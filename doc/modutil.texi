@@ -9,6 +9,7 @@
 * Packing binary data::         binary.pack
 * Running Chibi-scheme test suite::  compat.chibi-test
 * Rational-less arithmetic::    compat.norational
+* Futures::                     control.future
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
@@ -1090,7 +1091,7 @@ Gaucheのソースツリーの@file{test/srfi.scm}に実際の使用例を見る
 
 @c ----------------------------------------------------------------------
 
-@node Rational-less arithmetic, A common job descriptor for control modules, Running Chibi-scheme test suite, Library modules - Utilities
+@node Rational-less arithmetic, Futures, Running Chibi-scheme test suite, Library modules - Utilities
 @section @code{compat.norational} - Rational-less arithmetic
 @c NODE 有理数のない算術演算, @code{compat.norational} - 有理数のない算術演算
 
@@ -1189,7 +1190,146 @@ gosh> #i1/3
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node A common job descriptor for control modules, Thread pools, Rational-less arithmetic, Library modules - Utilities
+@node Futures, A common job descriptor for control modules, Rational-less arithmetic, Library modules - Utilities
+@section @code{control.future} - Futures
+@c NODE Future, @code{control.future} - Future
+
+@deftp {Module} control.future
+@mdindex control.future
+@c EN
+A @emph{future} is a simple construct for concurrent computation.
+
+It encloses an expression, and compute its value concurrently.  The result
+of computation can be retrieved later with @code{future-get}.
+@c JP
+@emph{future}は並行計算を簡単にする構造です。
+
+指定された式の計算を並行して行います。計算結果は@code{future-get}で取り出すことができます。
+@c COMMON
+
+@c EN
+Futures are introduced in MultiLisp, in which retrieval of the computed
+value is implicit---a future is substituted with the result automatically.
+Racket and Guile have futures as a library, though the primitive to
+retrieve the result is called @code{touch}.  We avoided to use the name
+since @code{touch} is too generic.
+@c JP
+futureはMultiLispで実装されました。
+MultiLispのfutureは暗黙的、つまり計算が終わるとその結果に自動的に置き換わるものでした。
+RacketとGuileはライブラリでfutureを提供していますが、
+結果の取り出しを@code{touch}と呼んでいます。@code{touch}という名前は一般的にすぎるので、
+Gaucheでは@code{future-get}と呼ぶことにしました。
+@c COMMON
+@end deftp
+
+@defmac future expr
+@c MOD control.future
+@c EN
+Returns a future object, which run the compuatation of @var{expr} in
+a separate thread.  The result of @var{expr} can be retrieved by
+@code{future-get}.
+@c JP
+@var{expr}を別スレッドで計算するfutureオブジェクトを返します。
+@var{expr}の結果は@code{future-get}で取り出せます。
+@c COMMON
+
+@c EN
+The @var{expr} is evaluated in the same environment
+as @code{future} appears, though if an exception raised within @var{expr}
+is not caught, its delivery is delayed until you call @code{future-get}.
+@c JP
+@var{expr}は@code{future}式と同じ環境で評価されます。
+ただし、@var{expr}が捕捉されない例外を投げた場合は、@code{future-get}が呼ばれるまで
+その例外の配送は遅延されます。
+@c COMMON
+@end defmac
+
+@defun make-future thunk
+@c MOD control.future
+@c EN
+Returns a future that calls @var{thunk} in a separate thread.
+@c JP
+@var{thunk}を別スレッドで呼ぶfutureを返します。
+@c COMMON
+
+@example
+(future expr) @equiv{} (make-future (lambda () expr))
+@end example
+@end defun
+
+
+@defun future? obj
+@c MOD control.future
+@c EN
+Returns @code{#t} if @var{obj} is a future, @code{#f} otherwise.
+@c JP
+@var{obj}がfutureなら@code{#t}を、そうでなければ@code{#t}を返します。
+@c COMMON
+@end defun
+
+
+@defun future-get future :optional timeout timeout-val
+@c MOD control.future
+@c EN
+The argument must be a future.  Retrieve the result of @var{future}.
+@c JP
+引数はfutureでなければなりません。@var{future}の結果を取り出します。
+@c COMMON
+
+@c EN
+If the result of @var{future} is already available, it is returned immediately.
+If @var{future} is still computing, @code{future-get} blocks until
+the result is ready by default.  You can limit how long you will wait by
+@var{timeout} argument, which can be @code{#f} (default, no timeout),
+a nonnegative real numebr (relative time in seconds), or
+a @code{<time>} object (absolute timepoint).  If the timeout reaches
+before the result is available, @var{timeout-val} is returned, which
+defaults to @code{#f}.
+Calling @code{future-get} more than once returns the same result.
+@c JP
+@var{future}の結果が既に求まっていれば、この手続きはただちにそれを返します。
+まだ計算中であった場合は、デフォルトでこの手続きは計算が終わるまでブロックします。
+待つ時間の上限を@var{timeout}引数で指定することもできます。
+@var{timeout}が@code{#f}(デフォルト)なら無制限に待ち、
+非負実数ならその秒数だけ待ち、@code{<time>}オブジェクトならそれで指定される
+絶対時間まで待ちます。タイムアウトが起きた場合は@var{timeout-val}が返されます。
+デフォルトは@code{#f}です。
+@code{future-get}を複数回呼んでも同じ結果が返されます。
+@c COMMON
+
+@c EN
+If an uncaught exception is raised during computation in the future,
+it is kept and reraised from @code{future-get}.  It is handled
+in the dynamic environment of @code{future-get} (not the one in the original
+@code{future} call).
+If you call @code{future-get}
+again on such future, the effect is undefined
+(currently it returns @code{#<undef>} without raising an exception, but
+it may change in future).
+@c JP
+futureの計算中に捕捉されない例外が投げられた場合、それは@code{future-get}を呼んだ時点で
+@code{future-get}の動的環境で再び投げられます。
+そのfutureにもう一度@code{future-get}を呼んだ場合の動作は未定義です
+(現在は、二度目以降は例外を投げることなく@code{#<undef>}が返されますが、
+将来変わる可能性があります)。
+@c COMMON
+@end defun
+
+
+@defun future-done? future
+@c MOD control.future
+@c EN
+Returns @code{#t} if computation in @var{future} is finished,
+@code{#f} otherwise.
+@c JP
+@var{future}の計算が終わっていれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+
+
+@c ----------------------------------------------------------------------
+@node A common job descriptor for control modules, Thread pools, Futures, Library modules - Utilities
 @section @code{control.job} - A common job descriptor for control modules
 @c NODE 制御モジュールのための汎用ジョブ記述子, @code{control.job} - 制御モジュールのための汎用ジョブ記述子
 
