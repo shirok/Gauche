@@ -59,12 +59,14 @@
   ;; all slots must be private
   ((%thread    :init-keyword :thread)))
 
-(define (make-future thunk)
-  (make <future> :thread (thread-start! (make-thread thunk))))
-
 (define-syntax future
   (syntax-rules ()
-    [(_ expr) (make-future (lambda () expr))]))
+    [(_ expr) 
+     (make <future> 
+       :thread (thread-start! (make-thread (lambda () (values->list expr)))))]))
+
+(define (make-future thunk)
+  (future (thunk)))
 
 (define (future? obj) (is-a? obj <future>))
 
@@ -75,4 +77,4 @@
 (define (future-get future :optional (timeout #f) (timeout-val #f))
   (assume-type future <future>)
   (guard (e [(<uncaught-exception> e) (raise (~ e'reason))])
-    (thread-join! (~ future'%thread) timeout timeout-val)))
+    (apply values (thread-join! (~ future'%thread) timeout timeout-val))))

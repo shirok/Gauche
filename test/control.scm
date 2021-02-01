@@ -206,12 +206,14 @@
   (test* "simple future" '(#t 3)
          (let1 f (future 3)
            (list (future? f)
-                 (touch f))))
+                 (future-get f))))
+  (test* "multiple values" '(1 2 3)
+         (values->list (future-get (future (values 1 2 3)))))
   (let1 f (future (error "oops"))
     (test* "future error handling (delayed)" #t
            (future? f))
     (test* "future error handling (propagated)" (test-error <error> "oops")
-           (touch f)))
+           (future-get f)))
   ]
  [else])
 
