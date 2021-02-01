@@ -34,16 +34,30 @@
 ;; This is a provisional implementation; we'll use implicit thread pool
 ;; to avoid thread creation overhead eventually.
 
-;; The API is upper-compatible to Guile's (ice-9 futures)
+;; Guile and Racket uses 'touch' to retrive the result of a future, but
+;; that name seems too generic.  We adopt 'future-get'.
+
+;; If a future already finished computation, 'future-get' returns immediately
+;; with the result value.  Otherwise, it blocks until the result is available,
+;; unless timeout is specified.  Subsequent 'future-get' returns the same
+;; result.
+;;
+;; If the concurrent computation raises an exception, it is caught, and
+;; re-raised when first 'future-get'.  It is undefined if future-get is
+;; called again on such a future---it depends on the behavior of thread-join!,
+;; but the behavior of calling thread-join! again on exceptionally terminated
+;; thread isn't defined either.  Currently, the second call of future-get
+;; won't raise an exception and returns #<undef>, but do not count on
+;; the behavior.
 
 (define-module control.future
   (use gauche.threads)
-  (export <future> future? future make-future touch))
+  (export <future> future? future make-future future-done? future-get))
 (select-module control.future)
 
 (define-class <future> ()
   ;; all slots must be private
-  ((%thread :init-keyword :thread)))
+  ((%thread    :init-keyword :thread)))
 
 (define (make-future thunk)
   (make <future> :thread (thread-start! (make-thread thunk))))
@@ -54,7 +68,11 @@
 
 (define (future? obj) (is-a? obj <future>))
 
-(define (touch future :optional (timeout #f) (timeout-val #f))
+(define (future-done? future)
+  (assume-type future <future>)
+  (eq? (thread-state (~ future'%thread)) 'terminated))
+
+(define (future-get future :optional (timeout #f) (timeout-val #f))
   (assume-type future <future>)
   (guard (e [(<uncaught-exception> e) (raise (~ e'reason))])
     (thread-join! (~ future'%thread) timeout timeout-val)))
