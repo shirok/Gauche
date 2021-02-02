@@ -715,6 +715,12 @@
        (call-with-output-string
          (cut pprint ''(,@(the quick brown fox jumps over the ,@lazy dog))
               :port <> :width 25)))
+(test* "shorthand notation" (test-none-of)
+       (call-with-output-string
+         (cut pprint `(,((with-module gauche.internal make-identifier)
+                         'quote (current-module) '())
+                       foo)
+              :port <>)))
 
 ;;===============================================================
 ;; utf-8 with BOM
