@@ -183,10 +183,8 @@
     (let loop ([lis lis] [len 0] [rs '()])
       (match lis
         [() (reverse rs)]
-        [((and (or 'quote 'quasiquote 'unquote 'unquote-splicing) p) _)
-         (if (has-label? (cdr lis) c)
-           (reverse (list* (layout-ref (cdr lis) c) dot (fn p) rs))
-           (reverse (list* (layout-shorthand lis fn c) dot rs)))]
+        [(? (cut may-layout-shorthand? <> c))
+         (reverse (list* (layout-shorthand lis fn c) dot rs))]
         [(l . lis)
          (if (>=* len (rp-length c))
            (reverse `(,dots ,@rs))
@@ -199,10 +197,7 @@
         [x (reverse `(,(fn x) ,dot ,@rs))])))
 
   (cond [(pair? obj)
-         (or (and (pair? (cdr obj))
-                  (null? (cddr obj))
-                  (not (has-label? (cdr obj) c))
-                  (memq (car obj) '(quote quasiquote unquote unquote-splicing))
+         (or (and (may-layout-shorthand? obj c)
                   (layout-shorthand obj rec c))
              (layout-list (sprefix obj "(" c) (map+ rec obj) c))]
         [(vector? obj) (layout-list (sprefix obj "#(" c) (mapi rec obj) c)]
@@ -244,6 +239,13 @@
     (memo^ [room memo]
            (match-let1 (s . w) (inner (-* room plen) memo)
              (cons (list pfx s) (and w (+ w plen)))))))
+
+(define (may-layout-shorthand? obj c)
+  (and (pair? obj)
+       (pair? (cdr obj))
+       (null? (cddr obj))
+       (not (has-label? (cdr obj) c))
+       (memq (car obj) '(quote quasiquote unquote unquote-splicing))))
 
 ;; layout-list :: (String, [Layouter], Context) -> Layouter
 (define (layout-list prefix elts c)
