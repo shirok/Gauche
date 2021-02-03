@@ -1,3 +1,9 @@
+2021-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (Scm_DynLoad): Make it return #<dlobj>.  Allow #t as
+	  initfn argument _not_ to call initialization function.  Preparation
+	  for ffi.
+
 2021-01-31  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/future.scm: Added.  This is a provisional impl.

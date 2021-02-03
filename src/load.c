@@ -443,7 +443,7 @@ struct ScmDLObjRec {
 static void dlobj_print(ScmObj obj, ScmPort *sink, 
                         ScmWriteContext *mode SCM_UNUSED)
 {
-    Scm_Printf(sink, "#<dlobj \"%s\">", SCM_DLOBJ(obj)->path);
+    Scm_Printf(sink, "#<dlobj %S>", SCM_DLOBJ(obj)->path);
 }
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_DLObjClass, dlobj_print);
@@ -637,8 +637,15 @@ static ScmObj find_prelinked(ScmString *dsoname)
 /* Dynamically load the specified object by DSONAME.
    DSONAME must not contain the system's suffix (.so, for example).
    The same name of DSO can be only loaded once.
+
    A DSO may contain multiple initialization functions (initfns), in
    which case each initfn is called at most once.
+
+   If INITFN is SCM_FALSE, the name of initialization function is derived
+   from the DSO name (see %get-initfn-name in libeval.scm).
+
+   If INITFN is SCM_TRUE, the initialization function won't be called.
+   It is to load DSO for FFI.
 */
 ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
                    u_long flags SCM_UNUSED /*reserved*/)
@@ -658,11 +665,18 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
         dsopath = SCM_CAR(spath);
         SCM_ASSERT(SCM_STRINGP(dsopath));
     }
-    static ScmObj get_initfn_name_proc = SCM_UNDEFINED;
-    SCM_BIND_PROC(get_initfn_name_proc, "%get-initfn-name",
-                  Scm_GaucheInternalModule());
-    ScmObj s_initname = Scm_ApplyRec2(get_initfn_name_proc, initfn, dsopath);
-    const char *initname = Scm_GetStringConst(SCM_STRING(s_initname));
+
+    const char *initname = NULL;
+
+    if (!SCM_EQ(initfn, SCM_TRUE)) {
+        static ScmObj get_initfn_name_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(get_initfn_name_proc, "%get-initfn-name",
+                      Scm_GaucheInternalModule());
+        ScmObj s_initname =
+            Scm_ApplyRec2(get_initfn_name_proc, initfn, dsopath);
+        initname = Scm_GetStringConst(SCM_STRING(s_initname));
+    }
+    
     ScmDLObj *dlo = find_dlobj(dsopath);
 
     /* Load the dlobj if necessary. */
@@ -676,12 +690,14 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
     /* Now the dlo is loaded.  We need to call initializer. */
     SCM_ASSERT(dlo->loaded);
 
-    SCM_UNWIND_PROTECT { call_initfn(dlo, initname); }
-    SCM_WHEN_ERROR { unlock_dlobj(dlo);  SCM_NEXT_HANDLER; }
-    SCM_END_PROTECT;
+    if (initname != NULL) {
+        SCM_UNWIND_PROTECT { call_initfn(dlo, initname); }
+        SCM_WHEN_ERROR { unlock_dlobj(dlo);  SCM_NEXT_HANDLER; }
+        SCM_END_PROTECT;
+    }
 
     unlock_dlobj(dlo);
-    return SCM_TRUE;
+    return SCM_OBJ(dlo);
 }
 
 /* Expose dlobj to Scheme world */
