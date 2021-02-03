@@ -1020,6 +1020,8 @@ void Scm__InitModule(void)
 
 void Scm__FinishModuleInitialization(void)
 {
+#if !GAUCHE_DEBUG_BOOTSTRAP
     Scm__DestroyModule(SCM_MODULE(bootstrapModule));
     bootstrapModule = SCM_FALSE;
+#endif
 }

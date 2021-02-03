@@ -147,6 +147,9 @@ SCM_DECL_BEGIN
    handling. */
 #define GAUCHE_SPLIT_STACK 0
 
+/* Define to 1 if debugging the bootstrap module */
+#define GAUCHE_DEBUG_BOOTSTRAP 0
+
 /* Include appropriate threading interface.  Threading primitives are
    abstracted with SCM_INTERNAL_* macros and ScmInternal* typedefs.
    See gauche/uthread.h for the semantics of these primitives. */
