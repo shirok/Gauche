@@ -420,7 +420,6 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
 typedef void (*ScmDynLoadEntry)(void); /* Dynamically loaded function pointr */
 
 typedef struct dlobj_entry_rec {
-    struct dlobj_entry_rec *next; /* chain */
     ScmString *name;            /* name of initfn (always w/ leading '_') */
     ScmDynLoadEntry fn;         /* function ptr */
     int called;                 /* TRUE if fn is called successfully */
@@ -435,7 +434,7 @@ struct ScmDLObjRec {
     void *handle;               /* whatever dl_open returned */
     ScmVM *loader;              /* The VM that's holding the lock to operate
                                    on this DLO. */
-    dlobj_entry *initfns;      /* list of initializer functions */
+    ScmHashCore entries;        /* name -> dlobj_entry */
     ScmInternalMutex mutex;
     ScmInternalCond  cv;
 };
@@ -455,7 +454,7 @@ static ScmDLObj *make_dlobj(ScmString *path)
     z->path = path;
     z->loader = NULL;
     z->loaded = FALSE;
-    z->initfns = NULL;
+    Scm_HashCoreInitSimple(&z->entries, SCM_HASH_STRING, 0, NULL);
     (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
     (void)SCM_INTERNAL_COND_INIT(z->cv);
     return z;
@@ -513,17 +512,16 @@ static void unlock_dlobj(ScmDLObj *dlo)
    Assuming the caller holding the lock of OBJ. */
 static dlobj_entry *find_initfn(ScmDLObj *dlo, ScmString *name)
 {
-    dlobj_entry *fns = dlo->initfns;
-    for (; fns != NULL; fns = fns->next) {
-        if (Scm_StringEqual(name, fns->name)) return fns;
-    }
-    fns = SCM_NEW(dlobj_entry);
-    fns->name = name;
-    fns->fn = NULL;
-    fns->called = FALSE;
-    fns->next = dlo->initfns;
-    dlo->initfns = fns;
-    return fns;
+    ScmDictEntry *e = Scm_HashCoreSearch(&dlo->entries, (intptr_t)name,
+                                         SCM_DICT_CREATE);
+    if (e->value != 0) return (dlobj_entry*)e->value;
+
+    dlobj_entry *dle = SCM_NEW(dlobj_entry);
+    dle->name = name;
+    dle->fn = NULL;             /* filled by the caller */
+    dle->called = FALSE;
+    e->value = (intptr_t)dle;
+    return dle;
 }
 
 /* Load the DSO.  The caller holds the lock of dlobj.  May throw an error;
@@ -717,10 +715,16 @@ static ScmObj dlobj_entries_get(ScmObj obj)
 {
     ScmObj h = SCM_NIL;
     ScmObj t = SCM_NIL;
+    ScmDLObj *dlo = SCM_DLOBJ(obj);
+    ScmHashIter iter;
+    
     lock_dlobj(SCM_DLOBJ(obj));
-    dlobj_entry *ifn = SCM_DLOBJ(obj)->initfns;
-    for (;ifn != NULL; ifn = ifn->next) {
-        ScmObj p = Scm_Cons(SCM_OBJ(ifn->name), SCM_MAKE_BOOL(ifn->called));
+    Scm_HashIterInit(&iter, &dlo->entries);
+    for (;;) {
+        ScmDictEntry *e = Scm_HashIterNext(&iter);
+        if (e == NULL) break;
+        dlobj_entry *dle = (dlobj_entry*)e->value;
+        ScmObj p = Scm_Cons(SCM_OBJ(dle->name), SCM_MAKE_BOOL(dle->called));
         SCM_APPEND1(h, t, p);
     }
     unlock_dlobj(SCM_DLOBJ(obj));
