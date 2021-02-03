@@ -46,9 +46,9 @@ static const char *dl_error(void)
     return dlerror();
 }
 
-static ScmDynLoadInitFn dl_sym(void *handle, const char *name)
+static ScmDynLoadEntry dl_sym(void *handle, const char *name)
 {
-    return (ScmDynLoadInitFn)dlsym(handle, name);
+    return (ScmDynLoadEntry)dlsym(handle, name);
 }
 
 static void dl_close(void *handle)

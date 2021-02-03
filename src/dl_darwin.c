@@ -90,11 +90,11 @@ static const char *dl_error(void)
     return dl_open_errstr;
 }
 
-static ScmDynLoadInitFn dl_sym(void *handle, const char *name)
+static ScmDynLoadEntry dl_sym(void *handle, const char *name)
 {
     NSSymbol sym = NSLookupSymbolInModule((NSModule)handle, name);
     if (sym == NULL) return NULL;
-    return (ScmDynLoadInitFn)NSAddressOfSymbol(sym);
+    return (ScmDynLoadEntry)NSAddressOfSymbol(sym);
 }
 
 static void dl_close(void *handle)

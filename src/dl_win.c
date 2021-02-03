@@ -53,9 +53,9 @@ static const char *dl_error(void)
     return SCM_STRDUP(buf);
 }
 
-static ScmDynLoadInitFn dl_sym(void *handle, const char *name)
+static ScmDynLoadEntry dl_sym(void *handle, const char *name)
 {
-    return (ScmDynLoadInitFn)GetProcAddress((HMODULE)handle, name);
+    return (ScmDynLoadEntry)GetProcAddress((HMODULE)handle, name);
 }
 
 static void dl_close(void *handle)

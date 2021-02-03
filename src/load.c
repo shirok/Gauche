@@ -378,7 +378,7 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
  *     of the calling program itself in such a case, but we never need that
  *     behavior.
  *
- *   ScmDynloadInitFn dl_sym(void *handle, const char *symbol)
+ *   ScmDynLoadEntry dl_sym(void *handle, const char *symbol)
  *     Finds the address of SYMBOL in the dl_openModule()-ed module
  *     HANDLE.
  *
@@ -417,14 +417,14 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
    keyword arguments.
  */
 
-typedef void (*ScmDynLoadInitFn)(void);
+typedef void (*ScmDynLoadEntry)(void); /* Dynamically loaded function pointr */
 
-typedef struct dlobj_initfn_rec {
-    struct dlobj_initfn_rec *next; /* chain */
-    const char *name;           /* name of initfn (always w/ leading '_') */
-    ScmDynLoadInitFn fn;        /* function ptr */
-    int initialized;            /* TRUE once fn returns */
-} dlobj_initfn;
+typedef struct dlobj_entry_rec {
+    struct dlobj_entry_rec *next; /* chain */
+    ScmString *name;            /* name of initfn (always w/ leading '_') */
+    ScmDynLoadEntry fn;         /* function ptr */
+    int called;                 /* TRUE if fn is called successfully */
+} dlobj_entry;
 
 struct ScmDLObjRec {
     SCM_HEADER;
@@ -435,7 +435,7 @@ struct ScmDLObjRec {
     void *handle;               /* whatever dl_open returned */
     ScmVM *loader;              /* The VM that's holding the lock to operate
                                    on this DLO. */
-    dlobj_initfn *initfns;      /* list of initializer functions */
+    dlobj_entry *initfns;      /* list of initializer functions */
     ScmInternalMutex mutex;
     ScmInternalCond  cv;
 };
@@ -509,18 +509,18 @@ static void unlock_dlobj(ScmDLObj *dlo)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
 }
 
-/* find dlobj_initfn from the given dlobj with name.
+/* find dlobj_entry from the given dlobj with name.
    Assuming the caller holding the lock of OBJ. */
-static dlobj_initfn *find_initfn(ScmDLObj *dlo, const char *name)
+static dlobj_entry *find_initfn(ScmDLObj *dlo, ScmString *name)
 {
-    dlobj_initfn *fns = dlo->initfns;
+    dlobj_entry *fns = dlo->initfns;
     for (; fns != NULL; fns = fns->next) {
-        if (strcmp(name, fns->name) == 0) return fns;
+        if (Scm_StringEqual(name, fns->name)) return fns;
     }
-    fns = SCM_NEW(dlobj_initfn);
+    fns = SCM_NEW(dlobj_entry);
     fns->name = name;
     fns->fn = NULL;
-    fns->initialized = FALSE;
+    fns->called = FALSE;
     fns->next = dlo->initfns;
     dlo->initfns = fns;
     return fns;
@@ -552,19 +552,20 @@ static void load_dlo(ScmDLObj *dlo)
 
 /* Call the DSO's initfn.  The caller holds the lock of dlobj, and responsible
    to release the lock even when this fn throws an error. */
-static void call_initfn(ScmDLObj *dlo, const char *name)
+static void call_initfn(ScmDLObj *dlo, ScmString *name)
 {
-    dlobj_initfn *ifn = find_initfn(dlo, name);
+    dlobj_entry *ifn = find_initfn(dlo, name);
 
-    if (ifn->initialized) return;
+    if (ifn->called) return;
 
     if (!ifn->fn) {
         /* locate initfn.  Name always has '_'.  Whether the actual
            symbol dl_sym returns has '_' or not depends on the platform,
            so we first try without '_', then '_'. */
-        ifn->fn = dl_sym(dlo->handle, name+1);
+        const char *cname = Scm_GetStringConst(name);
+        ifn->fn = dl_sym(dlo->handle, cname+1);
         if (ifn->fn == NULL) {
-            ifn->fn = (void(*)(void))dl_sym(dlo->handle, name);
+            ifn->fn = (void(*)(void))dl_sym(dlo->handle, cname);
             if (ifn->fn == NULL) {
                 dl_close(dlo->handle);
                 dlo->handle = NULL;
@@ -585,7 +586,7 @@ static void call_initfn(ScmDLObj *dlo, const char *name)
        standard module structure, such circular dependency is detected
        by Scm_Load, so we don't worry about it here. */
     ifn->fn();
-    ifn->initialized = TRUE;
+    ifn->called = TRUE;
 }
 
 /* Experimental: Prelink feature---we allow the extension module to be
@@ -601,7 +602,7 @@ static void call_initfn(ScmDLObj *dlo, const char *name)
    names with '_' first. */
 void Scm_RegisterPrelinked(ScmString *dsoname,
                            const char *initfn_names[],
-                           ScmDynLoadInitFn initfns[])
+                           ScmDynLoadEntry initfns[])
 {
     ScmObj path = Scm_StringAppend2(SCM_STRING(SCM_MAKE_STR_IMMUTABLE("@/")),
                                     dsoname);
@@ -610,7 +611,9 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
     for (int i=0; initfns[i] && initfn_names[i]; i++) {
-        dlobj_initfn *ifn = find_initfn(dlo, initfn_names[i]);
+        dlobj_entry *ifn =
+            find_initfn(dlo,
+                        SCM_STRING(SCM_MAKE_STR_IMMUTABLE(initfn_names[i])));
         SCM_ASSERT(ifn->fn == NULL);
         ifn->fn = initfns[i];
     }
@@ -666,15 +669,13 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
         SCM_ASSERT(SCM_STRINGP(dsopath));
     }
 
-    const char *initname = NULL;
+    ScmObj initname = SCM_FALSE;
 
     if (!SCM_EQ(initfn, SCM_TRUE)) {
         static ScmObj get_initfn_name_proc = SCM_UNDEFINED;
         SCM_BIND_PROC(get_initfn_name_proc, "%get-initfn-name",
                       Scm_GaucheInternalModule());
-        ScmObj s_initname =
-            Scm_ApplyRec2(get_initfn_name_proc, initfn, dsopath);
-        initname = Scm_GetStringConst(SCM_STRING(s_initname));
+        initname = Scm_ApplyRec2(get_initfn_name_proc, initfn, dsopath);
     }
     
     ScmDLObj *dlo = find_dlobj(dsopath);
@@ -690,8 +691,8 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
     /* Now the dlo is loaded.  We need to call initializer. */
     SCM_ASSERT(dlo->loaded);
 
-    if (initname != NULL) {
-        SCM_UNWIND_PROTECT { call_initfn(dlo, initname); }
+    if (SCM_STRINGP(initname)) {
+        SCM_UNWIND_PROTECT { call_initfn(dlo, SCM_STRING(initname)); }
         SCM_WHEN_ERROR { unlock_dlobj(dlo);  SCM_NEXT_HANDLER; }
         SCM_END_PROTECT;
     }
@@ -712,15 +713,14 @@ static ScmObj dlobj_loaded_get(ScmObj obj)
     return SCM_MAKE_BOOL(SCM_DLOBJ(obj)->loaded);
 }
 
-static ScmObj dlobj_initfns_get(ScmObj obj)
+static ScmObj dlobj_entries_get(ScmObj obj)
 {
     ScmObj h = SCM_NIL;
     ScmObj t = SCM_NIL;
     lock_dlobj(SCM_DLOBJ(obj));
-    dlobj_initfn *ifn = SCM_DLOBJ(obj)->initfns;
+    dlobj_entry *ifn = SCM_DLOBJ(obj)->initfns;
     for (;ifn != NULL; ifn = ifn->next) {
-        ScmObj p = Scm_Cons(SCM_MAKE_STR_IMMUTABLE(ifn->name),
-                            SCM_MAKE_BOOL(ifn->initialized));
+        ScmObj p = Scm_Cons(SCM_OBJ(ifn->name), SCM_MAKE_BOOL(ifn->called));
         SCM_APPEND1(h, t, p);
     }
     unlock_dlobj(SCM_DLOBJ(obj));
@@ -730,7 +730,7 @@ static ScmObj dlobj_initfns_get(ScmObj obj)
 static ScmClassStaticSlotSpec dlobj_slots[] = {
     SCM_CLASS_SLOT_SPEC("path", dlobj_path_get, NULL),
     SCM_CLASS_SLOT_SPEC("loaded?", dlobj_loaded_get, NULL),
-    SCM_CLASS_SLOT_SPEC("init-functions", dlobj_initfns_get, NULL),
+    SCM_CLASS_SLOT_SPEC("entries", dlobj_entries_get, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
