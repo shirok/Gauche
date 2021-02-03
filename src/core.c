@@ -117,6 +117,8 @@ extern void Scm_Init_libmacro(void);
 extern void Scm_Init_libparam(void);
 extern void Scm_Init_libomega(void);
 
+extern void Scm__FinishModuleInitialization(void);
+
 static void finalizable(void);
 static void init_cond_features(void);
 
@@ -235,6 +237,7 @@ void Scm_Init(const char *signature)
     ptr_pthread_create = GC_pthread_create;
 #endif
 
+    Scm__FinishModuleInitialization();
     scheme_initialized = TRUE;
 }
 

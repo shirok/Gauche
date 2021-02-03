@@ -119,6 +119,13 @@
    a module is simply a bad idea and shouldn't be allowed.
  */
 
+/* Note on gauche.bootstrap module
+   This module is only exists during boot process.  Once booting is
+   complete, it is destroyed.  We use the module to define some
+   under-the-hood procedures that we don't want ordinary programs
+   to call directly.
+ */
+
 /* Global module table */
 static struct {
     ScmHashTable *table;    /* Maps name -> module. */
@@ -142,6 +149,7 @@ DEFINE_STATIC_MODULE(reqbaseModule);  /* #<module gauche.require-base> */
 
 static ScmObj defaultParents = SCM_NIL; /* will be initialized */
 static ScmObj defaultMpl =     SCM_NIL; /* will be initialized */
+static ScmObj bootstrapModule = SCM_FALSE; /* will be initialized */
 
 /*----------------------------------------------------------------------
  * Constructor
@@ -799,6 +807,30 @@ void Scm_ModuleSeal(ScmModule *module)
 }
 
 /*----------------------------------------------------------------------
+ * Module destroying
+ */
+
+/* Destroying modules isn't a usual operation; it can break existing
+   code if used carelessly.  We treat it as an internal API.
+*/
+void Scm__DestroyModule(ScmModule *m)
+{
+    if (!SCM_FALSEP(m->name)) {
+        (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+        Scm_HashTableDelete(modules.table, m->name);
+        (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+    }
+    m->imported = SCM_NIL;
+    m->parents = SCM_NIL;
+    m->mpl = SCM_NIL;
+    m->depended = SCM_NIL;
+    Scm_HashCoreClear(&m->internal->core);
+    Scm_HashCoreClear(&m->external->core);
+    m->origin = SCM_FALSE;
+    m->prefix = SCM_FALSE;
+}
+
+/*----------------------------------------------------------------------
  * Finding modules
  */
 
@@ -977,8 +1009,17 @@ void Scm__InitModule(void)
              keywordModule.internal);
     gkeywordModule.exportAll = TRUE;
 
+    bootstrapModule = Scm_MakeModule(SCM_SYMBOL(SCM_INTERN("gauche.bootstrap")),
+                                     FALSE);
+
     /* create predefined moudles */
     for (modname = builtin_modules; *modname; modname++) {
         (void)SCM_FIND_MODULE(*modname, SCM_FIND_MODULE_CREATE);
     }
+}
+
+void Scm__FinishModuleInitialization(void)
+{
+    Scm__DestroyModule(SCM_MODULE(bootstrapModule));
+    bootstrapModule = SCM_FALSE;
 }
