@@ -274,6 +274,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->callTrace = (vm_call_trace_size
                     ? Scm__MakeCallTraceQueue(vm_call_trace_size)
                     : NULL);
+    v->codeCache = NULL;
 
     v->resetChain = SCM_NIL;
 

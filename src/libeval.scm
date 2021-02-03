@@ -686,3 +686,19 @@
                   `(,(car si) ,(cadr si))
                   si)))
          (reverse sis))))
+
+;; Nasty stuff.
+;; These bindings are available only during the bootstrap process,
+;; for we don't want ordinary code to call those internal routines.
+;; For now, it is just a stub for more experiment.  Eventually ffi and jit
+;; will use those routines.
+
+(select-module gauche.bootstrap)
+
+(inline-stub 
+ (.when (defined "HAVE_SYS_MMAN_H")
+   "extern ScmObj Scm__VMCallNative(ScmVM *, ScmUVector*);"
+
+   (define-cproc %call-native (code::<uvector>)
+     (return (Scm__VMCallNative (Scm_VM) code)))))
+

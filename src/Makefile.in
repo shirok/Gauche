@@ -222,7 +222,7 @@ libgauche_OBJECTS = \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
 	hash.$(OBJEXT) dws32hash.$(OBJEXT) dwsiphash.$(OBJEXT) \
 	treemap.$(OBJEXT) bits.$(OBJEXT) \
-	port.$(OBJEXT) write.$(OBJEXT) read.$(OBJEXT) \
+	native.$(OBJEXT) port.$(OBJEXT) write.$(OBJEXT) read.$(OBJEXT) \
 	vector.$(OBJEXT) weak.$(OBJEXT) symbol.$(OBJEXT) \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \

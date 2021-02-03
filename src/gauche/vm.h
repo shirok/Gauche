@@ -313,6 +313,9 @@ typedef struct ScmVMStatRec {
 /* The profiler structure is defined in prof.h */
 typedef struct ScmVMProfilerRec ScmVMProfiler;
 
+/* Some experimental stuff (native.c) */
+typedef struct ScmCodeCacheRec ScmCodeCache;
+
 /*
  * VM structure
  *
@@ -469,6 +472,7 @@ struct ScmVMRec {
                                    Set by vm_register. */
 
     ScmCallTrace *callTrace;
+    ScmCodeCache *codeCache;
 
     /* for reset/shift */
     ScmObj resetChain;          /* list of reset information,
