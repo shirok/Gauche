@@ -151,4 +151,30 @@ apply the settings.  Answering with `!` causes Emacs to remember your
 choice and the settings will be applied in future without asking.
 
 
+== TROUBLESHOOTING
+
+If your modification broke something fundamental and you couldn't even
+get to REPL, there are a couple of trick to isolate the problem.
+
+- Run gosh with `-q` option, e.g. `./gosh -ftest -q`.  It suppresses
+  loading startup files, e.g. it won't read any external Scheme files,
+  nor loading DSO files, before getting to a REPL prompt.   If you get
+  `gosh>` prompt, then the issue is the loading of runtime files.
+
+ -- Run gosh with `./gosh -ftest -fload-verbose` option and see which
+    startup file causes the trouble.
+ -- With the bare REPL from `./gosh -ftest -q`, try to load or evaluate
+    offending files/expressions to figure out the issue.  Note that
+    the 'bare' REPL only have minimal features---no toplevel commands,
+    no line editing, etc.
+
+- If you can't even get to REPL with `-q`, it is likely that something
+  is broken during initialization.  Run `gosh` with an environment variable
+  `GAUCHE_DEBUG_INITIALIZATION` set.  It reports which component is being
+  initialized.
+
+
+
+
+
 
