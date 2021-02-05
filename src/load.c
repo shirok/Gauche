@@ -577,7 +577,7 @@ static void call_initfn(ScmDLObj *dlo, ScmString *name)
         dl_close(dlo->handle);
         dlo->handle = NULL;
         Scm_Error("dynamic linking of %A failed: "
-                  "couldn't find initialization function %s",
+                  "couldn't find initialization function %S",
                   dlo->path, name);
     }
 
