@@ -9,6 +9,12 @@
 	  reason that user directly use dynamic-load, so we presume
 	  this won't break existing code.
 
+	  (dlobj-get-entry-address): Expose Scm_DLOGetEntryAddress in
+	  gauche module.  When we support ffi, there'll be no reason to
+	  hide this procedure.  (We might want a separate namespace,
+	  e.g. gauche.ffi, just to indicate this is for those who know
+	  what they're doing, though.  Let's see.)
+
 2021-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_DynLoad): Make it return #<dlobj>.  Allow #t as
