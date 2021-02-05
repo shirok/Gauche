@@ -2940,6 +2940,22 @@ struct foreign_data_rec {
     ScmInternalMutex identity_mutex; /* lock for identity_map */
 };
 
+/* This is used if custom printer isn't given to
+   Scm_MakeForeignPointerClass. */
+static void fptr_print(ScmObj obj, ScmPort *port, 
+                       ScmWriteContext *ctx SCM_UNUSED)
+{
+    ScmForeignPointer *fptr = SCM_FOREIGN_POINTER(obj);
+    ScmClass *klass = SCM_CLASS_OF(obj);
+    ScmObj name = Scm_ForeignPointerAttrGet(fptr, SCM_SYM_NAME, SCM_UNDEFINED);
+    void *ptr = SCM_FOREIGN_POINTER_REF(void*, fptr);
+    if (SCM_UNDEFINEDP(name)) {
+        Scm_Printf(port, "#<%A @%p>", Scm_ShortClassName(klass), ptr);
+    } else {
+        Scm_Printf(port, "#<%A %S@%p>", Scm_ShortClassName(klass), name, ptr);
+    }
+}
+
 ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
                                       const char *name,
                                       ScmClassPrintProc print_proc,
@@ -2958,7 +2974,7 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
                                  NULL };
     fp->name = s;
     fp->allocate = NULL;
-    fp->print = print_proc;
+    fp->print = (print_proc? print_proc : fptr_print);
     fp->cpa = fpcpa;
     fp->flags = SCM_CLASS_BUILTIN;
     initialize_builtin_cpl(fp, SCM_FALSE);
