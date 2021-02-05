@@ -450,6 +450,7 @@ static ScmDLObj *make_dlobj(ScmString *path)
     z->path = path;
     z->loader = NULL;
     z->loaded = FALSE;
+    z->handle = NULL;
     Scm_HashCoreInitSimple(&z->entries, SCM_HASH_STRING, 0, NULL);
     (void)SCM_INTERNAL_MUTEX_INIT(z->mutex);
     (void)SCM_INTERNAL_COND_INIT(z->cv);
@@ -576,6 +577,7 @@ static void call_initfn(ScmDLObj *dlo, ScmString *name)
     if (!SCM_FOREIGN_POINTER_P(fptr)) {
         dl_close(dlo->handle);
         dlo->handle = NULL;
+        dlo->loaded = FALSE;
         Scm_Error("dynamic linking of %A failed: "
                   "couldn't find initialization function %S",
                   dlo->path, name);
