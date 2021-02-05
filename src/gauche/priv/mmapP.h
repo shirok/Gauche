@@ -40,6 +40,9 @@ struct ScmMemoryRegionRec {
     size_t size;
     int prot;
     int flags;
+#if defined(GAUCHE_WINDOWS)
+    HANDLE fileMapping;         /* file mapping object handle */
+#endif
 };
 
 SCM_CLASS_DECL(Scm_MemoryRegionClass);
