@@ -1,3 +1,14 @@
+2021-02-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (dynamic-load): Change the default value of
+	  :init-function to #t, indicating using the default name derived
+	  from DSO name.  We use :init-function #f to indicate not to call
+	  init function at all.  This makes more sense than the previous
+	  implicit convention that #f indicates default name.
+	  The value #f was never documented, and previously there's no
+	  reason that user directly use dynamic-load, so we presume
+	  this won't break existing code.
+
 2021-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/load.c (Scm_DynLoad): Make it return #<dlobj>.  Allow #t as

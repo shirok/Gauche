@@ -651,10 +651,11 @@ static ScmObj find_prelinked(ScmString *dsoname)
    A DSO may contain multiple initialization functions (initfns), in
    which case each initfn is called at most once.
 
-   If INITFN is SCM_FALSE, the name of initialization function is derived
-   from the DSO name (see %get-initfn-name in libeval.scm).
+   If INITFN is SCM_TRUE, the name of initialization function is derived
+   from the DSO name (see %get-initfn-name in libeval.scm).  This is
+   the default value of 'dynamic-load'.
 
-   If INITFN is SCM_TRUE, the initialization function won't be called.
+   If INITFN is SCM_FALSE, the initialization function won't be called.
    It is to load DSO for FFI.
 */
 ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
@@ -678,11 +679,13 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
 
     ScmObj initname = SCM_FALSE;
 
-    if (!SCM_EQ(initfn, SCM_TRUE)) {
+    if (SCM_EQ(initfn, SCM_TRUE) || SCM_STRINGP(initfn)) {
         static ScmObj get_initfn_name_proc = SCM_UNDEFINED;
         SCM_BIND_PROC(get_initfn_name_proc, "%get-initfn-name",
                       Scm_GaucheInternalModule());
         initname = Scm_ApplyRec2(get_initfn_name_proc, initfn, dsopath);
+    } else if (!SCM_FALSEP(initfn)) {
+        SCM_TYPE_ERROR(initfn, "a string or a boolean");
     }
     
     ScmDLObj *dlo = find_dlobj(dsopath);
