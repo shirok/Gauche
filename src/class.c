@@ -2956,6 +2956,34 @@ static void fptr_print(ScmObj obj, ScmPort *port,
     }
 }
 
+/* Compare and hash methods are common to all subclasses */
+static int fptr_compare(ScmObj x, ScmObj y, int equalp)
+{
+    ScmForeignPointer *fx = SCM_FOREIGN_POINTER(x);
+    ScmForeignPointer *fy = SCM_FOREIGN_POINTER(y);
+    void *px = SCM_FOREIGN_POINTER_REF(void*, fx);
+    void *py = SCM_FOREIGN_POINTER_REF(void*, fy);
+    if (equalp) {
+        return px == py;
+    } else {
+        if (px < py) return -1;
+        if (px > py) return 1;
+        return 0;
+    }
+}
+
+static ScmSmallInt fptr_hash(ScmObj obj, ScmSmallInt salt, u_long flags)
+{
+    ScmForeignPointer *fptr = SCM_FOREIGN_POINTER(obj);
+    /* no portable hashing of fptr is possible, except that we return
+       a constant value.  So we ignore fptr in such case. */
+    void *ptr = ((flags & SCM_HASH_PORTABLE)
+                 ? NULL
+                 : SCM_FOREIGN_POINTER_REF(void*, fptr));
+    /* See hash.c for the magic number */
+    return (ScmSmallInt)(((intptr_t)ptr + salt) * 2654435761UL);
+}
+
 ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
                                       const char *name,
                                       ScmClassPrintProc print_proc,
@@ -2975,6 +3003,8 @@ ScmClass *Scm_MakeForeignPointerClass(ScmModule *mod,
     fp->name = s;
     fp->allocate = NULL;
     fp->print = (print_proc? print_proc : fptr_print);
+    fp->compare = fptr_compare;
+    fp->hash = fptr_hash;
     fp->cpa = fpcpa;
     fp->flags = SCM_CLASS_BUILTIN;
     initialize_builtin_cpl(fp, SCM_FALSE);
