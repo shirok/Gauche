@@ -3012,6 +3012,8 @@ ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr, ScmObj attr)
 {
     ScmForeignPointer *obj;
     struct foreign_data_rec *data = (struct foreign_data_rec *)klass->data;
+    SCM_ASSERT(data != NULL);   /* if this happens, user directly uses
+                                   <foreign-pointer> class without subclassing*/
 
     if (!klass) {               /* for extra safety */
         Scm_Error("NULL pointer passed to Scm_MakeForeignPointer");
