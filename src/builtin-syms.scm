@@ -216,10 +216,12 @@
     ;; to support scheme.bytevector (move this up on 1.0 release)
     (big                       SCM_SYM_BIG)
     (little                    SCM_SYM_LITTLE)
-    ;; port attibute
+    ;; port attibute, dlentry
     (name                      SCM_SYM_NAME)
     ;; macro source info
     (source                    SCM_SYM_SOURCE)
+    ;; dlentry
+    (called                    SCM_SYM_CALLED)
     ))
 
 

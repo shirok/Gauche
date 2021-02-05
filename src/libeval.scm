@@ -699,6 +699,11 @@
  (.when (defined "HAVE_SYS_MMAN_H")
    "extern ScmObj Scm__VMCallNative(ScmVM *, ScmUVector*);"
 
-   (define-cproc %call-native (code::<uvector>)
-     (return (Scm__VMCallNative (Scm_VM) code)))))
+   (define-cproc %%call-native (code::<uvector>)
+     (return (Scm__VMCallNative (Scm_VM) code)))
 
+   (define-cproc %%get-entry-address (dlo name::<string>)
+     (unless (SCM_DLOBJP dlo)
+       (SCM_TYPE_ERROR dlo "<dlobj>"))
+     (return (Scm_DLOGetEntryAddress (SCM_DLOBJ dlo) name)))
+   ))

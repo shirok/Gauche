@@ -101,6 +101,7 @@ SCM_CLASS_DECL(Scm_DLObjClass);
 SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, u_long flags);
 
 SCM_EXTERN ScmObj Scm_DLObjs(void);
+SCM_EXTERN ScmObj Scm_DLOGetEntryAddress(ScmDLObj *dlo, ScmString *name);
 
 /*=================================================================
  * Require & Provide

@@ -84,6 +84,8 @@ static struct {
                                      are already called by the application,
                                      but we may change this design in future.
                                   */
+    ScmClass *dlptr_class;        /* Foreign pointer class for the address
+                                     retrieved from dso. */
     ScmInternalMutex dso_mutex;
 } ldinfo;
 
@@ -417,13 +419,7 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
    keyword arguments.
  */
 
-typedef void (*ScmDynLoadEntry)(void); /* Dynamically loaded function pointr */
-
-typedef struct dlobj_entry_rec {
-    ScmString *name;            /* name of initfn (always w/ leading '_') */
-    ScmDynLoadEntry fn;         /* function ptr */
-    int called;                 /* TRUE if fn is called successfully */
-} dlobj_entry;
+typedef void (*ScmDynLoadEntry)(void); /* Dynamically loaded function pointer */
 
 struct ScmDLObjRec {
     SCM_HEADER;
@@ -434,7 +430,7 @@ struct ScmDLObjRec {
     void *handle;               /* whatever dl_open returned */
     ScmVM *loader;              /* The VM that's holding the lock to operate
                                    on this DLO. */
-    ScmHashCore entries;        /* name -> dlobj_entry */
+    ScmHashCore entries;        /* name -> <foreign-pointer> */
     ScmInternalMutex mutex;
     ScmInternalCond  cv;
 };
@@ -508,20 +504,43 @@ static void unlock_dlobj(ScmDLObj *dlo)
     (void)SCM_INTERNAL_MUTEX_UNLOCK(dlo->mutex);
 }
 
-/* find dlobj_entry from the given dlobj with name.
+/* Find NAME in the looked-up entries.
+   NAME must begin with '_'.
    Assuming the caller holding the lock of OBJ. */
-static dlobj_entry *find_initfn(ScmDLObj *dlo, ScmString *name)
+static ScmObj find_entry(ScmDLObj *dlo, ScmString *name)
 {
     ScmDictEntry *e = Scm_HashCoreSearch(&dlo->entries, (intptr_t)name,
-                                         SCM_DICT_CREATE);
-    if (e->value != 0) return (dlobj_entry*)e->value;
+                                         SCM_DICT_GET);
+    if (e) return SCM_DICT_VALUE(e);
+    else   return SCM_FALSE;
+}
 
-    dlobj_entry *dle = SCM_NEW(dlobj_entry);
-    dle->name = name;
-    dle->fn = NULL;             /* filled by the caller */
-    dle->called = FALSE;
-    e->value = (intptr_t)dle;
-    return dle;
+/* lookup the symbol within DLO.
+   NAME must begin with '_'.   We look up both with and without '_'.
+   Assuming the caller holding the lock of OBJ. */
+static ScmObj lookup_entry(ScmDLObj *dlo, ScmString *name)
+{
+    ScmObj fptr = find_entry(dlo, name);
+    if (SCM_FALSEP(fptr)) {
+        /* locate the entry.  Name always has '_'.  Whether the actual
+           symbol dl_sym returns has '_' or not depends on the platform,
+           so we first try without '_', then '_'. */
+        const char *cname = Scm_GetStringConst(name);
+        void *ptr = dl_sym(dlo->handle, cname+1);
+        if (ptr == NULL) {
+            ptr = dl_sym(dlo->handle, cname);
+            if (ptr == NULL) {
+                return SCM_FALSE; /* not found */
+            }
+        }
+        fptr = Scm_MakeForeignPointer(ldinfo.dlptr_class, ptr);
+        Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(fptr),
+                                  SCM_SYM_NAME, SCM_OBJ(name));
+        ScmDictEntry *e = Scm_HashCoreSearch(&dlo->entries, (intptr_t)name,
+                                             SCM_DICT_CREATE);
+        (void)SCM_DICT_SET_VALUE(e, fptr);
+    }
+    return fptr;
 }
 
 /* Load the DSO.  The caller holds the lock of dlobj.  May throw an error;
@@ -552,27 +571,19 @@ static void load_dlo(ScmDLObj *dlo)
    to release the lock even when this fn throws an error. */
 static void call_initfn(ScmDLObj *dlo, ScmString *name)
 {
-    dlobj_entry *ifn = find_initfn(dlo, name);
+    ScmObj fptr = lookup_entry(dlo, name);
 
-    if (ifn->called) return;
+    if (!SCM_FOREIGN_POINTER_P(fptr)) {
+        dl_close(dlo->handle);
+        dlo->handle = NULL;
+        Scm_Error("dynamic linking of %A failed: "
+                  "couldn't find initialization function %s",
+                  dlo->path, name);
+    }
 
-    if (!ifn->fn) {
-        /* locate initfn.  Name always has '_'.  Whether the actual
-           symbol dl_sym returns has '_' or not depends on the platform,
-           so we first try without '_', then '_'. */
-        const char *cname = Scm_GetStringConst(name);
-        ifn->fn = dl_sym(dlo->handle, cname+1);
-        if (ifn->fn == NULL) {
-            ifn->fn = (void(*)(void))dl_sym(dlo->handle, cname);
-            if (ifn->fn == NULL) {
-                dl_close(dlo->handle);
-                dlo->handle = NULL;
-                Scm_Error("dynamic linking of %A failed: "
-                          "couldn't find initialization function %s",
-                          dlo->path, name);
-                /*NOTREACHED*/
-            }
-        }
+    if (!SCM_FALSEP(Scm_ForeignPointerAttrGet(SCM_FOREIGN_POINTER(fptr),
+                                              SCM_SYM_CALLED, SCM_FALSE))) {
+        return;
     }
 
     /* Call initialization function.  note that there can be arbitrary
@@ -583,8 +594,10 @@ static void call_initfn(ScmDLObj *dlo, ScmString *name)
        loading right now.  However, if the code follows the Gauche's
        standard module structure, such circular dependency is detected
        by Scm_Load, so we don't worry about it here. */
-    ifn->fn();
-    ifn->called = TRUE;
+    ScmDynLoadEntry fn = SCM_FOREIGN_POINTER_REF(ScmDynLoadEntry, fptr);
+    fn();
+    Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(fptr),
+                              SCM_SYM_NAME, SCM_TRUE);
 }
 
 /* Experimental: Prelink feature---we allow the extension module to be
@@ -609,11 +622,7 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
     for (int i=0; initfns[i] && initfn_names[i]; i++) {
-        dlobj_entry *ifn =
-            find_initfn(dlo,
-                        SCM_STRING(SCM_MAKE_STR_IMMUTABLE(initfn_names[i])));
-        SCM_ASSERT(ifn->fn == NULL);
-        ifn->fn = initfns[i];
+        lookup_entry(dlo, SCM_STRING(SCM_MAKE_STR_IMMUTABLE(initfn_names[i])));
     }
     ldinfo.dso_prelinked = Scm_Cons(SCM_OBJ(dsoname), ldinfo.dso_prelinked);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
@@ -723,9 +732,7 @@ static ScmObj dlobj_entries_get(ScmObj obj)
     for (;;) {
         ScmDictEntry *e = Scm_HashIterNext(&iter);
         if (e == NULL) break;
-        dlobj_entry *dle = (dlobj_entry*)e->value;
-        ScmObj p = Scm_Cons(SCM_OBJ(dle->name), SCM_MAKE_BOOL(dle->called));
-        SCM_APPEND1(h, t, p);
+        SCM_APPEND1(h, t, SCM_DICT_VALUE(e));
     }
     unlock_dlobj(SCM_DLOBJ(obj));
     return h;
@@ -750,6 +757,16 @@ ScmObj Scm_DLObjs()
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
     return z;
+}
+
+/* name should have '_' prefix.  We look for a symbol with and without it.
+   Returns a foreign pointer or #f. */
+ScmObj Scm_DLOGetEntryAddress(ScmDLObj *dlo, ScmString *name)
+{
+    lock_dlobj(dlo);
+    ScmObj fptr = lookup_entry(dlo, name);
+    unlock_dlobj(dlo);
+    return fptr;
 }
 
 /*------------------------------------------------------------------
@@ -1253,6 +1270,9 @@ void Scm__InitLoad(void)
                                     SCM_MAKE_STR("." SHLIB_SO_SUFFIX));
     ldinfo.dso_table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_STRING,0));
     ldinfo.dso_prelinked = SCM_NIL;
+
+    ldinfo.dlptr_class = Scm_MakeForeignPointerClass(m, "<dlptr>",
+                                                     NULL, NULL, 0);
 
 #define PARAM_INIT(var, name, val) ldinfo.var = Scm_BindPrimitiveParameter(m, name, val, 0)
     PARAM_INIT(load_history, "current-load-history", SCM_NIL);
