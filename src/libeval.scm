@@ -696,12 +696,11 @@
 (select-module gauche.bootstrap)
 
 (inline-stub 
- (.when (defined "HAVE_SYS_MMAN_H")
-   "extern ScmObj Scm__VMCallNative(ScmVM *, ScmUVector*);"
+ "extern ScmObj Scm__VMCallNative(ScmVM *, ScmUVector*);"
 
-   (define-cproc %%call-native (code::<uvector>)
-     (return (Scm__VMCallNative (Scm_VM) code)))
-   ))
+ (define-cproc %%call-native (code::<uvector>)
+   (return (Scm__VMCallNative (Scm_VM) code)))
+ )
 
 (select-module gauche)
 

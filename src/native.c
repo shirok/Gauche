@@ -39,8 +39,8 @@
 #include "gauche/priv/mmapP.h"
 
 #if defined(HAVE_SYS_MMAN_H)
-
 #include <sys/mman.h>
+#endif
 
 /* We eventually manage mmap'ed page wisely as a code cache */
 struct ScmCodeCacheRec {
@@ -71,5 +71,3 @@ ScmObj Scm__VMCallNative(ScmVM *vm, ScmUVector *code)
     ScmObj z = ((ScmObj (*)())vm->codeCache->pad->ptr)();
     return z;
 }
-
-#endif /*HAVE_SYS_MMAM_H*/
