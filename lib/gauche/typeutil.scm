@@ -166,7 +166,6 @@
   (if (eq? (~ type'arguments) '*)
     (or (is-a? obj <procedure>)
         (is-a? obj <generic>)
-        (is-a? obj <method>)
         (let1 k (class-of obj)
           (let loop ([ms (~ object-apply'methods)])
             (cond [(null? ms) #f]
