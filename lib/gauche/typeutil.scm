@@ -108,7 +108,7 @@
 
 ;;;
 ;;; Class: <^>  (maybe we want to name it <λ>)
-;;;   Creates a function type.
+;;;   Creates a procedure type.
 ;;;   The signature can be specified as
 ;;;
 ;;;       <argtype1> <argtype2> ... :- <rettype1> <rettype2> ...
@@ -148,7 +148,7 @@
           [(and (null? rs) (eq? (car xs) '*) (null? (cdr xs)))
            (values args '*)]
           [(is-a? (car xs) <class>) 
-           (scan-results (cdr xs) args (cons (car xs) as))]
+           (scan-results (cdr xs) args (cons (car xs) rs))]
           [else
            (error "Non-class argument in the procedure type constructor:"
                   (car xs))]))
