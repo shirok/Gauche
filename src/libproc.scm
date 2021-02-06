@@ -221,7 +221,6 @@
                 nargs (slot-ref proc 'required))))]
           [(eq? c <generic>)
            (any (^m (apply method-applicable? m arg-types)) (~ proc'methods))]
-          [(eq? c <method>)  (apply method-applicable? m arg-types)]
           [else (apply applicable? object-apply c arg-types)])))
 
 (select-module gauche.internal)
