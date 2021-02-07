@@ -283,7 +283,7 @@
    (<primitive-parameter> "ScmPrimitiveParameter*" "primitive parameter"
                           "SCM_PRIMITIVE_PARAMETER_P" "SCM_PRIMITIVE_PARAMETER")
    (<dlobj> "ScmDLObj*" "dlobj" "SCM_DLOBJP" "SCM_DLOBJ")
-   (<dlptr> "ScmObj" "dlptr" "Scm_DLPtrP")
+   (<dlptr> "ScmObj" "dlptr" "Scm_DLPtrP" "SCM_OBJ")
    ))
 
 ;; Returns Scheme type name corresponds to the stub type.  It is mostly
