@@ -102,6 +102,7 @@ extern void Scm_Init_liblazy(void);
 extern void Scm_Init_liblist(void);
 extern void Scm_Init_libmisc(void);
 extern void Scm_Init_libmod(void);
+extern void Scm_Init_libnative(void);
 extern void Scm_Init_libnum(void);
 extern void Scm_Init_libobj(void);
 extern void Scm_Init_libproc(void);
@@ -207,6 +208,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm_Init_liblist);
     CALL_INIT(Scm_Init_libmisc);
     CALL_INIT(Scm_Init_libmod);
+    CALL_INIT(Scm_Init_libnative);
     CALL_INIT(Scm_Init_libnum);
     CALL_INIT(Scm_Init_libobj);
     CALL_INIT(Scm_Init_libproc);
