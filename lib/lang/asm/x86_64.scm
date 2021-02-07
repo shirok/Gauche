@@ -67,7 +67,7 @@
 ;; Entry and x86 ISA definitions (subset)
 ;;
 
-;; asm  :: [Insn] -> [Byte]
+;; asm  :: [Insn] -> [Byte], [(label . addr)]
 (define (asm insns)
   ;; first pass. create [(p,xaddr)] where p :: (Int,[(Symbol,Int)]) -> [Byte]
   ;; and xaddr is a value of PC after the code is fetched.
@@ -86,7 +86,8 @@
                           seed          ;ignore labels
                           (cons (p addr abss) seed))))
                     '() abss)
-      (concatenate (reverse bss)))))
+      (values (concatenate (reverse bss)) ; instructions
+              (filter-map (^p (and (symbol? (car p)) p)) abss)))))
 
 ;; asm1 :: ParsedInsn -> (Int, [Symbol,Int]) -> [Byte]
 ;;  First pass.  Returns a closure to generate the byte sequence of
@@ -201,10 +202,11 @@
     [('decq _)                     (op-inc pinsn 1)]
 
     ;; embedded data
-    [`(datab ,(_ i) ...)           (^(a t) (append-map int8 i))]
-    [`(datal ,(_ i) ...)           (^(a t) (append-map int32 i))]
-    [`(dataq ,(_ i) ...)           (^(a t) (append-map int64 i))]
-    [`(datas (str ,s))             (^(a t) (fold-right cons '(0) (string->u8vector s)))]
+    [`(.datab ,(_ i) ...)          (^(a t) (append-map int8 i))]
+    [`(.datal ,(_ i) ...)          (^(a t) (append-map int32 i))]
+    [`(.dataq ,(_ i) ...)          (^(a t) (append-map int64 i))]
+    [`(.datas (str ,s))            (^(a t) (fold-right cons '(0) (string->u8vector s)))]
+    [`(.align ,(_ i))              (^(a t) (make-list (- (round-up a i) a) 0))]
     ))
 
 ;; jump family
@@ -272,6 +274,10 @@
     [`(,_ (reg ,r))             (! w (opc #xff) (reg regc) (r/m-reg r))]
     [`(,_ (mem . ,x))           (! w (opc #xff) (reg regc) (mem x))]
     ))
+
+;; for align
+(define (round-up addr modu)
+  (* (quotient (+ addr modu -1) modu) modu))
 
 ;;-----------------------------------------------------------------
 ;; Asm parser & machine code generators
