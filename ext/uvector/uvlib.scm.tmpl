@@ -42,8 +42,6 @@
 
 ;; NB: Predicates referencers and modifiers are in the core.
 
-(define-cproc ${t}vector? (obj) ::<boolean> SCM_${T}VECTORP)
-
 (define-cproc ${t}vector-empty? (v::<${t}vector>) ::<boolean>
   (return (== (SCM_${T}VECTOR_SIZE v) 0)))
 
