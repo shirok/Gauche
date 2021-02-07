@@ -774,6 +774,21 @@ ScmObj Scm_DLOGetEntryAddress(ScmDLObj *dlo, ScmString *name)
     return fptr;
 }
 
+/* dlptr interface (we don't expose <dlptr> class pointer */
+int Scm_DLPtrP(ScmObj obj)
+{
+    return SCM_XTYPEP(obj, ldinfo.dlptr_class);
+}
+
+ScmObj Scm_DLPtrValue(ScmObj obj)
+{
+    if (!Scm_DLPtrP(obj)) {
+        SCM_TYPE_ERROR(obj, "dlptr");
+    }
+    intptr_t val = SCM_FOREIGN_POINTER_REF(intptr_t, obj);
+    return Scm_IntptrToInteger(val);
+}
+
 /*------------------------------------------------------------------
  * Require and provide
  */

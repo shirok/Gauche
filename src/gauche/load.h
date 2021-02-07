@@ -103,6 +103,9 @@ SCM_EXTERN ScmObj Scm_DynLoad(ScmString *path, ScmObj initfn, u_long flags);
 SCM_EXTERN ScmObj Scm_DLObjs(void);
 SCM_EXTERN ScmObj Scm_DLOGetEntryAddress(ScmDLObj *dlo, ScmString *name);
 
+SCM_EXTERN int Scm_DLPtrP(ScmObj obj);
+SCM_EXTERN ScmObj Scm_DLPtrValue(ScmObj obj);
+
 /*=================================================================
  * Require & Provide
  */
