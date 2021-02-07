@@ -5045,7 +5045,7 @@ to see if they are the same, and @var{hash-proc} is a procedure taking
 a key to calculate its hash value (nonnegative fixnum).
 The compatibility form is deprecated and should be avoided in the new code.
 
-The optional @var{arg} @var{dots} are implementation-dependent,
+The optional @var{arg} @dots{} are implementation-dependent,
 and specify various properties of the created hash table.
 They are ignored in Gauche.
 @c JP
@@ -5057,7 +5057,7 @@ srfi-69互換形式では、@var{equal-proc}はふたつのキーを取りそれ
 返す手続きです。
 この互換係式は非推奨で、新たなコードでは使うべきではありません。
 
-省略可能な@var{arg} @var{dots}引数は実装依存で、作られるハッシュテーブルの
+省略可能な@var{arg} @dots{}引数は実装依存で、作られるハッシュテーブルの
 様々な特性を指定するものです。Gaucheでは無視されます。
 @c COMMON
 @end defun
@@ -5107,7 +5107,7 @@ to see if they are the same, and @var{hash-proc} is a procedure taking
 a key to calculate its hash value (nonnegative fixnum).
 The compatibility form is deprecated and should be avoided in the new code.
 
-The optional @var{arg} @var{dots} are implementation-dependent,
+The optional @var{arg} @dots{} are implementation-dependent,
 and specify various properties of the created hash table.
 They are ignored in Gauche.
 @c JP
@@ -5119,7 +5119,7 @@ srfi-69互換形式では、@var{equal-proc}はふたつのキーを取りそれ
 返す手続きです。
 この互換係式は非推奨で、新たなコードでは使うべきではありません。
 
-省略可能な@var{arg} @var{dots}引数は実装依存で、作られるハッシュテーブルの
+省略可能な@var{arg} @dots{}引数は実装依存で、作られるハッシュテーブルの
 様々な特性を指定するものです。Gaucheでは無視されます。
 @c COMMON
 @end defun
@@ -5570,7 +5570,7 @@ The conversion is only done in the ``spine'' of @var{rlist}; that is,
 if @var{rlist} is nested, only the outermost @var{rlist} is converted.
 @end defun
 
-@defun linear-access-list->linear-access-list list
+@defun linear-access-list->random-access-list list
 Convert a proper ordinary list to an rlist.
 An error is thrown when @var{list} is not proper.
 The conversion is only done in the ``spine'' of @var{list}; that is,
