@@ -233,7 +233,8 @@ libgauche_OBJECTS = \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
 	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
 	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmacbase.$(OBJEXT) \
-	libmacro.$(OBJEXT) libmisc.$(OBJEXT) libmod.$(OBJEXT) libnum.$(OBJEXT) \
+	libmacro.$(OBJEXT) libmisc.$(OBJEXT) libmod.$(OBJEXT) \
+	libnative.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) \
 	libparam.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
@@ -313,6 +314,7 @@ liblist.c    : liblist.scm $(PRECOMP_DEPENDENCY)
 libmacbase.c : libmacbase.scm $(PRECOMP_DEPENDENCY)
 libmacro.c   : libmacro.scm $(PRECOMP_DEPENDENCY)
 libmisc.c    : libmisc.scm $(PRECOMP_DEPENDENCY)
+libnative.c  : libnative.scm $(PRECOMP_DEPENDENCY)
 libnum.c     : libnum.scm $(PRECOMP_DEPENDENCY)
 libobj.c     : libobj.scm $(PRECOMP_DEPENDENCY)
 libomega.c   : libomega.scm $(PRECOMP_DEPENDENCY)

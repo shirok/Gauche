@@ -219,11 +219,17 @@
 (select-module gauche)
 
 ;; API
+;; returns #<dlobj>
 (define-cproc dynamic-load (file::<string>
                             :key (init-function #t)
                             (export-symbols #f)); for backward compatibility
   (cast void export-symbols) ; suppress unused var warning
   (return (Scm_DynLoad file init_function 0)))
+
+;; API (experimental)
+;; returns #<dlptr>
+(define-cproc dlobj-get-entry-address (dlo::<dlobj> name::<string>)
+  Scm_DLOGetEntryAddress)
 
 ;; API
 (define-cproc provide (feature)   Scm_Provide)
@@ -687,24 +693,3 @@
                   si)))
          (reverse sis))))
 
-;; Nasty stuff.
-;; These bindings are available only during the bootstrap process,
-;; for we don't want ordinary code to call those internal routines.
-;; For now, it is just a stub for more experiment.  Eventually ffi and jit
-;; will use those routines.
-
-(select-module gauche.bootstrap)
-
-(inline-stub 
- "extern ScmObj Scm__VMCallNative(ScmVM *, ScmUVector*);"
-
- (define-cproc %%call-native (code::<uvector>)
-   (return (Scm__VMCallNative (Scm_VM) code)))
- )
-
-(select-module gauche)
-
-(define-cproc dlobj-get-entry-address (dlo name::<string>)
-  (unless (SCM_DLOBJP dlo)
-    (SCM_TYPE_ERROR dlo "<dlobj>"))
-  (return (Scm_DLOGetEntryAddress (SCM_DLOBJ dlo) name)))

@@ -220,6 +220,7 @@ test.record
 /src/libmacro.c
 /src/libmisc.c
 /src/libmod.c
+/src/libnative.c
 /src/libnum.c
 /src/libobj.c
 /src/libomega.c
