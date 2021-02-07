@@ -95,7 +95,7 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
  */
 
 /*===============================================================
- * Conversion between size_t/off_t and Scheme integer.
+ * Conversion between size_t/off_t/intptr_t and Scheme integer.
  * off_t can be either 32bit or 64bit.
  */
 size_t Scm_IntegerToSize(ScmObj i)
@@ -134,6 +134,24 @@ off_t Scm_IntegerToOffset(ScmObj i)
     return (off_t)-1;       /* dummy */
 }
 
+intptr_t Scm_IntegerToIntptr(ScmObj i)
+{
+    if (SCM_INTP(i)) {
+        return (intptr_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i)) {
+#if SIZEOF_INTPTR_T == SIZEOF_LONG
+        return (intptr_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_OFF_T == 8
+        return (intptr_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+        /* I don't think there's such an architecture. */
+# error "intptr_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as intptr: %S", i);
+    return (intptr_t)-1;       /* dummy */
+}
+
 ScmObj Scm_SizeToInteger(size_t off)
 {
 #if SIZEOF_SIZE_T == SIZEOF_LONG
@@ -155,6 +173,18 @@ ScmObj Scm_OffsetToInteger(off_t off)
 # error "off_t size on this platform is not suported."
 #endif
 }
+
+ScmObj Scm_IntptrToInteger(intptr_t i)
+{
+#if SIZEOF_INTPTR_T == SIZEOF_LONG
+    return Scm_MakeInteger(i);
+#elif SIZEOF_INTPTR_T == 8
+    return Scm_MakeInteger64((int64_t)i);
+#else
+# error "intptr_t size on this platform is not suported."
+#endif
+}
+
 
 /*===============================================================
  * Windows specific - conversion between mbs and wcs.
