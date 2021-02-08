@@ -492,6 +492,12 @@
 /* Shared library file suffix */
 #undef SHLIB_SO_SUFFIX
 
+/* The size of `double', as computed by sizeof. */
+#undef SIZEOF_DOUBLE
+
+/* The size of `float', as computed by sizeof. */
+#undef SIZEOF_FLOAT
+
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
