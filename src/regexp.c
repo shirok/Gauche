@@ -37,10 +37,10 @@
 #include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/regexp.h"
 #include "gauche/class.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/charP.h"
+#include "gauche/priv/regexpP.h"
 #include "gauche/priv/stringP.h"
 
 /* I don't like to reinvent wheels, so I looked for a regexp implementation

@@ -34,48 +34,4 @@
 #ifndef GAUCHE_REGEXP_H
 #define GAUCHE_REGEXP_H
 
-struct ScmRegexpRec {
-    SCM_HEADER;
-    ScmObj pattern;      /* Source string.  For debugging/introspection.
-                            Can be #f if this regexp is created from AST.
-                            regexp->string will construct the string
-                            representation and fill this slot in such case. */
-    ScmObj ast;          /* Parsed AST. */
-    const u_char *code;  /* byte code vector */
-    int numGroups;       /* # of captured groups */
-    int numCodes;        /* size of byte code vector */
-    ScmCharSet **sets;   /* array of charset literals referred from code */
-    ScmObj grpNames;     /* list of names for named groups. */
-    int numSets;         /* # of charsets in sets */
-    int flags;           /* internal; CASE_FOLD, BOL_ANCHORED etc. */
-    ScmString *mustMatch;
-    ScmObj laset;        /* lookahead set (char-set) or #f.
-                            If not #f, it represents the condition that can
-                            match at the beginning of the regexp.  It can be
-                            used to skip input start position when regexp
-                            isn't BOL_ANCHORED. */
-};
-
-struct ScmRegMatchRec {
-    SCM_HEADER;
-    const char *input;
-    int inputSize;
-    int inputLen;
-    int numMatches;
-    ScmObj grpNames;
-    struct ScmRegMatchSub {
-        int start;
-        int length;
-        int after;
-        const char *startp;
-        const char *endp;
-    } **matches;
-};
-
-#define SCM_REG_MATCH_SINGLE_BYTE_P(rm) \
-    ((rm)->inputSize == (rm)->inputLen)
-
-/* Note: The structure of ScmRegexp is changed on 0.9.1.  Shuold be safe,
-   for it should never be statically allocated. */
-
 #endif /* GAUCHE_REGEXP_H */

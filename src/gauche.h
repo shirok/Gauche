@@ -1935,7 +1935,7 @@ SCM_EXTERN ScmObj Scm_ReportError(ScmObj e, ScmObj out);
  */
 
 /* The definition of Scm_RegexpRec and Scm_RegeMatchRec is hidden
-   in gauche/regexp.h */
+   in gauche/priv/regexpP.h */
 
 SCM_CLASS_DECL(Scm_RegexpClass);
 #define SCM_CLASS_REGEXP          (&Scm_RegexpClass)
