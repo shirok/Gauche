@@ -1,0 +1,27 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+include ../Makefile.ext
+
+SCM_CATEGORY = gauche
+
+LIBFILES = gauche--ffitest.$(SOEXT)
+SCMFILES = ffitest.sci
+
+OBJECTS = gauche--ffitest.$(OBJEXT)
+
+GENERATED = Makefile
+XCLEANFILES = gauche--ffitest.c ffitest.sci
+
+all : $(LIBFILES)
+
+gauche--ffitest.$(SOEXT) : $(OBJECTS)
+	$(MODLINK) gauche--ffitest.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--ffitest.c ffitest.sci : ffitest.scm
+	$(PRECOMP) -e -P -o gauche--ffitest $(srcdir)/ffitest.scm
+
+# We don't install the module.
+install :
+
