@@ -22,11 +22,17 @@
 
 (let ((dlo (dynamic-load "gauche--ffitest" :init-function #f)))
   (test* "open dlo" #t (is-a? dlo <dlobj>))
-  (let ((dle (dlobj-get-entry-address dlo "_f_o")))
+  (let ((dle (dlobj-get-entry-address dlo "_f_v")))
     (test* "get dlptr" #t (is-a? dle <dlptr>))
-    (test* "call f_o" 'it_works
-           ((with-module gauche.internal call-amd64) dle '() 'o)))
+    (test* "call f_o" (list (undefined) "it works")
+           (let* ((r #f)
+                  (s (with-output-to-string
+                       (^[]
+                         (set! r ((with-module gauche.internal call-amd64)
+                                  dle '() 'v))))))
+             (list r s))))
 
+  (test-foreign-call dlo "_f_o" 'it_works '() 'o)
   (test-foreign-call dlo "_f_i" 42 '() 'i)
   (test-foreign-call dlo "_f_s" "it works" '() 's)
 

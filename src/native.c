@@ -57,6 +57,7 @@ static ScmObj sym_i;
 static ScmObj sym_d;
 static ScmObj sym_f;
 static ScmObj sym_s;
+static ScmObj sym_v;
 
 static void init_code_cache(ScmVM *vm) {
     if (vm->codeCache != NULL) return;
@@ -115,6 +116,8 @@ static inline void fill1(void *dst, ScmSmallInt pos,
  *                      is used.
  *
  *    <value> - Scheme value to pass.
+ *
+ * RETTYPE is also a symbol similar to <type>, plus 'v' as no value.
  */
 
 ScmObj Scm__VMCallNative(ScmVM *vm, 
@@ -205,6 +208,9 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
     } else if (SCM_EQ(rettype, sym_o)) {
         intptr_t r = ((intptr_t (*)())vm->codeCache->pad->ptr)();
         return SCM_OBJ(r);      /* trust the caller */
+    } else if (SCM_EQ(rettype, sym_v)) {
+        ((void (*)())vm->codeCache->pad->ptr)();
+        return SCM_UNDEFINED;
     } else {
         Scm_Error("unknown return type: %S", rettype);
         return SCM_UNDEFINED;   /* dummy */
@@ -220,5 +226,6 @@ void Scm__InitNative(void)
     sym_d = SCM_INTERN("d");
     sym_f = SCM_INTERN("f");
     sym_s = SCM_INTERN("s");
+    sym_v = SCM_INTERN("v");
 }
 

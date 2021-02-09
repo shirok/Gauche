@@ -12,6 +12,7 @@
 (define-cfn "f_o" () (return 'it_works))
 (define-cfn "f_i" () ::int  (return 42))
 (define-cfn "f_s" () ::(const char*)  (return "it works"))
+(define-cfn "f_v" () ::void (Scm_Printf SCM_CUROUT "it works"))
 
 ;; one argument
 
