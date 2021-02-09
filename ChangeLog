@@ -1,3 +1,9 @@
+2021-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm (<cgen-scheme-uvector>): Bug fix:
+	  Needed 'static' in uvector literal content definition, otherwise
+	  it caused name conflict if more than one DSOs had uvector literals.
+
 2021-02-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (dynamic-load): Change the default value of

@@ -729,7 +729,7 @@
   [decl (self)
     (let* ([value (~ self'value)]
            [class (class-of value)])
-      (print (uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
+      (print "static "(uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
       (dotimes [i (uvector-length value)]
         ($ uvector-class-emit-elt class
            $ (with-module gauche.internal uvector-ref) value i))
