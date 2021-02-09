@@ -44,6 +44,10 @@
   (test-foreign-call dlo "_fi_i" 121 '((i 11)) 'i)
   (test-foreign-call dlo "_fs_i" 6 '((s "gauche")) 'i)
   (test-foreign-call dlo "_fo_s" "(a b c)" '((o (a b c))) 's)
+
+  (test-foreign-call dlo "_foo_o" '(a . b) '((o a) (o b)) 'o)
+  (test-foreign-call dlo "_foi_o" '(a . 1) '((o a) (i 0)) 'o)
+  (test-foreign-call dlo "_fis_i" (char->integer #\c) '((i 2) (s "abcde")) 'i)
   )
 
 (test-end)

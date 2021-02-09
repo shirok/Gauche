@@ -33,3 +33,12 @@
     (Scm_Write x o SCM_WRITE_WRITE)
     (return (Scm_GetStringConst (SCM_STRING (Scm_GetOutputString (SCM_PORT o) 0))))))
 
+;; two arguments
+
+(define-cfn "foo_o" (x y)
+  (return (Scm_Cons x y)))
+(define-cfn "foi_o" (x y::ScmSmallInt)
+  (return (Scm_Cons x (SCM_MAKE_INT (+ y 1)))))
+(define-cfn "fis_i" (x::ScmSmallInt y::(const char*)) ::ScmSmallInt
+  (return (aref y x)))
+

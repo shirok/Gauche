@@ -44,7 +44,9 @@
       (cons
        '()
        (pair-fold (^[base-offsets entry-offsets r]
-                    (cons (map (cute - <> (car entry-offsets)) base-offsets) r))
+                    (cons 
+                     (reverse (map (cute - <> (car entry-offsets)) base-offsets))
+                     r))
                   '()
                   (map (cut assq-ref labels <>)
                        '(arg5: arg4: arg3: arg2: arg1: arg0:))

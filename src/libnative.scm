@@ -85,8 +85,8 @@
     (global-variable-ref (find-module 'gauche.bootstrap) '%%call-native))
    (entry-offsets '(42 35 28 21 14 7 0))
    (arg-offsets
-    '(() (29) (44 36) (59 51 43) (74 66 58 50) (89 81 73 65 57)
-      (104 96 88 80 72 64)))
+    '(() (29) (36 44) (43 51 59) (50 58 66 74) (57 65 73 81 89)
+      (64 72 80 88 96 104)))
    (func-offsets '(14 21 28 35 42 49 56)))
   (^
    (ptr args rettype)
