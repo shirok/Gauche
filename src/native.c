@@ -37,6 +37,7 @@
 #include "gauche.h"
 #include "gauche/priv/vmP.h"
 #include "gauche/priv/mmapP.h"
+#include "gauche/priv/nativeP.h"
 
 #if defined(HAVE_SYS_MMAN_H)
 #include <sys/mman.h>

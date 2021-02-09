@@ -42,8 +42,7 @@
 (select-module gauche.bootstrap)
 
 (inline-stub 
- "extern ScmObj Scm__VMCallNative(ScmVM *, ScmUVector*, ScmSmallInt, ScmSmallInt, ScmObj, ScmObj);"
-
+ (.include "gauche/priv/nativeP.h")
  (define-cproc %%call-native (code::<uvector> size::<fixnum> offset::<fixnum>
                               filler rettype)
    (return (Scm__VMCallNative (Scm_VM) code size offset filler rettype)))
