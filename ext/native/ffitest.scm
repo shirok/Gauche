@@ -21,3 +21,14 @@
   (return (Scm_Cons (SCM_MAKE_INT (+ i 1)) 'huh)))
 (define-cfn "fs_o" (s::(const char*))
   (return (Scm_MakeIntegerU (strlen s))))
+(define-cfn "fo_i" (x) ::ScmSmallInt
+  (return (Scm_Length x)))
+(define-cfn "fi_i" (i::ScmSmallInt) ::ScmSmallInt
+  (return (* i i)))
+(define-cfn "fs_i" (s::(const char*)) ::ScmSmallInt
+  (return (strlen s)))
+(define-cfn "fo_s" (x) ::(const char*)
+  (let* ([o (Scm_MakeOutputStringPort TRUE)])
+    (Scm_Write x o SCM_WRITE_WRITE)
+    (return (Scm_GetStringConst (SCM_STRING (Scm_GetOutputString (SCM_PORT o) 0))))))
+

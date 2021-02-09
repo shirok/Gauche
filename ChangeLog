@@ -1,5 +1,10 @@
 2021-02-09  Shiro Kawai  <shiro@acm.org>
 
+	* src/native.c, src/libnative.scm, ext/native: Experimenting FFI.
+	  Currently only started to support amd64 ABI, with limited argument
+	  types.  The API isn't fixed at all.  ext/native is just for
+	  testing, not the real extension module.
+
 	* lib/gauche/cgen/literal.scm (<cgen-scheme-uvector>): Bug fix:
 	  Needed 'static' in uvector literal content definition, otherwise
 	  it caused name conflict if more than one DSOs had uvector literals.

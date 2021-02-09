@@ -103,6 +103,7 @@ test.record
 /ext/gauche/gauche--generator.c
 /ext/gauche/gauche--unicode.c
 /ext/mt-random/math--mt-random.c
+/ext/native/gauche--ffitest.c
 /ext/net/netaux.c
 /ext/net/netlib.c
 /ext/peg/parser--peg.c

@@ -87,6 +87,7 @@ extern void Scm__InitAutoloads(void);
 extern void Scm__InitCollection(void);
 extern void Scm__InitComparator(void);
 extern void Scm__InitExecenv(void);
+extern void Scm__InitNative(void);
 
 extern void Scm_Init_libalpha(void);
 extern void Scm_Init_libbool(void);
@@ -193,6 +194,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm__InitSystem);
     CALL_INIT(Scm__InitComparator);
     CALL_INIT(Scm__InitExecenv);
+    CALL_INIT(Scm__InitNative);
 
     CALL_INIT(Scm_Init_libalpha);
     CALL_INIT(Scm_Init_libbool);
