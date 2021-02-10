@@ -28,27 +28,41 @@
              arg3: (.dataq 0)
              arg4: (.dataq 0)
              arg5: (.dataq 0)
-             entry6:
-             (movq (arg5:) %r9)
-             entry5:
-             (movq (arg4:) %r8)
-             entry4:
-             (movq (arg3:) %rcx)
-             entry3:
-             (movq (arg2:) %rdx)
-             entry2:
-             (movq (arg1:) %rsi)
-             entry1:
-             (movq (arg0:) %rdi)
-             entry0:
-             (jmp (func:))
+             farg0: (.dataq 0)
+             farg1: (.dataq 0)
+             farg2: (.dataq 0)
+             farg3: (.dataq 0)
+             farg4: (.dataq 0)
+             farg5: (.dataq 0)
+             farg6: (.dataq 0)
+             farg7: (.dataq 0)
+             entry6f7: (movsd (farg7:) %xmm7)
+             entry6f6: (movsd (farg6:) %xmm6)
+             entry6f5: (movsd (farg5:) %xmm5)
+             entry6f4: (movsd (farg4:) %xmm4)
+             entry6f3: (movsd (farg3:) %xmm3)
+             entry6f2: (movsd (farg2:) %xmm2)
+             entry6f1: (movsd (farg1:) %xmm1)
+             entry6f0: (movsd (farg0:) %xmm0)
+             entry6:   (movq (arg5:) %r9)
+             entry5:   (movq (arg4:) %r8)
+             entry4:   (movq (arg3:) %rcx)
+             entry3:   (movq (arg2:) %rdx)
+             entry2:   (movq (arg1:) %rsi)
+             entry1:   (movq (arg0:) %rdi)
+             entry0:   (jmp (func:))
              end:))
     (define entry-offsets   ;; numargs -> code vector offset
       (map (cut assq-ref labels <>) 
-           '(entry0: entry1: entry2: entry3: entry4: entry5: entry6:)))
+           '(entry0: entry1: entry2: entry3: entry4: entry5: entry6:
+             entry6f0: entry6f1: entry6f2: entry6f3:
+             entry6f4: entry6f5: entry6f6: entry6f7:)))
     (define arg-offsets     ;; arg# -> offset
       (map (cut assq-ref labels <>)
            '(arg0: arg1: arg2: arg3: arg4: arg5:)))
+    (define farg-offsets     ;; farg# -> offset
+      (map (cut assq-ref labels <>)
+           '(farg0: farg1: farg2: farg3: farg4: farg5: farg6: farg7:)))
     (define end-addr (assq-ref labels 'end:))
 
     (display ";; libnative.scm supplemental code.\n" port)
@@ -74,21 +88,33 @@
         (let ((%%call-native (global-variable-ref (find-module 'gauche.bootstrap)
                                                   '%%call-native))
               (entry-offsets ',entry-offsets)
-              (arg-offsets ',arg-offsets))
+              (arg-offsets ',arg-offsets)
+              (farg-offsets ',farg-offsets))
           (^[ptr args rettype]
-            (let* ((nargs (length args))
-                   (entry (~ entry-offsets nargs))
-                   (patcher (cons
-                             `(0 p ,ptr)  ; func:
-                             (map (^[offs arg] (cons offs arg))
-                                  arg-offsets
-                                  args))))
+            (let* ([num-iargs (count (^p (memq (car p) '(o p i s))) args)]
+                   [num-fargs (count (^p (memq (car p) '(d))) args)]
+                   [effective-nargs (if (zero? num-fargs)
+                                      num-iargs
+                                      (+ 6 num-fargs))]
+                   [entry (~ entry-offsets effective-nargs)]
+                   [patcher
+                    (let loop ([args args] [icount 0] [fcount 0] [r '()])
+                      (cond [(null? args) r]
+                            [(memq (caar args) '(o p i s))
+                             (loop (cdr args) (+ icount 1) fcount
+                                   (cons `(,(~ arg-offsets icount) ,@(car args))
+                                         r))]
+                            [(memq (caar args) '(d))
+                             (loop (cdr args) icount (+ fcount 1)
+                                   (cons `(,(~ farg-offsets fcount) ,@(car args))
+                                         r))]
+                            [else (error "bad arg entry:" (car args))]))])
               (%%call-native entry
                              *amd64-call-code*
                              entry
                              ,end-addr
                              entry
-                             patcher
+                             (cons `(0 p ,ptr) patcher)
                              rettype)))))
      :port port)
     ))

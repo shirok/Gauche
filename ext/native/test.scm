@@ -48,6 +48,10 @@
   (test-foreign-call dlo "_foo_o" '(a . b) '((o a) (o b)) 'o)
   (test-foreign-call dlo "_foi_o" '(a . 1) '((o a) (i 0)) 'o)
   (test-foreign-call dlo "_fis_i" (char->integer #\c) '((i 2) (s "abcde")) 'i)
+
+  (test-foreign-call dlo "_ff_o" 101.0  '((d 100.0)) 'o)
+  (test-foreign-call dlo "_fif_o" 99.0  '((i 100) (d 1.0)) 'o)
+  (test-foreign-call dlo "_ffi_o" 99.0  '((d 100.0) (i 1)) 'o)
   )
 
 (test-end)

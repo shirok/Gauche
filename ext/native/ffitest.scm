@@ -43,3 +43,10 @@
 (define-cfn "fis_i" (x::ScmSmallInt y::(const char*)) ::ScmSmallInt
   (return (aref y x)))
 
+;; flonum argument
+(define-cfn "ff_o" (x::double)
+  (return (Scm_MakeFlonum (+ x 1.0))))
+(define-cfn "fif_o" (x::ScmSmallInt y::double)
+  (return (Scm_MakeFlonum (- (cast double x) y))))
+(define-cfn "ffi_o" (x::double y::ScmSmallInt)
+  (return (Scm_MakeFlonum (- x (cast double y)))))
