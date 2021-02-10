@@ -774,6 +774,10 @@ AS_CASE([$host],
     dnl Kludge: We add -static-libgcc flag when creating dll, in order to avoid
     dnl introducing dependency to libgcc_s_dw2-1.dll.
     dnl Also we disable ASLR linker option for MinGW-w64 (64-bit).
+    AS_CASE([$host],
+      [x86_64-w64-mingw32], [
+        CFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $CFLAGS"
+        LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $LDFLAGS"])
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -static-libgcc -shared -o'
     AS_CASE([$host],
