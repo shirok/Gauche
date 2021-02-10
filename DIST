@@ -116,7 +116,7 @@ do_self_host_test () {
     if [ -d $destdir/stage1 ]; then rm -rf $destdir; fi
     XPATH=$destdir/bin:$PATH
     mkdir -p $destdir/stage1
-    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt_1; make install)
+    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt_1; make install && make -s install-check)
     mkdir -p $destdir/stage2
     (cd $destdir/stage2; PATH=$XPATH $srcdir/configure; PATH=$XPATH make $makeopt; PATH=$XPATH make -s check)
 }
