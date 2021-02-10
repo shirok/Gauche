@@ -30,8 +30,9 @@
   (return (strlen s)))
 (define-cfn "fo_s" (x) ::(const char*)
   (let* ([o (Scm_MakeOutputStringPort TRUE)])
-    (Scm_Write x o SCM_WRITE_WRITE)
-    (return (Scm_GetStringConst (SCM_STRING (Scm_GetOutputString (SCM_PORT o) 0))))))
+    (Scm_Write x o SCM_WRITE_SIMPLE)
+    (return (Scm_GetStringConst (SCM_STRING (Scm_GetOutputString (SCM_PORT o) 0))))
+    ))
 
 ;; two arguments
 
