@@ -178,6 +178,10 @@
 
     [`(leaq (mem . ,x) (reg ,dst)) (! w (opc #x8d) (reg dst) (mem x))]
 
+    [`(movsd (sse ,src) (sse ,dst)) (! (opc'(#xf2 #x0f #x10)) (reg dst) (r/m-reg dst))]
+    [`(movsd (mem . ,x) (sse ,dst)) (! (opc'(#xf2 #x0f #x10)) (reg dst) (mem x))]
+    [`(movsd (sse ,src) (mem . ,x)) (! (opc'(#xf2 #x0f #x11)) (reg src) (mem x))]
+
     ;; calculations
     [('addq _ _)                   (op-add pinsn 0)]
     [('orq _ _)                    (op-add pinsn 1)]
@@ -291,6 +295,7 @@
 (define (parse-operand opr)
   (match opr
     [(? reg64?)                     `(reg ,(regnum opr))]
+    [(? regsse?)                    `(sse ,(ssenum opr))]
     [(? symbol?)                    `(label ,opr)]
     [(? string?)                    `(str ,opr)] ; C string literal
     [(? imm8?)                      `(imm8 ,opr)]
@@ -455,6 +460,12 @@
 
 (define (reg64? opr) (memq opr *regs64*))
 (define (regnum reg) (find-index (cut eq? reg <>) *regs64*))
+
+(define *regsse*
+  '(%xmm0 %xmm1 %xmm2 %xmm3 %xmm4 %xmm5 %xmm6 %xmm7))
+
+(define (regsse? opr) (memq opr *regsse*))
+(define (ssenum reg) (find-index (cut eq? reg <>) *regsse*))
 
 (define (scale? n) (memv n '(1 2 4 8)))
 
