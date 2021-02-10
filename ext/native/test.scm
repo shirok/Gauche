@@ -49,6 +49,13 @@
   (test-foreign-call dlo "_foi_o" '(a . 1) '((o a) (i 0)) 'o)
   (test-foreign-call dlo "_fis_i" (char->integer #\c) '((i 2) (s "abcde")) 'i)
 
+  (test-foreign-call dlo "_fo_o_cb" '(z . z) '((o z)) 'o)
+  (test-foreign-call dlo "_foo_o_cb" '(d c b a)
+                     `((o ,reverse) (o (a b c d))) 'o)
+  (test-foreign-call dlo "_foo_o_cb"
+                     (test-error <error> "list required, but got zzz")
+                     `((o ,reverse) (o zzz)) 'o)
+
   (test-foreign-call dlo "_ff_o" 101.0  '((d 100.0)) 'o)
   (test-foreign-call dlo "_fif_o" 99.0  '((i 100) (d 1.0)) 'o)
   (test-foreign-call dlo "_ffi_o" 99.0  '((d 100.0) (i 1)) 'o)

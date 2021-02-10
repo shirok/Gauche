@@ -43,6 +43,17 @@
 (define-cfn "fis_i" (x::ScmSmallInt y::(const char*)) ::ScmSmallInt
   (return (aref y x)))
 
+
+;; calling back to Scheme
+(define-cfn "fo_o_cb" (x)
+  (let* ([fn (Scm_GlobalVariableRef (Scm_GaucheModule)
+                                    (SCM_SYMBOL (SCM_INTERN "cons"))
+                                    0)])
+    (return (Scm_ApplyRec2 fn x x))))
+(define-cfn "foo_o_cb" (proc x)
+  (return (Scm_ApplyRec1 proc x)))
+
+
 ;; flonum argument
 (define-cfn "ff_o" (x::double)
   (return (Scm_MakeFlonum (+ x 1.0))))
@@ -50,3 +61,4 @@
   (return (Scm_MakeFlonum (- (cast double x) y))))
 (define-cfn "ffi_o" (x::double y::ScmSmallInt)
   (return (Scm_MakeFlonum (- x (cast double y)))))
+
