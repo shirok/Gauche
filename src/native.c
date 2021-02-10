@@ -84,7 +84,7 @@ typedef union {
     uint8_t bf[SIZEOF_FLOAT];
 } pun_t;
 
-static inline void fill1(void *dst, ScmSmallInt pos,
+static inline void patch1(void *dst, ScmSmallInt pos,
                          uint8_t *src, ScmSmallInt size, void *lim)
 {
     if (dst + pos + size > lim) {
@@ -94,13 +94,14 @@ static inline void fill1(void *dst, ScmSmallInt pos,
 }
 
 /*  
- * Copy CODE to the scratch pad, filling its portions according to FILLER,
- * the exectes it.   SIZE and OFFSET is used to extract portion of CODE---
- * OFFSET-th byte to (OFFSET+SIZE-1)-th byte is used.  SIZE=0 means to use
- * to the end of CODE.   OFFSET+SIZE can exceed CODE; in that case, the 
- * remaining region is filled with 0's.
+ * Copy CODE to the scratch pad, starting from START-th byte up to right before
+ * END-th byte, from the pad's TSTART-th position.
  *
- * FILLER has the following list:
+ * Then the pad is patched according to PATCHER, as explained below.
+ *
+ * Finally, the code is called from the entry offset ENTRY.
+ *
+ * PATCHER has the following list:
  *   ((<pos> <type> <value>) ...)
  *
  *    <pos>  - specifies the position in the byte array to be filled.
@@ -121,10 +122,12 @@ static inline void fill1(void *dst, ScmSmallInt pos,
  */
 
 ScmObj Scm__VMCallNative(ScmVM *vm, 
+                         ScmSmallInt tstart,
                          ScmUVector *code,
-                         ScmSmallInt size,
-                         ScmSmallInt offset,
-                         ScmObj filler,
+                         ScmSmallInt start,
+                         ScmSmallInt end,
+                         ScmSmallInt entry,
+                         ScmObj patcher,
                          ScmObj rettype)
 {
     init_code_cache(vm);
@@ -132,23 +135,27 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
     SCM_ASSERT(SCM_U8VECTORP(code));
 
     ScmSmallInt uvsize = SCM_UVECTOR_SIZE(code);
-    if (offset < 0 || offset >= uvsize) {
-        Scm_Error("offset is out of range: %ld", offset);
+    SCM_CHECK_START_END(start, end, uvsize);
+    if (tstart < 0 || tstart + end - start > vm->codeCache->pad->size) {
+        Scm_Error("tstart out of range: %ld", tstart);
     }
-    ScmSmallInt copysize = (offset+size <= uvsize ? size : uvsize - offset);
-    ScmSmallInt fillsize = offset + size - uvsize;
-    
-    memcpy(vm->codeCache->pad->ptr, SCM_UVECTOR_ELEMENTS(code)+offset, copysize);
-    if (fillsize > 0) memset(vm->codeCache->pad->ptr + copysize, 0, fillsize);
+    if (entry < 0 || entry >= tstart + end - start) {
+        Scm_Error("entry out of range: %ld", entry);
+    }
+
+    if (tstart > 0) memset(vm->codeCache->pad->ptr, 0, tstart);
+    memcpy(vm->codeCache->pad->ptr + tstart,
+           SCM_UVECTOR_ELEMENTS(code)+start,
+           end - start);
 
     /* 
-     * Fill it
+     * Patch it
      */
     void *base  = vm->codeCache->pad->ptr;
     void *limit = base + vm->codeCache->pad->size;
 
     ScmObj cp;
-    SCM_FOR_EACH(cp, filler) {
+    SCM_FOR_EACH(cp, patcher) {
         ScmObj e = SCM_CAR(cp);
         if (Scm_Length(e) != 3) {
             Scm_Error("malformed filler entry: %S", e);
@@ -166,50 +173,51 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
         
         if (SCM_EQ(type, sym_o)) {
             pun.n = (intptr_t)val;
-            fill1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
         } else if (SCM_EQ(type, sym_p)) {
             if (!Scm_DLPtrP(val)) SCM_TYPE_ERROR(val, "dlptr");
             pun.n = SCM_FOREIGN_POINTER_REF(intptr_t, val);
-            fill1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
         } else if (SCM_EQ(type, sym_i)) {
             pun.n = Scm_IntegerToIntptr(val);
-            fill1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
         } else if (SCM_EQ(type, sym_d)) {
             pun.d = Scm_GetDouble(val);
-            fill1(base, pos, pun.bd, SIZEOF_DOUBLE, limit);
+            patch1(base, pos, pun.bd, SIZEOF_DOUBLE, limit);
         } else if (SCM_EQ(type, sym_f)) {
             pun.f = (float)Scm_GetDouble(val);
-            fill1(base, pos, pun.bf, SIZEOF_FLOAT, limit);
+            patch1(base, pos, pun.bf, SIZEOF_FLOAT, limit);
         } else if (SCM_EQ(type, sym_s)) {
             /* NB: If the callee retains the pointer, we need malloc. */
             if (!SCM_STRINGP(val)) SCM_TYPE_ERROR(val, "string");
             pun.n = (intptr_t)Scm_GetStringConst(SCM_STRING(val));
-            fill1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
         } else {
-            Scm_Error("unknown filler type: %S", type);
+            Scm_Error("unknown patch type: %S", type);
         }
     }
 
     /* 
      * Call the code
      */
+    void *entryPtr = vm->codeCache->pad->ptr + entry;
     if (SCM_EQ(rettype, sym_d)) {
-        double r = ((double (*)())vm->codeCache->pad->ptr)();
+        double r = ((double (*)())entryPtr)();
         return Scm_VMReturnFlonum(r);
     } else if (SCM_EQ(rettype, sym_f)) {
-        float r = ((float (*)())vm->codeCache->pad->ptr)();
+        float r = ((float (*)())entryPtr)();
         return Scm_VMReturnFlonum((double)r);
     } else if (SCM_EQ(rettype, sym_s)) {
-        intptr_t r = ((intptr_t (*)())vm->codeCache->pad->ptr)();
+        intptr_t r = ((intptr_t (*)())entryPtr)();
         return SCM_MAKE_STR_COPYING((const char*)r);
     } else if (SCM_EQ(rettype, sym_i)) {
-        intptr_t r = ((intptr_t (*)())vm->codeCache->pad->ptr)();
+        intptr_t r = ((intptr_t (*)())entryPtr)();
         return Scm_IntptrToInteger(r);
     } else if (SCM_EQ(rettype, sym_o)) {
-        intptr_t r = ((intptr_t (*)())vm->codeCache->pad->ptr)();
+        intptr_t r = ((intptr_t (*)())entryPtr)();
         return SCM_OBJ(r);      /* trust the caller */
     } else if (SCM_EQ(rettype, sym_v)) {
-        ((void (*)())vm->codeCache->pad->ptr)();
+        ((void (*)())entryPtr)();
         return SCM_UNDEFINED;
     } else {
         Scm_Error("unknown return type: %S", rettype);

@@ -35,10 +35,12 @@
 #define GAUCHE_PRIV_NATIVEP_H
 
 SCM_EXTERN ScmObj Scm__VMCallNative(ScmVM *vm, 
+                                    ScmSmallInt tstart,
                                     ScmUVector *code,
-                                    ScmSmallInt size,
-                                    ScmSmallInt offset,
-                                    ScmObj filler,
+                                    ScmSmallInt start,
+                                    ScmSmallInt end,
+                                    ScmSmallInt entry,
+                                    ScmObj patcher,
                                     ScmObj rettype);
 
 #endif /*GAUCHE_PRIV_NATIVEP_H*/
