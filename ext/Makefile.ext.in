@@ -56,7 +56,7 @@ LIB_INSTALL_DIR  = @libdir@
 BIN_INSTALL_DIR  = @bindir@
 DATA_INSTALL_DIR = @datadir@
 
-CLEANFILES = core *~ test.log test.out $(XCLEANFILES)
+CLEANFILES = core *~ test.log test.out installed.stamp $(XCLEANFILES)
 
 TESTRECORD = "$(top_builddir)/test.record"
 
@@ -89,7 +89,9 @@ check : all
 	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) $(GOSH) -I"$(srcdir)" -I. "$(srcdir)/test.scm" > test.log
 
 install-check :
-	GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) "${bindir}/gosh" "$(srcdir)/test.scm"
+	if test -f installed.stamp; then \
+	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) "${bindir}/gosh" "$(srcdir)/test.scm"; \
+	fi
 
 clean : unlink
 	rm -rf $(CLEANFILES) *.$(OBJEXT) *.$(SOEXT)
@@ -106,6 +108,7 @@ install-std : all
 	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" -T "$(GAUCHE_INCDIR)" $(HDRFILES)
 	$(GAUCHE_INSTALL) -m 444 -S "$(srcdir)" -T "$(GAUCHE_LIBDIR)/$(SCM_CATEGORY)" $(SCMFILES)
 	$(GAUCHE_INSTALL) -m 555 -T "$(GAUCHE_ARCHDIR)" $(LIBFILES)
+	touch installed.stamp
 
 uninstall :
 
