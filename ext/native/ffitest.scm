@@ -43,3 +43,13 @@
 (define-cfn "fis_i" (x::ScmSmallInt y::(const char*)) ::ScmSmallInt
   (return (aref y x)))
 
+;; calling back to Scheme
+(define-cfn "fo_o_cb" (x)
+  (let* ([fn (Scm_GlobalVariableRef (Scm_GaucheModule)
+                                    (SCM_SYMBOL (SCM_INTERN "cons"))
+                                    0)])
+    (return (Scm_ApplyRec2 fn x x))))
+(define-cfn "foo_o_cb" (proc x)
+  (return (Scm_ApplyRec1 proc x)))
+
+
