@@ -68,6 +68,7 @@ test.record
 .dirstamp
 /src/features.c
 /src/features.flags
+/src/native-supp.scm
 /ext/Makefile.ext
 /ext/bcrypt/crypt--bcrypt.c
 /ext/binary/binary--io.c

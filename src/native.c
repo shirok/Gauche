@@ -136,7 +136,7 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
 
     ScmSmallInt uvsize = SCM_UVECTOR_SIZE(code);
     SCM_CHECK_START_END(start, end, uvsize);
-    if (tstart < 0 || tstart + end - start > vm->codeCache->pad->size) {
+    if (tstart < 0 || tstart+end-start > (ScmSmallInt)vm->codeCache->pad->size) {
         Scm_Error("tstart out of range: %ld", tstart);
     }
     if (entry < 0 || entry >= tstart + end - start) {
