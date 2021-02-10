@@ -60,24 +60,23 @@
 ;; entry2:      28
 ;; entry1:      35
 ;; entry0:      42
-;; func:        56
-;; arg0:        64
-;; arg1:        72
-;; arg2:        80
-;; arg3:        88
-;; arg4:        96
-;; arg5:       104
-;; end:        112
-
+;; func:        48
+;; arg0:        56
+;; arg1:        64
+;; arg2:        72
+;; arg3:        80
+;; arg4:        88
+;; arg5:        96
+;; end:        104
 (define
  *amd64-call-code*
- '#u8(#x4c #x8b #xd #x61 #x0 #x0 #x0 #x4c #x8b #x5 #x52 #x0 #x0 #x0 #x48
-      #x8b #xd #x43 #x0 #x0 #x0 #x48 #x8b #x15 #x34 #x0 #x0 #x0 #x48 #x8b
-      #x35 #x25 #x0 #x0 #x0 #x48 #x8b #x3d #x16 #x0 #x0 #x0 #xff #x15 #x8
-      #x0 #x0 #x0 #xc3 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0
+ '#u8(#x4c #x8b #xd #x59 #x0 #x0 #x0 #x4c #x8b #x5 #x4a #x0 #x0 #x0 #x48
+      #x8b #xd #x3b #x0 #x0 #x0 #x48 #x8b #x15 #x2c #x0 #x0 #x0 #x48 #x8b
+      #x35 #x1d #x0 #x0 #x0 #x48 #x8b #x3d #xe #x0 #x0 #x0 #xff #x25 #x0
       #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0
       #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0
-      #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0))
+      #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0
+      #x0 #x0 #x0 #x0 #x0 #x0 #x0 #x0))
 (define
  call-amd64
  (let
@@ -85,9 +84,9 @@
     (global-variable-ref (find-module 'gauche.bootstrap) '%%call-native))
    (entry-offsets '(42 35 28 21 14 7 0))
    (arg-offsets
-    '(() (29) (36 44) (43 51 59) (50 58 66 74) (57 65 73 81 89)
-      (64 72 80 88 96 104)))
-   (func-offsets '(14 21 28 35 42 49 56)))
+    '(() (21) (28 36) (35 43 51) (42 50 58 66) (49 57 65 73 81)
+      (56 64 72 80 88 96)))
+   (func-offsets '(6 13 20 27 34 41 48)))
   (^
    (ptr args rettype)
    (let*
@@ -95,5 +94,5 @@
      (filler
       (cons `(,(~ func-offsets nargs) p ,ptr)
        (map (^ (offs arg) (cons offs arg)) (~ arg-offsets nargs) args))))
-    (%%call-native *amd64-call-code* (- 105 (~ entry-offsets nargs))
+    (%%call-native *amd64-call-code* (- 104 (~ entry-offsets nargs))
      (~ entry-offsets nargs) filler rettype)))))

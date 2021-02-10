@@ -9,6 +9,11 @@
 (use gauche.uvector)
 (use lang.asm.x86_64)
 
+;; The code tail jumps to the target, so the target's return directly
+;; returns to the caller of call-amd64.  Thus we can reuse the same
+;; codepad area without worrying the recursive calls overwrite active
+;; code.
+
 (define (gen-stub-amd64 port)
   ;; Support up to 6 args, integer register passing only for now.
   (receive (code labels)
@@ -25,8 +30,7 @@
              entry1:
              (movq (arg0:) %rdi)
              entry0:
-             (call (func:))
-             (ret)
+             (jmp (func:))
              (.align 8)
              func: (.dataq 0)
              arg0: (.dataq 0)
