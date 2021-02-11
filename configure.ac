@@ -774,26 +774,22 @@ AS_CASE([$host],
     dnl Kludge: We add -static-libgcc flag when creating dll, in order to avoid
     dnl introducing dependency to libgcc_s_dw2-1.dll.
     dnl Also we disable ASLR linker option for MinGW-w64 (64-bit).
-    AS_CASE([$host],
-      [x86_64-w64-mingw32], [
-        CFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $CFLAGS"
-        LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $LDFLAGS"])
     SHLIB_SO_CFLAGS=""
     SHLIB_SO_LDFLAGS='-Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc -static-libgcc -shared -o'
-    AS_CASE([$host],
-      [x86_64-w64-mingw32], [
-        SHLIB_SO_LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_SO_LDFLAGS"])
     SHLIB_SO_SUFFIX="dll"
     SHLIB_DYLIB_SUFFIX="dll"
     SHLIB_MAIN_LDFLAGS="-Wl,--enable-auto-import -static-libgcc"
-    AS_CASE([$host],
-      [x86_64-w64-mingw32], [
-        SHLIB_MAIN_LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_MAIN_LDFLAGS"])
     SHLIB_OK=ok
     GOSH_USE_SHLIB=yes
     ext_use_uvector=yes
     ext_use_libgauche=yes
     libgauche_version_link=no
+    AS_CASE([$host],
+      [x86_64-w64-mingw32], [
+        LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $LDFLAGS"
+        SHLIB_SO_CFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_SO_CFLAGS"
+        SHLIB_SO_LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_SO_LDFLAGS"
+        SHLIB_MAIN_LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_MAIN_LDFLAGS"])
     ],
   [
     SHLIB_SO_CFLAGS=""
