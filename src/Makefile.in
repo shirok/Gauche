@@ -123,7 +123,7 @@ BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
               "@BUILD_GOSH@" $(BUILD_GOSH_FLAGS) \
               -l$(srcdir)/preload \
               -I$(top_srcdir)/src -I$(top_srcdir)/lib \
-	      -I$(top_builddir)/lib \
+	      -I$(top_builddir)/lib -I$(builddir) \
 	      `cat $(builddir)/features.flags`
 
 LIB_INSTALL_DIR  = @libdir@
