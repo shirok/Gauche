@@ -56,9 +56,11 @@
                      (test-error <error> "list required, but got zzz")
                      `((o ,reverse) (o zzz)) 'o)
 
-  (test-foreign-call dlo "_ff_o" 101.0  '((d 100.0)) 'o)
-  (test-foreign-call dlo "_fif_o" 99.0  '((i 100) (d 1.0)) 'o)
-  (test-foreign-call dlo "_ffi_o" 99.0  '((d 100.0) (i 1)) 'o)
+  (test-foreign-call dlo "_fd_o" 101.0  '((d 100.0)) 'o)
+  (test-foreign-call dlo "_fid_o" 99.0  '((i 100) (d 1.0)) 'o)
+  (test-foreign-call dlo "_fdi_o" 99.0  '((d 100.0) (i 1)) 'o)
+  (test-foreign-call dlo "_fiiiiii_d" 10.5
+                     '((i 1) (i 2) (i 3) (i 4) (i 5) (i 6)) 'd)
   )
 
 (test-end)

@@ -55,10 +55,13 @@
 
 
 ;; flonum argument
-(define-cfn "ff_o" (x::double)
+(define-cfn "fd_o" (x::double)
   (return (Scm_MakeFlonum (+ x 1.0))))
-(define-cfn "fif_o" (x::ScmSmallInt y::double)
+(define-cfn "fid_o" (x::ScmSmallInt y::double)
   (return (Scm_MakeFlonum (- (cast double x) y))))
-(define-cfn "ffi_o" (x::double y::ScmSmallInt)
+(define-cfn "fdi_o" (x::double y::ScmSmallInt)
   (return (Scm_MakeFlonum (- x (cast double y)))))
 
+;; flonum return
+(define-cfn "fiiiiii_d" (a::int b::int c::int d::int e::int f::int) ::double
+  (return (/ (+ a b c d e f) 2.0)))
