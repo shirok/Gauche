@@ -786,10 +786,11 @@ AS_CASE([$host],
     libgauche_version_link=no
     AS_CASE([$host],
       [x86_64-w64-mingw32], [
-        LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $LDFLAGS"
-        SHLIB_SO_CFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_SO_CFLAGS"
-        SHLIB_SO_LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_SO_LDFLAGS"
-        SHLIB_MAIN_LDFLAGS="-Wl,--disable-dynamicbase,--disable-high-entropy-va,--default-image-base-low $SHLIB_MAIN_LDFLAGS"])
+        AS_IF([ld --help | grep -q '\[[disable-\]]high-entropy-va'], [
+          LDFLAGS="-Wl,--disable-high-entropy-va $LDFLAGS"
+          SHLIB_SO_CFLAGS="-Wl,--disable-high-entropy-va $SHLIB_SO_CFLAGS"
+          SHLIB_SO_LDFLAGS="-Wl,--disable-high-entropy-va $SHLIB_SO_LDFLAGS"
+          SHLIB_MAIN_LDFLAGS="-Wl,--disable-high-entropy-va $SHLIB_MAIN_LDFLAGS"])])
     ],
   [
     SHLIB_SO_CFLAGS=""
