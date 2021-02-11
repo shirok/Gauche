@@ -43,11 +43,16 @@
 #include <sys/mman.h>
 #endif
 
-/* We eventually manage mmap'ed page wisely as a code cache */
+/* 
+ * For the time being, we use a fixed area (mmapped executable page)
+ * as the scratch code pad, and simply manage it like a stack.  That is,
+ * the region below free is 'used'.  It's enough for simple FFI, since
+ * the generated code won't live after the dynamic extent of FFI call.
+ */
 struct ScmCodeCacheRec {
     ScmMemoryRegion *pad;
+    void *free;
 };
-
 
 #define CODE_PAD_SIZE 4096
 
@@ -66,7 +71,26 @@ static void init_code_cache(ScmVM *vm) {
     cc->pad = SCM_MEMORY_REGION(Scm_SysMmap(NULL, -1, CODE_PAD_SIZE, 0,
                                             PROT_READ|PROT_WRITE|PROT_EXEC,
                                             MAP_PRIVATE|MAP_ANONYMOUS));
+    cc->free = cc->pad->ptr;
     vm->codeCache = cc;
+}
+
+static inline void *allocate_code_cache(ScmVM *vm, size_t size)
+{
+    ScmCodeCache *cc = vm->codeCache;
+    if (cc->free + size > cc->pad->ptr + cc->pad->size) {
+        Scm_Error("VM code cache overflow");
+    }
+    void *region = cc->free;
+    cc->free += size;
+    return region;
+}
+
+static inline void free_code_cache(ScmVM *vm, void *ptr)
+{
+    ScmCodeCache *cc = vm->codeCache;
+    SCM_ASSERT(ptr >= cc->pad->ptr && ptr < cc->pad->ptr + cc->pad->size);
+    cc->free = ptr;
 }
 
 /* 
@@ -136,93 +160,100 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
 
     ScmSmallInt uvsize = SCM_UVECTOR_SIZE(code);
     SCM_CHECK_START_END(start, end, uvsize);
-    if (tstart < 0 || tstart+end-start > (ScmSmallInt)vm->codeCache->pad->size) {
-        Scm_Error("tstart out of range: %ld", tstart);
-    }
-    if (entry < 0 || entry >= tstart + end - start) {
+
+    size_t codesize = tstart + end - start;
+    if (entry < 0 || (size_t)entry >= codesize) {
         Scm_Error("entry out of range: %ld", entry);
     }
 
-    if (tstart > 0) memset(vm->codeCache->pad->ptr, 0, tstart);
-    memcpy(vm->codeCache->pad->ptr + tstart,
+    void *codepad = allocate_code_cache(vm, codesize);
+    if (tstart > 0) memset(codepad, 0, tstart);
+    memcpy(codepad + tstart,
            SCM_UVECTOR_ELEMENTS(code)+start,
            end - start);
 
-    /* 
-     * Patch it
-     */
-    void *base  = vm->codeCache->pad->ptr;
-    void *limit = base + vm->codeCache->pad->size;
+    ScmObj result = SCM_UNDEFINED;
 
-    ScmObj cp;
-    SCM_FOR_EACH(cp, patcher) {
-        ScmObj e = SCM_CAR(cp);
-        if (Scm_Length(e) != 3) {
-            Scm_Error("malformed filler entry: %S", e);
-        }
-        ScmObj s_pos = SCM_CAR(e);
-        ScmObj type = SCM_CADR(e);
-        ScmObj val = SCM_CAR(SCM_CDDR(e));
-        
-        if (!SCM_INTP(s_pos) || !SCM_SYMBOLP(type)) {
-            Scm_Error("bad filler entry: %S", e);
-        }
-        ScmSmallInt pos = SCM_INT_VALUE(s_pos);
+    SCM_UNWIND_PROTECT {
+        /* 
+         * Patch it
+         */
+        void *limit = codepad + codesize;
 
-        pun_t pun;
+        ScmObj cp;
+        SCM_FOR_EACH(cp, patcher) {
+            ScmObj e = SCM_CAR(cp);
+            if (Scm_Length(e) != 3) {
+                Scm_Error("malformed filler entry: %S", e);
+            }
+            ScmObj s_pos = SCM_CAR(e);
+            ScmObj type = SCM_CADR(e);
+            ScmObj val = SCM_CAR(SCM_CDDR(e));
         
-        if (SCM_EQ(type, sym_o)) {
-            pun.n = (intptr_t)val;
-            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
-        } else if (SCM_EQ(type, sym_p)) {
-            if (!Scm_DLPtrP(val)) SCM_TYPE_ERROR(val, "dlptr");
-            pun.n = SCM_FOREIGN_POINTER_REF(intptr_t, val);
-            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
-        } else if (SCM_EQ(type, sym_i)) {
-            pun.n = Scm_IntegerToIntptr(val);
-            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
-        } else if (SCM_EQ(type, sym_d)) {
-            pun.d = Scm_GetDouble(val);
-            patch1(base, pos, pun.bd, SIZEOF_DOUBLE, limit);
-        } else if (SCM_EQ(type, sym_f)) {
-            pun.f = (float)Scm_GetDouble(val);
-            patch1(base, pos, pun.bf, SIZEOF_FLOAT, limit);
-        } else if (SCM_EQ(type, sym_s)) {
-            /* NB: If the callee retains the pointer, we need malloc. */
-            if (!SCM_STRINGP(val)) SCM_TYPE_ERROR(val, "string");
-            pun.n = (intptr_t)Scm_GetStringConst(SCM_STRING(val));
-            patch1(base, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            if (!SCM_INTP(s_pos) || !SCM_SYMBOLP(type)) {
+                Scm_Error("bad filler entry: %S", e);
+            }
+            ScmSmallInt pos = SCM_INT_VALUE(s_pos);
+
+            pun_t pun;
+        
+            if (SCM_EQ(type, sym_o)) {
+                pun.n = (intptr_t)val;
+                patch1(codepad, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            } else if (SCM_EQ(type, sym_p)) {
+                if (!Scm_DLPtrP(val)) SCM_TYPE_ERROR(val, "dlptr");
+                pun.n = SCM_FOREIGN_POINTER_REF(intptr_t, val);
+                patch1(codepad, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            } else if (SCM_EQ(type, sym_i)) {
+                pun.n = Scm_IntegerToIntptr(val);
+                patch1(codepad, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            } else if (SCM_EQ(type, sym_d)) {
+                pun.d = Scm_GetDouble(val);
+                patch1(codepad, pos, pun.bd, SIZEOF_DOUBLE, limit);
+            } else if (SCM_EQ(type, sym_f)) {
+                pun.f = (float)Scm_GetDouble(val);
+                patch1(codepad, pos, pun.bf, SIZEOF_FLOAT, limit);
+            } else if (SCM_EQ(type, sym_s)) {
+                /* NB: If the callee retains the pointer, we need malloc. */
+                if (!SCM_STRINGP(val)) SCM_TYPE_ERROR(val, "string");
+                pun.n = (intptr_t)Scm_GetStringConst(SCM_STRING(val));
+                patch1(codepad, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            } else {
+                Scm_Error("unknown patch type: %S", type);
+            }
+        }
+
+        /* 
+         * Call the code
+         */
+        void *entryPtr = codepad + entry;
+        if (SCM_EQ(rettype, sym_d)) {
+            double r = ((double (*)())entryPtr)();
+            result = Scm_VMReturnFlonum(r);
+        } else if (SCM_EQ(rettype, sym_f)) {
+            float r = ((float (*)())entryPtr)();
+            result = Scm_VMReturnFlonum((double)r);
+        } else if (SCM_EQ(rettype, sym_s)) {
+            intptr_t r = ((intptr_t (*)())entryPtr)();
+            result = SCM_MAKE_STR_COPYING((const char*)r);
+        } else if (SCM_EQ(rettype, sym_i)) {
+            intptr_t r = ((intptr_t (*)())entryPtr)();
+            result = Scm_IntptrToInteger(r);
+        } else if (SCM_EQ(rettype, sym_o)) {
+            intptr_t r = ((intptr_t (*)())entryPtr)();
+            result = SCM_OBJ(r);      /* trust the caller */
+        } else if (SCM_EQ(rettype, sym_v)) {
+            ((void (*)())entryPtr)();
         } else {
-            Scm_Error("unknown patch type: %S", type);
+            Scm_Error("unknown return type: %S", rettype);
         }
-    }
-
-    /* 
-     * Call the code
-     */
-    void *entryPtr = vm->codeCache->pad->ptr + entry;
-    if (SCM_EQ(rettype, sym_d)) {
-        double r = ((double (*)())entryPtr)();
-        return Scm_VMReturnFlonum(r);
-    } else if (SCM_EQ(rettype, sym_f)) {
-        float r = ((float (*)())entryPtr)();
-        return Scm_VMReturnFlonum((double)r);
-    } else if (SCM_EQ(rettype, sym_s)) {
-        intptr_t r = ((intptr_t (*)())entryPtr)();
-        return SCM_MAKE_STR_COPYING((const char*)r);
-    } else if (SCM_EQ(rettype, sym_i)) {
-        intptr_t r = ((intptr_t (*)())entryPtr)();
-        return Scm_IntptrToInteger(r);
-    } else if (SCM_EQ(rettype, sym_o)) {
-        intptr_t r = ((intptr_t (*)())entryPtr)();
-        return SCM_OBJ(r);      /* trust the caller */
-    } else if (SCM_EQ(rettype, sym_v)) {
-        ((void (*)())entryPtr)();
-        return SCM_UNDEFINED;
-    } else {
-        Scm_Error("unknown return type: %S", rettype);
-        return SCM_UNDEFINED;   /* dummy */
-    }
+    } SCM_WHEN_ERROR {
+        free_code_cache(vm, codepad);
+        SCM_NEXT_HANDLER;
+    } SCM_END_PROTECT;
+    
+    free_code_cache(vm, codepad);
+    return result;
 }
 
 void Scm__InitNative(void)

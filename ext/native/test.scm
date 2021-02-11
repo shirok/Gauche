@@ -61,6 +61,15 @@
   (test-foreign-call dlo "_fdi_o" 99.0  '((d 100.0) (i 1)) 'o)
   (test-foreign-call dlo "_fiiiiii_d" 10.5
                      '((i 1) (i 2) (i 3) (i 4) (i 5) (i 6)) 'd)
+
+
+  ;; ensure error frees codepad memory
+  (test* "error and codepad memory management" #t
+         (let1 proc (lambda (_) (error "wow"))
+           (dotimes [2000]
+             (guard (e [else #t])
+               (foreign-call dlo "_foo_o_cb" `((o ,proc) (o #f)) 'o)))
+           #t))
   )
 
 (test-end)
