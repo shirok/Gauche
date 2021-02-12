@@ -227,7 +227,9 @@
                 ((expand-spec (opc opcode) (immX (- taddr addr))) 0 0))]
           [else (error "jump destination doesn't exist:" target)])))
 
-;; special case to load label's address into a register
+;; special case to load label's address into a register.
+;; NB: in most cases, absolute value of label address is irrelevant,
+;; for we don't have linker that handles relocation.
 (define (op-movlabel label dst)
   (define ! expand-spec)
   (define w rex.w)
@@ -235,6 +237,8 @@
     (if label-alist
       (let1 laddr (assq-ref label-alist label)
         (unless laddr (error "undefined label:" label))
+        (warn "Using absolute address of label may not what you want to do. \
+               Consider using leaq label(%rip) instead.\n")
         ((! w (rex.b dst) (opc+rq #xb8 dst) (imm64 laddr)) 0 0))
       ((! w (rex.b dst) (opc+rq #xb8 dst) (imm64 0)) 0 0)))) ;; dummy
 
@@ -304,7 +308,8 @@
     [((? integer? a))               `(mem addr ,a)]
     [((? reg64? b))                 `(mem base ,(regnum b))]
     [((? symbol? l))                `(mem label ,l)]
-    [((? integer? d) (? reg64? b))  `(mem base+disp ,(regnum b) ,d)]
+    [((? integer? d) (? reg64b? b)) `(mem base+disp ,(regnumb b) ,d)]
+    [((? symbol? l) (? reg64b? b))  `(mem base+disp ,(regnumb b) label ,l)]
     [((? reg64? b) (? reg64? i))    `(mem sib ,(regnum b) ,(regnum i) 1 0)]
     [((? integer? d) (? reg64? b) (? reg64? i))
                                     `(mem sib ,(regnum b) ,(regnum i) 1 ,d)]
@@ -399,11 +404,12 @@
 
 (define (mem params)
   (match params
-    [`(addr ,a)          (mem-addr a)]
-    [`(base ,b)          (mem-base b)]
-    [`(label ,l)         (mem-label l)]
-    [`(base+disp ,b ,d)  (mem-base+disp b d)]
-    [`(sib ,b ,i ,s ,d)  (mem-sib b i s d)]))
+    [`(addr ,a)               (mem-addr a)]
+    [`(base ,b)               (mem-base b)]
+    [`(label ,l)              (mem-label l)]
+    [`(base+disp ,b ,d)       (mem-base+disp b d)]
+    [`(base+disp ,b label ,l) (mem-base+disp-label b l)]
+    [`(sib ,b ,i ,s ,d)       (mem-sib b i s d)]))
 
 (define (r/m-reg r)
   (^[s a t] `(,@(if (>= r 8) `(:rex.b #t) '()) :mode 3 :r/m ,r ,@s)))
@@ -432,12 +438,22 @@
 
 (define (mem-base+disp base disp)
   (^[s a t]
-    `(,@(if (>= base 8) `(:rex.b #t) '())
-      :mode ,(if (imm8? disp) 1 2)
-      ,@(case (modulo base 8)
-          [(4) `(:r/m 4 :index 4 :base 4 :displacement ,(int8/32 disp))]
+    `(,@(if (and (number? base) (>= base 8)) `(:rex.b #t) '())
+      :mode ,(if (number? base) (if (imm8? disp) 1 2) 0)
+      ,@(case base
+          [(%rip) `(:r/m 5 :displacement ,(int32 disp))]
+          [(4 12) `(:r/m base :index base :base base
+                         :displacement ,(int8/32 disp))]
           [else `(:r/m ,base :displacement ,(int8/32 disp))])
       ,@s)))
+
+(define (mem-base+disp-label base l)
+  (^[s a t]
+    (if (and a t)
+      (let1 laddr (assq-ref t l)
+        (unless laddr (error "undefined label:" l))
+        ((mem-base+disp base (- laddr a)) s a t))
+      ((mem-base+disp base 0) s a t))))
 
 (define (mem-sib base index scale disp)
   (when (= index 4)
@@ -458,8 +474,16 @@
   '(%rax %rcx %rdx %rbx %rsp %rbp %rsi %rdi
     %r8  %r9  %r10 %r11 %r12 %r13 %r14 %r15))
 
+;; reg64 - general 64bit registers.  Can be source/dest registers.
+;; reg64b - registers that can be used as the 'base' register of modrm.
+;;          this includes %rip plus reg64.
+;; regnum - arg must be reg64.  returns the register number.
+;; regnumb - arg must be reg64b.  returns register number or '%rip.
+
 (define (reg64? opr) (memq opr *regs64*))
+(define (reg64b? opr) (or (reg64? opr) (eq? opr '%rip)))
 (define (regnum reg) (find-index (cut eq? reg <>) *regs64*))
+(define (regnumb reg) (or (regnum reg) reg))
 
 (define *regsse*
   '(%xmm0 %xmm1 %xmm2 %xmm3 %xmm4 %xmm5 %xmm6 %xmm7))
