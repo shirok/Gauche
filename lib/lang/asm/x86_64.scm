@@ -44,7 +44,7 @@
   (use srfi-13)
   (use srfi-42)
   (use util.match)
-  (export-all)                          ;for now
+  (export asm)
   )
 (select-module lang.asm.x86_64)
 
@@ -62,6 +62,11 @@
 ;;   (%base %index)
 ;;   (%base %index scale)
 ;;   (off %base %index scale)
+;;
+;; For jump instruction with label, %rip-relative addressing is used.
+;; TODO: (mov LABEL %reg) may also use %rip-relative.  Since we don't
+;; have linkers, the absolute address of LABEL will never be known.
+;; (Or, we could add an on-memory linker...)
 
 ;;-----------------------------------------------------------------
 ;; Entry and x86 ISA definitions (subset)
