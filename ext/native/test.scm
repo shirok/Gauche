@@ -49,6 +49,16 @@
   (test-foreign-call dlo "_foi_o" '(a . 1) '((o a) (i 0)) 'o)
   (test-foreign-call dlo "_fis_i" (char->integer #\c) '((i 2) (s "abcde")) 'i)
 
+  (test-foreign-call dlo "_fois_o" '("foo" 100 (cent))
+                     '((o (cent)) (i 100) (s "foo")) 'o)
+  (test-foreign-call dlo "_foiso_o" '(3+2i "foo" 100 (cent))
+                     '((o (cent)) (i 100) (s "foo") (o 3+2i)) 'o)
+  (test-foreign-call dlo "_foisoi_o" '(-56789 3+2i "foo" 100 (cent))
+                     '((o (cent)) (i 100) (s "foo") (o 3+2i) (i -56789)) 'o)
+  (test-foreign-call dlo "_foisois_o" '("" -56789 3+2i "foo" 100 (cent))
+                     '((o (cent)) (i 100) (s "foo") (o 3+2i) (i -56789) (s ""))
+                     'o)
+
   (test-foreign-call dlo "_fo_o_cb" '(z . z) '((o z)) 'o)
   (test-foreign-call dlo "_foo_o_cb" '(d c b a)
                      `((o ,reverse) (o (a b c d))) 'o)

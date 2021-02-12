@@ -43,6 +43,18 @@
 (define-cfn "fis_i" (x::ScmSmallInt y::(const char*)) ::ScmSmallInt
   (return (aref y x)))
 
+;; three-six arguments
+(define-cfn "fois_o" (a b::ScmSmallInt c::(const char*))
+  (return (SCM_LIST3 (SCM_MAKE_STR_COPYING c) (SCM_MAKE_INT b) a)))
+(define-cfn "foiso_o" (a b::ScmSmallInt c::(const char*) d)
+  (return (SCM_LIST4 d (SCM_MAKE_STR_COPYING c) (SCM_MAKE_INT b) a)))
+(define-cfn "foisoi_o" (a b::ScmSmallInt c::(const char*) d e::int)
+  (return (SCM_LIST5 (SCM_MAKE_INT e) d (SCM_MAKE_STR_COPYING c)
+                     (SCM_MAKE_INT b) a)))
+(define-cfn "foisois_o" (a b::ScmSmallInt c::(const char*) d e::int f::(const char*))
+  (return (Scm_Cons (SCM_MAKE_STR_COPYING f)
+                    (SCM_LIST5 (SCM_MAKE_INT e) d (SCM_MAKE_STR_COPYING c)
+                               (SCM_MAKE_INT b) a))))
 
 ;; calling back to Scheme
 (define-cfn "fo_o_cb" (x)
@@ -65,3 +77,5 @@
 ;; flonum return
 (define-cfn "fiiiiii_d" (a::int b::int c::int d::int e::int f::int) ::double
   (return (/ (+ a b c d e f) 2.0)))
+
+
