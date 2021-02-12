@@ -754,7 +754,9 @@ ScmObj Scm_ModuleExports(ScmModule *module)
     Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(module->external));
     ScmDictEntry *e;
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        SCM_APPEND1(h, t, SCM_DICT_KEY(e));
+        if (!(SCM_GLOC(SCM_DICT_VALUE(e)))->hidden) {
+            SCM_APPEND1(h, t, SCM_DICT_KEY(e));
+        }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return h;
