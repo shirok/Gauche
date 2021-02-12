@@ -513,7 +513,7 @@ void Scm_HideBinding(ScmModule *module, ScmSymbol *symbol)
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
     ScmObj v = Scm_HashTableRef(module->external, SCM_OBJ(symbol), SCM_FALSE);
     if (!SCM_FALSEP(v)) {
-        err_exists = TRUE;
+        if (!SCM_GLOC(v)->hidden) err_exists = TRUE;
     } else {
         ScmGloc *g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         g->hidden = TRUE;
