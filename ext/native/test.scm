@@ -32,6 +32,7 @@
                                   dle '() 'v))))))
              (list r s))))
 
+  (test-section "simple, register passing call (integral)")
   (test-foreign-call dlo "_f_o" 'it_works '() 'o)
   (test-foreign-call dlo "_f_i" 42 '() 'i)
   (test-foreign-call dlo "_f_s" "it works" '() 's)
@@ -59,6 +60,14 @@
                      '((o (cent)) (i 100) (s "foo") (o 3+2i) (i -56789) (s ""))
                      'o)
 
+  (test-section "register passing (flonum)")
+  (test-foreign-call dlo "_fd_o" 101.0  '((d 100.0)) 'o)
+  (test-foreign-call dlo "_fid_o" 99.0  '((i 100) (d 1.0)) 'o)
+  (test-foreign-call dlo "_fdi_o" 99.0  '((d 100.0) (i 1)) 'o)
+  (test-foreign-call dlo "_fiiiiii_d" 10.5
+                     '((i 1) (i 2) (i 3) (i 4) (i 5) (i 6)) 'd)
+
+  (test-section "calling back to Scheme")
   (test-foreign-call dlo "_fo_o_cb" '(z . z) '((o z)) 'o)
   (test-foreign-call dlo "_foo_o_cb" '(d c b a)
                      `((o ,reverse) (o (a b c d))) 'o)
@@ -66,14 +75,7 @@
                      (test-error <error> "list required, but got zzz")
                      `((o ,reverse) (o zzz)) 'o)
 
-  (test-foreign-call dlo "_fd_o" 101.0  '((d 100.0)) 'o)
-  (test-foreign-call dlo "_fid_o" 99.0  '((i 100) (d 1.0)) 'o)
-  (test-foreign-call dlo "_fdi_o" 99.0  '((d 100.0) (i 1)) 'o)
-  (test-foreign-call dlo "_fiiiiii_d" 10.5
-                     '((i 1) (i 2) (i 3) (i 4) (i 5) (i 6)) 'd)
-
-
-  ;; ensure error frees codepad memory
+  (test-section "ensure error frees codepad memory")
   (test* "error and codepad memory management" #t
          (let1 proc (lambda (_) (error "wow"))
            (dotimes [2000]
