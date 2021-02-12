@@ -44,12 +44,13 @@
 (inline-stub 
  (.include "gauche/priv/nativeP.h")
  (define-cproc %%call-native (tstart::<fixnum>
+                              tend::<fixnum>
                               code::<uvector> 
                               start::<fixnum>
                               end::<fixnum>
                               entry::<fixnum>
                               patcher rettype)
-   (return (Scm__VMCallNative (Scm_VM) tstart code start end entry
+   (return (Scm__VMCallNative (Scm_VM) tstart tend code start end entry
                               patcher rettype)))
  )
 

@@ -121,6 +121,10 @@ static inline void patch1(void *dst, ScmSmallInt pos,
  * Copy CODE to the scratch pad, starting from START-th byte up to right before
  * END-th byte, from the pad's TSTART-th position.
  *
+ * TEND is, when non-zero, it must be greater than TSTART+(END-START).  The
+ * scratch pad area is allocated up to TEND, and filled with zero after the
+ * code.
+ *
  * Then the pad is patched according to PATCHER, as explained below.
  *
  * Finally, the code is called from the entry offset ENTRY.
@@ -147,6 +151,7 @@ static inline void patch1(void *dst, ScmSmallInt pos,
 
 ScmObj Scm__VMCallNative(ScmVM *vm, 
                          ScmSmallInt tstart,
+                         ScmSmallInt tend,
                          ScmUVector *code,
                          ScmSmallInt start,
                          ScmSmallInt end,
@@ -166,11 +171,18 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
         Scm_Error("entry out of range: %ld", entry);
     }
 
-    void *codepad = allocate_code_cache(vm, codesize);
+    size_t realcodesize = codesize;
+    if (tend > codesize) realcodesize = tend;
+    
+    void *codepad = allocate_code_cache(vm, realcodesize);
     if (tstart > 0) memset(codepad, 0, tstart);
     memcpy(codepad + tstart,
            SCM_UVECTOR_ELEMENTS(code)+start,
            end - start);
+    if (realcodesize > codesize) {
+        memset(codepad + codesize, 0, realcodesize - codesize);
+        codesize = realcodesize;
+    }
 
     ScmObj result = SCM_UNDEFINED;
 

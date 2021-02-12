@@ -36,6 +36,7 @@
 
 SCM_EXTERN ScmObj Scm__VMCallNative(ScmVM *vm, 
                                     ScmSmallInt tstart,
+                                    ScmSmallInt tend,
                                     ScmUVector *code,
                                     ScmSmallInt start,
                                     ScmSmallInt end,
