@@ -75,6 +75,15 @@
                      (test-error <error> "list required, but got zzz")
                      `((o ,reverse) (o zzz)) 'o)
 
+  (test-section "spill-to-stack case")
+  (test-foreign-call dlo "_fooooooo_o" '((a b c d e) (f g))
+                     `((o a) (o b) (o c) (o d) (o e) (o f) (o g)) 'o)
+  (test-foreign-call dlo "_foooooooo_o" '((a b c d e) (f g h))
+                     `((o a) (o b) (o c) (o d) (o e) (o f) (o g) (o h)) 'o)
+  (test-foreign-call dlo "_fooooooooi_o" '((a b c d e) (f g h 5))
+                     `((o a) (o b) (o c) (o d) (o e) (o f) (o g) (o h) (i 4))
+                     'o)
+
   (test-section "ensure error frees codepad memory")
   (test* "error and codepad memory management" #t
          (let1 proc (lambda (_) (error "wow"))

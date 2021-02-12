@@ -56,6 +56,17 @@
                     (SCM_LIST5 (SCM_MAKE_INT e) d (SCM_MAKE_STR_COPYING c)
                                (SCM_MAKE_INT b) a))))
 
+;; seven or more (spill to stack)
+(define-cfn "fooooooo_o" (a b c d e f g)
+  (return (SCM_LIST2 (SCM_LIST5 a b c d e)
+                     (SCM_LIST2 f g))))
+(define-cfn "foooooooo_o" (a b c d e f g h)
+  (return (SCM_LIST2 (SCM_LIST5 a b c d e)
+                     (SCM_LIST3 f g h))))
+(define-cfn "fooooooooi_o" (a b c d e f g h j::int)
+  (return (SCM_LIST2 (SCM_LIST5 a b c d e)
+                     (SCM_LIST4 f g h (SCM_MAKE_INT (+ j 1))))))
+
 ;; calling back to Scheme
 (define-cfn "fo_o_cb" (x)
   (let* ([fn (Scm_GlobalVariableRef (Scm_GaucheModule)
