@@ -451,8 +451,14 @@
 (define (expand-cfn form env)
   (define (gen-args args env)
     (let1 eenv (expr-env env)
-      ($ intersperse ","
-         $ map (^.[(var . type) (cise-render-typed-var type var eenv)]) args)))
+      (let loop ([args args])
+        (match args
+          [() '()]
+          [(('... . _)) '("...")]       ;varargs
+          [((var . type))
+           `(,(cise-render-typed-var type var eenv))]
+          [((var . type) . rest)
+           `(,(cise-render-typed-var type var eenv) "," ,@(loop rest))]))))
 
   (define (gen-qualifiers quals) ; we might support more qualifiers in future
     (intersperse " "
