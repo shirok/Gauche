@@ -60,7 +60,7 @@
            entry1:   (movq (arg0:) %rdi)
            entry0:   (jmp (func:))
            end:)))
-  ;; Spill case.  We fill these after 
+  ;; Spill case.
   (define-values (spill-code spill-labels)
     (asm '(func: (.dataq 0)
            arg0: (.dataq 0)

@@ -136,7 +136,7 @@
                       (car insns))
               (when (pair? byte-slices)
                 (dolist [bytes (cdr byte-slices)]
-                  (foramt #t "    : ~24a\n" (bytedump bytes))))
+                  (format #t "    :~24a\n" (bytedump bytes))))
               (loop (cdr insns) (cdr a-map) (cdr bss)))))))))
 
 ;; asm1 :: ParsedInsn -> (Int, [Symbol,Int]) -> [Byte]
