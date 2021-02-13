@@ -85,7 +85,6 @@
            entry6f2: (movsd (farg2:) %xmm2)
            entry6f1: (movsd (farg1:) %xmm1)
            entry6f0: (movsd (farg0:) %xmm0)
-                     (movb 8 %al)        ;; for safety - see above
            entry6:   (movq (arg5:) %r9)
            entry5:   (movq (arg4:) %r8)
            entry4:   (movq (arg3:) %rcx)
@@ -99,6 +98,7 @@
                      (jnz loop:)
            entry2:   (movq (arg1:) %rsi)
            entry1:   (movq (arg0:) %rdi)
+                     (movb 8 %al)        ;; for safety - see above
            entry0:   (call (func:))
                      (addq (spill-size:) %rsp)
                      (ret)
