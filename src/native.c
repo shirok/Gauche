@@ -59,6 +59,7 @@ struct ScmCodeCacheRec {
 static ScmObj sym_o;
 static ScmObj sym_p;
 static ScmObj sym_i;
+static ScmObj sym_b;
 static ScmObj sym_d;
 static ScmObj sym_f;
 static ScmObj sym_s;
@@ -139,6 +140,7 @@ static inline void patch1(void *dst, ScmSmallInt pos,
  *        p : pointer.  <value> is <dlptr>.
  *        i : integer.  <value> must be an integral type or a character; 
  *                      its integer value is used.
+ *        b : byte.     <value> must be an integer [0..255].
  *        d : double.   <value> must be a real number.
  *        f : float.    <value> must be a real number.
  *        s : string    <value> must be a string type.  Pointer to the cstring
@@ -172,7 +174,7 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
     }
 
     size_t realcodesize = codesize;
-    if (tend > codesize) realcodesize = tend;
+    if (tend > (ScmSmallInt)codesize) realcodesize = tend;
     
     void *codepad = allocate_code_cache(vm, realcodesize);
     if (tstart > 0) memset(codepad, 0, tstart);
@@ -219,6 +221,10 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
             } else if (SCM_EQ(type, sym_i)) {
                 pun.n = Scm_IntegerToIntptr(val);
                 patch1(codepad, pos, pun.bn, SIZEOF_INTPTR_T, limit);
+            } else if (SCM_EQ(type, sym_b)) {
+                if (!SCM_INTP(val)) SCM_TYPE_ERROR(val, "fixnum");
+                uint8_t byte = SCM_INT_VALUE(val);
+                patch1(codepad, pos, &byte, 1, limit);
             } else if (SCM_EQ(type, sym_d)) {
                 pun.d = Scm_GetDouble(val);
                 patch1(codepad, pos, pun.bd, SIZEOF_DOUBLE, limit);
@@ -251,6 +257,9 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
         } else if (SCM_EQ(rettype, sym_i)) {
             intptr_t r = ((intptr_t (*)())entryPtr)();
             result = Scm_IntptrToInteger(r);
+        } else if (SCM_EQ(rettype, sym_b)) {
+            uint8_t r = ((uint8_t (*)())entryPtr)();
+            result = SCM_MAKE_INT(r);
         } else if (SCM_EQ(rettype, sym_o)) {
             intptr_t r = ((intptr_t (*)())entryPtr)();
             result = SCM_OBJ(r);      /* trust the caller */
@@ -273,6 +282,7 @@ void Scm__InitNative(void)
     /* symbols for type */
     sym_o = SCM_INTERN("o");
     sym_p = SCM_INTERN("p");
+    sym_b = SCM_INTERN("b");
     sym_i = SCM_INTERN("i");
     sym_d = SCM_INTERN("d");
     sym_f = SCM_INTERN("f");
