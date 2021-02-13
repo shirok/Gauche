@@ -103,7 +103,20 @@
                      `((o ,list*) (o A) (o B) (o C) (o D) (o E)
                        (o F) (o G) (o H) (o I) (o J))
                      'o)
-  
+
+  (test-foreign-call dlo "_fio_var_o" 
+                     '(A A B B C C)
+                     '((i 3) (o A) (o B) (o C))
+                     'o)
+  (test-foreign-call dlo "_fio_var_o" 
+                     '(A A B B C C D D E E F F G G H H)
+                     '((i 8) (o A) (o B) (o C) (o D) (o E) (o F) (o G) (o H))
+                     'o)
+  (test-foreign-call dlo "_fido_var_o" 
+                     '(A A B B C C D D 1.0)
+                     '((i 4) (d 1.0) (o A) (o B) (o C) (o D))
+                     'o)
+
   (test-section "ensure error frees codepad memory")
   (test* "error and codepad memory management" #t
          (let1 proc (lambda (_) (error "wow"))

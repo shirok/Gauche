@@ -7,6 +7,9 @@
 (define-module gauche.ffitest)
 (select-module gauche.ffitest)
 
+(inline-stub
+ (.include <stdarg.h>))
+
 ;; zero arguments
 
 (define-cfn "f_o" () (return 'it_works))
@@ -56,6 +59,18 @@
                     (SCM_LIST5 (SCM_MAKE_INT e) d (SCM_MAKE_STR_COPYING c)
                                (SCM_MAKE_INT b) a))))
 
+;; flonum argument
+(define-cfn "fd_o" (x::double)
+  (return (Scm_MakeFlonum (+ x 1.0))))
+(define-cfn "fid_o" (x::ScmSmallInt y::double)
+  (return (Scm_MakeFlonum (- (cast double x) y))))
+(define-cfn "fdi_o" (x::double y::ScmSmallInt)
+  (return (Scm_MakeFlonum (- x (cast double y)))))
+
+;; flonum return
+(define-cfn "fiiiiii_d" (a::int b::int c::int d::int e::int f::int) ::double
+  (return (/ (+ a b c d e f) 2.0)))
+
 ;; seven or more (spill to stack)
 (define-cfn "fooooooo_o" (a b c d e f g)
   (return (SCM_LIST2 (SCM_LIST5 a b c d e)
@@ -91,16 +106,21 @@
 (define-cfn "fooooooooooo_o_cb" (proc a b c d e f g h i j)
   (return (Scm_ApplyRec proc (Scm_List a b c d e f g h i j NULL))))
 
-;; flonum argument
-(define-cfn "fd_o" (x::double)
-  (return (Scm_MakeFlonum (+ x 1.0))))
-(define-cfn "fid_o" (x::ScmSmallInt y::double)
-  (return (Scm_MakeFlonum (- (cast double x) y))))
-(define-cfn "fdi_o" (x::double y::ScmSmallInt)
-  (return (Scm_MakeFlonum (- x (cast double y)))))
-
-;; flonum return
-(define-cfn "fiiiiii_d" (a::int b::int c::int d::int e::int f::int) ::double
-  (return (/ (+ a b c d e f) 2.0)))
-
-
+;; varargs
+(define-cfn "fio_var_o" (nargs::int ...)
+  (let* ([ap::va_list] [h SCM_NIL] [t SCM_NIL])
+    (va_start ap nargs)
+    (dotimes [i nargs]
+      (let* ([e (va_arg ap ScmObj)])
+        (SCM_APPEND1 h t e)
+        (SCM_APPEND1 h t e)))
+    (return h)))
+(define-cfn "fido_var_o" (nargs::int x::double ...)
+  (let* ([ap::va_list] [h SCM_NIL] [t SCM_NIL])
+    (va_start ap x)
+    (dotimes [i nargs]
+      (let* ([e (va_arg ap ScmObj)])
+        (SCM_APPEND1 h t e)
+        (SCM_APPEND1 h t e)))
+    (SCM_APPEND1 h t (Scm_MakeFlonum x))
+    (return h)))
