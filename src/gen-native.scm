@@ -19,6 +19,12 @@
 ;; For SYSV AMD64 calling convention: Section 3.2 of 
 ;; http://refspecs.linux-foundation.org/elf/x86_64-abi-0.95.pdf
 
+;; NB: SYSV AMD64 ABI requires the number of FP registers used is
+;; passed in %al.  It is to avoid copying FP regs unnecessarily if the
+;; called function is variadic.  Thus passing more than necessary value
+;; doesn't break anything but potentially make it slower.  We'll eventually
+;; pass a proper value, but for now, we always pass 8 for the simplicity.
+
 (define (gen-stub-amd64 port)
   ;; When all args can be on registers
   (define-values (reg-code reg-labels)
@@ -45,6 +51,7 @@
            entry6f2: (movsd (farg2:) %xmm2)
            entry6f1: (movsd (farg1:) %xmm1)
            entry6f0: (movsd (farg0:) %xmm0)
+                     (movb 8 %al)        ;; for safety - see above
            entry6:   (movq (arg5:) %r9)
            entry5:   (movq (arg4:) %r8)
            entry4:   (movq (arg3:) %rcx)
@@ -78,6 +85,7 @@
            entry6f2: (movsd (farg2:) %xmm2)
            entry6f1: (movsd (farg1:) %xmm1)
            entry6f0: (movsd (farg0:) %xmm0)
+                     (movb 8 %al)        ;; for safety - see above
            entry6:   (movq (arg5:) %r9)
            entry5:   (movq (arg4:) %r8)
            entry4:   (movq (arg3:) %rcx)
