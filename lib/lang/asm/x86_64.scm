@@ -44,7 +44,7 @@
   (use srfi-13)
   (use srfi-42)
   (use util.match)
-  (export asm)
+  (export asm asm-dump)
   )
 (select-module lang.asm.x86_64)
 
@@ -82,7 +82,7 @@
 (define (asm insns)
   (let* ([a-map (run-pass1 insns)]
          [bss   (run-pass2 a-map)])
-    (values (concatenate (reverse bss)) ; instructions
+    (values (concatenate bss) ; instructions
             (filter-map (^p (and (symbol? (car p)) p)) a-map))))
 
 ;; run-pass1 :: [Insn] -> [(p, addr)]
@@ -105,12 +105,39 @@
 ;;   Takes the result of first pass, calling the closure P to realize the
 ;;   actual machine codes.
 (define (run-pass2 a-map)
-  (fold (^[p+addr seed]
-          (match-let1 (p . addr) p+addr
-            (if (symbol? p)
-              seed          ;ignore labels
-              (cons (p addr a-map) seed))))
-        '() a-map))
+  (reverse (fold (^[p+addr seed]
+                   (match-let1 (p . addr) p+addr
+                     (if (symbol? p)
+                       seed          ;ignore labels
+                       (cons (p addr a-map) seed))))
+                 '() a-map)))
+
+;; asm-dump :: [Insn] -> ()
+;;   For debugging.  Show the assembly results in human-readable way.
+(define (asm-dump insns)
+  (let* ([a-map (run-pass1 insns)]
+         [bss   (run-pass2 a-map)])
+    (let loop ((insns insns) (a-map a-map) (bss bss))
+      (unless (null? insns)
+        (match-let1 (_ . addr) (car a-map)
+          (if (symbol? (car insns))     ;label
+            (begin
+              (format #t "~4d:~24a    ~a:\n" addr "" (car insns))
+              (loop (cdr insns) (cdr a-map) bss))
+            (let1 byte-slices (slices (car bss) 8)
+              (define (bytedump bytes)
+                (with-output-to-string
+                  (^[] (dolist [b bytes] (format #t " ~2,'0x" b)))))
+              (format #t "~4d:~24a          ~s\n" 
+                      addr
+                      (bytedump (if (pair? byte-slices)
+                                  (car byte-slices)
+                                  '()))
+                      (car insns))
+              (when (pair? byte-slices)
+                (dolist [bytes (cdr byte-slices)]
+                  (foramt #t "    : ~24a\n" (bytedump bytes))))
+              (loop (cdr insns) (cdr a-map) (cdr bss)))))))))
 
 ;; asm1 :: ParsedInsn -> (Int, [Symbol,Int]) -> [Byte]
 ;;  Called in pass 1.   The heart of instruction to machine code mapping.
