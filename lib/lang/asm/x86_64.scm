@@ -63,6 +63,9 @@
 ;;   (%base %index scale)
 ;;   (off %base %index scale)
 ;;
+;; For most operands, we require having data width suffix (e.g. movb for
+;; byte, movq for quad).  Not all widths are supported.
+;;
 ;; For jump instruction with label, %rip-relative addressing is used.
 ;; TODO: (mov LABEL %reg) may also use %rip-relative.  Since we don't
 ;; have linkers, the absolute address of LABEL will never be known.
@@ -168,6 +171,12 @@
     [((or 'jnlel 'jgl) ('label t)) (op-jump t #f '(#x0f #x8f))]
     
     ;; moving data around
+    [`(movb (reg8 ,src)(reg8 ,dst))(! (opc #x88) (reg src) (r/m-reg dst))]
+    [`(movb (reg8 ,src)(mem . ,x)) (! (opc #x88) (reg src) (mem x))]
+    [`(movb (mem . ,x) (reg8 ,dst))(! (opc #x8a) (reg dst) (mem x))]
+    [`(movb (imm8 ,i)  (reg8 ,dst))(! (opc+rq #xb0 dst) (imm8 i))]
+    [`(movb (imm8 ,i)  (mem . ,x)) (! (opc #xc6) (reg 0) (mem x) (imm8 i))]
+
     [`(movq (imm8  ,i) (reg ,dst)) (! w (opc #xc7) (reg 0) (r/m-reg dst) (imm32 i))]
     [`(movq (imm32 ,i) (reg ,dst)) (! w (opc #xc7) (reg 0) (r/m-reg dst) (imm32 i))]
     [`(movq (imm8  ,i) (mem . ,x)) (! w (opc #xc7) (reg 0) (mem x) (imm32 i))]
@@ -305,6 +314,7 @@
   (match opr
     [(? reg64?)                     `(reg ,(regnum opr))]
     [(? regsse?)                    `(sse ,(ssenum opr))]
+    [(? reg8?)                      `(reg8 ,(regnum8 opr))]
     [(? symbol?)                    `(label ,opr)]
     [(? string?)                    `(str ,opr)] ; C string literal
     [(? imm8?)                      `(imm8 ,opr)]
@@ -475,9 +485,16 @@
 (define (imm32 i)  (^[s a t] `(:immediate ,(int32 i) ,@s)))
 (define (imm64 i)  (^[s a t] `(:immediate ,(int64 i) ,@s)))
       
-(define *regs64*
-  '(%rax %rcx %rdx %rbx %rsp %rbp %rsi %rdi
-    %r8  %r9  %r10 %r11 %r12 %r13 %r14 %r15))
+
+(define *regs8*  '(%al %cl %dl %bl %ah %ch %dh %bh))
+(define *regs16* '(%ax %cx %dx %bx %sp %bp %si %di))
+(define *regs32* '(%eax %ecx %edx %ebx %esp %ebp %esi %edi))
+(define *regs64* '(%rax %rcx %rdx %rbx %rsp %rbp %rsi %rdi
+                   %r8  %r9  %r10 %r11 %r12 %r13 %r14 %r15))
+
+;; reg8 - legacy general 8bit registers
+(define (reg8? opr) (memq opr *regs8*))
+(define (regnum8 reg) (find-index (cut eq? reg <>) *regs8*))
 
 ;; reg64 - general 64bit registers.  Can be source/dest registers.
 ;; reg64b - registers that can be used as the 'base' register of modrm.
