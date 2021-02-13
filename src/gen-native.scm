@@ -198,9 +198,7 @@
             (spill-offset (^n (+ ,(assq-ref spill-labels 'spill:)
                                  (* n 8)))))
         (^[ptr args num-iargs num-fargs num-spills rettype]
-          (let* ([num-iargs (count (^p (memq (car p) '(o p i s))) args)]
-                 [num-fargs (count (^p (memq (car p) '(d))) args)]
-                 [effective-nargs (if (zero? num-fargs)
+          (let* ([effective-nargs (if (zero? num-fargs)
                                     num-iargs
                                     (+ 6 num-fargs))]
                  [entry (~ entry-offsets effective-nargs)]

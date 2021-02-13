@@ -66,6 +66,18 @@
 (define-cfn "fooooooooi_o" (a b c d e f g h j::int)
   (return (SCM_LIST2 (SCM_LIST5 a b c d e)
                      (SCM_LIST4 f g h (SCM_MAKE_INT (+ j 1))))))
+(define-cfn "fdddddddddd_d" (a::double b::double c::double d::double e::double
+                             f::double g::double h::double i::double j::double)
+  ::double
+  (return (* (+ a b c d e) (+ f g h i j))))
+(define-cfn "fiiiiiiddddddddidid_d"
+  (i0::int i1::int i2::int i3::int i4::int i5::int
+   d0::double d1::double d2::double d3::double 
+   d4::double d5::double d6::double d7::double
+   i6::int d8::double i7::int d9::double)
+  ::double
+  (return (* (+ i0 i1 i2 i3 i4 i5 i6 i7)
+             (+ d0 d1 d2 d3 d4 d5 d6 d7 d8 d9))))
 
 ;; calling back to Scheme
 (define-cfn "fo_o_cb" (x)
@@ -76,6 +88,8 @@
 (define-cfn "foo_o_cb" (proc x)
   (return (Scm_ApplyRec1 proc x)))
 
+(define-cfn "fooooooooooo_o_cb" (proc a b c d e f g h i j)
+  (return (Scm_ApplyRec proc (Scm_List a b c d e f g h i j NULL))))
 
 ;; flonum argument
 (define-cfn "fd_o" (x::double)

@@ -83,7 +83,27 @@
   (test-foreign-call dlo "_fooooooooi_o" '((a b c d e) (f g h 5))
                      `((o a) (o b) (o c) (o d) (o e) (o f) (o g) (o h) (i 4))
                      'o)
+  (test-foreign-call dlo "_fdddddddddd_d"
+                     (* (+ 1.0 1.1 1.2 1.3 1.4) (+ 1.5 1.6 1.7 1.8 1.9))
+                     `((d 1.0) (d 1.1) (d 1.2) (d 1.3) (d 1.4)
+                       (d 1.5) (d 1.6) (d 1.7) (d 1.8) (d 1.9))
+                     'd)
+  (test-foreign-call dlo "_fiiiiiiddddddddidid_d"
+                     (* (+ 1 2 3 4 5 6 7 8)
+                        (+ 1.0 1.1 1.2 1.3 1.4
+                           1.5 1.6 1.7 1.8 1.9))
+                     `((i 1) (i 2) (i 3) (i 4) (i 5) (i 6)
+                       (d 1.0) (d 1.1) (d 1.2) (d 1.3)
+                       (d 1.4) (d 1.5) (d 1.6) (d 1.7)
+                       (i 7) (d 1.8) (i 8) (d 1.9))
+                     'd)
 
+  (test-foreign-call dlo "_fooooooooooo_o_cb"
+                     '(A B C D E F G H I . J)
+                     `((o ,list*) (o A) (o B) (o C) (o D) (o E)
+                       (o F) (o G) (o H) (o I) (o J))
+                     'o)
+  
   (test-section "ensure error frees codepad memory")
   (test* "error and codepad memory management" #t
          (let1 proc (lambda (_) (error "wow"))
