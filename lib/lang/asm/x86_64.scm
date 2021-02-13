@@ -76,30 +76,45 @@
 ;;
 
 ;; asm  :: [Insn] -> [Byte], [(label . addr)]
+;;   Main entry.  Takes a sequence of assembly (in S-expr), and returns
+;;   two values: sequence of machine code bytes, and an alist of label to
+;;   relative address mapping.
 (define (asm insns)
-  ;; first pass. create [(p,xaddr)] where p :: (Int,[(Symbol,Int)]) -> [Byte]
-  ;; and xaddr is a value of PC after the code is fetched.
-  (receive (abss _)
-      (map-accum (match-lambda*
-                   [((? symbol? label) addr) (values (cons label addr) addr)]
-                   [(insn addr) (let* ((p (asm1 (parse-insn insn)))
-                                       (dummy (p addr #f))
-                                       (naddr (+ addr (length dummy))))
-                                  (values (cons p naddr) naddr))])
-                 0 insns)
-    ;; second pass
-    (let1 bss (fold (^[x seed]
-                      (match-let1 (p . addr) x
-                        (if (symbol? p)
-                          seed          ;ignore labels
-                          (cons (p addr abss) seed))))
-                    '() abss)
-      (values (concatenate (reverse bss)) ; instructions
-              (filter-map (^p (and (symbol? (car p)) p)) abss)))))
+  (let* ([a-map (run-pass1 insns)]
+         [bss   (run-pass2 a-map)])
+    (values (concatenate (reverse bss)) ; instructions
+            (filter-map (^p (and (symbol? (car p)) p)) a-map))))
+
+;; run-pass1 :: [Insn] -> [(p, addr)]
+;;   First pass. create an abstract mapping [(p, xaddr)], where
+;;     p :: Symbol                         ; in case of label
+;;        | (Int,[(Symbol,Int)]) -> [Byte] ; closure to generate machine codes
+;;   and addr is a value of PC after the code is fetched.
+(define (run-pass1 insns)
+  (values-ref
+   (map-accum (match-lambda*
+                [((? symbol? label) addr) (values (cons label addr) addr)]
+                [(insn addr) (let* ((p (asm1 (parse-insn insn)))
+                                    (dummy (p addr #f))
+                                    (naddr (+ addr (length dummy))))
+                               (values (cons p naddr) naddr))])
+              0 insns)
+   0))
+
+;; run-pass2 :: [(p, xaddr)] -> [[Byte]]
+;;   Takes the result of first pass, calling the closure P to realize the
+;;   actual machine codes.
+(define (run-pass2 a-map)
+  (fold (^[p+addr seed]
+          (match-let1 (p . addr) p+addr
+            (if (symbol? p)
+              seed          ;ignore labels
+              (cons (p addr a-map) seed))))
+        '() a-map))
 
 ;; asm1 :: ParsedInsn -> (Int, [Symbol,Int]) -> [Byte]
-;;  First pass.  Returns a closure to generate the byte sequence of
-;;  machine instructions.
+;;  Called in pass 1.   The heart of instruction to machine code mapping.
+;;  Returns a closure to generate the byte sequence of machine instructions.
 ;;  The closure will take (1) The address of *next* instruction, and
 ;;  (2) an assoc list of labels to addresses.
 (define (asm1 pinsn)
