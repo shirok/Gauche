@@ -22,15 +22,15 @@
 (define (gen-stub-amd64 port)
   ;; When all args can be on registers
   (define-values (reg-code reg-labels)
-    (asm '(func: (.dataq 0)
-           farg0: (.dataq 0)
-           farg1: (.dataq 0)
-           farg2: (.dataq 0)
-           farg3: (.dataq 0)
-           farg4: (.dataq 0)
-           farg5: (.dataq 0)
-           farg6: (.dataq 0)
-           farg7: (.dataq 0)
+    (asm '(func:     (.dataq 0)
+           farg0:    (.dataq 0)
+           farg1:    (.dataq 0)
+           farg2:    (.dataq 0)
+           farg3:    (.dataq 0)
+           farg4:    (.dataq 0)
+           farg5:    (.dataq 0)
+           farg6:    (.dataq 0)
+           farg7:    (.dataq 0)
            entry6f7: (movsd (farg7:) %xmm7)
            entry6f6: (movsd (farg6:) %xmm6)
            entry6f5: (movsd (farg5:) %xmm5)
@@ -50,15 +50,15 @@
            end:)))
   ;; Spill case.
   (define-values (spill-code spill-labels)
-    (asm '(func: (.dataq 0)
-           farg0: (.dataq 0)
-           farg1: (.dataq 0)
-           farg2: (.dataq 0)
-           farg3: (.dataq 0)
-           farg4: (.dataq 0)
-           farg5: (.dataq 0)
-           farg6: (.dataq 0)
-           farg7: (.dataq 0)
+    (asm '(func:     (.dataq 0)
+           farg0:    (.dataq 0)
+           farg1:    (.dataq 0)
+           farg2:    (.dataq 0)
+           farg3:    (.dataq 0)
+           farg4:    (.dataq 0)
+           farg5:    (.dataq 0)
+           farg6:    (.dataq 0)
+           farg7:    (.dataq 0)
            entry6f7: (movsd (farg7:) %xmm7)
            entry6f6: (movsd (farg6:) %xmm6)
            entry6f5: (movsd (farg5:) %xmm5)
@@ -71,7 +71,7 @@
            entry5:   (movq #x0123456789 %r8)   ; ditto
            entry4:   (movq #x0123456789 %rcx)  ; ditto
            entry3:   (movq #x0123456789 %rdx)  ; ditto
-                     (movq (spill-size:) %rax)
+           init:     (movq #x01234567 %rax)    ; imm32 to be patched
                      (leaq (spill: %rip) %rsi)
            loop:     (movq (%rsi) %rdi)
                      (push %rdi)
@@ -82,11 +82,10 @@
            entry1:   (movq #x0123456789 %rdi)  ; ditto
            entry0:   (movb 0 %al)              ; imm8 to be patched
                      (call (func:))
-                     (addq (spill-size:) %rsp)
+           epilogue: (addq #x01234567 %rsp)    ; imm32 to be patched
                      (ret)
                      (.align 8)
-           spill-size: (.dataq 0)
-           spill:)))
+           spill:)))                           ; spill data to be filled
            
   (define (entry-offsets labels)  ;; numargs -> code vector offset
     (map (cut assq-ref labels <>) 
@@ -97,8 +96,6 @@
     (map (cut assq-ref labels <>)
          '(farg0: farg1: farg2: farg3: farg4: farg5: farg6: farg7:)))
   (define (end-addr labels) (assq-ref labels 'end:))
-  (define (size-offset labels)
-    (assq-ref labels 'spill-size:))
   (display ";; libnative.scm supplemental code.\n" port)
   (display ";; Generated automatically by gen-native.scm.  DO NOT EDIT.\n" port)
   (display "\n" port)
@@ -183,7 +180,6 @@
                                                 '%%call-native))
             (entry-offsets ',(entry-offsets spill-labels))
             (farg-offsets ',(farg-offsets spill-labels))
-            (size-offset ',(size-offset spill-labels))
             (spill-offset (^n (+ ,(assq-ref spill-labels 'spill:)
                                  (* n 8)))))
         (^[ptr args num-iargs num-fargs num-spills rettype]
@@ -221,11 +217,16 @@
                               (* num-spills 8))
                            *amd64-call-spill-code*
                            entry
-                           ,(size-offset spill-labels)
+                           ,(assq-ref spill-labels 'spill:)
                            entry
                            (list* `(0 p ,ptr)
                                   `(,(+ (~ entry-offsets 0) 1) b ,num-fargs)
-                                  `(,',(size-offset spill-labels) i ,(* 8 num-spills))
+                                  ;; +3 for movq imm32 offset
+                                  `(,',(+ (assq-ref spill-labels 'init:) 3)
+                                    i32 ,(* 8 num-spills))
+                                  ;; +3 for addq imm32 offset
+                                  `(,',(+ (assq-ref spill-labels 'epilogue:) 3)
+                                    i32 ,(* 8 num-spills))
                                   patcher)
                            rettype)))))
    :port port)
