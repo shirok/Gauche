@@ -16311,8 +16311,13 @@ Sends SIGKILL, SIGSTOP and SIGCONT to @var{process}, respectively.
 @end defun
 
 @defun process-shutdown process :key ask ask-interval ask-retry signals signal-interval
+@c EN
 Tries to terminate @var{process} in the gradually escalating means.
+@c JP
+@var{process}を、徐々に強力な方法を使って終了させようとします。
+@c COMMON
 
+@c EN
 The @var{ask} argument is, if not @code{#f}, a procedure taking one argument,
 the retry count.  The @var{ask} procedure is responsible to interact with
 @var{process} in a proper protocol (e.g. send @code{exit} command via
@@ -16325,7 +16330,21 @@ delay inbetween, incrementing the retry count
 argument.   If @var{ask} argument is @code{#f}, this step is skipped.
 The default value of @var{ask} is @code{#f}, @var{ask-interval} is
 50e6 ns (50ms), and @var{ask-retry} is 1.
+@c JP
+@var{ask}引数は、@code{#f}でなければ、試行回数を引数にとる手続きでなければなりません。
+@var{ask}手続きは@var{process}に何らかの方法で作用して終了を試みるものです
+(例えば、通信チャネルから@code{exit}コマンドを送る等)。
+@var{ask}を呼び出し後(戻り値は捨てられます)、プロセスの状態が検査され、
+プロセスがexitしたら直ちに@code{process-shutdown}は@code{#t}を返します。
+プロセスがすぐにexitしなければ、@var{ask-interval}ナノ秒おきに@var{ask}手続きが
+最大@var{retry}回まで呼び出されます。@var{ask}に渡される引数は呼び出しの度に
+インクリメントされます。
+@var{ask}引数に@code{#f}が渡された場合、このステップは省かれます。
+省略時のデフォルト値は、@var{ask}が@code{#f}、@var{ask-interval}が50e6 ns (50ms)、
+@var{ask-retry}が1です。
+@c COMMON
 
+@c EN
 If the first step fails, this procedure starts sending signals.
 The process's status is checked every time after a signal is sent.
 As soon as the process exists, @code{process-shutdown}
@@ -16335,11 +16354,29 @@ and the interval of sending signals is specified by @var{signal-interval}
 argument.  The default value of @var{signals} is
 @code{(list SIGTERM SIGTERM SIGKILL)}, and @var{singal-interval} is
 50e6 ns (50ms).
+@c JP
+最初のステップでプロセスが止まらなければ、次にシグナルを送り始めます。
+シグナルが送られるたびにプロセスの状態が検査され、終了していれば直ちに
+@code{process-shutdown}は@code{#t}を返します。
+どのシグナルが送られるかは@var{signals}引数で決まり、
+またシグナルを送る間隔は@var{signal-interval}で指定されます。
+@var{signals}のデフォルト値は@code{(list SIGTERM SIGTERM SIGKILL)}、
+@var{signal-interval}のデフォルト値は50e6 ns (50ms)です。
+@c COMMON
 
+@c EN
 If all the measures fail, @code{#f} is returned.
+@c JP
+全てを試みてもまだプロセスが終了していなければ、@code{#f}が返されます。
+@c COMMON
 
+@c EN
 (Hint: If you wants to keep sending signals until the process really
 exits, you can pass a circular list to the @var{signals}.)
+@c JP
+(ヒント: プロセスが終了するまでシグナルを送りつづけたければ、
+@var{signals}に循環リストを渡すことで実現できます)
+@c COMMON
 @end defun
 
 @node Process ports, Process connection, Process object, High-level process interface
