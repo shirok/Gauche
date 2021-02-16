@@ -238,6 +238,7 @@
     [(dir) (call-with-temporary-file 
             (^[port tmpname]
               (gen-stub-amd64 port)
+              (close-output-port port)
               (sys-rename tmpname #"~|dir|/native-supp.scm"))
             :directory dir :prefix "native-supp.scm")]
     [else  (exit 1 "Usage: gosh ./gen-native.scm <directory>")])
