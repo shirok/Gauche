@@ -16847,33 +16847,70 @@ in @var{str}.
 @subsection Process connection
 
 @deftp {Class} <process-connection>
+@c EN
 A connection abstraction to communicate with an external processs.
 Inherits @code{<connection>}.
 @xref{Connection framework}, for the details of the connection interface.
+@c JP
+外部プロセスとの通信を@code{<connection>}として見せるクラスです。
+コネクションインタフェースについては@ref{Connection framework}を参照してください。
+@c COMMON
 
+@c EN
 This is useful to give an external process to the code that expects
 connection.  For example, instead of direct network connection, you can
 insert a filter process between remote server and your client code.
+@c JP
+これを使うとコネクションを期待しているコードに外部プロセスを渡せます。
+例えばネットワークと通信する部分を、直接の通信のかわりにリモートサーバの間に
+フィルタプロセスを入れる、といったことが簡単にできます。
+@c COMMON
 @end deftp
 
 @defun make-process-connection process-or-spec
+@c EN
 Run an external process and returns a connection that's connected
 to standard I/O of the process.
+@c JP
+外部プロセスを起動し、その標準入出力とコネクションとして通信する
+コネクションオブジェクトを返します。
+@c COMMON
 
+@c EN
 You can pass a list of command and its arguments, or
-a @var{<process>} object, to the @var{process-or-spec} argument.
+a @code{<process>} object, to the @var{process-or-spec} argument.
 If you it's a @code{<process>} object, it's stdin and stdout
-is connected to pipes.  If it is a list, it is passed to @code{run-process}
+must be connected to pipes.  If it is a list, it is passed to @code{run-process}
 to run a new process.
+@c JP
+@var{process-or-spec}にはコマンドと引数からなるリストか、
+@code{<process>}オブジェクトを渡すことができます。
+@code{<process>}オブジェクトならそのプロセスの標準入力と標準出力はパイプに
+なっていなければなりません。
+リストの場合は、それが@code{run-process}に渡されて新たなプロセスが起動されます。
+@c COMMON
 
+@c EN
 Shutting down both channels of the connection terminates the process.
 Most processes that reads from stdin would exits after it reads EOF
 from input, so we just poll the process exit status for a short period of time.
 If the process doesn't exit, we send signals (first SIGTERM, then SIGKILL)
 to ensure the termination of the process.
+@c JP
+コネクションの入出力チャネルを両方ともシャットダウンすれば、プロセスは終了します。
+多くのプロセスは、標準入力からEOFを読むと終了するので、
+まずは標準入力へのチャネルをシャットダウンしてから少し待ちます。
+もしそれでプロセスが終了する気配を見せなかった場合、シグナルSIGTERMを送り、
+それでも終了しなかったらSIGKILLを送ります。
+@c COMMON
 
+@c EN
 Merely closing the connection doesn't terminate the process, so that
 the forked process can keep talking to the process.
+@c JP
+コネクションをクローズするだけではプロセスは終了しません。
+forkしたプロセスがまだ通信するかもしれないからです。
+@c COMMON
 @end defun
 
 
