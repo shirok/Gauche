@@ -76,25 +76,41 @@
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
 (define (do-htmls input makeinfo version-info)
+  (define draft? (#/DRAFT/ version-info))
   (define top-link 
-    (cond [(#/HEAD/ version-info) "https://github.com/shirok/Gauche"]
+    (cond [draft? "https://github.com/shirok/Gauche"]
           [(#/j\.texi$/ input)
            "https://practical-scheme.net/gauche/memo-j.html"]
           [else "https://practical-scheme.net/gauche/memo.html"]))
+  (define header-style (if draft? 
+                         "width:100%;background-color:#f88"
+                         "width:100%;background-color:#cfc"))
+  (define header-div #"<div style=\"~|header-style|\">\
+                        <p style=\"text-align:center\">\
+                          <a href=\"~|top-link|\">For ~|version-info|</a>\
+                        </p>\
+                      </div>")
+  (define draft-mark (if draft?
+                       "<div style=\"position:fixed;top:150px;right:0px;\
+                                     font:bold 70px Helvetica,sans-serif;\
+                                     color:#f00;opacity:0.4;\
+                                     transform:rotate(-90deg)\">\
+                         DRAFT\
+                       </div>"
+                       ""))
   (or (string-null? makeinfo)
       (not (check-makeinfo-version makeinfo "5.0"))
       (do-process (make-cmd
                    `(,makeinfo "--html"
                                "--split=section"
                                "--set-customization-variable"
-                               ,#"AFTER_BODY_OPEN=<div style=\"width:100%\" class=\"header\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div><hr>"
+                               ,#"AFTER_BODY_OPEN=~|header-div|<hr>"
                                "--set-customization-variable"
-                               ,#"PRE_BODY_CLOSE=<hr><div style=\"width:100%\" class=\"footer\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div>"
+                               ,#"PRE_BODY_CLOSE=<hr>~|header-div|~|draft-mark|"
                                "--set-customization-variable"
                                ,#"TOP_NODE_UP_URL=~|top-link|"
                                ,@(cond-list
-                                  [(#/HEAD/ version-info)
-                                   @ `("-o" ,#"~(path-sans-extension input)-head")])
+                                  [draft? @ `("-o" ,#"~(path-sans-extension input)-draft")])
                                "-"))
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
