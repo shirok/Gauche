@@ -1,3 +1,12 @@
+2021-02-16  Shiro Kawai  <shiro@acm.org>
+
+	* doc/Makefile.in, doc/makedoc.scm: New target 'make htmls-head'
+	  generates html docs for development HEAD: The header shows
+	  "Development HEAD" instead of Gauche version.  It is generated
+	  in a separate directory, gauche-ref[ej]-head, from the normal
+	  destination.  It is maily to publis the cutting-edge documentation
+	  on the web.
+
 2021-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/native.c, src/libnative.scm, ext/native: Experimenting FFI.

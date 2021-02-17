@@ -95,6 +95,9 @@ test :
 %/index.html : %.texi
 	$(MAKEDOC) htmls $< "$(MAKEINFO)" "$(VERSION_INFO)"
 
+%-head/index.html : %.texi
+	$(MAKEDOC) htmls $< "$(MAKEINFO)" "Development HEAD"
+
 %.info.gz : %.texi
 	$(MAKEDOC) info $< "$(MAKEINFO)" "$(GZIP_PROGRAM)"
 
@@ -112,6 +115,7 @@ srfis.texi : $(top_builddir)/src/srfis.scm
 texi : gauche-refe.texi gauche-refj.texi
 html : gauche-refe.html gauche-refj.html
 htmls : gauche-refe/index.html gauche-refj/index.html
+htmls-head : gauche-refe-head/index.html gauche-refj-head/index.html
 dvi : gauche-refe.dvi gauche-refj.dvi
 pdf : gauche-refe.pdf gauche-refj.pdf
 info : gauche-refe.info.gz gauche-refj.info.gz
@@ -135,7 +139,7 @@ clean:
 	      $(EXTRACTED:.texi=.info*) \
 	      $(EXTRACTED:.texi=.html)  \
 	      $(EXTRACTED)
-	rm -rf $(EXTRACTED:.texi=/)
+	rm -rf $(EXTRACTED:.texi=/) $(EXTRACTED:.texi=-head/)
 	rm -rf $(EXTRACTED:.texi=.t2d/)
 
 distclean : clean

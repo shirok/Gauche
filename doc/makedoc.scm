@@ -76,9 +76,11 @@
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
 (define (do-htmls input makeinfo version-info)
-  (define top-link (if (#/j\.texi$/ input)
-                     "https://practical-scheme.net/gauche/memo-j.html"
-                     "https://practical-scheme.net/gauche/memo.html"))
+  (define top-link 
+    (cond [(#/HEAD/ version-info) "https://github.com/shirok/Gauche"]
+          [(#/j\.texi$/ input)
+           "https://practical-scheme.net/gauche/memo-j.html"]
+          [else "https://practical-scheme.net/gauche/memo.html"]))
   (or (string-null? makeinfo)
       (not (check-makeinfo-version makeinfo "5.0"))
       (do-process (make-cmd
@@ -90,6 +92,9 @@
                                ,#"PRE_BODY_CLOSE=<hr><div style=\"width:100%\" class=\"footer\"><p style=\"text-align:center\"><a href=\"~|top-link|\">For ~|version-info|</a></p></div>"
                                "--set-customization-variable"
                                ,#"TOP_NODE_UP_URL=~|top-link|"
+                               ,@(cond-list
+                                  [(#/HEAD/ version-info)
+                                   @ `("-o" ,#"~(path-sans-extension input)-head")])
                                "-"))
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
