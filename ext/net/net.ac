@@ -17,7 +17,7 @@ AC_ARG_ENABLE(ipv6,
   [
     AS_CASE([$enableval],
       [no], [enable_ipv6=no],
-	    [enable_ipv6=yes])
+            [enable_ipv6=yes])
   ], [enable_ipv6=yes])
 
 dnl
@@ -50,7 +50,7 @@ dnl Check to see if the system provides sockaddr_storage
 dnl
 AS_CASE(["$target"],
  [*mingw*], [AC_CHECK_TYPES([struct sockaddr_storage],,,[@%:@include <windows.h>])],
-	    [AC_CHECK_TYPES([struct sockaddr_storage],,,[@%:@include <sys/socket.h>])])
+            [AC_CHECK_TYPES([struct sockaddr_storage],,,[@%:@include <sys/socket.h>])])
 
 dnl
 dnl Check if net/if.h and struct ifreq
@@ -121,7 +121,7 @@ dnl on netbsd. (2004/5/31)
 dnl
 AS_CASE(["$target"],
   [*-*-netbsd*], [ac_cv_func_gethostbyname_r=no],
-		 [AC_CHECK_FUNC(gethostbyname_r)])
+                 [AC_CHECK_FUNC(gethostbyname_r)])
 
 AS_IF([test $ac_cv_func_gethostbyname_r = 'yes'], [
   AC_CACHE_CHECK(number of arguments for gethostbyname_r,
@@ -144,7 +144,7 @@ AS_IF([test $ac_cv_func_gethostbyname_r != no], [
 dnl Kludge: DragonFly BSD's gethostbyaddr_r is broken
 AS_CASE(["$target"],
   [*-*-dragonfly*|*-*-netbsd*], [ac_cv_func_gethostbyaddr_r='no'],
-				[AC_CHECK_FUNC(gethostbyaddr_r)])
+                                [AC_CHECK_FUNC(gethostbyaddr_r)])
 
 AS_IF([test $ac_cv_func_gethostbyaddr_r = 'yes'], [
   AC_CACHE_CHECK(number of arguments for gethostbyaddr_r,
@@ -167,7 +167,7 @@ AS_IF([test $ac_cv_func_gethostbyaddr_r != no], [
 dnl exclude netbsd.  see the comment above.
 AS_CASE(["$target"],
   [*-*-netbsd*], [ac_cv_func_getprotobyname_r=no],
-		 [AC_CHECK_FUNC(getprotobyname_r)])
+                 [AC_CHECK_FUNC(getprotobyname_r)])
 
 AS_IF([test $ac_cv_func_getprotobyname_r = 'yes'], [
   AC_CACHE_CHECK(number of arguments for getprotobyname_r,
@@ -190,7 +190,7 @@ AS_IF([test $ac_cv_func_getprotobyname_r != no], [
 dnl exclude netbsd.  see the comment above.
 AS_CASE(["$target"],
   [*-*-netbsd*], [ac_cv_func_getprotobynumber_r=no],
-		 [AC_CHECK_FUNC(getprotobynumber_r)])
+                 [AC_CHECK_FUNC(getprotobynumber_r)])
 
 AS_IF([test $ac_cv_func_getprotobynumber_r = 'yes'], [
   AC_CACHE_CHECK(number of arguments for getprotobynumber_r,
@@ -213,7 +213,7 @@ AS_IF([test $ac_cv_func_getprotobynumber_r != no], [
 dnl exclude netbsd.  see the comment above.
 AS_CASE(["$target"],
   [*-*-netbsd*], [ac_cv_func_getservbyname_r=no],
-		 [AC_CHECK_FUNC(getservbyname_r)])
+                 [AC_CHECK_FUNC(getservbyname_r)])
 
 AC_CHECK_FUNC(getservbyname_r)
 AS_IF([test $ac_cv_func_getservbyname_r = 'yes'], [
@@ -237,7 +237,7 @@ AS_IF([test $ac_cv_func_getservbyname_r != no], [
 dnl exclude netbsd.  see the comment above.
 AS_CASE(["$target"],
   [*-*-netbsd*], [ac_cv_func_getservbyport_r=no],
-		 [AC_CHECK_FUNC(getservbyport_r)])
+                 [AC_CHECK_FUNC(getservbyport_r)])
 
 AS_IF([test $ac_cv_func_getservbyport_r = 'yes'], [
   AC_CACHE_CHECK(number of arguments for getservbyport_r,

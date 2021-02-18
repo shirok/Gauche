@@ -14,8 +14,8 @@ SCMFILES = tls.sci tls/mbed.scm tls/get-cacert.scm
 OBJECTS = $(TLS_OBJECTS) $(MBED_OBJECTS)
 
 TLS_OBJECTS = rfc--tls.$(OBJEXT) \
-              tls.$(OBJEXT)      \
-              $(EXTRA_OBJECTS)
+	      tls.$(OBJEXT)      \
+	      $(EXTRA_OBJECTS)
 
 MBED_OBJECTS = tls-mbed.$(OBJEXT)
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
@@ -50,7 +50,7 @@ AXTLS_OBJECTS = axTLS/ssl/asn1.$(OBJEXT)		\
 @GAUCHE_TLS_SWITCH_NONE@EXTRA_OBJECTS =
 
 @GAUCHE_TLS_SWITCH_AXTLS@EXTRA_INCLUDES = $(AXTLS_INCLUDES)
-@GAUCHE_TLS_SWITCH_NONE@EXTRA_INCLUDES = 
+@GAUCHE_TLS_SWITCH_NONE@EXTRA_INCLUDES =
 
 SSLTEST = axTLS/ssl/ssltest$(EXEEXT)
 SSLTEST_GENERATED = axTLS/ssl/test/ssltest.mod.c

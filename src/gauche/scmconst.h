@@ -58,4 +58,3 @@ SCM_EXTERN ScmObj Scm__ConstObjs[];   /* initialized in number.c */
 #define SCM_NUM_CONST_OBJS  14
 
 #endif /*GAUCHE_SCMCONST_H*/
-

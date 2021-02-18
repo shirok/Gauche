@@ -43,14 +43,14 @@
           u64array s64array f16array f32array f64array
           array-concatenate array-transpose array-rotate-90
           array-flip array-flip!
-          identity-array array-inverse determinant determinant! 
+          identity-array array-inverse determinant determinant!
           array-mul array-expt
-          array-div-left array-div-right 
+          array-div-left array-div-right
           array-add-elements array-add-elements!
           array-sub-elements array-sub-elements!
           array-negate-elements array-negate-elements!
           array-mul-elements array-mul-elements!
-          array-div-elements array-div-elements! 
+          array-div-elements array-div-elements!
           array-reciprocate-elements array-reciprocate-elements!
           pretty-print-array
           ))
@@ -59,9 +59,9 @@
 (autoload "gauche/matrix"
   array-concatenate array-transpose array-rotate-90 array-flip array-flip!
   identity-array array-inverse determinant determinant! array-mul array-expt
-  array-div-left array-div-right 
+  array-div-left array-div-right
   array-add-elements array-add-elements!
-  array-sub-elements array-sub-elements! 
+  array-sub-elements array-sub-elements!
   array-negate-elements array-negate-elements!
   array-mul-elements array-mul-elements!
   array-div-elements array-div-elements!
@@ -703,4 +703,3 @@
       (^[ind] (add! (array-ref ar ind)))
       (make-vector (array-rank ar)))
     (get)))
-

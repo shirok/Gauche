@@ -191,7 +191,7 @@ int Scm_EqualP(ScmObj x, ScmObj y)
     if (cx == cy && cx->compare) return (cx->compare(x, y, TRUE) == 0);
     else                         return FALSE;
 
- fallback: 
+ fallback:
     {
         /* Fall back to Scheme version. */
         static ScmObj equal_interleave_proc = SCM_UNDEFINED;

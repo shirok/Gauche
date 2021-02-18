@@ -7,8 +7,8 @@ SCM_CATEGORY = data
 include ../Makefile.ext
 
 LIBFILES = data--queue.$(SOEXT) \
-           data--trie.$(SOEXT) \
-           data--ring-buffer.$(SOEXT)
+	   data--trie.$(SOEXT) \
+	   data--ring-buffer.$(SOEXT)
 SCMFILES = queue.sci trie.sci ring-buffer.sci
 
 GENERATED = Makefile
@@ -49,5 +49,3 @@ data--ring-buffer.c ring-buffer.sci : $(top_srcdir)/libsrc/data/ring-buffer.scm
 
 
 install : install-std
-
-

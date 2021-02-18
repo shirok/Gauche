@@ -233,7 +233,7 @@ ScmObj Scm_Force(ScmObj obj)
  *  If you check whether the object is pair or not by SCM_PAIRP,
  *  it is 'forced' to become a pair.  The forcing is
  *  identity-preserving; that is, once a lazy pair is forced, the pointer
- *  now becomes a pair (actually, an extended pair).  It is a critical 
+ *  now becomes a pair (actually, an extended pair).  It is a critical
  *  attribute to make the forcing implicit---we can't do it for general
  *  values.   Since the forcing is implicit, majority of the code won't see
  *  ScmLazyPair.
@@ -247,7 +247,7 @@ ScmObj Scm_Force(ScmObj obj)
 
   (0) Initial state
     A lazypair is allocated on 4-word boundary, but we return a pointer to
-    the second word.  That makes the object look like odd-word boundary 
+    the second word.  That makes the object look like odd-word boundary
     aligned, a marker of Extended Pair (see priv/pairP.h).   The 'hidden'
     first word will be used for synchronization.
     NB: An extended pair must have preceding hidden word with 111 in the lower
@@ -627,4 +627,3 @@ int Scm_PairP(ScmObj x)
         return FALSE;
     }
 }
-

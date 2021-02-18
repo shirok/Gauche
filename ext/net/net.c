@@ -68,7 +68,7 @@ static void socket_finalize(ScmObj obj, void *data SCM_UNUSED)
     }
 }
 
-static void socket_print(ScmObj obj, ScmPort *port, 
+static void socket_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmSocket *sock = SCM_SOCKET(obj);
@@ -768,7 +768,7 @@ ScmObj Scm_SocketIoctl(ScmSocket *s, u_long request, ScmObj data)
 
 /*==================================================================
  * Windows/MinGW compatibility layer
- * Older MinGW lacks inet_pton/ntop.  
+ * Older MinGW lacks inet_pton/ntop.
  */
 #if defined(GAUCHE_WINDOWS) && !defined(InetNtopA)
 

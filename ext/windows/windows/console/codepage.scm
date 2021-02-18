@@ -264,4 +264,3 @@
   (let ([ces (sys-getenv "GAUCHE_WINDOWS_CONSOLE_CES")]
         [api (sys-getenv "GAUCHE_WINDOWS_CONSOLE_API")])
     (wrap-windows-console-standard-ports ces (boolean api))))
-

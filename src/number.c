@@ -253,7 +253,7 @@ static void init_default_endian()
     if (default_endian == NULL) {
         SCM_INTERNAL_MUTEX_LOCK(default_endian_mutex);
         if (default_endian == NULL) {
-            default_endian =  
+            default_endian =
                 Scm_BindPrimitiveParameter(Scm_GaucheModule(), "default-endian",
                                            SCM_OBJ(Scm_NativeEndian()), 0);
 
@@ -366,9 +366,9 @@ ScmObj Scm_MakeFlonumToNumber(double d, int exact)
 
 /*
  * Flonum decomposition
- */ 
+ */
 
-static inline void decode_double(double d, 
+static inline void decode_double(double d,
                                  u_long *mant1 SCM_UNUSED,
                                  u_long *mant0,
                                  int *exp, int *sign)
@@ -565,11 +565,11 @@ ScmHalfFloat Scm_DoubleToHalf(double v)
    an internal procedure; external procedure should use Scm_EncodeFlonum.
 
    On 64bit architecture, only mant1 is used for mantissa.
-   On 32bit architecture, mant1 is for lower 32bits of mantissa, and 
+   On 32bit architecture, mant1 is for lower 32bits of mantissa, and
    lower 20bits of mant0 is used for higher bits.
  */
 double Scm__EncodeDouble(u_long mant1,
-                         u_long mant0 SCM_UNUSED, 
+                         u_long mant0 SCM_UNUSED,
                          int exp, int signbit)
 {
     ScmIEEEDouble dd;
@@ -883,7 +883,7 @@ ScmFloatComplex Scm_GetFloatComplex(ScmObj z)
 {
     ScmFloatComplex c = 0.0f;
     if (SCM_COMPNUMP(z)) {
-        c = (float)SCM_COMPNUM_REAL(z) 
+        c = (float)SCM_COMPNUM_REAL(z)
             + (float)SCM_COMPNUM_IMAG(z) * _Complex_I;
     } else if (SCM_REALP(z)) {
         c = (float)Scm_GetDouble(z);
@@ -897,7 +897,7 @@ ScmDoubleComplex Scm_GetDoubleComplex(ScmObj z)
 {
     ScmDoubleComplex c = 0.0f;
     if (SCM_COMPNUMP(z)) {
-        c = SCM_COMPNUM_REAL(z) 
+        c = SCM_COMPNUM_REAL(z)
             + SCM_COMPNUM_IMAG(z) * _Complex_I;
     } else if (SCM_REALP(z)) {
         c = Scm_GetDouble(z);
@@ -1355,11 +1355,11 @@ double Scm_GetDouble(ScmObj obj)
         /* This is more subtle than it appears.  A naive approach is to
            convert numerator and denominator to double, and do flonum division.
            However,
-           - Denominator and/or numerator may exceed FLT_MAX, yielding 
+           - Denominator and/or numerator may exceed FLT_MAX, yielding
              infinities in the intermediate results.  However, their ratio
              can be in a valid flonum range.
            - If denominator and/or numerator requires more than 53bit precision,
-             converting each to double causes rounding, which occurs before 
+             converting each to double causes rounding, which occurs before
              the final division, causing ULP-off error.
              E.g.  (inexact (/ (+ 1 (* (exact (flonum-epsilon)) 33/100)) 1))
              should be 1, but would yield 1.0000000000000002 if the numerator
@@ -1373,7 +1373,7 @@ double Scm_GetDouble(ScmObj obj)
         int d_dp = double_precision(denom, &d_hi, &d_lo);
 
         if (!(n_dp && d_dp)) goto fullpath;
-            
+
         double dnumer = Scm_GetDouble(numer);
         double ddenom = Scm_GetDouble(denom);
 
@@ -1393,7 +1393,7 @@ double Scm_GetDouble(ScmObj obj)
             result = dnumer/ddenom;
             SCM_FP_ENSURE_DOUBLE_PRECISION_END();
             return result;
-        } 
+        }
     fullpath:;
         /* Need more precise but expensive calculation.
            We find K such that 2^K * numer >= 2^54 * denom, so that
@@ -1412,7 +1412,7 @@ double Scm_GetDouble(ScmObj obj)
            Less than 53bits of quo is used, so we have to mask out the
            unncessary digit.  (Otherwise, it causes double-rounding.) */
         if (shift > 1076) {
-            ScmObj mask = 
+            ScmObj mask =
                 Scm_LogNot(Scm_Sub(Scm_Ash(SCM_MAKE_INT(1), shift-1076-1),
                                    SCM_MAKE_INT(1)));
             if (Scm_Sign(quo) < 0) {
@@ -1421,7 +1421,7 @@ double Scm_GetDouble(ScmObj obj)
                 quo = Scm_LogAnd(quo, mask);
             }
         }
-        
+
         int q_hi, q_lo;
         if (double_precision(quo, &q_hi, &q_lo)) {
             /* Result fits in double precision. */
@@ -3539,7 +3539,7 @@ static void spill_fixup(ScmDString *ds, int numstart)
    If it's true, we first generate optimal decimal notation, then round.
    */
 static void print_double(ScmDString *ds, double val, int plus_sign,
-                         int precision, int notational, 
+                         int precision, int notational,
                          int exp_lo, int exp_hi, int exp_width)
 {
     /* Handle a few special cases first. */
@@ -3790,7 +3790,7 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
     }
 }
 
-static void number_print(ScmObj obj, ScmPort *port, 
+static void number_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_PrintNumber(port, obj, NULL);
@@ -4370,8 +4370,8 @@ static ScmObj read_real(const char **strp, int *lenp,
                                                 Scm_MakeInteger(exponent-fracdigs)));
         if (minusp) return Scm_Negate(e);
         else        return e;
-    } 
-      
+    }
+
     /* Get double approximaiton of fraction.  If fraction >= 2^53 we'll
        only get approximation, but the error will be corrected in
        AlgorithmR.  We have to be careful, however, not to overflow
@@ -4392,7 +4392,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     } else {
         realnum = raise_pow10(realnum, raise_factor);
     }
-    
+
     if (SCM_IS_INF(realnum)) {
         /* Exponent is too big. */
         return (minusp? SCM_NEGATIVE_INFINITY : SCM_POSITIVE_INFINITY);

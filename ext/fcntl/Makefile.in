@@ -23,4 +23,3 @@ gauche--fcntl.c fcntl.sci : fcntl.scm
 	$(PRECOMP) -e -P -o gauche--fcntl $(srcdir)/fcntl.scm
 
 install : install-std
-

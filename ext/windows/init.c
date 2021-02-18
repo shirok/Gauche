@@ -58,4 +58,3 @@ SCM_EXTENSION_ENTRY void Scm_Init_os__windows(void)
 {
 }
 #endif /*!defined(GAUCHE_WINDOWS)*/
-

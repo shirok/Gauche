@@ -41,11 +41,11 @@
 
 (select-module gauche.bootstrap)
 
-(inline-stub 
+(inline-stub
  (.include "gauche/priv/nativeP.h")
  (define-cproc %%call-native (tstart::<fixnum>
                               tend::<fixnum>
-                              code::<uvector> 
+                              code::<uvector>
                               start::<fixnum>
                               end::<fixnum>
                               entry::<fixnum>

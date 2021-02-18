@@ -69,7 +69,7 @@ struct ScmComparatorRec {
       has dummy procedure)
 
    SCM_COMPARATOR_ANY_TYPE - The comparator can accept any Scheme object.
-     A small optimization to skip type tests.   
+     A small optimization to skip type tests.
 
    SCM_COMPARATOR_USE_COMPARISON - Records the fact that #t is passed
      to the equality-test in srfi-114 style constructor.  We use compareFn

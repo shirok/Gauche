@@ -80,4 +80,3 @@ SCM_EXTERN ScmObj Scm_Vsprintf(const char *fmt, va_list args, int sharedp);
 
 
 #endif  /*GAUCHE_WRITER_H*/
-

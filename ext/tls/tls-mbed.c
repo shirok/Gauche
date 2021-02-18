@@ -69,7 +69,7 @@ typedef struct ScmMbedTLSRec {
     ScmString *server_name;
 } ScmMbedTLS;
 
-/* 
+/*
  * 'system ca-bundle support
  */
 #include "load_system_cert.c"
@@ -77,8 +77,8 @@ typedef struct ScmMbedTLSRec {
 #ifdef HAVE_WINCRYPT_H
 static int mem_loader(ScmTLS *t, BYTE *pbCertEncoded, DWORD cbCertEncoded)
 {
-    return mbedtls_x509_crt_parse_der(&((ScmMbedTLS*)t)->ca, 
-                                      pbCertEncoded, 
+    return mbedtls_x509_crt_parse_der(&((ScmMbedTLS*)t)->ca,
+                                      pbCertEncoded,
                                       cbCertEncoded);
 }
 
@@ -92,7 +92,7 @@ static int file_loader(ScmTLS *t, const char *path)
     return mbedtls_x509_crt_parse_file(&((ScmMbedTLS*)t)->ca, path);
 }
 
-static ScmObj load_system_cert(ScmMbedTLS *t SCM_UNUSED) { 
+static ScmObj load_system_cert(ScmMbedTLS *t SCM_UNUSED) {
     return system_cert_loader((ScmTLS*)t, file_loader);
 }
 #endif
@@ -116,7 +116,7 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     mbed_context_check(t, "connect");
     const char* pers = "Gauche";
     if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-			     (const unsigned char *)pers, strlen(pers)) != 0) {
+                             (const unsigned char *)pers, strlen(pers)) != 0) {
         Scm_SysError("mbedtls_ctr_drbg_seed() failed");
     }
 
@@ -126,9 +126,9 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     t->conn.fd = fd;
 
     if (mbedtls_ssl_config_defaults(&t->conf,
-				    MBEDTLS_SSL_IS_CLIENT,
-				    MBEDTLS_SSL_TRANSPORT_STREAM,
-				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
+                                    MBEDTLS_SSL_IS_CLIENT,
+                                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                                    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
         Scm_SysError("mbedtls_ssl_config_defaults() failed");
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
@@ -182,7 +182,7 @@ static ScmObj mbed_accept(ScmTLS* tls, int fd)
 
     const char* pers = "Gauche";
     if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-			     (const unsigned char *)pers, strlen(pers)) != 0) {
+                             (const unsigned char *)pers, strlen(pers)) != 0) {
         Scm_SysError("mbedtls_ctr_drbg_seed() failed");
     }
 
@@ -192,9 +192,9 @@ static ScmObj mbed_accept(ScmTLS* tls, int fd)
     t->conn.fd = fd;
 
     if (mbedtls_ssl_config_defaults(&t->conf,
-				    MBEDTLS_SSL_IS_SERVER,
-				    MBEDTLS_SSL_TRANSPORT_STREAM,
-				    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
+                                    MBEDTLS_SSL_IS_SERVER,
+                                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                                    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
         Scm_SysError("mbedtls_ssl_config_defaults() failed");
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);

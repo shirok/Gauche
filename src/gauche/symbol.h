@@ -101,4 +101,3 @@ SCM_EXTERN ScmObj Scm_KeywordToString(ScmKeyword *k);
     Scm_GetKeyword(SCM_MAKE_KEYWORD(cstr), list, fallback)
 
 #endif /* GAUCHE_SYMBOL_H */
-

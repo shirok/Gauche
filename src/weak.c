@@ -219,7 +219,7 @@ void *Scm_WeakBoxRef(ScmWeakBox *wbox)
 #define MARK_GONE_ENTRY(ht, e)  (ht->goneEntries++)
 
 
-static void weakhash_print(ScmObj obj, ScmPort *port, 
+static void weakhash_print(ScmObj obj, ScmPort *port,
                            ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmWeakHashTable *ht = SCM_WEAK_HASH_TABLE(obj);

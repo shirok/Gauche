@@ -286,7 +286,7 @@
                (if (<= v end)
                  (eof-object)
                  (begin (inc! k) v))))))))
-        
+
 
 ;;;
 ;;; Generator operations
@@ -672,7 +672,7 @@
 
 ;; NB: The following consumers are built-in (libproc.scm)
 ;; generator-fold generator-fold-right
-;; genergenerator-for-each generator-map generator-find 
+;; genergenerator-for-each generator-map generator-find
 
 (define (%generator->list gen reverse? n)
   (if (integer? n)
@@ -734,7 +734,7 @@
 (define (generator->bytevector! vec at gen)
   (check-arg u8vector? vec)
   (generator->uvector! vec at gen))
-  
+
 (define (generator->string gen :optional (n #f))
   (with-output-to-string
     (^[]
@@ -768,7 +768,7 @@
 (define (generator-count pred gen)
   (rlet1 n 0
     (do-generator [v gen] (when (pred v) (inc! n)))))
-  
+
 (define (generator-unfold gen unfold . args)
   (apply unfold eof-object? identity (^_ (gen)) (gen) args))
 

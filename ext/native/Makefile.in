@@ -24,4 +24,3 @@ gauche--ffitest.c ffitest.sci : ffitest.scm
 
 # We don't install the module.
 install :
-

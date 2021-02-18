@@ -16,7 +16,7 @@
 ;; This is kinda ad-hockery but we expect we won't add more dependencies
 ;; to GPL libs in the main distribution.
 
-;; NB: Similar case for rfc.tls.mbed.  The license of mbedTLS is 
+;; NB: Similar case for rfc.tls.mbed.  The license of mbedTLS is
 ;; Apache 2.0, so it's not so much of a problem.  It's just that if
 ;; you don't want the standalone binary to depend on libmbedtls DSO.
 
@@ -124,7 +124,7 @@
             #"  {"
             #"    const char *initfn_names[] = { ~(cgen-safe-string (string-append \"_\" initfn)), NULL };"
             #"    void (*initfns[])(void) = { ~initfn, NULL };"
-            
+
             #"    Scm_RegisterPrelinked(SCM_STRING(~(cgen-cexpr str)), initfn_names, initfns);"
             #"   }"))))
 
@@ -280,7 +280,7 @@
          [dso-map (classify-dsos (gather-dsos modules-to-exclude))]
          ;; scm-map : key => ((module partialpath path) ...)
          [scm-map (classify-scms (get-scheme-paths) dso-map)])
-    (generate-c "staticinit" "Scm_InitPrelinked" #t 
+    (generate-c "staticinit" "Scm_InitPrelinked" #t
                 (hash-table-get scm-map #t)
                 (hash-table-get dso-map #t))
     (generate-c "staticinit_gdbm" "Scm_InitPrelinked_gdbm" #f

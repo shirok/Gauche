@@ -403,12 +403,12 @@
 (define (make-stacked-map cmpr . maps)
   (if (comparator? cmpr)
     (make <stacked-map> :key-comparator cmpr :stack maps)
-    (make <stacked-map> 
+    (make <stacked-map>
       :key-comparator (dict-comparator cmpr) ; cmpt is the first map
       :stack (cons cmpr maps))))
 
 (define-method stacked-map-stack ((smap <stacked-map>) (dict <dictionary>))
-  (make <stacked-map> 
+  (make <stacked-map>
     :key-comparator (slot-ref smap 'key-comparator)
     :stack (cons dict (slot-ref smap 'stack))))
 
@@ -420,7 +420,7 @@
   (length (slot-ref smap 'stack)))
 
 ;; These two alters the specific map that contains the key.
-(define-method stacked-map-entry-update! ((smap <stacked-map>) key proc 
+(define-method stacked-map-entry-update! ((smap <stacked-map>) key proc
                                           :optional fallback)
   (let loop ([ms (slot-ref smap 'stack)])
     (cond [(null? ms) #f]

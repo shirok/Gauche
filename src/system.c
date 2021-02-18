@@ -361,12 +361,12 @@ ScmObj Scm_GetCwd(void)
  * Mmap (sys/mman.h)
  */
 
-static void mem_print(ScmObj obj, ScmPort *port, 
+static void mem_print(ScmObj obj, ScmPort *port,
                       ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmMemoryRegion *m = SCM_MEMORY_REGION(obj);
 
-    
+
     Scm_Printf(port, "#<memory-region %p[%lx] (%s%s%s)>", m->ptr, m->size,
                (m->prot & PROT_READ)?  "r":"",
                (m->prot & PROT_WRITE)? "w":"",
@@ -374,7 +374,7 @@ static void mem_print(ScmObj obj, ScmPort *port,
 }
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_MemoryRegionClass,
-                         mem_print, NULL, NULL, NULL, 
+                         mem_print, NULL, NULL, NULL,
                          SCM_CLASS_DEFAULT_CPL);
 
 static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
@@ -404,7 +404,7 @@ ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
 {
 #if !defined(GAUCHE_WINDOWS)
     void *ptr;
-    SCM_SYSCALL3(ptr, mmap(addrhint, len, prot, flags, fd, off), 
+    SCM_SYSCALL3(ptr, mmap(addrhint, len, prot, flags, fd, off),
                  ptr == MAP_FAILED);
     if (ptr == MAP_FAILED) Scm_SysError("mmap failed");
     ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
@@ -557,7 +557,7 @@ ScmObj Scm_NormalizePathname(ScmString *pathname, int flags)
 {
     static ScmObj proc = SCM_UNDEFINED;
     SCM_BIND_PROC(proc, "sys-normalize-pathname", Scm_GaucheModule());
-    
+
     ScmObj h = SCM_NIL, t = SCM_NIL;
     SCM_APPEND1(h, t, SCM_OBJ(pathname));
     if (flags & SCM_PATH_ABSOLUTE) {
@@ -821,7 +821,7 @@ static ScmSmallInt stat_hash(ScmObj obj, ScmSmallInt salt, u_long flags)
                                            salt, flags), \
         Scm_CombineHashValue(Scm_Int64Hash((int64_t)s->SCM_CPP_CAT(st_, name).tv_nsec, \
                                            salt, flags),h))
-                             
+
 
     STAT_HASH_UI(mode);
     STAT_HASH_UI(ino);
@@ -982,7 +982,7 @@ static ScmObj time_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(t);
 }
 
-static void time_print(ScmObj obj, ScmPort *port, 
+static void time_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmTime *t = SCM_TIME(obj);
@@ -1103,7 +1103,7 @@ int Scm_ClockGetTimeMonotonic(u_long *sec, u_long *nsec)
 {
 #if defined(__APPLE__) && defined(__MACH__)
     if (tinfo.denom == 0) {
-	(void)mach_timebase_info(&tinfo);
+        (void)mach_timebase_info(&tinfo);
     }
     uint64_t t = mach_absolute_time();
     uint64_t ns = t * tinfo.numer / tinfo.denom;
@@ -1142,16 +1142,16 @@ int Scm_ClockGetResMonotonic(u_long *sec, u_long *nsec)
 {
 #if defined(__APPLE__) && defined(__MACH__)
     if (tinfo.denom == 0) {
-	(void)mach_timebase_info(&tinfo);
+        (void)mach_timebase_info(&tinfo);
     }
     if (tinfo.numer <= tinfo.denom) {
-	/* The precision is finer than nano seconds, but we can only
-	   represent nanosecond resolution. */
-	*sec = 0;
-	*nsec = 1;
+        /* The precision is finer than nano seconds, but we can only
+           represent nanosecond resolution. */
+        *sec = 0;
+        *nsec = 1;
     } else {
-	*sec = 0;
-	*nsec = tinfo.numer / tinfo.denom;
+        *sec = 0;
+        *nsec = tinfo.numer / tinfo.denom;
     }
     return TRUE;
 #elif defined(GAUCHE_WINDOWS)
@@ -1499,7 +1499,7 @@ static int grp_compare(ScmObj x, ScmObj y, int equalp)
 {
     ScmSysGroup *gx = SCM_SYS_GROUP(x);
     ScmSysGroup *gy = SCM_SYS_GROUP(y);
-    
+
     if (equalp) {
         return (Scm_EqualP(gx->name, gy->name)
                 && Scm_EqualP(gx->gid, gy->gid)
@@ -1594,7 +1594,7 @@ static ScmClassStaticSlotSpec grp_slots[] = {
  *   Patch provided by Yuuki Takahashi (t.yuuki@mbc.nifty.com)
  */
 
-static void pwd_print(ScmObj obj, ScmPort *port, 
+static void pwd_print(ScmObj obj, ScmPort *port,
                       ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<sys-passwd %S>",
@@ -1946,7 +1946,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
                                &pi); /* process info */
         if (hs != NULL) {
             for (int i=0; i<3; i++) {
-                /* hs[i].h may be a handle duped in win_prepare_handles(). 
+                /* hs[i].h may be a handle duped in win_prepare_handles().
                    We have to close it in parent process or they would be
                    inherited to subsequent child process.  (The higher-level
                    Scheme routine closes the open end of the pipe, but that
@@ -2524,7 +2524,7 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 
     int result = 0;
     wchar_t *prev_mem = NULL;
-    
+
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     if (overwrite || _wgetenv(wname) == NULL) {
         result = _wputenv(wnameval);
@@ -2535,7 +2535,7 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
             /* SCM_DICT_VALUE is only for ScmObj, so we directly access value
                field here. */
             prev_mem = (wchar_t*)e->value;
-            e->value = (intptr_t)wnameval; 
+            e->value = (intptr_t)wnameval;
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
@@ -2567,7 +2567,7 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
 
     int result = 0;
     char *prev_mem = NULL;
-    
+
     (void)SCM_INTERNAL_MUTEX_LOCK(env_mutex);
     if (overwrite || getenv(name) == NULL) {
         result = putenv(nameval);
@@ -2578,7 +2578,7 @@ void Scm_SetEnv(const char *name, const char *value, int overwrite)
             /* SCM_DICT_VALUE is only for ScmObj, so we directly access value
                field here. */
             prev_mem = (char*)e->value;
-            e->value = (intptr_t)nameval; 
+            e->value = (intptr_t)nameval;
         }
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(env_mutex);
@@ -2627,7 +2627,7 @@ ScmObj Scm_Environ(void)
 #  if defined(HAVE_CRT_EXTERNS_H)
     char **environ = *_NSGetEnviron();  /* OSX Hack*/
 #  endif
-    ScmObj r = (environ == NULL 
+    ScmObj r = (environ == NULL
                 ? SCM_NIL
                 : Scm_CStringArrayToList((const char**)environ, -1,
                                          SCM_STRING_COPYING));
@@ -2990,14 +2990,14 @@ ScmObj Scm_WinGetPipeName(HANDLE h)
 {
     if (GetFileType(h) != FILE_TYPE_PIPE) return SCM_FALSE;
     static BOOL (WINAPI *pGetFileInformationByHandleEx)(HANDLE,
-							X_FILE_INFO_BY_HANDLE_CLASS,
-							LPVOID, DWORD) = NULL;
-    
+                                                        X_FILE_INFO_BY_HANDLE_CLASS,
+                                                        LPVOID, DWORD) = NULL;
+
     if (pGetFileInformationByHandleEx == NULL) {
-	pGetFileInformationByHandleEx = 
-	    get_api_entry(_T("kernel32.dll"),
-			  "GetFileInformationByHandleEx",
-			  FALSE);
+        pGetFileInformationByHandleEx =
+            get_api_entry(_T("kernel32.dll"),
+                          "GetFileInformationByHandleEx",
+                          FALSE);
     }
     if (pGetFileInformationByHandleEx == NULL) return SCM_FALSE;
 
@@ -3005,7 +3005,7 @@ ScmObj Scm_WinGetPipeName(HANDLE h)
     X_FILE_NAME_INFO *info = SCM_MALLOC_ATOMIC(size);
     BOOL r = pGetFileInformationByHandleEx(h, X_FileNameInfo, info, size);
     if (!r) return SCM_FALSE;
-    
+
     info->FileName[info->FileNameLength / sizeof(WCHAR)] = 0;
     return SCM_MAKE_STR_COPYING(SCM_WCS2MBS(info->FileName));
 }
@@ -3025,7 +3025,7 @@ int utimensat(int dirfd SCM_UNUSED,
     struct utimbuf buf;
     buf.actime = times[0].tv_sec;
     buf.modtime = times[1].tv_sec;
-    
+
     if (times[0].tv_nsec == UTIME_NOW) {
         buf.actime = time(NULL);
     }
@@ -3033,7 +3033,7 @@ int utimensat(int dirfd SCM_UNUSED,
         buf.modtime = time(NULL);
     }
     /* TODO: UTIME_OMIT case */
-    
+
     return utime(path, &buf);
 }
 #endif /*!HAVE_UTIMENSAT*/
@@ -3376,7 +3376,7 @@ void Scm__InitSystem(void)
     Scm_InitStaticClass(&Scm_SysTmClass, "<sys-tm>", mod, tm_slots, 0);
     Scm_InitStaticClass(&Scm_SysGroupClass, "<sys-group>", mod, grp_slots, 0);
     Scm_InitStaticClass(&Scm_SysPasswdClass, "<sys-passwd>", mod, pwd_slots, 0);
-#if defined(HAVE_SYS_MMAN_H)    
+#if defined(HAVE_SYS_MMAN_H)
     Scm_InitStaticClass(&Scm_MemoryRegionClass, "<memory-region>", mod, NULL, 0);
 #endif
 #ifdef HAVE_SELECT

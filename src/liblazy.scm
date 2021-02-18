@@ -95,7 +95,7 @@
              (and (< step 0) (<= start end))) '()]
         [(= step 0) (generator->lseq (^[] start))]
         [(and (exact? start) (exact? step))
-         (generator->lseq start 
+         (generator->lseq start
                           (if (> step 0)
                             (^[] (inc! start step)
                               (if (< start end) start (eof-object)))

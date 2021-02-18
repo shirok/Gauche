@@ -151,7 +151,7 @@
 (define-builtin-inliner--/ /. NUMIDIV2 ensure-inexact-const)
 
 ;; NB: If we detect exact division-by-zero case, we shouldn't fold
-;; the constant and let it be handled at runtime.  
+;; the constant and let it be handled at runtime.
 (define-builtin-inliner /
   (^[src args]
     (match args
@@ -234,7 +234,7 @@
          (match args
            [(vec ind) ($asm src `(,UVEC-REF ,,%type) `(,vec ,ind))]
            [else (undefined)])))))
-    
+
 (define-builtin-inliner-uvref s8 S8)
 (define-builtin-inliner-uvref u8 U8)
 (define-builtin-inliner-uvref s16 S16)
@@ -312,4 +312,3 @@
                                          (list ($gref values.) ($lref r))))))
                     )))))]
       [_ (undefined)])))
-

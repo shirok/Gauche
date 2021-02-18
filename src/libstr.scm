@@ -480,8 +480,8 @@
     s))
 
 (define-cproc string-complete->incomplete (str::<string>)
-  (return (Scm_CopyStringWithFlags str 
-                                   SCM_STRING_INCOMPLETE 
+  (return (Scm_CopyStringWithFlags str
+                                   SCM_STRING_INCOMPLETE
                                    SCM_STRING_INCOMPLETE)))
 
 ;; handling : #f | :omit | :replace | :escape

@@ -162,7 +162,7 @@
 
  (define-cproc sparse-table-comparator (st::<sparse-table>)
    (return (SCM_OBJ (-> st comparator))))
- 
+
  (define-cproc sparse-table-num-entries (st::<sparse-table>) ::<ulong>
    (return (-> st numEntries)))
 
@@ -387,7 +387,7 @@
 (define-refset <sparse-f64vector>)
 
 ;; sparse vector comparator is just a singleton.
-(define *sparse-vector-comparator* 
+(define *sparse-vector-comparator*
   (make-comparator/compare (^x (and (exact? x) (integer? x) (>= x 0)))
                            eqv? compare eqv-hash
                            'sparse-vector-comparator))
@@ -417,7 +417,7 @@
      `(if (== ,oor NULL)
         (Scm_Error ,#"~|which| index is out of range: %S" ,which)
         (begin (set! (* ,oor) ,oorval) (return 0)))])
-  
+
   ;; Calculate linear index from 2d indexes (x,y) by interleaving the bits.
   ;; When the input is out of range, if OOR is provided it is set;
   ;; otherwise an error is signaled.
@@ -428,7 +428,7 @@
   ;; So we adopt 4 bits interleaving instead.
   (.define INTERLEAVE_SHIFT 4)
   (.define INTERLEAVE_MASK (- (<< 1UL INTERLEAVE_SHIFT) 1))
-  
+
   (define-cfn index-combine-2d (x y oor::int*)
     ::u_long :static
     (unless (SCM_INTEGERP x)
@@ -565,7 +565,7 @@
     (SparseVectorIterInit iter sv)
     (return
      (Scm_MakeSubr sparse-matrix-iter iter 1 0 '"sparse-matrix-iterator"))))
-       
+
 (define-cproc sparse-matrix-update! (sv::<sparse-matrix> x y proc
                                                          :optional fallback)
   ;; NB: We use j to pass the index to continuation proc, for it will be
@@ -624,7 +624,7 @@
 
 (define (sparse-matrix-values sv)
   (sparse-matrix-fold sv (^[x y v s] (cons v s)) '()))
-  
+
 ;;===============================================================
 ;; protocols
 ;;
@@ -657,4 +657,3 @@
   :pop!      sparse-vector-pop!
   :push!     sparse-vector-push!
   :update!   sparse-vector-update!)
-

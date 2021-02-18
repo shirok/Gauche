@@ -39,7 +39,7 @@
 (define-module gauche.vm.code
   (export vm-dump-code vm-code->list vm-insn-build
           vm-insn-code->name vm-insn-name->code
-          
+
           make-compiled-code-builder
           compiled-code-emit0! compiled-code-emit0o!
           compiled-code-emit0i! compiled-code-emit0oi!
@@ -202,7 +202,7 @@
 
 (select-module gauche)
 (inline-stub
-  ;; <compiled-code> class is visible 
+  ;; <compiled-code> class is visible
  (define-cclass <compiled-code>
    "ScmCompiledCode*" "Scm_CompiledCodeClass"
    (c "SCM_CLASS_DEFAULT_CPL")

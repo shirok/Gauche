@@ -719,7 +719,7 @@ static inline void fill_current_insn(cc_builder *b, int code)
         }
     }
 #undef SET_LREF_ARGS
-    
+
     /* Compose insn word */
     switch (Scm_VMInsnNumParams(code)) {
     case 0: b->currentInsn = SCM_VM_INSN(code); break;
@@ -986,4 +986,3 @@ ScmWord Scm_VMInsnBuild(ScmObj obj)
     Scm_Error("Bad VM insn spec: %S", obj);
     return 0;       /* dummy */
 }
-

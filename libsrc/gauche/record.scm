@@ -400,7 +400,7 @@
            (errorf "slot ~a of record ~s is immutable" field rtd))
          (^(o v) (,@mutator* o k v))))
      ))
-  
+
 (define-rtd-methods <record-meta>
   %record-ctor
   ((with-module gauche.object %record-ref) rtd)
@@ -448,7 +448,7 @@
 ;;; Syntactic layer
 ;;;
 
-(define-syntax define-record-type 
+(define-syntax define-record-type
   (er-macro-transformer
    (^[f r c]
      (define (parse-type-spec type-spec)
@@ -459,7 +459,7 @@
           (let-keywords opts ([mixins #f]
                               [metaclass #f])
             (values name parent
-                    (cond-list [mixins @ (quasirename r 
+                    (cond-list [mixins @ (quasirename r
                                            `(:mixins (list ,@mixins)))]
                                [metaclass @ (quasirename r
                                               `(:metaclass ,metaclass))])))]
@@ -481,7 +481,7 @@
        (match ctor-spec
          [#f '()]
          [#t (quasirename r
-               `((define-inline ,(sym+ 'make- typename) 
+               `((define-inline ,(sym+ 'make- typename)
                    (rtd-constructor ,typename))))]
          [((? identifier? ctor-name) field ...)
           (quasirename r
@@ -513,7 +513,7 @@
                               (rtd-accessor ,typename ',f)))])
             field-specs))
      (define (build-mutators typename field-specs)
-       (append-map 
+       (append-map
         (match-lambda
           [(f a m) (quasirename r
                      `((define-inline ,m

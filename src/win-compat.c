@@ -56,4 +56,3 @@ static const char *wcs2mbs(const WCHAR *s, int use_gc,
     }
     return mb;
 }
-

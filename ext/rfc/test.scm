@@ -190,7 +190,7 @@ Content-Length: 4349
                  (begin
                    (test* (format "rfc822-write-headers error (~a)" expect)
                           expect
-                          (guard (e (else (rxmatch-case 
+                          (guard (e (else (rxmatch-case
                                               (condition-message e "")
                                             [#/\(([\w-]+)\)/ (_ m) m]
                                             [else e])))
@@ -210,7 +210,7 @@ Content-Length: 4349
   (test-reason "stray-crlf" '(("name" "Shiro\nKawai")))
   (test-reason "line-too-long" `(("name" ,(make-string 1000 #\a))))
   )
-        
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.mime")
 (use rfc.mime)
@@ -450,7 +450,7 @@ Content-Length: 4349
                        ("content-type" ,#"multipart/mixed; boundary=\"~|boundary|\""))
                      (cut mime-body->string <> <>)))
               #f)))))
-                     
+
 (dotimes (n 8) (mime-roundtrip-tester n))
-    
+
 (test-end)

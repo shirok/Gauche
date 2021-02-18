@@ -248,7 +248,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 #if GAUCHE_SPLIT_STACK
     v->lastErrorCont = NULL;
 #endif /*GAUCHE_SPLIT_STACK*/
- 
+
     v->evalSituation = SCM_VM_EXECUTING;
 
     sigemptyset(&v->sigMask);
@@ -819,9 +819,9 @@ static void vm_unregister(ScmVM *vm)
    Otherwise thie procedure won't return.
 */
 
-static void wna(ScmVM *vm SCM_UNUSED, 
-                ScmObj proc, 
-                int ngiven, 
+static void wna(ScmVM *vm SCM_UNUSED,
+                ScmObj proc,
+                int ngiven,
                 int foldlen SCM_UNUSED)
 {
     int reqargs = SCM_PROCEDURE_REQUIRED(proc);
@@ -869,7 +869,7 @@ static void local_env_shift(ScmVM *vm, int env_depth)
         SCM_ASSERT(tenv);
         tenv = tenv->up;
     }
- 
+
     ScmObj *to;
     if (IN_STACK_P((ScmObj*)tenv)) {
         if (IN_STACK_P((ScmObj*)CONT) && (((ScmObj*)CONT) > ((ScmObj*)tenv))) {
@@ -1918,10 +1918,10 @@ int check_arglist_tail_for_apply(ScmVM *vm SCM_UNUSED, ScmObj z, int max_limit)
         if (SCM_NULLP(z)) return count;
         if (SCM_LAZY_PAIR_P(z)) goto do_lazy_pair;
         if (!SCM_PAIRP(z)) goto bad_list;
-        
+
         z = SCM_CDR(z);
         count++;
-        
+
         if (SCM_NULLP(z)) return count;
         if (SCM_LAZY_PAIR_P(z)) goto do_lazy_pair;
         if (!SCM_PAIRP(z)) goto bad_list;
@@ -2155,7 +2155,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         vm->lastErrorCont = vm->cont;
         vm->stackBase = vm->sp;
 #endif
-        
+
         /* To conform SRFI-34, the error handler (clauses in 'guard' form)
            should be executed with the same continuation and dynamic
            environment of the guard form itself.  That means the dynamic
@@ -2300,7 +2300,7 @@ static void call_error_reporter(ScmObj e)
 }
 
 static ScmObj default_exception_handler_body(ScmObj *argv,
-                                             int argc, 
+                                             int argc,
                                              void *data SCM_UNUSED)
 {
     SCM_ASSERT(argc == 1);
@@ -2337,7 +2337,7 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
         vm->exceptionHandler = SCM_CAR(ehstack);
         vm->exceptionHandlerStack = SCM_CDR(ehstack);
     }
-    
+
     if (eh != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_ApplyRec(eh, SCM_LIST1(exception));
         if (SCM_SERIOUS_CONDITION_P(exception)
@@ -2360,7 +2360,7 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
 /*
  * with-error-handler
  */
-static ScmObj install_ehandler(ScmObj *args SCM_UNUSED, 
+static ScmObj install_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data)
 {
@@ -2627,7 +2627,7 @@ static ScmObj throw_cont_cc(ScmObj result SCM_UNUSED, void **data)
 }
 
 /* Body of the continuation SUBR */
-static ScmObj throw_continuation(ScmObj *argframe, 
+static ScmObj throw_continuation(ScmObj *argframe,
                                  int nargs SCM_UNUSED, void *data)
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
@@ -3076,7 +3076,7 @@ ScmCallTrace *Scm__MakeCallTraceQueue(u_long size)
         while (n < size) n <<= 1; /* never overflow as we check the size above */
         size = n;
     }
-    
+
     ScmCallTrace *ct = SCM_NEW2(ScmCallTrace*,
                                 sizeof(ScmCallTrace)
                                 + (size-1)*sizeof(ScmCallTraceEntry));
@@ -3222,7 +3222,7 @@ static void dump_env(ScmEnvFrame *env, ScmPort *out)
 /* Show offset of given PC w.r.t to the beginning of the code of
    the current base.  Note that PC may not point to the code of the
    base.  */
-static void dump_pc_offset(ScmWord *pc, ScmCompiledCode *base, ScmPort *out) 
+static void dump_pc_offset(ScmWord *pc, ScmCompiledCode *base, ScmPort *out)
 {
     if (base && base->code <= pc && pc < base->code + base->codeSize) {
         Scm_Printf(out, " [%5u(%p)]", (u_long)(pc - base->code), base->code);

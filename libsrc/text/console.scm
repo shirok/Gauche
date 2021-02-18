@@ -310,7 +310,7 @@
              (apply enqueue! (~ con'input-buffer) #\escape (reverse chars))
              (e)])))
   (define (e) (error "terminal error when receiving cursor position"))
-    
+
   (putstr con "\x1b;[6n")
   (do-generator [ch (gtake-while (^c (not (eqv? c #\x1b))) r)]
     (enqueue! (~ con'input-buffer) ch))
@@ -388,4 +388,3 @@
 ;; we don't need to do anything.  See console/windows.scm for the details.
 (define-method ensure-bottom-room ((con <vt100>) :optional full-column-flag)
   #f)
-

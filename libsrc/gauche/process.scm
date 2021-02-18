@@ -78,9 +78,8 @@
           write-uvector)
 
 ;; Avoid build dependency issue
-(autoload srfi-19 
+(autoload srfi-19
           make-time add-duration time>?)
-
 
 (define-class <process> ()
   ((pid       :init-value -1 :getter process-pid)
@@ -159,7 +158,7 @@
 ;; Similar to do-process, but raise an error on abnormal exit.
 ;; This use case is typical, so we add a separate API.
 (define (do-process! command . args)
-  (apply do-process command :on-abnormal-exit :error 
+  (apply do-process command :on-abnormal-exit :error
          (delete-keyword :on-abnormal-exit args)))
 
 ;; Note: I/O redirection
@@ -526,7 +525,7 @@
                                         (max-wait #f) ; ns
                                         (continue-test #f)
                                         (raise-error? #f))
-  (define limit (and max-wait 
+  (define limit (and max-wait
                      (add-duration (current-time)
                                    (make-time 'time-duration
                                               (modulo max-wait #e1e9)
@@ -551,11 +550,11 @@
    [gauche.os.windows (undefined)]
    [else (process-send-signal process SIGCONT)]))
 
-(define (process-shutdown process 
+(define (process-shutdown process
                           :key (ask #f)
                                (ask-interval #e50e6) ;ns
                                (ask-retry 1)
-                               (signals `(,SIGTERM 
+                               (signals `(,SIGTERM
                                           ,SIGTERM
                                           ,SIGKILL))
                                (signal-interval #e50e6) ;ns
@@ -779,13 +778,13 @@
                   [(eqv? c #\\) (read-char) (cons c0 (read-escaped))]
                   [(#[|&\;<>()$`] c) (err-meta c)]
                   [else (read-char) (cons c0 (read-unquoted c))])))
-        (define (read-sq) 
-          (let loop ([c (read-char)] [cs '()]) 
+        (define (read-sq)
+          (let loop ([c (read-char)] [cs '()])
             (cond [(eof-object? c) (err "unclosed single quote: ~s" str)]
                   [(eqv? c #\') (reverse cs (read-next))]
                   [else (loop (read-char) (cons c cs))])))
         (define (read-dq)
-          (let loop ([c (read-char)] [cs '()]) 
+          (let loop ([c (read-char)] [cs '()])
             (cond [(eof-object? c) (err "unclosed double quote: ~s" str)]
                   [(eqv? c #\") (reverse cs (read-next))]
                   [(eqv? c #\\) (let1 c (read-char) ; section 2.2.3
@@ -959,7 +958,7 @@
                (not (process-exit-status p)))
       ;; Usually, closing process-input should cause the process to exit.
       ;; We try 150ms after closing, then send signals.
-      (process-shutdown p 
+      (process-shutdown p
                         :ask identity ;; doesn't matter
                         :ask-interval #e150e6 ; 50ms
                         :signal-interval #e100e6))))

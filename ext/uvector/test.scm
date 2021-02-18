@@ -124,12 +124,12 @@
 (uvmaketest-u32 '(0))
 (uvmaketest-s64 '(0))
 (uvmaketest-u64 '(0))
-(uvmaketest-f16 '(0 1.0 -1.0)) 
-(uvmaketest-f32 '(0 1.0 -1.0)) 
-(uvmaketest-f64 '(0 1.0 -1.0)) 
-(uvmaketest-c32 '(0 1.0+i -1.0-i)) 
-(uvmaketest-c64 '(0 1.0+i -1.0-i)) 
-(uvmaketest-c128 '(0 1.0+i -1.0-i)) 
+(uvmaketest-f16 '(0 1.0 -1.0))
+(uvmaketest-f32 '(0 1.0 -1.0))
+(uvmaketest-f64 '(0 1.0 -1.0))
+(uvmaketest-c32 '(0 1.0+i -1.0-i))
+(uvmaketest-c64 '(0 1.0+i -1.0-i))
+(uvmaketest-c128 '(0 1.0+i -1.0-i))
 
 ;;-------------------------------------------------------------------
 (test-section "ref and set")
@@ -144,7 +144,7 @@
             (and (equal? expvec vec)
                  (equal? numlist (map (^i (@vector-ref vec i)) seq))
                  (equal? numlist (map (^i (uvector-ref vec i)) seq))
-                 (begin 
+                 (begin
                    (uvector-set! vec 0 (@vector-ref expvec 1))
                    (equal? (@vector-ref expvec 1) (@vector-ref vec 0)))
                  (begin
@@ -290,7 +290,7 @@
 ;;-------------------------------------------------------------------
 (test-section "copying and filling")
 
-(expand-uvec 
+(expand-uvec
  (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
  (define (uvcopy-test-@ uvec filler)
    (test* "@vector-copy|fill!" #t
@@ -332,9 +332,9 @@
 (uvcopy-test-c64 '#c64(0+i -1.0-i 1.0) 1.0)
 (uvcopy-test-c128 '#c128(0+i -1.0-i 1.0) 1.0)
 
-(expand-uvec 
+(expand-uvec
  (u8 s8 u16 s16 u32 s32 u64 s64 f16 f32 f64 c32 c64 c128)
- (test* "uvcopy-startend @vector" 
+ (test* "uvcopy-startend @vector"
         (list (@vector 1 2 3) (@vector 1 2) (@vector 0 9 9 3))
         (let* ([v (@vector 0 1 2 3)]
                [v1 (@vector-copy v 1)]
@@ -685,7 +685,7 @@
 (expand-uvec
  (u8 s8 u16 s16 u32 s32 u64 s64)
  (define (bit-test-@ v0 v1 s0 s1)
-   (bit-test '@ v0 v1 s0 s1 
+   (bit-test '@ v0 v1 s0 s1
                 @vector->list
                 list->@vector
                 @vector-and
@@ -1411,7 +1411,7 @@
        (string->u32vector "abcde" 2 6))
 (test* "string->u32vector (byte swapping)"
        '#u32(#x40000000 #x41000000 #x42000000)
-       (string->u32vector "@AB" 0 -1 
+       (string->u32vector "@AB" 0 -1
                           (case (default-endian)
                             [(big-endian) 'little-endian]
                             [(little-endian) 'big-endian])))
@@ -1428,7 +1428,7 @@
                            (case (default-endian)
                              [(big-endian) 'little-endian]
                              [(little-endian) 'big-endian]) ))
-       
+
 
 (test* "u32vector->string" "@ABCD"
        (u32vector->string '#u32(64 65 66 67 68)))
@@ -1448,7 +1448,7 @@
        (u32vector->string '#u32(64 65 66 0 67 68) 0 -1 68))
 (test* "u32vector->string (byte swapping)" "@AB"
        (u32vector->string  '#u32(#x40000000 #x41000000 #x42000000)
-                           0 -1 #f 
+                           0 -1 #f
                            (case (default-endian)
                              [(big-endian) 'little-endian]
                              [(little-endian) 'big-endian])))
@@ -1465,7 +1465,7 @@
        (string->s32vector "abcde" 2 6))
 (test* "string->s32vector (byte swapping)"
        '#s32(#x40000000 #x41000000 #x42000000)
-       (string->s32vector "@AB" 0 -1 
+       (string->s32vector "@AB" 0 -1
                           (case (default-endian)
                             [(big-endian) 'little-endian]
                             [(little-endian) 'big-endian])))
@@ -1488,7 +1488,7 @@
        (s32vector->string '#s32(64 65 66 0 67 68) 0 -1 68))
 (test* "s32vector->string (byte swapping)" "@AB"
        (s32vector->string  '#s32(#x40000000 #x41000000 #x42000000)
-                           0 -1 #f 
+                           0 -1 #f
                            (case (default-endian)
                              [(big-endian) 'little-endian]
                              [(little-endian) 'big-endian])))

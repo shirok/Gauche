@@ -28,8 +28,8 @@ If you don't want to use iconv for some reason, say --without-iconv. ]),
   AS_CASE([$with_iconv],
     [no],  [ac_cv_use_iconv=no],
     [yes], [],
-	   [ICONV_CPPFLAGS="-I$with_iconv/include"
-	    ICONV_LDFLAGS="-L$with_iconv/lib"])
+           [ICONV_CPPFLAGS="-I$with_iconv/include"
+            ICONV_LDFLAGS="-L$with_iconv/lib"])
  ])
 
 AC_ARG_WITH(iconv-lib,

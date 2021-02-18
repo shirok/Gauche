@@ -25,4 +25,3 @@ util--match.c match.sci : $(top_srcdir)/libsrc/util/match.scm
 	$(PRECOMP) -e -P -o util--match $(top_srcdir)/libsrc/util/match.scm
 
 install : install-std
-

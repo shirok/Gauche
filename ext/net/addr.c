@@ -64,7 +64,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SockAddrClass, sockaddr_print,
                          NULL, NULL, sockaddr_allocate,
                          NULL);
 
-void sockaddr_print(ScmObj obj, ScmPort *port, 
+void sockaddr_print(ScmObj obj, ScmPort *port,
                     ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<sockaddr %S %S>",
@@ -91,7 +91,7 @@ ScmObj Scm_SockAddrFamily(ScmSockAddr *addr)
 }
 
 /* Fallback of allocation method */
-static ScmObj sockaddr_allocate(ScmClass *klass SCM_UNUSED, 
+static ScmObj sockaddr_allocate(ScmClass *klass SCM_UNUSED,
                                 ScmObj initargs SCM_UNUSED)
 {
     Scm_Error("you can't directly instantiate the abstract class <sockaddr>");

@@ -21,7 +21,7 @@
       (cf-subst 'CFLAGS (gauche-config "--default-cflags")))
     (unless (cf-have-subst? 'CPPFLAGS) (cf-subst 'CPPFLAGS ""))
     (unless (cf-have-subst? 'LDFLAGS)  (cf-subst 'LDFLAGS  ""))
-    (unless (cf-have-subst? 'LIBS)     (cf-subst 'LIBS     ""))  
+    (unless (cf-have-subst? 'LIBS)     (cf-subst 'LIBS     ""))
     (unless (cf-have-subst? 'WINDOWS_UNICODE_FLAG)
       (cf-subst 'WINDOWS_UNICODE_FLAG
                 (cond-expand

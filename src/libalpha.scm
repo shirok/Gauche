@@ -149,7 +149,7 @@
 
 (define-cproc set-box! (b :rest vs) ::<void>
   (cond
-   [(SCM_BOXP b) 
+   [(SCM_BOXP b)
     (unless (and (SCM_PAIRP vs) (SCM_NULLP (SCM_CDR vs)))
       (Scm_Error "Wrong number of values to set to a single-value box %S: %S"
                  b vs))
@@ -172,7 +172,7 @@
 
 (define-cproc unbox-value (b i::<fixnum>)
   (cond
-   [(SCM_BOXP b) 
+   [(SCM_BOXP b)
     (unless (== i 0) (Scm_Error "index out of range for %S: %d" b i))
     (return (SCM_BOX_VALUE b))]
    [(SCM_MVBOXP b)
@@ -184,7 +184,7 @@
 
 (define-cproc set-box-value! (b i::<fixnum> val) ::<void>
   (cond
-   [(SCM_BOXP b) 
+   [(SCM_BOXP b)
     (unless (== i 0) (Scm_Error "index out of range for %S: %d" b i))
     (SCM_BOX_SET b val)]
    [(SCM_MVBOXP b)

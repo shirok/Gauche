@@ -33,5 +33,3 @@
 (call-with-input-string data (^p (generator-for-each identity (cut reader p))))
 (profiler-stop)
 (profiler-show)
-
-

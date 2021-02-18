@@ -20,4 +20,3 @@
 
 /* Define if you have the <gdbm-ndbm.h> header file. */
 #undef HAVE_GDBM_MINUS_NDBM_H
-

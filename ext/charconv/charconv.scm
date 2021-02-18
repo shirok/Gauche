@@ -52,4 +52,3 @@
 (select-module gauche.charconv)
 
 (dynamic-load "gauche--charconv")
-

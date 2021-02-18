@@ -23,4 +23,3 @@ file--util.c util.sci : $(top_srcdir)/libsrc/file/util.scm
 	$(PRECOMP) -e -P -o file--util $(top_srcdir)/libsrc/file/util.scm
 
 install : install-std
-

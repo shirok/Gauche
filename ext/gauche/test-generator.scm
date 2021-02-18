@@ -99,7 +99,7 @@
     (t r bits->generator #xcafebabe)
     (t f reverse-bits->generator #xcafebabe)
     ))
-                                 
+
 ;; file generators
 (let-syntax ((t (syntax-rules ()
                   [(t fn expect data)
@@ -155,13 +155,13 @@
                                                            '(2 . c))))
                 car))
 (test* "x->generator <tree-map>" '((0 . a) (1 . b) (2 . c))
-       (generator->list (x->generator (alist->tree-map 
+       (generator->list (x->generator (alist->tree-map
                                        '((0 . a)
                                          (1 . b)
                                          (2 . c))
                                        = <))))
 (test* "x->generator <tree-map>" '((2 . c) (1 . b) (0 . a))
-       (generator->list (x->generator (alist->tree-map 
+       (generator->list (x->generator (alist->tree-map
                                        '((0 . a)
                                          (1 . b)
                                          (2 . c))

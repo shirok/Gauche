@@ -194,7 +194,7 @@ static int escape_required_p(const ScmStringBody *b, u_int flags, int casefold)
 {
     int siz = SCM_STRING_BODY_SIZE(b);
     if (siz == 0) return !(flags & SCM_SYMBOL_WRITER_NOESCAPE_EMPTY);
-    
+
     const char *p = SCM_STRING_BODY_START(b);
     const char *e = p + siz;
     ScmChar ch;

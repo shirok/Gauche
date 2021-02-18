@@ -130,7 +130,7 @@
 
 (select-module gauche.internal)
 (define-cproc %current-recursive-hash (:optional obj) Scm_CurrentRecursiveHash)
-  
+
 (select-module gauche)
 (define-cproc hash-salt () ::<fixnum> Scm_HashSaltRef)
 
@@ -429,7 +429,7 @@
 (define (hash-table-delete!-r7 ht . keys) ; r7rs
   (fold (^[key count] (if (hash-table-delete! ht key) (+ count 1) count))
         0 keys))
-        
+
 (define (hash-table-update!/default ht key updater default) ;r7rs
   (hash-table-update! ht key updater default))
 
@@ -510,7 +510,7 @@
 ;; it returns the result of PRED.
 (define (hash-table-find ht pred :optional (failure (^[] #f)))
   (hash-table-seek ht pred (^[r k v] r) failure))
-  
+
 (define (hash-table-find-r7 pred ht failure) ; r7rs
   (hash-table-seek ht pred (^[r k v] r) failure))
 
@@ -609,7 +609,7 @@
           [(or c1 c2) (error "hash-tables with different comparators can't be \
                               compared:" h1 h2)]
           [else (error "hash-tables don't have comparators and can't be \
-                        compared:" h1 h2)]))  
+                        compared:" h1 h2)]))
   ;; Let's start
   (if (eq? h1 h2)
     0                 ;fast path

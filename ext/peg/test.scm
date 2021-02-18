@@ -467,8 +467,8 @@
 ;;;
 (test-section "lookahead assertion")
 
-(let ([parser ($seq0 
-               ($->rope ($many 
+(let ([parser ($seq0
+               ($->rope ($many
                          ($try ($seq0 ($any)
                                              ($assert ($. #[a-z]))))))
                ($any))])
@@ -503,10 +503,10 @@
 
 ;; position
 (test* "error position handling"
-       (test-error <parse-error> 
+       (test-error <parse-error>
                    "expecting #[\\u000aa] at \"input.txt\":2:3, but got #\\b")
        (peg-run-parser ($many ($. #[a\n]) 10)
-                       (port->char-lseq/position 
+                       (port->char-lseq/position
                         (open-input-string "aaaaa\naabaa")
                         :source-name "input.txt")))
 
@@ -514,7 +514,7 @@
        #t
        (guard (e [(<parse-error> e) (sequence-position? (~ e'position))])
          (peg-run-parser ($many ($. #[a\n]) 10)
-                         (port->char-lseq/position 
+                         (port->char-lseq/position
                           (open-input-string "aaaaa\naabaa")
                           :source-name "input.txt"))))
 
@@ -553,9 +553,9 @@
   (define integer
     ($let ([ds digits])
       ($return (x->integer (list->string ds)))))
-  (define integers1 
+  (define integers1
     ($seq integer ($many ($seq separator integer))))
-  (define integers2 
+  (define integers2
     ($let ([n  integer]
            [ns ($many ($seq separator integer))])
       ($return (cons n ns))))
@@ -574,14 +574,14 @@
            ($return (cons n ns)))
          ($return '())))
   (define integers5 (sep-by integer separator))
-  (define begin-list 
+  (define begin-list
     ($seq0 ($. #[\(\[\{]) ws))
-  (define (end-list opener) 
+  (define (end-list opener)
     ($seq ws (case opener
                [(#\() ($. #\))]
                [(#\[) ($. #\])]
                [(#\{) ($. #\})])))
-  
+
   (define int-list
     ($let* ([opener begin-list]
             [ints ($sep-by integer separator)]
@@ -627,14 +627,14 @@
   (define paren  ($. #\())
   (define thesis ($. #\)))
 
-  (test* "$or example" 
+  (test* "$or example"
          (test-error <parse-error> "expecting ab at 1, but got #\\c")
 
          (peg-parse-string ($or ($seq paren ($."ab") thesis)
                                 ($seq paren ($."cd") thesis))
                            "(cd)"))
   )
-  
+
 (let ()
   (define integer   ($many1 ($. #[\d])))
   (define ws        ($many_ ($. #[\s])))
@@ -780,7 +780,7 @@
 
 (test-section "deprecated")
 ;; kludge - we can't say (use parser.peg.deprecated) until peg/deprecated.scm
-;; is installed in place.  
+;; is installed in place.
 (or (load "peg/deprecated" :error-if-not-found #f)
     (load "parser/peg/deprecated" :error-if-not-found #f))
 (import parser.peg.deprecated)
@@ -851,7 +851,7 @@
                   (if (eqv? x #\0)
                     'ok
                     (F "0 expected")))))
-  (test-succ "$match1 fail proc" 'ok p "012") 
+  (test-succ "$match1 fail proc" 'ok p "012")
   (test-fail "$match1 fail proc" '(0 "0 expected") p "123")
   (test-fail "$match1 not enough input" '(0 "(? char-numeric? x)") p ""))
 
@@ -1060,5 +1060,5 @@
          (parse-json-string "{\"x\":123}")))
 
 (include "test-srfi-180")
-       
+
 (test-end)

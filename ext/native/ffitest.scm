@@ -87,7 +87,7 @@
   (return (* (+ a b c d e) (+ f g h i j))))
 (define-cfn "fiiiiiiddddddddidid_d"
   (i0::int i1::int i2::int i3::int i4::int i5::int
-   d0::double d1::double d2::double d3::double 
+   d0::double d1::double d2::double d3::double
    d4::double d5::double d6::double d7::double
    i6::int d8::double i7::int d9::double)
   ::double

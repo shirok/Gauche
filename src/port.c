@@ -281,7 +281,7 @@ ScmSize Scm_PortBytes(ScmPort *port)
     return PORT_BYTES(port);
 }
 
-static void port_print(ScmObj obj, ScmPort *port, 
+static void port_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%s%sport%s %A %p>",
@@ -536,7 +536,7 @@ void Scm_PortFdDup(ScmPort *dst, ScmPort *src)
         Scm_Flush(dst);
     }
     /*  NB: We don't retry dup2().  By the time it returns EINTR, the
-        dstfd has actually been closed, and if other thread happens to 
+        dstfd has actually been closed, and if other thread happens to
         grab the same fd, retrying dup2() inadvertently closes that one.
     */
 
@@ -1327,7 +1327,7 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
 
     file_port_data *data = SCM_NEW(file_port_data);
     data->fd = fd;
-    
+
     ScmPortBuffer bufrec;
     bufrec.mode = buffering;
     bufrec.buffer = NULL;
@@ -1481,7 +1481,7 @@ ScmObj Scm_GetRemainingInputString(ScmPort *port, int flags)
             return Scm_MakeString(cp, (int)(ep-cp), -1, flags);
         } else {
             /* we need to copy */
-            return get_remaining_input_string_aux(cp, ep-cp, 
+            return get_remaining_input_string_aux(cp, ep-cp,
                                                   cbuf, nbytes, flags);
         }
     } else if (port->scrcnt > 0) {
@@ -1563,7 +1563,7 @@ static void null_putc(ScmChar c SCM_UNUSED, ScmPort *dummy SCM_UNUSED)
 }
 
 static void null_putz(const char *str SCM_UNUSED,
-                      ScmSize len SCM_UNUSED, 
+                      ScmSize len SCM_UNUSED,
                       ScmPort *dummy SCM_UNUSED)
 {
 }
@@ -1599,7 +1599,7 @@ ScmObj Scm_MakeVirtualPortFull(ScmClass *klass, ScmObj name,
     PORT_VT(p)->GetPos = NULL;
     PORT_VT(p)->SetPos = NULL;
     PORT_VT(p)->flags = 0;
-    
+
     if (vtable->Getb)  PORT_VT(p)->Getb   = vtable->Getb;
     if (vtable->Getc)  PORT_VT(p)->Getc   = vtable->Getc;
     if (vtable->Getz)  PORT_VT(p)->Getz   = vtable->Getz;
@@ -1926,13 +1926,13 @@ ScmObj Scm_SetCurrentErrorPort(ScmPort *port)
 void Scm__InitPort(void)
 {
     if (sizeof(ScmPort) < sizeof(ScmPortImpl)) {
-	fprintf(stderr,
-		"sizeof(ScmPort) [%"PRIdPTR"] is smaller than "
-		"sizeof(ScmPortImpl) [%"PRIdPTR"]\n",
-		SCM_WORD(sizeof(ScmPort)), SCM_WORD(sizeof(ScmPortImpl)));
+        fprintf(stderr,
+                "sizeof(ScmPort) [%"PRIdPTR"] is smaller than "
+                "sizeof(ScmPortImpl) [%"PRIdPTR"]\n",
+                SCM_WORD(sizeof(ScmPort)), SCM_WORD(sizeof(ScmPortImpl)));
         Scm_Panic("Implementation error.  Exitting.");
     }
-    
+
     (void)SCM_INTERNAL_MUTEX_INIT(active_buffered_ports.mutex);
     active_buffered_ports.ports = SCM_WEAK_VECTOR(Scm_MakeWeakVector(PORT_VECTOR_SIZE));
 

@@ -23,7 +23,7 @@
        (gap-buffer-visualize (string->gap-buffer "abcde" 0 'beginning)))
 (test* "constuct" "bcd_"
        (gap-buffer-visualize (string->gap-buffer "abcde" 0 'end 1 4)))
-  
+
 (let1 gbuf (string->gap-buffer "abcde")
   (test* "move" "abcd___e"
          (gap-buffer-visualize (gap-buffer-move! gbuf -1 'current)))
@@ -101,4 +101,3 @@
                 )
            (list s0 s1 s2 s3 s4 s5 s6 s7)))
   )
-

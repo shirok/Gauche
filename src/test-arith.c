@@ -826,4 +826,3 @@ int main(int argc SCM_UNUSED, char **argv SCM_UNUSED)
     }
     return 0;
 }
-

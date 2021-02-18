@@ -161,4 +161,3 @@ SCM_EXTERN ScmObj Scm_LoadMainScript(void);
 #endif /*GAUCHE_API_VERSION < 1000*/
 
 #endif /* GAUCHE_LOAD_H */
-

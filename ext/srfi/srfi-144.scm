@@ -41,7 +41,7 @@
           fl-cbrt-2 fl-cbrt-3 fl-4thrt-2 fl-phi fl-log-phi
           fl-1/log-phi fl-euler fl-e-euler fl-sin-1 fl-cos-1
           fl-gamma-1/2 fl-gamma-1/3 fl-gamma-2/3
-          
+
           fl-greatest fl-least fl-epsilon fl-fast-fl+*
           fl-integer-exponent-zero fl-integer-exponent-nan
 
@@ -56,7 +56,7 @@
           flnormalized? fldenormalized?
 
           flmax flmin fl+ fl* fl+* fl- fl/ flabs flabsdiff
-          flposdiff flsgn flnumerator fldenominator 
+          flposdiff flsgn flnumerator fldenominator
           flfloor flceiling flround fltruncate
 
           flexp flexp2 flexp-1 flsquare flsqrt flcbrt flhypot flexpt fllog
@@ -65,7 +65,7 @@
           flsin flcos fltan flasin flacos flatan
           flsinh flcosh fltanh flasinh flacosh flatanh
 
-          flquotient flremainder flremquo 
+          flquotient flremainder flremquo
 
           flgamma flloggamma flfirst-bessel flsecond-bessel
           flerf flerfc
@@ -136,13 +136,13 @@
 (define-inline (flonum n) (if (real? n) (inexact n) +nan.0))
 
 (define-cproc fladjacent (x::<real> y::<real>)
-  ::<real> :constant :fast-flonum 
+  ::<real> :constant :fast-flonum
   (return (nextafter x y)))
 
 (define-cproc flcopysign (x::<real> y::<real>)
   ::<real> :constant :fast-flonum
   (return (copysign x y)))
-  
+
 (define-inline (make-flonum x n) (ldexp x n))
 
 ;;;
@@ -152,7 +152,7 @@
 (define-cproc logb (x::<real>) ::<real> :constant :fast-flonum logb)
 (define-cproc ilogb (x::<real>) ::<int> :constant :fast-flonum ilogb)
 
-(define-inline (flinteger-fraction x) 
+(define-inline (flinteger-fraction x)
   (receive (r q) (modf x) (values q r)))
 (define-inline (flexponent x) (logb x))
 (define-inline (flinteger-exponent x) (ilogb x))
@@ -189,7 +189,7 @@
 (inline-stub
  ;; On MinGW 32bit, fpclassify is broken.
  ;; cf. https://github.com/shirok/Gauche/pull/465
- (define-cfn flonum_classify (d::double) ::int :static 
+ (define-cfn flonum_classify (d::double) ::int :static
    (.if (and (defined __MINGW32__) (not (defined __MIGW64__)))
         (return (__builtin_fpclassify FP_INFINITE FP_NAN FP_NORMAL FP_SUBNORMAL
                                       FP_ZERO d))
@@ -211,7 +211,7 @@
 
 (define-inline (fl+ . args) (apply +. args))
 (define-inline (fl* . args) (apply *. args))
-(define-cproc fl+* (x::<real> y::<real> z::<real>) 
+(define-cproc fl+* (x::<real> y::<real> z::<real>)
   ::<real> :fast-flonum :constant
   (return (fma x y z)))
 
@@ -235,7 +235,7 @@
   (cond [(or (infinite? x) (zero? x)) 1.0]
         [(nan? x) x]
         [else (inexact (denominator (exact x)))]))
-  
+
 (define-cproc flfloor (x::<real>) ::<real> :fast-flonum :constant floor)
 (define-cproc flceiling (x::<real>) ::<real> :fast-flonum :constant ceil)
 (define (flround x) (assume (flonum? x)) (round x))
@@ -295,13 +295,13 @@
                 [(nan? x) +nan.0]
                 [(odd? (floor x)) -1.0]
                 [else 1.0])))
-                  
+
 (define-cproc flfirst-bessel (n::<int> x::<real>)
   ::<real> :fast-flonum :constant
   jn)
-(define-cproc flsecond-bessel (n::<int> x::<real>) 
+(define-cproc flsecond-bessel (n::<int> x::<real>)
   ::<real> :fast-flonum :constant
-  ;; As of 2019, NB: MinGW's yn returns NaN if x = 0, as opposed to the 
+  ;; As of 2019, NB: MinGW's yn returns NaN if x = 0, as opposed to the
   ;; POSIX definition that says -HUGE_VAL.
   (.if (defined GAUCHE_WINDOWS)
        (if (== x 0.0)
@@ -315,4 +315,3 @@
 (define-cproc flerfc (x::<real>)
   ::<real> :fast-flonum :constant
   erfc)
-    

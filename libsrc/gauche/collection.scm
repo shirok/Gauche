@@ -48,7 +48,7 @@
 
 ;; Avoid hairy dependency issues
 (autoload gauche.uvector
-          u8vector-length 
+          u8vector-length
           s8vector-length
           u16vector-length
           s16vector-length
@@ -209,7 +209,7 @@
                  (^[] v)))
          (let1 q (make-queue)
            (proc (cut enqueue! q <>)
-                 (cut %list-> (queue->list q))))))]))     
+                 (cut %list-> (queue->list q))))))]))
 
 ;; NB: We don't have list->uvector in core yet, so builder definition is
 ;; in gauche.uvector.  It should be here, though.
@@ -220,7 +220,7 @@
 
 (define-method call-with-builder ((class <bitvector-meta>) proc
                                   :key (size #f) :allow-other-keys)
-  (*vector-builder make-bitvector bitvector-set! list->bitvector 
+  (*vector-builder make-bitvector bitvector-set! list->bitvector
                    class proc size))
 
 (define-method call-with-builder ((class <weak-vector-meta>) proc
@@ -338,7 +338,7 @@
 (define-fold-k fold3 (knil1 knil2 knil3))
 
 ;; partial applied version
-(define fold$ 
+(define fold$
   (case-lambda
     ([proc] (^[knil . lists] (apply fold proc knil lists)))
     ([proc knil] (^ lists (apply fold proc knil lists)))))
@@ -659,4 +659,3 @@
                         [else (cons (list key elt) buckets)])))
               '()
               col)))
-

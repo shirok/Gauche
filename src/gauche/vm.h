@@ -192,13 +192,13 @@ SCM_CLASS_DECL(Scm_IdentifierClass);
 #define SCM_IDENTIFIERP(obj)    SCM_XTYPEP(obj, SCM_CLASS_IDENTIFIER)
 
 /* Create an identifier.
-   NAME can be a symbol or an identifier.  
+   NAME can be a symbol or an identifier.
    MOD is the toplevel module to close; can be NULL to use the current module.
    ENV is the local local environment (list of frames) to close. */
 SCM_EXTERN ScmObj Scm_MakeIdentifier(ScmObj name,
                                      ScmModule *mod,
                                      ScmObj env);
-/* Returns the minimal local environment (list of frames) where this 
+/* Returns the minimal local environment (list of frames) where this
    identifier is bound.  If the identifier isn't bound locally, it would be ().
    The returned value may not be the same as ENV argument passed to the
    constructor; we truncate irrelevant frames. */
@@ -357,7 +357,7 @@ struct ScmVMRec {
     ScmCStack *cstack;          /* current escape point.  see the comment of
                                    "C stack rewinding" below. */
     /* TRANSIENT: Change these flags to u_long in 1.0 */
-#if GAUCHE_API_VERSION < 1000    
+#if GAUCHE_API_VERSION < 1000
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
 #else /*GAUCHE_API_VERSION >= 1000*/

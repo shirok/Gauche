@@ -544,7 +544,7 @@
       (unless (lvar-immutable? (car lvars))
         (compiled-code-emit1! ccb BOX cnt))
       (loop (cdr lvars) (- cnt 1)))))
-       
+
 ;; emit LSET or ENV-SET insn to initialize lvars that aren't closures or
 ;; constants.  init-alist is the second value partition-letrec-inits
 ;; returned, which is a list of (<lvar-count> <init-iform>).
@@ -602,7 +602,7 @@
                                           ccb  ; parent
                                           inliner)])
     (compiled-code-attach-source-info! ccb ($lambda-src iform))
-    
+
     ;; If any of procedure parameters are set!, we should box it
     ;; upon entering the procedure.
     (let loop ([lvs ($lambda-lvars iform)]
@@ -1169,4 +1169,3 @@
         (unless (lvar-immutable? (car lvars))
           (compiled-code-emit1i! ccb BOX (- envsize k) (lvar-name (car lvars))))
         (loop (cdr lvars) (+ k 1))))))
-

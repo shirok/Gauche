@@ -352,9 +352,9 @@
 ;; we can't get such value from any one, returns #f.
 (define (pass3/constant-arguments iforms)
   (let loop ([iforms iforms] [args '()])
-    (cond 
+    (cond
      [(null? iforms) (reverse args)]
-     [($const? (car iforms)) 
+     [($const? (car iforms))
       (loop (cdr iforms) (cons ($const-value (car iforms)) args))]
      [(has-tag? (car iforms) $GREF)
       (and-let1 gloc (gref-inlinable-gloc (car iforms))
@@ -464,4 +464,3 @@
 
 ;; Dispatch table.
 (define *pass3-dispatch-table* (generate-dispatch-table pass3))
-

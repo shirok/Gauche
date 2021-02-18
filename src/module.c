@@ -91,7 +91,7 @@
  *   each bound to itself, *and* exports all of such bindings.
  *
  * It turned out we can't use one 'keyword' module for both purpose; if
- * we have a keyword module that exports all bindings, they are automatically   
+ * we have a keyword module that exports all bindings, they are automatically
  * exported from modules that inherits them.  This means if a R7RS program
  * imports any of Gauche modules, it carries all of keyword bindings.  It's
  * not only nasty, but also dangerous for it can shadow bindings to the
@@ -250,7 +250,7 @@ static void err_sealed(ScmObj source, ScmModule *target)
     const char *what = "";
     if (SCM_MODULEP(source)) what = "import a module";
     else                     what = "create a binding";
-    
+
     if (target == Scm__RequireBaseModule()) {
         Scm_Error("Attempted to %s (%S) into gauche.require-base. "
                   "This may be caused by trying to 'use' or 'require' a file"
@@ -438,7 +438,7 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
                          ScmObj value, int flags)
 {
     if (module->sealed) err_sealed(SCM_OBJ(symbol), module);
-    
+
     ScmGloc *g;
     ScmObj oldval = SCM_UNDEFINED;
     int prev_kind = 0;
@@ -776,7 +776,7 @@ ScmObj Scm_ExtendModule(ScmModule *module, ScmObj supers)
     if (module->sealed) {
         Scm_Error("Attempt to extend a sealed module: %S", SCM_OBJ(module));
     }
-    
+
     ScmObj seqh = SCM_NIL, seqt = SCM_NIL;
     ScmObj sp;
     SCM_FOR_EACH(sp, supers) {

@@ -247,7 +247,7 @@
             [(string? (car ds)) (string-node (car ds) (cdr ds) r cnt)]
             [(eq? (caar ds) '*) (jump-node (car ds) (cdr ds) r cnt)]
             [else (simple-node (car ds) (cdr ds) r cnt)]))
-    
+
     (^[directives]
       (let1 branches (parse directives '() 0)
         (if (and (pair? branches) (null? (cdr branches)))
@@ -337,7 +337,7 @@
             (error "Bad type of argument for the format parameter ~a: ~s"
                    ',var ,var))))
   (define (gen-vbind var default :optional (check #f))
-    `(,var 
+    `(,var
       (if (eq? ,var 'variable)
         ,(if check
            `(rlet1 ,var (fr-next-arg! fmtstr argptr)
@@ -358,7 +358,7 @@
              (let* ,vbinds
                ,@body))
            (^[argptr port ctrl] ,@body))))))
-           
+
 ;; ~S, ~A, ~W
 ;; NB: ~W doesn't take params, so justifying part won't be called for ~W.
 (define (make-format-expr fmtstr params flags printer)
@@ -393,7 +393,7 @@
                (display s port)
                (unless (has-@? flags)
                  (dotimes [_ npad] (write-char padchar port))))))))))
-        
+
 (define (chop-and-out str limit flags port)
   (if (has-:? flags)
     (begin (display (substring str 0 (- limit 4)) port)
@@ -406,7 +406,7 @@
   (define (char-formatter writer)
     (^[argptr port ctrl]
       (let1 c (fr-next-arg! fmtstr argptr)
-        (unless (char? c) 
+        (unless (char? c)
           (error "Character required for ~c format directive, but got:" c))
         (writer c port))))
   (char-formatter (if (has-@? flags) write display)))
@@ -501,17 +501,17 @@
               (let1 s (call-with-output-string
                         (^p
                          (flo-fmt (* (real-part arg) (expt 10 scale))
-                                  0 digits 0 ovchar padchar 
+                                  0 digits 0 ovchar padchar
                                   (has-@? flags) (has-:? flags) #f p)
                          (flo-fmt (* (imag-part arg) (expt 10 scale))
-                                  0 digits 0 ovchar padchar 
+                                  0 digits 0 ovchar padchar
                                   #t (has-:? flags) #f p)
                          (display "i" p)))
                 (let1 len (string-length s)
                   (when (< len width)
                     (dotimes [(- width len)]  (write-char padchar port)))
                   (display s port)))]
-             [else 
+             [else
               (let1 sarg (write-to-string arg display)
                 (let1 len (string-length sarg)
                   (when (< len width)
@@ -529,7 +529,7 @@
      (let1 arg (fr-peek-arg fmtstr argptr)
        (if (real? arg)
          (flo-fmt (inexact (fr-next-arg! fmtstr argptr))
-                  width digits pre-digits 
+                  width digits pre-digits
                   #f padchar (has-@? flags) #t (has-:? flags) port)
          ;; if arg isn't real, use ~wD.
          (format-num-body fmtstr argptr port ctrl 10 #f
@@ -546,7 +546,7 @@
               (let* ([m (#/^([+-]?)(\d+)/ s0)]
                      [pre (m 2)])
                 (if (> pre-digits (string-length pre))
-                  (string-append 
+                  (string-append
                    (m 1)
                    (make-string (- pre-digits (string-length pre)) #\0)
                    pre (m 'after))
@@ -572,7 +572,7 @@
       (error "Argument for ~? must be a string, but got" str))
     ($ formatter-compile-rec str $ formatter-parse $ formatter-lex str))
   (if (has-@? flags)
-    ;; take 
+    ;; take
     (^[argptr port ctrl]
       (let1 formatter (fcompile (fr-next-arg! fmtstr argptr))
         (formatter argptr port ctrl)))
@@ -580,7 +580,7 @@
       (let* ([formatter (fcompile (fr-next-arg! fmtstr argptr))]
              [xargptr (fr-make-argptr (fr-next-arg! fmtstr argptr))])
         (formatter xargptr port ctrl)))))
-           
+
 ;; ~*
 (define (make-format-jump fmtstr params flags)
   ($ with-format-params ([count 1])

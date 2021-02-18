@@ -33,7 +33,7 @@
 
 (select-module gauche)
 (use util.match)
-(declare (keep-private-macro cond-expand quasirename 
+(declare (keep-private-macro cond-expand quasirename
                              syntax-error syntax-errorf
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z $ cut cute rec
@@ -42,7 +42,7 @@
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
-                             assume assume-type 
+                             assume assume-type
                              dotimes dolist do-plist doplist
                              ecase cond-list define-condition-type condition
                              unwind-protect
@@ -259,10 +259,10 @@
        (global-variable-ref 'gauche.internal '*quasirename-mode* #f))
      (define (legacy-message f)
        (if-let1 srcinfo (debug-source-info f)
-         (format "Legacy quasirename form (~a:~a): ~s" 
+         (format "Legacy quasirename form (~a:~a): ~s"
                  (car srcinfo) (cadr srcinfo) f)
          (format "Legacy quasirename form: ~s" f)))
-  
+
      (match f
        [(_ rr ((? quasiquote? qq) ff))
         (if (eq? qmode 'legacy)
@@ -388,7 +388,7 @@
      (if (null? (cdr f))
        (error "malformed $ form:" f)
        (let1 x (last f)
-         (cond [(c x $.) 
+         (cond [(c x $.)
                 (let1 arg (gensym)
                   `(,(r'lambda) (,arg) ,($-fold (cdr f) '() arg)))]
                [(c x $*.)
@@ -411,7 +411,7 @@
              [(c (car args) <...>.)
               (if (null? (cdr args))
                 (let1 restarg (gensym)
-                  (values (reverse tmps restarg) 
+                  (values (reverse tmps restarg)
                           (cons (r'apply) (reverse elts (list restarg)))))
                 (error "Malformed cut:" f))]
              [(c (car args) <>.)
@@ -530,7 +530,7 @@
    (^[f r c]
      (match f
        [(_ var test exp . more) (quasirename r
-                                  `(let ((,var ,test)) 
+                                  `(let ((,var ,test))
                                      (and ,var (begin ,exp ,@more))))]
        [_ (error "malformed and-let1:" f)]))))
 
@@ -603,7 +603,7 @@
        [(_ formals expr)
         (match formals
           [()  ; allowed in r7rs
-           (quasirename r 
+           (quasirename r
              `(define ,(gensym) (receive ,(gensym) ,expr #f)))]
           [(v) ; trivial case
            (quasirename r
@@ -677,7 +677,7 @@
                 `(receive (,@vars . _) ,mv-expr (values ,@rvars))))
             (quasirename r
               `(receive vals ,mv-expr
-                 (apply values (map (^[i] (list-ref vals i)) 
+                 (apply values (map (^[i] (list-ref vals i))
                                     (list ,@(cons n ns))))))))]))))
 
 (define-syntax values->list
@@ -686,7 +686,7 @@
      (match f
        [(_ mv-expr) (quasirename r
                       `(receive x ,mv-expr x))]))))
-        
+
 ;;; generalized set! family
 
 (define-syntax push!
@@ -832,7 +832,7 @@
        [(_ (var lis res) . body) (expand var lis res body)]
        [(_ (var lis) . body)     (expand var lis (undefined) body)]
        [(_ (lis) . body)         (expand (gensym) lis (undefined) body)]
-       [_ (error "Malformed dolist:" f)]))))   
+       [_ (error "Malformed dolist:" f)]))))
 
 (define-syntax do-plist
   (er-macro-transformer
@@ -849,7 +849,7 @@
        [(_ ((k v) plis default) . body)
         (expand k v plis body default)]
        [(_ ((k v) plis) . body)
-        (expand k v plis body 
+        (expand k v plis body
                 (quasirename r `(error "plist is not even:" ,plis)))]
        [_ (error "Malformed do-plist:" f)]))))
 
@@ -872,7 +872,7 @@
             (let1 choices (append-map car clause)
               (quasirename r
                 `(let ([v ,expr])
-                   (case v 
+                   (case v
                      ,@clause
                      (else (errorf "ecase test fell through: got ~s, \
                                     expecting one of ~s" v ',choices)))))))]
@@ -952,7 +952,7 @@
           (quasirename r
             `(begin
                (define-class ,name (,super)
-                 ,(map (^s (quasirename r 
+                 ,(map (^s (quasirename r
                              `(,s :init-keyword ',(make-keyword s))))
                        slots)
                  :metaclass <condition-meta>)
@@ -975,7 +975,7 @@
             ,@(map (match-lambda
                      [(type (field expr) ...)
                       (quasirename r
-                        `(make-condition 
+                        `(make-condition
                           ,type
                           ,@(append-map (^[f e] `(',f ,e)) field expr)))]
                      [_ (error "malformed condition:" f)])
@@ -1001,10 +1001,10 @@
 ;;
 ;; We also tweak exit-handler parameter inside the dyanmic scope of BODY
 ;; to ensure HANDLERS are executed even if BODY calls exit.
-;; (An alternative idea is to treat exit as if it's another kind of a 
+;; (An alternative idea is to treat exit as if it's another kind of a
 ;; condition, so that guard clauses are invoked.  We tried it, but the
-;; problem is how to deal with "ignore-errors" idiom, 
-;; e.g. (guard (e [else #f]) body).  The exit condition shouldn't be 
+;; problem is how to deal with "ignore-errors" idiom,
+;; e.g. (guard (e [else #f]) body).  The exit condition shouldn't be
 ;; stopped in such a way.)
 ;;
 ;; TODO: Current definition doesn't work when unwind-protect is used
@@ -1025,7 +1025,7 @@
         (let* ([sinfo (debug-source-info f)]
                [lambda. (r 'lambda)]
                [%unwind-protect. ((with-module gauche.internal make-identifier)
-                                  '%unwind-protect 
+                                  '%unwind-protect
                                   (find-module 'gauche.internal)
                                   '())])
           (if sinfo
@@ -1277,7 +1277,7 @@
        [(_ expr (var ...) then else)
         (quasirename r
           `(if-let1 m ,expr
-             (let ,(append-map (^[v i] 
+             (let ,(append-map (^[v i]
                                  (if v
                                    (quasirename r
                                      `((,v (rxmatch-substring m ,i))))
@@ -1313,7 +1313,7 @@
                ,(loop rest)))]
          [((matchexp (var ...) form ...) . rest)
           (quasirename r
-            `(rxmatch-if ,matchexp ,var 
+            `(rxmatch-if ,matchexp ,var
                (begin ,@form)
                ,(loop rest)))]
          [_ (error "bad clause in rxmatch-cond:" (car clause))])))))
@@ -1369,7 +1369,7 @@
 
 
 ;;;
-;;; OBSOLETED - Tentative compiler macro 
+;;; OBSOLETED - Tentative compiler macro
 ;;;
 
 (select-module gauche)

@@ -192,7 +192,7 @@
   (let ([toktab (map (^e (if (char-set? e)
                            (cons e (cut next-token-of e <>))
                            e))
-		     table)]
+                     table)]
         [c (rfc822-skip-cfws input)])
     (cond [(eof-object? c) c]
           [(find (^e (char-set-contains? (car e) c)) toktab)
@@ -335,4 +335,3 @@
            (cond [(any (^s (> (string-size s) 998)) lines) 'line-too-long]
                  [(any (^s (string-index s #[\u000d\u000a])) lines) 'stray-crlf]
                  [else #f]))]))
-

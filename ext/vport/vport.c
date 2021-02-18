@@ -366,7 +366,7 @@ static ScmObj vport_getpos(ScmPort *p)
         return Scm_ApplyRec(data->getpos_proc, SCM_NIL);
     } else if (!SCM_FALSEP(data->seek_proc)) {
         return Scm_ApplyRec(data->seek_proc,
-                            SCM_LIST2(SCM_MAKE_INT(0), 
+                            SCM_LIST2(SCM_MAKE_INT(0),
                                       SCM_MAKE_INT(SEEK_CUR)));
     }
     return SCM_UNDEFINED;
@@ -434,13 +434,13 @@ static ScmObj vport_allocate(ScmClass *klass, ScmObj initargs)
         Scm_Panic("vport_allocate: implementation error (class wiring screwed?)");
     }
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
-    ScmObj port = Scm_MakeVirtualPortFull(klass, name, dir, &vtab, 
+    ScmObj port = Scm_MakeVirtualPortFull(klass, name, dir, &vtab,
                                           SCM_PORT_WITH_POSITION);
     PORT_VT(port)->data = data;
     return port;
 }
 
-static void vport_print(ScmObj obj, ScmPort *port, 
+static void vport_print(ScmObj obj, ScmPort *port,
                         ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<%A%s %A %p>",
@@ -594,7 +594,7 @@ typedef struct bport_rec {
     ScmObj filenum_proc;        /* () -> Maybe Int */
     ScmObj getpos_proc;         /* () -> Maybe Int */
     ScmObj setpos_proc;         /* (Int) ->  () */
-    ScmObj seek_proc;           /* (Offset, Whence) -> Offset */    
+    ScmObj seek_proc;           /* (Offset, Whence) -> Offset */
 } bport;
 
 #define BPORT(port)   ((bport*)PORT_BUF(port)->data)
@@ -627,7 +627,7 @@ static ScmSize bport_flush(ScmPort *p, ScmSize cnt, int forcep)
     if (SCM_FALSEP(data->flush_proc)) {
         return cnt;             /* blackhole */
     }
-    ScmObj vec = 
+    ScmObj vec =
         Scm_MakeU8VectorFromArrayShared(cnt, (u_char*)PORT_BUF(p)->buffer);
     ScmObj r = Scm_ApplyRec(data->flush_proc,
                             SCM_LIST2(vec, SCM_MAKE_BOOL(forcep)));
@@ -793,7 +793,7 @@ static ScmObj bport_allocate(ScmClass *klass, ScmObj initargs)
         SCM_ASSERT(data != NULL);                                       \
         data->SCM_CPP_CAT(name,_proc) = v;                              \
     }
-    
+
 #define BPORT_ACC(name)   BPORT_GET(name) BPORT_SET(name)
 
 BPORT_ACC(fill)

@@ -112,7 +112,7 @@ static inline void leaf_key_set(Leaf *leaf, u_long key)
 }
 
 static inline u_long leaf_data(Leaf *leaf)
-{       
+{
     return (leaf->key0 >> LEAF_KEY_BITS);
 }
 

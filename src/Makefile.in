@@ -89,9 +89,9 @@ INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 POSTBUILD   = TARGETLIB="`pwd`" DESTDIR= $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT) ; \
-              TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
+	      TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LIBGAUCHE).$(SOEXT)
 PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT); \
-               TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT)
+	       TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT)
 
 PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 
@@ -120,9 +120,9 @@ BUILD_CFLAGS = -O2 -I$(top_builddir)/src -I$(top_srcdir)/src
 # be called when building from tarball.)
 # We clear GAUCHE_LOAD_PATH to make sure we won't read nonstandard stuff.
 BUILD_GOSH  = GAUCHE_LOAD_PATH="" GAUCHE_DYNLOAD_PATH="" \
-              "@BUILD_GOSH@" $(BUILD_GOSH_FLAGS) \
-              -l$(srcdir)/preload \
-              -I$(top_srcdir)/src -I$(top_srcdir)/lib \
+	      "@BUILD_GOSH@" $(BUILD_GOSH_FLAGS) \
+	      -l$(srcdir)/preload \
+	      -I$(top_srcdir)/src -I$(top_srcdir)/lib \
 	      -I$(top_builddir)/lib -I$(builddir) \
 	      `cat $(builddir)/features.flags`
 
@@ -151,7 +151,7 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc_config_macros.h ../gc/include/gc_cpp.h \
 	../gc/include/gc_inline.h ../gc/include/gc_mark.h \
 	../gc/include/gc_pthread_redirects.h ../gc/include/gc_tiny_fl.h \
-	../gc/include/gc_typed.h ../gc/include/gc_version.h 
+	../gc/include/gc_typed.h ../gc/include/gc_version.h
 INSTALL_SUBHEADERS = \
 	gauche/bignum.h gauche/bits.h gauche/bits_inline.h \
 	gauche/char_euc_jp.h gauche/char_none.h \
@@ -173,7 +173,7 @@ INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT) $(LIBGAUCHE_STATIC).a
 INSTALL_BINS = gosh$(EXEEXT)           \
 	       @ALTERNATIVE_GOSH@      \
 	       gauche-config$(EXEEXT)  \
-               gauche-install$(EXEEXT) \
+	       gauche-install$(EXEEXT) \
 	       gauche-package$(EXEEXT) \
 	       gauche-cesconv$(EXEEXT)
 INSTALL_SCMS = genstub precomp gencomp cesconv build-standalone
@@ -181,17 +181,17 @@ INSTALL_SCMS = genstub precomp gencomp cesconv build-standalone
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
 PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
-	          gauche/priv/arith_x86_64.h \
-	          gauche/priv/dws_adapter.h \
-	          gauche/priv/builtin-syms.h gauche/priv/codeP.h \
+		  gauche/priv/arith_x86_64.h \
+		  gauche/priv/dws_adapter.h \
+		  gauche/priv/builtin-syms.h gauche/priv/codeP.h \
 		  gauche/priv/classP.h gauche/priv/dispatchP.h \
-	          gauche/priv/identifierP.h gauche/priv/macroP.h \
-                  gauche/priv/moduleP.h gauche/priv/mmapP.h \
-	          gauche/priv/nativeP.h \
-	          gauche/priv/pairP.h gauche/priv/parameterP.h \
-	          gauche/priv/portP.h gauche/priv/procP.h \
-	          gauche/priv/readerP.h gauche/priv/regexpP.h \
-	          gauche/priv/stringP.h gauche/priv/writerP.h
+		  gauche/priv/identifierP.h gauche/priv/macroP.h \
+		  gauche/priv/moduleP.h gauche/priv/mmapP.h \
+		  gauche/priv/nativeP.h \
+		  gauche/priv/pairP.h gauche/priv/parameterP.h \
+		  gauche/priv/portP.h gauche/priv/procP.h \
+		  gauche/priv/readerP.h gauche/priv/regexpP.h \
+		  gauche/priv/stringP.h gauche/priv/writerP.h
 
 # MinGW specific
 INSTALL_MINGWHEADERS = gauche/win-compat.h
@@ -216,10 +216,10 @@ test_extra_LDFLAGS = @SHLIB_MAIN_LDFLAGS@
 
 libgauche_LIBRARY = $(LIBGAUCHE).$(SOEXT)
 libgauche_OBJECTS = \
-        box.$(OBJEXT) core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) \
+	box.$(OBJEXT) core.$(OBJEXT) vm.$(OBJEXT) compaux.$(OBJEXT) \
 	macro.$(OBJEXT) connection.$(OBJEXT) code.$(OBJEXT) class.$(OBJEXT) \
 	dispatch.$(OBJEXT) error.$(OBJEXT) execenv.$(OBJEXT) \
-        prof.$(OBJEXT) collection.$(OBJEXT) \
+	prof.$(OBJEXT) collection.$(OBJEXT) \
 	boolean.$(OBJEXT) char.$(OBJEXT) string.$(OBJEXT) list.$(OBJEXT) \
 	hash.$(OBJEXT) dws32hash.$(OBJEXT) dwsiphash.$(OBJEXT) \
 	treemap.$(OBJEXT) bits.$(OBJEXT) \
@@ -243,8 +243,8 @@ libgauche_OBJECTS = \
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 libgc_pic_OBJECTS = $(wildcard $(top_builddir)/gc/.libs/*.$(OBJEXT)) \
-                    $(wildcard $(top_builddir)/gc/extra/.libs/gc.$(OBJEXT)) \
-                    $(wildcard $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT))
+		    $(wildcard $(top_builddir)/gc/extra/.libs/gc.$(OBJEXT)) \
+		    $(wildcard $(top_builddir)/gc/libatomic_ops/src/.libs/*.$(OBJEXT))
 libgc_pic_LIBRARY = libgc_pic.a
 
 HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
@@ -254,11 +254,11 @@ OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 @CROSS_COMPILING_no@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) test-extra$(EXEEXT)
 @CROSS_COMPILING_yes@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
 
-gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS) 
+gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS)
 	@rm -f gosh$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) -o gosh$(EXEEXT) $(gosh_OBJECTS) $(gosh_LDADD) $(LIBS)
 
-gosh-noconsole$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_noconsole_OBJECTS) 
+gosh-noconsole$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_noconsole_OBJECTS)
 	@rm -f gosh-noconsole$(EXEEXT)
 	$(LINK) $(gosh_LDFLAGS) -o gosh-noconsole$(EXEEXT) $(gosh_noconsole_OBJECTS) $(gosh_LDADD) $(LIBS) -Wl,--subsystem,windows
 
@@ -301,8 +301,8 @@ native-supp.scm : gen-native.scm
 	$(BUILD_GOSH) $(srcdir)/gen-native.scm $(builddir)
 
 compile.c  : compile.scm compile-0.scm compile-1.scm compile-2.scm \
-             compile-3.scm compile-4.scm compile-5.scm compile-i.scm \
-             $(PRECOMP_DEPENDENCY)
+	     compile-3.scm compile-4.scm compile-5.scm compile-i.scm \
+	     $(PRECOMP_DEPENDENCY)
 libalpha.c   : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c    : libbool.scm $(PRECOMP_DEPENDENCY)
 libchar.c    : libchar.scm $(PRECOMP_DEPENDENCY)
@@ -408,28 +408,28 @@ gauche-package : gauche-package.in
 gauche-cesconv : gauche-cesconv.in
 	@rm -f gauche-cesconv
 	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv && \
-	cat $(srcdir)/gauche-cesconv.in >> gauche-cesconv 
+	cat $(srcdir)/gauche-cesconv.in >> gauche-cesconv
 	@chmod -w+x gauche-cesconv
 
 # static link -----------------------------------------
 # can be called after everything was built
 
 STATICINIT_SRCS = staticinit.c      \
-                  staticinit_gdbm.c \
-                  staticinit_mbed.c
+		  staticinit_gdbm.c \
+		  staticinit_mbed.c
 
 STATICINIT_OBJS = staticinit.$(OBJEXT)      \
-                  staticinit_gdbm.$(OBJEXT) \
-                  staticinit_mbed.$(OBJEXT)
+		  staticinit_gdbm.$(OBJEXT) \
+		  staticinit_mbed.$(OBJEXT)
 
 static : $(LIBGAUCHE_STATIC).a
 
 $(LIBGAUCHE_STATIC).a : all $(STATICINIT_OBJS)
 	rm -f $@
 	$(AR) -rc $@ $(libgauche_OBJECTS) \
-            `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
-            $(STATICINIT_OBJS) \
-            `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
+	    `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
+	    $(STATICINIT_OBJS) \
+	    `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
 
 # Pseudo dependencies to prevent multiple gen-staticinit from running in parallel
 staticinit_gdbm.c : staticinit.c
@@ -451,17 +451,17 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEX
 	./test-arith >> test.log
 	@for testfile in $(TESTFILES); do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-          top_srcdir=$(top_srcdir) \
+	  top_srcdir=$(top_srcdir) \
 	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
 	done
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-          top_srcdir=$(top_srcdir) \
+	  top_srcdir=$(top_srcdir) \
 	 ./test-extra $(top_srcdir)/test/capi.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-          top_srcdir=$(top_srcdir) \
+	  top_srcdir=$(top_srcdir) \
 	 ./gosh -ftest -e "(define *case-fold* #f)" $(top_srcdir)/test/symcase.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-          top_srcdir=$(top_srcdir) \
+	  top_srcdir=$(top_srcdir) \
 	 ./gosh -ftest -fcase-fold -e "(define *case-fold* #t)" $(top_srcdir)/test/symcase.scm >> test.log
 	@echo "See test.log for details."
 
@@ -469,8 +469,8 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEX
 test2 : gosh$(EXEEXT)
 	@for testfile in $(TEST2FILES); do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
-          top_srcdir=$(top_srcdir) \
-          top_builddir=$(top_builddir) \
+	  top_srcdir=$(top_srcdir) \
+	  top_builddir=$(top_builddir) \
 	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
 	done
 
@@ -498,7 +498,7 @@ install-check :
 # clean ------------------------------------------------
 GENERATED = compile.c autoloads.c builtin-syms.c \
 	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
-            ../lib/gauche/vm/insn.scm native-supp.scm \
+	    ../lib/gauche/vm/insn.scm native-supp.scm \
 	    char_attr.c gauche/priv/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
 	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
@@ -507,14 +507,14 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    libobj.c libparam.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
-	           features.c features.flags
+		   features.c features.flags
 
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
 	       $(GENERATED_SCRIPTS) gauche-config.c \
 	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
-               *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
+	       *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c \
 	       staticinit.c staticinit_gdbm.c staticinit_mbed.c \
@@ -540,7 +540,7 @@ INSTALL_DIRS = "$(DESTDIR)$(HEADER_INSTALL_DIR)" \
 
 install : install-core
 
-install-dirs : 
+install-dirs :
 	$(MKINSTDIR) $(INSTALL_DIRS)
 
 install-aux : all install-dirs

@@ -75,7 +75,7 @@
    (cast void addr)                     ; suppress unused var warning
    (return 'unix))
 
- (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass")) 
+ (define-cmethod sockaddr-family ((addr "Scm_SockAddrInClass"))
    (cast void addr)                     ; suppress unused var warning
    (return 'inet))
 
@@ -204,7 +204,7 @@
                                             SCM_PORT_BUFFER_LINE))])
     (return (Scm_SocketOutputPort sock bufmode))))
 
-(inline-stub 
+(inline-stub
  (.if (and (defined SHUT_RD)
            (defined SHUT_WR)
            (defined SHUT_RDWR))
@@ -415,7 +415,7 @@
 ;;----------------------------------------------------------
 ;; IPv6 routines
 
-(inline-stub 
+(inline-stub
  (declare-cfn addrinfo_allocate (klass::ScmClass* intargs))
 
  (.if (defined HAVE_IPV6)

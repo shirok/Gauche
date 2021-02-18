@@ -51,7 +51,7 @@
           return-result return-failure
           return-failure/expect return-failure/unexpect
           return-failure/message return-failure/compound
-          
+
           $bind $return $fail $expect $lift $lift* $debug
           $let $let* $try $assert $not
           $or $fold-parsers $fold-parsers-right
@@ -64,7 +64,7 @@
           $lazy $parameterize
 
           $any $eos $.
-          
+
           $symbol $string $string-ci
           $char $one-of $none-of
           $satisfy $match1 $match1*
@@ -267,7 +267,7 @@
         (cond [(eq? head s) c]
               [(null? head) "(unknown position)"]
               [else (loop (+ c 1) (cdr head))]))))
-            
+
 (define (construct-peg-parser-error r v s s1)
   (make-peg-parse-error r v (%get-input-pos s s1) s1))
 
@@ -298,7 +298,7 @@
 (define (peg-parse-string parser str :optional (cont #f))
   (check-arg string? str)
   (receive (r rest) (peg-run-parser parser (x->lseq str))
-    (if cont 
+    (if cont
       (cont r rest)
       r)))
 ;; API
@@ -451,7 +451,7 @@
    (^[f r c]
      (match f
        [(_ (bind ...) body ...)
-        (let1 vars&parsers 
+        (let1 vars&parsers
             (map (^b (match b
                        [(var parser) `(,var ,(gensym "parser") ,parser)]
                        [(parser) `(,(gensym "_") ,(gensym "parser") ,parser)]
@@ -757,14 +757,14 @@
 ;; API
 ;; $satisfy PRED EXPECT [RESULT])
 ;;   - Returns a parser such that ...
-;;   - If the head of input stream satisfies PRED, 
+;;   - If the head of input stream satisfies PRED,
 ;;     call (RESULT head (PRED head)) and let its result
 ;;     as the value of successulf parsing.
 ;;   - Otherwise, returns failure with EXPECT as the expected input.
 (define-inline ($satisfy pred expect :optional (result #f))
   (^s (if-let1 v (and (pair? s) (pred (car s)))
         (return-result (if result
-                         (result (car s) v) 
+                         (result (car s) v)
                          (car s))
                        (cdr s))
         (return-failure/expect expect s))))
@@ -776,8 +776,8 @@
 ;;   - $match1 takes one item from stream and see if it matches
 ;;     with PATTERN.
 ;;   - $match1* applys PATTERN on the entire input stream.
-;;   - If matched, RESULT is evaluated in the environment where pattern 
-;;     variables in PATTERN are bound, and its result becomes the result 
+;;   - If matched, RESULT is evaluated in the environment where pattern
+;;     variables in PATTERN are bound, and its result becomes the result
 ;;     value of the parser.
 ;;   - If RESULT is omitted, the matched item is returned.
 ;;   - If (=> FAIL) is given, FAIL (must be an identifier) is bound to
@@ -933,13 +933,13 @@
                    (char-ci=? (car s) (car lis)))
             (loop (cons (car s) r) (cdr s) (cdr lis))
             (return-failure/expect str s0)))))))
-   
+
 (define-inline ($char c)
-  (assume-type c <char>) 
+  (assume-type c <char>)
   ($satisfy (cut eqv? c <>) c))
 
 (define ($char-ci c)
-  (assume-type c <char>) 
+  (assume-type c <char>)
   ($satisfy (^x (and (char? x) (char-ci=? c x)))
             (list->char-set c (char-upcase c) (char-downcase c))))
 
@@ -948,7 +948,7 @@
   ($satisfy (^x (and (char? x) (char-set-contains? charset x)))
             charset))
 
-(define ($symbol sym) 
+(define ($symbol sym)
   (assume-type sym <symbol>)
   ($seq ($string (symbol->string sym)) ($return sym)))
 

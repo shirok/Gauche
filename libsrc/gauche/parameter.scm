@@ -90,7 +90,7 @@
       (slot-set! param 'pre-observers (make-hook 2))
       (slot-set! param 'post-observers (make-hook 2)))))
 
-;; For the backward compatibility.  
+;; For the backward compatibility.
 (define-method object-apply ((self <parameter>))
   ((with-module gauche.internal %primitive-parameter-ref) self))
 (define-method object-apply ((self <parameter>) newval)

@@ -29,4 +29,3 @@ rfc--zlib.c zlib.sci : zlib.scm
 	$(PRECOMP) -e -P -o rfc--zlib $(srcdir)/zlib.scm
 
 install : install-std
-

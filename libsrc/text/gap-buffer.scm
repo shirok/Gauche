@@ -268,12 +268,12 @@
      (let ([cpos (mov! pos)])
        (gap-buffer-insert! gbuf str)
        `(d ,cpos ,(string-length str)))]
-    [('d pos len) 
+    [('d pos len)
      (let* ([cpos (mov! pos)]
             [s (gap-buffer->string gbuf cpos (+ cpos len))])
        (gap-buffer-delete! gbuf len)
        `(i ,cpos ,s))]
-    [('c pos len str) 
+    [('c pos len str)
      (let* ([cpos (mov! pos)]
             [s (gap-buffer->string gbuf cpos (+ cpos len))])
        (gap-buffer-replace! gbuf len str)
@@ -310,4 +310,3 @@
 (define (gap-buffer->string gbuf :optional (start 0) (end (undefined)))
   (let1 g (gap-buffer->generator gbuf start end)
     (with-output-to-string (^[] (generator-for-each display g)))))
-

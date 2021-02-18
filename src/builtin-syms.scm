@@ -223,5 +223,3 @@
     ;; dlentry
     (called                    SCM_SYM_CALLED)
     ))
-
-

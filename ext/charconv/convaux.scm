@@ -106,7 +106,7 @@
              [entry-a (find-entry ces-a)])
         (cond [(or (eq? ces-a 'none) (eq? ces-b 'none)) #t]
               [(or (not entry-a) (not (find-entry ces-b)))
-	       unknown-fallback]
+               unknown-fallback]
               [else (let loop ([entry entry-a])
                       (or (boolean (memq ces-b (car entry)))
                           (any loop (map find-entry (cdr entry)))))])))
@@ -161,12 +161,12 @@
 
 ;; Convert string or uvector -> string or uvector
 (define (ces-convert-to class input fromcode
-                        :optional (tocode #f) 
+                        :optional (tocode #f)
                         :key illegal-output)
   (receive (inp isize) (%ces-input input)
     (receive (out get) (%ces-output class)
       (let1 in ($ open-input-conversion-port inp fromcode
-                  :to-code tocode :buffer-size isize 
+                  :to-code tocode :buffer-size isize
                   :owner? #t :illegal-output illegal-output)
         (copy-port in out :unit 'byte)
         (close-input-port in)
@@ -174,7 +174,7 @@
         (begin0 (get out)
           (close-output-port out))))))
 
-(define (ces-convert input fromcode 
+(define (ces-convert input fromcode
                      :optional (tocode #f)
                      :key illegal-output)
   (ces-convert-to <string> input fromcode tocode :illegal-output illegal-output))
@@ -321,5 +321,3 @@
        (return (SCM_MAKE_STR guessed))
        (return '#f))))
  )
-
-

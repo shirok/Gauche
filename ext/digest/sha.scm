@@ -195,5 +195,3 @@
  (define-cproc %sha512-final (ctx::<sha-context>)
    (common-final SHA512_Final ctx SHA512_DIGEST_LENGTH))
  )
-
-

@@ -150,7 +150,7 @@ void Scm_Init(const char *signature)
         if (debug_init) fprintf(stderr, "Calling %s...\n", #f); \
         f();                                                    \
     } while (0)
-    
+
     /* make sure the main program links the same version of libgauche */
     if (strcmp(signature, GAUCHE_SIGNATURE) != 0) {
         Scm_Panic("libgauche ABI version mismatch: libgauche %s, expected %s",
@@ -527,7 +527,7 @@ init_cond_features()
         /* NB: We should probably make checking 'r7rs' trigger loading
            r7rs module and setting up the environment. */
         { "r7rs", NULL },
-            
+
         /* R7RS Appendix B */
         { "exact-closed", NULL },
         // { "exact-complex", NULL }, /* not yet */
@@ -548,7 +548,7 @@ init_cond_features()
 
         /* SRFIs that are not libraries */
         { "srfi-22", NULL },    /* Scheme scripts */
-        
+
         /* Threads */
 #if   defined(GAUCHE_USE_PTHREADS)
         { "gauche.sys.threads", "gauche.threads" },
@@ -588,7 +588,7 @@ init_cond_features()
         { "regexp-unicode", "srfi.115" },
 
 #include "features.c"
-        
+
         { NULL, NULL }
     };
 

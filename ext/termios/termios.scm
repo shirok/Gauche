@@ -148,8 +148,8 @@
    (.when (defined HAVE_FORKPTY)
      (define-cproc sys-forkpty (:optional term) Scm_Forkpty)
      (define-cproc sys-forkpty-and-exec (program::<string> args::<list>
-                                         :key (iomap ()) 
-                                              term 
+                                         :key (iomap ())
+                                              term
                                               (sigmask::<sys-sigset>? #f))
        Scm_ForkptyAndExec)
      )
@@ -337,5 +337,5 @@
            (set! (port-buffering port) saved-buffering)
            (when cleanup (cleanup)))
          (unwind-protect (begin (set) (proc port)) (reset))))]))
- 
+
  ) ; without-precompiling

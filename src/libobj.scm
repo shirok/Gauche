@@ -190,7 +190,7 @@
    (let* ([val (Scm_GlobalVariableRef module name 0)])
      (cond
       [(Scm_TypeP val SCM_CLASS_GENERIC)
-       (when (SCM_UNBOUNDP (Scm_GlobalVariableRef module name 
+       (when (SCM_UNBOUNDP (Scm_GlobalVariableRef module name
                                                   SCM_BINDING_STAY_IN_MODULE))
          (Scm_Define module name val))]
       [else
@@ -876,7 +876,7 @@
           (cond [(char=? #\/ c) (display #\\ out) (display c out)]
                 [(memq (char-general-category c) '(Mn Mc Me Cc Cf Cs Co Cn))
                  (let1 code (char->ucs c)
-                   (if (< code #x10000)  
+                   (if (< code #x10000)
                      (format out "\\u~4,'0x" code)
                      (format out "\\U~8,'0x" code)))]
                 [else (display c out)])
@@ -963,4 +963,3 @@
                 %ensure-generic-function
                 %check-class-binding
                 )
-

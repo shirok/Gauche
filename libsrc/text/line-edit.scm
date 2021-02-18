@@ -185,7 +185,7 @@
     (%save-history ctx path)))
 
 ;; Global SIGCONT handler
-;;  Since we, as a library, don't have control of sigmasks in all threads, 
+;;  Since we, as a library, don't have control of sigmasks in all threads,
 ;;  so we don't know which thread the sigcont handler is invoked.
 
 ;;  *sigcont-observer* is an atom of these values:
@@ -249,7 +249,7 @@
       (eof-object)))
   ;; Command handler.
   ;; The command may return one of the following values.
-  ;;   visible - the command changed something visible so we need to 
+  ;;   visible - the command changed something visible so we need to
   ;;            redisplay, but we don't need to save the change in
   ;;            the actual buffer.
   ;;            The selection is cleared.
@@ -565,7 +565,7 @@
       (reset-character-attribute con)
       (set-character-attribute con newattr))))
 
-;; Show message at the starting point of the current 
+;; Show message at the starting point of the current
 ;; redraw the current buffer below it.
 (define (show-message ctx buffer msg :optional (attr #f))
   (move-cursor-to (~ ctx'console) (~ ctx'initpos-y) 0)
@@ -1060,8 +1060,8 @@
     (if (= lines (buffer-num-lines buf))
       (next-history ctx buf key)
       (begin (buffer-set-line&col! buf (+ lines 1) col) 'moved))))
-  
-       
+
+
 (define-edit-command (transpose-chars ctx buf key)
   "Exchange characters on the cursor and before the cursor and position \
    the cursor one character before.  If the buffer is empty, do nothing. \
@@ -1274,7 +1274,7 @@
   (and-let1 ks (command-name->keystrokes km command-name)
     (let1 s (keys->string ks #f)
       (substring s 0 (- (string-length s) 1))))) ;avoid depending srfi-13
-  
+
 (define-syntax define-key
   (syntax-rules ()
     [(_ km keystroke command)
@@ -1357,7 +1357,7 @@
   (define (rec km prefixes)
     (print (or (~ km'name) "(anonymous keymap)"))
     (keymap-describe km prefixes)
-    (hash-table-for-each 
+    (hash-table-for-each
      (~ km'table)
      (^[k v] (when (is-a? v <keymap>)
                (print)
@@ -1451,7 +1451,7 @@
 (define-key *default-keymap* (alt #\>) move-end-of-buffer)
 ;;(define-key *default-keymap* (alt #\?) undefined-command)
 
-              
+
 ;;(define-key *default-keymap* (alt #\@) undefined-command)
 ;;(define-key *default-keymap* (alt #\A) undefined-command)
 ;;(define-key *default-keymap* (alt #\B) undefined-command)
@@ -1588,7 +1588,7 @@ Undo semantics
  Here's the description of algorithm.
 
  - A, B, C, ... is an edit commans
- - Applying command A to buffer v is v*A.  
+ - Applying command A to buffer v is v*A.
  - ^X is an inversion of command X.  X*^X = ^X*X = I (identity)
 
  1. Suppose the user did three buffer-changing operations, A, B and C.
@@ -1633,8 +1633,6 @@ Undo semantics
     empty.
 
          buffer: v*A*B*C
-     undo stack: 
+     undo stack:
      redo queue: ^A ^B ^C C B ^B ^C C B A
 |#
-
-

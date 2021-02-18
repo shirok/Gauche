@@ -23,4 +23,3 @@ windows.c : windows.stub
 console.c : console.stub
 
 install : install-std
-

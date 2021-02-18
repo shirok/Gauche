@@ -50,7 +50,7 @@
    storage.  It doesn't have extra features such as filter
    procedure or hooks.  It is useful for the parameter that needs
    to be accessed from C as well.
-   
+
    ScmParameter is Scheme's <parameter> object.  It inherits
    primitive parameter, but adds some bells and whistles.
 */
@@ -72,9 +72,9 @@ SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                              ScmObj initval,
                                                              u_long flags);
 SCM_EXTERN ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p);
-SCM_EXTERN ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, 
+SCM_EXTERN ScmObj Scm_PrimitiveParameterRef(ScmVM *vm,
                                             const ScmPrimitiveParameter *p);
-SCM_EXTERN ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, 
+SCM_EXTERN ScmObj Scm_PrimitiveParameterSet(ScmVM *vm,
                                             const ScmPrimitiveParameter *p,
                                             ScmObj val);
 
@@ -99,7 +99,7 @@ SCM_EXTERN void Scm_DefinePrimitiveParameter(ScmModule *mod,
 SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm,
                                         ScmParameterLoc *location /*out*/);
 SCM_EXTERN void   Scm_InitParameterLoc(ScmVM *vm,
-                                       ScmParameterLoc *location, 
+                                       ScmParameterLoc *location,
                                        ScmObj initval);
 SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *location);
 SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,

@@ -89,16 +89,15 @@ size_t Scm_BinarySearchF32(const float vec[], size_t len, float key,
                            u_int skip, size_t *floor, size_t *ceil);
 size_t Scm_BinarySearchF64(const double vec[], size_t len, double key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchC32(const ScmHalfComplex vec[], size_t len, 
+size_t Scm_BinarySearchC32(const ScmHalfComplex vec[], size_t len,
                            ScmHalfComplex key,
                            u_int skip, size_t *floor, size_t *ceil);
 size_t Scm_BinarySearchC64(const ScmFloatComplex vec[], size_t len,
                            ScmFloatComplex key,
                            u_int skip, size_t *floor, size_t *ceil);
-size_t Scm_BinarySearchC128(const ScmDoubleComplex vec[], size_t len, 
+size_t Scm_BinarySearchC128(const ScmDoubleComplex vec[], size_t len,
                             ScmDoubleComplex key,
                             u_int skip, size_t *floor, size_t *ceil);
 
 
 #endif /*GAUCHE_PRIV_VECTORP_H*/
-

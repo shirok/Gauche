@@ -117,12 +117,12 @@
 (define (call-with-temporary-file proc
                                   :key (directory (temporary-directory))
                                        (prefix "gtemp"))
-  (receive (oport name) (sys-mkstemp (build-path directory prefix))  
+  (receive (oport name) (sys-mkstemp (build-path directory prefix))
     (unwind-protect (proc oport name)
       (close-output-port oport)
       (sys-unlink name))))
 
-(define (call-with-temporary-directory proc 
+(define (call-with-temporary-directory proc
                                        :key (directory (temporary-directory))
                                             (prefix "gtemp"))
   (let1 dir (sys-mkdtemp (build-path directory prefix))
@@ -204,7 +204,7 @@
   (define (err-notdir p)
     (errorf "non-directory ~s is found while creating a directory ~s"
             (sys-basename p) dir))
-    
+
   (define (rec p)
     (if (file-exists? p)
       (unless (file-is-directory? p) (err-notdir p))

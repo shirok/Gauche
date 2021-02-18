@@ -13,9 +13,9 @@ GENERATED = Makefile
 XCLEANFILES = crypt--bcrypt.c *.sci
 
 OBJECTS = crypt--bcrypt.$(OBJEXT) \
-          crypt_blowfish.$(OBJEXT) \
-          crypt_gensalt.$(OBJEXT) \
-          wrapper.$(OBJEXT)
+	  crypt_blowfish.$(OBJEXT) \
+	  crypt_gensalt.$(OBJEXT) \
+	  wrapper.$(OBJEXT)
 
 all : $(LIBFILES)
 
@@ -26,4 +26,3 @@ bcrypt.sci crypt--bcrypt.c : bcrypt.scm
 	$(PRECOMP) -e -P -o crypt--bcrypt $(srcdir)/bcrypt.scm
 
 install : install-std
-

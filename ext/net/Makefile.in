@@ -10,10 +10,10 @@ LIBFILES = gauche--net.$(SOEXT)
 SCMFILES = net.scm
 
 OBJECTS = net.$(OBJEXT)				\
-          addr.$(OBJEXT) 			\
-          netdb.$(OBJEXT)			\
-          netlib.$(OBJEXT)			\
-          netaux.$(OBJEXT)
+	  addr.$(OBJEXT)			\
+	  netdb.$(OBJEXT)			\
+	  netlib.$(OBJEXT)			\
+	  netaux.$(OBJEXT)
 
 GENERATED = Makefile
 XCLEANFILES = netlib.c netaux.c
@@ -30,5 +30,3 @@ netaux.c : netaux.scm
 	$(PRECOMP) $(srcdir)/netaux.scm
 
 install : install-std
-
-

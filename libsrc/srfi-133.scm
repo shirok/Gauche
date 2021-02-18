@@ -35,38 +35,38 @@
   (use util.match)
   (export
    ;; constructors
-   make-vector vector vector-unfold vector-unfold-right 
-   vector-copy vector-reverse-copy 
-   vector-append vector-concatenate vector-append-subvectors 
+   make-vector vector vector-unfold vector-unfold-right
+   vector-copy vector-reverse-copy
+   vector-append vector-concatenate vector-append-subvectors
 
-   ;; Predicates 
-   vector? vector-empty? vector= 
+   ;; Predicates
+   vector? vector-empty? vector=
 
-   ;; Selectors 
-   vector-ref vector-length 
+   ;; Selectors
+   vector-ref vector-length
 
-   ;; Iteration 
-   vector-fold vector-fold-right 
-   vector-map vector-map! 
-   vector-for-each vector-count 
-   vector-cumulate 
+   ;; Iteration
+   vector-fold vector-fold-right
+   vector-map vector-map!
+   vector-for-each vector-count
+   vector-cumulate
 
-   ;; Searching 
-   vector-index vector-index-right 
-   vector-skip vector-skip-right 
-   vector-binary-search 
-   vector-any vector-every 
-   vector-partition 
+   ;; Searching
+   vector-index vector-index-right
+   vector-skip vector-skip-right
+   vector-binary-search
+   vector-any vector-every
+   vector-partition
 
-   ;; Mutators 
-   vector-set! vector-swap! 
-   vector-fill! vector-reverse! 
-   vector-copy! vector-reverse-copy! 
-   vector-unfold! vector-unfold-right! 
+   ;; Mutators
+   vector-set! vector-swap!
+   vector-fill! vector-reverse!
+   vector-copy! vector-reverse-copy!
+   vector-unfold! vector-unfold-right!
 
-   ;; Conversion 
-   vector->list reverse-vector->list 
-   list->vector reverse-list->vector 
+   ;; Conversion
+   vector->list reverse-vector->list
+   list->vector reverse-list->vector
    vector->string string->vector
    ))
 
@@ -355,7 +355,7 @@
                    [(= lo mid) #f]
                    [(< r 0) (rec mid hi)]
                    [else (rec lo mid)]))))))
-     
+
 (define vector-any
   (case-lambda
     ([pred v]
@@ -438,7 +438,7 @@
   (%ensure-mutable vec)
   (receive (s e) (%vector-check-start+end vec start end #t)
     (%vector-reverse! vec s e)))
-  
+
 (define (reverse-vector->list vec :optional (start 0) (end -1))
   (assume-type vec <vector>)
   (receive (s e) (%vector-check-start+end vec start end #t)

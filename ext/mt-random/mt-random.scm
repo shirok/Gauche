@@ -50,7 +50,7 @@
  (declcode
   (.include "mt-random.h"))
  (initcode (Scm_Init_mt_random))
- 
+
  (define-type <mersenne-twister> "ScmMersenneTwister*")
  (define-type <u32vector> "ScmU32Vector*")
  (define-type <f32vector> "ScmF32Vector*")
@@ -125,4 +125,3 @@
         (if (< r qn)
           (quotient r q)
           (loop (%get-nword-random-int mt siz)))))))
-

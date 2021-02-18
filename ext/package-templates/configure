@@ -3,7 +3,7 @@
 ;; Run ./configure (or gosh ./configure) to generate Makefiles.
 
 (use gauche.configure)
-(load "configure-compat" 
+(load "configure-compat"
       :paths `(,(sys-dirname (current-load-path)))
       :error-if-not-found #f)
 

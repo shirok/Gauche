@@ -286,7 +286,7 @@ ScmObj Scm_CopyList(ScmObj list)
         if (!SCM_PAIRP(hare)) break;
         SCM_APPEND1(start, last, SCM_CAR(hare));
         hare = SCM_CDR(hare);
-        
+
         if (!SCM_PAIRP(hare)) break;
         SCM_APPEND1(start, last, SCM_CAR(hare));
         hare = SCM_CDR(hare);
@@ -761,7 +761,7 @@ static ScmObj make_extended_pair(ScmExtendedPairDescriptor *desc,
                                  ScmObj car, ScmObj cdr, ScmObj attrs)
 {
     ScmRealExtendedPair *xp = SCM_NEW(ScmRealExtendedPair);
-    /* ScmRealExtendedPair is not an ScmObj, and 
+    /* ScmRealExtendedPair is not an ScmObj, and
        ScmExtendedPairDescriptor is not an ScmClass.   To avoid confusion,
        we manually tweak tag bits.
     */
@@ -884,7 +884,7 @@ void Scm__InitList()
 
 /* Temporary - Check if normal pairs are all aligned with 2-word boundary */
 #if GAUCHE_CHECK_PAIR_ALIGNMENT
-int Scm_CheckingPairP(ScmObj obj) 
+int Scm_CheckingPairP(ScmObj obj)
 {
     if (SCM_HPTRP(obj)&&(SCM_HTAG(obj)!=7||Scm_PairP(SCM_OBJ(obj)))) {
         if (SCM_WORD(obj) & SIZEOF_LONG) {
@@ -897,4 +897,3 @@ int Scm_CheckingPairP(ScmObj obj)
     return FALSE;
 }
 #endif /*GAUCHE_CHECK_PAIR_ALIGNMENT*/
-

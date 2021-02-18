@@ -50,7 +50,7 @@
  * Syntax object
  */
 
-static void syntax_print(ScmObj obj, ScmPort *port, 
+static void syntax_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *mode SCM_UNUSED)
 {
     ScmSymbol *name = SCM_SYNTAX(obj)->name;
@@ -58,7 +58,7 @@ static void syntax_print(ScmObj obj, ScmPort *port,
     if (mod == NULL) {
         Scm_Printf(port, "#<syntax %A>", (name ? SCM_OBJ(name) : SCM_FALSE));
     } else {
-        Scm_Printf(port, "#<syntax %A#%A>", 
+        Scm_Printf(port, "#<syntax %A#%A>",
                    mod->name,
                    (name ? SCM_OBJ(name) : SCM_FALSE));
     }
@@ -130,7 +130,7 @@ SCM_CLASS_DECL(Scm_SyntaxPatternClass);
 #define SCM_SYNTAX_PATTERN(obj)   ((ScmSyntaxPattern*)(obj))
 #define SCM_SYNTAX_PATTERN_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTAX_PATTERN)
 
-static void pattern_print(ScmObj obj, ScmPort *port, 
+static void pattern_print(ScmObj obj, ScmPort *port,
                           ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<pattern:%d%S %S%s>",
@@ -158,7 +158,7 @@ ScmSyntaxPattern *make_syntax_pattern(int level, int numFollowing)
  *   Internal object to construct pattern matcher
  */
 
-static void synrule_print(ScmObj obj, ScmPort *port, 
+static void synrule_print(ScmObj obj, ScmPort *port,
                           ScmWriteContext *mode SCM_UNUSED)
 {
     ScmSyntaxRules *r = SCM_SYNTAX_RULES(obj);
@@ -273,7 +273,7 @@ typedef struct {
     ScmObj literals;            /* list of literals */
     ScmObj pvars;               /* list of (pvar . pvref) */
     ScmObj renames;             /* list of (var . identifier)  Keep mapping
-                                   of input symbol/identifier to fresh 
+                                   of input symbol/identifier to fresh
                                    identifier */
     ScmObj ellipsis;            /* symbol/identifier/keyword for ellipsis
                                    SCM_TRUE means default (...)
@@ -390,7 +390,7 @@ static ScmObj rename_variable(ScmObj var,
    In the pattern, we replace variables to identifiers.
    We also recognize pattern variables, and replace them for PVARs in
    the pattern, and for PVREFs in the template.
-   When encounters a repeatable subpattern, replace it with 
+   When encounters a repeatable subpattern, replace it with
    SyntaxPattern node.
 */
 static ScmObj compile_rule1(ScmObj form,
@@ -504,11 +504,11 @@ static ScmObj compile_rule1(ScmObj form,
         if (!SCM_FALSEP(Scm_Memq(form, ctx->literals))) {
             if (patternp)
                 return rename_variable(form, &ctx->renames, ctx->mod, ctx->env);
-            else        
+            else
                 return form;  /* template renaming is done in expansion time */
         }
         if (patternp && Scm__ERCompare(form, SCM_SYM_UNDERBAR,
-                                       ctx->mod, ctx->env)) { 
+                                       ctx->mod, ctx->env)) {
             return SCM_SYM_UNDERBAR;
         }
         if (patternp) {
@@ -1005,11 +1005,11 @@ ScmObj Scm_CompileSyntaxRules(ScmObj name, ScmObj src, ScmObj ellipsis,
     ScmObj info = SCM_NIL, info_tail = SCM_NIL;
     if (SCM_PAIRP(src)) {
         SCM_APPEND1(info, info_tail, Scm_Cons(SCM_SYM_SOURCE, src));
-        ScmObj source_info = Scm_PairAttrGet(SCM_PAIR(src), 
+        ScmObj source_info = Scm_PairAttrGet(SCM_PAIR(src),
                                              SCM_SYM_SOURCE_INFO,
                                              SCM_FALSE);
         if (SCM_PAIRP(source_info)) {
-            SCM_APPEND1(info, info_tail, 
+            SCM_APPEND1(info, info_tail,
                         Scm_Cons(SCM_SYM_SOURCE_INFO, source_info));
         }
     }

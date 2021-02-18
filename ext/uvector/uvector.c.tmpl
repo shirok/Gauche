@@ -692,7 +692,7 @@ static inline uint64_t u64num(ScmObj x, int *oor)
 ///(define *tmpl-numop* '(
 /* NB: s1 can be a register flonum. */
 static void ${t}vector_${opname}(const char *name,
-                                 ScmObj d, ScmObj s0, ScmObj s1, 
+                                 ScmObj d, ScmObj s0, ScmObj s1,
                                  int clamp SCM_UNUSED)
                                 /* clamp appears in macro call below, but
                                    the macro may not use it. */
@@ -972,7 +972,7 @@ static inline uint64_t u64muladd(uint64_t x, uint64_t y, uint64_t acc, ScmObj *s
 #define f64muladd(x, y, acc, sacc)  (acc + x*y)
 
 #define c32muladd(x, y, acc, sacc) \
-    (ScmHalfComplex){acc.r + x.r*y.r - x.i*y.i, acc.i + x.i*y.r + x.r*y.i} 
+    (ScmHalfComplex){acc.r + x.r*y.r - x.i*y.i, acc.i + x.i*y.r + x.r*y.i}
 #define c64muladd(x, y, acc, sacc)  (acc + x*y)
 #define c128muladd(x, y, acc, sacc)  (acc + x*y)
 ///))

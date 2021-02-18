@@ -576,4 +576,3 @@
 (define map-in-order map) ; Gauche's map is already in order
 
 (define alist-cons acons)
-

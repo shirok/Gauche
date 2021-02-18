@@ -16,7 +16,7 @@
 ;; codepad area without worrying the recursive calls overwrite active
 ;; code.
 
-;; For SYSV AMD64 calling convention: Section 3.2 of 
+;; For SYSV AMD64 calling convention: Section 3.2 of
 ;; http://refspecs.linux-foundation.org/elf/x86_64-abi-0.95.pdf
 
 (define (gen-stub-amd64 port)
@@ -86,9 +86,9 @@
                      (ret)
                      (.align 8)
            spill:)))                           ; spill data to be filled
-           
+
   (define (entry-offsets labels)  ;; numargs -> code vector offset
-    (map (cut assq-ref labels <>) 
+    (map (cut assq-ref labels <>)
          '(entry0: entry1: entry2: entry3: entry4: entry5: entry6:
                    entry6f0: entry6f1: entry6f2: entry6f3:
                    entry6f4: entry6f5: entry6f6: entry6f7:)))
@@ -106,7 +106,7 @@
   (pprint `(define *amd64-call-reg-code*
              ',(list->u8vector reg-code))
           :port port
-          :controls (make-write-controls :pretty #t :width 75 
+          :controls (make-write-controls :pretty #t :width 75
                                          :base 16 :radix #t))
 
   (display ";; Spill-to-stack case" port)
@@ -116,9 +116,9 @@
   (pprint `(define *amd64-call-spill-code*
              ',(list->u8vector spill-code))
           :port port
-          :controls (make-write-controls :pretty #t :width 75 
+          :controls (make-write-controls :pretty #t :width 75
                                          :base 16 :radix #t))
-  
+
   ;; (call-amd64 <dlptr> args rettype)
   ;;  args : ((type value) ...)
   ;; NB: In the final form, we won't expose this function to the user; it's
@@ -139,7 +139,7 @@
                               (min num-fargs 8)
                               num-spills rettype)))))
    :port port)
-  (pprint 
+  (pprint
    `(define call-amd64-regs
       (let ((%%call-native (global-variable-ref (find-module 'gauche.bootstrap)
                                                 '%%call-native))
@@ -156,7 +156,7 @@
                           [(memq (caar args) '(o p i s))
                            (loop (cdr args) (+ icount 1) fcount
                                  ;; +2 is offset of immediate field
-                                 (cons `(,(+ (~ entry-offsets (+ 1 icount)) 2) 
+                                 (cons `(,(+ (~ entry-offsets (+ 1 icount)) 2)
                                          ,@(car args))
                                        r))]
                           [(memq (caar args) '(d))
@@ -212,7 +212,7 @@
                                    (cons `(,(spill-offset (- num-spills scount 1)) ,@(car args))
                                          r)))]
                           [else (error "bad arg entry:" (car args))]))])
-            (%%call-native entry 
+            (%%call-native entry
                            (+ ,(assq-ref spill-labels 'spill:)
                               (* num-spills 8))
                            *amd64-call-spill-code*
@@ -235,7 +235,7 @@
 ;; gosh ./gen-native.scm <dir>
 (define (main args)
   (match (cdr args)
-    [(dir) (call-with-temporary-file 
+    [(dir) (call-with-temporary-file
             (^[port tmpname]
               (gen-stub-amd64 port)
               (close-output-port port)
@@ -243,4 +243,3 @@
             :directory dir :prefix "native-supp.scm")]
     [else  (exit 1 "Usage: gosh ./gen-native.scm <directory>")])
   0)
-

@@ -122,4 +122,3 @@ SCM_EXTERN ScmObj Scm_GlocMarkConst(ScmGloc *g);
 SCM_EXTERN ScmObj Scm_GlocUnmarkConst(ScmGloc *g);
 
 #endif /* GAUCHE_GLOC_H */
-

@@ -28,8 +28,3 @@
          (for-each sys-unlink (glob #"~|tname|.*"))))]
     [else (print "Usage: gosh ndbm-suffixes.scm <outfile>") (exit 1)])
   0)
-
-
-
-
-

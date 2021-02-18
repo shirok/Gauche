@@ -7,16 +7,16 @@ SCM_CATEGORY = sxml
 include ../Makefile.ext
 
 SCMCOMPILE = $(GOSH) -l$(srcdir)/adaptor -E "import sxml.adaptor" \
-                 -E 'provide "sxml/adaptor"' $(top_srcdir)/src/precomp
+		 -E 'provide "sxml/adaptor"' $(top_srcdir)/src/precomp
 SCMTRANS   = $(GOSH) $(srcdir)/trans.scm
 
 GENERATED_TARGET = tree-trans.scm to-html.scm \
-                   ssax.sci tools.sci sxpath.sci \
-	           serializer.sci
+		   ssax.sci tools.sci sxpath.sci \
+		   serializer.sci
 GENERATED_FILES = sxml--ssax.c sxml-ssax.scm \
-                  sxml--sxpath.c sxml-sxpath.scm \
-                  sxml--tools.c sxml-tools.scm \
-	          sxml--serializer.c sxml-serializer.scm
+		  sxml--sxpath.c sxml-sxpath.scm \
+		  sxml--tools.c sxml-tools.scm \
+		  sxml--serializer.c sxml-serializer.scm
 GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
 XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES)
 GENERATED = Makefile
@@ -24,10 +24,10 @@ GENERATED = Makefile
 LIBFILES = sxml--ssax.$(SOEXT) sxml--sxpath.$(SOEXT) sxml--tools.$(SOEXT) \
 	   sxml--serializer.$(SOEXT)
 SCMFILES = adaptor.scm ssax.sci sxpath.sci tools.sci \
-           tree-trans.scm to-html.scm serializer.sci
+	   tree-trans.scm to-html.scm serializer.sci
 
 OBJECTS = $(ssax_OBJECTS) $(sxpath_OBJECTS) $(tools_OBJECTS) \
-          $(serializer_OBJECTS)
+	  $(serializer_OBJECTS)
 
 all : $(LIBFILES) $(GENERATED_TARGET)
 

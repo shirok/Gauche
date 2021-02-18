@@ -86,13 +86,13 @@ typedef union ScmStringIndexRec {
     /* We use element size according to the length of string body.
        The first entry encodes the entry size and shift value.
        (We might try index24 and/or index48.)
-       
+
        RRSSS000 - index8
        RRSSS001 - index16
        RRSSS011 - index32
        RRSSS101 - index64
 
-       'SSS' encodes a value S, where an index is created for 
+       'SSS' encodes a value S, where an index is created for
        every 1<<(S+1) characters.
 
        'RR' is reserved.  Currently 00.

@@ -294,4 +294,3 @@
  (define-enum O_CREAT)
  (define-enum O_TRUNC)
  )
-

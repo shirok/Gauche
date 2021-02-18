@@ -23,5 +23,3 @@ gauche--syslog.c syslog.sci : syslog.scm
 	$(PRECOMP) -e -P -o gauche--syslog $(srcdir)/syslog.scm
 
 install : install-std
-
-

@@ -7,17 +7,17 @@ SCM_CATEGORY =
 include ../Makefile.ext
 
 LIBFILES = srfi-1.$(SOEXT)  \
-           srfi-13.$(SOEXT) \
-           srfi-19.$(SOEXT) \
-           srfi-43.$(SOEXT) \
-           srfi-133.$(SOEXT) \
+	   srfi-13.$(SOEXT) \
+	   srfi-19.$(SOEXT) \
+	   srfi-43.$(SOEXT) \
+	   srfi-133.$(SOEXT) \
 	   srfi-144.$(SOEXT) \
 	   srfi-178.$(SOEXT)
 SCMFILES = srfi-1.sci  \
-           srfi-13.sci \
-           srfi-19.sci \
-           srfi-43.sci \
-           srfi-133.sci \
+	   srfi-13.sci \
+	   srfi-19.sci \
+	   srfi-43.sci \
+	   srfi-133.sci \
 	   srfi-144.sci \
 	   srfi-178.sci
 

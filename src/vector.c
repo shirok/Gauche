@@ -49,7 +49,7 @@
    (8 or 16 bytes).  If there's not enough heap, then it tries to expand
    the heap by the size rounded up to the pagesize.  We don't want the final
    value overflows signed long.
-   (In reality, expanding heap with close to LONG_MAX surely fails, so it  
+   (In reality, expanding heap with close to LONG_MAX surely fails, so it
    should suffice to avoid overflow before calling GC_MALLOC. But it won't
    harm to have a bit of margin here...)
  */
@@ -112,7 +112,7 @@ static ScmVector *make_vector(ScmSmallInt size)
     SCM_SET_CLASS(v, SCM_CLASS_VECTOR);
 #if GAUCHE_API_VERSION >= 1000
     v->size_flags = (size << 1);
-#else    
+#else
     v->size = size;
 #endif
     return v;
@@ -623,7 +623,7 @@ ScmObj Scm_ReadUVector(ScmPort *port, const char *tag, ScmReadContext *ctx)
     else Scm_Error("invalid unform vector tag: %s", tag);
 
     ScmObj uv = Scm_ListToUVector(klass, list, 0);
-    
+
     /* If we are reading source file, let literal uvectors be immutable. */
     if (Scm_ReadContextLiteralImmutable(ctx)) {
         SCM_UVECTOR_IMMUTABLE_SET(uv, TRUE);
@@ -681,7 +681,7 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
         Scm_PrintDouble(out, cimag(elt), 0);    \
         Scm_Putz("i", 1, out);                  \
     } while (0)
-    
+
 
 static inline void s64pr(ScmPort *out, int64_t elt)
 {
@@ -802,7 +802,7 @@ DEF_CMP(C32, c32, ScmHalfComplex, c32eqv, c32lt)
 DEF_CMP(C64, c64, ScmFloatComplex, common_eqv, c64lt)
 DEF_CMP(C128, c128, ScmDoubleComplex, common_eqv, c128lt)
 
-/* 
+/*
  * Extract mmapped region
  */
 
@@ -843,8 +843,8 @@ static void bitvector_write_int(ScmBitvector *v, int prefix, ScmPort *port)
     }
 }
 
-static void bitvector_print(ScmObj obj, 
-                            ScmPort *port, 
+static void bitvector_print(ScmObj obj,
+                            ScmPort *port,
                             ScmWriteContext *ctx SCM_UNUSED)
 {
     bitvector_write_int(SCM_BITVECTOR(obj), TRUE, port);
@@ -909,13 +909,13 @@ ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init)
     return SCM_OBJ(v);
 }
 
-ScmObj Scm_ListToBitvector(ScmObj lis) 
+ScmObj Scm_ListToBitvector(ScmObj lis)
 {
     ScmSmallInt len = Scm_Length(lis);
     if (len < 0) {
         Scm_Error("proper list required, but got: %S", lis);
     }
-    
+
     ScmBitvector *v = SCM_BITVECTOR(Scm_MakeBitvector(len, SCM_FALSE));
     ScmObj cp;
     ScmSmallInt i = 0;
@@ -927,7 +927,7 @@ ScmObj Scm_ListToBitvector(ScmObj lis)
     return SCM_OBJ(v);
 }
 
-/* Parse string of 0's and 1's to a bitvector.  If PREFIX is true,      
+/* Parse string of 0's and 1's to a bitvector.  If PREFIX is true,
    "#*" prefix is assumed.  Returns #f if unparsable. */
 
 ScmObj Scm_StringToBitvector(ScmString *s, int prefix)
@@ -937,7 +937,7 @@ ScmObj Scm_StringToBitvector(ScmString *s, int prefix)
     /* multibyte string can't be a bitvector literal. */
     if (SCM_STRING_BODY_SIZE(b) != SCM_STRING_BODY_LENGTH(b)) return SCM_FALSE;
     ScmSmallInt len = SCM_STRING_BODY_LENGTH(b);
-    
+
     if (prefix) {
         if (len < 2) return SCM_FALSE;
         if (strncmp(p, "#*", 2) != 0) return SCM_FALSE;

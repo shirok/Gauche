@@ -7,4 +7,3 @@
 (include "test-trie.scm")
 
 (test-end)
-

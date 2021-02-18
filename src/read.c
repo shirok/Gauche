@@ -1798,9 +1798,9 @@ static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx)
     /* We used to use #*"..." for incomplete string literals, but it turned
        out it can be read as an zero-length bitvector #* followed by an
        ordinary string (since a double quote is a <delimiter> in R7RS).
-       
+
        So we changed the literal to #**"..." (yeah, ugly, but incomplete
-       strings are anomalies and shouldn't be used often). 
+       strings are anomalies and shouldn't be used often).
 
        The reader behavior can be customized by reader-lexical-mode:
 
@@ -1817,7 +1817,7 @@ static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx)
         c = Scm_GetcUnsafe(port);
         if (c == '"') return read_string(port, TRUE, ctx);
         Scm_ReadError(port, "Invalid #* syntax: #**%C", c);
-    }   
+    }
     if (c == '"') {
         ScmObj m = Scm_GetPortReaderLexicalMode(port);
         if (SCM_EQ(m, SCM_SYM_PERMISSIVE)) {
@@ -1838,7 +1838,7 @@ static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx)
         }
         Scm_Panic("invalid reader-lexical-mode");
     }
-    
+
     ScmDString ds;
     Scm_DStringInit(&ds);
     for (;;) {

@@ -134,7 +134,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
         if (SCM_TRUEP(y)) return  0;
         goto distinct_types;
     }
-    
+
     if (Scm_SubtypeP(cx, cy)) {
         if (cy->compare) return cy->compare(x, y, FALSE);
     } else if (Scm_SubtypeP(cy, cx)) {
@@ -144,7 +144,7 @@ int Scm_Compare(ScmObj x, ScmObj y)
         /* x and y are of the same type, and they can't be ordered. */
         Scm_Error("can't compare %S and %S", x, y);
     }
-    
+
  distinct_types:
     /* x and y are of distinct types.  Follow the srfi-114 rule:
        () < pairs < booleans < chars < strings < symbols < numbers

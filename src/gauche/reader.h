@@ -127,4 +127,3 @@ SCM_EXTERN ScmObj Scm_GetReaderCtor(ScmObj symbol, ScmObj module);
 SCM_EXTERN ScmObj Scm_DefineReaderDirective(ScmObj symbol, ScmObj proc);
 
 #endif  /*GAUCHE_READER_H*/
-

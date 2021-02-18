@@ -12,9 +12,9 @@ OBJECTS  = @DBM_OBJECTS@
 
 GENERATED = Makefile dbmconf.h
 XCLEANFILES = dbm--gdbm.c gdbm.sci \
-              dbm--ndbm.c ndbm.sci \
-              dbm--odbm.c odbm.sci \
-              ndbm-makedb ndbm-suffixes.h
+	      dbm--ndbm.c ndbm.sci \
+	      dbm--odbm.c odbm.sci \
+	      ndbm-makedb ndbm-suffixes.h
 
 all : $(LIBFILES)
 
@@ -54,4 +54,3 @@ ndbm-suffixes.h : ndbm-makedb ndbm-suffixes.scm
 	$(GOSH) $(srcdir)/ndbm-suffixes.scm ndbm-suffixes.h
 
 install : install-std
-

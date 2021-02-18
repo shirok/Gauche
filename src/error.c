@@ -75,7 +75,7 @@ static ScmClass *condition_cpl[] = {
 };
 
 SCM_DEFINE_BASE_CLASS(Scm_ConditionClass, ScmInstance,
-                      NULL, NULL, NULL, 
+                      NULL, NULL, NULL,
                       condition_allocate, SCM_CLASS_DEFAULT_CPL);
 SCM_DEFINE_BASE_CLASS(Scm_MessageConditionClass, ScmMessageCondition,
                       Scm_MessageConditionPrint, NULL, NULL,
@@ -93,7 +93,7 @@ static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 }
 
 /* We expose this, for other condition subclasses may share this. */
-void Scm_MessageConditionPrint(ScmObj obj, ScmPort *port, 
+void Scm_MessageConditionPrint(ScmObj obj, ScmPort *port,
                                ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);
@@ -195,7 +195,7 @@ static ScmClass *decoding_error_cpl[] = {
     ERROR_CPL,
     NULL
 };
-    
+
 static ScmClass *encoding_error_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_IOWriteErrorClass),
     SCM_CLASS_STATIC_PTR(Scm_PortErrorClass),
@@ -425,20 +425,20 @@ static ScmClassStaticSlotSpec porterror_slots[] = {
 
 static ScmClassStaticSlotSpec encodingerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
-    SCM_CLASS_SLOT_SPEC("offending-char", 
-                        porterror_offending_char_get, 
+    SCM_CLASS_SLOT_SPEC("offending-char",
+                        porterror_offending_char_get,
                         porterror_offending_char_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
-    
+
 static ScmClassStaticSlotSpec invalidpositionerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("port", porterror_port_get, porterror_port_set),
-    SCM_CLASS_SLOT_SPEC("position", 
-                        porterror_position_get, 
+    SCM_CLASS_SLOT_SPEC("position",
+                        porterror_position_get,
                         porterror_position_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
-    
+
 
 /*------------------------------------------------------------
  * Compound conditions
@@ -451,7 +451,7 @@ static ScmClass *compound_cpl[] = {
     NULL
 };
 
-static void compound_print(ScmObj obj, ScmPort *port, 
+static void compound_print(ScmObj obj, ScmPort *port,
                            ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);
@@ -699,7 +699,7 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
 /* Double fault check
  * In order to aviod infinite loop when error throwing routine
  * throws an error, we use vm flag SCM_ERROR_BEING_HANDLED to
- * check that.  Ideally a common single API should handle it,   
+ * check that.  Ideally a common single API should handle it,
  * but for the time being, we add the check at the beginning
  * of Scm_*Error APIs.
  * The SCM_ERROR_BEING_HANDLED flag is cleared in Scm_VMThrowException().
@@ -718,7 +718,7 @@ ScmObj Scm_ConditionTypeName(ScmObj c)
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_HANDLED);           \
     } while (0)
 
-/* Common part to format error message passed as varargs.  
+/* Common part to format error message passed as varargs.
  * ostr must be declared as ScmObj, and msg must be the last
  * arg of function before '...'.
  */
@@ -798,7 +798,7 @@ static int get_errno(void)
     return errno;
 #else  /*GAUCHE_WINDOWS*/
     int en;
-    
+
     if (errno == 0) {
         en = -(int)GetLastError();
     } else {
@@ -1028,7 +1028,7 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
  *   format   - SCM_STACK_TRACE_FORMAT_* enum value.  No longer used.
  */
 void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
-                        int maxdepth, int skip, int offset, 
+                        int maxdepth, int skip, int offset,
                         int format SCM_UNUSED)
 {
     static ScmObj show_stack_trace = SCM_UNDEFINED;

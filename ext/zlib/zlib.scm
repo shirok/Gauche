@@ -178,7 +178,7 @@
 
  (define-cproc inflate-sync (port::<inflating-port>) Scm_InflateSync)
  )
- 
+
 
 (export-if-defined Z_TEXT Z_FIXED)
 

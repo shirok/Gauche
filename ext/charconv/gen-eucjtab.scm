@@ -318,5 +318,3 @@
       (lambda () (generate-utf8->eucj data)))
     )
   0)
-
-

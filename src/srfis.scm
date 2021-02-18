@@ -22,7 +22,7 @@
 
 ;; returns ((num module exports doc-en doc-ja) ...)
 (define (parse self)
-  (let1 gen ($ record-generator 
+  (let1 gen ($ record-generator
                $ remove #/^\;/
                $ file->string-list self :encoding 'utf-8)
     ($ generator->list
@@ -726,7 +726,7 @@ SLIB Prerequisites
 This srfi is not exactly a library, but
 rather a description of features the platform should provide
 to support SLIB.  In order to load this module, SLIB must be
-already installed.  @xref{SLIB}, for the details.  
+already installed.  @xref{SLIB}, for the details.
 
 SLIB必要事項
 このsrfiはライブラリというよりは、SLIBをサポートするためにプラットフォームが

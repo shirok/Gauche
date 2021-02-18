@@ -73,7 +73,7 @@ static struct {
                                             searched. */
     ScmPrimitiveParameter *load_port;    /* current port from which we are
                                             loading */
-    
+
     /* Dynamic linking */
     ScmObj dso_suffixes;
     ScmHashTable *dso_table;      /* Hashtable path -> <dlobj> */
@@ -435,7 +435,7 @@ struct ScmDLObjRec {
     ScmInternalCond  cv;
 };
 
-static void dlobj_print(ScmObj obj, ScmPort *sink, 
+static void dlobj_print(ScmObj obj, ScmPort *sink,
                         ScmWriteContext *mode SCM_UNUSED)
 {
     Scm_Printf(sink, "#<dlobj %S>", SCM_DLOBJ(obj)->path);
@@ -689,7 +689,7 @@ ScmObj Scm_DynLoad(ScmString *dsoname, ScmObj initfn,
     } else if (!SCM_FALSEP(initfn)) {
         SCM_TYPE_ERROR(initfn, "a string or a boolean");
     }
-    
+
     ScmDLObj *dlo = find_dlobj(dsopath);
 
     /* Load the dlobj if necessary. */
@@ -731,7 +731,7 @@ static ScmObj dlobj_entries_get(ScmObj obj)
     ScmObj t = SCM_NIL;
     ScmDLObj *dlo = SCM_DLOBJ(obj);
     ScmHashIter iter;
-    
+
     lock_dlobj(SCM_DLOBJ(obj));
     Scm_HashIterInit(&iter, &dlo->entries);
     for (;;) {
@@ -1002,7 +1002,7 @@ int Scm_ProvidedP(ScmObj feature)
  * Autoload
  */
 
-static void autoload_print(ScmObj obj, ScmPort *out, 
+static void autoload_print(ScmObj obj, ScmPort *out,
                            ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(out, "#<autoload %A::%A (%A)>",

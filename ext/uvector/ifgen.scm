@@ -42,7 +42,7 @@
                  ,@(map (^[tag] `(export ,@(subst tag *srfi-160-base-api*)))
                         '(u8 s8 u16 s16 u32 s32 u64 s64
                           f32 f64 c64 c128)))))))
-      
+
 
 (define (gen-exports)
   (with-output-to-file "exports.scm"
@@ -138,8 +138,8 @@
     ))
 
 (define *extra-api*
-  '(@vector-add 
-    @vector-add! 
+  '(@vector-add
+    @vector-add!
     @vector-sub
     @vector-sub!
     @vector-mul
@@ -169,4 +169,3 @@
 (define *extra-api-multibyte*
   '(@vector-swap-bytes
     @vector-swap-bytes!))
-

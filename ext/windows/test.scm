@@ -298,4 +298,3 @@
 
  ] ; gauche.os.windows
  [else])
-

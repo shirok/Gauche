@@ -1202,4 +1202,3 @@
 (define (read-leap-second-table filename)
   (set! tm:leap-second-table (tm:read-tai-utc-data filename))
   (values))
-

@@ -46,7 +46,7 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProcedureClass, proc_print);
 
-static void proc_print(ScmObj obj, ScmPort *port, 
+static void proc_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmObj info = SCM_PROCEDURE_INFO(obj);
@@ -131,7 +131,7 @@ ScmObj Scm_MakeSubr(ScmSubrProc *func,
 {
     ScmSubr *s = SCM_NEW(ScmSubr);
     SCM_SET_CLASS(s, SCM_CLASS_PROCEDURE);
-    Scm__ProcedureInit(SCM_PROCEDURE(s), SCM_PROC_SUBR, 
+    Scm__ProcedureInit(SCM_PROCEDURE(s), SCM_PROC_SUBR,
                        required, optional, info);
     s->func = func;
     s->data = data;
@@ -171,7 +171,7 @@ ScmObj Scm_NullProc(void)
 ScmObj Scm_CopyProcedure(ScmProcedure *proc)
 {
     ScmObj n = SCM_UNDEFINED;
-    
+
     switch (proc->type) {
     case SCM_PROC_SUBR:
         n = Scm_MakeSubr(SCM_SUBR_FUNC(proc),

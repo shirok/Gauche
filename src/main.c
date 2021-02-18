@@ -496,8 +496,8 @@ static void test_paths_setup(char **av)
         Scm_AddLoadPath("../../libsrc", FALSE);
         Scm_AddLoadPath("../../lib", FALSE);
     } else {
-	Scm_Warn("Unable to find source tree.  The -ftest option is ignored.");
-	return;
+        Scm_Warn("Unable to find source tree.  The -ftest option is ignored.");
+        return;
     }
     /* Also set a feature identifier gauche.in-place, so that other modules
        may initialize differently if needed. */
@@ -716,8 +716,8 @@ static int has_terminal()
        %sys-mintty? is defined in libsys.scm. */
     ScmEvalPacket pac;
     int r = Scm_EvalCString("(%sys-mintty? 0)",
-			    SCM_OBJ(Scm_GaucheInternalModule()),
-			    &pac);
+                            SCM_OBJ(Scm_GaucheInternalModule()),
+                            &pac);
     if (r == 1 && !SCM_FALSEP(pac.results[0])) return TRUE;
 #endif /*GAUCHE_WINDOWS*/
     return FALSE;
@@ -821,7 +821,7 @@ int main(int ac, char **av)
        itself; normal user should never need this. */
     if (test_mode) test_paths_setup(av);
 
-    /* If -V is given, show version info and exit 
+    /* If -V is given, show version info and exit
        (must come after test_mode setup)  */
     if (version_mode) version();
 

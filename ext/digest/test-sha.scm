@@ -98,4 +98,3 @@
     ))
 
 (for-each test-from-file (glob "data/*.info"))
-

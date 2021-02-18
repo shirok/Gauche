@@ -70,10 +70,10 @@
    the backward compatibility.
 */
 /* The 'index' slot may contain an index vector to realize O(1) random-access
- * of the string.  Building index costs time and space, so it is only 
+ * of the string.  Building index costs time and space, so it is only
  * constructed when explicitly asked.  Srfi-135 (Immutable Texts) is
  * really an immutable string with an indexed body.
- * The user should treat index field as a opaque pointer.  
+ * The user should treat index field as a opaque pointer.
  * See priv/stringP.h for the details.
  */
 
@@ -199,7 +199,7 @@ SCM_EXTERN ScmObj  Scm_MakeString(const char *str,
                                   ScmSmallInt size, ScmSmallInt len,
                                   u_long flags);
 SCM_EXTERN ScmObj  Scm_MakeFillString(ScmSmallInt len, ScmChar fill);
-SCM_EXTERN ScmObj  Scm_CopyStringWithFlags(ScmString *str, 
+SCM_EXTERN ScmObj  Scm_CopyStringWithFlags(ScmString *str,
                                            u_long flags, u_long mask);
 
 #define SCM_MAKE_STR(cstr) \
@@ -310,7 +310,7 @@ enum {
     SCM_STRING_SCAN_BEFORE2,    /* return substr of s1 before s2 and rest */
     SCM_STRING_SCAN_AFTER2,     /* return substr of s1 up to s2 and rest */
     SCM_STRING_SCAN_BOTH,       /* return substr of s1 before and after s2 */
-    SCM_STRING_SCAN_CURSOR,     /* return <string-cursor> 
+    SCM_STRING_SCAN_CURSOR,     /* return <string-cursor>
                                    TRANSIENT: This may be more reasonable
                                    to be after INDEX, but we have it here
                                    until 1.0 to keep ABI compatibility */
@@ -379,8 +379,8 @@ SCM_EXTERN ScmSmallInt Scm_DStringSize(ScmDString *dstr);
 SCM_EXTERN ScmObj      Scm_DStringGet(ScmDString *dstr, u_long flags);
 SCM_EXTERN const char *Scm_DStringGetz(ScmDString *dstr);
 SCM_EXTERN void        Scm_DStringWeld(ScmDString *dstr);
-SCM_EXTERN const char *Scm_DStringPeek(ScmDString *dstr, 
-                                       ScmSmallInt *size, 
+SCM_EXTERN const char *Scm_DStringPeek(ScmDString *dstr,
+                                       ScmSmallInt *size,
                                        ScmSmallInt *len);
 SCM_EXTERN void        Scm_DStringPutz(ScmDString *dstr, const char *str,
                                        ScmSmallInt siz);

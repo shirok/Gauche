@@ -89,6 +89,6 @@
   (test-add-remove 3)
   (test-add-remove 12) ; causes realloc
   )
-                  
+
 (test-ring-buffer (make-vector 4))
 (test-ring-buffer (make-u8vector 5))

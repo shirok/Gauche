@@ -94,7 +94,7 @@ typedef struct ScmPortImplRec {
 
     /* Port attibutes.  Use Scm_PortAttr* API to access. */
     ScmObj attrs;
-    
+
 } ScmPortImpl;
 
 #define P_(p)   ((ScmPortImpl*)(p))
@@ -128,7 +128,7 @@ void Scm__SetupPortsForWindows(int has_console);
 #define PORT_ISTR(port)    (&P_(port)->src.istr)
 #define PORT_OSTR(port)    (&P_(port)->src.ostr)
 #define PORT_VT(port)      (&P_(port)->src.vt)
-    
+
 /*================================================================
  * Locking the ports
  *

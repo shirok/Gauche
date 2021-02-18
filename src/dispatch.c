@@ -44,7 +44,7 @@
  *
  *  In the current implementation, we use special open-addressing hash table.
  *  We don't use ScmHashCore for a few reasons:
- *  
+ *
  *   - We mutex modification of the table by gf->mutex, but we don't want
  *     to lock for searching it.  ScmHashCore doesn't guarantee consistency
  *     of reading while modifying.
@@ -165,9 +165,9 @@ static ScmObj mhash_probe(const mhash *h, ScmClass *k, int nargs)
     u_long j = mhashfn(k, nargs) & (h->size - 1);
     int i = 0;
     for (; i < h->size; i++) {
-	/* Need to strip 'const', because of C11 error
-	   http://www.open-std.org/jtc1/sc22/wg14/www/docs/summary.htm#dr_459 */
-	ScmAtomicVar *loc = (ScmAtomicVar*)&h->bins[j];
+        /* Need to strip 'const', because of C11 error
+           http://www.open-std.org/jtc1/sc22/wg14/www/docs/summary.htm#dr_459 */
+        ScmAtomicVar *loc = (ScmAtomicVar*)&h->bins[j];
         ScmWord w = SCM_WORD(AO_load(loc));
         if (w == 0) break;
         if (w != 1) {
@@ -207,7 +207,7 @@ static mhash *mhash_insert_1(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
             break;
         }
         j = (j + i + 1) & (h->size - 1);
-        
+
     }
     SCM_ASSERT(free_slot >= 0);
     mhash_entry *e = SCM_NEW(mhash_entry);
@@ -249,7 +249,7 @@ static mhash *mhash_insert(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 {
     u_long j = mhashfn(k, nargs) & (h->size - 1);
-    
+
     int i = 0;
     for (; i < h->size; i++) {
         ScmWord w = SCM_WORD(AO_load(&h->bins[j]));
@@ -299,7 +299,7 @@ static void mhash_print(mhash *h, ScmPort *out)
             Scm_Printf(out, "[%3d] deleted\n\n\n", i);
         } else {
             mhash_entry *e = (mhash_entry*)w;
-            Scm_Printf(out, "[%3d] %lu %S(%d)\n", i, 
+            Scm_Printf(out, "[%3d] %lu %S(%d)\n", i,
                        (mhashfn(e->klass, e->nargs) % h->size),
                        e->klass, e->nargs);
             Scm_Printf(out, "  Leaves:   %S\n", e->leaves);
@@ -339,7 +339,7 @@ static mhash *delete_method_from_dispatcher(mhash *h, int axis, ScmMethod *m)
 }
 
 /*
-    NB: We run through the method list twice, first process the 
+    NB: We run through the method list twice, first process the
     leaf methods, and then process non-leaf methods.  Non-leaf methods
     cancels the dispatcher entry and forces to go through normal route.
  */
@@ -407,4 +407,3 @@ void Scm__MethodDispatcherDump(ScmMethodDispatcher *dis, ScmPort *port)
     Scm_Printf(port, "MethodDispatcher axis=%d\n", dis->axis);
     mhash_print((mhash*)dis->methodHash, port);
 }
-

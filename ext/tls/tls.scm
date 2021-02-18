@@ -106,7 +106,7 @@
  (define-enum SSL_OBJ_RSA_KEY)
  (define-enum SSL_OBJ_PKCS8)
  (define-enum SSL_OBJ_PKCS12)
- 
+
  (define-cproc make-tls (:rest initargs) Scm_MakeTLS)
  (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
@@ -191,5 +191,3 @@
   (tls-close s))
 (define-method connection-close ((s <tls>))
   (tls-destroy s))
-
-

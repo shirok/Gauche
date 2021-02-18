@@ -99,7 +99,7 @@
 
 (inline-stub
  (initcode
-  (Scm_BindPrimitiveParameter (Scm_GaucheModule) 
+  (Scm_BindPrimitiveParameter (Scm_GaucheModule)
                               "current-trace-port"
                               (Scm_Stderr) 0)))
 
@@ -278,7 +278,7 @@
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %ld" fd))
     (cond
-     [(SCM_EQ owner? 'dup) 
+     [(SCM_EQ owner? 'dup)
       (let* ([r::int 0])
         (SCM_SYSCALL r (dup fd))
         (when (< r 0) (Scm_SysError "dup(2) failed"))
@@ -297,7 +297,7 @@
                                           SCM_PORT_BUFFER_FULL)])
     (when (< fd 0) (Scm_Error "bad file descriptor: %d" fd))
     (cond
-     [(SCM_EQ owner? 'dup) 
+     [(SCM_EQ owner? 'dup)
       (let* ([r::int 0])
         (SCM_SYSCALL r (dup fd))
         (when (< r 0) (Scm_SysError "dup(2) failed"))
@@ -305,7 +305,7 @@
      [(not (SCM_BOOLP owner?))
       (Scm_Error "owner? argument must be either #f, #t or a symbol dup, \n\
                   but go t%S" owner?)])
-    (return (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode 
+    (return (Scm_MakePortWithFd name SCM_PORT_OUTPUT fd bufmode
                                 (not (SCM_FALSEP owner?))))))
 
 ;; Buffered port
@@ -829,7 +829,7 @@
   (return (not (or (not (SCM_PTRP obj))
                    (SCM_NUMBERP obj)
                    (SCM_KEYWORDP obj)
-                   (and (SCM_SYMBOLP obj) (SCM_SYMBOL_INTERNED obj)) 
+                   (and (SCM_SYMBOLP obj) (SCM_SYMBOL_INTERNED obj))
                    (and (SCM_STRINGP obj) (== (SCM_STRING_SIZE obj) 0))
                    (and (SCM_VECTORP obj) (== (SCM_VECTOR_SIZE obj) 0))))))
 

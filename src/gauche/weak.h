@@ -122,4 +122,3 @@ SCM_EXTERN int    Scm_WeakHashIterNext(ScmWeakHashIter *iter,
                                        ScmObj *key, ScmObj *value);
 
 #endif /* GAUCHE_WEAK_H */
-

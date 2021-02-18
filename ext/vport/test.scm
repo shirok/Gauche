@@ -429,7 +429,7 @@
              (set! (port-buffering p) :none)
              (dotimes [size] (write-byte #x12 p) (write-byte #x12 p))
              (get-output-uvector p))))
-  
+
   (tester 0)
   (tester 16)
   (tester 17)
@@ -582,7 +582,7 @@
   (use srfi-64)
   (use srfi-181)
   (use srfi-192)
-  (use scheme.base :only (bytevector 
+  (use scheme.base :only (bytevector
                           bytevector-copy
                           bytevector-u8-ref
                           flush-output-port))
@@ -602,7 +602,7 @@
   (use gauche.test)
   (use srfi-181)
   (use srfi-192)
-  (define p (make-custom-binary-input-port 
+  (define p (make-custom-binary-input-port
              'invalid-position-error-test
              (^ _ 1)
              (^[] 0)
@@ -628,7 +628,7 @@
     (let1 native-codec (~ (native-transcoder)'codec)
       (test* `(bytevector->string (,(~ codec'name) -> ,(~ native-codec'name)))
              internal-string
-             (bytevector->string external-data 
+             (bytevector->string external-data
                                  (make-transcoder codec
                                                   (native-eol-style)
                                                   handling)))
@@ -664,7 +664,7 @@
   (define (roundtrip-test codec external-data internal-string handling)
     (import-test codec external-data internal-string handling)
     (export-test codec internal-string external-data handling))
-                   
+
   (cond-expand
    [gauche.ces.utf8
     (roundtrip-test (make-codec 'latin1)
@@ -688,7 +688,7 @@
                   '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
                   '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42))
                  'replace)
-    
+
     (import-test (make-codec 'utf-16be)
                  '#u8(#xdc #x00)
                  (test-error <io-decoding-error>) 'raise)

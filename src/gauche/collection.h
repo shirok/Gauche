@@ -128,4 +128,3 @@ typedef enum {
 } ScmDictSetFlags;
 
 #endif /* GAUCHE_COLLECTION_H */
-

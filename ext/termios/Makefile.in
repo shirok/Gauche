@@ -23,4 +23,3 @@ gauche--termios.c termios.sci : termios.scm
 	$(PRECOMP) -e -P -o gauche--termios $(srcdir)/termios.scm
 
 install : install-std
-

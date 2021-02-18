@@ -1,10 +1,10 @@
-/* 
+/*
  * Regexp engine instructions
  *
  * This file is included multiple times from src/regexp.c
  */
 
-/* DEF_RE_INSN(name, operand-type) 
+/* DEF_RE_INSN(name, operand-type)
 
    Operand-type can be:
 

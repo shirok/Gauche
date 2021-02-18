@@ -20,98 +20,98 @@
              "0123456789abcdefghijklmnopqrstuvwxyz\
               ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 (test-hashpw "$2a$05$abcdefghijklmnopqrstuu5s2v8.iXieOjg/.AySBTTZIIVFJeBui"
-	     "0123456789abcdefghijklmnopqrstuvwxyz\
-	      ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\
-	      chars after 72 are ignored")
+             "0123456789abcdefghijklmnopqrstuvwxyz\
+              ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\
+              chars after 72 are ignored")
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.CE5elHaaO4EbggVDjb8P19RukzXSM3e"
-	     (u8vector->string #u8(#xa3)))
+             (u8vector->string #u8(#xa3)))
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.CE5elHaaO4EbggVDjb8P19RukzXSM3e"
-	     (u8vector->string #u8(#xff #xff #xa3)))
+             (u8vector->string #u8(#xff #xff #xa3)))
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.CE5elHaaO4EbggVDjb8P19RukzXSM3e"
-	     (u8vector->string #u8(#xff #xff #xa3)))
+             (u8vector->string #u8(#xff #xff #xa3)))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.nqd1wy.pTMdcvrRWxyiGL2eMz.2a85."
-	     (u8vector->string #u8(#xff #xff #xa3)))
+             (u8vector->string #u8(#xff #xff #xa3)))
 (test-hashpw "$2b$05$/OK.fbVrR/bpIqNJ5ianF.CE5elHaaO4EbggVDjb8P19RukzXSM3e"
-	     (u8vector->string #u8(#xff #xff #xa3)))
+             (u8vector->string #u8(#xff #xff #xa3)))
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq"
-	     (u8vector->string #u8(#xa3)))
+             (u8vector->string #u8(#xa3)))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq"
-	     (u8vector->string #u8(#xa3)))
+             (u8vector->string #u8(#xa3)))
 (test-hashpw "$2b$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq"
-	     (u8vector->string #u8(#xa3)))
+             (u8vector->string #u8(#xa3)))
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append "1" (u8vector->string #u8(#xa3)) "345"))
+             (string-append "1" (u8vector->string #u8(#xa3)) "345"))
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append (u8vector->string #u8(#xff #xa3)) "345"))
+             (string-append (u8vector->string #u8(#xff #xa3)) "345"))
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append (u8vector->string #u8(#xff #xa3)) "34"
-	                    (u8vector->string #u8(#xff #xff #xff #xa3)) "345"))
+             (string-append (u8vector->string #u8(#xff #xa3)) "34"
+                            (u8vector->string #u8(#xff #xff #xff #xa3)) "345"))
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.o./n25XVfn6oAPaUvHe.Csk4zRfsYPi"
-	     (string-append (u8vector->string #u8(#xff #xa3)) "34"
-			    (u8vector->string #u8(#xff #xff #xff #xa3)) "345"))
+             (string-append (u8vector->string #u8(#xff #xa3)) "34"
+                            (u8vector->string #u8(#xff #xff #xff #xa3)) "345"))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.ZC1JEJ8Z4gPfpe1JOr/oyPXTWl9EFd."
-	     (string-append (u8vector->string #u8(#xff #xa3)) "34"
-			    (u8vector->string #u8(#xff #xff #xff #xa3)) "345"))
+             (string-append (u8vector->string #u8(#xff #xa3)) "34"
+                            (u8vector->string #u8(#xff #xff #xff #xa3)) "345"))
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.nRht2l/HRhr6zmCp9vYUvvsqynflf9e"
-	     (string-append (u8vector->string #u8(#xff #xa3)) "345"))
+             (string-append (u8vector->string #u8(#xff #xa3)) "345"))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.nRht2l/HRhr6zmCp9vYUvvsqynflf9e"
-	     (string-append (u8vector->string #u8(#xff #xa3)) "345"))
+             (string-append (u8vector->string #u8(#xff #xa3)) "345"))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.6IflQkJytoRVc1yuaNtHfiuq.FRlSIS"
-	     (string-append (u8vector->string #u8(#xa3)) "ab"))
+             (string-append (u8vector->string #u8(#xa3)) "ab"))
 (test-hashpw "$2x$05$/OK.fbVrR/bpIqNJ5ianF.6IflQkJytoRVc1yuaNtHfiuq.FRlSIS"
-	     (string-append (u8vector->string #u8(#xa3)) "ab"))
+             (string-append (u8vector->string #u8(#xa3)) "ab"))
 (test-hashpw "$2y$05$/OK.fbVrR/bpIqNJ5ianF.6IflQkJytoRVc1yuaNtHfiuq.FRlSIS"
-	     (string-append (u8vector->string #u8(#xa3)) "ab"))
+             (string-append (u8vector->string #u8(#xa3)) "ab"))
 (test-hashpw "$2x$05$6bNw2HLQYeqHYyBfLMsv/OiwqTymGIGzFsA4hOTWebfehXHNprcAS"
-	     (u8vector->string #u8(#xd1 #x91)))
+             (u8vector->string #u8(#xd1 #x91)))
 (test-hashpw "$2x$05$6bNw2HLQYeqHYyBfLMsv/O9LIGgn8OMzuDoHfof8AQimSGfcSWxnS"
-	     (u8vector->string #u8(#xd0 #xc1 #xd2 #xcf #xcc #xd8)))
+             (u8vector->string #u8(#xd0 #xc1 #xd2 #xcf #xcc #xd8)))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.swQOIzjOiJ9GHEPuhEkvqrUyvWhEMx6"
-	     (string-append
-	      (u8vector->string
-	       #u8(#xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
-		   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
-		   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
-		   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
-		   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
-		   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa))
-	      "chars after 72 are ignored as usual"))
+             (string-append
+              (u8vector->string
+               #u8(#xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
+                   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
+                   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
+                   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
+                   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa
+                   #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa #xaa))
+              "chars after 72 are ignored as usual"))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.R9xrDjiycxMbQE2bp.vgqlYpW5wx2yy"
-	     (u8vector->string
-	      #u8(#xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
-		  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
-		  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
-		  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
-		  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
-		  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55)))
+             (u8vector->string
+              #u8(#xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
+                  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
+                  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
+                  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
+                  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55
+                  #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55 #xaa #x55)))
 (test-hashpw "$2a$05$/OK.fbVrR/bpIqNJ5ianF.9tQZzcJfm3uj2NvJ/n5xkhpqLrMpWCe"
-	     (u8vector->string
-	      #u8(#x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
-		  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
-		  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
-		  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
-		  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
-		  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff)))
+             (u8vector->string
+              #u8(#x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
+                  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
+                  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
+                  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
+                  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff
+                  #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff #x55 #xaa #xff)))
 (test-hashpw "$2a$05$CCCCCCCCCCCCCCCCCCCCC.7uG0VCzI2bS7j6ymqJi9CdcdxiRTWNy"
-	     "")
+             "")
 
 (define (test-wrong-hash reason hash)
   (test* #"bcrypt-hashpw wrong hash setting: ~reason"
-	 (test-error)
-	 (bcrypt-hashpw "" hash)))
+         (test-error)
+         (bcrypt-hashpw "" hash)))
 
 (test-wrong-hash "iteration count is smaller than 4"
-		 "$2a$03$CCCCCCCCCCCCCCCCCCCCC.")
+                 "$2a$03$CCCCCCCCCCCCCCCCCCCCC.")
 (test-wrong-hash "iteration count is larger than 31" ;; can be up to 99, but currently limited to 31
-		 "$2a$32$CCCCCCCCCCCCCCCCCCCCC.")
+                 "$2a$32$CCCCCCCCCCCCCCCCCCCCC.")
 (test-wrong-hash "method 'c' is not implemented yet"
-		 "$2c$05$CCCCCCCCCCCCCCCCCCCCC.")
+                 "$2c$05$CCCCCCCCCCCCCCCCCCCCC.")
 (test-wrong-hash "method 'z' is not implemented yet"
-		 "$2z$05$CCCCCCCCCCCCCCCCCCCCC.")
+                 "$2z$05$CCCCCCCCCCCCCCCCCCCCC.")
 (test-wrong-hash "method is smaller than 'a'"
-		 "$2`$05$CCCCCCCCCCCCCCCCCCCCC.")
+                 "$2`$05$CCCCCCCCCCCCCCCCCCCCC.")
 (test-wrong-hash "method is larger than 'z'"
-		 "$2{$05$CCCCCCCCCCCCCCCCCCCCC.")
+                 "$2{$05$CCCCCCCCCCCCCCCCCCCCC.")
 
 (test* "bcrypt-gensalt" "$2b$10$"
        (string-take (bcrypt-gensalt) 7))

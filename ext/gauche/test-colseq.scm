@@ -734,11 +734,11 @@
                         (null? a)
                         (eq? a data))  ; check if head part is shared
                     (list a b))))))
-    
+
   (dolist [datum data]
     (apply tester #f datum)
     (apply tester #t datum)))
-  
+
 (test* "common-prefix" '(a b c)
        (common-prefix-to <list> '(a b c d e) '(a b c e d)))
 (test* "common-prefix" '(a b c)

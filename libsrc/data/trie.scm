@@ -211,7 +211,7 @@
     (and-let* ([tab (%node-table node)])
       (lookup node tab elt)))
   (let1 g (x->generator seq)
-    ;; last holds the last matched (key . value) pair    
+    ;; last holds the last matched (key . value) pair
     (let loop ([elt (g)]
                [node (slot-ref trie 'root)]
                [last (%node-find-terminal (slot-ref trie 'root) seq)])
@@ -429,4 +429,3 @@
 
 (define-method dict-comparator ((trie <trie>))
   (error "Comparator is not defined for trie:" trie))
-

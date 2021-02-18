@@ -13,6 +13,3 @@
 ;;
 ;; Put your Scheme definitions here
 ;;
-
-
-

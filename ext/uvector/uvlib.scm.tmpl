@@ -87,11 +87,11 @@
     (return (Scm_${T}VectorCopyX dst 0 (SCM_${T}VECTOR dstart) 0 -1))]
    [else (SCM_TYPE_ERROR dstart "integer") (return SCM_UNDEFINED)]))
 
-(define-cproc ${t}vector-reverse-copy 
+(define-cproc ${t}vector-reverse-copy
   (v::<${t}vector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
   (let* ([len::ScmSmallInt (SCM_UVECTOR_SIZE v)])
     (SCM_CHECK_START_END start end len)
-    (let* ([r::ScmUVector* (SCM_UVECTOR (Scm_Make${T}Vector (- end start) 
+    (let* ([r::ScmUVector* (SCM_UVECTOR (Scm_Make${T}Vector (- end start)
                                                   (C: "${ZERO}")))]
            [i::ScmSmallInt (- end 1)]
            [j::ScmSmallInt 0])
@@ -117,7 +117,7 @@
                  sstart send (SCM_OBJ src)
                  dstart dend (SCM_OBJ dst)))
     (while (>= (pre-- dend) dstart)
-      (set! (SCM_${T}VECTOR_ELEMENT dst dend) 
+      (set! (SCM_${T}VECTOR_ELEMENT dst dend)
             (SCM_${T}VECTOR_ELEMENT src sstart))
       (post++ sstart))))
 
@@ -291,7 +291,7 @@
   (define (rec i len vs)
     (if (<= (- len i) n)
       (reverse (cons (${t}vector-copy v i) vs))
-      (rec (+ i n) len 
+      (rec (+ i n) len
            (cons (${t}vector-copy v i (+ i n)) vs))))
   (rec 0 (${t}vector-length v) '()))
 (define (${t}vector= a b . rest) ; can have shortcut of 3 arg case as well
@@ -373,7 +373,7 @@
                (rlet1 seed (proc seed (${t}vector-ref vec i))
                  (${t}vector-set! rvec i seed))])
         [(= i len) rvec])))
-  
+
 ;; Searching
 
 (define (${t}vector-take-while pred vec)
@@ -564,7 +564,7 @@
 ;; Comparator
 
 (define ${t}vector-comparator
-  (make-comparator ${t}vector? ${t}vector= 
+  (make-comparator ${t}vector? ${t}vector=
                    (^[a b] (< (compare a b) 0))
                    default-hash))
 

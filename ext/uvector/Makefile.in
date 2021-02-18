@@ -7,10 +7,10 @@ include ../Makefile.ext
 SCM_CATEGORY = gauche
 
 GEN_SCMFILES = exports.scm uvector/base.scm \
-           uvector/u8.scm uvector/s8.scm uvector/u16.scm uvector/s16.scm \
-           uvector/u32.scm uvector/s32.scm uvector/u64.scm uvector/s64.scm \
-           uvector/f16.scm uvector/f32.scm uvector/f64.scm \
-           uvector/c32.scm uvector/c64.scm uvector/c128.scm
+	   uvector/u8.scm uvector/s8.scm uvector/u16.scm uvector/s16.scm \
+	   uvector/u32.scm uvector/s32.scm uvector/u64.scm uvector/s64.scm \
+	   uvector/f16.scm uvector/f32.scm uvector/f64.scm \
+	   uvector/c32.scm uvector/c64.scm uvector/c128.scm
 
 LIBFILES = gauche--uvector.$(SOEXT)
 SCMFILES = array.scm uvector.sci matrix.scm $(GEN_SCMFILES)
@@ -23,7 +23,7 @@ XCLEANFILES =  uvlib.scm uvector.c gauche--uvector.c gauche/uvector.h \
 all : $(LIBFILES) $(GEN_SCMFILES)
 
 OBJECTS = uvector.$(OBJEXT)      \
-          gauche--uvector.$(OBJEXT)
+	  gauche--uvector.$(OBJEXT)
 
 gauche--uvector.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--uvector.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
@@ -95,4 +95,3 @@ uvector/c128.scm : ifgen.scm
 	$(GOSH) $(srcdir)/ifgen.scm c128
 
 install : install-std
-

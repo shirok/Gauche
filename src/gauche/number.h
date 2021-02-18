@@ -401,4 +401,3 @@ SCM_EXTERN ScmObj Scm_VMExpt(ScmObj x, ScmObj y);
 SCM_EXTERN ScmObj Scm_VMRound(ScmObj num, int mode);
 
 #endif /* GAUCHE_NUMBER_H */
-

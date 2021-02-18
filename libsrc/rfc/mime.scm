@@ -570,4 +570,3 @@
    [(string-ci=? transfer-enc "quoted-printable") (quoted-printable-encode)]
    [else (error "Unsupported transfer encoding encountered while composing \
                  mime message: " transfer-enc)]))
-

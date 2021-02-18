@@ -23,4 +23,3 @@ math--mt-random.c mt-random.sci : mt-random.scm
 	$(PRECOMP) -e -P -o math--mt-random $(srcdir)/mt-random.scm
 
 install : install-std
-

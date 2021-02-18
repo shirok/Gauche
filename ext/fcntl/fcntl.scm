@@ -50,7 +50,7 @@
 (inline-stub
  (declcode
   (.include "gauche/fcntl.h" "gauche/class.h"))
- 
+
  (define-enum F_DUPFD)
  (define-enum F_GETFD)
  (define-enum F_SETFD)
@@ -117,12 +117,12 @@
  ;; low-level fd.  The integer fd can be closed by sys-close.
  ;; Unless absolutely necessary, user code should use
  ;; high-level open-{input|output}-file.
- (define-cproc sys-open (path::<const-cstring> flags::<int> 
+ (define-cproc sys-open (path::<const-cstring> flags::<int>
                                                :optional (mode::<ulong> #o664))
    ::<int>
    (let* ([fd::int 0])
     (SCM_SYSCALL fd (open path flags mode))
-    (when (< fd 0) 
+    (when (< fd 0)
       (Scm_SysError "open failed"))
     (return fd))))
 
@@ -155,7 +155,7 @@
       (namemax  :setter #f
                 :getter "return Scm_MakeIntegerU(obj->vfs.f_namemax);")
       ))
-             
+
    (define-cproc sys-statvfs (path::<const-cstring>)
      (let* ([vfs::ScmSysStatvfs* (SCM_NEW ScmSysStatvfs)]
             [r::int 0])

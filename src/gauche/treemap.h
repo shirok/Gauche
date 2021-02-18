@@ -67,7 +67,7 @@ struct ScmTreeCoreRec {
    cursor would go.  So 'prev' pointer points to the max node (hence
    going backwards start from max node) and 'next' pointer points to the
    min node (so going fowards start from min node).
-   
+
    p      c      n
    cur-1  cur    cur+1          normal state
    NULL   min    min+1          cursor at the lowest end
@@ -174,4 +174,3 @@ SCM_EXTERN ScmObj    Scm_TreeMapDelete(ScmTreeMap *tm, ScmObj key);
 SCM_EXTERN void      Scm_TreeMapDump(ScmTreeMap *tm, ScmPort *out);
 
 #endif /* GAUCHE_TREEMAP_H */
-

@@ -20,4 +20,3 @@ gauche--vport.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--vport.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 install : install-std
-

@@ -62,5 +62,3 @@
                          (dcgettext domain (car t) locale)))
               (assoc-ref *tests* locale)))
   )
-
-

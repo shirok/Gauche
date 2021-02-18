@@ -322,7 +322,7 @@ void Scm_TreeCoreCheckConsistency(ScmTreeCore *tc)
  * ScmTreeMap
  */
 
-static void treemap_print(ScmObj obj, ScmPort *port, 
+static void treemap_print(ScmObj obj, ScmPort *port,
                           ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmTreeMap *tm = SCM_TREE_MAP(obj);

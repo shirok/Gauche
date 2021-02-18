@@ -34,7 +34,7 @@
 (define-module srfi-178
   (use util.match)
   (use gauche.sequence)
-  (export 
+  (export
    ;; bit conversion
    bit->integer bit->boolean            ;built-in
 
@@ -67,7 +67,7 @@
 
    ;; prefixes, suffixes, trimming, padding
    bitvector-prefix-length bitvector-suffix-length
-   bitvector-prefix? bitvector-suffix? 
+   bitvector-prefix? bitvector-suffix?
    bitvector-pad bitvector-pad-right
    bitvector-trim bitvector-trim-right bitvector-trim-both
 
@@ -103,7 +103,7 @@
    bitvector-ior bitvector-ior!
    bitvector-xor bitvector-xor!
    bitvector-eqv bitvector-eqv!
-   
+
    bitvector-nand bitvector-nand!
    bitvector-nor bitvector-nor!
    bitvector-andc1 bitvector-andc1!
@@ -185,12 +185,12 @@
   (define (check xs len)
     (match xs
       [() len]
-      [(bv s e . rest) 
+      [(bv s e . rest)
        (assume-type bv <bitvector>)
        (assume (and (exact-integer? s) (exact-integer? e)))
        (assume (<= s e))
        (check rest (+ len (- e s)))]
-      [_ (error "number of arguments must be multiples of 3, but got" args)])) 
+      [_ (error "number of arguments must be multiples of 3, but got" args)]))
  (let1 len (check args 0)
    (rlet1 r (make-bitvector len)
      (let loop ([k 0] [args args])
@@ -268,7 +268,7 @@
                (let loop ([k 0] [knil knil])
                  (if (= k len) knil (loop (+ k 1) (kons knil (ref bv k)))))
                (let loop ([k 0] [knil knil])
-                 (if (= k len) 
+                 (if (= k len)
                    knil
                    (loop (+ k 1)
                          (apply kons knil (*ref bvs ref k)))))))
@@ -291,7 +291,7 @@
 
 (define (%gen-map ref)
   (bv-iterator ref (f bv bvs) len
-               ;; we don't need to worry about restart-safety      
+               ;; we don't need to worry about restart-safety
                (rlet1 r (make-bitvector len)
                  (let loop ([k 0])
                    (unless (= k len)
@@ -314,7 +314,7 @@
                    (loop (+ k 1))))
                (let loop ([k 0])
                  (unless (= k len)
-                   (bitvector-set! (car bvs) k 
+                   (bitvector-set! (car bvs) k
                                    (apply f (*ref bvs ref k)))
                    (loop (+ k 1))))))
 
@@ -325,12 +325,12 @@
   (bv-iterator ref (f bv bvs) len
                (let loop ([k (- len 1)] [r '()])
                  (if (< k 0)
-                   r   
+                   r
                    (loop (- k 1) (cons (f (ref bv k)) r))))
                (let loop ([k (- len 1)] [r '()])
                  (if (< k 0)
-                   r   
-                   (loop (- k 1) 
+                   r
+                   (loop (- k 1)
                          (cons (apply f (*ref bvs ref k)) r))))))
 
 (define bitvector-map->list/int (%gen-map->list bitvector-ref/int))
@@ -492,7 +492,7 @@
         (when (< k end)
           (vector-set! v j (bitvector-ref/int bv k))
           (loop (+ k 1) (+ j 1)))))))
-      
+
 (define (bitvector->vector/bool bv :optional start end)
   (with-range (bv start end)
     (rlet1 v (make-vector (- end start))
@@ -508,7 +508,7 @@
         (when (<= start k)
           (vector-set! v j (bitvector-ref/int bv k))
           (loop (- k 1) (+ j 1)))))))
-      
+
 (define (reverse-bitvector->vector/bool  bv :optional start end)
   (with-range (bv start end)
     (rlet1 v (make-vector (- end start))
@@ -540,7 +540,7 @@
     (return (SCM_MAKE_INT 0))
     (return
      (Scm_NormalizeBignum
-      (SCM_BIGNUM 
+      (SCM_BIGNUM
        (Scm_MakeBignumFromUIArray
         1
         (SCM_BITVECTOR_BITS bv)
@@ -656,7 +656,7 @@
     (rlet1 r (make-bitvector len bit)
       (cond [(<= len count)]
             [(<= 0 count) (bitvector-copy! r 0 bv count)]
-            [(< (- len) count) 
+            [(< (- len) count)
              ;; negative count is right shift
              (bitvector-copy! r (- count) bv 0 (+ len count))]))))
 
@@ -679,7 +679,7 @@
       (post++ c))
     (return c)))
 
-(define-cproc bitvector-if (bv-if::<bitvector> 
+(define-cproc bitvector-if (bv-if::<bitvector>
                             bv-then::<bitvector>
                             bv-else::<bitvector>)
   (let* ([len::ScmSmallInt (SCM_BITVECTOR_SIZE bv-if)]
@@ -715,7 +715,7 @@
 
 ;;; Bit field operations
 
-(define-cproc bitvector-field-any? (bv::<bitvector> 
+(define-cproc bitvector-field-any? (bv::<bitvector>
                                     start::<fixnum>
                                     end::<fixnum>)
   ::<boolean>
@@ -727,7 +727,7 @@
       (when (SCM_BITS_TEST bits i) (return TRUE)))
     (return FALSE)))
 
-(define-cproc bitvector-field-every? (bv::<bitvector> 
+(define-cproc bitvector-field-every? (bv::<bitvector>
                                       start::<fixnum>
                                       end::<fixnum>)
   ::<boolean>
@@ -742,7 +742,7 @@
 (define (bitvector-field-clear bv start end)
   (bitvector-field-clear! (bitvector-copy bv) start end))
 
-(define-cproc bitvector-field-clear! (bv::<bitvector> 
+(define-cproc bitvector-field-clear! (bv::<bitvector>
                                       start::<fixnum>
                                       end::<fixnum>)
   (let* ([len::ScmSmallInt (SCM_BITVECTOR_SIZE bv)]
@@ -756,7 +756,7 @@
 (define (bitvector-field-set bv start end)
   (bitvector-field-set! (bitvector-copy bv) start end))
 
-(define-cproc bitvector-field-set! (bv::<bitvector> 
+(define-cproc bitvector-field-set! (bv::<bitvector>
                                     start::<fixnum>
                                     end::<fixnum>)
   (let* ([len::ScmSmallInt (SCM_BITVECTOR_SIZE bv)]
@@ -796,7 +796,7 @@
         ;;                s   s+S       e
         ;;
         ;; dst   xxxxxxxxxbbbbbbbbbbaaaaxxxxx
-        ;;                
+        ;;
         (bitvector-copy! r start bv (+ start shift) end)
         (bitvector-copy! r (- end shift) bv start (+ start shift))))))
 
@@ -814,4 +814,3 @@
         (SCM_BITS_RESET bits i)
         (SCM_BITS_SET bits i)))
     (return (SCM_OBJ bv))))
-

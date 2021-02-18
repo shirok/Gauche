@@ -100,7 +100,7 @@ static ScmObj zliberror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(e);
 }
 
-static void message_print(ScmObj obj, ScmPort *port, 
+static void message_print(ScmObj obj, ScmPort *port,
                           ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);

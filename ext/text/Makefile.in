@@ -7,19 +7,19 @@ SCM_CATEGORY = text
 include ../Makefile.ext
 
 LIBFILES = text--console.$(SOEXT) \
-           text--gap-buffer.$(SOEXT) \
-           text--gettext.$(SOEXT) \
-           text--line-edit.$(SOEXT) \
-           text--tr.$(SOEXT)
+	   text--gap-buffer.$(SOEXT) \
+	   text--gettext.$(SOEXT) \
+	   text--line-edit.$(SOEXT) \
+	   text--tr.$(SOEXT)
 SCMFILES = console.sci gap-buffer.sci gettext.sci line-edit.sci tr.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c $(SCMFILES)
 
 OBJECTS = $(text-console_OBJECTS) \
-          $(text-gap-buffer_OBJECTS) \
-          $(text-gettext_OBJECTS) \
-          $(text-line-edit_OBJECTS) \
+	  $(text-gap-buffer_OBJECTS) \
+	  $(text-gettext_OBJECTS) \
+	  $(text-line-edit_OBJECTS) \
 	  $(text-tr_OBJECTS)
 
 all : $(LIBFILES)
@@ -85,4 +85,3 @@ text--tr.$(SOEXT) : $(text-tr_OBJECTS)
 
 text--tr.c tr.sci : $(top_srcdir)/libsrc/text/tr.scm
 	$(PRECOMP) -e -P -o text--tr $(top_srcdir)/libsrc/text/tr.scm
-

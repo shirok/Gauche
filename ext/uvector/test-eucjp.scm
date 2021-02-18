@@ -40,5 +40,3 @@
 (test "mb u32vector->string (start, end)" "A¤¤"
       (lambda ()
         (u32vector->string '#u32(#xa4a2 #x41 #xa4a4 #x42) 1 3)))
-
-

@@ -385,7 +385,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
             return cs;
         case 'p': case 'P':
             cs = Scm_GetStandardCharSet(Scm_CharSetParseCategory(ctx->ipat, ch));
-            
+
             rc_register_charset(ctx, SCM_CHAR_SET(cs));
             return cs;
         case '0': case '1': case '2': case '3': case '4':
@@ -1040,7 +1040,7 @@ static ScmObj rc2_optimize_seq(ScmObj seq, ScmObj rest)
            becomes deterministic (i.e. we don't need backtrack). */
         ScmObj repbody = rc2_optimize_seq(SCM_CDR(SCM_CDDR(elt)), rest);
         if (SCM_NULLP(repbody)) {
-            /* This is the case that an empy string (?:) is repeated. 
+            /* This is the case that an empy string (?:) is repeated.
                it always matches, so we collapse entire thing to (). */
             return tail;
         }
@@ -2156,7 +2156,7 @@ ScmObj Scm_RegCompFromAST(ScmObj ast)
 {
     return Scm_RegCompFromAST2(ast, 0);
 }
-    
+
 ScmObj Scm_RegCompFromAST2(ScmObj ast, int flags)
 #endif /* GAUCHE_API_VERSION < 1000 */
 {
@@ -2507,7 +2507,7 @@ static void rex_rec(const unsigned char *code,
         case RE_NWB:
             if (is_word_boundary(ctx, input, RE_WB)) return;
             continue;
-	case RE_BOG: case RE_EOG:
+        case RE_BOG: case RE_EOG:
             if (!is_grapheme_boundary(ctx, input, code[-1])) return;
             continue;
         case RE_SUCCESS:

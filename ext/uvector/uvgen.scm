@@ -103,7 +103,7 @@
 ;;  ntype       : natural C type to operate on each element. (optional)
 ;;                e.g. long for s16vector
 ;;  ZERO        : 'zero' value of etype (optional)
-;;  (REF_NTYPE v i) 
+;;  (REF_NTYPE v i)
 ;;              : Reference v[i] as ntype
 ;;  (CAST_N2E exp)
 ;;              : Cast etype's expression exp to ntype (optional)

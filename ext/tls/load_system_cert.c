@@ -1,6 +1,6 @@
-/* 
+/*
  * 'system' certificate loader.  This is included from both tls.c and
- * tls-mbed.c. 
+ * tls-mbed.c.
  */
 
 #ifdef HAVE_WINCRYPT_H
@@ -58,7 +58,7 @@ static ScmObj system_cert_loader(ScmTLS *t,
                                  int (*file_loader)(ScmTLS*, const char *))
 {
     static const char *cert_path = NULL;
-    
+
     if (cert_path == NULL) {
         const char *cacert_paths[] = {
             SYSTEM_CA_CERT_PATHS,

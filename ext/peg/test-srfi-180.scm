@@ -32,7 +32,7 @@
            (parse-with-generator " {} "))
 
     (test* "generator nesting"
-           '(array-start object-start "a" array-start 1 2 3 array-end 
+           '(array-start object-start "a" array-start 1 2 3 array-end
                          "b" 456 object-end null
                          array-start 3 1 2 array-end array-end)
            (parse-with-generator "[ {\"a\": [1,2 ,3],\"b\":456}, null, [ 3, 1, 2]]"))
@@ -64,14 +64,14 @@
              (define (array-end items) (reverse-list->vector items))
              (define (object-start _) '())
              (define (object-end plis)
-               (map (^[kv] (cons (string->symbol (car kv)) (cadr kv))) 
+               (map (^[kv] (cons (string->symbol (car kv)) (cadr kv)))
                     (slices (reverse plis) 2)))
              (define (proc obj seed)
                (if (undefined? seed)
                  obj
                  (cons obj seed)))
-             (let1 out (json-fold proc 
-                                  array-start array-end 
+             (let1 out (json-fold proc
+                                  array-start array-end
                                   object-start object-end
                                   (undefined) port)
                (if (undefined? out)
@@ -141,7 +141,7 @@
 
   (test* "json-write"
          "{\"a\":3,\"b\":[1,2,3],\"c\":{},\"d\":[true,false,null],\"e\":[]}"
-         (call-with-output-string 
+         (call-with-output-string
            (cut json-write '((a . 3)
                              (b . #(1 2 3))
                              (c . ())

@@ -7,20 +7,20 @@ SCM_CATEGORY = gauche
 include ../Makefile.ext
 
 LIBFILES = gauche--collection.$(SOEXT) \
-           gauche--sequence.$(SOEXT)   \
-           gauche--dictionary.$(SOEXT)   \
-           gauche--parameter.$(SOEXT)  \
-           gauche--process.$(SOEXT) \
-           gauche--hook.$(SOEXT) \
+	   gauche--sequence.$(SOEXT)   \
+	   gauche--dictionary.$(SOEXT)   \
+	   gauche--parameter.$(SOEXT)  \
+	   gauche--process.$(SOEXT) \
+	   gauche--hook.$(SOEXT) \
 	   gauche--record.$(SOEXT) \
 	   gauche--generator.$(SOEXT) \
 	   gauche--unicode.$(SOEXT)
 SCMFILES = collection.sci \
-           sequence.sci   \
+	   sequence.sci   \
 	   dictionary.sci \
-           parameter.sci  \
+	   parameter.sci  \
 	   process.sci \
-           hook.sci \
+	   hook.sci \
 	   record.sci \
 	   generator.sci \
 	   unicode.sci
@@ -131,4 +131,3 @@ gauche--unicode.$(OBJEXT) : gauche--unicode.c $(top_builddir)/src/gauche/priv/un
 
 
 install : install-std
-

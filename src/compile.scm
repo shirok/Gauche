@@ -537,7 +537,7 @@
 ;;   by this node (let* is expanded to the nested $let in pass 1).
 (define-simple-struct $let $LET $let
   (src       ; original source for debugging
-   type      ; indicates scope: 'let for normal let, 'rec[*] for letrec[*], 
+   type      ; indicates scope: 'let for normal let, 'rec[*] for letrec[*],
    lvars     ; list of lvars
    inits     ; list of IForms to initialize lvars
    body      ; IForm for the body
@@ -958,7 +958,7 @@
        [($LIST*)  ($list* (V i 1) (map unpack-rec (V i 2)))]
        [($LIST->VECTOR) ($list->vector (V i 1) (unpack-rec (V i 2)))]
        [(lvar)    (make-lvar (V i 1))]
-       [else 
+       [else
         (errorf "[internal error] unpack-iform: ivec broken at ~a (tag=~s): ~S"
                 i (V i) ivec)]))
 
@@ -1194,7 +1194,7 @@
 ;; won't change even if we move iform to a different place in the subtree.
 ;; NB: This may be called after pass2, so $LABEL node may have circular
 ;; reference.  We have to be careful not to diverge.
-(define (transparent? iform) 
+(define (transparent? iform)
   (define (side-effect-free-proc? iform) #f) ;for now
 
   ;; This is used when eliminating dead $ASM node.  We don't need to consider
@@ -1523,10 +1523,10 @@
    (unless (and (SCM_IDENTIFIERP id1) (SCM_IDENTIFIERP id2)) (return FALSE))
    (when (SCM_EQ id1 id2) (return TRUE))
    ;; Look at their binidngs
-   (let* ([b1 (env-lookup-int id1 (SCM_MAKE_INT 1) 
+   (let* ([b1 (env-lookup-int id1 (SCM_MAKE_INT 1)
                               (-> (SCM_IDENTIFIER id1) module)
                               (Scm_IdentifierEnv (SCM_IDENTIFIER id1)))]
-          [b2 (env-lookup-int id2 (SCM_MAKE_INT 1) 
+          [b2 (env-lookup-int id2 (SCM_MAKE_INT 1)
                               (-> (SCM_IDENTIFIER id2) module)
                               (Scm_IdentifierEnv (SCM_IDENTIFIER id2)))])
      (if (and (SCM_IDENTIFIERP b1) (SCM_IDENTIFIERP b2))
@@ -1543,7 +1543,7 @@
        ;; At least one of id1 and id2 is lvar or macro.
        (return (SCM_EQ b1 b2)))))
 
- (define-cproc free-identifier=? (id1 id2) ::<boolean> 
+ (define-cproc free-identifier=? (id1 id2) ::<boolean>
    %free-identifier=?)
  )
 
@@ -1629,10 +1629,10 @@
 ;; Call to this procedure can be inserted in the output of er-macro expander
 ;; and emitted in the precompiled file, so do not change this API unless
 ;; you're sure no existing precompiled code refers to this.
-(define (%make-er-transformer/toplevel xformer def-module def-name 
+(define (%make-er-transformer/toplevel xformer def-module def-name
                                        :key (has-inject? #f)
                                             (info-alist '()))
-  (%make-er-transformer xformer 
+  (%make-er-transformer xformer
                         (%make-cenv def-module '() def-name)
                         :has-inject? has-inject?
                         :info-alist info-alist))

@@ -77,7 +77,7 @@ SCM_CLASS_DECL(Scm_VectorClass);
   do { if (SCM_VECTOR_IMMUTABLE_P(obj)) {       \
     Scm_Error("vector is immutable: %S", obj);  \
   }} while (0)
-    
+
 SCM_EXTERN ScmObj Scm_MakeVector(ScmSmallInt size, ScmObj fill);
 SCM_EXTERN ScmObj Scm_VectorRef(ScmVector *vec, ScmSmallInt i, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_VectorSet(ScmVector *vec, ScmSmallInt i, ScmObj obj);
@@ -375,14 +375,14 @@ typedef ScmUVector ScmF16Vector;
 typedef ScmUVector ScmF32Vector;
 typedef ScmUVector ScmF64Vector;
 
-/* 
+/*
  * View memory as an uvector
  */
 ScmObj Scm_MakeViewUVector(ScmMemoryRegion *mem, ScmClass *klass,
                            ScmSmallInt len, ScmSmallInt offset,
                            int immutable);
 
-/* 
+/*
  * String/uvector common utility
  */
 
@@ -425,7 +425,7 @@ SCM_EXTERN int    Scm_Bit2Int(ScmObj bit);
 SCM_EXTERN ScmObj Scm_Bit2Bool(ScmObj bit);
 SCM_EXTERN ScmObj Scm_MakeBitvector(ScmSmallInt size, ScmObj init);
 SCM_EXTERN ScmObj Scm_ListToBitvector(ScmObj lis);
-SCM_EXTERN ScmObj Scm_BitvectorCopy(ScmBitvector *v, 
+SCM_EXTERN ScmObj Scm_BitvectorCopy(ScmBitvector *v,
                                     ScmSmallInt start,
                                     ScmSmallInt end);
 SCM_EXTERN ScmObj Scm_BitvectorCopyX(ScmBitvector *dest, ScmSmallInt dstart,

@@ -655,4 +655,3 @@
              (list* r0 r1 r)))))
 
 (test-end)
-

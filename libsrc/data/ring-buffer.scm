@@ -100,7 +100,7 @@
      `(,<f16vector> ,uvector-length ,f16vector-ref ,f16vector-set!
                     ,make-f16vector . ,uvector-copy!)
      `(,<f32vector> ,uvector-length ,f32vector-ref ,f32vector-set!
-                    ,make-f32vector . ,uvector-copy!) 
+                    ,make-f32vector . ,uvector-copy!)
      `(,<f64vector> ,uvector-length ,f64vector-ref ,f64vector-set!
                     ,make-f64vector . ,uvector-copy!)
      ))
@@ -120,7 +120,7 @@
 
 (define-inline (%rb-ref-1 dprocs storage index)
   ((cadr dprocs) storage (%rb-mod-index dprocs storage (- index 1))))
-  
+
 (define-inline (%rb-set! dprocs storage index val)
   ((caddr dprocs) storage index val))
 
@@ -291,4 +291,3 @@
          [dprocs (%dprocs s)])
     (%rb-set! dprocs s (%rb-mod-index dprocs s (+ (ring-buffer-head rb) n))
               val)))
-

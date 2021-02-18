@@ -461,7 +461,7 @@
          (eof-object)
          (begin0 (combine bvec start) (inc! start 2)))))
 
-(define (string->utf16 str :optional (endian 'big-endian) 
+(define (string->utf16 str :optional (endian 'big-endian)
                                      (add-bom? #f)
                                      (start 0) end)
   (with-builder (<u8vector> add! get)
@@ -499,7 +499,7 @@
       (if (zero? (mod start 4))
         (u32vector->string (uvector-alias <u32vector> bvec start end)
                            0 -1 #f endian)
-        (map-to <string> ucs->char 
+        (map-to <string> ucs->char
                 ($ generator->lseq
                    $ %u8->u32-generator bvec start end endian))))))
 
@@ -529,12 +529,12 @@
     (string->u32vector! rr 0 s 0 -1 endian)
     (when add-bom?
       (case endian
-        [(big big-endian) 
+        [(big big-endian)
          (u8vector-set! r 0 #x00)
          (u8vector-set! r 1 #x00)
          (u8vector-set! r 2 #xfe)
          (u8vector-set! r 3 #xff)]
-        [else 
+        [else
          (u8vector-set! r 0 #xff)
          (u8vector-set! r 1 #xfe)
          (u8vector-set! r 2 #x00)
@@ -672,7 +672,7 @@
 (define (make-sequence-splitter cluster-reader-maker)
   (^[seq]
     (let1 gen (x->generator seq)
-      (generator->list 
+      (generator->list
        (cluster-reader-maker gen (cut coerce-to (class-of seq) <>))))))
 
 ;;=========================================================================

@@ -326,7 +326,7 @@ int Scm_CharLexerCategoryP(ScmChar c, ScmCharLexerCategory category)
 {
     if (c < 128) {
         switch (category) {
-        case SCM_CHAR_INITIAL:    
+        case SCM_CHAR_INITIAL:
             return !!(ctypes[c] & INITIAL);
         case SCM_CHAR_SUBSEQUENT:
             return !!(ctypes[c] & SUBSEQUENT);
@@ -354,7 +354,7 @@ int Scm_CharLexerCategoryP(ScmChar c, ScmCharLexerCategory category)
     case SCM_CHAR_CATEGORY_Sm:
     case SCM_CHAR_CATEGORY_Sk:
     case SCM_CHAR_CATEGORY_So:
-    case SCM_CHAR_CATEGORY_Co: 
+    case SCM_CHAR_CATEGORY_Co:
         /* can be INITIAL, SUBSEQUENT and SIGN_SUBSEQUENT */
         return TRUE;
     case SCM_CHAR_CATEGORY_Nd:
@@ -383,7 +383,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_CharSetClass,
 #define MASK_SET(cs, ch)    SCM_BITS_SET(cs->small, ch)
 #define MASK_RESET(cs, ch)  SCM_BITS_RESET(cs->small, ch)
 
-static inline void check_mutable(ScmCharSet *cs) 
+static inline void check_mutable(ScmCharSet *cs)
 {
     if (SCM_CHAR_SET_IMMUTABLE_P(cs))
         Scm_Error("Char set is immutable: %S", cs);
@@ -426,7 +426,7 @@ static void charset_print_ch(ScmPort *out, ScmChar ch, int firstp)
     }
 }
 
-static void charset_print(ScmObj obj, ScmPort *out, 
+static void charset_print(ScmObj obj, ScmPort *out,
                           ScmWriteContext *ctx SCM_UNUSED)
 {
     int prev, code, first = TRUE;
@@ -611,7 +611,7 @@ static uint32_t *char_set_freeze_vec(ScmCharSet *src,
     SCM_ASSERT(!SCM_CHAR_SET_IMMUTABLE_P(src));
     size_t s = (size_t)Scm_TreeCoreNumEntries(&src->large.tree) * 2;
     uint32_t *v = (s == 2)? ivec : SCM_NEW_ATOMIC_ARRAY(uint32_t, s);
-    
+
     cs_iter iter;
     cs_iter_init(&iter, src);
     ScmChar lo, hi;
@@ -765,7 +765,7 @@ int Scm_CharSetLE(ScmCharSet *x, ScmCharSet *y)
 ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
 {
     check_mutable(cs);
-    
+
     ScmDictEntry *e, *lo, *hi;
 
     if (to < from) return SCM_OBJ(cs);
@@ -779,7 +779,7 @@ ScmObj Scm_CharSetAddRange(ScmCharSet *cs, ScmChar from, ScmChar to)
     }
 
     set_large(cs, TRUE);
-    
+
     /* Let e have the lower bound. */
     e = Scm_TreeCoreClosestEntries(&cs->large.tree, from, &lo, &hi);
     if (!e) {
@@ -818,7 +818,7 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
     if (SCM_CHAR_SET_LARGE_P(src)) {
         set_large(dst, TRUE);
     }
-    
+
     ScmTreeIter iter;
     ScmDictEntry *e;
     Scm_BitsOperate(dst->small, SCM_BIT_IOR, dst->small, src->small,
@@ -842,7 +842,7 @@ ScmObj Scm_CharSetAdd(ScmCharSet *dst, ScmCharSet *src)
 ScmObj Scm_CharSetComplement(ScmCharSet *cs)
 {
     check_mutable(cs);
-    
+
     ScmDictEntry *e, *n;
 
     Scm_BitsOperate(cs->small, SCM_BIT_NOT1, cs->small, NULL,
@@ -1303,7 +1303,7 @@ static struct predef_charset_category_name_rec {
 
 /* Read \p{Category}, \P{Category}.   INPUT must point right after 'p' or
    'P'.  KEY is either 'p' or 'P'.  On successful reading,  Returns the
-   charset number and update *cp to point right after the syntax. 
+   charset number and update *cp to point right after the syntax.
    Otherwise, throws an error.
 */
 int Scm_CharSetParseCategory(ScmPort *input, char key)
@@ -1313,18 +1313,18 @@ int Scm_CharSetParseCategory(ScmPort *input, char key)
         Scm_Error("\\%c must followed by '{'", key);
     }
     char name[3];
-    
+
     ch = Scm_Getc(input);
     if (ch == EOF || !SCM_CHAR_ASCII_P(ch)) {
         name[0] = '\0';
-        goto bad; 
+        goto bad;
     }
     name[0] = (char)ch;
 
     ch = Scm_Getc(input);
     if (ch == EOF || !SCM_CHAR_ASCII_P(ch)) {
         name[1] = '\0';
-        goto bad; 
+        goto bad;
     }
     if (ch == '}') {
         name[1] = '\0';
@@ -1551,7 +1551,7 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
 
 ScmObj Scm_GetStandardCharSet(int id)
 {
-    if (id == 0 
+    if (id == 0
         || id >= SCM_CHAR_SET_NUM_PREDEFINED_SETS
         || id <= -SCM_CHAR_SET_NUM_PREDEFINED_SETS) {
         Scm_Error("bad id for predefined charset index: %d", id);
@@ -1576,7 +1576,7 @@ void Scm__InitChar(void)
 
     init_predefined_charsets();
     predef_sets[SCM_CHAR_SET_FULL] = Scm_CharSetComplement(make_charset());
-    
+
 #define DEFCS(name, id) \
     Scm_Define(mod, SCM_SYMBOL(SCM_INTERN("char-set:" name)), predef_sets[SCM_CPP_CAT(SCM_CHAR_SET_, id)])
 

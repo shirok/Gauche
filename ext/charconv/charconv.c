@@ -240,7 +240,7 @@ static ScmSize conv_input_filler(ScmPort *port, ScmSize mincnt SCM_UNUSED)
                           "invalid character sequence in the input stream: %S ...", s);
         }
     }
-    
+
     /* Conversion is done completely. */
     /* NB: There are cases that some bytes are left in the input buffer
        even iconv returns positive value.  We need to shift those bytes. */

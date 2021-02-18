@@ -33,4 +33,3 @@
 /* Number of rounds */
 #define DwSH_CROUNDS 2
 #define DwSH_FROUNDS 4
-

@@ -55,7 +55,7 @@
 
           string->s8vector string->s8vector!
           string->u8vector string->u8vector!
-          string->s32vector string->s32vector! 
+          string->s32vector string->s32vector!
           string->u32vector string->u32vector!
           s8vector->string u8vector->string
           s32vector->string u32vector->string
@@ -146,7 +146,7 @@
 ;; uvector->list
 ;; uvector->vector
 (inline-stub
- (define-cproc uvector->list (v::<uvector> 
+ (define-cproc uvector->list (v::<uvector>
                               :optional (start::<fixnum> 0)
                                         (end::<fixnum> -1))
    (case (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
@@ -180,7 +180,7 @@
                                                        start end))]
      [else (Scm_Error "[internal] Invalid uvector type: %S" v)
            (return SCM_UNDEFINED)]))
- (define-cproc uvector->vector (v::<uvector> 
+ (define-cproc uvector->vector (v::<uvector>
                                 :optional (start::<fixnum> 0)
                                           (end::<fixnum> -1))
    (case (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v)))
@@ -213,7 +213,7 @@
      [(SCM_UVECTOR_C128) (return (Scm_C128VectorToVector (SCM_C128VECTOR v)
                                                          start end))]
      [else (Scm_Error "[internal] Invalid uvector type: %S" v)
-           (return SCM_UNDEFINED)])))   
+           (return SCM_UNDEFINED)])))
 
 ;; allocation by class
 (inline-stub
@@ -223,35 +223,35 @@
    (let* ([v (Scm_MakeUVector klass size NULL)])
      (case (Scm_UVectorType klass)
        [(SCM_UVECTOR_S8)
-        (Scm_S8VectorFill (SCM_S8VECTOR v) 
+        (Scm_S8VectorFill (SCM_S8VECTOR v)
                           (Scm_GetInteger8Clamp init SCM_CLAMP_ERROR NULL)
                           0 -1)]
        [(SCM_UVECTOR_U8)
-        (Scm_U8VectorFill (SCM_U8VECTOR v) 
+        (Scm_U8VectorFill (SCM_U8VECTOR v)
                           (Scm_GetIntegerU8Clamp init SCM_CLAMP_ERROR NULL)
                           0 -1)]
        [(SCM_UVECTOR_S16)
-        (Scm_S16VectorFill (SCM_S16VECTOR v) 
+        (Scm_S16VectorFill (SCM_S16VECTOR v)
                            (Scm_GetInteger16Clamp init SCM_CLAMP_ERROR NULL)
                            0 -1)]
        [(SCM_UVECTOR_U16)
-        (Scm_U16VectorFill (SCM_U16VECTOR v) 
+        (Scm_U16VectorFill (SCM_U16VECTOR v)
                            (Scm_GetIntegerU16Clamp init SCM_CLAMP_ERROR NULL)
                            0 -1)]
        [(SCM_UVECTOR_S32)
-        (Scm_S32VectorFill (SCM_S32VECTOR v) 
+        (Scm_S32VectorFill (SCM_S32VECTOR v)
                            (Scm_GetInteger32Clamp init SCM_CLAMP_ERROR NULL)
                            0 -1)]
        [(SCM_UVECTOR_U32)
-        (Scm_U32VectorFill (SCM_U32VECTOR v) 
+        (Scm_U32VectorFill (SCM_U32VECTOR v)
                            (Scm_GetIntegerU32Clamp init SCM_CLAMP_ERROR NULL)
                            0 -1)]
        [(SCM_UVECTOR_S64)
-        (Scm_S64VectorFill (SCM_S64VECTOR v) 
+        (Scm_S64VectorFill (SCM_S64VECTOR v)
                            (Scm_GetInteger64Clamp init SCM_CLAMP_ERROR NULL)
                            0 -1)]
        [(SCM_UVECTOR_U64)
-        (Scm_U64VectorFill (SCM_U64VECTOR v) 
+        (Scm_U64VectorFill (SCM_U64VECTOR v)
                            (Scm_GetIntegerU64Clamp init SCM_CLAMP_ERROR NULL)
                            0 -1)]
        [(SCM_UVECTOR_F16)
@@ -271,7 +271,7 @@
        [(SCM_UVECTOR_C64)
         (Scm_C64VectorFill (SCM_C64VECTOR v) (Scm_GetFloatComplex init) 0 -1)]
        [(SCM_UVECTOR_C128)
-        (Scm_C128VectorFill (SCM_C128VECTOR v) 
+        (Scm_C128VectorFill (SCM_C128VECTOR v)
                             (Scm_GetDoubleComplex init) 0 -1)]
        [else (Scm_Error "[internal] Invalid uvector class: %S" klass)])
      (return v))))
@@ -297,7 +297,7 @@
          [(SCM_FALSEP arg) (return fallback)]
          [else (Scm_Error "%s expects fixnum or #f, but got: %S" name arg)
                (return 0)])) ; dummy
- 
+
  (define-cproc uvector-binary-search (v::<uvector> key::<number>
                                                    :optional
                                                    (start #f)
@@ -359,11 +359,11 @@
          [(SCM_UVECTOR_F16)
           (let* ([k::ScmHalfFloat (Scm_DoubleToHalf (Scm_GetDouble key))])
             (set! r (Scm_BinarySearchF16 (+ (SCM_F16VECTOR_ELEMENTS v) s)
-                                         (- e s) k p (& lb) (& ub))))]         
+                                         (- e s) k p (& lb) (& ub))))]
          [(SCM_UVECTOR_F32)
           (let* ([k::float (Scm_GetDouble key)])
             (set! r (Scm_BinarySearchF32 (+ (SCM_F32VECTOR_ELEMENTS v) s)
-                                         (- e s) k p (& lb) (& ub))))]         
+                                         (- e s) k p (& lb) (& ub))))]
          [(SCM_UVECTOR_F64)
           (let* ([k::double (Scm_GetDouble key)])
             (set! r (Scm_BinarySearchF64 (+ (SCM_F64VECTOR_ELEMENTS v) s)
@@ -371,15 +371,15 @@
          [(SCM_UVECTOR_C32)
           (let* ([k::ScmHalfComplex (Scm_GetHalfComplex key)])
             (set! r (Scm_BinarySearchC32 (+ (SCM_C32VECTOR_ELEMENTS v) s)
-                                         (- e s) k p (& lb) (& ub))))]         
+                                         (- e s) k p (& lb) (& ub))))]
          [(SCM_UVECTOR_C64)
           (let* ([k::(ScmFloatComplex) (Scm_GetFloatComplex key)])
             (set! r (Scm_BinarySearchC64 (+ (SCM_C64VECTOR_ELEMENTS v) s)
-                                         (- e s) k p (& lb) (& ub))))]         
+                                         (- e s) k p (& lb) (& ub))))]
          [(SCM_UVECTOR_C128)
           (let* ([k::(ScmDoubleComplex) (Scm_GetDoubleComplex key)])
             (set! r (Scm_BinarySearchC128 (+ (SCM_C128VECTOR_ELEMENTS v) s)
-                                          (- e s) k p (& lb) (& ub))))] 
+                                          (- e s) k p (& lb) (& ub))))]
          [else (Scm_Error "[internal] Invalid uvector type: %S" v)]
          )
        (when (== r (cast (size_t) -1))
@@ -403,7 +403,7 @@
                                         (endian::<symbol>? #f))
    Scm_ReadBlockX)
 
- (define-cproc read-uvector (klass::<class> size::<fixnum> 
+ (define-cproc read-uvector (klass::<class> size::<fixnum>
                              :optional (port::<input-port> (current-input-port))
                                        (endian::<symbol>? #f))
    (unless (Scm_SubtypeP klass SCM_CLASS_UVECTOR)
@@ -485,9 +485,9 @@
                          (+ ,ss ,size)
                          (Scm_StringBodyPosition ,sb ,end))])
            ,@body)))])
- 
- (define-cfn string->bytevector (klass::ScmClass* 
-                                 s::ScmString* 
+
+ (define-cfn string->bytevector (klass::ScmClass*
+                                 s::ScmString*
                                  start::ScmSmallInt
                                  end::ScmSmallInt
                                  immutable::int)
@@ -512,10 +512,10 @@
     :optional (start::<fixnum> 0) (end::<fixnum> -1) (immutable?::<boolean> #f))
    (return (string->bytevector SCM_CLASS_U8VECTOR s start end immutable?)))
 
- (define-cfn string->bytevector! (v::ScmUVector* 
+ (define-cfn string->bytevector! (v::ScmUVector*
                                   tstart::ScmSmallInt
                                   s::ScmString*
-                                  start::ScmSmallInt 
+                                  start::ScmSmallInt
                                   end::ScmSmallInt)
    :static
    (let* ([tlen::ScmSmallInt (SCM_UVECTOR_SIZE v)])
@@ -542,8 +542,8 @@
                                   (end::<fixnum> -1))
    (return (string->bytevector! (SCM_UVECTOR v) tstart s start end)))
 
- (define-cfn bytevector->string (v::ScmUVector* 
-                                 start::ScmSmallInt 
+ (define-cfn bytevector->string (v::ScmUVector*
+                                 start::ScmSmallInt
                                  end::ScmSmallInt
                                  term)
    :static
@@ -671,7 +671,7 @@
                                              endian)
    (return (string->wordvector! (SCM_UVECTOR v) tstart s start end endian)))
 
- (define-cfn wordvector->string (v::ScmUVector* 
+ (define-cfn wordvector->string (v::ScmUVector*
                                  start::ScmSmallInt
                                  end::ScmSmallInt
                                  term
@@ -827,15 +827,14 @@
 (define (bytevector-s8-set! v k b)      ; scheme.bytevector
   (bytevector-u8-set! v k (logand b #xff)))
 (define bytevector-s8-ref         ; scheme.bytevector
-  (letrec ([bytevector-s8-ref 
+  (letrec ([bytevector-s8-ref
             (^[v k]
               (let1 b (bytevector-u8-ref v k)
                 (if (>= b 128) (- b 256) b)))])
     (getter-with-setter bytevector-s8-ref bytevector-s8-set!)))
-   
+
 (define (bytevector-copy!-r6 src sstart target tstart len) ; scheme.bytevector
   (u8vector-copy! target tstart src sstart (+ sstart len)))
 
 (define (bytevector->u8-list v) (u8vector->list v))     ; scheme.bytevector
 (define (u8-list->bytevector lis) (list->u8vector lis)) ; scheme.bytevector
-

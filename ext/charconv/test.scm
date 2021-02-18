@@ -124,12 +124,12 @@
           "data/lat1"
           '("ISO8859-1")
           '("ASCII" "ISO8859-1" "EUCJP" "SJIS" "ISO2022JP" "UTF-8"
-            "UTF-16" "UTF-16BE" "UTF-16LE" 
+            "UTF-16" "UTF-16BE" "UTF-16LE"
             "UTF-32" "UTF-32BE" "UTF-32LE"))
 (map-test (lambda (file from to)
             (test-input file from to :illegal-output 'replace))
           "data/lat1x"
-          '("ISO8859-1" "EUCJP" "UTF-8" "SJIS" 
+          '("ISO8859-1" "EUCJP" "UTF-8" "SJIS"
             "UTF-16" "UTF-16BE" "UTF-16LE"
             "UTF-32" "UTF-32BE" "UTF-32LE")
           '("ISO8859-1"))

@@ -181,7 +181,7 @@ int Scm_TLSSystemCABundleAvailable(void)
     return TRUE;
 #else   /* !HAVE_WINCRYPT_H */
     static ScmObj available = SCM_UNDEFINED;
-    
+
     if (SCM_UNDEFINEDP(available)) {
         const char *cacert_paths[] = {
             SYSTEM_CA_CERT_PATHS,
@@ -189,7 +189,7 @@ int Scm_TLSSystemCABundleAvailable(void)
             NULL
         };
 
-        const char **p = cacert_paths; 
+        const char **p = cacert_paths;
         for (;*p != NULL; p++) {
             if (access(*p, R_OK) == 0) {
                 available = SCM_TRUE;
@@ -212,7 +212,7 @@ static inline ScmObj default_ca_bundle(void)
     return s_check;
 #else
     return SCM_FALSE;
-#endif    
+#endif
 }
 
 void Scm_Init_tls(ScmModule *mod)
@@ -265,7 +265,7 @@ typedef struct ScmAxTLSRec {
 } ScmAxTLS;
 
 /* axTLS has ssl_display_error but it emits directly to stdout. */
-static const char *tls_strerror(int code) 
+static const char *tls_strerror(int code)
 {
     if (code < SSL_X509_OFFSET) {
         return x509_display_error(code - SSL_X509_OFFSET);
@@ -275,7 +275,7 @@ static const char *tls_strerror(int code)
         return "no error";
     case SSL_NOT_OK:
         return "not ok (internal error)";
-    case SSL_ERROR_DEAD:  
+    case SSL_ERROR_DEAD:
         return "connection dead";
     case SSL_CLOSE_NOTIFY:
         return "connection is being closed";
@@ -320,7 +320,7 @@ static const char *tls_strerror(int code)
     return Scm_GetStringConst(SCM_STRING(z));
 }
 
-/* 
+/*
  * 'system ca-bundle support
  */
 #ifdef HAVE_WINCRYPT_H

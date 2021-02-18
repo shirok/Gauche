@@ -118,4 +118,3 @@ ScmObj Scm_GlocUnmarkConst(ScmGloc *gloc)
     Scm_GlocMark(gloc, 0);
     return SCM_OBJ(gloc);
 }
-

@@ -168,5 +168,3 @@ ScmMVBox *Scm_ListToMVBox(ScmObj elts)
     }
     return b;
 }
-
-

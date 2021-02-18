@@ -69,7 +69,7 @@
 
 ;; This isn't POSIX, but we need it in bootstrap so we have it here.
 (define-in-module gauche (sys-normalize-pathname pathname
-                                                 :key 
+                                                 :key
                                                  (absolute #f)
                                                  (expand #f)
                                                  (canonicalize #f))
@@ -114,7 +114,7 @@
       (let loop ([comps (string-split path #[\\/])]
                  [r '()]
                  [dir? #f])             ;whether we add '/' at end
-        (cond [(null? comps) 
+        (cond [(null? comps)
                (let1 r (if dir? (cons "" r) r)
                  (string-join (reverse r) separator))]
               [(equal? (car comps) ".") (loop (cdr comps) r #t)]
@@ -143,7 +143,7 @@
  (initcode
   (set! errno_n2y (SCM_HASH_TABLE (Scm_MakeHashTableSimple SCM_HASH_EQV 0)))
   (set! errno_y2n (SCM_HASH_TABLE (Scm_MakeHashTableSimple SCM_HASH_EQ 0)))))
-  
+
 
 (define-macro (define-errno symbol)
   `(inline-stub
@@ -892,7 +892,7 @@
 ;; type to use autoboxing.
 ;; See https://github.com/shirok/Gauche/issues/638#issuecomment-601777334
 (define-cproc sys-ctime (time)
-  (let* ([tim::time_t (Scm_GetSysTime time)]) 
+  (let* ([tim::time_t (Scm_GetSysTime time)])
     (return (SCM_MAKE_STR_COPYING (ctime (& tim))))))
 
 (define-cproc sys-difftime (time1 time0) ::<double>
@@ -1079,7 +1079,7 @@
        (SCM_SYSCALL SCM_RESULT (call-nice inc (& errno_save)))
        (when (and (< SCM_RESULT 0) (!= errno 0))
          (Scm_SysError "nice failed"))))
-   
+
    ;; some less-frequently used get-*
 
    (define-cproc sys-getgroups ()

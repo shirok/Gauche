@@ -72,7 +72,7 @@
 
 (define (make-parameter value :optional (filter #f))
   (let* ([v (if filter (filter value) value)]
-         [p (make <parameter> 
+         [p (make <parameter>
               :filter filter
               :initial-value v)])
     (getter-with-setter
@@ -163,4 +163,3 @@
                (^[] (set! restarted #t)
                  (set! S (map (^[p v] (,%restore p v)) P S))))))]
        [(_ . x) (error "Invalid parameterize form:" f)]))))
-

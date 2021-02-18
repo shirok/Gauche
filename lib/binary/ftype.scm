@@ -45,7 +45,7 @@
 ;; A @emph{foreign object} , or @code{fobject}, is a Scheme object
 ;; that packages a chunk of binary data (@emph{storage}) with ftype.
 ;; It behaves like a Scheme record---it can have slots and you can
-;; get and set values.  
+;; get and set values.
 ;; However, it is possible to share storage among different Scheme objects.
 ;; For example, you can read binary data (e.g. image file content)
 ;; into an u8vector, then extract a part of it (e.g. image header)
@@ -71,7 +71,7 @@
    ftype:float ftype:double
 
    bitfield
-   
+
    ;; type metainformation
    ftype ftype-name ftype-size ftype-alignment ftype-endian
    ftype-getter ftype-putter
@@ -161,7 +161,7 @@
                                        bitpos
                                        (+ bitpos bitwidth)))
                           (^[uv pos val endian]
-                            (puti uv pos 
+                            (puti uv pos
                                   (copy-bit-field (geti uv pos endian)
                                                   val
                                                   bitpos
@@ -551,4 +551,3 @@
             (ftype:slot-position (cdr slot))
             (car slot)
             (ftype-name (ftype:slot-type (cdr slot))))))
-

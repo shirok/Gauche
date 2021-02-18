@@ -275,7 +275,7 @@
                   [(= j (s32vector-ref a-end 1))]
                 (inc! tmp (* (array-ref a i j)
                              (array-ref b (- j a-col-b-row-off) k))))
-              (array-set! res 
+              (array-set! res
                           (- i (s32vector-ref a-start 0))
                           (- k (s32vector-ref b-start 1)) tmp))))))))
 
@@ -310,7 +310,7 @@
               (let1 tmp 0
                 (do ([j a-start-col (+ j 1)]) ; for-each col of a & row of b
                     [(= j a-end-col)]
-                  (inc! tmp (* (array-ref a i j) 
+                  (inc! tmp (* (array-ref a i j)
                                (array-ref b (- j a-col-b-row-off) k))))
                 (array-set! res (- i a-start-row) (- k b-start-col) tmp)))))))))
 
@@ -656,5 +656,3 @@
         (if (eq? next <array>)
           (return <array>) ; already most general array
           (loop next (cdr l)))))))
-
-

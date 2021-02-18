@@ -231,7 +231,7 @@
 (inline-stub
  (declcode
   (.include "binary.h"))
- 
+
  (define-cproc read-u8
    (:optional (port::<input-port>? #f) (endian::<symbol>? #f))
    Scm_ReadBinaryU8)
@@ -494,7 +494,7 @@
      (do ([i 0 (+ i 1)]
           [v val (ash v -8)])
          [(>= i size) (undefined)]
-       (put-u8! uv (+ i pos) (logand v #xff)))]))  
+       (put-u8! uv (+ i pos) (logand v #xff)))]))
 
 (define (put-uint! size uv pos val :optional (endian (default-endian)))
   (case size

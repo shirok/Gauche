@@ -172,38 +172,38 @@ know.
 
 CHANGE HISTORY:
 
-0.8 to 0.9 	- Fixed spelling errors, changed to u_intXX_t type usage,
-		  removed names from prototypes, added prototypes to sha2.c,
-		  and a few things I can't recall.
+0.8 to 0.9	- Fixed spelling errors, changed to u_intXX_t type usage,
+                  removed names from prototypes, added prototypes to sha2.c,
+                  and a few things I can't recall.
 
 0.9 to 0.9.5	- Add a new define in sha2.c that permits one to compile
-		  it to either use memcpy()/memset() or bcopy()/bzero()
-		  for memory block copying and zeroing.  Added support
-		  for unrolled SHA-256/384/512 transform loops.  Just
-		  compile with SHA2_UNROLL_TRANSFORM to enable.  It takes
-		  longer to compile, but I hope it is a bit faster.  I
-		  need to do some test to see whether or not it is. Oh,
-		  in sha2.c, you either need to define SHA2_USE_BZERO_BCOPY
-		  or SHA2_USE_MEMSET_MEMCPY to choose which way you want
-		  to compile.  *Whew*  It's amazing how quickly something
-		  simple starts to grow more complex even in the span of
-		  just a few hours.  I didn't really intend to do this much.
+                  it to either use memcpy()/memset() or bcopy()/bzero()
+                  for memory block copying and zeroing.  Added support
+                  for unrolled SHA-256/384/512 transform loops.  Just
+                  compile with SHA2_UNROLL_TRANSFORM to enable.  It takes
+                  longer to compile, but I hope it is a bit faster.  I
+                  need to do some test to see whether or not it is. Oh,
+                  in sha2.c, you either need to define SHA2_USE_BZERO_BCOPY
+                  or SHA2_USE_MEMSET_MEMCPY to choose which way you want
+                  to compile.  *Whew*  It's amazing how quickly something
+                  simple starts to grow more complex even in the span of
+                  just a few hours.  I didn't really intend to do this much.
 0.9.5 to 0.9.6  - Added a test program (sha2test) which tests against several
                   known test vectors.  WARNING: Some of the test output
                   hashes are NOT from NIST's documentation and are the
                   output of this implementation and so may be incorrect.
 0.9.6 to 0.9.7  - Fixed a bug that could cause invalid output in certain
-		  cases and added an assumed scenario where zero-length
-		  data is hashed.  Also changed the rotation macros to use
-		  a temporary variable as this reduces the number of operations.
-		  When data is fed in blocks of the right length, copying of
-		  data is reduced in this version.  Added SHAYXZ_Data()
-		  functions for ease of hashing a set of data.  Added another
-		  file sha2speed.c for doing speed testing.  Added another test
-		  vector with a larger data size (16KB).  Fixed u_intXX_t and
-		  uintXX_t handling by adding a define for SHA2_USE_INTTYPES_H
-		  as well as made a few other minor changes to get rid of
-		  warnings when compiling on Compaq's Tru64 Unix.
+                  cases and added an assumed scenario where zero-length
+                  data is hashed.  Also changed the rotation macros to use
+                  a temporary variable as this reduces the number of operations.
+                  When data is fed in blocks of the right length, copying of
+                  data is reduced in this version.  Added SHAYXZ_Data()
+                  functions for ease of hashing a set of data.  Added another
+                  file sha2speed.c for doing speed testing.  Added another test
+                  vector with a larger data size (16KB).  Fixed u_intXX_t and
+                  uintXX_t handling by adding a define for SHA2_USE_INTTYPES_H
+                  as well as made a few other minor changes to get rid of
+                  warnings when compiling on Compaq's Tru64 Unix.
 0.9.7 to 0.9.8  - The bug fix in 0.9.7 was incomplete and in some cases made
                   things worse.  I believe that 0.9.8 fixes the bug completely
                   so that output is correct.  I cannot verify this, however,
@@ -230,7 +230,7 @@ CHANGE HISTORY:
                   either zero or a positive integer, and another (basically
                   the same bug) bug in SHA-384 and SHA-512 that showed up when
                   hashed data lengths L = 111 + 128 * X.  Thanks to Rogier
-		  van de Pol for sending me test data that revealed the bug.
+                  van de Pol for sending me test data that revealed the bug.
                   The fix was very simple (just two tiny changes).  Also,
                   I finally put the files into RCS so future changes will be
                   easier to manage.  The sha2prog.c file was rewritten to
@@ -302,4 +302,3 @@ That's all folks!  Have fun!
 Aaron out.
 
 $Id: README,v 1.3 2004/01/07 22:59:48 adg Exp $
-

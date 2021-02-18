@@ -1,4 +1,3 @@
-
 ;;-----------------------------------------------
 (test-section "data.queue")
 (use data.queue)
@@ -201,4 +200,3 @@
 
 ;; Note: */wait! APIs are tested in ext/threads/test.scm instead of here,
 ;; since we need threads working.
-

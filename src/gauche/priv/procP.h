@@ -42,4 +42,3 @@ void Scm__ProcedureInit(ScmProcedure *proc,
                         ScmObj info);
 
 #endif /*GAUCHE_PRIV_PROCP_H*/
-

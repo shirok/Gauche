@@ -137,7 +137,7 @@ SCM_EXTERN void   Scm_ModuleSeal(ScmModule *mod);
 enum {
     SCM_FIND_MODULE_CREATE = (1L<<0), /* Create if there's no named module */
     SCM_FIND_MODULE_QUIET  = (1L<<1), /* Do not signal an error if there's no
-                                         named module, but return NULL 
+                                         named module, but return NULL
                                          instead. */
     SCM_FIND_MODULE_PLACEHOLDING = (1L<<2) /* If module is newly created,
                                               mark it as placeholding. */
@@ -169,4 +169,3 @@ SCM_EXTERN ScmModule *Scm_CurrentModule(void);
 
 
 #endif /*GAUCHE_MODULE_H*/
-

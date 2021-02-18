@@ -72,7 +72,7 @@ typedef struct ScmExtendedPairDescriptorRec {
     void (*setCdr)(ScmObj, ScmObj);
 } ScmExtendedPairDescriptor;
 
-/* 
+/*
 
    ScmRealExtendedPair --> +--------------+  masked lower 3 bits
                            |   desc + 7   | -------> ScmExtendedPairDescriptor

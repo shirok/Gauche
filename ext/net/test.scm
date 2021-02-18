@@ -382,7 +382,7 @@
 (sys-unlink "sock.o")
 
 (test* "inet server socket" #t
-       (boolean (run-simple-server 
+       (boolean (run-simple-server
                  `(make-server-sockets #f ,*inet-port* :reuse-addr? #t))))
 
 (test* "inet client socket" '("ABC" "XYZ")
@@ -471,13 +471,13 @@
 (test* "getsockname/getpeername" #t
        (let* ([addr (make <sockaddr-in> :host :loopback :port 0)]
               [serv (make-server-socket addr :reuse-addr? #t)]
-              [clnt (make-client-socket 
+              [clnt (make-client-socket
                      (make <sockaddr-in>
                        :host :loopback
                        :port (sockaddr-port (socket-address serv))))])
          (begin0 (every (^[addr]
                           (and (= (sockaddr-addr addr) #x7f000001)
-                               (= (sockaddr-port addr) 
+                               (= (sockaddr-port addr)
                                   (sockaddr-port (socket-address serv)))))
                         (list (socket-getsockname serv)
                               (socket-getpeername clnt)))

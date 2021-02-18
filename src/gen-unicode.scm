@@ -241,7 +241,7 @@
   0)
 
 ;;;
-;;; Fetching 
+;;; Fetching
 ;;;
 (define (fetch-ucd dir :optional (version #f))
   (let ([path (if version
@@ -411,19 +411,19 @@
                        '(L LC M N P S Z C
                          (LETTER L) ASCII_LETTER
                          (DIGIT Nd) ASCII_DIGIT
-                         LETTER_DIGIT ASCII_LETTER_DIGIT 
-                         (LOWER Ll) ASCII_LOWER 
+                         LETTER_DIGIT ASCII_LETTER_DIGIT
+                         (LOWER Ll) ASCII_LOWER
                          (UPPER Lu) ASCII_UPPER
                          (TITLE Lt)
-                         GRAPHIC ASCII_GRAPHIC 
+                         GRAPHIC ASCII_GRAPHIC
                          PRINTING ASCII_PRINTING
-                         (PUNCTUATION P) ASCII_PUNCTUATION 
+                         (PUNCTUATION P) ASCII_PUNCTUATION
                          (SYMBOL S) ASCII_SYMBOL
                          (ISO_CONTROL Cc) ASCII_CONTROL
                          HEX_DIGIT
-                         WHITESPACE ASCII_WHITESPACE 
+                         WHITESPACE ASCII_WHITESPACE
                          BLANK ASCII_BLANK
-                         ASCII EMPTY 
+                         ASCII EMPTY
                          ASCII_WORD (WORD ASCII_WORD)))]
     (let1 setname (if (pair? cat) (car cat) cat)
       (print #"  predef_sets[SCM_CHAR_SET_~|setname|] =")
@@ -554,7 +554,7 @@
   (let1 ranges ($ reverse
                   $ fold (^[p s] (match s
                                    [() `(,p (0 . #f))]
-                                   [((_ . last) . rest)  
+                                   [((_ . last) . rest)
                                     (if (= (car p) last)
                                       `(,p ,@s)
                                       `(,p (,last . #f) ,@s))]))
@@ -640,7 +640,7 @@
   ;; general category class charsets (char-set:L etc.)
   (dolist [gcats (group-collection categories
                                   :key (^c (string-ref (symbol->string c) 0)))]
-    (let1 cs 
+    (let1 cs
         (make <char-code-set>
           :name (string->symbol (substring (symbol->string (car gcats)) 0 1)))
       (for-each (^c (walker (cut register cs c <> <>))) gcats)
@@ -649,12 +649,12 @@
   ;; is handled implicitly.
   (hash-table-put! sets 'ASCII_UPPER
                    (rlet1 cs (make <char-code-set> :name 'ASCII_UPPER)
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\A)
                                       (char->integer #\Z))))
   (hash-table-put! sets 'ASCII_LOWER
                    (rlet1 cs (make <char-code-set> :name 'ASCII_LOWER)
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\a)
                                       (char->integer #\z))))
   (hash-table-put! sets 'ASCII_LETTER
@@ -663,7 +663,7 @@
                                    (hash-table-ref sets 'ASCII_LOWER)))
   (hash-table-put! sets 'ASCII_DIGIT
                    (rlet1 cs (make <char-code-set> :name 'ASCII_DIGIT)
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\0)
                                       (char->integer #\9))))
   (hash-table-put! sets 'LETTER_DIGIT
@@ -754,13 +754,13 @@
                      (add-code! cs #x7f)))
   (hash-table-put! sets 'HEX_DIGIT
                    (rlet1 cs (make <char-code-set> :name 'HEX_DIGIT)
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\0)
                                       (char->integer #\9))
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\A)
                                       (char->integer #\F))
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\a)
                                       (char->integer #\f))))
   (hash-table-put! sets 'ASCII
@@ -768,13 +768,13 @@
                      (add-code-range! cs 0 127)))
   (hash-table-put! sets 'ASCII_WORD
                    (rlet1 cs (make <char-code-set> :name 'ASCII_WORD)
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\0)
                                       (char->integer #\9))
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\A)
                                       (char->integer #\Z))
-                     (add-code-range! cs 
+                     (add-code-range! cs
                                       (char->integer #\a)
                                       (char->integer #\z))
                      (add-code! cs (char->integer #\_))))
@@ -791,7 +791,7 @@
 ;;
 ;; The data structure is two-level tables that maps codepoint 0-1FFFFF to
 ;; an octet.
-;; 
+;;
 ;; The first level, break_table, is 512-length byte vector.
 ;; Upper 9bit of codepoint is used to index this table.  If the entry
 ;; is 255, the break property of that codepoint takes the default value.
@@ -869,7 +869,7 @@
 ;;
 ;; The data structure is two-level tables that maps codepoint 0-1FFFFF to
 ;; an octet.
-;; 
+;;
 ;; The first level, width_table, is 512-length byte vector.
 ;; Upper 9bit of codepoint is used to index this table.  If the entry
 ;; is one of WIDTH_x values, all codepoints of that range has that property
@@ -884,7 +884,7 @@
   (define prop-count (length (ucd-east-asian-widths)))
   (define subtable-count prop-count)
   (define width-table (~ db'width-table))
-  
+
   ;; returns subtable-number
   (define (gen-subtable start-code)
     (let1 e (dict-get width-table start-code 'N)
@@ -899,7 +899,7 @@
           (print "  },")
           (inc! subtable-count))
         ;; all codepoints of this range shares the value.
-        (find-index (cut eqv? e <>) (ucd-east-asian-widths))))) 
+        (find-index (cut eqv? e <>) (ucd-east-asian-widths)))))
 
   ;; Generate table of symbols
   (define (gen-symbol-table)

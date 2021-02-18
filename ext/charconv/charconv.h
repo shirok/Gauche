@@ -75,7 +75,7 @@ typedef struct ScmConvInfoRec {
 enum {
     CVPORT_OWNER = (1L<<0),     /* Close the inner port if the conversion port
                                    is closed. */
-    CVPORT_REPLACE = (1L<<1),   /* Use replacement character for illegal 
+    CVPORT_REPLACE = (1L<<1),   /* Use replacement character for illegal
                                    sequences instead of signaling an error */
 };
 
@@ -106,7 +106,7 @@ extern const char *Scm_GuessCES(const char *code,
                                 const char *buf,
                                 ScmSize buflen);
 
-/* 
+/*
  * jconv interface
  *
  *   jconv is a lower-level layer
@@ -118,7 +118,7 @@ extern const char *Scm_GuessCES(const char *code,
 #define OUTPUT_NOT_ENOUGH (-3)  /* output buffer is too small */
 #define NO_OUTPUT_CHAR    (-4)  /* char can't be represented in output CES */
 
-extern ScmConvInfo *jconv_open(const char *toCode, 
+extern ScmConvInfo *jconv_open(const char *toCode,
                                const char *fromCode,
                                int useIconv);
 extern int jconv_close(ScmConvInfo*);

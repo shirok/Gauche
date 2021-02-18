@@ -23,4 +23,3 @@ threads.sci gauche--threads.c : threads.scm
 	$(PRECOMP) -e -P -o gauche--threads $(srcdir)/threads.scm
 
 install : install-std
-

@@ -128,4 +128,3 @@
                              (logior SCM_STRING_INCOMPLETE
                                      SCM_STRING_COPYING)))))
  )
-

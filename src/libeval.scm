@@ -81,7 +81,7 @@
            [hooked? (pair? (cddr r))]
            [opener (if hooked? (caddr r) open-input-file)]
            [port (guard (e [else e]) (opener path))])
-      (when main-script 
+      (when main-script
         ;; record full path of the script
         (script-file (sys-normalize-pathname path
                                              :absolute #t :canonicalize #t)))
@@ -692,4 +692,3 @@
                   `(,(car si) ,(cadr si))
                   si)))
          (reverse sis))))
-

@@ -50,7 +50,7 @@ SCM_CLASS_DECL(Scm_MemoryRegionClass);
 #define SCM_MEMORY_REGION(obj)   ((ScmMemoryRegion*)obj)
 #define SCM_MEMORY_REGION_P(obj) SCM_XTYPEP(obj, SCM_CLASS_MEMORY_REGION)
 
-SCM_EXTERN ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off, 
+SCM_EXTERN ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
                               int prot, int flags);
 
 #endif /*GAUCHE_PRIV_MMAPP_H*/

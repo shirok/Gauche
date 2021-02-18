@@ -22,7 +22,3 @@ int main(int argc, const char **argv)
     Scm_SimpleMain(argc, argv, NULL, 0);
     return 0;
 }
-
-
-
-

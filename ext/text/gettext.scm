@@ -555,4 +555,3 @@
                 (hash-table-put! gettext-lookup-cache key lookup))
               lookup)
             (make-gettext-internal domain locale dirs cdir gettext-cached?)))))))
-

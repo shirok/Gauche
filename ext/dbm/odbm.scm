@@ -230,4 +230,3 @@
      (CHECK_ODBM) (TO_DATUM dkey key) (set! dnkey (nextkey dkey))
      (FROM_DATUM SCM_RESULT dnkey)))
  )
-

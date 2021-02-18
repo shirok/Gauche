@@ -2,11 +2,11 @@
  * gauche.h - Gauche scheme system header
  *
  *   Copyright (c) 2000-2020  Shiro Kawai  <shiro@acm.org>
- * 
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *   1. Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
  *
@@ -99,7 +99,7 @@ typedef ssize_t ScmSize;
 #if !defined(GC_BUILD)
 #define GC_BUILD  /* ditto */
 #endif
-#endif /* LIBGAUCHE_BODY */ 
+#endif /* LIBGAUCHE_BODY */
 #include <gc.h>
 
 #ifndef SCM_DECL_BEGIN
@@ -279,7 +279,7 @@ typedef struct ScmClassRec ScmClass;
  *      -------- -------- -------- -----111
  *      Only appears at the first word of heap-allocated
  *      objects except pairs and flonums.   Masking lower
- *      3bits gives a pointer to ScmClass.  
+ *      3bits gives a pointer to ScmClass.
  */
 
 /* Type coercer */
@@ -497,7 +497,7 @@ typedef struct ScmHeaderRec {
 /* You don't want to understand these. */
 # define SCM_CLASS_DECL(klass) \
     SCM_EXTERN ScmClass klass; \
-    extern ScmClass *SCM_CPP_CAT(_imp__, klass) 
+    extern ScmClass *SCM_CPP_CAT(_imp__, klass)
 # define SCM_CLASS_STATIC_PTR(klass) ((ScmClass*)(&SCM_CPP_CAT(_imp__,klass)))
 # define SCM_CLASS_STATIC_TAG(klass) SCM_CLASS2TAG(SCM_CLASS_STATIC_PTR(klass))
 
@@ -605,7 +605,7 @@ typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
 /* The new APIs to run Scheme code from C.
-   Returns # of results (>=0) if operation is successful, 
+   Returns # of results (>=0) if operation is successful,
    -1 if an error is occurred and captured.
    All result values are available in ScmEvalPacket.
    Exceptions are captured and returned in the ScmEvalPacket. */
@@ -736,7 +736,7 @@ enum {
     SCM_HASH_PORTABLE = 1L<<0  /* must calculate a portable hash value,
                                   can be used for portable-hash. */
 };
-    
+
 
 /* See class.c for the description of function pointer members.
    There's a lot of voodoo magic in class structure, so don't touch
@@ -807,7 +807,7 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
        code with the standard inheritance mechanism; though it can have
        subclasses, provided a special allocator and initializer.
 
-   SCM_CLASS_ABSTRACT 
+   SCM_CLASS_ABSTRACT
        This class is defined in C, but doesn't allowed to create an
        instance by its own.  It is intended to be used as a mixin from
        both C and Scheme-defined class.   An instance of this class
@@ -834,7 +834,7 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
    instance (i.e. it has to be castable to ScmInstance*).
 
    Here's the basic inheritance rules:
-                   
+
    - First, ABSTRACT class can be inserted at any place in the
      inheritance chain.  It doesn't affect C-level operation.  It is
      only to add the type information in Scheme-level.
@@ -845,7 +845,7 @@ typedef struct ScmClassStaticSlotSpecRec ScmClassStaticSlotSpec;
 
    - BUILTIN class can be inherited from BUILTIN classes, and
      its inheritance chain must form a single inheritance
-     
+
    - SCHEME class can be inherited from SCHEME or BASE classes.
      It can inherite from multiple SCHEME and/or BASE classes.
 */
@@ -1000,7 +1000,7 @@ extern ScmClass *Scm_ObjectCPL[];
         SCM_INTERNAL_COND_INITIALIZER,           \
         NULL       /* data */                    \
     } SCM__CLASS_PTR_BODY(cname)
-    
+
 /* Define built-in class statically -- full-featured version */
 #define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
     SCM__DEFINE_CLASS_COMMON(cname, 0,                    \
@@ -1307,7 +1307,7 @@ typedef enum {
                                    char, specified elsewhere. */
 } ScmIllegalCharHandling;
 
-    
+
 /*--------------------------------------------------------
  * STRING
  */
@@ -1445,7 +1445,7 @@ struct ScmProcedureRec {
    after argument folding).
 
    This special treatment is to avoid unnecessary consing of argumets;
-   if we know the callee immediately unfolds the rest argument, it's no 
+   if we know the callee immediately unfolds the rest argument, it's no
    use to fold excessive arguments anyway.
  */
 
@@ -1454,8 +1454,8 @@ struct ScmProcedureRec {
    For a <procedure> and <method>, this flag being TRUE means it returns
    the same constant value if given same constant arguments, and it does
    not have any other external effects.   The compiler may use this info
-   to replace a call of this proc with the resulting value, 
-   if all the arguments are known at compile-time.  
+   to replace a call of this proc with the resulting value,
+   if all the arguments are known at compile-time.
    The resulting value must be serializable to the
    precompiled file.  The result shouldn't be affected
    by the timing of the compile, architecture on which the compiler runs,
@@ -1487,7 +1487,7 @@ struct ScmProcedureRec {
            This slot may contain one of this:
            - Signature: For example, the subr `cons' has (cons obj1 obj2)
              in it.  The first pair may have the following pair attributes.
-             
+
                `source-info'   (<filename> <lineno>)
                    The source location the procedure is defined, if known.
                    This info can be retrieved with (source-location PROC).
@@ -1534,7 +1534,7 @@ struct ScmProcedureRec {
 /* About procedure inliner:
    This slot holds information to inline procedures.  The value of this slot
    can be one of the following kinds:
-   
+
    #f: No inliner associated to this procedure.  (For historical
       reasons, the code that access to this slot expects this slot can be
       NULL and treats it as SCM_FALSE in that case)
@@ -1808,7 +1808,7 @@ SCM_CLASS_DECL(Scm_SyntaxClass);
 SCM_CLASS_DECL(Scm_MacroClass);
 #define SCM_CLASS_MACRO            (&Scm_MacroClass)
 
-SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name, 
+SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name,
                                 ScmObj transformer,
                                 ScmObj info, /* alist */
                                 u_long flags);
@@ -1887,7 +1887,7 @@ SCM_EXTERN void Scm_Error(const char *msg, ...) SCM_NORETURN;
 SCM_EXTERN void Scm_SysError(const char *msg, ...) SCM_NORETURN;
 SCM_EXTERN void Scm_TypeError(const char *what,
                               const char *expected, ScmObj got) SCM_NORETURN;
-SCM_EXTERN void Scm_PortError(ScmPort *port, int reason, 
+SCM_EXTERN void Scm_PortError(ScmPort *port, int reason,
                               const char *msg, ...) SCM_NORETURN;
 SCM_EXTERN void Scm_PortErrorWithAux(ScmPort *port, int reason,
                                      ScmObj auxinfo,

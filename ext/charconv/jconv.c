@@ -55,7 +55,7 @@
 
 /* Fill outptr with substitution character.  Can return jconv error code. */
 static inline int do_subst(ScmConvInfo *cinfo,
-                           char *outptr, 
+                           char *outptr,
                            ScmSize outroom,
                            ScmSize *outchars)
 {
@@ -77,7 +77,7 @@ static inline int do_subst(ScmConvInfo *cinfo,
     } while (0)
 
 /******************************************************************
- * 
+ *
  *  Single-unit handling routines
  *
  *  This section defines routines that converts single input unit
@@ -456,8 +456,8 @@ static ScmSize eucj_lat1(ScmConvInfo *cinfo,
 
 /* ensure the current state is newstate.  returns # of output chars.
    may return OUTPUT_NOT_ENOUGH. */
-static ScmSize jis_ensure_state(ScmConvInfo *cinfo, int newstate, 
-                                ScmSize outbytes, 
+static ScmSize jis_ensure_state(ScmConvInfo *cinfo, int newstate,
+                                ScmSize outbytes,
                                 char *outptr, ScmSize outroom)
 {
     const char *escseq = NULL;
@@ -634,7 +634,7 @@ static ScmSize eucj_ascii(ScmConvInfo *cinfo,
 
 static ScmSize sjis_eucj(ScmConvInfo *cinfo SCM_UNUSED,
                          const char *inptr, ScmSize inroom,
-                         char *outptr, ScmSize outroom, 
+                         char *outptr, ScmSize outroom,
                          ScmSize *outchars)
 {
     static const unsigned char cvt[] = { 0xa1, 0xa8, 0xa3, 0xa4, 0xa5, 0xac, 0xae, 0xad, 0xaf, 0xee };
@@ -824,9 +824,9 @@ static ScmSize sjis_ascii(ScmConvInfo *cinfo,
 #include "ucs2eucj.c"
 
 /* Emit given euc char */
-static inline ScmSize utf2euc_emit_euc(unsigned short euc, 
+static inline ScmSize utf2euc_emit_euc(unsigned short euc,
                                        ScmSize inchars,
-                                       char *outptr, 
+                                       char *outptr,
                                        ScmSize outroom,
                                        ScmSize *outchars)
 {
@@ -848,7 +848,7 @@ static inline ScmSize utf2euc_emit_euc(unsigned short euc,
 /* handle 2-byte UTF8 sequence.  0xc0 <= u0 <= 0xdf */
 static inline ScmSize utf2euc_2(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
                                 const char *inptr, ScmSize inroom,
-                                char *outptr, ScmSize outroom, 
+                                char *outptr, ScmSize outroom,
                                 ScmSize *outchars)
 {
     const unsigned short *etab = NULL;
@@ -896,7 +896,7 @@ static inline ScmSize utf2euc_2(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 /* handle 3-byte UTF8 sequence.  0xe0 <= u0 <= 0xef */
 static inline ScmSize utf2euc_3(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
                                 const char *inptr, ScmSize inroom,
-                                char *outptr, ScmSize outroom, 
+                                char *outptr, ScmSize outroom,
                                 ScmSize *outchars)
 {
     const unsigned char *tab1 = NULL;
@@ -994,7 +994,7 @@ static inline ScmSize utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 }
 
 /* Body of UTF8 -> EUC_JP conversion */
-static ScmSize utf8_eucj(ScmConvInfo *cinfo,     
+static ScmSize utf8_eucj(ScmConvInfo *cinfo,
                         const char *inptr, ScmSize inroom,
                         char *outptr, ScmSize outroom,
                         ScmSize *outchars)
@@ -1038,7 +1038,7 @@ static ScmSize utf8_eucj(ScmConvInfo *cinfo,
 }
 
 /* UTF8 -> UTF16 */
-static ScmSize utf8_utf16(ScmConvInfo *cinfo,     
+static ScmSize utf8_utf16(ScmConvInfo *cinfo,
                           const char *inptr, ScmSize inroom,
                           char *outptr, ScmSize outroom,
                           ScmSize *outchars)
@@ -1047,7 +1047,7 @@ static ScmSize utf8_utf16(ScmConvInfo *cinfo,
     int ostate = cinfo->ostate;
     int need_bom = FALSE;
     ScmChar ch;
-    
+
     if (ostate == UTF_DEFAULT) {
         reqsize += 2;
         need_bom = TRUE;
@@ -1057,7 +1057,7 @@ static ScmSize utf8_utf16(ScmConvInfo *cinfo,
     if (r < 0) return r;
     if (ch < 0x10000) reqsize += 2;
     else reqsize += 4;
-    
+
     OUTCHK(reqsize);
     if (need_bom) {
         if (ostate == UTF_BE) {
@@ -1108,7 +1108,7 @@ static ScmSize utf8_utf16(ScmConvInfo *cinfo,
 }
 
 /* UTF8 -> UTF32 */
-static ScmSize utf8_utf32(ScmConvInfo *cinfo,     
+static ScmSize utf8_utf32(ScmConvInfo *cinfo,
                           const char *inptr, ScmSize inroom,
                           char *outptr, ScmSize outroom,
                           ScmSize *outchars)
@@ -1117,7 +1117,7 @@ static ScmSize utf8_utf32(ScmConvInfo *cinfo,
     int ostate = cinfo->ostate;
     int need_bom = FALSE;
     ScmChar ch;
-    
+
     if (ostate == UTF_DEFAULT) {
         reqsize += 4;
         need_bom = TRUE;
@@ -1126,7 +1126,7 @@ static ScmSize utf8_utf32(ScmConvInfo *cinfo,
     int r = jconv_utf8_to_ucs4(inptr, inroom, &ch);
     if (r < 0) return r;
     reqsize += 4;
-    
+
     OUTCHK(reqsize);
     if (need_bom) {
         if (ostate == UTF_BE) {
@@ -1159,7 +1159,7 @@ static ScmSize utf8_utf32(ScmConvInfo *cinfo,
 }
 
 /* UTF8 -> Latin1 */
-static ScmSize utf8_lat1(ScmConvInfo *cinfo,     
+static ScmSize utf8_lat1(ScmConvInfo *cinfo,
                          const char *inptr, ScmSize inroom,
                          char *outptr, ScmSize outroom,
                          ScmSize *outchars)
@@ -1177,7 +1177,7 @@ static ScmSize utf8_lat1(ScmConvInfo *cinfo,
 }
 
 /* UTF8 -> ASCII */
-static ScmSize utf8_ascii(ScmConvInfo *cinfo,     
+static ScmSize utf8_ascii(ScmConvInfo *cinfo,
                           const char *inptr, ScmSize inroom,
                           char *outptr, ScmSize outroom,
                           ScmSize *outchars)
@@ -1202,7 +1202,7 @@ static ScmSize utf8_ascii(ScmConvInfo *cinfo,
    directly supports utf8.  Theoretically though, having ucs4 to
    jis table would speed it up. */
 
-static ScmSize utf16_utf8(ScmConvInfo *cinfo,     
+static ScmSize utf16_utf8(ScmConvInfo *cinfo,
                           const char *inptr, ScmSize inroom,
                           char *outptr, ScmSize outroom,
                           ScmSize *outchars)
@@ -1228,7 +1228,7 @@ static ScmSize utf16_utf8(ScmConvInfo *cinfo,
             istate = UTF_BE;
         }
     }
-    
+
     u_char u[2];
     if (istate == UTF_BE) {
         u[0] = inptr[0];
@@ -1287,7 +1287,7 @@ static ScmSize utf16_utf8(ScmConvInfo *cinfo,
 
 /* This handles BOM stuff.   It is pretty twisted, for we need to keep the
    internal state consistent even when we return an error. */
-static ScmSize utf16_utf16(ScmConvInfo *cinfo,     
+static ScmSize utf16_utf16(ScmConvInfo *cinfo,
                            const char *inptr, ScmSize inroom,
                            char *outptr, ScmSize outroom,
                            ScmSize *outchars)
@@ -1332,7 +1332,7 @@ static ScmSize utf16_utf16(ScmConvInfo *cinfo,
         INCHK(2);
         OUTCHK(2);
     }
-    
+
     char u[2];
     if (cinfo->istate == UTF_BE) {
         u[0] = inptr[0];
@@ -1356,7 +1356,7 @@ static ScmSize utf16_utf16(ScmConvInfo *cinfo,
  * UTF32
  */
 
-static ScmSize utf32_utf8(ScmConvInfo *cinfo,     
+static ScmSize utf32_utf8(ScmConvInfo *cinfo,
                           const char *inptr, ScmSize inroom,
                           char *outptr, ScmSize outroom,
                           ScmSize *outchars)
@@ -1374,7 +1374,7 @@ static ScmSize utf32_utf8(ScmConvInfo *cinfo,
             inread += 4;
             INCHK(4);
             istate = UTF_BE;
-        } else if ((u_char)inptr[0] == 0xff    
+        } else if ((u_char)inptr[0] == 0xff
                    && (u_char)inptr[1] == 0xfe
                    && (u_char)inptr[2] == 0
                    && (u_char)inptr[3] == 0) {
@@ -1388,7 +1388,7 @@ static ScmSize utf32_utf8(ScmConvInfo *cinfo,
             istate = UTF_BE;
         }
     }
-    
+
     u_char u[4];
     if (istate == UTF_BE) {
         u[0] = inptr[0];
@@ -1414,7 +1414,7 @@ static ScmSize utf32_utf8(ScmConvInfo *cinfo,
 }
 
 /* This handles BOM stuff. */
-static ScmSize utf32_utf32(ScmConvInfo *cinfo,     
+static ScmSize utf32_utf32(ScmConvInfo *cinfo,
                            const char *inptr, ScmSize inroom,
                            char *outptr, ScmSize outroom,
                            ScmSize *outchars)
@@ -1436,7 +1436,7 @@ static ScmSize utf32_utf32(ScmConvInfo *cinfo,
                 istate = UTF_BE;
                 inptr += 4;
                 inroom -= 4;
-            } else if ((u_char)inptr[0] == 0xff 
+            } else if ((u_char)inptr[0] == 0xff
                        && (u_char)inptr[1] == 0xfe
                        && (u_char)inptr[2] == 0
                        && (u_char)inptr[3] == 0) {
@@ -1467,7 +1467,7 @@ static ScmSize utf32_utf32(ScmConvInfo *cinfo,
         INCHK(4);
         OUTCHK(4);
     }
-    
+
     char u[4];
     if (cinfo->istate == UTF_BE) {
         u[0] = inptr[0];
@@ -1774,13 +1774,13 @@ static ScmSize ident(ScmConvInfo *cinfo SCM_UNUSED,
 }
 
 /******************************************************************
- * 
+ *
  * Actual conversion
  *
  */
 
 /* map canonical code designator to inconv and outconv.  the order of
-   entry must match with the above designators. 
+   entry must match with the above designators.
    conv_converter[incode][outcode] returns the appropriate combiniation
    of routines.
    NB: It is tedious to maintain this table; we'll eventually generate

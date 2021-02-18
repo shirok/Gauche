@@ -25,4 +25,3 @@ data--sparse.c sparse.sci : sparse.scm
 	$(PRECOMP) -e -P -o data--sparse $(srcdir)/sparse.scm
 
 install : install-std
-

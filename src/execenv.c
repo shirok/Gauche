@@ -31,7 +31,7 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* 
+/*
  * Sets up various bindings and parameters to access runtime environment
  */
 
@@ -47,7 +47,7 @@ static const ScmPrimitiveParameter *script_file = NULL;
  * Command line arguments
  */
 
-/* 
+/*
  * Scm_InitCommandLine is to be called by an application to initialize
  * *program-name*, *argv* and (command-line).  argv[0] becomes *program-name*,
  * and *argv* gets the rest of arguments.
@@ -195,4 +195,3 @@ void Scm__InitExecenv(void)
                                              "script-file",
                                              SCM_FALSE, 0);
 }
-

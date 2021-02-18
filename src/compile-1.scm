@@ -127,7 +127,7 @@
    [else ($const program)]))
 
 ;; If op is (setter <var>), check if <var> has inlinable binding and
-;; its setter is locked; if so, returns the setter.  
+;; its setter is locked; if so, returns the setter.
 ;; There are a bunch of hoops to go through to satisfy the condition.
 (define (pass1/detect-constant-setter-call op cenv)
   (and (pair? op) (pair? (cdr op)) (null? (cddr op))
@@ -249,7 +249,7 @@
              (pass1/body-finish exprs mframe vframe cenv)]
             [(and (pair? head) (eq? (car head) :rec))
              (pass1/body-finish exprs mframe vframe cenv)]
-            [(not (wrapped-identifier? head)) 
+            [(not (wrapped-identifier? head))
              (error "[internal] pass1/body" head)]
             [(or (global-identifier=? head define.)
                  (global-identifier=? head define-inline.)
@@ -538,7 +538,7 @@
          ;; This matters when we compile multiple modules at once, and
          ;; one need to import from another with qualifiers.
          (unless (vm-compiler-flag-is-set? SCM_COMPILE_LEGACY_DEFINE)
-           (%insert-binding module (unwrap-syntax name) 
+           (%insert-binding module (unwrap-syntax name)
                             (%uninitialized) '(fresh)))
          ($define oform flags id (pass1 expr cenv))))]
     [_ (error "syntax-error:" oform)]))
@@ -760,7 +760,7 @@
                               (list expr xformer) cenv)])
        (pass1/make-inlinable-binding form name body cenv))]
     [_ (error "syntax-error: define-hybrid-syntax")]))
-            
+
 ;; Returns either <syntax> or <macro>
 (define (pass1/eval-macro-rhs who expr cenv)
   (rlet1 transformer ((make-toplevel-closure (compile expr cenv)))
@@ -802,7 +802,7 @@
                                                   :info-alist ',info)
                 cenv)
          (pass1 `(,%make-er-transformer. ,xformer ,cenv
-                                         :info-alist ',info) 
+                                         :info-alist ',info)
                 cenv)))]
     [_ (error "syntax-error: malformed er-macro-transformer:" form)]))
 
@@ -1101,7 +1101,7 @@
 ;; Quote and quasiquote ................................
 
 (define (pass1/quote obj)
-  ($const ($ unwrap-syntax obj 
+  ($const ($ unwrap-syntax obj
              $ not $ vm-compiler-flag-is-set? SCM_COMPILE_MUTABLE_LITERALS)))
 
 (define-pass1-syntax (quote form cenv) :null
@@ -1236,7 +1236,7 @@
             [(and (pair? (vector-ref obj i))
                   (unquote-splicing? (car (vector-ref obj i))))]
             [else (loop (+ i 1))])))
-  
+
   (quasi obj 0))
 
 
@@ -1245,16 +1245,16 @@
 (define-pass1-syntax (lambda form cenv) :null ;RnRS lambda
   (match form
     [(_ formals . body)
-     (receive (reqs rest) 
+     (receive (reqs rest)
          (let loop ((xs formals) (ys '()))
            (cond [(null? xs) (values (reverse ys) #f)]
                  [(identifier? xs) (values (reverse ys) xs)]
-                 [(pair? xs) 
+                 [(pair? xs)
                   (unless (identifier? (car xs))
                     (error "Invalid formal parameter:" (car xs)))
                   (loop (cdr xs) (cons (car xs) ys))]
                  [else (error "Invalid formal parameter:" formals)]))
-       (pass1/vanilla-lambda (add-arg-info form formals) 
+       (pass1/vanilla-lambda (add-arg-info form formals)
                              (if rest (append reqs (list rest)) reqs)
                              (length reqs)
                              (if rest 1 0)
@@ -1736,7 +1736,7 @@
         (pass1/report-include iport #f)
         (close-input-port iport))))
   (map do-include args))
-  
+
 ;; If filename is relative, we try to resolve it with the source file.
 ;; whenever possible.
 (define (pass1/open-include-file path includer-path)
@@ -1843,4 +1843,3 @@
        exp)]
     [_ (error "syntax-error: malformed with-meta:" form)]))
 |#
-

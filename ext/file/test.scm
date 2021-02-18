@@ -636,7 +636,7 @@
              (remove-files '("test.o"))
              (make-directory* "test.o")
              (receive (exists name)
-                 (call-with-temporary-file 
+                 (call-with-temporary-file
                   (^[oport name] (values (file-exists? name) name))
                   :directory "test.o"
                   :prefix "ooo")

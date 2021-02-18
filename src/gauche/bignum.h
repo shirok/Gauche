@@ -90,4 +90,3 @@ SCM_EXTERN ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc,
 SCM_EXTERN int Scm_DumpBignum(const ScmBignum *b, ScmPort *out);
 
 #endif /* GAUCHE_BIGNUM_H */
-

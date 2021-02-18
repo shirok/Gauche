@@ -386,7 +386,7 @@ Options:
                        the package name is used as the directory name.
   -v|verbose         : operate verbosely.
 ")
-  (let-args args ([autoconf "autoconf"] 
+  (let-args args ([autoconf "autoconf"]
                   [verbose  "v|verbose"]
                   [scheme-only "S|scheme-only"]
                   [tmpl-dir "template-dir=s"]

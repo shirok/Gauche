@@ -308,7 +308,7 @@
      (set! (-> c history) SCM_FALSE)
      (set! (-> c port) SCM_FALSE)
      (return (SCM_OBJ c))))
- 
+
  (define-cclass <load-condition-mixin>
    "ScmLoadConditionMixin*" "Scm_LoadConditionMixinClass"
    (c "mixin_condition_cpa")
@@ -321,7 +321,7 @@
    (let* ([c::ScmCompileErrorMixin* (SCM_NEW_INSTANCE ScmCompileErrorMixin klass)])
      (set! (-> c expr) SCM_FALSE)
      (return (SCM_OBJ c))))
- 
+
  (define-cclass <compile-error-mixin>
    "ScmCompileErrorMixin*" "Scm_CompileErrorMixinClass"
    (c "mixin_condition_cpa")
@@ -397,4 +397,3 @@
    ((filename))
    (allocator (c "filename_error_mixin_allocate")))
  )
-

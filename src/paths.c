@@ -156,7 +156,7 @@ static const char *get_install_dir()
     if (dir1 != NULL) return dir1;
     dir1 = remove_suffix(dir, "\\src"); /* while we're buliding */
     if (dir1 != NULL) return dir1;
-    /* At this moment, we're probably in a statically linked binary. 
+    /* At this moment, we're probably in a statically linked binary.
        We don't need a particular path, but we need something to substitute
        '@' in the load path. */
     return "";
@@ -283,7 +283,7 @@ static const char *get_install_dir()
 }
 
 #else
-/* 
+/*
  * The fallback case.  We try procfs, for it is supported on several platforms
  * and doesn't use special API functions.
  */
@@ -294,7 +294,7 @@ static const char *get_libgauche_path()
     FILE *fp = fopen("/proc/self/maps", "r");
     if (fp == NULL) return NULL;
     const char *const libgauche = "libgauche-"GAUCHE_ABI_VERSION".so";
-    
+
     char buf[MAPS_LINE_MAX+1];
     while (fgets(buf, MAPS_LINE_MAX, fp) != NULL) {
         const char *p = strstr(buf, libgauche);
@@ -380,7 +380,7 @@ static const char *substitute_all(const char *input,
     size_t ilen = strlen(input);
     size_t mlen = strlen(mark);
     size_t slen = strlen(subst);
-        
+
     int noccurs = 0;
     const char *p = input;
     const char *pend = p + ilen;
@@ -410,7 +410,7 @@ static const char *substitute_all(const char *input,
 
 
 /* The configure-generated path may have '@' in the pathnames.  We replace
-   it with the installation directory. 
+   it with the installation directory.
 
    NB: This is a static function, but called from gauche-config.c (it includes
    paths.c).

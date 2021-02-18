@@ -44,7 +44,3 @@
 #define SHA512_Final    Scm_SHA512_Final
 #define SHA512_End      Scm_SHA512_End
 #define SHA512_Data     Scm_SHA512_Data
-
-
-
-

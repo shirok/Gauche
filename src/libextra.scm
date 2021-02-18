@@ -66,4 +66,3 @@
     (exit 1 "usage: testgosh <test-script>"))
   (load (cadr args))
   0)
-

@@ -79,4 +79,3 @@ distclean : clean
 
 maintainer-clean : clean
 	rm -rf $(CONFIG_GENERATED) @@configure@@ VERSION
-

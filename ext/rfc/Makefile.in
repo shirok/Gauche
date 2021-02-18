@@ -37,4 +37,3 @@ rfc--822.c 822.sci : $(top_srcdir)/libsrc/rfc/822.scm
 	$(PRECOMP) -e -P -o rfc--822 $(top_srcdir)/libsrc/rfc/822.scm
 
 install : install-std
-

@@ -160,8 +160,8 @@
                                              :optional (flags '()))
   (let* ([z::int 0])
     (if (and (not (SCM_FALSEP (Scm_Memq 'fresh flags)))
-             (not (SCM_UNBOUNDP 
-                   (Scm_GlobalVariableRef mod name 
+             (not (SCM_UNBOUNDP
+                   (Scm_GlobalVariableRef mod name
                                           SCM_BINDING_STAY_IN_MODULE))))
       (return SCM_FALSE)
       (begin
@@ -216,7 +216,7 @@
                  (-> (SCM_MODULE (-> (SCM_MODULE obj) origin)) name)
                  obj)
      (Scm_Printf port "#<module %A>" (-> (SCM_MODULE obj) name))))
- 
+
  (define-cclass <module>
    "ScmModule*" "Scm_ModuleClass"
    (c "SCM_CLASS_COLLECTION_CPL")

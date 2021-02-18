@@ -99,4 +99,3 @@
 ;; make hook applicable.
 (define-method object-apply ((hook <hook>) . args)
   (apply run-hook hook args))
-

@@ -230,7 +230,7 @@
   (define (make-v6socks a6s)
     (receive (socks _) (map-accum try-v6 #f a6s)
       (filter identity socks)))
-  
+
   (let* ([ss (make-sockaddrs host port)]
          [a6s (v6addrs ss)])
     ;; NB: Mingw doesn't have EADDRINUSE.  it's likely not to have ipv6 either,

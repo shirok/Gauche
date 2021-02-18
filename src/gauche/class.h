@@ -161,10 +161,10 @@ SCM_EXTERN ScmObj Scm_VMIsA(ScmObj obj, ScmClass *klass);
 
 #if GAUCHE_API_VERSION < 1000
 SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt k);
-SCM_EXTERN ScmObj Scm_InstanceSlotRef3(ScmObj obj, ScmSmallInt k, 
+SCM_EXTERN ScmObj Scm_InstanceSlotRef3(ScmObj obj, ScmSmallInt k,
                                        ScmObj fallback);
 #else  /*GAUCHE_API_VERSION >= 1000*/
-SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt k, 
+SCM_EXTERN ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt k,
                                       ScmObj fallback);
 #endif /*GAUCHE_API_VERSION >= 1000*/
 

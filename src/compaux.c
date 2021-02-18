@@ -138,21 +138,21 @@ static ScmClassStaticSlotSpec synclo_slots[] = {
  * Identifier object
  */
 
-/* 
+/*
  * About identifier's ENV slot.
- * We close identifier's binding environment (list of frames), so that later 
+ * We close identifier's binding environment (list of frames), so that later
  * we can look up its bindings hygienically.  We truncate the frames up to
  * where the binding occur, for the efficient lookup and comparison.
- * Notably, the identifiers that are unbound or refer to toplevel variable 
+ * Notably, the identifiers that are unbound or refer to toplevel variable
  * has () in its env.
  * A caveat--we can't truncate frames at the time of construction, since
  * the entire frame structure may not be fixed while we're processing internal
- * defines.  The identifier may refer to another identifier that will be 
+ * defines.  The identifier may refer to another identifier that will be
  * inserted later.  Thus, we delay the truncation operation until it is
  * needed.
  * The ENV slot itself now contains (<flag> . <frames>), where <flag> is #f
  * if truncation hasn't be done, #t otherwise.  ENV should be treated as
- * an opaque data for the others; you should always get it with 
+ * an opaque data for the others; you should always get it with
  * Scm_IdentifierEnv(), and never directly access ENV slot itself.
  */
 
@@ -314,8 +314,8 @@ typedef struct unwrap_ctx_rec {
     int immutable;              /* flag */
 } unwrap_ctx;
 
-static void register_location(unwrap_ctx *ctx, 
-                              ScmObj *loc, 
+static void register_location(unwrap_ctx *ctx,
+                              ScmObj *loc,
                               ScmObj ref)
 {
     if (!SCM_READ_REFERENCE_P(ref)) return;
@@ -359,8 +359,8 @@ static void patch_locations(unwrap_ctx *ctx)
 static ScmObj unwrap_rec(ScmObj form, unwrap_ctx *ctx)
 {
     if (!SCM_PTRP(form)) return form;
-    ScmDictEntry *e = Scm_HashCoreSearch(&ctx->history, 
-                                         (intptr_t)form, 
+    ScmDictEntry *e = Scm_HashCoreSearch(&ctx->history,
+                                         (intptr_t)form,
                                          SCM_DICT_GET);
     if (e) {
         /* We've visited FORM before.  If this is the second time,

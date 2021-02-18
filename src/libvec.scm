@@ -292,7 +292,7 @@
   (return (Scm_VMUVectorRef v SCM_UVECTOR_C128 i fallback)))
 
 (define-cproc uvector-set! (v::<uvector> i::<fixnum> val :optional clamp)
-  ::<void> :fast-flonum 
+  ::<void> :fast-flonum
   (Scm_UVectorSet v (Scm_UVectorType (Scm_ClassOf (SCM_OBJ v))) i val
                   (Scm_ClampMode clamp)))
 (define-cproc uvector-ref (v::<uvector> i::<fixnum> :optional fallback)
@@ -368,7 +368,7 @@
     (if (SCM_UNBOUNDP fallback)
       (Scm_Error "bitvector index out of range: %ld" i)
       (return fallback)))
-  (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i) 
+  (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i)
               (SCM_MAKE_INT 1)
               (SCM_MAKE_INT 0))))
 
@@ -381,7 +381,7 @@
       (return fallback)))
   (return (?: (SCM_BITS_TEST (SCM_BITVECTOR_BITS v) i) SCM_TRUE SCM_FALSE)))
 
-(define-cproc bitvector-copy (v::<bitvector> 
+(define-cproc bitvector-copy (v::<bitvector>
                               :optional (start::<fixnum> 0)
                                         (end::<fixnum> -1)) ;srfi-178
   Scm_BitvectorCopy)
@@ -415,7 +415,7 @@
  (.define dc_lt (a b) (or (< (creal a) (creal b))
                           (and (== (creal a) (creal b))
                                (< (cimag a) (cimag b)))))
- 
+
  (define-cise-stmt %binary-search
    [(_ elttype eq lt)
     `(let* ([esize::u_int  (+ skip 1)]
@@ -440,7 +440,7 @@
            (set! (* ceil) (cast (size_t) -1))
            (set! (* ceil) (* hi esize))))
        (return (cast (size_t) -1)))])
- 
+
  (define-cfn Scm_BinarySearchS8 (vec::(const int8_t*)
                                  len::size_t
                                  key::int8_t
@@ -504,7 +504,7 @@
                                   floor::size_t*
                                   ceil::size_t*)
    ::size_t (%binary-search uint64_t common-eqv common-lt))
- 
+
  (define-cfn Scm_BinarySearchF16 (vec::(const ScmHalfFloat*)
                                   len::size_t
                                   key::ScmHalfFloat
@@ -536,7 +536,7 @@
                                   floor::size_t*
                                   ceil::size_t*)
    ::size_t (%binary-search ScmHalfComplex hc-eqv hc-lt))
- 
+
  (define-cfn Scm_BinarySearchC64 (vec::(const ScmFloatComplex*)
                                   len::size_t
                                   key::(ScmFloatComplex)
@@ -553,4 +553,3 @@
                                    ceil::size_t*)
    ::size_t (%binary-search (ScmDoubleComplex) common-eqv dc-lt))
  )
-

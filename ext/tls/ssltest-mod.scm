@@ -46,7 +46,7 @@
      (define srcpath-replace #"~|srcpath|/")
      (define kicker-replace  #"~kicker ")
      ])
-  ;; Caveat: 
+  ;; Caveat:
   ;;  Some axTLS tests use 1024bit keys.  Recent Debian sets openssl SECLEVEL to
   ;;  2 by default, which disables 1024bit keys and make tests fail.
   ;;  We ensure SECLEVEL=1 with the command line.

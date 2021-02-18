@@ -238,7 +238,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
         size_t s = SCM_UVECTOR_SIZE(u);
 
         switch (uvtype) {
-            /* We can use siphash if u is u8vector or s8vector. */ 
+            /* We can use siphash if u is u8vector or s8vector. */
         case SCM_UVECTOR_S8:
         case SCM_UVECTOR_U8:
             return Scm__DwSipPortableHash((uint8_t*)SCM_UVECTOR_ELEMENTS(u),
@@ -249,13 +249,13 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
                for we need to allocate a buffer.
                (Unless we directly access siphash setup/round function
                and feed one word at a time--which is tedious.)
-               The current code may not be ideal, but just as good as our 
+               The current code may not be ideal, but just as good as our
                other primitive portable hash functions. */
 
             /* Initial hash value.  The seed value for each uvector type
                is just a random value I generated. */
 #define INIT_R(r, seed) SMALL_INT_HASH(r, seed^salt)
-                                                         
+
         case SCM_UVECTOR_S16:
             seed = 3499211612ul;
             goto do16;
@@ -297,7 +297,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
             goto do64;
         case SCM_UVECTOR_U64:
             seed = 1323567403ul;
-            do64: 
+            do64:
             {
                 INIT_R(r, seed);
                 for (size_t i=0; i<s; i++) {
@@ -319,7 +319,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
             }
             return r;
         }
-#undef INIT_R            
+#undef INIT_R
         case SCM_UVECTOR_RESERVED1:
         case SCM_UVECTOR_C32:
         case SCM_UVECTOR_C64:
@@ -338,7 +338,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
 
 /* equal-hash, which satisfies
      forall x, y: equal(x,y) => hash(x) = hash(y)
-  
+
    Both default-hash and portable-hash have this property but their
    requirements are slightly different, so here's the common part.
 */
@@ -456,7 +456,7 @@ ScmObj Scm_CurrentRecursiveHash(ScmObj newval)
 }
 
 /* 'Portable' general hash function.
-   
+
    It is guaranteed that the hash value won't change for the same objects
    (roughly, indistinguishable in their external representation)
    across the runs of the program, and among different platforms.
@@ -484,7 +484,7 @@ ScmSmallInt Scm_RecursiveHash(ScmObj obj, ScmSmallInt salt, u_long flags)
     }
 }
 
-ScmSmallInt Scm_SmallIntHash(ScmSmallInt val, 
+ScmSmallInt Scm_SmallIntHash(ScmSmallInt val,
                              ScmSmallInt salt SCM_UNUSED,
                              u_long flags SCM_UNUSED)
 {
@@ -658,7 +658,7 @@ static u_long address_hash(const ScmHashCore *ht SCM_UNUSED, intptr_t obj)
     return hashval;
 }
 
-static int address_cmp(const ScmHashCore *ht SCM_UNUSED, 
+static int address_cmp(const ScmHashCore *ht SCM_UNUSED,
                        intptr_t key, intptr_t k2)
 {
     return (key == k2);
@@ -1114,7 +1114,7 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
  * Printer
  */
 
-static void hash_print(ScmObj obj, ScmPort *port, 
+static void hash_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmHashTable *ht = (ScmHashTable*)obj;
@@ -1168,15 +1168,15 @@ void Scm__InitHash()
     u_long salt = ((u_long)getpid() * ((u_long)t.tv_sec^(u_long)t.tv_usec));
     ADDRESS_HASH(salt, salt);
     salt &= SCM_SMALL_INT_MAX;
-    /* 
+    /*
      * We can't use Scm_BindPrimitiveParameter here, since symbol table
      * is not initialized yet (symbol table uses hashtable!)
      */
-    hash_salt = 
-        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE, 
+    hash_salt =
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE,
                                    Scm_MakeIntegerU(salt), 0);
-    current_recursive_hash = 
-        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE, 
+    current_recursive_hash =
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, SCM_FALSE,
                                    SCM_FALSE, 0);
 }
 
@@ -1398,7 +1398,7 @@ static u_long legacy_flonum_hash(double f)
     /* This condition eliminates NaN as well. */
     if (!(minus_two_pow_63 < d && d < two_pow_63)) return 0;
     if (-0.5 < d && d < 0.5) return 0;
-                                 
+
     double dm = trunc(fmod(d, two_pow_32));
     if (dm < 0) dm += two_pow_32;
     return (u_long)trunc(dm);

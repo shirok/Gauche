@@ -574,12 +574,12 @@ static const char *index2ptr(const ScmStringBody *body,
             break;
         default:
             Scm_Panic("String index contains unrecognized signature (%02x). "
-                      "Possible memory corruption.  Aborting...", 
+                      "Possible memory corruption.  Aborting...",
                       index->signature);
         }
     }
-    return forward_pos(body, 
-                       SCM_STRING_BODY_START(body) + off, 
+    return forward_pos(body,
+                       SCM_STRING_BODY_START(body) + off,
                        nchars & (STRING_INDEX_INTERVAL(index)-1));
 }
 
@@ -616,7 +616,7 @@ ScmChar Scm_StringRef(ScmString *str, ScmSmallInt pos, int range_error)
     } else {
         p = index2ptr(b, pos);
     }
-    
+
     if (SCM_STRING_BODY_SINGLE_BYTE_P(b)) {
         return (ScmChar)(*(unsigned char *)p);
     } else {
@@ -885,7 +885,7 @@ static ScmObj substring(const ScmStringBody *xb,
     ScmSmallInt len = byterange? SCM_STRING_BODY_SIZE(xb) : SCM_STRING_BODY_LENGTH(xb);
     u_long flags = SCM_STRING_BODY_FLAGS(xb);
     if (!immutable) flags &= ~SCM_STRING_IMMUTABLE;
-    
+
     SCM_CHECK_START_END(start, end, len);
 
     if (byterange) {
@@ -1168,9 +1168,9 @@ static int string_search(const char *s1, ScmSmallInt siz1,
 }
 
 /* NB: len2 is only used in some internal CES */
-static int string_search_reverse(const char *s1, ScmSmallInt siz1, 
+static int string_search_reverse(const char *s1, ScmSmallInt siz1,
                                  ScmSmallInt len1,
-                                 const char *s2, ScmSmallInt siz2, 
+                                 const char *s2, ScmSmallInt siz2,
                                  ScmSmallInt len2 SCM_UNUSED,
                                  ScmSmallInt *bi /* out */,
                                  ScmSmallInt *ci /* out */)
@@ -1702,23 +1702,23 @@ void Scm_StringBodyIndexDump(const ScmStringBody *sb, ScmPort *port)
     size_t index_size = 0;
 
     switch (STRING_INDEX_TYPE(index)) {
-    case STRING_INDEX8:  
-        Scm_Printf(port, "index8  "); 
+    case STRING_INDEX8:
+        Scm_Printf(port, "index8  ");
         index_size = (size_t)index->index8[1];
         break;
-    case STRING_INDEX16: 
-        Scm_Printf(port, "index16 ");   
+    case STRING_INDEX16:
+        Scm_Printf(port, "index16 ");
         index_size = (size_t)index->index16[1];
         break;
     case STRING_INDEX32:
-        Scm_Printf(port, "index32 "); 
+        Scm_Printf(port, "index32 ");
         index_size = (size_t)index->index32[1];
         break;
-    case STRING_INDEX64: 
+    case STRING_INDEX64:
         Scm_Printf(port, "index64 ");
         index_size = (size_t)index->index64[1];
         break;
-    default:    
+    default:
         Scm_Printf(port, "unknown(%02x) ", (uint8_t)STRING_INDEX_TYPE(index));
     }
     Scm_Printf(port, " interval %d  size %d\n", interval, index_size-1);
@@ -1841,7 +1841,7 @@ ScmObj Scm_StringCursorForward(ScmString* s, ScmObj sc, int nchars)
     if (SCM_INTEGERP(sc)) {
         return Scm_MakeStringCursorFromIndex(s, Scm_GetInteger(sc) + nchars);
     }
-    
+
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
     const char *ptr = string_cursor_ptr(srcb, sc);
     if (ptr == NULL) {
@@ -1865,7 +1865,7 @@ ScmObj Scm_StringCursorBack(ScmString* s, ScmObj sc, int nchars)
     if (ptr == NULL) {
         Scm_Error("must be either an index or a cursor: %S", sc);
     }
-    
+
     if (SCM_STRING_BODY_SINGLE_BYTE_P(srcb) ||
         SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
         return make_string_cursor(s, ptr - nchars);
@@ -1936,7 +1936,7 @@ int Scm_StringCursorCompare(ScmObj sc1, ScmObj sc2,
 
     ScmSmallInt i1 = string_cursor_offset(sc1);
     ScmSmallInt i2 = string_cursor_offset(sc2);
-    if (i1 < 0 || i2 < 0) { 
+    if (i1 < 0 || i2 < 0) {
         Scm_Error("arguments must be either both cursors or both indexes: %S vs %S", sc1, sc2);
     }
     return numcmp(SCM_MAKE_INT(i1), SCM_MAKE_INT(i2));
@@ -2037,9 +2037,9 @@ void Scm__DStringRealloc(ScmDString *dstr, ScmSmallInt minincr)
 }
 
 /* Retrieve accumulated string. */
-static const char *dstring_getz(ScmDString *dstr, 
-                                ScmSmallInt *psiz, 
-                                ScmSmallInt *plen, 
+static const char *dstring_getz(ScmDString *dstr,
+                                ScmSmallInt *psiz,
+                                ScmSmallInt *plen,
                                 int noalloc)
 {
     ScmSmallInt size, len;

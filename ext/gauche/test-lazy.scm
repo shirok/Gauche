@@ -84,10 +84,10 @@
 (let* ([source "abc\
               \ndef\
               \nghi"]
-       [z (port->char-lseq/position (open-input-string source) 
+       [z (port->char-lseq/position (open-input-string source)
                                     :source-name "source.txt")]
        [len (length z)])
-  (test* "" 
+  (test* ""
          '("source.txt:1:1(0) a"
            "source.txt:1:2(1) b"
            "source.txt:1:3(2) c"
@@ -101,7 +101,7 @@
            "source.txt:3:3(10) i")
          (map (^[c i]
                 (let1 p (lseq-position (drop z i))
-                  (format "~a:~a:~a(~a) ~a" 
+                  (format "~a:~a:~a(~a) ~a"
                           (sequence-position-source p)
                           (sequence-position-line p)
                           (sequence-position-column p)
@@ -116,4 +116,3 @@
 
 
 (test-end)
-

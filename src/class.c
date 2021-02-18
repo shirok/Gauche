@@ -417,7 +417,7 @@ static ScmObj class_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(instance);
 }
 
-static void class_print(ScmObj obj, ScmPort *port, 
+static void class_print(ScmObj obj, ScmPort *port,
                         ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<class %A%s>",
@@ -444,8 +444,8 @@ ScmObj Scm_Allocate(ScmClass *c, ScmObj initargs)
 }
 
 static ScmObj allocate(ScmNextMethod *nm SCM_UNUSED,
-                       ScmObj *argv, 
-                       int argc SCM_UNUSED, 
+                       ScmObj *argv,
+                       int argc SCM_UNUSED,
                        void *d SCM_UNUSED)
 {
     return Scm_Allocate(SCM_CLASS(argv[0]), argv[1]);
@@ -503,7 +503,7 @@ ScmClass *Scm_ClassOf(ScmObj obj)
             return SCM_CLASS_PAIR;
         }
     }
-    
+
     return SCM_CLASS_OF(obj);
 }
 
@@ -1778,7 +1778,7 @@ static SCM_DEFINE_METHOD(slot_bound_using_class_p_rec,
  * Scheme-defined objects will be initialized by object_initialize,
  * this method is called only for built-in classes.
  */
-static ScmObj builtin_initialize(ScmObj *argv, int argc, 
+static ScmObj builtin_initialize(ScmObj *argv, int argc,
                                  ScmGeneric *gf SCM_UNUSED)
 {
     SCM_ASSERT(argc == 2);
@@ -2002,7 +2002,7 @@ static ScmObj object_initialize_cc(ScmObj result SCM_UNUSED, void **data)
 }
 
 static ScmObj object_initialize(ScmNextMethod *nm SCM_UNUSED,
-                                ScmObj *argv, 
+                                ScmObj *argv,
                                 int argc SCM_UNUSED,
                                 void *data SCM_UNUSED)
 {
@@ -2071,7 +2071,7 @@ static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(gf);
 }
 
-static void generic_print(ScmObj obj, ScmPort *port, 
+static void generic_print(ScmObj obj, ScmPort *port,
                           ScmWriteContext *ctx SCM_UNUSED)
 {
 #if 0  /* enable this to show maxReqargs */
@@ -2378,7 +2378,7 @@ ScmObj Scm_SortMethods(ScmObj methods, ScmObj *argv, int argc)
 
 
 /* Developer API.  Accessible from Scheme via generic-build-dispatcher!
-   If axis is out of range, we do nothing and returns #f. 
+   If axis is out of range, we do nothing and returns #f.
  */
 ScmObj Scm__GenericBuildDispatcher(ScmGeneric *gf, int axis)
 {
@@ -2436,7 +2436,7 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(meth);
 }
 
-static void method_print(ScmObj obj, ScmPort *port, 
+static void method_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(port, "#<method %S>", SCM_METHOD(obj)->common.info);
@@ -2461,7 +2461,7 @@ static int method_leaf_p(ScmClosure *body)
  *    "initialize" method (chicken-and-egg circularity).
  */
 static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
-                                ScmObj *argv, 
+                                ScmObj *argv,
                                 int argc SCM_UNUSED,
                                 void *data SCM_UNUSED)
 {
@@ -2490,7 +2490,7 @@ static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
     if (!SCM_NULLP(lp)) opt++;
 
     if (SCM_PROCEDURE_REQUIRED(body) != req + opt + 1)
-        Scm_Error("method body %S doesn't match with lambda list %S", 
+        Scm_Error("method body %S doesn't match with lambda list %S",
                   body, llist);
     if (speclen != req)
         Scm_Error("specializer list doesn't match with lambda list: %S",specs);
@@ -2718,7 +2718,7 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
 }
 
 static ScmObj generic_addmethod(ScmNextMethod *nm SCM_UNUSED,
-                                ScmObj *argv, 
+                                ScmObj *argv,
                                 int argc SCM_UNUSED,
                                 void *data SCM_UNUSED)
 {
@@ -2812,7 +2812,7 @@ ScmObj Scm_MakeNextMethod(ScmGeneric *gf, ScmObj methods,
     return SCM_OBJ(nm);
 }
 
-static void next_method_print(ScmObj obj, ScmPort *out, 
+static void next_method_print(ScmObj obj, ScmPort *out,
                               ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmNextMethod *nm = SCM_NEXT_METHOD(obj);
@@ -2851,7 +2851,7 @@ static ScmObj accessor_get_proc(ScmNextMethod *nm SCM_UNUSED,
 }
 
 static ScmObj accessor_set_proc(ScmNextMethod *nm SCM_UNUSED,
-                                ScmObj *argv, 
+                                ScmObj *argv,
                                 int argc SCM_UNUSED,
                                 void *data SCM_UNUSED)
 {
@@ -2942,7 +2942,7 @@ struct foreign_data_rec {
 
 /* This is used if custom printer isn't given to
    Scm_MakeForeignPointerClass. */
-static void fptr_print(ScmObj obj, ScmPort *port, 
+static void fptr_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmForeignPointer *fptr = SCM_FOREIGN_POINTER(obj);
@@ -3099,7 +3099,7 @@ void *Scm_ForeignPointerRef(ScmForeignPointer *fp)
     if (Scm_ForeignPointerInvalidP(fp)) {
         Scm_Error("attempt to dereference a foreign pointer "
                   "that is no longer valid: %S", SCM_OBJ(fp));
-        
+
     }
     return fp->ptr;
 }
@@ -3470,7 +3470,7 @@ void Scm__InitClass(void)
     /* box.c */
     CINIT(SCM_CLASS_BOX,    "<box>");
     CINIT(SCM_CLASS_MVBOX,  "<mv-box>");
-    
+
     /* class.c */
     CINIT(SCM_CLASS_BOOL,   "<boolean>");
     CINIT(SCM_CLASS_CHAR,   "<char>");
@@ -3532,7 +3532,7 @@ void Scm__InitClass(void)
 
     /* parameter.c */
     BINIT(SCM_CLASS_PRIMITIVE_PARAMETER, "<primitive-parameter>", NULL);
-    
+
     /* port.c */
     /* initialized in Scm__InitPort */
 

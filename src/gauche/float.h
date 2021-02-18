@@ -182,7 +182,7 @@ extern unsigned int __cdecl _controlfp(unsigned int, unsigned int);
         static const u_short cw = 0x27f;        \
         asm volatile("fldcw %0": : "m"(cw));    \
     } while(0)
-    
+
 #define SCM_FP_ENSURE_DOUBLE_PRECISION_END()
 
 #elif defined(__NetBSD__) && defined(__i386__) && defined(HAVE_FPSETPREC)

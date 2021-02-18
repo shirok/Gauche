@@ -180,4 +180,3 @@
     (if (undefined? default)
       (errorf "Cannot find ~a definition in ~a" var makefile)
       default)))
-

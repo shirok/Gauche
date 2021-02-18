@@ -37,7 +37,7 @@ void test_eval(const char *msg, const char *sexp)
 }
 
 ScmObj dummy_eproc(ScmObj *args SCM_UNUSED,
-                   int nargs SCM_UNUSED, 
+                   int nargs SCM_UNUSED,
                    void *data SCM_UNUSED)
 {
     return SCM_UNDEFINED;

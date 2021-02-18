@@ -265,7 +265,7 @@
                         ($ sparse-table-comparator
                            $ make-sparse-table (car p))))
               predefs)))
-  
+
 
 ;; Default value behavior
 (let ()

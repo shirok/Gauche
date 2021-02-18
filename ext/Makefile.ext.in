@@ -64,7 +64,7 @@ TESTRECORD = "$(top_builddir)/test.record"
 .SUFFIXES: .S .c .o .obj .s .stub
 
 .PHONY: default all check install install-check clean distclean \
-        maintainer-clean install-std uninstall link unlink list-objects \
+	maintainer-clean install-std uninstall link unlink list-objects \
 	pre-package
 
 .c.obj:

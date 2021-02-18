@@ -24,8 +24,8 @@ If you don't want to use zlib for some reason, say --without-zlib. ]),
   AS_CASE([$with_zlib],
     [no],  [ac_cv_use_zlib=no],
     [yes], [],
-	   [ZLIB_CPPFLAGS="-I$with_zlib/include"
-	    ZLIB_LDFLAGS="-L$with_zlib/lib"])
+           [ZLIB_CPPFLAGS="-I$with_zlib/include"
+            ZLIB_LDFLAGS="-L$with_zlib/lib"])
  ])
 
 dnl

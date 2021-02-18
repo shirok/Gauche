@@ -52,5 +52,3 @@ static void dl_close(void *handle)
 {
     /* nothing to do */
 }
-
-

@@ -41,7 +41,7 @@
 (define-cproc regmatch? (obj) ::<boolean> SCM_REGMATCHP)
 
 (define-cproc string->regexp (str::<string> :key (case-fold #f) (multi-line #f))
-  (return 
+  (return
    (Scm_RegComp str
                 (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
                         (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)))))
@@ -50,7 +50,7 @@
   (return (logand (-> regexp flags) SCM_REGEXP_CASE_FOLD)))
 
 (define-cproc regexp-parse (str::<string> :key (case-fold #f) (multi-line #f))
-  (return 
+  (return
    (Scm_RegComp str
                 (logior (?: (SCM_BOOL_VALUE case-fold) SCM_REGEXP_CASE_FOLD 0)
                         (?: (SCM_BOOL_VALUE multi-line) SCM_REGEXP_MULTI_LINE 0)

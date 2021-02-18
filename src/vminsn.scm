@@ -834,7 +834,7 @@
 ;;
 (define-insn LREF        2 none #f
   ($lref (SCM_VM_INSN_ARG0 code)   ; depth
-         (SCM_VM_INSN_ARG1 code))) ; offset 
+         (SCM_VM_INSN_ARG1 code))) ; offset
 
 ;; Shortcut for the frequent depth/offset.
 ;; From statistics, we found that the following depth/offset combinations
@@ -1042,7 +1042,7 @@
   ;;
   ;; where N = SCMVM_INSN_ARG(code)-2.
   ;; rest contains a list of "all the rest arguments".
-  ;; We just push VAL0 onto stack, and move ARGP 
+  ;; We just push VAL0 onto stack, and move ARGP
   ;; We "rotate" the stack and VAL0 and jump to the
   ;; tail_apply_entry.  (The unfolding of rest
   ;; argument will be done in ADJUST_ARGUMENT_FRAME later,
@@ -1053,7 +1053,7 @@
   ;;        | argN |
   ;;        |   :  |
   ;;   ARGP>| arg0 |        VAL0=proc
-  ;;        | proc |< original ARGP postiion (proc unused) 
+  ;;        | proc |< original ARGP postiion (proc unused)
   (let* ([rest VAL0]
          [nargc::int (- (SCM_VM_INSN_ARG code) 2)]
          [proc (* (- SP nargc 1))])
@@ -1253,7 +1253,7 @@
              ($result:f (* (Scm_GetDouble arg) (Scm_GetDouble VAL0)))]
             [else ($result (Scm_Mul arg VAL0))])
       (if (SCM_FLONUMP VAL0)
-        (cond [(and (== (SCM_MAKE_INT 0) arg) 
+        (cond [(and (== (SCM_MAKE_INT 0) arg)
                     (not (SCM_IS_INF (SCM_FLONUM_VALUE VAL0)))
                     (not (SCM_IS_NAN (SCM_FLONUM_VALUE VAL0))))
                ($result (SCM_MAKE_INT 0))]

@@ -23,4 +23,3 @@ binary--io.c io.sci : io.scm
 	$(PRECOMP) -e -P -o binary--io $(srcdir)/io.scm
 
 install : install-std
-

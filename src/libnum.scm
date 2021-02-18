@@ -108,12 +108,12 @@
 (define-cproc native-endian () Scm_NativeEndian)
 
 ;; DBL_EPSILON, etc.
-(define-cproc flonum-epsilon () 
+(define-cproc flonum-epsilon ()
   (let* ([x::(static ScmObj) SCM_UNBOUND])
     (when (== x SCM_UNBOUND)
       (set! x (Scm_MakeFlonum DBL_EPSILON)))
     (return x)))
-(define-cproc flonum-min-normalized () 
+(define-cproc flonum-min-normalized ()
   (let* ([x::(static ScmObj) SCM_UNBOUND])
     (when (== x SCM_UNBOUND)
       (set! x (Scm_MakeFlonum DBL_MIN)))
@@ -214,7 +214,7 @@
          [o::ScmPort* (SCM_PORT (Scm_MakeOutputStringPort TRUE))])
     (when (or (< radix SCM_RADIX_MIN) (> radix SCM_RADIX_MAX))
       (Scm_Error "radix must be an integer between %d and %d, but got %d"
-                 SCM_RADIX_MIN SCM_RADIX_MAX radix))  
+                 SCM_RADIX_MIN SCM_RADIX_MAX radix))
     (cond [(or (SCM_FALSEP flags) (SCM_NULLP flags)) (set! f 0)]
           [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
           [(SCM_PAIRP flags)
@@ -242,9 +242,9 @@
                                         (default-exactness #f))
   (let* ([flags::u_long 0])
     (cond
-     [(SCM_EQ default-exactness 'exact) 
+     [(SCM_EQ default-exactness 'exact)
       (set! flags SCM_NUMBER_FORMAT_EXACT)]
-     [(SCM_EQ default-exactness 'inexact) 
+     [(SCM_EQ default-exactness 'inexact)
       (set! flags SCM_NUMBER_FORMAT_INEXACT)]
      [(SCM_FALSEP default-exactness)]
      [else (Scm_Error "default-exactness must be either #f, exact or inexact, but got: %S" default-exactness)])
@@ -572,7 +572,7 @@
 (define-cproc %exact-integer-expt (x y) :constant Scm_ExactIntegerExpt)
 (define (%exact-expt x y) ;; x, y :: exact
   (cond [(integer? y) (%exact-integer-expt x y)]
-        [(< x 0) (%expt x y)] ; we don't have exact compnum  
+        [(< x 0) (%expt x y)] ; we don't have exact compnum
         [(< y 0) (/ (%exact-expt x (- y)))]
         [(integer? x)
          (let ([a (numerator y)]

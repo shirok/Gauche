@@ -317,7 +317,7 @@
                      (set! (,p2-z v) 35)
                      (list (,p2-x v) (,p2-y v) (,p2-z v))))
        )))
-  
+
 (pseudo-record-test <list> list)
 (pseudo-record-test <vector> vector)
 (pseudo-record-test <u8vector> u8vector)
@@ -437,7 +437,7 @@
 
 ;; inheriting mixin class
 (define-record-type (myseq #f :mixins (<sequence>)) #t #t elements)
-(define-method referencer ((s myseq)) 
+(define-method referencer ((s myseq))
   (^[o i] (ref (myseq-elements o) i)))
 (define-method modifier ((s myseq))
   (^[o i v] (set! (ref (myseq-elements o) i) v)))

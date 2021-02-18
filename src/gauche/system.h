@@ -328,4 +328,3 @@ SCM_EXTERN ScmObj Scm_WinGetPipeName(HANDLE h);
 #endif /* GAUCHE_WINDOWS */
 
 #endif /* GAUCHE_SYSTEM_H */
-

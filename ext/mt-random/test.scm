@@ -133,7 +133,7 @@
              (exact? (random)))
       (test* "real random unit range" #t
              (every (^_ (< 0 (random) 1)) (iota 100)))))
-  
+
   (test* "random-source?" #t (random-source? s0))
 
   (random-source-randomize! s0)
@@ -152,4 +152,3 @@
   )
 
 (test-end)
-

@@ -135,7 +135,7 @@ typedef struct ScmPortInputStringRec {
    both getting and setting the position.  R6RS introduced
    port-position and set-port-position! interface, which then adopted as
    SRFI-192.  It requires different strategy than lseek interface.
-   
+
    1) SRFI-192 allows port position can be gotten but not be set, and that
       needs to be queried by port-has-set-port-position!?.  With lseek API,
       port position is either totally unavaiable or can be gotten/set.
@@ -149,8 +149,8 @@ typedef struct ScmPortInputStringRec {
    3) Lseek allows position to be set relative to the current position or
       to the end of the file.  SRFI-192 set-port-position! is always the
       absolute position.
-   
-  To support both interface, we have these hooks in SCM_PORT_FILE and 
+
+  To support both interface, we have these hooks in SCM_PORT_FILE and
   SCM_PORT_PROC type of ports (the field names differ for the historical
   reasons):
 
@@ -196,12 +196,12 @@ typedef struct ScmPortInputStringRec {
     u_int error     : 1;        /* Error has been occurred */           \
                                                                         \
     u_int flags     : 5         /* see ScmPortFlags below */
-    
+
 struct ScmPortRec {
     SCM_PORT_HEADER;
     /* See portP.h for the real definition.  The magic number is chosen
        so that ScmPort has enough size to contain the real struct.
-       
+
        We tested to use a pointer to the real struct, but I/O intensive
        benchmark showed 2-3% reduction of speed.  So we avoid indirection.
      */
@@ -300,7 +300,7 @@ enum ScmPortFlags {
 
 /* The following macros are for the backward compatibility; their use is
    deprecated.  (We used to have these macros directly access ScmPort
-   structure to eliminate function call overhead.  It turned out 
+   structure to eliminate function call overhead.  It turned out
    it matters little.   Use function APIs.) */
 #define SCM_PUTB(b, p)     Scm_Putb(b, SCM_PORT(p))
 #define SCM_PUTC(c, p)     Scm_Putc(c, SCM_PORT(p))
@@ -506,4 +506,3 @@ SCM_EXTERN ScmObj Scm_MakePortWithFd(ScmObj name,
 SCM_EXTERN ScmObj Scm_MakeCodingAwarePort(ScmPort *iport);
 
 #endif /*GAUCHE_PORT_H*/
-

@@ -1483,7 +1483,7 @@
   (use srfi-178)
   (test-module 'srfi-178)
   (use srfi-78)
-  
+
   (define-syntax import (syntax-rules () [(_ _) #f]))
   (include "../../test/include/srfi-178-tests.scm")
   )

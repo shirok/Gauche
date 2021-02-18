@@ -325,5 +325,3 @@
  (define-enum GDBM_CENTFREE)
  (define-enum GDBM_COALESCEBLKS)
  )
-
-

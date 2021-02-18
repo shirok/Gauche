@@ -6,7 +6,7 @@ GENERATED = Makefile iconv-adapter.h eucj2ucs.c ucs2eucj.c guess_tab.c \
 	    jconv_tab.h jconv_tab.c latin_tab.h latin_tab.c
 XCLEANFILES = convaux.c
 PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c jconv_tab.h latin_tab.h \
-                    pre-package-data
+		    pre-package-data
 
 include ../Makefile.ext
 
@@ -20,9 +20,9 @@ LIBFILES = gauche--charconv.$(SOEXT)
 SCMFILES = charconv.scm
 
 OBJECTS = charconv.$(OBJEXT)      \
-          convaux.$(OBJEXT)       \
-          jconv.$(OBJEXT)         \
-          guess.$(OBJEXT)
+	  convaux.$(OBJEXT)       \
+	  jconv.$(OBJEXT)         \
+	  guess.$(OBJEXT)
 
 all : $(LIBFILES)
 
@@ -60,5 +60,3 @@ pre-package-data :
 	cd data; $(MAKE) GOSH=$(GOSH)
 
 install : install-std
-
-

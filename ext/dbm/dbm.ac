@@ -19,7 +19,7 @@ dnl   otherwise.
 DBMS=gdbm,ndbm,odbm
 AC_ARG_WITH(dbm,
   AS_HELP_STRING([--with-dbm=DBM,...],
-                 [Select which dbm libraries to be compiled.  You can specify 
+                 [Select which dbm libraries to be compiled.  You can specify
 any combinations of gdbm, ndbm and odbm, or just 'no' to disable external
 dbm libraries.  Example: --with-dbm=ndbm,odbm
 (to use only ndbm and odbm) or --wtih-dbm=no (to not compile any of them).
@@ -31,7 +31,7 @@ exclude some dbm libraries that would be compiled otherwise.]),
     AS_CASE([$with_dbm],
       [no],  [DBMS=""],
       [yes], [], dnl Use the default
-	     [DBMS="$with_dbm"])
+             [DBMS="$with_dbm"])
   ])
 
 dnl Check for various dbm libraries availability

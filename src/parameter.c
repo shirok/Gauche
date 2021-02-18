@@ -112,7 +112,7 @@ ScmVMParameterTable *Scm__MakeVMParameterTable(ScmVM *base)
     return table;
 }
 
-static void pparam_print(ScmObj obj, 
+static void pparam_print(ScmObj obj,
                          ScmPort *out,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
@@ -162,7 +162,7 @@ static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
     return SCM_OBJ(p);
 }
 
-/* 
+/*
  * Create a primitive parameter
  */
 ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
@@ -195,7 +195,7 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     return p;
 }
 
-/* 
+/*
  * Create a SUBR that embeds a primitive parameter.
  */
 static ScmObj prim_param_proc(ScmObj *argv, int argc, void *data)
@@ -279,7 +279,7 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
     }
 
     t->vector[p->index] = val;
-    
+
     if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(oldval);
     else return oldval;
 }
@@ -291,7 +291,7 @@ ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
                                                   ScmObj initval,
                                                   u_long flags)
 {
-    ScmPrimitiveParameter *p = 
+    ScmPrimitiveParameter *p =
         Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
                                    SCM_INTERN(name), initval, flags);
     ScmObj subr = Scm_MakePrimitiveParameterSubr(p);
@@ -335,7 +335,7 @@ void Scm_InitParameterLoc(ScmVM *vm SCM_UNUSED,
 {
     Scm_Warn("Scm_InitParameterLoc is deprecated.  Use Scm_MakePrimitiveParameter");
     ScmPrimitiveParameter *p =
-        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER, 
+        Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
                                    SCM_FALSE, initval, 0);
     location->p = p;
 }

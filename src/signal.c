@@ -307,7 +307,7 @@ static ScmObj sigset_allocate(ScmClass *klass, ScmObj initargs);
 SCM_DEFINE_BUILTIN_CLASS(Scm_SysSigsetClass, sigset_print,
                          NULL, NULL, sigset_allocate, SCM_CLASS_DEFAULT_CPL);
 
-void sigset_print(ScmObj obj, ScmPort *out, 
+void sigset_print(ScmObj obj, ScmPort *out,
                   ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(out, "#<sys-sigset [");

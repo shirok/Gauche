@@ -58,7 +58,7 @@
 
 (define-cproc %make-comparator (type-test equality-test
                                 comparison-proc ; or order-proc
-                                hash name 
+                                hash name
                                 any-type::<boolean> use-cmp::<boolean>
                                 srfi-128::<boolean>)
   (let* ([flags::u_long (logior (?: srfi-128 SCM_COMPARATOR_SRFI_128 0)
@@ -88,7 +88,7 @@
         [else (error "make-comparator needs a procedure or #t as equality-test, but got:" equality-test)]))
 (define (ensure-hash-func hash)
   (cond [(or (eq? hash #f) (applicable? hash <bottom>)) hash]
-        [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)])) 
+        [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)]))
 
 ;; API - srfi-114 constructor
 (define-in-module gauche (make-comparator/compare type-test equality-test
@@ -182,7 +182,7 @@
 ;; For SRFI-114 comparator, we auto-generate ordering predicate.
 (define-cproc comparator-ordering-predicate (c::<comparator>) :constant
   Scm_ComparatorOrderingPredicate)
-  
+
 (inline-stub
  (define-cfn fallback-order (argv::ScmObj* argc::int data::void*) :static
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)]
@@ -206,8 +206,8 @@
        (set! (-> c orderFn) ord))
      (return ord)))
  )
- 
-;; 
+
+;;
 (define-cproc comparator-hash-function (c::<comparator>) :constant
   Scm_ComparatorHashFunction)
 
@@ -749,4 +749,3 @@
 (define stable-sort-by sort-by)
 (define (sort-by! seq key :optional (cmp #f)) (sort! seq cmp key))
 (define stable-sort-by! sort-by!)
-

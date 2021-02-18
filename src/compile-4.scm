@@ -115,7 +115,7 @@
                 ($let #f 'rec
                       (imap (^[x] ($lambda-lifted-var x)) lifted)
                       lifted
-                      iform.)))))))))    
+                      iform.)))))))))
 
 ;; Pass4 step1 - scan
 ;;   bs - List of lvars whose binding is introduced in the current scope.
@@ -314,4 +314,3 @@
   [($VECTOR $LIST $LIST*) (pass4/subst*! ($*-args iform) labels) iform]
   [($LIST->VECTOR) (pass4/subst! ($*-arg0 iform) labels)]
   [else iform])
-

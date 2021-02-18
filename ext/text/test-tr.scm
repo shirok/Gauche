@@ -85,4 +85,3 @@
 
 (test* "escape in spec" "*ello, World!"
        (string-tr "Hello,-World!" "A\\-H" "_ \\*"))
-

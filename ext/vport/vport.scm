@@ -185,8 +185,8 @@
 (define (open-output-bytevector) (open-output-uvector)) ;R7RS
 (define (get-output-bytevector port)
   (or (get-output-uvector port)
-      (error "get-output-bytevector needs a output uvector port, but got:" 
-             port)))  
+      (error "get-output-bytevector needs a output uvector port, but got:"
+             port)))
 
 ;;=======================================================
 ;; A port with limited-length input/output
@@ -254,7 +254,7 @@
     (if (< b #x80)
       (list b)
       ;; this is inefficient, but we assume it's a rare path
-      (u8vector->list (string->u8vector (string c))))))  
+      (u8vector->list (string->u8vector (string c))))))
 
 
 ;;=======================================================

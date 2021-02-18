@@ -1,5 +1,5 @@
 /*
- * native.c - dynamic native code generation 
+ * native.c - dynamic native code generation
  *
  *   Copyright (c) 2021  Shiro Kawai  <shiro@acm.org>
  *
@@ -43,7 +43,7 @@
 #include <sys/mman.h>
 #endif
 
-/* 
+/*
  * For the time being, we use a fixed area (mmapped executable page)
  * as the scratch code pad, and simply manage it like a stack.  That is,
  * the region below free is 'used'.  It's enough for simple FFI, since
@@ -70,7 +70,7 @@ static ScmObj sym_v;
 
 static void init_code_cache(ScmVM *vm) {
     if (vm->codeCache != NULL) return;
-    
+
     ScmCodeCache *cc = SCM_NEW(ScmCodeCache);
     cc->pad = SCM_MEMORY_REGION(Scm_SysMmap(NULL, -1, CODE_PAD_SIZE, 0,
                                             PROT_READ|PROT_WRITE|PROT_EXEC,
@@ -97,7 +97,7 @@ static inline void free_code_cache(ScmVM *vm, void *ptr)
     cc->free = ptr;
 }
 
-/* 
+/*
  * some utility to 'patch' the code array
  */
 
@@ -107,16 +107,16 @@ typedef union {
 
     int16_t i16;
     uint8_t bi16[2];
-    
+
     int32_t i32;
     uint8_t bi32[4];
-    
+
     int64_t i64;
     uint8_t bi64[8];
 
     double d;
     uint8_t bd[SIZEOF_DOUBLE];
-               
+
     float f;
     uint8_t bf[SIZEOF_FLOAT];
 } pun_t;
@@ -130,7 +130,7 @@ static inline void patch1(void *dst, ScmSmallInt pos,
     memcpy(dst+pos, src, size);
 }
 
-/*  
+/*
  * Copy CODE to the scratch pad, starting from START-th byte up to right before
  * END-th byte, from the pad's TSTART-th position.
  *
@@ -146,7 +146,7 @@ static inline void patch1(void *dst, ScmSmallInt pos,
  *   ((<pos> <type> <value>) ...)
  *
  *    <pos>  - specifies the position in the byte array to be filled.
- *          
+ *
  *    <type> - one of the following symbols:
  *        o : ScmObj.   <value>'s ScmObj is used as is.
  *        p : pointer.  <value> is <dlptr>.
@@ -166,7 +166,7 @@ static inline void patch1(void *dst, ScmSmallInt pos,
  * RETTYPE is also a symbol similar to <type>, plus 'v' as no value.
  */
 
-ScmObj Scm__VMCallNative(ScmVM *vm, 
+ScmObj Scm__VMCallNative(ScmVM *vm,
                          ScmSmallInt tstart,
                          ScmSmallInt tend,
                          ScmUVector *code,
@@ -190,7 +190,7 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
 
     size_t realcodesize = codesize;
     if (tend > (ScmSmallInt)codesize) realcodesize = tend;
-    
+
     void *codepad = allocate_code_cache(vm, realcodesize);
     if (tstart > 0) memset(codepad, 0, tstart);
     memcpy(codepad + tstart,
@@ -204,7 +204,7 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
     ScmObj result = SCM_UNDEFINED;
 
     SCM_UNWIND_PROTECT {
-        /* 
+        /*
          * Patch it
          */
         void *limit = codepad + codesize;
@@ -218,14 +218,14 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
             ScmObj s_pos = SCM_CAR(e);
             ScmObj type = SCM_CADR(e);
             ScmObj val = SCM_CAR(SCM_CDDR(e));
-        
+
             if (!SCM_INTP(s_pos) || !SCM_SYMBOLP(type)) {
                 Scm_Error("bad filler entry: %S", e);
             }
             ScmSmallInt pos = SCM_INT_VALUE(s_pos);
 
             pun_t pun;
-        
+
             if (SCM_EQ(type, sym_o)) {
                 pun.n = (intptr_t)val;
                 patch1(codepad, pos, pun.bn, SIZEOF_INTPTR_T, limit);
@@ -266,7 +266,7 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
             }
         }
 
-        /* 
+        /*
          * Call the code
          */
         void *entryPtr = codepad + entry;
@@ -297,7 +297,7 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
         free_code_cache(vm, codepad);
         SCM_NEXT_HANDLER;
     } SCM_END_PROTECT;
-    
+
     free_code_cache(vm, codepad);
     return result;
 }
@@ -317,4 +317,3 @@ void Scm__InitNative(void)
     sym_s   = SCM_INTERN("s");
     sym_v   = SCM_INTERN("v");
 }
-

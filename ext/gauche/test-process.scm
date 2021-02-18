@@ -444,7 +444,7 @@
                :output "test.o")
            (let1 r (call-with-input-file "test.o" port->string)
              (list (equal? r s) x y)))))
-       
+
 (test* "call-with-output-process (redirect/error - ignore)" #t
        (begin
          (call-with-output-process (cmds cat "NoSuchFile")
@@ -540,7 +540,7 @@
 ;; argument.  https://github.com/shirok/Gauche/issues/651
 (test* "process-output->string-list" #t
        (begin
-         (process-output->string-list (cmd ls '-a) 
+         (process-output->string-list (cmd ls '-a)
                                       :encoding (gauche-character-encoding))
          #t))
 
@@ -615,8 +615,8 @@
   (t "\"$abc\""            (test-error)                'posix)
   (t "'$abc'"              '("$abc")                   'posix)
   (t "abc >z"              (test-error)                'posix)
-  (t "abc \">z\""          '("abc" ">z")               'posix) 
-  (t "abc \"`z`\""         (test-error)                'posix) 
+  (t "abc \">z\""          '("abc" ">z")               'posix)
+  (t "abc \"`z`\""         (test-error)                'posix)
   (t "abc '`z`'"           '("abc" "`z`")              'posix)
 
   (t ""                    '()                         'windows)

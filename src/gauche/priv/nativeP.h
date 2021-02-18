@@ -34,7 +34,7 @@
 #ifndef GAUCHE_PRIV_NATIVEP_H
 #define GAUCHE_PRIV_NATIVEP_H
 
-SCM_EXTERN ScmObj Scm__VMCallNative(ScmVM *vm, 
+SCM_EXTERN ScmObj Scm__VMCallNative(ScmVM *vm,
                                     ScmSmallInt tstart,
                                     ScmSmallInt tend,
                                     ScmUVector *code,

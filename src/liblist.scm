@@ -156,7 +156,7 @@
 (define (length<? list k) (length<=? list (- k 1)))
 (define (length>? list k) (not (length<=? list k)))
 (define (length>=? list k) (not (length<? list k)))
-                  
+
 (select-module scheme)
 (define-cproc append (:rest lists) (inliner APPEND) Scm_Append)
 (define-cproc reverse (list::<list> :optional (tail ())) Scm_Reverse2)
@@ -803,4 +803,3 @@
 
 (define-cproc pair-attribute-set! (pair::<pair> key value)
   (return (Scm_PairAttrSet (SCM_PAIR pair) key value)))
-

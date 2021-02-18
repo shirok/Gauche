@@ -164,7 +164,7 @@
 ;;
 ;;     NB: In the following pattern, we can't do the conversion unless p is
 ;;     constant or unmodified $LREF, for (g b) might modify p.
-;;     
+;;
 ;;       (let ([q (g b)]) (h p q) (foo))
 ;;
 ;;     NB: We don't need to consider the possibility that (g b) modifies h,
@@ -627,7 +627,7 @@
 ;;
 ;; We only do this transformation if every x y z ... is either $lref
 ;; or $const.  If there's more complex expression, we can't change the order
-;; of evaluation, so we'd have to modify the outer $let form---which isn't 
+;; of evaluation, so we'd have to modify the outer $let form---which isn't
 ;; trivial, so we just give up such a case.
 ;;
 ;; If the argument list is constructed (as opposed to be a constant),
@@ -663,10 +663,10 @@
                       [y (check-safe (drop-right ($list*-args rarg) 1))])
              (append y z))]
           [(has-tag? rarg $ASM)
-           (case/unquote 
+           (case/unquote
             (car ($asm-insn rarg))
             [(LIST) (check-safe ($asm-args rarg))]
-            [(LIST-STAR) 
+            [(LIST-STAR)
              (and-let* ([z (expand-restarg (last ($asm-args rarg)))]
                         [y (check-safe (drop-right ($asm-args rarg) 1))])
                (append y z))]
@@ -847,4 +847,3 @@
 
 ;; Dispatch table.
 (define *pass2-dispatch-table* (generate-dispatch-table pass2))
-

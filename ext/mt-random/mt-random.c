@@ -320,4 +320,3 @@ void Scm_Init_mt_random(void)
                         mod, NULL, 0);
     key_seed = SCM_MAKE_KEYWORD("seed");
 }
-

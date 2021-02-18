@@ -298,7 +298,7 @@ int Scm_WriteLimited(ScmObj obj, ScmObj p, int mode, int width)
     } else {
         write_rec(obj, SCM_PORT(out), &ctx);
     }
-    
+
     ScmString *str = SCM_STRING(Scm_GetOutputString(SCM_PORT(out), 0));
     int nc = SCM_STRING_BODY_LENGTH(SCM_STRING_BODY(str));
     if (nc > width) {
@@ -338,7 +338,7 @@ static void write_general(ScmObj obj, ScmPort *out, ScmWriteContext *ctx)
    write-object.   We can't use VMApply here since this function can be
    called deep in the recursive stack of Scm_Write, so the control
    may not return to VM immediately. */
-static void write_object(ScmObj obj, ScmPort *port, 
+static void write_object(ScmObj obj, ScmPort *port,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_ApplyRec(SCM_OBJ(&Scm_GenericWriteObject),
@@ -428,9 +428,9 @@ static size_t write_char(ScmChar ch, ScmPort *port, ScmWriteContext *ctx)
  */
 ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
-    const ScmWriteControls *wp = 
+    const ScmWriteControls *wp =
         Scm_GetWriteControls(ctx, Scm_PortWriteState(port));
-    
+
 #define CASE_ITAG_RET(obj, str)                 \
     case SCM_ITAG(obj):                         \
         Scm_PutzUnsafe(str, -1, port);          \
@@ -481,7 +481,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     else if (SCM_STRING_CURSOR_SMALL_P(obj)) {
         char buf[SPBUFSIZ];
         int k = snprintf(buf, SPBUFSIZ, "#<string-cursor %ld>",
-			 SCM_STRING_CURSOR_SMALL_OFFSET(obj));
+                         SCM_STRING_CURSOR_SMALL_OFFSET(obj));
         Scm_PutzUnsafe(buf, -1, port);
         return SCM_MAKE_INT(k);
     }
@@ -594,7 +594,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             }                                                           \
         }                                                               \
     } while (0)
-    
+
 
     for (;;) {
     write1:
@@ -746,7 +746,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                         POP();
                     } else {
                         obj = v;
-                        SCM_SET_CAR_UNCHECKED(SCM_CDR(top), 
+                        SCM_SET_CAR_UNCHECKED(SCM_CDR(top),
                                               SCM_MAKE_INT(count+1));
                         SCM_SET_CDR_UNCHECKED(SCM_CDR(top), SCM_NIL);
                         goto write1;
@@ -1123,7 +1123,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
 
 /* Public APIs */
 
-void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap, 
+void Scm_Vprintf(ScmPort *out, const char *fmt, va_list ap,
                  int sharedp SCM_UNUSED)
 {
     if (!SCM_OPORTP(out)) Scm_Error("output port required, but got %S", out);
