@@ -31,8 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; EXPERIMENTAL.   THE API MAY CHANGE.
-
 (define-module gauche.mop.instance-pool
   (use srfi-1)
   (export <instance-pool-meta> <instance-pool-mixin>
