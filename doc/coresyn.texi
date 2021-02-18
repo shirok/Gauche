@@ -37,7 +37,7 @@ R7RS互換にすることもできます。
 
 @table @emph
 @c EN
-@item Hash-bang directives 
+@item Hash-bang directives
 Tokens beginning with @code{#!} may have special meanings to
 the reader.  R7RS defines two of such directives---@code{#!fold-case}
 and @code{#!no-fold-case}, which switches whether symbols
@@ -558,7 +558,7 @@ The table below lists sharp-syntaxes.
 @end multitable
 
 @menu
-* Hash-bang token::             
+* Hash-bang token::
 @end menu
 
 @node Hash-bang token,  , Sharp syntax, Lexical structure
@@ -1956,8 +1956,8 @@ gosh> (real-sqrt -1)
 @end example
 
 @c EN
-Note: This form is advisory---it isn't guaranteed for an error to be 
-signaled when @var{test-expr} fails.  
+Note: This form is advisory---it isn't guaranteed for an error to be
+signaled when @var{test-expr} fails.
 For example, we may add an optimization
 option that omits testing in speed-optimized code in future.
 We may also enhance the compiler to generate better code using the
@@ -2035,13 +2035,13 @@ the value(s) of this form.
 @c COMMON
 
 @c EN
-The four forms differ in terms of the scope and the order 
+The four forms differ in terms of the scope and the order
 @var{expr}s are evaluated.
 @code{Let} evaluates @var{expr}s before (outside of) @code{let} form.
 The order of evaluation of @var{expr}s is undefined, and the compiler
 may reorder those @var{expr}s freely for optimization.
 @code{Let*} evaluates @var{expr}s, in the order they appears,
-and each @var{expr} is evaluated in the scope 
+and each @var{expr} is evaluated in the scope
 where @var{var}s before it are bound.
 
 @code{Letrec} evaluates @var{expr}s, in an undefined order,
@@ -2729,7 +2729,7 @@ often the procedure is named @var{loop}, as in the following example.)
 Of course you don't need to loop with a named let; you can call @var{name}
 in non-tail position, pass @var{name} to other higher-order procedure, etc.
 Named let exists since it captures a very common pattern of local recursive
-procedures.  
+procedures.
 Some Schemers even prefer named let to @code{do}, for the better
 flexibility.
 @c JP
@@ -2815,7 +2815,7 @@ For example, the following example prints @code{year!} 10 times:
 If the third element (@var{result}) is given in @code{dotimes} or
 @code{dolist}, it is evaluated after all repetition is done, and its result
 becomes the result of @code{dotimes}/@code{dolist}.  While @var{result}
-is evaluated, @var{variable} is bound to the number of repetitions 
+is evaluated, @var{variable} is bound to the number of repetitions
 (in @code{dotimes}) or @code{()} (in @code{dolist}).
 It is supported because Common Lisp has it.
 @c JP
@@ -3640,7 +3640,7 @@ of @var{variable} with the value of @var{expression}, but additionally
 tells the compiler that (1) the binding won't change, and
 (2) the value of @var{expression} won't change from
 the one computed at the compile time.
-So the compiler can replace references of @var{variable} 
+So the compiler can replace references of @var{variable}
 with the compile-time value of @var{expression}.
 
 An error is signaled when you use @code{set!} to change the value
@@ -3706,12 +3706,12 @@ as internal defines.
 If it appears in the toplevel, it defines an @emph{inlinable} binding.
 An inlinable binding promises the compiler that the binding won't
 change, but unlike constant bindings introduced by @code{define-constant},
-the actual value of @var{expression} may be computed at runtime.  
+the actual value of @var{expression} may be computed at runtime.
 Hence the compiler cannot
 simply replace the references of @var{variable} with the compile-time
 value of @var{expression}.
 
-However, if the compiler can determine that the value of @var{expression} 
+However, if the compiler can determine that the value of @var{expression}
 is to be a procedure, it may inline the procedure where it is invoked.
 @c JP
 2番目の形式は@code{(define-inline variable (lambda formals body @dots{}))}の略記です。
@@ -3755,24 +3755,24 @@ signatureInfo: ((#f))
      2 LOCAL-ENV(1)             ; (dot3 x (quote #(-1.0 -2.0 -3.0)))
      3 LREF0                    ; a
      4 VEC-REFI(0)              ; (vector-ref a 0)
-     5 PUSH 
+     5 PUSH
      6 CONST -1.0
      8 NUMMUL2                  ; (* (vector-ref a 0) (vector-ref b 0))
-     9 PUSH 
+     9 PUSH
     10 LREF0                    ; a
     11 VEC-REFI(1)              ; (vector-ref a 1)
-    12 PUSH 
+    12 PUSH
     13 CONST -2.0
     15 NUMMUL2                  ; (* (vector-ref a 1) (vector-ref b 1))
     16 NUMADD2                  ; (+ (* (vector-ref a 0) (vector-ref b 0))
-    17 PUSH 
+    17 PUSH
     18 LREF0                    ; a
     19 VEC-REFI(2)              ; (vector-ref a 2)
-    20 PUSH 
+    20 PUSH
     21 CONST -3.0
     23 NUMMUL2                  ; (* (vector-ref a 2) (vector-ref b 2))
     24 NUMADD2                  ; (+ (* (vector-ref a 0) (vector-ref b 0))
-    25 RET 
+    25 RET
 @end example
 
 @c EN
@@ -3788,8 +3788,8 @@ gosh> (disasm (^[] (dot3 '#(1 2 3) '#(4 5 6))))
 CLOSURE #<closure (#f)>
 === main_code (name=#f, code=0x2a2b8e0, size=2, const=0 stack=0):
 signatureInfo: ((#f))
-     0 CONSTI(32) 
-     1 RET 
+     0 CONSTI(32)
+     1 RET
 @end example
 
 @c EN
@@ -3939,7 +3939,7 @@ Suppose you see these toplevel definitions:
 @end example
 
 @c EN
-The first appearance of @code{even?} in the first line 
+The first appearance of @code{even?} in the first line
 is understood as the one defined in the second line.  It becomes
 apparent when we compare it with internal defines:
 @c JP
@@ -4047,7 +4047,7 @@ The modern way of such augumentation is to use renaming import:
 
 @c EN
 Gauche's module system predates R6RS and R7RS, and it regards a module
-as a first-class entity and suppors class-like inheritance.  It is 
+as a first-class entity and suppors class-like inheritance.  It is
 upper-compatible to R7RS libraries, but we take freedom in interpreting
 R7RS undefined behaviors.
 @c JP
@@ -4129,7 +4129,7 @@ REPLセマンティクスで動くことを期待していたコードはある�
 In order to support the transition, if you set an enviornment
 variable @code{GAUCHE_LEGACY_DEFINE}, Gauche treats definitions
 in the same way as 0.9.8 and before.
-Note that if you that, you may see Gauche can't include some valid R7RS 
+Note that if you that, you may see Gauche can't include some valid R7RS
 code that has multiple libraries in one file.
 @c JP
 移行をスムースにするために、環境変数@code{GAUCHE_LEGACY_DEFINE}が定義されている
@@ -5758,14 +5758,6 @@ respectively.
 @var{module}の名前(シンボル)、@var{module}がインポートしているモジュールのリスト、
 エクスポートしているシンボルのリスト、そして
 シンボルから束縛へのマップを行うハッシュテーブルを返します。
-@c COMMON
-
-@c EN
-If the @var{module} exports all symbols, @code{module-exports} returns
-@code{#t}.
-@c JP
-もし@var{module}が全てのシンボルをエクスポートしている場合は、@code{module-exports}
-は@code{#t}を返します。
 @c COMMON
 
 @c EN
