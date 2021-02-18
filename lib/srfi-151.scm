@@ -41,9 +41,9 @@
           bitwise-ior                   ; srfi-60
           bitwise-xor                   ; srfi-60
           bitwise-eqv
-          bitwise-nand  bitwise-nor 
+          bitwise-nand  bitwise-nor
           bitwise-andc1 bitwise-andc2
-          bitwise-orc1  bitwise-orc2 
+          bitwise-orc1  bitwise-orc2
 
           arithmetic-shift              ; srfi-60
           bit-count                     ; builtin
@@ -151,6 +151,3 @@
 ;; Unlike bits->generator in gauche.generator, this one is infinite.
 (define (make-bitwise-generator n)
   (^[] (begin0 (odd? n) (set! n (ash n -1)))))
-
-  
-  

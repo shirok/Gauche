@@ -82,7 +82,7 @@
             [(eq? (car args) :metaclass)
              (loop (cddr args) (list* metaclass :metaclass r))]
             [else (loop (cddr args) (list* (cadr args) (car args) r))])))
-  
+
   (let* ([initargs (slot-ref sub 'initargs)]
          [supers   (new-supers (class-direct-supers sub))]
          ;; NB: this isn't really correct!
@@ -195,4 +195,3 @@
 (define-in-module gauche class-redefinition class-redefinition)
 (define-in-module gauche update-direct-subclass! update-direct-subclass!)
 (define-in-module gauche change-object-class change-object-class)
-

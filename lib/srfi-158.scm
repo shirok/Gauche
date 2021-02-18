@@ -5,7 +5,7 @@
 (define-module srfi-158
   (use gauche.unicode)
   (use gauche.generator)
-  (export generator circular-generator make-iota-generator make-range-generator 
+  (export generator circular-generator make-iota-generator make-range-generator
           make-coroutine-generator list->generator vector->generator
           reverse-vector->generator string->generator
           bytevector->generator

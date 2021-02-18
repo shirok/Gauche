@@ -590,7 +590,7 @@
       ;; A string encoding type signature of this procedure.
       ;; e.g. "(<string> <integer> :- <char>)"
       ;; We use a string to be dumped in the C code, and parse it only when
-      ;; type information is needed.  
+      ;; type information is needed.
    (info              :initform #f)
       ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
@@ -635,16 +635,16 @@
     ($ cise-register-macro! 'return
        (^[form env]
          (when (and (cise-return-types)
-                    (not (= (length (cdr form)) 
+                    (not (= (length (cdr form))
                             (length (cise-return-types)))))
-           (errorf <cgen-stub-error> 
-                   "return macro got wrong number of return values (expecting ~s): ~s" 
+           (errorf <cgen-stub-error>
+                   "return macro got wrong number of return values (expecting ~s): ~s"
                    (length (cise-return-types)) form))
          (match form
            [(_)         `(goto SCM_STUB_RETURN)]
            [(_ e0)       `(begin (set! SCM_RESULT ,e0)
                                  (goto SCM_STUB_RETURN))]
-           [(_ xs ...) `(begin 
+           [(_ xs ...) `(begin
                           (set!
                            ,@(concatenate
                               (map-with-index
@@ -822,7 +822,7 @@
    (let1 tmpvar (%insert-funcall-decls '.funcall/cps scheme-proc-name #f)
      (%expand-funcall-apply 'Scm_VMApply tmpvar arg))])
 
-;; create arg object.  used in cproc and cmethod 
+;; create arg object.  used in cproc and cmethod
 ;; NB: count arg is ignored if class is <keyword-arg> or <rest-arg>
 (define (make-arg class argname count . rest)
   (define (grok-argname argname)
@@ -2024,4 +2024,3 @@
          [r (fold (^[f r] (eval f m)) #f exprs)])
     (when (or (pair? r) (string? r))
       (cgen-stub-parse-form r))))
-

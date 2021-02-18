@@ -64,7 +64,7 @@
           set-union set-intersection set-difference set-xor
           set-union! set-intersection! set-difference! set-xor!
           set-comparator
-  
+
           bag bag-unfold
           bag? bag-contains? bag-empty? bag-disjoint?
           bag-member bag-element-comparator
@@ -79,7 +79,7 @@
           bag-union bag-intersection bag-difference bag-xor
           bag-union! bag-intersection! bag-difference! bag-xor!
           bag-comparator
-  
+
           bag-sum bag-sum! bag-product bag-product!
           bag-unique-size bag-element-count bag-for-each-unique bag-fold-unique
           bag-increment! bag-decrement! bag->set set->bag set->bag!
@@ -453,7 +453,7 @@
     (or (hash-table-find ht
                          (^[k v]
                            (and (= k element)
-                                (begin 
+                                (begin
                                   (hash-table-delete! ht k)
                                   (hash-table-set! ht element v)
                                   sob))))
@@ -830,7 +830,7 @@
 
 ;; Convert a list to a sob.  Probably could be done using unfold, but
 ;; since sobs are mutable anyway, it's just as easy to add the elements
-;; by side effect.  
+;; by side effect.
 
 (define (list->sob! sob list)
   (for-each (lambda (elem) (sob-increment! sob elem 1)) list)
@@ -936,7 +936,7 @@
 (define (dyadic-sob<? sob1 sob2)
   (let ([ht1 (sob-hash-table sob1)]
         [ht2 (sob-hash-table sob2)])
-    (and-let* ([small-count 
+    (and-let* ([small-count
                 (cond [(= (hash-table-size ht1) (hash-table-size ht2)) 0]
                       [(< (hash-table-size ht1) (hash-table-size ht2)) 1]
                       [else #f])]
@@ -1199,7 +1199,7 @@
 ;; For xor exactly two arguments are required, so the above structures are
 ;; not necessary.  This version accepts a result sob and computes the
 ;; absolute difference between the counts in the first sob and the
-;; corresponding counts in the second.  
+;; corresponding counts in the second.
 
 ;; We start by copying the entries in the second sob but not the first
 ;; into the first.  Then we scan the first sob, computing the absolute

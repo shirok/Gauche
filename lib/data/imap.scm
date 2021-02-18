@@ -144,7 +144,7 @@
      (unless (comparator? cmpr)
        (error "comparator required, but got:" cmpr))
      (make <imap> :comparator cmpr)]
-    [(key=? key<?) (make-imap (%key-proc->comparator key=? key<?))])) 
+    [(key=? key<?) (make-imap (%key-proc->comparator key=? key<?))]))
 
 ;; API
 (define alist->imap

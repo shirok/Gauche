@@ -334,4 +334,3 @@
   (let1 times (sys-times)
     (/. (+ (list-ref times 0) (list-ref times 1))
         (list-ref times 4))))
-

@@ -109,7 +109,7 @@
           cf-check-type cf-type-available? cf-check-types
           cf-check-decl cf-decl-available? cf-check-decls
           cf-check-member cf-member-available? cf-check-members
-          
+
           cf-check-func cf-func-available? cf-check-funcs
           cf-check-lib cf-lib-available? cf-search-libs
           ))
@@ -165,7 +165,7 @@
 
 ;;;
 ;;; Basic APIs
-;;; 
+;;;
 
 ;; API
 ;; Like AC_MSG_*
@@ -415,7 +415,7 @@
           (exit 0)]
          ;; -x-includes
          ;; -x-libraries
-         
+
          ;; Deal with --enable|--disable|--with|--without options.
          ;; Note that parse-options split '=arg' part of --enable-*=arg or
          ;; --with-*=arg; if it is given, it will be in (car rest).
@@ -520,7 +520,7 @@
          (cf-msg-error "Unfulfilled dependency of package ~a: \
                         required to be ~s, but only found ~s."
                        (car req) (cadr req) vers)])))
-  
+
   (and-let* ([reqs (~ (current-package)'gpd'require)]
              [ (not (null? reqs)) ])
     (cf-msg-checking "package dependencies")
@@ -618,7 +618,7 @@
   (cf-path-prog 'GAUCHE_CESCONV  "gauche-cesconv")
 
   (cf-subst 'default_prefix (gauche-config "--prefix"))
- 
+
   (cf-subst 'GAUCHE_PKGINCDIR  (gauche-config "--pkgincdir"))
   (cf-subst 'GAUCHE_PKGLIBDIR  (gauche-config "--pkglibdir"))
   (cf-subst 'GAUCHE_PKGARCHDIR (gauche-config "--pkgarchdir"))
@@ -698,7 +698,7 @@
 
 ;; API
 ;; Temporarily replace cf subst value
-(define-syntax with-cf-subst 
+(define-syntax with-cf-subst
   (syntax-rules ()
     [(_ ((var val) ...) body ...)
      (let ([saves (map (cut cf$ <>) '(var ...))])
@@ -752,7 +752,7 @@
   (push! (arg-processors)
          (list feature 'enable help-string
                action-if-given action-if-not-given)))
-  
+
 ;; API
 (define (cf-arg-with package help-string
                      :optional (action-if-given (^[val] #f))
@@ -809,7 +809,7 @@
     (if (null? (~ pa'config.h))
       (string-join
        (dict-map (~ pa'defs)
-                 (^[k v] 
+                 (^[k v]
                    (let1 vv ($ regexp-replace-all* (x->string v)
                                #/\\/ "\\\\\\\\"
                                #/\"/ "\\\\\"")
@@ -856,7 +856,7 @@
                     builddir
                     (simplify-path+ (build-path builddir path-prefix)))
                   (simplify-path+ (build-path revpath tbuilddir)))))))
-                  
+
   (define (make-replace-1 output-file)
     (let1 subst (make-subst (sys-dirname (simplify-path+ output-file)))
       (^[line outp]
@@ -878,7 +878,7 @@
     (cf-subst 'prefix (cf$ 'default_prefix)))
   (when (equal? (cf$ 'exec_prefix) "NONE")
     (cf-subst 'exec_prefix "${prefix}"))
-  
+
   (dolist [f files]
     (let1 inf (build-path (cf$'srcdir) #"~|f|.in")
       (unless (file-is-readable? inf)
@@ -920,7 +920,7 @@
   (log-format "## ------------ ##")
   (log-format ".")
   (dolist [k (sort (hash-table-keys (~ (current-package)'defs)))]
-    (log-format "#define ~a ~a" k 
+    (log-format "#define ~a ~a" k
                 (or (hash-table-get (~ (current-package)'defs) k) "/**/"))))
 
 ;; API
@@ -1386,7 +1386,7 @@
 
 ;; Feature Test API
 ;; Like AC_CHECK_FUNCS
-(define (cf-check-funcs funcs :key (if-found identity) 
+(define (cf-check-funcs funcs :key (if-found identity)
                                    (if-not-found identity))
   (dolist [f funcs]
     (if (cf-check-func f)
@@ -1427,17 +1427,17 @@
   (when libname
     (cf-subst-prepend 'LIBS #"-l~|libname|"))
   #t)
-   
+
 ;; Feature test API
 ;; Like AC_CHECK_LIBS
 (define (cf-search-libs fn libs
                         :key (other-libs '())
-                             (if-found default-lib-search-found) 
+                             (if-found default-lib-search-found)
                              (if-not-found default-lib-not-found))
   (let ([includes (cf-includes-default)]
         [xlibs #"~(string-join other-libs \" \") ~(cf$'LIBS)"])
     (define (try lib)
-      (with-cf-subst 
+      (with-cf-subst
        ([LIBS (if (eq? lib 'none) xlibs #"-l~|lib| ~xlibs")])
        (cf-try-compile-and-link includes
                                 (format "extern void ~a(); ~a();"

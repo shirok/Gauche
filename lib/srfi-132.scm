@@ -227,7 +227,7 @@
 ;;
 ;;  to:
 ;;            a       b
-;;  #(S S S S G G G G X X)   ; X: don't care 
+;;  #(S S S S G G G G X X)   ; X: don't care
 ;;
 ;; Returns a and b.
 ;;

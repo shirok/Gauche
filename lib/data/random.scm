@@ -41,7 +41,7 @@
   (use gauche.uvector)
   (use gauche.generator)
   (use gauche.sequence)
-  
+
   (export make-random-data-state random-data-seed with-random-data-seed
 
           integers$ integers-between$ fixnums chars$ samples$ booleans
@@ -128,7 +128,7 @@
   ;; the delimited ranges of characters in CSET.  For example, if CSET
   ;; is splitted into a ranges ((48 . 57) (65 . 90) (97 . 122)),
   ;; the table has the following mappings:
-  ;;    0 -> 48         (for range 48-57) 
+  ;;    0 -> 48         (for range 48-57)
   ;;   10 -> (- 65 10)  (for range 65-90)
   ;;   36 -> (- 97 36)  (for range 97-122)
   ;; We generate a random integer in [0, 61], that is, the size same as
@@ -323,10 +323,10 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
       [((or 'assert 'nassert) . _)
        (error "Lookahead/behind assertion can't be used (yet) to \
                generate strings:" (regexp-unparse ast))]
-      [((? integer? n) _ . as) 
+      [((? integer? n) _ . as)
        (let1 nodes (map rec as)
          (^[case-fold] (every (cut <> case-fold) nodes)))]
-      [_ (error "Unsupported regexp to generate strings:" 
+      [_ (error "Unsupported regexp to generate strings:"
                 (regexp-unparse ast))]))
 
   (rec ast))
@@ -388,7 +388,7 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
   (case-lambda
     [()         (strings-of (default-sizer) (chars$))]
     [(item-gen) (strings-of (default-sizer) item-gen)]
-    [(sizer item-gen) 
+    [(sizer item-gen)
      (%with-sizer sizer
        (^[] (let1 len (sizer)
               (with-output-to-string
@@ -415,4 +415,3 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
     (^[] (let1 ix (shuffle indices)
            (coerce-to (class-of seq)
                       (list-ec (: i len) (ref seq (vector-ref ix i))))))))
-

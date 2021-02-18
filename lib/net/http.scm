@@ -67,5 +67,3 @@
 (define http-delete  (net-command 'DELETE))
 (define http-trace   (net-command 'TRACE))
 (define http-connect (net-command 'CONNECT))
-
-

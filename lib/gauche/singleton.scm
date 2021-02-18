@@ -9,4 +9,3 @@
   (extend gauche.mop.singleton))
 
 (warn "gauche.singleton is obsoleted.  use gauche.mop.sigleton.")
-

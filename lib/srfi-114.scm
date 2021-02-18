@@ -58,10 +58,10 @@
           bytevector-comparator uvector-comparator ;all builtin
 
           default-comparator            ;builtin
-          
+
           (rename make-comparator/compare make-comparator) ;builtin
           make-car-comparator make-cdr-comparator
-          
+
           make-inexact-real-comparator
           make-vector-comparator ; builtin
           make-bytevector-comparator
@@ -234,8 +234,8 @@
    (^x (if-let1 cmp (selector x)
          (comparator-hash cmp x)
          (error "argument isn't hashable:" x)))))
-          
-(define (make-refining-comparator cmp . cmps)    
+
+(define (make-refining-comparator cmp . cmps)
   (define (selector x) ; returns a comparator
     (let loop ([cmp cmp] [cmps cmps])
       (cond [(comparator-test-type cmp x) cmp]

@@ -690,7 +690,7 @@
                   'runtime 'ScmObj
                   (list*
                    "SCM_OBJ(SCM_CLASS_STATIC_TAG(Scm_VectorClass)) /* <vector> */"
-                   (format "SCM_VECTOR_SIZE_SLOT_INITIALIZER(~a, ~a)" 
+                   (format "SCM_VECTOR_SIZE_SLOT_INITIALIZER(~a, ~a)"
                            (length literals)
                            (if (vector-immutable? value) "TRUE" "FALSE"))
                    (map (^[lit] (if (cgen-literal-static? lit)
@@ -783,7 +783,7 @@
                                     "SCM_DBL_POSITIVE_INFINITY"
                                     "SCM_DBL_NEGATIVE_INFINITY"))]
           [(-zero? v) (display "-0.0")]
-          [else (format #t "~s" v)]))    
+          [else (format #t "~s" v)]))
   (cond
    [(memq class `(,<s8vector> ,<s16vector> ,<s32vector>))
     (format #t "~d,\n" v)]
@@ -810,10 +810,10 @@
     (display "{ ") (pr-half-float (real-part v))
     (display ", ") (pr-half-float (imag-part v)) (print "},")]
    [(eq? class <c64vector>)
-    (pr-float (real-part v)) (display " + ") 
+    (pr-float (real-part v)) (display " + ")
     (pr-float (imag-part v)) (print " * _Complex_I,")]
    [(eq? class <c128vector>)
-    (pr-double (real-part v)) (display " + ") 
+    (pr-double (real-part v)) (display " + ")
     (pr-double (imag-part v)) (print " * _Complex_I,")]
    ))
 
@@ -905,4 +905,3 @@
 (define cgen-unique-name
   (let1 counter 0
     (^[] (format "~5,'0d" (inc! counter)))))
-

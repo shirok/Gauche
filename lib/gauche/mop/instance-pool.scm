@@ -180,5 +180,3 @@
   (instance-pool-for-each (class-of self) proc))
 (define-method instance-pool-map ((self <instance-pool-mixin>) proc)
   (instance-pool-map (class-of self) proc))
-
-

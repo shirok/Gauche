@@ -38,9 +38,3 @@
                        (use ,id) ;; count on the user providing srfi-N.scm
                        ,(require-srfi (cdr ids) rest))))))
   (rec clauses))
-
-
-
-
-
-

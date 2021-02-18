@@ -21,7 +21,7 @@
 ;; These procedures are the same as Gauche's built-in:
 ;; hash-table?       hash-table-delete!   hash-table-exists?
 ;; hash-table-keys   hash-table-values    hash-table-fold
-;;hash-table->alist hash-table-copy 
+;;hash-table->alist hash-table-copy
 
 (define-constant *hasher-range* (+ (greatest-fixnum) 1))
 

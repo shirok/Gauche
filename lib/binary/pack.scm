@@ -1049,5 +1049,3 @@
         (in (get-input-port rest)))
     (with-input-from-port in
       (cut packer 'skip))))
-
-

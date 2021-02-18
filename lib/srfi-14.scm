@@ -275,4 +275,3 @@
                           char-set-xor char-set-xor!
                           char-set-diff+intersection
                           char-set-diff+intersection!)
-

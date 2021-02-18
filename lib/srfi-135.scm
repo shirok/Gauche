@@ -44,7 +44,7 @@
           string->text vector->text list->text reverse-list->text
           textual->utf8 textual->utf16be textual->utf16le textual->utf16
           utf8->text utf16be->text utf16le->text utf16->text
-          
+
           text-length textual-length text-ref textual-ref
           subtext subtextual textual-copy
           textual-take textual-take-right textual-drop textual-drop-right
@@ -64,7 +64,7 @@
           textual-skip textual-skip-right
           textual-contains textual-contains-right
 
-          textual-upcase textual-downcase 
+          textual-upcase textual-downcase
           textual-foldcase textual-titlecase
 
           textual-append textual-concatenate textual-concatenate-reverse
@@ -85,7 +85,7 @@
 (define textual-every string-every)
 (define textual-any string-any)
 
-(define-inline (%textize obj) 
+(define-inline (%textize obj)
   (string-build-index! (string-copy-immutable obj)))
 (define-inline (%stringify obj)
   (cond [(char? obj) (string obj)]
@@ -111,7 +111,7 @@
 (define (text-unfold-right p f g seed :optional (base "") (make-final (^_ "")))
   (let loop ((seed seed) (r '()))
     (if (p seed)
-      (%textize (string-append (%stringify (make-final seed)) 
+      (%textize (string-append (%stringify (make-final seed))
                                (string-concatenate r)
                                (%stringify base)))
       (loop (g seed)
@@ -139,8 +139,8 @@
                     [(undefined? start) lis]
                     [else (error "start argument must be an integer, but got:"
                                  start)])]
-         [lis (cond [(integer? end) 
-                     (if (>= end start) 
+         [lis (cond [(integer? end)
+                     (if (>= end start)
                        (take lis (- end start))
                        (errorf "end argument ~s is less than start argument ~s"
                                end start))]
@@ -243,7 +243,7 @@
 (define (textual-concatenate args)
   (%textize (string-concatenate args)))
 (define (textual-concatenate-reverse args :optional (final-textual "") end)
-  (textual-concatenate (reverse args 
+  (textual-concatenate (reverse args
                                 (list
                                  (if (undefined? end)
                                    final-textual
@@ -269,7 +269,7 @@
   (assume (every textual? rest))
   (apply string-for-each proc textual rest))
 
-(define (textual-map-index proc textual :optional (start 0) 
+(define (textual-map-index proc textual :optional (start 0)
                                                   (end (textual-length textual)))
   (%textize
    (string-concatenate
@@ -289,7 +289,3 @@
   (%textize (apply string-replicate textual from to args)))
 (define (textual-split textual delimiter . args)
   (map %textize (apply string-split textual delimiter args)))
-
-  
-
-

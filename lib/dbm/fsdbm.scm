@@ -275,7 +275,5 @@
 (define (value-file-path key :optional (dir #f))
   (let1 p (key->path key)
     (if dir
-	(build-path dir (path->hash p) p)
-	(build-path (path->hash p) p))))
-
-
+        (build-path dir (path->hash p) p)
+        (build-path (path->hash p) p))))

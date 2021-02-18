@@ -9,4 +9,3 @@
   (export char-title-case?
           char-titlecase
           string-titlecase))
-

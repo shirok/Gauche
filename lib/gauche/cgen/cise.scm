@@ -572,7 +572,7 @@
           (gen-cvar var type '(:typedef) #f #f)])]
       [(init)
        (if (eq? (car form) 'define-cvar)
-         (gen-cvar var type quals #t init)  
+         (gen-cvar var type quals #t init)
          (errorf "declare-cvar ~s cannot have initializer" var))]
       [else
        (errorf "Invalid syntax in ~s ~s: ~s"
@@ -590,7 +590,7 @@
     (receive (type init-and-quals)
         (match spec
           [()         (values 'ScmObj '())]
-          [('::)      (errorf "invalid variable decl in ~s: (~s ~s)" 
+          [('::)      (errorf "invalid variable decl in ~s: (~s ~s)"
                               (car form) var spec)]
           [(':: type) (values type '())]
           [(':: type . init-and-quals) (values type init-and-quals)]
@@ -1376,7 +1376,7 @@
          ")"))]
     [(x)
      `(,(x->string x) " " ,(cise-render-identifier var))]
-    [(x xs ...) 
+    [(x xs ...)
      `(,(x->string x) " " ,(cise-render-typed-var xs var env))]
     [x
      `(,(x->string x) " " ,(cise-render-identifier var))]))
@@ -1384,7 +1384,7 @@
 (define (render-struct-or-union struct/union tag fields rest var env)
   `(,struct/union
     ,@(cond-list [tag `(" " ,tag)]
-                 [fields 
+                 [fields
                   `(" { "
                     ,@(map (^.[(member ':: type)
                                `(,(cise-render-typed-var type member env)
@@ -1450,4 +1450,3 @@
 ;;   This must come at the bottom of the module.
 
 (cise-ambient (cise-default-ambient))
-

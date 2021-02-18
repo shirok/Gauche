@@ -38,7 +38,7 @@
   (use gauche.process)
   (use file.util)
   (cond-expand
-   [gauche.sys.zlib 
+   [gauche.sys.zlib
     (use rfc.zlib)]
    [else])
   (export <info-file> <info-node>
@@ -185,7 +185,7 @@
 ;; Menu entry:
 ;;    (<entry-name> <node-name> [<line-number>])
 ;; Where <entry-name> is either a node name, function or macro name,
-;; module name, 
+;; module name,
 (define-method info-parse-menu ((info <info-node>))
   (with-input-from-string (~ info 'content)
     (^[]
@@ -267,4 +267,3 @@
                        [(#/^$/ line) (print) (desc (read-line))]
                        [(#/^ {4}/ line) (print line) (desc (read-line))]
                        [else]))])))))
-

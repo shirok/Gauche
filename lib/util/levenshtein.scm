@@ -45,7 +45,7 @@
 ;; Restricted edit distances of two sequences
 ;; (not limited to strings).
 
-;; Note: 
+;; Note:
 ;;  Those widely known algorithms were extensively researched in 60s
 ;;  to 70s, and sometimes different researchers reported same or similar
 ;;  algorithms without attaching specific name.  We took widely known
@@ -145,7 +145,7 @@
         (cut run <> #f)))
 
     (map f Bs)))
-      
+
 (define (l-distance A B :key (elt= eqv?) (cutoff #f))
   (car (l-base A (list B) elt= cutoff)))
 
@@ -217,7 +217,7 @@
         (cut run <> #f)))
 
     (map f Bs)))
-      
+
 (define (re-distance A B :key (elt= eqv?) (cutoff #f))
   (car (re-base A (list B) elt= cutoff)))
 

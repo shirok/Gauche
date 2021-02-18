@@ -73,7 +73,7 @@
           edn-object-tag edn-object-payload
 
           register-edn-object-handler! edn-object-handler
-          
+
           edn-symbol-prefix edn-symbol-basename edn-valid-symbol-name?
 
           parse-edn parse-edn* parse-edn-string
@@ -95,7 +95,7 @@
                                           (edn-object-payload b)))]
         [else (equal? a b)]))
 
-(define edn-comparator 
+(define edn-comparator
   (make-comparator #t edn-equal? #f default-hash))
 
 ;;;
@@ -133,7 +133,7 @@
   (payload edn-object-payload))
 
 (define-method write-object ((x <edn-object>) port)
-  (format port "#<edn-object #~s ~a>" 
+  (format port "#<edn-object #~s ~a>"
           (edn-object-tag x)
           (write-to-string (edn-object-payload x) edn-write)))
 
@@ -205,7 +205,7 @@
        [(equal? val "true")  ($return #t)]
        [(equal? val "false") ($return #f)]
        [(equal? val "nil")   ($return 'nil)]
-       [(string-prefix? ":" val) ($return 
+       [(string-prefix? ":" val) ($return
                                   (make-keyword (string-drop val 1)))]
        [(%parse-num val) => $return]
        [(edn-valid-symbol-name? val) ($return (string->symbol val))]
@@ -219,7 +219,7 @@
           ($return (h tag content))
           ($return (make-edn-object (string->symbol tag) content)))
         ($fail (format "invalid tag: ~s" tag)))))
-  (define %str 
+  (define %str
     ($between ($. #\")
               ($->string
                ($many ($or ($seq ($. "\\\"") ($return "\""))
@@ -305,7 +305,7 @@
   (display "#{") (do-intersperse " " edn-write (set->list x)) (display "}"))
 (define-method edn-write ((x <hash-table>))
   (display "{")
-  (do-intersperse ", " (^e (edn-write (car e)) 
+  (do-intersperse ", " (^e (edn-write (car e))
                            (display " ")
                            (edn-write (cdr e)))
                   (hash-table->alist x))

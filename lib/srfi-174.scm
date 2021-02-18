@@ -36,9 +36,9 @@
 
 (define (timespec->inexact v)
   (if (>= (timespec-seconds v) 0)
-    (+ (inexact (timespec-seconds v)) 
+    (+ (inexact (timespec-seconds v))
        (* (inexact (timespec-nanoseconds v)) 1e-9))
-    (- (inexact (timespec-seconds v)) 
+    (- (inexact (timespec-seconds v))
        (* (inexact (timespec-nanoseconds v)) 1e-9))))
 
 (define (timespec=? ts1 ts2) (time=? ts1 ts2))

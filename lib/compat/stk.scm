@@ -239,5 +239,3 @@
   (list->vector (sys-uname)))
 (define posix-host-name sys-gethostname)
 (define posix-domain-name sys-getdomainname)
-
-

@@ -53,7 +53,7 @@
                                 (bar-char #\#)
                                 (bar-width 40)
                                 (num-width 9)
-                                (num-format (^[cur max] 
+                                (num-format (^[cur max]
                                               (format "~d/~d" cur max)))
                                 (time-width 7)
                                 (info-width 0)
@@ -137,4 +137,3 @@
         [else
          (error "text-progress-bar: unrecognized message:" msg)]))
     ))
-

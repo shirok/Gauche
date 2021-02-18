@@ -68,7 +68,7 @@
   (define (hexify)
     (with-output-to-string
       (cut generator-for-each (cut format #t "~2,'0x" <>) read-byte)))
-  
+
   (cond
    [(u8vector? data)
     (let1 p (open-input-uvector data)

@@ -110,5 +110,3 @@
                                  '() (reverse lis)))]))
 
 (define (booleans->integer . lis) (list->integer lis))
-
-

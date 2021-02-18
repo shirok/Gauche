@@ -105,7 +105,7 @@
       (cond [(= finger1 finger2) finger1]
             [(< finger1 finger2) (loop (vector-ref doms finger1) finger2)]
             [else (loop finger1 (vector-ref doms finger2))])))
-                  
+
   (let* ([nnodes (postorder start 0)]
          [doms (make-vector nnodes #f)])
     (vector-set! doms (- nnodes 1) (- nnodes 1))

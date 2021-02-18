@@ -5,13 +5,13 @@
 (define-module srfi-152
   (use srfi-13)
   ;; Note, 130 version returns a cursor, not an index
-  (use srfi-130 
+  (use srfi-130
        :only (string-index string-index-right)
-       :rename ((string-index %string-index) 
+       :rename ((string-index %string-index)
                 (string-index-right %string-index-right)))
   (use gauche.unicode)
   (export
-   ;; 
+   ;;
    string? make-string string
    string->vector string->list list->string vector->string
    string-length string-ref substring string-copy
@@ -26,7 +26,7 @@
    string-null? string-every string-any
    string-tabulate string-unfold string-unfold-right
    reverse-list->string
-   
+
    string-take string-drop string-take-right string-drop-right
    string-pad string-pad-right
    string-trim string-trim-right string-trim-both

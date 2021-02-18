@@ -109,5 +109,3 @@
 
 (define-method uri-directory-uris ((uri <uri-object>))
   (map object->uri (uri-directory-objects uri)))
-
-

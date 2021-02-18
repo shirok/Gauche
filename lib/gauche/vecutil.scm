@@ -75,7 +75,7 @@
     (let1 vecs (cons vec more)
       (%vector-update! vec (apply min (map vector-length vecs))
                        (^i (apply proc (map (^v (vector-ref v i)) vecs)))))))
-  
+
 ;; srfi-43 vector-map.  passing the index to PROC as the first arg.
 (define (vector-map-with-index proc vec . more)
   (assume-type vec <vector>)

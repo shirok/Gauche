@@ -198,4 +198,3 @@
   (unless (eq? (direction-of self) :in)
      (error "Input serializer required:" self))
   (read-rec))
-

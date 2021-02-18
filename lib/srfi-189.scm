@@ -57,7 +57,7 @@
           exception->either
           maybe-map either-map maybe-for-each either-for-each
           maybe-fold either-fold maybe-unfold either-unfold
-          maybe-if 
+          maybe-if
           maybe-and maybe-or maybe-let* maybe-let*-values
           either-and either-or either-let* either-let*-values
           either-guard
@@ -105,7 +105,7 @@
 (define-method write-object ((obj <left>) port)
   (format port "#<Left ~a>"
           (string-join (map write-to-string (~ obj'objs)) " ")))
-  
+
 
 (define *nothing* (make <nothing>))
 
@@ -172,7 +172,7 @@
     [(x) x]
     [_ (error "~a with exactly one value expected, but got: ~s"
               (class-of container) container)]))
-    
+
 (define (maybe-ref maybe failure :optional (success values))
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
@@ -210,7 +210,7 @@
     (match (~ either'objs)
       [((? either? val)) val]
       [x (error "invalid payload" x)])))
-      
+
 (define (maybe-bind maybe proc . procs)
   (assume-type maybe <maybe>)
   (if (nothing? maybe)
@@ -428,7 +428,7 @@
     (if (call-with-values (cut apply successor seeds) stop?)
       (list->just (values->list (apply mapper seeds)))
       (error "unstoppable unfold"))))
-      
+
 (define (either-unfold stop? mapper successor . seeds)
   (if (apply stop? seeds)
     (list->left seeds)
@@ -474,7 +474,7 @@
 (define-syntax maybe-let*
   (syntax-rules ()
     ;; empty body case
-    [(_ ()) (just #t)] 
+    [(_ ()) (just #t)]
     [(_ ((var expr))) (assume-type expr <maybe>)]
     [(_ ((expr)))     (assume-type expr <maybe>)]
     [(_ (var))        (assume-type var <maybe>)]
@@ -585,7 +585,7 @@
           (just #t)
           (rec val (car maybes) (cdr maybes)))
         (just #f))))
-      
+
   (if (nothing? (assume-type maybe <maybe>))
     (just #f)
     (let1 v (%ref1 maybe)
@@ -602,7 +602,7 @@
         (if (nothing? (assume-type maybe <maybe>))
           maybe
           (if-let1 v (%ref1 maybe)
-            (rec maybes)                
+            (rec maybes)
             maybe)))))                  ; this must be #<just #f>
   (rec maybes))
 

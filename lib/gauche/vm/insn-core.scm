@@ -57,10 +57,10 @@
    (combined :init-keyword :combined)     ; combined insns
    (body   :init-keyword :body)           ; body of the insn
    (obsoleted :init-keyword :obsoleted)   ; is this insn fading out?
-   (multi-value :init-keyword :multi-value) ; can result multiple values 
+   (multi-value :init-keyword :multi-value) ; can result multiple values
    (fold-lref :init-keyword :fold-lref)   ; if #t, allow LREFnm + INSN
                                           ; sequence to be combined into
-                                          ; LREF-INSN(n,m).  This 
+                                          ; LREF-INSN(n,m).  This
 
    (base-variant :init-form #f)           ; 'base' variant of this insn
    (push-variant :init-form #f)           ; 'push' variant of this insn
@@ -124,14 +124,10 @@
                   (~ info 'code))]
          [(arg0 arg1)
           (check insn info 2)
-          (logior (ash (logand arg1 *insn-arg1-mask*) 
+          (logior (ash (logand arg1 *insn-arg1-mask*)
                        (+ VM_INSN_ARG0_BITS VM_INSN_CODE_BITS))
                   (ash (logand arg0 *insn-arg0-mask*)
                        VM_INSN_CODE_BITS)
                   (~ info 'code))]
          [else (error "vm-build-insn: bad insn:" insn)]))]
     [else (error "vm-build-insn: bad insn:" insn)]))
-
-
-
-

@@ -352,5 +352,3 @@
                    (net-response-ok? (smtp-quit smtp "")))
         (error "couldn't finishing message"))
       )))
-
-

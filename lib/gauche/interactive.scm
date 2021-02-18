@@ -87,10 +87,10 @@
 
     (define (visible? sym)
       (global-variable-bound? module sym))
-    
+
     (define (found module symbol)
       (push! result
-             (format #f "~30s (~a~a)~%" symbol 
+             (format #f "~30s (~a~a)~%" symbol
                      (if (visible? symbol) "" "*")
                      (module-name module))))
 
@@ -277,7 +277,7 @@
           [h    (sys-normalize-pathname h :absolute #t :expand #t)]
           [else (sys-normalize-pathname "~/.gosh_history" :expand #t)])))
 
-;; The variable *read-edit* is #f by default, #t if env var 
+;; The variable *read-edit* is #f by default, #t if env var
 ;; GAUCHE_READ_EDIT is set.  It is also controlled by -fread-edit or
 ;; -fno-read-edit flag.
 (define-values (%prompter %reader %line-edit-ctx)
@@ -399,4 +399,3 @@
 
 ;; This might help first time users
 (define-in-module user help "Type ,help (comma and help) for help")
-

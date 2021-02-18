@@ -78,4 +78,3 @@
 (define-class <propagate-mixin> ()
   ()
   :metaclass <propagate-meta>)
-

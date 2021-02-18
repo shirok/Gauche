@@ -130,4 +130,3 @@
   (let1 src default-random-source
     (values (^n (mt-random-integer src n))
             (^[]  (mt-random-real src)))))
-

@@ -3,7 +3,7 @@
 ;;;
 
 ;; Gauche supports immutable pairs natively.  They work transparently
-;; as mutable pairs, except set-car! and set-cdr!. 
+;; as mutable pairs, except set-car! and set-cdr!.
 ;; Procedures that don't cons are just alias of builtin procedures.
 ;; Whenever a procedure need to cons, we make an ipair instead of an mpair.
 
@@ -184,7 +184,7 @@
     ;; for inexact numbers, we use multiplication to avoid error accumulation.
     (do ([c count (- c 1)]
          [r '() (ipair (+ start (*. (- c 1) step)) r)])
-        [(<= c 0) r])))  
+        [(<= c 0) r])))
 
 (define (itake lis i)
   (assume exact-integer? i)
@@ -273,7 +273,7 @@
 
 (define (iunfold p f g seed :optional (tail-gen (^_ '())))
   (let rec ((seed seed))
-    (if (p seed) 
+    (if (p seed)
       (tail-gen seed)
       (ipair (f seed) (rec (g seed))))))
 
@@ -299,12 +299,12 @@
         (cond [(not cars) (ireverse r)]
               [(apply proc cars) => (^x (loop cdrs (cons x r)))]
               [else (loop cdrs r)])))))
-  
+
 (define imap-in-order
   (case-lambda
     ([proc lis] (ireverse (fold (^[x ys] (cons (proc x) ys)) '() lis)))
     ([proc lis . liss]
-     (ireverse (apply fold-left (^[ys . xs] (cons (apply proc xs) ys)) '() 
+     (ireverse (apply fold-left (^[ys . xs] (cons (apply proc xs) ys)) '()
                       lis liss)))))
 
 (define (ifilter pred lis)

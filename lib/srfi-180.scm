@@ -126,7 +126,7 @@
        'object-start]
       [(#\: #\,) => badtok]
       [else => identity]))
-  
+
   ;; State machine
   ;;  Each state is a thunk, set! to variable 'gen'.
 
@@ -166,7 +166,7 @@
   (define (object-key-after)
     (case (nexttok)
       [(#\:)
-       (set! gen object-value-after) 
+       (set! gen object-value-after)
        (case (value)
          [(array-end object-end) => badtok]
          [else => identity])]
@@ -217,7 +217,7 @@
                       :position (~ e'position) :objects (~ e'objects)
                       :message (~ e'message))))
       (proc lseq))))
-  
+
 ;; API
 ;; We skip json-fold/json-generator stuff entirely.
 (define (json-read :optional (port-or-generator (current-input-port)))
@@ -248,7 +248,7 @@
       (if (null? start)
         (values (eof-object) '())
         (receive (json next)
-            (guard (e [(<json-parse-error> e) 
+            (guard (e [(<json-parse-error> e)
                        (values 'error (skip-to-rs start))])
               (with-json-parser (cut peg-run-parser json-parser <>) start))
           (if (eq? json 'error)
@@ -268,7 +268,7 @@
                 port-or-accumulator))
   (define (err-input obj)
     (error <json-construct-error>
-           :message (format "Unexpected token ~a as json-accumulator input" 
+           :message (format "Unexpected token ~a as json-accumulator input"
                             obj)))
   (define stack '()) ; (kind . #<proc>)
 

@@ -104,7 +104,7 @@
 (define %array
   ($depth-check
    ($lift ($ build-array $ rope-finalize $)
-          ($between %begin-array 
+          ($between %begin-array
                     ($sep-by ($seq0 %value %ws) %value-separator)
                     %end-array))))
 
@@ -287,4 +287,3 @@
 
 (define (construct-json-string x)
   (call-with-output-string (cut construct-json x <>)))
-

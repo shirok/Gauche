@@ -66,7 +66,7 @@
 ;; Min-max heaps and generalized priority queues, CACM 29(10) pp.996-1000
 ;; Oct. 1986, http://dx.doi.org/10.1145/6617.6621
 
-;; Binary heap is stored in an array, S[].  
+;; Binary heap is stored in an array, S[].
 ;;
 ;; - S[1] is the root.
 ;; - S[i]'s child is S[2i] and S[2i+1]
@@ -131,7 +131,7 @@
           :<: <:
           :>: >:)))
 
-;; heapify 
+;; heapify
 (define (build-binary-heap storage :key (num-entries #f)
                                         (comparator default-comparator)
                                         (key identity))
@@ -157,7 +157,7 @@
           [(ordering) (values (comparator-ordering-predicate comparator)
                               (^[a b] (>? comparator a b)))]
           [(comparison) (values (^[a b] (<? comparator a b))
-                                (^[a b] (>? comparator a b)))])        
+                                (^[a b] (>? comparator a b)))])
       (bh-heapify! storage <: >: size)
       (make <binary-heap> :comparator comparator :storage storage :key key
             :<: <: :>: >: :next-leaf (+ size 1)
@@ -390,7 +390,7 @@
     (bh-bubble-up storage <: >: i)))
 
 (define (bh-trickle-down storage <: >: index size)
-  
+
   (define-syntax getval (syntax-rules () [(getval i) (~ storage (Ix i))]))
   (define-syntax in-bound? (syntax-rules () [(in-bound? i) (< i size)]))
 
@@ -430,4 +430,3 @@
           (trickle-down-rec >< pick)))))
 
   (trickle-down-rec (if (min-node? index) <: >:) index))
-

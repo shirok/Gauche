@@ -17,4 +17,3 @@
 (define-constant 1/pi   0.3183098861837907)
 (define-constant 180/pi 57.29577951308232)
 (define-constant e      2.718281828459045)
-

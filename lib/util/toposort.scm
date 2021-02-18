@@ -51,4 +51,3 @@
     (unless (null? rest)
       (error "graph has circular dependency" (map car rest))))
   (reverse result))
-

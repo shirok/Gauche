@@ -56,7 +56,7 @@
 
 (define (write-uuid uuid :optional (port (current-output-port)))
   ;; speed-conscious code
-  (define (writeb x) 
+  (define (writeb x)
     (write-char (integer->digit (ash x -4) 16) port)
     (write-char (integer->digit (logand x #xf) 16) port))
   (assume-type uuid <uuid>)
@@ -116,7 +116,7 @@
 (define *default-uuid-random-source*
   (rlet1 s (make-random-source)
     (random-source-randomize! s)))
-(define %uuid-random-int 
+(define %uuid-random-int
   (random-source-make-integers *default-uuid-random-source*))
 
 (define (uuid-random-source-set! s)
@@ -154,9 +154,9 @@
 (define (%pseudo-node)                  ; see Section 4.5
   (logior (%uuid-random-int (ash 1 47))
           (ash 1 40)))                  ; multicast bit
-  
+
 (define (uuid1 :optional (node-id #f))
-  (let ([nid (or node-id 
+  (let ([nid (or node-id
                  (atomic-update! pseudo-node
                                  (^[n] (or n (%pseudo-node)))))]
         [v (make-u8vector 16)])

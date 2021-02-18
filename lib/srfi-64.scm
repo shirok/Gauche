@@ -196,28 +196,28 @@
   (let ((result #f))
     (let loop ((l list))
       (cond ((null? l) result)
-	    (else
-	     (if (%test-specifier-matches (car l) runner)
-		 (set! result #t))
-	     (loop (cdr l)))))))
+            (else
+             (if (%test-specifier-matches (car l) runner)
+                 (set! result #t))
+             (loop (cdr l)))))))
 
 ;; Returns #f, #t, or 'xfail.
 (define (%test-should-execute runner)
   (let ((run (%test-runner-run-list runner)))
     (cond ((or
-	    (not (or (eqv? run #t)
-		     (%test-any-specifier-matches run runner)))
-	    (%test-any-specifier-matches
-	     (%test-runner-skip-list runner)
-	     runner))
+            (not (or (eqv? run #t)
+                     (%test-any-specifier-matches run runner)))
+            (%test-any-specifier-matches
+             (%test-runner-skip-list runner)
+             runner))
            (test-result-set! runner 'result-kind 'skip)
            #f)
-	  ((%test-any-specifier-matches
-	    (%test-runner-fail-list runner)
-	    runner)
-	   (test-result-set! runner 'result-kind 'xfail)
-	   'xfail)
-	  (else #t))))
+          ((%test-any-specifier-matches
+            (%test-runner-fail-list runner)
+            runner)
+           (test-result-set! runner 'result-kind 'xfail)
+           'xfail)
+          (else #t))))
 
 (define (%test-begin suite-name count)
   (if (not (test-runner-current))
@@ -227,17 +227,17 @@
   (let ((runner (test-runner-current)))
     ((test-runner-on-group-begin runner) runner suite-name count)
     (%test-runner-skip-save! runner
-			       (cons (%test-runner-skip-list runner)
-				     (%test-runner-skip-save runner)))
+                               (cons (%test-runner-skip-list runner)
+                                     (%test-runner-skip-save runner)))
     (%test-runner-fail-save! runner
-			       (cons (%test-runner-fail-list runner)
-				     (%test-runner-fail-save runner)))
+                               (cons (%test-runner-fail-list runner)
+                                     (%test-runner-fail-save runner)))
     (%test-runner-count-list! runner
-			     (cons (cons (%test-runner-total-count runner)
-					 count)
-				   (%test-runner-count-list runner)))
+                             (cons (cons (%test-runner-total-count runner)
+                                         count)
+                                   (%test-runner-count-list runner)))
     (test-runner-group-stack! runner (cons suite-name
-					(test-runner-group-stack runner)))))
+                                        (test-runner-group-stack runner)))))
 (define-syntax test-begin
   (syntax-rules ()
     ((test-begin suite-name)
@@ -248,39 +248,39 @@
 (define (test-on-group-begin-simple runner suite-name count)
   (if (null? (test-runner-group-stack runner))
       (begin
-	(display "%%%% Starting test ")
-	(display suite-name)
-	(if test-log-to-file
-	    (let* ((log-file-name
-		    (if (string? test-log-to-file) test-log-to-file
-			(string-append suite-name ".log")))
-		   (log-file
-		    (cond-expand (mzscheme
-				  (open-output-file log-file-name 'truncate/replace))
-				 (else (open-output-file log-file-name)))))
-	      (display "%%%% Starting test " log-file)
-	      (display suite-name log-file)
-	      (newline log-file)
-	      (test-runner-aux-value! runner log-file)
-	      (display "  (Writing full log to \"")
-	      (display log-file-name)
-	      (display "\")")))
-	(newline)))
+        (display "%%%% Starting test ")
+        (display suite-name)
+        (if test-log-to-file
+            (let* ((log-file-name
+                    (if (string? test-log-to-file) test-log-to-file
+                        (string-append suite-name ".log")))
+                   (log-file
+                    (cond-expand (mzscheme
+                                  (open-output-file log-file-name 'truncate/replace))
+                                 (else (open-output-file log-file-name)))))
+              (display "%%%% Starting test " log-file)
+              (display suite-name log-file)
+              (newline log-file)
+              (test-runner-aux-value! runner log-file)
+              (display "  (Writing full log to \"")
+              (display log-file-name)
+              (display "\")")))
+        (newline)))
   (let ((log (test-runner-aux-value runner)))
     (if (output-port? log)
-	(begin
-	  (display "Group begin: " log)
-	  (display suite-name log)
-	  (newline log))))
+        (begin
+          (display "Group begin: " log)
+          (display suite-name log)
+          (newline log))))
   #f)
 
 (define (test-on-group-end-simple runner)
   (let ((log (test-runner-aux-value runner)))
     (if (output-port? log)
-	(begin
-	  (display "Group end: " log)
-	  (display (car (test-runner-group-stack runner)) log)
-	  (newline log))))
+        (begin
+          (display "Group end: " log)
+          (display (car (test-runner-group-stack runner)) log)
+          (newline log))))
   #f)
 
 (define (%test-on-bad-count-write runner count expected-count port)
@@ -297,37 +297,37 @@
   (%test-on-bad-count-write runner count expected-count (current-output-port))
   (let ((log (test-runner-aux-value runner)))
     (if (output-port? log)
-	(%test-on-bad-count-write runner count expected-count log))))
+        (%test-on-bad-count-write runner count expected-count log))))
 
 (define (test-on-bad-end-name-simple runner begin-name end-name)
   (let ((msg (string-append (%test-format-line runner) "test-end " begin-name
-			    " does not match test-begin " end-name)))
+                            " does not match test-begin " end-name)))
     (error msg)))
 
 (define (%test-final-report1 value label port)
   (if (> value 0)
       (begin
-	(display label port)
-	(display value port)
-	(newline port))))
+        (display label port)
+        (display value port)
+        (newline port))))
 
 (define (%test-final-report-simple runner port)
   (%test-final-report1 (test-runner-pass-count runner)
-		      "# of expected passes      " port)
+                      "# of expected passes      " port)
   (%test-final-report1 (test-runner-xfail-count runner)
-		      "# of expected failures    " port)
+                      "# of expected failures    " port)
   (%test-final-report1 (test-runner-xpass-count runner)
-		      "# of unexpected successes " port)
+                      "# of unexpected successes " port)
   (%test-final-report1 (test-runner-fail-count runner)
-		      "# of unexpected failures  " port)
+                      "# of unexpected failures  " port)
   (%test-final-report1 (test-runner-skip-count runner)
-		      "# of skipped tests        " port))
+                      "# of skipped tests        " port))
 
 (define (test-on-final-simple runner)
   (%test-final-report-simple runner (current-output-port))
   (let ((log (test-runner-aux-value runner)))
     (if (output-port? log)
-	(%test-final-report-simple runner log))))
+        (%test-final-report-simple runner log))))
 
 ;;;
 ;;; Default runner
@@ -385,31 +385,31 @@
 
 (define (%test-format-line runner)
    (let* ((line-info (test-result-alist runner))
-	  (source-file (assq 'source-file line-info))
-	  (source-line (assq 'source-line line-info))
-	  (file (if source-file (cdr source-file) "")))
+          (source-file (assq 'source-file line-info))
+          (source-line (assq 'source-line line-info))
+          (file (if source-file (cdr source-file) "")))
      (if source-line
-	 (string-append file ":"
-			(number->string (cdr source-line)) ": ")
-	 "")))
+         (string-append file ":"
+                        (number->string (cdr source-line)) ": ")
+         "")))
 
 (define (%test-end suite-name line-info)
   (let* ((r (test-runner-get))
-	 (groups (test-runner-group-stack r))
-	 (line (%test-format-line r)))
+         (groups (test-runner-group-stack r))
+         (line (%test-format-line r)))
     (test-result-alist! r line-info)
     (if (null? groups)
-	(let ((msg (string-append line "test-end not in a group")))
+        (let ((msg (string-append line "test-end not in a group")))
           (error msg)))
     (if (and suite-name (not (equal? suite-name (car groups))))
-	((test-runner-on-bad-end-name r) r suite-name (car groups)))
+        ((test-runner-on-bad-end-name r) r suite-name (car groups)))
     (let* ((count-list (%test-runner-count-list r))
-	   (expected-count (cdar count-list))
-	   (saved-count (caar count-list))
-	   (group-count (- (%test-runner-total-count r) saved-count)))
+           (expected-count (cdar count-list))
+           (saved-count (caar count-list))
+           (group-count (- (%test-runner-total-count r) saved-count)))
       (if (and expected-count
-	       (not (= expected-count group-count)))
-	  ((test-runner-on-bad-count r) r group-count expected-count))
+               (not (= expected-count group-count)))
+          ((test-runner-on-bad-count r) r group-count expected-count))
       ((test-runner-on-group-end r) r)
       (test-runner-group-stack! r (cdr (test-runner-group-stack r)))
       (%test-runner-skip-list! r (car (%test-runner-skip-save r)))
@@ -418,7 +418,7 @@
       (%test-runner-fail-save! r (cdr (%test-runner-fail-save r)))
       (%test-runner-count-list! r (cdr count-list))
       (if (null? (test-runner-group-stack r))
-	  ((test-runner-on-final r) r)))))
+          ((test-runner-on-final r) r)))))
 
 (define-syntax test-group
   (syntax-rules ()
@@ -427,19 +427,19 @@
        ;; Ideally should also set line-number, if available.
        (test-result-alist! r (list (cons 'test-name suite-name)))
        (if (%test-should-execute r)
-	   (dynamic-wind
-	       (lambda () (test-begin suite-name))
-	       (lambda () . body)
-	       (lambda () (test-end  suite-name))))))))
+           (dynamic-wind
+               (lambda () (test-begin suite-name))
+               (lambda () . body)
+               (lambda () (test-end  suite-name))))))))
 
 (define-syntax test-group-with-cleanup
   (syntax-rules ()
     ((test-group-with-cleanup suite-name form cleanup-form)
      (test-group suite-name
-		    (dynamic-wind
-			(lambda () #f)
-			(lambda () form)
-			(lambda () cleanup-form))))
+                    (dynamic-wind
+                        (lambda () #f)
+                        (lambda () form)
+                        (lambda () cleanup-form))))
     ((test-group-with-cleanup suite-name cleanup-form)
      (test-group-with-cleanup suite-name #f cleanup-form))
     ((test-group-with-cleanup suite-name form1 form2 form3 . rest)
@@ -448,17 +448,17 @@
 (define (test-on-test-begin-simple runner)
  (let ((log (test-runner-aux-value runner)))
     (if (output-port? log)
-	(let* ((results (test-result-alist runner))
-	       (source-file (assq 'source-file results))
-	       (source-line (assq 'source-line results))
-	       (source-form (assq 'source-form results))
-	       (test-name (assq 'test-name results)))
-	  (display "Test begin:" log)
-	  (newline log)
-	  (if test-name (%test-write-result1 test-name log))
-	  (if source-file (%test-write-result1 source-file log))
-	  (if source-line (%test-write-result1 source-line log))
-	  (if source-form (%test-write-result1 source-form log))))))
+        (let* ((results (test-result-alist runner))
+               (source-file (assq 'source-file results))
+               (source-line (assq 'source-line results))
+               (source-form (assq 'source-form results))
+               (test-name (assq 'test-name results)))
+          (display "Test begin:" log)
+          (newline log)
+          (if test-name (%test-write-result1 test-name log))
+          (if source-file (%test-write-result1 source-file log))
+          (if source-line (%test-write-result1 source-line log))
+          (if source-form (%test-write-result1 source-form log))))))
 
 (define (test-result-ref runner pname :optional (default #f))
   (let ((p (assq pname (test-result-alist runner))))
@@ -466,20 +466,20 @@
 
 (define (test-on-test-end-simple runner)
   (let ((log (test-runner-aux-value runner))
-	(kind (test-result-ref runner 'result-kind)))
+        (kind (test-result-ref runner 'result-kind)))
     (if (memq kind '(fail xpass))
-	(let* ((results (test-result-alist runner))
-	       (source-file (assq 'source-file results))
-	       (source-line (assq 'source-line results))
-	       (test-name (assq 'test-name results)))
-	  (if (or source-file source-line)
-	      (begin
-		(if source-file (display (cdr source-file)))
-		(display ":")
-		(if source-line (display (cdr source-line)))
-		(display ": ")))
-	  (display (if (eq? kind 'xpass) "XPASS" "FAIL"))
-	  (if test-name	
+        (let* ((results (test-result-alist runner))
+               (source-file (assq 'source-file results))
+               (source-line (assq 'source-line results))
+               (test-name (assq 'test-name results)))
+          (if (or source-file source-line)
+              (begin
+                (if source-file (display (cdr source-file)))
+                (display ":")
+                (if source-line (display (cdr source-line)))
+                (display ": ")))
+          (display (if (eq? kind 'xpass) "XPASS" "FAIL"))
+          (if test-name
             (begin
               (display " ")
               (display (cdr test-name))))
@@ -489,19 +489,19 @@
           (newline)
           (display "    actual:")
           (write (test-result-ref runner 'actual-value))
-	  (newline)))
+          (newline)))
     (if (output-port? log)
-	(begin
-	  (display "Test end:" log)
-	  (newline log)
-	  (let loop ((list (test-result-alist runner)))
-	    (if (pair? list)
-		(let ((pair (car list)))
-		  ;; Write out properties not written out by on-test-begin.
-		  (if (not (memq (car pair)
-				 '(test-name source-file source-line source-form)))
-		      (%test-write-result1 pair log))
-		  (loop (cdr list)))))))))
+        (begin
+          (display "Test end:" log)
+          (newline log)
+          (let loop ((list (test-result-alist runner)))
+            (if (pair? list)
+                (let ((pair (car list)))
+                  ;; Write out properties not written out by on-test-begin.
+                  (if (not (memq (car pair)
+                                 '(test-name source-file source-line source-form)))
+                      (%test-write-result1 pair log))
+                  (loop (cdr list)))))))))
 
 (define (%test-write-result1 pair port)
   (display "  " port)
@@ -512,22 +512,22 @@
 
 (define (test-result-set! runner pname value)
   (let* ((alist (test-result-alist runner))
-	 (p (assq pname alist)))
+         (p (assq pname alist)))
     (if p
-	(set-cdr! p value)
-	(test-result-alist! runner (cons (cons pname value) alist)))))
+        (set-cdr! p value)
+        (test-result-alist! runner (cons (cons pname value) alist)))))
 
 (define (test-result-clear runner)
   (test-result-alist! runner '()))
 
 (define (test-result-remove runner pname)
   (let* ((alist (test-result-alist runner))
-	 (p (assq pname alist)))
+         (p (assq pname alist)))
     (if p
-	(test-result-alist! runner
-				   (let loop ((r alist))
-				     (if (eq? r p) (cdr r)
-					 (cons (car r) (loop (cdr r)))))))))
+        (test-result-alist! runner
+                                   (let loop ((r alist))
+                                     (if (eq? r p) (cdr r)
+                                         (cons (car r) (loop (cdr r)))))))))
 
 (define (test-result-kind . rest)
   (let ((runner (if (pair? rest) (car rest) (test-runner-current))))
@@ -539,7 +539,7 @@
 
 (define (%test-report-result)
   (let* ((r (test-runner-get))
-	 (result-kind (test-result-kind r)))
+         (result-kind (test-result-kind r)))
     (case result-kind
       ((pass)
        (test-runner-pass-count! r (+ 1 (test-runner-pass-count r))))
@@ -558,7 +558,7 @@
   (syntax-rules ()
     ((%test-evaluate-with-catch test-expression)
      (guard (err (else (print err) #f)) test-expression))))
-	    
+
 (define (%test-source-line2 form) ; can be something - later
   '())
 
@@ -569,9 +569,9 @@
 
 (define (%test-on-test-end r result)
     (test-result-set! r 'result-kind
-		      (if (eq? (test-result-ref r 'result-kind) 'xfail)
-			  (if result 'xpass 'xfail)
-			  (if result 'pass 'fail))))
+                      (if (eq? (test-result-ref r 'result-kind) 'xfail)
+                          (if result 'xpass 'xfail)
+                          (if result 'pass 'fail))))
 
 (define (test-runner-test-name runner)
   (test-result-ref runner 'test-name ""))
@@ -607,13 +607,13 @@
     ((%test-comp1body r expr)
      (let ()
        (if (%test-on-test-begin r)
-	   (let ()
+           (let ()
              (test-result-set! r 'expected-value #t)
              (test-runner-default-pre r 'expr)
-	     (let ((res (%test-evaluate-with-catch expr)))
-	       (test-result-set! r 'actual-value res)
+             (let ((res (%test-evaluate-with-catch expr)))
+               (test-result-set! r 'actual-value res)
                (test-runner-default-post r (boolean r))
-	       (%test-on-test-end r res))))
+               (%test-on-test-end r res))))
        (%test-report-result)))))
 
 (define-syntax test-end
@@ -703,20 +703,20 @@
   (if (test-runner? first)
       (test-with-runner first (apply test-apply rest))
       (let ((r (test-runner-current)))
-	(if r
-	    (let ((run-list (%test-runner-run-list r)))
-	      (cond ((null? rest)
-		     (%test-runner-run-list! r (reverse run-list))
-		     (first)) ;; actually apply procedure thunk
-		    (else
-		     (%test-runner-run-list!
-		      r
-		      (if (eq? run-list #t) (list first) (cons first run-list)))
-		     (apply test-apply rest)
-		     (%test-runner-run-list! r run-list))))
-	    (let ((r (test-runner-create)))
-	      (test-with-runner r (apply test-apply first rest))
-	      ((test-runner-on-final r) r))))))
+        (if r
+            (let ((run-list (%test-runner-run-list r)))
+              (cond ((null? rest)
+                     (%test-runner-run-list! r (reverse run-list))
+                     (first)) ;; actually apply procedure thunk
+                    (else
+                     (%test-runner-run-list!
+                      r
+                      (if (eq? run-list #t) (list first) (cons first run-list)))
+                     (apply test-apply rest)
+                     (%test-runner-run-list! r run-list))))
+            (let ((r (test-runner-create)))
+              (test-with-runner r (apply test-apply first rest))
+              ((test-runner-on-final r) r))))))
 
 ;;; Predicates
 
@@ -737,13 +737,13 @@
   (lambda (runner)
     (let ((result #t))
       (let loop ((l pred-list))
-	(if (null? l)
-	    result
-	    (begin
-	      (if (not ((car l) runner))
-		  (set! result #f))
-	      (loop (cdr l))))))))
-  
+        (if (null? l)
+            result
+            (begin
+              (if (not ((car l) runner))
+                  (set! result #f))
+              (loop (cdr l))))))))
+
 (define-syntax test-match-all
   (syntax-rules ()
     ((test-match-all pred ...)
@@ -753,13 +753,13 @@
   (lambda (runner)
     (let ((result #f))
       (let loop ((l pred-list))
-	(if (null? l)
-	    result
-	    (begin
-	      (if ((car l) runner)
-		  (set! result #t))
-	      (loop (cdr l))))))))
-  
+        (if (null? l)
+            result
+            (begin
+              (if ((car l) runner)
+                  (set! result #t))
+              (loop (cdr l))))))))
+
 (define-syntax test-match-any
   (syntax-rules ()
     ((test-match-any pred ...)
@@ -768,26 +768,26 @@
 ;; Coerce to a predicate function:
 (define (%test-as-specifier specifier)
   (cond ((procedure? specifier) specifier)
-	((integer? specifier) (test-match-nth 1 specifier))
-	((string? specifier) (test-match-name specifier))
-	(else
-	 (error "not a valid test specifier"))))
+        ((integer? specifier) (test-match-nth 1 specifier))
+        ((string? specifier) (test-match-name specifier))
+        (else
+         (error "not a valid test specifier"))))
 
 (define-syntax test-skip
   (syntax-rules ()
     ((test-skip pred ...)
      (let ((runner (test-runner-get)))
        (%test-runner-skip-list! runner
-				  (cons (test-match-all (%test-as-specifier pred)  ...)
-					(%test-runner-skip-list runner)))))))
+                                  (cons (test-match-all (%test-as-specifier pred)  ...)
+                                        (%test-runner-skip-list runner)))))))
 
 (define-syntax test-expect-fail
   (syntax-rules ()
     ((test-expect-fail pred ...)
      (let ((runner (test-runner-get)))
        (%test-runner-fail-list! runner
-				  (cons (test-match-all (%test-as-specifier pred)  ...)
-					(%test-runner-fail-list runner)))))))
+                                  (cons (test-match-all (%test-as-specifier pred)  ...)
+                                        (%test-runner-fail-list runner)))))))
 
 (define (test-match-name name)
   (lambda (runner)
@@ -795,7 +795,7 @@
 
 (define (test-read-eval-string string)
   (let* ((port (open-input-string string))
-	 (form (read port)))
+         (form (read port)))
     (if (eof-object? (read-char port))
       (eval form ((with-module gauche.internal vm-current-module)))
       (error "(not at eof)"))))

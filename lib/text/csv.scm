@@ -180,7 +180,7 @@
 
 ;; API
 ;; Create a procedure that converts one input row into a list of slot
-;; values, orderd in the same way as header-slots. 
+;; values, orderd in the same way as header-slots.
 ;; The permuter is the vector returned by make-csv-header-parser.
 ;; Required-slots determines if the input row is valid or not.  If
 ;; not, #f is returned.
@@ -234,4 +234,3 @@
                         [allow-gap? (record-loop (cdr rows) r)]
                         [else (reverse r)])))]
           [else (header-loop (cdr rows))])))
-

@@ -37,12 +37,9 @@
     (cond [(null? xs) r]
           [(>? cmpr (car xs) r) (loop (car xs) (cdr xs))]
           [else (loop r (cdr xs))])))
-  
+
 (define (comparator-min cmpr x . xs)
   (comparator-min-in-list cmpr (cons x xs)))
 
 (define (comparator-max cmpr x . xs)
   (comparator-max-in-list cmpr (cons x xs)))
-
-
-

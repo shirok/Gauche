@@ -89,7 +89,7 @@
                " " 'prefix))
 
 (define (make-compound-type-name op-name classes)
-  ($ string->symbol 
+  ($ string->symbol
      $ string-append "<" (x->string op-name) (join-class-names classes) ">"))
 
 (define (make-min-max-len-type-name op-name classes min max)
@@ -130,7 +130,7 @@
 (define-method object-apply ((k <^-meta>) . rest)
   (define (scan-args xs as)
     (match xs
-      [() (error "Missing ':-' in the procedure type constructor arguments:" 
+      [() (error "Missing ':-' in the procedure type constructor arguments:"
                  rest)]
       [(':- . xs) (scan-results xs (reverse as) '())]
       [('* ':- . xs)
@@ -139,7 +139,7 @@
          (error "Invalid '* in the procedure type constructor arguments:"
                 rest))]
       [else
-       (if (is-a? (car xs) <class>) 
+       (if (is-a? (car xs) <class>)
          (scan-args (cdr xs) (cons (car xs) as))
          (error "Non-class argument in the procedure type constructor:"
                 (car xs)))]))
@@ -147,7 +147,7 @@
     (cond [(null? xs) (values args (reverse rs))]
           [(and (null? rs) (eq? (car xs) '*) (null? (cdr xs)))
            (values args '*)]
-          [(is-a? (car xs) <class>) 
+          [(is-a? (car xs) <class>)
            (scan-results (cdr xs) args (cons (car xs) rs))]
           [else
            (error "Non-class argument in the procedure type constructor:"
@@ -183,7 +183,7 @@
 
 (define-method object-apply ((k </-meta>) . args)
   (assume (every (cut is-a? <> <class>) args))
-  (make </> 
+  (make </>
     :name (make-compound-type-name '/ args)
     :members args))
 
@@ -278,7 +278,7 @@
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f)))
 
-(define-method object-apply ((k <Vector-meta>) etype 
+(define-method object-apply ((k <Vector-meta>) etype
                              :optional (min #f) (max #f))
   (assume-type etype <class>)
   (assume-type min (<?> <integer>))

@@ -54,12 +54,12 @@
           lseq?        lseq=?
           lseq-car     lseq-cdr
           lseq-first   lseq-rest lseq-ref
-          lseq-take    lseq-drop   
+          lseq-take    lseq-drop
           lseq-realize lseq->generator
           lseq-length  lseq-append  lseq-zip
           lseq-map     lseq-for-each
           lseq-filter  lseq-remove
-          lseq-find    lseq-find-tail 
+          lseq-find    lseq-find-tail
           lseq-any     lseq-every
           lseq-index
           lseq-take-while lseq-drop-while
@@ -111,7 +111,3 @@
 (define lseq-member member)
 (define lseq-memq memq)
 (define lseq-memv memv)
-
-
-
-

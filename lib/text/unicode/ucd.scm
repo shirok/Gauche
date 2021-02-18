@@ -47,7 +47,7 @@
           ucd-extended-case-map-simple-map
           ucd-extended-case-map-special-map
           ucd-extended-case-map-code
-          
+
           ucd-break-property
           ucd-break-property-grapheme
           ucd-break-property-word
@@ -582,7 +582,7 @@
 ;;
 ;; 1. The low codepoint table part
 ;;
-;;  RLE compressed list of <ucd-entry> 
+;;  RLE compressed list of <ucd-entry>
 ;;
 ;;  <ucd-entry>  : <basic-entry>
 ;;  <basic-entry> : #f ; unassigned
@@ -636,7 +636,7 @@
   (print ";; unicode version")
   (write (unichar-db-version db))
   (print)
-  
+
   (print ";; unichar-db-table")
   (print "(")
   (let1 tab (unichar-db-table db)

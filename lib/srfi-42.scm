@@ -395,7 +395,7 @@
 
 ; (:while-1 cc test (:do ...))
 ;    modifies the fully decorated :do-generator such that it
-;    runs while test is a true value. 
+;    runs while test is a true value.
 ;       The original implementation just replaced ne1? by
 ;    (and ne1? test) as follows:
 ;
@@ -408,10 +408,10 @@
 ;    Unfortunately, this code is wrong because ne1? may depend
 ;    in the inner bindings introduced in ilet, but ne1? is evaluated
 ;    outside of the inner bindings. (Refer to the specification of
-;    :do to see the structure.) 
-;       The problem manifests itself (as sunnan@handgranat.org 
+;    :do to see the structure.)
+;       The problem manifests itself (as sunnan@handgranat.org
 ;    observed, 25-Apr-2005) when the :list-generator is modified:
-; 
+;
 ;      (do-ec (:while (:list x '(1 2)) (= x 1)) (display x)).
 ;
 ;    In order to generate proper code, we introduce temporary
@@ -435,9 +435,9 @@
 ;               /payload/
 ;               (if ne2?
 ;                   (loop ls ...) )))))
-; 
+;
 ; Bug #2:
-;    Unfortunately, the above expansion is still incorrect (as Jens-Axel 
+;    Unfortunately, the above expansion is still incorrect (as Jens-Axel
 ;    Soegaard pointed out, 4-Jun-2007) because ib-rhs are evaluated even
 ;    if ne1?-value is #f, indicating that the loop has ended.
 ;       The problem manifests itself in the following example:
@@ -578,7 +578,7 @@
           ((+ i 1)) ))
 
     ((_ *len *ref cc var (index i) arg1 arg2 arg ...)
-     (srfi-42-parallel cc 
+     (srfi-42-parallel cc
                        (srfi-42-*vector *len *ref cc var arg1 arg2 arg ...)
                        (srfi-42-integers i)) )
     ((_ *len *ref cc var arg1 arg2 arg ...)
@@ -1239,4 +1239,3 @@
 
     ((every?-ec qualifier expression)
      (first-ec #t qualifier (if (not expression)) #f) )))
-

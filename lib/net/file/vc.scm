@@ -16,5 +16,3 @@
 
 (define-method open-input-uri ((obj <vc-data>))
   (vc-open-input obj))
-
-

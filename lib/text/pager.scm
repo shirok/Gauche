@@ -97,7 +97,7 @@
     (use os.windows)
     (guard (e [else #f])
       (and (sys-isatty 1)
-           (sys-get-console-mode 
+           (sys-get-console-mode
             (sys-get-std-handle STD_OUTPUT_HANDLE))
            (not (= (sys-get-console-output-cp) 65001))))] ;unicode cp
    [else #f]))

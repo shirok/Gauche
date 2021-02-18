@@ -61,8 +61,8 @@
 
 (define-syntax future
   (syntax-rules ()
-    [(_ expr) 
-     (make <future> 
+    [(_ expr)
+     (make <future>
        :thread (thread-start! (make-thread (lambda () (values->list expr)))))]))
 
 (define (make-future thunk)

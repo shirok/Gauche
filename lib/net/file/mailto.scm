@@ -46,5 +46,3 @@
                 (concatenate (map (^x (list (make-keyword (car x)) (cadr x)))
                                   (headers-of obj))))))
      1024)))
-
-

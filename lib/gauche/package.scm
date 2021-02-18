@@ -79,7 +79,7 @@
 ;;
 ;;     ;; In the *.gpd file, the attributes marked with '*' above
 ;;     ;; are consolidated to the following plural attributes.
-;;     
+;;
 ;;     )
 ;;
 ;;   NAME _must_ match the filename sans suffix.

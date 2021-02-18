@@ -37,7 +37,7 @@
       (show-run (current-output-port) proc))
      ((eq? #f out)
       (let ((out (open-output-string)))
-        (show-run out proc) 
+        (show-run out proc)
         (get-output-string out)))
      (else
       (error "unknown output to show" out)))))

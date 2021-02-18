@@ -58,4 +58,3 @@
     (cond ((end-of-char-set? cursor) #f)
           ((pred (char-set-ref cs cursor)) #t)
           (else (loop (char-set-cursor-next cs cursor))))))
-

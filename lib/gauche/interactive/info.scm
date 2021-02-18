@@ -72,7 +72,7 @@
                 (hash-table-push! index #"<~(car p)>" (cdr p)))
               ($ hash-table-for-each index
                  ;; reverse v here so that earlier entry listed first
-                 (^[k v] 
+                 (^[k v]
                    (hash-table-put! index k (squash-entries (reverse v))))))
             (warn "Couldn't find info document in ~s. \
                    Maybe it has't been installed. \
@@ -96,7 +96,7 @@
 ;; " <n>" in the index entry.  This strips that.
 (define (entry-name e)
   (if-let1 m (#/ <\d+>$/ e) (rxmatch-before m) e))
-  
+
 (define (get-info-paths)
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
                         [else '()])]
@@ -209,5 +209,3 @@
        (with-output-to-string
          (^[] (for-each format-search-result-entry entries))))))
   (values))
-
-               

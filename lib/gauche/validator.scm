@@ -9,4 +9,3 @@
   (extend gauche.mop.validator))
 
 (warn "gauche.validator is obsoleted.  use gauche.mop.validator.")
-

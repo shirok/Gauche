@@ -199,6 +199,3 @@
 (define (call-with-socket socket proc)
   (unwind-protect (proc socket)
     (socket-close socket)))
-                                
-
-

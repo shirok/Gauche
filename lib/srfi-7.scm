@@ -50,5 +50,3 @@
               more ...)
      (begin (cond-expand (requirement (program stuff ...)) ...)
             (program more ...)))))
-
-

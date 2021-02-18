@@ -292,7 +292,7 @@
 (define (cgen-type->scheme-type-name cgen-type)
   (define (base-name cgen-type)
     (case (~ cgen-type'name)
-      [(<fixnum> <int> <short> <long> <int8> <int16> <int32> 
+      [(<fixnum> <int> <short> <long> <int8> <int16> <int32>
                  <uint> <ushort> <ulong> <uint8> <uint16> <uint32>)
        '<integer>]
       [(<float> <double>) '<real>]
@@ -340,4 +340,3 @@
 
 (define (cgen-return-stmt expr)
   #"SCM_RETURN(~expr);")
-

@@ -53,4 +53,3 @@
 (define-class <singleton-mixin> ()
   ()
   :metaclass <singleton-meta>)
-

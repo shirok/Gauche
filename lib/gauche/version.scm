@@ -107,9 +107,9 @@
 (define (next-component ver)
   (cond ((rxmatch #/[._-]/ ver)
          => (^m (values (rxmatch-before m)
-			(if (string=? (rxmatch-substring m) "_")
-			    'pre 'post)
-			(rxmatch-after m))))
+                        (if (string=? (rxmatch-substring m) "_")
+                            'pre 'post)
+                        (rxmatch-after m))))
         (else (values ver #f #f))))
 
 (define (version-compare va vb)

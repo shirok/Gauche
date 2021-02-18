@@ -38,4 +38,3 @@
             (source->list a reader)
             (source->list b reader)
             equal))
-

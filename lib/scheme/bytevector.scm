@@ -168,7 +168,7 @@
 (define (bytevector-s32-native-ref v k endian) (get-s32 v k ne))
 (define (bytevector-u64-native-ref v k endian) (get-u64 v k ne))
 (define (bytevector-s64-native-ref v k endian) (get-s64 v k ne))
-  
+
 (define (bytevector-u16-set! v k n endian) (put-u16! v k n endian))
 (define (bytevector-s16-set! v k n endian) (put-s16! v k n endian))
 (define (bytevector-u32-set! v k n endian) (put-u32! v k n endian))

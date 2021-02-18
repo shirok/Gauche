@@ -65,7 +65,7 @@
   (define variable? (comparator-type-test-predicate var-cmpr))
   (define value?    (comparator-type-test-predicate val-cmpr))
   (define (tuple? x) (and (not (variable? x)) (not (value? x))))
-  
+
   (define (unify-rec a b dict)       ;-> Maybe dict
     (and dict
          (cond [(variable? a) (unify-var a b dict)]

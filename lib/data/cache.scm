@@ -101,7 +101,7 @@
           make-counting-cache cache-stats))
 (select-module data.cache)
 
-;; storage and comparator 
+;; storage and comparator
 
 (define-class <cache> ()
   (;; private.  must be treated read-only.
@@ -284,7 +284,7 @@
     (dict-put! (cache-storage cache) key nv2)
     (%fifo-touch! cache (~ cache'queue) key)
     (cons key (cdr nv))))
-  
+
 ;; TTL Cache
 ;;  - Timestamps is a heap with (<timestamp> . <key>).   There can
 ;;    be multiple entries with the same <key>.
@@ -352,7 +352,7 @@
 ;;   is cache-check!, in which we 'touch' the entry.
 (define-class <ttlr-cache> (<ttl-cache>)
   ())
-  
+
 (define (make-ttlr-cache ttl :key (storage #f) (comparator #f)
                                   (timestamper sys-time))
   (make <ttlr-cache> :storage storage :comparator comparator

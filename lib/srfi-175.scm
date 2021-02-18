@@ -42,10 +42,10 @@
           ascii-control? ascii-non-control?
           ascii-space-or-tab? ascii-other-graphic?
           ascii-alphanumeric? ascii-alphabetic?
-          ascii-numeric? ascii-whitespace? 
-          ascii-upper-case? ascii-lower-case? 
+          ascii-numeric? ascii-whitespace?
+          ascii-upper-case? ascii-lower-case?
           ascii-ci=? ascii-ci<? ascii-ci<=? ascii-ci>? ascii-ci>=?
-          ascii-string-ci=? ascii-string-ci<? ascii-string-ci<=? 
+          ascii-string-ci=? ascii-string-ci<? ascii-string-ci<=?
           ascii-string-ci>? ascii-string-ci>=?
           ascii-upcase ascii-downcase
           ascii-control->graphic ascii-graphic->control
@@ -217,7 +217,7 @@
 
 (define (ascii-graphic->control c)
   (cond [(char? c)
-         (if (eqv? c #\?) 
+         (if (eqv? c #\?)
            #\x7f
            (let1 cc (char->integer c)
              (and (<= #x40 cc #x5f)

@@ -214,5 +214,3 @@
   ;; main entry
   ;;
   (entry (skip-ws sql-string) '()))
-
-

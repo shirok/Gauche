@@ -15,4 +15,3 @@
           gauche.uvector.c32
           gauche.uvector.c64
           gauche.uvector.c128))
-

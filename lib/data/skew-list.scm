@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Implements SkewList as described in 
+;; Implements SkewList as described in
 ;; Chris Okasaki: Purely Functional Data Structures
 ;;
 ;; Tree a = Leaf a | Node a (Tree a) (Tree a)
@@ -125,7 +125,7 @@
           fallback)
         (match-let1 ('Node x t1 t2) t
           (let1 w2 (/2 w)
-            (if (<= i w2) 
+            (if (<= i w2)
               (tree-ref w2 (- i 1) t1)
               (tree-ref w2 (- i 1 w2) t2)))))))
   (define (ref i ts)
@@ -148,7 +148,7 @@
         (error "index out of range" n)
         (match-let1 ('Node x t1 t2) t
           (let1 w2 (/2 w)
-            (if (<= i w2) 
+            (if (<= i w2)
               `(Node ,x ,(tree-set w2 (- i 1) t1) ,t2)
               `(Node ,x ,t1 ,(tree-set w2 (- i 1 w2) t2))))))))
   (define (set i ts)
@@ -401,7 +401,7 @@
          (if (< wz w1)
            (SL (append (skew-list-elements sl1) (skew-list-elements sl2)))
            (slow-append sl1 sl2))))]))
-                
+
 
 ;;;
 ;;; Collection & sequence protocol

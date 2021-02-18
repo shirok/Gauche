@@ -154,7 +154,3 @@
     (mark 0 (make-q))
     (compiled-code-copy! orig-code (sweep))
     orig-code))
-
-
-
-

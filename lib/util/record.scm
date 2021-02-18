@@ -65,4 +65,3 @@
 (define (record-type-fields record-class)
   (map (^x (if (pair? x) (car x) x))
        (compute-slots record-class)))
-

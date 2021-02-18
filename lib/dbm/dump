@@ -35,5 +35,3 @@
        (dbm-for-each dbm (^(k v) (write (cons k v) out) (newline out))))
      :output output :temporary-file output)
     (dbm-close dbm)))
-
-

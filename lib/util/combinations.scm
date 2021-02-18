@@ -294,6 +294,3 @@
        (lambda (sub-prod)
          (for-each (^x (proc (cons x sub-prod))) (car lol)))
        (cdr lol))))
-
-
-

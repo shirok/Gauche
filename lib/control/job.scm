@@ -144,4 +144,3 @@
         (job-status-set! job 'killed)
         (when cv
           (condition-variable-broadcast! cv))))))
-

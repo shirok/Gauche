@@ -170,4 +170,3 @@
 (define (char-set-diff+intersection! cs1 cs2 . charsets)
   (values (apply char-set-difference cs1 cs2 charsets)
           (char-set-intersection cs1 (apply char-set-union cs2 charsets))))
-

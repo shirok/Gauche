@@ -69,7 +69,7 @@
                     (if hist-file
                       (save-line-edit-history ctx (expand-path hist-file)))
                     input)
-                  (begin 
+                  (begin
                     (set! buffer (open-input-string (string-append input "\n")))
                     (try))))
               x))))

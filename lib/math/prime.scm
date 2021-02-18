@@ -212,7 +212,7 @@
   (define (J a n s)
     (cond [(= n 1) (* s 1)]
           [(= a 0) 0]
-          [(odd? a) 
+          [(odd? a)
            (if (and (= (logand a 3) 3) (= (logand n 3) 3))
              (J (modulo n a) a (- s))
              (J (modulo n a) a s))]
@@ -265,7 +265,7 @@
     (if (odd? x)
       (modulo (ash (+ x n) -1) n)
       (modulo (ash x -1) n)))
-  
+
   (let* ([n+1 (+ n 1)]
          [s   (twos-exponent-factor n+1)]
          [d   (ash n+1 (- s))]
@@ -401,7 +401,7 @@
 ;; Try MC factorization.  Returns (divisor . quotient).
 ;; Note: This will loop forever if N is a prime.  The caller should
 ;; exclude primes.  Unfortunately, we don't have a deterministic primality
-;; test > 2^64 yet.  
+;; test > 2^64 yet.
 (define (mc-try-factorize n)
   (let loop ()
     (if-let1 d (mc-find-divisor-1 n (random-integer n))

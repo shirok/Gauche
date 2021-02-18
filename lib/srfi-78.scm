@@ -134,7 +134,7 @@
        (format #t "Passed ~d tests out of ~d tests.  First failure on ~s, \
                    expected: ~s, result: ~s~a\n"
                (~ *global-results*'pass-count)
-               (~ *global-results*'total-count) 
+               (~ *global-results*'total-count)
                name expected result
                (%format-aux aux))]
       [_

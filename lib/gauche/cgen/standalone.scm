@@ -134,4 +134,3 @@
     (let1 cmd #"~cc ~cflags ~defs ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
       (print cmd)
       (sys-system cmd))))
-

@@ -35,7 +35,7 @@
             (: p (stable-sort! (map (^e (cons e (key e))) seq)
                                (^[a b] (less? (cdr a) (cdr b)))))
             (:integers i))
-           (set! (ref seq i) (car p)))    
+           (set! (ref seq i) (car p)))
     (do-ec (:parallel
             (: elt (stable-sort! (coerce-to <list> seq) less?))
             (:integers i))

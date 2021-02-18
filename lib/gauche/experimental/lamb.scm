@@ -14,4 +14,3 @@
 (define-syntax ^*
   (syntax-rules ()
     [(^* . clauses) (match-lambda* . clauses)]))
-

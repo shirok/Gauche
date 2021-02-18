@@ -18,5 +18,3 @@
 
 (define-method open-input-uri ((obj <uri-http>))
   (open-input-http (path-of obj)))
-
-

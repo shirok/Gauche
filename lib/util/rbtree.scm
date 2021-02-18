@@ -56,4 +56,3 @@
 (define rbtree-fold-right tree-map-fold-right)
 
 (define rbtree-check (with-module gauche.internal %tree-map-check-consistency))
-

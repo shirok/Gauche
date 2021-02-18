@@ -431,11 +431,10 @@
   (^[exprs]
     (match exprs
       ;; TODO: Get console width if possible
-      [() 
+      [()
        (write *1 (write-controls-copy (print-mode)
                                       :pretty #t :width 79
                                       :length #f :level #f))
        (newline)]
       [_ (usage)])
     *no-value*))
-

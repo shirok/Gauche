@@ -88,7 +88,7 @@
 (define (blob-sint-ref size endi blob k)
   (assume-type blob <u8vector>)
   (get-sint size blob k endi))
-  
+
 (define (blob-uint-set! size endi blob k v)
   (assume-type blob <u8vector>)
   (put-uint! size blob k v endi))

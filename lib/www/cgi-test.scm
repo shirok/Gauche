@@ -4,4 +4,3 @@
 
 (define-module www.cgi-test
   (extend www.cgi.test))
-

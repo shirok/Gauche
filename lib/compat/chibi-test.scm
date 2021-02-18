@@ -35,7 +35,7 @@
             (syntax-rules ()
               [(_ . args) (begin)])]
            [import
-            ;; So as import 
+            ;; So as import
             (syntax-rules ()
               [(_ . args) (begin)])]
            [include
@@ -85,7 +85,7 @@
      (let loop ([forms (cadr f)]
                 [defs '()])
        (match forms
-         [() 
+         [()
           (if (null? defs)
             (quasirename r `(begin))
             (quasirename r `(let () ,@(reverse defs) (begin))))]
@@ -98,7 +98,7 @@
          [(form . forms)
           (if (null? defs)
             (quasirename r `(let () ,form (chibi-test:expand ,forms)))
-            (quasirename r `(let () ,@(reverse defs) 
+            (quasirename r `(let () ,@(reverse defs)
                                  ,form (chibi-test:expand ,forms))))])))))
 
 (define-syntax chibi-test:include

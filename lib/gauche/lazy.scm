@@ -202,7 +202,7 @@
         (when (eqv? ch #\newline)
           (set! eol #t))
         (values ch `((input-position . (,pos . ,tracker)))))))
-  (tree-map-put! (car tracker) 
+  (tree-map-put! (car tracker)
                  (+ (- start-item-count start-column) 1)
                  start-line)
   (generator->lseq gen))

@@ -567,7 +567,7 @@
       [((? =export-all?)) (write-ext-module form) (compile-module-exports #t)]
       [((? =export-if-defined?) . _) (write-ext-module form) seed]
       [((? =provide?) arg) (write-ext-module form) seed]
-      [((? =extend?) . _) 
+      [((? =extend?) . _)
        (write-ext-module form)
        (eval-in-current-tmodule form)
        seed]
@@ -651,7 +651,7 @@
       (error "include requires literal string, but got:" filename))
     (with-input-from-port
         ($ (with-module gauche.internal pass1/open-include-file)
-           filename 
+           filename
            (sys-dirname (port-name (current-input-port))))
       (^[]
         (port-case-fold-set! (current-input-port) case-fold?)

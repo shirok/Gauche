@@ -197,4 +197,3 @@
     `(METHOD ,(~ obj'generic'name)
              ,(map class-name (~ obj'specializers)))]
    [else (write-to-string obj)]))
-

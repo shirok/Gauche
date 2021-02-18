@@ -250,4 +250,3 @@
 
 (define (log-open path . args)
   (log-default-drain (apply make <log-drain> :path path args)))
-

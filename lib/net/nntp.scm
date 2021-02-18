@@ -60,5 +60,3 @@
       (when close-when-done
         (nntp-quit nntp ""))
       )))
-
-

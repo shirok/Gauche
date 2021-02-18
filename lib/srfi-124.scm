@@ -64,8 +64,3 @@
   (weak-vector-ref (%ephemeron-key-box e) 0 #f))
 
 (define (reference-barrier key) #t)
-
-
-
-
-

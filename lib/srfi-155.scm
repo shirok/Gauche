@@ -8,13 +8,13 @@
                             (delay-force scheme-delay-force)))
   (use srfi-154)
   (export delay delay-force force
-	  make-promise promise?
-	  forcing-extent dynamic-extent?))
+          make-promise promise?
+          forcing-extent dynamic-extent?))
 (select-module srfi-155)
 
 ;; Reference implementation:
 
-;; Copyright (C) Marc Nieper-Wißkirchen (2017).  All Rights Reserved. 
+;; Copyright (C) Marc Nieper-Wißkirchen (2017).  All Rights Reserved.
 
 ;; Permission is hereby granted, free of charge, to any person
 ;; obtaining a copy of this software and associated documentation
@@ -50,18 +50,16 @@
     ((delay expression)
      (let ((dynamic-extent (current-dynamic-extent)))
        (scheme-delay
-	(let ((forcing-extent (current-dynamic-extent)))
-	  (with-dynamic-extent dynamic-extent (lambda ()
-						(parameterize
-						    ((current-forcing-extent forcing-extent))
-						  expression)))))))))
+        (let ((forcing-extent (current-dynamic-extent)))
+          (with-dynamic-extent dynamic-extent (lambda ()
+                                                (parameterize
+                                                    ((current-forcing-extent forcing-extent))
+                                                  expression)))))))))
 
 (define-syntax delay-force
   (syntax-rules ()
     ((delay-force expression)
      (let ((dynamic-extent (current-dynamic-extent)))
        (scheme-delay-force
-	(with-dynamic-extent dynamic-extent (lambda ()
-					      expression)))))))
-
-
+        (with-dynamic-extent dynamic-extent (lambda ()
+                                              expression)))))))

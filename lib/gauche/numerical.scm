@@ -231,7 +231,7 @@
                        7.936507936507937e-4
                        -5.952380952380953e-4
                        8.417508417508417e-4
-                       -0.0019175269175269176                     
+                       -0.0019175269175269176
                        0.00641025641025641
                        -0.029550653594771242)]
                  [z (/ (*. x x))])
@@ -342,7 +342,7 @@
   (let ([mantissa (vector-ref vec 0)]
         [exponent (vector-ref vec 1)]
         [sign     (vector-ref vec 2)])
-    
+
     (unless (<= min-exponent exponent max-exponent)
       (errorf "Exponent is out of range (must be between ~a and ~a: ~s"
               min-exponent max-exponent exponent))
@@ -371,4 +371,3 @@
   (warn "nearly=? is deprecated; use approx=?")
   (< (abs (- x y))
      (/ (max (abs x) (abs y)) tolerance)))
-

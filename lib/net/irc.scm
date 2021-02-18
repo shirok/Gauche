@@ -32,5 +32,3 @@
     ;; authenticate
     ;; return the ftp connection
     irc))
-
-

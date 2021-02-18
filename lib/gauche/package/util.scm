@@ -112,7 +112,7 @@
 ;; PACKAGE-NAME should be a package name.  Extension-name is derived from it.
 ;; MODULE-NAME should be a symbol (e.g. foo.bar).  If not given, derived
 ;; from extension-name.
-(define (copy-templates srcdir dstdir package-name 
+(define (copy-templates srcdir dstdir package-name
                         :key (module-name #f)
                              (use-autoconf #f)
                              (scheme-only #f)
@@ -189,4 +189,3 @@
                  [ (and email (not (string-null? email))) ])
         (write-to-string #"~name <~|email|>"))
       ""))
-    

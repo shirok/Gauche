@@ -44,7 +44,7 @@
                              (errorf <io-invalid-position-error>
                                      :port portvar
                                      :position (~ e'position)
-                                     "Invalid position object: ~s" 
+                                     "Invalid position object: ~s"
                                      (~ e'position))]
                             [else (raise e)])
                     (setpos pos))))]))
@@ -163,8 +163,8 @@
 
 (define (make-file-error . objs)
   ;; As of 0.9.9, Gauche uses ad-hoc way to determine file-error--
-  ;; that is, a <system-error> with certain errnos is a file error. 
-  ;; It is impossible to translate arbitrary objs into meaningful 
+  ;; that is, a <system-error> with certain errnos is a file error.
+  ;; It is impossible to translate arbitrary objs into meaningful
   ;; <system-error>.  This is just a crude emulation.
   (condition
    (<system-error> (errno ENXIO) (message (write-to-string objs)))))
@@ -199,7 +199,7 @@
 (define-method write-object ((c codec) port)
   (format port "#<codec ~s>" (codec-name c)))
 
-;; CES 'none' is kind of special---you can treat octet stream as any 
+;; CES 'none' is kind of special---you can treat octet stream as any
 ;; single-byte encoding.  However, srfi-181 transcoder needs to assume
 ;; specific internal encoding, so we treat 'none' as Latin1.
 (define *native-codec-name*
@@ -283,7 +283,7 @@
   (define got-return #f)
   (define (putx ch-or-byte)
     (case ch-or-byte
-      [(#\return #x0d) 
+      [(#\return #x0d)
        (when got-return (write-char #\newline oport))
        (set! got-return #t)]
       [(#\newline #x0a) (write-char #\newline oport)

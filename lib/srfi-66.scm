@@ -19,6 +19,3 @@
 
 (define (u8vector-copy! src src-start target target-start n)
   (gauche:u8vector-copy! target target-start src src-start (+ n src-start)))
-
-
-

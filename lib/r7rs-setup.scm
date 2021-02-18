@@ -110,7 +110,7 @@
   (define r7rs-import.    ((with-module gauche.internal make-identifier)
                            'r7rs-import (find-module 'r7rs.import) '()))
   (define use.            (global-id 'use))
-  
+
   (define-macro (define-library name . decls)
     `(,define-module. ,(library-name->module-name name)
        (,extend.)

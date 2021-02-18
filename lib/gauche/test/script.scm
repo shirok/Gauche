@@ -42,10 +42,10 @@
 ;; own modules, but they usually don't have.  For this test, we load the
 ;; script file into an anonymous module then use test-module on it if it
 ;; doesn't have its own module.
-(define (test-script file :key (allow-undefined '()) 
+(define (test-script file :key (allow-undefined '())
                                (bypass-arity-check '())
                                (compile-only #f))
-  (define file-abs-path 
+  (define file-abs-path
     (if (relative-path? file)
       (simplify-path (build-path (current-directory) file))
       file))

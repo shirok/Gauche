@@ -41,4 +41,3 @@
              ,@all-symbols))
   (extend gauche gauche.keyword)
   (do-export))
-

@@ -13,4 +13,3 @@ $GOSH -ftest -uslib  \
     -E'with-module slib (define (implementation-vicinity) "./")' \
     -E"require 'new-catalog" \
     -Eexit
-

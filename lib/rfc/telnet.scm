@@ -156,5 +156,3 @@
 (define-method telnet-recv ((self <telnet>))
   (let* ((inb (read-block 4000 (input-of self))))
     inb))
-
-

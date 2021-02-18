@@ -128,7 +128,7 @@
               (define (bytedump bytes)
                 (with-output-to-string
                   (^[] (dolist [b bytes] (format #t " ~2,'0x" b)))))
-              (format #t "~4d:~24a          ~s\n" 
+              (format #t "~4d:~24a          ~s\n"
                       addr
                       (bytedump (if (pair? byte-slices)
                                   (car byte-slices)
@@ -211,7 +211,7 @@
     [((or 'jlel 'jngl) ('label t)) (op-jump t #f '(#x0f #x8e))]
     [((or 'jnle 'jg)   ('label t)) (op-jump t #t #x7f)]
     [((or 'jnlel 'jgl) ('label t)) (op-jump t #f '(#x0f #x8f))]
-    
+
     ;; moving data around
     [`(movb (reg8 ,src)(reg8 ,dst))(! (opc #x88) (reg src) (r/m-reg dst))]
     [`(movb (reg8 ,src)(mem . ,x)) (! (opc #x88) (reg src) (mem x))]
@@ -526,7 +526,7 @@
 (define (imm8 i)   (^[s a t] `(:immediate ,(int8 i) ,@s)))
 (define (imm32 i)  (^[s a t] `(:immediate ,(int32 i) ,@s)))
 (define (imm64 i)  (^[s a t] `(:immediate ,(int64 i) ,@s)))
-      
+
 
 (define *regs8*  '(%al %cl %dl %bl %ah %ch %dh %bh))
 (define *regs16* '(%ax %cx %dx %bx %sp %bp %si %di))
@@ -582,4 +582,3 @@
         (logand (ash n -56) #xff)))
 
 (define (int8/32 n) (if (<= -128 n 127) (int8 n) (int32 n)))
-

@@ -155,5 +155,3 @@
         (if (net-response-ok? resp)
           (list resp (net-get-data client))
           (list resp #f))))))
-
-

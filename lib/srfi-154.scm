@@ -60,6 +60,4 @@
     [(_ formals body)
      (let1 dynamic-extent (current-dynamic-extent)
        (^ formals
-	 (with-dynamic-extent dynamic-extent (^[] body))))]))
-
-
+         (with-dynamic-extent dynamic-extent (^[] body))))]))

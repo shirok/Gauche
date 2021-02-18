@@ -66,4 +66,3 @@
 (define-class <validator-mixin> ()
   ()
   :metaclass <validator-meta>)
-

@@ -125,22 +125,22 @@
 
 (define (sorted? seq less?)
     (cond
-	((null? seq)
-	    #t)
-	((vector? seq)
-	    (let ((n (vector-length seq)))
-		(if (<= n 1)
-		    #t
-		    (do ((i 1 (+ i 1)))
-			((or (= i n)
-			     (less? (vector-ref seq (- i 1))
-			     	    (vector-ref seq i)))
-			    (= i n)) )) ))
-	(else
-	    (let loop ((last (car seq)) (next (cdr seq)))
-		(or (null? next)
-		    (and (not (less? (car next) last))
-			 (loop (car next) (cdr next)) )) )) ))
+        ((null? seq)
+            #t)
+        ((vector? seq)
+            (let ((n (vector-length seq)))
+                (if (<= n 1)
+                    #t
+                    (do ((i 1 (+ i 1)))
+                        ((or (= i n)
+                             (less? (vector-ref seq (- i 1))
+                                    (vector-ref seq i)))
+                            (= i n)) )) ))
+        (else
+            (let loop ((last (car seq)) (next (cdr seq)))
+                (or (null? next)
+                    (and (not (less? (car next) last))
+                         (loop (car next) (cdr next)) )) )) ))
 
 
 ;;; (merge a b less?)
@@ -151,19 +151,19 @@
 
 (define (merge a b less?)
     (cond
-	((null? a) b)
-	((null? b) a)
-	(else (let loop ((x (car a)) (a (cdr a)) (y (car b)) (b (cdr b)))
-	    ;; The loop handles the merging of non-empty lists.  It has
-	    ;; been written this way to save testing and car/cdring.
-	    (if (less? y x)
-		(if (null? b)
-		    (cons y (cons x a))
-		    (cons y (loop x a (car b) (cdr b)) ))
-		;; x <= y
-		(if (null? a)
-		    (cons x (cons y b))
-		    (cons x (loop (car a) (cdr a) y b)) )) )) ))
+        ((null? a) b)
+        ((null? b) a)
+        (else (let loop ((x (car a)) (a (cdr a)) (y (car b)) (b (cdr b)))
+            ;; The loop handles the merging of non-empty lists.  It has
+            ;; been written this way to save testing and car/cdring.
+            (if (less? y x)
+                (if (null? b)
+                    (cons y (cons x a))
+                    (cons y (loop x a (car b) (cdr b)) ))
+                ;; x <= y
+                (if (null? a)
+                    (cons x (cons y b))
+                    (cons x (loop (car a) (cdr a) y b)) )) )) ))
 
 
 ;;; (merge! a b less?)
@@ -173,31 +173,31 @@
 
 (define (merge! a b less?)
     (define (loop r a b)
-	(if (less? (car b) (car a))
-	    (begin
-		(set-cdr! r b)
-		(if (null? (cdr b))
-		    (set-cdr! b a)
-		    (loop b a (cdr b)) ))
-	    ;; (car a) <= (car b)
-	    (begin
-		(set-cdr! r a)
-		(if (null? (cdr a))
-		    (set-cdr! a b)
-		    (loop a (cdr a) b)) )) )
+        (if (less? (car b) (car a))
+            (begin
+                (set-cdr! r b)
+                (if (null? (cdr b))
+                    (set-cdr! b a)
+                    (loop b a (cdr b)) ))
+            ;; (car a) <= (car b)
+            (begin
+                (set-cdr! r a)
+                (if (null? (cdr a))
+                    (set-cdr! a b)
+                    (loop a (cdr a) b)) )) )
     (cond
-	((null? a) b)
-	((null? b) a)
-	((less? (car b) (car a))
-	    (if (null? (cdr b))
-		(set-cdr! b a)
-		(loop b a (cdr b)))
-	    b)
-	(else ; (car a) <= (car b)
-	    (if (null? (cdr a))
-		(set-cdr! a b)
-		(loop a (cdr a) b))
-	    a)))
+        ((null? a) b)
+        ((null? b) a)
+        ((less? (car b) (car a))
+            (if (null? (cdr b))
+                (set-cdr! b a)
+                (loop b a (cdr b)))
+            b)
+        (else ; (car a) <= (car b)
+            (if (null? (cdr a))
+                (set-cdr! a b)
+                (loop a (cdr a) b))
+            a)))
 
 
 
@@ -209,39 +209,39 @@
 
 (define (sort! seq less?)
     (define (step n)
-	(cond
-	    ((> n 2)
-		(let* ((j (quotient n 2))
-		       (a (step j))
-		       (k (- n j))
-		       (b (step k)))
-		    (merge! a b less?)))
-	    ((= n 2)
-		(let ((x (car seq))
-		      (y (cadr seq))
-		      (p seq))
-		    (set! seq (cddr seq))
-		    (if (less? y x) (begin
-			(set-car! p y)
-			(set-car! (cdr p) x)))
-		    (set-cdr! (cdr p) '())
-		    p))
-	    ((= n 1)
-		(let ((p seq))
-		    (set! seq (cdr seq))
-		    (set-cdr! p '())
-		    p))
-	    (else
-		'()) ))
+        (cond
+            ((> n 2)
+                (let* ((j (quotient n 2))
+                       (a (step j))
+                       (k (- n j))
+                       (b (step k)))
+                    (merge! a b less?)))
+            ((= n 2)
+                (let ((x (car seq))
+                      (y (cadr seq))
+                      (p seq))
+                    (set! seq (cddr seq))
+                    (if (less? y x) (begin
+                        (set-car! p y)
+                        (set-car! (cdr p) x)))
+                    (set-cdr! (cdr p) '())
+                    p))
+            ((= n 1)
+                (let ((p seq))
+                    (set! seq (cdr seq))
+                    (set-cdr! p '())
+                    p))
+            (else
+                '()) ))
     (if (vector? seq)
-	(let ((n (vector-length seq)))
-	    (set! seq (vector->list seq))
-	    (do ((p (step n) (cdr p))
-		 (i 0 (+ i 1)))
-		((null? p) vector)
-		(vector-set! vector i (car p)) ))
-	;; otherwise, assume it is a list
-	(step (length seq)) ))
+        (let ((n (vector-length seq)))
+            (set! seq (vector->list seq))
+            (do ((p (step n) (cdr p))
+                 (i 0 (+ i 1)))
+                ((null? p) vector)
+                (vector-set! vector i (car p)) ))
+        ;; otherwise, assume it is a list
+        (step (length seq)) ))
 
 
 ;;; (sort sequence less?)
@@ -253,7 +253,7 @@
 
 (define (sort seq less?)
     (if (vector? seq)
-	(list->vector (sort! (vector->list seq) less?))
-	(sort! (append seq '()) less?)))
+        (list->vector (sort! (vector->list seq) less?))
+        (sort! (append seq '()) less?)))
 
 ;;; eof

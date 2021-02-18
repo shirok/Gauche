@@ -220,6 +220,6 @@
     (cond [(keyword? x) (write-to-string x)]
           [(symbol? x) (symbol->string x)]
           [(and (integer? x) (exact? x) (>= x 0)) (number->string x)]
-          [else (error "Bad name component in library name:" x)]))    
+          [else (error "Bad name component in library name:" x)]))
   ($ string->symbol $ (cut string-join <> ".")
      $ map ($ (cut regexp-replace-all #/\./ <> "..") $ stringify $) libname))

@@ -154,4 +154,3 @@
 
   (set! (ref port 'fill) fill)
   port)
-

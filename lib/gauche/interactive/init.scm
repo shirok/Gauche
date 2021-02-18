@@ -57,4 +57,3 @@
                  (scheme repl) (scheme time) (scheme write)
                  (only (gauche base) *1 *1+ *2 *2+ *3 *3+ *e *history))
         (find-module 'r7rs.user)))
-

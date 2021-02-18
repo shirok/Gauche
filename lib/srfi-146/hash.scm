@@ -4,33 +4,33 @@
 
 (define-module srfi-146.hash
   (export hashmap hashmap-unfold
-	  hashmap? hashmap-contains? hashmap-empty? hashmap-disjoint?
-	  hashmap-ref hashmap-ref/default
+          hashmap? hashmap-contains? hashmap-empty? hashmap-disjoint?
+          hashmap-ref hashmap-ref/default
           hashmap-key-comparator
 
-	  hashmap-set hashmap-set! 
-	  hashmap-adjoin hashmap-adjoin!
-	  hashmap-replace hashmap-replace!
-	  hashmap-delete hashmap-delete!
+          hashmap-set hashmap-set!
+          hashmap-adjoin hashmap-adjoin!
+          hashmap-replace hashmap-replace!
+          hashmap-delete hashmap-delete!
           hashmap-delete-all hashmap-delete-all!
-	  hashmap-intern hashmap-intern!
-	  hashmap-update hashmap-update!
+          hashmap-intern hashmap-intern!
+          hashmap-update hashmap-update!
           hashmap-update/default hashmap-update!/default
           hashmap-pop hashmap-pop!
-	  hashmap-search hashmap-search!
-	  hashmap-size hashmap-find hashmap-count
+          hashmap-search hashmap-search!
+          hashmap-size hashmap-find hashmap-count
           hashmap-any? hashmap-every?
-	  hashmap-keys hashmap-values hashmap-entries
-	  hashmap-map hashmap-map->list hashmap-for-each hashmap-fold
-	  hashmap-filter hashmap-filter! hashmap-remove hashmap-remove!
-	  hashmap-partition hashmap-partition!
-	  hashmap-copy hashmap->alist alist->hashmap alist->hashmap!
+          hashmap-keys hashmap-values hashmap-entries
+          hashmap-map hashmap-map->list hashmap-for-each hashmap-fold
+          hashmap-filter hashmap-filter! hashmap-remove hashmap-remove!
+          hashmap-partition hashmap-partition!
+          hashmap-copy hashmap->alist alist->hashmap alist->hashmap!
 
-	  hashmap=? hashmap<? hashmap>? hashmap<=? hashmap>=?
-	  hashmap-union hashmap-intersection hashmap-difference hashmap-xor
-	  hashmap-union! hashmap-intersection! hashmap-difference! hashmap-xor!
-	  make-hashmap-comparator
-	  hashmap-comparator
+          hashmap=? hashmap<? hashmap>? hashmap<=? hashmap>=?
+          hashmap-union hashmap-intersection hashmap-difference hashmap-xor
+          hashmap-union! hashmap-intersection! hashmap-difference! hashmap-xor!
+          make-hashmap-comparator
+          hashmap-comparator
 
           ;; builtin
           comparator?))
@@ -128,7 +128,7 @@
   (assume-type m <hashmap>)
   (hash-table-replace! m k v)
   m)
-   
+
 (define (hashmap-delete m . keys) (hashmap-delete-all m keys))
 (define (hashmap-delete! m . keys) (hashmap-delete-all! m keys))
 
@@ -212,7 +212,7 @@
           (hash-table-delete! m k)
           (values m k v))))))
 
-(define (hashmap-pop m 
+(define (hashmap-pop m
                      :optional
                      (failure (^[] (error "can't pop from an empty map"))))
   (assume-type m <hashmap>)
@@ -435,4 +435,3 @@
   (make-comparator hashmap? hash-equal? #f hash-hash))
 
 (define hashmap-comparator (make-hashmap-comparator default-comparator))
-

@@ -77,4 +77,3 @@
       (or (and bundle (hash-table-get bundle template-name #f))
           (let ((next (rdc name)))
             (and (pair? next) (loop next)))))))
-

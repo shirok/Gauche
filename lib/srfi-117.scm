@@ -138,4 +138,3 @@
 
 (define (list-queue-for-each proc q)
   (for-each proc (queue->list q)))
-

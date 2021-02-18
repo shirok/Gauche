@@ -241,4 +241,3 @@
 (define port-fold-right generator-fold-right)
 (define port-for-each generator-for-each)
 (define port-map generator-map)
-

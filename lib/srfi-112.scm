@@ -18,4 +18,3 @@
 (define (machine-name) (~ (sys-uname) 1))      ; NODENAME field
 (define (os-name) (~ (sys-uname) 0))           ; SYSNAME field
 (define (os-version) (~ (sys-uname) 2))        ; RELEASE field
-

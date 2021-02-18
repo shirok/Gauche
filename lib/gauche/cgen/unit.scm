@@ -317,7 +317,7 @@
 ;; Call thunk while binding current-output-port to a temp file,
 ;; then calls (finisher tmpfile file).
 (define (cgen-with-output-file file finisher thunk)
-  (call-with-temporary-file 
+  (call-with-temporary-file
    (^[port tmpfile]
      (with-output-to-port port thunk)
      (close-output-port port)

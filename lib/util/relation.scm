@@ -297,6 +297,3 @@
 (define-method relation-deletable? ((r <object-set-relation>)) #t)
 (define-method relation-delete! ((r <object-set-relation>) row)
   (update! (ref r 'rows) (cut delete! row <> equal?)))
-
-
-

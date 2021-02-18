@@ -41,4 +41,3 @@
 (define (string-ci-hash obj)
   (assume-type obj <string>)
   (default-hash (string-foldcase obj)))
-

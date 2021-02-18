@@ -82,7 +82,7 @@
 (define char-comparator
   (make-comparator/compare char? eqv? compare eqv-hash 'char-comparator))
 (define char-ci-comparator
-  ($ make-comparator/compare char? char-ci=? 
+  ($ make-comparator/compare char? char-ci=?
      (^[a b] (compare (char-foldcase a) (char-foldcase b)))
      eqv-hash 'char-ci-comparator))
 ;; string-comparator - in libomega.scm
@@ -279,7 +279,7 @@
         (comparator-hash-function comparator))))
 
 ;; This is not in srfi-114, but generally useful.
-;; Compare with (accessor obj). 
+;; Compare with (accessor obj).
 (define (make-key-comparator comparator test key)
   (let ([ts  (comparator-type-test-predicate comparator)]
         [eq  (comparator-equality-predicate comparator)]

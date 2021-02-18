@@ -41,5 +41,3 @@
         (cut read in)))
      :input input)
     (dbm-close dbm)))
-
-

@@ -13,6 +13,3 @@
 
 (define (stream-take n s) (stream-take-safe s n))
 (define (stream-drop n s) (stream-take-drop s n))
-          
-          
-          

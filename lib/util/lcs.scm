@@ -181,4 +181,3 @@
              a b opt-eq)
     (unless (null? last) (push! hunks (reverse! last))))
   (reverse! hunks))
-

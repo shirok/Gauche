@@ -323,4 +323,3 @@
   (make <dbi-query> :connection c))
 (define-method dbi-execute-query ((q <dbi-query>) (s <string>))
   (dbi-do (ref q 'connection) s '(:pass-through #t)))
-

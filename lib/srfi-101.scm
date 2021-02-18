@@ -41,7 +41,7 @@
           (rename ra-cons cons)
           (rename ra-car car)
           (rename ra-cdr cdr)
-          (rename ra-caar caar) 
+          (rename ra-caar caar)
           (rename ra-cadr cadr)
           (rename ra-cddr cddr)
           (rename ra-cdar cdar)
@@ -203,7 +203,7 @@
 (define (ra-length ra)
   (cond [(ra-null? ra) 0]
         [(ra-proper? ra) (skew-list-length (ra-spine ra))]
-        [else 
+        [else
          (error "Attempt to take length of improper random-access-list:" ra)]))
 
 (define (ra-length<=? ra k)

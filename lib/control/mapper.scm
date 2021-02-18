@@ -100,12 +100,3 @@
 
 (define (pmap proc coll :key (mapper (default-mapper)))
   (mapper proc coll))
-                                
-  
-  
-    
-
-
-
-
-

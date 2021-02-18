@@ -46,7 +46,7 @@
           fxbit-field fxbit-field-rotate fxbit-field-reverse
           fx+/carry fx-/carry fx*/carry))
 (select-module srfi-143)
-          
+
 ;; We don't do define-constant, for these may differ among platforms
 ;; and making them constant would interfere with cross-compilation
 (define fx-width (fixnum-width))
@@ -117,8 +117,3 @@
   (let1 v (+ (* i j) k)
     (receive (q r) (balanced/ v *modulo*)
       (values r q))))
-
-
-
-
-

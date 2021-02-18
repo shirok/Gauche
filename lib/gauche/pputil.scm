@@ -176,7 +176,7 @@
            [rs (map (^i (fn (uvector-ref vec i)))
                     (iota (min* s (rp-length c))))])
       (if (>=* s (rp-length c)) `(,@rs ,dots) rs)))
-  
+
   ;; map+ :: (Obj -> Layouter), List -> Layouter
   ;; map considering dotted list, print-length, and shared structure
   (define (map+ fn lis)
@@ -225,11 +225,11 @@
 ;;   The second argument is to recursively layout X.
 ;;   The case that cdr of the form is shared should be handled by the caller.
 (define (layout-shorthand form rec c)
-  (let* ([pfx (sprefix form 
+  (let* ([pfx (sprefix form
                        (assq-ref '((quote . "'")
                                    (quasiquote . "`")
                                    (unquote . ",")
-                                   (unquote-splicing . ",@")) 
+                                   (unquote-splicing . ",@"))
                                  (car form))
                        c)]
          [plen (string-length pfx)]

@@ -55,9 +55,9 @@
 
    ;; extras
    generator->stream stream-concatenate
-   
+
    stream-xcons stream-cons* make-stream stream-tabulate
-   stream-iota stream-format stream-lines 
+   stream-iota stream-format stream-lines
    string->stream stream->string
    number->stream stream->number symbol->stream stream->symbol
    iterator->stream
@@ -216,7 +216,7 @@
 ;; srfi-40, 41
 (define-stream (stream-filter p s)
   (cond [(stream-null? s) s]
-        [(p (stream-car s)) (stream-cons (stream-car s) 
+        [(p (stream-car s)) (stream-cons (stream-car s)
                                          (stream-filter p (stream-cdr s)))]
         [else (stream-filter p (stream-cdr s))]))
 
@@ -318,12 +318,12 @@
                  (if (<= start end) 1 -1)
                  (begin (assume real? step) step))]
          [cmp (if (negative? step) > <)])
-    (if (and (exact? start) 
+    (if (and (exact? start)
              (or (exact? end) (infinite? end))
              (exact? step))
       (let loop ((start start))
         (stream-delay
-         (if (cmp start end) 
+         (if (cmp start end)
            (stream-cons start (loop (+ start step)))
            stream-null)))
       (let loop ((k 0))
@@ -363,7 +363,7 @@
 (define-stream (stream-scan f seed s)
   (if (stream-null? s)
     (stream-cons seed stream-null)
-    (stream-cons seed 
+    (stream-cons seed
                  (stream-scan f (f seed (stream-car s)) (stream-cdr s)))))
 
 ;; srfi-41
@@ -398,7 +398,7 @@
             (if rest?
               (quasirename r
                 `[(stream-length>= ,s ,n)
-                  (apply (lambda ,(flatpat pat) ,expr) 
+                  (apply (lambda ,(flatpat pat) ,expr)
                          (stream->list+stream ,s ,n))])
               (quasirename r
                 `[(stream-length= ,s ,n)
@@ -419,7 +419,7 @@
                     args)
                   => (cut apply (lambda ,pat ,expr) <>)])))]
          [_ (error "invalid clause ~s in stream-match: ~s" clause f)]))
-          
+
      (match f
        [(_ stream clause ...)
         (when (null? clause)
@@ -912,4 +912,3 @@
 ;                   (char=? lastchar (stream-car stream))))
 ;        stream-null
 ;        (stream-cons (stream-car stream) (stream-chomp (stream-cdr stream) lastchar))))))
-

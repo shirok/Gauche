@@ -112,4 +112,3 @@
 
 (define (quoted-printable-decode-string string)
   (with-string-io string quoted-printable-decode))
-

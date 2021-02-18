@@ -40,17 +40,17 @@
           hash-table                        ; extended for compatibility
           hash-table-unfold                 ; extended for compatibility
           alist->hash-table                 ; extended for compatibility
-          
+
           hash-table?                   ; builtin
           hash-table-contains?          ; builtin
           hash-table-exists?            ; builtin
           hash-table-empty?             ; builtin
           hash-table=?                  ; builtin
           hash-table-mutable?           ; builtin
-          
+
           hash-table-ref                ; builtin
           hash-table-ref/default        ; builtin
-          
+
           hash-table-set!               ; builtin
           (rename hash-table-delete!-r7 hash-table-delete!) ; builtin
           (rename hash-table-intern!-r7 hash-table-intern!) ; builtin
@@ -58,14 +58,14 @@
           hash-table-update!/default                        ; builtin
           (rename hash-table-pop!-r7 hash-table-pop!)       ; builtin
           hash-table-clear!                                 ; builtin
-          
+
           hash-table-size               ; builtin
           hash-table-keys               ; builtin
           hash-table-values             ; builtin
           hash-table-entries            ; builtin
           (rename hash-table-find-r7 hash-table-find) ; builtin
           (rename hash-table-count-r7 hash-table-count) ; builtin
-          
+
           (rename hash-table-map-r7 hash-table-map) ; builtin
           (rename hash-table-for-each-r7 hash-table-for-each) ; builtin
           hash-table-walk               ; compatibility
@@ -73,17 +73,17 @@
           (rename hash-table-map->list-r7 hash-table-map->list) ; builtin
           hash-table-fold               ; extended for compatibility
           (rename hash-table-prune!-r7 hash-table-prune!) ; builtin
-          
+
           hash-table-copy               ; builtin
           hash-table-empty-copy         ; builtin
           hash-table->alist             ; builtin
-          
+
           hash-table-union!             ; builtin
           hash-table-merge!             ; compatibility
           hash-table-intersection!      ; builtin
           hash-table-difference!        ; builtin
           hash-table-xor!               ; builtin
-          
+
           hash                          ; compatibility
           string-hash                   ; compatibility
           string-ci-hash                ; compatibility
@@ -166,5 +166,3 @@
 (define (hash-table-hash-function ht)
   (assume-type ht <hash-table>)
   (comparator-hash-function (hash-table-comparator ht)))
-
-  

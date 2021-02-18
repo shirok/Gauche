@@ -196,4 +196,3 @@
    [gauche.os.windows #f]
    [else (and (<unhandled-signal-error> e)
               (eqv? (ref e 'signal) SIGPIPE))]))
-

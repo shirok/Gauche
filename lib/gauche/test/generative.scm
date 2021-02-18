@@ -171,7 +171,7 @@
         (thunk))
     (unless (cmp expected result)
       (throw-failure result))))
-                            
+
 (define (format-check-failure e)
   (let1 msg (format "Ensure failed on ~s: expects ~s, got ~s"
                     (~ e 'expr) (~ e 'expected) (~ e 'actual))
@@ -181,5 +181,3 @@
       :count ,(~ e 'count)
       :seed ,(~ e 'seed)
       :vars ,(~ e 'var-alist))))
-
-           

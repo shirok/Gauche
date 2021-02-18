@@ -149,7 +149,7 @@
              (begin (set! *user-entered-editor* ans) ans)))]
         [else (error "Editor argument must be either one of #f, error, \
                       message, or ask, but got" editor)])))
-  
+
 ;; internal
 ;; Determine whether we should reload the file if it's updated.
 (define (load-after? load-after name)
@@ -169,4 +169,3 @@
 ;; Invoke external editor; won't return until the editor exits.
 (define (invoke-editor editor filename lineno)
   (run-process `(,editor ,#"+~lineno" ,filename) :wait #t))
-

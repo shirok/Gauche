@@ -180,7 +180,7 @@
     (run "./configure")
     (run #"\"~make\" distclean")
     (with-output-to-file "DIST_EXCLUDE_X"
-      (^[] 
+      (^[]
         (print "DIST")
         (print "DIST_EXCLUDE")
         (print "DIST_EXCLUDE_X")

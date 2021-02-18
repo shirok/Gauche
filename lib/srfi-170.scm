@@ -124,14 +124,14 @@
 (define-constant open/append O_APPEND)
 (define-constant open/create O_CREAT)
 (define-constant open/exclusive O_EXCL)
-(define-constant open/nofollow   (global-variable-ref 
+(define-constant open/nofollow   (global-variable-ref
                                   (find-module 'gauche.fcntl)
                                   'O_NOFOLLOW
                                   0))
 (define-constant open/truncate   O_TRUNC)
 
 (define (open-file fname port-type flags
-                   :optional (permission-bits #o666) 
+                   :optional (permission-bits #o666)
                              (buffer-mode buffer-block))
   (define xflags
     (case port-type
@@ -273,14 +273,14 @@
 (define (set-file-mode name bits) (sys-chmod name bits))
 
 (define (directory-files dir :optional (dot? #f))
-  (directory-list dir 
+  (directory-list dir
                   :children? #t
                   :filter (if dot? #f #/^[^\.]/)))
 
 (define (make-directory-files-generator dir :optional (dot? #f))
   ;; can be more efficient
   (list->generator (directory-files dir dot?)))
-                  
+
 ;; Gauche don't have a direct interface to opendir etc.
 ;; This is just an emulation.
 (define-class <DIR> ()
@@ -318,7 +318,7 @@
    [else
     (error "file-space isn't supported on this platform yet.")]))
 
-(define temp-file-prefix 
+(define temp-file-prefix
   (make-parameter (build-path (temporary-directory)
                               (x->string (sys-getpid)))))
 
@@ -326,7 +326,7 @@
 
 (define-constant TEMP_RETRY_MAX 256)
 
-(define (call-with-temporary-filename maker 
+(define (call-with-temporary-filename maker
                                       :optional (prefix (temp-file-prefix)))
   (let loop ([i 0])
     (let1 f #"~|prefix|~(suffix-generator)"
@@ -357,8 +357,8 @@
 
 (define (pid) (sys-getpid))
 
-(define (nice :optional (delta 1)) 
-  (cond-expand 
+(define (nice :optional (delta 1))
+  (cond-expand
    [gauche.os.windows (error "nice is not supported on this platform")]
    [else (sys-nice delta)]))
 
@@ -431,7 +431,7 @@
 
 (define (posix-time) (current-time))
 
-(define (monotonic-time) 
+(define (monotonic-time)
   (receive (s ns) (sys-clock-gettime-monotonic)
     (make-time 'time-monotonic ns s)))
 

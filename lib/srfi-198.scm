@@ -56,7 +56,7 @@
   (data))
 
 (define (make-syscall-error errno message procedure-name syscall-name data)
-  (condition (<system-error> 
+  (condition (<system-error>
               (errno errno)
               (message message))
              (<syscall-error-mixin>
@@ -93,8 +93,8 @@
     '()))
 
 (define (errno-error errno procedure-name syscall-name . objs)
-  (raise (make-syscall-error errno 
+  (raise (make-syscall-error errno
                              (sys-strerror errno)
-                             procedure-name 
-                             syscall-name 
+                             procedure-name
+                             syscall-name
                              objs)))

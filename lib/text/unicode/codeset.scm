@@ -137,4 +137,4 @@
   (print #"   return Scm_MakeImmutableCharSet(charset_~|name|_small,")
   (print #"                                   charset_~|name|_large,")
   (print #"                                   ~(* 2 (tree-map-num-entries (~ cs'large-map))));")
-  (print  "}"))                                
+  (print  "}"))

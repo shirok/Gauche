@@ -84,6 +84,3 @@
      thunk
      (^[] (for-each (^p (set-signal-handler! (car p) (cdr p)))
                     ohandlers)))))
-
-
-
