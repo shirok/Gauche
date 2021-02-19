@@ -83,7 +83,7 @@
 ;        (lambda (expected got)
 ;          (and (lset= equal? (car expected) (car got))
 ;               (lset= equal? (cadr expected) (cadr got)))))
-         
+
 ; (define x (make-weak-hash-table 'equal? 'key 'gone))
 
 ; (test* "make-weak-hash-table (key-weak)" <weak-hash-table>
@@ -122,5 +122,3 @@
 ;              (weak-hash-table-values x)))
 
 (test-end)
-
-

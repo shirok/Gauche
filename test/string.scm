@@ -154,7 +154,7 @@
   (test-string-scan2 "abcde" "fghi" "abcdefghi" #\e 'after*)
   (test-string-scan2 "abcd" "fghi" "abcdefghi" #\e 'both)
 
-  ;; this tests boyer-moore 
+  ;; this tests boyer-moore
   (test-string-scan 216
                     "abracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabrabracadababrabrabr"
                     "abracadabra")
@@ -676,7 +676,7 @@
 (test-string-ports "(mid)"
                    (* *dstr-init-size* (+ *dstr-incr-factor* 1))
                    (- *dstr-init-size* 1) *dstr-init-size* 3)
-(test-string-ports "(mid+1)" 
+(test-string-ports "(mid+1)"
                    (+ (* *dstr-init-size* (+ *dstr-incr-factor* 1)) 1)
                    (- *dstr-init-size* 1) *dstr-init-size* 3)
 (test-string-ports "(large)" 10000

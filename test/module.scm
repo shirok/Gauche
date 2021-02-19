@@ -503,7 +503,7 @@
   (import (mpl-prefix-b :prefix X:))
   (import (mpl-prefix-b :prefix Y:))
   (import mpl-prefix-b))
-  
+
 
 (let ()
   (define (check mod . syms)
@@ -528,7 +528,7 @@
   (test* "mpl prefix simple dupe (parent prefix)"
          '((a 0) (b 1) (Y:a 0) (Y:b undef))
          (check 'mpl-prefix-5 'a 'b 'Y:a 'Y:b))
-  
+
   (test* "mpl prefix simple merge (different prefix)"
          '((a undef) (b undef)   (c undef)
            (X:a 0)   (X:b 1)     (X:c undef)
@@ -540,7 +540,7 @@
            (X:a 0)   (X:b 1)     (X:c undef)
            (Y:a 0)   (Y:b undef) (Y:c 2))
          (check 'mpl-prefix-7 'a 'b 'c 'X:a 'X:b 'X:c 'Y:a 'Y:b 'Y:c))
-  
+
   (test* "mpl prefix simple dupe (different prefix)"
          '((a   0)   (b 1)
            (X:a 0)   (X:b 1)
@@ -625,7 +625,7 @@
         (let ((m0 (make-module #f)))
           (eval '(define x 13) m0)
           (eval 'x m0))))
-              
+
 (test "anonymous module" (test-error)
       (lambda ()
         (let ((m0 (make-module #f))

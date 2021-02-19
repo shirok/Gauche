@@ -11,7 +11,7 @@
 
 (define *cats* '(Lu Ll Lt Lm Lo Mn Nd Nl No Po Sm Zs Cc Co))
 
-;; Returns a map 
+;; Returns a map
 (define (setup-char-sets)
   (let1 vec (vector-tabulate (length *cats*) (^_ (char-set)))
     (do-ec (: c 0 #x20000)
@@ -76,9 +76,3 @@
     (report-benchmark (run-benchmark charsets (setup-input-data)))
     (print)
     (report-charset-stats charsets)))
-
-
-                        
-                     
-
-

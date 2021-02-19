@@ -555,7 +555,7 @@
          (let ((pid (sys-fork)))
            (if (= pid 0)
              (begin (sys-pause) (sys-exit 0))
-             (begin 
+             (begin
                (sys-kill pid SIGKILL)
                (receive (rpid code) (sys-wait)
                  (and (= rpid pid)
@@ -566,8 +566,8 @@
          (let1 pid (sys-fork)
            (if (= pid 0)
              (begin (nap) (sys-exit 0))
-             (begin 
-               (sys-kill pid SIGSTOP) 
+             (begin
+               (sys-kill pid SIGSTOP)
                (receive (rpid code) (sys-waitpid pid :untraced #t)
                  (and (= rpid pid)
                       (sys-wait-stopped? code)
@@ -651,7 +651,7 @@
                  (let1 result (read in)
                    (sys-waitpid pid)
                    (eqv? (car result) (cadr result)))))))
-    (run-and-read-test "fork, exec and detached process (not detached)" 
+    (run-and-read-test "fork, exec and detached process (not detached)"
                        (sys-getpid) #f)
     (run-and-read-test "fork, exec and detached process (detached)"
                        1 #t))
@@ -676,7 +676,7 @@
   ;;              (let ((line (read-line in)))
   ;;                (sys-waitpid pid)
   ;;                line)))))
-  
+
   ] ; !gauche.os.windows
  [else])
 
@@ -935,10 +935,10 @@
          (not gauche.os.cygwin))
     (let ()
       (define z (^n (raise 'foo)))
-      
+
       (set-signal-handler! SIGCHLD #t)
       (set-signal-handler! SIGINT z)
-      
+
       (test* "sys-sigwait" SIGHUP
              (receive (in out) (sys-pipe)
                (let1 pid (sys-fork)
@@ -965,8 +965,7 @@
     ]
    [else]) ; (not (and gauche.sys.sigwait (not gauche.os.cygwin)))
 
-  ] 
+  ]
  [else]) ; gauche.os.windows
 
 (test-end)
-

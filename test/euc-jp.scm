@@ -164,7 +164,7 @@
 (test-section "incomplete strings")
 
 (test* "string-length" 6 (string-length #*"あいう"))
-(test* "string-complete->incomplete" #*"あいう" 
+(test* "string-complete->incomplete" #*"あいう"
        (string-complete->incomplete "あいう"))
 (test* "string-complete->incomplete" #*"あいう"
        (string-complete->incomplete #*"あいう"))

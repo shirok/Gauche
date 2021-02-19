@@ -27,7 +27,7 @@
                           (apply * factors)
                           `(composites in ,factors))))
                 samples))))
-                                    
+
 ;; we need more systematic approach to test this
 (define *prime-test-samples*
   '((#f . 736775510329)
@@ -80,4 +80,3 @@
            (map (^[ps] (totient (apply * ps))) p2s))))
 
 (test-end)
-

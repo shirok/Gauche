@@ -108,7 +108,7 @@
 (prim-test "apply^2" '(1 . 2) (lambda () (Apply Apply cons '((1 2)))))
 (prim-test "apply^2" '(3 . 4) (lambda () (Apply Apply cons 3 '((4)))))
 (prim-test "apply^2" '(5 . 6) (lambda () (Apply Apply (list cons 5 '(6)))))
-                                          
+
 
 (prim-test "apply" '(6 7 8) (lambda ()  (Apply Apply (list list 6 7 '(8)))))
 
@@ -414,7 +414,7 @@
 ;; Fix this after we have separate compile-error condition.
 (define (test-max-literal-args msg expr)
   (prim-test (string-append "max literal arguments for " msg)
-             'caught 
+             'caught
              (lambda ()
                (with-error-handler (lambda (e) 'caught)
                  (lambda () (eval expr (interaction-environment)))))))
@@ -574,4 +574,3 @@
 
 
 (test-end)
-

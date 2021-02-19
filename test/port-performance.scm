@@ -9,5 +9,3 @@
           (with-output-to-file "/dev/null"
             (lambda ()
               (generator-for-each write-byte read-byte))))))
-
-      

@@ -19,7 +19,7 @@
   `(test ,msg ',expect (lambda () (unident (%macroexpand ,form)))))
 
 ;;----------------------------------------------------------------------
-;; 
+;;
 
 (test-section "ER macro basics")
 
@@ -382,11 +382,11 @@
                        ((_ ((?a ?b ... ?c) ... ?d))
                         ((?a ...) ((?b ...) ...) (?c ...) ?d))))
 
-(test-macro "nest4"((a d f)  
+(test-macro "nest4"((a d f)
                     ((b) () (g h i))
                     (c e j)
                     (k l m))
-            (nest4 ((a b c) (d e) (f g h i j) (k l m)))) 
+            (nest4 ((a b c) (d e) (f g h i j) (k l m))))
 
 (define-syntax nest5 (syntax-rules () ; r7rs
                        ((_ (?a (?b ... ?c ?d) ... . ?e))
@@ -448,7 +448,7 @@
 
 ;; test that wrong usage of ellipsis is correctly identified
 (test "bad ellipsis 1" (test-error)
-      (lambda () 
+      (lambda ()
         (eval '(define-syntax badellipsis
                  (syntax-rules () [(t) (3 ...)]))
               (interaction-environment))))
@@ -548,7 +548,7 @@
                          ((_ x) `(a ,x))))
 (test "unwrap1" '(a 3) (lambda () (unwrap1 3))
       (lambda (x y) (and (eq? (car x) (car y)) (eq? (cadr x) (cadr y)))))
-(test "unwrap1" '(a 4) (lambda () (let ((a 4)) (unwrap1 a))) 
+(test "unwrap1" '(a 4) (lambda () (let ((a 4)) (unwrap1 a)))
       (lambda (x y) (and (eq? (car x) (car y)) (eq? (cadr x) (cadr y)))))
 
 ;; regression check for quasiquote hygienty handling code
@@ -653,7 +653,7 @@
 
 ;; Note: if you "unident" the expansion result of %letrec, you see a symbol
 ;; "newtemp" appears repeatedly in the let binding, seemingly expanding
-;; into invalid syntax.  Internally, however, those symbols are treated 
+;; into invalid syntax.  Internally, however, those symbols are treated
 ;; as identifiers with the correct identity, so the expanded code works
 ;; fine (as tested in the second test).
 (test-macro "%letrec"
@@ -813,7 +813,7 @@
                                ((_ ?x ?y ...) (a ?y ...))
                                ((_) 2))))
             (a 8 9 10)))))
-      
+
 (test "letrec-syntax (nest)"
       '(9 11)
       (lambda ()
@@ -1252,8 +1252,8 @@
   (syntax-rules ()
     ((_ key (alist ...))
      (letrec-syntax ((fooj (syntax-rules (key)
-			    ((_ (key . e) res (... ...)) '(key . e))
-			    ((_ (a . d) res (... ...)) (fooj res (... ...))))))
+                            ((_ (key . e) res (... ...)) '(key . e))
+                            ((_ (a . d) res (... ...)) (fooj res (... ...))))))
        (fooj alist ...)))))
 
 (test "recursive reference in macro-defined-macro" '(c . d)
@@ -1899,5 +1899,5 @@
                                             [(_ b) (+ b x)]))])])
           (define-syntax bar (foo 3))
           (bar 5))))
-      
+
 (test-end)

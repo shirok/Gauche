@@ -102,7 +102,7 @@
 (test* "inlining apply (later stage)" '(((CONSTI-PUSH 5))
                                         ((LREF2))
                                         ((NUMMUL2))
-                                        ((PUSH)) 
+                                        ((PUSH))
                                         ((LREF1))
                                         ((NUMMUL2))
                                         ((PUSH))
@@ -249,4 +249,3 @@
        (proc->insn/split (^[] (static-gf 123))))
 
 (test-end)
-

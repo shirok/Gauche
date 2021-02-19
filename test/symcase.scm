@@ -1,7 +1,7 @@
 ;;
 ;; Test reader/writer case (in)sensitivty
 ;; Must be called with -e "(define *case-fold* #t)" or
-;; -e "(define *case-fold* #f)" 
+;; -e "(define *case-fold* #f)"
 ;;
 
 (use gauche.test)

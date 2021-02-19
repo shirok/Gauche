@@ -5,7 +5,7 @@
 
 ;; As of 0.9.7, dispatcher is on for 'ref' and 'object-apply'.
 ;; It can be turned off by setting GAUCHE_DISABLE_GENERIC_DISPATCHER env var
-;; at the initialization.  Run this script with and without it 
+;; at the initialization.  Run this script with and without it
 
 (use gauche.sequence)
 (use gauche.time)
@@ -26,7 +26,7 @@
                        (iota 10000)
                        ))]
        ))))
-        
+
 
 (define (do-vector v)
   (dotimes [1000] (unroll vector-ref v)))
@@ -102,7 +102,3 @@ w/o shortcut
   specific: 0.436 real, 0.430 cpu (0.430 user + 0.000 sys)@2.33/s n=1
 
 |#
-  
-         
-  
-

@@ -186,7 +186,7 @@
              (let* ([orig (list-copy source)]
                     [res  (fn arg0 orig)])
                (list res orig))))
-       
+
     (cond [(list? to-delete)
            (non-destructive 'delete-keywords delete-keywords to-delete)
            (destructive     'delete-keywords! delete-keywords! to-delete)]

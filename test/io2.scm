@@ -417,7 +417,7 @@
   (define (write-to-string/ctx obj . args)
     ($ write-to-string obj
        (^x (write x (apply make-write-controls args)))))
-  
+
   (test* "print-length" '("(0 1 2 3 4)"
                           ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
                           ("(0 1 2 3 ...)" "#(0 1 2 3 ...)" "#u8(0 1 2 3 ...)")
@@ -440,7 +440,7 @@
          '("()" "#()" "#u8()")
          (map (^x (write-to-string/ctx x :length 0))
               '(() #() #u8())))
-  
+
   (test* "print-length (nested)"
          '(("(...)"
             "#(...)")
@@ -471,7 +471,7 @@
                                                    (make-write-controls
                                                     :level n)))))
               (iota 8))))
-         
+
 (let* ([data '(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)])
   (test* "print-level"
          '("(a (b (c (d (e) (f) g) h) i) #(j (k #(l #(m) (n) o) p) q) r)"
@@ -487,7 +487,7 @@
               '(6 5 4 3 2 1 0))))
 
 ;; another example from CLHS
-(let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4) 
+(let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4)
                        (2 1) (2 2) (2 3) (3 2) (3 3) (3 4))]
        [data '(if (member x y) (+ (car x) 3) '(foo . #(a b c d "Baz")))])
   (test* "print-level & print-length"
@@ -597,7 +597,7 @@
     (define (peek2 p) (peek-char p) (read2 p))
     (define (fetch s reader ces)
       (call-with-input-string (ces-convert s #f ces) reader))
-    
+
     (define (t ces)
       (test* #"peek-char - read-char (~ces)"
              (fetch "\u3042" read1 ces) (fetch "\u3042" peek1 ces))
@@ -684,7 +684,7 @@
     ))
 
 (test* "no newline" "(a\n a)"
-       (call-with-output-string 
+       (call-with-output-string
          (cut pprint '(a a) :width 3 :newline #f :port <>)))
 
 (test* "label (issue #484)" "#0=(a #1=(b #0# #1#))\n"

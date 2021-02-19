@@ -33,7 +33,7 @@
 ;; check to see the compiler does the right thing about expanding
 ;; (delay x) to (lazy (eager x)).
 (test* "delay compilation" 3
-       (force 
+       (force
         (let ([lazy list]
               [eager list])
           (delay (force 3)))))
@@ -340,7 +340,7 @@
          (4 (count . 4))
          (5 (count . 5)))
        (let* ([count 0]
-              [z (generator->lseq (^[] 
+              [z (generator->lseq (^[]
                                     (inc! count)
                                     (values count `((count . ,count)))))])
          (map cons
@@ -368,4 +368,3 @@
               (map (^i (pair-attributes (drop z i))) (iota 5)))))
 
 (test-end)
-

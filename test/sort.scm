@@ -174,7 +174,7 @@
   (define nexts (list '(3 2 0) '(3 1 1) '(2 0 1)))
   (test* "in-place list sort identity preservation"
          '((2 0 1) (3 2 0) (3 1 1))
-         (begin 
+         (begin
            (sort! nexts < car)
            nexts)))
 

@@ -83,7 +83,7 @@
   (define (lazy)
     (with-input-from-file f
       (cut count char-whitespace? (lseq read-char))))
-  
+
   (with-input-from-file f (cut generator-for-each identity read-char)) ;fill buffer
   (time-these/report
    '(cpu 5)

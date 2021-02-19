@@ -108,4 +108,3 @@
          (vector-fill!! '#(1 2 3) 0)))
 
 (test-end)
-

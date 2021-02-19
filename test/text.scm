@@ -89,7 +89,7 @@
 
   (test* "make-csv-header-parser (regexps)" '#(3 2 6 5)
          (any (make-csv-header-parser header-slots2) data))
-  
+
   (test* "make-csv-record-parser (strings)"
          '(("Land of Lisp" "1958" "551,435,453" "39994")
            ("United States of Formula Translators" "1957" "4,343,225,434"
@@ -111,7 +111,7 @@
                                              '((#/year/i #/^\d+$/)
                                                #/country/i #/popu/i #/gdp/i))
                      data))
-  
+
   (test* "csv-rows->tuples (allow-gap? #f)"
          '(("Land of Lisp" "1958" "551,435,453" "39994")
            ("United States of Formula Translators" "1957" "4,343,225,434"
@@ -180,7 +180,7 @@ fuga
              (namespace/name . " namespace/name")
              (:keyword . ":keyword")
              ("string" . "\"string\"")
-             ("weird \" characters \t\n\r\\" 
+             ("weird \" characters \t\n\r\\"
               . "\"weird \\\" characters \\t\\n\\r\\\\\"")
              (#\a . "\\a")
              (#\newline . "\\newline")
@@ -233,7 +233,7 @@ fuga
            edn-equal?)))
 
 ;; custom object
-(register-edn-object-handler! 'u8vector 
+(register-edn-object-handler! 'u8vector
                               (^[tag vec] (vector->u8vector vec)))
 (define-method edn-write ((x <u8vector>))
   (display "#u8vector")
@@ -247,11 +247,11 @@ fuga
 ;; invalid
 (let1 invalids '("foo/bar/baz" "/foo" "foo/")
   (dolist [d invalids]
-    (test* (format "parse (invalid) ~s" d) 
+    (test* (format "parse (invalid) ~s" d)
            (test-error <edn-parse-error> #/invalid token/)
            (parse-edn-string d))))
 (test* (format "valid symbol name") '(#f #f #f #f #t)
-       (map edn-valid-symbol-name? 
+       (map edn-valid-symbol-name?
             '("nil" "bar/nil" "true" "false" "nile")))
 
 ;;-------------------------------------------------------------------
@@ -309,7 +309,7 @@ fuga
           ((null? (car x)) (flatten-rec (cdr x) r))
           (else (flatten-rec (cdr x) (cons (tos (car x)) r)))))
   (define (flatten x) (string-concatenate-reverse (flatten-rec x '())))
-  
+
   (test* "html, head, body"
          "<html><head><title>foo</title></head><body>foo</body></html>"
          (flatten (html:html (html:head (html:title "foo"))
@@ -434,7 +434,7 @@ fuga
 (test* "skip-while" '(eof eof)
        (test-parseutil skip-while "yxxxd"
                        (^x (and (char? x)
-				(char-alphabetic? x)))))
+                                (char-alphabetic? x)))))
 
 (test* "next-token" '("" #\d)
        (test-parseutil next-token "xxxd" #[ax ] #[d] "next token"))
@@ -449,9 +449,9 @@ fuga
 (test* "next-token" '("aeio" #\tab)
        (test-parseutil next-token "   aeio\tnjj"
                        (^x (and (char? x)
-				(char-whitespace? x)))
+                                (char-whitespace? x)))
                        (^x (or (eof-object? x)
-			       (char-whitespace? x)))
+                               (char-whitespace? x)))
                        "next token"
                        ))
 
@@ -524,7 +524,7 @@ fuga
                                            - #\. "E" (number "-3")
                                            (number "1.2") (number ".3")
                                            )
-                                           
+
        (sql-tokenize "0 -12 +12 .123 123. 123.45 -.123 -123. -123.45
                       +.123 +123. +123.45 0E0 -1E3 -1.E3 -.1E3
                       -1.2E3 1E-3 1.E-3 .1E-3 -.E-3 1.2.3"))

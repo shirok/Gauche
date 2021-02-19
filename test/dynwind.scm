@@ -57,7 +57,7 @@
       (if (null? r)
         (begin (set! r s) (cc -1))
         (list r s)))))
-    
+
 (test "call/cc (inline)" '((1 2 3 4 5 6 7 8) (1 2 3 4 -1 6 7 8))
       callcc-test2)
 
@@ -277,7 +277,7 @@
                      (^[] (push! k 'h)))
                  (push! k 'i)))
           (reverse k))))
-            
+
 (test "dynamic-wind - error in after thunk"
       '(a b c d e f h)
       (^[] (let1 k '()
@@ -370,7 +370,7 @@
 
 (test "stack overflow (apply)" (/ (* 2000 2001) 2)
       (^[] (sum-rec-apply 2000)))
-      
+
 (test "stack overflow (apply)" (/ (* 3000 3001) 2)
       (^[] (sum-rec-apply 3000)))
 
@@ -512,7 +512,7 @@
         (^[] (a-normal '(lambda (x) (lambda (y) (x y))))))
   )
 
-;; Typed Printf via Delimited Continuations 
+;; Typed Printf via Delimited Continuations
 ;; http://www.cs.ox.ac.uk/ralf.hinze/WG2.8/27/slides/kenichi2.pdf
 (let ()
   (define (sprintf format)

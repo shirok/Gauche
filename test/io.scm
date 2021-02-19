@@ -344,7 +344,7 @@
              [y (open-input-string "cd")]
              [r '()]
              [restart #f])
-         (if (call/cc 
+         (if (call/cc
               (^[escape]
                 (with-input-from-port x
                   (^()
@@ -365,7 +365,7 @@
           (let ([x (open-output-string)]
                 [y (open-output-string)]
                 [restart #f])
-            (if (call/cc 
+            (if (call/cc
                  (^[escape]
                    (with x
                      (^()
@@ -907,7 +907,7 @@
        '(foo bar this is outside of comment "hence this is in a string")
        (read-from-string
         "(foo bar #| grok
- \"the following bar-and-sharp terminates the comment |# 
+ \"the following bar-and-sharp terminates the comment |#
    this is outside of comment
  \"hence this is in a string\")
  "))
@@ -916,7 +916,7 @@
              "#| this is a string, not a comment"
              |# and this is not a comment terminator but an escaped symbol|)
        (read-from-string
-        "(foo bar 
+        "(foo bar
  \"#| this is a string, not a comment\"
  |# and this is not a comment terminator but an escaped symbol|)"))
 
@@ -1050,4 +1050,3 @@
        (map uvector-immutable? (load-read-test-uvectors)))
 
 (test-end)
-

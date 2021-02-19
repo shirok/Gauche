@@ -293,7 +293,7 @@
         ($ for-each write
            '((use gauche.configure)
              (cf-init-gauche-extension)
-             (cf-check-headers '("stdio.h" "stdlib.h" 
+             (cf-check-headers '("stdio.h" "stdlib.h"
                                  "no-such-header-should-exist.h"))
              (cf-check-types '("a_t" "b_t" "struct c_t" "d_t")
                              :includes '("typedef int a_t;\n"
@@ -493,8 +493,8 @@
   (define generate-command
     (if in-place?
       `(../gosh -ftest
-                ,(build-path *top-srcdir* "src" "gauche-package.in") 
-                generate 
+                ,(build-path *top-srcdir* "src" "gauche-package.in")
+                generate
                 ,@(cond-list [scheme-only? "--scheme-only"])
                 --template-dir ,(build-path *top-srcdir* "ext"
                                             "package-templates")
@@ -507,7 +507,7 @@
       `(../../gosh -q -I../../../src -I../../../lib
                    ../run compile
                    --verbose test test.c testlib.stub)
-      `(,gauche-package compile --verbose test test.c testlib.stub)))    
+      `(,gauche-package compile --verbose test test.c testlib.stub)))
   (define test-command
     (if in-place?
       `(../../gosh -ftest -I. ./test.scm)
@@ -535,7 +535,7 @@
              (load #"~|top-srcdir|/src/gauche-package.in")))))
 
   (test-log "Running ~a" generate-command)
-  
+
   ($ run-process generate-command :wait #t :directory "test.o/")
 
   (for-each file-check
@@ -552,7 +552,7 @@
     (test* "gauche-package compile" #t
            (let* ([p ($ run-process
                         compile-command
-                        :redirects '((>& 2 1) (> 1 out)) 
+                        :redirects '((>& 2 1) (> 1 out))
                         :directory "test.o/Test")]
                   [o (port->string (process-output p 'out))])
              (process-wait p)
@@ -562,7 +562,7 @@
   (test* "running test" #t
          (let* ([p ($ run-process
                       test-command
-                      :redirects  '((>& 2 1) (> 1 out)) 
+                      :redirects  '((>& 2 1) (> 1 out))
                       :directory "test.o/Test")]
                 [o (port->string (process-output p 'out))])
            (process-wait p)
@@ -655,7 +655,7 @@
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
          (file->string-list "test.o/foo.sci"))
 
-  (test* "compile and dynload" 
+  (test* "compile and dynload"
          (list (include "test-precomp/literals.scm")
                'begin1
                'begin2
@@ -727,11 +727,11 @@
 
 (define (static-test-1)
   (test* "static link test" #t
-         (run-build-static `("-o" "staticmain" 
+         (run-build-static `("-o" "staticmain"
                              "-I" ,(build-path *top-srcdir* "test/test-static"))
-                           `(,(fix-path (build-path *top-srcdir* 
+                           `(,(fix-path (build-path *top-srcdir*
                                                     "test/test-static/main.scm"))
-                             "foo/bar.scm" 
+                             "foo/bar.scm"
                              "foo/bar-impl.scm"
                              "foo/baz.scm")))
   (test* "static link executable" "ARGS: (A b CdE)"
@@ -747,7 +747,7 @@
 
 (define (test-script-test-1)
   (with-output-to-file "test.o/script"
-    (^[] 
+    (^[]
       (write `(use gauche.uvector))
       (write `(print "bar"))
       (write `(define (bar) (foo) (foo)))

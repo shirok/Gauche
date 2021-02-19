@@ -81,9 +81,9 @@
     (t #\u03c3  #\u03a3  #\u03c3  #\u03a3  #\u03c3) ; sigma
     (t #\u03c2  #\u03a3  #\u03c2  #\u03a3  #\u03c3) ; final sigma
     )
-  
+
   (case (gauche-character-encoding)
-    [(none) 
+    [(none)
      (t #\u00b5  #\u00b5  #\u00b5  #\u00b5  #\u00b5) ; micro sign
      (t #\u00ff  #\u00ff  #\u00ff  #\u00ff  #\u00ff) ; y with diaeresis
      ]
@@ -189,7 +189,7 @@
       (t0 ch char-upper-case? upper?)
       (t0 ch char-lower-case? lower?)
       (t0 ch char-general-category cat))
-    
+
     ;; Test characters that are in JISX0213 but not in Unicode 6.0.
     (when (eq? (gauche-character-encoding) 'euc-jp)
       (t (integer->char #xa4f7) #t #f #f 'Lo)
@@ -340,4 +340,3 @@
        (equal? #[\P{L}\p{L}] char-set:full))
 
 (test-end)
-

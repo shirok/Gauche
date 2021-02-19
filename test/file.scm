@@ -44,7 +44,7 @@
 ;;
 ;; glob test.
 ;; Note: on Windows the file/directory name can't end with a period.
-;; 
+;;
 (let ()
   (md "tmp1.o")
   (md "tmp1.o/a")
@@ -294,7 +294,7 @@
               :output "test2.o"
               :reader reader)
              (list r (f2s "test2.o")))))
-  
+
   (with-output-to-file "test1.o" (cut display "abc\n(def\nghi)"))
   (unwind-protect
       (begin
@@ -318,7 +318,7 @@
                                    (format out "~3d: ~a\n" nc line))
                                  (+ nc 1))
                                1 :input "test1.o" :output "test2.o")
-             (call-with-input-file "test2.o" 
+             (call-with-input-file "test2.o"
                (^i (call-with-output-string (^o (copy-port i o))))))
          (sys-unlink "test1.o")
          (sys-unlink "test2.o")))

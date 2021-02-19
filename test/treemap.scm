@@ -144,7 +144,7 @@
   (define (i . args) (dolist (k args) (tree-map-put! tree k k)))
   (define (d . args) (dolist (k args) (tree-map-delete! tree k)))
   (define (c) (%tree-map-check-consistency tree))
-  
+
   ;; Insertion
   ;;  case 0. adding to an empty tree
   ;;    B:0
@@ -419,7 +419,7 @@
                     (^[k v _] (unless (eq? k s) (tree-map-delete! tm k)))
                     #f)
                  (sort (tree-map-keys tm))))
-              '(a b c)))  
+              '(a b c)))
   (test* "deletion during traversal 3" '(() () ())
          (map (^s
                (let1 tm (make-tm)
@@ -431,7 +431,7 @@
                (let1 tm (make-tm)
                  (tree-map-fold-right tm (^[k v _] (tree-map-delete! tm k)) #f)
                  (sort (tree-map-keys tm))))
-              '(a b c)))  
+              '(a b c)))
   )
 
 ;;
@@ -488,7 +488,7 @@
   )
 
 (let1 tree (make-tree-map = <)
-  (test* "tree-map-pop-min! and num-entries" 0 
+  (test* "tree-map-pop-min! and num-entries" 0
          (begin
            (tree-map-put! tree 0 0)
            (tree-map-pop-min! tree)
@@ -568,4 +568,3 @@
   )
 
 (test-end)
-

@@ -470,7 +470,7 @@
                                  (list x y)))
                            (iota (quotient len 2)))))
     )
-  
+
   (do-test (iota 15) default-comparator)
   (do-test (iota 253) default-comparator)
   (do-test (reverse (iota 33))
@@ -733,9 +733,9 @@
   (t-take 6 1)    ; 6 = [3 3]
   (t-take 6 2)
   ;; general case
-  (t-take 6 3)  
-  (t-take 6 4)  
-  (t-take 6 5)  
+  (t-take 6 3)
+  (t-take 6 4)
+  (t-take 6 5)
   (t-take 26 2)
   (t-take 26 3)
   (t-take 26 5)
@@ -743,7 +743,7 @@
   (t-take 26 15)
   )
 
-;; append 
+;; append
 (let ()
   (define (t-append i j)
     (let ([x (iota i)]
@@ -774,7 +774,7 @@
   )
 
 ;; sequence protocol
-(test* "skew-list size-of" 5 
+(test* "skew-list size-of" 5
        (size-of (list->skew-list '(a b c d e))))
 (test* "skew-list iterator" '(a b c d e f g h i j k l m n o p q)
        (coerce-to <list> (list->skew-list '(a b c d e f g h i j k l m n o p q))))

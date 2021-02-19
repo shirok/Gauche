@@ -143,4 +143,3 @@
            (sys-unlink "test.o"))))
 
 (test-end)
-

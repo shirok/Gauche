@@ -34,7 +34,7 @@
      ("symbol" a ab #f)
      ("symbol" a #:a #f)
      ("symbol" #0=#:a #0# #t)
-     
+
      ("number" 1 1 #t)
      ("number" 1 1.0 #t)
      ("number" -1 1 #f)
@@ -92,7 +92,7 @@
     `(() (a . b) #t #\a "a" 0 #(a) #u8(0) #s8(0) #u16(0) #s16(0)
       #u32(0) #s32(0) #u64(0) #s64(0) #f16(0) #f32(0) #f64(0)
       ,(make <other-type>)))
-  
+
   (test* "comparing different types"
          (compare-matrix (map precedence *data*))
          (compare-matrix *data*)))
@@ -301,5 +301,3 @@
   )
 
 (test-end)
-
-

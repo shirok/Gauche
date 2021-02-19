@@ -17,8 +17,8 @@
 (test* "cond-expand" 0
        (cond-expand [(and (library srfi-0) (library srfi-1)) 0] [else 1]))
 (test* "cond-expand" #t
-       (cond-expand [(and (library srfi-2) (library srfi-1)) 
-                     (import srfi-1) (procedure? xcons)] 
+       (cond-expand [(and (library srfi-2) (library srfi-1))
+                     (import srfi-1) (procedure? xcons)]
                     [else #f]))
 (test* "cond-expand" 0
        (cond-expand [(or hogehoge (library srfi-1)) 0] [else 1]))
@@ -58,7 +58,7 @@
 (test* "empty and-let*" #t (and-let* ()))
 (test* "empty body and-let* var" 1 (let ((x 1)) (and-let* (x))))
 (test* "empty body and-let* expr" 2 (let ((x 1)) (and-let* ([ (+ x x) ]))))
-(test* "empty body and-let* (var expr)" 2 
+(test* "empty body and-let* (var expr)" 2
        (let ((x 1)) (and-let* ([y (+ x x)]))))
 
 ;;-----------------------------------------------------------------------
@@ -232,7 +232,7 @@
                   (char-set-unfold null? car cdr
                                    '(#\a #\e #\i #\o #\u #\u #\u))))
 (test* "char-set-unfold!" #t
-       
+
        (char-set= (string->char-set "eiaou246801357999")
                   (char-set-unfold! null? car cdr '(#\a #\e #\i #\o #\u)
                                     (string->char-set "0123456789"))))
@@ -266,10 +266,10 @@
 (test* "list->char-set" #t
        (char-set= (string->char-set "xy") (list->char-set '(#\x #\y))))
 (test* "list->char-set" #f
-       
+
        (char-set= (string->char-set "axy") (list->char-set '(#\x #\y))))
 (test* "list->char-set" #t
-       
+
        (char-set= (string->char-set "xy12345")
                   (list->char-set '(#\x #\y) (string->char-set "12345"))))
 (test* "list->char-set" #f
@@ -889,14 +889,14 @@
 (test* "list-ec" '((1 0) (1 1) (3 0) (3 1) (3 2) (3 3))
        (list-ec (:range n 5) (not (even? n)) (:range k (+ n 1)) (list n k)))
 (test* "list-ec" '((4 0) (4 1) (4 2) (4 3) (4 4))
-       (list-ec (:range n 5) 
-                (and (even? n) (> n 2)) 
-                (:range k (+ n 1)) 
+       (list-ec (:range n 5)
+                (and (even? n) (> n 2))
+                (:range k (+ n 1))
                 (list n k)))
 (test* "list-ec" '((0 0) (2 0) (2 1) (2 2) (4 0) (4 1) (4 2) (4 3) (4 4))
-       (list-ec (:range n 5) 
-                (or (even? n) (> n 3)) 
-                (:range k (+ n 1)) 
+       (list-ec (:range n 5)
+                (or (even? n) (> n 3))
+                (:range k (+ n 1))
                 (list n k)))
 (test* "list-ec" 10
        (let ((x 0)) (list-ec (:range n 10) (begin (set! x (+ x 1))) n) x))
@@ -1090,10 +1090,10 @@
 
 (test* ":do" '(0 1 2 3) (list-ec (:do ((i 0)) (< i 4) ((+ i 1))) i))
 (test* ":do" '(10 9 8 7)
-       (list-ec 
+       (list-ec
         (:do (let ((x 'x)))
-             ((i 0)) 
-             (< i 4) 
+             ((i 0))
+             (< i 4)
              (let ((j (- 10 i))))
              #t
              ((+ i 1)))
@@ -1185,7 +1185,7 @@
              (do-ec (:range n 10) (begin (write n) (newline)))))
          (call-with-input-file "tmp1.o"
            (^[port] (list-ec (: x port read) x)))))
-             
+
 (sys-system "rm -f tmp1.o")
 (test* ": port" (list-ec (:range n 10) n)
        (begin
@@ -1193,7 +1193,7 @@
            (^[]
              (do-ec (:range n 10) (begin (write n) (newline)))))
          (call-with-input-file "tmp1.o"
-           (^[port] (list-ec (: x port) x)))))       
+           (^[port] (list-ec (: x port) x)))))
 
 (sys-system "rm -f tmp1.o")
 
@@ -1240,7 +1240,7 @@
 (test* ":list :" '(0 1 #\2 #\3 4)
        (list-ec (:list x '(2 "23" (4))) (: y x) y))
 (test* ":parallel :integers :do" '((0 10) (1 9) (2 8) (3 7) (4 6))
-       (list-ec (:parallel (:integers x) 
+       (list-ec (:parallel (:integers x)
                            (:do ((i 10)) (< x i) ((- i 1))))
                 (list x i)))
 
@@ -1270,11 +1270,11 @@
 
 (let ()
   (define (pythagoras n) ; a, b, c s.t. 1 <= a <= b <= c <= n, a^2 + b^2 = c^2
-    (list-ec 
+    (list-ec
      (:let sqr-n (* n n))
      (:range a 1 (+ n 1))
      (:let sqr-a (* a a))
-     (:range b a (+ n 1)) 
+     (:range b a (+ n 1))
      (:let sqr-c (+ sqr-a (* b b)))
      (if (<= sqr-c sqr-n))
      (:range c b (+ n 1))
@@ -1299,7 +1299,7 @@
 
 (let ()
   (define (pi-BBP m) ; approx. of pi within 16^-m (Bailey-Borwein-Plouffe)
-    (sum-ec 
+    (sum-ec
      (:range n 0 (+ m 1))
      (:let n8 (* 8 n))
      (* (- (/ 4 (+ n8 1))
@@ -1314,7 +1314,7 @@
 (let ()
   (define (read-line port) ; next line (incl. #\newline) of port
     (let ([line
-           (string-ec 
+           (string-ec
             (:until (:port c port read-char)
                     (char=? c #\newline) )
             c )])
@@ -1969,7 +1969,7 @@
               ((1 2 3) (1 2.2 2.9) -1)
               ((1 2.2 2.9) (1 2 3) 1)
               ))
-            
+
   (test-cmp "vector" (make-vector-comparator
                       (make-inexact-real-comparator 0.25 'round 'error))
             '((#(1 2 3) #(1 2 3) 0)
@@ -1983,7 +1983,7 @@
               (#(1 2 3) #(1 2.2 2.9) -1)
               (#(1 2.2 2.9) #(1 2 3) 1)
               ))
-            
+
   )
 
 (let ()
@@ -2332,7 +2332,7 @@
 
   (test* "ephemeron-broken? e0" #t (ephemeron-broken? e0))
   (test* "ephemeron-broken? e1" #f (ephemeron-broken? e1))
-  
+
   (gc)
   (gc)
 
@@ -2879,7 +2879,7 @@
 
 (define-module srfi-189-tests
   (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (use srfi-189) 
+  (use srfi-189)
   (use srfi-78)                         ; check
   (use scheme.base :only (raise-continuable error-object?))
   (include "include/srfi-189-tests"))

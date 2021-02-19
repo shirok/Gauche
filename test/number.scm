@@ -191,7 +191,7 @@
        (string->number "#x-123_456_789"))
 (test* "Gauche extended format" #f
        (string->number "123_456_789"))
-(test* "Gauche extended format not allowed in r7rs strict mode" 
+(test* "Gauche extended format not allowed in r7rs strict mode"
        (test-error <read-error> #/bad numeric format/)
        (read-from-string "#!r7rs #x1234_5678"))
 
@@ -338,7 +338,7 @@
 (test* "flonum reader (zero with big exponent)" '(#t #t)
        (list (= 0.0 (string->number "0e324"))
              (= 0.0 (string->number "0e325"))))
-       
+
 ;; We used to allow 1#1 to be read as a symbol.  As of 0.9.4, it is an error.
 (test* "padding" '(10.0 #t) (flonum-test "1#"))
 (test* "padding" '(10.0 #t) (flonum-test "1#."))
@@ -485,7 +485,7 @@
       '("268435456" "536870911" "536870912"
         "-268435456" "-536870911" "-536870912" "-536870913")
       (i-tester2 (exp2 28)))
-      
+
 (test* "around 2^31"
       '("2147483648" "4294967295" "4294967296"
         "-2147483648" "-4294967295" "-4294967296" "-4294967297")
@@ -633,7 +633,7 @@
   (exact-expt-tester 101 103)
   (exact-expt-tester 11/13 23)
   )
-             
+
 ;; expt-mod
 (define (test-expt-mod base mod)
   ;; NB: we haven't tested iota.
@@ -950,7 +950,7 @@
 (test* "eqv?" #t (eqv? 20 (inexact->exact 20.0)))
 (test* "eqv?" #f (eqv? 20 20.0))
 
-;; numeric comparison involving nan.  we should test both 
+;; numeric comparison involving nan.  we should test both
 ;; inlined case and applied case
 (define-macro (test-nan-cmp op)
   `(begin
@@ -993,7 +993,7 @@
 ;; Go through number comparison routines.
 ;; assumes a >= b, a > 0, b > 0
 ;; we use apply to prevent inlining.
-(define (numcmp-test msg eq a b) 
+(define (numcmp-test msg eq a b)
   (let ((pp (list a b))
         (pm (list a (- b)))
         (mp (list (- a) b))
@@ -1289,7 +1289,7 @@
        (list (Apply * '(1 11/13)) (Apply * '(11/13 1))))
 (test* "ratnum / 1" 11/13
        (Apply / '(11/13 1)))
- 
+
 ;;------------------------------------------------------------------
 (test-section "promotions in addition")
 
@@ -1541,7 +1541,7 @@
         (exact? (quotient x y))))
 
 ;; these uses BignumDivSI -> bignum_sdiv
-(test* "big[1]/fix->fix" (q-result 17353 #t) 
+(test* "big[1]/fix->fix" (q-result 17353 #t)
       (q-tester 727836879 41943))
 (test* "big[1]/fix->fix" (q-result 136582 #t)
       (q-tester 3735928559 27353))
@@ -2361,7 +2361,7 @@
 (use math.const)
 (let ()
   (define *epsilon* 1e-12)
-  
+
   ;;
   ;; normal quantile function (probit function)
   ;;
@@ -2371,14 +2371,14 @@
     (if (< p 0)
       (- 1 (probit>0 (- p)))
       (probit>0 p) ))
-  
+
   (define (probit p)
     (define (probit>0 p)
       (* (sqrt 2) (inverse-erf (- (* p 2) 1)))) ;; NG
     (if (< p 0)
       (- 1 (probit>0 (- p)))
       (probit>0 p) ))
-  
+
   ;;
   ;; inverse error function (erf-1)
   ;;
@@ -2394,7 +2394,7 @@
         (if (= i k) cks
             (loop (+ i 1) (cons (calc-next-ck (+ i 1) cks) cks)))))
     (define (calc-ck k) (car (calc-cks k)))
-    
+
     (define (inverse-erf>0 z)
       (let1 r (* pi z z 1/4) ; (pi*z^2)/4
         (let loop ((k 0) (cks '(1)) (sum 0) (a 1))
@@ -2405,7 +2405,7 @@
                     (cons (calc-next-ck (+ k 1) cks) cks)
                     (+ sum delta)
                     (* a r)))))))
-    
+
     (cond [(< z 0) (- (inverse-erf>0 (- z)))]
           [(= z 0) 0]
           [else (inverse-erf>0 z)]) )

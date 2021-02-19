@@ -26,7 +26,7 @@
     ((r) (set! *x* (read port)))
     ((w) (write '(xxx) port) (flush port))))
 
-  
+
 (define (set-y port flags)
   (case flags
     ((r) (set! *y* (read port)))

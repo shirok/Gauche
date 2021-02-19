@@ -72,4 +72,3 @@
       (receive (sec1 usec1) (sys-gettimeofday)
         (- (+ (* sec1 1000000) usec1)
            (+ (* sec0 1000000) usec0))))))
-

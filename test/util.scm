@@ -444,7 +444,7 @@
 (test* "lcs edit-list"
        '(((+ 0 a) (+ 1 b) (+ 2 c) (+ 3 d)))
        (lcs-edit-list '() '(a b c d)))
-      
+
 (test* "lcs edit-list"
        '(((+ 0 b)) ((- 1 b)))
        (lcs-edit-list '(a b) '(b a)))
@@ -727,7 +727,7 @@
 
   (test* "simple-relation (relation-fold)" 1264
          (relation-fold r + 0 'a 'b))
-           
+
   )
 
 (define-class <object-set-test> ()
@@ -779,7 +779,7 @@
                (setter (relation-column-setter r 'c)))
            (for-each (lambda (row) (setter row (+ (getter row) 300))) r)
            (map getter r)))
-           
+
   (test* "simple-relation (relation-fold)" 1644
          (relation-fold r + 0 'a 'c))
   )
@@ -837,7 +837,7 @@
            (stream-unfolds (^s (if (stream-null? s)
                                  (values s '() '())
                                  (if (odd? (stream-car s))
-                                   (values (stream-cdr s) 
+                                   (values (stream-cdr s)
                                            (list (stream-car s))
                                            #f)
                                    (values (stream-cdr s)

@@ -102,7 +102,7 @@
             "(?>abc)" "(?=a*b*c)" "(?!a*b*c)" "(?<=a[bc])" "(?<!a[bc])"
             "(a)(?(1)b)" "(a)(?(1)b|c)" "(a)(?(1)|c)"
             "(?(?=ab)cd|ef)" "(?(?!ab)cd|ef)"
-            "(?(?<=ab)cd|ef)" "(?(?<!ab)cd|ef)" 
+            "(?(?<=ab)cd|ef)" "(?(?<!ab)cd|ef)"
             ))
 
 ;;-------------------------------------------------------------------------
@@ -353,7 +353,7 @@
 
 (test-re #/a+@a+\.a+/ "aaaaaaaaaaa@aaaaaaaa@@a.aaaaa@aaaaa" '())
 (test-re #/a+@a+\.a+/ "aaaaaaaaaaa@aaaaaaaa@@a.aaaaa@aaaaa.a" '("aaaaa@aaaaa.a"))
- 
+
 ;; Repetition of empty string
 (test-re #/a(?:)*b/ "zabr" '("ab"))
 (test-re #/a(?:)?b/ "zabr" '("ab"))
@@ -809,7 +809,7 @@
                            "**\\k<match>**"))
 
 (test* "regexp-replace" "abfedhi"
-       (regexp-replace #/c(.*)g/ "abcdefghi" 
+       (regexp-replace #/c(.*)g/ "abcdefghi"
                        (lambda (m)
                          (list->string
                           (reverse
@@ -1102,22 +1102,22 @@
           (seq "ab" "cd"))
 
 (test-ast (1 #f
-	     (2 #f (seq #\a #\b #\c))
-	     (3 #f (seq #\d #\e #\f))
-	     (seq #\g #\h #\i))
+             (2 #f (seq #\a #\b #\c))
+             (3 #f (seq #\d #\e #\f))
+             (seq #\g #\h #\i))
           ($ ($ "abc") ($ "def") "ghi"))
 
 (test-ast (1 result (seq #\a #\b #\c)) (-> result "abc"))
 
 (test-ast (seq (seq (seq (seq #\a #\b #\c))
-		    (seq (seq #\d #\e #\f))
-		    (seq #\g #\h #\i)))
+                    (seq (seq #\d #\e #\f))
+                    (seq #\g #\h #\i)))
           (w/nocapture ($ ($ "abc") ($ "def") "ghi")))
 
 (test-ast (seq (seq #\a #\b)) (w/case "ab"))
 (test-cset `(seq (seq ,(string->char-set "Aa")
-		      ,(string->char-set "Bb")))
-	   (w/nocase "ab"))
+                      ,(string->char-set "Bb")))
+           (w/nocase "ab"))
 (test-ast (seq (seq (seq #\a #\b))) (w/nocase (w/case "ab")))
 (test-ast (seq (seq #[Aa] #[Bb]) (seq (seq #\c #\d)) (seq #[Ee] #[Ff]))
           (w/nocase "ab" (w/case "cd") "ef"))

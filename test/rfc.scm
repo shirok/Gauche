@@ -349,7 +349,7 @@
        (receive r (uri-parse "mailto:shiro@example.com") r))
 
 (let ([base0 "http://a/b/c/d;p?q"])
-  (define (t base rel expect) 
+  (define (t base rel expect)
     (test* (format "merging ~s onto ~s" rel base)
            expect (uri-merge base rel)))
   (define t0 (pa$ t base0))
@@ -737,7 +737,7 @@
   (define (tester msg thunk)
     (test* #"http-post (multipart/form-data) ~msg" expected
            (receive (code headers body) (thunk)
-             
+
              (and-let* ([ (equal? code "200") ]
                         [ (equal? headers '(("content-type" "text/plain"))) ]
                         [r (read-from-string body)]

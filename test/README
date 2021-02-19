@@ -5,5 +5,3 @@ The tests listed in TESTS2 are run by "make test2" in the src directory.
 
 TESTS2 contains tests that depend on extension modules, so it should
 be run after 'make test' in the ext/ directory.
-
-

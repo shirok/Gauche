@@ -469,8 +469,8 @@
 ;; Another tricky interference between modules and implicit setter.
 ;; The :accessor slot option may create the setter generic function
 ;; with the weird name |setter of <getter-name>|.  The name isn't supposed
-;; to be visible from the user ever.  However, until 0.9.6, when the 
-;; MB.base below does not export the setter name, the derived class 
+;; to be visible from the user ever.  However, until 0.9.6, when the
+;; MB.base below does not export the setter name, the derived class
 ;; couldn't find the setter gf and created a separate setter gf, making it
 ;; incompatible with base class and derived class.
 (define-module MB.base
@@ -1456,7 +1456,7 @@
   ;; This triggers redefinition of <foo> AND <foobar>.
   (eval '(define-class <foo> () ()) (current-module))
 
-  ;; Make sure reference to the old <foobar> isn't 
+  ;; Make sure reference to the old <foobar> isn't
   (test* "multiple inheriance redefinition" '(#t #f)
          (list (boolean (memq <foobar> (~ <bar>'direct-subclasses)))
                (boolean (memq <foobar>-save (~ <bar>'direct-subclasses)))))
@@ -1653,5 +1653,5 @@
 (import (object-hygiene-2 :prefix oh2:))
 (test* "hygienic keyword match" oh2:<foo-meta>
        (class-of oh2:<foo>))
-  
+
 (test-end)

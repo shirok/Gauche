@@ -164,7 +164,7 @@
 (test-section "incomplete strings")
 
 (test* "string-length" 6 (string-length #*"‚ ‚¢‚¤"))
-(test* "string-complete->incomplete" #*"‚ ‚¢‚¤" 
+(test* "string-complete->incomplete" #*"‚ ‚¢‚¤"
        (string-complete->incomplete "‚ ‚¢‚¤"))
 (test* "string-complete->incomplete" #*"‚ ‚¢‚¤"
        (string-complete->incomplete #*"‚ ‚¢‚¤"))

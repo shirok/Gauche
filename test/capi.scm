@@ -10,7 +10,7 @@
 
 (let* ([obj (cons 'a 'a)] [obj2 (cons 'b 'b)])
 
-  ;; See KEEP_IDENTITY 
+  ;; See KEEP_IDENTITY
   (test* "identity preservation" '(#f #t #f)
          (list (eq? (make-fptr-simple obj) (make-fptr-simple obj))
                (eq? (make-fptr-unique obj) (make-fptr-unique obj))
@@ -60,7 +60,3 @@
                        "XYZ"))
 
 (test-end)
-
-
-
-

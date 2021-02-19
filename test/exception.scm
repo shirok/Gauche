@@ -1,4 +1,4 @@
-;; test exception handling system 
+;; test exception handling system
 ;; this must come after primsyn, error, macro and object tests.
 
 (use gauche.test)
@@ -76,7 +76,7 @@
           (condition-ref e 'message)
           (condition-ref e 'errno)
           (condition-ref e 'port))))
-          
+
 (test* "make-compound-condition"
        `(#t #t #t "message" 12 ,(current-input-port))
        (let ((e (make-compound-condition
@@ -113,7 +113,7 @@
           (list (condition-ref i 'message) (condition-ref i 'port))
           (list (condition-ref s 'message) (condition-ref s 'errno)))
          ))
-       
+
 ;;--------------------------------------------------------------------
 (test-section "srfi-35 style condition definitions")
 
@@ -204,7 +204,7 @@
                ((symbol? x) (cons 'symbol x))
                ((is-a? x <error>) 'caught-error))
          (raise 'a)))
-       
+
 (test* "guard" 'caught-error
        (guard (x
                ((symbol? x) (cons 'symbol x))

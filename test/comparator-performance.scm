@@ -58,22 +58,3 @@
        (custom1/3 . ,(ternary (make-comparator #t eqv? < #f) 0 1 2))
        (custom2/3 . ,(ternary (make-comparator integer? eqv? < #f) 0 1 2))))
   )
-
-
-   
-
-
-
-
-
-
-
-
-
-
-
-    
-
-  
-
-

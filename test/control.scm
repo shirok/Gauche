@@ -28,7 +28,7 @@
     (test* (format "job-touch! ~a" (car when)) #t
            (let1 time (job-touch! j (car when))
              (time=? time ((cadr when) j)))))
-    
+
   (set! j (make-job (^[] (set! z #t) 'ok)))
   (test* "job-run! precondition" '(#f #f) (list (job-status j) z))
   (test* "job-run! postcondition" '(done ok #t)
@@ -129,9 +129,9 @@
            (begin (add-job! pool work)
                   (wait-all pool 0.1 #e1e7)))
 
-    ;; fill the queue.  
+    ;; fill the queue.
     (add-job! pool work #t)
-    
+
     (test* "shutdown - raising <thread-pool-shutting-down>"
            (test-error <thread-pool-shut-down>)
            ;; subtle arrangement: The timing of thread execution isn't
@@ -226,5 +226,3 @@
 
 
 (test-end)
-
-

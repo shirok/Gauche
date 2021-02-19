@@ -10,7 +10,7 @@
 
 (test* "don't allow forward reference"
        (test-error <error> #/uninitialized variable: list/)
-       (eval '(begin 
+       (eval '(begin
                 (define orig-list list)
                 (define (list x) (cons 'x (orig-list x)))
                 (list 1))

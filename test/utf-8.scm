@@ -170,7 +170,7 @@
        [cycle2 (make-cycle #\α 25)]
        [cycle3 (make-cycle #\あ 85)])
   (define (make-str max-size)
-    (let loop ([size 0] [r '()] 
+    (let loop ([size 0] [r '()]
                [srcs (circular-list cycle1 cycle2 cycle3)]
                [counts (circular-list 1 2 3)])
       (let ([next-char (caar srcs)]
@@ -214,7 +214,7 @@
 (test-section "incomplete strings")
 
 (test "string-length" 9 (lambda () (string-length #*"あいう")))
-(test "string-complete->incomplete" #*"あいう" 
+(test "string-complete->incomplete" #*"あいう"
       (lambda () (string-complete->incomplete "あいう")))
 (test "string-complete->incomplete" #*"あいう"
       (lambda () (string-complete->incomplete #*"あいう")))

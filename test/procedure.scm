@@ -507,7 +507,7 @@
             arg&exp))
 
 (case-lambda-test "[0..]"
-                  (case-lambda 
+                  (case-lambda
                     (() 0)
                     ((x) x)
                     ((x y) (+ x y))

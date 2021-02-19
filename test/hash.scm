@@ -459,7 +459,7 @@
 
 ;; https://github.com/shirok/Gauche/issues/400
 
-(test* "hash-table-copy & rehash" #t 
+(test* "hash-table-copy & rehash" #t
   (let1 h (fold (^[n h] (rlet1 h (hash-table-copy h)
                           (hash-table-put! h n 1) h))
                 (make-hash-table 'eqv?)
@@ -561,5 +561,5 @@
          (hash-table=? (make-comparator number? (^[a b] (= (abs a) (abs b)))
                                         #f #f)
                        c d)))
-              
+
 (test-end)

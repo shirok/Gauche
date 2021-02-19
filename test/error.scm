@@ -210,7 +210,7 @@
         (let ((x '()))
           (with-error-handler
            (lambda (e) (push! x 'e))
-           (lambda () 
+           (lambda ()
              (dynamic-wind
               (lambda () (push! x 'a))
               (lambda ()
