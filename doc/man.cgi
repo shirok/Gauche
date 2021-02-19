@@ -20,7 +20,7 @@
 (define (multi-pick-from-file rx file)
   (call-with-input-file file
     (^p (filter-map (^l (and-let1 m (rx l) (m 1))) (port->string-lseq p)))))
-  
+
 (define (pick-initial initial file)
   (pick-from-file
    (string->regexp #`"<A class=\"(?:.*?)\" HREF=\"(.*?)\"><b>,(regexp-quote initial)</b></A>" :case-fold #t)
@@ -71,7 +71,7 @@
                        (and (equal? name sectitle)
                             (m 1)))))
                (port->string-lseq p))))))
-             
+
 (define (main args)
   (cgi-main
    (^[params]

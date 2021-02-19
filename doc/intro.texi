@@ -78,8 +78,8 @@ recent version on the web:
 @c COMMON
 
 @menu
-* Overview of Gauche::          
-* Notations::                   
+* Overview of Gauche::
+* Notations::
 @end menu
 
 @node Overview of Gauche, Notations, Introduction, Introduction
@@ -268,8 +268,8 @@ Gaucheは単なるScheme実装というだけでなく、言語レベルでい�
 @c NODE 表記について
 
 @menu
-* Entry format::                
-* Names and namespaces::        
+* Entry format::
+* Names and namespaces::
 @end menu
 
 @node Entry format, Names and namespaces, Notations, Notations
@@ -350,7 +350,7 @@ The following categories will appear in this manual:
 @item Parameter
 @c EN
 @tab A parameter, which is a procedure that follows a certain
-protocol and used to manipulate the dynamic environment.  
+protocol and used to manipulate the dynamic environment.
 @xref{Parameters}, for the details.
 @c JP
 @tab パラメータ。特定のプロトコルに従う手続きで、動的環境の操作に使われるもの。

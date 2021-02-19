@@ -9,7 +9,7 @@ a module `my-module`):
 {
     ...
     static ScmObj x_proc = SCM_UNDEFINED;
-    SCM_BIND_PROC(x_proc, "my-procedure", 
+    SCM_BIND_PROC(x_proc, "my-procedure",
                   Scm_FindModule(SCM_SYMBOL(SCM_INTERN("my-module")), 0));
     ...
 

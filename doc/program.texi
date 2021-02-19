@@ -119,7 +119,7 @@ Prints the @code{gosh} version and exits.
 
 @deftp {Command Option} -v version
 @c EN
-If @var{version} is not the running @code{gosh}'s version, execute the 
+If @var{version} is not the running @code{gosh}'s version, execute the
 specified version of @code{gosh} instead if it is installed.
 This is useful when you want to invoke specific version of Gauche.
 Note that @var{version} must be 0.9.6 or later.
@@ -899,7 +899,7 @@ the result of evaluation is printed.
 @example
 gosh> @i{(+ 1 2)}
 3
-gosh> 
+gosh>
 @end example
 
 @c EN
@@ -932,7 +932,7 @@ Scheme式が複数の値を返した場合
 gosh> @i{(min&max 1 -1 8 3)}
 -1
 8
-gosh> 
+gosh>
 @end example
 
 @c EN
@@ -974,7 +974,7 @@ gosh> @i{(*history)}
 *1: (-1 8)
 *2: -1
 *3: -1
-gosh> 
+gosh>
 @end example
 
 @c EN
@@ -1051,7 +1051,7 @@ just type @code{,help} and return.
 gosh> ,help
 You're in REPL (read-eval-print-loop) of Gauche shell.
 Type a Scheme expression to evaluate.
-A word preceded with comma has special meaning.  Type ,help <cmd> 
+A word preceded with comma has special meaning.  Type ,help <cmd>
 to see the detailed help for <cmd>.
 Commands can be abbreviated as far as it is not ambiguous.
 
@@ -1952,7 +1952,7 @@ Gaucheのリーダには、中間の結果を出力するために、
 
 @c EN
 The syntax @code{#?=@var{expr}} shows @var{expr} itself before
-evaluating it, and prints its result(s) after evaluation.  
+evaluating it, and prints its result(s) after evaluation.
 @c JP
 構文@code{#?=@var{expr}}は、@var{expr}を評価する前にまずその式自体を
 表示し、評価後にその結果(複数の場合もあります)を表示します。
@@ -2227,7 +2227,7 @@ Or even conditionally "use" the modules:
 The traditional technique of testing a toplevel binding
 (using @code{global-variable-bound?}, @pxref{Module introspection})
 doesn't work well in this case, since
-the @code{use} form takes effect at compile time.  
+the @code{use} form takes effect at compile time.
 It is strongly recommended to use @code{cond-expand} whenever possible.
 @c JP
 トップレベルの束縛をチェックするような旧いテクニック
@@ -3181,7 +3181,7 @@ source tree for the details.
 The generated binary still depends on external dynamically linked
 libraries, such as libpthread.  The exact dependency may differ
 how Gauche is configured, and can be checked
-by running system-provided tools, 
+by running system-provided tools,
 such as @code{ldd} on most Unix systems and MinGW or @code{otool -L} on OSX,
 on the generated standalone binaries.
 You may want to ensure the users have required libraries.
@@ -3223,8 +3223,8 @@ Gaucheがgdbmを使うようにコンフィグされていた場合、実行可�
 If you build Gauche with mbedTLS support (if you have libmbedtls on
 your machine, Gauche include its support by default), the resulting standalone
 binary also depends on libmbedtls DSO files.  If you're not sure mbedTLS
-DSO files are available on target machines, you can exclude 
-@code{rfc.tls.mbed} module by giving 
+DSO files are available on target machines, you can exclude
+@code{rfc.tls.mbed} module by giving
 @code{-D GAUCHE_STATIC_EXCLUDE_MBED} flag to @code{build-standalone}.
 @c JP
 もしGaucheがmbedTLSサポートつきでビルドされていた場合
@@ -3332,7 +3332,7 @@ For example, suppose you have this structure:
 
 @example
 project/src/
-    +----- main.scm 
+    +----- main.scm
     |          (use myscript.util)
     +----- myscript/util.scm
                (define-module myscript.util ...)
@@ -3368,7 +3368,7 @@ Another example; you have a separate library directory:
 
 @example
 project/
-    +----- src/main.scm 
+    +----- src/main.scm
     |          (use myscript.util)
     +----- lib/myscript/util.scm
                (define-module myscript.util ...)

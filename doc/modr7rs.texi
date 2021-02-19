@@ -2693,7 +2693,7 @@ rest of return values are passed to the next call of @var{f}.
 
 @c EN
 Note: This protocol is different from the list @code{unfold}
-and most of other @code{*-unfold} constructors (@pxref{R7RS lists}).  
+and most of other @code{*-unfold} constructors (@pxref{R7RS lists}).
 For fixed-length strcuctures like vectors,
 it makes more sense to know the final length beforehand, rather than
 checking the termination condition for each iteration.
@@ -2951,7 +2951,7 @@ first argument.
 
 (vector-fold-right (^[s x y] (cons (list x y) s)) '()
                    '#(a b c) '#(1 2 3 4))
-  @result{} ((a 1) (b 2) (c 3))                   
+  @result{} ((a 1) (b 2) (c 3))
 @end example
 @end defun
 
@@ -5000,8 +5000,8 @@ The following procedures are the same as Gauche's built-in.
 以下の手続きはGaucheの組み込みと同じです。
 @c COMMON
 @example
-hash-table?         hash-table-contains? hash-table-exists?  
-hash-table-empty?   hash-table=?         hash-table-mutable? 
+hash-table?         hash-table-contains? hash-table-exists?
+hash-table-empty?   hash-table=?         hash-table-mutable?
 hash-table-ref      hash-table-ref/default
 hash-table-set!     hash-table-update!/default
 hash-table-clear!   hash-table-size   hash-table-keys
@@ -8485,7 +8485,7 @@ provided by @var{key} @var{value} @dots{}.
 @c COMMON
 
 @c EN
-The @var{comparator} argument must be a comparator, 
+The @var{comparator} argument must be a comparator,
 with comparison/ordering procedure
 (@pxref{Basic comparators}).
 @c JP

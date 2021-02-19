@@ -708,7 +708,7 @@ chains @var{obj} to ``to-be-finalized'' list.  So when the finalizer
 is called, @var{obj} no longer has a finalizer.
 
 Last but not least, there's no guarantee that the finalizer is called
-promptly after @var{obj} lost all live references, 
+promptly after @var{obj} lost all live references,
 or whether it is called at all.  There might be an indefinite delay
 between the point when @var{obj} becomes a garbage and the finalizer is run.
 You should think finalizers as a safety-net, rather than a guaranteed clean-up
@@ -958,7 +958,7 @@ See @var{Scm_GetIntegerClamp} below for a concrete example.
 Returns @code{TRUE} if @var{obj} is a Scheme exact integer; that is,
 @var{obj} is either a fixnum or a bignum.
 (The name is somewhat misleading.  This is @emph{not} Scheme's @code{integer?}.
-To check whether @var{obj} is an integer, regardless of exact or 
+To check whether @var{obj} is an integer, regardless of exact or
 inexact, use @code{Scm_IntegerP} below).
 @end deftypefn
 
@@ -1116,7 +1116,7 @@ Returns the mantissa as a Scheme exact integer, and stores the exponent
 and the sign (either -1 or 1) in the location pointed by
 @var{exp} and @var{sign}.
 
-It returns Scheme integer since mantissa may not fit in @code{long} 
+It returns Scheme integer since mantissa may not fit in @code{long}
 on 32bit platforms, and this was created before @code{int64_t} became
 available universally.  On 64bit platforms, returned number is always
 a fixnum so no allocation occurs.
@@ -1347,7 +1347,7 @@ mostly small and you need speed, these macros will be handy.
 @deftypefn {Macro} int SCM_INTP (ScmObj @var{obj})
 Returns @code{TRUE} iff @var{obj} is a fixnum.
 
-See @code{SCM_INTEGERP} (@pxref{Number predicates}), 
+See @code{SCM_INTEGERP} (@pxref{Number predicates}),
 to see if @var{obj} is an exact integer (either a fixnum or a bignum).
 @end deftypefn
 
@@ -1866,7 +1866,7 @@ in the list.
 If @var{obj} is a Scheme proper list, returns its length.  If
 @var{obj} is an emptylist, the length is 0.
 
-If @var{obj} is a Scheme dotted list (which includes 
+If @var{obj} is a Scheme dotted list (which includes
 a non-pair, non-emptylist object), returns SCM_LIST_DOTTED, which
 is a negative integer constant.
 

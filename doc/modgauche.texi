@@ -972,8 +972,8 @@ value instead of counting on the side effects.
 @c COMMON
 
 @example
-(array-add-elements (array (shape 0 2 0 2) 1 2 3 4) 
-                    (array (shape 0 2 0 2) 5 6 7 8) 
+(array-add-elements (array (shape 0 2 0 2) 1 2 3 4)
+                    (array (shape 0 2 0 2) 5 6 7 8)
                     10)
  @result{} #,(<array> (0 2 0 2) 16 18 20 22)
 
@@ -1055,10 +1055,10 @@ All the bindings available in the @code{gauche} module are exported,
 except @code{import}, which is renamed to @code{gauche:import} to
 avoid conflict with R7RS @code{import}.
 
-The module extends @code{gauche.keyword}, so 
+The module extends @code{gauche.keyword}, so
 also exports all the keywords---the bindings from @code{gauche.keyword}---
 so that the code imports @code{gauche.base} can access to self-bound keywords
-without inheriting the keyword module.  
+without inheriting the keyword module.
 @c JP
 このモジュールはGaucheの組み込み手続きと構文をexportし、
 @code{gauche}モジュールを継承しない他のモジュールからもimportして
@@ -2840,7 +2840,7 @@ CES @var{ces-b}でエンコードされた文字列が、システムの知る�
 
 @c EN
 When Gauche's internal conversion routine encounters a character that can't
-be mapped, the behaivor depends on the @emph{illegal output handling mode} 
+be mapped, the behaivor depends on the @emph{illegal output handling mode}
 of the conversion port, specified by @var{illegal-output} keyword
 arguments.
 If the mode is @code{raise}, an @code{<io-encoding-error>}
@@ -4712,7 +4712,7 @@ It is used to check the system properties and generates build files
 @c COMMON
 
 @c EN
-The primary purpose is to replace autoconf-generated 
+The primary purpose is to replace autoconf-generated
 @file{configure} shell scripts
 in Gauche extension packages.
 @c JP
@@ -4722,8 +4722,8 @@ in Gauche extension packages.
 
 @c EN
 The advantage of using autoconf is that it generates
-a script that runs on most vanilla unix, for it only uses minimal 
-shell features and basic unix commands.   
+a script that runs on most vanilla unix, for it only uses minimal
+shell features and basic unix commands.
 However, when you configure Gauche extension,
 you sure have Gauche already, so you don't need to limit
 yourself with minimal environment.
@@ -4844,7 +4844,7 @@ familiar with this.
 
 @c EN
 The Gauche configure script is structurally similar to autoconf's
-@code{configure.in}, but you can use full power of Scheme. 
+@code{configure.in}, but you can use full power of Scheme.
 The following is the minimal configure script:
 @c JP
 Gaucheのconfigureスクリプトはautoconfの@code{configure.in}と
@@ -4874,12 +4874,12 @@ The @code{cf-init-gauche-extension} does the following:
 @c EN
 First, it handles command-line arguments given to @file{configure}.
 In the default settings, it recognizes standard configure
-arguments such as @code{--prefix}, and 
+arguments such as @code{--prefix}, and
 @code{--with-local=PATH:PATH:...}
 which adds @code{PATH/include}s and @code{PATH/lib}s to
 the header and library search paths.
 You can handle more arguments by adding
-@code{cf-arg-with} and @code{cf-arg-enable} before 
+@code{cf-arg-with} and @code{cf-arg-enable} before
 @code{cf-init-gauche-extension}.
 @c JP
 まず、@file{configure}スクリプトに渡されたコマンドライン引数が処理されます。
@@ -5169,11 +5169,11 @@ if the system has required packages.
 
 @c EN
 The optional arguments are only supported for the backward compatibility
-if you don't have @file{package.scm}.  You need at least 
+if you don't have @file{package.scm}.  You need at least
 to provide @var{package-name} and @var{package-version} to tell
 what package you're configuring.  They are used as the value
 of substitution parameter @code{PACKAGE_NAME} and @code{PACKAGE_VERSION}.
-The other optional arguments, @var{maintainer-email} and 
+The other optional arguments, @var{maintainer-email} and
 @var{homepage-url}, are used to initialize @code{PACKAGE_BUGREPORT} and
 @code{PACKAGE_URL}.  These arguments are compatible to autoconf's
 @code{AC_INIT} macro.
@@ -5248,7 +5248,7 @@ or @code{cf-init-gauche-extension}.
 The @var{feature} and @var{package} arguments must be a symbol.
 
 A feature selection argument is in a form of either
-@code{--enable-@var{feature}=@var{val}}, 
+@code{--enable-@var{feature}=@var{val}},
 @code{--enable-@var{feature}}, or @code{--disable-@var{feature}}.
 The latter two are equivalent to @code{--enable-@var{feature}=yes}
 and @code{--enable-@var{feature}=no}, respectively.
@@ -5306,7 +5306,7 @@ in the third argument:
 @c MOD gauche.configure
 Return a string formatted suitable to show as an option's help message.
 The result can be passed to @var{help-string} argument of
-@code{cf-arg-enable} and @code{cf-arg-with}. 
+@code{cf-arg-enable} and @code{cf-arg-with}.
 This corresponds to autoconf's @code{AS_HELP_STRING}.
 
 Call it as follows, and it'll indent and fill the description nicely.
@@ -5346,7 +5346,7 @@ that goes to @code{config.log}, and you can use @code{log-format}
 to write to it (@xref{User-level logging}, for the details of logging).
 
 However, to have consistent message format conveniently, the following
-procedures are provided.  They emits the message both to log files and 
+procedures are provided.  They emits the message both to log files and
 the current output port (in slightly different formats so that the
 console messages align nicely visually.)
 
@@ -5576,7 +5576,7 @@ which is either a string or a list of strings.
 The difference of @code{cf-check-prog} and @code{cf-path-prog} is that
 @code{cf-check-prog} uses the basename of the found program, while
 @code{cf-path-prog} uses its full path.  These corresponds to
-autoconf's @code{AC_CHECK_PROG}, @code{AC_CHECK_PROGS}, 
+autoconf's @code{AC_CHECK_PROG}, @code{AC_CHECK_PROGS},
 @code{AC_PATH_PROG} and @code{AC_PATH_PROGS}.
 
 For example, the following
@@ -5665,12 +5665,12 @@ that includes the named header file.
 Return @code{#t} if the header is usable, @code{#f} if not.
 
 Both procedure does the same thing.  The name @code{cf-check-header}
-corresponds to autoconf's @code{AC_CHECK_HEADER}.  
+corresponds to autoconf's @code{AC_CHECK_HEADER}.
 
 If @var{header} requires other headers being included or
 preprocessor symbols defined before it,
 you can pass a list of strings to be emitted before the check
-in the @var{includes} keyword arguments.  The given strings 
+in the @var{includes} keyword arguments.  The given strings
 are just concatenated and used as a C program fragment.
 The default value is provided by @code{cf-includes-default}.
 
@@ -5702,7 +5702,7 @@ See this example:
 
 This checks availability of each of listed headers,
 and sets C preprocessor definition @code{HAVE_UNISTD_H},
-@code{HAVE_STDINT_H}, @code{HAVE_INTTYPES_H} and 
+@code{HAVE_STDINT_H}, @code{HAVE_INTTYPES_H} and
 @code{HAVE_RPC_TYPES_H} to 1 if the corresponding header
 file is available.
 
@@ -5775,7 +5775,7 @@ Returns an undefiend value.  This procedure is for side effects.
 (cf-check-types '("ptrdiff_t" "unsigned long long int"))
 
 ;; Example of using @var{includes} to add an extra header.
-(cf-check-types '("float_t") 
+(cf-check-types '("float_t")
                 :includes `(,@@(cf-includes-default)
                             "#include <math.h>\n"))
 @end example
@@ -5787,7 +5787,7 @@ Returns an undefiend value.  This procedure is for side effects.
 Test if @var{symbol} is declared as a cpp macro, a variable,
 a constant, or a function.
 Return @code{#t} if @var{type} is defined,
-@code{#f} otherwise.   
+@code{#f} otherwise.
 
 Two procedures are the same.  The name @code{cf-check-decl} corresponds
 to autoconf's @code{AC_CHECK_DECL}.
@@ -5803,8 +5803,8 @@ the default list of such headers.
 @c MOD gauche.configure
 For each symbol in @var{symbols}, call @code{cf-check-decl} to see
 if it is declared.  If it is, define @code{HAVE_DECL_@var{symbol}} to
-1, and calls @var{if-found} with the symbol if provided.  
-If it is not declared, define @code{HAVE_DECL_@var{symbol}} to 0, 
+1, and calls @var{if-found} with the symbol if provided.
+If it is not declared, define @code{HAVE_DECL_@var{symbol}} to 0,
 and calls @var{if-not-found} with the symbol if provided.
 This corresponds to autoconf's @code{AC_CHECK_DECLS}.
 
@@ -5915,11 +5915,11 @@ libraries, it should be listed in @var{other-libs}:
 (cf-check-lib "Xt" "XtDisplay" :other-libs '("-lX11" "-lSM" "-lICE"))
 @end example
 
-If compilation and linking succeeds, 
+If compilation and linking succeeds,
 @var{if-found} is called at the
 tail position with
 the library name (@code{"m"} and @code{"Xt"} in the above examples,
-respectively) as the argument. 
+respectively) as the argument.
 The default behavior is to add
 @code{-l@var{lib}} in the left of substitution parameter @code{LIBS},
 and set @code{HAVE_LIB@var{lib}} definition, then
@@ -6020,7 +6020,7 @@ printf("()");
 @defun cf-lang-io-program
 @c MOD gauche.configure
 This is a convenience routine.  It returns a string tree
-of a program in the current language, that creates a file 
+of a program in the current language, that creates a file
 named @file{conftest.out}, then exits with zero status on
 success, or nonzero status on failure.
 @end defun
@@ -6159,7 +6159,7 @@ simply @code{-DHAVE_CONFIG_H}.
 @c MOD gauche.configure
 Print all substitution parameters; this is for debugging.
 
-For each substitution parameter name and value, 
+For each substitution parameter name and value,
 @var{formatter} is called with them; the default is
 @code{(^[k v] (format #t "~16s ~s" k v))}.
 @end defun
@@ -6339,7 +6339,7 @@ built on top of other dictionary classes.
 @c EN
 These generic functions are useful to implement algorithms
 common to any dictionary-like objects, a data structure
-that maps discrete, finite set of keys to values.  
+that maps discrete, finite set of keys to values.
 (Theoretically we can think of continuous and/or infinite set of
 keys, but implementation-wise it is cleaner to limit the dictionary
 
@@ -6767,7 +6767,7 @@ If there's no relations with given key, these are noop.
 @deftp {Class} <stacked-map>
 @c MOD gauche.dictionary
 Stacked map allows you to stack (layer) multiple maps (dictionaries)
-and treat as if they are a single map.  
+and treat as if they are a single map.
 The upper map "shadows" the lower maps.  Think of nested scopes, for
 example.
 
@@ -7352,7 +7352,7 @@ for unprivileged users.
 
 @defivar {<sys-statvfs>} fsid
 @c EN
-An exact integer filesystem ID.  
+An exact integer filesystem ID.
 @c JP
 ファイルシステムID。正確な整数です。
 @c COMMON
@@ -7389,7 +7389,7 @@ provided.
 If @code{ST_NOSUID} bit is on, suid and sgid bits of the files on this
 filesystem are ignored by @code{exec(3)}.
 
-If @code{ST_RDONLY} bit is on, the filesystem is mounted read-only. 
+If @code{ST_RDONLY} bit is on, the filesystem is mounted read-only.
 @c JP
 @code{<sys-statvfs>}の@code{flag}スロットに使えるビットフラグ値です。
 これらは機能識別子 @code{gauche.sys.statvfs}が提供されている場合のみ定義されます。
@@ -7466,7 +7466,7 @@ built on top of generators.
 
 @c EN
 The typical pattern of using generator is as follows: First you
-create a source or sources of the values, 
+create a source or sources of the values,
 using one of generator constructors
 (@pxref{Generator constructors}) or rolling your own one.  You
 may connect generator operators that modifies the stream of
@@ -7788,7 +7788,7 @@ with other procedures that accesses bit fields in integers
   @result{} (#t #f #t #f)  ; takes bit 4, 5, 6 and 7
 
 (generator->list (reverse-bits->generator #x56 4 8)
-  @result{} (#f #t #f #t)  ; takes bit 7, 6, 5 and 4 
+  @result{} (#f #t #f #t)  ; takes bit 7, 6, 5 and 4
 @end example
 
 @c EN
@@ -7950,7 +7950,7 @@ generate, and use @var{g} to update the seed value.
 Returns a generator of
 an infinite sequence of values where the next value is computed
 by applying @var{f} on the current value.  The first value generated
-by @code{giterate} is @var{seed} itself, while the first one by 
+by @code{giterate} is @var{seed} itself, while the first one by
 @code{giterate1} is @code{(@var{f} @var{seed})}.
 @c JP
 要素が、一つ前の要素に@var{f}を適用して計算されるような値の列を無限に生成する
@@ -8146,7 +8146,7 @@ number of generators.
 @c JP
 @var{gen}引数は、ジェネレータやシーケンスを生成するジェネレータです。
 この関数は、@var{gen}が生成する最初のジェネレータ/シーケンスの要素を次々に
-生成し、それが尽きたら二番目のジェネレータ/シーケンスの要素を次々に生成し… 
+生成し、それが尽きたら二番目のジェネレータ/シーケンスの要素を次々に生成し…
 というジェネレータを作って返します。
 
 @code{(apply gappend (generator->list gen))}と似た動作ですが、
@@ -8175,7 +8175,7 @@ one at a time.
 @c COMMON
 
 @c EN
-Example: The game Tetris determines the next 
+Example: The game Tetris determines the next
 dropping piece (tetrimino) by the following algorithm: Take a
 bag of tetriminos with one for each kind (O, I, T, S, Z, L, J),
 permute it, and draw one by one; once the bag is empty, take another
@@ -8292,7 +8292,7 @@ returns a generator immediately without consuming input.
 @c MOD gauche.generator
 @c EN
 A generator version of @code{map-accum} (@pxref{Mapping over collection}),
-mapping with states. 
+mapping with states.
 @c JP
 状態を持つマッピングを行う@code{map-accum} (@pxref{Mapping over collection})のジェネレータ版
 です。
@@ -9514,7 +9514,7 @@ to parse the info file.
 
 @c EN
 NB: When you use @code{less} as a pager, make sure you set
-it to handle utf-8 characters (e.g. setting @code{LESSCHARSET} 
+it to handle utf-8 characters (e.g. setting @code{LESSCHARSET}
 environment variable to
 @code{UTF-8}), or you'll see some escaped sequences on the screen.
 @c JP
@@ -9547,7 +9547,7 @@ infoファイルがどこから読まれるかについては上の@code{info}�
 @c MOD gauche.interactive
 @c EN
 Invoke an external editor to open the named file, or the file containing
-the definition of the given procedure (if it can be known).  
+the definition of the given procedure (if it can be known).
 For the latter, it uses @code{source-location} procedure to find out
 the source code location (@pxref{Debugging aid}).
 @c JP
@@ -9723,7 +9723,7 @@ you want to use @code{lmap}.
 @c NODE 遅延シーケンスのコンストラクタ
 
 @c EN
-You can construct lazy sequences with 
+You can construct lazy sequences with
 built-in @code{generator->lseq} and @code{lcons}.
 This module provides a few more constructors.
 @c JP
@@ -11170,7 +11170,7 @@ Sometimes, you want to track all instances created from a class.
 This module provies tools to do that.
 
 An @emph{instance pool} class is a class that keeps the list of instances
-of itself and its subclasses.  
+of itself and its subclasses.
 
 A class that inherits @code{<instance-pool-mixin>} directly becomes a 'root'
 class of the pool.  Instances of the subclass of the root class will
@@ -11205,7 +11205,7 @@ a root of the pool.
 
 @deffn {Generic Function} instance-pool->list class
 @c MOD gauche.mop.instance-pool
-Returns a list of instances in the pool of @var{class}, 
+Returns a list of instances in the pool of @var{class},
 which should be an instance
 of @code{<instance-pool-meta>}.
 The list is fresly constructuted every time it is called.
@@ -13624,7 +13624,7 @@ where @code{PACKAGENAME} is the name of the package.
 We collectively call @file{package.scm} and @file{*.gpd} as
 @emph{package description file}.
 
-This module provides utility procedures to read and write package 
+This module provides utility procedures to read and write package
 description files, and search installed @file{*.gpd} files.
 @end deftp
 
@@ -14945,7 +14945,7 @@ fail in shell-script type tasks.
 @code{Run-process} can run the subprocess concurrently by default,
 that is, it returns immediately.  The return value is a @code{<process>}
 object, which can be used to track the status of the subprocess
-(@pxref{Process object}). 
+(@pxref{Process object}).
 @c JP
 @code{run-process}はデフォルトでサブプロセスを並行して走らせます。
 つまり、直ちに返ってきます。返り値は@code{<process>}オブジェクトで、それを
@@ -15057,12 +15057,12 @@ The string is passed to the shell to be interpreted,
 so you can include redirections, or can pipe several commands.
 It would be handy for quick throwaway scripts.
 
-On the other hand, with @code{sys-system}, 
+On the other hand, with @code{sys-system},
 if you want to change command parameters
 at runtime, you need to worry about properly escape them
-(actually we have one to do the job in @code{gauche.process}; 
+(actually we have one to do the job in @code{gauche.process};
 see @code{shell-escape-string}
-below); you need to be aware that @code{/bin/sh}, used by 
+below); you need to be aware that @code{/bin/sh}, used by
 @code{sys-system} via @code{system(3)} call, may differ among
 platforms and be careful not to rely on specific features on
 certain systems.  As a rule of thumb, keep @code{sys-system} for
@@ -15098,7 +15098,7 @@ to STk.  This is still supported but deprecated.
 @c COMMON
 
 @c EN
-Large number of keyword arguments can be passed to 
+Large number of keyword arguments can be passed to
 @code{do-process} and
 @code{run-process}
 to control execution of the child process.  We describe them by
@@ -15421,7 +15421,7 @@ or @code{<&} to ``split'' the input from one source, instead:
 @c EN
 It is allowed to give the same file name more than once,
 just like the Unix shell.  However, note that the file is
-opened individually for each file descriptor, so simply 
+opened individually for each file descriptor, so simply
 writing to them may not produce desired result (for regular
 files, most likely that one output would overwrite another).
 @c JP
@@ -15826,7 +15826,7 @@ before returning.
 
 @c EN
 The @var{directory} and @var{sigmask} keyword arguments are applied
-to all the processes; 
+to all the processes;
 see @code{do-process}/@code{run-process} for the description
 of these arguments
 (@pxref{Running subprocess}).
@@ -16210,9 +16210,9 @@ If there's no child processes, this procedure immediately returns @code{#f}.
 @defun process-wait/poll process :key interval max-wait continue-test raise-error?
 @c MOD gauche.process
 @c EN
-Polls wait status of @var{process} periodically, sleeping 
+Polls wait status of @var{process} periodically, sleeping
 @var{interval} nanoseconds (default 2e6 ns, i.e. 2ms) between each poll.
-It returns as soon as it finds the process has exitted and its status is 
+It returns as soon as it finds the process has exitted and its status is
 retrieved.
 
 If @var{max-wait} is given and not @code{#f}, it species maximum duration
@@ -16322,7 +16322,7 @@ The @var{ask} argument is, if not @code{#f}, a procedure taking one argument,
 the retry count.  The @var{ask} procedure is responsible to interact with
 @var{process} in a proper protocol (e.g. send @code{exit} command via
 comminucation channel).  After @var{ask} is executed (the return value
-is ignored), the process's status is monitored, and 
+is ignored), the process's status is monitored, and
 @code{process-shutdown} returns @code{#t} as soon as the
 process exits.  If the process doesn't exit, the procedure repeats
 calling @var{ask} up to @var{retry} times, with @var{ask-interval} nanoseconds
@@ -16799,7 +16799,7 @@ Split a string @var{str} into arguments as the shell does.
 @end example
 
 @c EN
-The optional @var{flavor} arguments can be a symbol either 
+The optional @var{flavor} arguments can be a symbol either
 @code{windows} or @code{posix} to specify the syntax.
 If it's @code{windows}, we follow MSVC runtime command-line
 argument parser behavior.  If it's @code{posix}, we follow
@@ -18369,7 +18369,7 @@ The keyword argument @var{key} must be a procedure taking one argument,
 and it is applied to every element in the sequence once, to construct
 the result.  Its default is @code{identity}.
 
-The keyword argument @var{next} must be a procedure 
+The keyword argument @var{next} must be a procedure
 taking one argument, which is the key value (whatever @var{key} procedure
 returns) and must return the ``next'' key value.
 Its default is @code{(^n (+ n 1))}.
@@ -18516,7 +18516,7 @@ method, but it's not necessarily more efficient than
 @code{delete-neighbor-dups}, which creates a new sequence.
 If @var{seq} is a list or a string, each modification by index takes O(n)
 time (for a string even it costs O(n) extra storage), so the
-total cost is O(n^2), whereas @code{delete-neighbor-dups} 
+total cost is O(n^2), whereas @code{delete-neighbor-dups}
 needs O(n) time and storage.
 This works best for vectors and alike,
 with which it doesn't cost extra allocation and runs in O(n) time.
@@ -19517,7 +19517,7 @@ Marks beginning of the group of tests.  This is just for logging.
 @c EN
 This is also just for logging.  Creates a formatted string
 with @var{fmrstr} and @var{args} just like @code{format},
-then write it to the current output port, with prefix @code{;; } 
+then write it to the current output port, with prefix @code{;; }
 and newline at the end.
 
 With the typical Makefile settings, where you redirect
@@ -19525,7 +19525,7 @@ stdout of test scripts to a log file, the message only goes to
 the log file.
 
 Using this, you can dump information that can't be automatically
-tested but may be useful for troubleshooting.    For example, 
+tested but may be useful for troubleshooting.    For example,
 you get a mysterious test failure reports you can't reproduce
 on your machine, and suspect
 some aspects of the running systems may unpredictably
@@ -20046,7 +20046,7 @@ Gaucheでは、こういった種類のエラーをテスト時に検査する�
 @c COMMON
 
 @c EN
-The two procedures, @code{test-module} and @code{test-script}, 
+The two procedures, @code{test-module} and @code{test-script},
 load the named module and the script files respectively (which compiles
 the Scheme code to VM instructions), then scan the compiled VM code
 to perform the following tests:
@@ -21175,7 +21175,7 @@ explained in this section.
 @item MT-Queues
 Thread-safe queues (@code{<mtqueue>}) are provided in @code{data.queue} module
 (@pxref{Queue}), which works as a synchronized channel and
-suitable to implement producer-consumer pattern. 
+suitable to implement producer-consumer pattern.
 @end table
 @c JP
 mutexと条件変数が低レベルの同期デバイスとして提供されます。
@@ -21738,7 +21738,7 @@ to specify the relative time in seconds.  If timeout is
 expired, those procedures give up acquiring the lock,
 and the value given to @var{timeout-val} is returned.
 In @code{atomic} and @code{atomic-update!}, you can make them return
-multiple timeout values, by giving 
+multiple timeout values, by giving
 more than one @var{timeout-val} arguments.
 @c JP
 @var{timeout}引数はすぐにロックが得られなかった場合の動作を変更します。
@@ -22730,7 +22730,7 @@ If @var{strictness} is @code{permissive} or @code{replace}, this procedure
 may return an integer between 0 and 6, inclusive.
 If the input is from @code{#xf8} to @code{#xfd}, inclusive,
 this returns 5 or 6, according to the original utf-8 spec
-(these values corresponds to the codepoint 
+(these values corresponds to the codepoint
 range @code{#x110000} to
 @code{#x7fffffff}).
 If the input is in the range between @code{#x80}
@@ -22823,7 +22823,7 @@ If Gauche's native encoding is utf8, this procedure first tries
 @code{u8vector->string} (@pxref{Uvector conversion operations}).
 If the input utf8 sequence is valid, this is the fastest way.
 If the input contains invalid utf8 sequence, the procedure falls
-back to construct a string by one character at at time, 
+back to construct a string by one character at at time,
 replacing invalid sequence with Unicode replacement character @code{U+FFFD}.
 Hence it always returns a complete string.
 To know if the input contains invalid utf8 sequence, you can use
@@ -22982,7 +22982,7 @@ input list.
 If @var{strictness} is @code{strict} (default), an invalid utf-16
 sequence and out-of-range integer raise an error.  If @var{strictness}
 is @code{permissive}, an out-of-range integer causes an error, but
-a lone surrogate is allowed and returned as is.  
+a lone surrogate is allowed and returned as is.
 If @var{strictness} is @code{replace}, a lone surrogate is
 replaced with @code{U+FFFD}.
 If @var{strictness}
@@ -23009,7 +23009,7 @@ ignored.
 @c EN
 Convert utf16 and utf32 sequence stored in @var{u8vector} to a string,
 respectively.
-For @code{utf16->string}, 
+For @code{utf16->string},
 if the input contains invlaid utf16 sequence (unpaired surrogate),
 it is replaced with Unicode replacement character @code{U+FFFD}.
 If the number of input octet is not the multiple of unit (2 octets
@@ -23352,7 +23352,7 @@ different procedures.
 @defun char-east-asian-width char-or-codepoint
 @c MOD gauche.unicode
 The argument may be a character or a nonnegative integer of Unicode
-codepoint.  Returns one of the symbols @code{N} (neutral), 
+codepoint.  Returns one of the symbols @code{N} (neutral),
 @code{F} (fullwidth), @code{H} (halfwidth), @code{W} (wide),
 @code{Na} (narrow), and @code{A} (ambiguous).
 
@@ -23401,7 +23401,7 @@ Gaucheで拡張されている機能は次のとおりです:
 @itemize @bullet
 @item
 @c EN
-Support of @code{f16vector} and @code{c32vector}, using 16-bit floating 
+Support of @code{f16vector} and @code{c32vector}, using 16-bit floating
 point numbers as used in high-dynamic range image format.
 @c JP
 HDR画像フォーマットなどで使われる、16ビット浮動小数点数を使った
@@ -24622,7 +24622,7 @@ if you import @code{gauche.collection}.
 @defun uvector->list uvec :optional start end
 @c MOD gauche.uvector
 @c EN
-This is a generic version of @code{@@vector->list}.  
+This is a generic version of @code{@@vector->list}.
 It can take any kind of uvector as @var{uvec}.  The meaning of
 optional arguments are the same as @code{@@vector->list}.
 @c JP
@@ -24677,7 +24677,7 @@ if you import @code{gauche.collection}.
 @defun uvector->vector uvec :optional start end
 @c MOD gauche.uvector
 @c EN
-This is a generic version of @code{@@vector->vector}.  
+This is a generic version of @code{@@vector->vector}.
 It can take any kind of uvector as @var{uvec}.  The meaning of
 optional arguments are the same as @code{@@vector->vector}.
 @c JP
@@ -24748,7 +24748,7 @@ if you import @code{gauche.collection}.
 @c MOD gauche.uvector
 @c EN
 Create a new @code{@@vector} with the elements of @var{list} in
-reverse order.  
+reverse order.
 Optional argument @var{clamp} specifies the behavior when
 the element of @var{list} is out of the valid range.
 (The @var{clamp} argument is Gauche's extension.)
@@ -24987,7 +24987,7 @@ the characters in the string randomly.
 @var{Target} must be a mutable s32vector or u32vector, respectively.
 Fill the @var{target} from position @var{tstart} with the codepoint
 of each character of @var{string}, until either @var{string} is exhausted
-or @var{target} is filled to the end. 
+or @var{target} is filled to the end.
 
 Optional range arguments @var{start} and @var{end} specifies
 the @emph{character position} inside @var{string} to be
@@ -25908,7 +25908,7 @@ Alias of @code{u8vector}.  Returns a fresh bytevector (u8vector) with
 @c MOD gauche.uvector
 [R7RS base]
 @c EN
-Alias of @code{u8vector?}.  Returns true iff @var{obj} is 
+Alias of @code{u8vector?}.  Returns true iff @var{obj} is
 a bytevector (u8vector).
 @c JP
 @code{u8vector?}の別名です。@var{obj}がバイトベクタ(u8vector)なら
@@ -25999,7 +25999,7 @@ Gaucheの拡張として、@code{(setter bytevector-s8-ref)} は
 @c MOD gauche.uvector
 [R7RS base]
 @c EN
-Alias of @code{u8vector-copy}.  Returns a fresh copy of a 
+Alias of @code{u8vector-copy}.  Returns a fresh copy of a
 bytevector (u8vector) @var{bv}.  Optionally you can restrict the
 range of the source vector by indices @var{start} (inclusive)
 and @var{end} (exclusive).
@@ -26282,7 +26282,7 @@ The reason of having @code{<pre-subrelease>} is to allow
 A trick: If you want ``version 1.2 release or later'', you
 can say @code{(version<=? "1.2" v)}.  This excludes prerelease
 versions such as @code{1.2_pre3}.
-If you want ``version 1.2 release or later'', 
+If you want ``version 1.2 release or later'',
 you can say @code{(version<=? "1.2_" v)}, which includes
 @code{1.2_pre1} etc., but excludes anything below, such as
 @code{1.1.99999}.
@@ -27365,10 +27365,10 @@ the given list of characters and bytes as the source.
 @defun get-remaining-input-list port
 @c MOD gauche.vport
 @c EN
-If @var{port} is the one created by @code{open-input-char-list} 
+If @var{port} is the one created by @code{open-input-char-list}
 or @code{open-input-byte-list}, returns a list of remaining data
 that hasn't been read yet.  If the port already read everything,
-or the port is not the one created by @code{open-input-char-list} 
+or the port is not the one created by @code{open-input-char-list}
 or @code{open-input-byte-list}, an empty list is returned.
 
 A caveat: Gauche allows mixing binary input and textual input from
@@ -27449,7 +27449,7 @@ is undefined.
 @defun get-remaining-input-generator port
 @c MOD gauche.vport
 @c EN
-If @var{port} is the one created by @code{open-input-char-generator} 
+If @var{port} is the one created by @code{open-input-char-generator}
 or @code{open-input-byte-generator}, returns a generator that
 yields the characters or bytes that haven't been read yet.
 If the port already read everything, an empty generator

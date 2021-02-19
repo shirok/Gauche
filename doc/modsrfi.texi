@@ -743,7 +743,7 @@ always work even if the regions of source and destination are overlapping.
 
 @c EN
 Note that Gauche encourages you to treat strings as immutable objects.
-Internally, a string is an indirect pointer to a immutable entity, and 
+Internally, a string is an indirect pointer to a immutable entity, and
 mutating a string means copying the original entity and creating a new one.
 It doesn't ``save allocations''.
 Always use the functional version @code{string-copy} unless you
@@ -891,7 +891,7 @@ with the index of the last compared position in @var{s1}.
 
 @c EN
 The optional arguments restricts
-the range of the input strings; however, the index passed to one 
+the range of the input strings; however, the index passed to one
 of the procedures is always an index from the beginning of @var{s1}.
 @c JP
 省略可能引数は入力の文字列の比較すべき範囲を制限します。
@@ -1414,7 +1414,7 @@ index or a string cursor, it works as
 [SRFI-13]
 @c MOD srfi-13
 @c EN
-It works as 
+It works as
 @code{(string-copy! target tstart (xsubstring s sfrom sto start end))}.
 @c JP
 @code{(string-copy! target tstart (xsubstring s sfrom sto start end))}
@@ -1489,9 +1489,9 @@ which provides similar features but different criteria.
 [SRFI-13]
 @c MOD srfi-13
 @c EN
-Returns a string consists of characters in a string @var{s} 
+Returns a string consists of characters in a string @var{s}
 that passes (or don't pass) the test indicated by @var{char/char-set/pred},
-respectively.  
+respectively.
 @c JP
 それぞれ、文字列@var{s}中の文字のうち@var{char/char-set/pred}で示される
 テストを通る、または通らない文字からなる文字列を返します。
@@ -3768,7 +3768,7 @@ It is effectively the same as @code{(:list vars (list expr))}.
 @deffn {EC Qualifier} :while g-qualifier expr
 @deffnx {EC Qualifier} :until generator expr
 @c EN
-Generates values from  @var{g-qualifier} while/until @var{expr} evaluates true. 
+Generates values from  @var{g-qualifier} while/until @var{expr} evaluates true.
 Here, @var{g-qualifier} is one of generative EC qualifiers.  The variable
 bound in @var{g-qualifier} is visible from @var{expr}.
 @c JP
@@ -3820,10 +3820,10 @@ bound in @var{g-qualifier} is visible from @var{expr}.
 @deftp {Module} srfi-43
 @mdindex srfi-43
 @c EN
-This module is effectively superseded by R7RS and @code{srfi-133}.  
-There are a few procedures that are not compatible with R7RS and 
+This module is effectively superseded by R7RS and @code{srfi-133}.
+There are a few procedures that are not compatible with R7RS and
 @code{srfi-133}, and this module remains to support
-legacy code that depends on them.  
+legacy code that depends on them.
 
 @xref{Vectors}, and @pxref{R7RS vectors}, for the ``modern'' versions
 of vector library.  New code should use them.
@@ -3863,7 +3863,7 @@ vector-unfold         vector-unfold-right   vector-reverse-copy
 vector-reverse-copy!  vector-concatenate    vector-empty?
 vector=               vector-index          vector-index-right
 vector-skip           vector-skip-right     vector-binary-search
-vector-any            vector-every          vector-swap!    
+vector-any            vector-every          vector-swap!
 reverse-vector->list
 @end example
 
@@ -3898,7 +3898,7 @@ It is called as @code{(kons <index> <cumulated-value> <elt1> <elt2> ...)}.
 Gauche has @code{fold-with-index} (@pxref{Mapping over sequences})
 that can be used to fold vectors with index, but the argument order
 of @var{kons} is slightly different: It passes the index, each
-element from argument vectors, then cumulated values.  
+element from argument vectors, then cumulated values.
 @c JP
 Gaucheには@code{fold-with-index}があって、ベクタをインデックスつきで
 foldするのに使えます(@ref{Mapping over sequences})が、
@@ -4116,7 +4116,7 @@ The following procedures are defined in srfi-151.
 @example
 bitwise-not      bitwise-and      bitwise-ior      bitwise-xor
 arithmetic-shift bit-count        bitwise-if       bit-set?
-copy-bit         first-set-bit    
+copy-bit         first-set-bit
 @end example
 @end deftp
 
@@ -4384,7 +4384,7 @@ u8vector @var{target}のインデックス@var{tstart}からにコピーしま�
 
 @c EN
 Note that @code{gauche.uvector} has also @code{u8vector-copy!},
-but its argument order is as follows, where @var{send} 
+but its argument order is as follows, where @var{send}
 is @code{(+ @var{sstart} @var{n})}:
 @c JP
 @code{gauche.uvector}も@code{u8vector-copy!}を提供しますが、
@@ -4462,7 +4462,7 @@ The following procedures are the same as Gauche's built-in ones.
 @example
 hash-table?       hash-table-delete!   hash-table-exists?
 hash-table-keys   hash-table-values    hash-table-fold
-hash-table->alist hash-table-copy 
+hash-table->alist hash-table-copy
 @end example
 
 
@@ -4556,11 +4556,11 @@ This is the same as Gauche's @code{hash-table-put!}.
 Returns the number of entries in a hash table @var{ht}.  The same as Gauche's
 @code{hash-table-num-entries}.
 @end defun
-          
+
 @defun hash-table-walk ht proc
 [SRFI-69]
 @c MOD srfi-69
-For each entry in a hash table @var{ht}, 
+For each entry in a hash table @var{ht},
 calls @var{proc} with two arguments, a key and its value.
 It's the same as Gauche's @code{hash-table-for-each}.
 @end defun
@@ -5975,7 +5975,7 @@ Returns a comparator that just reverses the comparison order of
 [SRFI-114]
 @c MOD srfi-114
 Utility procedures to create a comparison procedure (the one returns
--1, 0, or 1) from the given predicate.  For example, 
+-1, 0, or 1) from the given predicate.  For example,
 @code{make-comparison<} can be defined as follows:
 
 @example
@@ -6395,7 +6395,7 @@ the substring @code{"bcd"}, with one @code{b} falling on the index zero:
 @c COMMON
 
 @example
-... b  c  d  b  c  d  b  c  d  b  c  d  b ... 
+... b  c  d  b  c  d  b  c  d  b  c  d  b ...
    -6 -5 -4 -3 -2 -1  0  1  2  3  4  5  6
 @end example
 
@@ -6912,7 +6912,7 @@ Bitmask constants to be used as @var{flags} argument of
 Corresponds to Gauche's built-in @code{sys-mkdir}, @code{sys-mkfifo},
 @code{sys-link} and @code{sys-symlink}.
 
-The default value of @var{permission} is @code{#o775} for 
+The default value of @var{permission} is @code{#o775} for
 @code{create-directory}, and @code{#o664} for @code{create-fifo}
 (It's not optoinal for Gauche's built-in).
 
@@ -7138,7 +7138,7 @@ Gauche's @code{sys-umask} without argument.
 @defun set-umask! mask
 [SRFI-170]
 @c MOD srfi-170
-Sets @var{mask}, which must be a nonnegative exact integer, 
+Sets @var{mask}, which must be a nonnegative exact integer,
 as the current umask.
 Gauche's @code{sys-umask}, except that it returns unspecified value.
 @end defun
@@ -7450,7 +7450,7 @@ Same as @code{time-second} and @code{time-nanosecond} of srfi-19
 [SRFI-174]
 @c MOD srfi-174
 Convert an inexact real number @var{v} to a timespec.  The integral part
-of @var{v} is the seconds after (when @var{v} is positive)  
+of @var{v} is the seconds after (when @var{v} is positive)
 or before (when @var{v} is negative) the Epoch, and the fractional part
 is rounded into nanosecond resolution.
 @end defun
@@ -7809,14 +7809,14 @@ it is returned as is.
 [SRFI-175]
 @c MOD srfi-175
 @c EN
-ASCII control characters (@code{#\x00}, @code{#\x01} .. @code{#\x1f}, 
+ASCII control characters (@code{#\x00}, @code{#\x01} .. @code{#\x1f},
 and @code{#\x7f})
 are sometimes noted as @code{^@@}, @code{^A} .. @code{^_}, and @code{^?}.
 These procedures converts the control character and corresponding
 graphical character (the one comes after @code{^}), and vice versa.
 The type of the return value is the same as the argument.
 @c JP
-ASCII制御文字(@code{#\x00}, @code{#\x01} .. @code{#\x1f}, 
+ASCII制御文字(@code{#\x00}, @code{#\x01} .. @code{#\x1f},
 and @code{#\x7f})はしばしば、
 @code{^@@}, @code{^A} .. @code{^_} および @code{^?} のように
 表記されます。これらの手続きは、制御文字とその表記 (@code{^}の後に来る文字)とを
@@ -8003,13 +8003,13 @@ While @code{bitvector-unfold} fills the bits from left to right,
 @example
 (use math.prime)
 (bitvector-unfold (^[index n]
-                    (values (small-prime? n) (+ n 1))) 
+                    (values (small-prime? n) (+ n 1)))
                   20 0)
   @result{} #*00110101000101000101
-(bitvector-unfold-right (^[index n] 
-                          (values (small-prime? n) (+ n 1))) 
+(bitvector-unfold-right (^[index n]
+                          (values (small-prime? n) (+ n 1)))
                         20 0)
-  @result{} #*10100010100010101100  
+  @result{} #*10100010100010101100
 @end example
 
 Note: This procedure follows the protocol of @code{vector-unfold}
@@ -8084,7 +8084,7 @@ first @var{n} bits.  @xref{Sequence framework}.
 @defunx bitvector-drop-right bv n
 [SRFI-178]
 @c MOD srfi-178
-Returns a new bitvector with bits except first/last @var{n} bits of 
+Returns a new bitvector with bits except first/last @var{n} bits of
 a bitvector @var{bv}.
 An error is thrown if length of @var{bv} is less than @var{n}.
 
@@ -8245,7 +8245,7 @@ elements outside of the range won't be affected.
 @defun bitvector-reverse-copy! to tstart from :optional start end
 [SRFI-178]
 @c MOD srfi-178
-Same as @code{(bitvector-copy! to start (bitvector-reverse-copy from start end))}, 
+Same as @code{(bitvector-copy! to start (bitvector-reverse-copy from start end))},
 but potentially more efficient.
 @end defun
 
@@ -8578,7 +8578,7 @@ See also @code{parse-json} in @code{rfc.json}
 (@pxref{JSON parsing and construction}).
 
 @example
-(call-with-input-string 
+(call-with-input-string
   "[@{\"a\":1@}, @{\"b\":true, \"c\":\"foo\"@}, null]"
   json-read)
   @result{} #(((a . 1))
@@ -8630,7 +8630,7 @@ This is dual to @code{json-generator}.  The @code{port-or-accumulator}
 should be an output port or an accumulator that accepts a character or
 a string.  This procedure
 returns an accumulator that accepts the events such as
-@code{json-generator} generates.  
+@code{json-generator} generates.
 @end defun
 
 @defun json-write obj :optional port-or-accumulator
@@ -8677,10 +8677,10 @@ For @code{make-custom-textual-input-port}, @var{buffer} is either
 a string or a vector of characters (Gauche's implementation always
 use a vector, but portable code should handle both).
 
-It should generate up to @var{count} bytes/characters of data and fill 
-@var{buffer} beginning from @var{start}, then return the number of 
+It should generate up to @var{count} bytes/characters of data and fill
+@var{buffer} beginning from @var{start}, then return the number of
 bytes/characters generated.
-It should generate at least 1 byte/character if there's still data. 
+It should generate at least 1 byte/character if there's still data.
 To indicate the end of the data, it writs no data and returns 0.
 
 The @var{get-pos} argument is a procedure to be called without arguments,
@@ -8693,7 +8693,7 @@ For @code{make-custom-binary-input-port}, there's a special rule that
 if @var{get-pos} returns an exact integer, it should be a byte position
 in the stream.
 
-The @var{set-pos!} argument is a procedure to be called with one argument, 
+The @var{set-pos!} argument is a procedure to be called with one argument,
 a new position.
 It should set the source's position so that next @var{read!} starts
 generating data from there.  The passed position is something that has
@@ -8743,7 +8743,7 @@ can be an arbitrary Scheme object, but for
 @code{make-custom-binary-output-port}, a position represented as
 an exact integer should correspond to the byte offset in the port.
 
-The @var{set-pos!} argument is a procedure to be called with one argument, 
+The @var{set-pos!} argument is a procedure to be called with one argument,
 a new position.
 It should set the sink's position so that next @var{write!} starts
 to write data from there.  The passed position is something that has
@@ -8764,7 +8764,7 @@ The @var{close} argument is a procedure to be called without
 argument, when the port is closed.  It can be @code{#f} if you
 don't need a special cleanup.
 
-The @var{flush} argument, if provided and not @code{#f}, 
+The @var{flush} argument, if provided and not @code{#f},
 should be a procedure taking no arguments.  It is called when
 the port is requested to flush the data buffered in the sink, if any.
 @end defun
@@ -8827,7 +8827,7 @@ A transcoder is an immutable object.
 @c MOD srfi-181
 Returns a singleton of the transcoder representing systems native
 (internal) codec and eol-style.  In Gauche, the native codec
-is the same as Gauche's native encoding 
+is the same as Gauche's native encoding
 (returned by @code{gauche-character-encoding}, @pxref{Characters}),
 and eol-style is @code{none}.
 @end defun
@@ -9115,7 +9115,7 @@ the value(s) can be correct ones or erroneous ones.
 
 If you're familiar with functional languages like Haskell, you may
 already know them.  They are useful when used in the monadic pattern; that is,
-you can code as if the chain of calculations never fails, 
+you can code as if the chain of calculations never fails,
 yet whenever the calculation fail at one place,
 the rest of chain is canceled and just the failure is returned.
 
@@ -9596,7 +9596,7 @@ If @var{either} is a Right, however, it returns a list of its payload values.
 @defun list-truth->either lis-or-false fail-objs @dots{}
 @c MOD srfi-189
 [SRFI-189]
-The @var{list-or-false} argument must be @code{#f} of a list.  
+The @var{list-or-false} argument must be @code{#f} of a list.
 If it is @code{#f}, a Left with @var{fail-objs} @dots{}
 is returned.  If it is a list, a Right with elements of the list is
 returned.
@@ -9692,8 +9692,8 @@ a Nothing is returned (the first return value is ignored).
 [SRFI-189]
 A procedure @var{thunk} is called without argument, wrapped by an
 exception handler.  If @var{thunk} raises a condition, it is
-examined by @var{pred}.  If @var{pred} returns true on the condition, 
-the exception is wrapped by a Left and returned.  
+examined by @var{pred}.  If @var{pred} returns true on the condition,
+the exception is wrapped by a Left and returned.
 If @var{pred} returns @code{#f}, the exception is reraised.
 If no exception is raised, the result(s) of @var{thunk} is wrapped
 by a Right and returned.
@@ -9731,7 +9731,7 @@ If expressions yield something other than Maybe/Either, an error is thrown.
 Evaluates @var{maybe}/@var{either} from left to right, as far as
 each yields a Nothing/Left.   If it encounters an expression that
 yields a Just/Right, it stops evaluating the rest of expressions and
-returns it.  
+returns it.
 
 If expressions yield something other than Maybe/Either, an error is thrown.
 @end defmac
@@ -9809,7 +9809,7 @@ This portably creates a condition suitable to be raised from
 @code{set-port-position!} when the given position object can't
 be accepted.  The @var{pos} argument is the offending position object.
 
-In Gauche, such condition is represented by 
+In Gauche, such condition is represented by
 @code{<io-invalid-position-error>} class, which is a subclass
 of @code{<port-error>}.
 
@@ -9886,7 +9886,7 @@ a REPL, in which case this procedure returns @code{#f}.
 一般に、Schemeプログラムを何らかの形で「コマンド」として走らせた場合、
 その「コマンド名」にふさわしいものが返されます。例外はREPLを走らせている場合で、
 @code{#f}が返されます。
-@c COMMON 
+@c COMMON
 
 @c EN
 This is useful for diagnostic messages, for example.
@@ -9930,4 +9930,3 @@ script location.
 @c mode: texinfo
 @c coding: utf-8
 @c end:
-

@@ -77,12 +77,12 @@
 
 (define (do-htmls input makeinfo version-info)
   (define draft? (#/DRAFT/ version-info))
-  (define top-link 
+  (define top-link
     (cond [draft? "https://github.com/shirok/Gauche"]
           [(#/j\.texi$/ input)
            "https://practical-scheme.net/gauche/memo-j.html"]
           [else "https://practical-scheme.net/gauche/memo.html"]))
-  (define header-style (if draft? 
+  (define header-style (if draft?
                          "width:100%;background-color:#f88"
                          "width:100%;background-color:#cfc"))
   (define header-div #"<div style=\"~|header-style|\">\
@@ -145,4 +145,3 @@
       (sys-putenv "TEX=dviluatex"))]
    [else])
   (do-process (make-cmd `(,makeinfo "--dvi" "--Xopt" "--tidy" ,input))))
-

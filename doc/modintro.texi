@@ -1120,11 +1120,11 @@ SRFI-14(文字集合ライブラリ)はR7RS largeに採り入れられ、
 
 @deftp {Module} srfi-43
 @c EN
-Vector library (Legacy) - 
+Vector library (Legacy) -
 this module is effectively superseded by R7RS and @code{srfi-133}.
 @xref{Vectors}, and @pxref{R7RS vectors}.
 @c JP
-ベクタライブラリ(旧式) - 
+ベクタライブラリ(旧式) -
 このモジュールは実効的に、R7RSと@code{srfi-133}に取って代わられています。
 @ref{Vectors}と@ref{R7RS vectors}参照。
 @c COMMON

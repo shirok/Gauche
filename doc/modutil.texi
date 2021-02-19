@@ -2150,7 +2150,7 @@ The comparator must have hash function.
 
 @c EN
 Alternatively, you can give a pre-filled dictionary
-(copied from another instance of the same kind of cache) 
+(copied from another instance of the same kind of cache)
 to start cache with some data already in it.  Note that
 what the cache keeps in the dictionary totally depends on the
 cache algorithm, so you can't just pass a random dictionary;
@@ -2726,7 +2726,7 @@ These are operationally equivalent to the followings, respectively:
 @end example
 
 @c EN
-However, those procedures are slightly efficient, 
+However, those procedures are slightly efficient,
 using heap property maintaining procedure only once per function call.
 @c JP
 ただしこれらの手続きは、
@@ -2783,7 +2783,7 @@ before comparison.
 
 @deftp {Module} data.ideque
 @mdindex data.ideque
-This module provides a functional double-ended queue (deque, 
+This module provides a functional double-ended queue (deque,
 pronounced as ``deck'').
 
 Almost all procedures in this module are now a part of R7RS large.
@@ -3275,7 +3275,7 @@ If the queue doesn't have the limit, @code{+inf.0} is returned.
 @c COMMON
 
 @c EN
-Note that even if this returns a non-zero finite value, subsequent 
+Note that even if this returns a non-zero finite value, subsequent
 @code{enqueue!} may throw an error because of the queue being full.
 It's because another thread may put an item to the queue
 between this procedure call and @code{enqueue!}.  To avoid
@@ -3294,7 +3294,7 @@ to mtqueue with finite max-length.
 @c MOD data.queue
 @c EN
 Returns the number of threads waiting on the mtqueue to read
-at this moment. 
+at this moment.
 The return value is always a nonnegative exact integer.
 
 Note that the value might change between this procedure's returning
@@ -4150,7 +4150,7 @@ cdrはジェネレータ@var{cdr-gen}によって生成されます。
 @defun tuples-of gen @dots{}
 @c MOD data.random
 @c EN
-Returns a generator that yields lists, 
+Returns a generator that yields lists,
 whose i-th element is generated from the i-th argument.
 @c JP
 リストを生成するジェネレータを作ります。
@@ -4847,7 +4847,7 @@ skew listはシーケンスでもあるので、@code{coerce-to}を使うこと�
 @c MOD data.skew-list
 @c EN
 The argument @var{lis} may be a dotted list (but can't be circular).
-Returns two values: a new skew-list which contains elements 
+Returns two values: a new skew-list which contains elements
 in @var{lis} except the last cdr of it, and the last cdr of @var{lis}.
 @c JP
 @var{lis}は正式なリストまたはドットリストです (循環リストであってはいけません)。
@@ -4966,7 +4966,7 @@ skew list @var{sl}の各要素に@var{proc}を適用した結果を集めた新�
 @deftp {Module} data.sparse
 @mdindex data.sparse
 @c EN
-This module provides a @emph{sparse vector} and @emph{sparse matrix}, 
+This module provides a @emph{sparse vector} and @emph{sparse matrix},
 a space efficient data container indexed by nonnegative integer(s), and
 a @emph{sparse table}, a hash table using a sparse vector
 as a backing storage.
@@ -7534,7 +7534,7 @@ The following code shows a typical usage of the database.
 @end example
 
 @c EN
-The @code{<dbm>} abstract class implements collection 
+The @code{<dbm>} abstract class implements collection
 and dictionary framework.  (See @ref{Collection framework}
 and @ref{Dictionary framework}, respectively).
 @c JP
@@ -10096,7 +10096,7 @@ output port.  It should write out the element to the port in a suitable
 way.  The @code{string-list->file} and @code{sexp-list->file} are
 specialized versions of @code{list->file}, where @code{string-list->file}
 uses @code{(^[s p] (display s p) (newline p))} as @var{writer},
-and @code{sexp-list->file} uses 
+and @code{sexp-list->file} uses
 @code{(^[s p] (write s p) (newline p))} as @var{writer}.
 @c JP
 @code{list->file}が取る@var{writer}引数は、リスト@var{lis}からのひとつの要素と
@@ -10353,7 +10353,7 @@ exclusive creation flag of @code{open(2)}.
 This is the default value.
 It works for most platforms;
 however, some NFS implementation may not implement the exclusive
-semantics properly.   
+semantics properly.
 @c JP
 @code{file}を指定した場合、@code{open(2)}の@code{O_EXCL}フラグを使う
 排他的ファイル作成を利用したロックファイルを使います。これがデフォルトの動作です。
@@ -10706,7 +10706,7 @@ to fill the state space.  If you do so, there is an algorithm
 that only samples a couple of result from MTRNG to calculate the original
 seed value, hence can predict entire sequence.  If you want the random
 sequence harder to predict, prepare your own u32vector seed filled with
-high-entroby bits. 
+high-entroby bits.
 
 Note that Mersenne Twister is never intended for cryptograhpy, you shouldn't
 use it for security-sensitive purposes.
@@ -10867,7 +10867,7 @@ you need certain primes in a short period of time---if you don't keep
 a reference to the head of the returned sequence, it will be garbage
 collected after you've done with the primes.
 (Note that calculation of a prime number needs the
-sequence of primes from the beginning, 
+sequence of primes from the beginning,
 so even if your code only keep a reference
 in the middle of the sequence, the entire sequence will be kept
 in the thunk within the lazy sequence---you have to release all
@@ -10875,7 +10875,7 @@ references in order to make the sequence GCed.)
 
 On the other hand,
 each sequence returned by @code{primes} are realized individually,
-duplicating calculation.  
+duplicating calculation.
 
 The rule of thumb is---if you use primes repeatedly throughout
 the program, just use @code{*primes*} and you'll save calculation.
@@ -10910,7 +10910,7 @@ and you'll save space.
 @defun small-prime? n
 @c MOD math.prime
 @c EN
-For relatively small positive integers 
+For relatively small positive integers
 (below @code{*small-prime-bound*}, to be specific), this procedure
 determines if the input is prime or not, quickly and deterministically.
 If @var{n} is on or above the bound, this procedure returns @code{#f}.
@@ -10972,7 +10972,7 @@ deterministic; if it returns @code{#t}, @var{n} is certainly a prime.
 @c COMMON
 
 @c EN
-If @var{n} is greater than or equal to 
+If @var{n} is greater than or equal to
 @code{*small-prime-bound*},
 we use a probabilistic test.  We choosing random base integer
 to perform Miller-Rabin test up to 7 times by default.
@@ -11125,7 +11125,7 @@ things faster.
 @c MOD math.prime
 @c EN
 Factorize a positive exact integer @var{n} using the algorithm
-described in 
+described in
 R. P. Brent, An improved Monte Carlo factorization algorithm, BIT 20 (1980), 176-184. @url{http://maths-people.anu.edu.au/~brent/pub/pub051.html}.
 @c JP
 正整数@var{n}をモンテカルロ素因数分解法
@@ -12063,10 +12063,10 @@ brackets or curly-braces.  Opening one and closing one must correspond.
 @c COMMON
 
 @example
-(define begin-list 
+(define begin-list
   ($seq0 ($. #[\(\[\@{]) ws))
 
-(define (end-list opener) 
+(define (end-list opener)
   ($seq ws (case opener
             [(#\() ($. #\))]
             [(#\[) ($. #\])]
@@ -12256,10 +12256,10 @@ We could check the reason of failure in the parser, and call
 @c COMMON
 
 @example
-(define (end-list2 opener) 
+(define (end-list2 opener)
   (define expected
     (assv-ref '((#\( . #\)) (#\[ . #\]) (#\@{ . #\@})) opener))
-  ($seq ws 
+  ($seq ws
         ($let ([closer ($. #[\)\]\@}])])
           (if (eqv? closer expected)
             ($return closer)
@@ -12269,12 +12269,12 @@ We could check the reason of failure in the parser, and call
 @end example
 
 @c EN
-You also have to change @code{nested-list} and @code{elem} to 
+You also have to change @code{nested-list} and @code{elem} to
 use @code{end-list2}:
 @c JP
 @code{nested-list}と@code{elem}についても@code{end-list2}を使うように変更します:
 @c COMMON
-                           
+
 @example
 (define nested-list2
   ($lazy
@@ -12288,7 +12288,7 @@ use @code{end-list2}:
 
 @c EN
 (You could redefine @code{end-list}, but if you do so, don't forget to
-re-evaluate the definitions of @code{nested-list} and @code{elem}.  
+re-evaluate the definitions of @code{nested-list} and @code{elem}.
 It's because the combinators
 are caculated taking the value of other combinators when it's defined,
 unlike typical procedural approach where you redefine one procedure and
@@ -12394,7 +12394,7 @@ Convenience wrappers of @code{peg-run-parser} that takes input from
 @c COMMON
 
 @c EN
-Without @var{cont} argument or it is @code{#f}, 
+Without @var{cont} argument or it is @code{#f},
 it returns the parsed result and discards
 the rest of the input.  (Hint: To make sure there's no garbage
 following, use @code{$eos} parser.)
@@ -12690,7 +12690,7 @@ If you're expecting some types of objects (@var{objs}) but got anything
 else, call @code{return-failure/expect}.  It generates @code{fail-expect}
 type failure.
 @c JP
-限られた種類のオブジェクト (@vars{objs}) を期待していて、それ以外の入力に
+限られた種類のオブジェクト (@var{objs}) を期待していて、それ以外の入力に
 出会った場合は、@code{return-failure/expect}を呼んでください。これは
 @code{fail-expect}タイプの失敗となります。
 @c COMMON
@@ -12700,7 +12700,7 @@ If you're not expecting some types of objects (@var{objs}) but got one,
 call @code{return-failure/unexpect}.  It generates @code{fail-unexpect}
 type failure
 @c JP
-限られた種類のオブジェクト (@vars{objs}) 以外のものを期待していたのに、
+限られた種類のオブジェクト (@var{objs}) 以外のものを期待していたのに、
 それに出会ってしまった場合は、@code{return-failure/unexpect}を呼んでください。
 これは@code{fail-unexpect}タイプの失敗となります。
 @c COMMON
@@ -13089,7 +13089,7 @@ the returned parser on the subsequent input.
 
 This combinator, along with @code{$return} and @code{$fail},
 composes a MonadFail interface as in Haskell.  Theoretically any
-combinators can be built on top of these three.  In practice, 
+combinators can be built on top of these three.  In practice,
 however, it is not always easy to build things directly on top
 of @code{$bind}, and more high-level forms such as @code{$let},
 @code{$let*} and @code{$lift} are frequently used.
@@ -13161,7 +13161,7 @@ In other words, the following equivalence holds:
  @equiv{} ($let ([r0a p0] [r1 p1] @dots{}) ($return (f r0 r1 @dots{})))
 @end example
 
-It is sometimes simpler to use @code{$lift} instead of @code{$let}.  
+It is sometimes simpler to use @code{$lift} instead of @code{$let}.
 For example, the following code creates a parser that matches
 input with @var{p0} @var{p1} @dots{} sequentially, then yields
 the list of the parser results:
@@ -13236,7 +13236,7 @@ Note that @code{$many} may fail if the input partially matches
 @example
 (peg-parse-string ($many ($seq ($. #\a) ($. #\b))) "ababcd")
   @result{} (#\b #\b)
-  
+
 (peg-parse-string ($many ($seq ($. #\a) ($. #\b))) "ababac")
   @result{} *** PARSE-ERROR: expecting #\b at 5, but got #\c
 @end example
@@ -13467,7 +13467,7 @@ This procedure can actually be used not only for the result of
 @code{rfc822-read-headers}, but for retrieving a value keyed
 by strings in a list-of-list structure: @code{((name value option ...) ...)}.
 For example, the return value of @code{parse-cookie-string}
-can be passed to @code{rfc-822-header-ref} 
+can be passed to @code{rfc-822-header-ref}
 (@pxref{HTTP cookie handling}, for @code{parse-cookie-string}).
 @c JP
 @code{rfc822-read-headers} が返すパーズ済みのヘッダリストから
@@ -13486,26 +13486,26 @@ can be passed to @code{rfc-822-header-ref}
 @c COMMON
 
 @example
-(rfc822-header-ref 
+(rfc822-header-ref
   '(("from" "foo@@example.com") ("to" "bar@@example.com"))
   "from")
  @result{} "foo@@example.com"
 
 ;; If no entry matches, #f is returned by default
-(rfc822-header-ref 
+(rfc822-header-ref
   '(("from" "foo@@example.com") ("to" "bar@@example.com"))
   "reply-to")
  @result{} #f
 
 ;; You can give the default value for no-match case
-(rfc822-header-ref 
+(rfc822-header-ref
   '(("from" "foo@@example.com") ("to" "bar@@example.com"))
   "reply-to" 'none)
  @result{} none
 
 ;; By giving the default value, you can distinguish
 ;; the no-match case and there's actually an entry with value #f.
-(rfc822-header-ref 
+(rfc822-header-ref
   '(("from" "foo@@example.com") ("reply-to" #f))
   "reply-to" 'none)
  @result{} #f
@@ -14821,7 +14821,7 @@ IPアドレスも使えます。IPv6アドレスは角括弧で囲んでくだ�
 また、@code{"unix:/path"}という形式でUnixドメインソケットに接続することもできます。
 @code{/path}部分にはソケットへの絶対パスを指定します。
 @c COMMON
-Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"}, 
+Examples: @code{"w3c.org"}, @code{"mycompany.com:8080"},
 @code{"192.168.0.1:8000"}, @code{"[::1]:8000"}
 
 @c EN
@@ -17173,7 +17173,7 @@ individual certificate per connection.
 
 @c EN
 If, for some reasons, you cannot install system-wide CA certificate bundle,
-you can also download Curl's CA certificate bundle 
+you can also download Curl's CA certificate bundle
 @url{https://curl.haxx.se/ca/cacert.pem}, and install it in
 Gauche installation directory.  We have a convenience script.
 After installing Gauche, run the following command:
@@ -17219,7 +17219,7 @@ CA証明書バンドルのパスを保持しています。値は、CA証明書�
 @c COMMON
 
 @c EN
-If it is @code{system}, Gauche uses system's default bundle.  
+If it is @code{system}, Gauche uses system's default bundle.
 An error is signaled on connection
 if Gauche can't find one.
 @c JP
@@ -17276,7 +17276,7 @@ Gauche supports two TLS subsystems - one based on AxTLS
 MbedTLS (@url{https://tls.mbed.org/}).  Whether they're included
 depends on the configuration options.  By default, AxTLS support
 is compiled in, and MbedTLS support is included if the build
-platform has MbedTLS library installed. 
+platform has MbedTLS library installed.
 @c JP
 Gaucheは二つのTLSサブシステムをサポートしています。
 ひとつはAxTLS(@url{http://axtls.sourceforge.net/})、
@@ -17367,7 +17367,7 @@ Server name to be used for TLS Server Name Indication extension.
 @item :num-sessions
 [AxTLS only]
 The number of sessions ot be used for session caching.
-0 indicates no sessino caching. 
+0 indicates no sessino caching.
 @item :options
 [AxTLS only]
 Bitflags of options.  Logical OR of the following numeric constants.
@@ -21019,7 +21019,7 @@ Conceptually, this combinator can be expressed as
  (define (node-closure f)
       (node-or
         (select-kids f)
-	 (node-reduce (select-kids (ntype?? '*)) (node-closure f))))
+         (node-reduce (select-kids (ntype?? '*)) (node-closure f))))
 @end example
 
 @c EN
@@ -22840,7 +22840,7 @@ what it can do is limited; for example, you can't get an event
 when shift key alone is pressed.  For finer controls, you need
 some extension libraries.
 
-For an example of the features in this module, see 
+For an example of the features in this module, see
 @file{snake.scm} in the examples directory of Gauche source distribution.
 @c JP
 このモジュールは文字端末を制御する簡単なインタフェースを提供します。
@@ -22932,7 +22932,7 @@ is available.  A suggested flow is as follows.
 推奨される手順は次のとおりです。
 @c COMMON
 @itemize
-@item 
+@item
 @c EN
 If @code{has-windows-console?} returns true, create @code{<windows-console>}
 instance.
@@ -22944,7 +22944,7 @@ You don't need @code{cond-expand}; @code{has-windows-console?} returns
 @code{has-windows-console?}はWindowsプラットフォーム以外では常に@code{#f}を
 返すので、@code{cond-expand}は不要です。
 @c COMMON
-@item 
+@item
 @c EN
 Check the environment variable @code{TERM}.  If it is set and
 satisfies @code{vt100-compatible?}, you can create
@@ -22980,7 +22980,7 @@ returns its instance.
 If no suitable console is available, the behavior depends on the
 @var{if-not-available} keyword argument.  If it is @code{:error},
 which is default, an error is signalled.  If it is @code{#f},
-the procedure returns @code{#f}. 
+the procedure returns @code{#f}.
 @c JP
 実行中のプロセスで使える端末のインスタンスを作成して返します。
 
@@ -23073,7 +23073,7 @@ Modifier keys except @code{ALT} are not treated separately but
 included in the returned keycode.  Assuming CAPSLOCK is off,
 if the user press @code{a}, @code{Shift}+@code{a}, and @code{Ctrl}+@code{a},
 the returned value is @code{#\a}, @code{#\A} and @code{#\x01}, respectively.
-@code{Ctrl}+@code{Shift}+@code{a} can't be distinguished from 
+@code{Ctrl}+@code{Shift}+@code{a} can't be distinguished from
 @code{Ctrl}+@code{a}.  @code{ALT}+@code{a}, @code{ALT}+@code{Shift}+@code{a},
 and @code{ALT}+@code{Ctrl}+@code{a} will be @code{(ALT #\a)},
 @code{(ALT #\A)} and @code{(ALT #\x01)}, respectively.
@@ -23171,7 +23171,7 @@ where:
 <option> : bright | reverse | underscore
 @end example
 
-For example, you can set characters to be written in red with 
+For example, you can set characters to be written in red with
 black background and underscore, you can call:
 
 @example
@@ -23335,7 +23335,7 @@ the following properties:
 @c EN
 There's a ``header row'' near the top; not necessarily the very
 first row, but certainly it comes before any real data.  It signifies
-the meaning of each column of the data.  
+the meaning of each column of the data.
 There may be superfluous columns inserted just for cosmetics,
 and sometimes the order of columns are changed when the original spreadsheet
 is edited.  So we need some
@@ -23451,7 +23451,7 @@ at least one non-empty column to be included in the tuple.
 
 @c EN
 If @var{allow-gap?} is @code{#t}, it keeps reading rows until the end,
-skipping invalid rows.  If @var{allow-gap?} is @code{#f} (default), 
+skipping invalid rows.  If @var{allow-gap?} is @code{#f} (default),
 it stops reading once it sees an invalid row after headers.
 @c JP
 @var{allow-gap?}が@code{#t}であった場合、無効な行を飛ばしながら、
@@ -23493,8 +23493,8 @@ as follows:
 (use text.csv)
 (use gauche.generator)
 
-(call-with-input-file "data.csv" 
-  (^p (csv-rows->tuples 
+(call-with-input-file "data.csv"
+  (^p (csv-rows->tuples
        (generator->list (cute (make-csv-reader #\,) p))
        '("Country" "Year" "GDP" "Population"))))
  @result{}
@@ -23539,8 +23539,8 @@ Year、Country、GDPのデータの一つ以上が欠けている行を除外し
 @c COMMON
 
 @smallexample
-(call-with-input-file "data.csv" 
-  (^p (csv-rows->tuples 
+(call-with-input-file "data.csv"
+  (^p (csv-rows->tuples
        (generator->list (cute (make-csv-reader #\,) p))
        '("Country" "Year" "GDP" "Population")
         :required-slots '(("Year" #/^\d@{4@}$/) "Country" "GDP")
@@ -23554,7 +23554,7 @@ Year、Country、GDPのデータの一つ以上が欠けている行を除外し
 @end defun
 
 @c EN
-The following two procedures are ingredients of 
+The following two procedures are ingredients of
 @code{csv-rows->tuples}:
 @c JP
 以下の二つの手続きは@code{csv-rows->tuples}の材料です。
@@ -23864,7 +23864,7 @@ for comparison.  @xref{R7RS sets} for interface of sets.
 @c COMMON
 @item tagged object @tab @code{<edn-object>}
 @c EN
-@tab Tagged objects are mapped to @code{<edn-object>} by default. 
+@tab Tagged objects are mapped to @code{<edn-object>} by default.
 You can customize the parser/writer to map tagged objects with a
 specific tag to a specific Gauche objects.
 @c JP
@@ -23897,7 +23897,7 @@ Read one EDN representation from the given input port, and returns
 Gauche object created from it.  If @var{iport} is omitted,
 current input port is assumed.
 
-When the parser encounters unparsable sequence, 
+When the parser encounters unparsable sequence,
 it raises @code{<edn-parse-error>}.
 
 Note that @var{iport} may be read ahead for characters. Suppose
@@ -23929,7 +23929,7 @@ Read EDN representations repeatedly from the given input port
 and returns a list of them.  If @var{iport} is omitted,
 current input port is assumed.
 
-When the parser encounters unparsable sequence, 
+When the parser encounters unparsable sequence,
 it raises @code{<edn-parse-error>}.
 @c JP
 与えられた入力ポートから、EOFに達するまでEDN表現を読み込み、結果のGaucheオブジェクトの
@@ -23945,7 +23945,7 @@ it raises @code{<edn-parse-error>}.
 A convenience procedure to parse EDN representation in a string @var{str},
 and returns the read object.
 
-When the parser encounters unparsable sequence, 
+When the parser encounters unparsable sequence,
 it raises @code{<edn-parse-error>}.
 @c JP
 EDN表現を文字列から読み込む便利手続きです。
@@ -24196,7 +24196,7 @@ as @code{#u8(1 2 3 4)}:
 @c COMMON
 
 @example
-(register-edn-object-handler! 'u8vector 
+(register-edn-object-handler! 'u8vector
                               (^[tag vec] (vector->u8vector vec)))
 @end example
 @end defun
@@ -24363,7 +24363,7 @@ is emtpy.
 The keyword argument
 @var{initial-capacity} must be a positive exact integer if given,
 and specifies the initial capacity of the buffer.  The buffer is
-automatically extended if necessary, so the argument is only a 
+automatically extended if necessary, so the argument is only a
 hint; if you know you'll insert a long string, for example,
 you can create a buffer that's large enough to hold it to avoid
 reallocation overhead.
@@ -24378,14 +24378,14 @@ The initial cursor position is set at the end of the string by default.
 The @var{pos} and @var{whence} argument can set the initial
 cursor position.  The @var{whence} argument must be either a symbol
 @code{beginning} or a symbol @code{end}, and @var{pos} must be an exact
-integer offset from the whence.  For example, @var{pos} = 10 and 
+integer offset from the whence.  For example, @var{pos} = 10 and
 @var{whence} = @code{beginning} sets the cursor at the 10th character
-of the string from the beginning, and @var{pos} = -1 and @var{whence} = 
+of the string from the beginning, and @var{pos} = -1 and @var{whence} =
 @code{end} sets the cursor position at one character before the end
 of the string.  If the combination of @var{pos} and @var{whence}
 points the outside of the string, an error is signaled.
 
-The optional @var{start} and @var{end} trims the input string before 
+The optional @var{start} and @var{end} trims the input string before
 creating the gap buffer.
 @end defun
 
@@ -24481,7 +24481,7 @@ Makes @var{gbuf} empty.
 @defun gap-buffer-replace! gbuf size content
 @c MOD text.gap-buffer
 This is a combination of @code{(gap-buffer-delete! gbuf size)} and
-@code{(gap-buffer-insert! gbuf content)}. 
+@code{(gap-buffer-insert! gbuf content)}.
 The @var{size} argument must be a nonnegative exact integer,
 and the @var{content} argument must be either a string or a character.
 @end defun
@@ -25770,8 +25770,8 @@ to be more general template engine.
 
 @c EN
 Gauche's string interpolation syntax is expanded at read time and then
-handled by macro expanders, and 
-becomes a simple Scheme code fragment.  
+handled by macro expanders, and
+becomes a simple Scheme code fragment.
 For example, if you have this:
 @c JP
 Gaucheの文字列補間構文はソース読み込み時にマクロ呼び出しへと展開され、
@@ -25825,7 +25825,7 @@ symbol escape by @code{|}.
 
 @c EN
 You also need to provide a @emph{template environment}, where the
-expressions in the template is evaluated.  Note that, 
+expressions in the template is evaluated.  Note that,
 unlike string interpolation,
 those expressions can't refer to the local bindings.
 @c JP
@@ -26574,7 +26574,7 @@ also useful for handling general directed graphs.
 @c MOD util.dominator
 @c EN
 The four arguments represent a directed, possibly cyclic, graph.
-Here, we use @code{Node} to denote an abstract type of a node 
+Here, we use @code{Node} to denote an abstract type of a node
 of the graph.  It can be anything---the algorithm is oblivious on
 the actual type of nodes.
 @c JP
@@ -26812,7 +26812,7 @@ equal (in the sense of @code{equal?}).
 @c EN
 This module implements the algorithm to find the longest common subsequence
 of two given sequences.  The implemented algorithm is based on
-Eugene Myers' O(ND) algorithm 
+Eugene Myers' O(ND) algorithm
 (Eugene Myers, An O(ND) Difference Algorithm and Its Variations,
 @i{Algorithmica} Vol. 1 No. 2, pp. 251-266, 1986.).
 
@@ -27074,7 +27074,7 @@ in this module can handle any type of sequence (@pxref{Sequence framework}).
 @c EN
 Calculates Levenshtein distance (@code{l-*}), restricted edit
 distance (@code{re-*}) and Damerau-Levenshtein distance (@code{dl-*})
-between sequences, respectively.  Each algorithm comes in two 
+between sequences, respectively.  Each algorithm comes in two
 flavors: The singular form @code{*-distance} takes two sequences,
 @var{seq-A} and @var{seq-B}, and calculates distance between them.
 The plural form @code{*-distances} takes a sequence @var{seq-A}
@@ -27596,7 +27596,7 @@ You can use a quoted symbol to match the symbol itself.
 @item
 @c EN
 A keyword, without a quote, used to match the same keyword object.
-Since we're in the process of unifying keywords and symbols, the user is 
+Since we're in the process of unifying keywords and symbols, the user is
 recommended to write keywords with a quote in a pattern in order to match
 the keyword in the input.  @xref{Keyword and symbol integration}, for
 the details.
@@ -29057,7 +29057,7 @@ but only the first 10 elements are calculated because of
 @c MOD util.stream
 @c EN
 Stream comprehension.  Returns a stream in which each element
-is computed by @var{elt-expr}.   
+is computed by @var{elt-expr}.
 The @var{clause} creates scope of @var{elt-expr}
 and controls iterations.  Each @var{clause} can be one of the following
 forms:
@@ -29882,7 +29882,7 @@ it is regarded as a tuple.
 @c COMMON
 @item Tuple folder: @code{tuple-fold}
 @c EN
-A procedure @code{(tuple-folde proc seed tuple1 [tuple2])}. 
+A procedure @code{(tuple-folde proc seed tuple1 [tuple2])}.
 This procedure should work like @code{fold} (@pxref{Walking over lists})
 over the elements in the tuple(s).  It is only called with
 either one or two tuples.
@@ -29894,7 +29894,7 @@ either one or two tuples.
 @item Tuple constructor: @code{make-tuple}
 @c EN
 A procedure @code{(make-tuple proto elements)}, where
-@var{proto} is a tuple and @var{elements} are a list of trees.  
+@var{proto} is a tuple and @var{elements} are a list of trees.
 It must return a new tuple with the given elements,
 while all other properties are the same as @var{proto}.
 This procedure isn't needed by @code{unify}.
@@ -29936,8 +29936,8 @@ of @var{var-cmpr}, @var{val-cmpr} and @var{tuple-fold}.
 @end example
 
 @c EN
-As you can see in the example above, 
-a variable may be mapped to another variable, or even to 
+As you can see in the example above,
+a variable may be mapped to another variable, or even to
 a tree that contains variables.  If you apply the substitution
 to the original tree, you must do it recursively until all the
 variables in the dictionary is eliminated.
@@ -31199,7 +31199,7 @@ The following is the complete rules of SxCSS syntax.
 @end smallexample
 
 @c EN
-NB: Negation op is @code{:not} instead of @code{not}, 
+NB: Negation op is @code{:not} instead of @code{not},
 since @code{(not <negation-arg>)}
 would be ambiguous from the simple node named "not" with one option.
 @c JP
@@ -31220,7 +31220,7 @@ used in the @code{style} attribute of the document, for example.
 @code{(style-decls <declaration> ...)}を@code{construct-css}に渡します。
 @c COMMON
 @example
-(with-output-to-string 
+(with-output-to-string
  (cut construct-css
       '((style-decls (width (50 %))
                      (padding #(0 (10 pt) 0 (10 pt)))))))

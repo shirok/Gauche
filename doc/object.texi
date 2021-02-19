@@ -3556,7 +3556,7 @@ Calculation of inheritance and slots are handle by generic
 functions.  If you define a metaclass, you can define methods
 for them to customize how those calculations are done.
 Class inheritance is calculated by @code{compute-cpl} defined below.
-Slot calculation is a bit involved, and explained in the 
+Slot calculation is a bit involved, and explained in the
 next subsection (@pxref{Customizing slot access}).
 @c JP
 継承とスロットの計算はジェネリックファンクションにより行われます。
@@ -3571,7 +3571,7 @@ next subsection (@pxref{Customizing slot access}).
 If your class needs to initialize auxiliary slots, you can
 define your own @code{initialize} method on its metaclass, in which you call
 @code{next-method} first to set up the core part of the
-@code{<class>} structure, then you sets up class-specific part.  
+@code{<class>} structure, then you sets up class-specific part.
 One caveat is that, after @code{next-method} handles
 initialization of the core @code{<class>} part, you can no longer
 modify essential class slots.  If you need to tweak those slots,
@@ -3989,8 +3989,8 @@ gosh> (ref foo'v)
 @c NODE クラスの再定義のカスタマイズ
 
 @deffn {Generic Function} class-redefinition old-class new-class
-When a class is redefined (@pxref{Class redefinition}), 
-a new class metaobject is instantiated by 
+When a class is redefined (@pxref{Class redefinition}),
+a new class metaobject is instantiated by
 @code{(make @var{metaclass} @var{initargs} @dots{})},
 then generic function is called with the old class metaobject and
 new class metaobject.  It should transform the information in the

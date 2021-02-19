@@ -505,7 +505,7 @@ provides a procedure @code{isomorphic?} which does the job
 Equality only concern about whether two objects are equivalent or not.
 However, sometimes we want to see the order among objects.  Again,
 there's no single ``universal order''.  It doesn't make mathematical
-sense to ask if one complex number is greater than another, but 
+sense to ask if one complex number is greater than another, but
 having some artificial order is useful when you want a consistent
 result of sorting a list of objects including numbers.
 @c JP
@@ -521,7 +521,7 @@ result of sorting a list of objects including numbers.
 @c EN
 A general comparison procedure.  Returns -1 if @var{obj1} is less than
 @var{obj2}, 0 if @var{obj1} is equal to @var{obj2}, and 1 if @var{obj1}
-is greater than @var{obj2}. 
+is greater than @var{obj2}.
 @c JP
 一般的な比較手続きです。@var{obj1}が@var{obj2}より小さければ-1を、
 等しければ0を、大きければ1を返します。
@@ -596,7 +596,7 @@ Note that it's different from lists and strings.
 @end example
 
 @c EN
-If two objects are of subclasses of @code{<object>}, 
+If two objects are of subclasses of @code{<object>},
 a generic function @code{object-compare} is called.
 @c JP
 二つのオブジェクトがともに@code{<object>}のサブクラスであれば、
@@ -613,7 +613,7 @@ isn't @code{<object>}, then they are ordered by their types.
 次の順序を定めています。
 @c COMMON
 
-@enumerate 
+@enumerate
 @item
 Empty list.
 @item
@@ -628,9 +628,9 @@ Strings.
 Symbols.
 @item
 Numbers.
-@item 
+@item
 Vectors.
-@item 
+@item
 Uniform vectors
 (u8 < s8 < u16 < s16 < u32 < s32 < u64 < s64 < f16 < f32 < f64)
 @item
@@ -665,7 +665,7 @@ or @code{#f} (@var{obj1} and @var{obj2} cannot be ordered).
 
 @deffn {Method} object-compare (obj1 <top>) (obj2 <top>)
 @c EN
-This method catches @code{compare} between two objects of a 
+This method catches @code{compare} between two objects of a
 user-defined class, in case the user doesn't define a specialized
 method for the class.
 
@@ -709,7 +709,7 @@ it accidentally.
 
 @defun eq-compare obj1 obj2
 @c EN
-Returns -1 (less than), 0 (equal to) or 1 (greater than) 
+Returns -1 (less than), 0 (equal to) or 1 (greater than)
 according to a certain total ordering of
 @var{obj1} and @var{obj2}.   Both arguments can be any Scheme
 objects, and can be different type of objects.
@@ -840,7 +840,7 @@ results.
 
 If @var{obj} is other than a number, a boolean, a character,
 a symbol, a keyword, a string, a list, a vector, or a uniform vector,
-this procedure calls 
+this procedure calls
 a generic function @code{object-hash} is called to calculate the hash value
 (see below).
 @c JP
@@ -1221,7 +1221,7 @@ a record that bundles closely-related comparison procedures together.
 
 @c EN
 There are two SRFIs that define comparators.  The one that was originally
-called @code{srfi-128} has now become a part of R7RS large as 
+called @code{srfi-128} has now become a part of R7RS large as
 @code{scheme.comparator}, and we recommend new code to use it.
 Gauche has all of @code{scheme.comparator}
 procedures built-in.  The older, and rather complex one is @code{srfi-114};
@@ -1298,7 +1298,7 @@ Returns a hash value of the given object.
 
 @c EN
 @code{Scheme.comparator}'s
-comparators use the ordering predicate, 
+comparators use the ordering predicate,
 while SRFI-114 comparators use the comparison procedure.
 Gauche's @code{<comparator>} supports both by automatically
 generating the missing one; that is, if you create a comparator
@@ -1347,7 +1347,7 @@ Gauche組み込みのデータ型は、コンストラクタで比較器を取�
 @defun make-comparator type-test equal order hash :optional name
 [R7RS comparator]
 @c EN
-Creates a new comparator form the given @var{type-test}, 
+Creates a new comparator form the given @var{type-test},
 @var{equal}, @var{order} and @var{hash} functions, and returns it.
 In R7RS, this is defined in @code{scheme.comparator}
 
@@ -1398,7 +1398,7 @@ or the predefined one.
 The @var{type-test} argument must be either @code{#t} or
 a predicate taking one argument to test suitability of
 the object for comparing by the resulting comparator.
-If it is @code{#t}, 
+If it is @code{#t},
 a procedure that always return @code{#t} is used.
 @c JP
 @code{type-test}引数は、@code{#t}もしくは1引数の手続きでなければなりません。
@@ -1713,7 +1713,7 @@ R7RSではこの手続きは@code{scheme.comparator}ライブラリで提供さ�
 [SRFI-114]
 @c EN
 Order two objects @var{a} and @var{b}
-using @var{cmpr}, and returns either one of 
+using @var{cmpr}, and returns either one of
 -1 (@var{a} is less than @var{b}),
 0 (@var{a} equals to @var{b}), or
 1 (@var{a} is greater than @var{b}).
@@ -1806,7 +1806,7 @@ the @code{default-comparator}
 (which is what @code{make-default-comparator} returns).
 
 Note that, in Gauche, you can also extend default comparator's behavior
-by defining specialized methods for @code{object-equal?}, 
+by defining specialized methods for @code{object-equal?},
 @code{object-compare} and @code{object-hash}.
 See the description of @code{default-comparator} above, for the details.
 @c JP
@@ -1970,7 +1970,7 @@ components only if the real components are the same.
 
 Note that those comparator rejects NaN.
 You need @code{make-inexact-real-comparator} in @code{srfi-114} module
-to compare NaNs with your own discretion. 
+to compare NaNs with your own discretion.
 @xref{Comparators}, for the details.
 @c JP
 それぞれ、正確な整数、整数、有理数、実数、複素数、そして全ての数値を比較する比較器です。
@@ -3500,7 +3500,7 @@ to an integer.   @code{Modf} returns two values; a fractional
 part of @var{x} and an integral part of @var{x}.   @code{Frexp}
 returns two values, @var{fraction} and @var{exponent} of @var{x},
 where @var{x} = @var{fraction} * 2^@var{exponent}, and
-0.5 <= |@var{fraction}| < 1.0, unless @var{x} is zero.  
+0.5 <= |@var{fraction}| < 1.0, unless @var{x} is zero.
 (When @var{x} is zero, both @var{fraction} and @var{exponent} are zero).
 @var{Ldexp} is a reverse operation of
 @code{frexp}; it returns a real number @var{x} * 2^@var{n}.
@@ -3611,7 +3611,7 @@ floating point representation is returned.
 @end example
 
 @c EN
-For all finite inexact real number @var{x}, 
+For all finite inexact real number @var{x},
 @code{(inexact (exact @var{x}))} is always @code{eqv?} to
 the original number @var{x}.
 @c JP
@@ -3746,7 +3746,7 @@ calculation of @code{(* sign mantissa (expt 2 exponent))}).
 @end example
 
 @c EN
-(If you give both @var{hi} and @var{lo}, but omit @var{open?}, 
+(If you give both @var{hi} and @var{lo}, but omit @var{open?},
 we assume closed range.)
 @c JP
 (@var{hi}と@var{lo}引数を与えて @var{open?}を省略した場合は、
@@ -3993,7 +3993,7 @@ and at that time,
 the argument order was @code{(copy-bit-field n start end from)}.
 During the discussion of SRFI-60 the argument order was changed
 for the consistency, and the new versions of SLIB followed it.
-We didn't realize the change until recently - before 0.9.4, 
+We didn't realize the change until recently - before 0.9.4,
 @emph{this procedure had the old argument order}.  Code that is using
 this procedure needs to be fixed.  If you need your code to work
 with both versions of Gauche, have the following definition
@@ -4081,7 +4081,7 @@ exact integer @var{n}.  Negative integer is assumed to be in
 
 @defun twos-exponent n
 @c EN
-If @var{n} is a power of two, that is, @code{(expt 2 k)} and @code{k >= 0}, 
+If @var{n} is a power of two, that is, @code{(expt 2 k)} and @code{k >= 0},
 then returns @code{k}.  Returns @code{#f} if @var{n} is not a power of two.
 @c JP
 @var{n}が2の冪乗@code{(expt 2 k)} (@code{k >= 0}) ならその冪 @code{k} を、
@@ -4339,7 +4339,7 @@ unbound variable means there's no value associated with the variable.
 @c EN
 However, @code{#<undef>} may be used in certain
 occasions to indicate that a value is not provided for
-the variable.  For example, 
+the variable.  For example,
 the toplevel variable can be bound to @code{#<undef>} if it is
 defined by @code{(define variable)} form (@pxref{Definitions}).
 An optional procedure parameter
@@ -4366,11 +4366,11 @@ You shouldn't let it carry too much meanings.
 @c COMMON
 
 @c EN
-The @code{#<undef>} value is counted as true value in generalized 
+The @code{#<undef>} value is counted as true value in generalized
 boolean context,
 since it is not @code{#f}.  However, branching based on @code{#<undef>}
 is dangerous---a procedure that is defined to return unspecified value
-may merely returning @code{#<undef>} as a provisional value; it will 
+may merely returning @code{#<undef>} as a provisional value; it will
 change the return value in future.  Since the return value isn't specified,
 no one should be using it.  The code that tests such result value as
 a generalized boolean may break if the procedure changes the return value.
@@ -4542,7 +4542,7 @@ An error is signaled when you try to modify an immutable pair.
 @c COMMON
 
 @c EN
-In Gauche, both type of pairs can be treated the same unless you try 
+In Gauche, both type of pairs can be treated the same unless you try
 to modify them.  Both satisfies the predicate @code{pair?}.  If you
 need to test specifically if a pair is immutable, use @code{ipair?}
 (@pxref{List predicates}).
@@ -4789,7 +4789,7 @@ SRFI-1 (R7RS @code{(scheme list)}) が@code{cons*}という名前を定義しま
 @defun list-copy list
 [R7RS base]
 @c EN
-Shallow copies @var{list}.  
+Shallow copies @var{list}.
 If @var{list} is circular, an error is thrown.
 (Detecting circular list is Gauche's extension; R7RS allows
 the procedure to diverge.)
@@ -6053,7 +6053,7 @@ Otherwise, @code{#f} is returned.
 @c COMMON
 
 @c EN
-If the optional @var{obj=} argument of @code{member} is given, 
+If the optional @var{obj=} argument of @code{member} is given,
 it is used as a equivalence predicate
 instead of @code{equal?}.
 @c JP
@@ -6434,7 +6434,7 @@ of memory than the ordinary pairs.
 @c EN
 Keep in mind that code using extended pairs is not easily ported to
 other Scheme implementations, although the
-feature can be emulated with a separate weak hash table.  
+feature can be emulated with a separate weak hash table.
 @c JP
 拡張ペアを使ったコードは、弱参照ハッシュテーブルでエミュレートできるとはいえ、
 他のScheme処理系には簡単に移植できないことに留意してください。
@@ -7158,7 +7158,7 @@ a pattern are treated as pattern variables, since they are symbols.
 The same thing happens to the patterns in @code{syntax-rules}.
 
 To make the code work in both versions, explicitly mark the keywords
-as literals.  
+as literals.
 @c JP
 @code{syntax-rules}でも同じことが起きます。
 
@@ -7290,7 +7290,7 @@ list of @code{(gauche base)}.)
   (import (scheme base)
           (only (gauche base) copy-port)
           (gauche keyword))
-  (export cat)        
+  (export cat)
 
   (begin
     (define (cat)
@@ -7422,9 +7422,9 @@ Before 0.9.4, @code{\xNN} syntax uses Gauche's internal
 character encoding as opposed to Unicode codepoint.  Both are
 the same if Gauche is compiled with internal encoding @code{utf-8}
 or @code{none} (if it's @code{none}, only characters up to U+00ff
-is supported and in this range the characters are the same as 
+is supported and in this range the characters are the same as
 Unicode characters.)   If Gauche is compiled with encoding
-@code{euc-jp} or @code{sjis}, the meaning of @code{\xNN} beyond 
+@code{euc-jp} or @code{sjis}, the meaning of @code{\xNN} beyond
 ASCII range differs from 0.9.3.3 or before.
 
 If you set the reader mode to @code{legacy} (@pxref{Reader lexical mode}),
@@ -7584,7 +7584,7 @@ Unicodeに対応するものがない文字がいくつかあります
 カテゴリに変更されるでしょう。
 @c COMMON
 
-@multitable {aaaa} {aaaa} {aaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} 
+@multitable {aaaa} {aaaa} {aaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
 @item SJIS @tab EUC @tab Cat  @tab Unicode
 @item @code{82F5} @tab @code{A4F7} @tab @code{Lo} @tab @code{U+304B U+309A} (Semi-voiced Hiragana KA)
 @item @code{82F6} @tab @code{A4F8} @tab @code{Lo} @tab @code{U+304D U+309A} (Semi-voiced Hiragana KI)
@@ -7893,7 +7893,7 @@ Gauche provides built-in support of character set creation and
 a predicate that tests whether a character is in the set or not.
 
 The class implements the collection protocol (@pxref{Collection framework}),
-so that the standard collection methods provided in the 
+so that the standard collection methods provided in the
 @code{gauche.collection} module can be used.
 
 An instance of @code{<char-set>} is applicable to a character,
@@ -7947,7 +7947,7 @@ A character whose Unicode codepoint is a hexadecimal number @var{N}.
 @itemx \U@var{XXXXXXXX}
 This is a legacy Gauche syntax, for a unicode character
 whose Unicode codepoint is represented by 4-digit and 8-digit hexadecimal
-numbers, respectively.  
+numbers, respectively.
 @item \s
 Whitespace characters
 (space, newline, tab, form feed, vertical tab, carriage return).
@@ -7973,7 +7973,7 @@ A caret character.
 @item [:alnum:] @dots{}
 Character set a la POSIX.  See the table below for the complete list of
 recognized character set names.  The set name must be in all lower cases.
-This notation only includes characters in ASCII range.  
+This notation only includes characters in ASCII range.
 @item [:^alnum:] @dots{}
 Complement set of @code{[:alnum:]} etc.
 @item [:ALNUM:] @dots{}
@@ -8373,7 +8373,7 @@ the corresponding char set without @code{ascii-}.
 @c COMMON
 
 @c EN
-The @code{\d}, @code{\s} and @code{\w} notation in the char-set literal 
+The @code{\d}, @code{\s} and @code{\w} notation in the char-set literal
 and regexp literal corresponds to @code{char-set:ascii-digit},
 @code{char-set:ascii-whitespace}, and @code{char-set:ascii-word},
 respectively (not the Unicode set).
@@ -8918,7 +8918,7 @@ a whitespace.  The result string is always complete.
 
 Note that the algorithm to allocate a string by @code{make-string} and
 then fills it one character at a time is @emph{extremely} inefficient
-in Gauche, and should be avoided. 
+in Gauche, and should be avoided.
 
 In Gauche, a string is simply a pointer to an immutable string content.
 If you mutate a string by, e.g. @code{string-set!}, Gauche allocates
@@ -9151,7 +9151,7 @@ string interpolation syntax.  Also be careful not to shadow
 This is the old style of string-interpolation.  It is still recognized,
 but discouraged for the new code.
 
-Inside @var{string-literal}, you can use @code{,@var{expr}} 
+Inside @var{string-literal}, you can use @code{,@var{expr}}
 (instead of @code{~@var{expr}}) to
 evaluate @var{expr}.  If comma isn't immediately followed by a
 character starting an expression, it loses special meaning.
@@ -9178,7 +9178,7 @@ languages.  They are usually linked with other syntax of the language
 reference syntax in some languages).
 
 The old style of string interpolation syntax was taken from quasiquote
-syntax, because those two are conceptually 
+syntax, because those two are conceptually
 similar operations (@pxref{Quasiquotation}).
 However, since comma character is frequently used in string literals,
 it was rather awkward.
@@ -10336,7 +10336,7 @@ The order in which @var{proc} is applied is not guaranteed to be left to right.
 You shouldn't depend on the order.
 
 If @var{proc} saves a continuation and it is invoked later, the result
-already returned from @code{string-map} won't be affected 
+already returned from @code{string-map} won't be affected
 (as specified in R7RS).
 @c JP
 入力文字列中の各文字に対して@var{proc}を適用し、その結果の文字を集めた
@@ -10856,7 +10856,7 @@ Matches any of the character set specified by @i{char-set-spec}.
 
 @item \s, \d, \w
 @c EN
-Matches a whitespace character (@code{char-set:ascii-whitespace}, 
+Matches a whitespace character (@code{char-set:ascii-whitespace},
 @code{#[\u0009-\u000d ]}),
 a digit character(@code{char-set:ascii-digit}, @code{#[0-9])}, or
 a word-constituent character (@code{char-set:ascii-word}, @code{#[A-Za-z0-9_]}),
@@ -10865,7 +10865,7 @@ Note that they don't include characters outside ASCII range.
 
 Can be used both inside and outside of character set.
 @c JP
-それぞれ空白文字(@code{char-set:ascii-whitespace}, 
+それぞれ空白文字(@code{char-set:ascii-whitespace},
 @code{#[\u0009-\u000d ]})、
 数字(@code{char-set:ascii-digit}, @code{#[0-9])}、
 単語を構成する文字(@code{char-set:ascii-word}, @code{#[A-Za-z0-9_]})にマッチします。
@@ -12177,7 +12177,7 @@ If it's the latter, @code{regexp-unparse} just returns @code{#f}.
 This is the structure of AST.  Note that this is originally
 developed only for internal use, and not very convenient to manipulate
 from the code (e.g. if you insert or delete a subtree, you have to
-renumber capturing groups to make them consistent.) 
+renumber capturing groups to make them consistent.)
 @c JP
 以下にASTの構造を示します。この仕様は当初、内部的に使うためだけに設計されたので、
 コードで直接いじるのには若干不便です (例えば、部分木を削除したり
@@ -12345,7 +12345,7 @@ Creates a vector whose elements are @var{obj} @dots{}.
 
 @defun vector-tabulate len proc
 @c EN
-Creates a vector of length @var{len}, 
+Creates a vector of length @var{len},
 initializing @var{i}-th
 element of which by @code{(@var{proc} @var{i})}
 for all @var{i} between @code{0} and @var{len}
@@ -12935,9 +12935,9 @@ A class for @@vector, where @code{@@} is one of the uvector tags
 (@code{u8}, @code{s8}, @dots{}).
 It inherits @code{<uvector>}.
 
-It implements sequence protocol (@pxref{Sequence framework})), 
+It implements sequence protocol (@pxref{Sequence framework})),
 so you can convert a sequence of
-real numbers into a uvector using @code{coerce-to}, 
+real numbers into a uvector using @code{coerce-to},
 if every elements is valid for the uvector.
 @c JP
 @@vectorのクラス。@code{@@}の部分はuvectorタグ
@@ -13271,7 +13271,7 @@ if you import @code{gauche.collection}.
 @c EN
 A bitvector is a sequence of bits.  Each bit can be considered either
 an exact integer 0/1, or a boolean values @code{#f}/@code{#t}.
-In the former view, it is similar to a uniform vector, but it has the 
+In the former view, it is similar to a uniform vector, but it has the
 interface sufficiently different from uvectors and we provided it as
 a disjoint type.
 
@@ -13706,9 +13706,9 @@ Gauche provides hashtables (@pxref{Hashtables}) and treemaps (@pxref{Treemaps})
 as the built-in dictionaries.  Some additional libraries provide more
 dictionary-type data structures.
 
-A generic interface is defined as a dictionary framework 
+A generic interface is defined as a dictionary framework
 (@pxref{Dictionary framework}), by which you can use dictionaries without
-knowing its details. 
+knowing its details.
 
 R7RS also defines an abstract dictionary interface as @emph{mapping};
 @pxref{R7RS mappings}, for the details.
@@ -13740,7 +13740,7 @@ R7RS-large defines hashtable (@code{scheme.hash-table} module,
 @pxref{R7RS hash tables}) but its API is not completely consistent
 with Gauche's original hashtables and other native APIs.
 
-Rather than mixing different flavor of APIs, we keep Gauche's native 
+Rather than mixing different flavor of APIs, we keep Gauche's native
 API consistent, and provide R7RS procedures that are inconsistent
 with aliases---specifically, those procedures are suffixed with @code{-r7}
 in @code{gauche} module.  For portable programs, you can import
@@ -13891,7 +13891,7 @@ The @var{comparator} argument is the same as of @code{make-hash-table}.
 Each @var{key&value} must be a pair, and its car is used as a key
 and its cdr is used as a value.
 
-Note: This is called @code{hash-table} by 0.9.5.  R7RS introduced 
+Note: This is called @code{hash-table} by 0.9.5.  R7RS introduced
 a procedure with the same name, but different interface.
 We see R7RS version makes more sense, so we'll eventually switch to it,
 but the transition will take long time.
@@ -14697,7 +14697,7 @@ depending on whether the first key is less than, equal to, or
 greater than the second key, respectively.  In other words, it
 is a comparison procedure of a comparator.
 
-The second form of @code{make-tree-map} is also for the 
+The second form of @code{make-tree-map} is also for the
 backward compatibility; it takes two procedures, each must
 be a procedure that takes two keys; the first one returns
 @code{#t} iff two keys are equal, and the second one returns
@@ -15218,7 +15218,7 @@ Schemeはまた、現在の計算の継続を取り出して手続きにラッ�
 
 @c EN
 Gauche extends the concept of procedure application, allowing
-you to apply any object as if it's a procedure; 
+you to apply any object as if it's a procedure;
 for example, you can set up Gauche to
 accept @code{("abc" 2)} can be a valid application syntax.
 @xref{Applicable objects}, for the details.
@@ -15640,7 +15640,7 @@ Partial application versions of @code{apply}, @code{map} and @code{for-each}.
 Partial application versions of some srfi-1 (R7RS @code{(scheme list)})
 procedures (@pxref{R7RS lists}).
 @c JP
-SRFI-1 (R7RS @code{(scheme list)}) 
+SRFI-1 (R7RS @code{(scheme list)})
 (@ref{R7RS lists}参照)の手続に対応する部分適用版手続。
 @c COMMON
 @end defun
@@ -16798,7 +16798,7 @@ The following example returns the first line matching the regexp
 
 @c EN
 Note: If you want to pick all the lines matching the regexp,
-like the @code{grep} command, 
+like the @code{grep} command,
 you can use @code{gfilter} and @code{generator->list}.
 @c JP
 註: @code{grep}コマンドのように、正規表現にマッチする全ての行を取り出したいなら、
@@ -17584,7 +17584,7 @@ Unfortunately, Gauche can't handle it well.
 
 @c EN
 When we want to access the second argument (@code{cadr}) of @code{*fibs*},
-we take the car of the second pair, 
+we take the car of the second pair,
 which is a lazy pair of @code{1} and @code{(lmap ...)}.  The lazy pair
 is forced and its cdr part needs to be calculated.  The first thing
 @code{lmap} returns needs to see the first and second element of @code{*fibs*},
@@ -17600,7 +17600,7 @@ carを取ろうとした時点でこの遅延ペアはforceされ、そのcdrが
 @c COMMON
 
 @c EN
-We can workaround this issue by 
+We can workaround this issue by
 avoiding accessing the immediately preceding value.
 Fibonacci numbers F(n) = F(n-1) + F(n-2) = 2*F(n-2) + F(n-3), so we
 can write our sequence as follows.
@@ -17670,7 +17670,7 @@ names are provided for the symmetry to @code{cons*}/@code{list*}.
 @c COMMON
 
 @c EN
-The @var{tail} argument should be an expression that yields a 
+The @var{tail} argument should be an expression that yields a
 (possibly lazy) list.   It is evaluated lazily.  Note that
 the preceding elements @var{x} @dots{} are evaluated eagerly.
 The following equivalences hold.
@@ -17764,7 +17764,7 @@ frequently.
 @c EN
 If @var{port} is omitted, the current input port is used.
 
-Note that the lazy sequence may buffer some items, so 
+Note that the lazy sequence may buffer some items, so
 once you make an lseq from a port, only use the resulting lseq
 and don't ever read from @var{port} directly.
 @c JP
@@ -18460,7 +18460,7 @@ To signal a compound condition, you can use @code{raise} as explained below.
 
 @defun error string arg @dots{}
 @defunx error condition-type keyword-arg @dots{} string arg @dots{}
-[R7RS+][SRFI-23+] 
+[R7RS+][SRFI-23+]
 @c EN
 Signals an error.  The first form creates an @code{<error>}
 condition, with a message consists of @var{string} and @var{arg} @dots{},
@@ -18927,7 +18927,7 @@ installed, the following action is taken.
 @enumerate
 @c EN
 If an unhandled exception occurs within a thread other than the primordial
-one, it terminates the thread, and the thrown condition 
+one, it terminates the thread, and the thrown condition
 is wrapped by @code{<uncaught-exception>} condition and stored in the
 thread object.  If other thread calls @code{thread-join!} to retrieve
 result, the the @code{<uncaught-exception>} is thrown in that thread.
@@ -18980,7 +18980,7 @@ then print the current stack trace.  This is the procedure
 the system calls when you see an error reported on REPL.
 
 Since you can @code{raise} any object, @var{exn} can be any
-object; it's not needed to be an instance of @code{<condition>}. 
+object; it's not needed to be an instance of @code{<condition>}.
 A suitable message is chosen by @code{report-error}.
 
 You can specify where the output goes by the optional @var{sink}
@@ -20040,7 +20040,7 @@ and re-invoke them afterwards.
 @c EN
 A port class.   A port is Scheme's way of abstraction of I/O channel.
 Gauche extends a port in number of ways so that it can be used
-in wide range of applications.  
+in wide range of applications.
 @c JP
 Portは、Schemeにおいて抽象化された入出力のインタフェースを提供します。
 Gaucheはportにいくつかの拡張を行い、いろいろなアプリケーションに対応できるようにしました。
@@ -20496,7 +20496,7 @@ represented as an integer byte offset from the top of the stream.
 If it is more complicated ports, such as the one doing the character encoding
 conversion, the port position may not be available, or returned
 object may not correspond to the byte offset.
-If @var{port} is a procedural (virtual) port (@pxref{Virtual ports}), 
+If @var{port} is a procedural (virtual) port (@pxref{Virtual ports}),
 the returned value can
 be an arbitrary Scheme object, it can only
 be valid to be used for @code{set-port-position!}.
@@ -20951,7 +20951,7 @@ This argument specifies the type of the file.
 @c EN
 The file is opened in "binary" mode. (This is the default)
 @c JP
-ファイルはバイナリモードでオープンされます。(これがデフォルトです。) 
+ファイルはバイナリモードでオープンされます。(これがデフォルトです。)
 @c COMMON
 @item :character
 @c EN
@@ -22394,13 +22394,13 @@ Gaucheにはたくさんの出力手続きがあり、慣れないうちはど�
 @item Object writers
 Procedures that write out Scheme objects.
 Although there exist more low-level procedures,
-these are regarded as a basic layer of output routines, 
+these are regarded as a basic layer of output routines,
 since it works on a generic Scheme object as a single unit.
 They come in two flavors:
 
 @itemize @bullet
 @item
-Write-family procedures: @code{write}, @code{write-shared}, @code{write-simple}--these are to produce @emph{external representation} of Scheme objects, 
+Write-family procedures: @code{write}, @code{write-shared}, @code{write-simple}--these are to produce @emph{external representation} of Scheme objects,
 which can be generally read back by @code{read} without losing
 information as much as possible@footnote{In a sense, this is somewhat similar to
 what is called ``serialization'' or ``marshalling'' in other programming
@@ -22414,7 +22414,7 @@ The external representation of most Scheme objects
 are the ones you write literal data in program, so this is the default way
 of writing Scheme objects out.
 @item
-Display-family procedures: 
+Display-family procedures:
 @code{display}, @code{print}, @code{newline}.
 These are to produce plain-text output suitable for human readers.
 @end itemize
@@ -22600,7 +22600,7 @@ column width used for pretty printing.
 
 @c EN
 A write-controls object is immutable.  If you need a controls object
-with a slight variation of an existing controls object, 
+with a slight variation of an existing controls object,
 use @code{write-controls-copy}.
 @c JP
 出力制御オブジェクトは変更不可です。もし既に存在する制御オブジェクトを
@@ -22677,7 +22677,7 @@ an output port, and when omitted, the current output port is assumed.
 Some procedures take @var{port/controls} argument, which can be either
 an output port or @code{<write-controls>} object.  For example, @code{write}
 takes up to two such optional arguments; that is, you can call it
-as @code{(write obj)}, @code{(write obj port)}, 
+as @code{(write obj)}, @code{(write obj port)},
 @code{(write obj controls)}, @code{(write obj port controls)}
 or @code{(write obj controls port)}.  When omitted, the port is assumed
 to be the current output port, and the controls is assumed to be the default
@@ -22713,7 +22713,7 @@ procedures differ in a way to handle shared or circular structures.
 @c EN
 @code{Write} is circular-safe; that is, it uses datum label notation
 (@code{#n=} and @code{#n#}) to show cycles.  It does not use datum label
-notation for non-circular structures that are merely shared 
+notation for non-circular structures that are merely shared
 (see the second example).
 @c JP
 @code{write}は循環構造に対して安全です。データに循環がある場合は
@@ -22816,7 +22816,7 @@ srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
 @defun display obj :optional port/controls1 port/controls2
 [R7RS write]
 @c EN
-Produces a human-friendly representation of an object @var{obj} 
+Produces a human-friendly representation of an object @var{obj}
 to the output port.
 
 If @var{obj} contains cycles, @code{display} uses datum-label notation.
@@ -22915,7 +22915,7 @@ value is assumed.
 
 (pprint (make-list 6 '(gauche droite)) :level 1)
  @result{} @r{prints}
-  (# # # # # #) 
+  (# # # # # #)
 @end example
 @end defun
 
@@ -23456,8 +23456,8 @@ Parameters: @var{digits},@var{idigits},@var{width},@var{padchar}
 Floating-point formatting suitable for currency display.  The @var{digits}
 parameter specifies the number of digits after the decimal point (default 2).
 The @var{idigits} parameter specifies the minimum number of digits before
-the decimal point (default 1).  The @var{width} parameter specifies the 
-mininum number of characters for the entire display, 
+the decimal point (default 1).  The @var{width} parameter specifies the
+mininum number of characters for the entire display,
 and if the number of printed characters are smaller than it,
 @var{padchar} is displayed on the left to fill the blank.  The default
 of @var{width} is 0, and the default of @var{padchar} is @code{#\space}.
@@ -23565,7 +23565,7 @@ absolute position of the arguments, starting from 0.
 @c EN
 Parameter: @var{count}
 
-Output a @code{#\~}, @code{#\newline}, @code{#\tab} and @code{#\page}, 
+Output a @code{#\~}, @code{#\newline}, @code{#\tab} and @code{#\page},
 respectively.    If @var{count} is given, output the specified number
 of characters.
 @c JP
@@ -24064,7 +24064,7 @@ module: #<module gauche.require-base>
 @end example
 
 @c EN
-Rationale: Generally it's difficult to guarantee 
+Rationale: Generally it's difficult to guarantee
 when the specified file is loaded by @code{require} (because some other
 module may already have required it).  If we just used the caller's current
 module, there would be a couple of issues: The form @code{define-module} or
@@ -24573,7 +24573,7 @@ in ascending order and returns the sorted sequence.
 You can pass an instance of any @code{<sequence>} as @var{seq};
 the same type of sequence will be returned.  For @code{sort}, the
 sequence type must have builder interface so that @code{sort} can
-build a new sequence of the same type (See @ref{Fundamental iterator creators}, 
+build a new sequence of the same type (See @ref{Fundamental iterator creators},
 for the builder interface).
 For @code{sort!}, @var{seq} must be mutable.
 
@@ -24646,7 +24646,7 @@ SRFI-95は安定性を要求しますが、同時に@var{cmp}が与えられる�
 @c EN
 If you want to keep a sorted set of objects to which you
 add objects one at at time, you can also use treemaps
-(@pxref{Treemaps}).  If you only need to find out 
+(@pxref{Treemaps}).  If you only need to find out
 a few maximum or minimum elements instead of sorting
 all the elements, heaps can be used (@pxref{Heap}).
 @c JP
@@ -28089,7 +28089,7 @@ the program's suid and/or sgid bit is set.)
 Note: If the platform has @code{issetugid()} call, we use it.
 Otherwise, we remember the if real (user|group) id and
 effective (user|group) id differ or not at the initialization time.
-(In the latter case, we can't detect the case that the process 
+(In the latter case, we can't detect the case that the process
 changes [e]uid/[e]gid before initializing Gauche; keep it in mind if
 libgauche is used as an embedded Scheme engine).
 @c JP
@@ -28236,7 +28236,7 @@ This may be just a @code{"/dev/tty"}.   See also @code{sys-ttyname}.
 
 @defun sys-getrlimit resource
 @defunx sys-setrlimit resource current :optional maximum
-[POSIX] 
+[POSIX]
 @c EN
 Get and set resource limits respectively.
 @var{Resource} is an integer constant to specify the resource
@@ -28348,7 +28348,7 @@ These procedures convert between integer error number and the symbol
 of its unix name (e.g. @code{EINTR}).
 
 If the given error number or name isn't available on the running
-platform, those procedures return @code{#f}.  See @code{sys-strerror} 
+platform, those procedures return @code{#f}.  See @code{sys-strerror}
 above for potentially available error names.
 
 Valid error names and their actual values differ among platforms.
@@ -29170,7 +29170,7 @@ Windowsネイティブ環境でのみ提供されます。
 @c COMMON
 
 @defun sys-win-process? obj
-[Windows] 
+[Windows]
 @c EN
 Returns @code{#t} iff @var{obj} is a Windows process handle object.
 @c JP
@@ -29180,7 +29180,7 @@ Returns @code{#t} iff @var{obj} is a Windows process handle object.
 @end defun
 
 @defun sys-win-process-pid handle
-[Windows] 
+[Windows]
 @c EN
 Returns an integer PID of the process represented by
 a Windows process handle @var{handle}.  An error is signaled
@@ -29648,7 +29648,7 @@ Bound to a positive integer that @code{sys-random} may return.
 @end defvar
 
 @defun sys-get-osfhandle port-or-fd
-[Windows] 
+[Windows]
 @c EN
 This procedure is only available on Windows native platforms.
 Returns a Windows file handle associated to the given port or

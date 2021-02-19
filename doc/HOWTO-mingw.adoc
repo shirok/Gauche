@@ -148,8 +148,8 @@ The MbedTLS source is downloaded and compiled during build.
 MSYSTEM=MINGW64 src/mingw-dist.sh --with-mbedtls
 ----
 
-Note: If you build a Gauche binary in this way, it includes MbedTLS library 
-which is covered by Apache License 2.0.  Distributing the binary will 
+Note: If you build a Gauche binary in this way, it includes MbedTLS library
+which is covered by Apache License 2.0.  Distributing the binary will
 be covered by that license, as well as BSDL.
 
 

@@ -349,7 +349,7 @@ is that a variable in macro use site is shadowed by the binding introduced
 by a macro definition.  We can apply the same renaming strategy to
 avoid that type of capture, too.  Let's see the following example:
 @c JP
-一方、もう一つのタイプの変数捕捉 (より頻繁に話題に上る、@code{gensym}で回避できる捕捉) 
+一方、もう一つのタイプの変数捕捉 (より頻繁に話題に上る、@code{gensym}で回避できる捕捉)
 は、マクロ使用時の変数がマクロ定義時に導入される束縛によりシャドウされてしまう
 という問題です。これについても、同じリネーム戦略が使えます。
 次の例を見てみましょう。
@@ -362,7 +362,7 @@ avoid that type of capture, too.  Let's see the following example:
 @end example
 
 @c EN
-The local macro inserts binding of @code{f} into the expansion.  
+The local macro inserts binding of @code{f} into the expansion.
 The macro use @code{(m (f 3))} also contains a reference to @code{f},
 which should be the outer @code{f},
 since the macro use is lexically outside of the @code{let} inserted
@@ -403,7 +403,7 @@ This is, in principle, what hygienic macro is about (well, almost).
 In reality, we don't rename everything in batch.
 One caveat is in the latter example---we statically renamed
 @code{f} to @code{f_2}, but it is possible that the macro
-recursively calls itself, and we have to distinguish @code{f}'s 
+recursively calls itself, and we have to distinguish @code{f}'s
 introduced in every individual expansion of @code{m}.
 So macro expansion and renaming should work together.
 @c JP
@@ -769,7 +769,7 @@ The @var{test} in pattern matches the input @code{(zero? x)}.
 @c COMMON
 @item
 @c EN
-The @var{body} in pattern matches the input @code{(print "huh?")} 
+The @var{body} in pattern matches the input @code{(print "huh?")}
 @emph{and} @code{(print "we got zero!")}.
 @c JP
 パターン中の@var{body}は入力の@code{(print "huh?")}および@code{(print "we got zero!")}とマッチ
@@ -857,8 +857,8 @@ See the following example:
 (define show
   (syntax-rules ()
     [(_ expr ...)
-     (begin 
-       (begin (write 'expr) (display "=") (write expr) (newline)) 
+     (begin
+       (begin (write 'expr) (display "=") (write expr) (newline))
        ...)]))
 @end example
 
@@ -999,7 +999,7 @@ splicing the leaves into the surrounding list:
 Note: Allowing multiple ellipses to directly follow a subtemplate,
 and a pattern variable in a subtemplate to be enclosed within more
 than the variable's level of nesting of ellipses, are extension to
-R7RS, and defined in SRFI-149.  In the above examples, 
+R7RS, and defined in SRFI-149.  In the above examples,
 @code{ellipsis-test}, @code{my-append} and @code{my-append2} are
 outside of R7RS.
 @c JP
@@ -1155,7 +1155,7 @@ used as follows:
 @c EN
 The @var{rename} argument passed to @var{procedure-expr} is
 a procedure that takes a symbol (or, to be precise, a symbol or
-an identifier) and @emph{effectively renames} it to a unique 
+an identifier) and @emph{effectively renames} it to a unique
 identifier that keeps identity within the macro definition environment and
 won't be affected in the macro use environment.
 @c JP
@@ -1362,7 +1362,7 @@ by the result of applying @var{rename} on themselves.
 
 @c EN
 The @var{quasiquote-form} argument must be a quasiquoted form.
-The outermost quasiquote @code{`} is consumed by @code{quasirename} and 
+The outermost quasiquote @code{`} is consumed by @code{quasirename} and
 won't appear in the output.
 The reason we require it is to make nested quasiquotes/quasirenames work.
 @c JP
@@ -1881,7 +1881,7 @@ keep them as simple as possible if you need to write ones.
 
 @c EN
 However, if you find yourself in an unfortunate situation that
-you have to untangle hairy macros, 
+you have to untangle hairy macros,
 Gauche has some tools to help.
 @c JP
 しかし、時には怪しげなマクロを解きほぐす必要に迫られるという不運に見舞われるかもしれません。
@@ -2228,7 +2228,7 @@ to be renamed.
                (od? (^n (if (= n 0) #f (ev? (- n 1)))))]
      (ev? 3)))
 
-@result{} 
+@result{}
 
 (let
  ((ev? (quote undefined)) (od? (quote undefined)))
@@ -2323,9 +2323,9 @@ feature only for interactive macro testing.
       (define x (expt foo))
       (let1 x 3
         (when-not (bar) (if x))))))
- @result{} (letrec ((if.0 list)) 
+ @result{} (letrec ((if.0 list))
      (letrec ((x.1 (expt foo)))
-       (letrec ((x.2 '3)) 
+       (letrec ((x.2 '3))
         (if (bar) '#f (if.0 x.2)))))
 @end example
 @end defun
