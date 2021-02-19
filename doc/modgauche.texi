@@ -10216,7 +10216,7 @@ An immutable structure holding positional information.  It is returned
 by @code{lseq-position}.  The information is queried by
 the following procedure.
 @c JP
-位置情報を保持する変更付加な構造で、@code{lseq-position}から返されます。
+位置情報を保持する変更不可な構造で、@code{lseq-position}から返されます。
 情報は以下の手続きでアクセスできます。
 @c COMMON
 @end deftp
