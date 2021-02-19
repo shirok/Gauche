@@ -12424,88 +12424,179 @@ It is an error to pass other values ot @var{cont}.
 
 @defun peg-parser->generator parser list
 @c MOD parser.peg
+@c EN
 This is useful when you need to apply @var{parser} repeatedly over
 the input @var{list}.    Returns a generator that generates
 the parsed result one match at a time.
+@c JP
+パーザ@var{parser}を入力@var{list}に繰り返し適用したい場合に便利です。
+マッチした入力をひとつづつ返すジェネレータを作って返します。
+@c COMMON
 
+@c EN
 The same input can be accepted by
 by @code{(peg-run-parser ($many parser) list)}, but this one
-won't return until all input is consumed.
+won't return until all input is consumed.  On the other hand,
+@c JP
+@code{(peg-run-parser ($many parser) list)}としても同じ入力が受容されますが、
+こうした場合は全ての入力が消費されるまで戻ってきません。
+@c COMMON
 @end defun
 
 @deftp {Condition type} <parse-error>
 @c MOD parser.peg
+@c EN
 An condition type raised by the parser driver when the given parser
 failed ultimately.  Inherits @code{<error>}.
 (Note that each parser won't throw this; one
 parser's failure doesn't necessarily mean the entire parser fails.
 It's the driver that recognizes the ultimate failure and raise this
 condition.)
+@c JP
+パーザが最終的に失敗した場合にパーザドライバが投げるコンディション型です。
+@code{<error>}を継承します。
+(各パーザがこのコンディションを投げることはありません。
+一つのパーザが失敗したとしても、他の選択肢が成功するかもしれないからです。
+最終的な失敗を認識してこのコンディションを投げるのはドライバの仕事です。)
+@c COMMON
 
+@c EN
 The following slots are available:
+@c JP
+以下のスロットを持ちます。
+@c COMMON
 
 @defivar <parse-error> message
+@c EN
 This slot is inherited from @code{<error>}.  Contains string error message.
+@c JP
+@code{<error>}から継承されたスロットで、エラーメッセージを保持しています。
+@c COMMON
 @end defivar
 
 @defivar <parse-error> position
+@c EN
 The position the failure occured.
+@c JP
+失敗が起きた入力の場所です。
+@c COMMON
 
+@c EN
 The exact meaning of this value depends on how you call the parser driver.
+@c JP
+この値の正確な意味は、パーザドライバがどう呼ばれたかに依存します。
+@c COMMON
 
+@c EN
 At minimum, when you call it on a bare list or a string/port (using
 @code{peg-parse-string}/@code{peg-parse-port}), the parser driver
 counts the number of elements took from the input and put it here,
 for it is the only available information.  Note that the number
 may not be what you want, e.g. if you start parsing in the middle of
 the stream.
+@c JP
+パーザドライバに普通のリストや、@code{peg-parse-string}/@code{peg-parse-port}を
+使って文字列/ポートを渡した場合、パーザドライバは入力の先頭から失敗箇所までの
+入力要素の数を数えてそれをこの値とします。それしか情報が無いからです。
+入力の途中からパーズを始めた場合などでは、この数値はあなたが必要としているものとは
+異なるかもしれません。
+@c COMMON
 
+@c EN
 If you're parsing from a sequence with positions,
 this slot contains an instance of @code{<sequence-position>}, which
 may have line & column numbers or a source file name.
 @xref{Lazy sequence with positions}, for the details.
+@c JP
+位置情報つきシーケンスを入力として渡していれば、このスロットは@code{<sequence-position>}
+のインスタンスを保持し、そこから行番号、カラム番号、ソースファイル名などを
+取り出すことができます。
+詳しくは@xref{Lazy sequence with positions}を参照してください。
+@c COMMON
 
+@c EN
 The user code should expect both cases.
+@c JP
+ユーザコードはどちらの場合にも対応できるようにしておかねばなりません。
+@c COMMON
 @end defivar
 
 @defivar <parse-error> type
+@c EN
 The type of failure.  It's either one of the follownig symbols:
+@c JP
+失敗のタイプ。次のいずれかのシンボルです。
+@c COMMON
 @table @code
 @item fail-expect
+@c EN
 The parser expects one of the objects in @var{objects} slot, but
 got a different one (stored in @var{token}).
+@c JP
+パーザは@var{objects}スロットに格納されたオブジェクトのどれかを期待していたが、
+入力はそうでないオブジェクトであった (入力オブジェクトは@var{token}スロットに格納される)。
+@c COMMON
 @item fail-unexpect
+@c EN
 The parser isn't expecting any of the objects in @var{objects} slot,
 but got the one in @var{token}.
+@c JP
+パーザは@var{object}スロットに格納されたオブジェクトのいずれも期待していなかったが、
+入力はそのいずれかであった (入力オブジェクトは@var{token}スロットに格納される)。
+@c COMMON
 @item fail-compound
+@c EN
 The parser failed multiple options.  The @var{objects} slot contains
 a list of of @code{(type . msg)} where @var{type} is one of the
 @code{<parse-error>} types, and
 @var{msg} is the message associated with it.
+@c JP
+パーザは複数の選択肢を試しいずれも失敗した。@var{objects}スロットは
+@code{(type . msg)}のリストを保持している。ここで@var{type}は一つの選択肢の
+失敗の@code{<parse-error>}タイプ、@var{msg}はその選択肢の失敗メッセージ。
+@c COMMON
 @item fail-message
+@c EN
 Other miscellaneous failure.  The @var{objects} slot contains
 a mmessage.
+@c JP
+その他の失敗。@var{message}スロットにメッセージがある。
+@c COMMON
 @end table
 @end defivar
 
 @defivar <parse-error> objects
+@c EN
 Value of this slot depends on the value of @var{type} slot.
+@c JP
+このスロットの値の意味は@var{type}スロットの値に依存します。
+@c COMMON
 @end defivar
 
 @defivar <parse-error> token
+@c EN
 The token at the head of input when failure occur.  If input already
 reached at the end, this slot is set to @code{#<eof>}.
+@c JP
+失敗が起きた時の入力トークン。もし入力が終端に達していた場合は@code{#<eof>}。
+@c COMMON
 @end defivar
 @end deftp
 
 @node What is a PEG parser, PEG primitive parser builders, PEG parser drivers, PEG parser combinators
 @subsection What is a PEG parser, really?
+@c NODE PEGパーザの正体
 
+@c EN
 A PEG parser is a Scheme procedure that takes a list of items as an input,
 and returns three values:
+@c JP
+PEGパーザは、入力にリストを取り、以下の3つの値を返す手続きです。
+@c COMMON
 
 @itemize
 @item
+@c EN
 Failure type.  If the parser successfully accepts the input, this value
 is @code{#f}.  If the parser fails to accept the input,
 this value is either one of the symbols
@@ -12513,30 +12604,67 @@ this value is either one of the symbols
 and @code{fail-message}.  It corresponds to the @code{type} slot
 of @code{<parse-error>}, and determines the meaning of the second
 return value.
+@c JP
+失敗のタイプ。パーザが入力を受理することに成功した場合、この値は@code{#f}です。
+失敗した場合は、この値は次のシンボルのうちのいずれかです:
+@code{fail-expect}、@code{fail-unexpect}、@code{fail-compound}、
+@code{fail-message}。これは@code{<parse-error>}オブジェクトの
+@code{type}スロットの値に対応します。二番目の戻り値の意味はこの値に依存します。
+@c COMMON
 @item
+@c EN
 Value.  If the parser successfully accepts the input, this
 value is the parser's ``result'', sometimes called a semantic
 value.  If the parser fails to accept the input,
 this value contains the hint of the failure.  It corresponds
 to the @code{objects} slot of @code{<parse-error>}; see the documentation
 of @code{<parse-error>} for the details (@pxref{PEG parser drivers}).
+@c JP
+値。パーザが入力の受理に成功した場合は、これはパーザの「結果」、
+しばしばセマンティックバリューと呼ばれるものです。
+パーザが失敗した場合は、この値は失敗の原因のヒントとなるものです。
+@code{<parse-error>}オブジェクトの@code{objects}スロットの値に対応します。
+詳しくは@code{<parse-error>}のドキュメントを見てください
+(@ref{PEG parser drivers}参照)。
+@c COMMON
 @item
+@c EN
 The rest of the input list.
+@c JP
+入力の残り。
+@c COMMON
 @end itemize
 
+@c EN
 Typically you don't need to write a parser as a procedure; instead,
 you can use one of the parser builders and combinators described in
 the following sections.
+@c JP
+通常、パーザを手続きとして書くことはあまりありません。
+以降の節で説明するパーザビルダやコンビネータを使ってパーザを作ります。
+@c COMMON
 
+@c EN
 We do provide a few utilities to write a parser from scratch, in case
 you need to do so.
+@c JP
+しかし、パーザ手続きを一から書く必要が出てきた時のために、
+いくつかのユーティリティ手続きが用意してあります。
+@c COMMON
 
 @defun return-result value rest
 @c MOD parser.peg
+@c EN
 Call this at the tail position of the parser when it succeeds, with
 @var{value} for the semantic value and @var{rest} for the rest of
 input.  This is the same as @code{(values #f value rest)}, but
 clearer to show the intention.
+@c JP
+パーザが入力の受理に成功した時は、この手続きを末尾位置で呼んでください。
+@var{value}はパーザが返すセマンティックバリュー、
+@var{rest}は入力の残りです。これは@code{(values #f value rest)}と同じですが、
+意図をより明確に示すことができます。
+@c COMMON
 @end defun
 
 @defun return-failure/expect objs rest
@@ -12544,43 +12672,85 @@ clearer to show the intention.
 @defunx return-failure/message msg rest
 @defunx return-failure/compound fails rest
 @c MOD parser.peg
+@c EN
 Call one of these at the tail position of the parser when it fails.
 The first argument will be in @code{objects} slot of @code{<parse-error>}.
+The second argument should be a list of input, with the first element
+being a token that can't be accepted.
+@c JP
+パーザが入力を受理できなかった場合は、この手続きのいずれかを末尾位置で呼んでください。
+最初の引数は@var{<parse-error>}の@code{objects}スロットの値となります。
+2番目の引数は、受理できなかったトークンを先頭とする入力リストです。
+@c COMMON
 
 @itemize
 @item
+@c EN
 If you're expecting some types of objects (@var{objs}) but got anything
 else, call @code{return-failure/expect}.  It generates @code{fail-expect}
 type failure.
+@c JP
+限られた種類のオブジェクト (@vars{objs}) を期待していて、それ以外の入力に
+出会った場合は、@code{return-failure/expect}を呼んでください。これは
+@code{fail-expect}タイプの失敗となります。
+@c COMMON
 @item
+@c EN
 If you're not expecting some types of objects (@var{objs}) but got one,
 call @code{return-failure/unexpect}.  It generates @code{fail-unexpect}
 type failure
+@c JP
+限られた種類のオブジェクト (@vars{objs}) 以外のものを期待していたのに、
+それに出会ってしまった場合は、@code{return-failure/unexpect}を呼んでください。
+これは@code{fail-unexpect}タイプの失敗となります。
+@c COMMON
 @item
+@c EN
 If you're failing because of all of multiple choices fail, you can
 gather those failures into an assoc list
-@code{((fail-type . objs) @dots{})}, and 
+@code{((fail-type . objs) @dots{})}, and
 call @code{return-failure/compound}.  It generates @code{fail-compound}
 type failure.
+@c JP
+複数の選択肢があってそのいずれにも失敗した場合は、
+全ての失敗を@code{((fail-type . objs) @dots{})}の形の連想リストにして、
+それを@var{fails}引数として@code{return-failure/compound}を呼んでください。
+これは@code{fail-compound}タイプの失敗となります。
+@c COMMON
 @item
+@c EN
 Finally, your failure can't be categorized to one of the above,
 you can call @code{return-failure/message}, with the message
 describing the reason of the failure.
+@c JP
+失敗が上記いずれにもあてはまらない場合は、失敗の理由を文字列のメッセージにして
+@code{return-failure/message}を呼んでください。
+@c COMMON
 @end itemize
 @end defun
 
 @defun return-failure type objs rest
 @c MOD parser.peg
+@c EN
 This should only be used to pass down the failure form other parser.
 See the example in @code{parse-success?} entry below.
+@c JP
+これは他のパーザからの失敗をそのまま失敗として返す場合にのみ使ってください。
+下の@code{parse-success?}の説明を参照のこと。
+@c COMMON
 @end defun
 
 
 @defun parse-success? r
 @c MOD parser.peg
+@c EN
 Check the first return value of a parser to see if it is a success.
 A typical usage is to check another parser's result and take
 actions accordingly:
+@c JP
+パーザの最初の戻り値が成功であるかどうかを調べます。
+典型的な使い方は、他のパーザの結果によって分岐する場合です:
+@c COMMON
 
 @example
 (receive (r v s) (parser input)
@@ -12589,46 +12759,101 @@ actions accordingly:
        (return-result ...))
      (return-failure r v s)))
 @end example
+
+@c EN
+This is simply checking if @var{r} is @code{#f}, but using this
+procedure indicates your intention clearly.
+@c JP
+この手続きは単に@var{r}が@code{#f}かどうか見ているだけですが、
+これを使うことにより意図を明確に示すことができます。
+@c COMMON
 @end defun
 
 
 @node PEG primitive parser builders, PEG ropes, What is a PEG parser, PEG parser combinators
 @subsection Primitive parser builders
+@c NODE 基本的なパーザビルダー
 
+@c EN
 Procedures and macros that create parsers.
+@c JP
+パーザを作り出す手続きとマクロです。
+@c COMMON
 
 @defun $return val
 @c MOD parser.peg
+@c EN
 Returns a parser that always succeeds, without consuming
 input, and yields @var{val} as the result of parser.
+@c JP
+入力を消費せず、常に成功して@var{val}を結果として返すパーザを作って返します。
+@c COMMON
 
+@c EN
 Frequently used in @code{$let} and @code{$let*}'s body, but can be
 used anywhere a parser is expected.
+@c JP
+@code{$let}や@code{$let*}の本体で使われることが多いですが、
+パーザを期待するところではどこでも使えます。
+@c COMMON
 @end defun
 
 @defun $fail msg-string
 @c MOD parser.peg
+@c EN
 Returns a parser that always fails, without consuming input,
 and uses @var{msg-string} as the failure message.
 
 Frequently used to produce user-friendly error messages.
+@c JP
+入力を消費せず、常に失敗して、@var{msg-string}を失敗メッセージとするパーザを
+作って返します。
+
+ユーザフレンドリなエラーメッセージを出すためによく使われます。
+@c COMMON
 @end defun
 
 @defun $satisfy pred expect :optional result
 @c MOD parser.peg
+@c EN
 This corresponds to ``semantic predicate'' in PEG; a parser
 that can apply an arbitrary predicate on input.
+@c JP
+これはPEGでいう「先読み述語」、つまり
+入力トークンに任意の述語@var{pred}を適用するパーザを作って返します。
+@c COMMON
 
+@c EN
 Returns a parser that works as follows:
+@c JP
+返されるパーザは次のように動作します。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 If the head of input stream satisfies @var{pred},
 call @code{(@var{result} head (@var{pred} head))} and
 yield its return value as the result of successful parsing.
 If @var{result} is omitted, it yields the head of input.
+@c JP
+入力の先頭headが述語@var{pred}を満たした場合、@var{result}を
+@code{(@var{result} head (@var{pred} head))} のように呼び出し、
+その戻り値をパーザ成功の結果とします。
+@var{result}が省略された場合は、入力の先頭が結果になります。
+@c COMMON
 @item
+@c EN
 Otherwise, the parsing fails with @var{expect} as the expected input.
+@c JP
+そうでなければ、@var{expect}を期待していた結果としてパーズは失敗します。
+@c COMMON
 @end itemize
+
+@c EN
+If you just need a lookahead parser, you can use @code{$assert}.
+@c JP
+必要なのが先読みするパーザであれば、@code{$assert}も使えます。
+@c COMMON
 @end defun
 
 @defun $. obj
