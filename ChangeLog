@@ -1,3 +1,9 @@
+2021-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c: Ensure to compute port address hash as unsigned.
+	  Fix from@Hamaya https://github.com/shirok/Gauche/pull/748
+	  This caused crash on Windows 64bit with recent MSYS toolchain.
+
 2021-02-16  Shiro Kawai  <shiro@acm.org>
 
 	* doc/Makefile.in, doc/makedoc.scm: New target 'make htmls-head'
@@ -232,7 +238,7 @@
 	  in the direc-subclasses list (the redefined class still keeps
 	  direct-supers link).
 
-          http://chaton.practical-scheme.net/gauche/a/2020/11/22#entry-5fbab148-42ea5
+	  http://chaton.practical-scheme.net/gauche/a/2020/11/22#entry-5fbab148-42ea5
 
 2020-11-22  Shiro Kawai  <shiro@acm.org>
 
@@ -1191,7 +1197,7 @@
 2020-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/endian.h: We can't refer to SCM_SYM_BIG_ENDIAN etc publicly.
-          So we export functions (Scm_IsBE() etc.) here, and moved the macros
+	  So we export functions (Scm_IsBE() etc.) here, and moved the macros
 	  to src/gauche/priv/bytesP.h.  The function definitions are in
 	  number.c for now, since we already have Scm_DefaultEndian() there.
 	  Also endian.h is now included from gauche.h.
@@ -3364,7 +3370,7 @@
 	  of the closure created by macro expanded code:
 
 	  gosh> (define (foo x)
-	          (^y (+ x y)))
+		  (^y (+ x y)))
 	  foo
 	  gosh> ,d (foo 3)
 	  #<closure ((foo foo) y)> is an instance of class <procedure>
@@ -5187,7 +5193,7 @@
 	* lib/gauche/cgen/stub.scm: During expanding stub procedures
 	  (define-cproc etc) we set up a custom cise context to override
 	  "return" macro; so that we can say (return something) safely
-          in the stub procedures, instead of (result something), which
+	  in the stub procedures, instead of (result something), which
 	  is somewhat awkward.  The difference from C return is that
 	  it can handle multiple return values.
 	  Note that this 'return' macro really behaves like return---it
@@ -5838,7 +5844,7 @@
 	  mixin conditions.
 	  Note: The above two changes may be a dangerous move, which
 	  can make it difficult to diagnose when we mess up then runtime
-          in a way that error reporting can't be carried out.  Especially,
+	  in a way that error reporting can't be carried out.  Especially,
 	  now we rely on working method dispatch to display mixin condition
 	  messages.  If this becomes an issue, we may replace the mixin
 	  condition mechanism to more primitive ones, like manual dispatch.
@@ -6344,7 +6350,7 @@
 
 	* src/vminsn.scm (BOX): Changed to be used to box procedure parameters.
 	  (ENV-SET): New instruction to initialize env slot (used with
-	  LOCAL-ENV-CLOSURES). 	 We used to use LSET, but we'll box all
+	  LOCAL-ENV-CLOSURES).	 We used to use LSET, but we'll box all
 	  set!-able lvars and LSET will do set-box! instead of directly setting
 	  env slot.
 	* src/compile.scm: Changed to emit ENV-SET and new BOX insn.
@@ -9142,7 +9148,7 @@
 	  yet.)
 	* src/stdlib.stub (load), src/extlib.stub (load-from-port,
 	  current-load-history, current-load-next, current-load-port):
-          Changed accordingly.  A new keyword argument :main-script is
+	  Changed accordingly.  A new keyword argument :main-script is
 	  added to load and load-from-port to turn on SCM_LOAD_MAIN_SCRIPT
 	  flag during loading.
 
@@ -9308,7 +9314,7 @@
 	  there's no way to have pathnames with whitespaces in it to be
 	  used with `gauche-config -I` magic.   Instead, --incdirs and
 	  --archdirs options are added that returns (semi)colon-separated
-          list of directories to be used for -I and -L option.
+	  list of directories to be used for -I and -L option.
 	  `gauche-config -I` and `gauche-config -L` are kept for backward
 	  compatibility.
 	* lib/gauche/package/compile.scm: Changed to use --incdirs and
@@ -10716,7 +10722,7 @@
 	* lib/gauche/cgen/cise.scm (<cise-env>, define-cise-toplevel): Added
 	  "toplevel" context so that we can have a toplevel cise macro
 	  that expands into toplevel cise forms.
-          (cise-render, cies-render-to-string): Because of the above change,
+	  (cise-render, cies-render-to-string): Because of the above change,
 	  the optional argument to indicate the context now takes a symbol
 	  either one of 'toplevel, 'stmt or 'expr, as opposed to the boolean
 	  value.
@@ -16427,7 +16433,7 @@
 2004-09-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c (Scm_MakeCodingAwarePort): preparation of enabling
-          'coding:' magic comment in the source file.
+	  'coding:' magic comment in the source file.
 	* src/gauche.h: ditto
 	* src/extlib.stub (open-coding-aware-port): ditto
 	* ext/charconv/charconv.c: ditto
@@ -20014,7 +20020,7 @@
 	  properly exactness, rational representation, and "#e#x" etc.
 	* lib/gauche/numerical.scm, src/gauche-init.scm, src/stlib.stub :
 	  changed 'make-polar' to a subr from a Scheme-defined function,
-          since the result of make-polar didn't exactly match the
+	  since the result of make-polar didn't exactly match the
 	  result of polar representation (<real>@<real>) on x86, because of
 	  the Intel's 80-bit floating-point arithmetic, and which was
 	  confusing.
@@ -20268,7 +20274,7 @@
 
 	* src/read.c : added support for back-reference reader syntax
 	  (#digit= and #digit#).  It doesn't work well yet for recursive
-          structures.
+	  structures.
 
 2002-01-24  Shiro Kawai  <shiro@acm.org>
 
@@ -21870,7 +21876,7 @@
 
 	* release 0.2.1
 	* src/gauche.h, src/class.c: further designing.  not much code yet.
-        * configure.in: made to work on sparc-sun-solaris2.6
+	* configure.in: made to work on sparc-sun-solaris2.6
 	* ext/example/Makefile.in: install rule was broken.  fixed.
 
 2001-03-12  Shiro Kawai  <shiro@acm.org>
@@ -21932,7 +21938,7 @@
 	  for dynamic linking.  Far from complete yet.
 	* src/genstub, src/core.c: initialization function generated by
 	  the stub generator now takes a module as an arg.
-        * src/load.c, src/extlib.stub, src/gauche-init.scm: require, provide
+	* src/load.c, src/extlib.stub, src/gauche-init.scm: require, provide
 	  and provided? are supported in C level.  Require and add-load-path
 	  are processed at compile time.
 	* src/syslib.stub: added sys/time.h related system interface functions
@@ -21993,7 +21999,7 @@
 
 	* release 0.1.1
 	* src/module.c, src/compile.c: implemented module selection
- 	  mechanism.  Module binding is resolved during compile time,
+	  mechanism.  Module binding is resolved during compile time,
 	  so the Scheme interface such as with-module, select-module and
 	  current-module are implemented as a built-in syntax.
 	* src/core.c (Scm_Init): initialize builtin functions within
@@ -22035,7 +22041,7 @@
 
 	* src/extlib.stub: added some nonstandard procedures (identifier?,
 	  identifier->symbol, flush)
-        * lib/test.scm: added to support simple self-testing.
+	* lib/test.scm: added to support simple self-testing.
 	* test/macrotest.scm: more tests.
 
 2001-02-26  Shiro Kawai  <shiro@acm.org>
@@ -22051,7 +22057,7 @@
 
 2001-02-23  Shiro Kawai  <shiro@acm.org>
 
-        * release 0.0.17
+	* release 0.0.17
 	* src/macro.c, src/gauche/macro.h: pattern language compiler and
 	  matcher test code.
 
@@ -22077,7 +22083,7 @@
 2001-02-19  Shiro Kawai  <shiro@acm.org>
 
 	* release 0.0.14
-        * configure.in, src/gauche/config.h.in: start using config.h instead
+	* configure.in, src/gauche/config.h.in: start using config.h instead
 	  of long $(DEFS).
 	* src/load.c, src/gauche-init.scm: autoload feature implemented
 	* src/compile.c: compile toplevel begin properly.  fix bug in
@@ -22173,7 +22179,7 @@
 	* release 0.0.4
 	* src/vm.c: clearify interaction between user-level eval/apply and
 	  exception handlers.
-        * src/compile.c: added traditional macro system.
+	* src/compile.c: added traditional macro system.
 	* src/class.c, et.al.: code cleanup around statically defined
 	  built-in classes
 
@@ -22182,7 +22188,7 @@
 	* release 0.0.3
 	* src/vm.c, src/gauche/vminsn.h, src/stdlib.stub: inline several
 	  numeric operations.
-        * src/compile.c: fix quasiquote code and clean up.
+	* src/compile.c: fix quasiquote code and clean up.
 	* make installation procedure clearer.
 	* src/gauche-config.in: added
 
