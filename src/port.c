@@ -1014,7 +1014,7 @@ static struct {
 } active_buffered_ports;
 
 #define PORT_HASH(port)  \
-    ((((SCM_WORD(port)>>3) * 2654435761UL)>>16) % PORT_VECTOR_SIZE)
+    ((u_long)(((SCM_WORD(port)>>3) * 2654435761UL)>>16) % PORT_VECTOR_SIZE)
 
 static void register_buffered_port(ScmPort *port)
 {
