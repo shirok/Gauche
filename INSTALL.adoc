@@ -226,9 +226,9 @@ GaucheはUnicode(UTF-8, 16, 32)、Latin-N、および代表的な日本語文字
 endif::JA[]
 ifdef::EN[]
 Gauche can recognize and converts Unicode (UTF-8, 16, 32), Latin-N, and
-typical japanese character encodings, but delegates other conversion work 
-to iconv library (when available).   If your system does not have iconv 
-installed in the standard location, you can specify the location of your 
+typical japanese character encodings, but delegates other conversion work
+to iconv library (when available).   If your system does not have iconv
+installed in the standard location, you can specify the location of your
 external iconv library by `--with-iconv` option.
 endif::EN[]
 

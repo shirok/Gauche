@@ -41,11 +41,11 @@
                     start-year
                     #"~|start-year|-~|current-year|")))
       #"~(m 'before)Copyright (c) ~years  ~author  <~|email|>"))
-  
+
   (and-let* ((input   (file->string-list+ path))
              (matched (find check-rx input)))
     (print "Rewriting " path "...")
-    (call-with-temporary-file 
+    (call-with-temporary-file
      (^[out tmp]
        (for-each (lambda (line)
                    (display (if (eq? line matched) (rewrite line) line) out)

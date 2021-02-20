@@ -181,7 +181,7 @@ Gauche still tries to find your slib installation from some typical places.]),
     AS_CASE([$with_slib],
       [no],  [search_slib=no],
       [yes], [search_slib=yes],
-	     [search_slib=no; SLIB_DIR=$with_slib])
+             [search_slib=no; SLIB_DIR=$with_slib])
   ], [ search_slib=yes ])
 
 AS_IF([test $search_slib = "yes"], [
@@ -609,16 +609,16 @@ case "$host" in
      AC_SEARCH_LIBS(dlopen, dl, AC_DEFINE(HAVE_DLOPEN,1,[Define if the system has dlopen()]))
      ;;
 esac
-     
+
 dnl Checks for sched_yield.
 AC_SEARCH_LIBS(sched_yield, rt, AC_DEFINE(HAVE_SCHED_YIELD,1,[Define if uses librt]))
 
 dnl Use Resource file
 AS_CASE([$host],
-	[*mingw*], [USE_WIN_RESOURCE_yes=""
-		    USE_WIN_RESOURCE_no="@%:@"],
-		   [USE_WIN_RESOURCE_yes="@%:@"
-		    USE_WIN_RESOURCE_no=""])
+        [*mingw*], [USE_WIN_RESOURCE_yes=""
+                    USE_WIN_RESOURCE_no="@%:@"],
+                   [USE_WIN_RESOURCE_yes="@%:@"
+                    USE_WIN_RESOURCE_no=""])
 AC_SUBST(USE_WIN_RESOURCE_yes)
 AC_SUBST(USE_WIN_RESOURCE_no)
 

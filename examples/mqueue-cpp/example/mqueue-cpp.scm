@@ -11,5 +11,3 @@
 
 ;; Loads extension
 (dynamic-load "mqueue_cpp")
-
-

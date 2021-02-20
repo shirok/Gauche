@@ -92,10 +92,10 @@
 ;; => #\)
 |#
 
-(define begin-list 
+(define begin-list
   ($seq0 ($. #[\(\[\{]) ws))
 
-(define (end-list opener) 
+(define (end-list opener)
   ($seq ws (case opener
             [(#\() ($. #\))]
             [(#\[) ($. #\])]
@@ -131,10 +131,10 @@
 ;; => *** PARSE-ERROR: expecting one of (#[0-9] #\]) at 19
 |#
 
-(define (end-list2 opener) 
+(define (end-list2 opener)
   (define expected
     (assv-ref '((#\( . #\)) (#\[ . #\]) (#\{ . #\})) opener))
-  ($seq ws 
+  ($seq ws
         ($let ([closer ($. #[\)\]\}])])
           (if (eqv? closer expected)
             ($return closer)

@@ -59,7 +59,7 @@
          (mqueue-push! mq1 "1" -2)
          (mqueue-push! mq0 "b" -7)
          (list (mqueue-pop! mq0) (mqueue-pop! mq1))))
-         
+
 (test-section "stress test & GC")
 
 (define *size* 1000)
@@ -86,8 +86,3 @@
 
 ;; epilogue
 (test-end)
-
-
-
-
-

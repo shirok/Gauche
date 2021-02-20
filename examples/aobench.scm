@@ -75,9 +75,9 @@
   (let1 size (%sqrt (vdot v v))
     (when (> (abs size) 1.0e-17)
       (f64vector-div! v size))))
-(define-inline (vec-diff v0 v1) (f64vector-sub v0 v1)) 
-(define-inline (vec-mul! v0 x)  (f64vector-mul! v0 x)) 
-(define-inline (vec-add! v0 v1) (f64vector-add! v0 v1)) 
+(define-inline (vec-diff v0 v1) (f64vector-sub v0 v1))
+(define-inline (vec-mul! v0 x)  (f64vector-mul! v0 x))
+(define-inline (vec-add! v0 v1) (f64vector-add! v0 v1))
 (define-inline (vec-sub! v0 v1) (f64vector-sub! v0 v1))
 (define-inline (vec-set! v0 v1) (f64vector-copy! v0 0 v1))
 
@@ -203,7 +203,7 @@
         [isect (make-isect)]
         [o-isect (make-isect)])
     (dotimes [x w]
-      (define off (* 3 (+ (* y w) x))) 
+      (define off (* 3 (+ (* y w) x)))
       (dotimes [v nsubsamples]
         (dotimes [u nsubsamples]
           (let* ([px (/ (+ x (- (/. u nsubsamples) (/ w 2.0))) (/ w 2.0))]
@@ -223,7 +223,7 @@
                    $ + (f64vector-ref fimg (+ off 1)) (vec-y col))
                 ($ f64vector-set! fimg (+ off 2)
                    $ + (f64vector-ref fimg (+ off 2)) (vec-z col))))))))))
-    
+
 (define (render img w h nsubsamples)
   (let ([fimg (make-f64vector (* w h 3))]
         [nprocs (sys-available-processors)])

@@ -15,4 +15,3 @@
 (dynamic-load "spigot")
 
 ;; You can define Scheme functions here if you want.
-

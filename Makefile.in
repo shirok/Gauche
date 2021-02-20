@@ -34,8 +34,8 @@ LN_S = @LN_S@
 
 PRE_PACKAGE_GENERATED = INSTALL.en.adoc INSTALL.ja.adoc
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-	           libtool configure.lineno autom4* gc/autom4* \
-	           gc/configure.gnu-gauche Gauche.spec
+		   libtool configure.lineno autom4* gc/autom4* \
+		   gc/configure.gnu-gauche Gauche.spec
 AUTOCONF_GENERATED = $(CONFIG_GENERATED) configure
 
 TESTRECORD = ./test.record
@@ -153,4 +153,3 @@ rpmfiles:
 	find $(GAUCHE_DATA_DIR)/$(VERSION) -type f -print | grep 'dbm/[ong]dbm' > rpmfiles-gdbm.txt
 	find $(GAUCHE_ARCH_DIR)/$(VERSION) -type f -print | grep -v '/dbm--[ong]dbm' > rpmfiles-encoding.txt
 	find $(GAUCHE_ARCH_DIR)/$(VERSION) -type f -print | grep '/dbm--[ong]dbm' >> rpmfiles-gdbm.txt
-

@@ -1,7 +1,7 @@
 #! /bin/sh
 # mkinstalldirs --- make directory hierarchy
 
-scriptversion=2018-03-07.03; # UTC
+scriptversion=2021-02-20.09; # UTC
 
 # Original author: Noah Friedman <friedman@prep.ai.mit.edu>
 # Created: 1993-05-16
@@ -131,17 +131,17 @@ do
       mkdir "$pathcomp" || lasterr=$?
 
       if test ! -d "$pathcomp"; then
-	errstatus=$lasterr
+        errstatus=$lasterr
       else
-	if test ! -z "$dirmode"; then
-	  echo "chmod $dirmode $pathcomp"
-	  lasterr=
-	  chmod "$dirmode" "$pathcomp" || lasterr=$?
+        if test ! -z "$dirmode"; then
+          echo "chmod $dirmode $pathcomp"
+          lasterr=
+          chmod "$dirmode" "$pathcomp" || lasterr=$?
 
-	  if test ! -z "$lasterr"; then
-	    errstatus=$lasterr
-	  fi
-	fi
+          if test ! -z "$lasterr"; then
+            errstatus=$lasterr
+          fi
+        fi
       fi
     fi
 

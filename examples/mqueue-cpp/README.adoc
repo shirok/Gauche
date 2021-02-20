@@ -60,7 +60,7 @@ instead of the default C compiler.
 [source,Makefile]
 ----
 mqueue_cpp.$(SOEXT): $(mqueue_SRCS) $(mqueue_HDRS)
-	$(GAUCHE_PACKAGE) compile --cc=$(CXX) --verbose mqueue_cpp $(mqueue_SRCS)
+        $(GAUCHE_PACKAGE) compile --cc=$(CXX) --verbose mqueue_cpp $(mqueue_SRCS)
 ----
 
 

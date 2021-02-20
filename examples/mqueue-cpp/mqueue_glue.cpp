@@ -38,7 +38,7 @@ void Scm_Init_mqueue_cpp()
 
     /* Create example.mqueue-cpp module */
     mod = SCM_MODULE(SCM_FIND_MODULE("example.mqueue-cpp", TRUE));
-    
+
     /* Create the foreign pointer class <mqueue-cpp>.
        The flag SCM_FOREIGN_POINTER_KEEP_IDENTITY makes Gauche to keep
        one-to-one mapping between the foreign object pointer (MQueue*)

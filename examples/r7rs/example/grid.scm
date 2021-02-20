@@ -31,4 +31,3 @@
         (do ((k 0 (+ k 1)))
             ((= k (cols grid)))
           (proc j k (ref grid j k)))))))
-

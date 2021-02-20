@@ -25,5 +25,3 @@ extern ScmClass *MQueueClass;
 extern void Scm_Init_mqueue_cpp();
 
 SCM_DECL_END
-
-

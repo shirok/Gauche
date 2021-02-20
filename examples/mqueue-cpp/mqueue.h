@@ -69,6 +69,5 @@ class MQueue {
     void unregisterSelf();
 };
 
-    
-#endif  // MQUEUE_H
 
+#endif  // MQUEUE_H

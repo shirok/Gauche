@@ -32,7 +32,7 @@
   base system that the k-th digit after point has the weight of k/(2k+1)
   of the previous digit, [1] means pi can be written as [2.222222...]
   in such a base system.
-  
+
     Base:   [1/3, 2/5, 3/7, ... , k/(2k+1), ...]
     Number: [2 . 222222222 ...]
 
@@ -40,7 +40,7 @@
     Number: [3 . 141592653 ...]
 
   Now, calculating pi is effectively a base conversion problem.
-  
+
   The actual calculation process is explained in detail at:
    http://membres.lycos.fr/bgourevitch/mathematiciens/goutte/goutte.html
 
@@ -163,4 +163,3 @@ ScmObj Scm_Init_spigot(void)
     /* Register stub-generated procedures inside "spigot" module */
     Scm_Init_spigotlib(mod);
 }
-

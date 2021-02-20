@@ -144,7 +144,7 @@ in ChangeLog, I'll update it separately.
 == CODING STYLE
 
 We aren't picky about coding style, but adopt some Gauche-specific
-style, especially for Gauche macros.  For Emacs users, such style is 
+style, especially for Gauche macros.  For Emacs users, such style is
 written in `.dir-locals.el` in the top source directory.  If you're
 using lisp-local package (available from MELPA), Emacs will ask you to
 apply the settings.  Answering with `!` causes Emacs to remember your
@@ -172,9 +172,3 @@ get to REPL, there are a couple of trick to isolate the problem.
   is broken during initialization.  Run `gosh` with an environment variable
   `GAUCHE_DEBUG_INITIALIZATION` set.  It reports which component is being
   initialized.
-
-
-
-
-
-

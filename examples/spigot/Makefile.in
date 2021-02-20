@@ -23,10 +23,10 @@ PACKAGE   = spigot
 
 ARCHFILES = spigot.$(SOEXT)
 SCMFILES  = spigot.scm
-HEADERS   = 
+HEADERS   =
 
 TARGET    = $(ARCHFILES)
-GENERATED = 
+GENERATED =
 CONFIG_GENERATED = Makefile config.log $(PACKAGE).gpd
 
 HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
@@ -46,7 +46,7 @@ check : all
 
 install : all
 	$(INSTALL) -m 444 -T $(HEADER_INSTALL_DIR) $(HEADERS)
-	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) $(SCMFILES) 
+	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR) $(SCMFILES)
 	$(INSTALL) -m 555 -T $(ARCH_INSTALL_DIR) $(ARCHFILES)
 	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR)/.packages $(PACKAGE).gpd
 

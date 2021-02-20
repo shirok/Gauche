@@ -111,7 +111,7 @@
              (game-over con field)]
             [(find-food? snake dir food)
              (let1 snake. (update-snake snake dir hd #t)
-               (run-game con field snake. snake 
+               (run-game con field snake. snake
                          (new-food field snake.) (+ score 1)))]
             [else
              (run-game con field (update-snake snake dir hd #f) snake

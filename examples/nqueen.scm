@@ -50,7 +50,7 @@
 ; nqueen: メインルーチン
 (define (nqueen n)
   (let ((result '()))
-    (rotrec (lambda (p) 
+    (rotrec (lambda (p)
               (if (checkqueen p)
                   (set! result
                         (cons (vector->list p) result))))

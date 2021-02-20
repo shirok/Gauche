@@ -23,4 +23,3 @@
         (for-each (cut with-input-from-file <> (cut grep rx))
                   (cddr args))))
   0)
-

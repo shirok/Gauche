@@ -9,10 +9,10 @@
 ;; Let the stub generator know about <mqueue> type.
 ;; The arguments of define-type are:
 ;;
-;; (define-type 
+;; (define-type
 ;;    scheme-name    ;; Scheme class name
 ;;    c-type         ;; C type name when unboxed
-;;    description    ;; used in error message 
+;;    description    ;; used in error message
 ;;    c-predicate    ;; bool c-predicate(ScmObj obj) - check whether
 ;;                   ;;   obj is the type.
 ;;    c-unbox        ;; c-type c-unbox(ScmObj obj) - unbox obj.

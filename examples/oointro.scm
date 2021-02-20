@@ -128,5 +128,5 @@
     ;; draw the shapes
     (draw *shapes* (make <ps-device>)))
   )
-  
+
 ;; (with-output-to-file "oointro.ps" shape-sample)

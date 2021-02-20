@@ -6,7 +6,7 @@
   (define (num-format cur max)
     (format "~d/~d(~3d%)" cur max
             (round->exact (/. (* cur 100) max))))
-  
+
   (let ((p (make-text-progress-bar :header "Example"
                                    :header-width 10
                                    :bar-char #\o
@@ -17,4 +17,3 @@
         ((= i 256) (p 'finish))
       (p 'inc 1)
       (sys-select #f #f #f 50000))))
-
