@@ -9789,11 +9789,18 @@ This is a Maybe/Either version of @code{and-let*}.
 
 @deftp {Module} srfi-192
 @mdindex srfi-192
+@c EN
 This srfi defines procedures to get and set the current position of
 the port.
 
 This feature is already supported in the Gauche core, so the following
 procedure is described in @ref{Common port operations}.
+@c JP
+このsrfiはポートの現在の位置を取得したり設定したりする手続きを提供します。
+
+この機能はGaucheのコアでサポートされており、以下の手続きは
+@ref{Common port operations}で説明されています:
+@c COMMON
 @example
 port-position
 port-has-port-position?
@@ -9805,28 +9812,54 @@ port-has-set-port-position?
 @defun make-i/o-invalid-position-error pos
 [SRFI-192]
 @c MOD srfi-192
+@c EN
 This portably creates a condition suitable to be raised from
 @code{set-port-position!} when the given position object can't
 be accepted.  The @var{pos} argument is the offending position object.
+@c JP
+これは、@code{set-port-position!}が不正な位置情報を受け取った時に
+投げるべきコンディションを作成するポータブルな手続きです。
+@var{pos}引数は問題となった位置情報でう。
+@c COMMON
 
+@c EN
 In Gauche, such condition is represented by
 @code{<io-invalid-position-error>} class, which is a subclass
 of @code{<port-error>}.
+@c JP
+Gaucheでは、その場合のコンディションは@code{<port-error>}のサブクラスである
+@code{<io-invalid-position-error>}のインスタンスで表されています。
+@c COMMON
 
+@c EN
 If you raise a condition created with this procedure from
 the @code{set-position!} callback of the custom ports
 (@pxref{Custom ports}), Gauche intercepts it and adds
 the port information to the condition.
+@c JP
+カスタムポート(@ref{Custom ports}参照)の@code{set-position!}コールバック手続き
+の中で、この手続きで作ったコンディションを投げた場合、
+Gaucheはその例外をインターセプトして、ポートの情報をコンディションに付け加えます。
+@c COMMON
 @end defun
 
 @defun i/o-invalid-position-error? obj
 [SRFI-192]
 @c MOD srfi-192
+@c EN
 Returns @code{#t} iff @var{obj} is an i/o-invalid-position-error
 condition (or a compound condition that includes it).
 
 In Gauche, it is the same as
 @code{(condition-has-type? @var{obj} <io-invalid-position-error>)}.
+@c JP
+@var{obj}がi/o-invalid-position-errorか、
+それを含む複合コンディションであれば@code{#t}を、そうでなければ@code{#f}を返します。
+
+Gaucheでは、これは
+@code{(condition-has-type? @var{obj} <io-invalid-position-error>)}
+と同じことです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
