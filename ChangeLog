@@ -1,3 +1,9 @@
+2021-02-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-189.scm (either-guard): Fixed the recognized syntax of
+	  either-guard.  It has been changed during draft period but hasn't
+	  been reflected.
+
 2021-02-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c: Ensure to compute port address hash as unsigned.

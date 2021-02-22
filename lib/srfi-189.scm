@@ -563,7 +563,7 @@
 
 (define-syntax either-guard
   (syntax-rules ()
-    [(_ (pred-expr) . body)
+    [(_ pred-expr . body)
      (guard (e [(pred-expr e) (left e)])
        (receive xs (begin . body)
          (list->right xs)))]))

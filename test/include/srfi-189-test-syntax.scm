@@ -39,9 +39,6 @@
   (check (nothing? (maybe-or (nothing) (nothing) (nothing))) => #t)
   (check (raises-error-object (maybe-or (nothing) #t))       => #t)
 
-  (check (just? (maybe-let* ())) => #t)
-  (check (just-of-z? (maybe-let* (((just 'z))))) => #t)
-  (check (just-of-z? (maybe-let* ((x (just 'z))))) => #t)
   (check (just-of-z?
           (maybe-let* (((maybe-bind (just #t) just)))
             'z)) => #t)
@@ -77,7 +74,6 @@
     (check (just-of-z? (maybe-let* (just-of-z ((just 'x)))
                          'z))
      => #t)
-    (check (nothing? (maybe-let* (zilch))) => #t)
     (check (nothing? (maybe-let* ((x (just 2)) zilch (y (just 3)))
                        (* x y)))
      => #t))
@@ -98,9 +94,6 @@
            (maybe-let* ((b (just #t)) ('nothing)) #t))
     => #t)
 
-  (check (just? (maybe-let*-values ())) => #t)
-  (check (just-of-z? (maybe-let*-values (((just 'z))))) => #t)
-  (check (just-of-z? (maybe-let*-values (((x) (just 'z))))) => #t)
   (check (just-of-z?
           (maybe-let*-values (((maybe-bind (just #t) just)))
             'z)) => #t)
@@ -149,7 +142,6 @@
     (check (just-of-z? (maybe-let*-values (just-of-z ((just 'x)))
                          'z))
      => #t)
-    (check (nothing? (maybe-let*-values (zilch))) => #t)
     (check (nothing? (maybe-let*-values (((x) (just 2))
                                          zilch
                                          ((y) (just 3)))
@@ -201,9 +193,6 @@
   (check (left-of-z? (either-or (left) (left) (left 'z))) => #t)
   (check (raises-error-object (either-or (left #f) #t))   => #t)
 
-  (check (right? (either-let* ())) => #t)
-  (check (right-of-z? (either-let* (((right 'z))))) => #t)
-  (check (right-of-z? (either-let* ((x (right 'z))))) => #t)
   (check (right-of-z?
           (either-let* (((either-bind (right #t) right)))
             'z))
@@ -240,7 +229,6 @@
             (either-let* (right-of-z ((right 'x)))
               'z))
      => #t)
-    (check (left-of-z? (either-let* (left-of-z))) => #t)
     (check (left-of-z?
             (either-let* ((x (right 2)) left-of-z (y (right 3)))
               (* x y)))
@@ -262,9 +250,6 @@
           (either-let* ((b (right #t)) ('left)) #t))
     => #t)
 
-  (check (right? (either-let*-values ())) => #t)
-  (check (right-of-z? (either-let*-values (((right 'z))))) => #t)
-  (check (right-of-z? (either-let*-values (((x) (right 'z))))) => #t)
   (check (right-of-z?
           (either-let*-values (((either-bind (right #t) right)))
             'z))
@@ -316,7 +301,6 @@
     (check (right-of-z? (either-let*-values (right-of-z ((right 'x)))
                           'z))
      => #t)
-    (check (left-of-z? (either-let*-values (left-of-z))) => #t)
     (check (left-of-z? (either-let*-values (((x) (right 2))
                                             left-of-z
                                             ((y) (right 3)))
@@ -346,16 +330,15 @@
            (either-let*-values (((b) (right #t)) ('left)) 'z))
     => #t)
 
-  (check (left-of-z? (either-guard (symbol?) (raise 'z))) => #t)
-  (check (right-of-z? (either-guard (symbol?) 'z)) => #t)
+  (check (left-of-z? (either-guard symbol? (raise 'z))) => #t)
+  (check (right-of-z? (either-guard symbol? 'z)) => #t)
   (check (guard (obj ((symbol? obj) obj))
-           (either-guard (number?) (raise-continuable 'z)))
+           (either-guard number? (raise-continuable 'z)))
    => 'z)
   (check (either= eqv?
                   (with-exception-handler
                    not
                    (lambda ()
-                     (either-guard (string?) (not (raise-continuable #t)))))
+                     (either-guard string? (not (raise-continuable #t)))))
                   (right #t))
    => #t))
-
