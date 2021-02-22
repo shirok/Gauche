@@ -9741,17 +9741,83 @@ If expressions yield something other than Maybe/Either, an error is thrown.
 @c MOD srfi-189
 [SRFI-189]
 This is a Maybe/Either version of @code{and-let*}.
+
+Each @var{claw} can be either one of the following forms:
+@itemize @code
+@item @var{identifier}
+The @var{identifier}'s value is taken.  It must be a Maybe/an Either,
+or an error is signaled.
+If it is a Just/Right, evaluation proceeds to the next claw.
+If it is a Nothing/Left, evaluation stops and the value is returned
+immediately.
+@item (@var{identifier} @var{expression})
+The @var{expression} is evaluated.  It must yield a Maybe/an Either,
+or an error is signaled.
+If it is a Just/Right, @var{identifier} is bound to its payload,
+and the rest of @var{claw}s and @var{body} are processed with the scope
+of @var{identifier}.  If it is a Nothing/Left, evaluation stops and
+the value is returned immediately.
+An error is signaled if a Just/Right doesn't carry exactly one value.
+@item ( @var{expression} )
+The @var{expression} is evaluated.  It must yield a Maybe/an Either,
+or an error is signaled.
+If it is a Just/Right, evaluation proceeds to the next claw.
+If it is a Nothing/Left, evaluation stops and the value is returned
+immediately.
+@end itemize
+
+After all @var{claws} are processed and none yields a Nothing/Left,
+@var{body} @dots{} are evaluated.
 @end defmac
 
 @defmac maybe-let*-values ( mv-claw @dots{} ) body @dots{}
 @defmacx either-let*-values ( mv-claw @dots{} ) body @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Multi-value payload version of @code{maybe-let*}/@code{either-let*}.
+
+Each @var{claw} can be either one of the following forms:
+@itemize @code
+@item @var{identifier}
+The @var{identifier}'s value is taken.  It must be a Maybe/an Either,
+or an error is signaled.
+If it is a Just/Right, evaluation proceeds to the next claw.
+If it is a Nothing/Left, evaluation stops and the value is returned
+immediately.
+@item (@var{formals} @var{expression})
+The @var{formals} is the same as the formals of the lambda form, that
+is, a proper or dotted list of identifiers.
+
+The @var{expression} is evaluated.  It must yield a Maybe/an Either,
+or an error is signaled.
+If it is a Just/Right, identifiers in the @var{formals} are bound
+with the payload of the Just/Right,
+and the rest of @var{claw}s and @var{body} are processed with the scope
+of those identifiers.  If it is a Nothing/Left, evaluation stops and
+the value is returned immediately.
+An error is signaled if the formals doesn't match the payload
+of the Just/Right.
+@item ( @var{expression} )
+The @var{expression} is evaluated.  It must yield a Maybe/an Either,
+or an error is signaled.
+If it is a Just/Right, evaluation proceeds to the next claw.
+If it is a Nothing/Left, evaluation stops and the value is returned
+immediately.
+@end itemize
+
+After all @var{claws} are processed and none yields a Nothing/Left,
+@var{body} @dots{} are evaluated.
 @end defmac
 
-@defmac either-guard (pred) body @dots{}
+@defmac either-guard pred body @dots{}
 @c MOD srfi-189
 [SRFI-189]
+The @var{body} @dots{} is evaluated, and the value(s) it produces
+are wrapped in a Right and returned.  If an exception occurs in
+@var{body} @dots{}, the thrown condition is passed to a predicate @var{pred}.
+If the condition satisfies the predicate, it is wrapped in a Left
+and returned.  Otherwise, the condition is reraised with
+@code{raise-continuable.}
 @end defmac
 
 @node Trivalent logic,  , Maybe and Either syntactic utilities, Maybe and Either optional container types
