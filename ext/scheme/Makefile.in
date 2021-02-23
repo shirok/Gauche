@@ -1,0 +1,31 @@
+srcdir       = @srcdir@
+top_builddir = @top_builddir@
+top_srcdir   = @top_srcdir@
+
+SCM_CATEGORY = scheme
+
+include ../Makefile.ext
+
+LIBFILES = scheme--list.$(SOEXT)
+SCMFILES = list.sci
+
+GENERATED = Makefile
+XCLEANFILES = *.c *.sci
+
+OBJECTS = $(list_OBJECTS)
+
+all : $(LIBFILES)
+
+install : install-std
+
+#
+# scheme.list (srfi-1)
+#
+
+list_OBJECTS = scheme--list.$(OBJEXT)
+
+scheme--list.$(SOEXT) : $(list_OBJECTS)
+	$(MODLINK) scheme--list.$(SOEXT) $(list_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+scheme--list.c list.sci : $(top_srcdir)/libsrc/scheme/list.scm
+	$(PRECOMP) -e -i list.sci -o scheme--list $(top_srcdir)/libsrc/scheme/list.scm

@@ -1,6 +1,8 @@
 ;;;
-;;; SRFI-1 - List processing library
+;;; scheme.list - List processing library (R7RS Red)
 ;;;
+
+;; Originally srfi-1
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -15,7 +17,7 @@
 ;; as fold$) in srfi-1 module.  As of 0.8.6, they're moved to gauche.procedure,
 ;; which is autoloaded.  The user doesn't need to see this change.
 
-(define-module srfi-1
+(define-module scheme.list
   ;; The export list includes the procedures defined in #<module gauche>
   ;; in order to make (import (srfi 1)) work for r7rs programs.
   (export xcons cons* make-list list-tabulate list-copy circular-list iota
@@ -40,7 +42,7 @@
           lset-difference! lset-xor lset-xor!
           lset-diff+intersection lset-diff+intersection!
           ))
-(select-module srfi-1)
+(select-module scheme.list)
 
 (define (xcons a b) (cons b a))
 

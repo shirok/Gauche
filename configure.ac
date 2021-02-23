@@ -938,6 +938,7 @@ AC_CONFIG_FILES([
           ext/native/Makefile
           ext/net/Makefile
           ext/peg/Makefile
+          ext/scheme/Makefile
           ext/sparse/Makefile
           ext/srfi/Makefile
           ext/sxml/Makefile

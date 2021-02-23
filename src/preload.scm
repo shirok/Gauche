@@ -22,7 +22,9 @@
  [gauche-0.9.9 (use gauche.stringutil) (use gauche.portutil)]
  [else])
 (use gauche.threads)
-(use srfi-1)
+(cond-expand
+ [gauche-0.9.10 (use srfi-1)]
+ [else (use scheme.list)])
 (use srfi-13)
 (use file.util)
 (use text.tr)
