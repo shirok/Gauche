@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-133.scm - vector library
+;;; scheme.vector - vector library (R7RS Red)
 ;;;
 ;;;   Copyright (c) 2016-2020  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module srfi-133
+;; Originally srfi-133
+(define-module scheme.vector
   (use util.match)
   (export
    ;; constructors
@@ -70,7 +71,7 @@
    vector->string string->vector
    ))
 
-(select-module srfi-133)
+(select-module scheme.vector)
 
 ;; Built-ins:
 ;; make-vector vector vector-copy vector-append

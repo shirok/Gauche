@@ -6,13 +6,15 @@ SCM_CATEGORY = scheme
 
 include ../Makefile.ext
 
-LIBFILES = scheme--list.$(SOEXT)
-SCMFILES = list.sci
+LIBFILES = scheme--list.$(SOEXT) \
+	   scheme--vector.$(SOEXT)
+SCMFILES = list.sci \
+	   vector.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c *.sci
 
-OBJECTS = $(list_OBJECTS)
+OBJECTS = $(list_OBJECTS) $(vector_OBJECTS)
 
 all : $(LIBFILES)
 
@@ -29,3 +31,15 @@ scheme--list.$(SOEXT) : $(list_OBJECTS)
 
 scheme--list.c list.sci : $(top_srcdir)/libsrc/scheme/list.scm
 	$(PRECOMP) -e -i list.sci -o scheme--list $(top_srcdir)/libsrc/scheme/list.scm
+
+#
+# scheme.vector (srfi-133)
+#
+
+vector_OBJECTS = scheme--vector.$(OBJEXT)
+
+scheme--vector.$(SOEXT) : $(vector_OBJECTS)
+	$(MODLINK) scheme--vector.$(SOEXT) $(vector_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+scheme--vector.c vector.sci : $(top_srcdir)/libsrc/scheme/vector.scm
+	$(PRECOMP) -e -i vector.sci -o scheme--vector $(top_srcdir)/libsrc/scheme/vector.scm
