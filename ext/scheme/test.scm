@@ -186,4 +186,81 @@
 (test* "lset<=" #f (lset<= char-ci=? '(#\a #\B #\c #\d) '(#\C #\A #\b)))
 (test* "lset<=" #t (lset<= char-ci=? '(#\a #\B #\c) '(#\C #\d #\A #\b)))
 
+
+;;;
+;;; scheme.vector (srfi-133)
+;;;
+
+(test-section "scheme.vector")
+
+(use scheme.vector)
+(test-module 'scheme.vector)
+
+(use compat.chibi-test)
+(use srfi-11)
+
+(chibi-test
+ (include "../../test/include/vectors-test.scm"))
+
+;;;
+;;; scheme.flonum (srfi-144)
+;;;
+
+(test-section "scheme.flonum")
+(use scheme.flonum)
+(test-module 'scheme.flonum)
+
+(define-module scheme-flonum-test
+
+  (define-module srfi.144 (extend scheme.flonum))
+  (define-module tests.scheme.test
+    (use gauche.test)
+    (export test test/one-of test/unspec-or-exn test/approx test/approx-1ulp)
+    (define (f=? a b)
+      (cond [(flonum? a)
+             (and (flonum? b)
+                  (cond [(nan? a) (nan? b)]
+                        [(-zero? a) (-zero? b)]
+                        [else (eqv? a b)]))]
+            [(list? a)
+             (and (list? b) (= (length a) (length b))
+                  (every f=? a b))]
+            [else (equal? a b)]))
+    (define-syntax test
+      (syntax-rules ()
+        [(_ expr expected)
+         (test* #"~'expr" expected expr f=?)]))
+    (define-syntax test/one-of
+      (syntax-rules ()
+        [(_ expr expected-list)
+         (test* #"~'expr" expected-list expr
+                (^[elis r] (any (cut f=? <> r) elis)))]))
+    (define-syntax test/unspec-or-exn
+      (syntax-rules ()
+        [(_ expr _)
+         (test* #"~'expr (error)" (test-error) expr)]))
+    (define-syntax test/approx-1ulp
+      (syntax-rules ()
+        [(_ expr expected)
+         (test* #"~'expr (approx 1ulp)" expected expr
+                (^[x y]
+                  (if (list? x)
+                    (and (list? y) (every approx=? x y))
+                    (approx=? x y))))]))
+    ;; NB: MinGW's bessel function jn has greater errors and we need
+    ;; to relax approx check.
+    (define rel-tolerance
+      (cond-expand
+       [gauche.os.windows 5e-7]
+       [else 1e-9]))
+    (define-syntax test/approx
+      (syntax-rules ()
+        [(_ expr expected)
+         (test* #"~'expr (approx)" expected expr
+                (cut approx=? <> <> rel-tolerance 1e-15))])))
+  (use scheme.base)
+  (include "../../test/include/srfi-144-tests.scm")
+  (with-module tests.scheme.flonum
+    (run-flonum-tests)))
+
 (test-end)

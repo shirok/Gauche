@@ -7,14 +7,16 @@ SCM_CATEGORY = scheme
 include ../Makefile.ext
 
 LIBFILES = scheme--list.$(SOEXT) \
-	   scheme--vector.$(SOEXT)
+	   scheme--vector.$(SOEXT) \
+	   scheme--flonum.$(SOEXT)
 SCMFILES = list.sci \
-	   vector.sci
+	   vector.sci \
+	   flonum.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c *.sci
 
-OBJECTS = $(list_OBJECTS) $(vector_OBJECTS)
+OBJECTS = $(list_OBJECTS) $(vector_OBJECTS) $(flonum_OBJECTS)
 
 all : $(LIBFILES)
 
@@ -43,3 +45,15 @@ scheme--vector.$(SOEXT) : $(vector_OBJECTS)
 
 scheme--vector.c vector.sci : $(top_srcdir)/libsrc/scheme/vector.scm
 	$(PRECOMP) -e -i vector.sci -o scheme--vector $(top_srcdir)/libsrc/scheme/vector.scm
+
+#
+# scheme.flonum (srfi-144)
+#
+
+flonum_OBJECTS = scheme--flonum.$(OBJEXT)
+
+scheme--flonum.$(SOEXT) : $(flonum_OBJECTS)
+	$(MODLINK) scheme--flonum.$(SOEXT) $(flonum_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+scheme--flonum.c flonum.sci : flonum.scm
+	$(PRECOMP) -e -P -i flonum.sci -o scheme--flonum $(srcdir)/flonum.scm

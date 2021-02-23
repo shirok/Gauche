@@ -110,13 +110,13 @@ test.record
 /ext/peg/parser--peg.c
 /ext/rfc/rfc--822.c
 /ext/rfc/rfc--mime.c
+/ext/scheme/scheme--flonum.c
+/ext/scheme/scheme--list.c
+/ext/scheme/scheme--vector.c
 /ext/sparse/data--sparse.c
-/ext/srfi/srfi-1.c
 /ext/srfi/srfi-13.c
 /ext/srfi/srfi-19.c
 /ext/srfi/srfi-43.c
-/ext/srfi/srfi-133.c
-/ext/srfi/srfi-144.c
 /ext/srfi/srfi-178.c
 /ext/sxml/sxml--serializer.c
 /ext/sxml/sxml--ssax.c

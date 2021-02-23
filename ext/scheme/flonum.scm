@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-144 - flonums
+;;; scheme.flonum - Flonums (R7Rs Tangerine)
 ;;;
 ;;;   Copyright (c) 2019-2020  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module srfi-144
+;; Originally srfi-144
+(define-module scheme.flonum
   (use math.const :prefix const:)
   (export fl-e fl-1/e fl-e-2 fl-e-pi/4 fl-log2-e fl-log10-e
           fl-log-2 fl-1/log-2 fl-log-3 fl-log-pi fl-log-10 fl-1/log-10
@@ -70,7 +71,7 @@
           flgamma flloggamma flfirst-bessel flsecond-bessel
           flerf flerfc
           ))
-(select-module srfi-144)
+(select-module scheme.flonum)
 
 (inline-stub
  (.include <math.h>))
