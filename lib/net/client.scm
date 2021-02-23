@@ -1,8 +1,7 @@
 ;;;; net.client -- network client abstract class
 
 (define-module net.client
-  (use srfi-1)      ;; list library
-  (use srfi-2)      ;; and-let*
+  (use scheme.list) ;; list library
   (use srfi-13)     ;; string library
   (use rfc.base64)
   (use gauche.net)

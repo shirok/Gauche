@@ -36,7 +36,7 @@
 ;; extension file.
 
 (define-module gauche.package.compile
-  (use srfi-1)
+  (use scheme.list)
   (use gauche.package)
   (use gauche.package.util)
   (use gauche.config)

@@ -1,8 +1,7 @@
 ;;;; net.file.mailto -- net.file access to the sending mail
 
 (define-module net.file.mailto
-  (use srfi-1)   ;; list library
-  (use srfi-2)   ;; and-let*
+  (use scheme.list) ;; list library
   (use srfi-13)  ;; string library
   (use net.smtp)
   (extend net.file.base)

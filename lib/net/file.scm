@@ -1,7 +1,6 @@
 ;;;; net.file -- universal file access
 
 (define-module net.file
-  (use srfi-2)      ;; and-let*
   (use rfc.uri)
   (extend net.file.base)
   (export uri->object))

@@ -4,7 +4,7 @@
 
 (use gauche.test)
 (use gauche.generator)
-(use srfi-1)
+(use scheme.list)
 (test-start "lazy sequence utilities")
 
 (use gauche.lazy)

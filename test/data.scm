@@ -412,7 +412,7 @@
 (use data.heap)
 (test-module 'data.heap)
 
-(use srfi-1)
+(use scheme.list)
 (use srfi-27)
 (use gauche.sequence)
 (use util.match)

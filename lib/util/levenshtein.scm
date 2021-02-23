@@ -32,8 +32,8 @@
 ;;;
 
 (define-module util.levenshtein
-  (use srfi-1)
-  (use srfi-133)
+  (use scheme.list)
+  (use scheme.vector)
   (use gauche.array)
   (use gauche.sequence)
   (export l-distance l-distances

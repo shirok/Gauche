@@ -3,7 +3,7 @@
 ;;
 
 (use gauche.test)
-(use srfi-1)
+(use scheme.list)
 
 (test-start "uniform vector and array")
 (use gauche.uvector)

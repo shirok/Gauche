@@ -36,7 +36,7 @@
 ;; process (untar+configure+make+make install).
 
 (define-module gauche.package.build
-  (use srfi-1)
+  (use scheme.list)
   (use gauche.package)
   (use gauche.package.util)
   (use gauche.package.fetch)

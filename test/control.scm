@@ -1,7 +1,7 @@
 ;; Tests for control.* modules
 
 (use gauche.test)
-(use srfi-1)
+(use scheme.list)
 (use srfi-19)
 (use data.queue)
 

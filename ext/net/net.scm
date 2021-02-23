@@ -34,7 +34,7 @@
 #!no-fold-case
 
 (define-module gauche.net
-  (use srfi-1)
+  (use scheme.list)
   (use gauche.uvector)
   (use gauche.sequence)
   (use gauche.lazy)

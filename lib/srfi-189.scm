@@ -32,7 +32,7 @@
 ;;;
 
 (define-module srfi-189
-  (use srfi-1)
+  (use scheme.list)
   (use util.match)
   (export just nothing right left either-swap
           maybe? either? just? nothing? right? left? maybe-ref-error?

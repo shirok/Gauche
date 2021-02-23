@@ -7,7 +7,7 @@
 
 (test-start "termios")
 (use gauche.termios)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 (test-module 'gauche.termios)
 

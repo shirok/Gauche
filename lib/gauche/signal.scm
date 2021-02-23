@@ -34,7 +34,7 @@
 ;; This file is to be autoloaded
 
 (select-module gauche)
-(use srfi-1)
+(use scheme.list)
 
 ;; (with-signal-handlers
 ;;   (clause ...)

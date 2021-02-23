@@ -36,7 +36,7 @@
 ;;   You might need to adjust code for newer version of Unicode.
 ;;   See doc/HOWTO-unicode.txt for the details.
 
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 (use srfi-42)
 (use text.csv)

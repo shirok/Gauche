@@ -35,7 +35,7 @@
   (use gauche.sequence)
   (use gauche.uvector)
   (use gauche.record)
-  (use srfi-133)
+  (use scheme.vector)
   (export make-ring-buffer
           make-overflow-doubler
           ring-buffer?

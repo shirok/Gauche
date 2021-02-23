@@ -32,7 +32,7 @@
 ;;;
 
 (define-module text.csv
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-11)
   (use srfi-13)
   (use srfi-14)

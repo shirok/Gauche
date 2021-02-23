@@ -41,7 +41,7 @@
 ;;   <http://www.netscape.com/newsref/std/cookie_spec.html>
 
 (define-module rfc.cookie
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use srfi-19)
   (export parse-cookie-string

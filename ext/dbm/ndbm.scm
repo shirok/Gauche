@@ -33,7 +33,7 @@
 
 (define-module dbm.ndbm
   (extend dbm)
-  (use srfi-1)
+  (use scheme.list)
   (use util.match)
   (export <ndbm>
           ;; low level funcions

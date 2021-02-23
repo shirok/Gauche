@@ -4,7 +4,7 @@
 ;; has to be done after their tests.
 
 (use gauche.test)
-(use srfi-1)
+(use scheme.list)
 (use util.isomorph)
 
 (test-start "advanced read/write features")

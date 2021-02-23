@@ -7,7 +7,7 @@
 
 (use gauche.test)
 (use gauche.sequence)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 (use srfi-60)
 (test-start "generators")

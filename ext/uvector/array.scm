@@ -18,7 +18,7 @@
 ;; map n-dimensional indices to an index of the backing storage.
 
 (define-module gauche.array
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-11)
   (use gauche.uvector)
   (use gauche.collection)

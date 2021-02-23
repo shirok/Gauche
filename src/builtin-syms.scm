@@ -2,7 +2,7 @@
 ;;; Generates builtin symbols
 ;;;
 
-(use srfi-1)
+(use scheme.list)
 (use file.util)
 (use gauche.cgen)
 (use gauche.sequence)

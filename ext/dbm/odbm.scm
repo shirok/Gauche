@@ -33,7 +33,7 @@
 
 (define-module dbm.odbm
   (extend dbm)
-  (use srfi-1)
+  (use scheme.list)
   (export <odbm>
           ;; low level funcions
           odbm-init    odbm-close    odbm-closed?

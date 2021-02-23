@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.libutil
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (export library-exists? library-fold library-map library-for-each
           library-has-module? library-name->module-name))

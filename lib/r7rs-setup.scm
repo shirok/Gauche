@@ -45,7 +45,7 @@
 ;; in this module.
 (define-module r7rs.import
   (use util.match)
-  (use srfi-1)
+  (use scheme.list)
   (export (rename import r7rs-import))
 
   ;; A trick - must be replaced once we have explicit-renaming macro.

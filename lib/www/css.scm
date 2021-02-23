@@ -38,7 +38,7 @@
   (use parser.peg)
   (use util.match)
   (use text.tree)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (export construct-css simple-selector?
           parse-css parse-css-file

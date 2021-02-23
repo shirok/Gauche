@@ -33,7 +33,7 @@
 
 
 (define-module gauche.selector
-  (use srfi-1)
+  (use scheme.list)
   (export <selector> selector-add! selector-delete! selector-select)
   )
 (select-module gauche.selector)

@@ -40,7 +40,7 @@
 (define-module lang.asm.x86_64
   (use gauche.uvector)
   (use gauche.sequence)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use srfi-42)
   (use util.match)

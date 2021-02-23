@@ -58,7 +58,7 @@
   (use gauche.uvector)
   (use gauche.record)
   (use gauche.sequence)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use binary.io)
   (use util.match)

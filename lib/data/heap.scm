@@ -34,7 +34,7 @@
 (define-module data.heap
   (use gauche.sequence)
   (use gauche.uvector)
-  (use srfi-1)
+  (use scheme.list)
   (export <binary-heap>
           make-binary-heap build-binary-heap
           binary-heap-comparator binary-heap-key-procedure

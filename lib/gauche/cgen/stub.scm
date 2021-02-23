@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.cgen.stub
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use srfi-42)
   (use util.match)

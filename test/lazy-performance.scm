@@ -6,7 +6,7 @@
 (use gauche.generator)
 (use gauche.lazy)
 (use file.util)
-(use srfi-1)
+(use scheme.list)
 (use srfi-42)
 
 ;; Compare crating list of integers (0 ... N-1) with

@@ -7,7 +7,7 @@
 ;;;
 
 (define-module util.toposort
-  (use srfi-1)
+  (use scheme.list)
   (export topological-sort)
   )
 (select-module util.toposort)

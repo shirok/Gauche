@@ -33,7 +33,7 @@
 
 (define-module text.html-lite
   (use text.tree)
-  (use srfi-1)
+  (use scheme.list)
   (export html-escape html-escape-string html-doctype)
   )
 (select-module text.html-lite)

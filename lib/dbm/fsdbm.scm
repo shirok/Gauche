@@ -35,7 +35,7 @@
   (extend dbm)
   (use gauche.fcntl)
   (use file.util)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (export <fsdbm>)
   )

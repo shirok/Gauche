@@ -2,7 +2,7 @@
 
 (use gauche.test)
 (use gauche.vm.insn)
-(use srfi-1)
+(use scheme.list)
 (use gauche.uvector)
 (use util.match)
 

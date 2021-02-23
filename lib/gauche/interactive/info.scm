@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.interactive.info
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use text.info)
   (use text.pager)

@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.mop.propagate
-  (use srfi-1)
+  (use scheme.list)
   (use util.match)
   (export <propagate-meta> <propagate-mixin>)
   )

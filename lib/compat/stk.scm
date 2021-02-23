@@ -34,7 +34,7 @@
 #!no-fold-case
 
 (define-module compat.stk
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use srfi-14)
   (use gauche.sequence)

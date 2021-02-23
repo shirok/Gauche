@@ -751,7 +751,7 @@
        (equal? (hash (make <cmp> :x (cons 1 2)))
                (hash (make <cmp> :x (cons 2 1)))))
 
-(use srfi-1)
+(use scheme.list)
 
 (define xht (make-hash-table 'equal?))
 
@@ -1178,7 +1178,7 @@
 ;;----------------------------------------------------------------
 (test-section "metaclass/instance-pool")
 
-(use srfi-1)
+(use scheme.list)
 (use gauche.mop.instance-pool)
 
 (define-class <pool-meta> (<instance-pool-meta>)

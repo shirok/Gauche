@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.vm.debugger
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (export debug-print debug-print-width
           debug-print-pre debug-print-post

@@ -5,7 +5,7 @@
 (use gauche.test)
 (use gauche.uvector)
 (use gauche.collection)
-(use srfi-1)
+(use scheme.list)
 
 (test-start "binary")
 

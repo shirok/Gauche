@@ -36,7 +36,7 @@
 ;; features.
 
 (define-module control.thread-pool
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-19)
   (use data.queue)
   (use util.match)

@@ -6,7 +6,7 @@
 (use file.util)
 (use gauche.process)
 (use util.match)
-(use srfi-1)
+(use scheme.list)
 (use text.tr)
 
 (define (usage)

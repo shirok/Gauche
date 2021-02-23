@@ -34,7 +34,7 @@
 ;; This file is autoloaded
 
 (select-module gauche.object)
-(use srfi-1)           ;; used by instance update protocol
+(use scheme.list)           ;; used by instance update protocol
 
 ;;----------------------------------------------------------------
 ;; Class Redefinition protocol

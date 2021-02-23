@@ -4,7 +4,7 @@
 (test-start "collections and sequences")
 
 (use data.queue)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 (use gauche.collection)
 (use gauche.sequence)

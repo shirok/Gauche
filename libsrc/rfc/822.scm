@@ -36,7 +36,7 @@
 ;;         http://www.ietf.org/rfc/rfc2822.txt
 
 (define-module rfc.822
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use srfi-19)
   (use text.parse)

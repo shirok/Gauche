@@ -34,7 +34,7 @@
 ;; Originally srfi-143
 (define-module scheme.fixnum
   (use srfi-60 :only (bitwise-if rotate-bit-field reverse-bit-field))
-  (use srfi-141 :only (balanced/))
+  (use scheme.division :only (balanced/))
   (export fx-width fx-greatest fx-least
           fixnum? fx=? fx<? fx<=? fx>? fx>=?
           fxzero? fxpositive? fxnegative? fxodd? fxeven?

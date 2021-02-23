@@ -4,7 +4,7 @@
 ;; is not fixed yet; they may change at any time as VM evolves.
 
 (use gauche.test)
-(use srfi-1)
+(use scheme.list)
 (use util.match)
 
 (test-start "debug features")

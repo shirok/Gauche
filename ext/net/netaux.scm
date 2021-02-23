@@ -32,7 +32,7 @@
 ;;;
 
 (select-module gauche.net)
-(use srfi-1)
+(use scheme.list)
 (use gauche.sequence)
 (use gauche.lazy)
 (use util.match)

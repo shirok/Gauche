@@ -9,7 +9,7 @@
 (use gauche.uvector)
 (use gauche.sequence)
 (use gauche.generator)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 (use file.util)
 (test-module 'gauche.vport)
@@ -577,7 +577,7 @@
 (define-module srfi-181-tests
   (use gauche.test)
   (use gauche.uvector)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use srfi-64)
   (use srfi-181)

@@ -35,7 +35,7 @@
 (define-module dbi
   (use text.sql)
   (use file.util)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use util.match)
   (extend util.relation)

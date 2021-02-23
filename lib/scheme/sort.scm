@@ -36,7 +36,7 @@
   (use gauche.sequence)
   (use gauche.generator)
   (use srfi-27)   ; we use random selection in vector-select
-  (use srfi-133)
+  (use scheme.vector)
   (export list-sorted? vector-sorted?
           list-sort list-stable-sort
           list-sort! list-stable-sort!

@@ -34,7 +34,7 @@
 ;;; tr(1) equivalent.
 
 (define-module text.tr
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use gauche.generator)
   (export tr transliterate string-tr string-transliterate

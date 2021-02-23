@@ -4,7 +4,7 @@
 (test-module 'data.ring-buffer)
 (use gauche.sequence)
 (use gauche.uvector)
-(use srfi-1)
+(use scheme.list)
 
 
 (define (test-ring-buffer initial-storage)

@@ -1,7 +1,6 @@
 ;;;; net.file.file -- net.file access to the local filesystem
 
 (define-module net.file.file
-  (use srfi-2)      ;; and-let*
   (use rfc.uri)
   (use file.util)
   (extend net.file.base)

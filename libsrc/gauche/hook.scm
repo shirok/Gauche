@@ -40,7 +40,7 @@
 
 (define-module gauche.hook
   (use gauche.mop.validator)
-  (use srfi-1)
+  (use scheme.list)
   (export <hook> make-hook hook? hook-empty? add-hook!
           remove-hook! delete-hook! reset-hook!
           hook->list run-hook)

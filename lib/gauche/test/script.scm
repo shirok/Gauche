@@ -35,7 +35,7 @@
 ;; depending on other modules.
 (select-module gauche.test)
 (use file.util)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 
 ;; Check toplevel bindings of a script file.  Script files can have their

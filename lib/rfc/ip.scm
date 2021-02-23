@@ -37,7 +37,7 @@
   (use gauche.uvector)
   (use binary.io)
   (use util.match)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (export ip-version ip-header-length ip-protocol
           ip-source-address ip-destination-address

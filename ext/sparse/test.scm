@@ -6,7 +6,7 @@
 (use gauche.generator)
 (use data.random)
 (use util.match)
-(use srfi-1)
+(use scheme.list)
 (use srfi-27)
 
 (test-start "data.sparse")

@@ -34,9 +34,9 @@
 ;; Originally srfi-151
 
 (define-module scheme.bitwise
-  (use srfi-1)
+  (use scheme.list)
+  (use scheme.vector)
   (use srfi-60)
-  (use srfi-133)
   (use gauche.generator)
   (export bitwise-not                   ; srfi-60
           bitwise-and                   ; srfi-60

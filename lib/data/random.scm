@@ -32,7 +32,7 @@
 ;;;
 
 (define-module data.random
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-14)
   (use srfi-42)
   (use util.match)

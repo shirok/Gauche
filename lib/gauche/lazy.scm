@@ -38,7 +38,7 @@
 ;; gauche.generator, which depends on modules built in ext/gauche.
 
 (define-module gauche.lazy
-  (use srfi-1)
+  (use scheme.list)
   (use gauche.record)
   (use gauche.generator)
   (export x->lseq lunfold literate

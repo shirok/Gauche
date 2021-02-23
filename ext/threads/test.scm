@@ -303,7 +303,7 @@
 ;;---------------------------------------------------------------------
 (test-section "port access serialization")
 
-(use srfi-1)
+(use scheme.list)
 
 (define (port-test-chunk-generator nchars c)
   (^[] (make-string nchars c)))
@@ -511,7 +511,7 @@
 ;;---------------------------------------------------------------------
 (test-section "threads and promise")
 
-(use srfi-1)
+(use scheme.list)
 
 (letrec ([x 0]
          [z (delay (begin (sys-nanosleep 100000) (inc! x) 'ok))])

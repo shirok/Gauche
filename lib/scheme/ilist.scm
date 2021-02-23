@@ -41,7 +41,7 @@
 ;; Note that we won't reject mpair passed to these procedures.
 
 (define-module scheme.ilist
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-114 :only (make-car-comparator
                        make-cdr-comparator
                        make-improper-list-comparator))

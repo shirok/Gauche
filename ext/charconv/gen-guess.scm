@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(use srfi-1)
+(use scheme.list)
 (use gauche.sequence)
 
 ;; This is a simple state machine compiler.

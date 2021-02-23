@@ -3,7 +3,7 @@
 (use gauche.test)
 
 (test-start "multibyte (utf-8)")
-(use srfi-1)
+(use scheme.list)
 
 ;;-------------------------------------------------------------------
 (test-section "string builtins")

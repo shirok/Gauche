@@ -5,7 +5,7 @@
 (use gauche.test)
 (test-start "util")
 
-(use srfi-1)
+(use scheme.list)
 
 ;;-----------------------------------------------
 (test-section "util.match")

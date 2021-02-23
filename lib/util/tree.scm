@@ -7,7 +7,7 @@
 ;;;
 
 (define-module util.tree
-  (use srfi-1)
+  (use scheme.list)
   (export tree-fold tree-walk tree-fold-bf tree-walk-bf)
   )
 (select-module util.tree)

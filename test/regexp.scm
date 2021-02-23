@@ -3,7 +3,7 @@
 ;;
 
 (use gauche.test)
-(use srfi-1)
+(use scheme.list)
 (use srfi-14)
 
 (test-start "regexp")

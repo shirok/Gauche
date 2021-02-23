@@ -2,7 +2,7 @@
 ;;; Test example.mqueue-cpp
 ;;;
 
-(use srfi-1)
+(use scheme.list)
 (use gauche.test)
 (use gauche.sequence)
 

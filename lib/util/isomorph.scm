@@ -32,8 +32,8 @@
 ;;;
 
 (define-module util.isomorph
-  (use srfi-1)
-  (use srfi-133)
+  (use scheme.list)
+  (use scheme.vector)
   (export isomorphic? object-isomorphic?)
   )
 (select-module util.isomorph)

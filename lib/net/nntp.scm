@@ -1,8 +1,7 @@
 ;;;; net.nntp -- simple NNTP module
 
 (define-module net.nntp
-  (use srfi-1)      ;; list library
-  (use srfi-2)      ;; and-let*
+  (use scheme.list) ;; list library
   (use srfi-13)     ;; string library
   (use gauche.net)
   (use net.client)

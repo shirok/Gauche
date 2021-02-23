@@ -3,7 +3,7 @@
 ;;
 
 (use gauche.test)
-(use srfi-1)
+(use scheme.list)
 (use file.util)
 (use gauche.collection)
 (use gauche.dictionary)

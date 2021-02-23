@@ -18,7 +18,7 @@
 ;; Modifided by Shiro Kawai
 
 (define-module util.combinations
-  (use srfi-1)
+  (use scheme.list)
   (use util.match)
   (use gauche.sequence)
   (export permutations permutations*

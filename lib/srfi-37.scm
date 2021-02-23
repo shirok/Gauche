@@ -32,7 +32,7 @@
 ;;;  * Replaced some expressions to utilize Gauche's native features.
 
 (define-module srfi-37
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-11)
   (export option option-names option-required-arg? option-optional-arg?
           option-processor option? args-fold)

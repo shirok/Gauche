@@ -7,7 +7,7 @@
 ;; objects collected, but may fail on certain occasions.
 
 (use gauche.test)
-(use srfi-1)
+(use scheme.list)
 
 (test-start "weak pointers")
 

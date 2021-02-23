@@ -37,7 +37,7 @@
 ;;;
 
 (define-module util.stream
-  (use srfi-1)
+  (use scheme.list)
   (use util.match)
   (export
    ;;  srfi-40

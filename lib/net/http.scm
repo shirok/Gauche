@@ -1,8 +1,7 @@
 ;;;; net.http -- simple HTTP module
 
 (define-module net.http
-  (use srfi-1)      ;; list library
-  (use srfi-2)      ;; and-let*
+  (use scheme.list) ;; list library
   (use srfi-13)     ;; string library
   (use srfi-19)     ;; time and date library
   (use gauche.net)

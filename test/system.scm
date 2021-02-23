@@ -6,7 +6,7 @@
 
 (use gauche.test)
 (use gauche.config)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 
 (test-start "system")

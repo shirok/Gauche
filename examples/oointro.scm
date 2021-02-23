@@ -3,7 +3,7 @@
 ;; "Introduction to the object system" in the reference manual.
 ;;
 
-(use srfi-1)
+(use scheme.list)
 
 ;;;
 ;;; 2D points

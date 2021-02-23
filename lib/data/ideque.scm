@@ -41,7 +41,7 @@
   (use gauche.generator)
   (use gauche.lazy)
   (use util.match)
-  (use srfi-1)
+  (use scheme.list)
   (export <ideque>
           make-ideque ideque ideque? ideque-empty? ideque=
           ideque-unfold ideque-unfold-right ideque-tabulate

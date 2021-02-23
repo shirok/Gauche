@@ -5,7 +5,7 @@
 (use gauche.test)
 (use gauche.generator)
 (test-start "file utilities")
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 
 ;; shorthand of normalizing pathname.  this doesn't do anything on

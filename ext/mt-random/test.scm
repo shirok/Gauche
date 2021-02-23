@@ -4,7 +4,7 @@
 
 (use gauche.test)
 (use gauche.collection)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 (use gauche.uvector)
 

@@ -31,8 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(use srfi-1)
-(use srfi-2)
+(use scheme.list)
 (use srfi-11)
 (use gauche.collection)
 

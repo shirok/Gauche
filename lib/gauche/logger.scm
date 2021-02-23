@@ -34,7 +34,7 @@
 #!no-fold-case
 
 (define-module gauche.logger
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use gauche.fcntl)
   (export <log-drain>

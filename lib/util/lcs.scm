@@ -41,7 +41,7 @@
 
 (define-module util.lcs
   (use gauche.sequence)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-11)
   (export lcs lcs-with-positions lcs-fold lcs-edit-list))
 (select-module util.lcs)

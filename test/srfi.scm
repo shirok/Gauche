@@ -18,7 +18,7 @@
        (cond-expand [(and (library srfi-0) (library srfi-1)) 0] [else 1]))
 (test* "cond-expand" #t
        (cond-expand [(and (library srfi-2) (library srfi-1))
-                     (import srfi-1) (procedure? xcons)]
+                     (use srfi-1) (procedure? xcons)]
                     [else #f]))
 (test* "cond-expand" 0
        (cond-expand [(or hogehoge (library srfi-1)) 0] [else 1]))
@@ -2390,7 +2390,7 @@
 ;;-----------------------------------------------------------------------
 (test-section "srfi-132")
 (use srfi-132)
-(use srfi-1)
+(use scheme.list)
 (test-module 'srfi-132)
 
 ;; partition-in-place! is not external, but it is such a fundamental
@@ -2593,7 +2593,7 @@
 (test-module 'srfi-146)
 
 (define-module srfi-146-tests
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-64)
   (use srfi-146)
   (use compat.r7rs-srfi-tests)
@@ -2606,7 +2606,7 @@
 (test-module 'srfi-146.hash)
 
 (define-module srfi-146-tests
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-64)
   (use srfi-146.hash)
   (use compat.r7rs-srfi-tests)
@@ -2672,7 +2672,7 @@
   (use compat.chibi-test)
   (use gauche.uvector)
   (define bytevector u8vector)
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-13)
   (use srfi-158)
   (chibi-test
@@ -2720,7 +2720,7 @@
 ;; procedures that are doing something more.
 
 (define-module srfi-170-tests
-  (use srfi-1)
+  (use scheme.list)
   (use srfi-170)
   (use file.util)
   (use gauche.test)

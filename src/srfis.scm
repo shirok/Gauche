@@ -15,7 +15,7 @@
 (use util.match)
 (use file.util)
 (use gauche.cgen.literal)
-(use srfi-1)
+(use scheme.list)
 (use gauche.generator)
 
 ;;; Parser

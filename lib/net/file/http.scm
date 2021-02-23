@@ -1,8 +1,7 @@
 ;;;; net.file.http -- net.file access to http
 
 (define-module net.file.http
-  (use srfi-1)   ;; list library
-  (use srfi-2)   ;; and-let*
+  (use scheme.list) ;; list library
   (use srfi-13)  ;; string library
   (use net.http)
   (extend net.file.base)

@@ -4,7 +4,7 @@
 (test-module 'data.trie)
 (use gauche.uvector)
 (use gauche.sequence)
-(use srfi-1)
+(use scheme.list)
 (use srfi-13)
 
 (let* ((strs '("kana" "kanaono" "kanawai" "kanawai koa"

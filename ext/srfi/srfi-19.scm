@@ -26,7 +26,7 @@
 ;;; Modified for Gauche by Shiro Kawai, shiro@acm.org
 
 (define-module srfi-19
-  (use srfi-1)
+  (use scheme.list)
   (use gauche.sequence)
   (use srfi-13)
   (export time-tai time-utc time-monotonic time-thread

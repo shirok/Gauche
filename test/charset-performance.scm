@@ -5,7 +5,7 @@
 (use gauche.time)
 (use data.random)
 (use gauche.sequence)
-(use srfi-1)
+(use scheme.list)
 (use srfi-14)
 (use srfi-42)
 
