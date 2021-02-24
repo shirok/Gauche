@@ -110,7 +110,7 @@ SCMFILES = \
        data/cache.scm data/heap.scm \
        data/ideque.scm data/imap.scm data/priority-map.scm data/random.scm \
        data/skew-list.scm \
-       lang/asm/x86_64.scm \
+       lang/asm/x86_64.scm lang/c/parser.scm \
        math/const.scm math/prime.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm util/queue.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
