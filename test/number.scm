@@ -2348,6 +2348,14 @@
   (test* "cos vs cospi" #f (check %cos %cospi))
   (test* "tan vs tanpi" #f (check %tan %tanpi)))
 
+(let ()
+  (test* "cos + degrees->radians" -1
+         (cos (degrees->radians 180))
+         approx=?)
+  (test* "radians->degrees + degrees->radians" 90
+         (radians->degrees (degrees->radians 90))
+         approx=?))
+
 ;;------------------------------------------------------------------
 (test-section "ffx optimization")
 

@@ -3238,6 +3238,16 @@ Hyperbolic trigonometric functions.  Work for complex numbers as well.
 @c COMMON
 @end defun
 
+@defun radians->degrees rad
+@defunx degrees->radians deg
+@c EN
+Convert radians to degrees and vice versa.
+The argument must be a real number.
+@c JP
+ラジアンと度を変換します。引数は実数でなければなりません。
+@c COMMON
+@end defun
+
 @defun sqrt z
 [R7RS inexact]
 @c EN

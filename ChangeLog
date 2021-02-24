@@ -1,3 +1,8 @@
+2021-02-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (degrees->radians, radians->degrees): Added.
+	  https://github.com/shirok/Gauche/issues/749
+
 2021-02-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-189.scm (either-guard): Fixed the recognized syntax of

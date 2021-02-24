@@ -735,6 +735,11 @@
     0
     (/ (- (log (+ 1 z)) (log (- 1 z))) 2)))
 
+(select-module gauche)
+(define-cproc radians->degrees (r::<real>) ::<real> :constant :fast-flonum
+  (return (* r (/ 180 M_PI))))
+(define-cproc degrees->radians (d::<real>) ::<real> :constant :fast-flonum
+  (return (* d (/ M_PI 180))))
 
 (select-module gauche)
 
