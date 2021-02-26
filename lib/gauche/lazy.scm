@@ -181,6 +181,13 @@
   (column     sequence-position-column)
   (item-count sequence-position-item-count))
 
+(define-method write-object ((obj <sequence-position>) port)
+  (format port "#<sequence-position ~s:~a:~a(~a)>"
+          (sequence-position-source obj)
+          (sequence-position-line obj)
+          (sequence-position-column obj)
+          (sequence-position-item-count obj)))
+
 ;; line-adjusters is a list of (<char> . <proc>).  If a char at the beginning
 ;; of a line matches <char>, <proc> is called with the char-gen, current
 ;; source-name, and line-count.  It should return three values:
