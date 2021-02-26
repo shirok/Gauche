@@ -49,7 +49,8 @@
           generator->lseq/position port->char-lseq/position lseq-position
           <sequence-position> sequence-position?
           sequence-position-source sequence-position-line
-          sequence-position-column sequence-position-item-count))
+          sequence-position-column sequence-position-item-count
+          cpp-line-adjuster cc1-line-adjuster))
 (select-module gauche.lazy)
 
 ;; Universal coercer.
@@ -180,34 +181,86 @@
   (column     sequence-position-column)
   (item-count sequence-position-item-count))
 
+;; line-adjusters is a list of (<char> . <proc>).  If a char at the beginning
+;; of a line matches <char>, <proc> is called with the char-gen, current
+;; source-name, and line-count.  It should return three values:
+;; a new source-name, line-count, and a list of prefetched
+;; characters to be included in the input.  (The last value is needed if
+;; the adjuster needs to read ahead to determine if it should consume them).
+
 (define (generator->lseq/position char-gen :key (source-name #f)
                                                 (start-line 1)
                                                 (start-column 1)
-                                                (start-item-count 0))
+                                                (start-item-count 0)
+                                                (line-adjusters '()))
   ;; The tracker treemap keeps
   ;;   integer-char-pos -> (source-name . line-number)
   ;; for characters at the beginning of line.  It is pointed from the cdr
   ;; of the input-char-position pair attribute.
   (define tracker (make-tree-map))
-  (define tracker-stack '())
-  (define line-count start-line)
+  (define bol (= start-column 1))      ;#t if beginning of line
+  ;; line count starts from 1.  but if we're starting at the beginning of
+  ;; line, line count is immediately incremented, so we offset it.
+  (define line-count (if bol (- start-line 1) start-line))
   (define char-count 0)
-  (define eol #f)                       ;#t after #\newline is seen
-  (define (gen)
+  (define prefetched '())               ;prefeched chars by an adjuster
+
+  ;; A simple case, with no line adjusters
+  (define (gen-simple)
     (glet1 ch (char-gen)
-      (let ([pos char-count])
-        (inc! char-count)
-        (when eol
-          (inc! line-count)
-          (tree-map-put! tracker pos (cons source-name line-count))
-          (set! eol #f))
-        (when (eqv? ch #\newline)
-          (set! eol #t))
-        (values ch `((input-position . (,pos . ,tracker)))))))
+      (gen-common ch)))
+
+  ;; With line adjusters
+  (define (gen-adjusters)
+    (glet1 ch (if (null? prefetched)
+                (char-gen)
+                (pop! prefetched))
+      (if-let1 adjuster (and bol (assv-ref line-adjusters ch))
+        (begin
+          (set!-values (source-name line-count prefetched)
+                       (adjuster char-gen source-name line-count))
+          (if (null? prefetched)
+            (begin
+              (dec! line-count)         ;will be +1 in next iteration
+              (gen-adjusters))          ;line is fully consumed
+            (gen-common ch)))
+        (gen-common ch))))
+
+  (define (gen-common ch)
+    (let ([pos char-count])
+      (inc! char-count)
+      (when bol
+        (inc! line-count)
+        (tree-map-put! tracker pos (cons source-name line-count)))
+      (set! bol (eqv? ch #\newline))
+      (values ch `((input-position . (,pos . ,tracker))))))
+
   (tree-map-put! tracker
                  (+ (- start-item-count start-column) 1)
                  (cons source-name start-line))
-  (generator->lseq gen))
+  (if (null? line-adjusters)
+    (generator->lseq gen-simple)
+    (generator->lseq gen-adjusters)))
+
+;; Pre-defined line adjusters
+
+;; #line <number> [<filename>]
+(define (cpp-line-adjuster char-gen source-name line-count)
+  (let1 chars ($ generator->list
+                 $ gtake-while (^c (not (eqv? c #\newline))) char-gen)
+    (rxmatch-case (list->string chars)
+      [#/^\s*line\s+(\d+)(?:\s+\"?([^\"\s]+)\"?)?/ (_ n fn)
+       (values (or fn source-name) (string->number n) '())]
+      [else (values source-name line-count (append chars '(#\newline)))])))
+
+;; # <number> [<filename>]
+(define (cc1-line-adjuster char-gen source-name line-count)
+  (let1 chars ($ generator->list
+                 $ gtake-while (^c (not (eqv? c #\newline))) char-gen)
+    (rxmatch-case (list->string chars)
+      [#/^\s*(\d+)(?:\s+\"?([^\"\s]+)\"?)?/ (_ n fn)
+       (values (or fn source-name) (string->number n) '())]
+      [else (values source-name line-count (append chars '(#\newline)))])))
 
 ;; Actually 's' doesn't need to be a lseq.  Better name?
 (define (lseq-position s)
@@ -227,6 +280,7 @@
                                        (start-line 1)
                                        (start-column 1)
                                        (start-item-count 0)
+                                       (line-adjusters '())
                                   :rest keys)
   (let1 name (or source-name (port-name port))
     (apply generator->lseq/position (cut read-char port)

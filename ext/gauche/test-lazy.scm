@@ -4,6 +4,7 @@
 
 (use gauche.test)
 (use gauche.generator)
+(use gauche.sequence)
 (use scheme.list)
 (test-start "lazy sequence utilities")
 
@@ -81,34 +82,112 @@
 
 ;;; lseq with input-positions
 
-(let* ([source "abc\n\
-                def\n\
-                ghi"]
-       [z (port->char-lseq/position (open-input-string source)
-                                    :source-name "source.txt")]
-       [len (length z)])
-  (test* ""
-         '("source.txt:1:1(0) a"
-           "source.txt:1:2(1) b"
-           "source.txt:1:3(2) c"
-           "source.txt:1:4(3) \n"
-           "source.txt:2:1(4) d"
-           "source.txt:2:2(5) e"
-           "source.txt:2:3(6) f"
-           "source.txt:2:4(7) \n"
-           "source.txt:3:1(8) g"
-           "source.txt:3:2(9) h"
-           "source.txt:3:3(10) i")
-         (map (^[c i]
-                (let1 p (lseq-position (drop z i))
-                  (format "~a:~a:~a(~a) ~a"
-                          (sequence-position-source p)
-                          (sequence-position-line p)
-                          (sequence-position-column p)
-                          (sequence-position-item-count p)
-                          c)))
-              z
-              (iota len)))
+(let ()
+  (define (test-positions name expected input . args)
+    (let1 z (apply port->char-lseq/position (open-input-string input) args)
+      (test* name expected
+             (map (^[c i]
+                    (let1 p (lseq-position (drop* z i))
+                      (and p
+                           (format "~a:~a:~a(~a) ~a"
+                                   (sequence-position-source p)
+                                   (sequence-position-line p)
+                                   (sequence-position-column p)
+                                   (sequence-position-item-count p)
+                                   c))))
+                  z
+                  (liota)))))
+
+  (test-positions "simple"
+                  '("source.txt:1:1(0) a"
+                    "source.txt:1:2(1) b"
+                    "source.txt:1:3(2) c"
+                    "source.txt:1:4(3) \n"
+                    "source.txt:2:1(4) d"
+                    "source.txt:2:2(5) e"
+                    "source.txt:2:3(6) f"
+                    "source.txt:2:4(7) \n"
+                    "source.txt:3:1(8) g"
+                    "source.txt:3:2(9) h"
+                    "source.txt:3:3(10) i")
+                  "abc\n\
+                   def\n\
+                   ghi"
+                  :source-name "source.txt")
+
+  (test-positions "cpp-line-adjuster"
+                  '("foo.txt:1:1(0) a"
+                    "foo.txt:1:2(1) \n"
+                    "foo.txt:2:1(2) b"
+                    "foo.txt:2:2(3) \n"
+                    "foo.txt:10:1(4) c"
+                    "foo.txt:10:2(5) \n"
+                    "bar.txt:2:1(6) d"
+                    "bar.txt:2:2(7) \n"
+                    "bar.txt:5:1(8) #"
+                    "bar.txt:5:2(9) i"
+                    "bar.txt:5:3(10) f"
+                    "bar.txt:5:4(11) \n"
+                    "bar.txt:6:1(12) e"
+                    "bar.txt:6:2(13) \n"
+                    "baz.txt:1:1(14) f"
+                    "baz.txt:1:2(15) \n"
+                    "foo.txt:14:1(16) g")
+                  "#line 1 \"foo.txt\"\n\
+                   a\n\
+                   b\n\
+                   #line 10\n\
+                   c\n\
+                   #  line   2   bar.txt  \n\
+                   d\n\
+                   #line 5\n\
+                   #if\n\
+                   e\n\
+                   #line 12 \"foo.txt\"\n\
+                   #line 1 baz.txt\n\
+                   f\n\
+                   #line 14 \"foo.txt\"\n\
+                   g"
+                  :line-adjusters `((#\# . ,cpp-line-adjuster)))
+
+  (test-positions "cc1-line-adjuster"
+                  '("foo.txt:1:1(0) a"
+                    "foo.txt:1:2(1) \n"
+                    "foo.txt:2:1(2) b"
+                    "foo.txt:2:2(3) \n"
+                    "foo.txt:10:1(4) c"
+                    "foo.txt:10:2(5) \n"
+                    "bar.txt:2:1(6) d"
+                    "bar.txt:2:2(7) \n"
+                    "bar.txt:5:1(8) #"
+                    "bar.txt:5:2(9) l"
+                    "bar.txt:5:3(10) i"
+                    "bar.txt:5:4(11) n"
+                    "bar.txt:5:5(12) e"
+                    "bar.txt:5:6(13)  "
+                    "bar.txt:5:7(14) 3"
+                    "bar.txt:5:8(15) \n"
+                    "bar.txt:6:1(16) e"
+                    "bar.txt:6:2(17) \n"
+                    "baz.txt:1:1(18) f"
+                    "baz.txt:1:2(19) \n"
+                    "foo.txt:14:1(20) g")
+                  "# 1 \"foo.txt\" 1 2\n\
+                   a\n\
+                   b\n\
+                   # 10\n\
+                   c\n\
+                   # 2 bar.txt 2 \n\
+                   d\n\
+                   # 5\n\
+                   #line 3\n\
+                   e\n\
+                   # 12 \"foo.txt\"\n\
+                   # 1 baz.txt\n\
+                   f\n\
+                   # 14 \"foo.txt\"\n\
+                   g"
+                  :line-adjusters `((#\# . ,cc1-line-adjuster)))
   )
 
 (test-end)
