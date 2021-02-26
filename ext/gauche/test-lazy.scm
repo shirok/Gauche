@@ -81,9 +81,9 @@
 
 ;;; lseq with input-positions
 
-(let* ([source "abc\
-              \ndef\
-              \nghi"]
+(let* ([source "abc\n\
+                def\n\
+                ghi"]
        [z (port->char-lseq/position (open-input-string source)
                                     :source-name "source.txt")]
        [len (length z)])
@@ -110,9 +110,5 @@
               z
               (iota len)))
   )
-
-
-
-
 
 (test-end)

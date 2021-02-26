@@ -184,10 +184,12 @@
                                                 (start-line 1)
                                                 (start-column 1)
                                                 (start-item-count 0))
-  ;; The treemap of the tracker keeps integer-char-pos -> line-number
+  ;; The tracker treemap keeps
+  ;;   integer-char-pos -> (source-name . line-number)
   ;; for characters at the beginning of line.  It is pointed from the cdr
   ;; of the input-char-position pair attribute.
-  (define tracker (cons (make-tree-map) source-name))
+  (define tracker (make-tree-map))
+  (define tracker-stack '())
   (define line-count start-line)
   (define char-count 0)
   (define eol #f)                       ;#t after #\newline is seen
@@ -197,14 +199,14 @@
         (inc! char-count)
         (when eol
           (inc! line-count)
-          (tree-map-put! (car tracker) pos line-count)
+          (tree-map-put! tracker pos (cons source-name line-count))
           (set! eol #f))
         (when (eqv? ch #\newline)
           (set! eol #t))
         (values ch `((input-position . (,pos . ,tracker)))))))
-  (tree-map-put! (car tracker)
+  (tree-map-put! tracker
                  (+ (- start-item-count start-column) 1)
-                 start-line)
+                 (cons source-name start-line))
   (generator->lseq gen))
 
 ;; Actually 's' doesn't need to be a lseq.  Better name?
@@ -212,9 +214,13 @@
   (and (pair? s)
        (and-let1 p (pair-attribute-get s 'input-position #f)
          (let ([pos (car p)]
-               [src (cddr p)])
-           (receive (bol-pos line) (tree-map-floor (cadr p) pos)
-             (%make-sequence-position src line (+ 1 (- pos bol-pos)) pos))))))
+               [mapper (cdr p)])
+           (receive (bol-pos name&line) (tree-map-floor mapper pos)
+             (and bol-pos
+                  (%make-sequence-position (car name&line)
+                                           (cdr name&line)
+                                           (+ 1 (- pos bol-pos))
+                                           pos)))))))
 
 (define (port->char-lseq/position :optional (port (current-input-port))
                                   :key (source-name #f)
