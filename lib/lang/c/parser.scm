@@ -37,262 +37,39 @@
   (use gauche.process)
   (use gauche.config)
   (use gauche.lazy)
+  (use lang.c.lexer)
   (export-all)                          ;for now
   )
 (select-module lang.c.parser)
 
 ;;;
-;;; Lexical elements (6.4)
+;;; Parser
 ;;;
 
-;; Intertoken stuff
+;; To be written...
 
-(define %whitespace ($one-of #[ \n\r\t]))
-(define %long-comment ($seq ($. "/*")
-                            ($many_ ($seq ($not ($. "*/"))
-                                          ($any)))
-                            ($. "*/")))
-(define %line-comment ($seq ($. "//")($many-till_ ($any) ($. "\n"))))
-(define %pragma ($seq ($. #\#) ($many_ ($none-of #[\n]))))
+;;;
+;;; Preprocessor
+;;;
 
-(define %spacing
-  ($many_ ($or %whitespace %long-comment %line-comment %pragma)))
-
-;; Punctuators (6.4.6)
-;; We return a char for paren-like stuff and '.', and
-;; symbols for other punctuators.
-
-(define ($->sym x) ($lift string->symbol ($. x)))
-
-(define %punctuator
-  ($or ($->sym"...") ($->sym"<<=") ($->sym">>=")
-       ($->sym"->")
-       ($->sym"++") ($->sym"--")
-       ($->sym"&&") ($->sym"||")
-       ($->sym"<<") ($->sym">>")
-       ($->sym"<=") ($->sym">=") ($->sym"==") ($->sym"!=")
-       ($->sym"*=") ($->sym"/*") ($->sym"%=") ($->sym"+=")
-       ($->sym"-=") ($->sym"&=") ($->sym"^=") ($->sym"|=")
-       ($seq ($."<:") ($return #\[))
-       ($seq ($.":>") ($return #\]))
-       ($seq ($."<%") ($return #\{))
-       ($seq ($."%>") ($return #\}))
-       ($seq ($."%:%:") ($return '|##|))
-       ($seq ($."%:") ($return '|#|))
-       ($->sym"*") ($->sym"+") ($->sym"-") ($->sym "/") ($->sym "%")
-       ($->sym"&") ($->sym"|") ($->sym"^") ($->sym"~") ($->sym "!")
-       ($->sym"<") ($->sym">")
-       ($->sym"?") ($->sym":") ($->sym";") ($->sym"=")
-       ($->sym",") ($->sym"##") ($->sym"#")
-       ($. #[\[\]\(\)\{\}.])))
-
-;; Keywords (6.4.1)
-;; We return a symbol.
-
-(define %hexquad ($lift (^[xs] (string->number (list->string xs) 16))
-                        ($repeat ($. #[[:xdigit:]]) 4)))
-
-(define %unichar-escaped
-  ($or ($lift (^[_ n] (integer->char n))
-              ($. #\u) %hexquad)
-       ($lift (^[_ n0 n1] (integer->char (+ (* n0 #x10000) n1)))
-              ($. #\U) %hexquad %hexquad)))
-
-(define %unichar-name ($seq ($. #\\) %unichar-escaped))
-
-(define %idnondigit ($or ($. #[a-zA-Z_]) %unichar-name))
-
-(define %idchar ($or ($. #[a-zA-Z0-9_]) %unichar-name))
-
-(define-syntax define-keywords
-  (er-macro-transformer
-   (^[f r c]
-     (define (define-1 key)
-       (let ([var (symbol-append '% key)]
-             [str (symbol->string key)])
-         (quasirename r
-           `(define ,var ($seq ($.,str) ($not %idchar)
-                               ($return ',key))))))
-     (quasirename r
-       `(begin
-          ,@(map define-1 (cdr f))
-          (define ,'%keyword
-            ($or ,@(map (cut symbol-append '% <>) (cdr f)))))))))
-
-(define-keywords
-  auto break case char const continue default double do else enum
-  extern float for goto if int inline long register restrict
-  return short signed sizeof static struct switch typedef
-  union unsigned void volatile while
-  _Bool _Complex _Imaginary _stdcall __declspec __attribute__)
-
-;; Identifiers (6.4.2)
-;; (ident <symbol>)
-
-(define %identifier
-  ($seq ($not %keyword)
-        ($lift (^[c cs]
-                 `(ident ,(string->symbol (list->string (cons c cs)))))
-               %idnondigit ($many %idchar))))
-
-;; Constants (6.4.4)
-
-;; We handle integers and floating point numbers at once.
-(define %dec-oct-numeric-constant
-  ($let ([integral   ($many ($. #[0-9]))]
-         [point      ($optional ($. "."))]
-         [fractional ($many ($. #[0-9]))]
-         [exponent   ($optional ($lift list
-                                       ($. #[eE])
-                                       ($optional ($. #[+-]))
-                                       ($many1 ($. #[0-9]))))]
-         [suffix     ($many %idchar)])
-    (cond
-     [(or point exponent) ;; must be flonum
-      (if (or (and (pair? integral) point)
-              (and point (pair? fractional))
-              (and (pair? integral) exponent))
-        (if-let1 suf (check-float-suffix suffix)
-          ($return `(literal ,suf
-                             ,(rope->string (list integral
-                                                  point
-                                                  fractional
-                                                  exponent
-                                                  suffix))))
-          ($fail (format "invalid floating point number constant suffix: ~a"
-                         (list->string suffix))))
-        ($fail "malformed floating point number constant"))]
-     [(and (pair? integral) (not point) (null? fractional) (not exponent))
-      ;; TODO: check octal constant vailidity
-      (if-let1 suf (check-int-suffix suffix)
-        ($return `(literal ,suf ,(rope->string (list integral suffix))))
-        ($fail (format "malformed integer constant suffix: ~a"
-                       (list->string suffix))))]
-     [else ($fail "malformed numeric constant")])))
-
-(define %hex-numeric-constant
-  ($let ([ ($. "0x") ]
-         [integral   ($many ($. #[[:xdigit:]]))]
-         [point      ($optional ($. "."))]
-         [fractional ($many ($. #[[:xdigit:]]))]
-         [bin-exp    ($optional ($lift list
-                                       ($. #[pP])
-                                       ($optional ($. #[+-]))
-                                       ($many1 ($. #[[:xdigit:]]))))]
-         [suffix     ($many %idchar)])
-    (cond
-     [(or point bin-exp) ;; must be flonum
-      (if (or (and (pair? integral) point)
-              (and point (pair? fractional))
-              (and (pair? integral) bin-exp))
-        (if-let1 suf (check-float-suffix suffix)
-          ($return `(literal ,suf
-                             ,(rope->string (list "0x"
-                                                  integral
-                                                  point
-                                                  fractional
-                                                  bin-exp
-                                                  suffix))))
-          ($fail (format "invalid floating point number constant suffix: ~a"
-                         (list->string suffix))))
-        ($fail "malformed hex floating point number constant"))]
-     [(and (pair? integral) (not point) (null? fractional) (not bin-exp))
-      (if-let1 suf (check-int-suffix suffix)
-        ($return `(literal ,suf ,(rope->string (list "0x" integral suffix))))
-        ($fail (format "malformed integer constant suffix: ~a"
-                       (list->string suffix))))]
-     [else ($fail "malformed numeric constant")])))
-
-;; we need to reject invalid suffix, so we first gather suffix characters
-;; then look at them, instead of using BNF rules.
-(define (check-float-suffix chars)
-  (match chars
-    [() 'double]
-    [((or #\f #\F)) 'float]
-    [((or #\l #\L)) 'long-double]
-    [_ #f]))
-
-(define (check-int-suffix chars)
-  (match chars
-    [() 'int]
-    [((or #\u #\U)) 'unsigned-int]
-    [((or #\l #\L)) 'long-int]
-    [((or #\u #\U) (or #\l #\L)) 'unsigned-long-int]
-    [((or #\l #\L) (or #\u #\U)) 'unsigned-long-int]
-    [(or (#\l #\l) (or #\L #\L)) 'long-long-int]
-    [(or ((or #\u #\U) #\l #\l) ((or #\u #\U) #\L #\L))
-     'unsigned-long-long-int]
-    [(or (#\l #\l (or #\u #\U)) (#\L #\L (or #\u #\U)))
-     'unsigned-long-long-int]
-    [_ #f]))
-
-(define %escaped-sequence
-  ($seq ($. #\\)
-        ($or ($. #[\'\"\\\?])
-             ($seq ($. #\a) ($return #\alarm))
-             ($seq ($. #\b) ($return #\backspace))
-             ($seq ($. #\f) ($return #\x0c))
-             ($seq ($. #\n) ($return #\newline))
-             ($seq ($. #\r) ($return #\return))
-             ($seq ($. #\t) ($return #\tab))
-             ($seq ($. #\v) ($return #\x0b))
-             ($lift (^s (integer->char
-                         (string->number (list->string s) 8)))
-                    ($many ($. #[0-7]) 1 3))
-             ($lift (^[_ s] (integer->char
-                             (string->number (list->string s) 16)))
-                    ($. #\x) ($many ($. #[[:xdigit:]])))
-             %unichar-escaped)))
-
-
-(define %c-char-sequence ($many ($or ($. #[^'\\\n]) %escaped-sequence)))
-
-(define %character-constant
-  ($or ($lift (^c `(char ,c))
-              ($between ($. #\')  %c-char-sequence ($. #\')))
-       ($lift (^c `(lchar ,c))
-              ($between ($. "L'") %c-char-sequence ($. #\')))))
-
-;; enum-constant is syntactically identical to %identifier
-(define %constant
-  ($or %hex-numeric-constant
-       %dec-oct-numeric-constant
-       %character-constant))
-
-(define %s-char-sequence ($many ($or ($. #[^\"\\\n]) %escaped-sequence)))
-
-(define %string-literal
-  ($or ($lift (^s `(string ,(list->string s)))
-              ($between ($. #\")  %s-char-sequence ($. #\")))
-       ($lift (^s `(lstring ,(list->string s)))
-              ($between ($. "L\"")  %s-char-sequence ($. #\")))))
-
-(define %token
-  ($seq0 ($or %punctuator
-              %keyword
-              %identifier
-              %constant
-              %string-literal)
-         %spacing))
-
-(define (make-c-tokenize-generator char-seq)
-  (rec (gen)
-    (if (null? char-seq)
-      (eof-object)
-      (receive (tok next) (peg-run-parser %token char-seq)
-        (let1 attrs (pair-attributes char-seq)
-          (set! char-seq next)
-          (values tok attrs))))))
-
-;; Lexer entry
-(define (c-tokenize char-seq)
-  (generator->lseq (make-c-tokenize-generator char-seq)))
+;; NB: We may eventually implement our own preprocessor, for we can do
+;; more things (such as caching), but for the time being, we call cpp.
+;;
+;; gcc exits with non-zero status if output isn't fully read, which happens
+;; when PROC throws an error.  We don't want to lose that error, so we set
+;; :on-abnormal-exit to :ignore.
 
 (define (call-with-cpp file proc)
-  (call-with-input-process `(,(gauche-config "--cc") "-E" ,file) proc))
+  (call-with-input-process `(,(gauche-config "--cc") "-E" ,file) proc
+                           :on-abnormal-exit :ignore))
+
+;;;
+;;; Driver
+;;;
 
 ;; For testing
 (define (c-tokenize-file file)
   (call-with-cpp file
      (^p ($ lseq->list $ c-tokenize
-            $ port->char-lseq/position p :source-name file))))
+            $ port->char-lseq/position p
+            :source-name file :line-adjusters `((#\# . ,cc1-line-adjuster))))))
