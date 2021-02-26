@@ -2408,62 +2408,128 @@ Additionally, the implementation should consider the following points.
 
 @itemize @bullet
 @item
-The initialize method must call @code{next-method} first, which sets up
+@c EN
+The @code{initialize} method must call @code{next-method} first, which sets up
 the @code{comparator} and @code{storage} slots.  You should check
 if @code{storage} has pre-filled entries, and if so, set up other
 internal structures appropriately.
+@c JP
+@code{initialize}メソッドは最初に@code{next-method}を呼ばなければなりません。
+それによって@code{comparator}と@code{storage}スロットが適切に初期化されます。
+また、@code{storage}スロットに既にデータが入っているかどうかを調べ、
+そうであれば他の内部構造をそれに合わせて初期化する必要があります。
+@c COMMON
 @item
+@c EN
 The default methods of @code{cache-evict!} and @code{cache-clear!} only
 takes care of the storage of the cache.  You should implement them
 if your auxiliary structure needs to be taken care of.
+@c JP
+@code{cache-evict!}と@code{cache-clear!}のデフォルトメソッドはキャッシュの
+@code{storage}だけを更新します。サブクラスが他の内部状態を持っている場合は、
+それらの一貫性を保つようなメソッドを定義する必要があります。
+@c COMMON
 @item
+@c EN
 The default method of @code{cache-write!} is just @code{cache-evict!}
 followed by @code{cache-register!}.  You may provide alternative method
 if you can do it more efficiently, which is often the case.
+@c JP
+@code{cache-write!}のデフォルトメソッドは、@code{cache-evict!}を呼んでから
+@code{cache-register!}を呼ぶだけです。
+より効率の良い実装があれば(あることが多いでしょう)、
+このメソッドをオーバライドするのが良いでしょう。
+@c COMMON
 @end itemize
 
+@c EN
 There are several procedures that help implementing cache subclasses:
+@c JP
+キャッシュのサブクラスを実装するのに便利な手続きがいくつか用意してあります:
+@c COMMON
 
 @defun cache-comparator cache
 @defunx cache-storage cache
 @c MOD data.cache
+@c EN
 Returns the comparator and the storage of the cache, respectively.
+@c JP
+キャッシュの@code{comparator}と@code{storage}を返します。
+@c COMMON
 @end defun
 
+@c EN
 Typical caches may be constructed with a storage (dictionary) and
 a queue, where the storage maps keys to @code{(<n> . <value>)},
 and queues holds @code{(<key> . <n>)}, @code{<n>} being a number
 (timestamp, counter, etc.)  Here are some common operations work
 on this queue-and-dictionary scheme:
+@c JP
+典型的なキャッシュは、storageとしての辞書と、キューで作られます。
+ここでstorageは、キーを@code{(<n> . <value>)}にマップし、
+キューは@code{(<key> . <n>)}を保持します。
+ただし@code{<n>}はタイムスタンプやカウンタなど何からの数値です。
+キャッシュがこの「キューと辞書」を使って実装されている場合は、
+以下の共通手続きが使えるでしょう:
+@c COMMON
 
 @defun cache-populate-queue! queue storage
 @c MOD data.cache
+@c EN
 You can call this in the @code{initialize} method to set up the
-queue.  This procedure walks storage to construct @code{(<key> . <n>)}
+queue.  This procedure walks @var{storage} (a dictionary that maps
+keys to @code{(<n> . <value>)}) to construct @code{(<key> . <n>)}
 pairs, sorts it in increasing order of @code{<n>}, and pushes them
-into the queue.
+into the @code{queue}.
+@c JP
+@code{initialize}メソッドの中でこの手続きを呼ぶことにより、
+キューを初期化できます。この手続きは、キーを@code{(<n> . <value>)}にマップする辞書である
+@var{storage}を走査し、@code{(<key> . <n>)}というペアを作り、
+@code{<n>}の昇順にソートしてそれを@var{queue}にプッシュします。
+@c COMMON
 @end defun
 
 @defun cache-compact-queue! queue storage
 @c MOD data.cache
+@c EN
 The queue may contain multiple pairs with the same key.  Sometimes the
 queue gets to have too many duplicated entries (e.g. the same entry
-is read repeatedly).  This scans the queue and removes duplicated entries
+is read repeatedly, and you push the read timestamp to the queue
+for every read).  This procedure scans the queue and removes duplicated entries
 but the up-to-date one.  After this operation, the length of the queue
 and the number of entries in the storage should match.
+@c JP
+キューに、同じキーを持つエントリが複数含まれることがあります。
+しばしば、そういった重複エントリが多くなりすぎる場合があります
+(例えばキーが読み出される度にタイムスタンプをキューにプッシュしていて、
+同じキーが何度も読まれた場合)。この手続きはキューを走査し、
+キーが重複しているエントリは最新のもの以外を取り除きます。
+この操作の後では、キューの長さとstorageのエントリ数は一致しているはずです。
+@c COMMON
 @end defun
 
 @defun cache-renumber-entries! queue storage
 @c MOD data.cache
+@c EN
 This procedure renumbers @code{<n>}s in the queue and the storage
 starting from 0, without changing their order, and returns the
 maximum @code{<n>}.  The duplicated entries in the queue is removed
 as in @code{cache-compact-queue!}.
+@c JP
+この手続きはキュー内の@code{<n>}を、順序を変えることなく、0から昇順に付け直し、
+@code{<n>}の最大値を返します。キーが重複するエントリは@code{cache-compact-queue!}と
+同様に、最新のもの以外取り除かれます。
+@c COMMON
 
+@c EN
 When you're using monotonically increasing counter for @code{<n>} and
 you don't want @code{<n>} to get too big (i.e. bignums), you can
-call this procedure occasionally to keep @code{<n>}'s in reasonable
-range.
+call this procedure occasionally to keep @code{<n>}'s in reasonable range.
+@c JP
+@code{<n>}に単調増加する数を使っていて、長い時間の後では@code{<n>}がbignum
+になって効率が落ちる心配があれば、この手続きを適宜呼ぶことで@code{<n>}を適切な
+範囲内に収めることができるでしょう。
+@c COMMON
 @end defun
 
 
