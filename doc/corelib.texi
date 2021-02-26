@@ -10369,7 +10369,7 @@ already returned from @code{string-map} won't be affected
 @c COMMON
 
 @example
-(string-map char-upcate "apple") @result{} "APPLE"
+(string-map char-upcase "apple") @result{} "APPLE"
 (string-map (^[a b] (if (char>? a b) a b)) "orange" "apple") @result{} "orpng"
 (string-map char-upcase "pineapple" 0 4) @result{} "PINE"
 @end example
