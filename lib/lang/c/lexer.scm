@@ -182,19 +182,19 @@
               (and point (pair? fractional))
               (and (pair? integral) exponent))
         (if-let1 suf (check-float-suffix suffix)
-          ($return `(literal ,suf
-                             ,(rope->string (list integral
-                                                  point
-                                                  fractional
-                                                  exponent
-                                                  suffix))))
+          ($return `(const ,suf
+                           ,(rope->string (list integral
+                                                point
+                                                fractional
+                                                exponent
+                                                suffix))))
           ($fail (format "invalid floating point number constant suffix: ~a"
                          (list->string suffix))))
         ($fail "malformed floating point number constant"))]
      [(and (pair? integral) (not point) (null? fractional) (not exponent))
       ;; TODO: check octal constant vailidity
       (if-let1 suf (check-int-suffix suffix)
-        ($return `(literal ,suf ,(rope->string (list integral suffix))))
+        ($return `(const ,suf ,(rope->string (list integral suffix))))
         ($fail (format "malformed integer constant suffix: ~a"
                        (list->string suffix))))]
      [else ($fail "malformed numeric constant")])))
@@ -215,19 +215,19 @@
               (and point (pair? fractional))
               (and (pair? integral) bin-exp))
         (if-let1 suf (check-float-suffix suffix)
-          ($return `(literal ,suf
-                             ,(rope->string (list "0x"
-                                                  integral
-                                                  point
-                                                  fractional
-                                                  bin-exp
-                                                  suffix))))
+          ($return `(const ,suf
+                           ,(rope->string (list "0x"
+                                                integral
+                                                point
+                                                fractional
+                                                bin-exp
+                                                suffix))))
           ($fail (format "invalid floating point number constant suffix: ~a"
                          (list->string suffix))))
         ($fail "malformed hex floating point number constant"))]
      [(and (pair? integral) (not point) (null? fractional) (not bin-exp))
       (if-let1 suf (check-int-suffix suffix)
-        ($return `(literal ,suf ,(rope->string (list "0x" integral suffix))))
+        ($return `(const ,suf ,(rope->string (list "0x" integral suffix))))
         ($fail (format "malformed integer constant suffix: ~a"
                        (list->string suffix))))]
      [else ($fail "malformed numeric constant")])))
@@ -248,7 +248,7 @@
     [((or #\l #\L)) 'long]
     [((or #\u #\U) (or #\l #\L)) 'ulong]
     [((or #\l #\L) (or #\u #\U)) 'ulong]
-    [(or (#\l #\l) (or #\L #\L)) 'longlong]
+    [(or (#\l #\l) (#\L #\L)) 'longlong]
     [(or ((or #\u #\U) #\l #\l) ((or #\u #\U) #\L #\L)) 'ulonglong]
     [(or (#\l #\l (or #\u #\U)) (#\L #\L (or #\u #\U))) 'ulonglong]
     [_ #f]))
@@ -294,11 +294,13 @@
        ($lift (^s `(wstring ,(list->string s)))
               ($between ($. "L\"")  %s-char-sequence ($. #\")))))
 
+;; NB: need to match %constant first, to recognize .0 as a number instead
+;; of '.' followed by '0'.
 (define %token
-  ($seq0 ($or %punctuator
+  ($seq0 ($or ($try %constant)
+              %punctuator
               %keyword
               %identifier
-              %constant
               %string-literal)
          %spacing))
 
