@@ -43,6 +43,37 @@
 ;;; Lexical elements (6.4)
 ;;;
 
+;; Tokenizer output: sequence of <token>s.
+;;
+;; <token> := <punctuator>
+;;         |  <keyword>
+;;         |  <identifier>
+;;         |  <constant>
+;;         |  <string-literal>
+;;
+;; <punctuator>     : <symbol> such as '|(| etc.
+;; <keyword>        : <symbol>
+;; <identifier>     : (ident <symbol>)
+;; <constant>       : (const <type> <value>)
+;; <string-literal> : (string <value>) | (wstring <value>)
+;;
+;;  <type> can be one of the following symbol:
+;;    char
+;;    wchar
+;;    int
+;;    uint
+;;    long
+;;    ulong
+;;    longlong
+;;    ulonglong
+;;    float
+;;    double
+;;    longdouble
+;;
+;;  <value> is a Scheme string as it appears in the source, except unicode
+;;  character sequences and excape sequences are converted to corresponding
+;;  characters.
+
 ;; Intertoken stuff
 
 (define %whitespace ($one-of #[ \n\r\t]))
@@ -109,8 +140,8 @@
        (let ([var (symbol-append '% key)]
              [str (symbol->string key)])
          (quasirename r
-           `(define ,var ($seq ($.,str) ($not %idchar)
-                               ($return ',key))))))
+           `(define ,var ($try ($seq ($.,str) ($not %idchar)
+                                     ($return ',key)))))))
      (quasirename r
        `(begin
           ,@(map define-1 (cdr f))
@@ -207,21 +238,19 @@
   (match chars
     [() 'double]
     [((or #\f #\F)) 'float]
-    [((or #\l #\L)) 'long-double]
+    [((or #\l #\L)) 'longdouble]
     [_ #f]))
 
 (define (check-int-suffix chars)
   (match chars
     [() 'int]
-    [((or #\u #\U)) 'unsigned-int]
-    [((or #\l #\L)) 'long-int]
-    [((or #\u #\U) (or #\l #\L)) 'unsigned-long-int]
-    [((or #\l #\L) (or #\u #\U)) 'unsigned-long-int]
-    [(or (#\l #\l) (or #\L #\L)) 'long-long-int]
-    [(or ((or #\u #\U) #\l #\l) ((or #\u #\U) #\L #\L))
-     'unsigned-long-long-int]
-    [(or (#\l #\l (or #\u #\U)) (#\L #\L (or #\u #\U)))
-     'unsigned-long-long-int]
+    [((or #\u #\U)) 'uint]
+    [((or #\l #\L)) 'long]
+    [((or #\u #\U) (or #\l #\L)) 'ulong]
+    [((or #\l #\L) (or #\u #\U)) 'ulong]
+    [(or (#\l #\l) (or #\L #\L)) 'longlong]
+    [(or ((or #\u #\U) #\l #\l) ((or #\u #\U) #\L #\L)) 'ulonglong]
+    [(or (#\l #\l (or #\u #\U)) (#\L #\L (or #\u #\U))) 'ulonglong]
     [_ #f]))
 
 (define %escaped-sequence
@@ -246,9 +275,9 @@
 (define %c-char-sequence ($many ($or ($. #[^'\\\n]) %escaped-sequence)))
 
 (define %character-constant
-  ($or ($lift (^c `(char ,c))
+  ($or ($lift (^c `(const char ,(list->string c)))
               ($between ($. #\')  %c-char-sequence ($. #\')))
-       ($lift (^c `(lchar ,c))
+       ($lift (^c `(const wchar ,c))
               ($between ($. "L'") %c-char-sequence ($. #\')))))
 
 ;; enum-constant is syntactically identical to %identifier
@@ -262,7 +291,7 @@
 (define %string-literal
   ($or ($lift (^s `(string ,(list->string s)))
               ($between ($. #\")  %s-char-sequence ($. #\")))
-       ($lift (^s `(lstring ,(list->string s)))
+       ($lift (^s `(wstring ,(list->string s)))
               ($between ($. "L\"")  %s-char-sequence ($. #\")))))
 
 (define %token

@@ -46,7 +46,22 @@
 ;;; Parser
 ;;;
 
+;; Token recognition
+(define %identifier ($match1 ('ident _)))
+(define %constant   ($match1 ('const . _)))
+(define %string-literal ($match1 ((or 'string 'wstring) . _)))
+(define ($punct x)  ($satisfy (cut eq? x <>) x))
+
+;; 6.5.1 Primary expressions
+
+(define %primary-expression
+  ($lazy ($or %identifier
+              %constnat
+              %string-literal
+              ($between ($punct '|\(|) %expression ($punct '|\)|)))))
+
 ;; To be written...
+
 
 ;;;
 ;;; Preprocessor
