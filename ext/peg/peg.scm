@@ -512,20 +512,21 @@
 (define ($or . parsers)
   (define (fail vs s)
     (match vs
-      [((r v s)) (values r v s)] ;; no need to create compound error
-      [vs        (return-failure/compound (reverse vs) s)]))
+      [((r . v)) (values r v s)] ;; no need to create compound error
+      [vs      (return-failure/compound (reverse vs) s)]))
   (match parsers
     [()  (^s (return-failure/message "empty $or" s))]
     [(p) p]
     [(ps ...)
      (^s (let loop ([vs '()] [ps ps])
-           (if (null? ps)
-             (fail vs s)
-             (receive (r v s1) ((car ps) s)
-               (cond [(parse-success? r) (values r v s1)]
-                     [(eq? s s1) (loop (acons r v vs) (cdr ps))]
-                     [(null? vs) (values r v s1)]
-                     [else (fail (acons r v vs) s1)])))))]))
+           (receive (r v s1) ((car ps) s)
+             (cond [(parse-success? r) (values r v s1)]
+                   [(null? (cdr ps))
+                    (if (eq? s s1)
+                      (fail (acons r v vs) s1)
+                      (return-failure r v s1))] ; last branch consumed input
+                   [(eq? s s1) (loop (acons r v vs) (cdr ps))]
+                   [else (fail (acons r v vs) s1)]))))]))
 
 ;; API
 ;; $fold-parsers proc seed parsers
