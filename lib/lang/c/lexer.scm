@@ -167,8 +167,11 @@
 ;; Constants (6.4.4)
 
 ;; We handle integers and floating point numbers at once.
+;; The initial assert is to rule out suffix-only match without consuming
+;; input.
 (define %dec-oct-numeric-constant
-  ($let ([integral   ($many ($. #[0-9]))]
+  ($let ([ ($assert ($. #[0-9.])) ]
+         [integral   ($many ($. #[0-9]))]
          [point      ($optional ($. "."))]
          [fractional ($many ($. #[0-9]))]
          [exponent   ($optional ($lift list
@@ -277,7 +280,7 @@
 (define %character-constant
   ($or ($lift (^c `(const char ,(list->string c)))
               ($between ($. #\')  %c-char-sequence ($. #\')))
-       ($lift (^c `(const wchar ,c))
+       ($lift (^c `(const wchar ,(list->string c)))
               ($between ($. "L'") %c-char-sequence ($. #\')))))
 
 ;; enum-constant is syntactically identical to %identifier
@@ -295,13 +298,15 @@
               ($between ($. "L\"")  %s-char-sequence ($. #\")))))
 
 ;; NB: need to match %constant first, to recognize .0 as a number instead
-;; of '.' followed by '0'.
+;; of '.' followed by '0'.  Also need to match %string-literal before
+;; %identifier, for L"..." should be a wstring instead of an identifier 'L'
+;; followed by a string.
 (define %token
   ($seq0 ($or ($try %constant)
+              %string-literal
               %punctuator
               %keyword
-              %identifier
-              %string-literal)
+              %identifier)
          %spacing))
 
 (define (make-c-tokenize-generator char-seq)
