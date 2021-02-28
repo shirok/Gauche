@@ -855,6 +855,23 @@
   (test-fail "$match1 fail proc" '(0 "0 expected") p "123")
   (test-fail "$match1 not enough input" '(0 "(? char-numeric? x)") p ""))
 
+
+(let ((p ($binding ($: x ($or ($seq ($: y ($."a")) ($."b"))
+                              ($seq ($: z ($."c")) ($."d"))))
+                   (list x y z))))
+  (test-succ "$binding" `("b" "a" ,(undefined)) p "ab")
+  (test-succ "$binding" `("d" ,(undefined) "c") p "cd")
+  (test-fail "$binding" '(1 "b") p "az")
+  (test-fail "$binding" '(1 "d") p "cy")
+  (test-fail "$binding" '(0 ((fail-expect . "a") (fail-expect . "c"))) p "pq"))
+
+(let ((p ($binding ($: x ($or ($seq ($: y ($."a")) ($."b"))
+                              ($seq ($: y ($."c")) ($."d"))))
+                   (list x y))))
+  (test-succ "$binding" `("b" "a") p "ab")
+  (test-succ "$binding" `("d" "c") p "cd")
+  (test-fail "$binding" '(1 "d") p "cy"))
+
 (test-succ "eof" (eof-object) eof "")
 (test-fail "eof" '(0 "end of input") eof "a")
 

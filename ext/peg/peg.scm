@@ -68,6 +68,7 @@
           $symbol $string $string-ci
           $char $one-of $none-of
           $satisfy $match1 $match1*
+          $binding
 
           $->rope $->string $->symbol rope->string rope-finalize
           )
@@ -873,9 +874,67 @@
         (build-parser pat (quasirename r `(car s)) #f)]
        ))))
 
-;;;============================================================
-;;; Intermediate structure constructor
-;;;
+;; $binding <peg-bind-expression> <body> ...
+;;   EXPERIMENTAL
+;;   <peg-bind-expression> is an expression that yields a parser,
+;;   but allowed to contain a form ($: var <peg-bind-expression>).
+;;   When inner <peg-bind-expression> accepts an input, its semantic
+;;   value is set to var.   Then <body> ... is evaluated with all such
+;;   vars to be bound.  If a branch of <peg-bind-expression> isn't
+;;   tried, vars included in it is bound to #<undef>.
+;;
+;;   An obvious translation is to create an enclosing scope, binds all
+;;   vars to some default value, and convert ($: var expr) to
+;;   ($lift (^x (set! var x) x) expr).  However, it causes allocation
+;;   of closures for each parser combinator every time the entire parser
+;;   is called, which incurs performance overhead.
+;;
+;;   Instead we rely on dynamic environment.  All closure allocation is
+;;   static.  The main parser sets up a vector
+
+(define %binding-storage
+  (make-parameter 'accessing-binding-storage-out-of-context))
+
+(define-syntax $binding
+  (er-macro-transformer
+   (^[f r c]
+     (define $:? (cute c (r'$:) <>))
+     ;; walk down form, gather variables and modify $: forms.
+     ;; returns modified form and list of (var . index)
+     (define (walk f vs)
+       (match f
+         [((? $:?) var expr)
+          (unless (identifier? var)
+            (error "($: var expr) form requires an identifier as var, but got:"
+                   var))
+          (receive (expr_ vs) (walk expr vs)
+            (receive (vs ind) (add-var var vs)
+              (values (quasirename r
+                        `($lift (^[x] (set! (vector-ref (%binding-storage) ,ind) x) x)
+                                ,expr_))
+                      vs)))]
+         [(xs ...) (map-accum walk vs xs)]
+         [obj (values obj vs)]))
+     (define (add-var var vs) ; returns var-alist and index
+       (if-let1 p (assq var vs)
+         (values vs (cdr p))
+         (let1 ind (length vs)
+           (values (acons var ind vs) ind))))
+     (receive (ff vs) (walk (cadr f) '())
+       (quasirename r
+         `(let ([parser ,ff])
+            (^[s]
+             (let1 storage (make-vector ,(length vs))
+               (parameterize ((%binding-storage storage))
+                 (receive (r v s) (parser s)
+                   (if (parse-success? r)
+                     (let ,(map (^p (let ([var (car p)]
+                                          [ind (cdr p)])
+                                      (quasirename r
+                                        `(,var (vector-ref storage ,ind)))))
+                                vs)
+                       (return-result (begin ,@(cddr f)) s))
+                     (return-failure r v s))))))))))))
 
 ;;;============================================================
 ;;; String parsers
