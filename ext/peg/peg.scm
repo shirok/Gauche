@@ -874,12 +874,12 @@
         (build-parser pat (quasirename r `(car s)) #f)]
        ))))
 
-;; $binding <peg-bind-expression> <body> ...
+;; $binding <peg-bind-expression> [(=> FAIL)] <body>
 ;;   EXPERIMENTAL
 ;;   <peg-bind-expression> is an expression that yields a parser,
 ;;   but allowed to contain a form ($: var <peg-bind-expression>).
 ;;   When inner <peg-bind-expression> accepts an input, its semantic
-;;   value is set to var.   Then <body> ... is evaluated with all such
+;;   value is set to var.   Then <body> is evaluated with all such
 ;;   vars to be bound.  If a branch of <peg-bind-expression> isn't
 ;;   tried, vars included in it is bound to #<undef>.
 ;;
@@ -890,7 +890,14 @@
 ;;   is called, which incurs performance overhead.
 ;;
 ;;   Instead we rely on dynamic environment.  All closure allocation is
-;;   static.  The main parser sets up a vector
+;;   static.  The main parser sets up a vector for the storage in a parameter,
+;;   and each $: form store the value to the corresponding slot.
+;;   If match succeeds, the stored values are retrieved and bound to VARs.
+;;
+;;   If (=> FAIL) form is given, FAIL, which should be an identifier, is
+;;   bound to a closure that can be called as (FAIL message).  If you
+;;   determine that the parser should fail inside <body>, you can call FAIL
+;;   at a tail position, with a suitable message.
 
 (define %binding-storage
   (make-parameter 'accessing-binding-storage-out-of-context))
@@ -898,7 +905,9 @@
 (define-syntax $binding
   (er-macro-transformer
    (^[f r c]
-     (define $:? (cute c (r'$:) <>))
+     (define $:? (let1 $:. (r'$:) (^x (c $:. (r x)))))
+     (define =>? (let1 =>. (r'=>) (^x (c =>. (r x)))))
+     (define fail-mark (gensym))
      ;; walk down form, gather variables and modify $: forms.
      ;; returns modified form and list of (var . index)
      (define (walk f vs)
@@ -920,21 +929,48 @@
          (values vs (cdr p))
          (let1 ind (length vs)
            (values (acons var ind vs) ind))))
-     (receive (ff vs) (walk (cadr f) '())
-       (quasirename r
-         `(let ([parser ,ff])
-            (^[s]
-             (let1 storage (make-vector ,(length vs))
-               (parameterize ((%binding-storage storage))
-                 (receive (r v s) (parser s)
-                   (if (parse-success? r)
-                     (let ,(map (^p (let ([var (car p)]
-                                          [ind (cdr p)])
-                                      (quasirename r
-                                        `(,var (vector-ref storage ,ind)))))
-                                vs)
-                       (return-result (begin ,@(cddr f)) s))
-                     (return-failure r v s))))))))))))
+     (define (build-fail-decl fail)
+       (if fail
+         (quasirename r
+           `((define (,fail msg) (cons ',fail-mark msg))))
+         '()))
+     (define (build-return result fail tail)
+       (if fail
+         (quasirename r
+           `(let ((r ,result))
+              (if (and (pair? r) (eq? (car r) ',fail-mark))
+                (return-failure/message (cdr r) s)
+                (return-result r ,tail))))
+         (quasirename r
+           `(return-result ,result ,tail))))
+
+     (define (build-parser parse body fail)
+       (receive (parse. vs) (walk parse '())
+         (quasirename r
+           `(let ([parser ,parse.])
+              (^[s]
+                ,@(build-fail-decl fail)
+                (let1 storage (make-vector ,(length vs))
+                  (parameterize ((%binding-storage storage))
+                    (receive (r v s) (parser s)
+                      (if (parse-success? r)
+                        ,(build-return
+                          (quasirename r
+                            `(let ,(map
+                                    (^p (let ([var (car p)]
+                                              [ind (cdr p)])
+                                          (quasirename r
+                                            `(,var (vector-ref storage ,ind)))))
+                                    vs)
+                               ,body))
+                          fail
+                          (r's))
+                        (return-failure r v s))))))))))
+
+     (match f
+       [(_ parse ((? =>?) fail) body) (build-parser parse body fail)]
+       [(_ parse body) (build-parser parse body #f)]
+       [_ (error "Malformed $binding:" f)]))))
 
 ;;;============================================================
 ;;; String parsers

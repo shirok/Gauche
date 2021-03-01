@@ -872,6 +872,17 @@
   (test-succ "$binding" `("d" "c") p "cd")
   (test-fail "$binding" '(1 "d") p "cy"))
 
+(let ((p ($binding ($: x ($or ($seq ($: y ($."a")) ($."b"))
+                              ($seq ($: y ($."c")) ($."d"))))
+                   (=> F)
+                   (if (equal? y "c")
+                     (F "no-no")
+                     (list x y)))))
+  (test-succ "$binding" `("b" "a") p "ab")
+  (test-fail "$binding" `(2 "no-no") p "cd")
+  (test-fail "$binding" '(1 "d") p "cy"))
+
+
 (test-succ "eof" (eof-object) eof "")
 (test-fail "eof" '(0 "end of input") eof "a")
 
