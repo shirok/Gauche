@@ -952,8 +952,8 @@
                 ,@(build-fail-decl fail)
                 (let1 storage (make-vector ,(length vs))
                   (parameterize ((%binding-storage storage))
-                    (receive (r v s) (parser s)
-                      (if (parse-success? r)
+                    (receive (rr v s) (parser s)
+                      (if (parse-success? rr)
                         ,(build-return
                           (quasirename r
                             `(let ,(map
@@ -965,7 +965,7 @@
                                ,body))
                           fail
                           (r's))
-                        (return-failure r v s))))))))))
+                        (return-failure rr v s))))))))))
 
      (match f
        [(_ parse ((? =>?) fail) body) (build-parser parse body fail)]
