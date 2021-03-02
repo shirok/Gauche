@@ -115,8 +115,12 @@
 (test-fail "$char" '(0 #\a) ($char #\a) "012")
 (test-succ "$one-of" #\j ($one-of #[a-z]) "j")
 (test-fail "$one-of" '(0 #[A-Z]) ($one-of #[A-Z]) "j")
+(test-succ "$one-of" "abd" ($one-of '("abc" "abd" "acd")) "abd")
+(test-succ "$one-of" #\c ($one-of '(#\a #\b #\c)) "c")
+(test-succ "$one-of" #\c ($one-of '("ab" #\c)) "c")
+(test-fail "$one-of" '(0 (#\a #\b #\c)) ($one-of '(#\a #\b #\c)) "z")
+(test-fail "$one-of" '(0 ("abc" "abd" "acd")) ($one-of '("abc" "abd" "acd")) "a")
 (test-succ "$none-of" #\j ($none-of #[A-Z]) "j")
-(test-fail "$none-of" '(0 #[^a-z]) ($none-of #[a-z]) "j")
 (test-succ "$string-ci" "aBC" ($string-ci "abc") "aBCdef")
 (test-fail "$string-ci" '(0 "abc") ($string-ci "abc") "012")
 

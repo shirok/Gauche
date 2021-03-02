@@ -1050,17 +1050,9 @@
   ($satisfy (^x (and (char? x) (char-ci=? c x)))
             (list->char-set c (char-upcase c) (char-downcase c))))
 
-(define ($one-of charset)
-  (assume-type charset <char-set>)
-  ($satisfy (^x (and (char? x) (char-set-contains? charset x)))
-            charset))
-
 (define ($symbol sym)
   (assume-type sym <symbol>)
   ($seq ($string (symbol->string sym)) ($return sym)))
-
-(define ($none-of charset)
-  ($one-of (char-set-complement charset)))
 
 ;; Anything except end of stream.
 (define-inline ($any)
@@ -1082,3 +1074,35 @@
    [(symbol? item) ($symbol item)]
    [else (error "Bad item: $. requires a char, a char-set, a string, \
                  or a symbol, but got:" item)]))
+
+(define-hybrid-syntax $one-of
+  (^[items]
+    (cond
+     [(char-set? items)
+      ($satisfy (^x (and (char? x) (char-set-contains? items x)))
+                items)]
+     [(list? items) ($or (apply $or (map $. items))
+                         :else ($fail items))]
+     [else (error "$one-of requires a charset or a list of items, \
+                   but got:" items)]))
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ (? char-set? items))
+        (quasirename r
+          `($satisfy (^[x] (and (char? x) (char-set-contains? ,items x)))
+                     ',items))]
+       [(_ (items ...))
+        (if (every (^x (or (char? x) (symbol? x))) items)
+          (quasirename r
+            `($satisfy (^[x] (memv x ',items)) ',items))
+          f)]
+       [_ f]))))
+
+;; NB: $none-of can't be generalized like $one-of, for the value to return
+;; on success is ambiguous except the case we're matching a single character.
+;; The asymmetry doesn't look good... we may drop $none-of in future.
+(define ($none-of charset)
+  (assume-type charset <char-set>)
+  ($satisfy (^x (or (not (char? x)) (not (char-set-contains? charset x))))
+            `(none-of ,charset)))
