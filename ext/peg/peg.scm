@@ -509,7 +509,12 @@
 
 ;; API
 ;; $or p1 p2 ...
+;; $or p1 p2 ... :else pz
 ;;   Ordered choice.
+;;   When all of p1 p2 ... fail without consuming input, returns compound
+;;   failure of all of them, except in the latter form, where all the failures
+;;   before pz is discarded.  Usually, pz is ($fail ...) to give a nicer
+;;   failure message than the compound one.
 (define ($or . parsers)
   (define (fail vs s)
     (match vs
@@ -520,14 +525,18 @@
     [(p) p]
     [(ps ...)
      (^s (let loop ([vs '()] [ps ps])
-           (receive (r v s1) ((car ps) s)
-             (cond [(parse-success? r) (values r v s1)]
-                   [(null? (cdr ps))
-                    (if (eq? s s1)
-                      (fail (acons r v vs) s1)
-                      (return-failure r v s1))] ; last branch consumed input
-                   [(eq? s s1) (loop (acons r v vs) (cdr ps))]
-                   [else (fail (acons r v vs) s1)]))))]))
+           (if (eq? (car ps) :else)
+             (if (null? (cdr ps))
+               (error "$or - no parsers after :else")
+               (loop '() (cdr ps)))
+             (receive (r v s1) ((car ps) s)
+               (cond [(parse-success? r) (values r v s1)]
+                     [(null? (cdr ps))
+                      (if (eq? s s1)
+                        (fail (acons r v vs) s1)
+                        (return-failure r v s1))] ; last branch consumed input
+                     [(eq? s s1) (loop (acons r v vs) (cdr ps))]
+                     [else (fail (acons r v vs) s1)])))))]))
 
 ;; API
 ;; $fold-parsers proc seed parsers
