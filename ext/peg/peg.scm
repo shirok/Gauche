@@ -898,6 +898,8 @@
 ;;   bound to a closure that can be called as (FAIL message).  If you
 ;;   determine that the parser should fail inside <body>, you can call FAIL
 ;;   at a tail position, with a suitable message.
+;;
+;;   Limitation - since $binding walks code, it can't be statically nested.
 
 (define %binding-storage
   (make-parameter 'accessing-binding-storage-out-of-context))
