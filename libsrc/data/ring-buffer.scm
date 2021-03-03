@@ -44,7 +44,9 @@
           ring-buffer-front ring-buffer-back
           ring-buffer-add-front! ring-buffer-add-back!
           ring-buffer-remove-front! ring-buffer-remove-back!
-          ring-buffer-ref ring-buffer-set!))
+          ring-buffer-ref ring-buffer-set!
+
+          ring-buffer->flat-vector))
 (select-module data.ring-buffer)
 
 ;;
@@ -177,16 +179,28 @@
 ;;    Returns 'overwrite  - overwrite existing entries.
 ;;    Allocates larger backing storage
 (define (make-ring-buffer :optional (storage (make-vector 4))
-                          :key (overflow-handler (make-overflow-doubler)))
-  (unless (or (vector? storage) (uvector? storage))
-    (error "Ring buffer storage must be a vector-like object, but got:" storage))
+                          :key (overflow-handler (make-overflow-doubler))
+                               (initial-head-index 0)
+                               (initial-tail-index 0))
+  (assume (exact-integer? initial-head-index))
+  (assume (exact-integer? initial-tail-index))
+  (assume (or (vector? storage) (uvector? storage))
+          "Ring buffer storage must be a vector-like object, but got:" storage)
+  (assume (<= 0 initial-head-index (- (size-of storage) 1))
+          "initial-head-index out of range:" initial-head-index)
+  (assume (<= initial-head-index initial-tail-index (size-of storage))
+          "initial-tail-index out of range:" initial-tail-index)
   (let1 h (case overflow-handler
             [(error) overflow-error]
             [(overwrite) overflow-overwrite]
             [else (unless (applicable? overflow-handler ring-buffer <top>)
                     (error "overflow-handler must be a procedure, or a symbol error of overwrite, but got" overflow-handler))
                   overflow-handler])
-    (%make-ring-buffer storage h 0 0 (size-of storage) 0)))
+    (%make-ring-buffer storage h
+                       initial-head-index
+                       (modulo initial-tail-index (size-of storage))
+                       (size-of storage)
+                       (- initial-tail-index initial-head-index))))
 
 ;; API
 (define (ring-buffer-empty? rb) (zero? (ring-buffer-num-entries rb)))
@@ -291,3 +305,31 @@
          [dprocs (%dprocs s)])
     (%rb-set! dprocs s (%rb-mod-index dprocs s (+ (ring-buffer-head rb) n))
               val)))
+
+;; API
+(define (ring-buffer->flat-vector rb
+                                  :optional (start 0)
+                                            (end (ring-buffer-num-entries rb)))
+  (define store (ring-buffer-storage rb))
+  (define (produce-result s1 e1 s2 e2)
+    (if (vector? store)
+      (rlet1 v (make-vector (+ (- e1 s1) (- e2 s2)))
+        (vector-copy! v 0 store s1 e1)
+        (when (< s2 e2)
+          (vector-copy! v (- e1 s1) store s2 e2)))
+      (rlet1 v (make-uvector (class-of store) (+ (- e1 s1) (- e2 s2)))
+        (uvector-copy! v 0 store s1 e1)
+        (when (< s2 e2)
+          (uvector-copy! v (- e1 s1) store s2 e2)))))
+
+  (assume (<= 0 start end (ring-buffer-num-entries rb))
+          "start/end index out of range:" (list start end))
+  (if (zero? (ring-buffer-num-entries rb))
+    (produce-result 0 0 0 0)
+    (let ([h (modulo (+ (ring-buffer-head rb) start)
+                     (ring-buffer-capacity rb))]
+          [t (modulo (+ (ring-buffer-head rb) end)
+                     (ring-buffer-capacity rb))])
+      (if (< h t)
+        (produce-result h t 0 0)
+        (produce-result h (ring-buffer-capacity rb) 0 t)))))

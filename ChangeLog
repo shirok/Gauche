@@ -1,3 +1,9 @@
+2021-03-02  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/data/ring-buffer.scm: Add ring-buffer->flat-vector.
+	  Also make-ring-buffer accepts initial indexes.  It allows to
+	  create a pre-filled ring-buffer.
+
 2021-02-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (degrees->radians, radians->degrees): Added.
