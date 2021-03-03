@@ -18167,82 +18167,169 @@ operations on character sets).
 
 @deftp {Module} rfc.uuid
 @mdindex rfc.uuid
+@c EN
 This module implements UUID defined in RFC4122.
 
 It provides generators of UUID version 1 and 4, and writer/parser
 of the string represenation of UUIDs.
+@c JP
+RFC4122で定義されたUUIDを実装しています。
+
+UUIDバージョン1と4を生成する機能、及びUUIDの文字列表記をパーズしたり
+バイナリから文字列表記を生成する機能が提供されます。
+@c COMMON
 @end deftp
 
 @deftp {Class} <uuid>
 @c MOD rfc.uuid
-Class of UUID instances.
+@c EN
+Class of UUID instances.  UUID instances are immutable.
+@c JP
+UUIDクラスです。UUIDインスタンスは変更不可なオブジェクトです。
+@c COMMON
 @end deftp
 
 @defun uuid-value uuid
 @c MOD rfc.uuid
+@c EN
 Returns the raw value of @var{uuid} as 16-element @code{u8vector}.
 You shouldn't mutate the returned u8vector.
+@c JP
+UUID @var{uuid}の「生の」値を、16要素の@code{u8vector}として返します。
+返されたベクタを変更してはいけません。
+@c COMMON
 @end defun
 
 @defun uuid-version uuid
 @c MOD rfc.uuid
+@c EN
 Returns the version number of @var{uuid}.
+@c JP
+@var{uuid}のバージョン番号を返します。
+@c COMMON
 @end defun
 
 @defvar uuid-comparator
 @c MOD rfc.uuid
+@c EN
 A comparator to compare and hash uuids.  @xref{Basic comparators}.
+
+Note: Equality of uuids can be tested with @code{equal?}.
+@c JP
+UUID同士を比較したりハッシュ値を取れる比較器です。
+比較器については@ref{Basic comparators}参照。
+
+註: 二つのUUIDが等しいかどうかは@code{equal?}で検査できます。
+@c COMMON
 @end defvar
+
+@deffn {Parameter} uuid-random-source
+@c MOD rfc.uuid
+@c EN
+We use PRNG to generate UUIDs.  By default, we internally creates
+a random source and randomize it.  You can alter the random source
+using @code{parameterize}.  The value must be a srfi-27 random source
+(@pxref{Sources of random bits}).
+@c JP
+UUIDを生成するのに乱数発生器を使います。
+デフォルトでは、内部的に乱数源を作って乱数化したものを使いますが、
+このパラメータを@code{parameterize}することで独自の乱数源を使うことができます。
+パラメータの値はsrfi-27の規定する乱数源でなければなりません
+(@ref{Sources of random bits}参照)。
+@c COMMON
+@end deffn
 
 @defun uuid-random-source-set! random-source
 @c MOD rfc.uuid
-We use PRNG to generate UUIDs.  By default, we internally creates
-a random source and randomize it.  You can pass in your own
-random source instead (@pxref{Sources of random bits}, for the details).
+@c EN
+This procedure is deprecated.  Use @code{uuid-random-source} parameter
+to customize random source to be used in uuid generation.
+@c JP
+この手続きは非推奨になりました。UUID生成に使われる乱数源をカスタマイズするには
+@code{uuid-random-source}パラメータを使ってください。
+@c COMMON
 @end defun
 
 @defun uuid1 :optional node-id
 @c MOD rfc.uuid
+@c EN
 Generates a uuid with version 1 algorithm (timestamp and node id based).
 The optional @var{node-id} argument must be 48bit exact integer
 specifing the node ID (IEEE802 MAC address of the machine).
 If it is omitted, we generate a process-global
 random node ID (with the multicast bit set to 1, so that it won't
 conflict with existing MAC address).
+@c JP
+バージョン1アルゴリズム(タイムスタンプとノードID)によるUUIDを生成して返します。
+省略可能な@var{node-id}引数はノードIDを指定する48ビットの正確な整数でなければ
+なりません (IEEE802 MACアドレスが通常使われます)。
+省略された場合は、プロセス内でひとつのランダムノードIDを生成して使います
+(この場合、生成されるノードIDはマルチキャストビットが立てられるので、
+現実に存在するMACアドレスとかぶることはありません)。
+@c COMMON
 @end defun
 
 @defun uuid4
 @c MOD rfc.uuid
+@c EN
 Generates a uuid with version 4 algorithm (random numbers).
+@c JP
+バージョン4アルゴリズム(乱数)によるUUIDを生成して返します。
+@c COMMON
 @end defun
 
 @defun nil-uuid
 @c MOD rfc.uuid
+@c EN
 Returns a nil-UUID (all bits zero).
+@c JP
+全てのビットが0であるnil UUIDを返します。
+@c COMMON
 @end defun
 
 @defun parse-uuid string
 @c MOD rfc.uuid
+@c EN
 Takes a string representation of UUID, parses it and returns
 an uuid instance.  If the string isn't a valid UUID representation,
 an error is thrown.
+@c JP
+UUIDの文字列表現をパーズし、UUIDインスタンスにして返します。
+文字列が有効なUUID表現でなければエラーが投げられます。
+@c COMMON
 
+@c EN
 Other than @code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} format,
 it recognizes the one with @code{urn:uuid:} prefix,
 the one enclosed by curly braces, and the one without hyphens.
+@c JP
+典型的な@code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}という形式に加え、
+@code{urn:uuid:}プレフィクスがついた形、前後がカーリーブレイスで囲まれた形、
+そしてハイフンを持たない形が認識されます。
+@c COMMON
 @end defun
 
 @defun write-uuid uuid :optional port
 @c MOD rfc.uuid
+@c EN
 Writes out a string representation of @var{uuid},
 in @code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} format, to the given
 port.  If the port is omitted, current output port is used.
+@c JP
+@var{uuid}の文字列表現を@code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}形式で
+@var{port}に書き出します。@var{port}が省略された場合は現在の出力ポートが使われます。
+@c COMMON
 @end defun
 
 @defun uuid->string uuid
 @c MOD rfc.uuid
+@c EN
 Returns a string representation of @var{uuid},
 in @code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} format.
+@c JP
+@var{uuid}の文字列表現を@code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}形式で
+返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
