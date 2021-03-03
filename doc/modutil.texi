@@ -13125,6 +13125,7 @@ Converts any ropes in in @var{obj} into strings.
 @subsection Choice, backtrack and assertion combinators
 
 @defun $or p1 p2 @dots{}
+@defunx $or p1 p2 @dots{} :else plast
 @c MOD parser.peg
 Returns a choice parser.  Tries the given parser in order on input.
 If one succeeds, immediately yields its result.
@@ -13135,6 +13136,22 @@ If @var{p1} @var{p2} @dots{} don't share the same prefix
 to match, you can let it fail as soon as one parser fails with consuming
 input.   If more than one parsers do match the same prefix,
 you want to wrap them with @code{$try} except the last one.
+
+If all of the parsers p1 p2 @dots{} fail without consuming input,
+@code{$or} returns a compound failure of all the failures.  You may
+wish to produce better error message than that.  Putting @code{$fail}
+parser at the last doesn't cut it, for @code{$fail} doesn't consume
+input so all the previous failures would be compound.   In such cases,
+you can use the second form---if the argument before the last parser
+is a keyword @code{:else}, then @code{$or} discards the previous failures.
+
+@example
+(peg-parse-string ($or ($. "ab")
+                       ($. "cd")
+                       :else ($fail "we want 'ab' or 'cd'"))
+                  "ef")
+ @result{} PARSE-ERROR: 'ab' or 'cd' required at 0
+@end example
 @end defun
 
 @defun $try p
