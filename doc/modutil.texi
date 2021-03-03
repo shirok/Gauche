@@ -4449,7 +4449,7 @@ storage of a ring buffer.
 @c COMMON
 @end deftp
 
-@defun make-ring-buffer :optional initial-storage :key overflow-handler
+@defun make-ring-buffer :optional initial-storage :key overflow-handler initial-head-index initial-tail-index
 @c MOD data.ring-buffer
 @c EN
 Creates a ring buffer.  By default, a fresh vector is allocated
@@ -4466,6 +4466,29 @@ nor make assumption about its content.
 リングバッファがそのベクタを変更するので、呼び出し側でベクタを変更
 したりベクタの内容が保存されることを期待してはいけません。
 @c COMMON
+
+@c EN
+By default, the storage you pass as @var{initial-storage} is assumed to
+be an empty buffer.  You can also pass a pre-filled storage, by
+specifing valid range of existing data with
+@var{initial-head-index} and @var{initial-tail-index} arguments
+(both are defaulted to 0).  For example, the following code returns
+a ring buffer of initial capacity 8, with the first 4 items are
+already filled.
+@c JP
+デフォルトでは、@var{initial-storage}に渡されたストレージは空のバッファとみなされます。
+しかし、あらかじめ一部に有効なデータを入れて渡すこともできます。その場合は、
+@var{initial-head-index}と@var{initial-tail-index}引数で有効なデータの
+インデックスの範囲を指定してください(これらの引数のデフォルトは0です)。
+例えば次のコードは、初期容量8のリングバッファのうち、最初の4要素が既に埋められているような
+リングバッファを作って返します。
+@c COMMON
+
+@example
+(make-ring-buffer (vector 'a 'b 'c 'd #f #f #f #f)
+                  :initial-tail-index 4)
+@end example
+
 
 @c EN
 The @var{overflow-handler} keyword argument specifies what to do when
@@ -4700,6 +4723,36 @@ An error is signaled if the index is out of bounds.
 
 @var{index}が@var{rb}の持つ要素の範囲外の場合はエラーが投げられます。
 @c COMMON
+@end defun
+
+
+@defun ring-buffer->flat-vector rb :optional start end
+@c MOD data.ring-buffer
+@c EN
+Returns the current valid content of the ring buffer @var{rb}
+as a fresh flat vector
+of the same type as @var{rb}'s storage.  If the optional @var{start}/@var{end}
+indexes are given, the content between those indexes are taken.
+@c JP
+リングバッファ@var{rb}の現在の有効な範囲の内容を、新たにアロケートされる
+@var{rb}のストレージと同じ型のベクタとして返します。
+@var{start}/@var{end}インデックスを指定した場合はそのインデックスの範囲内の
+内容だけが取り出されます。
+@c COMMON
+
+@example
+(define rb (make-ring-buffer (make-vector 4)))
+
+(ring-buffer->flat-vector rb) @result{} #()
+
+(ring-buffer-add-back! rb 'a)
+(ring-buffer-add-back! rb 'b)
+(ring-buffer-add-front! rb 'z)
+(ring-buffer-add-front! rb 'y)
+
+(ring-buffer->flat-vector rb) @result{} #(y z a b)
+(ring-buffer->flat-vector rb 1 3) @result{} #(z a)
+@end example
 @end defun
 
 
