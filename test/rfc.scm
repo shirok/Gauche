@@ -780,6 +780,7 @@
 (use rfc.uuid)
 (test-module 'rfc.uuid)
 (use srfi-13)
+(use srfi-27)
 
 (let1 u "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
   (test* "uuid-parse & write 1" u
@@ -803,5 +804,21 @@
 
 (let* ([u (uuid4)])
   (test* "uuid-version" 4 (uuid-version u)))
+
+;; test random source parameterization
+(let* ([rs (make-random-source)]
+       [uuid00 #f]
+       [uuid01 #f]
+       [uuid10 #f]
+       [uuid11 #f])
+  (random-source-state-set! rs (random-source-state-ref (uuid-random-source)))
+  (set! uuid00 (uuid4))
+  (parameterize ([uuid-random-source rs])
+    (set! uuid10 (uuid4))
+    (set! uuid11 (uuid4)))
+  (set! uuid01 (uuid4))
+  (test* "uuid-random-source" '(#t #t)
+         (list (equal? (uuid->string uuid00) (uuid->string uuid10))
+               (equal? (uuid->string uuid01) (uuid->string uuid11)))))
 
 (test-end)

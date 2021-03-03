@@ -1,3 +1,8 @@
+2021-03-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uuid.scm (uuid-random-source): Make this a parameter.
+	  Deprecate uuid-random-source-set!, for it has global effect.
+
 2021-03-02  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/data/ring-buffer.scm: Add ring-buffer->flat-vector.

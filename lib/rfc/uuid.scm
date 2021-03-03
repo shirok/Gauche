@@ -37,10 +37,12 @@
   (use gauche.record)
   (use gauche.uvector)
   (use gauche.threads)
+  (use gauche.parameter)                ; we use hooks
   (use binary.io)
   (use srfi-27)
   (export <uuid> uuid-value uuid-version
           uuid1 uuid4 nil-uuid
+          uuid-random-source
           uuid-random-source-set!
           uuid-comparator
           write-uuid uuid->string parse-uuid)
@@ -113,14 +115,22 @@
 ;;;Generation
 ;;;
 
-(define *default-uuid-random-source*
-  (rlet1 s (make-random-source)
-    (random-source-randomize! s)))
-(define %uuid-random-int
-  (random-source-make-integers *default-uuid-random-source*))
+(define uuid-random-source
+  (make-parameter
+   (rlet1 s (make-random-source)
+     (random-source-randomize! s))
+   (^x (assume random-source? "srfi-27 random source required, but got:" x) x)))
 
-(define (uuid-random-source-set! s)
-  (set! %uuid-random-int (random-source-make-integers s)))
+(define %uuid-random-int
+  (random-source-make-integers (uuid-random-source)))
+
+(parameter-observer-add! uuid-random-source
+                         (^[old new]
+                           (set! %uuid-random-int
+                                 (random-source-make-integers new))))
+
+;; Deprecated.  Use parameter.
+(define (uuid-random-source-set! s) (uuid-random-source s))
 
 (define timestate (atom 0 -1)) ; last-time and clock-seq
 (define pseudo-node (atom #f)) ; fake node id
