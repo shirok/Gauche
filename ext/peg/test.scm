@@ -148,6 +148,10 @@
            ($or ($string "foo") ($string "bar"))
            "012345")
 
+(test-fail "$or" '(0 "bar")
+           ($or ($string "foo") :else ($string "bar"))
+           "012345")
+
 ;; $try
 (test-succ "$try" "foo"
            ($try ($string "foo"))
