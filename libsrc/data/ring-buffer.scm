@@ -46,7 +46,7 @@
           ring-buffer-remove-front! ring-buffer-remove-back!
           ring-buffer-ref ring-buffer-set!
 
-          ring-buffer->flat-vector))
+          ring-buffer->flat-vector ring-buffer->flat-vector!))
 (select-module data.ring-buffer)
 
 ;;
@@ -333,3 +333,33 @@
       (if (< h t)
         (produce-result h t 0 0)
         (produce-result h (ring-buffer-capacity rb) 0 t)))))
+
+;; API
+(define (ring-buffer->flat-vector! target tstart rb
+                                   :optional (start 0)
+                                             (end (ring-buffer-num-entries rb)))
+  (define store (ring-buffer-storage rb))
+  (define (fill-result! s1 e1 s2 e2)
+    ((if (vector? target) vector-copy! uvector-copy!)
+     target tstart store s1 e1)
+    (when (< s2 e2)
+    ((if (vector? target) vector-copy! uvector-copy!)
+     target (+ tstart (- e1 s1)) store s2 e2)))
+
+  (assume (eqv? (class-of store) (class-of target))
+          "target must be the same class as ring-buffer's backing storage:"
+          (list (class-of target) (class-of store)))
+  (assume (<= 0 start end (ring-buffer-num-entries rb))
+          "start/end index out of range:" (list start end))
+  (assume (and (<= 0 tstart)
+               (<= (+ tstart (- end start)) (size-of target)))
+          "tstart out of range:" tstart)
+  (unless (zero? (ring-buffer-num-entries rb))
+    (let ([h (modulo (+ (ring-buffer-head rb) start)
+                     (ring-buffer-capacity rb))]
+          [t (modulo (+ (ring-buffer-head rb) end)
+                     (ring-buffer-capacity rb))])
+      (if (< h t)
+        (fill-result! h t 0 0)
+        (fill-result! h (ring-buffer-capacity rb) 0 t))))
+  (undefined))

@@ -167,3 +167,28 @@
   (ring-buffer-add-back! buf 'm)
   (test* "ring-buffer/initial expand" '#(d e f g h i j k l m)
          (ring-buffer->flat-vector buf)))
+
+;; flat vector fill
+(let ((buf (make-ring-buffer (make-s16vector 5))))
+  (ring-buffer-add-back! buf 1)
+  (ring-buffer-add-back! buf 2)
+  (ring-buffer-add-back! buf 3)
+  (ring-buffer-add-back! buf 4)
+  (ring-buffer-add-back! buf 5)
+  (ring-buffer-remove-front! buf)
+  (ring-buffer-remove-front! buf)
+  (ring-buffer-add-back! buf 6)
+  (ring-buffer-add-back! buf 7)
+
+  (test* "ring-buffer->flat-vector!"
+         '#s16(0 0 0 3 4 5 6 7 0 0)
+         (rlet1 v (make-s16vector 10)
+           (ring-buffer->flat-vector! v 3 buf)))
+  (ring-buffer-add-front! buf -1)
+  (ring-buffer-add-front! buf -2)
+  (ring-buffer-add-front! buf -3)
+  (test* "ring-buffer->flat-vector!"
+         '#s16(-2 -1 3 4 5 0 0 0 0 0)
+         (rlet1 v (make-s16vector 10)
+           (ring-buffer->flat-vector! v 0 buf 1 6)))
+  )
