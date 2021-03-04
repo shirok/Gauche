@@ -192,3 +192,14 @@
          (rlet1 v (make-s16vector 10)
            (ring-buffer->flat-vector! v 0 buf 1 6)))
   )
+
+;; sequence protocol
+(let ((buf (make-ring-buffer)))
+  (ring-buffer-add-back! buf 'a)
+  (ring-buffer-add-back! buf 'b)
+  (ring-buffer-add-back! buf 'c)
+  (ring-buffer-add-front! buf 'z)
+  (ring-buffer-add-front! buf 'y)
+  (ring-buffer-add-front! buf 'x)
+  (test* "ring-buffer sequence protocol" '(x y z a b c)
+         (coerce-to <list> buf)))

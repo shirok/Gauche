@@ -66,7 +66,8 @@
 ;; Although we define ring-buffer as a record-type, we don't export
 ;; accessors/constructors.  Users of this module should use exported
 ;; public APIs.
-(define-record-type ring-buffer %make-ring-buffer ring-buffer?
+(define-record-type (ring-buffer <record> :mixins (<sequence>))
+  %make-ring-buffer ring-buffer?
   (storage)
   overflow-handler
   (head)
@@ -363,3 +364,14 @@
         (fill-result! h t 0 0)
         (fill-result! h (ring-buffer-capacity rb) 0 t))))
   (undefined))
+
+;;
+;; Sequence protocol
+;;
+
+(define-method call-with-iterator ((rb ring-buffer) proc :key (start 0))
+  (define len (ring-buffer-num-entries rb))
+  (define k start)
+  (proc (^[] (>= k len))
+        (^[] (rlet1 v (ring-buffer-ref rb k)
+               (inc! k)))))
