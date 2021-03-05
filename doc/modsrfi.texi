@@ -3859,9 +3859,10 @@ bound in @var{g-qualifier} is visible from @var{expr}.
 
 @deffn {EC Qualifier} if test
 @c EN
-Evaluates @var{test}, and only if it yields a true value, the following
-qualifiers are evaluated.
+Evaluates @var{test}, and if it yields false, stops that iteration
+and start the next iteration.
 @c JP
+@var{test}を評価し、それが偽だった場合はその回の繰り返しを中止し、次の繰り返しに移ります。
 @c COMMON
 
 @c EN
