@@ -3347,33 +3347,54 @@ consists of the results of @var{body}.
 @defmac vector-ec qualifier @dots{} body
 [SRFI-42]
 @c MOD srfi-42
+@c EN
 Repeats @var{body} and collects the results into a vector.
+@c JP
+@var{body}を繰り返し、結果をベクタに集めて返します。
+@c COMMON
 @end defmac
 
 @defmac vector-of-length-ec k qualifier @dots{} body
 [SRFI-42]
 @c MOD srfi-42
+@c EN
 This is like @code{vector-ec}, except that the length of the
 result vector is known to be @var{k}.  It can be more efficient
 than @code{vector-ec}.  Unless the comprehension repeats exactly
-@code{k} times, an error is signaled.
+@var{k} times, an error is signaled.
+@c JP
+@code{vector-ec}と似ていますが、最終的なベクタの長さが@var{k}と分かっている時に
+使えます。あらかじめベクタをアロケートしておけるので@code{vector-ec}より効率が良いです。
+繰り返しが正確に@var{k}回にならなかった場合はエラーが投げられます。
+@c COMMON
 @end defmac
 
 @defmac sum-ec qualifier @dots{} body
 @defmacx product-ec qualifier @dots{} body
 [SRFI-42]
 @c MOD srfi-42
+@c EN
 @var{body} must yield a numeric value.  Returns sum of and product of
 the results, respectively.
+@c JP
+@var{body}は数値を生成しなければなりません。繰り返しによって生成される数値の和と積を
+それぞれ返します。
+@c COMMON
 @end defmac
 
 @defmac min-ec qualifier @dots{} body
 @defmacx max-ec qualifier @dots{} body
 [SRFI-42]
 @c MOD srfi-42
-@var{body} must yield a numeric value.  Returns maximum and minimum value
+@c EN
+@var{body} must yield a real number.  Returns maximum and minimum value
 of the results, respectively.  @var{body} must be evaluated at least once,
 or an error is signaled.
+@c JP
+@var{body}は実数値を生成しなければなりません。
+最初および最大の結果をそれぞれ返します。@var{body}は最低1回は実行されねばならず、
+そうでなければエラーが投げられます。
+@c COMMON
 @end defmac
 
 @defmac any?-ec qualifier @dots{} test
@@ -3401,16 +3422,29 @@ returned, respectively.
 @defmacx last-ec default qualifier @dots{} body
 [SRFI-42]
 @c MOD srfi-42
+@c EN
 First initializes the result by the value of the expression @var{default},
 then start iteration, and returns the value of the first and last
 evaluation of @var{body}, respectively.  In fact, @code{first-ec}
 only evaluates @var{body} at most once.
+@c JP
+まず結果を@var{default}式の値で初期化し、繰り返しを開始します。
+そして、最初または最後の@var{body}の値をそれぞれ返します。
+実際のところ、@code{first-ec}は@var{body}をたかだか一回しか評価しません。
+@c COMMON
 
-These procedures are most useful when used with control qualifiers.
+@c EN
+These forms are most useful when used with control qualifiers.
 For example, the following @code{first-ec} returns the @emph{first}
 set of distinct integers (@var{x}, @var{y}, @var{z}),
 where @var{x}*@var{x}+@var{y}*@var{y}+@var{z}*@var{z} becomes a square
 of another integer @var{w}.
+@c JP
+これらのフォームは、フロー制御のqualifierと一緒に使うことで効果を発揮します。
+例えば、下の@code{first-ec}は、それぞれ異なる3つの正整数(@var{x}, @var{y}, @var{z})で、
+@var{x}*@var{x}+@var{y}*@var{y}+@var{z}*@var{z}が@var{w}の平方と等しくなるような
+組み合わせのうち最初のものを返します。
+@c COMMON
 
 @example
 (first-ec #f (:integers w) (: z 1 w) (: y 1 z) (: x 1 y)
@@ -3418,33 +3452,59 @@ of another integer @var{w}.
           (list x y z w))
 @end example
 
+@c EN
 Note that the first qualifier, @code{(:integers w)}, generates
 infinite number of integers; if you use @code{list-ec} instead of
 @code{first-ec} it won't stop.
+@c JP
+@code{(:integers w)}は無限に整数列を生成することに注意してください。
+@code{first-ec}のかわりに@code{list-ec}を使うと、評価は終了しません。
+@c COMMON
 @end defmac
 
 @defmac fold-ec seed qualifier @dots{} expr proc
 @defmacx fold3-ec seed qualifier @dots{} expr init proc
 [SRFI-42]
 @c MOD srfi-42
+@c EN
 Reduces the values produced by @var{expr}.
+@c JP
+@var{expr}が生成する値をまとめます。
+@c COMMON
 
+@c EN
 Suppose @var{expr} produces a sequence of values
 @var{x0}, @var{x1}, @dots{}, @var{xN}.  @code{Fold-ec}
 calculates the following value:
+@c JP
+@var{expr}が生成する値を@var{x0}, @var{x1}, @dots{}, @var{xN}とした場合、
+@code{fold-ec}は次の値を計算します:
+@c COMMON
 
 @example
 (@var{proc} @var{xN} (@dots{}(@var{proc} @var{x1} (@var{proc} @var{x0} @var{seed}))@dots{}))
 @end example
 
+@c EN
 It's similar to @code{fold}, except that @var{proc} is evaluated
 within the scope of @var{qualifier} @dots{} so you can refer to the
 variables introduced by them.  On the other hand,
 @var{seed} is outside of the scope of @var{qualifier}s.
+@c JP
+@code{fold}と似ていますが、@var{proc}は@var{qualifier} @dots{}のスコープ内で
+評価されるので、それらが導入する変数を参照することができます。
+ただし@var{seed}は@var{qualifier}のスコープの外で評価されます。
+@c COMMON
 
+@c EN
 @code{Fold-ec3} is almost the same but the initial value calculation.
 In @code{fold-ec3}, @var{seed} is only used when @var{qualifier}s
 makes no iteration.  Otherwise it calculates the following value:
+@c JP
+@code{fold-ec3}は初期値の計算以外は同じです。
+@code{fold-ec3}では、@var{seed}は@var{qualifier}が一度も繰り返しを行わなかった
+場合にのみ使われます。そうでなければ以下の値が計算されます:
+@c COMMON
 
 @example
 (@var{proc} @var{xN} (@dots{}(@var{proc} @var{x1} (@var{init} @var{x0}))@dots{}))
@@ -3777,10 +3837,6 @@ bound in @var{g-qualifier} is visible from @var{expr}.
 @var{g-qualifier}が束縛する変数が使えます。
 @c COMMON
 
-@c EN
-@c JP
-@c COMMON
-
 @example
 (use math.prime)
 (sum-ec (:while (: p (index k) *primes*) (<= k 100)) p)
@@ -3795,20 +3851,68 @@ bound in @var{g-qualifier} is visible from @var{expr}.
 @deffnx {EC Qualifier} :do (let (ob @dots{}) oc @dots{}) (lb @dots{}) ne1? (let (ib @dots{}) ic @dots{}) ne2? (ls @dots{})
 @end deffn
 
+@c EN
 @subsubheading Control qualifiers
+@c JP
+@subsubheading フロー制御qualifier
+@c COMMON
 
 @deffn {EC Qualifier} if test
+@c EN
+Evaluates @var{test}, and only if it yields a true value, the following
+qualifiers are evaluated.
+@c JP
+@c COMMON
+
+@c EN
+The following examples returns a list of pythagorian triplets @code{(a b c)},
+which satisfies @code{a^2 + b^2 = c^2}, less than 100.
+@c JP
+次の例は、@code{a^2 + b^2 = c^2}を満たすピタゴラス数@code{(a b c)}の組を、
+c < 100 の範囲で列挙します。
+@c COMMON
+
+@example
+(list-ec (: c 1 100) (: a 1 c) (: b a c)
+         (if (= (square c) (+ (square a) (square b))))
+         (list a b c))
+  @result{} ((3 4 5) (6 8 10) (5 12 13) (9 12 15) (8 15 17) @dots{})
+@end example
 @end deffn
 
 @deffn {EC Qualifier} not test
 @deffnx {EC Qualifier} and test @dots{}
 @deffnx {EC Qualifier} or test @dots{}
+@c EN
+A shorthand of @code{(if (not test))}, @code{(if (and test @dots{}))}, and
+@code{(if (or test @dots{}))}.
+@c JP
+それぞれ@code{(if (not test))}、@code{(if (and test @dots{}))}、
+@code{(if (or test @dots{}))}の略記です。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} begin command @dots{} expr
+@c EN
+During iteration, evaluates @var{command} @dots{} for side effects
+before evalutes @var{expr}.  The result of @var{command}s are discarded.
+@c JP
+繰り返しの途中に、@var{expr}を評価する前に@var{command} @dots{}を副作用のために評価します。
+@var{command}の結果は捨てられます。
+@c COMMON
 @end deffn
 
 @deffn {EC Qualifier} nested qualifier @dots{}
+@c EN
+Splices @var{qualifier} @dots{}.  For example,
+@code{(list-ec (: a 2) (nested (: b 2) (: c 2)) (: d 2) (list a b c d))}
+is equivalent to
+@code{(list-ec (: a 2) (: b 2) (: c 2) (: d 2) (list a b c d))}.
+@c JP
+@var{qualifier} @dots{}をこの箇所にスプライシングします。たとえば
+@code{(list-ec (: a 2) (nested (: b 2) (: c 2)) (: d 2) (list a b c d))} は
+@code{(list-ec (: a 2) (: b 2) (: c 2) (: d 2) (list a b c d))} と同じです。
+@c COMMON
 @end deffn
 
 
@@ -3989,7 +4093,7 @@ See @ref{Collection framework} and @ref{Sequence framework}.
 @c ----------------------------------------------------------------------
 @node Requiring extensions, Integers as bits, Vector library (Legacy), Library modules - SRFIs
 @section @code{srfi-55} - Requiring extensions
-@c NODE Requiring extensions, @code{srfi-55} - require の拡張
+@c NODE require の拡張, @code{srfi-55} - require の拡張
 
 @deftp {Module} srfi-55
 @mdindex srfi-55
