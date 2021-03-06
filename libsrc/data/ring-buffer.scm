@@ -375,3 +375,16 @@
   (proc (^[] (>= k len))
         (^[] (rlet1 v (ring-buffer-ref rb k)
                (inc! k)))))
+
+(define-method call-with-reverse-iterator ((rb ring-buffer) proc
+                                           :key
+                                           (start 0)
+                                           (end (ring-buffer-num-entries rb))
+                                           :allow-other-keys)
+  (define k (- end 1))
+  (proc (^[] (<= start k))
+        (^[] (rlet1 v (ring-buffer-ref rb k)
+               (dec! k)))))
+
+(define-method referencer ((rb ring-buffer)) ring-buffer-ref)
+(define-method modifier ((rb ring-buffer)) ring-buffer-set!)
