@@ -36,6 +36,7 @@
   (use gauche.uvector)
   (use gauche.record)
   (use scheme.vector)
+  (use srfi-42)
   (export make-ring-buffer
           make-overflow-doubler
           ring-buffer?
@@ -44,7 +45,7 @@
           ring-buffer-front ring-buffer-back
           ring-buffer-add-front! ring-buffer-add-back!
           ring-buffer-remove-front! ring-buffer-remove-back!
-          ring-buffer-ref ring-buffer-set!
+          ring-buffer-ref ring-buffer-set! ring-buffer-insert-all!
 
           ring-buffer->flat-vector ring-buffer->flat-vector!))
 (select-module data.ring-buffer)
@@ -61,15 +62,24 @@
 ;;          +-----------+            |           |
 ;;    tail >|  (vacant) |            +-----------+
 ;;          |           |      head >|///////////|
-;;          +-----------+            +-----------+
+;;          +-----------+            +-----------+ < capacity
 
 ;; Although we define ring-buffer as a record-type, we don't export
 ;; accessors/constructors.  Users of this module should use exported
 ;; public APIs.
+;;
+;; Originally, ring-buffer is only supposed to grow by one item
+;; at a time, so overflow-handler only needs to expand a storage at least one.
+;; However, we decdied to use ring-buffer as a basis of flexvector (srfi-214)
+;; and needs some additional features, including the ability to extend
+;; the storage in arbitrary length.  We think it is slightly out-of-scope
+;; as a feature of a ring-buffer, so for now we keep it unofficial.
+
 (define-record-type (ring-buffer <record> :mixins (<sequence>))
   %make-ring-buffer ring-buffer?
   (storage)
   overflow-handler
+  room-maker                            ;only used by ring-buffer-insert-all!
   (head)
   (tail)
   (capacity)
@@ -181,6 +191,7 @@
 ;;    Allocates larger backing storage
 (define (make-ring-buffer :optional (storage (make-vector 4))
                           :key (overflow-handler (make-overflow-doubler))
+                               (room-maker #f)
                                (initial-head-index 0)
                                (initial-tail-index 0))
   (assume (exact-integer? initial-head-index))
@@ -191,13 +202,16 @@
           "initial-head-index out of range:" initial-head-index)
   (assume (<= initial-head-index initial-tail-index (size-of storage))
           "initial-tail-index out of range:" initial-tail-index)
-  (let1 h (case overflow-handler
-            [(error) overflow-error]
-            [(overwrite) overflow-overwrite]
-            [else (unless (applicable? overflow-handler ring-buffer <top>)
-                    (error "overflow-handler must be a procedure, or a symbol error of overwrite, but got" overflow-handler))
-                  overflow-handler])
-    (%make-ring-buffer storage h
+  (let1 ov-handler
+      (case overflow-handler
+        [(error) overflow-error]
+        [(overwrite) overflow-overwrite]
+        [else (unless (applicable? overflow-handler ring-buffer <top>)
+                (error "overflow-handler must be a procedure, or \
+                              a symbol error of overwrite, but got"
+                       overflow-handler))
+              overflow-handler])
+    (%make-ring-buffer storage ov-handler room-maker
                        initial-head-index
                        (modulo initial-tail-index (size-of storage))
                        (size-of storage)
@@ -214,6 +228,7 @@
   (when (ring-buffer-empty? rb)
     (error "Ring buffer is empty:" rb)))
 
+;; Make sure there's room for at least one entry in rb
 (define (%ensure-room! rb dir) ; dir = 'forward | 'backward
   (when (= (ring-buffer-num-entries rb) (ring-buffer-capacity rb))
     (let1 v ((ring-buffer-overflow-handler rb) rb (ring-buffer-storage rb))
@@ -307,6 +322,42 @@
     (%rb-set! dprocs s (%rb-mod-index dprocs s (+ (ring-buffer-head rb) n))
               val)))
 
+;; API (Unofficial)
+;;  Insert ITEMS (a list or a (u)vector) at N-th position of RB, shifting
+;;  the rest elements.
+;;  This is to implement flexvector.  We're not sure if this is appropriate
+;;  as a feature of ring-buffer, though, so for now we keep this unofficial.
+;   Note: The ring buffer needs room-maker callback, which takes
+(define (ring-buffer-insert-all! rb n items)
+  (assume (<= 0 n (ring-buffer-num-entries rb))
+          "index out of range:"n)
+  (let1 size (size-of items)
+    (if (>= (+ (ring-buffer-num-entries rb) size) (ring-buffer-capacity rb))
+      (if-let1 room-maker (ring-buffer-room-maker rb)
+        (let1 newbuf ($ room-maker rb
+                        (ring-buffer-storage rb)
+                        (+ size (ring-buffer-num-entries rb)))
+          (ring-buffer->flat-vector! newbuf 0 rb 0 n)
+          (ring-buffer->flat-vector! newbuf (+ n size) rb n)
+          (do-ec (: item (index i) items)
+                 (set! (~ newbuf (+ n i)) item))
+          (ring-buffer-storage-set! rb newbuf)
+          (ring-buffer-num-entries-set! rb (+ size (ring-buffer-num-entries rb)))
+          (ring-buffer-capacity-set! rb (size-of newbuf))
+          (ring-buffer-head-set! rb 0)
+          (ring-buffer-tail-set! rb (ring-buffer-num-entries rb)))
+        (errorf "ring buffer overflow (capacity=~s, required=~s)"
+                (ring-buffer-capacity rb)
+                (+ size (ring-buffer-num-entries rb))))
+      (let ([storage (ring-buffer-storage rb)]
+            [cap (ring-buffer-capacity rb)])
+        (do-ec (: i size 0 -1)
+               (set! (~ storage (modulo (+ n i -1) cap))
+                     (~ storage (modulo (+ n size i -1) cap))))
+        (do-ec (: item (index i) items)
+               (set! (~ storage (modulo (+ n i) cap)) item)))))
+  (undefined))
+
 ;; API
 (define (ring-buffer->flat-vector rb
                                   :optional (start 0)
@@ -355,7 +406,8 @@
   (assume (and (<= 0 tstart)
                (<= (+ tstart (- end start)) (size-of target)))
           "tstart out of range:" tstart)
-  (unless (zero? (ring-buffer-num-entries rb))
+  (unless (or (zero? (ring-buffer-num-entries rb))
+              (= start end))
     (let ([h (modulo (+ (ring-buffer-head rb) start)
                      (ring-buffer-capacity rb))]
           [t (modulo (+ (ring-buffer-head rb) end)

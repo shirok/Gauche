@@ -193,6 +193,25 @@
            (ring-buffer->flat-vector! v 0 buf 1 6)))
   )
 
+;; insert
+(let ((buf (make-ring-buffer (make-vector 4)
+                             :room-maker (^[rb old size] (make-vector size)))))
+  (ring-buffer-add-back! buf 'a)
+  (ring-buffer-add-back! buf 'b)
+  (ring-buffer-add-back! buf 'c)
+  (ring-buffer-add-front! buf 'z)
+  (test* "ring-buffer-insert-all!"
+         '#(z a p q r b c)
+         (begin
+           (ring-buffer-insert-all! buf 2 '(p q r))
+           (ring-buffer->flat-vector buf)))
+  (test* "ring-buffer-insert-all!"
+         '#(z a p q r b c d e f g h i j k l m n o s t u v)
+         (begin
+           (ring-buffer-insert-all! buf 7 '#(d e f g h i j k l m n o s t u v))
+           (ring-buffer->flat-vector buf)))
+  )
+
 ;; sequence protocol
 (let ((buf (make-ring-buffer)))
   (ring-buffer-add-back! buf 'a)
