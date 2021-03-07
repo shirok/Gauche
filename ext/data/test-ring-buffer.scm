@@ -166,7 +166,19 @@
   (ring-buffer-add-back! buf 'l)
   (ring-buffer-add-back! buf 'm)
   (test* "ring-buffer/initial expand" '#(d e f g h i j k l m)
-         (ring-buffer->xvector buf)))
+         (ring-buffer->xvector buf))
+
+  (test* "ring-buffer-clear!" '#()
+         (begin
+           (ring-buffer-clear! buf)
+           (ring-buffer->xvector buf)))
+
+  (ring-buffer-add-front! buf 'A)
+  (ring-buffer-add-front! buf 'B)
+  (ring-buffer-add-back! buf 'Z)
+  (test* "ring-buffer add after clear" '#(B A Z)
+         (ring-buffer->xvector buf))
+  )
 
 ;; flat vector fill
 (let ((buf (make-ring-buffer (make-s16vector 5))))

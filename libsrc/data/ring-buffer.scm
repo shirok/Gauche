@@ -46,7 +46,9 @@
           ring-buffer-front ring-buffer-back
           ring-buffer-add-front! ring-buffer-add-back!
           ring-buffer-remove-front! ring-buffer-remove-back!
-          ring-buffer-ref ring-buffer-set! ring-buffer-insert-all!
+          ring-buffer-ref ring-buffer-set!
+          ring-buffer-insert-all!
+          ring-buffer-clear!
 
           ring-buffer->xsubvectors
           ring-buffer->xvector ring-buffer->xvector!))
@@ -323,6 +325,12 @@
          [dprocs (%dprocs s)])
     (%rb-set! dprocs s (%rb-mod-index dprocs s (+ (ring-buffer-head rb) n))
               val)))
+
+;; API
+(define (ring-buffer-clear! rb)
+  (ring-buffer-head-set! rb 0)
+  (ring-buffer-tail-set! rb 0)
+  (ring-buffer-num-entries-set! rb 0))
 
 ;; API (Unofficial)
 ;;  Insert ITEMS (a list or a (u)vector) at N-th position of RB, shifting
