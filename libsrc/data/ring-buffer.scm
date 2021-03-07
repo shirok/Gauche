@@ -36,6 +36,7 @@
   (use gauche.uvector)
   (use gauche.record)
   (use scheme.vector)
+  (use util.match)
   (use srfi-42)
   (export make-ring-buffer
           make-overflow-doubler
@@ -47,7 +48,8 @@
           ring-buffer-remove-front! ring-buffer-remove-back!
           ring-buffer-ref ring-buffer-set! ring-buffer-insert-all!
 
-          ring-buffer->flat-vector ring-buffer->flat-vector!))
+          ring-buffer->xsubvectors
+          ring-buffer->xvector ring-buffer->xvector!))
 (select-module data.ring-buffer)
 
 ;;
@@ -337,8 +339,8 @@
         (let1 newbuf ($ room-maker rb
                         (ring-buffer-storage rb)
                         (+ size (ring-buffer-num-entries rb)))
-          (ring-buffer->flat-vector! newbuf 0 rb 0 n)
-          (ring-buffer->flat-vector! newbuf (+ n size) rb n)
+          (ring-buffer->xvector! newbuf 0 rb 0 n)
+          (ring-buffer->xvector! newbuf (+ n size) rb n)
           (do-ec (: item (index i) items)
                  (set! (~ newbuf (+ n i)) item))
           (ring-buffer-storage-set! rb newbuf)
@@ -359,63 +361,72 @@
   (undefined))
 
 ;; API
-(define (ring-buffer->flat-vector rb
+;;  Returns (vec1 start1 end1 vec2 start2 end2 ...)
+;;  The list is compatbile to the argument list of *vector-append-subvectors.
+;;  With the current implementation, the number of subvector ranges are
+;;  0, 1 or 2, but the caller shouldn't assume that.
+(define (ring-buffer->xsubvectors rb
                                   :optional (start 0)
                                             (end (ring-buffer-num-entries rb)))
-  (define store (ring-buffer-storage rb))
-  (define (produce-result s1 e1 s2 e2)
-    (if (vector? store)
-      (rlet1 v (make-vector (+ (- e1 s1) (- e2 s2)))
-        (vector-copy! v 0 store s1 e1)
-        (when (< s2 e2)
-          (vector-copy! v (- e1 s1) store s2 e2)))
-      (rlet1 v (make-uvector (class-of store) (+ (- e1 s1) (- e2 s2)))
-        (uvector-copy! v 0 store s1 e1)
-        (when (< s2 e2)
-          (uvector-copy! v (- e1 s1) store s2 e2)))))
-
+  (define storage (ring-buffer-storage rb))
   (assume (<= 0 start end (ring-buffer-num-entries rb))
           "start/end index out of range:" (list start end))
-  (if (zero? (ring-buffer-num-entries rb))
-    (produce-result 0 0 0 0)
+  (if (= start end)
+    '()
     (let ([h (modulo (+ (ring-buffer-head rb) start)
                      (ring-buffer-capacity rb))]
           [t (modulo (+ (ring-buffer-head rb) end)
                      (ring-buffer-capacity rb))])
-      (if (< h t)
-        (produce-result h t 0 0)
-        (produce-result h (ring-buffer-capacity rb) 0 t)))))
+      (cond [(< h t) `(,storage ,h ,t)]
+            [(= t 0) `(,storage ,h ,(ring-buffer-capacity rb))]
+            [else `(,storage ,h ,(ring-buffer-capacity rb) ,storage ,0 ,t)]))))
 
 ;; API
-(define (ring-buffer->flat-vector! target tstart rb
-                                   :optional (start 0)
-                                             (end (ring-buffer-num-entries rb)))
-  (define store (ring-buffer-storage rb))
-  (define (fill-result! s1 e1 s2 e2)
-    ((if (vector? target) vector-copy! uvector-copy!)
-     target tstart store s1 e1)
-    (when (< s2 e2)
-    ((if (vector? target) vector-copy! uvector-copy!)
-     target (+ tstart (- e1 s1)) store s2 e2)))
+(define (ring-buffer->xvector rb
+                              :optional (start 0)
+                                        (end (ring-buffer-num-entries rb)))
+  (define storage (ring-buffer-storage rb))
+  (define appender
+    ;; there should be better way
+    (cond [(vector? storage) vector-append-subvectors]
+          [(u8vector? storage) u8vector-append-subvectors]
+          [(s8vector? storage) s8vector-append-subvectors]
+          [(u16vector? storage) u16vector-append-subvectors]
+          [(s16vector? storage) s16vector-append-subvectors]
+          [(u32vector? storage) u32vector-append-subvectors]
+          [(s32vector? storage) s32vector-append-subvectors]
+          [(u64vector? storage) u64vector-append-subvectors]
+          [(s64vector? storage) s64vector-append-subvectors]
+          [(f16vector? storage) f16vector-append-subvectors]
+          [(f32vector? storage) f32vector-append-subvectors]
+          [(f64vector? storage) f64vector-append-subvectors]
+          [(c32vector? storage) c32vector-append-subvectors]
+          [(c64vector? storage) c64vector-append-subvectors]
+          [(c128vector? storage) c128vector-append-subvectors]
+          [else (error "Unsupported backing storage:" storage)]))
+  (apply appender (ring-buffer->xsubvectors rb start end)))
 
-  (assume (eqv? (class-of store) (class-of target))
+;; API
+(define (ring-buffer->xvector! target tstart rb
+                               :optional (start 0)
+                                         (end (ring-buffer-num-entries rb)))
+  (define storage (ring-buffer-storage rb))
+  (define fill! (if (vector? storage) vector-copy! uvector-copy!))
+
+  (assume (eqv? (class-of storage) (class-of target))
           "target must be the same class as ring-buffer's backing storage:"
-          (list (class-of target) (class-of store)))
+          (list (class-of target) (class-of storage)))
   (assume (<= 0 start end (ring-buffer-num-entries rb))
           "start/end index out of range:" (list start end))
   (assume (and (<= 0 tstart)
                (<= (+ tstart (- end start)) (size-of target)))
           "tstart out of range:" tstart)
-  (unless (or (zero? (ring-buffer-num-entries rb))
-              (= start end))
-    (let ([h (modulo (+ (ring-buffer-head rb) start)
-                     (ring-buffer-capacity rb))]
-          [t (modulo (+ (ring-buffer-head rb) end)
-                     (ring-buffer-capacity rb))])
-      (if (< h t)
-        (fill-result! h t 0 0)
-        (fill-result! h (ring-buffer-capacity rb) 0 t))))
-  (undefined))
+
+  (let loop ([k tstart]
+             [subvecs (ring-buffer->xsubvectors rb start end)])
+    (match subvecs
+      [() (undefined)]
+      [(vec s e . rest) (fill! target k vec s e) (loop (+ k (- e s)) rest)])))
 
 ;;
 ;; Sequence protocol

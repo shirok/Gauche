@@ -1,3 +1,8 @@
+2021-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/data/ring-buffer.scm: Rename 'flat-vector' to 'xvector',
+	  and rewrote them using ring-buffer->xsubvectors.
+
 2021-03-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uuid.scm (uuid-random-source): Make this a parameter.
