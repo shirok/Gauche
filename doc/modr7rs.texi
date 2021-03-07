@@ -5163,7 +5163,7 @@ a boolean indicating if the entry is actually deleted.
 実際に削除されたエントリの数を返します。
 
 組み込みの@code{hash-table-delete!}と違うのは次の2点です。
-組み込みはkeyをひとつしか取らず、そえが実際に削除されたかどうかをブール値で返します。
+組み込みはkeyをひとつしか取らず、それが実際に削除されたかどうかをブール値で返します。
 @c COMMON
 @end defun
 
