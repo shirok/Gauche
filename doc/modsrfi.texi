@@ -4524,30 +4524,57 @@ Gaucheの引数順は、R7RS、srfi-43およびsrfi-133の@var{vector-copy!}と
 
 @deftp {Module} srfi-69
 @mdindex srfi-69
+@c EN
 This module has been superseded by R7RS @code{scheme.hash-table}
 (@pxref{R7RS hash tables}).  New code should use it instead.
+@c JP
+このモジュールはR7RSの@code{scheme.hash-table}により更改されています。
+(@ref{R7RS hash tables}参照)。新たなコードはそちらを使うようにしてください。
+@c COMMON
 
+@c EN
 This is a thin adaptor on Gauche's built-in hashtables
 (@pxref{Hashtables}).  This is provided for the compatibility
 to the portable libraries; the hashtable object created by
 this module's @code{make-hash-table} is the same as the one
 created by Gauche's built-in, and you can pass the table to
 both APIs.
+@c JP
+このモジュールは、Gauche組み込みのハッシュテーブルのごく薄いラッパーです
+(@ref{Hashtables}参照)。このsrfiを要求するライブラリへの互換性のためだけに
+提供されています。このモジュールの@code{make-hash-table}で作られるハッシュテーブルは
+Gauche組み込みのハッシュテーブルそのものなので、どちらのAPIにも渡せます。
+@c COMMON
 @end deftp
 
+@c EN
 Here's a summary of difference between srfi-69 and Gauche's built-in
 hash table API:
+@c JP
+srfi-69とGaucheのAPIの違いを挙げておきます:
+@c COMMON
 
 @itemize
 @item
+@c EN
 The constructor @code{make-hash-table}, as well as @code{alist->hash-table},
 takes equality predicate and hash function, instead of a single
-comparator argument.
+comparator argument as Gauche does.
+@c JP
+コンストラクタ@code{make-hash-table}および@code{alist->hash-table}は、
+Gaucheでは比較器を取りますが、srfi-69では等価述語とハッシュ関数を取ります。
+@c COMMON
 @item
+@c EN
 The hash function passed to @code{srfi-69}'s @code{make-hash-table}
 takes two arguments, an object to calculate a hash value,
 and a positive integer that limits the range of the hash value.
+@c JP
+srfi-69の@code{make-hash-table}に渡されるハッシュ関数は、
+ハッシュ値を計算するオブジェクトに加え、ハッシュ値の範囲を指定する整数を取ります。
+@c COMMON
 @item
+@c EN
 @code{Srfi-69}'s primary hash table accessor is @code{hash-table-ref},
 which takes a thunk to be called when the table doesn't have an
 entry for the given key, while Gauche's @code{hash-table-get} takes
@@ -4555,14 +4582,32 @@ a fallback value for that.
 @code{Srfi-69} also has @code{hash-table-ref/default},
 which takes a fallback value like Gauche's @code{hash-table-get},
 but the default value can't be omitted.
+@c JP
+srfi-69の基本アクセサである@code{hash-table-ref}は、
+キーが登録されていなかった場合のデフォルト値を得るために、サンクを取ります。
+Gaucheの@code{hash-table-ref}はデフォルト値そのものを取ります。
+srfi-69の@code{hash-table-ref/default}が、Gaucheの@code{hash-table-ref}に
+相当します。(但し@code{hash-table-ref/default}はデフォルト値を省略できません)。
+@c COMMON
 @item
+@c EN
 The basic iterator of @code{srfi-69} is called @code{hash-table-walk},
 which is Gauche's @code{hash-table-for-each}.  The srfi name is chosen
 to avoid conflict with existing Scheme implementations.
+@c JP
+Gaucheの@code{hash-table-for-each}に相当するイテレータはsrfi-69では
+@code{hash-table-walk}です。
+srfiは既存の実装と名前がぶつからないようにこの名前を採用しました。
+@c COMMON
 @end itemize
 
+@c EN
 The following procedures are the same as Gauche's built-in ones.
 @xref{Hashtables}, for the details.
+@c JP
+以下の手続きはGauche組み込みのものと同じです。
+@ref{Hashtables}を参照してください。
+@c COMMON
 
 @example
 hash-table?       hash-table-delete!   hash-table-exists?
