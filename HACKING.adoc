@@ -145,10 +145,9 @@ in ChangeLog, I'll update it separately.
 
 We aren't picky about coding style, but adopt some Gauche-specific
 style, especially for Gauche macros.  For Emacs users, such style is
-written in `.dir-locals.el` in the top source directory.  If you're
-using lisp-local package (available from MELPA), Emacs will ask you to
-apply the settings.  Answering with `!` causes Emacs to remember your
-choice and the settings will be applied in future without asking.
+written in `.dir-locals.el` in the top source directory.  The Emacs
+package `lisp-local` (available from MELPA) can automatically apply
+the settings.
 
 
 == TROUBLESHOOTING
