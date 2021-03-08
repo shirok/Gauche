@@ -5190,14 +5190,28 @@ and insert a new entry associating @var{key} and the value
 @defun hash-table-update! ht key updater :optional failure success
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-update!-r7}.
 It takes different optional arguments from built-in @code{hash-table-update!}.
+@c JP
+これは組み込みの@code{hash-table-update!-r7}と同じです。
+組み込みの@code{hash-table-update!}とは取る引数が異なります。
+@c COMMON
 
+@c EN
 @var{Updater} is a procedure that takes one argument,
 @var{failure} is a thunk, and @var{success} is a procedure
 that takes one argument.
+@c JP
+@var{updater}は1引数の手続き、
+@var{failure}はサンク、@var{success}は1引数の手続きです。
+@c COMMON
 
+@c EN
 Works the same as follows, except maybe more efficiently.
+@c JP
+次の式と同様に動作しますが、より効率が良いかもしれません。
+@c COMMON
 @example
 (hash-table-set! ht key (updater (hash-table-ref ht key failure success)))
 @end example
@@ -5206,89 +5220,183 @@ Works the same as follows, except maybe more efficiently.
 @defun hash-table-pop! ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-pop!-r7}.
 It is a completely different procedure as built-in @code{hash-table-pop!}.
+@c JP
+これは組み込みの@code{hash-table-pop!-r7}と同じです。
+組み込みの@code{hash-table-pop!}とは全く異なる手続きです。
+@c COMMON
 
+@c EN
 Removes an arbitrary entry in the hash table @var{ht}, and
 returns the removed entry's key and value as two values.
+@c JP
+@var{ht}から任意のエントリをひとつ削除じ、削除したエントリのキーと値を
+二つの返り値として返します。
+@c COMMON
 
+@c EN
 If @var{ht} is empty, an error is signalled.
+@c JP
+@var{ht}が空であればエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun hash-table-find proc ht failure
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-find-r7}.
 It takes different arguments from built-in @code{hash-table-find}.
+@c JP
+これは組み込みの@code{hash-table-find-r7}と同じです。
+組み込みの@code{hash-table-find}とは引数が異なります。
+@c COMMON
 
+@c EN
 Calls @var{proc} with a key and a value of each entry in @var{ht},
 until @var{proc} returns non-false value.  If @var{proc} returns
 non-false value, @code{hash-table-find} immediately returns it.
 If @var{proc} returns @code{#f} for all entries, calls a thunk
 @var{failure} and returns its result.
+@c JP
+@var{ht}内のひとつのキーと値を引数にして@var{proc}を呼び出します。
+@var{proc}が真の値を返したら、@code{hash-table-find}はそれを直ちに返します。
+そうでなければ、別のキーと値で@var{proc}を呼び出し、全てのキーと値について
+試すまで繰り返します。
+全てのキーと値について@var{proc}が偽を返した場合は、@var{failure}サンクを呼び出し
+それを結果とします。
+@c COMMON
 @end defun
 
-@defun hash-table-count ht
+@defun hash-table-count proc ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-count-r7}.
+@c JP
+これは組み込みの@code{hash-table-count-r7}と同じです。
+@c COMMON
 
+@c EN
 Calls @var{proc} with a key and a value of each entry in @var{ht},
 and returns the number of times when @var{proc} returned true.
+@c JP
+ハッシュテーブル@var{ht}の各エントリについて@var{proc}をキーと値を引数にして呼び出し、
+@var{proc}が真の値を返した回数をこの手続きの値とします。
+@c COMMON
 @end defun
 
 @defun hash-table-map proc cmpr ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-map-r7}.
 This is different from built-in @code{hash-table-map}.
+@c JP
+これは組み込みの@code{hash-table-map-r7}と同じです。
+組み込みの@code{hash-table-map}とは異なる手続きです。
+@c COMMON
 
+@c EN
 Creates a fresh hashtable with a key comparator @var{cmpr}, then
 populate it by inserting the key and the result of applying @var{proc}
 on the value of each entry in @var{ht}.
+@c JP
+キーの比較を比較器@var{cmpr}で行う新たなハッシュテーブルを作成し、
+@var{ht}の各エントリのキーと値を@var{proc}に渡し、
+新たなハッシュテーブルにそのキーと@var{proc}の戻り値を新たなエントリとして作成します。
+@c COMMON
 @end defun
 
 @defun hash-table-map! proc ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-map!-r7}.
+@c JP
+これは組み込みの@code{hash-table-map-r7!}と同じです。
+@c COMMON
 
-Calls @var{proc} on the value of each entry in @var{ht}, and update
-the entry with the result of @var{proc}.
+@c EN
+Calls @var{proc} on the key and value of each entry in @var{ht}, and update
+the entry of the key with the result of @var{proc}.
+@c JP
+@var{proc}を@var{ht}の各エントリのキーと値を引数にして呼び出し、
+そのキーに対応する値を@var{proc}の戻り値で置き換えます。
+@c COMMON
 @end defun
 
 @defun hash-table-map->list proc ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-map->list-r7},
 and same as built-in @code{hash-table-map} (not the @code{scheme.hash-table}'s
 @code{hash-table-map}) except the order of the arguments.
+@c JP
+これは組み込みの@code{hash-table-map->list-r7}と同じで、
+また組み込みの@code{hash-table-map}とは引数の順序が異なるだけの違いです
+(@code{scheme.hash-table}の@code{hash-table-map}は全然異なる手続きです)。
+@c COMMON
 
+@c EN
 Apply @var{proc} on a key and a value of each entry in @var{ht},
 in arbitrary order, and returns a list of results.
+@c JP
+@var{ht}の各エントリのキーと値に対して@var{proc}を呼び出し、その結果をリストにして
+返します。エントリの順序は規定されません。
+@c COMMON
 @end defun
 
 @defun hash-table-for-each proc ht
 @defunx hash-table-for-each ht proc
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 Apply @var{proc} on a key and a value of each entry in @var{ht}.  The
 result of @var{proc} is discarded.  Returns an unspecified value.
+@c JP
+@var{proc}を@var{ht}の各エントリのキーと値を引数にして呼び出します。
+@var{proc}の戻り値は捨てられます。この手続きの戻り値は定義されません。
+@c COMMON
 
+@c EN
 This procedure allows arguments in both order for the compatibility---
 the first way is the @code{scheme.hash-table} recommended one,
 which is the same as built-in @code{hash-table-for-each-r7},
 and the latter way is compatible with srfi-69, which is
 the same as built-in @code{hash-table-for-each}.
+@c JP
+この手続きは、互換性のために2通りの順序で引数を取ります。
+@code{scheme.hash-table}が推奨するのは最初の方法です。
+組み込みの@code{hash-table-for-each-r7}も同じです。
+二番目の呼び出しはsrfi-69で規定されていた方法で、
+組み込みの@code{hash-table-for-each}はこちらの順序です。
+@c COMMON
 
+@c EN
 It is unfortunate that this compatibility thing is extremely confusing;
 especially in Gauche, you can make anything applicable, so the distinction
 between procedures and other objects is blurred.
+@c JP
+残念ながら、この互換性の問題は大きな混乱のもとになるでしょう。
+特にGaucheでは色々なオブジェクトを適用可能にできるので、
+手続きとそれ以外のオブジェクトの境目ははっきりしていません。
+@c COMMON
 
+@c EN
 We recommend that you stick to one way or another within a module; if
 your module uses built-in interface, use @code{(hash-table-for-each ht proc)}.
 If your module imports @code{scheme.hash-table},
 use @code{(hash-table-for-each proc ht)}.
+@c JP
+ひとつのモジュール内では統一した順序で呼び出すことを推奨します。
+組み込みのハッシュテーブルAPIを使っているなら@code{(hash-table-for-each ht proc)}の
+順序を、@code{scheme.hash-table}をインポートしたなら
+@code{(hash-table-for-each proc ht)}という順序を使うと良いでしょう。
+@c COMMON
 @end defun
 
 @defun hash-table-fold proc seed ht
