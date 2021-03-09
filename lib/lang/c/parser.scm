@@ -69,8 +69,8 @@
 
 ;; multiple choice infix.  assuming sep and op are the same.
 (define ($infix-n term associativity seps)
-  ($binding ($seq ($: x term)
-                  ($: xs ($many ($lift list ($one-of seps) term))))
+  ($binding ($: x term)
+            ($: xs ($many ($lift list ($one-of seps) term)))
             (ecase associativity
               [(left)  (fold (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)]
               [(right) (fold-right (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)])))
@@ -85,28 +85,26 @@
 
 ;; 6.5.2 Postfix operators
 (define %postfix-expression
-  ($lazy
-   ($binding ($or ($: prim %primary-expression)
+  ($lbinding ($or ($: prim %primary-expression)
                   ($seq ($: cast ($between %LP %type-name %RP))
                         ($: init ($between %LC %initializer-list %RC))))
              (if (undefined? prim)
                `(cast ,cast ,init)
-               prim))))
+               prim)))
 
 ;; 6.5.3 Unary operators
 ;;  sizeof(typename) will be recognized later, for at this stage we can't
 ;;  separate typename from identifiers.
 (define %unary-expression
-  ($binding ($seq ($: ops ($many ($one-of '(++ -- + - & * ~ ! sizeof))))
-                  ($: main %postfix-expression))
+  ($binding ($: ops ($many ($one-of '(++ -- + - & * ~ ! sizeof))))
+            ($: main %postfix-expression)
             (fold-right (^[op r] `(,op ,r)) main ops)))
 
 ;; 6.5.4 Cast operators
 (define %cast-expression
-  ($lazy
-   ($binding ($seq ($: types ($many ($between %LP %type-name %RP)))
-                   ($: main %unary-expression))
-             (fold-right (^[type r] `(cast ,type ,r)) main types))))
+  ($lbinding ($: types ($many ($between %LP %type-name %RP)))
+             ($: main %unary-expression)
+             (fold-right (^[type r] `(cast ,type ,r)) main types)))
 
 ;; 6.5.5 Multiplicative operators
 (define %multiplicative-expression
@@ -150,21 +148,21 @@
 
 ;; 6.5.15 Conditional operator
 (define %conditional-expression
-  ($lazy ($binding ($seq ($: main %logical-expression)
-                         ($optional ($seq ($. '?)
-                                          ($: then %expression)
-                                          ($. '|:|)
-                                          ($: else %conditional-expression))))
-                   (if (undefined? then)
-                     main
-                     `(?: ,main ,then ,else)))))
+  ($lbinding ($: main %logical-expression)
+             ($optional ($seq ($. '?)
+                              ($: then %expression)
+                              ($. '|:|)
+                              ($: else %conditional-expression)))
+             (if (undefined? then)
+               main
+               `(?: ,main ,then ,else))))
 
 ;; 6.5.16 Assignment operators
 (define %assignment-expression
-  ($binding ($seq ($: uexprs ($many ($lift list %unary-expression
-                                           ($one-of '(= *= /= %= += -=
-                                                        <<= >>= &= ^= |\|=|)))))
-                  ($: main %conditional-expression))
+  ($binding ($: uexprs ($many ($lift list %unary-expression
+                                     ($one-of '(= *= /= %= += -=
+                                                  <<= >>= &= ^= |\|=|)))))
+            ($: main %conditional-expression)
             (fold-right (^[uexpr r] `(,(cadr uexpr) ,(car uexpr) ,r))
                         main uexprs)))
 
@@ -197,16 +195,15 @@
 
 ;; 6.7.2.1 Structure and union specifiers
 (define %struct-declarator
-  ($lazy
-   ($binding ($or ($seq ($: decl %declarator)
-                        ($: bitfield ($seq ($. '|:|)
-                                           %constant-expression)))
-                  ($: bitfield ($seq ($. '|:|)
-                                     %constant-expression)))
-             (if (undefined? bitfield)
-               decl
-               `(,(if (undefined? decl) #f decl)
-                 ,bitfield)))))
+  ($lbinding ($or ($seq ($: decl %declarator)
+                       ($: bitfield ($seq ($. '|:|)
+                                          %constant-expression)))
+                 ($: bitfield ($seq ($. '|:|)
+                                    %constant-expression)))
+            (if (undefined? bitfield)
+              decl
+              `(,(if (undefined? decl) #f decl)
+                ,bitfield))))
 
 (define %struct-declaration
   ($lift list
@@ -217,17 +214,17 @@
   ($between %LC ($sep-by %struct-declaration ($. '|\;|)) %RC))
 
 (define %struct-or-union-specifier
-  ($binding ($seq ($: key ($one-of '(struct union)))
-                  ($or ($seq ($: tag %identifier)
-                             ($optional ($: mem %struct-members)))
-                       ($: mem %struct-members)))
+  ($binding ($: key ($one-of '(struct union)))
+            ($or ($seq ($: tag %identifier)
+                       ($optional ($: mem %struct-members)))
+                 ($: mem %struct-members))
             `(,key (if (undefined? tag) #f tag)
                    ,@(if (undefined? mem) '() mem))))
 
 ;; 6.7.2.2 Enumeration specifiers
 (define %enumerator
-  ($binding ($seq ($: enum %identifier)
-                  ($: init ($optional ($seq ($. '=) %constant-expression))))
+  ($binding ($: enum %identifier)
+            ($: init ($optional ($seq ($. '=) %constant-expression)))
             (if (undefined? init)
               enum
               `(,enum ,init))))
@@ -236,10 +233,10 @@
   ($between %LC ($sep-end-by %enumerator ($. '|,|)) %RC))
 
 (define %enum-specifier
-  ($binding ($seq ($. 'enum)
-                  ($or ($seq ($: tag %identifier)
-                             ($optional ($: lis %enumerators)))
-                       ($: lis %enumerators)))
+  ($binding ($. 'enum)
+            ($or ($seq ($: tag %identifier)
+                       ($optional ($: lis %enumerators)))
+                 ($: lis %enumerators))
             `(enum (if (undefined? tag) #f tag)
                    ,@(if (undefined? lis) '() lis))))
 
@@ -248,34 +245,32 @@
 
 ;; 6.7.5 Declarators
 (define %declarator
-  ($lazy
-   ($binding ($seq ($: ptr ($many %pointer))
-                   ($: main ($or %identifier
-                                 ($between %LP %declarator %RP)))
-                   ($: post ($many ($or %array-decl-suffix
-                                        %function-decl-suffix))))
-             `(,main :: (,@ptr @,post)))))
+  ($lbinding ($: ptr ($many %pointer))
+             ($: main ($or %identifier
+                           ($between %LP %declarator %RP)))
+             ($: post ($many ($or %array-decl-suffix
+                                  %function-decl-suffix)))
+             `(,main :: (,@ptr @,post))))
 
 (define %pointer
   ($lift cons ($. '*) ($many %type-qualifier)))
 
 (define %array-decl-suffix
-  ($binding ($seq %LC
-                  ($: quals ($many ($or ($. 'static)
-                                        %type-qualifier)))
-                  ($: assign ($optional ($or ($. '*)
-                                             %assignment-expression)))
-                  %RC)
+  ($binding %LC
+            ($: quals ($many ($or ($. 'static)
+                                  %type-qualifier)))
+            ($: assign ($optional ($or ($. '*)
+                                       %assignment-expression)))
+            %RC
             `(array ,quals ,assign)))
 
 (define %parameter-declaration
-  ($lazy
-   ($binding ($seq ($: spec %declaration-specifiers)
-                   ($: decl ($or %declarator
-                                 ($optional %abstract-declarator))))
+  ($lbinding ($: spec %declaration-specifiers)
+             ($: decl ($or %declarator
+                           ($optional %abstract-declarator)))
              (if decl
                `(,spec ,decl)
-               spec))))
+               spec)))
 
 (define %parameter-type-list
   ($binding ($: params ($sep-by ($or %parameter-declaration
@@ -288,10 +283,10 @@
                 params)))
 
 (define %function-decl-suffix
-  ($binding ($seq %LP
-                  ($: params ($or ($try %parameter-type-list)
-                                  ($sep-by %identifier ($. '|,|))))
-                  %RP)
+  ($binding %LP
+            ($: params ($or ($try %parameter-type-list)
+                            ($sep-by %identifier ($. '|,|))))
+            %RP
             `(function ,@params)))
 
 ;; 6.7.7 Type definitions
@@ -299,9 +294,9 @@
 
 ;; 6.7 Declarations
 (define %declaration
-  ($lazy ($binding ($seq ($: specs %declaration-specifiers)
-                         ($: decls ($sep-by %init-declarator ($. '|,|))))
-                   `(decl ,specs ,decls))))
+  ($lbinding ($: specs %declaration-specifiers)
+             ($: decls ($sep-by %init-declarator ($. '|,|)))
+             `(decl ,specs ,decls)))
 
 (define %declaration-specifiers
   ($many1 ($or %storage-class-specifier
@@ -310,32 +305,29 @@
                %function-specifier)))
 
 (define %init-declarator
-  ($lazy
-   ($binding ($seq ($: decl %declarator)
-                   ($: init ($optional ($seq ($. '=) %initializer))))
+  ($lbinding ($: decl %declarator)
+             ($: init ($optional ($seq ($. '=) %initializer)))
              (if init
                `(,decl ,init)
-               `(,decl)))))
+               `(,decl))))
 
 ;; 6.7.6 Type names
 (define %abstract-declarator
-  ($lazy
-   ($binding ($seq ($: ptrs ($many %pointer))
-                   ($: decl %direct-abstract-declarator))
-             (fold-right (^[p r] `(,p ,r)) decl ptrs))))
+  ($lbinding ($: ptrs ($many %pointer))
+             ($: decl %direct-abstract-declarator)
+             (fold-right (^[p r] `(,p ,r)) decl ptrs)))
 
 (define %direct-abstract-declarator
-  ($lazy
-   ($binding ($seq ($: paren ($optional $between %LC %abstract-declarator %RC))
-                   ($: suff ($many ($or ($try ($seq %LC ($. '*) %RC))
-                                        %array-decl-suffix
-                                        %function-decl-suffix))))
+  ($lbinding ($: paren ($optional $between %LC %abstract-declarator %RC))
+             ($: suff ($many ($or ($try ($seq %LC ($. '*) %RC))
+                                  %array-decl-suffix
+                                  %function-decl-suffix)))
              ;; for now
-             (cons paren suff))))
+             (cons paren suff)))
 
 (define %type-name
-  ($binding ($seq ($: specs ($many1 ($or %type-specifier %type-qualifier)))
-                  ($: decl ($optional %abstract-declarator)))
+  ($binding ($: specs ($many1 ($or %type-specifier %type-qualifier)))
+            ($: decl ($optional %abstract-declarator))
             (list specs decl)))
 
 ;; 6.7.8 Initialization
