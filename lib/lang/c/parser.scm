@@ -358,8 +358,80 @@
               %iteration-statement
               %jump-statement)))
 
-;; more to come...
+;; 6.8.1 Labeled statement
+(define %labeled-statement
+  ($or ($binding ($. 'case) ($: expr %constant-expression) ($. ':)
+                 ($: stmt %statement)
+                 `(case ,expr ,stmt))
+       ($binding ($. 'default) ($. ':) ($: stmt %statement)
+                 `(default ,stmt))
+       ($binding ($: label %identifier) ($. ':) ($: stmt %statement)
+                 `(label ,label ,stmt))))
 
+;; 6.8.2 Compound statement
+(define %compound-statement
+  ($binding %LC
+            ($: stmts ($many ($or %declaration %statement)))
+            %RC
+            `(begin ,stmts)))
+
+;; 6.8.3 Expression and null statements
+(define %expression-statement
+  ($binding ($: expr ($optional %expression))
+            ($. '|\;|)
+            (or expr '(begin))))
+
+;; 6.8.4 Selection statements
+(define %selection-statement
+  ($or ($binding ($. 'if) %LP ($: test %expression) %RP ($: then %statement)
+                 ($optional ($seq ($. 'else) ($: else %statement)))
+                 (if (undefined? else)
+                   `(if ,test ,then)
+                   `(if ,test ,then ,else)))
+       ($binding ($. 'switch) %LP ($: test %expression) %RP ($: stmt %statement)
+                 `(switch ,test ,stmt))))
+
+;; 6.8.5 Iteration statements
+(define %iteration-statement
+  ($or ($binding ($. 'while) %LP ($: test %expression) %RP ($: body %statement)
+                 `(while ,test ,body))
+       ($binding ($. 'do) ($: body %statement)
+                 ($. 'while) %LP ($: test %expression) ($. '|\;|)
+                 `(do-while ,test ,stmt))
+       ($binding ($. 'for) %LP
+                 ($: decl ($optional %declaration))
+                 ($: init ($optional %expression))
+                 ($. '|\;|)
+                 ($: test ($optional %expression))
+                 ($optional ($. '|\;|)
+                            ($: update ($optional %expression)))
+                 %RP
+                 ($: body %statement)
+                 (if decl
+                   `(for ((,decl ,init) ,test) ,body)
+                   `(for (,init ,test ,update) ,body)))))
+
+;; 6.8.6 Jump statement
+(define %jump-statement
+  ($or ($binding ($. 'goto) ($: dest %identifier)
+                 `(goto ,identifier))
+       ($seq ($. 'continue) 'continue)
+       ($seq ($. 'break) 'break)
+       ($binding ($. 'return) ($: expr ($optional %expression))
+                 `(return ,@(if expr `(,expr) '())))))
+
+;; 6.9 External definitions
+(define %external-declaration ($lazy ($or %function-definition %declaration)))
+
+(define %translation-unit ($many %external-declaration))
+
+;; 6.9.1 Function definitions
+(define %function-definition
+  ($binding ($: spec %declaration-specifiers)
+            ($: decl %declarator)
+            ($: lis ($many %declaration))
+            ($: body %compound-statement)
+            `(,spec ,decl ,lis ,body)))
 
 ;;;
 ;;; Preprocessor
