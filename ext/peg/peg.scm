@@ -68,7 +68,7 @@
           $symbol $string $string-ci
           $char $one-of $none-of
           $satisfy $match1 $match1*
-          $binding
+          $binding $lbinding
 
           $->rope $->string $->symbol rope->string rope-finalize
           )
@@ -880,14 +880,21 @@
         (build-parser pat (quasirename r `(car s)) #f)]
        ))))
 
-;; $binding <peg-bind-expression> [(=> FAIL)] <body>
+;; $binding  <peg-bind-expression> ... [(=> FAIL)] <body>
+;; $lbinding <peg-bind-expression> ... [(=> FAIL)] <body>
 ;;   EXPERIMENTAL
 ;;   <peg-bind-expression> is an expression that yields a parser,
 ;;   but allowed to contain a form ($: var <peg-bind-expression>).
 ;;   When inner <peg-bind-expression> accepts an input, its semantic
-;;   value is set to var.   Then <body> is evaluated with all such
+;;   value is set to var.
+;;
+;;   The parser runs as if ($seq <peg-bind-expression> ...), then
+;;   if it succeeds, evaluate <body> with all such
 ;;   vars to be bound.  If a branch of <peg-bind-expression> isn't
 ;;   tried, vars included in it is bound to #<undef>.
+;;
+;;   $lbinding is similar to $binding, except that it behaves as if
+;;   entire expression is enclosed in $lazy.
 ;;
 ;;   An obvious translation is to create an enclosing scope, binds all
 ;;   vars to some default value, and convert ($: var expr) to
@@ -909,6 +916,10 @@
 
 (define %binding-storage
   (make-parameter 'accessing-binding-storage-out-of-context))
+
+(define-syntax $lbinding
+  (syntax-rules ()
+    ([_ x ...] ($lazy ($binding x ...)))))
 
 (define-syntax $binding
   (er-macro-transformer
@@ -952,10 +963,10 @@
          (quasirename r
            `(return-result ,result ,tail))))
 
-     (define (build-parser parse body fail)
-       (receive (parse. vs) (walk parse '())
+     (define (build-parser parsers body fail)
+       (receive (parsers. vs) (walk parsers '())
          (quasirename r
-           `(let ([parser ,parse.])
+           `(let ([parser ($seq ,@parsers.)])
               (^[s]
                 ,@(build-fail-decl fail)
                 (let1 storage (make-vector ,(length vs))
@@ -975,10 +986,15 @@
                           (r's))
                         (return-failure rr v s))))))))))
 
-     (match f
-       [(_ parse ((? =>?) fail) body) (build-parser parse body fail)]
-       [(_ parse body) (build-parser parse body #f)]
-       [_ (error "Malformed $binding:" f)]))))
+     (define (bad) (error "Malformed $binding:" f))
+
+     (let loop ([forms (cdr f)] [ps '()])
+       (match forms
+         [(((? =>?) fail) body) (build-parser (reverse ps) body fail)]
+         [(((? =>?) fail) body ...) (bad)]
+         [(body) (build-parser (reverse ps) body #f)]
+         [(parser . rest) (loop rest (cons parser ps))]
+         [() (bad)])))))
 
 ;;;============================================================
 ;;; String parsers

@@ -891,12 +891,12 @@
   (test-fail "$binding fail proc" '(1 "d") p "cy"))
 
 (letrec ([p (lambda (q)
-              ($binding ($seq ($. "a")
-                              ($: y q)
-                              ($: x ($any))
-                              ($. "z"))
+              ($binding ($. "a")
+                        ($: y q)
+                        ($: x ($any))
+                        ($. "z")
                         (list x y)))]
-         [q ($binding ($seq ($many ($or ($: x ($. "b")) ($: y ($. "c")))))
+         [q ($binding ($many ($or ($: x ($. "b")) ($: y ($. "c"))))
                       (list x y))])
   (test-succ "$binding dynamically nested" '(#\d ("b" "c"))
              (p q) "abcbcdz")
