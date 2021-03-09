@@ -1084,7 +1084,7 @@
    [(char-set? item) ($one-of item)]
    [(char? item) ($char item)]
    [(string? item) ($string item)]
-   [(symbol? item) ($symbol item)]
+   [(symbol? item) ($satisfy (cut eq? <> item) item)]
    [else (error "Bad item: $. requires a char, a char-set, a string, \
                  or a symbol, but got:" item)]))
 
@@ -1094,8 +1094,7 @@
      [(char-set? items)
       ($satisfy (^x (and (char? x) (char-set-contains? items x)))
                 items)]
-     [(list? items) ($or (apply $or (map $. items))
-                         :else ($fail items))]
+     [(list? items) ($expect (apply $or (map $. items)) items)]
      [else (error "$one-of requires a charset or a list of items, \
                    but got:" items)]))
   (er-macro-transformer
@@ -1105,7 +1104,7 @@
         (quasirename r
           `($satisfy (^[x] (and (char? x) (char-set-contains? ,items x)))
                      ',items))]
-       [(_ (items ...))
+       [(_ ('quote (items ...)))
         (if (every (^x (or (char? x) (symbol? x))) items)
           (quasirename r
             `($satisfy (^[x] (memv x ',items)) ',items))

@@ -119,7 +119,11 @@
 (test-succ "$one-of" #\c ($one-of '(#\a #\b #\c)) "c")
 (test-succ "$one-of" #\c ($one-of '("ab" #\c)) "c")
 (test-fail "$one-of" '(0 (#\a #\b #\c)) ($one-of '(#\a #\b #\c)) "z")
-(test-fail "$one-of" '(0 ("abc" "abd" "acd")) ($one-of '("abc" "abd" "acd")) "a")
+(test-fail "$one-of" '(0 ("abc" "abd" "acd"))
+           ($one-of '("abc" "abd" "acd")) "a")
+(let ((var #f))
+  (set! var '("a" "b" "c")) ;suppress optimization
+  (test-succ "$one-of" "b" ($one-of var) "b"))
 (test-succ "$none-of" #\j ($none-of #[A-Z]) "j")
 (test-succ "$string-ci" "aBC" ($string-ci "abc") "aBCdef")
 (test-fail "$string-ci" '(0 "abc") ($string-ci "abc") "012")
@@ -537,6 +541,23 @@
 (test* "peg-parse-port cont" '("aaaa" #\b #\b #\c)
        (call-with-input-string "aaaabbc"
          (cut peg-parse-port ($->rope ($many ($. #\a))) <> cons)))
+
+;;;============================================================
+;;; Token parsing
+;;;
+
+(test-section "token parsing")
+
+(let ()
+  (define %a ($many1 ($. 'a)))
+  (define %bcd ($many1 ($one-of '(b c d))))
+  (define %p ($many ($lift list %a %bcd)))
+
+  (test* "token parsing"
+         '(((a) (b c)) ((a) (d)) ((a a) (b)) ((a) (c d c)))
+         (peg-run-parser %p '(a b c a d a a b a c d c)))
+  )
+
 
 ;;;============================================================
 ;;; Examples
