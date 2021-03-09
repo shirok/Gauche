@@ -65,7 +65,7 @@
 
           $any $eos $.
 
-          $symbol $string $string-ci
+          $string $string-ci
           $char $one-of $none-of
           $satisfy $match1 $match1*
           $binding $lbinding
@@ -1062,10 +1062,6 @@
   (assume-type c <char>)
   ($satisfy (^x (and (char? x) (char-ci=? c x)))
             (list->char-set c (char-upcase c) (char-downcase c))))
-
-(define ($symbol sym)
-  (assume-type sym <symbol>)
-  ($seq ($string (symbol->string sym)) ($return sym)))
 
 ;; Anything except end of stream.
 (define-inline ($any)

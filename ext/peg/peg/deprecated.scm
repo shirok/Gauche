@@ -14,7 +14,7 @@
           $followed-by $skip-many $skip-many1 $count $alternate
           $match $many-chars
 
-          $s $c $y)
+          $s $c $y $symbol)
 
   ;; $do clause ... body
   ;;   where
@@ -52,6 +52,9 @@
   (define ($c x) ($char x))
 
   (define ($y x) ($symbol x))
+  (define ($symbol sym)
+    (assume-type sym <symbol>)
+    ($seq ($string (symbol->string sym)) ($return sym)))
 
   (define (anychar s)
     (if (pair? s)
@@ -81,4 +84,3 @@
       (return-failure/expect "end of input" s)
       (return-result (eof-object) s)))
   )
-

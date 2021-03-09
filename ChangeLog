@@ -3,6 +3,9 @@
 	* ext/peg/peg.scm ($one-of, $.): Fixed symbol matching. We've doing
 	  something different.  ($. 'foo) should match the symbol itself
 	  in the token sream.
+	  ($symbol): Moved to parser.peg.deprecated.  It was never documented,
+	  and the name is ambiguous, for it looks like it matches input symbol
+	  token.
 
 2021-03-06  Shiro Kawai  <shiro@acm.org>
 
