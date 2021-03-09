@@ -108,14 +108,15 @@
                     ($sep-by ($seq0 %value %ws) %value-separator)
                     %end-array))))
 
+(define %sign ($optional ($. #[+-])))
+(define %digits ($many1 ($. #[\d])))
+
 (define %number
-  (let* ([%sign ($optional ($->rope ($one-of #[+-])))]
-         [%digits ($->rope ($many ($. #[\d]) 1))]
-         [%frac ($->rope ($. #\.) ($many ($. #[\d]) 1))]
-         [%exp ($->rope ($. #[eE]) %sign %digits)])
-    ($lift ($ string->number $ string-concatenate
-              $ map rope->string $ list $*)
-           %sign %digits ($optional %frac) ($optional %exp))))
+  ($binding ($: sign   %sign)
+            ($: digits %digits)
+            ($: frac   ($optional ($->rope ($. #\.) ($many1 ($. #[\d])))))
+            ($: exp    ($optional ($->rope ($. #[eE]) %sign %digits)))
+            (string->number (rope->string (list sign digits frac exp)))))
 
 (define %unicode
   (let ([%hex4 ($lift (^s (string->number (list->string s) 16))
@@ -169,12 +170,12 @@
     ($between %dquote %string-body %dquote)))
 
 (define %object
-  (let1 %member ($let ([k %string]
-                       [ %ws ]
-                       [ %name-separator ]
-                       [v %value]
-                       [ %ws ])
-                  ($return (cons k v)))
+  (let1 %member ($binding ($: k %string)
+                          %ws
+                          %name-separator
+                          ($: v %value)
+                          %ws
+                          (cons k v))
     ($depth-check
      ($between %begin-object
                ($lift ($ build-object $ rope-finalize $)
