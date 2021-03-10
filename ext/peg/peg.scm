@@ -33,8 +33,9 @@
 ;;;
 
 (define-module parser.peg
+  (use scheme.list)
+  (use scheme.charset)
   (use srfi-13)
-  (use srfi-14)
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)
@@ -963,36 +964,71 @@
          (quasirename r
            `(return-result ,result ,tail))))
 
-     (define (build-parser parsers body fail)
-       (receive (parsers. vs) (walk parsers '())
-         (quasirename r
-           `(let ([parser ($seq ,@parsers.)])
-              (^[s]
-                ,@(build-fail-decl fail)
-                (let1 storage (make-vector ,(length vs))
-                  (parameterize ((%binding-storage storage))
-                    (receive (rr v s) (parser s)
-                      (if (parse-success? rr)
-                        ,(build-return
-                          (quasirename r
-                            `(let ,(map
-                                    (^p (let ([var (car p)]
-                                              [ind (cdr p)])
-                                          (quasirename r
-                                            `(,var (vector-ref storage ,ind)))))
-                                    vs)
-                               ,body))
-                          fail
-                          (r's))
-                        (return-failure rr v s))))))))))
+     (define (build-parser parsers vs body fail)
+       (quasirename r
+         `(let ([parser ($seq ,@parsers)])
+            (^[s]
+              ,@(build-fail-decl fail)
+              (let1 storage (make-vector ,(length vs))
+                (parameterize ((%binding-storage storage))
+                  (receive (rr v s) (parser s)
+                    (if (parse-success? rr)
+                      ,(build-return
+                        (quasirename r
+                          `(let ,(map
+                                  (^p (let ([var (car p)]
+                                            [ind (cdr p)])
+                                        (quasirename r
+                                          `(,var (vector-ref storage ,ind)))))
+                                  vs)
+                             ,body))
+                        fail
+                        (r's))
+                      (return-failure rr v s)))))))))
+
+     ;; optimization - if all the variable binding form is in the first level,
+     ;; e.g.
+     ;;   ($binding ($: x parser1)
+     ;;             ($: y parser2
+     ;;             body)
+     ;; We can simply use $lift.
+     ;;   ($lift (lambda (x y) body) parser1 parser2)
+     ;; This saves setting up value vector.
+     ;; NB: we can't do this optimization if (=> fail) is used.
+
+     ;; check if lift optimization is possible.  note that duplicate vars
+     ;; are allowed, but that can be detected with the following, for
+     ;; vars are deduped.
+     (define (liftable? first-level-parsers vars)
+       (= (length vars)
+          (count (^p (match p
+                       [((? $:?) v _) #t]
+                       [_ #f]))
+                 first-level-parsers)))
+
+     (define (build-lift-form first-level-parsers body)
+       ;; ((var . parser) ...).
+       (define vars&parsers (map (^p (match p
+                                       [((? $:?) v p) `(,v . ,p)]
+                                       [p `(,(gensym) . ,p)]))
+                                 first-level-parsers))
+       (quasirename r
+         `($lift (lambda ,(map car vars&parsers) ,body)
+                 ,@(map cdr vars&parsers))))
 
      (define (bad) (error "Malformed $binding:" f))
 
      (let loop ([forms (cdr f)] [ps '()])
        (match forms
-         [(((? =>?) fail) body) (build-parser (reverse ps) body fail)]
+         [(((? =>?) fail) body)
+          (receive (parsers. vars) (walk (reverse ps) '())
+            (build-parser parsers. vars body fail))]
          [(((? =>?) fail) body ...) (bad)]
-         [(body) (build-parser (reverse ps) body #f)]
+         [(body)
+          (receive (parsers. vars) (walk (reverse ps) '())
+            (if (liftable? ps vars)
+              (build-lift-form (reverse ps) body)
+              (build-parser parsers. vars body #f)))]
          [(parser . rest) (loop rest (cons parser ps))]
          [() (bad)])))))
 
