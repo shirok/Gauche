@@ -153,7 +153,9 @@
   extern float for goto if int inline long register restrict
   return short signed sizeof static struct switch typedef
   union unsigned void volatile while
-  _Bool _Complex _Imaginary _stdcall __declspec __attribute__)
+  _Bool _Complex _Imaginary
+  _stdcall __declspec __attribute__
+  __restrict __restrict__ __asm __asm__)
 
 ;; Identifiers (6.4.2)
 ;; (ident <symbol>)

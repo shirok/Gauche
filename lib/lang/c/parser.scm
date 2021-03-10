@@ -32,15 +32,32 @@
 ;;;
 
 (define-module lang.c.parser
+  (use file.util)
   (use util.match)
   (use parser.peg)
   (use gauche.process)
   (use gauche.config)
   (use gauche.lazy)
   (use lang.c.lexer)
+  (use srfi-13)
   (export-all)                          ;for now
   )
 (select-module lang.c.parser)
+
+;;
+;; Typename catalog.
+;;    symbol -> decl info
+;;
+;; C syntax is ambiguous that identifier can also be a type name.  We need
+;; to track previously declared type names.
+
+(define *default-typedef-table*
+  (hash-table-r7 eq-comparator
+                 '__builtin_va_list 'builtin))
+
+(define (default-typedefs) (hash-table-copy *default-typedef-table*))
+
+(define typedef-names (make-parameter (default-typedefs)))
 
 ;;;
 ;;; Parser
@@ -51,21 +68,23 @@
 (define %constant   ($match1 ('const . _)))
 (define %string-literal ($match1 ((or 'string 'wstring) . _)))
 
-(define %LP ($. '|\(|))
-(define %RP ($. '|\)|))
-(define %LC ($. '|\{|))
-(define %RC ($. '|\}|))
-(define %LB ($. '|\[|))
-(define %RB ($. '|\]|))
+(define %LP ($. #\( ))
+(define %RP ($. #\) ))
+(define %LC ($. #\{ ))
+(define %RC ($. #\} ))
+(define %LB ($. #\[ ))
+(define %RB ($. #\] ))
 
 ;; typical infix operator parser
 ;; recognize term sep term sep ... term, returns (op term ...)
 ;; if ther's no sep, just return the result of term.
 (define ($infix term sep op)
-  ($lift (^[xs] (match xs
-                  [(x0) x0]
-                  [xs `(,op ,@xs)]))
-         ($sep-by term ($. sep))))
+  ($binding ($: xs ($sep-by term ($. sep)))
+            (=> fail)
+            (match xs
+              [() (fail "at least one expression required")]
+              [(x0) x0]
+              [xs `(,op ,@xs)])))
 
 ;; multiple choice infix.  assuming sep and op are the same.
 (define ($infix-n term associativity seps)
@@ -75,30 +94,88 @@
               [(left)  (fold (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)]
               [(right) (fold-right (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)])))
 
+;;
+;; nonstandard elements
+;;
+
+;; __attribute__ extension can appear in various places.
+(define %attribute-list-item
+  ($lbinding ($: name %identifier)
+             ($: params ($optional ($between %LP
+                                             ($sep-by %expression ($. '|,|))
+                                             %RP)))
+             (if params
+               `(,name ,@params)
+               name)))
+
+(define %attribute-specifier
+  ($binding ($. '__attribute__)
+            %LP %LP
+            ($: attrs ($sep-by %attribute-list-item ($. '|,|)))
+            %RP %RP
+            `(attribute ,@attrs)))
+
+(define %attribute-specifier-list
+  ($many %attribute-specifier))
+
+;; asm can appear as a statement, or a part of declaration.  For now, we
+;; only support declataion.
+(define %asm-decl-suffix
+  ($binding ($one-of '(asm __asm __asm__))
+            %LP ($: s ($many1 %string-literal)) %RP
+            `(asm ,(string-concatenate (map cadr s)))))
+
+;;
+;; Standard syntax
+;;
+
 ;; 6.5.1 Primary expressions
 (define %primary-expression
   ($lazy ($or %identifier
               %constant
               %string-literal
-              ($bindng ($: expr ($between %LP %expression %RP))
-                       `(paren ,expr)))))
+              ($binding ($: expr ($between %LP %expression %RP))
+                        `(paren ,expr)))))
 
 ;; 6.5.2 Postfix operators
 (define %postfix-expression
   ($lbinding ($or ($: prim %primary-expression)
                   ($seq ($: cast ($between %LP %type-name %RP))
                         ($: init ($between %LC %initializer-list %RC))))
-             (if (undefined? prim)
-               `(cast ,cast ,init)
-               prim)))
+             ($: pfx ($many %postfix-element))
+             (let1 core (if (undefined? prim)
+                          `(cast ,cast ,init)
+                          prim)
+               (fold (^[pfx r] (match pfx
+                                 [(op . params) `(,op ,r ,@params)]
+                                 [op `(,op ,r)]))
+                     core pfx))))
+
+(define %postfix-element
+  ($or ($lbinding %LB ($: e %expression) %RB
+                  `(aref ,e))
+       ($lbinding %LP ($: as %argument-expression-list) %RP
+                  `(call ,@as))
+       ($binding ($. '|.|) ($: field %identifier)
+                 `(ref ,field))
+       ($binding ($. '->) ($: field %identifier)
+                 `(-> ,field))
+       ($seq ($. '++) 'post++)
+       ($seq ($. '--) 'post--)))
+
+(define %argument-expression-list
+  ($lazy ($sep-by %assignment-expression ($. '|,|))))
 
 ;; 6.5.3 Unary operators
-;;  sizeof(typename) will be recognized later, for at this stage we can't
-;;  separate typename from identifiers.
 (define %unary-expression
-  ($binding ($: ops ($many ($one-of '(++ -- + - & * ~ ! sizeof))))
-            ($: main %postfix-expression)
-            (fold-right (^[op r] `(,op ,r)) main ops)))
+  ($or ($try ($lbinding ($. 'sizeof)
+                        %LP
+                        ($: t %type-name)
+                        %RP
+                        `(sizeof ,t)))
+       ($binding ($: ops ($many ($one-of '(++ -- + - & * ~ ! sizeof))))
+                 ($: main %postfix-expression)
+                 (fold-right (^[op r] `(,op ,r)) main ops))))
 
 ;; 6.5.4 Cast operators
 (define %cast-expression
@@ -148,7 +225,7 @@
 
 ;; 6.5.15 Conditional operator
 (define %conditional-expression
-  ($lbinding ($: main %logical-expression)
+  ($lbinding ($: main %logical-or-expression)
              ($optional ($seq ($. '?)
                               ($: then %expression)
                               ($. '|:|)
@@ -159,9 +236,10 @@
 
 ;; 6.5.16 Assignment operators
 (define %assignment-expression
-  ($binding ($: uexprs ($many ($lift list %unary-expression
+  ($binding ($: uexprs ($many
+                        ($try ($lift list %unary-expression
                                      ($one-of '(= *= /= %= += -=
-                                                  <<= >>= &= ^= |\|=|)))))
+                                                  <<= >>= &= ^= |\|=|))))))
             ($: main %conditional-expression)
             (fold-right (^[uexpr r] `(,(cadr uexpr) ,(car uexpr) ,r))
                         main uexprs)))
@@ -191,15 +269,16 @@
               %typedef-name)))
 
 ;; 6.7.3 Type qualifiers
-(define %type-qualifier ($one-of '(const restrict volatile)))
+(define %type-qualifier
+  ($one-of '(const volatile restrict __restrict __restrict__)))
 
 ;; 6.7.2.1 Structure and union specifiers
 (define %struct-declarator
   ($lbinding ($or ($seq ($: decl %declarator)
-                       ($: bitfield ($seq ($. '|:|)
-                                          %constant-expression)))
-                 ($: bitfield ($seq ($. '|:|)
-                                    %constant-expression)))
+                        ($optional ($: bitfield ($seq ($. '|:|)
+                                                      %constant-expression))))
+                  ($: bitfield ($seq ($. '|:|)
+                                     %constant-expression)))
             (if (undefined? bitfield)
               decl
               `(,(if (undefined? decl) #f decl)
@@ -211,14 +290,14 @@
          ($sep-by %struct-declarator ($. '|,|))))
 
 (define %struct-members
-  ($between %LC ($sep-by %struct-declaration ($. '|\;|)) %RC))
+  ($between %LC ($end-by %struct-declaration ($. '|\;|)) %RC))
 
 (define %struct-or-union-specifier
   ($binding ($: key ($one-of '(struct union)))
             ($or ($seq ($: tag %identifier)
                        ($optional ($: mem %struct-members)))
                  ($: mem %struct-members))
-            `(,key (if (undefined? tag) #f tag)
+            `(,key ,(if (undefined? tag) #f tag)
                    ,@(if (undefined? mem) '() mem))))
 
 ;; 6.7.2.2 Enumeration specifiers
@@ -249,33 +328,38 @@
              ($: main ($or %identifier
                            ($between %LP %declarator %RP)))
              ($: post ($many ($or %array-decl-suffix
-                                  %function-decl-suffix)))
-             `(,main :: (,@ptr @,post))))
+                                  %function-decl-suffix
+                                  %asm-decl-suffix)))
+             `(,main :: (,@ptr ,@post))))
 
 (define %pointer
-  ($lift cons ($. '*) ($many %type-qualifier)))
+  ($lift cons ($. '*) ($many ($or %type-qualifier %attribute-specifier))))
 
 (define %array-decl-suffix
-  ($binding %LC
+  ($binding %LB
             ($: quals ($many ($or ($. 'static)
-                                  %type-qualifier)))
+                                  %type-qualifier
+                                  %attribute-specifier)))
             ($: assign ($optional ($or ($. '*)
                                        %assignment-expression)))
-            %RC
+            %RB
             `(array ,quals ,assign)))
 
 (define %parameter-declaration
   ($lbinding ($: spec %declaration-specifiers)
-             ($: decl ($or %declarator
+             ($: decl ($or ($try %declarator)
                            ($optional %abstract-declarator)))
              (if decl
                `(,spec ,decl)
                spec)))
 
 (define %parameter-type-list
+  ;; NB: We require at least one %parameter-declaration, for the empty parameter
+  ;; case will be handled by the next branch in %function-decl-suffix.
   ($binding ($: params ($sep-by ($or %parameter-declaration
                                      ($. '...))
-                                ($. '|.|)))
+                                ($. '|,|)
+                                1))
             (=> fail)
             (or (and-let* ([p (memq '... params)]
                            [ (not (null? (cdr p))) ])
@@ -290,19 +374,35 @@
             `(function ,@params)))
 
 ;; 6.7.7 Type definitions
-(define %typedef-name %identifier)
+(define %typedef-name
+  ($try ($binding ($: id %identifier)
+                  (=> fail)
+                  (match-let1 ('ident x) id
+                    (if (hash-table-exists? (typedef-names) x)
+                      `(type ,x)
+                      (fail "typedef name"))))))
 
 ;; 6.7 Declarations
 (define %declaration
   ($lbinding ($: specs %declaration-specifiers)
              ($: decls ($sep-by %init-declarator ($. '|,|)))
-             `(decl ,specs ,decls)))
+             %attribute-specifier-list
+             ($. '|\;|)
+             (begin
+               (when (memq 'typedef specs)
+                 (map (^d (register-typedefs! specs d)) decls))
+               `(decl ,specs ,decls))))
+
+(define (register-typedefs! specs decl)
+  (match-let1 ((('ident name) . _) . _) decl
+    (hash-table-put! (typedef-names) name (list specs decl))))
 
 (define %declaration-specifiers
   ($many1 ($or %storage-class-specifier
                %type-specifier
                %type-qualifier
-               %function-specifier)))
+               %function-specifier
+               %attribute-specifier)))
 
 (define %init-declarator
   ($lbinding ($: decl %declarator)
@@ -318,7 +418,7 @@
              (fold-right (^[p r] `(,p ,r)) decl ptrs)))
 
 (define %direct-abstract-declarator
-  ($lbinding ($: paren ($optional $between %LC %abstract-declarator %RC))
+  ($lbinding ($: paren ($optional ($between %LC %abstract-declarator %RC)))
              ($: suff ($many ($or ($try ($seq %LC ($. '*) %RC))
                                   %array-decl-suffix
                                   %function-decl-suffix)))
@@ -349,14 +449,15 @@
        ($between %LC %initializer-list %RC)))
 
 ;; 6,8 Statements and blocks
-
+;;  we need $try for %labeled-statement, for it may consume the first
+;;  identifier before failing.
 (define %statement
-  ($lazy ($or %labeled-statement
-              %compound-statement
-              %expression-statement
+  ($lazy ($or %compound-statement
               %selection-statement
               %iteration-statement
-              %jump-statement)))
+              %jump-statement
+              ($try %labeled-statement)
+              %expression-statement)))
 
 ;; 6.8.1 Labeled statement
 (define %labeled-statement
@@ -378,6 +479,7 @@
 ;; 6.8.3 Expression and null statements
 (define %expression-statement
   ($binding ($: expr ($optional %expression))
+            %attribute-specifier-list   ;for now, we ignore this
             ($. '|\;|)
             (or expr '(begin))))
 
@@ -408,7 +510,7 @@
                  %RP
                  ($: body %statement)
                  (if decl
-                   `(for ((,decl ,init) ,test) ,body)
+                   `(for (,decl ,init ,test) ,body)
                    `(for (,init ,test ,update) ,body)))))
 
 ;; 6.8.6 Jump statement
@@ -421,9 +523,10 @@
                  `(return ,@(if expr `(,expr) '())))))
 
 ;; 6.9 External definitions
-(define %external-declaration ($lazy ($or %function-definition %declaration)))
+(define %external-declaration
+  ($lazy ($or ($try %function-definition) %declaration)))
 
-(define %translation-unit ($many %external-declaration))
+(define %translation-unit ($many1 %external-declaration))
 
 ;; 6.9.1 Function definitions
 (define %function-definition
@@ -452,9 +555,23 @@
 ;;; Driver
 ;;;
 
-;; For testing
+;; For testing - won't be official APIs.
+
 (define (c-tokenize-file file)
   (call-with-cpp file
      (^p ($ lseq->list $ c-tokenize
             $ port->char-lseq/position p
             :source-name file :line-adjusters `((#\# . ,cc1-line-adjuster))))))
+
+(define (c-parse-file file :optional (parser %translation-unit))
+  (parameterize ((typedef-names (default-typedefs)))
+    (peg-run-parser parser
+                    (c-tokenize-file file))))
+
+(define (c-parse-string string :optional (parser %translation-unit))
+  (let1 f (format "x~8,'0x.c" (receive (s us) (sys-gettimeofday)
+                                (modulo (* s us) 99999989)))
+    (with-output-to-file f (cut display string))
+    (unwind-protect
+        (c-parse-file f parser)
+      (sys-remove f))))
