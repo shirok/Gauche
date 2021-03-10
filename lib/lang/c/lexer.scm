@@ -155,7 +155,7 @@
   union unsigned void volatile while
   _Bool _Complex _Imaginary
   _stdcall __declspec __attribute__
-  __restrict __restrict__ __asm __asm__)
+  __restrict __restrict__ __asm __asm__ __extension__)
 
 ;; Identifiers (6.4.2)
 ;; (ident <symbol>)

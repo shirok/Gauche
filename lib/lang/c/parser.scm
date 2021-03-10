@@ -89,7 +89,7 @@
 ;; multiple choice infix.  assuming sep and op are the same.
 (define ($infix-n term associativity seps)
   ($binding ($: x term)
-            ($: xs ($many ($lift list ($one-of seps) term)))
+            ($: xs ($many ($list ($one-of seps) term)))
             (ecase associativity
               [(left)  (fold (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)]
               [(right) (fold-right (^[e r] `(,(car e) ,(cadr e) ,r)) x xs)])))
@@ -179,7 +179,7 @@
 
 ;; 6.5.4 Cast operators
 (define %cast-expression
-  ($lbinding ($: types ($many ($between %LP %type-name %RP)))
+  ($lbinding ($: types ($many ($try ($between %LP %type-name %RP))))
              ($: main %unary-expression)
              (fold-right (^[type r] `(cast ,type ,r)) main types)))
 
@@ -237,7 +237,7 @@
 ;; 6.5.16 Assignment operators
 (define %assignment-expression
   ($binding ($: uexprs ($many
-                        ($try ($lift list %unary-expression
+                        ($try ($list %unary-expression
                                      ($one-of '(= *= /= %= += -=
                                                   <<= >>= &= ^= |\|=|))))))
             ($: main %conditional-expression)
@@ -263,7 +263,7 @@
 ;; 6.7.2 Type specifiers
 (define %type-specifier
   ($lazy ($or ($one-of '(void char short int long float double signed unsigned
-                              _Book _Complex))
+                              _Bool _Complex))
               %struct-or-union-specifier
               %enum-specifier
               %typedef-name)))
@@ -285,8 +285,7 @@
                 ,bitfield))))
 
 (define %struct-declaration
-  ($lift list
-         ($many1 ($or %type-qualifier %type-specifier))
+  ($list ($many1 ($or %type-qualifier %type-specifier))
          ($sep-by %struct-declarator ($. '|,|))))
 
 (define %struct-members
@@ -546,10 +545,32 @@
 ;; gcc exits with non-zero status if output isn't fully read, which happens
 ;; when PROC throws an error.  We don't want to lose that error, so we set
 ;; :on-abnormal-exit to :ignore.
+;;
+;; INCLUDES is a list of include paths, or #f to use the system default
+;; (gauche-config --incdirs).  DEFS is an list of (var val ...) which will
+;; be used as -Dvar=val -Dvar=val ..., or just var for -Dvar.
 
-(define (call-with-cpp file proc)
-  (call-with-input-process `(,(gauche-config "--cc") "-E" ,file) proc
-                           :on-abnormal-exit :ignore))
+(define (call-with-cpp file proc
+                       :key (includes #f)
+                            (defs '()))
+  (define Is
+    (cond [(list? includes)
+           (map (^d (shell-escape-string #"-I~d")) includes)]
+          [(not includes)
+           (map (^d #"-I~d")
+                (string-split (gauche-config "--incdirs") #\:))]
+          [else (error "includes keyword arg must be a list of \
+                        directories or #f, but got:" includes)]))
+  (define Ds
+    (append-map (^[def]
+                  (match def
+                    [(var val ...)
+                     (map (^[val] (shell-escape-string #"-D~|var|=~val")) val)]
+                    [var `(,#"-D~var")]))
+                defs))
+  (call-with-input-process `(,(gauche-config "--cc") "-E" ,@Is ,@Ds ,file)
+    proc
+    :on-abnormal-exit :ignore))
 
 ;;;
 ;;; Driver
@@ -557,11 +578,19 @@
 
 ;; For testing - won't be official APIs.
 
+(define cpp-include-paths (make-parameter '()))
+(define cpp-definitions                 ; ignore some gcc extesion keywords
+  (make-parameter '(("__extension__" "")
+                    ("__inline__" "")
+                    ("__inline" ""))))
+
 (define (c-tokenize-file file)
   (call-with-cpp file
      (^p ($ lseq->list $ c-tokenize
             $ port->char-lseq/position p
-            :source-name file :line-adjusters `((#\# . ,cc1-line-adjuster))))))
+            :source-name file :line-adjusters `((#\# . ,cc1-line-adjuster))))
+     :includes (cpp-include-paths)
+     :defs (cpp-definitions)))
 
 (define (c-parse-file file :optional (parser %translation-unit))
   (parameterize ((typedef-names (default-typedefs)))
