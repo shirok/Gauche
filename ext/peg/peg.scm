@@ -56,7 +56,7 @@
           $bind $return $fail $expect $lift $lift* $debug
           $let $let* $try $assert $not
           $or $fold-parsers $fold-parsers-right
-          $seq $seq0 $between
+          $seq $seq0 $list $list* $between
           $many $many1 $many_ $many1_ $repeat $repeat_
           $many-till $many-till_
           $optional
@@ -576,6 +576,14 @@
 ;;   Matches P0 P ..., and returns the result of P.
 (define ($seq0 parse . followers)
   (apply $lift (^[v . _] v) parse followers))
+
+;; API
+;; $list P ...
+;; $list* P ...
+;;   Same as ($lift list P ...) and ($list list* P ...), but we see them
+;;   a lot, so it's worth to have them.
+(define-inline ($list . parsers) (apply $lift list parsers))
+(define-inline ($list* . parsers) (apply $lift list* parsers))
 
 ;; API
 ;; $try parser

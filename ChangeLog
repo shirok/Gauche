@@ -6,6 +6,7 @@
 	  ($symbol): Moved to parser.peg.deprecated.  It was never documented,
 	  and the name is ambiguous, for it looks like it matches input symbol
 	  token.
+	  ($list, $list*): Added.
 
 2021-03-06  Shiro Kawai  <shiro@acm.org>
 

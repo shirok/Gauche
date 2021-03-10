@@ -458,7 +458,7 @@
 (test-section "backtrack control")
 
 (test-succ "$or and $try" "abc"
-           ($or ($try ($lift list ($string "abc") ($string "foo")))
+           ($or ($try ($list ($string "abc") ($string "foo")))
                 ($string "abc"))
            "abcdefg")
 
@@ -551,7 +551,7 @@
 (let ()
   (define %a ($many1 ($. 'a)))
   (define %bcd ($many1 ($one-of '(b c d))))
-  (define %p ($many ($lift list %a %bcd)))
+  (define %p ($many ($list %a %bcd)))
 
   (test* "token parsing"
          '(((a) (b c)) ((a) (d)) ((a a) (b)) ((a) (c d c)))

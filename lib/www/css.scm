@@ -543,7 +543,7 @@
 (define %declaration-list
   ($lazy
    ($seq %WS* ($/ ($sep-by ($optional %declaration) ($tok 'SEMICOLON))
-                  ($lift list %at-rule %declaration-list)))))
+                  ($list %at-rule %declaration-list)))))
 
 (define %inter-rule-spaces
   ($many_ ($/ ($tok 'CDO) ($tok 'CDC) ($tok 'WHITESPACE))))
