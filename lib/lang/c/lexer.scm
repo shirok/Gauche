@@ -133,6 +133,8 @@
 
 (define %idchar ($or ($. #[a-zA-Z0-9_]) %unichar-name))
 
+;; <symbol> - standard
+;; (<symbol> <alt-symbol>) - match <symbol>, return <alt-symbol>
 (define *keywords*
   '(auto break case char const continue default double do else enum
     extern float for goto if int inline long register restrict
@@ -145,12 +147,26 @@
     __float128 _Float128 __float80 _Float64x __ibm128
     ;; gcc additional keywords
     __attribute__
-    __restrict __restrict__ __asm __asm__ __extension__ __alignof__))
+    (__restrict  restrict)
+    (__restrict__ restrict)
+    (__inline inline)
+    (__inline__ inline)
+    (asm asm)
+    (__asm asm)
+    (__asm__ asm)
+    (__extension__ __extension__)
+    (__alignof__ __alignof__)
+    ))
 
 (define %keyword
-  ($try ($binding ($: key ($one-of (map symbol->string *keywords*)))
-                  ($not %idchar)
-                  (string->symbol key))))
+  (apply $or (map (^e (if (pair? e)
+                        ($try ($seq ($. (symbol->string (car e)))
+                                    ($not %idchar)
+                                    ($return (cadr e))))
+                        ($try ($seq ($. (symbol->string e))
+                                    ($not %idchar)
+                                    ($return e)))))
+                  *keywords*)))
 
 ;; Identifiers (6.4.2)
 ;; (ident <symbol>)

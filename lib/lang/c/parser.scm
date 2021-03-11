@@ -611,9 +611,7 @@
 
 (define cpp-include-paths (make-parameter '()))
 (define cpp-definitions                 ; ignore some gcc extesion keywords
-  (make-parameter '(("__extension__" "")
-                    ("__inline__" "")
-                    ("__inline" ""))))
+  (make-parameter '(("__extension__" ""))))
 
 (define (c-tokenize-file file)
   (call-with-cpp file
@@ -628,10 +626,17 @@
     (peg-run-parser parser
                     (c-tokenize-file file))))
 
-(define (c-parse-string string :optional (parser %translation-unit))
+
+(define (%operate-on-string string proc)
   (let1 f (format "x~8,'0x.c" (receive (s us) (sys-gettimeofday)
                                 (modulo (* s us) 99999989)))
     (with-output-to-file f (cut display string))
     (unwind-protect
-        (c-parse-file f parser)
+        (proc f)
       (sys-remove f))))
+
+(define (c-tokenize-string string)
+  (%operate-on-string string c-tokenize-file))
+
+(define (c-parse-string string :optional (parser %translation-unit))
+  (%operate-on-string string (^f (c-parse-file f parser))))
