@@ -106,4 +106,27 @@
 (use lang.c.parser)
 (test-module 'lang.c.parser)
 
+;; We haven't fixed the format of the semantic value, so for now we just
+;; see if it parses.
+(let ()
+  (define (t-succ expect code)
+    (test* code expect (boolean (c-parse-string code))))
+
+  ;; simple declaration
+  (t-succ #t "int x;")
+  (t-succ #t "const int x;")
+  (t-succ #t "int const x;")
+  (t-succ #t "int x, y, z;")
+  (t-succ #t "int *x, **y, * const * volatile z;")
+
+  ;; typedef
+  (t-succ #t "typedef int N; N x;")
+
+  ;; typedef scoped
+  (t-succ #t "int N; { typedef double N; (N)3; } N = 3;")
+  (t-succ #t "typedef int N; N x; { int N; return N; }")
+  (t-succ #t "typedef int N; N x; { int N; return N; } N y;")
+  )
+
+
 (test-end)

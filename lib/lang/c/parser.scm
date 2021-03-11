@@ -37,6 +37,7 @@
   (use parser.peg)
   (use gauche.process)
   (use gauche.config)
+  (use gauche.dictionary)
   (use gauche.lazy)
   (use lang.c.lexer)
   (use srfi-13)
@@ -58,7 +59,16 @@
 
 (define (default-typedefs) (hash-table-copy *default-typedef-table*))
 
-(define typedef-names (make-parameter (default-typedefs)))
+(define typedef-names
+  (make-parameter (make-stacked-map (default-typedefs))))
+
+(define-syntax $with-scope
+  (syntax-rules ()
+    [(_ parser)
+     ($parameterize ((typedef-names (make-stacked-map
+                                     (make-hash-table eq-comparator)
+                                     (typedef-names))))
+                    parser)]))
 
 ;;;
 ;;; Parser
@@ -389,12 +399,13 @@
             `(function ,@params)))
 
 ;; 6.7.7 Type definitions
+;;  The semantic value of typedef name is the same as identifier.
 (define %typedef-name
   ($try ($binding ($: id %identifier)
                   (=> fail)
                   (match-let1 ('ident x) id
-                    (if (hash-table-exists? (typedef-names) x)
-                      `(type ,x)
+                    (if (dict-exists? (typedef-names) x)
+                      `(ident ,x)
                       (fail "typedef name"))))))
 
 ;; 6.7 Declarations
@@ -414,7 +425,7 @@
         [((('ident name) . _) . _) name]
         [(((('ident name) . _) . _) . _) name]
         [_ (error "huh?" decl)])
-    (hash-table-put! (typedef-names) typename (list specs decl))))
+    (dict-put! (typedef-names) typename (list specs decl))))
 
 ;; modified to handle typedef-name.  see %type-specifier above.
 (define %declaration-specifiers
@@ -502,7 +513,8 @@
 ;; 6.8.2 Compound statement
 (define %compound-statement
   ($binding %LC
-            ($: stmts ($many ($or %declaration %statement)))
+            ($with-scope
+             ($: stmts ($many ($or %declaration %statement))))
             %RC
             `(begin ,stmts)))
 
