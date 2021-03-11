@@ -85,7 +85,8 @@
 (define %pragma ($seq ($. #\#) ($many_ ($none-of #[\n]))))
 
 (define %spacing
-  ($many_ ($or %whitespace %long-comment %line-comment %pragma)))
+  ($many_ ($or %whitespace %long-comment %line-comment %pragma
+               ($lazy %ignorable-keyword))))
 
 ;; Punctuators (6.4.6)
 ;; We return a char for paren-like stuff and '.', and
@@ -154,7 +155,6 @@
     (asm asm)
     (__asm asm)
     (__asm__ asm)
-    (__extension__ __extension__)
     (__alignof__ __alignof__)
     ))
 
@@ -167,6 +167,10 @@
                                     ($not %idchar)
                                     ($return e)))))
                   *keywords*)))
+
+;; gcc specific
+(define %ignorable-keyword
+  ($try ($seq ($. "__extension__") ($not %idchar))))
 
 ;; Identifiers (6.4.2)
 ;; (ident <symbol>)

@@ -622,8 +622,7 @@
 ;; For testing - won't be official APIs.
 
 (define cpp-include-paths (make-parameter '()))
-(define cpp-definitions                 ; ignore some gcc extesion keywords
-  (make-parameter '(("__extension__" ""))))
+(define cpp-definitions (make-parameter '()))
 
 (define (c-tokenize-file file)
   (call-with-cpp file
