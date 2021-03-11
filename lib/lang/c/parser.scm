@@ -50,6 +50,7 @@
 ;;
 ;; C syntax is ambiguous that identifier can also be a type name.  We need
 ;; to track previously declared type names.
+;;
 
 (define *default-typedef-table*
   (hash-table-r7 eq-comparator
@@ -101,9 +102,10 @@
 ;; __attribute__ extension can appear in various places.
 (define %attribute-list-item
   ($lbinding ($: name %identifier)
-             ($: params ($optional ($between %LP
-                                             ($sep-by %expression ($. '|,|))
-                                             %RP)))
+             ($: params ($optional
+                         ($between %LP
+                                   ($sep-by %expression ($. '|,|))
+                                   %RP)))
              (if params
                `(,name ,@params)
                name)))
@@ -168,11 +170,11 @@
 
 ;; 6.5.3 Unary operators
 (define %unary-expression
-  ($or ($try ($lbinding ($. 'sizeof)
+  ($or ($try ($lbinding ($: op ($one-of '(sizeof __alignof__)))
                         %LP
                         ($: t %type-name)
                         %RP
-                        `(sizeof ,t)))
+                        `(,op ,t)))
        ($binding ($: ops ($many ($one-of '(++ -- + - & * ~ ! sizeof))))
                  ($: main %postfix-expression)
                  (fold-right (^[op r] `(,op ,r)) main ops))))
@@ -261,16 +263,28 @@
   ($one-of '(typedef extern static auto register)))
 
 ;; 6.7.2 Type specifiers
+;; NB: Typedef-name is removed to be distinguished from identifiers.  It is
+;; handled in declaration-specifier and type-specifier-qualifier-list.
 (define %type-specifier
   ($lazy ($or ($one-of '(void char short int long float double signed unsigned
-                              _Bool _Complex))
+                         _Bool _Complex
+                         ;; gcc additional floating types
+                         __float128 _Float128 __float80 _Float64x __ibm128))
               %struct-or-union-specifier
-              %enum-specifier
-              %typedef-name)))
+              %enum-specifier)))
 
 ;; 6.7.3 Type qualifiers
 (define %type-qualifier
   ($one-of '(const volatile restrict __restrict __restrict__)))
+
+;; This is a custom rule specially handle typedef-name.  typedef-name and
+;; other type-specifiers are mutually exclusive.
+(define %type-specifier-qualifier-list
+  ($or ($try ($lbinding ($: pre ($many %type-qualifier))
+                        ($: type %typedef-name)
+                        ($: post ($many %type-qualifier))
+                        (append pre (list type) post)))
+       ($many1 ($or %type-qualifier %type-specifier))))
 
 ;; 6.7.2.1 Structure and union specifiers
 (define %struct-declarator
@@ -284,8 +298,9 @@
               `(,(if (undefined? decl) #f decl)
                 ,bitfield))))
 
+;; modified to handle typedef-name.  see %type-specifier above.
 (define %struct-declaration
-  ($list ($many1 ($or %type-qualifier %type-specifier))
+  ($list %type-specifier-qualifier-list
          ($sep-by %struct-declarator ($. '|,|))))
 
 (define %struct-members
@@ -328,7 +343,8 @@
                            ($between %LP %declarator %RP)))
              ($: post ($many ($or %array-decl-suffix
                                   %function-decl-suffix
-                                  %asm-decl-suffix)))
+                                  %asm-decl-suffix
+                                  %attribute-specifier)))
              `(,main :: (,@ptr ,@post))))
 
 (define %pointer
@@ -393,15 +409,30 @@
                `(decl ,specs ,decls))))
 
 (define (register-typedefs! specs decl)
-  (match-let1 ((('ident name) . _) . _) decl
-    (hash-table-put! (typedef-names) name (list specs decl))))
+  (let1 typename
+      (match decl
+        [((('ident name) . _) . _) name]
+        [(((('ident name) . _) . _) . _) name]
+        [_ (error "huh?" decl)])
+    (hash-table-put! (typedef-names) typename (list specs decl))))
 
+;; modified to handle typedef-name.  see %type-specifier above.
 (define %declaration-specifiers
-  ($many1 ($or %storage-class-specifier
-               %type-specifier
-               %type-qualifier
-               %function-specifier
-               %attribute-specifier)))
+  ($or ($try ($binding ($: pre ($many ($or %storage-class-specifier
+                                           %type-qualifier
+                                           %function-specifier
+                                           %attribute-specifier)))
+                       ($: type %typedef-name)
+                       ($: post ($many ($or %storage-class-specifier
+                                            %type-qualifier
+                                            %function-specifier
+                                            %attribute-specifier)))
+                       (append pre (list type) post)))
+       ($many1 ($or %storage-class-specifier
+                    %type-specifier
+                    %type-qualifier
+                    %function-specifier
+                    %attribute-specifier))))
 
 (define %init-declarator
   ($lbinding ($: decl %declarator)
@@ -417,8 +448,8 @@
              (fold-right (^[p r] `(,p ,r)) decl ptrs)))
 
 (define %direct-abstract-declarator
-  ($lbinding ($: paren ($optional ($between %LC %abstract-declarator %RC)))
-             ($: suff ($many ($or ($try ($seq %LC ($. '*) %RC))
+  ($lbinding ($: paren ($optional ($between %LP %abstract-declarator %RP)))
+             ($: suff ($many ($or ($try ($seq %LB ($. '*) %RB))
                                   %array-decl-suffix
                                   %function-decl-suffix)))
              ;; for now

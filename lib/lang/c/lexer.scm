@@ -155,7 +155,10 @@
   union unsigned void volatile while
   _Bool _Complex _Imaginary
   _stdcall __declspec __attribute__
-  __restrict __restrict__ __asm __asm__ __extension__)
+  ;; gcc additional floating types
+  __float128 _Float128 __float80 _Float64x __ibm128
+  ;; gcc additional keywords
+  __restrict __restrict__ __asm __asm__ __extension__ __alignof__)
 
 ;; Identifiers (6.4.2)
 ;; (ident <symbol>)
