@@ -133,32 +133,24 @@
 
 (define %idchar ($or ($. #[a-zA-Z0-9_]) %unichar-name))
 
-(define-syntax define-keywords
-  (er-macro-transformer
-   (^[f r c]
-     (define (define-1 key)
-       (let ([var (symbol-append '% key)]
-             [str (symbol->string key)])
-         (quasirename r
-           `(define ,var ($try ($seq ($.,str) ($not %idchar)
-                                     ($return ',key)))))))
-     (quasirename r
-       `(begin
-          ,@(map define-1 (cdr f))
-          (define ,'%keyword
-            ($or ,@(map (cut symbol-append '% <>) (cdr f)))))))))
+(define *keywords*
+  '(auto break case char const continue default double do else enum
+    extern float for goto if int inline long register restrict
+    return short signed sizeof static struct switch typedef
+    union unsigned void volatile while
+    _Bool _Complex _Imaginary
+    ;; nonstandard keywords
+    _stdcall __declspec
+    ;; gcc additional floating types
+    __float128 _Float128 __float80 _Float64x __ibm128
+    ;; gcc additional keywords
+    __attribute__
+    __restrict __restrict__ __asm __asm__ __extension__ __alignof__))
 
-(define-keywords
-  auto break case char const continue default double do else enum
-  extern float for goto if int inline long register restrict
-  return short signed sizeof static struct switch typedef
-  union unsigned void volatile while
-  _Bool _Complex _Imaginary
-  _stdcall __declspec __attribute__
-  ;; gcc additional floating types
-  __float128 _Float128 __float80 _Float64x __ibm128
-  ;; gcc additional keywords
-  __restrict __restrict__ __asm __asm__ __extension__ __alignof__)
+(define %keyword
+  ($try ($binding ($: key ($one-of (map symbol->string *keywords*)))
+                  ($not %idchar)
+                  (string->symbol key))))
 
 ;; Identifiers (6.4.2)
 ;; (ident <symbol>)
