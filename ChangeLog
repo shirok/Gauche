@@ -1,3 +1,10 @@
+2021-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm (<parse-error>): Add 'rest' slot to keep the rest
+	  of input stream.  It turned out that just keeping offending token
+	  isn't enough.  The 'token' slot is now redundant, but we keep it
+	  for the backward compatibility.
+
 2021-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm ($one-of, $.): Fixed symbol matching. We've doing

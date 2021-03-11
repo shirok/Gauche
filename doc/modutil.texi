@@ -12692,12 +12692,25 @@ Value of this slot depends on the value of @var{type} slot.
 @c COMMON
 @end defivar
 
+@defivar <parse-error> rest
+@c EN
+The remaining input token stream, beginning from the point when
+the failure occur.
+@c JP
+失敗が起きた箇所から先の入力トークンストリーム。
+@c COMMON
+@end defivar
+
 @defivar <parse-error> token
 @c EN
 The token at the head of input when failure occur.  If input already
 reached at the end, this slot is set to @code{#<eof>}.
+
+This is the same as the car of @code{rest} slot when there's more input.
 @c JP
 失敗が起きた時の入力トークン。もし入力が終端に達していた場合は@code{#<eof>}。
+
+入力の残りがある場合、これは@code{rest}スロットのcarと同じです。
 @c COMMON
 @end defivar
 @end deftp

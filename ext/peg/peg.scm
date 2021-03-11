@@ -157,14 +157,17 @@
 ;; An error object for the external API.  Note that a parser won't raise
 ;; this error; it just returns a 'failure' value, so that other options
 ;; can be tried if there's any.   Creating, throwing, and catching an error
-;; is expesive operation compared to the simple call/return.  It is the
-;; parser driver that sees the failure as the final result, then constructs
-;; and creates <parse-error> to raise.
+;; is expensive operation compared to the simple call/return.  It is the
+;; parser driver that sees the failure as the final result, and constructs
+;; <parse-error> to raise.
+;; NB: 'Token' slot is (car rest) or #<eof>.  It's redundant, but kept for
+;; the backward compatibility.
 (define-condition-type <parse-error> <error> #f
   (position)                            ;stream position
   (type)                                ;fail type
   (objects)                             ;expecting/unexpecting items
-  (token))                              ;token that caused error
+  (token)                               ;token that caused error
+  (rest))                               ;rest of input string, including token
 
 (define-method write-object ((o <parse-error>) out)
   (format out "#<<parse-error> ~S>" (~ o 'message)))
@@ -257,7 +260,8 @@
                 (flatten-compound-error objs)
                 objs)])
     (make-condition <parse-error>
-                    'position pos 'type type 'objects objs 'token nexttok
+                    'position pos 'type type 'objects objs
+                    'token nexttok 'rest seq
                     'message (message objs pos nexttok))))
 
 (define (%get-input-pos head s)
