@@ -467,7 +467,7 @@
              (cons paren suff)))
 
 (define %type-name
-  ($binding ($: specs ($many1 ($or %type-specifier %type-qualifier)))
+  ($binding ($: specs %type-specifier-qualifier-list)
             ($: decl ($optional %abstract-declarator))
             (list specs decl)))
 
