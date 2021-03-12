@@ -172,8 +172,8 @@
                  `(ref ,field))
        ($binding ($. '->) ($: field %identifier)
                  `(-> ,field))
-       ($seq ($. '++) 'post++)
-       ($seq ($. '--) 'post--)))
+       ($seq ($. '++) ($return 'post++))
+       ($seq ($. '--) ($return 'post--))))
 
 (define %argument-expression-list
   ($lazy ($sep-by %assignment-expression ($. '|,|))))
@@ -558,7 +558,7 @@
 ;; 6.8.6 Jump statement
 (define %jump-statement
   ($or ($binding ($. 'goto) ($: dest %identifier)
-                 `(goto ,identifier))
+                 `(goto ,dest))
        ($seq ($. 'continue) 'continue)
        ($seq ($. 'break) 'break)
        ($binding ($. 'return) ($: expr ($optional %expression))
