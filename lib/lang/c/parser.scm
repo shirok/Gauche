@@ -540,8 +540,8 @@
   ($or ($binding ($. 'while) %LP ($: test %expression) %RP ($: body %statement)
                  `(while ,test ,body))
        ($binding ($. 'do) ($: body %statement)
-                 ($. 'while) %LP ($: test %expression) ($. '|\;|)
-                 `(do-while ,test ,stmt))
+                 ($. 'while) %LP ($: test %expression) %RP ($. '|\;|)
+                 `(do-while ,test ,body))
        ($binding ($. 'for) %LP
                  ($: decl ($optional %declaration))
                  ($: init ($optional %expression))
@@ -575,7 +575,8 @@
   ($binding ($: spec %declaration-specifiers)
             ($: decl %declarator)
             ($: lis ($many %declaration))
-            ($: body %compound-statement)
+            ($assert ($. #\{))
+            ($: body ($cut %compound-statement))
             `(,spec ,decl ,lis ,body)))
 
 ;;;
