@@ -854,7 +854,7 @@ See the following example:
 @c COMMON
 
 @example
-(define show
+(define-syntax show
   (syntax-rules ()
     [(_ expr ...)
      (begin
