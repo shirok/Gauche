@@ -1,3 +1,11 @@
+2021-03-13  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($raise, $cut): Experimentally add 'early exit'
+	  means.  A new failure type, fail-error, prevents parsers from
+	  backtracking.  This helps producing better error messages.
+	  See Andre Murbach Maidl, et al., "Error Reporting in Parsing
+	  Expression Grammers", https://arxiv.org/abs/1405.6646
+
 2021-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* ext/peg/peg.scm (<parse-error>): Add 'rest' slot to keep the rest

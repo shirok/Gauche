@@ -170,6 +170,28 @@
            ($try ($seq ($string "foo") ($string "bar")))
            "foobaz...")
 
+;; $cut and $raise
+(test-fail "$cut" '(0 (error (fail-expect . "a")))
+           ($or ($cut ($. "a")) ($. "b"))
+           "b")
+(test-succ "$cut" "a"
+           ($or ($cut ($. "a")) ($. "b"))
+           "a")
+
+(test-fail "$cut" '(1 (error (fail-expect . "b")))
+           ($or ($try ($seq ($. "a") ($cut ($. "b")))) ($. "a"))
+           "ac")
+(test-succ "$cut" "b"
+           ($or ($try ($seq ($. "a") ($cut ($. "b")))) ($. "a"))
+           "ab")
+
+(test-fail "$raise" '(1 (error (fail-message . "oops")))
+           ($or ($seq ($. "a") ($raise "oops")) ($. "a"))
+           "a")
+(test-fail "$raise" '(1 (error (fail-message . "oops")))
+           ($or ($try ($seq ($. "a") ($raise "oops"))) ($. "a"))
+           "a")
+
 ;; $let, $let*
 (test-succ "$let" "j"
            ($let ([j ($string "j")])

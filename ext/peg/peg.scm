@@ -64,6 +64,8 @@
           $chain-left $chain-right
           $lazy $parameterize
 
+          $cut $raise
+
           $any $eos $.
 
           $string $string-ci
@@ -135,7 +137,7 @@
 ;;;  That is,
 ;;;    Parser :: [a] -> (Status, Value, [a])
 ;;;
-;;;  Error status and value
+;;;  Failure status and value
 ;;;
 ;;;    status           value
 ;;;    ------------------------------------------------
@@ -143,6 +145,7 @@
 ;;;    fail-expect      string (message), char, char-set
 ;;;    fail-unexpect    string (message)
 ;;;    fail-compound    ((Status . Value) ...)
+;;;    fail-error       (tag (Status . Value ...))
 ;;;
 ;;;  A DRIVER is a wrapper to take a parser and an input.
 ;;;  DRIVER applies the parser on the input, and on success, it returns the
@@ -185,9 +188,11 @@
    (^[f r c]
      (match f
        [(_ ('quote x) v s)
-        (unless (memq x '(fail-message fail-expect fail-unexpect fail-compound))
+        (unless (memq x '(fail-message fail-expect fail-unexpect
+                                       fail-error fail-compound))
           (error "Invalid failure type; must be one of fail-message, \
-                  fail-expect, fail-unexpect or fail-compund, but got: " x))
+                  fail-expect, fail-unexpect, fail-compund or \
+                  fail-error, but got: " x))
         (quasirename r
           `(values ',x ,v ,s))]
        [(_ t v s)
@@ -253,6 +258,7 @@
          (format "expecting but ~s at ~a, and got ~s" objs pos-fmt nexttok)
          (format "expecting but ~a at ~a, and got ~s" objs pos-fmt nexttok))]
       [(fail-compound) (analyze-compound-error objs pos)]
+      [(fail-error) (analyze-compound-error (cdr objs) pos)] ;car is a tag
       [else (format "unknown parser error at ~a: ~a" pos-fmt objs)]  ;for safety
       ))
   (let ([nexttok (if (pair? seq) (car seq) (eof-object))]
@@ -382,6 +388,13 @@
 
 (define ($fail msg) (^s (return-failure/message msg s)))
 
+(define $raise
+  (case-lambda
+    [(tag msg)
+     (^s (return-failure 'fail-error `(,tag (fail-message . ,msg)) s))]
+    [(msg)
+     (^s (return-failure 'fail-error `(error (fail-message . ,msg)) s))]))
+
 ;; return a parser that tries PARSE.  On success, returns what it
 ;; returned.  On failure, returns 'fail-expect with MSG.
 (define ($expect parse msg)
@@ -441,6 +454,18 @@
       (receive [r v s] (parser s)
         (debug-print-post (list r v s))
         (values r v s))))
+
+;; API
+;; Convert failure to error
+(define $cut
+  (case-lambda
+    [(tag parser) (^s (receive (r v s) (parser s)
+                        (if (parse-success? r)
+                          (return-result v s)
+                          (return-failure 'fail-error
+                                          `(,tag (,r . ,v))
+                                          s))))]
+    [(parser) ($cut 'error parser)]))
 
 ;; API
 ;; $let (bind ...) body ...
@@ -533,6 +558,7 @@
                (loop '() (cdr ps)))     ;discard previous errors
              (receive (r v s1) ((car ps) s)
                (cond [(parse-success? r) (values r v s1)]
+                     [(eq? r 'fail-error) (values r v s1)]
                      [(null? (cdr ps))
                       (if (eq? s s1)
                         (fail (acons r v vs) s1)
@@ -599,9 +625,9 @@
 ;;   would try a, b, ... even some of them consumes the input.
 (define-inline ($try p)
   (^[s0] (receive (r v s) (p s0)
-           (if (parse-success? r)
-             (return-result v s)
-             (return-failure r v s0)))))
+           (cond [(parse-success? r) (return-result v s)]
+                 [(eq? r 'fail-error) (return-failure r v s)]
+                 [else (return-failure r v s0)]))))
 
 ;; API
 ;; $assert parser
