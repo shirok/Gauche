@@ -1,5 +1,19 @@
 2021-03-13  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c, src/portapi.c, src/libio.scm: Revised port attribute
+	  API.  This is technically an incompatible change, but port atttribute
+	  API has never been documented, so it should be OK.
+	  See https://github.com/shirok/Gauche/issues/753 for the issue
+	  initiated this change.
+	- We don't lock the port's main lock while accessing port attr.
+	  Rather, we use a separate lock.  Port attr can be accessed from
+	  a thread other than the one reading from/writing to the port.
+	  This eliminates *Unsafe version of C API.
+	- We dropped procedural port attributes.  If we call back to the
+	  Scheme, lock management gets complicated.
+	- We dropped port-attribute-create API.  It is only needed for procedural
+	  attributes.
+
 	* ext/peg/peg.scm ($raise, $cut): Experimentally add 'early exit'
 	  means.  A new failure type, fail-error, prevents parsers from
 	  backtracking.  This helps producing better error messages.

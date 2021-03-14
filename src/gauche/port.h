@@ -381,16 +381,9 @@ SCM_EXTERN ScmObj Scm_VMWithPortLocking(ScmPort *port,
 
 SCM_EXTERN ScmObj Scm_PortAttrGet(ScmPort *port, ScmObj key,
                                   ScmObj fallback);
-SCM_EXTERN ScmObj Scm_PortAttrGetUnsafe(ScmPort *port, ScmObj key,
-                                        ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PortAttrSet(ScmPort *port, ScmObj key, ScmObj val);
-SCM_EXTERN ScmObj Scm_PortAttrSetUnsafe(ScmPort *port, ScmObj key, ScmObj val);
-SCM_EXTERN ScmObj Scm_PortAttrCreate(ScmPort *port, ScmObj key, ScmObj get, ScmObj set);
-SCM_EXTERN ScmObj Scm_PortAttrCreateUnsafe(ScmPort *port, ScmObj key, ScmObj get, ScmObj set);
 SCM_EXTERN ScmObj Scm_PortAttrDelete(ScmPort *port, ScmObj key);
-SCM_EXTERN ScmObj Scm_PortAttrDeleteUnsafe(ScmPort *port, ScmObj key);
 SCM_EXTERN ScmObj Scm_PortAttrs(ScmPort *port);
-SCM_EXTERN ScmObj Scm_PortAttrsUnsafe(ScmPort *port);
 
 SCM_EXTERN void   Scm_Putb(ScmByte b, ScmPort *port);
 SCM_EXTERN void   Scm_Putc(ScmChar c, ScmPort *port);

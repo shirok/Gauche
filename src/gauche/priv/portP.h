@@ -70,6 +70,10 @@ typedef struct ScmPortImplRec {
     ScmVM *lockOwner;           /* for port mutex; owner of the lock */
     int lockCount;              /* for port mutex; # of recursive locks */
 
+    ScmInternalFastlock attrlock; /* for port attribute access
+                                     port attributes are simple alist, so
+                                     we don't consider recursive lock. */
+
     ScmWriteState *writeState;  /* used internally */
 
     /* Input counters.  these doesn't take account of ungetting and

@@ -223,9 +223,9 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
 
     /* Default reader lexical mode */
-    Scm_PortAttrSetUnsafe(SCM_PORT(port),
-                          SCM_SYM_READER_LEXICAL_MODE,
-                          Scm_ReaderLexicalMode());
+    Scm_PortAttrSet(SCM_PORT(port),
+                    SCM_SYM_READER_LEXICAL_MODE,
+                    Scm_ReaderLexicalMode());
 
     return SCM_PORT(port);
 }
@@ -263,7 +263,6 @@ ScmObj Scm_VMWithPortLocking(ScmPort *port SCM_UNUSED, ScmObj closure)
 
 /*===============================================================
  * Getting information
- * NB: Port attribute access API is in portapi.c
  */
 
 ScmObj Scm_PortName(ScmPort *port)
@@ -615,6 +614,103 @@ int Scm_FdReady(int fd, int dir)
 #else  /*!HAVE_SELECT && !GAUCHE_WINDOWS */
     return SCM_FD_UNKNOWN;
 #endif /*!HAVE_SELECT && !GAUCHE_WINDOWS */
+}
+
+/*=================================================================
+ * Port Attributes
+ *
+ * Port attributes are stored in alist.  Each entry is either one
+ * of the following form:
+ *  (key value)          Just a value
+ *  (key value . #f)     Just a value, read-only.  This is a system
+ *                       attribute; no public interface to create this
+ *                       kind of API is provided.  It is also undeletable.
+ *                       (Currently, only the internal port constructor
+ *                       creates this kind of attributes.)
+ *
+ * Access to the port attributes is mutexed by a separate lock than
+ * the port's main lock, for the attributes can be accessed from a
+ * thread while another thread is reading from/writing to it (e.g. taking
+ * the port name for display).
+ */
+
+ScmObj Scm_PortAttrGet(ScmPort *p, ScmObj key, ScmObj fallback)
+{
+    ScmObj r = SCM_UNBOUND;
+
+    /* We assume pointer op is atomic */
+    ScmObj v = Scm_Assq(key, PORT_ATTRS(p));
+    if (SCM_PAIRP(v)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CDR(v)));
+        r = SCM_CADR(v);
+    } else {
+        r = fallback;
+    }
+
+    if (SCM_UNBOUNDP(r)) {
+        Scm_Error("No port attribute for key %S in port %S", key, SCM_OBJ(p));
+    }
+    return r;
+}
+
+ScmObj Scm_PortAttrSet(ScmPort *p, ScmObj key, ScmObj val)
+{
+    volatile int err_readonly = FALSE;
+    volatile int exists = FALSE;
+
+    (void)SCM_INTERNAL_FASTLOCK_LOCK(P_(p)->lock);
+    ScmObj v = Scm_Assq(key, PORT_ATTRS(p));
+    if (SCM_PAIRP(v)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CDR(v)));
+        exists = TRUE;
+        if (SCM_NULLP(SCM_CDDR(v))) {
+            SCM_SET_CAR_UNCHECKED(SCM_CDR(v), val);
+        } else {
+            err_readonly = TRUE;
+        }
+    } else {
+        PORT_ATTRS(p) = Scm_Cons(SCM_LIST2(key, val), PORT_ATTRS(p));
+    }
+    (void)SCM_INTERNAL_FASTLOCK_UNLOCK(P_(p)->lock);
+
+    if (err_readonly) {
+        Scm_Error("Port attribute '%A' is read-only in port: %S",
+                  key, SCM_OBJ(p));
+    }
+    return SCM_MAKE_BOOL(exists);
+}
+
+ScmObj Scm_PortAttrDelete(ScmPort *p, ScmObj key)
+{
+    int err_undeletable = FALSE;
+
+    (void)SCM_INTERNAL_FASTLOCK_LOCK(P_(p)->lock);
+    ScmObj v = Scm_Assq(key, PORT_ATTRS(p));
+    if (SCM_PAIRP(v) && SCM_PAIRP(SCM_CDR(v)) && SCM_FALSEP(SCM_CDDR(v))) {
+        err_undeletable = TRUE;
+    } else {
+        PORT_ATTRS(p) = Scm_AssocDelete(key, PORT_ATTRS(p), SCM_CMP_EQ);
+    }
+    (void)SCM_INTERNAL_FASTLOCK_UNLOCK(P_(p)->lock);
+    if (err_undeletable) {
+        Scm_Error("Port attribute '%A' is not deletable from port: %S",
+                  key, SCM_OBJ(p));
+    }
+    return SCM_UNDEFINED;       /* we may return more useful info in future */
+}
+
+ScmObj Scm_PortAttrs(ScmPort *p)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmObj cp;
+    SCM_FOR_EACH(cp, PORT_ATTRS(p)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CAR(cp)) && SCM_PAIRP(SCM_CDAR(cp)));
+        ScmObj e = SCM_CAR(cp);
+        ScmObj k = SCM_CAR(e);
+        ScmObj v = SCM_CADR(e);
+        SCM_APPEND1(h, t, Scm_Cons(k, v));
+    }
+    return h;
 }
 
 /*===============================================================

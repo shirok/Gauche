@@ -128,9 +128,6 @@
 (define-cproc port-attribute-ref (port::<port> key :optional fallback)
   (setter port-attribute-set!)
   Scm_PortAttrGet)
-(define-cproc port-attribute-create! (port::<port> key
-                                      :optional (get #f) (set #f))
-  Scm_PortAttrCreate)
 (define-cproc port-attribute-delete! (port::<port> key)
   Scm_PortAttrDelete)
 (define-cproc port-attributes (port::<port>)
