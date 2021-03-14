@@ -89,7 +89,7 @@
                ($lazy %ignorable-keyword))))
 
 ;; Punctuators (6.4.6)
-;; We return a char for paren-like stuff and '.', and
+;; We return a char for paren-like stuff, and
 ;; symbols for other punctuators.
 
 (define ($->sym x) ($lift string->symbol ($. x)))
@@ -113,8 +113,8 @@
        ($->sym"&") ($->sym"|") ($->sym"^") ($->sym"~") ($->sym "!")
        ($->sym"<") ($->sym">")
        ($->sym"?") ($->sym":") ($->sym";") ($->sym"=")
-       ($->sym",") ($->sym"##") ($->sym"#")
-       ($. #[\[\]\(\)\{\}.])))
+       ($->sym",") ($->sym"##") ($->sym"#") ($->sym".")
+       ($. #[\[\]\(\)\{\}])))
 
 ;; Keywords (6.4.1)
 ;; We return a symbol.

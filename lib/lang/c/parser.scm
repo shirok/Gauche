@@ -185,7 +185,10 @@
                         ($: t %type-name)
                         %RP
                         `(,op ,t)))
-       ($binding ($: ops ($many ($one-of '(++ -- + - & * ~ ! sizeof))))
+       ($lbinding ($: op ($one-of '(& * + - ~ !)))
+                  ($: main %cast-expression)
+                  `(,op ,main))
+       ($binding ($: ops ($many ($one-of '(++ -- sizeof))))
                  ($: main %postfix-expression)
                  (fold-right (^[op r] `(,op ,r)) main ops))))
 
@@ -543,25 +546,25 @@
                  ($. 'while) %LP ($: test %expression) %RP ($. '|\;|)
                  `(do-while ,test ,body))
        ($binding ($. 'for) %LP
-                 ($: decl ($optional %declaration))
-                 ($: init ($optional %expression))
-                 ($. '|\;|)
+                 ($or ($: decl %declaration)
+                      ($seq ($: init ($optional %expression))
+                            ($. '|\;|)))
                  ($: test ($optional %expression))
-                 ($optional ($. '|\;|)
-                            ($: update ($optional %expression)))
+                 ($. '|\;|)
+                 ($: update ($optional %expression))
                  %RP
                  ($: body %statement)
-                 (if decl
-                   `(for (,decl ,init ,test) ,body)
+                 (if (undefined? init)
+                   `(for (,decl ,test ,update) ,body)
                    `(for (,init ,test ,update) ,body)))))
 
 ;; 6.8.6 Jump statement
 (define %jump-statement
-  ($or ($binding ($. 'goto) ($: dest %identifier)
+  ($or ($binding ($. 'goto) ($: dest %identifier) ($. '|\;|)
                  `(goto ,dest))
-       ($seq ($. 'continue) 'continue)
-       ($seq ($. 'break) 'break)
-       ($binding ($. 'return) ($: expr ($optional %expression))
+       ($seq ($. 'continue) ($. '|\;|) ($return 'continue))
+       ($seq ($. 'break) ($. '|\;|) ($return 'break))
+       ($binding ($. 'return) ($: expr ($optional %expression)) ($. '|\;|)
                  `(return ,@(if expr `(,expr) '())))))
 
 ;; 6.9 External definitions
