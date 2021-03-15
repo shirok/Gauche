@@ -52,7 +52,7 @@ class MQueue {
     // Basic queue operations.  The client doesn't need to know
     // about Message.
     bool empty() const      { return q.empty(); }
-    string popMessage() throw (MQueueException);
+    string popMessage();
     size_t pushMessage(string body, int urgency = 0);
 
     // One can find a previously created MQueue by its name.

@@ -21,7 +21,7 @@ class MQueue_eq : public unary_function<MQueue*, bool> {
 
 set<MQueue*> MQueue::knownQueues;
 
-string MQueue::popMessage() throw (MQueueException)
+string MQueue::popMessage()
 {
     if (q.empty()) {
         throw MQueueException("attempt to pop from an empty queue");
