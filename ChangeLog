@@ -1,3 +1,10 @@
+2021-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure.scm (cf-prog-cxx): This hasn't been working
+	  after we changed cf-arg-var.  Now cf-arg-var sets "" if the
+	  environment variable isn't defined, and other parts of the code
+	  thinks it has value.
+
 2021-03-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/portapi.c, src/libio.scm: Revised port attribute
@@ -11,8 +18,8 @@
 	  This eliminates *Unsafe version of C API.
 	- We dropped procedural port attributes.  If we call back to the
 	  Scheme, lock management gets complicated.
-	- We dropped port-attribute-create API.  It is only needed for procedural
-	  attributes.
+	- We dropped port-attribute-create API.  It is only needed for
+	  procedural attributes.
 
 	* ext/peg/peg.scm ($raise, $cut): Experimentally add 'early exit'
 	  means.  A new failure type, fail-error, prevents parsers from

@@ -1118,8 +1118,9 @@
   (cf-arg-var 'CXX)
   (cf-arg-var 'CXXFLAGS)
   (cf-arg-var 'CCC)
-  (or (cf-ref 'CXX #f)
-      (and-let1 ccc (cf-ref 'CCC #f)
+  (or (not (string-null? (cf-ref 'CXX)))
+      (and-let* ([ccc (cf-ref 'CCC)]
+                 [ (not (string-null? ccc)) ])
         (cf-subst 'CXX ccc)
         #t)
       (cf-check-tool 'CXX compilers :default "g++"))
@@ -1163,7 +1164,8 @@
 ;; If SYM is already cf-subst'd, we don't do anything.
 (define (cf-check-prog sym prog-or-progs
                        :key (value #f) (default #f) (paths #f) (filter #f))
-  (unless (cf-have-subst? sym)
+  (unless (and (cf-have-subst? sym)
+               (not (string-null? (cf-ref sym))))
     (cf-msg-checking "for ~a" prog-or-progs)
     (if-let1 found (check-for-program (listify prog-or-progs)
                                       :paths paths :filter filter)
@@ -1177,7 +1179,8 @@
 ;; cf-path-prog works like AC_PATH_PROG and AC_PATH_PROGS.
 (define (cf-path-prog sym prog-or-progs
                       :key (value #f) (default #f) (paths #f) (filter #f))
-  (unless (cf-have-subst? sym)
+  (unless (and (cf-have-subst? sym)
+               (not (string-null? (cf-ref sym))))
     (cf-msg-checking "for ~a" prog-or-progs)
     (if-let1 found (check-for-program (listify prog-or-progs)
                                       :paths paths :filter filter)
