@@ -37,7 +37,7 @@ void Scm_Init_mqueue_cpp()
     SCM_INIT_EXTENSION(mqueue_cpp);
 
     /* Create example.mqueue-cpp module */
-    mod = SCM_MODULE(SCM_FIND_MODULE("example.mqueue-cpp", TRUE));
+    mod = SCM_FIND_MODULE("example.mqueue-cpp", SCM_FIND_MODULE_CREATE);
 
     /* Create the foreign pointer class <mqueue-cpp>.
        The flag SCM_FOREIGN_POINTER_KEEP_IDENTITY makes Gauche to keep
