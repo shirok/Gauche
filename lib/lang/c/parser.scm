@@ -77,7 +77,9 @@
 ;; Token recognition
 (define %identifier ($match1 ('ident _)))
 (define %constant   ($match1 ('const . _)))
-(define %string-literal ($match1 ((or 'string 'wstring) . _)))
+(define %string-literal
+  ($lift string-concatenate
+         ($many1 ($match1 ((or 'string 'wstring) s) s))))
 
 (define %LP ($. #\( ))
 (define %RP ($. #\) ))
