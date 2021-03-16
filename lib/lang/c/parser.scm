@@ -132,12 +132,46 @@
 (define %attribute-specifier-list
   ($many %attribute-specifier))
 
-;; asm can appear as a statement, or a part of declaration.  For now, we
-;; only support declataion.
+;; asm can appear as a statement, or a part of declaration.
 (define %asm-decl-suffix
-  ($binding ($one-of '(asm __asm __asm__))
-            %LP ($: s ($many1 %string-literal)) %RP
-            `(asm ,(string-concatenate (map cadr s)))))
+  ($binding ($. 'asm)
+            %LP ($: s %string-literal) %RP
+            `(asm ,s)))
+
+(define %asm-operand
+  ($lbinding ($: symbolic-name ($optional ($between %LB %identifier %RB)))
+             ($: constraint %string-literal)
+             ($: expr ($optional ($between %LP %expression %RP)))
+             `(,symbolic-name ,constraint ,expr)))
+
+(define %asm-statement
+  ($binding ($. 'asm)
+            ($: quals ($many ($one-of '(volatile inline goto))))
+            %LP
+            ($: template %string-literal)
+            ($optional
+             ($seq
+              ($. '|:|)
+              ($: outs ($sep-by %asm-operand ($. '|,|)))
+              ($optional
+               ($seq
+                ($. '|:|)
+                ($: ins ($sep-by %asm-operand ($. '|,|)))
+                ($optional
+                 ($seq
+                  ($. '|:|)
+                  ($: clobbers ($sep-by %string-literal ($. '|,|)))
+                  ($optional
+                   ($seq
+                    ($. '|:|)
+                    ($: gotos ($sep-by %identifier ($. '|,|)))))))))))
+            %RP
+            ($. '|\;|)
+            `(asm ,template
+                  ,(if (undefined? outs) '() outs)
+                  ,(if (undefined? ins) '() ins)
+                  ,(if (undefined? clobbers) '() clobbers)
+                  ,(if (undefined? gotos) '() clobbers))))
 
 ;;
 ;; Standard syntax
@@ -502,6 +536,7 @@
               %selection-statement
               %iteration-statement
               %jump-statement
+              %asm-statement
               ($try %labeled-statement)
               %expression-statement)))
 
