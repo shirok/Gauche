@@ -41,7 +41,14 @@
   (use gauche.lazy)
   (use lang.c.lexer)
   (use srfi-13)
-  (export-all)                          ;for now
+  (use lang.c.parameter)
+
+  (export c-tokenize-file
+          c-tokenize-string
+          c-parse-file
+          c-parse-string
+          cpp-include-paths             ;re-export from lang.c.parameter
+          )
   )
 (select-module lang.c.parser)
 
@@ -668,9 +675,6 @@
 ;;;
 
 ;; For testing - won't be official APIs.
-
-(define cpp-include-paths (make-parameter '()))
-(define cpp-definitions (make-parameter '()))
 
 (define (c-tokenize-file file)
   (call-with-cpp file
