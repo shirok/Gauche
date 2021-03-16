@@ -212,7 +212,7 @@
                 objs))
   (define (analyze-compound-error objs pos)
     (let1 grps (map (^g (cons (caar g) (map cdr g)))
-                    (group-collection objs :key car))
+                    (group-collection (flatten-compound-error objs) :key car))
       (let ([msgs (assoc-ref grps 'fail-message)]
             [exps (assoc-ref grps 'fail-expect)]
             [unexps (assoc-ref grps 'fail-unexpect)])
@@ -261,10 +261,7 @@
       [(fail-error) (analyze-compound-error (cdr objs) pos)] ;car is a tag
       [else (format "unknown parser error at ~a: ~a" pos-fmt objs)]  ;for safety
       ))
-  (let ([nexttok (if (pair? seq) (car seq) (eof-object))]
-        [objs (if (eq? type 'fail-compound)
-                (flatten-compound-error objs)
-                objs)])
+  (let ([nexttok (if (pair? seq) (car seq) (eof-object))])
     (make-condition <parse-error>
                     'position pos 'type type 'objects objs
                     'token nexttok 'rest seq
