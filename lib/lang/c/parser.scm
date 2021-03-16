@@ -173,13 +173,20 @@
                   ,(if (undefined? clobbers) '() clobbers)
                   ,(if (undefined? gotos) '() clobbers))))
 
+;; gcc's va_arg expands into __builtin_va_arg and handled by the compiler.
+(define %va-arg
+  ($lbinding ($match1 ('ident '__builtin_va_arg))
+             %LP ($: e %assignment-expression) ($. '|,|) ($: t %type-name) %RP
+             `(va-arg ,e ,t)))
+
 ;;
 ;; Standard syntax
 ;;
 
 ;; 6.5.1 Primary expressions
 (define %primary-expression
-  ($lazy ($or %identifier
+  ($lazy ($or %va-arg                   ; gcc specific
+              %identifier
               %constant
               %string-literal
               ($binding ($: expr ($between %LP %expression %RP))
@@ -536,7 +543,7 @@
               %selection-statement
               %iteration-statement
               %jump-statement
-              %asm-statement
+              %asm-statement            ; gcc specific
               ($try %labeled-statement)
               %expression-statement)))
 
