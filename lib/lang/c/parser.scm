@@ -240,7 +240,10 @@
                   `(,op ,main))
        ($binding ($: ops ($many ($one-of '(++ -- sizeof))))
                  ($: main %postfix-expression)
-                 (fold-right (^[op r] `(,op ,r)) main ops))))
+                 (fold-right (^[op r] `(,op ,r)) main ops))
+       ($binding ($. '&&)               ;gcc label as value
+                 ($: label %identifier)
+                 `(&& ,label))))
 
 ;; 6.5.4 Cast operators
 (define %cast-expression
@@ -635,7 +638,9 @@
 
 ;; 6.8.6 Jump statement
 (define %jump-statement
-  ($or ($binding ($. 'goto) ($: dest %identifier) ($. '|\;|)
+  ($or ($binding ($. 'goto)
+                 ($: dest ($or %identifier
+                               ($list ($. '*) %expression))) ;gcc computed goto
                  `(goto ,dest))
        ($seq ($. 'continue) ($. '|\;|) ($return 'continue))
        ($seq ($. 'break) ($. '|\;|) ($return 'break))
