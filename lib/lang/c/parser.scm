@@ -400,6 +400,15 @@
 (define %function-specifier ($. 'inline))
 
 ;; 6.7.5 Declarators
+;;   Actual type of the identifier can't be determined until we see the
+;;   entire declaration.  A declarator simply returns a triplet:
+;;     (<identifier> <type-spec> ...)
+;;   where each type-spec can be
+;;     (* qualifier ...)
+;;     (array (qualifier ...) (dimension ...))
+;;     (function (parameter-spec ...))
+;;   This is a transient information.  Declaration constructs a complete
+;;   type.
 (define %declarator
   ($lbinding ($: ptr ($many %pointer))
              ($: main ($or %identifier
@@ -408,7 +417,11 @@
                                   %function-decl-suffix
                                   %asm-decl-suffix
                                   %attribute-specifier)))
-             `(,main :: (,@ptr ,@post))))
+             (match main
+               [('ident id) `((ident ,id) ,@post ,@ptr)]
+               [(('ident id) . specs) `((ident ,id) ,@post ,@ptr ,@specs)]
+               [else (errorf "something wrong with %declarator.  main=~s"
+                             main)])))
 
 (define %pointer
   ($lift cons ($. '*) ($many ($or %type-qualifier %attribute-specifier))))
@@ -462,23 +475,29 @@
                       (fail "typedef name"))))))
 
 ;; 6.7 Declarations
+;;   Returns (decl ((identifier . type) . init) ...)
+;;   The type part is constructed by grok-declaration
 (define %declaration
   ($lbinding ($: specs %declaration-specifiers)
-             ($: decls ($sep-by %init-declarator ($. '|,|)))
-             %attribute-specifier-list
+             ($: declarators ($sep-by %init-declarator ($. '|,|)))
+             %attribute-specifier-list  ;ignore for now
              ($. '|\;|)
-             (begin
+             (let ([decls (map (cut grok-declaration specs <>) declarators)])
                (when (memq 'typedef specs)
                  (map (^d (register-typedefs! specs d)) decls))
-               `(decl ,specs ,decls))))
+               `(decl ,@decls))))
 
 (define (register-typedefs! specs decl)
-  (let1 typename
-      (match decl
-        [((('ident name) . _) . _) name]
-        [(((('ident name) . _) . _) . _) name]
-        [_ (error "huh?" decl)])
-    (dict-put! (typedef-names) typename (list specs decl))))
+  (match decl
+    [(((? symbol? typename) . _) . _)
+     (dict-put! (typedef-names) typename (list specs decl))]
+    [else
+     (error "something wrong with typedef decl" decl)]))
+
+(define (grok-declaration specs decl)
+  (match decl
+    [((('ident id) . type) init) `((,id ,@type ,@specs) ,init)]
+    [((('ident id) . type))      `((,id ,@type ,@specs))]))
 
 ;; modified to handle typedef-name.  see %type-specifier above.
 (define %declaration-specifiers
