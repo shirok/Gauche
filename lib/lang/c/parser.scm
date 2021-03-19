@@ -573,13 +573,13 @@
 ;;  we need $try for %labeled-statement, for it may consume the first
 ;;  identifier before failing.
 (define %statement
-  ($lazy ($or %compound-statement
-              %selection-statement
-              %iteration-statement
-              %jump-statement
-              %asm-statement            ; gcc specific
-              ($try %labeled-statement)
-              %expression-statement)))
+  ($lazy ($cut ($or %compound-statement
+                    %selection-statement
+                    %iteration-statement
+                    %jump-statement
+                    %asm-statement            ; gcc specific
+                    ($try %labeled-statement)
+                    %expression-statement))))
 
 ;; 6.8.1 Labeled statement
 (define %labeled-statement
