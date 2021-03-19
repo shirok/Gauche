@@ -192,12 +192,18 @@
 
 ;; 6.5.1 Primary expressions
 (define %primary-expression
-  ($lazy ($or %va-arg                   ; gcc specific
-              %identifier
-              %constant
-              %string-literal
-              ($binding ($: expr ($between %LP %expression %RP))
-                        `(paren ,expr)))))
+  ($lazy
+   ($or %va-arg                   ; gcc specific
+        %identifier
+        %constant
+        %string-literal
+        ($binding ($between %LP
+                            ($or ($: stmt-expr %compound-statement) ; gcc
+                                 ($: expr %expression))
+                            %RP)
+                  (if (undefined? stmt-expr)
+                    `(paren ,expr)
+                    `(stmt-expr ,stmt-expr))))))
 
 ;; 6.5.2 Postfix operators
 (define %postfix-expression
