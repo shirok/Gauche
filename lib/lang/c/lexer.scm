@@ -152,6 +152,8 @@
     (__restrict__ restrict)
     (__inline inline)
     (__inline__ inline)
+    (__volatile volatile)
+    (__volatile__ volatile)
     (asm asm)
     (__asm asm)
     (__asm__ asm)
