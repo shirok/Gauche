@@ -204,6 +204,12 @@
 (define-inline (return-failure/unexpect v s) (values 'fail-unexpect v s))
 (define-inline (return-failure/compound v s) (values 'fail-compound v s))
 
+(define (return-error-from-failure tag failure payload s)
+  (case failure
+    [(fail-error) (match-let1 (_ . alist) payload
+                    (values 'fail-error `(,tag . ,alist) s))]
+    [else         (values 'fail-error `(,tag (,failure . ,payload)) s)]))
+
 (define (make-peg-parse-error type objs pos seq)
   (define (flatten-compound-error objs)
     (append-map (^e (if (eq? (car e) 'fail-compound)
@@ -459,9 +465,7 @@
     [(tag parser) (^s (receive (r v s) (parser s)
                         (if (parse-success? r)
                           (return-result v s)
-                          (return-failure 'fail-error
-                                          `(,tag (,r . ,v))
-                                          s))))]
+                          (return-error-from-failure tag r v s))))]
     [(parser) ($cut 'error parser)]))
 
 ;; API
