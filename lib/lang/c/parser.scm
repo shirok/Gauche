@@ -322,8 +322,9 @@
 (define %constant-expression %conditional-expression)
 
 ;; 6.7.1
-(define %storage-class-specifier
-  ($one-of '(typedef extern static auto register)))
+(define-constant *storage-classes* '(typedef extern static auto register))
+
+(define %storage-class-specifier ($one-of *storage-classes*))
 
 ;; 6.7.2 Type specifiers
 ;; NB: Typedef-name is removed to be distinguished from identifiers.  It is
@@ -475,7 +476,7 @@
                       (fail "typedef name"))))))
 
 ;; 6.7 Declarations
-;;   Returns (decl ((identifier . type) . init) ...)
+;;   Returns (decl (identifier storage-class type init) ...)
 ;;   The type part is constructed by grok-declaration
 (define %declaration
   ($lbinding ($: specs %declaration-specifiers)
@@ -489,15 +490,19 @@
 
 (define (register-typedefs! specs decl)
   (match decl
-    [(((? symbol? typename) . _) . _)
+    [((? symbol? typename) . _)
      (dict-put! (typedef-names) typename (list specs decl))]
     [else
      (error "something wrong with typedef decl" decl)]))
 
 (define (grok-declaration specs decl)
+  (define (build-decl id type init)
+    (let* ([sc (find (cut memq <> *storage-classes*) specs)]
+           [ty (delete sc specs)])
+      `(,id ,sc (,@type ,ty) ,init)))
   (match decl
-    [((('ident id) . type) init) `((,id ,@type ,@specs) ,init)]
-    [((('ident id) . type))      `((,id ,@type ,@specs))]))
+    [((('ident id) . type) init) (build-decl id type init)]
+    [((('ident id) . type))      (build-decl id type #f)]))
 
 ;; modified to handle typedef-name.  see %type-specifier above.
 (define %declaration-specifiers
