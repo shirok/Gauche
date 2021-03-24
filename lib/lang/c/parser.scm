@@ -102,7 +102,7 @@
   ($binding ($: xs ($sep-by term ($. sep)))
             (=> fail)
             (match xs
-              [() (fail "at least one expression required")]
+              [() (fail (format "at least one expression required for ~s" op))]
               [(x0) x0]
               [xs `(,op ,@xs)])))
 
@@ -464,7 +464,7 @@
             (=> fail)
             (or (and-let* ([p (memq '... params)]
                            [ (not (null? (cdr p))) ])
-                  (fail "'...' appear in middle of parameter list"))
+                  (fail 'error "'...' appear in middle of parameter list"))
                 params)))
 
 (define %function-decl-suffix
