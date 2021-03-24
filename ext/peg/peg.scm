@@ -203,7 +203,6 @@
 (define-inline (return-failure/expect v s)   (values 'fail-expect v s))
 (define-inline (return-failure/unexpect v s) (values 'fail-unexpect v s))
 (define-inline (return-failure/compound v s) (values 'fail-compound v s))
-
 (define (return-error-from-failure tag failure payload s)
   (case failure
     [(fail-error) (match-let1 (_ . alist) payload
@@ -991,14 +990,19 @@
      (define (build-fail-decl fail)
        (if fail
          (quasirename r
-           `((define (,fail msg) (cons ',fail-mark msg))))
+           `((define ,fail
+               (case-lambda
+                 ((msg) (list* ',fail-mark #f msg))
+                 ((tag msg) (list* ',fail-mark tag msg))))))
          '()))
      (define (build-return result fail tail)
        (if fail
          (quasirename r
            `(let ((r ,result))
               (if (and (pair? r) (eq? (car r) ',fail-mark))
-                (return-failure/message (cdr r) s)
+                (if (symbol? (cadr r))
+                  (return-error-from-failure (cadr r) 'fail-message (cddr r) s)
+                  (return-failure/message (cddr r) s))
                 (return-result r ,tail))))
          (quasirename r
            `(return-result ,result ,tail))))
@@ -1028,7 +1032,7 @@
      ;; optimization - if all the variable binding form is in the first level,
      ;; e.g.
      ;;   ($binding ($: x parser1)
-     ;;             ($: y parser2
+     ;;             ($: y parser2)
      ;;             body)
      ;; We can simply use $lift.
      ;;   ($lift (lambda (x y) body) parser1 parser2)

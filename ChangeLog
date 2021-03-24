@@ -1,3 +1,9 @@
+2021-03-23  Shiro Kawai  <shiro@acm.org>
+
+	* ext/peg/peg.scm ($binding): Allow fail procedure to yield
+	  non-recoverable failure.  The interface is a bit awkward (optional
+	  tag argument) so we may reconsider it.
+
 2021-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure.scm (cf-prog-cxx): This hasn't been working

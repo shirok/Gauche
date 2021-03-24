@@ -933,6 +933,13 @@
   (test-fail "$binding fail proc" `(2 "no-no") p "cd")
   (test-fail "$binding fail proc" '(1 "d") p "cy"))
 
+(let ((p ($or ($binding ($: x ($. "ab"))
+                        (=> F)
+                        (F 'error "ugh"))
+              ($. "ab"))))
+  (test-fail "$binding fail/error" '(2 (error (fail-message . "ugh")))
+             p "ab"))
+
 (letrec ([p (lambda (q)
               ($binding ($. "a")
                         ($: y q)
