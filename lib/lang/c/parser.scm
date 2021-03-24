@@ -651,6 +651,7 @@
   ($or ($binding ($. 'goto)
                  ($: dest ($or %identifier
                                ($list ($. '*) %expression))) ;gcc computed goto
+                 ($. '|\;|)
                  `(goto ,dest))
        ($seq ($. 'continue) ($. '|\;|) ($return 'continue))
        ($seq ($. 'break) ($. '|\;|) ($return 'break))
