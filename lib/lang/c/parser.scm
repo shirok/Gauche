@@ -411,7 +411,7 @@
 
 ;; 6.7.5 Declarators
 ;;   Actual type of the identifier can't be determined until we see the
-;;   entire declaration.  A declarator simply returns a triplet:
+;;   entire declaration.  A declarator simply returns a list:
 ;;     (<identifier> <type-spec> ...)
 ;;   where each type-spec can be
 ;;     (* qualifier ...)
@@ -447,12 +447,12 @@
             `(array ,quals ,assign)))
 
 (define %parameter-declaration
-  ($lbinding ($: spec %declaration-specifiers)
-             ($: decl ($or ($try %declarator)
-                           ($optional %abstract-declarator)))
+  ($lbinding ($: specs %declaration-specifiers)
+             ($: decl  ($or ($try %declarator)
+                            ($optional %abstract-declarator)))
              (if decl
-               `(,spec ,decl)
-               spec)))
+               (grok-declaration specs `(,decl))
+               (grok-declaration specs '((#f))))))
 
 (define %parameter-type-list
   ;; NB: We require at least one %parameter-declaration, for the empty parameter
@@ -511,7 +511,8 @@
       `(,id ,sc (,@type ,ty) ,init)))
   (match decl
     [((('ident id) . type) init) (build-decl id type init)]
-    [((('ident id) . type))      (build-decl id type #f)]))
+    [((('ident id) . type))      (build-decl id type #f)]
+    [((#f . type))               (build-decl #f type #f)]))  ; abstract-decl
 
 ;; modified to handle typedef-name.  see %type-specifier above.
 (define %declaration-specifiers
@@ -539,18 +540,21 @@
                `(,decl))))
 
 ;; 6.7.6 Type names
-(define %abstract-declarator
-  ($lbinding ($: ptrs ($many %pointer))
-             ($: decl %direct-abstract-declarator)
-             (fold-right (^[p r] `(,p ,r)) decl ptrs)))
 
-(define %direct-abstract-declarator
-  ($lbinding ($: paren ($optional ($between %LP %abstract-declarator %RP)))
-             ($: suff ($many ($or ($try ($seq %LB ($. '*) %RB))
+;; Value of %abstract-declarator is similar to %declarator, except that
+;; it has #f in place of the identifier.  It's an intermediate value and
+;; eventually parsed by grok-declaration.
+;;   (#f <type-spec> ...)
+(define %abstract-declarator
+  ($lbinding ($: ptr ($many %pointer))
+             ($: main ($optional ($between %LP %abstract-declarator %RP)))
+             ($: suff ($many ($or ($try ($between %LB ($. '*) %RB))
                                   %array-decl-suffix
                                   %function-decl-suffix)))
-             ;; for now
-             (cons paren suff)))
+             (if main
+               (let ((main-specs (cdr main)))
+                 `(#f ,@suff ,@ptr ,@main-specs))
+               `(#f ,@suff ,@ptr))))
 
 (define %type-name
   ($binding ($: specs %type-specifier-qualifier-list)
