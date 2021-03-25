@@ -440,22 +440,19 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     if (module->sealed) err_sealed(SCM_OBJ(symbol), module);
 
     ScmGloc *g;
-    ScmObj oldval = SCM_UNDEFINED;
-    int prev_kind = 0;
     int kind = ((flags&SCM_BINDING_CONST)
                 ? SCM_BINDING_CONST
                 : ((flags&SCM_BINDING_INLINABLE)
                    ? SCM_BINDING_INLINABLE
                    : 0));
+    int existing = FALSE;
 
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
     ScmObj v = Scm_HashTableRef(module->internal, SCM_OBJ(symbol), SCM_FALSE);
     /* NB: this function bypasses check of gloc setter */
     if (SCM_GLOCP(v)) {
         g = SCM_GLOC(v);
-        if (Scm_GlocConstP(g))          prev_kind = SCM_BINDING_CONST;
-        else if (Scm_GlocInlinableP(g)) prev_kind = SCM_BINDING_INLINABLE;
-        oldval = g->value;
+        existing = TRUE;
     } else {
         g = SCM_GLOC(Scm_MakeGloc(symbol, module));
         Scm_HashTableSet(module->internal, SCM_OBJ(symbol), SCM_OBJ(g), 0);
@@ -466,18 +463,14 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     }
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
 
-    g->value = value;
-    Scm_GlocMark(g, kind);
-
-    if (prev_kind != 0) {
-        /* NB: Scm_EqualP may throw an error.  It won't leave the state
-           inconsistent, but be aware. */
-        if (prev_kind != kind || !Scm_EqualP(value, oldval)) {
-            Scm_Warn("redefining %s %S::%S",
-                     (prev_kind == SCM_BINDING_CONST)? "constant" : "inlinable",
-                     g->module->name, g->name);
-        }
+    if (existing && !Scm_GlocSupersedableP(g, flags, value)) {
+        Scm_Warn("redefining %s %S::%S",
+                 Scm_GlocConstP(g)? "constant" : "inlinable",
+                 g->module->name, g->name);
     }
+
+    g->value = value;
+    Scm_GlocMark(g, flags);
     return g;
 }
 

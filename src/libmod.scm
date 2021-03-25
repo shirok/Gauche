@@ -153,6 +153,7 @@
 ;; one or more of the following symbols:
 ;;   const     - SCM_BINDING_CONST
 ;;   inlinable - SCM_BINDING_INLINABLE
+;;   dummy     - SCM_BINDING_DUMMY
 ;;   fresh     - insert only if there's no binding yet (this isn't an
 ;;               attribute for the binding itself)
 ;; returns GLOC or #f
@@ -169,6 +170,8 @@
           (logior= z SCM_BINDING_CONST))
         (unless (SCM_FALSEP (Scm_Memq 'inlinable flags))
           (logior= z SCM_BINDING_INLINABLE))
+        (unless (SCM_FALSEP (Scm_Memq 'dummy flags))
+          (logior= z SCM_BINDING_DUMMY))
         (return (SCM_OBJ (Scm_MakeBinding mod name value z)))))))
 
 ;; Insert binding as a syntactic keyword.  VALUE must be #<macro> or #<syntax>.

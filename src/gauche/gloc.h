@@ -107,6 +107,7 @@ SCM_CLASS_DECL(Scm_GlocClass);
 
 SCM_EXTERN int    Scm_GlocConstP(ScmGloc *g);
 SCM_EXTERN int    Scm_GlocInlinableP(ScmGloc *g);
+SCM_EXTERN int    Scm_GlocSupersedableP(ScmGloc *g, u_long flags, ScmObj val);
 
 /* INTERNAL */
 

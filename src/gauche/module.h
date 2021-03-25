@@ -88,10 +88,19 @@ enum {
     SCM_BINDING_STAY_IN_MODULE = (1L<<0), /*(F,R) do not search parent/imported*/
     SCM_BINDING_CONST = (1L<<1),          /*(M) constant binding */
     SCM_BINDING_INLINABLE = (1L<<2),      /*(M) inlinable binding */
-    SCM_BINDING_EXTERNAL = (1L<<3)        /*(F) only search externally visible
+    SCM_BINDING_EXTERNAL = (1L<<3),       /*(F) only search externally visible
                                             bindings, as if we're importing
                                             the module.  Currently used to
                                             create alias binding. */
+    SCM_BINDING_DUMMY = (1L<<4)           /*(M) inline or constant binding,
+                                            inserted only during compilation.
+                                            this is a dummy binding only to be
+                                            recognized by the compiler to expand
+                                            the following expressions. The
+                                            binding is ot be overwritten by
+                                            the proper one when the compiled
+                                            module is loaded, so we won't warn
+                                            the overwriting. */
 };
 
 SCM_EXTERN ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol,
