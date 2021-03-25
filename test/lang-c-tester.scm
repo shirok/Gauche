@@ -5,6 +5,7 @@
 ;; Run ./gosh -ftest ../test/lang-c-tester.scm under src
 
 (use gauche.time)
+(use util.match)
 (use lang.c.parser)
 (cpp-include-paths '("." "../gc/include" "../gc/libatomic_ops/src"))
 
@@ -99,5 +100,7 @@
   (print (time-this 1 (^[] (c-parse-file file)))))
 
 (define (main args)
-  (for-each do-parse *sources*)
+  (if (null? (cdr args))
+    (for-each do-parse *sources*)
+    (for-each do-parse (cdr args)))
   0)
