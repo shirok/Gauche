@@ -2,7 +2,7 @@
 ;;; control.thread-pool - thread pool
 ;;;
 ;;;  Copyright (c) 2003-2007 Time Intermedia Corporation, All rights reserved.
-;;;  Copyright (c) 2010-2020  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2010-2021  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;  Redistribution and use in source and binary forms, with or without
 ;;;  modification, are permitted provided that the following conditions
