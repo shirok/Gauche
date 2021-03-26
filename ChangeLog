@@ -1,3 +1,7 @@
+2021-03-26  Shiro Kawai  <shiro@acm.org>
+
+	* lib/contro/cseq.scm: Added experimentally.
+
 2021-03-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/mark-closure-inlinable!): We didn't set

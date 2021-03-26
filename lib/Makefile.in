@@ -105,7 +105,7 @@ SCMFILES = \
        gauche/experimental/app.scm \
        r7rs-setup.scm \
        binary/ftype.scm binary/pack.scm \
-       control/future.scm control/job.scm \
+       control/cseq.scm control/future.scm control/job.scm \
        control/mapper.scm control/thread-pool.scm \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        data/cache.scm data/heap.scm \

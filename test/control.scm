@@ -194,6 +194,35 @@
  [else])
 
 ;;--------------------------------------------------------------------
+;; control.cseq
+;;
+
+(cond-expand
+ [gauche.sys.threads
+  (test-section "control.cseq")
+  (use control.cseq)
+  (test-module 'control.cseq)
+
+  (let ((k 0))
+    (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
+    (define seq (generator->cseq gen))
+    (test* "cseq" '(0 10)
+           (list (car seq) k)))
+
+  (let ((k 0))
+    (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
+    (define seq (generator->cseq gen))
+    (test* "cseq" '(0 1 2 3 4 5 6 7 8 9) seq))
+
+  (let ((k 0))
+    (define (gen) (if (= k 5) (error "oops") (begin0 k (inc! k))))
+    (define seq (generator->cseq gen))
+    (test* "cseq" '(0 1 2 3) (take seq 4))
+    (test* "cseq" (test-error <error> "oops") (take seq 5)))
+  ]
+ [else])
+
+;;--------------------------------------------------------------------
 ;; control.future
 ;;
 
