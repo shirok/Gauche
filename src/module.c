@@ -440,11 +440,6 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     if (module->sealed) err_sealed(SCM_OBJ(symbol), module);
 
     ScmGloc *g;
-    int kind = ((flags&SCM_BINDING_CONST)
-                ? SCM_BINDING_CONST
-                : ((flags&SCM_BINDING_INLINABLE)
-                   ? SCM_BINDING_INLINABLE
-                   : 0));
     int existing = FALSE;
 
     SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN(modules.mutex);
