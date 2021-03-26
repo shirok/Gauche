@@ -232,6 +232,27 @@
            (test (bar)))
          (foo)))
 
+;; This test exhibits a bug on inlining a procedure within the same
+;; compilation unit.  Fixed by commit 43b479fb0.
+(test* "inlining procedure in the same compilation unit"
+       #f
+       (let ((m (make-module #f)))
+         ;; If foo is inline-expanded, gref to foo won't remain.
+         (define (reference-to-foo? opcode)
+           (and (wrapped-identifier? opcode)
+                (eq? (identifier->symbol opcode) 'foo)))
+
+         (eval '(begin
+                  (define-inline (foo x) (pair? x))
+                  (define (bar y) (foo (car y))))
+               m)
+         (find
+          (^[insn]
+            (match insn
+              [(_ (? reference-to-foo? x)) #t]
+              [_ #f]))
+          (proc->insn/split (global-variable-ref m 'bar)))))
+
 ;; generic function pre-dispatch
 ;; NB: We're still not sure how to expose this feature in general.
 ;; For the time being, we test the inlining logic (it's in pass 3)
