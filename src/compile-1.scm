@@ -671,8 +671,9 @@
     (when name
       ;; record inliner function for compiler.  this is used only when
       ;; the procedure needs to be inlined in the same compiler unit.
-      (%insert-binding module (unwrap-syntax name) dummy-proc)
-      (set! (%procedure-inliner dummy-proc) (pass1/inliner-procedure packed)))))
+      (%insert-binding module (unwrap-syntax name) dummy-proc
+                       '(inlinable dummy))
+      (set! (%procedure-inliner dummy-proc) packed))))
 
 (define (pass1/make-inlinable-binding form name iform cenv)
   ;; See the comment in pass1/define about renaming the toplevel identifier.
@@ -680,13 +681,6 @@
              (%rename-toplevel-identifier! name)
              (make-identifier name (cenv-module cenv) '()))
     ($define form '(inlinable) id iform)))
-
-(define (pass1/inliner-procedure inline-info)
-  (unless (vector? inline-info)
-    (error "[internal] pass1/inliner-procedure got invalid info" inline-info))
-  (^[form cenv]
-    (expand-inlined-procedure form (unpack-iform inline-info)
-                              (imap (cut pass1 <> cenv) (cdr form)))))
 
 ;; Toplevel macro definitions
 
