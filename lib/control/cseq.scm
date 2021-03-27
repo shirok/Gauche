@@ -39,9 +39,20 @@
   (use gauche.generator)
   (use gauche.threads)
   (use data.queue)
-  (export generator->cseq)
+  (export generator->cseq
+          coroutine->cseq)
   )
 (select-module control.cseq)
+
+(define (%concurrent-generator->lseq q thunk)
+  (define t (thread-start! (make-thread thunk)))
+  (generator->lseq (^[] (let1 r (dequeue/wait! q)
+                          (when (eof-object? (car r))
+                            (guard (e [(<uncaught-exception> e)
+                                       (raise (~ e 'reason))]
+                                      [else (raise e)])
+                              (thread-join! t)))
+                          (apply values r)))))
 
 (define (generator->cseq producer :key (queue-length #f))
   (define q (make-mtqueue :max-length (or queue-length 64)))
@@ -52,12 +63,14 @@
           (enqueue/wait! q (cons v rest))
           (unless (eof-object? v)
             (loop))))))
+  (%concurrent-generator->lseq q thunk))
 
-  (define t (thread-start! (make-thread thunk)))
-  (generator->lseq (^[] (let1 r (dequeue/wait! q)
-                          (when (eof-object? (car r))
-                            (guard (e [(<uncaught-exception> e)
-                                       (raise (~ e 'reason))]
-                                      [else (raise e)])
-                              (thread-join! t)))
-                          (apply values r)))))
+(define (coroutine->cseq proc :key (queue-length #f))
+  (define q (make-mtqueue :max-length (or queue-length 64)))
+  (define (yielder . vals) (enqueue/wait! q vals))
+
+  (define (thunk)
+    (guard [e (else (enqueue/wait! q (list (eof-object))) (raise e))]
+      (proc yielder)
+      (enqueue/wait! q (list (eof-object)))))
+  (%concurrent-generator->lseq q thunk))

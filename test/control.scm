@@ -206,19 +206,25 @@
   (let ((k 0))
     (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
     (define seq (generator->cseq gen))
-    (test* "cseq" '(0 10)
+    (test* "cseq (gen)" '(0 10)
            (list (car seq) k)))
 
   (let ((k 0))
     (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
     (define seq (generator->cseq gen))
-    (test* "cseq" '(0 1 2 3 4 5 6 7 8 9) seq))
+    (test* "cseq (gen)" '(0 1 2 3 4 5 6 7 8 9) seq))
 
   (let ((k 0))
     (define (gen) (if (= k 5) (error "oops") (begin0 k (inc! k))))
     (define seq (generator->cseq gen))
-    (test* "cseq" '(0 1 2 3) (take seq 4))
-    (test* "cseq" (test-error <error> "oops") (take seq 5)))
+    (test* "cseq (gen)" '(0 1 2 3) (take seq 4))
+    (test* "cseq (gen)" (test-error <error> "oops") (take seq 5)))
+
+  (let ()
+    (define (coro yield)
+      (let loop ((k 0)) (when (< k 10) (yield k) (loop (+ k 1)))))
+    (define seq (coroutine->cseq coro))
+    (test* "cseq (coroutine)" '(0 1 2 3 4 5 6 7 8 9) seq))
   ]
  [else])
 
