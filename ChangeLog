@@ -1,5 +1,9 @@
 2021-03-26  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/procedure.scm (disasm): Force an object in the closed
+	  environment before checking if it is a lifted closure.  Such
+	  'delayed' closure can be seen in the ones created with parser.peg.
+
 	* lib/contro/cseq.scm: Added experimentally.
 
 2021-03-25  Shiro Kawai  <shiro@acm.org>
