@@ -36,7 +36,8 @@
 ;; This is an internal module.  Not to be directly used.
 (define-module lang.c.parameter
   (export cpp-include-paths
-          cpp-definitions)
+          cpp-definitions
+          use-concurrent-lexer)
   )
 (select-module lang.c.parameter)
 
@@ -45,3 +46,6 @@
 
 ;; An assoc list of cpp variables and values.
 (define cpp-definitions (make-parameter '()))
+
+;; Whether using separate thread for lexer
+(define use-concurrent-lexer (make-parameter (> (sys-available-processors) 1)))

@@ -39,6 +39,7 @@
   (use gauche.config)
   (use gauche.dictionary)
   (use gauche.lazy)
+  (use control.cseq)
   (use lang.c.lexer)
   (use srfi-13)
   (use lang.c.parameter)
@@ -724,11 +725,26 @@
      :includes (cpp-include-paths)
      :defs (cpp-definitions)))
 
+(define (c-tokenize-file-coroutine file)
+  (^[yield]
+    ($ call-with-cpp file
+       (^p
+        (let loop ([tokens ($ c-tokenize
+                              $ port->char-lseq/position p
+                              :source-name file
+                              :line-adjusters `((#\# . ,cc1-line-adjuster)))])
+          (unless (null? tokens)
+            (yield (car tokens)
+                   (pair-attributes tokens))
+            (loop (cdr tokens)))))
+       :includes (cpp-include-paths)
+       :defs (cpp-definitions))))
+
 (define (c-parse-file file :optional (parser %translation-unit))
   (parameterize ((typedef-names (default-typedefs)))
-    (peg-run-parser parser
-                    (c-tokenize-file file))))
-
+    (if (use-concurrent-lexer)
+      (peg-run-parser parser (coroutine->cseq (c-tokenize-file-coroutine file)))
+      (peg-run-parser parser (c-tokenize-file file)))))
 
 (define (%operate-on-string string proc)
   (let1 f (format "x~8,'0x.c" (receive (s us) (sys-gettimeofday)
