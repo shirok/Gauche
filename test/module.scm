@@ -699,6 +699,52 @@
                 [else (loop (cdr names) (cons (car names) missing))]))))
 
 ;;-------------------------------------------------------------------
+;; Module exports
+
+(define-module exports-test-A
+  (export a b c)
+  (define a 0)
+  (define b 1)
+  (define c 2))
+
+(define-module exports-test-B
+  (extend exports-test-A)
+  (define a 3)
+  (define d 4)
+  (export d))
+
+(define-module exports-test-C
+  (extend exports-test-A)
+  (export-all)
+  (define e 5)
+  (define f 6))
+
+(define-module exports-test-D
+  (extend exports-test-B exports-test-C)
+  (export g)
+  (define g 7))
+
+(test "module-exports"
+      '(a b c d e f g)
+      (lambda ()
+        ;; NB: We haven't tested 'sort', so we need to roll our own
+        (define (sym<? a b)
+          (string<? (symbol->string a) (symbol->string b)))
+        (define (sort-sym xs)
+          (if (or (null? xs) (null? (cdr xs)))
+            xs
+            (let loop ((pivot (car xs))
+                       (xs (cdr xs))
+                       (lt '())
+                       (ge '()))
+              (if (null? xs)
+                (append (sort-sym lt) (list pivot) (sort-sym ge))
+                (if (sym<? (car xs) pivot)
+                  (loop pivot (cdr xs) (cons (car xs) lt) ge)
+                  (loop pivot (cdr xs) lt (cons (car xs) ge)))))))
+        (sort-sym (module-exports (find-module 'exports-test-D)))))
+
+;;-------------------------------------------------------------------
 ;; Macro and builtin inliner
 ;; https://twitter.com/tk_riple/status/647865265154326528
 
