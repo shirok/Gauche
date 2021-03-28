@@ -141,7 +141,7 @@
   (iform-tag iform)
   [($DEFINE) (unless t?
                (warn "define appears in non-top-level expression: ~s"
-                      ($define-src iform)))
+                     (unravel-syntax ($define-src iform))))
              (pass4/scan ($define-expr iform) bs fs t? labels)]
   [($LREF)   (pass4/add-lvar ($lref-lvar iform) bs fs)]
   [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs #f labels)
