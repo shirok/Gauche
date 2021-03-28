@@ -51,7 +51,7 @@
    stream-constant stream-drop-while stream-take-while
    stream-range stream-fold stream-from stream-iterate
    stream-length stream-ref stream-reverse stream-scan stream-zip
-   stream-match stream-of
+   stream-match stream-of stream-let
 
    ;; extras
    generator->stream stream-concatenate
