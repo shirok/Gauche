@@ -747,8 +747,9 @@
         (nl (+ ind 4))
         (rec (+ ind 4) ($receive-expr iform)) (nl (+ ind 2))
         (rec (+ ind 2) ($receive-body iform)) (display ")")]
-       [($LAMBDA) (format #t "($lambda[~a.~a~a] ~a" ($lambda-name iform)
+       [($LAMBDA) (format #t "($lambda[~a.~a~a~a] ~a" ($lambda-name iform)
                           (length ($lambda-calls iform))
+                          (if (null? ($lambda-free-lvars iform)) "" "c")
                           (if (vector? ($lambda-flag iform)) " inlinable" "")
                           (map lvar->string ($lambda-lvars iform)))
         (nl (+ ind 2))

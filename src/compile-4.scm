@@ -139,20 +139,22 @@
 
 (define/case (pass4/scan iform bs fs t? labels)
   (iform-tag iform)
-  [($DEFINE) (unless t? (error "[internal] pass4 $DEFINE in non-toplevel"))
+  [($DEFINE) (unless t?
+               (error "define appears in non-top-level expression"
+                      ($define-src iform)))
              (pass4/scan ($define-expr iform) bs fs #t labels)]
   [($LREF)   (pass4/add-lvar ($lref-lvar iform) bs fs)]
-  [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs t? labels)
+  [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs #f labels)
                (pass4/add-lvar ($lset-lvar iform) bs fs))]
-  [($GSET)   (pass4/scan ($gset-expr iform) bs fs t? labels)]
-  [($IF)     (let* ([fs (pass4/scan ($if-test iform) bs fs t? labels)]
-                    [fs (pass4/scan ($if-then iform) bs fs t? labels)])
-               (pass4/scan ($if-else iform) bs fs t? labels))]
+  [($GSET)   (pass4/scan ($gset-expr iform) bs fs #f labels)]
+  [($IF)     (let* ([fs (pass4/scan ($if-test iform) bs fs #f labels)]
+                    [fs (pass4/scan ($if-then iform) bs fs #f labels)])
+               (pass4/scan ($if-else iform) bs fs #f labels))]
   [($LET)    (let* ([new-bs (append ($let-lvars iform) bs)]
                     [bs (if (memv ($let-type iform) '(rec rec*)) new-bs bs)]
-                    [fs (pass4/scan* ($let-inits iform) bs fs t? labels)])
-               (pass4/scan ($let-body iform) new-bs fs #f labels))]
-  [($RECEIVE)(let ([fs (pass4/scan ($receive-expr iform) bs fs t? labels)]
+                    [fs (pass4/scan* ($let-inits iform) bs fs #f labels)])
+               (pass4/scan ($let-body iform) new-bs fs t? labels))]
+  [($RECEIVE)(let ([fs (pass4/scan ($receive-expr iform) bs fs #f labels)]
                    [bs (append ($receive-lvars iform) bs)])
                (pass4/scan ($receive-body iform) bs fs #f labels))]
   [($LAMBDA) (let1 inner-fs (pass4/scan ($lambda-body iform)
@@ -178,12 +180,12 @@
   [($SEQ)    (pass4/scan* ($seq-body iform) bs fs t? labels)]
   [($CALL)   (let1 fs (if (eq? ($call-flag iform) 'jump)
                         fs
-                        (pass4/scan ($call-proc iform) bs fs t? labels))
-               (pass4/scan* ($call-args iform) bs fs t? labels))]
-  [($ASM)    (pass4/scan* ($asm-args iform) bs fs t? labels)]
-  [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs t? labels)]
-  [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs t? labels)]
-  [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs t? labels)]
+                        (pass4/scan ($call-proc iform) bs fs #f labels))
+               (pass4/scan* ($call-args iform) bs fs #f labels))]
+  [($ASM)    (pass4/scan* ($asm-args iform) bs fs #f labels)]
+  [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs #f labels)]
+  [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs #f labels)]
+  [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs #f labels)]
   [else fs])
 
 (define (pass4/scan2 iform bs fs t? labels)

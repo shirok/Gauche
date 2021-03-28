@@ -639,22 +639,23 @@
                                  (>= c 50)) ; takes about 10s
                              (write (list (sys-getpid) (sys-getpgrp)))]
                             [else (loop (+ c 1))])))))))
-    (define (run-and-read-test msg ppid detached)
-      (test* msg detached
-             (receive (in out) (sys-pipe :buffering :none)
-               (let1 pid (sys-fork-and-exec "./gosh"
-                                            `("./gosh" "-ftest" "./test.out"
-                                              ,(x->string ppid))
-                                            :iomap `((1 . ,out))
-                                            :detached detached)
-                 (close-port out)
-                 (let1 result (read in)
-                   (sys-waitpid pid)
-                   (eqv? (car result) (cadr result)))))))
-    (run-and-read-test "fork, exec and detached process (not detached)"
-                       (sys-getpid) #f)
-    (run-and-read-test "fork, exec and detached process (detached)"
-                       1 #t))
+    (let ()
+      (define (run-and-read-test msg ppid detached)
+        (test* msg detached
+               (receive (in out) (sys-pipe :buffering :none)
+                 (let1 pid (sys-fork-and-exec "./gosh"
+                                              `("./gosh" "-ftest" "./test.out"
+                                                ,(x->string ppid))
+                                              :iomap `((1 . ,out))
+                                              :detached detached)
+                   (close-port out)
+                   (let1 result (read in)
+                     (sys-waitpid pid)
+                     (eqv? (car result) (cadr result)))))))
+      (run-and-read-test "fork, exec and detached process (not detached)"
+                         (sys-getpid) #f)
+      (run-and-read-test "fork, exec and detached process (detached)"
+                         1 #t)))
   (cmd-rmrf "test.out")
 
   ;; Testing GC in forked process---we don't explicitly spawn a thread here,

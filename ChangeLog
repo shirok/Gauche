@@ -1,3 +1,12 @@
+2021-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-4.scm (pass4/scan): Fix an issue that some closures
+	  weren't lifted when they should've been.
+	  As a side effect, we now reject non-internal define that doesn't
+	  appear in the toplevel; e.g. (when (...) (define ...) ...).
+	  Some cases of this form were tolerated previously.  The code that
+	  depends on this behavior will stop working.
+
 2021-03-26  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procedure.scm (disasm): Force an object in the closed
