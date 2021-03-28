@@ -140,9 +140,9 @@
 (define/case (pass4/scan iform bs fs t? labels)
   (iform-tag iform)
   [($DEFINE) (unless t?
-               (error "define appears in non-top-level expression"
+               (warn "define appears in non-top-level expression: ~s"
                       ($define-src iform)))
-             (pass4/scan ($define-expr iform) bs fs #t labels)]
+             (pass4/scan ($define-expr iform) bs fs t? labels)]
   [($LREF)   (pass4/add-lvar ($lref-lvar iform) bs fs)]
   [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs #f labels)
                (pass4/add-lvar ($lset-lvar iform) bs fs))]
