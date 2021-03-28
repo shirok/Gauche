@@ -1,3 +1,9 @@
+2021-03-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/module.c (Scm_ModuleExports): Include symbols exported from
+	  the parent modules.  It is probably accidental that we didn't included
+	  them.
+
 2021-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-4.scm (pass4/scan): Fix an issue that some closures

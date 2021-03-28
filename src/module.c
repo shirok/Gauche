@@ -730,23 +730,54 @@ ScmObj Scm_ExportAll(ScmModule *module)
     return SCM_OBJ(module);
 }
 
+/* internal routine form Scm_ModuleExports */
+static void add_parent_module_exports(ScmHashCore *syms,
+                                      ScmModule *module,
+                                      module_cache *visited)
+{
+    ScmObj mp;
+    SCM_FOR_EACH(mp, module->mpl) {
+        ScmModule *m = SCM_MODULE(SCM_CAR(mp));
+        if (module_visited_p(visited, m)) continue;
+        module_add_visited(visited, m);
+
+        ScmHashIter iter;
+        Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(m->external));
+        ScmDictEntry *e;
+        while ((e = Scm_HashIterNext(&iter)) != NULL) {
+            if (!(SCM_GLOC(SCM_DICT_VALUE(e)))->hidden) {
+                (void)Scm_HashCoreSearch(syms, e->key, SCM_DICT_CREATE);
+            }
+        }
+        add_parent_module_exports(syms, m, visited);
+    }
+}
+
 /* Returns list of exported symbols.   We assume this is infrequent
    operation, so we build the list every call.  If it becomes a problem,
    we can cache the result. */
 ScmObj Scm_ModuleExports(ScmModule *module)
 {
-    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmHashCore syms;
+    Scm_HashCoreInitSimple(&syms, SCM_HASH_EQ, 0, NULL);
+    module_cache visited;
+    init_module_cache(&visited);
 
     (void)SCM_INTERNAL_MUTEX_LOCK(modules.mutex);
+    Scm_HashCoreCopy(&syms, SCM_HASH_TABLE_CORE(module->external));
+    add_parent_module_exports(&syms, module, &visited);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
+
+    ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmHashIter iter;
-    Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(module->external));
+    Scm_HashIterInit(&iter, &syms);
     ScmDictEntry *e;
     while ((e = Scm_HashIterNext(&iter)) != NULL) {
-        if (!(SCM_GLOC(SCM_DICT_VALUE(e)))->hidden) {
-            SCM_APPEND1(h, t, SCM_DICT_KEY(e));
+        intptr_t v = e->value;
+        if (!v || (SCM_GLOCP(v) && !(SCM_GLOC(v)->hidden))) {
+            SCM_APPEND1(h, t, SCM_OBJ(e->key));
         }
     }
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(modules.mutex);
     return h;
 }
 
