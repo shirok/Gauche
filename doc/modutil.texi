@@ -9,6 +9,7 @@
 * Packing binary data::         binary.pack
 * Running Chibi-scheme test suite::  compat.chibi-test
 * Rational-less arithmetic::    compat.norational
+* Concurrent sequences::        control.cseq
 * Futures::                     control.future
 * A common job descriptor for control modules::  control.job
 * Thread pools::                control.thread-pool
@@ -1091,7 +1092,7 @@ Gaucheのソースツリーの@file{test/srfi.scm}に実際の使用例を見る
 
 @c ----------------------------------------------------------------------
 
-@node Rational-less arithmetic, Futures, Running Chibi-scheme test suite, Library modules - Utilities
+@node Rational-less arithmetic, Concurrent sequences, Running Chibi-scheme test suite, Library modules - Utilities
 @section @code{compat.norational} - Rational-less arithmetic
 @c NODE 有理数のない算術演算, @code{compat.norational} - 有理数のない算術演算
 
@@ -1190,7 +1191,68 @@ gosh> #i1/3
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Futures, A common job descriptor for control modules, Rational-less arithmetic, Library modules - Utilities
+@node Concurrent sequences, Futures, Rational-less arithmetic, Library modules - Utilities
+@section @code{control.cseq} - Concurrent sequences
+@c NODE Concurrent sequences, @code{control.cseq} - Concurrent sequences
+
+@deftp {Module} control.cseq
+@mdindex control.cseq
+Concurrent sequence (cseq) is a lazy sequence (@pxref{Lazy sequences}), but
+the generator runs in a separate thread.  You can use producer-consumer
+pararellism very easily using cseq; from the consumer side,
+it just looks like an ordinary list.  Synchornization is implicitly
+taken care of.
+
+Internally, it uses mtqueue (@pxref{Queue}) for synchronization.
+@end deftp
+
+@defun generator->cseq gen :key queue-length
+@mdindex control.cseq
+Create a lazy sequence from generator, much like @code{generator->lseq},
+except that @var{gen} runs in a separate thread.
+
+The returend value is indistinguishable from an ordinary list, but its
+cdrs are computed in parallel.  If a cdr isn't computed yet, the reader
+thread waits until a value becomes available.  The generator @var{gen}
+can be called to generate values asynchronously, until the internal queue
+gets full.
+
+If @var{gen} raises an error, it is caught, and reraised when the
+consumer reads to the point when @var{gen} raised the error.
+
+The optional @var{queue-length} must be a nonnegative exact integer or @code{#f}.
+If it is an integer, it specifies the length of the internal queue.
+If it is @code{#f}, an appropriate value is selected by the library
+(currently 64).
+
+Note that Gauche's lseq read-ahead one item (@pxref{Lazy sequences}).  So
+even if you set the queue length to 0, @var{gen} is called before
+the consumer reads out any value.
+@end defun
+
+
+@defun coroutine->cseq proc :key queue-length
+@mdindex control.cseq
+Returns an lseq, whose value is generated in @var{proc}, which is called
+in a separate thread.
+The @var{proc} argument is a procedure to be called with one argument,
+@var{yield}.  The @var{yield} argument is a procedure, and whenever it is
+called with a value, that value becomes the next item of the resulting lseq.
+When @var{proc} returns, it becomes the end of th lseq.
+
+If @var{proc} raises an error, it is caught, and reraised when the
+consumer reads to the point when previously generated values are all read
+and next value is about to read.
+
+The optional @var{queue-length} must be a nonnegative exact integer or @code{#f}.
+If it is an integer, it specifies the length of the internal queue.
+If it is @code{#f}, an appropriate value is selected by the library
+(currently 64).
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Futures, A common job descriptor for control modules, Concurrent sequences, Library modules - Utilities
 @section @code{control.future} - Futures
 @c NODE Future, @code{control.future} - Future
 

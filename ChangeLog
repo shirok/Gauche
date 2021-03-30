@@ -1,3 +1,8 @@
+2021-03-30  Shiro Kawai  <shiro@acm.org>
+
+	* doc/modutil.texi: Document control.cseq.  Haven't used heavily, but
+	  probably it's useful enough.
+
 2021-03-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/bcrypt: Rename blowfish functions so that it won't conflict
