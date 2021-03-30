@@ -13,18 +13,18 @@
 (select-module crypt.bcrypt)
 
 (inline-stub
- (declare-cfn crypt_ra (key::(const char *)
-                        setting::(const char *)
-                        data::void**
-                        size::int*) ::char*)
- (declare-cfn crypt_gensalt_ra (prefix::(const char *)
-                                count::(unsigned long)
-                                input::(const char *)
-                                size::int) ::char*)
+ (declare-cfn gauche_crypt_ra (key::(const char *)
+                                    setting::(const char *)
+                                    data::void**
+                                    size::int*) ::char*)
+ (declare-cfn gauche_crypt_gensalt_ra (prefix::(const char *)
+                                               count::(unsigned long)
+                                               input::(const char *)
+                                               size::int) ::char*)
 
  (define-cproc crypt-ra (pass::<const-cstring> setting::<const-cstring>)
    (let* ([data::void* NULL] [size::int 0]
-          [c::char* (crypt_ra pass setting (& data) (& size))])
+          [c::char* (gauche_crypt_ra pass setting (& data) (& size))])
      (when (== c NULL)
        (free data)
        (Scm_SysError "crypt_ra failed"))
@@ -35,10 +35,11 @@
  (define-cproc crypt-gensalt-ra (prefix::<const-cstring>
                                  count::<ulong>
                                  randomsrc::<u8vector>)
-   (let* ([c::char* (crypt_gensalt_ra prefix count
-                                      (cast (const char*)
-                                            (SCM_U8VECTOR_ELEMENTS randomsrc))
-                                      (SCM_U8VECTOR_SIZE randomsrc))])
+   (let* ([c::char*
+           (gauche_crypt_gensalt_ra prefix count
+                                    (cast (const char*)
+                                          (SCM_U8VECTOR_ELEMENTS randomsrc))
+                                    (SCM_U8VECTOR_SIZE randomsrc))])
      (when (== c NULL) (Scm_SysError "crypt_gensalt_ra failed"))
      (let* ([r (SCM_MAKE_STR_COPYING c)])
        (free c)

@@ -447,13 +447,17 @@
             %RB
             `(array ,quals ,assign)))
 
+;; For parameter declaration, we only return (<name> <type>),
+;; where <name> can be an ident or #f.
 (define %parameter-declaration
   ($lbinding ($: specs %declaration-specifiers)
              ($: decl  ($or ($try %declarator)
                             ($optional %abstract-declarator)))
-             (if decl
-               (grok-declaration specs `(,decl))
-               (grok-declaration specs '((#f))))))
+             (match-let1 (id storage type init)
+                 (if decl
+                   (grok-declaration specs `(,decl))
+                   (grok-declaration specs '((#f))))
+               `(--- ,id ,type))))
 
 (define %parameter-type-list
   ;; NB: We require at least one %parameter-declaration, for the empty parameter

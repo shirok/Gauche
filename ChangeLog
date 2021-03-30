@@ -1,3 +1,11 @@
+2021-03-29  Shiro Kawai  <shiro@acm.org>
+
+	* ext/bcrypt: Rename blowfish functions so that it won't conflict
+	  with system's libcrypt function.
+	  Generallly we *should* use system's functions when available, but
+	  we had a incompatibility case.  Besides, system's crypt function
+	  is available through sys-crypt.
+
 2021-03-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/module.c (Scm_ModuleExports): Include symbols exported from
