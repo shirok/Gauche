@@ -1961,8 +1961,8 @@ ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 {
     void *data[3];
 
-    /* NB: we don't check types of arguments, since we allow object-apply
-       hooks can be used for them. */
+    /* NB: we don't check types of arguments, since they can be non-procedure
+       objects with object-apply hooks. */
     data[0] = (void*)before;
     data[1] = (void*)body;
     data[2] = (void*)after;
