@@ -331,7 +331,7 @@
          c-type-1)))
 
 ;;;
-;;;  folding C connstant
+;;;  Folding C constant
 ;;;
 
 (define-constant *constant-folders*
