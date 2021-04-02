@@ -41,6 +41,7 @@
   (use gauche.lazy)
   (use control.cseq)
   (use lang.c.lexer)
+  (use lang.c.type)
   (use srfi-13)
   (use lang.c.parameter)
 
@@ -53,14 +54,14 @@
   )
 (select-module lang.c.parser)
 
+
 ;;
 ;; Typename catalog.
-;;    symbol -> decl info
+;;    symbol -> c-type
 ;;
 ;; C syntax is ambiguous that identifier can also be a type name.  We need
 ;; to track previously declared type names.
 ;;
-
 (define *default-typedef-table*
   (hash-table-r7 eq-comparator
                  '__builtin_va_list 'builtin))
@@ -416,7 +417,7 @@
 ;;     (<identifier> <type-spec> ...)
 ;;   where each type-spec can be
 ;;     (* qualifier ...)
-;;     (array (qualifier ...) (dimension ...))
+;;     (array-dimension (qualifier ...) dim-expr)
 ;;     (function (parameter-spec ...))
 ;;   This is a transient information.  Declaration constructs a complete
 ;;   type.
@@ -445,7 +446,7 @@
             ($: assign ($optional ($or ($. '*)
                                        %assignment-expression)))
             %RB
-            `(array ,quals ,assign)))
+            `(array-dimension ,quals ,assign)))
 
 ;; For parameter declaration, we only return (<name> <type>),
 ;; where <name> can be an ident or #f.
@@ -457,7 +458,7 @@
                  (if decl
                    (grok-declaration specs `(,decl))
                    (grok-declaration specs '((#f))))
-               `(--- ,id ,type))))
+               `(arg ,id ,type))))
 
 (define %parameter-type-list
   ;; NB: We require at least one %parameter-declaration, for the empty parameter
@@ -504,8 +505,8 @@
 
 (define (register-typedefs! specs decl)
   (match decl
-    [((? symbol? typename) . _)
-     (dict-put! (typedef-names) typename (list specs decl))]
+    [((? symbol? typename) 'typedef type _)
+     (dict-put! (typedef-names) typename type)]
     [else
      (error "something wrong with typedef decl" decl)]))
 
@@ -513,11 +514,29 @@
   (define (build-decl id type init)
     (let* ([sc (find (cut memq <> *storage-classes*) specs)]
            [ty (delete sc specs)])
-      `(,id ,sc (,@type ,ty) ,init)))
+      `(,id ,sc ,(grok-type `(,@type ,ty)) ,init)))
   (match decl
     [((('ident id) . type) init) (build-decl id type init)]
     [((('ident id) . type))      (build-decl id type #f)]
     [((#f . type))               (build-decl #f type #f)]))  ; abstract-decl
+
+(define (grok-type type-specs)
+  (match type-specs
+    [() '()]
+    [(('* . quals) . rest) `(.pointer ,quals ,(grok-type rest))]
+    [(('array-dimension quals size) . rest)
+     (match (fold-c-constant size)
+       [#f `(.array ,(grok-type rest) ,quals ,size)] ;variable size
+       [(val type)
+        (unless (c-basic-type-integral? type)
+          (error "non-integral array dimension not allowed:" type-specs))
+        `(.array ,(grok-type rest) ,quals ,val)])]
+    [(('function . params) . rest)
+     `(.function () ,params ,(grok-type rest))]
+    [(('struct tag . members)) `(.struct ,tag ,members)]
+    [(('union tag . members)) `(.union ,tag ,members)]
+    [((xs ...)) (grok-basic-type xs (typedef-names))]
+    [_ (error "[internal] unrecognized type specs:" type-specs)]))
 
 ;; modified to handle typedef-name.  see %type-specifier above.
 (define %declaration-specifiers
@@ -677,6 +696,52 @@
             ($assert ($. #\{))
             ($: body ($cut %compound-statement))
             `(,spec ,decl ,lis ,body)))
+
+;;;
+;;; C constant expression
+;;;
+
+(define-constant *constant-folders*
+  `((+ .    ,(^[x y type] (+ x y)))
+    (- .    ,(^[x y type] (- x y)))
+    (* .    ,(^[x y type] (* x y)))
+    (/ .    ,(^[x y type] (if (c-basic-type-integral? type)
+                            (quotient x y)
+                            (/ x y))))
+    (% .    ,(^[x y type] (modulo x y)))
+    (& .    ,(^[x y type] (logand x y)))
+    (|\|| . ,(^[x y type] (logior x y)))
+    (^ .    ,(^[x y type] (logxor x y)))
+    (<< .   ,(^[x y type] (ash x y)))
+    (>> .   ,(^[x y type] (ash x (- y))))
+    ))
+
+;; If EXPR is foldable, returns (<scheme-value> <c-type>).
+;; Otherwise returns #f
+(define (fold-c-constant expr)
+  (match expr
+    [('const type lit)
+     (cond [(c-basic-type-integral? `(,type ()))
+            (let1 n (if (memq type '(char s-char u-char)) ;;TODO: wchar
+                      (char->integer (string-ref lit 0))
+                      (string->number (string-trim-right lit #[uUlL])))
+              (if (exact-integer? n)
+                `(,n (,type (const)))
+                (error "bad literal integer constant:" lit)))]
+           [(c-basic-type-flonum? `(,type ()))
+            (let1 n (string->number (string-trim-right lit #[lLfF]))
+              (if (real? n)
+                `(,n (,type (const)))
+                (error "bad floating-point number constant:" lit)))]
+           [else #f])]
+    [((? (cut assq <> *constant-folders*) op) x1 x2)
+     (and-let* ([v1 (fold-c-constant x1)]
+                [v2 (fold-c-constant x2)]
+                [proc (assq-ref *constant-folders* op)]
+                [type (c-wider-type (cadr v1) (cadr v2))])
+       `(,(proc (car v1) (car v2) type) ,type))]
+    [_ #f]))
+
 
 ;;;
 ;;; Preprocessor

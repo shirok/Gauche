@@ -35,6 +35,7 @@
 (define-module lang.c.lexer
   (use util.match)
   (use parser.peg)
+  (use lang.c.type)
   (export c-tokenize)
   )
 (select-module lang.c.lexer)
@@ -54,21 +55,11 @@
 ;; <punctuator>     : <symbol> such as '|(| etc.
 ;; <keyword>        : <symbol>
 ;; <identifier>     : (ident <symbol>)
-;; <constant>       : (const <type> <value>)
+;; <constant>       : (const <const-type> <value>)
 ;; <string-literal> : (string <value>) | (wstring <value>)
 ;;
-;;  <type> can be one of the following symbol:
-;;    char
-;;    wchar
-;;    int
-;;    uint
-;;    long
-;;    ulong
-;;    longlong
-;;    ulonglong
-;;    float
-;;    double
-;;    longdouble
+;;  <const-type> is either one of the basic type symbols defined in
+;;  lang.c.type, or wchar_t.
 ;;
 ;;  <value> is a Scheme string as it appears in the source, except unicode
 ;;  character sequences and excape sequences are converted to corresponding
@@ -260,19 +251,19 @@
   (match chars
     [() 'double]
     [((or #\f #\F)) 'float]
-    [((or #\l #\L)) 'longdouble]
+    [((or #\l #\L)) 'long-double]
     [_ #f]))
 
 (define (check-int-suffix chars)
   (match chars
     [() 'int]
-    [((or #\u #\U)) 'uint]
+    [((or #\u #\U)) 'u-int]
     [((or #\l #\L)) 'long]
-    [((or #\u #\U) (or #\l #\L)) 'ulong]
-    [((or #\l #\L) (or #\u #\U)) 'ulong]
-    [(or (#\l #\l) (#\L #\L)) 'longlong]
-    [(or ((or #\u #\U) #\l #\l) ((or #\u #\U) #\L #\L)) 'ulonglong]
-    [(or (#\l #\l (or #\u #\U)) (#\L #\L (or #\u #\U))) 'ulonglong]
+    [((or #\u #\U) (or #\l #\L)) 'u-long]
+    [((or #\l #\L) (or #\u #\U)) 'u-long]
+    [(or (#\l #\l) (#\L #\L)) 'long-long]
+    [(or ((or #\u #\U) #\l #\l) ((or #\u #\U) #\L #\L)) 'u-long-long]
+    [(or (#\l #\l (or #\u #\U)) (#\L #\L (or #\u #\U))) 'u-long-long]
     [_ #f]))
 
 (define %escaped-sequence
