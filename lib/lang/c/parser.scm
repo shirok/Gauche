@@ -385,14 +385,18 @@
             ($or ($seq ($: tag %identifier)
                        ($optional ($: mem %struct-members)))
                  ($: mem %struct-members))
-            ;; mem := (quals&spec decl ...)
-            (let* ([tdict (typedef-names)]
-                   [member-decls
-                    (append-map
-                     (^m (map (cut grok-member-declaration (car m) <>) (cdr m)))
-                     (if (undefined? mem) '() mem))])
-              `(,key ,(if (undefined? tag) #f tag)
-                     ,@member-decls))))
+            (=> fail)
+            ;; need to catch error from grok-c-type
+            (guard (e [else (fail 'error (~ e'message))])
+              ;; mem := (quals&spec decl ...)
+              (let* ([tdict (typedef-names)]
+                     [member-decls
+                      (append-map
+                       (^m (map (cut grok-member-declaration (car m) <>)
+                                (cdr m)))
+                       (if (undefined? mem) '() mem))])
+                `(,key ,(if (undefined? tag) #f tag)
+                       ,@member-decls)))))
 
 (define (grok-member-declaration specs decl)
   (match decl
@@ -468,11 +472,14 @@
   ($lbinding ($: specs %declaration-specifiers)
              ($: decl  ($or ($try %declarator)
                             ($optional %abstract-declarator)))
-             (match-let1 (id storage type init)
-                 (if decl
-                   (grok-declaration specs `(,decl))
-                   (grok-declaration specs '((#f))))
-               `(,id ,type))))
+             (=> fail)
+             ;; need to catch error from grok-c-type
+             (guard (e [else (fail 'error (~ e'message))])
+               (match-let1 (id storage type init)
+                   (if decl
+                     (grok-declaration specs `(,decl))
+                     (grok-declaration specs '((#f))))
+                 `(,id ,type)))))
 
 (define %parameter-type-list
   ;; NB: We require at least one %parameter-declaration, for the empty parameter
@@ -518,10 +525,13 @@
              ($: declarators ($sep-by %init-declarator ($. '|,|)))
              %attribute-specifier-list  ;ignore for now
              ($. '|\;|)
-             (let ([decls (map (cut grok-declaration specs <>) declarators)])
-               (when (memq 'typedef specs)
-                 (map (^d (register-typedefs! specs d)) decls))
-               `(decl ,@decls))))
+             (=> fail)
+             ;; need to catch error from grok-c-type
+             (guard (e [else (fail 'error (~ e'message))])
+               (let ([decls (map (cut grok-declaration specs <>) declarators)])
+                 (when (memq 'typedef specs)
+                   (map (^d (register-typedefs! specs d)) decls))
+                 `(decl ,@decls)))))
 
 (define (register-typedefs! specs decl)
   (match decl
