@@ -208,6 +208,19 @@
           "const int (*x)(void);")
   (t-type '(.function (inline) (int ()) ()) "inline int x(void);")
   (t-type '(.function (inline) (.pointer () (int ())) ()) "inline int *x(void);")
+
+  (t-type '(.struct foo () ()) "struct foo {} x;")
+  (t-type '(.struct foo () ((a (int ()))
+                            (b (.pointer () (int ())))
+                            (c (double ()))))
+          "struct foo {int a, *b; double c;} x;")
+  (t-type '(.struct #f (const volatile) ()) "const struct {} volatile x;")
+  (t-type '(.union foo () ()) "union foo {} x;")
+
+  (t-type '(.union #f () ((n (.struct #f () ((a (int ()))
+                                             (b (double ())))))
+                          (b (.array (u-char ()) () 16))))
+          "union { struct { int a; double b; } n; unsigned char b[16];} x;")
   )
 
 ;; We haven't fixed the format of the semantic value, so for now we just

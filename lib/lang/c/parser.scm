@@ -370,13 +370,12 @@
                                      %constant-expression)))
             (if (undefined? bitfield)
               decl
-              `(,(if (undefined? decl) #f decl)
-                ,bitfield))))
+              `(bitfield ,(if (undefined? decl) #f decl) ,bitfield))))
 
 ;; modified to handle typedef-name.  see %type-specifier above.
 (define %struct-declaration
-  ($list %type-specifier-qualifier-list
-         ($sep-by %struct-declarator ($. '|,|))))
+  ($list* %type-specifier-qualifier-list
+          ($sep-by %struct-declarator ($. '|,|))))
 
 (define %struct-members
   ($between %LC ($end-by %struct-declaration ($. '|\;|)) %RC))
@@ -386,8 +385,24 @@
             ($or ($seq ($: tag %identifier)
                        ($optional ($: mem %struct-members)))
                  ($: mem %struct-members))
-            `(,key ,(if (undefined? tag) #f tag)
-                   ,@(if (undefined? mem) '() mem))))
+            ;; mem := (quals&spec decl ...)
+            (let* ([tdict (typedef-names)]
+                   [member-decls
+                    (append-map
+                     (^m (map (cut grok-member-declaration (car m) <>) (cdr m)))
+                     (if (undefined? mem) '() mem))])
+              `(,key ,(if (undefined? tag) #f tag)
+                     ,@member-decls))))
+
+(define (grok-member-declaration specs decl)
+  (match decl
+    [('bitfield #f size) `(#f (int ()) ,size)] ;padding
+    [('bitfield d size)  (match-let1 (id sorage type init)
+                             (grok-declaration specs `(,d))
+                           `(,id ,type ,size))]
+    [d (match-let1 (id sorage type init)
+           (grok-declaration specs `(,d))
+         `(,id ,type))]))
 
 ;; 6.7.2.2 Enumeration specifiers
 (define %enumerator
@@ -418,7 +433,7 @@
 ;;   where each type-spec can be
 ;;     (* qualifier ...)
 ;;     (array-dimension (qualifier ...) dim-expr)
-;;     (function (parameter-spec ...)) | (function unknown-args) | (function no-args)
+;;     (function params)  ; params := (param-spec ...) | no-args | unknown-args
 ;;   This is a transient information.  Declaration constructs a complete
 ;;   type.
 (define %declarator
@@ -520,45 +535,11 @@
   (define (build-decl id type init)
     (let* ([sc (find (cut memq <> *storage-classes*) specs)]
            [ty (delete sc specs)])
-      `(,id ,sc ,(grok-type `(,@type ,ty)) ,init)))
+      `(,id ,sc ,(grok-c-type `(,@type ,ty) (typedef-names)) ,init)))
   (match decl
     [((('ident id) . type) init) (build-decl id type init)]
     [((('ident id) . type))      (build-decl id type #f)]
     [((#f . type))               (build-decl #f type #f)]))  ; abstract-decl
-
-(define (grok-type type-specs)
-  (match type-specs
-    [() '()]
-    [(('* . quals) . rest) `(.pointer ,quals ,(grok-type rest))]
-    [(('array-dimension quals size) . rest)
-     (match (fold-c-constant size)
-       [#f `(.array ,(grok-type rest) ,quals ,size)] ;variable size
-       [(val type)
-        (unless (c-basic-type-integral? type)
-          (error "non-integral array dimension not allowed:" type-specs))
-        `(.array ,(grok-type rest) ,quals ,val)])]
-    [(('function params) . rest)
-     ;; special handling of 'inline' - syntactically it is attached to
-     ;; the return type, but we need to attach it to the function part.
-     (let* ([inline? (memq 'inline (last rest))]
-            [return-type (grok-type (if inline?
-                                      (append
-                                       (drop-right rest 1)
-                                       (list (delete 'inline (last rest))))
-                                      rest))]
-            [param-spec (case params
-                          [(no-args) '()]
-                          [(unknown-args) 'unknown-args]
-                          [else (map (^p (match p
-                                           [('ident n) `(,n #f)]
-                                           [(n t) p]
-                                           ['... p]))
-                                     params)])])
-       `(.function ,(if inline? '(inline) '()) ,return-type ,param-spec))]
-    [(('struct tag . members)) `(.struct ,tag ,members)]
-    [(('union tag . members)) `(.union ,tag ,members)]
-    [((xs ...)) (grok-basic-type xs (typedef-names))]
-    [_ (error "[internal] unrecognized type specs:" type-specs)]))
 
 ;; modified to handle typedef-name.  see %type-specifier above.
 (define %declaration-specifiers
@@ -718,52 +699,6 @@
             ($assert ($. #\{))
             ($: body ($cut %compound-statement))
             `(,spec ,decl ,lis ,body)))
-
-;;;
-;;; C constant expression
-;;;
-
-(define-constant *constant-folders*
-  `((+ .    ,(^[x y type] (+ x y)))
-    (- .    ,(^[x y type] (- x y)))
-    (* .    ,(^[x y type] (* x y)))
-    (/ .    ,(^[x y type] (if (c-basic-type-integral? type)
-                            (quotient x y)
-                            (/ x y))))
-    (% .    ,(^[x y type] (modulo x y)))
-    (& .    ,(^[x y type] (logand x y)))
-    (|\|| . ,(^[x y type] (logior x y)))
-    (^ .    ,(^[x y type] (logxor x y)))
-    (<< .   ,(^[x y type] (ash x y)))
-    (>> .   ,(^[x y type] (ash x (- y))))
-    ))
-
-;; If EXPR is foldable, returns (<scheme-value> <c-type>).
-;; Otherwise returns #f
-(define (fold-c-constant expr)
-  (match expr
-    [('const type lit)
-     (cond [(c-basic-type-integral? `(,type ()))
-            (let1 n (if (memq type '(char s-char u-char)) ;;TODO: wchar
-                      (char->integer (string-ref lit 0))
-                      (string->number (string-trim-right lit #[uUlL])))
-              (if (exact-integer? n)
-                `(,n (,type (const)))
-                (error "bad literal integer constant:" lit)))]
-           [(c-basic-type-flonum? `(,type ()))
-            (let1 n (string->number (string-trim-right lit #[lLfF]))
-              (if (real? n)
-                `(,n (,type (const)))
-                (error "bad floating-point number constant:" lit)))]
-           [else #f])]
-    [((? (cut assq <> *constant-folders*) op) x1 x2)
-     (and-let* ([v1 (fold-c-constant x1)]
-                [v2 (fold-c-constant x2)]
-                [proc (assq-ref *constant-folders* op)]
-                [type (c-wider-type (cadr v1) (cadr v2))])
-       `(,(proc (car v1) (car v2) type) ,type))]
-    [_ #f]))
-
 
 ;;;
 ;;; Preprocessor
