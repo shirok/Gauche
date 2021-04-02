@@ -62,7 +62,7 @@
 ;;   <basic-type> : one of the symbols in *c-basic-types*
 ;;
 ;;   <qual>   : 'volatile | 'const | 'restrict
-;;   <fqual>  : <qual> | 'inline
+;;   <fqual>  : 'inline
 ;;
 ;;   <aqual> : <qual> | 'static
 ;;   <size>  : scheme-integer

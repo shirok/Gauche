@@ -202,11 +202,12 @@
                                    (y (int ()))
                                    (z (double ()))))
           "int x(int x, int y, double z);")
-
   (t-type '(.function () (.pointer () (int (const))) ())
           "const int *x(void);")
   (t-type '(.pointer () (.function () (int (const)) ()))
           "const int (*x)(void);")
+  (t-type '(.function (inline) (int ()) ()) "inline int x(void);")
+  (t-type '(.function (inline) (.pointer () (int ())) ()) "inline int *x(void);")
   )
 
 ;; We haven't fixed the format of the semantic value, so for now we just

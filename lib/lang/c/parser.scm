@@ -538,16 +538,23 @@
           (error "non-integral array dimension not allowed:" type-specs))
         `(.array ,(grok-type rest) ,quals ,val)])]
     [(('function params) . rest)
-     (let ([return-type (grok-type rest)]
-           [param-spec (case params
-                         [(no-args) '()]
-                         [(unknown-args) 'unknown-args]
-                         [else (map (^p (match p
-                                          [('ident n) `(,n #f)]
-                                          [(n t) p]
-                                          ['... p]))
-                                    params)])])
-       `(.function () ,return-type ,param-spec))]
+     ;; special handling of 'inline' - syntactically it is attached to
+     ;; the return type, but we need to attach it to the function part.
+     (let* ([inline? (memq 'inline (last rest))]
+            [return-type (grok-type (if inline?
+                                      (append
+                                       (drop-right rest 1)
+                                       (list (delete 'inline (last rest))))
+                                      rest))]
+            [param-spec (case params
+                          [(no-args) '()]
+                          [(unknown-args) 'unknown-args]
+                          [else (map (^p (match p
+                                           [('ident n) `(,n #f)]
+                                           [(n t) p]
+                                           ['... p]))
+                                     params)])])
+       `(.function ,(if inline? '(inline) '()) ,return-type ,param-spec))]
     [(('struct tag . members)) `(.struct ,tag ,members)]
     [(('union tag . members)) `(.union ,tag ,members)]
     [((xs ...)) (grok-basic-type xs (typedef-names))]
