@@ -193,10 +193,16 @@
   (define (aggregate-type quals core)
     (define (make-agg-type mark tag members)
       `(,mark ,(aggregate-tag tag) ,(reverse quals) ,members))
+    (define (enum-member mem)
+      (match-let1 (name init) mem
+        (match (fold-c-constant init)
+          [#f mem]
+          [(val type) `(,name ,val)])))
     (match core
       [('struct tag . members) (make-agg-type '.struct tag members)]
       [('union tag . members)  (make-agg-type '.union tag members)]
-      [('enum tag . members)   (make-agg-type '.enum tag members)]))
+      [('enum tag . members)   (make-agg-type '.enum tag
+                                              (map enum-member members))]))
 
   ;; we make quals appear in the order of the original code, just to make
   ;; testing and debugging easier---the caller shouldn't rely on that.

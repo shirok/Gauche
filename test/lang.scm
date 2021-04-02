@@ -221,6 +221,13 @@
                                              (b (double ())))))
                           (b (.array (u-char ()) () 16))))
           "union { struct { int a; double b; } n; unsigned char b[16];} x;")
+
+  (t-type '(.enum e () ((X #f) (Y #f) (Z #f)))
+          "enum e { X, Y, Z } x;")
+  (t-type '(.enum #f (const) ((X 1) (Y 3) (Z #f)))
+          "enum { X=1, Y=3, Z } const x;")
+  (t-type '(.type T () (.enum e () ()))
+          "typedef enum e T; T x;")
   )
 
 ;; We haven't fixed the format of the semantic value, so for now we just

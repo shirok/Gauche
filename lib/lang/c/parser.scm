@@ -408,19 +408,18 @@
 (define %enumerator
   ($binding ($: enum %identifier)
             ($: init ($optional ($seq ($. '=) %constant-expression)))
-            (if (undefined? init)
-              enum
-              `(,enum ,init))))
+            `(,(cadr enum) ,init)))
 
 (define %enumerators
   ($between %LC ($sep-end-by %enumerator ($. '|,|)) %RC))
 
+;; returns (enum <tag> ((<symbol> <init-expr>) ...))
 (define %enum-specifier
   ($binding ($. 'enum)
             ($or ($seq ($: tag %identifier)
                        ($optional ($: lis %enumerators)))
                  ($: lis %enumerators))
-            `(enum (if (undefined? tag) #f tag)
+            `(enum ,(if (undefined? tag) #f tag)
                    ,@(if (undefined? lis) '() lis))))
 
 ;; 6.7.4 Function specifiers
