@@ -418,7 +418,7 @@
 ;;   where each type-spec can be
 ;;     (* qualifier ...)
 ;;     (array-dimension (qualifier ...) dim-expr)
-;;     (function (parameter-spec ...))
+;;     (function (parameter-spec ...)) | (function unknown-args) | (function no-args)
 ;;   This is a transient information.  Declaration constructs a complete
 ;;   type.
 (define %declarator
@@ -431,7 +431,7 @@
                                   %attribute-specifier)))
              (match main
                [('ident id) `((ident ,id) ,@post ,@ptr)]
-               [(('ident id) . specs) `((ident ,id) ,@post ,@ptr ,@specs)]
+               [(('ident id) . specs) `((ident ,id) ,@ptr ,@specs ,@post)]
                [else (errorf "something wrong with %declarator.  main=~s"
                              main)])))
 
@@ -458,7 +458,7 @@
                  (if decl
                    (grok-declaration specs `(,decl))
                    (grok-declaration specs '((#f))))
-               `(arg ,id ,type))))
+               `(,id ,type))))
 
 (define %parameter-type-list
   ;; NB: We require at least one %parameter-declaration, for the empty parameter
@@ -471,6 +471,10 @@
             (or (and-let* ([p (memq '... params)]
                            [ (not (null? (cdr p))) ])
                   (fail 'error "'...' appear in middle of parameter list"))
+                (and (member '(#f (void ())) params)
+                     (if (length=? params 1)
+                       'no-args         ; (void) means no parameters
+                       (fail 'error "void in parameter list must appear by itself")))
                 params)))
 
 (define %function-decl-suffix
@@ -478,7 +482,9 @@
             ($: params ($or ($try %parameter-type-list)
                             ($sep-by %identifier ($. '|,|))))
             %RP
-            `(function ,@params)))
+            (if (null? params)
+              `(function unknown-args)
+              `(function ,params))))
 
 ;; 6.7.7 Type definitions
 ;;  The semantic value of typedef name is the same as identifier.
@@ -531,8 +537,17 @@
         (unless (c-basic-type-integral? type)
           (error "non-integral array dimension not allowed:" type-specs))
         `(.array ,(grok-type rest) ,quals ,val)])]
-    [(('function . params) . rest)
-     `(.function () ,params ,(grok-type rest))]
+    [(('function params) . rest)
+     (let ([return-type (grok-type rest)]
+           [param-spec (case params
+                         [(no-args) '()]
+                         [(unknown-args) 'unknown-args]
+                         [else (map (^p (match p
+                                          [('ident n) `(,n #f)]
+                                          [(n t) p]
+                                          ['... p]))
+                                    params)])])
+       `(.function () ,return-type ,param-spec))]
     [(('struct tag . members)) `(.struct ,tag ,members)]
     [(('union tag . members)) `(.union ,tag ,members)]
     [((xs ...)) (grok-basic-type xs (typedef-names))]

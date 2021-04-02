@@ -54,7 +54,7 @@
 ;;   <c-type> : (<basic-type> <qual> ...)
 ;;            | (.pointer (<qual> ...) <c-type>)
 ;;            | (.array <c-type> <size> (<aqual> ...))
-;;            | (.function (<fqual> ...>) <args> <c-type>)
+;;            | (.function (<fqual> ...>) <c-type> <args>)
 ;;            | (.struct <tag> (<field-name> <c-type> [<size>]) ...)
 ;;            | (.union <tag> (<field-name> <c-type> [<size>]) ...)
 ;;            | (.type <type-name> (<qual> ...) <c-type>)
@@ -71,7 +71,7 @@
 ;;
 ;;   <args>  : (<arg> ...)
 ;;           | (<arg> ... <rest-arg>)
-;;           | 'unknown
+;;           | 'unknown-args
 ;;   <arg>   : (<arg-name> <arg-type>)
 ;;   <arg-name> : symbol | #f
 ;;   <arg-type> : <c-type> | #f
@@ -91,7 +91,7 @@
     long-long u-long-long
     float double long-double
     float-complex double-complex long-double-complex
-    bool
+    bool void
     ;; the followings are non-standard
     long-long-double long-long-double-complex))
 
@@ -144,6 +144,9 @@
                         (bad)
                         `(,(float-type size complex? core)
                           ,(reverse quals)))]
+      [(void) (if (or sign size complex?)
+                (bad)
+                `(void ,(reverse quals)))]
       [else (if-let1 def (and typedef-dict (dict-get typedef-dict core #f))
               `(.type ,core ,(reverse quals) ,def)
               (error "Unknown typedef name:" core))]))
@@ -187,6 +190,7 @@
       [('_Complex . r) (if complex?
                          (bad)
                          (loop r quals sign size #t core))]
+      [('void . r) (loop r quals sign size complex? 'void)]
       [((and (or 'const 'volatile 'restrict) q) . r)
        (loop r (cons q quals) sign size complex? core)]
       [(('ident name) . r) (loop r quals sign size complex? name)]
