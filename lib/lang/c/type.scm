@@ -311,7 +311,7 @@
 (define (attach-qualifier c-type qual)
   (match c-type
     [('.pointer qs inner) `(.pointer ,(cons qual qs) ,inner)]
-    [('.array inner . rest) `(.array ,(attach-c-qualifier inner qual) ,@rest)]
+    [('.array inner . rest) `(.array ,(attach-qualifier inner qual) ,@rest)]
     [('.function qs . rest) `(.function ,(cons qual qs) ,@rest)]
     [('.struct tag qs . rest) `(.struct ,tag ,(cons qual qs) ,@rest)]
     [('.union tag qs . rest) `(.union ,tag ,(cons qual qs) ,@rest)]
