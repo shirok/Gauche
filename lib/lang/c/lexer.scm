@@ -136,7 +136,9 @@
     ;; nonstandard keywords
     _stdcall __declspec
     ;; gcc additional floating types
-    __float128 _Float128 __float80 _Float64x __ibm128
+    _Float128 (__float128 _Float128)
+    _Float64x (__float80 _Float64x)
+    __ibm128
     ;; gcc additional keywords
     __attribute__
     (__restrict  restrict)

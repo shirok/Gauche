@@ -52,17 +52,22 @@
 ;;   We use plain S-expr rather than a bunch of records, for flexibility.
 ;;
 ;;
-;;   <c-type> : (<basic-type> <qual> ...)
+;;   <c-type> : (<basic-type> (<qual> ...))
 ;;            | (.pointer (<qual> ...) <c-type>)
 ;;            | (.array <c-type> <size> (<aqual> ...))
 ;;            | (.function (<fqual> ...>) <c-type> <args>)
-;;            | (.struct <tag> (<qual> ...) (<field-name> <c-type> [<size>]) ...)
-;;            | (.union <tag> (<qual> ...) (<field-name> <c-type> [<size>]) ...)
+;;            | (.struct <tag> (<qual> ...)
+;;                   ((<field-name> <c-type> [<size>]) ...))
+;;            | (.union <tag> (<qual> ...)
+;;                   ((<field-name> <c-type> [<size>]) ...))
+;;            | (.enum <tag> (<qual> ...)
+;;                   ((<enum-name> <enum-value>) ...))
 ;;            | (.type <type-name> (<qual> ...) <c-type>)
 ;;
 ;;   <basic-type> : one of the symbols in *c-basic-types*
 ;;
 ;;   <qual>   : 'volatile | 'const | 'restrict
+;;            | ('attribute ...) | ('asm ...)
 ;;   <fqual>  : 'inline
 ;;
 ;;   <aqual> : <qual> | 'static
@@ -82,7 +87,13 @@
 ;;   <field-name> : <symbol> | #f
 ;;   <type-name> : symbol
 ;;
+;;   <enum-name> : symbol
+;;   <enum-value> : scheme-integer
+;;                | c-constant-expression
+;;                | #f
+;;
 ;;   The (.type ...) form is used for typedef'ed types.
+
 
 ;; API
 ;;  Input is a list of type specs obtained from the parser.
@@ -91,6 +102,8 @@
 ;;   <type-modifier> : (* <qual> ...)
 ;;                   | (array-dimension (<aqual> ...) <dim-expr>)
 ;;                   | (function <params>)
+;;                   | (attribute <attrs>)
+;;                   | (asm <asm>)
 ;;   <params> : (<param-spec> ...)
 ;;            | (<param-spec> ... '...)
 ;;            | 'no-args
@@ -100,6 +113,8 @@
 ;;               | (struct <tag> <member-spec> ...)
 ;;               | (union <tag> <member-spec> ...)
 ;;               | (enum <tag> <member-id> ...)
+;;
+;;  NB: attribute and asm may appear in both type-modifier and in core quals
 ;;
 ;;  Output is a well-formed <c-type>.
 (define (grok-c-type type-specs typedef-dict)
@@ -132,6 +147,8 @@
                                              ['... p]))
                                        params)])])
          `(.function ,(if inline? '(inline) '()) ,return-type ,param-spec))]
+      [((and ('attribute . _) attr) . rest) (attach-qualifier (rec rest) attr)]
+      [((and ('asm . _) asm) . rest) (attach-qualifier (rec rest) asm)]
       [((xs ...)) (grok-core-type xs typedef-dict)]
       [_ (error "[internal] unrecognized type specs:" type-specs)]))
   (rec type-specs))
@@ -146,6 +163,7 @@
     float-complex double-complex long-double-complex
     bool void
     ;; the followings are non-standard
+    float128 float64x float-ibm128
     long-long-double long-long-double-complex))
 
 ;; (const unsigned volatile int) -> (u-int (const volatile))
@@ -188,7 +206,7 @@
   (define (aggregate-tag tag)
     (match tag
       [('ident x) x]
-      [#f #f]))
+     [#f #f]))
 
   (define (aggregate-type quals core)
     (define (make-agg-type mark tag members)
@@ -208,14 +226,14 @@
   ;; testing and debugging easier---the caller shouldn't rely on that.
   (define (finish-type quals sign size complex? core)
     (case core
-      [(#f int char bool) (if complex?
-                            (bad)
-                            `(,(integer-type sign size core)
-                              ,(reverse quals)))]
-      [(float double) (if sign
-                        (bad)
-                        `(,(float-type size complex? core)
-                          ,(reverse quals)))]
+      [(#f int char bool)
+       (if complex?
+         (bad)
+         `(,(integer-type sign size core) ,(reverse quals)))]
+      [(float double float128 float64x float-ibm128)
+       (if sign
+         (bad)
+         `(,(float-type size complex? core) ,(reverse quals)))]
       [(void) (if (or sign size complex?)
                 (bad)
                 `(void ,(reverse quals)))]
@@ -254,6 +272,15 @@
       [('double . r) (if core
                        (bad)
                        (loop r quals sign size complex? 'double))]
+      [('_Float128 . r) (if core
+                          (bad)
+                          (loop r quals sign size complex? 'float128))]
+      [('_Float64x . r) (if core
+                          (bad)
+                          (loop r quals sign size complex? 'float64x))]
+      [('__ibm128 . r) (if core
+                         (bad)
+                         (loop r quals sign size complex? 'float-ibm128))]
       [('unsigned . r) (if sign
                          (bad)
                          (loop r quals 'unsigned size complex? core))]
@@ -276,7 +303,21 @@
       [(('ident name) . r) (loop r quals sign size complex? name)]
       [((and ((or 'struct 'union 'enum) . _) aggregate) . r)
        (loop r quals sign size complex? aggregate)]
+      [((and ((or 'attribute 'asm) . _) xqual) . r)
+       (loop r (cons xqual quals) sign size complex? core)]
       [else (bad)])))
+
+;; Add qualifier to the 'main' type, which would be attached to the variable.
+(define (attach-qualifier c-type qual)
+  (match c-type
+    [('.pointer qs inner) `(.pointer ,(cons qual qs) ,inner)]
+    [('.array inner . rest) `(.array ,(attach-c-qualifier inner qual) ,@rest)]
+    [('.function qs . rest) `(.function ,(cons qual qs) ,@rest)]
+    [('.struct tag qs . rest) `(.struct ,tag ,(cons qual qs) ,@rest)]
+    [('.union tag qs . rest) `(.union ,tag ,(cons qual qs) ,@rest)]
+    [('.enum tag qs . rest) `(.enum ,tag ,(cons qual qs) ,@rest)]
+    [('.type name qs inner) `(.type ,name ,(cons qual qs) ,inner)]
+    [(btype qs) `(,btype ,(cons qual qs))]))
 
 ;; Types and its "weight".  The latter is used for type upgrading.
 (define-constant *integral-type-weight*
