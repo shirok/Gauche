@@ -1197,6 +1197,7 @@ gosh> #i1/3
 
 @deftp {Module} control.cseq
 @mdindex control.cseq
+@c EN
 Concurrent sequence (cseq) is a lazy sequence (@pxref{Lazy sequences}), but
 the generator runs in a separate thread.  You can use producer-consumer
 pararellism very easily using cseq; from the consumer side,
@@ -1204,12 +1205,25 @@ it just looks like an ordinary list.  Synchornization is implicitly
 taken care of.
 
 Internally, it uses mtqueue (@pxref{Queue}) for synchronization.
+@c JP
+並行シーケンス (cseq) はジェネレータが別スレッドで走る遅延シーケンスです
+(遅延シーケンスについては@ref{Lazy sequences}参照)。
+cseqを使うと、生産者-消費者型の並列性を簡単に書けます。
+消費者側からは、cseqは単なるリストに見え、同期は自動的に取られます。
+
+内部的には、同期のためにmtqueueが使われています (@ref{Queue}参照)。
+@c COMMON
 @end deftp
 
 @defun generator->cseq gen :key queue-length
 @mdindex control.cseq
+@c EN
 Create a lazy sequence from generator, much like @code{generator->lseq},
 except that @var{gen} runs in a separate thread.
+@c JP
+@code{generator->lseq}のように、ジェネレータから遅延シーケンスを作って返しますが、
+ジェネレータ@var{gen}自体は別スレッドで実行されます。
+@c COMMON
 
 The returend value is indistinguishable from an ordinary list, but its
 cdrs are computed in parallel.  If a cdr isn't computed yet, the reader
