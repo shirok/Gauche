@@ -2494,12 +2494,17 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
            E's before handler
            F's before handler
 
-   Returns a list of (before-flag <handler> . <handler-chain>).
-   The before-flag is used to determine when handler chain is updated.
-   (for 'before' handler, handler chain should be updated after calling it.
-    for 'after' handler, handler chain should be updated before calling it.)
-   The <handler-chain> is the state of handlers on which <handler> should
-   be executed. */
+   Returns a list of (flag . <handler-chain>)
+   The flag indicates which of 'before' or 'after' handler should be called,
+   and also how the handler chain shoud be updated.
+
+   If the flag is #f, the handler chain is set with CDR of
+   <handler-chain>, then the AFTER handler of the CAR of <handler-chain>
+   is called.
+
+   If the flag is #t, the BEFORE handler of the CAR of <handler-chain>
+   is called, then the vm's handler chain is set to <handler-chain>.
+*/
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
 {
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
@@ -2512,13 +2517,13 @@ static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), target))) break;
         /* push 'after' handlers to be called */
-        SCM_APPEND1(h, t, Scm_Cons(SCM_FALSE, Scm_Cons(SCM_CDAR(p), SCM_CDR(p))));
+        SCM_APPEND1(h, t, Scm_Cons(SCM_FALSE, p));
     }
     SCM_FOR_EACH(p, target) {
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), current))) break;
         /* push 'before' handlers to be called */
-        h2 = Scm_Cons(Scm_Cons(SCM_TRUE, Scm_Cons(SCM_CAAR(p), p)), h2);
+        h2 = Scm_Cons(Scm_Cons(SCM_TRUE, p), h2);
     }
     SCM_APPEND(h, t, h2);
     return h;
@@ -2530,19 +2535,24 @@ static void call_dynamic_handlers(ScmObj target, ScmObj current)
     ScmObj handlers_to_call = throw_cont_calculate_handlers(target, current);
     ScmObj p;
     SCM_FOR_EACH(p, handlers_to_call) {
-        ScmObj before_flag = SCM_CAAR(p);
-        ScmObj handler     = SCM_CADR(SCM_CAR(p));
-        ScmObj chain       = SCM_CDDR(SCM_CAR(p));
-        if (SCM_FALSEP(before_flag))  vm->handlers = chain;
-        Scm_ApplyRec(handler, SCM_NIL);
-        if (!SCM_FALSEP(before_flag)) vm->handlers = chain;
+        ScmObj before_flag   = SCM_CAAR(p);
+        ScmObj chain         = SCM_CDAR(p);
+        ScmObj handler_entry = SCM_CAR(chain);
+        if (SCM_FALSEP(before_flag)) {
+            vm->handlers = SCM_CDR(chain);
+            Scm_ApplyRec(SCM_CDR(handler_entry), SCM_NIL);
+        } else {
+            Scm_ApplyRec(SCM_CAR(handler_entry), SCM_NIL);
+            vm->handlers = chain;
+        }
     }
 }
 
 static ScmObj throw_cont_cc(ScmObj, void **);
 
-static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
-                                                     to be called */
+static ScmObj throw_cont_body(ScmObj handlers,    /* ((flag . handler-chain)...)
+                                                     see throw_cont_calculate_
+                                                     handlers() above. */
                               ScmEscapePoint *ep, /* target continuation */
                               ScmObj args)        /* args to pass to the
                                                      target continuation */
@@ -2558,16 +2568,21 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* after/before thunks
     if (SCM_PAIRP(handlers)) {
         SCM_ASSERT(SCM_PAIRP(SCM_CAR(handlers)));
         ScmObj before_flag = SCM_CAAR(handlers);
-        ScmObj handler     = SCM_CADR(SCM_CAR(handlers));
-        ScmObj chain       = SCM_CDDR(SCM_CAR(handlers));
+        ScmObj chain       = SCM_CDAR(handlers);
 
         data[0] = (void*)SCM_CDR(handlers);
         data[1] = (void*)ep;
         data[2] = (void*)args;
         data[3] = (void*)(SCM_FALSEP(before_flag)? NULL : chain);
         Scm_VMPushCC(throw_cont_cc, data, 4);
-        if (SCM_FALSEP(before_flag)) vm->handlers = chain;
-        return Scm_VMApply0(handler);
+        if (SCM_FALSEP(before_flag)) {
+            /* after handler */
+            vm->handlers = SCM_CDR(chain);
+            return Scm_VMApply0(SCM_CDAR(chain));
+        } else {
+            /* before handler */
+            return Scm_VMApply0(SCM_CAAR(chain));
+        }
     }
 
     /*
