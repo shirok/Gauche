@@ -43,7 +43,6 @@
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"
 
-
 /* Experimental code to use custom mark procedure for stack gc.
    Currently it doens't show any improvement, so we disable it
    by default. */
@@ -1953,6 +1952,15 @@ bad_list:
  * Dynamic handlers
  */
 
+/* On <handler-chain>
+ *
+ *   vm->handlers is a list of <handler-entry>.  Each <handler-entry>
+ *   keeps the "before" and "after" thunk of the dynamic-wind.
+ *   Currently, <handler-entry> is just a cons of two thunks, but we
+ *   may extend it in future.  You should use call_before_think and
+ *   call_after_thunk.
+ */
+
 static ScmCContinuationProc dynwind_before_cc;
 static ScmCContinuationProc dynwind_body_cc;
 static ScmCContinuationProc dynwind_after_cc;
@@ -2046,6 +2054,33 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
     return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
 }
 
+static void call_before_thunk(ScmObj handler_entry)
+{
+    /* This may be extended in future */
+    SCM_ASSERT(SCM_PAIRP(handler_entry));
+    Scm_ApplyRec(SCM_CAR(handler_entry), SCM_NIL);
+}
+
+static void call_after_thunk(ScmObj handler_entry)
+{
+    /* This may be extended in future */
+    SCM_ASSERT(SCM_PAIRP(handler_entry));
+    Scm_ApplyRec(SCM_CDR(handler_entry), SCM_NIL);
+}
+
+static ScmObj vm_call_before_thunk(ScmObj handler_entry)
+{
+    /* This may be extended in future */
+    SCM_ASSERT(SCM_PAIRP(handler_entry));
+    return Scm_VMApply0(SCM_CAR(handler_entry));
+}
+
+static ScmObj vm_call_after_thunk(ScmObj handler_entry)
+{
+    /* This may be extended in future */
+    SCM_ASSERT(SCM_PAIRP(handler_entry));
+    return Scm_VMApply0(SCM_CDR(handler_entry));
+}
 
 /*=================================================================
  * Exception handling
@@ -2494,7 +2529,8 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
            E's before handler
            F's before handler
 
-   Returns a list of (flag . <handler-chain>)
+   Returns a <handler-differential-list>, or <hdlist>, which is a list of
+   (flag . <handler-chain>)
    The flag indicates which of 'before' or 'after' handler should be called,
    and also how the handler chain shoud be updated.
 
@@ -2532,17 +2568,17 @@ static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
 static void call_dynamic_handlers(ScmObj target, ScmObj current)
 {
     ScmVM *vm = theVM;
-    ScmObj handlers_to_call = throw_cont_calculate_handlers(target, current);
+    ScmObj hdlist = throw_cont_calculate_handlers(target, current);
     ScmObj p;
-    SCM_FOR_EACH(p, handlers_to_call) {
+    SCM_FOR_EACH(p, hdlist) {
         ScmObj before_flag   = SCM_CAAR(p);
         ScmObj chain         = SCM_CDAR(p);
         ScmObj handler_entry = SCM_CAR(chain);
         if (SCM_FALSEP(before_flag)) {
             vm->handlers = SCM_CDR(chain);
-            Scm_ApplyRec(SCM_CDR(handler_entry), SCM_NIL);
+            call_after_thunk(handler_entry);
         } else {
-            Scm_ApplyRec(SCM_CAR(handler_entry), SCM_NIL);
+            call_before_thunk(handler_entry);
             vm->handlers = chain;
         }
     }
@@ -2550,9 +2586,7 @@ static void call_dynamic_handlers(ScmObj target, ScmObj current)
 
 static ScmObj throw_cont_cc(ScmObj, void **);
 
-static ScmObj throw_cont_body(ScmObj handlers,    /* ((flag . handler-chain)...)
-                                                     see throw_cont_calculate_
-                                                     handlers() above. */
+static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*/
                               ScmEscapePoint *ep, /* target continuation */
                               ScmObj args)        /* args to pass to the
                                                      target continuation */
@@ -2565,12 +2599,12 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* ((flag . handler-chain)...)
     /*
      * first, check to see if we need to evaluate dynamic handlers.
      */
-    if (SCM_PAIRP(handlers)) {
-        SCM_ASSERT(SCM_PAIRP(SCM_CAR(handlers)));
-        ScmObj before_flag = SCM_CAAR(handlers);
-        ScmObj chain       = SCM_CDAR(handlers);
+    if (SCM_PAIRP(hdlist)) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CAR(hdlist)));
+        ScmObj before_flag = SCM_CAAR(hdlist);
+        ScmObj chain       = SCM_CDAR(hdlist);
 
-        data[0] = (void*)SCM_CDR(handlers);
+        data[0] = (void*)SCM_CDR(hdlist);
         data[1] = (void*)ep;
         data[2] = (void*)args;
         data[3] = (void*)(SCM_FALSEP(before_flag)? NULL : chain);
@@ -2578,10 +2612,10 @@ static ScmObj throw_cont_body(ScmObj handlers,    /* ((flag . handler-chain)...)
         if (SCM_FALSEP(before_flag)) {
             /* after handler */
             vm->handlers = SCM_CDR(chain);
-            return Scm_VMApply0(SCM_CDAR(chain));
+            return vm_call_after_thunk(SCM_CAR(chain));
         } else {
-            /* before handler */
-            return Scm_VMApply0(SCM_CAAR(chain));
+            /* before handler.  chain is restored in throw_cont_cc. */
+            return vm_call_before_thunk(SCM_CAR(chain));
         }
     }
 
@@ -2631,14 +2665,15 @@ static ScmObj throw_cont_cc(ScmObj result SCM_UNUSED, void **data)
 {
     ScmVM *vm = theVM;
 
-    ScmObj handlers = SCM_OBJ(data[0]);
+    ScmObj hdlist = SCM_OBJ(data[0]);
     ScmEscapePoint *ep = (ScmEscapePoint *)data[1];
     ScmObj args = SCM_OBJ(data[2]);
     if (data[3]) {
+        /* restore chain only after 'before' thunk. */
         ScmObj chain = SCM_OBJ(data[3]);
         vm->handlers = chain;
     }
-    return throw_cont_body(handlers, ep, args);
+    return throw_cont_body(hdlist, ep, args);
 }
 
 /* Body of the continuation SUBR */
@@ -2689,19 +2724,18 @@ static ScmObj throw_continuation(ScmObj *argframe,
         Scm_Error("reset missing.");
     }
 
-    ScmObj handlers_to_call;
+    ScmObj hdlist;
     if (ep->cstack) {
         /* for full continuation */
-        handlers_to_call = throw_cont_calculate_handlers(ep->handlers,
-                                                         vm->handlers);
+        hdlist = throw_cont_calculate_handlers(ep->handlers, vm->handlers);
     } else {
         /* for partial continuation */
-        handlers_to_call
+        hdlist
             = throw_cont_calculate_handlers(Scm_Append2(ep->partHandlers,
                                                         vm->handlers),
                                             vm->handlers);
     }
-    return throw_cont_body(handlers_to_call, ep, args);
+    return throw_cont_body(hdlist, ep, args);
 }
 
 ScmObj Scm_VMCallCC(ScmObj proc)
