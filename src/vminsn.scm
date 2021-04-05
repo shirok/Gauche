@@ -1424,17 +1424,34 @@
 ;; Dynamic handlers
 ;;
 
-;; PUSH-HANDLERS
+;; PUSH-HANDLERS(n)
 ;; POP-HANDLERS
 ;;   Used for dynamic-wind and alike.
+;;   Push-handlers takes two procedures (before proc in SP top, and
+;;   after proc in VAL0), and zero or more args.  The number of args
+;;   is in parameter.
 
-(define-insn PUSH-HANDLERS 0 none #f    ; push dynamic handlers
-  (let* ((before) (after VAL0))
-    (VM-ASSERT (>= (- SP (-> vm stackBase)) 1))
+(define-insn PUSH-HANDLERS 1 none #f    ; push dynamic handlers
+  (let* ([nargs::long (SCM_VM_INSN_ARG code)]
+         [before]
+         [after VAL0]
+         [args SCM_NIL])
+    (VM-ASSERT (>= (- SP (-> vm stackBase)) (+ 1 nargs)))
+    (when (> nargs 0)
+      (SCM_FLONUM_ENSURE_MEM VAL0)
+      (set! args (Scm_Cons VAL0 SCM_NIL))
+      (while (> (pre-- nargs) 0)
+        (let* ([v])
+          (POP-ARG v)
+          (SCM_FLONUM_ENSURE_MEM v)
+          (set! args (Scm_Cons v args))))
+      (POP-ARG after))
     (POP-ARG before)
     (SCM_FLONUM_ENSURE_MEM before)
     (SCM_FLONUM_ENSURE_MEM after)
-    (set! (-> vm handlers) (Scm_Acons before after (-> vm handlers)))
+    (set! (-> vm handlers)
+          (Scm_Cons (make_handler_entry before after args)
+                    (-> vm handlers)))
     NEXT))
 
 (define-insn POP-HANDLERS 0 none #f     ; pop dynamic handlers

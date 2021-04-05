@@ -117,7 +117,13 @@
     [((? symbol? opcode) . params)
      (let1 info (vm-find-insn-info opcode)
        (match params
-         [() (check insn info 0) (ref info 'code)]
+         [()
+          ;; TRANSIENT: Only to compule 0.9.11 with 0.9.10
+          (if (eq? opcode 'PUSH-HANDLERS)
+            (~ info'code)               ; assumes 0 as param
+            (begin
+              (check insn info 0)
+              (ref info 'code)))]
          [(arg0)
           (check insn info 1)
           (logior (ash (logand arg0 *insn-arg-mask*) VM_INSN_CODE_BITS)

@@ -296,7 +296,7 @@
            ($let src 'let `(,at ,bt ,tt) `(,a ,b ,t)
                  ($seq
                   `(,($call ($*-src b) ($lref bt) '())
-                    ,($asm src `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
+                    ,($asm src `(,PUSH-HANDLERS 0) `(,($lref bt) ,($lref at)))
                     ,($call ($*-src t) ($lref tt) '()))))
            ;; normal path
            ($let src 'let `(,at ,bt ,tt) `(,a ,b ,t)

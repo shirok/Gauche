@@ -1,5 +1,12 @@
 2021-04-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/vminsn.scm (PUSH-HANDLERS): Change it to take one parameter,
+	  an argument list for before/after procedure.  This will allow
+	  the compiler to lift those procedures.
+	* lib/gauche/vm/insn-core.scm: 0.9.10 compiler tries to generate
+	  PUSH-HANDLERS without parameters, so we need a transient hack
+	  to convert it to PUSH-HANDLERS(0).
+
 	* src/vm.c (Scm_VMDynamicWindC): Deprecate it.  It has never been
 	  used and not so useful anyway.
 

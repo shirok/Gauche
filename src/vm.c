@@ -900,6 +900,8 @@ static void local_env_shift(ScmVM *vm, int env_depth)
 /*===================================================================
  * Main loop of VM
  */
+static ScmObj make_handler_entry(ScmObj, ScmObj, ScmObj);
+
 static void run_loop()
 {
     ScmVM *vm = theVM;
