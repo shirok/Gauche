@@ -1,3 +1,8 @@
+2021-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMDynamicWindC): Deprecate it.  It has never been
+	  used and not so useful anyway.
+
 2021-03-30  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modutil.texi: Document control.cseq.  Haven't used heavily, but

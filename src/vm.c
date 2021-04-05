@@ -2097,12 +2097,14 @@ static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
     return val0;
 }
 
-/* C-friendly wrapper */
+#if GAUCHE_API_VERSION < 1000
+/* DEPRECATED.  C-friendly wrapper */
 ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                           ScmSubrProc *body,
                           ScmSubrProc *after,
                           void *data)
 {
+    Scm_Warn("Dreprecated Scm_VMDynamicWindC is called");
     ScmObj beforeproc =
         before ? Scm_MakeSubr(before, data, 0, 0, SCM_FALSE) : Scm_NullProc();
     ScmObj afterproc =
@@ -2112,6 +2114,7 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
 
     return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
 }
+#endif /* GAUCHE_API_VERSION < 1000 */
 
 /*=================================================================
  * Exception handling

@@ -594,6 +594,14 @@ SCM_EXTERN long Scm_VMUnwindProtect(ScmVM *vm, ScmCStack *cstack);
 SCM_EXTERN void Scm_VMNextHandler(ScmVM *vm);
 SCM_EXTERN void Scm_VMRewindProtect(ScmVM *vm);
 
+#if GAUCHE_API_VERSION < 1000
+/* Deprecated - not that useful */
+SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
+                                     ScmSubrProc *body,
+                                     ScmSubrProc *after,
+                                     void *data);
+#endif
+
 /*
  * Runtime flags
  */
