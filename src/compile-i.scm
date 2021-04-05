@@ -199,6 +199,7 @@
     (match (classify-args args)
       [(#f)         ($const unit)]
       [(constval)   ($const constval)]
+      [(#f x)       (undefined)]
       [(constval x) ($asm src `(,opcode) (list ($const constval) x))]
       [(#f x y)     ($asm src `(,opcode) (list x y))]
       [_ (undefined)])))

@@ -2068,6 +2068,10 @@
 (test* "logxor (0arg)" 0 (logxor))
 (test* "logxor (1arg)" 1 (logxor 1))
 (test* "logxor (1arg)" (test-error) (logxor 3.14))
+;; check optimizer
+;; http://chaton.practical-scheme.net/gauche/a/2021/04/04#entry-6069b57b-bbbff
+(test* "logior (optimizer)" 1 (logior (if #f 0 1)))
+
 
 (test* "logtest" #t
       (logtest #xfeedbabe #x10000000))
