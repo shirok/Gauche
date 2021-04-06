@@ -13466,6 +13466,54 @@ fail.  If you need to fail after all the parsers succeeds, use @code{$let}
 or @code{$let}.
 @end defun
 
+@defmac $binding parser-bind-form @dots{} [(=> fail)] expr
+@defmacx $lbinding parser-bind-form @dots{} [(=> fail)] expr
+@c MOD parser.peg
+Each @var{parser-bind-form} may be a parser-yielding expression, except
+that you can insert a form @code{($: var parser-expression)} anywherer in it,
+where @var{parser-expression} is an expression that yields a parser.
+The @code{$:} form is equivalent to just the @var{parser-expression}, except
+that its semantic value is bound ot a variable @var{var}.
+
+Each parser created by @var{parser-bind-form} is applied to the input
+in sequence.  One of @var{parser-bind-form} fails, the entire parser
+immediately fails.  If all of @var{parser-bind-form} succeeds, @var{expr}
+is evaluated in the environment where all the @var{var}s are
+bound to the corresponding parser expression.
+
+Since @code{$binding} walks entire @var{parser-bind-form} to look for
+@code{$:} forms, you can't have nested @code{$binding} form inside
+@var{parser-bind-form}.
+
+If the parser expression associated with @var{var} fails, or never
+executed, the @var{var} is bound ot @code{#<undef>}.
+If the parser expression succeeds multiple times, @var{var} holds
+the last value.  Also, @var{var} can appear more than one places;
+it holds the last bound value.
+
+The value of @var{expr} form becomes the semantic value of the
+entire parser.
+
+@code{$lbinding} is a shorthand of @code{($lazy ($binding ...))}.
+
+The optional @code{(=> fail)} form before @var{expr} is similar to the
+one with @code{$match}.   If given, @var{fail}, which must be an identifier,
+is bound to a procedure that returns failure.  You should call it in the
+tail position of @var{expr} to indicate failure.  It can be
+
+@itemize @bullet
+@item
+@code{(@var{fail} @var{message})} : Returns @code{fail-message} type
+failure, with a string @var{message} as the message.
+@item
+@code{(@var{fail} @var{tag} @var{message})} : Returns @code{fail-error} type
+(non-recoverable) failure, where @var{tag} must be a symobl @code{error}
+(in future, differtent tags will be supported).
+@end itemize
+
+@end defmac
+
+
 @defun $fold-parsers proc seed ps
 @c MOD parser.peg
 @var{Ps} is a list of parsers.  Apply those parsers sequentially
