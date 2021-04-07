@@ -303,7 +303,7 @@
            ($let src 'let `(,at ,bt ,tt) `(,a ,b ,t)
                  ($seq
                   `(,($call ($*-src b) ($lref bt) '())
-                    ,($asm src `(,PUSH-HANDLERS) `(,($lref bt) ,($lref at)))
+                    ,($asm src `(,PUSH-HANDLERS 0) `(,($lref bt) ,($lref at)))
                     ,($receive #f 0 1 (list r)
                                ($call ($*-src t) ($lref tt) '())
                                ($seq
