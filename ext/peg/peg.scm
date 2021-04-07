@@ -990,10 +990,17 @@
      (define (build-fail-decl fail)
        (if fail
          (quasirename r
-           `((define ,fail
-               (case-lambda
-                 ((msg) (list* ',fail-mark #f msg))
-                 ((tag msg) (list* ',fail-mark tag msg))))))
+           ;; NB: We can't optimize dynamically created case-lambda yet.
+           ;; `((define ,fail
+           ;;     (case-lambda
+           ;;       ((msg) (list* ',fail-mark #f msg))
+           ;;       ((tag msg) (list* ',fail-mark tag msg)))))
+           ;; With the following definition, the branch is likely
+           ;; to be optimized out when call to fail is inlined:
+           `((define (,fail a . b)
+               (if (null? b)
+                 (list* ',fail-mark #f a) ;a=msg
+                 (list* ',fail-mark a (car b)))))) ;a=tag, (car b)=msg
          '()))
      (define (build-return result fail tail)
        (if fail
