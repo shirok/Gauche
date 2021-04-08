@@ -150,6 +150,12 @@
 (test* "lifting constant lambda" '()
        (filter-insn (^(xs) (map (^k (* k k)) xs)) 'CLOSURE))
 
+(test* "lifting constant lambda 2" '()
+       (filter-insn (^[] (let ([a (^[x r] (* x r))])
+                           (let ([b (^[xs] (fold a '() xs))])
+                             (f b))))
+                    'CLOSURE))
+
 ;; See if constant lambda keeps identity.
 ;; NB: This isn't a guaranteed behavior, but it holds in the
 ;; current compiler, and there's no reason to lose it.

@@ -120,7 +120,10 @@
 ;; Pass4 step1 - scan
 ;;   bs - List of lvars whose binding is introduced in the current scope.
 ;;   fs - List of free lvars found so far in the current scope.
-;;   t? - #t if we're in the top level, #f otherwise.
+;;   t? - #t in toplevel expression, not inside another $lambda or $let.
+;;        $lambda node appears in this context doesn't need to be lifted,
+;;        for they're created at the time the entire toplevel expression
+;;        is created anyway.
 ;;   labels - label-dic.  the info field is used to hold $LAMBDA nodes.
 ;; Eacl call returns a list of free lvars.
 
@@ -144,16 +147,16 @@
                      (unravel-syntax ($define-src iform))))
              (pass4/scan ($define-expr iform) bs fs t? labels)]
   [($LREF)   (pass4/add-lvar ($lref-lvar iform) bs fs)]
-  [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs #f labels)
+  [($LSET)   (let1 fs (pass4/scan ($lset-expr iform) bs fs t? labels)
                (pass4/add-lvar ($lset-lvar iform) bs fs))]
-  [($GSET)   (pass4/scan ($gset-expr iform) bs fs #f labels)]
-  [($IF)     (let* ([fs (pass4/scan ($if-test iform) bs fs #f labels)]
-                    [fs (pass4/scan ($if-then iform) bs fs #f labels)])
-               (pass4/scan ($if-else iform) bs fs #f labels))]
+  [($GSET)   (pass4/scan ($gset-expr iform) bs fs t? labels)]
+  [($IF)     (let* ([fs (pass4/scan ($if-test iform) bs fs t? labels)]
+                    [fs (pass4/scan ($if-then iform) bs fs t? labels)])
+               (pass4/scan ($if-else iform) bs fs t? labels))]
   [($LET)    (let* ([new-bs (append ($let-lvars iform) bs)]
                     [bs (if (memv ($let-type iform) '(rec rec*)) new-bs bs)]
                     [fs (pass4/scan* ($let-inits iform) bs fs #f labels)])
-               (pass4/scan ($let-body iform) new-bs fs t? labels))]
+               (pass4/scan ($let-body iform) new-bs fs #f labels))]
   [($RECEIVE)(let ([fs (pass4/scan ($receive-expr iform) bs fs #f labels)]
                    [bs (append ($receive-lvars iform) bs)])
                (pass4/scan ($receive-body iform) bs fs #f labels))]
@@ -176,16 +179,16 @@
                                      (pass4/add-lvar (car inner-fs) bs fs))))]))]
   [($LABEL)  (cond [(label-seen? labels iform) fs]
                    [else (label-push! labels iform)
-                         (pass4/scan ($label-body iform) bs fs #f labels)])]
+                         (pass4/scan ($label-body iform) bs fs t? labels)])]
   [($SEQ)    (pass4/scan* ($seq-body iform) bs fs t? labels)]
   [($CALL)   (let1 fs (if (eq? ($call-flag iform) 'jump)
                         fs
-                        (pass4/scan ($call-proc iform) bs fs #f labels))
-               (pass4/scan* ($call-args iform) bs fs #f labels))]
-  [($ASM)    (pass4/scan* ($asm-args iform) bs fs #f labels)]
-  [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs #f labels)]
-  [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs #f labels)]
-  [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs #f labels)]
+                        (pass4/scan ($call-proc iform) bs fs t? labels))
+               (pass4/scan* ($call-args iform) bs fs t? labels))]
+  [($ASM)    (pass4/scan* ($asm-args iform) bs fs t? labels)]
+  [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs t? labels)]
+  [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs t? labels)]
+  [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs t? labels)]
   [else fs])
 
 (define (pass4/scan2 iform bs fs t? labels)
@@ -230,26 +233,32 @@
               (set! top-name (identifier->symbol n))
               #t)
             (loop (cdr lms)))))
-    (rlet1 results '()
-      (let loop ([lms lambda-nodes])
-        (cond [(null? lms)]
+    ;; Loop over liftable lambda candidates.  Lifting one lambda node
+    ;; can turn another lambda nodes liftable, so we repeat the pass until
+    ;; we can't find liftable ones.
+    (rlet1 lifted '()
+      (let loop ([lms lambda-nodes]
+                 [lifted? #f]
+                 [remaining '()])
+        (cond [(null? lms) (when lifted? (loop remaining #f '()))] ;repeat
               [($lambda-lifted-var (car lms)) ; this is toplevel node
                ($lambda-lifted-var-set! (car lms) #f)
-               (loop (cdr lms))]
+               (loop (cdr lms) lifted? remaining)]
               [else
                (let* ([lm (car lms)]
                       [fvs ($lambda-free-lvars lm)])
-                 (when (or (null? fvs)
-                           (and (null? (cdr fvs))
-                                (lvar-immutable? (car fvs))
-                                (eq? (lvar-initval (car fvs)) lm)))
+                 (if (or (null? fvs)
+                         (and (null? (cdr fvs))
+                              (lvar-immutable? (car fvs))
+                              (memq (lvar-initval (car fvs)) lifted)))
                    (let1 lvar (make-lvar (gensym))
                      ($lambda-name-set! lm (list top-name
                                                  (or ($lambda-name lm)
                                                      (lvar-name lvar))))
                      ($lambda-lifted-var-set! lm lvar)
-                     (push! results lm)))
-                 (loop (cdr lms)))])))))
+                     (push! lifted lm)
+                     (loop (cdr lms) #t remaining))
+                   (loop (cdr lms) lifted? (cons lm remaining))))])))))
 
 ;; Final touch of pass4 - replace lifted lambda nodes to $GREFs.
 ;; Returns (possibly modified) IForm.
