@@ -271,19 +271,27 @@
            "lineament")
 
 ;; $lift and $lift*
-(test-succ "$lift" '(#\a . #\b)
-           ($lift cons ($any) ($any))
-           "abc")
-(test-fail "$lift" '(1 #\z)
-           ($lift cons ($any) ($char #\z))
-           "abc")
+;; NB: They are inline expanded, so we also call via apply
+(let ()
+  (define-syntax test-lift
+    (syntax-rules ()
+      [(test-lift tester name expect (exp ...) input)
+       (begin (tester name expect (exp ...) input)
+              (tester #"~|name| via apply"
+                      expect (apply exp ... '()) input))]))
 
-(test-succ "$lift*" "abc"
-           ($lift* list->string ($any) ($any) ($any))
-           "abc")
-(test-fail "$lift" '(2 #\z)
-           ($lift* list->string ($any) ($any) ($char #\z))
-           "abc")
+  (test-lift test-succ "$lift" '(#\a . #\b)
+             ($lift cons ($any) ($any))
+             "abc")
+  (test-lift test-fail "$lift" '(1 #\z)
+             ($lift cons ($any) ($char #\z))
+             "abc")
+  (test-lift test-succ "$lift*" "abc"
+             ($lift* list->string ($any) ($any) ($any))
+             "abc")
+  (test-lift test-fail "$lift" '(2 #\z)
+             ($lift* list->string ($any) ($any) ($char #\z))
+             "abc"))
 
 ;; $fold-parsers and $fold-parsers-right
 (test-succ "$fold-parsers" '()                  ; base case

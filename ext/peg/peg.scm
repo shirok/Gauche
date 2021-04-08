@@ -426,27 +426,71 @@
 ;; API
 ;; $lift :: (a,...) -> b, (Parser,..) -> Parser
 ;; ($lift f parser) == ($let ([x parser]) ($return (f x)))
-(define-inline ($lift f . parsers)
-  ;; We don't use the straightforward definition (using $let or $bind)
-  ;; to reduce closure construction.
-  (^s (let accum ([s s] [parsers parsers] [vs '()])
-        (if (null? parsers)
-          (return-result (apply f (reverse vs)) s)
-          (receive [r v s1] ((car parsers) s)
-            (if (parse-success? r)
-              (accum s1 (cdr parsers) (cons v vs))
-              (return-failure r v s1)))))))
+;;
+;; $lift* is like $lift, but f gets semantic values as a single list.
+;;
+;; The number of parsers is almost always fixed, and we macro-expand into
+;; chain of parser calls in such cases.
 
-;; API
-;; Like $lift, but f gets single list argument
-(define-inline ($lift* f . parsers)
-  (^s (let accum ([s s] [parsers parsers] [vs '()])
-        (if (null? parsers)
-          (return-result (f (reverse vs)) s)
-          (receive [r v s1] ((car parsers) s)
-            (if (parse-success? r)
-              (accum s1 (cdr parsers) (cons v vs))
-              (return-failure r v s1)))))))
+;; Aux function for macro expander
+(define (expand-$lift *?)
+)
+
+(define-hybrid-syntax $lift
+  (^[f . parsers]
+    ;; We don't use the straightforward definition (using $let or $bind)
+    ;; to reduce closure construction.
+    (^s (let accum ([s s] [parsers parsers] [vs '()])
+          (if (null? parsers)
+            (return-result (apply f (reverse vs)) s)
+            (receive [r v s1] ((car parsers) s)
+              (if (parse-success? r)
+                (accum s1 (cdr parsers) (cons v vs))
+                (return-failure r v s1)))))))
+  (er-macro-transformer
+   (^[f r c]
+     (define (generate-1 fn vs ps s)
+       (if (null? ps)
+         (quasirename r `(return-result (,fn ,@(reverse vs)) ,s))
+         (let* ([v1 (gensym "v")]
+                [inner (generate-1 fn (cons v1 vs) (cdr ps) s)])
+           (quasirename r `(receive [res ,v1 ,s] (,(car ps) ,s)
+                             (if (parse-success? res)
+                               ,inner
+                               (return-failure res ,v1 ,s)))))))
+     (match f
+       [(_ fn . ps)
+        (let1 s (r's)
+          (quasirename r
+            `(^[,s] ,(generate-1 fn '() ps s))))]
+       [_ f]))))
+
+(define-hybrid-syntax $lift*
+  (^[f . parsers]
+    (^s (let accum ([s s] [parsers parsers] [vs '()])
+          (if (null? parsers)
+            (return-result (f (reverse vs)) s)
+            (receive [r v s1] ((car parsers) s)
+              (if (parse-success? r)
+                (accum s1 (cdr parsers) (cons v vs))
+                (return-failure r v s1)))))))
+  (er-macro-transformer
+   (^[f r c]
+     (define (generate-1 fn vs ps s)
+       (if (null? ps)
+         (quasirename r `(return-result (,fn (list ,@(reverse vs))) ,s))
+         (let* ([v1 (gensym "v")]
+                [inner (generate-1 fn (cons v1 vs) (cdr ps) s)])
+           (quasirename r `(receive [res ,v1 ,s] (,(car ps) ,s)
+                             (if (parse-success? res)
+                               ,inner
+                               (return-failure res ,v1 ,s)))))))
+     (match f
+       [(_ fn . ps)
+        (let1 s (r's)
+          (quasirename r
+            `(^[,s] ,(generate-1 fn '() ps s))))]
+       [_ f]))))
 
 ;; API
 ;; For debugging
