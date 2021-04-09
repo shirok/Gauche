@@ -1651,15 +1651,13 @@
               [else (error "a boolean or a module required but got:" env)])])
     (unwind-protect
         (begin
-          ;; TODO: We suppress global inline expansion, otherwise we'll see
-          ;; $ASM nodes.  NB: This also suppress expansion of define-inline'd
-          ;; procedures and compiler macros, which may not be desirable.
-          ;; We'll think of it later.
-          (vm-compiler-flag-set! SCM_COMPILE_NOINLINE_GLOBALS)
+          ;; Suppress inline expansion to ASM node, for it is useless as
+          ;; the macro output.
+          (vm-compiler-flag-set! SCM_COMPILE_NOINLINE_INLINER)
           ($ unwrap-syntax $ iform->sexpr
              $ pass1 form (make-bottom-cenv env)))
       (begin
-        (vm-compiler-flag-clear! SCM_COMPILE_NOINLINE_GLOBALS)
+        (vm-compiler-flag-clear! SCM_COMPILE_NOINLINE_INLINER)
         (vm-compiler-flag-set! flags-save)))))
 
 ;;--------------------------------------------------------
@@ -1766,13 +1764,24 @@
                 (set! SCM_RESULT0 gval SCM_RESULT1 'macro)]
                [(SCM_SYNTAXP gval)
                 (set! SCM_RESULT0 gval SCM_RESULT1 'syntax)]
-               [(and (SCM_PROCEDUREP gval)
-                     (SCM_PROCEDURE_INLINER gval) ; inliner may be NULL
-                     (not (SCM_FALSEP (SCM_PROCEDURE_INLINER gval)))
-                     (Scm_GlocInlinableP gloc)
-                     (not (SCM_VM_COMPILER_FLAG_IS_SET
-                           (Scm_VM) SCM_COMPILE_NOINLINE_GLOBALS)))
-                (set! SCM_RESULT0 gval SCM_RESULT1 'inline)]
+               [(SCM_PROCEDUREP gval)
+                (let* ([inl (SCM_PROCEDURE_INLINER gval)])
+                  (if (and inl          ; inliner may be NULL
+                           (not (SCM_FALSEP inl))
+                           (Scm_GlocInlinableP gloc)
+                           (not (SCM_VM_COMPILER_FLAG_IS_SET
+                                 (Scm_VM) SCM_COMPILE_NOINLINE_GLOBALS))
+                           ;; When SCM_COMPILE_NOINLINE_INLINER is set, we
+                           ;; suppress inliner expansion except inl is a macro
+                           ;; xformer (define-hybrid-syntax creates it).
+                           ;; It is only for macroexpand-all; other inliners
+                           ;; may expand into $asm node, which isn't useful
+                           ;; as the output of macro expansion.
+                           (not (and (SCM_VM_COMPILER_FLAG_IS_SET
+                                      (Scm_VM) SCM_COMPILE_NOINLINE_INLINER)
+                                     (not (SCM_MACROP inl)))))
+                    (set! SCM_RESULT0 gval SCM_RESULT1 'inline)
+                    (goto normal)))]
                [else (goto normal)])
          (.if "defined(RECORD_DEPENDED_MODULES)"
               (begin
@@ -1948,6 +1957,7 @@
  (define-enum SCM_COMPILE_NOINLINE_LOCALS)
  (define-enum SCM_COMPILE_NOINLINE_CONSTS)
  (define-enum SCM_COMPILE_NOINLINE_SETTERS)
+ (define-enum SCM_COMPILE_NOINLINE_INLINER)
  (define-enum SCM_COMPILE_NOSOURCE)
  (define-enum SCM_COMPILE_SHOWRESULT)
  (define-enum SCM_COMPILE_NOCOMBINE)

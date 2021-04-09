@@ -1,3 +1,15 @@
+2021-04-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (macroexpand-all, global-call-type),
+	  src/gauche/vm.h (SCM_COMPILE_NOINLINE_INLINER): Allow macorexpand-all
+	  to expand hybrid macro as well.  We still need to suppress expansion
+	  of general inliners, for they can insert $asm node, which is not
+	  useful as the output of macro expansion.  This is a kludge, due to
+	  the current way that hybrid macro keeps macro xformer in the
+	  inliner slot.  If we track macro binding and runtime binding
+	  separately, NOINLINE_GLOBALS flag may suffice.  We may adopt
+	  that solution in future, dropping NOINLINE_INLINER flag.
+
 2021-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/vminsn.scm (PUSH-HANDLERS): Change it to take one parameter,

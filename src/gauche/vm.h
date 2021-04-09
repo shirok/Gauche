@@ -644,7 +644,8 @@ SCM_EXTERN void Scm_VMPushCC(ScmCContinuationProc *func,
  */
 
 enum {
-    SCM_COMPILE_NOINLINE_GLOBALS = (1L<<0),/* Do not inline global procs */
+    SCM_COMPILE_NOINLINE_GLOBALS = (1L<<0),/* Do not inline global procs
+                                              (implies NOINLINE_INLINER, too) */
     SCM_COMPILE_NOINLINE_LOCALS = (1L<<1), /* Do not inline local procs */
     SCM_COMPILE_NOINLINE_CONSTS = (1L<<2), /* Do not inline constants */
     SCM_COMPILE_NOSOURCE = (1L<<3),        /* Do not insert source info */
@@ -662,8 +663,12 @@ enum {
     SCM_COMPILE_LEGACY_DEFINE = (1L<<11),  /* Do not insert toplevel binding
                                               at compile-time. */
     SCM_COMPILE_MUTABLE_LITERALS = (1L<<12),/* Literal pairs are mutable */
-    SCM_COMPILE_SRFI_FEATURE_ID = (1L<<13)  /* Allow srfi-N feature id in
+    SCM_COMPILE_SRFI_FEATURE_ID = (1L<<13), /* Allow srfi-N feature id in
                                                cond-expand */
+    SCM_COMPILE_NOINLINE_INLINER = (1L<<14)/* (internal) Do not invoke custom
+                                              inliner and ASM inliners.
+                                              hybrid macro is still expanded.
+                                              used for macroexpand-all */
 };
 
 #define SCM_VM_COMPILER_FLAG_IS_SET(vm, flag) ((vm)->compilerFlags & (flag))
