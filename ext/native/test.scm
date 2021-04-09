@@ -143,4 +143,7 @@
          (list (is-a? *ffi* <foreign-library>)
                (hash-table-keys (~ *ffi* 'entries)))))
 
+(test* "call-foreign" 42
+       (call-foreign *ffi* 'f_i))
+
 (test-end)

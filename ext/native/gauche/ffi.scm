@@ -38,11 +38,13 @@
 
 (define-module gauche.ffi
   (use gauche.dictionary)
+  (use gauche.config)
   (use util.match)
   (use lang.c.parser)
+  (use lang.c.type)
   (export <foreign-library>
           load-foreign
-          ;;call-foreign
+          call-foreign
           ))
 (select-module gauche.ffi)
 
@@ -52,6 +54,12 @@
    (dlobj :init-keyword :dlobj)              ; <dlobj>
    (entries :init-keyword :entries)))
 
+(define-method write-object ((obj <foreign-library>) port)
+  (format port "#<foreign-library ~s ~s>"
+          (~ obj'header-name)
+          (~ obj'dso-name)))
+
+;; API
 (define (load-foreign header-name dso-name)
   (let ([hdr (c-parse-file header-name)]
         [dlo (dynamic-load dso-name :init-function #f)])
@@ -75,7 +83,41 @@
   (match-let1 (name _ type _) decl
     (match type
       [('.function _ rettype argtypes)
-       (let ((dle (dlobj-get-entry-address dlo (x->string name))))
-         (when dle
-           (dict-put! tab name (list dle argtypes rettype))))]
+       (let ([dle (dlobj-get-entry-address dlo (x->string name))]
+             [r (process-type rettype)]
+             [as (map process-type argtypes)])
+         (when (and dle r)
+           (dict-put! tab name (list dle as r))))]
       [_ #f])))
+
+(define (process-type type)
+  (cond [(c-basic-type-integral? type) 'i]
+        [(c-basic-type-flonum? type) 'f]
+        [else #f]))                     ;for now
+
+(define (unsupported)
+  (error "Foreign call isn't supported (yet) on this platform:"
+         (gauche-config "--arch")))
+
+(define (arch-check)
+  (cond-expand
+   [gauche.os.windows (unsupported)]
+   [else
+    (unless (#/^x86_64-/ (gauche-config "--arch"))
+      (unsupported))]))
+
+;; API
+(define (call-foreign flib name . args)
+  (assume-type flib <foreign-library>)
+  (assume-type name <symbol>)
+  (arch-check)
+  (match (dict-get (~ flib'entries) name #f)
+    [(dle arg-sigs ret-sig)
+     (unless (= (length args) (length arg-sigs))
+       (errorf "wrong number of arguments for foreign function ~s \
+                (~s required, but got ~s)"
+               dle (length arg-sigs) (length args)))
+     ((with-module gauche.internal call-amd64)
+      dle (map list arg-sigs args) ret-sig)]
+    [_ (errorf "cannot find foreign function ~s in ~s"
+               name flib)]))
