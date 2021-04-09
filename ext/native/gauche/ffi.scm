@@ -91,9 +91,10 @@
       [_ #f])))
 
 (define (process-type type)
-  (cond [(c-basic-type-integral? type) 'i]
-        [(c-basic-type-flonum? type) 'f]
-        [else #f]))                     ;for now
+  (let1 type (c-actual-type type)
+    (cond [(c-basic-type-integral? type) 'i]
+          [(c-basic-type-flonum? type) 'f]
+          [else #f])))                  ;for now
 
 (define (unsupported)
   (error "Foreign call isn't supported (yet) on this platform:"

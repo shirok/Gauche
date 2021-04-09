@@ -44,7 +44,8 @@
           c-basic-type-scalar-numeric?
           c-basic-type-numeric?
           c-type-narrower?
-          c-wider-type)
+          c-wider-type
+          c-actual-type)
   )
 (select-module lang.c.type)
 
@@ -370,6 +371,21 @@
        (if (c-type-narrower? c-type-1 c-type-2)
          c-type-2
          c-type-1)))
+
+;; strip typedefs and returns the actual type
+(define (c-actual-type c-type)
+  (define (merge-quals new-qs qs)
+    (if (null? new-qs)
+      qs
+      (let1 qs (merge-quals (cdr new-qs) qs)
+        (if (memq (car new-qs) qs)
+          qs
+          (cons (car new-qs) qs)))))
+  (match c-type
+    [(.type _ quals inner)
+     (match-let1 (t qs) (c-actual-type inner)
+       `(,t ,(merge-quals quals qs)))]
+    [_ c-type]))
 
 ;;;
 ;;;  Folding C constant
