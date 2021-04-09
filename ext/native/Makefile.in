@@ -23,8 +23,9 @@ gauche--ffitest.c ffitest.sci : ffitest.scm
 	$(PRECOMP) -e -P -o gauche--ffitest $(srcdir)/ffitest.scm
 
 test/f.$(SOEXT) : test/f.h test/f.c
-	$(GAUCHE_PACKAGE) compile $(srcdir)/test/f $(srcdir)/test/f.c
-
+	mkdir -p test
+	$(COMPILE) -c $(srcdir)/test/f.c
+	$(LINK) test/f.$(SOEXT) f.$(OBJEXT)
 
 # We don't install the module.
 install :

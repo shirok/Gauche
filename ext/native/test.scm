@@ -139,7 +139,7 @@
 (test* "load-foreign" '(#t (f_i))
        (let ((dir (sys-dirname (current-load-path))))
          (set! *ffi* (load-foreign (build-path dir "test/f.h")
-                                   (build-path dir "test/f")))
+                                   "test/f"))
          (list (is-a? *ffi* <foreign-library>)
                (hash-table-keys (~ *ffi* 'entries)))))
 
