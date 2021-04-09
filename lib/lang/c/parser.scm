@@ -350,7 +350,9 @@
 
 ;; 6.7.3 Type qualifiers
 (define %type-qualifier
-  ($one-of '(const volatile restrict __restrict __restrict__)))
+  ($one-of '(const volatile restrict
+                   ;; clang additional qualifiers
+                   _Nullable _Nonnull _Null_unspecified _Nullable_result)))
 
 ;; This is a custom rule specially handle typedef-name.  typedef-name and
 ;; other type-specifiers are mutually exclusive.

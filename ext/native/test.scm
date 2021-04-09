@@ -1,6 +1,7 @@
 (use gauche.test)
 (use gauche.config)
 (use gauche.ffitest)
+(use util.match)
 (use file.util)
 
 (cond-expand
@@ -136,12 +137,14 @@
 (test-module 'gauche.ffi)
 
 (define *ffi* #f)
-(test* "load-foreign" '(#t (f_i))
+(test* "load-foreign" '(#t (#t () i))
        (let ((dir (sys-dirname (current-load-path))))
          (set! *ffi* (load-foreign (build-path dir "test/f.h")
                                    "test/f"))
          (list (is-a? *ffi* <foreign-library>)
-               (hash-table-keys (~ *ffi* 'entries)))))
+               (match (hash-table-get (~ *ffi* 'entries) 'f_i #f)
+                 [(dlptr ats rt) `(,(is-a? dlptr <dlptr>) ,ats ,rt)]
+                 [_ #f]))))
 
 (test* "call-foreign" 42
        (call-foreign *ffi* 'f_i))

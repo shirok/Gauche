@@ -151,6 +151,8 @@
     (__asm asm)
     (__asm__ asm)
     (__alignof__ __alignof__)
+    ;; clang additional keywords
+    _Nullable _Nonnull _Null_unspecified _Nullable_result
     ))
 
 (define %keyword
