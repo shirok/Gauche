@@ -137,16 +137,19 @@
 (test-module 'gauche.ffi)
 
 (define *ffi* #f)
-(test* "load-foreign" '(#t (#t () i))
+(test* "load-foreign" '(#t (f_i () i) (f_i_i (i) i))
        (let ((dir (sys-dirname (current-load-path))))
          (set! *ffi* (load-foreign (build-path dir "test/f.h")
                                    "test/f"))
          (list (is-a? *ffi* <foreign-library>)
-               (match (hash-table-get (~ *ffi* 'entries) 'f_i #f)
-                 [(dlptr ats rt) `(,(is-a? dlptr <dlptr>) ,ats ,rt)]
-                 [_ #f]))))
+               (and-let1 e (hash-table-get (~ *ffi* 'entries) 'f_i #f)
+                 `(,(~ e'name) ,(~ e'arg-signatures) ,(~ e'ret-signature)))
+               (and-let1 e (hash-table-get (~ *ffi* 'entries) 'f_i_i #f)
+                 `(,(~ e'name) ,(~ e'arg-signatures) ,(~ e'ret-signature))))))
 
-(test* "call-foreign" 42
-       (call-foreign *ffi* 'f_i))
+(test* "call-foreign" 9 (call-foreign *ffi* 'f_c))
+(test* "call-foreign" 42 (call-foreign *ffi* 'f_i))
+
+(test* "call-foreign" 99 (call-foreign *ffi* 'f_i_i 98))
 
 (test-end)

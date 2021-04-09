@@ -52,12 +52,30 @@
   ((header-name :init-keyword :header-name)  ; header filename, for diag info
    (dso-name :init-keyword :dso-name)        ; dso filename, for diag info
    (dlobj :init-keyword :dlobj)              ; <dlobj>
-   (entries :init-keyword :entries)))
+   (entries :init-keyword :entries)))        ; symbol -> <foreign-entry>
 
 (define-method write-object ((obj <foreign-library>) port)
   (format port "#<foreign-library ~s ~s>"
           (~ obj'header-name)
           (~ obj'dso-name)))
+
+(define-class <foreign-entry> ()
+  ((name :init-keyword :name)            ; symbol
+   (ptr  :init-keyword :ptr)             ; <dlptr>
+   (type :init-keyword :type)            ; c-type
+   (callable? :init-keyword :callable?)
+   (ret-signature :init-keyword :ret-signature)
+   (arg-signatures :init-keyword :arg-signatures)))
+
+(define-method write-object ((obj <foreign-entry>) port)
+  (format port "#<foreign-entry ~s ~s~a>"
+          (~ obj'name)
+          (match (~ obj'type)
+            [('.function . _) 'function]
+            [_ 'other])
+          (if (~ obj'callable?)
+            ""
+            "(uncallable)")))
 
 ;; API
 (define (load-foreign header-name dso-name)
@@ -83,11 +101,15 @@
   (match-let1 (name _ type _) decl
     (match type
       [('.function _ rettype argtypes)
-       (let ([dle (dlobj-get-entry-address dlo (x->string name))]
-             [r (process-type rettype)]
-             [as (map process-type argtypes)])
-         (when (and dle r)
-           (dict-put! tab name (list dle as r))))]
+       (and-let1 dle (dlobj-get-entry-address dlo (x->string name))
+         (let ([r (process-type rettype)]
+               [as (map process-arg-type argtypes)])
+           (let1 e (make <foreign-entry>
+                     :name name :ptr dle :type type
+                     :callable? (and r (every identity as))
+                     :ret-signature r
+                     :arg-signatures as)
+             (dict-put! tab name e))))]
       [_ #f])))
 
 (define (process-type type)
@@ -95,6 +117,9 @@
     (cond [(c-basic-type-integral? type) 'i]
           [(c-basic-type-flonum? type) 'f]
           [else #f])))                  ;for now
+
+(define (process-arg-type arg) ; arg := (name type)
+  (process-type (cadr arg)))
 
 (define (unsupported)
   (error "Foreign call isn't supported (yet) on this platform:"
@@ -112,13 +137,17 @@
   (assume-type flib <foreign-library>)
   (assume-type name <symbol>)
   (arch-check)
-  (match (dict-get (~ flib'entries) name #f)
-    [(dle arg-sigs ret-sig)
-     (unless (= (length args) (length arg-sigs))
-       (errorf "wrong number of arguments for foreign function ~s \
-                (~s required, but got ~s)"
-               dle (length arg-sigs) (length args)))
-     ((with-module gauche.internal call-amd64)
-      dle (map list arg-sigs args) ret-sig)]
-    [_ (errorf "cannot find foreign function ~s in ~s"
-               name flib)]))
+  (if-let1 e (dict-get (~ flib'entries) name #f)
+    (cond [(not (~ e'callable?))
+           (error "foreign entry is not callable:" e)]
+          [else
+           (unless (= (length args) (length (~ e'arg-signatures)))
+             (errorf "wrong number of arguments for foreign function ~s \
+                      (~s required, but got ~s)"
+                     (~ e'name)
+                     (length (~ e'arg-signatures))
+                     (length args)))
+           ((with-module gauche.internal call-amd64)
+            (~ e'ptr) (map list (~ e'arg-signatures) args) (~ e'ret-signature))])
+    (errorf "cannot find foreign function ~s in ~s"
+            name flib)))
