@@ -752,7 +752,12 @@
 
 ;; For testing - won't be official APIs.
 
+(define (file-check file)
+  (unless (file-is-readable? file)
+    (error "file does not exist or unreadable:" file)))
+
 (define (c-tokenize-file file)
+  (file-check file)
   (call-with-cpp file
      (^p ($ lseq->list $ c-tokenize
             $ port->char-lseq/position p
@@ -776,6 +781,7 @@
        :defs (cpp-definitions))))
 
 (define (c-parse-file file :optional (parser %translation-unit))
+  (file-check file)
   (parameterize ((typedef-names (default-typedefs)))
     (if (use-concurrent-lexer)
       (peg-run-parser parser (coroutine->cseq (c-tokenize-file-coroutine file)))
