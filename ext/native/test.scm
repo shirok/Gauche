@@ -1,6 +1,7 @@
 (use gauche.test)
 (use gauche.config)
 (use gauche.ffitest)
+(use file.util)
 
 (cond-expand
  [gauche.os.windows (exit 0)]
@@ -9,6 +10,9 @@
     (exit 0))])
 
 (test-start "ffitest")
+
+;;==========================================================================
+(test-section "raw call")
 
 (define (foreign-call dlo name args rettype)
   ((with-module gauche.internal call-amd64)
@@ -124,5 +128,19 @@
                (foreign-call dlo "_foo_o_cb" `((o ,proc) (o #f)) 'o)))
            #t))
   )
+
+;;==========================================================================
+(test-section "FFI API")
+
+(use gauche.ffi)
+(test-module 'gauche.ffi)
+
+(define *ffi* #f)
+(test* "load-foreign" '(#t (f_i))
+       (let ((dir (sys-dirname (current-load-path))))
+         (set! *ffi* (load-foreign (build-path dir "test/f.h")
+                                   (build-path dir "test/f")))
+         (list (is-a? *ffi* <foreign-library>)
+               (hash-table-keys (~ *ffi* 'entries)))))
 
 (test-end)

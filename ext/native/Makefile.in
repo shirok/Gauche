@@ -12,15 +12,19 @@ SCMFILES = ffitest.sci
 OBJECTS = gauche--ffitest.$(OBJEXT)
 
 GENERATED = Makefile
-XCLEANFILES = gauche--ffitest.c ffitest.sci
+XCLEANFILES = gauche--ffitest.c ffitest.sci test/f.$(SOEXT)
 
-all : $(LIBFILES)
+all : $(LIBFILES) test/f.$(SOEXT)
 
 gauche--ffitest.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) gauche--ffitest.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--ffitest.c ffitest.sci : ffitest.scm
 	$(PRECOMP) -e -P -o gauche--ffitest $(srcdir)/ffitest.scm
+
+test/f.$(SOEXT) : test/f.h test/f.c
+	$(GAUCHE_PACKAGE) compile $(srcdir)/test/f $(srcdir)/test/f.c
+
 
 # We don't install the module.
 install :

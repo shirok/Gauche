@@ -63,6 +63,8 @@ peg : gauche
 
 rfc: gauche srfi util
 
+native: peg gauche srfi util data threads
+
 test : check
 
 check:

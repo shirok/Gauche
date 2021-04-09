@@ -43,6 +43,7 @@ MODLINK   = $(CCLD) $(CFLAGS) $(LDFLAGS)
 @CROSS_COMPILING_no@GOSH           = "$(top_builddir)/src/gosh" -ftest
 @CROSS_COMPILING_yes@GOSH           = $(BUILD_GOSH) $(BUILD_GOSH_FLAGS)
 GAUCHE_INSTALL = $(GOSH) "$(top_srcdir)/src/gauche-install.in" -C
+GAUCHE_PACKAGE = $(GOSH) "$(top_srcdir)/src/gauche-package.in"
 PRECOMP        = $(GOSH) "$(top_srcdir)/src/precomp"
 INSTALL_TYPE   = sys
 
