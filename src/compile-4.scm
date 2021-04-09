@@ -260,7 +260,8 @@
                      (loop (cdr lms) #t remaining))
                    (loop (cdr lms) lifted? (cons lm remaining))))])))))
 
-;; Final touch of pass4 - replace lifted lambda nodes to $GREFs.
+;; Final touch of pass4 - replace lifted lambda nodes to the reference of
+;; pre-bound lvars.
 ;; Returns (possibly modified) IForm.
 (define-macro (pass4/subst! access-form labels)
   (match-let1 (accessor expr) access-form
