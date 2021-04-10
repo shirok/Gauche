@@ -115,7 +115,11 @@
 (define (process-type type)
   (let1 type (c-actual-type type)
     (cond [(c-basic-type-integral? type) 'i]
-          [(c-basic-type-flonum? type) 'f]
+          [(c-basic-type-flonum? type)
+           (case (car type)
+             [(float) 'f]
+             [(double) 'd]
+             [else #f])]                ;for now
           [else #f])))                  ;for now
 
 (define (process-arg-type arg) ; arg := (name type)
