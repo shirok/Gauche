@@ -122,8 +122,10 @@
              [else #f])]                ;for now
           [else #f])))                  ;for now
 
-(define (process-arg-type arg) ; arg := (name type)
-  (process-type (cadr arg)))
+(define (process-arg-type arg) ; arg := (name type) | ...
+  (if (pair? arg)
+    (process-type (cadr arg))
+    '...))
 
 (define (unsupported)
   (error "Foreign call isn't supported (yet) on this platform:"
