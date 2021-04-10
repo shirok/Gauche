@@ -159,7 +159,7 @@
                                  (cons `(,(+ (~ entry-offsets (+ 1 icount)) 2)
                                          ,@(car args))
                                        r))]
-                          [(memq (caar args) '(d))
+                          [(memq (caar args) '(f d))
                            (loop (cdr args) icount (+ fcount 1)
                                  (cons `(,(~ farg-offsets fcount) ,@(car args))
                                        r))]
