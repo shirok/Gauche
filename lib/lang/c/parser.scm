@@ -63,8 +63,7 @@
 ;; to track previously declared type names.
 ;;
 (define *default-typedef-table*
-  (hash-table-r7 eq-comparator
-                 '__builtin_va_list 'builtin))
+  (make-hash-table eq-comparator))
 
 (define (default-typedefs) (hash-table-copy *default-typedef-table*))
 
@@ -343,6 +342,8 @@
 (define %type-specifier
   ($lazy ($or ($one-of '(void char short int long float double signed unsigned
                          _Bool _Complex
+                         ;; gcc/clang extension
+                         __builtin_va_list
                          ;; gcc additional floating types
                          __float128 _Float128 __float80 _Float64x __ibm128))
               %struct-or-union-specifier

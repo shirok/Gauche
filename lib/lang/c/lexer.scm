@@ -134,7 +134,7 @@
     union unsigned void volatile while
     _Bool _Complex _Imaginary
     ;; nonstandard keywords
-    _stdcall __declspec
+    _stdcall __declspec __builtin_va_list
     ;; gcc additional floating types
     _Float128 (__float128 _Float128)
     _Float64x (__float80 _Float64x)

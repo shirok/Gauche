@@ -164,6 +164,7 @@
     float-complex double-complex long-double-complex
     bool void
     ;; the followings are non-standard
+    builtin-va-list
     float128 float64x float-ibm128
     long-long-double long-long-double-complex))
 
@@ -238,6 +239,10 @@
       [(void) (if (or sign size complex?)
                 (bad)
                 `(void ,(reverse quals)))]
+      [(builtin-va-list)
+       (if (or sign size complex?)
+         (bad)
+         `(buildin-va-list ,(reverse quals)))]
       [else
        (if (symbol? core)
          ;; typedef name
@@ -298,6 +303,10 @@
       [('_Complex . r) (if complex?
                          (bad)
                          (loop r quals sign size #t core))]
+      [('__builtin_va_list . r)
+       (if core
+         (bad)
+         (loop r quals sign size complex? 'builtin-va-list))]
       [('void . r) (loop r quals sign size complex? 'void)]
       [((and (or 'const 'volatile 'restrict) q) . r)
        (loop r (cons q quals) sign size complex? core)]
@@ -382,7 +391,7 @@
           qs
           (cons (car new-qs) qs)))))
   (match c-type
-    [(.type _ quals inner)
+    [('.type _ quals inner)
      (match-let1 (t qs) (c-actual-type inner)
        `(,t ,(merge-quals quals qs)))]
     [_ c-type]))
