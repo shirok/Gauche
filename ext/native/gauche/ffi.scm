@@ -103,10 +103,10 @@
       [('.function _ rettype argtypes)
        (and-let1 dle (dlobj-get-entry-address dlo (x->string name))
          (let ([r (process-type rettype)]
-               [as (map process-arg-type argtypes)])
+               [as (process-arg-types argtypes)])
            (let1 e (make <foreign-entry>
                      :name name :ptr dle :type type
-                     :callable? (and r (every identity as))
+                     :callable? (and r (list? as) (every identity as))
                      :ret-signature r
                      :arg-signatures as)
              (dict-put! tab name e))))]
@@ -122,10 +122,14 @@
              [else #f])]                ;for now
           [else #f])))                  ;for now
 
-(define (process-arg-type arg) ; arg := (name type) | ...
-  (if (pair? arg)
-    (process-type (cadr arg))
-    '...))
+(define (process-arg-types argtypes)
+  (define (process-arg-type arg) ; arg := (name type) | ...
+    (if (pair? arg)
+      (process-type (cadr arg))
+      '...))
+  (cond [(list? argtypes) (map process-arg-type argtypes)]
+        ['unknown-args 'unknown-args]
+        [else (error "[internal] Unsupported arg types" argtypes)]))
 
 (define (unsupported)
   (error "Foreign call isn't supported (yet) on this platform:"

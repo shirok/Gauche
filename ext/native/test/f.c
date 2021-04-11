@@ -35,3 +35,7 @@ double f_d_d(double d)
 {
     return d*2;
 }
+
+void f_no_proto()
+{
+}
