@@ -132,7 +132,7 @@ SCMFILES = \
        scheme/case-lambda.scm scheme/char.scm scheme/charset.scm \
        scheme/comparator.scm scheme/complex.scm scheme/cxr.scm \
        scheme/division.scm scheme/ephemeron.scm scheme/eval.scm \
-       scheme/file.scm scheme/fixnum.scm scheme/flonum.scm \
+       scheme/file.scm scheme/fixnum.scm \
        scheme/generator.scm scheme/hash-table.scm scheme/ideque.scm \
        scheme/inexact.scm scheme/ilist.scm scheme/lazy.scm \
        scheme/list-queue.scm scheme/load.scm \
