@@ -21,6 +21,10 @@ double f_d(void)
     return 3.14;
 }
 
+void f_v(void)
+{
+}
+
 int f_i_i(int n)
 {
     return n+1;

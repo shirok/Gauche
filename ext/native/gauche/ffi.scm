@@ -120,6 +120,7 @@
              [(float) 'f]
              [(double) 'd]
              [else #f])]                ;for now
+          [(eq? (car type) 'void) 'v]
           [else #f])))                  ;for now
 
 (define (process-arg-types argtypes)
