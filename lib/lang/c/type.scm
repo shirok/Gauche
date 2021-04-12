@@ -39,6 +39,7 @@
   (use util.match)
   (use srfi-13)
   (export grok-c-type
+          c-primary-type
           c-basic-type-integral?
           c-basic-type-flonum?
           c-basic-type-scalar-numeric?
@@ -346,6 +347,13 @@
   (append *integral-type-weight*
           *float-type-weight*
           *complex-type-weight*))
+
+;; Returns <basic-type>, .pointer, .array, .function, .struct, .union, .enum
+;; typedef is followed.
+(define (c-primary-type c-type)
+  (match c-type
+    [('.type _ _ inner) (c-primary-type inner)]
+    [(p . _) p]))
 
 (define (c-basic-type-integral? c-type)
   (match c-type
