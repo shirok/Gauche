@@ -2958,12 +2958,20 @@ first argument.
 @defun vector-count pred vec1 vec2 @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Applies @var{pred} on each elements in argument vectors (if N vectors
 are given, @var{pred} takes N arguments, the first being
 @var{i}-th element of @var{vec1}, the second being @var{i}-th element
 of @var{vec2}, etc.)  Then returns the number of times
 @var{pred} returned true value.   The order @var{pred} applied
 to each element is unspecified.
+@c JP
+@var{pred}を引数のベクタの各要素に適用します
+(N個のベクタが与えられた場合、@var{pred}はN個の引数を取り、
+各ベクタの対応する要素が渡されます)。
+そして、@var{pred}が真の値を返した回数を正確な整数で返します。
+@var{pred}がどのような順番で適用されるかは規定されていません。
+@c COMMON
 
 @example
 (vector-count odd? '#(0 1 2 3 4)
@@ -2977,15 +2985,28 @@ to each element is unspecified.
 @defun vector-cumulate f seed vec
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Returns a fresh vector with the same size of @var{vec}, with
 the elements calculated as follows:
+@c JP
+@var{vec}と同じ長さの新たなベクタを作り、以下の手順で要素を埋めてからそれを返します。
+@c COMMON
 
+@c EN
 The first element of result vector is a result of procedure @var{f}
 called with @var{seed} and the first element of @var{vec}.
+@c JP
+結果の最初の要素は、@code{(@var{f} @var{seed} (vector-ref @var{vec} 0))}です。
+@c COMMON
 
+@c EN
 The @var{i}-th element of result vector is a result of procedure @var{f}
 called with @var{i-1}-th element of result vector and @var{i}-th element
 of @var{vec}.
+@c JP
+@var{i}番目の要素は、@var{i-1}番目の結果と、@code{(vector-ref @var{vec} @var{i})}を
+引数にして@var{f}を呼び出した結果です。
+@c COMMON
 
 @example
 (vector-cumulate string-append "z" '#("a" "b" "c"))
@@ -3004,20 +3025,34 @@ of @var{vec}.
 @defunx vector-index-right pred vec1 vec2 @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Returns the index of the first or the last elements in @var{vec1}
 @var{vec2} @dots{} that satisfy @var{pred}, respectively.
 Returns @code{#f} if no elements satisfy @var{pred}.
 In @code{vector-index}, comparison ends at the end of the shortest vector.
 For @code{vector-index-right}, all the vectors must have the same length.
+@c JP
+@var{vec1} @var{vec2} @dots{}の要素のうち@var{pred}を満たす最初のもの、
+あるいは最後のもののインデックスをそれぞれ返します。
+@var{pred}を満たす要素が無ければ@code{#f}が返されます。
+@code{vector-index}では、一番短いベクタの終端に達したら処理を終了します。
+@code{vector-index-right}では、全てのベクタは同じ長さでなければなりません。
+@c COMMON
 @end defun
 
 @defun vector-skip pred vec1 vec2 @dots{}
 @defunx vector-skip-right pred vec1 vec2 @dots{}
 [R7RS vector]
 @c MOD scheme.vector
+@c EN
 Like @code{vector-index} and @code{vector-index-right}, except that
 the result of @var{pred} is negated.  That is, returns the index
 of the first or the last elements that don't satisfy @var{pred}.
+@c JP
+@var{pred}の結果が逆であること以外は、
+@code{vector-index}および@code{vector-index-right}と同じです。
+すなわち、@var{pred}を満たさない最初あるいは最後の要素のインデックスが返されます。
+@c COMMON
 @end defun
 
 @defun vector-binary-search vec value cmp :optional start end
