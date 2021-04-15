@@ -1266,7 +1266,7 @@ Note that Gauche's lseq read-ahead one item (@pxref{Lazy sequences}).  So
 even if you set the queue length to 0, @var{gen} is called before
 the consumer reads out any value.
 @c JP
-Gaucheのlseqは一要素先読みするおとに注意してください(@ref{Lazy sequences}参照)。
+Gaucheのlseqは一要素先読みすることに注意してください(@ref{Lazy sequences}参照)。
 キュー長を0に指定しても、@var{gen}は消費者が値を呼び出す前に一回呼び出されます。
 @c COMMON
 @end defun
