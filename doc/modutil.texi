@@ -1193,7 +1193,7 @@ gosh> #i1/3
 @c ----------------------------------------------------------------------
 @node Concurrent sequences, Futures, Rational-less arithmetic, Library modules - Utilities
 @section @code{control.cseq} - Concurrent sequences
-@c NODE Concurrent sequences, @code{control.cseq} - Concurrent sequences
+@c NODE 並行シーケンス, @code{control.cseq} - 並行シーケンス
 
 @deftp {Module} control.cseq
 @mdindex control.cseq
@@ -1225,43 +1225,90 @@ except that @var{gen} runs in a separate thread.
 ジェネレータ@var{gen}自体は別スレッドで実行されます。
 @c COMMON
 
-The returend value is indistinguishable from an ordinary list, but its
+@c EN
+The returend value looks like an ordinary list, but its
 cdrs are computed in parallel.  If a cdr isn't computed yet, the reader
 thread waits until a value becomes available.  The generator @var{gen}
 can be called to generate values asynchronously, until the internal queue
-gets full.
+gets full.  (Compare this to an ordinary lseq, in which @var{gen} is called
+when it is required, and it runs in the same thread as the caller.)
+@c JP
+返される値は通常のリストのように見えますが、cdr方向のリストの要素は
+並行して計算されます。cdrを取ろうとしてそれがまだ計算されていなければ、
+読み出し側のスレッドはその値が計算されるまで待ちます。
+ジェネレータ@var{gen}は別スレッドで非同期に実行され、
+内部キューがいっぱいになるまで値を生成し続けます。
+(対比として、
+通常のlseqでは、@var{gen}は値が必要になった時に、読み出すスレッドで実行されます。)
+@c COMMON
 
+@c EN
 If @var{gen} raises an error, it is caught, and reraised when the
 consumer reads to the point when @var{gen} raised the error.
+@c JP
+@var{gen}がエラーを投げた場合、それは捕捉され、
+消費者がそのエラーが起きたポイントまで読み進めた時に消費者側のスレッドで再度投げられます。
+@c COMMON
 
+@c EN
 The optional @var{queue-length} must be a nonnegative exact integer or @code{#f}.
 If it is an integer, it specifies the length of the internal queue.
 If it is @code{#f}, an appropriate value is selected by the library
 (currently 64).
+@c JP
+省略可能な引数@var{queue-length}は非負の正確な整数か@code{#f}でなければなりません。
+整数の場合は、内部のキューの長さを指定します。
+@code{#f}の場合はライブラリのデフォルトの長さが使われます。
+@c COMMON
 
+@c EN
 Note that Gauche's lseq read-ahead one item (@pxref{Lazy sequences}).  So
 even if you set the queue length to 0, @var{gen} is called before
 the consumer reads out any value.
+@c JP
+Gaucheのlseqは一要素先読みするおとに注意してください(@ref{Lazy sequences}参照)。
+キュー長を0に指定しても、@var{gen}は消費者が値を呼び出す前に一回呼び出されます。
+@c COMMON
 @end defun
 
 
 @defun coroutine->cseq proc :key queue-length
 @mdindex control.cseq
+@c EN
 Returns an lseq, whose value is generated in @var{proc}, which is called
 in a separate thread.
 The @var{proc} argument is a procedure to be called with one argument,
 @var{yield}.  The @var{yield} argument is a procedure, and whenever it is
 called with a value, that value becomes the next item of the resulting lseq.
-When @var{proc} returns, it becomes the end of th lseq.
+When @var{proc} returns, it becomes the end of the lseq.
+@c JP
+値が@var{proc}によって生成されるlseqを返しますが、@var{proc}自体は別スレッドで
+実行されます。
+@var{proc}引数は、引数@var{yield}を取る手続きです。
+@var{yield}引数は1引数の手続きで、それが呼び出されると、引数に渡された値が
+lseqの次の要素になります。
+@var{proc}がリターンしたら、lseqはそこで終端となります。
+@c COMMON
 
+@c EN
 If @var{proc} raises an error, it is caught, and reraised when the
 consumer reads to the point when previously generated values are all read
 and next value is about to read.
+@c JP
+@var{proc}がエラーを投げた場合、それは捕捉され、
+消費者がその箇所まで読み進めた時に消費者スレッドで再度投げ直されます。
+@c COMMON
 
+@c EN
 The optional @var{queue-length} must be a nonnegative exact integer or @code{#f}.
 If it is an integer, it specifies the length of the internal queue.
 If it is @code{#f}, an appropriate value is selected by the library
 (currently 64).
+@c JP
+省略可能な引数@var{queue-length}は非負の正確な整数か@code{#f}でなければなりません。
+整数の場合は、内部のキューの長さを指定します。
+@code{#f}の場合はライブラリのデフォルトの長さが使われます。
+@c COMMON
 @end defun
 
 
