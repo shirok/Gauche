@@ -259,5 +259,45 @@
 (use control.mapper)
 (test-module 'control.mapper)
 
+;;--------------------------------------------------------------------
+;; control.scheduler
+;;
+(test-section "control.scheduler")
+(use control.scheduler)
+(test-module 'control.scheduler)
+
+(let ()
+  (define a #f)
+  (define b #f)
+  (define e #f)
+  (define sched (make <scheduler> :error-handler (^e (set! e e))))
+
+  (let ((id1 #f) (id2 #f))
+    (test* "scheduler-schedule!" #t
+           (begin
+             (set! id1 (scheduler-schedule! sched
+                                            (constantly #f)
+                                            (make-time time-duration 0 10000)))
+             (integer? id1)))
+    (test* "scheduler-exists?" '(#t #f)
+           (list (scheduler-exists? sched id1)
+                 (scheduler-exists? sched (+ id1 1))))
+    (test* "scheduler-schedule!" '(#t #t)
+           (begin
+             (set! id2 (scheduler-schedule! sched
+                                            (constantly #f)
+                                            (make-time time-duration 0 10000)))
+             (list (scheduler-exists? sched id1)
+                   (scheduler-exists? sched id2))))
+    (test* "scheduler-remove!" '(#f #t)
+           (begin (scheduler-remove! sched id1)
+                  (list (scheduler-exists? sched id1)
+                        (scheduler-exists? sched id2))))
+    (test* "scheduler-remove!" '(#f #f)
+           (begin (scheduler-remove! sched id2)
+                  (list (scheduler-exists? sched id2)
+                        (scheduler-exists? sched id2))))
+    )
+  )
 
 (test-end)
