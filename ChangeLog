@@ -1,3 +1,9 @@
+2021-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19.scm (make-time, make-date): Check the range of
+	  slot values.  Giving out-of-range values inadvertently would result
+	  hard-to-track bugs.
+
 2021-04-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (macroexpand-all, global-call-type),

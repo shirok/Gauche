@@ -164,6 +164,8 @@
   (slot-set! t 'nanosecond s))
 
 (define (make-time type nanosecond second)
+  (unless (<= 0 nanosecond 999999999)
+    (error "make-time: nanosecond out of range:" nanosecond))
   (make <time> :type type :second second :nanosecond nanosecond))
 
 (define (copy-time time)
@@ -404,6 +406,20 @@
 (define (date? obj) (is-a? obj <date>))
 
 (define (make-date nanosecond second minute hour day month year zone-offset)
+  (unless (<= 0 nanosecond 999999999)
+    (error "make-date: nanosecond out of range:" nanosecond))
+  (unless (<= 0 second 60)
+    (error "make-date: second out of range:" second))
+  (unless (<= 0 minute 59)
+    (error "make-date: minute out of range:" minute))
+  (unless (<= 0 hour 23)
+    (error "make-date: hour out of range:" hour))
+  (unless (<= 0 day 31)
+    (error "make-date: day out of range:" day))
+  (unless (<= 1 month 12)
+    (error "make-date: month out of range:" month))
+  (unless (exact-integer? year)
+    (error "make-date: bad object for year:" year))
   (make <date>
     :nanosecond nanosecond :second second :minute minute :hour hour
     :day day :month month :year year :zone-offset zone-offset))
@@ -1160,7 +1176,7 @@
          (date-month date)
          (date-year date)
          (date-zone-offset date)))
-  (let1 newdate (make-date 0 0 0 0 #f #f #f (tm:local-tz-offset))
+  (let1 newdate (make-date 0 0 0 0 0 1 0 (tm:local-tz-offset))
     (tm:string->date newdate
                      0
                      template-string
