@@ -90,7 +90,7 @@
          (if (or (sys-isatty 0)
                  ((with-module gauche.internal %sys-mintty?) 0))
            (make <vt100>)
-           #f)]
+           (e "Stdin isn't a console:" (standard-input-port)))]
         [(sys-getenv "TERM")
          => (^t (e #"Unsupported terminal type: ~t"))]
         [else
