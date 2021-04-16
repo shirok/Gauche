@@ -277,8 +277,8 @@
           [h    (sys-normalize-pathname h :absolute #t :expand #t)]
           [else (sys-normalize-pathname "~/.gosh_history" :expand #t)])))
 
-;; The variable *read-edit* is #f by default, #t if env var
-;; GAUCHE_READ_EDIT is set.  It is also controlled by -fread-edit or
+;; The variable *read-edit* is #t by default, #f if env var
+;; GAUCHE_NO_READ_EDIT is set.  It is also controlled by -fread-edit or
 ;; -fno-read-edit flag.
 (define-values (%prompter %reader %line-edit-ctx)
   (receive (r rl skipper ctx)

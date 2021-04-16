@@ -247,10 +247,11 @@
 ;;;
 
 (with-module gauche.internal)
-;; This variable affects hwo gauche.interactive handles input; if true,
-;; it sets up the input editor if possible.  Note that once gauche.interactive
-;; is loaded, this variable has no effect.
-(define *read-edit* (boolean (sys-getenv "GAUCHE_READ_EDIT")))
+;; This variable affects how gauche.interactive handles input; if true,
+;; it sets up the input editor if possible.  This is also modified by
+;; main.c with -fread-edit/-fno-read-edit flag.
+;; Note that once gauche.interactive is loaded, this variable has no effect.
+(define *read-edit* (not (sys-getenv "GAUCHE_NO_READ_EDIT")))
 
 ;;;
 ;;; Miscellaneous

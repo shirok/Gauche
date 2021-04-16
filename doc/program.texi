@@ -549,16 +549,16 @@ This is used by @code{ed} procedure in @code{gauche.interactive} module.
 
 @deftp {Environment variable} GAUCHE_HISTORY_FILE
 @c EN
-If Gauche is invoked with @code{GAUCHE_READ_EDIT} enabled (see below),
-the REPL history is kept in @file{~/.gosh_history} by default.
-This environment variable overrides the history file.
-To prohibit saving history, set an empty string to this variable.
+Specifies the filename where the REPL history is saved.
+If this enviornment varible is not set, history is saved
+in @file{~/.gosh_history}.  If this enviornment variable
+is set but an empty string, history isn't saved.
 If the process is suid/sgid-ed, history won't be saved.
 @c JP
-@code{GAUCHE_READ_EDIT}が有効になっている場合、REPLのヒストリが
-@file{~/.gosh_history}に保存されます。この環境変数で
-別のヒストリ保存ファイル名を指定できます。
-(プロセスがsuid/sgidされている場合はヒストリは保存されません)。
+REPLのヒストリがセーブされるファイル名を指定します。
+この環境変数が定義されていなければ、ヒストリは@file{~/.gosh_history}にセーブされます。
+この環境変数が定義されており、しかし空文字列だった場合はヒストリはセーブされません。
+(また、プロセスがsuid/sgidされている場合もヒストリは保存されません)。
 @c COMMON
 @end deftp
 
@@ -623,6 +623,20 @@ literals.  Set this environment variables to run such old programs.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_NO_READ_EDIT
+@c EN
+Disable line-editor on REPL prompt, even the terminal is capable.
+You can also turn it off with @code{-fno-read-edit} command-line option,
+or @code{,edit off} toplevel commands during REPL session.
+@xref{Interactive development}, for the details of line editing.
+@c JP
+REPLプロンプトでの行編集機能をオフにします。
+行編集機能はまた、@code{-fno-read-edit}コマンドラインオプションや、
+REPLセッション中の @code{,edit off} トップレベルコマンドでも切ることができます。
+詳しくは@ref{Interactive development}を参照してください。
+@c COMMON
+@end deftp
+
 @deftp {Environment variable} GAUCHE_QUASIRENAME_MODE
 @c EN
 This affects @code{quasirename} behavior, to keep the backward
@@ -635,17 +649,6 @@ compatibility with 0.9.7 and before.
 @c COMMON
 @end deftp
 
-
-@deftp {Environment variable} GAUCHE_READ_EDIT
-@c EN
-This is used by @code{gauche.interactive} module to enable line-editor
-on REPL prompt.  @xref{Interactive development}, for the details.
-@c JP
-これはREPLプロンプトで行編集機能を利用可能にするために
-@code{gauche.interactive}で使われます。
-詳しくは@ref{Interactive development}を参照してください。
-@c COMMON
-@end deftp
 
 @deftp {Environment variable} GAUCHE_REPL_NO_PPRINT
 @c EN
@@ -844,12 +847,12 @@ Emacsのバッファ内で@code{gosh}が走ります。
 @c COMMON
 
 @c EN
-You can turn on input-editing by an
-environment variable @code{GAUCHE_READ_EDIT} or a command-line option
-@code{-fread-edit}.  @xref{Input editing}, for the details.
+If you run @code{gosh} in the terminal with capability of cursor control,
+a basic line-editing feature is available in the REPL session.
+@xref{Input editing}, for the details.
 @c JP
-@code{GAUCHE_READ_EDIT}環境変数や@code{-fread-edit}オプションによって、
-入力のエディットが可能になります。
+カーソル制御可能な端末で@code{gosh}を走らせた場合、
+REPLセッションで簡単な行編集が使えます。
 詳しくは@ref{Input editing}を参照してください。
 @c COMMON
 
@@ -1394,36 +1397,38 @@ REPLの便利機能は@code{gauche.interactive}モジュールで実装されて
 @c NODE 入力の編集
 
 @c EN
-Gauche provides input editing feature on REPL.  Currently it is
-an experimental feature and isn't turn on by default, but you can
-try it by setting @code{GAUCHE_READ_EDIT} environment variable,
-or give @code{-fread-edit} flag to @code{gosh}.
-@c JP
-GaucheはREPLでの入力の編集機能を備えています。今のところまだ実験段階であり、
-デフォルトでは有効になっていませんが、環境変数@code{GAUCHE_READ_EDIT}をセットするか、
-@code{gosh}の起動時にオプション@code{-fread-edit}を与えることにより、
-使うことができます。
-@c COMMON
-
-@c EN
+When you run @code{gosh} in a terminal capable of cursor control,
+you can edit input expressions.
 If input editing mode is on, the REPL prompt ends with @code{$}, such
 as @code{gosh$}, instead of @code{gosh>}.
 @c JP
+@code{gosh}がカーソル制御可能な端末で起動された場合、入力編集が可能です。
 入力編集モードが有効であれば、REPLのプロンプトが@code{$}で終わります。
 例えばデフォルトでは@code{gosh>}のかわりに@code{gosh$}になります。
 @c COMMON
 
 @c EN
-(NB: Even if you set @code{GAUCHE_READ_EDIT} or give @code{-fread-edit},
-input editing may not be turned on if the terminal is not capable to do it.
-For example, if you run @code{gosh} inside Emacs, you'll get @code{gosh>}
-prompt even you have @code{GAUCHE_READ_EDIT} set.  Of course, you can
-use Emacs editing features in such a case instead.)
+(NB: Currently Gauche only supports terminals with vt100-like escape
+sequence, or Windows console.  If the terminal type isn't recognized
+as one of them,
+it falls back to non-editing mode.  You can tell which mode it is
+from the prompt.)
 @c JP
-(註: @code{GAUCHE_READ_EDIT}や@code{-fread-edit}が与えられても、
-端末が必要な機能を備えていなければ入力編集モードは有効になりません。
-例えばEmacs内で@code{gosh}を起動した場合は@code{GAUCHE_READ_EDIT}がセットされていても
-プロンプトは@code{gosh>}です。もちろんその場合、Emacsの編集機能が使えるわけですが。)
+(註: 今のところ、Gaucheはvt100系のエスケープシーケンスを認識する端末か、
+Windows consoleのみをサポートします。端末タイプがそれらでなかった場合は、
+入力編集の無いモードになります。プロンプトでどちらのモードにいるかわかります。)
+@c COMMON
+
+@c EN
+The input editing feature is still under development.  If you stumbled
+with a serious bug, you can turn it off by setting an enviornment
+variable @code{GAUCHE_NO_READ_EDIT}, or giving @code{-fno-read-edit} option
+to @code{gosh}, or type @code{,edit off} on REPL.
+@c JP
+入力編集機能はまだ開発途上です。もし重大なバグに当たって編集機能をオフにしたければ、
+環境変数@code{GAUCHE_NO_READ_EDIT}を設定するか、
+@code{gosh}を @code{-fno-read-edit} オプションつきで起動するか、
+REPLで @code{,edit off} とタイプしてください。
 @c COMMON
 
 @c EN
