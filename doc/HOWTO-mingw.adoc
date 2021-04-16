@@ -55,6 +55,12 @@ without them, but some features will not be available.
 - mingw-w64-x86_64-libiconv / mingw-w64-i686-libiconv
 - texinfo
 
+The following packages are used if you wand to compile MbedTLS within
+Gauche.  See "Build with MbedTLS" below for the details.
+
+- cmake
+- python3
+
 The following packages are only used for testing (`make check`).  You
 don't need them just to build and use Gauche:
 
@@ -147,6 +153,9 @@ The MbedTLS source is downloaded and compiled during build.
 ----
 MSYSTEM=MINGW64 src/mingw-dist.sh --with-mbedtls
 ----
+
+If you choose this, you need CMake and Python3 installed on your system,
+which is required to build MbedTLS.
 
 Note: If you build a Gauche binary in this way, it includes MbedTLS library
 which is covered by Apache License 2.0.  Distributing the binary will
