@@ -3256,6 +3256,17 @@ If @var{pmap} has more than one value that are equal to each other
 either one of them is picked.
 @end defun
 
+@defun priority-map-min-all pmap
+@defunx priority-map-max-all pmap
+@c MOD data.priority-map
+Return a pair of a list of keys and a value, where the value is smallest or
+largest in the priority map @var{pmap}, respectively.  The keys includes
+all the entries that has the same value.  The caller shouldn't modify
+the returned key list.
+
+If @var{pmap} is empty, @code{#f} is returned.
+@end defun
+
 @defun priority-map-pop-min! pmap
 @defunx priority-map-pop-max! pmap
 @c MOD data.priority-map
