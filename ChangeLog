@@ -1,5 +1,10 @@
 2021-04-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/data/priority-map.scm (priority-map-{min|max}): Fix: It should
+	  pick a single key, even when there are more than one keys with
+	  the same value. Manual entry is correct. Tests got it wrong.
+	  (priority-map-{min|all}-all): Added, in case user wants all keys.
+
 	* ext/srfi/srfi-19.scm (make-time, make-date): Check the range of
 	  slot values.  Giving out-of-range values inadvertently would result
 	  hard-to-track bugs.

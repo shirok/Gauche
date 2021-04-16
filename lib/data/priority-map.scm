@@ -43,6 +43,8 @@
           make-priority-map
           priority-map-min
           priority-map-max
+          priority-map-min-all
+          priority-map-max-all
           priority-map-pop-min!
           priority-map-pop-max!))
 (select-module data.priority-map)
@@ -136,9 +138,22 @@
 ;; Returns (k . v) where v is min or max; #f if pmap is empty
 (define (priority-map-min pmap)
   (and-let* ([p (tree-map-min (~ pmap'value-map))])
-    (cons (cdr p) (car p))))
+    ;; p := ([key] . value)
+    ;; we just take the first key.
+    (cons (cadr p) (car p))))
 
 (define (priority-map-max pmap)
+  (and-let* ([p (tree-map-max (~ pmap'value-map))])
+    ;; p := ([key] . value)
+    ;; we just take the first key.
+    (cons (cadr p) (car p))))
+
+;; Returns ((k k2 ...) . v); #f if pmap is empty
+(define (priority-map-min-all pmap)
+  (and-let* ([p (tree-map-min (~ pmap'value-map))])
+    (cons (cdr p) (car p))))
+
+(define (priority-map-max-all pmap)
   (and-let* ([p (tree-map-max (~ pmap'value-map))])
     (cons (cdr p) (car p))))
 
