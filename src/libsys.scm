@@ -1487,7 +1487,7 @@
     (and-let* ([ (global-variable-bound? (find-module 'gauche)
                                          'sys-win-pipe-name) ]
                [n (sys-win-pipe-name port-or-fd)])
-      (boolean (#/^\\msys-[\da-f]+-pty\d+-(to|from)-master$/ n))))
+      (boolean (#/^\\msys-[\da-f]+-pty\d+-(to|from)-master.*$/ n))))
   )
 
 ;; This is originally a part of shell-escape-string in gauche.process,
