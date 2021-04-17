@@ -174,6 +174,7 @@
          (write (ring-buffer-ref (~ ctx'history) i) port)
          (display "\n" port))
        (reverse (iota (history-size ctx))))
+      (close-output-port port) ;; necessary on MinGW
       (sys-rename name path))
     :directory (sys-dirname path)))
 
