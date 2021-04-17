@@ -1230,7 +1230,7 @@ the whole expression becomes a procedure expecting the last argument(s).
 @end example
 
 @c EN
-The more functional the code becomes, the more you
+The more functional the code becomes, the more you are
 tempted to write it as a chain of nested function calls.
 Scheme's syntax can get awkward in such code.  Close
 parentheses tend to clutter at the end of expressions.
@@ -1268,10 +1268,13 @@ sparingly, like spices.
 
 @c EN
 As a corner case, if neither @code{$} nor @code{$*} appear in the
-argument list, it just calls the function.
+argument list, it just calls the function.  It is useful when
+the function has long name and you don't want to indent arguments
+too further right.
 @c JP
 コーナーケースとして、引数リストに@code{$}も@code{$*}も現れなかった場合は、
-単なる関数呼び出しになります。
+単なる関数呼び出しになります。これだけでも、関数名が長くて引数をあまり右に
+深くインデントしたくない場合には便利です。
 @c COMMON
 
 @example
