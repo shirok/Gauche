@@ -10414,6 +10414,9 @@ You can keep the output file by renaming it in @var{proc}.  But if doing so,
 make sure to specify @var{directory} so that the temporary file
 is created in the same directory as the final output; rename
 may not work across filesystems.
+If you anticipate your code runs on Windows as well, make sure to close
+the output port before renaming.  Windows does not allow you to rename
+an opened file.
 
 Internally, it calls @code{sys-mkstemp} to create a unique file.
 @xref{Directory manipulation}, for the details.
@@ -10441,6 +10444,9 @@ Internally, it calls @code{sys-mkstemp} to create a unique file.
 その場合、最終的なファイルと同じディレクトリに一時ファイルを作るように、
 @var{directory}引数を指定するのを忘れないように。
 ファイルシステムをまたぐリネームはうまくいかない場合があります。
+また、コードがWindows上でも使われる可能性がある場合は、
+リネームする前に出力ポートを閉じてください。
+Windowsではオープンされているファイルはリネームできません。
 
 内部的に、この手続きは@code{sys-mkstemp}を呼んで一意なファイルを作っています。
 @code{sys-mkstemp}については@ref{Directory manipulation}参照。
