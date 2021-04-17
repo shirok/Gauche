@@ -33,9 +33,9 @@
 
 (define-module text.csv
   (use scheme.list)
+  (use scheme.charset)
   (use srfi-11)
   (use srfi-13)
-  (use srfi-14)
   (use srfi-42)
   (use gauche.sequence)
   (export make-csv-reader

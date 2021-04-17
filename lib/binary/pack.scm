@@ -17,7 +17,7 @@
 (define-module binary.pack
   (use srfi-11)   ;; let-values
   (use srfi-13)   ;; string library
-  (use srfi-14)   ;; char-set library
+  (use scheme.charset)
   (use text.parse)
   (use gauche.uvector)
   (use binary.io)

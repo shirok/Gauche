@@ -6,7 +6,7 @@
 (use data.random)
 (use gauche.sequence)
 (use scheme.list)
-(use srfi-14)
+(use scheme.charset)
 (use srfi-42)
 
 (define *cats* '(Lu Ll Lt Lm Lo Mn Nd Nl No Po Sm Zs Cc Co))

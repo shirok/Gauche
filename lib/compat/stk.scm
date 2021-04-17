@@ -35,8 +35,8 @@
 
 (define-module compat.stk
   (use scheme.list)
+  (use scheme.charset)
   (use srfi-13)
-  (use srfi-14)
   (use gauche.sequence)
   (export *argc*
           copy-tree remq remv remove string->uninterned-symbol bignum?

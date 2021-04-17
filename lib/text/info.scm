@@ -33,7 +33,7 @@
 
 (define-module text.info
   (use srfi-13)
-  (use srfi-14)
+  (use scheme.charset)
   (use text.parse)
   (use gauche.process)
   (use file.util)

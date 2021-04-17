@@ -33,7 +33,7 @@
 
 (define-module data.random
   (use scheme.list)
-  (use srfi-14)
+  (use scheme.charset)
   (use srfi-42)
   (use util.match)
   (use math.const)

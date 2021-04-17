@@ -39,8 +39,8 @@
 (define-module gauche.process
   (use gauche.generator)
   (use gauche.connection)
+  (use scheme.charset)
   (use srfi-13)
-  (use srfi-14)
   (export <process> <process-abnormal-exit>
           run-process do-process do-process!
           process? process-alive? process-pid

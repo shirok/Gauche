@@ -37,12 +37,12 @@
   (use gauche.process)
   (use gauche.termios)
   (use gauche.package)
+  (use scheme.charset)
   (use util.match)
   (use file.util)
   (use file.filter)
   (use text.tr)
   (use srfi-13)
-  (use srfi-14)
   (export run dry-run verbose-run get-password copy-templates
           find-package-name-and-version))
 (select-module gauche.package.util)

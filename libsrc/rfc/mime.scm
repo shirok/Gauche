@@ -44,7 +44,7 @@
 
 (define-module rfc.mime
   (use srfi-13)
-  (use srfi-14)
+  (use scheme.charset)
   (use rfc.822)
   (use util.match)
   (export mime-parse-version

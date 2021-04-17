@@ -110,6 +110,7 @@ test.record
 /ext/peg/parser--peg.c
 /ext/rfc/rfc--822.c
 /ext/rfc/rfc--mime.c
+/ext/scheme/scheme--charset.c
 /ext/scheme/scheme--flonum.c
 /ext/scheme/scheme--list.c
 /ext/scheme/scheme--vector.c
