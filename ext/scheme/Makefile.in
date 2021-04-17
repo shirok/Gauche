@@ -8,15 +8,17 @@ include ../Makefile.ext
 
 LIBFILES = scheme--list.$(SOEXT) \
 	   scheme--vector.$(SOEXT) \
+	   scheme--charset.$(SOEXT) \
 	   scheme--flonum.$(SOEXT)
 SCMFILES = list.sci \
 	   vector.sci \
+	   charset.sci \
 	   flonum.sci
 
 GENERATED = Makefile
 XCLEANFILES = *.c *.sci
 
-OBJECTS = $(list_OBJECTS) $(vector_OBJECTS) $(flonum_OBJECTS)
+OBJECTS = $(list_OBJECTS) $(vector_OBJECTS) $(charset_OBJECTS) $(flonum_OBJECTS)
 
 all : $(LIBFILES)
 
@@ -45,6 +47,18 @@ scheme--vector.$(SOEXT) : $(vector_OBJECTS)
 
 scheme--vector.c vector.sci : $(top_srcdir)/libsrc/scheme/vector.scm
 	$(PRECOMP) -e -i vector.sci -o scheme--vector $(top_srcdir)/libsrc/scheme/vector.scm
+
+#
+# scheme.charset (srfi-14)
+#
+
+charset_OBJECTS = scheme--charset.$(OBJEXT)
+
+scheme--charset.$(SOEXT) : $(charset_OBJECTS)
+	$(MODLINK) scheme--charset.$(SOEXT) $(charset_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+scheme--charset.c charset.sci : $(top_srcdir)/libsrc/scheme/charset.scm
+	$(PRECOMP) -e -i charset.sci -o scheme--charset $(top_srcdir)/libsrc/scheme/charset.scm
 
 #
 # scheme.flonum (srfi-144)

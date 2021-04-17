@@ -33,7 +33,7 @@ CONFIG_GENERATED = Makefile
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
 	   gauche/package gauche/cgen gauche/experimental gauche/test \
 	   gauche/regexp \
-	   srfi srfi/160 srfi-14 srfi-29 srfi-146 \
+	   srfi srfi/160 srfi-29 srfi-146 \
 	   srfi-159 srfi-159/internal srfi/159 \
 	   binary control data dbd dbm math util compat file \
 	   parser parser/peg rfc rfc/http \
@@ -44,7 +44,7 @@ SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
 
 SCMFILES = \
        srfi-1.scm srfi-4.scm srfi-5.scm srfi-7.scm srfi-9.scm srfi-11.scm \
-       srfi-14.scm srfi-14/query.scm srfi-14/set.scm srfi-18.scm \
+       srfi-14.scm srfi-18.scm \
        srfi-25.scm srfi-27.scm \
        srfi-29.scm srfi-29/bundle.scm srfi-29/format.scm \
        srfi-37.scm srfi-39.scm srfi-41.scm srfi-42.scm \
@@ -129,7 +129,7 @@ SCMFILES = \
        rfc/uuid.scm \
        scheme/base.scm scheme/box.scm scheme/bitwise.scm \
        scheme/bytevector.scm \
-       scheme/case-lambda.scm scheme/char.scm scheme/charset.scm \
+       scheme/case-lambda.scm scheme/char.scm \
        scheme/comparator.scm scheme/complex.scm scheme/cxr.scm \
        scheme/division.scm scheme/ephemeron.scm scheme/eval.scm \
        scheme/file.scm scheme/fixnum.scm \

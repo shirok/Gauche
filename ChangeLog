@@ -1,5 +1,7 @@
 2021-04-16  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/scheme/charset.scm : moved from lib/srfi-14.scm.
+
 	* src/main.c, src/libomega.scm: Make line-editing mode on by default.
 	  Users can turn it off by GAUCHE_NO_READ_EDIT environment variable.
 

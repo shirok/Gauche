@@ -203,6 +203,345 @@
  (include "../../test/include/vectors-test.scm"))
 
 ;;;
+;;; scheme.charset (srfi-14)
+;;;
+
+(test-section "scheme.charset")
+(use scheme.charset)
+(test-module 'scheme.charset)
+
+;; built-in char-set features are tested in test/char.scm
+
+;; Test samples taken from Olin Shivers' test suite,
+;; http://srfi.schemers.org/srfi-14/srfi-14-tests.scm
+;; TODO: This doesn't test characters beyond ASCII.  See char-set.euc.scm.
+(define (vowel? c) (member c '(#\a #\e #\i #\o #\u)))
+
+(test* "char-set?" #f (char-set? 5))
+(test* "char-set?" #t (char-set? (char-set #\a #\e #\i #\o #\u)))
+(test* "char-set=" #t (char-set=))
+(test* "char-set=" #t (char-set= (char-set)))
+(test* "char-set=" #t (char-set= (char-set #\a #\e #\i #\o #\u)
+                                 (string->char-set "ioeauaiii")))
+(test* "char-set=" #f (char-set= (char-set #\e #\i #\o #\u)
+                                 (string->char-set "ioeauaiii")))
+(test* "char-set<=" #t (char-set<=))
+(test* "char-set<=" #t (char-set<= (char-set)))
+(test* "char-set<=" #t (char-set<= (char-set #\a #\e #\i #\o #\u)
+                                   (string->char-set "ioeauaiii")))
+(test* "char-set<=" #t (char-set<= (char-set #\e #\i #\o #\u)
+                                   (string->char-set "ioeauaiii")))
+
+(test* "char-set-hash" #t
+       (<= 0 (char-set-hash char-set:graphic 100) 99))
+(test* "char-set-fold" #t
+       (= 4 (char-set-fold (^[c i] (+ i 1)) 0
+                           (char-set #\e #\i #\o #\u #\e #\e))))
+(test* "char-set-unfold" #t
+       (char-set= (string->char-set "eiaou2468013579999")
+                  (char-set-unfold null? car cdr
+                                   '(#\a #\e #\i #\o #\u #\u #\u)
+                                   char-set:ascii-digit)))
+(test* "char-set-unfold (default)" #t
+       (char-set= (string->char-set "aeiou")
+                  (char-set-unfold null? car cdr
+                                   '(#\a #\e #\i #\o #\u #\u #\u))))
+(test* "char-set-unfold!" #t
+
+       (char-set= (string->char-set "eiaou246801357999")
+                  (char-set-unfold! null? car cdr '(#\a #\e #\i #\o #\u)
+                                    (string->char-set "0123456789"))))
+(test* "char-set-unfold!" #f
+       (char-set= (string->char-set "eiaou246801357")
+                  (char-set-unfold! null? car cdr '(#\a #\e #\i #\o #\u)
+                                    (string->char-set "0123456789"))))
+(test* "char-set-for-each" #t
+       (let ([cs (string->char-set "0123456789")])
+         (char-set-for-each (^c (set! cs (char-set-delete cs c)))
+                            (string->char-set "02468000"))
+         (char-set= cs (string->char-set "97531"))))
+(test* "char-set-for-each" #t
+       (not (let ([cs (string->char-set "0123456789")])
+              (char-set-for-each (^c (set! cs (char-set-delete cs c)))
+                                 (string->char-set "02468"))
+              (char-set= cs (string->char-set "7531")))))
+(test* "char-set-map" #t
+       (char-set= (char-set-map char-upcase (string->char-set "aeiou"))
+                  (string->char-set "IOUAEEEE")))
+(test* "char-set-map" #f
+       (char-set= (char-set-map char-upcase (string->char-set "aeiou"))
+                  (string->char-set "OUAEEEE")))
+(test* "char-set-copy" #t
+       (char-set= (char-set-copy (string->char-set "aeiou"))
+                  (string->char-set "aeiou")))
+(test* "string->char-set" #t
+       (char-set= (char-set #\x #\y) (string->char-set "xy")))
+(test* "string->char-set" #t
+       (not (char-set= (char-set #\x #\y #\z) (string->char-set "xy"))))
+(test* "list->char-set" #t
+       (char-set= (string->char-set "xy") (list->char-set '(#\x #\y))))
+(test* "list->char-set" #f
+
+       (char-set= (string->char-set "axy") (list->char-set '(#\x #\y))))
+(test* "list->char-set" #t
+
+       (char-set= (string->char-set "xy12345")
+                  (list->char-set '(#\x #\y) (string->char-set "12345"))))
+(test* "list->char-set" #f
+       (char-set= (string->char-set "y12345")
+                  (list->char-set '(#\x #\y) (string->char-set "12345"))))
+(test* "list->char-set!" #t
+       (char-set= (string->char-set "xy12345")
+                  (list->char-set! '(#\x #\y) (string->char-set "12345"))))
+(test* "list->char-set!" #f
+       (char-set= (string->char-set "y12345")
+                  (list->char-set! '(#\x #\y) (string->char-set "12345"))))
+(test* "char-set-filter" #t
+       (char-set= (string->char-set "aeiou12345")
+                  (char-set-filter vowel? char-set:ascii
+                                   (string->char-set "12345"))))
+(test* "char-set-filter" #f
+       (char-set= (string->char-set "aeou12345")
+                  (char-set-filter vowel? char-set:ascii
+                                   (string->char-set "12345"))))
+(test* "char-set-filter!" #t
+       (char-set= (string->char-set "aeiou12345")
+                  (char-set-filter! vowel? char-set:ascii
+                                    (string->char-set "12345"))))
+(test* "char-set-filter!" #f
+       (char-set= (string->char-set "aeou12345")
+                  (char-set-filter! vowel? char-set:ascii
+                                    (string->char-set "12345"))))
+(test* "ucs-range->char-set" #t
+       (char-set= (string->char-set "abcdef12345")
+                  (ucs-range->char-set 97 103 #t
+                                       (string->char-set "12345"))))
+(test* "ucs-range->char-set" #f
+       (char-set= (string->char-set "abcef12345")
+                  (ucs-range->char-set 97 103 #t
+                                       (string->char-set "12345"))))
+(test* "ucs-range->char-set!" #t
+       (char-set= (string->char-set "abcdef12345")
+                  (ucs-range->char-set! 97 103 #t
+                                        (string->char-set "12345"))))
+(test* "ucs-range->char-set!" #f
+       (char-set= (string->char-set "abcef12345")
+                  (ucs-range->char-set! 97 103 #t
+                                        (string->char-set "12345"))))
+(test* "integer-range->char-set" #t
+       (char-set= (string->char-set "abcdef12345")
+                  (integer-range->char-set 97 103 #t
+                                           (string->char-set "12345"))))
+(test* "integer-range->char-set" #f
+       (char-set= (string->char-set "abcef12345")
+                  (integer-range->char-set 97 103 #t
+                                           (string->char-set "12345"))))
+(test* "integer-range->char-set!" #t
+       (char-set= (string->char-set "abcdef12345")
+                  (integer-range->char-set! 97 103 #t
+                                            (string->char-set "12345"))))
+(test* "integer-range->char-set!" #f
+       (char-set= (string->char-set "abcef12345")
+                  (integer-range->char-set! 97 103 #t
+                                            (string->char-set "12345"))))
+
+(test* "->char-set" #t
+       (char-set= (->char-set #\x)
+                  (->char-set "x")
+                  (->char-set (char-set #\x))))
+(test* "->char-set" #f
+       (char-set= (->char-set #\x)
+                  (->char-set "y")
+                  (->char-set (char-set #\x))))
+(test* "->char-set" #t
+       (char-set= (->char-set "abc")
+                  (->char-set '#(#\c #\a #\b #\a))))
+(test* "char-set-size" 10
+       (char-set-size (char-set-intersection char-set:ascii char-set:digit)))
+(test* "char-set-count" 5
+       (char-set-count vowel? char-set:ascii))
+(test* "char-set->list" #t
+       (equal? '(#\x) (char-set->list (char-set #\x))))
+(test* "char-set->list" #f
+       (equal? '(#\X) (char-set->list (char-set #\x))))
+(test* "char-set->string" #t
+       (equal? "x" (char-set->string (char-set #\x))))
+(test* "char-set->string" #f
+       (equal? "X" (char-set->string (char-set #\x))))
+(test* "char-set-contains?" #t
+       (char-set-contains? (->char-set "xyz") #\x))
+(test* "char-set-contains?" #f
+       (char-set-contains? (->char-set "xyz") #\a))
+(test* "char-set-complement (ascii, nohit)" #f
+       (char-set-contains? (char-set-complement (char-set #\a)) #\a))
+(test* "char-set-complement (ascii, hit)" #t
+       (char-set-contains? (char-set-complement (char-set #\a)) #\b))
+(test* "char-set-complement (~#x80, nohit)" #f
+       (char-set-contains? (char-set-complement (char-set (integer->char #x80)))
+                           (integer->char #x80)))
+(test* "char-set-complement (~#x80, hit)" #t
+       (char-set-contains? (char-set-complement (char-set (integer->char #x80)))
+                           (integer->char #x81)))
+(test* "char-set-complement (~~#x80, hit)" #t
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x80))))
+                           (integer->char #x80)))
+(test* "char-set-complement (~~#x80, nohit)" #f
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x80))))
+                           (integer->char #x81)))
+(test* "char-set-complement (~#x82, nohit)" #f
+       (char-set-contains? (char-set-complement (char-set (integer->char #x82)))
+                           (integer->char #x82)))
+(test* "char-set-complement (~#x82, hit-upper)" #t
+       (char-set-contains? (char-set-complement (char-set (integer->char #x82)))
+                           (integer->char #x83)))
+(test* "char-set-complement (~#x82, hit-lower)" #t
+       (char-set-contains? (char-set-complement (char-set (integer->char #x82)))
+                           (integer->char #x81)))
+(test* "char-set-complement (~~#x82, hit)" #t
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x82))))
+                           (integer->char #x82)))
+(test* "char-set-complement (~~#x82, nohit-upper)" #f
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x82))))
+                           (integer->char #x83)))
+(test* "char-set-complement (~~#x82, nohit-lower)" #f
+       (char-set-contains? (char-set-complement
+                            (char-set-complement
+                             (char-set (integer->char #x82))))
+                           (integer->char #x81)))
+(test* "char-set-complement (~empty)" #t
+       (char-set-contains? (char-set-complement (char-set))
+                           (integer->char #x80)))
+(test* "char-set-complement (~~empty)" #f
+       (char-set-contains? (char-set-complement (char-set-complement (char-set)))
+                           (integer->char #x80)))
+(test* "char-set-every" #t
+       (char-set-every char-lower-case? (->char-set "abcd")))
+(test* "char-set-every" #f
+       (char-set-every char-lower-case? (->char-set "abcD")))
+(test* "char-set-any" #t
+       (char-set-any char-lower-case? (->char-set "abcd")))
+(test* "char-set-any" #f
+       (char-set-any char-lower-case? (->char-set "ABCD")))
+(test* "char-set iterators" #t
+       (char-set= (->char-set "ABCD")
+                  (let ([cs (->char-set "abcd")])
+                    (let lp ([cur (char-set-cursor cs)] [ans '()])
+                      (if (end-of-char-set? cur) (list->char-set ans)
+                          (lp (char-set-cursor-next cs cur)
+                              (cons (char-upcase (char-set-ref cs cur)) ans)))))))
+(test* "char-set-adjoin" #t
+       (char-set= (char-set-adjoin (->char-set "123") #\x #\a)
+                  (->char-set "123xa")))
+(test* "char-set-adjoin" #f
+       (char-set= (char-set-adjoin (->char-set "123") #\x #\a)
+                  (->char-set "123x")))
+(test* "char-set-adjoin!" #t
+       (char-set= (char-set-adjoin! (->char-set "123") #\x #\a)
+                  (->char-set "123xa")))
+(test* "char-set-adjoin!" #f
+       (char-set= (char-set-adjoin! (->char-set "123") #\x #\a)
+                  (->char-set "123x")))
+(test* "char-set-delete" #t
+       (char-set= (char-set-delete (->char-set "123") #\2 #\a #\2)
+                  (->char-set "13")))
+(test* "char-set-delete" #f
+       (char-set= (char-set-delete (->char-set "123") #\2 #\a #\2)
+                  (->char-set "13a")))
+(test* "char-set-delete" #t
+       (char-set= (char-set-adjoin (char-set-delete char-set:full #\;) #\;)
+                  char-set:full))
+(test* "char-set-delete!" #t
+       (char-set= (char-set-delete! (->char-set "123") #\2 #\a #\2)
+                  (->char-set "13")))
+(test* "char-set-delete!" #f
+       (char-set= (char-set-delete! (->char-set "123") #\2 #\a #\2)
+                  (->char-set "13a")))
+(cond-expand
+ ;; Only test in utf-8, for the literal notation is interpreted differently
+ ;; in other encodings.
+ [gauche.ces.utf8
+  (test* "char-set-delete!" #[\x81\x83\x84\x86]
+         (char-set-delete! (->char-set '(#\x81 #\x82 #\x83 #\x84 #\x85 #\x86 #\x87))
+                           #\x82 #\x87 #\x85)
+         char-set=)]
+ [else])
+(test* "char-set-intersection" #t
+       (char-set= (char-set-intersection char-set:hex-digit (char-set-complement char-set:digit))
+                  (->char-set "abcdefABCDEF")))
+(test* "char-set-intersection!" #t
+       (char-set= (char-set-intersection! (char-set-complement! (->char-set "0123456789"))
+                                          char-set:hex-digit)
+                  (->char-set "abcdefABCDEF")))
+(test* "char-set-union" #t
+       (char-set= (char-set-union char-set:hex-digit
+                                  (->char-set "abcdefghijkl"))
+                  (->char-set "abcdefABCDEFghijkl0123456789")))
+(test* "char-set-union!" #t
+       (char-set= (char-set-union! (->char-set "abcdefghijkl")
+                                   char-set:hex-digit)
+                  (->char-set "abcdefABCDEFghijkl0123456789")))
+(cond-expand
+ ;; Only test in utf-8, for the literal notation is interpreted differently
+ ;; in other encodings.
+ [gauche.ces.utf8
+  (test* "char-set-union!" #[\x81-\x89]
+         (char-set-union! (->char-set '(#\x81 #\x83 #\x84 #\x86 #\x87))
+                          (->char-set '(#\x82 #\x85 #\x86 #\x88 #\x89)))
+         char-set=)]
+ [else])
+(test* "char-set-difference" #t
+       (char-set= (char-set-difference (->char-set "abcdefghijklmn")
+                                       char-set:hex-digit)
+                  (->char-set "ghijklmn")))
+(test* "char-set-difference!" #t
+       (char-set= (char-set-difference! (->char-set "abcdefghijklmn")
+                                        char-set:hex-digit)
+                  (->char-set "ghijklmn")))
+(test* "char-set-xor" #t
+       (char-set= (char-set-xor (->char-set "0123456789")
+                                char-set:hex-digit)
+                  (->char-set "abcdefABCDEF")))
+(test* "char-set-xor!" #t
+       (char-set= (char-set-xor! (->char-set "0123456789")
+                                 char-set:hex-digit)
+                  (->char-set "abcdefABCDEF")))
+(test* "char-set-diff+intersection" #t
+       (call-with-values (^[] (char-set-diff+intersection char-set:hex-digit
+                                                          char-set:letter))
+         (^[d i]
+           (and (char-set= d (->char-set "0123456789"))
+                (char-set= i (->char-set "abcdefABCDEF"))))))
+(test* "char-set-diff+intersection!" #t
+       (call-with-values (^[]
+                           (char-set-diff+intersection! (char-set-copy char-set:hex-digit)
+                                                        (char-set-copy char-set:letter)))
+         (^[d i]
+           (and (char-set= d (->char-set "0123456789"))
+                (char-set= i (->char-set "abcdefABCDEF"))))))
+
+(test* "char-set object-apply" '(#t #f)
+       (list (#[a-z] #\a) (#[a-z] #\A)))
+
+;; https://github.com/shirok/Gauche/pull/500
+(test* "CharSetAdd large flag bug" #t
+       (char-set= (char-set-intersection
+                   (char-set-union (string->char-set "_")
+                                   char-set:letter+digit)
+                   char-set:full)
+                  (char-set-intersection
+                   (char-set-union char-set:letter+digit
+                                   (string->char-set "_"))
+                   char-set:full)))
+
+;;;
 ;;; scheme.flonum (srfi-144)
 ;;;
 
