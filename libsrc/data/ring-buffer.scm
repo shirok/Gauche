@@ -31,13 +31,15 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+;; NB: This module is loaded for REPL with input editing, so mind the
+;; loading time.
+
 (define-module data.ring-buffer
   (use gauche.sequence)
   (use gauche.uvector)
   (use gauche.record)
   (use scheme.vector)
   (use util.match)
-  (use srfi-42)
   (export make-ring-buffer
           make-overflow-doubler
           ring-buffer?
@@ -349,8 +351,9 @@
                         (+ size (ring-buffer-num-entries rb)))
           (ring-buffer->xvector! newbuf 0 rb 0 n)
           (ring-buffer->xvector! newbuf (+ n size) rb n)
-          (do-ec (: item (index i) items)
-                 (set! (~ newbuf (+ n i)) item))
+          (for-each-with-index
+           (^[i item] (set! (~ newbuf (+ n i)) item))
+           items)
           (ring-buffer-storage-set! rb newbuf)
           (ring-buffer-num-entries-set! rb (+ size (ring-buffer-num-entries rb)))
           (ring-buffer-capacity-set! rb (size-of newbuf))
@@ -361,11 +364,13 @@
                 (+ size (ring-buffer-num-entries rb))))
       (let ([storage (ring-buffer-storage rb)]
             [cap (ring-buffer-capacity rb)])
-        (do-ec (: i size 0 -1)
-               (set! (~ storage (modulo (+ n i -1) cap))
-                     (~ storage (modulo (+ n size i -1) cap))))
-        (do-ec (: item (index i) items)
-               (set! (~ storage (modulo (+ n i) cap)) item)))))
+        (do ([i (- size 1) (- i 1)])
+            [(< i 0)]
+          (set! (~ storage (modulo (+ n i) cap))
+                (~ storage (modulo (+ n size i) cap))))
+        (for-each-with-index
+         (^[i item] (set! (~ storage (modulo (+ n i) cap)) item))
+         items))))
   (undefined))
 
 ;; API
