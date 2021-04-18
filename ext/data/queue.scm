@@ -51,7 +51,6 @@
           make-queue make-mtqueue queue? mtqueue?
           queue-length mtqueue-max-length mtqueue-room
           mtqueue-num-waiting-readers
-          mtqueue-close!
           queue-empty? copy-queue
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
@@ -345,13 +344,6 @@
  (define-cproc mtqueue-max-length (q::<mtqueue>)
    (return (?: (>= (MTQ_MAXLEN q) 0) (SCM_MAKE_INT (MTQ_MAXLEN q)) '#f)))
 
- ;; API
- ;; NB: mtqueue-close! must be called from the consumer. Producer should close
- ;; mtqueue via enqueue/wait!, for calling separate close! has a race condition
- ;; that other producer threads enqueues more data before closing.
- (define-cproc mtqueue-close! (q::<mtqueue>) ::<void>
-   (set! (MTQ_CLOSED q) TRUE))
-
  ;; caller must hold lock
  (define-cproc %mtqueue-overflow? (q::<mtqueue> cnt::<int>) ::<boolean>
    (return (mtq-overflows q cnt)))
@@ -574,11 +566,13 @@
      (return r)))
 
  (define-cproc dequeue/wait! (q::<mtqueue> :optional (timeout #f)
-                                                     (timeout-val #f))
+                                                     (timeout-val #f)
+                                                     (close::<boolean> #f))
    (let* ([retval SCM_UNDEFINED])
      (.if (defined GAUCHE_HAS_THREADS)
           (do-with-timeout q retval timeout timeout-val readerWait
                            (begin (post++ (MTQ_READER_SEM q))
+                                  (when close (set! (MTQ_CLOSED q) TRUE))
                                   (notify-writers (Q q)))
                            (Q_EMPTY_P q)
                            (begin (pre-- (MTQ_READER_SEM q))

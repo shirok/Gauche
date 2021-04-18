@@ -658,18 +658,18 @@
   (test* "mtqueue-closed?" '(#f #t)
          (let* ([q (make-mtqueue)]
                 [a (~ q'closed)]
-                [_ (mtqueue-close! q)]
+                [_ (dequeue/wait! q 0 #f #t)]
                 [b (~ q'closed)])
            (list a b)))
   (test* "closed mtqueue rejects enqueue"
          (test-error <error> #/queue is closed/)
          (let1 q (make-mtqueue)
-           (mtqueue-close! q)
+           (dequeue/wait! q 0 #f #t)
            (enqueue! q 'a)))
   (test* "closed mtqueue rejects enqueue/wait"
          (test-error <error> #/queue is closed/)
          (let1 q (make-mtqueue)
-           (mtqueue-close! q)
+           (dequeue/wait! q 0 #f #t)
            (enqueue/wait! q 'a)))
   (test* "enqueue with closing" #t
          (let1 q (make-mtqueue)
