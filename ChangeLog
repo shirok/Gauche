@@ -1,3 +1,10 @@
+2021-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* ext/data/queue.scm: Add 'close' operation in mtqueue.  This is
+	  useful in producer-consumer concurrency, when the producer side
+	  wants to tell consumer to stop the service.  If we use a separate
+	  flag, we'd need to protect the flag and the queue with another mutex.
+
 2021-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/scheme/charset.scm : moved from lib/srfi-14.scm.

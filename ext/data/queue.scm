@@ -51,6 +51,7 @@
           make-queue make-mtqueue queue? mtqueue?
           queue-length mtqueue-max-length mtqueue-room
           mtqueue-num-waiting-readers
+          mtqueue-closed? mtqueue-close!
           queue-empty? copy-queue
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
@@ -110,6 +111,7 @@
  ;;
  (define-ctype MtQueue::(.struct
                          (q::Queue
+                          closed::_Bool       ; if TRUE, reject enqueue!
                           maxlen::ScmSmallInt ; negative if unlimited
                           mutex::ScmInternalMutex
                           locker ; thread holding the lock.  see the comment above.
@@ -123,6 +125,7 @@
 
  (.define MTQP (obj) (SCM_ISA obj (& MtQueueClass)))
  (.define MTQ (obj) (cast MtQueue* obj))
+ (.define MTQ_CLOSED (obj) (-> (MTQ obj) closed))
  (.define MTQ_MAXLEN (obj) (-> (MTQ obj) maxlen))
  (.define MTQ_MUTEX (obj) (-> (MTQ obj) mutex))
  (.define MTQ_LOCKER (obj) (-> (MTQ obj) locker))
@@ -134,6 +137,7 @@
  (define-cfn makemtq (klass::ScmClass* maxlen::int)
    (let* ([z::MtQueue* (SCM_NEW_INSTANCE MtQueue klass)])
      (set! (Q_LENGTH z) 0 (Q_HEAD z) SCM_NIL (Q_TAIL z) SCM_NIL
+           (MTQ_CLOSED z) FALSE
            (MTQ_MAXLEN z) maxlen
            (MTQ_LOCKER z) SCM_FALSE
            (MTQ_READER_SEM z) 0)
@@ -226,6 +230,8 @@
  ;;   Lock Q and execute INIT, and wait while WAIT-CHECK satisfies.  Once
  ;;   WAIT-CHECK returns false, execute a statement DO-OK.  CVAR is a
  ;;   condition variable (-> Q CVAR) to be waited on.
+ ;;   INIT code may set a local variable ERR.  If it is set, it gives up
+ ;;   immediately and throws an error.
  ;;   If TIMEOUT isn't NULL and waiting times out, RETVAL is set with
  ;;   TIMEOUT-VAL.  (DO-OK is supposed to set RETVAL in it).
  (define-cise-stmt do-with-timeout
@@ -235,18 +241,21 @@
       `(let* ([,ts :: (ScmTimeSpec)] [,status :: int 0]
               [,tv :: (volatile ScmObj) ,timeout-val]
               [,pts :: (ScmTimeSpec*) (Scm_GetTimeSpec ,timeout (& ,ts))]
-              [,inited :: int FALSE])
+              [,inited :: int FALSE] [err :: (const char *) NULL])
          (while TRUE
            (with-mtq-mutex-lock ,q
              (unless ,inited ,init (set! ,inited TRUE))
-             (while TRUE
-               (wait-mtq-big-lock ,q)
-               (cond [,wait-check (wait-cv ,q ,cv-slot ,pts ,status)
-                                  (when (== ,status 0) (continue))]
-                     [else ,do-ok (set! ,status 0)])
-               (set! (MTQ_LOCKER ,q) SCM_FALSE)
-               (notify-lockers ,q)
-               (break)))
+             (unless err
+               (while TRUE
+                 (wait-mtq-big-lock ,q)
+                 (cond [,wait-check (wait-cv ,q ,cv-slot ,pts ,status)
+                                    (when (== ,status 0) (continue))]
+                       [else ,do-ok (set! ,status 0)])
+                 (set! (MTQ_LOCKER ,q) SCM_FALSE)
+                 (notify-lockers ,q)
+                 (break))))
+           (when err
+             (Scm_Error "%s: %S" err ,q))
            (case ,status
              [(CW_TIMEDOUT) (set! ,retval ,tv)]
              [(CW_INTR)     (Scm_SigCheck (Scm_VM)) (continue)]) ;restart op
@@ -330,6 +339,14 @@
  (define-cproc queue-length (q::<queue>) ::<int> %qlength)
  (define-cproc mtqueue-max-length (q::<mtqueue>)
    (return (?: (>= (MTQ_MAXLEN q) 0) (SCM_MAKE_INT (MTQ_MAXLEN q)) '#f)))
+
+ ;; API
+ ;; NB: mtqueue-close! must be called from the consumer. Producer should close
+ ;; mtqueue via enqueue/wait!, for calling separate close! has a race condition
+ ;; that other producer threads enqueues more data before closing.
+ (define-cproc mtqueue-closed? (q::<mtqueue>) ::<boolean> MTQ_CLOSED)
+ (define-cproc mtqueue-close! (q::<mtqueue>) ::<void>
+   (set! (MTQ_CLOSED q) TRUE))
 
  ;; caller must hold lock
  (define-cproc %mtqueue-overflow? (q::<mtqueue> cnt::<int>) ::<boolean>
@@ -416,10 +433,13 @@
  (define-cise-stmt q-write-op
    [(_ op q cnt head tail)
     `(if (MTQP ,q)
-       (let* ([ovf::int FALSE])
+       (let* ([ovf::int FALSE]
+              [closed::int FALSE])
          (with-mtq-light-lock ,q
-           (cond [(mtq-overflows ,q ,cnt) (set! ovf TRUE)]
+           (cond [(MTQ_CLOSED ,q) (set! closed TRUE)]
+                 [(mtq-overflows ,q ,cnt) (set! ovf TRUE)]
                  [else (,op ,q ,cnt ,head ,tail) (notify-readers ,q)]))
+         (when closed (Scm_Error "queue is closed: %S" ,q))
          (when ovf (Scm_Error "queue is full: %S" ,q)))
        (,op ,q ,cnt ,head ,tail))])
 
@@ -433,17 +453,22 @@
      (return (SCM_OBJ q))))
 
  ;; API
- (define-cproc enqueue/wait! (q::<mtqueue> obj :optional (timeout #f)
-                                                         (timeout-val #f))
+ (define-cproc enqueue/wait! (q::<mtqueue> obj
+                                           :optional (timeout #f)
+                                                     (timeout-val #f)
+                                                     (close::<boolean> #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
      (.if (defined GAUCHE_HAS_THREADS)
           (do-with-timeout q retval timeout timeout-val writerWait
-                           (begin)
+                           (when (MTQ_CLOSED q)
+                             (set! err "queue is closed"))
                            (?: (!= (MTQ_MAXLEN q) 0)
                                (mtq-overflows q 1)
                                (== (MTQ_READER_SEM q) 0))
                            (begin (enqueue_int (Q q) 1 cell cell)
                                   (set! retval '#t)
+                                  (when close
+                                    (set! (MTQ_CLOSED q) TRUE))
                                   (notify-readers (Q q))))
           (enqueue_int (Q q) 1 cell cell))
      (return retval)))
@@ -484,16 +509,21 @@
      (q-write-op queue-push-int q cnt head tail)
      (return (SCM_OBJ q))))
 
- (define-cproc queue-push/wait! (q::<mtqueue> obj :optional (timeout #f)
-                                                            (timeout-val #f))
+ (define-cproc queue-push/wait! (q::<mtqueue> obj
+                                              :optional (timeout #f)
+                                                        (timeout-val #f)
+                                                        (close::<boolean> #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
      (.if (defined GAUCHE_HAS_THREADS)
           (do-with-timeout q retval timeout timeout-val writerWait
-                           (begin)
+                           (when (MTQ_CLOSED q)
+                             (set! err "queue is closed"))
                            (?: (!= (MTQ_MAXLEN q) 0)
                                (mtq-overflows q 1)
                                (== (MTQ_READER_SEM q) 0))
                            (begin (queue_push_int (Q q) 1 cell cell)
+                                  (when close
+                                    (set! (MTQ_CLOSED q) TRUE))
                                   (notify-readers (Q q))))
           (queue_push_int (Q q) 1 cell cell))
      (return retval)))
