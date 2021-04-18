@@ -51,7 +51,7 @@
           make-queue make-mtqueue queue? mtqueue?
           queue-length mtqueue-max-length mtqueue-room
           mtqueue-num-waiting-readers
-          mtqueue-closed? mtqueue-close!
+          mtqueue-close!
           queue-empty? copy-queue
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
@@ -160,12 +160,17 @@
  (define-cclass <mtqueue>
    "MtQueue*" "MtQueueClass" ("QueueClass")
    ((max-length :getter "return mtq_maxlen_get(obj);"
-                :setter "mtq_maxlen_set(obj, value);"))
+                :setter "mtq_maxlen_set(obj, value);")
+    (closed     :getter "return SCM_MAKE_BOOL(MTQ_CLOSED(obj));"
+                :setter #f))
    (allocator
     (let* ([ml (Scm_GetKeyword ':max-length initargs SCM_FALSE)])
       (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) -1)))))
    (printer
-    (Scm_Printf port "#<mtqueue %d @%p>" (%qlength (Q obj)) obj)))
+    (Scm_Printf port "#<mtqueue %d %s@%p>"
+                (%qlength (Q obj))
+                (?: (MTQ_CLOSED obj) "(closed)" "")
+                obj)))
 
  ;; lock macros
  (define-cise-expr big-locked?
@@ -344,7 +349,6 @@
  ;; NB: mtqueue-close! must be called from the consumer. Producer should close
  ;; mtqueue via enqueue/wait!, for calling separate close! has a race condition
  ;; that other producer threads enqueues more data before closing.
- (define-cproc mtqueue-closed? (q::<mtqueue>) ::<boolean> MTQ_CLOSED)
  (define-cproc mtqueue-close! (q::<mtqueue>) ::<void>
    (set! (MTQ_CLOSED q) TRUE))
 
