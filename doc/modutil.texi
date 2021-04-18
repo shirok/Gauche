@@ -1023,6 +1023,7 @@ the test code as is.
 @end deftp
 
 @defmac chibi-test code @dots{}
+@c MOD compat.chibi-test
 @c EN
 Run @var{code} @dots{}, while translating Chibi test framework
 to Gauche's.
@@ -1216,7 +1217,7 @@ cseqを使うと、生産者-消費者型の並列性を簡単に書けます。
 @end deftp
 
 @defun generator->cseq gen :key queue-length
-@mdindex control.cseq
+@c MOD control.cseq
 @c EN
 Create a lazy sequence from generator, much like @code{generator->lseq},
 except that @var{gen} runs in a separate thread.
@@ -1273,7 +1274,7 @@ Gaucheのlseqは一要素先読みすることに注意してください(@ref{L
 
 
 @defun coroutine->cseq proc :key queue-length
-@mdindex control.cseq
+@c MOD control.cseq
 @c EN
 Returns an lseq, whose value is generated in @var{proc}, which is called
 in a separate thread.  (See also @code{coroutine->lseq},
