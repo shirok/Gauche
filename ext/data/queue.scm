@@ -156,7 +156,7 @@
          [(SCM_FALSEP maxlen) (set! (MTQ_MAXLEN mtq) -1)]
          [else (SCM_TYPE_ERROR maxlen "non-negative fixnum or #f")]))
 
- (define-type <mtqueue> "MtQueue*" "mt-queue" "MTQP" "MTQ")
+ (define-type <mtqueue> "MtQueue*" "mtqueue" "MTQP" "MTQ")
  (define-cclass <mtqueue>
    "MtQueue*" "MtQueueClass" ("QueueClass")
    ((max-length :getter "return mtq_maxlen_get(obj);"
@@ -165,7 +165,7 @@
     (let* ([ml (Scm_GetKeyword ':max-length initargs SCM_FALSE)])
       (return (makemtq klass (?: (SCM_INTP ml) (SCM_INT_VALUE ml) -1)))))
    (printer
-    (Scm_Printf port "#<mt-queue %d @%p>" (%qlength (Q obj)) obj)))
+    (Scm_Printf port "#<mtqueue %d @%p>" (%qlength (Q obj)) obj)))
 
  ;; lock macros
  (define-cise-expr big-locked?
