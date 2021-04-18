@@ -1276,12 +1276,14 @@ Gaucheのlseqは一要素先読みすることに注意してください(@ref{L
 @mdindex control.cseq
 @c EN
 Returns an lseq, whose value is generated in @var{proc}, which is called
-in a separate thread.
+in a separate thread.  (See also @code{coroutine->lseq},
+@ref{Lazy sequence constructors}).
 The @var{proc} argument is a procedure to be called with one argument,
 @var{yield}.  The @var{yield} argument is a procedure, and whenever it is
 called with a value, that value becomes the next item of the resulting lseq.
 When @var{proc} returns, it becomes the end of the lseq.
 @c JP
+@code{coroutine->lseq} (@ref{Lazy sequence constructors}) のように、
 値が@var{proc}によって生成されるlseqを返しますが、@var{proc}自体は別スレッドで
 実行されます。
 @var{proc}引数は、引数@var{yield}を取る手続きです。

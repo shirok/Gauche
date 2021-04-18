@@ -80,6 +80,9 @@
 (test* "lazyness - linterweave" '(1 a A 2 b A 3 c A)
        (linterweave (lrange 1)  '(a b c) '#0=(A . #0#)))
 
+(test* "lazyness - coroutine" '(0 1 4 9 16 25 36 49 64 81)
+       (coroutine->lseq (^[yield] (dotimes [i 10] (yield (square i))))))
+
 ;;; lseq with input-positions
 
 (let ()

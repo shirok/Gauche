@@ -9825,6 +9825,35 @@ See also @code{util.stream}, which as @code{stream-iterate}
 @end example
 @end defun
 
+@defun coroutine->lseq proc
+@c MOD gauche.lazy
+@c EN
+The @var{proc} procedure is called with one argument,
+@var{yield}, which is also a procedure that takes one argument.
+Whenever @var{yeild} is called, the value passed to it
+becomes the next element of resulting lseq.
+When @var{proc} returns, lseq ends.
+@c JP
+@var{proc}引数がひとつの引数@var{yield}を伴って呼び出されます。
+@var{yeidl}はそれ自体がひとつの引数を取る手続きで、呼ばれるとそこに渡された
+値が、結果のlseqの要素となります。@var{proc}からリターンしたらlseqも終了となります。
+@c COMMON
+
+@example
+(coroutine->lseq (^[yield] (dotimes [i 10] (yield (square i)))))
+  @result {} (0 1 4 9 16 25 36 49 64 81)
+@end example
+
+@c EN
+See also @code{generate} (@ref{Generator constructors}), and
+@code{coroutine->cseq} (@ref{Concurrent sequences}).
+@c JP
+@ref{Generator constructors}の@code{generate}、および
+@ref{Concurrent sequences}の@code{coroutine->cseq}も参照。
+@c COMMON
+@end defun
+
+
 @node Lazy sequence operations, Lazy sequence with positions, Lazy sequence constructors, Lazy sequence utilities
 @subsection Lazy sequence operations
 @c NODE 遅延シーケンスの操作

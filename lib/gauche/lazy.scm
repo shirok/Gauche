@@ -41,7 +41,7 @@
   (use scheme.list)
   (use gauche.record)
   (use gauche.generator)
-  (export x->lseq lunfold literate
+  (export x->lseq coroutine->lseq lunfold literate
           lmap lmap-accum lappend lappend-map lconcatenate
           linterweave lfilter lfilter-map lstate-filter
           ltake ltake-while lrxmatch lslices
@@ -65,6 +65,9 @@
            (if (applicable? g)
              (generator->lseq g)
              (error "cannot coerce the argument to a lazy sequence" obj)))]))
+
+(define (coroutine->lseq proc)
+  (generator->lseq (generate proc)))
 
 (define (lunfold p f g seed :optional (tail #f))
   ($ generator->lseq

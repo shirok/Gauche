@@ -1,5 +1,8 @@
 2021-04-18  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/lazy.scm (coroutine->lseq): Added, for the symmetry
+	  of coroutine->cseq.
+
 	* ext/data/queue.scm: Add 'close' operation in mtqueue.  This is
 	  useful in producer-consumer concurrency, when the producer side
 	  wants to tell consumer to stop the service.  If we use a separate
