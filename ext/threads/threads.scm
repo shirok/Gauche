@@ -53,7 +53,10 @@
           terminated-thread-exception? uncaught-exception?
           uncaught-exception-reason
 
-          atom atom? atom-ref atomic atomic-update!))
+          atom atom? atom-ref atomic atomic-update!
+
+          make-semaphore semaphore? semaphore-acquire! semaphore-release!
+          ))
 (select-module gauche.threads)
 
 (inline-stub
@@ -292,3 +295,53 @@
 (define (atom-ref atom :optional (index 0) (timeout #f) (timeout-val #f))
   (unless (atom? atom) (error "atom required, but got:" atom))
   ((atom-applier atom) (^ xs (list-ref xs index)) timeout timeout-val '()))
+
+;;===============================================================
+;; Semaphore
+;;
+
+(define-record-type <semaphore> %make-semaphore semaphore?
+  name                                  ; for information only
+  (count)
+  mutex
+  cv)
+
+(define (make-semaphore :optional (init-value 0) (name #f))
+  (%make-semaphore name init-value
+                   (make-mutex)
+                   (make-condition-variable)))
+
+(define-method write-object ((s <semaphore>) port)
+  (format port "#<semaphore ~d" (~ s'count))
+  (if-let1 name (~ s'name)
+    (format port " ~s>" name)
+    (format port ">")))
+
+(define (semaphore-acquire! sem :optional (timeout #f)
+                                          (timeout-val #f))
+  (assume-type sem <semaphore>)
+  (let loop ()
+    (mutex-lock! (~ sem'mutex))
+    (cond [(> (~ sem'count) 0)
+           (dec! (~ sem'count))
+           (mutex-unlock! (~ sem'mutex))
+           #t]
+          [(mutex-unlock! (~ sem'mutex) (~ sem'cv) timeout)
+           ;; signaled
+           (loop)]
+          [else
+           ;; timeout
+           timeout-val])))
+
+;; We allow to release more than one tokens at once.
+;; 'all means all
+(define (semaphore-release! sem :optional (count 1))
+  (assume-type sem <semaphore>)
+  (assume (and (exact-integer? count) (> count 0)))
+  (mutex-lock! (~ sem'mutex))
+  (inc! (~ sem'count) count)
+  (when (> (~ sem'count) 0)
+    (if (= count 1)
+      (condition-variable-signal! (~ sem'cv))
+      (condition-variable-broadcast! (~ sem'cv))))
+  (mutex-unlock! (~ sem'mutex)))

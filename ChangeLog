@@ -1,3 +1,7 @@
+2021-04-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.scm (<semaphore>): Added semaphore.
+
 2021-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/lazy.scm (coroutine->lseq): Added, for the symmetry

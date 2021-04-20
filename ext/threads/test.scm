@@ -509,6 +509,29 @@
                           (^[x y] (values (+ x 1) (+ y 1) (+ x y 1)))))))
 
 ;;---------------------------------------------------------------------
+(test-section "semaphore")
+
+(test* "semaphore" #t (semaphore? (make-semaphore 1)))
+
+(test* "semaphore wait" '(2 3 6)
+       (let* ([d (atom 0)]
+              [s (make-semaphore 2)]
+              [ts (map (^i (make-thread (^[]
+                                          (semaphore-acquire! s)
+                                          (atomic-update! d (cut + <> 1)))))
+                       (iota 6))])
+         (for-each thread-start! ts)
+         (sys-nanosleep 1000)
+         (let ([d1 (atom-ref d 0)])
+           (semaphore-release! s)
+           (sys-nanosleep 1000)
+           (let ([d2 (atom-ref d 0)])
+             (semaphore-release! s 3)
+             (sys-nanosleep 1000)
+             (for-each thread-join! ts)
+             (list d1 d2 (atom-ref d 0))))))
+
+;;---------------------------------------------------------------------
 (test-section "threads and promise")
 
 (use scheme.list)
