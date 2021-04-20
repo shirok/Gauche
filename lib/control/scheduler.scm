@@ -64,9 +64,9 @@
 ;; Request queue is a queue of jobs (control.job).
 ;; Public API actually sends a request to the scheduler's thread,
 ;; and retrieves the result.
-(define (request-response scheduler thunk)
+(define (request-response scheduler thunk :optional (end? #f))
   (define job (make-job thunk :waitable #t))
-  (enqueue/wait! (~ scheduler'request-queue) job)
+  (enqueue/wait! (~ scheduler'request-queue) job #f #f end?)
   (job-wait job)
   (let1 r (job-result job)
     (if (is-a? r <condition>)
@@ -187,5 +187,5 @@
      (^[] (dict-exists? (~ s'task-queue) task-id))))
 
 (define-method scheduler-terminate! ((s <scheduler>))
-  ($ request-response s (^[] (raise 'end)))
+  ($ request-response s (^[] (raise 'end)) #t)
   (undefined))

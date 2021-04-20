@@ -267,7 +267,7 @@
 (test-module 'control.scheduler)
 
 (let ()
-  (define a #f)
+  (define a '())
   (define b #f)
   (define e #f)
   (define sched (make <scheduler> :error-handler (^e (set! e e))))
@@ -298,6 +298,17 @@
                   (list (scheduler-exists? sched id2)
                         (scheduler-exists? sched id2))))
     )
+
+  (let ()
+    (test* "scheduler-terminate!" '(a)
+           (begin
+             (scheduler-schedule! sched (^[] (push! a 'a)) 0 1)
+             (scheduler-terminate! sched)
+             a))
+    (test* "don't accept new task" (test-error <error> #/queue is closed/)
+           (scheduler-schedule! sched (^[] (set! b 'b)) 0))
+    (test* "see if tasks are really stopped" '((a) #f)
+           (list a b)))
   )
 
 (test-end)
