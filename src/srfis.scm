@@ -1387,8 +1387,10 @@ Define higher-order lambda
 Gauche's built-in @code{define} (both R7RS-compatible one and
 extended one) supports this feature.
 If you import srfi-219 explicitly, it imports @code{null#define}.
+@xref{Define higher-order lambda}, for the details.
 
-lambdaの高階定義
+高階lambdaの定義
 Gauche組み込みの@code{define}は (R7RS互換のものも拡張のものも)
 この機能をサポートしています。
 陽にsrfi-219をインポートした場合は、@code{null#define}がインポートされます。
+詳しくは@ref{Define higher-order lambda}参照。

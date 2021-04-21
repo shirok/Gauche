@@ -68,6 +68,7 @@ srfi N is supported by Gauche.)
 * Maybe and Either optional container types::  srfi-189
 * Port positioning::            srfi-192
 * Command line::                srfi-193
+* Define higher-order lambda::  srfi-219
 @end menu
 
 
@@ -10079,7 +10080,7 @@ Gaucheでは、これは
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Command line,  , Port positioning, Library modules - SRFIs
+@node Command line, Define higher-order lambda, Port positioning, Library modules - SRFIs
 @section @code{srfi-193} - Command line
 @c NODE コマンドライン,  @code{srfi-193} - コマンドライン
 
@@ -10174,6 +10175,40 @@ script location.
 これは例えば、補助ファイルをスクリプトからの相対位置で探すのに便利です。
 @c COMMON
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Define higher-order lambda,  , Command line, Library modules - SRFIs
+@section @code{srfi-219} - Define higher-order lambda
+@c NODE 高階lambdaの定義,  @code{srfi-219} - 高階lambdaの定義
+
+@deftp {Module} srfi-193
+@mdindex srfi-193
+This srfi enhances @code{define} form to allow defining
+function-returning-function compactly.  It works as follows:
+
+@example
+(define ((f a b) c d) ...)
+ @equiv{} (define (f a b) (lambda (c d) ...))
+ @equiv{} (define f (lambda (a b) (lambda (c d) ...)))
+
+(define (((f a) b) c) ...)
+ @equiv{} (define ((f a) b) (lambda (c) ...))
+ @equiv{} (define (f a) (lambda (b) (lambda (c) ...)))
+ @equiv{} (define f (lambda (a) (lambda (b) (lambda (c) ...))))
+@end example
+
+This feature has been traditionally supported in many
+implementations, including Gauche.  So you can use this feature
+without using @code{srfi-193}.   This module is provided for
+the portable code.
+
+Note: Gauche has two @code{define}s: A ``vanilla'' @code{define} that
+works as defined in R7RS, and an ``extended'' @code{define} that
+supports extended lambda arguments.  If you import @code{srfi-193},
+it imports the former.
+@end deftp
+
+
 
 @c Local variables:
 @c mode: texinfo
