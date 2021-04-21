@@ -1378,3 +1378,17 @@ Built-in.  @xref{Boxes}.
 
 多値ボックス
 組み込みです。@ref{Boxes}参照。
+
+
+srfi-219
+(define)
+
+Define higher-order lambda
+Gauche's built-in @code{define} (both R7RS-compatible one and
+extended one) supports this feature.
+If you import srfi-219 explicitly, it imports @code{null#define}.
+
+lambdaの高階定義
+Gauche組み込みの@code{define}は (R7RS互換のものも拡張のものも)
+この機能をサポートしています。
+陽にsrfi-219をインポートした場合は、@code{null#define}がインポートされます。

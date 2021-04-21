@@ -1,5 +1,7 @@
 2021-04-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-219.scm: Support srfi-219.
+
 	* ext/threads/threads.scm (<semaphore>. <latch>): Added.
 
 2021-04-18  Shiro Kawai  <shiro@acm.org>
