@@ -532,6 +532,33 @@
              (list d1 d2 (atom-ref d 0))))))
 
 ;;---------------------------------------------------------------------
+(test-section "latch")
+
+(test* "latch" #t (latch? (make-latch 2)))
+
+(test* "latch operation" '(0 0 5 6)
+       (let* ([d (atom 0)]
+              [l (make-latch 2)]
+              [l2 (make-latch 5)]
+              [ts (map (^i (make-thread (^[]
+                                           (latch-await l)
+                                           (atomic-update! d (cut + <> 1))
+                                           (latch-dec! l2))))
+                       (iota 6))])
+         (for-each thread-start! (cdr ts))
+         (sys-nanosleep 1000)
+         (let ([d1 (atom-ref d 0)])
+           (latch-dec! l)
+           (sys-nanosleep 1000)
+           (let ([d2 (atom-ref d 0)])
+             (latch-dec! l)
+             (latch-await l2)
+             (let ([d3 (atom-ref d 0)])
+               (thread-start! (car ts))
+               (for-each thread-join! ts)
+               (list d1 d2 d3 (atom-ref d 0)))))))
+
+;;---------------------------------------------------------------------
 (test-section "threads and promise")
 
 (use scheme.list)

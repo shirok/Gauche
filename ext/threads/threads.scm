@@ -56,6 +56,7 @@
           atom atom? atom-ref atomic atomic-update!
 
           make-semaphore semaphore? semaphore-acquire! semaphore-release!
+          make-latch latch? latch-dec! latch-await
           ))
 (select-module gauche.threads)
 
@@ -317,8 +318,7 @@
     (format port " ~s>" name)
     (format port ">")))
 
-(define (semaphore-acquire! sem :optional (timeout #f)
-                                          (timeout-val #f))
+(define (semaphore-acquire! sem :optional (timeout #f) (timeout-val #f))
   (assume-type sem <semaphore>)
   (let loop ()
     (mutex-lock! (~ sem'mutex))
@@ -326,12 +326,8 @@
            (dec! (~ sem'count))
            (mutex-unlock! (~ sem'mutex))
            #t]
-          [(mutex-unlock! (~ sem'mutex) (~ sem'cv) timeout)
-           ;; signaled
-           (loop)]
-          [else
-           ;; timeout
-           timeout-val])))
+          [(mutex-unlock! (~ sem'mutex) (~ sem'cv) timeout) (loop)]
+          [else timeout-val])))         ;timeout
 
 ;; We allow to release more than one tokens at once.
 ;; 'all means all
@@ -345,3 +341,44 @@
       (condition-variable-signal! (~ sem'cv))
       (condition-variable-broadcast! (~ sem'cv))))
   (mutex-unlock! (~ sem'mutex)))
+
+;;===============================================================
+;; Latch
+;;
+
+(define-record-type <latch> %make-latch latch?
+  name                                  ; for information only
+  (count)
+  mutex
+  cv)
+
+(define (make-latch initial-count :optional (name #f))
+  (%make-latch name initial-count (make-mutex) (make-condition-variable)))
+
+(define-method write-object ((l <latch>) port)
+  (format port "#<latch ~d" (~ l'count))
+  (if-let1 name (~ l'name)
+    (format port " ~s>" name)
+    (format port ">")))
+
+(define (latch-dec! latch :optional (n 1))
+  (assume-type latch <latch>)
+  (assume (exact-integer? n))
+  (mutex-lock! (~ latch'mutex))
+  (when (> (~ latch'count) 0)
+    (dec! (~ latch'count) n)
+    (when (<= (~ latch'count) 0)
+      (condition-variable-broadcast! (~ latch'cv))))
+  (let1 n (~ latch'count)
+    (mutex-unlock! (~ latch'mutex))
+    n))
+
+(define (latch-await latch :optional (timeout #f) (timeout-val #f))
+  (assume-type latch <latch>)
+  (let loop ()
+    (mutex-lock! (~ latch'mutex))
+    (cond [(<= (~ latch'count) 0)
+           (mutex-unlock! (~ latch'mutex))
+           #t]
+          [(mutex-unlock! (~ latch'mutex) (~ latch'cv) timeout) (loop)]
+          [else timeout-val])))         ;timeout

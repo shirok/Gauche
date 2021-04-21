@@ -1,6 +1,6 @@
 2021-04-20  Shiro Kawai  <shiro@acm.org>
 
-	* ext/threads/threads.scm (<semaphore>): Added semaphore.
+	* ext/threads/threads.scm (<semaphore>. <latch>): Added.
 
 2021-04-18  Shiro Kawai  <shiro@acm.org>
 
