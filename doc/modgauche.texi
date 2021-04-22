@@ -1384,17 +1384,19 @@ in the current unit.
 @c COMMON
 @item
 @c EN
-Call @emph{emit} method on the unit, which generates a C file
+Call @emph{emit} method (@code{cgen-emit-c}, @code{cgen-emit-h})
+on the unit, which generates a C file
 and optionally a header file.
 @c JP
-unitに対して@emph{emit}メソッドを呼ぶ。これでCファイルと、
-必要に応じてヘッダファイルが生成される。
+unitに対して@emph{emit}メソッド(@code{cgen-emit-c}、@code{cgen-emit-h})
+を呼ぶ。これでCファイルと、必要に応じてヘッダファイルが生成される。
 @c COMMON
 @end enumerate
 
 @deffn {Generic Function} cgen-emit-c cgen-unit
 @deffnx {Generic Function} cgen-emit-h cgen-unit
 @c MOD gauche.cgen
+@c EN
 Write the accumulated code fragments in @var{cgen-unit} to a
 C source file and C header file.  The name of the files are
 determined by calling @code{cgen-unit-c-file} and @code{cgen-unit-h-file},
@@ -1402,62 +1404,126 @@ respectively.  If the files already exist, its content is overwritten;
 you can't gradually write to the files.
 So, usually these procedures are called at the last step of the code
 generation.
+@c JP
+@var{cgen-unit}に蓄積されたコード片を、それぞれCソースファイルとCヘッダファイルに
+書き出します。ファイルの名前はそれぞれ@code{cgen-unit-c-file}と
+@code{cgen-unit-h-file}が返す値になります。
+ファイルが既に存在する場合、それは上書きされます
+(コードを追加してゆくようなことはできません)。
+したがって、これらはコード生成の最後のステップで呼ばれるのが普通です。
+@c COMMON
 
+@c EN
 We'll explain the details of how each file is organized under
 ``Filling the content'' section below.
+@c JP
+各ファイルがどう構成されるかは、下の「内容を埋めてゆく」の項を参照してください。
+@c COMMON
 @end deffn
 
 @deffn {Generic Function} cgen-unit-c-file cgen-unit
 @deffnx {Generic Function} cgen-unit-h-file cgen-unit
 @c MOD gauche.cgen
+@c EN
 Returns a string that names C source and header file for
 @var{cgen-unit}, respectively.  The default method first
 looks at @code{c-file} or @code{h-file} slot of the
 @var{cgen-unit}, and if it is @code{#f}, use the value of @code{name}
 slot and appends an extension @code{.c} or @code{.h}.
+@c JP
+@var{cgen-unit}が扱うCソースファイルおよびヘッダファイルの名前を返します。
+デフォルトメソッドは、まず@var{cgen-unit}の@code{c-file}または@code{h-file}スロット
+の値を見て、@code{#f}でなければそれを返し、
+@code{#f}であれば@code{name}スロットの値に
+@code{.c}または@code{.h}の拡張子をつけたものを返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic Function} cgen-unit-init-name cgen-unit
 @c MOD gauche.cgen
+@c EN
 Returns a string that names the initialization function
 generated to C.  It is used to create the default
 @code{init-prologue} value.
+@c JP
+Cで生成される初期化関数の名前を返します。この名前は@code{init-prologue}の
+デフォルト値の中で使われます。
+@c COMMON
 @end deffn
 
+@c EN
 @subsubheading Filling the content
+@c JP
+@subsubheading 中身を埋めてゆく
+@c COMMON
 
+@c EN
 There are four parts to which you can add C code
 fragment.  Within each part, code fragments are rendered in the
 same order as added.
+@c JP
+Cコード片を追加できるパートは4つあります。それぞれのパートの中で、
+コード片は追加された順に出力されます。
+@c COMMON
 
 @table @asis
 @item extern
+@c EN
 This part is put into the header file, if exists.
+@c JP
+このパートは、ヘッダファイルに出力されます。
+@c COMMON
 @item decl
+@c EN
 Placed at the beginning of the C source, after the standard
 prologue.
+@c JP
+Cソースファイル中の先頭部分、標準の先頭要素が出力されたあとに出力されます。
+@c COMMON
 @item body
+@c EN
 Placed in the C source, following the 'decl' part.
+@c JP
+Cソースファイル中の、declパートの後に出力されます。
+@c COMMON
 @item init
+@c EN
 Placed inside the initialization function, which appears at
 the end of the C source.
+@c JP
+Cソースファイルの末尾に出力される、初期化関数の中に出力されます。
+@c COMMON
 @end table
 
+@c EN
 The following procedures are the simple way to put a source
 code fragments in an appropriate part:
+@c JP
+それぞれのパートにコードを追加するための手続きは次のとおりです。
+@c COMMON
 
 @defun cgen-extern code @dots{}
 @defunx cgen-decl code @dots{}
 @defunx cgen-body code @dots{}
 @defunx cgen-init code @dots{}
 @c MOD gauche.cgen
+@c EN
 Put code fragments @var{code} @dots{} to the appropriate parts.
 Each fragment must be a string.
+@c JP
+コード片@var{code} @dots{}を各パートに追加します。
+各コード片は文字列でなければなりません。
+@c COMMON
 @end defun
 
+@c EN
 This is a minimal example to show the typical usage.
 After running this code you'll get @code{my-cfile.c} and
 @code{my-cfile.h} in the current directory.
+@c JP
+下に、典型的な使い方の単純な例を示します。このコードを走らせると、
+カレントディレクトリに@code{my-cfile.c}と@code{my-cfile.h}ができます。
+@c COMMON
 
 @example
 (use gauche.cgen)
@@ -1475,8 +1541,13 @@ After running this code you'll get @code{my-cfile.c} and
 (cgen-emit-h *unit*)
 @end example
 
+@c EN
 These are handy escaping procedures; they are useful even
 if you don't use other parts of the @code{cgen} modules.
+@c JP
+次に示す手続きは、Cコードとして安全になるように文字列をエスケープします。
+他の@code{cgen}モジュールを使わずにCコードを生成する際に便利です。
+@c COMMON
 
 @defun cgen-safe-name string
 @defunx cgen-safe-name-friendly string
