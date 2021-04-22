@@ -311,4 +311,8 @@
            (list a b)))
   )
 
+;; srfi-120 is a wrapper of control.scheduler
+(use srfi-120)
+(test-module 'srfi-120)
+
 (test-end)

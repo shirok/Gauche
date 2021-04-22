@@ -1,3 +1,7 @@
+2021-04-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-120.scm: Added.
+
 2021-04-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-219.scm: Support srfi-219.

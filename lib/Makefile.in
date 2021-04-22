@@ -53,7 +53,7 @@ SCMFILES = \
        srfi-99.scm srfi-101.scm srfi-106.scm \
        srfi-112.scm srfi-113.scm srfi-114.scm \
        srfi-115.scm srfi-116.scm srfi-117.scm srfi-118.scm \
-       srfi-121.scm srfi-124.scm srfi-125.scm \
+       srfi-120.scm srfi-121.scm srfi-124.scm srfi-125.scm \
        srfi-127.scm srfi-128.scm srfi-129.scm \
        srfi-130.scm srfi-131.scm srfi-132.scm srfi-133.scm srfi-134.scm \
        srfi-135.scm \

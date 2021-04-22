@@ -1938,6 +1938,9 @@
   )
 
 ;;-----------------------------------------------------------------------
+;; srfi-120 depends on control.scheduler, so tested in control.scm
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-121")
 (use srfi-121) ; this is in fact gauche.generator
 (use srfi-11)
