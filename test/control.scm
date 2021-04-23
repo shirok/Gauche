@@ -311,8 +311,27 @@
            (list a b)))
   )
 
+(let ()
+  ;; test cancellation
+  (define sched (make <scheduler>))
+  (scheduler-schedule! sched (^[] (error "oops")) 0)
+  (sys-nanosleep 1000)
+  (test* "scheduler-terminate! on error" (test-error <error> #/oops/)
+         (scheduler-terminate! sched))
+  )
+
 ;; srfi-120 is a wrapper of control.scheduler
 (use srfi-120)
 (test-module 'srfi-120)
+
+(define-module srfi-120-test
+  (use srfi-64)
+  (use srfi-18)
+  (use srfi-19)
+  (use srfi-120)
+  (define-syntax import (syntax-rules () ([_ . x] '())))
+  (define-syntax cond-expand (syntax-rules () ([_ . x] '())))
+  (define (error-object? x) (<error> x))
+  (include "include/srfi-120-tests"))
 
 (test-end)

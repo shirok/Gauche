@@ -45,16 +45,21 @@
 (define (make-timer :optional (error-handler #f))
   (make <scheduler> :error-handler error-handler))
 
+(define (%when when)
+  (cond [(integer? when) (/ when 1e3)] ;ms
+        [(is-a? when <time>) when]
+        [else (error "integer (ms) or <time> required, but got:" when)]))
+
 (define (timer? obj) (is-a? obj <scheduler>))
 
 (define (timer-cancel! timer)
   (scheduler-terminate! timer))
 
 (define (timer-schedule! timer thunk when :optional (period 0))
-  (scheduler-schedule! timer thunk when period))
+  (scheduler-schedule! timer thunk (%when when) period))
 
 (define (timer-reschedule! timer task-id when :optional (period 0))
-  (scheduler-reschedule! timer task-id when period))
+  (scheduler-reschedule! timer task-id (%when when) period))
 
 (define (timer-task-remove! timer task-id)
   (scheduler-remove! timer task-id))
