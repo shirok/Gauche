@@ -142,15 +142,15 @@
 
 (define (absolute-time when)
   (cond [(real? when)
-         (receive (dsec dfrac) (modf when)
+         (receive (dfrac dsec) (modf when)
            (let* ([now (current-time)]
                   [sec  (+ (time-second now) (exact dsec))]
                   [nsec (+ (time-nanosecond now)
-                           (round->exact (* dfrac 10e9)))])
+                           (round->exact (* dfrac 1e9)))])
              (receive (sec nsec)
-                 (if (>= nsec #e10e9)
-                   (values (+ sec (exact (quotient nsec #e10e9)))
-                           (modulo nsec #e10e9))
+                 (if (>= nsec #e1e9)
+                   (values (+ sec (exact (quotient nsec #e1e9)))
+                           (modulo nsec #e1e9))
                    (values sec nsec))
                (make-time time-utc nsec sec))))]
         [(time? when)
@@ -175,14 +175,15 @@
                                       :optional (interval #f))
   ($ request-response s
      (^[]
-       (if-let1 task (dict-get (~ s'task-queue) task-id interval)
+       (if-let1 task (dict-get (~ s'task-queue) task-id #f)
          (begin
            (dict-delete! (~ s'task-queue) task-id)
            (set! (~ task'time) (absolute-time when))
            (set! (~ task'interval) 0)
            (dict-put! (~ s'task-queue) task-id task)
            task-id)
-         (condition (<error> (message (format "No task with id:" task-id))))))))
+         (condition
+          (<error> (message (format "No task with id: ~s" task-id))))))))
 
 (define-method scheduler-remove! ((s <scheduler>) task-id)
   ($ request-response s
