@@ -99,16 +99,22 @@
 
 ;; Scheduler thread.
 ;; Each scheduler runs an event processing loop with this thread.
+;; When a task throws an error and not handled by error-handler, we
+;; still keep running thread but no longer runs ready tasks.
 (define (scheduler-thread-proc s)
+  (define (cancel-by-error e)
+    (set! (~ s'exception) e))
+  (define end? #f)
   (^[]
-    (guard (e [(eq? e 'end) #t]
-              [else
-               (if-let1 eh (~ s'error-handler)
-                 (guard (e [else (set! (~ s'exception) e)])
-                   (eh e))
-                 (set! (~ s'exception) e))])
-      (do () (#f)
-        (run-ready-tasks! (~ s'task-queue))
+    (do () (end?)
+      (guard (e [(eq? e 'end) (set! end? #t)]
+                [else
+                 (if-let1 eh (~ s'error-handler)
+                   (guard (e [else (cancel-by-error e)])
+                     (eh e))
+                   (cancel-by-error e))])
+        (unless (slot-bound? s 'exception)
+          (run-ready-tasks! (~ s'task-queue)))
         (and-let1 req (dequeue/wait! (~ s'request-queue)
                                      (next-check-time (~ s'task-queue)))
           (job-run! req))))))
@@ -172,7 +178,7 @@
        (if-let1 task (dict-get (~ s'task-queue) task-id interval)
          (begin
            (dict-delete! (~ s'task-queue) task-id)
-           (set! (~ task'when) (absolute-time when))
+           (set! (~ task'time) (absolute-time when))
            (set! (~ task'interval) 0)
            (dict-put! (~ s'task-queue) task-id task)
            task-id)
@@ -188,4 +194,6 @@
 
 (define-method scheduler-terminate! ((s <scheduler>))
   ($ request-response s (^[] (raise 'end)) #t)
-  (undefined))
+  (if (slot-bound? s 'exception)
+    (raise (~ s'exception))
+    (undefined)))
