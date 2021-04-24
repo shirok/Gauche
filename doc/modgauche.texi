@@ -21264,38 +21264,77 @@ if given, or raises @code{<join-timeout-exception>}.
 @c EN
 Mutexes and condition variables are the low-level synchronization devices.
 Defined in srfi-18 and srfi-21, they are portable across Scheme implementations
-that supports one of those srfis.  However, in most cases you want to
+that supports one of those srfis.
+(@xref{Mutex}, and @pxref{Condition variable}, for the details.)
+
+However, in most cases you want to
 use following higher-level synchronization utilities:
+@c JP
+mutexと条件変数が低レベルの同期デバイスとして提供されます。
+これらはsrfi-18とsrfi-21で定義されているので、サポートしているScheme実装間では
+ポータブルです。
+(@ref{Mutex}、@ref{Condition variable}参照)。
+
+しかし多くの場合、次のような高レベルの同期ユーティリティを使った方が良いです。
+@c COMMON
 
 @table @asis
+@c EN
 @item Atoms
 An atom is a wrapper of arbitrary Scheme object, and allows synchronized
-access to it somewhat like Java's @code{synchronized} blocks.  Atoms are
-explained in this section.
+access to it somewhat like Java's @code{synchronized} blocks.
+@c JP
+@item アトム
+アトムは任意のSchemeオブジェクトをラップして、Javaの@code{synchronized}ブロックに
+似た形で同期アクセスを提供します。
+@c COMMON
+@c EN
+@item Semaphores
+A traditional synchronization primitive to share fixed number of resources.
+@c JP
+@item セマフォ
+決まった数のリソースの利用を振り分けるのに使う、定番の同期プリミティブです。
+@c COMMON
+@c EN
+@item Latch
+Holds thread(s) until a set of operations is completed by
+other thread(s).
+@c JP
+@item ラッチ
+いくつかの操作が完了するまで、他のスレッドを待たせる同期プリミティブです。
+@c COMMON
+@c EN
+@item Barrier
+Wait until the preset number of thread reaches at the point.
+@c JP
+@item バリア
+指定した個数のスレッドが指定ポイントに到達するまで全員で待ち合わせる同期プリミティブです。
+@c COMMON
+@c EN
 @item MT-Queues
 Thread-safe queues (@code{<mtqueue>}) are provided in @code{data.queue} module
 (@pxref{Queue}), which works as a synchronized channel and
 suitable to implement producer-consumer pattern.
-@end table
 @c JP
-mutexと条件変数が低レベルの同期デバイスとして提供されます。
-これらはsrfi-18とsrfi-21で定義されているので、サポートしているScheme実装間では
-ポータブルです。しかし多くの場合、次のような高レベルの同期ユーティリティを使った方が
-良いです。
-
-@table @asis
-@item アトム
-アトムは任意のSchemeオブジェクトをラップして、Javaの@code{synchronized}ブロックに
-似た形で同期アクセスを提供します。アトムについては本節で説明します。
 @item MT-Queue
 スレッドセーフなキュー(@code{<mtqueue>})が@code{data.queue}モジュールで
 提供されます(@ref{Queue}参照)。これは同期チャネルとして動作し、
 生産者-消費者パターンを実装するのに適しています。
-@end table
 @c COMMON
+@end table
 
+@menu
+* Mutex::
+* Condition variable::
+* Atom::
+* Semaphore::
+* Latch::
+* Barrier::
+@end menu
 
-@subsubheading Mutex
+@node Mutex, Condition variable, Synchronization primitives, Synchronization primitives
+@subsubsection Mutex
+@c NODE Mutex
 
 @deftp {Builtin Class} <mutex>
 @clindex mutex
@@ -21625,11 +21664,9 @@ follows.
 @end example
 @end defun
 
-@c EN
-@subsubheading Condition variable
-@c JP
-@subsubheading 条件変数
-@c COMMON
+@node Condition variable, Atom, Mutex, Synchronization primitives
+@subsubsection Condition variable
+@c NODE 条件変数
 
 @deftp {Builtin Class} <condition-variable>
 @clindex condition-variable
@@ -21775,11 +21812,9 @@ Unblocks all the threads waiting on @var{cv}.
 @c COMMON
 @end defun
 
-@c EN
-@subsubheading Atom
-@c JP
-@subsubheading アトム
-@c COMMON
+@node Atom, Semaphore, Condition variable, Synchronization primitives
+@subsubsection Atom
+@c NODE アトム
 
 @c EN
 An atom is a convenient wrapper to make operations on a
@@ -21993,6 +22028,88 @@ variable number of arguments.
 @code{string}/@code{make-string}などの慣習に従っています。
 つまり、@code{make-}のない手続きは、各要素を可変長引数の形で取ります。
 @c COMMON
+
+@node Semaphore, Latch, Atom, Synchronization primitives
+@subsubsection Semaphore
+@c NODE セマフォ
+
+@deftp {Builtin Class} <semaphore>
+@clindex semaphore
+@c MOD gauche.threads
+@end deftp
+
+@defun make-semaphore :optional init-value name
+@c MOD gauche.threads
+@end defun
+
+@defun semaphore? obj
+@c MOD gauche.threads
+@end defun
+
+@defun semaphore-acquire! sem :optional timeout timeout-val
+@c MOD gauche.threads
+@end defun
+
+@defun semaphore-release! sem :optional count
+@c MOD gauche.threads
+@end defun
+
+
+@node Latch, Barrier, Semaphore, Synchronization primitives
+@subsubsection Latch
+@c NODE ラッチ
+
+@deftp {Builtin Class} <latch>
+@clindex latch
+@c MOD gauche.threads
+@end deftp
+
+@defun make-latch initial-count :optional name
+@c MOD gauche.threads
+@end defun
+
+@defun latch? obj
+@c MOD gauche.threads
+@end defun
+
+@defun latch-dec! latch :optional n
+@c MOD gauche.threads
+@end defun
+
+@defun latch-await latch :optional timeout timeout-val
+@c MOD gauche.threads
+@end defun
+
+
+@node Barrier,  , Latch, Synchronization primitives
+@subsubsection Barrier
+@c NODE バリア
+
+@deftp {Builtin Class} <barrier>
+@clindex barrier
+@c MOD gauche.threads
+@end deftp
+
+@defun make-barrier threshold :optional action name
+@c MOD gauche.threads
+@end defun
+
+@defun barrier? obj
+@c MOD gauche.threads
+@end defun
+
+@defun barrier-await barrier :optional timeout timeout-val
+@c MOD gauche.threads
+@end defun
+
+@defun barrier-broken? barrier
+@c MOD gauche.threads
+@end defun
+
+@defun barrier-reset! barrier
+@c MOD gauche.threads
+@end defun
+
 
 @node Thread exceptions,  , Synchronization primitives, Threads
 @subsection Thread exceptions
