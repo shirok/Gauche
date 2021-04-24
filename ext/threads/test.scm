@@ -559,6 +559,47 @@
                (list d1 d2 d3 (atom-ref d 0)))))))
 
 ;;---------------------------------------------------------------------
+(test-section "barrier")
+
+(test* "barrier" #t (barrier? (make-barrier 3)))
+
+(let* ([pre (atom 0)]
+       [post (atom 0)]
+       [b (make-barrier 3)]
+       [l0 (make-latch 2)]
+       [l1 (make-latch 3)]
+       [ts (map (^i (make-thread (^[]
+                                   (atomic-update! pre (cut + <> 1))
+                                   (latch-dec! l0)
+                                   (barrier-await b)
+                                   (atomic-update! post (cut + <> 1))
+                                   (latch-dec! l1))))
+                (iota 3))])
+  (for-each thread-start! (cdr ts))
+  (latch-await l0)
+  (test* "simple barrier pre" '(2 0)
+         (list (atom-ref pre 0) (atom-ref post 0)))
+  (thread-start! (car ts))
+  (latch-await l1)
+  (test* "simple barrier post" '(3 3)
+         (list (atom-ref pre 0) (atom-ref post 0)))
+  (for-each thread-join! ts))
+
+(let* ([b (make-barrier 3)]
+       [t0 (make-thread (^[] (barrier-await b 1e-3 'timeout0)))]
+       [t1 (make-thread (^[] (barrier-await b #f 'timeout1)))])
+  (test* "barrier timeout" 'timeout0
+         (thread-join! (thread-start! t0)))
+  (test* "barrier broken?" #t
+         (barrier-broken? b))
+  (test* "broken barrier pass through" 'timeout1
+         (thread-join! (thread-start! t1)))
+  (test* "barrier reset" #f
+         (begin (barrier-reset! b)
+                (barrier-broken? b)))
+  )
+
+;;---------------------------------------------------------------------
 (test-section "threads and promise")
 
 (use scheme.list)

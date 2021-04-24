@@ -57,6 +57,7 @@
 
           make-semaphore semaphore? semaphore-acquire! semaphore-release!
           make-latch latch? latch-dec! latch-await
+          make-barrier barrier? barrier-reset! barrier-await barrier-broken?
           ))
 (select-module gauche.threads)
 
@@ -382,3 +383,74 @@
            #t]
           [(mutex-unlock! (~ latch'mutex) (~ latch'cv) timeout) (loop)]
           [else timeout-val])))         ;timeout
+
+;;===============================================================
+;; Barrier
+;;
+
+(define-record-type <barrier> %make-barrier barrier?
+  name                                  ; for information only
+  threshold
+  (count)
+  (generation)
+  (broken)
+  action
+  mutex
+  cv)
+
+(define (make-barrier threshold :optional (action #f) (name #f))
+  (%make-barrier name threshold 0 0 #f action
+                 (make-mutex) (make-condition-variable)))
+
+(define-method write-object ((b <barrier>) port)
+  (format port "#<barrier ~d/~d" (~ b'count) (~ b'threshold))
+  (if-let1 name (~ b'name)
+    (format port " ~s>" name)
+    (format port ">")))
+
+(define (barrier-reset! barrier)
+  (assume-type barrier <barrier>)
+  (mutex-lock! (~ barrier'mutex))
+  (set! (~ barrier'broken) #f)
+  (inc! (~ barrier'generation))
+  (set! (~ barrier'count) 0)
+  (condition-variable-broadcast! (~ barrier'cv))
+  (mutex-unlock! (~ barrier'mutex)))
+
+(define (barrier-broken? barrier)
+  (assume-type barrier <barrier>)
+  (~ barrier'broken))
+
+(define (barrier-await barrier :optional (timeout #f) (timeout-val #f))
+  (assume-type barrier <barrier>)
+  (let loop ((gen #f)
+             (place #f))
+    (mutex-lock! (~ barrier'mutex))
+    (unless gen                         ;first time
+      (inc! (~ barrier'count)))
+    (let ([gen (or gen (~ barrier'generation))]
+          [place (or place (- (~ barrier'threshold) (~ barrier'count)))]
+          [action-exception #f])
+      (cond [(~ barrier'broken)         ;already broken
+             (mutex-unlock! (~ barrier'mutex))
+             timeout-val]
+            [(< gen (~ barrier'generation))
+             (mutex-unlock! (~ barrier'mutex))
+             place]
+            [(= place 0) ;I'm the last
+             (set! (~ barrier'count) 0)
+             (inc! (~ barrier'generation))
+             (when (~ barrier'action)
+               (guard (e [else (set! (~ barrier'broken) #t)
+                               (set! action-exception e)])
+                 ((~ barrier'action))))
+             (condition-variable-broadcast! (~ barrier'cv))
+             (mutex-unlock! (~ barrier'mutex))
+             (when action-exception
+               (raise action-exception))
+             place]
+            [(mutex-unlock! (~ barrier'mutex) (~ barrier'cv) timeout)
+             (loop gen place)]
+            [else                       ;timeout -> broken
+             (set! (~ barrier'broken) #t)
+             timeout-val]))))

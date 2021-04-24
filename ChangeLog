@@ -1,5 +1,7 @@
 2021-04-23  Shiro Kawai  <shiro@acm.org>
 
+	* ext/threads/threads.scm (<barrier>): Added.
+
 	* lib/gauche/vm/debugger.scm (debug-funcall-pre): Attach thread id
 	  in funcall debug print as well.
 
