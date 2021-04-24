@@ -438,12 +438,18 @@
              (mutex-unlock! (~ barrier'mutex))
              place]
             [(= place 0) ;I'm the last
-             (set! (~ barrier'count) 0)
-             (inc! (~ barrier'generation))
              (when (~ barrier'action)
+               ;; We run the action without holding the lock.  If there're more
+               ;; threads than supposed and came after this, it gets the
+               ;; same generation and negative place (so it won't run the
+               ;; action) and wait on the same cv.
+               (mutex-unlock! (~ barrier'mutex))
                (guard (e [else (set! (~ barrier'broken) #t)
                                (set! action-exception e)])
-                 ((~ barrier'action))))
+                 ((~ barrier'action)))
+               (mutex-lock! (~ barrier'mutex)))
+             (set! (~ barrier'count) 0)
+             (inc! (~ barrier'generation))
              (condition-variable-broadcast! (~ barrier'cv))
              (mutex-unlock! (~ barrier'mutex))
              (when action-exception
@@ -452,5 +458,8 @@
             [(mutex-unlock! (~ barrier'mutex) (~ barrier'cv) timeout)
              (loop gen place)]
             [else                       ;timeout -> broken
+             (mutex-lock! (~ barrier'mutex))
              (set! (~ barrier'broken) #t)
+             (condition-variable-broadcast! (~ barrier'cv))
+             (mutex-unlock! (~ barrier'mutex))
              timeout-val]))))

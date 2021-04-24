@@ -585,19 +585,59 @@
          (list (atom-ref pre 0) (atom-ref post 0)))
   (for-each thread-join! ts))
 
-(let* ([b (make-barrier 3)]
-       [t0 (make-thread (^[] (barrier-await b 1e-3 'timeout0)))]
-       [t1 (make-thread (^[] (barrier-await b #f 'timeout1)))])
-  (test* "barrier timeout" 'timeout0
-         (thread-join! (thread-start! t0)))
+(let* ([b (make-barrier 4)]
+       [t0 (make-thread (^[] (barrier-await b #f 'timeout0)))]
+       [t1 (make-thread (^[] (barrier-await b 1e-3 'timeout1)))]
+       [t2 (make-thread (^[] (barrier-await b #f 'timeout2)))])
+  (thread-start! t0)
+  (test* "barrier broken?" #f
+         (barrier-broken? b))
+  (test* "barrier timeout" 'timeout1
+         (thread-join! (thread-start! t1)))
   (test* "barrier broken?" #t
          (barrier-broken? b))
-  (test* "broken barrier pass through" 'timeout1
-         (thread-join! (thread-start! t1)))
+  (test* "broken barrier pass through" 'timeout2
+         (thread-join! (thread-start! t2)))
   (test* "barrier reset" #f
          (begin (barrier-reset! b)
                 (barrier-broken? b)))
   )
+
+(let* ([b (make-barrier 3)]
+       [x (atom '())]
+       [ts (map (^t (make-thread (^[]
+                                   (dotimes [i 3]
+                                     (sys-nanosleep (* t 1000.0))
+                                     (atomic-update! x (cut cons i <>))
+                                     (barrier-await b)))))
+                (iota 3))])
+  (test* "barrier cycle" '(2 2 2 1 1 1 0 0 0)
+         (begin
+           (for-each thread-start! ts)
+           (for-each thread-join! ts)
+           (atom-ref x))))
+
+(let* ([x (atom 0)]
+       [b (make-barrier 3 (^[] (atomic-update! x (cut + <> 1))))]
+       [ts (map (^t (make-thread (^[]
+                                   (sys-nanosleep (* t 100.0))
+                                   (barrier-await b))))
+                (iota 3))])
+  (test* "barrier action once" 1
+         (begin (for-each thread-start! ts)
+                (for-each thread-join! ts)
+                (atom-ref x))))
+
+(let* ([b (make-barrier 3 (^[] (raise 'oops)))]
+       [ts (map (^t (make-thread (^[]
+                                   (sys-nanosleep (* t 100.0))
+                                   (guard (e [else e])
+                                     (barrier-await b #f t)))))
+                (iota 3))])
+  (for-each thread-start! ts)
+  (test* "barrier action once" '(#t 0 1 oops)
+         (let1 rs (map thread-join! ts)
+           (cons (barrier-broken? b) rs))))
 
 ;;---------------------------------------------------------------------
 (test-section "threads and promise")
