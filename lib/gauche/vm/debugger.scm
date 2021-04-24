@@ -112,13 +112,21 @@
 ;; we may be able to use them.
 (define (debug-funcall-pre form procname argforms args)
   (define p (current-trace-port))
-  (define w (- (debug-print-width) (string-length "calling `' with args:")))
-  (define argvalw (- (debug-print-width) (string-length "#?,- : ")))
+  (define thr-prefix (case (~ (current-thread)'vmid)
+                       [(0) ""]
+                       [else => (cut format "[~a]" <>)]))
+  (define w (- (debug-print-width)
+               (string-length "calling `' with args:")
+               (string-length thr-prefix)))
+  (define argvalw (- (debug-print-width)
+                     (string-length "#?,- : ")
+                     (string-length thr-prefix)))
   (cond [(debug-source-info form)
-         => (^[info] (format p "#?,~s:~a:calling `~,,,,v:s' with args:\n"
-                             (car info) (cadr info) w procname))]
+         => (^[info] (format p "#?,~a~s:~a:calling `~,,,,v:s' with args:\n"
+                             thr-prefix (car info) (cadr info) w procname))]
         [else
-         (format p "#?,calling `~,,,,v:s' with args:\n" w procname)])
+         (format p "#?,~acalling `~,,,,v:s' with args:\n"
+                 thr-prefix w procname)])
   (dolist [arg args]
-    (format p "#?,> ~,,,,v:s\n" w arg))
+    (format p "#?,>~a ~,,,,v:s\n" thr-prefix w arg))
   (flush p))
