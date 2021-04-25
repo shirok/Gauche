@@ -247,7 +247,12 @@
          [class     (gensym)]
          [slot      (gensym)])
     (quasirename %id
-      `(define ,name
+      ;; We expand this into define-inline, to make the binding inlinable.
+      ;; It allows the compiler to use the information of the class
+      ;; reference.  Note that class redefinition does override the
+      ;; inlinable binding (which should be rare, though).  We handle
+      ;; redefinition of class specially in gloc.c.
+      `(define-inline ,name
          (rlet1 ,class (make ,metaclass
                          ':name ',name ':supers (list ,@supers)
                          ':slots (list ,@slot-defs)

@@ -1088,9 +1088,10 @@ void Scm_ReplaceClassBinding(ScmClass *klass, ScmClass *newklass)
     ScmObj cp;
     SCM_FOR_EACH(cp, klass->modules) {
         if (!SCM_MODULEP(SCM_CAR(cp))) continue;
-        Scm_Define(SCM_MODULE(SCM_CAR(cp)),
-                   SCM_SYMBOL(klass->name),
-                   SCM_OBJ(newklass));
+        Scm_MakeBinding(SCM_MODULE(SCM_CAR(cp)),
+                        SCM_SYMBOL(klass->name),
+                        SCM_OBJ(newklass),
+                        SCM_BINDING_INLINABLE);
     }
 }
 

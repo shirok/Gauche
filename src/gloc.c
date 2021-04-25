@@ -120,7 +120,8 @@ static int gloc_dummy_inlinable_p(ScmGloc *gloc)
  *
  * If previous gloc is constant or inlinable, it is only replacable with the
  * same kind and value.  Except that if the previous gloc is dummy inlinable,
- * and the new gloc is inlinable.
+ * and the new gloc is inlinable; or, the previous value and new value are
+ * both classes (which means it is class redefinition).
  */
 int Scm_GlocSupersedableP(ScmGloc *gloc, u_long flags, ScmObj newval)
 {
@@ -130,9 +131,12 @@ int Scm_GlocSupersedableP(ScmGloc *gloc, u_long flags, ScmObj newval)
     if (Scm_GlocInlinableP(gloc)) {
         if (gloc_dummy_inlinable_p(gloc)) {
             return (flags & SCM_BINDING_INLINABLE);
+        } else if (flags & SCM_BINDING_INLINABLE) {
+            return (Scm_EqualP(gloc->value, newval)
+                    || (SCM_ISA(gloc->value, SCM_CLASS_CLASS)
+                        && SCM_ISA(newval, SCM_CLASS_CLASS)));
         } else {
-            return ((flags & SCM_BINDING_INLINABLE)
-                    && Scm_EqualP(gloc->value, newval));
+            return FALSE;
         }
     }
     return TRUE;

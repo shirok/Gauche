@@ -1,3 +1,11 @@
+2021-04-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (%expand-define-class),
+	  src/gloc.c (Scm_GlocSupersedableP): We make class definition
+	  "inlinable" binding, to ease the compiler to do type-based
+	  work.  Class redefinition needs to alter this inlinable binding,
+	  so we specially allow such rebinding.
+
 2021-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* ext/threads/threads.scm (<barrier>): Added.
