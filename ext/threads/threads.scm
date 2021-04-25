@@ -354,6 +354,8 @@
   cv)
 
 (define (make-latch initial-count :optional (name #f))
+  (assume (and (exact-integer? initial-count)
+               (positive? initial-count)))
   (%make-latch name initial-count (make-mutex) (make-condition-variable)))
 
 (define-method write-object ((l <latch>) port)

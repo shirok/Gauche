@@ -22093,24 +22093,53 @@ call @code{semaphore-release!} even you haven't called @code{semaphore-acuqire!}
 @deftp {Builtin Class} <latch>
 @clindex latch
 @c MOD gauche.threads
+A latch is a synchornization device with a counter.
+Any number of threads can wait until the counter becomes zero.
+(As opposed to semaphores, whose internal counter affects
+number of waiting threads as well.)
+
+One simple usage is to start with initial count 1; it is sometimes
+called a ``gate''.  You can let threads wait before the gate, and
+decrement the counter, then boom!  All threads proceeds.
 @end deftp
 
 @defun make-latch initial-count :optional name
 @c MOD gauche.threads
+Creates and returns a new latch with the counter value @var{initial-count},
+which must be an exact positive integer.
+
+The optional @var{name} argument can be any Scheme object, and
+used only for debugging.  It is displayed when the latch object
+is printed.
 @end defun
 
 @defun latch? obj
 @c MOD gauche.threads
+Returns @code{#t} iff @var{obj} is a latch.
 @end defun
 
 @defun latch-dec! latch :optional n
 @c MOD gauche.threads
+Decrement the counter of @var{latch} by @var{n}.
+If @var{n} is omitted, 1 is assumed.
+Returns the updated counter value.
+
+@var{N} must be an exact integer.  Zero or negative value is allowed.
 @end defun
 
 @defun latch-await latch :optional timeout timeout-val
 @c MOD gauche.threads
-@end defun
+If the counter of @var{latch} is zero or negative, returns @code{#t}
+immeiately.  Otherwise, the calling thread is blocked until
+the counter value becomes zero or below, or timeout reaches.
+If the thread started by the counter value, @code{#t} is returned.
+If the thread started by timeout, @var{timeout-val} is returned,
+whose default is @code{#f}.
 
+The @var{timeout} argument must be either @code{#f} (no timeout),
+a @code{<time>} object (absolute point of time), or a real number
+indicates number of seconds from the time this procedure is called.
+@end defun
 
 @node Barrier,  , Latch, Synchronization primitives
 @subsubsection Barrier
