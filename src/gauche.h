@@ -969,13 +969,13 @@ extern ScmClass *Scm_ObjectCPL[];
 #define SCM__CLASS_PTR_BODY(cname)  /* none */
 #endif /*!GAUCHE_BROKEN_LINKER_WORKAROUND*/
 
-#define SCM__DEFINE_CLASS_COMMON(cname, coreSize, flag, printer, compare, serialize, allocate, cpa) \
+#define SCM__DEFINE_CLASS_COMMON(cname, coreSize, flag, printer, compare, hash, allocate, cpa) \
     ScmClass cname = {                           \
         {{ SCM_CLASS_STATIC_TAG(Scm_ClassClass), NULL }},       \
         SCM__CLASS_PTR_SLOT(cname)               \
         printer,                                 \
         compare,                                 \
-        serialize,                               \
+        hash,                                    \
         allocate,                                \
         cpa,                                     \
         0,        /*numInstanceSlots*/           \
@@ -998,15 +998,15 @@ extern ScmClass *Scm_ObjectCPL[];
     } SCM__CLASS_PTR_BODY(cname)
 
 /* Define built-in class statically -- full-featured version */
-#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, serialize, allocate, cpa) \
+#define SCM_DEFINE_BUILTIN_CLASS(cname, printer, compare, hash, allocate, cpa) \
     SCM__DEFINE_CLASS_COMMON(cname, 0,                    \
                              SCM_CLASS_BUILTIN,           \
-                             printer, compare, serialize, allocate, cpa)
+                             printer, compare, hash, allocate, cpa)
 
-#define SCM_DEFINE_BUILTIN_CLASS_FLAGS(cname, printer, compare, serialize, allocate, cpa, flags) \
+#define SCM_DEFINE_BUILTIN_CLASS_FLAGS(cname, printer, compare, hash, allocate, cpa, flags) \
     SCM__DEFINE_CLASS_COMMON(cname, 0,                                  \
                              SCM_CLASS_BUILTIN|(flags),                 \
-                             printer, compare, serialize, allocate, cpa)
+                             printer, compare, hash, allocate, cpa)
 
 /* Define built-in class statically -- simpler version */
 #define SCM_DEFINE_BUILTIN_CLASS_SIMPLE(cname, printer)         \
@@ -1019,10 +1019,10 @@ extern ScmClass *Scm_ObjectCPL[];
                              NULL, NULL, NULL, NULL, cpa)
 
 /* define a class that can be subclassed by Scheme */
-#define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, serialize, allocate, cpa) \
+#define SCM_DEFINE_BASE_CLASS(cname, ctype, printer, compare, hash, allocate, cpa) \
     SCM__DEFINE_CLASS_COMMON(cname, sizeof(ctype),        \
                              SCM_CLASS_BASE,              \
-                             printer, compare, serialize, allocate, cpa)
+                             printer, compare, hash, allocate, cpa)
 
 /*
  * A simple class and instance API to wrap C pointer.
