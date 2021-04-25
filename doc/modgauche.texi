@@ -22036,22 +22036,53 @@ variable number of arguments.
 @deftp {Builtin Class} <semaphore>
 @clindex semaphore
 @c MOD gauche.threads
+A semaphore manages ``tokens'' for a fixed number of resources.
+A thread that wants to use one of the resources requests a token
+by @code{semaphore-acquire!}, and returns the token to the pool
+by @code{semaphore-release!}.  When the thread requests a token
+but none is available, it waits until a token becomes available
+by some other thread returning one.
 @end deftp
 
 @defun make-semaphore :optional init-value name
 @c MOD gauche.threads
+Creates and returns a new semaphore, with @var{init-value} tokens
+available initially.  If @var{init-value} is omitted, 0 is assumed.
+Another optional argument @var{name} is an arbitrary Scheme object
+and only used for a debugging purpose only; it is displayed
+when a semaphore is printed.
 @end defun
 
 @defun semaphore? obj
 @c MOD gauche.threads
+Returns @code{#t} iff @var{obj} is a semaphore.
 @end defun
 
 @defun semaphore-acquire! sem :optional timeout timeout-val
 @c MOD gauche.threads
+Obtain a token from a semaphore @var{sem}.
+If a token is available, this returns @code{#t} immediately,
+decrementing the available token count of @var{sem} atomically.
+If no token is available, this waits until a token becomes
+avaialble, or @var{timeout} reaches if it is given.  If timeout
+occurs, it returns @var{timeout-val}, defaulted to @code{#f}.
+
+The value of @var{timeout} is the same as @code{mutex}; it can be
+@code{#f} (no timeout), a @code{<time>} object to specify an absolute
+point of time, or a real number to specify the minimum number of seconds
+to wait.
 @end defun
 
 @defun semaphore-release! sem :optional count
 @c MOD gauche.threads
+Return a token to a semaphore @var{sem}, by incrementing its token count,
+and running threads waiting with @code{semaphore-acquire!} atomically.
+
+The @var{count} argument specifies number of tokens to add, defaulted to 1.
+
+Actually, the ``token'' model is to make it easier to understand the
+idea of semaphore, but internally it's just a counter, so you can
+call @code{semaphore-release!} even you haven't called @code{semaphore-acuqire!}.
 @end defun
 
 
