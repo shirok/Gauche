@@ -459,7 +459,7 @@ ScmGloc *Scm_MakeBinding(ScmModule *module, ScmSymbol *symbol,
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
 
     if (existing && !Scm_GlocSupersedableP(g, flags, value)) {
-        Scm_Warn("redefining %s %S::%S",
+        Scm_Warn("redefining %s %S#%S",
                  Scm_GlocConstP(g)? "constant" : "inlinable",
                  g->module->name, g->name);
     }
