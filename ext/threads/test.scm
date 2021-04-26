@@ -521,15 +521,18 @@
                                           (atomic-update! d (cut + <> 1)))))
                        (iota 6))])
          (for-each thread-start! ts)
-         (sys-nanosleep 1000)
-         (let ([d1 (atom-ref d 0)])
-           (semaphore-release! s)
-           (sys-nanosleep 1000)
-           (let ([d2 (atom-ref d 0)])
-             (semaphore-release! s 3)
-             (sys-nanosleep 1000)
-             (for-each thread-join! ts)
-             (list d1 d2 (atom-ref d 0))))))
+         (let loop ([d1 (atom-ref d)])
+           (cond
+            [(zero? d1) (sys-nanosleep 500) (loop (atom-ref d))]
+            [else
+             (semaphore-release! s)
+             (let loop ([d2 (atom-ref d)])
+               (cond
+                [(= d1 d2) (sys-nanosleep 500) (loop (atom-ref d))]
+                [else
+                 (semaphore-release! s 3)
+                 (for-each thread-join! ts)
+                 (list d1 d2 (atom-ref d 0))]))]))))
 
 ;;---------------------------------------------------------------------
 (test-section "latch")
