@@ -635,7 +635,9 @@
                                      (barrier-await b #f t)))))
                 (iota 3))])
   (for-each thread-start! ts)
-  (test* "barrier action once" '(#t 0 1 oops)
+  (test* "barrier action once" (test-one-of '(#t 0 1 oops)
+                                            '(#t 0 oops 2)
+                                            '(#t oops 1 2))
          (let1 rs (map thread-join! ts)
            (cons (barrier-broken? b) rs))))
 
