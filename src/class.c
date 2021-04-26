@@ -60,6 +60,7 @@ static void method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void next_method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void slot_accessor_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void accessor_method_print(ScmObj, ScmPort *, ScmWriteContext*);
+static void proxy_type_print(ScmObj, ScmPort *, ScmWriteContext*);
 
 static ScmObj class_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
@@ -134,6 +135,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_AccessorMethodClass,
                          method_allocate,
                          Scm_MethodCPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, next_method_print);
+SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProxyTypeClass,  proxy_type_print);
 
 /* Builtin generic functions */
 SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
@@ -3159,6 +3161,19 @@ ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
 }
 
 /*=====================================================================
+ * Proxy type
+ */
+
+static void proxy_type_print(ScmObj obj, ScmPort *port,
+                             ScmWriteContext *ctx SCM_UNUSED)
+{
+    ScmGloc *g = SCM_PROXY_TYPE(obj)->ref;
+    ScmObj klass = SCM_GLOC_GET(g);
+    SCM_ASSERT(SCM_ISA(klass, SCM_CLASS_CLASS));
+    Scm_Printf(port, "#<<%S>>", Scm_ShortClassName(SCM_CLASS(klass)));
+}
+
+/*=====================================================================
  * Class initialization
  */
 
@@ -3489,6 +3504,7 @@ void Scm__InitClass(void)
     Scm_AccessorMethodClass.flags |= SCM_CLASS_APPLICABLE;
     BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots);
     BINIT(SCM_CLASS_FOREIGN_POINTER, "<foreign-pointer>", NULL);
+    BINIT(SCM_CLASS_PROXY_TYPE, "<proxy-type>", NULL);
 
     /* char.c */
     CINIT(SCM_CLASS_CHAR_SET,         "<char-set>");
