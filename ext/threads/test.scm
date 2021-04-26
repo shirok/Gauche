@@ -523,7 +523,7 @@
          (for-each thread-start! ts)
          (let loop ([d1 (atom-ref d)])
            (cond
-            [(zero? d1) (sys-nanosleep 500) (loop (atom-ref d))]
+            [(< d1 2) (sys-nanosleep 500) (loop (atom-ref d))]
             [else
              (semaphore-release! s)
              (let loop ([d2 (atom-ref d)])
