@@ -3173,6 +3173,18 @@ static void proxy_type_print(ScmObj obj, ScmPort *port,
     Scm_Printf(port, "#<<%S>>", Scm_ShortClassName(SCM_CLASS(klass)));
 }
 
+ScmObj Scm_MakeProxyType(ScmGloc *g)
+{
+    ScmObj klass = SCM_GLOC_GET(g);
+    if (!SCM_ISA(klass, SCM_CLASS_CLASS)) {
+        Scm_Error("location must contain a class, but it has %S", klass);
+    }
+    ScmProxyType *p = SCM_NEW(ScmProxyType);
+    SCM_SET_CLASS(p, SCM_CLASS_PROXY_TYPE);
+    p->ref = g;
+    return SCM_OBJ(p);
+}
+
 /*=====================================================================
  * Class initialization
  */

@@ -692,6 +692,7 @@ SCM_CLASS_DECL(Scm_ProxyTypeClass);
 #define SCM_CLASS_PROXY_TYPE      (&Scm_ProxyTypeClass)
 #define SCM_PROXY_TYPE(obj)       ((ScmProxyType*)(obj))
 #define SCM_PROXY_TYPE_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_PROXY_TYPE))
+SCM_EXTERN ScmObj Scm_MakeProxyType(ScmGloc *g);
 
 /* A box is to keep a reference.  Internally, it is used for mutable
    local variables.  srfi-111 defines Scheme interface. */
