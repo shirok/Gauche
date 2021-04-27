@@ -112,6 +112,7 @@ extern void Scm_Init_libsrfis(void);
 extern void Scm_Init_libstr(void);
 extern void Scm_Init_libsym(void);
 extern void Scm_Init_libsys(void);
+extern void Scm_Init_libtype(void);
 extern void Scm_Init_libvec(void);
 extern void Scm_Init_libmacbase(void);
 extern void Scm_Init_compile(void);
@@ -222,8 +223,11 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm_Init_libvec);
     CALL_INIT(Scm_Init_libmacbase);
     CALL_INIT(Scm_Init_compile);
+    /* lib* that uses er-macro-transformer must be initialized
+       after libmacro */
     CALL_INIT(Scm_Init_libmacro);
     CALL_INIT(Scm_Init_libparam);
+    CALL_INIT(Scm_Init_libtype);
     CALL_INIT(Scm_Init_libomega);
 
     CALL_INIT(Scm__InitCompaux);

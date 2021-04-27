@@ -235,6 +235,7 @@ test.record
 /src/libstr.c
 /src/libsym.c
 /src/libsys.c
+/src/libtype.c
 /src/libvec.c
 /src/makeverslink
 /src/paths_arch.c

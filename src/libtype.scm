@@ -1,7 +1,7 @@
 ;;;
-;;; typeutil.scm - type utilities.
+;;; libtype.scm - type-related stuff
 ;;;
-;;;   Copyright (c) 2020-2021  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2021  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -31,19 +31,14 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; *EXPERIMENTAL*
+(declare) ;; a dummy form to suppress generation of "sci" file
 
-;; The classes useful for type validation and other type-related operations.
-;; They're abstract types---they won't create an instance---but can be
-;; used for of-type? to check if an object satisfies the type constraints.
-
-(define-module gauche.typeutil
-  (use util.match)
-  (export define-type-constructor of-type?
-          <type-constructor-meta> <type-instance-meta>
-          <^> </> <?> <Tuple> <List> <Vector>)
-  )
+;; This module is not meant to be `use'd.   It is just to hide
+;; auxiliary procedures from the rest of the system.  The necessary
+;; bindings are injected into 'gauche' module at the initialization time.
+(define-module gauche.typeutil)
 (select-module gauche.typeutil)
+(use util.match)
 
 ;; Metaclass: <type-constructor-meta>
 ;;   Instance classes of this metaclass are used to create an abstract types.
@@ -241,9 +236,6 @@
    (max-length :init-keyword :max-length :init-value #f)))
 
 (define-method object-apply ((k <List-meta>) etype :optional (min #f) (max #f))
-  (assume-type etype <class>)
-  (assume-type min (<?> <integer>))
-  (assume-type max (<?> <integer>))
   (make <List>
     :name (make-min-max-len-type-name 'List (list etype) min max)
     :element-type etype
@@ -280,9 +272,6 @@
 
 (define-method object-apply ((k <Vector-meta>) etype
                              :optional (min #f) (max #f))
-  (assume-type etype <class>)
-  (assume-type min (<?> <integer>))
-  (assume-type max (<?> <integer>))
   (make <Vector>
     :name (make-min-max-len-type-name 'Vector (list etype) min max)
     :element-type etype
@@ -301,3 +290,14 @@
                 (cond [(= i len) #t]
                       [(of-type? (vector-ref obj i) et) (loop (+ i 1))]
                       [else #f]))))))
+
+;;;
+;;; Make exported symbol visible from outside
+;;;
+
+(define-macro (insert-symbols . syms)
+  `(begin ,@(map (^[s] `(define-in-module gauche ,s ,s)) syms)))
+
+(insert-symbols <type-constructor-meta>
+                <type-instance-meta>
+                <^> </> <?> <Tuple> <List> <Vector>)

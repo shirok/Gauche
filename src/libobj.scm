@@ -543,8 +543,6 @@
 (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
 (define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubtypeP)
 
-;; Type validation using abstract type.  A concrete class can always be
-;; used as an abstract type.  For abstract types, see gauche.typeutil.
 (define-method of-type? (obj (type <class>)) (is-a? obj type))
 
 (define-cproc slot-ref (obj slot)

@@ -183,8 +183,6 @@
 
 (autoload gauche.pputil   %pretty-print pprint)
 
-(autoload gauche.typeutil <^> </> <?> <Tuple> <List> <Vector>)
-
 (autoload gauche.version-alist version-alist)
 
 ;; Autoloading r7rs-setup allows Gauche-native programs to load R7RS library

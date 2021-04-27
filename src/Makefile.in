@@ -239,7 +239,7 @@ libgauche_OBJECTS = \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) \
 	libparam.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
-	libsys.$(OBJEXT) libvec.$(OBJEXT)
+	libsys.$(OBJEXT) libtype.$(OBJEXT) libvec.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 libgc_pic_OBJECTS = $(wildcard $(top_builddir)/gc/.libs/*.$(OBJEXT)) \
@@ -329,6 +329,7 @@ libsrfis.c   : libsrfis.scm $(PRECOMP_DEPENDENCY)
 libstr.c     : libstr.scm $(PRECOMP_DEPENDENCY)
 libsym.c     : libsym.scm $(PRECOMP_DEPENDENCY)
 libsys.c     : libsys.scm $(PRECOMP_DEPENDENCY)
+libtype.c    : libtype.scm $(PRECOMP_DEPENDENCY)
 libvec.c     : libvec.scm $(PRECOMP_DEPENDENCY)
 libextra.c   : libextra.scm $(PRECOMP_DEPENDENCY)
 
