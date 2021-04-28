@@ -22036,53 +22036,104 @@ variable number of arguments.
 @deftp {Builtin Class} <semaphore>
 @clindex semaphore
 @c MOD gauche.threads
+@c EN
 A semaphore manages ``tokens'' for a fixed number of resources.
 A thread that wants to use one of the resources requests a token
 by @code{semaphore-acquire!}, and returns the token to the pool
 by @code{semaphore-release!}.  When the thread requests a token
 but none is available, it waits until a token becomes available
 by some other thread returning one.
+@c JP
+セマフォは、決まった数のリソースを使うための「トークン」を管理します。
+リソースを使いたいスレッドは@code{semaphore-acquire!}を呼びトークンを獲得します。
+リソースを使い終わったら@code{semaphore-release!}でトークンを返します。
+スレッドがトークンを要求した時点でトークンが余っていなければ、他のスレッドがトークンを返す
+まで待ちます。
+@c COMMON
 @end deftp
 
 @defun make-semaphore :optional init-value name
 @c MOD gauche.threads
+@c EN
 Creates and returns a new semaphore, with @var{init-value} tokens
 available initially.  If @var{init-value} is omitted, 0 is assumed.
 Another optional argument @var{name} is an arbitrary Scheme object
 and only used for a debugging purpose only; it is displayed
 when a semaphore is printed.
+@c JP
+新たなセマフォを作って返します。@var{init-value}は初期段階で使えるトークンの数を
+指定します。省略された場合は0になります。
+もう一つの省略可能引数@var{name}は任意のSchemeオブジェクトで、
+セマフォの表示にのみ使われます。
+@c COMMON
 @end defun
 
 @defun semaphore? obj
 @c MOD gauche.threads
+@c EN
 Returns @code{#t} iff @var{obj} is a semaphore.
+@c JP
+@var{obj}がセマフォなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun semaphore-acquire! sem :optional timeout timeout-val
 @c MOD gauche.threads
+@c EN
 Obtain a token from a semaphore @var{sem}.
 If a token is available, this returns @code{#t} immediately,
 decrementing the available token count of @var{sem} atomically.
 If no token is available, this waits until a token becomes
 avaialble, or @var{timeout} reaches if it is given.  If timeout
 occurs, it returns @var{timeout-val}, defaulted to @code{#f}.
+@c JP
+セマフォ@var{sem}からトークンを獲得します。トークンがあれば、
+トークンの残り数をデクリメントして、直ちに@code{#t}を返します。
+もしトークンが余ってなければ、新たなトークンが返却されるか、
+@var{timeout}が指定するタイムアウトまで待ちます。
+タイムアウトした場合は@var{timeout-val}が返されます。@var{timeout-val}の
+デフォルトは@code{#f}です。
+@c COMMON
 
+@c EN
 The value of @var{timeout} is the same as @code{mutex}; it can be
-@code{#f} (no timeout), a @code{<time>} object to specify an absolute
+@code{#f} (no timeout, default), a @code{<time>} object to specify an absolute
 point of time, or a real number to specify the minimum number of seconds
 to wait.
+@c JP
+@var{timeout}に渡せる値は@var{mutex}と同じで、
+@code{#f} (タイムアウトなし。デフォルト値)、
+絶対的な時刻を指定する@code{<time>}オブジェクト、
+あるいは現在からの秒数を相対的に指定する実数です。
+@c COMMON
 @end defun
 
 @defun semaphore-release! sem :optional count
 @c MOD gauche.threads
+@c EN
 Return a token to a semaphore @var{sem}, by incrementing its token count,
-and running threads waiting with @code{semaphore-acquire!} atomically.
+and running one of the threads waiting with @code{semaphore-acquire!} atomically.
+@c JP
+トークンをセマフォ@var{sem}に返却します。@var{sem}のトークン数をインクリメントするのと
+同時に、@var{semaphore-acquire!}で待っているスレッドのひとつを走らせます。
+@c COMMON
 
-The @var{count} argument specifies number of tokens to add, defaulted to 1.
+@c EN
+The @var{count} argument specifies number of tokens to return, defaulted to 1.
+@c JP
+@var{count}引数で返却するトークンの数を指定できます。デフォルトは1です。
+@c COMMON
 
+@c EN
 Actually, the ``token'' model is to make it easier to understand the
 idea of semaphore, but internally it's just a counter, so you can
 call @code{semaphore-release!} even you haven't called @code{semaphore-acuqire!}.
+@c JP
+実のところ、「トークン」と読んでいるのはセマフォのモデルを理解しやすくするためで、
+内部的には単なるカウンタにすぎません。なので
+@code{semaphore-acuqire!}を呼んでいなくても@code{semaphore-release!}でトークンを追加
+することができます。
+@c COMMON
 @end defun
 
 
@@ -22093,52 +22144,105 @@ call @code{semaphore-release!} even you haven't called @code{semaphore-acuqire!}
 @deftp {Builtin Class} <latch>
 @clindex latch
 @c MOD gauche.threads
+@c EN
 A latch is a synchornization device with a counter.
 Any number of threads can wait until the counter becomes zero.
+Once the counter reaches zero, all threads go.
 (As opposed to semaphores, whose internal counter affects
 number of waiting threads as well.)
+@c JP
+ラッチはカウンタを内部に持つ同期デバイスです。
+カウンタが0になるまで、スレッドはいくつでも待ちます。
+カウンタが0になった途端、全てのスレッドが走ります。
+(セマフォでは、内部のカウンタは待つスレッドの数にも影響しますが、
+ラッチではカウンタと待つスレッドの数は無関係です)。
+@c COMMON
 
+@c EN
 One simple usage is to start with initial count 1; it is sometimes
 called a ``gate''.  You can let threads wait before the gate, and
 decrement the counter, then boom!  All threads proceeds.
+@c JP
+最も単純な用途では、初期カウントを0から始めます。これはしばしば「ゲート」と呼ばれます。
+待つスレッドはゲートに達したらそこで停止し、ひとたびカウンタをデクリメントしたら、
+全てのスレッドがそこから走り始めます。
+@c COMMON
 @end deftp
 
 @defun make-latch initial-count :optional name
 @c MOD gauche.threads
+@c EN
 Creates and returns a new latch with the counter value @var{initial-count},
 which must be an exact positive integer.
+@c JP
+カウンタの初期値として@var{initial-count}を持つラッチを作って返します。
+@var{initial-count}は正確な正整数でなければなりません。
+@c COMMON
 
+@c EN
 The optional @var{name} argument can be any Scheme object, and
 used only for debugging.  It is displayed when the latch object
 is printed.
+@c JP
+省略可能な@var{name}引数は任意のSchemeオブジェクトで、
+ラッチを表示する時にのみ使われます。
+@c COMMON
 @end defun
 
 @defun latch? obj
 @c MOD gauche.threads
+@c EN
 Returns @code{#t} iff @var{obj} is a latch.
+@c JP
+@var{obj}がラッチなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun latch-dec! latch :optional n
 @c MOD gauche.threads
+@c EN
 Decrement the counter of @var{latch} by @var{n}.
 If @var{n} is omitted, 1 is assumed.
 Returns the updated counter value.
+@c JP
+ラッチのカウンタを@var{n}だけ減らします。@var{n}が省略されたら1を使います。
+更新後のカウンタの値を返します。
+@c COMMON
 
+@c EN
 @var{N} must be an exact integer.  Zero or negative value is allowed.
+@c JP
+@var{n}は正確な整数でなければなりません。0や負の値も許されます。
+@c COMMON
 @end defun
 
 @defun latch-await latch :optional timeout timeout-val
 @c MOD gauche.threads
+@c EN
 If the counter of @var{latch} is zero or negative, returns @code{#t}
 immeiately.  Otherwise, the calling thread is blocked until
 the counter value becomes zero or below, or timeout reaches.
 If the thread started by the counter value, @code{#t} is returned.
 If the thread started by timeout, @var{timeout-val} is returned,
 whose default is @code{#f}.
+@c JP
+ラッチ@var{latch}のカウンタが0以下なら直ちに@code{#t}を返します。
+そうでなければ、呼び出しスレッドはカウンタが0以下になるか、タイムアウトするまで
+ブロックされます。カウンタによりスレッドが再開された場合は@code{#t}が、
+タイムアウトした場合は@var{timeout-val}が返されます。
+@var{timeout-val}のデフォルトは@code{#f}です。
+@c COMMON
 
-The @var{timeout} argument must be either @code{#f} (no timeout),
+@c EN
+The @var{timeout} argument must be either @code{#f} (no timeout, default),
 a @code{<time>} object (absolute point of time), or a real number
 indicates number of seconds from the time this procedure is called.
+@c JP
+@var{timeout}引数は、
+@code{#f} (タイムアウトなし。デフォルト値)、
+絶対的な時刻を指定する@code{<time>}オブジェクト、
+あるいは現在からの秒数を相対的に指定する実数です。
+@c COMMON
 @end defun
 
 @node Barrier,  , Latch, Synchronization primitives
@@ -22148,26 +22252,107 @@ indicates number of seconds from the time this procedure is called.
 @deftp {Builtin Class} <barrier>
 @clindex barrier
 @c MOD gauche.threads
+@c EN
+A barrier is a synchronization primitive that multiple threads
+wait by @code{barrier-await}
+until a specified number of threads reach the point.
+Once the specified number of threads get to the barrier,
+all threads go, and the barrier automatically returns to the initial
+state; the next thread that comes to the barrier waits again.
+@c JP
+バリアは、指定された個数のスレッドが待ち状態になるまで待ち合わせる
+同期プリミティブです。
+@code{barrier-await}を呼んだスレッドが指定の個数に達したら、
+全てのスレッドが再開し、バリアは初期状態に戻ります。
+次にバリアに到達したスレッドは再び待ちに入ります。
+@c COMMON
+
+@c EN
+A barrier can have an optional @emph{action}, which is run by the
+last thread that reached to the barrier before everyone goes.
+@c JP
+バリアは「アクション」を持つことができます。アクションは、待ち合わせスレッドが
+しきい値に到達した時に、他のスレッドが走り出す前に実行されます。
+@c COMMON
+
+@c EN
+A barrier can be in a ``broken'' state when any one of the threads
+timeout, or the action raises an uncaptured exception.  Once the barrier
+is broken, all threads waiting on it is released as if timeout has
+occured.  The broken barrier remains broken (so any thread that reaches
+it just passes through) until it is reset by @code{barrier-reset!}.
+@c JP
+待っているスレッドのいずれかがタイムアウトするか、アクションで捕捉されない例外が
+投げられた場合、バリアは「破れた」状態になります。
+バリアが壊れると、待っていたスレッドはあたかもタイムアウトが起きたかのように
+再開されます。破れた状態は@code{barrier-reset!}で明示的にリセットされるまで
+保たれ、その間にバリアに到達したスレッドはあたかも0のタイムアウトが指定されたかのように
+そのまま素通りします。
+@c COMMON
 @end deftp
 
 @defun make-barrier threshold :optional action name
 @c MOD gauche.threads
+Craetes and returns a new barrier.  The @var{threshold} argument
+must be an exact nonnegative integer to specify the number of threads
+to let them go---threads calling @code{barrier-await} waits until
+the number of threads waiting reaches @var{threshold}.
+
+The optional @var{action} argument must be either @code{#f} (no action)
+or a thunk.  If it is a thunk, it is run by the last thread
+that calls @code{barrier-await}, before all the thread will go.
+
+The optional @var{name} argument can be any Scheme object,
+and only used to print the barrier instance, to help debugging.
 @end defun
 
 @defun barrier? obj
 @c MOD gauche.threads
+Returns @code{#t} iff @var{obj} is a barrier.
 @end defun
 
 @defun barrier-await barrier :optional timeout timeout-val
 @c MOD gauche.threads
+Waits on @var{barrier} until the number of waiting threads reaches
+the threshold of the barrier, or the barrier is broken.
+
+A barrier can be broken if any of waiting threads hit the timeout,
+or an uncaptured exception is raised from the action thunk of the barrier.
+
+The @var{timeout} and @var{timeout-val} are the same as other synchronization
+primitives; @var{timeout} may be @code{#f} (no timeout, default),
+a @code{<time>} object
+to specify an absolute time point, or a real number indicating relative
+time in number of seconds; @var{timeout-val} is the value returned
+when @code{barrier-await} returns prematurely---either timeout, or
+other barrier breakage conditions.
+The default of @var{timeout-val} is @code{#f}.
+
+It returns an integer if the thread is released by reaching the threshold,
+or @var{timeout-val} if the barrier is broken.  The integer indicates
+the number of threads required to reach the threshold at the time
+@code{barrier-wait} is called; that is, if you're the first to reach
+the barrier it is threshold - 1, and if you're the last it is 0.
+
+If the barrier is already broken when you call @code{barrier-await},
+it returns immediately with @var{timeout-val}.
+
+If the threads are released normally, the barrier turns back to the
+initial state so you can wait on it again.  If the threads are released
+because the barrier is broken, it remains in broken state until
+reset by @code{barrier-reset!}.
 @end defun
 
 @defun barrier-broken? barrier
 @c MOD gauche.threads
+Returns @code{#t} iff @var{barrier} is in broken state.
 @end defun
 
 @defun barrier-reset! barrier
 @c MOD gauche.threads
+Resets the barrier to the initial state.  If the barrire is broken,
+the broken state is cleared.  If any thread is waiting on the barrier,
+it is released as if the number of threads reaches the threshold.
 @end defun
 
 
