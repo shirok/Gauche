@@ -543,7 +543,10 @@
 (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
 (define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubtypeP)
 
-(define-method of-type? (obj (type <class>)) (is-a? obj type))
+(define (of-type? obj type)
+  (cond [(is-a? type <type-instance-meta>)
+         ((~ (class-of type)'of-type?) obj type)]
+        [else (is-a? obj type)]))
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF) (setter slot-set!)
