@@ -162,8 +162,7 @@
 
 ;; API
 ;; Returns task id
-(define-method scheduler-schedule! ((s <scheduler>) thunk when
-                                    :optional (interval #f))
+(define (scheduler-schedule! s thunk when :optional (interval #f))
   ($ request-response s
      (^[]
        (let1 task (make-task s thunk (absolute-time when) interval)
@@ -171,8 +170,7 @@
          (~ task'id)))))
 
 ;; API
-(define-method scheduler-reschedule! ((s <scheduler>) task-id when
-                                      :optional (interval #f))
+(define (scheduler-reschedule! s task-id when :optional (interval #f))
   ($ request-response s
      (^[]
        (if-let1 task (dict-get (~ s'task-queue) task-id #f)
@@ -185,15 +183,18 @@
          (condition
           (<error> (message (format "No task with id: ~s" task-id))))))))
 
-(define-method scheduler-remove! ((s <scheduler>) task-id)
+;; API
+(define (scheduler-remove! s task-id)
   ($ request-response s
      (^[] (dict-delete! (~ s'task-queue) task-id))))
 
-(define-method scheduler-exists? ((s <scheduler>) task-id)
+;; API
+(define (scheduler-exists? s task-id)
   ($ request-response s
      (^[] (dict-exists? (~ s'task-queue) task-id))))
 
-(define-method scheduler-terminate! ((s <scheduler>))
+;; API
+(define (scheduler-terminate! s)
   ($ request-response s (^[] (raise 'end)) #t)
   (if (slot-bound? s 'exception)
     (raise (~ s'exception))

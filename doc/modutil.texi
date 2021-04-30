@@ -12,6 +12,7 @@
 * Concurrent sequences::        control.cseq
 * Futures::                     control.future
 * A common job descriptor for control modules::  control.job
+* Scheduler::                   control.scheduler
 * Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
 * Cache::                       data.cache
@@ -1474,7 +1475,7 @@ Returns @code{#t} if computation in @var{future} is finished,
 
 
 @c ----------------------------------------------------------------------
-@node A common job descriptor for control modules, Thread pools, Futures, Library modules - Utilities
+@node A common job descriptor for control modules, Scheduler, Futures, Library modules - Utilities
 @section @code{control.job} - A common job descriptor for control modules
 @c NODE 制御モジュールのための汎用ジョブ記述子, @code{control.job} - 制御モジュールのための汎用ジョブ記述子
 
@@ -1705,7 +1706,53 @@ always returns @code{#f}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Thread pools, Password hashing, A common job descriptor for control modules, Library modules - Utilities
+@node Scheduler, Thread pools, A common job descriptor for control modules, Library modules - Utilities
+@section @code{control.scheduler} - Scheduler
+@c NODE スケジューラ, @code{control.scheduler} - スケジューラ
+
+@deftp {Module} control.scheduler
+@mdindex control.scheduler
+A scheduler is a device to run tasks in specified times.
+
+Each scheduler manages one or more tasks.  Each task has attached
+time to run.  A task can be run once, or can be run periodically.
+@end deftp
+
+@deftp {Class} <scheduler>
+@clindex scheduler
+@c MOD control.scheduler
+
+@defivar {<scheduler>} error-handler
+@end defivar
+
+@end deftp
+
+@defun scheduler-schedule! scheduler thunk when :optional interval
+@c MOD control.scheduler
+@end defun
+
+
+@defun scheduler-reschedule! scheduler thunk when :optional interval
+@c MOD control.scheduler
+@end defun
+
+
+@defun scheduler-remove! (s <scheduler>) task-id
+@c MOD control.scheduler
+@end defun
+
+
+@defun scheduler-exists? scheduler task-id
+@c MOD control.scheduler
+@end defun
+
+@defun scheduler-terminate! scheduler
+@c MOD control.scheduler
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Thread pools, Password hashing, Scheduler, Library modules - Utilities
 @section @code{control.thread-pool} - Thread pools
 @c NODE スレッドプール, @code{control.thread-pool} - スレッドプール
 
