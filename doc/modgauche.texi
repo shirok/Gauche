@@ -22293,22 +22293,43 @@ it just passes through) until it is reset by @code{barrier-reset!}.
 
 @defun make-barrier threshold :optional action name
 @c MOD gauche.threads
+@c EN
 Craetes and returns a new barrier.  The @var{threshold} argument
 must be an exact nonnegative integer to specify the number of threads
 to let them go---threads calling @code{barrier-await} waits until
 the number of threads waiting reaches @var{threshold}.
+@c JP
+新しいバリアを作って返します。@var{threshold}は正確な非負整数でなければならず、
+待ち合わせるスレッドの数を指定します。@code{barrier-await}を
+呼んだスレッドがこの数に達した時に、それら全てのスレッドで
+@code{barrier-await}から制御が戻ります。
+@c COMMON
 
+@c EN
 The optional @var{action} argument must be either @code{#f} (no action)
 or a thunk.  If it is a thunk, it is run by the last thread
 that calls @code{barrier-await}, before all the thread will go.
+@c JP
+省略可能な@var{action}引数は@code{#f}(アクションなし)かサンクでなければなりません。
+サンクの場合、それはバリアが開放される前の最後に@code{barrier-await}を呼んだ
+スレッドによって、他のスレッドが走り始める前に実行されます。
+@c COMMON
 
+@c EN
 The optional @var{name} argument can be any Scheme object,
 and only used to print the barrier instance, to help debugging.
+@c JP
+@var{name}引数は任意のSchemeオブジェクトで、バリアを表示する際にのみ使われます。
+@c COMMON
 @end defun
 
 @defun barrier? obj
 @c MOD gauche.threads
+@c EN
 Returns @code{#t} iff @var{obj} is a barrier.
+@c JP
+@var{obj}がバリアなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun barrier-await barrier :optional timeout timeout-val
