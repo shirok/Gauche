@@ -300,6 +300,8 @@
     )
 
   (let ()
+    (test* "running?" #t
+           (scheduler-running? sched))
     (test* "scheduler-terminate!" '(a)
            (begin
              (scheduler-schedule! sched (^[] (push! a 'a)) 0 1)
@@ -307,6 +309,8 @@
              a))
     (test* "don't accept new task" (test-error <error> #/queue is closed/)
            (scheduler-schedule! sched (^[] (set! b 'b)) 0))
+    (test* "running?" #f
+           (scheduler-running? sched))
     (test* "see if tasks are really stopped" '((a) #f)
            (list a b)))
   )

@@ -1712,7 +1712,7 @@ always returns @code{#f}.
 
 @deftp {Module} control.scheduler
 @mdindex control.scheduler
-A scheduler is a device to run tasks in specified times.
+A scheduler is a device to run tasks in scheduled time.
 
 Each scheduler manages one or more tasks.  Each task has attached
 time to run.  A task can be run once, or can be run periodically.
@@ -1721,14 +1721,57 @@ time to run.  A task can be run once, or can be run periodically.
 @deftp {Class} <scheduler>
 @clindex scheduler
 @c MOD control.scheduler
+A device to run tasks in scheduled time.  Each instance of this class
+have its own thread, and maintains a list of tasks along the information
+when each task should be run.  Tasks can be registered by
+@code{scheduler-schedule!}.
+
+If a task throws an error, a procedure bound to @code{error-handler}
+slot is invoked with the thrown condition as the only argument.
+If no @code{error-handler} is registered, or @code{error-handler}
+throws an error again, then the scheduler stops.  The thrown condition
+is kept in the scheduler and can be retrieved with
+@code{scheduler-terminate!}.
 
 @defivar {<scheduler>} error-handler
+This slot can be initialized with @code{:error-handler} keyword argument.
+It must be either @code{#f} or a procedure that takes one argument.
+If it is a procedure, it is invoked when a task throws an error,
+and the argument is the raised condition.
 @end defivar
-
 @end deftp
+
+@defun scheduler-running? scheduler
+@c MOD control.scheduler
+Returns @code{#t} iff @var{scheduler} is running.
+@end defun
+
 
 @defun scheduler-schedule! scheduler thunk when :optional interval
 @c MOD control.scheduler
+Inserts a new tasks that runs @var{thunk} into @var{scheduler}.
+The task can be run once, or periodically.
+
+The @var{when} argument specifies when the task should first run.
+It can be either one of the followings:
+
+@table @asis
+@item @code{<time>} object of @code{type-utc} or @code{time-tai} type
+Specifies the aboslute point of time.
+@item @code{<time>} object of @code{time-duration} type
+Specifies the relative time since this procedure is called.
+@item real number
+Specifies the relative time in seconds since this procedure is called.
+@end table
+
+The optional @var{interval} argument can be @code{#f}, real number
+or @code{<time>} object of @code{time-duration} type.  If it is @code{#f}
+or 0, the task is one-shot, that is, not repeated.  Otherwise,
+the task is repeated with the specified interval---the real number
+specifies the number of seconds.
+
+Returns an integer that identifies the task.  The task id can
+be used to cancel or reschedule the task.
 @end defun
 
 
@@ -1746,7 +1789,7 @@ time to run.  A task can be run once, or can be run periodically.
 @c MOD control.scheduler
 @end defun
 
-@defun scheduler-terminate! scheduler
+@defun scheduler-terminate! scheduler :key on-error
 @c MOD control.scheduler
 @end defun
 

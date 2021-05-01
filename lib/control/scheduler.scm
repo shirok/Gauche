@@ -43,6 +43,7 @@
           scheduler-reschedule!
           scheduler-remove!
           scheduler-exists?
+          scheduler-running?
           scheduler-terminate!))
 (select-module control.scheduler)
 
@@ -194,8 +195,14 @@
      (^[] (dict-exists? (~ s'task-queue) task-id))))
 
 ;; API
-(define (scheduler-terminate! s)
+(define (scheduler-running? s)
+  (not (~ s'request-queue'closed)))
+
+;; API
+(define (scheduler-terminate! s :key (on-error :reraise))
+  (assume (memq on-error '(:reraise :return)))
   ($ request-response s (^[] (raise 'end)) #t)
-  (if (slot-bound? s 'exception)
+  (if (and (slot-bound? s 'exception)
+           (eq? on-error :reraise))
     (raise (~ s'exception))
-    (undefined)))
+    #t))
