@@ -52,6 +52,7 @@ srfi N is supported by Gauche.)
 * Portable runtime environment inquiry::  srfi-112
 * Comparators::                 srfi-114
 * Simple adjustable-size strings::  srfi-118
+* Timer APIs::                  srfi-120
 * Cursor-based string library::  srfi-130
 * String library (reduced)::    srfi-152
 * First-class dynamic extents::  srfi-154
@@ -6218,7 +6219,7 @@ same as @code{srfi-162}.  @xref{Comparator sublibrary}.
 
 
 @c ----------------------------------------------------------------------
-@node Simple adjustable-size strings, Cursor-based string library, Comparators, Library modules - SRFIs
+@node Simple adjustable-size strings, Timer APIs, Comparators, Library modules - SRFIs
 @section @code{srfi-118} - Simple adjustable-size strings
 @c NODE 簡単な可変長文字列, @code{srfi-118} - 簡単な可変長文字列
 
@@ -6320,8 +6321,55 @@ rather than @code{string-replace}.
 
 
 @c ----------------------------------------------------------------------
-@node Cursor-based string library, String library (reduced), Simple adjustable-size strings, Library modules - SRFIs
+@node Timer APIs, Cursor-based string library, Simple adjustable-size strings, Library modules - SRFIs
+@section @code{srfi-120} - Timer APIs
+@c NODE タイマーAPI, @code{srfi-120} - タイマーAPI
+
+@deftp {Module} srfi-120
+@mdindex srfi-120
+@end deftp
+
+@defun make-timer :optional error-handler
+@c MOD srfi-120
+@end defun
+
+@defun timer? obj
+@c MOD srfi-120
+@end defun
+
+@defun timer-cancel! timer
+@c MOD srfi-120
+@end defun
+
+@defun timer-schedule! timer thunk when :optional period
+@c MOD srfi-120
+@end defun
+
+@defun timer-reschedule! timer task-id when :optional period
+@c MOD srfi-120
+@end defun
+
+@defun timer-task-remove! timer task-id
+@c MOD srfi-120
+@end defun
+
+@defun timer-task-exists? timer task-id
+@c MOD srfi-120
+@end defun
+
+@defun make-timer-delta n unit
+@c MOD srfi-120
+@end defun
+
+@defun timer-delta? obj
+@c MOD srfi-120
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Cursor-based string library, String library (reduced), Timer APIs, Library modules - SRFIs
 @section @code{srfi-130} - Cursor-based string library
+@c NODE カーソルを使う文字列ライブラリ, @code{srfi-130} - カーソルを使う文字列ライブラリ
 
 @deftp {Module} srfi-130
 @mdindex srfi-130

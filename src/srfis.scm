@@ -880,6 +880,18 @@ Supported by the module @code{srfi-118}.
 (@ref{Simple adjustable-size strings}参照)
 
 
+srfi-120, srfi-120
+()
+
+Timer APIs
+Supported by the module @code{srfi-120} (@pxref{Timer APIs}).
+It is a wrapper of @code{control.scheduler} (@pxref{Scheduler}).
+
+タイマーAPI
+モジュール@code{srfi-120}でサポートされます (@ref{Timer APIs}参照)。
+これは@code{control.scheduler}のラッパーです (@ref{Scheduler}参照)。
+
+
 srfi-121, gauche.generator
 ()
 
