@@ -1775,24 +1775,54 @@ be used to cancel or reschedule the task.
 @end defun
 
 
-@defun scheduler-reschedule! scheduler thunk when :optional interval
+@defun scheduler-reschedule! scheduler task-id when :optional interval
 @c MOD control.scheduler
+Change the schedule of the task specified by @var{task-id} in the
+scheduler.  The meaning of @var{when} and @var{interval} argument is
+the same as @code{scheduler-schedule!}.
+
+If the scheduler doesn't have a task with @var{task-id}, an exception
+is raised.
 @end defun
 
 
-@defun scheduler-remove! (s <scheduler>) task-id
+@defun scheduler-remove! scheduler task-id
 @c MOD control.scheduler
+Remove the task specified by @var{task-id} from the scheduler.
+If the scheduler doesn't have a task with @var{task-id}, this is no-op.
+Retuns @code{#<undef>}.
 @end defun
 
 
 @defun scheduler-exists? scheduler task-id
 @c MOD control.scheduler
+Returns @code{#t} iff the scheduler has the task with @var{task-id}
+in the queue.  Note that once the task is executed and not repeating,
+the task is removed from the queue.
 @end defun
 
 @defun scheduler-terminate! scheduler :key on-error
 @c MOD control.scheduler
-@end defun
+Stop the scheduler.  Tasks still in the scheduler's queue won't executed,
+and no new task will be accepted.   Once the scheduler is terminated,
+it can't be restarted.
 
+If no task has raised an exception, or all exceptions are handled
+by the error-handler of the scheduler, this procedure returns @code{#t}
+after the scheduler is stopped.
+
+If any task has raised an exception and not handled by
+the error-handler, the behavior depends on the @var{on-error}
+keyword argumnent, which should be one of the following:
+
+@table @code
+@item :reraise
+The exception is reraised from @code{scheduler-terminate!}.
+This is the default.
+@item :return
+The exception is returned from @code{scheduler-terminate!}.
+@end table
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Thread pools, Password hashing, Scheduler, Library modules - Utilities

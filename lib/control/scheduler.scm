@@ -187,7 +187,7 @@
 ;; API
 (define (scheduler-remove! s task-id)
   ($ request-response s
-     (^[] (dict-delete! (~ s'task-queue) task-id))))
+     (^[] (dict-delete! (~ s'task-queue) task-id) (undefined))))
 
 ;; API
 (define (scheduler-exists? s task-id)
