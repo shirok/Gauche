@@ -6327,41 +6327,158 @@ rather than @code{string-replace}.
 
 @deftp {Module} srfi-120
 @mdindex srfi-120
+@c EN
+This srfi provides a device to run tasks in a specified time.
+
+In Gauche, this is a thin wrapper of @code{control.scheduler} module
+(@pxref{Scheduler}, for the details).  Use this module if you need portability.
+@c JP
+このsrfiは、タスクを指定した時間に実行するデバイスを提供します。
+
+Gaucheではこれは@code{control.scheduler}の薄いラッパーです。
+(詳しくは@ref{Scheduler}参照)。このモジュールは移植性が必要な場合に利用すると良いでしょう。
+@c COMMON
 @end deftp
 
 @defun make-timer :optional error-handler
+[SRFI-120]
 @c MOD srfi-120
+@c EN
+Create a new timer, with @var{error-handler} as an error hander.
+The @var{error-handler} argument must be @code{#f} or
+a procedure that takes one argument.
+If it is a procedure, it is called when the task thunk raises an error,
+with the raised condition as an argument.  Its return value is ignored.
+If omitted, @code{#f} is assumed.
+
+In Gauche, returned timer object is just an instance of @code{<scheduler>},
+and @var{error-handler} is set in its @code{error-handler} slot.
+@xref{Scheduler}, for the details.
+@c JP
+新たなタイマーを作って返します。@var{error-handler}引数は@code{#f}もしくは
+引数をひとつ取る手続きです。手続きであれば、タスクのサンクがエラーを上げた時に、
+投げられたコンディションを引数にして呼び出されます。その返り値は無視されます。
+省略された場合は@code{#f}とされます。
+
+Gaucheでは、返されるタイマーオブジェクトは@code{<scheduler>}のインスタンスで、
+@var{error-handler}引数は@code{error-handler}スロットに渡されます。
+詳しくは@ref{Scheduler}を見てください。
+@c COMMON
 @end defun
 
 @defun timer? obj
+[SRFI-120]
 @c MOD srfi-120
+@c EN
+Returns @code{#t} iff @var{obj} is a timer
+(an instance of @code{<scheduler>}).
+
+Same as @code{scheduler?} in @code{control.scheduler} (@pxref{Scheduler}).
+@c JP
+@var{obj}がタイマー (@code{<scheduler>}のインスタンス)であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+
+@code{control.scheduler}の@code{scheduler?}と同じです (@ref{Scheduler}参照)。
+@c COMMON
 @end defun
 
 @defun timer-cancel! timer
+[SRFI-120]
 @c MOD srfi-120
+@c EN
+Stops the timer.  No tasks in the queue will be executed, and
+no new tasks is accepted.  Once timer is canceled, it can't be restarted.
+
+If the timer's tasks ever raised an error, and either the timer doesn't
+have an error handler, or an error handler itself raises an error, then
+the condition object is kept in the timer and reraised from this procedure.
+
+See also @code{scheduler-terminate!} in @code{control.scheduler}
+(@pxref{Scheduler}).
+@c JP
+タイマーを止めます。まだ残っているタスクはもう実行されず、
+また新しいタスクを登録することもできません。
+一旦止められたタイマーをリスタートすることはできません。
+
+タイマーのタスクがエラーを投げて、タイマーがerror-handlerを持っていないか、
+あるいはエラーを処理したerror-handlerがその中でさらにエラーを投げた場合、
+投げられたコンディションはタイマー中に保存され、この手続きからreraiseされます。
+
+@code{control.scheduler}の@code{scheduler-terminate!}も参照してください
+(@ref{Scheduler})。
+@c COMMON
 @end defun
 
 @defun timer-schedule! timer thunk when :optional period
+[SRFI-120]
 @c MOD srfi-120
+@c EN
+Creates a new task to run @var{thunk} in the @var{timer}, at @var{when}.
+The @var{when} argument specifies the relative time from the moment
+this procedure is called.  It must be either an integer as the number
+of @emph{milliseconds}, or a time delta object created by
+@code{make-timer-delta}.
+
+If the @var{period} argument is given and non zero, the task will be
+repeated in every period.
+It must be a nonnegative integer in milliseconds
+or a time delta object.  If it is zero, task is non-repeating.
+
+Retuns a task-id, which can be used to reschedule or remove the task
+later.  The srfi specifies a task id to be any printable Scheme object;
+Gauche uses an integer.
+
+Note: In Gauche, a time delta object is a srfi-19 @code{time-duration}
+time (@pxref{SRFI-19 Time types}).
+
+This is implemented on top of @code{scheduler-schedule!} in
+@code{control.scheduler} (@pxref{Scheduler}), but note that
+the unit of @var{when} and @var{period} is different from it.
+@c JP
+@var{thunk}を@var{when}で指定される時点に実行するタスクを作成します。
+@var{when}は正確な非負整数か、@code{make-timer-delta}が返す時間差オブジェクト
+でなければならず、この手続きを呼び出した時点からの相対時間を指定します。
+整数の場合はミリ秒単位です。
+
+@var{period}引数が与えられてゼロでない場合、タスクは指定間隔で繰り返されます。
+@var{period}引数も@var{when}と同様、非負整数のミリ秒か時間差オブジェクトです。
+@var{period}がゼロの場合はタスクは繰り返しません。
+
+戻り値はタスクIDで、それを使ってタスクをリスケジュールしたり削除したりできます。
+SRFIではタスクIDは「print可能であること」としか規定されていません。
+Gaucheは整数を使っています。
+
+註: Gaucheでは、時間差オブジェクトはsrfi-19の@code{time-duration}タイプの
+@code{<time>}オブジェクトです。@ref{SRFI-19 Time types}参照。
+
+この手続きは@code{control.scheduler}の@code{scheduler-schedule!}を
+使って実装されています(@ref{Scheduler}参照)が、
+@var{when}と@var{period}の単位が異なっていることに注意してください。
+@c COMMON
 @end defun
 
 @defun timer-reschedule! timer task-id when :optional period
+[SRFI-120]
 @c MOD srfi-120
 @end defun
 
 @defun timer-task-remove! timer task-id
+[SRFI-120]
 @c MOD srfi-120
 @end defun
 
 @defun timer-task-exists? timer task-id
+[SRFI-120]
 @c MOD srfi-120
 @end defun
 
 @defun make-timer-delta n unit
+[SRFI-120]
 @c MOD srfi-120
 @end defun
 
 @defun timer-delta? obj
+[SRFI-120]
 @c MOD srfi-120
 @end defun
 
