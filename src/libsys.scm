@@ -91,9 +91,8 @@
       path))
   (define (get-windows-home)
     (or (sys-getenv "HOME") ; MSYS
-        (sys-getenv "HOMEDRIVE") ; cmd.exe
-        (sys-getenv "HOMEPATH")
-        "\\"))
+        (sys-getenv "USERPROFILE") ; cmd.exe
+        ""))
   (define (get-unix-home pw)
     (if pw (~ pw'dir) (error "Couldn't obtain username for :" pathname)))
   (define (absolute? path)
