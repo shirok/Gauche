@@ -1,5 +1,12 @@
 2021-05-04  Shiro Kawai  <shiro@acm.org>
 
+	* ext/windows/windows.scm etc.: Improve windows console handling
+	  by @Hamayama https://github.com/shirok/Gauche/pull/756
+	* src/libsys.scm: Fix Windows home directory handling
+	  by @Hamayama https://github.com/shirok/Gauche/pull/757
+	* ext/charconv/jconv.c: Fix utf-16 surrogate handling
+	  by @Hamayama https://github.com/shirok/Gauche/pull/758
+
 	* lib/text/unicode/udc.scm: Add 'ExtPict' from emoji-data.txt in
 	  grapheme boundary info.
 	* ext/gauche/unicode.scm: Support new grapheme break rules
