@@ -1253,7 +1253,7 @@ static ScmSize utf16_utf8(ScmConvInfo *cinfo,
             v[0] = inptr[1];
             v[1] = inptr[0];
         }
-        if ((v[1] & 0xdc) == 0xdc) {
+        if ((v[0] & 0xdc) == 0xdc) {
             ch = (((u[0] & 0x03) << 18)
                   | (u[1] << 10)
                   | ((v[0] & 0x03) << 8)
