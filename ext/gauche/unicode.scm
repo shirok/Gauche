@@ -936,6 +936,7 @@
     ((or LVT T)         . :lvt-t)
     (Regional_Indicator . :regional-indicator)
     (Prepend            . :prepend)
+    (ExtPict            . :ext-pict)
     (:else              . :other)))
 
 (define *grapheme-break-states*
@@ -961,14 +962,24 @@
      (T                  -> #f :lvt-t)      ; GB8
      (:else              -> #t :default))
     (:regional-indicator
-     (Regional_Indicator -> #f :regional-indicator) ; GB8a
+     (Regional_Indicator -> #f :regional-indicator-1) ; GB12, GB13
+     (:else              -> #t :default))
+    (:regional-indicator-1
+     (Regional_Indicator -> #t :regional-indicator) ; GB12, GB13
      (:else              -> #t :default))
     (:prepend
      (CR                 -> #t :cr)         ; GB5
      ((or Control LF)    -> #t :control-lf) ; GB5
      (:else              -> #f :default))   ; GB9b
+    (:ext-pict
+     (Extend             -> #f :ext-pict)   ; GB11
+     (ZWJ                -> #f :ext-pict-1) ; GB9
+     (:else              -> #t :default))
+    (:ext-pict-1
+     (ExtPict            -> #f :ext-pict)   ; GB11
+     (:else              -> #t :default))
     (:other
-     (Extend             -> #f :other)      ; GB9
+     ((or Extend ZWJ)    -> #f :other)      ; GB9
      (SpacingMark        -> #f :other)      ; GB9a
      (:else              -> #t :default))   ; GB10
     ))
@@ -991,7 +1002,8 @@
                                                     '(LV . 8)
                                                     '(LVT . 9)
                                                     '(ZWJ . 10)
-                                                    '(Other . 11)
+                                                    '(ExtPict . 11)
+                                                    '(Other . 12)
                                                     '(CR . 16)
                                                     '(LF . 17))))
 

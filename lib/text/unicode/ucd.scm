@@ -217,9 +217,12 @@
 ;; one character each, so the lookup procedure recognizes those characters
 ;; directly instead of table lookup.  We don't store those properties
 ;; in the table.  The '#f' in the list marks boundary of these propetries.
+;; NB: 'ExtPict is not defined in Grapheme Break Properties, but in
+;; Emoji Properties.  It is required to implement GB11 rule
+;; (see ext/gauche/unicode.scm)
 (define (ucd-grapheme-break-properties)
   '(Control Extend Regional_Indicator Prepend SpacingMark
-    L V T LV LVT ZWJ Other #f CR LF))
+    L V T LV LVT ZWJ ExtPict Other #f CR LF))
 
 (define (ucd-word-break-properties)
   '(Newline Extend Regional_Indicator Format Katakana Hebrew_Letter ALetter
@@ -348,6 +351,8 @@
     (grapheme-break-property
      (ucd-grapheme-break-properties)
      (build-path datadir "auxiliary/GraphemeBreakProperty.txt") db)
+    (augument-grapheme-break-property
+     (build-path datadir "emoji/emoji-data.txt") db)
     (word-break-property
      (ucd-word-break-properties)
      (build-path datadir "auxiliary/WordBreakProperty.txt") db)
@@ -564,6 +569,25 @@
 
 (define grapheme-break-property (break-property ucd-break-property-grapheme))
 (define word-break-property     (break-property ucd-break-property-word))
+
+;; Grapheme break property needs to know emoji Extended_Pictographic
+(define (augument-grapheme-break-property file db)
+  (define (ensure c)
+    (let1 e (ensure-ucd-break-property db c)
+      (unless (eq? (ucd-break-property-grapheme e) 'Other)
+        (warn "Overriding non-'Other' grapheme property of U+~4,'0x (~s)\n"
+              c (ucd-break-property-grapheme e)))
+      (set! (ucd-break-property-grapheme e) 'ExtPict)))
+  (define (handle line)
+    (rxmatch-case line
+      [#/^([0-9a-fA-F]{4,6})\.\.([0-9a-fA-F]{4,6})\s+\;\s+Extended_Pictographic/
+          (_ ss ee)
+        (do-ec (: c (parse-code ss) (+ (parse-code ee) 1))
+               (ensure c))]
+      [#/^([0-9a-fA-F]{4,6})\s+\;\s+Extended_Pictographic/ (_ ss)
+        (ensure (parse-code ss))]))
+  (with-input-from-file file
+    (cut generator-for-each handle read-line)))
 
 ;;;
 ;;;  Dumping and restoring database

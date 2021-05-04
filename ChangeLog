@@ -1,3 +1,10 @@
+2021-05-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/unicode/udc.scm: Add 'ExtPict' from emoji-data.txt in
+	  grapheme boundary info.
+	* ext/gauche/unicode.scm: Support new grapheme break rules
+	  (GB11, GB12, GB13) for Unicode 13.
+
 2021-04-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (%expand-define-class),
