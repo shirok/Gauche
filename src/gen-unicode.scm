@@ -153,6 +153,9 @@
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/WordBreakProperty.txt
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/SentenceBreakProperty.txt
 ;;
+;;    NB: As of Unicode 13, we also need Extended_Poctographic Emoji property
+;;    to do Grapheme clustering properly.
+;;
 ;;    An entry is 8-bit, indicating the character's Word_Break and
 ;;    Grapheme_Break properties.  In unicode_attr.h, they are
 ;;    prefixed with WB_ and GB_, respectively.
@@ -216,6 +219,12 @@
 ;;    E0020..E007F   GB_Control, WB_Format
 ;;    E0100..E01EF   GB_Extend, WB_Extend
 ;;
+;;
+;; * Emoji Properties
+;;
+;;    Also http://unicode.org/reports/tr51
+;;    https://www.unicode.org/Public/13.0.0/ucd/emoji/emoji-data.txt
+;;
 
 ;;;
 ;;;  Main entry
@@ -253,8 +262,10 @@
                        "EastAsianWidth.txt"
                        "auxiliary/GraphemeBreakProperty.txt"
                        "auxiliary/SentenceBreakProperty.txt"
-                       "auxiliary/WordBreakProperty.txt")])
+                       "auxiliary/WordBreakProperty.txt"
+                       "emoji/emoji-data.txt")])
     (make-directory* (build-path dir "auxiliary"))
+    (make-directory* (build-path dir "emoji"))
     (dolist [f datafiles]
       (let1 p (build-path dir f)
         (display #"Getting ~|f|... ") (flush)
