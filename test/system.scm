@@ -193,13 +193,16 @@
        (sys-normalize-pathname "." :absolute #t))
 (test* "normalize" (n (string-append (get-pwd-via-pwd) "/"))
        (sys-normalize-pathname "" :absolute #t))
-(cond-expand
- (gauche.os.windows #t)
- (else
-  (test* "normalize"
-         (n (string-append (slot-ref (sys-getpwuid (sys-getuid)) 'dir) "/abc"))
-         (sys-normalize-pathname "~/abc" :expand #t))))
-
+(test* "normalize"
+       (cond-expand
+        [gauche.os.windows
+         (n (string-append (or (sys-getenv "HOME") ; MSYS
+                               (sys-getenv "USERPROFILE") ; cmd.exe
+                               "")
+                           "/abc"))]
+        [else
+         (n (string-append (slot-ref (sys-getpwuid (sys-getuid)) 'dir) "/abc"))])
+       (sys-normalize-pathname "~/abc" :expand #t))
 (test* "normalize" (n "/a/b/c/d/e")
        (sys-normalize-pathname "/a/b//.///c//d/./e"
                                :canonicalize #t))
