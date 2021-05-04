@@ -263,6 +263,9 @@
                        "auxiliary/GraphemeBreakProperty.txt"
                        "auxiliary/SentenceBreakProperty.txt"
                        "auxiliary/WordBreakProperty.txt"
+                       "auxiliary/GraphemeBreakTest.txt"
+                       "auxiliary/SentenceBreakTest.txt"
+                       "auxiliary/WordBreakTest.txt"
                        "emoji/emoji-data.txt")])
     (make-directory* (build-path dir "auxiliary"))
     (make-directory* (build-path dir "emoji"))
