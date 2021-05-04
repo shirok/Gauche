@@ -354,14 +354,17 @@
 ;;;
 
 ;; EXPERIMENTAL: windows console code page support for text.line-edit
-;; NB: ces (character encoding scheme) conversion is not implemented.
 (cond-expand
  [gauche.os.windows
-  (autoload os.windows sys-get-console-output-cp)
-  ;; check if we have a windows console.
-  (when (or (sys-isatty (standard-input-port))
-            (sys-isatty (standard-output-port))
-            (sys-isatty (standard-error-port)))
+  (autoload os.windows
+            sys-get-console-output-cp
+            sys-has-windows-console?
+            sys-windows-terminal?
+            sys-windows-console-legacy?)
+  ;; check if we have a windows console
+  ;; (except for windows terminal (windows 10))
+  (when (and (sys-has-windows-console?)
+             (not (sys-windows-terminal?)))
     ;; wide character settings for text.line-edit
     (if-let1 ctx %line-edit-ctx
       (case (sys-get-console-output-cp)
@@ -369,7 +372,8 @@
          (set! (~ ctx 'wide-char-disp-setting 'mode) 'Surrogate)
          (set! (~ ctx 'wide-char-pos-setting  'mode) 'Surrogate)
          (set! (~ ctx 'wide-char-disp-setting 'wide-char-width) 2)
-         (set! (~ ctx 'wide-char-pos-setting  'wide-char-width) 1)
+         (set! (~ ctx 'wide-char-pos-setting  'wide-char-width)
+               (if (sys-windows-console-legacy?) 1 2))
          (set! (~ ctx 'wide-char-disp-setting 'surrogate-char-width) 2)
          (set! (~ ctx 'wide-char-pos-setting  'surrogate-char-width) 2)]
         [else ; 932 etc.
