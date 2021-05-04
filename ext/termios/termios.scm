@@ -173,9 +173,7 @@
  (define (has-windows-console?)
    (cond-expand
     [gauche.os.windows
-     (or (sys-isatty (standard-input-port))
-         (sys-isatty (standard-output-port))
-         (sys-isatty (standard-error-port)))]
+     (sys-has-windows-console?)]
     [else #f]))
 
  (cond-expand

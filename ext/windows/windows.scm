@@ -98,10 +98,35 @@
    sys-set-console-title
    STD_INPUT_HANDLE STD_OUTPUT_HANDLE STD_ERROR_HANDLE
    sys-get-std-handle sys-set-std-handle
+
+   ;; windows console related
+   sys-has-windows-console?
+   sys-windows-terminal?
+   sys-windows-console-legacy?
    ))
 (select-module os.windows)
 
 (dynamic-load "os--windows")
+
+;; check if we have a windows console
+(define (sys-has-windows-console?)
+  (boolean (or (sys-isatty (standard-input-port))
+               (sys-isatty (standard-output-port))
+               (sys-isatty (standard-error-port)))))
+
+;; check if running on windows terminal (windows 10)
+(define (sys-windows-terminal?)
+  (boolean (and (not (sys-getenv "GAUCHE_WINDOWS_TERMINAL_OFF"))
+                (sys-getenv "WT_SESSION"))))
+
+;; check if windows console is in legacy mode (windows 10)
+(define (sys-windows-console-legacy?)
+  (let* ([hout         (sys-get-std-handle STD_OUTPUT_HANDLE)]
+         [con-out-mode (sys-get-console-mode hout)])
+    (guard (e [(<system-error> e) #t])
+      (sys-set-console-mode hout #x0005)
+      (sys-set-console-mode hout con-out-mode)
+      #f)))
 
 ] ; gauche.os.windows
 [else

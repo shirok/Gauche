@@ -47,11 +47,8 @@
 (define-class <windows-console> ()
   (;; all slots are private
    (keybuf :init-form (make-queue))
-   (high-surrogate)
+   (high-surrogate :init-value 0)
    ))
-(define-method initialize ((con <windows-console>) initargs)
-  (next-method)
-  (set! (~ con'high-surrogate) 0))
 
 ;; These handles should not be cached.
 (define (get-ihandle) (sys-get-std-handle STD_INPUT_HANDLE))
@@ -161,7 +158,10 @@
       (enqueue! (~ con'keybuf) (integer->char ch))]))
   (dolist [ks (win-keystate)]
     (match-let1 (kdown ch vk ctls) ks
-      (if (and (= kdown 1) (not (memv vk ignorevk)))
+      (if (or (and (= kdown 1) (not (memv vk ignorevk)))
+              ;; workaround for windows terminal (windows 10)
+              ;; (this is required when we input surrogate pair characters)
+              (and (= kdown 0) (= vk #x12) (not (= ch 0))))
         (cond-expand
          [gauche.ces.utf8
           ;; process a surrogate pair
@@ -176,8 +176,13 @@
                (enqueue-keybuffer ch vk ctls)
                (set! (~ con'high-surrogate) 0))]
             [else
-             (enqueue-keybuffer ch vk ctls)
-             (set! (~ con'high-surrogate) 0)])]
+             ;; drop some input for windows terminal (windows 10)
+             ;; (they appear when we input surrogate pair characters)
+             (unless (and (= ch 0)
+                          (or (= vk #x66) (= vk #x63))
+                          (logtest ctls LEFT_ALT_PRESSED))
+               (enqueue-keybuffer ch vk ctls)
+               (set! (~ con'high-surrogate) 0))])]
          [else
           (enqueue-keybuffer ch vk ctls)])
         ))))

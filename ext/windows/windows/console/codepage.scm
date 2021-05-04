@@ -57,6 +57,9 @@
         (begin
           (guard (e [(<system-error> e) #f]) (sys-alloc-console))
           (get-conv-param hdl-type ces use-api))
+      ;; set io type
+      (port-attribute-set! vport 'windows-console-io-type
+                           (if conv (if use-api 'win-api 'normal) 'through))
       ;; replace to a real getc procedure
       (let1 proc
           (if conv
@@ -117,6 +120,9 @@
         (begin
           (guard (e [(<system-error> e) #f]) (sys-alloc-console))
           (get-conv-param hdl-type ces use-api))
+      ;; set io type
+      (port-attribute-set! vport 'windows-console-io-type
+                           (if conv (if use-api 'win-api 'normal) 'through))
       ;; replace to a real puts procedure
       (let1 proc
           (if conv
@@ -142,7 +148,9 @@
           (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
                  [w     (+ 1 (- (slot-ref cinfo'window.right)
                                 (slot-ref cinfo'window.left)))]
-                 [cw    (if (= (sys-get-console-output-cp) 65001) 2 4)]
+                 [cw    (if (or (sys-windows-terminal?)
+                                (= (sys-get-console-output-cp) 65001))
+                          2 4)]
                  [len   (string-length str)])
             (let loop ([i1 0] [i2 0])
               (when (>= (u32vector-ref buf i2) #x10000)
@@ -185,6 +193,9 @@
   (let ([stdin-flag (eqv? hdl-type STD_INPUT_HANDLE)]
         [conv       #t]
         [ces2       (gauche-character-encoding)])
+    ;; for windows terminal (windows 10)
+    (when (sys-windows-terminal?)
+      (set! use-api #t))
     ;; automatic detection of ces
     (unless ces
       (let1 cp (if stdin-flag
@@ -226,6 +237,7 @@
        (rlet1 vport (make <virtual-input-port>
                       :name "(windows console standard input)")
          (port-attribute-set! vport 'windows-console-conversion #t)
+         (port-attribute-set! vport 'windows-console-io-type 'unknown)
          (let1 proc (make-conv-getc (standard-input-port)
                                     STD_INPUT_HANDLE ces use-api vport)
            (set! (~ vport'getc) proc)))))
@@ -236,6 +248,7 @@
        (rlet1 vport (make <virtual-output-port>
                       :name "(windows console standard output)")
          (port-attribute-set! vport 'windows-console-conversion #t)
+         (port-attribute-set! vport 'windows-console-io-type 'unknown)
          (let1 proc (make-conv-puts (standard-output-port)
                                     STD_OUTPUT_HANDLE ces use-api vport)
            (set! (~ vport'putc) proc)
@@ -247,6 +260,7 @@
        (rlet1 vport (make <virtual-output-port>
                       :name "(windows console standard error output)")
          (port-attribute-set! vport 'windows-console-conversion #t)
+         (port-attribute-set! vport 'windows-console-io-type 'unknown)
          (let1 proc (make-conv-puts (standard-error-port)
                                     STD_ERROR_HANDLE ces use-api vport)
            (set! (~ vport'putc) proc)
