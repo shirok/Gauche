@@ -235,9 +235,8 @@
 (define (main args)
   (match (cdr args)
     [("--fetch" dir . maybe-version) (apply fetch-ucd dir maybe-version)]
-    [("--import" dir ucdfile) (import-data dir ucdfile)]
-    [("--import" dir ucdfile testfile)
-     (import-data dir ucdfile) (import-test dir testfile)]
+    [("--import" dir ucdfile) (import-data dir ucdfile #f)]
+    [("--import" dir ucdfile testfile) (import-data dir ucdfile testfile)]
     [("--compile" ucdfile)
      (unless (file-exists? ucdfile)
        (exit 1 "Couldn't open unicode data file: ~a" ucdfile))
@@ -282,18 +281,17 @@
 ;;;
 
 ;; Dump unicode character data in ucdfile.
-(define (import-data dir ucdfile)
+(define (import-data dir ucdfile testfile)
   (unless (file-is-directory? dir)
     (exit 1 "Directory required, but got: ~a" dir))
-  (with-output-to-file ucdfile
-    (cut ucd-save-db (ucd-parse-files dir))))
+  (let1 ucd-db (ucd-parse-files dir)
+    (with-output-to-file ucdfile
+      (cut ucd-save-db ucd-db))
+    (when testfile
+      (with-output-to-file testfile
+        (^[] (import-break-test ucd-db dir))))))
 
-;; Generate test data
-(define (import-test dir testfile)
-  (with-output-to-file testfile
-    (^[] (import-break-test dir))))
-
-(define (import-break-test dir)
+(define (import-break-test ucd-db dir)
   ;; break test file format:
   ;;  <line>: <sep> (<code> <sep>)+ '#' <comment>
   ;;  <sep> : '÷' | '×'
@@ -319,6 +317,8 @@
       (generator-for-each (^r (write r) (newline))
                           (gfilter-map parse-1 (file->line-generator path)))
       (print "))")))
+  (print ";; -*- coding:utf-8 -*-")
+  (print ";; Generated from Unicode " (ucd-version ucd-db) " test data files")
   (parse '*grapheme-break-tests* "auxiliary/GraphemeBreakTest.txt")
   (parse '*word-break-tests*     "auxiliary/WordBreakTest.txt")
   (parse '*sentence-break-tests* "auxiliary/SentenceBreakTest.txt")

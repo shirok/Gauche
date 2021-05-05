@@ -362,7 +362,7 @@ char_attr.c : unicode-data.scm gen-unicode.scm
 
 char-data : gen-unicode.scm
 	@if test "$(UNICODEDATA)" = ""; then echo "Set UNICODEDATA to the path to the UnicodeData directory."; exit 1; fi
-	$(BUILD_GOSH) $(srcdir)/gen-unicode.scm --import $(UNICODEDATA) unicode-data.scm
+	$(BUILD_GOSH) $(srcdir)/gen-unicode.scm --import $(UNICODEDATA) unicode-data.scm $(top_srcdir)/test/include/unicode-test-data.scm
 
 char.$(OBJEXT) : char_attr.c
 
