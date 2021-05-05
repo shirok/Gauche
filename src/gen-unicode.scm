@@ -1,3 +1,4 @@
+;; -*- coding:utf-8 -*-
 ;;;
 ;;;  gen-unicode.scm - generate unicode-handling tables
 ;;;
@@ -14,7 +15,7 @@
 ;;   and the resulting unicode-data.scm is checked in to the source
 ;;   tree so that other developers don't need UCD.
 ;;
-;;    gosh ./gen-unicode.scm --import <unicode-database-directory> unicode-data.scm
+;;    gosh ./gen-unicode.scm --import <unicode-database-directory> unicode-data.scm [unicode-test.scm]
 ;;
 ;; (2) Generate source files from unicode-data.scm
 ;;   To reduce runtime overhead, unicode properties are saved in binary
@@ -43,6 +44,7 @@
 (use util.match)
 (use file.util)
 (use gauche.dictionary)
+(use gauche.generator)
 (use gauche.sequence)
 (use gauche.record)
 (use gauche.charconv)
@@ -233,11 +235,9 @@
 (define (main args)
   (match (cdr args)
     [("--fetch" dir . maybe-version) (apply fetch-ucd dir maybe-version)]
-    [("--import" dir ucdfile)
-     (unless (file-is-directory? dir)
-       (exit 1 "Directory required, but got: ~a" dir))
-     (with-output-to-file ucdfile
-       (cut ucd-save-db (ucd-parse-files dir)))]
+    [("--import" dir ucdfile) (import-data dir ucdfile)]
+    [("--import" dir ucdfile testfile)
+     (import-data dir ucdfile) (import-test dir testfile)]
     [("--compile" ucdfile)
      (unless (file-exists? ucdfile)
        (exit 1 "Couldn't open unicode data file: ~a" ucdfile))
@@ -276,6 +276,53 @@
           (^o (http-get "www.unicode.org" (build-path path f)
                         :sink o :flusher (^ _ #t))))
         (display "done\n")))))
+
+;;;
+;;;  Importing
+;;;
+
+;; Dump unicode character data in ucdfile.
+(define (import-data dir ucdfile)
+  (unless (file-is-directory? dir)
+    (exit 1 "Directory required, but got: ~a" dir))
+  (with-output-to-file ucdfile
+    (cut ucd-save-db (ucd-parse-files dir))))
+
+;; Generate test data
+(define (import-test dir testfile)
+  (with-output-to-file testfile
+    (^[] (import-break-test dir))))
+
+(define (import-break-test dir)
+  ;; break test file format:
+  ;;  <line>: <sep> (<code> <sep>)+ '#' <comment>
+  ;;  <sep> : '÷' | '×'
+  ;;  <code> : #[[:xdigit:]]+
+  ;;
+  ;; returns (<seq> <comment>)
+  ;;   where <seq> : <bool> (<integer> <bool>)+
+  ;;   <bool> : #t as breakable (÷), #f as unbreakable (×)
+  (define (parse-1 line)
+    (and-let1 m (#/^([÷×])\s+/ line)
+      (let loop ([line (m'after)] [r (list (break-flag (m 1)))])
+        (rxmatch-case line
+          [#/^([[:xdigit:]]+)\s+([÷×])\s+(.*)/ (_ cc ff rr)
+              (loop rr (list* (break-flag ff) (string->number cc 16) r))]
+          [#/^#\s+(.*)/ (_ comment) (list (reverse r) comment)]
+          [else (list (reverse r) "")]))))
+  (define (break-flag s) (equal? s "÷"))
+  (define (parse name file)
+    (let1 path (build-path dir file)
+      (print)
+      (print ";; " file)
+      (print #"(define ~name '(")
+      (generator-for-each (^r (write r) (newline))
+                          (gfilter-map parse-1 (file->line-generator path)))
+      (print "))")))
+  (parse '*grapheme-break-tests* "auxiliary/GraphemeBreakTest.txt")
+  (parse '*word-break-tests*     "auxiliary/WordBreakTest.txt")
+  (parse '*sentence-break-tests* "auxiliary/SentenceBreakTest.txt")
+  )
 
 ;;;
 ;;;  Generate source file
