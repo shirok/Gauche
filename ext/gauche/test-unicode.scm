@@ -346,6 +346,34 @@
 (test* "string-titlecase" "Stra\u00dfe" (string-titlecase "stra\u00dfe"))
 (test* "string-foldcase" "strasse" (string-foldcase "stra\u00dfe"))
 
+(test-section "text segmentation")
+
+(let ()
+  ;; Each test data countains a list of (<count> <seq> <comment>)
+  ;; where <seq> is <bool> (<code> <bool>)*
+  (include "../../test/include/unicode-test-data.scm")
+  (define (data->codes seq) ; extract codes
+    (remove boolean? seq))
+  (define (data->clusters seq) ; group unbreakable codes
+    (let loop ([seq (cdr seq)] [r '()] [s `(,(car seq))])
+      (match seq
+        [() (reverse (cons (reverse s) r))]
+        [(#t x . seq) (loop seq (cons (reverse s) r) (list x))]
+        [(#f x . seq) (loop seq r (cons x s))])))
+  (define (t name data segmenter)
+    (let ([count (car data)]
+          ;; The test data sequence us surrounded by '÷' (break), but we don't
+          ;; need them.
+          [seq (subseq (cadr data) 1 (- (length (cadr data)) 1))])
+      (test* #"~name (~count)" (data->clusters seq)
+             (segmenter (data->codes seq)))))
+  (define (t* name all-data segmenter)
+    (for-each (cut t name <> segmenter) all-data))
+
+  (t* "grapheme break" *grapheme-break-tests* codepoints->grapheme-clusters)
+  '(t* "word break" *word-break-tests* codepoints->words)
+  )
+
 (test-section "east asian width")
 
 (let ([data1 '((#\a  Na)

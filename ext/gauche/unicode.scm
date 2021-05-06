@@ -953,19 +953,29 @@
      (L                  -> #f :l)          ; GB6
      ((or V LV)          -> #f :lv-v)       ; GB6
      (LVT                -> #f :lvt-t)      ; GB6
+     ((or Extend ZWJ)    -> #f :other)      ; GB9
+     (SpacingMark        -> #f :other)      ; GB9a
      (:else              -> #t :default))
     (:lv-v
      (V                  -> #f :lv-v)       ; GB7
      (T                  -> #f :lvt-t)      ; GB7
+     ((or Extend ZWJ)    -> #f :other)      ; GB9
+     (SpacingMark        -> #f :other)      ; GB9a
      (:else              -> #t :default))
     (:lvt-t
      (T                  -> #f :lvt-t)      ; GB8
+     ((or Extend ZWJ)    -> #f :other)      ; GB9
+     (SpacingMark        -> #f :other)      ; GB9a
      (:else              -> #t :default))
     (:regional-indicator
      (Regional_Indicator -> #f :regional-indicator-1) ; GB12, GB13
+     ((or Extend ZWJ)    -> #f :other)                ; GB9
+     (SpacingMark        -> #f :other)                ; GB9a
      (:else              -> #t :default))
     (:regional-indicator-1
      (Regional_Indicator -> #t :regional-indicator) ; GB12, GB13
+     ((or Extend ZWJ)    -> #f :other)              ; GB9
+     (SpacingMark        -> #f :other)              ; GB9a
      (:else              -> #t :default))
     (:prepend
      (CR                 -> #t :cr)         ; GB5
@@ -974,9 +984,11 @@
     (:ext-pict
      (Extend             -> #f :ext-pict)   ; GB11
      (ZWJ                -> #f :ext-pict-1) ; GB9
+     (SpacingMark        -> #f :other)      ; GB9a
      (:else              -> #t :default))
     (:ext-pict-1
      (ExtPict            -> #f :ext-pict)   ; GB11
+     (SpacingMark        -> #f :other)      ; GB9a
      (:else              -> #t :default))
     (:other
      ((or Extend ZWJ)    -> #f :other)      ; GB9
