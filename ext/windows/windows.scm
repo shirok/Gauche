@@ -109,6 +109,10 @@
 (dynamic-load "os--windows")
 
 ;; check if we have a windows console
+;;
+;; NB: this procedure returns #f on MSYS (mintty).
+;; see %sys-mintty? in src/libsys.scm for details.
+;;
 (define (sys-has-windows-console?)
   (boolean (or (sys-isatty (standard-input-port))
                (sys-isatty (standard-output-port))
@@ -121,12 +125,13 @@
 
 ;; check if windows console is in legacy mode (windows 10)
 (define (sys-windows-console-legacy?)
-  (let* ([hout         (sys-get-std-handle STD_OUTPUT_HANDLE)]
-         [con-out-mode (sys-get-console-mode hout)])
-    (guard (e [(<system-error> e) #t])
-      (sys-set-console-mode hout #x0005)
-      (sys-set-console-mode hout con-out-mode)
-      #f)))
+  (let* ([hout (sys-get-std-handle STD_OUTPUT_HANDLE)]
+         [mode (sys-get-console-mode hout)]
+         [ret  (guard (e [(<system-error> e) #t])
+                 (sys-set-console-mode hout #x0005) ; try VT mode
+                 #f)])
+    (sys-set-console-mode hout mode) ; restore mode
+    ret))
 
 ] ; gauche.os.windows
 [else
