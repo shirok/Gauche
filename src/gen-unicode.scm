@@ -297,9 +297,11 @@
   ;;  <sep> : '÷' | '×'
   ;;  <code> : #[[:xdigit:]]+
   ;;
-  ;; returns (<seq> <comment>)
-  ;;   where <seq> : <bool> (<integer> <bool>)+
-  ;;   <bool> : #t as breakable (÷), #f as unbreakable (×)
+  ;; returns (<count> <seq> <comment>)
+  ;;   where
+  ;;     <count> : integer, to make it easy to find tests
+  ;;     <seq> : <bool> (<integer> <bool>)+
+  ;;     <bool> : #t as breakable (÷), #f as unbreakable (×)
   (define (parse-1 line)
     (and-let1 m (#/^([÷×])\s+/ line)
       (let loop ([line (m'after)] [r (list (break-flag (m 1)))])
@@ -314,8 +316,9 @@
       (print)
       (print ";; " file)
       (print #"(define ~name '(")
-      (generator-for-each (^r (write r) (newline))
-                          (gfilter-map parse-1 (file->line-generator path)))
+      (generator-for-each (^[r k] (pprint (cons k r)))
+                          (gfilter-map parse-1 (file->line-generator path))
+                          (giota))
       (print "))")))
   (print ";; -*- coding:utf-8 -*-")
   (print ";; Generated from Unicode " (ucd-version ucd-db) " test data files")
