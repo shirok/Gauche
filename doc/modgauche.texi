@@ -22334,12 +22334,23 @@ Returns @code{#t} iff @var{obj} is a barrier.
 
 @defun barrier-await barrier :optional timeout timeout-val
 @c MOD gauche.threads
+@c EN
 Waits on @var{barrier} until the number of waiting threads reaches
 the threshold of the barrier, or the barrier is broken.
+@c JP
+@var{barrier}で待っているスレッドが閾値に達するか、バリアが破れるまで、
+呼び出したスレッドを待たせます。
+@c COMMON
 
+@c EN
 A barrier can be broken if any of waiting threads hit the timeout,
 or an uncaptured exception is raised from the action thunk of the barrier.
+@c JP
+バリアが破れるのは、待っているスレッドのどれかがタイムアウトするか、
+バリアのアクションから例外が投げられた時です。
+@c COMMON
 
+@c EN
 The @var{timeout} and @var{timeout-val} are the same as other synchronization
 primitives; @var{timeout} may be @code{#f} (no timeout, default),
 a @code{<time>} object
@@ -22348,32 +22359,71 @@ time in number of seconds; @var{timeout-val} is the value returned
 when @code{barrier-await} returns prematurely---either timeout, or
 other barrier breakage conditions.
 The default of @var{timeout-val} is @code{#f}.
+@c JP
+@var{timeout}と@var{timeout-val}引数は他の同期プリミティブと同じです。
+@var{timeout}は@code{#t} (タイムアウトなし、デフォルト)か、
+絶対的時刻を指定する@code{<time>}オブジェクトか、
+相対的な秒数を指定する実数です。
+@var{timeout-val}は@code{barrier-await}がタイムアウトかバリア破れで
+戻る場合に返される値で、デフォルトは@code{#f}です。
+@c COMMON
 
+@c EN
 It returns an integer if the thread is released by reaching the threshold,
 or @var{timeout-val} if the barrier is broken.  The integer indicates
 the number of threads required to reach the threshold at the time
 @code{barrier-wait} is called; that is, if you're the first to reach
 the barrier it is threshold - 1, and if you're the last it is 0.
+@c JP
+この手続きの戻り値は、待ちスレッド数が閾値に達して戻った場合は正確な整数、
+バリアが破れた場合は@var{timeout-val}です。
+正確な整数は、@code{barrier-await}を呼び出した時点であといくつ待ちスレッドが
+必要だったかを示します。つまり、最初にバリアに到達したスレッドなら @code{threshold - 1}、
+最後に到達したなら0です。
+@c COMMON
 
+@c EN
 If the barrier is already broken when you call @code{barrier-await},
 it returns immediately with @var{timeout-val}.
+@c JP
+@code{barrier-await}を呼んだ時点で既にバリアが破れていたら、
+直ちに@var{timeout-val}が返されます。
+@c COMMON
 
+@c EN
 If the threads are released normally, the barrier turns back to the
 initial state so you can wait on it again.  If the threads are released
 because the barrier is broken, it remains in broken state until
 reset by @code{barrier-reset!}.
+@c JP
+スレッド数が閾値に達して全スレッドを解放した場合は、
+バリアは初期状態に戻ります。つまり、次に@code{barrier-await}を呼んだスレッドは
+再び待たされることになります。
+バリアが破れたば場合、@code{barrier-reset!}が呼ばれるまでバリアはずっと破れた
+状態のままになります。
+@c COMMON
 @end defun
 
 @defun barrier-broken? barrier
 @c MOD gauche.threads
+@c EN
 Returns @code{#t} iff @var{barrier} is in broken state.
+@c JP
+バリア@var{barrier}が破れた状態なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun barrier-reset! barrier
 @c MOD gauche.threads
+@c EN
 Resets the barrier to the initial state.  If the barrire is broken,
 the broken state is cleared.  If any thread is waiting on the barrier,
 it is released as if the number of threads reaches the threshold.
+@c JP
+バリアを初期状態にリセットします。バリアが破れた状態なら、破れていない状態に戻ります。
+バリアで待っているスレッドがいた場合、それはあたかもスレッド数が閾値に達したかのように
+解放されます。
+@c COMMON
 @end defun
 
 
