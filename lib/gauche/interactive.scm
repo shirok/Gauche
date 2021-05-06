@@ -361,12 +361,12 @@
             sys-has-windows-console?
             sys-windows-terminal?
             sys-windows-console-legacy?)
-  ;; check if we have a windows console
-  ;; (except for windows terminal (windows 10))
-  (when (and (sys-has-windows-console?)
-             (not (sys-windows-terminal?)))
-    ;; wide character settings for text.line-edit
-    (if-let1 ctx %line-edit-ctx
+  ;; wide character settings for text.line-edit
+  (if-let1 ctx %line-edit-ctx
+    ;; check if we have a windows console
+    ;; (except for windows terminal (windows 10))
+    (when (and (sys-has-windows-console?)
+               (not (sys-windows-terminal?)))
       (case (sys-get-console-output-cp)
         [(65001)
          (set! (~ ctx 'wide-char-disp-setting 'mode) 'Surrogate)
