@@ -185,9 +185,11 @@
           (<error> (message (format "No task with id: ~s" task-id))))))))
 
 ;; API
+;;  Returns #t if task is removed, #f if not, for srfi-120 specifies so.
+;;  Relies on such behaivor of dict-delete!
 (define (scheduler-remove! s task-id)
   ($ request-response s
-     (^[] (dict-delete! (~ s'task-queue) task-id) (undefined))))
+     (^[] (dict-delete! (~ s'task-queue) task-id))))
 
 ;; API
 (define (scheduler-exists? s task-id)

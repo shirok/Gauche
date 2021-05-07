@@ -1789,8 +1789,8 @@ is raised.
 @defun scheduler-remove! scheduler task-id
 @c MOD control.scheduler
 Remove the task specified by @var{task-id} from the scheduler.
-If the scheduler doesn't have a task with @var{task-id}, this is no-op.
-Retuns @code{#<undef>}.
+If the task is actually removed, @code{#t} is returned.
+If the scheduler doesn't have a task with @var{task-id}, @code{#f} is returned.
 @end defun
 
 
