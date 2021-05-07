@@ -6460,26 +6460,98 @@ Gaucheは整数を使っています。
 @defun timer-reschedule! timer task-id when :optional period
 [SRFI-120]
 @c MOD srfi-120
+@c EN
+Change the timing when task identified by @var{task-id} in @var{timer}
+is executed.  The @var{task-id} should be the object returned
+from previous @code{timer-schedule!} on the same @var{timer}.
+@c JP
+@var{timer}中で@var{task-id}で指定されるタスクの実行時間を変更します。
+@var{task-id}はこれ以前に@code{timer-schedule!}を@var{timer}に適用して
+返されたオブジェクトでなければなりません。
+@c COMMON
+
+@c EN
+The semantics of @var{when} and @var{period} are the same as
+@code{timer-schedule!}.
+@c JP
+@var{when}と@var{period}の意味は@code{timer-schedule!}と同じです。
+@c COMMON
+
+@c EN
+If there's no task with @var{task-id} in @var{timer} (including the
+case that the task was one-shot and already run), an error is thrown.
+(The behavior is undefined in the srfi).
+@c JP
+@var{task-id}に該当するタスクが無い場合 (一回きりのタスクとして既に実行されてしまって
+いる場合も含みます) にはエラーが投げられます。(srfiではこの場合の動作は規定されていません)
+@c COMMON
+
+@c EN
+This procedure returns @var{task-id}.
+@c JP
+返り値は@var{task-id}です。
+@c COMMON
+
+@c EN
+This is implemented on top of @code{scheduler-reschedule!} in
+@code{control.scheduler} (@pxref{Scheduler}), but note that
+the unit of @var{when} and @var{period} is different from it.
+@c JP
+この手続きは@code{control.scheduler}の@code{scheduler-reschedule!}を
+使って実装されています(@ref{Scheduler}参照)が、
+@var{when}と@var{period}の単位が異なっていることに注意してください。
+@c COMMON
+
 @end defun
 
 @defun timer-task-remove! timer task-id
 [SRFI-120]
 @c MOD srfi-120
+@c EN
+Removes the task specified by @var{task-id} from the @var{timer}.
+Returns @code{#t} if the task is actually removed, @code{#f} if
+the timer doesn't have the specified task.
+@c JP
+@var{timer}中の、@var{task-id}で指定されるタスクを取り除きます。
+タスクが実際に取り除かれたら@code{#t}を、指定のタスクが存在しなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun timer-task-exists? timer task-id
 [SRFI-120]
 @c MOD srfi-120
+@c EN
+Returns @code{#t} iff the timer has a task specified by @var{task-id}.
+A non-repeated task is automatically removed from @var{timer} once executed.
+@c JP
+@var{timer}が@var{task-id}で指定されるタスクを持っていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+繰り返さないタスクは実行されたら@var{timer}から自動的に除かれます。
+@c COMMON
 @end defun
 
 @defun make-timer-delta n unit
 [SRFI-120]
 @c MOD srfi-120
+A constructor for time-delta object.  It can be passed to @var{when}
+and @var{period} arguments of @code{timer-schedule!} and
+@code{timer-reschedule!}.
+
+In Gauche, a time-delta object is an instance of @code{<time>} with
+@code{time-duration} type.  The srfi doesn't specify the concrete
+implementation, though, so portable code should use this procedure.
+
+@var{n} is an integer, and @code{unit} must be one of the following symbols:
+@code{h} (hour), @code{m} (minute), @code{s} (second),
+@code{ms} (millisecond), @code{us} (microsecond) or @code{ns} (nanosecond).
 @end defun
 
 @defun timer-delta? obj
 [SRFI-120]
 @c MOD srfi-120
+Returns @code{#t} iff @var{obj} is a time-delta object,
+which is, in Gauche, an instance of @code{<time>} object with
+@code{time-duration} type.
 @end defun
 
 
