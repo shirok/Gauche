@@ -156,17 +156,9 @@
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/SentenceBreakProperty.txt
 ;;
 ;;    NB: As of Unicode 13, we also need Extended_Poctographic Emoji property
-;;    to do Grapheme clustering properly.
+;;    to do clustering properly.
 ;;
-;;    An entry is 8-bit, indicating the character's Word_Break and
-;;    Grapheme_Break properties.  In unicode_attr.h, they are
-;;    prefixed with WB_ and GB_, respectively.
-;;    Note that WB_CR, WB_LF, WB_Single_Quote, WB_Double_Quote,
-;;    GB_CR and GB_LF values are *not* stored in the table.  Each
-;;    property value is assigned to single character and we check
-;;    them separately.
-;;
-;;    bit7-4:  Word_Break property
+;;    Word_Break properties
 ;;             10    CR     (not stored in the table)
 ;;             11    LF     (not stored in the table)
 ;;              0    Newline
@@ -186,7 +178,8 @@
 ;;              c    WSegSpace
 ;;              d    ZWJ
 ;;              e    Other
-;;    bit3-0:  Graphene_Break property
+;;
+;;    Graphene_Break properties
 ;;             10    CR (not stored in the table)
 ;;             11    LF (not stored in the table)
 ;;              0    Control
@@ -200,7 +193,8 @@
 ;;              8    LV
 ;;              9    LVT
 ;;              a    ZWJ
-;;              b    Other
+;;              b    ExtPict
+;;              c    Other
 ;;
 ;;   Codepoints below U+20000 are looked up by two-staged tables.
 ;;   First, look up this table with (codepoint >> 8).
@@ -901,14 +895,20 @@
                                            (+ 16 i)))
                            (cdr specials)))
     (format #t "static void init_~a_symbols(ScmModule *mod) {\n" prefix)
+    (format #t "  ScmObj h = SCM_NIL, t = SCM_NIL;\n")
     (for-each (^c
-               (and c
-                    (format #t
-                            "Scm_DefineConst(mod, \
-                          SCM_SYMBOL(SCM_INTERN(\"~a_~a\")),\
-                          SCM_MAKE_INT(~a_~a));\n"
-                            prefix c prefix c)))
+               (when c
+                 (print "{")
+                 (format #t "  ScmObj s0 = SCM_INTERN(\"~a\");\n" c)
+                 (format #t "  ScmObj s = SCM_INTERN(\"~a_~a\");\n" prefix c)
+                 (format #t "  ScmObj v = SCM_MAKE_INT(~a_~a);\n" prefix c)
+                 (print "  Scm_DefineConst(mod, SCM_SYMBOL(s), v);")
+                 (print "  SCM_APPEND1(h, t, Scm_Cons(s0, v));")
+                 (print "}")))
               constants)
+    (format #t "  Scm_DefineConst(mod, \
+               SCM_SYMBOL(SCM_INTERN(\"*~a-property-alist*\")), h);\n"
+            prefix)
     (print "}"))
 
   (print)
