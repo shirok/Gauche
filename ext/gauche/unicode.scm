@@ -841,29 +841,9 @@
 (define *word-break-fa*
   (compile-state-transition-description *word-break-states*
                                         *word-break-default-next-states*
-                                        ;; NB: This mapping should be provided
-                                        ;; by text.unicode.ucd, but we hack it
-                                        ;; up for now.
-                                        (hash-table 'eq?
-                                                    '(Newline . 0)
-                                                    '(Extend . 1)
-                                                    '(Regional_Indicator . 2)
-                                                    '(Format . 3)
-                                                    '(Katakana . 4)
-                                                    '(Hebrew_Letter . 5)
-                                                    '(ALetter . 6)
-                                                    '(MidLetter . 7)
-                                                    '(MidNum . 8)
-                                                    '(MidNumLet . 9)
-                                                    '(Numeric . 10)
-                                                    '(ExtendNumLet . 11)
-                                                    '(WSegSpace . 12)
-                                                    '(ZWJ . 13)
-                                                    '(Other . 14)
-                                                    '(CR . 16)
-                                                    '(LF . 17)
-                                                    '(Single_Quote . 18)
-                                                    '(Double_Quote . 19))))
+                                        (alist->hash-table
+                                         *WB-property-alist* ; in unicode_attr.h
+                                         'eq?)))
 
 ;; Simple queue to avoid depending data.queue
 (define (makeq) (cons '() '()))
@@ -999,25 +979,9 @@
 (define *grapheme-break-fa*
   (compile-state-transition-description *grapheme-break-states*
                                         *grapheme-break-default-next-states*
-                                        ;; NB: This mapping should be provided
-                                        ;; by text.unicode.ucd, but we hack it
-                                        ;; up for now.
-                                        (hash-table 'eq?
-                                                    '(Control . 0)
-                                                    '(Extend . 1)
-                                                    '(Regional_Indicator . 2)
-                                                    '(Prepend . 3)
-                                                    '(SpacingMark . 4)
-                                                    '(L . 5)
-                                                    '(V . 6)
-                                                    '(T . 7)
-                                                    '(LV . 8)
-                                                    '(LVT . 9)
-                                                    '(ZWJ . 10)
-                                                    '(ExtPict . 11)
-                                                    '(Other . 12)
-                                                    '(CR . 16)
-                                                    '(LF . 17))))
+                                        (alist->hash-table
+                                         *GB-property-alist* ; in unicode_attr.h
+                                         'eq?)))
 
 ;; API
 ;; Returns a generator, that returns two values, a character and
