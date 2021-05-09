@@ -231,6 +231,8 @@
     [("--fetch" dir . maybe-version) (apply fetch-ucd dir maybe-version)]
     [("--import" dir ucdfile) (import-data dir ucdfile #f)]
     [("--import" dir ucdfile testfile) (import-data dir ucdfile testfile)]
+    [("--analyze" ucdfile)
+     (analyze-break-tables (call-with-input-file ucdfile ucd-load-db))]
     [("--compile" ucdfile)
      (unless (file-exists? ucdfile)
        (exit 1 "Couldn't open unicode data file: ~a" ucdfile))
@@ -927,6 +929,58 @@
                   (format #t " ~3d," n)))
     (format #t "\n};\n"))
   )
+
+;; Auxiliary stuff to find out optimal table configuration
+(define (analyze-break-tables db)
+  ;; Check break properties of 16 consecutive codepoints.
+  ;; Returns (<codepoint-string> . <property-or-#t>).  If properties
+  ;; all 16 codeponds are the same, cdr is the property; otherwise it's #t.
+  (define (probe-16 start accessor)
+    (define kind #f)
+    (define (get-1 i)
+      (if-let1 e (ucd-get-break-property db (+ start i))
+        (accessor e)
+        'Other))
+    (do-ec (: i 16)
+           (let1 kk (get-1 i)
+             (cond [(not kind) (set! kind kk)]
+                   [(eqv? kind #t)]
+                   [(eqv? kind kk)]
+                   [else (set! kind #t)])))
+    (cons (format "~4,'0xX" (ash start -4)) kind))
+  ;; Check break properties of 16 consecutive 16 codepoint blocks.
+  (define (probe-256 start accessor)
+    (define kind #f)
+    (define ps
+      (list-ec (: ii 16)
+               (rlet1 p (probe-16 (+ start (ash ii 4)) accessor)
+                 (cond [(not kind) (set! kind (cdr p))]
+                       [(eqv? kind (cdr p))]
+                       [else (set! kind #t)]))))
+    (case kind
+      [(#t)
+       (format #t "~3,'0xXX -------------\n" (ash start -8))
+       (for-each (^p (format #t "  ~a ~a\n" (car p) (cdr p)))
+                 (remove (^p (eq? (cdr p) 'Other)) ps))]
+      [(Other)]
+      [else
+       (format #t "~3,'0xXX  ~a\n" (ash start -8) kind)]))
+
+  (define (probe-all accessor)
+    (do-ec (: u #x200)
+           (probe-256 (ash u 8) accessor)))
+
+  (define (do-probe)
+    (format #t "GB distribution\n")
+    (probe-all ucd-break-property-grapheme)
+    (print)
+    (format #t "WB distribution\n")
+    (probe-all ucd-break-property-word)
+    )
+
+  (do-probe)
+  )
+
 
 ;; EastAsianWidth property values
 ;; This goes to src/gauche/priv/unicode_attr.h
