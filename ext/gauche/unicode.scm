@@ -572,14 +572,11 @@
  (define-cproc gb-property (scode) ::<int>
    (let* ([ch::int SCM_CHAR_INVALID])
      (get-arg ch scode)
-     (cond [(== ch #x0a) (return GB_LF)]
-           [(== ch #x0d) (return GB_CR)]
-           [(< ch #x20000)
-            (let* ([k::u_char (aref break_table (>> ch 8))])
-              (if (== k 255)
-                (return GB_Other)
-                (let* ([b::u_char (aref break_subtable k (logand ch #xff))])
-                  (return (>> b 4)))))]
+     (cond [(< ch #x20000)
+            (let* ([k::u_char (aref GB_break_table (>> ch 8))])
+              (if (>= k BOFF)
+                (return (- k BOFF)) ; all block is the same
+                (return (aref GB_break_subtable k (logand ch #xff)))))]
            [(or (== #xE0001 ch)
                 (and (<= #xE0020 ch) (<= ch #xE007F))) (return GB_Control)]
            [(and (<= #xE0100 ch) (<= ch #xE01EF)) (return GB_Extend)]
@@ -588,16 +585,11 @@
  (define-cproc wb-property (scode) ::<int>
    (let* ([ch::int SCM_CHAR_INVALID])
      (get-arg ch scode)
-     (cond [(== ch #x0a) (return WB_LF)]
-           [(== ch #x0d) (return WB_CR)]
-           [(== ch #x22) (return WB_Double_Quote)]
-           [(== ch #x27) (return WB_Single_Quote)]
-           [(< ch #x20000)
-            (let* ([k::u_char (aref break_table (>> ch 8))])
-              (if (== k 255)
-                (return WB_Other)
-                (let* ([b::u_char (aref break_subtable k (logand ch #xff))])
-                  (return (logand b #x0f)))))]
+     (cond [(< ch #x20000)
+            (let* ([k::u_char (aref WB_break_table (>> ch 8))])
+              (if (>= k BOFF)
+                (return (- k BOFF)) ; all block is the same
+                (return (aref WB_break_subtable k (logand ch #xff)))))]
            [(or (== #xE0001 ch)
                 (and (<= #xE0020 ch) (<= ch #xE007F))) (return WB_Format)]
            [(and (<= #xE0100 ch) (<= ch #xE01EF)) (return WB_Extend)]

@@ -853,82 +853,89 @@
 ;; The data structure is two-level tables that maps codepoint 0-1FFFFF to
 ;; an octet.
 ;;
-;; The first level, break_table, is 512-length byte vector.
-;; Upper 9bit of codepoint is used to index this table.  If the entry
-;; is 255, the break property of that codepoint takes the default value.
-;;
-;; Otherwise, the first table entry is the subtable, break_subtable[N][],
-;; and the lower 8bit of codepoint is used to index the subtable.
-;; it returns an octet, in which upper 4 bit is for grapheme break property
-;; and lower 4 bit is for word break property.
+;; The first level, {GB|WB}_break_table, is 512-length byte vector.
+;; Upper 9bit of codepoint is used to index this table.
+;; If the entry is [0..224], it's the index to the {GB|WB}_break_subtable[N][],
+;; which is indexed with the lower 8 bit of the codepoint.
+;; If the entry is above that, it indicates the entire block shares the
+;; same property.
 
 (define (generate-break-tables db)
+  (define single-property-offset 224)
   (define subtable-count 0)
 
-  (define (gen-entry code)
-    (let1 e (ucd-get-break-property db code)
-      (if (not e)
-        (format #t "    BREAK_ENTRY(GB_Other, WB_Other),\n")
-        (format #t "    BREAK_ENTRY(GB_~a, WB_~a),\n"
-                (let1 gp (ucd-break-property-grapheme e)
-                  (if (memq gp '(CR LF))
-                    'Other
-                    gp))
-                (let1 wp (ucd-break-property-word e)
-                  (if (memq wp '(CR LF Single_Quote Double_Quote))
-                    'Other
-                    wp))))))
+  (define (get-property entry type); type : GB | WB
+    (if entry
+      (case type
+        [(GB) (ucd-break-property-grapheme entry)]
+        [(WB) (ucd-break-property-word entry)])
+      'Other))
+
+  (define (gen-entry code type) ; type : GB | WB
+    (format #t "    ~a_~a,\n" type
+            (get-property (ucd-get-break-property db code) type)))
 
   ;; returns subtable-number
-  (define (gen-subtable start-code)
-    (if (any?-ec (: lb 256) (ucd-get-break-property db (+ start-code lb)))
+  (define (gen-subtable start-code type)
+    (define kind #f)
+    (do-ec (: lb 256)
+           (let* ([e (ucd-get-break-property db (+ start-code lb))]
+                  [p (get-property e type)])
+             (cond [(not kind) (set! kind p)]
+                   [(eqv? kind p)]
+                   [else (set! kind #t)])))
+    (if (symbol? kind)
+      ;; same property in the entire block
+      (format "(BOFF+~a_~a)" type kind)
       (rlet1 subtable-num subtable-count
         (format #t "  {\n")
-        (do-ec (: lb 256) (gen-entry (+ start-code lb)))
+        (do-ec (: lb 256) (gen-entry (+ start-code lb) type))
         (format #t "  },\n")
-        (inc! subtable-count))
-      255))
+        (inc! subtable-count))))
+
+  (define (gen-main-table type)
+    (set! subtable-count 0)
+    (print)
+    (print #"static unsigned char ~|type|_break_subtable[][256] = {")
+    (let1 nlist (list-ec (: n 512) (gen-subtable (* n 256) type))
+      (print "};")
+      (when (>= subtable-count single-property-offset)
+        (error #"~|type| subtable index overflow (~|subtable-count|)"))
+      (print)
+      (format #t "static unsigned char ~a_break_table[] = {" type)
+      (do-ec (:parallel (: n nlist) (:integers i))
+             (begin (when (zero? (mod i 4)) (format #t "\n   "))
+                    (format #t " ~3d," n)))
+      (format #t "\n};\n")))
 
   ;; Generate table of symbols
-  (define (gen-symbol-table constants prefix)
-    (receive (normals specials) (break not constants)
-      (for-each-with-index (^(i c) (format #t "#define ~a_~a ~a\n" prefix c i))
-                           normals)
-      (for-each-with-index (^(i c) (format #t "#define ~a_~a ~a\n" prefix c
-                                           (+ 16 i)))
-                           (cdr specials)))
-    (format #t "static void init_~a_symbols(ScmModule *mod) {\n" prefix)
+  (define (gen-symbol-table constants type)
+    (for-each-with-index (^[i c] (format #t "#define ~a_~a ~a\n" type c i))
+                         constants)
+    (format #t "static void init_~a_symbols(ScmModule *mod) {\n" type)
     (format #t "  ScmObj h = SCM_NIL, t = SCM_NIL;\n")
     (for-each (^c
                (when c
                  (print "{")
                  (format #t "  ScmObj s0 = SCM_INTERN(\"~a\");\n" c)
-                 (format #t "  ScmObj s = SCM_INTERN(\"~a_~a\");\n" prefix c)
-                 (format #t "  ScmObj v = SCM_MAKE_INT(~a_~a);\n" prefix c)
+                 (format #t "  ScmObj s = SCM_INTERN(\"~a_~a\");\n" type c)
+                 (format #t "  ScmObj v = SCM_MAKE_INT(~a_~a);\n" type c)
                  (print "  Scm_DefineConst(mod, SCM_SYMBOL(s), v);")
                  (print "  SCM_APPEND1(h, t, Scm_Cons(s0, v));")
                  (print "}")))
               constants)
     (format #t "  Scm_DefineConst(mod, \
                SCM_SYMBOL(SCM_INTERN(\"*~a-property-alist*\")), h);\n"
-            prefix)
+            type)
     (print "}"))
 
   (print)
-  (gen-symbol-table (ucd-grapheme-break-properties) "GB")
-  (gen-symbol-table (ucd-word-break-properties) "WB")
+  (gen-symbol-table (ucd-grapheme-break-properties) 'GB)
+  (gen-symbol-table (ucd-word-break-properties) 'WB)
   (print)
-  (print "#define BREAK_ENTRY(g, w)  (((g)<<4)|(w))")
-  (print)
-  (print "static unsigned char break_subtable[][256] = {")
-  (let1 nlist (list-ec (: n 512) (gen-subtable (* n 256)))
-    (print "};")
-    (print)
-    (format #t "static unsigned char break_table[] = {")
-    (do-ec (:parallel (: n nlist) (:integers i))
-           (begin (when (zero? (mod i 8)) (format #t "\n   "))
-                  (format #t " ~3d," n)))
-    (format #t "\n};\n"))
+  (print #"#define BOFF ~|single-property-offset|")
+  (gen-main-table 'GB)
+  (gen-main-table 'WB)
   )
 
 ;; Auxiliary stuff to find out optimal table configuration
