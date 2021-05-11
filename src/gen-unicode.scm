@@ -155,58 +155,30 @@
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/WordBreakProperty.txt
 ;;    http://www.unicode.org/Public/UNIDATA/auxiliary/SentenceBreakProperty.txt
 ;;
-;;    NB: As of Unicode 13, we also need Extended_Poctographic Emoji property
-;;    to do clustering properly.
+;;    NB: As of Unicode 13, we also need Extended_Poctographic (ExtPict)
+;;    Emoji property to do clustering properly.  For grapheme break
+;;    properties, all ExtPict codepoints are GB_Other, so we simply name
+;;    them GB_ExtPict.  For word break properties, ExtPict falls on WB_Other
+;;    and WB_ALetter.  We Name the former WB_ExtPict, and the latter
+;;    WB_ExtPict_ALetter.
 ;;
-;;    Word_Break properties
-;;             10    CR     (not stored in the table)
-;;             11    LF     (not stored in the table)
-;;              0    Newline
-;;              1    Extend
-;;              2    Regional_Indicator
-;;              3    Format
-;;              4    Katakana
-;;              5    Hebrew_Letter
-;;              6    ALetter
-;;             12    Single_Quote (not stored in the table)
-;;             13    Double_Quote (not stored in the table)
-;;              7    MidLetter
-;;              8    MidNum
-;;              9    MidNumLet
-;;              a    Numeric
-;;              b    ExtendNumLet
-;;              c    WSegSpace
-;;              d    ZWJ
-;;              e    Other
-;;
-;;    Graphene_Break properties
-;;             10    CR (not stored in the table)
-;;             11    LF (not stored in the table)
-;;              0    Control
-;;              1    Extend
-;;              2    Regional_Indicator
-;;              3    Prepend
-;;              4    SpacingMark
-;;              5    L
-;;              6    V
-;;              7    T
-;;              8    LV
-;;              9    LVT
-;;              a    ZWJ
-;;              b    ExtPict
-;;              c    Other
+;;    The definitive list of properties are in text.unicode.ucd,
+;;    ucd-grapheme-break-properties and ucd-word-break-properties
 ;;
 ;;   Codepoints below U+20000 are looked up by two-staged tables.
 ;;   First, look up this table with (codepoint >> 8).
 ;;
-;;     static unsigned char break_table[0x200]
+;;     static unsigned char {GB|WB}_break_table[0x200]
 ;;
-;;   If the value is 255, both properties are 'Other'.
-;;   Otherwise, the value is an index to the secondary table.
+;;   If the value is up to single-property-offset (224), the value is
+;;   the index to the secondary table.
 ;;
-;;     static unsigned char break_subtable[index][256]
+;;     static unsigned char {GB|WB}_break_subtable[index][256]
 ;;
-;;   The value of this table encodes WB and GB properties.
+;;   The value of this table encodes GB|WB properties.
+;;   If th evalue is equal to or more than single-property-offset,
+;;   it indicates the entire block of 256 codepoints shared the same
+;;   property, (- value single-property-offset).
 ;;
 ;;   Codepoints on or above U+20000 are all 'Other', except the following
 ;;   ranges.  They are handled specially in the lookup procedure.
