@@ -1,3 +1,8 @@
+2021-05-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-unicode.scm, ext/gauche/unicode.scm: Catch up word break
+	  algorithm to Unicode 13.
+
 2021-05-04  Shiro Kawai  <shiro@acm.org>
 
 	* ext/windows/windows.scm etc.: Improve windows console handling

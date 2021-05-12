@@ -371,7 +371,7 @@
     (for-each (cut t name <> segmenter) all-data))
 
   (t* "grapheme break" *grapheme-break-tests* codepoints->grapheme-clusters)
-  '(t* "word break" *word-break-tests* codepoints->words)
+  (t* "word break" *word-break-tests* codepoints->words)
   )
 
 (test-section "east asian width")

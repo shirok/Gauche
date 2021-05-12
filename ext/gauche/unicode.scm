@@ -675,6 +675,12 @@
 ;; by input.  The element of inner vector is a pair of
 ;; (<output> . <next-state-index>)
 ;;
+;; For our purpose, <output> can be either one of these:
+;;   #f   - Do not break before the current input.
+;;   #t   - Break before the current input.
+;;   hold - Do not consume the current input and just go to the next state.
+;;   wb6, wb7b, wb12 - This triggers special handling in word breaker
+;;
 ;; Each description is in the form of (state-name arc ...)
 ;; where arc is (input -> output next-state-name)
 ;; and input may be a symbol, (or input ...), or :else.
@@ -743,6 +749,7 @@
     (ALetter            . :a-letter)
     (Numeric            . :numeric)
     (ExtendNumLet       . :extend-num-let)
+    (WSegSpace          . :wsegspace)
     (:else              . :other)))
 
 (define *word-break-states*
@@ -752,39 +759,67 @@
      ((or Newline LF)     -> #t :newline-lf)
      (CR                  -> #t :cr)
      ((or Extend Format)  -> #t :sep-extend-format)
+     (ZWJ                 -> #t :sep-zwj)
      (:else               -> #t :default))
     ;; CR (WB3, WB3a) - break except followed by LF.
     (:cr
      (LF                  -> #f :newline-lf)
-     ((or Extend Format)  -> #t :sep-extend-format)
+     ((or Extend Format ) -> #t :sep-extend-format)
+     (ZWJ                 -> #t :sep-zwj)
      (:else               -> #t :default))
     ;; Newline|LF  (WB3, WB3a)
     (:newline-lf
      ((or Extend Format)  -> #t :sep-extend-format)
+     (ZWJ                 -> #t :sep-zwj)
+     (:else               -> #t :default))
+    ;; Sep + ZWJ x ExtendedPict (WB3c)
+    (:sep-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :sep-extend-format)
+     (ZWJ                 -> #f :sep-zwj)
      (:else               -> #t :default))
     ;; Sep + (Extend|Format)*  (WB4)
     (:sep-extend-format
      ((or Extend Format)  -> #f :sep-extend-format)
+     (ZWJ                 -> #f :sep-zwj)
      (:else               -> #t :default))
     ;; ALetter
     (:a-letter
      ((or Extend Format)  -> #f :a-letter)       ; WB4
+     (ZWJ                 -> #f :a-letter-zwj)   ; WB4
      (ALetter             -> #f :a-letter)       ; WB5
      (Hebrew_Letter       -> #f :hebrew-letter)  ; WB5
      ((or MidLetter MidNumLet Single_Quote) -> wb6 :a-letter+mid) ; WB6
      (Numeric             -> #f :numeric)        ; WB9
      (ExtendNumLet        -> #f :extend-num-let) ; WB13a
      (:else               -> #t :default))
-    ;; ALetter + (MidLetter|MidNumLetQ)
+    ;; ALetter x ZWJ x ExtendedPict (WB3c)
+    (:a-letter-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :a-letter)
+     (ZWJ                 -> #f :a-letter-zwj)
+     (:else               -> hold :a-letter))
+    ;; ALetter x (MidLetter|MidNumLetQ)
     (:a-letter+mid
      ((or Extend Format)  -> #f :a-letter+mid)   ; WB4
+     (ZWJ                 -> #f :a-letter+mid-zwj) ; WB4
      (ALetter             -> #f :a-letter)       ; WB7
      (Hebrew_Letter       -> #f :hebrew-letter)  ; WB7
      (:else               -> #t :default))
+    ;; ALetter + (MidLetter|MidNumLetQ) + ZWJ x ExtendedPict (WB3c)
+    (:a-letter+mid-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :a-letter+mid)
+     (ZWJ                 -> #f :a-letter+mid-zwj)
+     (:else               -> hold :a-letter+mid))
     ;; Hebrew_Letter
     ;; NB: WB7a is actually covered by WB6.
     (:hebrew-letter
      ((or Extend Format)  -> #f :hebrew-letter)  ; WB4
+     (ZWJ                 -> #f :hebrew-letter-zwj) ; WB4
      (ALetter             -> #f :a-letter)       ; WB5
      (Hebrew_Letter       -> #f :hebrew-letter)  ; WB5
      (Single_Quote        -> #f :a-letter+mid)   ; WB7a
@@ -793,41 +828,129 @@
      (Numeric             -> #f :numeric)        ; WB9
      (ExtendNumLet        -> #f :extend-num-let) ; WB13a
      (:else               -> #t :default))
+    ;; Hebrew_Letter x ZWJ x ExtendedPict (WB3c)
+    (:hebrew-letter-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :hebrew-letter)
+     (ZWJ                 -> #f :hebrew-letter-zwj)
+     (:else               -> hold :hebrew-letter))
     ;; Hebrew_Letter + Double_Quote
     (:hebrew-letter+dq
      ((or Extend Format)  -> #f :hebrew-letter+dq) ; WB4
+     (ZWJ                 -> #f :hebrew-letter+dq-zwj) ; WB4
      (Hebrew_Letter       -> #f :hebrew-letter)    ; WB7c
      (:else               -> #t :default))
+    ;; Hebrew_Letter + Double_Quote + ZWJ x ExtendedPict (WB3c)
+    (:hebrew-letter+dq-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :hebrew-letter+dq) ; WB4
+     (ZWJ                 -> #f :hebrew-letter+dq-zwj)
+     (:else               -> hold :hebrew-letter+dq))
     (:numeric
      ((or Extend Format)  -> #f :numeric)        ; WB4
+     (ZWJ                 -> #f :numeric-zwj)    ; WB4
      (Numeric             -> #f :numeric)        ; WB8
      (ALetter             -> #f :a-letter)       ; WB10
      (Hebrew_Letter       -> #f :hebrew-letter)  ; WB10
-     ((or MidLetter MidNumLet Single_Quote) -> wb12 :numeric+mid) ; WB12
+     ((or MidNum MidNumLet Single_Quote) -> wb12 :numeric+mid) ; WB12
      (ExtendNumLet        -> #f :extend-num-let) ; WB13a
      (:else               -> #t :default))
+    (:numeric-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :numeric)        ; WB4
+     (ZWJ                 -> #f :numeric-zwj)
+     (:else               -> hold :numeric))
     (:numeric+mid
      ((or Extend Format)  -> #f :numeric+mid)    ; WB4
+     (ZWJ                 -> #f :numeric+mid-zwj) ; WB4
      (Numeric             -> #f :numeric)        ; WB11
      (:else               -> #t :default))
+    (:numeric+mid-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :numeric+mid)    ; WB4
+     (ZWJ                 -> #f :numeric+mid-zwj)
+     (:else               -> hold :numeric+mid))
     (:katakana
      ((or Extend Format)  -> #f :katakana)       ; WB4
+     (ZWJ                 -> #f :katakana-zwj)   ; WB4
      (Katakana            -> #f :katakana)       ; WB13
+     (ExtendNumLet        -> #f :extend-num-let) ; WB13a
      (:else               -> #t :default))
+    (:katakana-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :katakana)       ; WB4
+     (ZWJ                 -> #f :katakana-zwj)
+     (:else               -> hold :katakana))
     (:extend-num-let
      ((or Extend Format)  -> #f :extend-num-let) ; WB4
+     (ZWJ                 -> #f :extend-num-let-zwj) ; WB4
      (ExtendNumLet        -> #f :extend-num-let) ; WB13a
      (ALetter             -> #f :a-letter)       ; WB13b
      (Hebrew_Letter       -> #f :hebrew-letter)  ; WB13b
      (Numeric             -> #f :numeric)        ; WB13b
      (Katakana            -> #f :katakana)       ; WB13b
      (:else               -> #t :default))
+    (:extend-num-let-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :extend-num-let)
+     (ZWJ                 -> #f :extend-num-let-zwj)
+     (:else               -> hold :extend-num-let))
     (:regional-indicator
      ((or Extend Format)  -> #f :regional-indicator) ; WB4
-     (Regional_Indicator  -> #f :regional-indicator) ; WB13c
+     (ZWJ                 -> #f :regional-indicator-zwj) ; WB4
+     (Regional_Indicator  -> #f :regional-indicator-1) ; WB15, WB16
      (:else               -> #t :default))
+    (:regional-indicator-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :regional-indicator)
+     (ZWJ                 -> #f :regional-indicator-zwj)
+     (:else               -> hold :regional-indicator))
+    (:regional-indicator-1
+     (Regional_Indicator  -> #t :regional-indicator) ; WB15, WB16
+     ((or Extend Format)  -> #f :regional-indicator-1)
+     (ZWJ                 -> #f :regional-indicator-1-zwj)
+     (:else               -> #t :default))
+    (:regional-indicator-1-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :regional-indicator-1)
+     (ZWJ                 -> #f :regional-indicator-1-zwj)
+     (:else               -> hold :regional-indicator-1))
+    ;; WSegSpace (WB3d)
+    ;; NB: WordBreakTest.txt indicates WSegSpace x Extend ÷ WSegSpace,
+    ;; so we need :wsegspace-ex
+    (:wsegspace
+     (WSegSpace           -> #f :wsegspace)      ; WB3d
+     ((or Extend Format)  -> #f :wsegspace-ex)
+     (ZWJ                 -> #f :wsegspace-zwj)  ; WB4
+     (:else               -> #t :default))
+    (:wsegspace-ex
+     ((or Extend Format)  -> #f :wsegspace-ex)
+     (ZWJ                 -> #f :wsegspace-zwj)
+     (:else               -> #t :default))
+    (:wsegspace-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :wsegspace-ex)   ; WB4
+     (ZWJ                 -> #f :wsegspace-zwj)
+     (:else               -> hold :wsegspace))
     (:other
+     ((or Extend Format)  -> #f :other)          ; WB4
+     (ZWJ                 -> #f :other-zwj)      ; WB4
      (:else               -> #t :default))       ; WB14
+    (:other-zwj
+     (ExtPict             -> #f :other)
+     (ExtPict_ALetter     -> #f :a-letter)
+     ((or Extend Format)  -> #f :other)
+     (ZWJ                 -> #f :other-zwj)
+     (:else               -> hold :other))
     ))
 
 (define *word-break-fa*
@@ -847,6 +970,10 @@
 (define (deq! q) (if (q-empty? q)
                    (error "[internal] queue is empty")
                    (rlet1 p (caar q) (set-car! q (cdar q)))))
+(define (pushq! q item) (if (q-empty? q)
+                          (let1 p (list item)
+                            (set-car! q p) (set-cdr! q p))
+                          (set-car! q (cons item (car q)))))
 
 ;; API
 ;; Returns a generator procedure.  Every time it is called, it returns
@@ -858,13 +985,14 @@
 (define (make-word-breaker generator)
   (define current-state (vector-ref *word-break-fa* 0))
   (define q (makeq))  ;characters looked ahead.
-  (^[]
+  (rec (gen)
     (let1 ch (if (q-empty? q) (generator) (deq! q))
       (if (eof-object? ch)
         (values ch #t) ; WB2
         (let1 p (vector-ref current-state (wb-property ch))
           (set! current-state (vector-ref *word-break-fa* (cdr p)))
           (cond [(boolean? (car p)) (values ch (car p))]
+                [(eq? (car p) 'hold) (pushq! q ch) (gen)]
                 [(eq? (car p) 'wb6)
                  (wb-lookahead generator q ch `(,WB_ALetter ,WB_Hebrew_Letter))]
                 [(eq? (car p) 'wb12)
@@ -884,6 +1012,7 @@
         (cond [(memv prop next-props) (values ch #f)]
               [(eqv? prop WB_Extend) (loop (generator))]
               [(eqv? prop WB_Format) (loop (generator))]
+              [(eqv? prop WB_ZWJ) (loop (generator))]
               [else (values ch #t)])))))
 
 ;; API
