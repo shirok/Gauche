@@ -44,9 +44,11 @@
 (use util.match)
 
 (define (main args)
-  (let1 predef-syms '()
+  (let ([predef-syms '()]
+        [includes '()])
     (let-args (cdr args)
         ([help               "h|help" => (^_ (usage #f))]
+         [inc                "I=s" => (^v (push! includes v))]
          [keep-private-macro "M|keep-private-macro=s"]
          [ext-main           "e|ext-main"]
          [xprefix            "p|strip-prefix=s"]
@@ -72,6 +74,7 @@
            (cgen-precompile src
                             :out.c out.c
                             :out.sci (or out.sci ext-module)
+                            :load-paths (reverse includes)
                             :strip-prefix prefix
                             :ext-initializer extini
                             :sub-initializers subinits

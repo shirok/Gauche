@@ -1,3 +1,11 @@
+2021-05-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/precomp, lib/gauche/cgen/precomp.scm: Make precomp recognize -I
+	  option.  This is mainly for 'include' form in the source; when
+	  the build is out-of-tree and the source includes generated files,
+	  it can be that the location of includer (srcdir) and the location
+	  of includee (builddir) differ.
+
 2021-05-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/gen-unicode.scm, ext/gauche/unicode.scm: Catch up word break

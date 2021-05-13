@@ -150,6 +150,12 @@
 ;;      which isn't exported) are not included in the output.  But sometimes
 ;;      hygienic public macros expands to a call of private macros, and
 ;;      gauche.cgen.precomp cannot detect such dependencies yet.
+;;
+;; load-paths : Extra load paths prepended to the system's *load-path* during
+;;      compilation.  NB: Currnently, precompilation environment isn't isolated
+;;      enough from the host environment.  You can't load a different version
+;;      of the same library the host is using just for the precompiled file.
+;;      This option is mainly for 'include's in the source.
 
 (define (cgen-precompile src . keys)
   (with-tmodule-recording
@@ -166,6 +172,7 @@
                                     (predef-syms '())
                                     (macros-to-keep '())
                                     (single-sci-file #f)
+                                    (load-paths '())
                                     (extra-optimization #f))
   (define (precomp-1 main src)
     (let* ([out.c (cgen-scm-path->c-file (strip-prefix src prefix))]
@@ -180,6 +187,7 @@
                         :extra-optimization extra-optimization
                         :ext-initializer (and (equal? src main)
                                               ext-initializer)
+                        :load-paths load-paths
                         :initializer-name initname)))
   (define (tweak-sci sci) ; for consolidating sci files. returns sexp list
     (if (not sci)
@@ -222,14 +230,23 @@
                                (initializer-name #f)
                                (sub-initializers '())
                                (predef-syms '())
+                               (load-paths '())
                                (macros-to-keep '())
                                (extra-optimization #f))
   (define (do-it)
     (parameterize ([omitted-code '()])
       (setup ext-initializer sub-initializers)
       (with-input-from-file src
-        (cut emit-toplevel-executor
-             (reverse (generator-fold compile-toplevel-form '() read))))
+        (^[]
+          ;; NB: *load-path* isn't a parameter (yet), so we hack it.
+          ;; This shouldn't be the way; do not copy it.
+          (define load-path-save *load-path*)
+          (unwind-protect
+              (begin
+                (set! *load-path* (fold cons *load-path* (reverse load-paths)))
+                (emit-toplevel-executor
+                 (reverse (generator-fold compile-toplevel-form '() read))))
+            (set! *load-path* load-path-save))))
       (finalize sub-initializers)
       (cgen-emit-c (cgen-current-unit))))
   (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
