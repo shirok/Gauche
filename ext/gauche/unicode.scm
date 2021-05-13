@@ -545,6 +545,9 @@
 ;;;  Character properties
 ;;;
 
+;; unicode-attr.scm is created with src/gen-unicode.scm during build.
+(include "unicode-attr.scm")
+
 ;;=========================================================================
 ;; Low level code to look up properties
 ;;
@@ -553,8 +556,6 @@
  (declcode
   (.include "gauche/priv/unicode_attr.h"))
 
- (initcode "init_GB_symbols(Scm_CurrentModule());")
- (initcode "init_WB_symbols(Scm_CurrentModule());")
  (initcode "init_WIDTH_symbols(Scm_CurrentModule());")
 
  (define-cise-stmt get-arg
@@ -740,7 +741,7 @@
 ;; The flag may be #t (break), #f (not break), wb6 (special lookahead for
 ;; WB6) or wb12 (special lookahead for WB12).
 
-(define *word-break-default-next-states*
+(define-constant *word-break-default-next-states*
   '((CR                 . :cr)
     ((or Newline LF)    . :newline-lf)
     (Regional_Indicator . :regional-indicator)
@@ -752,7 +753,7 @@
     (WSegSpace          . :wsegspace)
     (:else              . :other)))
 
-(define *word-break-states*
+(define-constant *word-break-states*
   '(;; Initial state (sot)
     ;; From WB1, we always break.
     (:sot
@@ -957,7 +958,7 @@
   (compile-state-transition-description *word-break-states*
                                         *word-break-default-next-states*
                                         (alist->hash-table
-                                         *WB-property-alist* ; in unicode_attr.h
+                                         *WB-properties* ; in unicode-attr.scm
                                          'eq?)))
 
 ;; Simple queue to avoid depending data.queue
@@ -1101,7 +1102,7 @@
   (compile-state-transition-description *grapheme-break-states*
                                         *grapheme-break-default-next-states*
                                         (alist->hash-table
-                                         *GB-property-alist* ; in unicode_attr.h
+                                         *GB-properties* ; in unicode_attr.scm
                                          'eq?)))
 
 ;; API

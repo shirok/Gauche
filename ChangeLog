@@ -1,5 +1,10 @@
 2021-05-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/gen-unicode.scm, ext/gauche/unicode.scm: Generate break property
+	  symbols in unicode-attr.scm, instead of unicode_attr.h.  With the
+	  latter, those symbols won't be available until runtime, preventing
+	  some compile-time compuation.
+
 	* src/precomp, lib/gauche/cgen/precomp.scm: Make precomp recognize -I
 	  option.  This is mainly for 'include' form in the source; when
 	  the build is out-of-tree and the source includes generated files,

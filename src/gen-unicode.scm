@@ -23,6 +23,7 @@
 ;;
 ;;   char_attr.c                - General category and case mappings.
 ;;   gauche/priv/unicode_attr.h - Grapheme break, word break, East-asian width
+;;   ext/gauche/unicode-attr.scm - Break property symbols
 ;;
 ;;   This is done when you build from git source tree.
 ;;
@@ -301,26 +302,33 @@
 ;;;
 
 (define (generate-tables db)
-  (receive (char_attr.p char_attr.c) (sys-mkstemp "char_attr.c.")
-    (receive (unicode_attr.p unicode_attr.h) (sys-mkstemp "unicode_attr.h.")
-      (with-output-to-port char_attr.p
-        (^() (preamble db)
-          (generate-category-tables db)
-          (generate-case-tables db)
-          (generate-digit-value-tables db)))
-      (with-output-to-port unicode_attr.p
-        (^() (preamble db)
-          (generate-break-tables db)
-          (generate-width-tables db)))
-      (close-port char_attr.p)
-      (close-port unicode_attr.p)
-      (sys-rename char_attr.c "char_attr.c")
-      (sys-rename unicode_attr.h "gauche/priv/unicode_attr.h"))))
+  (let-values ([(c.p char_attr.c) (sys-mkstemp "char_attr.c.")]
+               [(h.p unicode_attr.h) (sys-mkstemp "unicode_attr.h.")]
+               [(scm.p unicode-attr.scm) (sys-mkstemp "unicode-attr.scm.")])
+    (with-output-to-port c.p
+      (^() (preamble db "/*" "*/")
+        (generate-category-tables db)
+        (generate-case-tables db)
+        (generate-digit-value-tables db)))
+    (with-output-to-port h.p
+      (^() (preamble db "/*" "*/")
+        (generate-break-tables db)
+        (generate-width-tables db)))
+    (with-output-to-port scm.p
+      (^() (preamble db ";;" "")
+        (generate-break-symbols db)))
+    (close-port c.p)
+    (close-port h.p)
+    (close-port scm.p)
+    (make-directory* "gauche/priv") ; in case we're building out-of-tree
+    (sys-rename char_attr.c "char_attr.c")
+    (sys-rename unicode_attr.h "gauche/priv/unicode_attr.h")
+    (sys-rename unicode-attr.scm "../ext/gauche/unicode-attr.scm")))
 
-(define (preamble db)
-  (print "/* Generated automatically from Unicode character database */")
-  (print "/* See src/gen-unicode.scm for the description of data structures. */")
-  (print #"/* Unicode version ~(ucd-version db).  Do not edit. */")
+(define (preamble db op cl)
+  (print #"~|op| Generated automatically from Unicode character database ~|cl|")
+  (print #"~|op| See src/gen-unicode.scm for the description of data structures. ~|cl|")
+  (print #"~|op| Unicode version ~(ucd-version db).  Do not edit. ~|cl|")
   )
 
 ;; NB: The caracter category tables are generated for each supported
@@ -820,7 +828,7 @@
   sets)
 
 ;; Break property values
-;; This goes to src/gauche/priv/unicode_attr.h
+;; This goes to src/gauche/priv/unicode_attr.h and ext/gauche/unicode-attr.scm
 ;;
 ;; The data structure is two-level tables that maps codepoint 0-1FFFFF to
 ;; an octet.
@@ -883,23 +891,7 @@
   ;; Generate table of symbols
   (define (gen-symbol-table constants type)
     (for-each-with-index (^[i c] (format #t "#define ~a_~a ~a\n" type c i))
-                         constants)
-    (format #t "static void init_~a_symbols(ScmModule *mod) {\n" type)
-    (format #t "  ScmObj h = SCM_NIL, t = SCM_NIL;\n")
-    (for-each (^c
-               (when c
-                 (print "{")
-                 (format #t "  ScmObj s0 = SCM_INTERN(\"~a\");\n" c)
-                 (format #t "  ScmObj s = SCM_INTERN(\"~a_~a\");\n" type c)
-                 (format #t "  ScmObj v = SCM_MAKE_INT(~a_~a);\n" type c)
-                 (print "  Scm_DefineConst(mod, SCM_SYMBOL(s), v);")
-                 (print "  SCM_APPEND1(h, t, Scm_Cons(s0, v));")
-                 (print "}")))
-              constants)
-    (format #t "  Scm_DefineConst(mod, \
-               SCM_SYMBOL(SCM_INTERN(\"*~a-property-alist*\")), h);\n"
-            type)
-    (print "}"))
+                         constants))
 
   (print)
   (gen-symbol-table (ucd-grapheme-break-properties) 'GB)
@@ -964,6 +956,18 @@
                     (probe-all "WB" ucd-break-property-word))]
     (format #t "~a # int. tables = ~d, # leaf tables = ~d\n"
             (car rr) (cadr rr) (caddr rr)))
+  )
+
+(define (generate-break-symbols db)
+  (define (gen-symbols constants type)
+    (for-each-with-index
+     (^[i c] (pprint `(define-constant ,(symbol-append type '_ c) ,i)))
+     constants)
+    (pprint `(define-constant ,(symbol-append '* type '-properties*)
+               ',(map-with-index (^[i c] (cons c i)) constants))))
+
+  (gen-symbols (ucd-grapheme-break-properties) 'GB)
+  (gen-symbols (ucd-word-break-properties) 'WB)
   )
 
 ;; EastAsianWidth property values
