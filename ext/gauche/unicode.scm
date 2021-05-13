@@ -693,6 +693,7 @@
 ;; The input-index-map argument is a map to look up input index from
 ;; the input symbol.
 
+(eval-when (:compile-toplevel)
 (define (compile-state-transition-description state-desc default-next-state
                                               input-index-map)
   (define (expand-or alist)
@@ -728,6 +729,7 @@
                [_ (errorf "Can't find transition from state ~s with input ~s"
                           (car state) input-symbol)])))))
     (list->vector (map build-inner-vec states))))
+)
 
 ;;=========================================================================
 ;; Word breaker state transition tables
@@ -741,6 +743,7 @@
 ;; The flag may be #t (break), #f (not break), wb6 (special lookahead for
 ;; WB6) or wb12 (special lookahead for WB12).
 
+(eval-when (:compile-toplevel)
 (define-constant *word-break-default-next-states*
   '((CR                 . :cr)
     ((or Newline LF)    . :newline-lf)
@@ -954,12 +957,13 @@
      (:else               -> hold :other))
     ))
 
-(define *word-break-fa*
+(define-constant *word-break-fa*
   (compile-state-transition-description *word-break-states*
                                         *word-break-default-next-states*
                                         (alist->hash-table
                                          *WB-properties* ; in unicode-attr.scm
                                          'eq?)))
+);eval-when
 
 ;; Simple queue to avoid depending data.queue
 (define (makeq) (cons '() '()))
@@ -1029,7 +1033,8 @@
 ;; and entry is a cons of boolean value (#t - break, #f - not break),
 ;; and the next state vector index.
 
-(define *grapheme-break-default-next-states*
+(eval-when (:compile-toplevel)
+(define-constant *grapheme-break-default-next-states*
   '((CR                 . :cr)
     (LF                 . :control-lf)
     (Control            . :control-lf)
@@ -1041,7 +1046,7 @@
     (ExtPict            . :ext-pict)
     (:else              . :other)))
 
-(define *grapheme-break-states*
+(define-constant *grapheme-break-states*
   '(;; Initial state - sot
     (:sot
      (:else              -> #t :default))   ; GB1
@@ -1098,12 +1103,13 @@
      (:else              -> #t :default))   ; GB10
     ))
 
-(define *grapheme-break-fa*
+(define-constant *grapheme-break-fa*
   (compile-state-transition-description *grapheme-break-states*
                                         *grapheme-break-default-next-states*
                                         (alist->hash-table
                                          *GB-properties* ; in unicode_attr.scm
                                          'eq?)))
+);eval-when
 
 ;; API
 ;; Returns a generator, that returns two values, a character and
