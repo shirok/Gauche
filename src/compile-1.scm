@@ -60,11 +60,11 @@
 ;; It would be a large change, so this is a compromise...
 (define-inline (pass1/lookup-head head cenv)
   (or (and (identifier? head)
-           (cenv-lookup-syntax cenv head))
+           (cenv-lookup cenv head))
       (and (pair? head)
            (module-qualified-variable? head cenv)
            (let1 mod (ensure-module (cadr head) 'with-module #f)
-             (cenv-lookup-syntax (cenv-swap-module cenv mod) (caddr head))))))
+             (cenv-lookup (cenv-swap-module cenv mod) (caddr head))))))
 
 ;;--------------------------------------------------------------
 ;; pass1 :: Sexpr, Cenv -> IForm
@@ -118,11 +118,13 @@
      [else (pass1/call program (pass1 (car program) (cenv-sans-name cenv))
                        (cdr program) cenv)])]
    [(identifier? program)               ; variable reference
-    (let1 r (cenv-lookup-variable cenv program)
+    (let1 r (cenv-lookup cenv program)
       (cond [(lvar? r) ($lref r)]
             [(wrapped-identifier? r)
              (or (and-let* ([const (find-const-binding r)]) ($const const))
                  ($gref r))]
+            [(macro? r) ;; local macro appearing in non-head pos
+             (error "invalid macro use:" program)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
@@ -192,7 +194,7 @@
 (define (module-qualified-variable? expr cenv)
   (match expr
     [((? identifier? wm) mod (? identifier? v))
-     (and-let* ([var (cenv-lookup-syntax cenv wm)]
+     (and-let* ([var (cenv-lookup cenv wm)]
                 [ (identifier? var) ])
        (global-identifier=? var with-module.))]
     [_ #f]))
@@ -839,7 +841,7 @@
   (define (xpand expr)
     (match expr
       [((? identifier? op) . args)
-       (let1 var (cenv-lookup-syntax cenv op)
+       (let1 var (cenv-lookup cenv op)
          (cond [(macro? var) (call-macro-expander var expr cenv)]
                [(wrapped-identifier? var)
                 (if-let1 gval (and-let* ([gloc (id->bound-gloc var)]
@@ -1538,7 +1540,7 @@
     [(_ name expr)
      (unless (identifier? name)
        (error "syntax-error: malformed set!:" form))
-     (let ([var (cenv-lookup-variable cenv name)]
+     (let ([var (cenv-lookup cenv name)]
            [val (pass1 expr cenv)])
        (if (lvar? var)
          ($lset var val)

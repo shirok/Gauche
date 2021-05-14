@@ -1,3 +1,22 @@
+2021-05-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm (cenv-lookup): No longer distinguish 'lookup as
+	  syntax' and 'lookup as variable'.  This change doesn't change
+	  RnRS valid programs, but programs that may depend on previous
+	  (non-standard) behavior may be affected.
+	  The distinction concerns the resolution of variable that appear
+	  at non-head position.  In pre-R6RS era, macro keyword can only be
+	  valid when it appears at the head of the list.  So when we looked
+	  up a variable that doesn't appear at the head, we ignored local
+	  macro bindings.  As an introduction of identifier macros in R6RS
+	  that's no longer the case.  Although Gauche hasn't supported
+	  identifier macros, we see some identifier-related srfis recently
+	  and it is a good time to align the semantics.
+	  Here's an example that shows the difference:
+	  (let ((a 0))
+	    (let-syntax ((a (syntax-rules () ((_ x) '(a x)))))
+	      (list a)))  ;-> used to (0), now ERROR: invalid macro use
+
 2021-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/gen-unicode.scm, ext/gauche/unicode.scm: Generate break property

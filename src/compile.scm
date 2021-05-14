@@ -115,7 +115,7 @@
 ;; Compile-time constants
 ;;
 
-;; Used by env-lookup-int.  the frame is marked as either LEXICAL or SYNTAX.
+;; A local frame is marked as either LEXICAL or SYNTAX in its car.
 (eval-when (:compile-toplevel)
   (define-constant LEXICAL 0)
   (define-constant SYNTAX  1))
@@ -299,20 +299,16 @@
 
 ;; Some cenv-related procedures are in C for better performance.
 (inline-stub
- ;; env-lookup-int :: Name, LookupAs, Module, [Frame] -> Var
+ ;; env-lookup-int :: Name, Module, [Frame] -> Var
  ;;         where Var = Lvar | Identifier | Macro
  ;;
  ;;  PERFORMANCE KLUDGE:
  ;;     - We assume the frame structure is well-formed, so skip some tests.
- ;;     - We assume 'lookupAs' and the car of each frame are small non-negative
- ;;       integers, so we directly compare them without unboxing them.
  ;;
- (define-cfn env-lookup-int (name lookup-as module::ScmModule* frames) :static
+ (define-cfn env-lookup-int (name module::ScmModule* frames) :static
    (let* ([y name])
      (while 1
        (dopairs [fp1 frames]
-         (when (> (SCM_CAAR fp1) lookup-as) ; see PERFORMANCE KLUDGE above
-           (continue))
          ;; inline assq here to squeeze performance.
          (dolist [vp (SCM_CDAR fp1)]
            (when (SCM_EQ y (SCM_CAR vp)) (return (SCM_CDR vp)))))
@@ -332,18 +328,11 @@
 
  ;; Internal API - used while macro expansion
  (define-cproc env-lookup (name module frames)
-   (return (env-lookup-int name (SCM_MAKE_INT 1) ;; SYNTAX
-                           (SCM_MODULE module) frames)))
+   (return (env-lookup-int name (SCM_MODULE module) frames)))
  ;; Internal API - for faster CENV lookup
- (define-cproc cenv-lookup-syntax (cenv name)
+ (define-cproc cenv-lookup (cenv name)
    (return
-    (env-lookup-int name (SCM_MAKE_INT 1)                      ; SYNTAX
-                    (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
-                    (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
- ;; Internal API - for faster CENV lookup
- (define-cproc cenv-lookup-variable (cenv name)
-   (return
-    (env-lookup-int name (SCM_MAKE_INT 0)                      ; LEXICAL
+    (env-lookup-int name
                     (SCM_MODULE (SCM_VECTOR_ELEMENT cenv 0))   ; module
                     (SCM_VECTOR_ELEMENT cenv 1))))             ; frames
 
@@ -1524,10 +1513,10 @@
    (unless (and (SCM_IDENTIFIERP id1) (SCM_IDENTIFIERP id2)) (return FALSE))
    (when (SCM_EQ id1 id2) (return TRUE))
    ;; Look at their binidngs
-   (let* ([b1 (env-lookup-int id1 (SCM_MAKE_INT 1)
+   (let* ([b1 (env-lookup-int id1
                               (-> (SCM_IDENTIFIER id1) module)
                               (Scm_IdentifierEnv (SCM_IDENTIFIER id1)))]
-          [b2 (env-lookup-int id2 (SCM_MAKE_INT 1)
+          [b2 (env-lookup-int id2
                               (-> (SCM_IDENTIFIER id2) module)
                               (Scm_IdentifierEnv (SCM_IDENTIFIER id2)))])
      (if (and (SCM_IDENTIFIERP b1) (SCM_IDENTIFIERP b2))
@@ -1589,8 +1578,8 @@
  (define-cfn Scm__ERCompare (a b module::ScmModule* frames) ::int
    (cond [(and (or (SCM_SYMBOLP a) (SCM_IDENTIFIERP a))
                (or (SCM_SYMBOLP b) (SCM_IDENTIFIERP b)))
-          (let* [(a1 (env-lookup-int a (SCM_MAKE_INT 1) module frames))
-                 (b1 (env-lookup-int b (SCM_MAKE_INT 1) module frames))]
+          (let* [(a1 (env-lookup-int a module frames))
+                 (b1 (env-lookup-int b module frames))]
             (when (SCM_EQ a1 b1) (return TRUE))
             (unless (and (SCM_IDENTIFIERP a1) (SCM_IDENTIFIERP b1)) (return FALSE))
             (return (%free-identifier=? a1 b1)))]
@@ -1808,7 +1797,7 @@
 
 (define (global-eq? var id cenv)  ; like free-identifier=?, used in pass1.
   (and (identifier? var)
-       (let1 v (cenv-lookup-variable cenv var)
+       (let1 v (cenv-lookup cenv var)
          (and (wrapped-identifier? v)
               (global-identifier=? v id)))))
 
