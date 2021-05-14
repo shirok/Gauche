@@ -1826,8 +1826,6 @@ SCM_EXTERN ScmObj Scm_MakeMacro(ScmObj name,
 SCM_EXTERN ScmObj Scm_MacroTransformer(ScmMacro *mac);
 SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 
-SCM_EXTERN ScmObj Scm_MakeMacroTransformer(ScmSymbol *name,
-                                           ScmObj proc);
 SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
 
