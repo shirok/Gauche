@@ -838,6 +838,15 @@
                               ((e? (x . xs)) (o? xs)))))
           (e? '(a a a a)))))
 
+;; shadowing variable binding with syntactic binding
+;; it was allowed up to 0.9.10, but no longer.
+(test "shadowing" (test-error <error> #/Non-identifier-macro can't appear/)
+      (lambda ()
+        (eval '(let ((x 0))
+                 (let-syntax ((x (syntax-rules () ((_) 1))))
+                   (list x)))
+              (current-module))))
+
 ;; This is from comp.lang.scheme posting by Antti Huima
 ;; http://groups.google.com/groups?hl=ja&selm=7qpu5ncg2l.fsf%40divergence.tcs.hut.fi
 (test "let-syntax (huima)" '(1 3 5 9)

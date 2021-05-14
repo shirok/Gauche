@@ -1,3 +1,11 @@
+2021-05-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1),
+	  src/libmacbase.scm (call-id-macro-expander),
+	  src/gauche/priv/macroP.h (SCM_MACRO_IDENTIFIER): Basis of supporting
+	  identifier macro.  This is an initial step.  The means to create
+	  identifier macros will come next.
+
 2021-05-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (cenv-lookup): No longer distinguish 'lookup as

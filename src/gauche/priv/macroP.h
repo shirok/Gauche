@@ -60,7 +60,12 @@ struct ScmMacroRec {
                                 (source . S-expr)  ; transformer source
                                 (source-info . (file line))
                               */
-    u_long flags;            /* reserved */
+    u_long flags;            /* SCM_MACRO_* */
+};
+
+enum {
+    SCM_MACRO_IDENTIFIER = 1L<<0   /* Macro xformer is called even when
+                                      the macro appears in non-head position */
 };
 
 /*

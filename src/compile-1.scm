@@ -124,7 +124,7 @@
              (or (and-let* ([const (find-const-binding r)]) ($const const))
                  ($gref r))]
             [(macro? r) ;; local macro appearing in non-head pos
-             (error "invalid macro use:" program)]
+             (call-id-macro-expander r cenv)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 

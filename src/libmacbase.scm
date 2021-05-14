@@ -147,6 +147,8 @@
 
 (define-cproc macro-transformer (mac::<macro>) Scm_MacroTransformer)
 (define-cproc macro-name (mac::<macro>) Scm_MacroName)
+(define-cproc identifier-macro? (mac::<macro>) ::<boolean>
+  (return (logand (-> mac flags) SCM_MACRO_IDENTIFIER)))
 
 ;; Macro expand tracer
 ;; *trace-macro* can be #f (default - no trace), #t (trace all macros),
@@ -180,6 +182,11 @@
         (display "\n" (current-trace-port))
         (flush (current-trace-port))))
     out))
+
+(define (call-id-macro-expander mac cenv)
+  (unless (identifier-macro? mac)
+    (error "Non-identifier-macro can't appear in this context:" mac))
+  (call-macro-expander mac mac cenv))
 
 (define-cproc make-syntax (name::<symbol> module::<module> proc)
   Scm_MakeSyntax)
