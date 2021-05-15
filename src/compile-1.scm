@@ -775,7 +775,7 @@
 
 (define-pass1-syntax (er-macro-transformer form cenv) :gauche
   (match form
-    [(_ xformer) (%pass1/er-macro-maker form xformer cenv #f #F)]
+    [(_ xformer) (%pass1/er-macro-maker form xformer cenv #f #f)]
     [(_ xformer ':identifier-macro? v)
      (assume (boolean? v))
      (%pass1/er-macro-maker form xformer cenv #f v)]
@@ -783,7 +783,7 @@
 
 (define-pass1-syntax (eri-macro-transformer form cenv) :gauche
   (match form
-    [(_ xformer) (%pass1/er-macro-maker form xformer cenv #t)]
+    [(_ xformer) (%pass1/er-macro-maker form xformer cenv #t #f)]
     [(_ xformer ':identifier-macro? v)
      (assume (boolean? v))
      (%pass1/er-macro-maker form xformer cenv #t v)]
