@@ -278,6 +278,23 @@
 ;;          (eri-test-foo exiit)))
 
 ;;----------------------------------------------------------------------
+;; er identifier macros
+;;  EXPERIMENTAL - The interface of er-macro-transformer may change
+
+(test-section "er identifier macros")
+
+(test "er identifier macro" '((1 2) 3)
+      (lambda ()
+        (let ((x 1) (y 2))
+          (let-syntax ((x (er-macro-transformer
+                           (lambda (f r c)
+                             (if (pair? f)
+                               (quasirename r `(list x y))
+                               (quasirename r `(+ x y))))
+                           :identifier-macro? #t)))
+            (list (x) x)))))
+
+;;----------------------------------------------------------------------
 ;; basic tests
 
 (test-section "basic expansion")

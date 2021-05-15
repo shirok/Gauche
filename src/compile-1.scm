@@ -124,7 +124,7 @@
              (or (and-let* ([const (find-const-binding r)]) ($const const))
                  ($gref r))]
             [(macro? r) ;; local macro appearing in non-head pos
-             (call-id-macro-expander r cenv)]
+             (pass1 (call-id-macro-expander r cenv) cenv)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
@@ -775,57 +775,61 @@
 
 (define-pass1-syntax (er-macro-transformer form cenv) :gauche
   (match form
-    [(_ xformer)
-     ;; We need to capture the current CENV as the macro definition
-     ;; environment.  There's a catch, though---if we're AOT compiling
-     ;; a macro, the captured CENV must be serializable to a file,
-     ;; which isn't generally the case.
-     ;; So, if we're compiling toplevel, we call a special API that takes
-     ;; the current module and cenv-exp-name, and reconstruct the cenv
-     ;; at runtime.
-     ;; If cenv has local environment, we don't bother that, for the macro
-     ;; will be fully expanded during AOT compilation.  HOWEVER - we can't
-     ;; embed cenv as a vector literal (e.g. `',cenv) since quoting will
-     ;; strip all identifier information in cenv.  The right thing would be
-     ;; to make cenv as a record.  For now, we take advantage that unquoted
-     ;; vector evaluates to itself, and insert cenv without quoting.  This
-     ;; has to change if we prohibit unquoted vector literals.
-     (let1 info (%er-macro-info-alist form)
-       (if (cenv-toplevel? cenv)
-         (pass1 `(,%make-er-transformer/toplevel. ,xformer
-                                                  ,(cenv-module cenv)
-                                                  ',(cenv-exp-name cenv)
-                                                  :info-alist ',info)
-                cenv)
-         (pass1 `(,%make-er-transformer. ,xformer ,cenv
-                                         :info-alist ',info)
-                cenv)))]
+    [(_ xformer) (%pass1/er-macro-maker form xformer cenv #f #F)]
+    [(_ xformer ':identifier-macro? v)
+     (assume (boolean? v))
+     (%pass1/er-macro-maker form xformer cenv #f v)]
     [_ (error "syntax-error: malformed er-macro-transformer:" form)]))
 
 (define-pass1-syntax (eri-macro-transformer form cenv) :gauche
   (match form
-    [(_ xformer)
-     ;; See the comment above in er-macro-transformer
-     (let1 info (%er-macro-info-alist form)
-       (if (cenv-toplevel? cenv)
-         (pass1 `(,%make-er-transformer/toplevel. ,xformer
-                                                  ,(cenv-module cenv)
-                                                  ',(cenv-exp-name cenv)
-                                                  :has-inject? #t
-                                                  :info-alist ',info)
-                cenv)
-         (pass1 `(,%make-er-transformer. ,xformer ,cenv :has-inject? #t
-                                         :info-alist ',info)
-                cenv)))]
+    [(_ xformer) (%pass1/er-macro-maker form xformer cenv #t)]
+    [(_ xformer ':identifier-macro? v)
+     (assume (boolean? v))
+     (%pass1/er-macro-maker form xformer cenv #t v)]
     [_ (error "syntax-error: malformed eri-macro-transformer:" form)]))
 
-(define (%er-macro-info-alist form)
+;; Build an expression to construct er macro at runtime, and run pass 1
+;; on it.
+;;
+;; We need to capture the current CENV as the macro definition
+;; environment.  There's a catch, though---if we're AOT compiling
+;; a macro, the captured CENV must be serializable to a file,
+;; which isn't generally the case.
+;; So, if we're compiling toplevel, we call a special API that takes
+;; the current module and cenv-exp-name, and reconstruct the cenv
+;; at runtime.
+;; If cenv has local environment, we don't bother that, for the macro
+;; will be fully expanded during AOT compilation.  HOWEVER - we can't
+;; embed cenv as a vector literal (e.g. `',cenv) since quoting will
+;; strip all identifier information in cenv.  The right thing would be
+;; to make cenv as a record.  For now, we take advantage that unquoted
+;; vector evaluates to itself, and insert cenv without quoting.  This
+;; has to change if we prohibit unquoted vector literals.
+(define (%pass1/er-macro-maker form xformer cenv has-inject? id-macro?)
   ;; We don't save source---it's not so much useful, and we don't want it to
   ;; take up space in precompiled code.
-  (or (and-let* ([ (pair? form) ]
-                 [si (pair-attribute-get form 'source-info #f)])
-        `((source-info . ,si)))
-      '()))
+  (define info
+    (or (and-let* ([ (pair? form) ]
+                   [si (pair-attribute-get form 'source-info #f)])
+          `((source-info . ,si)))
+        '()))
+
+  (if (cenv-toplevel? cenv)
+    (pass1 `(,%make-er-transformer/toplevel.
+             ,xformer ,(cenv-module cenv) ',(cenv-exp-name cenv)
+             ,@(cond-list
+                [has-inject? @ `(:has-inject? ',has-inject?)]
+                [(pair? info) @ `(:info-alist ',info)]
+                [id-macro? @ `(:identifier-macro? #t)]))
+           cenv)
+    (pass1 `(,%make-er-transformer.
+             ,xformer ,cenv
+             ,@(cond-list
+                [has-inject? @ `(:has-inject? ',has-inject?)]
+                [(pair? info) @ `(:info-alist ',info)]
+                [id-macro? @ `(:identifier-macro? #t)]))
+           cenv)))
 
 (define-pass1-syntax (%macroexpand form cenv) :gauche
   (match form

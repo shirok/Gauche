@@ -1,3 +1,10 @@
+2021-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (er-macro-transformer): Experimentally enable
+	  identifier macro (set! magic hasn't done yet).  The public API is
+	  still fluid; keyword arguments for macro seems awkward.  We may
+	  give a different macro name.
+
 2021-05-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1),
