@@ -16,8 +16,8 @@
 2021-05-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (cenv-lookup): No longer distinguish 'lookup as
-	  syntax' and 'lookup as variable'.  This change doesn't change
-	  RnRS valid programs, but programs that may depend on previous
+	  syntax' and 'lookup as variable'.  This doesn't change
+	  RnRS valid programs, but programs that depend on previous
 	  (non-standard) behavior may be affected.
 	  The distinction concerns the resolution of variable that appear
 	  at non-head position.  In pre-R6RS era, macro keyword can only be
