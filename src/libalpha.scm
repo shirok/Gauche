@@ -342,8 +342,19 @@
 ;;;
 
 (with-module gauche.internal)
-;; proc :: Sexpr, Cenv -> Sexpr
+
+;; transformer :: Sexpr, Cenv -> Sexpr
+;; flags is a list of flag symbols (we avoid using numeric values,
+;; to avoid inter-version build.
 (define-cproc %make-macro-transformer (name transformer
                                        :optional (info ())
-                                                 (flags::<ulong> 0))
-  Scm_MakeMacro)
+                                                 (flags ()))
+  (let* ([flag-bits::u_long 0])
+    (for-each (lambda (flag)
+                (cond
+                 [(SCM_EQ flag 'identifier-macro)
+                  (logior= flag-bits SCM_MACRO_IDENTIFIER)]
+                 [else
+                  (Scm_Error "Unknown flag symbol: %S" flag)]))
+              flags)
+    (return (Scm_MakeMacro name transformer info flag-bits))))
