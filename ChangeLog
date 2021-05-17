@@ -1,3 +1,10 @@
+2021-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19.scm (date->string): Fix ~V to behave as specified
+	  in ISO 8601. https://github.com/shirok/Gauche/issues/763
+	  NB: Srfi is vague about how date-week-number should behave.  We may
+	  need to change that, too.
+
 2021-05-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (er-macro-transformer): Experimentally enable

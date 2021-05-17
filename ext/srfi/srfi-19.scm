@@ -643,6 +643,25 @@
                (tm:days-before-first-week  date day-of-week-starting-week))
             7))
 
+(define (tm:date-week-number-iso date)
+  ;; The week with the year's first Thursday is week 01.
+  (let* ([first-day-of-the-week (tm:week-day 1 1 (date-year date))]
+         [offset (if (> first-day-of-the-week 4) 0 1)]
+         ;; -2: decrement one day to compensate 1-origin of date-year-day,
+         ;; and decrement one more day for Sunday belongs to the previous week.
+         [w (+ (floor-quotient (+ (date-year-day date) first-day-of-the-week -2)
+                               7)
+               offset)])
+    (cond [(zero? w)
+           ;; date belongs to the last week of the previous year
+           (tm:date-week-number-iso (make-date 0 0 0 0 31 12
+                                               (- (date-year date) 1) #f))]
+          [(and (= w 53)
+                (<= (tm:week-day 1 1 (+ (date-year date) 1)) 4))
+           ;; date belongs to the first week of the next year
+           1]
+          [else w])))
+
 (define (current-date :optional (off (tm:local-tz-offset)))
   (time-utc->date (current-time time-utc) off))
 
@@ -897,7 +916,7 @@
                         (+ (date-week-number date 0) 1)
                         (date-week-number date 0)))))
     (#\V . ,(^[date pad-with]
-              (format #t "~2,'0d" (date-week-number date 1))))
+             (format #t "~2,'0d" (tm:date-week-number-iso date))))
     (#\w . ,(^[date pad-with]
               (display (date-week-day date))))
     (#\x . ,(^[date pad-with]
