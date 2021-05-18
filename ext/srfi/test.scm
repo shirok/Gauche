@@ -639,37 +639,44 @@
               '(year month day hour minute second zone-offset))))
 
 ;; ISO week number ~V should be the same as strftime %V
-(let ((dates '((2021 1 1) ; Friday, week 53
-               (2021 1 3) ; Sunday, week 53
-               (2021 1 4) ; Monday, week 1
-               (2020 12 31) ; Thursday, week 53
+;; NB: MinGW's strftime doesn't support %V yet.  Since the Scheme code is
+;; portable, we just skip the tests for now.
+;; Cf. https://sourceforge.net/p/mingw-w64/bugs/793/
+(cond-expand
+ [gauche.os.windows]
+ [else
+  (let ((dates '((2021 1 1) ; Friday, week 53
+                 (2021 1 3) ; Sunday, week 53
+                 (2021 1 4) ; Monday, week 1
+                 (2020 12 31) ; Thursday, week 53
 
-               (2020 1 1) ; Wednesday, week 1
-               (2019 12 31) ; Tuesday, week 1
-               (2019 12 30) ; Monday, week 1
-               (2019 12 29) ; Sunday, week 52
+                 (2020 1 1) ; Wednesday, week 1
+                 (2019 12 31) ; Tuesday, week 1
+                 (2019 12 30) ; Monday, week 1
+                 (2019 12 29) ; Sunday, week 52
 
-               (2017 1 1) ; Sunday, week 52
-               (2017 1 2) ; Monday, week 1
-               (2017 1 8) ; Sunday, week 1
-               (2017 1 9) ; Monday, week 2
-               (2016 12 31) ; Saturday, week 52
+                 (2017 1 1) ; Sunday, week 52
+                 (2017 1 2) ; Monday, week 1
+                 (2017 1 8) ; Sunday, week 1
+                 (2017 1 9) ; Monday, week 2
+                 (2016 12 31) ; Saturday, week 52
 
-               (2015 1 1) ; Thursday, week 1
-               (2015 1 2) ; Friday, week 1
-               (2015 1 3) ; Saturday, week 1
-               (2015 1 4) ; Sunday, week 1
-               (2015 1 5) ; Monday, week 2
-               (2014 12 31) ; Wednesday, week 1
-               (2014 12 30) ; Tuesday, week 1
-               (2014 12 29) ; Monday, week 1
-               (2014 12 28) ; Sunday, week 52
-               )))
-  (dolist [date dates]
-    (let1 d (make-date 0 0 0 0 (caddr date) (cadr date) (car date) 0)
-      (test* (apply format "~d/~2,'0d/~2,'0d" date)
-             (sys-strftime "%V" (sys-gmtime (date->time-utc d)))
-             (date->string d "~V")))))
+                 (2015 1 1) ; Thursday, week 1
+                 (2015 1 2) ; Friday, week 1
+                 (2015 1 3) ; Saturday, week 1
+                 (2015 1 4) ; Sunday, week 1
+                 (2015 1 5) ; Monday, week 2
+                 (2014 12 31) ; Wednesday, week 1
+                 (2014 12 30) ; Tuesday, week 1
+                 (2014 12 29) ; Monday, week 1
+                 (2014 12 28) ; Sunday, week 52
+                 )))
+    (dolist [date dates]
+      (let1 d (make-date 0 0 0 0 (caddr date) (cadr date) (car date) 0)
+        (test* (apply format "~d/~2,'0d/~2,'0d" date)
+               (sys-strftime "%V" (sys-gmtime (date->time-utc d)))
+               (date->string d "~V")))))
+  ]) ; cond-expand
 
 ;;
 ;; testing srfi-43
