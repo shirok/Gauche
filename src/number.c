@@ -1228,8 +1228,8 @@ int64_t Scm_GetInteger64Clamp(ScmObj obj, int clamp, int *oor)
         int64_t maxval, minval;
         double v;
 
-        SCM_SET_INT64_MAX(maxval);
-        SCM_SET_INT64_MIN(minval);
+        maxval = INT64_MAX;
+        minval = INT64_MIN;
         v = SCM_FLONUM_VALUE(obj);
         if (v > (double)maxval) {
             if (!(clamp&SCM_CLAMP_HI)) goto err;
@@ -1274,7 +1274,7 @@ uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
             if (!(clamp&SCM_CLAMP_LO)) goto err;
             return 0;
         }
-        SCM_SET_UINT64_MAX(maxval);
+        maxval = UINT64_MAX;
         if (v > (double)maxval) {
             if (!(clamp&SCM_CLAMP_HI)) goto err;
             return maxval;

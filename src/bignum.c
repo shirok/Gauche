@@ -309,7 +309,7 @@ int64_t Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
             r = b->values[0];
         } else if (b->size > 2 || b->values[1] > LONG_MAX) {
             if (!(clamp & SCM_CLAMP_HI)) goto err;
-            SCM_SET_INT64_MAX(r);
+            r = INT64_MAX;
         } else {
             r = ((int64_t)b->values[1] << 32) + (uint64_t)b->values[0];
         }
@@ -318,7 +318,7 @@ int64_t Scm_BignumToSI64(const ScmBignum *b, int clamp, int *oor)
             r = -(int64_t)b->values[0];
         } else if (b->size > 2 || (b->values[1] > LONG_MAX && b->values[0] > 0)) {
             if (!(clamp&SCM_CLAMP_LO)) goto err;
-            SCM_SET_INT64_MIN(r);
+            r = INT64_MIN;
         } else {
             r = -(int64_t)(((int64_t)b->values[1] << 32) + (uint64_t)b->values[0]);
         }
@@ -340,7 +340,7 @@ uint64_t Scm_BignumToUI64(const ScmBignum *b, int clamp, int *oor)
     if (b->sign > 0) {
         if (b->size > 2) {
             if (!(clamp&SCM_CLAMP_HI)) goto err;
-            SCM_SET_UINT64_MAX(r);
+            r = UINT64_MAX;
         } else if (b->size == 2) {
             r = (((uint64_t)b->values[1]) << 32) + (uint64_t)b->values[0];
         } else {
