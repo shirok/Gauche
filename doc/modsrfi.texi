@@ -1753,9 +1753,24 @@ number of days since 1858-11-17T00:00:00Z
 @c COMMON
 @end defun
 
-@defun time-resolution
+@defun time-resolution :optional type
 [SRFI-19]
 @c MOD srfi-19
+@c EN
+Returns clock resolution of the time type @var{type} in nanoseconds,
+as an exact positive integer.  If @var{type} is omitted, @code{time-utc}
+is assumed.
+
+Note: In the current implementation, the return value isn't actual
+resolution, but a value that's guaranteed to be equal to or greater
+than the actual resolution.
+@c JP
+時間タイプ@var{type}を計測する時計の粒度を、ナノセコンド単位の正整数として返します。
+@var{type}が省略された場合は@code{time-utc}になります。
+
+註: 現在の実装では、これは正確な粒度そのものではなく、
+正確な粒度と等しいかより大きい値を返します。
+@c COMMON
 @end defun
 
 
@@ -2176,9 +2191,12 @@ Horizontal tab.
 @item ~T
 Time, 24 hour clock, same as "~H:~M:~S".
 @item ~U
-Week number of year with Sunday as first day of week (01...53).
+Week number of year with Sunday as first day of week (00...53).
 @item ~V
-Week number of year with Monday as first day of week (00...52).
+ISO8601 Week number of year with Monday as first day of week.
+The week with the first Thursday is week 01.  If there's a partial
+week before that, it becomes week 52 or 53 of the preceding year
+(01...53).
 @item ~w
 Day of week (0...6).
 @item ~W
@@ -2261,9 +2279,10 @@ ISO-8601 year-month-day-hour-minute-second format.
 @item ~T
 時刻、24時制、"~H:~M:~S"と同じ
 @item ~U
-年経過週、週は日曜はじまり(01...53)
+年経過週、週は日曜はじまり(00...53)
 @item ~V
-年経過週、週は月曜はじまり(00...52)
+ISO8601形式の年経過週、週は月曜はじまり。年の最初の木曜日を含む週が01となり、
+それ以前の週にはみ出た部分は前年の52または53週となる (01...53)
 @item ~w
 曜日を表す数字、日曜が0 (0...6)
 @item ~W
