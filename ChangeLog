@@ -1,3 +1,7 @@
+2021-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* 0.9.11_pre1
+
 2021-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-19.scm (date->string): Fix ~V to behave as specified
