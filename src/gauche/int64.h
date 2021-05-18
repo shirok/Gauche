@@ -39,7 +39,7 @@
 #ifndef GAUCHE_INT64_H
 #define GAUCHE_INT64_H
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 
 /* assuming gauche/config.h is read. */
 
@@ -66,6 +66,6 @@ double    Scm_UInt64ToDouble(uint64_t v);
 int64_t   Scm_DoubleToInt64(double v);
 uint64_t  Scm_DoubleToUInt64(double v);
 
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 #endif /*GAUCHE_INT64_H*/

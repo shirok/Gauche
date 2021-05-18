@@ -1534,7 +1534,7 @@ ScmObj Scm_GetOutputStringUnsafe(ScmPort *port, int flags)
     return Scm_DStringGet(PORT_OSTR(port), flags);
 }
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
    Will be removed on 1.0 */
 ScmObj Scm__GetOutputStringCompat(ScmPort *port)
@@ -1548,7 +1548,7 @@ ScmObj Scm__GetOutputStringUnsafeCompat(ScmPort *port)
 {
     return Scm_GetOutputStringUnsafe(port, 0);
 }
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 static ScmObj get_remaining_input_string_aux(const char *s, ScmSize ssiz,
                                              const char *p, ScmSize psiz,
@@ -1608,14 +1608,14 @@ static ScmObj get_remaining_input_string_aux(const char *s, ScmSize ssiz,
     return Scm_MakeString(b, psiz+ssiz, -1, flags);
 }
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
    Will be removed on 1.0 */
 ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port)
 {
     return Scm_GetRemainingInputString(port, 0);
 }
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 /*===============================================================
  * Procedural port

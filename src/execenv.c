@@ -55,15 +55,15 @@ static const ScmPrimitiveParameter *script_file = NULL;
  * Note that this is likely to be called before VM loop starts.
  * Scm_Error isn't much useful yet.
  */
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 ScmObj Scm_InitCommandLine(int argc, const char *argv[])
 {
     return Scm_InitCommandLine2(argc, argv, SCM_COMMAND_LINE_SCRIPT);
 }
 ScmObj Scm_InitCommandLine2(int argc, const char *argv[], int kind)
-#else  /* GAUCHE_API_VERSION >= 1000 */
+#else  /* GAUCHE_API_VERSION >= 98 */
 ScmObj Scm_InitCommandLine(int argc, const char *argv[], int kind)
-#endif /* GAUCHE_API_VERSION >= 1000 */
+#endif /* GAUCHE_API_VERSION >= 98 */
 {
     ScmObj args = Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
 
@@ -167,7 +167,7 @@ ScmObj Scm_ExecutablePath()
 }
 
 /* TRANSIENT: For ABI Compatibility.  Remove on 1.0 release. */
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 ScmObj Scm__RuntimeDirectory()
 {
     return Scm_RuntimeDirectory();

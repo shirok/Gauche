@@ -1186,7 +1186,7 @@ ScmObj Scm_CurrentLoadPort()    { return PARAM_REF(Scm_VM(), load_port); }
  * Compatibility stuff
  */
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
    Will be removed on 1.0 */
 void Scm__LoadFromPortCompat(ScmPort *port, int flags)
@@ -1231,7 +1231,7 @@ ScmObj Scm_LoadMainScript()
 {
     return SCM_UNDEFINED;
 }
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 
 /*------------------------------------------------------------------

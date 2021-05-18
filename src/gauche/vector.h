@@ -40,11 +40,11 @@
 
 struct ScmVectorRec {
     SCM_HEADER;
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
     ScmWord size_flags;
-#else  /* GAUCHE_API_VERSION < 1000 */
+#else  /* GAUCHE_API_VERSION < 98 */
     ScmWord size;
-#endif /* GAUCHE_API_VERSION < 1000 */
+#endif /* GAUCHE_API_VERSION < 98 */
     ScmObj elements[1];
 };
 
@@ -57,7 +57,7 @@ SCM_CLASS_DECL(Scm_VectorClass);
 
 /* SCM_VECTOR_SIZE_SLOT_INITIALIZER is used in cgen-generated code  */
 
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
 #define SCM_VECTOR_SIZE(obj)        (SCM_VECTOR(obj)->size_flags >> 1)
 #define SCM_VECTOR_IMMUTABLE_P(obj) (SCM_VECTOR(obj)->size_flags & 1)
 #define SCM_VECTOR_IMMUTABLE_SET(obj, flag)     \
@@ -66,12 +66,12 @@ SCM_CLASS_DECL(Scm_VectorClass);
      : (SCM_UVECTOR(obj)->size_flags &= ~1))
 #define SCM_VECTOR_SIZE_SLOT_INITIALIZER(len, imm) \
     SCM_OBJ(((len)<<1)|(imm?1:0))
-#else  /* GAUCHE_API_VERSION < 1000 */
+#else  /* GAUCHE_API_VERSION < 98 */
 #define SCM_VECTOR_SIZE(obj)        (SCM_VECTOR(obj)->size)
 #define SCM_VECTOR_IMMUTABLE_P(obj) (!SCM_VECTORP(obj)) /* always FALSE, but need to use obj to avoid unused variable warning */
 #define SCM_VECTOR_IMMUTABLE_SET(obj, flag)  /*empty*/
 #define SCM_VECTOR_SIZE_SLOT_INITIALIZER(len, imm)  SCM_OBJ(len)
-#endif /* GAUCHE_API_VERSION < 1000 */
+#endif /* GAUCHE_API_VERSION < 98 */
 
 #define SCM_VECTOR_CHECK_MUTABLE(obj)           \
   do { if (SCM_VECTOR_IMMUTABLE_P(obj)) {       \

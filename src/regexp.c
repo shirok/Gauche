@@ -2149,16 +2149,16 @@ ScmObj Scm_RegComp(ScmString *pattern, int flags)
 }
 
 /* alternative entry that compiles from AST */
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
 ScmObj Scm_RegCompFromAST(ScmObj ast, int flags)
-#else /* GAUCHE_API_VERSION < 1000 */
+#else /* GAUCHE_API_VERSION < 98 */
 ScmObj Scm_RegCompFromAST(ScmObj ast)
 {
     return Scm_RegCompFromAST2(ast, 0);
 }
 
 ScmObj Scm_RegCompFromAST2(ScmObj ast, int flags)
-#endif /* GAUCHE_API_VERSION < 1000 */
+#endif /* GAUCHE_API_VERSION < 98 */
 {
     ScmRegexp *rx = make_regexp();
     regcomp_ctx cctx;

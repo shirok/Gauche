@@ -154,10 +154,10 @@ SCM_EXTERN void   Scm_DefineAutoload(ScmModule *where, ScmObj file_or_module,
 SCM_EXTERN ScmObj Scm_ResolveAutoload(ScmAutoload *autoload, int flags);
 
 /* Obsoleted stuff */
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 SCM_EXTERN ScmObj Scm_VMLoadFromPort(ScmPort *port, ScmObj next_paths,
                                      ScmObj env, int flags);
 SCM_EXTERN ScmObj Scm_LoadMainScript(void);
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 #endif /* GAUCHE_LOAD_H */

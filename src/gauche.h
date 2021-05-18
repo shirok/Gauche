@@ -1295,13 +1295,13 @@ SCM_EXTERN ScmObj Scm_PairAttr(ScmPair *pair);
 SCM_EXTERN ScmObj Scm_PairAttrGet(ScmPair *pair, ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value);
 
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
 SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj sequences);
 #define Scm_MonotonicMerge1(x) Scm_MonotonicMerge(x)
-#else  /* GAUCHE_API_VERSION < 1000 */
+#else  /* GAUCHE_API_VERSION < 98 */
 SCM_EXTERN ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences);
 SCM_EXTERN ScmObj Scm_MonotonicMerge1(ScmObj sequences);
-#endif /* GAUCHE_API_VERSION < 1000 */
+#endif /* GAUCHE_API_VERSION < 98 */
 
 /*--------------------------------------------------------
  * CHARACTERS
@@ -1832,13 +1832,13 @@ SCM_EXTERN ScmObj Scm_MacroName(ScmMacro *mac);
 SCM_EXTERN ScmObj Scm_MakeMacroAutoload(ScmSymbol *name,
                                         ScmAutoload *al);
 
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
 SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form, int immutablep);
 #define Scm_UnwrapSyntax2(form, imm) Scm_UnwrapSyntax(form, imm)
-#else  /* GAUCHE_API_VERSION < 1000 */
+#else  /* GAUCHE_API_VERSION < 98 */
 SCM_EXTERN ScmObj Scm_UnwrapSyntax(ScmObj form);
 SCM_EXTERN ScmObj Scm_UnwrapSyntax2(ScmObj form, int immutablep);
-#endif /* GAUCHE_API_VERSION < 1000 */
+#endif /* GAUCHE_API_VERSION < 98 */
 
 /*--------------------------------------------------------
  * PROMISE
@@ -1961,13 +1961,13 @@ SCM_CLASS_DECL(Scm_RegexpClass);
 #define SCM_REGEXP_MULTI_LINE     (1L<<4)
 
 SCM_EXTERN ScmObj Scm_RegComp(ScmString *pattern, int flags);
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
 SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast, int flags);
 #define Scm_RegCompFromAST2(a,b) Scm_RegCompFromAST(a,b)
-#else   /* GAUCHE_API_VERSION < 1000 */
+#else   /* GAUCHE_API_VERSION < 98 */
 SCM_EXTERN ScmObj Scm_RegCompFromAST(ScmObj ast);
 SCM_EXTERN ScmObj Scm_RegCompFromAST2(ScmObj ast, int flags);
-#endif  /* GAUCHE_API_VERSION < 1000 */
+#endif  /* GAUCHE_API_VERSION < 98 */
 SCM_EXTERN ScmObj Scm_RegOptimizeAST(ScmObj ast);
 SCM_EXTERN ScmObj Scm_RegExec(ScmRegexp *rx, ScmString *input, ScmObj start, ScmObj end);
 SCM_EXTERN void Scm_RegDump(ScmRegexp *rx);
@@ -2028,10 +2028,10 @@ SCM_EXTERN void   Scm_SetMasterSigmask(sigset_t *set);
 SCM_EXTERN ScmObj Scm_SignalName(int signum);
 SCM_EXTERN void   Scm_ResetSignalHandlers(sigset_t *mask);
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 SCM_EXTERN void   Scm_GetSigmask(sigset_t *mask);
 SCM_EXTERN void   Scm_SetSigmask(sigset_t *mask);
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 /*---------------------------------------------------
  * SYSTEM
@@ -2073,14 +2073,14 @@ enum {
     SCM_COMMAND_LINE_BOTH = (SCM_COMMAND_LINE_SCRIPT|SCM_COMMAND_LINE_OS)
 };
 
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
 SCM_EXTERN ScmObj Scm_InitCommandLine(int argc, const char *argv[],
                                       int kind);
 #define Scm_InitCommandLine2(ac, av, kind) Scm_InitCommandLine(ac, av, kind)
-#else  /* GAUCHE_API_VERSION < 1000 */
+#else  /* GAUCHE_API_VERSION < 98 */
 SCM_EXTERN ScmObj Scm_InitCommandLine(int argc, const char *argv[]);
 SCM_EXTERN ScmObj Scm_InitCommandLine2(int argc, const char *argv[], int kind);
-#endif /* GAUCHE_API_VERSION < 1000 */
+#endif /* GAUCHE_API_VERSION < 98 */
 
 SCM_EXTERN void Scm_SimpleMain(int argc, const char *argv[],
                                const char *script, u_long flags);

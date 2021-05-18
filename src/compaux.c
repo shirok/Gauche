@@ -426,15 +426,15 @@ static ScmObj unwrap_rec(ScmObj form, unwrap_ctx *ctx)
     return form;
 }
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 ScmObj Scm_UnwrapSyntax(ScmObj form)
 {
     return Scm_UnwrapSyntax2(form, FALSE);
 }
 ScmObj Scm_UnwrapSyntax2(ScmObj form, int immutablep)
-#else  /* GAUCHE_API_VERSION >= 1000 */
+#else  /* GAUCHE_API_VERSION >= 98 */
 ScmObj Scm_UnwrapSyntax(ScmObj form, int immutablep)
-#endif /* GAUCHE_API_VERSION >= 1000 */
+#endif /* GAUCHE_API_VERSION >= 98 */
 {
     unwrap_ctx ctx;
     Scm_HashCoreInitSimple(&ctx.history, SCM_HASH_EQ, 0, NULL);

@@ -357,13 +357,13 @@ struct ScmVMRec {
     ScmCStack *cstack;          /* current escape point.  see the comment of
                                    "C stack rewinding" below. */
     /* TRANSIENT: Change these flags to u_long in 1.0 */
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
     unsigned int runtimeFlags;  /* Runtime flags */
     unsigned int compilerFlags; /* Compiler flags */
-#else /*GAUCHE_API_VERSION >= 1000*/
+#else /*GAUCHE_API_VERSION >= 98*/
     u_long runtimeFlags;  /* Runtime flags */
     u_long compilerFlags; /* Compiler flags */
-#endif /*GAUCHE_API_VERSION >= 1000*/
+#endif /*GAUCHE_API_VERSION >= 98*/
     intptr_t attentionRequest;  /* Flag if VM needs to check signal queue,
                                    finalizer queue, or stop request.
                                    This flag can be turned on asynchronously.
@@ -594,7 +594,7 @@ SCM_EXTERN long Scm_VMUnwindProtect(ScmVM *vm, ScmCStack *cstack);
 SCM_EXTERN void Scm_VMNextHandler(ScmVM *vm);
 SCM_EXTERN void Scm_VMRewindProtect(ScmVM *vm);
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* Deprecated - not that useful */
 SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                                      ScmSubrProc *body,

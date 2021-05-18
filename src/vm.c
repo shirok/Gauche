@@ -2099,7 +2099,7 @@ static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
     return val0;
 }
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* DEPRECATED.  C-friendly wrapper */
 ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
                           ScmSubrProc *body,
@@ -2116,7 +2116,7 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
 
     return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
 }
-#endif /* GAUCHE_API_VERSION < 1000 */
+#endif /* GAUCHE_API_VERSION < 98 */
 
 /*=================================================================
  * Exception handling

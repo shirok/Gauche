@@ -693,7 +693,7 @@ ScmObj Scm_DeleteDuplicatesX(ScmObj list, int cmpmode)
  *  releasing 1.0.
  */
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences)
 {
     ScmObj r = Scm_MonotonicMerge1(sequences);
@@ -701,9 +701,9 @@ ScmObj Scm_MonotonicMerge(ScmObj start, ScmObj sequences)
     return r;
 }
 ScmObj Scm_MonotonicMerge1(ScmObj sequences)
-#else  /*GAUCHE_API_VERSION >= 1000 */
+#else  /*GAUCHE_API_VERSION >= 98 */
 ScmObj Scm_MonotonicMerge(ScmObj sequences)
-#endif /*GAUCHE_API_VERSION >= 1000 */
+#endif /*GAUCHE_API_VERSION >= 98 */
 {
     ScmObj result = SCM_NIL;
     int nseqs = Scm_Length(sequences);

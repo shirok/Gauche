@@ -1289,7 +1289,7 @@ uint64_t Scm_GetIntegerU64Clamp(ScmObj obj, int clamp, int *oor)
 
 #endif /* SIZEOF_LONG == 4 */
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* Since we adopt C99, we can simply use cast instead of the funcitons.
    These are kept for ABI compatibility until 1.0 release */
 int64_t Scm_DoubleToInt64(double v)
@@ -1311,7 +1311,7 @@ double Scm_UInt64ToDouble(uint64_t v)
 {
     return (double)v;
 }
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 /* See if a Scheme integer si can be representable with 53bit mantissa. */
 static int double_precision(ScmObj si, int *hi, int *lo)

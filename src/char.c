@@ -143,10 +143,10 @@ void Scm__InstallCharconvHooks(ScmChar (*u2c)(int), int (*c2u)(ScmChar))
 
 /* TRANSIENT: These two variables are no longer used, but kept here for the
    ABI compatibility.  Remove them on 1.0 release. */
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 ScmChar (*Scm_UcsToCharHook)(int ucs4) = NULL;
 int (*Scm_CharToUcsHook)(ScmChar ch) = NULL;
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 ScmChar Scm_UcsToChar(int n)
 {

@@ -110,7 +110,7 @@ static ScmVector *make_vector(ScmSmallInt size)
     ScmVector *v = SCM_NEW2(ScmVector *,
                             sizeof(ScmVector) + sizeof(ScmObj)*(size-1));
     SCM_SET_CLASS(v, SCM_CLASS_VECTOR);
-#if GAUCHE_API_VERSION >= 1000
+#if GAUCHE_API_VERSION >= 98
     v->size_flags = (size << 1);
 #else
     v->size = size;

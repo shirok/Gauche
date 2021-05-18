@@ -260,13 +260,13 @@ ScmObj Scm_ShortClassName(ScmClass *klass)
     return SCM_MAKE_STR("(unnamed class)");
 }
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* TRANSIENT: For the backward compatibility.  Remove this on 1.0. */
 ScmObj Scm__InternalClassName(ScmClass *klass)
 {
     return Scm_ShortClassName(klass);
 }
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 /*=====================================================================
  * Class metaobject
@@ -1242,13 +1242,13 @@ ScmObj Scm_NewInstance(ScmClass *klass, int coresize)
     return obj;
 }
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* TRANSIENT: For the binary compatibility.  Will go on 1.0. */
 ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize)
 {
     return Scm_NewInstance(klass, coresize);
 }
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 
 /* A special procedure that shortcuts allocate-instance and initialize
@@ -1320,7 +1320,7 @@ static inline void scheme_slot_set(ScmObj obj, ScmSmallInt number, ScmObj val)
    We shouldn't do class redefinition check here, since the slot number
    is calculated based on the old class, if the class is ever redefined.
 */
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* OBSOLETED, for the backward compatibility */
 ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt number)
 {
@@ -1329,9 +1329,9 @@ ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt number)
 
 /* TRANSIENT: we'll rename this to Scm_InstanceSlotRef() in 1.0. */
 ScmObj Scm_InstanceSlotRef3(ScmObj obj, ScmSmallInt number, ScmObj fallback)
-#else  /*GAUCHE_API_VERSION >= 1000*/
+#else  /*GAUCHE_API_VERSION >= 98*/
 ScmObj Scm_InstanceSlotRef(ScmObj obj, ScmSmallInt number, ScmObj fallback)
-#endif /*GAUCHE_API_VERSION*/
+#endif /*GAUCHE_API_VERSION >= 98*/
 {
     ScmObj v = scheme_slot_ref(obj, number);
     if (SCM_UNBOUNDP(v)) {
@@ -1969,14 +1969,14 @@ static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(SCM_NEW_INSTANCE(ScmInstance, klass));
 }
 
-#if GAUCHE_API_VERSION < 1000
+#if GAUCHE_API_VERSION < 98
 /* TRANSIENT: For the binary compatibility during 0.9 series.  Remove
    this on 1.0 */
 ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs)
 {
     return instance_allocate(klass, initargs);
 }
-#endif /*GAUCHE_API_VERSION < 1000*/
+#endif /*GAUCHE_API_VERSION < 98*/
 
 /* (initialize <object> initargs) */
 static ScmObj object_initialize_cc(ScmObj result, void **data);
