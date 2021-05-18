@@ -1,5 +1,11 @@
 2021-05-17  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac, src/gauche.h: Bumped ABI/ABI version to 0.98.
+	  We'll tweak binary ABIs in subsequent commits until 0.9.11 release.
+	  Don't expect the extensions built with 0.9.10 to work; they must be
+	  recompiled.  If you're using HEAD with other extensions,
+	  stay with 0.9.10, or configure with --with-abi-version=97
+
 	* 0.9.11_pre1
 
 2021-05-16  Shiro Kawai  <shiro@acm.org>

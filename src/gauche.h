@@ -48,10 +48,12 @@
 
    As of 0.9.10, API_VERSION is 97, corresponding to libgauche-0.97.so.
 
+   As of 0.9.11, API_VERSION is 98, corresponding to libgauche-0.98.so.
+
    This can be overridden by --with-api-version configure option.
  */
 #ifndef GAUCHE_API_VERSION
-#define GAUCHE_API_VERSION  97
+#define GAUCHE_API_VERSION  98
 //#define GAUCHE_API_VERSION 1000
 #endif
 
@@ -1429,6 +1431,7 @@ struct ScmProcedureRec {
                                      we do some tricky stuff here.  API will
                                      be provided.
                                    */
+    ScmObj reservedSlot;           /* for future use */
 #endif /*GAUCHE_API_VERSION >= 98*/
 };
 
@@ -1610,7 +1613,7 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
 #if GAUCHE_API_VERSION >= 98
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
     { { klass, NULL }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0, 0,    \
-      (inf), SCM_FALSE, (inl), SCM_FALSE }
+      (inf), SCM_FALSE, (inl), SCM_FALSE, SCM_NIL }
 #else  /* GAUCHE_API_VERSION < 98 */
 #define SCM__PROCEDURE_INITIALIZER(klass, req, opt, typ, cst, lef, inf, inl) \
     { { klass, NULL }, (req), (opt), (typ), FALSE, FALSE, cst, lef, 0,       \
