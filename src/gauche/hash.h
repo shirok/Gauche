@@ -180,7 +180,8 @@ SCM_EXTERN ScmObj Scm_HashTableStat(ScmHashTable *table);
  * For backward compatibility.  DEPRECATED.
  */
 
-#if GAUCHE_API_VERSION < 98
+/* This API is still used in existing code, so let them linger a bit... */
+#if GAUCHE_API_VERSION < 1000
 
 #define SCM_HASHTABLE(x)       SCM_HASH_TABLE(x)
 #define SCM_HASHTABLEP(x)      SCM_HASH_TABLE_P(x)
@@ -202,6 +203,6 @@ SCM_EXTERN ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
                                     ScmHashCompareProc *cmpfn,
                                     unsigned int initSize);
 
-#endif /*GAUCHE_API_VERSION < 98*/
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 #endif /* GAUCHE_HASH_H */
