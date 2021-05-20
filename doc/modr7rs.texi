@@ -3506,50 +3506,119 @@ See also @code{merge} and @var{merge!} in @ref{Sorting and merging}.
 @defunx vector-stable-sort elt< vec :optional start end
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Sort elements in a vector @var{vec} according to the ordering
 predicate @var{elt<}, which takes two elements from @var{vec}
 and returns true iff the first argument is strictly less
 than the second argument.  Returns a fresh sorted vector.
 The ``stable'' variation guarantees stable sort.
+@c JP
+ベクタ@var{vec}の要素を、順序述語@var{elt<}によってソートします
+@var{elt<}は@var{vec}の要素から2つの値を引数として取り、最初の引数が
+厳密に2番目の引数より小さい場合に真の値を、そうでなければ@code{#f}を返す手続きです。
+返り値はソートされた新たなベクタです。
+`stable'がついている手続きは安定ソートが保証されます。
+@c COMMON
 
+@c EN
 When the optional @var{start} and/or @var{end} arguments are given,
 only the portion from @var{start} (inclusive) and
 @var{end} (exclusive) of @var{vec} are looked at.
 The result vector's length is @code{@var{end} - @var{start})}.
 When @var{end} is omitted, the length of @var{vec} is assumed.
+@c JP
+省略可能な@var{start}/@var{end}引数は、@var{vec}中のソートすべき範囲の
+インデックスを指定します。@var{start}は開始インデックス (範囲に含まれる)、
+@var{end}は終了インデックス (範囲に含まれない) です。
+返り値のベクタの長さは@code{@var{end} - @var{start})}になります。
+@var{end}が省略された場合は@var{vec}の最後までが対象になります。
+@c COMMON
 
+@c EN
 See also @code{sort} and @code{stable-sort} in @ref{Sorting and merging}.
+@c JP
+@ref{Sorting and merging}の@code{sort}と@code{stable-sort}も参照。
+@c COMMON
 @end defun
 
 @defun vector-sort! elt< vec :optional start end
 @defunx vector-stable-sort! elt< vec :optional start end
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Sort elements ``in-place'' in a vector @var{vec} according to the ordering
 predicate @var{elt<}, which takes two elements from @var{vec}
 and returns true iff the first argument is strictly less
 than the second argument.  Upon successful return,
 @var{vec}'s elements are sorted.  Returns unspecified value; the
 caller must rely on the side effect.
+@c JP
+ベクタ@var{vec}の要素を、順序述語@var{elt<}を使って「その場で」ソートします。
+@var{elt<}は@var{vec}の要素から2つの値を引数として取り、最初の引数が
+厳密に2番目の引数より小さい場合に真の値を、そうでなければ@code{#f}を返す手続きです。
+手続きが返った時点で、@var{vec}の内容が書き換わっています。
+戻り値は未規定です。呼び出しは副作用のために呼ばれます。
+@c COMMON
 
+@c EN
+Note that most of recent APIs with @code{!} is @emph{linear updating},
+meaning it may or may not change the argument, and the caller must use
+the return value.  On the other hand, @code{vector-sort!} and
+@code{vector-stable-sort!} are purely for side effects,
+and use minimal space
+(@code{vector-sort!} doesn't need extra space, while
+@code{vector-stable-sort!} may allocate a temporary storage up to
+the size of the input).
+@c JP
+註: 最近追加された名前に@code{!}がつくAPIには、@emph{線形更新}であるものが多いです。
+線形更新の場合、引数が更新されるかどうかは不定であり、呼び出し側は返り値を使わねばなりません。
+一方、@code{vector-sort!}と@code{vector-stable-sort!}は純粋に副作用のために呼び、
+必要最低限のメモリを使うことが保証されています。
+(@code{vector-sort!}は固定メモリ量で実行されます。
+@code{vector-stable-sort!}は入力長とおなじ一時領域を使うかもしれません)。
+@c COMMON
+
+@c EN
 When the optional @var{start} and/or @var{end} arguments are given,
 only the portion from @var{start} (inclusive) and
 @var{end} (exclusive) of @var{vec} are sorted; other elements
 will remain intact.
 When @var{end} is omitted, the length of @var{vec} is assumed.
+@c JP
+省略可能な@var{start}/@var{end}引数は、@var{vec}中のソートすべき範囲の
+インデックスを指定します。@var{start}は開始インデックス (範囲に含まれる)、
+@var{end}は終了インデックス (範囲に含まれない) です。
+返り値のベクタの長さは@code{@var{end} - @var{start})}になります。
+@var{end}が省略された場合は@var{vec}の最後までが対象になります。
+@c COMMON
 
+@c EN
 See also @code{sort!} and @code{stable-sort!} in @ref{Sorting and merging}.
+@c JP
+@ref{Sorting and merging}の@code{sort!}と@code{stable-sort!}も参照。
+@c COMMON
 @end defun
 
 @defun vector-sorted? elt< vec :optional start end
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Returns true iff @var{vec} between @var{start} (inclusive)
 and @var{end} (exclusive) is sorted according to the ordering
 predicate @var{elt<}.  If @var{start} and/or @var{end} is/are omitted,
 0 and the length of @var{vec} are assumed, respectively.
+@c JP
+@var{vec}の@var{start}番目 (含まれる) から @var{end}番目 (含まれない) までの
+要素が、順序述語@var{elt<}に照らしてソートされていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@var{start}/@var{end}引数が省略された場合はそれぞれ0と@var{vec}の長さが使われます。
+@c COMMON
 
+@c EN
 See also @code{sorted?} in @ref{Sorting and merging}.
+@c JP
+@ref{Sorting and merging}の@code{sorted?}も参照。
+@c COMMON
 @end defun
 
 
