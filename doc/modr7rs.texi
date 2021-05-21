@@ -3626,22 +3626,51 @@ See also @code{sorted?} in @ref{Sorting and merging}.
 @defunx vector-merge! elt< rvec vec1 vec2 :optional rstart start1 end1 start2 end2
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Merge two sorted vectors @var{vec1} and @var{vec2}
 into one vector, according to the
 ordering predicate @var{elt<}.
+@c JP
+ソート済みのベクタ@var{vec1}と@var{vec2}の要素を合わせて
+ひとつのソート済みのベクタを作ります。要素の並びは順序述語@var{elt<}で決まります。
+@c COMMON
 
+@c EN
 The optional argument @var{start1} and @var{end1} restricts @var{vec1}'s
 portion to be looked at, and @var{start2} and @var{end2}
-restricts @var{vec2}'s portion to be looked at.
+restricts @var{vec2}'s portion to be looked at.  Each is integer index
+to the corresponding vector, and the start index is inclusive, while
+the end index is exclusive.
+@c JP
+省略可能な引数@var{start1}、@var{end1}は@var{vec1}内の対象とする範囲を、
+@var{start2}、@var{end2}は@var{vec2}内の対象とする範囲を制限します。
+各引数は対応するベクタへの整数インデックスであり、start側は含まれ、end側は含まれません。
+@c COMMON
 
-The functional version @var{vector-merge} allocates a fresh vector
+@c EN
+The functional version @code{vector-merge} allocates a fresh vector
 to hold the result, and returns it.
+@c JP
+関数的なバージョン@code{vector-merge}はマージ結果を格納する新たなベクタを
+作って返します。
+@c COMMON
 
-The side-effecting version @var{vector-merge!} uses @var{rvec}.
-to hold the result. The procedure doesn't return a meaningful value.
+@c EN
+The side-effecting version @code{vector-merge!} uses @var{rvec}.
+to hold the result.
+The procedure doesn't return a meaningful value.
 The optional @var{rstart} argument specifies
 the index of @var{rvec} from which the result is filled; the default
-is 0.
+is 0.  The length of @var{rvec} must be greater than
+@var{rstart} + (@var{end1}-@var{start1}) + (@var{end2}-@var{start2}).
+@c JP
+副作用バージョン@code{vector-merge!}は、@var{rvec}引数に渡されるベクタに結果を格納します。
+戻り値は未規定です。省略可能引数@var{rstart}は@var{rvec}のどこから結果を格納するかの
+インデックスを指定し、省略時は0です。
+@var{rvec}の長さは
+@var{rstart} + (@var{end1}-@var{start1}) + (@var{end2}-@var{start2}) より
+大きくなければなりません。
+@c COMMON
 @end defun
 
 @defun list-delete-neighbor-dups elt= lis
@@ -3650,22 +3679,44 @@ is 0.
 @defunx vector-delete-neighbor-dups! elt= vec :optional start end
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 From the given list @var{lis} or vector @var{vec},
 these procedures delete adjacent duplicate elements.  Equivalence
 is checked by @var{elt=} procedure.
+@c JP
+リスト@var{lis}やベクタ@var{vec}の要素を順にスキャンし、
+隣り合う要素が重複していたらその一方を取り除きます。
+要素が等しいかどうかは@var{elt=}手続きで判断します。
+@c COMMON
 
 @example
 (list-delete-neighbor-dups eq? '(m i s s i s s i p p i))
   @result{} (m i s i s i p i)
 @end example
 
+@c EN
 The non-destructive versions @code{list-delete-neighbor-dups} and
 @code{vector-delete-neighbor-dups} returns a freshly allocated
 list and vector, respectively.
+@c JP
+非破壊的バージョン@code{list-delete-neighbor-dups}と
+@code{vector-delete-neighbor-dups}では、結果を格納するリストやベクタが新たに
+作られて返されます。
+@c COMMON
 
+@c EN
 The destructive @code{list-delete-neighbor-dups!} works in-place,
 reusing pairs of @var{lis}.  No allocation will be done.
+It is a single-pass iterative algorithm, and the first cell of input
+is the first cell of output (except when the input is an empty list).
+@c JP
+破壊的バージョン@code{list-delete-neighbor-dups!}はアロケーションを行わず、
+@var{lis}に含まれるペアを再利用して結果を格納します。
+これは1パスの繰り返しアルゴリズムを使い、入力が空リストでなければ、入力の最初のセルは
+出力の最初のセルになります。
+@c COMMON
 
+@c EN
 The destructive @code{vector-delete-neighbor-dups!} has a bit different
 interface.  It updates @var{vec} in-place, but since we can't change
 the length of the vector, it gathers the result from the beginning of
@@ -3674,9 +3725,23 @@ of @var{vec}---that is,
 after calling this procedure, @code{[@var{start}, @var{newend})}
 holds the result.
 The elements between @code{[@var{newend}, @var{end})} will remain intact.
+@c JP
+破壊的バージョン@code{vector-delete-neighbor-dups!}はちょっと特殊なインタフェースです。
+@var{vec}を破壊的に変更して結果を格納しますが、ベクタの長さを変えることはできないので、
+結果は@var{vec}の先頭に詰められ、最終的に結果が格納された次のインデックス@var{newend}
+が返り値になります。
+つまり、この手続きを呼んだ後では、@var{vec}のうち@var{start}から@var{newend}
+までに結果が格納されている状態になっています。
+それ以外の@var{vec}の要素は変更されません。
+@c COMMON
 
+@c EN
 The optional @var{start} and @var{end} arguments limits the region
 of @var{vec} to be looked at.
+@c JP
+省略可能な@var{start}、@var{end}引数は、@var{vec}内で対象とする範囲を
+整数インデックスで指定します。
+@c COMMON
 
 @example
 (vector-delete-neighbor-dups eq? '#(a a a b b c c d d e e f f) 3 10)
@@ -3706,15 +3771,28 @@ for the details.
 @defun vector-select! elt< vec k :optional start end
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Select @var{k}-th smallest element in @var{vec} according to the
 ordering predicate @var{elt<}.  @var{K} is zero based, i.e. 0 means
 the smallest.  The optional @var{start} and @var{end} arguments
 limits the range of @var{vec} to be looked at, and defaulted to
 0 and the length of @var{vec}, respectively.
 @var{K} must satisfy @code{@var{start} <= @var{k} < @var{end}}.
+@c JP
+@var{vec}の要素のうち、@var{k}番目に小さい要素を返します。
+大小比較は順序述語@var{elt<}で判断されます。
+@var{k}はゼロ起点で、つまり0なら最も小さな要素が返されます。
+省略可能な@var{start}、@var{end}引数は@var{vec}内の対象とする範囲を限定します。
+@code{0 <= @var{k} < (@var{end}-@var{start})} でなければなりません。
+@c COMMON
 
-This procedure runs in O(n) time, and requires no extra stroage.
+@c EN
+This procedure runs in O(n) time in average, and requires no extra stroage.
 This procedure may partially modify @var{vec}.
+@c JP
+この手続きは平均@code{O(n)}で走り、余分なメモリをアロケートしません。
+この手続きの実行中に@var{vec}の一部は変更されます。
+@c COMMON
 @end defun
 
 @defun vector-separate! elt< vec k :optional start end
