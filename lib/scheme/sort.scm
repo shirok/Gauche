@@ -172,7 +172,7 @@
   (assume-type v <vector>)
   (assume-type k <integer>)
   (%check-range v start end)
-  (assume (<= start k (- end 1)))
+  (assume (<= 0 k (- end start 1)))
   (vector-select-1! elt< v k start end))
 
 ;; Make initial k element of v contain k-smallest elements, sorted.
