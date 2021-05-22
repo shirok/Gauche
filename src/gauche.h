@@ -964,9 +964,11 @@ SCM_CLASS_DECL(Scm_ForeignPointerClass);
    dllimport-ed variables as constants. */
 extern ScmClass *Scm_DefaultCPL[];
 extern ScmClass *Scm_ObjectCPL[];
+extern ScmClass *Scm_MetaclassCPL[];
 
 #define SCM_CLASS_DEFAULT_CPL     (Scm_DefaultCPL)
 #define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
+#define SCM_CLASS_METACLASS_CPL   (Scm_MetaclassCPL)
 
 /* Static definition of classes
  *   SCM_DEFINE_BUILTIN_CLASS

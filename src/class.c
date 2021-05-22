@@ -95,6 +95,13 @@ static ScmClass *Scm_MethodCPL[] = {
     NULL
 };
 
+ScmClass *Scm_MetaclassCPL[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ClassClass),
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
 /* Class <top> is the superclass of all classes.  The class initialization
    routine ensures that the class precedence list always terminates by <top>.
    Class <bottom> is the subclass of all classes.  It won't appear in the
@@ -874,8 +881,7 @@ static ScmClass *make_implicit_meta(const char *name,
 {
     ScmClass *meta = (ScmClass*)class_allocate(SCM_CLASS_CLASS, SCM_NIL);
     ScmObj s = SCM_INTERN(name);
-    static ScmClass *metacpa[] = { SCM_CLASS_CLASS, SCM_CLASS_OBJECT, SCM_CLASS_TOP, NULL };
-    ScmClass **metas = metacpa;
+    ScmClass **metas = SCM_CLASS_METACLASS_CPL;
 
     /* check to see if parent class has also metaclass, and if so,
        adds it to the CPA.  We know all the builtin classes use
@@ -884,23 +890,25 @@ static ScmClass *make_implicit_meta(const char *name,
     */
     {
         ScmClass **parent;
-        int numExtraMetas = 0, i;
+        int numExtraMetas = 0;
         for (parent = cpa; *parent; parent++) {
             if (SCM_CLASS_OF(*parent) != SCM_CLASS_CLASS) {
                 numExtraMetas++;
             }
         }
         if (numExtraMetas) {
-            metas = SCM_NEW_ARRAY(ScmClass*, numExtraMetas+4);
-            for (i = 0, parent = cpa; *parent; parent++) {
+            size_t newmetasize
+                = numExtraMetas + (sizeof(Scm_MetaclassCPL)/sizeof(ScmClass*));
+            metas = SCM_NEW_ARRAY(ScmClass*, newmetasize);
+            size_t i = 0;
+            for (parent = cpa; *parent; parent++) {
                 if (SCM_CLASS_OF(*parent) != SCM_CLASS_CLASS) {
                     metas[i++] = SCM_CLASS_OF(*parent);
                 }
             }
-            metas[i++] = SCM_CLASS_CLASS;
-            metas[i++] = SCM_CLASS_OBJECT;
-            metas[i++] = SCM_CLASS_TOP;
-            metas[i] = NULL;
+            for (size_t j = 0; i < newmetasize; i++, j++) {
+                metas[i] = Scm_MetaclassCPL[j];
+            }
         }
     }
 

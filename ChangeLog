@@ -1,3 +1,8 @@
+2021-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c, src/gauche.h (SCM_CLASS_METACLASS_CPL): Added to
+	  initialize builtin metaclass easier.
+
 2021-05-17  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac, src/gauche.h: Bumped ABI/ABI version to 0.98.
