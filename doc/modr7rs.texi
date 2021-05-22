@@ -3752,10 +3752,17 @@ of @var{vec} to be looked at.
   @result{} (7 . #(a a a b c d e d d e e f f))
 @end example
 
+@c EN
 Note: The @code{gauche.sequence} module provides neighbor duplicate
 deletion on generic sequences.  Those procedures are implemented by
 the generic versions as shown below.  @xref{Other operations over sequences},
 for the details.
+@c JP
+註: @code{gauche.sequsence}モジュールではジェネリックなシーケンスについて
+隣接要素の重複削除操作を提供しています。@code{scheme.sort}の各手続きに対応する
+ジェネリックなバージョンは次のとおりです。
+詳しくは@ref{Other operations over sequences}を参照。
+@c COMMON
 @table @code
 @item list-delete-neighbor-dups
 @code{delete-neighbor-dups}
@@ -3798,6 +3805,7 @@ This procedure may partially modify @var{vec}.
 @defun vector-separate! elt< vec k :optional start end
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Find @var{k}-th smallerst element in @var{vec} (pivot) between
 between @var{start} and @var{end}, according to the ordering
 predicate @var{elt<}, then rearrange elements
@@ -3806,33 +3814,67 @@ elements smaller than the pivot comes between @code{@var{start}} and
 @code{@var{start} + @var{k}}, and the rest of the elements come
 afterwards.  When omitted, @var{start} is 0 and @var{end} is
 the length of the @var{vec}.
+@c JP
+@var{vec}中のインデックス@var{start}から@var{end}までの範囲で、
+@var{k}番目に小さい要素(ピボット)を見つけ、その範囲の要素を、
+「@code{@var{start}}から@code{@var{start} + @var{k}}までには
+ピボットより小さい要素、その後にピボット、そしてピボットより大きい要素」
+と言う具合に並べ替えます。大小比較は述語@var{elt<}に従います。
+@var{start}、@var{end}が省略された場合はそれぞれ0と@var{vec}の長さが使われます。
+@c COMMON
 
+@c EN
 This can be used as a building block for in-place divide-and-conquer
 algorithms.  Runs in O(n) time.
+@c JP
+これは、アロケーションを行わない「分割統治」型のアルゴリズムの部品として使えます。
+O(n)時間で完了します。
+@c COMMON
 @end defun
 
 @defun vector-find-median elt< vec knil :optional mean
 @defunx vector-find-median! elt< vec knil :optional mean
 [R7RS sort]
 @c MOD scheme.sort
+@c EN
 Find median value of elements in @var{vec}, when ordered by
 the ordering predicate @var{elt<}.  Non-destructive version
 @code{vector-find-median} runs in O(n) time.  The destructive
 version @code{vector-find-median!} is specified to leave
 @var{vec} sorted, so it runs in O(n log n).
+@c JP
+@var{vec}の要素を比較述語@var{elt<}に従って並べた時の中央値を返します。
+非破壊バージョン@code{vector-find-median}はO(n)時間で走ります。
+破壊バージョン@code{vector-find-median!}は、副作用として
+@var{vec}が完全にソートされた状態になると規定されているので、O(n log n)時間かかります。
+@c COMMON
 
 @enumerate
 @item
+@c EN
 If @var{vec} is empty, @var{knil} is returned.  This is the only case
 @var{knil} is used.
+@c JP
+@var{vec}が空なら、@var{knil}が返されます。@var{knil}が使われるのはこの場合のみです。
+@c COMMON
 @item
+@c EN
 If @var{vec} has odd number of elements, the element falls in the exactly
 the midpoint when ordered, is returned.
+@c JP
+@var{vec}の要素が奇数個なら、順序で並べたときに中央に来る要素が返されます。
+@c COMMON
 @item
+@c EN
 If @var{vec} has even number of elements, the two elements closest to
 the midpoint is chosen and passed to the procedure @var{mean}, and
 its result is returned.  The default of @var{mean} is an arithmetic
 mean of numbers.
+@c JP
+@var{vec}の要素が偶数個の場合は、中央に最も近い二つの要素が選びだされ、
+それが手続き@var{mean}に渡され、その結果が返り値となります。
+@var{mean}が省略された場合は、二つの数値の算術平均が使われます。
+@c COMMON
 @end enumerate
 
 @example
