@@ -182,7 +182,7 @@
   (assume-type v <vector>)
   (assume-type k <integer>)
   (%check-range v start end)
-  (assume (<= start k (- end 1)))
+  (assume (<= 0 k (- end start 1)))
   (partition-in-place-full! elt< v k start end))
 
 (define (vector-find-median elt< v knil :optional (mean arithmetic-mean))
