@@ -1591,8 +1591,9 @@
 ;;
 ;; <cpa> := (<string> ...)
 ;;
-;; qualifiers := :base | :built-in | :private
-
+;; qualifiers := qualifier ...
+;; qualifier := :base | :built-in | :private | :no-meta
+;;
 ;; 'qualifiers' modifies the generated code slightly.  :base and :built-in
 ;; are exclusive.  :base generates a base class definition (inheritable
 ;; from Scheme code), while :built-in generates a built-in class definition
@@ -1602,6 +1603,9 @@
 ;; also generated (which needs to be in the separate header file if you want
 ;; the C-level structure to be used from other C code.  If the extension is
 ;; small enough to be contained in one C file, this option is convenient.)
+;; :no-meta is another optional qualifier and prevents a corresponding
+;; metaclass to be generated (by default, when you define-cclass <foo>,
+;; a metaclass <foo-meta> is automatically generated).
 ;;
 ;; 'cpa' lists ancestor classes in precedence order.  They need to
 ;; be C identifiers of Scheme class (Scm_*Class), for the time being.
@@ -1647,7 +1651,7 @@
   (check-arg symbol? scm-name)
   (receive (quals rest) (span keyword? args)
     (cond
-     [(lset-difference eqv? quals '(:built-in :base :private)) pair?
+     [(lset-difference eqv? quals '(:built-in :base :private :no-meta)) pair?
       => (cut error <cgen-stub-error> "unknown define-cclass qualifier(s)" <>)])
     (match rest
       [(c-type c-name cpa slot-spec . more)
@@ -1737,7 +1741,15 @@
   )
 
 (define-method cgen-emit-init ((self <cclass>))
-  (p "  Scm_InitBuiltinClass(&"(~ self'c-name)", \""(~ self'scheme-name)"\", "(c-slot-spec-name self)", TRUE, SCM_MODULE("(stub-tmodule-cname self)"));")
+  (let ([class-addr #"&~(~ self'c-name)"]
+        [class-name (cgen-safe-string (x->string (~ self'scheme-name)))]
+        [specs  (c-slot-spec-name self)]
+        [mod (stub-tmodule-cname self)])
+    (if (memq :no-meta (~ self'qualifiers))
+      (p "  Scm_InitStaticClass("class-addr", "class-name","
+         " SCM_MODULE("mod"), "specs", 0);")
+      (p "  Scm_InitStaticClassWithMeta("class-addr", "class-name","
+         " SCM_MODULE("mod"), NULL, SCM_FALSE, "specs", 0);")))
   ;; adjust direct-supers if necessary
   (let1 ds (~ self'direct-supers)
     (when (not (null? ds))
