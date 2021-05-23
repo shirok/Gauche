@@ -400,14 +400,22 @@ ScmObj Scm__InternalClassName(ScmClass *klass)
 /* Allocate class structure.  klass is a metaclass. */
 static ScmObj class_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
-    ScmClass *instance = SCM_NEW_INSTANCE(ScmClass, klass);
+    /* NB: In some context, klass's initialization hasn't finished yet and
+       klass->coreSize is 0.  In such case we can safely assume the class
+       is the same size as ScmClass. */
+    int classCoreSize = ((size_t)klass->coreSize < sizeof(ScmClass)
+                         ? (int)sizeof(ScmClass)
+                         : klass->coreSize);
+    ScmClass *instance = (ScmClass*)Scm_NewInstance(klass, classCoreSize);
     instance->allocate = NULL;  /* will be set when CPL is set */
     instance->print = NULL;
     instance->compare = Scm_ObjectCompare;
     instance->hash = NULL;
     instance->cpa = NULL;
     instance->numInstanceSlots = 0; /* will be adjusted in class init */
-    instance->coreSize = 0;     /* will be set when CPL is set */
+    instance->coreSize = 0;     /* will be set when CPL is set.  this is
+                                   core size of the instance, not the
+                                   classCoreSize above. */
     instance->flags = SCM_CLASS_SCHEME|SCM_CLASS_MALLEABLE; /* default */
     instance->name = SCM_FALSE;
     instance->directSupers = SCM_NIL;
@@ -794,6 +802,11 @@ static ScmObj class_category(ScmClass *klass)
     case SCM_CLASS_BASE:     return SCM_SYM_BASE;
     default:                 return SCM_SYM_SCHEME;
     }
+}
+
+static ScmObj class_core_size(ScmClass *klass)
+{
+    return SCM_MAKE_INT(klass->coreSize);
 }
 
 static ScmObj class_initargs(ScmClass *klass)
@@ -3214,6 +3227,7 @@ static ScmClassStaticSlotSpec class_slots[] = {
     SCM_CLASS_SLOT_SPEC("defined-modules", class_defined_modules, class_defined_modules_set),
     SCM_CLASS_SLOT_SPEC("redefined", class_redefined, NULL),
     SCM_CLASS_SLOT_SPEC("category", class_category, NULL),
+    SCM_CLASS_SLOT_SPEC("core-size", class_core_size, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
