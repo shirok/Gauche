@@ -3310,6 +3310,24 @@ static void initialize_builtin_cpl(ScmClass *klass, ScmObj supers)
 }
 
 /*
+ * Special handling for static metaclass initialization
+ *   If a metaclass is statically allocated (via define-cclass)
+ *   and it doesn't have a custom allocate handler, we need
+ *   the default class allocator which isn't public.
+ */
+static void ensure_metaclass_allocate(ScmClass *klass)
+{
+    for (int i = 0; klass->cpa[i] != NULL; i++) {
+        if (SCM_EQ(klass->cpa[i], SCM_CLASS_CLASS)) {
+            if (klass->allocate == NULL) {
+                klass->allocate = class_allocate;
+            }
+            return;
+        }
+    }
+}
+
+/*
  * A common part for builtin class initialization
  */
 static void init_class(ScmClass *klass,
@@ -3328,6 +3346,9 @@ static void init_class(ScmClass *klass,
 
     klass->name = SCM_INTERN(name);
     initialize_builtin_cpl(klass, supers);
+
+    /* if the class is a metaclass, ensure proper allocate  */
+    ensure_metaclass_allocate(klass);
 
     /* On Windows, mutex and cv must be initialized at runtime. */
     SCM_INTERNAL_MUTEX_INIT(klass->mutex);
