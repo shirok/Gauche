@@ -257,6 +257,10 @@
 ;;; Miscellaneous
 ;;;
 
+;; Make %transfer-bindings unavailable.  It is only for initialization.
+(with-module gauche.internal
+  (set! %transfer-bindings #f))
+
 ;;
 ;; Turn on generic dispatcher on selected gfs.
 ;; Eventually, we automate attaching dispacher whenever gf meets certain

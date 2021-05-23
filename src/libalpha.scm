@@ -338,6 +338,46 @@
                       (loop r (+ i 1))))))))))
 
 ;;;
+;;; Transfer binding to other module
+;;;
+
+;; Some components (e.g. libobj.scm) has its own module, and transfer
+;; external API to 'gauche' module.
+;; NB: For more general (internal) API, we have %insert-binding in libmod.
+;; %transfer-bindings is purely for initialization, and it is overwritten
+;; in libomega.
+
+(with-module gauche.internal)
+
+;; Take binding of each symbol in SYMBOLS in the module FROM and inject
+;; it in the module TO.  Binding flags (const, inlinable) are carried over,
+;; unless a list given to FLAGS argument.  FLAGS list may include
+;; 'const and 'inlinable.
+(define-cproc %transfer-bindings (from::<module> to::<module> symbols
+                                                 :optional (flags #f))
+  (for-each (lambda (sym)
+              (SCM_ASSERT (SCM_SYMBOLP sym))
+              (let* ([g::ScmGloc* (Scm_FindBinding from (SCM_SYMBOL sym) 0)]
+                     [lflags::u_long 0])
+                (SCM_ASSERT (!= g NULL))
+                (cond [(SCM_PAIRP flags)
+                       (for-each (lambda (fl)
+                                   (cond [(SCM_EQ fl 'const)
+                                          (logior= lflags SCM_BINDING_CONST)]
+                                         [(SCM_EQ fl 'inlinable)
+                                          (logior= lflags SCM_BINDING_INLINABLE)]
+                                         [else
+                                          (Scm_Error "unknown flag: %S" fl)]))
+                                 flags)]
+                      [else
+                       (when (Scm_GlocInlinableP g)
+                         (logior= lflags SCM_BINDING_INLINABLE))
+                       (when (Scm_GlocConstP g)
+                         (logior= lflags SCM_BINDING_CONST))])
+                (Scm_MakeBinding to (SCM_SYMBOL sym) (SCM_GLOC_GET g) lflags)))
+            symbols))
+
+;;;
 ;;; This is needed before we use define-macro.
 ;;;
 

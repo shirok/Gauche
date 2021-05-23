@@ -1,3 +1,10 @@
+2021-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (%transfer-binding), src/libobj.scm, src/libtype.scm:
+	  Replace the kludgy macro 'insert-bindings' with a cproc, for we
+	  need to transfer binding flags as well.  It is only available
+	  during initialization.
+
 2021-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c, src/gauche.h (SCM_CLASS_METACLASS_CPL): Added to

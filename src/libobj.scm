@@ -932,40 +932,41 @@
 ;;; Make exported symbol visible from outside
 ;;;
 
-(define-macro (insert-symbols . syms)
-  `(begin ,@(map (^[s] `(define-in-module gauche ,s ,s)) syms)))
+(let ((xfer (with-module gauche.internal %transfer-bindings)))
+  (xfer (current-module)
+        (find-module 'gauche)
+        '(;define-generic define-method define-class
+          compute-slots
+          compute-get-n-set compute-slot-accessor
+          class-slot-ref class-slot-set! class-slot-bound?
+          slot-push! slot-pop! slot-unbound slot-missing
+          slot-exists? slot-exists-using-class?
+          change-class
+          apply-generic sort-applicable-methods
+          apply-methods apply-method
+          class-of current-class-of is-a? subtype? of-type?
+          slot-ref slot-set!
+          slot-bound? slot-ref-using-accessor slot-bound-using-accessor?
+          slot-set-using-accessor! slot-initialize-using-accessor!
+          instance-slot-ref instance-slot-set! touch-instance!
+          class-name class-precedence-list class-direct-supers
+          class-direct-methods class-direct-subclasses
+          class-direct-slots class-slots
+          class-post-initialize
+          slot-definition-name slot-definition-options
+          slot-definition-option
+          slot-definition-allocation slot-definition-getter
+          slot-definition-setter slot-definition-accessor
+          class-slot-definition class-slot-accessor
+          x->string x->integer x->number ref |setter of ref|
+          ~ ref*
+          describe describe-common describe-slots
 
-(insert-symbols ;define-generic define-method define-class
-                compute-slots compute-get-n-set compute-slot-accessor
-                class-slot-ref class-slot-set! class-slot-bound?
-                slot-push! slot-pop! slot-unbound slot-missing
-                slot-exists? slot-exists-using-class?
-                change-class
-                apply-generic sort-applicable-methods
-                apply-methods apply-method
-                class-of current-class-of is-a? subtype? of-type?
-                slot-ref slot-set!
-                slot-bound? slot-ref-using-accessor slot-bound-using-accessor?
-                slot-set-using-accessor! slot-initialize-using-accessor!
-                instance-slot-ref instance-slot-set! touch-instance!
-                class-name class-precedence-list class-direct-supers
-                class-direct-methods class-direct-subclasses
-                class-direct-slots class-slots
-                class-post-initialize
-                slot-definition-name slot-definition-options
-                slot-definition-option
-                slot-definition-allocation slot-definition-getter
-                slot-definition-setter slot-definition-accessor
-                class-slot-definition class-slot-accessor
-                x->string x->integer x->number ref |setter of ref|
-                ~ ref*
-                describe describe-common describe-slots
-
-                ;; These shouldn't be necessary to be injected into gauche
-                ;; module; unfortunately, the current define-method and
-                ;; define-class are unhygienic, and we need them visible
-                ;; from the expanded code.  Should be removed once we rewrite
-                ;; related macros hygienic.
-                %ensure-generic-function
-                %check-class-binding
-                )
+          ;; These shouldn't be necessary to be injected into gauche
+          ;; module; unfortunately, the current define-method and
+          ;; define-class are unhygienic, and we need them visible
+          ;; from the expanded code.  Should be removed once we rewrite
+          ;; related macros hygienic.
+          %ensure-generic-function
+          %check-class-binding
+          )))
