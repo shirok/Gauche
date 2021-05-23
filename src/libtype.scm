@@ -31,7 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(declare) ;; a dummy form to suppress generation of "sci" file
+;; This must be the first form to prevents generation of *.sci file
+(declare (keep-private-macro define-type-constructor))
 
 ;; In Gauche, types are a data structure that appears in both compile-time
 ;; and run-time, describes metalevel properties of run-time data.
@@ -45,10 +46,19 @@
 ;; only to be used to validate and/or infer the actual (generative) type of
 ;; data.
 ;;
-;; Descriptive types can be constructed by type constructors.
+;; Descriptive types can be constructed by type constructors.  Since the
+;; compiler needs to know about types, type constructor expressions
+;; are evaluated at the compile time, much like macros.
 ;;
-;; A type constructor itself is a class.  We use object-apply hook to make
-;; it applicable.
+;; We could implemented types with macros, but it would be tricky.  Unlike
+;; macros, type expression needs to evaluate from inside to outside, just
+;; like the ordinary expression.  It's more like compile-time constant folding.
+;;
+;; Since type handing is deeply intertwined with compiler, we let the compiler
+;; recognize type expression specifically, rather than reusing existing
+;; evaluation mechanism.  When the compile sees (C x ...) and C has an
+;; inlineable binding to an instance of <type-constructor-meta>, it recognizes
+;; type expression.
 
 ;; This module is not meant to be `use'd.   It is just to hide
 ;; auxiliary procedures from the rest of the system.  The necessary
@@ -59,11 +69,22 @@
 
 ;; Metaclass: <type-constructor-meta>
 ;;   Instance classes of this metaclass are used to create an abstract types.
-;;   They have object-apply method, and each intance class can be used
-;;   as a procedure that takes classes and returns a class.
-(define-class <type-constructor-meta> (<class>)
-  ((of-type? :init-keyword :of-type?) ;; obj, type -> bool
-   ))
+(inline-stub
+ (.include "gauche/class.h")
+ (define-ctype ScmTypeConstructor
+   ::(.struct ScmTypeConstructorRec
+              (common::ScmClass
+               validator::ScmObj)))
+
+ (define-cclass <type-constructor-meta> :base :private :no-meta
+   "ScmTypeConstructor*" "Scm_TypeConstructorMeta"
+   (c "SCM_CLASS_METACLASS_CPL")
+   ((validator))
+   )
+
+ (define-cfn Scm_TypeConstructorP (klass) ::int
+   (return (SCM_ISA klass (& Scm_TypeConstructorMeta))))
+ )
 
 ;; define-type-constructor name supers
 ;;   (slot ...)
@@ -73,7 +94,7 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ name supers slots of-type)
+       [(_ name supers slots validator)
         (let ([meta-name (rxmatch-if (#/^<(.*)>$/ (symbol->string name))
                              [_ trimmed]
                            (string->symbol #"<~|trimmed|-meta>")
@@ -86,7 +107,7 @@
                (define-class ,meta-name (<type-constructor-meta>) ())
                (define-class ,name ,supers ,slots
                  :metaclass ,meta-name
-                 :of-type? ,of-type))))]))))
+                 :validator ,validator))))]))))
 
 ;; Metaclass: <type-instance-meta>
 ;;   An abstract type instance, which is a class but won't create instances.
@@ -143,7 +164,7 @@
 (define-type-constructor <^> ()
   ((arguments :init-keyword :arguments)
    (results :init-keyword :results))
-  (^[obj type]
+  (^[type obj]
     (if (eq? (~ type'arguments) '*)
       (or (is-a? obj <procedure>)
           (is-a? obj <generic>)
@@ -196,7 +217,7 @@
 
 (define-type-constructor </> ()
   ((members :init-keyword :members))
-  (^[obj type]
+  (^[type obj]
     (any (cut of-type? obj <>) (~ type'members))))
 
 (define-method object-apply ((k </-meta>) . args)
@@ -212,7 +233,7 @@
 
 (define-type-constructor <?> ()
   ((primary-type :init-keyword :primary-type))
-  (^[obj type]
+  (^[type obj]
     (or (eqv? obj #f) (of-type? obj (~ type'primary-type)))))
 
 (define-method object-apply ((k <?-meta>) ptype)
@@ -228,7 +249,7 @@
 
 (define-type-constructor <Tuple> ()
   ((elements :init-keyword :elements))
-  (^[obj type]
+  (^[type obj]
     (let loop ((obj obj) (elts (~ type'elements)))
       (if (null? obj)
         (null? elts)
@@ -252,7 +273,7 @@
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
-  (^[obj type]
+  (^[type obj]
     (let ([et (~ type'element-type)]
           [mi (~ type'min-length)]
           [ma (~ type'max-length)])
@@ -286,7 +307,7 @@
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
-  (^[obj type]
+  (^[type obj]
     (and (vector? obj)
          (let ([et (~ type'element-type)]
                [mi (~ type'min-length)]

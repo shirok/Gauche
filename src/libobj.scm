@@ -545,7 +545,7 @@
 
 (define (of-type? obj type)
   (cond [(is-a? type <type-instance-meta>)
-         ((~ (class-of type)'of-type?) obj type)]
+         ((~ (class-of type) 'validator) type obj)]
         [else (is-a? obj type)]))
 
 (define-cproc slot-ref (obj slot)
