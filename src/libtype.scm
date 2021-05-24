@@ -74,12 +74,14 @@
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
               (common::ScmClass
+               constructor::ScmObj
                validator::ScmObj)))
 
  (define-cclass <type-constructor-meta> :base :private :no-meta
    "ScmTypeConstructor*" "Scm_TypeConstructorMeta"
    (c "SCM_CLASS_METACLASS_CPL")
-   ((validator))
+   ((constructor)
+    (validator))
    )
 
  (define-cfn Scm_TypeConstructorP (klass) ::int
@@ -94,7 +96,7 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ name supers slots validator)
+       [(_ name supers slots constructor validator)
         (let ([meta-name (rxmatch-if (#/^<(.*)>$/ (symbol->string name))
                              [_ trimmed]
                            (string->symbol #"<~|trimmed|-meta>")
@@ -107,7 +109,13 @@
                (define-class ,meta-name (<type-constructor-meta>) ())
                (define-class ,name ,supers ,slots
                  :metaclass ,meta-name
+                 :constructor ,constructor
                  :validator ,validator))))]))))
+
+;; This will be dropped once we compilete compile-time type constructor
+;; evaluation
+(define-method object-apply ((k <type-constructor-meta>) . args)
+  (apply (~ k'constructor) args))
 
 ;; Metaclass: <type-instance-meta>
 ;;   An abstract type instance, which is a class but won't create instances.
@@ -161,21 +169,8 @@
 ;;;   TODO: How to type optional, keyword and rest arguments?
 ;;;
 
-(define-type-constructor <^> ()
-  ((arguments :init-keyword :arguments)
-   (results :init-keyword :results))
-  (^[type obj]
-    (if (eq? (~ type'arguments) '*)
-      (or (is-a? obj <procedure>)
-          (is-a? obj <generic>)
-          (let1 k (class-of obj)
-            (let loop ([ms (~ object-apply'methods)])
-              (cond [(null? ms) #f]
-                    [(subtype? k (car (~ (car ms)'specializers)))]
-                    [else (loop (cdr ms))]))))
-      (apply applicable? obj (~ type'arguments)))))
 
-(define-method object-apply ((k <^-meta>) . rest)
+(define (make-^ . rest)
   (define (scan-args xs as)
     (match xs
       [() (error "Missing ':-' in the procedure type constructor arguments:"
@@ -210,123 +205,154 @@
       :arguments args
       :results results)))
 
+(define (validate-^ type obj)
+  (if (eq? (~ type'arguments) '*)
+    (or (is-a? obj <procedure>)
+        (is-a? obj <generic>)
+        (let1 k (class-of obj)
+          (let loop ([ms (~ object-apply'methods)])
+            (cond [(null? ms) #f]
+                  [(subtype? k (car (~ (car ms)'specializers)))]
+                  [else (loop (cdr ms))]))))
+    (apply applicable? obj (~ type'arguments))))
+
+(define-type-constructor <^> ()
+  ((arguments :init-keyword :arguments)
+   (results :init-keyword :results))
+  make-^
+  validate-^)
+
 ;;;
 ;;; Class: </>
 ;;;   Creates a union type.
 ;;;
 
-(define-type-constructor </> ()
-  ((members :init-keyword :members))
-  (^[type obj]
-    (any (cut of-type? obj <>) (~ type'members))))
-
-(define-method object-apply ((k </-meta>) . args)
+(define (make-/ . args)
   (assume (every (cut is-a? <> <class>) args))
   (make </>
     :name (make-compound-type-name '/ args)
     :members args))
+
+(define (validate-/ type obj)
+  (any (cut of-type? obj <>) (~ type'members)))
+
+(define-type-constructor </> ()
+  ((members :init-keyword :members))
+  make-/
+  validate-/)
 
 ;;;
 ;;; Class: <?>
 ;;;   Creates a boolean-optional type, that is, <type> or #f.
 ;;;
 
-(define-type-constructor <?> ()
-  ((primary-type :init-keyword :primary-type))
-  (^[type obj]
-    (or (eqv? obj #f) (of-type? obj (~ type'primary-type)))))
-
-(define-method object-apply ((k <?-meta>) ptype)
+(define (make-? ptype)
   (assume (is-a? ptype <class>))
   (make <?>
     :name (make-compound-type-name '? `(,ptype))
     :primary-type ptype))
+
+(define (validate-? type obj)
+  (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
+
+(define-type-constructor <?> ()
+  ((primary-type :init-keyword :primary-type))
+  make-?
+  validate-?)
 
 ;;;
 ;;; Class: <Tuple>
 ;;;   Fixed-lenght list, each element having its own type constraints.
 ;;;
 
-(define-type-constructor <Tuple> ()
-  ((elements :init-keyword :elements))
-  (^[type obj]
-    (let loop ((obj obj) (elts (~ type'elements)))
-      (if (null? obj)
-        (null? elts)
-        (and (pair? obj)
-             (pair? elts)
-             (of-type? (car obj) (car elts))
-             (loop (cdr obj) (cdr elts)))))))
-
-(define-method object-apply ((k <Tuple-meta>) . args)
+(define (make-Tuple . args)
   (assume (every (cut is-a? <> <class>) args))
   (make <Tuple>
     :name (make-compound-type-name 'Tuple args)
     :elements args))
+
+(define (validate-Tuple type obj)
+  (let loop ((obj obj) (elts (~ type'elements)))
+    (if (null? obj)
+      (null? elts)
+      (and (pair? obj)
+           (pair? elts)
+           (of-type? (car obj) (car elts))
+           (loop (cdr obj) (cdr elts))))))
+
+(define-type-constructor <Tuple> ()
+  ((elements :init-keyword :elements))
+  make-Tuple
+  validate-Tuple)
 
 ;;;
 ;;; Class: <List>
 ;;;   A list of specified types.
 ;;;
 
-(define-type-constructor <List> ()
-  ((element-type :init-keyword :element-type)
-   (min-length :init-keyword :min-length :init-value #f)
-   (max-length :init-keyword :max-length :init-value #f))
-  (^[type obj]
-    (let ([et (~ type'element-type)]
-          [mi (~ type'min-length)]
-          [ma (~ type'max-length)])
-      (if (not (or mi ma))
-        ;; simple case
-        (let loop ([obj obj])
-          (cond [(null? obj) #t]
-                [(not (pair? obj)) #f]
-                [(of-type? (car obj) et) (loop (cdr obj))]
-                [else #f]))
-        ;; general case
-        (let loop ([obj obj] [n 0])
-          (cond [(null? obj) (or (not mi) (<= mi n))]
-                [(and ma (<= ma n)) #f]
-                [(not (pair? obj)) #f]
-                [(of-type? (car obj) et) (loop (cdr obj) (+ n 1))]
-                [else #f]))))))
-
-(define-method object-apply ((k <List-meta>) etype :optional (min #f) (max #f))
+(define (make-List etype :optional (min #f) (max #f))
   (make <List>
     :name (make-min-max-len-type-name 'List (list etype) min max)
     :element-type etype
     :min-length min
     :max-length max))
 
+(define (validate-List type obj)
+  (let ([et (~ type'element-type)]
+        [mi (~ type'min-length)]
+        [ma (~ type'max-length)])
+    (if (not (or mi ma))
+      ;; simple case
+      (let loop ([obj obj])
+        (cond [(null? obj) #t]
+              [(not (pair? obj)) #f]
+              [(of-type? (car obj) et) (loop (cdr obj))]
+              [else #f]))
+      ;; general case
+      (let loop ([obj obj] [n 0])
+        (cond [(null? obj) (or (not mi) (<= mi n))]
+              [(and ma (<= ma n)) #f]
+              [(not (pair? obj)) #f]
+              [(of-type? (car obj) et) (loop (cdr obj) (+ n 1))]
+              [else #f])))))
+
+(define-type-constructor <List> ()
+  ((element-type :init-keyword :element-type)
+   (min-length :init-keyword :min-length :init-value #f)
+   (max-length :init-keyword :max-length :init-value #f))
+  make-List
+  validate-List)
+
 ;;;
 ;;; <Vector> element-type [min-length [max-length]]
 ;;;
 
-(define-type-constructor <Vector> ()
-  ((element-type :init-keyword :element-type)
-   (min-length :init-keyword :min-length :init-value #f)
-   (max-length :init-keyword :max-length :init-value #f))
-  (^[type obj]
-    (and (vector? obj)
-         (let ([et (~ type'element-type)]
-               [mi (~ type'min-length)]
-               [ma (~ type'max-length)]
-               [len (vector-length obj)])
-           (and (or (not mi) (<= mi len))
-                (or (not ma) (<= len ma))
-                (let loop ([i 0])
-                  (cond [(= i len) #t]
-                        [(of-type? (vector-ref obj i) et) (loop (+ i 1))]
-                        [else #f])))))))
-
-(define-method object-apply ((k <Vector-meta>) etype
-                             :optional (min #f) (max #f))
+(define (make-Vector etype :optional (min #f) (max #f))
   (make <Vector>
     :name (make-min-max-len-type-name 'Vector (list etype) min max)
     :element-type etype
     :min-length min
     :max-length max))
+
+(define (validate-Vector type obj)
+  (and (vector? obj)
+       (let ([et (~ type'element-type)]
+             [mi (~ type'min-length)]
+             [ma (~ type'max-length)]
+             [len (vector-length obj)])
+         (and (or (not mi) (<= mi len))
+              (or (not ma) (<= len ma))
+              (let loop ([i 0])
+                (cond [(= i len) #t]
+                      [(of-type? (vector-ref obj i) et) (loop (+ i 1))]
+                      [else #f]))))))
+
+(define-type-constructor <Vector> ()
+  ((element-type :init-keyword :element-type)
+   (min-length :init-keyword :min-length :init-value #f)
+   (max-length :init-keyword :max-length :init-value #f))
+  make-Vector
+  validate-Vector)
 
 ;;;
 ;;; Make exported symbol visible from outside
