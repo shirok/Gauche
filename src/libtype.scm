@@ -75,12 +75,20 @@
    ::(.struct ScmTypeConstructorRec
               (common::ScmClass
                constructor::ScmObj
+               deconstructor::ScmObj
                validator::ScmObj)))
 
+ ;; constructor - a procedure to build a descriptive type, an instance
+ ;;               of the metaclass.
+ ;; deconstructor - returns a list of objects which, when passed to the
+ ;;               constructor, recreates the type.
+ ;;               each element must be either a simple constant or a type.
+ ;; validator - takes type and obj, returns if obj is valid as type.
  (define-cclass <type-constructor-meta> :base :private :no-meta
    "ScmTypeConstructor*" "Scm_TypeConstructorMeta"
    (c "SCM_CLASS_METACLASS_CPL")
    ((constructor)
+    (deconstructor)
     (validator))
    )
 
@@ -96,7 +104,7 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ name supers slots constructor validator)
+       [(_ name supers slots constructor deconstructor validator)
         (let ([meta-name (rxmatch-if (#/^<(.*)>$/ (symbol->string name))
                              [_ trimmed]
                            (string->symbol #"<~|trimmed|-meta>")
@@ -110,6 +118,7 @@
                (define-class ,name ,supers ,slots
                  :metaclass ,meta-name
                  :constructor ,constructor
+                 :deconstructor ,deconstructor
                  :validator ,validator))))]))))
 
 ;; This will be dropped once we compilete compile-time type constructor
@@ -123,8 +132,11 @@
 (define-class <type-instance-meta> (<class>)
   ())
 
-(define-method allocate-instance ((z <type-instance-meta>) initargs)
-  (error "Abstract type instance cannot instantiate a concrete object:" z))
+(define-method allocate-instance ((t <type-instance-meta>) initargs)
+  (error "Abstract type instance cannot instantiate a concrete object:" t))
+
+(define-method deconstruct-type ((t <type-instance-meta>))
+  ((~ (class-of t)'deconstructor) t))
 
 ;; Utilities to create reasonable name
 (define (join-class-names classes)
@@ -205,6 +217,11 @@
       :arguments args
       :results results)))
 
+(define (deconstruct-^ type)
+  (if (eq? (~ type'results) '*)
+    (append (~ type'arguments) '(:- *))
+    (append (~ type'arguments) '(:-) (~ type'results))))
+
 (define (validate-^ type obj)
   (if (eq? (~ type'arguments) '*)
     (or (is-a? obj <procedure>)
@@ -220,6 +237,7 @@
   ((arguments :init-keyword :arguments)
    (results :init-keyword :results))
   make-^
+  deconstruct-^
   validate-^)
 
 ;;;
@@ -233,12 +251,16 @@
     :name (make-compound-type-name '/ args)
     :members args))
 
+(define (deconstruct-/ type)
+  (~ type'members))
+
 (define (validate-/ type obj)
   (any (cut of-type? obj <>) (~ type'members)))
 
 (define-type-constructor </> ()
   ((members :init-keyword :members))
   make-/
+  deconstruct-/
   validate-/)
 
 ;;;
@@ -252,12 +274,16 @@
     :name (make-compound-type-name '? `(,ptype))
     :primary-type ptype))
 
+(define (deconstruct-? type)
+  (list (~ type'primary-type)))
+
 (define (validate-? type obj)
   (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
 
 (define-type-constructor <?> ()
   ((primary-type :init-keyword :primary-type))
   make-?
+  deconstruct-?
   validate-?)
 
 ;;;
@@ -271,6 +297,9 @@
     :name (make-compound-type-name 'Tuple args)
     :elements args))
 
+(define (deconstruct-Tuple type)
+  (~ type'elements))
+
 (define (validate-Tuple type obj)
   (let loop ((obj obj) (elts (~ type'elements)))
     (if (null? obj)
@@ -283,6 +312,7 @@
 (define-type-constructor <Tuple> ()
   ((elements :init-keyword :elements))
   make-Tuple
+  deconstruct-Tuple
   validate-Tuple)
 
 ;;;
@@ -296,6 +326,9 @@
     :element-type etype
     :min-length min
     :max-length max))
+
+(define (deconstruct-List type)
+  (list (~ type'element-type) (~ type'min-length) (~ type'max-length)))
 
 (define (validate-List type obj)
   (let ([et (~ type'element-type)]
@@ -321,6 +354,7 @@
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
   make-List
+  deconstruct-List
   validate-List)
 
 ;;;
@@ -333,6 +367,9 @@
     :element-type etype
     :min-length min
     :max-length max))
+
+(define (deconstruct-Vector type)
+  (list (~ type'element-type) (~ type'min-length) (~ type'max-length)))
 
 (define (validate-Vector type obj)
   (and (vector? obj)
@@ -352,6 +389,7 @@
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
   make-Vector
+  deconstruct-Vector
   validate-Vector)
 
 ;;;
@@ -367,4 +405,7 @@
         '(<type-constructor-meta>
           <type-instance-meta>
           <^> </> <?> <Tuple> <List> <Vector>)
-        '(inlinable)))
+        '(inlinable))
+  (xfer (current-module)
+        (find-module 'gauche.internal)
+        '(deconstruct-type)))
