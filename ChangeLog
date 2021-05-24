@@ -1,5 +1,9 @@
 2021-05-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile.scm (global-call-type): Recognize type constructor expr.
+	  For now, we don't do nothing in the compiler and leave it to the
+	  runtime, but will switch later.
+
 	* src/libalpha.scm (%transfer-binding), src/libobj.scm, src/libtype.scm:
 	  Replace the kludgy macro 'insert-bindings' with a cproc, for we
 	  need to transfer binding flags as well.  It is only available

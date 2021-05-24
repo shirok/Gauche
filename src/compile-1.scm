@@ -84,7 +84,11 @@
           [(macro)  (pass1 (call-macro-expander gval program cenv) cenv)]
           [(syntax) (call-syntax-handler gval program cenv)]
           [(inline) (or (pass1/expand-inliner program id gval cenv)
-                        (pass1/call program ($gref id) (cdr program) cenv))])
+                        (pass1/call program ($gref id) (cdr program) cenv))]
+          [(type-ctor)
+           ;; we'll eventually construct the type here, but for now
+           ;; we put it off to runtime.
+           (pass1/call program ($gref id) (cdr program) cenv)])
         (pass1/call program ($gref id) (cdr program) cenv))))
 
   ;; main body of pass1

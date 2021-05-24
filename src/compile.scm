@@ -1721,7 +1721,8 @@
 ;;
 ;;   The first value is #f if this global call would be a simple call.
 ;;   Otherwise, the first value is a bound value of the global variable,
-;;   and the second value is one of the symbols 'macro, 'syntax or 'inline.
+;;   and the second value is one of the symbols 'macro, 'syntax, 'inline,
+;;   or 'type-ctor.
 ;;
 ;;   We write this in C because it is in critical path of the compiler.
 ;;
@@ -1777,6 +1778,9 @@
                                      (not (SCM_MACROP inl)))))
                     (set! SCM_RESULT0 gval SCM_RESULT1 'inline)
                     (goto normal)))]
+               [(and (Scm_TypeConstructorP gval)
+                     (Scm_GlocInlinableP gloc))
+                (set! SCM_RESULT0 gval SCM_RESULT1 'type-ctor)]
                [else (goto normal)])
          (.if "defined(RECORD_DEPENDED_MODULES)"
               (begin
