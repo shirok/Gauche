@@ -355,6 +355,7 @@
 ;; 'const and 'inlinable.
 (define-cproc %transfer-bindings (from::<module> to::<module> symbols
                                                  :optional (flags #f))
+  ::<void>
   (for-each (lambda (sym)
               (SCM_ASSERT (SCM_SYMBOLP sym))
               (let* ([g::ScmGloc* (Scm_FindBinding from (SCM_SYMBOL sym) 0)]
