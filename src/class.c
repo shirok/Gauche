@@ -3470,8 +3470,9 @@ void Scm_InitStaticClassWithMeta(ScmClass *klass,
     }
 }
 
-/* The old API - deprecated.  We keep this around for a while
+/* TRANSIENT: The old API - deprecated.  We keep this around for a while
    for backward compatibility. */
+#if GAUCHE_API_VERSION < 1000
 void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
                           ScmClassStaticSlotSpec *specs,
                           int withMeta, ScmModule *mod)
@@ -3482,6 +3483,7 @@ void Scm_InitBuiltinClass(ScmClass *klass, const char *name,
         Scm_InitStaticClass(klass, name, mod, specs, 0);
     }
 }
+#endif /*GAUCHE_API_VERSION < 1000*/
 
 void Scm_InitBuiltinGeneric(ScmGeneric *gf, const char *name, ScmModule *mod)
 {
