@@ -1,3 +1,9 @@
+2021-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse (sparse-vector-find, sparse-table-find): Added.
+	  The API may be reconsidered, for there are some variations
+	  in the 'find' and 'any' APIs.
+
 2021-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (global-call-type): Recognize type constructor expr.

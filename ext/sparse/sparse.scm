@@ -40,7 +40,8 @@
           sparse-table-clear! sparse-table-delete! sparse-table-copy
           sparse-table-update! sparse-table-push! sparse-table-pop!
           sparse-table-fold sparse-table-map sparse-table-for-each
-          sparse-table-keys sparse-table-values sparse-table-comparator
+          sparse-table-find sparse-table-keys sparse-table-values
+          sparse-table-comparator
           %sparse-table-dump %sparse-table-check
 
           <sparse-vector-base> <sparse-vector> <sparse-s8vector>
@@ -55,7 +56,7 @@
           sparse-vector-update! sparse-vector-inc!
           sparse-vector-push! sparse-vector-pop!
           sparse-vector-fold sparse-vector-map sparse-vector-for-each
-          sparse-vector-keys sparse-vector-values
+          sparse-vector-find sparse-vector-keys sparse-vector-values
           %sparse-vector-dump
 
           <sparse-matrix-base> <sparse-matrix> <sparse-s8matrix>
@@ -85,6 +86,7 @@
   (let ([x-fold     (string->symbol #"~|type|-fold")]
         [x-map      (string->symbol #"~|type|-map")]
         [x-for-each (string->symbol #"~|type|-for-each")]
+        [x-find     (string->symbol #"~|type|-find")]
         [x-keys     (string->symbol #"~|type|-keys")]
         [x-values   (string->symbol #"~|type|-values")]
         [x-update!  (string->symbol #"~|type|-update!")]
@@ -104,6 +106,14 @@
          (,x-fold st (^[k v s] (cons (proc k v) s)) '()))
        (define (,x-for-each st proc)
          (,x-fold st (^[k v _] (proc k v)) #f))
+       (define (,x-find pred st :optional (failure (lambda () (values #f #f))))
+         (let ([iter (,iter st)]
+               [end (list #f)])
+           (let loop ()
+             (receive (key val) (iter end)
+               (cond [(eq? key end) (failure)]
+                     [(pred key val) (values key val)]
+                     [else (loop)])))))
        (define (,x-keys st)
          (,x-fold st (^[k v s] (cons k s)) '()))
        (define (,x-values st)
