@@ -116,6 +116,16 @@
   (unless (sparse-vector-exists? m k)
     (sparse-vector-set! m (assume k exact-integer?) v)))
 
+(define *unique* (cons #f #f))
+
+(define (%imapping-adjoin-1/combinator! m k v combine)
+  (sparse-vector-update! m (assume k exact-integer?)
+                         (^[prev]
+                           (if (eq? prev *unique*)
+                             v
+                             (combine v prev)))
+                         *unique*))
+
 (define (imapping-adjoin! m . args)
   (let loop ([as args])
     (match as
@@ -144,3 +154,42 @@
       (match p
         [(k . v) (%imapping-adjoin-1! m k v)]
         [_ (error "alist contain non-pair:" p)]))))
+
+(define (alist->imapping/combinator proc alist)
+  (rlet1 m (make-sparse-vector)
+    (dolist [p alist]
+      (match p
+        [(k . v) (%imapping-adjoin-1/combinator! m k v proc)]
+        [_ (error "alist contain non-pair:" p)]))))
+
+(define (imapping-contains? m k)
+  (assume-type m <sparse-vector>)
+  (assume k exact-integer?)
+  (sparse-vector-exists? m k))
+
+(define (imapping-empty? m)
+  (assume-type m <sparse-vector>)
+  (zero? (sparse-vector-num-entries m)))
+
+(define (imapping-disjoint? m1 m2)
+  (receive (k v) (sparse-vector-find (^[k _] (sparse-vector-exists? m2 k))
+                                     m1)
+    (not k)))
+
+(define (imapping-ref m k
+                      :optional (failure #f)
+                                (success identity))
+  (assume-type m <sparse-vector>)
+  (let1 v (sparse-vector-ref m k *unique*)
+    (if (eq? v *unique*)
+      (if failure
+        (failure)
+        (errorf "imapping %S doesn't have an entry for %S" m k))
+      (success v))))
+
+(define (imapping-lookup m k)
+  (assume-type m <sparse-vector>)
+  (let1 v (sparse-vector-ref m k *unique*)
+    (if (eq? v *unique*)
+      (just v)
+      (nothing))))
