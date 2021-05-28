@@ -122,3 +122,119 @@
   (match (tree-map-max (iset-tmap iset))
     [#f #f]
     [(_ . e) e]))
+
+;; Updaters
+
+(define (%adjoin-1 k tmap next)
+  (receive (s e) (tree-map-floor tmap k)
+    (cond [(not s) (rlet1 tmap2 (make-tree-map < =)
+                     (tree-map-put! tmap2 k k))]
+          [(<= k e) tmap]             ; subsumed
+          [else (receive (s2 e2) (tree-map-floor tmap (+ k 1))
+                  (rlet1 tmap2 (next tmap)
+                    (if (not s2)
+                      (if (= (+ e 1) k)
+                        (tree-map-put! tmap2 s k) ; extend
+                        (tree-map-put! tmap2 k k)) ; lone
+                      (if (= (+ e 1) k)
+                        (begin ; k connects two spans
+                          (tree-map-delete! tmap2 s2)
+                          (tree-map-put! tmap2 s e2))
+                        (tree-map-put! tmap2 k k)))))])))
+
+(define (iset-adjoin iset k . ks)
+  (define (noclobber tmap)
+    (if (eq? tmap (iset-tmap iset))
+      (tree-map-copy (iset-tmap iset))
+      tmap))
+  (let1 tm (if (null? ks)
+             (%adjoin-1 k (iset-tmap iset) noclobber)
+             (fold (cut %adjoin-1 <> <> noclobber)
+                   (%adjoin-1 k (iset-tmap iset) noclobber) ks))
+    (if (eq? tm (iset-tmap iset))
+      iset
+      (%make-iset tm))))
+
+(define (iset-adjoin! iset k . ks)
+  (%adjoin-1 k (iset-tmap iset) identity)
+  (dolist [k ks] (%adjoin-1 k (iset-tmap iset) identity))
+  iset)
+
+(define (%delete-1 k tmap next)
+  (receive (s e) (tree-map-floor tmap)
+    (if s
+      (cond [(= k s) (if (= k e)
+                       (rlet1 tmap2 (next tmap)
+                         (tree-map-delete! tmap2 k))
+                       (tree-map-put! tmap (+ s 1) e))]
+            [(< k e) (rlet1 tmap2 (next tmap)
+                       (tree-map-put! tmap s (- k 1))
+                       (tree-map-put! tmap (+ k 1) e))]
+            [(= k e) (rlet1 tmap2 (next tmap)
+                       (tree-map-put! tmap s (- k 1)))]
+            [else tmap])
+      tmap)))
+
+(define (iset-delete iset k . ks)
+  (define (noclobber tmap)
+    (if (eq? tmap (iset-tmap iset))
+      (tree-map-copy (iset-tmap iset))
+      tmap))
+  (let1 tm (if (null? ks)
+             (%delete-1 k (iset-tmap iset) noclobber)
+             (fold (cut %delete-1 <> <> noclobber)
+                   (%delete-1 k (iset-tmap iset) noclobber) ks))
+    (if (eq? tm (iset-tmap iset))
+      iset
+      (%make-iset tm))))
+
+(define (iset-delete! iset k . ks)
+  (%delete-1 k (iset-tmap iset) identity)
+  (dolist [k ks] (%delete-1 k (iset-tmap iset) identity))
+  iset)
+
+(define (iset-delete-all iset ks)
+  (if (null? ks)
+    iset
+    (apply iset-delete iset ks)))
+
+(define (iset-delete-all! iset ks)
+  (if (null? ks)
+    iset
+    (apply iset-delete! iset ks)))
+
+(define (iset-delete-min iset)
+  (match (tree-map-min (iset-tmap iset))
+    [#f (error "iset is empty:" iset)]
+    [(s . e) (let1 tmap2 (tree-map-copy (iset-tmap iset))
+               (tree-map-delete! tmap2 s)
+               (when (< s e)
+                 (tree-map-put! tmap2 (+ s 1) e))
+               (%make-iset tmap2))]))
+
+(define (iset-delete-min! iset)
+  (match (tree-map-min (iset-tmap iset))
+    [#f (error "iset is empty:" iset)]
+    [(s . e) (let1 tmap (iset-tmap iset)
+               (tree-map-delete! t s)
+               (when (< s e)
+                 (tree-map-put! tmap2 (+ s 1) e))
+               iset)]))
+
+(define (iset-delete-max iset)
+  (match (tree-map-max (iset-tmap iset))
+    [#f (error "iset is empty:" iset)]
+    [(s . e) (let1 tmap2 (tree-map-copy (iset-tmap iset))
+               (if (= s e)
+                 (tree-map-delete! tmap2 s)
+                 (tree-map-put! tmap2 s (- e 1)))
+               (%make-iset tmap2))]))
+
+(define (iset-delete-max! iset)
+  (match (tree-map-max (iset-tmap iset))
+    [#f (error "iset is empty:" iset)]
+    [(s . e) (let1 tmap (iset-tmap iset)
+               (if (= s e)
+                 (tree-map-delete! tmap2 s)
+                 (tree-map-put! tmap2 s (- e 1)))
+               iset)]))
