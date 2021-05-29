@@ -1,3 +1,9 @@
+2021-05-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/heap.scm (binary-heap-find): Change argument order to
+	  align other *-find API (except hash-table-find, which is peculiar).
+	  Old API is still recognized by the argument type.
+
 2021-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse (sparse-vector-find, sparse-table-find): Added.

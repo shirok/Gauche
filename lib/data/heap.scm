@@ -289,12 +289,19 @@
 
 ;; not exactly heap operations, but useful...
 
-(define (binary-heap-find hp pred)
-  (and-let* ([storage (~ hp'storage)]
-             [i (find-index (^i (pred (~ storage i)))
-                            (liota (binary-heap-num-entries hp)))])
-    ;; NB: This i is 0-base, so we don't need Ix.
-    (~ storage i)))
+;; Up to 0.9.10, we have (binary-heap-find <heap> <pred>) but that doesn't
+;; align with other *-find procedures.  In 0.9.11 we change it to
+;; (binary-heap-find <pred> <heap> :optional <failure>), while supporting
+;; old API as well.
+(define (binary-heap-find pred hp :optional (failure (^[] #f)))
+  (if (is-a? pred <binary-heap>)
+    (binary-heap-find hp pred failure) ; backward compatibility
+    (or (and-let* ([storage (~ hp'storage)]
+                   [i (find-index (^i (pred (~ storage i)))
+                                  (liota (binary-heap-num-entries hp)))])
+          ;; NB: This i is 0-base, so we don't need Ix.
+          (~ storage i))
+        (failure))))
 
 (define (binary-heap-remove! hp pred)
   (let1 storage (~ hp'storage)

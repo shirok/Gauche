@@ -496,7 +496,7 @@
                  (remove pred lis)
                  (delete item lis))
            (let ([heap (build-binary-heap (list->vector (shuffle lis rs)))])
-             (list (if-let1 r (binary-heap-find heap pred)
+             (list (if-let1 r (binary-heap-find pred heap)
                      (pred r)
                      #f)
                    (let1 h (binary-heap-copy heap)
@@ -518,6 +518,18 @@
   (do-scan (iota 23) odd? 5)
   (do-scan (iota 42) (^n (< (modulo n 3) 2)) 91)
   )
+
+;; check binary-heap-find old & new API
+(let ([h (build-binary-heap (vector 0 8 2 16 11 24 4 10))])
+  (test* "binary-heap-find (new)" 11
+         (binary-heap-find odd? h))
+  (test* "binary-heap-find (new)" #f
+         (binary-heap-find (cut > <> 100) h))
+  (test* "binary-heap-find (new)" 'oops
+         (binary-heap-find (cut > <> 100) h (constantly 'oops)))
+  (test* "binary-heap-find (old)" '11
+         (binary-heap-find h odd?)))
+
 
 (let ()
   (define (test-swap source actions)
