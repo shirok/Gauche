@@ -1,5 +1,7 @@
 2021-05-30  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/treeutil.scm (tree-map-seek-right): Added.
+
 	* libsrc/gauche/dictionary.scm (dict-seek),
 	  src/libdict.scm (hash-table-seek),
 	  lib/gauche/treeutil.scm (tree-map-seek): Reversed failure and success

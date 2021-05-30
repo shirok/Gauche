@@ -34,7 +34,8 @@
 (define-module gauche.treeutil
   (export make-tree-map tree-map-empty?
           tree-map-min tree-map-max tree-map-pop-min! tree-map-pop-max!
-          tree-map-seek tree-map-fold tree-map-fold-right
+          tree-map-seek tree-map-seek-right
+          tree-map-fold tree-map-fold-right
           tree-map-map tree-map-for-each
           tree-map-keys tree-map-values
           tree-map->alist alist->tree-map
@@ -82,7 +83,7 @@
 (define (tree-map-fold-right tm kons knil)
   (%tree-map-fold tm kons knil #t))
 
-(define (tree-map-seek tm pred fail succ)
+(define (%tree-map-seek tm pred fail succ backward)
   (assume-type tm <tree-map>)
   (let ((eof (cons #f #f))              ;marker
         (i ((with-module gauche.internal %tree-map-iter) tm)))
@@ -91,6 +92,12 @@
         (cond [(eq? k eof) (fail)]
               [(pred k v) => (^r (succ r k v))]
               [else (loop)])))))
+
+(define (tree-map-seek tm pred fail succ)
+  (%tree-map-seek tm pred fail succ #f))
+
+(define (tree-map-seek-right tm pred fail succ)
+  (%tree-map-seek tm pred fail succ #t))
 
 (define (tree-map-map tm proc)
   (tree-map-fold-right tm (lambda (k v r) (cons (proc k v) r)) '()))
