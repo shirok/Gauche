@@ -82,7 +82,7 @@
 (define (tree-map-fold-right tm kons knil)
   (%tree-map-fold tm kons knil #t))
 
-(define (tree-map-seek tm pred succ fail)
+(define (tree-map-seek tm pred fail succ)
   (assume-type tm <tree-map>)
   (let ((eof (cons #f #f))              ;marker
         (i ((with-module gauche.internal %tree-map-iter) tm)))

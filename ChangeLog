@@ -1,3 +1,13 @@
+2021-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/dictionary.scm (dict-seek),
+	  src/libdict.scm (hash-table-seek),
+	  lib/gauche/treeutil.scm (tree-map-seek): Reversed failure and success
+	  arguments, to match SRFI's convention (esp. *-search procedures).
+	  Technically this is an incompatible change, but those
+	  procedures are still unofficial and undocumented.  The name '*-seek'
+	  is still provisional.
+
 2021-05-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/heap.scm (binary-heap-find): Change argument order to

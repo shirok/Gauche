@@ -101,8 +101,8 @@
   (assume-type m1 <hashmap>)
   (assume-type m2 <hashmap>)
   (hash-table-seek m1 (^[k _] (hash-table-exists? m2 k))
-                 (^[r k v] #f)
-                 (^[] #t)))
+                 (^[] #t)
+                 (^[r k v] #f)))
 
 (define %unique (list #f))
 
@@ -282,7 +282,7 @@
 
 (define (hashmap-find pred m failure)
   (assume-type m <hashmap>)
-  (hash-table-seek m pred (^[r k v] (values k v)) failure))
+  (hash-table-seek m pred failure (^[r k v] (values k v))))
 
 (define (hashmap-count pred m)
   (assume-type m <hashmap>)
@@ -290,11 +290,11 @@
 
 (define (hashmap-any? pred m)
   (assume-type m <hashmap>)
-  (hash-table-seek m pred (^[r k v] #t) (^[] #f)))
+  (hash-table-seek m pred (^[] #f) (^[r k v] #t)))
 
 (define (hashmap-every? pred m)
   (assume-type m <hashmap>)
-  (hash-table-seek m (^[k v] (not (pred k v))) (^[r k v] #f) (^[] #t)))
+  (hash-table-seek m (^[k v] (not (pred k v))) (^[] #t) (^[r k v] #f)))
 
 (define (hashmap-keys m) (hash-table-keys m))
 (define (hashmap-values m) (hash-table-values m))

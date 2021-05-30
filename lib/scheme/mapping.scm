@@ -117,8 +117,8 @@
   (assume-type m1 <mapping>)
   (assume-type m2 <mapping>)
   (tree-map-seek m1 (^[k _] (tree-map-exists? m2 k))
-                 (^[r k v] #f)
-                 (^[] #t)))
+                 (^[] #t)
+                 (^[r k v] #f)))
 
 (define %unique (list #f))
 
@@ -293,7 +293,7 @@
 
 (define (mapping-find pred m failure)
   (assume-type m <mapping>)
-  (tree-map-seek m pred (^[r k v] (values k v)) failure))
+  (tree-map-seek m pred failure (^[r k v] (values k v))))
 
 (define (mapping-count pred m)
   (assume-type m <mapping>)
@@ -301,11 +301,11 @@
 
 (define (mapping-any? pred m)
   (assume-type m <mapping>)
-  (tree-map-seek m pred (^[r k v] #t) (^[] #f)))
+  (tree-map-seek m pred (^[] #f) (^[r k v] #t)))
 
 (define (mapping-every? pred m)
   (assume-type m <mapping>)
-  (tree-map-seek m (^[k v] (not (pred k v))) (^[r k v] #f) (^[] #t)))
+  (tree-map-seek m (^[k v] (not (pred k v))) (^[] #t) (^[r k v] #f)))
 
 (define (mapping-keys m) (tree-map-keys m))
 (define (mapping-values m) (tree-map-values m))

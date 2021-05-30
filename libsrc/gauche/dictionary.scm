@@ -147,8 +147,8 @@
          `(define-method dict-comparator ((,dict ,class))
             (,specific ,dict))]
         [(:seek)
-         `(define-method dict-seek ((,dict ,class) ,proc ,succ ,fail)
-            (,specific ,dict ,proc ,succ ,fail))]
+         `(define-method dict-seek ((,dict ,class) ,proc ,fail ,succ)
+            (,specific ,dict ,proc ,fail ,succ))]
         [else (error "invalid kind in define-dict-interface:" kind)])))
   `(begin
      ,@(map (^p (gen-def (car p) (cadr p))) (slices clauses 2))))
@@ -213,7 +213,7 @@
 (define-method dict-fold-right ((dict <ordered-dictionary>) proc seed)
   (fold-right (^[kv seed] (proc (car kv) (cdr kv) seed)) dict seed))
 
-(define-method dict-seek ((dict <dictionary>) pred succ fail)
+(define-method dict-seek ((dict <dictionary>) pred fail succ)
   (let/cc return
     (dict-fold dict
                (^[k v _] (if-let1 r (pred k v)
@@ -225,10 +225,10 @@
 
 (define-method dict-find ((dict <dictionary>) pred
                           :optional (fail (^[] (values #f #f))))
-  (dict-seek dict pred (^[r k v] (values k v)) fail))
+  (dict-seek dict pred fail (^[r k v] (values k v))))
 
 (define-method dict-any ((dict <dictionary>) pred)
-  (dict-seek dict pred (^[r k v] r) (^[] #f)))
+  (dict-seek dict pred (^[] #f) (^[r k v] r)))
 
 (define-method dict-map ((dict <dictionary>) proc)
   (reverse (dict-fold dict (^[k v s] (cons (proc k v) s)) '())))

@@ -497,7 +497,7 @@
 (define (hash-table-prune!-r7 proc ht) ; r7rs
   (hash-table-for-each ht (^[k v] (when (proc k v) (hash-table-delete! ht k)))))
 
-(define (hash-table-seek ht pred succ fail)
+(define (hash-table-seek ht pred fail succ)
   (assume-type ht <hash-table>)
   (let1 i ((with-module gauche.internal %hash-table-iter) ht)
     (let loop ()
@@ -509,10 +509,10 @@
 ;; hash-table-find.  This doesn't align with other '*-find' API in a way that
 ;; it returns the result of PRED.
 (define (hash-table-find ht pred :optional (failure (^[] #f)))
-  (hash-table-seek ht pred (^[r k v] r) failure))
+  (hash-table-seek ht pred failure (^[r k v] r)))
 
 (define (hash-table-find-r7 pred ht failure) ; r7rs
-  (hash-table-seek ht pred (^[r k v] r) failure))
+  (hash-table-seek ht pred failure (^[r k v] r)))
 
 (define (hash-table-count-r7 pred ht)   ; r7rs
   ($ hash-table-fold ht
@@ -599,8 +599,8 @@
                      (^[k v] (let1 w (hash-table-get larger k unique)
                                (or (eq? unique w)
                                    (not (value=? v w)))))
-                     (^[r k v] #f)
-                     (^[] #t)))
+                     (^[] #t)
+                     (^[r k v] #f)))
 
   ;; Check comparator compatibility
   (let ([c1 (hash-table-comparator h1)]
