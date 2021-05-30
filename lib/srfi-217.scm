@@ -35,6 +35,7 @@
   (use gauche.record)
   (use gauche.sequence)
   (use util.match)
+  (use srfi-42)
   (export iset iset-unfold make-range-iset
           iset? iset-contains? iset-empty? iset-disjoint?
           iset-member iset-min iset-max
@@ -238,3 +239,77 @@
                  (tree-map-delete! tmap2 s)
                  (tree-map-put! tmap2 s (- e 1)))
                iset)]))
+
+(define (%iset-search iset k failure success update remove insert)
+  (receive (s e) (tree-map-floor (iset-tmap iset) k)
+    (if (and s (<= k e))
+      (success k update remove)
+      (failure insert (^[result] (values iset result))))))
+
+(define (iset-search iset k failure success)
+  (define (update new-k result)
+    (values (iset-adjoin! (iset-delete iset k) new-k) result))
+  (define (remove result)
+    (values (iset-delete iset k) result))
+  (define (insert result)
+    (values (iset-adjoin iset k) result))
+  (%iset-search iset k failure success update remove insert))
+
+(define (iset-search! iset k failure success)
+  (define (update new-k result)
+    (values (iset-adjoin! (iset-delete! iset k) new-k) result))
+  (define (remove result)
+    (values (iset-delete! iset k) result))
+  (define (insert result)
+    (values (iset-adjoin! iset k) result))
+  (%iset-search iset k failure success update remove insert))
+
+;; The whole set
+
+(define (iset-size iset)
+  (tree-map-fold (iset-tmap iset)
+                 (^[s e count] (+ 1 (- e s) count))
+                 0))
+
+(define (iset-find pred iset failure)
+  (let/cc return
+    (tree-map-for-each (iset-tmap iset)
+                       (^[s e]
+                         (do-ec (: k s (+ e 1))
+                                (when (pred k) (return k)))))
+    (failure)))
+
+(define (iset-count pred iset)
+  (rlet1 cnt 0
+    (tree-map-for-each (iset-tmap iset)
+                       (^[s e]
+                         (do-ec (: k s (+ e 1))
+                                (when (pred k) (inc! cnt)))))))
+
+(define (iset-any? pred iset)
+  (boolean (iset-find pred iset (constantly #f))))
+
+(define (iset-every? pred iset)
+  (not (iset-find (complement pred) iset (constantly #f))))
+
+;; Mapping and folding
+
+(define (iset-map proc iset)
+  (rlet1 r (iset)
+    (tree-map-for-each (iset-tmap iset)
+                       (^[s e]
+                         (do-ec (: k s (+ e 1))
+                                (set! r (iset-adjoin! r k)))))))
+
+(define (iset-for-each proc iset)
+  (tree-map-for-each (iset-tmap iset)
+                     (^[s e]
+                       (do-ec (: k s (+ e 1))
+                              (proc k)))))
+
+(define (iset-fold kons knil iset)
+  (rlet1 seed knil
+    (tree-map-for-each (iset-tmap iset)
+                       (^[s e]
+                         (do-ec (: k s (+ e 1))
+                                (set! seed (proc k seed)))))))
