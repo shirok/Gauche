@@ -57,17 +57,19 @@
 (select-module srfi-217)
 
 (define-record-type <iset> %make-iset iset?
-  (tmap))
+  (tmap iset-tmap))
 
 (define-method write-object ((iset <iset>) port)
-  (format port "#<iset ~a entrie(s)>"
-          (tree-map-num-entries (~ iset'tmap))))
+  (format port "#<iset ~a entrie(s)>" (iset-size iset)))
 
-;; Constructors
+;;;
+;;; Constructors
+;;;
+
 (define (iset . args) (list->iset args))
 
 (define (list->iset args)
-  (let1 tmap (make-tree-map < =)
+  (let1 tmap (make-tree-map = <)
     (let loop ([p (group-contiguous-sequence (sort args <) :squeeze #t)])
       (match p
         [() (%make-iset tmap)]
@@ -77,7 +79,11 @@
 (define (iset-unfold p f g seed)
   (list->iset (unfold p f g seed)))
 
-;; Predicates
+(define (%empty-iset) (iset)) ;internal - avoid name conflict with argument
+
+;;;
+;;; Predicates
+;;;
 
 ;; iset? - above
 
@@ -105,7 +111,9 @@
                (loop p1 (g2))
                #f)]))))
 
-;; Accessors
+;;;
+;;; Accessors
+;;;
 
 (define (iset-member iset k fallback)
   (if (iset-contains? iset k)
@@ -124,11 +132,13 @@
     [#f #f]
     [(_ . e) e]))
 
-;; Updaters
+;;;
+;;; Updaters
+;;;
 
 (define (%adjoin-1 k tmap next)
   (receive (s e) (tree-map-floor tmap k)
-    (cond [(not s) (rlet1 tmap2 (make-tree-map < =)
+    (cond [(not s) (rlet1 tmap2 (make-tree-map = <)
                      (tree-map-put! tmap2 k k))]
           [(<= k e) tmap]             ; subsumed
           [else (receive (s2 e2) (tree-map-floor tmap (+ k 1))
@@ -264,7 +274,9 @@
     (values (iset-adjoin! iset k) result))
   (%iset-search iset k failure success update remove insert))
 
-;; The whole set
+;;;
+;;; The whole set
+;;;
 
 (define (iset-size iset)
   (tree-map-fold (iset-tmap iset)
@@ -292,10 +304,12 @@
 (define (iset-every? pred iset)
   (not (iset-find (complement pred) iset (constantly #f))))
 
-;; Mapping and folding
+;;;
+;;; Mapping and folding
+;;;
 
 (define (iset-map proc iset)
-  (rlet1 r (iset)
+  (rlet1 r (%empty-iset)
     (tree-map-for-each (iset-tmap iset)
                        (^[s e]
                          (do-ec (: k s (+ e 1))
@@ -308,8 +322,82 @@
                               (proc k)))))
 
 (define (iset-fold kons knil iset)
-  (rlet1 seed knil
-    (tree-map-for-each (iset-tmap iset)
-                       (^[s e]
-                         (do-ec (: k s (+ e 1))
-                                (set! seed (proc k seed)))))))
+  (tree-map-fold (iset-tmap iset)
+                 (^[s e seed]
+                   (fold-ec seed (: k s (+ e 1)) k kons))
+                 knil))
+
+(define (iset-fold-right kons knil iset)
+  (tree-map-fold-right (iset-tmap iset)
+                       (^[s e seed]
+                         (fold-ec seed (: k e (- s 1) -1) k kons))
+                       knil))
+
+(define (iset-filter pred iset)
+  (rlet1 r (%empty-iset)
+    (iset-for-each (^k (when (pred k) (set! r (iset-adjoin! r k))))
+                   iset)))
+
+;; we don't have an efficient way to modify the internal map in-place.
+(define (iset-filter! pred iset) (iset-filter pred iset))
+
+(define (iset-remove pred iset)
+  (rlet1 r (%empty-iset)
+    (iset-for-each (^k (unless (pred k) (set! r (iset-adjoin! r k))))
+                   iset)))
+
+(define (iset-remove! pred iset) (iset-remove pred iset))
+
+(define (iset-partition pred iset)
+  (let ([in (%empty-iset)]
+        [out (%empty-iset)])
+    (iset-for-each (^k (if (pred k)
+                         (set! in (iset-adjoin! in k))
+                         (set! out (iset-adjoin! out k))))
+                   iset)
+    (values in out)))
+
+(define (iset-partition! pred iset) (iset-partition pred iset))
+
+;;;
+;;; Copying and conversion
+;;;
+
+(define (iset-copy iset)
+  (%make-iset (tree-map-copy (iset-tmap iset))))
+
+(define (iset->list iset)
+  (iset-fold-right cons '() iset))
+
+(define (list->iset! iset)
+  (iset-for-each (^k (set! iset (iset-adjoin! iset k))) iset)
+  iset)
+
+;;;
+;;; Subsets
+;;;
+
+(define (iset=? iset1 iset2 . isets)
+  (and (equal? (iset-tmap iset1) (iset-tmap iset2))
+       (or (null? isets)
+           (apply iset=? iset2 isets))))
+
+(define (iset<? iset1 iset2 . isets)
+  (and (< (iset-size iset1) (iset-size iset2))
+       (iset-every? (cut iset-contains? iset2 <>) iset1)
+       (or (null? isets)
+           (apply iset<? iset2 isets))))
+
+(define (iset<? iset1 iset2 . isets)
+  (and (iset-every? (cut iset-contains? iset2 <>) iset1)
+       (or (null? isets)
+           (apply iset<? iset2 isets))))
+
+(define (iset>? iset1 iset2 . isets)
+  (and (iset-every? (cut iset-contains? iset1 <>) iset2)
+       (or (null? isets)
+           (apply iset>? iset2 isets))))
+
+;;;
+;;; Set theory operations
+;;;
