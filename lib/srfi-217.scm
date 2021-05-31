@@ -56,8 +56,19 @@
   )
 (select-module srfi-217)
 
-(define-record-type <iset> %make-iset iset?
+(define-record-type <iset> %make-iset-int iset?
+  (size %iset-size %iset-size-set!)  ;; this is lazily computed
   (tmap iset-tmap))
+
+(define (%make-iset :optional (tmap #f))
+  (%make-iset-int #f                    ;; size to be computed lazily
+                  (or tmap (make-tree-map = <))))
+
+;; If you modify internal tree map, call this to invalidate size cache.
+;; returns iset itself.
+(define (%iset-touch! iset)
+  (%iset-size-set! iset #f)
+  iset)
 
 (define-method write-object ((iset <iset>) port)
   (format port "#<iset ~a entrie(s)>" (iset-size iset)))
@@ -78,8 +89,6 @@
 
 (define (iset-unfold p f g seed)
   (list->iset (unfold p f g seed)))
-
-(define (%empty-iset) (iset)) ;internal - avoid name conflict with argument
 
 ;;;
 ;;; Predicates
@@ -169,7 +178,7 @@
 (define (iset-adjoin! iset k . ks)
   (%adjoin-1 k (iset-tmap iset) identity)
   (dolist [k ks] (%adjoin-1 k (iset-tmap iset) identity))
-  iset)
+  (%iset-touch! iset))
 
 (define (%delete-1 k tmap next)
   (receive (s e) (tree-map-floor tmap)
@@ -202,7 +211,7 @@
 (define (iset-delete! iset k . ks)
   (%delete-1 k (iset-tmap iset) identity)
   (dolist [k ks] (%delete-1 k (iset-tmap iset) identity))
-  iset)
+  (%iset-touch! iset))
 
 (define (iset-delete-all iset ks)
   (if (null? ks)
@@ -230,7 +239,7 @@
                (tree-map-delete! t s)
                (when (< s e)
                  (tree-map-put! tmap2 (+ s 1) e))
-               iset)]))
+               (%iset-touch! iset))]))
 
 (define (iset-delete-max iset)
   (match (tree-map-max (iset-tmap iset))
@@ -248,7 +257,7 @@
                (if (= s e)
                  (tree-map-delete! tmap2 s)
                  (tree-map-put! tmap2 s (- e 1)))
-               iset)]))
+               (%iset-touch! iset))]))
 
 (define (%iset-search iset k failure success update remove insert)
   (receive (s e) (tree-map-floor (iset-tmap iset) k)
@@ -279,9 +288,11 @@
 ;;;
 
 (define (iset-size iset)
-  (tree-map-fold (iset-tmap iset)
-                 (^[s e count] (+ 1 (- e s) count))
-                 0))
+  (or (%iset-size iset)
+      (rlet1 s (tree-map-fold (iset-tmap iset)
+                              (^[s e count] (+ 1 (- e s) count))
+                              0)
+        (%iset-size-set! iset s))))
 
 (define (iset-find pred iset failure)
   (let/cc return
@@ -309,7 +320,7 @@
 ;;;
 
 (define (iset-map proc iset)
-  (rlet1 r (%empty-iset)
+  (rlet1 r (%make-iset)
     (tree-map-for-each (iset-tmap iset)
                        (^[s e]
                          (do-ec (: k s (+ e 1))
@@ -334,7 +345,7 @@
                        knil))
 
 (define (iset-filter pred iset)
-  (rlet1 r (%empty-iset)
+  (rlet1 r (%make-iset)
     (iset-for-each (^k (when (pred k) (set! r (iset-adjoin! r k))))
                    iset)))
 
@@ -342,15 +353,15 @@
 (define (iset-filter! pred iset) (iset-filter pred iset))
 
 (define (iset-remove pred iset)
-  (rlet1 r (%empty-iset)
+  (rlet1 r (%make-iset)
     (iset-for-each (^k (unless (pred k) (set! r (iset-adjoin! r k))))
                    iset)))
 
 (define (iset-remove! pred iset) (iset-remove pred iset))
 
 (define (iset-partition pred iset)
-  (let ([in (%empty-iset)]
-        [out (%empty-iset)])
+  (let ([in (%make-iset)]
+        [out (%make-iset)])
     (iset-for-each (^k (if (pred k)
                          (set! in (iset-adjoin! in k))
                          (set! out (iset-adjoin! out k))))
