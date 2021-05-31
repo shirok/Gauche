@@ -86,6 +86,35 @@
    (storage :init-keyword :storage)
    (offset :init-keyword :offset :init-value 0)))
 
+;; appended ranges.
+;; ranges slot contains #((offset . subrange) ...)
+(define (%appended-range-index range i)
+  (assume (exact-integer? i))
+  (assume (< -1 i (~ o'length)))
+  (let* ([vec (~ o'ranges)]
+         [len (vector-length vec)])
+    (define (call-indexer p i)
+      ((~ (cdr p)'indexer) (cdr p) (- i (car p))))
+    (let loop ([lo 0] [hi len] [k (ash len -1)])
+      (let1 p (vector-ref vec k)
+        (cond [(= k lo) (call-indexer p i)]
+              [(= k (- hi 1)) (call-indexer p i)]
+              [(> (car p) i) (loop lo k (+ lo (ash (- k lo) -1)))]
+              [else (loop k hi (+ k (ash (- hi k) -1)))])))))
+
+(define-class <appended-range> (<range>)
+  ((indexer :init-value %appended-range-index)
+   (ranges :init-keyword :ranges)))
+
+;; take a section of a range
+(define (%subrange-index range i)
+  ((~ range'range'indexer) (~ range'range) (- i (~ range'offset))))
+
+(define-class <subrange> (<range>)
+  ((indexer :init-value %subrange-index)
+   (range  :init-keyword :range)
+   (offset :init-keyword :offset)))
+
 ;;;
 ;;; Constructors
 ;;;
@@ -117,3 +146,46 @@
     :length (- end start)
     :storage vec
     :offset start))
+
+(define (range-append . ranges)
+  (receive (off&ranges total)
+      (map-accum (^[range total]
+                   (values (cons total range)
+                           (+ total (range-length range))))
+                 0 ranges)
+    (make <appended-range>
+      :length total
+      :ranges (list->vector off&ranges))))
+
+;;;
+;;; Predicates
+;;;
+
+(define (range? x) (is-a? x <range>))
+
+(define (range=? elt= . ranges)
+  (or (null? ranges)
+      (and (assert (range? (car ranges))) (null? (cdr ranges)))
+      (and (apply list= (^[a b] (= (range-length a) (range-length b))) ranges)
+           (every?-ec (: i (range-length (car ranges)))
+                      (apply list= elt= (map (cut range-ref <> i) ranges))))))
+
+;;;
+;;; Accessors
+;;;
+
+(define (range-length range)
+  (assert (range? range))
+  (~ range'length))
+
+(define (range-ref range n)
+  (assert (range? range))
+  (assert (< -1 n (range-length range)))
+  ((~ range'indexer) range n))
+
+(define (range-first range) (range-ref range 0))
+(define (range-last range) (range-ref range (- (range-length range) 1)))
+
+;;;
+;;; Iteration
+;;;
