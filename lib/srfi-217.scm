@@ -34,6 +34,8 @@
 (define-module srfi-217
   (use gauche.record)
   (use gauche.sequence)
+  (use gauche.generator)
+  (use scheme.list)
   (use util.match)
   (use srfi-42)
   (export iset iset-unfold make-range-iset
@@ -52,7 +54,7 @@
           iset-union! iset-intersection! iset-difference! iset-xor!
           iset-open-interval iset-closed-interval
           iset-open-closed-interval iset-closed-open-interval
-          isbuset= isubset< isubset<= isbuset> isbuset>=)
+          isubset= isubset< isubset<= isubset> isubset>=)
   )
 (select-module srfi-217)
 
@@ -89,6 +91,11 @@
 
 (define (iset-unfold p f g seed)
   (list->iset (unfold p f g seed)))
+
+(define (make-range-iset start end :optional (step 1))
+  (if (= step 1)
+    (%make-iset (alist->tree-map `((,start . ,(- end 1))) = <))
+    (list->iset (lrange start end step))))
 
 ;;;
 ;;; Predicates
@@ -145,13 +152,13 @@
 ;;; Updaters
 ;;;
 
-(define (%adjoin-1 k tmap next)
+(define (%adjoin-1! k tmap maybe-copy)
   (receive (s e) (tree-map-floor tmap k)
     (cond [(not s) (rlet1 tmap2 (make-tree-map = <)
                      (tree-map-put! tmap2 k k))]
           [(<= k e) tmap]             ; subsumed
           [else (receive (s2 e2) (tree-map-floor tmap (+ k 1))
-                  (rlet1 tmap2 (next tmap)
+                  (rlet1 tmap2 (maybe-copy tmap)
                     (if (not s2)
                       (if (= (+ e 1) k)
                         (tree-map-put! tmap2 s k) ; extend
@@ -168,29 +175,29 @@
       (tree-map-copy (iset-tmap iset))
       tmap))
   (let1 tm (if (null? ks)
-             (%adjoin-1 k (iset-tmap iset) noclobber)
-             (fold (cut %adjoin-1 <> <> noclobber)
-                   (%adjoin-1 k (iset-tmap iset) noclobber) ks))
+             (%adjoin-1! k (iset-tmap iset) noclobber)
+             (fold (cut %adjoin-1! <> <> noclobber)
+                   (%adjoin-1! k (iset-tmap iset) noclobber) ks))
     (if (eq? tm (iset-tmap iset))
       iset
       (%make-iset tm))))
 
 (define (iset-adjoin! iset k . ks)
-  (%adjoin-1 k (iset-tmap iset) identity)
-  (dolist [k ks] (%adjoin-1 k (iset-tmap iset) identity))
+  (%adjoin-1! k (iset-tmap iset) identity)
+  (dolist [k ks] (%adjoin-1! k (iset-tmap iset) identity))
   (%iset-touch! iset))
 
-(define (%delete-1 k tmap next)
-  (receive (s e) (tree-map-floor tmap)
+(define (%delete-1! k tmap maybe-copy)
+  (receive (s e) (tree-map-floor tmap k)
     (if s
       (cond [(= k s) (if (= k e)
-                       (rlet1 tmap2 (next tmap)
+                       (rlet1 tmap2 (maybe-copy tmap)
                          (tree-map-delete! tmap2 k))
                        (tree-map-put! tmap (+ s 1) e))]
-            [(< k e) (rlet1 tmap2 (next tmap)
+            [(< k e) (rlet1 tmap2 (maybe-copy tmap)
                        (tree-map-put! tmap s (- k 1))
                        (tree-map-put! tmap (+ k 1) e))]
-            [(= k e) (rlet1 tmap2 (next tmap)
+            [(= k e) (rlet1 tmap2 (maybe-copy tmap)
                        (tree-map-put! tmap s (- k 1)))]
             [else tmap])
       tmap)))
@@ -201,16 +208,16 @@
       (tree-map-copy (iset-tmap iset))
       tmap))
   (let1 tm (if (null? ks)
-             (%delete-1 k (iset-tmap iset) noclobber)
-             (fold (cut %delete-1 <> <> noclobber)
-                   (%delete-1 k (iset-tmap iset) noclobber) ks))
+             (%delete-1! k (iset-tmap iset) noclobber)
+             (fold (cut %delete-1! <> <> noclobber)
+                   (%delete-1! k (iset-tmap iset) noclobber) ks))
     (if (eq? tm (iset-tmap iset))
       iset
       (%make-iset tm))))
 
 (define (iset-delete! iset k . ks)
-  (%delete-1 k (iset-tmap iset) identity)
-  (dolist [k ks] (%delete-1 k (iset-tmap iset) identity))
+  (%delete-1! k (iset-tmap iset) identity)
+  (dolist [k ks] (%delete-1! k (iset-tmap iset) identity))
   (%iset-touch! iset))
 
 (define (iset-delete-all iset ks)
@@ -236,9 +243,9 @@
   (match (tree-map-min (iset-tmap iset))
     [#f (error "iset is empty:" iset)]
     [(s . e) (let1 tmap (iset-tmap iset)
-               (tree-map-delete! t s)
+               (tree-map-delete! tmap s)
                (when (< s e)
-                 (tree-map-put! tmap2 (+ s 1) e))
+                 (tree-map-put! tmap (+ s 1) e))
                (%iset-touch! iset))]))
 
 (define (iset-delete-max iset)
@@ -255,8 +262,8 @@
     [#f (error "iset is empty:" iset)]
     [(s . e) (let1 tmap (iset-tmap iset)
                (if (= s e)
-                 (tree-map-delete! tmap2 s)
-                 (tree-map-put! tmap2 s (- e 1)))
+                 (tree-map-delete! tmap s)
+                 (tree-map-put! tmap s (- e 1)))
                (%iset-touch! iset))]))
 
 (define (%iset-search iset k failure success update remove insert)
@@ -399,16 +406,92 @@
        (or (null? isets)
            (apply iset<? iset2 isets))))
 
-(define (iset<? iset1 iset2 . isets)
-  (and (iset-every? (cut iset-contains? iset2 <>) iset1)
-       (or (null? isets)
-           (apply iset<? iset2 isets))))
-
 (define (iset>? iset1 iset2 . isets)
-  (and (iset-every? (cut iset-contains? iset1 <>) iset2)
+  (and (> (iset-size iset1) (iset-size iset2))
+       (iset-every? (cut iset-contains? iset1 <>) iset2)
        (or (null? isets)
            (apply iset>? iset2 isets))))
+
+(define (iset<=? iset1 iset2 . isets)
+  (and (iset-every? (cut iset-contains? iset2 <>) iset1)
+       (or (null? isets)
+           (apply iset<=? iset2 isets))))
+
+(define (iset>=? iset1 iset2 . isets)
+  (and (iset-every? (cut iset-contains? iset1 <>) iset2)
+       (or (null? isets)
+           (apply iset>=? iset2 isets))))
 
 ;;;
 ;;; Set theory operations
 ;;;
+
+(define (%union-2! tmap1 tmap2 maybe-copy)
+  (tree-map-fold tmap2
+                 (^[k rtmap] (%adjoin-1! k rtmap maybe-copy))
+                 tmap1))
+
+(define (iset-union iset1 iset2 . isets)
+  (define (noclobber tmap)
+    (if (eq? tmap (iset-tmap iset1))
+      (tree-map-copy tmap)
+      tmap))
+  (let loop ([tmap (%union-2! (iset-tmap iset1) (iset-tmap iset2) noclobber)]
+             [isets isets])
+    (if (null? isets)
+      (if (eq? tmap (iset-tmap iset1))
+        iset1
+        (%make-iset tmap))
+      (loop (%union-2! tmap (iset-tmap (car isets)) noclobber)
+            (cdr isets)))))
+
+(define (iset-union! iset1 iset2 . isets)
+  (let loop ([tmap (%union-2! (iset-tmap iset1) (iset-tmap iset2) identity)]
+             [isets isets])
+    (if (null? isets)
+      (%iset-touch! iset1)
+      (loop (%union-2! tmap (iset-tmap (car isets)) identity)
+            (cdr isets)))))
+
+(define (%diff-2! tmap1 tmap2 maybe-copy)
+  (tree-map-fold tmap2
+                 (^[k rtmap] (%delete-1! k rtmap maybe-copy))
+                 tmap1))
+
+(define (iset-difference iset1 iset2 . isets)
+  (define (noclobber tmap)
+    (if (eq? tmap (iset-tmap iset1))
+      (tree-map-copy tmap)
+      tmap))
+  (let loop ([tmap (%diff-2! (iset-tmap iset1) (iset-tmap iset2) noclobber)]
+             [isets isets])
+    (if (null? isets)
+      (if (eq? tmap (iset-tmap iset1))
+        iset1
+        (%make-iset tmap))
+      (loop (%diff-2! tmap (iset-tmap (car isets)) noclobber)
+            (cdr isets)))))
+
+(define (iset-difference! iset1 iset2 . isets)
+  (let loop ([tmap (%diff-2! (iset-tmap iset1) (iset-tmap iset2) identity)]
+             [isets isets])
+    (if (null? isets)
+      (%iset-touch! iset1)
+      (loop (%diff-2! tmap (iset-tmap (car isets)) identity)
+            (cdr isets)))))
+
+;; To be implemented
+(define iset-xor)
+(define iset-xor!)
+(define iset-intersection)
+(define iset-intersection!)
+(define isubset)
+(define isubset=)
+(define isubset<)
+(define isubset>)
+(define isubset<=)
+(define isubset>=)
+(define iset-closed-interval)
+(define iset-open-closed-interval)
+(define iset-closed-open-interval)
+(define iset-open-interval)
