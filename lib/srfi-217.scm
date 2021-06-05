@@ -58,12 +58,23 @@
   )
 (select-module srfi-217)
 
+;; Internally, <iset> has a persistent/transient distinction.  Persistent
+;; iset is an ordinary functional structure.  Transient iset can be passed
+;; to linear-updating procedures, given that the caller will never share the
+;; reference to it elsewhere, and the linear-updating procedure may mutate it.
+;;
+;; If a functional procedure receives a transient iset, or a linear-updating
+;; procedure gets a persistent iset, the structure is always copied.
+;; Cf. http://blog.practical-scheme.net/gauche/20210531-functional-and-linear-update
+;;
 (define-record-type <iset> %make-iset-int iset?
+  (transient? %iset-transient? %iset-transient?-set!)
   (size %iset-size %iset-size-set!)  ;; this is lazily computed
   (tmap iset-tmap))
 
-(define (%make-iset :optional (tmap #f))
-  (%make-iset-int #f                    ;; size to be computed lazily
+(define (%make-iset :optional (transient? #t) (tmap #f))
+  (%make-iset-int transient?
+                  #f                    ;; size to be computed lazily
                   (or tmap (make-tree-map = <))))
 
 ;; If you modify internal tree map, call this to invalidate size cache.
@@ -75,6 +86,19 @@
 (define-method write-object ((iset <iset>) port)
   (format port "#<iset ~a entrie(s)>" (iset-size iset)))
 
+(define (%iset->persistent iset)
+  (if (%iset-transient? iset)
+    (%make-iset #f (iset-tmap iset))
+    iset))
+
+(define (%iset->transient iset)
+  (if (%iset-transient? iset)
+    iset
+    (%make-iset #t (iset-tmap iset))))
+
+(define (%iset-make-persistent! iset) ; only used in constructors
+  (%iset-transient?-set! iset #f))
+
 ;;;
 ;;; Constructors
 ;;;
@@ -85,7 +109,7 @@
   (let1 tmap (make-tree-map = <)
     (let loop ([p (group-contiguous-sequence (sort args <) :squeeze #t)])
       (match p
-        [() (%make-iset tmap)]
+        [() (%make-iset #f tmap)]
         [((s e) . rest) (tree-map-put! tmap s e) (loop rest)]
         [((v) . rest) (tree-map-put! tmap v v) (loop rest)]))))
 
@@ -94,7 +118,7 @@
 
 (define (make-range-iset start end :optional (step 1))
   (if (= step 1)
-    (%make-iset (alist->tree-map `((,start . ,(- end 1))) = <))
+    (%make-iset #f (alist->tree-map `((,start . ,(- end 1))) = <))
     (list->iset (lrange start end step))))
 
 ;;;
@@ -106,7 +130,7 @@
 (define (iset-contains? iset k)
   (assume-type iset <iset>)
   (receive (s e) (tree-map-floor (iset-tmap iset) k)
-    (<= k e)))
+    (and s (<= k e))))
 
 (define (iset-empty? iset) (tree-map-empty? (iset-tmap iset)))
 
@@ -152,6 +176,8 @@
 ;;; Updaters
 ;;;
 
+;; The 'noclobber' thing is to avoid unecessary copying of persistent iset.
+
 (define (%adjoin-1! k tmap maybe-copy)
   (receive (s e) (tree-map-floor tmap k)
     (cond [(not s) (rlet1 tmap2 (make-tree-map = <)
@@ -174,18 +200,20 @@
     (if (eq? tmap (iset-tmap iset))
       (tree-map-copy (iset-tmap iset))
       tmap))
-  (let1 tm (if (null? ks)
-             (%adjoin-1! k (iset-tmap iset) noclobber)
-             (fold (cut %adjoin-1! <> <> noclobber)
-                   (%adjoin-1! k (iset-tmap iset) noclobber) ks))
+  (let* ([input (%iset->persistent iset)]
+         [tm (if (null? ks)
+               (%adjoin-1! k (iset-tmap input) noclobber)
+               (fold (cut %adjoin-1! <> <> noclobber)
+                     (%adjoin-1! k (iset-tmap input) noclobber) ks))])
     (if (eq? tm (iset-tmap iset))
       iset
-      (%make-iset tm))))
+      (%make-iset #f tm))))
 
 (define (iset-adjoin! iset k . ks)
-  (%adjoin-1! k (iset-tmap iset) identity)
-  (dolist [k ks] (%adjoin-1! k (iset-tmap iset) identity))
-  (%iset-touch! iset))
+  (let1 input (%iset->transient iset)
+    (%adjoin-1! k (iset-tmap input) identity)
+    (dolist [k ks] (%adjoin-1! k (iset-tmap input) identity))
+    (%iset-touch! input)))
 
 (define (%delete-1! k tmap maybe-copy)
   (receive (s e) (tree-map-floor tmap k)
@@ -207,60 +235,70 @@
     (if (eq? tmap (iset-tmap iset))
       (tree-map-copy (iset-tmap iset))
       tmap))
-  (let1 tm (if (null? ks)
-             (%delete-1! k (iset-tmap iset) noclobber)
-             (fold (cut %delete-1! <> <> noclobber)
-                   (%delete-1! k (iset-tmap iset) noclobber) ks))
+  (let* ([input (%iset->persistent iset)]
+         [tm (if (null? ks)
+               (%delete-1! k (iset-tmap input) noclobber)
+               (fold (cut %delete-1! <> <> noclobber)
+                     (%delete-1! k (iset-tmap input) noclobber) ks))])
     (if (eq? tm (iset-tmap iset))
       iset
-      (%make-iset tm))))
+      (%make-iset #f tm))))
 
 (define (iset-delete! iset k . ks)
-  (%delete-1! k (iset-tmap iset) identity)
-  (dolist [k ks] (%delete-1! k (iset-tmap iset) identity))
-  (%iset-touch! iset))
+  (let1 input (%iset->transient iset)
+    (%delete-1! k (iset-tmap input) identity)
+    (dolist [k ks] (%delete-1! k (iset-tmap input) identity))
+    (%iset-touch! input)))
 
 (define (iset-delete-all iset ks)
   (if (null? ks)
-    iset
+    (%iset->persistent iset)
     (apply iset-delete iset ks)))
 
 (define (iset-delete-all! iset ks)
   (if (null? ks)
-    iset
+    (%iset->transient iset)
     (apply iset-delete! iset ks)))
 
 (define (iset-delete-min iset)
   (match (tree-map-min (iset-tmap iset))
     [#f (error "iset is empty:" iset)]
-    [(s . e) (let1 tmap2 (tree-map-copy (iset-tmap iset))
-               (tree-map-delete! tmap2 s)
-               (when (< s e)
-                 (tree-map-put! tmap2 (+ s 1) e))
-               (%make-iset tmap2))]))
+    [(s . e)
+     ;; we copy the tree anyway, so it doesn't matter if input is transient
+     ;; or persistent.
+     (let1 tmap (tree-map-copy (iset-tmap iset))
+       (tree-map-delete! tmap s)
+       (when (< s e)
+         (tree-map-put! tmap (+ s 1) e))
+       (%make-iset #f tmap))]))
 
 (define (iset-delete-min! iset)
   (match (tree-map-min (iset-tmap iset))
     [#f (error "iset is empty:" iset)]
-    [(s . e) (let1 tmap (iset-tmap iset)
+    [(s . e) (let* ([input (%iset->transient iset)]
+                    [tmap (iset-tmap input)])
                (tree-map-delete! tmap s)
                (when (< s e)
                  (tree-map-put! tmap (+ s 1) e))
-               (%iset-touch! iset))]))
+               (%iset-touch! input))]))
 
 (define (iset-delete-max iset)
   (match (tree-map-max (iset-tmap iset))
     [#f (error "iset is empty:" iset)]
-    [(s . e) (let1 tmap2 (tree-map-copy (iset-tmap iset))
-               (if (= s e)
-                 (tree-map-delete! tmap2 s)
-                 (tree-map-put! tmap2 s (- e 1)))
-               (%make-iset tmap2))]))
+    [(s . e)
+     ;; we copy the tree anyway, so it doesn't matter if input is transient
+     ;; or persistent.
+     (let1 tmap (tree-map-copy (iset-tmap iset))
+       (if (= s e)
+         (tree-map-delete! tmap s)
+         (tree-map-put! tmap s (- e 1)))
+       (%make-iset #f tmap))]))
 
 (define (iset-delete-max! iset)
   (match (tree-map-max (iset-tmap iset))
     [#f (error "iset is empty:" iset)]
-    [(s . e) (let1 tmap (iset-tmap iset)
+    [(s . e) (let* ([input (%iset->transient iset)]
+                    [tmap (iset-tmap input)])
                (if (= s e)
                  (tree-map-delete! tmap s)
                  (tree-map-put! tmap s (- e 1)))
@@ -331,7 +369,8 @@
     (tree-map-for-each (iset-tmap iset)
                        (^[s e]
                          (do-ec (: k s (+ e 1))
-                                (set! r (iset-adjoin! r k)))))))
+                                (set! r (iset-adjoin! r k)))))
+    (%iset-make-persistent! r)))
 
 (define (iset-for-each proc iset)
   (tree-map-for-each (iset-tmap iset)
@@ -354,7 +393,8 @@
 (define (iset-filter pred iset)
   (rlet1 r (%make-iset)
     (iset-for-each (^k (when (pred k) (set! r (iset-adjoin! r k))))
-                   iset)))
+                   iset)
+    (%iset-make-persistent! r)))
 
 ;; we don't have an efficient way to modify the internal map in-place.
 (define (iset-filter! pred iset) (iset-filter pred iset))
@@ -362,7 +402,8 @@
 (define (iset-remove pred iset)
   (rlet1 r (%make-iset)
     (iset-for-each (^k (unless (pred k) (set! r (iset-adjoin! r k))))
-                   iset)))
+                   iset)
+    (%iset-make-persistent! r)))
 
 (define (iset-remove! pred iset) (iset-remove pred iset))
 
@@ -373,6 +414,8 @@
                          (set! in (iset-adjoin! in k))
                          (set! out (iset-adjoin! out k))))
                    iset)
+    (%iset-make-persistent! in)
+    (%iset-make-persistent! out)
     (values in out)))
 
 (define (iset-partition! pred iset) (iset-partition pred iset))
@@ -382,7 +425,9 @@
 ;;;
 
 (define (iset-copy iset)
-  (%make-iset (tree-map-copy (iset-tmap iset))))
+  (if (%iset-transient? iset)
+    (%make-iset #t (tree-map-copy (iset-tmap iset)))
+    iset))
 
 (define (iset->list iset)
   (iset-fold-right cons '() iset))
