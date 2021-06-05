@@ -39,6 +39,7 @@
           tree-map-map tree-map-for-each
           tree-map-keys tree-map-values
           tree-map->alist alist->tree-map
+          tree-map->generator/key-range
           tree-map-compare-as-sets
           tree-map-compare-as-sequences)
   )
@@ -118,6 +119,46 @@
   (rlet1 tm (apply make-tree-map args)
     (dolist (kv alist)
       (tree-map-put! tm (car kv) (cdr kv)))))
+
+;; Range generators.  Returns a pair of key/value while key is in the
+;; given range.
+(define (tree-map->generator/key-range tm :key ((:< <-key) #f)
+                                               ((:<= <=-key) #f)
+                                               ((:> >-key) #f)
+                                               ((:>= >=-key) #f)
+                                               (decreasing #f))
+  (define cmp (tree-map-comparator tm))
+  (define (call fn tm key)
+    (receive (k v) (fn tm key *uniq* *uniq*)
+      (if (eq? k *uniq*) #f (cons k v))))
+  (if decreasing
+    (let1 p (cond [<=-key (call tree-map-floor tm <=-key)]
+                  [<-key  (call tree-map-predecessor tm <-key)]
+                  [else   (tree-map-max tm)])
+      (^[]
+        (unless (and p (cond [>-key  (>? cmp (car p) >-key)]
+                             [>=-key (>=? cmp (car p) >=-key)]
+                             [else #t]))
+          (set! p #f))
+        (if p
+          (begin0 p
+            (set! p (call tree-map-predecessor tm (car p))))
+          (eof-object))))
+    ;; increasing
+    (let1 p (cond [>=-key (call tree-map-ceiling tm >=-key)]
+                  [>-key  (call tree-map-successor tm >-key)]
+                  [else   (tree-map-min tm)])
+      (^[]
+        (unless (and p (cond [<-key  (<? cmp (car p) <-key)]
+                             [<=-key (<=? cmp (car p) <=-key)]
+                             [else #t]))
+          (set! p #f))
+        (if p
+          (begin0 p
+            (set! p (call tree-map-successor tm (car p))))
+          (eof-object))))))
+
+(define *uniq* (cons #f #f))
 
 ;; Compare two tree-maps as sets.
 (define (tree-map-compare-as-sets tm1 tm2

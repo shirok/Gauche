@@ -1,3 +1,7 @@
+2021-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/treeutil.scm (tree-map->generator/key-range): Added.
+
 2021-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/treeutil.scm (tree-map-seek-right): Added.

@@ -170,6 +170,7 @@
                           tree-map-map tree-map-for-each
                           tree-map-keys tree-map-values
                           tree-map->alist alist->tree-map
+                          tree-map->generator/key-range
                           tree-map-compare-as-sets
                           tree-map-compare-as-sequences)
 
