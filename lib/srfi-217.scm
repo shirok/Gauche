@@ -127,10 +127,13 @@
 
 ;; iset? - above
 
+(define (%tmap-contains? tmap k)
+  (receive (s e) (tree-map-floor tmap k)
+    (and s (<= k e))))
+
 (define (iset-contains? iset k)
   (assume-type iset <iset>)
-  (receive (s e) (tree-map-floor (iset-tmap iset) k)
-    (and s (<= k e))))
+  (%tmap-contains? (iset-tmap iset) k))
 
 (define (iset-empty? iset) (tree-map-empty? (iset-tmap iset)))
 
@@ -486,7 +489,7 @@
     (if (null? isets)
       (if (eq? tmap (iset-tmap iset1))
         iset1
-        (%make-iset tmap))
+        (%make-iset #f tmap))
       (loop (%union-2! tmap (iset-tmap (car isets)) noclobber)
             (cdr isets)))))
 
@@ -513,7 +516,7 @@
     (if (null? isets)
       (if (eq? tmap (iset-tmap iset1))
         iset1
-        (%make-iset tmap))
+        (%make-iset #f tmap))
       (loop (%diff-2! tmap (iset-tmap (car isets)) noclobber)
             (cdr isets)))))
 
@@ -525,11 +528,53 @@
       (loop (%diff-2! tmap (iset-tmap (car isets)) identity)
             (cdr isets)))))
 
+;; For xor and intersect, it's easier to build a new imap.
+;; We might be able to do better when operating on more than two sets.
+
+(define (%xor-2 tmap1 tmap2)
+  (rlet1 rmap (tree-map-copy tmap1)
+    (tree-map-for-each tmap2
+                       (^[s e]
+                         (do-ec (: k s (+ e 1))
+                                (if (%tmap-contains? tmap1 k)
+                                  (%delete-1! k rmap identity)
+                                  (%adjoin-1! k rmap identity)))))))
+
+(define (%xor-n transient? iset1 iset2 . isets)
+  (let loop ([tmap (%xor-2 (iset-tmap iset1) (iset-tmap iset2))]
+             [isets isets])
+    (if (null? isets)
+      (%make-iset transient? tmap)
+      (loop (%xor-2 tmap (iset-tmap (car isets))) (cdr isets)))))
+
+(define (iset-xor iset1 iset2 . isets)
+  (apply %xor-n #f iset1 iset2 isets))
+
+(define (iset-xor! iset1 iset2 . isets)
+  (apply %xor-n #t iset1 iset2 isets))
+
+(define (%intersect-2 tmap1 tmap2)
+  (rlet1 rmap (make-tree-map = <)
+    (tree-map-for-each tmap2
+                       (^[s e]
+                         (do-ec (: k s (+ e 1))
+                                (when (%tmap-contains? tmap1 k)
+                                  (%adjoin-1! k rmap identity)))))))
+
+(define (%intersect-n transient? iset1 iset2 . isets)
+  (let loop ([tmap (%intersect-2 (iset-tmap iset1) (iset-tmap iset2))]
+             [isets isets])
+    (if (null? isets)
+      (%make-iset transient? tmap)
+      (loop (%intersect-2 tmap (iset-tmap (car isets))) (cdr isets)))))
+
+(define (iset-intersection iset1 iset2 . isets)
+  (apply %intersect-n #f iset1 iset2 isets))
+
+(define (iset-intersection! iset1 iset2 . isets)
+  (apply %intersect-n #t iset1 iset2 isets))
+
 ;; To be implemented
-(define iset-xor)
-(define iset-xor!)
-(define iset-intersection)
-(define iset-intersection!)
 (define isubset)
 (define isubset=)
 (define isubset<)
