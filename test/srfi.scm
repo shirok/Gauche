@@ -2558,6 +2558,11 @@
 ;; NB: srfi-192 is tested in gauche.vport
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-196")
+(use srfi-196)
+(test-module 'srfi-196)
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-217")
 (use srfi-217)
 (test-module 'srfi-217)

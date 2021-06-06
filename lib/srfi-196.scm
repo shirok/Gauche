@@ -33,6 +33,8 @@
 
 (define-module srfi-196
   (use gauche.sequence)
+  (use scheme.list)
+  (use srfi-42)
   (export
    ;; Constructors
    range numeric-range iota-range vector-range string-range
@@ -90,8 +92,8 @@
 ;; ranges slot contains #((offset . subrange) ...)
 (define (%appended-range-index range i)
   (assume (exact-integer? i))
-  (assume (< -1 i (~ o'length)))
-  (let* ([vec (~ o'ranges)]
+  (assume (< -1 i (~ range'length)))
+  (let* ([vec (~ range'ranges)]
          [len (vector-length vec)])
     (define (call-indexer p i)
       ((~ (cdr p)'indexer) (cdr p) (- i (car p))))
@@ -125,7 +127,7 @@
 
 (define (numeric-range start end :optional (step 1))
   (make <range>
-    :length (floor->exact (- end start) step)
+    :length (exact (floor-quotient (- end start) step))
     :ref (^[_ i] (+ start (* i step)))))
 
 (define (iota-range length :optional (start 0) (step 1))
@@ -141,10 +143,10 @@
     :offset start))
 
 ;; optional arguments are Gauche-specific
-(define (string-range str :optional (start 0) (end (string-length vec)))
+(define (string-range str :optional (start 0) (end (string-length str)))
   (make <flat-range>
     :length (- end start)
-    :storage vec
+    :storage str
     :offset start))
 
 (define (range-append . ranges)
@@ -165,7 +167,7 @@
 
 (define (range=? elt= . ranges)
   (or (null? ranges)
-      (and (assert (range? (car ranges))) (null? (cdr ranges)))
+      (and (assume (range? (car ranges))) (null? (cdr ranges)))
       (and (apply list= (^[a b] (= (range-length a) (range-length b))) ranges)
            (every?-ec (: i (range-length (car ranges)))
                       (apply list= elt= (map (cut range-ref <> i) ranges))))))
@@ -175,12 +177,12 @@
 ;;;
 
 (define (range-length range)
-  (assert (range? range))
+  (assume (range? range))
   (~ range'length))
 
 (define (range-ref range n)
-  (assert (range? range))
-  (assert (< -1 n (range-length range)))
+  (assume (range? range))
+  (assume (< -1 n (range-length range)))
   ((~ range'indexer) range n))
 
 (define (range-first range) (range-ref range 0))
@@ -189,3 +191,68 @@
 ;;;
 ;;; Iteration
 ;;;
+
+(define range-split-at)
+
+(define subrange)
+
+(define range-segment)
+
+(define range-take)
+(define range-take-right)
+
+(define range-drop)
+(define range-drop-right)
+
+(define range-count)
+(define range-any)
+(define range-every)
+
+(define range-map)
+(define range-map->list)
+(define range-map->vector)
+
+(define range-for-each)
+
+(define range-filter-map)
+(define range-filter-map->list)
+
+(define range-filter)
+(define range-filter->list)
+(define range-remove)
+(define range-remove->list)
+
+(define range-fold)
+(define range-fold-right)
+
+;;;
+;;; Searching
+;;;
+
+(define range-index)
+(define range-index-right)
+
+(define range-take-while)
+(define range-take-while-right)
+
+(define range-drop-while)
+(define range-drop-while-right)
+
+;;;
+;;; Conversion
+;;;
+
+(define range->list)
+(define range->vector)
+(define range->string)
+
+;; optional arguments are Gauche-specific
+(define (vector->range vec :optional (start 0) (end (vector-length vec)))
+  (vector-range (vector-copy vec start end)))
+
+;; optional arguments are Gauche-specific
+(define (range->generator range :optional (start 0) (end (range-length range)))
+  (define i start)
+  (^[] (if (>= i end)
+         (eof-object)
+         (begin0 (range-ref range i) (inc! i)))))
