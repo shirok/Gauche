@@ -108,7 +108,9 @@
   ((indexer :init-value %appended-range-index)
    (ranges :init-keyword :ranges)))
 
-;; take a section of a range
+;; take a section of a range.
+;; Use subrange to construct this type of instance.  It tries to "flatten"
+;; nested subranges.
 (define (%subrange-index range i)
   ((~ range'range'indexer) (~ range'range) (- i (~ range'offset))))
 
@@ -116,6 +118,7 @@
   ((indexer :init-value %subrange-index)
    (range  :init-keyword :range)
    (offset :init-keyword :offset)))
+
 
 ;;;
 ;;; Constructors
@@ -192,17 +195,39 @@
 ;;; Iteration
 ;;;
 
-(define range-split-at)
+(define (range-split-at range index)
+  (assume-type range <range>)
+  (assume (<= 0 index (range-length range)))
+  (values (subrange range 0 index)
+          (subrange range index (range-length range))))
 
-(define subrange)
+(define (subrange range start end)
+  (assume-type range <range>)
+  (if (> (- end start) (range-length range))
+    (error "subrange start/end index out of original range:"
+           (list range start end)))
+  (if (is-a? range <subrange>)
+    ;; We flatten the range
+    (make <subrange>
+      :length (- end start)
+      :range (~ range'range) ; use inner range
+      :offset (+ (~ range'offset) start))
+    (make <subrange>
+      :length (- end start)
+      :range range
+      :offset start)))
 
 (define range-segment)
 
-(define range-take)
-(define range-take-right)
+(define (range-take range index)
+  (subrange range 0 index))
+(define (range-take-right range index)
+  (subrange range (- (range-length range) index) (range-length range)))
 
-(define range-drop)
-(define range-drop-right)
+(define (range-drop range index)
+  (subrange range index (range-length range)))
+(define (range-drop-right range index)
+  (subrange range 0 (- (range-length range) index)))
 
 (define range-count)
 (define range-any)
@@ -242,9 +267,30 @@
 ;;; Conversion
 ;;;
 
-(define range->list)
-(define range->vector)
-(define range->string)
+(define (range->list range)
+  (assume-type range <range>)
+  (list-ec (: i (range-length range))
+           (range-ref range i)))
+
+(define (range->vector range)
+  (assume-type range <range>)
+  ;; We might be able to return the internal storage directly if range is
+  ;; <flat-range> on a vector, since "it is an error" to mutate the return
+  ;; value; but there would be no check if the caller conforms it.  Until
+  ;; we see the case that such optimization is effective, we just build
+  ;; a new vector.
+  (vector-ec (: i (range-length range))
+             (range-ref range i)))
+
+(define (range->string range)
+  (assume-type range <range>)
+  (if (and (is-a? range <flat-range>)
+           (string? (~ range'storage)))
+    (substring (~ range'storage)
+               (~ range'offset)
+               (+ (~ range'offset) (~ range'length)))
+    (string-ec (: i (range-length range))
+               (range-ref range i))))
 
 ;; optional arguments are Gauche-specific
 (define (vector->range vec :optional (start 0) (end (vector-length vec)))
