@@ -126,12 +126,12 @@
                                                ((:<= <=-key) #f)
                                                ((:> >-key) #f)
                                                ((:>= >=-key) #f)
-                                               (decreasing #f))
+                                               (descending #f))
   (define cmp (tree-map-comparator tm))
   (define (call fn tm key)
     (receive (k v) (fn tm key *uniq* *uniq*)
       (if (eq? k *uniq*) #f (cons k v))))
-  (if decreasing
+  (if descending
     (let1 p (cond [<=-key (call tree-map-floor tm <=-key)]
                   [<-key  (call tree-map-predecessor tm <-key)]
                   [else   (tree-map-max tm)])

@@ -15032,13 +15032,13 @@ the criteria).
 @c COMMON
 @end defun
 
-@defun tree-map->generator/key-range tree-map :key > >= < <= decreasing
+@defun tree-map->generator/key-range tree-map :key > >= < <= descending
 @c EN
 Returns a generator (@pxref{Generators}) that yields pairs of key and value
 such that the key is in the specified range.
-If the @var{decreasing} keyword argument is @code{#f} (default),
+If the @var{descending} keyword argument is @code{#f} (default),
 it yields the pairs with increasing keys; otherwise,
-it yields them with decreasing keys.
+it yields them with descending keys.
 
 The keyword argument @code{>} and @code{>=} specifies the lower bound
 of the key, including and excluding the given key value itself, respectively.
@@ -15050,7 +15050,7 @@ If both are given, either one of them is considered.
 @c JP
 キーが指定された範囲に入っているようなキーと値のペアを生成するジェネレータを作って
 返します (@ref{Generators}参照)。
-もし@var{decreasing}キーワード引数が@code{#f}(デフォルト値)なら、ペアは
+もし@var{descending}キーワード引数が@code{#f}(デフォルト値)なら、ペアは
 キーの昇順に生成されます。それが真の値なら、ペアはキーの降順に生成されます。
 
 キーワード引数@code{>}と@code{>=}はキーの下限を指定します。前者は指定値を含み、
@@ -15072,7 +15072,7 @@ If both are given, either one of them is considered.
   @result{} ((1 . b) (2 . c) (3 . d))
 
 (generator->list
-  (tree-map->generator/key-range tm :>= 1 :< 4 :decreasing #t))
+  (tree-map->generator/key-range tm :>= 1 :< 4 :descending #t))
   @result{} ((3 . d) (2 . c) (1 . b))
 
 (generator->list

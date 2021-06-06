@@ -584,55 +584,55 @@
          (->list (tree-map->generator/key-range tm)))
   (test* "key-range generator (no limits, reverse)"
          '((5 . f) (4 . e) (3 . d) (2 . c) (1 . b) (0 . a))
-         (->list (tree-map->generator/key-range tm :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :descending #t)))
   (test* "key-range generator (> 1)"
          '((2 . c) (3 . d) (4 . e) (5 . f))
          (->list (tree-map->generator/key-range tm :> 1)))
   (test* "key-range generator (> 1, reverse)"
          '((5 . f) (4 . e) (3 . d) (2 . c))
-         (->list (tree-map->generator/key-range tm :> 1 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :> 1 :descending #t)))
   (test* "key-range generator (>= 1)"
          '((1 . b) (2 . c) (3 . d) (4 . e) (5 . f))
          (->list (tree-map->generator/key-range tm :>= 1)))
   (test* "key-range generator (>= 1, reverse)"
          '((5 . f) (4 . e) (3 . d) (2 . c) (1 . b))
-         (->list (tree-map->generator/key-range tm :>= 1 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :>= 1 :descending #t)))
   (test* "key-range generator (< 4)"
          '((0 . a) (1 . b) (2 . c) (3 . d))
          (->list (tree-map->generator/key-range tm :< 4)))
   (test* "key-range generator (< 4, reverse)"
          '((3 . d) (2 . c) (1 . b) (0 . a))
-         (->list (tree-map->generator/key-range tm :< 4 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :< 4 :descending #t)))
   (test* "key-range generator (<= 4)"
          '((0 . a) (1 . b) (2 . c) (3 . d) (4 . e))
          (->list (tree-map->generator/key-range tm :<= 4)))
   (test* "key-range generator (<= 4, reverse)"
          '((4 . e) (3 . d) (2 . c) (1 . b) (0 . a))
-         (->list (tree-map->generator/key-range tm :<= 4 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :<= 4 :descending #t)))
   (test* "key-range generator (> 1, <= 4)"
          '((2 . c) (3 . d) (4 . e))
          (->list (tree-map->generator/key-range tm :<= 4 :> 1)))
   (test* "key-range generator (> 1, <= 4, reverse)"
          '((4 . e) (3 . d) (2 . c))
-         (->list (tree-map->generator/key-range tm :<= 4 :> 1 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :<= 4 :> 1 :descending #t)))
   (test* "key-range generator (>= 1, < 4)"
          '((1 . b) (2 . c) (3 . d))
          (->list (tree-map->generator/key-range tm :< 4 :>= 1)))
   (test* "key-range generator (>= 1, < 4, reverse)"
          '((3 . d) (2 . c) (1 . b))
-         (->list (tree-map->generator/key-range tm :< 4 :>= 1 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :< 4 :>= 1 :descending #t)))
   (test* "key-range generator (> 5)"
          '()
          (->list (tree-map->generator/key-range tm :> 5)))
-  (test* "key-range generator (> 5, decreasing)"
+  (test* "key-range generator (> 5, descending)"
          '()
-         (->list (tree-map->generator/key-range tm :> 5 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :> 5 :descending #t)))
   (test* "key-range generator (< 0)"
          '()
          (->list (tree-map->generator/key-range tm :< 0)))
-  (test* "key-range generator (< 0, decreasing)"
+  (test* "key-range generator (< 0, descending)"
          '()
-         (->list (tree-map->generator/key-range tm :< 0 :decreasing #t)))
+         (->list (tree-map->generator/key-range tm :< 0 :descending #t)))
   (test* "key-range generator (> 4, < 4)"
          '()
          (->list (tree-map->generator/key-range tm :< 4 :> 4)))
