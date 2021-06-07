@@ -54,7 +54,7 @@
 (define (filter pattern-in pattern-out)
   ;; This regexp picks potential typo of extract directives.
   (define suspicious
-    #/^@c ([A-Za-z]{2,7}(?![A-Za-z:', -])([^A-Za-z:', -])?)/)
+    #/^@c ([A-Za-z]{2,7}:?)(?![,-])\s*(.*)/)
   (define (in line)
     (rxmatch-case line
       [test eof-object?]
@@ -76,7 +76,7 @@
       [#/^@c MOD\s+(\S+)$/ (#f module)
              (display #"@{@t{~|module|}@}\n")
              (in (read-line))]
-      [suspicious (#f word) (check-typo word line) (in (read-line))]
+      [suspicious (#f word rest) (check-typo word rest line) (in (read-line))]
       [test (^_ (eq? (lang) 'en))
             (display (regexp-replace-all #/@VERSION@/ line *version*))
             (newline) (in (read-line))]
@@ -100,22 +100,29 @@
       [test eof-object?]
       [pattern-in ()  (in (read-line))]
       [#/^@c COMMON$/ () (in (read-line))]
-      [suspicious (#f word) (check-typo word line) (out (read-line))]
+      [suspicious (#f word rest) (check-typo word rest line) (out (read-line))]
       [else (out (read-line))]))
 
   (in (read-line)))
 
 ;; Detect potential typo of extract directives.
-;; I tend to miss the warnings, so make it an error.  Add allowed words
-;; as needed.
-(define (check-typo word line)
+;; It is a bit complicated, since we need to allow general comment after @c.
+;; WORD is a 2-7 letter alphabetic word, and REST is what follows.
+(define (check-typo word rest line)
   (when (and (string-any char-upper-case? word)
-             (let1 ds (re-distances word '("EN" "JP" "COMMON" "NODE" "MOD"
-                                           "TODO" "NOTE" "NB"))
-               (<= 1 (apply min ds) 2)))
-    (errorf "Unrecognized extract directive ~s at or near ~s:~d\n"
+             (or (and (equal? rest "")
+                      ;; directives that doesn't take argument
+                      (let1 ds (re-distances word '("EN" "JP" "COMMON"))
+                        (<= 1 (apply min ds) 2)))
+                 ;; directives that does take argument
+                 (and (>= (string-length word) 3)
+                      (let1 ds (re-distances word '("NODE" "MOD" "NOTE"
+                                                    "TODO:" "NB:"))
+                            (<= 1 (apply min ds) 2)))))
+    (errorf "Unrecognized extract directive ~s at or near ~s:~d: ~a\n"
             word (port-name (current-input-port))
-            (port-current-line (current-input-port)))))
+            (port-current-line (current-input-port))
+            line)))
 
 ;; We search relative to the current directory first, then
 ;; relative to $srcdir; for FILE may be the generated one.
