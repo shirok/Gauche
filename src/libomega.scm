@@ -119,7 +119,7 @@
        (or (and (not (comparator-ordered? x))
                 (not (comparator-ordered? y)))
            (ecase (comparator-flavor x)
-             [(ordered) (eqv? (~ x'ordering) (~ y'ordering))]
+             [(ordering) (eqv? (~ x'ordering) (~ y'ordering))]
              [(comparison) (eqv? (~ x'comparison) (~ y'comparison))]))
        (or (and (not (comparator-hashable? x))
                 (not (comparator-hashable? y)))
