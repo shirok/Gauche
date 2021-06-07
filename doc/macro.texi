@@ -662,7 +662,7 @@ used to define alias of existing macro or syntax keyword.
 
 @node Syntax-rules macro transformer, Explicit-renaming macro transformer, Hygienic macros, Hygienic macros
 @subsection Syntax-rules macro transformer
-@c NODe Syntax-rulesマクロ変換器
+@c NODE Syntax-rulesマクロ変換器
 
 @defspec syntax-rules (literal @dots{}) clause clause2 @dots{}
 @defspecx syntax-rules ellipsis (literal @dots{}) clause clause2 @dots{}

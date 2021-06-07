@@ -17324,7 +17324,7 @@ Returns @code{#t} iff @var{obj} is a promise object.
 @c COMMON
 @end defun
 
-@c TODO example - use lazy tarai function
+@c TODO: example - use lazy tarai function
 
 @node Lazy sequences,  , Delay force and lazy, Lazy evaluation
 @subsection  Lazy sequences
