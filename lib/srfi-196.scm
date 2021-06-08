@@ -229,7 +229,13 @@
 (define (range-drop-right range index)
   (subrange range 0 (- (range-length range) index)))
 
-(define range-count)
+(define (range-count pred range1 . ranges)
+  (if (null? ranges)
+    (range-fold (^[cnt val] (if (pred val) (+ cnt 1) cnt)) 0 range1)
+    (range-fold (^[cnt . vals] (if (apply pred vals) (+ cnt 1) cnt))
+                0
+                (cons range1 ranges))))
+
 (define range-any)
 (define range-every)
 
@@ -247,8 +253,34 @@
 (define range-remove)
 (define range-remove->list)
 
-(define range-fold)
-(define range-fold-right)
+;; kons is invoked with the same order of vector-fold (state first)
+(define (range-fold kons knil range1 . ranges)
+  (if (null? ranges)
+    (fold (^[i seed] (kons seed (range-ref range1 i)))
+          knil
+          (liota (range-length range1)))
+    (let1 len (fold (^[r m] (min m (range-length r)))
+                    (range-length range1)
+                    ranges)
+      (fold (^[i seed] (apply kons seed
+                              (range-ref range1 i)
+                              (map (^r (range-ref r i)) ranges)))
+            knil
+            (liota len)))))
+
+(define (range-fold-right kons knil range1 . ranges)
+  (if (null? ranges)
+    (fold (^[i seed] (kons seed (range-ref range1 i)))
+          knil
+          (liota (range-length range1) (- (range-length range1) 1) -1))
+    (let1 len (fold (^[r m] (min m (range-length r)))
+                    (range-length range1)
+                    ranges)
+      (fold (^[i seed] (apply kons seed
+                              (range-ref range1 i)
+                              (map (^r (range-ref r i)) ranges)))
+            knil
+            (liota len (- len 1) -1)))))
 
 ;;;
 ;;; Searching
