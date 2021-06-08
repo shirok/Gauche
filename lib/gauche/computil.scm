@@ -185,7 +185,7 @@
                                         (head car)
                                         (tail cdr))
   (ecase (comparator-flavor elt-comparator)
-    [(ordered)
+    [(ordering)
      (let ([elt= (comparator-equality-predicate elt-comparator)]
            [elt< (comparator-ordering-predicate elt-comparator)])
        (make-comparator test (%gen-listwise-equal elt= empty? head tail)
@@ -247,7 +247,7 @@
                                           (len vector-length)
                                           (ref vector-ref))
   (ecase (comparator-flavor elt-comparator)
-    [(ordered)
+    [(ordering)
      (let ([elt= (comparator-equality-predicate elt-comparator)]
            [elt< (comparator-ordering-predicate elt-comparator)])
        (make-comparator test (%gen-vectorwise-equal elt= len ref)
