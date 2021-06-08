@@ -2574,4 +2574,17 @@
   (use srfi-217)
   (include "include/srfi-217-test"))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-221")
+(use srfi-221)
+(test-module 'srfi-221)
+
+(define-module srfi-221-tests
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+  (use srfi-41)
+  (use srfi-158)
+  (use srfi-64)
+  (use srfi-221)
+  (include "include/srfi-221-test"))
+
 (test-end)
