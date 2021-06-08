@@ -98,7 +98,18 @@
       (generator 0 0 0 0 0 1 1 2)
       (generator 1)
       (generator 2)
-      (generator 3))))
+      (generator 3)))
+
+  (test-g-equal
+   (generator 1 3 5 2 4 6)
+   (gchoice
+    (make-unfold-generator (lambda (_) #f)
+                           (lambda (x) (modulo x 3))
+                           (lambda (x) (+ x 1))
+                           0)
+    (generator 1 2)
+    (generator 3 4)
+    (generator 5 6))))
 
 (test-group
   "generator->stream"

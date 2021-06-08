@@ -33,6 +33,7 @@
 
 (define-module srfi-221
   (use gauche.generator)
+  (use scheme.vector :only (vector-every))
   (use util.stream)
   (export gcompose-left gcompose-right
           accumulate-generated-values
@@ -81,7 +82,11 @@
           (if g
             (let1 v (g)
               (if (eof-object? v)
-                (begin (vector-set! srcs c #f) (gen))
+                (begin
+                  (vector-set! srcs c #f)
+                  (if (vector-every not srcs)
+                    (eof-object)
+                    (gen)))
                 v))
             (gen)))))))
 
