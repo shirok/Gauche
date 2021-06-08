@@ -188,7 +188,7 @@
           [(<= k e) tmap]             ; subsumed
           [else (receive (s2 e2) (tree-map-floor tmap (+ k 1))
                   (rlet1 tmap2 (maybe-copy tmap)
-                    (if (not s2)
+                    (if (or (not s2) (= s s2))
                       (if (= (+ e 1) k)
                         (tree-map-put! tmap2 s k) ; extend
                         (tree-map-put! tmap2 k k)) ; lone
@@ -372,7 +372,7 @@
     (tree-map-for-each (iset-tmap iset)
                        (^[s e]
                          (do-ec (: k s (+ e 1))
-                                (set! r (iset-adjoin! r k)))))
+                                (set! r (iset-adjoin! r (proc k))))))
     (%iset-make-persistent! r)))
 
 (define (iset-for-each proc iset)
@@ -473,7 +473,10 @@
 
 (define (%union-2! tmap1 tmap2 maybe-copy)
   (tree-map-fold tmap2
-                 (^[k rtmap] (%adjoin-1! k rtmap maybe-copy))
+                 (^[s e rtmap]
+                   (do-ec [: k s (+ e 1)]
+                          (set! rtmap (%adjoin-1! k rtmap maybe-copy)))
+                   rtmap)
                  tmap1))
 
 (define (iset-union iset1 iset2 . isets)
@@ -500,7 +503,10 @@
 
 (define (%diff-2! tmap1 tmap2 maybe-copy)
   (tree-map-fold tmap2
-                 (^[k rtmap] (%delete-1! k rtmap maybe-copy))
+                 (^[s e rtmap]
+                   (do-ec [: k s (+ e 1)]
+                          (set! rtmap (%delete-1! k rtmap maybe-copy)))
+                   rtmap)
                  tmap1))
 
 (define (iset-difference iset1 iset2 . isets)
@@ -573,53 +579,83 @@
 
 ;; To be implemented
 
-(define (isubset= iset k)
-  (if (iset-contains? iset k)
-    (if (= (iset-size iset) 1)
-      (%iset->persistent iset)
+(define (isubset= iset0 k)
+  (if (iset-contains? iset0 k)
+    (if (= (iset-size iset0) 1)
+      (%iset->persistent iset0)
       (iset k))
     (iset)))
 
-(define (isubset< iset k)
-  (let1 tmap (iset-tmap iset)
+(define (isubset< iset0 k)
+  (let1 tmap (iset-tmap iset0)
     (match (tree-map-max tmap)
-      [#f (%iset->persistent iset)]     ;empty set
+      [#f (%iset->persistent iset0)]    ;empty set
       [(s . e)
        (if (<= e k)
-         (%iset->persistent iset)       ;no change
+         (%iset->persistent iset0)      ;no change
          (let ([rmap (make-tree-map = <)]
                [g (x->generator tmap)])
            (let loop ()
              (match-let1 (s . e) (g)
                (cond
-                [(<= e k) (tree-map-put! rmap s e) (loop)]
+                [(< e k) (tree-map-put! rmap s e) (loop)]
                 [(<= k s) (%make-iset #f rmap)]
                 [else (tree-map-put! rmap s (- k 1))
                       (%make-iset #f rmap)])))))])))
 
-(define (isubset<= iset k) (isubset< iset (- k 1)))
+(define (isubset<= iset0 k) (isubset< iset0 (+ k 1)))
 
-(define (isubset>= iset k)
-  (let1 tmap (iset-tmap iset)
+(define (isubset>= iset0 k)
+  (let1 tmap (iset-tmap iset0)
     (match (tree-map-min tmap)
-      [#f (%iset->persistent iset)]     ;empty set
+      [#f (%iset->persistent iset0)]    ;empty set
       [(s . e)
        (if (<= k s)
-         (%iset->persistent iset)       ;no change
+         (%iset->persistent iset0)      ;no change
          (let ([rmap (make-tree-map = <)]
                [g (x->generator tmap)])
            (let loop ()
              (match (g)
                [(s . e)
                 (cond
-                 [(<= e k) (loop)]
+                 [(< e k) (loop)]
                  [(<= k s) (tree-map-put! rmap s e) (loop)]
                  [else (tree-map-put! rmap k e) (loop)])]
                [else (%make-iset #f rmap)]))))])))
 
-(define (isubset> iset k) (isubset>= iset (- k 1)))
+(define (isubset> iset0 k) (isubset>= iset0 (+ k 1)))
 
-(define iset-closed-interval)
-(define iset-open-closed-interval)
-(define iset-closed-open-interval)
-(define iset-open-interval)
+
+(define (iset-closed-interval iset0 lo hi)
+  (let1 tmap (iset-tmap iset0)
+    (match (tree-map-min tmap)
+      [#f (%iset->persistent iset0)]
+      [(s . e)
+       (if (< hi s)
+         (iset)                         ;empty
+         (match-let1 (sz . ez) (tree-map-max tmap)
+           (if (< ez lo)
+             (iset)                     ;empty
+             (let ([rmap (make-tree-map = <)]
+                   [g (x->generator tmap)])
+               (let loop ()
+                 (match (g)
+                   [(s . e)
+                    (cond
+                     [(< e lo) (loop)]               ;non overwrapping
+                     [(< hi s) (%make-iset #f rmap)] ;past range
+                     [(< lo s) (if (< e hi)
+                                 (begin (tree-map-put! rmap s e) (loop))
+                                 (begin (tree-map-put! rmap s hi)
+                                        (%make-iset #f rmap)))]
+                     [else (if (< e hi)
+                             (begin (tree-map-put! rmap lo e) (loop))
+                             (begin (tree-map-put! rmap lo hi)
+                                    (%make-iset #f rmap)))])]))))))])))
+
+(define (iset-open-closed-interval iset0 lo hi)
+  (iset-closed-interval iset0 (+ lo 1) hi))
+(define (iset-closed-open-interval iset0 lo hi)
+  (iset-closed-interval iset0 lo (- hi 1)))
+(define (iset-open-interval iset0 lo hi)
+  (iset-closed-interval iset0 (+ lo 1) (- hi 1)))

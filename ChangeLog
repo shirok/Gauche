@@ -1,3 +1,7 @@
+2021-06-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-217.scm: Support srfi-217
+
 2021-06-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libomega.scm (object-equal? <comparator>): Fixed a long-standing

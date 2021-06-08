@@ -2567,4 +2567,11 @@
 (use srfi-217)
 (test-module 'srfi-217)
 
+(define-module srfi-217-tests
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+  (use scheme.list)
+  (use srfi-78)                         ; check
+  (use srfi-217)
+  (include "include/srfi-217-test"))
+
 (test-end)
