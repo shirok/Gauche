@@ -100,6 +100,7 @@
       (generator 2)
       (generator 3)))
 
+  ;; test exhausted source (choice generator won't be exhausted)
   (test-g-equal
    (generator 1 3 5 2 4 6)
    (gchoice
