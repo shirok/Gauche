@@ -10438,8 +10438,8 @@ script location.
 @section @code{srfi-219} - Define higher-order lambda
 @c NODE 高階lambdaの定義,  @code{srfi-219} - 高階lambdaの定義
 
-@deftp {Module} srfi-193
-@mdindex srfi-193
+@deftp {Module} srfi-219
+@mdindex srfi-219
 This srfi enhances @code{define} form to allow defining
 function-returning-function compactly.  It works as follows:
 
