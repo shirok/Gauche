@@ -69,6 +69,7 @@ srfi N is supported by Gauche.)
 * Maybe and Either optional container types::  srfi-189
 * Port positioning::            srfi-192
 * Command line::                srfi-193
+* Integer sets::                srfi-217
 * Define higher-order lambda::  srfi-219
 * Generator/accumulator sub-library::  srfi-221
 @end menu
@@ -10337,7 +10338,7 @@ Gaucheでは、これは
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Command line, Define higher-order lambda, Port positioning, Library modules - SRFIs
+@node Command line, Integer sets, Port positioning, Library modules - SRFIs
 @section @code{srfi-193} - Command line
 @c NODE コマンドライン,  @code{srfi-193} - コマンドライン
 
@@ -10434,7 +10435,220 @@ script location.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Define higher-order lambda, Generator/accumulator sub-library, Command line, Library modules - SRFIs
+@node Integer sets, Define higher-order lambda, Command line, Library modules - SRFIs
+@section @code{srfi-217} - Integer sets
+@c NODE 整数集合,  @code{srfi-217} - 整数集合
+
+@deftp {Module} srfi-217
+@mdindex srfi-217
+This srfi defines a set whose element is limited to fixnums.
+
+Although general sets are provided by @code{scheme.set}
+(@pxref{R7RS sets}), this module may take advantage of limited-type
+elements to optimize storage and operations.
+
+It also provides range-based operations, which aren't available in
+the general sets.
+@end deftp
+
+@subheading Constructors
+
+@defun iset element @dots{}
+@c MOD srfi-217
+@end defun
+
+@defun iset-unfold p f g seed
+@c MOD srfi-217
+@end defun
+
+@defun make-range-iset start end :optional step
+@c MOD srfi-217
+@end defun
+
+@subheading Predicates
+
+@defun iset? obj
+@c MOD srfi-217
+@end defun
+
+@defun iset-contains? iset element
+@c MOD srfi-217
+@end defun
+
+@defun iset-empty? iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-disjoint? iset1 iset2
+@c MOD srfi-217
+@end defun
+
+@subheading Accessors
+
+@defun iset-member iset element default
+@c MOD srfi-217
+@end defun
+
+@defun iset-min iset
+@defunx iset-max iset
+@c MOD srfi-217
+@end defun
+
+
+@subheading Updaters
+
+@defun iset-adjoin iset elt1 elt2 @dots{}
+@defunx iset-adjoin! iset elt1 elt2 @dots{}
+@c MOD srfi-217
+@end defun
+
+@defun iset-delete iset elt1 elt2 @dots{}
+@defunx iset-delete! iset elt1 elt2 @dots{}
+@c MOD srfi-217
+@end defun
+
+@defun iset-delete-all iset elt-list
+@defunx iset-delete-all! iset elt-list
+@c MOD srfi-217
+@end defun
+
+@defun iset-delete-min iset
+@defunx iset-delete-min! iset
+@defunx iset-delete-max iset
+@defunx iset-delete-max! iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-search iset element failure success
+@defunx iset-search! iset element failure success
+@c MOD srfi-217
+@end defun
+
+@subheading The whole iset
+
+@defun iset-size iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-find pred iset failure
+@c MOD srfi-217
+@end defun
+
+@defun iset-count pred iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-any? pred iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-every? pred iset
+@c MOD srfi-217
+@end defun
+
+@subheading Mapping and folding
+
+@defun iset-map proc iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-for-each proc iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-fold kons knil iset
+@defunx iset-fold-right kons knil iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-filter pred iset
+@defunx iset-filter! pred iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-remove pred iset
+@defunx iset-remove! pred iset
+@c MOD srfi-217
+@end defun
+
+@defun iset-partition pred iset
+@defunx iset-partition! pred iset
+@c MOD srfi-217
+@end defun
+
+@subheading Copying and conversion
+
+@defun iset-copy iset
+@c MOD srfi-217
+@end defun
+
+@defun iset->list iset
+@c MOD srfi-217
+@end defun
+
+@defun list->iset iset
+@c MOD srfi-217
+@end defun
+
+@defun list->iset! iset list
+@c MOD srfi-217
+@end defun
+
+@subheading Subsets
+
+@defun iset=? iset1 iset2 iset3 @dots{}
+@c MOD srfi-217
+@end defun
+
+@defun iset<? iset1 iset2 iset3 @dots{}
+@defunx iset<=? iset1 iset2 iset3 @dots{}
+@defunx iset>? iset1 iset2 iset3 @dots{}
+@defunx iset>=? iset1 iset2 iset3 @dots{}
+@c MOD srfi-217
+@end defun
+
+@subheading Set theory operations
+
+@defun iset-union iset1 iset2 iset3 @dots{}
+@defunx iset-union! iset1 iset2 iset3 @dots{}
+@c MOD srfi-217
+@end defun
+
+@defun iset-intersection iset1 iset2 iset3 @dots{}
+@defunx iset-intersection! iset1 iset2 iset3 @dots{}
+@c MOD srfi-217
+@end defun
+union
+
+@defun iset-difference iset1 iset2 iset3 @dots{}
+@defunx iset-difference! iset1 iset2 iset3 @dots{}
+@c MOD srfi-217
+@end defun
+
+@defun iset-xor iset1 iset2 iset3 @dots{}
+@defunx iset-xor! iset1 iset2 iset3 @dots{}
+@c MOD srfi-217
+@end defun
+
+@subheading Intervals and ranges
+
+@defun iset-open-interval iset low high
+@defunx iset-closed-interval iset low high
+@defunx iset-open-closed-interval iset low high
+@defunx iset-closed-open-interval iset low high
+@c MOD srfi-217
+@end defun
+
+@defun isubset= iset k
+@defunx isubset< iset k
+@defunx isubset<= iset k
+@defunx isubset> iset k
+@defunx isubset>= iset k
+@c MOD srfi-217
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Define higher-order lambda, Generator/accumulator sub-library, Integer sets, Library modules - SRFIs
 @section @code{srfi-219} - Define higher-order lambda
 @c NODE 高階lambdaの定義,  @code{srfi-219} - 高階lambdaの定義
 

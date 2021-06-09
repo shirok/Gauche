@@ -1396,10 +1396,12 @@ srfi-217, srfi-217
 ()
 
 Integer sets
-Supported by the module @code{srfi-217}.
+Supported by the module @code{srfi-217}
+(@pxref{Integer sets}).
 
 整数集合
-@code{srfi-217}でサポートされます。
+@code{srfi-217}でサポートされます
+(@ref{Integer sets}参照)。
 
 
 srfi-219
