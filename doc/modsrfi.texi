@@ -10454,43 +10454,52 @@ the general sets.
 @subheading Constructors
 
 @defun iset element @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-unfold p f g seed
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun make-range-iset start end :optional step
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @subheading Predicates
 
 @defun iset? obj
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-contains? iset element
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-empty? iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-disjoint? iset1 iset2
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @subheading Accessors
 
 @defun iset-member iset element default
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-min iset
 @defunx iset-max iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
@@ -10499,16 +10508,19 @@ the general sets.
 
 @defun iset-adjoin iset elt1 elt2 @dots{}
 @defunx iset-adjoin! iset elt1 elt2 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-delete iset elt1 elt2 @dots{}
 @defunx iset-delete! iset elt1 elt2 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-delete-all iset elt-list
 @defunx iset-delete-all! iset elt-list
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
@@ -10516,87 +10528,105 @@ the general sets.
 @defunx iset-delete-min! iset
 @defunx iset-delete-max iset
 @defunx iset-delete-max! iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-search iset element failure success
 @defunx iset-search! iset element failure success
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @subheading The whole iset
 
 @defun iset-size iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-find pred iset failure
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-count pred iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-any? pred iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-every? pred iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @subheading Mapping and folding
 
 @defun iset-map proc iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-for-each proc iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-fold kons knil iset
 @defunx iset-fold-right kons knil iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-filter pred iset
 @defunx iset-filter! pred iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-remove pred iset
 @defunx iset-remove! pred iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-partition pred iset
 @defunx iset-partition! pred iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @subheading Copying and conversion
 
 @defun iset-copy iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset->list iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun list->iset iset
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun list->iset! iset list
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @subheading Subsets
 
 @defun iset=? iset1 iset2 iset3 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
@@ -10604,6 +10634,7 @@ the general sets.
 @defunx iset<=? iset1 iset2 iset3 @dots{}
 @defunx iset>? iset1 iset2 iset3 @dots{}
 @defunx iset>=? iset1 iset2 iset3 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
@@ -10611,22 +10642,26 @@ the general sets.
 
 @defun iset-union iset1 iset2 iset3 @dots{}
 @defunx iset-union! iset1 iset2 iset3 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-intersection iset1 iset2 iset3 @dots{}
 @defunx iset-intersection! iset1 iset2 iset3 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 union
 
 @defun iset-difference iset1 iset2 iset3 @dots{}
 @defunx iset-difference! iset1 iset2 iset3 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
 @defun iset-xor iset1 iset2 iset3 @dots{}
 @defunx iset-xor! iset1 iset2 iset3 @dots{}
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
@@ -10636,6 +10671,7 @@ union
 @defunx iset-closed-interval iset low high
 @defunx iset-open-closed-interval iset low high
 @defunx iset-closed-open-interval iset low high
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
@@ -10644,6 +10680,7 @@ union
 @defunx isubset<= iset k
 @defunx isubset> iset k
 @defunx isubset>= iset k
+[SRFI-217]
 @c MOD srfi-217
 @end defun
 
@@ -10693,6 +10730,7 @@ This srfi adds several utility procedures to the generator library
 
 @defun gcompose-left constructor operation @dots{}
 @defunx gcompose-right constructor operation @dots{}
+@c MOD srfi-221
 The @var{constructor} argument is a thunk that returns a generator.
 Each @var{operation} is a procedure that takes a generator and returns
 a generator.
@@ -10726,6 +10764,8 @@ while @code{gcompose-right} does right to left (right-associative).
 @end defun
 
 @defun accumulate-generated-values accumulator generator
+[SRFI-221]
+@c MOD srfi-221
 Calls @var{generator} repeatedly, accumulating the values into
 @var{accumulator}, until @var{generator} is exhausted.  Then it
 retrieves and returns the accumulated value.
@@ -10735,6 +10775,8 @@ you can pass an accumulator that returns the desired type of result.
 @end defun
 
 @defun genumerate gen
+[SRFI-221]
+@c MOD srfi-221
 Returns a generator that yields pairs, each of which consists of
 an exact integer count and the value yielded by @var{gen}.
 The count starts from 0 and incremented.
@@ -10746,6 +10788,8 @@ The count starts from 0 and incremented.
 @end defun
 
 @defun gchoice choice-gen source-gen @dots{}
+[SRFI-221]
+@c MOD srfi-221
 Returns a generator that yields a value from one of @var{source-gen}s,
 according to @var{choice-gen}.
 
@@ -10764,6 +10808,8 @@ is exhausted, the resulting generator is also exhausted.
 @end defun
 
 @defun stream->generator stream
+[SRFI-221]
+@c MOD srfi-221
 Returns a generator that yields each element of a lazy stream @var{stream}.
 Lazy streams are defined in R7RS-large @code{scheme.stream}
 (@pxref{R7RS stream}), which is a subset of Gauche's @code{util.stream}
@@ -10771,6 +10817,8 @@ Lazy streams are defined in R7RS-large @code{scheme.stream}
 @end defun
 
 @defun generator->stream generator
+[SRFI-221]
+@c MOD srfi-221
 Returns a lazy stream whose elements consist of the values
 generated by @var{generator}
 Lazy streams are defined in R7RS-large @code{scheme.stream}
