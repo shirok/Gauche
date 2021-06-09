@@ -1392,6 +1392,16 @@ Built-in.  @xref{Boxes}.
 組み込みです。@ref{Boxes}参照。
 
 
+srfi-217, srfi-217
+()
+
+Integer sets
+Supported by the module @code{srfi-217}.
+
+整数集合
+@code{srfi-217}でサポートされます。
+
+
 srfi-219
 (define)
 
@@ -1406,3 +1416,15 @@ Gauche組み込みの@code{define}は (R7RS互換のものも拡張のものも)
 この機能をサポートしています。
 陽にsrfi-219をインポートした場合は、@code{null#define}がインポートされます。
 詳しくは@ref{Define higher-order lambda}参照。
+
+
+srfi-221, srfi-221
+()
+
+Generator/accumulator sub-library
+Supported by the module @code{srfi-221}
+(@pxref{Generator/accumulator sub-library}).
+
+ジェネレータ/アキュムレータ サブライブラリ
+@code{srfi-221}でサポートされます
+(@ref{Generator/accumulator sub-library}参照)。
