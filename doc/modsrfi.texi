@@ -10232,29 +10232,59 @@ and returned.  Otherwise, the condition is reraised with
 @node Trivalent logic,  , Maybe and Either syntactic utilities, Maybe and Either optional container types
 @subsection Trivalent logic
 
+This section describes procedures that deal with trivalent logic---a value can
+be a false value (@code{Just #f}), a true value
+(@code{Just} with anything other than @code{#f}), and @code{Nothing}.
+
+If any of the arguments is @code{Nothing}, the result becomes @code{Nothing}
+(except @code{tri=?}).
+
+All the argument must be Maybe type, or an error is signalled.
+
 @defun tri-not maybe
 @c MOD srfi-189
 [SRFI-189]
+Returns @code{Just #t} if @var{maybe} is trivalent-false,
+@code{Just #f} if @var{maybe} is triavlent-true, and
+@code{Nothing} if @var{maybe} is @code{Nothing}.
 @end defun
 
 @defun try=? maybe @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Returns @code{Just #t} if arguments are either all trivalent-true
+or all trivalent-false.  Otherwise return @code{Just #f}.
+Note that if any of the argument is @code{Nothing}, the result is
+@code{Just #f} (even all arguments are @code{Nothing}).
 @end defun
 
 @defun try-and maybe @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Returns @code{Just #t} if all arguments are trivalent-true,
+@code{Just #f} if all arguments are @code{Just} but at least one
+of them is @code{Just #f}, and @code{Nothing} if any of the arguments
+is @code{Nothing}.  If there's no arguments, @code{Just #t} is returned.
+
+This is not a shortcut operation like @code{and}.
 @end defun
 
 @defun try-or maybe @dots{}
 @c MOD srfi-189
 [SRFI-189]
+Returns @code{Just #f} if all arguments are trivalent-false,
+@code{Just #t} if all arguments are @code{Just} but at least one
+of them is trivalent-true, and @code{Nothing} if any of the arguments
+is @code{Nothing}.  If there's no arguments, @code{Just #f} is returned.
+
+This is not a shortcut operation like @code{or}.
 @end defun
 
 @defun try-merge maybe @dots{}
 @c MOD srfi-189
 [SRFI-189]
+If all arguments are @code{Nothing}, @code{Nothing} is returned.
+Otherwise, first @code{Just} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
