@@ -236,14 +236,58 @@
                 0
                 (cons range1 ranges))))
 
-(define range-any)
-(define range-every)
+(define (range-any pred range1 . ranges)
+  (if (null? ranges)
+    (let1 g (range->generator range1)
+      (let loop ([v (g)])
+        (cond [(eof-object? v) #f]
+              [(pred v)]
+              [else (loop (g))])))
+    (let1 gs (cons (range->generator range1)
+                   (map range->generator ranges))
+      (let loop ([vs (map (^g (g)) gs)])
+        (cond [(any eof-object? vs) #f]
+              [(apply pred vs)]
+              [else (loop (map (^g (g)) gs))])))))
 
-(define range-map)
-(define range-map->list)
-(define range-map->vector)
+(define (range-every pred range1 . ranges)
+  (if (null? ranges)
+    (let1 g (range->generator range1)
+      (let loop ([v (g)] [last #t])
+        (cond [(eof-object? v) last]
+              [(pred v) => (cut loop (g) <>)]
+              [else #f])))
+    (let1 gs (cons (range->generator range1)
+                   (map range->generator ranges))
+      (let loop ([vs (map (^g (g)) gs)] [last #t])
+        (cond [(any eof-object? vs) last]
+              [(apply pred vs) => (cut loop (map (^g (g)) gs) <>)]
+              [else #f])))))
 
-(define range-for-each)
+(define (range-map proc range1 . ranges)
+  (vector-range (apply range-map->vector range1 ranges)))
+
+(define (range-map->list proc range1 . ranges)
+  (if (null? ranges)
+    (range-fold-right (^[r v] (cons (proc v) r)) '() range1)
+    (apply range-fold-right (^[r . vs] (cons (apply proc vs) r)) '()
+           range1 ranges)))
+(define (range-map->vector proc range1 . ranges)
+  (if (null? ranges)
+    (let1 vec (make-vector (range-length range1))
+      (do-ec (: k (range-length range1))
+             (vector-set! vec k (proc (range-ref range1 k))))
+      (vector-range vec))
+    (let* ([ranges (cons range1 ranges)]
+           [vec (make-vector (apply min (map range-length ranges)))])
+      (do-ec (: k (range-length range1))
+             (vector-set! vec k (apply proc (map (cut range-ref <> k) ranges))))
+      (vector-range vec))))
+
+(define (range-for-each proc range1 . ranges)
+  (if (null? ranges)
+    (range-fold (^[_ v] (proc v)) #f range1)
+    (apply range-fold (^[_ . vs] (apply proc vs)) #f range1 ranges)))
 
 (define range-filter-map)
 (define range-filter-map->list)
