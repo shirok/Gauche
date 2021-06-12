@@ -38,7 +38,7 @@
   (define $skip-many1 $many1_)
   (define $followed-by $seq0)
   (define $count $repeat)
-  (define ($many-chars cset :optional min max)
+  (define ($many-chars cset :optional (min 0) (max +inf.0))
     ($many ($. cset) min max))
 
   (define ($alternate parse sep)
