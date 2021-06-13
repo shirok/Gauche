@@ -6554,25 +6554,50 @@ A non-repeated task is automatically removed from @var{timer} once executed.
 @defun make-timer-delta n unit
 [SRFI-120]
 @c MOD srfi-120
+@c EN
 A constructor for time-delta object.  It can be passed to @var{when}
 and @var{period} arguments of @code{timer-schedule!} and
 @code{timer-reschedule!}.
+@c JP
+時間差オブジェクトのコンストラクタです。時間差オブジェクトは@code{timer-schedule!}と
+@code{timer-reschedule!}の@var{when}と@var{period}引数に渡すことができます。
+@c COMMON
 
+@c EN
 In Gauche, a time-delta object is an instance of @code{<time>} with
-@code{time-duration} type.  The srfi doesn't specify the concrete
+@code{time-duration} type (@pxref{SRFI-19 Time types}).
+The srfi doesn't specify the concrete
 implementation, though, so portable code should use this procedure.
+@c JP
+Gaucheでは時間差オブジェクトは@code{time-duration}型の@code{<time>}オブジェクト
+のインスタンスです(@ref{SRFI-19 Time types}参照)。
+このSRFIでは時間差オブジェクトの具体的な実装は指定されていないので、
+ポータブルなコードではこの手続きを使って時間差オブジェクトを得るのが良いでしょう。
+@c COMMON
 
+@c EN
 @var{n} is an integer, and @code{unit} must be one of the following symbols:
 @code{h} (hour), @code{m} (minute), @code{s} (second),
 @code{ms} (millisecond), @code{us} (microsecond) or @code{ns} (nanosecond).
+@c JP
+@var{n}は整数、@code{unit}は以下のシンボルのいずれかです:
+@code{h} (時間)、@code{m} (分)、@code{s} (秒)、
+@code{ms} (ミリ秒)、@code{us} (マイクロ秒)、@code{ns} (ナノ秒)。
+@c COMMON
 @end defun
 
 @defun timer-delta? obj
 [SRFI-120]
 @c MOD srfi-120
+@c EN
 Returns @code{#t} iff @var{obj} is a time-delta object,
 which is, in Gauche, an instance of @code{<time>} object with
 @code{time-duration} type.
+@c JP
+@var{obj}が時間差オブジェクトなら@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheでは時間差オブジェクトは@code{time-duration}型の@code{<time>}オブジェクトの
+インスタンスです。
+@c COMMON
 @end defun
 
 
@@ -6583,11 +6608,32 @@ which is, in Gauche, an instance of @code{<time>} object with
 
 @deftp {Module} srfi-130
 @mdindex srfi-130
+@c EN
 This is an reduced version of @code{srfi-13} that supports cursors in
 addition to indexes. The consistency with R7RS and recent srfis are
 also considered.
+@c JP
+これは@code{srfi-13}の縮小バージョンで、インデックスの箇所に文字列カーソルも
+使えるようにしたものです。APIにはR7RSと最近のsrfiとの一貫性も考慮してあります。
+@c COMMON
 
+@c EN
+Gauche supports string cursors natively (@pxref{String cursors}), so
+all built-in and srfi-13 string procedures that takes string indexes
+can als otake string cursors as well.  You want to use this module
+explicitly, though, if you're writing a portable code.
+@c JP
+Gaucheは文字列カーソルを組み込みでサポートしており(@ref{String cursors}参照)、
+文字列インデックスを引数に取る組み込み手続きやsrfi-13手続きはインデックスの箇所に
+文字列カーソルを渡すことができます。ただ、ポータブルなコードを書いている場合は、
+このモジュールを明示的に使うのが良いでしょう。
+@c COMMON
+
+@c EN
 The following are built-in.  @xref{String cursors}, for the details.
+@c JP
+以下の手続きは組み込みです。@ref{String cursors}を参照してください。
+@c COMMON
 
 @example
 string-cursor?        string-cursor-start    string-cursor-end
@@ -6597,20 +6643,34 @@ string-cursor<=?      string-cursor>?        string-cursor>=?
 string-cursor-diff    string-cursor->index   string-index->cursor
 @end example
 
+@c EN
 The following procedures are simply aliases of the builtin version
 without the @code{/cursor} or @code{/cursors} suffix.
+@c JP
+以下の手続きは@code{/cursor}や@code{/cursors}サフィックスを除いた
+組み込み手続きの単なる別名になっています。
+@c COMMON
 
 @example
 string->list/cursors  string->vector/cursors string-copy/cursors
 string-ref/cursor     substring/cursors
 @end example
 
+@c EN
 The following procedures are defined in srfi-13.  @xref{String library},
 for the details.  Note: Some of those procedures in srfi-13 accept
-only indexes (e.g. @code{string-index}).  In srfi-130, both indexes
+only indexes.  In srfi-130, both indexes
 and cursors are accepted.  Our srfi-13 implementation shares the same
 procedure with srfi-130, so they accept both indexes and cursors but
 such code won't be portable as srfi-13.
+@c JP
+以下の手続きはsrfi-13で定義されています (@ref{String library}参照)。
+srfi-13でインデックスのみを受け取る手続きは、srfi-130で
+インデックスと文字列カーソル両方を受け取るように拡張されています。
+Gaucheではsrfi-13とsrfi-130の手続きは同じコードを利用していて、
+従って常にインデックスも文字列カーソルも使えますが、
+srfi-13としてインポートした手続きに文字列カーソルを渡すのはポータブルではありません。
+@c COMMON
 
 @example
 string-null?       string-any         string-every       string-tabulate
@@ -6623,6 +6683,7 @@ string-concatenate string-concatenate-reverse            string-count
 string-filter      string-reverse
 @end example
 
+@c EN
 The following procedures are also defined in srfi-13 and redefined in
 srfi-130. However, for operations going from left to right, the
 srfi-130 version returns a cursor instead of an index when found or
@@ -6632,34 +6693,61 @@ a @emph{successor} of the matching character when found, or
 @code{(string-cursor-begin)} of the input string when not found. In
 contrast, the srfi-13 version returns either an index when found or
 @code{#f} otherwise.
+@c JP
+以下の手続きはsrfi-13の同名の手続きと異なり、インデックスではなく文字列カーソルを返します。
+文字列を左から右にスキャンする手続きでは、述語を満たした文字を指すカーソル、または
+(述語を満たす文字が無かった場合は)文字列の終端の次を指すカーソルが、
+文字列を右から左にスキャンする手続きでは、述語を満たした文字の次の文字を指すカーソル、
+または(述語を満たす文字が無かった場合は)文字列の先頭を指すカーソルが変えされます。
+@c COMMON
 
 @example
-string-fold        string-fold-right   string-index
-string-index-right string-skip         string-skip-right
+string-index        string-index-right
+string-skip         string-skip-right
 @end example
 
+@c EN
 @code{string-contains} is defined the same as srfi-13. However the
 srfi-130 returns a cursor when a string is found, and @code{#f}
 otherwise. In contrast, the srfi-13 version returns an index or
 @code{#f}. @code{string-contains-right} is similar to
 @code{string-contains} except that the searching start from the end of
 the string.
+@c JP
+@code{string-contains}と@code{string-contains-right}もまた、
+srfi-13と同じように部分文字列を探しますが、見つかった場合にインデックスではなく
+文字列カーソルを返すところが異なります (見つからなかった場合は@code{#f}を返します)。
+@c COMMON
 
+@c EN
 @code{string-for-each-cursor} is similar to
 @code{string-for-each-index} from srfi-13 but @code{proc} will take
 the cursor instead of the index.
+@c JP
+@code{string-for-each-cursor}はsrfi-13の@code{string-for-each-index}と
+似ていますが、@var{proc}にはインデックスのかわりに文字列カーソルが渡されます。
+@c COMMON
 
+@c EN
 @code{xsubstring} and @code{string-delete} in srfi-13 are renamed
 @code{string-replicate} and @code{string-remove} respectively in
 srfi-130. Similar to srfi-152, the @var{to} argument is required in
 @code{string-replicate}.
+@c JP
+srfi-13の@code{xsubstring}と@code{string-delete}は
+srfi-130で@code{string-replicate}と@code{string-remove}に
+リネームされました。srfi-152と同様に、@code{string-replicate}の
+@var{to}引数は必須になっています。
+@c COMMON
 
-@code{string-split} is the same as one from srfi-152 or
-@code{gauche.stringutil} module.
-
+@c EN
+@code{string-split} is the same as defined in srfi-152,
+and provided as Gauche built-in (@pxref{String utilities}).
+@c JP
+@code{string-split}はsrfi-152と同じで、Gaucheでは組み込みです
+(@ref{String utilities}参照)。
+@c COMMON
 @end deftp
-
-
 
 @c ----------------------------------------------------------------------
 @node String library (reduced), First-class dynamic extents, Cursor-based string library, Library modules - SRFIs
