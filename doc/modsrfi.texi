@@ -381,39 +381,38 @@ Gauche はそれぞれの @var{requirement} をひとつずつチェックし、
 @deftp {Module} srfi-13
 @mdindex srfi-13
 @c EN
-Defines a large set of string-related functions.
-In Gauche, those functions are splitted to number of files
-and the form @code{(use srfi-13)} merely sets up autoloading of
-those files.  So it is not likely to slow down the script startup.
+Defines a large set of string-related procedures.
 @c JP
-文字列に関連する関数の大きなセットを定義しています。
-Gaucheでは、それらの関数はいくつかのファイルに分割されており、
-@code{(use srfi-13)}というフォームは単にそれらのファイルの
-オートロードのセットアップをするだけです。
-したがって、スクリプトのスタートアップを遅くするようなことは
-ありません。
+文字列に関連する手続きの大きなセットを定義しています。
 @c COMMON
+
 @c EN
-See SRFI-13 (@uref{https://srfi.schemers.org/srfi-13/srfi-13.html})
-for the detailed specification and discussion of design issues.
-This manual serves as a reference of function API.
-Some SRFI-13 functions are Gauche built-in and not listed here.
+It was one of the earliest popular srfis, but some of
+the procedures were turned out not to align well with recent Scheme
+developments.  @xref{String library (reduced)},
+and @ref{Cursor-based string library} adapts this srfis to more
+``modern'' form.  Consider to use them for newer development.
 @c JP
-詳細な仕様とデザインに関する議論については、SRFI-13
-(@uref{https://srfi.schemers.org/srfi-13/srfi-13.html})
-を参照して下さい。
-このマニュアルは、関数のAPIのリファレンスとして提供されます。
-いくつかのSRFI-13の関数は、Gaucheのビルトインになっており、
-ここにはリストされていないものもあります。
+これは広く使われた初期のsrfiのひとつですが、いくつかの手続きは
+その後のSchemeの発展と相性が良くないということがわかってきました。
+@ref{String library (reduced)}や@ref{Cursor-based string library}では
+このsrfiをより「現代的」なものにしようとしています。
+新規に開発する場合はそれらのsrfiを見てみると良いでしょう。
 @c COMMON
+
 @c EN
-Note: SRFI-13 documents suggests the name of the module that
-implements these functions to be ``string-lib'' and ``string-lib-internals''.
-Gauche uses the name ``srfi-13'' for consistency.
+Many procedures in this srfi specifies the position of a character
+in a string with an integer index.  Although it's portable, it is not
+optimal for multibyte strings.  Gauche natively supports string cursors,
+which is more efficient than integer indexes (@pxref{String cursors}).
+All srfi-13 procedures
+that accepts integer indexes can also accept string cursors.
 @c JP
-注意: SRFI-13のドキュメントは、これらの関数を実装するモジュールの
-名前を``string-lib''と``string-lib-internals''とすることを推奨しています。
-Gaucheでは、一貫性のために``srfi-13''と名付けています。
+このsrfiの多くの手続きは、文字列中の文字の位置を整数のインデックスで表します。
+これはポータブルですが、マルチバイト文字列では効率が悪いです。
+Gaucheは組み込みでより効率のよい文字列カーソルをサポートしており(@ref{String cursors})、
+srfi-13の手続きは全て文字列インデックスを受け取るところに文字列カーソルも
+渡せるようになっています。
 @c COMMON
 @end deftp
 
