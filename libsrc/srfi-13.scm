@@ -206,20 +206,21 @@
                      (c/s/p #[\s])
                      (start 0)
                      (end (string-cursor-end s)))
-  (substring s (car (%string-skip s c/s/p start end)) end))
+  (substring s (values-ref (%string-skip s c/s/p start end) 0) end))
 
 (define (string-trim-right s :optional
                            (c/s/p #[\s])
                            (start 0)
                            (end (string-cursor-end s)))
-  (substring s start (car (%string-skip-right s c/s/p start end))))
+  (substring s start (values-ref (%string-skip-right s c/s/p start end) 0)))
 
 (define (string-trim-both s :optional
                           (c/s/p #[\s])
                           (start 0)
                           (end (string-cursor-end s)))
-  (let ([new-start (car (%string-skip s c/s/p start end))])
-    (substring s new-start (car (%string-skip-right s c/s/p new-start end)))))
+  (let1 new-start (values-ref (%string-skip s c/s/p start end) 0)
+    (substring s new-start
+               (values-ref (%string-skip-right s c/s/p new-start end) 0))))
 
 ;;;
 ;;; Comparison functions
@@ -458,7 +459,8 @@
 ;;; Search
 ;;;
 
-;; these % variants return a pair of result and end cursor
+;; These % variants return two values, the result as cursor, and the
+;; cursor indicates 'not found'.
 (define (%string-index s c/s/p
                        :optional
                        (start 0)
@@ -469,8 +471,8 @@
     (let loop ([cur (string-index->cursor s start)])
       (if (or (string-cursor=? cur end)
               (pred c/s/p (string-ref s cur)))
-          (cons cur end)
-          (loop (string-cursor-next s cur))))))
+        (values cur end)
+        (loop (string-cursor-next s cur))))))
 
 (define (%string-index-right s c/s/p
                              :optional
@@ -481,11 +483,11 @@
         [start (string-index->cursor s start)])
     (let loop ([cur (string-index->cursor s end)])
       (if (string-cursor>? cur start)
-          (let ([prev (string-cursor-prev s cur)])
-            (if (pred c/s/p (string-ref s prev))
-                (cons cur start)
-                (loop prev)))
-          (cons cur start)))))
+        (let ([prev (string-cursor-prev s cur)])
+          (if (pred c/s/p (string-ref s prev))
+            (values cur start)
+            (loop prev)))
+        (values cur start)))))
 
 (define (%string-skip s c/s/p
                       :optional
@@ -497,8 +499,8 @@
     (let loop ([cur (string-index->cursor s start)])
       (if (and (string-cursor<? cur end)
                (pred c/s/p (string-ref s cur)))
-          (loop (string-cursor-next s cur))
-          (cons cur end)))))
+        (loop (string-cursor-next s cur))
+        (values cur end)))))
 
 (define (%string-skip-right s c/s/p
                             :optional
@@ -509,43 +511,43 @@
         [start (string-index->cursor s start)])
     (let loop ([cur (string-index->cursor s end)])
       (if (string-cursor>? cur start)
-          (let ([prev (string-cursor-prev s cur)])
-            (if (pred c/s/p (string-ref s prev))
-                (loop prev)
-                (cons cur start)))
-          (cons cur start)))))
+        (let ([prev (string-cursor-prev s cur)])
+          (if (pred c/s/p (string-ref s prev))
+            (loop prev)
+            (values cur start)))
+        (values cur start)))))
 
 (define (string-index s c/s/p . args)
-  (let ([result (apply %string-index s c/s/p args)])
-    (if (string-cursor=? (car result) (cdr result))
-        #f
-        (string-cursor->index s (car result)))))
+  (receive (location limit) (apply %string-index s c/s/p args)
+    (if (string-cursor=? location limit)
+      #f
+      (string-cursor->index s location))))
 
 (define (string-index-right s c/s/p . args)
-  (let ([result (apply %string-index-right s c/s/p args)])
-    (if (string-cursor=? (car result) (cdr result))
-        #f
-        (- (string-cursor->index s (car result)) 1))))
+  (receive (location limit) (apply %string-index-right s c/s/p args)
+    (if (string-cursor=? location limit)
+      #f
+      (- (string-cursor->index s location) 1))))
 
 (define (string-skip s c/s/p . args)
-  (let ([result (apply %string-skip s c/s/p args)])
-    (if (string-cursor=? (car result) (cdr result))
-        #f
-        (string-cursor->index s (car result)))))
+  (receive (location limit) (apply %string-skip s c/s/p args)
+    (if (string-cursor=? location limit)
+      #f
+      (string-cursor->index s location))))
 
 (define (string-skip-right s c/s/p . args)
-  (let ([result (apply %string-skip-right s c/s/p args)])
-    (if (string-cursor=? (car result) (cdr result))
-        #f
-        (- (string-cursor->index s (car result)) 1))))
+  (receive (location limit) (apply %string-skip-right s c/s/p args)
+    (if (string-cursor=? location limit)
+      #f
+      (- (string-cursor->index s location) 1))))
 
 (define (string-count s c/s/p
                       :optional
                       (start 0)
                       (end (string-cursor-end s)))
   (assume-type s <string>)
-  (let ((pred (%get-char-pred c/s/p))
-        (end (string-index->cursor s end)))
+  (let ([pred (%get-char-pred c/s/p)]
+        [end (string-index->cursor s end)])
     (let loop ((cur (string-index->cursor s start))
                (count 0))
       (if (string-cursor=? cur end)
@@ -558,18 +560,18 @@
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ((str1 (%maybe-substring s1 start1 end1))
-         (str2 (%maybe-substring s2 start2 end2))
-         (res  (string-scan str1 str2)))
+  (let* ([str1 (%maybe-substring s1 start1 end1)]
+         [str2 (%maybe-substring s2 start2 end2)]
+         [res  (string-scan str1 str2)])
     (and res (+ start1 res))))
 
 ;; not tuned (maybe to be moved to native)
 (define (string-contains-ci s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ((str1 (string-upcase (%maybe-substring s1 start1 end1)))
-         (str2 (string-upcase (%maybe-substring s2 start2 end2)))
-         (res  (string-scan str1 str2)))
+  (let* ([str1 (string-upcase (%maybe-substring s1 start1 end1))]
+         [str2 (string-upcase (%maybe-substring s2 start2 end2))]
+         [res  (string-scan str1 str2)])
     (and res (+ start1 res))))
 
 ;;;

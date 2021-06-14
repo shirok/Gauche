@@ -84,16 +84,16 @@
 (define substring/cursors substring)
 
 (define (string-index . args)
-  (car (apply (with-module srfi-13 %string-index) args)))
+  (values-ref (apply (with-module srfi-13 %string-index) args) 0))
 
 (define (string-index-right . args)
-  (car (apply (with-module srfi-13 %string-index-right) args)))
+  (values-ref (apply (with-module srfi-13 %string-index-right) args) 0))
 
 (define (string-skip . args)
-  (car (apply (with-module srfi-13 %string-skip) args)))
+  (values-ref (apply (with-module srfi-13 %string-skip) args) 0))
 
 (define (string-skip-right . args)
-  (car (apply (with-module srfi-13 %string-skip-right) args)))
+  (values-ref (apply (with-module srfi-13 %string-skip-right) args) 0))
 
 (define (string-for-each-cursor proc s :optional
                                 (start 0)
@@ -108,9 +108,9 @@
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ((str1 (%maybe-substring s1 start1 end1))
-         (str2 (%maybe-substring s2 start2 end2))
-         (res  (string-scan str1 str2 'cursor)))
+  (let* ([str1 (%maybe-substring s1 start1 end1)]
+         [str2 (%maybe-substring s2 start2 end2)]
+         [res  (string-scan str1 str2 'cursor)])
     (and res
          (string-cursor-forward s1
                                 (string-index->cursor s1 start1)
@@ -119,9 +119,9 @@
 (define (string-contains-right s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ((str1 (%maybe-substring s1 start1 end1))
-         (str2 (%maybe-substring s2 start2 end2))
-         (res  (string-scan-right str1 str2 'cursor)))
+  (let* ([str1 (%maybe-substring s1 start1 end1)]
+         [str2 (%maybe-substring s2 start2 end2)]
+         [res  (string-scan-right str1 str2 'cursor)])
     (and res
          (string-cursor-forward s1
                                 (string-index->cursor s1 start1)
