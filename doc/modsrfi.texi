@@ -6683,70 +6683,107 @@ string-filter      string-reverse
 @end example
 
 @c EN
-The following procedures are also defined in srfi-13 and redefined in
-srfi-130. However, for operations going from left to right, the
-srfi-130 version returns a cursor instead of an index when found or
-@code{(string-cursor-end)} of the input string when not found.  For
-operations going from right to left, it returns a cursor representing
-a @emph{successor} of the matching character when found, or
-@code{(string-cursor-begin)} of the input string when not found. In
-contrast, the srfi-13 version returns either an index when found or
-@code{#f} otherwise.
+The following procedures are the same as srfi-152, except that
+the arguments that takes integer indexes can also accept string cursors
+(@pxref{String library (reduced)}):
+@c JP
+以下の手続きは、整数インデックスを取る引数が文字列カーソルも取れるという点を除いて、
+srfi-152にあるものと同じです (@ref{String library (reduced)}参照):
+@c COMMON
+
+@example
+string-replicate   string-remove      string-split
+@end example
+
+@c EN
+The following procedures are also defined in srfi-13, but srfi-130 redefines
+them to return a string cursor instead of an integer index.  They are
+described below.
 @c JP
 以下の手続きはsrfi-13の同名の手続きと異なり、インデックスではなく文字列カーソルを返します。
-文字列を左から右にスキャンする手続きでは、述語を満たした文字を指すカーソル、または
-(述語を満たす文字が無かった場合は)文字列の終端の次を指すカーソルが、
-文字列を右から左にスキャンする手続きでは、述語を満たした文字の次の文字を指すカーソル、
-または(述語を満たす文字が無かった場合は)文字列の先頭を指すカーソルが変えされます。
+以下で詳しく説明します。
 @c COMMON
 
 @example
 string-index        string-index-right
 string-skip         string-skip-right
+string-contains     string-contains-right
 @end example
-
-@c EN
-@code{string-contains} is defined the same as srfi-13. However the
-srfi-130 returns a cursor when a string is found, and @code{#f}
-otherwise. In contrast, the srfi-13 version returns an index or
-@code{#f}. @code{string-contains-right} is similar to
-@code{string-contains} except that the searching start from the end of
-the string.
-@c JP
-@code{string-contains}と@code{string-contains-right}もまた、
-srfi-13と同じように部分文字列を探しますが、見つかった場合にインデックスではなく
-文字列カーソルを返すところが異なります (見つからなかった場合は@code{#f}を返します)。
-@c COMMON
-
-@c EN
-@code{string-for-each-cursor} is similar to
-@code{string-for-each-index} from srfi-13 but @code{proc} will take
-the cursor instead of the index.
-@c JP
-@code{string-for-each-cursor}はsrfi-13の@code{string-for-each-index}と
-似ていますが、@var{proc}にはインデックスのかわりに文字列カーソルが渡されます。
-@c COMMON
-
-@c EN
-@code{xsubstring} and @code{string-delete} in srfi-13 are renamed
-@code{string-replicate} and @code{string-remove} respectively in
-srfi-130. Similar to srfi-152, the @var{to} argument is required in
-@code{string-replicate}.
-@c JP
-srfi-13の@code{xsubstring}と@code{string-delete}は
-srfi-130で@code{string-replicate}と@code{string-remove}に
-リネームされました。srfi-152と同様に、@code{string-replicate}の
-@var{to}引数は必須になっています。
-@c COMMON
-
-@c EN
-@code{string-split} is the same as defined in srfi-152,
-and provided as Gauche built-in (@pxref{String utilities}).
-@c JP
-@code{string-split}はsrfi-152と同じで、Gaucheでは組み込みです
-(@ref{String utilities}参照)。
-@c COMMON
 @end deftp
+
+@defun string-index string pred :optional start end
+@defunx string-index-right string pred :optional start end
+@defunx string-skip string pred :optional start end
+@defunx string-skip-right string pred :optional start end
+[SRFI-130]
+@c MOD srfi-130
+Find the position of a character that satisfies @var{pred}
+(@code{string-index}/@code{string-index-right}), or
+does not satisfy @var{pred}
+(@code{string-skip}/@code{string-skip-right}), in a @var{string}.
+
+While srfi-13's procedures of the same names returns integer index,
+these returns a string cursor instead.
+
+They always return a string cursor.
+The returned cursor from @code{string-index}/@code{string-skip}
+points the leftmost character that satisfies/does not satsify @var{pred},
+while the returned cursor from
+@code{string-index-right} points the next (right) character of the rightmost
+one that satisfies/does not satisfy @var{pred}.
+If there's no character that satisfies/does not satisfy @var{pred},
+@code{string-index} and @code{string-skip} returns a cursor at the end
+of the string, while @code{string-index-right} and @code{string-skip-right}
+returns a cursor at the beginning of the string.
+
+(This is easier to understand if you think the cursor is between characters;
+if we scan a string from left to right, the cursor looks at the
+character on its right; if we scan from right to left, the cursor looks at
+the character on its left.)
+
+The optional @var{start}/@var{end} can be string cursors or integer
+indexes to limit the region of @var{string} to search.
+
+@example
+(define *s* "abc def ghi")
+
+(string-cursor->index *s* (string-index *s* char-whitespace?))
+  @result{} 3
+
+(string-cursor->index *s* (string-index *s* char-whitespace? 4))
+  @result{} 7
+
+(string-cursor->index *s* (string-index-right *s* char-whitespace?))
+  @result{} 8
+
+(string-cursor->index *s* (string-index-right *s* char-whitespace? 0 7))
+  @result{} 4
+@end example
+@end defun
+
+@defun string-contains haystack needle :optional start1 end1 start2 end2
+@defunx string-contains-right haystack needle :optional start1 end1 start2 end2
+[SRFI-130]
+@c MOD srfi-130
+Search for a substring @var{needle} in a string @var{haystack}.
+The substring is searched from left to right (@code{string-contains})
+or right to left (@code{string-contains-right}).
+
+While srfi-13's procedures of the same names returns an integer index
+when a substring is found, these procedures returns a string curosr
+of @var{haystack}.
+
+If @var{haystack} doesn't countain @var{needle}, they return @code{#f}.
+@end defun
+
+@defun string-for-each-cursor proc string :optional start end
+[SRFI-130]
+@c MOD srfi-130
+Calls @var{proc} with each cursor of @var{string}, from left to right,
+excluding the post-end cursor.  This is the cursor version of
+@code{string-for-each-index} in srfi-13 (@pxref{SRFI-13 String mapping}).
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node String library (reduced), First-class dynamic extents, Cursor-based string library, Library modules - SRFIs
