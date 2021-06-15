@@ -217,7 +217,13 @@
       :range range
       :offset start)))
 
-(define range-segment)
+(define (range-segment range length)
+  (let* ([total-length (range-length range)]
+         [n (floor-quotient total-length length)])
+    (map (^i (subrange range
+                       (* i length)
+                       (min (* (+ i 1) length) total-length)))
+         (liota n))))
 
 (define (range-take range index)
   (subrange range 0 index))
@@ -289,13 +295,31 @@
     (range-fold (^[_ v] (proc v)) #f range1)
     (apply range-fold (^[_ . vs] (apply proc vs)) #f range1 ranges)))
 
-(define range-filter-map)
-(define range-filter-map->list)
+(define (range-filter-map proc range1 . ranges)
+  ($ vector-range $ list->vector
+     $ apply range-filter-map->list proc range1 ranges))
 
-(define range-filter)
-(define range-filter->list)
-(define range-remove)
-(define range-remove->list)
+(define (range-filter-map->list proc range1 . ranges)
+  (if (null? ranges)
+    (range-fold-right (^[r e] (if-let1 v (proc e)
+                                (cons v r)
+                                r))
+                      '() range1)
+    (apply range-fold-right
+           (^[r . es] (if-let1 v (apply proc es)
+                        (cons v r)
+                        r))
+           '() range1 ranges)))
+
+(define (range-filter pred range)
+  ($ vector-range $ list->vector $ range-filter->list pred range))
+(define (range-filter->list pred range)
+  (range-fold-right (^[r e] (if (pred e) (cons e r) r)) '() range))
+
+(define (range-remove pred range)
+  ($ vector-range $ list->vector $ range-remove->list pred range))
+(define (range-remove->list pred range)
+  (range-fold-right (^[r e] (if (pred e) r (cons e r))) '() range))
 
 ;; kons is invoked with the same order of vector-fold (state first)
 (define (range-fold kons knil range1 . ranges)
@@ -330,8 +354,33 @@
 ;;; Searching
 ;;;
 
-(define range-index)
-(define range-index-right)
+(define (range-index pred range1 . ranges)
+  (if (null? ranges)
+    (let1 len (range-length range1)
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(pred (range-ref range1 i)) i]
+              [else (loop (+ i 1))])))
+    (let1 len (apply min (range-length range1) (map range-length ranges))
+      (let loop ([i 0])
+        (cond [(= i len) #f]
+              [(apply pred (range-ref range1 i)
+                      (map (cut range-ref <> i) ranges)) i]
+              [else (loop (+ i 1))])))))
+
+(define (range-index-right pred range1 . ranges)
+  (if (null? ranges)
+    (let1 len (range-length range1)
+      (let loop ([i (- len 1)])
+        (cond [(= i 0) #f]
+              [(pred (range-ref range1 i)) i]
+              [else (loop (0 i 1))])))
+    (let1 len (apply min (range-length range1) (map range-length ranges))
+      (let loop ([i (- len 1)])
+        (cond [(= i 0) #f]
+              [(apply pred (range-ref range1 i)
+                      (map (cut range-ref <> i) ranges)) i]
+              [else (loop (- i 1))])))))
 
 (define range-take-while)
 (define range-take-while-right)
