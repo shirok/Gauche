@@ -3361,6 +3361,8 @@ static void init_class(ScmClass *klass,
     klass->name = SCM_INTERN(name);
     initialize_builtin_cpl(klass, supers);
 
+    klass->modules = SCM_LIST1(SCM_OBJ(mod)); /* defined module */
+
     /* if the class is a metaclass, ensure proper allocate  */
     ensure_metaclass_allocate(klass);
 
