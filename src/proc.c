@@ -335,6 +335,8 @@ ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given, int ngiven, int foldlen)
  * in 1.0.
  */
 
+#if GAUCHE_API_VERSION <= 97
+
 ScmObj Scm_ForEach1(ScmObj proc, ScmObj args)
 {
     return Scm_ForEach(proc, args, SCM_NIL);
@@ -358,6 +360,8 @@ ScmObj Scm_Map(ScmObj proc, ScmObj arg1, ScmObj args)
     SCM_BIND_PROC(stub, "map", Scm_SchemeModule());
     return Scm_VMApply(stub, Scm_Cons(proc, Scm_Cons(arg1, args)));
 }
+
+#endif /*GAUCHE_API_VERSION <= 97*/
 
 /*=================================================================
  * Generic setter
