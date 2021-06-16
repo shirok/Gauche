@@ -1,3 +1,8 @@
+2021-06-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (init_class): Make bindings of statically initialized
+	  classes inlinable, to use type information at compile-time.
+
 2021-06-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-221.scm: Support srfi-221

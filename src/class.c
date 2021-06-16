@@ -3369,7 +3369,8 @@ static void init_class(ScmClass *klass,
     SCM_INTERNAL_COND_INIT(klass->cv);
 
     /* insert binding */
-    Scm_Define(mod, SCM_SYMBOL(klass->name), SCM_OBJ(klass));
+    Scm_MakeBinding(mod, SCM_SYMBOL(klass->name), SCM_OBJ(klass),
+                    SCM_BINDING_INLINABLE);
 
     /* initialize direct slots */
     if (specs) {
