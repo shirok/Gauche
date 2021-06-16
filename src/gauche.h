@@ -930,6 +930,8 @@ SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
 SCM_EXTERN ScmClass *Scm_BaseClassOf(ScmClass *klass);
 
 SCM_EXTERN int    Scm_TypeConstructorP(ScmObj obj);
+/* This is called from init routie of precompiled code */
+SCM_EXTERN ScmObj Scm_ConstructType(ScmObj ctor, ScmObj args);
 
 SCM_EXTERN void   Scm_ClassMalleableSet(ScmClass *klass, int flag);
 

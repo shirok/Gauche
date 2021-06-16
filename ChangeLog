@@ -1,5 +1,10 @@
 2021-06-15  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/literal.scm: Allow class object to appear in the
+	  literals of precompiled code.  The class object is looked up based
+	  on its name and defined-module.  The descriptive type instance
+	  is reconstructed in the initialization code.
+
 	* src/compile-t.scm: Start adding compile-time type handling.
 
 	* src/class.c (init_class): Make bindings of statically initialized

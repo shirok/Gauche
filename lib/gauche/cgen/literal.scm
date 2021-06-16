@@ -852,6 +852,57 @@
             (if (~ self'case-fold?) "SCM_REGEXP_CASE_FOLD" "0")))
   (static (self) #f))
 
+;; class --------------------------------------------------------
+
+;; We can only dump classes that has globally bound name.
+(define-cgen-literal <cgen-scheme-class> <class>
+  ((defined-module :init-keyword :defined-module)
+   (name :init-keyword :name))
+  (make (value)
+    (when (null? (~ value'defined-modules))
+      (error "Can't precompile a class that doesn't have global binding:"
+             value))
+    (assume (module? (car (~ value'defined-modules))))
+    (assume (symbol? (class-name value)))
+    (make <cgen-scheme-class> :value value
+          :c-name (cgen-allocate-static-datum)
+          :name (cgen-literal (class-name value))
+          :defined-module (cgen-literal (car (~ value'defined-modules)))))
+  (init (self)
+    (let ([m (gensym "mod")] [n (gensym "name")])
+      (format #t "{\n  ScmObj ~a = SCM_OBJ(~a); ScmObj ~a = ~a;\n"
+              m (cgen-c-name (~ self'defined-module))
+              n (cgen-c-name (~ self'name)))
+      (format #t "  SCM_ASSERT(SCM_MODULEP(~a));\n" m)
+      (format #t "  SCM_ASSERT(SCM_SYMBOLP(~a));\n" n)
+      (format #t "  ~a = Scm_GlobalVariableRef(SCM_MODULE(~a), SCM_SYMBOL(~a),0);\n"
+              (cgen-c-name self) m n)
+      (format #t "}\n")))
+  (static (self) #f))
+
+;; descriptive type ---------------------------------------------
+
+;; TRANSIENT: This cond-expand is to compile 0.9.11 with 0.9.10.
+;; Remove it after 0.9.11 release.
+(cond-expand
+ [gauche-0.9.10]
+ [else
+  (define-cgen-literal <cgen-scheme-type> <type-instance-meta>
+    ((ctor :init-keyword :ctor)
+     (args :init-keyword :args))
+    (make (value)
+      (make <cgen-scheme-type> :value value
+            :c-name (cgen-allocate-static-datum)
+            :ctor (cgen-literal (class-of value))
+            :args ($ cgen-literal
+                     $ (with-module gauche.internal deconstruct-type) value)))
+    (init (self)
+          (format #t "  ~a = Scm_ConstructType(~a, ~a);"
+                  (cgen-c-name self)
+                  (cgen-c-name (~ self'ctor))
+                  (cgen-c-name (~ self'args))))
+    (static (self) #f))])
+
 ;;---------------------------------------------------------------
 ;; Inferring literal handlers.
 ;;  The code generator does not know how to generate literals for

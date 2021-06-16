@@ -135,8 +135,19 @@
 (define-method allocate-instance ((t <type-instance-meta>) initargs)
   (error "Abstract type instance cannot instantiate a concrete object:" t))
 
+;; Internal API, required to precompile descriptive type constant
 (define-method deconstruct-type ((t <type-instance-meta>))
   ((~ (class-of t)'deconstructor) t))
+
+;; This is called from initialization of precompiled code to recove
+;; descripitve type instance.
+(inline-stub
+ (define-cfn Scm_ConstructType (ctor args)
+   (unless (Scm_TypeConstructorP ctor)
+     (SCM_TYPE_ERROR ctor "<type-constructor-meta>"))
+   (return (Scm_ApplyRec (-> (cast ScmTypeConstructor* ctor) constructor)
+                         args)))
+ )
 
 ;; Utilities to create reasonable name
 (define (join-class-names classes)
