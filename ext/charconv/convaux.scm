@@ -143,12 +143,12 @@
 
 ;; returns appropriate input port and size
 (define (%ces-input input)
+  (assume-type input (</> <string> <u8vector>))
   (cond [(string? input)
          (values (open-input-string input :private? #t) (string-length input))]
         ;; avoid using u8vector? so that we don't depend on gauche.uvector
         [(is-a? input <u8vector>)
-         (values (open-input-uvector input) (uvector-length input))]
-        [else (error "string or u8vector required, but got:" input)]))
+         (values (open-input-uvector input) (uvector-length input))]))
 
 ;; returns appropriate output port and get-output-*
 (define (%ces-output class)
