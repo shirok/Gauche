@@ -1,5 +1,7 @@
 2021-06-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-t.scm: Start adding compile-time type handling.
+
 	* src/class.c (init_class): Make bindings of statically initialized
 	  classes inlinable, to use type information at compile-time.
 

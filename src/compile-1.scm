@@ -86,9 +86,11 @@
           [(inline) (or (pass1/expand-inliner program id gval cenv)
                         (pass1/call program ($gref id) (cdr program) cenv))]
           [(type-ctor)
-           ;; we'll eventually construct the type here, but for now
-           ;; we put it off to runtime.
-           (pass1/call program ($gref id) (cdr program) cenv)])
+           ;; Type constructor have to be called during compilation,
+           ;; and the resulting node becomes ($const <type-instance>).
+           (type/construct gval
+                           (pass1/call program ($gref id) (cdr program) cenv)
+                           cenv)])
         (pass1/call program ($gref id) (cdr program) cenv))))
 
   ;; main body of pass1

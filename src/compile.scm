@@ -1497,6 +1497,7 @@
 (include "compile-4")
 (include "compile-5")
 (include "compile-i")
+(include "compile-t")
 
 ;;============================================================
 ;; Macro support basis
