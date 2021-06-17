@@ -619,6 +619,28 @@
                       [else (= x y)]))]
           [else (equal? x y)]))
 
+  ;; On Windows we can't remove dll file that's being used in the active
+  ;; process, so we spawn a child gosh and load it.
+  (define-syntax dynload-and-eval
+    (syntax-rules ()
+      [(_ libname expr)
+       (cond-expand
+        [gauche.os.windows
+         (with-output-to-file "test.o/t.scm"
+           (^[]
+             (write '(add-load-path "."))
+             (write '(load libname))
+             (write '(write 'expr))
+             (write '(exit 0))))
+         (let* ([p (run-process '("../../src/gosh" "-ftest" "./t.scm")
+                                :output :pipe :directory "test.o")]
+                [result (read (process-output p))])
+           (process-wait p)
+           result)]
+        [else
+         (load libname :paths '("./test.o"))
+         expr])]))
+
   (do-process `("../../src/gosh" "-ftest"
                 ,#"-I~|*top-srcdir*|/test/test-precomp"
                 ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
@@ -655,52 +677,34 @@
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
          (file->string-list "test.o/foo.sci"))
 
-  (test* "compile and dynload"
+  (test* "compile" #t
+         (do-process
+          `("../../src/gosh" "-ftest"
+            ,(build-path *top-srcdir* "src/gauche-package.in")
+            "compile"
+            ,#"--cppflags=-I~(fix-path (build-path *top-srcdir* \"src\")) \
+                                        -I~(fix-path (build-path *top-srcdir* \"gc/include\")) \
+                                        -I~(fix-path (build-path *top-builddir* \"src\")) \
+                                        -I~(fix-path (build-path *top-builddir* \"gc/include\"))"
+            ,#"--ldflags=-L~(fix-path (build-path *top-srcdir* \"src\")) \
+                                       -L~(fix-path (build-path *top-builddir* \"src\"))"
+            "foo"
+            "foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")
+
+          :directory "test.o"))
+  (test* "dynload and literals 1"
          (list (include "test-precomp/literals.scm")
                'begin1
                'begin2
                'include1
                'include2)
-         (begin
-           (do-process! `("../../src/gosh" "-ftest"
-                          ,(build-path *top-srcdir* "src/gauche-package.in")
-                          "compile"
-                          ,#"--cppflags=-I~(fix-path (build-path *top-srcdir* \"src\")) \
-                                        -I~(fix-path (build-path *top-srcdir* \"gc/include\")) \
-                                        -I~(fix-path (build-path *top-builddir* \"src\")) \
-                                        -I~(fix-path (build-path *top-builddir* \"gc/include\"))"
-                          ,#"--ldflags=-L~(fix-path (build-path *top-srcdir* \"src\")) \
-                                       -L~(fix-path (build-path *top-builddir* \"src\"))"
-                          "foo"
-                          "foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")
-                        :directory "test.o")
-           (cond-expand
-            [gauche.os.windows
-             ;; On Windows, foo.dll can't be removed if process using it exists,
-             ;; so we run another gosh in subprocess.
-             (with-output-to-file "test.o/t.scm"
-               (^[]
-                 (write '(add-load-path "."))
-                 (write '(load "foo"))
-                 (write '(write
-                          `(,((global-variable-ref 'foo 'foo-literals))
-                            ,((global-variable-ref 'foo 'foo-begin1))
-                            ,((global-variable-ref 'foo 'foo-begin2))
-                            ,((global-variable-ref 'foo 'foo-include1))
-                            ,((global-variable-ref 'foo 'foo-include2)))))
-                 (write '(exit 0))))
-             (let* ([p (run-process '("../../src/gosh" "-ftest" "./t.scm")
-                                    :output :pipe :directory "test.o")]
-                    [result (read (process-output p))])
-               (process-wait p)
-               result)]
-            [else
-             (load "foo" :paths '("./test.o"))
-             (list ((global-variable-ref 'foo 'foo-literals))
-                   ((global-variable-ref 'foo 'foo-begin1))
-                   ((global-variable-ref 'foo 'foo-begin2))
-                   ((global-variable-ref 'foo 'foo-include1))
-                   ((global-variable-ref 'foo 'foo-include2)))]))
+         (dynload-and-eval
+          "foo"
+          (list ((global-variable-ref 'foo 'foo-literals))
+                ((global-variable-ref 'foo 'foo-begin1))
+                ((global-variable-ref 'foo 'foo-begin2))
+                ((global-variable-ref 'foo 'foo-include1))
+                ((global-variable-ref 'foo 'foo-include2))))
          literal=?)
   )
 
