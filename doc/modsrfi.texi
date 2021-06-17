@@ -10845,8 +10845,13 @@ union
 
 @deftp {Module} srfi-219
 @mdindex srfi-219
+@c EN
 This srfi enhances @code{define} form to allow defining
 function-returning-function compactly.  It works as follows:
+@c JP
+このsrfiは、関数を返す関数を簡単に定義できるように@code{define}を拡張します。
+次のように動作します。
+@c COMMON
 
 @example
 (define ((f a b) c d) ...)
@@ -10859,15 +10864,30 @@ function-returning-function compactly.  It works as follows:
  @equiv{} (define f (lambda (a) (lambda (b) (lambda (c) ...))))
 @end example
 
+@c EN
 This feature has been traditionally supported in many
 implementations, including Gauche.  So you can use this feature
 without using @code{srfi-193}.   This module is provided for
 the portable code.
+@c JP
+この機能は伝統的に多くの実装でサポートされており、Gaucheも例外ではありません。
+従って@code{srfi-193}を使わないでもこの機能を使うことはできます。
+ポータブルなコードを書く必要がある場合にこのモジュールを使うと良いでしょう。
+@c COMMON
 
+@c EN
 Note: Gauche has two @code{define}s: A ``vanilla'' @code{define} that
 works as defined in R7RS, and an ``extended'' @code{define} that
 supports extended lambda arguments.  If you import @code{srfi-193},
-it imports the former.
+it imports the former, hence extended lambda arguments are not available.
+It's what you need for the portable code.
+@c JP
+Gaucheはふたつの@code{define}を持っています。
+R7RSで定義されているとおりの「素の」@code{define}と、
+拡張ラムダ引数をサポートしている「拡張」@code{define}です。
+@code{srfi-193}をインポートすると前者の@code{define}がインポートされます。
+ポータブルなコードに必要なのは前者だからです。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
