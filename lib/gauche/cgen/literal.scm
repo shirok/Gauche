@@ -363,18 +363,16 @@
 ;; literal value management -----------------------------------
 
 ;; We want to share the same literals.  The criteria of this 'same' is
-;; a bit complicated, and we can't use a hashtable for it (unless we have
-;; a hashtable with completely customizable hash fn and cmp fn, which Gauche
-;; doesn't have yet).  So we roll our own table, at least for the time being.
+;; a bit complicated, and we need a customized comparator for thta.
 ;;
 ;; NOTE: We don't share literals when they have different cpp-conditions,
 ;; even if they are the same otherwise.  Theoretically we can share if one
 ;; has cpp-condition and the other doesn't, but tracking those dependencies
 ;; is just a headache.  We just assume such sharing rarely occurs.
+;; This, the key of the hashtable consists of a pair of the literal value
+;; and its cpp condition.
 
-(define-constant .literal-hash-size. 32769)
-
-(define (literal-value-hash literal)
+(define (literal-value-hash key)
   (define mask #x0fffffff)
   (define (rec val)
     (cond
@@ -384,9 +382,10 @@
      [(wrapped-identifier? val)
       (logand (+ (rec (~ val'name))(rec (~ val'module))) mask)]
      [else (eqv-hash val)]))
-  (modulo (rec literal) .literal-hash-size.))
+  ;; for hashing, we ignore cpp condition
+  (rec (car key)))
 
-(define (literal-value=? x y)
+(define (literal-value=? x-key y-key)
   (define (rec x y)
     (cond
      [(pair? x) (and (pair? y) (rec (car x) (car y)) (rec (cdr x) (cdr y)))]
@@ -402,31 +401,33 @@
            (eq? (~ x'name) (~ y'name))
            (eq? (~ x'module) (~ y'module)))]
      [else (and (eq? (class-of x) (class-of y)) (eqv? x y))]))
-  (rec x y))
+  (and (equal? (cdr x-key) (cdr y-key))
+       (rec (car x-key) (car y-key))))
 
 (define (ensure-literal-hash unit)
   (or (~ unit'literals)
-      (rlet1 hash (make-vector .literal-hash-size. '())
+      (rlet1 hash (make-hash-table (make-comparator (constantly #t)
+                                                    literal-value=?
+                                                    #f
+                                                    literal-value-hash))
         (set! (~ unit'literals) hash))))
 
+(define *uniq* (cons #f #f))
+
 (define (register-literal-value unit literal-obj)
-  (let ([lh   (ensure-literal-hash unit)]
-        [cppc (~ literal-obj'cpp-conditions)]
-        [h    (literal-value-hash (~ literal-obj'value))])
-    (or (and-let* ([entry (find (^e (and (equal? (caar e) cppc)
-                                         (literal-value=? (~ literal-obj'value)
-                                                          (cdar e))))
-                                (vector-ref lh h))])
-          (set-cdr! entry literal-obj))
-        (push! (vector-ref lh h) (acons cppc (~ literal-obj'value) literal-obj)))))
+  (let ([h (ensure-literal-hash unit)]
+        [key (cons (~ literal-obj'value)
+                   (~ literal-obj'cpp-conditions))])
+    (hash-table-update! h key
+                        (^v (if (eq? v *uniq*)
+                              literal-obj
+                              v))
+                        *uniq*)))
 
 (define (lookup-literal-value unit val)
-  (let ([lh (ensure-literal-hash unit)]
-        [cppc (cgen-cpp-conditions)])
-    (and-let* ([entry (find (^e (and (equal? (caar e) cppc)
-                                     (literal-value=? val (cdar e))))
-                            (vector-ref lh (literal-value-hash val)))])
-      (cdr entry))))
+  (let ([h (ensure-literal-hash unit)]
+        [key (cons val (cgen-cpp-conditions))])
+    (hash-table-get h key #f)))
 
 ;; primitive values -------------------------------------------
 
