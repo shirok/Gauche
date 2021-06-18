@@ -630,7 +630,7 @@
            (^[]
              (write '(add-load-path "."))
              (write '(load libname))
-             (write '(write 'expr))
+             (write '(write expr))
              (write '(exit 0))))
          (let* ([p (run-process '("../../src/gosh" "-ftest" "./t.scm")
                                 :output :pipe :directory "test.o")]
