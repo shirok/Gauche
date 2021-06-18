@@ -672,7 +672,7 @@
            "(select-module foo.bar1)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
            "(provide \"foo/bar1\")"
-           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master foo-literals foo-shared-literals foo-begin1 foo-begin2) (export foo-include1 foo-include2))"
+           "(define-module foo (use gauche.uvector) (use foo.bar1) (use foo.bar3) (export foo-master foo-literals foo-shared-literals foo-begin1 foo-begin2) (export foo-include1 foo-include2))"
            "(select-module foo)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
          (file->string-list "test.o/foo.sci"))
@@ -708,7 +708,7 @@
                 ((global-variable-ref 'foo 'foo-include2))))
          literal=?)
 
-  (test* "literal sharing" '(#t #t #t #t)
+  (test* "literal sharing" '(#t #t #t #t #t)
          (dynload-and-eval
           "foo"
           (let1 vs ((global-variable-ref 'foo 'foo-shared-literals))
@@ -721,6 +721,8 @@
              ;; See if vectors are shared
              (eq? (assq-ref vs 'vec1)
                   (assq-ref vs 'vec2))
+             (eq? (assq-ref vs 'uvec1)
+                  (assq-ref vs 'uvec2))
              ;; See if strings are shared
              (eq? (assq-ref vs 'str1)
                   (assq-ref vs 'str2))))))

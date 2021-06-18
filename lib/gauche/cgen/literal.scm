@@ -373,15 +373,11 @@
 ;; and its cpp condition.
 
 (define (literal-value-hash key)
-  (define mask #x0fffffff)
   (define (rec val)
     (cond
-     [(pair? val) (logand (+ (rec (car val)) (rec (cdr val))) mask)]
-     [(vector? val) (fold (^(v r) (logand (+ (rec v) r) mask)) 0 val)]
-     [(string? val) (logand (string-hash val) mask)]
      [(wrapped-identifier? val)
-      (logand (+ (rec (~ val'name))(rec (~ val'module))) mask)]
-     [else (eqv-hash val)]))
+      (combine-hash-value (rec (~ val'name)) (rec (~ val'module)))]
+     [else (default-hash val)]))
   ;; for hashing, we ignore cpp condition
   (rec (car key)))
 
@@ -395,13 +391,16 @@
              (and (= len (vector-length y))
                   (every?-ec (: i len)
                              (rec (vector-ref x i) (vector-ref y i))))))]
-     [(string? x) (and (string? y) (string=? x y))]
+     [(or (uvector? x) (string? x) (char-set? x) (regexp? x))
+      (equal? x y)]
      [(wrapped-identifier? x)
       (and (wrapped-identifier? y)
            (eq? (~ x'name) (~ y'name))
            (eq? (~ x'module) (~ y'module)))]
+     ;; We can't use equal? as fallback, for the equality predicate needs
+     ;; to recurse to literal-value=?.
      [else (and (eq? (class-of x) (class-of y)) (eqv? x y))]))
-  (and (equal? (cdr x-key) (cdr y-key))
+  (and (equal? (cdr x-key) (cdr y-key)) ;cpp conditions
        (rec (car x-key) (car y-key))))
 
 (define (ensure-literal-hash unit)
