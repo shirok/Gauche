@@ -672,7 +672,7 @@
            "(select-module foo.bar1)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
            "(provide \"foo/bar1\")"
-           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master foo-literals foo-begin1 foo-begin2) (export foo-include1 foo-include2))"
+           "(define-module foo (use foo.bar1) (use foo.bar3) (export foo-master foo-literals foo-shared-literals foo-begin1 foo-begin2) (export foo-include1 foo-include2))"
            "(select-module foo)"
            "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
          (file->string-list "test.o/foo.sci"))
@@ -692,6 +692,7 @@
             "foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")
 
           :directory "test.o"))
+
   (test* "dynload and literals 1"
          (list (include "test-precomp/literals.scm")
                'begin1
@@ -706,6 +707,23 @@
                 ((global-variable-ref 'foo 'foo-include1))
                 ((global-variable-ref 'foo 'foo-include2))))
          literal=?)
+
+  (test* "literal sharing" '(#t #t #t #t)
+         (dynload-and-eval
+          "foo"
+          (let1 vs ((global-variable-ref 'foo 'foo-shared-literals))
+            (list
+             ;; See if partial lists are shared
+             (eq? (cdr (assq-ref vs 'list1))
+                  (assq-ref vs 'list2))
+             (eq? (cdr (assq-ref vs 'list2))
+                  (assq-ref vs 'list3))
+             ;; See if vectors are shared
+             (eq? (assq-ref vs 'vec1)
+                  (assq-ref vs 'vec2))
+             ;; See if strings are shared
+             (eq? (assq-ref vs 'str1)
+                  (assq-ref vs 'str2))))))
   )
 
 (wrap-with-test-directory precomp-test-1 '("test.o"))
