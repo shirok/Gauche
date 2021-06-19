@@ -69,10 +69,16 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     return SCM_OBJ(g);
 }
 
-/* Public accessor/mutators */
+/* Public accessor/mutators
+   We don't allow Scm_GlocGetValues to return SCM_UNBOUND.
+*/
 ScmObj Scm_GlocGetValue(ScmGloc *gloc)
 {
-    return SCM_GLOC_GET(gloc);
+    ScmObj v = SCM_GLOC_GET(gloc);
+    if (SCM_UNBOUNDP(v)) {
+        Scm_Error("Attempt to dereference a phantom gloc: %S", gloc);
+    }
+    return v;
 }
 
 void Scm_GlocSetValue(ScmGloc *gloc, ScmObj val)

@@ -48,6 +48,10 @@ struct ScmGlocRec {
     ScmObj (*setter)(ScmGloc *, ScmObj); /* see 'hooks' below */
 };
 
+/* Use these macros only for performance cricical code.
+   Mind that SCM_GLOC_GET can return SCM_UNBOUND if the gloc is
+   a phantom. */
+
 #define SCM_GLOC_GET(gloc) \
     ((gloc)->getter? (gloc)->getter(gloc) : (gloc)->value)
 #define SCM_GLOC_SET(gloc, val) \

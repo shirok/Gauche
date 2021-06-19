@@ -88,6 +88,10 @@ SCM_CLASS_DECL(Scm_GlocClass);
 #define SCM_GLOC(obj)            ((ScmGloc*)(obj))
 #define SCM_GLOCP(obj)           SCM_XTYPEP(obj, SCM_CLASS_GLOC)
 
+/* Scm_GlocGetValue can raise 'reference to a phantom gloc' error if
+   the given gloc is a phantom binding.  Use Scm_GlocPhantomBindingP
+   to exclude such case. */
+
 SCM_EXTERN ScmObj Scm_GlocGetValue(ScmGloc *g);
 SCM_EXTERN void   Scm_GlocSetValue(ScmGloc *g, ScmObj val);
 
