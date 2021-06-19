@@ -682,19 +682,15 @@ SCM_EXTERN ScmObj Scm_VMGetCallTraceLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
 
 /* A proxy type is a class to hold a reference to another class.
-   It is used to keep reference to a type in another compound type
-   structure.  We need an indirection because a class may be redefined.
-*/
-typedef struct ScmProxyTypeRec {
-    SCM_HEADER;
-    ScmGloc *ref;               /* GLOC that holds the actual class */
-} ScmProxyType;
+   Used in descriptive types to handle redefinition of the original class.
+   The actual definition and construtor is in gauche/priv/classP.h */
+typedef struct ScmProxyTypeRec ScmProxyType;
 
 SCM_CLASS_DECL(Scm_ProxyTypeClass);
 #define SCM_CLASS_PROXY_TYPE      (&Scm_ProxyTypeClass)
 #define SCM_PROXY_TYPE(obj)       ((ScmProxyType*)(obj))
 #define SCM_PROXY_TYPE_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_PROXY_TYPE))
-SCM_EXTERN ScmObj Scm_MakeProxyType(ScmGloc *g);
+
 
 /* A box is to keep a reference.  Internally, it is used for mutable
    local variables.  srfi-111 defines Scheme interface. */
