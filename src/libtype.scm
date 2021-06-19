@@ -121,11 +121,6 @@
                  :deconstructor ,deconstructor
                  :validator ,validator))))]))))
 
-;; This will be dropped once we compilete compile-time type constructor
-;; evaluation
-(define-method object-apply ((k <type-constructor-meta>) . args)
-  (apply (~ k'constructor) args))
-
 ;; Metaclass: <type-instance-meta>
 ;;   An abstract type instance, which is a class but won't create instances.
 ;;   It can be used for of-type? method.
@@ -155,7 +150,10 @@
                          args)))
  )
 
-;; Utilities to create reasonable name
+;;;
+;;; Utilities
+;;;
+
 (define (join-class-names classes)
   (string-join (map (^k (if (is-a? k <class>)
                           ($ symbol->string $ class-name k)
