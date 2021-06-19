@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/glocP.h"
 #include "gauche/priv/moduleP.h"
 
 /*

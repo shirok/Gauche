@@ -3189,14 +3189,14 @@ static void proxy_type_print(ScmObj obj, ScmPort *port,
                              ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmGloc *g = SCM_PROXY_TYPE(obj)->ref;
-    ScmObj klass = SCM_GLOC_GET(g);
+    ScmObj klass = Scm_GlocGetValue(g);
     SCM_ASSERT(SCM_ISA(klass, SCM_CLASS_CLASS));
     Scm_Printf(port, "#<<%S>>", Scm_ShortClassName(SCM_CLASS(klass)));
 }
 
 ScmObj Scm_MakeProxyType(ScmGloc *g)
 {
-    ScmObj klass = SCM_GLOC_GET(g);
+    ScmObj klass = Scm_GlocGetValue(g);
     if (!SCM_ISA(klass, SCM_CLASS_CLASS)) {
         Scm_Error("location must contain a class, but it has %S", klass);
     }

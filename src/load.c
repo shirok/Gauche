@@ -260,7 +260,7 @@ int Scm_LoadFromCString(const char *program, u_long flags, ScmLoadPacket *p)
 ScmObj Scm_GetLoadPath(void)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    ScmObj paths = Scm_CopyList(ldinfo.load_path_rec->value);
+    ScmObj paths = Scm_CopyList(Scm_GlocGetValue(ldinfo.load_path_rec));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     return paths;
 }
@@ -268,7 +268,7 @@ ScmObj Scm_GetLoadPath(void)
 ScmObj Scm_GetDynLoadPath(void)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    ScmObj paths = Scm_CopyList(ldinfo.dynload_path_rec->value);
+    ScmObj paths = Scm_CopyList(Scm_GlocGetValue(ldinfo.dynload_path_rec));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
     return paths;
 }
@@ -293,16 +293,12 @@ static ScmObj break_env_paths(const char *envname)
     }
 }
 
-static ScmObj add_list_item(ScmObj orig, ScmObj item, int afterp)
+static void add_gloc_list_item(ScmGloc *gloc, ScmObj item, int afterp)
 {
-    if (afterp) {
-        return Scm_Append2(orig, SCM_LIST1(item));
-    } else {
-        return Scm_Cons(item, orig);
-    }
+    ScmObj vs = Scm_GlocGetValue(gloc);
+    ScmObj r = afterp? Scm_Append2(vs, SCM_LIST1(item)) : Scm_Cons(item, vs);
+    Scm_GlocSetValue(gloc, r);
 }
-#define ADD_LIST_ITEM(list, item, afterp) \
-    list = add_list_item(list, item, afterp)
 
 /* Add CPATH to the current list of load path.  The path is
  * added before the current list, unless AFTERP is true.
@@ -332,9 +328,9 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    ADD_LIST_ITEM(ldinfo.load_path_rec->value, spath, afterp);
-    ADD_LIST_ITEM(ldinfo.dynload_path_rec->value, dpath, afterp);
-    ScmObj r = ldinfo.load_path_rec->value;
+    add_gloc_list_item(ldinfo.load_path_rec, spath, afterp);
+    add_gloc_list_item(ldinfo.dynload_path_rec, dpath, afterp);
+    ScmObj r = Scm_GlocGetValue(ldinfo.load_path_rec);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 
     return r;
@@ -343,7 +339,7 @@ ScmObj Scm_AddLoadPath(const char *cpath, int afterp)
 void Scm_AddLoadPathHook(ScmObj proc, int afterp)
 {
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
-    ADD_LIST_ITEM(ldinfo.load_path_hooks_rec->value, proc, afterp);
+    add_gloc_list_item(ldinfo.load_path_hooks_rec, proc, afterp);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 }
 
@@ -352,8 +348,9 @@ void Scm_DeleteLoadPathHook(ScmObj proc)
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.path_mutex);
     /* we should use Scm_Delete, instead of Scm_DeleteX,
        to avoid race with reader of the list */
-    ldinfo.load_path_hooks_rec->value
-        = Scm_Delete(proc, ldinfo.load_path_hooks_rec->value, SCM_CMP_EQ);
+    Scm_GlocSetValue(ldinfo.load_path_hooks_rec,
+                     Scm_Delete(proc, Scm_GlocGetValue(ldinfo.load_path_hooks_rec),
+                                SCM_CMP_EQ));
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.path_mutex);
 }
 
@@ -1146,18 +1143,18 @@ ScmObj Scm_ResolveAutoload(ScmAutoload *adata, int flags SCM_UNUSED)
             ScmGloc *g = Scm_FindBinding(adata->module, adata->name, 0);
             SCM_ASSERT(f != NULL);
             SCM_ASSERT(g != NULL);
-            adata->value = SCM_GLOC_GET(f);
+            adata->value = Scm_GlocGetValue(f);
             if (SCM_UNBOUNDP(adata->value) || SCM_AUTOLOADP(adata->value)) {
                 Scm_Error("Autoloaded symbol %S is not defined in the module %S",
                           adata->name, adata->import_from);
             }
-            SCM_GLOC_SET(g, adata->value);
+            Scm_GlocSetValue(g, adata->value);
         } else {
             /* Normal import.  The binding must have been inserted to
                adata->module */
             ScmGloc *g = Scm_FindBinding(adata->module, adata->name, 0);
             SCM_ASSERT(g != NULL);
-            adata->value = SCM_GLOC_GET(g);
+            adata->value = Scm_GlocGetValue(g);
             if (SCM_UNBOUNDP(adata->value) || SCM_AUTOLOADP(adata->value)) {
                 Scm_Error("Autoloaded symbol %S is not defined in the file %S",
                           adata->name, adata->path);

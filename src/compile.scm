@@ -45,6 +45,7 @@
             <gauche/vminsn.h>
             <gauche/priv/macroP.h>
             <gauche/priv/moduleP.h>
+            <gauche/priv/glocP.h>
             <gauche/priv/identifierP.h>
             <gauche/priv/builtin-syms.h>)))
 

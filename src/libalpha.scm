@@ -38,6 +38,7 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
+                     <gauche/priv/glocP.h>
                      <gauche/priv/macroP.h>)))
 
 ;;;

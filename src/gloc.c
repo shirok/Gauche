@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/glocP.h"
 
 /*---------------------------------------------------------------
  * GLOCs
@@ -67,6 +68,23 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
     g->setter = NULL;
     return SCM_OBJ(g);
 }
+
+/* Public accessor/mutators */
+ScmObj Scm_GlocGetValue(ScmGloc *gloc)
+{
+    return SCM_GLOC_GET(gloc);
+}
+
+void Scm_GlocSetValue(ScmGloc *gloc, ScmObj val)
+{
+    SCM_GLOC_SET(gloc, val);
+}
+
+int Scm_GlocPhantomBindingP(ScmGloc *gloc)
+{
+    return SCM_GLOC_PHANTOM_BINDING_P(gloc);
+}
+
 
 /* special setters for const and inlinable bindings. */
 ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val SCM_UNUSED)

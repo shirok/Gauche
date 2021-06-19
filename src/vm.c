@@ -37,6 +37,7 @@
 #include "gauche/exception.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/vmP.h"
+#include "gauche/priv/glocP.h"
 #include "gauche/priv/identifierP.h"
 #include "gauche/priv/parameterP.h"
 #include "gauche/code.h"
