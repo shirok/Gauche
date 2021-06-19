@@ -3206,6 +3206,16 @@ ScmObj Scm_MakeProxyType(ScmGloc *g)
     return SCM_OBJ(p);
 }
 
+ScmClass *Scm_ProxyTypeRef(ScmProxyType *p)
+{
+    ScmObj v = Scm_GlocGetValue(p->ref);
+    if (!SCM_ISA(v, SCM_CLASS_CLASS)) {
+        Scm_Error("A proxy type contains non-class reference. "
+                  "This shouldn't happen.");
+    }
+    return SCM_CLASS(v);
+}
+
 /*=====================================================================
  * Class initialization
  */

@@ -58,5 +58,4 @@ struct ScmProxyTypeRec {
 
 SCM_EXTERN ScmObj Scm_MakeProxyType(ScmGloc *g);
 
-
 #endif /*GAUCHE_PRIV_CLASSP_H*/
