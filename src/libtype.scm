@@ -135,6 +135,12 @@
 (define-method allocate-instance ((t <type-instance-meta>) initargs)
   (error "Abstract type instance cannot instantiate a concrete object:" t))
 
+;; Equality is used when consolidate literals.  It's not lightweight
+;; (it calls deconstructor, which allocates).
+(define-method object-equal? ((x <type-instance-meta>) (y <type-instance-meta>))
+  (and (equal? (class-of x) (class-of y))
+       (equal? (deconstruct-type x) (deconstruct-type y))))
+
 ;; Internal API, required to precompile descriptive type constant
 (define-method deconstruct-type ((t <type-instance-meta>))
   ((~ (class-of t)'deconstructor) t))

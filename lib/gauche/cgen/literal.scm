@@ -372,11 +372,27 @@
 ;; This, the key of the hashtable consists of a pair of the literal value
 ;; and its cpp condition.
 
+;; TRANSIENT: Need these to compile 0.9.11 with 0.9.10
+(cond-expand
+ [gauche-0.9.10
+  (begin
+    (define (%type-instance-meta? obj) #f)
+    (define (%deconstruct-type t) #f))]
+ [else
+  (begin
+    (define (%type-instance-meta? obj)
+      (is-a? obj <type-instance-meta>))
+    (define (%deconstruct-type t)
+      ((with-module gauche.internal deconstruct-type) t)))])
+
 (define (literal-value-hash key)
   (define (rec val)
     (cond
      [(wrapped-identifier? val)
       (combine-hash-value (rec (~ val'name)) (rec (~ val'module)))]
+     [(%type-instance-meta? val)
+      (fold combine-hash-value (rec (~ val'name))
+            (map rec (%deconstruct-type val)))]
      [else (default-hash val)]))
   ;; for hashing, we ignore cpp condition
   (rec (car key)))
@@ -391,7 +407,8 @@
              (and (= len (vector-length y))
                   (every?-ec (: i len)
                              (rec (vector-ref x i) (vector-ref y i))))))]
-     [(or (uvector? x) (string? x) (char-set? x) (regexp? x))
+     [(or (uvector? x) (string? x) (char-set? x) (regexp? x)
+          (%type-instance-meta? x))
       (equal? x y)]
      [(wrapped-identifier? x)
       (and (wrapped-identifier? y)

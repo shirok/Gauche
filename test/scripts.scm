@@ -708,7 +708,7 @@
                 ((global-variable-ref 'foo 'foo-include2))))
          literal=?)
 
-  (test* "literal sharing" '(#t #t #t #t #t)
+  (test* "literal sharing" '(#t #t #t #t #t #t)
          (dynload-and-eval
           "foo"
           (let1 vs ((global-variable-ref 'foo 'foo-shared-literals))
@@ -725,7 +725,11 @@
                   (assq-ref vs 'uvec2))
              ;; See if strings are shared
              (eq? (assq-ref vs 'str1)
-                  (assq-ref vs 'str2))))))
+                  (assq-ref vs 'str2))
+             ;; Descriptive types
+             (eq? (assq-ref vs 'dtype1)
+                  (assq-ref vs 'dtype2))
+             ))))
   )
 
 (wrap-with-test-directory precomp-test-1 '("test.o"))

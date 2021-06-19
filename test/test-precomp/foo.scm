@@ -24,6 +24,9 @@
 (define-constant *foo-string1* "abc")
 (define-constant *foo-string2* (list->string '(#\a #\b #\c)))
 
+(define-constant *foo-dtype1* (<?> <integer>))
+(define-constant *foo-dtype2* (<?> <integer>))
+
 (define (foo-shared-literals)
   `((list1 . ,*foo-list1*)
     (list2 . ,*foo-list2*)
@@ -34,6 +37,8 @@
     (uvec2  . ,*foo-uvec2*)
     (str1  . ,*foo-string1*)
     (str2  . ,*foo-string2*)
+    (dtype1 . ,*foo-dtype1*)
+    (dtype2 . ,*foo-dtype2*)
     ))
 
 (begin
