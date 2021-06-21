@@ -47,7 +47,7 @@
              ;; (let1 v (gloc-ref gloc)
              ;;   (if (and (is-a? v <class>)
              ;;            (not (is-a? v <type-instance-meta>)))
-             ;;     (%wrap-with-proxy-type gloc)
+             ;;     (%wrap-with-proxy-type ($gref-id arg) gloc)
              ;;     v))
              (gloc-ref gloc)
              (errorf "Can't use non-inlinable global varible `~s' in \
@@ -84,7 +84,9 @@
 ;; wrap them with proxy type, for they can be redefined.  This wrapping
 ;; must be done in the compiler.
 
-(define-cproc %wrap-with-proxy-type (gloc)
+(define-cproc %wrap-with-proxy-type (id gloc)
+  (unless (SCM_IDENTIFIERP id)
+    (SCM_TYPE_ERROR id "identifier"))
   (unless (SCM_GLOCP gloc)
     (SCM_TYPE_ERROR gloc "gloc"))
-  (return (Scm_MakeProxyType (SCM_GLOC gloc))))
+  (return (Scm_MakeProxyType (SCM_IDENTIFIER id) (SCM_GLOC gloc))))

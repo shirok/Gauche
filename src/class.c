@@ -3205,26 +3205,44 @@ static void proxy_type_print(ScmObj obj, ScmPort *port,
     Scm_Printf(port, "#<<%A>>", Scm_ShortClassName(SCM_CLASS(klass)));
 }
 
-ScmObj Scm_MakeProxyType(ScmGloc *g)
+static ScmClass *proxy_type_get_class(ScmGloc *ref)
 {
-    ScmObj klass = Scm_GlocGetValue(g);
+    ScmObj klass = Scm_GlocGetValue(ref);
     if (!SCM_ISA(klass, SCM_CLASS_CLASS)) {
-        Scm_Error("location must contain a class, but it has %S", klass);
+        Scm_Error("Identifier %S wrapped by a proxy-type has to be bound "
+                  "to a class, but it is bound to %S.  This shouldn't happen.",
+                  klass);
+    }
+    return SCM_CLASS(klass);
+}
+
+ScmObj Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref)
+{
+    /* If REF != NULL, it must be the binding of ID.  We trust the caller,
+       and just check that it is bound to a class. */
+    if (ref != NULL) {
+        (void)proxy_type_get_class(ref); /* detect error early */
     }
     ScmProxyType *p = SCM_NEW(ScmProxyType);
     SCM_SET_CLASS(p, SCM_CLASS_PROXY_TYPE);
-    p->ref = g;
+    p->id = id;
+    p->ref = ref;
     return SCM_OBJ(p);
 }
 
 ScmClass *Scm_ProxyTypeRef(ScmProxyType *p)
 {
-    ScmObj v = Scm_GlocGetValue(p->ref);
-    if (!SCM_ISA(v, SCM_CLASS_CLASS)) {
-        Scm_Error("A proxy type contains non-class reference. "
-                  "This shouldn't happen.");
+    if (p->ref == NULL) {
+        /* Lazily get the binding.  This is idempotent operation as long as
+           p->id is already bound, so MT-safe. */
+        ScmGloc *g = Scm_IdentifierGlobalBinding(p->id);
+        if (g == NULL || Scm_GlocPhantomBindingP(g)) {
+            Scm_Error("Identifier wrapped by a proxy-type is unbound: %S",
+                      SCM_OBJ(p->id));
+        }
+        p->ref = g;
     }
-    return SCM_CLASS(v);
+    return proxy_type_get_class(p->ref);
 }
 
 /*=====================================================================
