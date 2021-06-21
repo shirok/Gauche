@@ -102,6 +102,13 @@ ScmClass *Scm_MetaclassCPL[] = {
     NULL
 };
 
+ScmClass *Scm_DescriptiveTypeCPL[] = {
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass), /* for constructive types */
+    SCM_CLASS_STATIC_PTR(Scm_DescriptiveTypeClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
 /* Class <top> is the superclass of all classes.  The class initialization
    routine ensures that the class precedence list always terminates by <top>.
    Class <bottom> is the subclass of all classes.  It won't appear in the
@@ -142,7 +149,11 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_AccessorMethodClass,
                          method_allocate,
                          Scm_MethodCPL);
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, next_method_print);
-SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProxyTypeClass,  proxy_type_print);
+
+SCM_DEFINE_ABSTRACT_CLASS(Scm_DescriptiveTypeClass, NULL);
+SCM_DEFINE_BASE_CLASS(Scm_ProxyTypeClass, ScmProxyType,
+                      proxy_type_print, NULL, NULL, NULL,
+                      Scm_DescriptiveTypeCPL+1);
 
 /* Builtin generic functions */
 SCM_DEFINE_GENERIC(Scm_GenericMake, Scm_NoNextMethod, NULL);
@@ -3191,7 +3202,7 @@ static void proxy_type_print(ScmObj obj, ScmPort *port,
     ScmGloc *g = SCM_PROXY_TYPE(obj)->ref;
     ScmObj klass = Scm_GlocGetValue(g);
     SCM_ASSERT(SCM_ISA(klass, SCM_CLASS_CLASS));
-    Scm_Printf(port, "#<<%S>>", Scm_ShortClassName(SCM_CLASS(klass)));
+    Scm_Printf(port, "#<<%A>>", Scm_ShortClassName(SCM_CLASS(klass)));
 }
 
 ScmObj Scm_MakeProxyType(ScmGloc *g)
@@ -3574,6 +3585,7 @@ void Scm__InitClass(void)
     Scm_AccessorMethodClass.flags |= SCM_CLASS_APPLICABLE;
     BINIT(SCM_CLASS_SLOT_ACCESSOR,"<slot-accessor>", slot_accessor_slots);
     BINIT(SCM_CLASS_FOREIGN_POINTER, "<foreign-pointer>", NULL);
+    BINIT(SCM_CLASS_DESCRIPTIVE_TYPE, "<descriptive-type>", NULL);
     BINIT(SCM_CLASS_PROXY_TYPE, "<proxy-type>", NULL);
 
     /* char.c */

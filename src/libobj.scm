@@ -544,9 +544,16 @@
 (define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubtypeP)
 
 (define (of-type? obj type)
-  (cond [(is-a? type <type-instance-meta>)
+  (cond [(is-a? type <proxy-type>)
+         (of-type? obj (%proxy-type-ref type))]
+        [(is-a? type <type-instance-meta>)
          ((~ (class-of type) 'validator) type obj)]
         [else (is-a? obj type)]))
+
+(define-cproc %proxy-type-ref (proxy)
+  (unless (SCM_PROXY_TYPE_P proxy)
+    (SCM_TYPE_ERROR proxy "<proxy-type>"))
+  (return (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE proxy)))))
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF) (setter slot-set!)

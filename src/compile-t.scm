@@ -44,6 +44,11 @@
     (cond [($const? arg) ($const-value arg)]
           [(has-tag? arg $GREF)
            (if-let1 gloc (gref-inlinable-gloc arg)
+             ;; (let1 v (gloc-ref gloc)
+             ;;   (if (and (is-a? v <class>)
+             ;;            (not (is-a? v <type-instance-meta>)))
+             ;;     (%wrap-with-proxy-type gloc)
+             ;;     v))
              (gloc-ref gloc)
              (errorf "Can't use non-inlinable global varible `~s' in \
                       type constructor expression: ~s"
@@ -55,7 +60,8 @@
                    a compile-time constant:" ($*-src iform))]))
   (define (check-arg-value val)
     ;; For now, we restrict type ctor arguments to simple values
-    (unless (or (is-a? val <class>)
+    (unless (or (is-a? val <proxy-type>)
+                (is-a? val <class>)
                 (number? val)
                 (boolean? val)
                 (string? val)
@@ -67,8 +73,18 @@
   (let1 type
       (apply (~ ctor'constructor)
              (map ($ check-arg-value $ get-arg-value $) ($call-args iform)))
-    (unless (is-a? type <class>)
+    (unless (is-a? type <type-instance-meta>)
       (errorf "Type costructor ~s returned an object other than a \
                type instance: ~s"
               ($*-src iform) type))
     ($const type)))
+
+
+;; When generative types appear in the compile-time type expression, we
+;; wrap them with proxy type, for they can be redefined.  This wrapping
+;; must be done in the compiler.
+
+(define-cproc %wrap-with-proxy-type (gloc)
+  (unless (SCM_GLOCP gloc)
+    (SCM_TYPE_ERROR gloc "gloc"))
+  (return (Scm_MakeProxyType (SCM_GLOC gloc))))

@@ -681,18 +681,6 @@ SCM_EXTERN ScmObj Scm_VMGetStackLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetCallTraceLite(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMGetStack(ScmVM *vm);
 
-/* A proxy type is a class to hold a reference to another class.
-   Used in descriptive types to handle redefinition of the original class.
-   The actual definition and construtor is in gauche/priv/classP.h */
-typedef struct ScmProxyTypeRec ScmProxyType;
-
-SCM_CLASS_DECL(Scm_ProxyTypeClass);
-#define SCM_CLASS_PROXY_TYPE      (&Scm_ProxyTypeClass)
-#define SCM_PROXY_TYPE(obj)       ((ScmProxyType*)(obj))
-#define SCM_PROXY_TYPE_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_PROXY_TYPE))
-
-SCM_EXTERN ScmClass *Scm_ProxTypeRef(ScmProxyType *p);
-
 /* A box is to keep a reference.  Internally, it is used for mutable
    local variables.  srfi-111 defines Scheme interface. */
 typedef struct ScmBoxRec {
@@ -730,7 +718,7 @@ SCM_EXTERN ScmMVBox *Scm_MakeMVBox(ScmSmallInt size, ScmObj init);
 SCM_EXTERN ScmMVBox *Scm_ListToMVBox(ScmObj elts);
 
 /*---------------------------------------------------------
- * CLASS
+ * CLASS AND TYPE
  */
 
 typedef void (*ScmClassPrintProc)(ScmObj obj,
@@ -1107,6 +1095,31 @@ SCM_EXTERN ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
                                             ScmObj key, ScmObj fallback);
 SCM_EXTERN ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
                                             ScmObj key, ScmObj value);
+
+
+/* A type is either a class or a descriptive type.  The latter is only
+   used to describe a certain aspect of an object, e.g. "the argument
+   must be either an <integer> or #f".  Descriptive type cannot be used
+   to instantiate objects, but can be used to validate and infer the type
+   of the object.
+
+   All descritive types are a subclass of <descriptive-type>.
+ */
+
+SCM_CLASS_DECL(Scm_DescriptiveTypeClass);
+#define SCM_CLASS_DESCRIPTIVE_TYPE      (&Scm_DescriptiveTypeClass)
+
+/* A proxy type is a descriptive type to hold a reference to a class.
+   Used in other descriptive types to handle redefinition of the original class.
+   The actual definition and construtor is in gauche/priv/classP.h */
+typedef struct ScmProxyTypeRec ScmProxyType;
+
+SCM_CLASS_DECL(Scm_ProxyTypeClass);
+#define SCM_CLASS_PROXY_TYPE      (&Scm_ProxyTypeClass)
+#define SCM_PROXY_TYPE(obj)       ((ScmProxyType*)(obj))
+#define SCM_PROXY_TYPE_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_PROXY_TYPE))
+
+SCM_EXTERN ScmClass *Scm_ProxyTypeRef(ScmProxyType *p);
 
 /*--------------------------------------------------------
  * COLLECTION INTERFACE
