@@ -70,7 +70,8 @@
 ;; Metaclass: <type-constructor-meta>
 ;;   Instance classes of this metaclass are used to create an abstract types.
 (inline-stub
- (.include "gauche/class.h")
+ (.include "gauche/class.h"
+           "gauche/priv/classP.h")
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
               (common::ScmClass
@@ -179,6 +180,25 @@
    (return (Scm_ApplyRec (-> (cast ScmTypeConstructor* ctor) constructor)
                          args)))
  )
+
+;;;
+;;; Proxy type API.
+;;;
+
+;; These are available in gauche.internal
+
+(define-cproc wrap-with-proxy-type (id gloc)
+  (unless (SCM_IDENTIFIERP id)
+    (SCM_TYPE_ERROR id "identifier"))
+  (unless (SCM_GLOCP gloc)
+    (SCM_TYPE_ERROR gloc "gloc"))
+  (return (Scm_MakeProxyType (SCM_IDENTIFIER id) (SCM_GLOC gloc))))
+
+(define-cproc proxy-type-ref (type)
+  (unless (SCM_PROXY_TYPE_P type)
+    (SCM_TYPE_ERROR type "proxy-type"))
+  (return (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE type)))))
+
 
 ;;;
 ;;; Utilities
@@ -455,4 +475,6 @@
         '(inlinable))
   (xfer (current-module)
         (find-module 'gauche.internal)
-        '(deconstruct-type)))
+        '(deconstruct-type
+          wrap-with-proxy-type
+          proxy-type-ref)))

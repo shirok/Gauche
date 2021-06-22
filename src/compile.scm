@@ -44,7 +44,6 @@
             <gauche/code.h>
             <gauche/vminsn.h>
             <gauche/priv/builtin-syms.h>
-            <gauche/priv/classP.h>
             <gauche/priv/glocP.h>
             <gauche/priv/identifierP.h>
             <gauche/priv/macroP.h>
