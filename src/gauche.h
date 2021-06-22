@@ -1129,7 +1129,20 @@ SCM_CLASS_DECL(Scm_ProxyTypeClass);
 #define SCM_PROXY_TYPE(obj)       ((ScmProxyType*)(obj))
 #define SCM_PROXY_TYPE_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_PROXY_TYPE))
 
+/* Since ProxyType is instantiated at compile-time, the constructor
+   is called only from the compiler or initializer (in the case proxytype
+   is serialized into compiled code).   We put Scm_MakeProxyType decl here
+   so that the initializer of precompiled code can see it.
+
+   The REF argument is technically redundant, since it is a binding of ID.
+   But the compile has looked up ID already, so we can just use it.
+   We trust the caller giving the proer REF.
+   REF can be NULL when invoked from the initializer; in that case
+   we derive it from ID, but lazily (in Scm_ProxyTypeRef).
+ */
+SCM_EXTERN ScmObj    Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref);
 SCM_EXTERN ScmClass *Scm_ProxyTypeRef(ScmProxyType *p);
+SCM_EXTERN ScmObj    Scm_ProxyTypeId(ScmProxyType *p);
 
 /*--------------------------------------------------------
  * COLLECTION INTERFACE

@@ -60,17 +60,4 @@ struct ScmProxyTypeRec {
                                    from ID lazily. */
 };
 
-/* Since ProxyType is instantiated at compile-time, the constructor
-   is called only from the compiler or initializer (in the case proxytype
-   is serialized into compiled code).
-
-   The REF argument is technically redundant, since it is a binding of ID.
-   But the compile has looked up ID already, so we can just use it.
-   We trust the caller giving the proer REF.
-   REF can be NULL when invoked from the initializer; in that case
-   we derive it from ID, but lazily (in Scm_ProxyTypeRef).
- */
-
-SCM_EXTERN ScmObj Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref);
-
 #endif /*GAUCHE_PRIV_CLASSP_H*/

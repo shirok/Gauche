@@ -199,6 +199,10 @@
     (SCM_TYPE_ERROR type "proxy-type"))
   (return (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE type)))))
 
+(define-cproc proxy-type-id (type)
+  (unless (SCM_PROXY_TYPE_P type)
+    (SCM_TYPE_ERROR type "proxy-type"))
+  (return (Scm_ProxyTypeId (SCM_PROXY_TYPE type))))
 
 ;;;
 ;;; Utilities
@@ -208,6 +212,8 @@
   (string-join (map (^k (x->string
                          (cond [(is-a? k <class>) (class-name k)]
                                [(is-a? k <descriptive-type>) (~ k'name)]
+                               [(is-a? k <proxy-type>)
+                                (~ (proxy-type-id k) 'name)]
                                [else k])))
                     classes)
                " " 'prefix))
@@ -477,4 +483,5 @@
         (find-module 'gauche.internal)
         '(deconstruct-type
           wrap-with-proxy-type
-          proxy-type-ref)))
+          proxy-type-ref
+          proxy-type-id)))

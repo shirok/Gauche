@@ -904,21 +904,34 @@
 (cond-expand
  [gauche-0.9.10]
  [else
-  (define-cgen-literal <cgen-scheme-type> <descriptive-type>
-    ((ctor :init-keyword :ctor)
-     (args :init-keyword :args))
-    (make (value)
-      (make <cgen-scheme-type> :value value
-            :c-name (cgen-allocate-static-datum)
-            :ctor (cgen-literal (class-of value))
-            :args ($ cgen-literal
-                     $ (with-module gauche.internal deconstruct-type) value)))
-    (init (self)
-          (format #t "  ~a = Scm_ConstructType(~a, ~a);"
-                  (cgen-c-name self)
-                  (cgen-c-name (~ self'ctor))
-                  (cgen-c-name (~ self'args))))
-    (static (self) #f))])
+  (begin
+    (define-cgen-literal <cgen-scheme-proxy-type> <proxy-type>
+      ((id :init-keyword :id))
+      (make (value)
+        (make <cgen-scheme-proxy-type> :value value
+              :c-name (cgen-allocate-static-datum)
+              :id ($ cgen-literal
+                     $ (with-module gauche.internal proxy-type-id) value)))
+      (init (self)
+            (format #t "  ~a = Scm_MakeProxyType(SCM_IDENTIFIER(~a), NULL);"
+                    (cgen-c-name self)
+                    (cgen-c-name (~ self'id))))
+      (static (self) #f))
+    (define-cgen-literal <cgen-scheme-descriptive-type> <descriptive-type>
+      ((ctor :init-keyword :ctor)
+       (args :init-keyword :args))
+      (make (value)
+        (make <cgen-scheme-descriptive-type> :value value
+              :c-name (cgen-allocate-static-datum)
+              :ctor (cgen-literal (class-of value))
+              :args ($ cgen-literal
+                       $ (with-module gauche.internal deconstruct-type) value)))
+      (init (self)
+            (format #t "  ~a = Scm_ConstructType(~a, ~a);"
+                    (cgen-c-name self)
+                    (cgen-c-name (~ self'ctor))
+                    (cgen-c-name (~ self'args))))
+      (static (self) #f)))])
 
 ;;---------------------------------------------------------------
 ;; Inferring literal handlers.

@@ -35,8 +35,9 @@
 #include "gauche.h"
 #include "gauche/class.h"
 #include "gauche/code.h"
-#include "gauche/priv/classP.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/classP.h"
+#include "gauche/priv/identifierP.h"
 #include "gauche/priv/macroP.h"
 #include "gauche/priv/pairP.h"
 #include "gauche/priv/writerP.h"
@@ -61,6 +62,7 @@ static void next_method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void slot_accessor_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void accessor_method_print(ScmObj, ScmPort *, ScmWriteContext*);
 static void proxy_type_print(ScmObj, ScmPort *, ScmWriteContext*);
+static int  proxy_type_compare(ScmObj, ScmObj, int);
 
 static ScmObj class_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj generic_allocate(ScmClass *klass, ScmObj initargs);
@@ -146,7 +148,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_AccessorMethodClass,
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_NextMethodClass, next_method_print);
 
 SCM_DEFINE_BASE_CLASS(Scm_ProxyTypeClass, ScmProxyType,
-                      proxy_type_print, NULL, NULL, NULL,
+                      proxy_type_print, proxy_type_compare, NULL, NULL,
                       SCM_CLASS_TYPE_CPL);
 
 /* Builtin generic functions */
@@ -3193,10 +3195,27 @@ ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
 static void proxy_type_print(ScmObj obj, ScmPort *port,
                              ScmWriteContext *ctx SCM_UNUSED)
 {
+    ScmIdentifier *id = SCM_PROXY_TYPE(obj)->id;
     ScmGloc *g = SCM_PROXY_TYPE(obj)->ref;
-    ScmObj klass = Scm_GlocGetValue(g);
-    SCM_ASSERT(SCM_ISA(klass, SCM_CLASS_CLASS));
-    Scm_Printf(port, "#<<%A>>", Scm_ShortClassName(SCM_CLASS(klass)));
+    if (g == NULL || Scm_GlocPhantomBindingP(g)) {
+        Scm_Printf(port, "#<%A (unresolved)>", id->name);
+    } else {
+        Scm_Printf(port, "#<%A>", id->name);
+    }
+}
+
+static int proxy_type_compare(ScmObj x, ScmObj y, int equalp)
+{
+    SCM_ASSERT(SCM_PROXY_TYPE_P(x));
+    SCM_ASSERT(SCM_PROXY_TYPE_P(y));
+    ScmClass *cx = Scm_ProxyTypeRef(SCM_PROXY_TYPE(x));
+    ScmClass *cy = Scm_ProxyTypeRef(SCM_PROXY_TYPE(y));
+    if (equalp) {
+        return cx != cy;
+    } else {
+        /* delegate comparison to generic function */
+        return Scm_ObjectCompare(SCM_OBJ(cx), SCM_OBJ(cy), FALSE);
+    }
 }
 
 static ScmClass *proxy_type_get_class(ScmGloc *ref)
@@ -3237,6 +3256,11 @@ ScmClass *Scm_ProxyTypeRef(ScmProxyType *p)
         p->ref = g;
     }
     return proxy_type_get_class(p->ref);
+}
+
+ScmObj Scm_ProxyTypeId(ScmProxyType *p)
+{
+    return SCM_OBJ(p->id);
 }
 
 /*=====================================================================

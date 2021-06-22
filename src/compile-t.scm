@@ -44,12 +44,10 @@
     (cond [($const? arg) ($const-value arg)]
           [(has-tag? arg $GREF)
            (if-let1 gloc (gref-inlinable-gloc arg)
-             ;; (let1 v (gloc-ref gloc)
-             ;;   (if (and (is-a? v <class>)
-             ;;            (not (is-a? v <descriptive-type>)))
-             ;;     (wrap-with-proxy-type ($gref-id arg) gloc)
-             ;;     v))
-             (gloc-ref gloc)
+             (let1 v (gloc-ref gloc)
+               (if (is-a? v <class>)
+                 (wrap-with-proxy-type ($gref-id arg) gloc)
+                 v))
              (errorf "Can't use non-inlinable global varible `~s' in \
                       type constructor expression: ~s"
                      (identifier-name ($gref-id arg))
