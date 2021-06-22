@@ -109,6 +109,24 @@
                 (cast void initargs)    ;suppress unused warning
                 (set! (-> z name) SCM_FALSE)
                 (return (SCM_OBJ z)))))
+
+ ;; (of-type? ofj type)
+ ;;    This may push C continuations on VM, so must be called on VM.
+ (define-cfn Scm_VMOfType (obj type)
+   (cond [(SCM_PROXY_TYPE_P type)
+          (return (Scm_VMIsA obj (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))]
+         [(SCM_DESCRIPTIVE_TYPE_P type)
+          (let* ([k::ScmClass* (SCM_CLASS_OF type)])
+            (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
+            (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
+                                  type obj)))]
+         [(SCM_CLASSP type)
+          (return (Scm_VMIsA obj (SCM_CLASS type)))]
+         [else
+          (Scm_Error "Second argument of of-type? must be a type, but got: %S"
+                     type)]))
+
+ (define-cproc of-type? (obj type) Scm_VMOfType)
  )
 
 ;; define-type-constructor name supers
@@ -432,7 +450,8 @@
         (find-module 'gauche)
         '(<type-constructor-meta>
           <descriptive-type>
-          <^> </> <?> <Tuple> <List> <Vector>)
+          <^> </> <?> <Tuple> <List> <Vector>
+          of-type?)
         '(inlinable))
   (xfer (current-module)
         (find-module 'gauche.internal)

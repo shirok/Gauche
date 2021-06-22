@@ -540,20 +540,10 @@
 ;; which has been redefined.  Should only be used in class redefinition
 ;; routines.
 (define-cproc current-class-of (obj) (return (SCM_OBJ (Scm_ClassOf obj))))
+
 (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
 (define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubtypeP)
-
-(define (of-type? obj type)
-  (cond [(is-a? type <proxy-type>)
-         (of-type? obj (%proxy-type-ref type))]
-        [(is-a? type <descriptive-type>)
-         ((~ (class-of type) 'validator) type obj)]
-        [else (is-a? obj type)]))
-
-(define-cproc %proxy-type-ref (proxy)
-  (unless (SCM_PROXY_TYPE_P proxy)
-    (SCM_TYPE_ERROR proxy "<proxy-type>"))
-  (return (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE proxy)))))
+;; NB: of-type? is in libtype.scm.
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF) (setter slot-set!)
@@ -951,7 +941,7 @@
           change-class
           apply-generic sort-applicable-methods
           apply-methods apply-method
-          class-of current-class-of is-a? subtype? of-type?
+          class-of current-class-of is-a? subtype?
           slot-ref slot-set!
           slot-bound? slot-ref-using-accessor slot-bound-using-accessor?
           slot-set-using-accessor! slot-initialize-using-accessor!
