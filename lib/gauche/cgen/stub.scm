@@ -1698,7 +1698,7 @@
   (let1 type (cgen-type-from-name (~ self'scheme-name))
     (p "SCM_CLASS_DECL("(~ self'c-name)");")
     (p "#define "(cgen-unboxer-name type)"(obj) (("(~ self'c-type)")obj)")
-    (p "#define "(cgen-pred-name type)"(obj) SCM_XTYPEP(obj, (&"(~ self'c-name)"))")
+    (p "#define "(cgen-pred-name type)"(obj) SCM_ISA(obj, (&"(~ self'c-name)"))")
     ))
 
 (define-method cgen-emit-body ((self <cclass>))
