@@ -721,6 +721,25 @@ SCM_EXTERN ScmMVBox *Scm_ListToMVBox(ScmObj elts);
  * CLASS AND TYPE
  */
 
+/* A type is a metaobject that defines/describes certain properties of
+   a group of objects.  In Gauche, we have a few different kind of types.
+
+   CLASS - A class defines the structure and behavior of the group of
+   objects (instances).  Every runtime object directly belongs to a class.
+   Classes are inheritable, so an instance can have is-a relationship to
+   more than one classes.   The class structure is defined below,
+   and mainly implemented in class.c.
+
+   DESCRIPTIVE TYPE - Represents type constraints.  You can create a
+   descriptive type such as "this value should be either an integer or a
+   string".  It can be used to validate a value, but cannot be used
+   to create an instance.  This is implemented in libtype.scm.
+
+   PROXY TYPE - This is a special wrapper of classes, and usually it isn't
+   visible for the users.  This is required because Gauche allows
+   classes to be redefined.  See ScmProxyType defintion below.
+ */
+
 typedef void (*ScmClassPrintProc)(ScmObj obj,
                                   ScmPort *sink,
                                   ScmWriteContext *mode);
@@ -930,6 +949,7 @@ SCM_CLASS_DECL(Scm_TopClass);
 SCM_CLASS_DECL(Scm_BottomClass);
 SCM_CLASS_DECL(Scm_BoolClass);
 SCM_CLASS_DECL(Scm_CharClass);
+SCM_CLASS_DECL(Scm_TypeClass);
 SCM_CLASS_DECL(Scm_ClassClass);
 SCM_CLASS_DECL(Scm_EOFObjectClass);
 SCM_CLASS_DECL(Scm_UndefinedObjectClass);
@@ -942,6 +962,7 @@ SCM_CLASS_DECL(Scm_ForeignPointerClass);
 #define SCM_CLASS_BOTTOM           (&Scm_BottomClass)
 #define SCM_CLASS_BOOL             (&Scm_BoolClass)
 #define SCM_CLASS_CHAR             (&Scm_CharClass)
+#define SCM_CLASS_TYPE             (&Scm_TypeClass)
 #define SCM_CLASS_CLASS            (&Scm_ClassClass)
 #define SCM_CLASS_EOF_OBJECT       (&Scm_EOFObjectClass)
 #define SCM_CLASS_UNDEFINED_OBJECT (&Scm_UndefinedObjectClass)
@@ -954,10 +975,12 @@ SCM_CLASS_DECL(Scm_ForeignPointerClass);
 extern ScmClass *Scm_DefaultCPL[];
 extern ScmClass *Scm_ObjectCPL[];
 extern ScmClass *Scm_MetaclassCPL[];
+extern ScmClass *Scm_DescriptiveTypeCPL[];
 
-#define SCM_CLASS_DEFAULT_CPL     (Scm_DefaultCPL)
-#define SCM_CLASS_OBJECT_CPL      (Scm_ObjectCPL)
-#define SCM_CLASS_METACLASS_CPL   (Scm_MetaclassCPL)
+#define SCM_CLASS_DEFAULT_CPL       (Scm_DefaultCPL)
+#define SCM_CLASS_OBJECT_CPL        (Scm_ObjectCPL)
+#define SCM_CLASS_METACLASS_CPL     (Scm_MetaclassCPL)
+#define SCM_CLASS_TYPE_CPL          (Scm_MetaclassCPL+2)
 
 /* Static definition of classes
  *   SCM_DEFINE_BUILTIN_CLASS
@@ -1096,20 +1119,7 @@ SCM_EXTERN ScmObj Scm_ForeignPointerAttrGet(ScmForeignPointer *fp,
 SCM_EXTERN ScmObj Scm_ForeignPointerAttrSet(ScmForeignPointer *fp,
                                             ScmObj key, ScmObj value);
 
-
-/* A type is either a class or a descriptive type.  The latter is only
-   used to describe a certain aspect of an object, e.g. "the argument
-   must be either an <integer> or #f".  Descriptive type cannot be used
-   to instantiate objects, but can be used to validate and infer the type
-   of the object.
-
-   All descritive types are a subclass of <descriptive-type>.
- */
-
-SCM_CLASS_DECL(Scm_DescriptiveTypeClass);
-#define SCM_CLASS_DESCRIPTIVE_TYPE      (&Scm_DescriptiveTypeClass)
-
-/* A proxy type is a descriptive type to hold a reference to a class.
+/* A proxy type is to hold a reference to a class.
    Used in other descriptive types to handle redefinition of the original class.
    The actual definition and construtor is in gauche/priv/classP.h */
 typedef struct ScmProxyTypeRec ScmProxyType;

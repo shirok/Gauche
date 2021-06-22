@@ -85,7 +85,7 @@
  ;;               each element must be either a simple constant or a type.
  ;; validator - takes type and obj, returns if obj is valid as type.
  (define-cclass <type-constructor-meta> :base :private :no-meta
-   "ScmTypeConstructor*" "Scm_TypeConstructorMeta"
+   "ScmTypeConstructor*" "Scm_TypeConstructorMetaClass"
    (c "SCM_CLASS_METACLASS_CPL")
    ((constructor)
     (deconstructor)
@@ -93,7 +93,22 @@
    )
 
  (define-cfn Scm_TypeConstructorP (klass) ::int
-   (return (SCM_ISA klass (& Scm_TypeConstructorMeta))))
+   (return (SCM_ISA klass (& Scm_TypeConstructorMetaClass))))
+
+ (define-ctype ScmDescriptiveType
+   ::(.struct ScmDescriptiveTypeRec
+              (hdr::ScmInstance
+               name::ScmObj)))
+
+ (define-cclass <descriptive-type> :base :private :no-meta
+   "ScmDescriptiveType*" "Scm_DescriptiveTypeClass"
+   (c "SCM_CLASS_METACLASS_CPL+1")
+   ((name))
+   (allocator (let* ([z::ScmDescriptiveType*
+                      (SCM_NEW_INSTANCE ScmDescriptiveType klass)])
+                (cast void initargs)    ;suppress unused warning
+                (set! (-> z name) SCM_FALSE)
+                (return (SCM_OBJ z)))))
  )
 
 ;; define-type-constructor name supers
@@ -110,7 +125,7 @@
                            (string->symbol #"<~|trimmed|-meta>")
                            (string->symbol #"~|name|-meta"))]
               [supers (if (null? supers)
-                        (list (r'<type-instance-meta>))
+                        (list (r'<descriptive-type>))
                         supers)])
           (quasirename r
             `(begin
@@ -121,23 +136,20 @@
                  :deconstructor ,deconstructor
                  :validator ,validator))))]))))
 
-;; Metaclass: <type-instance-meta>
-;;   An abstract type instance, which is a class but won't create instances.
-;;   It can be used for of-type? method.
-(define-class <type-instance-meta> (<class>)
-  ())
-
-(define-method allocate-instance ((t <type-instance-meta>) initargs)
+(define-method allocate-instance ((t <descriptive-type>) initargs)
   (error "Abstract type instance cannot instantiate a concrete object:" t))
+
+(define-method write-object ((t <descriptive-type>) port)
+  (format port "#~a" (~ t'name)))
 
 ;; Equality is used when consolidate literals.  It's not lightweight
 ;; (it calls deconstructor, which allocates).
-(define-method object-equal? ((x <type-instance-meta>) (y <type-instance-meta>))
+(define-method object-equal? ((x <descriptive-type>) (y <descriptive-type>))
   (and (equal? (class-of x) (class-of y))
        (equal? (deconstruct-type x) (deconstruct-type y))))
 
 ;; Internal API, required to precompile descriptive type constant
-(define-method deconstruct-type ((t <type-instance-meta>))
+(define-method deconstruct-type ((t <descriptive-type>))
   ((~ (class-of t)'deconstructor) t))
 
 ;; This is called from initialization of precompiled code to recove
@@ -155,9 +167,10 @@
 ;;;
 
 (define (join-class-names classes)
-  (string-join (map (^k (if (is-a? k <class>)
-                          ($ symbol->string $ class-name k)
-                          (x->string k)))
+  (string-join (map (^k (x->string
+                         (cond [(is-a? k <class>) (class-name k)]
+                               [(is-a? k <descriptive-type>) (~ k'name)]
+                               [else k])))
                     classes)
                " " 'prefix))
 
@@ -209,15 +222,15 @@
          (error "Invalid '* in the procedure type constructor arguments:"
                 rest))]
       [else
-       (if (is-a? (car xs) <class>)
+       (if (is-a? (car xs) <type>)
          (scan-args (cdr xs) (cons (car xs) as))
-         (error "Non-class argument in the procedure type constructor:"
+         (error "Non-type argument in the procedure type constructor:"
                 (car xs)))]))
   (define (scan-results xs args rs)
     (cond [(null? xs) (values args (reverse rs))]
           [(and (null? rs) (eq? (car xs) '*) (null? (cdr xs)))
            (values args '*)]
-          [(is-a? (car xs) <class>)
+          [(is-a? (car xs) <type>)
            (scan-results (cdr xs) args (cons (car xs) rs))]
           [else
            (error "Non-class argument in the procedure type constructor:"
@@ -261,7 +274,7 @@
 ;;;
 
 (define (make-/ . args)
-  (assume (every (cut is-a? <> <class>) args))
+  (assume (every (cut is-a? <> <type>) args))
   (make </>
     :name (make-compound-type-name '/ args)
     :members args))
@@ -284,7 +297,7 @@
 ;;;
 
 (define (make-? ptype)
-  (assume (is-a? ptype <class>))
+  (assume (is-a? ptype <type>))
   (make <?>
     :name (make-compound-type-name '? `(,ptype))
     :primary-type ptype))
@@ -307,7 +320,7 @@
 ;;;
 
 (define (make-Tuple . args)
-  (assume (every (cut is-a? <> <class>) args))
+  (assume (every (cut is-a? <> <type>) args))
   (make <Tuple>
     :name (make-compound-type-name 'Tuple args)
     :elements args))
@@ -418,7 +431,7 @@
   (xfer (current-module)
         (find-module 'gauche)
         '(<type-constructor-meta>
-          <type-instance-meta>
+          <descriptive-type>
           <^> </> <?> <Tuple> <List> <Vector>)
         '(inlinable))
   (xfer (current-module)

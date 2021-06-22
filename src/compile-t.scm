@@ -46,7 +46,7 @@
            (if-let1 gloc (gref-inlinable-gloc arg)
              ;; (let1 v (gloc-ref gloc)
              ;;   (if (and (is-a? v <class>)
-             ;;            (not (is-a? v <type-instance-meta>)))
+             ;;            (not (is-a? v <descriptive-type>)))
              ;;     (%wrap-with-proxy-type ($gref-id arg) gloc)
              ;;     v))
              (gloc-ref gloc)
@@ -60,8 +60,7 @@
                    a compile-time constant:" ($*-src iform))]))
   (define (check-arg-value val)
     ;; For now, we restrict type ctor arguments to simple values
-    (unless (or (is-a? val <proxy-type>)
-                (is-a? val <class>)
+    (unless (or (is-a? val <type>)
                 (number? val)
                 (boolean? val)
                 (string? val)
@@ -73,7 +72,7 @@
   (let1 type
       (apply (~ ctor'constructor)
              (map ($ check-arg-value $ get-arg-value $) ($call-args iform)))
-    (unless (is-a? type <type-instance-meta>)
+    (unless (is-a? type <descriptive-type>)
       (errorf "Type costructor ~s returned an object other than a \
                type instance: ~s"
               ($*-src iform) type))

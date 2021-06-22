@@ -376,12 +376,12 @@
 (cond-expand
  [gauche-0.9.10
   (begin
-    (define (%type-instance-meta? obj) #f)
+    (define (%descriptive-type? obj) #f)
     (define (%deconstruct-type t) #f))]
  [else
   (begin
-    (define (%type-instance-meta? obj)
-      (is-a? obj <type-instance-meta>))
+    (define (%descriptive-type? obj)
+      (is-a? obj <descriptive-type>))
     (define (%deconstruct-type t)
       ((with-module gauche.internal deconstruct-type) t)))])
 
@@ -390,7 +390,7 @@
     (cond
      [(wrapped-identifier? val)
       (combine-hash-value (rec (~ val'name)) (rec (~ val'module)))]
-     [(%type-instance-meta? val)
+     [(%descriptive-type? val)
       (fold combine-hash-value (rec (~ val'name))
             (map rec (%deconstruct-type val)))]
      [else (default-hash val)]))
@@ -408,7 +408,7 @@
                   (every?-ec (: i len)
                              (rec (vector-ref x i) (vector-ref y i))))))]
      [(or (uvector? x) (string? x) (char-set? x) (regexp? x)
-          (%type-instance-meta? x))
+          (%descriptive-type? x))
       (equal? x y)]
      [(wrapped-identifier? x)
       (and (wrapped-identifier? y)
@@ -904,7 +904,7 @@
 (cond-expand
  [gauche-0.9.10]
  [else
-  (define-cgen-literal <cgen-scheme-type> <type-instance-meta>
+  (define-cgen-literal <cgen-scheme-type> <descriptive-type>
     ((ctor :init-keyword :ctor)
      (args :init-keyword :args))
     (make (value)

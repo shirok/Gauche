@@ -546,7 +546,7 @@
 (define (of-type? obj type)
   (cond [(is-a? type <proxy-type>)
          (of-type? obj (%proxy-type-ref type))]
-        [(is-a? type <type-instance-meta>)
+        [(is-a? type <descriptive-type>)
          ((~ (class-of type) 'validator) type obj)]
         [else (is-a? obj type)]))
 
