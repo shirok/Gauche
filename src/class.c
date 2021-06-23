@@ -3218,13 +3218,13 @@ static int proxy_type_compare(ScmObj x, ScmObj y, int equalp)
     }
 }
 
-static ScmClass *proxy_type_get_class(ScmGloc *ref)
+static ScmClass *proxy_type_get_class(ScmIdentifier *id, ScmGloc *ref)
 {
     ScmObj klass = Scm_GlocGetValue(ref);
     if (!SCM_ISA(klass, SCM_CLASS_CLASS)) {
         Scm_Error("Identifier %S wrapped by a proxy-type has to be bound "
                   "to a class, but it is bound to %S.  This shouldn't happen.",
-                  klass);
+                  id, klass);
     }
     return SCM_CLASS(klass);
 }
@@ -3234,7 +3234,7 @@ ScmObj Scm_MakeProxyType(ScmIdentifier *id, ScmGloc *ref)
     /* If REF != NULL, it must be the binding of ID.  We trust the caller,
        and just check that it is bound to a class. */
     if (ref != NULL) {
-        (void)proxy_type_get_class(ref); /* detect error early */
+        (void)proxy_type_get_class(id, ref); /* detect error early */
     }
     ScmProxyType *p = SCM_NEW(ScmProxyType);
     SCM_SET_CLASS(p, SCM_CLASS_PROXY_TYPE);
@@ -3255,7 +3255,7 @@ ScmClass *Scm_ProxyTypeRef(ScmProxyType *p)
         }
         p->ref = g;
     }
-    return proxy_type_get_class(p->ref);
+    return proxy_type_get_class(p->id, p->ref);
 }
 
 ScmObj Scm_ProxyTypeId(ScmProxyType *p)
