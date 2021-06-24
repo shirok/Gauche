@@ -781,6 +781,8 @@
           `(or ,expr
                (error (format "Invalid assumption: ~s" ',expr) ,@objs)))]))))
 
+;; This will eventually folded into the compiler.  The argumet must be
+;; a literal <type>.
 (define-syntax assume-type
   (er-macro-transformer
    (^[f r c]
