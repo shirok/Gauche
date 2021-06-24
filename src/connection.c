@@ -33,7 +33,6 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/class.h"
 
 /* the class is initialized in class.c */
 SCM_DEFINE_ABSTRACT_CLASS(Scm_ConnectionClass, NULL);

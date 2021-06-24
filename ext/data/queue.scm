@@ -67,8 +67,6 @@
 ;;;  Data structures
 ;;;
 (inline-stub
- (declcode
-  (.include <gauche/class.h>))
 
  ;;
  ;; <queue>

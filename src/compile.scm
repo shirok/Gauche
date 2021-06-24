@@ -40,8 +40,7 @@
 
 (inline-stub
  (declcode
-  (.include <gauche/class.h>
-            <gauche/code.h>
+  (.include <gauche/code.h>
             <gauche/vminsn.h>
             <gauche/priv/builtin-syms.h>
             <gauche/priv/glocP.h>

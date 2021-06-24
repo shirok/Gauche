@@ -36,7 +36,6 @@
 #include <gauche.h>
 #include <string.h>
 #include <errno.h>
-#include <gauche/class.h>
 #include <gauche/extend.h>
 
 #include "gauche/fcntl.h"

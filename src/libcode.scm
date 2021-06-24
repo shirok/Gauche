@@ -62,7 +62,6 @@
  (declcode
   (.include <gauche/code.h>
             <gauche/priv/codeP.h>
-            <gauche/class.h>
             <gauche/vminsn.h>))
 
  (define-cproc vm-dump-code (code::<compiled-code>) ::<void>

@@ -37,7 +37,6 @@
 
  (declcode
   (.include "gauche-net.h")
-  (.include <gauche/class.h>)
   (.include <gauche/bignum.h>))
 
  (define-type <socket-address> "ScmSockAddr*" "socket address"

@@ -88,7 +88,6 @@
 
 (inline-stub
  (declcode
-  (.include <gauche/class.h>)
   (.include "md5.h")
 
   (.define LIBGAUCHE_EXT_BODY)

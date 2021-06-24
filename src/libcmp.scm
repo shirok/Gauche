@@ -33,9 +33,6 @@
 
 (select-module gauche.internal)
 
-(inline-stub
- (declcode (.include "gauche/class.h")))
-
 ;;;
 ;;; Comparator (a la srfi-114/128)
 ;;;

@@ -34,7 +34,6 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
-#include "gauche/class.h"
 #include "gauche/priv/parameterP.h"
 
 /*

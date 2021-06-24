@@ -32,7 +32,6 @@
  */
 
 #include <gauche.h>
-#include <gauche/class.h>
 #include <gauche/extend.h>
 #include <gauche/priv/portP.h>
 

@@ -117,7 +117,6 @@
 
 (inline-stub
  (declcode
-  (.include <gauche/class.h>)
   ;; customization for sha2.h
   (.define SHA2_USE_INTTYPES_H)         ; use uintXX_t
   (.include "sha2.h")

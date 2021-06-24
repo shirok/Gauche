@@ -34,8 +34,7 @@
 (select-module gauche.internal)
 (use util.match)
 (inline-stub
- (declcode (.include "gauche/class.h"
-                     "gauche/priv/macroP.h")))
+ (declcode (.include "gauche/priv/macroP.h")))
 
 ;; This file defines lower level layer of macro system.
 ;; Initialization of compile.scm depends on this file.

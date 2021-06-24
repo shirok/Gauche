@@ -35,7 +35,6 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
-                     <gauche/class.h>
                      <gauche/exception.h>
                      <gauche/priv/portP.h>
                      <gauche/priv/writerP.h>

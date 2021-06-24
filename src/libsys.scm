@@ -37,7 +37,7 @@
 (select-module gauche)
 (inline-stub
  (declcode
-  (.include <gauche/class.h> <gauche/priv/mmapP.h>)
+  (.include <gauche/priv/mmapP.h>)
   (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
   (.cond ["TIME_WITH_SYS_TIME" (.include <sys/time.h> <time.h>)]
          ["HAVE_SYS_TIME_H"    (.include <sys/time.h>)]

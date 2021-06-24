@@ -34,7 +34,6 @@
 #define LIBGAUCHE_BODY
 #include <math.h>
 #include "gauche.h"
-#include "gauche/class.h"
 #include "gauche/priv/atomicP.h"
 
 /*============================================================

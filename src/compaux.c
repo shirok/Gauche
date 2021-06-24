@@ -39,7 +39,6 @@
 #include "gauche.h"
 #include "gauche/vm.h"
 #include "gauche/vminsn.h"
-#include "gauche/class.h"
 #include "gauche/code.h"
 #include "gauche/priv/glocP.h"
 #include "gauche/priv/identifierP.h"

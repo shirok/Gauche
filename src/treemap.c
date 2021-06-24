@@ -33,7 +33,6 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/class.h"
 
 /*================================================================
  * ScmTreeCore

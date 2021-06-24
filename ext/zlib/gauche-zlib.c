@@ -33,7 +33,6 @@
 
 #include "gauche-zlib.h"
 #include <gauche/exception.h>
-#include <gauche/class.h>
 #define CHUNK 4096
 
 #define DEFAULT_BUFFER_SIZE 4096

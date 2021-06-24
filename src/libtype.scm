@@ -70,8 +70,7 @@
 ;; Metaclass: <type-constructor-meta>
 ;;   Instance classes of this metaclass are used to create an abstract types.
 (inline-stub
- (.include "gauche/class.h"
-           "gauche/priv/classP.h")
+ (.include "gauche/priv/classP.h")
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
               (common::ScmClass

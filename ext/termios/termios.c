@@ -33,7 +33,6 @@
 
 #include <string.h>
 #include <gauche.h>
-#include <gauche/class.h>
 #include <gauche/extend.h>
 
 #include "gauche-termios.h"

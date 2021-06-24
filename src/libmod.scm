@@ -35,7 +35,6 @@
 
 (inline-stub
  (declcode (.include "gauche/vminsn.h")
-           (.include "gauche/class.h")
            (.include "gauche/priv/glocP.h")
            (.include "gauche/priv/moduleP.h")))
 

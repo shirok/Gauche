@@ -33,7 +33,6 @@
 
 #include <math.h>
 #include <gauche.h>
-#include <gauche/class.h>
 #include <gauche/exception.h>
 #include "threads.h"
 

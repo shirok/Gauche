@@ -33,7 +33,6 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/class.h"
 #include "gauche/writer.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/macroP.h" /* PVREF stuff.  Will go in future */

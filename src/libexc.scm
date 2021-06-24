@@ -33,8 +33,7 @@
 
 (select-module gauche)
 (inline-stub
- (declcode (.include <gauche/class.h>
-                     <gauche/exception.h>)))
+ (declcode (.include <gauche/exception.h>)))
 
 (use util.match)
 (declare (keep-private-macro define-condition-type condition))

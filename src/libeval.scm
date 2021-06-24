@@ -35,7 +35,6 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
-                     <gauche/class.h>
                      <gauche/priv/readerP.h>)))
 
 (declare (keep-private-macro autoload add-load-path))
