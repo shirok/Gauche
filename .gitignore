@@ -209,6 +209,7 @@ test.record
 /src/genconfig
 /src/libalpha.c
 /src/libbool.c
+/src/libbox.c
 /src/libchar.c
 /src/libcode.c
 /src/libcmp.c
