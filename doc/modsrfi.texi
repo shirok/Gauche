@@ -7312,15 +7312,30 @@ by @var{comparator}.  It is an error if @var{list} is empty.
 
 @deftp {Module} srfi-170
 @mdindex srfi-170
+@c EN
 This module provides a portable interface to a part of POSIX API,
 mainly filesystem interface.
+@c JP
+このモジュールは、ファイルシステムインタフェースを中心としたPOSIX APIの一部を
+ポータブルなインタフェースとして提供します。
+@c COMMON
 
+@c EN
 In Gauche, it is a thin wrapper of Gauche's native system interface
 (@pxref{System interface}).  You may want to use this module for
 a portable code.
+@c JP
+GaucheではこのモジュールはGaucheのネイティブシステムインタフェース
+(@ref{System interface})の薄いラッパーになっています。
+ポータブルなコードを書く場合にこのモジュールは便利でしょう。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading POSIX Error
+@c JP
+@subheading POSIXエラー
+@c COMMON
 
 @defun posix-error? obj
 [SRFI-170]
@@ -7938,14 +7953,26 @@ the same as @var{hook}'s arity.
 
 @deftp {Module} srfi-174
 @mdindex srfi-174
+@c EN
 Note: This srfi is originally intended to be used with srfi-170
 (@pxref{POSIX API}), but it turned out this was not enough to support
 the latter--notably, we need srfi-19 type argument in the constructor.
+@c JP
+註: このsrfiはsrfi-170 (@ref{POSIX API}参照)で使うための補助ライブラリとして
+作られたのですが、その後の議論で不十分であることがわかりました。
+特に、srfi-19の時間の型をコンストラクタで指定することが不可欠だとわかったのです。
+@c COMMON
 
+@c EN
 Consequently, it is likely that this srfi will be superseded later.
 We deprecate using this srfi; if you need a portable time representation,
 srfi-19 is the best choice at this moment.  @xref{Time data types and procedures},
 for the details.
+@c JP
+従って、このsrfiは将来のsrfiで置き換えられる可能性が高く、使用は非推奨です。
+ポータブルな時間の表現が必要であれば、srfi-19を使ってください
+(@ref{Time data types and procedures}参照)。
+@c COMMON
 @end deftp
 
 @defun timespec secs nsecs
