@@ -17090,7 +17090,7 @@ It is originally introduced by srfi-111, which was later adopted in
 R7RS-large as @code{scheme.box}.  Srfi-195 enhances it to deal with
 multiple values.
 
-The srfis leaves some details to implementations.  Here are our choices:
+The srfis leave some details to implementations.  Here are our choices:
 @itemize
 @item
 We don't support autoboxing; that is, it is an error to pass non-box
