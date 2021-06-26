@@ -231,7 +231,7 @@ libgauche_OBJECTS = \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
 	compile.$(OBJEXT) \
-	libalpha.$(OBJEXT) libbool.$(OBJEXT) libchar.$(OBJEXT) \
+	libalpha.$(OBJEXT) libbool.$(OBJEXT) libbox.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
 	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
 	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmacbase.$(OBJEXT) \
@@ -306,6 +306,7 @@ compile.c  : compile.scm compile-0.scm compile-1.scm compile-2.scm \
 	     compile-t.scm $(PRECOMP_DEPENDENCY)
 libalpha.c   : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c    : libbool.scm $(PRECOMP_DEPENDENCY)
+libbox.c     : libbox.scm $(PRECOMP_DEPENDENCY)
 libchar.c    : libchar.scm $(PRECOMP_DEPENDENCY)
 libcode.c    : libcode.scm $(PRECOMP_DEPENDENCY)
 libcmp.c     : libcmp.scm $(PRECOMP_DEPENDENCY)
@@ -503,8 +504,8 @@ GENERATED = compile.c autoloads.c builtin-syms.c \
 	    ../lib/gauche/vm/insn.scm native-supp.scm \
 	    char_attr.c gauche/priv/unicode_attr.h \
 	    libsrfis.scm ../doc/srfis.texi \
-	    libalpha.c libbool.c libchar.c libcode.c libcmp.c libdict.c \
-	    libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c \
+	    libalpha.c libbool.c libbox.c libchar.c libcode.c libcmp.c \
+	    libdict.c libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c \
 	    libmacbase.c libmacro.c libmisc.c libmod.c libnative.c libnum.c \
 	    libobj.c libparam.c libproc.c librx.c libstr.c \
 	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
