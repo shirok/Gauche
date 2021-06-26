@@ -9150,7 +9150,8 @@ See also @code{parse-json} in @code{rfc.json}
 @defun json-lines-read :optional port-or-generator
 [SRFI-180]
 @c MOD srfi-180
-Read JSON Lines format
+Returns a generator that yields a JSON values at a time,
+read from the source in JSON Lines format
 (@url{http://jsonlines.org/}), which contains multiple
 toplevel JSON values separated with @code{#\newline}.
 The input @var{port-or-generator} should be an input port
@@ -9158,15 +9159,15 @@ or a char generator, defaulted to the current input port.
 
 See @code{json-read} above about the mapping from JSON values to Scheme
 values.
-
-Returns a list of read JSON values.  A @code{<json-parse-error>}
-is thrown if it encounters invalid JSON text.
 @end defun
 
 @defun json-sequence-read :optional port-or-generator
 [SRFI-180]
 @c MOD srfi-180
-Read JSON Text Sequence format (RFC7464, @url{https://tools.ietf.org/html/rfc7464}) from @var{port-or-generator}, which should be an input port
+Returns a generator that yields a JSON values at a time,
+read from the source in JSON Text Sequence format
+(RFC7464, @url{https://tools.ietf.org/html/rfc7464}).
+The input @var{port-or-generator} should be an input port
 or a char generator, defaulted to the current input port.
 
 JSON Text Sequence can contain multiple JSON values,
