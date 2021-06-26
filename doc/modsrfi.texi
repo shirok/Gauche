@@ -2842,6 +2842,7 @@ including long options.
 @end deftp
 
 @defun args-fold args options unrecognized-proc operand-proc :rest seeds
+[SRFI-37]
 @c MOD srfi-37
 @c EN
 Processes program options @var{args} from left to right,
@@ -2965,6 +2966,7 @@ from @code{args-fold}.
 @end defun
 
 @defun option names require-arg? optional-arg? processor
+[SRFI-37]
 @c MOD srfi-37
 @c EN
 Creates an option object with the passed properties.
@@ -3022,6 +3024,7 @@ as '@code{-d}' with argument '@code{foo}'.
 @end defun
 
 @defun option? obj
+[SRFI-37]
 @c MOD srfi-37
 @c EN
 Returns @code{#t} if @var{obj} is an option object,
@@ -3036,6 +3039,7 @@ Returns @code{#t} if @var{obj} is an option object,
 @defunx option-required-arg? option
 @defunx option-optional-arg? option
 @defunx option-processor
+[SRFI-37]
 @c MOD srfi-37
 @c EN
 Returns the properties of an option object @var{option}.
@@ -4144,6 +4148,7 @@ you shouldn't.
 @end deftp
 
 @defmac require-extension clause @dots{}
+[SRFI-55]
 @c MOD srfi-55
 @c EN
 Make extension(s) specified by @var{clause}s available in the rest
@@ -5534,6 +5539,7 @@ in @var{flag} @dots{}.
 @end multitable
 
 @defmac address-family name
+[SRFI-106]
 @c MOD srfi-106
 @c EN
 @var{Name} can be either one of symbols
@@ -5561,6 +5567,7 @@ If @var{name} is other object, an error is signaled.
 @end multitable
 
 @defmac socket-domain name
+[SRFI-106]
 @c MOD srfi-106
 @c EN
 @var{Name} can be either one of symbols
@@ -5594,6 +5601,7 @@ If @var{name} is other object, an error is signaled.
 @end multitable
 
 @defmac address-info name @dots{}
+[SRFI-106]
 @c MOD srfi-106
 @c EN
 Maps combination of names @code{canoname}, @code{numerichost},
@@ -5628,6 +5636,7 @@ An error is signaled if other symbols are passed.
 @end multitable
 
 @defmac ip-protocol name
+[SRFI-106]
 @c MOD srfi-106
 @c EN
 Maps one of names @code{ip}, @code{tcp}, and @code{udp}
@@ -5658,6 +5667,7 @@ if other symbol is passed.
 @end multitable
 
 @defmac message-type name @dots{}
+[SRFI-106]
 @c MOD srfi-106
 @c EN
 Maps combination of names @code{none}, @code{peek},
@@ -5692,6 +5702,7 @@ An error is signaled if other symbols are passed.
 @end multitable
 
 @defmac shutdown-method name @dots{}
+[SRFI-106]
 @c MOD srfi-106
 @c EN
 Maps combination of names @code{read} and @code{write}
@@ -9821,8 +9832,8 @@ constructor procedures @code{right} and @code{left}.
 @defun maybe? obj
 @defunx just? obj
 @defunx nothing? obj
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Type predicates.
 Returns @code{#t} iff @var{obj} is a Maybe, a Just, or a Nothing,
 respectively.
@@ -9831,16 +9842,16 @@ respectively.
 @defun either? obj
 @defunx right? obj
 @defunx left? obj
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Type predicates.
 Returns @code{#t} iff @var{obj} is a Either, a Right, or a Left,
 respectively.
 @end defun
 
 @defun maybe= elt= maybe1 maybe @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Equality predicate of Maybes.  It returns @code{#t} iff
 all of @var{maybe1} @var{maybe} @dots{} are Nothings,
 or Justs with their respective payload objects are the same
@@ -9848,8 +9859,8 @@ using @var{elt=}.
 @end defun
 
 @defun either= elt= either1 either @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Equality predicate of Eithers.  It returns @code{#t} iff
 all of @var{either11} @var{either} @dots{} are the same
 types (all Rights, or all Lefts), with
@@ -9861,21 +9872,21 @@ using @var{elt=}.
 @subsection Constructors
 
 @defun just obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns a Just with @var{obj} @dots{} as its payload.
 @end defun
 
 @defun nothing
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns a Nothing.
 @end defun
 
 @defun right obj @dots{}
 @defunx left obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns a Right or a Left respectively, with @var{obj} @dots{}
 as its payload.
 @end defun
@@ -9883,31 +9894,31 @@ as its payload.
 @defun list->just objs
 @defunx list->right objs
 @defunx list->left objs
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns a Just, Right or Left respectively, with
 @var{objs} as its payload.
 @end defun
 
 @defun maybe->either maybe obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{maybe} argument must be a Maybe.
 If it is a Just, then a Right with the same payload is returned.
 If it is a Nothing, a Left with @var{obj} @dots{} as its payload.
 @end defun
 
 @defun either->maybe either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{either} argument must be an Either.
 If it is a Right, then a Just with the same payload is returned.
 If it is a Left, a Nothing is returned.
 @end defun
 
 @defun either-swap either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{either} argument must be an Either.
 If it is a Right, a Left with the same payload argument is returned.
 If it is a Left, a Right with the same payload argument is returned.
@@ -9917,8 +9928,8 @@ If it is a Left, a Right with the same payload argument is returned.
 @subsection Accessors
 
 @defun maybe-ref maybe failure :optional success
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{maybe} arugment must be a Maybe.  If it's a Nothing,
 a procedure @var{failure} is tail-called with no arguments.
 If it's Just, a procedure @var{success} is tail-called with its
@@ -9931,8 +9942,8 @@ payload object(s).  If @var{success} is omitted, @code{values} is used.
 @end defun
 
 @defun either-ref either failure :optional success
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{either} argument must be an Either.
 If it's a Left, a procedure @var{failure} is called with
 its payload object(s).  If it's a Right, a procedure
@@ -9941,16 +9952,16 @@ If @var{success} is omitted, @code{values} is used.
 @end defun
 
 @defun maybe-ref/default maybe default @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{maybe} argument must be a Maybe.  If it's a Nothing,
 @var{default} @dots{} are returned as multiple values.
 If it's a Just, its payload object(s) is/are returned as multiple values.
 @end defun
 
 @defun either-ref/default maybe default @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{either} argument must be an Either.  If it's a Left,
 @var{default} @dots{} are returned as multiple values (the Left's payload
 is discarded).
@@ -9958,24 +9969,24 @@ If it's a Right, its payload object(s) is/are returned as multiple values.
 @end defun
 
 @defun maybe-join maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe} is a Nothing,
 it is returned.  If it's a Maybe and its only payload is a Maybe,
 the inner Maybe is returned.  Other cases raise an error.
 @end defun
 
 @defun either-join either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{either} is a Left, it is returned.
 If it is a Right and its only payload is an Either,
 the inner Either is returned.  Other cases raise an error.
 @end defun
 
 @defun maybe-bind maybe mproc mproc2 @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Monadic @var{bind} operation.  The @var{maybe} argument must be a Maybe.
 If it is a Nothing, it is returned.
 If it is a Just, its payload object(s) is/are applied to a procedure
@@ -9989,8 +10000,8 @@ given, the same operation is repeated on them.
 @end defun
 
 @defun either-bind either mproc mproc2 @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Monadic @var{bind} operation.  The @var{either} argument must be an Either.
 If it is a Left, it is returned as is.
 If it is a Right, its payload object(s) is/are applied to a procedure
@@ -10005,8 +10016,8 @@ given, the same operation is repeated on them.
 
 @defun maybe-compose mproc mproc2 @dots{}
 @defunx either-compose mproc mproc2 @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Each argument must be a procedure taking zero or more arguments
 and return a Maybe/an Either.   Returns a procedure that accepts zero or more
 arguments and returns a Maybe/an Either.
@@ -10036,8 +10047,8 @@ of individual values.)
 
 @defun maybe-length maybe
 @defunx either-length either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns 0 if @var{maybe}/@var{either} is a Nothing/Left, and
 1 if it is a Just/Right.  An error is thrown if the argument
 isn't a Maybe/an Either.
@@ -10045,8 +10056,8 @@ isn't a Maybe/an Either.
 
 @defun maybe-filter pred maybe
 @defunx either-filter pred either obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe}/@var{either} is a Nothing/Left,
 returns a Nothing/a Left of @var{obj} @dots{}.
 If @var{maybe}/@var{either} is a Just/a Right, apply @var{pred} on
@@ -10059,16 +10070,16 @@ An error is thrown if @var{maybe}/@var{either} isn't a Maybe/an Either.
 
 @defun maybe-remove pred maybe
 @defunx either-remove pred either obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Like @code{maybe-filter}/@code{either-filter}, but the meaning of
 @var{pred} is reversed.
 @end defun
 
 @defun maybe-sequence mappable cmap :optional aggregator
 @defunx either-sequence mappable cmap :optional aggregator
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 This converts a collection of Maybes/Eithers to a Mayber/an Either of
 a collection.  The input collection and the collection in the output can
 be of different type.
@@ -10101,8 +10112,8 @@ procedure, whose default value is @code{list}.
 
 @defun maybe-map proc maybe
 @defunx either-map proc either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe}/@var{either} is a Nothing/Left, it is returned as is.
 If it is a Just/Right, its payload value(s) is/are passed to @var{proc},
 and the result is returned.
@@ -10110,8 +10121,8 @@ and the result is returned.
 
 @defun maybe-for-each proc maybe
 @defunx either-for-each proc either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe}/@var{either} is a Nothing/Left, these procedures do nothing.
 Otherwise, @var{proc} is applied to the argument's payload values.
 The result of @var{proc} is discarded.  Returns an unspecified vlaue.
@@ -10119,8 +10130,8 @@ The result of @var{proc} is discarded.  Returns an unspecified vlaue.
 
 @defun maybe-fold kons knil maybe
 @defunx either-fold kons knil either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe}/@var{either} is a Nothing/Left, @var{knil} is returned.
 Otherwise, @var{kons} is called with the argument's payload values, plus
 @var{knil}.  What @var{kons} returns becomes the result.
@@ -10128,8 +10139,8 @@ Otherwise, @var{kons} is called with the argument's payload values, plus
 
 @defun maybe-unfold p f g seed @dots{}
 @defunx either-unfold p f g seed @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 First, the stop predicate @var{p} is applied to @var{seed} @dots{}.
 If it returns a true value, a Nothing / a Left of @var{seed} @dots{} is
 returned.  Otherwise, @var{g} is applied to @var{seed} @dots{},
@@ -10144,15 +10155,15 @@ then the results are wrapped in a Just/Right to be returned.
 @subsection Protocol converters
 
 @defun maybe->list maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe} is a Just, returns a list of its payload values.
 If it is a Nothing, an empty list is retured.
 @end defun
 
 @defun list->maybe lis
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{lis} is an empty list, a Nothing is returned.
 Otherwise, a Just that has elements in @var{lis} as payload values
 is returned.
@@ -10163,23 +10174,23 @@ a Nothing.
 @end defun
 
 @defun either->list either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{either} is a Right, returns a list of its payload values.
 If it is a Left, returns an empty string.
 @end defun
 
 @defun list->either lis obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{lis} is an empty list, a Left of @var{obj} @dots{} is returned.
 Otherwise, a Right that has elements in @var{lis} as payload values
 is returned.
 @end defun
 
 @defun maybe->truth maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe} is a Nothing, @code{#f} is returned.
 Otherwise, it must be a Just with one value, and its value is returned.
 
@@ -10189,8 +10200,8 @@ use @code{maybe->list-truth}.
 @end defun
 
 @defun truth->maybe obj
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{obj} is @code{#f}, returns a Nothing.
 Otherwise, returns a Just with @var{obj} as its payload.
 
@@ -10199,8 +10210,8 @@ if @var{x} is a Just wrapping @code{#f}, you'll get a Nothing.
 @end defun
 
 @defun either->truth either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{either} is a Left, @code{#f} is returned.
 Otherwise, it must be a Right with one value, and its value is returned.
 
@@ -10210,23 +10221,23 @@ use @code{either->list-truth}.
 @end defun
 
 @defun truth->either obj fail-obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{obj} is @code{#f}, returns a Left with @var{fail-obj} @dots{} is
 returned.
 Otherwise, returns a Right with @var{obj} as its payload.
 @end defun
 
 @defun maybe->list-truth maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Like @code{maybe->list}, it returns @code{#f} if @var{maybe} is a Nothing.
 If @var{maybe} is a Just, however, it returns a list of its payload values.
 @end defun
 
 @defun list-truth->maybe lis-or-false
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The argument must be @code{#f} of a list.  If it is @code{#f}, a Nothing
 is returned.  If it is a list, a Just with elements of the list is
 returned.
@@ -10235,15 +10246,15 @@ returned.
 @end defun
 
 @defun either->list-truth either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Like @code{either->list}, it returns @code{#f} if @var{either} is a Left.
 If @var{either} is a Right, however, it returns a list of its payload values.
 @end defun
 
 @defun list-truth->either lis-or-false fail-objs @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{list-or-false} argument must be @code{#f} of a list.
 If it is @code{#f}, a Left with @var{fail-objs} @dots{}
 is returned.  If it is a list, a Right with elements of the list is
@@ -10251,8 +10262,8 @@ returned.
 @end defun
 
 @defun maybe->generation maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe} is a Nothing, an EOF object is returned.
 Otherwise, it must be a Just with one value, and its value is returned.
 If @var{maybe} is a Just and it doesn't have exactly one value, an error
@@ -10260,15 +10271,15 @@ is thrown.
 @end defun
 
 @defun generation->maybe obj
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{obj} is an EOF value, a Nothing is returned.
 Otherwise, a Just wrapping @var{obj} is returned.
 @end defun
 
 @defun either->generation either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{either} is a Left, an EOF object is returned.
 Otherwise, it must be a Right with one value, and its value is returned.
 If @var{either} is a Right and it doesn't have exactly one value, an error
@@ -10276,39 +10287,39 @@ is thrown.
 @end defun
 
 @defun generation->either obj fail-objs @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{obj} is an EOF value, a Left with @var{fail-objs} @dots{} is returned.
 Otherwise, a Right wrapping @var{obj} is returned.
 @end defun
 
 @defun maybe->values maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe} is a Just, returns its payload as multiple values.
 If it is a Nothing, returns no values.
 (Note that a Just with zero values also returns no values.)
 @end defun
 
 @defun values->maybe producer
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 It first invokes a procedure @var{producer} with no values.
 If it returns zero values, a Nothing is returned; otherwise,
 a Just with those values are returned.
 @end defun
 
 @defun either->values either
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{either} is a Right, returns its payload as multiple values.
 If it is a Left, returns no values.
 (Note that a Right with zero values also returns no values.)
 @end defun
 
 @defun values->either producer fail-obj @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 It first invokes a procedure @var{producer} with no values.
 If it returns zero values, a Left with @var{fail-obj} @dots{} as
 its payload is returned.
@@ -10317,8 +10328,8 @@ a Right with those values are returned.
 @end defun
 
 @defun maybe->two-values maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If @var{maybe} is a Just with exactly one value, the value and @code{#t}
 is returned.  If @var{maybe} is a Nothing, two @code{#f} is returned.
 An error is thrown if @var{maybe} has a Just with zero or more than two
@@ -10326,8 +10337,8 @@ values.
 @end defun
 
 @defun two-values->maybe producer
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The inverse of @code{maybe->two-values}.  A procedure @var{producer}
 is called with no arguments.  It must return two values, a possible
 payload value, and a boolean.  If the second value is true,
@@ -10336,8 +10347,8 @@ a Nothing is returned (the first return value is ignored).
 @end defun
 
 @defun exception->either pred thunk
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 A procedure @var{thunk} is called without argument, wrapped by an
 exception handler.  If @var{thunk} raises a condition, it is
 examined by @var{pred}.  If @var{pred} returns true on the condition,
@@ -10351,8 +10362,8 @@ by a Right and returned.
 @subsection Syntactic utilities
 
 @defmac maybe-if mtest then else
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If the @var{mtest} expression yields a Just, evaluates @var{then}.
 If the @var{mtest} expression yeilds a Nothing, evaluates @var{else}.
 If the @var{mtest} expression doesn't produce a Maybe, an error
@@ -10361,8 +10372,8 @@ is thrown.
 
 @defmac maybe-and maybe @dots{}
 @defmacx either-and either @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Evaluates @var{maybe}/@var{either} from left to right, as far as
 each yields a Just/Right.  If every expression yields a Just/Right,
 the last one is returned.  If it encounters an expression that
@@ -10374,8 +10385,8 @@ If expressions yield something other than Maybe/Either, an error is thrown.
 
 @defmac maybe-or maybe @dots{}
 @defmacx either-or either @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Evaluates @var{maybe}/@var{either} from left to right, as far as
 each yields a Nothing/Left.   If it encounters an expression that
 yields a Just/Right, it stops evaluating the rest of expressions and
@@ -10386,8 +10397,8 @@ If expressions yield something other than Maybe/Either, an error is thrown.
 
 @defmac maybe-let* ( claw @dots{} ) body @dots{}
 @defmacx either-let* ( claw @dots{} ) body @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 This is a Maybe/Either version of @code{and-let*}.
 
 Each @var{claw} can be either one of the following forms:
@@ -10420,8 +10431,8 @@ After all @var{claws} are processed and none yields a Nothing/Left,
 
 @defmac maybe-let*-values ( mv-claw @dots{} ) body @dots{}
 @defmacx either-let*-values ( mv-claw @dots{} ) body @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Multi-value payload version of @code{maybe-let*}/@code{either-let*}.
 
 Each @var{claw} can be either one of the following forms:
@@ -10458,8 +10469,8 @@ After all @var{claws} are processed and none yields a Nothing/Left,
 @end defmac
 
 @defmac either-guard pred body @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 The @var{body} @dots{} is evaluated, and the value(s) it produces
 are wrapped in a Right and returned.  If an exception occurs in
 @var{body} @dots{}, the thrown condition is passed to a predicate @var{pred}.
@@ -10481,16 +10492,16 @@ If any of the arguments is @code{Nothing}, the result becomes @code{Nothing}
 All the argument must be Maybe type, or an error is signalled.
 
 @defun tri-not maybe
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns @code{Just #t} if @var{maybe} is trivalent-false,
 @code{Just #f} if @var{maybe} is triavlent-true, and
 @code{Nothing} if @var{maybe} is @code{Nothing}.
 @end defun
 
 @defun try=? maybe @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns @code{Just #t} if arguments are either all trivalent-true
 or all trivalent-false.  Otherwise return @code{Just #f}.
 Note that if any of the argument is @code{Nothing}, the result is
@@ -10498,8 +10509,8 @@ Note that if any of the argument is @code{Nothing}, the result is
 @end defun
 
 @defun try-and maybe @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns @code{Just #t} if all arguments are trivalent-true,
 @code{Just #f} if all arguments are @code{Just} but at least one
 of them is @code{Just #f}, and @code{Nothing} if any of the arguments
@@ -10509,8 +10520,8 @@ This is not a shortcut operation like @code{and}.
 @end defun
 
 @defun try-or maybe @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 Returns @code{Just #f} if all arguments are trivalent-false,
 @code{Just #t} if all arguments are @code{Just} but at least one
 of them is trivalent-true, and @code{Nothing} if any of the arguments
@@ -10520,8 +10531,8 @@ This is not a shortcut operation like @code{or}.
 @end defun
 
 @defun try-merge maybe @dots{}
-@c MOD srfi-189
 [SRFI-189]
+@c MOD srfi-189
 If all arguments are @code{Nothing}, @code{Nothing} is returned.
 Otherwise, first @code{Just} is returned.
 @end defun
@@ -11025,6 +11036,7 @@ R7RS-largeのジェネレータについては@ref{R7RS generators}を参照。)
 
 @defun gcompose-left constructor operation @dots{}
 @defunx gcompose-right constructor operation @dots{}
+[SRFI-221]
 @c MOD srfi-221
 @c EN
 The @var{constructor} argument is a thunk that returns a generator.
