@@ -127,7 +127,12 @@
 ;; See https://srfi-email.schemers.org/srfi-discuss/msg/16912128/
 ;; for the discussion triggered this implementation.
 
-(use gauche.internal)
+(define-module gauche.experimental.counted-box)
+(select-module gauche.experimental.counted-box)
+
+(export <counted-box> make-counted-box
+        counted-box-unbox countex-box-ref
+        counted-box-arity counted-box-count counted-box-inc!)
 
 (inline-stub
  (.include "gauche/priv/atomicP.h")
