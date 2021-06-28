@@ -131,7 +131,7 @@
 (select-module gauche.experimental.counted-box)
 
 (export <counted-box> make-counted-box
-        counted-box-unbox countex-box-ref
+        counted-box-unbox counted-box-ref
         counted-box-arity counted-box-count counted-box-inc!)
 
 (inline-stub
@@ -154,7 +154,7 @@
 (define-cproc make-counted-box (initial-count::<fixnum> :rest values)
   (let* ([numVals::ScmSmallInt (Scm_Length values)]
          [z::ScmCountedBox* (SCM_NEW2 (.type ScmCountedBox*)
-                                      (+ (sizeof (.type ScmCountedBox*))
+                                      (+ (sizeof (.type ScmCountedBox))
                                          (* (sizeof (.type ScmObj))
                                             (- numVals 1))))]
          [i::int 0])
