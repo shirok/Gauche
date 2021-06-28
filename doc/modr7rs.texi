@@ -3955,8 +3955,13 @@ Gauche独自拡張として、セットやバッグはコレクションプロ�
 @defunx bag comparator elt @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Creates a new set and bag from given elements @var{elt} @dots{}.
 Given @var{comparator} will be used to compare equality of elements.
+@c JP
+与えられた@var{elt} @dots{}を要素にもつセットとバッグをそれぞれ作って返します。
+比較器@var{comparator}は要素の等価性を判定するのに使われます。
+@c COMMON
 
 @example
 (set->list (set eq-comparator 'a 'b 'a 'b))
@@ -3971,10 +3976,17 @@ Given @var{comparator} will be used to compare equality of elements.
 @defunx bag-unfold stop? mapper successor seed comparator
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Procedurally creates a set or a bag.  The first three
 arguments, @var{stop?},  @var{mapper} and @var{successor},
 are all procedures that takes one argument, the current seed value.
 It may be easier to know their types:
+@c JP
+手続的にセットとバッグを作ります。
+最初の3つの引数@var{stop?}、@var{mapper}、@var{successor}は
+いずれも現在のシード値を唯一の引数に取る手続きです。
+型を考えるとわかりやすいでしょう:
+@c COMMON
 
 @example
 seed      :: Seed
@@ -3983,16 +3995,34 @@ mapper    :: Seed -> ElementType
 successor :: Seed -> Seed
 @end example
 
-The @code{stop?} procedure takes the current seed value and
+@c EN
+The @var{stop?} procedure takes the current seed value and
 returns a boolean value - if it is true, iteration stops.
+@c JP
+@var{stop?}手続きは現在のシード値を見て、繰り返しを停止すべきなら@code{#t}を、
+そうでなければ@code{#f}を返す手続きです。
+@c COMMON
 
-The @code{mapper} procedure takes the current seed value
+@c EN
+The @var{mapper} procedure takes the current seed value
 and returns an item, which is to be included in the resulting set or bag.
+@c JP
+@var{mapper}手続きは現在のシード値から、セットやバッグに加えるべき要素を生成する
+手続きです。
+@c COMMON
 
-The @code{successor} procedure takes the current seed value
+@c EN
+The @var{successor} procedure takes the current seed value
 and returns the next seed value.
+@c JP
+@var{successor}手続きは現在のシード値から次のシード値を計算する手続きです。
+@c COMMON
 
-And the @code{seed} argument gives the initial seed value.
+@c EN
+And the @var{seed} argument gives the initial seed value.
+@c JP
+そして@var{seed}引数がシード値の初期値を与えます。
+@c COMMON
 
 @example
 (set->list (set-unfold (^s (= s 75))
@@ -4004,43 +4034,75 @@ And the @code{seed} argument gives the initial seed value.
 @end example
 @end defun
 
+@c EN
 @subheading Predicates
+@c JP
+@subheading 述語
+@c COMMON
 
 @defun set-contains? set obj
 @defunx bag-contains? bag obj
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Check if @var{obj} is in the set or the bag.
+@c JP
+@var{obj}がそれぞれセット/バッグであることを検査します。
+@c COMMON
 @end defun
 
 @defun set-empty? set
 @defunx bag-empty? bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns @code{#t} iff the given set or bag is empty.
+@c JP
+セット/バッグが空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun set-disjoint? set1 set2
 @defunx bag-disjoint? bag1 bag2
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns @code{#t} iff the given arguments (sets or bags) don't have
 common items.  Both arguments must have the same comparator---otherwise
 an error is signaled.
+@c JP
+引数のセット/バッグがそれぞれ共通要素を持たなければ@code{#t}を、持っていれば@code{#f}を
+返します。引数のセット/バッグは同じ比較器を持っていなければならす、そうでなければ
+エラーが投げられます。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Accessors
+@c JP
+@subheading アクセサ
+@c COMMON
 
 @defun set-member set obj default
 @defunx bag-member bag obj default
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns an element in the given set or bag which is equal to @var{obj}
 in terms of the set's or the bag's comparator.  If no such element is
 found, @var{default} will be returned.
+@c JP
+@var{obj}と等しい (セットやバッグの比較器を使って) 要素がセット/バッグにあれば
+その要素を、無ければ@var{default}を返します。
+@c COMMON
 
+@c EN
 Note that the returned object doesn't need to be ``the same''
 as @var{obj} in a usual sense.  See the following example:
+@c JP
+比較器の選び方によっては、要素が見つかっても返される値が@var{obj}と通常の意味で「等しい」
+とは限りません。次の例を参照。
+@c COMMON
 
 @example
 (let s (set string-ci-comparator "abc" def")
@@ -4053,29 +4115,50 @@ as @var{obj} in a usual sense.  See the following example:
 @defunx bag-element-comparator bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns the comparator used to compare the elements for the set or the bag.
+@c JP
+セット/バッグの比較器を返します。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Updaters
+@c JP
+@subheading アップデータ
+@c COMMON
 
 @defun set-adjoin set elt @dots{}
 @defunx bag-adjoin bag elt @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set or bag that contains all the elements
 in the original set/bag, plus given elements.  The new set/bag's
 comparator is the same as the original set/bag's one.
+@c JP
+元の@var{set}/@var{bag}に、引数に与えられた@var{elt} @dots{}の要素を加えた
+セット/バッグを新たに作って返します。作られるセット/バッグの比較器は
+元の@var{set}/@var{bag}の比較器と同じになります。
+@c COMMON
 @end defun
 
 @defun set-replace set elt
 @defunx bag-replace bag elt
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set/bag with the same comparator with
 the original set/bag, and the same elements, except that the elements
 equal to @var{elt} (in terms of set/bag's comparator) is replaced
 by @var{elt}.  If the original set/bag doesn't contain an element
 equal to @var{elt}, the original one is returned.
+@c JP
+@var{set}/@var{bag}の要素のうち、@var{elt}と等しい
+(セット/バッグの比較器の意味で)要素があれば、元の要素を除いて@var{elt}を追加した
+セット/バッグを新たに作って返します。@var{elt}と等しい要素が元のセット/バッグに
+無ければ元のセット/バッグがそのまま返されます。
+@c COMMON
 
 @example
 (let ((s (set string-ci-comparator "ABC" "def")))
@@ -4088,20 +4171,29 @@ equal to @var{elt}, the original one is returned.
 @defunx bag-delete bag elt @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set or bag that has the same comparator
 and the same elements in the original set/bag, except that the
 item which is equal to @var{elt}.
+@c JP
+元の@var{set}/@var{bag}の要素から、@var{elt} @dots{}に等しいもの以外を
+要素に持つセット/バッグを作って返します。
+@c COMMON
 @end defun
 
 @defun set-delete-all set elt-list
 @defunx bag-delete-all bag elt-list
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set or bag with the same comparator of
 the original set/bag, with the elements of the original set/bag
 except the ones listed in @var{elt-list}.
+@c JP
+元の@var{set}/@var{bag}の要素から、@var{elt-list}に含まれるもの以外を
+要素に持つセット/バッグを作って返します。
+@c COMMON
 @end defun
-
 
 @defun set-adjoin! set elt @dots{}
 @defunx bag-adjoin! bag elt @dots{}
@@ -4113,14 +4205,25 @@ except the ones listed in @var{elt-list}.
 @defunx bag-delete-all! bag elt-list
 [R7RS set]
 @c MOD scheme.set
+@c EN
 These are the linear update versions of their counterparts.
 It works just like the ones without @code{!}, except that
 the original set/bag @emph{may} be reused to produce the result,
 instead of new one being allocated.
+@c JP
+これらは、対応する(@code{!}を除いた名前の)手続きの線形更新版です。
+@code{!}のない版と同じ動作をしますが、結果を作るのに
+引数に渡されたセット/バッグを再利用するかもしれません。
+@c COMMON
 
+@c EN
 Note that it's not guaranteed that the original
 set/bag is modified, so you should use the return value of them,
 instead of relying on the side effects.
+@c JP
+引数に渡したセット/バッグが必ず変更されるとは限らないので、
+呼出側は副作用に頼らず戻り値を結果として使う必要があります。
+@c COMMON
 @end defun
 
 @defun set-search! set elt failure success
