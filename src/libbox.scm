@@ -130,7 +130,7 @@
 (define-module gauche.experimental.counted-box)
 (select-module gauche.experimental.counted-box)
 
-(export <counted-box> make-counted-box
+(export <counted-box> counted-box
         counted-box-unbox counted-box-ref
         counted-box-arity counted-box-count counted-box-inc!)
 
@@ -147,11 +147,18 @@
  (define-cclass <counted-box> :base :private :no-meta
    "ScmCountedBox*" "Scm_CountedBoxClass"
    (c "SCM_CLASS_DEFAULT_CPL")
-   ())
+   ()
+   (printer (let* ([b::ScmCountedBox* (SCM_COUNTED_BOX obj)]
+                   [cnt::ScmAtomicWord (AO_load (& (-> b counter)))])
+              (Scm_Printf port "#<counted-box[%d]<%d>"
+                          (-> b numValues) cnt)
+              (dotimes [i (-> b numValues)]
+                (Scm_Printf port " %S" (aref (-> b values) i)))
+              (Scm_Printf port ">"))))
  )
 
 ;; API
-(define-cproc make-counted-box (initial-count::<fixnum> :rest values)
+(define-cproc counted-box (initial-count::<fixnum> :rest values)
   (let* ([numVals::ScmSmallInt (Scm_Length values)]
          [z::ScmCountedBox* (SCM_NEW2 (.type ScmCountedBox*)
                                       (+ (sizeof (.type ScmCountedBox))

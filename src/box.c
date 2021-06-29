@@ -105,7 +105,7 @@ ScmBox *Scm_MakeBox(ScmObj value)
 static void mvbox_print(ScmObj obj, ScmPort *port,
                         ScmWriteContext *ctx SCM_UNUSED)
 {
-    Scm_Printf(port, "#<mv-box(%d)", SCM_MVBOX_SIZE(obj));
+    Scm_Printf(port, "#<mv-box[%d]", SCM_MVBOX_SIZE(obj));
     ScmObj *vs = SCM_MVBOX_VALUES(obj);
     for (ScmSmallInt i = 0; i < SCM_MVBOX_SIZE(obj); i++) {
         Scm_Printf(port, " %S", vs[i]);
