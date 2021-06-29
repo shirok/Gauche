@@ -19583,6 +19583,19 @@ test easily.  The rule may look like this:
 check :
         gosh my-feature-test.scm > test.log
 @end example
+
+@c EN
+For the portable programs, there are a couple of srfis that provide testing
+frameworks (@pxref{Lightweight testing},
+and @pxref{A Scheme API for test suites}).
+In Gauche, when you can use these srfis with @code{gauche.test},
+srfi's tests work as a part of Gauche's tests.
+@c JP
+ポータブルなコードでは、テストフレームワークを定めたsrfiがあります
+(@ref{Lightweight testing}、および@ref{A Scheme API for test suites}参照)。
+Gaucheでは、これらのsrfiを@code{gauche.test}と一緒に使うと、
+srfiのテストがGaucheのテストとして走るようになっています。
+@c COMMON
 @end deftp
 
 @c EN
