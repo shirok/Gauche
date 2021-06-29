@@ -186,7 +186,8 @@
     (return (Scm_MakeInteger (cast long v)))))
 
 ;; API
-(define-cproc counted-box-inc! (cb::<counted-box> delta::<fixnum>)
+(define-cproc counted-box-inc! (cb::<counted-box>
+                                :optional (delta::<fixnum> 1))
   (for ()
     (let* ([v::ScmAtomicVar (AO_load (& (-> cb counter)))]
            [vv::ScmAtomicWord (+ v delta)])
