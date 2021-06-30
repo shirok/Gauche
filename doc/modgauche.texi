@@ -13728,37 +13728,159 @@ This module provides utility procedures to read and write package
 description files, and search installed @file{*.gpd} files.
 @end deftp
 
-@subheading @code{define-gauche-package} form
+@subheading @file{package.scm}
+
+A package file, @file{package.scm}, must contain one package definition
+in the following form.  It is not evaluated; it is read as a literal data.
+
+@deffn {Package definition} define-gauche-package name key-value-list @dots{}
+Defines a package @var{name}.
+It is followed by a keyword-value list.  The following keywords are
+recognized.
+
+@table @code
+@item version
+The version of the package, in a string, e.g. @code{"1.0"}.
+@item description
+The description of the pacakge, in a string.  The first line (up to the
+first newline character) should be the one-line summary of the package.
+@item require
+A list of requirements.  Each requirement is
+@code{(<package-name> <version-spec>)}, where @code{<package-name>}
+is a string package name, and @code{<version-spec>} determines
+the accepable versions of the package.  @xref{Comparing version numbers},
+for the details of @code{<version-spec>}.
+@item providing-modules
+A list of module names in symbols, that this package provides.
+@item authors
+A list of name and contact info of the authors of this package.
+@item maintainers
+A list of name and contact info of the maintainers of this package,
+if they differ from the @code{authors}.
+@item licenses
+A list of licenses.
+@item homepage
+A homepage URL of the package, if any.
+@item repository
+A repository URL of the package, if any.
+@end table
+@end deffn
 
 @subheading @code{configure} script and @code{*.gpd} file generation
+
+If you use @code{configure} script based on @code{gauche.configure}
+(@pxref{Generating build files}), a Gauche package description file
+(@file{*.gpd}) is created with it.  The @code{gpd} file contains
+information from @file{package.scm}, plus the information on the
+installaion platform gathered by @code{configure}.
+
+The generated @code{gpd} file is installed with the package itself,
+and will be used by @code{gauche-package} command, as well as
+retrieved by the following utility APIs.
 
 @subheading Utility procedures
 
 @defun <gauche-package-description>
 @c MOD gauche.package
+An object to handle package descriptions programatically.
+
+@defivar {<gauche-package-description>} name
+The name of the package, a string
+@end defivar
+
+@defivar {<gauche-package-description>} version
+The version of the package, a string, e.g. @code{"1.0"}.
+@end defivar
+
+@defivar {<gauche-package-description>} description
+The description of the package.  Up to the first newline character
+may be used as a short summary.
+@end defivar
+
+@defivar {<gauche-package-description>} require
+A list of @code{(package-name version-spec)}, to specify
+the other packages this package requires.
+@end defivar
+
+@defivar {<gauche-package-description>} providing-modules
+A list of module names (symbols) that this package provides.
+@end defivar
+
+@defivar {<gauche-package-description>} authors
+A list of author's name and contact info.
+@end defivar
+
+@defivar {<gauche-package-description>} maintainers
+A list of maintainer's name and contact info, if it differs from
+@code{authors}.
+@end defivar
+
+@defivar {<gauche-package-description>} licenses
+A list of licenses.
+@end defivar
+
+@defivar {<gauche-package-description>} repository
+An URL to the repository of this package.
+@end defivar
+
+@defivar {<gauche-package-description>} homepage
+An URL to the homepage of this package.
+@end defivar
+
+@defivar {<gauche-package-description>} gauche-version
+Gauche version with which this module is installed.
+@end defivar
+
+@defivar {<gauche-package-description>} configure
+A command-line string keeping how @code{configure} script was run
+to build and install this package.
+@end defivar
 @end defun
 
 @defun path->gauche-package-description filename
 @c MOD gauche.package
+The named file must be a @code{gpd} file.  This reads the file
+and returns an instance of @code{<gauche-package-description>}.
+
+An error is thrown if @var{filename} can't be read, or doesn't
+have a proper @code{define-gauche-package} form.
 @end defun
 
 @defun write-gauche-package-description description :optional oport
 @c MOD gauche.package
+Write out the content of @code{<gauche-package-description>} instance,
+@var{description} as a @code{define-gauche-package} form,
+to an output port @var{oport}.  If @var{oport} is omitted,
+current output port is used.
 @end defun
 
-@defun make-gauche-package-description
+@defun make-gauche-package-description name :key version description require maintainers authors licenses homepage repository gauche-version configure providing-modules
 @c MOD gauche.package
+Creates and returns a new instance of @code{<gauche-package-description>},
+the slots of which is initialized with the given keyword arguments.
 @end defun
 
 @defun gauche-package-description-paths :key all-versions
 @c MOD gauche.package
+Gather all the @code{gpd} file paths installed in the standard location
+on the system.  By default, it collects packages installed in
+@code{*load-path*}.  If you give a true value to @var{all-version},
+it attempts to collect packages installed for other versions of
+Gauche as well.
 @end defun
 
 @defun find-gauche-package-description name :key all-versions
 @c MOD gauche.package
+Try to find a package description of @var{name}
+installed in the standard location,
+and returns an instance of @code{<gauche-package-description>} if found.
+Returns @code{#f} if the named package isn't found.
+
+By default, it collects packages installed in
+@code{*load-path*}.  If you give a true value to @var{all-version},
+it attempts to collect packages installed for other versions of
+Gauche as well.
 @end defun
-
-
 
 
 @c ----------------------------------------------------------------------
