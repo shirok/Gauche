@@ -103,7 +103,7 @@ SCMFILES = \
        gauche/package.scm gauche/package/build.scm gauche/package/fetch.scm \
        gauche/package/util.scm gauche/package/compile.scm \
        gauche/experimental/ref.scm gauche/experimental/lamb.scm \
-       gauche/experimental/app.scm \
+       gauche/experimental/app.scm gauche/experimental/shared-struct.scm \
        r7rs-setup.scm \
        binary/ftype.scm binary/pack.scm \
        control/cseq.scm control/future.scm control/job.scm \
