@@ -110,6 +110,19 @@
                 (set! (-> z name) SCM_FALSE)
                 (return (SCM_OBJ z)))))
 
+ (define-ctype ScmStubType
+   ::(.struct ScmStubTypeRec
+              (hdr::ScmHeader
+               name::ScmObj
+               of-type::ScmObj))) ; obj -> bool
+
+ (define-cclass <stub-type> :built-in :private :no-meta
+   "ScmStubType*" "Scm_StubTypeClass"
+   (c "SCM_CLASS_METACLASS_CPL+1")
+   ((name)
+    (of-type))
+   (printer (Scm_Printf port "#<stub-type %S>" (-> (SCM_STUB_TYPE obj) name))))
+
  ;; (of-type? ofj type)
  ;;    This may push C continuations on VM, so must be called on VM.
  (define-cfn Scm_VMOfType (obj type)
@@ -120,6 +133,8 @@
             (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
             (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
                                   type obj)))]
+         [(SCM_STUB_TYPE_P type)
+          (return (Scm_VMApply1 (-> (SCM_STUB_TYPE type) of-type) obj))]
          [(SCM_CLASSP type)
           (return (Scm_VMIsA obj (SCM_CLASS type)))]
          [else
@@ -464,6 +479,27 @@
   validate-Vector)
 
 ;;;
+;;; Types for stubs
+;;;
+
+;; Each of these types has a corresponding cgen-type that maintains
+;; the knowledge how it is represented in C.
+
+(define-cproc make-stub-type (name of-type?)
+  (let* ([z::ScmStubType* (SCM_NEW ScmStubType)])
+    (SCM_SET_CLASS z (& Scm_StubTypeClass))
+    (set! (-> z name) name)
+    (set! (-> z of-type) of-type?)
+    (return (SCM_OBJ z))))
+
+(define-syntax define-stub-type
+  (syntax-rules ()
+    [(_ name validator)
+     (define name (make-stub-type 'name validator))]))
+
+(define-stub-type <fixnum> fixnum?)
+
+;;;
 ;;; Make exported symbol visible from outside
 ;;;
 
@@ -476,7 +512,8 @@
         '(<type-constructor-meta>
           <descriptive-type>
           <^> </> <?> <Tuple> <List> <Vector>
-          of-type?)
+          of-type?
+          <fixnum>)
         '(inlinable))
   (xfer (current-module)
         (find-module 'gauche.internal)
