@@ -7802,13 +7802,23 @@ until returning from this procedure.
 
 @deftp {Module} scheme.comparator
 @mdindex scheme.comparator
+@c EN
 This module defines comparators and related procedures.
 Originally called @code{srfi-128}.
+@c JP
+このモジュールは、比較器(comparator)とそれに関わる手続きを提供します。
+元々は@code{srfi-128}で定義されました。
+@c COMMON
 
+@c EN
 Gauche supports comparators fully compatible to
 @code{scheme.comparator} built-in.
 @xref{Basic comparators}, for the following procedures
 defined in this module.
+@c JP
+Gaucheは@code{scheme.comparator}の上位互換である比較器を組み込みで提供しています。
+以下の手続きについては、@ref{Basic comparators}を参照してください。
+@c COMMON
 
 @example
 comparator? comparator-ordered? comparator-hashable?
@@ -7839,24 +7849,68 @@ comparator-test-type comparator-check-type comparator-hash
 @deftp {Module} scheme.regex
 @mdindex scheme.regex
 @c COMMON
+@c EN
 This module provides operations on Scheme Regular Expressions (SRE).
 Originally defined as srfi-115.
+@c JP
+このモジュールは、Scheme正規表現(Scheme Regular Expressions, SRE)の操作を提供します。
+元々は@code{srfi-115}で定義されました。
+@c COMMON
 
+@c EN
+Gauche has built-in support of regular expressions, and this module
+simply tranlsates SRE to Gauche's native regular expressions.
+The regular expression object returned from the @code{regexp} procedure
+in this module is Gauche's @code{<regexp>} object, for example.
+You can pass Gauche's regexp object to the procedures that expects
+compiled SRE in this module as well.
+@c JP
+Gaucheは組み込みで正規表現を提供していて、
+このモジュールはSREを組み込み正規表現に変換するだけです。
+例えばこのモジュールの@code{regexp}手続きが返す正規表現オブジェクトは、
+Gaucheの@code{<regexp>}オブジェクトに他なりません。
+また、このモジュールでコンパイルされた正規表現を期待している手続きに、
+Gaucheの正規表現オブジェクトを渡すこともできます。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Scheme regular expression syntax
+@c JP
+@subheading Scheme正規表現構文
+@c COMMON
 
+@c EN
 @subsubheading Syntax summary
+@c JP
+@subsubheading 構文のまとめ
+@c COMMON
 
+@c EN
 SRE is just an S-expression with the structure summarized below.
+@c JP
+SREは以下にまとめられた構造を持つS式です。
+@c COMMON
 
+@c EN
 With the exception of @code{or}, any syntax that takes multiple
 @code{<sre>} processes them in a sequence. In other words @code{(foo
 <sre> ...)} is equivalent to @code{(foo (seq <sre> ...))}.
+@c JP
+@code{or}を除き、複数の@code{<sre>}を引数に取る構文はそれら部分式を
+シーケンスとして処理します。言い換えれば、
+@code{(foo <sre> ...)}は@code{(foo (seq <sre> ...))}と同じということです。
+@c COMMON
 
+@c EN
 Note: SRE uses the symbol @code{|} for alteration, but the vertical bar
 character is used for symbol escape in Gauche (and R7RS), so you have to
 write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
+@c JP
+註: SREは縦棒@code{|}を選択演算子に使っていますが、GaucheとR7RSでは
+@code{|}はシンボルのエスケープ文字に使われているので、SRE内で使いたければ@code{|\||}
+と書かなければなりません。@code{or}を使った方がわかりやすいでしょう。
+@c COMMON
 
 @smallexample
     <sre> ::=
@@ -7928,7 +7982,11 @@ write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
      @c | (if-backref <backref> <then-sre> [<else-sre>])          ; Conditional pattern
 @end smallexample
 
+@c EN
 The grammar for @code{cset-sre} is as follows.
+@c JP
+@code{cset-sre}の構文は次のとおりです。
+@c COMMON
 
 @smallexample
     <cset-sre> ::=
@@ -7961,12 +8019,20 @@ The grammar for @code{cset-sre} is as follows.
     <range-spec> ::= <string> | <char>
 @end smallexample
 
+@c EN
 @subsubheading Basic patterns
+@c JP
+@subsubheading 基本パターン
+@c COMMON
 
 @table @code
 @item <string>
 
+@c EN
 A literal string.
+@c JP
+リテラル文字列。
+@c COMMON
 
 @example
 (regexp-search "needle" "hayneedlehay")
@@ -7978,8 +8044,13 @@ A literal string.
 @item (seq <sre> ...)
 @itemx (: <sre> ...)
 
+@c EN
 A sequence of patterns that should be matched in the same order. This
 is the same as RE syntax @code{(?:@i{re}@dots{})}
+@c JP
+パターンのシーケンス。入力はパターンに順にマッチしなければなりません。
+これは正規表現構文@code{(?:@i{re}@dots{})}と同じです。
+@c COMMON
 
 @example
 (regexp-search '(: "one" space "two" space "three") "one two three")
@@ -7989,8 +8060,13 @@ is the same as RE syntax @code{(?:@i{re}@dots{})}
 @item (or <sre> ...)
 @itemx (|\|| <sre> ...)
 
+@c EN
 Matches one of the given patterns. This is the same as
 RE syntax @code{@i{pattern1}|@i{pattern2}|@dots{}}
+@c JP
+与えられたパターンのどれかにマッチします。
+これは正規表現構文@code{@i{pattern1}|@i{pattern2}|@dots{}}と同じです。
+@c COMMON
 
 @example
 (regexp-search '(or "eeney" "meeney" "miney") "meeney")
@@ -12131,7 +12207,7 @@ Returns the complementary error function, 1 - erf(@var{x}).
 @c ----------------------------------------------------------------------
 @node R7RS bytevectors, R7RS combinator formatting, R7RS flonum, R7RS large
 @subsection @code{scheme.bytevector} - R7RS bytevectors
-@c NODE R7RS bytevectors, @code{scheme.bytevector} - R7RS bytevector
+@c NODE R7RSバイトベクタ, @code{scheme.bytevector} - R7RSバイトベクタ
 
 @deftp {Module} scheme.bytevector
 @mdindex scheme.bytevector
