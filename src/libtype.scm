@@ -509,8 +509,125 @@
  (define-cfn stub_fixnumP (obj) ::int :static
    (return (SCM_INTP obj)))
 
+ ;; NB: Range check is also in ext/uvector/uvector.scm.  May be integrated.
+ (define-cfn stub_s8P (obj) ::int :static
+   (return (and (SCM_INTP obj)
+                (>= (SCM_INT_VALUE obj) -128)
+                (<= (SCM_INT_VALUE obj) 127))))
+ (define-cfn stub_u8P (obj) ::int :static
+   (return (and (SCM_INTP obj)
+                (>= (SCM_INT_VALUE obj) 0)
+                (<= (SCM_INT_VALUE obj) 255))))
+ (define-cfn stub_s16P (obj) ::int :static
+   (return (and (SCM_INTP obj)
+                (>= (SCM_INT_VALUE obj) -32768)
+                (<= (SCM_INT_VALUE obj) 32767))))
+ (define-cfn stub_u16P (obj) ::int :static
+   (return (and (SCM_INTP obj)
+                (>= (SCM_INT_VALUE obj) 0)
+                (<= (SCM_INT_VALUE obj) 65535))))
+ (define-cfn stub_s32P (obj) ::int :static
+   (.if (== SIZEOF_LONG 4)
+        (return (or (SCM_INTP obj)
+                    (and (SCM_BIGNUMP obj)
+                         (>= (Scm_NumCmp obj '#x-8000_0000) 0)
+                         (<= (Scm_NumCmp obj '#x7fff_ffff) 0))))
+        (return (and (SCM_INTP obj)
+                     (>= (SCM_INT_VALUE obj) #x-8000_0000)
+                     (<= (SCM_INT_VALUE obj) #x7fff_ffff)))))
+ (define-cfn stub_u32P (obj) ::int :static
+   (.if (== SIZEOF_LONG 4)
+        (return (or (and (SCM_INTP obj)
+                         (>= (SCM_INT_VALUE obj) 0))
+                    (and (SCM_BIGNUMP obj)
+                         (>= (Scm_Sign obj) 0)
+                         (<= (Scm_NumCmp obj '#xffff_ffff) 0))))
+        (return (and (SCM_INTP obj)
+                     (>= (SCM_INT_VALUE obj) 0)
+                     (<= (SCM_INT_VALUE obj) #xffff_ffff)))))
+ (define-cfn stub_s64P (obj) ::int :static
+   (return (or (SCM_INTP obj)
+               (and (SCM_BIGNUMP obj)
+                    (>= (Scm_NumCmp obj '#x-8000_0000_0000_0000) 0)
+                    (<= (Scm_NumCmp obj '#x-7fff_ffff_ffff_ffff) 0)))))
+ (define-cfn stub_u64P (obj) ::int :static
+   (return (or (and (SCM_INTP obj)
+                    (>= (SCM_INT_VALUE obj) 0))
+               (and (SCM_BIGNUMP obj)
+                    (>= (Scm_Sign obj) 0)
+                    (<= (Scm_NumCmp obj '#xffff_ffff_ffff_ffff) 0)))))
+
+ (define-cfn stub_shortP (obj) ::int :static
+   (return (and (SCM_INTP obj)
+                (>= (SCM_INT_VALUE obj) SHRT_MIN)
+                (<= (SCM_INT_VALUE obj) SHRT_MAX))))
+ (define-cfn stub_ushortP (obj) ::int :static
+   (return (and (SCM_INTP obj)
+                (>= (SCM_INT_VALUE obj) 0)
+                (<= (SCM_INT_VALUE obj) USHRT_MAX))))
+ (define-cfn stub_intP (obj) ::int :static
+   (.if (== SIZEOF_LONG 4)
+        (if (SCM_BIGNUMP obj)
+          (let* ([oor::int FALSE]
+                 [v::long (Scm_GetIntegerClamp obj SCM_CLAMP_BOTH (& oor))])
+            (return (and (not oor)
+                         (>= v INT_MIN)
+                         (<= v INT_MAX))))
+          (return (SCM_INTP obj)))
+        (if (SCM_INTP obj)
+          (let* ([v::long (SCM_INT_VALUE obj)])
+            (return (and (>= v INT_MIN)
+                         (<= v INT_MAX))))
+          (return FALSE))))
+ (define-cfn stub_uintP (obj) ::int :static
+   (.if (== SIZEOF_LONG 4)
+        (if (SCM_BIGNUMP obj)
+          (let* ([oor::int FALSE]
+                 [v::u_long (Scm_GetIntegerUClamp obj SCM_CLAMP_BOTH (& oor))])
+            (return (not oor)))
+          (return (and (SCM_INTP obj) (>= (SCM_INT_VALUE obj) 0))))
+        (return (and (SCM_INTP obj)
+                     (>= (SCM_INT_VALUE obj) 0)
+                     (<= (SCM_INT_VALUE obj) UINT_MAX)))))
+ (define-cfn stub_longP (obj) ::int :static
+   (if (SCM_BIGNUMP obj)
+     (let* ([oor::int FALSE])
+       (cast void (Scm_GetIntegerClamp obj SCM_CLAMP_BOTH (& oor)))
+       (return (not oor)))
+     (return (SCM_INTP obj))))
+ (define-cfn stub_ulongP (obj) ::int :static
+   (if (SCM_BIGNUMP obj)
+     (let* ([oor::int FALSE])
+       (cast void (Scm_GetIntegerUClamp obj SCM_CLAMP_BOTH (& oor)))
+       (return (not oor)))
+     (return (and (SCM_INTP obj) (>= (SCM_INT_VALUE obj) 0)))))
+
+ ;; we don't range-check flonums
+ (define-cfn stub_realP (obj) ::int :static
+   (return (SCM_REALP obj)))
+ (define-cfn stub_cstrP (obj) ::int :static
+   (return (SCM_STRINGP obj)))
+
  (initcode
-  (define-stub-type "<fixnum>" stub_fixnumP)))
+  (define-stub-type "<fixnum>"  stub_fixnumP)
+  (define-stub-type "<short>"   stub_shortP)
+  (define-stub-type "<ushort>"  stub_ushortP)
+  (define-stub-type "<int>"     stub_intP)
+  (define-stub-type "<uint>"    stub_uintP)
+  (define-stub-type "<long>"    stub_longP)
+  (define-stub-type "<ulong>"   stub_ulongP)
+  (define-stub-type "<int8>"    stub_s8P)
+  (define-stub-type "<uint8>"   stub_u8P)
+  (define-stub-type "<int16>"   stub_s16P)
+  (define-stub-type "<uint16>"  stub_u16P)
+  (define-stub-type "<int32>"   stub_s32P)
+  (define-stub-type "<uint32>"  stub_u32P)
+  (define-stub-type "<int64>"   stub_s64P)
+  (define-stub-type "<uint64>"  stub_u64P)
+  (define-stub-type "<float>"   stub_realP)
+  (define-stub-type "<double>"  stub_realP)
+  (define-stub-type "<const-cstring>" stub_cstrP)
+  ))
 
 ;;;
 ;;; Make exported symbol visible from outside
@@ -525,8 +642,7 @@
         '(<type-constructor-meta>
           <descriptive-type>
           <^> </> <?> <Tuple> <List> <Vector>
-          of-type?
-          <fixnum>)
+          of-type?)
         '(inlinable))
   (xfer (current-module)
         (find-module 'gauche.internal)
