@@ -2562,6 +2562,14 @@
 (use srfi-196)
 (test-module 'srfi-196)
 
+(define-module srfi-196-tests
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+  (use scheme.list)
+  (use srfi-78)                         ; check
+  (use srfi-158)                        ; generator->list
+  (use srfi-196)
+  (include "include/srfi-196-test"))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-217")
 (use srfi-217)

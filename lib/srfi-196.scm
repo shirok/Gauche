@@ -34,6 +34,7 @@
 (define-module srfi-196
   (use gauche.sequence)
   (use scheme.list)
+  (use scheme.division)
   (use srfi-42)
   (export
    ;; Constructors
@@ -55,6 +56,7 @@
    range-for-each range-filter-map range-filter-map->list
    range-filter range-filter->list range-remove range-remove->list
    range-fold range-fold-right
+   range-reverse
 
    ;; Searching
    range-index range-index-right
@@ -73,7 +75,7 @@
 ;; the index.
 (define-class <range> (<sequence>)
   ((length :init-keyword :length)
-   (ref :init-keyword :indexer)))   ; obj, integer -> element
+   (indexer :init-keyword :indexer)))   ; obj, integer -> element
 
 (define-method write-object ((r <range>) port)
   (format port "#<range (~d)>" (~ r'length)))
@@ -109,16 +111,22 @@
    (ranges :init-keyword :ranges)))
 
 ;; take a section of a range.
-;; Use subrange to construct this type of instance.  It tries to "flatten"
-;; nested subranges.
+;; Use subrange to construct this type of instance.  The constructor
+;; tries to "flatten" nested subranges.
+;; If the reverse? flag is true, the indexing is reversed.
 (define (%subrange-index range i)
-  ((~ range'range'indexer) (~ range'range) (- i (~ range'offset))))
+  ((~ range'range'indexer) (~ range'range) (+ i (~ range'offset))))
+(define (%subrange-index-reverse range i)
+  ((~ range'range'indexer) (~ range'range)
+   (+ (- (~ range'length) i 1) (~ range'offset))))
 
 (define-class <subrange> (<range>)
-  ((indexer :init-value %subrange-index)
+  ((indexer :init-value %subrange-index :init-keyword :indexer)
    (range  :init-keyword :range)
    (offset :init-keyword :offset)))
 
+(define (%subrange-reversed? subrange)
+  (eq? (~ subrange'indexer) %subrange-index-reverse))
 
 ;;;
 ;;; Constructors
@@ -126,17 +134,17 @@
 
 (define (range length indexer)
   (assume (and (exact-integer? length) (>= length 0)))
-  (make <range> :length length :ref (^[_ i] (indexer i))))
+  (make <range> :length length :indexer (^[_ i] (indexer i))))
 
 (define (numeric-range start end :optional (step 1))
   (make <range>
-    :length (exact (floor-quotient (- end start) step))
-    :ref (^[_ i] (+ start (* i step)))))
+    :length (max 0 (ceiling->exact (/ (- end start) step)))
+    :indexer (^[_ i] (+ start (* i step)))))
 
 (define (iota-range length :optional (start 0) (step 1))
   (make <range>
     :length length
-    :ref (^[_ i] (+ start (* i step)))))
+    :indexer (^[_ i] (+ start (* i step)))))
 
 ;; optional arguments are Gauche-specific
 (define (vector-range vec :optional (start 0) (end (vector-length vec)))
@@ -171,9 +179,12 @@
 (define (range=? elt= . ranges)
   (or (null? ranges)
       (and (assume (range? (car ranges))) (null? (cdr ranges)))
-      (and (apply list= (^[a b] (= (range-length a) (range-length b))) ranges)
-           (every?-ec (: i (range-length (car ranges)))
-                      (apply list= elt= (map (cut range-ref <> i) ranges))))))
+      (let1 len (range-length (car ranges))
+        (every?-ec (: r (cdr ranges))
+                   (and (= len (range-length r))
+                        (every?-ec (: i len)
+                                   (elt= (range-ref (car ranges) i)
+                                         (range-ref r i))))))))
 
 ;;;
 ;;; Accessors
@@ -217,9 +228,28 @@
       :range range
       :offset start)))
 
+(define (range-reverse range)
+  (assume-type range <range>)
+  (if (is-a? range <subrange>)
+    (if (%subrange-reversed? range)
+      (make <subrange>
+        :length (~ range'length)
+        :range (~ range'range)
+        :offset (~ range'offset))
+      (make <subrange>
+        :indexer %subrange-index-reverse
+        :length (~ range'length)
+        :range (~ range'range)
+        :offset (~ range'offset)))
+    (make <subrange>
+      :indexer %subrange-index-reverse
+      :range range
+      :length (~ range'length)
+      :offset 0)))
+
 (define (range-segment range length)
   (let* ([total-length (range-length range)]
-         [n (floor-quotient total-length length)])
+         [n (ceiling-quotient total-length length)])
     (map (^i (subrange range
                        (* i length)
                        (min (* (+ i 1) length) total-length)))
@@ -238,9 +268,8 @@
 (define (range-count pred range1 . ranges)
   (if (null? ranges)
     (range-fold (^[cnt val] (if (pred val) (+ cnt 1) cnt)) 0 range1)
-    (range-fold (^[cnt . vals] (if (apply pred vals) (+ cnt 1) cnt))
-                0
-                (cons range1 ranges))))
+    (apply range-fold (^[cnt . vals] (if (apply pred vals) (+ cnt 1) cnt))
+           0 range1 ranges)))
 
 (define (range-any pred range1 . ranges)
   (if (null? ranges)
@@ -271,7 +300,7 @@
               [else #f])))))
 
 (define (range-map proc range1 . ranges)
-  (vector-range (apply range-map->vector range1 ranges)))
+  (vector-range (apply range-map->vector proc range1 ranges)))
 
 (define (range-map->list proc range1 . ranges)
   (if (null? ranges)
@@ -280,15 +309,14 @@
            range1 ranges)))
 (define (range-map->vector proc range1 . ranges)
   (if (null? ranges)
-    (let1 vec (make-vector (range-length range1))
+    (rlet1 vec (make-vector (range-length range1))
       (do-ec (: k (range-length range1))
-             (vector-set! vec k (proc (range-ref range1 k))))
-      (vector-range vec))
+             (vector-set! vec k (proc (range-ref range1 k)))))
     (let* ([ranges (cons range1 ranges)]
            [vec (make-vector (apply min (map range-length ranges)))])
-      (do-ec (: k (range-length range1))
+      (do-ec (: k (vector-length vec))
              (vector-set! vec k (apply proc (map (cut range-ref <> k) ranges))))
-      (vector-range vec))))
+      vec)))
 
 (define (range-for-each proc range1 . ranges)
   (if (null? ranges)
@@ -374,7 +402,7 @@
       (let loop ([i (- len 1)])
         (cond [(= i 0) #f]
               [(pred (range-ref range1 i)) i]
-              [else (loop (0 i 1))])))
+              [else (loop (- i 1))])))
     (let1 len (apply min (range-length range1) (map range-length ranges))
       (let loop ([i (- len 1)])
         (cond [(= i 0) #f]
@@ -382,45 +410,45 @@
                       (map (cut range-ref <> i) ranges)) i]
               [else (loop (- i 1))])))))
 
-(define (range-take-while pred range)
-  (let1 len (range-length range)
-    (let loop ([i 0] [es '()])
+(define (range-take-while pred r)
+  (let1 len (range-length r)
+    (let loop ([i 0])
       (if (= i len)
-        (vector-range (reverse-list->vector es))
-        (let1 e (range-ref range i)
+        r
+        (let1 e (range-ref r i)
           (if (pred e)
-            (loop (+ i 1) (cons e es))
-            (vector-range (reverse-list->vector es))))))))
+            (loop (+ i 1))
+            (subrange r 0 i)))))))
 
-(define (range-take-while-right pred range)
-  (let1 len (range-length range)
-    (let loop ([i (- len 1)] [es '()])
+(define (range-take-while-right pred r)
+  (let1 len (range-length r)
+    (let loop ([i (- len 1)])
       (if (= i 0)
-        (vector-range (list->vector es))
-        (let1 e (range-ref range i)
+        r
+        (let1 e (range-ref r i)
           (if (pred e)
-            (loop (- i 1) (cons e es))
-            (vector-range (list->vector es))))))))
+            (loop (- i 1))
+            (subrange r (+ i 1) len)))))))
 
-(define (range-drop-while pred range)
-  (let1 len (range-length range)
-    (let loop ([i 0] [es '()])
+(define (range-drop-while pred r)
+  (let1 len (range-length r)
+    (let loop ([i 0])
       (if (= i len)
-        (vector-range (reverse-list->vector es))
-        (let1 e (range-ref range i)
+        (range 0 (constantly #f))
+        (let1 e (range-ref r i)
           (if (pred e)
-            (vector-range (reverse-list->vector es))
-            (loop (+ i 1) (cons e es))))))))
+            (loop (+ i 1))
+            (subrange r i len)))))))
 
-(define (range-drop-while-right pred range)
-  (let1 len (range-length range)
-    (let loop ([i (- len 1)] [es '()])
+(define (range-drop-while-right pred r)
+  (let1 len (range-length r)
+    (let loop ([i (- len 1)])
       (if (= i 0)
-        (vector-range (list->vector es))
-        (let1 e (range-ref range i)
+        (range 0 (constantly #f))
+        (let1 e (range-ref r i)
           (if (pred e)
-            (vector-range (list->vector es))
-            (loop (- i 1) (cons e es))))))))
+            (loop (- i 1))
+            (subrange r 0 (+ i 1))))))))
 
 ;;;
 ;;; Conversion
