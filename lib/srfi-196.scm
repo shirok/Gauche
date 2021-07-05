@@ -37,6 +37,8 @@
   (use scheme.division)
   (use srfi-42)
   (export
+   <range>
+
    ;; Constructors
    range numeric-range iota-range vector-range string-range
    range-append
@@ -73,12 +75,44 @@
 
 ;; In Gauche, a range is a sequence whose element may be computed from
 ;; the index.
+(define-class <range-meta> (<class>) ())
+
 (define-class <range> (<sequence>)
   ((length :init-keyword :length)
-   (indexer :init-keyword :indexer)))   ; obj, integer -> element
+   (indexer :init-keyword :indexer))   ; obj, integer -> element
+  :metaclass <range-meta>)
 
 (define-method write-object ((r <range>) port)
   (format port "#<range (~d)>" (~ r'length)))
+
+;; Sequence protocol
+(define-method referencer ((r <range>)) (~ r'indexer))
+
+(define-method call-with-iterator ((r <range>) proc
+                                   :key (start 0)
+                                        (end (range-length r))
+                                   :allow-other-keys)
+  (let ([i start])
+    (proc (^[] (>= i end))
+          (^[] (begin0 (range-ref r i) (inc! i))))))
+
+(define-method call-with-reverse-iterator ((r <range>) proc
+                                           :key (start 0)
+                                                (end (range-length r))
+                                           :allow-other-keys)
+  (let ([i (- end 1)])
+    (proc (^[] (< i start)
+          (^[] (begin0 (range-ref r i) (dec! i)))))))
+
+(define-method call-with-builder ((r <range-meta>) proc :key (size #f))
+  (if (integer? size)
+    (let ([buf (make-vector size #f)]
+          [i 0])
+      (proc (^v (vector-set! buf i v) (inc! i))
+            (^[] (vector-range buf))))
+    (let ([vs '()])
+      (proc (^v (push! vs v))
+            (^[] (vector-range (list->vector vs)))))))
 
 ;; special case, where indexer is simply a indexed reference from a sequence
 (define-class <flat-range> (<range>)
