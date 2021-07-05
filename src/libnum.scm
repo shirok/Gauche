@@ -189,6 +189,10 @@
   (Scm_MinMax arg0 args (& SCM_RESULT) NULL))
 
 (select-module gauche)
+(define-cproc <=:< (x y z) ::<boolean> :fast-flonum :constant
+  (return (and (Scm_NumLE x y) (Scm_NumLT y z))))
+(define-cproc <:<= (x y z) ::<boolean> :fast-flonum :constant
+  (return (and (Scm_NumLT x y) (Scm_NumLE y z))))
 (define-cproc min&max (arg0 :rest args) ::(<top> <top>)
   (Scm_MinMax arg0 args (& SCM_RESULT0) (& SCM_RESULT1)))
 

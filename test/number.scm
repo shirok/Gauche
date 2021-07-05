@@ -1073,6 +1073,26 @@
 (numcmp-multiarg-test '(1 1 1 1 1 2)    #f #f #t #f #f)
 (numcmp-multiarg-test '(1 1 1 1 1 0)    #f #f #f #f #t)
 
+(define (numrange3-test x y z left-inclusive right-inclusive)
+  (test* #"(<=:< ~x ~y ~z)" left-inclusive (<=:< x y z))
+  (test* #"(<:<= ~x ~y ~z)" right-inclusive (<:<= x y z)))
+
+(numrange3-test 1 2 3 #t #t)
+(numrange3-test 1 1 3 #t #f)
+(numrange3-test 1 3 3 #f #t)
+(numrange3-test 1 0 3 #f #f)
+(numrange3-test 1 4 3 #f #f)
+(numrange3-test 1 1 1 #f #f)
+
+(numrange3-test +nan.0 2 3 #f #f)
+(numrange3-test 1 +nan.0 3 #f #f)
+(numrange3-test 1 2 +nan.0 #f #f)
+(numrange3-test -inf.0 1 +inf.0 #t #t)
+(numrange3-test -inf.0 -inf.0 +inf.0 #t #f)
+(numrange3-test -inf.0 +inf.0 +inf.0 #f #t)
+(numrange3-test -inf.0 +nan.0 +inf.0 #f #f)
+
+
 ;; This is from the bug report from Bill Schottsteadt.  Before 0.8.10
 ;; this yielded #t because of the precision loss in fixnum vs ratnum
 ;; comparison.

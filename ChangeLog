@@ -1,3 +1,9 @@
+2021-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (<=:<, <:<=): Added open-closed/closed-open range
+	  comparator.  Tired of writing (and (<= x y) (< y z)) etc.  And the
+	  symbol is kind of cute (like squid?).
+
 2021-06-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (cclass-emit-standard-decls): The type check
