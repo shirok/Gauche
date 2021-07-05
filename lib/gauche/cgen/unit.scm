@@ -358,7 +358,7 @@
                [(#\!) (display #\X) (loop (read-char))]
                [(#\<) (display "_LT") (loop (read-char))]
                [(#\>) (display "_GT") (loop (read-char))]
-               [(#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\= #\. #\/ #\~)
+               [(#\* #\> #\@ #\$ #\% #\^ #\& #\* #\+ #\= #\. #\/ #\~ #\:)
                 (display #\_)
                 (display (number->string (char->integer c) 16))
                 (loop (read-char))]
