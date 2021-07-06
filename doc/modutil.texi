@@ -22,6 +22,7 @@
 * Priority map::                data.priority-map
 * Queue::                       data.queue
 * Random data generators::      data.random
+* Range::                       data.range
 * Ring buffer::                 data.ring-buffer
 * Skew binary random-access lists::  data.skew-list
 * Sparse data containers::      data.sparse
@@ -4053,7 +4054,7 @@ the channel.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Random data generators, Ring buffer, Queue, Library modules - Utilities
+@node Random data generators, Range, Queue, Library modules - Utilities
 @section @code{data.random} - Random data generators
 @c NODE ランダムデータの生成, @code{data.random} - ランダムデータの生成
 
@@ -4724,7 +4725,231 @@ of nonnegative integers.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Ring buffer, Skew binary random-access lists, Random data generators, Library modules - Utilities
+@node Range, Ring buffer, Random data generators, Library modules - Utilities
+@section @code{data.range} - Range
+@c NODE レンジ, @code{data.range} - レンジ
+
+@deftp {Module} data.range
+@mdindex data.range
+A @emph{range} object is an immutable sequence with O(1) indexed access
+to the elements, and each element may be computed procedurally.
+It allows certain operations efficient, such as taking subsequence
+or appending sequences.
+
+A portable range object interface is defined in @code{srfi-196}.
+We implement the range object as a @code{<sequence>}, so that all
+sequence framework interface can be used on the ranges
+(@pxref{Sequence framework}).  We also provide some additional
+procedures.
+@end deftp
+
+@subheading Classes
+
+@deftp {Class} <range>
+@clindex range
+@end deftp
+
+@deftp {Class} <range-meta>
+@clindex range-meta
+@end deftp
+
+@subheading Constructors
+
+@defun range length indexer
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun numeric-range start end :optional step
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun iota-range length :optional start step
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun vector-range vec :optional start end
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun string-range str :optional start end
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-append range @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-reverse range :optional start end
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@subheading Predicates
+
+@defun range? obj
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range=? range elt= range @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@subheading Accessors
+
+@defun range-length range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-ref range i :optional fallback
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-first range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-last range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@subheading Iteration
+
+@defun range-split-at range k
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun subrange range start end
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-segment range len
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-take range count
+@defunx range-take-right range count
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-drop range count
+@defunx range-drop-range range count
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-count pred range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-any pred range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-every pred range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+
+@defun range-map proc range range2 @dots{}
+@defunx range-map->list proc range range2 @dots{}
+@defunx range-map->vector proc range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-for-each pred range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-filter-map pred range range2 @dots{}
+@defunx range-filter-map->list pred range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-filter pred range
+@defunx range-filter->list pred range
+@defunx range-remove pred range
+@defunx range-remove->list pred range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-fold kons knil range range2 @dots{}
+@defunx range-fold-right kons knil range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@subheading Searching
+
+@defun range-index pred range range2 @dots{}
+@defunx range-index-right pred range range2 @dots{}
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-take-while pred range
+@defunx range-take-while-right pred range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range-drop-while pred range
+@defunx range-drop-while-right pred range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@subheading Conversion
+
+@defun range->list range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range->vector range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range->string range
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun vector->range vec :optional start end
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@defun range->generator range :optional start end
+[SRFI-196]
+@c MOD data.range
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Ring buffer, Skew binary random-access lists, Range, Library modules - Utilities
 @section @code{data.ring-buffer} - Ring buffer
 @c NODE リングバッファ, @code{data.ring-buffer} - リングバッファ
 
