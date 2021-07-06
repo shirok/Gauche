@@ -38,6 +38,7 @@
 (select-module srfi-42)
 
 (autoload gauche.uvector uvector->list)
+(autoload data.range range-length range-ref)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -130,6 +131,7 @@
            ((:char-range)  (rename 'srfi-42-char-range))
            ((:port)        (rename 'srfi-42-port))
            ((:generator)   (rename 'srfi-42-generator))
+           ((:range)       (rename 'srfi-42-range))
            ((:collection)  (rename 'srfi-42-collection))
            ((:dispatched)  (rename 'srfi-42-dispatched))
            ((:do)          (rename 'srfi-42-do))
@@ -562,6 +564,11 @@
 (define-syntax srfi-42-uvector
   (syntax-rules ()
     [(_ . args) (srfi-42-*vector uvector-length uvector-ref . args)]))
+
+;; srfi-196 range object
+(define-syntax srfi-42-range
+  (syntax-rules ()
+    [(_ . args) (srfi-42-*vector range-length range-ref . args)]))
 
 (define-syntax srfi-42-*vector
   (syntax-rules (index)

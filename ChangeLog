@@ -1,3 +1,7 @@
+2021-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-42: Support :range qualifier (srfi-196).
+
 2021-07-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/range.scm: Move the implementation of srfi-196 here, for

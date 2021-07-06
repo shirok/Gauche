@@ -683,6 +683,16 @@
 (test* "range as a sequence (subseq)" '(3 4 5 6 7)
        (range->list (subseq (numeric-range 0 10) 3 8)))
 
+;; srfi-42 extension
+(define-module range-srfi-42-test
+  (use gauche.test)
+  (use data.range)
+  (use srfi-42)
+  (test* "srfi-42 :range" '((a 0) (b 1) (c 2) (d 3) (e 4))
+         (list-ec (: v (index k) (vector-range '#(a b c d e)))
+                  (list v k)))
+  )
+
 ;;;========================================================================
 ;; skew-list
 (test-section "data.skew-list")
