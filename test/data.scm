@@ -625,6 +625,47 @@
                        m))))
   )
 
+;;;========================================================================
+;; range
+(test-section "data.range")
+(use data.range)
+(test-module 'data.range)
+
+;; srfi-196 is a subset of data.range, and we test it here.
+
+(define-module srfi-196-tests
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+  (use scheme.list)
+  (use srfi-78)                         ; check
+  (use srfi-158)                        ; generator->list
+  (use srfi-196)
+  (include "include/srfi-196-test"))
+
+;; gauche extensions
+(test* "vector-range start/end" '(c d e f g)
+       (range->list (vector-range '#(a b c d e f g) 2)))
+(test* "vector-range start/end" '(c d e)
+       (range->list (vector-range '#(a b c d e f g) 2 5)))
+(test* "uvector-range" '(0 1 2 3 4)
+       (range->list (uvector-range '#u8(0 1 2 3 4))))
+(test* "uvector-range start/end" '(1 2 3 4)
+       (range->list (uvector-range '#u8(0 1 2 3 4 5) 1 5)))
+(test* "string-range start/end" '(#\c #\d #\e #\f #\g)
+       (range->list (string-range "abcdefg" 2)))
+(test* "string-range start/end" '(#\c #\d #\e)
+       (range->list (string-range "abcdefg" 2 5)))
+
+
+;; sequence protocol
+(test* "range as a sequence (ref)" 3 (~ (numeric-range 1 6) 2))
+(test* "range as a sequence (iterate)" '(1 2 3 4 5)
+       (coerce-to <list> (numeric-range 1 6)))
+(test* "range as a sequence (build from list)" '(a b c d e)
+       (range->list (coerce-to <range> '(a b c d e))))
+(test* "range as a sequence (build from vector)" '(a b c d e)
+       (range->list (coerce-to <range> '#(a b c d e))))
+(test* "range as a sequence (subseq)" '(3 4 5 6 7)
+       (range->list (subseq (numeric-range 0 10) 3 8)))
 
 ;;;========================================================================
 ;; skew-list

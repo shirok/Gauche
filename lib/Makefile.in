@@ -111,7 +111,7 @@ SCMFILES = \
        dbi.scm dbd/null.scm dbm.scm dbm/fsdbm.scm dbm/dump dbm/restore \
        data/cache.scm data/heap.scm \
        data/ideque.scm data/imap.scm data/priority-map.scm data/random.scm \
-       data/skew-list.scm \
+       data/range.scm data/skew-list.scm \
        lang/asm/x86_64.scm \
        lang/c/parameter.scm lang/c/lexer.scm lang/c/parser.scm \
        lang/c/type.scm \

@@ -1,5 +1,9 @@
 2021-07-05  Shiro Kawai  <shiro@acm.org>
 
+	* lib/data/range.scm: Move the implementation of srfi-196 here, for
+	  we want to provide more range operations better integrated in
+	  Gauche.  Srfi-196 re-exports subset of data.range.
+
 	* lib/srfi-196.scm, test/include/srfi-196-test.scm: Finishing srfi-196.
 
 2021-07-04  Shiro Kawai  <shiro@acm.org>
