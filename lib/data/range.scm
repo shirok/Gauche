@@ -45,7 +45,7 @@
 
    ;; Constructors
    range numeric-range iota-range vector-range uvector-range string-range
-   range-append
+   range-append range-reverse
 
    ;; Predicates
    range? range=?
@@ -62,7 +62,6 @@
    range-for-each range-filter-map range-filter-map->list
    range-filter range-filter->list range-remove range-remove->list
    range-fold range-fold-right
-   range-reverse
 
    ;; Searching
    range-index range-index-right
@@ -194,6 +193,26 @@
       :length total
       :ranges (list->vector off&ranges))))
 
+ (define (range-reverse rg :optional (start 0) (end (range-length rg)))
+  (assume-type rg <range>)
+  (assume (<= 0 start end (range-length rg)))
+  (if (is-a? rg <subrange>)
+    (if (%subrange-reversed? rg)
+      (make <subrange>
+        :length (- end start)
+        :range (~ rg'range)
+        :offset (+ start (~ rg'offset)))
+      (make <subrange>
+        :indexer %subrange-index-reverse
+        :length (- end start)
+        :range (~ rg'range)
+        :offset (+ start (~ rg'offset))))
+    (make <subrange>
+      :indexer %subrange-index-reverse
+      :range rg
+      :length (- end start)
+      :offset start)))
+
 ;;;
 ;;; Predicates
 ;;;
@@ -218,10 +237,12 @@
   (assume (range? range))
   (~ range'length))
 
-(define (range-ref range n)
+;; The optional fallback is Gauche extension
+(define (range-ref range n :optional fallback)
   (assume (range? range))
-  (assume (< -1 n (range-length range)))
-  ((~ range'indexer) range n))
+  (cond [(<=:< 0 n (range-length range)) ((~ range'indexer) range n)]
+        [(undefined? fallback) (error "Index out of range:" n)]
+        [else fallback]))
 
 (define (range-first range) (range-ref range 0))
 (define (range-last range) (range-ref range (- (range-length range) 1)))
@@ -251,25 +272,6 @@
       :length (- end start)
       :range range
       :offset start)))
-
-(define (range-reverse range)
-  (assume-type range <range>)
-  (if (is-a? range <subrange>)
-    (if (%subrange-reversed? range)
-      (make <subrange>
-        :length (~ range'length)
-        :range (~ range'range)
-        :offset (~ range'offset))
-      (make <subrange>
-        :indexer %subrange-index-reverse
-        :length (~ range'length)
-        :range (~ range'range)
-        :offset (~ range'offset)))
-    (make <subrange>
-      :indexer %subrange-index-reverse
-      :range range
-      :length (~ range'length)
-      :offset 0)))
 
 (define (range-segment range length)
   (let* ([total-length (range-length range)]

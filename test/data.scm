@@ -642,6 +642,23 @@
   (include "include/srfi-196-test"))
 
 ;; gauche extensions
+
+(test* "range-ref out of range" (test-error <error> #/Index out of range/)
+       (range-ref (iota-range 10) 11))
+(test* "range-ref fallback" 'oops
+       (range-ref (iota-range 10) 11 'oops))
+(test* "range-ref fallback" 'oops
+       (range-ref (iota-range 10) -1 'oops))
+
+(test* "range-reverse start/end" '(5 4 3)
+       (range->list (range-reverse (iota-range 7) 3 6)))
+(test* "range-reverse start/end nested" '(5 4 3)
+       (range->list (range-reverse (subrange (iota-range 10) 1 9) 2 5)))
+(test* "range-reverse start/end nested" '(6 5 4)
+       (range->list (range-reverse
+                     (subrange (subrange (iota-range 10) 1 9) 1 6)
+                     2 5)))
+
 (test* "vector-range start/end" '(c d e f g)
        (range->list (vector-range '#(a b c d e f g) 2)))
 (test* "vector-range start/end" '(c d e)
@@ -654,7 +671,6 @@
        (range->list (string-range "abcdefg" 2)))
 (test* "string-range start/end" '(#\c #\d #\e)
        (range->list (string-range "abcdefg" 2 5)))
-
 
 ;; sequence protocol
 (test* "range as a sequence (ref)" 3 (~ (numeric-range 1 6) 2))
