@@ -629,9 +629,11 @@
     ((_ cc var (index i) arg1 arg ...)
      (srfi-42-parallel cc (srfi-42-range var arg1 arg ...) (srfi-42-integers i)) )
     ((_ cc var arg1)
-     (if (range? arg1)
-       (srfi-42-*vector range-length range-ref cc var arg1)
-       (srfi-42-range cc var 0 arg1 1)) )
+     ;; Avoid (range? arg1), for we don't want to load data.range until
+     ;; absolutely necessary.
+     (if (exact-integer? arg1)
+       (srfi-42-range cc var 0 arg1 1)
+       (srfi-42-*vector range-length range-ref cc var arg1)) )
     ((_ cc var arg1 arg2)
      (srfi-42-range cc var arg1 arg2 1) )
 
@@ -928,6 +930,10 @@
                (srfi-42-generator-proc (srfi-42-collection a1))]
               [(applicable? a1)
                (srfi-42-generator-proc (srfi-42-generator a1))]
+              ;; This would trigger autoloading data.range, so we don't
+              ;; support it for now.
+              ;; [(range? a1)
+              ;;  (srfi-42-generator-proc (srfi-42-range a1))]
               [else #f]))]
       [(2) (let ([a1 (car args)] [a2 (cadr args)])
              (cond

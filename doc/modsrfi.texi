@@ -3633,12 +3633,15 @@ Generates infinite series of increasing integers, starting from 0.
 @deffn {EC Qualifier} :range vars stop
 @deffnx {EC Qualifier} :range vars start stop
 @deffnx {EC Qualifier} :range vars start stop step
+@deffnx {EC Qualifiter} :range vars range
 @c EN
-Generates a series of exact integers, starting from
+The first three forms
+generates a series of exact integers, starting from
 @var{start} (defaults to 0) and stops below @var{stop},
 stepping by @var{step} (defaults to 1).  Giving a negative
 integer to @var{step} makes a decreasing series.
 @c JP
+最初の3つの形式は、
 @var{start}から始まり、@var{step}づつ増加し、@var{stop}を越えないような
 正確な整数列を生成します。@var{start}が省略された場合は0、
 @var{step}が省略された場合は1が使われます。
@@ -3658,6 +3661,15 @@ qualifier @code{:}, this qualifier is used.
 @c JP
 汎用qualifier@code{:}に1個から3個の正確な整数が与えられた場合は、
 このqualifierが使われます。
+@c COMMON
+
+@c EN
+If a range object (@pxref{Range}) is given to this qualifier,
+as in the fourth form,
+this generates each element in the range sequentially.
+@c JP
+最後の形式のように、レンジオブジェクト (@ref{Range}参照) が与えられた場合は、
+そのレンジの要素を順に生成します。
 @c COMMON
 @end deffn
 
