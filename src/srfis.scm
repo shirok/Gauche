@@ -1392,6 +1392,17 @@ Built-in.  @xref{Boxes}.
 組み込みです。@ref{Boxes}参照。
 
 
+srfi-196, srfi-196
+()
+
+Range objects
+Suppored by the module @code{srfi-196}.  Also the @code{data.range}
+module is the superset of this srfi (@pxref{Range}).
+
+モジュール@code{srfi-196}でサポートされます。また、@code{data.range}モジュールは
+このsrfiの上位互換になっています (@ref{Range}参照)。
+
+
 srfi-217, srfi-217
 ()
 
