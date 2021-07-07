@@ -38,7 +38,7 @@
 (select-module srfi-42)
 
 (autoload gauche.uvector uvector->list)
-(autoload data.range range-length range-ref)
+(autoload data.range range? range-length range-ref)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -131,7 +131,6 @@
            ((:char-range)  (rename 'srfi-42-char-range))
            ((:port)        (rename 'srfi-42-port))
            ((:generator)   (rename 'srfi-42-generator))
-           ((:range)       (rename 'srfi-42-range))
            ((:collection)  (rename 'srfi-42-collection))
            ((:dispatched)  (rename 'srfi-42-dispatched))
            ((:do)          (rename 'srfi-42-do))
@@ -565,11 +564,6 @@
   (syntax-rules ()
     [(_ . args) (srfi-42-*vector uvector-length uvector-ref . args)]))
 
-;; srfi-196 range object
-(define-syntax srfi-42-range
-  (syntax-rules ()
-    [(_ . args) (srfi-42-*vector range-length range-ref . args)]))
-
 (define-syntax srfi-42-*vector
   (syntax-rules (index)
     ((_ *len *ref cc var arg)
@@ -626,6 +620,7 @@
     ((_ cc var)
      (srfi-42-do cc ((var 0)) #t ((+ var 1))) )))
 
+;; Extended to support srfi-196 (data.range) <range> object.
 
 (define-syntax srfi-42-range
   (syntax-rules (index)
@@ -634,7 +629,9 @@
     ((_ cc var (index i) arg1 arg ...)
      (srfi-42-parallel cc (srfi-42-range var arg1 arg ...) (srfi-42-integers i)) )
     ((_ cc var arg1)
-     (srfi-42-range cc var 0 arg1 1) )
+     (if (range? arg1)
+       (srfi-42-*vector range-length range-ref cc var arg1)
+       (srfi-42-range cc var 0 arg1 1)) )
     ((_ cc var arg1 arg2)
      (srfi-42-range cc var arg1 arg2 1) )
 
