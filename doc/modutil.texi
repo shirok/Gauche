@@ -4731,26 +4731,60 @@ of nonnegative integers.
 
 @deftp {Module} data.range
 @mdindex data.range
+@c EN
 A @emph{range} object is an immutable sequence with O(1) indexed access
 to the elements, and each element may be computed procedurally.
-It allows certain operations efficient, such as taking subsequence
+For example, a range of intergers between 0 and N can be trivially
+realized as a range, where @var{i}-th element is simply computed by
+@code{identity}.  It is a lot more space-efficient than actually generating
+a sequence containing every number.
+
+It also allows certain operations efficient, such as taking subsequence
 or appending sequences.
 
+A range object can be used with @code{:range} qualifier in the
+srfi-42 eager comprehension (@pxref{Eager comprehensions}).
+@c JP
+レンジオブジェクトはO(1)で要素にアクセスでき、
+そして各要素が手続き的に計算されるような不変なシーケンスです。
+例えば、0からNまでの整数のレンジ、というのは、@var{i}番目の要素を計算する手続きが
+@code{identity}であるようなレンジとして簡単に実現できるでしょう。
+これは、全ての整数を持つシーケンスを作るよりずっと軽いです。
+
+レンジはまた、一部分だけ取り出したレンジを作ったり、
+レンジ同士をつなげたりする操作を効率的に行えます。
+
+レンジオブジェクトはsrfi-42 先行評価的内包表記の@code{:range} qualifierに
+渡すこともできます (@ref{Eager comprehensions}参照)。
+@c COMMON
+
+@c EN
 A portable range object interface is defined in @code{srfi-196}.
 We implement the range object as a @code{<sequence>}, so that all
 sequence framework interface can be used on the ranges
 (@pxref{Sequence framework}).  We also provide some additional
-procedures.
+procedures that are not in srfi-196.
+@c JP
+ポータブルなレンジオブジェクトのインタフェースは@code{srfi-196}で
+規定されています。Gaucheではレンジオブジェクトを@code{<sequence>}として
+実装し、シーケンスプロトコルも使えるようにしています
+(@ref{Sequence framework}参照)。またこのモジュールでは@code{srfi-196}にない
+手続きも提供されます。
+@c COMMON
 @end deftp
 
 @subheading Classes
 
 @deftp {Class} <range>
 @clindex range
+Range object class.  Internally we use several subclasses
+according to the nature of the range, but externally all
+ranges can be treated as an instance of @code{<range>}.
 @end deftp
 
 @deftp {Class} <range-meta>
 @clindex range-meta
+The metaclass of @code{<range>} class.
 @end deftp
 
 @subheading Constructors
@@ -4758,21 +4792,80 @@ procedures.
 @defun range length indexer
 [SRFI-196]
 @c MOD data.range
+Creates and returns a range of length @var{length},
+whose @var{i}-th element (0 <= @code{i} < @var{length}))
+is determined by a procedure @var{indexer}, which takes @var{i}
+as the sole argument and returns the corresponding element.
+
+Note that @var{indexer} must run in O(1) time, and must be
+referentially transparent.  The impelemntation may ``expand''
+the range, that is, computes the element values into a flat
+vector internally.
+
+@example
+(range->list (range 5 (^i (+ i 10))))
+ @result{} (10 11 12 13 14)
+@end example
 @end defun
 
 @defun numeric-range start end :optional step
 [SRFI-196]
 @c MOD data.range
+Creates and returns a range of integers starting from @var{start} (inclusive)
+and ending below @var{end} (exclusive), increasing with @var{step}.
+The default value of @var{step} is 1.
+
+@example
+(range->list (numeric-range 2 6))
+ @result{} (2 3 4 5)
+
+(range->list (numeric-range 0 5 2/3))
+ @result{} (0 2/3 4/3 2 8/3 10/3 4 14/3)
+@end example
 @end defun
 
 @defun iota-range length :optional start step
 [SRFI-196]
 @c MOD data.range
+Creates and returns a range of integers.  Total length of the range
+is @var{length}.  The range starts from @var{start} (default 0),
+and increased with @var{step} (default 1).
+
+@example
+(range->list (iota-range 5))
+  @result{} (0 1 2 3 4)
+
+(range->list (iota-range 7 1 -1/7))
+  @result{} (1 6/7 5/7 4/7 3/7 2/7 1/7)
+@end example
 @end defun
 
 @defun vector-range vec :optional start end
-[SRFI-196]
+[SRFI-196+]
 @c MOD data.range
+Returns a range over the given vector @var{vec}.
+The vector is kept in the range, so you shouldn't mutate @var{vec}.
+
+The optional @var{start} and @var{end} arguments limits the
+range of the vector to be used.
+They are Gauche's extension and not in srfi-196.
+
+@example
+(range->list (vector-range '#(a b c)))
+  @result{} (a b c)
+
+(range->list (vector-range '#(a b c d e) 1 4))
+  @result{} (b c d)
+@end example
+@end defun
+
+@defun uvector-range uvec :optional start end
+@c MOD data.range
+Returns a range over the given uniform vector @var{uvec}.
+The uniform vector is kept in the range, so you shouldn't mutate @var{uvec}.
+
+The optional @var{start} and @var{end} arguments limits the
+range of the uniorm vector to be used.
 @end defun
 
 @defun string-range str :optional start end
