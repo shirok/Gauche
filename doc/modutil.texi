@@ -4871,16 +4871,45 @@ range of the uniorm vector to be used.
 @defun string-range str :optional start end
 [SRFI-196]
 @c MOD data.range
+Returns a range over each character in the given string @var{str}.
+The string is kept in the range, so you shouldn't mutate @var{str}.
+
+The optional @var{start} and @var{end} arguments limits the
+range of the vector to be used.
+They are Gauche's extension and not in srfi-196.
+
+@example
+(range->list (string-range "abc"))
+  @result{} (#\a #\b #\c)
+
+(range->list (string-range "abcde" 1 4))
+  @result{} (#\b #\c #\d)
+@end example
 @end defun
 
 @defun range-append range @dots{}
 [SRFI-196]
 @c MOD data.range
+Returns a new range that walks over concatenation of the given ranges.
 @end defun
 
 @defun range-reverse range :optional start end
-[SRFI-196]
+[SRFI-196+]
 @c MOD data.range
+Returns a new range that walks over the elements of @var{range}, but
+in reverse order.
+
+The optional @var{start} and @var{end} arguments limits the
+range of the vector to be used.
+They are Gauche's extension and not in srfi-196.
+
+@example
+(range->list (range-reverse (string-range "abc")))
+  @result{} (#\c #\b #\a)
+
+(range->list (range-reverse (string-range "abcdef" 1 4)))
+  @result{} (#\d #\c #\b)
+@end example
 @end defun
 
 @subheading Predicates
@@ -4888,11 +4917,24 @@ range of the uniorm vector to be used.
 @defun range? obj
 [SRFI-196]
 @c MOD data.range
+Returns true iff @var{obj} is a range.
 @end defun
 
-@defun range=? range elt= range @dots{}
+@defun range=? elt= range @dots{}
 [SRFI-196]
 @c MOD data.range
+Returns true iff all ranges have the same length, and any pair
+of corresponding elements in the given ranges are equal in terms of
+@code{elt=} predicate.
+
+As edge cases, when zero or one range is given, @code{#t} is returned.
+
+@example
+(range=? eqv? (numeric-range 0 5)
+              (iota-range 5)
+              (vector-range '#(0 1 2 3 4)))
+  @result{} #t
+@end example
 @end defun
 
 @subheading Accessors
@@ -4900,21 +4942,38 @@ range of the uniorm vector to be used.
 @defun range-length range
 [SRFI-196]
 @c MOD data.range
+Returns the length of @var{range}.
 @end defun
 
 @defun range-ref range i :optional fallback
-[SRFI-196]
+[SRFI-196+]
 @c MOD data.range
+Returns the @var{i}-th element of @var{range}.  The index
+@var{i} must be an exact integer.
+
+If @var{i} is negative, or greater than or equal to the length of @var{range},
+@var{fallback} is returned if given, or an error is signaled.
+The @var{fallback} argument is Gauche's extension and not in srfi-196.
 @end defun
 
-@defun range-first range
-[SRFI-196]
+@defun range-first range :optional fallback
+[SRFI-196+]
 @c MOD data.range
+Returns the first element of @var{range}.
+
+If the range is empty,
+@var{fallback} is returned if given, or an error is signaled.
+The @var{fallback} argument is Gauche's extension and not in srfi-196.
 @end defun
 
-@defun range-last range
-[SRFI-196]
+@defun range-last range :optional fallback
+[SRFI-196+]
 @c MOD data.range
+Returns the last element of @var{range}.
+
+If the range is empty,
+@var{fallback} is returned if given, or an error is signaled.
+The @var{fallback} argument is Gauche's extension and not in srfi-196.
 @end defun
 
 @subheading Iteration
@@ -4922,11 +4981,16 @@ range of the uniorm vector to be used.
 @defun range-split-at range k
 [SRFI-196]
 @c MOD data.range
+Returns two ranges, the first one with elements before @var{k}-th
+elements of @var{range},
+and the second one with @var{k}-th elements and after of @var{range}.
 @end defun
 
 @defun subrange range start end
 [SRFI-196]
 @c MOD data.range
+Returns a new range that contains @var{start}-th (inclusive)
+to @var{end}-th (exclusive) elements of @var{range}.
 @end defun
 
 @defun range-segment range len
