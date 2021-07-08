@@ -244,8 +244,19 @@
         [(undefined? fallback) (error "Index out of range:" n)]
         [else fallback]))
 
-(define (range-first range) (range-ref range 0))
-(define (range-last range) (range-ref range (- (range-length range) 1)))
+(define (range-first range :optional fallback)
+  (if (zero? (range-length range))
+    (if (undefined? fallback)
+      (error "range is empty:" range)
+      fallback)
+    (range-ref range 0)))
+(define (range-last range :optional fallback)
+  (let1 len (range-length range)
+    (if (zero? len)
+      (if (undefined? fallback)
+        (error "range is empty:" range)
+        fallback)
+      (range-ref range (- len 1)))))
 
 ;;;
 ;;; Iteration

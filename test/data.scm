@@ -649,6 +649,10 @@
        (range-ref (iota-range 10) 11 'oops))
 (test* "range-ref fallback" 'oops
        (range-ref (iota-range 10) -1 'oops))
+(test* "range-first fallback" 'wow
+       (range-first (iota-range 0) 'wow))
+(test* "range-last fallback" 'boo
+       (range-last (iota-range 0) 'boo))
 
 (test* "range-reverse start/end" '(5 4 3)
        (range->list (range-reverse (iota-range 7) 3 6)))
