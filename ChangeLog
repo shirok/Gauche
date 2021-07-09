@@ -1,3 +1,10 @@
+2021-07-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c (Scm_SubclassP): Rename Scm_SubtypeP to Scm_SubclassP;
+	  now that we have types other than classes, SubtypeP does no longer
+	  do what the name suggests.  The Scheme API subtype? will be
+	  enhanced to handle types as well.
+
 2021-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-42: Support :range qualifier (srfi-196).

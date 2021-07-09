@@ -250,9 +250,17 @@ SCM_EXTERN void Scm_InitBuiltinClass(ScmClass *c, const char *name,
                                      ScmModule *m);
 
 SCM_EXTERN ScmClass *Scm_ClassOf(ScmObj obj);
-SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
-SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
 SCM_EXTERN ScmClass *Scm_BaseClassOf(ScmClass *klass);
+
+#if GAUCHE_API_VERSION >= 98
+SCM_EXTERN int Scm_SubclassP(ScmClass *sub, ScmClass *type);
+#define Scm_SubtypeP(sub, type)   Scm_SubclassP(sub, type)
+#else  /*GAUCHE_API_VERSION < 98*/
+#define Scm_SubclassP(sub, type)  Scm_SubtypeP(sub, type)
+SCM_EXTERN int Scm_SubtypeP(ScmClass *sub, ScmClass *type);
+#endif /*GAUCHE_API_VERSION < 98*/
+
+SCM_EXTERN int Scm_TypeP(ScmObj obj, ScmClass *type);
 
 SCM_EXTERN int    Scm_TypeConstructorP(ScmObj obj);
 /* This is called from init routie of precompiled code */

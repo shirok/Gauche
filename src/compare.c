@@ -134,9 +134,9 @@ int Scm_Compare(ScmObj x, ScmObj y)
         goto distinct_types;
     }
 
-    if (Scm_SubtypeP(cx, cy)) {
+    if (Scm_SubclassP(cx, cy)) {
         if (cy->compare) return cy->compare(x, y, FALSE);
-    } else if (Scm_SubtypeP(cy, cx)) {
+    } else if (Scm_SubclassP(cy, cx)) {
         if (cx->compare) return cx->compare(x, y, FALSE);
     }
     if (cx == cy) {

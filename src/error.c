@@ -987,7 +987,7 @@ ScmObj Scm_RaiseCondition(ScmObj condition_type, ...)
     va_list ap;
 
     if (!SCM_CLASSP(condition_type)
-        || !Scm_SubtypeP(SCM_CLASS(condition_type), SCM_CLASS_CONDITION)) {
+        || !Scm_SubclassP(SCM_CLASS(condition_type), SCM_CLASS_CONDITION)) {
         /* If we don't get a condition type, fallback to a normal error. */
         condition_type = SCM_OBJ(SCM_CLASS_ERROR);
     }

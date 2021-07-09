@@ -947,7 +947,11 @@ static ScmClass *make_implicit_meta(const char *name,
  * External interface
  */
 
+#if GAUCHE_API_VERSION >= 98
+int Scm_SubclassP(ScmClass *sub, ScmClass *type)
+#else  /*GAUCHE_API_VERSION < 98*/
 int Scm_SubtypeP(ScmClass *sub, ScmClass *type)
+#endif /*GAUCHE_API_VERSION < 98*/
 {
     if (sub == type) return TRUE;
     if (sub == SCM_CLASS_BOTTOM) return TRUE;
@@ -961,7 +965,7 @@ int Scm_SubtypeP(ScmClass *sub, ScmClass *type)
 
 int Scm_TypeP(ScmObj obj, ScmClass *type)
 {
-    return Scm_SubtypeP(Scm_ClassOf(obj), type);
+    return Scm_SubclassP(Scm_ClassOf(obj), type);
 }
 
 /*
@@ -2210,7 +2214,7 @@ int Scm_MethodApplicableForClasses(ScmMethod *m, ScmClass *types[], int nargs)
         int n = 0;
         for (; n < m->common.required; n++) {
             if (SCM_EQ(sp[n], SCM_CLASS_TOP)) continue;
-            if (!Scm_SubtypeP(types[n], sp[n])) return FALSE;
+            if (!Scm_SubclassP(types[n], sp[n])) return FALSE;
         }
     }
     return TRUE;
@@ -3094,7 +3098,7 @@ ScmObj Scm_MakeForeignPointerWithAttr(ScmClass *klass, void *ptr, ScmObj attr)
     if (!klass) {               /* for extra safety */
         Scm_Error("NULL pointer passed to Scm_MakeForeignPointer");
     }
-    if (!Scm_SubtypeP(klass, SCM_CLASS_FOREIGN_POINTER)) {
+    if (!Scm_SubclassP(klass, SCM_CLASS_FOREIGN_POINTER)) {
         Scm_Error("attempt to instantiate non-foreign-pointer class %S via Scm_MakeForeignPointer", klass);
     }
 

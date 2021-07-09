@@ -541,7 +541,8 @@
 (define-cproc current-class-of (obj) (return (SCM_OBJ (Scm_ClassOf obj))))
 
 (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
-(define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubtypeP)
+(define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubclassP)
+
 ;; NB: of-type? is in libtype.scm.
 
 (define-cproc slot-ref (obj slot)
