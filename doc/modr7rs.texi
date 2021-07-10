@@ -6276,67 +6276,135 @@ Returns an unspecified value.
 
 @deftp {Module} scheme.text
 @mdindex scheme.text
+@c EN
 This module provides @emph{text} type, an immutable string
 with O(1) random access.  This is originally defined in srfi-135.
+@c JP
+このモジュールは@emph{text}と呼ばれる、O(1)ランダムアクセスができる
+変更不可な文字列へのインタフェースを提供します。
+元はsrfi-135として規定されました。
+@c COMMON
 
-In Gauche, a string with index access generally takes O(n); however,
+@c EN
+In Gauche, a string with index access generally takes O(n) because of
+mulit-byte representation; however,
 if the string is ASCII-only or you precalculate string indexes,
 index access becomes O(1) (@pxref{String indexing}).
 So, a text in Gauche is just an immutable indexed string.  It satisfies
 @code{string?}, too.
+@c JP
+Gaucheの文字列は一般的にはマルチバイト文字列のためインデックスアクセスはO(n)と
+なります。しかし、文字列がASCII文字のみからなる場合、
+あるいは文字列インデックスが付加されている場合(@ref{String indexing}参照)は、
+インデックスアクセスはO(1)になります。
+従って、Gaucheではtextは単なる変更付加でインデックスが付加された文字列であり、
+@code{string?}に対しても@code{#t}を返します。
+@c COMMON
 
-Note that, in Gauche, text is not disjoint from string, so @emph{textual}
-type is just a string type, and many @code{textual-*} procedures are
+@c EN
+Since text is not disjoint from string in Gauche, @emph{textual}
+type mentioned in this srfi
+is equivalent to a string type, and many @code{textual-*} procedures are
 just aliases to the corresponding @code{string-*} procedures.
-Use this module if you need portability.
+
+However, if you're writing portable code, keep it in mind that
+some implementation may have disjoint text and string types.
+@c JP
+Gaucheではこのsrfiでいう@emph{textual}型は文字列型と全く同じであり、
+@code{textual-*}手続きの大半は対応する@code{string-*}手続きの単なる別名です。
+
+しかし、ポータブルなコードを書いている場合は、処理系によってはtext型と文字列型が
+別の型である場合もあることに留意してください。
+@c COMMON
 @end deftp
 
 @defun text? obj
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Returns @code{#t} iff @var{obj} is a text, which is an immutable
 indexed string in Gauche.  Note that a text type is not disjoint
 from a string in Gauche.
+@c JP
+@var{obj}がtext型なら@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheではtextは文字列インデックスが付加された変更不可な文字列です。
+文字列型とtext型が排他ではないことに注意してください。
+@c COMMON
 @end defun
 
 @defun textual? obj
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Returns @code{#t} iff @var{obj} is either a text or a string.
 In Gauche, this is just an alias of @code{string?}.
+@c JP
+@var{obj}がtext型か文字列型であれば@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheではこれは単に@code{string?}の別名です。
+@c COMMON
 @end defun
 
 @defun textual-null? obj
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Returns @code{#t} iff @var{obj} is an empty string/text.  In Gauche
 this is just an alias of @code{string-null?}.
+@c JP
+@var{obj}が空の文字列かtextなら@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheではこれは単に@code{string-null?}の別名です。
+@c COMMON
 @end defun
 
 @defun textual-every pred textual :optional start end
 @defunx textual-any pred textual :optional start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
+Like @code{string-every} and @code{string-any}, but can work on both
+texts and strings.  In Gauche, these are just aliases of
+@code{string-every} and @code{string-any}.
+@c JP
+textと文字列の両方に対して、@code{string-every}や@code{string-any}のように動作します。
+Gaucheではこれらは@code{string-every}、@code{string-any}の別名です。
+@c COMMON
 @end defun
 
 @defun make-text len char
 [R7RS text]
 @c MOD scheme.text
+@c EN
 In Gauche it is same as @code{make-string}, except that the returned
 string is immutable and indexed, and you can't omit @var{char}.
+@c JP
+Gaucheではこれは@code{make-string}とほぼ同じですが、
+返される文字列は変更不可であり、また文字列インデックスが付加済みです。
+@var{char}を省略できないことに注意してください。
+@c COMMON
 @end defun
 
 @defun text char @dots{}
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Like @code{string}, but returned string is immutable and indexed.
+@c JP
+@code{string}と似ていますが、
+返される文字列は変更不可であり、また文字列インデックスが付加済みです。
+@c COMMON
 @end defun
 
 @defun text-tabulate proc len
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Like @code{string-tabulate}, but returned string is immutable and indexed
 (@pxref{String constructors}).
+@c JP
+@code{string-tabulate}と似ていますが、
+返される文字列は変更不可であり、また文字列インデックスが付加済みです。
+@ref{String constructors}参照。
+@c COMMON
 @end defun
 
 @defun text-unfold p f g seed :optional base make-final
@@ -6352,24 +6420,60 @@ a string instead of a character.
 @defun text-length text
 [R7RS text]
 @c MOD scheme.text
+@c EN
+Returns the length of @var{text}.
+An error is signaled if @var{text} is not a text.
+@c JP
+@var{text}の長さを返します。@var{text}がtextでなければエラーが報告されます。
+@c COMMON
 @end defun
 
 @defun text-ref text index
 [R7RS text]
 @c MOD scheme.text
+@c EN
+Returns @var{index}-th character of the text.  Guaranteed to be O(1).
+An error is signaled if @var{text} is not a text.
+@c JP
+textの@var{index}番目の文字を返します。O(1)アクセスが保証されます。
+@var{text}がtextでなければエラーが報告されます。
+@c COMMON
 @end defun
 
 @defun textual-length textual
-@defunx textual-ref textual index
 [R7RS text]
 @c MOD scheme.text
+@c EN
+Returns the length of a text or a string.
+This is just an alias of @code{string-length} in Gauche.
+@c JP
+textあるいは文字列の長さを返します。
+Gaucheではこれは単に@code{string-length}の別名です。
+@c COMMON
+@end defun
+
+@defun textual-ref textual index
+[R7RS text]
+@c MOD scheme.text
+@c EN
+Returns @var{index}-th character of the text.
+This is just an alias of @code{string-ref} in Gauche.
+@c JP
+textの@var{index}番目の文字を返します。
+Gaucheではこれは単に@code{string-ref}の別名です。
+@c COMMON
 @end defun
 
 @defun textual->text textual
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Takes a string, and returns an immutable, indexed string of the same
 content.  If @var{textual} is already a such string, it is returned as is.
+@c JP
+文字列を受け取り、同じ内容の、文字列インデックス付加済みで変更付加な文字列を返します。
+@var{textual}が既にそういう文字列であれば、それがそのまま返されます。
+@c COMMON
 @end defun
 
 @defun textual->string textual :optional start end
@@ -6377,10 +6481,17 @@ content.  If @var{textual} is already a such string, it is returned as is.
 @defunx textual->list textual :optional start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Converts a textual to a fresh mutable string,
 a vector and a list, respectively.
 These are aliases of @code{string-copy}, @code{string->vector}
 and @code{string->list} in Gauche.
+@c JP
+@var{textual}を新たにアロケートされた変更可能な文字列、
+文字のベクタ、文字のリストにそれぞれ変換します。
+Gaucheではこれらは@code{string-copy}、@code{string->vector}、
+@code{string->list}の別名です。
+@c COMMON
 @end defun
 
 @defun string->text string :optional start end
