@@ -6411,10 +6411,18 @@ Like @code{string-tabulate}, but returned string is immutable and indexed
 @defunx text-unfold-right p f g seed :optional base make-final
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Like @code{string-unfold} and @code{string-unfold-right},
 but returned string is immutable and indexed
 (@pxref{String constructors}).  The mapper procedure @var{f} may return
 a string instead of a character.
+@c JP
+@code{string-unfold}および@code{string-unfold-right}と似ていますが、
+返される文字列は変更不可であり、文字列インデックス付加済みになります
+(@ref{String constructors}参照)。
+また、シードから要素を生成する手続き@var{f}は、
+文字だけでなく文字列を返すこともできます (その文字列の各文字が結果に挿入されます)。
+@c COMMON
 @end defun
 
 @defun text-length text
@@ -6471,7 +6479,7 @@ Gaucheではこれは単に@code{string-ref}の別名です。
 Takes a string, and returns an immutable, indexed string of the same
 content.  If @var{textual} is already a such string, it is returned as is.
 @c JP
-文字列を受け取り、同じ内容の、文字列インデックス付加済みで変更付加な文字列を返します。
+文字列を受け取り、同じ内容の、文字列インデックス付加済みで変更不可な文字列を返します。
 @var{textual}が既にそういう文字列であれば、それがそのまま返されます。
 @c COMMON
 @end defun
@@ -6499,65 +6507,114 @@ Gaucheではこれらは@code{string-copy}、@code{string->vector}、
 @defunx list->text char-list :optional start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Convert a string, a vector of characters, and a list of characters
 to an immutable indexed string.
 If an immutable indexed string is given to @code{string->text} without
 start/end arguments, the input is returned as is.
+@c JP
+それぞれ、文字列、文字のベクタ、文字のリストを、
+文字列インデックス付きの変更不可な文字列に変換します。
+@code{string->text}に文字列インデックス付きの変更不可な文字列が渡された場合は
+それがそのまま返されます。
+@c COMMON
 @end defun
 
 @defun reverse-list->text char-list
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Same as @code{(list->text (reverse char-list))} but maybe more efficient.
+@c JP
+@code{(list->text (reverse char-list))}と同じですがより効率的な場合があります。
+@c COMMON
 @end defun
 
 @defun textual->utf8 textual :optional start end
 [R7RS text]
 @c MOD scheme.text
-Returns a bytevector that contains utf8 encoding of the input
+@c EN
+Returns a bytevector (u8vector) that contains utf8 encoding of the input
 textual.  In Gauche, it is the same as @code{string->utf8}
 (@pxref{Unicode transfer encodings}).
+@c JP
+入力のtextまたは文字列をutf8エンコーディングのバイト列に変換し、バイトベクタ(u8vector)
+として返します。Gaucheではこれは@code{string->utf8}と同じです
+(@ref{Unicode transfer encodings}参照)。
+@c COMMON
 @end defun
 
 @defun textual->utf16 textual :optional start end
 [R7RS text]
 @c MOD scheme.text
-Returns a bytevector that contains utf16 encoding of the input
+@c EN
+Returns a bytevector (u8vector) that contains utf16 encoding of the input
 textual, with BOM attached, and in the native byteorder.
 In Gauche, it is the same as
 @code{(string->utf16 textual (native-endian) #t [start end])}
 (@pxref{Unicode transfer encodings}).
+@c JP
+入力のtextまたは文字列をutf16エンコーディングのバイト列
+(ネイティブバイトオーダー、BOMつき)に変換し、バイトベクタ(u8vector)
+として返します。Gaucheではこれは
+@code{(string->utf16 textual (native-endian) #t [start end])}と同じです
+(@ref{Unicode transfer encodings}参照)。
+@c COMMON
 @end defun
 
 @defun textual->utf16be textual :optional start end
 @defunx textual->utf16le textual :optional start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Returns a bytevector that contains utf16be and utf16le encoding of the input
 textual.  No BOM is attached.
 In Gauche, they are the same as
 @code{(string->utf16 textual 'big-endian #f [start end])} and
 @code{(string->utf16 textual 'little-endian #t [start end])}
 (@pxref{Unicode transfer encodings}).
+@c JP
+入力のtextまたは文字列をutf16le/beエンコーディングのバイト列
+(BOMなし)に変換し、バイトベクタ(u8vector)として返します。Gaucheではこれはそれぞれ
+@code{(string->utf16 textual 'big-endian #f [start end])}および
+@code{(string->utf16 textual 'little-endian #t [start end])}と同じです
+(@ref{Unicode transfer encodings}参照)。
+@c COMMON
 @end defun
 
 @defun utf8->text bytevector :optional start end
 [R7RS text]
 @c MOD scheme.text
-Converts a utf8 octet sequence stored in @var{bytevector} to a text.
+@c EN
+Converts a utf8 octet sequence stored in @var{bytevector} (u8vector) to a text.
 If the octet sequence begins with BOM sequence, it is interpreted
 as a character U+FEFF.  Optional @var{start}/@var{end} arguments
 limits the input range of @var{bytevector}.
+@c JP
+@var{bytevector} (u8vector)に格納されたutf8オクテット列をtext
+(インデックス付き変更不可文字列) に変換して返します。
+入力がBOMで始まっていた場合、それは文字U+FEFFと解釈されます。
+省略可能な@var{start}/@var{end}引数は入力@var{bytevector}の範囲を制限します。
+@c COMMON
 
+@c EN
 If the input contains an invalid utf-8 sequence, and Gauche's native
 encoding is utf-8, it is replaced by a unicode replacement character
 U+FFFD.  (NB: Srfi-135 says it is an error.)
+@c JP
+入力にutf-8として不正なオクテットが含まれており、Gaucheが内部エンコーディングutf-8で
+コンパイルされていれば、そのオクテットはUnicode置換文字U+FFFDに変換されます。
+(SRFI-134ではその場合は「エラーである」と規定されているので、
+実際の処理は処理系依存になります)。
+@c COMMON
 @end defun
 
 @defun utf16->text bytevector :optional start end
 @defunx utf16be->text bytevector :optional start end
 @defunx utf16le->text bytevector :optional start end
 [R7RS text]
+@c MOD scheme.text
+@c EN
 Converts a utf16 octet sequence stored in @var{bytevector} to a text.
 For @code{utf16->text}, the sequence may begin with BOM,
 in which case it determines the endianness.
@@ -6565,36 +6622,82 @@ Otherwise, platform's native endianness is assumed.
 Fro @code{utf16be->text} and @code{utf16le->text}, the input is
 assumed to be in UTF16BE/UTF16LE respectively; if it begins with BOM
 it is treated as a character U+FEFF.
+@c JP
+@var{bytevector} (u8vector)に格納されたutf8オクテット列をtext
+(インデックス付き変更不可文字列) に変換して返します。
+@code{utf16->text}は、入力がBOMで始まっていればそれに従ってバイトオーダーを
+解釈し、BOMが無ければネイティブバイトオーダーを使います。
+@code{utf16be->text}と@code{utf16le->text}はそれぞれ
+入力がbig/little endianであることを前提に解釈します。先頭にBOMがあれば
+それはU+FEFFという文字になります。
+@c COMMON
 
+@c EN
 Optional @var{start}/@var{end} arguments
 limits the input range of @var{bytevector}.
+@c JP
+省略可能な@var{start}/@var{end}引数は入力@var{bytevector}の範囲を制限します。
+@c JP
 
+@c EN
 If the length of input (@var{end} - @var{start}, if the range is limited)
 isn't even, an error is thrown.
+@c JP
+入力のオクテット数 (入力範囲の制限がある場合は@var{end} - @var{start})が偶数で
+なければエラーが投げられます。
+@c COMMON
 
+@c EN
 If the input contains an invalid utf-16 sequence (unpaired surrogates),
 it is replaced by a unicode replacement character U+FFFD.
 (NB: Srfi-135 says it is an error.)
-@c MOD scheme.text
+@c JP
+入力にutf-16として不正な列 (対になっていないサロゲート) が含まれていた
+場合、それはUnicode置換文字U+FFFDに変換されます。
+(SRFI-134ではその場合は「エラーである」と規定されているので、
+実際の処理は処理系依存になります)。
+@c COMMON
 @end defun
 
 @defun subtext text start end
 @defunx subtextual textual start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Returns a text between @var{start}-th (inclusive) and @var{end}-th (exclusive)
 characters in the input.
+@c JP
+入力のtext、あるいはtextual(textまたは文字列)の@var{start}番目の文字から
+@var{end}番目の文字の手前までを取り出してtext (インデックス付加済みの変更不可な文字列)
+として返します。
+@c COMMON
 @end defun
 
 @defun textual-copy textual :optional start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
 Returns a copy of @var{textual}, optionally limited between
-@var{start}/@var{end}.
+@var{start}/@var{end}, as a text.
+@c JP
+textまたは文字列のコピーをtextとして返します。
+省略可能な@var{start}/@var{end}引数は、
+コピーする範囲を@var{start}文字目から@var{end}文字目の手前までに制限します。
+@c COMMON
 
+@c EN
 Srfi-135 specifies that even the input is a text, the returned one
-must be freshly allocated.  In Gauche, string body is immutable anyway,
+must be freshly allocated (as opposed to @code{subtextual}, which
+is allowed to return the result sharing the input).
+In Gauche, string body is immutable anyway,
 so it isn't a big deal.
+@c JP
+srfi-135は、@code{textual-copy}が常に新たなtextをアロケートして返すことを
+要求しています (@code{subtextual}は戻り値が入力と共有されることを許します)。
+Gaucheでは、文字列本体はimmutableであり、
+文字列のコピーは文字列本体へのポインタをコピーするだけなので、
+どちらもあまり変わりませんが。
+@c COMMON
 @end defun
 
 @defun textual-take textual nchars
@@ -6608,12 +6711,22 @@ so it isn't a big deal.
 @defunx textual-trim-both textual :optional pred start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
 In Gauche, these are the same as corresponding string operations
 (@code{string-take}, @code{string-drop}, @code{string-take-right},
 @code{string-drop-right}, @code{string-pad}, @code{string-pad-right},
 @code{string-trim}, @code{string-tirm-right}, and @code{string-trim-both}),
 except that the returned string is always immutable and indexed.
 @xref{SRFI-13 String selection}, for these string procedures.
+@c JP
+Gaucheでは、結果が常に変更不可でインデックス付きになることを以外は、
+対応する文字列操作
+(@code{string-take}、@code{string-drop}、@code{string-take-right}、
+@code{string-drop-right}、@code{string-pad}、@code{string-pad-right}、
+@code{string-trim}、@code{string-tirm-right}、@code{string-trim-both})
+と同じです。
+詳しくは@ref{SRFI-13 String selection}を参照してください。
+@c COMMON
 @end defun
 
 @defun textual-replace textual1 textual2 start1 end1 :optional start2 end2
@@ -6656,16 +6769,25 @@ In Gauche, these are just aliases of @emph{the unicode version} of
 @defunx textual-suffix? textual1 textual2 :optional start1 end1 start2 end2
 [R7RS text]
 @c MOD scheme.text
+In Gauche, these are just aliases of @code{srfi-13}'s
+@code{string-prefix-length}, @code{string-suffix-length},
+@code{string-prefix?}, and @code{string-suffix?}, respectively.
+@xref{SRFI-13 String prefixes & suffixes}, for the details.
 @end defun
 
 @defun textual-index textual pred :optional start end
 @defunx textual-index-right textual pred :optional start end
 @defunx textual-skip textual pred :optional start end
 @defunx textual-skip-right textual pred :optional start end
-@defunx textual-contains textual1 textual2 :optional start1 end1 start2 end2
-@defunx textual-contains-right textual1 textual2 :optional start1 end1 start2 end2
+@defunx textual-contains textual-haystack textual-needle :optional start1 end1 start2 end2
+@defunx textual-contains-right textual-haystack textual-needle :optional start1 end1 start2 end2
 [R7RS text]
 @c MOD scheme.text
+In Gauche, these are just aliases of @code{srfi-13}'s
+@code{string-index}, @code{string-index-right},
+@code{string-skip}, @code{string-skip-right},
+@code{string-contains}, and @code{string-contains-right}, respectively.
+@xref{SRFI-13 String searching}, for the details.
 @end defun
 
 @defun textual-upcase textual
