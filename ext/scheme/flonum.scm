@@ -136,12 +136,12 @@
 ;; See post-finalization note in srfi about returning +nan.0
 (define-inline (flonum n) (if (real? n) (inexact n) +nan.0))
 
-(define-cproc fladjacent (x::<real> y::<real>)
-  ::<real> :constant :fast-flonum
+(define-cproc fladjacent (x::<double> y::<double>)
+  ::<double> :constant :fast-flonum
   (return (nextafter x y)))
 
-(define-cproc flcopysign (x::<real> y::<real>)
-  ::<real> :constant :fast-flonum
+(define-cproc flcopysign (x::<double> y::<double>)
+  ::<double> :constant :fast-flonum
   (return (copysign x y)))
 
 (define-inline (make-flonum x n) (ldexp x n))
@@ -150,15 +150,15 @@
 ;;; accessors
 ;;;
 
-(define-cproc logb (x::<real>) ::<real> :constant :fast-flonum logb)
-(define-cproc ilogb (x::<real>) ::<int> :constant :fast-flonum ilogb)
+(define-cproc logb (x::<double>) ::<double> :constant :fast-flonum logb)
+(define-cproc ilogb (x::<double>) ::<int> :constant :fast-flonum ilogb)
 
 (define-inline (flinteger-fraction x)
   (receive (r q) (modf x) (values q r)))
 (define-inline (flexponent x) (logb x))
 (define-inline (flinteger-exponent x) (ilogb x))
 (define-inline (flnormalized-fraction-exponent x) (frexp x))
-(define-cproc flsign-bit (x::<real>) ::<int> :constant :fast-flonum
+(define-cproc flsign-bit (x::<double>) ::<int> :constant :fast-flonum
   (return (?: (signbit x) 1 0)))
 
 ;;;
@@ -196,9 +196,9 @@
                                       FP_ZERO d))
         (return (fpclassify d)))))
 
-(define-cproc flnormalized? (x::<real>) ::<boolean> :constant :fast-flonum
+(define-cproc flnormalized? (x::<double>) ::<boolean> :constant :fast-flonum
   (return (== (flonum_classify x) FP_NORMAL)))
-(define-cproc fldenormalized? (x::<real>) ::<boolean> :constant :fast-flonum
+(define-cproc fldenormalized? (x::<double>) ::<boolean> :constant :fast-flonum
   (return (== (flonum_classify x) FP_SUBNORMAL)))
 
 ;;;
@@ -212,19 +212,21 @@
 
 (define-inline (fl+ . args) (apply +. args))
 (define-inline (fl* . args) (apply *. args))
-(define-cproc fl+* (x::<real> y::<real> z::<real>)
-  ::<real> :fast-flonum :constant
+(define-cproc fl+* (x::<double> y::<double> z::<double>)
+  ::<double> :fast-flonum :constant
   (return (fma x y z)))
 
 (define-inline (fl- x . args) (apply -. x args))
 (define-inline (fl/ x . args) (apply /. x args))
 
-(define-cproc flabs (x::<real>) ::<real> :fast-flonum :constant fabs)
-(define-cproc flabsdiff (x::<real> y::<real>) ::<real> :fast-flonum :constant
+(define-cproc flabs (x::<double>) ::<double> :fast-flonum :constant fabs)
+(define-cproc flabsdiff (x::<double> y::<double>)
+  ::<double> :fast-flonum :constant
   (return (fabs (- x y))))
-(define-cproc flposdiff (x::<real> y::<real>) ::<real> :fast-flonum :constant
+(define-cproc flposdiff (x::<double> y::<double>)
+  ::<double> :fast-flonum :constant
   (return (?: (> x y) (- x y) 0.0)))
-(define-cproc flsgn  (x::<real>) ::<real> :fast-flonum :constant
+(define-cproc flsgn  (x::<double>) ::<double> :fast-flonum :constant
   (return (?: (signbit x) -1.0 1.0)))
 
 (define (flnumerator x)
@@ -237,14 +239,14 @@
         [(nan? x) x]
         [else (inexact (denominator (exact x)))]))
 
-(define-cproc flfloor (x::<real>) ::<real> :fast-flonum :constant floor)
-(define-cproc flceiling (x::<real>) ::<real> :fast-flonum :constant ceil)
+(define-cproc flfloor (x::<double>) ::<double> :fast-flonum :constant floor)
+(define-cproc flceiling (x::<double>) ::<double> :fast-flonum :constant ceil)
 (define (flround x) (assume (flonum? x)) (round x))
-(define-cproc fltruncate (x::<real>) ::<real> :fast-flonum :constant trunc)
+(define-cproc fltruncate (x::<double>) ::<double> :fast-flonum :constant trunc)
 
 (define-inline (flexp x) (%exp x))
 (define-inline (flexp2 x) (%expt 2.0 x))
-(define-cproc flexp-1 (x::<real>) ::<real> :fast-flonum :constant expm1)
+(define-cproc flexp-1 (x::<double>) ::<double> :fast-flonum :constant expm1)
 (define-inline (flsquare x) (*. x x))
 (define-inline (flsqrt x) (%sqrt x))
 (define (flcbrt x)
@@ -260,12 +262,13 @@
           (if (= r r+)
             r
             (loop r+)))))))
-(define-cproc flhypot (x::<real> y::<real>) ::<real> :fast-flonum :constant hypot)
+(define-cproc flhypot (x::<double> y::<double>)
+  ::<double> :fast-flonum :constant hypot)
 (define-inline (flexpt x y) (%expt x y))
 (define-inline (fllog x) (%log x))
-(define-cproc fllog1+ (x::<real>) ::<real> :fast-flonum :constant log1p)
-(define-cproc fllog2 (x::<real>) ::<real> :fast-flonum :constant log2)
-(define-cproc fllog10 (x::<real>) ::<real> :fast-flonum :constant log10)
+(define-cproc fllog1+ (x::<double>) ::<double> :fast-flonum :constant log1p)
+(define-cproc fllog2 (x::<double>) ::<double> :fast-flonum :constant log2)
+(define-cproc fllog10 (x::<double>) ::<double> :fast-flonum :constant log10)
 (define (make-fllog-base base) (^x (/. (%log x) (%log base))))
 
 (define-inline (flsin x) (%sin x))
@@ -277,13 +280,13 @@
 (define-inline (flsinh x) (%sinh x))
 (define-inline (flcosh x) (%cosh x))
 (define-inline (fltanh x) (%tanh x))
-(define-cproc flasinh (x::<real>) ::<real> :fast-flonum :constant asinh)
-(define-cproc flacosh (x::<real>) ::<real> :fast-flonum :constant acosh)
-(define-cproc flatanh (x::<real>) ::<real> :fast-flonum :constant atanh)
+(define-cproc flasinh (x::<double>) ::<double> :fast-flonum :constant asinh)
+(define-cproc flacosh (x::<double>) ::<double> :fast-flonum :constant acosh)
+(define-cproc flatanh (x::<double>) ::<double> :fast-flonum :constant atanh)
 
 (define (flquotient x y) (fltruncate (/. x y)))
 (define (flremainder x y) (-. x (*. y (flquotient x y))))
-(define-cproc flremquo (x::<real> y::<real>) ::(<real> <int>)
+(define-cproc flremquo (x::<double> y::<double>) ::(<double> <int>)
   (let* ([quo::int]
          [rem::double (remquo x y (& quo))])
     (result rem quo)))
@@ -297,11 +300,11 @@
                 [(odd? (floor x)) -1.0]
                 [else 1.0])))
 
-(define-cproc flfirst-bessel (n::<int> x::<real>)
-  ::<real> :fast-flonum :constant
+(define-cproc flfirst-bessel (n::<int> x::<double>)
+  ::<double> :fast-flonum :constant
   jn)
-(define-cproc flsecond-bessel (n::<int> x::<real>)
-  ::<real> :fast-flonum :constant
+(define-cproc flsecond-bessel (n::<int> x::<double>)
+  ::<double> :fast-flonum :constant
   ;; As of 2019, NB: MinGW's yn returns NaN if x = 0, as opposed to the
   ;; POSIX definition that says -HUGE_VAL.
   (.if (defined GAUCHE_WINDOWS)
@@ -310,9 +313,9 @@
          (return (yn n x)))
        (return (yn n x))))
 
-(define-cproc flerf (x::<real>)
-  ::<real> :fast-flonum :constant
+(define-cproc flerf (x::<double>)
+  ::<double> :fast-flonum :constant
   erf)
-(define-cproc flerfc (x::<real>)
-  ::<real> :fast-flonum :constant
+(define-cproc flerfc (x::<double>)
+  ::<double> :fast-flonum :constant
   erfc)

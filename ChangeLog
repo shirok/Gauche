@@ -1,3 +1,11 @@
+2021-07-10  Shiro Kawai  <shiro@acm.org>
+
+	* Use <double> instead of <real> as a stub-type expecting C double.
+	  <real> in Scheme world includes bignums and rationals, and coercing
+	  it into C double is not a right thing.  Eventually we use <real>
+	  type restriction to check the input is Scheme real number, but
+	  pass it as ScmObj to the C world.
+
 2021-07-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c (Scm_SubclassP): Rename Scm_SubtypeP to Scm_SubclassP;

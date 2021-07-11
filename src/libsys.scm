@@ -881,7 +881,7 @@
 (define-cproc time->seconds (t::<time>) ;SRFI-18
   Scm_TimeToSeconds)
 
-(define-cproc seconds->time (t::<real>) ;SRFI-18
+(define-cproc seconds->time (t::<double>) ;SRFI-18
   Scm_RealSecondsToTime)
 
 (define-cproc sys-asctime (tm::<sys-tm>)

@@ -281,31 +281,31 @@
            (return v))]
         [else (SCM_TYPE_ERROR num "real number") (return SCM_UNDEFINED)]))
 
-(define-cproc fmod (x::<real> y::<real>) ::<double> fmod)
+(define-cproc fmod (x::<double> y::<double>) ::<double> fmod)
 
-(define-cproc frexp (d::<real>) ::(<double> <int>)
+(define-cproc frexp (d::<double>) ::(<double> <int>)
   (set! SCM_RESULT0 (frexp d (& SCM_RESULT1))))
 
-(define-cproc modf (x::<real>) ::(<double> <double>)
+(define-cproc modf (x::<double>) ::(<double> <double>)
   (set! SCM_RESULT0 (modf x (& SCM_RESULT1))))
 
-(define-cproc ldexp (x::<real> exp::<int>) ::<real> ldexp)
+(define-cproc ldexp (x::<double> exp::<int>) ::<double> ldexp)
 
-(define-cproc log10 (x::<real>) ::<real> log10)
+(define-cproc log10 (x::<double>) ::<double> log10)
 
 ;; NB: Alternative implemenation of gamma and log-abs-gamma functions are
 ;; provided in Scheme (lib/gauche/numerical.scm).
 (select-module gauche.internal)
 (inline-stub
  (if "defined(HAVE_TGAMMA)"
-   (define-cproc %gamma (x::<real>) ::<real> :fast-flonum :constant
+   (define-cproc %gamma (x::<double>) ::<double> :fast-flonum :constant
      tgamma))
  (if "defined(HAVE_LGAMMA)"
-   (define-cproc %lgamma (x::<real>) ::<real> :fast-flonum :constant
+   (define-cproc %lgamma (x::<double>) ::<double> :fast-flonum :constant
      lgamma)))
 ;; Returns the HalfFloat representation as integer.  For now,
 ;; we keep it in gauche.internal.
-(define-cproc flonum->f16bits (x::<real>) ::<int> Scm_DoubleToHalf)
+(define-cproc flonum->f16bits (x::<double>) ::<int> Scm_DoubleToHalf)
 
 ;;
 ;; Arithmetics
@@ -408,7 +408,7 @@
 ;; Transcedental functions.   First, real-only versions.
 
 (select-module gauche)
-(define-cproc %exp (x::<real>) ::<real> :fast-flonum :constant exp)
+(define-cproc %exp (x::<double>) ::<double> :fast-flonum :constant exp)
 
 (define-cproc %log (x) ::<number> :fast-flonum :constant
   (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
@@ -430,15 +430,15 @@
       (return (Scm_MakeComplex (+ (log (- d)) shift) M_PI))
       (return (Scm_VMReturnFlonum (+ (log d) shift))))))
 
-(define-cproc %sin (x::<real>) ::<real> :fast-flonum :constant sin)
-(define-cproc %cos (x::<real>) ::<real> :fast-flonum :constant cos)
-(define-cproc %tan (x::<real>) ::<real> :fast-flonum :constant tan)
+(define-cproc %sin (x::<double>) ::<double> :fast-flonum :constant sin)
+(define-cproc %cos (x::<double>) ::<double> :fast-flonum :constant cos)
+(define-cproc %tan (x::<double>) ::<double> :fast-flonum :constant tan)
 
-(define-cproc %sinpi (x::<real>) ::<real> :fast-flonum :constant Scm_SinPi)
-(define-cproc %cospi (x::<real>) ::<real> :fast-flonum :constant Scm_CosPi)
-(define-cproc %tanpi (x::<real>) ::<real> :fast-flonum :constant Scm_TanPi)
+(define-cproc %sinpi (x::<double>) ::<double> :fast-flonum :constant Scm_SinPi)
+(define-cproc %cospi (x::<double>) ::<double> :fast-flonum :constant Scm_CosPi)
+(define-cproc %tanpi (x::<double>) ::<double> :fast-flonum :constant Scm_TanPi)
 
-(define-cproc %asin (x::<real>) ::<number> :fast-flonum :constant
+(define-cproc %asin (x::<double>) ::<number> :fast-flonum :constant
   (cond [(> x 1.0)
          (return (Scm_MakeComplex (/ M_PI 2.0)
                                   (- (log (+ x (sqrt (- (* x x) 1.0)))))))]
@@ -447,24 +447,24 @@
                                   (- (log (- (- x) (sqrt (- (* x x) 1.0)))))))]
         [else (return (Scm_VMReturnFlonum (asin x)))]))
 
-(define-cproc %acos (x::<real>) ::<number> :fast-flonum :constant
+(define-cproc %acos (x::<double>) ::<number> :fast-flonum :constant
   (cond [(> x 1.0)
          (return (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
         [(< x -1.0)
          (return (Scm_MakeComplex 0 (log (+ x (sqrt (- (* x x) 1.0))))))]
         [else (return (Scm_VMReturnFlonum (acos x)))]))
 
-(define-cproc %atan (z::<real> :optional x) ::<double> :fast-flonum :constant
+(define-cproc %atan (z::<double> :optional x) ::<double> :fast-flonum :constant
   (cond [(SCM_UNBOUNDP x) (return (atan z))]
         [else (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
               (return (atan2 z (Scm_GetDouble x)))]))
 
-(define-cproc %sinh (x::<real>) ::<real> :fast-flonum :constant sinh)
-(define-cproc %cosh (x::<real>) ::<real> :fast-flonum :constant cosh)
-(define-cproc %tanh (x::<real>) ::<real> :fast-flonum :constant tanh)
+(define-cproc %sinh (x::<double>) ::<double> :fast-flonum :constant sinh)
+(define-cproc %cosh (x::<double>) ::<double> :fast-flonum :constant cosh)
+(define-cproc %tanh (x::<double>) ::<double> :fast-flonum :constant tanh)
 ;; NB: asinh and acosh are not in POSIX.
 
-(define-cproc %sqrt (x::<real>) :fast-flonum :constant
+(define-cproc %sqrt (x::<double>) :fast-flonum :constant
   (if (< x 0)
     (return (Scm_MakeComplex 0.0 (sqrt (- x))))
     (return (Scm_VMReturnFlonum (sqrt x)))))
@@ -740,9 +740,9 @@
     (/ (- (log (+ 1 z)) (log (- 1 z))) 2)))
 
 (select-module gauche)
-(define-cproc radians->degrees (r::<real>) ::<real> :constant :fast-flonum
+(define-cproc radians->degrees (r::<double>) ::<double> :constant :fast-flonum
   (return (* r (/ 180 M_PI))))
-(define-cproc degrees->radians (d::<real>) ::<real> :constant :fast-flonum
+(define-cproc degrees->radians (d::<double>) ::<double> :constant :fast-flonum
   (return (* d (/ M_PI 180))))
 
 (select-module gauche)
@@ -882,8 +882,10 @@
 ;;
 
 (select-module scheme)
-(define-cproc make-rectangular (a::<real> b::<real>) :constant Scm_MakeComplex)
-(define-cproc make-polar (r::<real> t::<real>) :constant Scm_MakeComplexPolar)
+(define-cproc make-rectangular (a::<double> b::<double>) :constant
+  Scm_MakeComplex)
+(define-cproc make-polar (r::<double> t::<double>) :constant
+  Scm_MakeComplexPolar)
 
 ;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
 ;; and avoiding extra allocation.
