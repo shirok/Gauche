@@ -115,17 +115,24 @@
               (hdr::ScmHeader
                name::ScmObj
                c-of-type::(.function (obj) ::int *)
-               of-type::ScmObj))) ; obj -> bool
+               super::ScmObj
+               of-type::ScmObj)))       ; obj -> bool
 
  (define-cclass <stub-type> :built-in :private :no-meta
    "ScmStubType*" "Scm_StubTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name)
+    (super)
     (of-type))
    (printer (Scm_Printf port "#<stub-type %S>" (-> (SCM_STUB_TYPE obj) name))))
+ )
 
- ;; (of-type? ofj type)
- ;;    This may push C continuations on VM, so must be called on VM.
+;;;
+;;; of-type? obj type
+;;;
+
+(inline-stub
+ ;;  This may push C continuations on VM, so must be called on VM.
  (define-cfn Scm_VMOfType (obj type)
    (cond [(SCM_PROXY_TYPE_P type)
           (return (Scm_VMIsA obj (Scm_ProxyTypeRef (SCM_PROXY_TYPE type))))]
@@ -147,6 +154,33 @@
 
  (define-cproc of-type? (obj type) Scm_VMOfType)
  )
+
+;;;
+;;; subtype? type-or-class type-or-class
+;;;
+
+;; Partial: We eventually add suport of descriptive types.
+(define-cproc subtype? (sub super) ::<boolean>
+  (loop
+   (cond [(SCM_CLASSP sub)
+          (return (and (SCM_CLASSP super)
+                       (Scm_SubclassP (SCM_CLASS sub) (SCM_CLASS super))))]
+         [(SCM_PROXY_TYPE_P sub)
+          (set! sub (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub))))]
+         [(SCM_PROXY_TYPE_P super)
+          (set! super (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE super))))]
+         [(SCM_STUB_TYPE_P sub)
+          (when (SCM_EQ sub super) (return TRUE))
+          (let* ([klass (-> (SCM_STUB_TYPE sub) super)])
+            (SCM_ASSERT (SCM_CLASSP klass))
+            (return (and (SCM_CLASSP super)
+                         (Scm_SubclassP (SCM_CLASS klass)
+                                        (SCM_CLASS super)))))]
+         [else (return FALSE)])))
+
+;;;
+;;; Descriptive type constructors
+;;;
 
 ;; define-type-constructor name supers
 ;;   (slot ...)
@@ -319,7 +353,7 @@
         (let1 k (class-of obj)
           (let loop ([ms (~ object-apply'methods)])
             (cond [(null? ms) #f]
-                  [(subtype? k (car (~ (car ms)'specializers)))]
+                  [(subclass? k (car (~ (car ms)'specializers)))]
                   [else (loop (cdr ms))]))))
     (apply applicable? obj (~ type'arguments))))
 
@@ -491,17 +525,19 @@
 
 (inline-stub
  (define-cfn Scm_MakeStubType (name::(const char*)
+                               super
                                c-of-type::(.function (obj)::int *))
    (let* ([z::ScmStubType* (SCM_NEW ScmStubType)])
      (SCM_SET_CLASS z (& Scm_StubTypeClass))
      (set! (-> z name) (SCM_INTERN name))
+     (set! (-> z super) super)
      (set! (-> z c-of-type) c-of-type)
      (set! (-> z of-type) SCM_FALSE)
      (return (SCM_OBJ z))))
 
  (define-cise-stmt define-stub-type
-   [(_ name fn)
-    `(let* ([z (Scm_MakeStubType ,name ,fn)])
+   [(_ name super fn)
+    `(let* ([z (Scm_MakeStubType ,name ,super ,fn)])
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_STUB_TYPE z) name)) z
                         SCM_BINDING_INLINABLE))])
@@ -608,25 +644,37 @@
  (define-cfn stub_cstrP (obj) ::int :static
    (return (SCM_STRINGP obj)))
 
+ (define-cvar intclass :static)
+ (define-cvar realclass :static)
+ (define-cvar strclass :static)
  (initcode
-  (define-stub-type "<fixnum>"  stub_fixnumP)
-  (define-stub-type "<short>"   stub_shortP)
-  (define-stub-type "<ushort>"  stub_ushortP)
-  (define-stub-type "<int>"     stub_intP)
-  (define-stub-type "<uint>"    stub_uintP)
-  (define-stub-type "<long>"    stub_longP)
-  (define-stub-type "<ulong>"   stub_ulongP)
-  (define-stub-type "<int8>"    stub_s8P)
-  (define-stub-type "<uint8>"   stub_u8P)
-  (define-stub-type "<int16>"   stub_s16P)
-  (define-stub-type "<uint16>"  stub_u16P)
-  (define-stub-type "<int32>"   stub_s32P)
-  (define-stub-type "<uint32>"  stub_u32P)
-  (define-stub-type "<int64>"   stub_s64P)
-  (define-stub-type "<uint64>"  stub_u64P)
-  (define-stub-type "<float>"   stub_realP)
-  (define-stub-type "<double>"  stub_realP)
-  (define-stub-type "<const-cstring>" stub_cstrP)
+  (set! intclass (Scm_GlobalVariableRef (Scm_GaucheModule)
+                                        (SCM_SYMBOL (SCM_INTERN "<integer>"))
+                                        0))
+  (set! realclass (Scm_GlobalVariableRef (Scm_GaucheModule)
+                                         (SCM_SYMBOL (SCM_INTERN "<real>"))
+                                         0))
+  (set! strclass (Scm_GlobalVariableRef (Scm_GaucheModule)
+                                        (SCM_SYMBOL (SCM_INTERN "<string>"))
+                                        0))
+  (define-stub-type "<fixnum>"  intclass stub_fixnumP)
+  (define-stub-type "<short>"   intclass stub_shortP)
+  (define-stub-type "<ushort>"  intclass stub_ushortP)
+  (define-stub-type "<int>"     intclass stub_intP)
+  (define-stub-type "<uint>"    intclass stub_uintP)
+  (define-stub-type "<long>"    intclass stub_longP)
+  (define-stub-type "<ulong>"   intclass stub_ulongP)
+  (define-stub-type "<int8>"    intclass stub_s8P)
+  (define-stub-type "<uint8>"   intclass stub_u8P)
+  (define-stub-type "<int16>"   intclass stub_s16P)
+  (define-stub-type "<uint16>"  intclass stub_u16P)
+  (define-stub-type "<int32>"   intclass stub_s32P)
+  (define-stub-type "<uint32>"  intclass stub_u32P)
+  (define-stub-type "<int64>"   intclass stub_s64P)
+  (define-stub-type "<uint64>"  intclass stub_u64P)
+  (define-stub-type "<float>"   realclass stub_realP)
+  (define-stub-type "<double>"  realclass stub_realP)
+  (define-stub-type "<const-cstring>" strclass stub_cstrP)
   ))
 
 ;;;
@@ -642,7 +690,7 @@
         '(<type-constructor-meta>
           <descriptive-type>
           <^> </> <?> <Tuple> <List> <Vector>
-          of-type?)
+          subtype? of-type?)
         '(inlinable))
   (xfer (current-module)
         (find-module 'gauche.internal)

@@ -541,9 +541,9 @@
 (define-cproc current-class-of (obj) (return (SCM_OBJ (Scm_ClassOf obj))))
 
 (define-cproc is-a? (obj klass::<class>) (inliner IS-A) Scm_VMIsA)
-(define-cproc subtype? (c1::<class> c2::<class>) ::<boolean> Scm_SubclassP)
+(define-cproc subclass? (c1::<class> c2::<class>) ::<boolean> Scm_SubclassP)
 
-;; NB: of-type? is in libtype.scm.
+;; NB: subtype? and of-type? is in libtype.scm.
 
 (define-cproc slot-ref (obj slot)
   (inliner SLOT-REF) (setter slot-set!)
@@ -941,7 +941,7 @@
           change-class
           apply-generic sort-applicable-methods
           apply-methods apply-method
-          class-of current-class-of is-a? subtype?
+          class-of current-class-of is-a? subclass?
           slot-ref slot-set!
           slot-bound? slot-ref-using-accessor slot-bound-using-accessor?
           slot-set-using-accessor! slot-initialize-using-accessor!

@@ -1,3 +1,13 @@
+2021-07-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (subclass?), src/libtype.scm (subtype?): Move subtype?
+	  to libtype.scm, for it needs to handle types other than classes.
+	  The existing class-only predicate is renamed to subclass?.  It is
+	  only supposed to be used internal business; the user can keep using
+	  subtype?, which is upper-compatible to subclass?.
+	  For now, subtype? handles <stub-type> and <proxy-type>.  We'll
+	  enhance it to handel <descriptive-type> later.
+
 2021-07-10  Shiro Kawai  <shiro@acm.org>
 
 	* Use <double> instead of <real> as a stub-type expecting C double.
