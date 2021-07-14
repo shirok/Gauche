@@ -67,29 +67,54 @@
 (select-module gauche.typeutil)
 (use util.match)
 
-;; Metaclass: <type-constructor-meta>
-;;   Instance classes of this metaclass are used to create an abstract types.
+
 (inline-stub
  (.include "gauche/priv/classP.h")
+ ;; Metaclass: <type-constructor-meta>
+ ;;   Its instance is ScmTypeConstructor.  Provides the following slots.
+ ;;   (We don't use generic functions, for they are also called from C runtime).
+ ;;
+ ;;   constructor :: arg ... -> <descriptive-type>
+ ;;     A type constructor that creates a descriptive type.  It is called from
+ ;;     either a compiler or an initcode of precompiled code.  Note that
+ ;;     a raw class object should never passed to the argument---the compiler
+ ;;     wraps class objects with a proxy type.  The constructor should raise
+ ;;     an error if a class object is given.
+ ;;     This procedure must be pure.  We may memoize the result.
+ ;;   deconstructor :: <descriptive-type> -> (arg ...)
+ ;;     Returns a list of arguments such that when they are passed to the
+ ;;     constructor, an equivalent descriptive type is constructed again.
+ ;;     This is called from the precompiler to serialize the descriptive type.
+ ;;   validator :: <descriptive-type> obj -> <boolean>
+ ;;     Returns true iff obj is of type <descriptive-type>.  Called from
+ ;;     `of-type?`.
+ ;;   subtype? :: <descriptive-type> type -> <boolean>
+ ;;     Returns true iff the descriptive type is a subtype of TYPE, which may
+ ;;     be a class or another descriptive type.  Note that proxy types and
+ ;;     stub types are already excluded, as well as the case where reflective
+ ;;     case (subtype? x x) and the base cases (subtype? x <top>).
+ ;;   supertype? :: <descriptive-type> type -> <boolean>
+;;      Returns true iff the descriptive type is a supertype of TYPE, which
+ ;;     may be a class or another descriptive type.  Like subtype?
+ ;;     some trivial cases are already excluded.
+
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
               (common::ScmClass
                constructor::ScmObj
                deconstructor::ScmObj
-               validator::ScmObj)))
+               validator::ScmObj
+               subtypeP::ScmObj
+               supertypeP::ScmObj)))
 
- ;; constructor - a procedure to build a descriptive type, an instance
- ;;               of the metaclass.
- ;; deconstructor - returns a list of objects which, when passed to the
- ;;               constructor, recreates the type.
- ;;               each element must be either a simple constant or a type.
- ;; validator - takes type and obj, returns if obj is valid as type.
  (define-cclass <type-constructor-meta> :base :private :no-meta
    "ScmTypeConstructor*" "Scm_TypeConstructorMetaClass"
    (c "SCM_CLASS_METACLASS_CPL")
    ((constructor)
     (deconstructor)
-    (validator))
+    (validator)
+    (subtype? :c-name "subtypeP")
+    (supertype? :c-name "supertypeP"))
    )
 
  (define-cfn Scm_TypeConstructorP (klass) ::int
@@ -190,7 +215,7 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ name supers slots constructor deconstructor validator)
+       [(_ name supers slots constructor deconstructor validator sub? sup?)
         (let ([meta-name (rxmatch-if (#/^<(.*)>$/ (symbol->string name))
                              [_ trimmed]
                            (string->symbol #"<~|trimmed|-meta>")
@@ -205,7 +230,9 @@
                  :metaclass ,meta-name
                  :constructor ,constructor
                  :deconstructor ,deconstructor
-                 :validator ,validator))))]))))
+                 :validator ,validator
+                 :subtype? ,sub?
+                 :supertype? ,sup?))))]))))
 
 (define-method allocate-instance ((t <descriptive-type>) initargs)
   (error "Abstract type instance cannot instantiate a concrete object:" t))
@@ -223,7 +250,7 @@
 (define-method deconstruct-type ((t <descriptive-type>))
   ((~ (class-of t)'deconstructor) t))
 
-;; This is called from initialization of precompiled code to recove
+;; This is called from initialization of precompiled code to recover
 ;; descripitve type instance.
 (inline-stub
  (define-cfn Scm_ConstructType (ctor args)
@@ -302,7 +329,7 @@
 ;;;   NB: Currently we don't keep the return value info in procedure, so
 ;;;   we only allow "wild card" '* as the results.
 ;;;
-;;;   TODO: How to type optional, keyword and rest arguments?
+;;;   TODO: How to type optional and keyword arguments?
 ;;;
 
 
@@ -311,58 +338,121 @@
     (match xs
       [() (error "Missing ':-' in the procedure type constructor arguments:"
                  rest)]
-      [(':- . xs) (scan-results xs (reverse as) '())]
-      [('* ':- . xs)
-       (if (null? as)
-         (scan-results xs '* '())
-         (error "Invalid '* in the procedure type constructor arguments:"
-                rest))]
-      [else
+      [(':- . xs) (scan-results xs (reverse as) #f '())]
+      [('* ':- . xs) (scan-results xs (reverse as) #t '())]
+      [_
        (if (is-a? (car xs) <type>)
          (scan-args (cdr xs) (cons (car xs) as))
          (error "Non-type argument in the procedure type constructor:"
                 (car xs)))]))
-  (define (scan-results xs args rs)
-    (cond [(null? xs) (values args (reverse rs))]
-          [(and (null? rs) (eq? (car xs) '*) (null? (cdr xs)))
-           (values args '*)]
-          [(is-a? (car xs) <type>)
-           (scan-results (cdr xs) args (cons (car xs) rs))]
-          [else
-           (error "Non-class argument in the procedure type constructor:"
-                  (car xs))]))
+  (define (scan-results xs args args-rest rs) ;return args arest rest rrest
+    (match xs
+      [() (values args args-rest (reverse rs) #f)]
+      [('*) (values args args-rest (reverse rs) #t)]
+      [(x . xs)
+       (if (is-a? x <type>)
+         (scan-results (cdr xs) args args-rest (cons (car xs) rs))
+         (error "Non-class argument in the procedure type constructor:" x))]
+      [_ (error "Invalid arguments:" xs)]))
 
-  (receive (args results) (scan-args rest '())
-    (unless (eq? results '*)
-      (error "Result type must be '*, for we don't support result type checking \
-              yet:" results))
+  (receive (args arest results rrest) (scan-args rest '())
     (make <^>
       :name (make-compound-type-name '^ rest)
       :arguments args
-      :results results)))
+      :rest-arguments? arest
+      :results results
+      :rest-results? rrest)))
 
 (define (deconstruct-^ type)
-  (if (eq? (~ type'results) '*)
-    (append (~ type'arguments) '(:- *))
-    (append (~ type'arguments) '(:-) (~ type'results))))
+  (append (~ type'arguments)
+          (if (~ type'rest-arguments?) '(*) '())
+          '(:-)
+          (~ type'results)
+          (if (~ type'rest-results?) '(*) '())))
 
 (define (validate-^ type obj)
-  (if (eq? (~ type'arguments) '*)
-    (or (is-a? obj <procedure>)
-        (is-a? obj <generic>)
-        (let1 k (class-of obj)
-          (let loop ([ms (~ object-apply'methods)])
-            (cond [(null? ms) #f]
-                  [(subclass? k (car (~ (car ms)'specializers)))]
-                  [else (loop (cdr ms))]))))
-    (apply applicable? obj (~ type'arguments))))
+  (and-let1 otype (%callable-type obj)
+    ;; eventually, subtype? would handle this.
+    ;; (subtype? type otype))
+    ;; for now, we only check the number of arguments.
+    ;; NB: the rest-argument/rest-result of TYPE means OBJ is *allowed* to
+    ;; take extra arguments / return extra results, not that OBJ is mandated
+    ;; to take rest-arguemnt/rest-result.
+    (and (cond [(~ type'rest-arguments?)
+                (or (~ otype'rest-arguments?)
+                    (<= (length (~ type'arguments))
+                        (length (~ otype'arguments))))]
+               [(~ otype'rest-arguments?)
+                (<= (length (~ otype'arguments))
+                    (length (~ type'arguments)))]
+               [else
+                (= (length (~ otype'arguments)) (length (~ type'arguments)))])
+         (cond [(~ type'rest-results?)
+                (or (~ otype'rest-results?)
+                    (<= (length (~ type'results))
+                        (length (~ otype'results))))]
+               [(~ otype'rest-results?)
+                (<= (length (~ otype'results))
+                    (length (~ type'results)))]
+               [else
+                (= (length (~ otype'results)) (length (~ type'results)))]))))
+
+;; Kludge - If the procedure doesn't have detailed type, we try to
+;; recover it from available info.
+;; Eventually, we expect these info will be embedded in the procedure
+;; at the compile time.
+
+(define-cproc %class->proxy (klass::<class>)
+  (let* ([ms (-> klass modules)]
+         [n (-> klass name)])
+    (dolist [m ms]
+      (let* ([g::ScmGloc* (Scm_FindBinding (SCM_MODULE m) (SCM_SYMBOL n) 0)])
+        (when (!= g NULL)
+          (let* ([id (Scm_MakeIdentifier n (SCM_MODULE m) SCM_NIL)])
+            (return (Scm_MakeProxyType (SCM_IDENTIFIER id) g))))))
+    (return SCM_FALSE)))
+
+(define (%procedure-type proc)
+  (if-let1 clinfo (case-lambda-info proc)
+    (apply make-/ (map (^v (%procedure-type (caddr v))) clinfo))
+    (let1 top (%class->proxy <top>)
+      (apply make-^
+             `(,@(make-list (~ proc'required) top)
+               ,@(if (~ proc'optional) '(*) '())
+               :- *)))))
+
+(define (%method-type meth)
+  (apply make-^
+         `(,@(map %class->proxy (~ meth'specializers))
+           ,@(if (~ meth'optional) '(*) '())
+           :- *)))
+
+(define (%generic-type gf)
+  (apply make-/ (map %method-type (~ gf'methods))))
+
+(define (%callable-type obj)
+  (cond [(is-a? obj <procedure>) (%procedure-type obj)]
+        [(is-a? obj <generic>)   (%generic-type obj)]
+        [(is-a? obj <method>)    (%method-type obj)]
+        ;; Dealing with applicable objects are debatable.  Any object can
+        ;; become applicable, which makes its type
+        ;; (</> <original-type> <type-when-applied>).  That makes type
+        ;; operations extremely complicated.
+        [else #f]))
+
+(define (subtype-dummy self super) #f)
+(define (supertype-dummy self sub) #f)
 
 (define-type-constructor <^> ()
-  ((arguments :init-keyword :arguments)
-   (results :init-keyword :results))
+  ((arguments       :init-keyword :arguments)
+   (rest-arguments? :init-keyword :rest-arguments?)
+   (results         :init-keyword :results)
+   (rest-results?   :init-keyword :rest-results?))
   make-^
   deconstruct-^
-  validate-^)
+  validate-^
+  subtype-dummy
+  supertype-dummy)
 
 ;;;
 ;;; Class: </>
@@ -385,7 +475,9 @@
   ((members :init-keyword :members))
   make-/
   deconstruct-/
-  validate-/)
+  validate-/
+  subtype-dummy
+  supertype-dummy)
 
 ;;;
 ;;; Class: <?>
@@ -408,7 +500,9 @@
   ((primary-type :init-keyword :primary-type))
   make-?
   deconstruct-?
-  validate-?)
+  validate-?
+  subtype-dummy
+  supertype-dummy)
 
 ;;;
 ;;; Class: <Tuple>
@@ -437,7 +531,9 @@
   ((elements :init-keyword :elements))
   make-Tuple
   deconstruct-Tuple
-  validate-Tuple)
+  validate-Tuple
+  subtype-dummy
+  supertype-dummy)
 
 ;;;
 ;;; Class: <List>
@@ -479,7 +575,9 @@
    (max-length :init-keyword :max-length :init-value #f))
   make-List
   deconstruct-List
-  validate-List)
+  validate-List
+  subtype-dummy
+  supertype-dummy)
 
 ;;;
 ;;; <Vector> element-type [min-length [max-length]]
@@ -514,7 +612,9 @@
    (max-length :init-keyword :max-length :init-value #f))
   make-Vector
   deconstruct-Vector
-  validate-Vector)
+  validate-Vector
+  subtype-dummy
+  supertype-dummy)
 
 ;;;
 ;;; Types for stubs
