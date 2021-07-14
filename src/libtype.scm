@@ -93,10 +93,9 @@
  ;;     be a class or another descriptive type.  Note that proxy types and
  ;;     stub types are already excluded, as well as the case where reflective
  ;;     case (subtype? x x) and the base cases (subtype? x <top>).
- ;;   supertype? :: <descriptive-type> type -> <boolean>
- ;;     Returns true iff the descriptive type is a supertype of TYPE, which
- ;;     may be a class or another descriptive type.  Like subtype?
- ;;     some trivial cases are already excluded, and if TYPE is also
+ ;;   supertype? :: <descriptive-type> class -> <boolean>
+ ;;     Returns true iff the descriptive type is a supertype of CLASS.
+ ;;     Trivial cases are already excluded.
 
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
@@ -388,30 +387,32 @@
 
 (define (validate-^ type obj)
   (and-let1 otype (%callable-type obj)
-    ;; eventually, subtype? would handle this.
-    ;; (subtype? type otype))
-    ;; for now, we only check the number of arguments.
-    ;; NB: the rest-argument/rest-result of TYPE means OBJ is *allowed* to
-    ;; take extra arguments / return extra results, not that OBJ is mandated
-    ;; to take rest-arguemnt/rest-result.
-    (and (cond [(~ type'rest-arguments?)
-                (or (~ otype'rest-arguments?)
-                    (<= (length (~ type'arguments))
-                        (length (~ otype'arguments))))]
-               [(~ otype'rest-arguments?)
-                (<= (length (~ otype'arguments))
-                    (length (~ type'arguments)))]
-               [else
-                (= (length (~ otype'arguments)) (length (~ type'arguments)))])
-         (cond [(~ type'rest-results?)
-                (or (~ otype'rest-results?)
-                    (<= (length (~ type'results))
-                        (length (~ otype'results))))]
-               [(~ otype'rest-results?)
-                (<= (length (~ otype'results))
-                    (length (~ type'results)))]
-               [else
-                (= (length (~ otype'results)) (length (~ type'results)))]))))
+    (subtype? type otype)))
+
+(define (subtype-^ type super)
+  (and (is-a? super <^>)
+       (cond [(~ type'rest-arguments?)
+              (or (~ super'rest-arguments?)
+                  (<= (length (~ type'arguments))
+                      (length (~ super'arguments))))]
+             [(~ super'rest-arguments?)
+              (<= (length (~ super'arguments))
+                  (length (~ type'arguments)))]
+             [else
+              (= (length (~ super'arguments)) (length (~ type'arguments)))])
+       (cond [(~ type'rest-results?)
+              (or (~ super'rest-results?)
+                  (<= (length (~ type'results))
+                      (length (~ super'results))))]
+             [(~ super'rest-results?)
+              (<= (length (~ super'results))
+                  (length (~ type'results)))]
+             [else
+              (= (length (~ super'results)) (length (~ type'results)))])))
+
+;; No types other than <^ ...> can be a subtype of <^>, but that case is
+;; already handled.
+(define (supertype-^ type sub) #f)
 
 ;; Kludge - If the procedure doesn't have detailed type, we try to
 ;; recover it from available info.
@@ -456,9 +457,6 @@
         ;; operations extremely complicated.
         [else #f]))
 
-(define (subtype-dummy self super) #f)
-(define (supertype-dummy self sub) #f)
-
 (define-type-constructor <^> ()
   ((arguments       :init-keyword :arguments)
    (rest-arguments? :init-keyword :rest-arguments?)
@@ -467,8 +465,8 @@
   make-^
   deconstruct-^
   validate-^
-  subtype-dummy
-  supertype-dummy)
+  subtype-^
+  supertype-^)
 
 ;;;
 ;;; Class: </>
@@ -487,13 +485,20 @@
 (define (validate-/ type obj)
   (any (cut of-type? obj <>) (~ type'members)))
 
+(define (subtype-/ type super)
+  (and (is-a? super </>)
+       (boolean (every (cut subtype? <> super) (~ type'members)))))
+
+(define (supertype-/ type sub)
+  (boolean (any (cut subtype? sub <>) (~ type'members))))
+
 (define-type-constructor </> ()
   ((members :init-keyword :members))
   make-/
   deconstruct-/
   validate-/
-  subtype-dummy
-  supertype-dummy)
+  subtype-/
+  supertype-/)
 
 ;;;
 ;;; Class: <?>
@@ -512,13 +517,20 @@
 (define (validate-? type obj)
   (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
 
+(define (subtype-? type super)
+  (and (is-a? super <?>)
+       (subtype? (~ type'primary-type) (~ super'primary-type))))
+
+(define (supertype-? type sub)
+  (subtype? sub (~ type'primary-type)))
+
 (define-type-constructor <?> ()
   ((primary-type :init-keyword :primary-type))
   make-?
   deconstruct-?
   validate-?
-  subtype-dummy
-  supertype-dummy)
+  subtype-?
+  supertype-?)
 
 ;;;
 ;;; Class: <Tuple>
@@ -543,13 +555,26 @@
            (of-type? (car obj) (car elts))
            (loop (cdr obj) (cdr elts))))))
 
+(define (subtype-Tuple type super)
+  (or (eqv? super <list>)
+      (and (is-a? super <Tuple>)
+           (= (length (~ type'elements)) (length (~ super'elements)))
+           (every (cut subtype? <> <>) (~ type'elements) (~ super'elements)))
+      (and (is-a? super <List>)
+           (every (cute subtype? <> (~ super'element-type)) (~ type'elements))
+           (<= (or (~ super'min-length) 0)
+               (length (~ type'elements))
+               (or (~ super'max-length) +inf.0)))))
+
+(define (supertype-Tuple type sub) #f)
+
 (define-type-constructor <Tuple> ()
   ((elements :init-keyword :elements))
   make-Tuple
   deconstruct-Tuple
   validate-Tuple
-  subtype-dummy
-  supertype-dummy)
+  subtype-Tuple
+  supertype-Tuple)
 
 ;;;
 ;;; Class: <List>
@@ -585,6 +610,17 @@
               [(of-type? (car obj) et) (loop (cdr obj) (+ n 1))]
               [else #f])))))
 
+(define (subtype-List type super)
+  (or (eqv? super <list>)
+      (and (is-a? super <List>)
+           (subtype? (~ type'element-type) (~ super'element-type))
+           (>= (or (~ type'min-length) 0)
+               (or (~ super'min-length) 0))
+           (<= (or (~ type'max-length) +inf.0)
+               (or (~ super'max-length) +inf.0)))))
+
+(define (supertype-List type sub) #f)
+
 (define-type-constructor <List> ()
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
@@ -592,8 +628,8 @@
   make-List
   deconstruct-List
   validate-List
-  subtype-dummy
-  supertype-dummy)
+  subtype-List
+  supertype-List)
 
 ;;;
 ;;; <Vector> element-type [min-length [max-length]]
@@ -622,6 +658,17 @@
                       [(of-type? (vector-ref obj i) et) (loop (+ i 1))]
                       [else #f]))))))
 
+(define (subtype-Vector type super)
+  (or (eqv? super <vector>)
+      (and (is-a? super <Vector>)
+           (subtype? (~ type'element-type) (~ super'element-type))
+           (>= (or (~ type'min-length) 0)
+               (or (~ super'min-length) 0))
+           (<= (or (~ type'max-length) +inf.0)
+               (or (~ super'max-length) +inf.0)))))
+
+(define (supertype-Vector type sub) #f)
+
 (define-type-constructor <Vector> ()
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
@@ -629,8 +676,8 @@
   make-Vector
   deconstruct-Vector
   validate-Vector
-  subtype-dummy
-  supertype-dummy)
+  subtype-Vector
+  supertype-Vector)
 
 ;;;
 ;;; Types for stubs
