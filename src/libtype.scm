@@ -94,9 +94,9 @@
  ;;     stub types are already excluded, as well as the case where reflective
  ;;     case (subtype? x x) and the base cases (subtype? x <top>).
  ;;   supertype? :: <descriptive-type> type -> <boolean>
-;;      Returns true iff the descriptive type is a supertype of TYPE, which
+ ;;     Returns true iff the descriptive type is a supertype of TYPE, which
  ;;     may be a class or another descriptive type.  Like subtype?
- ;;     some trivial cases are already excluded.
+ ;;     some trivial cases are already excluded, and if TYPE is also
 
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
@@ -184,24 +184,40 @@
 ;;; subtype? type-or-class type-or-class
 ;;;
 
-;; Partial: We eventually add suport of descriptive types.
-(define-cproc subtype? (sub super) ::<boolean>
+(define-cproc subtype? (sub super)
   (loop
-   (cond [(SCM_CLASSP sub)
-          (return (and (SCM_CLASSP super)
-                       (Scm_SubclassP (SCM_CLASS sub) (SCM_CLASS super))))]
-         [(SCM_PROXY_TYPE_P sub)
-          (set! sub (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub))))]
-         [(SCM_PROXY_TYPE_P super)
-          (set! super (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE super))))]
-         [(SCM_STUB_TYPE_P sub)
-          (when (SCM_EQ sub super) (return TRUE))
-          (let* ([klass (-> (SCM_STUB_TYPE sub) super)])
-            (SCM_ASSERT (SCM_CLASSP klass))
-            (return (and (SCM_CLASSP super)
-                         (Scm_SubclassP (SCM_CLASS klass)
-                                        (SCM_CLASS super)))))]
-         [else (return FALSE)])))
+   (cond
+    ;; Strip proxy types first
+    [(SCM_PROXY_TYPE_P sub)
+     (set! sub (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub))))]
+    [(SCM_PROXY_TYPE_P super)
+     (set! super (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE super))))]
+    ;; Both are classes, we can use subclass?
+    [(and (SCM_CLASSP sub) (SCM_CLASSP super))
+     (return (SCM_MAKE_BOOL (Scm_SubclassP (SCM_CLASS sub) (SCM_CLASS super))))]
+    ;; Filter out the trivial cases
+    [(SCM_EQ super (SCM_OBJ SCM_CLASS_TOP)) (return SCM_TRUE)]
+    [(SCM_EQ sub (SCM_OBJ SCM_CLASS_BOTTOM)) (return SCM_TRUE)]
+    [(SCM_EQ super sub) (return SCM_TRUE)]
+    ;; Stub types can be a subtype of a class.  No type (except BOTTOM) can
+    ;; be a subtype of a stub type.
+    [(SCM_STUB_TYPE_P sub)
+     (let* ([klass (-> (SCM_STUB_TYPE sub) super)])
+       (SCM_ASSERT (SCM_CLASSP klass))
+       (set! sub klass))]
+    [(SCM_STUB_TYPE_P super) (return FALSE)]
+    ;; Delegate descriptive types to its handlers.
+    [(SCM_DESCRIPTIVE_TYPE_P sub)
+     (let* ([k::ScmClass* (Scm_ClassOf sub)])
+       (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
+       (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) subtypeP)
+                             sub super)))]
+    [(SCM_DESCRIPTIVE_TYPE_P super)
+     (let* ([k::ScmClass* (Scm_ClassOf super)])
+       (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
+       (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) supertypeP)
+                             super sub)))]
+    [else (return SCM_FALSE)])))
 
 ;;;
 ;;; Descriptive type constructors
