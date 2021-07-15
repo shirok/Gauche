@@ -54,6 +54,7 @@
 (t-subtype (</> <integer> <string>) (</> <string> <integer>) #t)
 (t-subtype (</> <integer> <string>) (</> <string> <char> <integer>) #t)
 (t-subtype (</> <integer> <string>) (</> <char> <integer>) #f)
+(t-subtype (</> <integer> <string>) (<?> (</> <number> <string>)) #t)
 
 (t-subtype <integer> (<?> <integer>) #t)
 (t-subtype <boolean> (<?> <integer>) #f)
@@ -61,6 +62,7 @@
 (t-subtype <real>    (<?> <integer>) #f)
 (t-subtype (<?> <integer>) (<?> <real>) #t)
 (t-subtype (<?> <integer>) <integer> #f)
+(t-subtype (<?> <integer>) (</> (<?> <number>) (<?> <string>)) #t)
 
 (t-subtype (<Tuple> <integer> <string>) <list> #t)
 (t-subtype (<Tuple> <integer> <string>) (<Tuple> <integer> <string>) #t)
@@ -90,6 +92,8 @@
 (t-subtype (<List> <integer> #f 3) (<List> <integer> 0 4) #t)
 (t-subtype (<List> <integer> #f 3) (<List> <integer> 0) #t)
 (t-subtype (<List> <integer> 0) (<List> <integer> 0 3) #f)
+(t-subtype (<List> <integer>) (<?> (<List> <number>)) #t)
+(t-subtype (<List> <integer>) (</> (<List> <string>) (<List> <number>)) #t)
 
 (t-subtype (<Vector> <integer>) <vector> #t)
 (t-subtype (<Vector> <integer>) (<Vector> <number>) #t)
@@ -100,6 +104,9 @@
 (t-subtype (<Vector> <integer> #f 3) (<Vector> <integer> 0 4) #t)
 (t-subtype (<Vector> <integer> #f 3) (<Vector> <integer> 0) #t)
 (t-subtype (<Vector> <integer> 0) (<Vector> <integer> 0 3) #f)
+(t-subtype (<Vector> <integer>) (<?> (<Vector> <number>)) #t)
+(t-subtype (<Vector> <integer>) (</> (<Vector> <string>) (<Vector> <number>)) #t)
+
 
 (test-section "built-in type constructors")
 
@@ -172,6 +179,12 @@
 (validation-test (<^> <top> <top> :- '*)
                  `((,cons . #t)
                    (,car . #f)))
+
+(validation-test (<^> <top> <top> :- '*)
+                 `((,(case-lambda ((a) 1) ((a b) 2)) . #t)))
+
+(validation-test (</> (<^> <top> :- '*) (<^> <top> <top> :- '*))
+                 `((,(case-lambda ((a) 1) ((a b) 2)) . #t)))
 
 (validation-test (<List> <integer>)
                  '((() . #t)

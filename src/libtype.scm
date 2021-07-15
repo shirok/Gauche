@@ -93,9 +93,13 @@
  ;;     be a class or another descriptive type.  Note that proxy types and
  ;;     stub types are already excluded, as well as the case where reflective
  ;;     case (subtype? x x) and the base cases (subtype? x <top>).
- ;;   supertype? :: <descriptive-type> class -> <boolean>
- ;;     Returns true iff the descriptive type is a supertype of CLASS.
- ;;     Trivial cases are already excluded.
+ ;;     NB: if TYPE is a descriptive type different kind of <descriptive-type>,
+ ;;     you may want to call (~ type'supertype?) to determine if it thinks
+ ;;     <descriptive-type> its subtype.
+ ;;   supertype? :: <descriptive-type> type -> <boolean>
+ ;;     Returns true iff the descriptive type is a supertype of TYPE.
+ ;;     Trivial cases are already excluded, esp., TYPE won't be the
+ ;;     same kind of <descriptive-type>.
 
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
@@ -217,6 +221,11 @@
        (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) supertypeP)
                              super sub)))]
     [else (return SCM_FALSE)])))
+
+;; Call this in subtype? after dealing with typical cases.
+(define (%delegate-to-super type super)
+  (and (is-a? super <descriptive-type>)
+       ((~ (class-of super)'supertype?) super type)))
 
 ;;;
 ;;; Descriptive type constructors
@@ -388,9 +397,10 @@
     (subtype? type otype)))
 
 (define (subtype-^ type super)
-  (and (is-a? super <^>)
-       (subtype-Tuple (~ type'arguments) (~ super'arguments))
-       (subtype-Tuple (~ super'results) (~ type'results))))
+  (if (is-a? super <^>)
+    (and (subtype-Tuple (~ type'arguments) (~ super'arguments))
+         (subtype-Tuple (~ super'results) (~ type'results)))
+    (%delegate-to-super type super)))
 
 ;; No types other than <^ ...> can be a subtype of <^>, but that case is
 ;; already handled.
@@ -466,11 +476,11 @@
   (any (cut of-type? obj <>) (~ type'members)))
 
 (define (subtype-/ type super)
-  (and (is-a? super </>)
-       (boolean (every (cut subtype? <> super) (~ type'members)))))
+  (if (is-a? super </>)
+    (every (cut subtype? <> super) (~ type'members))
+    (%delegate-to-super type super)))
 
-(define (supertype-/ type sub)
-  (boolean (any (cut subtype? sub <>) (~ type'members))))
+(define (supertype-/ type sub) (any (cut subtype? sub <>) (~ type'members)))
 
 (define-type-constructor </> ()
   ((members :init-keyword :members))
@@ -498,8 +508,9 @@
   (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
 
 (define (subtype-? type super)
-  (and (is-a? super <?>)
-       (subtype? (~ type'primary-type) (~ super'primary-type))))
+  (if (is-a? super <?>)
+    (subtype? (~ type'primary-type) (~ super'primary-type))
+    (%delegate-to-super type super)))
 
 (define (supertype-? type sub)
   (subtype? sub (~ type'primary-type)))
@@ -555,7 +566,8 @@
            (every (cute subtype? <> (~ super'element-type)) (~ type'elements))
            (<= (or (~ super'min-length) 0)
                (length (~ type'elements))
-               (or (~ super'max-length) +inf.0)))))
+               (or (~ super'max-length) +inf.0)))
+      (%delegate-to-super type super)))
 
 (define (supertype-Tuple type sub) #f)
 
@@ -609,7 +621,8 @@
            (>= (or (~ type'min-length) 0)
                (or (~ super'min-length) 0))
            (<= (or (~ type'max-length) +inf.0)
-               (or (~ super'max-length) +inf.0)))))
+               (or (~ super'max-length) +inf.0)))
+      (%delegate-to-super type super)))
 
 (define (supertype-List type sub) #f)
 
@@ -657,7 +670,8 @@
            (>= (or (~ type'min-length) 0)
                (or (~ super'min-length) 0))
            (<= (or (~ type'max-length) +inf.0)
-               (or (~ super'max-length) +inf.0)))))
+               (or (~ super'max-length) +inf.0)))
+      (%delegate-to-super type super)))
 
 (define (supertype-Vector type sub) #f)
 
