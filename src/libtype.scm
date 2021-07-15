@@ -353,37 +353,35 @@
     (match xs
       [() (error "Missing ':-' in the procedure type constructor arguments:"
                  rest)]
-      [(':- . xs) (scan-results xs (reverse as) #f '())]
-      [('* ':- . xs) (scan-results xs (reverse as) #t '())]
+      [(':- . xs) (scan-results xs (reverse as) '())]
+      [('* ':- . xs) (scan-results xs (reverse as '(*)) '())]
       [_
        (if (is-a? (car xs) <type>)
          (scan-args (cdr xs) (cons (car xs) as))
          (error "Non-type argument in the procedure type constructor:"
                 (car xs)))]))
-  (define (scan-results xs args args-rest rs) ;return args arest rest rrest
+  (define (scan-results xs args rs)
     (match xs
-      [() (values args args-rest (reverse rs) #f)]
-      [('*) (values args args-rest (reverse rs) #t)]
+      [() (values args (reverse rs))]
+      [('*) (values args (reverse rs '(*)))]
       [(x . xs)
        (if (is-a? x <type>)
-         (scan-results (cdr xs) args args-rest (cons (car xs) rs))
+         (scan-results (cdr xs) args (cons (car xs) rs))
          (error "Non-class argument in the procedure type constructor:" x))]
       [_ (error "Invalid arguments:" xs)]))
 
-  (receive (args arest results rrest) (scan-args rest '())
+  (receive (args results) (scan-args rest '())
     (make <^>
       :name (make-compound-type-name '^ rest)
-      :arguments args
-      :rest-arguments? arest
-      :results results
-      :rest-results? rrest)))
+      :arguments (apply make-Tuple args)
+      :results (apply make-Tuple results))))
 
 (define (deconstruct-^ type)
-  (append (~ type'arguments)
-          (if (~ type'rest-arguments?) '(*) '())
+  (append (~ type'arguments'elements)
+          (if (~ type'arguments'allow-rest?) '(*) '())
           '(:-)
-          (~ type'results)
-          (if (~ type'rest-results?) '(*) '())))
+          (~ type'results'elements)
+          (if (~ type'results'allow-rest?) '(*) '())))
 
 (define (validate-^ type obj)
   (and-let1 otype (%callable-type obj)
@@ -391,24 +389,8 @@
 
 (define (subtype-^ type super)
   (and (is-a? super <^>)
-       (cond [(~ type'rest-arguments?)
-              (or (~ super'rest-arguments?)
-                  (<= (length (~ type'arguments))
-                      (length (~ super'arguments))))]
-             [(~ super'rest-arguments?)
-              (<= (length (~ super'arguments))
-                  (length (~ type'arguments)))]
-             [else
-              (= (length (~ super'arguments)) (length (~ type'arguments)))])
-       (cond [(~ type'rest-results?)
-              (or (~ super'rest-results?)
-                  (<= (length (~ type'results))
-                      (length (~ super'results))))]
-             [(~ super'rest-results?)
-              (<= (length (~ super'results))
-                  (length (~ type'results)))]
-             [else
-              (= (length (~ super'results)) (length (~ type'results)))])))
+       (subtype-Tuple (~ type'arguments) (~ super'arguments))
+       (subtype-Tuple (~ super'results) (~ type'results))))
 
 ;; No types other than <^ ...> can be a subtype of <^>, but that case is
 ;; already handled.
@@ -458,10 +440,8 @@
         [else #f]))
 
 (define-type-constructor <^> ()
-  ((arguments       :init-keyword :arguments)
-   (rest-arguments? :init-keyword :rest-arguments?)
-   (results         :init-keyword :results)
-   (rest-results?   :init-keyword :rest-results?))
+  ((arguments :init-keyword :arguments)    ; <Tuple>
+   (results   :init-keyword :results))     ; <Tuple>
   make-^
   deconstruct-^
   validate-^
