@@ -484,7 +484,9 @@ typedef struct ScmHeaderRec {
 # define SCM_CLASS_STATIC_TAG(klass) SCM_CLASS2TAG(&klass)
 
 /* Extract the class pointer from the tag.
-   You can use these only if SCM_HOBJP(obj) != FALSE */
+   You can use these only if SCM_HOBJP(obj) != FALSE.
+   To get a class of a given object, always use Scm_ClassOf().
+ */
 # define SCM_CLASS_OF(obj)      SCM_CLASS((SCM_OBJ(obj)->tag - 7))
 # define SCM_SET_CLASS(obj, k)  (SCM_OBJ(obj)->tag = (ScmByte*)(k) + 7)
 
