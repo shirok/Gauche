@@ -537,28 +537,39 @@
 ;;;   Fixed-lenght list, each element having its own type constraints.
 ;;;
 
+;; (<Tuple> type ... [*])
+
 (define (make-Tuple . args)
-  (assume (every (cut is-a? <> <type>) args))
-  (make <Tuple>
-    :name (make-compound-type-name 'Tuple args)
-    :elements args))
+  (receive (types rest?) (if (and (pair? args) (eqv? (last args) '*))
+                           (values (drop-right args 1) #t)
+                           (values args #f))
+    (dolist [t types]
+      (unless (is-a? t <type>)
+        (error "Non-type parameter in <Tuple> constructor:" t)))
+    (make <Tuple>
+      :name (make-compound-type-name 'Tuple args)
+      :elements types
+      :allow-rest? rest?)))
 
 (define (deconstruct-Tuple type)
-  (~ type'elements))
+  (if (~ type'allow-rest?)
+    (append (~ type'elements) '(*))
+    (~ type'elements)))
 
 (define (validate-Tuple type obj)
-  (let loop ((obj obj) (elts (~ type'elements)))
-    (if (null? obj)
-      (null? elts)
-      (and (pair? obj)
-           (pair? elts)
-           (of-type? (car obj) (car elts))
-           (loop (cdr obj) (cdr elts))))))
+  (let loop ([obj obj] [elts (~ type'elements)])
+    (cond [(null? obj) (null? elts)]
+          [(not (pair? obj)) #f]
+          [(null? elts) (~ type'allow-rest?)]
+          [else (and (of-type? (car obj) (car elts))
+                     (loop (cdr obj) (cdr elts)))])))
 
 (define (subtype-Tuple type super)
   (or (eqv? super <list>)
       (and (is-a? super <Tuple>)
-           (= (length (~ type'elements)) (length (~ super'elements)))
+           (if (~ type'allow-rest?)
+             (<= (length (~ type'elements)) (length (~ super'elements)))
+             (= (length (~ type'elements)) (length (~ super'elements))))
            (every (cut subtype? <> <>) (~ type'elements) (~ super'elements)))
       (and (is-a? super <List>)
            (every (cute subtype? <> (~ super'element-type)) (~ type'elements))
@@ -569,7 +580,8 @@
 (define (supertype-Tuple type sub) #f)
 
 (define-type-constructor <Tuple> ()
-  ((elements :init-keyword :elements))
+  ((elements    :init-keyword :elements)
+   (allow-rest? :init-keyword :allow-rest?))
   make-Tuple
   deconstruct-Tuple
   validate-Tuple
