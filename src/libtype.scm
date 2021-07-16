@@ -854,8 +854,13 @@
  ;; we don't range-check flonums
  (define-cfn stub_realP (obj) ::int :static
    (return (SCM_REALP obj)))
+
  (define-cfn stub_cstrP (obj) ::int :static
    (return (SCM_STRINGP obj)))
+
+ ;; subrs returning <void> actually return #<undef>
+ (define-cfn stub_voidP (obj) ::int :static
+   (return (SCM_UNDEFINEDP obj)))
 
  (define-cvar intclass :static)
  (define-cvar realclass :static)
@@ -888,6 +893,7 @@
   (define-stub-type "<float>"   realclass stub_realP)
   (define-stub-type "<double>"  realclass stub_realP)
   (define-stub-type "<const-cstring>" strclass stub_cstrP)
+  (define-stub-type "<void>"    (SCM_OBJ SCM_CLASS_TOP) stub_voidP)
   ))
 
 ;;;
