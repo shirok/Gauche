@@ -687,7 +687,7 @@
   (list->vector
    `(1 ,(and-let1 tm (current-tmodule) (~ tm'name))
        ,@(arg-types (~ procstub'args))
-       :-
+       ->
        ,@(ret-types (~ procstub'return-type)))))
 
 ;;-----------------------------------------------------------------

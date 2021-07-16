@@ -73,15 +73,15 @@
 (t-subtype (<Tuple> <integer> <integer>) (<List> <integer> 0 2) #t)
 (t-subtype (<Tuple> <integer> <integer>) (<List> <integer> 0 1) #f)
 (t-subtype (<Tuple> <integer> <string>) (<List> <integer>) #f)
-(t-subtype (<Tuple> <char> <string> '*) <list> #t)
-(t-subtype (<Tuple> <char> <string> '*) (<Tuple> <char>) #f)
-(t-subtype (<Tuple> <char> <string> '*) (<Tuple> <char> <string>) #t)
-(t-subtype (<Tuple> <char> <string> '*) (<Tuple> <char> <string> <char>) #t)
-(t-subtype (<Tuple> '*) <list> #t)
-(t-subtype (<Tuple> '*) (<Tuple> <integer> '*) #t)
-(t-subtype (<Tuple> <integer>) (<Tuple> <integer> '*) #t)
-(t-subtype (<Tuple> <integer>) (<Tuple> <integer> <integer> '*) #f)
-(t-subtype (<Tuple> <integer> '*) (<Tuple> <integer> <integer> '*) #t)
+(t-subtype (<Tuple> <char> <string> *) <list> #t)
+(t-subtype (<Tuple> <char> <string> *) (<Tuple> <char>) #f)
+(t-subtype (<Tuple> <char> <string> *) (<Tuple> <char> <string>) #t)
+(t-subtype (<Tuple> <char> <string> *) (<Tuple> <char> <string> <char>) #t)
+(t-subtype (<Tuple> *) <list> #t)
+(t-subtype (<Tuple> *) (<Tuple> <integer> *) #t)
+(t-subtype (<Tuple> <integer>) (<Tuple> <integer> *) #t)
+(t-subtype (<Tuple> <integer>) (<Tuple> <integer> <integer> *) #f)
+(t-subtype (<Tuple> <integer> *) (<Tuple> <integer> <integer> *) #t)
 
 (t-subtype (<List> <integer>) <list> #t)
 (t-subtype (<List> <integer>) (<List> <number>) #t)
@@ -148,13 +148,13 @@
                    ((#\a) . #f)
                    (("a") . #f)))
 
-(validation-test (<Tuple> <integer> <real> '*)
+(validation-test (<Tuple> <integer> <real> *)
                  '(((2 2.3) . #t)
                    ((2 2.3 3) . #t)
                    ((2.2 3) . #f)
                    ((2 2.3 . 3) . #f)))
 
-(validation-test (<^> '* :- '*)
+(validation-test (<^> * -> *)
                  `((,car . #t)
                    (,cons . #t)
                    (,list . #t)
@@ -162,7 +162,7 @@
                    ;;(#/abc/ . #t) ; applicable objects are not supported yet
                    ))
 
-(validation-test (<^> <top> :- '*)
+(validation-test (<^> <top> -> *)
                  `((,car . #t)
                    (,cons . #f)
                    (,list . #f)
@@ -170,19 +170,19 @@
                    (,current-input-port . #f)
                    (,(lambda () #f) . #f)))
 
-(validation-test (<^> :- '*)
+(validation-test (<^> -> *)
                  `((,(lambda () #f) . #t)
                    (,car . #f)
                    (,list . #t)))
 
-(validation-test (<^> <top> <top> :- '*)
+(validation-test (<^> <top> <top> -> *)
                  `((,cons . #t)
                    (,car . #f)))
 
-(validation-test (<^> <top> <top> :- '*)
+(validation-test (<^> <top> <top> -> *)
                  `((,(case-lambda ((a) 1) ((a b) 2)) . #t)))
 
-(validation-test (</> (<^> <top> :- '*) (<^> <top> <top> :- '*))
+(validation-test (</> (<^> <top> -> *) (<^> <top> <top> -> *))
                  `((,(case-lambda ((a) 1) ((a b) 2)) . #t)))
 
 (validation-test (<List> <integer>)
@@ -266,18 +266,18 @@
             (procedure-type proc))]))
 
 
-(proctype-test cons (<^> <top> <top> :- <pair>))
-(proctype-test car  (<^> <pair> :- <top>))
-(proctype-test list (<^> '* :- <list>))
-(proctype-test set-cdr! (<^> <pair> <top> :- <void>))
+(proctype-test cons (<^> <top> <top> -> <pair>))
+(proctype-test car  (<^> <pair> -> <top>))
+(proctype-test list (<^> * -> <list>))
+(proctype-test set-cdr! (<^> <pair> <top> -> <void>))
 
 ;; This tests gf's type is recomputed after method addition
 (define-method a-gf ((x <number>)) x)
 
-(proctype-test a-gf (</> (<^> <number> :- '*)))
+(proctype-test a-gf (</> (<^> <number> -> *)))
 
 (define-method a-gf ((x <string>)) x)
 
-(proctype-test a-gf (</> (<^> <string> :- '*) (<^> <number> :- '*)))
+(proctype-test a-gf (</> (<^> <string> -> *) (<^> <number> -> *)))
 
 (test-end)

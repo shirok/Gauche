@@ -363,11 +363,11 @@
 ;;;   Creates a procedure type.
 ;;;   The signature can be specified as
 ;;;
-;;;       <argtype1> <argtype2> ... :- <rettype1> <rettype2> ...
+;;;       <argtype1> <argtype2> ... -> <rettype1> <rettype2> ...
 ;;;
-;;;   Argument types and/or return types can be also a single symbol '*,
+;;;   Argument types and/or return types can be also a single symbol *,
 ;;;   indicating arbitrary number of args/values.   That is, any procedure
-;;;   can be of type '* :- '*.
+;;;   can be of type * -> *.
 ;;;
 ;;;   NB: Currently we don't keep the return value info in procedure, so
 ;;;   we only allow "wild card" '* as the results.
@@ -379,10 +379,10 @@
 (define (make-^ . rest)
   (define (scan-args xs as)
     (match xs
-      [() (error "Missing ':-' in the procedure type constructor arguments:"
+      [() (error "Missing '->' in the procedure type constructor arguments:"
                  rest)]
-      [(':- . xs) (scan-results xs (reverse as) '())]
-      [('* ':- . xs) (scan-results xs (reverse as '(*)) '())]
+      [('-> . xs) (scan-results xs (reverse as) '())]
+      [('* '-> . xs) (scan-results xs (reverse as '(*)) '())]
       [_
        (if (is-a? (car xs) <type>)
          (scan-args (cdr xs) (cons (car xs) as))
@@ -407,7 +407,7 @@
 (define (deconstruct-^ type)
   (append (~ type'arguments'elements)
           (if (~ type'arguments'allow-rest?) '(*) '())
-          '(:-)
+          '(->)
           (~ type'results'elements)
           (if (~ type'results'allow-rest?) '(*) '())))
 
@@ -441,7 +441,7 @@
                 module-name)
           (compute-procedure-type proc)) ;; fallback
         ($ make-^
-           $* map (^e (if (or (memq e '(* :-)))
+           $* map (^e (if (or (memq e '(* ->)))
                         e
                         (or (%type-name->type module e)
                             (error "unknown type in procedure type info:" e))))
@@ -473,13 +473,13 @@
       (apply make-^
              `(,@(make-list (~ proc'required) top)
                ,@(if (~ proc'optional) '(*) '())
-               :- *)))))
+               -> *)))))
 
 (define (%method-type meth)
   (apply make-^
          `(,@(map %class->proxy (~ meth'specializers))
            ,@(if (~ meth'optional) '(*) '())
-           :- *)))
+           -> *)))
 
 (define (%generic-type gf)
   (apply make-/ (map %method-type (~ gf'methods))))

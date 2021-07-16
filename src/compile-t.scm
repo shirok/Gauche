@@ -33,25 +33,39 @@
 
 ;; Descriptive types should be created during compilation.
 
+;; These identifiers are recognized in type constructor expressions.
+;; (We don't use the convention adding '.' after the name, for we have
+;  a procedure named '*.'.
+(define id:-> (global-id '->))
+(define id:*  (global-id '*))
+
+(define-in-module gauche -> (undefined)) ; need to be bound for identifier match
+
 ;; Called from pass1/global-call, when we detect (<type-ctor> arg ...)
 ;; CTOR is the gloval value of type constructor,  IFORM is the $CALL node
 ;; represents the ctor invocation.
 ;; Since arguments for the type constructor have already gone through pass1,
 ;; constant variable reference and type constructor calls are already
 ;; handled.
+
 (define (type/construct ctor iform cenv)
   (define (get-arg-value arg)
     (cond [($const? arg) ($const-value arg)]
           [(has-tag? arg $GREF)
-           (if-let1 gloc (gref-inlinable-gloc arg)
-             (let1 v (gloc-ref gloc)
-               (if (is-a? v <class>)
-                 (wrap-with-proxy-type ($gref-id arg) gloc)
-                 v))
-             (errorf "Can't use non-inlinable global varible `~s' in \
-                      type constructor expression: ~s"
-                     (identifier-name ($gref-id arg))
-                     ($*-src iform)))]
+           ;; We recognize some "reserved keywords".
+           (cond [(global-identifier=? ($gref-id arg) id:*) '*]
+                 [(global-identifier=? ($gref-id arg) id:->) '->]
+                 [(gref-inlinable-gloc arg)
+                  => (^[gloc]
+                       (let1 v (gloc-ref gloc)
+                         (if (is-a? v <class>)
+                           (wrap-with-proxy-type ($gref-id arg) gloc)
+                           v)))]
+                 [else
+                  (errorf "Can't use non-inlinable global varible `~s' in \
+                           type constructor expression: ~s"
+                          ($gref-id arg)
+                          ($*-src iform))])]
           [else
            ;; we can run constant folding here, but for the time being...
            (error "Arguments of type constructor expression must be \
