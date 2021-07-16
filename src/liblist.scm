@@ -43,13 +43,16 @@
 (select-module scheme)
 (define-cproc pair? (obj) ::<boolean> :fast-flonum :constant
   (inliner PAIRP) SCM_PAIRP)
-(define-cproc cons (obj1 obj2) (inliner CONS) Scm_Cons)
+(define-cproc cons (obj1 obj2) ::<pair> (inliner CONS)
+  (return (SCM_PAIR (Scm_Cons obj1 obj2))))
 (define-cproc car (obj::<pair>) :constant
   (inliner CAR) (setter set-car!) SCM_CAR)
 (define-cproc cdr (obj::<pair>) :constant
   (inliner CDR) (setter set-cdr!) SCM_CDR)
-(define-cproc set-car! (obj value) ::<void> Scm_SetCar)
-(define-cproc set-cdr! (obj value) ::<void> Scm_SetCdr)
+(define-cproc set-car! (obj::<pair> value) ::<void>
+  (Scm_SetCar (SCM_OBJ obj) value))
+(define-cproc set-cdr! (obj::<pair> value) ::<void>
+  (Scm_SetCdr (SCM_OBJ obj) value))
 
 (inline-stub
  "#define CXR_SETTER(PRE, pre, tail) \
@@ -109,7 +112,8 @@
 
 ;; primitives for immutable pars
 (define-cproc ipair? (obj) ::<boolean> Scm_ImmutablePairP)
-(define-cproc ipair (car cdr) Scm_MakeImmutablePair)
+(define-cproc ipair (car cdr) ::<pair>
+  (return (SCM_PAIR (Scm_MakeImmutablePair car cdr))))
 (define-cproc ilist (:rest args)
   (if (SCM_NULLP args)
     (return SCM_NIL)
@@ -128,7 +132,7 @@
   (inliner NULLP) SCM_NULLP)
 (define-cproc list? (obj) ::<boolean> :fast-flonum :constant
   SCM_PROPER_LIST_P)
-(define-cproc list (:rest args) (inliner LIST) (return args))
+(define-cproc list (:rest args) ::<list> (inliner LIST) (return args))
 
 (define-cproc length (list) ::<long> :constant (inliner LENGTH)
   (let* ([len::long (Scm_Length list)])

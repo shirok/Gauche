@@ -265,6 +265,12 @@
      (test* '(procedure-type proc) supposed-type
             (procedure-type proc))]))
 
+
+(proctype-test cons (<^> <top> <top> :- <pair>))
+(proctype-test car  (<^> <pair> :- <top>))
+(proctype-test list (<^> '* :- <list>))
+(proctype-test set-cdr! (<^> <pair> <top> :- <void>))
+
 ;; This tests gf's type is recomputed after method addition
 (define-method a-gf ((x <number>)) x)
 
