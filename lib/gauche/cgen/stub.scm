@@ -586,11 +586,6 @@
    (bind-info         :initform #f :init-keyword :bind-info)
       ;; (module-name::<symbol> proc-name::<symbol>), if known.
       ;; Will be saved in pair attributes of info.
-   (type-string       :initform #f :init-keyword :signature-string)
-      ;; A string encoding type signature of this procedure.
-      ;; e.g. "(<string> <integer> :- <char>)"
-      ;; We use a string to be dumped in the C code, and parse it only when
-      ;; type information is needed.
    (info              :initform #f)
       ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
@@ -661,31 +656,6 @@
        body ...
        (push! (~ procstub'forward-decls)
               (cise-ambient-decl-strings (cise-ambient))))]))
-
-;; NB: Once we serialize, we lose module information.  Generally, the type info
-;; is deserialized in the module where cproc is defined, so the type names are
-;; visible from that module.  But to be robust, we have to come up a way to
-;; serialize module info where the type name is bound.
-(define (compute-type-string procstub)
-  (define (arg-types args)
-    (let loop ([args args] [types '()])
-      (cond [(null? args) (reverse types)]
-            [(is-a? (car args) <required-arg>)
-             (loop (cdr args)
-                   (cons (cgen-type->scheme-type-name (~ (car args)'type))
-                         types))]
-            [else ;; for now, we treat all auxiliary arguments as restarg
-             (reverse types '(:rest))])))
-  (define (ret-types types)
-    (cond
-     [(eq? types #f) '(<top>)]
-     [(list? types)
-      (map ($ cgen-type->scheme-type-name $ cgen-type-from-name $) types)]
-     [else (ret-types (list types))]))
-  (write-to-string
-   (append (arg-types (~ procstub'args))
-           '(:-)
-           (ret-types (~ procstub'return-type)))))
 
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)
@@ -1180,15 +1150,13 @@
                         [(pair? kargs) @ `(:key ,@(map arginfo kargs))]
                         [(pair? rarg) @ `(:rest ,(arginfo (car rarg)))]
                         [(pair? aarg) @ `(:optarray ,(arginfo (car aarg)))]))])
-    (set! (~ proc'type-string) (compute-type-string proc))
     (set! (~ proc'info)
           (make-literal
            (if (or (~ proc'source-info) (~ proc'bind-info))
              ($ make-serializable-extended-pair (~ proc'scheme-name) all-args
                 (cond-list
                  [(~ proc'source-info) => (cut cons 'source-info <>)]
-                 [(~ proc'bind-info)   => (cut cons 'bind-info <>)]
-                 [(~ proc'type-string) => (cut cons 'type-string <>)]))
+                 [(~ proc'bind-info)   => (cut cons 'bind-info <>)]))
              (cons (~ proc'scheme-name) all-args))))))
 
 ;;;
