@@ -333,6 +333,7 @@
   (string-join (map (^k (x->string
                          (cond [(is-a? k <class>) (class-name k)]
                                [(is-a? k <descriptive-type>) (~ k'name)]
+                               [(is-a? k <stub-type>) (~ k'name)]
                                [(is-a? k <proxy-type>)
                                 (~ (proxy-type-id k) 'name)]
                                [else k])))
