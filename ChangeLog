@@ -1,3 +1,11 @@
+2021-07-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm: Save cproc's type info as a vector
+	  (we drop the type-string, for we need module info.)
+	* src/libproc.scm (procedure-type): Returns descriptive type of the
+	  procedure.  If the procedure is subr, type info is reconstructed
+	  from the saved type hint.
+
 2021-07-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (subclass?), src/libtype.scm (subtype?): Move subtype?

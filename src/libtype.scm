@@ -307,6 +307,24 @@
     (SCM_TYPE_ERROR type "proxy-type"))
   (return (Scm_ProxyTypeId (SCM_PROXY_TYPE type))))
 
+;; Internal.  Recover type from the serialized type name for precompiled subr.
+;; KLUDGE: 'module' here is the module where the subr is defined, but the type
+;; itself isn't necessarily visible from that module.  A typical case is the
+;; subr defined in 'scheme' module---the types are obviously not visible from
+;; vanilla scheme.  For now, we try the given module, then try #<module gauche>.
+(define-cproc %type-name->type (mod::<module> type-name::<symbol>)
+  (let* ([g::ScmGloc* (Scm_FindBinding mod type-name 0)])
+    (when (== g NULL)
+      (set! g (Scm_FindBinding (Scm_GaucheModule) type-name 0)))
+    (when (== g NULL)
+      (return SCM_FALSE))
+    (let* ([val (Scm_GlocGetValue g)])
+      (cond [(SCM_CLASSP val)
+             (let* ([id (Scm_MakeIdentifier (SCM_OBJ type-name) mod SCM_NIL)])
+               (return (Scm_MakeProxyType (SCM_IDENTIFIER id) g)))]
+            [(SCM_ISA val SCM_CLASS_TYPE) (return val)]
+            [else (return SCM_FALSE)]))))
+
 ;;;
 ;;; Utilities
 ;;;
@@ -405,6 +423,32 @@
 ;; No types other than <^ ...> can be a subtype of <^>, but that case is
 ;; already handled.
 (define (supertype-^ type sub) #f)
+
+;; Internal API - called from procedure-type (libproc)
+(define (reconstruct-procedure-type proc encoded-type)
+  (if (and (vector? encoded-type)
+           (>= (vector-length encoded-type) 3)
+           (= (vector-ref encoded-type 0) 1))
+    (let* ([module-name (vector-ref encoded-type 1)]
+           [module (find-module module-name)])
+      (define (type-name->type name)
+        ())
+
+      (if (not module)
+        (begin
+          (warn "unknown module during reconstructing procedure type: ~a\n"
+                module-name)
+          (compute-procedure-type proc)) ;; fallback
+        ($ make-^
+           $* map (^e (if (or (memq e '(* :-)))
+                        e
+                        (or (%type-name->type module e)
+                            (error "unknown type in procedure type info:" e))))
+           (vector->list encoded-type 2))))
+    (compute-procedure-type proc)))
+
+;; Internal API - called from procedure-type (libproc)
+(define (compute-procedure-type proc) (%callable-type proc))
 
 ;; Kludge - If the procedure doesn't have detailed type, we try to
 ;; recover it from available info.
@@ -866,4 +910,7 @@
         '(deconstruct-type
           wrap-with-proxy-type
           proxy-type-ref
-          proxy-type-id)))
+          proxy-type-id
+          ;; followings are called from procedure-type (libproc)
+          reconstruct-procedure-type
+          compute-procedure-type)))

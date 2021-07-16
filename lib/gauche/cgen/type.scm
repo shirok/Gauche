@@ -38,8 +38,7 @@
   (export <cgen-type> cgen-type-from-name make-cgen-type
           cgen-boxer-name cgen-unboxer-name cgen-pred-name
           cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
-          cgen-type-maybe? cgen-return-stmt
-          cgen-type->scheme-type-name)
+          cgen-type-maybe? cgen-return-stmt)
   )
 (select-module gauche.cgen.type)
 
@@ -285,22 +284,6 @@
    (<dlobj> "ScmDLObj*" "dlobj" "SCM_DLOBJP" "SCM_DLOBJ")
    (<dlptr> "ScmObj" "dlptr" "Scm_DLPtrP" "SCM_OBJ")
    ))
-
-;; Returns Scheme type name corresponds to the stub type.  It is mostly
-;; the same as the stub type name, except several built-in primitive types.
-;; This is called from gauche.cgen.stub to generate type-string of procs.
-(define (cgen-type->scheme-type-name cgen-type)
-  (define (base-name cgen-type)
-    (case (~ cgen-type'name)
-      [(<fixnum> <int> <short> <long> <int8> <int16> <int32>
-                 <uint> <ushort> <ulong> <uint8> <uint16> <uint32>)
-       '<integer>]
-      [(<float> <double>) '<real>]
-      [(<const-cstring>) '<string>]
-      [else => identity]))
-  (if-let1 inner (~ cgen-type'%maybe)
-    `(<?> ,(base-name inner))
-    (base-name cgen-type)))
 
 ;;
 ;; Generating C expressions from type info

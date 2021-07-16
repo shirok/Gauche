@@ -586,6 +586,8 @@
    (bind-info         :initform #f :init-keyword :bind-info)
       ;; (module-name::<symbol> proc-name::<symbol>), if known.
       ;; Will be saved in pair attributes of info.
+   (type-info         :initform #f :init-keyword :type-info)
+      ;; cgen-literal of a vector-encoded type info; see compute-type-info below
    (info              :initform #f)
       ;; cgen-literal of ScmObj to be set in the 'info' slot of ScmProcedure.
    ))
@@ -657,6 +659,37 @@
        (push! (~ procstub'forward-decls)
               (cise-ambient-decl-strings (cise-ambient))))]))
 
+;; Construct stub type info
+;; We don't create <^>-type, for it'd be tricky to serialize, and we don't
+;; want to spend initialization time to reconstruct it for something that
+;; might not be used.
+;; The current format is a vector, with the first element 1 indicates the
+;; version.  Followed by the module name, and arguments for <^> but the
+;; stub type is represented.
+;; NB: The module name may be #f, when we're precompiling stub file (as opposed
+;; to the scm file).  For, in case of the stub file, the module is passed
+;; to the initialization routine.  In that case, we'll patch up the typehint
+;; vector at the init code.  (See cgen-emit-init <cpproc> below).
+(define (compute-type-info procstub)
+  (define (arg-types args)
+    (let loop ([args args] [types '()])
+      (cond [(null? args) (reverse types)]
+            [(is-a? (car args) <required-arg>)
+             (loop (cdr args)
+                   (cons (~ (car args)'type'name) types))]
+            [else ;; all auxiliary arguments are rest arg as type
+             (reverse types '(*))])))
+  (define (ret-types types)
+    (cond
+     [(eq? types #f) '(<top>)]
+     [(list? types) types]
+     [else (ret-types (list types))]))
+  (list->vector
+   `(1 ,(and-let1 tm (current-tmodule) (~ tm'name))
+       ,@(arg-types (~ procstub'args))
+       :-
+       ,@(ret-types (~ procstub'return-type)))))
+
 ;;-----------------------------------------------------------------
 ;; (define-cproc scheme-name (argspec) body)
 ;;
@@ -717,6 +750,7 @@
           (process-body cproc body)
           (check-fast-flonum cproc args)
           (assign-proc-info! cproc)
+          (set! (~ cproc'type-info) (cgen-literal (compute-type-info cproc)))
           (cgen-add! cproc))))))
 
 (define-method c-stub-name ((cproc <cproc>)) #"~(~ cproc'c-name)__STUB")
@@ -1257,6 +1291,15 @@
   (when (~ cproc'info)
     (f "  ~a.common.info = ~a;"
        (c-stub-name cproc) (cgen-c-name (~ cproc'info))))
+  (when (~ cproc'type-info)
+    (cgen-with-cpp-condition `(>= GAUCHE_API_VERSION 98)
+      (f "  ~a.common.typeHint = ~a;"
+         (c-stub-name cproc) (cgen-c-name (~ cproc'type-info)))
+      (unless (current-tmodule)
+        ;; we're precompiling *.stub file (old style), instead of *.scm style.
+        ;; patch up the module name.
+        (f "  SCM_VECTOR_ELEMENT(~a, 1) = SCM_MODULE(mod)->name;"
+           (cgen-c-name (~ cproc'type-info))))))
   (next-method)
   )
 

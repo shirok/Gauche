@@ -202,6 +202,26 @@
 (define-cproc procedure-info (proc::<procedure>)
   (return (SCM_PROCEDURE_INFO proc)))
 
+(define-cproc procedure-type (proc::<procedure>)
+  (let* ([typehint (-> proc typeHint)])
+    (cond [(SCM_VECTORP typehint)
+           (let* ([reconstruct-proc::(static ScmObj) SCM_UNDEFINED])
+             (SCM_BIND_PROC reconstruct-proc "reconstruct-procedure-type"
+                            (Scm_GaucheInternalModule))
+             (let1/cps type (Scm_VMApply2 reconstruct-proc proc typehint)
+               (proc)
+               (set! (-> (cast ScmProcedure* proc) typeHint) type)
+               (return type)))]
+          [(SCM_FALSEP typehint)
+           (let* ([compute-proc::(static ScmObj) SCM_UNDEFINED])
+             (SCM_BIND_PROC compute-proc "compute-procedure-type"
+                            (Scm_GaucheInternalModule))
+             (let1/cps type (Scm_VMApply1 compute-proc (SCM_OBJ proc))
+               (proc)
+               (set! (-> (cast ScmProcedure* proc) typeHint) type)
+               (return type)))]
+          [else (return typehint)])))
+
 (define-cproc method-leaf? (m::<method>) ::<boolean> SCM_METHOD_LEAF_P)
 
 ;; NB: This takes a list of classes.  But what if we support eqv-specilizer?
