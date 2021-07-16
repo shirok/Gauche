@@ -375,7 +375,7 @@
       [('*) (values args (reverse rs '(*)))]
       [(x . xs)
        (if (is-a? x <type>)
-         (scan-results (cdr xs) args (cons (car xs) rs))
+         (scan-results xs args (cons x rs))
          (error "Non-class argument in the procedure type constructor:" x))]
       [_ (error "Invalid arguments:" xs)]))
 
