@@ -2736,6 +2736,10 @@ ScmObj Scm_AddMethod(ScmGeneric *gf, ScmMethod *method)
     if (!replaced && (method_locked == NULL)) {
         gf->methods = pair;
         gf->maxReqargs = reqs;
+#if GAUCHE_API_VERSION >= 98
+        /* the type info needs to be recomputed */
+        gf->common.typeHint = SCM_FALSE;
+#endif /*GAUCHE_API_VERSION >= 98*/
     }
     if (gf->dispatcher && (method_locked == NULL)) {
         ScmMethodDispatcher *dis = (ScmMethodDispatcher*)gf->dispatcher;

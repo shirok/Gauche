@@ -107,7 +107,6 @@
 (t-subtype (<Vector> <integer>) (<?> (<Vector> <number>)) #t)
 (t-subtype (<Vector> <integer>) (</> (<Vector> <string>) (<Vector> <number>)) #t)
 
-
 (test-section "built-in type constructors")
 
 (define (validation-test type alist)
@@ -257,5 +256,22 @@
                    (#(1 2 3 4 5 6 7) . #f)
                    (#(1 2 a 3 4) . #f)
                    (1 . #f)))
+
+(test-section "procedure types")
+
+(define-syntax proctype-test
+  (syntax-rules ()
+    [(_ proc supposed-type)
+     (test* '(procedure-type proc) supposed-type
+            (procedure-type proc))]))
+
+;; This tests gf's type is recomputed after method addition
+(define-method a-gf ((x <number>)) x)
+
+(proctype-test a-gf (</> (<^> <number> :- '*)))
+
+(define-method a-gf ((x <string>)) x)
+
+(proctype-test a-gf (</> (<^> <string> :- '*) (<^> <number> :- '*)))
 
 (test-end)
