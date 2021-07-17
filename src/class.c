@@ -940,6 +940,7 @@ static ScmClass *make_implicit_meta(const char *name,
     Scm_Define(mod, SCM_SYMBOL(s), SCM_OBJ(meta));
     meta->slots = Scm_ClassClass.slots;
     meta->accessors = Scm_ClassClass.accessors;
+    meta->modules = SCM_LIST1(SCM_OBJ(mod));
     return meta;
 }
 
