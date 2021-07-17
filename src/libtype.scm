@@ -870,6 +870,13 @@
  (define-cfn stub_voidP (obj) ::int :static
    (return (SCM_UNDEFINEDP obj)))
 
+ (define-cfn stub_iportP (obj) ::int :static
+   (return (SCM_IPORTP obj)))
+ (define-cfn stub_oportP (obj) ::int :static
+   (return (SCM_OPORTP obj)))
+ (define-cfn stub_closureP (obj) ::int :static
+   (return (SCM_CLOSUREP obj)))
+
  (define-cvar intclass :static)
  (define-cvar realclass :static)
  (define-cvar strclass :static)
@@ -901,6 +908,9 @@
   (define-stub-type "<float>"   realclass stub_realP)
   (define-stub-type "<double>"  realclass stub_realP)
   (define-stub-type "<const-cstring>" strclass stub_cstrP)
+  (define-stub-type "<input-port>"  (SCM_OBJ SCM_CLASS_PORT) stub_iportP)
+  (define-stub-type "<output-port>" (SCM_OBJ SCM_CLASS_PORT) stub_oportP)
+  (define-stub-type "<closure>" (SCM_OBJ SCM_CLASS_PROCEDURE) stub_closureP)
   (define-stub-type "<void>"    (SCM_OBJ SCM_CLASS_TOP) stub_voidP)
   ))
 
