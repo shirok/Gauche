@@ -261,8 +261,10 @@
 ;;; Procedural layer
 ;;;
 
+;; NB: If record is created procedurally, we don't know what to set
+;; in :defined-module.
 (define (make-rtd name fieldspecs :optional (parent #f)
-                  :key (mixins '()) (metaclass #f))
+                  :key (mixins '()) (metaclass #f) (module #f))
   ;; We only allow to inherit either other record class, or classes that
   ;; don't add slots.  The metaclass be alwayas <record-meta>
   (when parent
@@ -285,7 +287,8 @@
                     (cond [(is-a? parent <record-meta>) (list parent)]
                           [else (list <record>)]))
     :slots ($ fieldspecs->slotspecs fieldspecs
-              $ if parent (length (class-slots parent)) 0)))
+              $ if parent (length (class-slots parent)) 0)
+    :defined-modules (if module (list module) '())))
 
 (define (rtd? obj) (is-a? obj <record-meta>))
 
@@ -476,6 +479,7 @@
        (quasirename r
          `(define-inline ,typename
             (make-rtd ',typename ',(build-field-spec field-specs) ,parent
+                      ':module (current-module)
                       ,@opts))))
      (define (build-ctor typename ctor-spec)
        (match ctor-spec

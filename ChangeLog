@@ -1,3 +1,8 @@
+2021-07-17  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/record.scm (define-record-type, make-rtd): Set
+	  defined-modules slot of the newly created record type.
+
 2021-07-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm: Save cproc's type info as a vector
