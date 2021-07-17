@@ -312,7 +312,7 @@
 ;; itself isn't necessarily visible from that module.  A typical case is the
 ;; subr defined in 'scheme' module---the types are obviously not visible from
 ;; vanilla scheme.  For now, we try the given module, then try #<module gauche>.
-(define-cproc %type-name->type (mod::<module> type-name::<symbol>)
+(define-cproc %lookup-type (mod::<module> type-name::<symbol>)
   (let* ([g::ScmGloc* (Scm_FindBinding mod type-name 0)])
     (when (== g NULL)
       (set! g (Scm_FindBinding (Scm_GaucheModule) type-name 0)))
@@ -324,6 +324,16 @@
                (return (Scm_MakeProxyType (SCM_IDENTIFIER id) g)))]
             [(SCM_ISA val SCM_CLASS_TYPE) (return val)]
             [else (return SCM_FALSE)]))))
+
+(define (%type-name->type module type-name)
+  (define (maybe-type y)
+    (let1 s (symbol->string y)
+      (and (eqv? (string-ref s (- (string-length s) 1)) #\?)
+           (string->symbol (substring s 0 (- (string-length s) 1))))))
+  (if-let1 m (maybe-type type-name)
+    (and-let1 mt (%lookup-type module m)
+      (make-? mt))
+    (%lookup-type module type-name)))
 
 ;;;
 ;;; Utilities
@@ -432,9 +442,6 @@
            (= (vector-ref encoded-type 0) 1))
     (let* ([module-name (vector-ref encoded-type 1)]
            [module (find-module module-name)])
-      (define (type-name->type name)
-        ())
-
       (if (not module)
         (begin
           (warn "unknown module during reconstructing procedure type: ~a\n"
