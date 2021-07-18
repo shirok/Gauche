@@ -10415,7 +10415,7 @@ If expressions yield something other than Maybe/Either, an error is thrown.
 This is a Maybe/Either version of @code{and-let*}.
 
 Each @var{claw} can be either one of the following forms:
-@itemize @code
+@table @code
 @item @var{identifier}
 The @var{identifier}'s value is taken.  It must be a Maybe/an Either,
 or an error is signaled.
@@ -10436,7 +10436,7 @@ or an error is signaled.
 If it is a Just/Right, evaluation proceeds to the next claw.
 If it is a Nothing/Left, evaluation stops and the value is returned
 immediately.
-@end itemize
+@end table
 
 After all @var{claws} are processed and none yields a Nothing/Left,
 @var{body} @dots{} are evaluated.
@@ -10449,7 +10449,7 @@ After all @var{claws} are processed and none yields a Nothing/Left,
 Multi-value payload version of @code{maybe-let*}/@code{either-let*}.
 
 Each @var{claw} can be either one of the following forms:
-@itemize @code
+@table @code
 @item @var{identifier}
 The @var{identifier}'s value is taken.  It must be a Maybe/an Either,
 or an error is signaled.
@@ -10475,7 +10475,7 @@ or an error is signaled.
 If it is a Just/Right, evaluation proceeds to the next claw.
 If it is a Nothing/Left, evaluation stops and the value is returned
 immediately.
-@end itemize
+@end table
 
 After all @var{claws} are processed and none yields a Nothing/Left,
 @var{body} @dots{} are evaluated.
