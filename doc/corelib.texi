@@ -45,40 +45,371 @@ Schemeは動的な強い型付けの言語です。つまり、全ての値は
 @c COMMON
 
 @c EN
-In Gauche, @emph{classes} are used to describe types.
-A class is also an object you can handle at runtime.
-You can also create a new class in order to have objects
-with distinct types.
+The Scheme standard is pretty simple on types; basically,
+an object being a type means the type predicate returns true on the object,
+and that's all.  Gauche adopts a bit more elaborated system---types are
+first-class object and you can query various information.
 @c JP
-Gaucheでは、@emph{クラス}によって型を記述します。クラス自身もオブジェクトであり、
-実行時に取り扱うことができます。新たなクラスを作成することで、
-既存の型とは異なるユーザ定義型を使うことができます。
+Scheme標準は、型についてはとても単純です。基本的に、オブジェクトがある型であるというのは、
+そのオブジェクトに対して型述語が真を返す、それだけです。
+Gaucheはもう少し込み入ったシステムを採用していて、型も第一級のオブジェクトになり
+様々な情報を問い合わせることができます。
+@c COMMON
+
+@menu
+* Prescriptive and descriptive types::
+* Generic type predicates::
+* Type expressions and type constructors::
+* Predefined classes::
+@end menu
+
+@node Prescriptive and descriptive types, Generic type predicates, Types and classes, Types and classes
+@subsection Prescriptive and descriptive types
+@c NODE 規範的な型と記述的な型
+
+@c EN
+Types are used in two ways.  A type can be seen as a template of
+the actual values (instances)---that is, a type @emph{prescribes}
+the structure of, and possible operations on, its instances.
+In Gauche, such prescriptive types are represented by @emph{classes}.
+Every value in Gauche belongs to a class, which can be queried with the
+@code{class-of} procedure.  You can also define your own class with
+@code{define-class} or @code{define-record-type}
+(@pxref{Object system}, and @pxref{Record types}).
+@c JP
+型には2つの使われ方があります。まず、型は実際の値(インスタンス)のテンプレートと
+見ることができます。つまり、型がインスタンスの構造と、それに適用できる操作を
+あらかじめ決めている(prescribe)ということです。
+Gaucheでは、このような規範的(prescriptive)な型は、@emph{クラス}で表現されます。
+Gauche内での値は全て何かのクラスに属していて、
+@code{class-of}手続きでそのクラスを取れます。また、ユーザは独自のクラスを
+@code{define-class}や@code{define-record-type}で定義することもできます
+(@ref{Object system}および@ref{Record types}参照)。
 @c COMMON
 
 @c EN
-Since R6RS, Scheme got a standard way to define a new type,
-through @code{define-record-type}.  You can use record types
-in Gauche as well, via @code{gauche.record} module.
-@xref{Record types}.  Internally a record type is implemented
-as a class.
+A type can also be seen as a constraint of a given
+expression---that is, a type @emph{describes} what characteristics
+a certain expression must have.   Gauche has entities
+to represent such descriptive types separate from classes.
+Descriptive types are created with @emph{type constructors}
+(@pxref{Type expressions and type constructors}).
 @c JP
-R6RSから、Schemeにも新しい型を定義する機能が標準で備わりました。
-@code{define-record-type}を使います。Gaucheでも、
-@code{gauche.record}モジュールを使うことでレコード型を定義できます。
-@ref{Record types}を参照してください。内部的にはレコード型は
-クラスで実装されています。
+型はまた、与えられた式についての制約と見ることもできます。
+つまり、型がその式が持つべき特定の性質を記述する(describe)ということです。
+Gaucheでは、クラスとは別に、そういった記述的(descriptive)な型を表現するエンティティを
+用意しています。記述的な型は型コンストラクタで作ることができます
+(@ref{Type expressions and type constructors}参照)。
 @c COMMON
 
 @c EN
-In this section we introduce the most basic interface
-to the Gauche's type system.
-@xref{Object system}, for the details of
-how to define your own classes and creates values (instances).
+A value is an instance of a class. For example,
+@code{1} is an instance of @code{<integer>}, and @code{"xyz"}
+is an instance of @code{<string>}.  This presctiptive type relationship
+is checked with @code{is-a?} procedure: @code{(is-a? 1 <integer>)} and
+@code{(is-a? "xyz" <string>)} both returns @code{#t}.
 @c JP
-この節ではもっとも基本的な型システムへのインタフェースを説明します。
-新たなクラスを定義し、そのインスタンスを作る方法については
-@ref{Object system}を参照してください。
+値は、特定のクラスのインスタンスです。
+例えば@code{1}は@code{<integer>}のインスタンスであり、
+@code{"xyz"}は@code{<string>}のインスタンスです。
+このprescriptiveな型の関係は、手続き@code{is-a?}で検査できます。
+@code{(is-a? 1 <integer>)}、@code{(is-a? "xyz" <string>)}は
+どちらも@code{#t}を返します。
 @c COMMON
+
+@c EN
+On the other hand, you may have a procedure that takes either a number
+or a string as an argument.  ``A number or a string'' is a type constraint,
+and can be expressed as a descriptive type, @code{(</> <number> <string>)}.
+Descriptive type relationship is checked with @code{of-type?} procedure:
+@code{(of-type? 1 (</> <number> <string>))} and
+@code{(of-type? "xyz" (</> <number> <string>))} both returns @code{#t}.
+More conveniently, @code{(assume-type arg (</> <number> <string>))}
+would raise an error if @var{arg} doesn't satisfy the given type constraint.
+@c JP
+一方、例えば手続きが数値か文字列を引数に取る、といったケースもあります。
+「数値か文字列」というのは型に関する制約であり、descriptiveな型
+@code{(</> <number> <string>)}として表現できます。
+descriptiveな型の関係は手続き@code{of-type?}で検査できます。
+@code{(of-type? 1 (</> <number> <string>))}、
+@code{(of-type? "xyz" (</> <number> <string>))}はどちらも@code{#t}を返します。
+また、@code{(assume-type arg (</> <number> <string>))}は
+@var{arg}が与えられた型の制約を満たさなければエラーを投げます。
+@c COMMON
+
+@node Generic type predicates, Type expressions and type constructors, Prescriptive and descriptive types, Types and classes
+@subsection Generic type predicates
+@c NODE 汎用型述語
+
+@c EN
+A ``type predicate'' is a predicate that tells if an object is of a specific
+type; e.g. @code{number?} tells you if the argument is a number.
+Since types are first-class in Gauche, we have predicates that can tell
+an object is of a @emph{given} type, as well as predicates to ask
+the relationship between types.
+@c JP
+「型述語」は、与えられたオブジェクトが特定の型を持つかどうかを判定する述語です。
+例えば@code{number?}は引数が数値かどうかを返します。
+Gaucheでは型がファーストクラスなので、もう一歩進めて、
+オブジェクトが@emph{与えられた}型を持つかどうかを判定する述語や、
+型同士の関係を調べる述語が提供されています。
+@c COMMON
+
+@defun is-a? obj class
+@c EN
+This is a prescriptive types predicate.
+Returns true iff @var{obj} is an instance of @var{class} or an instance
+of descendants of @var{class}.
+@c JP
+これは規範的な型に関する述語です。
+@var{obj}が@var{class}のインスタンスであるか、@var{class}のサブクラスの
+インスタンスである場合に、真を返します。
+@c COMMON
+
+@example
+(is-a? 3 <integer>)   @result{} #t
+(is-a? 3 <real>)      @result{} #t
+(is-a? 5+3i <real>)   @result{} #f
+(is-a? :foo <symbol>) @result{} #f
+@end example
+
+@c EN
+Note: If @var{obj}'s class has been redefined, @code{is-a?} also
+triggers instance update.
+See @ref{Class redefinition} for the details.
+@c JP
+註：@var{obj}のクラスが再定義されていた場合、@code{is-a?}はインスタンスアップデートを
+トリガします。@ref{Class redefinition}を参照してください。
+@c COMMON
+@end defun
+
+@defun of-type? obj type
+@c EN
+This is a descriptie type predicate.
+Returns true iff @var{obj} satisfies the constraints described by @var{type},
+which can be either a class (in that case, this is the same as @code{is-a?}),
+or a descriptive type (@pxref{Type expressions and type constructors} below).
+@c JP
+これは記述的な型に関する述語です。
+@var{obj}が@var{type}で記述される制約を満たすなら@code{#t}を、そうでなければ@code{#f}を
+返します。@var{type}はクラスか(その場合は@code{is-a?}と同じです)、
+記述型 (@pxref{Type expressions and type constructors}参照) です。
+@c COMMON
+
+@example
+(of-type? 1   (</> <number> <string>)) @result{} #t
+(of-type? "a" (</> <number> <string>)) @result{} #t
+(of-type? 'a  (</> <number> <string>)) @result{} #f
+@end example
+@end defun
+
+@defun subtype? sub super
+@c EN
+Returns @code{#t} if a type @var{sub} is a subtype of a type @var{super}
+(includes the case that @var{sub} is @var{super}).
+Otherwise, returns @code{#f}.
+@c JP
+型@var{sub}が型@var{super}のサブタイプであれば(@var{sub}と@var{super}が
+同じである場合も含め)@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+
+@c EN
+In general, if @var{sub} is a subtype of @var{super}, an object that satisfies
+the constraints of @var{sub} also satisfies the constraints of @var{super},
+so you can use the object where objects of type @var{super} are expected.
+In other words, @var{sub} is more restrictive than @var{super}.
+If both @var{sub} and @var{super} are classes, @var{sub} being a subtype
+of @var{super} means @var{sub} is a subclass of @var{super}.
+@c JP
+一般的に、@var{sub}が@var{super}のサブタイプであれば、
+@var{sub}の制約を満たすオブジェクトは@var{super}が期待されている箇所で使うことが
+できます。言い換えれば、@var{sub}の制約の方が@var{super}よりきついということです。
+@var{sub}と@var{super}のどちらもがクラスの場合、@var{sub}が@var{super}の
+サブタイプであるということは、@var{sub}が@var{super}のサブクラスであるということです。
+@c COMMON
+
+@example
+(subtype? <integer> <real>) @result{} #t
+(subtype? <char> (</> <char> <string>)) @result{} #t
+(subtype? (</> <integer> <string>) (</> <number> <string>)) @result{} #t
+@end example
+
+@c EN
+Note that we're not rigorous on this ``substitution principle'',
+for we don't aim at guaranteeing type safety through static analysis.
+For example, ``list of integers'' can be used in place of a generic list
+most of the time, and @code{(subtype? (<List> <integer>) <list>)} is
+@code{#t}.  However, if list is mutated, you can't replace
+generic list with a list of integers---because mutators may try to
+set non-integer in the list.   That kind of cases needs to be handled
+separately, not on relying solely on @code{subtype?}.
+@c JP
+この「置換原則」は常に厳密に成り立つわけではないことに注意してください。
+例えば「整数のリスト」は大抵の場合、ジェネリックなリストが期待されているところに
+使えて、従って@code{(subtype? (<List> <integer>) <list>)}も@code{#t}を
+返します。しかし、渡されたリストが変更される場合は、ジェネリックなリストを
+整数のリストで置き換え可能とは限りません。コードはリストに整数でないものをセットしようとする
+かもしれないからです。こういったケースは@code{subtype?}に頼るのではなく
+個別に対応する必要があります。
+@c COMMON
+@end defun
+
+@node Type expressions and type constructors, Predefined classes, Generic type predicates, Types and classes
+@subsection Type expressions and type consturctors
+@c NODE 型の式と型コンストラクタ
+
+Types are first-class objects in Gauche, but they must be known at compile-time
+in order to do optimizations or static analysis.  In certain places,
+Gauche requires the the value of type-yielding expressions to be statically
+computable.  We call such expressions @emph{type expressions}.
+
+A type expression is either a global variable reference that are
+constantly bound to a type, or a call of type constructor:
+
+@example
+<type-expression> : <global-variable-constantly-bound-to-a-type>
+                  | <type-constructor-call>
+
+<type-constructor-call> : (<type-constructor> <type-constructor-argument> ...)
+
+<type-constructor-argument> : <type-expression>
+                            | <integer-constant>
+                            | ->
+                            | *
+@end example
+
+All built-in classes, such as @code{<integer>}, are statically bound
+(in precise terms, they are ``inlinable'' binding).  If you try to alter
+it, a warning is issued, and the further bahvior will be undefined.
+In future, we'll make it an error to alter the binding of
+type variables.  Classes defined with @code{define-class} and
+@code{define-record-type} are also bound as inlinable.
+
+Type constructors are a special classes whose instances are
+descriptive types.  Type constructors can be invoked as if they are
+a procedure, but @code{<type-constructor-call>} is recognized by
+the compiler and the derived type is computed at compile-time.
+So, at runtime you only see the resulting derived type instance.
+
+For example, @code{<?>} is a type constructor that creates
+``maybe''-like type, e.g. ``an integer or @code{#f}''.
+(Do not confuse this with Maybe type
+defined in srfi-189, @pxref{Maybe and Either optional container types}).
+A type expression @code{(<?> <integer>)} yields such type
+(printed as @code{#<? <integer>>}):
+
+@example
+(<?> <integer>) @result{} #<? <integer>>
+@end example
+
+It looks like a procedure call, but it s computed at compile time:
+
+@example
+gosh> (disasm (^[] (<?> <integer>)))
+CLOSURE #<closure (#f)>
+=== main_code (name=#f, cc=0x7f5cd76ab540, codevec=...):
+signatureInfo: ((#f))
+     0 CONST-RET #<? <integer>>
+@end example
+
+@deftp {Type Constructor} <?> type
+@clindex ?
+@var{Type} must be a type expression.
+This creates a maybe-like type, that is, the object is either
+of @var{type} or @code{#f}.   Usually, @code{#f} indicates
+that the value is invalid (e.g. the return value of @code{assoc}).
+
+This type has ambiguity when @code{#f} can be a meaningful value, but
+traditionally used a lot in Scheme, for it is lightweight.
+We also have a ``proper'' Maybe type in srfi-189
+(@pxref{Maybe and Either optional container types}) but that involves
+extra allocation to wrap the value.
+@end deftp
+
+@deftp {Type Constructor} </> type @dots{}
+@clindex ?
+@var{Type} @dots{} must be type expressions.
+This creates a @emph{sum type} of @var{type} @dots{}.
+For example, @code{(</> <string> <symbol>)} is a type that is
+either a string or a symbol.
+@end deftp
+
+@deftp {Type Constructor} <Tuple> type @dots{}
+@clindex Tuple
+@var{Type} @dots{} must be type expressions, except that the
+last argument may be an identifier @code{*}.
+This creates a @emph{product type} of @var{type} @dots{}.
+
+Actually, this type is looser than the product types in typical
+statically-typed languages.  Our tuple is a subtype of list, with
+types of each positional element are restricted with @var{type} @dots{}.
+For example, @code{(<Tuple> <integer> <string>)} is a list of two
+elements, the first one being an integer and the second being a string.
+
+@example
+(of-type? '(3 "abc") (<Tuple> <integer> <string>)) @result{} #t
+@end example
+
+If you need more strict, disjoint product type, you can just create
+a class or a record.
+
+If the last argument is @code{*}, the resulting type allows
+extra elements after the typed elements.
+
+@example
+(of-type? '(3 "abc" 1 2) (<Tuple> <integer> <string> *)) @result{} #t
+@end example
+@end deftp
+
+@deftp {Type Constructor} <^> type @dots{} @code{->} type @dots{}
+@clindex ^
+@var{Type} @dots{} must be type expressions, except that the
+one right before @code{->} and the last one may be an identifier @code{*}.
+This creates a procedure type, with the constraints in
+arguments and return types.
+The @var{type} @dots{} before @code{->} are the argument types,
+and the ones after @code{->} are the result types.
+
+The @code{*} in the last of argument type list and/or result type list
+indicates extra elements are allowed.
+
+In vanilla Scheme, all procedures belong to just one type, that responds
+true to @code{procedure?}.  It is simple and flexible, but sometimes the
+resolution is to coarse to do reasoning on the program.
+
+In Gauche, we can attach more detailed type information in procedures.
+In the current version, some built-in procedures already have such
+type information, that can be retrieved with @code{procedure-type}:
+
+@example
+(procedure-type cons) @result{} #<^ <top> <top> -> <pair>>
+@end example
+
+Not all procedures have such information, though.  Do not expect the
+rigorousness of statically typed languages.
+
+At this moment, Scheme-defined procedures treats all argument types
+as @code{<top>}.  We'll provide a way to attach type info in future.
+@end deftp
+
+@deftp {Type Constructor} <List> type :optional min-length max-length
+@deftpx {Type Constructor} <Vector> type :optional min-length max-length
+@clindex List
+@clindex Vector
+@var{Type} must be a type expression.
+These create a list or a vector type whose elements are of @var{type},
+respectively.
+For example, @code{(<List> <string>)} is a list of strings.
+
+The optional arguments must be a literal real numbers that limit
+the minimum and maximum length of the list or the vector.
+When omitted, @var{min-length}
+is zero and @var{max-length} is @code{inf.0}.
+@end deftp
+
+@node Predefined classes,  , Type expressions and type constructors, Types and classes
+@subsection Predefined classes
+@c NODE 定義済みクラス
 
 @c EN
 Predefined classes are bound to a global variable; Gauche's
@@ -194,47 +525,11 @@ If the new definition has different configuration of the instance,
 @c COMMON
 @end defun
 
-@defun is-a? obj class
-@c EN
-Returns true if @var{obj} is an instance of @var{class} or an instance
-of descendants of @var{class}.
-@c JP
-@var{obj}が@var{class}のインスタンスであるか、@var{class}のサブクラスの
-インスタンスである場合に、真を返します。
-@c COMMON
 
-@example
-(is-a? 3 <integer>)   @result{} #t
-(is-a? 3 <real>)      @result{} #t
-(is-a? 5+3i <real>)   @result{} #f
-(is-a? :foo <symbol>) @result{} #f
-@end example
 
-@c EN
-Note: If @var{obj}'s class has been redefined, @code{is-a?} also
-triggers instance update.
-See @ref{Class redefinition} for the details.
-@c JP
-註：@var{obj}のクラスが再定義されていた場合、@code{is-a?}はインスタンスアップデートを
-トリガします。@ref{Class redefinition}を参照してください。
-@c COMMON
-@end defun
 
-@defun subtype? sub super
-@c EN
-Returns @code{#t} if a class @var{sub} is a subclass of a class @var{super}
-(includes the case that @var{sub} is @var{super}).
-Otherwise, returns @code{#f}.
 
-(The name @code{subtype?} is taken from Common Lisp's procedure
-@code{subtypep}.)
-@c JP
-クラス@var{sub}がクラス@var{super}のサブクラスであれば(@var{sub}と@var{super}が
-同じである場合も含め)@code{#t}を、そうでなければ@code{#f}を返します。
 
-(@code{subtype?}という名前はCommon Lispの@code{subtypep}から来ています)。
-@c COMMON
-@end defun
 
 @node Equality and comparison, Numbers, Types and classes, Core library
 @section Equality and comparison
