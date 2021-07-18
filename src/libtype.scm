@@ -37,8 +37,8 @@
 ;; In Gauche, types are a data structure that appears in both compile-time
 ;; and run-time, describes metalevel properties of run-time data.
 ;;
-;; Gauche has two kinds of types--generative types and descriptive types.
-;; Generative types are the types that are actually used to generate the
+;; Gauche has two kinds of types--prescriptive types and descriptive types.
+;; Prescriptive types are the types that are actually used to generate the
 ;; actual data---we also call it classes.  Descriptive types are, otoh,
 ;; used only to descrive the nature of data at the certain point of program
 ;; execution---for example, you may say the argument must be either <integer>
@@ -379,9 +379,6 @@
 ;;;   indicating arbitrary number of args/values.   That is, any procedure
 ;;;   can be of type * -> *.
 ;;;
-;;;   NB: Currently we don't keep the return value info in procedure, so
-;;;   we only allow "wild card" '* as the results.
-;;;
 ;;;   TODO: How to type optional and keyword arguments?
 ;;;
 
@@ -422,7 +419,7 @@
           (if (~ type'results'allow-rest?) '(*) '())))
 
 (define (validate-^ type obj)
-  (and-let1 otype (%callable-type obj)
+  (and-let1 otype (compute-procedure-type obj)
     (subtype? type otype)))
 
 (define (subtype-^ type super)
@@ -456,12 +453,31 @@
     (compute-procedure-type proc)))
 
 ;; Internal API - called from procedure-type (libproc)
-(define (compute-procedure-type proc) (%callable-type proc))
+(define (compute-procedure-type proc)
+  (define (%procedure-type proc)
+    (if-let1 clinfo (case-lambda-info proc)
+      (apply make-/ (map (^v (%procedure-type (caddr v))) clinfo))
+      (let1 top (%class->proxy <top>)
+        (apply make-^
+               `(,@(make-list (~ proc'required) top)
+                 ,@(if (~ proc'optional) '(*) '())
+                 -> *)))))
+  (define (%method-type meth)
+    (apply make-^
+           `(,@(map %class->proxy (~ meth'specializers))
+             ,@(if (~ meth'optional) '(*) '())
+             -> *)))
+  (define (%generic-type gf)
+    (apply make-/ (map %method-type (~ gf'methods))))
 
-;; Kludge - If the procedure doesn't have detailed type, we try to
-;; recover it from available info.
-;; Eventually, we expect these info will be embedded in the procedure
-;; at the compile time.
+  (cond [(is-a? proc <procedure>) (%procedure-type proc)]
+        [(is-a? proc <generic>)   (%generic-type proc)]
+        [(is-a? proc <method>)    (%method-type proc)]
+        ;; Dealing with applicable objects are debatable.  Any object can
+        ;; become applicable, which makes its type
+        ;; (</> <original-type> <type-when-applied>).  That makes type
+        ;; operations extremely complicated.
+        [else #f]))
 
 (define-cproc %class->proxy (klass::<class>)
   (let* ([ms (-> klass modules)]
@@ -471,35 +487,13 @@
         (when (!= g NULL)
           (let* ([id (Scm_MakeIdentifier n (SCM_MODULE m) SCM_NIL)])
             (return (Scm_MakeProxyType (SCM_IDENTIFIER id) g))))))
-    (return SCM_FALSE)))
-
-(define (%procedure-type proc)
-  (if-let1 clinfo (case-lambda-info proc)
-    (apply make-/ (map (^v (%procedure-type (caddr v))) clinfo))
-    (let1 top (%class->proxy <top>)
-      (apply make-^
-             `(,@(make-list (~ proc'required) top)
-               ,@(if (~ proc'optional) '(*) '())
-               -> *)))))
-
-(define (%method-type meth)
-  (apply make-^
-         `(,@(map %class->proxy (~ meth'specializers))
-           ,@(if (~ meth'optional) '(*) '())
-           -> *)))
-
-(define (%generic-type gf)
-  (apply make-/ (map %method-type (~ gf'methods))))
-
-(define (%callable-type obj)
-  (cond [(is-a? obj <procedure>) (%procedure-type obj)]
-        [(is-a? obj <generic>)   (%generic-type obj)]
-        [(is-a? obj <method>)    (%method-type obj)]
-        ;; Dealing with applicable objects are debatable.  Any object can
-        ;; become applicable, which makes its type
-        ;; (</> <original-type> <type-when-applied>).  That makes type
-        ;; operations extremely complicated.
-        [else #f]))
+    ;; If we're here, the class doesn't have a known global binding.
+    ;; It is possible---a class can be created procedurally at runtime---
+    ;; but to be used in a type expession, it must be recognized by the
+    ;; compiler, which requires the class is statically bound to a global
+    ;; identifier.  We raise an error if that's not the case.
+    (Scm_Error "Class %S doesn't have a known global binding and can't be used \
+                in a type expression." klass)))
 
 (define-type-constructor <^> ()
   ((arguments :init-keyword :arguments)    ; <Tuple>
