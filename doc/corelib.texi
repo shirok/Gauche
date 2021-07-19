@@ -48,12 +48,24 @@ Schemeは動的な強い型付けの言語です。つまり、全ての値は
 The Scheme standard is pretty simple on types; basically,
 an object being a type means the type predicate returns true on the object,
 and that's all.  Gauche adopts a bit more elaborated system---types are
-first-class object and you can query various information.
+first-class objects and you can query various information.
 @c JP
 Scheme標準は、型についてはとても単純です。基本的に、オブジェクトがある型であるというのは、
 そのオブジェクトに対して型述語が真を返す、それだけです。
 Gaucheはもう少し込み入ったシステムを採用していて、型も第一級のオブジェクトになり
 様々な情報を問い合わせることができます。
+@c COMMON
+
+@c EN
+In Gauche, types are conventionally
+named with brackets @code{<} and @code{>}, e.g. @code{<string>}.
+It's nothing syntactically special with these brackets; they're valid
+characters to consist of variable names.
+@c JP
+Gaucheでは慣習的に、型は@code{<string>}のように
+@code{<}と@code{>}で囲まれた名前を持ちます。
+この@code{<}や@code{>}は文法的には何ら特別な意味を持ちません。
+普通に変数名として使える文字です。
 @c COMMON
 
 @menu
@@ -282,10 +294,10 @@ All built-in classes, such as @code{<integer>}, are statically bound
 (in precise terms, they are ``inlinable'' binding).  If you try to alter
 it, a warning is issued, and the further bahvior will be undefined.
 In future, we'll make it an error to alter the binding of
-type variables.  Classes defined with @code{define-class} and
+global variables bount to types.  Classes defined with @code{define-class} and
 @code{define-record-type} are also bound as inlinable.
 
-Type constructors are a special classes whose instances are
+Type constructors are special classes whose instances are
 descriptive types.  Type constructors can be invoked as if they are
 a procedure, but @code{<type-constructor-call>} is recognized by
 the compiler and the derived type is computed at compile-time.
@@ -320,7 +332,7 @@ of @var{type} or @code{#f}.   Usually, @code{#f} indicates
 that the value is invalid (e.g. the return value of @code{assoc}).
 
 This type has ambiguity when @code{#f} can be a meaningful value, but
-traditionally used a lot in Scheme, for it is lightweight.
+traditionally been used a lot in Scheme, for it is lightweight.
 We also have a ``proper'' Maybe type in srfi-189
 (@pxref{Maybe and Either optional container types}) but that involves
 extra allocation to wrap the value.
@@ -337,7 +349,7 @@ either a string or a symbol.
 @deftp {Type Constructor} <Tuple> type @dots{}
 @clindex Tuple
 @var{Type} @dots{} must be type expressions, except that the
-last argument may be an identifier @code{*}.
+last argument that may be an identifier @code{*}.
 This creates a @emph{product type} of @var{type} @dots{}.
 
 Actually, this type is looser than the product types in typical
@@ -350,7 +362,7 @@ elements, the first one being an integer and the second being a string.
 (of-type? '(3 "abc") (<Tuple> <integer> <string>)) @result{} #t
 @end example
 
-If you need more strict, disjoint product type, you can just create
+If you need a more strict and disjoint product type, you can just create
 a class or a record.
 
 If the last argument is @code{*}, the resulting type allows
@@ -375,7 +387,7 @@ indicates extra elements are allowed.
 
 In vanilla Scheme, all procedures belong to just one type, that responds
 true to @code{procedure?}.  It is simple and flexible, but sometimes the
-resolution is to coarse to do reasoning on the program.
+resolution is too coarse to do reasoning on the program.
 
 In Gauche, we can attach more detailed type information in procedures.
 In the current version, some built-in procedures already have such
@@ -413,18 +425,9 @@ is zero and @var{max-length} is @code{inf.0}.
 
 @c EN
 Predefined classes are bound to a global variable; Gauche's
-convention is to name the variable that holds a class
-with brackets @code{<} and @code{>}, e.g. @code{<string>}.
-(It's nothing syntactically special with these brackets; they're valid
-characters to consist of variable names).
 We'll introduce classes for each built-in type as we go through
 this chapter.  Here are a few basic classes to start with:
 @c JP
-あらかじめ定義されているクラスはグローバル変数に束縛されています。Gaucheでの
-慣習として、クラスを格納している変数は@code{<string>}のように
-@code{<}と@code{>}で囲まれた名前を持ちます。
-(この@code{<}や@code{>}は文法的には何ら特別な意味を持ちません。
-普通に変数名として使える文字です)。
 組み込みの型に対応するクラスについては、この章の中で順に紹介してゆきます。
 まずは次のいくつかのクラスから始めましょう。
 @c COMMON
