@@ -62,14 +62,18 @@
   SCM_SET_C##PRE##R(cell, value);
 "
  )
-(define-cproc caar (obj) :fast-flonum :constant
-  (inliner CAAR) (setter (obj value) ::<void> (CXR_SETTER A a a)) Scm_Caar)
-(define-cproc cadr (obj) :fast-flonum :constant
-  (inliner CADR) (setter (obj value) ::<void> (CXR_SETTER A a d)) Scm_Cadr)
-(define-cproc cdar (obj) :fast-flonum :constant
-  (inliner CDAR) (setter (obj value) ::<void> (CXR_SETTER D d a)) Scm_Cdar)
-(define-cproc cddr (obj) :fast-flonum :constant
-  (inliner CDDR) (setter (obj value) ::<void> (CXR_SETTER D d d)) Scm_Cddr)
+(define-cproc caar (obj::<pair>) :fast-flonum :constant
+  (inliner CAAR) (setter (obj value) ::<void> (CXR_SETTER A a a))
+  (return (Scm_Caar (SCM_OBJ obj))))
+(define-cproc cadr (obj::<pair>) :fast-flonum :constant
+  (inliner CADR) (setter (obj value) ::<void> (CXR_SETTER A a d))
+  (return (Scm_Cadr (SCM_OBJ obj))))
+(define-cproc cdar (obj::<pair>) :fast-flonum :constant
+  (inliner CDAR) (setter (obj value) ::<void> (CXR_SETTER D d a))
+  (return (Scm_Cdar (SCM_OBJ obj))))
+(define-cproc cddr (obj::<pair>) :fast-flonum :constant
+  (inliner CDDR) (setter (obj value) ::<void> (CXR_SETTER D d d))
+  (return (Scm_Cddr (SCM_OBJ obj))))
 
 ;; NB: we avoid using getter-with-setter here, since
 ;;   - The current compiler doesn't take advantage of locked setters
@@ -114,7 +118,7 @@
 (define-cproc ipair? (obj) ::<boolean> Scm_ImmutablePairP)
 (define-cproc ipair (car cdr) ::<pair>
   (return (SCM_PAIR (Scm_MakeImmutablePair car cdr))))
-(define-cproc ilist (:rest args)
+(define-cproc ilist (:rest args) ::<list>
   (if (SCM_NULLP args)
     (return SCM_NIL)
     (let* ([h SCM_NIL] [t SCM_NIL])
@@ -197,7 +201,7 @@
 ;;
 
 (select-module gauche)
-(define-cproc length+ (list) :constant ;; srfi-1
+(define-cproc length+ (list) ::<integer>? :constant ;; srfi-1
   (let* ([i::int (Scm_Length list)])
     (if (< i 0) (return SCM_FALSE) (return (Scm_MakeInteger i)))))
 
@@ -205,7 +209,8 @@
 (define-cproc dotted-list? (obj)   ::<boolean> :constant SCM_DOTTED_LIST_P)
 (define-cproc circular-list? (obj) ::<boolean> :constant SCM_CIRCULAR_LIST_P)
 (define-cproc make-list (len::<fixnum> :optional (fill #f)) Scm_MakeList)
-(define-cproc acons (caa cda cd) Scm_Acons)
+(define-cproc acons (caa cda cd) ::<pair>
+  (return (SCM_PAIR (Scm_Acons caa cda cd))))
 (define-cproc last-pair (list) :constant Scm_LastPair)
 (define-cproc list-copy (list) Scm_CopyList)
 
@@ -236,7 +241,7 @@
 
 (define-cproc reverse! (list :optional (tail ())) Scm_Reverse2X)
 
-(define-cproc monotonic-merge (sequences::<list>) Scm_MonotonicMerge1)
+(define-cproc monotonic-merge (sequences::<list>) ::<list> Scm_MonotonicMerge1)
 
 (select-module gauche.internal)
 (define-in-module scheme (map proc lis . more)
@@ -798,7 +803,7 @@
                   (Scm_PairAttrSet (SCM_PAIR z) (SCM_CAR p) (SCM_CDR p)))
                 (Scm_Reverse attrs)))
     (return z)))
-(define-cproc extended-list (elt :rest more) Scm_ExtendedCons)
+(define-cproc extended-list (elt :rest more) ::<list> Scm_ExtendedCons)
 
 (define-cproc pair-attributes (pair::<pair>) Scm_PairAttr)
 
