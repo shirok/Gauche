@@ -173,6 +173,7 @@
   (describe-common p)
   (and-let1 source (source-location p)
     (format #t "Defined at ~s:~d\n" (car source) (cadr source)))
+  (format #t "type: ~s\n" (procedure-type p))
   (describe-slots p)
   (values))
 

@@ -1,3 +1,8 @@
+2021-07-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (describe): Show type info when describing
+	  procedures.
+
 2021-07-17  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/record.scm (define-record-type, make-rtd): Set
