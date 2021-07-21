@@ -1321,20 +1321,30 @@
 ;;   <formals> is a copy of input sans type annotation.
 ;;   <types> is a list of types for required args.  If there's a restarg,
 ;;      the lenght of <types> is one shorter than the length of <args>.
+;;      Can be #f if there's no type annotation.
 ;;   <nreqs> is the number of required arguments.
 ;;   <nopts> is 0 if no optional arg, 1 if not.
 ;;   <kargs> is like (:optional (x #f) (y #f) :rest k) etc.  '() if restarg.
 (define (parse-extended-lambda-args formals)
-  (let loop ([formals formals] [as '()] [fs '()] [ts '()] [n 0])
-    (match formals
-      [()      (values (reverse as) (reverse fs) (reverse ts) n 0 '())]
-      [((? keyword-like?) . _)
-       (values (reverse as) (reverse fs formals) (reverse ts) n 0 formals)]
-      [(x ':: t . y)
-       (loop y (cons x as) (cons x fs) (cons t ts) (+ n 1))]
-      [(x . y)
-       (loop y (cons x as) (cons x fs) (cons '<top> ts) (+ n 1))]
-      [x (values (reverse (cons x as)) (reverse fs x) (reverse ts) n 1 '())])))
+  ;; If formals don't have type annotations at all, we skip building
+  ;; copy of formals and type lists.
+  (if (and (pair? formals) (member ':: formals))
+    (let loop ([rest formals] [as '()] [fs '()] [ts '()] [n 0])
+      (match rest
+        [()      (values (reverse as) (reverse fs) (reverse ts) n 0 '())]
+        [((? keyword-like?) . _)
+         (values (reverse as) (reverse fs formals) (reverse ts) n 0 rest)]
+        [(x ':: t . y)
+         (loop y (cons x as) (cons x fs) (cons t ts) (+ n 1))]
+        [(x . y)
+         (loop y (cons x as) (cons x fs) (cons '<top> ts) (+ n 1))]
+        [x (values (reverse (cons x as)) (reverse fs x) (reverse ts) n 1 '())]))
+    (let loop ([rest formals] [as '()] [n 0])
+      (match rest
+        [()      (values (reverse as) formals #f n 0 '())]
+        [((? keyword-like?) . _) (values (reverse as) formals #f n 0 rest)]
+        [(x . y) (loop y (cons x as) (+ n 1))]
+        [x (values (reverse (cons x as)) formals #f n 1 '())]))))
 
 ;; Handles extended lambda list.  garg is a gensymed var that receives
 ;; restarg.
