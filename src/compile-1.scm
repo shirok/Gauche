@@ -1260,7 +1260,7 @@
                     (error "Invalid formal parameter:" (car xs)))
                   (loop (cdr xs) (cons (car xs) ys))]
                  [else (error "Invalid formal parameter:" formals)]))
-       (pass1/vanilla-lambda (add-arg-info form formals)
+       (pass1/vanilla-lambda (add-arg-info form formals #f)
                              (if rest (append reqs (list rest)) reqs)
                              (length reqs)
                              (if rest 1 0)
@@ -1270,13 +1270,14 @@
 (define-pass1-syntax (lambda form cenv) :gauche ;Extended lambda
   (match form
     [(_ formals . body)
-     (receive (args nreqs nopts kargs) (parse-extended-lambda-args formals)
+     (receive (args formals types nreqs nopts kargs)
+         (parse-extended-lambda-args formals)
        (if (null? kargs)
-         (pass1/vanilla-lambda (add-arg-info form formals)
+         (pass1/vanilla-lambda (add-arg-info form formals types)
                                args nreqs nopts body cenv)
          ;; Convert extended lambda into vanilla lambda
          (let1 restarg (gensym "rest")
-           (pass1/vanilla-lambda (add-arg-info form formals)
+           (pass1/vanilla-lambda (add-arg-info form formals types)
                                  (append args (list restarg))
                                  nreqs 1
                                  (pass1/extended-lambda-body form cenv restarg
@@ -1284,8 +1285,10 @@
                                  cenv))))]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
-;; Add formals list as 'arg-info attributes of the source form
-(define (add-arg-info form formals)
+;; Add formals list as 'arg-info, and argument type list to 'arg-types,
+;; in the source form.  They're retrieved by compiled-code-attach-source-info.
+;; NB: For arg-types, We need to retrieve <type> from names.  To be done.
+(define (add-arg-info form formals arg-types)
   (rlet1 xform (if (extended-pair? form)
                  form
                  (extended-cons (car form) (cdr form)))
@@ -1302,7 +1305,8 @@
 (define-pass1-syntax (receive form cenv) :gauche
   (match form
     [(_ formals expr body ...)
-     (receive (args nreqs nopts kargs) (parse-extended-lambda-args formals)
+     (receive (args formals types nreqs nopts kargs)
+         (parse-extended-lambda-args formals)
        (unless (null? kargs)
          (error "syntax-error: extended lambda list isn't allowed in receive:"
                 form))
@@ -1312,15 +1316,25 @@
                    (pass1/body body newenv))))]
     [_ (error "syntax-error: malformed receive:" form)]))
 
-;; Returns <list of args>, <# of reqargs>, <has optarg?>, <kargs>
-;; <kargs> is like (:optional (x #f) (y #f) :rest k) etc.
+;; Returns <args>, <formals>, <types>, <nreqs>, <nopts>, <kargs>
+;;   <args> is the list of requried args, plus a restarg if any.
+;;   <formals> is a copy of input sans type annotation.
+;;   <types> is a list of types for required args.  If there's a restarg,
+;;      the lenght of <types> is one shorter than the length of <args>.
+;;   <nreqs> is the number of required arguments.
+;;   <nopts> is 0 if no optional arg, 1 if not.
+;;   <kargs> is like (:optional (x #f) (y #f) :rest k) etc.  '() if restarg.
 (define (parse-extended-lambda-args formals)
-  (let loop ([formals formals] [args '()] [n 0])
+  (let loop ([formals formals] [as '()] [fs '()] [ts '()] [n 0])
     (match formals
-      [()      (values (reverse args) n 0 '())]
-      [((? keyword-like?) . _) (values (reverse args) n 1 formals)]
-      [(x . y) (loop (cdr formals) (cons (car formals) args) (+ n 1))]
-      [x       (values (reverse (cons x args)) n 1 '())])))
+      [()      (values (reverse as) (reverse fs) (reverse ts) n 0 '())]
+      [((? keyword-like?) . _)
+       (values (reverse as) (reverse fs formals) (reverse ts) n 0 formals)]
+      [(x ':: t . y)
+       (loop y (cons x as) (cons x fs) (cons t ts) (+ n 1))]
+      [(x . y)
+       (loop y (cons x as) (cons x fs) (cons '<top> ts) (+ n 1))]
+      [x (values (reverse (cons x as)) (reverse fs x) (reverse ts) n 1 '())])))
 
 ;; Handles extended lambda list.  garg is a gensymed var that receives
 ;; restarg.
