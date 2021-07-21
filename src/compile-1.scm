@@ -206,6 +206,14 @@
     [_ #f]))
 
 ;;--------------------------------------------------------------
+;; pass1/type-expression - Compile input as a type expression
+;;
+
+(define (pass1/type-expression expr cenv)
+  (or (type/ensure (pass1 expr cenv) cenv)
+      (error "Invalid type expression:" expr)))
+
+;;--------------------------------------------------------------
 ;; pass1/body - Compiling body with internal definitions.
 ;;
 ;; For the letrec* semantics, we need to build the internal frame
@@ -1272,17 +1280,19 @@
     [(_ formals . body)
      (receive (args formals types nreqs nopts kargs)
          (parse-extended-lambda-args formals)
-       (if (null? kargs)
-         (pass1/vanilla-lambda (add-arg-info form formals types)
-                               args nreqs nopts body cenv)
-         ;; Convert extended lambda into vanilla lambda
-         (let1 restarg (gensym "rest")
-           (pass1/vanilla-lambda (add-arg-info form formals types)
-                                 (append args (list restarg))
-                                 nreqs 1
-                                 (pass1/extended-lambda-body form cenv restarg
-                                                             kargs body)
-                                 cenv))))]
+       (let1 typeinfo (and types
+                           (pass1-for-type-annotations types args cenv))
+         (if (null? kargs)
+           (pass1/vanilla-lambda (add-arg-info form formals typeinfo)
+                                 args nreqs nopts body cenv)
+           ;; Convert extended lambda into vanilla lambda
+           (let1 restarg (gensym "rest")
+             (pass1/vanilla-lambda (add-arg-info form formals typeinfo)
+                                   (append args (list restarg))
+                                   nreqs 1
+                                   (pass1/extended-lambda-body form cenv restarg
+                                                               kargs body)
+                                   cenv)))))]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
 ;; Add formals list as 'arg-info, and argument type list to 'arg-types,
@@ -1292,7 +1302,9 @@
   (rlet1 xform (if (extended-pair? form)
                  form
                  (extended-cons (car form) (cdr form)))
-    (pair-attribute-set! xform 'arg-info formals)))
+    (pair-attribute-set! xform 'arg-info formals)
+    (when arg-types
+      (pair-attribute-set! xform 'arg-types arg-types))))
 
 (define (pass1/vanilla-lambda form formals nreqs nopts body cenv) ; R7RS lambda
   (let* ([lvars (imap make-lvar+ formals)]
@@ -1345,6 +1357,19 @@
         [((? keyword-like?) . _) (values (reverse as) formals #f n 0 rest)]
         [(x . y) (loop y (cons x as) (+ n 1))]
         [x (values (reverse (cons x as)) formals #f n 1 '())]))))
+
+;; Run pass1 on each type expression in the argument type annotaions.
+;; NB: Written in a way to avoid closure allocation.
+(define (pass1-for-type-annotations types args cenv)
+  (define (type-1 type arg cenv)
+    (or (type/ensure (pass1 type cenv) cenv)
+        (errorf "Invalid type expression ~s for argument ~s" type arg)))
+  (define (type-n types args cenv)
+    (if (null? types)
+      '()
+      (cons (type-1 (car types) (car args) cenv)
+            (type-n (cdr types) (cdr args) cenv))))
+  (type-n types args cenv))
 
 ;; Handles extended lambda list.  garg is a gensymed var that receives
 ;; restarg.

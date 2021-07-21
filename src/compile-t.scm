@@ -41,6 +41,22 @@
 
 (define-in-module gauche -> (undefined)) ; need to be bound for identifier match
 
+;; Ensure the result of pass1 is a type, or returns #f.
+;; Called from pass1/type-expression to compile type expression.
+;; Always returns a ($const TYPE).
+;; Classes are wrapped with proxy-type.
+(define (type/ensure iform cenv)
+  (or (and-let* ([ ($const? iform) ]
+                 [v ($const-value iform) ]
+                 [ (is-a? v <type>) ])
+        v)
+      (and-let* ([ (has-tag? iform $GREF) ]
+                 [gloc (gref-inlinable-gloc iform)]
+                 [v (gloc-ref gloc)])
+        (cond [(is-a? v <class>) (wrap-with-proxy-type ($gref-id iform) gloc)]
+              [(is-a? v <type>) v]
+              [else #f]))))
+
 ;; Called from pass1/global-call, when we detect (<type-ctor> arg ...)
 ;; CTOR is the gloval value of type constructor,  IFORM is the $CALL node
 ;; represents the ctor invocation.
