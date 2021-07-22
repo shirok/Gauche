@@ -97,9 +97,8 @@
     val)
 
   ;; Call type constructor
-  (let1 type
-      (apply (~ ctor'constructor)
-             (map ($ check-arg-value $ get-arg-value $) ($call-args iform)))
+  (let1 type ($ construct-type ctor
+                (map ($ check-arg-value $ get-arg-value $) ($call-args iform)))
     (unless (is-a? type <descriptive-type>)
       (errorf "Type costructor ~s returned an object other than a \
                type instance: ~s"

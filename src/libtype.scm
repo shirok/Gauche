@@ -74,13 +74,13 @@
  ;;   Its instance is ScmTypeConstructor.  Provides the following slots.
  ;;   (We don't use generic functions, for they are also called from C runtime).
  ;;
- ;;   constructor :: arg ... -> <descriptive-type>
- ;;     A type constructor that creates a descriptive type.  It is called from
- ;;     either a compiler or an initcode of precompiled code.  Note that
- ;;     a raw class object should never passed to the argument---the compiler
- ;;     wraps class objects with a proxy type.  The constructor should raise
- ;;     an error if a class object is given.
- ;;     This procedure must be pure.  We may memoize the result.
+ ;;   initializer :: <descriptive-type> args -> <descriptive-type>
+ ;;     Called from a type constructor that fills the descriptive type.
+ ;;     It is called from either a compiler or an initcode of precompiled code.
+ ;;     Note that a raw class object should never passed in the args---the
+ ;;     compiler wraps class objects with a proxy type.  The initializer
+ ;;     should raise an error if a class object is given.
+ ;;     This procedure must be pure.  We may memoize the constructor result.
  ;;   deconstructor :: <descriptive-type> -> (arg ...)
  ;;     Returns a list of arguments such that when they are passed to the
  ;;     constructor, an equivalent descriptive type is constructed again.
@@ -104,7 +104,7 @@
  (define-ctype ScmTypeConstructor
    ::(.struct ScmTypeConstructorRec
               (common::ScmClass
-               constructor::ScmObj
+               initializer::ScmObj
                deconstructor::ScmObj
                validator::ScmObj
                subtypeP::ScmObj
@@ -113,7 +113,7 @@
  (define-cclass <type-constructor-meta> :base :private :no-meta
    "ScmTypeConstructor*" "Scm_TypeConstructorMetaClass"
    (c "SCM_CLASS_METACLASS_CPL")
-   ((constructor)
+   ((initializer)
     (deconstructor)
     (validator)
     (subtype? :c-name "subtypeP")
@@ -123,6 +123,7 @@
  (define-cfn Scm_TypeConstructorP (klass) ::int
    (return (SCM_ISA klass (& Scm_TypeConstructorMetaClass))))
 
+ ;; The 'name' slot is computed by the initializer.
  (define-ctype ScmDescriptiveType
    ::(.struct ScmDescriptiveTypeRec
               (hdr::ScmInstance
@@ -239,7 +240,7 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ name supers slots constructor deconstructor validator sub? sup?)
+       [(_ name supers slots initializer deconstructor validator sub? sup?)
         (let ([meta-name (rxmatch-if (#/^<(.*)>$/ (symbol->string name))
                              [_ trimmed]
                            (string->symbol #"<~|trimmed|-meta>")
@@ -252,7 +253,7 @@
                (define-class ,meta-name (<type-constructor-meta>) ())
                (define-class ,name ,supers ,slots
                  :metaclass ,meta-name
-                 :constructor ,constructor
+                 :initializer ,initializer
                  :deconstructor ,deconstructor
                  :validator ,validator
                  :subtype? ,sub?
@@ -270,6 +271,11 @@
   (and (equal? (class-of x) (class-of y))
        (equal? (deconstruct-type x) (deconstruct-type y))))
 
+;; Public interface to construct a descriptive type.
+(define (construct-type meta args)
+  (rlet1 type (make meta)
+    ((~ meta'initializer) type args)))
+
 ;; Internal API, required to precompile descriptive type constant
 (define-method deconstruct-type ((t <descriptive-type>))
   ((~ (class-of t)'deconstructor) t))
@@ -280,8 +286,9 @@
  (define-cfn Scm_ConstructType (ctor args)
    (unless (Scm_TypeConstructorP ctor)
      (SCM_TYPE_ERROR ctor "<type-constructor-meta>"))
-   (return (Scm_ApplyRec (-> (cast ScmTypeConstructor* ctor) constructor)
-                         args)))
+   (let* ([type (Scm_NewInstance (SCM_CLASS ctor) (sizeof ScmDescriptiveType))])
+     (Scm_ApplyRec2 (-> (cast ScmTypeConstructor* ctor) initializer) type args)
+     (return type)))
  )
 
 ;;;
@@ -332,7 +339,7 @@
            (string->symbol (substring s 0 (- (string-length s) 1))))))
   (if-let1 m (maybe-type type-name)
     (and-let1 mt (%lookup-type module m)
-      (make-? mt))
+      (construct-type <?> (list mt)))
     (%lookup-type module type-name)))
 
 ;;;
@@ -383,11 +390,11 @@
 ;;;
 
 
-(define (make-^ . rest)
+(define (init-^ type init-args)
   (define (scan-args xs as)
     (match xs
       [() (error "Missing '->' in the procedure type constructor arguments:"
-                 rest)]
+                 init-args)]
       [('-> . xs) (scan-results xs (reverse as) '())]
       [('* '-> . xs) (scan-results xs (reverse as '(*)) '())]
       [_
@@ -405,11 +412,10 @@
          (error "Non-class argument in the procedure type constructor:" x))]
       [_ (error "Invalid arguments:" xs)]))
 
-  (receive (args results) (scan-args rest '())
-    (make <^>
-      :name (make-compound-type-name '^ rest)
-      :arguments (apply make-Tuple args)
-      :results (apply make-Tuple results))))
+  (receive (args results) (scan-args init-args '())
+    (slot-set! type 'name      (make-compound-type-name '^ init-args))
+    (slot-set! type 'arguments (construct-type <Tuple> args))
+    (slot-set! type 'results   (construct-type <Tuple> results))))
 
 (define (deconstruct-^ type)
   (append (~ type'arguments'elements)
@@ -444,11 +450,11 @@
           (warn "unknown module during reconstructing procedure type: ~a\n"
                 module-name)
           (compute-procedure-type proc)) ;; fallback
-        ($ make-^
-           $* map (^e (if (or (memq e '(* ->)))
-                        e
-                        (or (%type-name->type module e)
-                            (error "unknown type in procedure type info:" e))))
+        ($ construct-type <^>
+           $ map (^e (if (or (memq e '(* ->)))
+                       e
+                       (or (%type-name->type module e)
+                           (error "unknown type in procedure type info:" e))))
            (vector->list encoded-type 2))))
     (compute-procedure-type proc)))
 
@@ -456,19 +462,19 @@
 (define (compute-procedure-type proc)
   (define (%procedure-type proc)
     (if-let1 clinfo (case-lambda-info proc)
-      (apply make-/ (map (^v (%procedure-type (caddr v))) clinfo))
+      (construct-type </> (map (^v (%procedure-type (caddr v))) clinfo))
       (let1 top (%class->proxy <top>)
-        (apply make-^
-               `(,@(make-list (~ proc'required) top)
-                 ,@(if (~ proc'optional) '(*) '())
-                 -> *)))))
+        (construct-type <^>
+                        `(,@(make-list (~ proc'required) top)
+                          ,@(if (~ proc'optional) '(*) '())
+                          -> *)))))
   (define (%method-type meth)
-    (apply make-^
-           `(,@(map %class->proxy (~ meth'specializers))
-             ,@(if (~ meth'optional) '(*) '())
-             -> *)))
+    (construct-type <^>
+                    `(,@(map %class->proxy (~ meth'specializers))
+                      ,@(if (~ meth'optional) '(*) '())
+                      -> *)))
   (define (%generic-type gf)
-    (apply make-/ (map %method-type (~ gf'methods))))
+    (construct-type </> (map %method-type (~ gf'methods))))
 
   (cond [(is-a? proc <procedure>) (%procedure-type proc)]
         [(is-a? proc <generic>)   (%generic-type proc)]
@@ -498,7 +504,7 @@
 (define-type-constructor <^> ()
   ((arguments :init-keyword :arguments)    ; <Tuple>
    (results   :init-keyword :results))     ; <Tuple>
-  make-^
+  init-^
   deconstruct-^
   validate-^
   subtype-^
@@ -509,11 +515,10 @@
 ;;;   Creates a union type.
 ;;;
 
-(define (make-/ . args)
+(define (init-/ type args)
   (assume (every (cut is-a? <> <type>) args))
-  (make </>
-    :name (make-compound-type-name '/ args)
-    :members args))
+  (slot-set! type 'name (make-compound-type-name '/ args))
+  (slot-set! type 'members args))
 
 (define (deconstruct-/ type)
   (~ type'members))
@@ -530,7 +535,7 @@
 
 (define-type-constructor </> ()
   ((members :init-keyword :members))
-  make-/
+  init-/
   deconstruct-/
   validate-/
   subtype-/
@@ -541,11 +546,11 @@
 ;;;   Creates a boolean-optional type, that is, <type> or #f.
 ;;;
 
-(define (make-? ptype)
-  (assume (is-a? ptype <type>))
-  (make <?>
-    :name (make-compound-type-name '? `(,ptype))
-    :primary-type ptype))
+(define (init-? type args)
+  (let1 ptype (car args)
+    (assume (is-a? ptype <type>))
+    (slot-set! type 'name (make-compound-type-name '? `(,ptype)))
+    (slot-set! type 'primary-type ptype)))
 
 (define (deconstruct-? type)
   (list (~ type'primary-type)))
@@ -563,7 +568,7 @@
 
 (define-type-constructor <?> ()
   ((primary-type :init-keyword :primary-type))
-  make-?
+  init-?
   deconstruct-?
   validate-?
   subtype-?
@@ -576,17 +581,16 @@
 
 ;; (<Tuple> type ... [*])
 
-(define (make-Tuple . args)
+(define (init-Tuple type args)
   (receive (types rest?) (if (and (pair? args) (eqv? (last args) '*))
                            (values (drop-right args 1) #t)
                            (values args #f))
     (dolist [t types]
       (unless (is-a? t <type>)
         (error "Non-type parameter in <Tuple> constructor:" t)))
-    (make <Tuple>
-      :name (make-compound-type-name 'Tuple args)
-      :elements types
-      :allow-rest? rest?)))
+    (slot-set! type 'name (make-compound-type-name 'Tuple args))
+    (slot-set! type 'elements types)
+    (slot-set! type 'allow-rest? rest?)))
 
 (define (deconstruct-Tuple type)
   (if (~ type'allow-rest?)
@@ -620,7 +624,7 @@
 (define-type-constructor <Tuple> ()
   ((elements    :init-keyword :elements)
    (allow-rest? :init-keyword :allow-rest?))
-  make-Tuple
+  init-Tuple
   deconstruct-Tuple
   validate-Tuple
   subtype-Tuple
@@ -631,12 +635,14 @@
 ;;;   A list of specified types.
 ;;;
 
-(define (make-List etype :optional (min #f) (max #f))
-  (make <List>
-    :name (make-min-max-len-type-name 'List (list etype) min max)
-    :element-type etype
-    :min-length min
-    :max-length max))
+(define (init-List type args)
+  (apply (^[etype :optional (min #f) (max #f)]
+           (slot-set! type 'name
+                      (make-min-max-len-type-name 'List (list etype) min max))
+           (slot-set! type 'element-type etype)
+           (slot-set! type 'min-length min)
+           (slot-set! type 'max-length max))
+         args))
 
 (define (deconstruct-List type)
   (list (~ type'element-type) (~ type'min-length) (~ type'max-length)))
@@ -676,7 +682,7 @@
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
-  make-List
+  init-List
   deconstruct-List
   validate-List
   subtype-List
@@ -686,12 +692,14 @@
 ;;; <Vector> element-type [min-length [max-length]]
 ;;;
 
-(define (make-Vector etype :optional (min #f) (max #f))
-  (make <Vector>
-    :name (make-min-max-len-type-name 'Vector (list etype) min max)
-    :element-type etype
-    :min-length min
-    :max-length max))
+(define (init-Vector type args)
+  (apply (^[etype :optional (min #f) (max #f)]
+           (slot-set! type 'name
+                      (make-min-max-len-type-name 'Vector (list etype) min max))
+           (slot-set! type 'element-type etype)
+           (slot-set! type 'min-length min)
+           (slot-set! type 'max-length max))
+         args))
 
 (define (deconstruct-Vector type)
   (list (~ type'element-type) (~ type'min-length) (~ type'max-length)))
@@ -725,7 +733,7 @@
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
-  make-Vector
+  init-Vector
   deconstruct-Vector
   validate-Vector
   subtype-Vector
@@ -925,7 +933,8 @@
         '(inlinable))
   (xfer (current-module)
         (find-module 'gauche.internal)
-        '(deconstruct-type
+        '(construct-type
+          deconstruct-type
           wrap-with-proxy-type
           proxy-type-ref
           proxy-type-id
