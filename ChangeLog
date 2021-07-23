@@ -1,3 +1,10 @@
+2021-07-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19.scm (describe): Let (describe <time>) show in
+	  user-friendly time units.  If it's a point of time, we show it
+	  in the date format, and if it's a duration, we show it in
+	  days/hours/minutes/seconds.
+
 2021-07-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): Show type info when describing

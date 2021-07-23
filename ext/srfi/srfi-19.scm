@@ -1237,3 +1237,49 @@
 (define (read-leap-second-table filename)
   (set! tm:leap-second-table (tm:read-tai-utc-data filename))
   (values))
+
+;;;
+;;; Gauche extension
+;;;
+
+;; Some user friendly rendering with 'describe'.
+
+(define (describe-time t)
+  (define (as-date ->date)
+    (let ([local (->date t)]
+          [gmt   (->date t 0)])
+      (if (zero? (date-zone-offset local))
+        (print (date->string gmt "in date: ~4"))
+        (format #t "in date: ~a   ~a\n"
+                (date->string local "~4")
+                (date->string gmt "~4")))))
+  (define (ns->string t)
+    (let1 ns (time-nanosecond t)
+      (cond [(zero? ns) ""]
+            [(zero? (modulo ns #e1e6)) (format "~3,'0d" (quotient ns #e1e6))]
+            [(zero? (modulo ns #e1e3)) (format "~6,'0d" (quotient ns #e1e3))]
+            [else (format "~9,'0d" ns)])))
+  (define (as-time t)
+    (let* ([secs (modulo (time-second t) 60)]
+           [z (quotient (time-second t) 60)]
+           [mins (modulo z 60)]
+           [z (quotient z 60)]
+           [hours (modulo z 24)]
+           [days (quotient z 24)])
+      (cond
+       [(> days 0) (format #t "dufation: ~ddays ~2,'0dh~2,'0dm~2,'0ds~a\n"
+                           days hours mins secs (ns->string t))]
+       [(> hours 0) (format #t "duration: ~dh~2,'0dm~2,'0ds~a\n"
+                            hours mins secs (ns->string t))]
+       [else (format #t "duration: ~dm~2,'0ds~a\n"
+                     mins secs (ns->string t))])))
+  (case (time-type t)
+    [(time-utc) (as-date time-utc->date)]
+    [(time-tai) (as-date time-tai->date)]
+    [(time-monotonic) (as-date time-monotonic->date)]
+    [(time-thread time-process time-duration) (as-time t)]))
+
+(define-method describe ((t <time>))
+  (describe-common t)
+  (describe-time t)
+  (describe-slots t))
