@@ -91,7 +91,7 @@
  ;;   subtype? :: <descriptive-type> type -> <boolean>
  ;;     Returns true iff the descriptive type is a subtype of TYPE, which may
  ;;     be a class or another descriptive type.  Note that proxy types and
- ;;     stub types are already excluded, as well as the case where reflective
+ ;;     native types are already excluded, as well as the case where reflective
  ;;     case (subtype? x x) and the base cases (subtype? x <top>).
  ;;     NB: if TYPE is a descriptive type different kind of <descriptive-type>,
  ;;     you may want to call (~ type'supertype?) to determine if it thinks
@@ -124,10 +124,14 @@
    (return (SCM_ISA klass (& Scm_TypeConstructorMetaClass))))
 
  ;; The 'name' slot is computed by the initializer.
+ ;; The 'constructorArgs' slot is #f by default.  If the instance is
+ ;; reconstructed from the precompiled form, however, we delay the actual
+ ;; initialization until the type is used.
  (define-ctype ScmDescriptiveType
    ::(.struct ScmDescriptiveTypeRec
               (hdr::ScmInstance
-               name::ScmObj)))
+               name::ScmObj
+               constructorArgs::ScmObj)))
 
  (define-cclass <descriptive-type> :base :private :no-meta
    "ScmDescriptiveType*" "Scm_DescriptiveTypeClass"
@@ -137,23 +141,24 @@
                       (SCM_NEW_INSTANCE ScmDescriptiveType klass)])
                 (cast void initargs)    ;suppress unused warning
                 (set! (-> z name) SCM_FALSE)
+                (set! (-> z constructorArgs) SCM_FALSE)
                 (return (SCM_OBJ z)))))
 
- (define-ctype ScmStubType
-   ::(.struct ScmStubTypeRec
+ (define-ctype ScmNativeType
+   ::(.struct ScmNativeTypeRec
               (hdr::ScmHeader
                name::ScmObj
                c-of-type::(.function (obj) ::int *)
                super::ScmObj
                of-type::ScmObj)))       ; obj -> bool
 
- (define-cclass <stub-type> :built-in :private :no-meta
-   "ScmStubType*" "Scm_StubTypeClass"
+ (define-cclass <native-type> :built-in :private :no-meta
+   "ScmNativeType*" "Scm_NativeTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name)
     (super)
     (of-type))
-   (printer (Scm_Printf port "#<stub-type %S>" (-> (SCM_STUB_TYPE obj) name))))
+   (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
  )
 
 ;;;
@@ -170,11 +175,11 @@
             (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
             (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
                                   type obj)))]
-         [(SCM_STUB_TYPE_P type)
-          (if (-> (SCM_STUB_TYPE type) c-of-type)
+         [(SCM_NATIVE_TYPE_P type)
+          (if (-> (SCM_NATIVE_TYPE type) c-of-type)
             (return (SCM_MAKE_BOOL
-                     (funcall (-> (SCM_STUB_TYPE type) c-of-type) obj)))
-            (return (Scm_VMApply1 (-> (SCM_STUB_TYPE type) of-type) obj)))]
+                     (funcall (-> (SCM_NATIVE_TYPE type) c-of-type) obj)))
+            (return (Scm_VMApply1 (-> (SCM_NATIVE_TYPE type) of-type) obj)))]
          [(SCM_CLASSP type)
           (return (Scm_VMIsA obj (SCM_CLASS type)))]
          [else
@@ -203,13 +208,13 @@
     [(SCM_EQ super (SCM_OBJ SCM_CLASS_TOP)) (return SCM_TRUE)]
     [(SCM_EQ sub (SCM_OBJ SCM_CLASS_BOTTOM)) (return SCM_TRUE)]
     [(SCM_EQ super sub) (return SCM_TRUE)]
-    ;; Stub types can be a subtype of a class.  No type (except BOTTOM) can
-    ;; be a subtype of a stub type.
-    [(SCM_STUB_TYPE_P sub)
-     (let* ([klass (-> (SCM_STUB_TYPE sub) super)])
+    ;; Native types can be a subtype of a class.  No type (except BOTTOM) can
+    ;; be a subtype of a native type.
+    [(SCM_NATIVE_TYPE_P sub)
+     (let* ([klass (-> (SCM_NATIVE_TYPE sub) super)])
        (SCM_ASSERT (SCM_CLASSP klass))
        (set! sub klass))]
-    [(SCM_STUB_TYPE_P super) (return FALSE)]
+    [(SCM_NATIVE_TYPE_P super) (return FALSE)]
     ;; Delegate descriptive types to its handlers.
     [(SCM_DESCRIPTIVE_TYPE_P sub)
      (let* ([k::ScmClass* (Scm_ClassOf sub)])
@@ -275,6 +280,10 @@
 (define (construct-type meta args)
   (rlet1 type (make meta)
     ((~ meta'initializer) type args)))
+
+(define (lazy-construct-type meta args)
+  (rlet1 type (make meta)
+    (slot-set! type 'constructor-args args)))
 
 ;; Internal API, required to precompile descriptive type constant
 (define-method deconstruct-type ((t <descriptive-type>))
@@ -350,7 +359,7 @@
   (string-join (map (^k (x->string
                          (cond [(is-a? k <class>) (class-name k)]
                                [(is-a? k <descriptive-type>) (~ k'name)]
-                               [(is-a? k <stub-type>) (~ k'name)]
+                               [(is-a? k <native-type>) (~ k'name)]
                                [(is-a? k <proxy-type>)
                                 (~ (proxy-type-id k) 'name)]
                                [else k])))
@@ -740,52 +749,52 @@
   supertype-Vector)
 
 ;;;
-;;; Types for stubs
+;;; Types for bridging Scheme and C
 ;;;
 
 ;; Each of these types has a corresponding cgen-type that maintains
 ;; the knowledge how it is represented in C.
 
 (inline-stub
- (define-cfn Scm_MakeStubType (name::(const char*)
-                               super
-                               c-of-type::(.function (obj)::int *))
-   (let* ([z::ScmStubType* (SCM_NEW ScmStubType)])
-     (SCM_SET_CLASS z (& Scm_StubTypeClass))
+ (define-cfn Scm_MakeNativeType (name::(const char*)
+                                 super
+                                 c-of-type::(.function (obj)::int *))
+   (let* ([z::ScmNativeType* (SCM_NEW ScmNativeType)])
+     (SCM_SET_CLASS z (& Scm_NativeTypeClass))
      (set! (-> z name) (SCM_INTERN name))
      (set! (-> z super) super)
      (set! (-> z c-of-type) c-of-type)
      (set! (-> z of-type) SCM_FALSE)
      (return (SCM_OBJ z))))
 
- (define-cise-stmt define-stub-type
+ (define-cise-stmt define-native-type
    [(_ name super fn)
-    `(let* ([z (Scm_MakeStubType ,name ,super ,fn)])
+    `(let* ([z (Scm_MakeNativeType ,name ,super ,fn)])
        (Scm_MakeBinding (Scm_GaucheModule)
-                        (SCM_SYMBOL (-> (SCM_STUB_TYPE z) name)) z
+                        (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
                         SCM_BINDING_INLINABLE))])
 
- (define-cfn stub_fixnumP (obj) ::int :static
+ (define-cfn native_fixnumP (obj) ::int :static
    (return (SCM_INTP obj)))
 
  ;; NB: Range check is also in ext/uvector/uvector.scm.  May be integrated.
- (define-cfn stub_s8P (obj) ::int :static
+ (define-cfn native_s8P (obj) ::int :static
    (return (and (SCM_INTP obj)
                 (>= (SCM_INT_VALUE obj) -128)
                 (<= (SCM_INT_VALUE obj) 127))))
- (define-cfn stub_u8P (obj) ::int :static
+ (define-cfn native_u8P (obj) ::int :static
    (return (and (SCM_INTP obj)
                 (>= (SCM_INT_VALUE obj) 0)
                 (<= (SCM_INT_VALUE obj) 255))))
- (define-cfn stub_s16P (obj) ::int :static
+ (define-cfn native_s16P (obj) ::int :static
    (return (and (SCM_INTP obj)
                 (>= (SCM_INT_VALUE obj) -32768)
                 (<= (SCM_INT_VALUE obj) 32767))))
- (define-cfn stub_u16P (obj) ::int :static
+ (define-cfn native_u16P (obj) ::int :static
    (return (and (SCM_INTP obj)
                 (>= (SCM_INT_VALUE obj) 0)
                 (<= (SCM_INT_VALUE obj) 65535))))
- (define-cfn stub_s32P (obj) ::int :static
+ (define-cfn native_s32P (obj) ::int :static
    (.if (== SIZEOF_LONG 4)
         (return (or (SCM_INTP obj)
                     (and (SCM_BIGNUMP obj)
@@ -794,7 +803,7 @@
         (return (and (SCM_INTP obj)
                      (>= (SCM_INT_VALUE obj) #x-8000_0000)
                      (<= (SCM_INT_VALUE obj) #x7fff_ffff)))))
- (define-cfn stub_u32P (obj) ::int :static
+ (define-cfn native_u32P (obj) ::int :static
    (.if (== SIZEOF_LONG 4)
         (return (or (and (SCM_INTP obj)
                          (>= (SCM_INT_VALUE obj) 0))
@@ -804,27 +813,27 @@
         (return (and (SCM_INTP obj)
                      (>= (SCM_INT_VALUE obj) 0)
                      (<= (SCM_INT_VALUE obj) #xffff_ffff)))))
- (define-cfn stub_s64P (obj) ::int :static
+ (define-cfn native_s64P (obj) ::int :static
    (return (or (SCM_INTP obj)
                (and (SCM_BIGNUMP obj)
                     (>= (Scm_NumCmp obj '#x-8000_0000_0000_0000) 0)
                     (<= (Scm_NumCmp obj '#x-7fff_ffff_ffff_ffff) 0)))))
- (define-cfn stub_u64P (obj) ::int :static
+ (define-cfn native_u64P (obj) ::int :static
    (return (or (and (SCM_INTP obj)
                     (>= (SCM_INT_VALUE obj) 0))
                (and (SCM_BIGNUMP obj)
                     (>= (Scm_Sign obj) 0)
                     (<= (Scm_NumCmp obj '#xffff_ffff_ffff_ffff) 0)))))
 
- (define-cfn stub_shortP (obj) ::int :static
+ (define-cfn native_shortP (obj) ::int :static
    (return (and (SCM_INTP obj)
                 (>= (SCM_INT_VALUE obj) SHRT_MIN)
                 (<= (SCM_INT_VALUE obj) SHRT_MAX))))
- (define-cfn stub_ushortP (obj) ::int :static
+ (define-cfn native_ushortP (obj) ::int :static
    (return (and (SCM_INTP obj)
                 (>= (SCM_INT_VALUE obj) 0)
                 (<= (SCM_INT_VALUE obj) USHRT_MAX))))
- (define-cfn stub_intP (obj) ::int :static
+ (define-cfn native_intP (obj) ::int :static
    (.if (== SIZEOF_LONG 4)
         (if (SCM_BIGNUMP obj)
           (let* ([oor::int FALSE]
@@ -838,7 +847,7 @@
             (return (and (>= v INT_MIN)
                          (<= v INT_MAX))))
           (return FALSE))))
- (define-cfn stub_uintP (obj) ::int :static
+ (define-cfn native_uintP (obj) ::int :static
    (.if (== SIZEOF_LONG 4)
         (if (SCM_BIGNUMP obj)
           (let* ([oor::int FALSE]
@@ -848,13 +857,13 @@
         (return (and (SCM_INTP obj)
                      (>= (SCM_INT_VALUE obj) 0)
                      (<= (SCM_INT_VALUE obj) UINT_MAX)))))
- (define-cfn stub_longP (obj) ::int :static
+ (define-cfn native_longP (obj) ::int :static
    (if (SCM_BIGNUMP obj)
      (let* ([oor::int FALSE])
        (cast void (Scm_GetIntegerClamp obj SCM_CLAMP_BOTH (& oor)))
        (return (not oor)))
      (return (SCM_INTP obj))))
- (define-cfn stub_ulongP (obj) ::int :static
+ (define-cfn native_ulongP (obj) ::int :static
    (if (SCM_BIGNUMP obj)
      (let* ([oor::int FALSE])
        (cast void (Scm_GetIntegerUClamp obj SCM_CLAMP_BOTH (& oor)))
@@ -862,21 +871,21 @@
      (return (and (SCM_INTP obj) (>= (SCM_INT_VALUE obj) 0)))))
 
  ;; we don't range-check flonums
- (define-cfn stub_realP (obj) ::int :static
+ (define-cfn native_realP (obj) ::int :static
    (return (SCM_REALP obj)))
 
- (define-cfn stub_cstrP (obj) ::int :static
+ (define-cfn native_cstrP (obj) ::int :static
    (return (SCM_STRINGP obj)))
 
  ;; subrs returning <void> actually return #<undef>
- (define-cfn stub_voidP (obj) ::int :static
+ (define-cfn native_voidP (obj) ::int :static
    (return (SCM_UNDEFINEDP obj)))
 
- (define-cfn stub_iportP (obj) ::int :static
+ (define-cfn native_iportP (obj) ::int :static
    (return (SCM_IPORTP obj)))
- (define-cfn stub_oportP (obj) ::int :static
+ (define-cfn native_oportP (obj) ::int :static
    (return (SCM_OPORTP obj)))
- (define-cfn stub_closureP (obj) ::int :static
+ (define-cfn native_closureP (obj) ::int :static
    (return (SCM_CLOSUREP obj)))
 
  (define-cvar intclass :static)
@@ -892,28 +901,28 @@
   (set! strclass (Scm_GlobalVariableRef (Scm_GaucheModule)
                                         (SCM_SYMBOL (SCM_INTERN "<string>"))
                                         0))
-  (define-stub-type "<fixnum>"  intclass stub_fixnumP)
-  (define-stub-type "<short>"   intclass stub_shortP)
-  (define-stub-type "<ushort>"  intclass stub_ushortP)
-  (define-stub-type "<int>"     intclass stub_intP)
-  (define-stub-type "<uint>"    intclass stub_uintP)
-  (define-stub-type "<long>"    intclass stub_longP)
-  (define-stub-type "<ulong>"   intclass stub_ulongP)
-  (define-stub-type "<int8>"    intclass stub_s8P)
-  (define-stub-type "<uint8>"   intclass stub_u8P)
-  (define-stub-type "<int16>"   intclass stub_s16P)
-  (define-stub-type "<uint16>"  intclass stub_u16P)
-  (define-stub-type "<int32>"   intclass stub_s32P)
-  (define-stub-type "<uint32>"  intclass stub_u32P)
-  (define-stub-type "<int64>"   intclass stub_s64P)
-  (define-stub-type "<uint64>"  intclass stub_u64P)
-  (define-stub-type "<float>"   realclass stub_realP)
-  (define-stub-type "<double>"  realclass stub_realP)
-  (define-stub-type "<const-cstring>" strclass stub_cstrP)
-  (define-stub-type "<input-port>"  (SCM_OBJ SCM_CLASS_PORT) stub_iportP)
-  (define-stub-type "<output-port>" (SCM_OBJ SCM_CLASS_PORT) stub_oportP)
-  (define-stub-type "<closure>" (SCM_OBJ SCM_CLASS_PROCEDURE) stub_closureP)
-  (define-stub-type "<void>"    (SCM_OBJ SCM_CLASS_TOP) stub_voidP)
+  (define-native-type "<fixnum>"  intclass native_fixnumP)
+  (define-native-type "<short>"   intclass native_shortP)
+  (define-native-type "<ushort>"  intclass native_ushortP)
+  (define-native-type "<int>"     intclass native_intP)
+  (define-native-type "<uint>"    intclass native_uintP)
+  (define-native-type "<long>"    intclass native_longP)
+  (define-native-type "<ulong>"   intclass native_ulongP)
+  (define-native-type "<int8>"    intclass native_s8P)
+  (define-native-type "<uint8>"   intclass native_u8P)
+  (define-native-type "<int16>"   intclass native_s16P)
+  (define-native-type "<uint16>"  intclass native_u16P)
+  (define-native-type "<int32>"   intclass native_s32P)
+  (define-native-type "<uint32>"  intclass native_u32P)
+  (define-native-type "<int64>"   intclass native_s64P)
+  (define-native-type "<uint64>"  intclass native_u64P)
+  (define-native-type "<float>"   realclass native_realP)
+  (define-native-type "<double>"  realclass native_realP)
+  (define-native-type "<const-cstring>" strclass native_cstrP)
+  (define-native-type "<input-port>"  (SCM_OBJ SCM_CLASS_PORT) native_iportP)
+  (define-native-type "<output-port>" (SCM_OBJ SCM_CLASS_PORT) native_oportP)
+  (define-native-type "<closure>" (SCM_OBJ SCM_CLASS_PROCEDURE) native_closureP)
+  (define-native-type "<void>"    (SCM_OBJ SCM_CLASS_TOP) native_voidP)
   ))
 
 ;;;

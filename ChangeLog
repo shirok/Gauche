@@ -1,3 +1,8 @@
+2021-07-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm: Change <stub-type> -> <native-type>.  It'll be
+	  the basis of FFI type system.
+
 2021-07-22  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-19.scm (describe): Let (describe <time>) show in
