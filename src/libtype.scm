@@ -752,9 +752,10 @@
 ;; the knowledge how it is represented in C.
 
 (inline-stub
- (define-cfn Scm_MakeNativeType (name::(const char*)
-                                 super
-                                 c-of-type::(.function (obj)::int *))
+ (define-cfn make_native_type (name::(const char*)
+                               super
+                               c-of-type::(.function (obj)::int *))
+   :static
    (let* ([z::ScmNativeType*
            (SCM_NEW_INSTANCE ScmNativeType (& Scm_NativeTypeClass))])
      (set! (-> z name) (SCM_INTERN name))
@@ -764,7 +765,7 @@
 
  (define-cise-stmt define-native-type
    [(_ name super fn)
-    `(let* ([z (Scm_MakeNativeType ,name ,super ,fn)])
+    `(let* ([z (make_native_type ,name ,super ,fn)])
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
                         SCM_BINDING_INLINABLE))])
