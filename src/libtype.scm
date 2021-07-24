@@ -146,18 +146,16 @@
 
  (define-ctype ScmNativeType
    ::(.struct ScmNativeTypeRec
-              (hdr::ScmHeader
+              (hdr::ScmInstance
                name::ScmObj
                c-of-type::(.function (obj) ::int *)
-               super::ScmObj
-               of-type::ScmObj)))       ; obj -> bool
+               super::ScmObj)))
 
  (define-cclass <native-type> :built-in :private :no-meta
    "ScmNativeType*" "Scm_NativeTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name)
-    (super)
-    (of-type))
+    (super))
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
  )
 
@@ -176,10 +174,8 @@
             (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) validator)
                                   type obj)))]
          [(SCM_NATIVE_TYPE_P type)
-          (if (-> (SCM_NATIVE_TYPE type) c-of-type)
-            (return (SCM_MAKE_BOOL
-                     (funcall (-> (SCM_NATIVE_TYPE type) c-of-type) obj)))
-            (return (Scm_VMApply1 (-> (SCM_NATIVE_TYPE type) of-type) obj)))]
+          (return (SCM_MAKE_BOOL
+                   (funcall (-> (SCM_NATIVE_TYPE type) c-of-type) obj)))]
          [(SCM_CLASSP type)
           (return (Scm_VMIsA obj (SCM_CLASS type)))]
          [else
@@ -759,12 +755,11 @@
  (define-cfn Scm_MakeNativeType (name::(const char*)
                                  super
                                  c-of-type::(.function (obj)::int *))
-   (let* ([z::ScmNativeType* (SCM_NEW ScmNativeType)])
-     (SCM_SET_CLASS z (& Scm_NativeTypeClass))
+   (let* ([z::ScmNativeType*
+           (SCM_NEW_INSTANCE ScmNativeType (& Scm_NativeTypeClass))])
      (set! (-> z name) (SCM_INTERN name))
      (set! (-> z super) super)
      (set! (-> z c-of-type) c-of-type)
-     (set! (-> z of-type) SCM_FALSE)
      (return (SCM_OBJ z))))
 
  (define-cise-stmt define-native-type
