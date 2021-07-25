@@ -882,6 +882,24 @@
        (return (not oor)))
      (return (and (SCM_INTP obj) (>= (SCM_INT_VALUE obj) 0)))))
 
+ (define-cvar SCM_SIZE_MAX :static)
+ (define-cvar SCM_SSIZE_MAX :static)
+ (define-cvar SCM_SSIZE_MIN :static)
+ (define-cvar SCM_PTRDIFF_MAX :static)
+ (define-cvar SCM_PTRDIFF_MIN :static)
+ (define-cfn native_sizetP (obj) ::int :static
+   (return (and (SCM_INTEGERP obj)
+                (>= (Scm_Sign obj) 0)
+                (<= (Scm_NumCmp obj SCM_SIZE_MAX) 0))))
+ (define-cfn native_ssizetP (obj) ::int :static
+   (return (and (SCM_INTEGERP obj)
+                (>= (Scm_NumCmp obj SCM_SSIZE_MIN) 0)
+                (<= (Scm_NumCmp obj SCM_SSIZE_MAX) 0))))
+ (define-cfn native_ptrdifftP (obj) ::int :static
+   (return (and (SCM_INTEGERP obj)
+                (>= (Scm_NumCmp obj SCM_PTRDIFF_MIN) 0)
+                (<= (Scm_NumCmp obj SCM_PTRDIFF_MAX) 0))))
+
  ;; we don't range-check flonums
  (define-cfn native_realP (obj) ::int :static
    (return (SCM_REALP obj)))
@@ -901,6 +919,12 @@
    (return (SCM_CLOSUREP obj)))
 
  (initcode
+  (set! SCM_SIZE_MAX (Scm_MakeIntegerU SIZE_MAX))
+  (set! SCM_SSIZE_MAX (Scm_MakeInteger SSIZE_MAX))
+  (set! SCM_SSIZE_MIN (Scm_MakeInteger (- (- SSIZE_MAX) 1)))
+  (set! SCM_PTRDIFF_MAX (Scm_MakeInteger PTRDIFF_MAX))
+  (set! SCM_PTRDIFF_MIN (Scm_MakeInteger (- (- PTRDIFF_MAX) 1)))
+
   (define-native-type "<fixnum>"  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
   (define-native-type "<short>"   SCM_CLASS_INTEGER short native_shortP)
   (define-native-type "<ushort>"  SCM_CLASS_INTEGER u_short native_ushortP)
@@ -916,6 +940,9 @@
   (define-native-type "<uint32>"  SCM_CLASS_INTEGER uint32_t native_u32P)
   (define-native-type "<int64>"   SCM_CLASS_INTEGER int64_t native_s64P)
   (define-native-type "<uint64>"  SCM_CLASS_INTEGER uint64_t native_u64P)
+  (define-native-type "<size_t>"  SCM_CLASS_INTEGER size_t native_sizetP)
+  (define-native-type "<ssize_t>" SCM_CLASS_INTEGER ssize_t native_ssizetP)
+  (define-native-type "<ptrdiff_t>" SCM_CLASS_INTEGER ptrdiff_t native_ptrdifftP)
   (define-native-type "<float>"   SCM_CLASS_REAL float native_realP)
   (define-native-type "<double>"  SCM_CLASS_REAL double native_realP)
   (define-native-type "<const-cstring>" SCM_CLASS_STRING char* native_cstrP)
