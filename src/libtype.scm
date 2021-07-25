@@ -70,6 +70,8 @@
 
 (inline-stub
  (.include "gauche/priv/classP.h")
+ (.include "gauche/priv/nativeP.h")
+
  ;; Metaclass: <type-constructor-meta>
  ;;   Its instance is ScmTypeConstructor.  Provides the following slots.
  ;;   (We don't use generic functions, for they are also called from C runtime).
@@ -144,18 +146,25 @@
                 (set! (-> z constructorArgs) SCM_FALSE)
                 (return (SCM_OBJ z)))))
 
+ ;; TRANSIENT: for size and alignemnt slots, we'll change them to size_t once
+ ;; 0.9.11 is released.  (0.9.10's precompiler doesn't support <size_t>
+ ;; stub types.
  (define-ctype ScmNativeType
    ::(.struct ScmNativeTypeRec
               (hdr::ScmInstance
                name::ScmObj
                c-of-type::(.function (obj) ::int *)
-               super::ScmObj)))
+               super::ScmObj
+               size::u_long
+               alignment::u_long)))
 
  (define-cclass <native-type> :built-in :private :no-meta
    "ScmNativeType*" "Scm_NativeTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name)
-    (super))
+    (super)
+    (size :type <ulong>)
+    (alignment :type <ulong>))
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
  )
 
@@ -754,6 +763,8 @@
 (inline-stub
  (define-cfn make_native_type (name::(const char*)
                                super
+                               size::size_t
+                               alignment::size_t
                                c-of-type::(.function (obj)::int *))
    :static
    (let* ([z::ScmNativeType*
@@ -761,11 +772,16 @@
      (set! (-> z name) (SCM_INTERN name))
      (set! (-> z super) super)
      (set! (-> z c-of-type) c-of-type)
+     (set! (-> z size) size)
+     (set! (-> z alignment) alignment)
      (return (SCM_OBJ z))))
 
  (define-cise-stmt define-native-type
-   [(_ name super fn)
-    `(let* ([z (make_native_type ,name ,super ,fn)])
+   [(_ name super ctype fn)
+    `(let* ([z (make_native_type ,name (SCM_OBJ ,super)
+                                 (sizeof (.type ,ctype))
+                                 (SCM_ALIGNOF (.type ,ctype))
+                                 ,fn)])
        (Scm_MakeBinding (Scm_GaucheModule)
                         (SCM_SYMBOL (-> (SCM_NATIVE_TYPE z) name)) z
                         SCM_BINDING_INLINABLE))])
@@ -884,41 +900,29 @@
  (define-cfn native_closureP (obj) ::int :static
    (return (SCM_CLOSUREP obj)))
 
- (define-cvar intclass :static)
- (define-cvar realclass :static)
- (define-cvar strclass :static)
  (initcode
-  (set! intclass (Scm_GlobalVariableRef (Scm_GaucheModule)
-                                        (SCM_SYMBOL (SCM_INTERN "<integer>"))
-                                        0))
-  (set! realclass (Scm_GlobalVariableRef (Scm_GaucheModule)
-                                         (SCM_SYMBOL (SCM_INTERN "<real>"))
-                                         0))
-  (set! strclass (Scm_GlobalVariableRef (Scm_GaucheModule)
-                                        (SCM_SYMBOL (SCM_INTERN "<string>"))
-                                        0))
-  (define-native-type "<fixnum>"  intclass native_fixnumP)
-  (define-native-type "<short>"   intclass native_shortP)
-  (define-native-type "<ushort>"  intclass native_ushortP)
-  (define-native-type "<int>"     intclass native_intP)
-  (define-native-type "<uint>"    intclass native_uintP)
-  (define-native-type "<long>"    intclass native_longP)
-  (define-native-type "<ulong>"   intclass native_ulongP)
-  (define-native-type "<int8>"    intclass native_s8P)
-  (define-native-type "<uint8>"   intclass native_u8P)
-  (define-native-type "<int16>"   intclass native_s16P)
-  (define-native-type "<uint16>"  intclass native_u16P)
-  (define-native-type "<int32>"   intclass native_s32P)
-  (define-native-type "<uint32>"  intclass native_u32P)
-  (define-native-type "<int64>"   intclass native_s64P)
-  (define-native-type "<uint64>"  intclass native_u64P)
-  (define-native-type "<float>"   realclass native_realP)
-  (define-native-type "<double>"  realclass native_realP)
-  (define-native-type "<const-cstring>" strclass native_cstrP)
-  (define-native-type "<input-port>"  (SCM_OBJ SCM_CLASS_PORT) native_iportP)
-  (define-native-type "<output-port>" (SCM_OBJ SCM_CLASS_PORT) native_oportP)
-  (define-native-type "<closure>" (SCM_OBJ SCM_CLASS_PROCEDURE) native_closureP)
-  (define-native-type "<void>"    (SCM_OBJ SCM_CLASS_TOP) native_voidP)
+  (define-native-type "<fixnum>"  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
+  (define-native-type "<short>"   SCM_CLASS_INTEGER short native_shortP)
+  (define-native-type "<ushort>"  SCM_CLASS_INTEGER u_short native_ushortP)
+  (define-native-type "<int>"     SCM_CLASS_INTEGER int native_intP)
+  (define-native-type "<uint>"    SCM_CLASS_INTEGER u_int native_uintP)
+  (define-native-type "<long>"    SCM_CLASS_INTEGER long native_longP)
+  (define-native-type "<ulong>"   SCM_CLASS_INTEGER u_long native_ulongP)
+  (define-native-type "<int8>"    SCM_CLASS_INTEGER int8_t native_s8P)
+  (define-native-type "<uint8>"   SCM_CLASS_INTEGER uint8_t native_u8P)
+  (define-native-type "<int16>"   SCM_CLASS_INTEGER int16_t native_s16P)
+  (define-native-type "<uint16>"  SCM_CLASS_INTEGER uint16_t native_u16P)
+  (define-native-type "<int32>"   SCM_CLASS_INTEGER int32_t native_s32P)
+  (define-native-type "<uint32>"  SCM_CLASS_INTEGER uint32_t native_u32P)
+  (define-native-type "<int64>"   SCM_CLASS_INTEGER int64_t native_s64P)
+  (define-native-type "<uint64>"  SCM_CLASS_INTEGER uint64_t native_u64P)
+  (define-native-type "<float>"   SCM_CLASS_REAL float native_realP)
+  (define-native-type "<double>"  SCM_CLASS_REAL double native_realP)
+  (define-native-type "<const-cstring>" SCM_CLASS_STRING char* native_cstrP)
+  (define-native-type "<input-port>"  SCM_CLASS_PORT ScmObj native_iportP)
+  (define-native-type "<output-port>" SCM_CLASS_PORT ScmObj native_oportP)
+  (define-native-type "<closure>" SCM_CLASS_PROCEDURE ScmObj native_closureP)
+  (define-native-type "<void>"    SCM_CLASS_TOP ScmObj native_voidP)
   ))
 
 ;;;
