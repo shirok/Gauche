@@ -34,6 +34,13 @@
 #ifndef GAUCHE_PRIV_NATIVEP_H
 #define GAUCHE_PRIV_NATIVEP_H
 
+#if defined(HAVE_STDALIGN_H)
+#define SCM_ALIGNOF(type) _Alignof(type)
+#else  /*!defined(HAVE_STDALIGN_H)*/
+#define SCM_ALIGNOF(type) offsetof(struct { char c; type m; }, m)
+#endif /*!defined(HAVE_STDALIGN_H)*/
+
+
 SCM_EXTERN ScmObj Scm__VMCallNative(ScmVM *vm,
                                     ScmSmallInt tstart,
                                     ScmSmallInt tend,

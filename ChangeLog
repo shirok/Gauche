@@ -1,3 +1,7 @@
+2021-07-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/nativeP.h (SCM_ALIGNOF): Added.
+
 2021-07-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm: Change <stub-type> -> <native-type>.  It'll be

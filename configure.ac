@@ -420,6 +420,9 @@ AC_CHECK_HEADERS(pty.h util.h bsd/libutil.h libutil.h sys/loadavg.h sys/resource
 AC_CHECK_HEADERS(sys/statvfs.h)
 AC_CHECK_HEADERS(sys/mman.h)
 
+dnl C11 stdalign availability
+AC_CHECK_HEADERS(stdalign.h)
+
 dnl glibc specific
 AC_CHECK_HEADERS(fpu_control.h)
 
