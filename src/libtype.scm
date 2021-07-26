@@ -646,19 +646,25 @@
 
 ;;;
 ;;; Class: <List>
-;;;   A list of specified types.
+;;; Class: <Vector>
+;;;   A list or vector of specified types.
 ;;;
 
-(define (init-List type args)
-  (apply (^[etype :optional (min #f) (max #f)]
-           (slot-set! type 'name
-                      (make-min-max-len-type-name 'List (list etype) min max))
-           (slot-set! type 'element-type etype)
-           (slot-set! type 'min-length min)
-           (slot-set! type 'max-length max))
-         args))
+(define (make-init-Seq name)
+  (^[type args]
+    (apply (^[etype :optional (min #f) (max #f)]
+             (unless (or (not min) (real? min))
+               (error "min argument must be a real number or #f, but got:" min))
+             (unless (or (not max) (real? max))
+               (error "max argument must be a real number or #f, but got:" max))
+             (slot-set! type 'name
+                        (make-min-max-len-type-name name (list etype) min max))
+             (slot-set! type 'element-type etype)
+             (slot-set! type 'min-length min)
+             (slot-set! type 'max-length max))
+           args)))
 
-(define (deconstruct-List type)
+(define (deconstruct-Seq type)
   (list (~ type'element-type) (~ type'min-length) (~ type'max-length)))
 
 (define (validate-List type obj)
@@ -680,44 +686,6 @@
               [(of-type? (car obj) et) (loop (cdr obj) (+ n 1))]
               [else #f])))))
 
-(define (subtype-List type super)
-  (or (eqv? super <list>)
-      (and (is-a? super <List>)
-           (subtype? (~ type'element-type) (~ super'element-type))
-           (>= (or (~ type'min-length) 0)
-               (or (~ super'min-length) 0))
-           (<= (or (~ type'max-length) +inf.0)
-               (or (~ super'max-length) +inf.0)))
-      (%delegate-to-super type super)))
-
-(define (supertype-List type sub) #f)
-
-(define-type-constructor <List> ()
-  ((element-type :init-keyword :element-type)
-   (min-length :init-keyword :min-length :init-value #f)
-   (max-length :init-keyword :max-length :init-value #f))
-  init-List
-  deconstruct-List
-  validate-List
-  subtype-List
-  supertype-List)
-
-;;;
-;;; <Vector> element-type [min-length [max-length]]
-;;;
-
-(define (init-Vector type args)
-  (apply (^[etype :optional (min #f) (max #f)]
-           (slot-set! type 'name
-                      (make-min-max-len-type-name 'Vector (list etype) min max))
-           (slot-set! type 'element-type etype)
-           (slot-set! type 'min-length min)
-           (slot-set! type 'max-length max))
-         args))
-
-(define (deconstruct-Vector type)
-  (list (~ type'element-type) (~ type'min-length) (~ type'max-length)))
-
 (define (validate-Vector type obj)
   (and (vector? obj)
        (let ([et (~ type'element-type)]
@@ -731,27 +699,38 @@
                       [(of-type? (vector-ref obj i) et) (loop (+ i 1))]
                       [else #f]))))))
 
-(define (subtype-Vector type super)
-  (or (eqv? super <vector>)
-      (and (is-a? super <Vector>)
-           (subtype? (~ type'element-type) (~ super'element-type))
-           (>= (or (~ type'min-length) 0)
-               (or (~ super'min-length) 0))
-           (<= (or (~ type'max-length) +inf.0)
-               (or (~ super'max-length) +inf.0)))
-      (%delegate-to-super type super)))
+(define (make-subtype-Seq base-type)
+  (^[type super]
+    (or (eqv? super base-type)
+        (and (is-a? super (class-of type))
+             (subtype? (~ type'element-type) (~ super'element-type))
+             (>= (or (~ type'min-length) 0)
+                 (or (~ super'min-length) 0))
+             (<= (or (~ type'max-length) +inf.0)
+                 (or (~ super'max-length) +inf.0)))
+        (%delegate-to-super type super))))
 
-(define (supertype-Vector type sub) #f)
+(define (supertype-Seq type sub) #f)
+
+(define-type-constructor <List> ()
+  ((element-type :init-keyword :element-type)
+   (min-length :init-keyword :min-length :init-value #f)
+   (max-length :init-keyword :max-length :init-value #f))
+  (make-init-Seq 'List)
+  deconstruct-Seq
+  validate-List
+  (make-subtype-Seq <list>)
+  supertype-Seq)
 
 (define-type-constructor <Vector> ()
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
-  init-Vector
-  deconstruct-Vector
+  (make-init-Seq 'Vector)
+  deconstruct-Seq
   validate-Vector
-  subtype-Vector
-  supertype-Vector)
+  (make-subtype-Seq <vector>)
+  supertype-Seq)
 
 ;;;
 ;;; Types for bridging Scheme and C
