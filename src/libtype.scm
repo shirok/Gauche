@@ -32,7 +32,7 @@
 ;;;
 
 ;; This must be the first form to prevents generation of *.sci file
-(declare (keep-private-macro define-type-constructor))
+(declare)
 
 ;; In Gauche, types are a data structure that appears in both compile-time
 ;; and run-time, describes metalevel properties of run-time data.
@@ -158,7 +158,7 @@
                size::u_long
                alignment::u_long)))
 
- (define-cclass <native-type> :built-in :private :no-meta
+ (define-cclass <native-type> :base :private :no-meta
    "ScmNativeType*" "Scm_NativeTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name)
@@ -167,6 +167,13 @@
     (alignment :type <ulong>))
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
  )
+
+(define-method initialize ((c <type-constructor-meta>) initargs)
+  (next-method)
+  (unless (slot-bound? c 'subtype?)
+    (slot-set! c 'subtype? (^[type super] #f)))
+  (unless (slot-bound? c 'supertype?)
+    (slot-set! c 'supertype? (^[type sub] #f))))
 
 ;;;
 ;;; of-type? obj type
@@ -239,35 +246,8 @@
        ((~ (class-of super)'supertype?) super type)))
 
 ;;;
-;;; Descriptive type constructors
+;;; Descriptive type infrastructure
 ;;;
-
-;; define-type-constructor name supers
-;;   (slot ...)
-;;   of-type
-
-(define-syntax define-type-constructor
-  (er-macro-transformer
-   (^[f r c]
-     (match f
-       [(_ name supers slots initializer deconstructor validator sub? sup?)
-        (let ([meta-name (rxmatch-if (#/^<(.*)>$/ (symbol->string name))
-                             [_ trimmed]
-                           (string->symbol #"<~|trimmed|-meta>")
-                           (string->symbol #"~|name|-meta"))]
-              [supers (if (null? supers)
-                        (list (r'<descriptive-type>))
-                        supers)])
-          (quasirename r
-            `(begin
-               (define-class ,meta-name (<type-constructor-meta>) ())
-               (define-class ,name ,supers ,slots
-                 :metaclass ,meta-name
-                 :initializer ,initializer
-                 :deconstructor ,deconstructor
-                 :validator ,validator
-                 :subtype? ,sub?
-                 :supertype? ,sup?))))]))))
 
 (define-method allocate-instance ((t <descriptive-type>) initargs)
   (error "Abstract type instance cannot instantiate a concrete object:" t))
@@ -448,10 +428,6 @@
          (subtype-Tuple (~ super'results) (~ type'results)))
     (%delegate-to-super type super)))
 
-;; No types other than <^ ...> can be a subtype of <^>, but that case is
-;; already handled.
-(define (supertype-^ type sub) #f)
-
 ;; Internal API - called from procedure-type (libproc)
 (define (reconstruct-procedure-type proc encoded-type)
   (if (and (vector? encoded-type)
@@ -515,78 +491,56 @@
     (Scm_Error "Class %S doesn't have a known global binding and can't be used \
                 in a type expression." klass)))
 
-(define-type-constructor <^> ()
+(define-class <^> (<descriptive-type>)
   ((arguments :init-keyword :arguments)    ; <Tuple>
    (results   :init-keyword :results))     ; <Tuple>
-  init-^
-  deconstruct-^
-  validate-^
-  subtype-^
-  supertype-^)
+  :metaclass <type-constructor-meta>
+  :initializer init-^
+  :deconstructor deconstruct-^
+  :validator validate-^
+  :subtype? subtype-^)
 
 ;;;
 ;;; Class: </>
 ;;;   Creates a union type.
 ;;;
 
-(define (init-/ type args)
-  (assume (every (cut is-a? <> <type>) args))
-  (slot-set! type 'name (make-compound-type-name '/ args))
-  (slot-set! type 'members args))
-
-(define (deconstruct-/ type)
-  (~ type'members))
-
-(define (validate-/ type obj)
-  (any (cut of-type? obj <>) (~ type'members)))
-
-(define (subtype-/ type super)
-  (if (is-a? super </>)
-    (every (cut subtype? <> super) (~ type'members))
-    (%delegate-to-super type super)))
-
-(define (supertype-/ type sub) (any (cut subtype? sub <>) (~ type'members)))
-
-(define-type-constructor </> ()
+(define-class </> (<descriptive-type>)
   ((members :init-keyword :members))
-  init-/
-  deconstruct-/
-  validate-/
-  subtype-/
-  supertype-/)
+  :metaclass <type-constructor-meta>
+  :initializer (^[type args]
+                 (assume (every (cut is-a? <> <type>) args))
+                 (slot-set! type 'name (make-compound-type-name '/ args))
+                 (slot-set! type 'members args))
+  :deconstructor (^[type] (~ type'members))
+  :validator (^[type obj] (any (cut of-type? obj <>) (~ type'members)))
+  :subtype? (^[type super]
+              (if (is-a? super </>)
+                (every (cut subtype? <> super) (~ type'members))
+                (%delegate-to-super type super)))
+  :supertype? (^[type sub] (any (cut subtype? sub <>) (~ type'members))))
 
 ;;;
 ;;; Class: <?>
 ;;;   Creates a boolean-optional type, that is, <type> or #f.
 ;;;
 
-(define (init-? type args)
-  (let1 ptype (car args)
-    (assume (is-a? ptype <type>))
-    (slot-set! type 'name (make-compound-type-name '? `(,ptype)))
-    (slot-set! type 'primary-type ptype)))
-
-(define (deconstruct-? type)
-  (list (~ type'primary-type)))
-
-(define (validate-? type obj)
-  (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
-
-(define (subtype-? type super)
-  (if (is-a? super <?>)
-    (subtype? (~ type'primary-type) (~ super'primary-type))
-    (%delegate-to-super type super)))
-
-(define (supertype-? type sub)
-  (subtype? sub (~ type'primary-type)))
-
-(define-type-constructor <?> ()
+(define-class <?> (<descriptive-type>)
   ((primary-type :init-keyword :primary-type))
-  init-?
-  deconstruct-?
-  validate-?
-  subtype-?
-  supertype-?)
+  :metaclass <type-constructor-meta>
+  :initializer (^[type args]
+                 (let1 ptype (car args)
+                   (assume (is-a? ptype <type>))
+                   (slot-set! type 'name (make-compound-type-name '? `(,ptype)))
+                   (slot-set! type 'primary-type ptype)))
+  :deconstructor (^[type] (list (~ type'primary-type)))
+  :validator (^[type obj]
+               (or (eqv? obj #f) (of-type? obj (~ type'primary-type))))
+  :subtype? (^[type super]
+              (if (is-a? super <?>)
+                (subtype? (~ type'primary-type) (~ super'primary-type))
+                (%delegate-to-super type super)))
+  :supertype? (^[type sub] (subtype? sub (~ type'primary-type))))
 
 ;;;
 ;;; Class: <Tuple>
@@ -633,16 +587,14 @@
                (or (~ super'max-length) +inf.0)))
       (%delegate-to-super type super)))
 
-(define (supertype-Tuple type sub) #f)
-
-(define-type-constructor <Tuple> ()
+(define-class <Tuple> (<descriptive-type>)
   ((elements    :init-keyword :elements)
    (allow-rest? :init-keyword :allow-rest?))
-  init-Tuple
-  deconstruct-Tuple
-  validate-Tuple
-  subtype-Tuple
-  supertype-Tuple)
+  :metaclass <type-constructor-meta>
+  :initializer init-Tuple
+  :deconstructor deconstruct-Tuple
+  :validator  validate-Tuple
+  :subtype? subtype-Tuple)
 
 ;;;
 ;;; Class: <List>
@@ -710,27 +662,25 @@
                  (or (~ super'max-length) +inf.0)))
         (%delegate-to-super type super))))
 
-(define (supertype-Seq type sub) #f)
-
-(define-type-constructor <List> ()
+(define-class <List> (<descriptive-type>)
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
-  (make-init-Seq 'List)
-  deconstruct-Seq
-  validate-List
-  (make-subtype-Seq <list>)
-  supertype-Seq)
+  :metaclass <type-constructor-meta>
+  :initializer (make-init-Seq 'List)
+  :deconstructor deconstruct-Seq
+  :validator validate-List
+  :subtype? (make-subtype-Seq <list>))
 
-(define-type-constructor <Vector> ()
+(define-class <Vector> (<descriptive-type>)
   ((element-type :init-keyword :element-type)
    (min-length :init-keyword :min-length :init-value #f)
    (max-length :init-keyword :max-length :init-value #f))
-  (make-init-Seq 'Vector)
-  deconstruct-Seq
-  validate-Vector
-  (make-subtype-Seq <vector>)
-  supertype-Seq)
+  :metaclass <type-constructor-meta>
+  :initializer (make-init-Seq 'Vector)
+  :deconstructor deconstruct-Seq
+  :validator validate-Vector
+  :subtype? (make-subtype-Seq <vector>))
 
 ;;;
 ;;; Types for bridging Scheme and C
@@ -943,6 +893,7 @@
         (find-module 'gauche)
         '(<type-constructor-meta>
           <descriptive-type>
+          <native-type>
           <^> </> <?> <Tuple> <List> <Vector>
           subtype? of-type?)
         '(inlinable))
