@@ -1,3 +1,10 @@
+2021-07-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-remove-files, test-with-temporary-directory):
+	  Added.  test-remove-files is effectively the same as remove-files in
+	  file.util, and only for the tests that can't rely on file.util.
+	  test-with-temporary-directory is generally useful.
+
 2021-07-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/nativeP.h (SCM_ALIGNOF): Added.

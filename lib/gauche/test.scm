@@ -87,7 +87,9 @@
           test-error test-one-of test-none-of
           test-check test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test
-          test-count++ test-pass++ test-fail++))
+          test-count++ test-pass++ test-fail++
+
+          test-remove-files test-with-temporary-directory))
 (select-module gauche.test)
 
 ;; Autoload test-script to avoid depending other modules
@@ -545,3 +547,27 @@
   (unless (and (zero? (vector-ref *test-counts* 2))
                (zero? (vector-ref *test-counts* 3)))
     (exit 1)))
+
+;; Temporary files and cleanup  --------------------------------------
+
+;; Remove files and directories.  Functionally same as 'remove-files' in
+;; file.util; but this can be used _before_ we test file.util.
+(define (test-remove-files . paths)
+  (define (remove-1 path)
+    (if (file-is-directory? path)
+      (begin (for-each (^e (unless (member e '("." ".."))
+                             (remove-1 (string-append path "/" e))))
+                       (sys-readdir path))
+             (sys-rmdir path))
+      (sys-unlink path)))
+  (for-each remove-1 paths))
+
+;; Create a fresh DIR, call THUNK (without cd'ing), then remove DIR.
+(define (test-with-temporary-directory dir thunk)
+  (test-remove-files dir)
+  (sys-mkdir dir #o755)
+  ;; Avoid relying on unwind-protect
+  (dynamic-wind
+    (^[] #f)
+    thunk
+    (^[] (test-remove-files dir))))

@@ -23,6 +23,7 @@
 (define (n pathname) (sys-normalize-pathname pathname))
 
 ;; some common operations via command
+;; NB: We do not use sys-* interface yet, for we're going to test them!
 (define (cmd-rmrf dir)
   (cond-expand
    (gauche.os.windows

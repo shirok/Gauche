@@ -117,19 +117,6 @@
               [cur** (current-directory)])
          (list root root* (string=? cur cur*) (string=? cur* cur**))))
 
-;; rm -rf
-(define (cmd-rmrf dir)
-  ;; shorthand of normalizing pathname.  this doesn't do anything on
-  ;; unix, but on Windows the separator in PATHNAME is replaced.
-  (define (n pathname) (sys-normalize-pathname pathname))
-
-  (cond-expand
-   [gauche.os.windows
-    (sys-system #"rmdir /q /s ~(n dir) > NUL 2>&1")
-    (sys-system #"del /q ~(n dir) > NUL 2>&1")]
-   [else
-    (sys-system #"rm -rf ~dir > /dev/null")]))
-
 ;; prepare test data set
 (define *test-tree*
   `(test.out
@@ -159,7 +146,7 @@
               test12.o))
      )))
 
-(cmd-rmrf "test.out")
+(test-remove-files "test.out")
 
 (test* "create-directory-tree" #t
        (begin (create-directory-tree "." *test-tree*)
@@ -338,7 +325,7 @@
                                                     files))))))
        )
 
-(cmd-rmrf "test.out")
+(test-remove-files "test.out")
 
 ;;=====================================================================
 (test-section "file utils")
