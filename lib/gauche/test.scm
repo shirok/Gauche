@@ -85,7 +85,7 @@
   (export test test* test-start test-end test-running? test-section test-log
           test-module test-script
           test-error test-one-of test-none-of
-          test-check test-record-file test-summary-check
+          test-check test-report test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test
           test-count++ test-pass++ test-fail++
 
@@ -220,11 +220,21 @@
 
 ;; Tests ------------------------------------------------------------
 
+;; test msg expect thunk :optional check hook report
+;;   check is called (check expected actual-result).  default is test-check.
+;;   hook is called (hook fail|pass msg expected actual-result)
+;;   report is called (report msg expected actual-result) when failed.
+;;                  The output must end with newline.
+
 ;; Primitive test.  This uses neither with-error-handler nor the
 ;; object system, so it can be used _before_ those constructs are tested.
 (define (prim-test msg expect thunk . args)
-  (let ([cmp  (if (pair? args) (car args) test-check)]
-        [hook (and (pair? args) (pair? (cdr args)) (cadr args))])
+  (let ([cmp  (or (and (pair? args) (car args))
+                  test-check)]
+        [hook (and (pair? args) (pair? (cdr args)) (cadr args))]
+        [report (or (and (pair? args) (pair? (cdr args)) (pair? (cddr args))
+                         (caddr args))
+                    test-report)])
     (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
     (test-count++)
@@ -234,7 +244,7 @@
              (test-pass++)
              (when hook (hook 'pass msg expect r))]
             [else
-             (format/ss #t "ERROR: GOT ~S\n" r)
+             (report msg expect r)
              (test-fail++ msg expect r)
              (when hook (hook 'fail msg expect r))])
       (flush))))
@@ -457,6 +467,10 @@
          (cons name src-code))))
 
 ;; Logging and bookkeeping -----------------------------------------
+
+;; Default report procedure
+(define (test-report msg expected actual)
+  (format #t "ERROR: GOT ~S\n" actual))
 
 ;; private global flag, true during we're running tests.
 ;; (we avoid using parameters intentionally.)

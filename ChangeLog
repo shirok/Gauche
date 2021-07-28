@@ -1,3 +1,8 @@
+2021-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm (test-report): Add an optional 'report' arg to
+	  prim-test, test and test*, to customize failure reporting.
+
 2021-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-remove-files, test-with-temporary-directory):
