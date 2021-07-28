@@ -19970,7 +19970,7 @@ A convenience macro that wraps @var{expr} by lambda.
 @end example
 @end defmac
 
-@defun test name expected thunk :optional check hook
+@defun test name expected thunk :optional check hook report
 @c MOD gauche.test
 @c EN
 Calls @var{thunk}, and checks its result fits @var{expected}
@@ -20060,6 +20060,29 @@ do its own bookkeeping.
 これは、@code{gauche.test}をラップしたライブラリが独自にテスト結果を記録したい
 場合に便利です。
 @c COMMON
+
+@c EN
+Finally, @var{report} optional argument must be an @code{#f} or a
+procedure that takes three arguments.  If it is a procedure, it is called
+after @var{check} returns false (but before @var{hook} is called).
+The first argument is @var{name},
+the seond argument is @var{expected}, and the third argument
+is either the result of @var{thunk}, or a @code{<test-error>} object
+when @var{thunk} raises an error.
+The default is @code{test-report} procedure, which calls
+@code{(format #t "ERROR: GOT ~S\n" actual)}.  It can customize
+the message to be printed when the test is failed.  The output
+must end with a newline.
+@c JP
+最後に、省略可能引数@var{report}は@code{#f}か、引数を3つ取る手続きです。
+@var{check}が偽を返した場合に呼ばれます (ただし、@var{hook}が呼ばれる前です)。
+最初の引数は@var{name}、次の引数は@var{expeced}、最後の引数は@var{thunk}が
+返した値か、@var{thunk}がエラーを投げた場合は@code{<test-error>}オブジェクトです。
+デフォルトは@code{test-error}手続きで、これは
+@code{(format #t "ERROR: GOT ~S\n" actual)}を呼び出します。
+別の手続きを与えることにより、テスト失敗時の出力をカスタマイズできます。
+その場合、最後に改行を出力してください。
+@c COMMON
 @end defun
 
 @defun test-check expected result :optional fallback
@@ -20080,6 +20103,21 @@ described below.
 デフォルト値は@code{equal?}です。
 ただし、以下に述べるとおり、@var{expected}が特殊なテストオブジェクト
 だった場合には特別な振る舞いをします。
+@c COMMON
+@end defun
+
+@defun test-report name expected result
+@c MOD gauche.test
+@c EN
+The default procedure to report test failure.  It calls
+@code{(format #t "ERROR: GOT ~S\n" actual-result)}.
+You can customize the failure report by passing your reporting procedure
+to @var{report} argument to @code{test} and @var{test*}.
+@c JP
+テスト失敗をレポートする手続きのデフォルトです。これは単に
+@code{(format #t "ERROR: GOT ~S\n" actual-result)}を呼ぶだけです。
+@code{test}や@code{test*}の@var{report}引数に独自の手続きを渡すことにより、
+テスト失敗時の表示をカスタマイズできます。
 @c COMMON
 @end defun
 
