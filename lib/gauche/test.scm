@@ -85,7 +85,7 @@
   (export test test* test-start test-end test-running? test-section test-log
           test-module test-script
           test-error test-one-of test-none-of
-          test-check test-report test-record-file test-summary-check
+          test-check test-report-failure test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test
           test-count++ test-pass++ test-fail++
 
@@ -234,7 +234,7 @@
         [hook (and (pair? args) (pair? (cdr args)) (cadr args))]
         [report (or (and (pair? args) (pair? (cdr args)) (pair? (cddr args))
                          (caddr args))
-                    test-report)])
+                    test-report-failure)])
     (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
     (test-count++)
@@ -469,7 +469,7 @@
 ;; Logging and bookkeeping -----------------------------------------
 
 ;; Default report procedure
-(define (test-report msg expected actual)
+(define (test-report-failure msg expected actual)
   (format #t "ERROR: GOT ~S\n" actual))
 
 ;; private global flag, true during we're running tests.

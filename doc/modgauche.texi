@@ -20069,7 +20069,7 @@ The first argument is @var{name},
 the seond argument is @var{expected}, and the third argument
 is either the result of @var{thunk}, or a @code{<test-error>} object
 when @var{thunk} raises an error.
-The default is @code{test-report} procedure, which calls
+The default is @code{test-report-failure} procedure, which calls
 @code{(format #t "ERROR: GOT ~S\n" actual)}.  It can customize
 the message to be printed when the test is failed.  The output
 must end with a newline.
@@ -20106,7 +20106,7 @@ described below.
 @c COMMON
 @end defun
 
-@defun test-report name expected result
+@defun test-report-failure name expected result
 @c MOD gauche.test
 @c EN
 The default procedure to report test failure.  It calls
