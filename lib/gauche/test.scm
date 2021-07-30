@@ -83,17 +83,20 @@
 
 (define-module gauche.test
   (export test test* test-start test-end test-running? test-section test-log
-          test-module test-script
+          test-module test-script test*-diff
           test-error test-one-of test-none-of
-          test-check test-report-failure test-record-file test-summary-check
+          test-check
+          test-report-failure test-report-failure-plain
+          test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test
           test-count++ test-pass++ test-fail++
 
           test-remove-files test-with-temporary-directory))
 (select-module gauche.test)
 
-;; Autoload test-script to avoid depending other modules
+;; Autoloads to avoid depending other modules
 (autoload "gauche/test/script" test-script)
+(autoload "gauche/test/diff" (:macro test*-diff))
 
 ;; An object to represent error.  This class isn't exported; the user
 ;; must use `test-error' procedure to create an instance.
@@ -468,9 +471,14 @@
 
 ;; Logging and bookkeeping -----------------------------------------
 
-;; Default report procedure
+;; API: Default report procedure
 (define (test-report-failure msg expected actual)
   (format #t "ERROR: GOT ~S\n" actual))
+
+;; API: Use ~a instead of ~s
+(define (test-report-failure-plain msg expected actual)
+  (format #t "ERROR: GOT ~a\n" actual))
+
 
 ;; private global flag, true during we're running tests.
 ;; (we avoid using parameters intentionally.)

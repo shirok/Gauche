@@ -1,3 +1,9 @@
+2021-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test/diff.scm (test*-diff): Add a utility that reports
+	  diff of expected and actual results.  It's a lot easier to spot
+	  what went wrong than the default output.
+
 2021-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test.scm (test-report): Add an optional 'report' arg to
