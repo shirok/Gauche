@@ -576,7 +576,8 @@
 ;; file.util; but this can be used _before_ we test file.util.
 (define (test-remove-files . paths)
   (define (remove-1 path)
-    (if (file-is-directory? path)
+    (if (and (file-is-directory? path)
+             (not (eq? (slot-ref (sys-lstat path)'type) 'symlink)))
       (begin (for-each (^e (unless (member e '("." ".."))
                              (remove-1 (string-append path "/" e))))
                        (sys-readdir path))
