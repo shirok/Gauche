@@ -1588,6 +1588,7 @@
 ;;   [(printer   <proc-spec>)]
 ;;   [(comparer  <proc-spec>)]
 ;;   [(direct-supers <string> ...)]
+;;   [(metaclass <class-name>)]
 ;;   )
 ;;
 ;; <slot-spec> := slot-name
@@ -1604,6 +1605,8 @@
 ;;
 ;; qualifiers := qualifier ...
 ;; qualifier := :base | :built-in | :private | :no-meta
+;;
+;; <class-name> := <string> | <symbol>
 ;;
 ;; 'qualifiers' modifies the generated code slightly.  :base and :built-in
 ;; are exclusive.  :base generates a base class definition (inheritable
@@ -1629,11 +1632,16 @@
 ;; 'allocator' and 'printer' clause specifies custom allocator and/or
 ;; printer procedure.  You can either directly write C function body
 ;; in <c-code>, or specify a C function name by '(c <c-name>)' form.
+;;
+;; 'metaclass' specifies the metaclass of this class; if specified, it msut
+;; be either C class name (e.g. "SCM_CLASS_CLASS") or a symbol naming a
+;; global variable bound to a class visible from the module.
 
 (define-class <cclass> (<stub>)
   ((cpa        :init-keyword :cpa       :init-value '())
    (c-type     :init-keyword :c-type)
    (qualifiers :init-keyword :qualifiers)
+   (metaclass  :init-keyword :metaclass :init-value #f)
    (allocator  :init-keyword :allocator :init-value #f)
    (printer    :init-keyword :printer   :init-value #f)
    (comparer   :init-keyword :comparer  :init-value #f)
@@ -1673,12 +1681,13 @@
               [printer   (cond [(assq 'printer more) => cadr] [else #f])]
               [comparer  (cond [(assq 'comparer more) => cadr] [else #f])]
               [dsupers   (cond [(assq 'direct-supers more) => cdr] [else '()])]
+              [metaclass (cond [(assq 'metaclass more) => cadr] [else #f])]
               [cclass (make <cclass>
                         :scheme-name scm-name :c-type c-type :c-name c-name
                         :qualifiers quals
                         :cpa cpa :direct-supers dsupers
                         :allocator allocator :printer printer
-                        :comparer comparer)])
+                        :comparer comparer :metaclass metaclass)])
          (set! (~ cclass'slot-spec) (process-cclass-slots cclass slot-spec))
          (cgen-add! cclass))])))
 
@@ -1756,11 +1765,25 @@
         [class-name (cgen-safe-string (x->string (~ self'scheme-name)))]
         [specs  (c-slot-spec-name self)]
         [mod (stub-tmodule-cname self)])
-    (if (memq :no-meta (~ self'qualifiers))
-      (p "  Scm_InitStaticClass("class-addr", "class-name","
-         " SCM_MODULE("mod"), "specs", 0);")
+    (define (gen-init-class/meta meta-cname)
       (p "  Scm_InitStaticClassWithMeta("class-addr", "class-name","
-         " SCM_MODULE("mod"), NULL, SCM_FALSE, "specs", 0);")))
+         " SCM_MODULE("mod"), "meta-cname", SCM_FALSE, "specs", 0);"))
+
+    (cond [(memq :no-meta (~ self'qualifiers))
+           (p "  Scm_InitStaticClass("class-addr", "class-name","
+              " SCM_MODULE("mod"), "specs", 0);")]
+          [(~ self'metaclass)
+           => (^m (cond [(string? m) (gen-init-class/meta m)]
+                        [(symbol? m)
+                         (p "{ ScmObj meta = Scm_GlobalVariableRef("mod",\
+                                  SCM_SYMBOL(SCM_INTERN(\"" m "\")), 0);")
+                         (p "  if (SCM_UNBOUNDP(meta)) Scm_Error(\"Uknown metaclass: "m"\");")
+                         (p "  if (!SCM_CLASSP(meta)) Scm_Error(\"Metaclass is not a class: %S\", meta);")
+                         (gen-init-class/meta "SCM_CLASS(meta)")
+                         (p "}")]
+                        [else
+                         (error "Invalid metaclass spec:" m)]))]
+          [else (gen-init-class/meta "NULL")]))
   ;; adjust direct-supers if necessary
   (let1 ds (~ self'direct-supers)
     (when (not (null? ds))
