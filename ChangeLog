@@ -8,6 +8,9 @@
 	  Note the report procedure output is slightly changed.  The prefix
 	  "ERROR: GOT " and the last newline is printed by the test framework
 	  now, so the report procedure only need to display the content.
+	  (prim-test): Change the optional argument order.  'hook' argument will
+	  be rarely used (it's to adapt other test frameworks to Gauche), so
+	  it will make more sense to have it last.
 
 2021-08-01  Shiro Kawai  <shiro@acm.org>
 

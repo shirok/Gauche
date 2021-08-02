@@ -19970,7 +19970,7 @@ A convenience macro that wraps @var{expr} by lambda.
 @end example
 @end defmac
 
-@defun test name expected thunk :optional check hook report
+@defun test name expected thunk :optional check report hook
 @c MOD gauche.test
 @c EN
 Calls @var{thunk}, and checks its result fits @var{expected}
@@ -20038,7 +20038,30 @@ of error.  See the entry of @code{test-error} below for the details.
 @c COMMON
 
 @c EN
-The @var{hook} optional argument must be an @code{#f} or a procedure
+The @var{report} optional argument must be an @code{#f} or a
+procedure that takes three arguments.  If it is a procedure, it is called
+after @var{check} returns false (but before @var{hook} is called).
+The first argument is @var{name},
+the seond argument is @var{expected}, and the third argument
+is either the result of @var{thunk}, or a @code{<test-error>} object
+when @var{thunk} raises an error.
+The default is @code{test-report-failure} procedure, which simply
+uses @code{write} to display the result of @var{thunk}
+or a @code{<test-error>} object.
+By passing your own procedure, you can customize
+the message to be printed when the test is failed.
+@c JP
+最後に、省略可能引数@var{report}は@code{#f}か、引数を3つ取る手続きです。
+@var{check}が偽を返した場合に呼ばれます (ただし、@var{hook}が呼ばれる前です)。
+最初の引数は@var{name}、次の引数は@var{expeced}、最後の引数は@var{thunk}が
+返した値か、@var{thunk}がエラーを投げた場合は@code{<test-error>}オブジェクトです。
+デフォルトは@code{test-report-failure}手続きで、これは単に@code{write}を使って
+最後の引数(実際の結果、あるいは@code{<test-error>}オブジェクト)を出力するだけです。
+別の手続きを与えることにより、テスト失敗時の出力をカスタマイズできます。
+@c COMMON
+
+@c EN
+Finally, the @var{hook} optional argument must be an @code{#f} or a procedure
 that takes four arguments.  If it is a procedure, it is called after
 the @code{test} procedure finishes the test.  The first argument
 is a symbol either @code{pass} or @code{fail}, the second argument
@@ -20062,26 +20085,21 @@ do its own bookkeeping.
 @c COMMON
 
 @c EN
-Finally, @var{report} optional argument must be an @code{#f} or a
-procedure that takes three arguments.  If it is a procedure, it is called
-after @var{check} returns false (but before @var{hook} is called).
-The first argument is @var{name},
-the seond argument is @var{expected}, and the third argument
-is either the result of @var{thunk}, or a @code{<test-error>} object
-when @var{thunk} raises an error.
-The default is @code{test-report-failure} procedure, which simply
-uses @code{write} to display the result of @var{thunk}
-or a @code{<test-error>} object.
-By passing your own procedure, you can customize
-the message to be printed when the test is failed.
+Note: In 0.9.10, we didn't have @var{report} argument.  Instead of
+adding @var{report} to the last optional argument, we made it the second
+and shifted @var{hook}, for @var{hook} arugment will rarely be used.
+To keep the backward compatibility, we recognize if
+4-argument procedure is passed to a @var{report} argument we treat it
+as @var{hook}, with warning.  This compatibility feature will be removed
+in future releases.
 @c JP
-最後に、省略可能引数@var{report}は@code{#f}か、引数を3つ取る手続きです。
-@var{check}が偽を返した場合に呼ばれます (ただし、@var{hook}が呼ばれる前です)。
-最初の引数は@var{name}、次の引数は@var{expeced}、最後の引数は@var{thunk}が
-返した値か、@var{thunk}がエラーを投げた場合は@code{<test-error>}オブジェクトです。
-デフォルトは@code{test-report-failure}手続きで、これは単に@code{write}を使って
-最後の引数(実際の結果、あるいは@code{<test-error>}オブジェクト)を出力するだけです。
-別の手続きを与えることにより、テスト失敗時の出力をカスタマイズできます。
+註: 0.9.10では@var{report}引数がありませんでした。@var{report}引数を追加するに
+当たって、それを最後の省略可能引数ではなく、2番目の省略可能引数として
+@var{hook}引数をずらすことにしました。
+@var{hook}引数は滅多に使われないだろうという判断でう。
+互換性のため、@var{report}引数に4引数の手続きが渡された場合は
+警告を出したうえでそれを@var{hook}として扱うコードが今は入っています。
+将来のリリースではこの互換性コードは取り除かれます。
 @c COMMON
 @end defun
 

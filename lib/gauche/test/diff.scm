@@ -54,7 +54,7 @@
   (syntax-rules ()
     ([_ msg expected expr]
      (test* msg expected expr
-            %test-check-diff #f %test-report-diff))))
+            %test-check-diff %test-report-diff))))
 
 ;; internal
 (define (%->input what src)

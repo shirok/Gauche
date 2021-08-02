@@ -83,7 +83,7 @@
 (define (do-check results name expected thunk eqproc aux)
   (if (test-running?)
     ;; delegate to gauche.test
-    (test name expected thunk eqproc (%check-hook results))
+    (test name expected thunk eqproc #f (%check-hook results))
     (guard ([e (else
                 (register-failure! results name expected e aux))])
       (inc! (~ results'total-count))

@@ -224,21 +224,34 @@
 
 ;; Tests ------------------------------------------------------------
 
-;; test msg expect thunk :optional check hook report
+;; test msg expect thunk :optional check report hook
 ;;   check is called (check expected actual-result).  default is test-check.
-;;   hook is called (hook fail|pass msg expected actual-result)
 ;;   report is called (report msg expected actual-result) when failed.
 ;;                  The output must end with newline.
+;;   hook is called (hook 'fail|'pass msg expected actual-result)
+;; NB: In 0.9.10, we have a signature ':optional check hook' (no report).
+;; We adopted ':optional check report hook', for it makes more sense.
+;; To keep the backward compatibility, we check the arity of the second
+;; optional argument.
 
 ;; Primitive test.  This uses neither with-error-handler nor the
 ;; object system, so it can be used _before_ those constructs are tested.
 (define (prim-test msg expect thunk . args)
   (let ([cmp  (or (and (pair? args) (car args))
                   test-check)]
-        [hook (and (pair? args) (pair? (cdr args)) (cadr args))]
-        [report (or (and (pair? args) (pair? (cdr args)) (pair? (cddr args))
-                         (caddr args))
-                    test-report-failure)])
+        [report (or (and (pair? args) (pair? (cdr args))
+                         (cadr args))
+                    test-report-failure)]
+        [hook (and (pair? args) (pair? (cdr args)) (pair? (cddr args))
+                   (caddr args))])
+    ;; TRANSIENT: Backward compatibility of 'hook'.  Remove by 1.0.
+    (when (and (not (eq? report test-report-failure))
+               (not hook)
+               (eqv? (arity report) 4))
+      (warn "gauche.test: `test' is called with old signature (hook).\n")
+      (set! hook report)
+      (set! report test-report-failure))
+    ;; End transient code
     (format/ss #t "test ~a, expects ~s ==> " msg expect)
     (flush)
     (test-count++)
@@ -270,7 +283,7 @@
          args))
 
 ;; A convenient macro version
-;; We use er-macro-transformer, so test* should be used after macro
+;; We use er-macro-transformer, so test* should be used after the macro
 ;; subsystem is tested with more primitive framework.
 (define-syntax test*
   (er-macro-transformer
