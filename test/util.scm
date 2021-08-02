@@ -474,6 +474,19 @@
        '(#((0 2 (#f a) (! b) (#f c)) (0 2 (#f a) (! d) (#f c))))
        (lcs-edit-list/context '(a b c) '(a d c)))
 
+(test* "lcs edit-list/context size"
+       '(#((3 11 (#f d) (#f e) (#f f) (! g) (! h) (! i) (#f j) (#f k) (#f l))
+           (3 11 (#f d) (#f e) (#f f) (! x) (! y) (! z) (#f j) (#f k) (#f l))))
+       (lcs-edit-list/context '(a b c d e f g h i j k l m n)
+                              '(a b c d e f x y z j k l m n)))
+
+(test* "lcs edit-list/context size"
+       '(#((5 9 (#f f) (! g) (! h) (! i) (#f j))
+           (5 9 (#f f) (! x) (! y) (! z) (#f j))))
+       (lcs-edit-list/context '(a b c d e f g h i j k l m n)
+                              '(a b c d e f x y z j k l m n)
+                              eq? :context-size 1))
+
 ;;-----------------------------------------------
 (test-section "util.rbtree")
 (use util.rbtree)

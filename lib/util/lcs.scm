@@ -240,7 +240,7 @@
                       (Node-b-next-set! (b-tip tips) n)
                       (cons n n)))
                   (cons head head) a b eq)
-      (let1 tail #?=(make-node #f
+      (let1 tail (make-node #f
                             (+ 1 (Node-a-pos (a-tip tips)))
                             (+ 1 (Node-b-pos (b-tip tips))))
         (Node-a-prev-set! tail (a-tip tips))
@@ -294,8 +294,9 @@
              [next (forward-path tl (* 2 context-size))])
         (if (split-point? next)
           (loop next) ; continue
-          (values (make-hunk (backward-path start context-size)
-                             (forward-path next context-size))
+          ;; Need -1, for 'start' and 'next' are both common node.
+          (values (make-hunk (backward-path start (- context-size 1))
+                             (forward-path tl (- context-size 1)))
                   next))))
     (values #f #f)))
 
@@ -339,8 +340,8 @@
                       end-node
                       (Node-b-prev end-node)))))
 
-(define (lcs-edit-list/context a b :optional (context-size 3)
-                                             (eq equal?))
+(define (lcs-edit-list/context a b :optional (eq equal?)
+                               :key (context-size 3))
   (let1 graph (build-graph a b eq)
     (let loop ([hunks '()] [next graph])
       (receive (hunk next) (find-hunk next context-size)
