@@ -164,6 +164,25 @@ fuga
        (with-output-to-string
          (lambda () (diff-report diff-a diff-b))))
 
+(test* "diff-report/context"
+       (string-join '("***************"
+                      "*** 1,6 ****"
+                      "  foo"
+                      "  bar"
+                      "- bar"
+                      "  baz"
+                      "! baz"
+                      "  hoge"
+                      "--- 1,6 ----"
+                      "  foo"
+                      "  bar"
+                      "  baz"
+                      "! fuga"
+                      "  hoge"
+                      "+ fuga")
+                    "\n" 'suffix)
+       (with-output-to-string
+         (lambda () (diff-report/context diff-a diff-b))))
 
 ;;-------------------------------------------------------------------
 (test-section "edn")

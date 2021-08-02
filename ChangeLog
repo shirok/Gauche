@@ -1,5 +1,7 @@
 2021-08-01  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/diff.scm (diff-report/context): Added.
+
 	* lib/util/lcs.scm (lcs-edit-list/context): Add 'context diff'
 	  functonality.
 

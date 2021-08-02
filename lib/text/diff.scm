@@ -6,7 +6,8 @@
 
 (define-module text.diff
   (use util.lcs)
-  (export diff diff-report)
+  (use util.match)
+  (export diff diff-report diff-report/context)
   )
 (select-module text.diff)
 
@@ -38,3 +39,28 @@
             (source->list a reader)
             (source->list b reader)
             equal))
+
+(define (diff-report/context a b :key (writer write-line-diff)
+                                      (reader read-line)
+                                      (equal equal?)
+                                      (hunk-separator "***************")
+                                      (hunk-range-format-a "*** ~d,~d ****")
+                                      (hunk-range-format-b "--- ~d,~d ----"))
+  (define (show-lines half-hunk range-format)
+    (match-let1 (start end . lines) half-hunk
+      ;; line number is 1-origin by tradition
+      (format #t range-format (+ 1 start) (+ 1 end))
+      (newline)
+      (dolist [line lines]
+        (match line
+          [(#f x) (format #t "  ~a\n" x)]
+          [('- x) (format #t "- ~a\n" x)]
+          [('+ x) (format #t "+ ~a\n" x)]
+          [('! x) (format #t "! ~a\n" x)]))))
+
+  (dolist [hunk (lcs-edit-list/context (source->list a reader)
+                                       (source->list b reader)
+                                       equal)]
+    (print hunk-separator)
+    (show-lines (~ hunk 0) hunk-range-format-a)
+    (show-lines (~ hunk 1) hunk-range-format-b)))
