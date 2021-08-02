@@ -1,3 +1,14 @@
+2021-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test.scm: Save failure report procedure in
+	  *discrepancy-list* as well, so that we can report in the same
+	  format in the test summary.  test-fail++ is enhanced to
+	  take the optioanl report procedure; it's optional to keep the
+	  backward compatibility.
+	  Note the report procedure output is slightly changed.  The prefix
+	  "ERROR: GOT " and the last newline is printed by the test framework
+	  now, so the report procedure only need to display the content.
+
 2021-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/diff.scm (diff-report/context): Added.

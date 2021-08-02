@@ -76,5 +76,5 @@
   (equal? (%->input 'expected expected) (%->input 'actual actual)))
 
 (define (%test-report-diff msg expected actual)
-  (format #t "ERROR: Diffs are:\n")
+  (format #t "diffs:\n")
   (diff-report (%->input 'expected expected) (%->input 'actual actual)))

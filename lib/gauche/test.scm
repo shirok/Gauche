@@ -185,9 +185,10 @@
   (vector-set! *test-counts* 0 (+ (vector-ref *test-counts* 0) 1)))
 (define (test-pass++)
   (vector-set! *test-counts* 1 (+ (vector-ref *test-counts* 1) 1)))
-(define (test-fail++ msg expected result)
+(define (test-fail++ msg expected result :optional (report test-report-failure))
   (vector-set! *test-counts* 2 (+ (vector-ref *test-counts* 2) 1))
-  (set! *discrepancy-list* (cons (list msg expected result) *discrepancy-list*)))
+  (set! *discrepancy-list*
+        (cons (list report msg expected result) *discrepancy-list*)))
 (define (format-summary)
   (format "Total: ~5d tests, ~5d passed, ~5d failed, ~5d aborted.\n"
           (vector-ref *test-counts* 0)
@@ -247,8 +248,10 @@
              (test-pass++)
              (when hook (hook 'pass msg expect r))]
             [else
+             (display "ERROR: GOT ")
              (report msg expect r)
-             (test-fail++ msg expect r)
+             (newline)
+             (test-fail++ msg expect r report)
              (when hook (hook 'fail msg expect r))])
       (flush))))
 
@@ -473,12 +476,11 @@
 
 ;; API: Default report procedure
 (define (test-report-failure msg expected actual)
-  (format #t "ERROR: GOT ~S\n" actual))
+  (write actual))
 
 ;; API: Use ~a instead of ~s
 (define (test-report-failure-plain msg expected actual)
-  (format #t "ERROR: GOT ~a\n" actual))
-
+  (display actual))
 
 ;; private global flag, true during we're running tests.
 ;; (we avoid using parameters intentionally.)
@@ -546,7 +548,11 @@
       (begin
         (fmt "failed.\ndiscrepancies found.  Errors are:\n")
         (for-each (lambda (r)
-                    (apply fmt "test ~a: expects ~s => got ~s\n" r))
+                    (apply (lambda (report msg expect actual)
+                             (fmt "test ~a: expects ~s => got " msg expect)
+                             (report msg expect actual)
+                             (newline))
+                           r))
                   (reverse *discrepancy-list*))))
     (flush)
 

@@ -20069,19 +20069,19 @@ The first argument is @var{name},
 the seond argument is @var{expected}, and the third argument
 is either the result of @var{thunk}, or a @code{<test-error>} object
 when @var{thunk} raises an error.
-The default is @code{test-report-failure} procedure, which calls
-@code{(format #t "ERROR: GOT ~S\n" actual)}.  It can customize
-the message to be printed when the test is failed.  The output
-must end with a newline.
+The default is @code{test-report-failure} procedure, which simply
+uses @code{write} to display the result of @var{thunk}
+or a @code{<test-error>} object.
+By passing your own procedure, you can customize
+the message to be printed when the test is failed.
 @c JP
 最後に、省略可能引数@var{report}は@code{#f}か、引数を3つ取る手続きです。
 @var{check}が偽を返した場合に呼ばれます (ただし、@var{hook}が呼ばれる前です)。
 最初の引数は@var{name}、次の引数は@var{expeced}、最後の引数は@var{thunk}が
 返した値か、@var{thunk}がエラーを投げた場合は@code{<test-error>}オブジェクトです。
-デフォルトは@code{test-error}手続きで、これは
-@code{(format #t "ERROR: GOT ~S\n" actual)}を呼び出します。
+デフォルトは@code{test-report-failure}手続きで、これは単に@code{write}を使って
+最後の引数(実際の結果、あるいは@code{<test-error>}オブジェクト)を出力するだけです。
 別の手続きを与えることにより、テスト失敗時の出力をカスタマイズできます。
-その場合、最後に改行を出力してください。
 @c COMMON
 @end defun
 
