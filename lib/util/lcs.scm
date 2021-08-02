@@ -41,9 +41,11 @@
 
 (define-module util.lcs
   (use gauche.sequence)
+  (use gauche.record)
   (use scheme.list)
+  (use util.match)
   (use srfi-11)
-  (export lcs lcs-with-positions lcs-fold lcs-edit-list))
+  (export lcs lcs-with-positions lcs-fold lcs-edit-list lcs-edit-list/context))
 (select-module util.lcs)
 
 ;; The base algorithm.   This code implements
@@ -181,3 +183,167 @@
              a b opt-eq)
     (unless (null? last) (push! hunks (reverse! last))))
   (reverse! hunks))
+
+;; Similar to 'lcs-edit-list', but each hunk is surrounded by
+;; CONTEXT-SIZE elements that are common to both input.
+;; Returns a list of hunks.  Each hunk has a form:
+;;   #((<A-start-pos> <A-end-pos> (<sign> <elt>) ...)
+;;     (<B-start-pos> <B-end-pos> (<sign> <elt>) ...))
+;; where <sign> may be #f (common), + (inserted, only appear in B elements),
+;; - (deleted, only appear in A elements), or ! (replaced, appears in both).
+;; If all of the changes are insertions, A elements are omitted.
+;; If all of the changes are deletions, B elements are omitted.
+;; The position is 0-origin.
+;;
+;; Strategy:
+;;   In the first pass, we create a bidirectional graph of nodes
+;;    #(item a-pos a-prev a-next b-pos b-prev b-next)
+;;   In the second pass, we extract hunks from the nodes.
+
+(define-record-type (Node (pseudo-rtd <vector>)) %make-node #f
+  item
+  (a-pos)
+  (a-prev)
+  (a-next)
+  (b-pos)
+  (b-prev)
+  (b-next))
+
+(define (make-node item a-pos b-pos)
+  (%make-node item a-pos #f #f b-pos #f #f))
+
+;; The graph begins with head node, and end with tail node, both have
+;; #f in the item field.
+(define (build-graph a b eq)
+  (rlet1 head (make-node #f -1 -1)
+    ;; The seed value is (<tip-of-a-graph> . <tip-of-b-graph>)
+    (define (a-tip tips) (car tips))
+    (define (b-tip tips) (cdr tips))
+    (let1 tips
+        (lcs-fold (^[elt tips]              ;a-only
+                    (let1 n (make-node elt (+ 1 (Node-a-pos (a-tip tips))) #f)
+                      (Node-a-prev-set! n (a-tip tips))
+                      (Node-a-next-set! (a-tip tips) n)
+                      (cons n (b-tip tips))))
+                  (^[elt tips]              ;b-only
+                    (let1 n (make-node elt #f (+ 1 (Node-b-pos (b-tip tips))))
+                      (Node-b-prev-set! n (b-tip tips))
+                      (Node-b-next-set! (b-tip tips) n)
+                      (cons (a-tip tips) n)))
+                  (^[elt tips]              ;common
+                    (let1 n (make-node elt
+                                       (+ 1 (Node-a-pos (a-tip tips)))
+                                       (+ 1 (Node-b-pos (b-tip tips))))
+                      (Node-a-prev-set! n (a-tip tips))
+                      (Node-a-next-set! (a-tip tips) n)
+                      (Node-b-prev-set! n (b-tip tips))
+                      (Node-b-next-set! (b-tip tips) n)
+                      (cons n n)))
+                  (cons head head) a b eq)
+      (let1 tail #?=(make-node #f
+                            (+ 1 (Node-a-pos (a-tip tips)))
+                            (+ 1 (Node-b-pos (b-tip tips))))
+        (Node-a-prev-set! tail (a-tip tips))
+        (Node-a-next-set! (a-tip tips) tail)
+        (Node-b-prev-set! tail (b-tip tips))
+        (Node-b-next-set! (b-tip tips) tail)))))
+
+(define (split-point? node)
+  (not (eq? (Node-a-next node) (Node-b-next node))))
+
+(define (common-node? node)             ; node is any node but head
+  (and (Node-a-prev node) (Node-b-prev node)))
+
+;; Returns a node where a and b diverges.  Returns #f if it reaches
+;; the end of the grpah.
+(define (find-split-point node)
+  (cond [(or (not (Node-a-next node)) (not (Node-b-next node))) #f]
+        [(split-point? node) node]
+        [else (find-split-point (Node-a-next node))]))
+
+;; node must be common to both a-path and b-path.  go down the
+;; common path, up to N nodes, and returns the last common node.
+;; If the paths splits before N nodes, returns the split point node.
+(define (forward-path node n)
+  (cond [(zero? n) node]
+        [(or (not (Node-a-next node)) (not (Node-b-next node))) node]
+        [(split-point? node) node]
+        [else (forward-path (Node-a-next node) (- n 1))]))
+
+;; node must be common to both paths.  go back upstream up to N nodes.
+(define (backward-path node n)
+  (cond [(zero? n) node]
+        [(not (eq? (Node-a-prev node) (Node-b-prev node))) node]
+        [(not (Node-a-prev node)) node]
+        [else (backward-path (Node-a-prev node) (- n 1))]))
+
+;; Starting from a split-point node, find a merge-point node.
+;; There's always a merge-point (since we have a commin tail node).
+(define (find-merge-point node)
+  (define (loop a-node)
+    (if (common-node? a-node)
+      a-node
+      (loop (Node-a-next a-node))))
+  (loop (Node-a-next node)))
+
+;;Starting from the given common node, extract a next hunk if any.
+(define (find-hunk node context-size)
+  (if-let1 start (find-split-point node)
+    (let loop ([hd start])
+      (let* ([tl (find-merge-point hd)]
+             [next (forward-path tl (* 2 context-size))])
+        (if (split-point? next)
+          (loop next) ; continue
+          (values (make-hunk (backward-path start context-size)
+                             (forward-path next context-size))
+                  next))))
+    (values #f #f)))
+
+(define (make-hunk start-node end-node)
+  (define (gather-a s e)
+    (list* (Node-a-pos s) (Node-a-pos e)
+           (let rec ([n s] [change? #f])
+             (let1 tail (cond [(eq? n e) '()]
+                              [(Node-b-next n)
+                               => (^[nn]
+                                    (if (common-node? nn)
+                                      (rec (Node-a-next n) #f)
+                                      (rec (Node-a-next n) #t)))]
+                              [else (rec (Node-a-next n) change?)])
+               (cond [(common-node? n) `((#f ,(Node-item n)) ,@tail)]
+                     [change? `((! ,(Node-item n)) ,@tail)]
+                     [else `((- ,(Node-item n)) ,@tail)])))))
+  (define (gather-b s e)
+    (list* (Node-b-pos s) (Node-b-pos e)
+           (let rec ([n s] [change? #f])
+             (let1 tail (cond [(eq? n e) '()]
+                              [(Node-a-next n)
+                               => (^[nn]
+                                    (if (common-node? nn)
+                                      (rec (Node-b-next n) #f)
+                                      (rec (Node-b-next n) #t)))]
+                              [else (rec (Node-b-next n) change?)])
+               (cond [(common-node? n) `((#f ,(Node-item n)) ,@tail)]
+                     [change? `((! ,(Node-item n)) ,@tail)]
+                     [else `((+ ,(Node-item n)) ,@tail)])))))
+  (vector (gather-a (if (Node-item start-node)
+                      start-node
+                      (Node-a-next start-node))
+                    (if (Node-item end-node)
+                      end-node
+                      (Node-a-prev end-node)))
+          (gather-b (if (Node-item start-node)
+                      start-node
+                      (Node-b-next start-node))
+                    (if (Node-item end-node)
+                      end-node
+                      (Node-b-prev end-node)))))
+
+(define (lcs-edit-list/context a b :optional (context-size 3)
+                                             (eq equal?))
+  (let1 graph (build-graph a b eq)
+    (let loop ([hunks '()] [next graph])
+      (receive (hunk next) (find-hunk next context-size)
+        (if hunk
+          (loop (cons hunk hunks) next)
+          (reverse hunks))))))

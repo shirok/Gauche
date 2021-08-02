@@ -457,6 +457,23 @@
        '(((+ 1 b)))
        (lcs-edit-list '(a) '(a b)))
 
+(test* "lcs edit-list/context (no diff)"
+       '()
+       (lcs-edit-list/context '(a b c) '(a b c)))
+
+(test* "lcs edit-list/context (deletion)"
+       '(#((0 3 (#f a) (- b) (#f c) (#f d)) (0 2 (#f a) (#f c) (#f d))))
+       (lcs-edit-list/context '(a b c d) '(a c d)))
+
+(test* "lcs edit-list/context (addition)"
+       '(#((0 3 (#f a) (#f b) (#f c) (#f d))
+           (0 4 (#f a) (#f b) (+ z) (#f c) (#f d))))
+       (lcs-edit-list/context '(a b c d) '(a b z c d)))
+
+(test* "lcs edit-list/context (change)"
+       '(#((0 2 (#f a) (! b) (#f c)) (0 2 (#f a) (! d) (#f c))))
+       (lcs-edit-list/context '(a b c) '(a d c)))
+
 ;;-----------------------------------------------
 (test-section "util.rbtree")
 (use util.rbtree)
