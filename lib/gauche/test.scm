@@ -562,9 +562,9 @@
         (fmt "failed.\ndiscrepancies found.  Errors are:\n")
         (for-each (lambda (r)
                     (apply (lambda (report msg expect actual)
-                             (fmt "test ~a: expects ~s => got " msg expect)
-                             (report msg expect actual)
-                             (newline))
+                             (fmt "test ~a: expects ~s => got ~a\n" msg expect
+                                  (with-output-to-string
+                                    (cut report msg expect actual))))
                            r))
                   (reverse *discrepancy-list*))))
     (flush)
