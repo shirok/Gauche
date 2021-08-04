@@ -290,7 +290,7 @@
   (if-let1 start (find-split-point node)
     (let loop ([hd start])
       (let* ([tl (find-merge-point hd)]
-             [next (forward-path tl (* 2 context-size))])
+             [next (forward-path tl (- (* 2 context-size) 1))])
         (if (split-point? next)
           (loop next) ; continue
           ;; Need -1, for 'start' and 'next' are both common node.

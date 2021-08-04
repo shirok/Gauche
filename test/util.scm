@@ -495,6 +495,24 @@
                               '(a b c d e f x y z j k l m n)
                               eq? :context-size 1))
 
+(test* "lcs edit-list/context multiple hunks"
+       '(#((1 3 (#f b) (! c) (#f d))
+           (1 4 (#f b) (! C) (! C) (#f d)))
+         #((9 12 (#f j) (- k) (- l) (#f m))
+           (10 11 (#f j) (#f m))))
+       (lcs-edit-list/context '(a b c   d e f g h i j k l m n)
+                              '(a b C C d e f g h i j     m n)
+                              eq? :context-size 1))
+
+(test* "lcs edit-list/context hunk merging"
+       '(#((0 10 (#f a) (! b) (! c) (#f d) (#f e) (#f f) (#f g) (! h) (! i) (#f j) (#f k))
+           (0 10 (#f a) (! B) (! C) (#f d) (#f e) (#f f) (#f g) (! H) (! I) (#f j) (#f k)))
+         #((12 16 (#f m) (#f n) (! o) (! p) (#f q))
+           (12 16 (#f m) (#f n) (! O) (! P) (#f q))))
+       (lcs-edit-list/context '(a b c d e f g h i j k l m n o p q)
+                              '(a B C d e f g H I j k l m n O P q)
+                              eq? :context-size 2))
+
 ;;-----------------------------------------------
 (test-section "util.rbtree")
 (use util.rbtree)
