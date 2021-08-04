@@ -527,8 +527,6 @@ some_trick();
                        (write form)
                        (newline))))
               (cgen-genstub out.stub :output-directory "test.o")
-              (print "==================")
-              (print (sys-readdir "test.o"))
               (file->string (sys-normalize-pathname out.c :absolute #t)))))))
 
   ($ test-stub-output "cclass-basic"
@@ -536,6 +534,18 @@ some_trick();
         "Foo*" "FooClass"
         (c "SCM_CLASS_TOP_CPL")
         ((x) (y) (z))))
+  ($ test-stub-output "cclass-metaclass"
+     '(define-cclass foo :base :private
+        "Foo*" "FooClass"
+        (c "SCM_CLASS_TOP_CPL")
+        ()
+        (metaclass "SCM_CLASS_CLASS")))
+  ($ test-stub-output "cclass-metaclass2"
+     '(define-cclass foo :base :private
+        "Foo*" "FooClass"
+        (c "SCM_CLASS_TOP_CPL")
+        ()
+        (metaclass <class>)))
   )
 
 ;;====================================================================
