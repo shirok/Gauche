@@ -191,9 +191,8 @@
 ;;     (<B-start-pos> <B-end-pos> (<sign> <elt>) ...))
 ;; where <sign> may be #f (common), + (inserted, only appear in B elements),
 ;; - (deleted, only appear in A elements), or ! (replaced, appears in both).
-;; If all of the changes are insertions, A elements are omitted.
-;; If all of the changes are deletions, B elements are omitted.
 ;; The position is 0-origin.
+;; If one side of hunk is totaly empty, end position is omitted.
 ;;
 ;; Strategy:
 ;;   In the first pass, we create a bidirectional graph of nodes
@@ -292,7 +291,7 @@
     (let loop ([hd start])
       (let* ([tl (find-merge-point hd)]
              [next (forward-path tl (* 2 context-size))])
-        (if (split-point? next)
+        (if #?=(split-point? next)
           (loop next) ; continue
           ;; Need -1, for 'start' and 'next' are both common node.
           (values (make-hunk (backward-path start (- context-size 1))
@@ -327,18 +326,24 @@
                (cond [(common-node? n) `((#f ,(Node-item n)) ,@tail)]
                      [change? `((! ,(Node-item n)) ,@tail)]
                      [else `((+ ,(Node-item n)) ,@tail)])))))
-  (vector (gather-a (if (Node-item start-node)
-                      start-node
-                      (Node-a-next start-node))
-                    (if (Node-item end-node)
+  (vector (let ([s (if (Node-item start-node)
+                     start-node
+                     (Node-a-next start-node))]
+                [e (if (Node-item end-node)
                       end-node
-                      (Node-a-prev end-node)))
-          (gather-b (if (Node-item start-node)
-                      start-node
-                      (Node-b-next start-node))
-                    (if (Node-item end-node)
+                      (Node-a-prev end-node))])
+            (if (eq? s end-node)
+              `(,(Node-a-pos start-node)) ;special case - empty
+              (gather-a s e)))
+          (let ([s (if (Node-item start-node)
+                     start-node
+                     (Node-b-next start-node))]
+                [e (if (Node-item end-node)
                       end-node
-                      (Node-b-prev end-node)))))
+                      (Node-b-prev end-node))])
+            (if (eq? s end-node)
+              `(,(Node-b-pos start-node)) ;special case - empty
+              (gather-b s e)))))
 
 (define (lcs-edit-list/context a b :optional (eq equal?)
                                :key (context-size 3))

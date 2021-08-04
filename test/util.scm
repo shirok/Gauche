@@ -461,6 +461,14 @@
        '()
        (lcs-edit-list/context '(a b c) '(a b c)))
 
+(test* "lcs edit-list/context (a empty)"
+       '(#((-1) (0 2 (+ a) (+ b) (+ c))))
+       (lcs-edit-list/context '() '(a b c)))
+
+(test* "lcs edit-list/context (b empty)"
+       '(#((0 2 (- a) (- b) (- c)) (-1)))
+       (lcs-edit-list/context '(a b c) '()))
+
 (test* "lcs edit-list/context (deletion)"
        '(#((0 3 (#f a) (- b) (#f c) (#f d)) (0 2 (#f a) (#f c) (#f d))))
        (lcs-edit-list/context '(a b c d) '(a c d)))
