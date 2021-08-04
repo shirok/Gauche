@@ -511,6 +511,33 @@ some_trick();
     (c '(return e0 e1 e2) "{SCM_RESULT0=(e0),SCM_RESULT1=(e1),SCM_RESULT2=(e2);goto SCM_STUB_RETURN;}")
     (c '(return e0 e1 e2 e3) "{SCM_RESULT0=(e0),SCM_RESULT1=(e1),SCM_RESULT2=(e2),SCM_RESULT3=(e3);goto SCM_STUB_RETURN;}")))
 
+;; generate stub and compare with pre-generated file
+(let ()
+  (define (test-stub-output name . stub-forms)
+    ($ test-with-temporary-directory "test.o"
+       (^[]
+         ($ test*-diff #"stub-output ~name"
+            `(content-of ,(build-path (sys-dirname (current-load-path))
+                                      "data" "cgen" name))
+            (let* ([out (build-path "test.o" name)]
+                   [out.stub (path-swap-extension out "stub")]
+                   [out.c (path-swap-extension out "c")])
+              (with-output-to-file out.stub
+                (^[] (dolist [form stub-forms]
+                       (write form)
+                       (newline))))
+              (cgen-genstub out.stub :output-directory "test.o")
+              (print "==================")
+              (print (sys-readdir "test.o"))
+              (file->string (sys-normalize-pathname out.c :absolute #t)))))))
+
+  ($ test-stub-output "cclass-basic"
+     '(define-cclass foo :base :private :no-meta
+        "Foo*" "FooClass"
+        (c "SCM_CLASS_TOP_CPL")
+        ((x) (y) (z))))
+  )
+
 ;;====================================================================
 (test-section "gauche.cgen.precomp")
 (use gauche.cgen.precomp)
