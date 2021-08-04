@@ -61,7 +61,7 @@
   (match src
     [('content-of filename)
      (let1 fn (if (relative-path? filename)
-                (build-path (sys-basename (current-load-path)) filename)
+                (build-path (sys-dirname (current-load-path)) filename)
                 filename)
        (open-input-file fn))]
     [(x ...) (=> fail)
