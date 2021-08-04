@@ -42,25 +42,23 @@
 
 (define (diff-report/context a b :key (writer write-line-diff)
                                       (reader read-line)
-                                      (equal equal?)
-                                      (hunk-separator "***************")
-                                      (hunk-range-format-a "*** ~d,~d ****")
-                                      (hunk-range-format-b "--- ~d,~d ----"))
-  (define (show-lines half-hunk range-format)
-    (match-let1 (start end . lines) half-hunk
-      ;; line number is 1-origin by tradition
-      (format #t range-format (+ 1 start) (+ 1 end))
-      (newline)
-      (dolist [line lines]
-        (match line
-          [(#f x) (format #t "  ~a\n" x)]
-          [('- x) (format #t "- ~a\n" x)]
-          [('+ x) (format #t "+ ~a\n" x)]
-          [('! x) (format #t "! ~a\n" x)]))))
+                                      (equal equal?))
+  (define (show-lines half-hunk header-lead header-tail)
+    ;; line number is 1-origin by tradition
+    (match half-hunk
+      [(start) (format #t "~a ~d ~a\n" header-lead (+ 1 start) header-tail)]
+      [(start end . lines)
+       (format #t "~a ~d,~d ~a\n" header-lead (+ 1 start) (+ 1 end) header-tail)
+       (dolist [line lines]
+         (match line
+           [(#f x) (format #t "  ~a\n" x)]
+           [('- x) (format #t "- ~a\n" x)]
+           [('+ x) (format #t "+ ~a\n" x)]
+           [('! x) (format #t "! ~a\n" x)]))]))
 
   (dolist [hunk (lcs-edit-list/context (source->list a reader)
                                        (source->list b reader)
                                        equal)]
-    (print hunk-separator)
-    (show-lines (~ hunk 0) hunk-range-format-a)
-    (show-lines (~ hunk 1) hunk-range-format-b)))
+    (print "***************")
+    (show-lines (~ hunk 0) "***" "****")
+    (show-lines (~ hunk 1) "---" "----")))
