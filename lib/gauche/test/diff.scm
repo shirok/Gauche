@@ -64,10 +64,12 @@
 (define (%->input what src)
   (match src
     [('content-of filename)
-     (file->string
-      (if (relative-path? filename)
-        (build-path (sys-dirname (current-load-path)) filename)
-        filename))]
+     (let1 file (if (relative-path? filename)
+                  (build-path (sys-dirname (current-load-path)) filename)
+                  filename)
+       (if (file-exists? file)
+         (file->string file)
+         ""))]
     [(x ...) (=> fail)
      (if (every string? x)
        (string-join x "\n")
