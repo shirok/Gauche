@@ -192,11 +192,19 @@
   (if src
     (let ([orig ((with-module gauche.vm.code %original-source) src)]
           [sig (extended-cons (~ code'full-name)
-                              (pair-attribute-get src 'arg-info '_))])
+                              (pair-attribute-get src 'arg-info '_))]
+          [type (and-let1 argtypes (pair-attribute-get src 'arg-types #f)
+                  ($ (with-module gauche.internal construct-type)
+                     <^>
+                     (if (zero? (~ code'optional-args))
+                       `(,@argtypes -> *)
+                       `(,@argtypes * -> *))))])
       (if-let1 si (pair-attribute-get orig 'source-info #f)
         (pair-attribute-set! sig 'source-info si))
       (compiled-code-push-info! code `(definition (source-info . ,src)))
-      (slot-set! code 'signature-info (list sig)))
+      (slot-set! code 'signature-info
+                 (cons sig
+                       (cond-list [type `(type . ,type)]))))
     (slot-set! code 'signature-info (list (cons (~ code'full-name) '_)))))
 
 (select-module gauche)

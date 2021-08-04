@@ -96,8 +96,9 @@ struct ScmCompiledCodeRec {
  *       for debug information.  See Scm_CompiledCodeFullName().
  *       <formal> ... is the formal argument list, as appears in the original
  *       lambda form, including :key, :optional etc.
- *       At this moment we don't use <info> ... yet; the plan is to put
- *       metainfo about closure interface, e.g. types.
+ *       <info> is a form of (<key> . <value>).  For now, we have 'type
+ *       as a key, and <value> contains symbolic type signature such as
+ *       '(<list> <integer> * -> *).  We may add more <key>s later.
  *   *5) This IForm is a direct result of Pass1, i.e. non-optimized form.
  *       Pass2 scans it when IForm is inlined into the caller site.
  */
