@@ -43,8 +43,12 @@
 ;;              <expression-to-generate-output>)
 ;;
 ;; This is a handy macro to compare a generated text against a pre-generated
-;; text.  Each of EXPECTED and RESULT arguments can be either a string,
+;; text.  EXPECTED argument can be either a string,
 ;; a list of string, or a form (content-of <filename>).
+;; The test expression must yield a string or a list of strings.
+;; (NB: The test expression can yield (content-of <filename>), but if you do so,
+;; the <filename> must exist to the end of the entire tests, for the
+;; discrepancy report may need to access it.)
 ;; If it is a list of string, each string is regarded as a line (no newline
 ;; character is required).  If it is (content-of <filename>), the <filename>
 ;; is read and used.  If <filename> is a relative path, it is relative to
@@ -60,10 +64,10 @@
 (define (%->input what src)
   (match src
     [('content-of filename)
-     (let1 fn (if (relative-path? filename)
-                (build-path (sys-dirname (current-load-path)) filename)
-                filename)
-       (open-input-file fn))]
+     (file->string
+      (if (relative-path? filename)
+        (build-path (sys-dirname (current-load-path)) filename)
+        filename))]
     [(x ...) (=> fail)
      (if (every string? x)
        (string-join x "\n")
@@ -77,4 +81,4 @@
 
 (define (%test-report-diff msg expected actual)
   (format #t "diffs:\n")
-  (diff-report (%->input 'expected expected) (%->input 'actual actual)))
+  (diff-report/context (%->input 'expected expected) (%->input 'actual actual)))
