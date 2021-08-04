@@ -139,6 +139,7 @@
    "ScmDescriptiveType*" "Scm_DescriptiveTypeClass"
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name))
+   (metaclass <type-constructor-meta>)
    (allocator (let* ([z::ScmDescriptiveType*
                       (SCM_NEW_INSTANCE ScmDescriptiveType klass)])
                 (cast void initargs)    ;suppress unused warning
