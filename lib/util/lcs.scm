@@ -291,7 +291,7 @@
     (let loop ([hd start])
       (let* ([tl (find-merge-point hd)]
              [next (forward-path tl (* 2 context-size))])
-        (if #?=(split-point? next)
+        (if (split-point? next)
           (loop next) ; continue
           ;; Need -1, for 'start' and 'next' are both common node.
           (values (make-hunk (backward-path start (- context-size 1))
