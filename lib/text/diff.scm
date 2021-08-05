@@ -44,17 +44,19 @@
                                       (reader read-line)
                                       (equal equal?))
   (define (show-lines half-hunk header-lead header-tail)
-    ;; line number is 1-origin by tradition
-    (match half-hunk
-      [() (format #t "~a 0 ~a\n" header-lead header-tail)]
-      [(start end . lines)
-       (format #t "~a ~d,~d ~a\n" header-lead (+ 1 start) (+ 1 end) header-tail)
-       (dolist [line lines]
-         (match line
-           [('= x) (format #t "  ~a\n" x)]
-           [('- x) (format #t "- ~a\n" x)]
-           [('+ x) (format #t "+ ~a\n" x)]
-           [('! x) (format #t "! ~a\n" x)]))]))
+    (match-let1 (start end . lines) half-hunk
+      ;; Traditionally, line number is 1-origin, and both ends are inclusive,
+      ;; so we need adjustment.  As a special case, if (= start end),
+      ;; we only show a single index (it only occurs when that side is empty).
+      (if (= start end)
+        (format #t "~a 0 ~a\n" header-lead header-tail)
+        (format #t "~a ~d,~d ~a\n" header-lead (+ 1 start) end header-tail))
+      (dolist [line lines]
+        (match line
+          [('= x) (format #t "  ~a\n" x)]
+          [('- x) (format #t "- ~a\n" x)]
+          [('+ x) (format #t "+ ~a\n" x)]
+          [('! x) (format #t "! ~a\n" x)]))))
 
   (dolist [hunk (lcs-edit-list/context (source->list a reader)
                                        (source->list b reader)

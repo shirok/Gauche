@@ -199,10 +199,10 @@
 ;;     - (deleted, only appear in A elements),
 ;;     ! (replaced, appears in both).
 ;;
-;;   The position is 0-origin.   Both positions are inclusive.
-;;
-;;   As a special case, if one of the input is empty, the side of the
-;;   hunk is just an empty list.
+;;   The position is 0-origin.  Start-pos is inclusive, end-pos is excluisve.
+;;   If the change is insertion-only or deletion-only, that is, one side
+;;   doesn't contain any +/-/!, then the element list is omitted in that
+;;   side.
 ;;
 ;; Strategy:
 ;;   In the first pass, we create a bidirectional graph of nodes
@@ -263,6 +263,8 @@
 (define (common-node? node)             ; node is any node but head
   (and (Node-a-prev node) (Node-b-prev node)))
 
+(define (anchor-node? node) (not (Node-item node)))
+
 ;; Returns a node where a and b diverges.  Returns #f if it reaches
 ;; the end of the grpah.
 (define (find-split-point node)
@@ -310,50 +312,35 @@
     (values #f #f)))
 
 (define (make-hunk start-node end-node)
-  (define (gather-a s e)
-    (list* (Node-a-pos s) (Node-a-pos e)
-           (let rec ([n s] [change? #f])
-             (let1 tail (cond [(eq? n e) '()]
-                              [(Node-b-next n)
-                               => (^[nn]
-                                    (if (common-node? nn)
-                                      (rec (Node-a-next n) #f)
-                                      (rec (Node-a-next n) #t)))]
-                              [else (rec (Node-a-next n) change?)])
-               (cond [(common-node? n) `((= ,(Node-item n)) ,@tail)]
-                     [change? `((! ,(Node-item n)) ,@tail)]
-                     [else `((- ,(Node-item n)) ,@tail)])))))
-  (define (gather-b s e)
-    (list* (Node-b-pos s) (Node-b-pos e)
-           (let rec ([n s] [change? #f])
-             (let1 tail (cond [(eq? n e) '()]
-                              [(Node-a-next n)
-                               => (^[nn]
-                                    (if (common-node? nn)
-                                      (rec (Node-b-next n) #f)
-                                      (rec (Node-b-next n) #t)))]
-                              [else (rec (Node-b-next n) change?)])
-               (cond [(common-node? n) `((= ,(Node-item n)) ,@tail)]
-                     [change? `((! ,(Node-item n)) ,@tail)]
-                     [else `((+ ,(Node-item n)) ,@tail)])))))
-  (vector (let ([s (if (Node-item start-node)
-                     start-node
-                     (Node-a-next start-node))]
-                [e (if (Node-item end-node)
-                      end-node
-                      (Node-a-prev end-node))])
-            (if (eq? s end-node)
-              '()                       ;special case - empty
-              (gather-a s e)))
-          (let ([s (if (Node-item start-node)
-                     start-node
-                     (Node-b-next start-node))]
-                [e (if (Node-item end-node)
-                      end-node
-                      (Node-b-prev end-node))])
-            (if (eq? s end-node)
-              '()                       ;special case - empty
-              (gather-b s e)))))
+  (define (gather this-next other-next sign)
+    (let rec ([n start-node]
+              [change? (and (anchor-node? start-node)
+                            (not (common-node? (other-next start-node))))])
+      (let1 tail (cond [(eq? n end-node) '()]
+                       [(other-next n)
+                        => (^[nn]
+                             (if (common-node? nn)
+                               (rec (this-next n) #f)
+                               (rec (this-next n) #t)))]
+                       [else (rec (this-next n) change?)])
+        (cond [(anchor-node? n) tail]
+              [(common-node? n) `((= ,(Node-item n)) ,@tail)]
+              [change? `((! ,(Node-item n)) ,@tail)]
+              [else `((,sign ,(Node-item n)) ,@tail)]))))
+  (define (make-half-hunk this-pos this-next other-next sign)
+    (let ([start-index (if (anchor-node? start-node)
+                         0
+                         (this-pos start-node))]
+          [end-index (if (anchor-node? end-node)
+                       (this-pos end-node)
+                       (+ 1 (this-pos end-node)))]
+          [path (gather this-next other-next sign)])
+      (if (every (^p (eq? (car p) '=)) path)
+        `(,start-index ,end-index)      ;omit elements if no change
+        `(,start-index ,end-index ,@path))))
+
+  (vector (make-half-hunk Node-a-pos Node-a-next Node-b-next '-)
+          (make-half-hunk Node-b-pos Node-b-next Node-a-next '+)))
 
 (define (lcs-edit-list/context a b :optional (eq equal?)
                                :key (context-size 3))

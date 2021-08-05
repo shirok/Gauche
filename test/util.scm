@@ -462,56 +462,73 @@
        (lcs-edit-list/context '(a b c) '(a b c)))
 
 (test* "lcs edit-list/context (a empty)"
-       '(#(() (0 2 (+ a) (+ b) (+ c))))
+       '(#((0 0) (0 3 (+ a) (+ b) (+ c))))
        (lcs-edit-list/context '() '(a b c)))
 
 (test* "lcs edit-list/context (b empty)"
-       '(#((0 2 (- a) (- b) (- c)) ()))
+       '(#((0 3 (- a) (- b) (- c)) (0 0)))
        (lcs-edit-list/context '(a b c) '()))
 
 (test* "lcs edit-list/context (deletion)"
-       '(#((0 3 (= a) (- b) (= c) (= d)) (0 2 (= a) (= c) (= d))))
+       '(#((0 4 (= a) (- b) (= c) (= d))
+           (0 3)))
        (lcs-edit-list/context '(a b c d) '(a c d)))
 
 (test* "lcs edit-list/context (addition)"
-       '(#((0 3 (= a) (= b) (= c) (= d))
-           (0 4 (= a) (= b) (+ z) (= c) (= d))))
+       '(#((0 4)
+           (0 5 (= a) (= b) (+ z) (= c) (= d))))
        (lcs-edit-list/context '(a b c d) '(a b z c d)))
 
 (test* "lcs edit-list/context (change)"
-       '(#((0 2 (= a) (! b) (= c)) (0 2 (= a) (! d) (= c))))
+       '(#((0 3 (= a) (! b) (= c)) (0 3 (= a) (! d) (= c))))
        (lcs-edit-list/context '(a b c) '(a d c)))
 
 (test* "lcs edit-list/context size"
-       '(#((3 11 (= d) (= e) (= f) (! g) (! h) (! i) (= j) (= k) (= l))
-           (3 11 (= d) (= e) (= f) (! x) (! y) (! z) (= j) (= k) (= l))))
+       '(#((3 12 (= d) (= e) (= f) (! g) (! h) (! i) (= j) (= k) (= l))
+           (3 12 (= d) (= e) (= f) (! x) (! y) (! z) (= j) (= k) (= l))))
        (lcs-edit-list/context '(a b c d e f g h i j k l m n)
                               '(a b c d e f x y z j k l m n)))
 
 (test* "lcs edit-list/context size"
-       '(#((5 9 (= f) (! g) (! h) (! i) (= j))
-           (5 9 (= f) (! x) (! y) (! z) (= j))))
+       '(#((5 10 (= f) (! g) (! h) (! i) (= j))
+           (5 10 (= f) (! x) (! y) (! z) (= j))))
        (lcs-edit-list/context '(a b c d e f g h i j k l m n)
                               '(a b c d e f x y z j k l m n)
                               eq? :context-size 1))
 
 (test* "lcs edit-list/context multiple hunks"
-       '(#((1 3 (= b) (! c) (= d))
-           (1 4 (= b) (! C) (! C) (= d)))
-         #((9 12 (= j) (- k) (- l) (= m))
-           (10 11 (= j) (= m))))
+       '(#((1 4 (= b) (! c) (= d))
+           (1 5 (= b) (! C) (! C) (= d)))
+         #((9 13 (= j) (- k) (- l) (= m))
+           (10 12)))
        (lcs-edit-list/context '(a b c   d e f g h i j k l m n)
                               '(a b C C d e f g h i j     m n)
                               eq? :context-size 1))
 
 (test* "lcs edit-list/context hunk merging"
-       '(#((0 10 (= a) (! b) (! c) (= d) (= e) (= f) (= g) (! h) (! i) (= j) (= k))
-           (0 10 (= a) (! B) (! C) (= d) (= e) (= f) (= g) (! H) (! I) (= j) (= k)))
-         #((12 16 (= m) (= n) (! o) (! p) (= q))
-           (12 16 (= m) (= n) (! O) (! P) (= q))))
+       '(#((0 11 (= a) (! b) (! c) (= d) (= e) (= f) (= g) (! h) (! i) (= j) (= k))
+           (0 11 (= a) (! B) (! C) (= d) (= e) (= f) (= g) (! H) (! I) (= j) (= k)))
+         #((12 17 (= m) (= n) (! o) (! p) (= q))
+           (12 17 (= m) (= n) (! O) (! P) (= q))))
        (lcs-edit-list/context '(a b c d e f g h i j k l m n o p q)
                               '(a B C d e f g H I j k l m n O P q)
                               eq? :context-size 2))
+
+(test* "lcs edit-list/context boundary condition 1"
+       '(#((0 5 (- a) (- b) (= c) (= d) (= e))
+           (0 3))
+         #((8 11)
+           (6 11 (= i) (= j) (= k) (+ l) (+ m))))
+       (lcs-edit-list/context '(a b c d e f g h i j k)
+                              '(c d e f g h i j k l m)))
+
+(test* "lcs edit-list/context boundary condition"
+       '(#((0 5 (! a) (! b) (= c) (= d) (= e))
+           (0 4 (! B) (= c) (= d) (= e)))
+         #((8 12 (= i) (= j) (= k) (! L))
+           (7 12 (= i) (= j) (= k) (! l) (! m))))
+       (lcs-edit-list/context '(a b c d e f g h i j k L)
+                              '(B c d e f g h i j k l m)))
 
 ;;-----------------------------------------------
 (test-section "util.rbtree")
