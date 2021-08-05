@@ -46,12 +46,12 @@
   (define (show-lines half-hunk header-lead header-tail)
     ;; line number is 1-origin by tradition
     (match half-hunk
-      [(start) (format #t "~a ~d ~a\n" header-lead (+ 1 start) header-tail)]
+      [() (format #t "~a 0 ~a\n" header-lead header-tail)]
       [(start end . lines)
        (format #t "~a ~d,~d ~a\n" header-lead (+ 1 start) (+ 1 end) header-tail)
        (dolist [line lines]
          (match line
-           [(#f x) (format #t "  ~a\n" x)]
+           [('= x) (format #t "  ~a\n" x)]
            [('- x) (format #t "- ~a\n" x)]
            [('+ x) (format #t "+ ~a\n" x)]
            [('! x) (format #t "! ~a\n" x)]))]))

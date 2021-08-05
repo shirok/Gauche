@@ -184,15 +184,25 @@
     (unless (null? last) (push! hunks (reverse! last))))
   (reverse! hunks))
 
-;; Similar to 'lcs-edit-list', but each hunk is surrounded by
-;; CONTEXT-SIZE elements that are common to both input.
-;; Returns a list of hunks.  Each hunk has a form:
-;;   #((<A-start-pos> <A-end-pos> (<sign> <elt>) ...)
-;;     (<B-start-pos> <B-end-pos> (<sign> <elt>) ...))
-;; where <sign> may be #f (common), + (inserted, only appear in B elements),
-;; - (deleted, only appear in A elements), or ! (replaced, appears in both).
-;; The position is 0-origin.
-;; If one side of hunk is totaly empty, end position is omitted.
+;; lcs-edit-list/context
+;;   Similar to 'lcs-edit-list', but each hunk is surrounded by
+;;   CONTEXT-SIZE elements that are common to both input.
+;;
+;;   Returns a list of hunks.  Each hunk has a form:
+;;
+;;     #((<A-start-pos> <A-end-pos> (<sign> <elt>) ...)
+;;       (<B-start-pos> <B-end-pos> (<sign> <elt>) ...))
+;;
+;;   where <sign> may be one of the followings.
+;;     = (common),
+;;     + (inserted, only appear in B elements),
+;;     - (deleted, only appear in A elements),
+;;     ! (replaced, appears in both).
+;;
+;;   The position is 0-origin.   Both positions are inclusive.
+;;
+;;   As a special case, if one of the input is empty, the side of the
+;;   hunk is just an empty list.
 ;;
 ;; Strategy:
 ;;   In the first pass, we create a bidirectional graph of nodes
@@ -310,7 +320,7 @@
                                       (rec (Node-a-next n) #f)
                                       (rec (Node-a-next n) #t)))]
                               [else (rec (Node-a-next n) change?)])
-               (cond [(common-node? n) `((#f ,(Node-item n)) ,@tail)]
+               (cond [(common-node? n) `((= ,(Node-item n)) ,@tail)]
                      [change? `((! ,(Node-item n)) ,@tail)]
                      [else `((- ,(Node-item n)) ,@tail)])))))
   (define (gather-b s e)
@@ -323,7 +333,7 @@
                                       (rec (Node-b-next n) #f)
                                       (rec (Node-b-next n) #t)))]
                               [else (rec (Node-b-next n) change?)])
-               (cond [(common-node? n) `((#f ,(Node-item n)) ,@tail)]
+               (cond [(common-node? n) `((= ,(Node-item n)) ,@tail)]
                      [change? `((! ,(Node-item n)) ,@tail)]
                      [else `((+ ,(Node-item n)) ,@tail)])))))
   (vector (let ([s (if (Node-item start-node)
@@ -333,7 +343,7 @@
                       end-node
                       (Node-a-prev end-node))])
             (if (eq? s end-node)
-              `(,(Node-a-pos start-node)) ;special case - empty
+              '()                       ;special case - empty
               (gather-a s e)))
           (let ([s (if (Node-item start-node)
                      start-node
@@ -342,7 +352,7 @@
                       end-node
                       (Node-b-prev end-node))])
             (if (eq? s end-node)
-              `(,(Node-b-pos start-node)) ;special case - empty
+              '()                       ;special case - empty
               (gather-b s e)))))
 
 (define (lcs-edit-list/context a b :optional (eq equal?)
