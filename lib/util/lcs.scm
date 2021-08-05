@@ -200,9 +200,6 @@
 ;;     ! (replaced, appears in both).
 ;;
 ;;   The position is 0-origin.  Start-pos is inclusive, end-pos is excluisve.
-;;   If the change is insertion-only or deletion-only, that is, one side
-;;   doesn't contain any +/-/!, then the element list is omitted in that
-;;   side.
 ;;
 ;; Strategy:
 ;;   In the first pass, we create a bidirectional graph of nodes
@@ -335,15 +332,15 @@
                        (this-pos end-node)
                        (+ 1 (this-pos end-node)))]
           [path (gather this-next other-next sign)])
-      (if (every (^p (eq? (car p) '=)) path)
-        `(,start-index ,end-index)      ;omit elements if no change
-        `(,start-index ,end-index ,@path))))
+      (list* start-index end-index path)))
 
   (vector (make-half-hunk Node-a-pos Node-a-next Node-b-next '-)
           (make-half-hunk Node-b-pos Node-b-next Node-a-next '+)))
 
 (define (lcs-edit-list/context a b :optional (eq equal?)
                                :key (context-size 3))
+  (assume (and (exact-integer? context-size)
+               (<= 1 context-size)))
   (let1 graph (build-graph a b eq)
     (let loop ([hunks '()] [next graph])
       (receive (hunk next) (find-hunk next context-size)

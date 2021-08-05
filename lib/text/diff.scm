@@ -51,12 +51,15 @@
       (if (= start end)
         (format #t "~a 0 ~a\n" header-lead header-tail)
         (format #t "~a ~d,~d ~a\n" header-lead (+ 1 start) end header-tail))
-      (dolist [line lines]
-        (match line
-          [('= x) (format #t "  ~a\n" x)]
-          [('- x) (format #t "- ~a\n" x)]
-          [('+ x) (format #t "+ ~a\n" x)]
-          [('! x) (format #t "! ~a\n" x)]))))
+      ;; If the lines are all unchanged, we don't emit it, following
+      ;; the context-diff format.
+      (unless (every (^e (eq? (car e) '=)) lines)
+        (dolist [line lines]
+          (match line
+            [('= x) (format #t "  ~a\n" x)]
+            [('- x) (format #t "- ~a\n" x)]
+            [('+ x) (format #t "+ ~a\n" x)]
+            [('! x) (format #t "! ~a\n" x)])))))
 
   (dolist [hunk (lcs-edit-list/context (source->list a reader)
                                        (source->list b reader)

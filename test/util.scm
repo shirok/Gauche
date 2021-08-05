@@ -471,11 +471,11 @@
 
 (test* "lcs edit-list/context (deletion)"
        '(#((0 4 (= a) (- b) (= c) (= d))
-           (0 3)))
+           (0 3 (= a) (= c) (= d))))
        (lcs-edit-list/context '(a b c d) '(a c d)))
 
 (test* "lcs edit-list/context (addition)"
-       '(#((0 4)
+       '(#((0 4 (= a) (= b) (= c) (= d))
            (0 5 (= a) (= b) (+ z) (= c) (= d))))
        (lcs-edit-list/context '(a b c d) '(a b z c d)))
 
@@ -500,7 +500,7 @@
        '(#((1 4 (= b) (! c) (= d))
            (1 5 (= b) (! C) (! C) (= d)))
          #((9 13 (= j) (- k) (- l) (= m))
-           (10 12)))
+           (10 12 (= j) (= m))))
        (lcs-edit-list/context '(a b c   d e f g h i j k l m n)
                               '(a b C C d e f g h i j     m n)
                               eq? :context-size 1))
@@ -516,8 +516,8 @@
 
 (test* "lcs edit-list/context boundary condition 1"
        '(#((0 5 (- a) (- b) (= c) (= d) (= e))
-           (0 3))
-         #((8 11)
+           (0 3 (= c) (= d) (= e)))
+         #((8 11 (= i) (= j) (= k))
            (6 11 (= i) (= j) (= k) (+ l) (+ m))))
        (lcs-edit-list/context '(a b c d e f g h i j k)
                               '(c d e f g h i j k l m)))
