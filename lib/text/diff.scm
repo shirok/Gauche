@@ -74,17 +74,23 @@
                                       (reader read-line)
                                       (equal equal?)
                                       (context-size (undefined)))
+  (define (show-line start end)
+    (format #t "~d" (if (= start end 0) 0 (+ start 1)))
+    (unless (= 1 (- end start))
+      (format #t ",~d" (- end start))))
+
   (define (show-hunk hunk)
     (match-let1 #(as ae bs be lines) hunk
-      (display "@@ ")
-      (if (= as ae 0) (display "-0,0 ") (format #t "-~d,~d " (+ as 1) ae))
-      (if (= bs be 0) (display "+0,0 ") (format #t "+~d,~d " (+ bs 1) be))
-      (display "@@\n")
+      (display "@@ -")
+      (show-line as ae)
+      (display " +")
+      (show-line bs be)
+      (display " @@\n")
       (dolist [line lines]
         (match line
-            [('= x) (format #t "  ~a\n" x)]
-            [('- x) (format #t "- ~a\n" x)]
-            [('+ x) (format #t "+ ~a\n" x)]))))
+            [('= x) (format #t " ~a\n" x)]
+            [('- x) (format #t "-~a\n" x)]
+            [('+ x) (format #t "+~a\n" x)]))))
   (for-each show-hunk
             (lcs-edit-list/unified (source->list a reader)
                                    (source->list b reader)
