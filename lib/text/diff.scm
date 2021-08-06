@@ -7,7 +7,7 @@
 (define-module text.diff
   (use util.lcs)
   (use util.match)
-  (export diff diff-report diff-report/context)
+  (export diff diff-report diff-report/context diff-report/unified)
   )
 (select-module text.diff)
 
@@ -42,7 +42,8 @@
 
 (define (diff-report/context a b :key (writer write-line-diff)
                                       (reader read-line)
-                                      (equal equal?))
+                                      (equal equal?)
+                                      (context-size (undefined)))
   (define (show-lines half-hunk header-lead header-tail)
     (match-let1 (start end . lines) half-hunk
       ;; Traditionally, line number is 1-origin, and both ends are inclusive,
@@ -63,7 +64,29 @@
 
   (dolist [hunk (lcs-edit-list/context (source->list a reader)
                                        (source->list b reader)
-                                       equal)]
+                                       equal
+                                       :context-size context-size)]
     (print "***************")
     (show-lines (~ hunk 0) "***" "****")
     (show-lines (~ hunk 1) "---" "----")))
+
+(define (diff-report/unified a b :key (writer write-line-diff)
+                                      (reader read-line)
+                                      (equal equal?)
+                                      (context-size (undefined)))
+  (define (show-hunk hunk)
+    (match-let1 #(as ae bs be lines) hunk
+      (display "@@ ")
+      (if (= as ae 0) (display "-0,0 ") (format #t "-~d,~d " (+ as 1) ae))
+      (if (= bs be 0) (display "+0,0 ") (format #t "+~d,~d " (+ bs 1) be))
+      (display "@@\n")
+      (dolist [line lines]
+        (match line
+            [('= x) (format #t "  ~a\n" x)]
+            [('- x) (format #t "- ~a\n" x)]
+            [('+ x) (format #t "+ ~a\n" x)]))))
+  (for-each show-hunk
+            (lcs-edit-list/unified (source->list a reader)
+                                   (source->list b reader)
+                                   equal
+                                   :context-size context-size)))

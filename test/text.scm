@@ -198,6 +198,32 @@ fuga
        (with-output-to-string
          (lambda () (diff-report/context "" diff-b))))
 
+(test* "diff-report/unified"
+       (string-join '("@@ -1,6 +1,6 @@"
+                      "  foo"
+                      "  bar"
+                      "- bar"
+                      "  baz"
+                      "- baz"
+                      "+ fuga"
+                      "  hoge"
+                      "+ fuga")
+                    "\n" 'suffix)
+       (with-output-to-string
+         (lambda () (diff-report/unified diff-a diff-b))))
+
+(test* "diff-report/context (one-side empty)"
+       (string-join '("@@ -1,6 +0,0 @@"
+                      "- foo"
+                      "- bar"
+                      "- bar"
+                      "- baz"
+                      "- baz"
+                      "- hoge")
+                    "\n" 'suffix)
+       (with-output-to-string
+         (lambda () (diff-report/unified diff-a ""))))
+
 ;;-------------------------------------------------------------------
 (test-section "edn")
 (use text.edn)

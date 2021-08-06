@@ -45,7 +45,8 @@
   (use scheme.list)
   (use util.match)
   (use srfi-11)
-  (export lcs lcs-with-positions lcs-fold lcs-edit-list lcs-edit-list/context))
+  (export lcs lcs-with-positions lcs-fold lcs-edit-list
+          lcs-edit-list/context lcs-edit-list/unified))
 (select-module util.lcs)
 
 ;; The base algorithm.   This code implements
@@ -295,7 +296,7 @@
   (loop (Node-a-next node)))
 
 ;;Starting from the given common node, extract a next hunk if any.
-(define (find-hunk node context-size)
+(define (find-hunk node maker context-size)
   (if-let1 start (find-split-point node)
     (let loop ([hd start])
       (let* ([tl (find-merge-point hd)]
@@ -303,12 +304,12 @@
         (if (split-point? next)
           (loop next) ; continue
           ;; Need -1, for 'start' and 'next' are both common node.
-          (values (make-hunk (backward-path start (- context-size 1))
-                             (forward-path tl (- context-size 1)))
+          (values (maker (backward-path start (- context-size 1))
+                         (forward-path tl (- context-size 1)))
                   next))))
     (values #f #f)))
 
-(define (make-hunk start-node end-node)
+(define (make-context-hunk start-node end-node)
   (define (gather this-next other-next sign)
     (let rec ([n start-node]
               [change? (and (anchor-node? start-node)
@@ -337,13 +338,55 @@
   (vector (make-half-hunk Node-a-pos Node-a-next Node-b-next '-)
           (make-half-hunk Node-b-pos Node-b-next Node-a-next '+)))
 
+;; API
 (define (lcs-edit-list/context a b :optional (eq equal?)
                                :key (context-size 3))
   (assume (and (exact-integer? context-size)
                (<= 1 context-size)))
   (let1 graph (build-graph a b eq)
     (let loop ([hunks '()] [next graph])
-      (receive (hunk next) (find-hunk next context-size)
+      (receive (hunk next) (find-hunk next make-context-hunk context-size)
+        (if hunk
+          (loop (cons hunk hunks) next)
+          (reverse hunks))))))
+
+;; API
+(define (lcs-edit-list/unified a b :optional (eq equal?)
+                               :key (context-size 3))
+  (define (make-unified-hunk start-node end-node)
+    (define (common n rs)
+      (let1 rs (if (anchor-node? n) rs `((= ,(Node-item n)) ,@rs))
+        (if (eq? n end-node)
+          (reverse rs)
+          (let ([a (Node-a-next n)]
+                [b (Node-b-next n)])
+            (if (eq? a b)
+              (common a rs)
+              (a-only a b rs))))))
+    (define (a-only n b rs)
+      (if (common-node? n)
+        (b-only b rs)
+        (a-only (Node-a-next n) b `((- ,(Node-item n)) ,@rs))))
+    (define (b-only n rs)
+      (if (common-node? n)
+        (common n rs)
+        (b-only (Node-b-next n) `((+ ,(Node-item n)) ,@rs))))
+    (define (start-index n pos)
+      (if (anchor-node? n) (+ 1 (pos n)) (pos n)))
+    (define (end-index n pos)
+      (if (anchor-node? n) (pos n) (+ 1 (pos n))))
+
+    `#(,(start-index start-node Node-a-pos)
+       ,(end-index end-node Node-a-pos)
+       ,(start-index start-node Node-b-pos)
+       ,(end-index end-node Node-b-pos)
+       ,(common start-node '())))
+
+  (assume (and (exact-integer? context-size)
+               (<= 1 context-size)))
+  (let1 graph (build-graph a b eq)
+    (let loop ([hunks '()] [next graph])
+      (receive (hunk next) (find-hunk next make-unified-hunk context-size)
         (if hunk
           (loop (cons hunk hunks) next)
           (reverse hunks))))))
