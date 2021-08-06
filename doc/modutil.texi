@@ -24821,6 +24821,120 @@ displays:
 @end example
 @end defun
 
+@defun diff-report/context src-a src-b :key reader eq-fn writer context-size
+@c MOD text.diff
+@c EN
+Produce a human-friendly difference of two text sources like
+@code{diff-report}, but in the ``context diff'' format.
+@c JP
+@code{diff-report}と同じように、二つのテキストソースの差違を出力しますが、
+コンテキスト形式を使います。
+@c COMMON
+
+@example
+(diff-report/context "a\nb\nc\nd\n" "b\ne\nd\nf\n")
+@end example
+@c EN
+displays:
+@c JP
+は次を出力します:
+@c COMMON
+@example
+***************
+*** 1,4 ****
+- a
+  b
+! c
+  d
+--- 1,4 ----
+  b
+! e
+  d
++ f
+@end example
+
+@c EN
+This calls @code{lcs-edit-list/context} to get a context diff of lines,
+then format it in the same way as @code{diff -c} output.
+(@xref{The longest common subsequence}, for the details of
+@code{lcs-edit-list/context}.)
+@c JP
+この手続きは@code{lcs-edit-list/context}を呼んでコンテキストdiffを得て、
+それを@code{diff -c}と同じ形式にして出力します。
+@c COMMON
+
+@c EN
+Each ``hunk'' (a chunk containing difference)
+is preceded by a separater @code{***************},
+followed by the excerpt from @var{src-a}, then the excerpt form @var{src-b},
+each preceded by the header showing the line number of that excerpts
+(start and end line, inclusive, 1-based).
+@c JP
+各 ``hunk'' (差異を含む塊)はセパレータ@code{***************}で始まり、
+その後に@var{src-a}からの抜粋、そして@var{src-b}からの抜粋が続きます。
+各抜粋の先頭には、そのhunkの範囲を示す行番号が出力されます
+(開始と終了の行番号、どちらも範囲に含まれる、最初の行は1)。
+@c COMMON
+
+@c EN
+In the excerpts, the line that's deleted from @var{src-a} is prefixed
+with @code{-}, the line that's inserted into @var{src-b} is prefixed
+with @code{+}, and the line changed is prefixed with @code{!}.
+@c JP
+抜粋の中では、@var{src-a}から削除された行の前に@code{-}が、
+@var{src-b}に挿入された行の前に@code{+}が、そして置き換えられた行の前に@code{!}が、
+それぞれ付加されます。
+@c COMMON
+
+@c EN
+If the hunk only consists of either insertions or deletions, the other
+side of excerpt is omitted.
+@c JP
+1つのhunkが、挿入のみ、または削除のみで構成されている場合、
+変更のない方は抜粋が省略されます。
+@c COMMON
+
+@example
+(diff-report/context "a\nb\nc\n" "a\nc\n")
+ @r{prints:}
+***************
+*** 1,3 ****
+  a
+- b
+  c
+--- 1,2 ----
+@end example
+
+@c EN
+As a special case, if one of the source is empty, its header is shown
+as zero-th line:
+@c JP
+特別な場合として、一方のソースが空だった場合、その抜粋のヘッダの行番号は0となります。
+@c COMMON
+
+@example
+(diff-report/context "" "a\nb\nc\n")
+ @r{prints:}
+***************
+*** 0 ****
+--- 1,3 ----
++ a
++ b
++ c
+@end example
+
+@c EN
+The @var{reader}, @var{writer} and @var{eq-fn} keyword arguments are the
+same as @code{diff-report}.  The @var{context-size} keyword argument
+specifies the maximum unchanged lines attached to each hunk to show the
+context.
+@c JP
+@var{reader}、@var{writer}、@var{eq-fn}キーワード引数の意味は
+@code{diff-report}と同じです。@var{context-size}キーワード引数は
+各hunkの前後に文脈表示のために付加される、変更のなかった行の最大数を指定します。
+@c COMMON
+@end defun
+
 @c ----------------------------------------------------------------------
 @node EDN parsing and construction, Running external editor, Calculate difference of text streams, Library modules - Utilities
 @section @code{text.edn} - EDN parsing and construction
@@ -28062,6 +28176,79 @@ returns.
 その@code{diff}手続きが返すものと同じ構造だということが分かるでしょう。
 @c COMMON
 @end defun
+
+@defun lcs-edit-list/context a b :optional eq-fn :key context-size
+@c MOD util.lcs
+Calculates edit list of two sequences @var{a} and @var{b}, including
+context surrounding the changes.
+It is similar to what you get with @code{diff -c},
+and in fact, @code{text.diff} module provides context diff on top of
+this procedure (@pxref{Calculate difference of text streams}).
+
+The @var{eq-fn} argument specifies the equality predicate on the elements.
+Its default is @code{equal?}.
+The @var{context-size} keyword argument specifies the maximum
+size of the unchanged elements surrounding each edits.  It must be
+an exact positive integer.  Its default is 3.
+
+Returns a list of @emph{hunk}s.  Each hunk represents a chunk of
+difference between @var{a} and @var{b}.   A hunk is a two-vector
+elements, in the following format:
+
+@example
+<hunk> : #(<a-edits> <b-edits>)
+
+<a-edits> : <edits>
+<b-edits> : <edits>
+
+<edits> : (<start-pos> <end-pos> <edit> ...)
+
+<edit> : (= <element>)     ; same in both a and b
+       | (- <element>)     ; deleted: only in a
+       | (+ <element>)     ; inserted: only in b
+       | (! <element>)     ; changed
+@end example
+
+The @var{<start-pos>} and @var{<end-pos>} are exact integer indexes
+of the sequence the hunk is covering; the start position inclusive,
+the end position exclusive, and 0-based.
+
+Each @var{<edit>} shows the element in that range, and whether the
+element is to be unchanged, deleted, inserted or changed, to edit
+the sequence @var{a} to make @var{b}.
+
+Here's an example:
+
+@example
+(lcs-edit-list/context '(a b c) '(a B c d))
+ @result{}
+   (#((0 3 (= a) (! b) (= c))
+     ((0 4 (= a) (! B) (= c) (+ d)))))
+@end example
+
+The result contains one hunk.  It shows that you should change @code{b}
+to @code{B}, and insert @code{d}.
+
+In each hunk, up to @var{context-size} unchanged elements are attached
+before and after the inserted/delete/changed elements, to show the
+context.  If there's less than @code{(+ 1 (* conext-size 2))} elements
+between two changes, they are merged into one hunk.  In the followig
+example, the change of @code{b} to @code{B} and @code{e} to @code{E}
+are merged into one hunk for they're not far enough, while
+the change of @code{i} to @code{I} is in a separate hunk:
+
+@example
+(lcs-edit-list/context '(a b c d e f g h i j)
+                       '(a B c d E f g h I j)
+                       equal? :context-size 1)
+ @result{}
+   (#((0 6 (= a) (! b) (= c) (= d) (! e) (= f))
+      (0 6 (= a) (! B) (= c) (= d) (! E) (= f)))
+    #((7 10 (= h) (! i) (= j))
+      (7 10 (= h) (! I) (= j))))
+@end example
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Levenshtein edit distance, Pattern matching, The longest common subsequence, Library modules - Utilities
