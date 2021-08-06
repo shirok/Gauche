@@ -24935,6 +24935,13 @@ context.
 @c COMMON
 @end defun
 
+@defun diff-report/unified src-a src-b :key reader eq-fn writer context-size
+@c MOD text.diff
+Like @code{diff-report/context}, but use ``unified diff'' format,
+same as @code{diff -u}.
+@end defun
+
+
 @c ----------------------------------------------------------------------
 @node EDN parsing and construction, Running external editor, Calculate difference of text streams, Library modules - Utilities
 @section @code{text.edn} - EDN parsing and construction
@@ -28178,11 +28185,12 @@ returns.
 @end defun
 
 @defun lcs-edit-list/context a b :optional eq-fn :key context-size
+@defunx lcs-edit-list/unified a b :optional eq-fn :key context-size
 @c MOD util.lcs
 Calculates edit list of two sequences @var{a} and @var{b}, including
 context surrounding the changes.
-It is similar to what you get with @code{diff -c},
-and in fact, @code{text.diff} module provides context diff on top of
+It is similar to what you get with @code{diff -c} and @code{diff -u},
+respectively.  The @code{text.diff} module provides context diff on top of
 this procedure (@pxref{Calculate difference of text streams}).
 
 The @var{eq-fn} argument specifies the equality predicate on the elements.
@@ -28192,8 +28200,11 @@ size of the unchanged elements surrounding each edits.  It must be
 an exact positive integer.  Its default is 3.
 
 Returns a list of @emph{hunk}s.  Each hunk represents a chunk of
-difference between @var{a} and @var{b}.   A hunk is a two-vector
-elements, in the following format:
+difference between @var{a} and @var{b}.  The format of hunk
+differs between @code{lcs-edit-list/context} and
+@code{lcs-edit-list/unified}.
+
+@strong{A hunk of @code{lcs-edit-list/context}} has the following form:
 
 @example
 <hunk> : #(<a-edits> <b-edits>)
@@ -28229,6 +28240,21 @@ Here's an example:
 The result contains one hunk.  It shows that you should change @code{b}
 to @code{B}, and insert @code{d}.
 
+@strong{A hunk of @code{lcs-edit-list/unified}} has the following form:
+
+@example
+<hunk> : #(<a-start> <a-size> <b-start> <b-size> (<edit> ...))
+
+<edit> : (= <element>)     ; unchanged
+       | (- <element>)     ; deleted
+       | (+ <element>)     ; inserted
+@end example
+
+Each @var{start} and @var{size} in the hunk specifies
+the start position within the sequence (0-based) and
+the length of the hunk in the sequence, respectively.
+
+@strong{Context size:}
 In each hunk, up to @var{context-size} unchanged elements are attached
 before and after the inserted/delete/changed elements, to show the
 context.  If there's less than @code{(+ 1 (* conext-size 2))} elements
@@ -28246,6 +28272,13 @@ the change of @code{i} to @code{I} is in a separate hunk:
       (0 6 (= a) (! B) (= c) (= d) (! E) (= f)))
     #((7 10 (= h) (! i) (= j))
       (7 10 (= h) (! I) (= j))))
+
+(lcs-edit-list/unified '(a b c d e f g h i j)
+                       '(a B c d E f g h I j)
+                       equal? :context-size 1)
+ @result{}
+   (#(0 6 0 6 ((= a) (- b) (+ B) (= c) (= d) (- e) (+ E) (= f)))
+    #(7 3 7 3 ((= h) (- i) (+ I) (= j))))
 @end example
 @end defun
 
