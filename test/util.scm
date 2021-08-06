@@ -555,21 +555,21 @@
        (lcs-edit-list/unified '(a b c) '(a d c)))
 
 (test* "lcs edit-list/unified size"
-       '(#(3 12 3 12 ((= d) (= e) (= f) (- g) (- h) (- i)
-                      (+ x) (+ y) (+ z) (= j) (= k) (= l))))
+       '(#(3 9 3 9 ((= d) (= e) (= f) (- g) (- h) (- i)
+                    (+ x) (+ y) (+ z) (= j) (= k) (= l))))
        (lcs-edit-list/unified '(a b c d e f g h i j k l m n)
                               '(a b c d e f x y z j k l m n)))
 
 (test* "lcs edit-list/unified size"
-       '(#(5 10 5 10 ((= f) (- g) (- h) (- i)
-                      (+ x) (+ y) (+ z) (= j))))
+       '(#(5 5 5 5 ((= f) (- g) (- h) (- i)
+                    (+ x) (+ y) (+ z) (= j))))
        (lcs-edit-list/unified '(a b c d e f g h i j k l m n)
                               '(a b c d e f x y z j k l m n)
                               eq? :context-size 1))
 
 (test* "lcs edit-list/unified multiple hunks"
-       '(#(1 4 1 5 ((= b) (- c) (+ C) (+ C) (= d)))
-         #(9 13 10 12 ((= j) (- k) (- l) (= m))))
+       '(#(1 3 1 4 ((= b) (- c) (+ C) (+ C) (= d)))
+         #(9 4 10 2 ((= j) (- k) (- l) (= m))))
        (lcs-edit-list/unified '(a b c   d e f g h i j k l m n)
                               '(a b C C d e f g h i j     m n)
                               eq? :context-size 1))
@@ -577,20 +577,20 @@
 (test* "lcs edit-list/unified hunk merging"
        '(#(0 11 0 11 ((= a) (- b) (- c) (+ B) (+ C) (= d) (= e) (= f) (= g)
                       (- h) (- i) (+ H) (+ I) (= j) (= k)))
-         #(12 17 12 17 ((= m) (= n) (- o) (- p) (+ O) (+ P) (= q))))
+         #(12 5 12 5 ((= m) (= n) (- o) (- p) (+ O) (+ P) (= q))))
        (lcs-edit-list/unified '(a b c d e f g h i j k l m n o p q)
                               '(a B C d e f g H I j k l m n O P q)
                               eq? :context-size 2))
 
 (test* "lcs edit-list/unified boundary condition 1"
        '(#(0 5 0 3 ((- a) (- b) (= c) (= d) (= e)))
-         #(8 11 6 11 ((= i) (= j) (= k) (+ l) (+ m))))
+         #(8 3 6 5 ((= i) (= j) (= k) (+ l) (+ m))))
        (lcs-edit-list/unified '(a b c d e f g h i j k)
                               '(c d e f g h i j k l m)))
 
 (test* "lcs edit-list/unified boundary condition"
        '(#(0 5 0 4 ((- a) (- b) (+ B) (= c) (= d) (= e)))
-         #(8 12 7 12 ((= i) (= j) (= k) (- L) (+ l) (+ m))))
+         #(8 4 7 5 ((= i) (= j) (= k) (- L) (+ l) (+ m))))
        (lcs-edit-list/unified '(a b c d e f g h i j k L)
                               '(B c d e f g h i j k l m)))
 

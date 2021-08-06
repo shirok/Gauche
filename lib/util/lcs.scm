@@ -350,6 +350,16 @@
           (loop (cons hunk hunks) next)
           (reverse hunks))))))
 
+;; lcs-edit-list/unified
+;;
+;;  Hunk format
+;;   #(<a-start> <a-len> <b-start> <b-len> (<edit> ...))
+;;
+;;   <edit> : (= <element>)
+;;          | (- <element>)
+;;          | (+ <element>)
+;;
+
 ;; API
 (define (lcs-edit-list/unified a b :optional (eq equal?)
                                :key (context-size 3))
@@ -375,11 +385,13 @@
       (if (anchor-node? n) (+ 1 (pos n)) (pos n)))
     (define (end-index n pos)
       (if (anchor-node? n) (pos n) (+ 1 (pos n))))
+    (define (hunk-size s e pos)
+      (- (end-index e pos) (start-index s pos)))
 
     `#(,(start-index start-node Node-a-pos)
-       ,(end-index end-node Node-a-pos)
+       ,(hunk-size start-node end-node Node-a-pos)
        ,(start-index start-node Node-b-pos)
-       ,(end-index end-node Node-b-pos)
+       ,(hunk-size start-node end-node Node-b-pos)
        ,(common start-node '())))
 
   (assume (and (exact-integer? context-size)

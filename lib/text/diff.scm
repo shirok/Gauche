@@ -74,17 +74,17 @@
                                       (reader read-line)
                                       (equal equal?)
                                       (context-size (undefined)))
-  (define (show-line start end)
-    (format #t "~d" (if (= start end 0) 0 (+ start 1)))
-    (unless (= 1 (- end start))
-      (format #t ",~d" (- end start))))
+  (define (show-line start len)
+    (if (= len 1)
+      (format #t "~d" (+ start 1))
+      (format #t "~d,~d" (if (= len 0) 0 (+ start 1)) len)))
 
   (define (show-hunk hunk)
-    (match-let1 #(as ae bs be lines) hunk
+    (match-let1 #(as alen bs blen lines) hunk
       (display "@@ -")
-      (show-line as ae)
+      (show-line as alen)
       (display " +")
-      (show-line bs be)
+      (show-line bs blen)
       (display " @@\n")
       (dolist [line lines]
         (match line
