@@ -82,5 +82,7 @@
   (equal? (%->input 'expected expected) (%->input 'actual actual)))
 
 (define (%test-report-diff msg expected actual)
-  (format #t "diffs:\n")
-  (diff-report/context (%->input 'expected expected) (%->input 'actual actual)))
+  (print "diffs:")
+  (print "--- expected")
+  (print "+++ actual")
+  (diff-report/unified (%->input 'expected expected) (%->input 'actual actual)))
