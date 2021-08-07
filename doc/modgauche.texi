@@ -20196,16 +20196,16 @@ described below.
 @c COMMON
 @end defun
 
-@defun test-report-failure name expected result
+@defun test-report-failure name expected-result actual-result
 @c MOD gauche.test
 @c EN
-The default procedure to report test failure.  It calls
-@code{(format #t "ERROR: GOT ~S\n" actual-result)}.
+The default procedure to report test failure.  It just
+writes @var{actual-result} with @code{write}.
 You can customize the failure report by passing your reporting procedure
 to @var{report} argument to @code{test} and @var{test*}.
 @c JP
 テスト失敗をレポートする手続きのデフォルトです。これは単に
-@code{(format #t "ERROR: GOT ~S\n" actual-result)}を呼ぶだけです。
+@var{actual-result}を@code{write}で書き出すだけです。
 @code{test}や@code{test*}の@var{report}引数に独自の手続きを渡すことにより、
 テスト失敗時の表示をカスタマイズできます。
 @c COMMON

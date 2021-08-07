@@ -24937,8 +24937,93 @@ context.
 
 @defun diff-report/unified src-a src-b :key reader eq-fn writer context-size
 @c MOD text.diff
+@c EN
 Like @code{diff-report/context}, but use ``unified diff'' format,
 same as @code{diff -u}.
+@c JP
+@code{diff-report/context}と似ていますが、@code{diff -u}と同じ
+「unified diff」形式で結果を表示します。
+@c COMMON
+
+@example
+(diff-report/unified "a\nb\nc\nd\n" "a\nx\nd\n")
+ @r{prints:}
+@@@@ -1,4 +1,3 @@@@
+ a
+-b
+-c
++x
+ d
+@end example
+
+@c EN
+Each ``hunk'' begins with the header:
+@c JP
+各hunkは次のヘッダで始まります:
+@c COMMON
+@example
+@@@@ -p,q +r,s @@@@
+@end example
+@c EN
+where @var{p} is the start line number in @var{src-a},
+@var{q} is the length of the hunk in @var{src-a},
+@var{r} is the start line number in @var{src-b},
+and @var{s} is the length of the hunk in @var{src-b}.
+@c JP
+ここで、@var{p}は@var{src-a}におけるhunkの開始行、
+@var{q}は@var{src-a}におけるhunkの長さ、
+@var{r}は@var{src-b}におけるhunkの開始行、
+@var{s}は@var{src-b}におけるhunkの長さです。
+@c COMMON
+
+@c EN
+The line-number is 1-based.
+If the length of the hunk is 1, it is omitted.
+@c JP
+行番号は1から始まります。また、hunkの長さが1の場合、それは省略されます。
+@c COMMON
+
+@c EN
+The lines deleted from @var{src-a} has @code{-} prefix,
+the ones inserted into @var{src-b} has @code{+} prefix,
+and unchanged lines has a space prefix.
+@c JP
+@var{src-a}から削除された行には@code{-}が、
+@var{src-b}に追加された行には@code{+}が、
+そして変更のない行にはスペースが付加されます。
+@c COMMON
+
+@c EN
+As a special case, if either of sources is empty, both of its start index and
+length are shown as @code{0}.
+@c JP
+特別な場合として、どちらかの入力が空だった場合、その開始行と長さはともに0となります。
+@c COMMON
+
+@example
+(diff-report/unified "a\nb\nc\n" "")
+ @r{prints:}
+@@@@ -1,3 +0,0 @@@@
+-a
+-b
+-c
+@end example
+
+@c EN
+The @var{reader}, @var{eq-fn}, @code{writer}, and @var{context-size}
+keyword arguments are the same as @code{diff-report/context}.
+@c JP
+@var{reader}、@var{eq-fn}、@var{writer}、@var{context-size}キーワード引数は
+@code{diff-report/context}と同じです。
+@c COMMON
+
+@c EN
+This is used to show the difference of test results in @code{test*/diff}
+(@pxref{Unit testing}).
+@c JP
+この手続きは@code{test*/diff}でテスト結果との差異を示すのに使われています
+(@ref{Unit testing}参照)。
+@c COMMON
 @end defun
 
 
@@ -27992,7 +28077,7 @@ Eugene Myers' O(ND) algorithm
 
 One of the applications of this algorithm is to calculate
 the difference of two text streams;
-see @ref{Calculate difference of text streams}.
+@pxref{Calculate difference of text streams}.
 @c JP
 このモジュールは、与えられた2つのシーケンスの最長共通サブシーケンスを見つける
 アルゴリズムを実装しています。アルゴリズムは、Eugene Myersの
@@ -28001,7 +28086,8 @@ O(ND)アルゴリズムに基づいています
 @i{Algorithmica} Vol. 1 No. 2, pp. 251-266, 1986.)。
 
 このアルゴリズムを使うアプリケーションの1つは、2つのテキストストリームの
-相違点を計算する@ref{Calculate difference of text streams}です。
+相違点を計算する@code{test.diff}モジュールです
+(@ref{Calculate difference of text streams}参照)。
 @c COMMON
 @end deftp
 
@@ -28187,24 +28273,49 @@ returns.
 @defun lcs-edit-list/context a b :optional eq-fn :key context-size
 @defunx lcs-edit-list/unified a b :optional eq-fn :key context-size
 @c MOD util.lcs
+@c EN
 Calculates edit list of two sequences @var{a} and @var{b}, including
 context surrounding the changes.
-It is similar to what you get with @code{diff -c} and @code{diff -u},
-respectively.  The @code{text.diff} module provides context diff on top of
+It is similar to what you get with @code{diff -c} and @code{diff -u}
+commands, respectively.
+The @code{text.diff} module provides context diff on top of
 this procedure (@pxref{Calculate difference of text streams}).
+@c JP
+二つのシーケンス@var{a}と@var{b}から、変更の文脈を含めた編集リストを計算します。
+@code{diff -c}および@code{diff -u}コマンドの出力と似たようなものです。
+@code{text.diff}モジュールではこの手続きの上に、コンテクストdiff出力を得る
+ユーティリティを提供しています
+(@ref{Calculate difference of text streams}参照)。
+@c COMMON
 
+@c EN
 The @var{eq-fn} argument specifies the equality predicate on the elements.
 Its default is @code{equal?}.
 The @var{context-size} keyword argument specifies the maximum
 size of the unchanged elements surrounding each edits.  It must be
 an exact positive integer.  Its default is 3.
+@c JP
+@var{eq-fn}引数はシーケンスの各要素を比較する述語で、デフォルトは@code{equal?}です。
+@var{context-size}引数は、文脈を示すために変更点の前後に付加される変更のない
+要素の最大数で、正の正確な整数でなければなりません。デフォルトは3です。
+@c COMMON
 
+@c EN
 Returns a list of @emph{hunk}s.  Each hunk represents a chunk of
 difference between @var{a} and @var{b}.  The format of hunk
 differs between @code{lcs-edit-list/context} and
 @code{lcs-edit-list/unified}.
+@c JP
+戻り値は@emph{hunk}のリストです。各hunkが@var{a}と@var{b}の相違点を示します。
+hunkのフォーマットは@code{lcs-edit-list/context}と@code{lcs-edit-list/unified}で
+異なります。
+@c COMMON
 
+@c EN
 @strong{A hunk of @code{lcs-edit-list/context}} has the following form:
+@c JP
+@strong{@code{lcs-edit-list/context}のhunk}は次のとおりです。
+@c COMMON
 
 @example
 <hunk> : #(<a-edits> <b-edits>)
@@ -28220,15 +28331,31 @@ differs between @code{lcs-edit-list/context} and
        | (! <element>)     ; changed
 @end example
 
+@c EN
 The @var{<start-pos>} and @var{<end-pos>} are exact integer indexes
 of the sequence the hunk is covering; the start position inclusive,
 the end position exclusive, and 0-based.
+@c JP
+@var{<start-pos>}と@var{<end-pos>}は正確な整数のインデックスで、
+シーケンス中でhunkがカバーする範囲を示します (@var{<start-pos>}は含まれ、
+@var{<end-pos>}は含まれません)。
+@c COMMON
 
+@c EN
 Each @var{<edit>} shows the element in that range, and whether the
 element is to be unchanged, deleted, inserted or changed, to edit
 the sequence @var{a} to make @var{b}.
+@c JP
+各@var{<edit>}はその範囲の要素と、それが両シーケンスで同じなのか、
+削除された(@var{a}だけに存在)か、挿入された(@var{b}だけに存在)か、
+あるいは置き換えられたかを示します。
+@c COMMON
 
+@c EN
 Here's an example:
+@c JP
+これが例です:
+@c COMMON
 
 @example
 (lcs-edit-list/context '(a b c) '(a B c d))
@@ -28237,10 +28364,19 @@ Here's an example:
      ((0 4 (= a) (! B) (= c) (+ d)))))
 @end example
 
+@c EN
 The result contains one hunk.  It shows that you should change @code{b}
 to @code{B}, and insert @code{d}.
+@c JP
+結果には1つのhunkが含まれ、それは@code{b}を@code{B}に置き換えて@code{d}を追加することを
+指示しています。
+@c COMMON
 
+@c EN
 @strong{A hunk of @code{lcs-edit-list/unified}} has the following form:
+@c JP
+@strong{@code{lcs-edit-list/unified}のhunk}は次のとおりです:
+@c COMMON
 
 @example
 <hunk> : #(<a-start> <a-size> <b-start> <b-size> (<edit> ...))
@@ -28250,10 +28386,22 @@ to @code{B}, and insert @code{d}.
        | (+ <element>)     ; inserted
 @end example
 
+@c EN
 Each @var{start} and @var{size} in the hunk specifies
 the start position within the sequence (0-based) and
 the length of the hunk in the sequence, respectively.
+@c JP
+各@var{start}と@var{size}はそれぞれのシーケンス中での、
+hunkの開始位置(0起点)とその長さを示します。
+@c COMMON
 
+@example
+(lcs-edit-list/unified '(a b c) '(a B c d))
+  @result{}
+  (#(0 3 0 4 ((= a) (- b) (+ B) (= c) (+ d))))
+@end example
+
+@c EN
 @strong{Context size:}
 In each hunk, up to @var{context-size} unchanged elements are attached
 before and after the inserted/delete/changed elements, to show the
@@ -28262,6 +28410,16 @@ between two changes, they are merged into one hunk.  In the followig
 example, the change of @code{b} to @code{B} and @code{e} to @code{E}
 are merged into one hunk for they're not far enough, while
 the change of @code{i} to @code{I} is in a separate hunk:
+@c JP
+@strong{コンテキストの大きさ}:
+各hunkの前後には、文脈を示すために、
+最大で@var{context-size}の、変更のない要素が付加されています。
+もし変更のあった二ヶ所の間の要素が@code{(+ 1 (* conext-size 2))}より少なければ、
+二つの変更箇所は一つのhunkにまとめられます。
+次の例では、@code{b}から@code{B}、@code{e}から@code{E}への変更は
+十分に離れていないのでひとつのhunkになり、一方@code{i}から@code{I}への変更は
+別のhunkになっています:
+@c COMMON
 
 @example
 (lcs-edit-list/context '(a b c d e f g h i j)
