@@ -39,7 +39,7 @@
 (use util.match)
 
 ;; Usage example:
-;;  (test*-diff "foo" '(content-of "sample.out")
+;;  (test*/diff "foo" '(content-of "sample.out")
 ;;              <expression-to-generate-output>)
 ;;
 ;; This is a handy macro to compare a generated text against a pre-generated
@@ -54,14 +54,14 @@
 ;; is read and used.  If <filename> is a relative path, it is relative to
 ;; the current loading path.
 
-(define-syntax test*-diff
+(define-syntax test*/diff
   (syntax-rules ()
     ([_ msg expected expr]
      (test* msg expected expr
             %test-check-diff %test-report-diff))))
 
-;; internal
-(define (%->input what src)
+;; internal.  converts src to string.  if can't convert, just return src as is.
+(define (%->input src)
   (match src
     [('content-of filename)
      (let1 file (if (relative-path? filename)
@@ -74,15 +74,18 @@
      (if (every string? x)
        (string-join x "\n")
        (fail))]
-    [(? string?) src]
-    [else
-     (errorf "Bad ~a spec: ~s" what src)]))
+    [else src]))                        ;convers string src case
 
 (define (%test-check-diff expected actual)
-  (equal? (%->input 'expected expected) (%->input 'actual actual)))
+  (equal? (%->input expected) (%->input actual)))
 
 (define (%test-report-diff msg expected actual)
-  (print "diffs:")
-  (print "--- expected")
-  (print "+++ actual")
-  (diff-report/unified (%->input 'expected expected) (%->input 'actual actual)))
+  (let ([e (%->input expected)]
+        [a (%->input actual)])
+    (if (and (string? e) (string? a))
+      (begin
+        (print "diffs:")
+        (print "--- expected")
+        (print "+++ actual")
+        (diff-report/unified e a))
+      (test-report-failure msg expected actual)))) ;fallback

@@ -1,3 +1,9 @@
+2021-08-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test/diff.scm (test*/diff): Renamed from test*-diff.
+	  Use unified diff instead of context diff.  Handle the case
+	  when the result isn't a string.
+
 2021-08-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/util/lcs.scm (lcs-edit-list/unified),
