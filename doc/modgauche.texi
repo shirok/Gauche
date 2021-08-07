@@ -20103,6 +20103,78 @@ in future releases.
 @c COMMON
 @end defun
 
+@defmac test*/diff name expected expr
+@c MOD gauche.test
+@c EN
+This is a customized @code{test*}, particularly useful when
+the expected result is a multi-line text.
+@c JP
+これは、期待される結果が複数行のテキストの場合に特に便利な、
+@code{test*}のカスタマイズ版です。
+@c COMMON
+
+@c EN
+Like @code{test*}, it evaluates @var{expr} and compares the result
+with @var{expected}.  If they differ, the difference is reported
+in a unified diff format (using @code{diff-report/unified}.
+@xref{Calculate difference of text streams}).
+@c JP
+@code{test*}と同様に、@var{expr}を評価してその結果を@var{expected}と比較します。
+ただ、違っていた場合に、その差異をunified diff形式でレポートします
+(@code{diff-report/unified}が使われます。
+@ref{Calculate difference of text streams}参照)。
+@c COMMON
+
+@c EN
+The @var{expected} argument should be in one of the following forms:
+@table @asis
+@item @code{@i{string}}
+The expected text as a single string.
+@item @code{(@i{string} @dots{})}
+List of lines, which are joined together with newline characters.
+@item @code{(content-of @i{filename})}
+Read the file @i{filename} and use its content as the expected text.
+If @i{filename} is a relative path, it is looked for from the test script.
+If @i{filaname} does not exist, an empty string is assumed.
+@end table
+@c JP
+@var{expected}引数は次のいずれかの形式です:
+@table @asis
+@item @code{@i{string}}
+期待されるテキストを単一の文字列で。
+@item @code{(@i{string} @dots{})}
+期待されるテキストを行のリストで。各行は改行を追加されてjoinされます。
+@item @code{(content-of @i{filename})}
+@i{filename}を読んでその内容を期待するテキストとして使います。
+@i{filename}が相対パスの場合は、テストスクリプトからの相対パスと解釈します。
+@i{filename}が存在しない場合は、空の文字列が使われます。
+@end table
+@c COMMON
+
+@c EN
+The test exprssion @var{expr} should yield one of the above forms as well.
+If it yields @code{(contet-of @i{filename})} form, however, make sure that the
+file remains until the end of the tests---since the file is read again
+when the discrepancy summary is reported.  Typicall, it is easier
+to yield a string or a list of strings.
+@c JP
+@var{expr}の結果も、上記形式のどれかでなければなりません。
+ただし、@code{(contet-of @i{filename})}を生成する場合は、@i{filename}が
+テスト終了時まで残るようにしてください。というのは、失敗したテスト一覧を最後に報告する時に
+@i{filename}が再び読まれるからです。
+一般的には、@var{expr}が直接文字列もしくは文字列のリストを返すようにするのが良いでしょう。
+@c COMMON
+
+@c EN
+If either @var{expected} or the result of @var{expr} is not in one of
+those forms, @code{test*/diff} reports the result just like
+@code{test*}.
+@c JP
+@var{expected}か@var{expr}が上記形式以外のものを返した場合は、diffではなく
+@code{test*}と同じ形式で報告します。
+@c COMMON
+@end defmac
+
 @defun test-check expected result :optional fallback
 @c MOD gauche.test
 @c EN
