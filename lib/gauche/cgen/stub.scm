@@ -1203,9 +1203,6 @@
 ;;; Emitting code
 ;;;
 
-(define-method cgen-emit-decl ((proc <procstub>))
-  (dolist [s (~ proc'forward-decls)] (p s)))
-
 (define-method cgen-emit-decl ((cproc <cproc>))
   (next-method)
   ;; We emit forward definitions of C function names and stub record definitions
@@ -1235,7 +1232,11 @@
                   [else "NULL"])))                    ; inliner
   (p))
 
+(define-method cgen-emit-body ((proc <procstub>))
+  (dolist [s (~ proc'forward-decls)] (p s)))
+
 (define-method cgen-emit-body ((cproc <cproc>))
+  (next-method)
   (p "static ScmObj "(~ cproc'c-name)"(ScmObj *SCM_FP SCM_UNUSED, int SCM_ARGCNT SCM_UNUSED, void *data_ SCM_UNUSED)")
   (p "{")
   ;; argument decl
@@ -1407,6 +1408,7 @@
   (~ self'c-name))
 
 (define-method cgen-emit-body ((self <cgeneric>))
+  (next-method)
   (unless (extern? self) (p "static "))
   (p "SCM_DEFINE_GENERIC("(~ self'c-name)", "(~ self'fallback)", NULL);")
   (p))
@@ -1511,6 +1513,7 @@
         ))))
 
 (define-method cgen-emit-body ((method <cmethod>))
+  (next-method)
   (f "static ScmObj ~a(ScmNextMethod *nm_ SCM_UNUSED, ScmObj *SCM_FP, int SCM_ARGCNT SCM_UNUSED, void *d_ SCM_UNUSED)"
      (~ method'c-name))
   (p "{")
