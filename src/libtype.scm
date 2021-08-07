@@ -90,14 +90,14 @@
  ;;   validator :: <descriptive-type> obj -> <boolean>
  ;;     Returns true iff obj is of type <descriptive-type>.  Called from
  ;;     `of-type?`.
- ;;   subtype? :: <descriptive-type> type -> <boolean>
- ;;     Returns true iff the descriptive type is a subtype of TYPE, which may
- ;;     be a class or another descriptive type.  Note that proxy types and
- ;;     native types are already excluded, as well as the case where reflective
- ;;     case (subtype? x x) and the base cases (subtype? x <top>).
- ;;     NB: if TYPE is a descriptive type different kind of <descriptive-type>,
- ;;     you may want to call (~ type'supertype?) to determine if it thinks
- ;;     <descriptive-type> its subtype.
+ ;;   subtype? :: <descriptive-type> type -> <boolean>|'super
+ ;;     Returns one of three values:  #t if the descriptive type is a subtype
+ ;;     of TYPE, which may be a class or another descriptive type.  #f if
+ ;;     the descriptive type is definitely not a subtype.  A symbol 'super
+ ;;     if you need to ask TYPE.
+ ;;     Note that proxy types and native types are already excluded, as well
+ ;;     as the reflective case (subtype? x x) and the base cases
+ ;;     (subtype? x <top>).
  ;;   supertype? :: <descriptive-type> type -> <boolean>
  ;;     Returns true iff the descriptive type is a supertype of TYPE.
  ;;     Trivial cases are already excluded, esp., TYPE won't be the
@@ -206,6 +206,14 @@
 ;;; subtype? type-or-class type-or-class
 ;;;
 
+(define-cfn delegate-to-super (sub super) :static
+  (if (SCM_DESCRIPTIVE_TYPE_P super)
+    (let* ([k::ScmClass* (Scm_ClassOf super)])
+      (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
+      (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) supertypeP)
+                            super sub)))
+    (return SCM_FALSE)))
+
 (define-cproc subtype? (sub super)
   (loop
    (cond
@@ -232,19 +240,15 @@
     [(SCM_DESCRIPTIVE_TYPE_P sub)
      (let* ([k::ScmClass* (Scm_ClassOf sub)])
        (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
-       (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) subtypeP)
-                             sub super)))]
-    [(SCM_DESCRIPTIVE_TYPE_P super)
-     (let* ([k::ScmClass* (Scm_ClassOf super)])
-       (SCM_ASSERT (SCM_TYPE_CONSTRUCTOR_META_P k))
-       (return (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) supertypeP)
-                             super sub)))]
-    [else (return SCM_FALSE)])))
-
-;; Call this in subtype? after dealing with typical cases.
-(define (%delegate-to-super type super)
-  (and (is-a? super <descriptive-type>)
-       ((~ (class-of super)'supertype?) super type)))
+       (let1/cps r (Scm_VMApply2 (-> (SCM_TYPE_CONSTRUCTOR_META k) subtypeP)
+                                 sub super)
+         [sub super]
+         (cond [(or (SCM_FALSEP r) (SCM_EQ r SCM_TRUE)) (return r)]
+               [(SCM_EQ r 'super) (return (delegate-to-super sub super))]
+               [else
+                (Scm_Error "subtype? handler of %S returned invalid value: %S"
+                           r)])))]
+    [else (return (delegate-to-super sub super))])))
 
 ;;;
 ;;; Descriptive type infrastructure
@@ -425,9 +429,9 @@
 
 (define (subtype-^ type super)
   (if (is-a? super <^>)
-    (and (subtype-Tuple (~ type'arguments) (~ super'arguments))
-         (subtype-Tuple (~ super'results) (~ type'results)))
-    (%delegate-to-super type super)))
+    (and (subtype? (~ type'arguments) (~ super'arguments))
+         (subtype? (~ super'results) (~ type'results)))
+    'super))
 
 ;; Internal API - called from procedure-type (libproc)
 (define (reconstruct-procedure-type proc encoded-type)
@@ -518,7 +522,7 @@
   :subtype? (^[type super]
               (if (is-a? super </>)
                 (every (cut subtype? <> super) (~ type'members))
-                (%delegate-to-super type super)))
+                'super))
   :supertype? (^[type sub] (any (cut subtype? sub <>) (~ type'members))))
 
 ;;;
@@ -540,7 +544,7 @@
   :subtype? (^[type super]
               (if (is-a? super <?>)
                 (subtype? (~ type'primary-type) (~ super'primary-type))
-                (%delegate-to-super type super)))
+                'super))
   :supertype? (^[type sub] (subtype? sub (~ type'primary-type))))
 
 ;;;
@@ -586,7 +590,7 @@
            (<= (or (~ super'min-length) 0)
                (length (~ type'elements))
                (or (~ super'max-length) +inf.0)))
-      (%delegate-to-super type super)))
+      'super))
 
 (define-class <Tuple> (<descriptive-type>)
   ((elements    :init-keyword :elements)
@@ -661,7 +665,7 @@
                  (or (~ super'min-length) 0))
              (<= (or (~ type'max-length) +inf.0)
                  (or (~ super'max-length) +inf.0)))
-        (%delegate-to-super type super))))
+        'super)))
 
 (define-class <List> (<descriptive-type>)
   ((element-type :init-keyword :element-type)
