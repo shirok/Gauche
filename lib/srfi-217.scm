@@ -577,8 +577,6 @@
 (define (iset-intersection! iset1 iset2 . isets)
   (apply %intersect-n #t iset1 iset2 isets))
 
-;; To be implemented
-
 (define (isubset= iset0 k)
   (if (iset-contains? iset0 k)
     (if (= (iset-size iset0) 1)
