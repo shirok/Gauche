@@ -508,9 +508,9 @@
          [(declare-cfn)
           (unless (null? body)
             (errorf "declare-cfn ~s must not have a body" name))
-          (when (or (memq :static quals) (memq :inline quals))
-            (errorf "declare-cfn ~s cannot have qualifier(s)" name))
-          (record-static name '(:extern) args ret-type)
+          (if (and (not (memq :extern quals)) (not (memq :static quals)))
+            (record-static name `(:extern ,@quals) args ret-type)
+            (record-static name quals args ret-type))
           ;; no function implementation
           '()])]))
 
