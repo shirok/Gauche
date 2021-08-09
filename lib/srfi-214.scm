@@ -112,7 +112,7 @@
   ;; diractly).
   (let1 vec (make-vector (- end start))
     (dotimes [k (- end start)]
-      (vector-set! vec k (rinb-buffer-ref fv (- end k 1))))
+      (vector-set! vec k (ring-buffer-ref fv (- end k 1))))
     (make-ring-buffer vec :initial-tail-index (- end start))))
 
 (define (flexvector-append . fvs) (flexvector-concatenate fvs))
