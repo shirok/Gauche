@@ -25510,93 +25510,210 @@ GaucheオブジェクトをEDNタグつきオブジェクトとして書き出�
 
 @deftp {Module} text.external-editor
 @mdindex text.external-editor
+@c EN
 A convenience module to invoke external editor program.
 This is mainly to be used from REPL, but can be useful for
 other purposes.
+@c JP
+外部エディタプログラムを起動するための便利なモジュールです。
+もともとREPLで使われることを意図していましたが、他の目的にも有用かもしれません。
+@c COMMON
 @end deftp
 
 @defun ed path-or-proc :key editor load-after
 @c MOD text.external-editor
+@c EN
 Starts an external editor.  The editor program path is determined
 in the following order:
+@c JP
+外部エディタを起動します。起動するエディタのパスは次のように決められます。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 The @var{editor} keyword argument, if it's a string.
+@c JP
+@var{editor}キーワード引数に文字列が与えれれば、それをパスと解釈します。
+@c COMMON
 @item
+@c EN
 The value of @code{*editor*} in the user module, if defined.
+@c JP
+userモジュールに変数@code{*editor*}が定義されていれば、その値。
+@c COMMON
 @item
+@c EN
 The value of the environment variable @code{GAUCHE_EDITOR}.
+@c JP
+環境変数@code{GAUCHE_EDITOR}が定義されていれば、その値。
+@c COMMON
 @item
+@c EN
 The value of the environment variable @code{EDITOR}.
+@c JP
+環境変数@code{EDITOR}が定義されていれば、その値。
+@c COMMON
 @item
-If none works, the behavior depends on the value of :editor keyword
+@c EN
+If none works, the behavior depends on the value of @var{editor} keyword
 argument:
+@c JP
+どれも該当しなかった場合、@var{editor}キーワード引数によって振る舞いが決まります。
+@c COMMON
 @table @code
 @item #f
+@c EN
 Just returns @code{#f}.
+@c JP
+単に@code{#f}を返します。
+@c COMMON
 @item error
+@c EN
 Throws an error.
+@c JP
+エラーを投げます。
+@c COMMON
 @item ask
-Asks the user.
+@c EN
+Asks the user. (default)
+@c JP
+ユーザに尋ねます。(デフォルト)
+@c COMMON
 @item message
+@c EN
 Prints message and returns @code{#f}.
+@c JP
+メッセージを出して@code{#f}を返します。
+@c COMMON
 @end table
 @end itemize
 
+@c EN
 Returns @code{#t} for normal termination.
+@c JP
+エディタを起動して、それが終了した場合は@code{#t}を返します。
+@c COMMON
 
+@c EN
 The editor program may be called in one of the following way:
+@c JP
+エディタプログラムは次のどちらかの形で呼ばれます:
+@c COMMON
 
 @example
 EDITOR filename
 EDITOR +lineno filename
 @end example
 
+@c EN
 The latter expects to locate the cursor on the specified line number
 in the filename.
+@c JP
+後者の場合、エディタは@var{filename}をオープンした後、
+@var{lineno}で示される行にカーソルを移動することが期待されます。
+@c COMMON
 
-The file to open is determined by a generic function @code{ed-pick-file}.
+@c EN
+The file to open is determined by calling the generic function
+@code{ed-pick-file} on the argument @var{path-or-proc}.
 It should return @code{(@var{filename} @var{lineno})},
 or @code{#f} to indicate that it couldn't determine the file to edit.
+Methods for @code{<string>} and @code{<procedure>} are already defined;
+see the entry of @code{ed-pick-file} below.
+@c JP
+オープンするファイル名は、ジェネリックファンクション@code{ed-pick-file}を
+@var{path-or-proc}を引数として起動することで決定されます。
+@code{ed-pick-file}は@code{(@var{filename} @var{lineno})}を返すか、
+オープンすべきファイル名が決定できない場合は@code{#f}を返します。
+@code{<string>}と@code{<procedure>}に対するメソッドは既に定義されています。
+詳しくは下の@code{ed-pick-file}を見てください。
+@c COMMON
 
+@c EN
+@c EN
 The @var{load-after} argument controls whether the file is loaded
 into the process after the file is modified.  It must be one of
 the following values:
+@c JP
+@var{load-after}引数は、ファイルが変更された後でそれを
+自動的にロードするかどうかを指定します。以下の値のいずれかでなければなりません。
+@c COMMON
 @table @code
 @item #t
+@c EN
 Load the file once editor exits and the file is modified.
+@c JP
+エディタが終了し、その時点でファイルが変更されていた場合は、それをロードします。
+@c COMMON
 @item #f
+@c EN
 Do not load the file.
+@c JP
+ファイルをロードしません。
+@c COMMON
 @item ask
-Ask the user if the file should be loaded or not.
+@c EN
+Ask the user if the file should be loaded or not if the file is modified.
+(default)
+@c JP
+ファイルが変更されていた場合に、ロードすべきかどうかをユーザに尋ねます。(デフォルト)
+@c COMMON
 @end table
 
+@c EN
 NB: Common Lisp's @code{ed} can be invoked without argument.  For our usage,
 though, that feature doesn't seem too useful---it's more likely that
 repl IS inside an editor so we only need to open a specific file in
 a buffer.  Emacsclient requires filename, so it further complicates things.
 For now we just require one argument.
+@c JP
+註: Common Lispの@code{ed}は引数なしで呼び出すこともできます。
+しかし我々の用途ではそれはあまり有用でないと判断しました。REPLを走らせている場合、
+それが既にエディタの中である可能性は高く、
+それなら指定ファイルをバッファで開けばいいわけです。
+また、@code{emacsclient}はファイル名を取るので、
+ファイル名無しの場合の処理が煩雑になります。なので今のところ、ファイル名を必須としました。
+@c COMMON
 @end defun
 
 @defun ed-string string :key editor
 @c MOD text.external-editor
-Invoke an external editor (as described in @code{ed}) with @var{string}
-being the initial content.  Once editor exits,
-returns the edited content as a string.
+@c EN
+Invoke an external editor (as described in @code{ed}) on a temporary file
+whose content is @var{string}.
+Once editor exits, returns the edited content as a string.
+@c JP
+@var{string}を一時ファイルに書き出して、それをオープンするエディタを起動します
+(エディタがどう起動されるかについては@code{ed}のエントリを参照)。
+エディタが終了したら、編集済の内容を文字列として返します。
+@c COMMON
 @end defun
 
 @deffn {Generic Function} ed-pick-file obj
 @c MOD text.external-editor
+@c EN
 Determine what to edit.  It must return a list of
 filename and line number, or @code{#f} if it can't find appropriate file to
 edit.
+@c JP
+何を編集するかを決めるジェネリックファンクションです。
+ファイル名と行番号からなるリストか、編集すべきファイル名が見つからなければ@code{#f}を
+返します。
+@c COMMON
 
-Methos for strings, procedures and @code{<top>} are already defined.
+@c EN
+Methods for strings, procedures and @code{<top>} are already defined.
 If @var{obj} is a string, it is taken as a filename.
 If @var{obj} is a procedure and its source location is available,
 the source file and the location is returned.
 Otherwise, @code{#f} is returned.
+@c JP
+文字列、@code{<procedure>}、そして@code{<top>}に対するメソッドが既に定義されています。
+@var{obj}が文字列なら、それがファイル名です。
+@var{obj}が手続きでそのソース位置が分かっていれば、ソースファイル名と定義行を返します。
+@var{obj}がそれ以外なら@code{#f}を返します。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
