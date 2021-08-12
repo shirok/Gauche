@@ -70,6 +70,7 @@ srfi N is supported by Gauche.)
 * Port positioning::            srfi-192
 * Command line::                srfi-193
 * Range objects::               srfi-196
+* Pipeline operators::          srfi-197
 * Integer sets::                srfi-217
 * Define higher-order lambda::  srfi-219
 * Generator/accumulator sub-library::  srfi-221
@@ -10728,7 +10729,7 @@ script location.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Range objects, Integer sets, Command line, Library modules - SRFIs
+@node Range objects, Pipeline operators, Command line, Library modules - SRFIs
 @section @code{srfi-196} - Range objects
 @c NODE レンジオブジェクト, @code{srfi-196} - レンジオブジェクト
 
@@ -10764,7 +10765,100 @@ vector->range      range->generator
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Integer sets, Define higher-order lambda, Range objects, Library modules - SRFIs
+@node Pipeline operators, Integer sets, Range objects, Library modules - SRFIs
+@section @code{srfi-197} - Pipeline operators
+@c NODE パイプラインオペレータ, @code{srfi-197} - パイプラインオペレータ
+
+@deftp {Module} srfi-197
+@mdindex srfi-197
+This module provides a set of macros to compose multiple operations.
+It is similar to Clojure's ``threading macro''.
+
+When you're passing a result of some procedure to another procedure and
+so on, sometimes you get a deeply nested expression:
+
+@example
+(g (f (e (d (c (b (a arg)))))))
+@end example
+
+In Gauche, you can also write the above expression with @code{$} macro
+(@pxref{Making procedures}):
+
+@example
+($ g $ f $ e $ d $ c $ b $ a arg)
+@end example
+
+Deep nesting is avoided, but it's still right-to-left, and the placement
+of argument to receive the previous result is limited to the last position.
+
+With @code{chain} macro in this module, you can write it
+from left to right:
+
+@example
+(chain (a arg) (b _) (c _) (d _) (e _) (f _) (g _))
+@end example
+
+The @code{_} in the second expressions and after indicates the place
+where previous result is passed.
+It is conceptually expanded to the following:
+
+@example
+(let* ((tmp (a arg))
+       (tmp (b tmp))
+       (tmp (c tmp))
+       (tmp (d tmp))
+       (tmp (e tmp)))
+  (g tmp))
+@end example
+
+Because the placeholder is explicit, you can pass additional arguments:
+
+@example
+(chain x (y a _) (z _ b))
+ @equiv{}
+ (let* ((tmp x)
+        (tmp (y a tmp)))
+   (z tmp b))
+@end example
+
+Or even use multiple values:
+
+@example
+(chain mv-expr (f _ _) (g _ _))
+ @equiv{}
+ (let*-values (((tmp1 tmp2) mv-expr)
+               ((tmp1 tmp2) (f tmp1 tmp2)))
+   (g tmp1 tmp2))
+@end example
+@end deftp
+
+@defmac chain initial-value [placeholder [ellipsis]] step @dots{}
+@c MOD srfi-197
+@end defmac
+
+@defmac chain-and initial-value [placeholder] step @dots{}
+@c MOD srfi-197
+@end defmac
+
+@defmac chain-when initial-value [placeholder] ([guard] step) @dots{}
+@c MOD srfi-197
+@end defmac
+
+@defmac chain-lambda [placeholder [ellipsis]] step @dots{}
+@c MOD srfi-197
+@end defmac
+
+@defmac nest [placeholder] step @dots{} initial-value
+@c MOD srfi-197
+@end defmac
+
+@defmac nest-reverse initial-value [placeholder] step @dots{}
+@c MOD srfi-197
+@end defmac
+
+
+@c ----------------------------------------------------------------------
+@node Integer sets, Define higher-order lambda, Pipeline operators, Library modules - SRFIs
 @section @code{srfi-217} - Integer sets
 @c NODE 整数集合,  @code{srfi-217} - 整数集合
 

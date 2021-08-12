@@ -1403,6 +1403,16 @@ module is the superset of this srfi (@pxref{Range}).
 このsrfiの上位互換になっています (@ref{Range}参照)。
 
 
+srfi-197, srfi-197
+()
+
+Pipeline operators
+Supported by the module @code{srfi-197} (@pxref{Pipeline operators}).
+
+パイプラインオペレータ
+モジュール@code{srfi-197}でサポートされます (@ref{Pipeline operators}参照)。
+
+
 srfi-217, srfi-217
 ()
 
