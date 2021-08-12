@@ -2561,6 +2561,20 @@
 ;; NB: srfi-196 is tested with data.range
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-197")
+(use srfi-197)
+(test-module 'srfi-197)
+
+(define-module srfi-197-tests
+  (use gauche.test)
+  (use scheme.base)
+  (use scheme.process-context)
+  (use scheme.write)
+  (use srfi-64)
+  (use srfi-197)
+  (include "include/srfi-197-test"))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-217")
 (use srfi-217)
 (test-module 'srfi-217)
