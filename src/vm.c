@@ -3252,6 +3252,10 @@ ScmObj Scm_VMGetStack(ScmVM *vm SCM_UNUSED /* temporary*/)
 
 /*
  * Dump VM internal state.
+ *
+ *  NB: ScmObj can't be NULL, but Scm_VMDump() may be called on a VM in a broken
+ *  state, so we have checks for it too.  If an ScmObj value is NULL, it is
+ *  displayed as #NULL.
  */
 static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
 {
@@ -3293,15 +3297,26 @@ ScmObj Scm_VMGetBindInfo(ScmCompiledCode *base, SCM_PCTYPE pc)
     return SCM_FALSE;
 }
 
-static void dump_env(ScmEnvFrame *env, ScmPort *out)
+/* returns next env */
+static ScmEnvFrame *dump_env(ScmVM *vm, ScmEnvFrame *env, ScmPort *out)
 {
-    Scm_Printf(out, "   %p %55.1S\n", env, env->info);
-    Scm_Printf(out, "       up=%p size=%d\n", env->up, env->size);
-    Scm_Printf(out, "       [");
-    for (int i=0; i<env->size; i++) {
-        Scm_Printf(out, " %S", ENV_DATA(env, i));
+    if (env && (IN_STACK_P((ScmObj*)env) || GC_base(env))) {
+        Scm_Printf(out, "   %p %55.1S\n", env, env->info);
+        Scm_Printf(out, "       up=%p size=%d\n", env->up, env->size);
+        Scm_Printf(out, "       [");
+        for (int i=0; i<env->size; i++) {
+            if (ENV_DATA(env, i)) {
+                Scm_Printf(out, " %S", ENV_DATA(env, i));
+            } else {
+                Scm_Printf(out, " #NULL");
+            }
+        }
+        Scm_Printf(out, " ]\n");
+        return env->up;
+    } else {
+        Scm_Printf(out, "   %p #INVALID\n", env);
+        return NULL;
     }
-    Scm_Printf(out, " ]\n");
 }
 
 /* Show offset of given PC w.r.t to the beginning of the code of
@@ -3310,7 +3325,7 @@ static void dump_env(ScmEnvFrame *env, ScmPort *out)
 static void dump_pc_offset(ScmWord *pc, ScmCompiledCode *base, ScmPort *out)
 {
     if (base && base->code <= pc && pc < base->code + base->codeSize) {
-        Scm_Printf(out, " [%5u(%p)]", (u_long)(pc - base->code), base->code);
+        Scm_Printf(out, "[%5u(%p)]", (u_long)(pc - base->code), base->code);
     }
 }
 
@@ -3324,18 +3339,21 @@ void Scm_VMDump(ScmVM *vm)
     ScmEscapePoint *ep = vm->escapePoint;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
-    Scm_Printf(out, "   pc: %p", vm->pc);
+    Scm_Printf(out, "   pc: %p  ", vm->pc);
     dump_pc_offset(vm->pc, vm->base, out);
     Scm_Printf(out, " (%08x)\n", *vm->pc);
     Scm_Printf(out, "   sp: %p  [%p-%p-%p]\n", vm->sp,
                vm->stack, vm->stackBase, vm->stackEnd);
     Scm_Printf(out, " argp: %p\n", vm->argp);
-    Scm_Printf(out, " val0: %#65.1S\n", vm->val0);
+    if (vm->val0) {
+        Scm_Printf(out, " val0: %#65.1S\n", vm->val0);
+    } else {
+        Scm_Printf(out, " val0: #NULL\n");
+    }
 
     Scm_Printf(out, " envs:\n");
     while (env) {
-        dump_env(env, out);
-        env = env->up;
+        env = dump_env(vm, env, out);
     }
 
     Scm_Printf(out, "conts:\n");
@@ -3343,6 +3361,7 @@ void Scm_VMDump(ScmVM *vm)
         Scm_Printf(out, "   %p\n", cont);
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             size = %d\n", cont->size);
+        Scm_Printf(out, "             base = %p\n", cont->base);
         if (!C_CONTINUATION_P(cont)) {
             Scm_Printf(out, "               pc = %p", cont->pc);
             dump_pc_offset(cont->pc, cont->base, out);
@@ -3350,7 +3369,6 @@ void Scm_VMDump(ScmVM *vm)
         } else {
             Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
         }
-        Scm_Printf(out, "             base = %p\n", cont->base);
         cont = cont->prev;
     }
 
@@ -3362,11 +3380,21 @@ void Scm_VMDump(ScmVM *vm)
     }
     Scm_Printf(out, "Escape points:\n");
     while (ep) {
-        Scm_Printf(out, "  %p: cont=%p, handler=%#20.1S\n",
-                   ep, ep->cont, ep->ehandler);
+        if (ep->ehandler) {
+            Scm_Printf(out, "  %p: cont=%p, handler=%#20.1S\n",
+                       ep, ep->cont, ep->ehandler);
+        } else {
+            Scm_Printf(out, "  %p: cont=%p, handler=#NULL\n",
+                       ep, ep->cont);
+        }
         ep = ep->prev;
     }
-    Scm_Printf(out, "dynenv: %S\n", vm->handlers);
+    if (vm->handlers) {
+        Scm_Printf(out, "dynenv: %S\n", vm->handlers);
+    } else {
+        Scm_Printf(out, "dynenv: #NULL\n");
+    }
+
     Scm_Printf(out, "reset-chain-length: %d\n", (int)Scm_Length(vm->resetChain));
     if (vm->base) {
         Scm_Printf(out, "Code:\n");
