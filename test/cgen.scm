@@ -170,9 +170,9 @@ some_trick();
 ;; .if .cond .when .unless
 (parameterize ([cise-emit-source-line #f])
   (define (c form exp)
-    (test* (format "cise transform: ~a" form)
-           (apply string-append (map (cut string-append <> "\n") exp))
-           (cise-render-to-string form 'toplevel)))
+    (test*/diff (format "cise transform: ~a" form)
+                exp
+                (cise-render-to-string form 'toplevel)))
 
   (c '(.if foo then) '(""
                        "#if foo"

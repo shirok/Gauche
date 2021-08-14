@@ -634,15 +634,15 @@ fuga
         (make-template-environment
          :bindings `(abc 3 def 9 jkl ,format pqr 1000))))
 
-(test* "expand-template-file"
-       "<html><head><title>Test</title></head><body><p><a href=\"foo\">bar</a\n>baz</p\n></body></html>\n"
-       (expand-template-file
-        "template.txt"
-        (make-template-environment
-         :imports '(text.tree)
-         :bindings `(title "Test"
-                     body ,(html:p (html:a :href "foo" "bar") "baz")))
-        '("../test/data")))
+(test*/diff "expand-template-file"
+            "<html><head><title>Test</title></head><body><p><a href=\"foo\">bar</a\n>baz</p\n></body></html>\n"
+            (expand-template-file
+             "template.txt"
+             (make-template-environment
+              :imports '(text.tree)
+              :bindings `(title "Test"
+                                body ,(html:p (html:a :href "foo" "bar") "baz")))
+             '("../test/data")))
 
 ;;-------------------------------------------------------------------
 (test-section "tree")

@@ -355,30 +355,30 @@
            '("LIBS = -lm"))
          (file->string-list "test.o/src/Makefile"))
 
-  (test* "cf-check-headers and cf-check-lib to set defines"
-         `("#define HAVE_STDIO_H 1"
-           "#define HAVE_STDLIB_H 1"
-           "/* #undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H */"
-           "#define HAVE_A_T 1"
-           "/* #undef HAVE_B_T */"
-           "#define HAVE_STRUCT_C_T 1"
-           "/* #undef HAVE_D_T */"
-           "#define HAVE_DECL_A 1"
-           "#define HAVE_DECL_B 1"
-           "#define HAVE_DECL_C 1"
-           "#define HAVE_DECL_D 1"
-           "#define HAVE_DECL_E 1"
-           "#define HAVE_DECL_F 0"
-           "/* #undef HAVE_STRUCT_FOO_A */"
-           "#define HAVE_STRUCT_FOO_B 1"
-           "#define HAVE_PRINTF 1"
-           "/* #undef HAVE_NONEXISTENT_WEIRD_FUNCTION */"
-           ,(if (#/darwin/ (gauche-architecture))
-              "/* #undef HAVE_LIBM */"
-              "#define HAVE_LIBM 1")
-           "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
-         ($ filter #/HAVE_/
-            $ file->string-list "test.o/config.h"))
+  (test*/diff "cf-check-headers and cf-check-lib to set defines"
+              `("#define HAVE_STDIO_H 1"
+                "#define HAVE_STDLIB_H 1"
+                "/* #undef HAVE_NO_SUCH_HEADER_SHOILD_EXIST_H */"
+                "#define HAVE_A_T 1"
+                "/* #undef HAVE_B_T */"
+                "#define HAVE_STRUCT_C_T 1"
+                "/* #undef HAVE_D_T */"
+                "#define HAVE_DECL_A 1"
+                "#define HAVE_DECL_B 1"
+                "#define HAVE_DECL_C 1"
+                "#define HAVE_DECL_D 1"
+                "#define HAVE_DECL_E 1"
+                "#define HAVE_DECL_F 0"
+                "/* #undef HAVE_STRUCT_FOO_A */"
+                "#define HAVE_STRUCT_FOO_B 1"
+                "#define HAVE_PRINTF 1"
+                "/* #undef HAVE_NONEXISTENT_WEIRD_FUNCTION */"
+                ,(if (#/darwin/ (gauche-architecture))
+                   "/* #undef HAVE_LIBM */"
+                   "#define HAVE_LIBM 1")
+                "/* #undef HAVE_LIBNO_SUCH_LIBRARY_SHOULD_EXIST */")
+              ($ filter #/HAVE_/
+                 $ file->string-list "test.o/config.h"))
   )
 
 (wrap-with-test-directory configure-test-1 '("test.o" "test2.o") #f)
@@ -657,25 +657,25 @@
            "test.o/foo.sci")
          (sort (map fix-path (directory-fold "test.o" cons '()))))
 
-  (test* "consolidated sci file"
-         '(";; generated automatically.  DO NOT EDIT"
-           "#!no-fold-case"
-           "(define-module foo.bar2 (use util.match) (export bar2))"
-           "(select-module foo.bar2)"
-           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar2\")"
-           "(provide \"foo/bar2\")"
-           "(define-module foo.bar3 (use foo.bar2) (export bar3))"
-           "(select-module foo.bar3)"
-           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar3\")"
-           "(provide \"foo/bar3\")"
-           "(define-module foo.bar1 (use foo.bar2) (export bar1))"
-           "(select-module foo.bar1)"
-           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
-           "(provide \"foo/bar1\")"
-           "(define-module foo (use gauche.uvector) (use foo.bar1) (use foo.bar3) (export foo-master foo-literals foo-shared-literals foo-begin1 foo-begin2) (export foo-include1 foo-include2))"
-           "(select-module foo)"
-           "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
-         (file->string-list "test.o/foo.sci"))
+  (test*/diff "consolidated sci file"
+              '(";; generated automatically.  DO NOT EDIT"
+                "#!no-fold-case"
+                "(define-module foo.bar2 (use util.match) (export bar2))"
+                "(select-module foo.bar2)"
+                "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar2\")"
+                "(provide \"foo/bar2\")"
+                "(define-module foo.bar3 (use foo.bar2) (export bar3))"
+                "(select-module foo.bar3)"
+                "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar3\")"
+                "(provide \"foo/bar3\")"
+                "(define-module foo.bar1 (use foo.bar2) (export bar1))"
+                "(select-module foo.bar1)"
+                "(dynamic-load \"foo\" :init-function \"Scm_Init_foo__bar1\")"
+                "(provide \"foo/bar1\")"
+                "(define-module foo (use gauche.uvector) (use foo.bar1) (use foo.bar3) (export foo-master foo-literals foo-shared-literals foo-begin1 foo-begin2) (export foo-include1 foo-include2))"
+                "(select-module foo)"
+                "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
+              (file->string-list "test.o/foo.sci"))
 
   (test* "compile" #t
          (do-process
