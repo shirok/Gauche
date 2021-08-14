@@ -72,7 +72,7 @@
          ""))]
     [(x ...) (=> fail)
      (if (every string? x)
-       (string-join x "\n")
+       (string-join x "\n" 'suffix)
        (fail))]
     [else src]))                        ;convers string src case
 
