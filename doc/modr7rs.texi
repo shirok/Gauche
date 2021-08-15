@@ -5798,6 +5798,11 @@ Provided for the compatibility with srfi-69, and are deprecated.
 
 Returns the equivalence function and hash function of a hash table @var{ht}.
 
+Note that @code{hash-table-hash-function} is not exactly the same
+as srfi-69's.  Srfi-69's hash function, returned from its version
+of @code{hash-table-hash-function}, can take optional @var{bound} argument.
+@xref{Basic hash tables}, for the details.
+
 For the introspection, we recommend to use
 built-in @code{hash-table-comparator}.  (Unfortunately, it is not
 included in @code{scheme.hash-table}, though.)
