@@ -1,3 +1,9 @@
+2021-08-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-69.scm (hash-table-hash-function): The returned procedure's
+	  second argument is now optional, for the compatibility with srfi-128.
+	  https://github.com/shirok/Gauche/issues/777
+
 2021-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-197.scm: Added (reference implementation)

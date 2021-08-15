@@ -49,7 +49,8 @@
 ;; NB: srfi-69's hash function must take second argument.
 (define (hash-table-hash-function ht)
   (let1 h (comparator-hash-function (hash-table-comparator ht))
-    (^[obj bound] (modulo (h obj) bound))))
+    (^[obj :optional (bound #f)]
+      (if bound (modulo (h obj) bound) (h obj)))))
 
 (define *unique* (list #f))
 
