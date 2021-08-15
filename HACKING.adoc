@@ -1,7 +1,7 @@
 = How to hack the cutting-edge Gauche
 
-NOTE: This file is for those who wants to hack the cutting-edge
-Gauche sources from the git repository.  If you just want to
+NOTE: This document is for those who wants to hack the bleeding-edge
+Gauche source from the git repository.  If you just want to
 compile from the distribution, you don't need to read any further.
 
 
@@ -31,7 +31,7 @@ $ ./DIST gen
 ----
 
 Afterwards, you just do the usual `./configure` + `make`.  For
-configure options, see the link:INSTALL.adoc[].
+the configure options, see the link:INSTALL.adoc[].
 
 In case if the latest release of Gauche can't be built on your
 target machine but the fix is already in the HEAD, you need to
@@ -75,7 +75,7 @@ of the latest release to be installed.  The easiest way is to
 grab the windows installer from https://practical-scheme.net/gauche.
 For the details of build procedure, see link:doc/HOWTO-mingw.adoc[].
 
-You can build Gauche with Cygwin; do it just like on Unix.
+You can build Gauche with Cygwin, but it is no longer actively supported.
 
 Some effort was made to build Gauche with MSVC.  You can find
 project files under winnt.  Unfortunatley though, it is so
@@ -99,7 +99,7 @@ Gauche from scratch.  Consequently, there are quite a few nasty
 dependency issues.  If you modify files listed below, be careful
 not to introduce undesirable dependencies.
 
-- The compiler (`compile.scm`) shouldn't depend on anything that
+- The compiler (`compile*.scm`) shouldn't depend on anything that
   are not compiled into the libgauche core.   An exception is
   `util.match`; it's ok since it is just a macro and all `match`
   forms are expanded fully in precompilation.
@@ -153,19 +153,18 @@ the settings.
 == TROUBLESHOOTING
 
 If your modification broke something fundamental and you couldn't even
-get to REPL, there are a couple of trick to isolate the problem.
+get to REPL, there are a couple of tricks to isolate the problem.
 
 - Run gosh with `-q` option, e.g. `./gosh -ftest -q`.  It suppresses
   loading startup files, e.g. it won't read any external Scheme files,
   nor loading DSO files, before getting to a REPL prompt.   If you get
   `gosh>` prompt, then the issue is the loading of runtime files.
-
- -- Run gosh with `./gosh -ftest -fload-verbose` option and see which
-    startup file causes the trouble.
- -- With the bare REPL from `./gosh -ftest -q`, try to load or evaluate
-    offending files/expressions to figure out the issue.  Note that
-    the 'bare' REPL only have minimal features---no toplevel commands,
-    no line editing, etc.
+-- Run gosh with `./gosh -ftest -fload-verbose` option and see which
+   startup file causes the trouble.
+-- With the bare REPL from `./gosh -ftest -q`, try to load or evaluate
+   offending files/expressions to figure out the issue.  Note that
+   the 'bare' REPL only have minimal features---no toplevel commands,
+   no line editing, etc.
 
 - If you can't even get to REPL with `-q`, it is likely that something
   is broken during initialization.  Run `gosh` with an environment variable
