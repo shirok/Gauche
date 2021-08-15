@@ -6,6 +6,8 @@
 ;;;  written similar code.
 ;;;
 
+;; The algorithm is loosely based on Algorithm T in TAOCP section 2.2.3.
+
 (define-module util.toposort
   (use scheme.list)
   (export topological-sort)
@@ -35,7 +37,7 @@
       (let1 n0 (assoc (pop! queue) nodes eq)
         (when n0
           (dolist [to (cdr n0)]
-            (if-let1 p (assoc to table eq)
+            (and-let1 p (assoc to table eq)
               (let1 cnt (- (cdr p) 1)
                 (when (= cnt 0)
                   (push! result to)
