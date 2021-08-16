@@ -7376,7 +7376,7 @@ until you change the code, you can set the environment variable
 プログラム中に表記してあるキーワードはそれ自身に評価されるので、
 かつてと同じようにキーワード引数を渡すことができます。
 キーワードを変数として使い、例えば@code{(define :key 3)}のように
-新たな値に束縛することはできるますが、その変更は
+新たな値に束縛することはできますが、その変更は
 そうしているモジュールの中だけに留まります。
 (他のモジュールは@code{gauche.keyword}モジュールにある@code{:key}の束縛を
 参照するので影響を受けません。)
@@ -13657,7 +13657,7 @@ not to be used actively), we changed incomplete string literals to
 
 @c EN
 For the backward compatibility, the current version reads @code{#*"..."}
-is read as an incomplete string.  If the reader lexical mode is
+as an incomplete string.  If the reader lexical mode is
 @code{warn-legacy} (@pxref{Reader lexical mode}), such literals are
 warned.  We'll gradually migrate to make @code{#*"..."} read
 as a bytevector followed by a string.
