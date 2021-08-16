@@ -10838,26 +10838,99 @@ Or even use multiple values:
 
 @defmac chain initial-value [placeholder [ellipsis]] step @dots{}
 @c MOD srfi-197
+The optional @var{placeholder} and @var{ellipsis} are, if given,
+literal symbols.   It replaces the default placeholder and ellipsis
+symbols, @code{_} and @code{...}, respectively.
+
+Each @var{step} is @code{@var{datum} @dots{}}, where each @var{datum}
+must be either a placeholder symbol, the ellipsis symbol.
+The ellipsis symbol must appear in the last position, if any,
+and must immediately follow the placeholder symbol.
+
+Conceptually, each @var{step} becomes a procedure that takes as
+many arguments as the placeholders.  If the @var{step} ends with
+ellipsis symbol, the last placeholder works as the ``rest'' arguments.
+
+If a @var{step} expects more than one value, the previous @var{step}
+or @var{initial-value} is expected to yield that many values.
+
+@example
+(chain expr (f _ a _ ...))
+  @equiv{}
+  (let*-values (((tmp1 . tmp2) expr))
+    (apply f tmp1 a tmp2))
+@end example
 @end defmac
 
 @defmac chain-and initial-value [placeholder] step @dots{}
 @c MOD srfi-197
+A variant of @code{chain} that stops and returns @code{#f}
+immedialy when the intermediate result becomes @code{#f}.
+
+The @var{initial-value} is an expression that yields one value.
+The @var{placeholder} is a literal symbol to be used as the placeholder
+in @var{step}; if omitted, @code{_} is used.
+
+Unlike @code{chain}, a @var{step} can only contain zero or one placeholder
+symbol.  If @var{step} doesn't contain placeholder symbol, the previous
+@var{step}'s result isn't passed, but it is still checked if it's @code{#f}.
 @end defmac
 
 @defmac chain-when initial-value [placeholder] ([guard] step) @dots{}
 @c MOD srfi-197
+A variant of @code{chain} where you can select whether each @var{step}
+is applied or skipped.
+
+Each @var{step} can have at most one placeholder symbol, just as
+@code{chain-and}.
+
+Each @var{guard} is an expression.  For each step, @var{guard} is
+evaluated, and if it yields a true value, the previous result is
+passed to the placeholder in the corresponding @var{step}.  If
+@var{guard} yields @code{#f}, however, @var{step} is skipped and
+the previous value is passed through to the next step.
+
+@example
+(chain-when expr ((p? x) (f _)) ((q? x) (g _)))
+ @equiv{}
+ (let* ([tmp expr]
+        [tmp (if (p? x) (f tmp) tmp)])
+   (if (q? x) (g tmp) tmp))
+@end example
 @end defmac
 
 @defmac chain-lambda [placeholder [ellipsis]] step @dots{}
 @c MOD srfi-197
+@example
+(chain-lambda step @dots{})
+  @equiv{} (lambda args (chain (apply values args) step @dots{}))
+@end example
 @end defmac
 
 @defmac nest [placeholder] step @dots{} initial-value
 @c MOD srfi-197
+Similar to @code{chain}, except the order of steps is right-to-left.
+
+Each @var{step} must have exactly one placeholder symbol, for
+this macro simply nests the steps:
+
+@example
+(nest (f a _) (g _ b) (h _) expr)
+ @equiv{} (f a (g (h expr) b))
+@end example
 @end defmac
 
 @defmac nest-reverse initial-value [placeholder] step @dots{}
 @c MOD srfi-197
+Similar to @code{nest} except the nesting is in reverse order.
+
+Each @var{step} must have exactly one placeholder symbol, for
+this macro simply nests the steps:
+
+@example
+(nest expr (h _) (g _ b) (f a _))
+ @equiv{} (f a (g (h expr) b))
+@end example
 @end defmac
 
 
