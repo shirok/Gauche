@@ -42,7 +42,7 @@
   (use gauche.generator)
   (use gauche.sequence)
 
-  (export make-random-data-state random-data-seed with-random-data-seed
+  (export random-data-seed with-random-data-seed
 
           integers$ integers-between$ fixnums chars$ samples$ booleans
           int8s uint8s int16s uint16s int32s uint32s int64s uint64s
@@ -63,23 +63,22 @@
 ;; a portable way to save and restore the random state.
 ;; Srfi-27's random state isn't guaranteed to be printable.
 
-;; API
-(define (make-random-data-state seed)
+(define (%make-random-date-state seed)
   (cons seed (make <mersenne-twister> :seed seed)))
 
 (define %random-data-state
-  (make-parameter (make-random-data-state 42)))
+  (make-parameter (%make-random-date-state 42)))
 
 ;; API
 (define random-data-seed
   (getter-with-setter
    (^[] (car (%random-data-state)))
-   (^[seed] (%random-data-state (make-random-data-state seed)))))
+   (^[seed] (%random-data-state (%make-random-date-state seed)))))
 
 ;; API
 (define (with-random-data-seed seed thunk)
   ;; create st here so that reentering thunk retains the state.
-  (let1 st (make-random-data-state seed)
+  (let1 st (%make-random-date-state seed)
     (parameterize ([%random-data-state st])
       (thunk))))
 
