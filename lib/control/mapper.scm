@@ -49,7 +49,14 @@
 ;; processes.
 ;;
 ;; The high-level API, pmap, can be used without knowing underlying
-;; thread models; it uses threads
+;; thread models; it uses threads if running Gauche has the thread support
+;; and the system has more than one cores.   Otherwise, it just runs
+;; ordinary map (see single-mapper).
+;;
+;; Concurrent execution can be done in either (1) staically split
+;; the task according to the number of available threads, or (2) dynamically
+;; split it using an existing thread pool.   We don't make thread
+;; pool every time pmap is called, for the overhead would be too big.
 
 (define (single-mapper proc coll)
   (map proc coll))
