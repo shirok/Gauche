@@ -4105,7 +4105,7 @@ as @var{obj} in a usual sense.  See the following example:
 @c COMMON
 
 @example
-(let s (set string-ci-comparator "abc" def")
+(let1 s (set string-ci-comparator "abc" "def")
   (set-member s "ABC" #f))
   @result{} "abc"
 @end example
