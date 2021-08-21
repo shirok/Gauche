@@ -44,15 +44,21 @@
   (use scheme.list)
   (use srfi-13)
   (use srfi-19)
+  (use util.match)
+  (use gauche.threads)
   (export parse-cookie-string
           construct-cookie-string
+
+          make-cookie-jar
+          cookie-jar-put*!
+          cookie-jar-get*
+          cookie-jar-purge-ephemeral!
           )
   )
 (select-module rfc.cookie)
 
 ;;==============================================================
 ;; Cookie header parser and constructor
-;; These are mainly used by the server side.
 ;;
 
 ;; utility fn.  breaks  ``attr=value;attr=value ... '' into alist.
@@ -251,22 +257,107 @@
     (format #f "Expires=~a" (ensure-time-string time)))
 
 ;;==============================================================
-;; Cookie-bin, a client-side storage of cookies used by <http-connection>
+;; Cookie-jar, a client-side storage of cookies used by <http-connection>
 ;;
 
+;; From outside, <cookie-jar> should be treated as an opaque object.
+;; The opeartions on <cookie-jar> is thread-safe, so that it can easily
+;; be shared by multiple connections.
 
-;; Client-side cookie representation.
+;; Client-side cookie representation.  Immutable.
+;;
 ;; Max-Age is converted to the absolute time when the cookie shall be
 ;; discarded.
-; (define-class <http-cookie> ()
-;   ((name    :init-keyword :name)
-;    (value   :init-keyword :value)
-;    (domain  :init-keyword :domain)
-;    (path    :init-keyword :path)
-;    (lifetime :init-keyword :lifetime :init-value #f) ; #f or <time>
-;    (port    :init-keyword :port :init-value '())  ; list of port numbers
-;    (secure  :init-keyword :secure :init-value #f)
-;    (version :init-keyword :version :init-value 1)
-;    (comment :init-keyword :comment :init-value #f)
-;    (comment-url :init-keyword :comment-url :init-value #f)
-;    ))
+;;
+;; request-host is not an attribute in the cookie string, but should be
+;; passed by the caller in client side to set which host the cookie
+;; string is sent from.  It is used only when the cookie is missing Domain
+;; attribute.
+(define-class <http-cookie> ()
+  ((name    :init-keyword :name)
+   (value   :init-keyword :value)
+   (domain  :init-keyword :domain :init-value #f)
+   (request-host :init-keyword :source-domain :init-value #f)
+   (path    :init-keyword :path :init-value #f)
+   (lifetime :init-keyword :lifetime :init-value #f) ; #f or <time>
+   (port    :init-keyword :port :init-value '())  ; list of port numbers
+   (secure  :init-keyword :secure :init-value #f)
+   (version :init-keyword :version :init-value 1)
+   (comment :init-keyword :comment :init-value #f)
+   (comment-url :init-keyword :comment-url :init-value #f)
+   ))
+
+;; For now, we just use a linear list.  May change if performance becomes
+;; the issue.   The user should treat <cookie-jar> an opaque object.
+(define-class <cookie-jar> (<collection>)
+  ((%table :init-keyword :%table)))     ;private
+
+(define (%put-cookie! jar cookie)
+  ;;WRITEME
+  #f)
+
+(define (%remove-cookie! jar domain name)
+  ;;WRITEME
+  #f)
+
+(define (%compute-lifetime max-age expires)
+  ;;WRITEME
+  #f)
+
+(define (%domain-belongs-to? sub parent)
+  ;;WRITEME
+  #t)
+
+;; API
+(define (make-cookie-jar :optional proto)
+  (assume-type proto (<?> <cookie-jar>))
+  (make <cookie-jar>
+    :%table (if proto
+              (atom (list-copy (atom-ref (~ proto'%table))))
+              (atom '()))))
+
+;; API
+(define (cookie-jar-put*! jar request-host parsed-cookies)
+  (define (put-1 parsed-cookie)
+    (match parsed-cookie
+      [(name value . args)
+       (let-keywords args ([path #f] [domain #f] [port #f]
+                           [discard #f] [max-age #f] [expires #f]
+                           [secure #f] [http-only #f] [version #f]
+                           [comment #f] [comment-url #f]
+                           . other)
+         (unless (not (null? other))
+           (error "Invalid cookie attribute in ~s" parsed-cookie))
+         (when (or (not domain)
+                   ;; if request-host doesn't belong to domain, just ignore
+                   (%domain-belongs-to? request-host domain))
+           (if (or (not value) (equal? value ""))
+             (%remove-cookie! jar (or domain request-host) name)
+             (%put-cookie! jar
+                           (make <http-cookie>
+                             :name name
+                             :value value
+                             :domain (or domain request-host)
+                             :request-host request-host
+                             :path path
+                             :lifetime (%compute-lifetime max-age expires)
+                             :port (if port
+                                     (string-tokenize port)
+                                     '())
+                             :secure secure
+                             :version version
+                             :commetn comment
+                             :comment-url comment-url)))))]
+      [_ (error "Invalid cookie format: ~s" parsed-cookie)]))
+
+  (for-each put-1 parsed-cookies))
+
+;; API
+(define (cookie-jar-get* jar request-host ports)
+  ;; WRITEME
+  '())
+
+;; API
+(define (cookie-jar-purge-ephemeral! jar)
+  ;; WRITEME
+  (undefined))
