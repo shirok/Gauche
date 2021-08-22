@@ -403,6 +403,10 @@
    (year       :init-keyword :year       :getter date-year)
    (zone-offset :init-keyword :zone-offset :getter date-zone-offset)))
 
+(define-method object-equal? ((a <date>) (b <date>))
+  (every (^[slot] (= (~ a slot) (~ b slot)))
+         '(nanosecond second minute hour day month year zone-offset)))
+
 (define (date? obj) (is-a? obj <date>))
 
 (define (make-date nanosecond second minute hour day month year zone-offset)

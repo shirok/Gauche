@@ -1,3 +1,7 @@
+2021-08-22  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-19.scm: Define object-equal? on <date>.
+
 2021-08-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-69.scm (hash-table-hash-function): The returned procedure's
