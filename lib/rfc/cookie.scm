@@ -42,17 +42,20 @@
 
 (define-module rfc.cookie
   (use scheme.list)
+  (use gauche.threads)
+  (use gauche.sequence)
   (use srfi-13)
   (use srfi-19)
   (use util.match)
-  (use gauche.threads)
   (export parse-cookie-string
           construct-cookie-string
 
-          make-cookie-jar
-          cookie-jar-put*!
-          cookie-jar-get*
-          cookie-jar-purge-ephemeral!
+          parse-cookie-date
+
+          ;make-cookie-jar
+          ;cookie-jar-put*!
+          ;cookie-jar-get*
+          ;cookie-jar-purge-ephemeral!
           )
   )
 (select-module rfc.cookie)
@@ -292,6 +295,61 @@
 (define-class <cookie-jar> (<collection>)
   ((%table :init-keyword :%table)))     ;private
 
+
+;; RFC6265 5.1.1
+(define (parse-cookie-date str)
+  (let loop ([tokens ($ string-split str
+                        #[\x09\x20-\x2f\x3b-\x40\x5b-\x60\x7b-\x7e])]
+             [hour #f]
+             [minute #f]
+             [second #f]
+             [day #f]
+             [month #f]
+             [year #f])
+    (cond [(null? tokens)
+           (and hour minute second day month year
+                (<= 0 hour 23)
+                (<= 0 minute 59)
+                (<= 0 second 59)
+                (<= 1 day 31)
+                (<= 1601 year)
+                (make-date 0 second minute hour day month year 0))] ;UTC
+          [(#/^(\d{1,2}):(\d{1,2}):(\d{1,2})\D?/ (car tokens))
+           => (^m (if hour
+                   (loop (cdr tokens) hour minute second day month year)
+                   (loop (cdr tokens)
+                         (string->number (m 1))
+                         (string->number (m 2))
+                         (string->number (m 3))
+                         day month year)))]
+          [(#/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i (car tokens))
+           => (^m (loop
+                   (cdr tokens) hour minute second day
+                   (or month
+                       (find-index (cute string-ci=? <> (m 1))
+                                   '("" "jan" "feb" "mar" "apr" "may" "jun"
+                                     "jul" "aug" "sep" "oct" "nov" "dec")))
+                   year))]
+          [(#/^\d{1,4}/ (car tokens))
+           => (^m (let1 n (string->number (m 0))
+                    (cond [(< n 10)
+                           (loop (cdr tokens) hour minute second
+                                 (or day n) month year)]
+                          [(<= 10 n 99)
+                           (if day
+                             (loop (cdr tokens) hour minute second day
+                                   month (or year
+                                             (if (<= 70 n)
+                                               (+ 1900 n)
+                                               (+ 2000 n))))
+                             (loop (cdr tokens) hour minute second
+                                   n month year))]
+                          [else
+                           (loop (cdr tokens) hour minute second day
+                                 month (or year n))])))]
+          [else (loop (cdr tokens) hour minute second day month year)])))
+
+
 (define (%put-cookie! jar cookie)
   ;;WRITEME
   #f)
@@ -305,8 +363,13 @@
   #f)
 
 (define (%domain-belongs-to? sub parent)
-  ;;WRITEME
-  #t)
+  (let loop ([sub-components (reverse (string-split sub #\.))]
+             [par-components (reverse (string-split parent #\.))])
+    (cond [(null? sub-components) (null? par-components)]
+          [(null? par-components)]
+          [(equal? (car sub-components) (car par-components))
+           (loop (cdr sub-components) (cdr par-components))]
+          [else #f])))
 
 ;; API
 (define (make-cookie-jar :optional proto)

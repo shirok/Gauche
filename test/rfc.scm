@@ -193,6 +193,11 @@
           ("foo" "baz" :expires ,(make-date 0 40 46 1 9 9 2001 0)))
         0))
 
+(test* "cookie date" (make-date 0 1 2 3 11 12 2023 0)
+       (parse-cookie-date "Sun, 11-Dec-2023 03:02:01 GMT"))
+(test* "cookie date" (make-date 0 3 4 5 2 1 1999 0)
+       (parse-cookie-date "Sun, 2-January-99 5:4:3 garbage"))
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.ftp")
 (use rfc.ftp)
