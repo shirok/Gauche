@@ -1,5 +1,7 @@
 2021-08-22  Shiro Kawai  <shiro@acm.org>
 
+	* src/number.c (scm_abs): Fix: (abs -0.0) returned -0.0.  Oops.
+
 	* ext/srfi/srfi-19.scm: Define object-equal? on <date>.
 
 2021-08-15  Shiro Kawai  <shiro@acm.org>

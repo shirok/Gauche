@@ -1565,7 +1565,7 @@ static ScmObj scm_abs(ScmObj obj, int vmp)
         }
     } else if (SCM_FLONUMP(obj)) {
         double v = SCM_FLONUM_VALUE(obj);
-        if (v < 0) RETURN_FLONUM(-v);
+        if (signbit(v)) RETURN_FLONUM(-v);
     } else if (SCM_RATNUMP(obj)) {
         if (Scm_Sign(SCM_RATNUM_NUMER(obj)) < 0) {
             obj = Scm_MakeRational(Scm_Negate(SCM_RATNUM_NUMER(obj)),
