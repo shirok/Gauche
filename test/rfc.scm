@@ -133,8 +133,9 @@
 ;;--------------------------------------------------------------------
 (test-section "rfc.cookie")
 (use rfc.cookie)
-(use srfi-19)
 (test-module 'rfc.cookie)
+(use scheme.list)
+(use srfi-19)
 
 (test* "parse, old" '(("foo" "bar")
                       ("aaa" "bbb" :path "/a/b" :domain "a.b.com")
@@ -197,6 +198,16 @@
        (parse-cookie-date "Sun, 11-Dec-2023 03:02:01 GMT"))
 (test* "cookie date" (make-date 0 3 4 5 2 1 1999 0)
        (parse-cookie-date "Sun, 2-January-99 5:4:3 garbage"))
+
+(let ([jar (make-cookie-jar)])
+  (cookie-jar-put*! jar "foo.example.com"
+                    '(("a" "ABC" :path "/" :domain "example.com")
+                      ("d" "DEF" :path "/" :domain "example.org")
+                      ("g" "GHI" :path "/" :domain "foo.example.com")))
+  (test* "cookie-jar-get*" '(("a" "ABC") ("g" "GHI"))
+         (map (^e (list (~ e'name) (~ e'value)))
+              (cookie-jar-get* jar "foo.example.com" 80))
+         (cut lset= equal? <> <>)))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.ftp")

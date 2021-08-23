@@ -52,9 +52,9 @@
 
           parse-cookie-date
 
-          ;make-cookie-jar
-          ;cookie-jar-put*!
-          ;cookie-jar-get*
+          make-cookie-jar
+          cookie-jar-put*!
+          cookie-jar-get*
           ;cookie-jar-purge-ephemeral!
           )
   )
@@ -279,7 +279,7 @@
 (define-class <http-cookie> ()
   ((name    :init-keyword :name)
    (value   :init-keyword :value)
-   (domain  :init-keyword :domain :init-value #f)
+   (domain  :init-keyword :domain :init-value #f) ;lower case
    (request-host :init-keyword :source-domain :init-value #f)
    (path    :init-keyword :path :init-value #f)
    (lifetime :init-keyword :lifetime :init-value #f) ; #f or <time>
@@ -351,28 +351,42 @@
 
 
 (define (%put-cookie! jar cookie)
-  ;;WRITEME
-  #f)
+  ;; ok, this isn't ideal, but just for now...
+  ($ atomic-update! (~ jar'%table)
+     (^[table]
+       (cons cookie
+             (remove (^e (and (equal? (~ e'domain) (~ cookie'domain))
+                              (equal? (~ e'name) (~ cookie'name))))
+                     table)))))
 
 (define (%remove-cookie! jar domain name)
-  ;;WRITEME
-  #f)
+  ($ atomic-update! (~ jar'%table)
+     (^[table] (remove (^e (and (equal? (~ e'domain) domain)
+                                (equal? (~ e'name) name)))
+                       table))))
 
 (define (%compute-lifetime max-age expires)
-  ;;WRITEME
-  #f)
+  ;; max-age has precedence (RFC6265 4.1.2.2)
+  (cond [(and-let* ([  max-age ]
+                    [secs (string->number max-age)])
+           (if (< secs 0)
+             (make-time time-utc 0 0)
+             (add-duration (current-time)
+                           (make-time time-duration 0 secs))))]
+        [expires (date->time-utc (parse-cookie-date expires))]
+        [else #f]))
 
 (define (%domain-belongs-to? sub parent)
   (let loop ([sub-components (reverse (string-split sub #\.))]
              [par-components (reverse (string-split parent #\.))])
     (cond [(null? sub-components) (null? par-components)]
           [(null? par-components)]
-          [(equal? (car sub-components) (car par-components))
+          [(string-ci=? (car sub-components) (car par-components))
            (loop (cdr sub-components) (cdr par-components))]
           [else #f])))
 
 ;; API
-(define (make-cookie-jar :optional proto)
+(define (make-cookie-jar :optional (proto #f))
   (assume-type proto (<?> <cookie-jar>))
   (make <cookie-jar>
     :%table (if proto
@@ -389,7 +403,7 @@
                            [secure #f] [http-only #f] [version #f]
                            [comment #f] [comment-url #f]
                            . other)
-         (unless (not (null? other))
+         (unless (null? other)
            (error "Invalid cookie attribute in ~s" parsed-cookie))
          (when (or (not domain)
                    ;; if request-host doesn't belong to domain, just ignore
@@ -400,7 +414,7 @@
                            (make <http-cookie>
                              :name name
                              :value value
-                             :domain (or domain request-host)
+                             :domain (string-downcase (or domain request-host))
                              :request-host request-host
                              :path path
                              :lifetime (%compute-lifetime max-age expires)
@@ -416,9 +430,13 @@
   (for-each put-1 parsed-cookies))
 
 ;; API
-(define (cookie-jar-get* jar request-host ports)
-  ;; WRITEME
-  '())
+(define (cookie-jar-get* jar request-host request-port)
+  ($ atomic (~ jar'%table)
+     (^[table]
+       (filter (^e (and (%domain-belongs-to? request-host (~ e'domain))
+                        (or (null? (~ e'port))
+                            (memv request-port (~ e'port)))))
+               table))))
 
 ;; API
 (define (cookie-jar-purge-ephemeral! jar)
