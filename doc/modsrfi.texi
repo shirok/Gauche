@@ -10775,36 +10775,66 @@ vector->range      range->generator
 
 @deftp {Module} srfi-197
 @mdindex srfi-197
+@c EN
 This module provides a set of macros to compose multiple operations.
 It is similar to Clojure's ``threading macro''.
+@c JP
+このモジュールは、複数の操作を組み合わせるマクロを提供します。
+Clojureの「スレッドマクロ」に似たものです。
+@c COMMON
 
+@c EN
 When you're passing a result of some procedure to another procedure and
 so on, sometimes you get a deeply nested expression:
+@c JP
+ひとつの関数適用の結果を別の関数に渡して…というのをつなげてゆくと、
+しばしば式のネストが深くなってしまいます:
+@c COMMON
 
 @example
 (g (f (e (d (c (b (a arg)))))))
 @end example
 
+@c EN
 In Gauche, you can also write the above expression with @code{$} macro
 (@pxref{Making procedures}):
+@c JP
+Gaucheでは@code{$}マクロを使えば上の式はこうも書けます
+(@ref{Making procedures}参照):
+@c COMMON
 
 @example
 ($ g $ f $ e $ d $ c $ b $ a arg)
 @end example
 
+@c EN
 Deep nesting is avoided, but it's still right-to-left, and the placement
 of argument to receive the previous result is limited to the last position.
+@c JP
+ネストは浅くなりましたが、適用順は依然として右から左で、
+また前の結果を引数として渡す位置が最後の引数に限られます。
+@c COMMON
 
+@c EN
 With @code{chain} macro in this module, you can write it
 from left to right:
+@c JP
+このモジュールの@code{chain}マクロを使うと、
+上の式は左から右にデータを流すように書けます:
+@c COMMON
 
 @example
 (chain (a arg) (b _) (c _) (d _) (e _) (f _) (g _))
 @end example
 
+@c EN
 The @code{_} in the second expressions and after indicates the place
 where previous result is passed.
 It is conceptually expanded to the following:
+@c JP
+2番目以降の式中の@code{_}は、前の結果をその位置の引数で受け取ることを示します。
+上の式は概念的には次の式と等価です。
+@c COMMON
 
 @example
 (let* ((tmp (a arg))
@@ -10815,7 +10845,11 @@ It is conceptually expanded to the following:
   (g tmp))
 @end example
 
+@c EN
 Because the placeholder is explicit, you can pass additional arguments:
+@c JP
+引数をはめ込む場所を明示できるので、他の引数も自由に渡せます:
+@c COMMON
 
 @example
 (chain x (y a _) (z _ b))
@@ -10825,7 +10859,11 @@ Because the placeholder is explicit, you can pass additional arguments:
    (z tmp b))
 @end example
 
+@c EN
 Or even use multiple values:
+@c JP
+多値を受け取って複数の引数として渡すこともできます:
+@c COMMON
 
 @example
 (chain mv-expr (f _ _) (g _ _))
@@ -10838,21 +10876,46 @@ Or even use multiple values:
 
 @defmac chain initial-value [placeholder [ellipsis]] step @dots{}
 @c MOD srfi-197
+@c EN
 The optional @var{placeholder} and @var{ellipsis} are, if given,
 literal symbols.   It replaces the default placeholder and ellipsis
 symbols, @code{_} and @code{...}, respectively.
+@c JP
+省略可能な@var{placeholder}と@var{ellipsis}引数は、
+リテラルシンボルでなければなりません。与えられた場合は、
+デフォルトのプレースホルダ@code{_}とエリプシス@code{...}を置き換えます。
+@c COMMON
 
-Each @var{step} is @code{@var{datum} @dots{}}, where each @var{datum}
-must be either a placeholder symbol, the ellipsis symbol.
+@c EN
+Each @var{step} is @code{(@var{datum} @dots{})}, where each @var{datum}
+must be either an expression,  placeholder symbol, the ellipsis symbol.
 The ellipsis symbol must appear in the last position, if any,
 and must immediately follow the placeholder symbol.
+@c JP
+各@var{step}は@code{(@var{datum} @dots{})}の形で、
+@var{datum}は式、プレースホルダ、あるいはエリプシスです。
+但し、エリプシスは最後の要素としてのみ許され、現れた場合は直前がプレースホルダ
+でなければなりません。
+@c COMMON
 
+@c EN
 Conceptually, each @var{step} becomes a procedure that takes as
 many arguments as the placeholders.  If the @var{step} ends with
 ellipsis symbol, the last placeholder works as the ``rest'' arguments.
+@c JP
+概念的には、各@var{step}はプレースホルダの数だけ引数を取る手続きへと展開されます。
+手続きに渡された引数は順にプレースホルダの箇所に充てられます。
+@var{step}の最後がエリプシスだった場合は、直前のプレースホルダが ``rest'' 引数として
+動作します。
+@c COMMON
 
+@c EN
 If a @var{step} expects more than one value, the previous @var{step}
 or @var{initial-value} is expected to yield that many values.
+@c JP
+@var{step}が一つ以上の値を期待する場合、直前の@var{step}もしくは
+@var{initial-value}は同じ数だけの値を生成せねばなりません。
+@c COMMON
 
 @example
 (chain expr (f _ a _ ...))
