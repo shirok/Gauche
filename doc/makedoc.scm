@@ -62,7 +62,7 @@
       (not (check-makeinfo-version makeinfo "5.0"))
       (and (do-process (make-cmd `(,makeinfo ,input)))
            (begin (remove-files (glob #"~|info|*.gz"))
-                  (do-process (make-cmd `(,gzip ,info ,@(glob #"~|info|-[0-9]*"))))))))
+                  (do-process (make-cmd `(,gzip "-n" ,info ,@(glob #"~|info|-[0-9]*"))))))))
 
 (define (do-html input makeinfo)
   (or (string-null? makeinfo)
