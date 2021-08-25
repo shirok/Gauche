@@ -696,6 +696,13 @@ for user-defined classes.
 (equal? "abc" "abc")           @result{} #t
 (equal? 100 100)               @result{} #t
 (equal? 100 100.0)             @result{} #f
+
+@c EN
+;; 0.0 and -0.0 is numerically equal (=), but eqv? distingushes them, so as equal?.
+@c JP
+;; 0.0と-0.0は数値としては等しい(=)ですが、eqv?は区別し、したがってequal?も区別します。
+@c COMMON
+(equal? 0.0 -0.0)              @result{} #f
 @end example
 
 @c EN
