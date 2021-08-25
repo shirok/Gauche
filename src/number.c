@@ -2510,8 +2510,10 @@ ScmObj Scm_Quotient(ScmObj x, ScmObj y, ScmObj *rem)
         {
             if (ry == 0.0) goto DIVBYZERO;
             double q = (rx*ry > 0)? floor(rx/ry) : ceil(rx/ry);
+            if (q == 0.0) q = 0.0; /* Don't return -0.0 */
             if (rem) {
                 double rr = roundeven(rx - q*ry);
+                if (rr == 0.0) rr = 0.0; /* Don't return -0.0 */
                 *rem = Scm_MakeFlonum(rr);
             }
             return Scm_MakeFlonum(q);
@@ -2622,6 +2624,7 @@ ScmObj Scm_Modulo(ScmObj x, ScmObj y, int remp)
                 rem += ry;
             }
         }
+        if (rem == 0.0) rem = 0.0; /* Don't return -0.0 */
         return Scm_MakeFlonum(rem);
     } else {
         goto BADARG;
@@ -2856,7 +2859,7 @@ static double trig_pi_reduce_range(double x)
     double xx = fmod(x, 2.0);   /* -2.0 < x < 2.0 */
     if (xx > 1.0)  return xx - 2.0;
     if (xx < -1.0) return xx + 2.0;
-    if (xx == 0.0 && signbit(xx)) return -xx; /* we don't return -0.0 */
+    if (xx == 0.0) return 0.0; /* we don't return -0.0 */
     else return xx;
 }
 
@@ -3197,6 +3200,7 @@ static ScmObj scm_round(ScmObj num, int mode, int vmp)
         case SCM_ROUND_ROUND: r = roundeven(v); break;
         default: Scm_Panic("something screwed up");
         }
+        if (r == 0.0) r = 0.0;  /* Don't return -0.0 */
         RETURN_FLONUM(r);
     }
     Scm_Error("real number required, but got %S", num);

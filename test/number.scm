@@ -656,7 +656,10 @@
    (let ((e (car e&i))
          (i (cdr e&i)))
      (test* (format "exact->inexact ~s" i) i (exact->inexact e))
-     (test* (format "exact->inexact ~s" (- i)) (- i) (exact->inexact (- e)))
+     ;; (- 0) is 0, but (- 0.0) is -0.0
+     (test* (format "exact->inexact ~s" (- i))
+            (if (= i 0.0) i (- i))
+            (exact->inexact (- e)))
      (test* (format "inexact->exact ~s" e) e (inexact->exact i))
      (test* (format "inexact->exact ~s" (- e)) (- e) (inexact->exact (- i)))
      ))
@@ -949,6 +952,8 @@
 ;(test* "eqv?" #f (eqv? 4/5 (inexact->exact 0.8)))
 (test* "eqv?" #t (eqv? 20 (inexact->exact 20.0)))
 (test* "eqv?" #f (eqv? 20 20.0))
+
+(test* "eqv? with -0.0" #f (eqv? 0.0 -0.0)) ;R7RS requires this
 
 ;; numeric comparison involving nan.  we should test both
 ;; inlined case and applied case
@@ -1826,6 +1831,14 @@
 (round-tester -35565/2 #t -17782 -17783 -17782 -17782)
 (round-tester 35567/2 #t 17784 17783 17783 17784)
 (round-tester -35567/2 #t -17783 -17784 -17783 -17784)
+
+;; Ensure that rounding never yields -0.0.
+;; It is not specified in R7RS, but having them return -0.0 complicates
+;; integer division operations; notably, comparing division result to
+;; 0.0 with equal? fails if division returns -0.0, which is mostly unexpected.
+(test* "ceiling to 0.0 (not -0.0)" 0.0 (ceiling -0.5))
+(test* "truncate to 0.0 (not -0.0)" 0.0 (truncate -0.5))
+(test* "round to 0.0 (not -0.0)" 0.0 (round -0.5))
 
 (test* "round->exact" 3 (round->exact 3.4) =)
 (test* "round->exact" 4 (round->exact 3.5) =)

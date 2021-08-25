@@ -53,7 +53,16 @@ int Scm_EqvP(ScmObj x, ScmObj y)
                another is not. */
             if (SCM_FLONUMP(x)) {
                 if (SCM_FLONUMP(y)) {
-                    return (SCM_FLONUM_VALUE(x) == SCM_FLONUM_VALUE(y));
+                    double rx = SCM_FLONUM_VALUE(x);
+                    double ry = SCM_FLONUM_VALUE(y);
+                    /* Comparison of signbit is for (eq? 0.0 -0.0) => #f.
+                       R7RS 6.1: eqv? returns #f if ... obj1 and obj2 are
+                       both inexact numbers such that ... they do not yield
+                       the same results when passed as arguments to any
+                       other procedure that can be defined as a finite
+                       composition of Scheme's standard arithmetic
+                       procedures, ... */
+                    return (rx == ry && signbit(rx) == signbit(ry));
                 } else {
                     return FALSE;
                 }

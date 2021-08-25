@@ -1,3 +1,14 @@
+2021-08-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/boolean.c (Scm_EqvP): Let (eqv? -0.0 0.0) #f.  The spec of eqv?
+	  has been changed since R5RS; in R7RS, it must return #f if two objects
+	  are numbers and it yields different results with Scheme's standard
+	  arithmetic operations.
+	  Subsequently, (equal? -0.0 0.0) also returns #f.
+	* src/numebr.c: Make sure integer divisions and roundings never return
+	  -0.0.  It complicates things when the result is compared to 0.0
+	   with equal?.
+
 2021-08-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (scm_abs): Fix: (abs -0.0) returned -0.0.  Oops.
