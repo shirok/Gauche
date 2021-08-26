@@ -40,7 +40,10 @@
   (use control.thread-pool)
   (use control.job)
   (export pmap
-          single-mapper make-thread-mapper make-pool-mapper))
+          single-mapper
+          make-static-mapper
+          make-pool-mapper
+          make-fully-concurrent-mapper))
 (select-module control.pmap)
 
 ;; MAPPER allows a procedure to run on set of objects, possibly
@@ -78,7 +81,7 @@
                                       (make-list (- n r) q)))
                    0))))
 
-(define (make-thread-mapper :optional (num-threads #f))
+(define (make-static-mapper :optional (num-threads #f))
   (let1 nt (or num-threads (sys-available-processors))
     (^[proc coll]
       (let* ([cols (%split-collection coll nt)]
@@ -105,12 +108,17 @@
             (run pool proc coll)
           (terminate-all! pool))))))
 
+(define (make-fully-concurrent-mapper :optional (timeout #f) (timeout-val #f))
+  (^[proc coll]
+    (let1 ts (map (^e (thread-start! (make-thread (^[] (proc e))))) coll)
+      (map (cut thread-join! <> timeout timeout-val) ts))))
+
 (define (default-mapper)
   (cond-expand
    [gauche.sys.threads
     (if (= 1 (sys-available-processors))
       single-mapper
-      (make-thread-mapper))]
+      (make-static-mapper))]
    [else
     single-mapper]))
 

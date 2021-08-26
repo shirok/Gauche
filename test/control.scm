@@ -276,7 +276,10 @@
            (unwind-protect
                (append (pmap (cut * <> 2) (iota 100) :mapper mapper)
                        (pmap (cut * <> 3) (iota 100) :mapper mapper))
-             (terminate-all! pool))))]
+             (terminate-all! pool))))
+  (test* "pmap (fully concurrent)"
+         (map (cut * <> 2) (iota 25))
+         (pmap (cut * <> 2) (iota 25) :mapper (make-fully-concurrent-mapper)))]
  [else])
 
 ;;--------------------------------------------------------------------
