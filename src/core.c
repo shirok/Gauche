@@ -69,6 +69,7 @@ extern void Scm__InitSymbol(void);
 extern void Scm__InitNumber(void);
 extern void Scm__InitChar(void);
 extern void Scm__InitClass(void);
+extern void Scm__InitMemoTable(void);
 extern void Scm__InitList(void);
 extern void Scm__InitExceptions(void);
 extern void Scm__InitPort(void);
@@ -182,6 +183,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm__InitNumber);
     CALL_INIT(Scm__InitChar);
     CALL_INIT(Scm__InitClass);
+    CALL_INIT(Scm__InitMemoTable);
     CALL_INIT(Scm__InitList);
     CALL_INIT(Scm__InitCollection);
     CALL_INIT(Scm__InitExceptions);
