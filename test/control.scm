@@ -253,11 +253,11 @@
  [else])
 
 ;;--------------------------------------------------------------------
-;; control.mapper
+;; control.pmap
 ;;
-(test-section "control.mapper")
-(use control.mapper)
-(test-module 'control.mapper)
+(test-section "control.pmap")
+(use control.pmap)
+(test-module 'control.pmap)
 
 (test* "pmap (default)"
        (map (cut * <> 2) (iota 100))

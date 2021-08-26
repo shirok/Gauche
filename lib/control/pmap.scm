@@ -1,5 +1,5 @@
 ;;;
-;;; control.mapper - parallel mapper
+;;; control.pmap - parallel mapper
 ;;;
 ;;;   Copyright (c) 2018-2021  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module control.mapper
+(define-module control.pmap
   (use gauche.threads)
   (use gauche.sequence)
   (use gauche.generator)
@@ -41,7 +41,7 @@
   (use control.job)
   (export pmap
           single-mapper make-thread-mapper make-pool-mapper))
-(select-module control.mapper)
+(select-module control.pmap)
 
 ;; MAPPER allows a procedure to run on set of objects, possibly
 ;; in parallel.  It abstracts the execution mechanism so that the
