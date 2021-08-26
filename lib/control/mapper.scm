@@ -88,13 +88,22 @@
         (for-each thread-start! ts)
         (append-map thread-join! ts)))))
 
-(define (make-pool-mapper pool)
-  (^[proc coll]
+(define (make-pool-mapper :optional (pool #f))
+  (define ephemeral? (not pool))
+  (define (run pool proc coll)
     (for-each-with-index (^[i e] (add-job! pool (^[] (cons i (proc e))) #t))
                          coll)
     ($ map cdr $ (cut sort <> < car)
        $ map (^_ (job-result (dequeue/wait! (thread-pool-results pool))))
-       $ liota (size-of coll))))
+       $ liota (size-of coll)))
+
+  (if pool
+    (^[proc coll] (run pool proc coll))
+    (let1 pool (make-thread-pool (sys-available-processors))
+      (^[proc coll]
+        (unwind-protect
+            (run pool proc coll)
+          (terminate-all! pool))))))
 
 (define (default-mapper)
   (cond-expand

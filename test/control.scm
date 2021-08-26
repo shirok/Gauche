@@ -259,6 +259,26 @@
 (use control.mapper)
 (test-module 'control.mapper)
 
+(test* "pmap (default)"
+       (map (cut * <> 2) (iota 100))
+       (pmap (cut * <> 2) (iota 100)))
+
+(cond-expand
+ [gauche.sys.threads
+  (test* "pmap (thread-pool)"
+         (map (cut * <> 2) (iota 100))
+         (pmap (cut * <> 2) (iota 100) :mapper (make-pool-mapper)))
+  (test* "pmap (thread-pool reuse)"
+         (append (map (cut * <> 2) (iota 100))
+                 (map (cut * <> 3) (iota 100)))
+         (let* ([pool (make-thread-pool (sys-available-processors))]
+                [mapper (make-pool-mapper pool)])
+           (unwind-protect
+               (append (pmap (cut * <> 2) (iota 100) :mapper mapper)
+                       (pmap (cut * <> 3) (iota 100) :mapper mapper))
+             (terminate-all! pool))))]
+ [else])
+
 ;;--------------------------------------------------------------------
 ;; control.scheduler
 ;;
