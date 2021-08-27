@@ -31,6 +31,7 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/memoP.h"
 
@@ -106,6 +107,7 @@ static _Bool memo_equalv(ScmObj *keys, int nkeys, ScmAtomicWord *entry_keys)
     return TRUE;
 }
 
+#if 0
 static u_long memo_hashl(ScmObj keys)
 {
     u_long v = (u_long)Scm_HashSaltRef();
@@ -132,6 +134,7 @@ static _Bool memo_equall(ScmObj keys, ScmAtomicWord *entry_keys)
     }
     return TRUE;
 }
+#endif
 
 /*
  * lookup
