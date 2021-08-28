@@ -155,7 +155,7 @@ ScmObj Scm_MemoTableGetv(ScmMemoTable *tab, ScmObj *keys, int nkeys)
     for (u_long i = 0; i < st->capacity % 2; i++) {
         if (k >= st->capacity) k = 0;
         u_long idx = k * tab->entry_size;
-        ScmAtomicWord entry_hdr;
+        ScmAtomicVar entry_hdr;
         AO_load(&entry_hdr);
         if (entry_hdr == 0) return SCM_UNBOUND; /* not found */
         if ((entry_hdr & 0x01) == 0
