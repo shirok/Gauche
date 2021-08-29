@@ -42,7 +42,7 @@
   )
 (select-module gauche.interactive)
 
-(autoload gauche.uvector f64vector uvector-alias u64vecto-ref)
+(autoload gauche.uvector f64vector uvector-alias u64vector-ref)
 
 ;;;
 ;;; Apropos - search bound symbols matching given pattern
