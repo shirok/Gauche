@@ -21423,8 +21423,8 @@ the request.
 @c COMMON
 @end defun
 
-@defun thread-terminate! thread
-[SRFI-18], [SRFI-21]
+@defun thread-terminate! thread :key force
+[SRFI-18+], [SRFI-21+]
 @c MOD gauche.threads
 @c EN
 Terminates the specified thread @var{thread}.
@@ -21446,23 +21446,47 @@ won't return.  Otherwise, this procedure returns unspecified value.
 @c COMMON
 
 @c EN
-This procedure should be used with care, since
-@var{thread} won't have a chance to call cleanup
-procedures (such as 'after' thunks of @code{dynamic-wind}).
-If @var{thread} is in a critical section, it can leave some state
-inconsistent.  However, once a thread is terminated, any mutex
-that the thread has kept becomes 'abandoned' state, and an attempt
-to lock such a mutex by other thread raises an 'abandoned mutex exception',
-so that you will know the situation.  @xref{Synchronization primitives}.
+By default, this procedure tries to termiante the thread in ``safe''
+point, so that the thread can keep the process in consistent state.
+The locked mutexes, however, may remain locked; they become
+``abandoned'' state and when other thread tries to touch the mutex
+it will raise @code{<abandoned-mutex-exception>}.
 @c JP
-@var{thread}には(@code{dynamic-wind}での'after'手続きのような)クリーンアップ手続きを
-呼ぶチャンスがないので、この手続きは注意して使って下さい。
-@var{thread}がクリティカルセクションにあるならば、一貫性のない状態を残すことに
-なります。
-しかし、あるスレッドが一旦終了すると、そのスレッドが保持していたmutexは
-'abandoned'(放棄された)状態になり、そのようなmutexをロックしようとするスレッドは
-'abandoned mutex exception'を投げるので、その状況を知ることができます。
-@ref{Synchronization primitives}参照。
+デフォルトでは、この手続きは指定スレッドを「安全な」箇所で終了させます。
+これは、プロセスの状態に最低限の一貫性を保証します。
+ただし、指定スレッドがロックしていたmutexはロックされたまま「放棄された」状態になります。
+他のスレッドがそのmutexに触ろうとすると@code{<abandoned-mutex-exception>}例外が
+投げられます。
+@c COMMON
+
+@c EN
+This storategy may, however, leave the system's thread unterminated,
+if the thread is blocking in certain system calls, even in Scheme level
+the thread is marked terminated.  The system thread will terminate itself
+as soon as it resumes and return the control to Gauche runtime.
+@c JP
+只し、この戦略では、スレッドがある種のシステムコールでブロックしていた場合、
+Schemeレベルのスレッドが「terminated」とマークされた後でもシステムスレッドが
+生きたまま残る可能性があります。このシステムスレッドが再会されてGaucheのランタイムに
+制御が戻れば、その時点でシステムスレッドは自己終了します。
+@c COMMON
+
+@c EN
+If, for some reason, you need to guarantee to terminate the system thread,
+you can pass a true value to @code{force} keyword argument.  If you do so,
+@code{thread-termiante!} will forcibly terminate the system thread
+after the usual graceful termination fails.  It calls
+@code{pthread_cancel} or @code{TerminateThread} as the last resort,
+which can leave the process state inconsistent, so this mode should be
+used in an absolute emergency.
+@c JP
+もし何らかの理由でシステムスレッドも確実に終了させたい場合は、
+@code{force}キーワードに真の値を渡してください。その場合、
+@code{thread-terminate!}は通常の穏やかな終了を試みて失敗したら、
+強制的にシステムスレッドを終了させます。
+これは最終的に@code{pthread_cancel}や@code{TerminateThread}コールによって
+行われ、スレッドに後始末の余地を与えないため、プロセスの状態に一貫性が無くなる
+可能性があります。緊急事態の時のみ用いてください。
 @c COMMON
 @end defun
 
