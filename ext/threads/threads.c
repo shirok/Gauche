@@ -466,10 +466,11 @@ ScmObj Scm_ThreadTerminate(ScmVM *target, u_long flags)
 #endif  /* defined(GAUCHE_USE_WTHREADS) */
                 if (wait_for_termination(target)) break;
 
+		thread_cleanup_inner(target);
+		
                 /* If forcible termination is requested, we resort to
                    the extreme measure. */
                 if (flags & SCM_THREAD_TERMINATE_FORCIBLE) {
-                    thread_cleanup_inner(target);
 #if defined(GAUCHE_USE_PTHREADS)
                     pthread_cancel(target->thread);
 #elif defined(GAUCHE_USE_WTHREADS)
