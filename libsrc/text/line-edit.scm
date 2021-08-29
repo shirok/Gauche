@@ -1141,7 +1141,7 @@
   (beep (~ ctx'console))
   (show-message ctx buf
                 #"Unknown keystroke ~(keys->string '() key). \
-                  Type M-h b for list of key bindings."
+                  Type M-h b for the list of key bindings."
                 '(#f #f reverse))
   'redraw)
 
