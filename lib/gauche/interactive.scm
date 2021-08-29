@@ -42,6 +42,8 @@
   )
 (select-module gauche.interactive)
 
+(autoload gauche.uvector f64vector uvector-alias u64vecto-ref)
+
 ;;;
 ;;; Apropos - search bound symbols matching given pattern
 ;;;
@@ -154,6 +156,23 @@
               (sys-strftime "%Y-%m-%dT%H:%M:%SZ" (sys-gmtime n))))
     (format #t ")\n")
     (values)))
+
+(define-method describe ((d <real>))
+  (describe-common d)
+  (when (flonum? d)
+    (let* ([components (decode-float d)]
+           [buf (f64vector d)])
+      (if (finite? d)
+        (format #t "  mantissa: #x~a~14,'0,'_,4:x   exponent: ~d"
+                (if (positive? (vector-ref components 2)) "+" "-")
+                (vector-ref components 0)
+                (vector-ref components 1))
+        (format #t "  ~s" d))
+      (format #t "    hex: #x~16,'0,'_,4:x\n"
+              (u64vector-ref (uvector-alias <u64vector> buf) 0)))
+    (when (finite? d)
+      (format #t "  (exact ~s) is ~s\n" d (exact d))))
+  (values))
 
 (define-method describe ((g <generic>))
   (next-method) ; common object description

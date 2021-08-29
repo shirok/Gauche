@@ -1,5 +1,8 @@
 2021-08-29  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive.scm (describe): Add (describe <real>)
+	  to describe flonum.
+
 	* ext/threads/threads.c (Scm_TerminateThread): Add flags argument, and
 	  allow to choose forcible/non-forcible termination.
 	* ext/threads/threads.scm (thread-terminate!): Make non-forcible
