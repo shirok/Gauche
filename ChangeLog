@@ -1,3 +1,7 @@
+2021-08-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche-cesconv.in: Add --in-place option.
+
 2021-08-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/boolean.c (Scm_EqvP): Let (eqv? -0.0 0.0) #f.  The spec of eqv?

@@ -7,13 +7,16 @@
 (use gauche.charconv)
 (use gauche.parseopt)
 (use file.filter)
+(use file.util)
 
 (define (usage)
   (print "Usage: gauche-cesconv [options] inputfile")
   (print "  -f, --from-code=encoding  : input ces.  can be '*jp' to guess.")
   (print "  -t, --to-code=encoding    : output ces.")
   (print "  -o, --output=file         : output file (instead of stdout)")
+  (print "  --in-place                : replace inputfile with converted file")
   (print "When inputfile is omitted, input is taken from stdin.")
+  (print "(The inputfile argument is required if --in-place is given.)")
   (print "when input/output ces is omitted, Gauche's native CES is used.")
   (exit 0))
 
@@ -26,19 +29,39 @@
   (let-args (cdr args) ((ices "f|from-code=s" (gauche-character-encoding))
                         (oces "t|to-code=s" (gauche-character-encoding))
                         (outfile "o|output=s" #f)
+                        (in-place "in-place" #f)
                         (#f   "h|help" => (cut usage))
                         . files)
-    (file-filter (lambda (in out)
-                   (let ((inp  (wrap-with-input-conversion in ices))
-                         (outp (wrap-with-output-conversion out oces)))
-                     (copy-port inp outp :unit 'char)
-                     (close-input-port inp)
-                     (close-output-port outp)))
-                 :input  (or (and (pair? files) (car files))
-                             (current-input-port))
-                 :output (or outfile (current-output-port))
-                 )
-    0))
+    (when (and in-place (null? files))
+      (exit 1 "In-place flag requires input file name"))
+    (let* ([ifile (if (pair? files) (car files) (current-input-port))]
+           [ofile (or outfile
+                      (and in-place ifile)
+                      (current-output-port))])
+      (if in-place
+        (unwind-protect
+            (begin
+              (sys-unlink #"~|ofile|.orig")
+              (sys-link ofile #"~|ofile|.orig")
+              (do-it ices oces ifile ofile))
+          (when (file-exists? #"~|ofile|.orig")
+            (if (not (file-eqv? ofile #"~|ofile|.orig"))
+              (sys-unlink #"~|ofile|.orig")
+              (sys-rename #"~|ofile|.orig" ofile))))
+        (do-it ices oces ifile ofile))))
+  0)
+
+(define (do-it ices oces infile outfile)
+  (file-filter (^[in out]
+                 (let ([inp  (wrap-with-input-conversion in ices)]
+                       [outp (wrap-with-output-conversion out oces)])
+                   (copy-port inp outp :unit 'char)
+                   (close-input-port inp)
+                   (close-output-port outp)))
+               :input  infile
+               :output outfile
+               :temporary-file #t))
+
 
 ;; Local variables:
 ;; mode: scheme
