@@ -1,3 +1,15 @@
+2021-08-29  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.c (Scm_TerminateThread): Add flags argument, and
+	  allow to choose forcible/non-forcible termination.
+	* ext/threads/threads.scm (thread-terminate!): Make non-forcible
+	  termination default.  Forcible termination has no guarantee the
+	  process state is sane afterwards, so it should be reserved for
+	  absolutely desperate situation.   We expect non-forcible termination
+	  shows little difference from forcible termination, for the program
+	  will go on anyways---the only difference should be the hanged thread
+	  remains in the process.
+
 2021-08-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-cesconv.in: Add --in-place option.

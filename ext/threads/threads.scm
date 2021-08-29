@@ -131,7 +131,11 @@
  (define-cproc thread-join! (vm::<thread> :optional (timeout #f) timeout-val)
    Scm_ThreadJoin)
 
- (define-cproc thread-terminate! (vm::<thread>) Scm_ThreadTerminate)
+ (define-cproc thread-terminate! (vm::<thread> :key (force #f))
+   (let* ([flags::u_long 0])
+     (when (not (SCM_FALSEP force))
+       (set! flags SCM_THREAD_TERMINATE_FORCIBLE))
+     (return (Scm_ThreadTerminate vm flags))))
 
  (define-cproc thread-stop! (target::<thread>
                              :optional (timeout #f) (timeout-val #f))

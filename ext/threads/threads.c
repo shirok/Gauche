@@ -390,11 +390,26 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
    We try to terminate the thread gracefully as possible.
    First, we use vm->stopRequest mechanism.  If the target thread is
    in VM loop, it responds to the flag and terminates itself.
-   If that fails, then we use more aggressive means.
 
-   TODO: We should probably make it configurable whether to use the
-   forcible termination---it is too dangerous.
- */
+   If that fails, we send a signal to the thread.  If the thread is blocked
+   by a system call, this most likely unblocks the thread and termnates it.
+   (We use a dedicated signal.
+
+   There are cases when signals can fail.  On POSIX platform, if the thread
+   is waiting on pthread_cond_wait, it is not guaranteed to be interrupted
+   with a signal.  On Windows platform, system calls can't be interrupted
+   so we don't have this option.  (We may, in future, use CancelSynchronousIo
+   to interrupt at least synchronous I/O calls).
+
+   If the above steps all fails and SCM_THREAD_TERIMINATE_FORCIBLE is passed
+   in FLAGS, we resort to use pthread_cancel or TerminateThread.  This is not
+   safe---the thread may leave memory in inconsistent state.
+
+   In any way, the target thread is marked as SCM_VM_TERMINATED.  If we
+   avoid the forcible termiantion, the thread remains in the system, but
+   as soon as it unblocks and resumes execution of Gauche code, it will
+   see the terminate request and terminate itself.
+*/
 
 /* Caller must hold target->vmlock.  return TRUE if the target terminates
    gracefully. */
@@ -411,7 +426,7 @@ static int wait_for_termination(ScmVM *target)
     return (r == 0);
 }
 
-ScmObj Scm_ThreadTerminate(ScmVM *target)
+ScmObj Scm_ThreadTerminate(ScmVM *target, u_long flags)
 {
     ScmVM *vm = Scm_VM();
     if (target == vm) {
@@ -429,10 +444,10 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
 
     (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
     if (target->state == SCM_VM_RUNNABLE || target->state == SCM_VM_STOPPED) {
-        do {
-            /* This ensures only the first call of thread-terminate! on a
-               thread is in effect. */
-            if (target->canceller == NULL) {
+        /* This ensures only the first call of thread-terminate! on a
+           thread is in effect. */
+        if (target->canceller == NULL) {
+            do {
                 target->canceller = vm;
 
                 /* First try */
@@ -451,15 +466,18 @@ ScmObj Scm_ThreadTerminate(ScmVM *target)
 #endif  /* defined(GAUCHE_USE_WTHREADS) */
                 if (wait_for_termination(target)) break;
 
-                /* Last resort */
-                thread_cleanup_inner(target);
+                /* If forcible termination is requested, we resort to
+                   the extreme measure. */
+                if (flags & SCM_THREAD_TERMINATE_FORCIBLE) {
+                    thread_cleanup_inner(target);
 #if defined(GAUCHE_USE_PTHREADS)
-                pthread_cancel(target->thread);
+                    pthread_cancel(target->thread);
 #elif defined(GAUCHE_USE_WTHREADS)
-                TerminateThread(target->thread, 0);
+                    TerminateThread(target->thread, 0);
 #endif
-            }
-        } while (0);
+                }
+            } while (0);
+        }
     }
     /* target either is terminated or hasn't been run */
     target->state = SCM_VM_TERMINATED;
