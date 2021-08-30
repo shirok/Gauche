@@ -58,7 +58,7 @@
   (syntax-rules ()
     ([_ msg expected expr]
      (test* msg expected expr
-            %test-check-diff %test-report-diff))))
+            test-check-diff test-report-failure-diff))))
 
 ;; internal.  converts src to string.  if can't convert, just return src as is.
 (define (%->input src)
@@ -76,10 +76,10 @@
        (fail))]
     [else src]))                        ;convers string src case
 
-(define (%test-check-diff expected actual)
+(define (test-check-diff expected actual)
   (equal? (%->input expected) (%->input actual)))
 
-(define (%test-report-diff msg expected actual)
+(define (test-report-failure-diff msg expected actual)
   (let ([e (%->input expected)]
         [a (%->input actual)])
     (if (and (string? e) (string? a))

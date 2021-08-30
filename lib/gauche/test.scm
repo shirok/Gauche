@@ -85,8 +85,9 @@
   (export test test* test-start test-end test-running? test-section test-log
           test-module test-script test*/diff
           test-error test-one-of test-none-of
-          test-check
+          test-check test-check-diff
           test-report-failure test-report-failure-plain
+          test-report-failure-diff
           test-record-file test-summary-check
           *test-error* *test-report-error* test-error? prim-test
           test-count++ test-pass++ test-fail++
@@ -96,7 +97,8 @@
 
 ;; Autoloads to avoid depending other modules
 (autoload "gauche/test/script" test-script)
-(autoload "gauche/test/diff" (:macro test*/diff))
+(autoload "gauche/test/diff"
+          (:macro test*/diff) test-check-diff test-report-failure-diff)
 
 ;; An object to represent error.  This class isn't exported; the user
 ;; must use `test-error' procedure to create an instance.
