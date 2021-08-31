@@ -76,8 +76,8 @@
        (fail))]
     [else src]))                        ;convers string src case
 
-(define (test-check-diff expected actual)
-  (equal? (%->input expected) (%->input actual)))
+(define (test-check-diff expected actual :optional (fallback equal?))
+  (fallback (%->input expected) (%->input actual)))
 
 (define (test-report-failure-diff msg expected actual)
   (let ([e (%->input expected)]
