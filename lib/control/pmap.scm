@@ -35,6 +35,7 @@
   (use gauche.threads)
   (use gauche.sequence)
   (use gauche.generator)
+  (use gauche.mop.singleton)
   (use data.queue)
   (use scheme.list)
   (use control.thread-pool)
@@ -43,13 +44,28 @@
           single-mapper
           make-static-mapper
           make-pool-mapper
-          make-fully-concurrent-mapper))
-(select-module control.pmap)
+          make-fully-concurrent-mapper))(
+select-module control.pmap)
 
-;; MAPPER allows a procedure to run on set of objects, possibly
-;; in parallel.  It abstracts the execution mechanism so that the
-;; same code can run on both single-threaded and multi-threaded
-;; processes.
+;; MAPPER abstracts the parallelization strategy.  We provide several
+;; predefined mappers.
+;;
+;;   single-mapper - A sigleton mapper that runs in a single (current) thread.
+;;      If the running system is single-core, this is the default mapper.
+;;
+;;   pool-mapper - Use thread pool.  This is ideal when each task requies
+;;      some processing time, so that the overhead of thread pool is
+;;      negligible.
+;;
+;;   static-mapper - Create as many threads as the available cores, and
+;;      distribute elements evenly.  Low overhead, good when each task is
+;;      lightweight and the execution time won't fractuate much.
+;;
+;;   full-concurrent-mapper - Creates as many threads as the number of
+;;      elements and run concurrently.  Relatively large overhead per element,
+;;      but works better if (1) the number of elements are not very large,
+;;      e.g. up to a few dozens, and (2) each task is expected to block
+;;      on I/O.
 ;;
 ;; The high-level API, pmap, can be used without knowing underlying
 ;; thread models; it uses threads if running Gauche has the thread support
@@ -61,8 +77,46 @@
 ;; split it using an existing thread pool.   We don't make thread
 ;; pool every time pmap is called, for the overhead would be too big.
 
-(define (single-mapper proc coll)
+
+;; Abstract class.
+(define-class <mapper> () ())
+
+;;
+;; single-mapper
+;;
+(define-class <single-mapper> (<mapper> <singleton-mixin>) ())
+
+(define (single-mapper) (instance-of <single-mapper>))
+
+(define-method run-pmap ((mapper <single-mapper>) proc coll)
   (map proc coll))
+
+(define-method run-select ((mapper <single-mapper>) proc coll stopper)
+  (with-iterator (coll end? next)
+    (let loop ()
+      (if (end?)
+        #f
+        (let1 e (proc (next))
+          (receive (s? r) (stopper e)
+            (if s? r (loop))))))))
+
+;;
+;; static-mapper
+;;
+
+(define-class <static-mapper> (<mapper>)
+  ((num-threads :init-keyword :num-threads)))
+
+(define (make-static-mapper :optional (num-threads (sys-available-processors)))
+  (make <static-mapper> :num-threads num-threads))
+
+(define-method run-pmap ((mapper <static-mapper>) proc coll)
+  (let* ([cols (%split-collection coll (~ mapper'num-threads))]
+         [ts (filter-map (^c (and (pair? c)
+                                  (make-thread (cut map proc c))))
+                         cols)])
+    (for-each thread-start! ts)
+    (append-map thread-join! ts)))
 
 ;; (define (%split-collection coll n)
 ;;   (define qs (list-tabulate n (^_ (make-queue))))
@@ -81,37 +135,97 @@
                                       (make-list (- n r) q)))
                    0))))
 
-(define (make-static-mapper :optional (num-threads #f))
-  (let1 nt (or num-threads (sys-available-processors))
-    (^[proc coll]
-      (let* ([cols (%split-collection coll nt)]
+(define-method run-select ((mapper <static-mapper>) proc coll stopper)
+  (let  ([signaled (atom #f)])
+    (define (with-stopper proc elts threads stopper)
+      (let loop ([elts elts])
+        (if (null? elts)
+          #f
+          (let1 e (proc (car elts))
+            (receive (s? r) (stopper e)
+              (if s?
+                ($ atomic-update! signaled
+                   (^f (or f
+                           (dolist (t threads r)
+                             (unless (eq? t (current-thread))
+                               (thread-terminate! t))))))
+                (loop (cdr elts))))))))
+    (letrec ([cols (%split-collection coll (~ mapper'num-threads))]
              [ts (filter-map (^c (and (pair? c)
-                                      (make-thread (^[] (map proc c)))))
+                                      (make-thread
+                                       (cut with-stopper proc c ts stopper))))
                              cols)])
-        (for-each thread-start! ts)
-        (append-map thread-join! ts)))))
+      (for-each thread-start! ts)
+      (do ([ts ts (cdr ts)]
+           [r #f (guard (e [(<terminated-thread-exception> e) r])
+                   (thread-join! (car ts)))])
+          [(null? ts) r]))))
+
+;;
+;; pool mapper
+;;
+
+(define-class <pool-mapper> (<mapper>)
+  ((pool :init-keyword :pool
+         :init-value #f)
+   (ephemeral :init-value #f)))
+
+(define-method initialize ((mapper <pool-mapper>) initargs)
+  (next-method)
+  (unless (~ mapper'pool)
+    (set! (~ mapper'pool) (make-thread-pool (sys-available-processors)))
+    (set! (~ mapper'ephemeral) #t)))
 
 (define (make-pool-mapper :optional (pool #f))
-  (define ephemeral? (not pool))
-  (define (run pool proc coll)
-    (for-each-with-index (^[i e] (add-job! pool (^[] (cons i (proc e))) #t))
-                         coll)
-    ($ map cdr $ (cut sort <> < car)
-       $ map (^_ (job-result (dequeue/wait! (thread-pool-results pool))))
-       $ liota (size-of coll)))
+  (make <pool-mapper> :pool pool))
 
-  (if pool
-    (^[proc coll] (run pool proc coll))
-    (let1 pool (make-thread-pool (sys-available-processors))
-      (^[proc coll]
-        (unwind-protect
-            (run pool proc coll)
-          (terminate-all! pool))))))
+(define (pool-mapper-shutdown mapper)
+  (when (~ mapper'pool)
+    (terminate-all! (~ mapper'pool))))
+
+(define-method run-pmap ((mapper <pool-mapper>) proc coll)
+  (define (run)
+    (let1 pool (~ mapper'pool)
+      ($ for-each-with-index
+         (^[i e] (add-job! pool (^[] (cons i (proc e))) #t))
+         coll)
+      ($ map cdr $ (cut sort <> < car)
+         $ map (^_ (job-result (dequeue/wait! (thread-pool-results pool))))
+         $ liota (size-of coll))))
+  (if (~ mapper'ephemeral)
+    (unwind-protect
+        (run)
+      (pool-mapper-shutdown mapper))
+    (run)))
+
+(define-method run-select ((mapper <pool-mapper>) proc coll stopper)
+  ;; WRITEME
+  #f)
+
+;;
+;; fully concurrent mapper
+;;
+
+(define-class <fully-concurrent-mapper> (<mapper>)
+  ((timeout :init-keyword :timeout :init-value #f)
+   (timeout-val :init-keyword :timeout-val :init-value #f)))
 
 (define (make-fully-concurrent-mapper :optional (timeout #f) (timeout-val #f))
-  (^[proc coll]
-    (let1 ts (map (^e (thread-start! (make-thread (^[] (proc e))))) coll)
-      (map (cut thread-join! <> timeout timeout-val) ts))))
+  (make <fully-concurrent-mapper> :timeout timeout :timeout-val timeout-val))
+
+(define-method run-pmap ((mapper <fully-concurrent-mapper>) proc coll)
+  (let ([ts (map (^e (thread-start! (make-thread (^[] (proc e))))) coll)]
+        [timeout (~ mapper'timeout)]
+        [timeout-val (~ mapper'timeout-val)])
+    (map (cut thread-join! <> timeout timeout-val) ts)))
+
+(define-method run-select ((mapper <fully-concurrent-mapper>) proc coll stopper)
+  ;; WRITEME
+  #f)
+
+;;
+;; default mapper
+;;
 
 (define (default-mapper)
   (cond-expand
@@ -122,5 +236,9 @@
    [else
     single-mapper]))
 
+;;;
+;;; High-level API
+;;;
+
 (define (pmap proc coll :key (mapper (default-mapper)))
-  (mapper proc coll))
+  (run-pmap mapper proc coll))
