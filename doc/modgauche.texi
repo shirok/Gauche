@@ -20051,7 +20051,7 @@ or a @code{<test-error>} object.
 By passing your own procedure, you can customize
 the message to be printed when the test is failed.
 @c JP
-最後に、省略可能引数@var{report}は@code{#f}か、引数を3つ取る手続きです。
+省略可能引数@var{report}は@code{#f}か、引数を3つ取る手続きです。
 @var{check}が偽を返した場合に呼ばれます (ただし、@var{hook}が呼ばれる前です)。
 最初の引数は@var{name}、次の引数は@var{expeced}、最後の引数は@var{thunk}が
 返した値か、@var{thunk}がエラーを投げた場合は@code{<test-error>}オブジェクトです。
@@ -20073,7 +20073,7 @@ ignored.
 It is mainly for libraries that wrap @code{gauche.test} and wants to
 do its own bookkeeping.
 @c JP
-省略可能引数@var{hook}は、@code{#f}か4引数の手続きでなければなりません。
+最後に、省略可能引数@var{hook}は、@code{#f}か4引数の手続きでなければなりません。
 それが手続きの場合、@code{test}がテストを終えた後で次の引数で呼び出されます:
 第1引数はシンボル@code{pass}か@code{fail}、第2引数は@var{name}、
 第3引数は@var{expected}、そして第4引数は、@var{thunk}の返り値か、
@@ -20103,39 +20103,41 @@ in future releases.
 @c COMMON
 @end defun
 
-@defun test-check expected result :optional fallback
+@defun test-check expected actual :optional equal
 @c MOD gauche.test
 @c EN
 The default procedure @code{test} and @code{test*} use
 to check the result of the test expression conforms the
 expected value.  By default, @code{test-check} just compares
-@var{expected} and @var{result} with a procedure @var{fallback},
+@var{expected} and @var{actual} with a procedure @var{equal},
 which is defaulted to @code{equal?}.   @code{test-check} behaves
 differently if @var{expected} is one of special test objects
 described below.
 @c JP
 テスト式の結果が期待された値に合致していることをチェックするために
 @code{test}と@code{test*}が使うデフォルトの手続きです。
-基本的に、@code{test-check}は@var{expected}と@var{result}を
-@var{fallback}に渡された手続きで比較するだけです。@var{fallback}の
+基本的に、@code{test-check}は@var{expected}と@var{actual}を
+@var{equal}に渡された手続きで比較するだけです。@var{equal}の
 デフォルト値は@code{equal?}です。
 ただし、以下に述べるとおり、@var{expected}が特殊なテストオブジェクト
 だった場合には特別な振る舞いをします。
 @c COMMON
 @end defun
 
-@defun test-report-failure name expected-result actual-result
+@defun test-report-failure name expected actual
 @c MOD gauche.test
 @c EN
 The default procedure to report test failure.  It just
-writes @var{actual-result} with @code{write}.
+writes @var{actual} with @code{write}.
 You can customize the failure report by passing your reporting procedure
 to @var{report} argument to @code{test} and @var{test*}.
+See @code{test-report-failure-diff} below, for example.
 @c JP
 テスト失敗をレポートする手続きのデフォルトです。これは単に
 @var{actual-result}を@code{write}で書き出すだけです。
 @code{test}や@code{test*}の@var{report}引数に独自の手続きを渡すことにより、
 テスト失敗時の表示をカスタマイズできます。
+例えば下の@code{test-report-failure-diff}を参照してください。
 @c COMMON
 @end defun
 
@@ -20308,19 +20310,37 @@ env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
 @subheading 見やすい失敗の報告
 @c COMMON
 
+@c EN
 As described in @code{test} entry above, you can customize
 how the failure is reported by passing the optional @var{report} argument
 to @code{test} and @code{test*}.  One of useful customizations is
 to show the difference between multi-line text.  It's such a useful tool
 so we provide a report procedure.
+@c JP
+上記@code{test}の項で説明したように、@code{test}手続きや@code{test*}マクロの
+@var{report}引数に手続きを渡すことで、失敗の報告をカスタマイズできます。
+便利なカスタマイズのひとつは、複数行に渡るテキストの差分を示すことです。
+これはとても便利なので、それ用の手続きを用意しました。
+@c COMMON
 
+@c EN
 Here's a contrived example.  We pass @code{test-report-failure-diff}
 as a report procedure (and @code{test-check-diff} for check procedure,
 which we'll explain later).  Expected text is given as a list of lines,
 while the actual result is a single string;
-the custom check and report procedures canonicalizes both expected
+Both @code{test-report-failure-diff} and @code{test-check-diff}
+procedures canonicalize expected
 and actual result into a single multi-line string, so you can give
 them in whichever ways that's convenient for you.
+@c JP
+これはちょっとわざとらしいテストです。
+@code{test-report-failure-diff}を@var{report}引数に渡しています
+(それと、@var{check}引数に@code{test-check-diff}を渡しています。後で説明します。)
+期待される結果は行のリストで、実際の結果は単一の文字列になっています。
+@code{test-report-failure-diff}と@code{test-check-diff}手続きは、
+@var{expected}と@var{actual}に渡されるものを単一の文字列へと正規化するので、
+渡しやすいような形式で引数を渡すことができます。
+@c COMMON
 
 @example
 (test* "Beatrice"
@@ -20350,52 +20370,110 @@ ERROR: GOT diffs:
  No glory lives behind the back of such.
 @end example
 
+@c EN
 As you see, the result is reported in a unified diff format
 (@pxref{Calculate difference of text streams}) so that you can
 spot the difference easily.
+@c JP
+このとおり、結果がunified diffフォーマットで報告されるので、どこが違っているのか
+見つけやすくなります
+(unified diffフォーマットについては@ref{Calculate difference of text streams}参照)。
+@c COMMON
 
 @defun test-check-diff expected actual :optional equal
 @c MOD gauche.test
+@c EN
 An alternative check procedure you can pass into @var{check} argument
 of @code{test} procedure / @code{test*} macro.
+@c JP
+@code{test}手続き/@code{test*}マクロの@var{check}引数に渡せる
+チェック手続きです。
+@c COMMON
 
+@c EN
 Before comparing @var{expected} and @var{actual}, it performs the
 following operations on each of @var{expected} and @var{actual}:
+@c JP
+まず、@var{expected}と@var{actual}を次の規則によって正規化します。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 If it is a list of strings, join them with @code{\n} (with @code{suffix}
 syntax, so the last line is also appended with @code{\n}).
+@c JP
+文字列のリストであれば、@code{\n}を糊としてひとつの文字列へとjoinします
+(@code{suffix}シンタックスを使います。つまり、最後の行の末尾にも@code{\n}は付きます)。
+@c COMMON
 @item
+@c EN
 If it is a form @code{(content-of <string>)}, then @code{<string>}
 is taken as a filename and the content of the file is used as
 a string.  If the filename is relative, it is relative to the
 current loading file.  If named file doesn't exist, an empty string
 is used.
+@c JP
+@code{(content-of <string>)}という形であれば、
+@code{<string>}をファイル名と解釈し、そのファイルを読み込んだ文字列を使います。
+ファイル名が相対パスの場合、現在ロードしているファイルからの相対と解釈されます。
+ファイルが無ければ空文字列になります。
+@c COMMON
 @item
+@c EN
 If it is a string or other object, it is used as is.
+@c JP
+文字列や他のオブジェクトの場合は、それがそのまま使われます。
+@c COMMON
 @end itemize
 
+@c EN
 Then the two arguments are compared using @var{equal}, which is defaulted
 to @code{equal?}.
+@c JP
+正規化後、二つの引数が@var{equal}手続きによって比較されます。デフォルトは@code{equal?}です。
+@c COMMON
 @end defun
 
 @defun test-report-failure-diff msg expected actual
 @c MOD gauche.test
+@c EN
 An alternative failure report procedure you can pass into @var{report}
 argument of @code{test} procedure / @code{test*} macro.
+@c JP
+@code{test}手続き/@code{test*}マクロの@var{report}引数に渡せる
+チェック手続きです。
+@c COMMON
 
+@c EN
 The @var{expected} and @var{actual} arguments are converted in the same
 way as @code{test-check-diff}; that is, if it is a list of strings (lines)
 or a form @code{(content-of <filename>)}, it is converted to
 a single string.
+@c JP
+まず@var{expected}と@var{actual}引数が@code{test-check-diff}と同様に
+正規化されます。つまり、文字列のリストか@code{(content-of <filename>)}ならば
+単一の文字列に変換されます。
+@c COMMON
 
+@c EN
 Then the difference of the two is reported in a unified diff format
 (using @code{diff-report/unified}. @xref{Calculate difference of text streams}).
+@c JP
+それから、両者の差異をunified diff形式で表示します
+(@code{diff-report/unified}が使われます。
+@ref{Calculate difference of text streams}参照)。
+@c COMMON
 
+@c EN
 If either @var{expected} or @var{actual} is not convertable to a single
 string, the result is reported in the same way as the standard
 @code{test-report-failure}.
+@c JP
+@var{expected}と@var{actual}の少なくとも一方が文字列に変換されなかった場合は、
+標準の@code{test-report-failure}と同じ表示になります。
+@c COMMON
 
+@c EN
 Note: This procedure is called twice, once when the test is failed,
 and again from @code{test-end} to report the summary of discrepancy.
 If you pass @code{(content-of <filename>)} form, you have to make sure
@@ -20403,13 +20481,28 @@ the named file exists until @code{test-end} returns.  This is tricky
 if you generate text into a temporary file during a single test.
 In general, @code{(content-of <filename>)} form is useful in the
 @var{expected} argument, where you can specify the prepared file.
+@c JP
+註: この手続きは、テストが失敗した時だけでなく、@code{test-end}がテスト結果の
+まとめを表示する時にも呼ばれます。
+従って、@code{(content-of <filename>)}の形式を使う場合は、
+@code{test-end}が戻るまで@code{<filename>}が存在するようにしてください。
+例えばテスト内で一時ファイルを作って結果をそこに出し、そのテスト後にクリアする、
+という場合はこの形式は使い辛いでしょう。
+一般的に、@code{(content-of <filename>)}形式は、@var{expected}に
+あらかじめ用意してあるファイルを指定するのに使うのが良いでしょう。
+@c COMMON
 @end defun
 
 @defmac test*/diff name expected expr
 @c MOD gauche.test
+@c EN
 This is a convenience version of @code{test*}, using
 @code{test-check-diff} and @code{test-report-failure-diff} as
 check and report procedures, respectively.
+@c JP
+@code{test*}マクロで@code{test-check-diff}と@code{test-report-failure-diff}を
+@var{check}と@var{report}引数に指定したもので、簡便のために用意されています。
+@c COMMON
 
 @example
 (test*/diff name expected expr)
