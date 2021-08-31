@@ -20103,78 +20103,6 @@ in future releases.
 @c COMMON
 @end defun
 
-@defmac test*/diff name expected expr
-@c MOD gauche.test
-@c EN
-This is a customized @code{test*}, particularly useful when
-the expected result is a multi-line text.
-@c JP
-これは、期待される結果が複数行のテキストの場合に特に便利な、
-@code{test*}のカスタマイズ版です。
-@c COMMON
-
-@c EN
-Like @code{test*}, it evaluates @var{expr} and compares the result
-with @var{expected}.  If they differ, the difference is reported
-in a unified diff format (using @code{diff-report/unified}.
-@xref{Calculate difference of text streams}).
-@c JP
-@code{test*}と同様に、@var{expr}を評価してその結果を@var{expected}と比較します。
-ただ、違っていた場合に、その差異をunified diff形式でレポートします
-(@code{diff-report/unified}が使われます。
-@ref{Calculate difference of text streams}参照)。
-@c COMMON
-
-@c EN
-The @var{expected} argument should be in one of the following forms:
-@table @asis
-@item @code{@i{string}}
-The expected text as a single string.
-@item @code{(@i{string} @dots{})}
-List of lines, which are joined together with newline characters.
-@item @code{(content-of @i{filename})}
-Read the file @i{filename} and use its content as the expected text.
-If @i{filename} is a relative path, it is looked for from the test script.
-If @i{filaname} does not exist, an empty string is assumed.
-@end table
-@c JP
-@var{expected}引数は次のいずれかの形式です:
-@table @asis
-@item @code{@i{string}}
-期待されるテキストを単一の文字列で。
-@item @code{(@i{string} @dots{})}
-期待されるテキストを行のリストで。各行は改行を追加されてjoinされます。
-@item @code{(content-of @i{filename})}
-@i{filename}を読んでその内容を期待するテキストとして使います。
-@i{filename}が相対パスの場合は、テストスクリプトからの相対パスと解釈します。
-@i{filename}が存在しない場合は、空の文字列が使われます。
-@end table
-@c COMMON
-
-@c EN
-The test exprssion @var{expr} should yield one of the above forms as well.
-If it yields @code{(contet-of @i{filename})} form, however, make sure that the
-file remains until the end of the tests---since the file is read again
-when the discrepancy summary is reported.  Typicall, it is easier
-to yield a string or a list of strings.
-@c JP
-@var{expr}の結果も、上記形式のどれかでなければなりません。
-ただし、@code{(contet-of @i{filename})}を生成する場合は、@i{filename}が
-テスト終了時まで残るようにしてください。というのは、失敗したテスト一覧を最後に報告する時に
-@i{filename}が再び読まれるからです。
-一般的には、@var{expr}が直接文字列もしくは文字列のリストを返すようにするのが良いでしょう。
-@c COMMON
-
-@c EN
-If either @var{expected} or the result of @var{expr} is not in one of
-those forms, @code{test*/diff} reports the result just like
-@code{test*}.
-@c JP
-@var{expected}か@var{expr}が上記形式以外のものを返した場合は、diffではなく
-@code{test*}と同じ形式で報告します。
-@c COMMON
-@end defmac
-
 @defun test-check expected result :optional fallback
 @c MOD gauche.test
 @c EN
@@ -20373,6 +20301,122 @@ of the environment variable doesn't matter).
 env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
 @end example
 @end defvar
+
+@c EN
+@subheading Better failure reporting
+@c JP
+@subheading 見やすい失敗の報告
+@c COMMON
+
+As described in @code{test} entry above, you can customize
+how the failure is reported by passing the optional @var{report} argument
+to @code{test} and @code{test*}.  One of useful customizations is
+to show the difference between multi-line text.  It's such a useful tool
+so we provide a report procedure.
+
+Here's a contrived example.  We pass @code{test-report-failure-diff}
+as a report procedure (and @code{test-check-diff} for check procedure,
+which we'll explain later).  Expected text is given as a list of lines,
+while the actual result is a single string;
+the custom check and report procedures canonicalizes both expected
+and actual result into a single multi-line string, so you can give
+them in whichever ways that's convenient for you.
+
+@example
+(test* "Beatrice"
+       ;; expected
+        '("What fire is in mine ears?  Can this be true?"
+          "Stand I condemned for pride and scorn so much?"
+          "Contempt, farewell, and maiden pride, adieu!"
+          "No glory lives behind the back of such.")
+       ;; actual
+       "What fire is in mine ears?  Can this be true?\n\
+        Stand I condemn'd for pride and scorn so much?\n\
+        Contempt, farewell! and maiden pride, adieu!\n\
+        No glory lives behind the back of such.\n"
+       test-check-diff           ; check
+       test-report-failure-diff) ; report
+
+ @result{} @r{Reports:}
+ERROR: GOT diffs:
+--- expected
++++ actual
+@@@@ -1,4 +1,4 @@@@
+ What fire is in mine ears?  Can this be true?
+-Stand I condemned for pride and scorn so much?
+-Contempt, farewell, and maiden pride, adieu!
++Stand I condemn'd for pride and scorn so much?
++Contempt, farewell! and maiden pride, adieu!
+ No glory lives behind the back of such.
+@end example
+
+As you see, the result is reported in a unified diff format
+(@pxref{Calculate difference of text streams}) so that you can
+spot the difference easily.
+
+@defun test-check-diff expected actual :optional equal
+@c MOD gauche.test
+An alternative check procedure you can pass into @var{check} argument
+of @code{test} procedure / @code{test*} macro.
+
+Before comparing @var{expected} and @var{actual}, it performs the
+following operations on each of @var{expected} and @var{actual}:
+@itemize @bullet
+@item
+If it is a list of strings, join them with @code{\n} (with @code{suffix}
+syntax, so the last line is also appended with @code{\n}).
+@item
+If it is a form @code{(content-of <string>)}, then @code{<string>}
+is taken as a filename and the content of the file is used as
+a string.  If the filename is relative, it is relative to the
+current loading file.  If named file doesn't exist, an empty string
+is used.
+@item
+If it is a string or other object, it is used as is.
+@end itemize
+
+Then the two arguments are compared using @var{equal}, which is defaulted
+to @code{equal?}.
+@end defun
+
+@defun test-report-failure-diff msg expected actual
+@c MOD gauche.test
+An alternative failure report procedure you can pass into @var{report}
+argument of @code{test} procedure / @code{test*} macro.
+
+The @var{expected} and @var{actual} arguments are converted in the same
+way as @code{test-check-diff}; that is, if it is a list of strings (lines)
+or a form @code{(content-of <filename>)}, it is converted to
+a single string.
+
+Then the difference of the two is reported in a unified diff format
+(using @code{diff-report/unified}. @xref{Calculate difference of text streams}).
+
+If either @var{expected} or @var{actual} is not convertable to a single
+string, the result is reported in the same way as the standard
+@code{test-report-failure}.
+
+Note: This procedure is called twice, once when the test is failed,
+and again from @code{test-end} to report the summary of discrepancy.
+If you pass @code{(content-of <filename>)} form, you have to make sure
+the named file exists until @code{test-end} returns.  This is tricky
+if you generate text into a temporary file during a single test.
+In general, @code{(content-of <filename>)} form is useful in the
+@var{expected} argument, where you can specify the prepared file.
+@end defun
+
+@defmac test*/diff name expected expr
+@c MOD gauche.test
+This is a convenience version of @code{test*}, using
+@code{test-check-diff} and @code{test-report-failure-diff} as
+check and report procedures, respectively.
+
+@example
+(test*/diff name expected expr)
+ @equiv{}
+ (test* name expected expr test-check-diff test-report-failure-diff)
+@end example
+@end defmac
 
 @c EN
 @subheading Quasi-static checks
