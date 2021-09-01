@@ -21403,11 +21403,36 @@ Gets/sets the value of the @var{thread}'s specific slot.
 [SRFI-18], [SRFI-21]
 @c MOD gauche.threads
 @c EN
-Starts the @var{thread}.  It is an error if @var{thread} is already started.
+Starts the @var{thread}.  An error is thrown if @var{thread} is not in
+``new'' state.
 Returns @var{thread}.
 @c JP
-@var{thread}を開始します。@var{thread}がすでに開始されていればエラーになります。
+@var{thread}を開始します。@var{thread}が ``new'' 状態でなければエラーが投げられます。
 @var{thread}を返します。
+@c COMMON
+@end defun
+
+@defun thread-try-start! thread
+@c MOD gauche.threads
+@c EN
+Starts and returns the @var{thread} if it is in ``new'' state.
+Otherwise, returns @code{#f}.
+@c JP
+@var{thread}が ``new'' 状態であればそれを開始し、@var{thread}自身を返します。
+そうでなければ@code{#f}を返します。
+@c COMMON
+
+@c EN
+Note that a thread can become a ``terminated'' state even if it is never
+started, if another thread calls @code{thread-terminate!} on it.
+If that's the possibility, this procedure comes handy,
+for @code{thread-start!} may raise an error if the thread is
+termianted before started.
+@c JP
+スレッドは開始する前に ``terminated'' 状態になる場合があります。他のスレッドが
+そのスレッドに対して@code{thread-terminate!}を呼んだ場合です。
+開始する前に終了してしまったスレッドに対して@code{thread-start!}を呼ぶとエラーが
+投げられますが、この手続きではエラーになりません。
 @c COMMON
 @end defun
 
@@ -21580,6 +21605,12 @@ won't return.  Otherwise, this procedure returns unspecified value.
 @c JP
 @var{thread}が呼び出しているスレッドと同じ場合、この手続きは戻りません。
 そうでなければ、この手続きは未定義値を返します。
+@c COMMON
+
+@c EN
+If @var{thread} is already terminated, this procedure does nothing.
+@c JP
+@var{thread}が既に終了していた場合は、この手続きは何もしません。
 @c COMMON
 
 @c EN
