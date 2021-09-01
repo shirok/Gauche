@@ -282,6 +282,46 @@
          (pmap (cut * <> 2) (iota 25) :mapper (make-fully-concurrent-mapper)))]
  [else])
 
+
+(test* "pfind (single)"
+       (find (cut = <> 7) (iota 10))
+       (pfind (cut = <> 7) (iota 10) :mapper (single-mapper)))
+
+(test* "pany (signle)"
+       (any (^x (and (= x 7) 42)) (iota 10))
+       (pany (^x (and (= x 7) 42)) (iota 10) :mapper (single-mapper)))
+
+(cond-expand
+ [gauche.sys.threads
+  (test* "pfind (static)"
+         (find (cut = <> 1) (iota 20))
+         (pfind (^x (and (sys-sleep (quotient x 2))
+                         (= x 1)))
+                (iota 20)
+                :mapper (make-static-mapper)))
+  (test* "pany (static)"
+         (any (^x (and (= x 1) 42)) (iota 10))
+         (pany (^x (and (sys-sleep (quotient x 2))
+                        (= x 1)
+                        42))
+               (iota 20)
+               :mapper (make-static-mapper)))
+  (test* "pfind (fully-concurrent)"
+         (find (cut = <> 1) (iota 20))
+         (pfind (^x (and (sys-sleep (quotient x 2))
+                         (= x 1)))
+                (iota 20)
+                :mapper (make-fully-concurrent-mapper)))
+  (test* "pany (fully-concurrent)"
+         (any (^x (and (= x 1) 42)) (iota 10))
+         (pany (^x (and (sys-sleep (quotient x 2))
+                        (= x 1)
+                        42))
+               (iota 20)
+               :mapper (make-fully-concurrent-mapper)))
+  ]
+ [else])
+
 ;;--------------------------------------------------------------------
 ;; control.scheduler
 ;;
