@@ -41,7 +41,7 @@
   (use control.thread-pool)
   (use control.job)
   (export pmap pfind pany
-          single-mapper
+          sequential-mapper
           make-static-mapper
           make-pool-mapper
           make-fully-concurrent-mapper))(
@@ -50,7 +50,7 @@ select-module control.pmap)
 ;; MAPPER abstracts the parallelization strategy.  We provide several
 ;; predefined mappers.
 ;;
-;;   single-mapper - A sigleton mapper that runs in a single (current) thread.
+;;   sequential-mapper - A sigleton mapper that runs in a single (current) thread.
 ;;      If the running system is single-core, this is the default mapper.
 ;;
 ;;   pool-mapper - Use thread pool.  This is ideal when each task requies
@@ -85,7 +85,7 @@ select-module control.pmap)
 ;; The high-level API, pmap, can be used without knowing underlying
 ;; thread models; it uses threads if running Gauche has the thread support
 ;; and the system has more than one cores.   Otherwise, it just runs
-;; ordinary map (see single-mapper).
+;; ordinary map (see sequential-mapper).
 ;;
 ;; Concurrent execution can be done in either (1) staically split
 ;; the task according to the number of available threads, or (2) dynamically
@@ -96,17 +96,23 @@ select-module control.pmap)
 ;; Abstract class.
 (define-class <mapper> () ())
 
-;;
-;; single-mapper
-;;
-(define-class <single-mapper> (<mapper> <singleton-mixin>) ())
+;; Utilities
 
-(define (single-mapper) (instance-of <single-mapper>))
+;; Start threads in the list.
+(define (%start-threads threads)
+  (for-each thread-try-start! threads))
 
-(define-method run-map ((mapper <single-mapper>) proc coll)
+;;
+;; sequential-mapper
+;;
+(define-class <sequential-mapper> (<mapper> <singleton-mixin>) ())
+
+(define (sequential-mapper) (instance-of <sequential-mapper>))
+
+(define-method run-map ((mapper <sequential-mapper>) proc coll)
   (map proc coll))
 
-(define-method run-select ((mapper <single-mapper>) proc coll)
+(define-method run-select ((mapper <sequential-mapper>) proc coll)
   (with-iterator (coll end? next)
     (let loop ()
       (if (end?)
@@ -129,7 +135,7 @@ select-module control.pmap)
          [ts (filter-map (^c (and (pair? c)
                                   (make-thread (cut map proc c))))
                          cols)])
-    (for-each thread-start! ts)
+    (%start-threads ts)
     (append-map thread-join! ts)))
 
 ;; (define (%split-collection coll n)
@@ -172,7 +178,7 @@ select-module control.pmap)
                                     (make-thread
                                      (cut with-stopper proc c ts))))
                            cols)])
-    (for-each thread-start! ts)
+    (%start-threads ts)
     (do ([ts ts (cdr ts)]
          [r #f (guard (e [(<terminated-thread-exception> e) r])
                  (or (thread-join! (car ts)) r))])
@@ -231,9 +237,10 @@ select-module control.pmap)
   (make <fully-concurrent-mapper> :timeout timeout :timeout-val timeout-val))
 
 (define-method run-map ((mapper <fully-concurrent-mapper>) proc coll)
-  (let ([ts (map (^e (thread-start! (make-thread (^[] (proc e))))) coll)]
+  (let ([ts (map (^e (make-thread (^[] (proc e)))) coll)]
         [timeout (~ mapper'timeout)]
         [timeout-val (~ mapper'timeout-val)])
+    (%start-threads ts)
     (map (cut thread-join! <> timeout timeout-val) ts)))
 
 (define-method run-select ((mapper <fully-concurrent-mapper>) proc coll)
@@ -252,7 +259,7 @@ select-module control.pmap)
          1)
         #f)))
   (letrec ([ts (map (^e (make-thread (^[] (task e ts)))) coll)])
-    (for-each (^t (thread-start! t)) ts)
+    (%start-threads ts)
     (do ([ts ts (cdr ts)]
          [r #f (guard (e [(<terminated-thread-exception> e) r])
                  (or (thread-join! (car ts)) r))])
@@ -266,10 +273,10 @@ select-module control.pmap)
   (cond-expand
    [gauche.sys.threads
     (if (= 1 (sys-available-processors))
-      single-mapper
+      (sequential-mapper)
       (make-static-mapper))]
    [else
-    single-mapper]))
+    (sequential-mapper)]))
 
 ;;;
 ;;; High-level API

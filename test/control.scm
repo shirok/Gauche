@@ -285,11 +285,11 @@
 
 (test* "pfind (single)"
        (find (cut = <> 7) (iota 10))
-       (pfind (cut = <> 7) (iota 10) :mapper (single-mapper)))
+       (pfind (cut = <> 7) (iota 10) :mapper (sequential-mapper)))
 
 (test* "pany (signle)"
        (any (^x (and (= x 7) 42)) (iota 10))
-       (pany (^x (and (= x 7) 42)) (iota 10) :mapper (single-mapper)))
+       (pany (^x (and (= x 7) 42)) (iota 10) :mapper (sequential-mapper)))
 
 (cond-expand
  [gauche.sys.threads
