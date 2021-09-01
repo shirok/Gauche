@@ -43,13 +43,18 @@
  * Scheme-level thread API
  */
 
-/* flag for Scm_ThreadTerminate. */
+/* flag for Scm_ThreadTerminate */
 enum {
     SCM_THREAD_TERMINATE_FORCIBLE = 1
 };
 
+/* flag for Scm_ThreadStart */
+enum {
+    SCM_THREAD_START_TRYSTART = 1
+};
+
 extern ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
-extern ScmObj Scm_ThreadStart(ScmVM *vm);
+extern ScmObj Scm_ThreadStart(ScmVM *vm, u_long flags);
 extern ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
 extern ScmObj Scm_ThreadStop(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
 extern ScmObj Scm_ThreadCont(ScmVM *vm);

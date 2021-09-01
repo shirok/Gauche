@@ -1,3 +1,10 @@
+2021-09-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.scm (thread-try-start!): Added. A thread can
+	  be terminated before it is started.  thread-start! raises an error
+	  when it is applied on such a thread.  However, we may want to just
+	  ignore such case.
+
 2021-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): Add (describe <real>)

@@ -152,7 +152,7 @@ static struct threadRec {
    This is to prevent exited thread's system resources from being
    uncollected.
  */
-ScmObj Scm_ThreadStart(ScmVM *vm)
+ScmObj Scm_ThreadStart(ScmVM *vm, u_long flags)
 {
     int err_state = FALSE, err_create = FALSE;
 
@@ -196,7 +196,12 @@ ScmObj Scm_ThreadStart(ScmVM *vm)
 #endif
     }
     (void)SCM_INTERNAL_MUTEX_UNLOCK(vm->vmlock);
-    if (err_state) Scm_Error("attempt to start an already-started thread: %S", vm);
+    if (err_state) {
+        if (flags & SCM_THREAD_START_TRYSTART) {
+            return SCM_FALSE;
+        }
+        Scm_Error("attempt to start an already-started thread: %S", vm);
+    }
     if (err_create) Scm_Error("couldn't start a new thread: %S", vm);
     return SCM_OBJ(vm);
 }
@@ -443,45 +448,50 @@ ScmObj Scm_ThreadTerminate(ScmVM *target, u_long flags)
     }
 
     (void)SCM_INTERNAL_MUTEX_LOCK(target->vmlock);
-    if (target->state == SCM_VM_RUNNABLE || target->state == SCM_VM_STOPPED) {
+    if (target->state != SCM_VM_TERMINATED) {
         /* This ensures only the first call of thread-terminate! on a
            thread is in effect. */
         if (target->canceller == NULL) {
-            do {
-                target->canceller = vm;
+            target->canceller = vm;
 
-                /* First try */
-                target->stopRequest = SCM_VM_REQUEST_TERMINATE;
-                target->attentionRequest = TRUE;
-                if (wait_for_termination(target)) break;
+            if (target->state == SCM_VM_NEW) {
+                /* The thread is being killed before started.  We don't have
+                   the actual thread, so just clean up. */
+                thread_cleanup_inner(target);
+            } else {
+                do {
+                    /* First try */
+                    target->stopRequest = SCM_VM_REQUEST_TERMINATE;
+                    target->attentionRequest = TRUE;
+                    if (wait_for_termination(target)) break;
 
-                /* Second try */
-                SCM_ASSERT(target->thread);
+                    /* Second try */
+                    SCM_ASSERT(target->thread);
 #if defined(GAUCHE_USE_PTHREADS)
 # if defined(GAUCHE_PTHREAD_SIGNAL)
-                pthread_kill(target->thread, GAUCHE_PTHREAD_SIGNAL);
+                    pthread_kill(target->thread, GAUCHE_PTHREAD_SIGNAL);
 # endif /*defined(GAUCHE_PTHREAD_SIGNAL)*/
 #elif defined(GAUCHE_USE_WTHREADS)
-                /* TODO: implement signal mechanism using an event */
+                    /* TODO: implement signal mechanism using an event */
 #endif  /* defined(GAUCHE_USE_WTHREADS) */
-                if (wait_for_termination(target)) break;
+                    if (wait_for_termination(target)) break;
 
-		thread_cleanup_inner(target);
-		
-                /* If forcible termination is requested, we resort to
-                   the extreme measure. */
-                if (flags & SCM_THREAD_TERMINATE_FORCIBLE) {
+                    thread_cleanup_inner(target);
+
+                    /* If forcible termination is requested, we resort to
+                       the extreme measure. */
+                    if (flags & SCM_THREAD_TERMINATE_FORCIBLE) {
 #if defined(GAUCHE_USE_PTHREADS)
-                    pthread_cancel(target->thread);
+                        pthread_cancel(target->thread);
 #elif defined(GAUCHE_USE_WTHREADS)
-                    TerminateThread(target->thread, 0);
+                        TerminateThread(target->thread, 0);
 #endif
-                }
-            } while (0);
+                    }
+                } while (0);
+            }
         }
     }
     /* target either is terminated or hasn't been run */
-    target->state = SCM_VM_TERMINATED;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(target->vmlock);
     return SCM_UNDEFINED;
 }

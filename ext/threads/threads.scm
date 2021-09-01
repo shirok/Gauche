@@ -37,7 +37,8 @@
           current-thread                ;re-exporting the builtin
 
           thread? make-thread thread-name thread-specific-set! thread-specific
-          thread-state thread-start! thread-yield! thread-sleep!
+          thread-state thread-start! thread-try-start!
+          thread-yield! thread-sleep!
           thread-join! thread-terminate! thread-stop! thread-cont!
 
           mutex? make-mutex mutex-name mutex-state
@@ -122,7 +123,11 @@
 
  (define-cproc %make-thread (thunk::<procedure> name) Scm_MakeThread)
 
- (define-cproc thread-start! (vm::<thread>) Scm_ThreadStart)
+ (define-cproc thread-start! (vm::<thread>)
+   (return (Scm_ThreadStart vm 0)))
+
+ (define-cproc thread-try-start! (vm::<thread>)
+   (return (Scm_ThreadStart vm SCM_THREAD_START_TRYSTART)))
 
  (define-cproc thread-yield! () ::<void> Scm_YieldCPU)
 
