@@ -12,6 +12,7 @@
 * Concurrent sequences::        control.cseq
 * Futures::                     control.future
 * A common job descriptor for control modules::  control.job
+* Parallel map::                control.pmap
 * Scheduler::                   control.scheduler
 * Thread pools::                control.thread-pool
 * Password hashing::            crypt.bcrypt
@@ -1476,7 +1477,7 @@ Returns @code{#t} if computation in @var{future} is finished,
 
 
 @c ----------------------------------------------------------------------
-@node A common job descriptor for control modules, Scheduler, Futures, Library modules - Utilities
+@node A common job descriptor for control modules, Parallel map, Futures, Library modules - Utilities
 @section @code{control.job} - A common job descriptor for control modules
 @c NODE 制御モジュールのための汎用ジョブ記述子, @code{control.job} - 制御モジュールのための汎用ジョブ記述子
 
@@ -1707,7 +1708,142 @@ always returns @code{#f}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Scheduler, Thread pools, A common job descriptor for control modules, Library modules - Utilities
+@node Parallel map, Scheduler, A common job descriptor for control modules, Library modules - Utilities
+@section @code{control.pmap} - Parallel map
+@c NODE 並列map, @code{control.pmap} - 並列map
+
+@deftp {Module} control.pmap
+@mdindex control.pmap
+This module provides high-level utilities to run code in parallel
+using threads.
+For example, the @code{pmap} procedure applies the given procedure
+on each elements in the collection and gathers the restuls into a list,
+just like @code{map}, but the appliation of the procedure is done in parallel.
+
+A desired parallelization strategy differs for application, so we also
+pvovide @emph{mapper} objects, that encapsulate how the work is distributed.
+@end deftp
+
+@subheading High-level API
+
+@defun pmap proc collection :key mapper
+@c MOD control.pmap
+The @var{proc} argument must be a procedure that takes one argument,
+and @var{collection} must be a collection (@pxref{Collection framework}).
+
+Applis @var{proc} on each element of @var{collection}, possibly concurrently
+using multiple threads.  The result is gathered into a list and
+returned.
+
+You can pass a mapper to the @var{mapper} keyword argument to specify how
+the task is distibuted to multiple threads.
+@end defun
+
+
+@subheading Mappers
+
+A mapper is an object that encapsulates a storategy to run
+tasks in parallel.  We provide the following mappers.
+
+@table @code
+@item Sequential mapper
+This runs tasks sequentially in a calling thread.  No concurrency involved.
+It serves two purposes: (1) On a single-core system, this is the least
+overhead strategy, and (2) You can test the algorithmic correctness
+without complication of concurrency.   On single-core systems,
+this mapper is the default value of @code{default-mapper}.
+@item Static mapper
+Creates several threads and distribute the tasks evenly.  It is suitable
+when the number of tasks are large and each task is expected to take
+mostly same amount of time, for it takes less overhead than other
+multi-threading mappers.  You can create a static mapper
+@item Pool mapper
+Uses thread pool to process the tasks.  It is suitable when the number
+of tasks are large and/or the execution time of each task varies
+a lot.  You can also reuse the pooled threads, so that you can
+reduce the overhead of thread creation.
+@item Fully concurrent mapper
+Creates one thread per each task.  It is suitable when the task
+involves blocking I/O calls, and the number of tasks are not so large.
+@end table
+
+@deffn {Parameter} default-mapper
+@c MOD control.pmap
+A parameter keeping a mapper to be used by @code{pmap} etc. when no
+mapper is specified.
+
+The default is a static mapper (with the number of threads same as
+the number of available cores) if Gauche is configured with threads
+and the running system has more than one core, or a sequential mapper
+otherwise.
+
+The mapper set to this parameter is reused, or even is used
+simultaneously from multiple @code{pmap} calls.
+Pool mappers with external pool keeps a given thread pool in it,
+so you should be careful ot use such mapper as the default mapper.
+@end deffn
+
+@defun sequential-mapper
+@c MOD control.pmap
+Returns a sigleton instance of the sequential mapper.
+@end defun
+
+@defun make-static-mapper :optional num-threads
+@c MOD control.pmap
+Returns a new instance of a static mapper, which spawns @var{num-threads}
+threads on execution, each of which handles evenly divided tasks.
+This mapper is suitable if you have large number of small tasks with
+even load.
+@end defun
+
+@defun make-pool-mapper :optional external-pool
+@c MOD control.pmap
+Returns a new instance of a pool mapper, which uses a thread pool
+(@pxref{Thread pools}) to run the tasks.  It is suitable when the load
+of tasks varies a lot.
+
+If @var{external-pool} is not given, the mapper creats a thread
+pool, and shut it down, every time high-level mapping operation is called.
+This usage is local; that is, the thread pool is contained within
+one call of @code{pmap} etc., and won't be shared.
+
+Alternatively, you can pass an existing thread pool to @var{external-pool}
+to be used.  The pool will be reused every time you use this mapper instance.
+Using an external pool will eliminate overhead of thread pool creation and
+shutting down every time you run @code{pmap}; however, you have to be
+aware of those caveats:
+@itemize @bullet
+@item
+It's your responsibility to shut down the thread pool after you're done
+with the mapper.
+@item
+The mapper keeps the given thread pool and reuses it every time
+it is passed to @code{pmap} etc., so you have to make sure that
+one mapper is used simultaneously in more than one @code{pmap} etc..
+Be careful using this type of pool mapper as the default mapper.
+@end itemize
+@end defun
+
+@defun make-fully-concurrent-mapper :optional timeout timeout-val
+@c MOD control.pmap
+Returns a new instance of a fully-concurrent mapper, which spawns
+as many threads as the elements in the given collection to perform
+the operation concurrently.  It is suitable when you don't have
+many tasks, but each task may perform blocking I/O calls.
+The overhead of creating threads are relatively large, but
+you may be able to utilize CPU more while most of the threads are
+waiting I/O.
+
+The optional @var{timeout} and @var{timeout-val} arguments are
+passed to @code{thread-join!} (@pxref{Thread procedures}).
+It is useful when I/O operations may take too long and you
+want to guarantee the entire operation finishes within certain
+time limit.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Scheduler, Thread pools, Parallel map, Library modules - Utilities
 @section @code{control.scheduler} - Scheduler
 @c NODE スケジューラ, @code{control.scheduler} - スケジューラ
 
