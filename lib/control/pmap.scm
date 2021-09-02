@@ -188,38 +188,30 @@ select-module control.pmap)
 ;; pool mapper
 ;;
 
-(define-class <pool-mapper> (<mapper>)
-  ((pool :init-keyword :pool
-         :init-value #f)
-   (ephemeral :init-value #f)))
+;; NB: You can pass an exsting thread pool and it well be reused.
+;; If you do so, it is your responsibility to shut down the pool properly.
 
-(define-method initialize ((mapper <pool-mapper>) initargs)
-  (next-method)
-  (unless (~ mapper'pool)
-    (set! (~ mapper'pool) (make-thread-pool (sys-available-processors)))
-    (set! (~ mapper'ephemeral) #t)))
+(define-class <pool-mapper> (<mapper>)
+  ((external-pool :init-keyword :external-pool
+                  :init-value #f)))
 
 (define (make-pool-mapper :optional (pool #f))
-  (make <pool-mapper> :pool pool))
-
-(define (pool-mapper-shutdown mapper)
-  (when (~ mapper'pool)
-    (terminate-all! (~ mapper'pool))))
+  (make <pool-mapper> :external-pool pool))
 
 (define-method run-map ((mapper <pool-mapper>) proc coll)
-  (define (run)
-    (let1 pool (~ mapper'pool)
-      ($ for-each-with-index
-         (^[i e] (add-job! pool (^[] (cons i (proc e))) #t))
-         coll)
-      ($ map cdr $ (cut sort <> < car)
-         $ map (^_ (job-result (dequeue/wait! (thread-pool-results pool))))
-         $ liota (size-of coll))))
-  (if (~ mapper'ephemeral)
-    (unwind-protect
-        (run)
-      (pool-mapper-shutdown mapper))
-    (run)))
+  (define (run pool)
+    ($ for-each-with-index
+       (^[i e] (add-job! pool (^[] (cons i (proc e))) #t))
+       coll)
+    ($ map cdr $ (cut sort <> < car)
+       $ map (^_ (job-result (dequeue/wait! (thread-pool-results pool))))
+       $ liota (size-of coll)))
+  (if-let1 pool (~ mapper'external-pool)
+    (run pool)
+    (let1 pool (make-thread-pool (sys-available-processors))
+      (unwind-protect
+          (run pool)
+        (terminate-all! pool)))))
 
 (define-method run-select ((mapper <pool-mapper>) proc coll)
   ;; WRITEME
@@ -269,14 +261,15 @@ select-module control.pmap)
 ;; default mapper
 ;;
 
-(define (default-mapper)
-  (cond-expand
-   [gauche.sys.threads
-    (if (= 1 (sys-available-processors))
-      (sequential-mapper)
-      (make-static-mapper))]
-   [else
-    (sequential-mapper)]))
+(define default-mapper
+  (make-parameter
+   (cond-expand
+    [gauche.sys.threads
+     (if (= 1 (sys-available-processors))
+       (sequential-mapper)
+       (make-static-mapper))]
+    [else
+     (sequential-mapper)])))
 
 ;;;
 ;;; High-level API
