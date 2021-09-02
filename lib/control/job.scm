@@ -123,13 +123,15 @@
       (job-result-set! job result)
       (job-status-set! job status)))
   (define (start)
-    (job-status-set! job 'running)
-    (%job-touch! job :start))
+    (and (not (eq? (job-status job) 'killed))
+         (begin (job-status-set! job 'running)
+                (%job-touch! job :start)
+                #t)))
 
-  (safely job (start))
-  (guard (e [else (safely job (finish 'error e))])
-    (let1 r ((job-thunk job))
-      (safely job (finish 'done r)))))
+  (and (safely job (start))
+       (guard (e [else (safely job (finish 'error e))])
+         (let1 r ((job-thunk job))
+           (safely job (finish 'done r))))))
 
 ;; this doesn't actually kill the process/threads that running the job,
 ;; but merely marks the job killed and notify it to the waiter.
