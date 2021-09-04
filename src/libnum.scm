@@ -77,6 +77,7 @@
 (define-cproc fixnum? (x) ::<boolean> :fast-flonum SCM_INTP)
 (define-cproc bignum? (x) ::<boolean> :fast-flonum SCM_BIGNUMP)
 (define-cproc flonum? (x) ::<boolean> :fast-flonum :constant SCM_FLONUMP)
+(define-cproc ratnum? (x) ::<boolean> :fast-flonum :constant SCM_RATNUMP)
 
 (define-cproc finite?   (x::<number>) ::<boolean> :fast-flonum Scm_FiniteP)
 (define-cproc infinite? (x::<number>) ::<boolean> :fast-flonum Scm_InfiniteP)

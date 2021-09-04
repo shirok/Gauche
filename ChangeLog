@@ -1,3 +1,7 @@
+2021-09-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (ratnum?): Added.
+
 2021-09-01  Shiro Kawai  <shiro@acm.org>
 
 	* ext/threads/threads.scm (thread-try-start!): Added. A thread can
