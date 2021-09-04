@@ -157,6 +157,12 @@
     (format #t ")\n")
     (values)))
 
+(define-method describe ((r <rational>))
+  (describe-common r)
+  (when (ratnum? r)
+    (format #t "  inexact: ~s\n" (inexact r)))
+  (values))
+
 (define-method describe ((d <real>))
   (describe-common d)
   (when (flonum? d)
@@ -171,7 +177,7 @@
       (format #t "    hex: #x~16,'0,'_,4:x\n"
               (u64vector-ref (uvector-alias <u64vector> buf) 0)))
     (when (finite? d)
-      (format #t "  (exact ~s) is ~s\n" d (exact d))))
+      (format #t "  exact: ~s\n" (exact d))))
   (values))
 
 (define-method describe ((g <generic>))
