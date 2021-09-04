@@ -2766,6 +2766,25 @@ flonumを扱う包括的なライブラリは@ref{R7RS flonum}を参照してく
 @c COMMON
 @end defun
 
+@defun ratnum? x
+@c EN
+Returns @code{#t} if @var{x} is a number represented by an exact
+non-integral number, or @code{#f} otherwise.  Internally, a number
+that returns @code{#t} for it is represented as a pair of two
+exact integers.
+
+Usually you don't need to distinguish ratnums from exact integers; you
+can treat them as exact numbers.  In performance-sensitive code, however,
+ratnum slows down computation a lot and you may want to detect that case.
+@c JP
+@var{x}が正確な非整数の場合に@code{#t}を、そうでなければ@code{#f}を返します。
+この述語に@code{#t}を返す数値は内部的には二つの正確な整数の組で表現されています。
+
+通常、正確な整数とratnumとを区別する必要はありません。両方とも単なる正確数です。
+ただ、性能が要求されるコードにおいて、ratnumの演算が入ると計算が重くなるので、
+その状況を検出したい場合はあるかもしれません。
+@c COMMON
+@end defun
 
 @node Numerical comparison, Arithmetics, Numerical predicates, Numbers
 @subsection Numerical comparison
