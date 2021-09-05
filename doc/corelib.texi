@@ -2793,17 +2793,50 @@ ratnum slows down computation a lot and you may want to detect that case.
 @defun = z1 z2 z3 @dots{}
 [R7RS base]
 @c EN
-If all the numbers @var{z} are equal, returns @code{#t}.
+If all the numbers @var{z} are equal numerically, returns @code{#t}.
 @c JP
-与えられた全ての数値@var{z}が等しければ@code{#t}を返します。
+与えられた全ての数値@var{z}が数値として等しければ@code{#t}を返します。
 @c COMMON
 
 @example
 (= 2 2)          @result{} #t
 (= 2 3)          @result{} #f
+(= 2/4 1/2)      @result{} #t
+@end example
+
+@c EN
+Exactness doesn't affect numerical comparison; inexact 1.0 and
+exact 1 are @code{=} to each other.  Positive inexact zero (0.0) and
+negative inexact zero (-0.0) are also @code{=} to each other.
+To distinguish numerically equal
+exact and inexact number, you have to use @code{eqv?} or @code{equal?}.
+@c JP
+正確性は数値としての比較には影響しません。非正確な1.0と正確な1は@code{=}とみなされます。
+非正確な正のゼロ(0.0)と非正確な負のゼロも@code{=}です。
+それらを区別するには、@code{eqv?}や@code{equal?}を使ってください。
+@c COMMON
+
+@example
 (= 2 2.0)        @result{} #t
 (= 2 2.0 2.0+0i) @result{} #t
-(= 2/4 1/2)      @result{} #t
+(= -0.0 0.0)     @result{} #t
+
+;; cf:
+(eqv? 2 2.0)     @result{} #f
+(eqv? -0.0 0.0)  @result{} #f
+@end example
+
+@c EN
+Note that @code{+nan.0} would never @code{=} to any number, including itself.
+@c JP
+@code{+nan.0}は、それ自身を含めていかなる数値とも@code{=}になりません。
+@c COMMON
+
+@example
+(= +nan.0 +inf.0)  @result{} #f
+(= +nan.0 +nan.0)  @result{} #f
+
+(let ((x +nan.0)) (= x x)) @result{} #f
 @end example
 @end defun
 
@@ -2820,6 +2853,21 @@ nonincreasing, respectively.
 @c JP
 与えられた全ての実数@var{x}がそれぞれ単調増加、単調非減少、単調減少、単調非増加している
 場合に@code{#t}を返します。
+@c COMMON
+
+@c EN
+Since @code{(= 0.0 -0.0)} is @code{#t}, @code{(> 0.0 -0.0)} is @code{#f}.
+@c JP
+@code{(= 0.0 -0.0)}は@code{#t}なので、@code{(> 0.0 -0.0)}は@code{#f}になります。
+@c COMMON
+
+@c EN
+If any of the argument is NaN, the result is always @code{#f}.
+Hence @code{(< x y) @result{} #f} does not imply @code{(>= x y) @result{} #t}.
+@c JP
+引数にNaNが入っていると結果は@code{#f}になります。
+すなわち、@code{(< x y) @result{} #f}だからといって@code{(>= x y) @result{} #t}
+とは限りません。
 @c COMMON
 @end defun
 
