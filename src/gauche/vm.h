@@ -129,11 +129,25 @@ typedef struct ScmEnvFrameRec {
  *  and pc contains a C function pointer.
  */
 
+/* NB: The size of continuation frame (in words) is embedded in the precompiled
+ * compile.scm in order to calculate maximum stack size in procedure.
+ * Precompilation can be done on a different platform from the target,
+ * so the size of continuation frame in words must be kept the same across
+ * different platforms.  Hence the #if's in size and marker field.
+ * We could've done it by using full word for size and marker, but one more
+ * word in each continuation frame impacts performance.
+ */
+
 typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
+#if SIZEOF_LONG == 4
+    long size : 31;               /* size of argument frame */
+    u_long marker : 1;            /* end marker of partial continuation */
+#else
     int size;                     /* size of argument frame */
     int marker;                   /* end marker of partial continuation */
+#endif
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
