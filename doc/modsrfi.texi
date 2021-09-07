@@ -11019,16 +11019,45 @@ the general sets.
 @defun iset element @dots{}
 [SRFI-217]
 @c MOD srfi-217
+Each @var{element} must be a fixnum.
+
+Returns a fresh iset contains @var{element} @dots{}.
 @end defun
 
 @defun iset-unfold p f g seed
 [SRFI-217]
 @c MOD srfi-217
+Constructs an iset whose element is computed procedurally.
+
+The @var{p} argument is called with a current seed value.  If it returns
+@code{#t}, the iteration ends.
+
+The @var{f} argument is called with a current seed value, and returns
+a fixnum to be included into the set.
+
+The @var{g} argument is called with a current seed value, and returns
+the next seed value.
+
+The @var{seed} argument gives the initial seed.
+
+@example
+(iset->list
+ (iset-unfold (cut > <> 10) (cut * <> 2) (cut + <> 1) 0))
+ @result{} (0 2 4 6 8 10 12 14 16 18 20)
+@end example
 @end defun
 
 @defun make-range-iset start end :optional step
 [SRFI-217]
 @c MOD srfi-217
+Creates an iset that contains each fixnum in
+@code{(numeric-range @var{start} @var{end} @var{step})}.
+@xref{Range}, for the details of ranges.
+
+@example
+(iset->list (make-range-iset 0 5))
+ @result{} (0 1 2 3 4)
+@end example
 @end defun
 
 @subheading Predicates
@@ -11036,21 +11065,27 @@ the general sets.
 @defun iset? obj
 [SRFI-217]
 @c MOD srfi-217
+Returns @code{#t} iff @var{obj} is an iset.
 @end defun
 
 @defun iset-contains? iset element
 [SRFI-217]
 @c MOD srfi-217
+Returns @code{#t} iff @var{iset} contains @var{element}.
 @end defun
 
 @defun iset-empty? iset
 [SRFI-217]
 @c MOD srfi-217
+Returns @code{#t} iff @var{iset} is empty.  An error is thrown if
+an object other than an iset is passed.
 @end defun
 
 @defun iset-disjoint? iset1 iset2
 [SRFI-217]
 @c MOD srfi-217
+Both arguments must be an iset.  Returns @code{#t} iff no element belongs
+to both isets.
 @end defun
 
 @subheading Accessors
@@ -11058,12 +11093,15 @@ the general sets.
 @defun iset-member iset element default
 [SRFI-217]
 @c MOD srfi-217
+Returns @var{element} if it is contained in @var{iset}, otherwise @var{default}.
 @end defun
 
 @defun iset-min iset
 @defunx iset-max iset
 [SRFI-217]
 @c MOD srfi-217
+Returns the minimum and the maximum element in @var{iset}.  If
+@var{iset} is empty, returns @code{#f}.
 @end defun
 
 
@@ -11073,18 +11111,34 @@ the general sets.
 @defunx iset-adjoin! iset elt1 elt2 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that includes all the elements in @var{iset},
+plus @var{elt1} @var{elt2} @dots{}.
+
+The linear update version @var{iset-adjoin!} may reuse @var{iset}
+to store the result, but the caller must always use its return value.
 @end defun
 
 @defun iset-delete iset elt1 elt2 @dots{}
 @defunx iset-delete! iset elt1 elt2 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that includes the elements in @var{iset}
+except the ones matching one of @var{elt1} @var{elt2} @dots{}.
+
+The linear update version @var{iset-delete!} may reuse @var{iset}
+to store the result, but the caller must always use its return value.
 @end defun
 
 @defun iset-delete-all iset elt-list
 @defunx iset-delete-all! iset elt-list
 [SRFI-217]
 @c MOD srfi-217
+The @var{elt-list} argument must be a list of fixnums.
+Returns an iset that includes the elements in @var{iset}
+except the ones in @var{elt-list}.
+
+The linear update version @var{iset-delete-all!} may reuse @var{iset}
+to store the result, but the caller must always use its return value.
 @end defun
 
 @defun iset-delete-min iset
@@ -11093,6 +11147,13 @@ the general sets.
 @defunx iset-delete-max! iset
 [SRFI-217]
 @c MOD srfi-217
+Returns two values: The minimum or the maximum element in @var{iset},
+and a new iset taht contains elements in @var{iset} except the
+minimum/maximum element.   An error is thrown if @var{iset} is empty.
+
+The linear update version @code{iset-delete-min!}/@code{iset-delete-max!}
+may reuse @var{iset} to store the result,
+but the caller must always use its return value.
 @end defun
 
 @defun iset-search iset element failure success
@@ -11214,7 +11275,6 @@ the general sets.
 [SRFI-217]
 @c MOD srfi-217
 @end defun
-union
 
 @defun iset-difference iset1 iset2 iset3 @dots{}
 @defunx iset-difference! iset1 iset2 iset3 @dots{}
