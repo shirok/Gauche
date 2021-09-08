@@ -22618,7 +22618,7 @@ One simple usage is to start with initial count 1; it is sometimes
 called a ``gate''.  You can let threads wait before the gate, and
 decrement the counter, then boom!  All threads proceeds.
 @c JP
-最も単純な用途では、初期カウントを0から始めます。これはしばしば「ゲート」と呼ばれます。
+最も単純な用途では、初期カウントを1から始めます。これはしばしば「ゲート」と呼ばれます。
 待つスレッドはゲートに達したらそこで停止し、ひとたびカウンタをデクリメントしたら、
 全てのスレッドがそこから走り始めます。
 @c COMMON
@@ -22668,6 +22668,22 @@ Returns the updated counter value.
 @var{N} must be an exact integer.  Zero or negative value is allowed.
 @c JP
 @var{n}は正確な整数でなければなりません。0や負の値も許されます。
+@c COMMON
+@end defun
+
+@defun latch-clear! latch
+@c MOD gauche.threads
+@c EN
+If @var{latch}'s count was non-zero, make it zero and wakes up
+the threads waiting on it.
+If @var{latch}'s count has already been zero, do nothing.
+
+Returns the previous count.
+@c JP
+@var{latch}のカウンタが0でなければ、それを0にし、待っているスレッドを起こします。
+既に0であれば何もしません。
+
+0にする前のカウンタの値を返します。
 @c COMMON
 @end defun
 

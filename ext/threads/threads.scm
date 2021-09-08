@@ -388,12 +388,10 @@
 (define (latch-clear! latch)
   (assume-type latch <latch>)
   (mutex-lock! (~ latch'mutex))
-  (begin0 (if (> (~ latch'count) 0)
-            (begin
-              (set! (~ latch'count) 0)
-              (condition-variable-broadcast! (~ latch'cv))
-              #t)
-            #f)
+  (rlet1 c (~ latch'count)
+    (unless (zero? c)
+      (set! (~ latch'count) 0)
+      (condition-variable-broadcast! (~ latch'cv)))
     (mutex-unlock! (~ latch'mutex))))
 
 (define (latch-await latch :optional (timeout #f) (timeout-val #f))
