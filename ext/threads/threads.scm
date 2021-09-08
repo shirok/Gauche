@@ -57,7 +57,7 @@
           atom atom? atom-ref atomic atomic-update!
 
           make-semaphore semaphore? semaphore-acquire! semaphore-release!
-          make-latch latch? latch-dec! latch-await
+          make-latch latch? latch-dec! latch-clear! latch-await
           make-barrier barrier? barrier-reset! barrier-await barrier-broken?
           ))
 (select-module gauche.threads)
@@ -384,6 +384,17 @@
   (let1 n (~ latch'count)
     (mutex-unlock! (~ latch'mutex))
     n))
+
+(define (latch-clear! latch)
+  (assume-type latch <latch>)
+  (mutex-lock! (~ latch'mutex))
+  (begin0 (if (> (~ latch'count) 0)
+            (begin
+              (set! (~ latch'count) 0)
+              (condition-variable-broadcast! (~ latch'cv))
+              #t)
+            #f)
+    (mutex-unlock! (~ latch'mutex))))
 
 (define (latch-await latch :optional (timeout #f) (timeout-val #f))
   (assume-type latch <latch>)

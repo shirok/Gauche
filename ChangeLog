@@ -1,3 +1,7 @@
+2021-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/threads/threads.scm (latch-clear!): Added.
+
 2021-09-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): Add (describe <rational>).
