@@ -1,5 +1,10 @@
 2021-09-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/vm/debugger.scm, src/read.c: Experimentally implemented
+	  per-thread debug logging.  #?@=expr records evaluation of expr like
+	  #?=, but the output goes to per-thread file, with timestamp.
+	  This prevents logs to be mixed up.
+
 	* ext/threads/threads.scm (latch-clear!): Added.
 
 2021-09-03  Shiro Kawai  <shiro@acm.org>

@@ -120,8 +120,9 @@
 (autoload gauche.time (:macro time))
 
 (autoload gauche.vm.debugger
-          (:macro debug-print debug-funcall)
-          debug-print-width debug-print-pre debug-print-post debug-funcall-pre)
+          (:macro debug-print debug-funcall debug-thread-log)
+          debug-print-width debug-print-pre debug-print-post debug-funcall-pre
+          debug-thread-pre debug-thread-post)
 
 (autoload gauche.vm.profiler
           profiler-show profiler-show-load-stats with-profiler)

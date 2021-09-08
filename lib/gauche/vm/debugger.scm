@@ -36,7 +36,8 @@
   (use srfi-13)
   (export debug-print debug-print-width
           debug-print-pre debug-print-post
-          debug-source-info))
+          debug-source-info
+          debug-thread-log debug-thread-pre debug-thread-post))
 (select-module gauche.vm.debugger)
 
 (define debug-print-width (make-parameter 65))
@@ -130,3 +131,60 @@
   (dolist [arg args]
     (format p "#?,>~a ~,,,,v:s\n" thr-prefix w arg))
   (flush p))
+
+;; Per-thread logging --------------------------------------------
+
+;; Can be (<thread> . <port>)
+(define thread-log-sink (make-parameter #f))
+
+(define thread-log-prefix (make-parameter "gauche-debug"))
+
+(define (ensure-thread-log-sink)
+  (let1 p (thread-log-sink)
+    (if (and p (eq? (car p) (current-thread)))
+      (cdr p)
+      (rlet1 out (open-output-file (format "~a.~a.~a.log" (thread-log-prefix)
+                                           (sys-getpid)
+                                           (~ (current-thread)'vmid))
+                                   :buffering :none)
+        (thread-log-sink (cons (current-thread) out))))))
+
+(define (write-to-thread-log x)
+  (let1 p (ensure-thread-log-sink)
+    (display x p)
+    (flush p)))
+
+(define (debug-thread-pre form)
+  (receive (s ns) (sys-clock-gettime-monotonic)
+    (let1 prefix (format "~9d.~9,'0d[~2d]" s ns (~ (current-thread)'vmid))
+      (write-to-thread-log
+       (if-let1 info (debug-source-info form)
+         (format "~a#?=~s:~a:~,,,,v:s\n" prefix
+                 (car info) (cadr info) (debug-print-width) form)
+         (format "~a#?=~,,,,v:s\n" prefix
+                 (debug-print-width) form))))))
+
+(define (debug-thread-post vals)
+  (receive (s ns) (sys-clock-gettime-monotonic)
+    (let1 prefix (format "~9d.~9,'0d[~2d]" s ns (~ (current-thread)'vmid))
+      (write-to-thread-log
+       (with-output-to-string
+         (^[]
+           (if (null? vals)
+             (display (format "~a#?-<void>\n" prefix))
+             (begin
+               (display (format "~a#?-    ~,,,,v:s\n" prefix
+                                (debug-print-width) (car vals)))
+               (for-each (^[elt]
+                           (display (format/ss "~a#?+    ~,,,,v:s\n" prefix
+                                               (debug-print-width) elt)))
+                         (cdr vals)))))))
+      (apply values vals))))
+
+(define-syntax debug-thread-log
+  (syntax-rules ()
+    [(_ ?form)
+     (begin
+       (debug-thread-pre '?form)
+       (receive vals ?form
+         (debug-thread-post vals)))]))

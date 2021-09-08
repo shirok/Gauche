@@ -222,4 +222,6 @@
     (source                    SCM_SYM_SOURCE)
     ;; dlentry
     (called                    SCM_SYM_CALLED)
+    ;; debug-thread-log (move this up on 1.0 release)
+    (debug-thread-log          SCM_SYM_DEBUG_THREAD_LOG)
     ))
