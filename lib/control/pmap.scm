@@ -44,8 +44,8 @@
           sequential-mapper
           make-static-mapper
           make-pool-mapper
-          make-fully-concurrent-mapper))(
-select-module control.pmap)
+          make-fully-concurrent-mapper))
+(select-module control.pmap)
 
 ;; MAPPER abstracts the parallelization strategy.  We provide several
 ;; predefined mappers.
@@ -214,8 +214,34 @@ select-module control.pmap)
         (terminate-all! pool)))))
 
 (define-method run-select ((mapper <pool-mapper>) proc coll)
-  ;; WRITEME
-  'not-implemented)
+  (define result (atom #f #f))
+  (define start-latch (make-latch 1))
+  (define finish-latch (make-latch (size-of coll)))
+  (define (do-job elt jobs)
+    (latch-await start-latch)
+    (receive (s? r) (proc elt)
+      (if s?
+        (receive [found? result notify?]
+            (atomic-update! result (^[f v]
+                                     (if f
+                                       (values f v #f)
+                                       (values #t r #t))))
+          (when notify?
+            (for-each (^j (job-mark-killed! j "solution selected"))
+                      jobs)
+            (latch-clear! finish-latch))) ;ensure to open the latch
+        (latch-dec! finish-latch))))
+  (define (run pool)
+    (letrec ([jobs (map (^e (add-job! pool (cut do-job e jobs))) coll)])
+      (latch-dec! start-latch)
+      (latch-await finish-latch)
+      (atom-ref result 1)))
+  (if-let1 pool (~ mapper'external-pool)
+    (run pool)
+    (let1 pool (make-thread-pool (sys-available-processors))
+      (unwind-protect
+          (run pool)
+        (terminate-all! pool :force-timeout 0)))))
 
 ;;
 ;; fully concurrent mapper

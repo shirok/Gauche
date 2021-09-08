@@ -306,6 +306,19 @@
                         42))
                (iota 20)
                :mapper (make-static-mapper)))
+  (test* "pfind (pool)"
+         (find (cut = <> 1) (iota 20))
+         (pfind (^x (and (sys-sleep (quotient x 2))
+                         (= x 1)))
+                (iota 20)
+                :mapper (make-pool-mapper)))
+  (test* "pany (pool)"
+         (any (^x (and (= x 1) 42)) (iota 10))
+         (pany (^x (and (sys-sleep (quotient x 2))
+                        (= x 1)
+                        42))
+               (iota 20)
+               :mapper (make-pool-mapper)))
   (test* "pfind (fully-concurrent)"
          (find (cut = <> 1) (iota 20))
          (pfind (^x (and (sys-sleep (quotient x 2))
