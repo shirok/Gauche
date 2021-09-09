@@ -22658,9 +22658,16 @@ Returns @code{#t} iff @var{obj} is a latch.
 @c EN
 Decrement the counter of @var{latch} by @var{n}.
 If @var{n} is omitted, 1 is assumed.
+
+If the value of the latch becomes 0 or less, threads waiting on the
+latch are woken up.
+
 Returns the updated counter value.
 @c JP
 ラッチのカウンタを@var{n}だけ減らします。@var{n}が省略されたら1を使います。
+
+カウンタの値が0以下になったら、ラッチで待っているスレッドを起こします。
+
 更新後のカウンタの値を返します。
 @c COMMON
 
@@ -24291,6 +24298,7 @@ Then the created generator works as follows:
 @defunx string-foldcase string
 [R6RS][R7RS char]
 @c MOD gauche.unicode
+@c EN
 Converts the case of given @var{string}
 using language-independent full case folding defined by Unicode standard.
 They differ from srfi-13's procedures
@@ -24300,6 +24308,15 @@ Notably, the length of resulting string may differ from the source string,
 and some conversions are sensitive to whether the character is at the
 word boundary or not.  The word boundaries are determined according
 to UAX #29 text segmentation rules.
+@c JP
+与えられた文字列@var{string}の大文字小文字を、Unicodeで定義された
+言語独立のcase folding規則に基づいて変換します。
+srfi-13にも同名の手続きがありますが、そちらは文字ごとに変換する点で
+これらの手続きと異なります(@ref{SRFI-13 String case mapping}参照)。
+特に、こちらの手続きは元の文字列と変換後の文字列の長さが異なる場合があり、
+また文字が単語境界にあるかどうかで変換が変わることもあります。
+単語境界はUAX #29の規則に基づいて判断されます。
+@c COMMON
 
 @example
 (string-upcase "straße")
@@ -24314,8 +24331,13 @@ to UAX #29 text segmentation rules.
  @result{} "χαοσσ"
 @end example
 
-Note that @code{string-titlecase} isn't included in R7RS @code{scheme.char}
-module.
+@c EN
+Procedures @code{string-upcase}, @code{string-downcase},
+and @code{string-foldcase} are also in R7RS @code{scheme.char} module.
+@c JP
+@code{string-upcase}、@code{string-downcase}、@code{string-foldcase}は
+R7RSの@code{scheme.char}モジュールでも提供されます。
+@c COMMON
 @end defun
 
 @defun codepoints-upcase sequence
@@ -24323,8 +24345,13 @@ module.
 @defunx codepoints-titlecase sequence
 @defunx codepoints-foldcase sequence
 @c MOD gauche.unicode
+@c EN
 Like @code{string-upcase} etc, but these work on a sequence of
 codepoints instead.  Returns a sequence of the same type of the input.
+@c JP
+@code{string-upcase}などと同じですが、文字列ではなくコードポイント例を対象にします。
+戻り値は入力と同じ型になります。
+@c COMMON
 
 @example
 (codepoints-upcase '#(115 116 114 97 223 101))
@@ -24339,11 +24366,21 @@ codepoints instead.  Returns a sequence of the same type of the input.
 @defunx string-ci>=? string1 string2 string3 @dots{}
 [R7RS char]
 @c MOD gauche.unicode
+@c EN
 Case-insensitive string comparison, using full-string case conversion.
+@c JP
+文字列全体の大文字小文字変換を使って、大文字小文字の違いを無視した文字列比較を行います。
+@c COMMON
 
+@c EN
 Note that Gauche has builtin @code{string-ci=?} etc., which use
 character-wise case folding (@pxref{String comparison}).  These are
 different procedures.
+@c JP
+Gaucheは組み込みで@code{string-ci=?}などを持っていますが、そちらは
+文字ごとの大文字小文字変換を使います(@ref{String comparison}参照)。
+それとは異なる手続きです。
+@c COMMON
 
 @example
 (string-ci=? "\u00df" "SS") @result{} #t
@@ -24352,9 +24389,11 @@ different procedures.
 
 @node East asian width property,  , Full string case conversion, Unicode utilities
 @subsection East asian width property
+@c NODE 東アジア文字幅プロパティ
 
 @defun char-east-asian-width char-or-codepoint
 @c MOD gauche.unicode
+@c EN
 The argument may be a character or a nonnegative integer of Unicode
 codepoint.  Returns one of the symbols @code{N} (neutral),
 @code{F} (fullwidth), @code{H} (halfwidth), @code{W} (wide),
@@ -24362,6 +24401,17 @@ codepoint.  Returns one of the symbols @code{N} (neutral),
 
 The meaning of this property is explained in Unicode standard annex #11,
 @url{http://unicode.org/reports/tr11/}.
+@c JP
+引数は文字か、Unicodeコードポイントを表す非負整数でなければなりません。
+次のいずれかのシンボルを返します:
+@code{N} (neutral)、
+@code{F} (fullwidth)、 @code{H} (halfwidth)、 @code{W} (wide)、
+@code{Na} (narrow)、@code{A} (ambiguous)。
+
+各シンボルの意味についてはUnicode standard annex #11を参照してください:
+@url{http://unicode.org/reports/tr11/}。
+@c COMMON
+
 @end defun
 
 
