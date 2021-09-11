@@ -83,12 +83,19 @@
            "https://practical-scheme.net/gauche/memo-j.html"]
           [else "https://practical-scheme.net/gauche/memo.html"]))
   (define header-style (if draft?
-                         "width:100%;background-color:#f88"
-                         "width:100%;background-color:#cfc"))
+                         "width:100%;background-color:#f88;"
+                         "width:100%;background-color:#cfc;"))
+  (define lang (if (#/j\.texi$/ input) "jp" "en"))
   (define header-div #"<div style=\"~|header-style|\">\
-                        <p style=\"text-align:center\">\
+                        <form action=\"https://practical-scheme.net/gauche/man/\"\
+                              style=\"padding:5px 10px\">\
                           <a href=\"~|top-link|\">For ~|version-info|</a>\
-                        </p>\
+                          <span style=\"float: right\">\
+                            Search (procedure/syntax/module): \
+                            <input type=\"text\" name=\"p\">\
+                            <input type=\"hidden\" name=\"l\" value=\"~|lang|\">\
+                          </span>\
+                        </form>\
                       </div>")
   (define draft-mark (if draft?
                        "<div style=\"position:fixed;top:150px;right:0px;\
