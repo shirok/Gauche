@@ -77,15 +77,18 @@
 
 (define (do-htmls input makeinfo version-info)
   (define draft? (#/DRAFT/ version-info))
+  (define ja? (#/j\.texi$/ input))
   (define top-link
     (cond [draft? "https://github.com/shirok/Gauche"]
-          [(#/j\.texi$/ input)
-           "https://practical-scheme.net/gauche/memo-j.html"]
+          [ja? "https://practical-scheme.net/gauche/memo-j.html"]
           [else "https://practical-scheme.net/gauche/memo.html"]))
   (define header-style (if draft?
                          "width:100%;background-color:#f88;"
                          "width:100%;background-color:#cfc;"))
-  (define lang (if (#/j\.texi$/ input) "jp" "en"))
+  (define lang (if ja? "ja" "en"))
+  (define draft-search (if draft?
+                         "<input type=\"hidden\" name=\"v\" value=\"draft\">"
+                         ""))
   (define header-div #"<div style=\"~|header-style|\">\
                         <form action=\"https://practical-scheme.net/gauche/man/\"\
                               style=\"padding:5px 10px\">\
@@ -94,6 +97,7 @@
                             Search (procedure/syntax/module): \
                             <input type=\"text\" name=\"p\">\
                             <input type=\"hidden\" name=\"l\" value=\"~|lang|\">\
+                            ~|draft-search|\
                           </span>\
                         </form>\
                       </div>")
