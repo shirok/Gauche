@@ -1714,57 +1714,153 @@ always returns @code{#f}.
 
 @deftp {Module} control.pmap
 @mdindex control.pmap
+@c EN
 This module provides high-level utilities to run code in parallel
 using threads.
 For example, the @code{pmap} procedure applies the given procedure
 on each elements in the collection and gathers the restuls into a list,
 just like @code{map}, but the appliation of the procedure is done in parallel.
+@c JP
+このモジュールは、コードを複数スレッドで並列に走らせる高レベルユーティリティを提供します。
+例えば@code{pmap}は、@code{map}と同様に、
+与えられたコレクションの各要素に手続きを適用してその結果をリストにして返しますが、
+手続きの適用は並列に行われます。
+@c COMMON
 
+@c EN
 A desired parallelization strategy differs for application, so we also
 pvovide @emph{mapper} objects, that encapsulate how the work is distributed.
+@c JP
+応用によって望ましい並列化戦略が違うので、仕事の割り振りの戦略をカプセル化する
+@emph{mapper}オブジェクトも提供されます。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading High-level API
+@c JP
+@subheading 高レベルAPI
+@c COMMON
 
 @defun pmap proc collection :key mapper
 @c MOD control.pmap
+@c EN
 The @var{proc} argument must be a procedure that takes one argument,
 and @var{collection} must be a collection (@pxref{Collection framework}).
+@c JP
+@var{proc}はひとつの引数を取る手続き、@var{collection}はコレクションです
+(@ref{Collection framework}参照)。
+@c COMMON
 
+@c EN
 Applis @var{proc} on each element of @var{collection}, possibly concurrently
 using multiple threads.  The result is gathered into a list and
 returned.
+@c JP
+@var{collection}の各要素に、@var{proc}を適用します。
+適用は複数のスレッドを使って並行して行われるかもしれません。結果はリストにまとめられて返されます。
+@c COMMON
 
+@c EN
 You can pass a mapper to the @var{mapper} keyword argument to specify how
 the task is distibuted to multiple threads.
+@c JP
+@var{mapper}キーワード引数にmapperを渡すことで、各スレッドにどのように仕事が
+割り振られるかをカスタマイズできます。
+@c COMMON
 @end defun
 
+@defun pfind pred collection :key mapper
+@defunx pany pred collection :key mapper
+@c MOD control.pmap
+@c EN
+These are to be used to find one element that satisfies the predicate @var{pred}.
+As soon as the element is found, other tasks are cancelled.
+@c JP
+これらは、@var{pred}を満たす要素を一つ見つけたい時に使えます。
+条件に合う要素が見つかった時点で、他のタスクはキャンセルされます。
+@c COMMON
+
+@c EN
+@code{pfind} is like @code{find} that returns the element that satisfies
+@var{pred}, while @code{pany} is like @code{any} that returns the result
+of @var{pred} that isn't @code{#f}.
+@c JP
+@code{pfind}は@code{find}のように、@var{pred}を満たす要素を見つけたらその要素自身を
+返します。一方、@code{pany}は@code{any}と同じように、
+@var{pred}が@code{#f}でない値を返したらその返り値を返します。
+@c COMMON
+
+@c EN
+If no element satisfies @var{pred}, @code{#f} is returned.
+@c JP
+@var{pred}を満たす要素が一つも無ければ@code{#f}が返ります。
+@c COMMON
+
+@c EN
+If there are more than one element that satisfy @var{pred}, which one is picked
+depends on various factors, so you shouln't count on a deterministic behavior.
+@c JP
+@var{pred}を満たす要素が複数あった場合にどれが返るかは様々な状況に依存するので、
+決定的な振る舞いを期待すべきではありません。
+@c COMMON
+@end defun
 
 @subheading Mappers
 
+@c EN
 A mapper is an object that encapsulates a storategy to run
 tasks in parallel.  We provide the following mappers.
+@c JP
+mamperはタスクを並列に走らせる戦略をカプセル化したものです。
+次のmapperが提供されます。
+@c COMMON
 
 @table @code
+@item Static mapper
+@c EN
+Creates several threads and distribute the tasks evenly.  It is suitable
+when the number of tasks are large and each task is expected to take
+mostly same amount of time, for it takes less overhead than other
+multi-threading mappers.
+@c JP
+いくつかのスレッドを作り、タスクを均等に割り振ります。
+タスク数が多く、各タスクにかかる時間がそれほど分散しない場合に適しています。
+他のマルチスレッドmapperよりもオーバヘッドが少ないです。
+@c COMMON
+@item Pool mapper
+@c EN
+Uses thread pool to process the tasks.  It is suitable when the number
+of tasks are large and/or the execution time of each task varies
+a lot.  You can also reuse the pooled threads, so that you can
+reduce the overhead of thread creation.
+@c JP
+スレッドプールを使ってタスクを処理します。タスク数が多いか、
+各タスクの実行にかかる時間の分散が大きい場合に適しています。
+また、スレッドプールを再利用することもでき、スレッド作成のオーバヘッドを削減できます。
+@c COMMON
+@item Fully concurrent mapper
+@c EN
+Creates one thread per each task.  It is suitable when the task
+involves blocking I/O calls, and the number of tasks are not so large.
+@c JP
+タスクの数だけスレッドを作成して実行します。タスク数がそれほど多くなく、
+タスクの中でブロッキングI/Oをする場合に適しています。
+@c COMMON
 @item Sequential mapper
+@c EN
 This runs tasks sequentially in a calling thread.  No concurrency involved.
 It serves two purposes: (1) On a single-core system, this is the least
 overhead strategy, and (2) You can test the algorithmic correctness
 without complication of concurrency.   On single-core systems,
 this mapper is the default value of @code{default-mapper}.
-@item Static mapper
-Creates several threads and distribute the tasks evenly.  It is suitable
-when the number of tasks are large and each task is expected to take
-mostly same amount of time, for it takes less overhead than other
-multi-threading mappers.  You can create a static mapper
-@item Pool mapper
-Uses thread pool to process the tasks.  It is suitable when the number
-of tasks are large and/or the execution time of each task varies
-a lot.  You can also reuse the pooled threads, so that you can
-reduce the overhead of thread creation.
-@item Fully concurrent mapper
-Creates one thread per each task.  It is suitable when the task
-involves blocking I/O calls, and the number of tasks are not so large.
+@c JP
+これは呼び出したスレッド内でタスクを逐次的に実行します。並行実行は行われません。
+これには2つの目的があります。(1)シングルコアのシステムでは、
+これが最もオーバヘッドの少ない戦略です。(2)並行性による複雑さを除外してアルゴリズムの
+動作を確かめるのに使えます。
+シングルコアシステムでは、これが@code{default-mapper}の初期値です。
+@c COMMON
 @end table
 
 @deffn {Parameter} default-mapper
