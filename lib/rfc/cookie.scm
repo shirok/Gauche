@@ -376,6 +376,25 @@
         [expires (date->time-utc (parse-cookie-date expires))]
         [else #f]))
 
+;; 5.1.4
+(define (%default-path uri-path)
+  (if (or (equal? uri-path "")
+          (not (eqv? (~ uri-path 0) #\/)))
+    "/"
+    (let1 xs (drop-right (string-split uri-path "/" 'prefix) 1)
+      (if (null? xs)
+        "/"
+        (string-join xs "/" 'prefix)))))
+
+;; 5.1.4
+(define (%path-match cookie-path request-path)
+  (or (equal? cookie-path request-path)
+      (and (string-prefix? cookie-path request-path)
+           (or (boolean (#/\/$/ cookie-path))
+               (eqv? (string-ref request-path (string-length cookie-path))
+                     #\/)))))
+
+
 (define (%domain-belongs-to? sub parent)
   (let loop ([sub-components (reverse (string-split sub #\.))]
              [par-components (reverse (string-split parent #\.))])
@@ -394,7 +413,7 @@
               (atom '()))))
 
 ;; API
-(define (cookie-jar-put*! jar request-host parsed-cookies)
+(define (cookie-jar-put*! jar request-host request-path parsed-cookies)
   (define (put-1 parsed-cookie)
     (match parsed-cookie
       [(name value . args)
@@ -416,7 +435,7 @@
                              :value value
                              :domain (string-downcase (or domain request-host))
                              :request-host request-host
-                             :path path
+                             :path (or path (%default-path request-path))
                              :lifetime (%compute-lifetime max-age expires)
                              :port (if port
                                      (string-tokenize port)
