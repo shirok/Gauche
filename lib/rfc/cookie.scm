@@ -55,7 +55,7 @@
           make-cookie-jar
           cookie-jar-put*!
           cookie-jar-get*
-          ;cookie-jar-purge-ephemeral!
+          cookie-jar-purge-ephemeral!
           )
   )
 (select-module rfc.cookie)
@@ -387,7 +387,7 @@
         (string-join xs "/" 'prefix)))))
 
 ;; 5.1.4
-(define (%path-match cookie-path request-path)
+(define (%path-match request-path cookie-path)
   (or (equal? cookie-path request-path)
       (and (string-prefix? cookie-path request-path)
            (or (boolean (#/\/$/ cookie-path))
@@ -442,22 +442,28 @@
                                      '())
                              :secure secure
                              :version version
-                             :commetn comment
+                             :comment comment
                              :comment-url comment-url)))))]
       [_ (error "Invalid cookie format: ~s" parsed-cookie)]))
 
   (for-each put-1 parsed-cookies))
 
 ;; API
-(define (cookie-jar-get* jar request-host request-port)
-  ($ atomic (~ jar'%table)
-     (^[table]
-       (filter (^e (and (%domain-belongs-to? request-host (~ e'domain))
-                        (or (null? (~ e'port))
-                            (memv request-port (~ e'port)))))
-               table))))
+(define (cookie-jar-get* jar request-host request-port request-path)
+  (let1 now (current-time)
+    ($ atomic (~ jar'%table)
+       (^[table]
+         (filter (^e (and (%domain-belongs-to? request-host (~ e'domain))
+                          (%path-match request-path (~ e'path))
+                          (or (null? (~ e'port))
+                              (memv request-port (~ e'port)))
+                          (or (not (~ e'lifetime))
+                              (time<=? (~ e'lifetime) now))))
+                 table)))))
 
 ;; API
+;; Discard non-persistent cookies
 (define (cookie-jar-purge-ephemeral! jar)
-  ;; WRITEME
-  (undefined))
+  (let1 now (current-time)
+    (atomic-update! (~ jar'%table)
+                    (^[table] (filter (^e (~ e'lifetime)) table)))))
