@@ -53,8 +53,8 @@
           parse-cookie-date
 
           make-cookie-jar
-          cookie-jar-put*!
-          cookie-jar-get*
+          cookie-jar-put!
+          cookie-jar-get
           cookie-jar-purge-ephemeral!
           )
   )
@@ -413,7 +413,7 @@
               (atom '()))))
 
 ;; API
-(define (cookie-jar-put*! jar request-host request-path parsed-cookies)
+(define (cookie-jar-put! jar request-host request-path parsed-cookies)
   (define (put-1 parsed-cookie)
     (match parsed-cookie
       [(name value . args)
@@ -449,17 +449,28 @@
   (for-each put-1 parsed-cookies))
 
 ;; API
-(define (cookie-jar-get* jar request-host request-port request-path)
-  (let1 now (current-time)
-    ($ atomic (~ jar'%table)
-       (^[table]
-         (filter (^e (and (%domain-belongs-to? request-host (~ e'domain))
-                          (%path-match request-path (~ e'path))
-                          (or (null? (~ e'port))
-                              (memv request-port (~ e'port)))
-                          (or (not (~ e'lifetime))
-                              (time<=? (~ e'lifetime) now))))
-                 table)))))
+(define (cookie-jar-get jar request-host request-port request-path)
+  (define now (current-time))
+  (define (alive? c) (or (not (~ c'lifetime))
+                         (time<=? (~ c'lifetime) now)))
+  (define (match? c) (and (%domain-belongs-to? request-host (~ c'domain))
+                          (%path-match request-path (~ c'path))
+                          (or (null? (~ c'port))
+                              (memv request-port (~ c'port)))))
+
+  (values-ref
+   ($ atomic-update! (~ jar'%table)
+      (^[cookies]
+        (let loop ([keep '()] [matched '()] [cookies cookies])
+          (match cookies
+            [() (values (reverse keep) (reverse matched))]
+            [(c . cookies)
+             (if (alive? c)
+               (loop (cons c keep)
+                     (if (match? c) (cons c matched) matched)
+                     cookies)
+               (loop keep matched cookies))]))))
+   1))
 
 ;; API
 ;; Discard non-persistent cookies
