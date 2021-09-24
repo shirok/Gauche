@@ -200,24 +200,28 @@
        (parse-cookie-date "Sun, 2-January-99 5:4:3 garbage"))
 
 (let ([jar (make-cookie-jar)])
+  (define (test-jar n host port path expect)
+    (test* #"cookie-jar-get ~n" expect
+           (map (^e (list (~ e'name) (~ e'value)))
+                (cookie-jar-get jar host port path))
+           (cut lset= equal? <> <>)))
+
   (cookie-jar-put! jar "foo.example.com" "/index.html"
                    '(("a" "ABC" :path "/" :domain "example.com")
                      ("d" "DEF" :path "/" :domain "example.org")
                      ("g" "GHI" :path "/" :domain "foo.example.com")))
-  (test* "cookie-jar-get* 1" '(("a" "ABC") ("g" "GHI"))
-         (map (^e (list (~ e'name) (~ e'value)))
-              (cookie-jar-get jar "foo.example.com" 80 "/"))
-         (cut lset= equal? <> <>))
+  (test-jar 1 "foo.example.com" 80 "/"
+            '(("a" "ABC") ("g" "GHI")))
 
   (cookie-jar-put! jar "foo.bar.example.org" "/x/y/z"
                    '(("x" "XYZ" :domain "bar.example.org")
                      ("y" "YZX" :domain "foo.example.org")
-                     ("z" "ZXY" :path "/x/y")
+                     ("z" "ZXY" :path "/x/")
                      ("w" "WXY" :path "/x/w")))
-  (test* "cookie-jar-get 2" '(("x" "XYZ") ("z" "ZXY"))
-         (map (^e (list (~ e'name) (~ e'value)))
-              (cookie-jar-get jar "foo.bar.example.org" #f "/x/y"))
-         (cut lset= equal? <> <>))
+  (test-jar 2 "foo.bar.example.org" #f "/x/y"
+            '(("x" "XYZ") ("z" "ZXY")))
+  (test-jar 3 "foo.bar.example.org" #f "/x/w"
+            '(("z" "ZXY") ("w" "WXY")))
   )
 
 ;;--------------------------------------------------------------------
