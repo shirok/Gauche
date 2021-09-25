@@ -11160,6 +11160,31 @@ but the caller must always use its return value.
 @defunx iset-search! iset element failure success
 [SRFI-217]
 @c MOD srfi-217
+Search @var{iset} for matching @var{element} from lowest to highest value.
+They return two values, a (possibly updated) iset, and auxiliary
+value as explained below.
+
+If @var{element} is found, the @var{success} procedure is called
+with three arguments: the matching element of @var{iset}, a procedure
+@var{update}, and a procedure @var{remove}.  The @var{update} procedure
+can be invoked with two arguments, @var{new-element} and @var{obj}; if
+called, @var{new-element} replaces @var{element} in @var{iset}, and
+@code{iset-search} returns the new iset and @var{obj}.
+The @var{remove} procedure can be invoked with one argument, @var{obj}.
+It removes the matching element from @var{iset} and @code{iset-search}
+returns the new iset and @var{obj}.
+
+If @var{element} is not found, the @var{failure} procedure is called
+with two arguments, @var{insert} and @var{ignore}, both procedures.
+The @var{insert} procedure can be called with one argument, @var{obj}.
+It causes @code{iset-search} to return a new iset that contains all
+the elements from @var{iset} plus @var{element}, and @var{obj}.
+The @var{ignore} procedure can be called with one argument, @var{obj}.
+It causes @code{iset-search} to return the original @var{iset} and
+@var{obj}.
+
+The linear update version, @code{iset-search!}, may reuse @var{iset}
+for the updated iset.
 @end defun
 
 @subheading The whole iset
@@ -11167,26 +11192,35 @@ but the caller must always use its return value.
 @defun iset-size iset
 [SRFI-217]
 @c MOD srfi-217
+Returns the number of elements in @var{iset}.
 @end defun
 
 @defun iset-find pred iset failure
 [SRFI-217]
 @c MOD srfi-217
+Returns the smallest element of @var{iset} that satisfies @var{pred}.
+If no element satisfies @var{pred}, @var{failure} is called with no
+arguments, and its result is returned from @code{iset-find}.
 @end defun
 
 @defun iset-count pred iset
 [SRFI-217]
 @c MOD srfi-217
+Returns the number of elements in @var{iset} that satisfy @var{pred}.
 @end defun
 
 @defun iset-any? pred iset
 [SRFI-217]
 @c MOD srfi-217
+Returns @code{#t} if any element in @var{iset} satisfies @var{pred},
+@code{#f} otherwise.
 @end defun
 
 @defun iset-every? pred iset
 [SRFI-217]
 @c MOD srfi-217
+Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
+@code{#f} otherwise.
 @end defun
 
 @subheading Mapping and folding
