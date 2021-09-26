@@ -1620,6 +1620,33 @@ procedure call, to use the value of @var{expr} at run-time.
 その場合、Gaucheはフォームを単なる手続き呼び出しとしてコンパイルし、
 @var{expr}の実行時の値が呼び出されます。
 @c COMMON
+
+@c EN
+Note: If what you want to do with the hybrid macro is just to
+inline-expand the procedure body,
+use @code{define-inline} (@pxref{Definitions}).
+@c JP
+註: ハイブリッドマクロでやりたいことが、手続き本体をインライン展開するだけなら、
+@code{define-inline}を使った方が良いです。@ref{Definitions}参照。
+@c COMMON
+
+@c EN
+Note about the syntax: Traditionally in Lisp, compiler macros
+are defined by a separate form from the procedure binding.
+
+However, having bindings to the same identifier twice makes the program
+semantics ambiguous.  What if the two forms are separated into different
+modules?  What if the identifier is redefined?  It would be clearer that
+single form determines the binding.
+@c JP
+構文についての註: 伝統的にLispでは、コンパイラマクロを定義するフォームは
+通常の手続きの束縛を定義するフォームと別でした。
+
+しかし、一つの識別子に別々のフォームで複数の定義を与えるのは、
+プログラムの意味に曖昧性を持ち込みます。たとえば通常の定義とコンパイラマクロの定義が
+別のモジュールに分かれていたら? あるいはどちらか一方が再定義されたら?
+Gaucheではひとつのフォームで束縛を決定してしまう方が良いと判断しました。
+@c COMMON
 @end defmac
 
 @node Identifiers, Debugging macros, Hybrid macros, Macros
