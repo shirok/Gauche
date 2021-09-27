@@ -235,8 +235,9 @@ libgauche_OBJECTS = \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libbox.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
 	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
-	liblazy.$(OBJEXT) liblist.$(OBJEXT) libmacbase.$(OBJEXT) \
-	libmacro.$(OBJEXT) libmisc.$(OBJEXT) libmod.$(OBJEXT) \
+	liblazy.$(OBJEXT) liblist.$(OBJEXT) \
+	libmacbase.$(OBJEXT) libmacro.$(OBJEXT) libmemo.$(OBJEXT) \
+	libmisc.$(OBJEXT) libmod.$(OBJEXT) \
 	libnative.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) \
 	libparam.$(OBJEXT) libproc.$(OBJEXT) \
@@ -320,6 +321,7 @@ liblazy.c    : liblazy.scm $(PRECOMP_DEPENDENCY)
 liblist.c    : liblist.scm $(PRECOMP_DEPENDENCY)
 libmacbase.c : libmacbase.scm $(PRECOMP_DEPENDENCY)
 libmacro.c   : libmacro.scm $(PRECOMP_DEPENDENCY)
+libmemo.c    : libmemo.scm $(PRECOMP_DEPENDENCY)
 libmisc.c    : libmisc.scm $(PRECOMP_DEPENDENCY)
 libnative.c  : libnative.scm native-supp.scm $(PRECOMP_DEPENDENCY)
 libnum.c     : libnum.scm $(PRECOMP_DEPENDENCY)

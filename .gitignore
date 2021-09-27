@@ -223,6 +223,7 @@ test.record
 /src/liblist.c
 /src/libmacbase.c
 /src/libmacro.c
+/src/libmemo.c
 /src/libmisc.c
 /src/libmod.c
 /src/libnative.c
