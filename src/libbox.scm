@@ -208,7 +208,7 @@
 (define-cproc shared-box-inc! (cb::<shared-box>
                                :optional (delta::<fixnum> 1))
   (for ()
-    (let* ([v::ScmAtomicVar (AO_load (& (-> cb counter)))]
+    (let* ([v::ScmAtomicWord (AO_load (& (-> cb counter)))]
            [vv::ScmAtomicWord (+ v delta)])
       (when (AO_compare_and_swap_full (& (-> cb counter)) v vv)
         (return (Scm_MakeInteger (cast long v)))))))
