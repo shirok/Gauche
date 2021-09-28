@@ -43,7 +43,7 @@
                                num-keys::<int>
                                :key (weak #f)
                                     (fixed #f))
-  (let* ([flags::ulong 0])
+  (let* ([flags::u_long 0])
     (unless (SCM_FALSEP weak) (logior= flags SCM_MEMO_TABLE_WEAK))
     (unless (SCM_FALSEP fixed) (logior= flags SCM_MEMO_TABLE_FIXED))
     (return (Scm_MakeMemoTable capacity num-keys flags))))
