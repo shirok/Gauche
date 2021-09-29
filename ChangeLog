@@ -1,3 +1,7 @@
+2021-09-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random: Add mt-random-get-seed
+
 2021-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/vm/debugger.scm, src/read.c: Experimentally implemented

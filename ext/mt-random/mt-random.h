@@ -61,7 +61,12 @@
 typedef struct ScmMersenneTwisterRec {
     SCM_HEADER;
     unsigned long mt[N]; /* the array for the state vector  */
-    int mti;             /* mti==N+1 means mt[N] is not initialized */
+    int mti;             /* index into the state vector.
+                            new integer random number is computed from
+                            mt[mti], incrementing mti; once it exceeds N,
+                            the entire state vector is recomputed. */
+    ScmObj seed;         /* last seed value used to initialize this instance.
+                            useful to reproduce the same random sequence. */
 } ScmMersenneTwister;
 
 SCM_CLASS_DECL(Scm_MersenneTwisterClass);

@@ -81,6 +81,7 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
         /* for >32 bit machines */
     }
     mt->mti = mti;
+    mt->seed = Scm_MakeIntegerU(s);
 }
 
 void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
@@ -110,6 +111,7 @@ void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
     } else {
         Scm_TypeError("random seed", "an exact integer or u32vector", seed);
     }
+    mt->seed = seed;
 }
 
 
@@ -141,6 +143,9 @@ void Scm_MTInitByArray(ScmMersenneTwister *mt,
     }
 
     mt->mt[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */
+    /* NB: We coerce the seed value to u32vector, for the compability of
+       Scheme-level mt-random-set-seed!. */
+    mt->seed = Scm_MakeU32VectorFromArray(key_length, (uint32_t*)init_key);
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
@@ -309,6 +314,7 @@ static ScmObj mt_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
     mt = SCM_NEW(ScmMersenneTwister);
     SCM_SET_CLASS(mt, &Scm_MersenneTwisterClass);
     mt->mti = N+1;
+    mt->seed = SCM_UNDEFINED;
     if (!SCM_FALSEP(seed)) Scm_MTSetSeed(mt, seed);
     return SCM_OBJ(mt);
 }

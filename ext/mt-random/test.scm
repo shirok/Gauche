@@ -86,6 +86,17 @@
                      (make-random-sequence <list> 100
                                            (^[] (mt-random-real m1)))))))
 
+(test "seed transplant" #t
+      (^[] (let ([m0 (make <mersenne-twister>)]
+                 [m1 (make <mersenne-twister>)])
+             (mt-random-set-seed! m0 '#u32(472346 37429385 72))
+             (let1 s0 (make-random-sequence <list> 100
+                                            (^[] (mt-random-real m0)))
+               (mt-random-set-seed! m1 (mt-random-get-seed m0))
+               (equal? s0
+                       (make-random-sequence <list> 100
+                                             (^[] (mt-random-real m1))))))))
+
 (test "u32vector" #t
       (^[] (let ([m0 (make <mersenne-twister> :seed 1)]
                  [m1 (make <mersenne-twister> :seed 1)])

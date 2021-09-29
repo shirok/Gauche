@@ -34,6 +34,7 @@
 (define-module math.mt-random
   (use gauche.uvector)
   (export <mersenne-twister>
+          mt-random-get-seed
           mt-random-set-seed!
           mt-random-get-state
           mt-random-set-state!
@@ -55,6 +56,9 @@
  (define-type <u32vector> "ScmU32Vector*")
  (define-type <f32vector> "ScmF32Vector*")
  (define-type <f64vector> "ScmF64Vector*")
+
+ (define-cproc mt-random-get-seed (mt::<mersenne-twister>)
+   (return (-> mt seed)))
 
  (define-cproc mt-random-set-seed! (mt::<mersenne-twister> init) ::<void>
    Scm_MTSetSeed)
