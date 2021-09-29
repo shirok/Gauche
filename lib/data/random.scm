@@ -42,7 +42,7 @@
   (use gauche.generator)
   (use gauche.sequence)
 
-  (export random-data-seed with-random-data-seed
+  (export random-data-random-source random-data-seed with-random-data-seed
 
           integers$ integers-between$ fixnums chars$ samples$ booleans
           int8s uint8s int16s uint16s int32s uint32s int64s uint64s
@@ -57,34 +57,42 @@
           ))
 (select-module data.random)
 
-;; Random state management
-;; Random state is kept in %random-source parameter as (seed . #<mt>)
-;; We use mt-random directly instead of srfi-27, for we need
-;; a portable way to save and restore the random state.
-;; Srfi-27's random state isn't guaranteed to be printable.
-
-(define (%make-random-date-state seed)
-  (cons seed (make <mersenne-twister> :seed seed)))
-
-(define %random-data-state
-  (make-parameter (%make-random-date-state 42)))
-
 ;; API
+;; We start from a fixed seed, to guarantee reproducibility.
+(define random-data-random-source
+  (make-parameter (make <mersenne-twister> :seed 42)))
+
+;; random-data-seed and with-random-data-seed are intended to reproduce
+;; sequences that has been generated.  If you simply using srfi-27
+;; random-source as a parameter, you can't retrieve its seed value,
+;; so you can't reproduce the sequence unless you remember what seed value
+;; you used to initialize the random-source.
+;; However, the interface is kind of awkward (e.g. you can't swap
+;; two independent random sources) and non-intuitive.   We keep them
+;; only for the backward compatibility.
+
+;; Deprecated API
+;; NB: Currently the only srfi-27 random-source is <mersenne-twister>,
+;; but we may add other kind of random-source in future.
 (define random-data-seed
   (getter-with-setter
-   (^[] (car (%random-data-state)))
-   (^[seed] (%random-data-state (%make-random-date-state seed)))))
+   (^[] (let1 rs (random-data-random-source)
+          (if (is-a? rs <mersenne-twister>)
+            (mt-random-get-seed rs)
+            (undefined))))
+   (^[seed] (random-data-random-source
+             (make <mersenne-twister> :seed seed)))))
 
-;; API
+;; Deprecated API
 (define (with-random-data-seed seed thunk)
   ;; create st here so that reentering thunk retains the state.
-  (let1 st (%make-random-date-state seed)
-    (parameterize ([%random-data-state st])
+  (let1 st (make <mersenne-twister> :seed seed)
+    (parameterize ([random-data-random-source st])
       (thunk))))
 
-(define (%rand-int n) (mt-random-integer (cdr (%random-data-state)) n))
-(define (%rand-real0) (mt-random-real0 (cdr (%random-data-state))))
-(define (%rand-real)  (mt-random-real (cdr (%random-data-state))))
+(define (%rand-int n) (mt-random-integer (random-data-random-source) n))
+(define (%rand-real0) (mt-random-real0 (random-data-random-source)))
+(define (%rand-real)  (mt-random-real (random-data-random-source)))
 
 ;;;
 ;;; Primitive generators
@@ -406,7 +414,7 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 
 ;; API
 (define (permutations-of seq)
-  (^[] (shuffle seq (cdr (%random-data-state)))))
+  (^[] (shuffle seq (random-data-random-source))))
 
 ;; API
 (define (combinations-of len seq)

@@ -1,5 +1,9 @@
 2021-09-28  Shiro Kawai  <shiro@acm.org>
 
+	* lib/data/random.scm (random-data-random-source): A parameter to
+	  keep the current random source.  Previous random-state thingy was
+	  awkward and not compatible to srfi-194.
+
 	* ext/mt-random: Add mt-random-get-seed
 
 2021-09-07  Shiro Kawai  <shiro@acm.org>
