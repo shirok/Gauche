@@ -11790,6 +11790,20 @@ in the bignum is used for the seed.
 @c COMMON
 @end defun
 
+@defun mt-random-get-seed mt
+@c MOD math.mt-random
+@c EN
+Returns the last seed value used to initialize Mersenne Twister RNG @var{mt}.
+It is either an exact integer or u32vector.
+If @var{mt} has never been initialized, @code{#<undef>} is returned.
+@c JP
+Mersenne Twister RNG @var{mt}を初期化するのに使われたシード値を返します。
+複数回初期化されている場合は、最後に初期化されたものを返します。
+シード値は正確な整数かu32vectorです。
+初期化されたことがなければ、@code{#<undef>}が返されます。
+@c COMMON
+@end defun
+
 @defun mt-random-get-state mt
 @defunx mt-random-set-state! mt state
 @c MOD math.mt-random
