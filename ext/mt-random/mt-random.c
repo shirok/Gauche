@@ -111,7 +111,7 @@ void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
     } else {
         Scm_TypeError("random seed", "an exact integer or u32vector", seed);
     }
-    mt->seed = seed;
+    /* NB: mt->seed is set by either Scm_MTInitByUI or Scm_MTInitByArray.  */
 }
 
 
