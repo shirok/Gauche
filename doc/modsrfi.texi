@@ -11228,35 +11228,59 @@ Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
 @defun iset-map proc iset
 [SRFI-217]
 @c MOD srfi-217
+Creates and returns a new iset whose elements consist of
+the result of @var{proc} applied to each element of the given @var{iset}.
+An error is signaled if @var{proc} doesn't return an exact integer.
+
+Note that the size of the result set may be smaller than the input,
+if @var{proc} isn't injective.
+
+The order of @var{proc}'s application is unspecified.
 @end defun
 
 @defun iset-for-each proc iset
 [SRFI-217]
 @c MOD srfi-217
+Applies @var{proc} to each element in @var{iset} in increasing order.
+The result of @var{proc} is discarded.  Returns unspecified result.
 @end defun
 
 @defun iset-fold kons knil iset
 @defunx iset-fold-right kons knil iset
 [SRFI-217]
 @c MOD srfi-217
+Like @code{fold}/@code{fold-right}, apply @var{kons} on each element
+in @var{iset}, passing the result to the next @var{kons}.
 @end defun
 
 @defun iset-filter pred iset
 @defunx iset-filter! pred iset
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that contains the elements in @var{iset} that satisfy @var{pred}.
+The linear-update version @code{iset-filter!} may reuse given @var{iset}
+to store the result.
 @end defun
 
 @defun iset-remove pred iset
 @defunx iset-remove! pred iset
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that contains the elements in @var{iset} that do not satisfy
+@var{pred}.
+The linear-update version @code{iset-remove!} may reuse given @var{iset}
+to store the result.
 @end defun
 
 @defun iset-partition pred iset
 @defunx iset-partition! pred iset
 [SRFI-217]
 @c MOD srfi-217
+Returns two isets, first one consisting of the elements in @var{iset} that
+satisfy @var{pred}, and the second one consisting of the elements that
+don't.
+The linear-update version @code{iset-partition!} may reuse given @var{iset}
+to store one of the results.
 @end defun
 
 @subheading Copying and conversion
@@ -11264,21 +11288,27 @@ Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
 @defun iset-copy iset
 [SRFI-217]
 @c MOD srfi-217
+Returns a copy of @var{iset}.
 @end defun
 
 @defun iset->list iset
 [SRFI-217]
 @c MOD srfi-217
+Returns a list of elements in @var{iset}, in increasing order.
 @end defun
 
-@defun list->iset iset
+@defun list->iset list
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that contains elements in @var{list}.  The elements
+in @var{list} must be exact integers.  Duplicate elements are omitted.
 @end defun
 
 @defun list->iset! iset list
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset consists of the elements from @var{iset} and @var{list}.
+It may reuse the given @var{iset} to store the result.
 @end defun
 
 @subheading Subsets
@@ -11286,6 +11316,7 @@ Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
 @defun iset=? iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+Returns @code{#t} iff given isets are equal to each other as sets.
 @end defun
 
 @defun iset<? iset1 iset2 iset3 @dots{}
@@ -11294,6 +11325,11 @@ Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
 @defunx iset>=? iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+These compares subset relationships between isets.
+@code{(iset<=? iset1 iset2)} is @code{#t} iff every element of @var{iset1}
+is contained in @var{iset2}, and so on.
+
+Note that @code{(iset<? a b)} does not imply @code{(iset>=? a b)}.
 @end defun
 
 @subheading Set theory operations
@@ -11339,6 +11375,9 @@ Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
 @defunx isubset>= iset k
 [SRFI-217]
 @c MOD srfi-217
+Returns a subset of @var{iset} whose elements are equal to,
+less than, less than or equal to, greater than, and greater than or
+equal to, @var{k}.
 @end defun
 
 @c ----------------------------------------------------------------------
