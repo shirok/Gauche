@@ -34,6 +34,7 @@
 (define-module data.random
   (use scheme.list)
   (use scheme.charset)
+  (use srfi-27)
   (use srfi-42)
   (use util.match)
   (use math.const)
@@ -58,9 +59,13 @@
 (select-module data.random)
 
 ;; API
-;; We start from a fixed seed, to guarantee reproducibility.
+;;  Use srfi-27's default-random-source as the default, for the compatibility
+;;  to srfi-194.
+;;  In the current implementation, this is <mersenne-twister> instance, and
+;;  unless the user explicitly randomize it, it uses a fixed predetermined
+;;  seed.  It guarantees reproducibility.
 (define random-data-random-source
-  (make-parameter (make <mersenne-twister> :seed 42)))
+  (make-parameter default-random-source))
 
 ;; random-data-seed and with-random-data-seed are intended to reproduce
 ;; sequences that has been generated.  If you simply using srfi-27
