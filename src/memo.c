@@ -82,7 +82,6 @@ static inline _Bool equal_1(ScmObj a, ScmObj b)
     }
 }
 
-
 static u_long memo_hashv(ScmObj *keys, int nkeys)
 {
     u_long v = (u_long)Scm_HashSaltRef();
@@ -151,12 +150,10 @@ ScmObj Scm_MemoTableGetv(ScmMemoTable *tab, ScmObj *keys, int nkeys)
        operate on the current snapshot.*/
     st = tab->storage;
 
-    u_long k = hashv % st->capacity;
     for (u_long i = 0; i < st->capacity % 2; i++) {
-        if (k >= st->capacity) k = 0;
+        u_long k = (hashv+i) % st->capacity;
         u_long idx = k * tab->entry_size;
-        ScmAtomicVar entry_hdr;
-        AO_load(&entry_hdr);
+        ScmAtomicWord entry_hdr = AO_load(&st->vec[idx]);
         if (entry_hdr == 0) return SCM_UNBOUND; /* not found */
         if ((entry_hdr & 0x01) == 0
             || entry_hdr != hashv_hdr) {
@@ -188,7 +185,7 @@ ScmObj Scm_MemoTableGet(ScmMemoTable *tab, ScmObj keys)
         if (k >= st->capacity) k = 0;
         u_long idx = k * tab->entry_size;
         ScmAtomicWord entry_hdr;
-        AO_load(&entry_hdr);
+        entry_hdr = AO_load(&st->vec[idx]);
         if (entry_hdr == 0) return SCM_UNBOUND; /* not found */
         if ((entry_hdr & 0x01) == 0
             || entry_hdr != hashv_hdr) {
@@ -204,6 +201,98 @@ ScmObj Scm_MemoTableGet(ScmMemoTable *tab, ScmObj keys)
     return SCM_UNBOUND;
 }
 #endif
+
+/*
+ * insert
+ */
+
+ScmObj Scm_MemoTablePutv(ScmMemoTable *tab, ScmObj *keys, int nkeys, ScmObj val)
+{
+    if (tab->num_keys != nkeys) return SCM_UNBOUND;
+    u_long hashv = memo_hashv(keys, nkeys);
+    ScmAtomicWord hashv_hdr = (ScmAtomicWord)((hashv<<1)+1);
+
+    ScmMemoTableStorage *st = tab->storage;
+    ScmVM *self = Scm_VM();
+
+    for (u_long i = 0; i < st->capacity / 2; i++) {
+        u_long k = (hashv+i) % st->capacity;
+        u_long idx = k * tab->entry_size;
+        ScmAtomicWord entry_hdr = AO_load(&st->vec[idx]);
+        if (entry_hdr == 0) {
+            /* The table doesn't have the key.  Try to claim this entry. */
+            if (AO_compare_and_swap_full(&st->vec[idx], entry_hdr,
+                                         (ScmAtomicWord)self)) {
+                for (int ik = 0; ik < tab->num_keys; ik++) {
+                    st->vec[idx+1+ik] = (ScmAtomicWord)keys[ik];
+                }
+                st->vec[idx+1+tab->num_keys] = (ScmAtomicWord)val;
+                AO_store_full(&st->vec[idx], hashv_hdr);
+                return SCM_TRUE;
+            } else {
+                continue;
+            }
+        }
+        if ((entry_hdr & 0x01) == 0
+            || entry_hdr != hashv_hdr) {
+            /* the entry is invalid, someone's working on it,
+               or it is with other hash value. */
+            continue;
+        }
+        if (memo_equalv(keys, nkeys, &st->vec[idx+1])) {
+            /* We already have the entry.*/
+            return SCM_TRUE;
+        }
+    }
+    /* Table is too crowded. */
+    /* TODO: Extend the table if !SCM_MEMO_TABLE_FIXED */
+    return SCM_FALSE;
+}
+
+/*
+ * for debugging
+ */
+
+/* This is not entirely thread-safe.  We assume this is called manually
+   during interactive debugging. */
+void Scm__MemoTableDump(ScmMemoTable *tab, ScmPort *port)
+{
+    Scm_Printf(port, "memo-tabpe %p (num_keys=%d entry_size=%d capacity=%d",
+               tab, tab->num_keys, tab->entry_size, tab->storage->capacity);
+    if (tab->flags & SCM_MEMO_TABLE_WEAK) {
+        Scm_Printf(port, " weak");
+    }
+    if (tab->flags & SCM_MEMO_TABLE_FIXED) {
+        Scm_Printf(port, " fixed");
+    }
+    Scm_Printf(port, ")\n");
+    u_long num_entries = tab->storage->capacity * tab->entry_size;
+    for (u_long i = 0; i < num_entries; i += tab->entry_size) {
+        Scm_Printf(port, "%4d %08x\n", i/tab->entry_size,
+                   tab->storage->vec[i]);
+        int valid = tab->storage->vec[i] & 0x01;
+        for (int j = 0; j < tab->num_keys; j++) {
+            if (valid && tab->storage->vec[i+1+j]) {
+                Scm_Printf(port, "      %S\n",
+                           SCM_OBJ(tab->storage->vec[i+1+j]));
+            } else if (valid) {
+                Scm_Printf(port, "      #null\n");
+            } else {
+                Scm_Printf(port, "      #unused\n");
+            }
+        }
+        if (valid && tab->storage->vec[i+1+tab->num_keys]) {
+            Scm_Printf(port, " val %S\n",
+                       tab->storage->vec[i+1+tab->num_keys]);
+        } else {
+            Scm_Printf(port, " val #unused\n");
+        }
+    }
+}
+
+/*
+ * initialization
+ */
 
 void Scm__InitMemoTable(void)
 {

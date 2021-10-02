@@ -33,7 +33,10 @@
 
 (select-module gauche.internal)
 (inline-stub
- (declcode (.include "gauche/priv/memoP.h")))
+ (declcode (.include "gauche/priv/memoP.h"))
+
+ (define-type <memo-table> "ScmMemoTable*")
+ )
 
 ;;
 ;; The API is provisional
@@ -47,3 +50,32 @@
     (unless (SCM_FALSEP weak) (logior= flags SCM_MEMO_TABLE_WEAK))
     (unless (SCM_FALSEP fixed) (logior= flags SCM_MEMO_TABLE_FIXED))
     (return (Scm_MakeMemoTable capacity num-keys flags))))
+
+;; Instead of the standard (*-get obj key :optional default) -> <top>
+;; signature, this returns two values: The value or #<undef>, and
+;; a boolean that indicates a hit.
+;; Since mishit is in ordinary operation in memoization table, it is a
+;; waste to provide and check default value.  The '2' suffis is to
+;;  distinguish from the standard protocol.
+
+(define-cproc memo-table-get2 (tab::<memo-table> keys) ::(<top> <boolean>)
+  ;; For now, we only support vector keys; later we'll support lists.
+  (unless (SCM_VECTORP keys)
+    (SCM_TYPE_ERROR keys "vector"))
+  (let* ([v (Scm_MemoTableGetv tab (SCM_VECTOR_ELEMENTS keys)
+                               (SCM_VECTOR_SIZE keys))])
+    (if (SCM_UNBOUNDP v)
+      (return SCM_UNDEFINED FALSE)
+      (return v TRUE))))
+
+(define-cproc memo-table-put! (tab::<memo-table> keys value)
+  ;; For now, we only support vector keys; later we'll support lists.
+  (unless (SCM_VECTORP keys)
+    (SCM_TYPE_ERROR keys "vector"))
+  (return (Scm_MemoTablePutv tab (SCM_VECTOR_ELEMENTS keys)
+                             (SCM_VECTOR_SIZE keys) value)))
+
+(define-cproc memo-table-dump (tab::<memo-table>
+                               :optional (port::<port> (current-output-port)))
+  ::<void>
+  (Scm__MemoTableDump tab port))

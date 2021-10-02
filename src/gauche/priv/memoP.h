@@ -199,7 +199,9 @@ SCM_EXTERN ScmObj Scm_MemoTableGet(ScmMemoTable *tab, ScmObj keys);
 SCM_EXTERN ScmObj Scm_MemoTableGetv(ScmMemoTable *tab, ScmObj *keys, int nkeys);
 
 SCM_EXTERN ScmObj Scm_MemoTablePut(ScmMemoTable *tab, ScmObj keys, ScmObj val);
-SCM_EXTERN ScmObj scm_MemoTablePutv(ScmMemoTable *tab, ScmObj *keys, int nkeys,
+SCM_EXTERN ScmObj Scm_MemoTablePutv(ScmMemoTable *tab, ScmObj *keys, int nkeys,
                                     ScmObj val);
+
+SCM_EXTERN void Scm__MemoTableDump(ScmMemoTable *tab, ScmPort *port);
 
 #endif /*GAUCHE_PRIV_MEMOP_H*/
