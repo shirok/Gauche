@@ -174,7 +174,7 @@ enum {
 
 typedef struct ScmMemoTableStorageRec {
     u_long capacity;            /* read only */
-    ScmAtomicWord *vec;         /* [capacity*entry_size] */
+    ScmAtomicVar *vec;         /* [capacity*entry_size] */
 } ScmMemoTableStorage;
 
 /* Fields other than storage are read-only */
