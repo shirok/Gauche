@@ -36,8 +36,7 @@
 (inline-stub
 
  (declcode
-  (.include "gauche-net.h")
-  (.include <gauche/bignum.h>))
+  (.include "gauche-net.h"))
 
  (define-type <socket-address> "ScmSockAddr*" "socket address"
    "Scm_SockAddrP" "SCM_SOCKADDR")

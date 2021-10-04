@@ -194,6 +194,9 @@ SCM_EXTERN int    Scm_ClampMode(ScmObj clamp);
 
 SCM_EXTERN ScmObj Scm_MakeInteger(long i);
 SCM_EXTERN ScmObj Scm_MakeIntegerU(u_long i);
+SCM_EXTERN ScmObj Scm_MakeIntegerFromUIArray(int sign,
+                                             const u_long *values,
+                                             int size);
 
 SCM_EXTERN long   Scm_GetIntegerClamp(ScmObj obj, int clamp, int *oor);
 SCM_EXTERN u_long Scm_GetIntegerUClamp(ScmObj obj, int clamp, int *oor);

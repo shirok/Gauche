@@ -35,7 +35,7 @@
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
-                     <gauche/bignum.h>
+                     <gauche/priv/bignumP.h>
                      <stdlib.h>
                      <float.h>
                      <math.h>))

@@ -138,9 +138,6 @@
        (assume (<= start end len))
        . body)]))
 
-(inline-stub
- (.include "gauche/bignum.h"))
-
 ;;; Constructors
 
 ;; make-bitvector, bitvector - built-in
@@ -538,13 +535,9 @@
 (define-cproc bitvector->integer (bv::<bitvector>)
   (if (== (SCM_BITVECTOR_SIZE bv) 0)
     (return (SCM_MAKE_INT 0))
-    (return
-     (Scm_NormalizeBignum
-      (SCM_BIGNUM
-       (Scm_MakeBignumFromUIArray
-        1
-        (SCM_BITVECTOR_BITS bv)
-        (SCM_BITS_NUM_WORDS (SCM_BITVECTOR_SIZE bv))))))))
+    (return (Scm_MakeIntegerFromUIArray 1
+                                        (SCM_BITVECTOR_BITS bv)
+                                        (SCM_BITS_NUM_WORDS (SCM_BITVECTOR_SIZE bv))))))
 
 ;; We could directly copy ScmBits* from a bignum but we don't have
 ;; an API to construct bitvector from ScmBits* yet.

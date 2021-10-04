@@ -1,5 +1,5 @@
 /*
- * gauche/bignum.h - Internal API for bignums
+ * gauche/priv/bignumP.h - Internal API for bignums
  *
  *   Copyright (c) 2000-2021  Shiro Kawai  <shiro@acm.org>
  *
@@ -31,11 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* APIs concerning bignums.  They are not for general public use,
-   so separated to here. */
-
-#ifndef GAUCHE_BIGNUM_H
-#define GAUCHE_BIGNUM_H
+#ifndef GAUCHE_PRIV_BIGNUMP_H
+#define GAUCHE_PRIV_BIGNUMP_H
 
 SCM_EXTERN ScmObj Scm_MakeBignumFromSI(long val);
 SCM_EXTERN ScmObj Scm_MakeBignumFromUI(u_long val);
@@ -89,4 +86,4 @@ SCM_EXTERN ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc,
 
 SCM_EXTERN void   Scm_BignumDump(const ScmBignum *b, ScmPort *out);
 
-#endif /* GAUCHE_BIGNUM_H */
+#endif /* GAUCHE_PRIV_BIGNUMP_H */

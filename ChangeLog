@@ -1,3 +1,9 @@
+2021-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/bignumP.h: Make bignum.h private.  It was never
+	  intended for public use.  Technically this is compatiblity-breaking,
+	  but if the user code directly uses bignum API, there's something wrong.
+
 2021-09-28  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/random.scm (random-data-random-source): A parameter to

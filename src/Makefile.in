@@ -153,7 +153,7 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc_pthread_redirects.h ../gc/include/gc_tiny_fl.h \
 	../gc/include/gc_typed.h ../gc/include/gc_version.h
 INSTALL_SUBHEADERS = \
-	gauche/bignum.h gauche/bits.h gauche/bits_inline.h \
+	gauche/bits.h gauche/bits_inline.h \
 	gauche/char_euc_jp.h gauche/char_none.h \
 	gauche/char_sjis.h gauche/char_utf_8.h gauche/charset.h \
 	gauche/class.h gauche/code.h gauche/collection.h \
@@ -181,10 +181,10 @@ INSTALL_SCMS = genstub precomp gencomp cesconv build-standalone
 GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 
 PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
-		  gauche/priv/arith_x86_64.h \
-		  gauche/priv/dws_adapter.h \
+		  gauche/priv/arith_x86_64.h gauche/priv/bignumP.h \
 		  gauche/priv/builtin-syms.h gauche/priv/codeP.h \
 		  gauche/priv/classP.h gauche/priv/dispatchP.h \
+		  gauche/priv/dws_adapter.h \
 		  gauche/priv/glocP.h \
 		  gauche/priv/identifierP.h \
 		  gauche/priv/macroP.h gauche/priv/memoP.h \

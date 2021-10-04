@@ -83,7 +83,7 @@ char *alloca ();
 #include "gauche/priv/arith.h"
 #include "gauche/bits.h"
 #include "gauche/bits_inline.h"
-#include "gauche/bignum.h"
+#include "gauche/priv/bignumP.h"
 
 #undef min
 #define min(x, y)   (((x) < (y))? (x) : (y))

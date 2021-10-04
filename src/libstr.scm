@@ -34,8 +34,8 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include <gauche/bignum.h>
-                     <gauche/vminsn.h>
+ (declcode (.include <gauche/vminsn.h>
+                     <gauche/priv/bignumP.h>
                      <gauche/priv/stringP.h>)))
 
 ;;

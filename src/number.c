@@ -32,10 +32,10 @@
  */
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/bignum.h"
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
 #include "gauche/bits_inline.h"
+#include "gauche/priv/bignumP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/arith.h"
 #include "gauche/priv/bytesP.h"
@@ -970,6 +970,14 @@ ScmObj Scm_MakeIntegerU(u_long i)
 {
     if (i <= (u_long)SCM_SMALL_INT_MAX) return SCM_MAKE_INT(i);
     else return Scm_MakeBignumFromUI(i);
+}
+
+ScmObj Scm_MakeIntegerFromUIArray(int sign,
+                                  const u_long *values,
+                                  int size)
+{
+    ScmBignum *b = SCM_BIGNUM(Scm_MakeBignumFromUIArray(sign, values, size));
+    return Scm_NormalizeBignum(b);
 }
 
 static void range_error(ScmObj obj, int clamp, int *oor)
