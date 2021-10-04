@@ -899,8 +899,8 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
 #undef DIV_DEBUG
 #ifdef DIV_DEBUG
     Scm_Printf(SCM_CUROUT, "shift=%d, n=%d, m=%d\n", d, n, m);
-    Scm_Printf(SCM_CUROUT, "u="); Scm_DumpBignum(u, SCM_CUROUT);
-    Scm_Printf(SCM_CUROUT, "\nv="); Scm_DumpBignum(v, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "u="); Scm_BignumDump(u, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "\nv="); Scm_BignumDump(v, SCM_CUROUT);
     Scm_Printf(SCM_CUROUT, "\nvn_1=%08lx, vn_2=%08lx\n", vn_1, vn_2);
 #endif
 
@@ -930,7 +930,7 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
         }
 #ifdef DIV_DEBUG
         Scm_Printf(SCM_CUROUT, "subtract cy = %d, ", cy);
-        Scm_Printf(SCM_CUROUT, "u="); Scm_DumpBignum(u, SCM_CUROUT);
+        Scm_Printf(SCM_CUROUT, "u="); Scm_BignumDump(u, SCM_CUROUT);
         Scm_Printf(SCM_CUROUT, "\n");
 #endif
         if (cy) {
@@ -949,8 +949,8 @@ static ScmBignum *bignum_gdiv(const ScmBignum *dividend,
     }
     bignum_rshift(u, u, d);
 #ifdef DIV_DEBUG
-    Scm_Printf(SCM_CUROUT, "quot q="); Scm_DumpBignum(quotient, SCM_CUROUT);
-    Scm_Printf(SCM_CUROUT, "\nrem  u="); Scm_DumpBignum(u, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "quot q="); Scm_BignumDump(quotient, SCM_CUROUT);
+    Scm_Printf(SCM_CUROUT, "\nrem  u="); Scm_BignumDump(u, SCM_CUROUT);
     Scm_Printf(SCM_CUROUT, "\n");
 #endif
     return u;
@@ -1254,7 +1254,7 @@ ScmObj Scm_BignumToString(const ScmBignum *b, int radix, int use_upper)
     return Scm_ListToString(Scm_ReverseX(h));
 }
 
-int Scm_DumpBignum(const ScmBignum *b, ScmPort *out)
+void Scm_BignumDump(const ScmBignum *b, ScmPort *out)
 {
     Scm_Printf(out, "#<bignum ");
     if (b->sign < 0) SCM_PUTC('-', out);
@@ -1262,7 +1262,6 @@ int Scm_DumpBignum(const ScmBignum *b, ScmPort *out)
         Scm_Printf(out, "%08lx ", b->values[i]);
     }
     SCM_PUTC('>', out);
-    return 0;
 }
 
 /*-----------------------------------------------------------------------

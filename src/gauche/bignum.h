@@ -87,6 +87,6 @@ SCM_EXTERN ScmBignum *Scm_MakeBignumWithSize(int size, u_long init);
 SCM_EXTERN ScmBignum *Scm_BignumAccMultAddUI(ScmBignum *acc,
                                              u_long coef, u_long c);
 
-SCM_EXTERN int Scm_DumpBignum(const ScmBignum *b, ScmPort *out);
+SCM_EXTERN void   Scm_BignumDump(const ScmBignum *b, ScmPort *out);
 
 #endif /* GAUCHE_BIGNUM_H */

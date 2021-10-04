@@ -131,7 +131,7 @@
 (select-module gauche.internal)
 (define-cproc %bignum-dump (obj) ::<void>
   (when (SCM_BIGNUMP obj)
-    (Scm_DumpBignum (SCM_BIGNUM obj) SCM_CUROUT)))
+    (Scm_BignumDump (SCM_BIGNUM obj) SCM_CUROUT)))
 
 ;;
 ;; Comparison
