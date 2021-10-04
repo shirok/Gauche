@@ -50,10 +50,10 @@ ScmObj Scm_MakeMemoTable(u_long capacity, int num_keys, u_long flags)
     ScmMemoTableStorage *s = SCM_NEW(ScmMemoTableStorage);
     s->capacity = capacity;
     if (flags & SCM_MEMO_TABLE_WEAK) {
-        s->vec = SCM_NEW_ATOMIC_ARRAY(ScmAtomicWord,
+        s->vec = SCM_NEW_ATOMIC_ARRAY(ScmAtomicVar,
                                       capacity * t->entry_size);
     } else {
-        s->vec = SCM_NEW_ARRAY(ScmAtomicWord,
+        s->vec = SCM_NEW_ARRAY(ScmAtomicVar,
                                capacity * t->entry_size);
     }
     t->storage = s;
