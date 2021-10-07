@@ -67,12 +67,19 @@
             |    value    |
             +-------------+
 
-   If num_keys is 0, keys are in list and pointed from the storage:
+   If num_keys is 0 or less, the last key entry has list of "rest" keys.
+   The absolute value of num_keys specifies number of mandatory keys.
 
             +-------------+
     Entry > |   hashval   |
             +-------------+
-            |    keys --------> (key0 ... keyN-1)
+            |    key 0    |
+            +-------------+
+            :             :
+            +-------------+
+            |   key n-1   |
+            +-------------+
+            |      -----------> (key ...)
             +-------------+
             |    value    |
             +-------------+
