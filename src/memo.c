@@ -45,7 +45,7 @@ ScmObj Scm_MakeMemoTable(u_long capacity, int num_keys, u_long flags)
     SCM_SET_CLASS(t, SCM_CLASS_MEMO_TABLE);
     t->flags = flags;
     t->num_keys = num_keys;
-    t->entry_size = num_keys + 2;
+    t->entry_size = (num_keys > 0? (num_keys+2) : (-num_keys+3));
 
     ScmMemoTableStorage *s = SCM_NEW(ScmMemoTableStorage);
     s->capacity = capacity;
@@ -142,12 +142,14 @@ static _Bool memo_equalv(ScmObj *keys, int nkeys, ScmAtomicVar *entry_keys)
  * lookup
  */
 
+/* Returns #<unbound> if entry not found.
+   Be careful not to leak it to Scheme. */
 ScmObj Scm_MemoTableGetv(ScmMemoTable *tab, ScmObj *keys, int nkeys)
 {
     int rest_keys;
     int fixed_keys = get_numkeys(tab->num_keys, &rest_keys);
     if (fixed_keys+rest_keys != nkeys) return SCM_UNBOUND;
-    u_long hashv = memo_hashv(keys, nkeys);
+    u_long hashv = memo_hashv(keys, tab->num_keys);
     ScmAtomicWord hashv_hdr = (ScmAtomicWord)((hashv<<1)+1);
 
     /* storage pointer may be swapped by another thread, but we're going to
@@ -173,38 +175,23 @@ ScmObj Scm_MemoTableGetv(ScmMemoTable *tab, ScmObj *keys, int nkeys)
     return SCM_UNBOUND;
 }
 
-#if 0
 ScmObj Scm_MemoTableGet(ScmMemoTable *tab, ScmObj keys)
 {
-    ScmMemoTableStorage *st;
-    u_long hashv = memo_hashl(keys);
-    ScmAtomicWord hashv_hdr = (ScmAtomicWord)((hashv<<1)+1);
+    int rest_keys;
+    int fixed_keys = get_numkeys(tab->num_keys, &rest_keys);
+    ScmSmallInt given_keys = Scm_Length(keys);
+    if ((!rest_keys && given_keys != fixed_keys)
+        || (rest_keys && given_keys < fixed_keys)) return SCM_UNBOUND;
 
-    /* storage pointer may be swapped by another thread, but we're going to
-       operate on the current snapshot.*/
-    st = tab->storage;
-
-    u_long k = hashv % st->capacity;
-    for (u_long i = 0; i < st->capacity % 2; i++) {
-        if (k >= st->capacity) k = 0;
-        u_long idx = k * tab->entry_size;
-        ScmAtomicWord entry_hdr;
-        entry_hdr = AO_load(&st->vec[idx]);
-        if (entry_hdr == 0) return SCM_UNBOUND; /* not found */
-        if ((entry_hdr & 0x01) == 0
-            || entry_hdr != hashv_hdr) {
-            /* the entry is invalid, someone's working on it,
-               or it is with other hash value. */
-            continue;
-        }
-        if (memo_equalv(keys, nkeys, &st->vec[idx+1])) {
-            /* found */
-            return SCM_OBJ(st->vec[idx + nkeys + 1]);
-        }
+    ScmObj keyv[fixed_keys+rest_keys];
+    for (int i=0; i<fixed_keys; i++) {
+        keyv[i] = SCM_CAR(keys);
+        keys = SCM_CDR(keys);
     }
-    return SCM_UNBOUND;
+    if (rest_keys) keyv[fixed_keys] = keys;
+
+    return Scm_MemoTableGetv(tab, keyv, fixed_keys+rest_keys);
 }
-#endif
 
 /*
  * insert
@@ -215,13 +202,11 @@ ScmObj Scm_MemoTablePutv(ScmMemoTable *tab, ScmObj *keys, int nkeys, ScmObj val)
     int rest_keys;
     int fixed_keys = get_numkeys(tab->num_keys, &rest_keys);
     if (nkeys != fixed_keys+rest_keys) return SCM_FALSE;
-    u_long hashv = memo_hashv(keys, nkeys);
+    u_long hashv = memo_hashv(keys, tab->num_keys);
     ScmAtomicWord hashv_hdr = (ScmAtomicWord)((hashv<<1)+1);
 
     ScmMemoTableStorage *st = tab->storage;
     ScmVM *self = Scm_VM();
-
-    Scm_Printf(SCM_CURERR, "hashv_hdr = %lu\n", hashv_hdr);
 
     for (u_long i = 0; i < st->capacity / 2; i++) {
         u_long k = (hashv+i) % st->capacity;
@@ -252,18 +237,34 @@ ScmObj Scm_MemoTablePutv(ScmMemoTable *tab, ScmObj *keys, int nkeys, ScmObj val)
             || entry_hdr != hashv_hdr) {
             /* the entry is invalid, someone's working on it,
                or it is with other hash value. */
-            Scm_Printf(SCM_CURERR, "dabom idx=%d\n", idx);
             continue;
         }
         if (memo_equalv(keys, nkeys, &st->vec[idx+1])) {
             /* We already have the entry.*/
-            Scm_Printf(SCM_CURERR, "gotcha idx=%d\n", idx);
             return SCM_TRUE;
         }
     }
     /* Table is too crowded. */
     /* TODO: Extend the table if !SCM_MEMO_TABLE_FIXED */
     return SCM_FALSE;
+}
+
+ScmObj Scm_MemoTablePut(ScmMemoTable *tab, ScmObj keys, ScmObj val)
+{
+    int rest_keys;
+    int fixed_keys = get_numkeys(tab->num_keys, &rest_keys);
+    ScmSmallInt given_keys = Scm_Length(keys);
+    if ((!rest_keys && given_keys != fixed_keys)
+        || (rest_keys && given_keys < fixed_keys)) return SCM_UNBOUND;
+
+    ScmObj keyv[fixed_keys+rest_keys];
+    for (int i=0; i<fixed_keys; i++) {
+        keyv[i] = SCM_CAR(keys);
+        keys = SCM_CDR(keys);
+    }
+    if (rest_keys) keyv[fixed_keys] = keys;
+
+    return Scm_MemoTablePutv(tab, keyv, fixed_keys+rest_keys, val);
 }
 
 /*
