@@ -175,7 +175,7 @@
  */
 
 enum {
-    SCM_MEMO_TABLE_WEAK = (1L<<0),    /* use weak table */
+    SCM_MEMO_TABLE_WEAK = (1L<<0),    /* use weak table  (not suppored yet) */
     SCM_MEMO_TABLE_FIXED = (1L<<1)    /* don't allow expansion */
 };
 
