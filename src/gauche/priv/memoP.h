@@ -146,8 +146,15 @@
      there's no race.
 
    - Key becomes 0 - The entry become invalid, for it will never match
-     valid keys.  To accelerate probing, whoever finds such entry sets
-     its hashval field to #b10, so that next probing can easily skip it.
+     valid keys.
+
+   When these conditions are found during traversal, we set the value to 0
+   and the entry header to 0x10, in this order.
+
+    - Setting value to 0 makes other threads that are reading keys
+      recognize the entry is invalid.
+    - Setting the header to 0x10 let future readers know this entry is
+      invalid immediatly.
 
   Table GC/expansion
 
@@ -175,8 +182,8 @@
  */
 
 enum {
-    SCM_MEMO_TABLE_WEAK = (1L<<0),    /* use weak table  (not suppored yet) */
-    SCM_MEMO_TABLE_FIXED = (1L<<1)    /* don't allow expansion */
+    SCM_MEMO_TABLE_WEAK = (1L<<0),    /* use weak table (not suppored yet) */
+    SCM_MEMO_TABLE_FIXED = (1L<<1)    /* don't allow expansion (not supported yet) */
 };
 
 typedef struct ScmMemoTableStorageRec {
