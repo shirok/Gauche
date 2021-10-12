@@ -482,14 +482,14 @@ static void test_paths_setup(char **av)
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(libsrcdir)), FALSE);
         Scm_AddLoadPath(Scm_GetStringConst(SCM_STRING(libdir)), FALSE);
     } else if (access("../src/gauche/config.h", R_OK) == 0
-        && access("../libsrc/srfi-1.scm", R_OK) == 0
+        && access("../libsrc/scheme/list.scm", R_OK) == 0
         && access("../lib/r7rs-setup.scm", R_OK) == 0) {
         test_ld_path_setup(av, "../src");
         Scm_AddLoadPath("../src", FALSE);
         Scm_AddLoadPath("../libsrc", FALSE);
         Scm_AddLoadPath("../lib", FALSE);
     } else if (access("../../src/gauche/config.h", R_OK) == 0
-               && access("../../libsrc/srfi-1.scm", R_OK) == 0
+               && access("../../libsrc/scheme/list.scm", R_OK) == 0
                && access("../../lib/r7rs-setup.scm", R_OK) == 0) {
         test_ld_path_setup(av, "../../src");
         Scm_AddLoadPath("../../src", FALSE);
