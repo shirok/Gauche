@@ -51,7 +51,7 @@ more than one results, you have to use `Scm_Apply`:
 [source,c]
 ----
     ScmEvalPacket packet;
-    int nargs = Scm_Apply(x_proc, args, &packet);
+    int nresults = Scm_Apply(x_proc, args, &packet);
 ----
 
 `Scm_Apply` always returns even the Scheme routine throws an error.
