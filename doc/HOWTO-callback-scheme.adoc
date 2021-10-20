@@ -1,4 +1,6 @@
-# Calling Scheme procedure from C code
+= Calling Scheme procedure from C code
+
+== A quick starter
 
 A typical code to call a Scheme procedure from C looks like the following.
 (We assume you want to call a Scheme procedure `my-procedure` in
@@ -43,6 +45,8 @@ frame that are waiting to catch the error.   If your code is
 called from Gauche runtime, there's a Scheme VM running outside of
 your routine that calls you---so the Scheme VM will handle the error.
 
+== Capturing error
+
 If you need to stop the error (either for resource handling or
 there's no VM running outside of your routine), or you need to receive
 more than one results, you have to use `Scm_Apply`:
@@ -50,6 +54,11 @@ more than one results, you have to use `Scm_Apply`:
 
 [source,c]
 ----
+    ...
+    static ScmObj x_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(x_proc, "my-procedure",
+                  Scm_FindModule(SCM_SYMBOL(SCM_INTERN("my-module")), 0));
+    ...
     ScmEvalPacket packet;
     int nresults = Scm_Apply(x_proc, args, &packet);
 ----
@@ -68,11 +77,152 @@ typedef struct ScmEvalPacketRec {
 } ScmEvalPacket;
 ----
 
-Another caveat of `Scm_ApplyRec` and `Scm_Apply` is that they implicitly
-inserts `reset` to call the Scheme routine---that is, if the Scheme
-routine captures a continuation, the continuation chain is delimited
-by the frame where you call `Scm_ApplyRec` or `Scm_Apply`.  It is inevitable,
-for C routine isn't expect a procedure returns more than once.
+If the return value is nonnegative, `results[]` contains the return
+value(s) of the procedure call.  If the return value is negative,
+`exception` contains the exception thrown during the procedure call.
 
-To make your C code transparent with continuations, you have to employ
-a technique we call "C continuation".  We'll add explanation later.
+== Continuation-safety
+
+Scheme procedures can return more than once, but C doesn't expect
+its functions to return one than once.  So we have a checkpoint
+at the Scheme-C boundary, and if a Scheme function tries to return
+to C function in second time and later, it throws an error.  Typically,
+when such error occurs, we already finished executing the caller function
+(in C), so even `Scm_Apply` can't capture it.  Such error is generally
+handled by the Gauche VM.
+
+If you're implementing a C function to be called from Scheme program,
+which in turn needs to call back to Scheme (think, for example,
+you're writing `map`-like function in C), this limitation is too restricting.
+
+Suppose you have a C function which is callable from Scheme, and it
+takes a callback argument you need to call within the C function:
+
+[source,c]
+----
+ScmObj func(ScmObj callback)
+{
+    ....
+    ScmObj args = ...
+
+    ScmObj r = Scm_ApplyRec(callback, args);
+    ....
+
+    return something;
+}
+----
+
+If a continuation is captured during calling `callback`, and it is
+re-invoked after `Scm_ApplyRec` returns, _and_ `callback` tries
+to return to the C world the second time, an error is thrown.
+(Note that it is ok that the continuation is re-invoked after
+`Scm_ApplyRec` returns, as far as the control transfers out before
+returning from `callback` again.)
+
+To allow `callback` to return more than once, you need to split
+`func` into two parts.
+
+[source,c]
+----
+static ScmObj func_cc(ScmObj result, void **data);
+
+/* The first half */
+ScmObj func(ScmObj callback)
+{
+    ScmObj args = ...
+    ....
+    Scm_VMPushCC(func_cc, NULL, 0);
+    return Scm_VMApply(callback, args);
+}
+
+
+/* The latter half.  The result argument holds the return value
+   of callback. */
+ScmObj func_cc(ScmObj result, void **data)
+{
+    ...
+    return something;
+}
+----
+
+You see the C function `func` is splitted to two parts, one
+before calling `callback` and another after calling `callback`.
+The call `Scm_VMPushCC` arranges that the latter half `func_cc` to
+be called after `callback` returns.  `Scm_VMApply` arranges
+`callback` to be called after `func` returns to VM.
+
+You should treat what `Scm_VMApply` returns as an opaque object.
+It is important that the value will be returned to the Gauche VM.
+What `Scm_VMApply` and `Scm_VMPushCC` do is to set up the VM state
+so that `callback` and `func_cc` will be called.  If you do something
+to change the VM state between returning `Scm_VMApply` and the VM takes back
+control, unexpected things cna happen.
+
+If you call `callback` in this way, and a continuation is captured
+within `callback`, it does not involve C calling stack, so that the
+`callback` can return as many times as it wish.  It's simply that
+`func_cc` will be called more than once.
+
+What if you need to retain a local variable across the call of
+`callback`?
+
+[source,c]
+----
+ScmObj func(ScmObj callback)
+{
+    ....
+    ScmObj args = ...
+    ScmObj some_var = ...
+    ....
+    ScmObj r = Scm_ApplyRec(callback, args);
+    ....
+    do_something_with(some_var);
+    ....
+    return something;
+}
+----
+
+You can pass a small number of variables via `void **data` array.
+
+[source,c]
+----
+static ScmObj func_cc(ScmObj result, void **data);
+
+/* The first half */
+ScmObj func(ScmObj callback)
+{
+    ScmObj args = ...
+    ScmObj some_var = ...
+    ....
+    void *data[1];
+    data[0] = some_var;
+    Scm_VMPushCC(func_cc, data, 1);
+    return Scm_VMApply(callback, args);
+}
+
+
+/* The latter half.  The result argument holds the return value
+   of callback. */
+ScmObj func_cc(ScmObj result, void **data)
+{
+    ScmObj some_var = SCM_OBJ(data[0]);
+    ....
+    do_something_with(some_var);
+    ...
+    return something;
+}
+----
+
+Here, the content of data array passed to `Scm_VMPushCC` is carried
+over to the `data` argument of `func_cc`.  The array itself is copied
+into the area managed by Gauche VM, so the `data` variable in `func` can
+be local.  The `data` varaiable in `func_cc` is valid only until Gauche
+VM state changes, so it is better to extract its content before calling
+any Gauche API.
+
+The maximum size of the data array is `SCM_CCONT_DATA_SIZE`, which is
+at least 6.  If yuo need to retain more local state, you should allocate
+a struct by `SCM_NEW` and pass its pointer via `data`.
+Be aware that `func_cc` can be called more than once   You shouldn't
+dealloate resources explicitly in `func_cc`, but leave that work
+to the garbage collector.
