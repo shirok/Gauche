@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Maintenance script
-# 
+#
 set -e
 
 usage () {
@@ -108,9 +108,9 @@ do_self_host_test () {
     destdir=`pwd`/../Gauche-tmp-self-host-test
     # mingw doesn't seem to like parallel make
     if [ x$MSYSTEM = x ]; then
-	makeopt=-j
+        makeopt=-j
     else
-	makeopt=
+        makeopt=
     fi
     makeopt_1="$makeopt BUILD_GOSH_FLAGS=$BUILD_GOSH_FLAGS"
     if [ -d $destdir/stage1 ]; then rm -rf $destdir; fi
@@ -118,7 +118,7 @@ do_self_host_test () {
     mkdir -p $destdir/stage1
     (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt_1; make install && make -s install-check)
     mkdir -p $destdir/stage2
-    (cd $destdir/stage2; PATH=$XPATH $srcdir/configure; PATH=$XPATH make $makeopt; PATH=$XPATH make -s check)
+    (cd $destdir/stage2; PATH=$XPATH $srcdir/configure --prefix=$destdir; PATH=$XPATH make $makeopt; PATH=$XPATH make -s check && make install && make -s install-check)
 }
 
 case $1 in
