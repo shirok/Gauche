@@ -517,8 +517,8 @@ some_trick();
     ($ test-with-temporary-directory "test.o"
        (^[]
          ($ test*/diff #"stub-output ~name"
-            `(content-of ,(build-path (sys-dirname (current-load-path))
-                                      "data" "cgen" name))
+            ;; relative to this file
+            `(content-of ,(build-path "data" "cgen" name))
             (let* ([out (build-path "test.o" name)]
                    [out.stub (path-swap-extension out "stub")]
                    [out.c (path-swap-extension out "c")])
