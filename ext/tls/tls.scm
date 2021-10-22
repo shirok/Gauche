@@ -111,8 +111,10 @@
  (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
  (define-cproc %tls-destroy (tls::<tls>) Scm_TLSDestroy)
- (define-cproc %tls-connect (tls::<tls> sock fd::<long>) Scm_TLSConnect)
- (define-cproc %tls-accept (tls::<tls> sock fd::<long>) Scm_TLSAccept)
+ (define-cproc %tls-connect-with-socket (tls::<tls> sock fd::<long>)
+   Scm_TLSConnectWithSocket)
+ (define-cproc %tls-accept-with-socket (tls::<tls> sock fd::<long>)
+   Scm_TLSAcceptWithSocket)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
  (define-cproc tls-read (tls::<tls>) Scm_TLSRead)
  (define-cproc tls-write (tls::<tls> msg) Scm_TLSWrite)
@@ -129,14 +131,14 @@
 
 ;; API
 (define (tls-connect tls sock)
-  (%tls-connect tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
+  (%tls-connect-with-socket tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)
 
 ;; API
 (define (tls-accept tls sock)
-  (%tls-accept tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
+  (%tls-accept-with-socket tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)

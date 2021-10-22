@@ -106,8 +106,8 @@ struct ScmTLSRec {
     ScmObj in_port;
     ScmObj out_port;
 
-    ScmObj (*connect)(ScmTLS*, int);
-    ScmObj (*accept)(ScmTLS*, int);
+    ScmObj (*connectSock)(ScmTLS*, int);
+    ScmObj (*acceptSock)(ScmTLS*, int);
     ScmObj (*read)(ScmTLS*);
     ScmObj (*write)(ScmTLS*, ScmObj);
     ScmObj (*close)(ScmTLS*);
@@ -132,8 +132,8 @@ extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                                 const char *filename,
                                 const char *password);
-extern ScmObj Scm_TLSConnect(ScmTLS* t, ScmObj sock, int fd);
-extern ScmObj Scm_TLSAccept(ScmTLS* t, ScmObj sock, int fd);
+extern ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd);
+extern ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
 extern ScmObj Scm_TLSSocket(ScmTLS *t);
 

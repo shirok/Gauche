@@ -121,16 +121,16 @@ ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
     return t->loadObject(t, obj_type, filename, password);
 }
 
-ScmObj Scm_TLSConnect(ScmTLS* t, ScmObj sock, int fd)
+ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd)
 {
     t->sock = sock;
-    return t->connect(t, fd);
+    return t->connectSock(t, fd);
 }
 
-ScmObj Scm_TLSAccept(ScmTLS* t, ScmObj sock, int fd)
+ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd)
 {
     t->sock = sock;
-    return t->accept(t, fd);
+    return t->acceptSock(t, fd);
 }
 
 ScmObj Scm_TLSRead(ScmTLS* t)
@@ -498,8 +498,8 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_FALSE;
 
-    t->common.connect = ax_connect;
-    t->common.accept = ax_accept;
+    t->common.connectSock = ax_connect;
+    t->common.acceptSock = ax_accept;
     t->common.read = ax_read;
     t->common.write = ax_write;
     t->common.close = ax_close;
