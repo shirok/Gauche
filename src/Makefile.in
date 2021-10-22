@@ -494,11 +494,11 @@ test-arith$(EXEEXT) : test-arith.$(OBJEXT) $(LIBGAUCHE).$(SOEXT)
 test-arith.$(OBJEXT) : gauche/priv/arith.h
 
 install-check :
-	@rm -rf test.log
+	@echo "Install check :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::" >> test.log
 	@for f in `cat ../test/TESTS ../test/TESTS2`; do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	  "${bindir}/gosh" ../test/$$f install-check; \
+	  "${bindir}/gosh" ../test/$$f install-check >> test.log; \
 	done
 
 # clean ------------------------------------------------
