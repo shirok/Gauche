@@ -315,8 +315,8 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
-    t->common.connect = mbed_connect;
-    t->common.accept = mbed_accept;
+    t->common.connectSock = mbed_connect;
+    t->common.acceptSock = mbed_accept;
     t->common.read = mbed_read;
     t->common.write = mbed_write;
     t->common.close = mbed_close;
