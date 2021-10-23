@@ -109,22 +109,9 @@ static void mbed_close_check(ScmMbedTLS* t, const char *op)
     if (t->conn.fd < 0) Scm_Error("attempt to %s closed TLS: %S", op, t);
 }
 
-static ScmObj mbed_connect(ScmTLS* tls, int fd)
+
+static ScmObj mbed_connect_common(ScmMbedTLS *t)
 {
-    ScmMbedTLS* t = (ScmMbedTLS*)tls;
-
-    mbed_context_check(t, "connect");
-    const char* pers = "Gauche";
-    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-                             (const unsigned char *)pers, strlen(pers)) != 0) {
-        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
-    }
-
-    if (t->conn.fd >= 0) {
-        Scm_Error("attempt to connect already-connected TLS %S", t);
-    }
-    t->conn.fd = fd;
-
     if (mbedtls_ssl_config_defaults(&t->conf,
                                     MBEDTLS_SSL_IS_CLIENT,
                                     MBEDTLS_SSL_TRANSPORT_STREAM,
@@ -175,6 +162,30 @@ static ScmObj mbed_connect(ScmTLS* tls, int fd)
     return SCM_OBJ(t);
 }
 
+static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
+                           int proto)
+{
+    ScmMbedTLS* t = (ScmMbedTLS*)tls;
+
+    mbed_context_check(t, "connect");
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+                             (const unsigned char *)pers, strlen(pers)) != 0) {
+        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
+    int mbedtls_proto = MBEDTLS_NET_PROTO_TCP;
+    if (proto == SCM_TLS_PROTO_UDP) {
+        mbedtls_proto = MBEDTLS_NET_PROTO_UDP;
+    }
+
+    int r = mbedtls_net_connect(&t->conn, host, port, mbedtls_proto);
+    if (r != 0) {
+        Scm_Error("mbedtls_net_connect() failed (%d)", r);
+    }
+    return mbed_connect_common(t);
+}
+
 static ScmObj mbed_accept(ScmTLS* tls, int fd)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
@@ -219,6 +230,24 @@ static ScmObj mbed_accept(ScmTLS* tls, int fd)
         Scm_Error("TLS handshake failed: %d", r);
     }
     return SCM_OBJ(t);
+}
+
+static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
+{
+    ScmMbedTLS* t = (ScmMbedTLS*)tls;
+
+    mbed_context_check(t, "connect");
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+                             (const unsigned char *)pers, strlen(pers)) != 0) {
+        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
+    if (t->conn.fd >= 0) {
+        Scm_Error("attempt to connect already-connected TLS %S", t);
+    }
+    t->conn.fd = fd;
+    return mbed_connect_common(t);
 }
 
 static ScmObj mbed_read(ScmTLS* tls)
@@ -315,7 +344,8 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
-    t->common.connectSock = mbed_connect;
+    t->common.connect = mbed_connect;
+    t->common.connectSock = mbed_connect_with_socket;
     t->common.acceptSock = mbed_accept;
     t->common.read = mbed_read;
     t->common.write = mbed_write;

@@ -94,6 +94,12 @@
 #define SSL_OBJ_PKCS12                          5
 #endif
 
+/* 'proto' parameter */
+enum {
+    SCM_TLS_PROTO_TCP,
+    SCM_TLS_PROTO_UDP
+};
+
 SCM_DECL_BEGIN
 
 /* Common structure */
@@ -106,7 +112,10 @@ struct ScmTLSRec {
     ScmObj in_port;
     ScmObj out_port;
 
+    ScmObj (*connect)(ScmTLS*, const char*, const char*, int);
     ScmObj (*connectSock)(ScmTLS*, int);
+    ScmObj (*bind)(ScmTLS*, const char*, const char*, int);
+    ScmObj (*accept)(ScmTLS*);
     ScmObj (*acceptSock)(ScmTLS*, int);
     ScmObj (*read)(ScmTLS*);
     ScmObj (*write)(ScmTLS*, ScmObj);
@@ -132,12 +141,23 @@ extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                                 const char *filename,
                                 const char *password);
+extern ScmObj Scm_TLSConnect(ScmTLS *t,
+                             const char *host,
+                             const char *port, /* numeric or service name */
+                             int proto);
 extern ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd);
+extern ScmObj Scm_TLSBind(ScmTLS *t,
+                          const char *ip,
+                          const char *port, /* numeric or service name */
+                          int proto);
+extern ScmObj Scm_TLSAccept(ScmTLS *t); /* returns connected <tls> */
 extern ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
 extern ScmObj Scm_TLSSocket(ScmTLS *t);
 
 extern int    Scm_TLSSystemCABundleAvailable(void);
+
+
 
 /*
    KZ: presumably due to block sizes imposed by the crypto algorithms
