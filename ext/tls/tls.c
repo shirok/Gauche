@@ -375,7 +375,7 @@ static void ax_close_check(ScmAxTLS* t, const char *op)
     if (!t->conn) Scm_Error("attempt to %s closed TLS: %S", op, t);
 }
 
-static ScmObj ax_connect(ScmTLS* tls, int fd)
+static ScmObj ax_connect_with_socket(ScmTLS* tls, int fd)
 {
     ScmAxTLS *t = (ScmAxTLS*)tls;
     ax_context_check(t, "connect");
@@ -415,6 +415,56 @@ static ScmObj ax_connect(ScmTLS* tls, int fd)
         Scm_Error("TLS handshake failed. Possibly no supported ciphers. (code=%d)", r);
     }
     return SCM_OBJ(t);
+}
+
+static ScmObj ax_connect(ScmTLS* tls, const char *host, const char *port,
+                         int proto)
+{
+    /* We can't call Scm_GetAddrinfo(), for it's in ext/net and separately
+       dynloaded. */
+    struct addrinfo hints, *addrs;
+    hints.ai_family = AF_UNSPEC;
+    switch (proto) {
+    case SCM_TLS_PROTO_TCP:
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = IPPROTO_TCP;
+        break;
+    case SCM_TLS_PROTO_UDP:
+        hints.ai_socktype = SOCK_DGRAM;
+        hints.ai_protocol = IPPROTO_UDP;
+        break;
+    default:
+        Scm_Error("Bad value for proto: %d", proto);
+    }
+
+    int r = getaddrinfo(host, port, &hints, &addrs);
+#if !defined(GAUCHE_WINDOWS)
+    if (r) {
+        if (r == EAI_SYSTEM) {
+            Scm_SysError("getaddrinfo failed: %s", gai_strerror(r));
+        } else {
+            Scm_Error("getaddrinfo failed: %s", gai_strerror(r));
+        }
+    }
+#else  /*GAUCHE_WINDOWS*/
+    if (r) Scm_SysError("getaddrinfo failed");
+#endif /*GAUCHE_WINDOWS*/
+
+    int fd = -1;
+    for (struct addrinfo *a = addrs; a != NULL; a = a->ai_next) {
+        fd = (int)socket(a->ai_family, a->ai_socktype, a->ai_protocol);
+        if (fd < 0) continue;
+        if (connect(fd, a->ai_addr, a->ai_addrlen) == 0) {
+            break;
+        } else {
+            close(fd);
+        }
+    }
+    freeaddrinfo(addrs);
+    if (fd < 0) {
+        Scm_Error("Connection failed to %s:%s", host, port);
+    }
+    return ax_connect_with_socket(tls, fd);
 }
 
 static ScmObj ax_accept(ScmTLS* tls, int fd)
@@ -516,7 +566,8 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_FALSE;
 
-    t->common.connectSock = ax_connect;
+    t->common.connect = ax_connect;
+    t->common.connectSock = ax_connect_with_socket;
     t->common.acceptSock = ax_accept;
     t->common.read = ax_read;
     t->common.write = ax_write;
