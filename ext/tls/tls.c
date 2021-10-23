@@ -423,6 +423,7 @@ static ScmObj ax_connect(ScmTLS* tls, const char *host, const char *port,
     /* We can't call Scm_GetAddrinfo(), for it's in ext/net and separately
        dynloaded. */
     struct addrinfo hints, *addrs;
+    memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     switch (proto) {
     case SCM_TLS_PROTO_TCP:

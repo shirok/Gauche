@@ -37,6 +37,7 @@
   (use gauche.vport)
   (use gauche.connection)
   (use gauche.net)
+  (use util.match)
   (export <tls> make-tls tls-destroy tls-connect tls-accept tls-close
           tls-load-object tls-read tls-write
           tls-input-port tls-output-port
@@ -111,6 +112,11 @@
  (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
  (define-cproc %tls-destroy (tls::<tls>) Scm_TLSDestroy)
+ (define-cproc %tls-connect (tls::<tls>
+                             host::<const-cstring>
+                             port::<const-cstring>
+                             proto)
+   Scm_TLSConnect)
  (define-cproc %tls-connect-with-socket (tls::<tls> sock fd::<long>)
    Scm_TLSConnectWithSocket)
  (define-cproc %tls-accept-with-socket (tls::<tls> sock fd::<long>)
@@ -130,8 +136,13 @@
  )
 
 ;; API
-(define (tls-connect tls sock)
-  (%tls-connect-with-socket tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
+(define (tls-connect tls . args)
+  (match args
+    [((? (cut is-a? <> <socket>) sock))
+     (%tls-connect-with-socket tls sock (socket-fd sock))]
+    [(host port proto)
+     (%tls-connect tls host port proto)]
+    [else (error "Invalid arguments:" (cons tls args))])
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)
