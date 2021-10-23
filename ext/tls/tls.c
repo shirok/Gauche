@@ -78,6 +78,8 @@ static ScmPrimitiveParameter *ca_bundle_path;
 static ScmPrimitiveParameter *default_tls_class;
 static ScmObj s_system;
 static ScmObj s_check;
+static ScmObj s_tcp;
+static ScmObj s_udp;
 static ScmObj k_options;
 static ScmObj k_num_sessions;
 #if defined(GAUCHE_USE_AXTLS)
@@ -119,6 +121,20 @@ ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                          const char *filename, const char *password)
 {
     return t->loadObject(t, obj_type, filename, password);
+}
+
+static int parse_proto(ScmObj proto)
+{
+    if (SCM_EQ(proto, s_tcp)) return SCM_TLS_PROTO_TCP;
+    if (SCM_EQ(proto, s_udp)) return SCM_TLS_PROTO_UDP;
+    Scm_Error("proto must be either 'tcp or 'udp, but got: %S", proto);
+    return 0;                   /* dummy */
+}
+
+ScmObj Scm_TLSConnect(ScmTLS *t, const char *host, const char *port,
+                      ScmObj proto) /* symbol */
+{
+    return t->connect(t, host, port, parse_proto(proto));
 }
 
 ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd)
@@ -224,6 +240,8 @@ void Scm_Init_tls(ScmModule *mod)
 
     s_system = SCM_INTERN("system");
     s_check = SCM_INTERN("check");
+    s_tcp = SCM_INTERN("tcp");
+    s_udp = SCM_INTERN("udp");
 
     /* Set default-tls-class to be lazy (see tls.scm for the reason) */
     default_tls_class =

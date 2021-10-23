@@ -143,8 +143,8 @@ extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
                                 const char *password);
 extern ScmObj Scm_TLSConnect(ScmTLS *t,
                              const char *host,
-                             const char *port, /* numeric or service name */
-                             int proto);
+                             const char *port, /* number or service name */
+                             ScmObj proto);
 extern ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSBind(ScmTLS *t,
                           const char *ip,
