@@ -1037,10 +1037,6 @@ void SHA256_Internal_Last(SHA_CTX* context) {
         unsigned int	usedspace;
 
         usedspace = (context->s256.bitcount >> 3) % 64;
-#if BYTE_ORDER == LITTLE_ENDIAN
-        /* Convert FROM host byte order */
-        REVERSE64(context->s256.bitcount,context->s256.bitcount);
-#endif
         if (usedspace > 0) {
                 /* Begin padding with a 1 bit: */
                 context->s256.buffer[usedspace++] = 0x80;
@@ -1068,8 +1064,16 @@ void SHA256_Internal_Last(SHA_CTX* context) {
                 *context->s256.buffer = 0x80;
         }
         /* Set the bit count: */
-        void *buf56 = &context->s256.buffer[56];
-        *(sha_word64*)buf56 = context->s256.bitcount;
+        /* [SK] see the above comment in SHA1_Final */
+        sha_byte *buf56 = &context->s256.buffer[56];
+        buf56[7] = context->s256.bitcount & 0xff;
+        buf56[6] = (context->s256.bitcount >> 8) & 0xff;
+        buf56[5] = (context->s256.bitcount >> 16) & 0xff;
+        buf56[4] = (context->s256.bitcount >> 24) & 0xff;
+        buf56[3] = (context->s256.bitcount >> 32) & 0xff;
+        buf56[2] = (context->s256.bitcount >> 40) & 0xff;
+        buf56[1] = (context->s256.bitcount >> 48) & 0xff;
+        buf56[0] = (context->s256.bitcount >> 56) & 0xff;
 
         /* Final transform: */
         SHA256_Internal_Transform(context, (sha_word32*)context->s256.buffer);
@@ -1445,11 +1449,6 @@ void SHA512_Internal_Last(SHA_CTX* context) {
         unsigned int	usedspace;
 
         usedspace = (context->s512.bitcount[0] >> 3) % 128;
-#if BYTE_ORDER == LITTLE_ENDIAN
-        /* Convert FROM host byte order */
-        REVERSE64(context->s512.bitcount[0],context->s512.bitcount[0]);
-        REVERSE64(context->s512.bitcount[1],context->s512.bitcount[1]);
-#endif
         if (usedspace > 0) {
                 /* Begin padding with a 1 bit: */
                 context->s512.buffer[usedspace++] = 0x80;
@@ -1477,10 +1476,25 @@ void SHA512_Internal_Last(SHA_CTX* context) {
                 *context->s512.buffer = 0x80;
         }
         /* Store the length of input data (in bits): */
-        void *buf112 = &context->s512.buffer[112];
-        *(sha_word64*)buf112 = context->s512.bitcount[1];
-        void *buf120 = &context->s512.buffer[120];
-        *(sha_word64*)buf120 = context->s512.bitcount[0];
+        /* [SK] see the above comment in SHA1_Final */
+        sha_byte *buf112 = &context->s512.buffer[112];
+        buf112[7] = context->s512.bitcount[1] & 0xff;
+        buf112[6] = (context->s512.bitcount[1] >> 8) & 0xff;
+        buf112[5] = (context->s512.bitcount[1] >> 16) & 0xff;
+        buf112[4] = (context->s512.bitcount[1] >> 24) & 0xff;
+        buf112[3] = (context->s512.bitcount[1] >> 32) & 0xff;
+        buf112[2] = (context->s512.bitcount[1] >> 40) & 0xff;
+        buf112[1] = (context->s512.bitcount[1] >> 48) & 0xff;
+        buf112[0] = (context->s512.bitcount[1] >> 56) & 0xff;
+        sha_byte *buf120 = &context->s512.buffer[120];
+        buf120[7] = context->s512.bitcount[0] & 0xff;
+        buf120[6] = (context->s512.bitcount[0] >> 8) & 0xff;
+        buf120[5] = (context->s512.bitcount[0] >> 16) & 0xff;
+        buf120[4] = (context->s512.bitcount[0] >> 24) & 0xff;
+        buf120[3] = (context->s512.bitcount[0] >> 32) & 0xff;
+        buf120[2] = (context->s512.bitcount[0] >> 40) & 0xff;
+        buf120[1] = (context->s512.bitcount[0] >> 48) & 0xff;
+        buf120[0] = (context->s512.bitcount[0] >> 56) & 0xff;
 
         /* Final transform: */
         SHA512_Internal_Transform(context, (sha_word64*)context->s512.buffer);
