@@ -53,6 +53,9 @@
     "/usr/local/etc/openssl/cert.pem"     /* osx homebrew openssl */
 
 #if defined(GAUCHE_USE_AXTLS)
+#  if defined(GAUCHE_WINDOWS)
+#    include <ws2tcpip.h>
+#  endif /*GAUCHE_WINDOWS*/
 #include "axTLS/ssl/ssl.h"
 #endif  /* GAUCHE_USE_MBEDTLS */
 
