@@ -1,3 +1,9 @@
+2021-10-24  Shiro Kawai  <shiro@acm.org>
+
+	* ext/digest/sha2.c (SHA1_End): Fix strict aliasing violation.
+	  The original code yields incorrect binary with gcc 11.2 when
+	  compiled with -O2.
+
 2021-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/bignumP.h: Make bignum.h private.  It was never

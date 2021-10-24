@@ -730,12 +730,18 @@ void SHA1_Final(sha_byte digest[], SHA_CTX* context) {
                 usedspace = 0;
         }
         /* Set the bit count: */
-#if BYTE_ORDER == LITTLE_ENDIAN
-        /* Convert FROM host byte order */
-        REVERSE64(context->s1.bitcount,context->s1.bitcount);
-#endif
-        void *buf56 = &context->s1.buffer[56];
-        *(sha_word64*)buf56 = context->s1.bitcount;
+        /* [SK] Original code used type punning to set 64bit bitcount into
+           buffer, but that violates the strict aliasing rule and caused
+           unintended code with gcc 11.2. */
+        sha_byte *buf56 = &context->s1.buffer[56];
+        buf56[7] = context->s1.bitcount & 0xff;
+        buf56[6] = (context->s1.bitcount >> 8) & 0xff;
+        buf56[5] = (context->s1.bitcount >> 16) & 0xff;
+        buf56[4] = (context->s1.bitcount >> 24) & 0xff;
+        buf56[3] = (context->s1.bitcount >> 32) & 0xff;
+        buf56[2] = (context->s1.bitcount >> 40) & 0xff;
+        buf56[1] = (context->s1.bitcount >> 48) & 0xff;
+        buf56[0] = (context->s1.bitcount >> 56) & 0xff;
 
         /* Final transform: */
         SHA1_Internal_Transform(context, (sha_word32*)context->s1.buffer);
