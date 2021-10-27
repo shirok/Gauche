@@ -1,5 +1,8 @@
 2021-10-27  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/http.scm: Use new tls-connect interface that lets TLS
+	  module opens the socket.  This allows proper use of mbedTLS.
+
 	* ext/*/Makefile.in: Adjust GENERATED and CONFIG_GENERATED macros
 	  to the src/*.  The 'distcclean' target removes CONFIG_GENERATED
 	  (e.g. Makefile), and 'maintainer-clean' removes GENERATED as well.

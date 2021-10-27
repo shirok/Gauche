@@ -732,28 +732,27 @@
       [#/^([^:]+)(?::(\d+))?$/ (_ host port) (values host port #f)]
       [else (error "Unrecognized http server address:" addr)]))
   (define (connect-socket)
-    (receive (host port path) (parse-address (or (~ conn'proxy) (~ conn'server)))
-      (if path
-        (make-client-socket 'unix path)
-        (make-client-socket host (if port
-                                   (x->integer port)
-                                   (if (~ conn'secure) 443 80))))))
-  (ecase (~ conn'secure)
-    [(#f) (set! (~ conn'socket) (connect-socket))]
-    [(tls)
-     (cond-expand
-      [gauche.net.tls
-       (let1 tls (make-tls :server-name (~ conn'server)
-                           :options (if (tls-ca-bundle-path)
-                                      0
-                                      SSL_SERVER_VERIFY_LATER))
-         (set! (~ conn'socket) (tls-connect tls (connect-socket))))]
-      [else
-       (error "TLS support is not available on this Gauche (you need to recompile Gauche with TLS support on.)")])]
-    [(stunnel)
-     (let* ([rhost      (or (~ conn'proxy) (~ conn'server))]
-            [rhost:port (if (string-index rhost #\:) rhost #"~|rhost|:https")])
-       (set! (~ conn'socket) (make-stunnel-connection rhost:port)))]))
+    (receive (host port path)
+        (parse-address (or (~ conn'proxy) (~ conn'server)))
+      (cond [path (make-client-socket 'unix path)]
+            [(eq? (~ conn'secure) 'tls)
+             (cond-expand
+              [gauche.net.tls
+               (tls-connect (make-tls :server-name (~ conn'server)
+                                      :options (if (tls-ca-bundle-path)
+                                                 0
+                                                 SSL_SERVER_VERIFY_LATER))
+                            host (or port "443") 'tcp)]
+              [else
+               (error "TLS support is not available on this Gauche (you need to recompile Gauche with TLS support on.)")])]
+            [(eq? (~ conn'secure) 'stunnel)
+             (let1 host:port (cond [port #"~|host|:~|port|"]
+                                    [(string-index host #\:) host]
+                                    [else #"~|host|:https"])
+               (make-stunnel-connection host:port))]
+            [else (make-client-socket host (if port (x->integer port) 80))])))
+
+  (set! (~ conn'socket) (connect-socket)))
 
 (define (with-connection conn proc)
   (unwind-protect

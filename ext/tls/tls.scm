@@ -161,12 +161,14 @@
   (when (output-port? (tls-output-port t))
     (close-output-port (tls-output-port t)))
   (%tls-close t)
-  (socket-shutdown (tls-socket t)))
+  (when (is-a? (tls-socket t) <socket>)
+    (socket-shutdown (tls-socket t))))
 
 ;; API
 (define (tls-destroy t)
   (%tls-destroy t)
-  (socket-close (tls-socket t)))
+  (when (is-a? (tls-socket t) <socket>)
+    (socket-close (tls-socket t))))
 
 ;; Internal
 (define-cproc %tls-system-ca-bundle-available? () ::<boolean>
