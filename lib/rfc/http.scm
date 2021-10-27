@@ -49,6 +49,7 @@
   (use rfc.822)
   (use rfc.uri)
   (use rfc.base64)
+  (use rfc.tls)
   (use gauche.net)
   (use gauche.charconv)
   (use gauche.sequence)
@@ -82,11 +83,10 @@
           mime-compose-message-string
           mime-compose-parameters
           mime-parse-content-type)
-(autoload rfc.tls make-tls tls-connect)
 (autoload rfc.http.tunnel probe-stunnel make-stunnel-connection)
 (autoload file.util file-size find-file-in-paths null-device)
 
-;;==============================================================
+;==============================================================
 ;; Conditions
 ;;
 
@@ -741,11 +741,15 @@
   (ecase (~ conn'secure)
     [(#f) (set! (~ conn'socket) (connect-socket))]
     [(tls)
-     (let1 tls (make-tls :server-name (~ conn'server)
-                         :options (if (tls-ca-bundle-path)
-                                    0
-                                    SSL_SERVER_VERIFY_LATER))
-       (set! (~ conn'socket) (tls-connect tls (connect-socket))))]
+     (cond-expand
+      [gauche.net.tls
+       (let1 tls (make-tls :server-name (~ conn'server)
+                           :options (if (tls-ca-bundle-path)
+                                      0
+                                      SSL_SERVER_VERIFY_LATER))
+         (set! (~ conn'socket) (tls-connect tls (connect-socket))))]
+      [else
+       (error "TLS support is not available on this Gauche (you need to recompile Gauche with TLS support on.)")])]
     [(stunnel)
      (let* ([rhost      (or (~ conn'proxy) (~ conn'server))]
             [rhost:port (if (string-index rhost #\:) rhost #"~|rhost|:https")])

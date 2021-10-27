@@ -1,3 +1,12 @@
+2021-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/http (start-connection): When no TLS module is available,
+	  raise an error saying so, rather than letting rfc.tls module
+	  throw an obscure error.
+	  Cf. https://github.com/shirok/Gauche/issues/784
+	  NB: rfc.tls is loaded by cond-expand gauche.net.tls, so we don't
+	  bother to make it autoload.
+
 2021-10-24  Shiro Kawai  <shiro@acm.org>
 
 	* ext/digest/sha2.c (SHA1_End): Fix strict aliasing violation.
