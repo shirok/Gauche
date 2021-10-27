@@ -15,7 +15,8 @@ SCMFILES = list.sci \
 	   charset.sci \
 	   flonum.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = *.c *.sci
 
 OBJECTS = $(list_OBJECTS) $(vector_OBJECTS) $(charset_OBJECTS) $(flonum_OBJECTS)

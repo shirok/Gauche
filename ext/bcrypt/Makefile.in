@@ -9,7 +9,8 @@ include ../Makefile.ext
 LIBFILES = crypt--bcrypt.$(SOEXT)
 SCMFILES = bcrypt.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = crypt--bcrypt.c *.sci
 
 OBJECTS = crypt--bcrypt.$(OBJEXT) \

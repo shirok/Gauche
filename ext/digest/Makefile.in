@@ -9,7 +9,8 @@ SCM_CATEGORY = rfc
 LIBFILES = rfc--md5.$(SOEXT) rfc--sha.$(SOEXT)
 SCMFILES = md5.sci sha1.scm sha.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = rfc--md5.c rfc--sha.c *.sci
 
 all : $(LIBFILES)
@@ -35,4 +36,3 @@ sha.sci rfc--sha.c : sha.scm
 	$(PRECOMP) -e -P -o rfc--sha $(srcdir)/sha.scm
 
 install : install-std
-

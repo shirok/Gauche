@@ -94,14 +94,23 @@ install-check :
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) "${bindir}/gosh" "$(srcdir)/test.scm"; \
 	fi
 
+# Cleaning
+# Files in the following variables will be removed with the targets:
+#
+#                              clean          distclean       maintainer-clean
+#   XCLEANFILES                  x                x                 x
+#   CONFIG_GENERATED                              x                 x
+#   GENERATED                                                       x
+
+
 clean : unlink
 	rm -rf $(CLEANFILES) *.$(OBJEXT) *.$(SOEXT)
 
 distclean : clean
-	rm -rf $(GENERATED)
+	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -rf $(GENERATED)
+	rm -rf $(CONFIG_GENERATED) $(GENERATED)
 
 pre-package : $(PRE_PACKAGE_FILES)
 

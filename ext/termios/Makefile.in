@@ -11,7 +11,8 @@ SCMFILES = termios.sci
 
 OBJECTS = termios.$(OBJEXT) gauche--termios.$(OBJEXT)
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES =  gauche--termios.c termios.sci
 
 all : $(LIBFILES)

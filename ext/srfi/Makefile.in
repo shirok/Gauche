@@ -15,7 +15,8 @@ SCMFILES = srfi-13.sci \
 	   srfi-43.sci \
 	   srfi-178.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = *.c *.sci
 
 OBJECTS = $(srfi_13_OBJECTS) \

@@ -16,7 +16,8 @@ LIBFILES = gauche--uvector.$(SOEXT)
 SCMFILES = array.scm uvector.sci matrix.scm $(GEN_SCMFILES)
 HDRFILES = gauche/uvector.h
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES =  uvlib.scm uvector.c gauche--uvector.c gauche/uvector.h \
 	  uvector.sci $(GEN_SCMFILES)
 

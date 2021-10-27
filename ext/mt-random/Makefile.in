@@ -2,7 +2,8 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = math--mt-random.c mt-random.sci
 
 include ../Makefile.ext

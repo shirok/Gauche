@@ -2,8 +2,9 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-GENERATED = Makefile iconv-adapter.h eucj2ucs.c ucs2eucj.c guess_tab.c \
-	    jconv_tab.h jconv_tab.c latin_tab.h latin_tab.c
+CONFIG_GENERATED = Makefile iconv-adapter.h eucj2ucs.c ucs2eucj.c guess_tab.c \
+		   jconv_tab.h jconv_tab.c latin_tab.h latin_tab.c
+GENERATED =
 XCLEANFILES = convaux.c
 PRE_PACKAGE_FILES = eucj2ucs.c guess_tab.c jconv_tab.h latin_tab.h \
 		    pre-package-data

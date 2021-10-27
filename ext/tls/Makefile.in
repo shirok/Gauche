@@ -65,7 +65,8 @@ MBEDTLS_INTERNAL = $(top_builddir)/tools/tls/include/mbedtls/ssl.h
 @GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no@MBED_DEP =
 
 
-GENERATED = Makefile kick_openssl.sh
+CONFIG_GENERATED = Makefile kick_openssl.sh
+GENERATED =
 XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs
 
 @CROSS_COMPILING_no@all : $(LIBFILES) $(EXTRA_TEST_BIN)

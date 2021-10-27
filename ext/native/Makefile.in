@@ -11,7 +11,8 @@ SCMFILES = ffitest.sci
 
 OBJECTS = gauche--ffitest.$(OBJEXT)
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = gauche--ffitest.c ffitest.sci test/f.$(SOEXT)
 
 all : $(LIBFILES) test/f.$(SOEXT)

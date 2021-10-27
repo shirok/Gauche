@@ -11,7 +11,8 @@ LIBFILES = data--queue.$(SOEXT) \
 	   data--ring-buffer.$(SOEXT)
 SCMFILES = queue.sci trie.sci ring-buffer.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES =  *.c $(SCMFILES)
 
 OBJECTS = $(data_queue_OBJECTS) \

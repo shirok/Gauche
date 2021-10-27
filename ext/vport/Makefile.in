@@ -11,7 +11,8 @@ SCMFILES = vport.scm
 
 OBJECTS = vport.$(OBJEXT)
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = srfi-181-192-test.log
 
 all : $(LIBFILES)

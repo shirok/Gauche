@@ -10,7 +10,8 @@ LIBFILES = @DBM_ARCHFILES@
 SCMFILES = @DBM_SCMFILES@
 OBJECTS  = @DBM_OBJECTS@
 
-GENERATED = Makefile dbmconf.h
+CONFIG_GENERATED = Makefile dbmconf.h
+GENERATED =
 XCLEANFILES = dbm--gdbm.c gdbm.sci \
 	      dbm--ndbm.c ndbm.sci \
 	      dbm--odbm.c odbm.sci \

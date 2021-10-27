@@ -11,7 +11,8 @@ SCMFILES = peg.sci peg/deprecated.scm
 
 OBJECTS = parser--peg.$(OBJEXT)
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = peg.sci *.c
 
 all : $(LIBFILES)
@@ -21,8 +22,7 @@ parser--peg.$(SOEXT) : $(OBJECTS)
 
 parser--peg.c peg.sci : peg.scm
 	$(PRECOMP) -e -P -o parser--peg \
-	           --keep-private-macro=return-failure/compound,return-failure/expect,return-result \
-	           $(srcdir)/peg.scm
+		   --keep-private-macro=return-failure/compound,return-failure/expect,return-result \
+		   $(srcdir)/peg.scm
 
 install : install-std
-

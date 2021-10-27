@@ -13,7 +13,8 @@ LIBFILES = text--console.$(SOEXT) \
 	   text--tr.$(SOEXT)
 SCMFILES = console.sci gap-buffer.sci gettext.sci line-edit.sci tr.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = *.c $(SCMFILES)
 
 OBJECTS = $(text-console_OBJECTS) \

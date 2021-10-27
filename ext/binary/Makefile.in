@@ -9,7 +9,8 @@ include ../Makefile.ext
 LIBFILES = binary--io.$(SOEXT)
 SCMFILES = io.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = binary--io.c io.sci
 
 OBJECTS = binary--io.$(OBJEXT) binary.$(OBJEXT)

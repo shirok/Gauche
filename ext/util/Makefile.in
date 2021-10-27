@@ -9,7 +9,8 @@ include ../Makefile.ext
 LIBFILES = util--match.$(SOEXT)
 SCMFILES = match.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES =  *.c match.sci
 
 OBJECTS = $(util_match_OBJECTS)

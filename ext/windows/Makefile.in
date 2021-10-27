@@ -9,7 +9,8 @@ include ../Makefile.ext
 LIBFILES = os--windows.$(SOEXT)
 SCMFILES = windows.scm windows/console/codepage.scm
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = windows.c console.c
 
 OBJECTS = init.$(OBJEXT) windows.$(OBJEXT) console.$(OBJEXT)

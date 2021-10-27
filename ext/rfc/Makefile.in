@@ -11,7 +11,8 @@ LIBFILES = rfc--mime.$(SOEXT) \
 SCMFILES = mime.sci \
 	   822.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = *.c $(SCMFILES)
 
 all : $(LIBFILES)

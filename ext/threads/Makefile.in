@@ -11,7 +11,8 @@ SCMFILES = threads.sci
 
 OBJECTS = threads.$(OBJEXT) mutex.$(OBJEXT) gauche--threads.$(OBJEXT)
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = gauche--threads.c *.sci
 
 all : $(LIBFILES)

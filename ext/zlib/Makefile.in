@@ -15,7 +15,8 @@ SCMFILES = @ZLIB_SCMFILES@
 
 OBJECTS = @ZLIB_OBJECTS@
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = rfc--zlib.c zlib.sci
 
 all : $(LIBFILES)

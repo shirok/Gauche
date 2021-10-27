@@ -9,7 +9,8 @@ include ../Makefile.ext
 LIBFILES = file--util.$(SOEXT)
 SCMFILES = util.sci
 
-GENERATED = Makefile
+CONFIG_GENERATED = Makefile
+GENERATED =
 XCLEANFILES = *.c util.sci
 
 OBJECTS = file--util.$(OBJEXT)
