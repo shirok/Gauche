@@ -27,7 +27,7 @@ INSTALL_DATA    = @INSTALL_DATA@
 MKINSTDIR       = $(top_srcdir)/mkinstalldirs
 SLIB_DIR        = @SLIB_DIR@
 
-GENERATED       = gauche/vm/insn.scm gauche/config.scm srfi/*
+PREGENERATED    = gauche/vm/insn.scm gauche/config.scm srfi/*
 CONFIG_GENERATED = Makefile
 
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
@@ -205,4 +205,4 @@ distclean: clean
 	rm -f $(CONFIG_GENERATED)
 
 maintainer-clean: clean
-	rm -f $(CONFIG_GENERATED) $(GENERATED)
+	rm -f $(CONFIG_GENERATED) $(PREGENERATED)

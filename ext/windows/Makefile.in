@@ -10,7 +10,7 @@ LIBFILES = os--windows.$(SOEXT)
 SCMFILES = windows.scm windows/console/codepage.scm
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = windows.c console.c
 
 OBJECTS = init.$(OBJEXT) windows.$(OBJEXT) console.$(OBJEXT)

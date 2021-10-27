@@ -10,7 +10,7 @@ LIBFILES = util--match.$(SOEXT)
 SCMFILES = match.sci
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES =  *.c match.sci
 
 OBJECTS = $(util_match_OBJECTS)

@@ -6,6 +6,7 @@
 	  Before this change, a build after distclean caused an error
 	  while building ext/gauche, for unicode-attr.scm is removed by
 	  distclean but not regenerated since src/char_attr.c exists.
+	  Also, renamed GENERATED -> PREGENERATED to avoid confusion.
 
 	* lib/rfc/http (start-connection): When no TLS module is available,
 	  raise an error saying so, rather than letting rfc.tls module

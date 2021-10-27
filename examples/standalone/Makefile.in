@@ -4,13 +4,13 @@ top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
 TARGET    = sample-repl sample-repl-nogdbm sample-repl-nombed
-GENERATED = *.c
+CLEANFILES = *.c
 CONFIG_GENERATED = Makefile
 
 all: $(TARGET)
 
 clean:
-	rm -f core *~ $(TARGET) $(GENERATED)
+	rm -f core *~ $(TARGET) $(CLEANFILES)
 
 distclean: clean
 	rm -f $(CONFIG_GENERATED)

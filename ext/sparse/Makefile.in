@@ -12,7 +12,7 @@ SCMFILES = sparse.sci
 OBJECTS = data--sparse.$(OBJEXT) ctrie.$(OBJEXT) spvec.$(OBJEXT) sptab.$(OBJEXT)
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = data--sparse.c sparse.sci
 
 all : $(LIBFILES) $(SCMFILES)

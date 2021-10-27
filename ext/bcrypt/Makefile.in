@@ -10,7 +10,7 @@ LIBFILES = crypt--bcrypt.$(SOEXT)
 SCMFILES = bcrypt.sci
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = crypt--bcrypt.c *.sci
 
 OBJECTS = crypt--bcrypt.$(OBJEXT) \

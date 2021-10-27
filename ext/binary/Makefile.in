@@ -10,7 +10,7 @@ LIBFILES = binary--io.$(SOEXT)
 SCMFILES = io.sci
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = binary--io.c io.sci
 
 OBJECTS = binary--io.$(OBJEXT) binary.$(OBJEXT)

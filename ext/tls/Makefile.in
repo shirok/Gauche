@@ -66,7 +66,7 @@ MBEDTLS_INTERNAL = $(top_builddir)/tools/tls/include/mbedtls/ssl.h
 
 
 CONFIG_GENERATED = Makefile kick_openssl.sh
-GENERATED =
+PREGENERATED =
 XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs
 
 @CROSS_COMPILING_no@all : $(LIBFILES) $(EXTRA_TEST_BIN)

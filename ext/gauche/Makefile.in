@@ -27,7 +27,7 @@ SCMFILES = collection.sci \
 	   unicode.sci
 
 CONFIG_GENERATED = Makefile
-GENERATED = unicode-attr.scm
+PREGENERATED = unicode-attr.scm
 XCLEANFILES = *.c $(SCMFILES)
 
 all : $(LIBFILES)

@@ -11,7 +11,7 @@ SCMFILES = @DBM_SCMFILES@
 OBJECTS  = @DBM_OBJECTS@
 
 CONFIG_GENERATED = Makefile dbmconf.h
-GENERATED =
+PREGENERATED =
 XCLEANFILES = dbm--gdbm.c gdbm.sci \
 	      dbm--ndbm.c ndbm.sci \
 	      dbm--odbm.c odbm.sci \

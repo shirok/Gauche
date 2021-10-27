@@ -14,7 +14,7 @@ LIBFILES = text--console.$(SOEXT) \
 SCMFILES = console.sci gap-buffer.sci gettext.sci line-edit.sci tr.sci
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = *.c $(SCMFILES)
 
 OBJECTS = $(text-console_OBJECTS) \

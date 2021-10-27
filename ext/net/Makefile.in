@@ -16,7 +16,7 @@ OBJECTS = net.$(OBJEXT)				\
 	  netaux.$(OBJEXT)
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = netlib.c netaux.c
 
 all : $(LIBFILES)

@@ -35,7 +35,7 @@ SCMFILES  = $(srcdir)/@@modpath@@.scm
 HEADERS   =
 
 TARGET    = $(ARCHFILES)
-GENERATED =
+CLEANFILES =
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   configure.lineno autom4te*.cache $(PACKAGE).gpd
 
@@ -72,7 +72,7 @@ uninstall :
 
 clean :
 	$(GAUCHE_PACKAGE) compile --clean @@extname@@ $(@@extname@@_SRCS)
-	rm -rf core $(TARGET) $(GENERATED) *~ test.log so_locations
+	rm -rf core $(TARGET) $(CLEANFILES) *~ test.log so_locations
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)

@@ -26,7 +26,7 @@ SCMFILES  = spigot.scm
 HEADERS   =
 
 TARGET    = $(ARCHFILES)
-GENERATED =
+CLEANFILES =
 CONFIG_GENERATED = Makefile config.log $(PACKAGE).gpd
 
 HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
@@ -52,7 +52,7 @@ install : all
 
 clean :
 	$(GAUCHE_PACKAGE) compile --clean spigot $(spigot_SRCS)
-	rm -rf core $(TARGET) $(GENERATED) *~ test.log so_locations
+	rm -rf core $(TARGET) $(CLEANFILES) *~ test.log so_locations
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)

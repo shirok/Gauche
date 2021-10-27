@@ -11,7 +11,7 @@ MANPAGES = gosh.1 gauche-config.1 gauche-install.1 gauche-package.1 \
 	   gauche-cesconv.1
 EXTRACTED = gauche-refe.texi gauche-refj.texi \
 	    gauche-deve.texi gauche-devj.texi
-GENERATED = Makefile $(MANPAGES)
+CONFIG_GENERATED = Makefile $(MANPAGES)
 @CROSS_COMPILING_no@GOSH = $(top_builddir)/src/gosh -q -ftest
 @CROSS_COMPILING_yes@GOSH = $(BUILD_GOSH) -q
 INSTALL      = @INSTALL@
@@ -143,7 +143,7 @@ clean:
 	rm -rf $(EXTRACTED:.texi=.t2d/)
 
 distclean : clean
-	rm -f $(GENERATED)
+	rm -f $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -f $(GENERATED)
+	rm -f $(CONFIG_GENERATED)

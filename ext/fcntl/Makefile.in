@@ -12,7 +12,7 @@ SCMFILES = fcntl.sci
 OBJECTS = fcntl.$(OBJEXT) gauche--fcntl.$(OBJEXT)
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = gauche--fcntl.c fcntl.sci
 
 all : $(LIBFILES)

@@ -12,7 +12,7 @@ SCMFILES = mime.sci \
 	   822.sci
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = *.c $(SCMFILES)
 
 all : $(LIBFILES)

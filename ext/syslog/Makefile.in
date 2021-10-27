@@ -12,7 +12,7 @@ SCMFILES = syslog.sci
 OBJECTS = gauche--syslog.$(OBJEXT)
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = gauche--syslog.c $(SCMFILES)
 
 all : $(LIBFILES)

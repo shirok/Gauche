@@ -12,7 +12,7 @@ SCMFILES = peg.sci peg/deprecated.scm
 OBJECTS = parser--peg.$(OBJEXT)
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = peg.sci *.c
 
 all : $(LIBFILES)

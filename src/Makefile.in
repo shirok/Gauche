@@ -502,16 +502,17 @@ install-check :
 	done
 
 # clean ------------------------------------------------
-GENERATED = compile.c autoloads.c builtin-syms.c \
-	    gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
-	    ../lib/gauche/vm/insn.scm native-supp.scm \
-	    char_attr.c gauche/priv/unicode_attr.h \
-	    libsrfis.scm ../doc/srfis.texi \
-	    libalpha.c libbool.c libbox.c libchar.c libcode.c libcmp.c \
-	    libdict.c libeval.c libexc.c libfmt.c libio.c liblazy.c liblist.c \
-	    libmacbase.c libmacro.c libmisc.c libmod.c libnative.c libnum.c \
-	    libobj.c libparam.c libproc.c librx.c libstr.c \
-	    libsrfis.c libsym.c libsys.c libvec.c libomega.c libextra.c
+PREGENERATED = compile.c autoloads.c builtin-syms.c \
+	       gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
+	       ../lib/gauche/vm/insn.scm native-supp.scm \
+	       char_attr.c gauche/priv/unicode_attr.h \
+	       libsrfis.scm ../doc/srfis.texi \
+	       libalpha.c libbool.c libbox.c libchar.c libcode.c libcmp.c \
+	       libdict.c libeval.c libexc.c libfmt.c libio.c liblazy.c \
+	       liblist.c libmacbase.c libmacro.c libmisc.c libmod.c \
+	       libnative.c libnum.c libobj.c libparam.c libproc.c librx.c \
+	       libstr.c libsrfis.c libsym.c libsys.c libvec.c \
+	       libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
 		   features.c features.flags
 
@@ -530,7 +531,7 @@ distclean : clean
 	rm -f $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -f $(CONFIG_GENERATED) $(GENERATED)
+	rm -f $(CONFIG_GENERATED) $(PREGENERATED)
 
 # install ----------------------------------------------
 
@@ -573,7 +574,7 @@ uninstall :
 	for f in $(INSTALL_LIBS); do rm -f "$(LIB_INSTALL_DIR)/$$f"; done
 	rm -rf "$(GAUCHE_ARCH_DIR)/@GAUCHE_VERSION@" "$(GAUCHE_DATA_DIR)/@GAUCHE_VERSION@" "$(GAUCHE_ARCH_DIR)/site/@GAUCHE_VERSION@"
 
-pre-package : $(GENERATED)
+pre-package : $(PREGENERATED)
 
 # MinGW specific stuff --------------------------------
 

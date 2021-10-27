@@ -20,7 +20,7 @@ GENERATED_FILES = sxml--ssax.c sxml-ssax.scm \
 GENERATED_TEST = ssax-test.scm tree-trans-test.scm to-html-test.scm
 XCLEANFILES = $(GENERATED_TARGET) $(GENERATED_TEST) $(GENERATED_FILES)
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 
 LIBFILES = sxml--ssax.$(SOEXT) sxml--sxpath.$(SOEXT) sxml--tools.$(SOEXT) \
 	   sxml--serializer.$(SOEXT)

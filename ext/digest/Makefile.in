@@ -10,7 +10,7 @@ LIBFILES = rfc--md5.$(SOEXT) rfc--sha.$(SOEXT)
 SCMFILES = md5.sci sha1.scm sha.sci
 
 CONFIG_GENERATED = Makefile
-GENERATED =
+PREGENERATED =
 XCLEANFILES = rfc--md5.c rfc--sha.c *.sci
 
 all : $(LIBFILES)

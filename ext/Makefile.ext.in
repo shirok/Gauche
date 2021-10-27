@@ -100,7 +100,7 @@ install-check :
 #                              clean          distclean       maintainer-clean
 #   XCLEANFILES                  x                x                 x
 #   CONFIG_GENERATED                              x                 x
-#   GENERATED                                                       x
+#   PREGENERATED                                                    x
 
 
 clean : unlink
@@ -110,7 +110,7 @@ distclean : clean
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean : clean
-	rm -rf $(CONFIG_GENERATED) $(GENERATED)
+	rm -rf $(CONFIG_GENERATED) $(PREGENERATED)
 
 pre-package : $(PRE_PACKAGE_FILES)
 
