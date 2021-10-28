@@ -60,6 +60,7 @@
 #endif  /* GAUCHE_USE_MBEDTLS */
 
 #if defined(GAUCHE_USE_MBEDTLS)
+#include <mbedtls/version.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>

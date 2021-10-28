@@ -235,7 +235,10 @@ static ScmObj mbed_accept(ScmTLS* tls, int fd)
 static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
 {
     ScmMbedTLS* t = (ScmMbedTLS*)tls;
-
+#if MBEDTLS_VERSION_MAJOR >= 3
+    Scm_Error("Making TLS connection over existing socket (%d) is not supporetd "
+              "in MbedTLS version 3 (%S)", fd, tls);
+#else /*MBEDTLS_VERSION_MAJOR = 2*/
     mbed_context_check(t, "connect");
     const char* pers = "Gauche";
     if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
@@ -248,6 +251,7 @@ static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
     }
     t->conn.fd = fd;
     return mbed_connect_common(t);
+#endif
 }
 
 static ScmObj mbed_read(ScmTLS* tls)
