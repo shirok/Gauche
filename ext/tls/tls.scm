@@ -121,6 +121,7 @@
    Scm_TLSConnectWithSocket)
  (define-cproc %tls-accept-with-socket (tls::<tls> sock fd::<long>)
    Scm_TLSAcceptWithSocket)
+ (define-cproc %tls-accept (tls::<tls>) Scm_TLSAccept)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
  (define-cproc tls-read (tls::<tls>) Scm_TLSRead)
  (define-cproc tls-write (tls::<tls> msg) Scm_TLSWrite)
@@ -148,11 +149,13 @@
   tls)
 
 ;; API
-(define (tls-accept tls sock)
-  (%tls-accept-with-socket tls sock (socket-fd sock)) ;; done before ports in case of connect failure.
-  (tls-input-port-set! tls (make-tls-input-port tls))
-  (tls-output-port-set! tls (make-tls-output-port tls))
-  tls)
+(define (tls-accept tls :optional (sock #f))
+  (rlet1 new-tls
+      (if sock
+        (%tls-accept-with-socket tls sock (socket-fd sock))
+        (%tls-accept tls))
+    (tls-input-port-set! new-tls (make-tls-input-port new-tls))
+    (tls-output-port-set! new-tls (make-tls-output-port new-tls))))
 
 ;; API
 (define (tls-close t)

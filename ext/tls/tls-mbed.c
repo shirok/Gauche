@@ -186,7 +186,75 @@ static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
     return mbed_connect_common(t);
 }
 
-static ScmObj mbed_accept(ScmTLS* tls, int fd)
+static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
+{
+    ScmMbedTLS* t = (ScmMbedTLS*)tls;
+#if MBEDTLS_VERSION_MAJOR >= 3
+    Scm_Error("Making TLS connection over existing socket (%d) is not supporetd "
+              "in MbedTLS version 3 (%S)", fd, tls);
+#else /*MBEDTLS_VERSION_MAJOR = 2*/
+    mbed_context_check(t, "connect");
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+                             (const unsigned char *)pers, strlen(pers)) != 0) {
+        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
+    if (t->conn.fd >= 0) {
+        Scm_Error("attempt to connect already-connected TLS %S", t);
+    }
+    t->conn.fd = fd;
+    return mbed_connect_common(t);
+#endif
+}
+
+static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
+{
+    SCM_ASSERT(SCM_XTYPEP(tls, &Scm_MbedTLSClass));
+    ScmMbedTLS *servt = (ScmMbedTLS*)tls;
+    ScmMbedTLS *t = (ScmMbedTLS*)mbed_allocate(Scm_ClassOf(SCM_OBJ(tls)),
+                                               SCM_NIL);
+
+    /* TODO: check servt is bound */
+    const char* pers = "Gauche";
+    int r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
+                                  &t->entropy,
+                                  (const unsigned char *)pers, strlen(pers));
+    if(r != 0) {
+        Scm_Error("mbedtls_ctr_drbg_seed() failed (%d)", r);
+    }
+
+    r = mbedtls_ssl_config_defaults(&t->conf,
+                                    MBEDTLS_SSL_IS_SERVER,
+                                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                                    MBEDTLS_SSL_PRESET_DEFAULT);
+    if (r != 0) {
+        Scm_Error("mbedtls_ssl_config_defaults() failed (%d)", r);
+    }
+    mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
+
+    r = mbedtls_ssl_setup(&t->ctx, &t->conf);
+    if(r != 0) {
+        Scm_Error("mbedtls_ssl_setup() failed (%d)", r);
+    }
+
+    /* TODO: Take client address info and save it to newt. */
+    r = mbedtls_net_accept(&servt->conn, &t->conn, NULL, 0, NULL);
+    if (r != 0) {
+        Scm_Error("mbedtls_net_accept() failed (%d)", r);
+    }
+
+    mbedtls_ssl_set_bio(&t->ctx, &t->conn,
+                        mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    r = mbedtls_ssl_handshake(&t->ctx);
+    if (r != 0) {
+        Scm_Error("TLS handshake failed: %d", r);
+    }
+    return SCM_OBJ(t);
+}
+
+static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "accept");
@@ -230,28 +298,6 @@ static ScmObj mbed_accept(ScmTLS* tls, int fd)
         Scm_Error("TLS handshake failed: %d", r);
     }
     return SCM_OBJ(t);
-}
-
-static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
-{
-    ScmMbedTLS* t = (ScmMbedTLS*)tls;
-#if MBEDTLS_VERSION_MAJOR >= 3
-    Scm_Error("Making TLS connection over existing socket (%d) is not supporetd "
-              "in MbedTLS version 3 (%S)", fd, tls);
-#else /*MBEDTLS_VERSION_MAJOR = 2*/
-    mbed_context_check(t, "connect");
-    const char* pers = "Gauche";
-    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-                             (const unsigned char *)pers, strlen(pers)) != 0) {
-        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
-    }
-
-    if (t->conn.fd >= 0) {
-        Scm_Error("attempt to connect already-connected TLS %S", t);
-    }
-    t->conn.fd = fd;
-    return mbed_connect_common(t);
-#endif
 }
 
 static ScmObj mbed_read(ScmTLS* tls)
@@ -351,7 +397,8 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 
     t->common.connect = mbed_connect;
     t->common.connectSock = mbed_connect_with_socket;
-    t->common.acceptSock = mbed_accept;
+    t->common.accept = mbed_accept;
+    t->common.acceptSock = mbed_accept_with_socket;
     t->common.read = mbed_read;
     t->common.write = mbed_write;
     t->common.close = mbed_close;

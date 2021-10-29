@@ -137,12 +137,19 @@ ScmObj Scm_TLSConnect(ScmTLS *t, const char *host, const char *port,
     return t->connect(t, host, port, parse_proto(proto));
 }
 
+/* DEPRECATED */
 ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd)
 {
     t->sock = sock;
     return t->connectSock(t, fd);
 }
 
+ScmObj Scm_TLSAccept(ScmTLS *t)
+{
+    return t->accept(t);
+}
+
+/* DEPRECATED */
 ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd)
 {
     t->sock = sock;
