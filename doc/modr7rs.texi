@@ -4230,47 +4230,120 @@ instead of relying on the side effects.
 @defunx bag-search! bag elt failure success
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Lookup-and-modify procedures.  The @var{failure} and @var{success}
 arguments are procedures.
+@c JP
+検索と変更を行う手続きです。@var{failure}と@var{success}引数は手続きです。
+@c COMMON
 
-First, they search @var{elt} in the given set/bag.
+@c EN
+First, they search an item that matches @var{elt} in the given set/bag.
 If an item that matches @var{elt} is found, the @var{success} procedure
 is called with three arguments, as follows:
+@c JP
+まず、与えられたセット/バッグから@var{elt}に一致する要素が探されます。
+見つかった場合、@var{success}手続きが次のとおり3つの引数を伴って呼び出されます。
+@c COMMON
 @example
 (success item update remove)
 @end example
-The @var{update} argument is a procedure that takes two arguments,
-as @code{(update new-item retval)}.  It replaces the matching @var{item} in the
-set/bag with @var{new-item}, and returns @var{retval}.
-The @var{remove} argument is a procedure that takes one argument,
-as @code{(remove retval)}.  It removes the matching @var{item} in
-the set/bag, and returns @var{retval}.
+@c EN
+wheras, @var{item} is the matched item in the set/bag.
+@c JP
+ここで@var{item}はset/bagのマッチした要素です。
+@c COMMON
 
+@c EN
+The @var{update} argument is a procedure that takes two arguments,
+as @code{(update new-item retval)}.  It returns two values:
+(1) A set/bag that are the same as the given one except
+that @var{item} is replaced with @var{new-item},
+and (2) @var{retval}.
+
+The @var{remove} argument is a procedure that takes one argument,
+as @code{(remove retval)}.  It returns two values:
+(1) A set/bag that are the same as the given one except
+@var{item} is removed, and (2) @var{retval}.
+@c JP
+@var{update}は引数を2つとる手続きで、@code{(update new-item retval)}のように
+呼ぶことができます。呼び出されると、2つの値を返します。
+(1) 元のセット/バッグの@var{item}を@var{new-item}に置き換えたセット/バッグ、
+(2) @var{retval}。
+
+@var{remove}は引数を2つとる手続きで、@code{(remove retval)}のように
+呼ぶことができます。呼び出されると、2つの値を返します。
+(1) 元のセット/バッグから@var{item}が除かれたセット/バッグ、
+(2) @var{retval}。
+@c COMMON
+
+@c EN
 If an item that matches @var{elt} is not found, the @var{failure} procedure
 is called with two arguments, as follows:
+@c JP
+@var{elt}に一致する要素が見つからなかった場合は、@var{failure}手続きが
+次のとおり2つの引数を伴って呼ばれます。
+@c COMMON
 @example
 (failure insert ignore)
 @end example
+@c EN
 The @var{insert} argument is a procedure that takes one argument,
-as @code{(insert retval)}.  It inserts @var{elt} into the set/bag, and
-returns @var{retval}.
+as @code{(insert retval)}.  It returns two values:
+(1) a set/bag that has all the items in the given one plus @var{elt},
+and (2) @var{retval}.
+
 The @var{ignore} argument is a procedure that takes one argument,
-as @code{(ignore retval)}.  It just returns @var{retval}.
+as @code{(ignore retval)}.  It returns two values:
+(1) the original set/bag, and (2) @var{retval}.
+@c JP
+@var{insert}引数はひとつの引数を取る手続きで、
+@code{(insert retval)}のように呼べます。これは二つの値を返します。
+(1)元のセット/バッグに@var{elt}を追加したセット/バッグ、(2)@var{retval}。
 
+@var{ignore}引数はひとつの引数を取る手続きで、
+@code{(ignore retval)}のように呼べます。
+これは二つの値を返します。
+(1)元のセット/バッグ、(2)@var{retval}。
+@c COMMON
+
+@c EN
+The original set/bag may be reused to produce the result by @var{update},
+@var{remove} and @var{insert} procedures.
+@c JP
+元のset/bagは、結果を格納するために
+@var{update}、@var{remove}、@var{insert}手続きによって再利用されるかもしれません。
+@c COMMON
+
+@c EN
 The return values of @code{set-search!} and @code{bag-search!} is
-the modified set/bag (which may or may not be @code{eq?} to the passed one),
-and the value returned by @var{success} or @var{failure} procedures.
+what either @var{success} or @var{failure} procedure returns.
+These caller-provided procedures should invoke the passed-in procedures
+(@var{update}, @var{remove}, @var{insert} or @var{ignore}) and return
+their results---which is a potentially modified set/bag
+(which may or may not be @code{eq?} to the passed one) and the @var{retval}.
+@c JP
+@var{set-search!}と@var{bag-search!}は、@var{success}もしくは@var{failure}が
+返した値をそのまま返します。これらの呼出側が渡す手続きは、
+それに渡される手続き(@var{update}, @var{remove}, @var{insert}, @var{ignore})の
+いずれかを呼び出し、その結果をそのまま返さねばなりません。
+従って全体の戻り値は、(変更されたかもしれない)セット/バッグと、@var{retval}ということに
+なります。
+@c COMMON
 
-Note that @var{retval} isn't used in this process; it is just to provide
-one of the return values of @code{set-search!}/@code{bag-search!}, for
-the procedures passed to @var{success} or @var{failure} are expected
-to be tail-called.
-
+@c EN
 If there are more than one item that matches @var{elt} in a bag,
 @code{bag-search!} only invokes @var{success} for the first item
-it finds.  You can recurse into @code{bag-search!} in the @var{failure}
+it finds.  You can recurse into @code{bag-search!} in the @var{success}
 procedure to visit all matching items.  It is guaranteed that @var{success}
 and @var{failure} procedures are tail-called.
+@c JP
+もしバッグ中に@var{elt}に一致する要素が複数あった場合、@code{bag-search!}は
+最初の要素でのみ@var{success}を起動します。
+@var{success}手続きの中で@code{bag-search!}を再帰的に呼ぶことで
+全てのマッチする要素を処理することができます。@var{success}と@var{failure}は
+末尾呼び出しされることが保証されています。
+@c COMMON
 @end defun
 
 @subheading The whole set
