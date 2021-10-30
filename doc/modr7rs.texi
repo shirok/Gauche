@@ -4346,47 +4346,110 @@ and @var{failure} procedures are tail-called.
 @c COMMON
 @end defun
 
+@c EN
 @subheading The whole set
+@c JP
+@subheading セット全体
+@c COMMON
 
 @defun set-size set
 @defunx bag-size bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns the number of items in the set/bag.
+@c JP
+セット/バッグの中にある要素の数を返します。
+@c COMMON
 @end defun
 
 @defun set-find pred set failure
 @defunx bag-find pred bag failure
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Apply @var{pred} on each item in the set/bag, and returns the
 first item on which @var{pred} returns true.  Since sets and bags
 are unordered, if there are more than one items that satisfy @var{pred},
 you won't know which one will be returned.
+@c JP
+@var{pred}をセット/バッグの各要素に順に適用し、@var{pred}が最初に真の値を返した
+要素を返します。セット/バッグに順序はないので、
+@var{pred}を満たす要素が複数あった場合にどれが買えされるかは不定です。
+@c COMMON
 
-If there're no items that satisfy @var{pred}, a thunk @code{failure}
-is called and its result is returned.
+@c EN
+If there're no items that satisfy @var{pred}, a thunk @var{failure}
+is tail-called.
+@c JP
+@var{pred}を満たす要素がなかった場合は、引数を取らない手続き@var{failure}が
+末尾呼び出しされます。
+@c COMMON
+
+@c EN
+NB: The API differs from @code{find} in @code{scheme.list} (built-in in Gauche),
+that @code{find} does not take @var{failure} procedure.
+@c JP
+註: このAPIは@code{scheme.list}で定義される@code{find} (Gaucheでは組み込み)
+と異なります。@code{find}は@var{failue}手続きを取りません。
+@c COMMON
 @end defun
 
 @defun set-count pred set
 @defunx bag-count pred bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns the number of items that satisfy @var{pred} in the set/bag.
+@c JP
+セット/バッグ中の@var{pred}を満たす要素の数を返します。
+@c COMMON
 @end defun
 
 @defun set-any? pred set
 @defunx bag-any? pred bag
 [R7RS set]
 @c MOD scheme.set
-Returns true iff any item in the set/bag satisfy @var{pred}.
+@c EN
+Returns @code{#f} iff any item in the set/bag satisfy @var{pred}.
+@c JP
+セット/バッグ中にひとつでも@var{pred}を満たす要素があれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+
+@c EN
+NB: It differs from @code{any} defined in @code{scheme.list} (built-in in Gauche)
+that @code{any} returns the true result of @var{pred}, while
+@code{set-any?} always returns a boolean value (hence the question mark).
+@c JP
+註: これは@code{scheme.list}で定義されている@code{any} (Gaucheでは組み込み)
+と異なります。@code{any}は@var{pred}が偽でない値を返したらそれをそのまま返しますが、
+@code{set-any?}は常に真偽値を返します (なのでクエスチョンマークがついています)。
+@c COMMON
 @end defun
 
 @defun set-every? pred set
 @defunx bag-every? pred bag
 [R7RS set]
 @c MOD scheme.set
-Returns true iff every item in the set/bag satisfy @var{pred}.
+@c EN
+Returns @code{#t} iff every item in the set/bag satisfy @var{pred}.
+@c JP
+セット/バッグ中の全ての要素が@var{pred}を満たせば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+
+@c EN
+NB: It differs from @code{every} defined in @code{scheme.list} (built-in in Gauche)
+that @code{every} returns the last true result of @var{pred} when all the
+elements satisfy @var{pred}, while
+@code{set-every?} always returns a boolean value (hence the question mark).
+@c JP
+註: これは@code{scheme.list}で定義されている@code{every} (Gaucheでは組み込み)
+と異なります。@code{every}は全ての要素が@var{pred}を満たした場合、最後の@var{pred}の
+戻り値を返しますが、
+@code{set-every?}は常に真偽値を返します (なのでクエスチョンマークがついています)。
+@c COMMON
 @end defun
 
 @subheading Mapping and folding
