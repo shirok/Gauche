@@ -4458,27 +4458,45 @@ elements satisfy @var{pred}, while
 @defunx bag-map comparator proc bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Create and return a new set/bag with the comparator @var{comparator},
 whose items are calculated by applying @var{proc} to each element
 in the original set/bag.
+@c JP
+与えられた@var{set}/@var{bag}の各要素に@var{proc}を適用した結果を要素として、
+@var{comparator}を比較器に使う新たなセット/バッグを作って返します。
+@c COMMON
 @end defun
 
 @defun set-for-each proc set
 @defunx bag-for-each proc bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Apply @var{proc} to each element in the set/bag.   The result of @var{proc}
 is ignored.  Return value is undefined.
+@c JP
+@var{set}/@var{bag}の各要素に@var{proc}を適用します。
+@var{proc}の戻り値は捨てられます。この手続き自体の戻り値は未定義です。
+@c cOMMON
 @end defun
 
 @defun set-fold proc seed set
 @defunx bag-fold proc seed bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 For each item in the set/bag, call @var{proc} with two arguments, an item
 and a seed value.  What @var{proc} returns becomes the next seed value.
 The @var{seed} argument gives the initial seed value, and the last return
 value of @var{proc} will be the result of @code{set-fold}/@code{bag-fold}.
+@c JP
+与えられたセット/バッグの各要素に対し、@var{proc}を2つの引数を伴って呼び出します。
+@var{proc}の1つ目の引数はセット/バッグの要素、2つ目の引数はシード値です。
+最初のシード値は@var{seed}で与えられ、各@var{proc}の戻り値が次のシード値となります。
+全ての要素に@var{proc}が適用されたら、最後の@var{proc}の戻り値が
+@code{set-fold}/@code{bag-fold}の戻り値になります。
+@c COMMON
 
 @example
 (bag-fold + 0 (bag eqv-comparator 1 1 2 2 3 3 4 4))
@@ -4490,9 +4508,14 @@ value of @var{proc} will be the result of @code{set-fold}/@code{bag-fold}.
 @defunx bag-filter pred bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set/bag with the same comparator of the original
 set/bag, and its content consists of items from the original set/bag
 that satisfy @var{pred}.
+@c JP
+与えられたセット/バッグと同じ比較器を持つ新たなセット/バッグを作り、
+元の要素のうち述語@var{pred}を満たす要素だけを入れて返します。
+@c COMMON
 
 @example
 (set->list (set-filter odd? (set eqv-comparator 1 2 3 4 5)))
@@ -4504,9 +4527,14 @@ that satisfy @var{pred}.
 @defunx bag-remove pred bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set/bag with the same comparator of the original
 set/bag, and its content consists of items from the original set/bag
 that does not satisfy @var{pred}.
+@c JP
+与えられたセット/バッグと同じ比較器を持つ新たなセット/バッグを作り、
+元の要素のうち述語@var{pred}を満たさない要素だけを入れて返します。
+@c COMMON
 
 @example
 (set->list (set-remove odd? (set eqv-comparator 1 2 3 4 5)))
