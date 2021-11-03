@@ -4478,7 +4478,7 @@ is ignored.  Return value is undefined.
 @c JP
 @var{set}/@var{bag}の各要素に@var{proc}を適用します。
 @var{proc}の戻り値は捨てられます。この手続き自体の戻り値は未定義です。
-@c cOMMON
+@c COMMON
 @end defun
 
 @defun set-fold proc seed set
