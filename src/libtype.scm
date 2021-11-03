@@ -50,9 +50,9 @@
 ;; compiler needs to know about types, type constructor expressions
 ;; are evaluated at the compile time, much like macros.
 ;;
-;; We could implemented types with macros, but it would be tricky.  Unlike
+;; We could've implemented types with macros, but it would be tricky.  Unlike
 ;; macros, type expression needs to evaluate from inside to outside, just
-;; like the ordinary expression.  It's more like compile-time constant folding.
+;; like ordinary expressions.  It's more like compile-time constant folding.
 ;;
 ;; Since type handing is deeply intertwined with compiler, we let the compiler
 ;; recognize type expression specifically, rather than reusing existing
