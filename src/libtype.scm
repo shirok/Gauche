@@ -59,6 +59,33 @@
 ;; evaluation mechanism.  When the compile sees (C x ...) and C has an
 ;; inlineable binding to an instance of <type-constructor-meta>, it recognizes
 ;; type expression.
+;;
+;; We have several kinds of descriptive types.
+;;
+;;   Constraint types
+;;      - We don't have a separate class for this, but this is a kind of
+;;        descriptive type that constraints the type the concerned
+;;        value can take, e.g. (</> <integer> <string>).   Created by
+;;        a type constructor.   Currently, the main use is in `assert-type`.
+;;
+;;   <native-type>
+;;      - A subset of Scheme primitive types that can map onto the native
+;;        types.  E.g. <long> is a subset of <integer> but can map onto
+;;        the underlying `long` integer value.   Main use is for FFI.
+;;
+;;   <proxy-type>
+;;      - This is a wrapper of an prescriptive types, and as far as type
+;;        checking is concerened, it behaves just like the wrapped type.
+;;        We need this because classes can be redefined.  When a class
+;;        is redefined, a new class instance is created and the class name
+;;        is rebound to it.  We want that other aggregate descriptive types
+;;        also start referring to the new class, so a descriptive type can't
+;;        hold a direct reference to a prescriptive type; instead, we refer
+;;        to it through a proxy type.  A proxy type always refer to the
+;;        the redefined class.
+;;        Proxy types are automatically created and handled under the hood;
+;;        users doesn't need to deal with them explicity.
+
 
 ;; This module is not meant to be `use'd.   It is just to hide
 ;; auxiliary procedures from the rest of the system.  The necessary
