@@ -183,6 +183,7 @@
                name::ScmObj
                c-of-type::(.function (obj) ::int *)
                super::ScmObj
+               c-type-name::(const char *)
                size::u_long
                alignment::u_long)))
 
@@ -191,6 +192,7 @@
    (c "SCM_CLASS_METACLASS_CPL+1")
    ((name)
     (super)
+    (c-type-name :type <const-cstring>)
     (size :type <ulong>)
     (alignment :type <ulong>))
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
@@ -724,6 +726,7 @@
 (inline-stub
  (define-cfn make_native_type (name::(const char*)
                                super
+                               c-type-name::(const char*)
                                size::size_t
                                alignment::size_t
                                c-of-type::(.function (obj)::int *))
@@ -732,6 +735,7 @@
            (SCM_NEW_INSTANCE ScmNativeType (& Scm_NativeTypeClass))])
      (set! (-> z name) (SCM_INTERN name))
      (set! (-> z super) super)
+     (set! (-> z c-type-name) c-type-name)
      (set! (-> z c-of-type) c-of-type)
      (set! (-> z size) size)
      (set! (-> z alignment) alignment)
@@ -739,7 +743,7 @@
 
  (define-cise-stmt define-native-type
    [(_ name super ctype fn)
-    `(let* ([z (make_native_type ,name (SCM_OBJ ,super)
+    `(let* ([z (make_native_type ,name (SCM_OBJ ,super) ,(x->string ctype)
                                  (sizeof (.type ,ctype))
                                  (SCM_ALIGNOF (.type ,ctype))
                                  ,fn)])

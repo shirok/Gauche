@@ -1,3 +1,11 @@
+2021-11-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (ScmNativeType): Let it keep C type name as well.
+	  The long-term plan is to integrate stub types to the built-in type
+	  system, though we'll still keep some info outside of the built-in
+	  types (e.g. C notation of boxer/unboxer won't be used except stub
+	  generators, so no need to carry it around in the <native-type>).
+
 2021-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/http.scm: Use new tls-connect interface that lets TLS
