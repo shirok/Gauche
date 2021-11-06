@@ -54,8 +54,8 @@
 ;;
 ;; We have a few categories of stub types.
 ;;
-;;  - Native types.  Some native types can represent a subset of Scheme 
-;;    types; e.g. <int16> native type corresponds to C's int16_t, 
+;;  - Native types.  Some native types can represent a subset of Scheme
+;;    types; e.g. <int16> native type corresponds to C's int16_t,
 ;;    and covers a subset of Scheme <integer> type.  See src/libtype.scm
 ;;    for those native types.
 ;;
@@ -117,7 +117,7 @@
       (and-let* ((m (#/\?$/ (symbol->string name)))
                  (basename (string->symbol (m 'before)))
                  (basetype (cgen-type-from-name basename)))
-        (make <cgen-type> 
+        (make <cgen-type>
           :name name
           :scheme-type #f ;; cna be (<?> TYPE) after 0.9.11 release
           :c-type (~ basetype'c-type)
@@ -165,16 +165,16 @@
 ;; with 0.9.10, so we fake 'em.  See src/libtype.scm for the complete
 ;; definition.
 (cond-expand
- [gauche-0.9.10
+ [(or gauche-0.9.10 gauche-0.9.11_pre1)
   (begin
-    (define-class <native-type> ()
+    (define-class <native-type-alt> ()
       ((name :init-keyword :name)
        (c-type-name :init-keyword :c-type-name)))
     (define-syntax define-native-type
       (syntax-rules ()
         [(_ name super c-type-name pred)
-         (define name (make <native-type> 
-                        :name 'name 
+         (define name (make <native-type-alt>
+                        :name 'name
                         :c-type-name 'c-type-name))]))
     ;; Taken from src/libtype.scm
     (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
@@ -197,108 +197,143 @@
     (define-native-type <ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t native_ptrdifftP)
     (define-native-type <float>   SCM_CLASS_REAL float native_realP)
     (define-native-type <double>  SCM_CLASS_REAL double native_realP)
-    (define-native-type <const-cstring> SCM_CLASS_STRING char* native_cstrP)
-    (define-native-type <input-port>  SCM_CLASS_PORT ScmObj native_iportP)
-    (define-native-type <output-port> SCM_CLASS_PORT ScmObj native_oportP)
-    (define-native-type <closure> SCM_CLASS_PROCEDURE ScmObj native_closureP)
+    (define-native-type <const-cstring> SCM_CLASS_STRING "const char*" native_cstrP)
+    (define-native-type <input-port>  SCM_CLASS_PORT ScmPort* native_iportP)
+    (define-native-type <output-port> SCM_CLASS_PORT ScmPort* native_oportP)
+    (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP)
     (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP))]
  [else])
 
-;; Builtin types
-(for-each
- (^[args]
-   (apply (^[name c-type :optional (desc #f) (c-pred #f) (unbox #f) (box #f)]
-            (make-cgen-type name #f c-type desc c-pred unbox box))
-          args))
- '(;; Numeric types
-   ;; NB: The boxer of <real> may be substituted when cgen-box-tail-expr
-   ;; is used.
-   (<fixnum>  "ScmSmallInt" "small integer" "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
-   (<integer> "ScmObj" "exact integer" "SCM_INTEGERP" "")
-   (<real>    "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
-   (<number>  "ScmObj" "number" "SCM_NUMBERP" "")
-   (<int>     "int" "C integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
-   (<long>    "long" "C long integer" "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
-   (<short>   "short" "C short integer" "SCM_INTP" "(short)SCM_INT_VALUE" "SCM_MAKE_INT")
-   (<int8>    "int" "8bit signed integer" "SCM_INTEGERP" "Scm_GetInteger8" "Scm_MakeInteger")
-   (<int16>   "int" "16bit signed integer" "SCM_INTEGERP" "Scm_GetInteger16" "Scm_MakeInteger")
-   (<int32>   "int" "32bit signed integer" "SCM_INTEGERP" "Scm_GetInteger32" "Scm_MakeInteger")
-   (<uint>    "u_int" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerU")
-   (<ulong>   "u_long" "C integer" "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerU")
-   (<ushort>  "u_short" "C short integer" "SCM_INTEGERP" "(unsigned short)Scm_GetIntegerU" "Scm_MakeIntegerU")
-   (<uint8>   "u_int" "8bit unsigned integer" "SCM_UINTP" "Scm_GetIntegerU8" "Scm_MakeIntegerU")
-   (<uint16>  "u_int" "16bit unsigned integer" "SCM_UINTP" "Scm_GetIntegerU16" "Scm_MakeIntegerU")
-   (<uint32>  "u_int" "32bit unsigned integer" "SCM_UINTEGERP" "Scm_GetIntegerU32" "Scm_MakeIntegerU")
-   (<float>   "float" "real number" "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
-   (<double>  "double" "real number" "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
+;; Stub types corresponding to native types.
+;; NB: <real> should be a pass-through type.  If coersion to double is needed,
+;; you can use <double>.  For the backward compatibility, we keep it as it is
+;; for some time.
+(let ()
+  (define (%native native-type pred unbox box)
+    (make <cgen-type>
+      :name (~ native-type'name)
+      :scheme-type native-type
+      :c-type (~ native-type'c-type-name)
+      :description (~ native-type'c-type-name)
+      :c-predicate pred
+      :unboxer unbox
+      :boxer box
+      :maybe #f))
 
-   ;; Basic immediate types
-   (<boolean> "int" "boolean" "SCM_BOOLP"   "SCM_BOOL_VALUE" "SCM_MAKE_BOOL")
-   (<char>    "ScmChar" "character" "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
-   (<void>    "void" "void" "" "" "SCM_VOID_RETURN_VALUE")
-   (<top>     "ScmObj" "scheme object" "" "")
-   ;; C string
-   (<const-cstring> "const char *" "const C string"
-                    "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
+  (%native <fixnum>  "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
+  (%native <int>     "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
+  (%native <long>    "SCM_INTEGERP" "Scm_GetInteger" "Scm_MakeInteger")
+  (%native <short>   "SCM_INTP" "(short)SCM_INT_VALUE" "SCM_MAKE_INT")
+  (%native <int8>    "SCM_INTEGERP" "Scm_GetInteger8" "Scm_MakeInteger")
+  (%native <int16>   "SCM_INTEGERP" "Scm_GetInteger16" "Scm_MakeInteger")
+  (%native <int32>   "SCM_INTEGERP" "Scm_GetInteger32" "Scm_MakeInteger")
+  (%native <int64>   "SCM_INTEGERP" "Scm_GetInteger64" "Scm_MakeInteger")
+  (%native <uint>    "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerU")
+  (%native <ulong>   "SCM_UINTEGERP" "Scm_GetIntegerU" "Scm_MakeIntegerU")
+  (%native <ushort>  "SCM_UINTEGERP" "(unsigned short)Scm_GetIntegerU" "Scm_MakeIntegerU")
+  (%native <uint8>   "SCM_UINTP" "Scm_GetIntegerU8" "Scm_MakeIntegerU")
+  (%native <uint16>  "SCM_UINTP" "Scm_GetIntegerU16" "Scm_MakeIntegerU")
+  (%native <uint32>  "SCM_UINTEGERP" "Scm_GetIntegerU32" "Scm_MakeIntegerU")
+  (%native <uint64>  "SCM_UINTEGERP" "Scm_GetIntegerU64" "Scm_MakeIntegerU")
+  (%native <float>   "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
+  (%native <double>  "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
 
-   ;; Aggregate types
-   (<pair> "ScmPair*" "pair" "SCM_PAIRP" "SCM_PAIR" "SCM_OBJ")
-   (<list> "ScmObj" "list" "SCM_LISTP" "")
-   (<vector> "ScmVector*" "vector" "SCM_VECTORP" "SCM_VECTOR")
-   (<uvector> "ScmUVector*" "uniform vector" "SCM_UVECTORP" "SCM_UVECTOR")
-   (<s8vector> "ScmUVector*" "s8vector" "SCM_S8VECTORP" "SCM_S8VECTOR")
-   (<u8vector> "ScmUVector*" "u8vector" "SCM_U8VECTORP" "SCM_U8VECTOR")
-   (<s16vector> "ScmUVector*" "s16vector" "SCM_S16VECTORP" "SCM_S16VECTOR")
-   (<u16vector> "ScmUVector*" "u16vector" "SCM_U16VECTORP" "SCM_U16VECTOR")
-   (<s32vector> "ScmUVector*" "s32vector" "SCM_S32VECTORP" "SCM_S32VECTOR")
-   (<u32vector> "ScmUVector*" "u32vector" "SCM_U32VECTORP" "SCM_U32VECTOR")
-   (<s64vector> "ScmUVector*" "s64vector" "SCM_S64VECTORP" "SCM_S64VECTOR")
-   (<u64vector> "ScmUVector*" "u64vector" "SCM_U64VECTORP" "SCM_U64VECTOR")
-   (<f16vector> "ScmUVector*" "f16vector" "SCM_F16VECTORP" "SCM_F16VECTOR")
-   (<f32vector> "ScmUVector*" "f32vector" "SCM_F32VECTORP" "SCM_F32VECTOR")
-   (<f64vector> "ScmUVector*" "f64vector" "SCM_F64VECTORP" "SCM_F64VECTOR")
-   (<c32vector> "ScmUVector*" "c32vector" "SCM_C32VECTORP" "SCM_C32VECTOR")
-   (<c64vector> "ScmUVector*" "c64vector" "SCM_C64VECTORP" "SCM_C64VECTOR")
-   (<c128vector> "ScmUVector*" "c128vector" "SCM_C128VECTORP" "SCM_C128VECTOR")
-   (<bitvector> "ScmBitvector*" "bitvector" "SCM_BITVECTORP" "SCM_BITVECTOR")
-   (<string> "ScmString*" "string" "SCM_STRINGP" "SCM_STRING")
-   (<string-cursor> "ScmObj" "string cursor" "Scm_StringCursorP" "")
-   (<symbol> "ScmSymbol*" "symbol" "SCM_SYMBOLP" "SCM_SYMBOL")
-   (<keyword> "ScmKeyword*" "keyword" "SCM_KEYWORDP" "SCM_KEYWORD")
-   (<identifier> "ScmIdentifier*" "identifier" "SCM_IDENTIFIERP" "SCM_IDENTIFIER")
-   (<char-set> "ScmCharSet*" "char-set" "SCM_CHARSETP" "SCM_CHARSET")
-   (<regexp> "ScmRegexp*" "regexp" "SCM_REGEXPP" "SCM_REGEXP")
-   (<regmatch> "ScmRegMatch*" "regmatch" "SCM_REGMATCHP" "SCM_REGMATCH")
-   (<port> "ScmPort*" "port" "SCM_PORTP" "SCM_PORT")
-   (<input-port> "ScmPort*" "input port" "SCM_IPORTP" "SCM_PORT")
-   (<output-port> "ScmPort*" "output port" "SCM_OPORTP" "SCM_PORT")
-   (<procedure> "ScmProcedure*" "procedure" "SCM_PROCEDUREP" "SCM_PROCEDURE")
-   (<closure> "ScmClosure*" "closure" "SCM_CLOSUREP" "SCM_CLOSURE")
-   (<promise> "ScmPromise*" "promise" "SCM_PROMISEP" "SCM_PROMISE")
-   (<comparator> "ScmComparator*" "comparator" "SCM_COMPARATORP" "SCM_COMPARATOR")
-   (<hash-table> "ScmHashTable*" "hash table" "SCM_HASH_TABLE_P" "SCM_HASH_TABLE")
-   (<tree-map> "ScmTreeMap*" "tree map" "SCM_TREE_MAP_P" "SCM_TREE_MAP")
-   (<class> "ScmClass*" "class" "SCM_CLASSP" "SCM_CLASS")
-   (<method> "ScmMethod*" "method" "SCM_METHODP" "SCM_METHOD")
-   (<module> "ScmModule*" "module" "SCM_MODULEP" "SCM_MODULE")
-   (<thread> "ScmVM*" "thread" "SCM_VMP" "SCM_VM")
-   (<mutex> "ScmMutex*" "mutex" "SCM_MUTEXP" "SCM_MUTEX")
-   (<condition-variable> "ScmConditionVariable*" "condition variable"
-                         "SCM_CONDITION_VARIABLE_P" "SCM_CONDITION_VARIABLE")
-   (<weak-vector> "ScmWeakVector*" "weak vector"
-                  "SCM_WEAK_VECTOR_P" "SCM_WEAK_VECTOR")
-   (<weak-hash-table> "ScmWeakHashTable*" "weak hash table"
-                      "SCM_WEAK_HASH_TABLE_P" "SCM_WEAK_HASH_TABLE")
-   (<compiled-code> "ScmCompiledCode*" "compiled code"
-                    "SCM_COMPILED_CODE_P" "SCM_COMPILED_CODE")
-   (<foreign-pointer> "ScmForeignPointer*" "foreign pointer"
-                      "SCM_FOREIGN_POINTER_P" "SCM_FOREIGN_POINTER")
-   (<box>  "ScmBox*" "box" "SCM_BOXP" "SCM_BOX")
-   (<primitive-parameter> "ScmPrimitiveParameter*" "primitive parameter"
-                          "SCM_PRIMITIVE_PARAMETER_P" "SCM_PRIMITIVE_PARAMETER")
-   (<dlobj> "ScmDLObj*" "dlobj" "SCM_DLOBJP" "SCM_DLOBJ")
-   (<dlptr> "ScmObj" "dlptr" "Scm_DLPtrP" "SCM_OBJ")
-   ))
+  (%native <closure> "SCM_CLOSUREP" "SCM_CLOSURE" "SCM_OBJ")
+  (%native <void>    "" "" "SCM_VOID_RETURN_VALUE")
+
+  (%native <const-cstring> "SCM_STRINGP" "SCM_STRING_CONST_CSTRING" "SCM_MAKE_STR_COPYING")
+  )
+
+;; A few native types that has corresponding actual Scheme types.
+;; NB: <real> should be a pass-through type, for coercing to double can lose
+;; information.  To interface with C double or float, you can use <double>
+;; or <float>.  We keep it so for the backward compatibility, but at some
+;; point we'll change it to a pass-through type.
+(make-cgen-type '<real> <real> "double" "real number"
+                "SCM_REALP" "Scm_GetDouble" "Scm_MakeFlonum")
+(make-cgen-type '<char> <char> "ScmChar" "character"
+                "SCM_CHARP" "SCM_CHAR_VALUE" "SCM_MAKE_CHAR")
+(make-cgen-type '<boolean> <boolean> "int" "boolean"
+                "SCM_BOOLP" "SCM_BOOL_VALUE" "SCM_MAKE_BOOL")
+
+;; Pass-through types
+(let ()
+  (define (%pass-through class desc pred)
+    (make <cgen-type>
+      :name (class-name class)
+      :scheme-type class
+      :c-type "ScmObj"
+      :description desc
+      :c-predicate pred
+      :unboxer "" :maybe #f))
+
+   (%pass-through <integer> "exact integer" "SCM_INTEGERP")
+   (%pass-through <number>  "number" "SCM_NUMBERP")
+   (%pass-through <top>     "scheme object" "")
+   (%pass-through <list>    "list" "SCM_LISTP")
+
+   (%pass-through <string-cursor> "string cursor" "Scm_StringCursorP")
+   )
+
+;; C-class types
+(let ()
+  (define (%cclass class c-type :optional (pred #f) (unbox #f))
+    (make-cgen-type (class-name class) class c-type
+                    (x->string (class-name class)) pred unbox))
+
+   (%cclass <pair> "ScmPair*")
+   (%cclass <vector> "ScmVector*")
+   (%cclass <uvector> "ScmUVector*")
+   (%cclass <s8vector> "ScmUVector*")
+   (%cclass <u8vector> "ScmUVector*")
+   (%cclass <s16vector> "ScmUVector*")
+   (%cclass <u16vector> "ScmUVector*")
+   (%cclass <s32vector> "ScmUVector*")
+   (%cclass <u32vector> "ScmUVector*")
+   (%cclass <s64vector> "ScmUVector*")
+   (%cclass <u64vector> "ScmUVector*")
+   (%cclass <f16vector> "ScmUVector*")
+   (%cclass <f32vector> "ScmUVector*")
+   (%cclass <f64vector> "ScmUVector*")
+   (%cclass <c32vector> "ScmUVector*")
+   (%cclass <c64vector> "ScmUVector*")
+   (%cclass <c128vector> "ScmUVector*")
+   (%cclass <bitvector> "ScmBitvector*")
+   (%cclass <string> "ScmString*")
+   (%cclass <symbol> "ScmSymbol*")
+   (%cclass <keyword> "ScmKeyword*")
+   (%cclass <identifier> "ScmIdentifier*")
+   (%cclass <char-set> "ScmCharSet*")
+   (%cclass <regexp> "ScmRegexp*")
+   (%cclass <regmatch> "ScmRegMatch*")
+   (%cclass <port> "ScmPort*")
+   (%cclass <input-port> "ScmPort*" "SCM_IPORTP" "SCM_PORT")
+   (%cclass <output-port> "ScmPort*" "SCM_OPORTP" "SCM_PORT")
+   (%cclass <procedure> "ScmProcedure*")
+   (%cclass <promise> "ScmPromise*")
+   (%cclass <comparator> "ScmComparator*")
+   (%cclass <hash-table> "ScmHashTable*")
+   (%cclass <tree-map> "ScmTreeMap*")
+   (%cclass <class> "ScmClass*")
+   (%cclass <method> "ScmMethod*")
+   (%cclass <module> "ScmModule*")
+   (%cclass <thread> "ScmVM*" "SCM_VMP" "SCM_VM")
+   (%cclass <weak-vector> "ScmWeakVector*")
+   (%cclass <weak-hash-table> "ScmWeakHashTable*")
+   (%cclass <compiled-code> "ScmCompiledCode*")
+   (%cclass <foreign-pointer> "ScmForeignPointer*")
+   (%cclass <box>  "ScmBox*")
+   (%cclass <primitive-parameter> "ScmPrimitiveParameter*")
+   (%cclass <dlobj> "ScmDLObj*")
+   (%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")
+
+   ;; Exception - These classes are not available until we load gauche.threads,
+   ;; but we need those stub types before compiling gauche.threads.
+   ;; We hand-wire them, leaving scheme-type field #f.
+   (make-cgen-type '<mutex> #f "ScmMutex*" "<mutex>")
+   (make-cgen-type '<condition-variable> #f "ScmConditionVariable*"
+                   "<condition-variable>")
+   )
 
 ;;
 ;; Generating C expressions from type info
