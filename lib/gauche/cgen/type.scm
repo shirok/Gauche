@@ -325,7 +325,7 @@
    (%cclass <box>  "ScmBox*")
    (%cclass <primitive-parameter> "ScmPrimitiveParameter*")
    (%cclass <dlobj> "ScmDLObj*")
-   (%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")
+   ;(%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")
 
    ;; Exception - These classes are not available until we load gauche.threads,
    ;; but we need those stub types before compiling gauche.threads.
@@ -333,6 +333,9 @@
    (make-cgen-type '<mutex> #f "ScmMutex*" "<mutex>")
    (make-cgen-type '<condition-variable> #f "ScmConditionVariable*"
                    "<condition-variable>")
+   ;; TRANSIENT: <dlptr> isn't in 0.9.10
+   (make-cgen-type '<dlptr> #f "ScmObj" "<dlptr>"
+                   "Scm_DLPtrP" "SCM_OBJ")
    )
 
 ;;
