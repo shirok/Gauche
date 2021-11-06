@@ -379,7 +379,9 @@
 (define-form-parser define-type args
   (unless (<= 2 (length args) 6)
     (error <cgen-stub-error> "malformed define-type: " `(define-type . ,args)))
-  (apply make-cgen-type args))
+  (apply (^[name c-type :optional (desc #f) (c-pred #f) (unbox #f) (box #f)]
+           (make-cgen-type name #f c-type desc c-pred unbox box))
+         args))
 
 ;; default
 (define *scm-type* (name->type '<top>))
@@ -1958,7 +1960,7 @@
                       :flags flags
                       :print-proc (and print-proc (car print-proc))
                       :cleanup-proc (and cleanup-proc (car cleanup-proc)))
-           (make-cgen-type scm-name c-type
+           (make-cgen-type scm-name #f c-type
                            (x->string scm-name) ; description
                            (x->string c-pred)
                            (x->string c-unboxer)

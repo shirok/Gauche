@@ -1,5 +1,5 @@
 ;;;
-;;; gauche.cgen.type - type management
+;;; gauche.cgen.type - Stub type management
 ;;;
 ;;;   Copyright (c) 2004-2021  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -42,28 +42,9 @@
   )
 (select-module gauche.cgen.type)
 
-;;===================================================================
-;; Type handling
-;;
-
-;; Stub's type system doesn't exactly match Scheme's, since stub has
-;; to handle internal guts of Scheme implementations as well as
-;; C type systems.  We call the types used in the stub generator
-;; "stub type", apart from "C type" and "Scheme type".
-;;
-;; For each existing conversion between C type and Scheme type, a stub
-;; type is defined.  For types that has one-to-one mapping between
-;; C and Scheme (such as most aggregate types, for example, Scheme's
-;; <u32vector> and C's ScmU32Vector*), there is only one stub type,
-;; which uses the same name as the Scheme's.  There are some stub types
-;; that reflects C type variations: <int>, <int8>, <int16>, <int32>,
-;; <uint>, <uint8>, <uint16>, <uint32> --- these are mapped to Scheme's
-;; integer, but the range limit is taken into account.   <fixnum>
-;; refers to the integers that can be represented in an immediate integer.
-;; Note that a stub type <integer> corresponds to Scheme's exact integers,
-;; but it is mapped to C's ScmObj, since C's integer isn't enough to
-;; represent all of Scheme integers.   A stub type <void> is
-;; used to denote a procedure return type.
+;; Stub types augment Gauche's runtime type system, adding information
+;; on how to generate C code fragments to typecheck, box and unbox the
+;; value of the given type.
 ;;
 ;; Each stub type has a "boxer" and an "unboxer".  A boxer is a C name
 ;; of a function or a macro that takes an object of C type of the stub
@@ -71,60 +52,43 @@
 ;; or a macro that takes Scheme object and checks its vailidy, then
 ;; returns a C object of the C type or throws an error.
 ;;
-;; Here's a summary of primitive stub types and the mapping each one
-;; represents.
+;; We have a few categories of stub types.
 ;;
-;;   stub type    Scheme       C           Notes
-;;  -----------------------------------------------------------------
-;;   <fixnum>     <integer>    ScmSmallInt Integers within fixnum range
-;;   <integer>    <integer>    ScmObj      Any exact integers
-;;   <real>       <real>       double
-;;   <number>     <number>     ScmObj      Any numbers
+;;  - Native types.  Some native types can represent a subset of Scheme 
+;;    types; e.g. <int16> native type corresponds to C's int16_t, 
+;;    and covers a subset of Scheme <integer> type.  See src/libtype.scm
+;;    for those native types.
 ;;
-;;   <int>        <integer>    int         Integers representable in C
-;;   <int8>       <integer>    int
-;;   <int16>      <integer>    int
-;;   <int32>      <integer>    int
-;;   <short>      <integer>    short
-;;   <long>       <integer>    long
-;;   <uint>       <integer>    uint        Integers representable in C
-;;   <uint8>      <integer>    uint
-;;   <uint16>     <integer>    uint
-;;   <uint32>     <integer>    uint
-;;   <ushort>     <integer>    ushort
-;;   <ulong>      <integer>    ulong
-;;   <float>      <real>       float       Unboxed value cast to float
-;;   <double>     <real>       double      Alias of <real>
+;;  - C-class types.  These are Scheme object whose structure is defined in C.
+;;    They can be treated as ScmObj or can be casted to the specific C type;
+;;    e.g. <symbol> can be casted to ScmSymbol*.
+;;    Its unboxer is ScmObj -> C-TYPE*, and boxer is C-TYPE* -> ScmObj.
 ;;
-;;   <boolean>    <boolean>    int         Boolean value
-;;   <char>       <char>       ScmChar     NB: not a C char
+;;  - Pass-through types.  These are Scheme object that are also handled
+;;    as ScmObj in C-level.  Stub types only typecheck, and its boxer and
+;;    unboxer are just identity.  It can be either purely-Scheme-defined
+;;    objects, or an object that can take multiple representations
+;;    (e.g. <integer> cna be a fixnum or ScmBignum*, so the stub generator
+;;    passes through it, and the C routine handles the internals.)
 ;;
-;;   <void>       -            void        (Used only as a return type.
-;;                                          Scheme function returns #<undef>)
-;;
-;;   <const-cstring> <string>  const char* For arguments, string is unboxed
-;;                                         by Scm_GetStringConst.
-;;                                         For return values, C string is boxed
-;;                                         by SCM_MAKE_STR_COPYING.
-;;
-;;   <pair>       <pair>       ScmPair*
-;;   <list>       <list>       ScmObj
-;;   <string>     <string>     ScmString*
-;;   <symbol>     <symbol>     ScmSymbol*
-;;   <vector>     <vector>     ScmVector*
-;;    :
-;;
-;; Pointer types can be qualified as 'maybe', by adding '?' at the
-;; end of type name, e.g. '<string>?'.
-;; If 'maybe' type appears as an argument type, the argument accepts #f
-;; as well as the specified type, and translates #f to NULL.  If 'maybe'
-;; type appears as the return type, the result of C expression can be NULL
-;; and the stub translates it to #f.
+;;  - Maybe types.  (<?> TYPE).  In stub context, we only concern maybe type
+;;    that can be unboxed into a C pointer type.  In addition to the objects
+;;    of TYPE, it maps Scheme's #f to C's NULL and vice versa.
+;;    For the convenicne, maybe type can be notated as TYPE? in the stub,
+;;    e.g. <port>?
+
+;; Each <cgen-type> has a corresponding Gauche type.  However, when
+;; compiling an extension that introduces a new type, the compiling
+;; Gauche may not know the type that's being defined.  So <cgen-types> are
+;; catalogued with the 'name' of the corresponding Gauche type, rather than
+;; the type object itself.
 
 ;; Stub type definition
 (define-class <cgen-type> (<instance-pool-mixin>)
   ((name        :init-keyword :name)
-   ;; ::<symbol> - name of this stub type.
+   ;; ::<symbol> - name of the Gauche type.
+   (scheme-type :init-keyword :scheme-type)
+   ;; class or type.  can be #f if the type does not exist at runtime yet.
    (c-type      :init-keyword :c-type)
    ;; ::<string> - C type name this stub type represents
    (description :init-keyword :description)
@@ -144,6 +108,7 @@
    ;; ::<type>? - base type, if this is 'maybe' qualified type.
    ))
 
+;; Lookup/create a cgen type from Gauche type name
 (define (cgen-type-from-name name)
   (or (find (lambda (type) (eq? (~ type'name) name))
             (instance-pool->list <cgen-type>))
@@ -152,12 +117,15 @@
       (and-let* ((m (#/\?$/ (symbol->string name)))
                  (basename (string->symbol (m 'before)))
                  (basetype (cgen-type-from-name basename)))
-        (make <cgen-type> :name name :c-type (~ basetype'c-type)
-              :description #"~(~ basetype'description) or #f"
-              :c-predicate (~ basetype'%c-predicate)
-              :unboxer     (~ basetype'%unboxer)
-              :boxer       (~ basetype'%boxer)
-              :maybe       basetype))))
+        (make <cgen-type> 
+          :name name
+          :scheme-type #f ;; cna be (<?> TYPE) after 0.9.11 release
+          :c-type (~ basetype'c-type)
+          :description #"~(~ basetype'description) or #f"
+          :c-predicate (~ basetype'%c-predicate)
+          :unboxer     (~ basetype'%unboxer)
+          :boxer       (~ basetype'%boxer)
+          :maybe       basetype))))
 
 ;; accessor
 (define (cgen-type-maybe? type)
@@ -172,7 +140,7 @@
 ;; Many cgen-types follows a specific convention to name boxer/unboxer etc,
 ;; and make-cgen-type assumes the convention if they are not provided.
 
-(define (make-cgen-type name c-type :optional (desc #f) (c-pred #f)
+(define (make-cgen-type name scheme-type c-type :optional (desc #f) (c-pred #f)
                         (unbox #f) (box #f))
   (define (strip<> name) (string-trim-both name #[<>]))
   (define (default-cpred name)
@@ -186,15 +154,62 @@
   (define (default-box name)
     #"SCM_MAKE_~(string-tr (strip<> name) \"a-z-\" \"A-Z_\")")
   (make <cgen-type>
-    :name name :c-type c-type
+    :name name :scheme-type scheme-type :c-type c-type
     :description (or desc (x->string name))
     :c-predicate (or c-pred (default-cpred (x->string name)))
     :unboxer     (or unbox (default-unbox (x->string name)))
     :boxer       (or box "SCM_OBJ_SAFE")))
 
+;; TRANSIENT: Remove this after 0.9.11 release
+;; <native-type> is introduced in 0.9.11, but we need 'em to compile 0.9.11
+;; with 0.9.10, so we fake 'em.  See src/libtype.scm for the complete
+;; definition.
+(cond-expand
+ [gauche-0.9.10
+  (begin
+    (define-class <native-type> ()
+      ((name :init-keyword :name)
+       (c-type-name :init-keyword :c-type-name)))
+    (define-syntax define-native-type
+      (syntax-rules ()
+        [(_ name super c-type-name pred)
+         (define name (make <native-type> 
+                        :name 'name 
+                        :c-type-name 'c-type-name))]))
+    ;; Taken from src/libtype.scm
+    (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
+    (define-native-type <short>   SCM_CLASS_INTEGER short native_shortP)
+    (define-native-type <ushort>  SCM_CLASS_INTEGER u_short native_ushortP)
+    (define-native-type <int>     SCM_CLASS_INTEGER int native_intP)
+    (define-native-type <uint>    SCM_CLASS_INTEGER u_int native_uintP)
+    (define-native-type <long>    SCM_CLASS_INTEGER long native_longP)
+    (define-native-type <ulong>   SCM_CLASS_INTEGER u_long native_ulongP)
+    (define-native-type <int8>    SCM_CLASS_INTEGER int8_t native_s8P)
+    (define-native-type <uint8>   SCM_CLASS_INTEGER uint8_t native_u8P)
+    (define-native-type <int16>   SCM_CLASS_INTEGER int16_t native_s16P)
+    (define-native-type <uint16>  SCM_CLASS_INTEGER uint16_t native_u16P)
+    (define-native-type <int32>   SCM_CLASS_INTEGER int32_t native_s32P)
+    (define-native-type <uint32>  SCM_CLASS_INTEGER uint32_t native_u32P)
+    (define-native-type <int64>   SCM_CLASS_INTEGER int64_t native_s64P)
+    (define-native-type <uint64>  SCM_CLASS_INTEGER uint64_t native_u64P)
+    (define-native-type <size_t>  SCM_CLASS_INTEGER size_t native_sizetP)
+    (define-native-type <ssize_t> SCM_CLASS_INTEGER ssize_t native_ssizetP)
+    (define-native-type <ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t native_ptrdifftP)
+    (define-native-type <float>   SCM_CLASS_REAL float native_realP)
+    (define-native-type <double>  SCM_CLASS_REAL double native_realP)
+    (define-native-type <const-cstring> SCM_CLASS_STRING char* native_cstrP)
+    (define-native-type <input-port>  SCM_CLASS_PORT ScmObj native_iportP)
+    (define-native-type <output-port> SCM_CLASS_PORT ScmObj native_oportP)
+    (define-native-type <closure> SCM_CLASS_PROCEDURE ScmObj native_closureP)
+    (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP))]
+ [else])
+
 ;; Builtin types
 (for-each
- (cut apply make-cgen-type <>)
+ (^[args]
+   (apply (^[name c-type :optional (desc #f) (c-pred #f) (unbox #f) (box #f)]
+            (make-cgen-type name #f c-type desc c-pred unbox box))
+          args))
  '(;; Numeric types
    ;; NB: The boxer of <real> may be substituted when cgen-box-tail-expr
    ;; is used.
