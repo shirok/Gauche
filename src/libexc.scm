@@ -245,9 +245,11 @@
    (allocator (c "thread_exception_allocate"))
    (printer   (c "thread_exception_print")))
 
+ ;; Those classes shares the same C structure, so we reuse the same C predicate
+ ;; and unboxer.  That's why we need a separate define-type, not relying on
+ ;; the stub type auto generation of define-cclass.
  (define-type <join-timeout-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
-
  (define-cclass <join-timeout-exception>
    "ScmThreadException*" "Scm_JoinTimeoutExceptionClass"
    (c "thread_exception_cpa")
@@ -257,7 +259,6 @@
 
  (define-type <abandoned-mutex-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
-
  (define-cclass <abandoned-mutex-exception>
    "ScmThreadException*" "Scm_AbandonedMutexExceptionClass"
    (c "thread_exception_cpa")
@@ -267,7 +268,6 @@
 
  (define-type <terminated-thread-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
-
  (define-cclass <terminated-thread-exception>
    "ScmThreadException*" "Scm_TerminatedThreadExceptionClass"
    (c "thread_exception_cpa")
@@ -277,7 +277,6 @@
 
  (define-type <uncaught-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
-
  (define-cclass <uncaught-exception>
    "ScmThreadException*" "Scm_UncaughtExceptionClass"
    (c "thread_exception_cpa")
@@ -348,6 +347,9 @@
    NULL
   };"
 
+ ;; Those classes share the same C structure, so we reuse the same C predicate
+ ;; and unboxer.  That's why we need a separate define-type, not relying on
+ ;; the stub type auto generation of define-cclass.
  (define-type <io-filename-error> "ScmFilenameErrorMixin*" #f
    "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
  (define-cclass <io-filename-error>
