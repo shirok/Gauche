@@ -53,9 +53,6 @@
  (initcode (Scm_Init_mt_random))
 
  (define-type <mersenne-twister> "ScmMersenneTwister*")
- (define-type <u32vector> "ScmU32Vector*")
- (define-type <f32vector> "ScmF32Vector*")
- (define-type <f64vector> "ScmF64Vector*")
 
  (define-cproc mt-random-get-seed (mt::<mersenne-twister>)
    (return (-> mt seed)))

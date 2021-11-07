@@ -362,7 +362,8 @@ SCM_EXTERN ScmObj Scm_MakeC128VectorFromArrayShared(ScmSmallInt size,
                                                    ScmDoubleComplex array[]);
 
 
-/* For the backward compatibility */
+/* For the backward compatibility.  Use ScmUVector for the new code
+   (that's why we don't define ScmC**Vector, for they are new additions. */
 typedef ScmUVector ScmS8Vector;
 typedef ScmUVector ScmU8Vector;
 typedef ScmUVector ScmS16Vector;

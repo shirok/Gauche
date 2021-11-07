@@ -119,7 +119,7 @@
                  (basetype (cgen-type-from-name basename)))
         (make <cgen-type>
           :name name
-          :scheme-type #f ;; cna be (<?> TYPE) after 0.9.11 release
+          :scheme-type #f ;; can be (<?> TYPE) after 0.9.11 release
           :c-type (~ basetype'c-type)
           :description #"~(~ basetype'description) or #f"
           :c-predicate (~ basetype'%c-predicate)
@@ -205,9 +205,6 @@
  [else])
 
 ;; Stub types corresponding to native types.
-;; NB: <real> should be a pass-through type.  If coersion to double is needed,
-;; you can use <double>.  For the backward compatibility, we keep it as it is
-;; for some time.
 (let ()
   (define (%native native-type pred unbox box)
     (make <cgen-type>
