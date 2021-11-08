@@ -96,12 +96,13 @@
      (set! (Q_LENGTH z) 0 (Q_HEAD z) SCM_NIL (Q_TAIL z) SCM_NIL)
      (return (SCM_OBJ z))))
 
- (declare-stub-type <queue> "Queue*" "queue" "QP" "Q")
  (define-cclass <queue>
    "Queue*" "QueueClass" ()
    ((length :type <uint> :c-name "len" :setter #f))
    (allocator (begin (cast void initargs) (return (makeq klass))))
-   (printer (Scm_Printf port "#<queue %d @%p>" (%qlength (Q obj)) obj)))
+   (printer (Scm_Printf port "#<queue %d @%p>" (%qlength (Q obj)) obj))
+   (c-predicate "QP")
+   (unboxer "Q"))
 
  ;;
  ;; <mtqueue>
@@ -153,7 +154,6 @@
          [(SCM_FALSEP maxlen) (set! (MTQ_MAXLEN mtq) -1)]
          [else (SCM_TYPE_ERROR maxlen "non-negative fixnum or #f")]))
 
- (declare-stub-type <mtqueue> "MtQueue*" "mtqueue" "MTQP" "MTQ")
  (define-cclass <mtqueue>
    "MtQueue*" "MtQueueClass" ("QueueClass")
    ((max-length :getter "return mtq_maxlen_get(obj);"
@@ -167,7 +167,9 @@
     (Scm_Printf port "#<mtqueue %d %s@%p>"
                 (%qlength (Q obj))
                 (?: (MTQ_CLOSED obj) "(closed)" "")
-                obj)))
+                obj))
+   (c-predicate "MTQP")
+   (unboxer "MTQ"))
 
  ;; lock macros
  (define-cise-expr big-locked?

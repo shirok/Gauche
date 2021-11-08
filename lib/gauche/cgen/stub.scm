@@ -1615,11 +1615,15 @@
 
 ;; (define-cclass scheme-name [qualifiers] c-type-name c-class-name cpa
 ;;   (<slot-spec> ...)
-;;   [(allocator <proc-spec>)]
-;;   [(printer   <proc-spec>)]
-;;   [(comparer  <proc-spec>)]
-;;   [(direct-supers <string> ...)]
-;;   [(metaclass <class-name>)]
+;;   ;; optional fields - can appear in any order
+;;   (allocator <proc-spec>)
+;;   (printer   <proc-spec>)
+;;   (comparer  <proc-spec>)
+;;   (direct-supers <string> ...)
+;;   (metaclass <class-name>)
+;;   (c-predicate <string>)   ; for stub-type
+;;   (unboxer <string>)       ; for stub-type
+;;   (boxer <string>)         ; for stub-type
 ;;   )
 ;;
 ;; <slot-spec> := slot-name
@@ -1680,13 +1684,6 @@
    (direct-supers :init-keyword :direct-supers :init-value '())
    ))
 
-(define-method initialize ((self <cclass>) initargs)
-  (next-method)
-  (unless (cgen-type-from-name (~ self'scheme-name))
-    (cgen-stub-parse-form
-     `(declare-stub-type ,(~ self'scheme-name) ,(~ self'c-type))))
-  )
-
 (define-class <cslot> ()
   ((cclass      :init-keyword :cclass)
    (scheme-name :init-keyword :scheme-name)
@@ -1705,20 +1702,27 @@
       => (cut error <cgen-stub-error> "unknown define-cclass qualifier(s)" <>)])
     (match rest
       [(c-type c-name cpa slot-spec . more)
+       (define (get-opt opt init) (cond [(assq opt more) => cadr] [else init]))
        (check-arg string? c-name)
        (check-arg list? cpa)
        (check-arg list? slot-spec)
-       (let* ([allocator (cond [(assq 'allocator more) => cadr] [else #f])]
-              [printer   (cond [(assq 'printer more) => cadr] [else #f])]
-              [comparer  (cond [(assq 'comparer more) => cadr] [else #f])]
-              [dsupers   (cond [(assq 'direct-supers more) => cdr] [else '()])]
-              [metaclass (cond [(assq 'metaclass more) => cadr] [else #f])]
+       (let* ([allocator (get-opt 'allocator #f)]
+              [printer   (get-opt 'printer #f)]
+              [comparer  (get-opt 'comparer #f)]
+              [dsupers   (get-opt 'direct-supers '())]
+              [metaclass (get-opt 'metaclass #f)]
+              [c-pred    (get-opt 'c-predicate #f)]
+              [unboxer   (get-opt 'unboxer #f)]
+              [boxer     (get-opt 'boxer #f)]
               [cclass (make <cclass>
                         :scheme-name scm-name :c-type c-type :c-name c-name
                         :qualifiers quals
                         :cpa cpa :direct-supers dsupers
                         :allocator allocator :printer printer
                         :comparer comparer :metaclass metaclass)])
+         (unless (cgen-type-from-name scm-name)
+           (make-cgen-type scm-name #f c-type (x->string scm-name)
+                           c-pred unboxer boxer))
          (set! (~ cclass'slot-spec) (process-cclass-slots cclass slot-spec))
          (cgen-add! cclass))])))
 

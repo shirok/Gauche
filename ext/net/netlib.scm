@@ -418,9 +418,6 @@
 
  (.if (defined HAVE_IPV6)
     (begin
-      (declare-stub-type <sys-addrinfo> "ScmSysAddrinfo*" #f
-        "SCM_SYS_ADDRINFO_P" "SCM_SYS_ADDRINFO")
-
       (define-cclass <sys-addrinfo>
         "ScmSysAddrinfo*" "Scm_SysAddrinfoClass"
         ()

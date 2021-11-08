@@ -578,7 +578,7 @@
 
 ;;;
 ;;; Class: <Tuple>
-;;;   Fixed-lenght list, each element having its own type constraints.
+;;;   Fixed-length list, each element having its own type constraints.
 ;;;
 
 ;; (<Tuple> type ... [*])
