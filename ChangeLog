@@ -5,6 +5,8 @@
 	  only effective during a single stub file processing.
 	  (define-cclass): Let it handle declare-stub-type, even if it needs
 	  custom c-predicate name or unboxer name.
+	  (define-cstruct): Incorporated define-cstruct, an easier stub
+	  interface for C struct.
 
 2021-11-05  Shiro Kawai  <shiro@acm.org>
 
