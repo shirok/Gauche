@@ -20059,6 +20059,23 @@ module @code{slib}.
 @code{require}でロードされる、SLIBで導入されるすべての定義は、
 @code{slib}モジュール内で行われます。
 @c COMMON
+
+@c EN
+NB: SLIB probes available srfis during initialization, and by the way
+it does so, all available srfis are loaded,
+regardless of whether you @code{require} it or not.  This may
+introduce unexpected side effects; for example, Gauche's built-in
+@code{regexp-replace} is shadowed by @code{srfi-115}'s one
+(@pxref{R7RS regular expressions}), which has slightly different API.
+@c JP
+註: SLIBは初期化時にサポートされているsrfiを自動的に検出しますが、
+その副作用として、@code{require}するか否かにかかわらず
+検出されたsrfiが全てロードされてしまいます。
+これは思いがけない作用をもたらすことがあります。例えばGaucheの組み込みの
+@code{regexp-replace}は、やや異なるAPIを持つ@code{srfi-115}の
+同名の手続きによってシャドウされてしまいます
+(@ref{R7RS regular expressions}参照)。
+@c COMMON
 @end deftp
 
 @example
