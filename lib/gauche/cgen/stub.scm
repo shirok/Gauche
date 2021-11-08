@@ -1608,10 +1608,10 @@
 ;;
 ;;  - Generates C stub for static class definition, slot accessors and
 ;;    initialization.   Corresponding C struct has to be defined elsewhere.
-;;
-;;  - <cclass> should be a <cgen-type> as well, but currently not.
-;;    If a corresponding type is not defined at the time define-cclass is
-;;    parsed, the type is created with the default parameters.
+;;  - Define-cclass automatically creates corresponding stub-type.
+;;    By default, C predicate, unboxer and boxer names are inferred from
+;;    the scheme name.  If you need different names, you can specify them
+;;    in the options.
 
 ;; (define-cclass scheme-name [qualifiers] c-type-name c-class-name cpa
 ;;   (<slot-spec> ...)
@@ -1720,9 +1720,11 @@
                         :cpa cpa :direct-supers dsupers
                         :allocator allocator :printer printer
                         :comparer comparer :metaclass metaclass)])
-         (unless (cgen-type-from-name scm-name)
-           (make-cgen-type scm-name #f c-type (x->string scm-name)
-                           c-pred unboxer boxer))
+         (let1 stub-type 
+             (or (cgen-type-from-name scm-name)
+                 (make-cgen-type scm-name #f c-type (x->string scm-name)
+                                 c-pred unboxer boxer))
+           (set! (~ stub-type'cclass) cclass))
          (set! (~ cclass'slot-spec) (process-cclass-slots cclass slot-spec))
          (cgen-add! cclass))])))
 

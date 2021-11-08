@@ -100,6 +100,9 @@
    ;; ::<string> - C type name this stub type represents
    (description :init-keyword :description)
    ;; ::<string> - used in the type error message
+   (cclass      :init-keyword :cclass :init-value #f)
+   ;; If this cgen-type is for define-cclass'ed class, this slot holds
+   ;; <cclass>.
 
    ;; The following field should be private.  Use cgen-box-expr etc.
    (%c-predicate :init-keyword :c-predicate)
