@@ -55,10 +55,22 @@
 
 ;; Summary of forms
 ;;
-;;   define-type name c-type [desc c-predicate unboxer boxer]
+;;   declare-stub-type name c-type [desc c-predicate unboxer boxer]
 ;;
-;;      Register a new type to be recognized.  This is rather a declaration
-;;      than definition; no C code will be generated directly by this form.
+;;      Register a new type to be recognized.  This is only to tell the
+;;      stub generator about how C code should be generated dealing
+;;      with the given type.  It is independent from the actual
+;;      Scheme class/type---only effective during stub generation of
+;;      the file.
+;;
+;;      This restriction seems too limiting, but actually, you can't refer
+;;      to the external types introduced in the extension module anyway;
+;;      so this form is only effective for the types introduced
+;;      in the extension module itself.
+;;
+;;      This form is called define-type before, but it may be confusing
+;;      with the actual 'types' in Gauche, so we renamed.  The old
+;;      form will be supported for a while.
 ;;
 ;;   define-cproc name (args ...) [rettype] [flag ...] [qual ...] body ...
 ;;
@@ -297,6 +309,12 @@
   `(make <form-parser> :name ',name :args ',args
          :handler (^ (&whole ,@args) ,@body)))
 
+(define-macro (define-form-parser-alias name orig)
+  `(if-let1 p (instance-pool-find <form-parser> (^o (eq? (~ o'name) ',orig)))
+     (make <form-parser> :name ',name
+           :args (~ p'args) :handler (~ p'handler))
+     (error "unknown form parser:" ',orig)))
+
 (define-syntax export-toplevel-cise-form
   (syntax-rules ()
     [(_ name)
@@ -369,19 +387,22 @@
   (or (cgen-type-from-name name)
       (error <cgen-stub-error> "unknown stub-type: " name)))
 
-;; define-type name c-type [desc c-predicate unboxer boxer]
+;; declare-stub-type name c-type [desc c-predicate unboxer boxer]
 ;;
 ;;   Creates a new stub type for existing scheme type.
 ;;   This form itself doesn't generate any C code, but predicate, boxer
 ;;   and unboxer will be used by other stub forms to generate C code
 ;;   based on stub types.
 
-(define-form-parser define-type args
+(define-form-parser declare-stub-type args
   (unless (<= 2 (length args) 6)
-    (error <cgen-stub-error> "malformed define-type: " `(define-type . ,args)))
+    (error <cgen-stub-error> "malformed define-type: "
+           `(declare-stub-type . ,args)))
   (apply (^[name c-type :optional (desc #f) (c-pred #f) (unbox #f) (box #f)]
            (make-cgen-type name #f c-type desc c-pred unbox box))
          args))
+
+(define-form-parser-alias define-type declare-stub-type)
 
 ;; default
 (define *scm-type* (name->type '<top>))
@@ -1664,7 +1685,7 @@
   (next-method)
   (unless (cgen-type-from-name (~ self'scheme-name))
     (cgen-stub-parse-form
-     `(define-type ,(~ self'scheme-name) ,(~ self'c-type))))
+     `(declare-stub-type ,(~ self'scheme-name) ,(~ self'c-type))))
   )
 
 (define-class <cslot> ()

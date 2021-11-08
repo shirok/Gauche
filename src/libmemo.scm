@@ -35,7 +35,7 @@
 (inline-stub
  (declcode (.include "gauche/priv/memoP.h"))
 
- (define-type <memo-table> "ScmMemoTable*")
+ (declare-stub-type <memo-table> "ScmMemoTable*")
  )
 
 ;;

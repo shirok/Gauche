@@ -281,7 +281,7 @@
 ;; GLOCs are not for public use, so all APIs are internal.
 
 (inline-stub
- (define-type <gloc> "ScmGloc*" "GLOC"
+ (declare-stub-type <gloc> "ScmGloc*" "GLOC"
    "SCM_GLOCP" "SCM_GLOC" "SCM_OBJ")
  )
 

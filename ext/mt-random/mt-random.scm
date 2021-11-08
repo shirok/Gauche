@@ -52,7 +52,7 @@
   (.include "mt-random.h"))
  (initcode (Scm_Init_mt_random))
 
- (define-type <mersenne-twister> "ScmMersenneTwister*")
+ (declare-stub-type <mersenne-twister> "ScmMersenneTwister*")
 
  (define-cproc mt-random-get-seed (mt::<mersenne-twister>)
    (return (-> mt seed)))

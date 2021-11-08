@@ -37,9 +37,9 @@
 (inline-stub
  (declcode (.include <gauche/priv/classP.h>
                      <gauche/vminsn.h>))
- (define-type <slot-accessor> "ScmSlotAccessor*")
- (define-type <generic> "ScmGeneric*")
- (define-type <method> "ScmMethod*")
+ (declare-stub-type <slot-accessor> "ScmSlotAccessor*")
+ (declare-stub-type <generic> "ScmGeneric*")
+ (declare-stub-type <method> "ScmMethod*")
  )
 
 ;; This module is not meant to be `use'd.   It is just to hide

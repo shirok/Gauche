@@ -63,16 +63,16 @@
   (.include "gauche-zlib.h"))
  (initcode (Scm_Init_zlib))
 
- (define-type <deflating-port> "ScmPort*" "deflating port"
+ (declare-stub-type <deflating-port> "ScmPort*" "deflating port"
    "SCM_DEFLATING_PORT_P" "SCM_PORT")
- (define-type <inflating-port> "ScmPort*" "inflating port"
+ (declare-stub-type <inflating-port> "ScmPort*" "inflating port"
    "SCM_INFLATING_PORT_P" "SCM_PORT")
 
  (.define SCM_XFLATING_PORT_P (x) (or (SCM_INFLATING_PORT_P x)
                                       (SCM_DEFLATING_PORT_P x)))
 
  ;; proxy type for shorter code.  <xflating-port> isn't really a Scheme class.
- (define-type <xflating-port> "ScmPort*" "inflating or deflating port"
+ (declare-stub-type <xflating-port> "ScmPort*" "inflating or deflating port"
    "SCM_XFLATING_PORT_P" "SCM_PORT")
 
  (define-cfn data_element (data::ScmObj

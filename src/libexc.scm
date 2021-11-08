@@ -246,9 +246,9 @@
    (printer   (c "thread_exception_print")))
 
  ;; Those classes shares the same C structure, so we reuse the same C predicate
- ;; and unboxer.  That's why we need a separate define-type, not relying on
+ ;; and unboxer.  That's why we need a separate declare-stub-type, not relying on
  ;; the stub type auto generation of define-cclass.
- (define-type <join-timeout-exception> "ScmThreadException*" #f
+ (declare-stub-type <join-timeout-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
  (define-cclass <join-timeout-exception>
    "ScmThreadException*" "Scm_JoinTimeoutExceptionClass"
@@ -257,7 +257,7 @@
    (allocator (c "thread_exception_allocate"))
    (printer   (c "thread_exception_print")))
 
- (define-type <abandoned-mutex-exception> "ScmThreadException*" #f
+ (declare-stub-type <abandoned-mutex-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
  (define-cclass <abandoned-mutex-exception>
    "ScmThreadException*" "Scm_AbandonedMutexExceptionClass"
@@ -266,7 +266,7 @@
    (allocator (c "thread_exception_allocate"))
    (printer   (c "thread_exception_print")))
 
- (define-type <terminated-thread-exception> "ScmThreadException*" #f
+ (declare-stub-type <terminated-thread-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
  (define-cclass <terminated-thread-exception>
    "ScmThreadException*" "Scm_TerminatedThreadExceptionClass"
@@ -275,7 +275,7 @@
    (allocator (c "thread_exception_allocate"))
    (printer   (c "terminated_thread_print")))
 
- (define-type <uncaught-exception> "ScmThreadException*" #f
+ (declare-stub-type <uncaught-exception> "ScmThreadException*" #f
    "SCM_THREAD_EXCEPTION_P" "SCM_THREAD_EXCEPTION")
  (define-cclass <uncaught-exception>
    "ScmThreadException*" "Scm_UncaughtExceptionClass"
@@ -348,9 +348,9 @@
   };"
 
  ;; Those classes share the same C structure, so we reuse the same C predicate
- ;; and unboxer.  That's why we need a separate define-type, not relying on
+ ;; and unboxer.  That's why we need a separate declare-stub-type, not relying on
  ;; the stub type auto generation of define-cclass.
- (define-type <io-filename-error> "ScmFilenameErrorMixin*" #f
+ (declare-stub-type <io-filename-error> "ScmFilenameErrorMixin*" #f
    "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
  (define-cclass <io-filename-error>
    "ScmFilenameErrorMixin*" "Scm_FilenameErrorMixinClass"
@@ -358,7 +358,7 @@
    ((filename))
    (allocator (c "filename_error_mixin_allocate")))
 
- (define-type <io-malformed-filename-error> "ScmFilenameErrorMixin*" #f
+ (declare-stub-type <io-malformed-filename-error> "ScmFilenameErrorMixin*" #f
    "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
  (define-cclass <io-malformed-filename-error>
    "ScmFilenameErrorMixin*" "Scm_MalformedFilenameErrorClass"
@@ -366,7 +366,7 @@
    ((filename))
    (allocator (c "filename_error_mixin_allocate")))
 
- (define-type <io-file-protection-error> "ScmFilenameErrorMixin*" #f
+ (declare-stub-type <io-file-protection-error> "ScmFilenameErrorMixin*" #f
    "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
  (define-cclass <io-file-protection-error>
    "ScmFilenameErrorMixin*" "Scm_FileProtectionErrorMixinClass"
@@ -374,7 +374,7 @@
    ((filename))
    (allocator (c "filename_error_mixin_allocate")))
 
- (define-type <io-file-is-read-only-error> "ScmFilenameErrorMixin*" #f
+ (declare-stub-type <io-file-is-read-only-error> "ScmFilenameErrorMixin*" #f
    "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
  (define-cclass <io-file-is-read-only-error>
    "ScmFilenameErrorMixin*" "Scm_FileIsReadOnlyErrorMixinClass"
@@ -382,7 +382,7 @@
    ((filename))
    (allocator (c "filename_error_mixin_allocate")))
 
- (define-type <io-file-already-exists-error> "ScmFilenameErrorMixin*" #f
+ (declare-stub-type <io-file-already-exists-error> "ScmFilenameErrorMixin*" #f
    "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
  (define-cclass <io-file-already-exists-error>
    "ScmFilenameErrorMixin*" "Scm_FileAlreadyExistsErrorMixinClass"
@@ -390,7 +390,7 @@
    ((filename))
    (allocator (c "filename_error_mixin_allocate")))
 
- (define-type <io-no-such-file-error> "ScmFilenameErrorMixin*" #f
+ (declare-stub-type <io-no-such-file-error> "ScmFilenameErrorMixin*" #f
    "SCM_FILENAME_ERROR_MIXIN_P" "SCM_FILENAME_ERROR_MIXIN")
  (define-cclass <io-no-such-file-error>
    "ScmFilenameErrorMixin*" "Scm_NoSuchFileErrorMixinClass"

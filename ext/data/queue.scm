@@ -96,7 +96,7 @@
      (set! (Q_LENGTH z) 0 (Q_HEAD z) SCM_NIL (Q_TAIL z) SCM_NIL)
      (return (SCM_OBJ z))))
 
- (define-type <queue> "Queue*" "queue" "QP" "Q")
+ (declare-stub-type <queue> "Queue*" "queue" "QP" "Q")
  (define-cclass <queue>
    "Queue*" "QueueClass" ()
    ((length :type <uint> :c-name "len" :setter #f))
@@ -153,7 +153,7 @@
          [(SCM_FALSEP maxlen) (set! (MTQ_MAXLEN mtq) -1)]
          [else (SCM_TYPE_ERROR maxlen "non-negative fixnum or #f")]))
 
- (define-type <mtqueue> "MtQueue*" "mtqueue" "MTQP" "MTQ")
+ (declare-stub-type <mtqueue> "MtQueue*" "mtqueue" "MTQP" "MTQ")
  (define-cclass <mtqueue>
    "MtQueue*" "MtQueueClass" ("QueueClass")
    ((max-length :getter "return mtq_maxlen_get(obj);"

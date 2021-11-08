@@ -157,7 +157,7 @@
 (inline-stub
  (initcode "Scm_Init_sptab(Scm_CurrentModule());")
 
- (define-type <sparse-table> "SparseTable*" "sparse table"
+ (declare-stub-type <sparse-table> "SparseTable*" "sparse table"
    "SPARSE_TABLE_P" "SPARSE_TABLE")
 
  (define-cproc %make-sparse-table (type cmpr::<comparator>)
@@ -268,7 +268,7 @@
 (inline-stub
  (initcode "Scm_Init_spvec(Scm_CurrentModule());")
 
- (define-type <sparse-vector> "SparseVector*" "sparse vector"
+ (declare-stub-type <sparse-vector> "SparseVector*" "sparse vector"
    "SPARSE_VECTOR_BASE_P" "SPARSE_VECTOR")
 
  (define-cproc %make-sparse-vector (type default-value flags::<ulong>)
@@ -416,7 +416,7 @@
 ;; Then we don't need to worry about the range of each index.
 
 (inline-stub
-  (define-type <sparse-matrix> "SparseVector*" "sparse matrix"
+  (declare-stub-type <sparse-matrix> "SparseVector*" "sparse matrix"
     "SPARSE_MATRIX_BASE_P" "SPARSE_MATRIX")
 
   (.define X_OOR 1)

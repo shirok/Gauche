@@ -38,10 +38,10 @@
  (declcode
   (.include "gauche-net.h"))
 
- (define-type <socket-address> "ScmSockAddr*" "socket address"
+ (declare-stub-type <socket-address> "ScmSockAddr*" "socket address"
    "Scm_SockAddrP" "SCM_SOCKADDR")
 
- (define-type <socket> "ScmSocket*")
+ (declare-stub-type <socket> "ScmSocket*")
  )
 
 ;;----------------------------------------------------------
@@ -418,7 +418,7 @@
 
  (.if (defined HAVE_IPV6)
     (begin
-      (define-type <sys-addrinfo> "ScmSysAddrinfo*" #f
+      (declare-stub-type <sys-addrinfo> "ScmSysAddrinfo*" #f
         "SCM_SYS_ADDRINFO_P" "SCM_SYS_ADDRINFO")
 
       (define-cclass <sys-addrinfo>

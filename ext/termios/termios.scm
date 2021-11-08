@@ -44,8 +44,8 @@
  ;;---------------------------------------------------------------------
  ;; termios.h
 
- (define-type <sys-termios> "ScmSysTermios*")
- (define-type <sys-sigset>  "ScmSysSigset*")
+ (declare-stub-type <sys-termios> "ScmSysTermios*")
+ (declare-stub-type <sys-sigset>  "ScmSysSigset*")
 
  (.unless (defined GAUCHE_WINDOWS)
 

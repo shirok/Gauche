@@ -110,7 +110,7 @@
 
 (select-module gauche.internal)
 (inline-stub
- (define-type <macro> "ScmMacro*" "macro"
+ (declare-stub-type <macro> "ScmMacro*" "macro"
    "SCM_MACROP" "SCM_MACRO" "SCM_OBJ")
  )
 

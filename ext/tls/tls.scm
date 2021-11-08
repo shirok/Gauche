@@ -92,7 +92,7 @@
  (declcode
   (.include "gauche-tls.h"))
 
- (define-type <tls> "ScmTLS*")
+ (declare-stub-type <tls> "ScmTLS*")
 
  (define-enum SSL_SERVER_VERIFY_LATER)
  (define-enum SSL_CLIENT_AUTHENTICATION)

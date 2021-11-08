@@ -699,10 +699,10 @@
   Scm_DefineReaderDirective)
 
 (inline-stub
- (define-type <read-context> "ScmReadContext*" "read context"
+ (declare-stub-type <read-context> "ScmReadContext*" "read context"
    "SCM_READ_CONTEXT_P" "SCM_READ_CONTEXT" "")
 
- (define-type <read-reference> "ScmReadReference*" "read reference"
+ (declare-stub-type <read-reference> "ScmReadReference*" "read reference"
    "SCM_READ_REFERENCE_P" "SCM_READ_REFERENCE" "")
  )
 
@@ -733,7 +733,7 @@
 ;;;
 
 (inline-stub
- (define-type <write-controls> "ScmWriteControls*" "write controls"
+ (declare-stub-type <write-controls> "ScmWriteControls*" "write controls"
    "SCM_WRITE_CONTROLS_P" "SCM_WRITE_CONTROLS" "")
 
  (define-cfn parse-write-optionals (opt1 opt2
