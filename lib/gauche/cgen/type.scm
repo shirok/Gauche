@@ -330,7 +330,14 @@
    (%cclass <primitive-parameter> "ScmPrimitiveParameter*")
    (%cclass <dlobj> "ScmDLObj*")
    ;(%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")
-
+   (%cclass <sys-group> "ScmSysGroup*")
+   (%cclass <sys-passwd> "ScmSysPasswd*")
+   (%cclass <sys-sigset> "ScmSysSigset*")
+   (%cclass <sys-stat> "ScmSysStat*")
+   (%cclass <time> "ScmTime*")
+   (%cclass <sys-tm> "ScmSysTm*")
+   (%cclass <sys-fdset> "ScmSysFdset*")
+ 
    ;; Exception - These classes are not available until we load gauche.threads,
    ;; but we need those stub types before compiling gauche.threads.
    ;; We hand-wire them, leaving scheme-type field #f.

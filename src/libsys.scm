@@ -292,10 +292,6 @@
 ;;---------------------------------------------------------------------
 ;; grp.h - groups
 
-(inline-stub
- (declare-stub-type <sys-group> "ScmSysGroup*")
- )
-
 (define-cproc sys-getgrgid (gid::<int>) Scm_GetGroupById)
 (define-cproc sys-getgrnam (name::<string>) Scm_GetGroupByName)
 
@@ -356,10 +352,6 @@
 ;;---------------------------------------------------------------------
 ;; pwd.h - passwords
 
-(inline-stub
- (declare-stub-type <sys-passwd> "ScmSysPasswd*")
- )
-
 (define-cproc sys-getpwuid (uid::<int>) Scm_GetPasswdById)
 (define-cproc sys-getpwnam (name::<string>) Scm_GetPasswdByName)
 
@@ -377,8 +369,6 @@
 ;; signal.h
 
 (inline-stub
- (declare-stub-type <sys-sigset> "ScmSysSigset*")
-
  (define-enum SIG_SETMASK)
  (define-enum SIG_BLOCK)
  (define-enum SIG_UNBLOCK)
@@ -663,8 +653,6 @@
 ;; sys/stat.h
 
 (inline-stub
- (declare-stub-type <sys-stat> "ScmSysStat*")
-
  ;; Commn code for stat and lstat.
  (define-cise-stmt stat-common
    [(_ statfn)
@@ -838,11 +826,6 @@
 
 ;;---------------------------------------------------------------------
 ;; time.h
-
-(inline-stub
- (declare-stub-type <time> "ScmTime*")
- (declare-stub-type <sys-tm> "ScmSysTm*")
- )
 
 (define-cproc sys-time () (return (Scm_MakeSysTime (time NULL))))
 
@@ -1331,8 +1314,6 @@
 ;; select
 
 (inline-stub
- (declare-stub-type <sys-fdset> "ScmSysFdset*")
-
  (when "defined(HAVE_SELECT)"
    ;; NB: On Windows, FD_SETSIZE merely indicates the maximum # of socket
    ;; descriptors fd_set can contain, and unrelated to the actual value
