@@ -311,8 +311,7 @@
 
 (define-macro (define-form-parser-alias name orig)
   `(if-let1 p (instance-pool-find <form-parser> (^o (eq? (~ o'name) ',orig)))
-     (make <form-parser> :name ',name
-           :args (~ p'args) :handler (~ p'handler))
+     (make <form-parser> :name ',name :args (~ p'args) :handler (~ p'handler))
      (error "unknown form parser:" ',orig)))
 
 (define-syntax export-toplevel-cise-form
@@ -340,7 +339,7 @@
                  [else form]))))
 
 (define (cgen-stub-parser key)
-  (cond [(find (^p (eq? key (~ p'name))) (instance-pool->list <form-parser>))
+  (cond [(instance-pool-find <form-parser> (^p (eq? key (~ p'name))))
          => (^[parser] (cut invoke parser <>))]
         [else #f]))
 

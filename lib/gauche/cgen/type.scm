@@ -76,6 +76,13 @@
 ;;    of TYPE, it maps Scheme's #f to C's NULL and vice versa.
 ;;    For the convenicne, maybe type can be notated as TYPE? in the stub,
 ;;    e.g. <port>?
+;;
+;; In general, types defined in extensions can't be directly accesible from
+;; other extensions at C level.  So we don't need to carry around stub types
+;; across boundary of extensions.  Each extension is only accessible to
+;; the stub types provided from Gauche core, or the stub types explicitly
+;; defined within it.
+;; The stub types provided from Gauche core are defined in this module.
 
 ;; Each <cgen-type> has a corresponding Gauche type.  However, when
 ;; compiling an extension that introduces a new type, the compiling
