@@ -338,7 +338,7 @@
    (%cclass <sys-sigset> "ScmSysSigset*")
    (%cclass <sys-stat> "ScmSysStat*")
    (%cclass <time> "ScmTime*")
-   (%cclass <sys-tm> "ScmSysTm*")
+   ;(%cclass <sys-tm> "ScmSysTm*")
    (%cclass <sys-fdset> "ScmSysFdset*")
  
    ;; Exception - These classes are not available until we load gauche.threads,

@@ -1346,72 +1346,6 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
     return spec;
 }
 
-/* <sys-tm> object */
-
-static ScmObj tm_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
-{
-    return SCM_OBJ(SCM_NEW_INSTANCE(ScmSysTm, klass));
-}
-
-static void tm_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)
-{
-#define TM_BUFSIZ 50
-    char buf[TM_BUFSIZ];
-    ScmSysTm *st = SCM_SYS_TM(obj);
-#if !defined(GAUCHE_WINDOWS)
-    strftime(buf, TM_BUFSIZ, "%a %b %e %T %Y", &st->tm);
-#else  /* GAUCHE_WINDOWS */
-    strftime(buf, TM_BUFSIZ, "%a %b %d %H:%M:%S %Y", &st->tm);
-#endif /* GAUCHE_WINDOWS */
-    Scm_Printf(port, "#<sys-tm \"%s\">", buf);
-#undef TM_BUFSIZ
-}
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_SysTmClass,
-                         tm_print, NULL, NULL,
-                         tm_allocate, SCM_CLASS_DEFAULT_CPL);
-
-ScmObj Scm_MakeSysTm(struct tm *tm)
-{
-    ScmSysTm *st = SCM_NEW(ScmSysTm);
-    SCM_SET_CLASS(st, SCM_CLASS_SYS_TM);
-    st->tm = *tm;               /* copy */
-    return SCM_OBJ(st);
-}
-
-#define TM_ACCESSOR(name)                                               \
-  static ScmObj SCM_CPP_CAT(name, _get)(ScmSysTm *tm) {                 \
-    return Scm_MakeInteger(tm->tm.name);                                \
-  }                                                                     \
-  static void SCM_CPP_CAT(name, _set)(ScmSysTm *tm, ScmObj val) {       \
-    if (!SCM_EXACTP(val))                                               \
-      Scm_Error("exact integer required, but got %S", val);             \
-    tm->tm.name = Scm_GetInteger(val);                                  \
-  }
-
-TM_ACCESSOR(tm_sec)
-TM_ACCESSOR(tm_min)
-TM_ACCESSOR(tm_hour)
-TM_ACCESSOR(tm_mday)
-TM_ACCESSOR(tm_mon)
-TM_ACCESSOR(tm_year)
-TM_ACCESSOR(tm_wday)
-TM_ACCESSOR(tm_yday)
-TM_ACCESSOR(tm_isdst)
-
-static ScmClassStaticSlotSpec tm_slots[] = {
-    SCM_CLASS_SLOT_SPEC("sec", tm_sec_get, tm_sec_set),
-    SCM_CLASS_SLOT_SPEC("min", tm_min_get, tm_min_set),
-    SCM_CLASS_SLOT_SPEC("hour", tm_hour_get, tm_hour_set),
-    SCM_CLASS_SLOT_SPEC("mday", tm_mday_get, tm_mday_set),
-    SCM_CLASS_SLOT_SPEC("mon", tm_mon_get, tm_mon_set),
-    SCM_CLASS_SLOT_SPEC("year", tm_year_get, tm_year_set),
-    SCM_CLASS_SLOT_SPEC("wday", tm_wday_get, tm_wday_set),
-    SCM_CLASS_SLOT_SPEC("yday", tm_yday_get, tm_yday_set),
-    SCM_CLASS_SLOT_SPEC("isdst", tm_isdst_get, tm_isdst_set),
-    SCM_CLASS_SLOT_SPEC_END()
-};
-
 /*
  * nanosleep() compatibility layer
  */
@@ -3372,7 +3306,6 @@ void Scm__InitSystem(void)
     ScmModule *mod = Scm_GaucheModule();
     Scm_InitStaticClass(&Scm_SysStatClass, "<sys-stat>", mod, stat_slots, 0);
     Scm_InitStaticClass(&Scm_TimeClass, "<time>", mod, time_slots, 0);
-    Scm_InitStaticClass(&Scm_SysTmClass, "<sys-tm>", mod, tm_slots, 0);
     Scm_InitStaticClass(&Scm_SysGroupClass, "<sys-group>", mod, grp_slots, 0);
     Scm_InitStaticClass(&Scm_SysPasswdClass, "<sys-passwd>", mod, pwd_slots, 0);
 #if defined(HAVE_SYS_MMAN_H)

@@ -173,20 +173,6 @@ SCM_EXTERN ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec);
 /* sched_yield */
 SCM_EXTERN void   Scm_YieldCPU(void);
 
-/* struct tm */
-typedef struct ScmSysTmRec {
-    SCM_HEADER;
-    struct tm tm;
-} ScmSysTm;
-
-SCM_CLASS_DECL(Scm_SysTmClass);
-#define SCM_CLASS_SYS_TM      (&Scm_SysTmClass)
-#define SCM_SYS_TM(obj)       ((ScmSysTm*)(obj))
-#define SCM_SYS_TM_P(obj)     (SCM_XTYPEP(obj, SCM_CLASS_SYS_TM))
-#define SCM_SYS_TM_TM(obj)    SCM_SYS_TM(obj)->tm
-
-SCM_EXTERN ScmObj Scm_MakeSysTm(struct tm *);
-
 SCM_EXTERN int    Scm_NanoSleep(const ScmTimeSpec *req,
                                 ScmTimeSpec *rem);
 

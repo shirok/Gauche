@@ -867,8 +867,31 @@
 (define-cproc seconds->time (t::<double>) ;SRFI-18
   Scm_RealSecondsToTime)
 
+(inline-stub
+ (define-cstruct <sys-tm> "struct tm"
+   (sec::<int> "tm_sec"
+    min::<int> "tm_min"
+    hour::<int> "tm_hour"
+    mday::<int> "tm_mday"
+    mon::<int>  "tm_mon"
+    year::<int> "tm_year"
+    wday::<int> "tm_wday"
+    yday::<int> "tm_yday"
+    isdst::<int> "tm_isdst")
+   (printer (c "tm_print")))
+
+ (define-cfn tm_print (obj port::ScmPort* ctx::ScmWriteContext*) ::void
+   (cast void ctx)
+   (let* ([buf::(.array char (30))]
+          [st::(struct tm*) (SCM_SYS_TM obj)])
+     (.if (not (defined "GAUCHE_WINDOWS"))
+          (strftime buf 30 "%a %b %e %T %Y" st)
+          (strftime buf 30 "%a %b %d %H:%M:%S %Y" st))
+     (Scm_Printf port "#<sys-tm \"%s\">" buf)))
+ )
+
 (define-cproc sys-asctime (tm::<sys-tm>)
-  (return (SCM_MAKE_STR_COPYING (asctime (& (SCM_SYS_TM_TM tm))))))
+  (return (SCM_MAKE_STR_COPYING (asctime tm))))
 
 ;; NB: For sys-ctime and sys-strftime, we don't use <const-cstring> return
 ;; type to use autoboxing.
@@ -882,19 +905,21 @@
 
 (define-cproc sys-strftime (format::<const-cstring> tm::<sys-tm>)
   (let* ([tmpbuf::(.array char [256])])
-    (strftime tmpbuf (sizeof tmpbuf) format (& (SCM_SYS_TM_TM tm)))
+    (strftime tmpbuf (sizeof tmpbuf) format tm)
     (return (SCM_MAKE_STR_COPYING tmpbuf))))
 
-(define-cproc sys-gmtime (time)
-  (let* ([tim::time_t (Scm_GetSysTime time)])
-    (return (Scm_MakeSysTm (gmtime (& tim))))))
+(define-cproc sys-gmtime (time) ::<sys-tm>
+  (let* ([tim::time_t (Scm_GetSysTime time)]
+         [buf::(struct tm)])
+    (return (gmtime_r (& tim) (& buf)))))
 
-(define-cproc sys-localtime (time)
-  (let* ([tim::time_t (Scm_GetSysTime time)])
-    (return (Scm_MakeSysTm (localtime (& tim))))))
+(define-cproc sys-localtime (time) ::<sys-tm>
+  (let* ([tim::time_t (Scm_GetSysTime time)]
+         [buf::(struct tm)])
+    (return (localtime_r (& tim) (& buf)))))
 
 (define-cproc sys-mktime (tm::<sys-tm>)
-  (return (Scm_MakeSysTime (mktime (& (SCM_SYS_TM_TM tm))))))
+  (return (Scm_MakeSysTime (mktime tm))))
 
 ;;---------------------------------------------------------------------
 ;; unistd.h - miscellaneous functions
