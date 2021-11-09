@@ -1998,7 +1998,7 @@
          [ClassName #"Scm_~|TYPENAME|_Class"]
          [RecName #"Scm_~|TYPENAME|_Rec"]
          [BoxerName #"Scm_Make_~|TYPENAME|"]
-         [type (make-cgen-type scm-name #"~|c-struct-name|*" #f
+         [type (make-cgen-type scm-name #f #"~|c-struct-name|*" #f
                                #f #f BoxerName)]
          [initializer (assq 'initializer opts)]
          [cclass (make <cclass>
