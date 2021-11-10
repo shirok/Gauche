@@ -451,14 +451,18 @@
 (define (expand-cfn form env)
   (define (gen-args args env)
     (let1 eenv (expr-env env)
+      (define (gen-arg-1 var type)
+        (if (eq? var '_)
+          `(,@(cise-render-typed-var type (gensym) eenv) " SCM_UNUSED")
+          (cise-render-typed-var type var eenv)))
       (let loop ([args args])
         (match args
           [() '()]
           [(('... . _)) '("...")]       ;varargs
           [((var . type))
-           `(,(cise-render-typed-var type var eenv))]
+           `(,@(gen-arg-1 var type))]
           [((var . type) . rest)
-           `(,(cise-render-typed-var type var eenv) "," ,@(loop rest))]))))
+           `(,@(gen-arg-1 var type) "," ,@(loop rest))]))))
 
   (define (gen-qualifiers quals) ; we might support more qualifiers in future
     (intersperse " "

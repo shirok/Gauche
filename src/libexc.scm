@@ -202,13 +202,11 @@
 
 (select-module gauche)
 (inline-stub
- (define-cfn thread_exception_allocate (klass::ScmClass* initargs) :static
-   (cast void initargs)                 ;suppress unused warning
+ (define-cfn thread_exception_allocate (klass::ScmClass* _) :static
    (return (Scm_MakeThreadException klass NULL)))
 
- (define-cfn thread_exception_print (obj port::ScmPort* ctx::ScmWriteContext*)
+ (define-cfn thread_exception_print (obj port::ScmPort* _::ScmWriteContext*)
    ::void :static
-   (cast void ctx)                      ;suppress unused warning
    (let* ([k::ScmClass* (SCM_CLASS_OF obj)]
           [exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)]
           [cname (Scm_ShortClassName k)])
@@ -217,16 +215,14 @@
        (Scm_Printf port "#<%A %S %S>" cname (SCM_OBJ_SAFE (-> exc thread))
                    (-> exc data)))))
 
- (define-cfn uncaught_exception_print (obj port::ScmPort* ctx::ScmWriteContext*)
+ (define-cfn uncaught_exception_print (obj port::ScmPort* _::ScmWriteContext*)
    ::void :static
-   (cast void ctx)                      ;suppress unused warning
    (let* ([exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)])
      (Scm_Printf port "#<uncaught-exception in thread %S: %S>"
                  (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
 
- (define-cfn terminated_thread_print (obj port::ScmPort* ctx::ScmWriteContext*)
+ (define-cfn terminated_thread_print (obj port::ScmPort* _::ScmWriteContext*)
    ::void :static
-   (cast void ctx)                      ;suppress unused warning
    (let* ([exc::ScmThreadException* (SCM_THREAD_EXCEPTION obj)])
      (Scm_Printf port "#<terminated-thread-exception: %S terminated by %S>"
                  (SCM_OBJ_SAFE (-> exc thread)) (-> exc data))))
@@ -293,8 +289,7 @@
    NULL
   };"
 
- (define-cfn load-condition-mixin-allocate (klass::ScmClass* initargs) :static
-   (cast void initargs)                 ;suppress unused warning
+ (define-cfn load-condition-mixin-allocate (klass::ScmClass* _) :static
    (let* ([c::ScmLoadConditionMixin* (SCM_NEW_INSTANCE ScmLoadConditionMixin klass)])
      (set! (-> c history) SCM_FALSE)
      (set! (-> c port) SCM_FALSE)
@@ -307,8 +302,7 @@
     (port))
    (allocator (c "load_condition_mixin_allocate")))
 
- (define-cfn compile-error-mixin-allocate (klass::ScmClass* initargs) :static
-   (cast void initargs)                 ;suppress unused warning
+ (define-cfn compile-error-mixin-allocate (klass::ScmClass* _) :static
    (let* ([c::ScmCompileErrorMixin* (SCM_NEW_INSTANCE ScmCompileErrorMixin klass)])
      (set! (-> c expr) SCM_FALSE)
      (return (SCM_OBJ c))))
@@ -325,8 +319,7 @@
  ;; names and drop "-mixin".
  ;; In C-level all filename mixin classes share one struct definition, and
  ;; one allocator.
- (define-cfn filename-error-mixin-allocate (klass::ScmClass* initargs) :static
-   (cast void initargs) ; suppress unused var warning
+ (define-cfn filename-error-mixin-allocate (klass::ScmClass* _) :static
    (let* ([c::ScmFilenameErrorMixin* (SCM_NEW_INSTANCE ScmFilenameErrorMixin klass)])
      (set! (-> c filename) SCM_FALSE)
      (return (SCM_OBJ c))))

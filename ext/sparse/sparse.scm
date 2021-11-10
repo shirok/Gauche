@@ -198,8 +198,7 @@
 
  (define-cproc sparse-table-copy (sv::<sparse-table>) SparseTableCopy)
 
- (define-cfn sparse-table-iter (args::ScmObj* nargs::int data::void*) :static
-   (cast void nargs)                    ; suppress unused var warning
+ (define-cfn sparse-table-iter (args::ScmObj* _::int data::void*) :static
    (let* ([iter::SparseTableIter* (cast SparseTableIter* data)]
           [r (SparseTableIterNext iter)]
           [eofval (aref args 0)])
@@ -346,8 +345,7 @@
                                    :optional fallback)
    SparseVectorInc)
 
- (define-cfn sparse-vector-iter (args::ScmObj* nargs::int data::void*) :static
-   (cast void nargs)                    ; suppress unused var warning
+ (define-cfn sparse-vector-iter (args::ScmObj* _::int data::void*) :static
    (let* ([iter::SparseVectorIter* (cast SparseVectorIter* data)]
           [r (SparseVectorIterNext iter)]
           [eofval (aref args 0)])
@@ -556,8 +554,7 @@
   (return (SparseVectorInc sv (index-combine-2d x y NULL) delta fallback)))
 
 (inline-stub
- (define-cfn sparse-matrix-iter (args::ScmObj* nargs::int data::void*) :static
-   (cast void nargs)                    ; suppress unused var warning
+ (define-cfn sparse-matrix-iter (args::ScmObj* _::int data::void*) :static
    (let* ([iter::SparseVectorIter* (cast SparseVectorIter* data)]
           [r (SparseVectorIterNext iter)]
           [eofval (aref args 0)])

@@ -349,9 +349,8 @@
     (return (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_INPUT TRUE (& bufrec)))))
 
 (inline-stub
- (define-cfn bufport-flusher (p::ScmPort* cnt::ScmSize forcep::int)
+ (define-cfn bufport-flusher (p::ScmPort* cnt::ScmSize _::int)
    ::ScmSize :static
-   (cast void forcep) ; suppress unused var warning
    (let* ([scmflusher (SCM_OBJ (-> (PORT_BUF p) data))]
           [s (Scm_MakeString (-> (PORT_BUF p) buffer) cnt cnt
                              (logior SCM_STRING_INCOMPLETE SCM_STRING_COPYING))])
@@ -467,14 +466,11 @@
   PORT_WRITESS_P)
 
 (inline-stub
- (define-cfn write_state_allocate (klass::ScmClass* initargs) :static
-   (cast void klass)                    ; suppress unused var warning
-   (cast void initargs)                 ; suppress unused var warning
+ (define-cfn write_state_allocate (_::ScmClass* _) :static
    (return (SCM_OBJ (Scm_MakeWriteState NULL))))
 
- (define-cfn write_state_print (obj port::ScmPort* ctx::ScmWriteContext*)
+ (define-cfn write_state_print (obj port::ScmPort* _::ScmWriteContext*)
    ::void :static
-   (cast void ctx)                      ; suppress unused var warning
    (Scm_Printf port "#<write-state %p>" obj))
 
  (define-cclass <write-state>
@@ -872,9 +868,7 @@
 
 (select-module gauche)
 (inline-stub
- (define-cfn write_controls_allocate (klass::ScmClass* initargs) :static
-   (cast void klass)                    ; suppress unused var warning
-   (cast void initargs)                 ; suppress unused var warning
+ (define-cfn write_controls_allocate (_::ScmClass* _) :static
    (return (SCM_OBJ (Scm_MakeWriteControls NULL))))
 
  ;; TODO: We want to treat <write-controls> as immutable structure, but

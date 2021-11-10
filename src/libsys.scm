@@ -883,8 +883,7 @@
     isdst::<int> "tm_isdst")
    (printer (c "tm_print")))
 
- (define-cfn tm_print (obj port::ScmPort* ctx::ScmWriteContext*) ::void
-   (cast void ctx)
+ (define-cfn tm_print (obj port::ScmPort* _::ScmWriteContext*) ::void
    (let* ([buf::(.array char (30))]
           [st::(struct tm*) (SCM_SYS_TM obj)])
      (.if (not (defined "GAUCHE_WINDOWS"))
@@ -1428,10 +1427,9 @@
    (define-cfn handle-cleanup (h) ::void :static
      (CloseHandle (SCM_FOREIGN_POINTER_REF HANDLE h)))
 
-   (define-cfn handle-print (h p::ScmPort* c::ScmWriteContext*) ::void :static
+   (define-cfn handle-print (h p::ScmPort* _::ScmWriteContext*) ::void :static
      (let* ([type (Scm_ForeignPointerAttrGet (SCM_FOREIGN_POINTER h)
                                              'handle-type '#f)])
-       (cast void c) ; suppress unused var warning
        (cond
         [(SCM_EQ type 'process)
          (Scm_Printf p "#<win:handle process %d @%p>" (Scm_WinProcessPID h) h)]

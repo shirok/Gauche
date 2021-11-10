@@ -146,11 +146,10 @@
   Scm_ComparatorComparisonProcedure)
 
 (inline-stub
- (define-cfn fallback-compare (argv::ScmObj* argc::int data::void*) :static
+ (define-cfn fallback-compare (argv::ScmObj* _::int data::void*) :static
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)]
           [a (aref argv 0)]
           [b (aref argv 1)])
-     (cast void argc)                   ; suppress unused var warning
      (unless (logand (-> c flags) SCM_COMPARATOR_SRFI_128) (goto err))
      (when (SCM_FALSEP (-> c orderFn)) (goto err))
      (let1/cps r (Scm_VMApply2 (-> c orderFn) a b)
@@ -181,11 +180,10 @@
   Scm_ComparatorOrderingPredicate)
 
 (inline-stub
- (define-cfn fallback-order (argv::ScmObj* argc::int data::void*) :static
+ (define-cfn fallback-order (argv::ScmObj* _::int data::void*) :static
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)]
           [a (aref argv 0)]
           [b (aref argv 1)])
-     (cast void argc)                   ; suppress unused var warning
      (when (logand (-> c flags) SCM_COMPARATOR_SRFI_128) (goto err))
      (when (SCM_FALSEP (-> c compareFn)) (goto err))
      (let1/cps r (Scm_VMApply2 (-> c compareFn) a b)
@@ -209,9 +207,7 @@
   Scm_ComparatorHashFunction)
 
 (inline-stub
- (define-cfn fallback-hash (argv::ScmObj* argc::int data::void*) :static
-   (cast void argv)                     ; suppress unsed var warning
-   (cast void argc)                     ; suppress unused var warning
+ (define-cfn fallback-hash (_::ScmObj* _::int data::void*) :static
    (let* ([c::ScmComparator* (SCM_COMPARATOR data)])
      (Scm_Error "%S doesn't have hash function" (SCM_OBJ c))
      (return SCM_UNDEFINED)))           ;dummy

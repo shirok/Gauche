@@ -10,8 +10,7 @@
 (inline-stub
  "ScmClass *fptr_simple, *fptr_unique, *fptr_maybe;"
 
- (define-cfn print-fptr (obj sink::ScmPort* mode::ScmWriteContext*) ::void
-   (cast void mode)                     ; suppress unused parameter warning
+ (define-cfn print-fptr (obj sink::ScmPort* _::ScmWriteContext*) ::void
    (let* ([k::ScmClass* (Scm_ClassOf obj)])
      (Scm_Printf sink "#<fptr-%s %p>"
                  (?: (== k fptr_simple) "simple"

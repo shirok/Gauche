@@ -315,8 +315,7 @@
   (dict-pop! hash Scm_HashCoreSearch SCM_HASH_TABLE_CORE))
 
 (inline-stub
- (define-cfn hash-table-iter (args::ScmObj* nargs::int data::void*) :static
-   (cast void nargs) ; suppress unused var warning
+ (define-cfn hash-table-iter (args::ScmObj* _::int data::void*) :static
    (let* ([iter::ScmHashIter* (cast ScmHashIter* data)]
           [e::ScmDictEntry* (Scm_HashIterNext iter)]
           [eofval (aref args 0)])
@@ -717,8 +716,7 @@
       (return '#f))))
 
 (inline-stub
- (define-cfn tree-map-iter (args::ScmObj* nargs::int data::void*) :static
-   (cast void nargs) ; suppress unused var warning
+ (define-cfn tree-map-iter (args::ScmObj* _::int data::void*) :static
    (let* ([iter::ScmTreeIter* (cast ScmTreeIter* data)]
           [e::ScmDictEntry*   (?: (SCM_FALSEP (aref args 1))
                                   (Scm_TreeIterNext iter)
