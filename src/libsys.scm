@@ -908,15 +908,23 @@
     (strftime tmpbuf (sizeof tmpbuf) format tm)
     (return (SCM_MAKE_STR_COPYING tmpbuf))))
 
+;; NB: Windows doesn't have gmtime_r/localtime_r, but its gmtime/localtime
+;; is thread-safe.
 (define-cproc sys-gmtime (time) ::<sys-tm>
-  (let* ([tim::time_t (Scm_GetSysTime time)]
-         [buf::(struct tm)])
-    (return (gmtime_r (& tim) (& buf)))))
+  (.if (defined "GAUCHE_WINDOWS")
+       (let* ([tim::time_t (Scm_GetSysTime time)])
+         (return (gmtime (& tim))))
+       (let* ([tim::time_t (Scm_GetSysTime time)]
+              [buf::(struct tm)])
+         (return (gmtime_r (& tim) (& buf))))))
 
 (define-cproc sys-localtime (time) ::<sys-tm>
-  (let* ([tim::time_t (Scm_GetSysTime time)]
-         [buf::(struct tm)])
-    (return (localtime_r (& tim) (& buf)))))
+  (.if (defined "GAUCHE_WINDOWS")
+       (let* ([tim::time_t (Scm_GetSysTime time)])
+         (return (localtime (& tim))))
+       (let* ([tim::time_t (Scm_GetSysTime time)]
+              [buf::(struct tm)])
+         (return (localtime_r (& tim) (& buf))))))
 
 (define-cproc sys-mktime (tm::<sys-tm>)
   (return (Scm_MakeSysTime (mktime tm))))
