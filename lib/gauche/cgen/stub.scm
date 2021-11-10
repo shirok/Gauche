@@ -1725,7 +1725,7 @@
                         :cpa cpa :direct-supers dsupers
                         :allocator allocator :printer printer
                         :comparer comparer :metaclass metaclass)])
-         (let1 stub-type 
+         (let1 stub-type
              (or (cgen-type-from-name scm-name)
                  (make-cgen-type scm-name #f c-type (x->string scm-name)
                                  c-pred unboxer boxer))
@@ -1989,6 +1989,7 @@
 ;;   and subject to GC.
 
 (define-form-parser define-cstruct (scm-name c-struct-name slots . opts)
+  (define (get-opt opt init) (cond [(assq opt opts) => cadr] [else init]))
   (assume-type scm-name <symbol>)
   (assume-type c-struct-name <string>)
   (assume-type slots <list>)
@@ -2000,7 +2001,9 @@
          [BoxerName #"Scm_Make_~|TYPENAME|"]
          [type (make-cgen-type scm-name #f #"~|c-struct-name|*" #f
                                #f #f BoxerName)]
-         [initializer (assq 'initializer opts)]
+         [initializer (get-opt 'initializer #f)]
+         [printer     (get-opt 'printer #f)]
+         [comparer    (get-opt 'comparer #f)]
          [cclass (make <cclass>
                    :scheme-name scm-name
                    :c-type #"~|c-struct-name|*"
@@ -2009,8 +2012,8 @@
                    :cpa '()
                    :direct-supers '()
                    :allocator #f
-                   :printer #f
-                   :comparer #f)]
+                   :printer printer
+                   :comparer comparer)]
          [slot-specs (cstruct-grok-slot-specs cclass slots)])
     (set! (~ cclass'slot-spec)
           (append-map (cut process-cstruct-slot cclass RecName <>) slot-specs))
@@ -2034,7 +2037,7 @@
       (and-let1 init (~ slot'init-cexpr)
         (cgen-body #"  z->data.~(~ slot'c-name) = ~|init|;")))
     (cgen-body (if initializer
-                 #"{ ~|c-struct-name| *obj = &z->data;\n~(cadr initializer)\n}"
+                 #"{ ~|c-struct-name| *obj = &z->data;\n~|initializer|\n}"
                  "")
                #"  return SCM_OBJ(z);"
                #"}")

@@ -868,6 +868,9 @@
   Scm_RealSecondsToTime)
 
 (inline-stub
+ (declare-cfn tm_print (obj port::ScmPort* ctx::ScmWriteContext*)
+              ::void :static)
+
  (define-cstruct <sys-tm> "struct tm"
    (sec::<int> "tm_sec"
     min::<int> "tm_min"
