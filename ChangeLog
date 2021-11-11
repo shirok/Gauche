@@ -1,3 +1,8 @@
+2021-11-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm: (define-cenum): Added.  This has been
+	  in Gauche-gl for a while.
+
 2021-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm: Allow '_' as an unused argument in

@@ -222,6 +222,9 @@
 ;;   define-enum-conditionally name
 ;;      Abbreviation of (if "defined(name)" (define-enum name))
 ;;
+;;   define-cenum scm-name c-type-name (enum ...)
+;;      Also register c enum type name as a stub type.
+;;
 ;;   define-cise-stmt name clause ...
 ;;   define-cise-expr name clause ...
 ;;      Cise macro definitions (see gauche.cgen.cise).
@@ -558,6 +561,17 @@
   (check-arg symbol? name)
   (cgen-with-cpp-condition `(defined ,name)
     (variable-parser-common #t name (list 'c #"Scm_MakeInteger(~name)") '())))
+
+;; define-cenum scm-type c-type-name (enum ...)
+;;   This combines define-type and declare-stub-type.
+(define-form-parser define-cenum (scm-name c-type-name enums)
+  (assume-type scm-name <symbol>)
+  (assume-type c-type-name <string>)
+  (assume-type enums <list>)
+  (make-cgen-type scm-name #f c-type-name #f
+                  "SCM_INTP" "SCM_INT_VALUE" "SCM_MAKE_INT")
+  (dolist [e enums]
+    (variable-parser-common #t e `(c ,#"Scm_MakeInteger(~e)") '())))
 
 ;;-------------------------------------------------------------------
 ;; (define-keyword scheme-name c-name)
