@@ -264,7 +264,7 @@
 
    ;; pty interface
    (.when (defined HAVE_OPENPTY)
-     (define-cproc sys-openpty (:optional term::<sys-termios>?)
+     (define-cproc sys-openpty (:optional (term::<sys-termios>? #f))
        ::(<int> <int>)
        (let* ([master::int 0] [slave::int 0])
          (when (< (openpty (& master) (& slave) NULL term NULL) 0)
@@ -272,7 +272,7 @@
          (return master slave)))
      )
    (.when (defined HAVE_FORKPTY)
-     (define-cproc sys-forkpty (:optional term::<sys-termios>?)
+     (define-cproc sys-forkpty (:optional (term::<sys-termios>? #f))
        ::(<int> <int>)
        (let* ([master::int 0]
               [pid::pid_t (forkpty (& master) NULL term NULL)])
