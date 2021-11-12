@@ -2175,7 +2175,7 @@
                  `(let* ([v (Scm_MakeVector len SCM_FALSE)]
                          [i::ScmSmallInt 0])
                     (for (() (< i len) (post++ i))
-                      (let* ([e :: ,(~ etype'c-type) 
+                      (let* ([e :: ,(~ etype'c-type)
                                 (aref (ref (-> obj data) ,(string->symbol c-field)) i)])
                         (set! (SCM_VECTOR_ELEMENT v i)
                               (C: ,(cgen-box-expr etype "e")))))
@@ -2206,7 +2206,7 @@
                     (Scm_Error ,#"Invalid length for ~|cclass-cname|.~|c-field|: %ld (must be ~c-length)\n" vlen))
                  '())
               ,(if ptr?
-                 `(set! vs (SCM_NEW_ARRAY ,(~ etype 'c-type) vlen))
+                 `(set! vs (SCM_NEW_ARRAY (C: ,(~ etype 'c-type)) vlen))
                  `(set! vs (ref (-> obj data) (C: ,c-field))))
               ,(if (eq? scm-vector '<vector>)
                  `(let* ([i::ScmSmallInt 0])
