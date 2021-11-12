@@ -37,14 +37,27 @@
   )
 (select-module gauche.termios)
 
-(inline-stub
- (declcode
-  (.include "gauche-termios.h"))
-
  ;;---------------------------------------------------------------------
  ;; termios.h
 
+(inline-stub
  (.unless (defined GAUCHE_WINDOWS)
+
+   (declcode
+    (.include <termios.h>)
+    (.when (defined HAVE_PTY_H)
+      (.include <pty.h>))
+    (.when (defined HAVE_UTIL_H)
+      (.include <util.h>))
+    ;; libutil.h is superseded by bsd/libutil.h
+    (.if (defined HAVE_BSD_LIBUTIL_H)
+         (.include <bsd/libutil.h>)
+         (.if (defined HAVE_LIBUTIL_H)
+              (.include <libutil.h>)))
+    (.when (defined HAVE_UNISTD_H)
+      (.include <unistd.h>)))
+
+   ;; Constants for termios.  Non-POSIX symbols are defined conditionally.
 
    (define-enum TCSANOW)
    (define-enum TCSADRAIN)
@@ -57,6 +70,109 @@
    (define-enum TCIOFF)
    (define-enum TCION)
 
+   ;; c_iflag masks
+   (define-enum IGNBRK)
+   (define-enum BRKINT)
+   (define-enum IGNPAR)
+   (define-enum INPCK)
+   (define-enum ISTRIP)
+   (define-enum INLCR)
+   (define-enum IGNCR)
+   (define-enum ICRNL)
+   (define-enum IXON)
+   (define-enum IXOFF)
+   (define-enum-conditionally IXANY)
+   (define-enum-conditionally IUCLC)
+   (define-enum-conditionally IMAXBEL)
+
+   ;; c_oflag masks
+   (define-enum OPOST)
+   (define-enum-conditionally OLCUC)
+   (define-enum-conditionally ONLCR)
+   (define-enum-conditionally OCRNL)
+   (define-enum-conditionally ONOCR)
+   (define-enum-conditionally ONLRET)
+   (define-enum-conditionally OFILL)
+   (define-enum-conditionally OFDEL)
+   (define-enum-conditionally NLDLY)
+   (define-enum-conditionally NL0)
+   (define-enum-conditionally NL1)
+   (define-enum-conditionally CRDLY)
+   (define-enum-conditionally CR0)
+   (define-enum-conditionally CR1)
+   (define-enum-conditionally CR2)
+   (define-enum-conditionally CR3)
+   (define-enum-conditionally BSDLY)
+   (define-enum-conditionally BS0)
+   (define-enum-conditionally BS1)
+   (define-enum-conditionally VTDLY)
+   (define-enum-conditionally VT0)
+   (define-enum-conditionally VT1)
+   (define-enum-conditionally FFDLY)
+   (define-enum-conditionally FF0)
+   (define-enum-conditionally FF1)
+
+   ;; c_cflag masks
+   (define-enum CLOCAL)
+   (define-enum CREAD)
+   (define-enum CSIZE)
+   (define-enum CS5)
+   (define-enum CS6)
+   (define-enum CS7)
+   (define-enum CS8)
+   (define-enum CSTOPB)
+   (define-enum HUPCL)
+   (define-enum PARENB)
+   (define-enum PARODD)
+   (define-enum-conditionally CIBAUD)
+   (define-enum-conditionally CRTSCTS)
+
+   ;; c_lflag masks
+   (define-enum ECHO)
+   (define-enum ECHOE)
+   (define-enum ECHOK)
+   (define-enum ECHONL)
+   (define-enum ICANON)
+   (define-enum ISIG)
+   (define-enum NOFLSH)
+   (define-enum TOSTOP)
+   (define-enum IEXTEN)
+   (define-enum-conditionally XCASE)
+   (define-enum-conditionally ECHOCTL)
+   (define-enum-conditionally ECHOPRT)
+   (define-enum-conditionally ECHOKE)
+   (define-enum-conditionally FLUSH0)
+   (define-enum-conditionally PENDIN)
+
+   ;; c_cc size
+   (define-enum NCCS)
+
+   ;; disable character
+   (define-enum _POSIX_VDISABLE)
+
+   ;; c_cc subscripts
+   (define-enum VEOF)
+   (define-enum VEOL)
+   (define-enum VERASE)
+   (define-enum VINTR)
+   (define-enum VKILL)
+   (define-enum VMIN)
+   (define-enum VQUIT)
+   (define-enum VSTART)
+   (define-enum VSTOP)
+   (define-enum VSUSP)
+   (define-enum VTIME)
+   (define-enum-conditionally VDISCARD)
+   (define-enum-conditionally VDSUSP)
+   (define-enum-conditionally VEOL2)
+   (define-enum-conditionally VLNEXT)
+   (define-enum-conditionally VREPRINT)
+   (define-enum-conditionally VSTATUS)
+   (define-enum-conditionally VWERASE)
+   (define-enum-conditionally VSWTCH)
+   (define-enum-conditionally VSWTC)
+
+   ;; baudrates
    (define-enum B0)
    (define-enum B50)
    (define-enum B75)
@@ -73,6 +189,9 @@
    (define-enum B9600)
    (define-enum B19200)
    (define-enum B38400)
+   (define-enum-conditionally B57600)
+   (define-enum-conditionally B115200)
+   (define-enum-conditionally B230400)
 
    (define-cstruct <sys-termios> "struct termios"
      (iflag::<ulong> "c_iflag"
@@ -155,7 +274,7 @@
    (.when (defined HAVE_FORKPTY)
      (define-cproc sys-forkpty (:optional term::<sys-termios>?)
        ::(<int> <int>)
-       (let* ([master::int 0] 
+       (let* ([master::int 0]
               [pid::pid_t (forkpty (& master) NULL term NULL)])
          (when (< pid 0)
            (Scm_SysError "forkpty failed"))
@@ -187,8 +306,6 @@
      )
 
    ) ;; !defined(GAUCHE_WINDOWS)
-
- (initcode (Scm_Init_termios))
  ) ;; inline-stub
 
 ;;

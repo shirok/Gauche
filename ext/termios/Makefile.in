@@ -9,7 +9,7 @@ SCM_CATEGORY = gauche
 LIBFILES = gauche--termios.$(SOEXT)
 SCMFILES = termios.sci
 
-OBJECTS = termios.$(OBJEXT) gauche--termios.$(OBJEXT)
+OBJECTS = gauche--termios.$(OBJEXT)
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
