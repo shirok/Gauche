@@ -64,18 +64,6 @@
 #endif
 #include <gauche/extern.h>
 
-typedef struct ScmSysTermiosRec {
-    SCM_HEADER;
-    struct termios term;
-} ScmSysTermios;
-
-SCM_CLASS_DECL(Scm_SysTermiosClass);
-#define SCM_CLASS_SYS_TERMIOS   (&Scm_SysTermiosClass)
-#define SCM_SYS_TERMIOS(obj)    ((ScmSysTermios*)(obj))
-#define SCM_SYS_TERMIOS_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_SYS_TERMIOS))
-
-ScmObj Scm_MakeSysTermios(void);
-
 #ifdef HAVE_OPENPTY
 ScmObj Scm_Openpty(ScmObj slaveterm);
 #endif

@@ -44,8 +44,6 @@
  ;;---------------------------------------------------------------------
  ;; termios.h
 
- (declare-stub-type <sys-termios> "ScmSysTermios*")
-
  (.unless (defined GAUCHE_WINDOWS)
 
    (define-enum TCSANOW)
@@ -76,17 +74,24 @@
    (define-enum B19200)
    (define-enum B38400)
 
-   (define-cproc sys-tcgetattr (port-or-fd)
+   (define-cstruct <sys-termios> "struct termios"
+     (iflag::<ulong> "c_iflag"
+      oflag::<ulong> "c_oflag"
+      cflag::<ulong> "c_cflag"
+      lflag::<ulong> "c_lflag"
+      cc::(.array <uint8> :as <u8vector>) "c_cc[NCCS]"))
+
+   (define-cproc sys-tcgetattr (port-or-fd) ::<sys-termios>
      (let* ([fd::int (Scm_GetPortFd port-or-fd TRUE)]
-            [term::ScmSysTermios* (SCM_SYS_TERMIOS (Scm_MakeSysTermios))])
-       (when (< (tcgetattr fd (& (-> term term))) 0)
+            [term::(struct termios)])
+       (when (< (tcgetattr fd (& term)) 0)
          (Scm_SysError "tcgetattr failed"))
-       (return (SCM_OBJ term))))
+       (return (& term))))
 
    (define-cproc sys-tcsetattr (port-or-fd option::<fixnum> term::<sys-termios>)
      ::<void>
      (let* ([fd::int (Scm_GetPortFd port-or-fd TRUE)])
-       (when (< (tcsetattr fd option (& (-> term term))) 0)
+       (when (< (tcsetattr fd option term) 0)
          (Scm_SysError "tcsetattr failed"))))
 
    (define-cproc sys-tcsendbreak (port-or-fd duration::<fixnum>) ::<boolean>
@@ -116,41 +121,69 @@
        (when (< (tcsetpgrp fd pgrp) 0) (Scm_SysError "tcsetpgrp failed"))))
 
    (define-cproc sys-cfgetispeed (term::<sys-termios>) ::<int>
-     (let* ([s::speed_t (cfgetispeed (& (-> term term)))])
+     (let* ([s::speed_t (cfgetispeed term)])
        (return s)))
 
    (define-cproc sys-cfsetispeed (term::<sys-termios> speed::<int>) ::<void>
-     (when (< (cfsetispeed (& (-> term term)) speed) 0)
+     (when (< (cfsetispeed term speed) 0)
        (Scm_SysError "cfsetispeed failed")))
 
    (define-cproc sys-cfgetospeed (term::<sys-termios>) ::<int>
-     (let* ([s::speed_t (cfgetospeed (& (-> term term)))])
+     (let* ([s::speed_t (cfgetospeed term)])
        (return s)))
 
    (define-cproc sys-cfsetospeed (term::<sys-termios> speed::<int>) ::<void>
-     (when (< (cfsetospeed (& (-> term term)) speed) 0)
+     (when (< (cfsetospeed term speed) 0)
        (Scm_SysError "cfsetospeed failed")))
 
    ;; Returns fresh copy of <sys-termios>
    ;; The fields of struct termios are system-dependent, and it may contain
    ;; more fields than specified in POSIX.  However, we assume they're safe
-   ;; for bitwise-copy.
-   (define-cproc sys-termios-copy (src::<sys-termios>)
-     (let* ([dest::(ScmSysTermios*) (SCM_SYS_TERMIOS (Scm_MakeSysTermios))])
-       (set! (-> dest term) (-> src term))
-       (return (SCM_OBJ dest))))
+   ;; for bitwise-copy.  The cstruct boxer copies *src into the fresh object.
+   (define-cproc sys-termios-copy (src::<sys-termios>) ::<sys-termios>
+     (return src))
 
    ;; pty interface
    (.when (defined HAVE_OPENPTY)
-     (define-cproc sys-openpty (:optional term) Scm_Openpty)
+     (define-cproc sys-openpty (:optional term::<sys-termios>?)
+       ::(<int> <int>)
+       (let* ([master::int 0] [slave::int 0])
+         (when (< (openpty (& master) (& slave) NULL term NULL) 0)
+           (Scm_SysError "openpty failed"))
+         (return master slave)))
      )
    (.when (defined HAVE_FORKPTY)
-     (define-cproc sys-forkpty (:optional term) Scm_Forkpty)
+     (define-cproc sys-forkpty (:optional term::<sys-termios>?)
+       ::(<int> <int>)
+       (let* ([master::int 0] 
+              [pid::pid_t (forkpty (& master) NULL term NULL)])
+         (when (< pid 0)
+           (Scm_SysError "forkpty failed"))
+         (return pid master)))
      (define-cproc sys-forkpty-and-exec (program::<string> args::<list>
                                          :key (iomap ())
-                                              term
+                                              (term::<sys-termios>? #f)
                                               (sigmask::<sys-sigset>? #f))
-       Scm_ForkptyAndExec)
+       ::(<int> <int>)
+       (let* ([argc::ScmSmallInt (Scm_Length args)])
+         (when (< argc 1)
+           (Scm_Error "argument list must have at least one element: %S" args))
+         (let* ([argv::char** (Scm_ListToCStringArray args TRUE NULL)]
+                [cprogram::(const char *) (Scm_GetStringConst program)]
+                [fds::int* (Scm_SysPrepareFdMap iomap)]
+                [master::int 0]
+                [pid::pid_t (forkpty (& master) NULL term NULL)])
+           (when (< pid 0)
+             (Scm_SysError "forkpty failed"))
+           (when (== pid 0)
+             (Scm_SysSwapFds fds)
+             (when sigmask
+               (Scm_ResetSignalHandlers (& (-> sigmask set)))
+               (Scm_SysSigmask SIG_SETMASK sigmask))
+             (execvp cprogram (cast (char * const *) argv))
+             ;; here, we failed
+             (Scm_Panic "exec failed: %s: %s" cprogram (strerror errno)))
+           (return pid master))))
      )
 
    ) ;; !defined(GAUCHE_WINDOWS)
