@@ -90,7 +90,7 @@
   (timer-schedule! timer (lambda () (set! a (cons 2 a))) 400)
   ;; reschedule
   (timer-reschedule! timer id 300 0)
-  (thread-sleep! 0.5) ;; wait 500ms
+  (thread-sleep! 1.0) ;; wait 1000ms
   ;; first one must be executed first so 2 1
   (test-equal "reschedule" '(2 1) a)
   )
