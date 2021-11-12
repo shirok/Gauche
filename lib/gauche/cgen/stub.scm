@@ -1722,13 +1722,14 @@
     (match rest
       [(c-type c-name cpa slot-spec . more)
        (define (get-opt opt init) (cond [(assq opt more) => cadr] [else init]))
+       (define (listify x) (if (list? x) x (list x)))
        (check-arg string? c-name)
        (check-arg list? cpa)
        (check-arg list? slot-spec)
        (let* ([allocator (get-opt 'allocator #f)]
               [printer   (get-opt 'printer #f)]
               [comparer  (get-opt 'comparer #f)]
-              [dsupers   (get-opt 'direct-supers '())]
+              [dsupers   (listify (get-opt 'direct-supers '()))]
               [metaclass (get-opt 'metaclass #f)]
               [c-pred    (get-opt 'c-predicate #f)]
               [unboxer   (get-opt 'unboxer #f)]
