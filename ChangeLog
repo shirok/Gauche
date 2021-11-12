@@ -1,5 +1,10 @@
 2021-11-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/stub.scm (make-array-getter-setter): Support
+	  treating u8int_t array in cstruct as <u8vector>.  Eventually
+	  we'll extend it to other uniform vectors, and this is the first
+	  step.
+
 	* lib/gauche/cgen/cise.scm: (define-cenum): Added.  This has been
 	  in Gauche-gl for a while.
 

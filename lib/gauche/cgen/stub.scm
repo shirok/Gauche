@@ -2068,11 +2068,19 @@
                                                c-field c-length c-init)]
           [('.array etype)
            (make-array-getter-setter cclass cclass-cname
-                                     slot-name etype #f
+                                     slot-name etype #f '<vector>
+                                     c-field c-length c-init)]
+          [('.array etype ':as scm-vector)
+           (make-array-getter-setter cclass cclass-cname
+                                     slot-name etype #f scm-vector
                                      c-field c-length c-init)]
           [('.array* etype)
            (make-array-getter-setter cclass cclass-cname
-                                     slot-name etype #t
+                                     slot-name etype #t '<vector>
+                                     c-field c-length c-init)]
+          [('.array* etype ':as scm-vector)
+           (make-array-getter-setter cclass cclass-cname
+                                     slot-name etype #t scm-vector
                                      c-field c-length c-init)]
           [_ (values type #t #t)])
       `(,(make <cslot>
@@ -2109,7 +2117,7 @@
       [((? symbol? y) . rest)
        (if (#/::$/ (symbol->string y))
          (match rest
-           [((and ((or '.array* '.array) etype) type) (? string? c-spec) . rest)
+           [((and ((or '.array* '.array) etype . opts) type) (? string? c-spec) . rest)
             (receive (slot-name _) (parse-symbol::type y)
               (receive (c-field c-length c-init)
                   (parse-c-spec slot-name c-spec)
@@ -2135,68 +2143,96 @@
       (receive (slot rest) (grok-1 slots)
         (loop rest (cons slot r))))))
 
-;; Handle slot::(.array[*] <elt-type>) "c-name"
+;; Handle slot::(.array[*] <elt-type> [:as <scheme-vector>]) "c-name"
 ;;   c-name : "c-field[c-length]"
 ;;   cclass-cname is the C typename of the wrapper.
+;;   By default, array field is extracted as a Scheme vector. You can give
+;;   a uniform vector type by :as <scheme-vector> to treat it as uvector.
+;;   If uvector type is specified, its element type must be compatible with
+;;   <elt-type>.
 ;; Returns stub-type, getter-name, setter-name
 ;; TODO: Make c-length field read-only.
 (define (make-array-getter-setter cclass cclass-cname
-                                  slot-name elt-type-name ptr?
+                                  slot-name elt-type-name ptr? scm-vector
                                   c-field c-length c-init)
   (define etype (name->type elt-type-name))
   (define (gen-getter c-field c-length) ; returns getter name
     (rlet1 getter-name #"~(~ cclass 'c-name)_~|c-field|_GET"
       (cgen-decl   #"static ScmObj ~|getter-name|(ScmObj);")
-      (cgen-body   #"static ScmObj ~|getter-name|(ScmObj obj_s)"
-                   #"{"
-                   #"  ~|cclass-cname|* obj = (~|cclass-cname|*)obj_s;")
-      (if (string? c-length)
-        (cgen-body #"  if (obj->data.~|c-length| <= 0) return SCM_FALSE;"
-                   #"  ssize_t len = obj->data.~|c-length|;")
-        (cgen-body #"  ssize_t len = ~|c-length|;"))
-      (cgen-body   #"  ScmObj v = Scm_MakeVector(len, SCM_FALSE);"
-                   #"  for (ScmSmallInt i = 0; i < len; i++) {"
-                   #"    ~(~ etype'c-type) e = obj->data.~|c-field|[i];"
-                   #"    SCM_VECTOR_ELEMENT(v, i) ="
-                   #"      ~(cgen-box-expr etype \"e\");"
-                   #"  }"
-                   #"  return SCM_OBJ(v);"
-                   #"}")))
+      ($ cgen-body $ cise-render-to-string
+         `(define-cfn ,getter-name (obj_s) :static
+            (let* ([obj :: (,cclass-cname *) (cast (,cclass-cname *) obj_s)]
+                   [len::ssize_t 0])
+              ;; TODO: We might have a pointer to an array of fixed size given as
+              ;; a C macro.  Need to distinguish from the case of separate size
+              ;; field.
+              ,(if (and ptr? (string? c-length))
+                 `(if (<= (ref (-> obj data) (C: ,c-length)) 0)
+                    (return SCM_FALSE)
+                    (set! len (ref (-> obj data) (C: ,c-length))))
+                 `(set! len (C: ,c-length)))
+              ,(if (eq? scm-vector '<vector>)
+                 `(let* ([v (Scm_MakeVector len SCM_FALSE)]
+                         [i::ScmSmallInt 0])
+                    (for (() (< i len) (post++ i))
+                      (let* ([e :: ,(~ etype'c-type) 
+                                (aref (ref (-> obj data) ,(string->symbol c-field)) i)])
+                        (set! (SCM_VECTOR_ELEMENT v i)
+                              (C: ,(cgen-box-expr etype "e")))))
+                    (return (SCM_OBJ v)))
+                 ;; TODO: Check type consistency
+                 `(return (Scm_MakeU8VectorFromArray len (ref (-> obj data) ,(string->symbol c-field)))))))
+         'toplevel)))
   (define (gen-setter c-field c-length)
     (rlet1 setter-name #"~(~ cclass 'c-name)_~|c-field|_SET"
       (cgen-decl   #"static void ~|setter-name|(ScmObj, ScmObj);")
-      (cgen-body   #"static void ~|setter-name|(ScmObj obj_s, ScmObj val)"
-                   #"{"
-                   #"  ~|cclass-cname|* obj = (~|cclass-cname|*)obj_s;")
-      (when ptr?
-        (cgen-body #"  if (SCM_FALSEP(val)) {"
-                   #"    obj->data.~|c-length| = 0;"
-                   #"    obj->data.~|c-field| = NULL;"
-                   #"    return;"
-                   #"  }"))
-      (cgen-body   #"  if (!SCM_VECTORP(val)) SCM_TYPE_ERROR(val, \"vector\");"
-                   #"  ScmSmallInt vlen = SCM_VECTOR_SIZE(val);")
-      (when (number? c-length)
-        (cgen-body #"  if (vlen != ~|c-length|) {"
-                   #"     Scm_Error(\"Invalid length for ~|cclass-cname|.~|c-field|: %ld (must be ~|c-length|)\", vlen);"
-                   #"  }"))
-      (if ptr?
-        (cgen-body #"  ~(~ etype'c-type) *vs = SCM_NEW_ARRAY(~(~ etype'c-type), vlen);")
-        (cgen-body #"  ~(~ etype'c-type) *vs = obj->data.~|c-field|;"))
-      (cgen-body   #"  for (ScmSmallInt i = 0; i < vlen; i++) {"
-                   #"    ScmObj val_i = SCM_VECTOR_ELEMENT(val,i);"
-                   #"    if (!~(cgen-pred-expr etype \"val_i\")) {"
-                   #"      SCM_TYPE_ERROR(val_i, \"~(~ etype'name)\");"
-                   #"    }"
-                   #"    vs[i] = ~(cgen-unbox-expr etype \"val_i\");"
-                   #"  }")
-      (unless (number? c-length)
-        (cgen-body #"  obj->data.~|c-length| = vlen;"))
-      (when ptr?
-        (cgen-body #"  obj->data.~|c-field| = vs;"))
-      (cgen-body #"}")))
+      ($ cgen-body $ cise-render-to-string
+         `(define-cfn ,setter-name (obj_s val) ::void :static
+            (let* ([obj :: (,cclass-cname *) (cast (,cclass-cname *) obj_s)]
+                   [vlen::ScmSmallInt 0]
+                   [vs :: (,(~ etype 'c-type) *)])
+              ,(if ptr?
+                 `(when (SCM_FALSEP val)
+                    (set! (ref (-> obj data) (C: ,c-length)) 0)
+                    (set! (ref (-> obj data) (C: ,c-field)) NULL)
+                    (return))
+                 '())
+              ,(if (eq? scm-vector '<vector>)
+                 `(unless (SCM_VECTORP val) (SCM_TYPE_ERROR val "vector"))
+                 `(unless (SCM_U8VECTORP val) (SCM_TYPE_ERROR val "u8vector")))
+              (set! vlen (SCM_VECTOR_SIZE val))
+              ,(if (not (and ptr? (string? c-length)))
+                 `(unless (== vlen (C: ,c-length))
+                    (Scm_Error ,#"Invalid length for ~|cclass-cname|.~|c-field|: %ld (must be ~c-length)\n" vlen))
+                 '())
+              ,(if ptr?
+                 `(set! vs (SCM_NEW_ARRAY ,(~ etype 'c-type) vlen))
+                 `(set! vs (ref (-> obj data) (C: ,c-field))))
+              ,(if (eq? scm-vector '<vector>)
+                 `(let* ([i::ScmSmallInt 0])
+                    (for (() (< i vlen) (post++ i))
+                      (let* ([val_i (SCM_VECTOR_ELEMENT val i)])
+                        (unless (C: ,(cgen-pred-expr etype "val_i"))
+                          (SCM_TYPE_ERROR val_i ,(x->string (~ etype'name))))
+                        (set! (aref vs i) (C: ,(cgen-unbox-expr etype "val_i"))))))
+                 `(memcpy vs (SCM_UVECTOR_ELEMENTS val) vlen))
+              ,(if (and ptr? (string? c-length))
+                 `(set! (ref (-> obj data) (C: ,c-length)) vlen)
+                 '())
+              ,(if ptr?
+                 `(set! (ref (-> obj data) (C: ,c-field)) vs)
+                 '())))
+         'toplevel)))
 
-  (values '<vector>
+  (cond [(eq? scm-vector '<vector>)]
+        [(eq? scm-vector '<u8vector>)
+         (unless (memq elt-type-name '(<uint8> <int8>))
+           (errorf "Slot %S: Array element type (%A) and Scheme type (<u8vector>) don't match"
+                   slot-name elt-type-name))]
+        [else
+         (errorf "Slot %S: Unsupported array type mapping: %S"
+                 slot-name scm-vector)])
+  (values scm-vector
           `(c ,(gen-getter c-field c-length))
           `(c ,(gen-setter c-field c-length))))
 
