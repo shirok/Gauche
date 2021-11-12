@@ -154,6 +154,20 @@
                  )))
            ccs)))
 
+  ;; Check openpty basics
+  ;; sys-openpty isn't used in the tests above if we have console, so we check
+  ;; it here.
+  (cond-expand
+   [gauche.sys.openpty
+    (test* "openpty w/o term spec" '(#t #t #t)
+           (receive (m s) (sys-openpty)
+             (begin0 (list (integer? m)
+                           (integer? s)
+                           (sys-isatty s))
+               (sys-close m)
+               (sys-close s))))
+    ]
+   [else])
   ]
  [else
   ;;
