@@ -331,9 +331,9 @@
     (return (Scm_MakeSubr hash_table_iter iter 1 0 '"hash-table-iterator"))))
 
 (select-module gauche)
-(define-cproc hash-table-copy (ht::<hash-table> :optional mutable?)
-  ;; we don't have immutable hash table, and ignore mutable? argument (srfi-125)
-  (cast void mutable?) ; suppress unused var warning
+(define-cproc hash-table-copy (ht::<hash-table> :optional _)
+  ;; we don't have immutable hash table, and ignore the optional 
+  ;; mutable? argument (srfi-125)
   (return (Scm_HashTableCopy ht)))
 (define-cproc hash-table-keys (ht::<hash-table>)   Scm_HashTableKeys)
 (define-cproc hash-table-values (ht::<hash-table>) Scm_HashTableValues)

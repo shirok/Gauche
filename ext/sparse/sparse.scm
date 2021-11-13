@@ -270,8 +270,7 @@
  (declare-stub-type <sparse-vector> "SparseVector*" "sparse vector"
    "SPARSE_VECTOR_BASE_P" "SPARSE_VECTOR")
 
- (define-cproc %make-sparse-vector (type default-value flags::<ulong>)
-   (cast void flags)                     ; suppress unused var warning
+ (define-cproc %make-sparse-vector (type default-value _::<ulong>)
    (let* ([klass::ScmClass* NULL])
      (cond [(SCM_CLASSP type)  (set! klass (SCM_CLASS type))]
            [(SCM_FALSEP type)  (set! klass SCM_CLASS_SPARSE_VECTOR)]

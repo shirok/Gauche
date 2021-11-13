@@ -543,24 +543,25 @@
 ;;---------------------------------------------------------------------
 ;; sys/loadavg.h
 
-(define-cproc sys-getloadavg (:optional (nsamples::<int> 3))
-  (cast void nsamples) ; suppress unused var warning
-  (.if "defined HAVE_GETLOADAVG"
-       (let* ([samples::(.array double [3])])
-         (when (or (<= nsamples 0) (> nsamples 3))
-           (Scm_Error "sys-getloadavg: argument out of range: %d" nsamples))
-         (let* ([count::int (getloadavg samples nsamples)])
-           (if (< count 0)
-             (return '#f)
-             (let* ([h '()] [t '()])
-               (dotimes [i count]
-                 (let* ([n (Scm_MakeFlonum (aref samples i))])
-                   (SCM_APPEND1 h t n)))
-               (return h)))))
-       (begin
-         (Scm_Error "sys-getloadavg isn't supported on this platform")
-         (return SCM_UNDEFINED))))      ;dummy
-
+(inline-stub
+(.if (defined HAVE_GETLOADAVG)
+  (define-cproc sys-getloadavg (:optional (nsamples::<int> 3))
+    (let* ([samples::(.array double [3])])
+      (when (or (<= nsamples 0) (> nsamples 3))
+        (Scm_Error "sys-getloadavg: argument out of range: %d" nsamples))
+      (let* ([count::int (getloadavg samples nsamples)])
+        (if (< count 0)
+          (return '#f)
+          (let* ([h '()] [t '()])
+            (dotimes [i count]
+              (let* ([n (Scm_MakeFlonum (aref samples i))])
+                (SCM_APPEND1 h t n)))
+            (return h))))))
+  (define-cproc sys-getloadavg (:optional _::<int>)
+    (begin
+      (Scm_Error "sys-getloadavg isn't supported on this platform")
+      (return SCM_UNDEFINED))))
+)
 ;;---------------------------------------------------------------------
 ;; sys/mman.h
 

@@ -4,6 +4,7 @@
 	  treating u8int_t array in cstruct as <u8vector>.  Eventually
 	  we'll extend it to other uniform vectors, and this is the first
 	  step.
+	  (define-cproc): Allow '_ in the arguments to indicate unused args.
 
 	* lib/gauche/cgen/cise.scm: (define-cenum): Added.  This has been
 	  in Gauche-gl for a while.

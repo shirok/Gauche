@@ -512,6 +512,10 @@
   (next-method)
   (set! (~ self'keyword) (cgen-literal (make-keyword (~ self'name)))))
 
+;; Argument named '_' is just a placehodler and ignored.
+(define (unused-arg? arg) (eq? (~ arg'name) '_))
+(define (used-args args) (remove unused-arg? args))
+
 ;;===================================================================
 ;; Symbol and keyword definition
 ;;
@@ -1278,14 +1282,14 @@
   (p "static ScmObj "(~ cproc'c-name)"(ScmObj *SCM_FP SCM_UNUSED, int SCM_ARGCNT SCM_UNUSED, void *data_ SCM_UNUSED)")
   (p "{")
   ;; argument decl
-  (for-each emit-arg-decl (~ cproc'args))
-  (for-each emit-arg-decl (~ cproc'keyword-args))
+  (for-each emit-arg-decl (used-args (~ cproc'args)))
+  (for-each emit-arg-decl (used-args (~ cproc'keyword-args)))
   (let1 arg-array-size (+ (length (~ cproc'args))
                           (~ cproc'num-optargs)
                           (if (null? (~ cproc'keyword-args)) 0 -1))
     (unless (zero? arg-array-size)
       (p "  ScmObj SCM_SUBRARGS["arg-array-size"];")))
-  (unless (null? (~ cproc'keyword-args))
+  (unless (null? (used-args (~ cproc'keyword-args)))
     (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
   (p "  SCM_ENTER_SUBR(\""(~ cproc'scheme-name)"\");")
   ;; argument count check (for optargs)
@@ -1305,7 +1309,7 @@
       (p "  for (int SCM_i=0; SCM_i<"k"; SCM_i++) {")
       (p "    SCM_SUBRARGS[SCM_i] = SCM_ARGREF(SCM_i);")
       (p "  }")))
-  (for-each emit-arg-unbox (~ cproc'args))
+  (for-each emit-arg-unbox (used-args (~ cproc'args)))
   (unless (null? (~ cproc'keyword-args))
     (emit-keyword-args-unbox cproc))
   ;; body
@@ -1407,7 +1411,7 @@
         [else "SCM_UNBOUND"]))
 
 (define (emit-keyword-args-unbox cproc)
-  (let ([args (~ cproc'keyword-args)]
+  (let ([args (used-args (~ cproc'keyword-args))]
         [other-keys? (~ cproc'allow-other-keys?)])
     (p "  if (Scm_Length(SCM_OPTARGS) % 2)")
     (p "    Scm_Error(\"keyword list not even: %S\", SCM_OPTARGS);")

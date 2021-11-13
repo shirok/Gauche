@@ -48,34 +48,32 @@
  ;; a "not implemented" error, or simply discard the requests?  I tend to
  ;; think, for a logging feature, it is more useful to discard them.
 
- (define-cproc sys-openlog
-   (ident::<const-cstring> option::<fixnum> facility::<fixnum>) ::<void>
-   (.if (defined HAVE_SYSLOG)
-        (openlog ident option facility)
-        (begin (cast void ident)       ; suppress unused var warning
-               (cast void option)      ; suppress unused var warning
-               (cast void facility)))) ; suppress unused var warning
+ (.if (defined HAVE_SYSLOG)
+   (begin
+     (define-cproc sys-openlog (ident::<const-cstring> 
+                                option::<fixnum>
+                                facility::<fixnum>)
+       ::<void>
+       (openlog ident option facility))
+     (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>)
+       ::<void>
+       (syslog prio "%s" message))
+     (define-cproc sys-closelog () ::<void> (closelog)))
+   (begin
+     (define-cproc sys-openlog (_::<const-cstring> _::<fixnum> _::<fixnum>)
+       ::<void> ())
+     (define-cproc sys-syslog (_::<fixnum> _::<const-cstring>) ::<void> ())
+     (define-cproc sys-closelog () ::<void> ())))
 
- (define-cproc sys-syslog (prio::<fixnum> message::<const-cstring>) ::<void>
-   (.if (defined HAVE_SYSLOG)
-        (syslog prio "%s" message)
-        (begin (cast void prio)       ; suppress unused var warning
-               (cast void message)))) ; suppress unused var warning
-
- (define-cproc sys-closelog () ::<void>
-   (.if (defined HAVE_SYSLOG) (closelog)))
-
- (define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
-   (.if (defined HAVE_SETLOGMASK)
-        (return (LOG_MASK prio))
-        (begin (cast void prio) ; suppress unused var warning
-               (return 0))))
-
- (define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum>
-   (.if (defined HAVE_SETLOGMASK)
-        (return (setlogmask mask))
-        (begin (cast void mask) ; suppress unused var warning
-               (return 0))))
+ (.if (defined HAVE_SETLOGMASK)
+   (begin
+     (define-cproc sys-logmask (prio::<fixnum>) ::<fixnum>
+       (return (LOG_MASK prio)))
+     (define-cproc sys-setlogmask (mask::<fixnum>) ::<fixnum>
+       (return (setlogmask mask))))
+   (begin
+     (define-cproc sys-logmask (_::<fixnum>) ::<fixnum> (return 0))
+     (define-cproc sys-setlogmask (_::<fixnum>) ::<fixnum> (return 0))))
 
  ;; We need to define at least these three logging option constants,
  ;; for they are referenced in gauche.logger.  The actual value doesn't matter.
