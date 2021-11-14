@@ -96,8 +96,11 @@
 
 
 (inline-stub
- (.include "gauche/priv/classP.h")
- (.include "gauche/priv/nativeP.h")
+ (declcode
+  (.include "gauche/priv/classP.h")
+  (.include "gauche/priv/nativeP.h")
+  (.include "gauche/priv/memoP.h")
+  (.include "gauche/priv/typeP.h"))
 
  ;; Metaclass: <type-constructor-meta>
  ;;   Its instance is ScmTypeConstructor.  Provides the following slots.
@@ -129,15 +132,6 @@
  ;;     Returns true iff the descriptive type is a supertype of TYPE.
  ;;     Trivial cases are already excluded, esp., TYPE won't be the
  ;;     same kind of <descriptive-type>.
-
- (define-ctype ScmTypeConstructor
-   ::(.struct ScmTypeConstructorRec
-              (common::ScmClass
-               initializer::ScmObj
-               deconstructor::ScmObj
-               validator::ScmObj
-               subtypeP::ScmObj
-               supertypeP::ScmObj)))
 
  (define-cclass <type-constructor-meta> :base :private :no-meta
    "ScmTypeConstructor*" "Scm_TypeConstructorMetaClass"
@@ -173,6 +167,36 @@
                 (set! (-> z name) SCM_FALSE)
                 (set! (-> z constructorArgs) SCM_FALSE)
                 (return (SCM_OBJ z)))))
+
+ ;; We memoize constructed types.  The type is keyed by the constructor class
+ ;; and a list of contructor arguments.
+ (define-cvar type-table::ScmMemoTable* :static)
+ (initcode
+  (set! type-table (SCM_MEMO_TABLE (Scm_MakeMemoTable 256 -1 0))))
+
+ (define-cfn lookup-constructed-type (type-ctor::ScmTypeConstructor*
+                                      args)
+   :static
+   (let* ([keys::(.array ScmObj (2))] [r])
+     (set! (aref keys 0) (SCM_OBJ type-ctor))
+     (set! (aref keys 1) args)
+     (set! r (Scm_MemoTableGetv type-table keys 2))
+     (if (SCM_UNBOUNDP r)
+       (return SCM_FALSE)
+       (return r))))
+
+ (define-cfn register-constructed-type (type-ctor::ScmTypeConstructor*
+                                        args
+                                        type)
+   :static
+   (let* ([keys::(.array ScmObj (2))])
+     (set! (aref keys 0) (SCM_OBJ type-ctor))
+     (set! (aref keys 1) args)
+     (Scm_MemoTablePutv type-table keys 2 type)
+     (return type)))
+
+ (define-cproc %dump-type-table () ::<void> ; for debug
+   (Scm__MemoTableDump type-table SCM_CURERR))
 
  ;; TRANSIENT: for size and alignemnt slots, we'll change them to size_t once
  ;; 0.9.11 is released.  (0.9.10's precompiler doesn't support <size_t>
@@ -295,10 +319,22 @@
   (and (equal? (class-of x) (class-of y))
        (equal? (deconstruct-type x) (deconstruct-type y))))
 
+;; This can also be called from initialization of precompiled code to recover
+;; descripitve type instance.
+(inline-stub
+ (define-cfn Scm_ConstructType (ctor args)
+   (SCM_ASSERT (!= ctor NULL))
+   (unless (Scm_TypeConstructorP ctor)
+     (SCM_TYPE_ERROR ctor "<type-constructor-meta>"))
+   (let* ([ct::ScmTypeConstructor* (cast ScmTypeConstructor* ctor)]
+          [type (lookup-constructed-type ct args)])
+     (unless (SCM_FALSEP type) (return type))
+     (set! type (Scm_NewInstance (SCM_CLASS ct) (sizeof ScmDescriptiveType)))
+     (Scm_ApplyRec2 (-> ct initializer) type args)
+     (return (register-constructed-type ct args type))))
+ )
 ;; Public interface to construct a descriptive type.
-(define (construct-type meta args)
-  (rlet1 type (make meta)
-    ((~ meta'initializer) type args)))
+(define-cproc construct-type (meta args) Scm_ConstructType)
 
 (define (lazy-construct-type meta args)
   (rlet1 type (make meta)
@@ -308,16 +344,6 @@
 (define-method deconstruct-type ((t <descriptive-type>))
   ((~ (class-of t)'deconstructor) t))
 
-;; This is called from initialization of precompiled code to recover
-;; descripitve type instance.
-(inline-stub
- (define-cfn Scm_ConstructType (ctor args)
-   (unless (Scm_TypeConstructorP ctor)
-     (SCM_TYPE_ERROR ctor "<type-constructor-meta>"))
-   (let* ([type (Scm_NewInstance (SCM_CLASS ctor) (sizeof ScmDescriptiveType))])
-     (Scm_ApplyRec2 (-> (cast ScmTypeConstructor* ctor) initializer) type args)
-     (return type)))
- )
 
 ;;;
 ;;; Proxy type API.

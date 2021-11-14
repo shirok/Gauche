@@ -6,6 +6,22 @@
 (use gauche.typeutil)
 (test-module 'gauche.typeutil)
 
+(test-section "type constuctor memoization")
+
+;; This tests the constructed types from the same arguments gets eq?,
+;; because of the memoization.
+
+(define-syntax t-equality
+  (syntax-rules ()
+    [(_ expect a b)
+     (test* (list 'a 'b) expect (eq? a b))]))
+
+(t-equality #t (<?> <integer>) (<?> <integer>))
+(t-equality #t (</> <integer> <string>) (</> <integer> <string>))
+(t-equality #f (<?> <integer>) (<?> <int>))
+(t-equality #t (</> <uint8> <uint16>) (</> <uint8> <uint16>))
+(t-equality #f (</> <uint8> <uint16>) (</> <uint16> <uint8>))
+
 (test-section "subtype?")
 
 (define-syntax t-subtype
