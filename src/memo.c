@@ -37,6 +37,8 @@
 
 /* See memoP.h for the design choices. */
 
+/* NB: Get, Getv, Put and Putv procedures shouldn't throw a Scheme error. */
+
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_MemoTableClass, NULL);
 
 static ScmMemoTableStorage *new_storage(u_long capacity,
@@ -80,22 +82,31 @@ static inline int get_total_numkeys(int nkeys)
 
 /*
  * hash and equality
+ *
+ * We use hard-wired hash/equality function.
+ *   Objects are hashed/compared as eqv-hash and eqv?, except <string>,
+ *   <box>, <mv-box> and <proxy-type>.
  */
 
 static inline _Bool equal_1(ScmObj a, ScmObj b)
 {
     if (SCM_STRINGP(a)) {
-        if (SCM_STRINGP(b)) {
-            return Scm_StringEqual(SCM_STRING(a), SCM_STRING(b));
-        } else {
-            return FALSE;
+        return SCM_STRINGP(b) && Scm_StringEqual(SCM_STRING(a), SCM_STRING(b));
+    } else if (SCM_BOXP(a)) {
+        return SCM_BOXP(b) && equal_1(SCM_BOX_VALUE(a), SCM_BOX_VALUE(b));
+    } else if (SCM_MVBOXP(a)) {
+        if (!SCM_MVBOXP(b) || SCM_MVBOX_SIZE(a)!=SCM_MVBOX_SIZE(b)) return FALSE;
+        for (ScmSmallInt i=0; i<SCM_MVBOX_SIZE(a); i++) {
+            if (!equal_1(SCM_MVBOX_VALUES(a)[i], SCM_MVBOX_VALUES(b)[i]))
+                return FALSE;
         }
+        return TRUE;
+    } else if (SCM_PROXY_TYPE_P(a)) {
+        return SCM_PROXY_TYPE_P(b)
+            && SCM_EQ(Scm_ProxyTypeRef(SCM_PROXY_TYPE(a)),
+                      Scm_ProxyTypeRef(SCM_PROXY_TYPE(b)));
     } else {
-        if (!SCM_STRINGP(b)) {
-            return Scm_EqvP(a, b);
-        } else {
-            return FALSE;
-        }
+        return Scm_EqvP(a, b);
     }
 }
 
@@ -103,6 +114,16 @@ static inline u_long hash_1(ScmObj key)
 {
     if (SCM_STRINGP(key)) {
         return Scm_HashString(SCM_STRING(key), 0);
+    } else if (SCM_BOXP(key)) {
+        return hash_1(SCM_BOX_VALUE(key));
+    } else if (SCM_MVBOXP(key)) {
+        u_long h = 0;
+        for (ScmSmallInt i=0; i<SCM_MVBOX_SIZE(key); i++) {
+            h = Scm_CombineHashValue(h, hash_1(SCM_MVBOX_VALUES(key)[i]));
+        }
+        return h;
+    } else if (SCM_PROXY_TYPE_P(key)) {
+        return hash_1(SCM_OBJ(Scm_ProxyTypeRef(SCM_PROXY_TYPE(key))));
     } else {
         return Scm_EqvHash(key);
     }
@@ -175,7 +196,7 @@ ScmObj Scm_MemoTableGetv(ScmMemoTable *tab, ScmObj *keys, int nkeys)
                or it is with other hash value. */
             continue;
         }
-        if (memo_equalv(keys, nkeys, &st->vec[idx+1])) {
+        if (memo_equalv(keys, tab->num_keys, &st->vec[idx+1])) {
             /* found */
             return SCM_OBJ(st->vec[idx + nkeys + 1]);
         }
@@ -204,7 +225,6 @@ ScmObj Scm_MemoTableGet(ScmMemoTable *tab, ScmObj keys)
 /*
  * insert
  */
-
 
 static inline void insert_entry(ScmMemoTable *tab, ScmMemoTableStorage *st,
                                 u_long entry_index, ScmAtomicWord hashv_hdr,
