@@ -774,6 +774,22 @@
                    (</> (<Tuple> (<?> <int8>) <string> <integer>)
                         (<List> <integer>)))
            )))
+
+  (test* "assertion with reconstructed type" '((3 "ok" 8483958394)
+                                               (#f "ok" -8483958394)
+                                               (1 2 3 4 5))
+         (dynload-and-eval
+          "types-test"
+          (list
+           ((global-variable-ref 'types-test 'foo) '(3 "ok" 8483958394))
+           ((global-variable-ref 'types-test 'foo) '(#f "ok" -8483958394))
+           ((global-variable-ref 'types-test 'foo) '(1 2 3 4 5)))))
+
+  (test* "assertion with reconstructed type" 
+         (test-error <error> #/supposed to be of type/)
+         (dynload-and-eval
+          "types-test"
+          ((global-variable-ref 'types-test 'foo) "ng")))
   )
 
 (wrap-with-test-directory precomp-test-1 '("test.o"))
