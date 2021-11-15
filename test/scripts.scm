@@ -575,30 +575,31 @@
 ;;=======================================================================
 (test-section "precomp")
 
-(define (precomp-test-1)
-  (do-process `("../../src/gosh" "-ftest"
-                ,#"-I~|*top-srcdir*|/test/test-precomp"
-                ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
-                ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
-                ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
-                       '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
-              :directory "test.o")
-  (test* "precomp generated files"
-         '("test.o/foo--bar1.c"
-           "test.o/foo--bar2.c"
-           "test.o/foo--bar3.c"
-           "test.o/foo.c"
-           "test.o/foo.sci"
-           "test.o/foo/bar1.sci"
-           "test.o/foo/bar2.sci"
-           "test.o/foo/bar3.sci")
-         (sort (map fix-path (directory-fold "test.o" cons '()))))
-  )
+(define (do-precomp! files extra-options)
+  (do-process! `("../../src/gosh" "-ftest"
+                 ,#"-I~|*top-srcdir*|/test/test-precomp"
+                 ,(build-path *top-srcdir* "src/precomp")
+                 "--strip-prefix"
+                 ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
+                 ,@extra-options
+                 ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
+                        files))
+               :directory "test.o"))
 
-
-(add-load-path "test.o")
-(use srfi-42)
-(use scheme.vector :only (vector-every))
+(define (do-compile! output files)
+  (do-process!
+   `("../../src/gosh" "-ftest"
+     ,(build-path *top-srcdir* "src/gauche-package.in")
+     "compile"
+     ,#"--cppflags=-I~(fix-path (build-path *top-srcdir* \"src\")) \
+                   -I~(fix-path (build-path *top-srcdir* \"gc/include\")) \
+                   -I~(fix-path (build-path *top-builddir* \"src\")) \
+                   -I~(fix-path (build-path *top-builddir* \"gc/include\"))"
+     ,#"--ldflags=-L~(fix-path (build-path *top-srcdir* \"src\")) \
+                  -L~(fix-path (build-path *top-builddir* \"src\"))"
+     ,output
+     ,@files)
+   :directory "test.o"))
 
 ;; On Windows we can't remove dll file that's being used in the active
 ;; process, so we spawn a child gosh and load it.
@@ -622,6 +623,27 @@
        (load libname :paths '("./test.o"))
        expr])]))
 
+
+(define (precomp-test-1)
+  (test* "running precomp 1" #t
+         (do-precomp! '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")
+                      '()))
+  (test* "precomp generated files"
+         '("test.o/foo--bar1.c"
+           "test.o/foo--bar2.c"
+           "test.o/foo--bar3.c"
+           "test.o/foo.c"
+           "test.o/foo.sci"
+           "test.o/foo/bar1.sci"
+           "test.o/foo/bar2.sci"
+           "test.o/foo/bar3.sci")
+         (sort (map fix-path (directory-fold "test.o" cons '()))))
+  )
+
+(add-load-path "test.o")
+(use srfi-42)
+(use scheme.vector :only (vector-every))
+
 (define (precomp-test-2)
   (define (literal=? x y)
     (cond [(pair? x) (and (pair? y)
@@ -641,14 +663,9 @@
                       [else (= x y)]))]
           [else (equal? x y)]))
 
-  (do-process `("../../src/gosh" "-ftest"
-                ,#"-I~|*top-srcdir*|/test/test-precomp"
-                ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
-                ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
-                "--single-interface"
-                ,@(map (^[file] (fix-path (build-path *top-srcdir* "test/test-precomp" file)))
-                       '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")))
-              :directory "test.o")
+  (test* "running precomp 2" #t
+         (do-precomp! '("foo.scm" "foo/bar1.scm" "foo/bar2.scm" "foo/bar3.scm")
+                      '("--single-interface")))
   (test* "precomp generated files with --single-interface"
          '("test.o/foo--bar1.c"
            "test.o/foo--bar2.c"
@@ -677,22 +694,9 @@
                 "(dynamic-load \"foo\" :init-function \"Scm_Init_foo\")")
               (file->string-list "test.o/foo.sci"))
 
-  (test* "compile" #t
-         (do-process
-          `("../../src/gosh" "-ftest"
-            ,(build-path *top-srcdir* "src/gauche-package.in")
-            "compile"
-            ,#"--cppflags=-I~(fix-path (build-path *top-srcdir* \"src\")) \
-                                        -I~(fix-path (build-path *top-srcdir* \"gc/include\")) \
-                                        -I~(fix-path (build-path *top-builddir* \"src\")) \
-                                        -I~(fix-path (build-path *top-builddir* \"gc/include\"))"
-            ,#"--ldflags=-L~(fix-path (build-path *top-srcdir* \"src\")) \
-                                       -L~(fix-path (build-path *top-builddir* \"src\"))"
-            "foo"
-            "foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")
-
-          :directory "test.o"))
-
+  (test* "compile 2" #t
+         (do-compile! "foo"
+                      '("foo.c" "foo--bar1.c" "foo--bar2.c" "foo--bar3.c")))
   (test* "dynload and literals 1"
          (list (include "test-precomp/literals.scm")
                'begin1
@@ -733,27 +737,8 @@
   )
 
 (define (precomp-test-3)
-  (do-process! `("../../src/gosh" "-ftest"
-                 ,#"-I~|*top-srcdir*|/test/test-precomp"
-                 ,(build-path *top-srcdir* "src/precomp") "--strip-prefix"
-                 ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
-                 "-e"
-                 ,(fix-path (build-path *top-srcdir* "test/test-precomp/types-test.scm")))
-               :directory "test.o")
-  (test* "compile" #t
-         (do-process
-          `("../../src/gosh" "-ftest"
-            ,(build-path *top-srcdir* "src/gauche-package.in")
-            "compile"
-            ,#"--cppflags=-I~(fix-path (build-path *top-srcdir* \"src\")) \
-                          -I~(fix-path (build-path *top-srcdir* \"gc/include\")) \
-                          -I~(fix-path (build-path *top-builddir* \"src\")) \
-                          -I~(fix-path (build-path *top-builddir* \"gc/include\"))"
-            ,#"--ldflags=-L~(fix-path (build-path *top-srcdir* \"src\")) \
-                         -L~(fix-path (build-path *top-builddir* \"src\"))"
-            "types-test"
-            "types-test.c")
-          :directory "test.o"))
+  (test* "running precomp 3" #t (do-precomp! '("types-test.scm") '("-e")))
+  (test* "compile 3" #t (do-compile! "types-test" '("types-test.c")))
 
   (test* "type reconstruction" '(#t #t #f #t)
          (dynload-and-eval
