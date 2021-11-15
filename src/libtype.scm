@@ -489,6 +489,7 @@
     'super))
 
 ;; Internal API - called from procedure-type (libproc)
+;; Reconstruct #<^ ...> type from a serialized type info encoded in a vector.
 (define (reconstruct-procedure-type proc encoded-type)
   (if (and (vector? encoded-type)
            (>= (vector-length encoded-type) 3)
@@ -509,6 +510,7 @@
     (compute-procedure-type proc)))
 
 ;; Internal API - called from procedure-type (libproc)
+;; Compute #<^ ...> type from the information available in the procedure.
 (define (compute-procedure-type proc)
   (define (%procedure-type proc)
     (if-let1 clinfo (case-lambda-info proc)

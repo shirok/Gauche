@@ -202,6 +202,12 @@
 (define-cproc procedure-info (proc::<procedure>)
   (return (SCM_PROCEDURE_INFO proc)))
 
+;; procedure-type returns a descriptive type of the given procedure.
+;; It is an instance of <^> type constructor (see libtype.scm).
+;; procedure-type is computed lazily, and cached to proc->typeHint.
+;; If the procedure is precompiled, the type info is serialized to a
+;; vector; it is reconstructed to #<^ ...> type when accessed for the
+;; first time.
 (define-cproc procedure-type (proc::<procedure>)
   (let* ([typehint (-> proc typeHint)])
     (cond [(SCM_VECTORP typehint)
