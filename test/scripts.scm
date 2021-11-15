@@ -755,7 +755,7 @@
             "types-test.c")
           :directory "test.o"))
 
-  (test* "type reconstruction" '(#t #t)
+  (test* "type reconstruction" '(#t #t #f #t)
          (dynload-and-eval
           "types-test"
           (list
@@ -764,6 +764,15 @@
                      (<List> <integer> 3 10)))
            (eq? (global-variable-ref 'types-test '<A>)
                 (global-variable-ref 'types-test '<B>))
+           (eq? (global-variable-ref 'types-test '<A>)
+                (global-variable-ref 'types-test '<C>))
+           ;; NB: The following may not be eq?, since (<List> <integer>) is
+           ;; serialized as (<List> <integer> #f #f).  The memoization is
+           ;; based on the argument list of the type constructor, so it
+           ;; doesn't match with (<List> <integer>) at runtime.
+           (equal? (global-variable-ref 'types-test '<C>)
+                   (</> (<Tuple> (<?> <int8>) <string> <integer>)
+                        (<List> <integer>)))
            )))
   )
 
