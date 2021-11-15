@@ -931,6 +931,20 @@
                     (cgen-c-name self)
                     (cgen-c-name (~ self'ctor))
                     (cgen-c-name (~ self'args))))
+      (static (self) #f))
+    (define-cgen-literal <cgen-scheme-native-type> <native-type>
+      ((name :init-keyword :name))
+      (make (value)
+        (make <cgen-scheme-native-type> :value value
+              :c-name (cgen-allocate-static-datum)
+              :name (cgen-literal (~ value'name))))
+      (init (self)
+            (format #t "  ~a = Scm_GlobalVariableRef(Scm_GaucheModule(), \
+                                     SCM_SYMBOL(~a), 0);"
+                    (cgen-c-name self) (cgen-c-name (~ self'name)))
+            (format #t "  if (SCM_UNBOUNDP(~a)) \
+                             Scm_Error(\"Invalid native type: %S\", ~a);"
+                    (cgen-c-name self) (cgen-c-name (~ self'name))))
       (static (self) #f)))])
 
 ;;---------------------------------------------------------------

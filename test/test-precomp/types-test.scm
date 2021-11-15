@@ -5,9 +5,9 @@
   (export <A> <B> foo))
 (select-module types-test)
 
-(define <A> (</> (<Tuple> (<?> <char>) <string> <integer>)
+(define <A> (</> (<Tuple> (<?> <int8>) <string> <integer>)
                  (<List> <integer> 3 10)))
-(define <B> (</> (<Tuple> (<?> <char>) <string> <integer>)
+(define <B> (</> (<Tuple> (<?> <int8>) <string> <integer>)
                  (<List> <integer> 3 10)))
 
 (define (foo x)

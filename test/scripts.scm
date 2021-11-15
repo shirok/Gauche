@@ -760,7 +760,7 @@
           "types-test"
           (list
            (eq? (global-variable-ref 'types-test '<A>)
-                (</> (<Tuple> (<?> <char>) <string> <integer>)
+                (</> (<Tuple> (<?> <int8>) <string> <integer>)
                      (<List> <integer> 3 10)))
            (eq? (global-variable-ref 'types-test '<A>)
                 (global-variable-ref 'types-test '<B>))
