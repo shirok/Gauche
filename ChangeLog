@@ -9,6 +9,8 @@
 	  and copying shouldn't make difference.  It is only used internally
 	  to do certain bookkeeping.
 
+	* lib/srfi-229.scm: Added.
+
 2021-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (make-array-getter-setter): Support

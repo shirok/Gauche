@@ -1,3 +1,4 @@
+;; -*- coding:utf-8 -*-
 ;;
 ;; Test for SRFIs
 ;;
@@ -2598,5 +2599,10 @@
   (use srfi-64)
   (use srfi-221)
   (include "include/srfi-221-test"))
+
+;;-----------------------------------------------------------------------
+(test-section "srfi-229")
+(use srfi-229)
+(test-module 'srfi-229)
 
 (test-end)
