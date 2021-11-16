@@ -165,7 +165,7 @@ ScmObj Scm_NullProc(void)
 
 /* Procedure is inherently an immutable entity, so copying doesn't
    make much sense.  However, sometimes we do need to mutate procedure
-   instances to add various bookkeeping infos during construction,
+   instances to add various bookkeeping info during construction,
    and it comes handy to do "copy, then modify" workflow. */
 ScmObj Scm_CopyProcedure(ScmProcedure *proc)
 {
@@ -178,19 +178,11 @@ ScmObj Scm_CopyProcedure(ScmProcedure *proc)
                          SCM_PROCEDURE_REQUIRED(proc),
                          SCM_PROCEDURE_OPTIONAL(proc),
                          SCM_PROCEDURE_INFO(proc));
-        SCM_PROCEDURE_INLINER(n) = SCM_PROCEDURE_INLINER(proc);
-        SCM_PROCEDURE_SETTER(n) = SCM_PROCEDURE_SETTER(proc);
-        SCM_PROCEDURE_SETTER_LOCKED(n) = SCM_PROCEDURE_SETTER_LOCKED(proc);
-        SCM_PROCEDURE_CURRYING(n) = SCM_PROCEDURE_CURRYING(proc);
         SCM_SUBR_FLAGS(n) = SCM_SUBR_FLAGS(proc);
         break;
     case SCM_PROC_CLOSURE:
         n = Scm_MakeClosure(SCM_CLOSURE_CODE(proc),
                             SCM_CLOSURE_ENV(proc));
-        SCM_PROCEDURE_INLINER(n) = SCM_PROCEDURE_INLINER(proc);
-        SCM_PROCEDURE_SETTER(n) = SCM_PROCEDURE_SETTER(proc);
-        SCM_PROCEDURE_SETTER_LOCKED(n) = SCM_PROCEDURE_SETTER_LOCKED(proc);
-        SCM_PROCEDURE_CURRYING(n) = SCM_PROCEDURE_CURRYING(proc);
         break;
     case SCM_PROC_GENERIC:
     case SCM_PROC_METHOD:
@@ -200,6 +192,15 @@ ScmObj Scm_CopyProcedure(ScmProcedure *proc)
         Scm_Error("procedure-copy can only copy subr or closure: %S",
                   SCM_OBJ(proc));
     }
+    /* Copying common fields */
+    SCM_PROCEDURE_INLINER(n) = SCM_PROCEDURE_INLINER(proc);
+    SCM_PROCEDURE_SETTER(n) = SCM_PROCEDURE_SETTER(proc);
+    SCM_PROCEDURE_SETTER_LOCKED(n) = SCM_PROCEDURE_SETTER_LOCKED(proc);
+    SCM_PROCEDURE_CURRYING(n) = SCM_PROCEDURE_CURRYING(proc);
+#if GAUCHE_API_VERSION >= 98
+    SCM_PROCEDURE(n)->reserved32 = proc->reserved32;
+    SCM_PROCEDURE(n)->typeHint = proc->typeHint;
+#endif /*GAUCHE_API_VERSION >= 98*/
     return n;
 }
 
