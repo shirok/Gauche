@@ -770,15 +770,21 @@
            ((global-variable-ref 'types-test 'foo) '(#f "ok" -8483958394))
            ((global-variable-ref 'types-test 'foo) '(1 2 3 4 5)))))
 
-  (test* "assertion with reconstructed type" 
-         (test-error <error> #/supposed to be of type/)
+  (test* "assertion with reconstructed type"
+         #t
          (dynload-and-eval
           "types-test"
-          ((global-variable-ref 'types-test 'foo) "ng")))
+          (guard (e ((<error> e)
+                     (boolean (#/supposed to be of type/ (~ e'message)))))
+            ((global-variable-ref 'types-test 'foo) "ng"))))
   )
 
-(wrap-with-test-directory precomp-test-1 '("test.o"))
-(wrap-with-test-directory precomp-test-2 '("test.o"))
+'(wrap-with-test-directory precomp-test-1 '("test.o"))
+'(wrap-with-test-directory precomp-test-2 '("test.o"))
+(sys-mkdir "test.o" #o755)
+(precomp-test-3)
+(exit 0)
+
 (wrap-with-test-directory precomp-test-3 '("test.o"))
 
 ;;=======================================================================
