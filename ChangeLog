@@ -1,3 +1,14 @@
+2021-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h (ScmProcedure), src/proc.c (Scm__CopyProcedure):
+	  Use the reserved slot of ScmProcedure as tags-alist.
+	  We can keep srfi-229 procedure tag there, and more in future.
+	  INCOMPATIBLE CHANGE: We make Scm_CopyProcedure private, moved
+	  to priv/procP.h and renamed to Scm__CopyProcedure.  Use code
+	  shouldn't need to use it, for procedures are immutable entity
+	  and copying shouldn't make difference.  It is only used internally
+	  to do certain bookkeeping.
+
 2021-11-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (make-array-getter-setter): Support

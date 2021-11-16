@@ -33,8 +33,9 @@
 
 (select-module gauche.internal)
 (inline-stub
- (declcode (.include <gauche/vminsn.h>
-                     <gauche/prof.h>)))
+ (declcode (.include "gauche/vminsn.h"
+                     "gauche/prof.h"
+                     "gauche/priv/procP.h")))
 
 ;;;
 ;;; R5RS
@@ -264,7 +265,11 @@
   (return (and (SCM_PROCEDUREP obj)
                (SCM_PROCEDURE_CONSTANT obj))))
 
-(define-cproc %procedure-copy (p::<procedure>) Scm_CopyProcedure)
+(define-cproc %procedure-copy (p::<procedure> :optional (tags-alist #f))
+  Scm__CopyProcedure)
+
+(define-cproc %procedure-tags-alist (p::<procedure>)
+  (return (-> p tagsAlist)))
 
 (select-module gauche.internal)
 ;; Make the environment the closure closes into a list and return it.

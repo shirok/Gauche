@@ -1066,11 +1066,24 @@ struct ScmProcedureRec {
     ScmObj inliner;                /* inliner information (see below) */
 #if GAUCHE_API_VERSION >= 98
     ScmObj typeHint;               /* info to be used for type checking.
-                                     shouldn't be accessed directly, for
-                                     we do some tricky stuff here.  API will
-                                     be provided.
+                                      shouldn't be accessed directly, for
+                                      we do some tricky stuff here.
+                                      Use Scheme API procedure-type
+                                      to get the type info.
                                    */
-    ScmObj reservedSlot;           /* for future use */
+    ScmObj tagsAlist;              /* Alist of procedure tags. Procedure
+                                      tags can carry extra info about
+                                      the procedure.  They should be treated
+                                      as immutable property, for procedures
+                                      can be duplicated/consolidated for
+                                      optimizations and other runtime handlings.
+                                      NB: The value of a tag can have a
+                                      mutable structure.
+                                      SRFI-229 procedure tag is held as
+                                      a value corresponds to 'srfi-229-tag.
+                                      This shouldn't be accessed directly;
+                                      use API instead.
+                                    */
 #endif /*GAUCHE_API_VERSION >= 98*/
 };
 
@@ -1259,7 +1272,6 @@ SCM_CLASS_DECL(Scm_ProcedureClass);
       (inf), SCM_FALSE, (inl) }
 #endif /* GAUCHE_API_VERSION < 98 */
 
-SCM_EXTERN ScmObj Scm_CopyProcedure(ScmProcedure *proc);
 SCM_EXTERN ScmObj Scm_CurryProcedure(ScmObj proc, ScmObj *given,
                                      int ngiven, int foldlen);
 

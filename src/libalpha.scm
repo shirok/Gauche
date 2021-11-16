@@ -37,9 +37,10 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>
-                     <gauche/priv/glocP.h>
-                     <gauche/priv/macroP.h>)))
+ (declcode (.include "gauche/vminsn.h"
+                     "gauche/priv/glocP.h"
+                     "gauche/priv/macroP.h"
+                     "gauche/priv/procP.h")))
 
 ;;;
 ;;;  errors
@@ -117,7 +118,7 @@
                  method using the name (setter %S)."
                 (SCM_PROCEDURE_INFO proc))]
     [else (Scm_Error "You can't attach a setter to %S." (SCM_OBJ proc))])
-  (let* ([p (Scm_CopyProcedure proc)])
+  (let* ([p (Scm__CopyProcedure proc SCM_FALSE)])
     ;; NB: We override p->locked, for p is a copy.
     (set! (SCM_PROCEDURE_SETTER_LOCKED p) FALSE)
     (return (Scm_SetterSet (SCM_PROCEDURE p) set TRUE))))

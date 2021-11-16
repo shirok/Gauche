@@ -84,6 +84,7 @@ void Scm__ProcedureInit(ScmProcedure *proc,
 #if GAUCHE_API_VERSION >= 98
     proc->reserved32 = 0;
     proc->typeHint = SCM_FALSE;
+    proc->tagsAlist = SCM_NIL;
 #endif /*GAUCHE_API_VERSION >= 98*/
 }
 
@@ -91,7 +92,7 @@ void Scm__ProcedureInit(ScmProcedure *proc,
  * Closure
  */
 
-ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
+ScmObj Scm_MakeClosureWithTags(ScmObj code, ScmEnvFrame *env, ScmObj tags)
 {
     ScmClosure *c = SCM_NEW(ScmClosure);
 
@@ -115,18 +116,24 @@ ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
     c->code = code;
     c->env = env;
     SCM_PROCEDURE(c)->inliner = SCM_COMPILED_CODE(code)->intermediateForm;
+    SCM_PROCEDURE(c)->tagsAlist = tags;    
 
     return SCM_OBJ(c);
+}
+
+ScmObj Scm_MakeClosure(ScmObj code, ScmEnvFrame *env)
+{
+    return Scm_MakeClosureWithTags(code, env, SCM_NIL);
 }
 
 /*=================================================================
  * Subr
  */
 
-ScmObj Scm_MakeSubr(ScmSubrProc *func,
-                    void *data,
-                    int required, int optional,
-                    ScmObj info)
+ScmObj Scm_MakeSubrWithTags(ScmSubrProc *func,
+                            void *data,
+                            int required, int optional,
+                            ScmObj info, ScmObj tags)
 {
     ScmSubr *s = SCM_NEW(ScmSubr);
     SCM_SET_CLASS(s, SCM_CLASS_PROCEDURE);
@@ -134,7 +141,16 @@ ScmObj Scm_MakeSubr(ScmSubrProc *func,
                        required, optional, info);
     s->func = func;
     s->data = data;
+    SCM_PROCEDURE(s)->tagsAlist = tags;
     return SCM_OBJ(s);
+}
+
+ScmObj Scm_MakeSubr(ScmSubrProc *func,
+                    void *data,
+                    int required, int optional,
+                    ScmObj info)
+{
+    return Scm_MakeSubrWithTags(func, data, required, optional, info, SCM_NIL);
 }
 
 /*
@@ -167,7 +183,7 @@ ScmObj Scm_NullProc(void)
    make much sense.  However, sometimes we do need to mutate procedure
    instances to add various bookkeeping info during construction,
    and it comes handy to do "copy, then modify" workflow. */
-ScmObj Scm_CopyProcedure(ScmProcedure *proc)
+ScmObj Scm__CopyProcedure(ScmProcedure *proc , ScmObj tagsAlist)
 {
     ScmObj n = SCM_UNDEFINED;
 
@@ -200,6 +216,12 @@ ScmObj Scm_CopyProcedure(ScmProcedure *proc)
 #if GAUCHE_API_VERSION >= 98
     SCM_PROCEDURE(n)->reserved32 = proc->reserved32;
     SCM_PROCEDURE(n)->typeHint = proc->typeHint;
+    if (SCM_FALSEP(tagsAlist)) {
+        SCM_PROCEDURE(n)->tagsAlist = proc->tagsAlist;
+    } else {
+        SCM_ASSERT(SCM_LISTP(tagsAlist));
+        SCM_PROCEDURE(n)->tagsAlist = tagsAlist;
+    }
 #endif /*GAUCHE_API_VERSION >= 98*/
     return n;
 }

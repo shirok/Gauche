@@ -41,4 +41,10 @@ void Scm__ProcedureInit(ScmProcedure *proc,
                         int optional,
                         ScmObj info);
 
+/* Copying procedure.  Procedures must be treated as an immutable entity
+   and user code shouldn't attempt to copy a procedure object.  This is
+   used only for internal purpose.
+ */
+SCM_EXTERN ScmObj Scm__CopyProcedure(ScmProcedure *proc, ScmObj tagsAlist);
+
 #endif /*GAUCHE_PRIV_PROCP_H*/
