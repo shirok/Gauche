@@ -779,12 +779,8 @@
             ((global-variable-ref 'types-test 'foo) "ng"))))
   )
 
-'(wrap-with-test-directory precomp-test-1 '("test.o"))
-'(wrap-with-test-directory precomp-test-2 '("test.o"))
-(sys-mkdir "test.o" #o755)
-(precomp-test-3)
-(exit 0)
-
+(wrap-with-test-directory precomp-test-1 '("test.o"))
+(wrap-with-test-directory precomp-test-2 '("test.o"))
 (wrap-with-test-directory precomp-test-3 '("test.o"))
 
 ;;=======================================================================
