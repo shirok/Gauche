@@ -7,13 +7,22 @@
 
 (define make-memo-table (with-module gauche.internal make-memo-table))
 (define memo-table-putv! (with-module gauche.internal memo-table-putv!))
+(define memo-table-put!  (with-module gauche.internal memo-table-put!))
 (define memo-table-getv2 (with-module gauche.internal memo-table-getv2))
+(define memo-table-get2  (with-module gauche.internal memo-table-get2))
 
 (define (memo-table-getv1 tab x) (values-ref (memo-table-getv2 tab x) 0))
+(define (memo-table-get1 tab x)  (values-ref (memo-table-get2 tab x) 0))
 (define (memo-table-exists? tab x) (values-ref (memo-table-getv2 tab x) 1))
 
 (define (test-get-put msg args data)
-  (define tab)
+  (define tab)                          ; will be set
+  (define (expand-data vec)
+    (if (> (cadr args) 0)
+      (vector->list vec)                 ; no 'rest' keys
+      (apply list* (vector->list vec)))) ; 'rest' keys
+
+  ;; passing keys in vector
   (test* #"build ~|msg|~args" #t
          (begin (set! tab (apply make-memo-table args)) #t))
   (test* #"empty ~|msg|~args" #f
@@ -36,6 +45,28 @@
            (for-each (^[d v] (memo-table-putv! tab d v))
                      (cddr data) (iota (length (cddr data)) 2))
            (map (cut memo-table-getv1 tab <>) data)))
+
+  ;; passing keys in list
+  (test* #"build ~|msg|~args" #t
+         (begin (set! tab (apply make-memo-table args)) #t))
+  (test* #"put 1 ~|msg|~args" 0
+         (begin
+           (memo-table-put! tab (expand-data (car data)) 0)
+           (memo-table-get1 tab (expand-data (car data)))))
+  (test* #"put 1 (rest) ~|msg|~args" #f
+         (any (cut memo-table-exists? tab <>) (cdr data)))
+  (test* #"put 2 ~|msg|~args" '(0 1)
+         (begin
+           (memo-table-put! tab (expand-data (cadr data)) 1)
+           (list (memo-table-get1 tab (expand-data (car data)))
+                 (memo-table-get1 tab (expand-data (cadr data))))))
+  (test* #"put 2 (rest) ~|msg|~args" #f
+         (any (cut memo-table-exists? tab <>) (cddr data)))
+  (test* #"put all ~|msg|~args" (iota (length data))
+         (begin
+           (for-each (^[d v] (memo-table-put! tab (expand-data d) v))
+                     (cddr data) (iota (length (cddr data)) 2))
+           (map (^d (memo-table-get1 tab (expand-data d))) data)))
   )
 
 (test-get-put "" '(16 1)

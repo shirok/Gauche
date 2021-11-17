@@ -59,22 +59,32 @@
 ;;  distinguish from the standard protocol.
 
 ;; keys are given in a vector; must match the table entry's shape.
-(define-cproc memo-table-getv2 (tab::<memo-table> keys) ::(<top> <boolean>)
-  (unless (SCM_VECTORP keys)
-    (SCM_TYPE_ERROR keys "vector"))
+(define-cproc memo-table-getv2 (tab::<memo-table> keys::<vector>)
+  ::(<top> <boolean>)
   (let* ([v (Scm_MemoTableGetv tab (SCM_VECTOR_ELEMENTS keys)
                                (SCM_VECTOR_SIZE keys))])
     (if (SCM_UNBOUNDP v)
       (return SCM_UNDEFINED FALSE)
       (return v TRUE))))
 
+;; keys are given as a list
+(define-cproc memo-table-get2 (tab::<memo-table> keys::<list>)
+  ::(<top> <boolean>)
+  (let* ([v (Scm_MemoTableGet tab keys)])
+    (if (SCM_UNBOUNDP v)
+      (return SCM_UNDEFINED FALSE)
+      (return v TRUE))))
+
 ;; keys are given in a vector; must match the table entry's shape.
-(define-cproc memo-table-putv! (tab::<memo-table> keys value)
-  (unless (SCM_VECTORP keys)
-    (SCM_TYPE_ERROR keys "vector"))
+(define-cproc memo-table-putv! (tab::<memo-table> keys::<vector> value)
   (return (Scm_MemoTablePutv tab (SCM_VECTOR_ELEMENTS keys)
                              (SCM_VECTOR_SIZE keys) value)))
 
+;; keys are given as a list
+(define-cproc memo-table-put! (tab::<memo-table> keys::<list> value)
+  (return (Scm_MemoTablePut tab keys value)))
+
+;; For debugging
 (define-cproc memo-table-dump (tab::<memo-table>
                                :optional (port::<port> (current-output-port)))
   ::<void>
