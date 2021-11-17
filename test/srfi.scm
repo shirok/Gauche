@@ -2605,4 +2605,10 @@
 (use srfi-229)
 (test-module 'srfi-229)
 
+(define-module srfi-229-tests
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+  (use srfi-64)
+  (use srfi-229)
+  (include "include/srfi-229-tests"))
+
 (test-end)
