@@ -58,8 +58,8 @@
 ;; waste to provide and check default value.  The '2' suffis is to
 ;;  distinguish from the standard protocol.
 
-(define-cproc memo-table-get2 (tab::<memo-table> keys) ::(<top> <boolean>)
-  ;; For now, we only support vector keys; later we'll support lists.
+;; keys are given in a vector; must match the table entry's shape.
+(define-cproc memo-table-getv2 (tab::<memo-table> keys) ::(<top> <boolean>)
   (unless (SCM_VECTORP keys)
     (SCM_TYPE_ERROR keys "vector"))
   (let* ([v (Scm_MemoTableGetv tab (SCM_VECTOR_ELEMENTS keys)
@@ -68,8 +68,8 @@
       (return SCM_UNDEFINED FALSE)
       (return v TRUE))))
 
-(define-cproc memo-table-put! (tab::<memo-table> keys value)
-  ;; For now, we only support vector keys; later we'll support lists.
+;; keys are given in a vector; must match the table entry's shape.
+(define-cproc memo-table-putv! (tab::<memo-table> keys value)
   (unless (SCM_VECTORP keys)
     (SCM_TYPE_ERROR keys "vector"))
   (return (Scm_MemoTablePutv tab (SCM_VECTOR_ELEMENTS keys)

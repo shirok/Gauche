@@ -820,10 +820,10 @@
 ;; here we stress it with MT-access.
 
 (let ([make-memo-table (with-module gauche.internal make-memo-table)]
-      [memo-table-put! (with-module gauche.internal memo-table-put!)]
-      [memo-table-get2 (with-module gauche.internal memo-table-get2)])
-  (define (memo-table-get1 tab x) (values-ref (memo-table-get2 tab x) 0))
-  (define (memo-table-exists? tab x) (values-ref (memo-table-get2 tab x) 1))
+      [memo-table-putv! (with-module gauche.internal memo-table-putv!)]
+      [memo-table-getv2 (with-module gauche.internal memo-table-getv2)])
+  (define (memo-table-get1 tab x) (values-ref (memo-table-getv2 tab x) 0))
+  (define (memo-table-exists? tab x) (values-ref (memo-table-getv2 tab x) 1))
 
   (define fib
     (let1 tab (make-memo-table 2 1)
@@ -831,11 +831,11 @@
         (if (<= n 1)
           1
           (let1 key (vector n)
-            (receive (val exists?) (memo-table-get2 tab key)
+            (receive (val exists?) (memo-table-getv2 tab key)
               (if exists?
                 val
                 (rlet1 v (+ (fib (- n 1)) (fib (- n 2)))
-                  (memo-table-put! tab key v)))))))))
+                  (memo-table-putv! tab key v)))))))))
 
   (test* "memoizing fib" (make-list 100 20365011074)
          (map thread-join!
