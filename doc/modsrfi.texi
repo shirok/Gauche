@@ -74,6 +74,7 @@ srfi N is supported by Gauche.)
 * Integer sets::                srfi-217
 * Define higher-order lambda::  srfi-219
 * Generator/accumulator sub-library::  srfi-221
+* Tagged procedures::           srfi-229
 @end menu
 
 
@@ -11433,7 +11434,7 @@ R7RSで定義されているとおりの「素の」@code{define}と、
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Generator/accumulator sub-library,  , Define higher-order lambda, Library modules - SRFIs
+@node Generator/accumulator sub-library, Tagged procedures, Define higher-order lambda, Library modules - SRFIs
 @section @code{srfi-221} - Generator/accumulator sub-library
 @c NODE ジェネレータ/アキュムレータ サブライブラリ, @code{srfi-221} - ジェネレータ/アキュムレータ サブライブラリ
 
@@ -11444,7 +11445,7 @@ This srfi adds several utility procedures to the generator library
 (@pxref{Generators}, for Gauche's native support of generators;
 @pxref{R7RS generators}, for R7RS-large spec).
 @c JP
-このsrfiは、ジェネレータライブラリにいくつか有用な手続きを追加しるものです。
+このsrfiは、ジェネレータライブラリにいくつか有用な手続きを追加するものです。
 (Gaucheのネイティブなジェネレータについては@ref{Generators}を、
 R7RS-largeのジェネレータについては@ref{R7RS generators}を参照。)
 @c COMMON
@@ -11629,6 +11630,61 @@ lightweight than lazy streams.
 Gaucheでは、遅延シーケンスは通常のリストと統合されていて、遅延ストリームより軽いです。
 @c COMMON
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Tagged procedures,  , Generator/accumulator sub-library, Library modules - SRFIs
+@section @code{srfi-229} - Tagged procedures
+@c NODE 手続きタグ, @code{srfi-229} - 手続きタグ
+
+@deftp {Module} srfi-229
+@mdindex srfi-229
+This srfi allows to attach auxiliary information (tag) to a procedure.
+A tag can be attached when a procedure is created, and later retrieved.
+A procedure itself should be considered as an immutable entity,
+so you can't attach or remove a tag to an existing procedure
+(although you can attach a mutable structure as a tag and mutate
+it later; much like the closed environment can be mutated).
+@end deftp
+
+@defmac lambda/tag expr formals body @dots{}
+[SRFI-229]
+@c MOD SRFI-229
+Evaluates @var{expr}, and returns a procedure that is
+the same as @code{(lambda formals body @dots{})} except that
+the value of @var{expr} is attached as a tag to the resulting
+procedure.   The tag can be retrieved with @code{procedure-tag}.
+@end defmac
+
+@defmac case-lambda/tag expr clause @dots{}
+[SRFI-229]
+@c MOD SRFI-229
+Each @code{clause} is @code{(formals body @dots{})}, much like
+the ordinary @code{case-lambda}.
+
+First evaluates @var{expr}, and returns a procedure that is
+the same as @code{(case-lambda clause @dots{})}, excpet that
+the value of @var{expr} is attached as a tag to the resulting
+procedure.   The tag can be retrieved with @code{procedure-tag}.
+@end defmac
+
+@defun procedure/tag? obj
+[SRFI-229]
+@c MOD SRFI-229
+Returns @code{#t} iff @var{obj} is a procedure and has a tag.
+@end defun
+
+@defun procedure-tag proc
+[SRFI-229]
+@c MOD SRFI-229
+Returns a tag of @var{proc}, which must be a tagged procedure.
+If @var{proc} is not a procedure or not tagged, an error
+is signaled.
+@end defun
+
+
+
+
+
 
 
 @c Local variables:

@@ -1451,3 +1451,15 @@ Supported by the module @code{srfi-221}
 ジェネレータ/アキュムレータ サブライブラリ
 @code{srfi-221}でサポートされます
 (@ref{Generator/accumulator sub-library}参照)。
+
+
+srfi-229, srfi-229
+()
+
+Tagged procedures
+Supported by the module @code{srfi-229}
+(@pxref{Tagged procedures}).
+
+手続きタグ
+@code{srfi-229}でサポートされます。
+(@ref{Tagged procedures}参照)。
