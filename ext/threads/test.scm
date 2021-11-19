@@ -820,10 +820,10 @@
 ;; here we stress it with MT-access.
 
 (let ([make-memo-table (with-module gauche.internal make-memo-table)]
+      [memo-table-put! (with-module gauche.internal memo-table-put!)]
+      [memo-table-get2 (with-module gauche.internal memo-table-get2)]
       [memo-table-putv! (with-module gauche.internal memo-table-putv!)]
       [memo-table-getv2 (with-module gauche.internal memo-table-getv2)])
-  (define (memo-table-get1 tab x) (values-ref (memo-table-getv2 tab x) 0))
-  (define (memo-table-exists? tab x) (values-ref (memo-table-getv2 tab x) 1))
 
   (define fib
     (let1 tab (make-memo-table 2 1)
@@ -837,10 +837,54 @@
                 (rlet1 v (+ (fib (- n 1)) (fib (- n 2)))
                   (memo-table-putv! tab key v)))))))))
 
+  (define string-hash-tab (make-memo-table 3 2))
+
+  (define (string-hash/memo s)
+    (let1 key (list s (box s))
+      (receive (val exists?) (memo-table-get2 string-hash-tab key)
+        (if exists?
+          val
+          (rlet1 n (string-hash s)
+            (memo-table-put! string-hash-tab key n))))))
+
+  ;; avoid using data.random, gauche.generator etc.
+  (define (random-integer n)
+    (modulo (sys-random) n)) ;; not a uniform distribution, but ok here
+
+  (define string-pool
+    (rlet1 vec (make-vector 256)
+      (dotimes [n (vector-length vec)]
+        ($ vector-set! vec n
+           $ list->string 
+           $ map (^_ (integer->char (+ (random-integer 95) 32))) (iota 5)))))
+
+  (define (string-hash-test)
+    (dotimes [n (ash (vector-length string-pool) -1)]
+      ($ string-hash/memo
+         $ vector-ref string-pool
+         $ random-integer (vector-length string-pool))))
+
   (test* "memoizing fib" (make-list 100 20365011074)
          (map thread-join!
               (map (^_ (thread-start! (make-thread (^[] (fib 50)))))
                    (iota 100))))
+
+  (sys-srandom 42)
+
+  (test* "memoizing string hash" #t
+         (let/cc return
+           ($ for-each thread-join! 
+              $ map thread-start!
+              $ map (^_ (make-thread string-hash-test)) (iota 100))
+           (positive? 
+            (count (^s (receive (val exists?)
+                           (memo-table-get2 string-hash-tab (list s (box s)))
+                         (and exists?
+                              (or (= val (string-hash s))
+                                  (return val)))))
+                   (vector->list string-pool)))))
+
+  ;;((with-module gauche.internal memo-table-dump) string-hash-tab)
   )
 
 (test-end)
