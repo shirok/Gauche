@@ -336,10 +336,6 @@
 ;; Public interface to construct a descriptive type.
 (define-cproc construct-type (meta args) Scm_ConstructType)
 
-(define (lazy-construct-type meta args)
-  (rlet1 type (make meta)
-    (slot-set! type 'constructor-args args)))
-
 ;; Internal API, required to precompile descriptive type constant
 (define-method deconstruct-type ((t <descriptive-type>))
   ((~ (class-of t)'deconstructor) t))
@@ -446,6 +442,9 @@
 
 (define (init-^ type init-args)
   (define (scan-args xs as)
+    ;; NB: We want to allow a right arrow (U+2192) in place of ->.
+    ;; The code would be messy though, if we want to support 'none' encoding as
+    ;; well.  Think about it after we drop 'none' support.
     (match xs
       [() (error "Missing '->' in the procedure type constructor arguments:"
                  init-args)]
