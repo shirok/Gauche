@@ -35,13 +35,15 @@
 ;;;  Utility macros used in the main compiler.
 ;;;
 
+(declare (keep-private-macro case/unquote))
+
 ;; NB: This file may be included from more than one file, so be careful
 ;; to put only macro definitions.
 
 ;; Defines a bunch of constants, and the alist to map name to value.
 (define-macro (define-enum name . syms)
   (let1 alist '()
-    `(eval-when (:compile-toplevel)
+    `(begin
        ,@(let loop ((syms syms) (i 0))
            (if (null? syms)
              '()
