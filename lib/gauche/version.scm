@@ -93,43 +93,41 @@
     (errorf "unparsable release number: ~s" vn)))
 
 (define (relnum-compare a b)
-  (let-values (((an ax) (relnum-decompose a))
-               ((bn bx) (relnum-decompose b)))
-    (cond ((= an bn)
+  (let-values ([(an ax) (relnum-decompose a)]
+               [(bn bx) (relnum-decompose b)])
+    (cond [(= an bn)
            (cond ((string=? ax bx) 0)
                  ((string<? ax bx) -1)
-                 (else 1)))
-          ((< an bn) -1)
-          (else 1))))
+                 (else 1))]
+          [(< an bn) -1]
+          [else 1])))
 
 (define (next-component ver)
-  (cond ((rxmatch #/[._-]/ ver)
+  (cond [(rxmatch #/[._-]/ ver)
          => (^m (values (rxmatch-before m)
                         (if (string=? (rxmatch-substring m) "_")
                             'pre 'post)
-                        (rxmatch-after m))))
-        (else (values ver #f #f))))
+                        (rxmatch-after m)))]
+        [else (values ver #f #f)]))
 
 (define (version-compare va vb)
   (define (sep-cmp a-sep a-ver b-sep b-ver)
     (cond
-     ((not a-sep)
-      (cond ((eq? b-sep 'post) -1)
-            ((eq? b-sep 'pre) 1)
-            (else 0)))
-     ((eq? a-sep 'post)
-      (cond ((eq? b-sep 'post) (ver-cmp a-ver b-ver))
-            (else 1)))
-     (else
-      (cond ((eq? b-sep 'pre)  (ver-cmp a-ver b-ver))
-            (else -1)))))
+     [(not a-sep)
+      (cond [(eq? b-sep 'post) -1]
+            [(eq? b-sep 'pre) 1]
+            [else 0])]
+     [(eq? a-sep 'post)
+      (if (eq? b-sep 'post) (ver-cmp a-ver b-ver) 1)]
+     [else
+      (if (eq? b-sep 'pre)  (ver-cmp a-ver b-ver) -1)]))
   (define (ver-cmp a-ver b-ver)
-    (let*-values (((a-rel a-sep a-next) (next-component a-ver))
-                  ((b-rel b-sep b-next) (next-component b-ver))
-                  ((c) (relnum-compare a-rel b-rel)))
+    (let*-values ([(a-rel a-sep a-next) (next-component a-ver)]
+                  [(b-rel b-sep b-next) (next-component b-ver)]
+                  [(c) (relnum-compare a-rel b-rel)])
       (if (zero? c)
-          (sep-cmp a-sep a-next b-sep b-next)
-          c)))
+        (sep-cmp a-sep a-next b-sep b-next)
+        c)))
   (ver-cmp va vb))
 
 (define (version=? a b)  (zero? (version-compare a b)))
