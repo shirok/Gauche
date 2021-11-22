@@ -79,8 +79,6 @@
 ;;;    "1.1-patch112" < "1.2_alpha"
 
 (define-module gauche.version
-  (use srfi-11)                         ;let-values
-  (use srfi-13)
   (use util.match)
   (export relnum-compare
           version-compare
