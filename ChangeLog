@@ -1,3 +1,10 @@
+2021-11-22  shiro  <shiro@acm.org>
+
+	* src/libmacro.scm (cond-expand): EXPERIMENTALLY add 'package'
+	  clause to test package existence and its version.  A special
+	  package name 'gauche' can be used to check running Gauche
+	  version.  Let's see how it goes.
+
 2021-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche.h (ScmProcedure), src/proc.c (Scm__CopyProcedure):

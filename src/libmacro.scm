@@ -56,6 +56,9 @@
 
 ;;; cond-expand
 
+(autoload gauche.version valid-version-spec? version-satisfy?)
+(autoload gauche.package find-gauche-package-description)
+
 (define-syntax cond-expand
   (er-macro-transformer
    (^[f r c]
@@ -81,6 +84,7 @@
            [(or)  (fulfill-or  (cdr req) seed)]
            [(not) (fulfill-not (cadr req) seed)]
            [(library) (fulfill-library (cdr req) seed)]
+           [(package) (fulfill-package (cdr req) seed)]
            [else (error "Invalid cond-expand feature expression:" req)])]))
 
      (define (fulfill-and reqs seed)
@@ -110,6 +114,20 @@
          ;; NB: R7RS doesn't say we load the library implicitly.
          (and (library-exists? modname)
               seed)))
+
+     (define (fulfill-package rest seed)
+       (match rest
+         [(package) 
+          (or (equal? package 'gauche)
+              (find-gauche-package-description package))]
+         [(package version-spec)
+          (unless (valid-version-spec? version-spec)
+            (error "Invalid version spec in package clause:" `(package ,@rest)))
+          (if (equal? package 'gauche)
+            (and (version-satisfy? version-spec (gauche-version)) seed)
+            (and-let1 gpd (find-gauche-package-description package)
+              (and (version-satisfy? version-spec (~ gpd'version)) seed)))]
+         [_ (error "Malformed package clause:" `(package ,@rest))]))
 
      (define (rec cls)
        (cond
