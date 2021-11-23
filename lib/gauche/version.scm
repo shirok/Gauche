@@ -31,6 +31,10 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+;; NB: This module is autoloaded from the core (cond-expand) when 'package'
+;; clause is used with version spec.  If you modify this, keep the dependencies
+;; minimum.
+
 ;;; Defines a few procedures that deal with popular version
 ;;; numbers, such as 1.2.3.
 ;;;
