@@ -1,4 +1,11 @@
-2021-11-22  shiro  <shiro@acm.org>
+2021-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm (handle-define-inline): Fix that
+	  define-inline'ed procedures weren't expanded within the same
+	  compilation unit.  We need to let the compiling enviornment know
+	  about the inlined procedures.
+
+2021-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (cond-expand): EXPERIMENTALLY add 'package'
 	  clause to test package existence and its version.  A special
