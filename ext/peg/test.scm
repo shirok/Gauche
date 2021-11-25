@@ -798,21 +798,21 @@
              records "\"a  \"\" \n\" , b  , c"))
 
 ;; Poor-man's XML parser
-(letrec ([open-tag ($->rope ($between ($char #\<)
-                                      ($one-of #[[:alnum:]])
-                                      ($char #\>)))]
-         [close-tag (^[tagname]
-                      ($seq ($string "</") ($string tagname) ($char #\>)))]
-         [text ($->rope ($many ($none-of #[<])))]
-         [body ($let ([t text]
-                      [r ($many ($let ([e element]
-                                       [t text])
-                                  ($return (list e t))))])
-                 ($return `(,t ,@(apply append r))))]
-         [element ($let* ([tagname ($try open-tag)]
-                          [body body]
-                          [ (close-tag (rope-finalize tagname)) ])
-                    ($return (cons tagname body)))])
+(letrec* ([open-tag ($->rope ($between ($char #\<)
+                                       ($one-of #[[:alnum:]])
+                                       ($char #\>)))]
+          [close-tag (^[tagname]
+                       ($seq ($string "</") ($string tagname) ($char #\>)))]
+          [text ($->rope ($many ($none-of #[<])))]
+          [body ($let ([t text]
+                       [r ($many ($let ([e ($lazy element)]
+                                        [t text])
+                                       ($return (list e t))))])
+                      ($return `(,t ,@(apply append r))))]
+          [element ($let* ([tagname ($try open-tag)]
+                           [body body]
+                           [ (close-tag (rope-finalize tagname)) ])
+                          ($return (cons tagname body)))])
   (test-succ "tag element" '("a" "")
              element "<a></a>")
   (test-succ "tag element" '("a" "foo" ("b" "bar") "baz")
