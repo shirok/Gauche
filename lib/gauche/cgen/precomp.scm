@@ -836,7 +836,7 @@
   ;; NB: We should also handle (define-inline x (lambda ...)) form eventually.
   (match form
     [((name . formals) . body)
-     '(eval-in-current-tmodule
+     (eval-in-current-tmodule
       `((with-module gauche define-inline) ,@form))
      (cons '(with-module gauche define) form)]
     [(name expr)

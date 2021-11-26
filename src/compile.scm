@@ -446,12 +446,10 @@
 ;;      side-effects may vary depends on the path to the node.  The only
 ;;      exception is $label node.
 
-(define-macro (iform-tag iform)
-  `(vector-ref ,iform 0))
+(define-inline (iform-tag iform) (vector-ref iform 0))
 
 ;; check intermediate tag
-(define-macro (has-tag? iform tag)
-  `(eqv? (vector-ref ,iform 0) ,tag))
+(define-inline (has-tag? iform tag) (eqv? (vector-ref iform 0) tag))
 
 ;; [IForm Definitions]
 
