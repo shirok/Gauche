@@ -1986,33 +1986,31 @@
 ;; Dummy macros
 ;;
 
-(define (%precomp-only name)
-  (warn "The ~a form can only be used for Scheme sources \
-         to be pre-compiled.  Since you're loading the file without \
-         pre-compilation, this form is ignored (Current module=~s)"
-        name (current-module))
-  (undefined))
-
 (select-module gauche)
 
-(declare (keep-private-macro inline-stub define-cproc declare))
+(define-macro (%precomp-only . names)
+  `(begin
+     (declare (keep-private-macro ,@names))
+     ,@(map (^[name]
+              `(define-macro (,name . _)
+                 (warn "The ~a form can only be used for Scheme sources \
+                        to be pre-compiled.  Since you're loading the file \
+                        ~s without pre-compilation, this form is ignored.\n"
+                       ',name (current-load-path))
+                 (undefined)))
+            names)))
 
-;; Those forms are recognized by the AOT compiler (precomp), and
+;; Some forms are recognized by the AOT compiler (precomp), and
 ;; translated to C.  They can't be evaluated at runtime, so
 ;; we have dummy macros to warn.
-(define-macro (inline-stub . _)
-  ((with-module gauche.internal %precomp-only) 'inline-stub))
-(define-macro (define-cproc . _)
-  ((with-module gauche.internal %precomp-only) 'define-cproc))
-(define-macro (define-cfn . _)
-  ((with-module gauche.internal %precomp-only) 'define-cfn))
-(define-macro (define-enum . _)
-  ((with-module gauche.internal %precomp-only) 'define-enum))
-(define-macro (define-enum-conditionally . _)
-  ((with-module gauche.internal %precomp-only) 'define-enum-conditionally))
-
+(%precomp-only inline-stub
+               define-cproc
+               define-cfn
+               define-enum
+               define-enum-conditionally)
 
 ;; The form (declare ...) may be used in wider purpose.  For the time
 ;; being we use it in limited purposes for compilers.  In interpreter
 ;; we just ignore it.
+(declare (keep-private-macro declare))
 (define-macro (declare . _) #f)
