@@ -652,13 +652,13 @@
 (define-simple-struct $list->vector $LIST->VECTOR $list->vector (src arg0))
 
 ;; common accessors
-(define-macro ($*-src  iform)  `(vector-ref ,iform 1))
-(define-macro ($*-args iform)  `(vector-ref ,iform 2))
-(define-macro ($*-arg0 iform)  `(vector-ref ,iform 2))
-(define-macro ($*-arg1 iform)  `(vector-ref ,iform 3))
-(define-macro ($*-args-set! iform val)  `(vector-set! ,iform 2 ,val))
-(define-macro ($*-arg0-set! iform val)  `(vector-set! ,iform 2 ,val))
-(define-macro ($*-arg1-set! iform val)  `(vector-set! ,iform 3 ,val))
+(define-inline ($*-src  iform)  (vector-ref iform 1))
+(define-inline ($*-args iform)  (vector-ref iform 2))
+(define-inline ($*-arg0 iform)  (vector-ref iform 2))
+(define-inline ($*-arg1 iform)  (vector-ref iform 3))
+(define-inline ($*-args-set! iform val)  (vector-set! iform 2 val))
+(define-inline ($*-arg0-set! iform val)  (vector-set! iform 2 val))
+(define-inline ($*-arg1-set! iform val)  (vector-set! iform 3 val))
 
 ;; look up symbolic name of iform tag (for debugging)
 (define (iform-tag-name tag)
