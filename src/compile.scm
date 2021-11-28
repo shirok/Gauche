@@ -356,10 +356,10 @@
                ,(get-keyword :current-proc kvs `(cenv-current-proc ,cenv))
                ,(get-keyword :source-path kvs `(cenv-source-path ,cenv))))
 
-(define-macro (make-bottom-cenv . maybe-module)
+(define-inline (make-bottom-cenv . maybe-module)
   (if (null? maybe-module)
-    `(%make-cenv (vm-current-module) '())
-    `(%make-cenv ,(car maybe-module) '())))
+    (%make-cenv (vm-current-module) '())
+    (%make-cenv (car maybe-module) '())))
 
 (define-inline (cenv-swap-module cenv mod)
   (cenv-copy-except cenv :module mod))
