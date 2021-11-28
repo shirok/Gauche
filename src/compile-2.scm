@@ -493,6 +493,8 @@
                                       (cons iform penv) #t))
   iform)
 
+(define (pass2/$CLAMBDA iform penv tail?) iform)
+
 (define (pass2/$LABEL iform penv tail?)
   ;; $LABEL's body should already be processed by pass2, so we don't need
   ;; to do it again.
