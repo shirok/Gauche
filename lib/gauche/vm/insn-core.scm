@@ -78,10 +78,18 @@
 (define-method write-object ((s <vm-insn-info>) out)
   (format out "#<insn ~a>" (ref s 'name)))
 
+(define (vm-all-insns) (class-slot-ref <vm-insn-info> 'all-insns))
+
 ;; API. opcode mnemonic -> <vm-insn-info>
-(define (vm-find-insn-info mnemonic)
-  (cond ((assq mnemonic (class-slot-ref <vm-insn-info> 'all-insns)) => cdr)
-        (else (error "No such VM instruction:" mnemonic))))
+(define (vm-find-insn-info mnemonic-or-opcode)
+  (cond 
+   [(and (symbol? mnemonic-or-opcode)
+         (assq-ref (vm-all-insns) mnemonic-or-opcode))]
+   [(and (integer? mnemonic-or-opcode)
+         (any (^p (and (eqv? (~ (cdr p)'code) mnemonic-or-opcode)
+                       (cdr p)))
+              (vm-all-insns)))]
+   [else (error "No such VM instruction:" mnemonic)]))
 
 ;; API.  Arg can be <vm-insn-info> or opcode symbol
 (define-method vm-insn-size ((info <vm-insn-info>))
