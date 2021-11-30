@@ -79,7 +79,8 @@
 ;;   First, we convert IForm to a DG of basic blocks (BBs).
 ;;   BB has one entry point and multiple exit point.
 
-(define-class <context> ()
+;; Block environment
+(define-class <benv> ()
   ((registers :init-form '())                 ; (<List> (</> <reg> <const>))
    (regmap :init-form (make-hash-table 'eq?)) ; lvar -> <reg>
    (cstmap :init-form (make-hash-table 'equal?)) ; const -> <const>
@@ -93,12 +94,12 @@
     (format port "#<reg ~a(~a)>" (~ reg'name) (lvar-name lvar))
     (format port "#<reg ~a>" (~ reg'name))))
 
-(define (make-reg ctx lvar)
-  (or (hash-table-get (~ ctx'regmap) lvar #f)
-      (let1 name (symbol-append '% (length (~ ctx'registers)))
+(define (make-reg benv lvar)
+  (or (hash-table-get (~ benv'regmap) lvar #f)
+      (let1 name (symbol-append '% (length (~ benv'registers)))
         (rlet1 r (make <reg> :name name :lvar lvar)
-          (push! (~ ctx'registers) r)
-          (when lvar (hash-table-put! (~ ctx'regmap) lvar r))))))
+          (push! (~ benv'registers) r)
+          (when lvar (hash-table-put! (~ benv'regmap) lvar r))))))
 
 (define-class <const> ()                ; constant register
   ((value :init-keyword :value)         ; constant value
@@ -106,13 +107,12 @@
 (define-method write-object ((cst <const>) port)
   (format port "#<const ~a(~,,,,20:s)>" (~ cst'name) (~ cst'value)))
 
-(define (make-const ctx val)
-  (or (hash-table-get (~ ctx'cstmap) val #f)
-      (let1 name (symbol-append '% (length (~ ctx'registers)))
+(define (make-const benv val)
+  (or (hash-table-get (~ benv'cstmap) val #f)
+      (let1 name (symbol-append '% (length (~ benv'registers)))
         (rlet1 r (make <const> :name name :value val)
-          (push! (~ ctx'registers) r)
-          (hash-table-put! (~ ctx'cstmap) val r)))))
-
+          (push! (~ benv'registers) r)
+          (hash-table-put! (~ benv'cstmap) val r)))))
 
 (define-class <basic-block> ()
   ((insns      :init-value '())   ; list of instructions
@@ -123,108 +123,135 @@
 (define (make-bb . upstreams)
   (make <basic-block> :upstream upstreams))
 
-;;
-
 (define (push-insn bb insn)
   (push! (~ bb'insns) insn))
 
-;;
-
 ;; Main traverser.
-(define (iform->bb ctx iform)
+;; Returns the entry basic block
+(define (iform->bb benv iform)
   ;; Returns two values, bb and the 'current value', which is either
-  ;; <reg>, <const>, or #f.
-  (define (rec bb iform)
+  ;; <reg>, <const>, '%VAL0, or #f.
+  ;; ctx is either 'tail, 'normal or 'ignore.
+  (define (rec bb iform ctx)
     (case/unquote
      (iform-tag iform)
-     [($DEFINE)(receive (bb val0) (rec bb ($define-expr iform))
+     [($DEFINE)(receive (bb val0) (rec bb ($define-expr iform) 'normal)
                  (push-insn bb `(DEF ,($define-id iform)
                                      ,($define-flags iform)
                                      ,val0))
                  (values bb #f))]
-     [($LREF)  (values bb (make-reg ctx ($lref-lvar iform)))]
-     [($LSET)  (receive (bb val0) (rec bb ($lset-expr iform))
-                 (let1 r (make-reg ctx ($lset-lvar iform))
+     [($LREF)  (values bb (make-reg benv ($lref-lvar iform)))]
+     [($LSET)  (receive (bb val0) (rec bb ($lset-expr iform) 'normal)
+                 (let1 r (make-reg benv ($lset-lvar iform))
                    (push-insn bb `(MOV ,r ,val0))
                    (values bb r)))]
-     [($GREF)  (let1 r (make-reg ctx #f)
-                 (push-insn bb `(LD ,r ($gref-id iform)))
+     [($GREF)  (let1 r (make-reg benv 'normal)
+                 (push-insn bb `(LD ,r ,($gref-id iform)))
                  (values bb r))]
-     [($GSET)  (receive (bb val0) (rec bb ($gset-expr iform))
-                 (push-insn bb `(ST ,val0 ($gref-id iform)))
+     [($GSET)  (receive (bb val0) (rec bb ($gset-expr iform) 'normal)
+                 (push-insn bb `(ST ,val0 ,($gref-id iform)))
                  (values bb #f))]
-     [($CONST) (values bb (make-const ctx ($const-value iform)))]
-     [($IF)    (receive (bb val0) (rec bb ($if-test iform))
+     [($CONST) (values bb (make-const benv ($const-value iform)))]
+     [($IF)    (receive (bb val0) (rec bb ($if-test iform) 'normal)
                  (let ([then-bb (make-bb bb)]
                        [else-bb (make-bb bb)])
                    (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
-                   (receive (tbb tval0) (rec then-bb ($if-then iform))
-                     (receive (ebb eval0) (rec else-bb ($if-eles iform))
+                   (receive (tbb tval0) (rec then-bb ($if-then iform) 'normal)
+                     (receive (ebb eval0) (rec else-bb ($if-eles iform) 'normal)
                        (let* ([cbb (make-bb tbb ebb)]
-                              [r (make-reg ctx #f)])
+                              [r (make-reg benv #f)])
                          (when tval0 (push-insn tbb `(MOV ,r ,tval0)))
                          (push-insn tbb '(JP ,cbb))
                          (when eval0 (push-insn ebb `(MOV ,r ,eval0)))
                          (push-insn ebb `(JP ,cbb))
                          (values cbb r))))))]
-     [($LET)   (values bb #f)]          ;WRITEME
+     [($LET)   (let loop ([bb bb] 
+                          [vars ($let-lvars iform)]
+                          [inits ($let-inits iform)])
+                 (if (null? vars)
+                   (rec bb ($let-body iform) ctx)
+                   (let1 reg (make-reg benv (car vars))
+                     (receive (bb val0) (rec bb (car inits) 'normal)
+                       (push-insn bb `(MOV ,reg ,val0))
+                       (loop bb (cdr vars) (cdr inits))))))]
      [($RECEIVE) (values bb #f)]        ;WRITEME
      [($LAMBDA) (let ([lbb (make-bb)]
-                      [reg (make-reg ctx #f)])
-                  (receive (lbb val0) (rec lbb ($lambda-body iform))
+                      [reg (make-reg benv #f)])
+                  (receive (lbb val0) (rec lbb ($lambda-body iform) 'tail)
                     (push-insn lbb `(RET ,val0))
                     (push-insn bb `(CLOSE ,reg ,lbb))
                     (values bb reg)))]
-     [($LABEL)  (values bb #f)]
+     [($LABEL)  (values bb #f)]         ;WRITEME
      [($SEQ)   (if (null? ($seq-body iform))
                  (values bb #f)
-                 (let loop ([bb bb] [iforms ($seg-body iform)])
+                 (let loop ([bb bb] [iforms ($seq-body iform)])
                    (if (null? (cdr iforms))
-                     (rec bb (car iforms))
-                     (receive (bb _) (rec bb (car iforms))
+                     (rec bb (car iforms) ctx)
+                     (receive (bb _) (rec bb (car iforms) 'ignore)
                        (loop bb (cdr iforms))))))]
-     [($CALL)  (let1 cbb (make-bb bb)
-                 (push-insn bb `(CONT ,cbb))
-                 (let loop ([bb bb] [args ($cont-args iform)] [regs '()])
-                   (if (null? args)
-                     (receive (bb proc) (rec bb ($cont-proc iform))
-                       (push-insn bb `(CALL ,proc ,@(reverse regs)))
-                       (values cbb 'VAL0))
-                     (receive (bb arg) (rec bb (car args))
-                       (loop bb (cdr args) (cons arg regs))))))]
+     [($CALL)  (case ctx
+                 [(tail)
+                  (let loop ([bb bb] [args ($call-args iform)] [regs '()])
+                    (if (null? args)
+                      (receive (bb proc) (rec bb ($call-proc iform) #f)
+                        (push-insn bb `(CALL ,proc ,@(reverse regs)))
+                        (values bb '%VAL0))
+                      (receive (bb arg) (rec bb (car args) #f)
+                        (loop bb (cdr args) (cons arg regs)))))]
+                 [(ignore)
+                  (let ([cbb (make-bb bb)])
+                    (push-insn bb `(CONT ,cbb))
+                    (let loop ([bb bb] [args ($call-args iform)] [regs '()])
+                      (if (null? args)
+                        (receive (bb proc) (rec bb ($call-proc iform) #f)
+                          (push-insn bb `(CALL ,proc ,@(reverse regs)))
+                          (values cbb #f))
+                        (receive (bb arg) (rec bb (car args) #f)
+                          (loop bb (cdr args) (cons arg regs))))))]
+                 [(normal)
+                  (let ([cbb (make-bb bb)]
+                        [valreg (make-reg benv #f)])
+                    (push-insn bb `(CONT ,cbb))
+                    (push-insn cbb `(MOV ,valreg %VAL0))
+                    (let loop ([bb bb] [args ($call-args iform)] [regs '()])
+                      (if (null? args)
+                        (receive (bb proc) (rec bb ($call-proc iform) #f)
+                          (push-insn bb `(CALL ,proc ,@(reverse regs)))
+                          (values cbb valreg))
+                        (receive (bb arg) (rec bb (car args) #f)
+                          (loop bb (cdr args) (cons arg regs))))))])]
      [($ASM)    (let loop ([bb bb] [args ($asm-args iform)] [regs '()])
                   (if (null? args)
                     (begin
                       (push-insn bb `(ASM ,($asm-insn iform) ,@(reverse regs)))
-                      (values bb 'VAL0))
-                    (receive (bb reg) (rec bb (car args))
+                      (values bb '%VAL0))
+                    (receive (bb reg) (rec bb (car args) 'normal)
                       (loop bb (cdr args) (cons reg regs)))))]
      [($CONS $APPEND $MEMV $EQ? $EQV?)
       ;; 2-arg builtin - temporary
-      (receive (bb reg0) (rec bb ($*-arg0 iform))
-        (receive (bb reg1) (rec bb ($*-arg1 iform))
+      (receive (bb reg0) (rec bb ($*-arg0 iform) 'normal)
+        (receive (bb reg1) (rec bb ($*-arg1 iform) 'normal)
           (push-insn bb `(BUILTIN ,(iform-tag iform) ,reg0 ,reg1))
-          (values bb 'VAL0)))]
+          (values bb '%VAL0)))]
      [($LIST->VECTOR)
       ;; 1-arg bultin - temporary
-      (receive (bb reg0) (rec bb ($*-arg0 iform))
+      (receive (bb reg0) (rec bb ($*-arg0 iform) 'normal)
         (push-insn bb `(BUILTIN ,(iform-tag iform) ,reg0))
-        (values bb 'VAL0))]
+        (values bb '%VAL0))]
      [($VECTOR $LIST $LIST*)
       ;; n-arg builtin - temporary
       (let loop ([bb bb] [args ($*-args iform)] [regs '()])
         (if (null? args)
           (begin
             (push-insn bb `(BUILTIN ,(iform-tag iform) ,@(reverse regs)))
-            (values bb 'VAL0))
-          (receive (bb r) (rec bb (car args))
+            (values bb '%VAL0))
+          (receive (bb r) (rec bb (car args) 'normal)
             (loop bb (cdr args) (cons reg regs)))))]
      [else (values bb #f)]))
-  (rec (make-bb) iform))
+  (rlet1 entry-bb (make-bb)
+    (rec entry-bb iform 'tail)))
 
 ;; For debugging
-
-
 
 (define (dump-bb bb :optional (port (current-output-port)))
   (define bb-alist '())
@@ -242,7 +269,7 @@
     (define (regname reg) (if (is-a? reg <reg>) (~ reg'name) reg))
     (match insn
       [((or 'MOV 'BREF 'BSET) d s)
-       (format port "  ~s\n" `(,(car insn) ,(~ d'name) ,(~ s'name)))]
+       (format port "  ~s\n" `(,(car insn) ,(regname d) ,(regname s)))]
       [((or 'LD 'ST) reg id)
        (format port "  (~s ~s ~a#~a)\n" (car insn) (regname reg)
                (~ id'module'name) (~ id'name))]
@@ -265,8 +292,8 @@
     (unless (memq bb bb-shown)
       (push! bb-shown bb)
       (format port "BB #~a\n" (bb-num bb))
-      (format port "  Up: ~s\n" (map bb-num (~ bb'upstream)))
-      (format port "  Dn: ~s\n" (map bb-num (~ bb'downstream)))
+      (format port "    Up: ~s\n" (map bb-num (~ bb'upstream)))
+      (format port "    Dn: ~s\n" (map bb-num (~ bb'downstream)))
       (for-each dump-insn (reverse (~ bb'insns)))))
   (let loop ()
     (unless (null? bb-toshow)
@@ -275,8 +302,9 @@
         
 (define (compile-b program)
   (let* ([cenv (make-bottom-cenv (vm-current-module))]
-         [iform (pass2-4 (pass1 program cenv) (cenv-module cenv))])
+         [iform (pass2-4 (pass1 program cenv) (cenv-module cenv))]
+         [bb (make-bb)])
     (pp-iform iform)
-    (dump-bb (iform->bb (make <context>) iform))))
+    (dump-bb (iform->bb (make <benv>) iform))))
 
                       
