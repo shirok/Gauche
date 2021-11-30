@@ -126,132 +126,192 @@
 (define (push-insn bb insn)
   (push! (~ bb'insns) insn))
 
-;; Main traverser.
-;; Returns the entry basic block
-(define (iform->bb benv iform)
-  ;; Returns two values, bb and the 'current value', which is either
-  ;; <reg>, <const>, '%VAL0, or #f.
-  ;; ctx is either 'tail, 'normal or 'ignore.
-  (define (rec bb iform ctx)
-    (case/unquote
-     (iform-tag iform)
-     [($DEFINE)(receive (bb val0) (rec bb ($define-expr iform) 'normal)
-                 (push-insn bb `(DEF ,($define-id iform)
-                                     ,($define-flags iform)
-                                     ,val0))
-                 (values bb #f))]
-     [($LREF)  (values bb (make-reg benv ($lref-lvar iform)))]
-     [($LSET)  (receive (bb val0) (rec bb ($lset-expr iform) 'normal)
-                 (let1 r (make-reg benv ($lset-lvar iform))
-                   (push-insn bb `(MOV ,r ,val0))
-                   (values bb r)))]
-     [($GREF)  (let1 r (make-reg benv 'normal)
-                 (push-insn bb `(LD ,r ,($gref-id iform)))
-                 (values bb r))]
-     [($GSET)  (receive (bb val0) (rec bb ($gset-expr iform) 'normal)
-                 (push-insn bb `(ST ,val0 ,($gref-id iform)))
-                 (values bb #f))]
-     [($CONST) (values bb (make-const benv ($const-value iform)))]
-     [($IF)    (receive (bb val0) (rec bb ($if-test iform) 'normal)
-                 (let ([then-bb (make-bb bb)]
-                       [else-bb (make-bb bb)])
-                   (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
-                   (receive (tbb tval0) (rec then-bb ($if-then iform) 'normal)
-                     (receive (ebb eval0) (rec else-bb ($if-eles iform) 'normal)
-                       (let* ([cbb (make-bb tbb ebb)]
-                              [r (make-reg benv #f)])
-                         (when tval0 (push-insn tbb `(MOV ,r ,tval0)))
-                         (push-insn tbb '(JP ,cbb))
-                         (when eval0 (push-insn ebb `(MOV ,r ,eval0)))
-                         (push-insn ebb `(JP ,cbb))
-                         (values cbb r))))))]
-     [($LET)   (let loop ([bb bb] 
-                          [vars ($let-lvars iform)]
-                          [inits ($let-inits iform)])
-                 (if (null? vars)
-                   (rec bb ($let-body iform) ctx)
-                   (let1 reg (make-reg benv (car vars))
-                     (receive (bb val0) (rec bb (car inits) 'normal)
-                       (push-insn bb `(MOV ,reg ,val0))
-                       (loop bb (cdr vars) (cdr inits))))))]
-     [($RECEIVE) (values bb #f)]        ;WRITEME
-     [($LAMBDA) (let ([lbb (make-bb)]
-                      [reg (make-reg benv #f)])
-                  (receive (lbb val0) (rec lbb ($lambda-body iform) 'tail)
-                    (push-insn lbb `(RET ,val0))
-                    (push-insn bb `(CLOSE ,reg ,lbb))
-                    (values bb reg)))]
-     [($LABEL)  (values bb #f)]         ;WRITEME
-     [($SEQ)   (if (null? ($seq-body iform))
-                 (values bb #f)
-                 (let loop ([bb bb] [iforms ($seq-body iform)])
-                   (if (null? (cdr iforms))
-                     (rec bb (car iforms) ctx)
-                     (receive (bb _) (rec bb (car iforms) 'ignore)
-                       (loop bb (cdr iforms))))))]
-     [($CALL)  (case ctx
-                 [(tail)
-                  (let loop ([bb bb] [args ($call-args iform)] [regs '()])
-                    (if (null? args)
-                      (receive (bb proc) (rec bb ($call-proc iform) #f)
-                        (push-insn bb `(CALL ,proc ,@(reverse regs)))
-                        (values bb '%VAL0))
-                      (receive (bb arg) (rec bb (car args) #f)
-                        (loop bb (cdr args) (cons arg regs)))))]
-                 [(ignore)
-                  (let ([cbb (make-bb bb)])
-                    (push-insn bb `(CONT ,cbb))
-                    (let loop ([bb bb] [args ($call-args iform)] [regs '()])
-                      (if (null? args)
-                        (receive (bb proc) (rec bb ($call-proc iform) #f)
-                          (push-insn bb `(CALL ,proc ,@(reverse regs)))
-                          (values cbb #f))
-                        (receive (bb arg) (rec bb (car args) #f)
-                          (loop bb (cdr args) (cons arg regs))))))]
-                 [(normal)
-                  (let ([cbb (make-bb bb)]
-                        [valreg (make-reg benv #f)])
-                    (push-insn bb `(CONT ,cbb))
-                    (push-insn cbb `(MOV ,valreg %VAL0))
-                    (let loop ([bb bb] [args ($call-args iform)] [regs '()])
-                      (if (null? args)
-                        (receive (bb proc) (rec bb ($call-proc iform) #f)
-                          (push-insn bb `(CALL ,proc ,@(reverse regs)))
-                          (values cbb valreg))
-                        (receive (bb arg) (rec bb (car args) #f)
-                          (loop bb (cdr args) (cons arg regs))))))])]
-     [($ASM)    (let loop ([bb bb] [args ($asm-args iform)] [regs '()])
-                  (if (null? args)
-                    (begin
-                      (push-insn bb `(ASM ,($asm-insn iform) ,@(reverse regs)))
-                      (values bb '%VAL0))
-                    (receive (bb reg) (rec bb (car args) 'normal)
-                      (loop bb (cdr args) (cons reg regs)))))]
-     [($CONS $APPEND $MEMV $EQ? $EQV?)
-      ;; 2-arg builtin - temporary
-      (receive (bb reg0) (rec bb ($*-arg0 iform) 'normal)
-        (receive (bb reg1) (rec bb ($*-arg1 iform) 'normal)
-          (push-insn bb `(BUILTIN ,(iform-tag iform) ,reg0 ,reg1))
-          (values bb '%VAL0)))]
-     [($LIST->VECTOR)
-      ;; 1-arg bultin - temporary
-      (receive (bb reg0) (rec bb ($*-arg0 iform) 'normal)
-        (push-insn bb `(BUILTIN ,(iform-tag iform) ,reg0))
-        (values bb '%VAL0))]
-     [($VECTOR $LIST $LIST*)
-      ;; n-arg builtin - temporary
-      (let loop ([bb bb] [args ($*-args iform)] [regs '()])
-        (if (null? args)
-          (begin
-            (push-insn bb `(BUILTIN ,(iform-tag iform) ,@(reverse regs)))
-            (values bb '%VAL0))
-          (receive (bb r) (rec bb (car args) 'normal)
-            (loop bb (cdr args) (cons reg regs)))))]
-     [else (values bb #f)]))
-  (rlet1 entry-bb (make-bb)
-    (rec entry-bb iform 'tail)))
+;;
+;; Conversion to basic blocks
+;;
 
+(define-inline (pass5b/rec iform bb benv ctx)
+  ((vector-ref *pass5b-dispatch-table* (iform-tag iform))
+   iform bb benv ctx))
+
+;; Returns the entry basic block
+(define (pass5b iform benv)
+  (rlet1 entry-bb (make-bb)
+    (pass5b/rec iform entry-bb benv 'tail)))
+  
+
+(define (pass5b/$DEFINE iform bb benv ctx)
+  (receive (bb val0) (pass5b/rec ($define-expr iform) bb benv 'normal)
+    (push-insn bb `(DEF ,($define-id iform)
+                        ,($define-flags iform)
+                        ,val0))
+    (values bb #f)))
+
+(define (pass5b/$LREF iform bb benv ctx)
+  (values bb (make-reg benv ($lref-lvar iform))))
+
+(define (pass5b/$LSET iform bb benv ctx)
+  (receive (bb val0) (pass5b/rec ($lset-expr iform) bb benv 'normal)
+    (let1 r (make-reg benv ($lset-lvar iform))
+      (push-insn bb `(MOV ,r ,val0))
+      (values bb r))))  
+
+(define (pass5b/$GREF iform bb benv ctx)
+  (let1 r (make-reg benv 'normal)
+    (push-insn bb `(LD ,r ,($gref-id iform)))
+    (values bb r)))
+
+(define (pass5b/$GSET iform bb benv ctx)
+  (receive (bb val0) (pass5b/rec ($gset-expr iform) bb benv 'normal)
+    (push-insn bb `(ST ,val0 ,($gref-id iform)))
+    (values bb #f)))
+
+(define (pass5b/$CONST iform bb benv ctx)
+  (values bb (make-const benv ($const-value iform))))
+
+(define (pass5b/$IF iform bb benv ctx)
+  (receive (bb val0) (pass5b/rec ($if-test iform) bb benv 'normal)
+    (let ([then-bb (make-bb bb)]
+          [else-bb (make-bb bb)])
+      (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
+      (receive (tbb tval0) (pass5b/rec ($if-then iform) then-bb benv 'normal)
+        (receive (ebb eval0) (pass5b/rec ($if-eles iform) else-bb benv 'normal)
+          (let* ([cbb (make-bb tbb ebb)]
+                 [r (make-reg benv #f)])
+            (when tval0 (push-insn tbb `(MOV ,r ,tval0)))
+            (push-insn tbb '(JP ,cbb))
+            (when eval0 (push-insn ebb `(MOV ,r ,eval0)))
+            (push-insn ebb `(JP ,cbb))
+            (values cbb r)))))))
+
+(define (pass5b/$LET iform bb benv ctx)
+  (let loop ([bb bb] 
+             [vars ($let-lvars iform)]
+             [inits ($let-inits iform)])
+    (if (null? vars)
+      (pass5b/rec ($let-body iform) bb benv ctx)
+      (let1 reg (make-reg benv (car vars))
+        (receive (bb val0) (pass5b/rec (car inits) bb benv 'normal)
+          (push-insn bb `(MOV ,reg ,val0))
+          (loop bb (cdr vars) (cdr inits)))))))
+
+(define (pass5b/$RECEIVE iform bb benv ctx)
+  (let1 regs (map (cut make-reg benv <>) ($receive-lvars iform))
+    (receive (bb val0) (pass5b/rec ($receive-expr iform) bb benv 'normal)
+      (push-insn bb `(MOV* ,($receive-reqargs iform) ,($receve-optargs iform)
+                           ,regs ,val0))
+      (pass5b/rec ($receive-body iform) bb benv ctx))))
+
+(define (pass5b/$LAMBDA iform bb benv ctx)
+  (let ([lbb (make-bb)]
+        [reg (make-reg benv #f)])
+    (receive (lbb val0) (pass5b/rec ($lambda-body iform) lbb benv 'tail)
+      (push-insn lbb `(RET ,val0))
+      (push-insn bb `(CLOSE ,reg ,lbb))
+      (values bb reg))))
+
+(define (pass5b/$LABEL iform bb benv ctx)
+  ;;WRITEME
+  (values bb #f))
+
+(define (pass5b/$SEQ iform bb benv ctx)
+  (if (null? ($seq-body iform))
+    (values bb #f)
+    (let loop ([bb bb] [iforms ($seq-body iform)])
+      (if (null? (cdr iforms))
+        (pass5b/rec (car iforms) bb benv ctx)
+        (receive (bb _) (pass5b/rec (car iforms) bb benv 'stmt)
+          (loop bb (cdr iforms)))))))
+
+(define (pass5b/$CALL iform bb benv ctx)
+  (case ctx
+    [(tail)
+     (let loop ([bb bb] [args ($call-args iform)] [regs '()])
+       (if (null? args)
+         (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
+           (push-insn bb `(CALL ,proc ,@(reverse regs)))
+           (values bb '%VAL0))
+         (receive (bb arg) (pass5b/rec (car args) bb benv 'normal)
+           (loop bb (cdr args) (cons arg regs)))))]
+    [(stmt)
+     (let ([cbb (make-bb bb)])
+       (push-insn bb `(CONT ,cbb))
+       (let loop ([bb bb] [args ($call-args iform)] [regs '()])
+         (if (null? args)
+           (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
+             (push-insn bb `(CALL ,proc ,@(reverse regs)))
+             (values cbb #f))
+           (receive (bb arg) (pass5b/rec (car args) bb benv 'normal)
+             (loop bb (cdr args) (cons arg regs))))))]
+    [(normal)
+     (let ([cbb (make-bb bb)]
+           [valreg (make-reg benv #f)])
+       (push-insn bb `(CONT ,cbb))
+       (push-insn cbb `(MOV ,valreg %VAL0))
+       (let loop ([bb bb] [args ($call-args iform)] [regs '()])
+         (if (null? args)
+           (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
+             (push-insn bb `(CALL ,proc ,@(reverse regs)))
+             (values cbb valreg))
+           (receive (bb arg) (pass5b/rec (car args) bb benv 'normal)
+             (loop bb (cdr args) (cons arg regs))))))]))
+
+(define (pass5b/$ASM iform bb benv ctx)
+  (let loop ([bb bb] [args ($asm-args iform)] [regs '()])
+    (if (null? args)
+      (begin
+        (push-insn bb `(ASM ,($asm-insn iform) ,@(reverse regs)))
+        (values bb '%VAL0))
+      (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
+        (loop bb (cdr args) (cons reg regs))))))
+
+(define (pass5b/$CONS iform bb benv ctx)
+  (pass5b/builtin-twoargs 'CONS iform bb benv ctx))
+(define (pass5b/$APPEND iform bb benv ctx)
+  (pass5b/builtin-twoargs 'APPEND iform bb benv ctx))
+(define (pass5b/$MEMV iform bb benv ctx)
+  (pass5b/builtin-twoargs 'MEMV iform bb benv ctx))
+(define (pass5b/$EQ? iform bb benv ctx)
+  (pass5b/builtin-twoargs 'EQ? iform bb benv ctx))
+(define (pass5b/$EQV? iform bb benv ctx)
+  (pass5b/builtin-twoargs 'EQV? iform bb benv ctx))
+
+(define (pass5b/builtin-twoargs op iform bb benv ctx)
+  (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
+    (receive (bb reg1) (pass5b/rec ($*-arg1 iform) bb benv 'normal)
+      (push-insn bb `(BUILTIN ,op ,reg0 ,reg1))
+      (values bb '%VAL0))))
+
+(define (pass5b/$LIST->VECTOR iform bb benv ctx)
+  (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
+    (push-insn bb `(BUILTIN LIST->VECTOR ,reg0))
+    (values bb '%VAL0)))
+
+(define (pass5b/$VECTOR iform bb benv ctx)
+  (pass5b/builtin-nargs 'VECTOR iform bb benv ctx))
+(define (pass5b/$LIST iform bb benv ctx)
+  (pass5b/builtin-nargs 'LIST iform bb benv ctx))
+(define (pass5b/$LIST* iform bb benv ctx)
+  (pass5b/builtin-nargs 'LIST* iform bb benv ctx))
+
+(define (pass5b/builtin-nargs op iform bb benv ctx)
+  (let loop ([bb bb] [args ($*-args iform)] [regs '()])
+    (if (null? args)
+      (begin
+        (push-insn bb `(BUILTIN ,op ,@(reverse regs)))
+        (vlaues bb '%VAL0))
+      (receive (bb reg) (pass5b/rec (car args) bb benv ctx)
+        (loop bb (cdr args) (cons reg regs))))))
+
+(define (pass5b/$IT iform bb benv ctx)
+  (values bb '%VAL0))
+
+;; Dispatch table.
+(define *pass5b-dispatch-table* (generate-dispatch-table pass5b))
+
+;;
 ;; For debugging
+;;
 
 (define (dump-bb bb :optional (port (current-output-port)))
   (define bb-alist '())
@@ -299,12 +359,12 @@
     (unless (null? bb-toshow)
       (dump-1 (pop! bb-toshow))
       (loop))))
-        
+
+;; For now 
 (define (compile-b program)
   (let* ([cenv (make-bottom-cenv (vm-current-module))]
          [iform (pass2-4 (pass1 program cenv) (cenv-module cenv))]
          [bb (make-bb)])
     (pp-iform iform)
-    (dump-bb (iform->bb (make <benv>) iform))))
-
+    (dump-bb (pass5b iform (make <benv>)))))
                       

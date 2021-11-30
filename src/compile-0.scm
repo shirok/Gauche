@@ -35,7 +35,7 @@
 ;;;  Utility macros used in the main compiler.
 ;;;
 
-(declare (keep-private-macro case/unquote))
+(declare (keep-private-macro case/unquote generate-dispatch-table))
 
 ;; NB: This file may be included from more than one file, so be careful
 ;; to put only macro definitions.
