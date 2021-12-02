@@ -1,6 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.68])
 AC_INIT([Gauche],[0.9.11_pre2],[shiro@acm.org],,[https://practical-scheme.net/gauche/])
+BUILD_GOSH_VERSION=0.9.10  # Host Gauche version required for build from scratch
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -339,6 +340,7 @@ AC_SUBST(GAUCHE_MICRO_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_MAJOR_VERSION, $GAUCHE_MAJOR_VERSION,[Gauche major version number])
 AC_DEFINE_UNQUOTED(GAUCHE_MINOR_VERSION, $GAUCHE_MINOR_VERSION,[Gauche minor version number])
 AC_DEFINE_UNQUOTED(GAUCHE_MICRO_VERSION, $GAUCHE_MICRO_VERSION,[Gauche patch level number])
+AC_SUBST(BUILD_GOSH_VERSION)
 
 if test -z "$GAUCHE_ABI_VERSION"; then
   GAUCHE_ABI_VERSION="$GAUCHE_MAJOR_VERSION.$GAUCHE_MINOR_VERSION"

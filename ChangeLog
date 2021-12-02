@@ -1,3 +1,14 @@
+2021-12-01  Shiro Kawai  <shiro@acm.org>
+
+	* check-build-version, configure.ac, Makefile.in: Before generating
+	  files by BUILD_GOSH, check if it is the latest release.  With this,
+	  the user who accidentally try to compile from the repo using older
+	  Gauche will be told so upfront, instead of getting an misterious
+	  error in the middle of building.
+	  The required BUILD_GOSH version is kept in configure.ac, right
+	  below the AC_INIT line.  Don't forget to update when you make
+	  a new release.
+
 2021-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm (handle-define-inline): Fix that

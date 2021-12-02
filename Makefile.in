@@ -26,13 +26,15 @@ GAUCHE_VERSION  = @GAUCHE_VERSION@
 GAUCHE_DATA_DIR = $(datadir)/gauche-@GAUCHE_ABI_VERSION@
 GAUCHE_ARCH_DIR = $(libdir)/gauche-@GAUCHE_ABI_VERSION@
 GAUCHE_ACLOCAL_DIR = $(GAUCHE_DATA_DIR)/$(GAUCHE_VERSION)/
+BUILD_GOSH = @BUILD_GOSH@
+BUILD_GOSH_VERSION = @BUILD_GOSH_VERSION@
 BUILD_GOSH_FLAGS =
 DESTDIR =
 
 GOSH = gosh
 LN_S = @LN_S@
 
-PRE_PACKAGE_GENERATED = INSTALL.en.adoc INSTALL.ja.adoc
+PRE_PACKAGE_GENERATED = INSTALL.en.adoc INSTALL.ja.adoc pre-package.stamp
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
 		   libtool configure.lineno autom4* gc/autom4* \
 		   gc/configure.gnu-gauche Gauche.spec
@@ -40,7 +42,7 @@ AUTOCONF_GENERATED = $(CONFIG_GENERATED) configure
 
 TESTRECORD = ./test.record
 
-all:
+all: pre-package.stamp
 	if [ $(srcdir) != "." ]; then $(srcdir)/wirebuildlibs "$(srcdir)" "$(LN_S)"; fi
 	for d in $(SUBDIRS); do (cd $$d; $(MAKE) all) || exit 1; done
 	cd src; $(MAKE) -s static
@@ -69,6 +71,10 @@ pre-package: $(PRE_PACKAGE_GENERATED)
 	cd src; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd ext; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
 	cd doc; $(MAKE) GOSH=$(GOSH) BUILD_GOSH_FLAGS=$(BUILD_GOSH_FLAGS) pre-package
+
+# Check if the host's Gauche is recent enough to generate files for this version.
+pre-package.stamp:
+	$(BUILD_GOSH) $(srcdir)/check-build-version ${BUILD_GOSH_VERSION} && touch pre-package.stamp
 
 INSTALL.en.adoc: INSTALL.adoc
 	sed -e '/^ifdef::JA/,/^endif::JA/d ; /^ifdef::EN/d ; /^endif::EN/d ; /^\/\/@start header/,/^\/\/@end header/d' $< > $@
