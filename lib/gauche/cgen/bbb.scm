@@ -94,12 +94,12 @@
     (format port "#<reg ~a(~a)>" (~ reg'name) (lvar-name lvar))
     (format port "#<reg ~a>" (~ reg'name))))
 
-(define (make-reg benv lvar)
-  (or (hash-table-get (~ benv'regmap) lvar #f)
-      (let1 name (symbol-append '% (length (~ benv'registers)))
+(define (make-reg bb lvar)
+  (or (hash-table-get (~ bb'benv'regmap) lvar #f)
+      (let1 name (symbol-append '% (length (~ bb'benv'registers)))
         (rlet1 r (make <reg> :name name :lvar lvar)
-          (push! (~ benv'registers) r)
-          (when lvar (hash-table-put! (~ benv'regmap) lvar r))))))
+          (push! (~ bb'benv'registers) r)
+          (when lvar (hash-table-put! (~ bb'benv'regmap) lvar r))))))
 
 (define-class <const> ()                ; constant register
   ((value :init-keyword :value)         ; constant value
@@ -107,21 +107,22 @@
 (define-method write-object ((cst <const>) port)
   (format port "#<const ~a(~,,,,20:s)>" (~ cst'name) (~ cst'value)))
 
-(define (make-const benv val)
-  (or (hash-table-get (~ benv'cstmap) val #f)
-      (let1 name (symbol-append '% (length (~ benv'registers)))
+(define (make-const bb val)
+  (or (hash-table-get (~ bb'benv'cstmap) val #f)
+      (let1 name (symbol-append '% (length (~ bb'benv'registers)))
         (rlet1 r (make <const> :name name :value val)
-          (push! (~ benv'registers) r)
-          (hash-table-put! (~ benv'cstmap) val r)))))
+          (push! (~ bb'benv'registers) r)
+          (hash-table-put! (~ bb'benv'cstmap) val r)))))
 
 (define-class <basic-block> ()
-  ((insns      :init-value '())   ; list of instructions
-   (upstream   :init-value '())   ; list of upstream blocks
-   (downstream :init-value '())   ; list of downstream blocks
+  ((insns      :init-value '())         ; list of instructions
+   (upstream   :init-keyword :upstream) ; list of upstream blocks
+   (downstream :init-value '())         ; list of downstream blocks
+   (benv       :init-keyword :benv)
    ))
 
-(define (make-bb . upstreams)
-  (make <basic-block> :upstream upstreams))
+(define (make-bb benv . upstreams)
+  (make <basic-block> :benv benv :upstream upstreams))
 
 (define (push-insn bb insn)
   (push! (~ bb'insns) insn))
@@ -136,7 +137,7 @@
 
 ;; Returns the entry basic block
 (define (pass5b iform benv)
-  (rlet1 entry-bb (make-bb)
+  (rlet1 entry-bb (make-bb benv)
     (pass5b/rec iform entry-bb benv 'tail)))
 
 ;; Wrap the tail expr with this, to add RET.
@@ -155,16 +156,16 @@
     (values bb #f)))
 
 (define (pass5b/$LREF iform bb benv ctx)
-  (pass5b/return bb ctx (make-reg benv ($lref-lvar iform))))
+  (pass5b/return bb ctx (make-reg bb ($lref-lvar iform))))
 
 (define (pass5b/$LSET iform bb benv ctx)
   (receive (bb val0) (pass5b/rec ($lset-expr iform) bb benv 'normal)
-    (let1 r (make-reg benv ($lset-lvar iform))
+    (let1 r (make-reg bb ($lset-lvar iform))
       (push-insn bb `(MOV ,r ,val0))
       (pass5b/return bb ctx r))))
 
 (define (pass5b/$GREF iform bb benv ctx)
-  (let1 r (make-reg benv #f)
+  (let1 r (make-reg bb #f)
     (push-insn bb `(LD ,r ,($gref-id iform)))
     (pass5b/return bb ctx r)))
 
@@ -174,28 +175,28 @@
     (pass5b/return bb ctx #f)))
 
 (define (pass5b/$CONST iform bb benv ctx)
-  (pass5b/return bb ctx (make-const benv ($const-value iform))))
+  (pass5b/return bb ctx (make-const bb ($const-value iform))))
 
 (define (pass5b/$IF iform bb benv ctx)
   (receive (bb val0) (pass5b/rec ($if-test iform) bb benv 'normal)
-    (let ([then-bb (make-bb bb)]
-          [else-bb (make-bb bb)])
+    (let ([then-bb (make-bb benv bb)]
+          [else-bb (make-bb benv bb)])
       (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
       (receive (tbb tval0) (pass5b/rec ($if-then iform) then-bb benv 'normal)
         (receive (ebb eval0) (pass5b/rec ($if-else iform) else-bb benv 'normal)
           (case ctx
-            [(tail) 
+            [(tail)
              (push-insn tbb `(RET ,tval0))
              (push-insn ebb `(RET ,eval0))
              (values tbb tval0)] ; it doesn't really matter
             [(stmt)
-             (let1 cbb (make-bb tbb ebb)
+             (let1 cbb (make-bb benv tbb ebb)
                (push-insn tbb `(JP ,cbb))
                (push-insn ebb `(JP ,cbb))
                (values cbb #f))]
             [(normal)
-             (let* ([cbb (make-bb tbb ebb)]
-                    [r (make-reg benv #f)])
+             (let* ([cbb (make-bb benv tbb ebb)]
+                    [r (make-reg cbb #f)])
                (when tval0 (push-insn tbb `(MOV ,r ,tval0)))
                (push-insn tbb `(JP ,cbb))
                (when eval0 (push-insn ebb `(MOV ,r ,eval0)))
@@ -203,26 +204,26 @@
                (values cbb r))]))))))
 
 (define (pass5b/$LET iform bb benv ctx)
-  (let loop ([bb bb] 
+  (let loop ([bb bb]
              [vars ($let-lvars iform)]
              [inits ($let-inits iform)])
     (if (null? vars)
       (pass5b/rec ($let-body iform) bb benv ctx)
-      (let1 reg (make-reg benv (car vars))
+      (let1 reg (make-reg bb (car vars))
         (receive (bb val0) (pass5b/rec (car inits) bb benv 'normal)
           (push-insn bb `(MOV ,reg ,val0))
           (loop bb (cdr vars) (cdr inits)))))))
 
 (define (pass5b/$RECEIVE iform bb benv ctx)
-  (let1 regs (map (cut make-reg benv <>) ($receive-lvars iform))
+  (let1 regs (map (cut make-reg bb <>) ($receive-lvars iform))
     (receive (bb val0) (pass5b/rec ($receive-expr iform) bb benv 'normal)
       (push-insn bb `(MOV* ,($receive-reqargs iform) ,($receive-optarg iform)
                            ,regs ,val0))
       (pass5b/rec ($receive-body iform) bb benv ctx))))
 
 (define (pass5b/$LAMBDA iform bb benv ctx)
-  (let ([lbb (make-bb)]
-        [reg (make-reg benv #f)])
+  (let ([lbb (make-bb benv)]
+        [reg (make-reg bb #f)])
     (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb benv 'tail)
       (push-insn bb `(CLOSE ,reg ,lbb))
       (pass5b/return bb ctx reg))))
@@ -258,11 +259,11 @@
           (loop bb (cdr args) (cons reg regs))))))
   (ecase ctx
     [(tail)   (call-common #f '%VAL0)]
-    [(stmt)   (let1 cbb (make-bb bb)
+    [(stmt)   (let1 cbb (make-bb benv bb)
                 (push-insn bb `(CONT ,cbb))
                 (call-common cbb #f))]
-    [(normal) (let ([cbb (make-bb bb)]
-                    [valreg (make-reg benv #f)])
+    [(normal) (let* ([cbb (make-bb benv bb)]
+                     [valreg (make-reg cbb #f)])
                 (push-insn bb `(CONT ,cbb))
                 (push-insn cbb `(MOV ,valreg %VAL0))
                 (call-common cbb valreg))]))
@@ -371,7 +372,7 @@
       (dump-1 (pop! bb-toshow))
       (loop))))
 
-;; For now 
+;; For now
 (define (compile-b program)
   (let* ([cenv (make-bottom-cenv (vm-current-module))]
          [iform (pass2-4 (pass1 program cenv) (cenv-module cenv))])
@@ -380,4 +381,3 @@
            [bb (pass5b iform benv)])
       ;;(write (~ benv'registers)) (newline)
       (dump-bb bb))))
-                      
