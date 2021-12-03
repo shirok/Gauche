@@ -1585,6 +1585,17 @@
 (test* "box error handling" (test-error <error> #/Wrong number/)
        (set-box! (box 1 2) 3))
 
+
+;; https://github.com/shirok/Gauche/issues/787
+(test* "box circular printing" "#0=#<box #0#>"
+       (let1 b (box 1)
+         (set-box! b b)
+         (write-to-string b)))
+(test* "mvbox circular printing" "#0=#<mv-box[2] 0 #0#>"
+       (let1 b (box 1 2)
+         (set-box! b 0 b)
+         (write-to-string b)))
+
 ;;-----------------------------------------------------------------------
 ;; srfi-113 depends on srfi-114, so we test this first.
 (test-section "srfi-114")

@@ -1,3 +1,8 @@
+2021-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (%write-walk-rec): Handle circular reference through
+	  boxes.  https://github.com/shirok/Gauche/issues/787
+
 2021-12-01  Shiro Kawai  <shiro@acm.org>
 
 	* check-build-version, configure.ac, Makefile.in: Before generating

@@ -844,6 +844,9 @@
          [(vector? obj)
           (dotimes [i (vector-length obj)]
             (%write-walk-rec (vector-ref obj i) port tab))]
+         [(box? obj)
+          (dotimes [i (box-arity obj)]
+            (%write-walk-rec (unbox-value obj i) port tab))]
          [else ; generic objects.  we go walk pass via write-object
           (write-object obj port)])
         ;; If circular-only, we don't count non-circular objects.
