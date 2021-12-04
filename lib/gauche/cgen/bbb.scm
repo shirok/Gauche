@@ -1,5 +1,5 @@
 ;;;
-;;; bbb.scm - Basic-blocks backend
+;;; gauche.cgen.bbb - Basic-blocks backend
 ;;;
 ;;;   Copyright (c) 2021  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -79,13 +79,19 @@
 ;;   First, we convert IForm to a DG of basic blocks (BBs).
 ;;   BB has one entry point and multiple exit point.
 
-;; Block environment
+;; Block environment.  Keep track of allocated registers and blocks
+;; per compile unit (usually each toplevel form)
 (define-class <benv> ()
   ((registers :init-form '())                 ; (<List> (</> <reg> <const>))
    (regmap :init-form (make-hash-table 'eq?)) ; lvar -> <reg>
    (cstmap :init-form (make-hash-table 'equal?)) ; const -> <const>
-   (blocks :init-value '())))                 ; basic blocks
+   (blocks :init-value '())                   ; basic blocks
+   (parent :init-keyword :parent)))           ; parent benv
 
+(define (make-benv parent)
+  (make <benv> :parent parent))
+
+;; Registers and constatns.
 (define-class <reg> ()
   ((lvar :init-keyword :lvar)           ; source LVAR; can be #f
    (name :init-keyword :name)))         ; given temporary name
@@ -95,7 +101,11 @@
     (format port "#<reg ~a>" (~ reg'name))))
 
 (define (make-reg bb lvar)
-  (or (hash-table-get (~ bb'benv'regmap) lvar #f)
+  (define (lookup benv lvar)
+    (or (hash-table-get (~ benv'regmap) lvar #f)
+        (and-let1 parent (~ benv'parent)
+          (lookup parent lvar))))
+  (or (lookup (~ bb'benv) lvar)
       (let1 name (symbol-append '% (length (~ bb'benv'registers)))
         (rlet1 r (make <reg> :name name :lvar lvar)
           (push! (~ bb'benv'registers) r)
@@ -114,6 +124,7 @@
           (push! (~ bb'benv'registers) r)
           (hash-table-put! (~ bb'benv'cstmap) val r)))))
 
+;; Basic blocks
 (define-class <basic-block> ()
   ((insns      :init-value '())         ; list of instructions
    (upstream   :init-keyword :upstream) ; list of upstream blocks
@@ -223,9 +234,10 @@
       (pass5b/rec ($receive-body iform) bb benv ctx))))
 
 (define (pass5b/$LAMBDA iform bb benv ctx)
-  (let ([lbb (make-bb benv)]
-        [reg (make-reg bb #f)])
-    (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb benv 'tail)
+  (let* ([lbenv (make-benv benv)]
+         [lbb (make-bb lbenv)]
+         [reg (make-reg bb #f)])
+    (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb lbenv 'tail)
       (push-insn bb `(CLOSE ,reg ,lbb))
       (pass5b/return bb ctx reg))))
 
@@ -365,8 +377,8 @@
     (unless (memq bb bb-shown)
       (push! bb-shown bb)
       (format port "BB #~a\n" (bb-num bb))
-      ;;(format port "    Up: ~s\n" (map bb-num (~ bb'upstream)))
-      ;;(format port "    Dn: ~s\n" (map bb-num (~ bb'downstream)))
+      (format port "    Up: ~s\n" (map bb-num (~ bb'upstream)))
+      (format port "    Dn: ~s\n" (map bb-num (~ bb'downstream)))
       (for-each dump-insn (reverse (~ bb'insns)))))
   (let loop ()
     (unless (null? bb-toshow)
@@ -378,7 +390,7 @@
   (let* ([cenv (make-bottom-cenv (vm-current-module))]
          [iform (pass2-4 (pass1 program cenv) (cenv-module cenv))])
     (pp-iform iform)
-    (let* ([benv (make <benv>)]
+    (let* ([benv (make-benv #f)]
            [bb (pass5b iform benv)])
       ;;(write (~ benv'registers)) (newline)
       (dump-bb bb))))
