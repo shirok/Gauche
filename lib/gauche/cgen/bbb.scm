@@ -122,7 +122,8 @@
    ))
 
 (define (make-bb benv . upstreams)
-  (make <basic-block> :benv benv :upstream upstreams))
+  (rlet1 bb (make <basic-block> :benv benv :upstream upstreams)
+    (push! (~ benv'blocks) bb)))
 
 (define (push-insn bb insn)
   (push! (~ bb'insns) insn))
