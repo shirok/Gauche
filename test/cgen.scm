@@ -559,6 +559,11 @@ some_trick();
 (test-module 'gauche.cgen.standalone)
 
 ;;====================================================================
+(test-section "gauche.cgen.bbb")
+(use gauche.cgen.bbb)
+(test-module 'gauche.cgen.bbb)
+
+;;====================================================================
 (test-section "gauche.cgen")
 (use gauche.cgen)
 (test-module 'gauche.cgen)
