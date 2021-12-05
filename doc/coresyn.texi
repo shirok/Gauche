@@ -1992,12 +1992,13 @@ If not, raises an error.  The result of @var{expr} is returned.
 @c COMMON
 
 @c EN
-As @var{type}, you can specify a Gauche class.  The value is of type
-if it satisfies @code{(is-a? value type)}
+As @var{type}, you can specify a Gauche class or a
+descriptive type.  The value is of type
+if it satisfies @code{(of-type? value type)}
 (@pxref{Types and classes}).
 @c JP
-@var{type}にはGaucheのクラスを指定できます。
-値がその型かどうかは@code{(is-a? value type)}で判定されます
+@var{type}にはGaucheのクラスか記述的な型を指定できます。
+値がその型かどうかは@code{(of-type? value type)}で判定されます
 (@ref{Types and classes}参照)。
 @c COMMON
 
