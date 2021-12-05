@@ -57,6 +57,7 @@
 ;; Instructions:
 ;;
 ;; (MOV dreg sreg)     - dreg <- sreg
+;; (MOV* r o (dreg ...) sreg) - mv bind (details TBD)
 ;; (BREF dreg sreg)    - dreg <- (box-ref sreg)
 ;; (BSET dreg sreg)    - (box-set! dreg sreg)
 ;; (LD reg identifier) - global load
@@ -71,6 +72,8 @@
 ;; (CALL proc arg ...) - PROC and ARGs are all registers.  Transfer control
 ;;                       to PROC.
 ;; (RET reg ...)       - Return, using values in REGs as the results.
+;; (BUILTIN op reg ...) - Builtin operation
+;; (ASM op reg ...)    - Inlined VM assembly operation
 ;;
 ;; (DEF id flags reg)  - insert global binding of ID in the current module
 ;;                       with the value in REG.
@@ -91,6 +94,9 @@
 (define (make-benv parent)
   (make <benv> :parent parent))
 
+(define (benv-depth benv)               ; used for register naming
+  (if-let1 p (~ benv'parent) (+ (benv-depth p) 1) 0))
+
 ;; Registers and constatns.
 (define-class <reg> ()
   ((lvar :init-keyword :lvar)           ; source LVAR; can be #f
@@ -106,23 +112,26 @@
         (and-let1 parent (~ benv'parent)
           (lookup parent lvar))))
   (or (lookup (~ bb'benv) lvar)
-      (let1 name (symbol-append '% (length (~ bb'benv'registers)))
+      (let1 name (string->symbol (format "%~d.~d" (benv-depth (~ bb'benv))
+                                         (length (~ bb'benv'registers))))
         (rlet1 r (make <reg> :name name :lvar lvar)
           (push! (~ bb'benv'registers) r)
           (when lvar (hash-table-put! (~ bb'benv'regmap) lvar r))))))
 
+;; For constant, we box the value, in case if it is #<undef>.
 (define-class <const> ()                ; constant register
-  ((value :init-keyword :value)         ; constant value
+  ((value :init-keyword :value)         ; BOXED constant value
    (name :init-keyword :name)))         ; given temporary name
 (define-method write-object ((cst <const>) port)
-  (format port "#<const ~a(~,,,,20:s)>" (~ cst'name) (~ cst'value)))
+  (format port "#<const ~a(~,,,,20:s)>" (~ cst'name) (unbox (~ cst'value))))
 
 (define (make-const bb val)
   (or (hash-table-get (~ bb'benv'cstmap) val #f)
       (let1 name (symbol-append '% (length (~ bb'benv'registers)))
-        (rlet1 r (make <const> :name name :value val)
+        (rlet1 r (make <const> :name name :value (box val))
           (push! (~ bb'benv'registers) r)
           (hash-table-put! (~ bb'benv'cstmap) val r)))))
+(define (const-value cst) (unbox (~ cst'value)))
 
 ;; Basic blocks
 (define-class <basic-block> ()
@@ -246,11 +255,12 @@
   ;; it to keep <basic-block> once we assigne one.
   (if-let1 cbb ($label-label iform)
     (begin (push-insn bb `(JP ,cbb))
-           (values cbb #f))
-    (receive (cbb res) (pass5b/rec ($label-body iform) bb benv ctx)
-      ($label-label-set! iform cbb)
+           (values bb #f))
+    (let1 cbb (make-bb benv bb)
       (push-insn bb `(JP ,cbb))
-      (values cbb res))))
+      ($label-label-set! iform cbb)
+      (receive (ccbb res) (pass5b/rec ($label-body iform) cbb benv ctx)
+        (values ccbb res)))))
 
 (define (pass5b/$SEQ iform bb benv ctx)
   (if (null? ($seq-body iform))
