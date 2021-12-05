@@ -101,6 +101,7 @@ SCMFILES = \
        gauche/cgen/cise.scm gauche/cgen/type.scm gauche/cgen/stub.scm \
        gauche/cgen/precomp.scm gauche/cgen/optimizer.scm \
        gauche/cgen/standalone.scm gauche/cgen/tmodule.scm \
+       gauche/cgen/bbb.scm \
        gauche/package.scm gauche/package/build.scm gauche/package/fetch.scm \
        gauche/package/util.scm gauche/package/compile.scm \
        gauche/experimental/ref.scm gauche/experimental/lamb.scm \
