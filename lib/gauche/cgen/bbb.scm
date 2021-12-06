@@ -209,12 +209,10 @@
     (let ([then-bb (make-bb benv bb)]
           [else-bb (make-bb benv bb)])
       (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
-      (receive (tbb tval0) (pass5b/rec ($if-then iform) then-bb benv 'normal)
-        (receive (ebb eval0) (pass5b/rec ($if-else iform) else-bb benv 'normal)
+      (receive (tbb tval0) (pass5b/rec ($if-then iform) then-bb benv ctx)
+        (receive (ebb eval0) (pass5b/rec ($if-else iform) else-bb benv ctx)
           (case ctx
             [(tail)
-             (push-insn tbb `(RET ,tval0))
-             (push-insn ebb `(RET ,eval0))
              (values tbb tval0)] ; it doesn't really matter
             [(stmt)
              (let1 cbb (make-bb benv tbb ebb)
@@ -277,26 +275,57 @@
         (receive (bb _) (pass5b/rec (car iforms) bb benv 'stmt)
           (loop bb (cdr iforms)))))))
 
+;; $CALL node is classfied by pass4; see compile-5.scm for the details.
+;; We set <basic-block> to $label node's label.
 (define (pass5b/$CALL iform bb benv ctx)
-  (define (call-common cont-bb cont-reg)
-    (when cont-bb (set! (~ cont-bb'entry?) #t))
+  (define (prepare-args bb)             ;returns bb and list of regs
     (let loop ([bb bb] [args ($call-args iform)] [regs '()])
       (if (null? args)
-        (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
-          (push-insn bb `(CALL ,proc ,@(reverse regs)))
-          (values (or cont-bb bb) cont-reg))
+        (values bb (reverse regs))
         (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
           (loop bb (cdr args) (cons reg regs))))))
-  (ecase ctx
-    [(tail)   (call-common #f '%VAL0)]
-    [(stmt)   (let1 cbb (make-bb benv bb)
-                (push-insn bb `(CONT ,cbb))
-                (call-common cbb #f))]
-    [(normal) (let* ([cbb (make-bb benv bb)]
-                     [valreg (make-reg cbb #f)])
-                (push-insn bb `(CONT ,cbb))
-                (push-insn cbb `(MOV ,valreg %VAL0))
-                (call-common cbb valreg))]))
+  (define (embedded-call)
+    (receive (bb regs) (prepare-args bb)
+      (let* ([proc ($call-proc iform)]    ; $LAMBDA node
+             [label ($lambda-body proc)]  ; $LABEL mode
+             [lbb (make-bb benv bb)])
+        (for-each (^[reg lvar]
+                    (push-insn bb `(MOV ,(make-reg bb lvar) ,reg)))
+                  regs ($lambda-lvars proc))
+        (push-insn bb `(JP ,lbb))
+        ($label-label-set! label lbb)
+        (pass5b/rec ($label-body label) lbb benv ctx))))
+  (define (jump-call)
+    (receive (bb regs) (prepare-args bb)
+      (let* ([embed-node ($call-proc iform)]  ; $CALL node
+             [proc ($call-proc embed-node)]   ; $LAMBDA node
+             [label ($lambda-body proc)]      ; $LABEL node
+             [lbb ($label-label label)])
+        (for-each (^[reg lvar]
+                    (push-insn bb `(MOV ,(make-reg bb lvar) ,reg)))
+                  regs ($lambda-lvars proc))
+        (push-insn bb `(JP ,lbb))
+        (values lbb #f))))                 ;dummy
+  (define (normal-call cont-bb cont-reg)
+    (when cont-bb (set! (~ cont-bb'entry?) #t))
+    (receive (bb regs) (prepare-args bb)
+      (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
+        (push-insn bb `(CALL ,proc ,@(reverse regs)))
+        (values (or cont-bb bb) cont-reg))))
+  (case ($call-flag iform)
+    [(embed) (embedded-call)]
+    [(jump) (jump-call)]
+    [else
+     (ecase ctx
+       [(tail)   (normal-call #f '%VAL0)]
+       [(stmt)   (let1 cbb (make-bb benv bb)
+                   (push-insn bb `(CONT ,cbb))
+                   (normal-call cbb #f))]
+       [(normal) (let* ([cbb (make-bb benv bb)]
+                        [valreg (make-reg cbb #f)])
+                   (push-insn bb `(CONT ,cbb))
+                   (push-insn cbb `(MOV ,valreg %VAL0))
+                   (normal-call cbb valreg))])]))
 
 (define (pass5b/$ASM iform bb benv ctx)
   (let loop ([bb bb] [args ($asm-args iform)] [regs '()])
@@ -365,7 +394,7 @@
   (define (bbname bb)
     (unless (memq bb bb-shown) (push! bb-toshow bb))
     (if (~ bb'entry?)
-      #"BB#~(bb-num bb)<"
+      #"BB#~(bb-num bb)!"
       #"BB#~(bb-num bb)"))
   (define bb-shown '())
   (define bb-toshow (list bb))
