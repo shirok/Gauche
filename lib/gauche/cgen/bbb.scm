@@ -89,10 +89,13 @@
    (regmap :init-form (make-hash-table 'eq?)) ; lvar -> <reg>
    (cstmap :init-form (make-hash-table 'equal?)) ; const -> <const>
    (blocks :init-value '())                   ; basic blocks
-   (parent :init-keyword :parent)))           ; parent benv
+   (parent :init-keyword :parent)             ; parent benv
+   (children :init-value '())))
 
 (define (make-benv parent)
-  (make <benv> :parent parent))
+  (rlet1 benv (make <benv> :parent parent)
+    (when parent
+      (push! (~ parent'children) benv))))
 
 (define (benv-depth benv)               ; used for register naming
   (if-let1 p (~ benv'parent) (+ (benv-depth p) 1) 0))
@@ -150,6 +153,10 @@
     (dolist [ubb upstreams]
       (push! (~ ubb'downstream) bb))
     (push! (~ benv'blocks) bb)))
+
+(define (link-bb from-bb to-bb)         ;if we emit JP from FROM-BB to TO-BB
+  (push! (~ from-bb'downstream) to-bb)
+  (push! (~ to-bb'upstream) from-bb))
 
 (define (push-insn bb insn)
   (push! (~ bb'insns) insn))
@@ -258,7 +265,8 @@
   ;; NB: $label-label is #f at the end of pass4.  We assume that, and use
   ;; it to keep <basic-block> once we assigne one.
   (if-let1 cbb ($label-label iform)
-    (begin (push-insn bb `(JP ,cbb))
+    (begin (link-bb bb cbb)
+           (push-insn bb `(JP ,cbb))
            (values bb #f))
     (let1 cbb (make-bb benv bb)
       (push-insn bb `(JP ,cbb))
@@ -275,17 +283,27 @@
         (receive (bb _) (pass5b/rec (car iforms) bb benv 'stmt)
           (loop bb (cdr iforms)))))))
 
+;; Used by $CALL, $ASM and $BUILTIN nodes.  Returns bb and list of regs.
+;; If ues-val0? is true, the last reg may be %VAL0.
+(define (pass5b/prepare-args bb benv args :optional (use-val0? #f))
+  (if (null? args)
+    (values bb '())
+    (let loop ([bb bb] [args args] [regs '()])
+      (if (null? (cdr args))
+        (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
+          (values bb (reverse (cons reg regs))))
+        (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
+          (if (eq? reg '%VAL0)
+            (let1 reg (make-reg bb #f)
+              (push-insn bb `(MOV ,reg %VAL0))
+              (loop bb (cdr args) (cons reg regs)))
+            (loop bb (cdr args) (cons reg regs))))))))
+
 ;; $CALL node is classfied by pass4; see compile-5.scm for the details.
 ;; We set <basic-block> to $label node's label.
 (define (pass5b/$CALL iform bb benv ctx)
-  (define (prepare-args bb)             ;returns bb and list of regs
-    (let loop ([bb bb] [args ($call-args iform)] [regs '()])
-      (if (null? args)
-        (values bb (reverse regs))
-        (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
-          (loop bb (cdr args) (cons reg regs))))))
   (define (embedded-call)
-    (receive (bb regs) (prepare-args bb)
+    (receive (bb regs) (pass5b/prepare-args bb benv ($call-args iform))
       (let* ([proc ($call-proc iform)]    ; $LAMBDA node
              [label ($lambda-body proc)]  ; $LABEL mode
              [lbb (make-bb benv bb)])
@@ -296,7 +314,7 @@
         ($label-label-set! label lbb)
         (pass5b/rec ($label-body label) lbb benv ctx))))
   (define (jump-call)
-    (receive (bb regs) (prepare-args bb)
+    (receive (bb regs) (pass5b/prepare-args bb benv ($call-args iform))
       (let* ([embed-node ($call-proc iform)]  ; $CALL node
              [proc ($call-proc embed-node)]   ; $LAMBDA node
              [label ($lambda-body proc)]      ; $LABEL node
@@ -308,9 +326,9 @@
         (values lbb #f))))                 ;dummy
   (define (normal-call cont-bb cont-reg)
     (when cont-bb (set! (~ cont-bb'entry?) #t))
-    (receive (bb regs) (prepare-args bb)
+    (receive (bb regs) (pass5b/prepare-args bb benv ($call-args iform))
       (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
-        (push-insn bb `(CALL ,proc ,@(reverse regs)))
+        (push-insn bb `(CALL ,proc ,@regs))
         (values (or cont-bb bb) cont-reg))))
   (case ($call-flag iform)
     [(embed) (embedded-call)]
@@ -328,13 +346,9 @@
                    (normal-call cbb valreg))])]))
 
 (define (pass5b/$ASM iform bb benv ctx)
-  (let loop ([bb bb] [args ($asm-args iform)] [regs '()])
-    (if (null? args)
-      (begin
-        (push-insn bb `(ASM ,($asm-insn iform) ,@(reverse regs)))
-        (pass5b/return bb ctx '%VAL0))
-      (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
-        (loop bb (cdr args) (cons reg regs))))))
+  (receive (bb regs) (pass5b/prepare-args bb benv ($asm-args iform) #t)
+    (push-insn bb `(ASM ,($asm-insn iform) ,@regs))
+    (pass5b/return bb ctx '%VAL0)))
 
 (define (pass5b/$CONS iform bb benv ctx)
   (pass5b/builtin-twoargs 'CONS iform bb benv ctx))
@@ -348,10 +362,10 @@
   (pass5b/builtin-twoargs 'EQV? iform bb benv ctx))
 
 (define (pass5b/builtin-twoargs op iform bb benv ctx)
-  (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
-    (receive (bb reg1) (pass5b/rec ($*-arg1 iform) bb benv 'normal)
-      (push-insn bb `(BUILTIN ,op ,reg0 ,reg1))
-      (pass5b/return bb ctx '%VAL0))))
+  (receive (bb regs)
+      (pass5b/prepare-args bb benv (list ($*-arg0 iform) ($*-arg1 iform)) #t)
+    (push-insn bb `(BUILTIN ,op ,@regs))
+    (pass5b/return bb ctx '%VAL0)))
 
 (define (pass5b/$LIST->VECTOR iform bb benv ctx)
   (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
@@ -366,19 +380,50 @@
   (pass5b/builtin-nargs 'LIST* iform bb benv ctx))
 
 (define (pass5b/builtin-nargs op iform bb benv ctx)
-  (let loop ([bb bb] [args ($*-args iform)] [regs '()])
-    (if (null? args)
-      (begin
-        (push-insn bb `(BUILTIN ,op ,@(reverse regs)))
-        (pass5b/return bb ctx '%VAL0))
-      (receive (bb reg) (pass5b/rec (car args) bb benv ctx)
-        (loop bb (cdr args) (cons reg regs))))))
+  (receive (bb regs) (pass5b/prepare-args bb benv ($*-args iform) #t)
+    (push-insn bb `(BUILTIN ,op ,@(reverse regs)))
+    (pass5b/return bb ctx '%VAL0)))
 
 (define (pass5b/$IT iform bb benv ctx)
   (pass5b/return bb ctx '%VAL0))
 
 ;; Dispatch table.
 (define *pass5b-dispatch-table* (generate-dispatch-table pass5b))
+
+;;
+;; Simplify bb chains
+;;
+
+(define (simplify-bbs! benv)
+  (define (skip-jp-insn! bb intermediate dest)
+    (match (car (~ bb'insns))
+      [('JP _) (set-car! (~ bb'insns) `(JP ,dest))]
+      [('BR t a b)
+       (cond
+        [(eq? a intermediate) (set-car! (~ bb'insns) `(BR ,t ,dest ,b))]
+        [(eq? b intermediate) (set-car! (~ bb'insns) `(BR ,t ,a ,dest))]
+        [else (error "[internal] Something wrong - can't swap:"
+                     (list a b intermediate dest))])]
+      [x (error "[internal] Something wrong - can't swap with " x)]))
+  (define (erase-downstream! bb down)
+    (update! (~ bb'downstream) (^[bbs] (delete down bbs))))
+  (define (remove-bb! bb)
+    (update! (~ bb'benv'blocks) (^[blocks] (delete bb blocks))))
+  (define (check-bb bb)
+    (when (and (not (~ bb'entry?))
+               (length=? (~ bb'insns) 1))
+      (let1 i (car (~ bb'insns))
+        (match i
+          [('JP dest)
+           (dolist [u (~ bb'upstream)]
+             (erase-downstream! u bb)
+             (skip-jp-insn! u bb dest))
+           (remove-bb! bb)]
+          [_ #f]))))
+  (define (scan benv)
+    (for-each check-bb (~ benv'blocks))
+    (for-each scan (~ benv'children)))
+  (scan benv))
 
 ;;
 ;; For debugging
@@ -443,4 +488,5 @@
     (let* ([benv (make-benv #f)]
            [bb (pass5b iform benv)])
       ;;(write (~ benv'registers)) (newline)
+      (simplify-bbs! benv)
       (dump-bb bb))))
