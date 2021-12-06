@@ -112,8 +112,9 @@
         (and-let1 parent (~ benv'parent)
           (lookup parent lvar))))
   (or (lookup (~ bb'benv) lvar)
-      (let1 name (string->symbol (format "%~d.~d" (benv-depth (~ bb'benv))
-                                         (length (~ bb'benv'registers))))
+      (let1 name (string->symbol (format "%~d.~d~a" (benv-depth (~ bb'benv))
+                                         (length (~ bb'benv'registers))
+                                         (if lvar #".~(lvar-name lvar)" "")))
         (rlet1 r (make <reg> :name name :lvar lvar)
           (push! (~ bb'benv'registers) r)
           (when lvar (hash-table-put! (~ bb'benv'regmap) lvar r))))))
@@ -139,10 +140,15 @@
    (upstream   :init-keyword :upstream) ; list of upstream blocks
    (downstream :init-value '())         ; list of downstream blocks
    (benv       :init-keyword :benv)
+   (entry?     :init-value #f)          ; #t if this BB is entered from outside
    ))
 
 (define (make-bb benv . upstreams)
   (rlet1 bb (make <basic-block> :benv benv :upstream upstreams)
+    (when (null? upstreams)
+      (set! (~ bb'entry?) #t))
+    (dolist [ubb upstreams]
+      (push! (~ ubb'downstream) bb))
     (push! (~ benv'blocks) bb)))
 
 (define (push-insn bb insn)
@@ -273,6 +279,7 @@
 
 (define (pass5b/$CALL iform bb benv ctx)
   (define (call-common cont-bb cont-reg)
+    (when cont-bb (set! (~ cont-bb'entry?) #t))
     (let loop ([bb bb] [args ($call-args iform)] [regs '()])
       (if (null? args)
         (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
@@ -355,12 +362,14 @@
       (cdr p)
       (rlet1 n (length bb-alist)
         (push! bb-alist (cons bb n)))))
+  (define (bbname bb)
+    (unless (memq bb bb-shown) (push! bb-toshow bb))
+    (if (~ bb'entry?)
+      #"BB#~(bb-num bb)<"
+      #"BB#~(bb-num bb)"))
   (define bb-shown '())
   (define bb-toshow (list bb))
   (define (dump-insn insn)
-    (define (bbname bb)
-      (unless (memq bb bb-shown) (push! bb-toshow bb))
-      #"BB#~(bb-num bb)")
     (define (regname reg) (if (is-a? reg <reg>) (~ reg'name) reg))
     (match insn
       [((or 'MOV 'BREF 'BSET) d s)
@@ -379,6 +388,8 @@
        (let ((insn-name (~ (vm-find-insn-info (car insn))'name)))
          (format port "  ~s\n" `(ASM (,insn-name ,@(cdr insn))
                                      ,@(map regname args))))]
+      [('BUILTIN op . args)
+       (format port "  ~s\n" `(BUILTIN ,op ,@(map regname args)))]
       [('DEF id flags reg)
        (format port "  (DEF ~a#~a ~s ~s)\n" (~ id'module'name) (~ id'name)
                flags (regname reg))]
@@ -386,7 +397,7 @@
   (define (dump-1 bb)
     (unless (memq bb bb-shown)
       (push! bb-shown bb)
-      (format port "BB #~a\n" (bb-num bb))
+      (format port "~a\n" (bbname bb))
       (format port "    Up: ~s\n" (map bb-num (~ bb'upstream)))
       (format port "    Dn: ~s\n" (map bb-num (~ bb'downstream)))
       (for-each dump-insn (reverse (~ bb'insns)))))
