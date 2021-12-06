@@ -64,6 +64,7 @@ test.record
 /DIST_EXCLUDE_X
 /INSTALL.en.adoc
 /INSTALL.ja.adoc
+/pre-package.stamp
 .deps
 .dirstamp
 /src/features.c
