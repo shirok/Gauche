@@ -2003,16 +2003,24 @@ if it satisfies @code{(of-type? value type)}
 @c COMMON
 
 @c EN
+The type assumption may be used by the compiler
+future compilers for optimizations.
+In order for the compiler to use the type constraint information,
+@var{type} must be an expression statically computable at compile-time.
+That is, it must be either a class or a type constructor expression,
+or a constant binding to them.
+@c JP
+このフォームによる情報は、将来のコンパイラで最適化に使われるかもしれません。
+コンパイラが型制約の情報を利用するためには、@var{type}が静的に型へと計算可能でなければ
+なりません。すなわち、クラスか、型コンストラクタか、それらへのconstantな束縛です。
+@c COMMON
+
+@c EN
 Note: Like @code{assume}, this form is advisory; it is not guaranteed
 that the check is performed, nor @var{expr} is evaluated.
-
-On the other hand, the type assumption may be used by the compiler
-future compilers for optimizations.
 @c JP
 註: @code{assume}と同様、このフォームも勧告として機能します。
 チェックがなされるか、@var{expr}が評価されるかどうかは保証されません。
-
-一方、このフォームによる情報は、将来のコンパイラで最適化に使われるかもしれません。
 @c COMMON
 @end defmac
 
