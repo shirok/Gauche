@@ -74,7 +74,7 @@ pre-package: $(PRE_PACKAGE_GENERATED)
 
 # Check if the host's Gauche is recent enough to generate files for this version.
 pre-package.stamp:
-	$(BUILD_GOSH) $(srcdir)/check-build-version ${BUILD_GOSH_VERSION} && touch pre-package.stamp
+	"$(BUILD_GOSH)" "$(srcdir)/check-build-version" ${BUILD_GOSH_VERSION} && touch pre-package.stamp
 
 INSTALL.en.adoc: INSTALL.adoc
 	sed -e '/^ifdef::JA/,/^endif::JA/d ; /^ifdef::EN/d ; /^endif::EN/d ; /^\/\/@start header/,/^\/\/@end header/d' $< > $@
