@@ -24296,7 +24296,7 @@ Then the created generator works as follows:
 @defunx string-downcase string
 @defunx string-titlecase string
 @defunx string-foldcase string
-[R6RS][R7RS char]
+[R6RS][R7RS char][SRFI-129]
 @c MOD gauche.unicode
 @c EN
 Converts the case of given @var{string}
@@ -24337,6 +24337,12 @@ and @code{string-foldcase} are also in R7RS @code{scheme.char} module.
 @c JP
 @code{string-upcase}、@code{string-downcase}、@code{string-foldcase}は
 R7RSの@code{scheme.char}モジュールでも提供されます。
+@c COMMON
+
+@c EN
+Procedure @code{string-titlecase} is also defined in SRFI-129.
+@c JP
+@code{string-titlecase}はSRFI-129でも定義されています。
 @c COMMON
 @end defun
 

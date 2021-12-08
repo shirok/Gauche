@@ -53,6 +53,7 @@ srfi N is supported by Gauche.)
 * Comparators::                 srfi-114
 * Simple adjustable-size strings::  srfi-118
 * Timer APIs::                  srfi-120
+* Titlecase procedures::        srfi-129
 * Cursor-based string library::  srfi-130
 * String library (reduced)::    srfi-152
 * First-class dynamic extents::  srfi-154
@@ -6371,7 +6372,7 @@ rather than @code{string-replace}.
 
 
 @c ----------------------------------------------------------------------
-@node Timer APIs, Cursor-based string library, Simple adjustable-size strings, Library modules - SRFIs
+@node Timer APIs, Titlecase procedures, Simple adjustable-size strings, Library modules - SRFIs
 @section @code{srfi-120} - Timer APIs
 @c NODE タイマーAPI, @code{srfi-120} - タイマーAPI
 
@@ -6631,7 +6632,32 @@ Gaucheでは時間差オブジェクトは@code{time-duration}型の@code{<time>
 
 
 @c ----------------------------------------------------------------------
-@node Cursor-based string library, String library (reduced), Timer APIs, Library modules - SRFIs
+@node Titlecase procedures, Cursor-based string library, Timer APIs, Library modules - SRFIs
+@section @code{srfi-129} - Titlecase procedures
+@c NODE Titlecase手続き, @code{srfi-129} - Titlecase手続き
+
+@deftp {Module} srfi-129
+@mdindex srfi-129
+This srfi defines 3 procedures handling titlecase of characters.
+All of the procedures are supported by Gauche, and this module
+serves as a compatiblity interface.
+
+These two procedures are built-in (@pxref{Characters}):
+@example
+char-title-case?
+char-titlecase
+@end example
+
+The following procedure is provided in @code{gauche.unicode}
+(@pxref{Unicode utilities}).
+@example
+string-titlecase
+@end example
+
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Cursor-based string library, String library (reduced), Titlecase procedures, Library modules - SRFIs
 @section @code{srfi-130} - Cursor-based string library
 @c NODE カーソルを使う文字列ライブラリ, @code{srfi-130} - カーソルを使う文字列ライブラリ
 

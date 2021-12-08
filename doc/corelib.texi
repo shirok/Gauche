@@ -7890,7 +7890,8 @@ R7RSではこれらの手続きは@code{(scheme char)}ライブラリにあり�
 @defunx char-whitespace? char
 @defunx char-upper-case? char
 @defunx char-lower-case? char
-[R7RS char]
+@defunx char-title-case? char
+[R7RS char][SRFI-129]
 @c EN
 Returns true if a character @var{char} is an alphabetic character
 (Unicode character category @code{Lu}, @code{Ll}, @code{Lt},
@@ -7904,7 +7905,9 @@ an upper case character
 or a lower case character
 (Unicode character category @code{Ll}), respectively.
 
-In R7RS, these procedures are in the @code{(scheme char)} library.
+In R7RS, these procedures except @code{char-title-case?}
+are in the @code{(scheme char)} library,
+while @code{char-title-case?} is defined in SRFI-129.
 @c JP
 文字@var{char}がそれぞれアルファベット
 (Unicode文字カテゴリ @code{Lu}、@code{Ll}、@code{Lt}、
@@ -7914,7 +7917,9 @@ In R7RS, these procedures are in the @code{(scheme char)} library.
 大文字 (Unicode文字カテゴリ @code{Lu})、
 小文字 (Unicode文字カテゴリ @code{Ll})の時に真の値を返します。
 
-R7RSではこれらの手続きは@code{(scheme char)}ライブラリにあります。
+R7RSでは@code{char-title-case?}以外の手続きは
+@code{(scheme char)}ライブラリにあります。
+@code{char-title-case?}はSRFI-129で定義されます。
 @c COMMON
 @end defun
 
@@ -8087,7 +8092,7 @@ Gaucheの内部文字エンコーディングがUTF-8でない場合、
 @defunx char-downcase char
 @defunx char-titlecase char
 @defunx char-foldcase char
-[R7RS char]
+[R7RS char][SRFI-129]
 @c EN
 Returns the upper case, lower case, title case and folded case of
 @var{char}, respectively.
@@ -8101,8 +8106,10 @@ small y with diaresis (U+00ff) maps to capital y with diaeresis
 (U+0178) if the internal encoding is utf-8, but it is no-op if
 the internal encoding is none.
 
-R7RS doesn't have @code{char-titlecase}; other three procedures are
-defined in the @code{(scheme char)} library.  R6RS defines all of them.
+R7RS defines @code{char-upcase}, @code{char-downcase}, and
+@code{char-foldcase} in the @code{(scheme char)} library,
+while @code{char-titlecase} is defined in SRFI-129.
+R6RS defines all of them.
 @c JP
 @var{char}の大文字、小文字、titlecase、foldcaseを
 それぞれ返します。
@@ -8115,8 +8122,10 @@ small y with diaresis (U+00ff) をupcaseすると、
 内部エンコーディングがutf-8の場合はcapital y with diaeresis (U+0178)にマップされますが、
 内部エンコーディングがnoneであれば元の文字がそのまま返されます。
 
-R7RSは@code{char-titlecase}を定義していません。それ以外の3つの手続きは
-@code{(scheme char)}ライブラリにあります。R6RSは全ての手続きを提供しています。
+R7RSは@code{(scheme char)}ライブラリで、@code{char-upcase}、
+@code{char-downcase}、@code{char-foldcase}を定義しています。
+@code{char-titlecase}はSRFI-129で定義されます。
+R6RSは全ての手続きを提供しています。
 @c COMMON
 
 @c EN
