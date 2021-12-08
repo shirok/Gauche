@@ -88,6 +88,7 @@
   ((registers :init-form '())                 ; (<List> (</> <reg> <const>))
    (regmap :init-form (make-hash-table 'eq?)) ; lvar -> <reg>
    (cstmap :init-form (make-hash-table 'equal?)) ; const -> <const>
+   (input-regs :init-value '())               ; <reg>s to receive args
    (blocks :init-value '())                   ; basic blocks
    (parent :init-keyword :parent)             ; parent benv
    (children :init-value '())))
@@ -103,7 +104,10 @@
 ;; Registers and constatns.
 (define-class <reg> ()
   ((lvar :init-keyword :lvar)           ; source LVAR; can be #f
-   (name :init-keyword :name)))         ; given temporary name
+   (name :init-keyword :name)           ; given temporary name
+   (blocks :init-value '())             ; BBs using this register.
+   ))
+
 (define-method write-object ((reg <reg>) port)
   (if-let1 lvar (~ reg'lvar)
     (format port "#<reg ~a(~a)>" (~ reg'name) (lvar-name lvar))
@@ -114,13 +118,21 @@
     (or (hash-table-get (~ benv'regmap) lvar #f)
         (and-let1 parent (~ benv'parent)
           (lookup parent lvar))))
-  (or (lookup (~ bb'benv) lvar)
-      (let1 name (string->symbol (format "%~d.~d~a" (benv-depth (~ bb'benv))
+  (if-let1 reg (lookup (~ bb'benv) lvar)
+    (touch-reg! bb reg)
+    (let* ([symname (and lvar (unwrap-syntax (lvar-name lvar)))]
+           [name (string->symbol (format "%~d.~d~a" (benv-depth (~ bb'benv))
                                          (length (~ bb'benv'registers))
-                                         (if lvar #".~(lvar-name lvar)" "")))
-        (rlet1 r (make <reg> :name name :lvar lvar)
-          (push! (~ bb'benv'registers) r)
-          (when lvar (hash-table-put! (~ bb'benv'regmap) lvar r))))))
+                                         (if symname #".~symname" "")))])
+      (rlet1 reg (make <reg> :name name :lvar lvar)
+        (push! (~ bb'benv'registers) reg)
+        (push! (~ reg'blocks) bb)
+        (when lvar (hash-table-put! (~ bb'benv'regmap) lvar reg))))))
+
+(define (touch-reg! bb reg)
+  (when (and (is-a? reg <reg>) (not (memq bb (~ reg'blocks))))
+    (push! (~ reg'blocks) bb))
+  reg)
 
 ;; For constant, we box the value, in case if it is #<undef>.
 (define-class <const> ()                ; constant register
@@ -215,6 +227,7 @@
   (receive (bb val0) (pass5b/rec ($if-test iform) bb benv 'normal)
     (let ([then-bb (make-bb benv bb)]
           [else-bb (make-bb benv bb)])
+      (touch-reg! bb val0)
       (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
       (receive (tbb tval0) (pass5b/rec ($if-then iform) then-bb benv ctx)
         (receive (ebb eval0) (pass5b/rec ($if-else iform) else-bb benv ctx)
@@ -229,9 +242,11 @@
             [(normal)
              (let* ([cbb (make-bb benv tbb ebb)]
                     [r (make-reg cbb #f)])
-               (when tval0 (push-insn tbb `(MOV ,r ,tval0)))
+               (when tval0
+                 (touch-reg! tbb tval0) (push-insn tbb `(MOV ,r ,tval0)))
                (push-insn tbb `(JP ,cbb))
-               (when eval0 (push-insn ebb `(MOV ,r ,eval0)))
+               (when eval0
+                 (touch-reg! ebb eval0) (push-insn ebb `(MOV ,r ,eval0)))
                (push-insn ebb `(JP ,cbb))
                (values cbb r))]))))))
 
@@ -257,6 +272,8 @@
   (let* ([lbenv (make-benv benv)]
          [lbb (make-bb lbenv)]
          [reg (make-reg bb #f)])
+    (set! (~ lbenv'input-regs)
+          (map (cut make-reg lbb <>) ($lambda-lvars iform)))
     (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb lbenv 'tail)
       (push-insn bb `(CLOSE ,reg ,lbb))
       (pass5b/return bb ctx reg))))
@@ -308,7 +325,10 @@
              [label ($lambda-body proc)]  ; $LABEL mode
              [lbb (make-bb benv bb)])
         (for-each (^[reg lvar]
-                    (push-insn bb `(MOV ,(make-reg bb lvar) ,reg)))
+                    (touch-reg! bb reg)
+                    (let1 lreg (make-reg bb lvar)
+                      (unless (eq? lreg reg)
+                        (push-insn bb `(MOV ,lreg ,reg)))))
                   regs ($lambda-lvars proc))
         (push-insn bb `(JP ,lbb))
         ($label-label-set! label lbb)
@@ -320,8 +340,12 @@
              [label ($lambda-body proc)]      ; $LABEL node
              [lbb ($label-label label)])
         (for-each (^[reg lvar]
-                    (push-insn bb `(MOV ,(make-reg bb lvar) ,reg)))
+                    (touch-reg! bb reg)
+                    (let1 lreg (make-reg bb lvar)
+                      (unless (eq? lreg reg)
+                        (push-insn bb `(MOV ,lreg ,reg)))))
                   regs ($lambda-lvars proc))
+        (link-bb bb lbb)
         (push-insn bb `(JP ,lbb))
         (values lbb #f))))                 ;dummy
   (define (normal-call cont-bb cont-reg)
@@ -429,22 +453,25 @@
 ;; For debugging
 ;;
 
-(define (dump-bb bb :optional (port (current-output-port)))
-  (define bb-alist '())  ;; ((bb . N) ...)
+(define (dump-benv benv :optional (port (current-output-port)))
+  (define benv-alist '()) ;; ((benv . N) ...)
+  (define bb-alist '())   ;; ((bb . N) ...)
   (define (bb-num bb)
     (if-let1 p (assq bb bb-alist)
       (cdr p)
       (rlet1 n (length bb-alist)
         (push! bb-alist (cons bb n)))))
   (define (bbname bb)
-    (unless (memq bb bb-shown) (push! bb-toshow bb))
     (if (~ bb'entry?)
       #"BB#~(bb-num bb)!"
       #"BB#~(bb-num bb)"))
-  (define bb-shown '())
-  (define bb-toshow (list bb))
+  (define (regname reg)
+    (if (is-a? reg <reg>)
+      (if (length>? (~ reg'blocks) 1)
+        (string->symbol #"~(~ reg'name)*")
+        (~ reg'name))
+      reg))
   (define (dump-insn insn)
-    (define (regname reg) (if (is-a? reg <reg>) (~ reg'name) reg))
     (match insn
       [((or 'MOV 'BREF 'BSET) d s)
        (format port "  ~s\n" `(,(car insn) ,(regname d) ,(regname s)))]
@@ -468,17 +495,18 @@
        (format port "  (DEF ~a#~a ~s ~s)\n" (~ id'module'name) (~ id'name)
                flags (regname reg))]
       [_ (format port "??~s\n" insn)]))
-  (define (dump-1 bb)
-    (unless (memq bb bb-shown)
-      (push! bb-shown bb)
-      (format port "~a\n" (bbname bb))
-      (format port "    Up: ~s\n" (map bb-num (~ bb'upstream)))
-      (format port "    Dn: ~s\n" (map bb-num (~ bb'downstream)))
-      (for-each dump-insn (reverse (~ bb'insns)))))
-  (let loop ()
-    (unless (null? bb-toshow)
-      (dump-1 (pop! bb-toshow))
-      (loop))))
+  (define (dump-bb bb)
+    (format port "~a\n" (bbname bb))
+    (format port "    ~s → * → ~s\n"
+            (map bb-num (reverse (~ bb'upstream)))
+            (map bb-num (reverse (~ bb'downstream))))
+    (for-each dump-insn (reverse (~ bb'insns))))
+  (define (dump-1 benv)
+    (format port "BENV ~a ============================================\n" benv)
+    (format port "   args: ~s\n" (map regname (~ benv'input-regs)))
+    (for-each dump-bb (reverse (~ benv'blocks)))
+    (for-each dump-1 (reverse (~ benv'children))))
+  (dump-1 benv))
 
 ;; For now
 (define (compile-b program)
@@ -489,4 +517,4 @@
            [bb (pass5b iform benv)])
       ;;(write (~ benv'registers)) (newline)
       (simplify-bbs! benv)
-      (dump-bb bb))))
+      (dump-benv benv))))
