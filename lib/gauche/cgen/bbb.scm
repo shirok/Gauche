@@ -85,18 +85,21 @@
 ;; Block environment.  Keep track of allocated registers and blocks
 ;; per compile unit (usually each toplevel form)
 (define-class <benv> ()
-  ((registers :init-form '())                 ; (<List> (</> <reg> <const>))
+  ((name :init-keyword :name)                 ; possible name (for info)
+   (registers :init-form '())                 ; (<List> (</> <reg> <const>))
    (regmap :init-form (make-hash-table 'eq?)) ; lvar -> <reg>
    (cstmap :init-form (make-hash-table 'equal?)) ; const -> <const>
    (input-regs :init-value '())               ; <reg>s to receive args
+   (entry :init-value #f)                     ; entry BB
    (blocks :init-value '())                   ; basic blocks
    (parent :init-keyword :parent)             ; parent benv
    (children :init-value '())))
 
-(define (make-benv parent)
-  (rlet1 benv (make <benv> :parent parent)
+(define (make-benv parent name)
+  (rlet1 benv (make <benv> :parent parent :name name)
     (when parent
-      (push! (~ parent'children) benv))))
+      (push! (~ parent'children) benv))
+    (set! (~ benv'entry) (make-bb benv))))
 
 (define (benv-depth benv)               ; used for register naming
   (if-let1 p (~ benv'parent) (+ (benv-depth p) 1) 0))
@@ -196,7 +199,7 @@
 
 ;; Returns the entry basic block
 (define (pass5b iform benv)
-  (rlet1 entry-bb (make-bb benv)
+  (rlet1 entry-bb (~ benv'entry)
     (pass5b/rec iform entry-bb benv 'tail)))
 
 ;; Wrap the tail expr with this, to add RET.
@@ -302,13 +305,13 @@
       (pass5b/rec ($receive-body iform) bb benv ctx))))
 
 (define (pass5b/$LAMBDA iform bb benv ctx)
-  (let* ([lbenv (make-benv benv)]
-         [lbb (make-bb lbenv)]
+  (let* ([lbenv (make-benv benv ($lambda-name iform))]
+         [lbb (~ lbenv'entry)]
          [reg (make-reg bb #f)])
     (set! (~ lbenv'input-regs)
           (map (cut make-reg lbb <>) ($lambda-lvars iform)))
     (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb lbenv 'tail)
-      (push-insn bb `(CLOSE ,reg ,lbb))
+      (push-insn bb `(CLOSE ,reg ,lbenv))
       (pass5b/return bb ctx reg))))
 
 (define (pass5b/$LABEL iform bb benv ctx)
@@ -517,6 +520,8 @@
 
 (define (dump-benv benv :optional (port (current-output-port)))
   (define benv-alist '()) ;; ((benv . N) ...)
+  (define (benvname benv)
+    #"~(assq-ref benv-alist benv).~(~ benv'name)")
   (define (regname reg)
     (if (is-a? reg <reg>)
       (if (length>? (~ reg'blocks) 1)
@@ -530,8 +535,8 @@
       [((or 'LD 'ST) reg id)
        (format port "  (~s ~s ~a#~a)\n" (car insn) (regname reg)
                (~ id'module'name) (~ id'name))]
-      [('CLOSE reg bb)
-       (format port "  (CLOSE ~s ~a)\n" (regname reg) (bb-name bb))]
+      [('CLOSE reg benv)
+       (format port "  (CLOSE ~s BENV#~a)\n" (regname reg) (benvname benv))]
       [('BR reg bb1 bb2)
        (format port "  (BR ~s ~a ~a)\n"
                (regname reg) (bb-name bb1) (bb-name bb2))]
@@ -555,18 +560,27 @@
             (map (cut ~ <> 'id) (reverse (~ bb'downstream))))
     (for-each dump-insn (reverse (~ bb'insns))))
   (define (dump-1 benv)
-    (format port "BENV ~a ============================================\n" benv)
+    (let1 n (x->string (benvname benv))
+      (format port "BENV ~a ~a\n"
+              n (make-string (- 65 (string-length n)) #\=)))
     (format port "   args: ~s\n" (map regname (~ benv'input-regs)))
     (for-each dump-bb (reverse (~ benv'blocks)))
     (for-each dump-1 (reverse (~ benv'children))))
+  (define (assign-benv-names benv)
+    (push! benv-alist (cons benv (length benv-alist)))
+    (for-each assign-benv-names (reverse (~ benv'children))))
+  (assign-benv-names benv)
   (dump-1 benv))
 
 ;; For now
-(define (compile-b program)
+(define (compile-to-basic-blocks program)
   (let* ([cenv (make-bottom-cenv (vm-current-module))]
          [iform (pass2-4 (pass1 program cenv) (cenv-module cenv))])
     (pp-iform iform)
-    (let* ([benv (make-benv #f)]
+    (let* ([benv (make-benv #f '%toplevel)]
            [bb (pass5b iform benv)])
       (simplify-bbs! benv)
-      (dump-benv benv))))
+      benv)))
+
+(define (compile-b program)
+  (dump-benv (compile-to-basic-blocks program)))
