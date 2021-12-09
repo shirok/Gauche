@@ -151,15 +151,18 @@
 
 ;; Basic blocks
 (define-class <basic-block> ()
-  ((insns      :init-value '())         ; list of instructions
+  ((id         :init-keyword :id)       ; unique id within benv
+   (insns      :init-value '())         ; list of instructions (reversed)
    (upstream   :init-keyword :upstream) ; list of upstream blocks
    (downstream :init-value '())         ; list of downstream blocks
    (benv       :init-keyword :benv)
    (entry?     :init-value #f)          ; #t if this BB is entered from outside
    ))
 
+
 (define (make-bb benv . upstreams)
-  (rlet1 bb (make <basic-block> :benv benv :upstream upstreams)
+  (rlet1 bb (make <basic-block>
+              :benv benv :upstream upstreams :id (length (~ benv'blocks)))
     (when (null? upstreams)
       (set! (~ bb'entry?) #t))
     (dolist [ubb upstreams]
@@ -170,8 +173,18 @@
   (push! (~ from-bb'downstream) to-bb)
   (push! (~ to-bb'upstream) from-bb))
 
+(define (bb-name bb)                    ;for debug dump
+  (format "BB#~s~a" (~ bb'id) (if (~ bb'entry?) "!" "")))
+
 (define (push-insn bb insn)
   (push! (~ bb'insns) insn))
+
+;; A 'complete' basic block is the one thats ends with either
+;; CALL, BR, JP or RET insn.
+(define (bb-complete? bb)
+  (match (~ bb'insns)
+    [(((or 'CALL 'BR 'JP 'RET) . _) . _) #t]
+    [_ #f]))
 
 ;;
 ;; Conversion to basic blocks
@@ -234,21 +247,41 @@
           (case ctx
             [(tail)
              (values tbb tval0)] ; it doesn't really matter
-            [(stmt)
-             (let1 cbb (make-bb benv tbb ebb)
-               (push-insn tbb `(JP ,cbb))
-               (push-insn ebb `(JP ,cbb))
-               (values cbb #f))]
-            [(normal)
-             (let* ([cbb (make-bb benv tbb ebb)]
-                    [r (make-reg cbb #f)])
-               (when tval0
-                 (touch-reg! tbb tval0) (push-insn tbb `(MOV ,r ,tval0)))
-               (push-insn tbb `(JP ,cbb))
-               (when eval0
-                 (touch-reg! ebb eval0) (push-insn ebb `(MOV ,r ,eval0)))
-               (push-insn ebb `(JP ,cbb))
-               (values cbb r))]))))))
+            [(stmt normal)
+             (if (bb-complete? tbb)
+               (if (bb-complete? ebb)
+                 (values tbb #f) ; it doesn't really matter
+                 (let* ([cbb (make-bb benv ebb)]
+                        [r (and (eq? ctx 'normal) eval0
+                                (rlet1 r (make-reg cbb #f)
+                                  (touch-reg! ebb eval0)
+                                  (touch-reg! ebb r)
+                                  (push-insn ebb `(MOV ,r ,eval0))))])
+                   (push-insn ebb `(JP ,cbb))
+                   (values cbb r)))
+               (if (bb-complete? ebb)
+                 (let* ([cbb (make-bb benv tbb)]
+                        [r (and (eq? ctx 'normal) tval0
+                                (rlet1 r (make-reg cbb #f)
+                                  (touch-reg! tbb tval0)
+                                  (touch-reg! tbb r)
+                                  (push-insn tbb `(MOV ,r ,tval0))))])
+                   (push-insn ebb `(JP ,cbb))
+                   (values cbb r))
+                 (let* ([cbb (make-bb benv tbb ebb)]
+                        [r (and (eq? ctx 'normal)
+                                (make-reg cbb #f))])
+                   (when (and (eq? ctx 'normal) tval0)
+                     (touch-reg! tbb tval0)
+                     (touch-reg! tbb r)
+                     (push-insn tbb `(MOV ,r ,tval0)))
+                   (push-insn tbb `(JP ,cbb))
+                   (when (and (eq? ctx 'normal) eval0)
+                     (touch-reg! ebb eval0)
+                     (touch-reg! ebb r)
+                     (push-insn ebb `(MOV ,r ,eval0)))
+                   (push-insn ebb `(JP ,cbb))
+                   (values cbb r))))]))))))
 
 (define (pass5b/$LET iform bb benv ctx)
   (let loop ([bb bb]
@@ -280,7 +313,7 @@
 
 (define (pass5b/$LABEL iform bb benv ctx)
   ;; NB: $label-label is #f at the end of pass4.  We assume that, and use
-  ;; it to keep <basic-block> once we assigne one.
+  ;; it to keep <basic-block> once we assign one.
   (if-let1 cbb ($label-label iform)
     (begin (link-bb bb cbb)
            (push-insn bb `(JP ,cbb))
@@ -301,14 +334,18 @@
           (loop bb (cdr iforms)))))))
 
 ;; Used by $CALL, $ASM and $BUILTIN nodes.  Returns bb and list of regs.
-;; If ues-val0? is true, the last reg may be %VAL0.
+;; If use-val0? is true, the last reg may be %VAL0.
 (define (pass5b/prepare-args bb benv args :optional (use-val0? #f))
   (if (null? args)
     (values bb '())
     (let loop ([bb bb] [args args] [regs '()])
       (if (null? (cdr args))
         (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
-          (values bb (reverse (cons reg regs))))
+          (let1 reg (if (eq? reg '%VAL0)
+                      (rlet1 reg (make-reg bb #f)
+                        (push-insn bb `(MOV ,reg %VAL0)))
+                      reg)
+            (values bb (reverse (cons reg regs)))))
         (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
           (if (eq? reg '%VAL0)
             (let1 reg (make-reg bb #f)
@@ -352,6 +389,7 @@
     (when cont-bb (set! (~ cont-bb'entry?) #t))
     (receive (bb regs) (pass5b/prepare-args bb benv ($call-args iform))
       (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
+        (for-each (cut touch-reg! bb <>) regs)
         (push-insn bb `(CALL ,proc ,@regs))
         (values (or cont-bb bb) cont-reg))))
   (case ($call-flag iform)
@@ -388,11 +426,13 @@
 (define (pass5b/builtin-twoargs op iform bb benv ctx)
   (receive (bb regs)
       (pass5b/prepare-args bb benv (list ($*-arg0 iform) ($*-arg1 iform)) #t)
+    (for-each (cut touch-reg! bb <>) regs)
     (push-insn bb `(BUILTIN ,op ,@regs))
     (pass5b/return bb ctx '%VAL0)))
 
 (define (pass5b/$LIST->VECTOR iform bb benv ctx)
   (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
+    (touch-reg! bb reg0)
     (push-insn bb `(BUILTIN LIST->VECTOR ,reg0))
     (pass5b/return bb ctx '%VAL0)))
 
@@ -405,6 +445,7 @@
 
 (define (pass5b/builtin-nargs op iform bb benv ctx)
   (receive (bb regs) (pass5b/prepare-args bb benv ($*-args iform) #t)
+    (for-each (cut touch-reg! bb <>) regs)
     (push-insn bb `(BUILTIN ,op ,@(reverse regs)))
     (pass5b/return bb ctx '%VAL0)))
 
@@ -421,16 +462,28 @@
 (define (simplify-bbs! benv)
   (define (skip-jp-insn! bb intermediate dest)
     (match (car (~ bb'insns))
-      [('JP _) (set-car! (~ bb'insns) `(JP ,dest))]
+      [('JP _)
+       (set-car! (~ bb'insns) `(JP ,dest))
+       (link-bb bb dest)]
       [('BR t a b)
        (cond
-        [(eq? a intermediate) (set-car! (~ bb'insns) `(BR ,t ,dest ,b))]
-        [(eq? b intermediate) (set-car! (~ bb'insns) `(BR ,t ,a ,dest))]
+        [(eq? a intermediate)
+         (set-car! (~ bb'insns) `(BR ,t ,dest ,b))
+         (link-bb bb dest)]
+        [(eq? b intermediate)
+         (set-car! (~ bb'insns) `(BR ,t ,a ,dest))
+         (link-bb bb dest)]
         [else (error "[internal] Something wrong - can't swap:"
                      (list a b intermediate dest))])]
       [x (error "[internal] Something wrong - can't swap with " x)]))
+  (define (swap-jp-to-ret! bb intermediate reg)
+    (match (car (~ bb'insns))
+      [('JP _) (set-car! (~ bb'insns) `(RET ,reg)) #t]
+      [_ #f]))
   (define (erase-downstream! bb down)
     (update! (~ bb'downstream) (^[bbs] (delete down bbs))))
+  (define (erase-upstream! bb up)
+    (update! (~ bb'upstream) (^[bbs] (delete up bbs))))
   (define (remove-bb! bb)
     (update! (~ bb'benv'blocks) (^[blocks] (delete bb blocks))))
   (define (check-bb bb)
@@ -442,7 +495,16 @@
            (dolist [u (~ bb'upstream)]
              (erase-downstream! u bb)
              (skip-jp-insn! u bb dest))
+           (dolist [d (~ bb'downstream)]
+             (erase-upstream! d bb))
            (remove-bb! bb)]
+          [('RET reg)
+           (dolist [u (~ bb'upstream)]
+             (when (swap-jp-to-ret! u bb reg)
+               (erase-downstream! u bb)
+               (erase-upstream! bb u)))
+           (when (null? (~ bb'upstream))
+             (remove-bb! bb))]
           [_ #f]))))
   (define (scan benv)
     (for-each check-bb (~ benv'blocks))
@@ -455,16 +517,6 @@
 
 (define (dump-benv benv :optional (port (current-output-port)))
   (define benv-alist '()) ;; ((benv . N) ...)
-  (define bb-alist '())   ;; ((bb . N) ...)
-  (define (bb-num bb)
-    (if-let1 p (assq bb bb-alist)
-      (cdr p)
-      (rlet1 n (length bb-alist)
-        (push! bb-alist (cons bb n)))))
-  (define (bbname bb)
-    (if (~ bb'entry?)
-      #"BB#~(bb-num bb)!"
-      #"BB#~(bb-num bb)"))
   (define (regname reg)
     (if (is-a? reg <reg>)
       (if (length>? (~ reg'blocks) 1)
@@ -479,10 +531,11 @@
        (format port "  (~s ~s ~a#~a)\n" (car insn) (regname reg)
                (~ id'module'name) (~ id'name))]
       [('CLOSE reg bb)
-       (format port "  (CLOSE ~s ~a)\n" (regname reg) (bbname bb))]
+       (format port "  (CLOSE ~s ~a)\n" (regname reg) (bb-name bb))]
       [('BR reg bb1 bb2)
-       (format port "  (BR ~s ~a ~a)\n" (regname reg) (bbname bb1) (bbname bb2))]
-      [((or 'JP 'CONT) bb)  (format port "  (~s ~a)\n" (car insn) (bbname bb))]
+       (format port "  (BR ~s ~a ~a)\n"
+               (regname reg) (bb-name bb1) (bb-name bb2))]
+      [((or 'JP 'CONT) bb)  (format port "  (~s ~a)\n" (car insn) (bb-name bb))]
       [((or 'CALL 'RET) . regs)
        (format port "  ~s\n" `(,(car insn) ,@(map regname regs)))]
       [('ASM insn . args)
@@ -496,10 +549,10 @@
                flags (regname reg))]
       [_ (format port "??~s\n" insn)]))
   (define (dump-bb bb)
-    (format port "~a\n" (bbname bb))
+    (format port "~a\n" (bb-name bb))
     (format port "    ~s → * → ~s\n"
-            (map bb-num (reverse (~ bb'upstream)))
-            (map bb-num (reverse (~ bb'downstream))))
+            (map (cut ~ <> 'id) (reverse (~ bb'upstream)))
+            (map (cut ~ <> 'id) (reverse (~ bb'downstream))))
     (for-each dump-insn (reverse (~ bb'insns))))
   (define (dump-1 benv)
     (format port "BENV ~a ============================================\n" benv)
@@ -515,6 +568,5 @@
     (pp-iform iform)
     (let* ([benv (make-benv #f)]
            [bb (pass5b iform benv)])
-      ;;(write (~ benv'registers)) (newline)
       (simplify-bbs! benv)
       (dump-benv benv))))
