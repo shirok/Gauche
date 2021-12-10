@@ -58,8 +58,6 @@
 ;;
 ;; (MOV dreg sreg)     - dreg <- sreg
 ;; (MOV* r o (dreg ...) sreg) - mv bind (details TBD)
-;; (BREF dreg sreg)    - dreg <- (box-ref sreg)
-;; (BSET dreg sreg)    - (box-set! dreg sreg)
 ;; (LD reg identifier) - global load
 ;; (ST reg identifier) - global store
 ;; (CLOSE reg bb)      - make a closure with current env and a basic block BB,
@@ -77,6 +75,10 @@
 ;;
 ;; (DEF id flags reg)  - insert global binding of ID in the current module
 ;;                       with the value in REG.
+;;
+;;  reg is either <reg>, <const> or %VAL0.  If it is <reg>, it can be 'boxed',
+;;  meaning we have one indirection to the shared box.
+;;  register is destination position is always <reg>.
 
 ;; Basic blocks:
 ;;   First, we convert IForm to a DG of basic blocks (BBs).
@@ -90,6 +92,11 @@
    (regmap :init-form (make-hash-table 'eq?)) ; lvar -> <reg>
    (cstmap :init-form (make-hash-table 'equal?)) ; const -> <const>
    (input-regs :init-value '())               ; <reg>s to receive args
+   (input-reqargs :init-value #f)             ; # of required args.
+                                              ;  #f if this is not a closure
+                                              ;  (- (length input-regs) 1) if
+                                              ;  closure takes rest args.
+                                              ;  (length input-regs) otherwise.
    (entry :init-value #f)                     ; entry BB
    (blocks :init-value '())                   ; basic blocks
    (parent :init-keyword :parent)             ; parent benv
@@ -108,6 +115,7 @@
 (define-class <reg> ()
   ((lvar :init-keyword :lvar)           ; source LVAR; can be #f
    (name :init-keyword :name)           ; given temporary name
+   (boxed :init-value #f)               ; #t if this reg should be in a box
    (blocks :init-value '())             ; BBs using this register.
    ))
 
@@ -136,6 +144,10 @@
   (when (and (is-a? reg <reg>) (not (memq bb (~ reg'blocks))))
     (push! (~ reg'blocks) bb))
   reg)
+
+(define (mark-reg-boxed! reg) (set! (~ reg'boxed) #t))
+(define (reg-boxed? reg) (~ reg'boxed))
+
 
 ;; For constant, we box the value, in case if it is #<undef>.
 (define-class <const> ()                ; constant register
@@ -293,6 +305,8 @@
     (if (null? vars)
       (pass5b/rec ($let-body iform) bb benv ctx)
       (let1 reg (make-reg bb (car vars))
+        (when (memq ($let-type iform) '(rec rec*))
+          (mark-reg-boxed! reg))
         (receive (bb val0) (pass5b/rec (car inits) bb benv 'normal)
           (push-insn bb `(MOV ,reg ,val0))
           (loop bb (cdr vars) (cdr inits)))))))
@@ -310,6 +324,7 @@
          [reg (make-reg bb #f)])
     (set! (~ lbenv'input-regs)
           (map (cut make-reg lbb <>) ($lambda-lvars iform)))
+    (set! (~ lbenv'input-reqargs) ($lambda-reqargs iform))
     (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb lbenv 'tail)
       (push-insn bb `(CLOSE ,reg ,lbenv))
       (pass5b/return bb ctx reg))))
@@ -530,7 +545,7 @@
       reg))
   (define (dump-insn insn)
     (match insn
-      [((or 'MOV 'BREF 'BSET) d s)
+      [('MOV d s)
        (format port "  ~s\n" `(,(car insn) ,(regname d) ,(regname s)))]
       [((or 'LD 'ST) reg id)
        (format port "  (~s ~s ~a#~a)\n" (car insn) (regname reg)
