@@ -81,7 +81,7 @@ SCMFILES = \
        gauche/signal.scm gauche/numerical.scm gauche/let-opt.scm \
        gauche/logical.scm \
        gauche/vm/debugger.scm gauche/vm/insn-core.scm gauche/vm/insn.scm \
-       gauche/vm/profiler.scm \
+       gauche/vm/profiler.scm gauche/vm/register-machine.scm \
        gauche/pputil.scm gauche/procedure.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
        gauche/parseopt.scm gauche/interactive.scm gauche/interactive/info.scm \
