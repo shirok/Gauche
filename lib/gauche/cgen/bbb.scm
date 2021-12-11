@@ -464,7 +464,7 @@
 (define (pass5b/builtin-nargs op iform bb benv ctx)
   (receive (bb regs) (pass5b/prepare-args bb benv ($*-args iform) #t)
     (for-each (cut touch-reg! bb <>) regs)
-    (push-insn bb `(BUILTIN ,op ,@(reverse regs)))
+    (push-insn bb `(BUILTIN ,op ,@regs))
     (pass5b/return bb ctx '%VAL0)))
 
 (define (pass5b/$IT iform bb benv ctx)

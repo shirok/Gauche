@@ -32,7 +32,7 @@
 ;;;
 
 ;; This module interprets the output of basic-block backend (gauche.cgen.bbb)
-;; for testing the backend.  Not for practical use---especially, performance
+;; for testing.  Not for practical use---especially, performance
 ;; is not considered.
 
 (define-module gauche.vm.register-machine
@@ -43,9 +43,9 @@
   (export run-on-register-machine))
 (select-module gauche.vm.register-machine)
 
-(define (run-on-register-machine program)
-  (let1 benv (compile-to-basic-blocks program)
-    (dump-benv benv)
+;; API
+(define (run-on-register-machine program :optional (mod (vm-current-module)))
+  (let1 benv (compile-to-basic-blocks program mod)
     (execute-basic-blocks benv)))
 
 (define (execute-basic-blocks benv)
@@ -107,8 +107,8 @@
       [(('RET reg) . _)
        (reg-ref reg)]
       [(('DEF id flags reg) . insns)
-       (%insert-binding (~ id'module) (~ id'name) flags)
-       (loop insns #f)]
+       (%insert-binding (~ id'module) (~ id'name) (reg-ref reg) flags)
+       (loop insns id)]
       [(('ASM op . args) . insns)
        (loop insns (run-asm benv regs op args val0))]
       [(('BUILTIN op . args) . insns)
@@ -144,22 +144,56 @@
 (define (run-asm benv regs op args val0)
   (define-reg-ref reg-ref regs val0)
   (case (~ (vm-find-insn-info (car op))'name)
+    [(NULLP)   (null? (reg-ref (car args)))]
+    [(PAIRP)   (pair? (reg-ref (car args)))]
+    [(CAR)     (car (reg-ref (car args)))]
+    [(CDR)     (cdr (reg-ref (car args)))]
+    [(CAAR)    (caar (reg-ref (car args)))]
+    [(CADR)    (cadr (reg-ref (car args)))]
+    [(CDAR)    (cdar (reg-ref (car args)))]
+    [(CDDR)    (cddr (reg-ref (car args)))]
+    [(CONS)    (cons (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(LIST)    (map reg-ref args)]
+    [(LIST*)   (apply list* (map reg-ref args))]
+    [(LENGTH)  (length (reg-ref (car args)))]
+    [(APPEND)  (append (map reg-ref args))]
+    [(REVERSE) (apply reverse (map reg-ref args))]
+    [(MEMQ)    (memq (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(MEMV)    (memv (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(ASSQ)    (assq (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(ASSV)    (assv (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMADD2) (+ (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(NUMSUB2) (- (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMSUB2) (- (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMMUL2) (* (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMDIV2) (/ (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(NUMMODI) (modulo (reg-ref (car args)) (cadr op))]
+    [(NUMREMI) (remainder (reg-ref (car args)) (cadr op))]
+    [(NUMASHI) (ash (reg-ref (car args)) (cadr op))]
     [(NUMEQ2)  (=  (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMLT2)  (<  (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMLE2)  (<= (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMGT2)  (>  (reg-ref (car args)) (reg-ref (cadr args)))]
     [(NUMGE2)  (>= (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(NEGATE)  (- (reg-ref (car args)))]
+    [(LOGAND)  (logand (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(LOGIOR)  (logior (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(LOGXOR)  (logxor (reg-ref (car args)) (reg-ref (cadr args)))]
+    [(NOT)     (not (reg-ref (car args)))]
+    [(CURIN)   (current-input-port)]
+    [(CUROUT)  (current-output-port)]
+    [(CURERR)  (current-error-port)]
+    [(TAIL-APPLY) (apply (reg-ref (car args)) (map reg-ref (cdr args)))]
     [else => (^[opc] (error "[internal] Unsupported asm: "
                             (~ (vm-find-insn-info opc)'name)))]))
 
 (define (run-builtin benv regs op args val0)
   (define-reg-ref reg-ref regs val0)
   (match op
-    [(opc . _) (error "[internal] Unsupported builtin: " opc)]))
+    ['APPEND (apply append (map reg-ref args))]
+    ['LIST*  (apply list* (map reg-ref args))]
+    ['CONS   (cons (reg-ref (car args)) (reg-ref (cadr args)))]
+    [opc     (error "[internal] Unsupported builtin: " opc)]))
 
 ;; for debug
 (define (dump-regs regs :optional (port (current-output-port)))
