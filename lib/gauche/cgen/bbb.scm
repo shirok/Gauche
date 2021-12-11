@@ -588,10 +588,10 @@
   (dump-1 benv))
 
 ;; For now
-(define (compile-to-basic-blocks program)
-  (let* ([cenv (make-bottom-cenv (vm-current-module))]
-         [iform (pass2-4 (pass1 program cenv) (cenv-module cenv))])
-    (pp-iform iform)
+(define (compile-to-basic-blocks program :optional (mod (vm-current-module)))
+  (let* ([cenv (make-bottom-cenv mod)]
+         [iform (pass2-4 (pass1 program cenv) mod)])
+    ;(pp-iform iform)
     (let* ([benv (make-benv #f '%toplevel)]
            [bb (pass5b iform benv)])
       (simplify-bbs! benv)
