@@ -5,6 +5,7 @@ lang.scm
 optimize.scm
 control.scm
 compiler-misc.scm
+compiler-alt.scm
 debug.scm
 scripts.scm
 interactive.scm

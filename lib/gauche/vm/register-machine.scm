@@ -111,8 +111,8 @@
        (loop insns #f)]
       [(('ASM op . args) . insns)
        (loop insns (run-asm benv regs op args val0))]
-      [(('BUILTON op . args) . insns)
-       (loop insns (run-builtin benv op args val0))]
+      [(('BUILTIN op . args) . insns)
+       (loop insns (run-builtin benv regs op args val0))]
       [(x . _) (error "[intenral] Unknown insn:" x)])))
 
 (define (close-benv parent-regs benv)
@@ -126,19 +126,20 @@
       (unless (>= (length args) (~ benv'input-reqargs))
         (errorf "Too few args for closed benv ~s: at least ~s expeced, got ~s"
                 (~ benv'name) (~ benv'input-reqargs) (length args)))))
-  (dump-regs parent-regs)
-  (lambda args
+  (define (bind-input args)
     (check-input args)
-    (let loop ([args args]
-               [input (~ benv'input-regs)]
-               [n (~ benv'input-reqargs)])
-      (print n input args)
-      (cond [(null? input)]
-            [(zero? n) (hash-table-put! newregs (car input) args)]
-            [else (hash-table-put! newregs (car input) (car args))
-                  (loop (cdr args) (cdr input) (- n 1))]))
-    (dump-regs newregs)
-    (run-bb benv newregs (~ benv'entry))))
+    (rlet1 regs (hash-table-copy newregs)
+      (let loop ([args args]
+                 [input (~ benv'input-regs)]
+                 [n (~ benv'input-reqargs)])
+        (cond [(null? input)]
+              [(zero? n) (hash-table-put! regs (car input) args)]
+              [else (hash-table-put! regs (car input) (car args))
+                    (loop (cdr args) (cdr input) (- n 1))]))))
+  (lambda args
+    (let1 regs (bind-input args)
+      ;(dump-regs regs)
+      (run-bb benv regs (~ benv'entry)))))
 
 (define (run-asm benv regs op args val0)
   (define-reg-ref reg-ref regs val0)

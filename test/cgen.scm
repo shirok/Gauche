@@ -2,6 +2,8 @@
 ;; gauche.cgen.* tests
 ;;
 
+;; NB: gauche.cgen.bbb is tested in compiler-aux.scm
+
 (use gauche.test)
 (use file.util)
 (use gauche.cgen)
@@ -557,11 +559,6 @@ some_trick();
 (test-section "gauche.cgen.standalone")
 (use gauche.cgen.standalone)
 (test-module 'gauche.cgen.standalone)
-
-;;====================================================================
-(test-section "gauche.cgen.bbb")
-(use gauche.cgen.bbb)
-(test-module 'gauche.cgen.bbb)
 
 ;;====================================================================
 (test-section "gauche.cgen")
