@@ -70,8 +70,8 @@
 ;; (CALL proc arg ...) - PROC and ARGs are all registers.  Transfer control
 ;;                       to PROC.
 ;; (RET reg ...)       - Return, using values in REGs as the results.
-;; (BUILTIN op reg ...) - Builtin operation
-;; (ASM op reg ...)    - Inlined VM assembly operation
+;; (BUILTIN op receiver reg ...) - Builtin operation
+;; (ASM op receiver reg ...)    - Inlined VM assembly operation
 ;;
 ;; (DEF id flags reg)  - insert global binding of ID in the current module
 ;;                       with the value in REG.
@@ -204,6 +204,16 @@
 ;;
 ;; Conversion to basic blocks
 ;;
+;;   iform - input iform to compile (after pass4)
+;;   bb - 'current' basic block to accumulate insns
+;;   benv - current benv
+;;   ctx - expression context.
+;;
+;;  Returns two values.
+;;   - A basic block the caller should continue to emit insns (it may be
+;;     the same as the input bb, or a new one.
+;;   - A register that holds the result of expression.  It may be #f (no
+;;     result), or '%VAL0, instead of a <reg>.
 
 (define-inline (pass5b/rec iform bb benv ctx)
   ((vector-ref *pass5b-dispatch-table* (iform-tag iform))
@@ -427,8 +437,9 @@
 
 (define (pass5b/$ASM iform bb benv ctx)
   (receive (bb regs) (pass5b/prepare-args bb benv ($asm-args iform) #t)
-    (push-insn bb `(ASM ,($asm-insn iform) ,@regs))
-    (pass5b/return bb ctx '%VAL0)))
+    (let1 receiver (make-reg bb #f)
+      (push-insn bb `(ASM ,($asm-insn iform) ,receiver ,@regs))
+      (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$CONS iform bb benv ctx)
   (pass5b/builtin-twoargs 'CONS iform bb benv ctx))
@@ -445,14 +456,16 @@
   (receive (bb regs)
       (pass5b/prepare-args bb benv (list ($*-arg0 iform) ($*-arg1 iform)) #t)
     (for-each (cut touch-reg! bb <>) regs)
-    (push-insn bb `(BUILTIN ,op ,@regs))
-    (pass5b/return bb ctx '%VAL0)))
+    (let1 receiver (make-reg bb #f)
+      (push-insn bb `(BUILTIN ,op ,receiver ,@regs))
+      (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$LIST->VECTOR iform bb benv ctx)
   (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
     (touch-reg! bb reg0)
-    (push-insn bb `(BUILTIN LIST->VECTOR ,reg0))
-    (pass5b/return bb ctx '%VAL0)))
+    (let1 receiver (make-reg bb #f)
+      (push-insn bb `(BUILTIN LIST->VECTOR ,receiver ,reg0))
+      (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$VECTOR iform bb benv ctx)
   (pass5b/builtin-nargs 'VECTOR iform bb benv ctx))
@@ -464,8 +477,9 @@
 (define (pass5b/builtin-nargs op iform bb benv ctx)
   (receive (bb regs) (pass5b/prepare-args bb benv ($*-args iform) #t)
     (for-each (cut touch-reg! bb <>) regs)
-    (push-insn bb `(BUILTIN ,op ,@regs))
-    (pass5b/return bb ctx '%VAL0)))
+    (let1 receiver (make-reg bb #f)
+      (push-insn bb `(BUILTIN ,op ,receiver ,@regs))
+      (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$IT iform bb benv ctx)
   (pass5b/return bb ctx '%VAL0))
