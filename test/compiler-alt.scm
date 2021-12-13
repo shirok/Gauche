@@ -43,6 +43,13 @@
         (list (add-two (- a)) (add-one (- b)))))
   )
 
+(t "$IT node handling" #f '(2 1 #f)
+   '(begin
+      (define (foo a b c) (and a (or b c)))
+      (list (foo #t #f 2)
+            (foo #t 1 2)
+            (foo #f 3 4))))
+
 (t "letrec and loop" #f
    '(1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz 16 17
        Fizz 19 Buzz)

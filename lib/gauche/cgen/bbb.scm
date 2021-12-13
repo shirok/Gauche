@@ -261,14 +261,30 @@
 (define (pass5b/$CONST iform bb benv ctx)
   (pass5b/return bb ctx (make-const bb ($const-value iform))))
 
+;; $IF - We have these variations
+;;   Context:
+;;     - If it's tail, we just BR to then/else branches, not worrying about
+;;       their result.  Return value is irrelevant.
+;;     - If it's stmt, the control merges to a new BB and it is returned.
+;;     - If it's normal, the control merges and the register contains
+;;       the result.
+;;   $IT:
+;;     - Either one of the branch can be an $IT node.  We recognize
+;;       the case and pass down the result of the test.
+
 (define (pass5b/$IF iform bb benv ctx)
+  (define (if-branch iform bb benv ctx test-result)
+    (if (has-tag? iform $IT)
+      (begin (touch-reg! bb test-result)
+             (pass5b/return bb ctx test-result))
+      (pass5b/rec iform bb benv ctx)))
   (receive (bb val0) (pass5b/rec ($if-test iform) bb benv 'normal)
     (let ([then-bb (make-bb benv bb)]
           [else-bb (make-bb benv bb)])
       (touch-reg! bb val0)
       (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
-      (receive (tbb tval0) (pass5b/rec ($if-then iform) then-bb benv ctx)
-        (receive (ebb eval0) (pass5b/rec ($if-else iform) else-bb benv ctx)
+      (receive (tbb tval0) (if-branch ($if-then iform) then-bb benv ctx val0)
+        (receive (ebb eval0) (if-branch ($if-else iform) else-bb benv ctx val0)
           (case ctx
             [(tail)
              (values tbb tval0)] ; it doesn't really matter
@@ -482,7 +498,7 @@
       (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$IT iform bb benv ctx)
-  (pass5b/return bb ctx '%VAL0))
+  (error "[Intenral] $IT node should be handled by the parent."))
 
 ;; Dispatch table.
 (define *pass5b-dispatch-table* (generate-dispatch-table pass5b))
