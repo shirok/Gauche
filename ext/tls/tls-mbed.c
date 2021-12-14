@@ -55,11 +55,18 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_MbedTLSClass, mbedtls_print, NULL,
 
 static ScmObj k_server_name;
 
+enum MbedState {
+    UNCONNECTED,
+    CONNECTED,
+    CLOSED
+};
+
 /*
  * Instance
  */
 typedef struct ScmMbedTLSRec {
     ScmTLS common;
+    enum MbedState state;
     mbedtls_ssl_context ctx;
     mbedtls_net_context conn;
     mbedtls_entropy_context entropy;
@@ -106,7 +113,9 @@ static void mbed_context_check(ScmMbedTLS* t SCM_UNUSED,
 
 static void mbed_close_check(ScmMbedTLS* t, const char *op)
 {
-    if (t->conn.fd < 0) Scm_Error("attempt to %s closed TLS: %S", op, t);
+    if (t->state != CONNECTED) {
+        Scm_Error("attempt to %s unconnected or closed TLS: %S", op, t);
+    }
 }
 
 
@@ -159,6 +168,7 @@ static ScmObj mbed_connect_common(ScmMbedTLS *t)
     if (r != 0) {
         Scm_Error("TLS handshake failed: %d", r);
     }
+    t->state = CONNECTED;
     return SCM_OBJ(t);
 }
 
@@ -188,11 +198,12 @@ static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
 
 static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
 {
-    ScmMbedTLS* t = (ScmMbedTLS*)tls;
 #if MBEDTLS_VERSION_MAJOR >= 3
     Scm_Error("Making TLS connection over existing socket (%d) is not supporetd "
               "in MbedTLS version 3 (%S)", fd, tls);
+    return SCM_UNDEFINED;       /* dummy */
 #else /*MBEDTLS_VERSION_MAJOR = 2*/
+    ScmMbedTLS* t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "connect");
     const char* pers = "Gauche";
     if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
@@ -251,11 +262,17 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
     if (r != 0) {
         Scm_Error("TLS handshake failed: %d", r);
     }
+    t->state = CONNECTED;
     return SCM_OBJ(t);
 }
 
 static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
 {
+#if MBEDTLS_VERSION_MAJOR >= 3
+    Scm_Error("Accepting TLS connection over existing socket (%d) is not supporetd "
+              "in MbedTLS version 3 (%S)", fd, tls);
+    return SCM_UNDEFINED;       /* dummy */
+#else /*MBEDTLS_VERSION_MAJOR = 2*/
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "accept");
 
@@ -297,7 +314,9 @@ static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
     if (r != 0) {
         Scm_Error("TLS handshake failed: %d", r);
     }
+    t->state = CONNECTED;
     return SCM_OBJ(t);
+#endif /*MBEDTLS_VERSION_MAJOR = 2*/
 }
 
 static ScmObj mbed_read(ScmTLS* tls)
@@ -337,10 +356,13 @@ static ScmObj mbed_write(ScmTLS* tls, ScmObj msg)
 static ScmObj mbed_close(ScmTLS *tls)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
-    mbedtls_ssl_close_notify(&t->ctx);
-    mbedtls_net_free(&t->conn);
-    t->server_name = NULL;
-    t->common.in_port = t->common.out_port = SCM_UNDEFINED;
+    if (t->state == CONNECTED) {
+        mbedtls_ssl_close_notify(&t->ctx);
+        mbedtls_net_free(&t->conn);
+        t->server_name = NULL;
+        t->common.in_port = t->common.out_port = SCM_UNDEFINED;
+    }
+    t->state = CLOSED;
     return SCM_TRUE;
 }
 
@@ -368,8 +390,10 @@ static void mbedtls_print(ScmObj obj, ScmPort* port,
     if (t->server_name) {
         Scm_Printf(port, " %S", t->server_name);
     }
-    if (t->conn.fd >= 0) {
-        Scm_Printf(port, " (connected)");
+    switch (t->state) {
+    case UNCONNECTED: Scm_Printf(port, " (unconnected)"); break;
+    case CONNECTED:   Scm_Printf(port, " (connected)"); break;
+    case CLOSED:      Scm_Printf(port, " (closed)"); break;
     }
     Scm_Printf(port, ">");
 }
@@ -383,6 +407,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
         Scm_TypeError("mbed-tls server-name", "string or #f", server_name);
     }
 
+    t->state = UNCONNECTED;
     mbedtls_ctr_drbg_init(&t->ctr_drbg);
     mbedtls_net_init(&t->conn);
     mbedtls_ssl_init(&t->ctx);

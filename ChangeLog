@@ -1,3 +1,9 @@
+2021-12-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls-mbed.c: Support MbedTLS 3.0.  This is a partial support:
+	  we need tls-bind to allow TLS-enabled server.  But at least this one
+	  works as a client.
+
 2021-12-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (%write-walk-rec): Handle circular reference through
