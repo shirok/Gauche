@@ -18593,14 +18593,28 @@ Bitflags of options.  Logical OR of the following numeric constants.
 @end table
 @end defun
 
-@defun tls-connect tls socket
+@defun tls-connect tls host port proto
+@defunx tls-connect tls socket
 @c MOD rfc.tls
-Establishes TLS connection as a client.  The @var{tls} argument must
-be an unconnected TLS object, and the @var{socket} argument must
-be a @emph{connected} socket.  On success, it returns @var{tls},
+Establishes TLS connection as a client.  The first form is the
+recommended API.  The second form is only kept for the backward compatibility,
+may not work on the newer MbedTLS, and will be removed in future.
+
+The @var{tls} argument must be an unconnected TLS object.  The
+@var{host} and @var{port} arguments are strings to specify
+server's hostname and port.  Besides the common hostname, IP notation
+(e.g. @code{"127.0.0.1"} or @code{"[::1]"}) are allowed in @var{host}.
+Numeric notation (e.g. @code{"443"}) or service name (e.g. @code{"https"})
+are allowed in @var{port}.
+The @var{proto} argument must be either one of the symbols
+@code{tcp} or @code{udp}.
+
+On success, it returns @var{tls},
 which is in connected state.  It can be used to read/write data
 from/to the connected peer.
 
+In the second, deprecated form,
+the @var{socket} argument must be a @emph{connected} socket.
 The @var{socket} is owned by @var{tls} object and should not be directly
 accessed after calling this procedure.
 @end defun

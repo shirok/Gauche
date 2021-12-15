@@ -143,7 +143,7 @@
      (%tls-connect-with-socket tls sock (socket-fd sock))]
     [(host port proto)
      (%tls-connect tls host port proto)]
-    [else (error "Invalid arguments:" (cons tls args))])
+    [_ (error "Invalid arguments:" (cons tls args))])
   (tls-input-port-set! tls (make-tls-input-port tls))
   (tls-output-port-set! tls (make-tls-output-port tls))
   tls)
