@@ -277,6 +277,13 @@ void Scm_Init_tls(ScmModule *mod)
 
 #if defined(GAUCHE_USE_AXTLS)
 
+/* axTLS interface is to "piggyback" the existing raw socket; you're
+ * supposed to use ordinary connect()/listen()/bind()/accept() to establish
+ * socket connection, then overlay TLS layer on top of it to negotiate
+ * the secure connection.
+ */
+
+
 #ifdef HAVE_WINCRYPT_H
 #include <wincrypt.h>
 #endif
@@ -287,7 +294,12 @@ typedef struct ScmAxTLSRec {
     SSL* conn;
     SSL_EXTENSIONS* extensions;
     ScmString *server_name;
+    int bound_sock;             /* set with bind, used by accept */
 } ScmAxTLS;
+
+static ScmAxTLS *ax_new(ScmClass *klass,
+                        SSL_CTX *ctx,
+                        ScmString*server_name);
 
 /* axTLS has ssl_display_error but it emits directly to stdout. */
 static const char *tls_strerror(int code)
@@ -475,7 +487,7 @@ static ScmObj ax_connect(ScmTLS* tls, const char *host, const char *port,
     return ax_connect_with_socket(tls, fd);
 }
 
-static ScmObj ax_accept(ScmTLS* tls, int fd)
+static ScmObj ax_accept_with_socket(ScmTLS* tls, int fd)
 {
     ScmAxTLS *t = (ScmAxTLS*)tls;
     ax_context_check(t, "accept");
@@ -484,6 +496,25 @@ static ScmObj ax_accept(ScmTLS* tls, int fd)
 
     return SCM_UNDEFINED;
 }
+
+static ScmObj ax_accept(ScmTLS* tls) /* tls must already be bound */
+{
+    ScmAxTLS *t = (ScmAxTLS*)tls;
+    ax_context_check(t, "accept");
+    if (t->bound_sock < 0) Scm_Error("accept called on unbound TLS %S", t);
+
+    struct sockaddr addr;
+    socklen_t addrlen;
+    int newsock = accept(t->bound_sock, &addr, &addrlen);
+    if (newsock < 0) {
+        Scm_Error("tls-accept failed on %S", t);
+    }
+
+    ScmAxTLS *nt = ax_new(&Scm_AxTLSClass, t->ctx, t->server_name);
+    nt->conn = ssl_server_new(nt->ctx, newsock);
+    return SCM_OBJ(nt);
+}
+
 
 static ScmObj ax_read(ScmTLS* tls)
 {
@@ -548,10 +579,34 @@ static void ax_finalize(ScmObj obj, void *data SCM_UNUSED)
     }
 }
 
-static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
+ScmAxTLS *ax_new(ScmClass *klass,
+                 SSL_CTX *ctx,
+                 ScmString*server_name)
 {
     ScmAxTLS* t = SCM_NEW_INSTANCE(ScmAxTLS, klass);
 
+    t->ctx = ctx;
+    t->conn = NULL;
+    t->extensions = ssl_ext_new();
+    t->server_name = SCM_STRING(server_name);
+    t->bound_sock = -1;
+    t->common.in_port = t->common.out_port = SCM_FALSE;
+
+    t->common.connect = ax_connect;
+    t->common.connectSock = ax_connect_with_socket;
+    t->common.accept = ax_accept;
+    t->common.acceptSock = ax_accept_with_socket;
+    t->common.read = ax_read;
+    t->common.write = ax_write;
+    t->common.close = ax_close;
+    t->common.loadObject = ax_loadObject;
+    t->common.finalize = ax_finalize;
+    Scm_RegisterFinalizer(SCM_OBJ(t), ax_finalize, NULL);
+    return t;
+}
+
+static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
+{
     uint32_t options = 0;
     ScmObj s_options = Scm_GetKeyword(k_options, initargs, SCM_UNDEFINED);
     if (SCM_INTEGERP(s_options)) {
@@ -567,23 +622,9 @@ static ScmObj ax_allocate(ScmClass *klass, ScmObj initargs)
     if (!SCM_STRINGP(server_name) && !SCM_FALSEP(server_name)) {
         Scm_TypeError("ax-tls server-name", "string or #f", server_name);
     }
-
-    t->ctx = ssl_ctx_new(options, num_sessions);
-    t->conn = NULL;
-    t->extensions = ssl_ext_new();
-    t->server_name = SCM_STRING(server_name);
-    t->common.in_port = t->common.out_port = SCM_FALSE;
-
-    t->common.connect = ax_connect;
-    t->common.connectSock = ax_connect_with_socket;
-    t->common.acceptSock = ax_accept;
-    t->common.read = ax_read;
-    t->common.write = ax_write;
-    t->common.close = ax_close;
-    t->common.loadObject = ax_loadObject;
-    t->common.finalize = ax_finalize;
-    Scm_RegisterFinalizer(SCM_OBJ(t), ax_finalize, NULL);
-    return SCM_OBJ(t);
+    return SCM_OBJ(ax_new(klass,
+                          ssl_ctx_new(options, num_sessions),
+                          SCM_STRING(server_name)));
 }
 
 #endif /*GAUCHE_USE_AXTLS*/
