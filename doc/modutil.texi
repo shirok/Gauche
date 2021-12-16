@@ -18621,6 +18621,11 @@ accessed after calling this procedure.
 
 @defun tls-accept tls socket
 @c MOD rfc.tls
+NB: This API is deprecated.  It is incompatible to
+the newer MbedTLS.  We plan to provide an alternative API, with
+which you can ``bind'' a tls object and then ``accept'' the client
+connection, without touching the underlying sockets.
+
 Establishes TLS connection as a server.  The @var{tls} argument must
 be an unconnected TLS object, and the @var{socket} argument must
 be a @emph{listening} socket.  On success, it returns @var{tls},
