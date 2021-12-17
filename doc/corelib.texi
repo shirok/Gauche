@@ -25274,6 +25274,7 @@ Cの標準ライブラリとGaucheの手続きとの対応が示してありま�
 * Process management::
 * I/O multiplexing::
 * Garbage collection::
+* Memory mapping::
 * Miscellaneous system calls::
 @end menu
 
@@ -29836,7 +29837,7 @@ doesn't modify its arguments.
 @end defun
 
 
-@node Garbage collection, Miscellaneous system calls, I/O multiplexing, System interface
+@node Garbage collection, Memory mapping, I/O multiplexing, System interface
 @subsection Garbage collection
 @c NODE ガベージコレクション
 
@@ -29874,7 +29875,242 @@ GCに関する統計情報を返します。返り値はリストのリストで
 @c COMMON
 @end defun
 
-@node Miscellaneous system calls,  , Garbage collection, System interface
+@node Memory mapping, Miscellaneous system calls, Garbage collection, System interface
+@subsection Memory mapping
+@c NODE メモリマッピング
+
+@deftp {Class} <memory-region>
+@c EN
+An object representing a mapped memory pages.  It is returned
+from @code{sys-mmap}, and can be passed to @code{make-view-uvector}
+to access.  It has the following read-only slots.
+@c JP
+マップされたメモリ領域を表すオブジェクトです。@code{sys-mmap}によって返され、
+@code{make-view-uvector}に渡してアクセスできます。以下の読み取り専用スロットを
+持っています。
+@c COMMON
+
+@defivar {<memory-region>} address
+@c EN
+The address of the mapping.  Not useful in the Scheme world, but
+you may need to pass this to foreign functions.
+@c JP
+マッピングされたアドレス。Schemeの世界では意味がありませんが、
+外部関数に渡すことはできます。
+@c COMMON
+@end defivar
+
+@defivar {<memory-region>} size
+@c EN
+The size of the mapping, in bytes.
+@c JP
+マッピングの大きさをバイト数で。
+@c COMMON
+@end defivar
+
+@defivar {<memory-region>} protection
+@c EN
+The bitmask represents memory protection.  It is a bitwise OR of integer
+constants
+@code{PROT_READ}, @code{PROT_WRITE}, @code{PROT_EXEC} and @code{PROT_NONE}.
+See @code{sys-mmap} below for thedetails.
+@c JP
+メモリ保護属性のビットマスク。整数定数
+@code{PROT_READ}、@code{PROT_WRITE}、@code{PROT_EXEC}、@code{PROT_NONE}
+の組み合わせのbitwise orです。詳しくは下の@code{sys-mmap}を参照。
+@c COMMON
+@end defivar
+
+@defivar {<memory-region>} flags
+@c EN
+the flags passed to the @code{sys-mmap}.  See @code{sys-mmap} below
+for the details.
+@c JP
+@code{sys-mmap}に渡されたフラグ。下の@code{sys-mmap}を参照。
+@c COMMON
+@end defivar
+@end deftp
+
+@defun sys-mmap port prot flags size :optional offset
+[POSIX]
+@c EN
+Maps files into memory using @code{mmap(2)} (or
+@code{MapViewOfFileEx} on Windows).  Returns
+a @code{<memory-region>} object, which can be accessed
+via @code{make-view-uvector}.
+@c JP
+@code{mmap(2)} (Windowsでは@code{MapViewOfFileEx}) を使って
+ファイルをメモリにマップします。マップされたメモリは
+@code{<memory-region>}オブジェクトとして返され、
+@code{make-view-uvector}でアクセスできます。
+@c COMMON
+
+@c EN
+The @var{port} argument must be either a port or @code{#f}.
+If it is a port, it must have underlying file.  If it is @code{#f},
+the mapping becomes ``anonymous'' (not backed with a file); in that
+case, @code{MAP_ANONYMOUS} flag must also be specified in @var{flags}.
+@c JP
+@var{port}引数はポートか@code{#f}でなければならず、ポートの場合は
+ファイルと結びつけられていなければなりません。この引数が@code{#f}の場合は、
+ファイルの裏打ちがない「匿名の」メモリ領域がマップされます。この場合、
+@var{flags}引数に@code{MAP_ANONYMOUS}が指定されていなければなりません。
+@c COMMON
+
+@c EN
+The @var{prot} argument specifies the protection bits of the
+memory region; it must be an integer created by bitwise-OR
+of the following constants:
+@c JP
+@var{port}引数はメモリ領域の保護属性を指定します。以下の定数のbitwise or
+でなければなりません。
+@c COMMON
+@table @code
+@item PROT_EXEC
+@c EN
+The mapped pages may be executed.
+@c JP
+メモリページに実行可能属性を付加。
+@c COMMON
+@item PROT_READ
+@c EN
+The mapped pages may be read.
+@c JP
+メモリページに読み取り可能属性を付加。
+@c COMMON
+@item PROT_WRITE
+@c EN
+The mapped pages may be written.
+@c JP
+メモリページに書き込み可能属性を付加。
+@c COMMON
+@item PROT_NONE
+@c EN
+Pages may not be accessed.
+@c JP
+ページにはアクセスできない。
+@c COMMON
+@end table
+
+@c EN
+The @var{flags} argument must be an integer created by bitwise-OR
+of the following constants:
+@c JP
+@var{flags}引数は、以下の定数のbitwise orでなければなりません。
+@c COMMON
+@table @code
+@item MAP_SHARED
+@c EN
+The mapping is shared among processes.  If you update the mapped
+pages, other processes mapping the same region can see it, too.
+@c JP
+マッピングはプロセス間で共有される。マップされたページを変更した場合、
+その変更は同じ領域をマップしている他のプロセスからも見える。
+@c COMMON
+@item MAP_PRIVATE
+@c EN
+The mapping is private to this process.  If you update the mapped
+pages, it stays in the process and is not visible from outside.
+@c JP
+マッピングはプロセスだけに止まる。マップされたページを変更しても、
+それは外からは見えない。
+@c COMMON
+@item MAP_ANONYMOUS
+@c EN
+The pages don't have a backing file.
+@c JP
+マップされたページはファイルに結びつけられない。
+@c COMMON
+@end table
+
+@c EN
+The @var{size} argument must be a positive exact integer, and the
+@var{offset} argument must be a non-negative exact integer.  They specify
+the region of the file to be mapped; @var{size} bytes starting
+from @var{offset} bytes.  The @var{offset} must be a multiple of
+the page size.  If @var{offfset} is omitted, 0 is assumed.
+If you're mapping non-file-backed memory (when @var{port} is @code{#f}),
+@var{offset} is ignored.
+@c JP
+@var{size}は正の正確な整数、@var{offset}は非負の正確な整数でなければなりません。
+それらはファイル中のマップすべき領域を指定します。@var{offset}バイト目から始まる、
+@var{size}バイトの領域です。@var{offset}はページサイズの倍数でなければならず、
+省略された場合は0となります。マッピングがファイルと結びつけられていない場合
+(@var{port}が@code{#f}の場合)、@var{offset}は無視されます。
+@c COMMON
+
+@c EN
+You don't need to @code{unmap} the mapped pages explicitly; when the created
+@code{<memory-region>} object is garbage collected, the memory
+is unmapped.
+@c JP
+マップされたメモリを陽に@code{unmap}する必要はありません。
+@code{<memory-region>}オブジェクトがガベージコレクトされる時に、メモリはunmapされます。
+@c COMMON
+@end defun
+
+@defun make-view-uvector mem class length :optional offset immutable?
+@c EN
+This procedure creates a uniform vector that works as a ``window''
+to hte memory region @var{mem}, which must be
+a @code{<memory-region>} object.  If the underlying memory content
+changes, it is visible through the uvector.  If the memory region is
+writeble and you mutate the uvector, it is reflected to the underlying
+memory region.
+@c JP
+この手続きはメモリ領域@var{mem}の「窓」になるユニフォームベクタを作って返します。
+@var{mem}は@code{<memory-region>}オブジェクトでなければなりません。
+マップされているメモリ領域に変化があれば、uvectorの内容も変化します。
+メモリが書き込み可能でマップされていれば、uvectorを変更するとそれが
+メモリにも反映されます。
+@c COMMON
+
+@c EN
+The @var{class} argument must be one of the uniform vector class
+(e.g. @code{<u8vector>}), and @var{length} is the length of the
+uvector to be created.  The length is the number of elements,
+not the number of bytes.  The memory is accessed with the native
+endianness.  @var{Length} can be @code{#f}, in that case up to the end of the
+memory region is used.
+@c JP
+@var{class}はユニフォームベクタのクラスでなければなりません (例: @code{<u8vector>})。
+@var{length}は作られるユニフォームベクタの長さ(要素数)です。
+メモリはネイティブバイトオーダーでアクセスされます。@var{length}は@code{#f}でも良く、
+その場合はメモリ領域の最後までが使われます。
+@c COMMON
+
+@c EN
+The @var{offset} argument specifies the offset from the beginning of
+memory region, in number of @emph{bytes}.  It must be a multiple
+of the uvector's element size.
+@c JP
+@var{offset}引数はメモリ領域先頭からのオフセットをバイト数で指定します。
+これはユニフォームベクタの要素サイズの倍数でなければなりません。
+@c COMMON
+
+@c EN
+If the memory region is read-only (i.e. it is mapped without @code{PROT_WRITE}),
+the resulting uvector is immutable.  Otherwise, it is mutable by default,
+but ynou can give a true value to @var{immutable?} argument to create
+an immutable uvector.
+@c JP
+メモリ領域が読み出し専用であれば(つまり、@code{PROT_WRITE}属性なしでマップされていれば)、
+返されるユニフォームベクタは変更不可になります。そうでなければデフォルトで変更可能な
+ユニフォームベクタが返されますが、@var{immutable?}引数に真の値を与えることで、
+変更不可なユニフォームベクタを得ることもできます。
+@c COMMON
+
+@c EN
+The memory region isn't garbage collected as long as there're uvectors
+that referencing the region.
+@c JP
+メモリ領域は、それを参照しているユニフォームベクタが生きている限りは
+ガベージコレクトされません。
+@c COMMON
+@end defun
+
+
+@node Miscellaneous system calls,  , Memory mapping, System interface
 @subsection Miscellaneous system calls
 @c NODE その他のシステムコール
 
