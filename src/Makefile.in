@@ -512,7 +512,7 @@ PREGENERATED = compile.c autoloads.c builtin-syms.c \
 	       libdict.c libeval.c libexc.c libfmt.c libio.c liblazy.c \
 	       liblist.c libmacbase.c libmacro.c libmemo.c libmisc.c libmod.c \
 	       libnative.c libnum.c libobj.c libparam.c libproc.c librx.c \
-	       libstr.c libsrfis.c libsym.c libsys.c libvec.c \
+	       libstr.c libsrfis.c libsym.c libsys.c libtype.c libvec.c \
 	       libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
 		   features.c features.flags
