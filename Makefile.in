@@ -128,7 +128,6 @@ distclean: clean
 	-for d in $(SRIDBUS); do (cd $$d; $(MAKE) distclean); done
 	-if test -f $(LIBATOMICDIR)/Makefile; then (cd $(LIBATOMICDIR); $(MAKE) distclean); fi
 	-(cd winnt/wix; $(MAKE) clean)
-	-$(MAKE) -C tools/scoop distclean
 	rm -rf $(CONFIG_GENERATED)
 
 maintainer-clean: clean
