@@ -1,3 +1,9 @@
+2021-12-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm (sys-mmap, <memory-region>): Improve mmap API.
+	  size argument needs to be mandatory (there's no reasonable default).
+	  Expose fields of <memory-region> for introspection.
+
 2021-12-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls-mbed.c: Support MbedTLS 3.0.  This is a partial support:

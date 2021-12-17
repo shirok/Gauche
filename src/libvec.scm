@@ -322,15 +322,17 @@
 (define-cproc c64vector? (x) ::<boolean> SCM_C64VECTORP)
 (define-cproc c128vector? (x) ::<boolean> SCM_C128VECTORP)
 
-(define-cproc make-view-uvector (mem klass::<class> size::<fixnum>
+(define-cproc make-view-uvector (mem klass::<class> length::<integer>?
                                      :optional (offset::<fixnum> 0)
                                                (immutable?::<boolean> #f))
-  (.when "defined(HAVE_SYS_MMAN_H)"
-    (unless (SCM_MEMORY_REGION_P mem)
-      (SCM_TYPE_ERROR mem "<memory-region>")))
-  (return (Scm_MakeViewUVector (SCM_MEMORY_REGION mem)
-                               klass
-                               size offset immutable?)))
+  (unless (SCM_MEMORY_REGION_P mem)
+    (SCM_TYPE_ERROR mem "<memory-region>"))
+  (let* ([len::ScmSmallInt 0])
+    (cond [(SCM_FALSEP length) (set! len -1)]
+          [(SCM_INTP length) (set! len (SCM_INT_VALUE length))]
+          [else (Scm_Error "length is out of range: %S" length)])
+    (return (Scm_MakeViewUVector (SCM_MEMORY_REGION mem)
+                                 klass len offset immutable?))))
 
 ;;;
 ;;; Bitvectors

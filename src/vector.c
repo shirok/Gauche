@@ -817,7 +817,7 @@ ScmObj Scm_MakeViewUVector(ScmMemoryRegion *mem, ScmClass *klass,
                            ScmSmallInt len, ScmSmallInt offset,
                            int immutable)
 {
-    if (offset < 0) Scm_Error("offset must be positive, but got %ld", offset);
+    if (offset < 0) Scm_Error("offset must not be negative: %ld", offset);
     int esize = Scm_UVectorElementSize(klass);
     if (esize < 0) Scm_Error("uvector class required, but got: %S", klass);
     if ((offset % esize) != 0) {

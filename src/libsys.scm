@@ -565,8 +565,25 @@
 ;;---------------------------------------------------------------------
 ;; sys/mman.h
 
-(define-cproc sys-mmap (maybe-port prot::<int> flags::<int>
-                                   :key size off)
+(inline-stub
+ (define-cclass <memory-region>
+   "ScmMemoryRegion*" "Scm_MemoryRegionClass"
+   ()
+   ((address :c-name "ptr"
+             :c-spec "Scm_MakeIntegerU((uintptr_t)obj->ptr)" :setter #f)
+    ;; TRANSIENT: After 0.9.11, we can say :c-type <size_t>.
+    (size :c-spec "Scm_MakeIntegerU(obj->size)" :setter #f)
+    (protection :c-name "prot" :type <int> :setter #f)
+    (flags :type <int> :setter #f))
+   (printer (let* ((m::ScmMemoryRegion* (SCM_MEMORY_REGION obj)))
+              (Scm_Printf port "#<memory-region %p[%lx] (%s%s%s)>"
+                          (-> m ptr) (-> m size)
+                          (?: (logand (-> m prot) PROT_READ) "r" "")
+                          (?: (logand (-> m prot) PROT_WRITE) "w" "")
+                          (?: (logand (-> m prot) PROT_EXEC) "x" ""))))))
+
+(define-cproc sys-mmap (maybe-port prot::<int> flags::<int> size::<integer>
+                                   :optional (off::<integer> 0))
   (let* ([fd::int -1] [isize::size_t 0] [ioff::off_t 0])
     (cond [(SCM_PORTP maybe-port)
            (set! fd (Scm_PortFileNo (SCM_PORT maybe-port)))
