@@ -266,6 +266,19 @@ separately, not on relying solely on @code{subtype?}.
 @c COMMON
 @end defun
 
+@defun subclass? sub super
+@c EN
+Both arguments must be classes.  Returns @code{#t} iff @var{sub} is
+a subclass of @var{super}.  A class is regarded as a subclass of
+itself.
+@c JP
+引数はどちらもクラスでなければなりません。
+@var{sub}が@var{super}のサブクラスであれば@code{#t}を、そうでなければ@code{#f}を
+返します。クラスはそれ自身のサブクラスとみなされます。
+@c COMMON
+@end defun
+
+
 @node Type expressions and type constructors, Predefined classes, Generic type predicates, Types and classes
 @subsection Type expressions and type consturctors
 @c NODE 型の式と型コンストラクタ
@@ -15874,6 +15887,30 @@ Gauche's type handling.
 @ref{Types and classes}を参照してください。
 @c COMMON
 @end defun
+
+
+@defun procedure-type proc
+The argument must be a procedure.  Returns a descriptive type
+of the @var{proc}, as much as the system knows.
+@xref{Types and classes}, for the details of procedure types.
+
+The ``type'' returned by this procedure is just a hint.
+Currently, most Scheme-defined procedures doesn't have much type info.
+
+@example
+(procedure-type filter) @result{} #<^ <top> <top> -> *>
+@end example
+
+Some of subrs (C-defined procedures) has a bit more info, derived
+from C type information.
+@example
+(procedure-type cons) @result{} #<^ <top> <top> -> <pair>>
+@end example
+
+Eventually we'll improve this system to return more precise type info,
+and use it for optimizations and other static analysis.
+@end defun
+
 
 @node Universal accessor, Combinators, Procedure class and applicability, Procedures and continuations
 @subsection Universal accessor

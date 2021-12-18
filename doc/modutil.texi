@@ -3282,17 +3282,31 @@ using heap property maintaining procedure only once per function call.
 
 
 
-@defun binary-heap-find heap pred
+@defun binary-heap-find pred heap :optional failure
 @c MOD data.heap
 @c EN
 Returns an item in the heap that satisfies @var{pred}.
 If there are more than one item that satisfy @var{pred},
 any one of them can be returned.  If no item satisfy @var{pred},
-@code{#f} is returned.  This is O(n) operation.
+the thunk @var{failure} is called, whose default is @code{(^[] #f)}.
+This is O(n) operation.
 @c JP
 ヒープの中で、述語@var{pred}を満たす要素を返します。@var{pred}を満たす要素が
 複数ある場合にどれが返るかは不定です。@var{pred}を満たす要素が無ければ
-@code{#f}が返ります。O(n)の操作です。
+サンク@var{failure}が呼ばれます。@var{failure}のデフォルトは
+@code{(^[] #f)}です、O(n)の操作です。
+@c COMMON
+
+@c EN
+Note: The argument order used to be @code{(binary-heap-find heap pred)}
+until 0.9.10.  We changed it to align other *-find procedures.
+The old argument order still work for the backward compatibility,
+but the new code should use the current order.
+@c JP
+註: 0.9.10まで、引数の順序は@code{(binary-heap-find heap pred)}でしたが、
+他の *-find 系インタフェースと合わせるために変更されました。
+互換性のため、古いインタフェースで呼び出しても動作するようになっていますが、
+新たに書くコードは新しいインタフェースを使ってください。
 @c COMMON
 @end defun
 
@@ -13997,7 +14011,7 @@ If you just need a lookahead parser, you can use @code{$assert}.
 @defun $. obj
 @c MOD parser.peg
 Creates a parser that matches a Scheme object @var{obj},
-which may be a character, a string, or a char-set.
+which may be a character, a string, a char-set, or a symbol.
 If @var{obj} is a char-set, the parser matches any character in the set.
 
 The resulting parser is atomic, that is, it doesn't consume
@@ -14028,9 +14042,15 @@ it doesn't consume the input.  That is,
 @end defun
 
 @defun $one-of cset
+@defunx $one-of obj-list
 @c MOD parser.peg
-Returns a parser that accepts any character in the character set @var{cset}.
-On success, the parser yields the accepted character.
+The first form returns a parser that accepts any character in
+the character set @var{cset}.
+In the second form, @var{obj-list} must be a list of either
+a character, a string, a character set or a symbol, and each one
+is matched with the same way as @code{$.}.
+
+On success, the parser yields the accepted object.
 @end defun
 
 @defun $none-of cset
@@ -14229,7 +14249,8 @@ See also @code{$raise} above.
 @defun $seq p1 p2 @dots{}
 @defunx $seq0 p1 p2 @dots{}
 @c MOD parser.peg
-Matches @var{p1}, @var{p2}, @dots{} sequentially.  When all the parser
+Returns a parser that atches
+@var{p1}, @var{p2}, @dots{} sequentially.  When all the parser
 succeeds, @code{$seq} returns
 the last result, while @var{$seq0} returns the first result.
 Fails immediately when one of the parsers fails.
@@ -14237,8 +14258,21 @@ Fails immediately when one of the parsers fails.
 
 @defun $between p1 p2 p3
 @c MOD parser.peg
-Matches @var{p1}, @var{p2} and @var{p3} sequentially, and returns
+Returns a parser that matches
+@var{p1}, @var{p2} and @var{p3} sequentially, and returns
 the result of @var{p2}.
+@end defun
+
+@defun $list p @dots{}
+@defunx $list* p @dots{}
+@c MOD parser.peg
+Returns a parser that matches @var{p} @dots{},
+and returns the list of the results.
+@code{$list*} uses the last parser's result as the last cdr.
+
+They are the same as @code{($lift list p @dots{})} and
+@code{($lift list* p @dots{})}, but we encounter this pattern
+frequent enough to have these.
 @end defun
 
 @defun $bind p f
@@ -14334,7 +14368,7 @@ the list of the parser results:
 ($lift list p0 p1 @dots{})
 @end example
 
-Note that after all the parsers succeeds, the whole parser is
+Note that after all the parsers succeed, the whole parser is
 destined to succeed---the procedure @var{f} can't make the parser
 fail.  If you need to fail after all the parsers succeeds, use @code{$let}
 or @code{$let}.
