@@ -930,21 +930,24 @@
 
 ;; NB: Windows doesn't have gmtime_r/localtime_r, but its gmtime/localtime
 ;; is thread-safe.
-(define-cproc sys-gmtime (time) ::<sys-tm>
+;; On Unix, we pass struct tm buf to gmtime_r/localtime_r, and we need
+;; to copy it before the buf goes out of scope.  So we don't use
+;; auto-boxing feature but manually call Scm_Make_sys_tm.
+(define-cproc sys-gmtime (time)
   (.if (defined "GAUCHE_WINDOWS")
        (let* ([tim::time_t (Scm_GetSysTime time)])
-         (return (gmtime (& tim))))
+         (return (Scm_Make_sys_tm (gmtime (& tim)))))
        (let* ([tim::time_t (Scm_GetSysTime time)]
               [buf::(struct tm)])
-         (return (gmtime_r (& tim) (& buf))))))
+         (return (Scm_Make_sys_tm (gmtime_r (& tim) (& buf)))))))
 
-(define-cproc sys-localtime (time) ::<sys-tm>
+(define-cproc sys-localtime (time)
   (.if (defined "GAUCHE_WINDOWS")
        (let* ([tim::time_t (Scm_GetSysTime time)])
-         (return (localtime (& tim))))
+         (return (Scm_Make_sys_tm (localtime (& tim)))))
        (let* ([tim::time_t (Scm_GetSysTime time)]
               [buf::(struct tm)])
-         (return (localtime_r (& tim) (& buf))))))
+         (return (Scm_Make_sys_tm (localtime_r (& tim) (& buf)))))))
 
 (define-cproc sys-mktime (tm::<sys-tm>)
   (return (Scm_MakeSysTime (mktime tm))))
