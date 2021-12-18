@@ -15888,27 +15888,47 @@ Gauche's type handling.
 @c COMMON
 @end defun
 
-
 @defun procedure-type proc
+@c EN
 The argument must be a procedure.  Returns a descriptive type
 of the @var{proc}, as much as the system knows.
 @xref{Types and classes}, for the details of procedure types.
+@c JP
+引数は手続きでなければなりません。手続き@var{proc}の記述的な型を、
+わかる範囲で返します。
+手続きの型について詳しくは@ref{Types and classes}を参照してください。
+@c COMMON
 
+@c EN
 The ``type'' returned by this procedure is just a hint.
 Currently, most Scheme-defined procedures doesn't have much type info.
+@c JP
+この手続きで返される型は一種のヒントにすぎません。
+今のところ、ほとんどのSchemeで定義された手続きからは、あまり詳しい型情報は取れません。
+@c COMMON
 
 @example
 (procedure-type filter) @result{} #<^ <top> <top> -> *>
 @end example
 
+@c EN
 Some of subrs (C-defined procedures) has a bit more info, derived
 from C type information.
+@c JP
+subr (Cで定義された手続き) の中には、Cの型情報を使って多少詳しい情報が
+取れるものもあります。
+@c COMMON
 @example
 (procedure-type cons) @result{} #<^ <top> <top> -> <pair>>
 @end example
 
+@c EN
 Eventually we'll improve this system to return more precise type info,
 and use it for optimizations and other static analysis.
+@c JP
+いずれ、より正確な型情報を取れるようにして、
+最適化やその他の静的解析に使えるようにする予定です。
+@c COMMON
 @end defun
 
 
