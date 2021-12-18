@@ -355,6 +355,9 @@
       (push-insn bb `(CLOSE ,reg ,lbenv))
       (pass5b/return bb ctx reg))))
 
+(define (pass5b/$CLAMBDA iform bb cenv ctx)
+  (error "[internal] CLAMBDA is not supported yet"))
+
 (define (pass5b/$LABEL iform bb benv ctx)
   ;; NB: $label-label is #f at the end of pass4.  We assume that, and use
   ;; it to keep <basic-block> once we assign one.
