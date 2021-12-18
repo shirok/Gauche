@@ -593,6 +593,9 @@
     (compiled-code-emit0oi! ccb CLOSURE code info))
   0)
 
+(define (pass5/$CLAMBDA ifrom ccb renv ctx)
+  0)
+
 (define (pass5/lambda iform ccb renv)
   (let* ([inliner (let1 v ($lambda-flag iform)
                    (and (vector? v) v))]

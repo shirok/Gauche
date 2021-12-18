@@ -152,6 +152,7 @@
   $LET
   $RECEIVE
   $LAMBDA
+  $CLAMBDA
   $LABEL
   $SEQ
   $CALL
@@ -415,6 +416,7 @@
 ;;                           ;; local binding (mv)
 ;;    #($lambda <src> <name> <reqarg> <optarg> (<lvar> ...) <iform> <flag>)
 ;;                           ;; closure
+;;    #($clambda <src> <name> <lambda-node> ...)
 ;;    #($label <src> <label> <iform>) ;; merge point of local call.  see below.
 ;;    #($seq (<iform> ...))   ;; sequencing
 ;;    #($call <src> <proc-expr> (<arg-expr> ...) <flag>) ;; procedure call
@@ -541,7 +543,7 @@
    body      ; IForm for the body
    ))
 
-;; $lambda <src> <reqargs> <optarg> <lvars> <body> [<flag>]
+;; $lambda <src> <name> <reqargs> <optarg> <lvars> <body> [<flag>]
 ;;   Closure.
 ;;   $lambda has a couple of transient slots, which are used only
 ;;   during the optimization paths and not be saved by pack-iform.
@@ -568,6 +570,13 @@
                     ; contains an lvar to which the toplevel closure
                     ; is to be bound.  See pass 4.
    ))
+
+;; $clambda <src> <name> <lambda-node> ...
+;;   Case-lambda.
+(define-simple-struct $clambda $CLAMBDA $clambda
+  (src
+   name
+   closures))
 
 ;; $label <src> <label> <body>
 ;;    This kind of IForm node is introduced in Pass2 to record a shared

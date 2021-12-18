@@ -240,6 +240,9 @@
   ($lambda-body-set! iform (pass3/rec ($lambda-body iform) labels))
   iform)
 
+(define (pass3/$CLAMBDA iform labels)
+  iform)
+
 (define (pass3/$LABEL iform labels)
   (unless (label-seen? labels iform)
     (label-push! labels iform)
