@@ -55,6 +55,9 @@
  */
 static void check_size(ScmSmallInt size, int eltsize)
 {
+    if (size < 0) {
+        Scm_Error("Invalid size: %ld", size);
+    }
     if (size >= (ScmSmallInt)((LONG_MAX - 0x400000)/eltsize)) {
         Scm_Error("Size too big: %ld", size);
     }
@@ -107,8 +110,15 @@ SCM_DEFINE_BUILTIN_CLASS_FLAGS(Scm_VectorClass, vector_print, vector_compare,
 static ScmVector *make_vector(ScmSmallInt size)
 {
     check_size(size, sizeof(ScmObj));
+
+    /* We allocate at least one element for zero-length vector, since
+       ScmVector is declared to have at least one element.
+       Alternatively, we can have a singleton instance for #().
+     */
+    ScmSmallInt alloc_size = (size == 0)? 0 : (size-1);
+
     ScmVector *v = SCM_NEW2(ScmVector *,
-                            sizeof(ScmVector) + sizeof(ScmObj)*(size-1));
+                            sizeof(ScmVector) + sizeof(ScmObj)*alloc_size);
     SCM_SET_CLASS(v, SCM_CLASS_VECTOR);
 #if GAUCHE_API_VERSION >= 98
     v->size_flags = (size << 1);
