@@ -855,8 +855,8 @@
  (define-cfn native_uintP (obj) ::int :static
    (.if (== SIZEOF_LONG 4)
         (if (SCM_BIGNUMP obj)
-          (let* ([oor::int FALSE]
-                 [v::u_long (Scm_GetIntegerUClamp obj SCM_CLAMP_BOTH (& oor))])
+          (let* ([oor::int FALSE])
+            (cast (void) (Scm_GetIntegerUClamp obj SCM_CLAMP_BOTH (& oor)))
             (return (not oor)))
           (return (and (SCM_INTP obj) (>= (SCM_INT_VALUE obj) 0))))
         (return (and (SCM_INTP obj)
@@ -912,11 +912,11 @@
    (return (SCM_CLOSUREP obj)))
 
  (initcode
-  (set! SCM_SIZE_MAX (Scm_MakeIntegerU SIZE_MAX))
-  (set! SCM_SSIZE_MAX (Scm_MakeInteger SSIZE_MAX))
-  (set! SCM_SSIZE_MIN (Scm_MakeInteger (- (- SSIZE_MAX) 1)))
-  (set! SCM_PTRDIFF_MAX (Scm_MakeInteger PTRDIFF_MAX))
-  (set! SCM_PTRDIFF_MIN (Scm_MakeInteger (- (- PTRDIFF_MAX) 1)))
+  (set! SCM_SIZE_MAX (Scm_MakeIntegerU64 SIZE_MAX))
+  (set! SCM_SSIZE_MAX (Scm_MakeInteger64 SSIZE_MAX))
+  (set! SCM_SSIZE_MIN (Scm_MakeInteger64 (- (- SSIZE_MAX) 1)))
+  (set! SCM_PTRDIFF_MAX (Scm_MakeInteger64 PTRDIFF_MAX))
+  (set! SCM_PTRDIFF_MIN (Scm_MakeInteger64 (- (- PTRDIFF_MAX) 1)))
 
   (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
   (define-native-type <short>   SCM_CLASS_INTEGER short native_shortP)

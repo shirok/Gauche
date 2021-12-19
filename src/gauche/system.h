@@ -177,7 +177,7 @@ SCM_EXTERN int    Scm_NanoSleep(const ScmTimeSpec *req,
                                 ScmTimeSpec *rem);
 
 #if !HAVE_UTIMENSAT
-int utimensat(int, const char*, const ScmTimeSpec*, int);
+int utimensat(int, const char*, const ScmTimeSpec[2], int);
 #  if !defined(AT_FDCWD)
 #  define AT_FDCWD -1
 #  endif
