@@ -283,13 +283,25 @@ itself.
 @subsection Type expressions and type consturctors
 @c NODE 型の式と型コンストラクタ
 
-Types are first-class objects in Gauche, but they must be known at compile-time
+@c EN
+Types are first-class objects manipulatable at runtime in Gauche,
+but they must be known at compile-time
 in order to do optimizations or static analysis.  In certain places,
 Gauche requires the the value of type-yielding expressions to be statically
 computable.  We call such expressions @emph{type expressions}.
+@c JP
+型はGaucheでは実行時に扱える第一級のオブジェクトですが、
+静的解析のためにはコンパイル時に型がわかる必要があります。
+なので、いくつかの場所では、型を生成する式の値が静的に計算可能であることが要求されます。
+そのような式を「型の式 (type expression)」と呼びます。
+@c COMMON
 
+@c EN
 A type expression is either a global variable reference that are
 constantly bound to a type, or a call of type constructor:
+@c JP
+型の式は、型に静的に束縛されたグローバル変数か、型コンストラクタの呼び出しです:
+@c COMMON
 
 @example
 <type-expression> : <global-variable-constantly-bound-to-a-type>
@@ -303,31 +315,60 @@ constantly bound to a type, or a call of type constructor:
                             | *
 @end example
 
+@c EN
 All built-in classes, such as @code{<integer>}, are statically bound
 (in precise terms, they are ``inlinable'' binding).  If you try to alter
 it, a warning is issued, and the further bahvior will be undefined.
 In future, we'll make it an error to alter the binding of
 global variables bount to types.  Classes defined with @code{define-class} and
 @code{define-record-type} are also bound as inlinable.
+@c JP
+@code{<integer>}のような全ての組み込みクラスは静的に束縛されています
+(正確には、「インライン可能な」束縛になっています)。
+そのような束縛を変更しようとすると警告が出され、それ以降の動作は保証されません。
+将来的には、型に静的に束縛された変数を変更するのはエラーにするつもりです。
+@code{define-class}や@code{define-record-type}で定義されるクラスも、
+インライン可能な束縛になります。
+@c COMMON
 
+@c EN
 Type constructors are special classes whose instances are
 descriptive types.  Type constructors can be invoked as if they are
-a procedure, but @code{<type-constructor-call>} is recognized by
+a procedure, but <type-constructor-call> above is recognized by
 the compiler and the derived type is computed at compile-time.
 So, at runtime you only see the resulting derived type instance.
+@c JP
+型コンストラクタはそれ自身がクラスで、
+そのインスタンスが記述的な型オブジェクトになるものです。
+型コンストラクタは構文的には手続き呼び出しのように使えますが、
+上の<type-constructor-call>はコンパイラによって認識され、
+コンパイル時に計算されて型オブジェクトになります。
+なので、ランタイムには結果の型オブジェクトしか見えません。
+@c COMMON
 
+@c EN
 For example, @code{<?>} is a type constructor that creates
 ``maybe''-like type, e.g. ``an integer or @code{#f}''.
 (Do not confuse this with Maybe type
 defined in srfi-189, @pxref{Maybe and Either optional container types}).
 A type expression @code{(<?> <integer>)} yields such type
 (printed as @code{#<? <integer>>}):
+@c JP
+例えば、@code{<?>}は''maybe''のようなオプショナルな型を作る型コンストラクタです。
+@code{(<?> <integer>)}は「@code{<integer>}か@code{#f}」を意味します
+(srfi-189 (@ref{Maybe and Either optional container types}参照) の
+Maybe型と混同しないようにしてください)
+@c COMMON
 
 @example
 (<?> <integer>) @result{} #<? <integer>>
 @end example
 
+@c EN
 It looks like a procedure call, but it s computed at compile time:
+@c JP
+型コンストラクタの呼び出しは手続き呼び出しのように見えますが、コンパイル時に計算されます。
+@c COMMON
 
 @example
 gosh> (disasm (^[] (<?> <integer>)))
