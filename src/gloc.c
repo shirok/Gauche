@@ -102,7 +102,7 @@ ScmObj Scm_GlocConstSetter(ScmGloc *gloc, ScmObj val SCM_UNUSED)
 
 ScmObj Scm_GlocInlinableSetter(ScmGloc *gloc, ScmObj val)
 {
-    Scm_Warn("altering binding of inlinable procedure: %S#%S",
+    Scm_Warn("altering inlinable binding: %S#%S",
              gloc->module->name, gloc->name);
     return val;
 }
@@ -115,7 +115,7 @@ ScmObj Scm_GlocInlinableSetter(ScmGloc *gloc, ScmObj val)
 */
 static ScmObj gloc_dummy_inlinable_setter(ScmGloc *gloc, ScmObj val)
 {
-    Scm_Warn("altering binding of inlinable procedure: %S#%S",
+    Scm_Warn("altering inlinable binding: %S#%S",
              gloc->module->name, gloc->name);
     return val;
 }
