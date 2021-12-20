@@ -7,7 +7,8 @@
 (cond-expand
  [gauche.os.windows (exit 0)]
  [else
-  (unless (#/^x86_64-/ (gauche-config "--arch"))
+  ;; Currently we only support those platforms
+  (unless (#/^x86_64-.*(-linux|-darwin)/ (gauche-config "--arch"))
     (exit 0))])
 
 (test-start "ffitest")
