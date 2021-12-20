@@ -618,6 +618,12 @@ esac
 dnl Checks for sched_yield.
 AC_SEARCH_LIBS(sched_yield, rt, AC_DEFINE(HAVE_SCHED_YIELD,1,[Define if uses librt]))
 
+dnl Check for pthread_cancel.  $LIBS should already have thread libraries.
+if test "$GAUCHE_THREAD_TYPE" = pthreads; then
+  AC_CHECK_FUNCS(pthread_cancel)
+fi
+
+
 dnl Use Resource file
 AS_CASE([$host],
         [*mingw*], [USE_WIN_RESOURCE_yes=""

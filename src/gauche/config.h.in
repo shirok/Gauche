@@ -300,6 +300,9 @@
 /* Define if you have openpty */
 #undef HAVE_OPENPTY
 
+/* Define if you have pthread_cancel */
+#undef HAVE_PTHREAD_CANCEL
+
 /* Define to 1 if the system has the type `pthread_spinlock_t'. */
 #undef HAVE_PTHREAD_SPINLOCK_T
 

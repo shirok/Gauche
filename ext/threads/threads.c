@@ -482,7 +482,18 @@ ScmObj Scm_ThreadTerminate(ScmVM *target, u_long flags)
                        the extreme measure. */
                     if (flags & SCM_THREAD_TERMINATE_FORCIBLE) {
 #if defined(GAUCHE_USE_PTHREADS)
+# if defined(HAVE_PTHREAD_CANCEL)
+                        /* pthread_cancel() may be redirected to
+                           GC_pthread_cancel(), but that only happens
+                           if the system has pthread_cancel anyway.
+                         */
                         pthread_cancel(target->thread);
+# else
+                        /* The system lacks pthread_cancel(), e.g. on Android.
+                           https://github.com/shirok/Gauche/issues/790
+                           We have no choice but do nothing. */
+                        ;
+# endif
 #elif defined(GAUCHE_USE_WTHREADS)
                         TerminateThread(target->thread, 0);
 #endif
