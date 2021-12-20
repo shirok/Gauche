@@ -141,6 +141,11 @@
   (and-let1 p (priority-map-min task-queue)
     (~ (cdr p)'time)))
 
+(define (validate-time when)
+  (or (and (real? when) (>= when 0))
+      (and (time? when) (memq (time-type when) '(time-duration time-utc)))
+      (error "Nonnegative real number or <time> is expected, but got:" when)))
+
 (define (absolute-time when)
   (cond [(real? when)
          (receive (dfrac dsec) (modf when)
@@ -164,6 +169,8 @@
 ;; API
 ;; Returns task id
 (define (scheduler-schedule! s thunk when :optional (interval #f))
+  (validate-time when)
+  (and interval (validate-time interval))
   ($ request-response s
      (^[]
        (let1 task (make-task s thunk (absolute-time when) interval)
@@ -172,6 +179,8 @@
 
 ;; API
 (define (scheduler-reschedule! s task-id when :optional (interval #f))
+  (validate-time when)
+  (and interval (validate-time interval))
   ($ request-response s
      (^[]
        (if-let1 task (dict-get (~ s'task-queue) task-id #f)
