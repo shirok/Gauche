@@ -46,12 +46,12 @@
       `("cmd.exe" "/c" ,@cmd-list))]
    [else cmd-list]))
 
-(define (check-makeinfo-version makeinfo min-version)
+(define (check-makeinfo-version makeinfo min-version :optional (quiet? #f))
   (and-let* ([ makeinfo ]
              [msg (process-output->string (make-cmd `(,makeinfo --version)))]
              [vers (rxmatch->string #/\d+\.\d+(\.\d+)?/ msg)])
     (rlet1 b (version<=? min-version vers)
-      (unless b
+      (when (and (not b) (not quiet?))
         (warn "makeinfo version ~a or greater is required, but ~a's \
                version is ~a.  Skipping.\n" min-version makeinfo vers)))))
 
@@ -121,7 +121,14 @@
                                "--set-customization-variable"
                                ,#"TOP_NODE_UP_URL=~|top-link|"
                                ,@(cond-list
-                                  [draft? @ `("-o" ,#"~(path-sans-extension input)-draft")])
+                                  [(check-makeinfo-version makeinfo "6.8" #t) @
+                                   `("--set-customization-variable"
+                                     "FORMAT_MENU=menu"
+                                     "--set-customization-variable"
+                                     "CONTENTS_OUTPUT_LOCATION=inline")]
+                                  [draft? @
+                                   `("-o"
+                                     ,#"~(path-sans-extension input)-draft")])
                                "-"))
                   :redirects `((<< 0 ,(alter-top-node input))))))
 
