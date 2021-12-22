@@ -2598,6 +2598,24 @@
   (use srfi-217)
   (include "include/srfi-217-test"))
 
+;; Here are some tests specifically tailored to check
+;; the corner case of Gauche's implementation
+(let ()
+  (define (t a b uni int dif xor)
+    (test* "iset set operation (union, intersection, differnce, xor"
+           (list uni int dif xor)
+           (let ([a. (list->iset a)]
+                 [b. (list->iset b)])
+             (list (iset->list (iset-union a. b.))
+                   (iset->list (iset-intersection a. b.))
+                   (iset->list (iset-difference a. b.))
+                   (iset->list (iset-xor a. b.))))))
+  (t '(0 1 2 3 5 6 7 8) '(3 4 5)
+     '(0 1 2 3 4 5 6 7 8)
+     '(3 5)
+     '(0 1 2 6 7 8)
+     '(0 1 2 4 6 7 8)))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-221")
 (use srfi-221)

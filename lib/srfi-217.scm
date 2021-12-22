@@ -221,28 +221,28 @@
 (define (%delete-1! k tmap maybe-copy)
   (receive (s e) (tree-map-floor tmap k)
     (if s
-      (cond [(= k s) (if (= k e)
-                       (rlet1 tmap2 (maybe-copy tmap)
-                         (tree-map-delete! tmap2 k))
-                       (tree-map-put! tmap (+ s 1) e))]
+      (cond [(= k s) (rlet1 tmap2 (maybe-copy tmap)
+                       (tree-map-delete! tmap2 k)
+                       (unless (= k e) (tree-map-put! tmap2 (+ s 1) e)))]
             [(< k e) (rlet1 tmap2 (maybe-copy tmap)
-                       (tree-map-put! tmap s (- k 1))
-                       (tree-map-put! tmap (+ k 1) e))]
+                       (tree-map-put! tmap2 s (- k 1))
+                       (tree-map-put! tmap2 (+ k 1) e))]
             [(= k e) (rlet1 tmap2 (maybe-copy tmap)
-                       (tree-map-put! tmap s (- k 1)))]
+                       (tree-map-put! tmap2 s (- k 1)))]
             [else tmap])
       tmap)))
 
 (define (iset-delete iset k . ks)
+  (define input (%iset->persistent iset))
   (define (noclobber tmap)
-    (if (eq? tmap (iset-tmap iset))
-      (tree-map-copy (iset-tmap iset))
+    (if (eq? tmap (iset-tmap input))
+      (tree-map-copy (iset-tmap input))
       tmap))
-  (let* ([input (%iset->persistent iset)]
-         [tm (if (null? ks)
-               (%delete-1! k (iset-tmap input) noclobber)
-               (fold (cut %delete-1! <> <> noclobber)
-                     (%delete-1! k (iset-tmap input) noclobber) ks))])
+  (let ([tm (let loop ([tm (%delete-1! k (iset-tmap iset) noclobber)]
+                       [ks ks])
+              (if (null? ks)
+                tm
+                (loop (%delete-1! (car ks) tm noclobber) (cdr ks))))])
     (if (eq? tm (iset-tmap iset))
       iset
       (%make-iset #f tm))))
