@@ -67,6 +67,15 @@
 ;; procedure gets a persistent iset, the structure is always copied.
 ;; Cf. http://blog.practical-scheme.net/gauche/20210531-functional-and-linear-update
 ;;
+;; A functional procedure always returns a persistent iset. A linear-updating
+;; procedure returns a transient iset, except when it is an alias of
+;; functional version.
+;;
+;; The distinction is purely internal; the users don't need to worry about it,
+;; and they can treat functional version as if it always return a copy, so
+;; that it is safe to pass it to the linear updating version as long as
+;; she don't keep explicit reference to it.
+
 (define-record-type <iset> %make-iset-int iset?
   (transient? %iset-transient? %iset-transient?-set!)
   (size %iset-size %iset-size-set!)  ;; this is lazily computed
@@ -88,13 +97,13 @@
 
 (define (%iset->persistent iset)
   (if (%iset-transient? iset)
-    (%make-iset #f (iset-tmap iset))
+    (%make-iset #f (tree-map-copy (iset-tmap iset)))
     iset))
 
 (define (%iset->transient iset)
   (if (%iset-transient? iset)
     iset
-    (%make-iset #t (iset-tmap iset))))
+    (%make-iset #t (tree-map-copy (iset-tmap iset)))))
 
 (define (%iset-make-persistent! iset) ; only used in constructors
   (%iset-transient?-set! iset #f))
@@ -201,7 +210,7 @@
 (define (iset-adjoin iset k . ks)
   (define (noclobber tmap)
     (if (eq? tmap (iset-tmap iset))
-      (tree-map-copy (iset-tmap iset))
+      (tree-map-copy tmap)
       tmap))
   (let* ([input (%iset->persistent iset)]
          [tm (if (null? ks)
@@ -233,13 +242,13 @@
       tmap)))
 
 (define (iset-delete iset k . ks)
-  (define input (%iset->persistent iset))
   (define (noclobber tmap)
-    (if (eq? tmap (iset-tmap input))
-      (tree-map-copy (iset-tmap input))
+    (if (eq? tmap (iset-tmap iset))
+      (tree-map-copy tmap)
       tmap))
-  (let ([tm (let loop ([tm (%delete-1! k (iset-tmap iset) noclobber)]
-                       [ks ks])
+  (let* ([input (%iset->persistent iset)]
+         [tm (let loop ([tm (%delete-1! k (iset-tmap input) noclobber)]
+                        [ks ks])
               (if (null? ks)
                 tm
                 (loop (%delete-1! (car ks) tm noclobber) (cdr ks))))])
@@ -484,7 +493,8 @@
     (if (eq? tmap (iset-tmap iset1))
       (tree-map-copy tmap)
       tmap))
-  (let loop ([tmap (%union-2! (iset-tmap iset1) (iset-tmap iset2) noclobber)]
+  (define input (%iset->persistent iset1))
+  (let loop ([tmap (%union-2! (iset-tmap input) (iset-tmap iset2) noclobber)]
              [isets isets])
     (if (null? isets)
       (if (eq? tmap (iset-tmap iset1))
@@ -494,10 +504,11 @@
             (cdr isets)))))
 
 (define (iset-union! iset1 iset2 . isets)
-  (let loop ([tmap (%union-2! (iset-tmap iset1) (iset-tmap iset2) identity)]
+  (define input (%iset->transient iset1))
+  (let loop ([tmap (%union-2! (iset-tmap input) (iset-tmap iset2) identity)]
              [isets isets])
     (if (null? isets)
-      (%iset-touch! iset1)
+      (%iset-touch! input)
       (loop (%union-2! tmap (iset-tmap (car isets)) identity)
             (cdr isets)))))
 
@@ -514,7 +525,8 @@
     (if (eq? tmap (iset-tmap iset1))
       (tree-map-copy tmap)
       tmap))
-  (let loop ([tmap (%diff-2! (iset-tmap iset1) (iset-tmap iset2) noclobber)]
+  (define input (%iset->persistent iset1))
+  (let loop ([tmap (%diff-2! (iset-tmap input) (iset-tmap iset2) noclobber)]
              [isets isets])
     (if (null? isets)
       (if (eq? tmap (iset-tmap iset1))
@@ -524,10 +536,11 @@
             (cdr isets)))))
 
 (define (iset-difference! iset1 iset2 . isets)
-  (let loop ([tmap (%diff-2! (iset-tmap iset1) (iset-tmap iset2) identity)]
+  (define input (%iset->transient iset1))
+  (let loop ([tmap (%diff-2! (iset-tmap input) (iset-tmap iset2) identity)]
              [isets isets])
     (if (null? isets)
-      (%iset-touch! iset1)
+      (%iset-touch! input)
       (loop (%diff-2! tmap (iset-tmap (car isets)) identity)
             (cdr isets)))))
 
