@@ -1,6 +1,9 @@
 ;; Scan extensions directories and generate staticinit.c
 ;; gosh gen-staticinit.scm $(top_srcdir) $(top_builddir)
 
+;; This script may be executed by BUILD_GOSH.  Be careful not to depend
+;; on compiled extensions other than listed in preload.scm.
+
 ;; NB: At this moment, we assume each extension DSO has single
 ;; initfn, with the default name.  It is the case in all bundled
 ;; extensions now.  However, Gauche allows to precompile multiple
