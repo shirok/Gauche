@@ -705,4 +705,28 @@
            (set-cdr! z 4)))
   )
 
+(let* ((data1 '((a . b) (c . d)))
+       (data2 (list (cons 'A 'B) (cons 'C 'D)))
+       (p1 (extended-cons 1 2 data1))
+       (p2 (extended-cons 1 2 data2)))
+  ;; extended-pair-set! shouldn't clobber the original list
+  (test* "pair-attribute-set! noclobber 1" '((e . z) (a . b) (c . y))
+         (begin
+           (pair-attribute-set! p1 'e 'z)
+           (pair-attribute-set! p1 'c 'y)
+           (pair-attributes p1)))
+  (test* "pair-attribute-set! noclobber 2" '((E . Z) (A . Y) (C . D))
+         (begin
+           (pair-attribute-set! p2 'A 'Y)
+           (pair-attribute-set! p2 'E 'Z)
+           (pair-attributes p2)))
+  (test* "pair-attribute-set! noclobber" #t
+         (equal? data1 '((a . b) (c . d))))
+  (test* "pair-attribute-set! noclobber" #t
+         (equal? data2 '((A . B) (C . D))))
+  ;; prevent optimization
+  (set! data1 #f)
+  (set! data2 #f)
+  )
+
 (test-end)

@@ -6967,6 +6967,15 @@ An error is thrown if @var{pair} is not an exteded pair.
 @var{key}と@var{value}は任意のSchemeオブジェクトです。
 @var{pair}が拡張ペアでなければエラーが投げられます。
 @c COMMON
+
+@c EN
+This procedure does not mutate the exising alist, but rather makes
+a necessary copy.  The pair attributes
+are not supposed to be mutated frequently.
+@c JP
+この手続きは既存の連想リスト自体は変更せず、必要に応じてコピーします。
+ペア属性は頻繁に変更される運用を想定していません。
+@c COMMON
 @end defun
 
 

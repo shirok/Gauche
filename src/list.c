@@ -843,10 +843,30 @@ ScmObj Scm_PairAttrSet(ScmPair *pair, ScmObj key, ScmObj value)
                   key, SCM_OBJ(pair));
     }
 
-    ScmObj p = Scm_Assq(key, SCM_EXTENDED_PAIR(pair)->attributes);
-    if (SCM_PAIRP(p)) SCM_SET_CDR_UNCHECKED(p, value);
-    else SCM_EXTENDED_PAIR(pair)->attributes
-        = Scm_Acons(key, value, SCM_EXTENDED_PAIR(pair)->attributes);
+    /* We update the attribute list non-destructively.
+       In case if two threads update the list simultaneously, one change
+       can be lost, but no invalid access can occur.  Guaranteeing mutex
+       is the caller's responsibility, though.
+    */
+    ScmObj xs, attrs = SCM_EXTENDED_PAIR(pair)->attributes;
+    SCM_FOR_EACH(xs, attrs) {
+        SCM_ASSERT(SCM_PAIRP(SCM_CAR(xs)));
+        if (SCM_EQ(SCM_CAAR(xs), key)) {
+            /* need to copy up to here */
+            ScmObj h = SCM_NIL, t = SCM_NIL, ys;
+            SCM_FOR_EACH(ys, attrs) {
+                if (SCM_EQ(ys, xs)) {
+                    SCM_APPEND1(h, t, Scm_Cons(key, value));
+                    SCM_APPEND(h, t, SCM_CDR(xs));
+                    SCM_EXTENDED_PAIR(pair)->attributes = h;
+                    return SCM_UNDEFINED;
+                }
+                SCM_APPEND1(h, t, SCM_CAR(ys));
+            }
+            SCM_ASSERT(FALSE);  /* Shouldn't be here */
+        }
+    }
+    SCM_EXTENDED_PAIR(pair)->attributes = Scm_Acons(key, value, attrs);
     return SCM_UNDEFINED;
 }
 
