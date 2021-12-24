@@ -6865,13 +6865,15 @@ Gaucheは、拡張ペア (extended pair) と呼ばれる特別なペアを持っ
 @c COMMON
 
 @c EN
-Extended pairs don't incur any overhead in accessing it; @code{set-car!}
+Extended pairs don't incur any overhead in accessing its car/cdr;
+@code{set-car!}
 and @code{set-cdr!} has a little overhead (another reason you should avoid
-mutatiion!).
+mutation!).
 Internally it takes up twice
 of memory than the ordinary pairs.
 @c JP
-拡張ペアのアクセスにオーバーヘッドは全くありません。@code{set-car!}と@code{set-cdr!}
+拡張ペアのcar/cdrへのアクセスにオーバーヘッドは全くありません。
+@code{set-car!}と@code{set-cdr!}
 には少しだけオーバヘッドがあります (できるだけ副作用を避けましょう!)。
 内部的に、拡張ペアは通常のペアの倍のメモリを使います。
 @c COMMON
