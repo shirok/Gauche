@@ -1,3 +1,7 @@
+2021-12-23  Shiro Kawai  <shiro@acm.org>
+
+	* Release 0.9.11
+
 2021-12-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm (sys-mmap, <memory-region>): Improve mmap API.

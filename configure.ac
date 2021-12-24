@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.68])
-AC_INIT([Gauche],[0.9.11_rc4],[shiro@acm.org],,[https://practical-scheme.net/gauche/])
+AC_INIT([Gauche],[0.9.11],[shiro@acm.org],,[https://practical-scheme.net/gauche/])
 BUILD_GOSH_VERSION=0.9.10  # Host Gauche version required for build from scratch
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
