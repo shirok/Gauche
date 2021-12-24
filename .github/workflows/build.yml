@@ -120,7 +120,7 @@ jobs:
         path-type: inherit
         release: true
         update: true
-        install: 'base-devel mingw-w64-${{ matrix.arch }}-toolchain mingw-w64-autotools'
+        install: 'base-devel mingw-w64-${{ matrix.arch }}-toolchain mingw-w64-${{ matrix.arch }}-autotools'
     - name: Run MSYS2 once
       shell: msys2 {0}
       run: |
