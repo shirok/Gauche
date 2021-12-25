@@ -792,7 +792,7 @@
 ;; we have emulation of times() in auxsys.c for mingw.
 (define-cproc sys-times ()
   (let* ([info::(struct tms)] [r::clock_t] [tick::long])
-    (SCM_SYSCALL r (times (& info)))
+    (SCM_SYSCALL3 r (times (& info)) (== r (cast clock_t -1)))
     (when (== r (cast clock_t -1)) (Scm_SysError "times failed"))
     (.if "defined(_SC_CLK_TCK)"
          (set! tick (sysconf _SC_CLK_TCK))
