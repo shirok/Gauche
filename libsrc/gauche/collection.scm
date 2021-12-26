@@ -63,6 +63,7 @@
           c64vector-length
           c128vector-length)
 
+;; utility - we can't depend on data.queue, so this is a simple
 ;; alternative.
 (define (make-queue)   (let1 anchor (list #f) (cons anchor anchor)))
 (define (enqueue! q x) (set! (cddr q) (list x)) (set! (cdr q) (cddr q)))
