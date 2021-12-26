@@ -182,6 +182,7 @@ static const char *get_executable_path()
     if (r == PROC_PIDPATHINFO_MAXSIZE) return NULL; /* too long? something's funny */
     char *path = PATH_ALLOC(r+1);
     memcpy(path, buf, r);
+    path[r] = '\0';
     return path;
 }
 
