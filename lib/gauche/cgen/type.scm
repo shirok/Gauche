@@ -170,50 +170,6 @@
     :unboxer     (or unbox (default-unbox (x->string name)))
     :boxer       (or box "SCM_OBJ_SAFE")))
 
-;; TRANSIENT: Remove this after 0.9.11 release
-;; <native-type> is introduced in 0.9.11, but we need 'em to compile 0.9.11
-;; with 0.9.10, so we fake 'em.  See src/libtype.scm for the complete
-;; definition.
-(cond-expand
- [(or gauche-0.9.10 gauche-0.9.11_pre1)
-  (begin
-    (define-class <native-type-alt> ()
-      ((name :init-keyword :name)
-       (c-type-name :init-keyword :c-type-name)))
-    (define-syntax define-native-type
-      (syntax-rules ()
-        [(_ name super c-type-name pred)
-         (define name (make <native-type-alt>
-                        :name 'name
-                        :c-type-name 'c-type-name))]))
-    ;; Taken from src/libtype.scm
-    (define-native-type <fixnum>  SCM_CLASS_INTEGER ScmSmallInt native_fixnumP)
-    (define-native-type <short>   SCM_CLASS_INTEGER short native_shortP)
-    (define-native-type <ushort>  SCM_CLASS_INTEGER u_short native_ushortP)
-    (define-native-type <int>     SCM_CLASS_INTEGER int native_intP)
-    (define-native-type <uint>    SCM_CLASS_INTEGER u_int native_uintP)
-    (define-native-type <long>    SCM_CLASS_INTEGER long native_longP)
-    (define-native-type <ulong>   SCM_CLASS_INTEGER u_long native_ulongP)
-    (define-native-type <int8>    SCM_CLASS_INTEGER int8_t native_s8P)
-    (define-native-type <uint8>   SCM_CLASS_INTEGER uint8_t native_u8P)
-    (define-native-type <int16>   SCM_CLASS_INTEGER int16_t native_s16P)
-    (define-native-type <uint16>  SCM_CLASS_INTEGER uint16_t native_u16P)
-    (define-native-type <int32>   SCM_CLASS_INTEGER int32_t native_s32P)
-    (define-native-type <uint32>  SCM_CLASS_INTEGER uint32_t native_u32P)
-    (define-native-type <int64>   SCM_CLASS_INTEGER int64_t native_s64P)
-    (define-native-type <uint64>  SCM_CLASS_INTEGER uint64_t native_u64P)
-    (define-native-type <size_t>  SCM_CLASS_INTEGER size_t native_sizetP)
-    (define-native-type <ssize_t> SCM_CLASS_INTEGER ssize_t native_ssizetP)
-    (define-native-type <ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t native_ptrdifftP)
-    (define-native-type <float>   SCM_CLASS_REAL float native_realP)
-    (define-native-type <double>  SCM_CLASS_REAL double native_realP)
-    (define-native-type <const-cstring> SCM_CLASS_STRING "const char*" native_cstrP)
-    (define-native-type <input-port>  SCM_CLASS_PORT ScmPort* native_iportP)
-    (define-native-type <output-port> SCM_CLASS_PORT ScmPort* native_oportP)
-    (define-native-type <closure> SCM_CLASS_PROCEDURE ScmClosure* native_closureP)
-    (define-native-type <void>    SCM_CLASS_TOP ScmObj native_voidP))]
- [else])
-
 ;; Stub types corresponding to native types.
 (let ()
   (define (%native native-type pred unbox box)
@@ -332,7 +288,7 @@
    (%cclass <box>  "ScmBox*")
    (%cclass <primitive-parameter> "ScmPrimitiveParameter*")
    (%cclass <dlobj> "ScmDLObj*")
-   ;(%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")
+   (%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")
    (%cclass <sys-group> "ScmSysGroup*")
    (%cclass <sys-passwd> "ScmSysPasswd*")
    (%cclass <sys-sigset> "ScmSysSigset*")
@@ -340,16 +296,13 @@
    (%cclass <time> "ScmTime*")
    ;(%cclass <sys-tm> "ScmSysTm*")
    (%cclass <sys-fdset> "ScmSysFdset*")
- 
+
    ;; Exception - These classes are not available until we load gauche.threads,
    ;; but we need those stub types before compiling gauche.threads.
    ;; We hand-wire them, leaving scheme-type field #f.
    (make-cgen-type '<mutex> #f "ScmMutex*" "<mutex>")
    (make-cgen-type '<condition-variable> #f "ScmConditionVariable*"
                    "<condition-variable>")
-   ;; TRANSIENT: <dlptr> isn't in 0.9.10
-   (make-cgen-type '<dlptr> #f "ScmObj" "<dlptr>"
-                   "Scm_DLPtrP" "SCM_OBJ")
    )
 
 ;;
