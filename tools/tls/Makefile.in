@@ -5,7 +5,7 @@
 .PHONY: mbedtls
 
 # update these for new MbedTLS version / repo
-MBEDTLS_VERSION = 2.24.0
+MBEDTLS_VERSION = 3.1.0
 MBEDTLS_SOURCE  = https://github.com/ARMmbed/mbedtls/archive/v$(MBEDTLS_VERSION).tar.gz
 
 
