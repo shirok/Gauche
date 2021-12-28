@@ -914,10 +914,6 @@
             [else (rlet1 body (unpack-body ref)
                     (hash-table-put! dict ref body))]))
     (define (unpack-body i)
-      ;; NB: We dispatch by symbol, not the numeric tag value.
-      ;; TRANSIENT: Due to a bug, 0.9.7 precompiled IForm contains numeric
-      ;; tag 7 in place of $LET.  To keep binary compatibility, we have to
-      ;; support it until the next ABI bump.
       (case (V i)
        [($DEFINE) ($define (V i 1) (V i 2) (V i 3) (unpack-rec (V i 4)))]
        [($LREF)   ($lref (unpack-rec (V i 1)))]
@@ -925,14 +921,14 @@
        [($GREF)   ($gref (V i 1))]
        [($GSET)   ($gset (V i 1) (unpack-rec (V i 2)))]
        [($CONST)  ($const (V i 1))]
-       [($IF)  ($if (V i 1) (unpack-rec (V i 2))
+       [($IF)     ($if (V i 1) (unpack-rec (V i 2))
                     (unpack-rec (V i 3)) (unpack-rec (V i 4)))]
-       [($LET 7) (rlet1 unpacked
-                     ($let (V i 1) (V i 2)
-                           (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
-                           (unpack-rec (V i 5)))
-                   (ifor-each2 (^(lv in) (lvar-initval-set! lv in))
-                               ($let-lvars unpacked) ($let-inits unpacked)))]
+       [($LET)    (rlet1 unpacked
+                      ($let (V i 1) (V i 2)
+                            (map unpack-rec (V i 3)) (map unpack-rec (V i 4))
+                            (unpack-rec (V i 5)))
+                    (ifor-each2 (^(lv in) (lvar-initval-set! lv in))
+                                ($let-lvars unpacked) ($let-inits unpacked)))]
        [($RECEIVE) ($receive (V i 1) (V i 2) (V i 3)
                              (map unpack-rec (V i 4)) (unpack-rec (V i 5))
                              (unpack-rec (V i 6)))]
