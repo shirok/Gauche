@@ -198,9 +198,6 @@
  (define-cproc %dump-type-table () ::<void> ; for debug
    (Scm__MemoTableDump type-table SCM_CURERR))
 
- ;; TRANSIENT: for size and alignemnt slots, we'll change them to size_t once
- ;; 0.9.11 is released.  (0.9.10's precompiler doesn't support <size_t>
- ;; stub types.
  (define-ctype ScmNativeType
    ::(.struct ScmNativeTypeRec
               (hdr::ScmInstance
@@ -208,8 +205,8 @@
                c-of-type::(.function (obj) ::int *)
                super::ScmObj
                c-type-name::(const char *)
-               size::u_long
-               alignment::u_long)))
+               size::size_t
+               alignment::size_t)))
 
  (define-cclass <native-type> :base :private :no-meta
    "ScmNativeType*" "Scm_NativeTypeClass"
@@ -217,8 +214,8 @@
    ((name)
     (super)
     (c-type-name :type <const-cstring>)
-    (size :type <ulong>)
-    (alignment :type <ulong>))
+    (size :type <size_t>)
+    (alignment :type <size_t>))
    (printer (Scm_Printf port "#<native-type %S>" (-> (SCM_NATIVE_TYPE obj) name))))
  )
 

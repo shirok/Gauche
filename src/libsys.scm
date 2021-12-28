@@ -571,8 +571,7 @@
    ()
    ((address :c-name "ptr"
              :c-spec "Scm_MakeIntegerU((uintptr_t)obj->ptr)" :setter #f)
-    ;; TRANSIENT: After 0.9.11, we can say :c-type <size_t>.
-    (size :c-spec "Scm_MakeIntegerU(obj->size)" :setter #f)
+    (size :type <size_t>  :setter #f)
     (protection :c-name "prot" :type <int> :setter #f)
     (flags :type <int> :setter #f))
    (printer (let* ((m::ScmMemoryRegion* (SCM_MEMORY_REGION obj)))
