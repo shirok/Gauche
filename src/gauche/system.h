@@ -73,13 +73,6 @@
 
 SCM_EXTERN int Scm_GetPortFd(ScmObj port_or_fd, int needfd);
 
-SCM_EXTERN size_t   Scm_IntegerToSize(ScmObj);
-SCM_EXTERN ScmObj   Scm_SizeToInteger(size_t);
-SCM_EXTERN off_t    Scm_IntegerToOffset(ScmObj);
-SCM_EXTERN ScmObj   Scm_OffsetToInteger(off_t);
-SCM_EXTERN intptr_t Scm_IntegerToIntptr(ScmObj);
-SCM_EXTERN ScmObj   Scm_IntptrToInteger(intptr_t);
-
 /*==============================================================
  * Filesystem
  */

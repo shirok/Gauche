@@ -3366,6 +3366,205 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
     return Scm_BignumLogXor(SCM_BIGNUM(x), SCM_BIGNUM(y));
 }
 
+
+/*===============================================================
+ * System-specific integral types
+ */
+
+static ScmObj SCM_SIZE_T_MAX;
+static ScmObj SCM_SSIZE_T_MAX;
+static ScmObj SCM_SSIZE_T_MIN;
+static ScmObj SCM_PTRDIFF_T_MAX;
+static ScmObj SCM_PTRDIFF_T_MIN;
+
+int Scm_IntegerFitSizeP(ScmObj i)
+{
+    if (SCM_INTP(i)) return SCM_INT_VALUE(i) >= 0;
+    if (SCM_BIGNUMP(i)) {
+        return (SCM_BIGNUM_SIGN(i) >= 0
+                && Scm_NumCmp(i, SCM_SSIZE_T_MAX) <= 0);
+    }
+    return FALSE;
+}
+
+/* i must satisfy Scm_IntegerFitsSizeP */
+size_t Scm_IntegerToSize(ScmObj i)
+{
+    if (SCM_INTP(i) && SCM_INT_VALUE(i) >= 0) {
+        return (size_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i) && SCM_BIGNUM_SIGN(i) >= 0) {
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+        return (size_t)Scm_GetIntegerUClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_SIZE_T == 8
+        return (size_t)Scm_GetIntegerU64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+        /* I don't think there's such an architecture. */
+# error "size_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as size_t: %S", i);
+    return (size_t)-1;       /* dummy */
+}
+
+ScmObj Scm_SizeToInteger(size_t off)
+{
+#if SIZEOF_SIZE_T == SIZEOF_LONG
+    return Scm_MakeInteger(off);
+#elif SIZEOF_SIZE_T == 8
+    return Scm_MakeInteger64((int64_t)off);
+#else
+# error "size_t size on this platform is not suported."
+#endif
+}
+
+int Scm_IntegerFitSsizeP(ScmObj i)
+{
+    if (SCM_INTP(i)) return TRUE; /* all fixnums should fit in ssize_t */
+    if (SCM_BIGNUMP(i)) {
+        return (Scm_NumCmp(i, SCM_SSIZE_T_MIN) >= 0
+                && Scm_NumCmp(i, SCM_SSIZE_T_MAX) <= 0);
+    }
+    return FALSE;
+}
+
+/* i must satisfy Scm_IntegerFitsSsizeP */
+ssize_t Scm_IntegerToSsize(ScmObj i)
+{
+    if (SCM_INTP(i)) return (ssize_t)SCM_INT_VALUE(i);
+    if (SCM_BIGNUMP(i)) {
+#if SIZEOF_SSIZE_T == SIZEOF_LONG
+        return (ssize_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_SSIZE_T == 8
+        return (ssize_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+        /* I don't think there's such an architecture. */
+# error "ssize_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as ssize_t: %S", i);
+    return (ssize_t)-1;       /* dummy */
+}
+
+/* There're platforms where pointer width is smaller than long's, so
+   not all fixnums may fit in ptfdiff_t.
+ */
+int Scm_IntegerFitPtrdiffP(ScmObj i)
+{
+    if (SCM_INTEGERP(i)) {
+        return (Scm_NumCmp(i, SCM_PTRDIFF_T_MIN) >= 0
+                && Scm_NumCmp(i, SCM_PTRDIFF_T_MAX) <= 0);
+    }
+    return FALSE;
+}
+
+ptrdiff_t Scm_IntegerToPtrdiff(ScmObj i)
+{
+    if (SCM_INTEGERP(i)) {
+#if SIZEOF_PTRDIFF_T == SIZEOF_LONG
+        return (ptrdiff_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_PTRDIFF_T == 8
+        return (ptrdiff_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+# error "ptrdiff_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as ptrdiff: %S", i);
+    return (ptrdiff_t)-1;       /* dummy */
+}
+
+ScmObj Scm_PtrdiffToInteger(ptrdiff_t d)
+{
+#if SIZEOF_PTRDIFF_T == SIZEOF_LONG
+    return Scm_MakeInteger((long)d);
+#elif SIZEOF_PTRDIFF_T == 8
+    return Scm_MakeInteger64((int64_t)d);
+#else
+# error "ptrdiff_t size on this platform is not suported."
+#endif
+}
+
+/* Range of off_t is not provided in POSIX.  We assume the range of signed
+   integer that fits in the size of off_t. */
+int Scm_IntegerFitOffsetP(ScmObj i)
+{
+    if (SCM_INTP(i)) return TRUE;
+#if SIZEOF_OFF_T == 4
+    if (SCM_BIGNUMP(i)) {
+        return (Scm_NumCmp(i, SCM_MINUS_2_31) >= 0
+                && Scm_NumCmp(i, SCM_2_31) >= 0);
+    }
+#elif SIZEOF_OFF_T == 8
+    if (SCM_BIGNUMP(i)) {
+        return (Scm_NumCmp(i, SCM_MINUS_2_63) >= 0
+                && Scm_NumCmp(i, SCM_2_63) >= 0);
+    }
+#else
+# error "off_t size on this platform is not suported."
+#endif
+    return FALSE;
+}
+
+off_t Scm_IntegerToOffset(ScmObj i)
+{
+    if (SCM_INTP(i)) {
+        return (off_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i)) {
+#if SIZEOF_OFF_T == SIZEOF_LONG
+        return (off_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_OFF_T == 8
+        return (off_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+# error "off_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as offset: %S", i);
+    return (off_t)-1;       /* dummy */
+}
+
+ScmObj Scm_OffsetToInteger(off_t off)
+{
+#if SIZEOF_OFF_T == SIZEOF_LONG
+    return Scm_MakeInteger(off);
+#elif SIZEOF_OFF_T == 8
+    return Scm_MakeInteger64((int64_t)off);
+#else
+# error "off_t size on this platform is not suported."
+#endif
+}
+
+intptr_t Scm_IntegerToIntptr(ScmObj i)
+{
+    if (SCM_INTP(i)) {
+        return (intptr_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i)) {
+#if SIZEOF_INTPTR_T == SIZEOF_LONG
+        return (intptr_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_OFF_T == 8
+        return (intptr_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+        /* I don't think there's such an architecture. */
+# error "intptr_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as intptr: %S", i);
+    return (intptr_t)-1;       /* dummy */
+}
+
+ScmObj Scm_IntptrToInteger(intptr_t i)
+{
+#if SIZEOF_INTPTR_T == SIZEOF_LONG
+    return Scm_MakeInteger(i);
+#elif SIZEOF_INTPTR_T == 8
+    return Scm_MakeInteger64((int64_t)i);
+#else
+# error "intptr_t size on this platform is not suported."
+#endif
+}
+
+
+
+
+
 /*===============================================================
  * Number I/O
  */
@@ -4647,6 +4846,12 @@ void Scm__InitNumber(void)
     SCM_POSITIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_POSITIVE_INFINITY);
     SCM_NEGATIVE_INFINITY = Scm_MakeFlonum(SCM_DBL_NEGATIVE_INFINITY);
     SCM_NAN               = Scm_MakeFlonum(SCM_DBL_NAN);
+
+    SCM_SIZE_T_MAX = Scm_MakeIntegerU64(SIZE_MAX);
+    SCM_SSIZE_T_MAX = Scm_MakeInteger64(SSIZE_MAX);
+    SCM_SSIZE_T_MIN = Scm_MakeInteger64(-(SSIZE_MAX-1));
+    SCM_PTRDIFF_T_MAX = Scm_MakeInteger64(PTRDIFF_MAX);
+    SCM_PTRDIFF_T_MIN = Scm_MakeInteger64(-(PTRDIFF_MAX-1));
 
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);
