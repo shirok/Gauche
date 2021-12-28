@@ -923,9 +923,6 @@
 ;;; Make exported symbol visible from outside
 ;;;
 
-;; TRANSIENT: the inlinable flag is only necessary in 0.9.10 -> 0.9.11
-;; transition, for define-class doesn't create inlinable binding in 0.9.10 but
-;; it does in 0.9.11.
 (let ((xfer (with-module gauche.internal %transfer-bindings)))
   (xfer (current-module)
         (find-module 'gauche)
@@ -933,8 +930,7 @@
           <descriptive-type>
           <native-type>
           <^> </> <?> <Tuple> <List> <Vector>
-          subtype? of-type?)
-        '(inlinable))
+          subtype? of-type?))
   (xfer (current-module)
         (find-module 'gauche.internal)
         '(construct-type
