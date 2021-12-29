@@ -64,13 +64,7 @@
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
-
-#ifdef HAVE_MBEDTLS_NET_SOCKETS_H
 #include <mbedtls/net_sockets.h>
-#elif  HAVE_MBEDTLS_NET_H
-#include <mbedtls/net.h>
-#endif
-
 #endif  /*GAUCHE_USE_MBEDTLS*/
 
 /* This is a 'success' code of AxTLS.  mbedtls x509 routine returns 0

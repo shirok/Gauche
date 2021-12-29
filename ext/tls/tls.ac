@@ -110,13 +110,8 @@ AS_IF([echo $TLSLIBS | grep -F -w -q axtls], [
 dnl mbedtls
 AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
   CFLAGS_SAVE=$CFLAGS
-  CFLAGS="$MBEDTLS_INCLUDES $CFLAGS"
-  AC_CHECK_HEADER([mbedtls/net_sockets.h],
-    [AC_DEFINE(HAVE_MBEDTLS_NET_SOCKETS_H, 1,
-               [Define to 1 if you have the <mbedtls/net_sockets.h> header file.])],
-    [AC_CHECK_HEADER([mbedtls/net.h],
-      [AC_DEFINE(HAVE_MBEDTLS_NET_H, 1, [Define to 1 if you have the <mbedtls/net.h> header file.])],
-      [mbedtls_unavailable=yes])])
+  CFLAGS="$MBEDTLS_CFLAGS $CFLAGS"
+  AC_CHECK_HEADER([mbedtls/version.h], [], [mbedtls_unavailable=yes])
   CFLAGS=${CFLAGS_SAVE}
 
   dnl We don't want to include mbedtls libraries in generic LIBS
