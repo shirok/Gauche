@@ -57,15 +57,7 @@
 #    include <ws2tcpip.h>
 #  endif /*GAUCHE_WINDOWS*/
 #include "axTLS/ssl/ssl.h"
-#endif  /* GAUCHE_USE_MBEDTLS */
-
-#if defined(GAUCHE_USE_MBEDTLS)
-#include <mbedtls/version.h>
-#include <mbedtls/ssl.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/net_sockets.h>
-#endif  /*GAUCHE_USE_MBEDTLS*/
+#endif  /* GAUCHE_USE_AXTLS */
 
 /* This is a 'success' code of AxTLS.  mbedtls x509 routine returns 0
    on success, which happens to be the same as SSL_OK.
@@ -126,9 +118,6 @@ SCM_CLASS_DECL(Scm_TLSClass);
 #if defined(GAUCHE_USE_AXTLS)
 SCM_CLASS_DECL(Scm_AxTLSClass);
 #endif /*GAUCHE_USE_AXTLS*/
-#if defined(GAUCHE_USE_MBEDTLS)
-SCM_CLASS_DECL(Scm_MbedTLSClass);
-#endif /*GAUCHE_USE_MBEDTLS*/
 
 #define SCM_CLASS_TLS   (&Scm_TLSClass)
 #define SCM_TLS(obj)    ((ScmTLS*)obj)

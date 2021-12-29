@@ -109,29 +109,38 @@ AS_IF([echo $TLSLIBS | grep -F -w -q axtls], [
 
 dnl mbedtls
 AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
-  CFLAGS_SAVE=$CFLAGS
-  CFLAGS="$MBEDTLS_CFLAGS $CFLAGS"
-  AC_CHECK_HEADER([mbedtls/version.h], [], [mbedtls_unavailable=yes])
-  CFLAGS=${CFLAGS_SAVE}
+  AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls-internal], [
+    dnl We'll extract MbedTLS source tree under tools/tls by 'make'.
+    dnl We don't have the source tree during ./configure, so we can't
+    dnl run tests for it.   Since we know the version of MbedTLS we use
+    dnl (see MBEDTLS_VERSION in tools/tls/Makefile.in), we assume
+    dnl those libraries are available.
+    MBEDTLS_LIBS="${MBEDTLS_LDFLAGS} -lmbedtls -lmbedx509 -lmbedcrypto"
+  ], [
+    CFLAGS_SAVE=$CFLAGS
+    CFLAGS="$MBEDTLS_CFLAGS $CFLAGS"
+    AC_CHECK_HEADER([mbedtls/version.h], [], [mbedtls_unavailable=yes])
+    CFLAGS=${CFLAGS_SAVE}
 
-  dnl We don't want to include mbedtls libraries in generic LIBS
-  LDFLAGS_SAVE=${LDFLAGS}
-  LIBS_SAVE=${LIBS}
-  LDFLAGS="${LDFLAGS} ${MBEDTLS_LDFLAGS}"
-  MBEDTLS_LIBS=""
-  AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto],
-   [MBEDTLS_LIBS="-lmbedcrypto ${MBEDTLS_LIBS}"],
-   [mbedtls_unavailable=yes])
-  AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509],
-   [MBEDTLS_LIBS="-lmbedx509 ${MBEDTLS_LIBS}"],
-   [mbedtls_unavailable=yes])
-  AC_SEARCH_LIBS([mbedtls_ssl_init], [mbedtls],
-   [MBEDTLS_LIBS="-lmbedtls ${MBEDTLS_LIBS}"],
-   [mbedtls_unavailable=yes])
-  LDFLAGS=${LDFLAGS_SAVE}
-  LIBS=${LIBS_SAVE}
-  MBEDTLS_LIBS="${MBEDTLS_LDFLAGS} ${MBEDTLS_LIBS}"
-  EXT_LIBS="$EXT_LIBS $MBEDTLS_LIBS"
+    dnl We don't want to include mbedtls libraries in generic LIBS
+    LDFLAGS_SAVE=${LDFLAGS}
+    LIBS_SAVE=${LIBS}
+    LDFLAGS="${LDFLAGS} ${MBEDTLS_LDFLAGS}"
+    MBEDTLS_LIBS=""
+    AC_SEARCH_LIBS([mbedtls_ctr_drbg_init], [mbedcrypto],
+     [MBEDTLS_LIBS="-lmbedcrypto ${MBEDTLS_LIBS}"],
+     [mbedtls_unavailable=yes])
+    AC_SEARCH_LIBS([mbedtls_x509_crt_init], [mbedx509],
+     [MBEDTLS_LIBS="-lmbedx509 ${MBEDTLS_LIBS}"],
+     [mbedtls_unavailable=yes])
+    AC_SEARCH_LIBS([mbedtls_ssl_init], [mbedtls],
+     [MBEDTLS_LIBS="-lmbedtls ${MBEDTLS_LIBS}"],
+     [mbedtls_unavailable=yes])
+    LDFLAGS=${LDFLAGS_SAVE}
+    LIBS=${LIBS_SAVE}
+    MBEDTLS_LIBS="${MBEDTLS_LDFLAGS} ${MBEDTLS_LIBS}"
+    EXT_LIBS="$EXT_LIBS $MBEDTLS_LIBS"
+  ])
 
   AS_IF([test "$mbedtls_unavailable" = yes], [
     AC_MSG_NOTICE([Can't find mbedtls headers and/or libraries.])
