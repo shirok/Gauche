@@ -201,9 +201,9 @@
   (%native <float>   "SCM_REALP" "(float)Scm_GetDouble" "Scm_MakeFlonum")
   (%native <double>  "SCM_REALP" "Scm_GetDouble" "Scm_VMReturnFlonum")
 
-  (%native <size_t>  "Scm_IntegerFitSizeP" "Scm_IntegerToSize" "Scm_SizeToInteger")
-  (%native <ssize_t> "Scm_IntegerFitSsizeP" "Scm_IntegerToSsize" "Scm_SsizeToInteger")
-  (%native <ptrdiff_t> "Scm_IntegerFitPtrdiffP"  "Scm_IntegerToPtrdiff" "Scm_PtrdiffToInteger")
+  (%native <size_t>  "Scm_IntegerFitsSizeP" "Scm_IntegerToSize" "Scm_SizeToInteger")
+  (%native <ssize_t> "Scm_IntegerFitsSsizeP" "Scm_IntegerToSsize" "Scm_SsizeToInteger")
+  (%native <ptrdiff_t> "Scm_IntegerFitsPtrdiffP"  "Scm_IntegerToPtrdiff" "Scm_PtrdiffToInteger")
 
   ;; TRANSIENT: The following needs to be in after 0.9.12 release
   ;;(%native <off_t>   "SCM_INTEGERP" "Scm_IntegerToOffset" "Scm_OffsetToInteger")

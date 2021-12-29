@@ -3377,7 +3377,7 @@ static ScmObj SCM_SSIZE_T_MIN;
 static ScmObj SCM_PTRDIFF_T_MAX;
 static ScmObj SCM_PTRDIFF_T_MIN;
 
-int Scm_IntegerFitSizeP(ScmObj i)
+int Scm_IntegerFitsSizeP(ScmObj i)
 {
     if (SCM_INTP(i)) return SCM_INT_VALUE(i) >= 0;
     if (SCM_BIGNUMP(i)) {
@@ -3417,7 +3417,7 @@ ScmObj Scm_SizeToInteger(size_t off)
 #endif
 }
 
-int Scm_IntegerFitSsizeP(ScmObj i)
+int Scm_IntegerFitsSsizeP(ScmObj i)
 {
     if (SCM_INTP(i)) return TRUE; /* all fixnums should fit in ssize_t */
     if (SCM_BIGNUMP(i)) {
@@ -3448,7 +3448,7 @@ ssize_t Scm_IntegerToSsize(ScmObj i)
 /* There're platforms where pointer width is smaller than long's, so
    not all fixnums may fit in ptfdiff_t.
  */
-int Scm_IntegerFitPtrdiffP(ScmObj i)
+int Scm_IntegerFitsPtrdiffP(ScmObj i)
 {
     if (SCM_INTEGERP(i)) {
         return (Scm_NumCmp(i, SCM_PTRDIFF_T_MIN) >= 0
@@ -3485,7 +3485,7 @@ ScmObj Scm_PtrdiffToInteger(ptrdiff_t d)
 
 /* Range of off_t is not provided in POSIX.  We assume the range of signed
    integer that fits in the size of off_t. */
-int Scm_IntegerFitOffsetP(ScmObj i)
+int Scm_IntegerFitsOffsetP(ScmObj i)
 {
     if (SCM_INTP(i)) return TRUE;
 #if SIZEOF_OFF_T == 4
