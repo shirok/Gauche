@@ -1,5 +1,7 @@
 2021-12-28  Shiro Kawai  <shiro@acm.org>
 
+	* Release 0.9.11-p1: A "patch" release fixing mbedtls-internal issue.
+
 	* ext/tls/tls.ac: Fix build defect when internal mbedtls is used
 	  https://github.com/shirok/Gauche/issues/799
 
