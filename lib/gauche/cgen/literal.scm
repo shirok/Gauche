@@ -372,18 +372,11 @@
 ;; This, the key of the hashtable consists of a pair of the literal value
 ;; and its cpp condition.
 
-;; TRANSIENT: Need these to compile 0.9.11 with 0.9.10
-(cond-expand
- [gauche-0.9.10
-  (begin
-    (define (%descriptive-type? obj) #f)
-    (define (%deconstruct-type t) #f))]
- [else
-  (begin
-    (define (%descriptive-type? obj)
-      (is-a? obj <descriptive-type>))
-    (define (%deconstruct-type t)
-      ((with-module gauche.internal deconstruct-type) t)))])
+(define (%descriptive-type? obj)
+  (is-a? obj <descriptive-type>))
+
+(define (%deconstruct-type t)
+  ((with-module gauche.internal deconstruct-type) t))
 
 (define (literal-value-hash key)
   (define (rec val)
@@ -899,53 +892,49 @@
 
 ;; descriptive type ---------------------------------------------
 
-;; TRANSIENT: This cond-expand is to compile 0.9.11 with 0.9.10.
-;; Remove it after 0.9.11 release.
-(cond-expand
- [gauche-0.9.10]
- [else
-  (begin
-    (define-cgen-literal <cgen-scheme-proxy-type> <proxy-type>
-      ((id :init-keyword :id))
-      (make (value)
-        (make <cgen-scheme-proxy-type> :value value
-              :c-name (cgen-allocate-static-datum)
-              :id ($ cgen-literal
-                     $ (with-module gauche.internal proxy-type-id) value)))
-      (init (self)
-            (format #t "  ~a = Scm_MakeProxyType(SCM_IDENTIFIER(~a), NULL);"
-                    (cgen-c-name self)
-                    (cgen-c-name (~ self'id))))
-      (static (self) #f))
-    (define-cgen-literal <cgen-scheme-descriptive-type> <descriptive-type>
-      ((ctor :init-keyword :ctor)
-       (args :init-keyword :args))
-      (make (value)
-        (make <cgen-scheme-descriptive-type> :value value
-              :c-name (cgen-allocate-static-datum)
-              :ctor (cgen-literal (class-of value))
-              :args ($ cgen-literal
-                       $ (with-module gauche.internal deconstruct-type) value)))
-      (init (self)
-            (format #t "  ~a = Scm_ConstructType(~a, ~a);"
-                    (cgen-c-name self)
-                    (cgen-c-name (~ self'ctor))
-                    (cgen-c-name (~ self'args))))
-      (static (self) #f))
-    (define-cgen-literal <cgen-scheme-native-type> <native-type>
-      ((name :init-keyword :name))
-      (make (value)
-        (make <cgen-scheme-native-type> :value value
-              :c-name (cgen-allocate-static-datum)
-              :name (cgen-literal (~ value'name))))
-      (init (self)
-            (format #t "  ~a = Scm_GlobalVariableRef(Scm_GaucheModule(), \
+(define-cgen-literal <cgen-scheme-proxy-type> <proxy-type>
+  ((id :init-keyword :id))
+  (make (value)
+    (make <cgen-scheme-proxy-type> :value value
+          :c-name (cgen-allocate-static-datum)
+          :id ($ cgen-literal
+                 $ (with-module gauche.internal proxy-type-id) value)))
+  (init (self)
+        (format #t "  ~a = Scm_MakeProxyType(SCM_IDENTIFIER(~a), NULL);"
+                (cgen-c-name self)
+                (cgen-c-name (~ self'id))))
+  (static (self) #f))
+
+(define-cgen-literal <cgen-scheme-descriptive-type> <descriptive-type>
+  ((ctor :init-keyword :ctor)
+   (args :init-keyword :args))
+  (make (value)
+    (make <cgen-scheme-descriptive-type> :value value
+          :c-name (cgen-allocate-static-datum)
+          :ctor (cgen-literal (class-of value))
+          :args ($ cgen-literal
+                   $ (with-module gauche.internal deconstruct-type) value)))
+  (init (self)
+        (format #t "  ~a = Scm_ConstructType(~a, ~a);"
+                (cgen-c-name self)
+                (cgen-c-name (~ self'ctor))
+                (cgen-c-name (~ self'args))))
+  (static (self) #f))
+
+(define-cgen-literal <cgen-scheme-native-type> <native-type>
+  ((name :init-keyword :name))
+  (make (value)
+    (make <cgen-scheme-native-type> :value value
+          :c-name (cgen-allocate-static-datum)
+          :name (cgen-literal (~ value'name))))
+  (init (self)
+        (format #t "  ~a = Scm_GlobalVariableRef(Scm_GaucheModule(), \
                                      SCM_SYMBOL(~a), 0);"
-                    (cgen-c-name self) (cgen-c-name (~ self'name)))
-            (format #t "  if (SCM_UNBOUNDP(~a)) \
+                (cgen-c-name self) (cgen-c-name (~ self'name)))
+        (format #t "  if (SCM_UNBOUNDP(~a)) \
                              Scm_Error(\"Invalid native type: %S\", ~a);"
-                    (cgen-c-name self) (cgen-c-name (~ self'name))))
-      (static (self) #f)))])
+                (cgen-c-name self) (cgen-c-name (~ self'name))))
+  (static (self) #f))
 
 ;;---------------------------------------------------------------
 ;; Inferring literal handlers.
