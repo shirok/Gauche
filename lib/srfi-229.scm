@@ -35,7 +35,7 @@
   (export case-lambda/tag lambda/tag procedure/tag? procedure-tag))
 (select-module srfi-229)
 
-(define %procedure-copy 
+(define %procedure-copy
   (with-module gauche.internal %procedure-copy))
 (define %procedure-tags-alist
   (with-module gauche.internal %procedure-tags-alist))
