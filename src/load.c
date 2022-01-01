@@ -503,13 +503,26 @@ static void unlock_dlobj(ScmDLObj *dlo)
 
 /* Find NAME in the looked-up entries.
    NAME must begin with '_'.
-   Assuming the caller holding the lock of OBJ. */
+   Assuming the caller holding the lock of DLO. */
 static ScmObj find_entry(ScmDLObj *dlo, ScmString *name)
 {
     ScmDictEntry *e = Scm_HashCoreSearch(&dlo->entries, (intptr_t)name,
                                          SCM_DICT_GET);
     if (e) return SCM_DICT_VALUE(e);
     else   return SCM_FALSE;
+}
+
+/* Register name => fptr entry in dlo.  Assuming the caller holding the
+   lock of DLO.  Returns a foreign pointer wrapping ptr. */
+static ScmObj add_entry(ScmDLObj *dlo, ScmString *name, void *ptr)
+{
+    ScmObj fptr = Scm_MakeForeignPointer(ldinfo.dlptr_class, ptr);
+    Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(fptr),
+                              SCM_SYM_NAME, SCM_OBJ(name));
+    ScmDictEntry *e = Scm_HashCoreSearch(&dlo->entries, (intptr_t)name,
+                                         SCM_DICT_CREATE);
+    (void)SCM_DICT_SET_VALUE(e, fptr);
+    return fptr;
 }
 
 /* lookup the symbol within DLO.
@@ -530,12 +543,7 @@ static ScmObj lookup_entry(ScmDLObj *dlo, ScmString *name)
                 return SCM_FALSE; /* not found */
             }
         }
-        fptr = Scm_MakeForeignPointer(ldinfo.dlptr_class, ptr);
-        Scm_ForeignPointerAttrSet(SCM_FOREIGN_POINTER(fptr),
-                                  SCM_SYM_NAME, SCM_OBJ(name));
-        ScmDictEntry *e = Scm_HashCoreSearch(&dlo->entries, (intptr_t)name,
-                                             SCM_DICT_CREATE);
-        (void)SCM_DICT_SET_VALUE(e, fptr);
+        fptr = add_entry(dlo, name, ptr);
     }
     return fptr;
 }
@@ -620,7 +628,8 @@ void Scm_RegisterPrelinked(ScmString *dsoname,
 
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.dso_mutex);
     for (int i=0; initfns[i] && initfn_names[i]; i++) {
-        lookup_entry(dlo, SCM_STRING(SCM_MAKE_STR_IMMUTABLE(initfn_names[i])));
+        add_entry(dlo, SCM_STRING(SCM_MAKE_STR_IMMUTABLE(initfn_names[i])),
+                  initfns[i]);
     }
     ldinfo.dso_prelinked = Scm_Cons(SCM_OBJ(dsoname), ldinfo.dso_prelinked);
     (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.dso_mutex);
