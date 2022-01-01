@@ -733,43 +733,6 @@ static int string_cmp(const ScmHashCore *ht SCM_UNUSED, intptr_t k1, intptr_t k2
 }
 
 /*
- * Accessor function for multiword raw hashtable.
- * Key points to an array of N words.
- */
-#if 0                           /* not used yet */
-static u_long multiword_hash(const ScmHashCore *table, intptr_t key)
-{
-    ScmWord keysize = (ScmWord)table->data;
-    ScmWord *keyarray = (ScmWord*)key;
-    u_long h = 0, h1;
-    for (int i=0; i<keysize; i++) {
-        ADDRESS_HASH(h1, keyarray[i]);
-        h = COMBINE(h, h1);
-    }
-    return h;
-}
-#endif
-
-#if 0
-static Entry *multiword_access(ScmHashCore *table, intptr_t k, ScmDictOp op)
-{
-    u_long hashval, index;
-    ScmWord keysize = (ScmWord)table->data;
-
-    hashval = multiword_hash(table, k);
-    index = HASH2INDEX(table->numBuckets, table->numBucketsLog2, hashval);
-    Entry **buckets = (Entry**)table->buckets;
-
-    for (Entry *e = buckets[index], *p = NULL; e; p = e, e = e->next) {
-        if (memcmp((void*)k, (void*)e->key, keysize*sizeof(ScmWord)) == 0)
-            FOUND(table, op, e, p, index);
-    }
-    NOTFOUND(table, op, k, hashval, index);
-}
-#endif
-
-
-/*
  * Accessor function for general case
  *    (hashfn and cmpfn are given by user)
  */
@@ -1236,15 +1199,6 @@ ScmHashEntry *Scm__HashIterNextCompat(ScmHashIter *iter)
     return (ScmHashEntry*)e;
 }
 
-#if 0
-ScmObj Scm_MakeHashTableMultiWord(int keysize, int initsize)
-{
-    return make_hash_table(SCM_CLASS_HASH_TABLE, SCM_HASH_MULTIWORD,
-                           multiword_access, multiword_hash,
-                           NULL, initsize, (void*)SCM_WORD(keysize));
-}
-#endif
-
 /* Legacy constructor.  DEPRECATED.  Will go away soon. */
 ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
                          ScmHashCompareProc *cmpfn SCM_UNUSED,
@@ -1259,14 +1213,7 @@ ScmObj Scm_MakeHashTable(ScmHashProc *hashfn,
     } else if (hashfn == (ScmHashProc*)SCM_HASH_STRING) {
         return Scm_MakeHashTableSimple(SCM_HASH_STRING, initSize);
     }
-#if 0
-    else {
-        return Scm_MakeHashTableFull(SCM_CLASS_HASH_TABLE, SCM_HASH_GENERAL,
-                                     hashfn, cmpfn, initSize, NULL);
-    }
-#else
     return SCM_UNDEFINED;
-#endif
 }
 #endif /*GAUCHE_API_VERSION < 1000*/
 
