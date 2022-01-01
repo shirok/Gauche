@@ -810,7 +810,7 @@
                              "foo/bar.scm"
                              "foo/bar-impl.scm"
                              "foo/baz.scm")))
-  (test* "static link executable" "ARGS: (A b CdE)"
+  (test* "static link executable" "ARGS: #(A b CdE)"
          (process-output->string '(test.o/staticmain A b CdE)))
   )
 
