@@ -35,7 +35,6 @@
 #include "gauche.h"
 #include "gauche/priv/bignumP.h"
 #include "gauche/priv/builtin-syms.h"
-#include "gauche/priv/mmapP.h"
 
 #include <locale.h>
 #include <errno.h>
@@ -83,9 +82,6 @@ static int win_wait_for_handles(HANDLE *handles, int nhandles, int options,
 #endif
 #ifdef HAVE_SCHED_H
 #include <sched.h>
-#endif
-#ifdef HAVE_SYS_MMAN_H
-#include <sys/mman.h>
 #endif
 
 /*
@@ -262,104 +258,6 @@ ScmObj Scm_GetCwd(void)
     return Scm_MakeString(buf, -1, -1, SCM_STRING_COPYING);
 #endif /*!(defined(GAUCHE_WINDOWS) && defined(UNICODE))*/
 #undef CHAR_T
-}
-
-/*===============================================================
- * Mmap (sys/mman.h)
- */
-
-static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
-{
-    ScmMemoryRegion *m = SCM_MEMORY_REGION(obj);
-    if (m->ptr != NULL) {
-#if !defined(GAUCHE_WINDOWS)
-        int r;
-        SCM_SYSCALL(r, munmap(m->ptr, m->size));
-        if (r < 0) Scm_Warn("munmap failed");
-        m->ptr = NULL;
-#else  /*GAUCHE_WINDOWS*/
-        if (!UnmapViewOfFile(m->ptr)) {
-            Scm_SysError("UnmapViewOfFile failed");
-        }
-        m->ptr = NULL;
-        if (!CloseHandle(m->fileMapping)) {
-            Scm_SysError("CloseHandle failed");
-        }
-        m->fileMapping = INVALID_HANDLE_VALUE;
-#endif /*GAUCHE_WINDOWS*/
-    }
-}
-
-ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
-                   int prot, int flags)
-{
-#if !defined(GAUCHE_WINDOWS)
-    void *ptr;
-    SCM_SYSCALL3(ptr, mmap(addrhint, len, prot, flags, fd, off),
-                 ptr == MAP_FAILED);
-    if (ptr == MAP_FAILED) Scm_SysError("mmap failed");
-    ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
-    SCM_SET_CLASS(m, SCM_CLASS_MEMORY_REGION);
-    m->ptr = ptr;
-    m->size = len;
-    m->prot = prot;
-    m->flags = flags;
-    Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
-    return SCM_OBJ(m);
-#else  /*GAUCHE_WINDOWS*/
-    HANDLE fhandle = INVALID_HANDLE_VALUE;
-    if (fd >= 0) {
-        fhandle = (HANDLE)_get_osfhandle(fd);
-        if (fhandle == INVALID_HANDLE_VALUE) {
-            Scm_Error("fd is not associated to a file: %d", fd);
-        }
-    }
-
-    DWORD wprot = 0;
-    if (prot & PROT_EXEC) {
-        if (prot & PROT_WRITE) wprot = PAGE_EXECUTE_READWRITE;
-        else wprot = PAGE_EXECUTE_READ;
-    } else {
-        if (prot & PROT_WRITE) wprot = PAGE_READWRITE;
-        else wprot = PAGE_READONLY;
-    }
-    if (wprot == 0) {
-        Scm_Error("PROT_NONE mmap protection isn't allowed on MinGW");
-    }
-
-    DWORD size_hi = len >> 32;
-    DWORD size_lo = len & 0xffffffffULL;
-    HANDLE mapping = CreateFileMappingA(fhandle, NULL, wprot,
-                                        size_hi, size_lo, NULL);
-    if (mapping == NULL) {
-        Scm_SysError("CreateFileMapping failed");
-    }
-
-    DWORD off_hi = off >> 32;
-    DWORD off_lo = off & 0xffffffffULL;
-    DWORD accmode = 0;
-    if (prot & PROT_WRITE) accmode = FILE_MAP_WRITE;
-    else accmode = FILE_MAP_READ;
-    if (prot & PROT_EXEC) accmode |= FILE_MAP_EXECUTE;
-    LPVOID ptr = MapViewOfFileEx(mapping, accmode, off_hi, off_lo,
-                                 0, addrhint);
-    if (ptr == NULL) {
-        DWORD errcode = GetLastError();
-        (void)CloseHandle(mapping);
-        SetLastError(errcode);
-        Scm_SysError("MapViewOfFileEx failed");
-    }
-
-    ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
-    SCM_SET_CLASS(m, SCM_CLASS_MEMORY_REGION);
-    m->ptr = ptr;
-    m->size = len;
-    m->prot = prot;
-    m->flags = flags;
-    m->fileMapping = mapping;
-    Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
-    return SCM_OBJ(m);
-#endif /*GAUCHE_WINDOWS*/
 }
 
 /*===============================================================

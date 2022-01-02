@@ -230,7 +230,8 @@ libgauche_OBJECTS = \
 	vector.$(OBJEXT) weak.$(OBJEXT) symbol.$(OBJEXT) \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \
-	memo.$(OBJEXT) number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) \
+	memo.$(OBJEXT) mmap.$(OBJEXT) \
+	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libbox.$(OBJEXT) libchar.$(OBJEXT) \
