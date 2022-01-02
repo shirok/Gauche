@@ -66,22 +66,38 @@ static void mem_finalize(ScmObj obj, void *data SCM_UNUSED)
     }
 }
 
-ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
-                   int prot, int flags)
+static ScmObj make_memory_region(void *ptr, size_t size, int prot, int flags
+#if defined(GAUCHE_WINDOWS)
+                                 , HANDLE fileMapping
+#endif
+                                 )
+{
+    ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
+    SCM_SET_CLASS(m, SCM_CLASS_MEMORY_REGION);
+    m->ptr = ptr;
+    m->size = size;
+    m->prot = prot;
+    m->flags = flags;
+#if defined(GAUCHE_WINDOWS)
+    m->fileMapping = mapping;
+#endif
+    Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
+    return SCM_OBJ(m);
+}
+
+static void *mmap_int(void *addrhint, size_t len, int prot, int flags,
+                      int fd, size_t off
+#if defined(GAUCHE_WINDOWS)
+                      , HANDLE *pmapping
+#endif
+                      )
 {
 #if !defined(GAUCHE_WINDOWS)
     void *ptr;
     SCM_SYSCALL3(ptr, mmap(addrhint, len, prot, flags, fd, off),
                  ptr == MAP_FAILED);
     if (ptr == MAP_FAILED) Scm_SysError("mmap failed");
-    ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
-    SCM_SET_CLASS(m, SCM_CLASS_MEMORY_REGION);
-    m->ptr = ptr;
-    m->size = len;
-    m->prot = prot;
-    m->flags = flags;
-    Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
-    return SCM_OBJ(m);
+    return ptr;
 #else  /*GAUCHE_WINDOWS*/
     HANDLE fhandle = INVALID_HANDLE_VALUE;
     if (fd >= 0) {
@@ -126,14 +142,20 @@ ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
         Scm_SysError("MapViewOfFileEx failed");
     }
 
-    ScmMemoryRegion *m = SCM_NEW(ScmMemoryRegion);
-    SCM_SET_CLASS(m, SCM_CLASS_MEMORY_REGION);
-    m->ptr = ptr;
-    m->size = len;
-    m->prot = prot;
-    m->flags = flags;
-    m->fileMapping = mapping;
-    Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
-    return SCM_OBJ(m);
+    *pmapping = mapping;
+    return ptr;
+#endif /*GAUCHE_WINDOWS*/
+}
+
+ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
+                   int prot, int flags)
+{
+#if !defined(GAUCHE_WINDOWS)
+    void *ptr = mmap_int(addrhint, len, prot, flags, fd, off);
+    return make_memory_region(ptr, len, prot, flags);
+#else  /*GAUCHE_WINDOWS*/
+    HANDLE mapping = INVALID_HANDLE_VALUE;
+    void *ptr = mmap_int(addrhint, len, prot, flags, fd, off, &mapping);
+    return make_memory_region(ptr, len, prot, flags, mapping);
 #endif /*GAUCHE_WINDOWS*/
 }
