@@ -1000,3 +1000,16 @@ This Gauche has been configured with the following parameters:
           CA store: $TLS_CA_TYPE $TLS_CA_PATH
   optional modules: $OPTDBMS$OPTZLIB
 ])
+
+AS_IF([test "$GAUCHE_CHAR_ENCODING" != utf8], [
+  AC_MSG_RESULT([
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! Support of internal encoding other than utf-8 is deprecated.  Please  !!!
+!!! migrate to utf-8 at your earliest convenience.  Note that you can     !!!
+!!! still have your source code and data in encodings other than utf-8.   !!!
+!!! Just make sure their encoding is explicit, e.g. use coding:... magic  !!!
+!!! comment in your sources.  See                                         !!!
+!!! https://practical-scheme.net/gauche/gmemo/?Utf8Only for the details.  !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ])
+])
