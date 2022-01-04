@@ -45,10 +45,14 @@ v$(MBEDTLS_VERSION).tgz:
 
 # list-objects target is called by src/list-ext-objects.sh to gather
 # object files to archive into static gauche library.
+# NB: mbedtls is configured independently from Gauche, so our OBJEXT
+# may not match the one used in mbedtls.  We need to use 'find' to collect
+# objects heuristically.
 list-objects:
 	rm -rf objects && mkdir -p objects \
 	  && for a in $(MBEDTLS_LIBS); do (cd objects; ar x ../$$a); done \
-	  && for o in objects/*.$(OBJEXT); do echo "/// `pwd`/$$o"; done
+	  && find objects -name '*.$(OBJEXT)' -o -name '*.obj' \
+	       -exec echo "/// `pwd`/{}" \;
 
 clean:
 	rm -rf include objects
