@@ -51,7 +51,7 @@ v$(MBEDTLS_VERSION).tgz:
 list-objects:
 	rm -rf objects && mkdir -p objects \
 	  && for a in $(MBEDTLS_LIBS); do (cd objects; ar x ../$$a); done \
-	  && find objects -name '*.$(OBJEXT)' -o -name '*.obj' \
+	  && find objects \( -name '*.$(OBJEXT)' -o -name '*.obj' \) \
 	       -exec echo "/// `pwd`/{}" \;
 
 clean:
