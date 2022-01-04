@@ -10,7 +10,7 @@ MBEDTLS_SOURCE  = https://github.com/ARMmbed/mbedtls/archive/v$(MBEDTLS_VERSION)
 
 
 LN_S = @LN_S@
-
+OBJEXT = @OBJEXT@
 
 FETCHED = v$(MBEDTLS_VERSION).tgz
 CONFIG_GENERATED = Makefile
@@ -48,7 +48,7 @@ v$(MBEDTLS_VERSION).tgz:
 list-objects:
 	rm -rf objects && mkdir -p objects \
 	  && for a in $(MBEDTLS_LIBS); do (cd objects; ar x ../$$a); done \
-	  && for o in objects/*; do echo "/// `pwd`/$$o"; done
+	  && for o in objects/*.$(OBJEXT); do echo "/// `pwd`/$$o"; done
 
 clean:
 	rm -rf include objects
