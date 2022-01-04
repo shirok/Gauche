@@ -79,7 +79,7 @@ static ScmObj make_memory_region(void *ptr, size_t size, int prot, int flags
     m->prot = prot;
     m->flags = flags;
 #if defined(GAUCHE_WINDOWS)
-    m->fileMapping = mapping;
+    m->fileMapping = fileMapping;
 #endif
     Scm_RegisterFinalizer(SCM_OBJ(m), mem_finalize, NULL);
     return SCM_OBJ(m);
