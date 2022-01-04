@@ -1,3 +1,12 @@
+2022-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/list-ext-objects.sh: Allow to take extra directories to scan
+	  object files to archive.
+	* src/Makefile.in, tools/tls/Makefile.in:
+	  If --with-tls=mbedtls-internal, scan tools/tls to archive mbed
+	  object files in the static library.
+	  Cf. https://github.com/shirok/Gauche/issues/802
+
 2021-12-28  Shiro Kawai  <shiro@acm.org>
 
 	* Release 0.9.11-p1: A "patch" release fixing mbedtls-internal issue.

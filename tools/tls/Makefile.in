@@ -43,8 +43,15 @@ mbedtls-$(MBEDTLS_VERSION): v$(MBEDTLS_VERSION).tgz
 v$(MBEDTLS_VERSION).tgz:
 	curl -f -L -o v$(MBEDTLS_VERSION).tgz $(MBEDTLS_SOURCE)
 
+# list-objects target is called by src/list-ext-objects.sh to gather
+# object files to archive into static gauche library.
+list-objects:
+	rm -rf objects && mkdir -p objects \
+	  && for a in $(MBEDTLS_LIBS); do (cd objects; ar x ../$$a); done \
+	  && for o in objects/*; do echo "/// `pwd`/$$o"; done
+
 clean:
-	rm -rf include
+	rm -rf include objects
 	rm -rf $(MBEDTLS_LIBS)
 	cd mbedtls-$(MBEDTLS_VERSION) && $(MAKE) -q clean ; true
 

@@ -100,6 +100,11 @@ PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
 @CROSS_COMPILING_no@STATIC_GOSH  = $(top_builddir)/src/gosh -ftest
 @CROSS_COMPILING_yes@STATIC_GOSH = $(BUILD_GOSH)
 
+# MbedTLS internal switch (see ext/tls/tls.ac).  Need this for static
+# library build.
+@GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes@MBEDTLS_INTERNAL_DIR = tools/tls
+@GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no@MBEDTLS_INTERNAL_DIR =
+
 # List files that may affect stub generation.  If any of these files are
 # touched, stub files in src/ need to be regenerated.  (NB: Regeneration of
 # those files requires installed Gauche.  So only list files that absolutely
@@ -437,7 +442,7 @@ $(LIBGAUCHE_STATIC).a : all $(STATICINIT_OBJS)
 	$(AR) -rc $@ $(libgauche_OBJECTS) \
 	    `if [ X$(libgc_pic_LIBRARY) != X ]; then echo $(libgc_pic_OBJECTS); fi` \
 	    $(STATICINIT_OBJS) \
-	    `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)"`
+	    `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)" $(MBEDTLS_INTERNAL_DIR)` \
 
 # Pseudo dependencies to prevent multiple gen-staticinit from running in parallel
 staticinit_gdbm.c : staticinit.c
