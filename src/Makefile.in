@@ -440,7 +440,7 @@ static : $(LIBGAUCHE_STATIC).a
 $(LIBGAUCHE_STATIC).a : all $(STATICINIT_OBJS)
 	rm -f $@
 	$(AR) -rc $@ $(libgauche_OBJECTS) \
-	    `test X$(libgc_pic_LIBRARY) != X && echo $(libgc_pic_OBJECTS)` \
+	    `test -n "$(libgc_pic_LIBRARY)" && echo $(libgc_pic_OBJECTS)` \
 	    $(STATICINIT_OBJS) \
 	    `MAKE=$(MAKE) "$(srcdir)/list-ext-objects.sh" "$(top_builddir)" $(MBEDTLS_INTERNAL_DIR)` \
 
