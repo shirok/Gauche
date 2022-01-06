@@ -199,23 +199,37 @@ ifdef::EN[]
 endif::EN[]
 
 ifdef::JA[]
-デフォルトでは、Gaucheは内部文字エンコーディングとして UTF-8 を使います。
+Gaucheは内部文字エンコーディングとして UTF-8 を使います。
+
 `--enable-multibyte=ENCODING` というオプションをconfigureに渡すことで、
-内部文字エンコーディングを変えることができます。
+内部文字エンコーディングを変えることができます。ENCODINGには `utf-8` (デフォルト)、
+`euc-jp`、`sjis`、そして `none` (8ビット固定長。ISO8859-xなど)を指定できます。
+ただし、utf-8以外の内部エンコーディングは非推奨で、既にGaucheをそのエンコーディングで
+使っているシステムの互換性のためだけに残されています。Gaucheをutf-8以外の
+内部エンコーディングで使っている場合は、移行を考えて下さい。
+
+内部エンコーディングがutf-8であって、コードやデータにそれ以外のエンコーディングを
+使うことに制限はありません。入出力の際にエンコーディングを指定しない場合のデフォルトが
+utf-8になるというのが主な違いです。詳細は以下のURLで。
 endif::JA[]
 ifdef::EN[]
-By default, Gauche is compiled with UTF-8 as a native character encoding.
-You can give a `--enable-multibyte=ENCODING` option to switch the native
-encoding.   Note that if you want to use ISO8859-1 GR characters in
-the program text, you have to specify no multibyte encoding, or
-Gauche takes such characters as the first byte of multibyte charaters.
+Gauche is compiled with UTF-8 as a native character encoding.
+
+You can select different character encoding with `--enable-multibyte=ENCODING`
+configure option, where ENCODING can be either `utf-8` (default),
+`euc-jp`, `sjis` or `none` (8-bit/character encoding such as ISO8859-x).
+However, it is deprecated and kept only for the
+backward compatibility to support existing systems.  If your system
+uses Gauche with different internal encodings other than utf-8, consider
+migration.
+
+Even if you configure Gauche with utf-8, you can still have your code
+and data in other encodings.  The main difference is that when you do
+I/O without specifying encoding, utf-8 is assumed by default.
+See the following URL for the details.
 endif::EN[]
 
-[horizontal]
-`--enable-multibyte=utf-8`   :: UTF-8 (default)
-`--enable-multibyte=euc-jp`  :: EUC-JP
-`--enable-multibyte=sjis`    :: Shift JIS
-`--enable-multibyte=no`      :: No multibyte string
+https://practical-scheme.net/gauche/gmemo/?Utf8Only
 
 
 ifdef::JA[]
