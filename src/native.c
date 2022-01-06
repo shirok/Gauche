@@ -50,7 +50,8 @@
  * the generated code won't live after the dynamic extent of FFI call.
  */
 struct ScmCodeCacheRec {
-    ScmMemoryRegion *pad;
+    ScmMemoryRegion *wpad;      /* writable page */
+    ScmMemoryRegion *xpad;      /* executable page */
     void *free;
 };
 
@@ -72,17 +73,15 @@ static void init_code_cache(ScmVM *vm) {
     if (vm->codeCache != NULL) return;
 
     ScmCodeCache *cc = SCM_NEW(ScmCodeCache);
-    cc->pad = SCM_MEMORY_REGION(Scm_SysMmap(NULL, -1, CODE_PAD_SIZE, 0,
-                                            PROT_READ|PROT_WRITE|PROT_EXEC,
-                                            MAP_PRIVATE|MAP_ANONYMOUS));
-    cc->free = cc->pad->ptr;
+    Scm_SysMmapWX(CODE_PAD_SIZE, &cc->wpad, &cc->xpad);
+    cc->free = cc->wpad->ptr;
     vm->codeCache = cc;
 }
 
 static inline void *allocate_code_cache(ScmVM *vm, size_t size)
 {
     ScmCodeCache *cc = vm->codeCache;
-    if (cc->free + size > cc->pad->ptr + cc->pad->size) {
+    if (cc->free + size > cc->wpad->ptr + cc->wpad->size) {
         Scm_Error("VM code cache overflow");
     }
     void *region = cc->free;
@@ -93,8 +92,14 @@ static inline void *allocate_code_cache(ScmVM *vm, size_t size)
 static inline void free_code_cache(ScmVM *vm, void *ptr)
 {
     ScmCodeCache *cc = vm->codeCache;
-    SCM_ASSERT(ptr >= cc->pad->ptr && ptr < cc->pad->ptr + cc->pad->size);
+    SCM_ASSERT(ptr >= cc->wpad->ptr && ptr < cc->wpad->ptr + cc->wpad->size);
     cc->free = ptr;
+}
+
+/* Returns address in xpad that corresponds to the wpad_ptr. */
+static inline void *get_entry_address(ScmCodeCache *cc, void *wpad_ptr)
+{
+    return cc->xpad->ptr + (wpad_ptr - cc->wpad->ptr);
 }
 
 /*
@@ -269,7 +274,7 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
         /*
          * Call the code
          */
-        void *entryPtr = codepad + entry;
+        void *entryPtr = get_entry_address(vm->codeCache, codepad + entry);
         if (SCM_EQ(rettype, sym_d)) {
             double r = ((double (*)())entryPtr)();
             result = Scm_VMReturnFlonum(r);

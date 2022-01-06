@@ -1,3 +1,8 @@
+2022-01-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/mmap.c (Scm_SysMmapWX): Separate writable pages and executable
+	  page if PaX MPROTEXT is active.
+
 2022-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/list-ext-objects.sh: Allow to take extra directories to scan

@@ -38,6 +38,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/atomicP.h"
 #include "gauche/priv/mmapP.h"
 
 #ifdef HAVE_SYS_MMAN_H
@@ -147,6 +148,32 @@ static void *mmap_int(void *addrhint, size_t len, int prot, int flags,
 #endif /*GAUCHE_WINDOWS*/
 }
 
+/* Check if PaX mprotect is active. */
+#if !defined(GAUCHE_WINDOWS)
+static int pax_active_p()
+{
+    static ScmAtomicVar result_cache = -1; /* -1: unknown */
+
+    /* No MT hazard - operation is idempotent*/
+    if (result_cache < 0) {
+        size_t pagesize = sysconf(_SC_PAGESIZE);
+        SCM_ASSERT(pagesize > 0);
+        void *ptr = mmap(NULL, pagesize, PROT_WRITE,
+                         MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+        SCM_ASSERT(ptr != NULL);
+        int r = mprotect(ptr, pagesize, PROT_WRITE|PROT_EXEC);
+        (void)munmap(ptr, pagesize);
+        AO_store_full(&result_cache, (r < 0));
+    }
+    return result_cache;
+}
+#endif /*!GAUCHE_WINDOWS*/
+
+/*
+ * API
+ */
+
+/* Straight mmap() interface.   Scheme's sys-mmap calls this. */
 ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
                    int prot, int flags)
 {
@@ -158,4 +185,28 @@ ScmObj Scm_SysMmap(void *addrhint, int fd, size_t len, off_t off,
     void *ptr = mmap_int(addrhint, len, prot, flags, fd, off, &mapping);
     return make_memory_region(ptr, len, prot, flags, mapping);
 #endif /*GAUCHE_WINDOWS*/
+}
+
+/* Mmap for runtime code generation.  Returns two ScmMemoryRegions
+   of the same size, one for write and one for execute.  If the system
+   allows a page being both writable and executable, two regions may
+   be the same. */
+void Scm_SysMmapWX(size_t len,
+                   ScmMemoryRegion **writable,   /* ret */
+                   ScmMemoryRegion **executable) /* ret */
+{
+#if !defined(GAUCHE_WINDOWS)
+    if (!pax_active_p()) goto fallback;
+    /* TODO */
+    Scm_Error("System has Pax MPROTECT activated.  We haven't suppored it yet.");
+#endif /*GAUCHE_WINDOWS*/
+ fallback:
+    {
+        ScmMemoryRegion *m =
+            SCM_MEMORY_REGION(Scm_SysMmap(NULL, -1, len, 0,
+                                          PROT_READ|PROT_WRITE|PROT_EXEC,
+                                          MAP_PRIVATE|MAP_ANONYMOUS));
+        *writable = m;
+        *executable = m;
+    }
 }
