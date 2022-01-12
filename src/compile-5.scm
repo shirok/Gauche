@@ -594,7 +594,38 @@
   0)
 
 (define (pass5/$CLAMBDA ifrom ccb renv ctx)
-  0)
+  (define (reqargs-min-max lambda-nodes)
+    (let loop ([nodes lambda-nodes] [mi +inf.0] [mx 0])
+      (if (null? nodes)
+        (values min max)
+        (loop (cdr nodes)
+              (min mi ($lambda-reqargs (car nodes)))
+              (max mx ($lambda-reqargs (car nodes)))))))
+  ;; TRANSIENT: We reuse make-case-lambda for now.  It requires list of
+  ;; formals only to compute possible argument count.  $LAMBDA node doesn't
+  ;; keep formals as are, so we rebuild dummy formals.
+  (define (lambda-formals lambda-node)
+    (let rec ([n ($lambda-reqargs lambda-node)]
+              [r (if (zero? ($lambda-optarg lambda-node)) '() 'v)])
+      (if (zero? n) r (rec (- n 1) (cons 'v r)))))
+
+  (let*-values ([(cs) ($clambda-closures iform)]
+                [(minarg maxarg) (regargs-min-max cs)]
+                [(formals) (map lambda-formals ($clambda-closures iform))]
+                [merger (if (bottom-context? ctx)
+                          #f
+                          (compiled-code-new-label ccb))])
+    (when merger
+      (compiled-code-emit1oi! ccb PRE-CALL (length cs) merger ($*-src iform)))
+    (compiled-code-emit0o! ccb CONST minarg)
+    (compiled-code-emit-push! ccb)
+    (compiled-code-emit0o! ccb CONST maxarg)
+    (compiled-code-emit-push! ccb)
+    (rlet1 d (pass5/prepare-args (cs ccb renv 'normal/top))
+      (compiled-code-emit0oi! ccb GREF make-case-lambda.)
+      (compiled-code-emit1i! ccb CALL (+ (length cs) 2) ($*-src iform))
+      (when merger
+        (compiled-code-set-label! ccb merger)))))
 
 (define (pass5/lambda iform ccb renv)
   (let* ([inliner (let1 v ($lambda-flag iform)

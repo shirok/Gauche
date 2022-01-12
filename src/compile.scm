@@ -574,9 +574,9 @@
 ;; $clambda <src> <name> <lambda-node> ...
 ;;   Case-lambda.
 (define-simple-struct $clambda $CLAMBDA $clambda
-  (src
-   name
-   closures))
+  (src              ; original source for debugging
+   name             ; inferred name of this closure
+   closures))       ; list of $LAMBDA nodes (always 2 or more)
 
 ;; $label <src> <label> <body>
 ;;    This kind of IForm node is introduced in Pass2 to record a shared
