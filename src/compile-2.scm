@@ -493,7 +493,13 @@
                                       (cons iform penv) #t))
   iform)
 
-(define (pass2/$CLAMBDA iform penv tail?) iform)
+(define (pass2/$CLAMBDA iform penv tail?)
+  (let loop ([cs ($clambda-closures iform)] [r '()])
+    (if (null? cs)
+      (begin
+        ($clambda-closures-set! iform (reverse r))
+        iform)
+      (loop (cdr cs) (cons (pass2/rec (car cs) iform #f) r)))))
 
 (define (pass2/$LABEL iform penv tail?)
   ;; $LABEL's body should already be processed by pass2, so we don't need

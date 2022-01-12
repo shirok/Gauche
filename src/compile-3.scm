@@ -241,7 +241,12 @@
   iform)
 
 (define (pass3/$CLAMBDA iform labels)
-  iform)
+  (let loop ([cs ($clambda-closures iform)] [r '()])
+    (if (null? cs)
+      (begin
+        ($clambda-closures-set! iform (reverse r))
+        iform)
+      (loop (cdr cs) (cons (pass3/rec (car cs) iform) r)))))
 
 (define (pass3/$LABEL iform labels)
   (unless (label-seen? labels iform)
