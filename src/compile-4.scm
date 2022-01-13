@@ -317,7 +317,7 @@
              (or (and-let* ([lifted ($lambda-lifted-var iform)])
                    ($lref lifted))
                  iform)]
-  [($CLAMBDA) (pass4/subst*! ($clambda-closures ifrom) labels) iform]
+  [($CLAMBDA) (pass4/subst*! ($clambda-closures iform) labels) iform]
   [($LABEL)  (unless (label-seen? labels iform)
                (label-push! labels iform)
                (pass4/subst! ($label-body iform) labels))
