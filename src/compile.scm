@@ -750,6 +750,10 @@
                           (map lvar->string ($lambda-lvars iform)))
         (nl (+ ind 2))
         (rec (+ ind 2) ($lambda-body iform)) (display ")")]
+       [($CLAMBDA) (format #t "($clambda ~a" ($clambda-name iform))
+                   (for-each (^l (nl (+ ind 2)) (rec (+ ind 2) l))
+                             ($clambda-closures iform))
+                   (display ")")]
        [($LABEL) (if-let1 p (assq iform labels)
                    (format #t "label#~a" (cdr p))
                    (let1 num (length labels)

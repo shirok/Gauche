@@ -1465,6 +1465,20 @@
               cenv))]
     [_ (error "syntax-error: malformed case-lambda:" form)]))
 
+;; TEMPORARY - This is to test the new CLAMBDA nodes.  Once everything works,
+;; this takes over case-lambda.
+(define-pass1-syntax (case-lambda-new form cenv) :gauche
+  (match form
+    [(_ (formals . body)) ; special case
+     (pass1 `(,lambda. ,formals ,@body) cenv)]
+    [(_) (error "syntax-error: malformed case-lambda:" form)]
+    [(_ (formals . body) ...)
+     (let1 closures (map (^[f b] (pass1 `(,lambda. ,f ,@b) cenv)) formals body)
+       ($clambda form (cenv-exp-name cenv) closures))]
+    [_ (error "syntax-error: malformed case-lambda:" form)]))
+
+
+
 (define (find-argcount-minmax formals)
   (define (length. xs k)
     (if (pair? xs) (length. (cdr xs) (+ k 1)) k))
