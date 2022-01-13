@@ -872,6 +872,9 @@
                       (map get-ref ($lambda-lvars iform))
                       (get-ref ($lambda-body iform))
                       ($lambda-flag iform))]
+     [($CLAMBDA) (put! iform '$CLAMBDA ($*-src iform)
+                       ($clambda-name iform)
+                       (map get-ref ($clambda-closures iform)))]
      [($LABEL)  (put! iform '$LABEL ($*-src iform) #f
                       (get-ref ($label-body iform)))]
      [($SEQ)    (put! iform '$SEQ (map get-ref ($seq-body iform)))]
@@ -939,6 +942,7 @@
        [($LAMBDA) ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
                            (map unpack-rec (V i 5))
                            (unpack-rec (V i 6)) (V i 7))]
+       [($CLAMBDA) ($clambda (V i 1) (V i 2) (map unpack-rec (V i 3)))]
        [($LABEL)  ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
        [($SEQ)    ($seq (map unpack-rec (V i 1)))]
        [($CALL)   ($call (V i 1) (unpack-rec (V i 2))
@@ -985,6 +989,7 @@
        [($RECEIVE)
         (sum-items (+ cnt 1) ($receive-expr iform) ($receive-body iform))]
        [($LAMBDA) (sum-items (+ cnt 1) ($lambda-body iform))]
+       [($CLAMBDA) (sum-items (+ cnt 1) (* ($clambda-closures iform)))]
        [($LABEL)  (sum-items cnt ($label-body iform))]
        [($SEQ)    (sum-items cnt (* ($seq-body iform)))]
        [($CALL) (sum-items (+ cnt 1) ($call-proc iform) (* ($call-args iform)))]
@@ -1050,6 +1055,9 @@
                          newlvs
                          (iform-copy ($lambda-body iform) newalist)
                          ($lambda-flag iform)))]
+   [($CLAMBDA) ($clambda ($*-src iform) ($clambda-name iform)
+                         (imap (cut iform-copy <> lv-alist)
+                               ($clambda-closures iform)))]
    [($LABEL)
     (cond [(assq iform lv-alist) => (^p (cdr p))]
           [else
@@ -1145,6 +1153,8 @@
                          ($lambda-lvars iform)
                          (rec ($lambda-body iform))
                          ($lambda-flag iform))]
+     [($CLAMBDA) ($lambda ($*-src iform) ($clambda-name iform)
+                          (imap rec ($clambda-closures iform)))]
      [($LABEL)  (error "[compiler internal] $LABEL node shouldn't appear \
                         in the packed IForm")]
      [($SEQ)    ($seq (imap rec ($seq-body iform)))]
@@ -1216,6 +1226,7 @@
      [($RECEIVE)(and (rec ($receive-expr iform) labels)
                      (rec ($receive-body iform) labels))]
      [($LAMBDA) #t]
+     [($CLAMBDA) #t]
      [($LABEL)  (or (label-seen? labels iform)
                     (begin (label-push! labels iform)
                            (rec ($label-body iform) labels)))]
@@ -1259,6 +1270,7 @@
              (reset-lvars/rec ($receive-body iform) labels)]
   [($LAMBDA) (for-each lvar-reset ($lambda-lvars iform))
    (reset-lvars/rec ($lambda-body iform) labels)]
+  [($CLAMBDA) (reset-lvars/rec* ($clambda-closures iform) labels)]
   [($LABEL)  (unless (label-seen? labels iform)
                (label-push! labels iform)
                (reset-lvars/rec ($label-body iform) labels))]
@@ -1357,6 +1369,9 @@
                     ($lambda ($*-src iform) ($lambda-name iform)
                              ($lambda-reqargs iform) ($lambda-optarg iform)
                              ($lambda-lvars iform) b ($lambda-flag iform))))]
+     [($CLAMBDA) ($clambda ($*-src iform) ($clambda-name iform)
+                           (imap (cut subst <> mapping dict)
+                                 ($clambda-closures iform)))]
      [($SEQ)    ($seq (imap (cut subst <> mapping dict) ($seq-body iform)))]
      [($CALL)   ($call ($*-src iform)
                        (subst ($call-proc iform) mapping dict)
@@ -1431,6 +1446,8 @@
                                    vars
                                    (apply list* vars))])
                    `(lambda ,formals ,(rec ($lambda-body iform))))]
+     [($CLAMBDA) (let1 cs (map rec ($clambda-closures iform))
+                   `(case-lambda ,@(map cdr cs)))]
      [($SEQ)    `(begin ,@(map rec ($seq-body iform)))]
      [($CALL)   `(,(rec ($call-proc iform)) ,@(map rec ($call-args iform)))]
      [($ASM)    `(asm ,($asm-insn iform)
