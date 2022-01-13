@@ -12969,6 +12969,7 @@ sequence of formatters and outputs to a port or returns a string.
 @c MOD scheme.show.base
 This is the main entry for combinator formatting. All formatters are
 processed to produce a string to @var{output-dest} if it's a port. If
+@var{output-dest} is @code{#t}, the current output port is used. If
 @var{output-dest} is @code{#f}, the output string is returned.
 @code{show} return value is otherwise undefined. Non-formatters are
 also accepted and will be wrapped in @code{displayed} formatter.
