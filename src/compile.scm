@@ -573,10 +573,17 @@
 
 ;; $clambda <src> <name> <lambda-node> ...
 ;;   Case-lambda.
+;;   Closures slot contains two or more IForms.  They're initially $LAMBDA
+;;   nodes, but may be replaced with $LREF nodes by lambda-lifting pass.
+;;   The argcounts slot is computed when this node is constructed, and
+;;   unpacked.
 (define-simple-struct $clambda $CLAMBDA $clambda
   (src              ; original source for debugging
    name             ; inferred name of this closure
-   closures))       ; list of $LAMBDA nodes (always 2 or more)
+   closures         ; list of IForms
+   ;; The following slots are transient, not saved when packed.
+   (argcounts '())  ; ((#reqargs . #optargs) ...)
+   ))
 
 ;; $label <src> <label> <body>
 ;;    This kind of IForm node is introduced in Pass2 to record a shared
@@ -942,7 +949,9 @@
        [($LAMBDA) ($lambda (V i 1) (V i 2) (V i 3) (V i 4)
                            (map unpack-rec (V i 5))
                            (unpack-rec (V i 6)) (V i 7))]
-       [($CLAMBDA) ($clambda (V i 1) (V i 2) (map unpack-rec (V i 3)))]
+       [($CLAMBDA) (let1 lambda-nodes (map unpack-rec (V i 3))
+                     ($clambda (V i 1) (V i 2) lambda-nodes
+                               (compute-clambda-argcounts lambda-nodes)))]
        [($LABEL)  ($label (V i 1) (V i 2) (unpack-rec (V i 3)))]
        [($SEQ)    ($seq (map unpack-rec (V i 1)))]
        [($CALL)   ($call (V i 1) (unpack-rec (V i 2))

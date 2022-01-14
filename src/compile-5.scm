@@ -627,26 +627,22 @@
            'tail)))
 
 (define (pass5/$CLAMBDA iform ccb renv ctx)
-  (define (reqargs-min-max lambda-nodes)
-    (let loop ([nodes lambda-nodes] [mi #f] [mx 0])
-      (if (null? nodes)
-        (values mi mx)
-        (loop (cdr nodes)
-              (if mi
-                (min mi ($lambda-reqargs (car nodes)))
-                ($lambda-reqargs (car nodes)))
-              (max mx ($lambda-reqargs (car nodes)))))))
+  (define (reqargs-min-max argcounts)
+    (let loop ([counts argcounts] [mi #f] [mx 0])
+      (match counts
+        [() (values mi mx)]
+        [((req . _) . rest) (loop rest (if mi (min mi req) req) (max mx req))])))
   ;; TRANSIENT: We reuse make-case-lambda for now.  It requires list of
   ;; formals only to compute possible argument count.  $LAMBDA node doesn't
   ;; keep formals as are, so we rebuild dummy formals.
-  (define (lambda-formals lambda-node)
-    (let rec ([n ($lambda-reqargs lambda-node)]
-              [r (if (zero? ($lambda-optarg lambda-node)) '() 'v)])
+  (define (lambda-formals argcount)
+    (let rec ([n (car argcount)]
+              [r (if (zero? (cdr argcount)) '() 'v)])
       (if (zero? n) r (rec (- n 1) (cons 'v r)))))
 
   (let*-values ([(cs) ($clambda-closures iform)]
-                [(minarg maxarg) (reqargs-min-max cs)]
-                [(formals) (map lambda-formals ($clambda-closures iform))]
+                [(minarg maxarg) (reqargs-min-max ($clambda-argcounts iform))]
+                [(formals) (map lambda-formals ($clambda-argcounts iform))]
                 [merger (if (bottom-context? ctx)
                           #f
                           (compiled-code-new-label ccb))])

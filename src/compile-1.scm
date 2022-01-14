@@ -1474,9 +1474,13 @@
     [(_) (error "syntax-error: malformed case-lambda:" form)]
     [(_ (formals . body) ...)
      (let1 closures (map (^[f b] (pass1 `(,lambda. ,f ,@b) cenv)) formals body)
-       ($clambda form (cenv-exp-name cenv) closures))]
+       ($clambda form (cenv-exp-name cenv) closures
+                 (compute-clambda-argcounts closures)))]
     [_ (error "syntax-error: malformed case-lambda:" form)]))
 
+;; This is called when constructing and unpacking CLAMBDA nodes.
+(define (compute-clambda-argcounts lambda-nodes)
+  (map (^l (cons ($lambda-reqargs l) ($lambda-optarg l))) lambda-nodes))
 
 
 (define (find-argcount-minmax formals)
