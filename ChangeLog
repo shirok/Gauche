@@ -1,3 +1,10 @@
+2022-01-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (case-lambda): Change case-lambda handling.
+	  Instead of expanding to the call for make-case-lambda in pass1,
+	  we create $CLAMBDA node and carry it up to pass5.  This will allow
+	  more optimizations.
+
 2022-01-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/mmap.c (Scm_SysMmapWX): Separate writable pages and executable
