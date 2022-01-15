@@ -10766,12 +10766,22 @@ script location.
 
 @deftp {Module} srfi-196
 @mdindex srfi-196
+@c EN
 This srfi defines @emph{range} object, an abstract immutable sequence.
 
 Gauche's @code{data.range} module provides superset of @code{srfi-196}.
 This module re-exports the following procedures from it for the portable
 code.
 @xref{Range}, for the description of the procedures.
+@c JP
+このsrfiはレンジオブジェクトを定義します。
+レンジオブジェクトは、変更不可なシーケンスを抽象化したものです。
+
+Gaucheは@code{data.range}モジュールで@code{srfi-196}のスーパーセットを
+提供しています。このモジュールは、ポータブルなコードのために以下の手続きを
+再エクスポートするだけのものです。
+レンジオブジェクトについて詳しくは@ref{Range}を参照してください。
+@c COMMON
 
 @example
 range              numeric-range         iota-range
@@ -11078,6 +11088,7 @@ this macro simply nests the steps:
 
 @deftp {Module} srfi-217
 @mdindex srfi-217
+@c EN
 This srfi defines a set whose element is limited to fixnums.
 
 Although general sets are provided by @code{scheme.set}
@@ -11086,6 +11097,14 @@ elements to optimize storage and operations.
 
 It also provides range-based operations, which aren't available in
 the general sets.
+@c JP
+このsrfiは要素がfixnumに限定されたセットを定義します。
+
+汎用のセットは@code{scheme.set}で提供されています(@ref{R7RS sets}参照)が、
+このモジュールは要素が限定されていることを利用してコンパクトにセットを保持します。
+
+また、汎用のセットにはない、キーの範囲を使った操作も提供しています。
+@c COMMON
 @end deftp
 
 @subheading Constructors
