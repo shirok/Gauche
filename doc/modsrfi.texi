@@ -10954,31 +10954,64 @@ or @var{initial-value} is expected to yield that many values.
 
 @defmac chain-and initial-value [placeholder] step @dots{}
 @c MOD srfi-197
+@c EN
 A variant of @code{chain} that stops and returns @code{#f}
 immedialy when the intermediate result becomes @code{#f}.
+@c JP
+@code{chain}の変種で、中間の結果が@code{#f}になった場合にその後の@var{step}の
+評価を行わず直ちに@code{#f}を返します。
+@c COMMON
 
+@c EN
 The @var{initial-value} is an expression that yields one value.
 The @var{placeholder} is a literal symbol to be used as the placeholder
 in @var{step}; if omitted, @code{_} is used.
+@c JP
+@var{initial-value}はひとつの値を返す式です。
+@var{placeholder}は@var{step}中でプレースホルダーとして使われるリテラルシンボルです。
+省略時には@code{_}が使われます。
+@c COMMON
 
+@c EN
 Unlike @code{chain}, a @var{step} can only contain zero or one placeholder
 symbol.  If @var{step} doesn't contain placeholder symbol, the previous
 @var{step}'s result isn't passed, but it is still checked if it's @code{#f}.
+@c JP
+@code{chain}と違い、各@var{step}はたかだか1個のプレースホルダーしか
+含むことができません。@var{step}がプレースホルダーを含んでいない場合、
+直前の@var{step}の結果は操作を打ちきるかどうかの判定のみに使われ、その後捨てられます。
+@c COMMON
 @end defmac
 
 @defmac chain-when initial-value [placeholder] ([guard] step) @dots{}
 @c MOD srfi-197
+@c EN
 A variant of @code{chain} where you can select whether each @var{step}
 is applied or skipped.
+@c JP
+@code{chain}の変種で、@var{step}を適用するかどうかを選べるものです。
+@c COMMON
 
+@c EN
 Each @var{step} can have at most one placeholder symbol, just as
 @code{chain-and}.
+@c JP
+@code{chain-and}と同じく、各@var{step}はプレースホルダーをたかだか1個までしか
+含むことができません。
+@c COMMON
 
+@c EN
 Each @var{guard} is an expression.  For each step, @var{guard} is
 evaluated, and if it yields a true value, the previous result is
 passed to the placeholder in the corresponding @var{step}.  If
 @var{guard} yields @code{#f}, however, @var{step} is skipped and
 the previous value is passed through to the next step.
+@c JP
+各@var{guard}は式です。各ステップで、まず@var{guard}が評価され、
+それが真ならば直前に実行された結果がプレースホルダーに束縛されて
+対応する@var{step}が実行されます。@var{guard}が偽ならば、
+@var{step}は実行されず、直前の結果が次のステップへと持ち越されます。
+@c COMMON
 
 @example
 (chain-when expr ((p? x) (f _)) ((q? x) (g _)))
@@ -10999,10 +11032,17 @@ the previous value is passed through to the next step.
 
 @defmac nest [placeholder] step @dots{} initial-value
 @c MOD srfi-197
+@c EN
 Similar to @code{chain}, except the order of steps is right-to-left.
 
 Each @var{step} must have exactly one placeholder symbol, for
 this macro simply nests the steps:
+@c JP
+@code{chain}と似ていますが、評価順が右から左になります。
+
+各@var{step}はひとつだけプレースホルダーシンボルを持たなければなりません。
+このマクロは単にステップをネストした式に変換するだけです。
+@c COMMON
 
 @example
 (nest (f a _) (g _ b) (h _) expr)
@@ -11012,10 +11052,17 @@ this macro simply nests the steps:
 
 @defmac nest-reverse initial-value [placeholder] step @dots{}
 @c MOD srfi-197
+@c EN
 Similar to @code{nest} except the nesting is in reverse order.
 
 Each @var{step} must have exactly one placeholder symbol, for
 this macro simply nests the steps:
+@c JP
+@code{nest}の評価順が逆になったものです。
+
+各@var{step}はひとつだけプレースホルダーシンボルを持たなければなりません。
+このマクロは単にステップをネストした式に変換するだけです。
+@c COMMON
 
 @example
 (nest expr (h _) (g _ b) (f a _))
