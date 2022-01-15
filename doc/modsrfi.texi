@@ -11664,54 +11664,80 @@ Gaucheでは、遅延シーケンスは通常のリストと統合されてい�
 
 @deftp {Module} srfi-229
 @mdindex srfi-229
+@c EN
 This srfi allows to attach auxiliary information (tag) to a procedure.
 A tag can be attached when a procedure is created, and later retrieved.
 A procedure itself should be considered as an immutable entity,
 so you can't attach or remove a tag to an existing procedure
 (although you can attach a mutable structure as a tag and mutate
 it later; much like the closed environment can be mutated).
+@c JP
+このsrfiは、手続きに補助的な情報(タグ)を付加できるようにするものです。
+タグは手続きを作るときに与えることができて、後で取り出すことができます。
+手続きは変更不可なオブジェクトであり、従って既にある手続きにタグを追加したり
+取り除いたりすることはできません。(ただ、変更可能な構造をタグとして付加して、
+その構造を後で変更することはできます。クロージャに閉じ込まれた環境を
+変更できるのと同じです)。
+@c COMMON
 @end deftp
 
 @defmac lambda/tag expr formals body @dots{}
 [SRFI-229]
 @c MOD SRFI-229
+@c EN
 Evaluates @var{expr}, and returns a procedure that is
 the same as @code{(lambda formals body @dots{})} except that
 the value of @var{expr} is attached as a tag to the resulting
 procedure.   The tag can be retrieved with @code{procedure-tag}.
+@c JP
+@var{expr}を評価し、その値をタグとして持つ手続き@code{(lambda formals body @dots{})}を
+返します。タグは@code{procedure-tag}で取り出すことができます。
+@c COMMON
 @end defmac
 
 @defmac case-lambda/tag expr clause @dots{}
 [SRFI-229]
 @c MOD SRFI-229
-Each @code{clause} is @code{(formals body @dots{})}, much like
+@c EN
+Each @var{clause} is @code{(formals body @dots{})}, much like
 the ordinary @code{case-lambda}.
 
 First evaluates @var{expr}, and returns a procedure that is
 the same as @code{(case-lambda clause @dots{})}, excpet that
 the value of @var{expr} is attached as a tag to the resulting
 procedure.   The tag can be retrieved with @code{procedure-tag}.
+@c JP
+各@var{clause}は、通常の@code{case-lambda}と同様に
+@code{(formals body @dots{})}という形式です。
+
+まず@var{expr}を評価し、その値をタグとして持つ、
+@code{(case-lambda clause @dots{})}で作られる手続きを返します。
+タグは@code{procedure-tag}で取り出すことができます。
+@c COMMON
 @end defmac
 
 @defun procedure/tag? obj
 [SRFI-229]
 @c MOD SRFI-229
+@c EN
 Returns @code{#t} iff @var{obj} is a procedure and has a tag.
+@c JP
+@var{obj}が手続きであり、タグを持っていたら@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun procedure-tag proc
 [SRFI-229]
 @c MOD SRFI-229
+@c EN
 Returns a tag of @var{proc}, which must be a tagged procedure.
 If @var{proc} is not a procedure or not tagged, an error
 is signaled.
+@c JP
+@var{proc}がタグ付き手続きであればそのタグを返します。
+@var{proc}がタグ付き手続きでなければエラーが投げられます。
+@c COMMON
 @end defun
-
-
-
-
-
-
 
 @c Local variables:
 @c mode: texinfo
