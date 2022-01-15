@@ -561,6 +561,41 @@
                   `[(1) . (foo 1 ())]
                   `[(1 2) . (foo 1 (2))])
 
+;; Test if inlining case-lambda works correctly
+(define-inline (case-lambda-inlining-test x)
+  (case-lambda
+    [() x]
+    [(a) (+ x a)]
+    [(a b c) (* x a b c)]
+    [(a . b) 'oof]))
+
+(define case-lambda-inlining-test-2 (case-lambda-inlining-test 2))
+
+(let ([data '((() . 2)
+              ((1) . 3)
+              ((3 4) . oof)
+              ((3 4 5) . 120)
+              ((3 4 5 6) . oof))])
+  (define f (case-lambda-inlining-test 2))
+
+  (for-each (^d
+             (test* `("case-lambda inlining" ,(car d)) (cdr d)
+                    (apply case-lambda-inlining-test-2 (car d))))
+            data)
+
+  ;; The followings expect case-lambda optimizations
+  (test* "case-lambda inlining & optimization () " 2
+         (f))
+  (test* "case-lambda inlining & optimization (1) " 3
+         (f 1))
+  (test* "case-lambda inlining & optimization (3 4) " 'oof
+         (f 3 4))
+  (test* "case-lambda inlining & optimization (3 4 5) " 120
+         (f 3 4 5))
+  (test* "case-lambda inlining & optimization (3 4 5 6) " 'oof
+         (f 3 4 5 6))
+  )
+
 ;;-----------------------------------------------------------------------
 ;; generator-*
 (test-section "generator-*")
