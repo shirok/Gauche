@@ -28,15 +28,15 @@
    are met:
 
      1. Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
+	notice, this list of conditions and the following disclaimer.
 
      2. Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
+	notice, this list of conditions and the following disclaimer in the
+	documentation and/or other materials provided with the distribution.
 
      3. The names of its contributors may not be used to endorse or promote
-        products derived from this software without specific prior written
-        permission.
+	products derived from this software without specific prior written
+	permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -71,14 +71,14 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
     int mti;
     mt->mt[0]= s & 0xffffffffUL;
     for (mti=1; mti<N; mti++) {
-        mt->mt[mti] =
-            (1812433253UL * (mt->mt[mti-1] ^ (mt->mt[mti-1] >> 30)) + mti);
-        /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
-        /* In the previous versions, MSBs of the seed affect   */
-        /* only MSBs of the array mt[].                        */
-        /* 2002/01/09 modified by Makoto Matsumoto             */
-        mt->mt[mti] &= 0xffffffffUL;
-        /* for >32 bit machines */
+	mt->mt[mti] =
+	    (1812433253UL * (mt->mt[mti-1] ^ (mt->mt[mti-1] >> 30)) + mti);
+	/* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
+	/* In the previous versions, MSBs of the seed affect   */
+	/* only MSBs of the array mt[].                        */
+	/* 2002/01/09 modified by Makoto Matsumoto             */
+	mt->mt[mti] &= 0xffffffffUL;
+	/* for >32 bit machines */
     }
     mt->mti = mti;
     mt->seed = Scm_MakeIntegerU(s);
@@ -87,29 +87,29 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
 void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
 {
     if (SCM_INTP(seed)) {
-        /* For the backward compatibility, we only use the lower 32bit. */
-        Scm_MTInitByUI(mt, (uint32_t)Scm_GetUInteger(seed));
+	/* For the backward compatibility, we only use the lower 32bit. */
+	Scm_MTInitByUI(mt, (uint32_t)Scm_GetUInteger(seed));
     } else if (SCM_BIGNUMP(seed)) {
 #if SIZEOF_LONG == 4
-        Scm_MTInitByArray(mt, (int32_t*)SCM_BIGNUM(seed)->values,
-                          (int)SCM_BIGNUM_SIZE(seed));
+	Scm_MTInitByArray(mt, (int32_t*)SCM_BIGNUM(seed)->values,
+			  (int)SCM_BIGNUM_SIZE(seed));
 #elif SIZEOF_LONG == 8
-        /* We can't just pass seed->values as (int32_t*), for the result
-           would differ by endianness. */
-        int32_t seedv[SCM_BIGNUM_SIZE(seed)*2];
-        for (size_t i=0; i<SCM_BIGNUM_SIZE(seed); i++) {
-            seedv[i*2] = (int32_t)(SCM_BIGNUM(seed)->values[i]&0xffffffff);
-            seedv[i*2+1] = (int32_t)(SCM_BIGNUM(seed)->values[i]>>32);
-        }
-        Scm_MTInitByArray(mt, seedv, (int)SCM_BIGNUM_SIZE(seed)*2);
+	/* We can't just pass seed->values as (int32_t*), for the result
+	   would differ by endianness. */
+	int32_t seedv[SCM_BIGNUM_SIZE(seed)*2];
+	for (size_t i=0; i<SCM_BIGNUM_SIZE(seed); i++) {
+	    seedv[i*2] = (int32_t)(SCM_BIGNUM(seed)->values[i]&0xffffffff);
+	    seedv[i*2+1] = (int32_t)(SCM_BIGNUM(seed)->values[i]>>32);
+	}
+	Scm_MTInitByArray(mt, seedv, (int)SCM_BIGNUM_SIZE(seed)*2);
 #else
 #error "sizeof(long) must be 4 or 8"
 #endif
     } else if (SCM_U32VECTORP(seed)) {
-        Scm_MTInitByArray(mt, (int32_t*)SCM_U32VECTOR_ELEMENTS(seed),
-                          SCM_U32VECTOR_SIZE(seed));
+	Scm_MTInitByArray(mt, (int32_t*)SCM_U32VECTOR_ELEMENTS(seed),
+			  SCM_U32VECTOR_SIZE(seed));
     } else {
-        Scm_TypeError("random seed", "an exact integer or u32vector", seed);
+	Scm_TypeError("random seed", "an exact integer or u32vector", seed);
     }
     /* NB: mt->seed is set by either Scm_MTInitByUI or Scm_MTInitByArray.  */
 }
@@ -119,27 +119,27 @@ void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 void Scm_MTInitByArray(ScmMersenneTwister *mt,
-                       int32_t init_key[],
-                       unsigned long key_length)
+		       int32_t init_key[],
+		       unsigned long key_length)
 {
     int i, j, k;
     Scm_MTInitByUI(mt, 19650218UL);
     i=1; j=0;
     k = (N>key_length ? N : key_length);
     for (; k; k--) {
-        mt->mt[i] = (mt->mt[i] ^ ((mt->mt[i-1] ^ (mt->mt[i-1] >> 30)) * 1664525UL))
-            + init_key[j] + j; /* non linear */
-        mt->mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
-        i++; j++;
-        if (i>=N) { mt->mt[0] = mt->mt[N-1]; i=1; }
-        if (j>=(int)key_length) j=0;
+	mt->mt[i] = (mt->mt[i] ^ ((mt->mt[i-1] ^ (mt->mt[i-1] >> 30)) * 1664525UL))
+	    + init_key[j] + j; /* non linear */
+	mt->mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
+	i++; j++;
+	if (i>=N) { mt->mt[0] = mt->mt[N-1]; i=1; }
+	if (j>=(int)key_length) j=0;
     }
     for (k=N-1; k; k--) {
-        mt->mt[i] = (mt->mt[i] ^ ((mt->mt[i-1] ^ (mt->mt[i-1] >> 30)) * 1566083941UL))
-            - i; /* non linear */
-        mt->mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
-        i++;
-        if (i>=N) { mt->mt[0] = mt->mt[N-1]; i=1; }
+	mt->mt[i] = (mt->mt[i] ^ ((mt->mt[i-1] ^ (mt->mt[i-1] >> 30)) * 1566083941UL))
+	    - i; /* non linear */
+	mt->mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
+	i++;
+	if (i>=N) { mt->mt[0] = mt->mt[N-1]; i=1; }
     }
 
     mt->mt[0] = 0x80000000UL; /* MSB is 1; assuring non-zero initial array */
@@ -157,23 +157,23 @@ unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
     if (mti >= N) { /* generate N words at one time */
-        int kk;
+	int kk;
 
-        if (mti == N+1)   /* if Scm_MTInitByUI() has not been called, */
-            Scm_MTInitByUI(mt, 5489UL); /* a default initial seed is used */
+	if (mti == N+1)   /* if Scm_MTInitByUI() has not been called, */
+	    Scm_MTInitByUI(mt, 5489UL); /* a default initial seed is used */
 
-        for (kk=0;kk<N-M;kk++) {
-            y = (mt->mt[kk]&UPPER_MASK)|(mt->mt[kk+1]&LOWER_MASK);
-            mt->mt[kk] = mt->mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1UL];
-        }
-        for (;kk<N-1;kk++) {
-            y = (mt->mt[kk]&UPPER_MASK)|(mt->mt[kk+1]&LOWER_MASK);
-            mt->mt[kk] = mt->mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1UL];
-        }
-        y = (mt->mt[N-1]&UPPER_MASK)|(mt->mt[0]&LOWER_MASK);
-        mt->mt[N-1] = mt->mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
+	for (kk=0;kk<N-M;kk++) {
+	    y = (mt->mt[kk]&UPPER_MASK)|(mt->mt[kk+1]&LOWER_MASK);
+	    mt->mt[kk] = mt->mt[kk+M] ^ (y >> 1) ^ mag01[y & 0x1UL];
+	}
+	for (;kk<N-1;kk++) {
+	    y = (mt->mt[kk]&UPPER_MASK)|(mt->mt[kk+1]&LOWER_MASK);
+	    mt->mt[kk] = mt->mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1UL];
+	}
+	y = (mt->mt[N-1]&UPPER_MASK)|(mt->mt[0]&LOWER_MASK);
+	mt->mt[N-1] = mt->mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
 
-        mti = 0;
+	mti = 0;
     }
 
     y = mt->mt[mti++];
@@ -193,8 +193,8 @@ float Scm_MTGenrandF32(ScmMersenneTwister *mt, int exclude0)
 {
     float r;
     do {
-        r = (float)(Scm_MTGenrandU32(mt)*(1.0/4294967296.0));
-        /* divided by 2^32 */
+	r = (float)(Scm_MTGenrandU32(mt)*(1.0/4294967296.0));
+	/* divided by 2^32 */
     } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
     return r;
 }
@@ -205,9 +205,9 @@ double Scm_MTGenrandF64(ScmMersenneTwister *mt, int exclude0)
     double r;
     unsigned long a, b;
     do {
-        a = Scm_MTGenrandU32(mt)>>5;
-        b = Scm_MTGenrandU32(mt)>>6;
-        r = (a*67108864.0+b)*(1.0/9007199254740992.0);
+	a = Scm_MTGenrandU32(mt)>>5;
+	b = Scm_MTGenrandU32(mt)>>6;
+	r = (a*67108864.0+b)*(1.0/9007199254740992.0);
     } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
     return r;
 }
@@ -230,19 +230,19 @@ static inline int xlog2(unsigned long n)
     unsigned long m = (1UL<<START_BIT);
 
     if (n < m) {
-        do {
-            m >>= 1;
-            e--;
-            if (n == m) return e;
-        } while (e >= 0 && n < m);
+	do {
+	    m >>= 1;
+	    e--;
+	    if (n == m) return e;
+	} while (e >= 0 && n < m);
     } else if (n > m) {
-        do {
-            m <<= 1;
-            e++;
-            if (n == m) return e;
-        } while (e < MAX_BIT && n > m);
+	do {
+	    m <<= 1;
+	    e++;
+	    if (n == m) return e;
+	} while (e < MAX_BIT && n > m);
     } else { /* n == m */
-        return e;
+	return e;
     }
     return -1;
 #undef START_BIT
@@ -256,40 +256,40 @@ static ScmObj genrand_int_small(ScmMersenneTwister *mt, unsigned long n)
     int e;
     unsigned long r;
     if ((e = xlog2(n)) == 0) {
-        return SCM_MAKE_INT(0);
+	return SCM_MAKE_INT(0);
     } else if (e > 0) {
-        /* optimize for 2^e case */
-        r = Scm_MTGenrandU32(mt);
-        if (e == 32) return Scm_MakeIntegerFromUI(r);
-        else return Scm_MakeIntegerFromUI(r >> (32-e));
+	/* optimize for 2^e case */
+	r = Scm_MTGenrandU32(mt);
+	if (e == 32) return Scm_MakeIntegerFromUI(r);
+	else return Scm_MakeIntegerFromUI(r >> (32-e));
     } else {
-        double q = floor((double)0xffffffff / (double)n);
-        double qn = q * n;
-        do {
-            r = Scm_MTGenrandU32(mt);
-        } while (r >= qn);
-        return Scm_MakeIntegerFromUI((unsigned long)(r/q));
+	double q = floor((double)0xffffffff / (double)n);
+	double qn = q * n;
+	do {
+	    r = Scm_MTGenrandU32(mt);
+	} while (r >= qn);
+	return Scm_MakeIntegerFromUI((unsigned long)(r/q));
     }
 }
 
 ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n)
 {
     if (SCM_INTP(n)) {
-        long m = SCM_INT_VALUE(n);
-        if (m <= 0) goto err;
-        return genrand_int_small(mt, m);
+	long m = SCM_INT_VALUE(n);
+	if (m <= 0) goto err;
+	return genrand_int_small(mt, m);
     }
 #if SIZEOF_LONG == 4
     if (SCM_BIGNUMP(n)) {
-        if (SCM_BIGNUM_SIGN(n) <= 0) goto err;
-        if (SCM_BIGNUM_SIZE(n) == 1) {
-            return genrand_int_small(mt, SCM_BIGNUM(n)->values[0]);
-        }
-        if (SCM_BIGNUM_SIZE(n) == 2
-            && SCM_BIGNUM(n)->values[0] == 0
-            && SCM_BIGNUM(n)->values[1] == 1) {
-            return Scm_MakeIntegerFromUI(Scm_MTGenrandU32(mt));
-        }
+	if (SCM_BIGNUM_SIGN(n) <= 0) goto err;
+	if (SCM_BIGNUM_SIZE(n) == 1) {
+	    return genrand_int_small(mt, SCM_BIGNUM(n)->values[0]);
+	}
+	if (SCM_BIGNUM_SIZE(n) == 2
+	    && SCM_BIGNUM(n)->values[0] == 0
+	    && SCM_BIGNUM(n)->values[1] == 1) {
+	    return Scm_MakeIntegerFromUI(Scm_MTGenrandU32(mt));
+	}
     }
 #endif
   err:
@@ -303,8 +303,8 @@ ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n)
 static ScmObj key_seed;
 static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs);
 SCM_DEFINE_BUILTIN_CLASS(Scm_MersenneTwisterClass,
-                         NULL, NULL, NULL, mt_allocate,
-                         NULL);
+			 NULL, NULL, NULL, mt_allocate,
+			 NULL);
 
 static ScmObj mt_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
 {
@@ -323,6 +323,6 @@ void Scm_Init_mt_random(void)
 {
     ScmModule *mod = SCM_FIND_MODULE("math.mt-random", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_MersenneTwisterClass, "<mersenne-twister>",
-                        mod, NULL, 0);
+			mod, NULL, 0);
     key_seed = SCM_MAKE_KEYWORD("seed");
 }

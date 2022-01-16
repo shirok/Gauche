@@ -20,15 +20,15 @@
    are met:
 
      1. Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
+	notice, this list of conditions and the following disclaimer.
 
      2. Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
+	notice, this list of conditions and the following disclaimer in the
+	documentation and/or other materials provided with the distribution.
 
      3. The names of its contributors may not be used to endorse or promote
-        products derived from this software without specific prior written
-        permission.
+	products derived from this software without specific prior written
+	permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -62,11 +62,11 @@ typedef struct ScmMersenneTwisterRec {
     SCM_HEADER;
     unsigned long mt[N]; /* the array for the state vector  */
     int mti;             /* index into the state vector.
-                            new integer random number is computed from
-                            mt[mti], incrementing mti; once it exceeds N,
-                            the entire state vector is recomputed. */
+			    new integer random number is computed from
+			    mt[mti], incrementing mti; once it exceeds N,
+			    the entire state vector is recomputed. */
     ScmObj seed;         /* last seed value used to initialize this instance.
-                            useful to reproduce the same random sequence. */
+			    useful to reproduce the same random sequence. */
 } ScmMersenneTwister;
 
 SCM_CLASS_DECL(Scm_MersenneTwisterClass);
@@ -75,8 +75,8 @@ SCM_CLASS_DECL(Scm_MersenneTwisterClass);
 
 extern void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s);
 extern void Scm_MTInitByArray(ScmMersenneTwister *mt,
-                              int32_t init_key[],
-                              unsigned long key_length);
+			      int32_t init_key[],
+			      unsigned long key_length);
 extern void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed);
 
 extern unsigned long Scm_MTGenrandU32(ScmMersenneTwister *);
