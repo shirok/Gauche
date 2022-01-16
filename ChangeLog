@@ -1,3 +1,10 @@
+2022-01-16  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/gap-buffer: Drop gap-buffer-gap-start and
+	  gap-buffer-gap-end.  They reveals internals unnecessarily.  They
+	  weren't documented, and have only been used for testing.
+	  (gap-buffer-pos-at-end?): Added.
+
 2022-01-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (case-lambda): Change case-lambda handling.

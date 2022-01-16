@@ -1085,7 +1085,7 @@
   (if (> (ring-buffer-num-entries (~ ctx'kill-ring)) 0)
     (begin
       (set! (~ ctx'last-yank) 0)
-      (set! (~ ctx'last-yank-pos) (gap-buffer-gap-start buf))
+      (set! (~ ctx'last-yank-pos) (gap-buffer-pos buf))
       (let1 yanked-text (get-yank-line ctx)
         (set! (~ ctx'last-yank-size) (string-length yanked-text))
         `(yanked ,(gap-buffer-edit! buf `(i #f ,yanked-text)))))

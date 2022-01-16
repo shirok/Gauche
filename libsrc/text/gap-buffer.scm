@@ -44,8 +44,8 @@
   (use util.match)
   (export make-gap-buffer string->gap-buffer gap-buffer-copy
           gap-buffer? gap-buffer-capacity gap-buffer-content-length
-          gap-buffer-pos gap-buffer-gap-at? gap-buffer-ref
-          gap-buffer-gap-start gap-buffer-gap-end gap-buffer-move!
+          gap-buffer-pos gap-buffer-pos-at-end? gap-buffer-gap-at?
+          gap-buffer-ref gap-buffer-move!
           gap-buffer-insert! gap-buffer-delete! gap-buffer-replace!
           gap-buffer-clear!
           gap-buffer-edit!
@@ -67,19 +67,15 @@
 (define (gap-buffer? obj) (is-a? obj <gap-buffer>))
 
 ;; API
-(define (gap-buffer-gap-start gbuf)
+(define (gap-buffer-pos gbuf)
   (assume-type gbuf <gap-buffer>)
   (~ gbuf'gap-start))
 
 ;; API
-;; same as gap-buffer-gap-start, but this name emphasizes the function
-;; instead of internal workings.
-(define (gap-buffer-pos gbuf) (gap-buffer-gap-start gbuf))
-
-;; API
-(define (gap-buffer-gap-end gbuf)
+;; Trivial, but useful.
+(define (gap-buffer-pos-at-end? gbuf pos)
   (assume-type gbuf <gap-buffer>)
-  (~ gbuf'gap-end))
+  (= pos (%gbuf-content-length gbuf)))
 
 ;; API
 ;; Trivial, but useful.

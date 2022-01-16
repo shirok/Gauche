@@ -10,12 +10,12 @@
   (with-output-to-string
     (^[]
       (let1 buf (~ gbuf'buffer) ;accessing internal
-        (dotimes [i (gap-buffer-gap-start gbuf)]
+        (dotimes [i (~ gbuf'gap-start)]
           (display (integer->char (~ buf i))))
-        (dotimes [i (- (gap-buffer-gap-end gbuf) (gap-buffer-gap-start gbuf))]
+        (dotimes [i (- (~ gbuf'gap-end) (~ gbuf'gap-start))]
           (display #\_))
-        (dotimes [i (- (gap-buffer-capacity gbuf) (gap-buffer-gap-end gbuf))]
-          (display (integer->char (~ buf (+ i (gap-buffer-gap-end gbuf))))))))))
+        (dotimes [i (- (gap-buffer-capacity gbuf) (~ gbuf'gap-end))]
+          (display (integer->char (~ buf (+ i (~ gbuf'gap-end))))))))))
 
 (test* "constuct" "abcde___"
        (gap-buffer-visualize (string->gap-buffer "abcde")))
@@ -67,6 +67,15 @@
   (test* "->string (gap at middle)" "abcde"
          (begin (gap-buffer-move! gbuf 3 'current)
                 (gap-buffer->string gbuf)))
+  )
+
+(let1 gbuf (make-gap-buffer :initial-capacity 32)
+  (gap-buffer-insert! gbuf "abcde")
+  (gap-buffer-move! gbuf 2)
+  (test* "gap-buffer-pos-at-end?" '(#f #f #t)
+         (list (gap-buffer-pos-at-end? gbuf 0)
+               (gap-buffer-pos-at-end? gbuf 2)
+               (gap-buffer-pos-at-end? gbuf 5)))
   )
 
 (let1 gbuf (gap-buffer-copy (string->gap-buffer "abcde"))
