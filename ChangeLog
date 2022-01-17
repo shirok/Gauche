@@ -1,5 +1,7 @@
 2022-01-16  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/text/line-edit.scm: Add a hook for completion.
+
 	* libsrc/text/gap-buffer: Drop gap-buffer-gap-start and
 	  gap-buffer-gap-end.  They reveals internals unnecessarily.  They
 	  weren't documented, and have only been used for testing.
