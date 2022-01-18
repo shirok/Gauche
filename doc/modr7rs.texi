@@ -7500,13 +7500,25 @@ so @var{lseq}s work just as well as ordinary lists.
 
 @deftp {Module} scheme.stream
 @mdindex scheme.stream
+@c EN
 This module provides utilities for lazily evaluated streams.
 It is more heavyweight than lazy sequences (@pxref{Lazy sequences}),
 but it strictly implements ``as lazy as possible'' semantics---elements
 are never evaluated until it is actually accessed.
+@c JP
+遅延評価ストリームのユーティリティを提供するモジュールです。
+遅延シーケンス(@ref{Lazy sequences}参照)よりも重いですが、
+「可能な限り遅延する」セマンティクスを厳密に実装しています。
+つまり、要素は本当に必要とされるまで決して評価されません。
+@c COMMON
 
+@c EN
 The following procedures are provided in Gauche's @code{util.stream} module;
 @pxref{Stream library} for their description:
+@c JP
+以下の手続きはGaucheの@code{util.streams}モジュールで提供されるものと同じです。
+説明は@ref{Stream library}を参照してください。
+@c COMMON
 
 @example
 stream-null         stream-cons       stream?          stream-null?
@@ -7521,8 +7533,12 @@ stream-range        stream-ref        stream-reverse   stream-scan
 stream-take-while   stream-unfold     stream-unfolds   stream-zip
 @end example
 
+@c EN
 The following macro and procedures have different interface from
 Gauche's @code{util.stream} module:
+@c JP
+以下のマクロと手続きはGaucheの@code{util.stream}とはインタフェースが異なります。
+@c COMMON
 
 @example
 stream              stream-take      stream-drop
@@ -7532,12 +7548,23 @@ stream              stream-take      stream-drop
 @defmac stream expr @dots{}
 [R7RS stream]
 @c MOD scheme.stream
+@c EN
 Returns a new stream whose elements are the result of @var{expr} @dots{}.
 Arguments won't be evaluated until required.
+@c JP
+@var{expr} @dots{}の結果を要素とする新たなストリームを作って返します。
+各@var{expr}は必要となるまで評価されません。
+@c COMMON
 
+@c EN
 This differs from srfi-40 and @code{util.stream}'s @code{stream},
 which is a procedure so arguments are evaluated
 (@pxref{Stream constructors}, for the details).
+@c JP
+srfi-40および@code{util.stream}の@code{stream}は単なる手続きであり、
+各@var{expr}は呼び出し時に評価されてしまうことが異なります
+(@ref{Stream constructors}参照)。
+@c COMMON
 @end defmac
 
 
@@ -7545,16 +7572,30 @@ which is a procedure so arguments are evaluated
 @defunx stream-drop n stream
 [R7RS stream]
 @c MOD scheme.stream
+@c EN
 Returns a stream that contains first @var{n} elements from @var{stream},
 or elements without first @var{n} elements from it, respectively.
 If @var{stream} has less than @var{n} elements, @code{stream-take}
 returns a copy of the entire @var{stream}, while @code{stream-drop}
 returns a null stream.
+@c JP
+それぞれ、@var{stream}の最初の@var{n}要素を含むストリーム、
+および最初の@var{n}要素を除いたストリームを返します。
+@var{stream}の要素数が@var{n}より小さい場合、
+@code{stream-take}は@var{stream}全体のコピーを返し、
+@code{stream-drop}は空のストリームを返します。
+@c COMMON
 
+@c EN
 Note that the argument order doesn't follow the Scheme tradition,
 which takes the main object (@var{stream} in this case) first, then
 the count.  Procedures with the same name is provided in @code{util.stream}
 with the different argument order.
+@c JP
+引数順がSchemeの慣習と違っていることに注意してください。
+Schemeは通常、主となるオブジェクト(この場合は@var{stream})を第一引数に取ります。
+@code{util.stream}の同名の手続きはそうなっています。
+@c COMMON
 @end defun
 
 @node R7RS boxes, R7RS list queues, R7RS stream, R7RS large
@@ -7563,8 +7604,13 @@ with the different argument order.
 
 @deftp {Module} scheme.box
 @mdindex scheme.box
+@c EN
 Gauche supports boxes built-in (@pxref{Boxes}), so this module
 is merely a facade that exports the following identifiers:
+@c JP
+Gaucheは組み込みでboxをサポートしています (@ref{Boxes}参照)。
+このモジュールは以下の識別子をエクスポートするラッパーです。
+@c COMMON
 
 @example
 box    box?    unbox    set-box!
