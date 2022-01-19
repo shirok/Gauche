@@ -92,6 +92,9 @@
    (wide-char-pos-setting :init-keyword :wide-char-pos-setting
                           :init-form (make <wide-char-setting>))
 
+   ;; A predicate or a char-set to determine word constituent characters
+   (completion-word-constituent? :init-keyword :completion-word-constituent?
+                                 :init-value #[-\w])
    ;; <^ <string> <gap-buffer> <integer> <integer> -> <List <string>>>
    ;; Returns list of completion candidates that match the given word.
    (completion-lister :init-keyword :completion-lister :init-value #f)
@@ -809,7 +812,7 @@
              '(#\) #\] #\}))
        (buffer-find-matching-paren buf 0 (gap-buffer-pos buf))))
 
-;; Pick word including POS (if omitted, current pos is used)
+;; Pick word at the current position of BUF.
 ;; Returns three values: The word, start position, and end position.
 ;; The first word can be #f if the word isn't found.
 ;; If the position doesn't have a word-constituent character, but
@@ -818,7 +821,7 @@
 ;; This is mainly to extract a word to be used for completion.  We don't
 ;; do precise word segmentation (considering grapheme clusters); we just
 ;; define 'word' as a consecutive characters in word-chars charset.
-(define (buffer-find-word buf :optional (pos #f) (word-chars #[\w]))
+(define (buffer-find-word buf word-chars)
   (define (scan-backward pos)
     (cond [(= pos 0) 0]
           [(word-chars (gap-buffer-ref buf (- pos 1))) (scan-backward (- pos 1))]
@@ -828,7 +831,7 @@
           [(word-chars (gap-buffer-ref buf pos)) (scan-forward (+ pos 1))]
           [else pos]))
 
-  (let* ([pos (or pos (gap-buffer-pos buf))]
+  (let* ([pos (gap-buffer-pos buf)]
          [start (scan-backward pos)]
          [end (scan-forward pos)])
     (values (if (= start end) #f (gap-buffer->string buf start end))
@@ -1190,7 +1193,8 @@
 
 (define-edit-command (completion-command ctx buf key)
   "Try to complete the (partial) word at the cursor"
-  (receive (word start-pos end-pos) (buffer-find-word buf)
+  (receive (word start-pos end-pos)
+      (buffer-find-word buf (~ ctx'completion-word-constituent?))
     (or (and-let* ([ word ]
                    [lister (~ ctx'completion-lister)]
                    [words (lister word buf start-pos end-pos)])
