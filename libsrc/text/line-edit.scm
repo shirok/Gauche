@@ -1294,18 +1294,34 @@
    (table   :init-keyword :table)         ;hashtable
    (default :init-keyword :default)))
 
+;; Stacked keymap is like <keymap>, except that default slot is
+;; always a <keymap>, and if a keystroke is not in the table,
+;; lookup is delegated to that keymap.
+;; (It is distinguished from a <keymap> whose default value is
+;; a secondary keymap - in that case, a keystroke falls on the default
+;; replaces the current keymap to it.)
+(define-class <stacked-keymap> (<keymap>) ())
+
 (define (make-keymap :optional (name #f) (default undefined-command))
   (make <keymap> :name name :table (make-hash-table 'equal?) :default default))
 
+(define (make-stacked-keymap base-keymap :optional (name #f))
+  (make <stacked-keymap> :name name :table (make-hash-table 'equal?)
+        :default base-keymap))
+
 (define (copy-keymap km :optional (name #f))
-  (make <keymap>
+  (make (class-of km)
     :name name
     :table (hash-table-copy (~ km'table))
     :default (~ km'default)))
 
-(define (keymap-ref km keystroke)
+(define-method keymap-ref ((km <keymap>) keystroke)
   (or (hash-table-get (~ km'table) keystroke #f)
       (~ km'default)))
+
+(define-method keymap-ref ((km <stacked-keymap>) keystroke)
+  (or (hash-table-ref (~ km'table) keystroke #f)
+      (keymap-ref (~ km'default) keystroke)))
 
 (define (command-name->keystrokes km command-name)
   (assume-type km <keymap>)
