@@ -1453,6 +1453,18 @@ Supported by the module @code{srfi-221}
 (@ref{Generator/accumulator sub-library}参照)。
 
 
+srfi-227, srfi-227
+()
+
+Optional arguments
+Supported by the module @code{srfi-227}
+(@pxref{Optional arguments}).
+
+省略可能引数
+モジュール@code{srfi-227}でサポートされます
+(@ref{Optional arguments}参照)。
+
+
 srfi-229, srfi-229
 ()
 

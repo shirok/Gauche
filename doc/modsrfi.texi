@@ -75,6 +75,7 @@ srfi N is supported by Gauche.)
 * Integer sets::                srfi-217
 * Define higher-order lambda::  srfi-219
 * Generator/accumulator sub-library::  srfi-221
+* Optional arguments::          srfi-227
 * Tagged procedures::           srfi-229
 @end menu
 
@@ -11526,7 +11527,7 @@ R7RSで定義されているとおりの「素の」@code{define}と、
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Generator/accumulator sub-library, Tagged procedures, Define higher-order lambda, Library modules - SRFIs
+@node Generator/accumulator sub-library, Optional arguments, Define higher-order lambda, Library modules - SRFIs
 @section @code{srfi-221} - Generator/accumulator sub-library
 @c NODE ジェネレータ/アキュムレータ サブライブラリ, @code{srfi-221} - ジェネレータ/アキュムレータ サブライブラリ
 
@@ -11724,7 +11725,48 @@ Gaucheでは、遅延シーケンスは通常のリストと統合されてい�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Tagged procedures,  , Generator/accumulator sub-library, Library modules - SRFIs
+@node Optional arguments, Tagged procedures, Generator/accumulator sub-library, Library modules - SRFIs
+@section @code{srfi-227} - Optional arguments
+@c NODE 省略可能引数, @code{srfi-227} - 省略可能引数
+
+@deftp {Module} srfi-227
+@deftpx {Module} srfi-227.definitions
+@mdindex srfi-227
+@mdindex srfi-227.definitions
+This srfi provies macros to specify optional arguments portably.
+Gauche supports optional arguments in extended formals
+(@pxref{Making procedures}), but it is not portable.
+
+The main module, @code{srfi-227}, exports macros
+@code{opt-lambda}, @code{opt*-lambda}, @code{let-optionals}, and
+@code{let-optionals*}.  Note that this @code{let-optionals*} has different
+semantics from Gauche's built-in @code{let-optionals*}.
+
+The submodule @code{srfi-227.definitions} exports two more
+macros, @code{define-optionals} and @code{define-optionals*}.
+@end deftp
+
+@defmac opt-labmda opt-formals body @dots{}
+@defmacx opt*-labmda opt-formals body @dots{}
+[SRFI-227]
+@c MOD srfi-227
+@end defmac
+
+@defmac let-optionals expr opt-formals body @dots{}
+@defmacx let-optionals* expr opt-formals body @dots{}
+[SRFI-227]
+@c MOD srfi-227
+@end defmac
+
+@defmac define-optionals (name . opt-formals) body @dots{}
+@defmacx define-optionals* (name . opt-formals) body @dots{}
+[SRFI-227]
+@c MOD srfi-227.definitions
+@end defmac
+
+
+@c ----------------------------------------------------------------------
+@node Tagged procedures,  , Optional arguments, Library modules - SRFIs
 @section @code{srfi-229} - Tagged procedures
 @c NODE 手続きタグ, @code{srfi-229} - 手続きタグ
 
@@ -11749,7 +11791,7 @@ it later; much like the closed environment can be mutated).
 
 @defmac lambda/tag expr formals body @dots{}
 [SRFI-229]
-@c MOD SRFI-229
+@c MOD srfi-229
 @c EN
 Evaluates @var{expr}, and returns a procedure that is
 the same as @code{(lambda formals body @dots{})} except that
@@ -11763,7 +11805,7 @@ procedure.   The tag can be retrieved with @code{procedure-tag}.
 
 @defmac case-lambda/tag expr clause @dots{}
 [SRFI-229]
-@c MOD SRFI-229
+@c MOD srfi-229
 @c EN
 Each @var{clause} is @code{(formals body @dots{})}, much like
 the ordinary @code{case-lambda}.
@@ -11784,7 +11826,7 @@ procedure.   The tag can be retrieved with @code{procedure-tag}.
 
 @defun procedure/tag? obj
 [SRFI-229]
-@c MOD SRFI-229
+@c MOD srfi-229
 @c EN
 Returns @code{#t} iff @var{obj} is a procedure and has a tag.
 @c JP
@@ -11794,7 +11836,7 @@ Returns @code{#t} iff @var{obj} is a procedure and has a tag.
 
 @defun procedure-tag proc
 [SRFI-229]
-@c MOD SRFI-229
+@c MOD srfi-229
 @c EN
 Returns a tag of @var{proc}, which must be a tagged procedure.
 If @var{proc} is not a procedure or not tagged, an error
