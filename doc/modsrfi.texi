@@ -11733,35 +11733,163 @@ Gaucheでは、遅延シーケンスは通常のリストと統合されてい�
 @deftpx {Module} srfi-227.definitions
 @mdindex srfi-227
 @mdindex srfi-227.definitions
+@c EN
 This srfi provies macros to specify optional arguments portably.
 Gauche supports optional arguments in extended formals
 (@pxref{Making procedures}), but it is not portable.
+@c JP
+このsrfiは、ポータブルに省略可能引数を書く方法を提供します。
+Gaucheは拡張引数構文で省略可能引数を指定できますが、ポータブルではありません
+(@ref{Making procedures}参照)。
+@c COMMON
 
+@c EN
 The main module, @code{srfi-227}, exports macros
 @code{opt-lambda}, @code{opt*-lambda}, @code{let-optionals}, and
 @code{let-optionals*}.  Note that this @code{let-optionals*} has different
 semantics from Gauche's built-in @code{let-optionals*}.
+@c JP
+モジュール@var{srfi-227}はマクロ
+@code{opt-lambda}、@code{opt*-lambda}、@code{let-optionals}、
+@code{let-optionals*}をexportします。この@code{let-optionals*}は
+Gauche組み込みの@code{let-optionals*}と異なることに注意してください。
+@c COMMON
 
+@c EN
 The submodule @code{srfi-227.definitions} exports two more
 macros, @code{define-optionals} and @code{define-optionals*}.
+@c JP
+サブモジュール@code{srfi-227.definitions}はさらに2つのマクロ、
+@code{define-optionals}と@code{define-optionals*}をexportします。
+@c COMMON
 @end deftp
 
 @defmac opt-labmda opt-formals body @dots{}
 @defmacx opt*-labmda opt-formals body @dots{}
 [SRFI-227]
 @c MOD srfi-227
+@c EN
+Evaliates to a procedure, similar to @code{lambda}.
+@c JP
+@code{lambda}と同じように、手続きへと評価されます。
+@c COMMON
+
+@c EN
+The @var{opt-formals} is either one of the following form:
+@c JP
+@var{opt-formals}は以下のいずれかの形式です。
+@c COMMON
+@example
+(@var{var} @dots{} (@var{optvar} @var{init}) @dots{})
+(@var{var} @dots{} (@var{optvar} @var{init}) @dots{} . @var{restvar})
+@end example
+
+@c EN
+@var{Var}, @var{optvar}, and @var{restvar} are identifiers.
+Each @var{init} is an expression.
+@c JP
+@var{var}、@code{optvar}、@code{restvar}は識別子で、
+@var{init}は式です。
+@c COMMON
+
+@c EN
+@var{Var} @dots{} are required arguments.  @var{Optvar} @dots{} are
+optional arguments, and when no corresponding parameter is provided,
+@var{init} is evaluated and used as the value of the argument.
+@c JP
+@var{var} @dots{}は必須引数を指定します。
+@var{optvar} @dots{}は省略可能引数で、与えられた実引数が足りない場合は
+対応する@var{init}が評価されその値に束縛されます。
+@c COMMON
+
+@c EN
+In the first form, giving exessive arguments throws an error; in the
+second form, excessive arguments are bound to @var{restvar} as a list.
+@c JP
+最初の形式では、余分な引数が与えられるとエラーが投げられます。
+二番目の形式では、余分な引数はリストとして@var{restvar}に束縛されます。
+@c COMMON
+
+@c EN
+The scope of @var{init} differs between @code{opt-lambda} and
+@var{opt-lambda*}.  With @code{opt-lambda}, @var{init}s are evaluated
+in the scope where @code{opt-lambda} is placed.  With @var{opt*-lambda},
+the scope of @var{init}s also includes preceding @var{var}s and @var{optvar}s.
+@c JP
+@var{init}のスコープは@code{opt-lambda}と@code{opt*-lambda}で異なります。
+@code{opt-lambda}では、@var{init}は@code{opt-lambda}が置かれた環境で評価されます。
+@code{opt*-lambda}ではそれに加え、先行する@var{var}と@var{optvar}も
+スコープに含まれます。
+@c COMMON
+
+@example
+(let ((x 1))
+  ((opt-lambda (x (y (+ x 1))) (list x y)) 10))
+ @result{} (10 2)
+
+(let ((x 1))
+  ((opt*-lambda (x (y (+ x 1))) (list x y)) 10))
+ @result{} (10 11)
+@end example
+
+@c EN
+Note: @code{(opt*-lambda (v @dots{} (w init) @dots{}) body @dots{}} is the same
+as Gauche's
+@code{(lambda (v @dots{} :optional (w init) @dots{}) body @dots{})}.
+@c JP
+@code{(opt*-lambda (v @dots{} (w init) @dots{}) body @dots{}}は
+Gaucheの拡張引数を使った
+@code{(lambda (v @dots{} :optional (w init) @dots{}) body @dots{})}
+と同じです。
+@c COMMON
 @end defmac
 
 @defmac let-optionals expr opt-formals body @dots{}
 @defmacx let-optionals* expr opt-formals body @dots{}
 [SRFI-227]
 @c MOD srfi-227
+@c EN
+Syntax sugar to decompose the result of @var{expr} using @var{opt-formals}:
+@c JP
+@var{opt-formal}を使って@var{expr}の結果を分解する糖衣構文です。
+@c COMMON
+
+@example
+(let-optionals expr opt-formals body @dots{})
+ @equiv{} ((opt-lambda opt-formals body @dots{}) expr)
+
+(let-optionals* expr opt-formals body @dots{})
+ @equiv{} ((opt*-lambda opt-formals body @dots{}) expr)
+@end example
+
+@c EN
+Note: Gauche has built-in @code{let-optionals*}, which is different
+from this srfi.  Gauche's doesn't allow requried parameters.
+@xref{Making procedures}, for the details.
+@c JP
+註: Gaucheの組み込みの@code{let-optionals*}は、
+必須パラメータを取らないという点でこのsrfiと異なります。
+@ref{Making procedures}参照。
+@c COMMON
 @end defmac
 
 @defmac define-optionals (name . opt-formals) body @dots{}
 @defmacx define-optionals* (name . opt-formals) body @dots{}
 [SRFI-227]
 @c MOD srfi-227.definitions
+@c EN
+These two forms are provided in a submodule @code{srfi-227.definitions}.
+@c JP
+これら2つのフォームはサブモジュール@code{srfi-227.definitions}で提供されます。
+@c COMMON
+
+@example
+(define-optionals (name . opt-formals) body @dots{})
+ @equiv{} (define name (opt-lambda opt-formals body @dots{}))
+
+(define-optionals* (name . opt-formals) body @dots{})
+ @equiv{} (define name (opt*-lambda opt-formals body @dots{}))
+@end example
 @end defmac
 
 
