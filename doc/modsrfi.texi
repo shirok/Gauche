@@ -107,7 +107,7 @@ ordered by SRFI numbers.
 @item srfi-115 Scheme Regular Expressions
 @code{scheme.regex} (@pxref{R7RS regular expressions}).
 @item srfi-116 Immutable list library
-@code{scheme.ilist}
+@code{scheme.ilist} (@pxref{R7RS immutable lists}).
 @item srfi-117 Queues based on lists
 @code{scheme.list-queue} (@pxref{R7RS list queues}).
 @item srfi-121 Generators
@@ -141,7 +141,7 @@ ordered by SRFI numbers.
 @item srfi-158 Generators and accumulators
 @code{scheme.generator} (@pxref{R7RS generators}).
 @item srfi-159 Combinator formatting
-@code{scheme.show}
+@code{scheme.show} (@pxref{R7RS combinator formatting}).
 @item srfi-160 Homogeneous numeric vector libraries
 @code{scheme.vector.@@} (@pxref{R7RS uniform vectors}).
 @end table
