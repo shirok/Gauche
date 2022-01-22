@@ -2650,6 +2650,8 @@
 (test-section "srfi-227")
 (use srfi-227)
 (test-module 'srfi-227)
+(use srfi-227.definitions)
+(test-module 'srfi-227.definitions)
 
 (define-module srfi-227-tests
   (use gauche.test)
@@ -2712,7 +2714,27 @@
              (list x y z))))
   )
 
+(define-module srfi-227-definitions-tests
+  (use gauche.test)
+  (use srfi-227.definitions)
 
+  (define x 1)
+  (define y 2)
+  (define z 3)
+  (define-optionals* (f x y (z (+ x 1)) (w (* y z)))
+    (list x y z w))
+  (define-optionals (g x y (z (+ x 1)) (w (* y z)))
+    (list x y z w))
+
+  (test* "define-optionals 0" (test-error)    (f))
+  (test* "define-optionals 2" '(10 20 11 220) (f 10 20))
+  (test* "define-optionals 3" '(10 20 30 600) (f 10 20 30))
+  (test* "define-optionals 4" '(10 20 30 40)  (f 10 20 30 40))
+  (test* "define-optionals* 0" (test-error)   (g))
+  (test* "define-optionals* 2" '(10 20 2 6)   (g 10 20))
+  (test* "define-optionals* 3" '(10 20 30 6)  (g 10 20 30))
+  (test* "define-optionals* 4" '(10 20 30 40) (g 10 20 30 40))
+  )
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-229")
