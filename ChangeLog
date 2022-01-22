@@ -1,3 +1,7 @@
+2022-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-227.scm: Added srfi-227.
+
 2022-01-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/editable-reader.scm: Implement a rudimental symbol

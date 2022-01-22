@@ -2647,6 +2647,74 @@
   (include "include/srfi-221-test"))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-227")
+(use srfi-227)
+(test-module 'srfi-227)
+
+(define-module srfi-227-tests
+  (use gauche.test)
+  (use srfi-227)
+
+  (define f
+    (opt*-lambda (x y (z (+ x 1)) (w (* y z)))
+      (list x y z w)))
+
+  (test* "opt*-lambda 0" (test-error)    (f))
+  (test* "opt*-lambda 1" (test-error)    (f 10))
+  (test* "opt*-lambda 2" '(10 20 11 220) (f 10 20))
+  (test* "opt*-lambda 3" '(10 20 30 600) (f 10 20 30))
+  (test* "opt*-lambda 4" '(10 20 30 40)  (f 10 20 30 40))
+  (test* "opt*-lambda 5" (test-error)    (f 10 20 30 40 50))
+
+  (define f+
+    (opt*-lambda (x (y (+ x 1)) . r)
+      (list x y r)))
+
+  (test* "opt*-lambda rest 0" (test-error)    (f+))
+  (test* "opt*-lambda rest 1" '(10 11 ())     (f+ 10))
+  (test* "opt*-lambda rest 2" '(10 20 ())     (f+ 10 20))
+  (test* "opt*-lambda rest 3" '(10 20 (30))   (f+ 10 20 30))
+  (test* "opt*-lambda rest 3" '(10 20 (30 40))(f+ 10 20 30 40))
+
+  (define g
+    (let ((x -1) (y -2) (z -3))
+      (opt-lambda (x y (z (+ x 1)) (w (* y z)))
+        (list x y z w))))
+
+  (test* "opt-lambda 0" (test-error)    (g))
+  (test* "opt-lambda 1" (test-error)    (g 10))
+  (test* "opt-lambda 2" '(10 20 0 6)    (g 10 20))
+  (test* "opt-lambda 3" '(10 20 30 6)   (g 10 20 30))
+  (test* "opt-lambda 4" '(10 20 30 40)  (g 10 20 30 40))
+  (test* "opt-lambda 5" (test-error)    (g 10 20 30 40 50))
+
+  (define g+
+    (let ((x -1))
+      (opt-lambda (x (y (+ x 1)) . r)
+        (list x y r))))
+
+  (test* "opt-lambda rest 0" (test-error)    (g+))
+  (test* "opt-lambda rest 1" '(10 0 ())      (g+ 10))
+  (test* "opt-lambda rest 2" '(10 20 ())     (g+ 10 20))
+  (test* "opt-lambda rest 3" '(10 20 (30))   (g+ 10 20 30))
+  (test* "opt-lambda rest 3" '(10 20 (30 40))(g+ 10 20 30 40))
+
+  (test* "let-optionals*" '(1 2 4)
+         (let ((y -2) (z -3))
+           (let-optionals* '(1 2)
+             (x (y (+ x 1)) (z (+ y 2)))
+             (list x y z))))
+
+  (test* "let-optionals" '(1 2 0)
+         (let ((y -2) (z -3))
+           (let-optionals '(1 2)
+             (x (y (+ x 1)) (z (+ y 2)))
+             (list x y z))))
+  )
+
+
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-229")
 (use srfi-229)
 (test-module 'srfi-229)
