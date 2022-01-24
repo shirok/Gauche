@@ -6639,18 +6639,33 @@ Gaucheでは時間差オブジェクトは@code{time-duration}型の@code{<time>
 
 @deftp {Module} srfi-129
 @mdindex srfi-129
+@c EN
 This srfi defines 3 procedures handling titlecase of characters.
 All of the procedures are supported by Gauche, and this module
 serves as a compatiblity interface.
+@c JP
+このsrfiは、文字のtitlecaseを扱う3つの手続きを定義しています。
+全ての手続きはGaucheでサポートされているので、このモジュールは互換性のための
+インタフェースを提供するだけです。
+@c COMMON
 
+@c EN
 These two procedures are built-in (@pxref{Characters}):
+@c JP
+次の2つの手続きは組み込みです (@ref{Characters}参照):
+@c COMMON
 @example
 char-title-case?
 char-titlecase
 @end example
 
+@c EN
 The following procedure is provided in @code{gauche.unicode}
 (@pxref{Full string case conversion}).
+@c JP
+次の手続きは@code{gauche.unicode}で提供されています
+(@ref{Full string case conversion}参照):
+@c COMMON
 @example
 string-titlecase
 @end example
