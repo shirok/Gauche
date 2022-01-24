@@ -156,7 +156,7 @@ SCMFILES = \
        scheme/vector/f32.scm scheme/vector/f64.scm \
        scheme/vector/c64.scm scheme/vector/c128.scm \
        text/csv.scm text/edn.scm text/external-editor.scm \
-       text/parse.scm text/tree.scm text/sql.scm \
+       text/multicolumn.scm text/parse.scm text/tree.scm text/sql.scm \
        text/html-lite.scm text/info.scm text/diff.scm \
        text/pager.scm text/progress.scm \
        text/console/framebuffer.scm text/console/wide-char-setting.scm \
