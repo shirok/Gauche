@@ -1,5 +1,9 @@
 2022-01-23  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/text/line-edit.scm: Some improvement of completion.  Now
+	  if there're multiple candidate and TAB is typed twice, the candidate
+	  list is displayed.
+
 	* lib/text/multicolumn.scm: Added
 
 2022-01-21  Shiro Kawai  <shiro@acm.org>

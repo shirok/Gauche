@@ -58,6 +58,7 @@
 (autoload text.console.framebuffer <framebuffer-console>
                                    init-framebuffer
                                    draw-framebuffer)
+(autoload text.multicolumn display-multicolumn)
 
 (define *kill-ring-size* 60)
 (define *history-size* 200)
@@ -110,6 +111,10 @@
    ;; (or, more precisely, the cursor position after the last redraw).
    (lastpos-y)
    (lastpos-x)
+
+   ;; The last executed editor command.  Completion command behaves differently
+   ;; if invoked more than once immediately.
+   (last-command :init-value #f)
 
    ;; Experimental framebuffer support.  Only enabled by the env var.
    (framebuffer :init-form (and (sys-getenv "GAUCHE_READ_EDIT_WITH_FB")
@@ -297,19 +302,19 @@
      [(applicable? h <top> <top> <top>)
       (match (h ctx buffer ch)
         [(? eof-object?) (eofread)]
-        ['nop       (loop redisp)]
+        ['nop       (loop redisp h)]
         ['visible   (reset-last-yank! ctx)
                     (clear-mark! ctx buffer)
                     (break-undo-sequence! ctx)
-                    (loop #t)]
+                    (loop #t h)]
         ['unchanged (reset-last-yank! ctx)
                     (break-undo-sequence! ctx)
-                    (loop redisp)]
+                    (loop redisp h)]
         ['redraw    (reset-cursor-pos ctx)
-                    (loop #t)]
+                    (loop #t h)]
         ['moved     (reset-last-yank! ctx)
                     (break-undo-sequence! ctx)
-                    (loop #t)]
+                    (loop #t h)]
         ['commit
          ;; We move the cursor to the last of input and redisplay,
          ;; so that the output of the client program won't overwrite
@@ -320,18 +325,18 @@
          (commit-history ctx buffer)]
         ['undone (reset-last-yank! ctx)
                  (clear-mark! ctx buffer)
-                 (loop #t)] ; don't break undo sequence
+                 (loop #t h)] ; don't break undo sequence
         [('yanked edit-command)
          (break-undo-sequence! ctx)
          (clear-mark! ctx buffer)
          (push-undo! ctx edit-command)
-         (loop #t)]
+         (loop #t h)]
         [(? list? edit-command)
          (reset-last-yank! ctx)
          (break-undo-sequence! ctx)
          (clear-mark! ctx buffer)
          (push-undo! ctx edit-command)
-         (loop #t)]
+         (loop #t h)]
         [x (error "[internal] invalid return value from a command:" x)])]
      [(is-a? h <keymap>)
       (let* ([ch (next-keystroke ctx)]
@@ -344,7 +349,7 @@
   ;; Pass true to redisp to cause buffer to be redisplayed before
   ;; accepting a new edit command.
   ;; Returns a string or #<eof>
-  (define (edit-loop redisp)
+  (define (edit-loop redisp last-command)
     ;; NB: If next char is ready, don't bother to redisplay and
     ;; just carry over redisp flag.
     (let* ([redisp (if (and redisp (not (chready? (~ ctx'console))))
@@ -352,6 +357,7 @@
                      redisp)]
            [ch (next-keystroke ctx)]
            [h (keymap-ref (~ ctx'keymap) ch)])
+      (set! (~ ctx'last-command) last-command)
       (handle-command h ch edit-loop redisp)))
 
   ;; The 'main' routine of the editor.  Called while the console is set up
@@ -365,7 +371,7 @@
         (when redisp (reset-terminal (~ ctx'console)))
         (show-prompt ctx)
         (init-screen-params ctx)
-        (edit-loop redisp))
+        (edit-loop redisp #f))
       %sigcont-unobserve))
 
   ;;
@@ -574,10 +580,22 @@
       (reset-character-attribute con)
       (set-character-attribute con newattr))))
 
-;; Show message at the starting point of the current
-;; redraw the current buffer below it.
+;; Show message at the starting point of the current input.
+;; Redraw the current buffer below it.
+;; (Existing input is overwritten.)
 (define (show-message ctx buffer msg :optional (attr #f))
   (move-cursor-to (~ ctx'console) (~ ctx'initpos-y) 0)
+  (%draw-lines-with-attr ctx msg attr))
+
+;; Show message below the line where the cursor is at.
+;; Redraw the entire input after that.
+(define (show-message-below ctx buffer msg :optional (attr #f))
+  (ensure-bottom-room (~ ctx'console))
+  (cursor-down/scroll-up (~ ctx'console))
+  (putch (~ ctx'console) #\return)
+  (%draw-lines-with-attr ctx msg attr))
+
+(define (%draw-lines-with-attr ctx msg attr)
   (when attr
     (set-character-attribute (~ ctx'console) attr))
   (unwind-protect
@@ -1192,7 +1210,7 @@
   'nop)
 
 (define-edit-command (completion-command ctx buf key)
-  "Try to complete the (partial) word at the cursor"
+  "Try to complete the (partial) word at the cursor."
   (receive (word start-pos end-pos)
       (buffer-find-word buf (~ ctx'completion-word-constituent?))
     (or (and-let* ([ word ]
@@ -1205,7 +1223,14 @@
              (gap-buffer-replace! buf (- end-pos start-pos) w)
              'redraw]
             [(w ws ...)
-             ;; TODO: show candidates
+             (when (eq? (~ ctx'last-command) completion-command)
+               (let1 candidates
+                   (with-output-to-string
+                     (cut display-multicolumn (cons w ws)))
+                 ;; NB: output of display-multicolumn contains newline at the
+                 ;; end.  We don't want to display it.
+                 ($ show-message-below ctx buf
+                    (substring candidates 0 (- (string-length candidates) 1)))))
              (let1 pre (fold common-prefix w ws)
                (gap-buffer-move! buf start-pos)
                (gap-buffer-replace! buf (- end-pos start-pos) pre)
