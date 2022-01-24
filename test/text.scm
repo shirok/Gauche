@@ -383,6 +383,150 @@ fuga
   )
 
 ;;-------------------------------------------------------------------
+(test-section "multicolumn")
+(use text.multicolumn)
+(test-module 'text.multicolumn)
+
+(let ([data '("alike" "ancient" "attend" "blood" "both"
+              "break" "bury" "but" "children’s" "civil" "continuance"
+              "could" "death" "death-mark’d" "dignity" "do" "ears"
+              "end" "fair" "fatal" "fearful" "foes" "forth" "from"
+              "grudge" "hands" "here" "hours" "households" "if"
+              "in" "is" "lay" "life" "loins" "love" "lovers" "makes"
+              "mend" "misadventured" "miss" "mutiny" "new" "nought"
+              "now" "of" "our" "overthrows" "pair" "parents"
+              "passage" "patient" "piteous" "rage" "remove" "scene"
+              "shall" "stage" "star-cross’d" "strife" "strive" "take"
+              "the" "their" "these" "to" "toil" "traffic" "two" "unclean"
+              "verona" "we" "what" "where" "which" "whose" "with" "you")])
+  (define (t expect . args)
+    (test*/diff (write-to-string `(display-multicolumn data ,@args))
+                expect
+                (with-output-to-string
+                  (cut apply display-multicolumn data args))))
+
+  (t '(
+       "alike          fearful        miss           strive"
+       "ancient        foes           mutiny         take"
+       "attend         forth          new            the"
+       "blood          from           nought         their"
+       "both           grudge         now            these"
+       "break          hands          of             to"
+       "bury           here           our            toil"
+       "but            hours          overthrows     traffic"
+       "children’s     households     pair           two"
+       "civil          if             parents        unclean"
+       "continuance    in             passage        verona"
+       "could          is             patient        we"
+       "death          lay            piteous        what"
+       "death-mark’d   life           rage           where"
+       "dignity        loins          remove         which"
+       "do             love           scene          whose"
+       "ears           lovers         shall          with"
+       "end            makes          stage          you"
+       "fair           mend           star-cross’d"
+       "fatal          misadventured  strife"))
+
+  (t '(
+       "alike                    here                     piteous"
+       "ancient                  hours                    rage"
+       "attend                   households               remove"
+       "blood                    if                       scene"
+       "both                     in                       shall"
+       "break                    is                       stage"
+       "bury                     lay                      star-cross’d"
+       "but                      life                     strife"
+       "children’s               loins                    strive"
+       "civil                    love                     take"
+       "continuance              lovers                   the"
+       "could                    makes                    their"
+       "death                    mend                     these"
+       "death-mark’d             misadventured            to"
+       "dignity                  miss                     toil"
+       "do                       mutiny                   traffic"
+       "ears                     new                      two"
+       "end                      nought                   unclean"
+       "fair                     now                      verona"
+       "fatal                    of                       we"
+       "fearful                  our                      what"
+       "foes                     overthrows               where"
+       "forth                    pair                     which"
+       "from                     parents                  whose"
+       "grudge                   passage                  with"
+       "hands                    patient                  you")
+      :minimum-width 25)
+
+  (t '("alike          ears           lay            pair           these"
+       "ancient        end            life           parents        to"
+       "attend         fair           loins          passage        toil"
+       "blood          fatal          love           patient        traffic"
+       "both           fearful        lovers         piteous        two"
+       "break          foes           makes          rage           unclean"
+       "bury           forth          mend           remove         verona"
+       "but            from           misadventured  scene          we"
+       "children’s     grudge         miss           shall          what"
+       "civil          hands          mutiny         stage          where"
+       "continuance    here           new            star-cross’d   which"
+       "could          hours          nought         strife         whose"
+       "death          households     now            strive         with"
+       "death-mark’d   if             of             take           you"
+       "dignity        in             our            the"
+       "do             is             overthrows     their")
+     :max-columns 7)
+
+  (t '("alike          ancient        attend         blood"
+       "both           break          bury           but"
+       "children’s     civil          continuance    could"
+       "death          death-mark’d   dignity        do"
+       "ears           end            fair           fatal"
+       "fearful        foes           forth          from"
+       "grudge         hands          here           hours"
+       "households     if             in             is"
+       "lay            life           loins          love"
+       "lovers         makes          mend           misadventured"
+       "miss           mutiny         new            nought"
+       "now            of             our            overthrows"
+       "pair           parents        passage        patient"
+       "piteous        rage           remove         scene"
+       "shall          stage          star-cross’d   strife"
+       "strive         take           the            their"
+       "these          to             toil           traffic"
+       "two            unclean        verona         we"
+       "what           where          which          whose"
+       "with           you")
+     :order 'row)
+
+  (t '(
+       "alike          here           piteous"
+       "ancient        hours          rage"
+       "attend         households     remove"
+       "blood          if             scene"
+       "both           in             shall"
+       "break          is             stage"
+       "bury           lay            star-cross’d"
+       "but            life           strife"
+       "children’s     loins          strive"
+       "civil          love           take"
+       "continuance    lovers         the"
+       "could          makes          their"
+       "death          mend           these"
+       "death-mark’d   misadventured  to"
+       "dignity        miss           toil"
+       "do             mutiny         traffic"
+       "ears           new            two"
+       "end            nought         unclean"
+       "fair           now            verona"
+       "fatal          of             we"
+       "fearful        our            what"
+       "foes           overthrows     where"
+       "forth          pair           which"
+       "from           parents        whose"
+       "grudge         passage        with"
+       "hands          patient        you")
+     :width 50)
+  )
+
+;;-------------------------------------------------------------------
 (test-section "parse")
 (use text.parse)
 (test-module 'text.parse)
