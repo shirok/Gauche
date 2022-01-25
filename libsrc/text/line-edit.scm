@@ -581,11 +581,12 @@
       (set-character-attribute con newattr))))
 
 ;; Show message at the starting point of the current input.
+;; MSG may be a string, or list of strings (lines).
 ;; Redraw the current buffer below it.
 ;; (Existing input is overwritten.)
 (define (show-message ctx buffer msg :optional (attr #f))
   (move-cursor-to (~ ctx'console) (~ ctx'initpos-y) 0)
-  (%draw-lines-with-attr ctx msg attr))
+  (%draw-lines-with-attr ctx msg attr #t))
 
 ;; Show message below the line where the cursor is at.
 ;; Redraw the entire input after that.
@@ -593,22 +594,44 @@
   (ensure-bottom-room (~ ctx'console))
   (cursor-down/scroll-up (~ ctx'console))
   (putch (~ ctx'console) #\return)
-  (%draw-lines-with-attr ctx msg attr))
+  (%draw-lines-with-attr ctx msg attr #t))
 
-(define (%draw-lines-with-attr ctx msg attr)
+(define (%draw-lines-with-attr ctx msg attr newline-after?)
+  (define lines
+    (cond [(string? msg) (string-split msg #\newline)]
+          [(list? msg) msg]
+          [else (error "[internal] string or list of strings required but got:"
+                       msg)]))
   (when attr
     (set-character-attribute (~ ctx'console) attr))
   (unwind-protect
-      (dolist [line (string-split msg #\newline)]
-        (clear-to-eos (~ ctx'console))
-        (putstr (~ ctx'console) line)
+      (let loop ([lines lines])
+        (unless (null? lines)
+          (clear-to-eos (~ ctx'console))
+          (putstr (~ ctx'console) (car lines))
+          (when (or (pair? (cdr lines)) newline-after?)
+            (cursor-down/scroll-up (~ ctx'console))
+            (putch (~ ctx'console) #\return)
+            (ensure-bottom-room (~ ctx'console))
+            (when (< (~ ctx'initpos-y) (- (~ ctx'screen-height) 1))
+              (inc! (~ ctx'initpos-y))))
+          (loop (cdr lines))))
+    (when attr
+      (reset-character-attribute (~ ctx'console)))))
+
+(define (ask-y-or-n ctx buffer msg)
+  (ensure-bottom-room (~ ctx'console))
+  (cursor-down/scroll-up (~ ctx'console))
+  (putch (~ ctx'console) #\return)
+  (%draw-lines-with-attr ctx #"~msg (y/n): " #f #f)
+  (or (eqv? #\y (getch (~ ctx'console)))
+      (begin
         (cursor-down/scroll-up (~ ctx'console))
         (putch (~ ctx'console) #\return)
         (ensure-bottom-room (~ ctx'console))
         (when (< (~ ctx'initpos-y) (- (~ ctx'screen-height) 1))
-          (inc! (~ ctx'initpos-y))))
-    (when attr
-      (reset-character-attribute (~ ctx'console)))))
+          (inc! (~ ctx'initpos-y)))
+        #f)))
 
 ;;
 ;; Key combinations
@@ -1224,13 +1247,20 @@
              'redraw]
             [(w ws ...)
              (when (eq? (~ ctx'last-command) completion-command)
-               (let1 candidates
-                   (with-output-to-string
-                     (cut display-multicolumn (cons w ws)))
-                 ;; NB: output of display-multicolumn contains newline at the
-                 ;; end.  We don't want to display it.
-                 ($ show-message-below ctx buf
-                    (substring candidates 0 (- (string-length candidates) 1)))))
+               ;; We split string for..
+               ;; - Output of display-multicolumn contains newline at the
+               ;;   end.  We don't want to display it.
+               ;; - We need to know # of rows to switch how to display it
+               (let1 candidates (string-split
+                                 (with-output-to-string
+                                   (cut display-multicolumn (cons w ws)))
+                                 #\newline 'suffix)
+                 (if (length<? candidates 20)
+                   (show-message-below ctx buf candidates)
+                   (if ($ ask-y-or-n ctx buf
+                          $ format "Display all ~d possibilities?"
+                          $ + 1 (length ws))
+                     (show-message-below ctx buf candidates)))))
              (let1 pre (fold common-prefix w ws)
                (gap-buffer-move! buf start-pos)
                (gap-buffer-replace! buf (- end-pos start-pos) pre)
