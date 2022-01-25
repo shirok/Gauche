@@ -1260,7 +1260,7 @@
                    (if ($ ask-y-or-n ctx buf
                           $ format "Display all ~d possibilities?"
                           $ + 1 (length ws))
-                     (show-message-below ctx buf candidates)))))
+                     (display/pager (string-join candidates "\n"))))))
              (let1 pre (fold common-prefix w ws)
                (gap-buffer-move! buf start-pos)
                (gap-buffer-replace! buf (- end-pos start-pos) pre)
