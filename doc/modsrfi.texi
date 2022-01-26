@@ -234,7 +234,7 @@ This module provides a program configuration metalanguage
 Gauche autoloads srfi-7 module, so you don't need
 to say @code{(use srfi-7)} explicitly.
 @c JP
-Gauche は srfi-7 モジュールを autoload しますので、@code{(use srfi-7)} と
+Gauche は srfi-7 モジュールを autoload するので、@code{(use srfi-7)} と
 明示的に書く必要はありません。
 
 @c EN
@@ -253,8 +253,8 @@ evaluates the form directly.  Nonetheless, it doesn't make sense
 to mix @code{program} form and other forms in one file,
 or expecting a return value of @code{program} form.
 @c JP
-Gauche @code{program} フォームをマクロとして実装しています。それゆえ、
-そのフォームを直接、評価することができます。とはいえ、@code{program}
+Gauche @code{program} フォームをマクロとして実装しているので、
+フォーム自体を直接、評価することができます。とはいえ、@code{program}
 フォームと他のフォームを一つのファイル中で混在させたり、@code{program}
 フォームの返り値を期待するのは、よいことではありません。
 
@@ -267,7 +267,7 @@ you can just load it.
 @c JP
 @code{program}フォームの典型的な使い方は、@code{program} フォームのみを
 含む単一のファイルを用意することです。(@code{program}フォーム中で
-@code{files} 節(後述)を用いて他のファイルをロードするとが可能です。)
+@code{files} 節(後述)を用いて他のファイルをロードすることが可能です。)
 このようなプログラムファイルを Gauche で実行するには、単にそれを
 ロードするだけです。
 @c COMMON
@@ -1549,10 +1549,73 @@ We recommend the new code to use the new order.
 @subsection Low-level string procedures
 @c NODE 低レベルな文字列に関する手続き
 
+@c EN
+Here are some helper procedures useful
+to write other string-processing utilities similar to srfi-13:
+@c JP
+srfi-13に似せた他の文字列処理ユーティリティを書くのに便利なヘルパー関数です。
+@c COMMON
+
+
 @defun string-parse-start+end proc s args
 @defunx string-parse-final-start+end proc s args
 [SRFI-13]
 @c MOD srfi-13
+@c EN
+Most srfi-13 procedures takes optional start and end arguments.
+These procedures looks for them in the rest arguments @var{args},
+and if they're not provided, gives the default values.
+@c JP
+多くのsrfi-13の手続きは、省略可能引数としてstartとend引数を取ります。
+この手続きは、残余引数リスト@var{args}にstartとendが指定されているかを調べ、
+指定されていればそれらを、されていなければ適切なデフォルト値を返します。
+@c COMMON
+
+@c EN
+The @var{proc} argument is the name (symbol) of the procedure,
+to be used in the error condition, and @var{s} is the string to be processed.
+@c JP
+@var{proc}はエラー通知に使われる手続きの名前 (シンボル)、
+@var{s}は処理すべき文字列です。
+@c COMMON
+
+@c EN
+Both expects an optional @var{start} argument at the beginning of @var{args},
+followed by an optional @var{end} argument.  If the @var{end} argument
+is missing, the length of @var{s} is assumed.  If the @var{start} argument
+is also missing, @code{0} is assumed.
+If arguments are provided, they must be exact integers,
+and @code{0} <= @var{start} <= @code{end} <= @code{(string-length @var{s})} must
+be satisfied; otherwise, an error is signaled.
+@c JP
+どちらの手続きも、@var{args}の最初に@var{start}引数があり、その次に@var{end}引数が
+あることを期待します。@var{end}引数が省略されていた場合は@var{s}の長さが、
+@var{start}引数も省略されていた場合は@code{0}が使われます。
+引数が与えられた場合は、それらは正確な整数で
+@code{0} <= @var{start} <= @code{end} <= @code{(string-length @var{s})}
+を満たしていなければなりません。そうでなければエラーが投げられます。
+@c COMMON
+
+@c EN
+If more than two arguments are in @var{args}, @code{string-parse-final-start+end}
+raises an error (in other words, it requires that the argument list
+end with the @var{end} argument at most), while @code{string-parse-start+end}
+permits it and returns the result of arguments, along with start and
+end indexes.
+@c JP
+@var{args}に二つ以上の引数が含まれていた場合、
+@code{string-parse-final-start+end}はエラーを通知します
+(つまり、最長でも引数リストが@var{end}引数で終わる場合に使えます)。
+一方、@code{string-parse-start+end}は、余分な引数を許し、それを
+start/endの値とともに返します。
+@c COMMON
+
+@c EN
+Both function return three values: The rest of the argument list,
+the start index, and the end index.
+@c JP
+どちらの関数も3つの値を返します。余分な引数のリスト、startの値、endの値です。
+@c COMMON
 @end defun
 
 @defmac let-string-start+end (start end [rest]) proc-exp s-exp args-exp body @dots{}
