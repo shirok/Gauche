@@ -515,7 +515,7 @@ Supported by the module @code{util.stream}.
 
 ストリームライブラリ
 モジュール@code{util.stream}でサポートされています。
-@xref{Stream library}.
+@ref{Stream library}参照。
 
 
 srfi-41, srfi-41
@@ -570,7 +570,7 @@ Built-in.
 
 反復的 Lazy アルゴリズムのための基本関数
 組み込みです。
-@xref{Lazy evaluation}.
+@ref{Lazy evaluation}参照。
 
 
 srfi-46
@@ -584,7 +584,7 @@ Built-in.
 基本的なsyntax-rulesの拡張
 これはR7RS smallの一部となりました。
 組み込みです。
-@xref{Hygienic macros}.
+@ref{Hygienic macros}参照。
 
 
 srfi-55, srfi-55
@@ -763,11 +763,13 @@ srfi-101
 
 Purely functional random-access pairs and lists
 This has become a part of R7RS large.
-Supported by the module @code{scheme.rlist}.
+Supported by the module @code{scheme.rlist}
+(@pxref{R7RS random-access lists}).
 
 純粋に関数的でランダムアクセス可能なペアとリスト
 これはR7RS largeの一部となりました。
-モジュール@code{scheme.rlist}でサポートされます。
+モジュール@code{scheme.rlist}でサポートされます
+(@ref{R7RS random-access lists}参照)。
 
 
 srfi-106, srfi-106
