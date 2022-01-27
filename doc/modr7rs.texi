@@ -4452,7 +4452,11 @@ elements satisfy @var{pred}, while
 @c COMMON
 @end defun
 
+@c EN
 @subheading Mapping and folding
+@c JP
+@subheading マップと畳み込み
+@c COMMON
 
 @defun set-map comparator proc set
 @defunx bag-map comparator proc bag
@@ -4546,9 +4550,15 @@ that does not satisfy @var{pred}.
 @defunx bag-partition pred bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns two sets or bags, both have the same comparator of the original
 set or bag.  The first one consists of the items from the original set/bag
 that satisfy @var{pred}, and the second one consists of the items that don't.
+@c JP
+与えられたセット/バッグと同じ比較器を持つ、二つのセット/バッグを返します。
+最初の戻り値には、元のセット/バッグの要素のうち@var{pred}を満たすもののみが含まれ、
+二番目の戻り値にはそうでない要素のみが含まれます。
+@c COMMON
 
 @example
 (receive (in out) (set-remove odd? (set eqv-comparator 1 2 3 4 5))
@@ -4566,38 +4576,67 @@ that satisfy @var{pred}, and the second one consists of the items that don't.
 @defunx bag-partition! pred bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Linear update versions of their counterparts (the procedures without @code{!}).
 They work like their respective counterpart, but they are allowed (but not
 required) to reuse the original set/bag to produce the result(s).
+@c JP
+それぞれの@code{!}がない手続きの線形更新版です。
+@code{!}がない手続きと同様に動きますが、
+戻り値を作るために渡されたセット/バッグを破壊することが許されています。
+@c COMMON
 
+@c EN
 Note that it is not guaranteed that the original set/bag is modified, so
 you have to use the return value(s) instead of relying on the side effects.
+@c JP
+元のセット/バッグが必ず変更されるとは限らないことに注意してください。
+副作用を当てにするのではなく、必ず戻り値を使う必要があります。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Copying and conversion
+@c JP
+@subheading コピーと変換
+@c COMMON
 
 @defun set-copy set
 @defunx bag-copy bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a copy of the set/bag.
+@c JP
+与えられたセット/バッグのコピーを返します。
+@c COMMON
 @end defun
 
 @defun set->list set
 @defunx bag->list bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a list of all items in the set/bag.
 Since sets and bags are unordered, there's no guarantee on the
 order of items.
+@c JP
+セット/バッグの持つ要素全てのリストを返します。
+セット/バッグは順序を持たないので、要素がどういう順序になるかは不定です。
+@c COMMON
 @end defun
 
 @defun list->set comparator elt-list
 @defunx list->bag comparator elt-list
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Creates a set or a bag with the given comparator, and
 the list of element.  Functionally equivalent to the followings:
+@c JP
+与えられた比較器と要素のリストから、セット/バッグを作って返します。
+次のコードと機能的に等価です。
+@c COMMON
 
 @example
 (apply set comparator elt-list)
@@ -4609,9 +4648,16 @@ the list of element.  Functionally equivalent to the followings:
 @defunx list->bag! bag elt-list
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Add items in @var{elt-list} to the existing set/bag, and returns
-the updated set/bag.  The original set/bag is also modified.
+the updated set/bag.  The original set/bag may or may not be modified.
 Functionally equivalent to the followings:
+@c JP
+リスト@var{elt-list}の要素を与えられたセット/バッグに追加し、
+更新されたセット/バッグを返します。
+元のセット/バッグは破壊的に変更されるかもしれませんし、されないかもしれません。
+次のコードと機能的に等価です。
+@c COMMON
 
 @example
 (apply set-adjoin! set elt-list)
