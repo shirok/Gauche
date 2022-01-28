@@ -65,6 +65,7 @@ ScmObj Scm_InitCommandLine2(int argc, const char *argv[], int kind)
 ScmObj Scm_InitCommandLine(int argc, const char *argv[], int kind)
 #endif /* GAUCHE_API_VERSION >= 98 */
 {
+    SCM_ASSERT(argc > 0);
     ScmObj args = Scm_CStringArrayToList(argv, argc, SCM_STRING_IMMUTABLE);
 
     if (kind & SCM_COMMAND_LINE_OS) {
