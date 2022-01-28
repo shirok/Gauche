@@ -4669,48 +4669,86 @@ Functionally equivalent to the followings:
 @defunx set->bag set
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Conversions between a bag and a set.  Returns a newly created bag or set,
 respectively.
+@c JP
+バッグをセットに、あるいはセットをバッグに変換します。
+新に作られたセットあるいはバッグを返します。
+@c COMMON
 
+@c EN
 If @var{bag} has duplicated items, @code{bag->set} coerces them to one
 item.
+@c JP
+元の@var{bag}に重複する要素が含まれていた場合、
+@code{bag->set}はそのうちひとつだけを含みます。
+@c COMMON
 @end defun
 
 @defun set->bag! bag set
 [R7RS set]
 @c MOD scheme.set
-Adds all items in @var{set} to @var{bag}, and returns @var{bag}.
+@c EN
+Returns a bag that contains all items in @var{set} plus
+all iterms in @var{bag}, which may be modified to create the result.
 Both @var{bag} and @var{set} must have the same comparator.
+@c JP
+@var{bag}に含まれる全ての要素に、@var{set}に含まれる要素を追加したバッグを返します。
+@var{bag}は破壊的に変更されるかもしれません。
+@var{bag}と@var{set}は同じ比較器を使っていなければなりません。
+@c COMMON
 @end defun
 
 
 @defun bag->alist bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a list of @code{(item . count)}, where @var{item} is
 an item in @var{bag}, and @var{count} is the number of that item
 in the bag.
+@c JP
+@var{bag}中の相異なる各要素@var{item}についてその個数を@var{count}としたとき、
+@code{(item . count)}のリストを返します。
+@c COMMON
 @end defun
 
 @defun alist->bag comparator alist
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Creates a new bag with @var{comparator}, and fills it according to
 @var{alist}, which must be a list of @code{(item . count)}.
+@c JP
+@var{alist}は要素とその個数のペア @code{(item . count)} のリストです。
+@var{comparator}を比較器として、それぞれの@var{item}を@var{count}個づつ
+含むようなバッグを作成して返します。
+@c COMMON
 
+@c EN
 If there's duplicate items in @var{alist}, only fist one counts.
+@c JP
+@var{alist}中に重複する@var{item}があった場合、最初のもののみが考慮されます。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Subsets
+@c JP
+@subheading 部分集合
+@c COMMON
 
 @defun set=? set1 set2 @dots{}
 @defunx bag=? bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns true iff all sets/bags have exactly same items.
-
-The comparators of the argument sets/bags are not checked, but assumed
-to be the same, in terms of the equality of items.
+@c JP
+全てのセット/バッグが同じ要素を持っている場合に@code{#t}を、そうでなければ@code{#f}を
+返します。
+@c COMMON
 @end defun
 
 @defun set<? set1 set2 @dots{}
@@ -4723,38 +4761,67 @@ to be the same, in terms of the equality of items.
 @defunx bag>=? bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
-Returns true iff each preceding set/bag is a proper subset of,
-a proper superset of, a subset of, or a superset of the following
-set/bags, respectively.
+@c EN
+These predicates checks inclusion relationship between sets or bags.
+For example, @code{(set<? @var{set1} @var{set2})} is @code{#t} iff @var{set1}
+is a proper subset of @var{set2}, and
+@code{(bag>=? @var{bag1} @var{bag2})} is @code{#t} iff
+@var{bag2} is a subset (including the 'equal to' case) of @var{bag1}, etc.
 
-Again, the comparators of the argument sets/bags are not checked, but assumed
-to be the same, in terms of the equality of items.
+If more than two arguments are given, the predicate returns @code{#t} iff
+every consecutive arguments satisfies the relationship.
+@c JP
+これらの述語は集合の包含関係を判定します。例えば@code{(set<? @var{set1} @var{set2})}
+は@var{set1}が@var{set2}の真部分集合の時に@code{#t}を、そうでなければ@code{#f}を
+返し、@code{(bag>=? @var{bag1} @var{bag2})}は@var{bag2}が@var{bag1}の
+部分集合(等しい場合を含む)の時に@code{#t}を、そうでなければ@code{#f}を返すという具合です。
+
+3つ以上の引数が与えられた場合、全ての隣り合う引数同士で関係が成り立っている時のみ
+@code{#t}が返されます。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Set theory operations
+@c JP
+@subheading 集合論演算
+@c COMMON
 
 @defun set-union set1 set2 @dots{}
 @defunx bag-union bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly allocated set or bag which is a union of all
 the sets/bags.
+@c JP
+与えられた全てのセット/バッグの和集合となるセット/バッグを新に作って返します。
+@c COMMON
 @end defun
 
 @defun set-intersection set1 set2 @dots{}
 @defunx bag-intersection bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly allocated set or bag which is an intersection of
 all the sets/bags.
+@c JP
+与えられた全てのセット/バッグの共通集合となるセット/バッグを新に作って返します。
+@c COMMON
 @end defun
 
 @defun set-difference set1 set2 @dots{}
 @defunx bag-difference bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set or bag that contains items in @var{set1}/@var{bag1}
 except those are also in @var{set2}/@var{bag2} @dots{}.
+@c JP
+@var{set1}/@var{bag1}の要素のうち、@var{set2}/@var{bag2} @dots{}に含まれないもの
+のみを集めたセット/バッグを新に作って返します。
+@c COMMON
 
 @example
 (sort (set->list (set-difference (set eqv-comparator 1 2 3 4 5 6 7)
@@ -4768,9 +4835,14 @@ except those are also in @var{set2}/@var{bag2} @dots{}.
 @defunx bag-xor bag1 bag2
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a newly created set or bag that consists of items
 that are either in @var{set1}/@var{bag1} or @var{set2}/@var{bag2},
 but not in both.
+@c JP
+@var{set1}/@var{bag1}および@var{set2}/@var{bag2}に含まれる要素のうち、
+どちらか一方にしか含まれない要素のみを集めた集合を新に作って返します。
+@c COMMON
 
 @example
 (sort (set->list (set-xor (set eqv-comparator 2 3 5 7 11 13 17)
@@ -4789,26 +4861,47 @@ but not in both.
 @defunx bag-xor! bag1 bag2
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Linear update versions of their corresponding procedures.
 Those procedures works like their @code{!}-less counterparts,
 except that they are allowed to, but not required to, reuse
 @var{set1}/@var{bag1} to produce the result.
+@c JP
+それぞれ、対応する手続き(@code{!}のついていないもの)の線形更新版です。
+@code{!}のついていない版と同様に動作しますが、結果を生成するために
+@var{set1}/@var{bag1}を破壊的に変更するかもしれません。
+@c COMMON
 
+@c EN
 The caller should always use the returned set/bag instead of
 relying on the side effects.
+@c JP
+呼び出し側は、副作用を期待するのではなく、常に戻り値を利用してください。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Bag-specific procedures
+@c JP
+@subheading バッグだけにある操作
+@c COMMON
 
 @defun bag-sum bag1 bag2 @dots{}
 @defunx bag-sum! bag1 bag2 @dots{}
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a bag that gathers all the items in given bags, counting
 duplicates.  The functional version @code{bag-sum} always
 creates new bag to return.
 The linear update version @code{bag-sum!} is allowed to,
 but not required to, modify @var{bag1} to produce the result.
+@c JP
+与えられた全てのバッグの要素を合わせたバッグを作って返します。
+重複する要素があればその分同じ要素が重ねられます。
+@var{bag-sum}は常に新たなバッグを作って返しますが、
+線形更新版の@var{bag-sum!}は結果を作るために@var{bag1}を破壊的に変更するかもしれません。
+@c COMMON
 
 @example
 (sort (bag->list (bag-sum (bag eqv-comparator 1 1 2 4 5 5 6)
@@ -4816,7 +4909,11 @@ but not required to, modify @var{bag1} to produce the result.
   @result{} (1 1 2 3 3 4 5 5 5 6 9)
 @end example
 
+@c EN
 Note the difference from @code{bag-union}:
+@c JP
+@code{bag-union}との違いに注意してください。
+@c COMMON
 
 @example
 (sort (bag->list (bag-union (bag eqv-comparator 1 1 2 4 5 5 6)
@@ -4829,10 +4926,16 @@ Note the difference from @code{bag-union}:
 @defunx bag-product! n bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns a bag that contains every item as @var{n}-times
 many as the original bag.  A fresh bag is created and returned
 by @code{bag-product}, while @code{bag-product!} may reuse
 @var{bag} to produce the result.
+@c JP
+与えられたバッグの各要素数を@var{n}倍したバッグを返します。
+@code{bag-product}は常に新たなバッグを作りますが、
+@code{bag-product!}は結果を作るために@var{bag}を破壊的に変更するかもしれません。
+@c COMMON
 
 @example
 (sort (bag->list (bag-product 2 (bag eq-comparator 'a 'b 'r 'a))))
@@ -4843,7 +4946,11 @@ by @code{bag-product}, while @code{bag-product!} may reuse
 @defun bag-unique-size bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns the number of unique elements in @var{bag}.
+@c JP
+@var{bag}中の、互いに異なる要素の数を返します。
+@c COMMON
 
 @example
 (bag-unique-size (bag eqv-comparator 1 1 2 2 3 3 4))
@@ -4854,7 +4961,11 @@ Returns the number of unique elements in @var{bag}.
 @defun bag-element-count bag elt
 [R7RS set]
 @c MOD scheme.set
+@c EN
 Returns the number of specified element @var{elt} in @var{bag}.
+@c JP
+@var{bag}中に@var{elt}がいくつあるかを返します。
+@c COMMON
 
 @example
 (bag-element-count (bag eqv-comparator 1 1 2 2 2 3 3) 2)
@@ -4865,18 +4976,30 @@ Returns the number of specified element @var{elt} in @var{bag}.
 @defun bag-for-each-unique proc bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 For each unique item in @var{bag}, calls @code{proc} with two arguments:
 The item, and the count of the item in the bag.
+@c JP
+@var{bag}中の相異なる各要素について、@var{proc}を2つの引数で呼び出します。
+引数は、要素と、その要素の数です。
+@c COMMON
 @end defun
 
 @defun bag-fold-unique proc seed bag
 [R7RS set]
 @c MOD scheme.set
+@c EN
 For each unique item in @var{bag}, calls @var{proc} with three arguments:
 The item, the count of the item, and the previous seed value.
 The @var{seed} argument provides the initial seed value; the result
 of @var{proc} is used for the next seed value, and the last
 result of @code{proc} is returned from @code{bag-fold-unique}.
+@c JP
+@var{bag}中の相異なる各要素について、@var{proc}を3つの引数で呼び出します。
+要素、その個数、そして一つ前のシード値です。
+@var{seed}引数が最初のシード値を与え、その後は各@var{proc}の戻り値が次のシード値となります。
+最後のシード値が@code{bag-fold-unique}の戻り値となります。
+@c COMMON
 
 @example
 (sort (bag-fold-unique acons '()
@@ -4890,22 +5013,40 @@ result of @code{proc} is returned from @code{bag-fold-unique}.
 @defunx bag-decrement! bag elt count
 [R7RS set]
 @c MOD scheme.set
-Linear update @var{bag} to increase or decrease the count of @var{elt} in it
+@c EN
+Linearly update @var{bag} to increase or decrease the count of @var{elt} in it
 by @var{count}, which must be an exact integer.  Note that the
 element count won't get below zero; if a bag has two @code{a}'s, and
 you call @code{(bag-decrement! bag 'a 100)}, you get a bag
 with zero @code{a}'s.
+@c JP
+@var{bag}中の要素@var{elt}の個数を@var{count}だけ増やし/減らします。
+線形更新手続きなので、@var{bag}は結果を作るために破壊的に変更されるかもしれません。
+要素の個数は負にはなりません。@code{a}が二つバッグに含まれている状態で
+@code{(bag-decrement! bag 'a 100)}を呼ぶと、
+@code{a}がひとつも含まれないバッグが返されます。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Comparators
+@c JP
+@subheading 比較器
+@c COMMON
 
 @defvr {Comparator} set-comparator
 @defvrx {Comparator} bag-comparator
 [R7RS comparator]
 @c MOD scheme.set
+@c EN
 Comparators to be used to compare sets or bags.  They don't provide
 comparison procedure, for you cannot define a total order among sets or bags.
 They do provide hash functions.
+@c JP
+セット同士、バッグ同士を比較する比較器です。
+セット/バッグに一般的な全順序関係は定義できないので、大小比較手続きは提供されません。
+ハッシュ手続きは提供されます。
+@c COMMON
 @end defvr
 
 
