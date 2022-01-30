@@ -167,4 +167,8 @@
   (comparator-equality-predicate (hash-table-comparator ht)))
 (define (hash-table-hash-function ht)
   (assume-type ht <hash-table>)
-  (comparator-hash-function (hash-table-comparator ht)))
+  (let1 h (comparator-hash-function (hash-table-comparator ht))
+    (if (eqv? (arity h) 1)
+      (^[obj :optional (bound #f)]
+        (if bound (modulo (h obj) bound) (h obj)))
+      h)))
