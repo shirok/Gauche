@@ -4773,14 +4773,10 @@ See @code{make-hash-table} above for the description of
 Returns equivalence function and hash function of the
 hashtable @var{ht}.
 
-Note that @code{srfi-69}'s @code{hash-table-hash-function} differs from
-@code{scheme.hash-table}'s one of the same name (@pxref{R7RS hash tables}).
-This one returns a hash function that takes an optional @var{bound} argument
-to limit the range of the hash value.  Since our underlying hash tables
+Note that @code{srfi-69}'s hash function takes an optional
+@var{bound} argument.   Since our underlying hash tables
 don't use bound argument, we actually wrap the internal hash function
 to allow the optional bound argument.
-Hence the function returned by @code{hash-table-hash-function} is not
-be @code{eq?} to the one you gave to @code{make-hash-table}.
 @end defun
 
 @defun hash-table-ref ht key :optional thunk

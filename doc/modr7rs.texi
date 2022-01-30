@@ -6081,40 +6081,77 @@ use @code{(hash-table-for-each proc ht)}.
 @defunx hash-table-fold ht proc seed
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 The @var{proc} argument takes three arguments, a key, a value, and
 the current seed value.  The procedure applies @var{proc} for
 each entry in @var{ht}, using @var{seed} as the first seed value,
 and using the previous result of @var{proc} as the subsequent seed value.
 Returns the result of the last call of @var{seed}.
+@c JP
+@var{proc}は、キー、対応する値、シード値の3つの引数を取る手続きです。
+@code{hash-table-fold}はハッシュテーブル@var{ht}のそれぞれのエントリについて、
+@var{proc}を呼び出します。シード値の初期値は@var{seed}で、
+以降は一つ前の@var{proc}の戻り値が次のシード値として渡されてゆき、
+最後の@var{proc}呼び出しの戻り値が全体の戻り値となります。
+@c COMMON
 
+@c EN
 This procedure allows arguments in both order for the compatibility---
 the first way is the @code{scheme.hash-table} recommended one,
 which is the same as built-in @code{hash-table-fold-r7},
 and the latter way is compatible with srfi-69, which is
 the same as built-in @code{hash-table-fold}.
+@c JP
+この手続きもまた、互換性のために二つのインタフェースを用意しています。
+最初のインタフェースは@code{scheme.hash-table}ライブラリ推奨のもので、
+Gauche組み込みの@code{hash-table-fold-r7}と同じです。
+後者はsrfi-69およびGauche組み込みの@code{hash-table-fold}と同じです。
+@c COMMON
 
+@c EN
 It is unfortunate that this compatibility thing is extremely confusing.
 We recommend that you stick to one way or another within a module; if
 your module uses built-in interface, use the second interface.
-If your module imports @code{scheme.hash-table},
+If your module is for portable R7RS code,
 use the first interface.
+@c JP
+歴史的経緯とはいえ、ふたつの紛らわしいインタフェースが併存するのは残念なことです。
+一つのモジュール内では混乱を避けるため、どちらかに統一した方が良いでしょう。
+Gauche組み込みのハッシュテーブルインタフェースを他にも使っているなら後者で、
+ポータブルなR7RSコードを書いているなら前者で。
+@c COMMON
 @end defun
 
 @defun hash-table-prune! proc ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as built-in @code{hash-table-prune!-r7}.
+@c JP
+組み込みの@code{hash-table-prune!-r7}と同じです。
+@c COMMON
 
+@c EN
 Apply @var{proc} on a key and a value of each entry in @var{ht},
 and deletes the entry if @var{proc} returns a true value.
 This procedure returns an unspecified value.
+@c JP
+@var{ht}の各エントリについて、@var{proc}をキーと値を引数として呼び出し、
+@var{proc}が真の値を返したエントリを@var{ht}から削除します。
+戻り値は規定されていません。
+@c COMMON
 @end defun
 
 @defun hash-table-merge! ht1 ht2
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 This is the same as @code{hash-table-union!}, and provided just
 for the compatibility with srfi-69.  Deprecated.
+@c JP
+これは@code{hash-table-union!}と同じで、
+srfi-69との互換性のためだけに提供されています。非推奨です。
+@c COMMON
 @end defun
 
 @defun hash obj :optional ignore
@@ -6123,8 +6160,13 @@ for the compatibility with srfi-69.  Deprecated.
 @defunx hash-by-identity obj :optional ignore
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 Provided for the compatibility with srfi-69, and are deprecated.
+@c JP
+srfi-69互換性のために提供されているハッシュ関数です。非推奨です。
+@c COMMON
 
+@c EN
 The first three are the same as built-in @code{default-hash},
 @code{string-hash}, and @code{string-ci-hash}, except that
 these accept an optional second argument, which is ignored.
@@ -6132,31 +6174,69 @@ Note that @code{hash-by-identity} is also defined as the same
 as @code{default-hash} except the ignored optional second argument,
 per srfi-125, although the name suggests that it would work as if
 @code{eq-hash}.
+@c JP
+最初の3つの手続きは、無視される省略可能引数を取ることを除いて、
+組み込みの@code{default-hash}、@code{string-hash}、@code{string-ci-hash}
+とそれぞれ同じです。
+@code{hash-by-identity}も省略可能引数を除いては@code{default-hash}と
+同じです。名前から@code{eq-hash}のように思えるかもしれませんが、
+srfi-125で@code{default-hash}と同じと規定されています。
+@c COMMON
 
+@c EN
 Do not use these procedures in the new code; you can use comparators
 instead (@code{default-comparator}, @code{string-comparator},
 @code{string-ci-comparator} and @code{eq-comparator},
 @pxref{Predefined comparators}).   If you do need hash function,
 you should still avoid @code{hash} and @code{hash-by-identity},
 and use @code{default-hash} and @code{eq-hash} instead.
+@c JP
+新しいコードではこれらを使わず、
+(@code{default-comparator}、@code{string-comparator}、
+@code{string-ci-comparator}、@code{eq-comparator}等の
+比較器を渡すようにしてください (@ref{Predefined comparators}参照)。
+たとえハッシュ関数を渡す必要があったとしても、
+@code{hash}と@code{hash-by-identity}の使用は避け、
+かわりに@code{default-hash}や@code{eq-hash}を使いましょう。
+@c COMMON
 @end defun
 
 @defun hash-table-equivalence-function ht
 @defunx hash-table-hash-function ht
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c EN
 Provided for the compatibility with srfi-69, and are deprecated.
+@c JP
+srfi-69との互換性のために提供されている手続きで、非推奨です。
+@c COMMON
 
+@c EN
 Returns the equivalence function and hash function of a hash table @var{ht}.
+@c JP
+ハッシュテーブル@var{ht}の等値判定手続きとハッシュ手続きをそれぞれ返します。
+@c COMMON
 
-Note that @code{hash-table-hash-function} is not exactly the same
-as srfi-69's.  Srfi-69's hash function, returned from its version
-of @code{hash-table-hash-function}, can take optional @var{bound} argument.
-@xref{Basic hash tables}, for the details.
+@c EN
+Note that srfi-69's hash function takes an optional @var{bound} argument;
+so, if you build @var{ht} with a comparator or a hash function that does
+not take optional argument, @code{hash-table-hash-function} wraps the
+real hash function with a procedure that allows optional @var{bound}
+argument.
+@c JP
+srfi-69ではハッシュ関数は省略可能な@var{bound}引数を取るというプロトコルになっています。
+そこで、@var{ht}が比較器、もしくは省略可能引数を取らないハッシュ関数から
+作られていた場合、@code{hash-table-hash-function}は元のハッシュ関数をラップして、
+省略可能引数@var{bound}を取るようにした手続きを返します。
+@c COMMON
 
+@c EN
 For the introspection, we recommend to use
-built-in @code{hash-table-comparator}.  (Unfortunately, it is not
-included in @code{scheme.hash-table}, though.)
+built-in @code{hash-table-comparator} (@pxref{Hashtables}).
+@c JP
+ハッシュテーブルのイントロスペクションには、@code{hash-table-comparator}で
+比較器を取り出す方が良いでしょう (@ref{Hashtables}参照)。
+@c COMMON
 @end defun
 
 
