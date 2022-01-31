@@ -10311,9 +10311,12 @@ extension of Gauche.
 @c EN
 When @var{start} is zero and @var{end} is @var{N}, this procedure
 returns a copy of @var{string}.
+(See also @code{opt-substring} below, if you don't want to copy
+if not necessary.)
 @c JP
 @var{start}がゼロでかつ@var{end}が@var{N}の場合には、@var{string}のコ
 ピーが返ります。
+(不必要な時にコピーを避けたければ、下の@code{opt-substring}が使えます)。
 @c COMMON
 
 @c EN
@@ -10328,6 +10331,39 @@ for the generic version.
 @ref{Sequence framework}のジェネリック版@code{subseq}も参照してください。
 @c COMMON
 @end defun
+
+@defun opt-substring string :optional start end
+@c EN
+Like @code{substring}, returns a part of @var{string} between
+@var{start}-th character (inclusive) and @var{end}-th character (exclusive).
+However, if the entire @var{string} is used (e.g. @var{start} is 0 and
+@var{end} is the length of @var{string}, or the arguments are omitted, etc.),
+@var{string} is returned as is, without copying.
+
+This is a typical handling of optional @var{start}/@var{end} indexes
+for many string utilities.   Note that using @code{substring} forces
+copying the input string even when it's not necessary.
+
+Besides exact integers, @code{#f} or @code{#<undef>} is allowed
+as @var{start} and @var{end}, to indicate the argument is missing.
+In that case, 0 is assumed for @var{start}, and
+the length of @var{string} is assumed for @var{end}.
+@c JP
+@code{substring}と同様に、@var{string}の@var{start}番目の文字(含む)から
+@var{end}番目の文字(含まない)までを切り取った文字列を返します。
+ただし、入力文字列全てが使われる場合(@var{start}が0で@var{end}が入力文字列長だとか、
+それらが省略された場合だとか)は、コピーせずに@var{string}がそのまま返されます。
+
+これは、多くの文字列処理関数で省略可能な@var{start}/@var{end}引数を扱う場合に
+共通する処理です。
+@code{substring}を使うと必ず文字列がコピーされることに注意してください。
+
+@var{start}/@var{end}引数には、正確な整数のほか、
+該当する引数が省略されたことを示すために@code{#f}と@code{#<undef>}が許されます。
+引数が省略された場合、@var{start}は0、@var{end}は@var{string}の長さが使われます。
+@c COMMON
+@end defun
+
 
 @defun string-append string @dots{}
 [R7RS base]
