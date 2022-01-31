@@ -113,8 +113,7 @@
     (^[] (if (< i start) (eof-object) (%begin0 (vector-ref vec i) (dec! i))))))
 
 (define (string->generator str :optional (start #f) (end #f))
-  (let1 p (open-input-string
-           ((with-module gauche.internal %maybe-substring) str start end))
+  (let1 p (open-input-string (opt-substring str start end))
     (^[] (read-char p))))
 
 (define (uvector->generator uvec :optional (start #f) (end #f))

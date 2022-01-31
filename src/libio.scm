@@ -599,8 +599,7 @@
 (define (write-string string :optional (port (current-output-port))
                                        (start 0)
                                        (end -1))
-  (display ((with-module gauche.internal %maybe-substring) string start end)
-           port))
+  (display (opt-substring string start end) port))
 
 ;; Consume trailing whiespaces up to (including) first EOL.
 ;; This is mainly intended for interactive REPL,
@@ -1049,7 +1048,7 @@
 
 (define-in-module gauche (read-from-string string . args)
   (with-input-from-string
-      (if (null? args) string (apply %maybe-substring string args))
+      (if (null? args) string (apply opt-substring string args))
     read))
 
 ;; with-port

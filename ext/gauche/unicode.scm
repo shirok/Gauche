@@ -522,7 +522,7 @@
 (define (string->utf32 str :optional (endian 'big-endian)
                                      (add-bom? #f)
                                      (start 0) end)
-  (let* ([s ((with-module gauche.internal %maybe-substring) str start end)]
+  (let* ([s (opt-substring str start end)]
          [len (string-length s)]
          [r (make-u8vector (* 4 (if add-bom? (+ len 1) len)))]
          [rr (uvector-alias <u32vector> r (if add-bom? 4 0))])

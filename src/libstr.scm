@@ -117,7 +117,7 @@
 (define-cproc string-size (str::<string>) ::<fixnum> :constant
   (return (SCM_STRING_BODY_SIZE (SCM_STRING_BODY str))))
 
-(define-cproc %maybe-substring (str::<string> :optional start end)
+(define-cproc opt-substring (str::<string> :optional start end)
   Scm_MaybeSubstring)
 
 ;; bound argument is for srfi-13
@@ -193,7 +193,7 @@
     (error "grammar argument must be one of (infix strict-infix prefix suffix), but got" grammar))
   (unless (or (not limit) (and (integer? limit) (>= limit 0)))
     (error "limit argument must be a nonnegative integer or #f, but got" limit))
-  (let1 s ((with-module gauche.internal %maybe-substring) string start end)
+  (let1 s (opt-substring string start end)
     (if (equal? s "")
       (if (eq? grammar 'strict-infix)
         (error "string must not be empty with strict-infix grammar")
@@ -406,13 +406,11 @@
         [(or (integer? (car rest))
              (string-cursor? (car rest)))
          (if (null? (cdr rest))
-           (proc-single proc (%maybe-substring str (car rest) (undefined)))
+           (proc-single proc (opt-substring str (car rest) (undefined)))
            (if (or (integer? (cadr rest))
                    (string-cursor? (cadr rest)))
              (if (null? (cddr rest))
-               (proc-single proc (%maybe-substring str
-                                                   (car rest)
-                                                   (cadr rest)))
+               (proc-single proc (opt-substring str (car rest) (cadr rest)))
                (errorf "Too many arguments for srfi-13 style ~a" name))
              (error "Integer or string-cursor expected, but got:" (cadr rest))))]
         [(string? (car rest))

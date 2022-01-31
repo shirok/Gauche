@@ -74,8 +74,6 @@
           ))
 (select-module srfi-130)
 
-(define %maybe-substring (with-module gauche.internal %maybe-substring))
-
 (define string->list/cursors string->list)
 (define string->vector/cursors string->vector)
 (define string-copy/cursors string-copy)
@@ -108,8 +106,8 @@
 (define (string-contains s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ([str1 (%maybe-substring s1 start1 end1)]
-         [str2 (%maybe-substring s2 start2 end2)]
+  (let* ([str1 (opt-substring s1 start1 end1)]
+         [str2 (opt-substring s2 start2 end2)]
          [res  (string-scan str1 str2 'cursor)])
     (and res
          (string-cursor-forward s1
@@ -119,8 +117,8 @@
 (define (string-contains-right s1 s2 :optional (start1 0) end1 start2 end2)
   (assume-type s1 <string>)
   (assume-type s2 <string>)
-  (let* ([str1 (%maybe-substring s1 start1 end1)]
-         [str2 (%maybe-substring s2 start2 end2)]
+  (let* ([str1 (opt-substring s1 start1 end1)]
+         [str2 (opt-substring s2 start2 end2)]
          [res  (string-scan-right str1 str2 'cursor)])
     (and res
          (string-cursor-forward s1
