@@ -128,7 +128,7 @@
 
 (define-method call-with-iterator ((coll <string>) proc
                                    :key (start #f) :allow-other-keys)
-  (let* ([s  (open-input-string (if start (string-copy coll start) coll))]
+  (let* ([s  (open-input-string (opt-substring coll start))]
          [ch (read-char s)])
     (proc (cut eof-object? ch)
           (^[] (rlet1 c ch
