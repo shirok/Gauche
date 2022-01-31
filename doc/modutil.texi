@@ -26178,6 +26178,32 @@ The @var{size} argument must be a nonnegative exact integer,
 and the @var{content} argument must be either a string or a character.
 @end defun
 
+@defun gap-buffer-contains gbuf str :optional gstart gend sstart send
+@c MOD text.gap-buffer
+Search a string @var{str} in a gap buffer @var{gbuf}.  If found,
+returns the integer index of the beginning of @var{str} in @var{gbuf}.
+If not found, returns @code{#f}.
+
+The optional arguments @var{gstart} and @var{gend}
+restricts the range of @var{gbuf} to be searched, by integer indexes.
+The default is the entire buffer.
+You can pass @code{#f} to indicate to use the
+default value.
+
+The optional arguments @var{sstart} and @var{send} restricts
+the span of @var{str} to be searched, by integer indexes.
+You can pass @code{#f} to indicate to use the
+default value.
+@end defun
+
+@defun gap-buffer-looking-at? gbuf str :optional point
+@c MOD text.gap-buffer
+Returns @code{#t} iff the content immeidately following @var{point}
+matches a string @var{str}.  If @var{point} is omitted or @code{#f},
+the current cursor position is used.
+@end defun
+
+
 @defun gap-buffer-edit! gbuf edit-command
 @c MOD text.gap-buffer
 This is a convenience procedure to ``replay'' editing of the gap buffer

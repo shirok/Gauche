@@ -48,6 +48,7 @@
           gap-buffer-ref gap-buffer-move!
           gap-buffer-insert! gap-buffer-delete! gap-buffer-replace!
           gap-buffer-clear!
+          gap-buffer-contains gap-buffer-looking-at?
           gap-buffer-edit!
           gap-buffer->generator gap-buffer->string)
   )
@@ -62,6 +63,9 @@
 (define-inline (%gbuf-content-length gbuf)
   (- (%gbuf-size gbuf)
      (- (~ gbuf'gap-end) (~ gbuf'gap-start))))
+(define-inline (%gbuf-index gbuf i)
+  (let1 s (~ gbuf'gap-start)
+    (if (< i s) i (+ i (- (~ gbuf'gap-end) s)))))
 
 ;; API
 (define (gap-buffer? obj) (is-a? obj <gap-buffer>))
@@ -306,3 +310,54 @@
 (define (gap-buffer->string gbuf :optional (start 0) (end (undefined)))
   (let1 g (gap-buffer->generator gbuf start end)
     (with-output-to-string (^[] (generator-for-each display g)))))
+
+;; API
+;; Search string STR in GBUF, returns its starting index if found,
+;; #f if not.
+(define (gap-buffer-contains gbuf str
+                             :optional (gstart 0) (gend #f) sstart send)
+  (assume-type gbuf <gap-buffer>)
+  (assume-type str <string>)
+  (let* ([needle (string->u32vector (opt-substring str sstart send))]
+         [needlelen (u32vector-length needle)]
+         [buf (~ gbuf'buffer)]
+         [ilimit (- (or gend (%gbuf-content-length gbuf)) needlelen)]
+         [gap-start (~ gbuf'gap-start)]
+         [gap-end (~ gbuf'gap-end)])
+    ;; We could adopt better algorithm like KMP once it is necessary.
+    ;; For the time being, supposed use cases are having short STR,
+    ;; so we don't bother.
+    (let outer ([i gstart])
+      (and (<= i ilimit)
+           (let inner ([j (%gbuf-index gbuf i)] [k 0])
+             (if (< k needlelen)
+               (if (eqv? (u32vector-ref buf j) (u32vector-ref needle k))
+                 (inner (if (= j (- gap-start 1))
+                          gap-end
+                          (+ j 1))
+                        (+ k 1))
+                 (outer (+ i 1)))
+               i))))))                  ;found
+
+;; API
+;; Returns #t iff gbuffer content immediate following the current point
+;; matches the given string STR.
+;; NB: Emacs's looking-at takes regexp.  We may extend this to do so later,
+;; though
+(define (gap-buffer-looking-at? gbuf str :optional (point #f))
+  (assume-type gbuf <gap-buffer>)
+  (assume-type str <string>)
+  (let* ([needle (string->u32vector str)]
+         [needlelen (u32vector-length needle)]
+         [buf (~ gbuf'buffer)]
+         [gap-start (~ gbuf'gap-start)]
+         [gap-end (~ gbuf'gap-end)]
+         [point (or point gap-start)])
+    (and (<= point (- (%gbuf-content-length gbuf) needlelen))
+         (let loop ([j (%gbuf-index gbuf point)] [k 0])
+           (or (= k needlelen)
+               (and (eqv? (u32vector-ref buf j) (u32vector-ref needle k))
+                    (loop (if (= j (- gap-start 1))
+                            gap-end
+                            (+ j 1))
+                          (+ k 1))))))))

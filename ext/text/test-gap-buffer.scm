@@ -78,6 +78,39 @@
                (gap-buffer-pos-at-end? gbuf 5)))
   )
 
+(let1 gbuf (string->gap-buffer "abcdabcdebcdef")
+  (gap-buffer-move! gbuf 5)
+  (test* "gap-buffer-contains" 0
+         (gap-buffer-contains gbuf "abcd"))
+  (test* "gap-buffer-contains" 4
+         (gap-buffer-contains gbuf "abcde"))
+  (test* "gap-buffer-contains" 9
+         (gap-buffer-contains gbuf "bcdef"))
+  (test* "gap-buffer-contains" #f
+         (gap-buffer-contains gbuf "abcq"))
+  (test* "gap-buffer-contains gstart" 4
+         (gap-buffer-contains gbuf "abcd" 1))
+  (test* "gap-buffer-contains gstart gend" #f
+         (gap-buffer-contains gbuf "abcde" 0 8))
+  (test* "gap-buffer-contains sstart" 9
+         (gap-buffer-contains gbuf "abcdef" 0 #f 1))
+
+  (test* "gap-buffer-looking-at?" #t
+         (gap-buffer-looking-at? gbuf "bcde"))
+  (test* "gap-buffer-looking-at?" #f
+         (gap-buffer-looking-at? gbuf "bcdef"))
+  (test* "gap-buffer-looking-at?" #f
+         (gap-buffer-looking-at? gbuf "abcd"))
+  (test* "gap-buffer-looking-at? point" #t
+         (gap-buffer-looking-at? gbuf "abcd" 0))
+  (test* "gap-buffer-looking-at? point" #t
+         (gap-buffer-looking-at? gbuf "abcde" 4))
+  (test* "gap-buffer-looking-at? point" #t
+         (gap-buffer-looking-at? gbuf "def" 11))
+  (test* "gap-buffer-looking-at? point" #f
+         (gap-buffer-looking-at? gbuf "defg" 11))
+  )
+
 (let1 gbuf (gap-buffer-copy (string->gap-buffer "abcde"))
   (test* "undo and redo"
          '("abXYZcde" "abXYde" "aQRSYde" "abXYde" "abXYZcde"
