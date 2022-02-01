@@ -34,16 +34,16 @@
 ;; This module is autoloaded from gauche.interactive.
 
 (define-module gauche.interactive.editable-reader
-  (use srfi-13)
   (use text.console)
   (use util.match)
   (use file.util)
   (export make-editable-reader))
 (select-module gauche.interactive.editable-reader)
 
-;; Delay loading line-edit in case editable console isn't available.
+;; Delay loading some modules in case editable console isn't available.
 (autoload text.line-edit <line-edit-context> read-line/edit
           load-line-edit-history save-line-edit-history)
+(autoload gauche.interactive.completion list-completions)
 
 ;; Internal API, to be used by gauche.interactive.
 ;; Because of toplevel commands, we can't just provide alternative 'read'
@@ -55,11 +55,13 @@
 ;; to allow other console (e.g. over pty).
 (define (make-editable-reader get-prompt-string hist-file)
   (if-let1 console (make-default-console :if-not-available #f)
+    ;; We wrap list-completions with lambda to delay loading completion module
     (let ([ctx (make <line-edit-context>
                  :console console
                  :prompt (^[] (display (get-prompt-string)))
                  :input-continues (^s (not (%input-complete? s)))
-                 :completion-lister list-completions)]
+                 :completion-lister (^[word gbuf start end]
+                                      (list-completions word gbuf start end)))]
           [buffer (open-input-string "")])
       (define (read-1 reader)
         (rec (try)
@@ -90,28 +92,3 @@
     (not (#/^\s*$/ (m 1)))
     (complete-sexp? s)))
 
-;; Completion (EXPERIMENTAL)
-;; Some questions to consider
-;;   - Should we build a trie for quick access to prefix-matching symbols?
-;;     If we do so, how to keep it updated?
-;;   - Do we want to complete w-i-f-f to with-input-from-file?
-;;   - We need to access runtime 'current-module' info, which currently isn't
-;;     a public API.  Should we have an official API for that?
-;;   - The routine is pretty similar to apropos.  Should we refactor?
-(define (list-completions word buf start end)
-  (let ([mod ((with-module gauche.internal vm-current-module))]
-        [visited '()]
-        [hits (make-hash-table 'string=?)])
-    (define (search m)
-      (unless (memq m visited)
-        (push! visited m)
-        ($ hash-table-for-each (module-table m)
-           (^[sym _]
-             (let1 s (symbol->string sym)
-               (when (string-prefix? word s)
-                 (hash-table-put! hits s #t)))))))
-
-    (search mod)
-    (dolist [m (module-imports mod)]
-      (for-each search (module-precedence-list m)))
-    (sort (hash-table-keys hits))))

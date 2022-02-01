@@ -89,6 +89,7 @@ SCMFILES = \
        gauche/interactive/init.scm \
        gauche/interactive/toplevel.scm \
        gauche/interactive/editable-reader.scm \
+       gauche/interactive/completion.scm \
        gauche/selector.scm gauche/logger.scm \
        gauche/common-macros.scm gauche/singleton.scm gauche/validator.scm \
        gauche/version.scm gauche/version-alist.scm \
