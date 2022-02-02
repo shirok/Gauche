@@ -1,3 +1,9 @@
+2022-02-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (Scm_CharWordConstituent),
+	  src/libio.scm (char-word-consituent?): Expose these for they are
+	  generally useful to write something that deal with Scheme names.
+
 2022-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/gap-buffer.scm
