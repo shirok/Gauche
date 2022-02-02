@@ -60,6 +60,7 @@
                  :console console
                  :prompt (^[] (display (get-prompt-string)))
                  :input-continues (^s (not (%input-complete? s)))
+                 :completion-word-constituent? char-word-constituent?
                  :completion-lister (^[word gbuf start end]
                                       (list-completions word gbuf start end)))]
           [buffer (open-input-string "")])
@@ -91,4 +92,3 @@
   (if-let1 m (#/^\s*,(.*)/ s)
     (not (#/^\s*$/ (m 1)))
     (complete-sexp? s)))
-
