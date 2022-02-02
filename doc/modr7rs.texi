@@ -6325,6 +6325,7 @@ built-in @code{hash-table-comparator} (@pxref{Hashtables}).
 @findex make-improper-ilist-comparator
 @findex make-icar-comparator
 @findex make-icdr-comparator
+@c EN
 This module provides a set of procedures that handles immutable pairs
 and lists.
 
@@ -6337,7 +6338,23 @@ them) works seamlessly on both kind.
 Consequently, the following procedures are just aliases of their
 non-immutable versions (just remove @code{i} prefix from them).
 Note that these procedures and variables in Gauche do not reject if the input is
-mutable pairs/lists, but such usage may not be portable.
+mutable pairs/lists, but such usage may not be portable
+(@pxref{Mutable and immutable pairs}).
+@c JP
+このモジュールは変更不可なペアとリストを扱う手続きを提供します。
+
+規格では、Scheme実装は変更可能なペアと変更不可能なペアを別の型として持つことを許していて、
+そのためこのモジュールでは@code{scheme.list}にある多くの手続きの変更不可ペア用バージョンを
+提供しています。
+しかしGaucheは、変更可能なペアも変更不可なペアもどちらも「ペア」として扱い、
+ペアにアクセスする手続きは(ペアを破壊的変更しない限り)変更不可なペアにもそのまま使えます
+(@ref{Mutable and immutable pairs}参照)。
+
+従って、このモジュールが提供する手続きは単に変更可能ペア用バージョンの別名になっています。
+(名前から@code{i}プレフィクスを除いたものが対応する手続きです)。
+このモジュールの手続きは、変更可能なペアが与えられてもエラーにしないことに注意してください。
+Gaucheではそれらを区別しませんが、区別する処理系ではエラーになるかもしれません。
+@c COMMON
 
 @example
 proper-ilist?     ilist?            dotted-ilist?     not-ipair?
