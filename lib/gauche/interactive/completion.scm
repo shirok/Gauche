@@ -36,6 +36,8 @@
 (define-module gauche.interactive.completion
   (use srfi-13)
   (use text.gap-buffer)
+  (use util.match)
+  (use gauche.interactive.toplevel)
   (export list-completions))
 (select-module gauche.interactive.completion)
 
@@ -48,8 +50,37 @@
 ;;     a public API.  Should we have an official API for that?
 ;;   - The routine is pretty similar to apropos.  Should we refactor?
 (define (list-completions word gbuf start end)
-  (%complete-symbol word))
+  (match (%toplevel-command gbuf start)
+    ["" (%complete-toplevel-command word)]
+    [(or "l" "load") (%complete-path word)]
+    [(or "u" "use" "r" "reload") (%complete-module-name word)]
+    [_ (%complete-symbol word)]))
 
+;; See if we're in a toplevel command.
+;; LIMIT is the beginning position of the word to complete.
+;; If we're in a toplevel command, return <command>
+;; <command> may be "" if we're completing the toplevel command itself.
+;; If we're not in a toplevel command, return #f.
+(define (%toplevel-command gbuf limit)
+  (define (scan-comma i)
+    (and (< i limit)
+         (let1 c (gap-buffer-ref gbuf i)
+           (cond [(char-whitespace? c) (scan-comma (+ i 1))]
+                 [(eqv? c #\,) (scan-command (+ i 1) '())]
+                 [else #f]))))
+  (define (scan-command i cs)
+    (if (= i limit)
+      (list->string (reverse cs))
+      (let1 c (gap-buffer-ref gbuf i)
+        (if (char-whitespace? c)
+          (list->string (reverse cs))
+          (scan-command (+ i 1) (cons c cs))))))
+  (scan-comma 0))
+
+(define (%complete-toplevel-command partial-command)
+  (toplevel-command-matches partial-command))
+
+;; Complete from visible symbols
 (define (%complete-symbol word)
   (let ([mod ((with-module gauche.internal vm-current-module))]
         [visited '()]
@@ -66,4 +97,22 @@
     (dolist [m (module-imports mod)]
       (for-each search (module-precedence-list m)))
     (sort (hash-table-keys hits))))
-               
+
+(define (%complete-path word)
+  (glob `(,#"~|word|*{.scm,.sci,.sld}" ,#"~|word|*/")))
+
+(define (%complete-module-name word)
+  ;; TODO: Currently, library-fold doesn't take flexible glob pattern
+  ;; like **.  Until we adapt library-fold to the generic glob,
+  ;; this kludge works for the most of the cases (until we have
+  ;; a library with too deep hierarchy)
+  (define found (make-hash-table 'eq?))
+  (define (search! pat)
+    (library-fold (string->symbol pat)
+                 (^[mod _ _] (hash-table-put! found mod #t))
+                 #f))
+  (search! #"~|word|*.*.*.*")
+  (search! #"~|word|*.*.*")
+  (search! #"~|word|*.*")
+  (search! #"~|word|*")
+  (sort (map x->string (hash-table-keys found))))

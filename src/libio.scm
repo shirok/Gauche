@@ -624,6 +624,9 @@
                  (read-byte port))]
               [(eqv? b 10) (read-byte port)])))))        ;lf
 
+(define-cproc char-word-constituent? (ch::<char>) ::<boolean>
+  (return (Scm_CharWordConstituent ch 0)))
+
 ;; DEPRECATED - read-uvector should be used
 (define-cproc read-block (bytes::<fixnum>
                           :optional (port::<input-port> (current-input-port)))

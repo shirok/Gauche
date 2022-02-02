@@ -405,6 +405,14 @@ inline static int char_word_case_fold(int c)
     return (c >= 0 && c < 128 && (ctypes[(unsigned char)c]&2));
 }
 
+/* For external API
+ * We may use flags for include_hash_sign in future.
+ */
+int Scm_CharWordConstituent(ScmChar ch, u_long flags SCM_UNUSED)
+{
+    return char_word_constituent((int)ch, FALSE);
+}
+
 /* R7RS 7.1.1 <delimiter> */
 static int char_is_delimiter(ScmChar ch)
 {

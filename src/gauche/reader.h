@@ -115,6 +115,11 @@ SCM_EXTERN long Scm_ParseDigitsAsLong(const char *buf, ScmSize len, int radix,
                                       ScmSize *numread);
 
 /*
+ * Useful utility
+ */
+SCM_EXTERN int    Scm_CharWordConstituent(ScmChar ch, u_long flags);
+
+/*
  * SRFI-10 hash-comma syntax
  */
 SCM_EXTERN ScmObj Scm_DefineReaderCtor(ScmObj symbol, ScmObj proc,

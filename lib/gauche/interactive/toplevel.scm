@@ -53,7 +53,7 @@
   (use srfi-13)
   (use util.match)
   (use data.trie)
-  (export handle-toplevel-command)
+  (export handle-toplevel-command toplevel-command-matches)
   )
 (select-module gauche.interactive.toplevel)
 
@@ -76,6 +76,12 @@
        (^t (if-let1 v (trie-get t k #f)
              `((,k . ,v))
              (sort (trie-common-prefix t k) string<? car))))))
+
+;; For gauche.interactive.completion
+;; Returns a lis tof commands that shares the given prefix
+(define (toplevel-command-matches key)
+  ($ atomic *toplevel-commands*
+     (^t (sort (map car (trie-common-prefix t key))))))
 
 ;; Returns [((key ...) help-string)]
 (define (toplevel-command-keys)
