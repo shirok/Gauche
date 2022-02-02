@@ -53,6 +53,7 @@
   (match (%toplevel-command gbuf start)
     ["" (%complete-toplevel-command word)]
     [(or "l" "load") (%complete-path word)]
+    [(or "u" "use" "r" "reload") (%complete-module-name word)]
     [_ (%complete-symbol word)]))
 
 ;; See if we're in a toplevel command.
@@ -99,3 +100,19 @@
 
 (define (%complete-path word)
   (glob `(,#"~|word|*{.scm,.sci,.sld}" ,#"~|word|*/")))
+
+(define (%complete-module-name word)
+  ;; TODO: Currently, library-fold doesn't take flexible glob pattern
+  ;; like **.  Until we adapt library-fold to the generic glob,
+  ;; this kludge works for the most of the cases (until we have
+  ;; a library with too deep hierarchy)
+  (define found (make-hash-table 'eq?))
+  (define (search! pat)
+    (library-fold (string->symbol pat)
+                 (^[mod _ _] (hash-table-put! found mod #t))
+                 #f))
+  (search! #"~|word|*.*.*.*")
+  (search! #"~|word|*.*.*")
+  (search! #"~|word|*.*")
+  (search! #"~|word|*")
+  (sort (map x->string (hash-table-keys found))))
