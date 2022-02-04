@@ -6388,32 +6388,67 @@ make-icar-comparator                make-icdr-comparator
 
 @deftp {Module} scheme.rlist
 @mdindex scheme.rlist
+@c EN
 This module provides an alternative datatype for pairs and lists,
 which are immutable and allows O(log n) random access, while
 maintaining O(1) @code{car} and @code{cdr} operations.
 This is originally defined as @code{srfi-101}.  We call this datatype
 @emph{rlist} in the following explanation.
+@c JP
+このモジュールは、変更不可で、ランダムアクセスがO(log n)であるような、
+ペアとリストに替わるデータ構造を提供します。@code{car}と@code{cdr}はO(1)です。
+元は@code{srfi-101}として定められました。
+ここでは、このデータ型を@emph{rlist}と呼ぶことにします。
+@c COMMON
 
+@c EN
 The srfi allows a Scheme implementation to adopt rlist
 as the built-in pairs and lists, so the procedure names are
 duplicated from the Scheme primitives.  If you use this module,
 you might want to import with prefix
 (e.g. @code{(use scheme.rlist :prefix rlist:)}).
+@c JP
+このsrfiでは、組み込みのペアとリストとしてrlistを選択するScheme処理系も可能なように
+書かれています。そのため、手続き名がSchemeのペアやリストを扱うプリミティブと
+重複しています。このモジュールを使う際には、
+@code{(use scheme.rlist :prefix rlist:)}といった具合にプリフィクスつきで
+インポートすると良いでしょう。
+@c COMMON
 
+@c EN
 In Gauche, we implement rlist on top of skew-list
 (@pxref{Skew binary random-access lists}).  The main difference
 is that skew-list only allows proper lists, while rlist allows
 improper lists (the @code{cdr} of the last pair can be an arbitrary
 objects).
+@c JP
+Gaucheでは、rlistはskew-list (@ref{Skew binary random-access lists}参照) の上に
+実装されています。skew-listとの大きな違いは、skew-listは常に真正リストですが、
+rlistはドットリストが許されることです。(つまり、rlistの最後のペアの@code{cdr}には
+どんなオブジェクトも許されます。)
+@c COMMON
 
+@c EN
 However, having improper lists makes things a lot complicated.  If you just
 need a list with fast random access, you want to use skew-list.
 Use rlist only if you need to deal with improper lists.
+@c JP
+ただ、真正でないリストを扱うために内部では面倒なことをしています。
+速いランダムアクセス可能なリストが必要なら、skew-listをそのまま使った方が良いです。
+その上で非真正リストを扱う必要がある場合だけ、このモジュールを使うのが良いでしょう。
+@c COMMON
 
+@c EN
 The following procedures behave just like the built-in counterparts,
 except they take/return rlists instead of ordinary pairs and lists.
 (NB: @code{list-ref} and @code{list-tail} here doesn't take the optional
 fallback argument, for they are Gauche's extension).
+@c JP
+次の手続きは、引数や戻り値がrlistであること以外は、組み込みの同名の手続きと同じ動作をします。
+(註: このモジュールの@code{list-ref}と@code{list-tail}は省略可能引数を取りません。
+通常のリストに対する@code{list-ref}と@code{list-tail}が省略可能引数を取るのは
+Gaucheの独自拡張だからです。)
+@c COMMON
 
 @example
 pair?     cons       car        cdr
@@ -6429,40 +6464,86 @@ length    append     reverse    list-tail
 list-ref  map        for-each
 @end example
 
+@c EN
 This module also exports a syntax @code{quote}, which denotes
 the literal rlist.  @code{(quote (a (b c)))} becomes a literal
 rlist consists of elements @code{a}, and an rlist consists
 of @code{b} and @code{c}.
+@c JP
+このモジュールはまた、リテラルのrlistを書くめの@code{quote}という構文もエクスポートします。
+@code{(quote (a (b c)))}は、
+@code{a}および、「@code{b}と@code{c}を要素に持つrlist」のrlistになります。
+@c COMMON
 
+@c EN
 Note that if you import @code{scheme.rlist} without suffix,
 the shorthand notation @code{'(a (b c))} refers to @code{scheme.rlist#quote},
 instead of built-in @code{quote}.
+@c JP
+@code{scheme.rlist}をプリフィクスなしでインポートした場合、
+@code{'(a (b c))}は組み込みの@code{quote}ではなく@code{scheme.rlist#quote}を
+使うことに注意してください。
+@c COMMON
 @end deftp
 
 @defun list-set rlist k obj
+[R7RS rlist]
+@c MOD scheme.rlist
+@c EN
 Returns a new rlist which is the same as @var{rlist} except
 that its @var{k}-th element is replaced with @var{obj}.
 This is O(log n) operation where n is the length of @var{rlist}.
+@c JP
+元の@var{rlist}のうち、@var{k}番目の要素が@var{obj}に置き換えられた
+@var{rlist}を作って返します。@var{rlist}の長さをnとした時、
+O(log n)の操作です。
+@c COMMON
 @end defun
 
 @defun list-ref/update rlist k proc
+[R7RS rlist]
+@c MOD scheme.rlist
+@c EN
 Returns two values, the result of @code{(list-ref rlist k)}
 and the result of @code{(list-set rlist k (proc (list-ref rlist k)))},
 but may be more efficient.
+@c JP
+@code{(list-ref rlist k)}の結果と、
+@code{(list-set rlist k (proc (list-ref rlist k)))}の結果という二つの値を返します。
+ただし、別々に呼び出すよりは効率が良いかもしれません。
+@c COMMON
 @end defun
 
 @defun random-access-list->linear-access-list rlist
+[R7RS rlist]
+@c MOD scheme.rlist
+@c EN
 Convert a proper rlist to an ordinary list.  An error is
 thrown when @var{rlist} is not proper.
 The conversion is only done in the ``spine'' of @var{rlist}; that is,
 if @var{rlist} is nested, only the outermost @var{rlist} is converted.
+@c JP
+真正のrlistと同じ要素を持つ通常のリストを返します。
+@var{rlist}が真正でなければエラーが投げられます。
+変換は@var{rlist}の「背骨」に対してのみ行われることに注意してください。
+@var{rlist}がネストしていた場合、一番外側の@var{rlist}だけが変換されます。
+@c COMMON
 @end defun
 
 @defun linear-access-list->random-access-list list
+[R7RS rlist]
+@c MOD scheme.rlist
+@c EN
 Convert a proper ordinary list to an rlist.
 An error is thrown when @var{list} is not proper.
 The conversion is only done in the ``spine'' of @var{list}; that is,
 if @var{list} is nested, only the outermost @var{list} is converted.
+@c JP
+通常の真正リスト@var{list}と同じ要素を持つrlistを返します。
+@var{list}が真正でなければエラーが投げられます。
+変換は@var{list}の「背骨」に対してのみ行われることに注意してください。
+@var{list}がネストしていた場合、一番外側の@var{list}だけが変換されます。
+@c COMMON
 @end defun
 
 
