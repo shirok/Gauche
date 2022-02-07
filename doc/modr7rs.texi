@@ -6553,34 +6553,62 @@ if @var{list} is nested, only the outermost @var{list} is converted.
 
 @deftp {Module} scheme.ideque
 @mdindex scheme.ideque
+@c EN
 This module provides a functional double-ended queue
 (deque, pronounced as ``deck''),
 with amortized O(1) access of queue operations on either end.
+@c JP
+このモジュールは、関数的な両端キュー (deque:「デック」と読みます) を提供します。
+どちらの端からのキュー操作もO(1)償却時間で可能です。
+@c COMMON
 
+@c EN
 It also serves as a convenient bidirectional list structures
 in a sense that operations from the end of the list is just as
 efficient as the ones from the front.
+@c JP
+dequeはまた、どちらの方向からでもトラバースできるリストとして使うこともできます。
+@c COMMON
 
+@c EN
 Note: If you don't need immutability and wants space-efficient
 deque, you can also use @code{data.ring-buffer} as a deque
 (@pxref{Ring buffer}).
+@c JP
+註: 変更不可である必要がなく、メモリ効率の良いdequeが必要なら、
+@code{data.ring-buffer}をdequeとして使うことができます(@ref{Ring buffer}参照)。
+@c COMMON
 
+@c EN
 This module was originally defined as @code{srfi-134}, then
 became a part of R7RS large.
+@c JP
+このモジュールは@code{srfi-134}として定義され、R7RS largeに取り込まれました。
+@c COMMON
 
+@c EN
 Gauche's @code{data.ideque} is a superset of this module.
 @xref{Immutable deques}.
+@c JP
+Gaucheの@code{data.ideque}はこのモジュールのスーパーセットになっています
+(@ref{Immutable deques}参照)。
+@c COMMON
 @end deftp
 
 @defun ideque element @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns an ideque with the given elements.
+@c JP
+@var{element} @dots{} を要素に持つidequeを作って返します。
+@c COMMON
 @end defun
 
 @defun ideque-unfold p f g seed
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Construct an ideque in the same way as @code{unfold} (@pxref{R7RS lists}),
 that is, a predicate @var{p} is applied to a current state value;
 if it returns true, the iteration stops.  Otherwise, an item
@@ -6591,124 +6619,251 @@ and its result becomes the next state value, and we iterate.
 The result of @var{f} is gathered in order, and becomes the content
 of the returned ideque.
 The @var{seed} argument specifies the initial state value.
+@c JP
+リストを構築する@code{unfold}と同じ要領でidequeを左から構築します
+(@code{unfold}については@ref{R7RS lists}参照)。
+
+各繰り返しにて、まず@var{p}が現在の状態値に適用されます。
+それが真の値を返したら繰り返しは終了です。
+そうでなければ、@var{f}が状態値に適用され、その結果がidequeの要素のひとつになります。
+次に@var{g}が状態値に適用され、その結果が次の繰り返しの状態値となります。
+@var{f}の結果が順に集められて、idequeの内容となります。
+@var{seed}引数は最初の状態値を与えます。
+@c COMMON
+
+@example
+(ideque->list
+  (ideque-unfold (cut > <> 10) square (cut + <> 1) 0))
+ @result{} (0 1 4 9 16 25 36 49 64 81 100)
+@end example
 @end defun
 
 @defun ideque-unfold-right p f g seed
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Similar to @code{ideque-unfold}, but the generated elements are
 stored in the reverse order in the resulting ideque.
+@c JP
+@code{ideque-unfold}と同じようにidequeを作りますが、
+要素が右から生成されます。
+@c COMMON
+
+@example
+(ideque->list
+  (ideque-unfold-right (cut > <> 10) square (cut + <> 1) 0))
+ @result{} (100 81 64 49 36 25 16 9 4 1 0)
+@end example
 @end defun
 
 @defun ideque-tabulate size init
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Create an ideque of length @var{size}, whose @var{i}-th element
 is computed by @code{(init @var{i})}.
+@c JP
+@var{size}の長さのidequeを作ります。左から@var{i}番目の要素は
+@code{(init @var{i})}で計算されます。
+@c COMMON
+
+@example
+(ideque->list (ideque-tabulate 11 square))
+ @result{} (0 1 4 9 16 25 36 49 64 81 100)
+@end example
 @end defun
 
 @defun ideque? obj
 [R7RS ideque]
 @c MOD scheme.ideque
-Returns true iff @code{obj} is an ideque.
+@c EN
+Returns true iff @var{obj} is an ideque.
+@c JP
+@var{obj}がidequeなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ideque-empty? idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns true iff an ideque @var{idq} is empty.
+@c JP
+@var{idq}が空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ideque-add-front idq x
 @defunx ideque-add-back idq x
 [R7RS ideque]
 @c MOD scheme.ideque
-Returns an ideque with an item @var{x} added to the front or back of @var{idq}.
-This is O(1) operation.
+@c EN
+Returns an ideque with an item @var{x} added to the front or back of
+an ideque @var{idq}, respectively.
+These are O(1) operations.
+@c JP
+それぞれ、@var{x}がideque @var{idq}の前(左)または後(右)に付け加えられた
+idequeを返します。O(1)の操作です。
+@c COMMON
 @end defun
 
 @defun ideque-front idq
 @defunx ideque-back idq
 [R7RS ideque]
 @c MOD scheme.ideque
-Returns the front or back element of @var{idq}.  An error is thrown
-if @var{idq} is empty.  This is O(1) operation.
+@c EN
+Returns the front or back element of an ideque @var{idq}, respectively.
+An error is thrown if @var{idq} is empty.  Thess are O(1) operations.
+@c JP
+それぞれ、ideque @var{idq}の先頭または末尾の要素を返します。
+@var{idq}が空の場合はエラーが投げられます。
+O(1)の操作です。
+@c COMMON
 @end defun
 
 @defun ideque-remove-front idq
 @defunx ideque-remove-back idq
 [R7RS ideque]
 @c MOD scheme.ideque
-Returns an ideque with the front or back element of @var{idq} removed.
-An error is thrown if @var{idq} is empty.  This is O(1) operation.
+@c EN
+Returns an ideque with the front or back element of @var{idq} removed,
+respectively.
+An error is thrown if @var{idq} is empty.  These are O(1) operations.
+@c JP
+それぞれ、ideque @var{idq}の先頭または末尾の要素を取り除いたidequeを返します。
+@var{idq}が空の場合はエラーが投げられます。
+O(1)の操作です。
+@c COMMON
 @end defun
 
 @defun ideque-reverse idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns an ideque with the elements of @var{idq} in reverse order.
 This is O(1) operation.
+@c JP
+ideque @var{idq}の順序を逆にしたidequeを返します。
+O(1)の操作です。
+@c COMMON
 @end defun
 
 @defun ideque= elt= idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns @code{#t} iff all ideques are of the same length,
 and each corresponding element compares equal by @var{elt=}, which
 is called with two arguments, one element from i-th ideque and
 another element from (i+1)-th ideque.
+@c JP
+引数のideque @var{idq} @dots{}が全て同じ長さで、対応する各要素が
+全て@var{elt=}で比較して等しい場合に@code{#t}を、そうでなければ@var{#f}を
+返します。@var{elt=}は、i番目のidequeの要素とi+1番目のidequeの要素を引数として
+呼ばれます。
+@c COMMON
 
+@c EN
 If zero or one ideque is given, @var{elt=} won't be called at all
 and this procedure returns @code{#t}.
+@c JP
+idequeがひとつだけ、あるいは全く渡されなかった場合、@var{elt=}は呼ばれず、
+@code{#t}が返されます。
+@c COMMON
 @end defun
 
 @defun ideque-ref idq n
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns @var{n}-th element of @var{idq}.  An error is signaled if
 @var{n} is out of range.
+@c JP
+ideque @var{idq}の@var{n}番目の要素を返します。
+@var{n}が範囲外の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun ideque-take idq n
 @defunx ideque-take-right idq n
 [R7RS ideque]
 @c MOD scheme.ideque
-Returns an ideque that has first or last @var{n} elements of @var{idq}.
+@c EN
+Returns an ideque that has first or last @var{n} elements of @var{idq},
+respectively
+An error is signaled if @var{n} is greater than the length of @var{idq}.
+@c JP
+それぞれ、ideque @var{idq}の先頭から/末尾から@var{n}要素を内容とするidequeを
+返します。@var{n}が@var{idq}の長さより大きい場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun ideque-drop idq n
 @defunx ideque-drop-right idq n
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns an ideque that has elements of @var{idq} with
-first or last @var{n} elements removed.
+first or last @var{n} elements removed, respectively.
+An error is signaled if @var{n} is greater than the length of @var{idq}.
+@c JP
+それぞれ、ideque @var{idq}の先頭から/末尾から@var{n}要素を取り除いたものを
+内容とするidequeを返します。
+@var{n}が@var{idq}の長さより大きい場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun ideque-split-at idq n
 [R7RS ideque]
 @c MOD scheme.ideque
+@c
 Returns two ideques, the first one is @code{(ideque-take idq n)} and
 the second one is @code{(ideque-drop idq n)}.
+An error is signaled if @var{n} is greater than the length of @var{idq}.
+@c JP
+二つの値を返します。最初の値は@code{(ideque-take idq n)}の結果と等しく、
+次の値は@code{(ideque-drop idq n)}の結果と等しいです。
+@var{n}が@var{idq}の長さより大きい場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun ideque-length idq
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns the length of @var{idq}.
+@c JP
+ideque @var{idq}の長さを返します。
+@c COMMON
 @end defun
 
 @defun ideque-append idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns an ideque that concatenates contents of given ideques.
+@c JP
+与えられたideque @var{idq} @dots{}を順につないだidequeqを返します。
+@c COMMON
 @end defun
 
 @defun ideque-zip idq idq2 @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Returns an ideque whose i-th element is a list of i-th elements of given
 ideques.  If the length of given ideques differ, the result terminates
 at the shortest ideque.
+@c JP
+ideque @var{idq} @var{idq2} @dots{} の各i番目の要素のリストを要素とする
+idequeを返します。元のidequeの要素数が異なる場合は、最も短いidequeに揃えます。
+@c COMMON
+
+@example
+(ideque->list
+  (ideque-zip (ideque 'a 'b 'c) (ideque 1 2) (ideque 'x 'y 'z)))
+ @result{} ((a 1 x) (b 2 y))
+@end example
 @end defun
 
 @defun ideque-map proc idq @dots{}
