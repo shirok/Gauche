@@ -22,7 +22,7 @@ instead of features.  In many cases, this is a mistake.
 Many of the tested configuration macros are at least somewhat defined in
 either include/private/gcconfig.h or in Makefile.direct.  Here is an attempt
 at documenting these macros:  (Thanks to Walter Bright for suggesting
-this.  This is a work in progress)
+this.)
 
 MACRO           EXPLANATION
 -----           -----------
@@ -56,6 +56,10 @@ _ENABLE_ARRAYNEW
                 #define'd by the Digital Mars C++ compiler when
                 operator new[] and delete[] are separately
                 overloadable. Used in gc_cpp.h.
+
+GC_NO_INLINE_STD_NEW    Tested by gc_cpp.cc and gc_cpp.h.  MS Windows only.
+                Define the system-wide new and delete operators in gccpp.dll
+                instead of providing an inline version of the operators.
 
 _DLL            Tested by gc_config_macros.h. Defined by Visual C++ if runtime
                 dynamic libraries are in use.  Used (only if none of GC_DLL,

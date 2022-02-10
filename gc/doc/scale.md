@@ -39,7 +39,8 @@ to be used together.
   is performed by the thread that triggered the collection, together with
   _N_ - 1 dedicated threads, where _N_ is the number of processors detected
   by the collector. The dedicated threads are created once at initialization
-  time. A second effect of this flag is to switch to a more concurrent
+  time (and optionally recreated in child processes after forking).
+  A second effect of this flag is to switch to a more concurrent
   implementation of `GC_malloc_many`, so that free lists can be built, and
   memory can be cleared, by more than one thread concurrently.
   * Building the collector with `-DTHREAD_LOCAL_ALLOC` adds support for
@@ -142,9 +143,10 @@ These measurements do not use incremental collection, nor was prefetching
 enabled in the marker. We used the C version of the benchmark. All
 measurements are in elapsed seconds on an unloaded machine.
 
-Number of threads| 1 marker thread (secs.) | 2 marker threads (secs.)
----|---|---
-1 client| 10.45| 7.85 | 2 clients| 19.95| 12.3
+Number of client threads| 1 marker thread (secs.)| 2 marker threads (secs.)
+---|------|-----
+  1| 10.45| 7.85
+  2| 19.95| 12.3
 
 The execution time for the single threaded case is slightly worse than with
 simple locking. However, even the single-threaded benchmark runs faster than

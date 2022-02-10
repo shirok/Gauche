@@ -160,7 +160,8 @@ EXTERN_C_BEGIN
 # if defined(__aarch64__)
 #    define AARCH64
 #    if !defined(LINUX) && !defined(DARWIN) && !defined(FREEBSD) \
-        && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX)
+        && !defined(NETBSD) && !defined(NN_BUILD_TARGET_PLATFORM_NX) \
+        && !defined(OPENBSD)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -194,6 +195,10 @@ EXTERN_C_BEGIN
 # endif
 # if defined(OPENBSD) && defined(__arm__)
 #    define ARM32
+#    define mach_type_known
+# endif
+# if defined(OPENBSD) && defined(__aarch64__)
+#    define AARCH64
 #    define mach_type_known
 # endif
 # if defined(OPENBSD) && defined(__sh__)
@@ -883,7 +888,8 @@ EXTERN_C_BEGIN
      && !(defined(POWERPC) && defined(DARWIN)) /* for MacOS X 10.3.9 */ \
      && !defined(RTEMS) \
      && !defined(__ARMCC_VERSION) /* does not exist in armcc gnu emu */ \
-     && !defined(__clang__) /* since no-op in clang (3.0) */
+     && (!defined(__clang__) \
+         || (GC_CLANG_PREREQ(8, 0) && defined(HOST_ANDROID)))
 #   define HAVE_BUILTIN_UNWIND_INIT
 # endif
 
@@ -943,7 +949,10 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       define MPROTECT_VDB
+#       define COUNT_UNMAPPED_REGIONS
+#       if !defined(REDIRECT_MALLOC)
+#         define MPROTECT_VDB
+#       endif
 #       ifdef __ELF__
 #         define DYNAMIC_LOADING
           EXTERN_C_END
@@ -1033,6 +1042,7 @@ EXTERN_C_BEGIN
 #     else
 #       define LINUX_STACKBOTTOM
 #     endif
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -1078,17 +1088,7 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "OPENBSD"
 #     define ALIGNMENT 4
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-        /* USRSTACK is defined in <machine/vmparam.h> but that is       */
-        /* protected by _KERNEL in <uvm/uvm_param.h> file.              */
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1288,6 +1288,7 @@ EXTERN_C_BEGIN
 #     elif !defined(CPPCHECK)
 #       error Linux SPARC a.out not supported
 #     endif
+#     define COUNT_UNMAPPED_REGIONS
       extern int _end[];
       extern int _etext[];
 #     define DATAEND ((ptr_t)(_end))
@@ -1304,15 +1305,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -1468,7 +1461,8 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#       define COUNT_UNMAPPED_REGIONS
+#       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
             /* We seem to get random errors in incremental mode,        */
@@ -1545,6 +1539,8 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef CYGWIN32
 #       define OS_TYPE "CYGWIN32"
+#       define WOW64_THREAD_CONTEXT_WORKAROUND
+#       define RETRY_GET_THREAD_CONTEXT
 #       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
 #       define DATAEND   ((ptr_t)GC_DATAEND)
 #       undef STACK_GRAN
@@ -1575,6 +1571,8 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef MSWIN32
 #       define OS_TYPE "MSWIN32"
+#       define WOW64_THREAD_CONTEXT_WORKAROUND
+#       define RETRY_GET_THREAD_CONTEXT
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
 #       define MPROTECT_VDB
@@ -1601,15 +1599,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #       define OS_TYPE "OPENBSD"
 #       ifndef GC_OPENBSD_THREADS
-          EXTERN_C_END
-#         include <sys/param.h>
-#         include <uvm/uvm_extern.h>
-          EXTERN_C_BEGIN
-#         ifdef USRSTACK
-#           define STACKBOTTOM ((ptr_t)USRSTACK)
-#         else
 #           define HEURISTIC2
-#         endif
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -1747,6 +1737,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define DYNAMIC_LOADING
+#     define COUNT_UNMAPPED_REGIONS
       extern int _end[];
 #     pragma weak __data_start
       extern int __data_start[];
@@ -1847,20 +1838,13 @@ EXTERN_C_BEGIN
 #  endif
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
-#     define ALIGNMENT 4
+#     define CPP_WORDSZ 64 /* all OpenBSD/mips platforms are 64-bit */
+#     define ALIGNMENT 8
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
-      extern int _fdata[];
-#     define DATASTART ((ptr_t)_fdata)
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
       extern int _end[];
 #     define DATAEND ((ptr_t)(&_end))
 #     define DYNAMIC_LOADING
@@ -1898,6 +1882,7 @@ EXTERN_C_BEGIN
 #  ifdef LINUX
 #    define OS_TYPE "LINUX"
 #    define DYNAMIC_LOADING
+#    define COUNT_UNMAPPED_REGIONS
      extern int _end[];
      extern int __data_start[];
 #    define DATASTART ((ptr_t)(__data_start))
@@ -1916,6 +1901,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define DYNAMIC_LOADING
+#     define COUNT_UNMAPPED_REGIONS
       extern int _end[];
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
@@ -1946,6 +1932,9 @@ EXTERN_C_BEGIN
 #     define OS_TYPE "HPUX"
       extern int __data_start[];
 #     define DATASTART ((ptr_t)(__data_start))
+#     ifdef USE_MMAP
+#       define USE_MMAP_ANON
+#     endif
 #     ifdef USE_HPUX_FIXED_STACKBOTTOM
         /* The following appears to work for 7xx systems running HP/UX  */
         /* 9.xx.  Furthermore, it might result in much faster           */
@@ -1954,13 +1943,22 @@ EXTERN_C_BEGIN
         /* default, since it may not work on older machine/OS           */
         /* combinations. (Thanks to Raymond X.T. Nijssen for uncovering */
         /* this.)                                                       */
+        /* This technique also doesn't work with HP/UX 11.xx.  The      */
+        /* stack size is settable using the kernel maxssiz variable,    */
+        /* and in 11.23 and latter, the size can be set dynamically.    */
+        /* It also doesn't handle SHMEM_MAGIC binaries which have       */
+        /* stack and data in the first quadrant.                        */
 #       define STACKBOTTOM ((ptr_t)0x7b033000) /* from /etc/conf/h/param.h */
-#     else
+#     elif defined(USE_ENVIRON_POINTER)
         /* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2       */
         /* to this.  Note that the GC must be initialized before the    */
-        /* first putenv call.                                           */
+        /* first putenv call.  Unfortunately, some clients do not obey. */
         extern char ** environ;
 #       define STACKBOTTOM ((ptr_t)environ)
+#     elif !defined(HEURISTIC2)
+        /* This uses pst_vm_status support. */
+#       define HPUX_MAIN_STACKBOTTOM
+#       define NEED_FIND_LIMIT
 #     endif
 #     define DYNAMIC_LOADING
       EXTERN_C_END
@@ -1977,6 +1975,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -1985,15 +1984,7 @@ EXTERN_C_BEGIN
 #  ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2021,15 +2012,7 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
-          EXTERN_C_END
-#         include <sys/param.h>
-#         include <uvm/uvm_extern.h>
-          EXTERN_C_BEGIN
-#         ifdef USRSTACK
-#           define STACKBOTTOM ((ptr_t)USRSTACK)
-#         else
 #           define HEURISTIC2
-#         endif
 #       endif
         extern int __data_start[];
 #       define DATASTART ((ptr_t)__data_start)
@@ -2088,6 +2071,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       ifdef __ELF__
 #         define SEARCH_FOR_DATA_START
 #         define DYNAMIC_LOADING
@@ -2096,9 +2080,11 @@ EXTERN_C_BEGIN
 #       endif
         extern int _end[];
 #       define DATAEND ((ptr_t)(_end))
-#       define MPROTECT_VDB
+#       if !defined(REDIRECT_MALLOC)
+#           define MPROTECT_VDB
                 /* Has only been superficially tested.  May not */
                 /* work on all versions.                        */
+#       endif
 #   endif
 # endif
 
@@ -2120,6 +2106,9 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "HPUX"
         extern int __data_start[];
 #       define DATASTART ((ptr_t)(__data_start))
+#       ifdef USE_MMAP
+#         define USE_MMAP_ANON
+#       endif
         /* Gustavo Rodriguez-Rivera suggested changing HEURISTIC2       */
         /* to this.  Note that the GC must be initialized before the    */
         /* first putenv call.                                           */
@@ -2153,6 +2142,7 @@ EXTERN_C_BEGIN
         /* backing store.                                       */
         extern ptr_t GC_register_stackbottom;
 #       define BACKING_STORE_BASE GC_register_stackbottom
+#       define COUNT_UNMAPPED_REGIONS
 #       define SEARCH_FOR_DATA_START
 #       ifdef __GNUC__
 #         define DYNAMIC_LOADING
@@ -2161,8 +2151,10 @@ EXTERN_C_BEGIN
           /* statically linked executables and an undefined reference   */
           /* to _DYNAMIC                                                */
 #       endif
-#       define MPROTECT_VDB
+#       if !defined(REDIRECT_MALLOC)
+#         define MPROTECT_VDB
                 /* Requires Linux 2.3.47 or later.      */
+#       endif
         extern int _end[];
 #       define DATAEND ((ptr_t)(_end))
 #       ifdef __GNUC__
@@ -2181,17 +2173,6 @@ EXTERN_C_BEGIN
 #           define GC_PREFETCH_FOR_WRITE(x) __lfetch(__lfhint_nta, (x))
 #           define CLEAR_DOUBLE(x) __stf_spill((void *)(x), 0)
 #         endif /* __INTEL_COMPILER */
-#       endif
-#   endif
-#   ifdef CYGWIN32
-#       define OS_TYPE "CYGWIN32"
-#       define DATASTART ((ptr_t)GC_DATASTART)  /* From gc.h */
-#       define DATAEND   ((ptr_t)GC_DATAEND)
-#       undef STACK_GRAN
-#       define STACK_GRAN 0x10000
-#       ifdef USE_MMAP
-#         define NEED_FIND_LIMIT
-#         define USE_MMAP_ANON
 #       endif
 #   endif
 #   ifdef MSWIN32
@@ -2260,6 +2241,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       define DYNAMIC_LOADING
         extern int __data_start[] __attribute__((__weak__));
 #       define DATASTART ((ptr_t)(__data_start))
@@ -2285,6 +2267,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     if defined(HOST_ANDROID)
 #       define SEARCH_FOR_DATA_START
@@ -2304,7 +2287,9 @@ EXTERN_C_BEGIN
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
 #     define USE_MMAP_ANON
-#     define MPROTECT_VDB
+      /* MPROTECT_VDB causes use of non-public API like exc_server,     */
+      /* this could be a reason for blocking the client application in  */
+      /* the store.                                                     */
       EXTERN_C_END
 #     include <unistd.h>
       EXTERN_C_BEGIN
@@ -2337,6 +2322,18 @@ EXTERN_C_BEGIN
 #     define ELF_CLASS ELFCLASS64
 #     define DYNAMIC_LOADING
 #   endif
+#   ifdef OPENBSD
+#     define OS_TYPE "OPENBSD"
+#     define ELF_CLASS ELFCLASS64
+#     ifndef GC_OPENBSD_THREADS
+#       define HEURISTIC2
+#     endif
+      extern int __data_start[];
+#     define DATASTART ((ptr_t)__data_start)
+      extern int _end[];
+#     define DATAEND ((ptr_t)(&_end))
+#     define DYNAMIC_LOADING
+#   endif
 #   ifdef NINTENDO_SWITCH
       extern int __bss_end[];
 #     define NO_HANDLE_FORK 1
@@ -2344,6 +2341,13 @@ EXTERN_C_BEGIN
 #     define DATAEND (ptr_t)(&__bss_end)
       void *switch_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)switch_get_stack_bottom())
+#   endif
+#   ifdef MSWIN32   /* UWP */
+#     define OS_TYPE "MSWIN32"
+      /* TODO: Enable GWW_VDB and/or MPROTECT_VDB */
+#     ifndef DATAEND
+#       define DATAEND  /* not needed */
+#     endif
 #   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.   */
@@ -2377,6 +2381,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       undef STACK_GRAN
 #       define STACK_GRAN 0x10000000
 #       ifdef __ELF__
@@ -2435,7 +2440,7 @@ EXTERN_C_BEGIN
 #     define DATAEND   ((ptr_t)get_end())
 #     define STACKBOTTOM ((ptr_t)0x30000000)
 #     define USE_MMAP_ANON
-#     define MPROTECT_VDB
+      /* MPROTECT_VDB causes use of non-public API.     */
       EXTERN_C_END
 #     include <unistd.h>
       EXTERN_C_BEGIN
@@ -2450,15 +2455,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2481,6 +2478,13 @@ EXTERN_C_BEGIN
       void *n3ds_get_stack_bottom(void);
 #     define STACKBOTTOM ((ptr_t)n3ds_get_stack_bottom())
 #   endif
+#   ifdef MSWIN32   /* UWP */
+#     define OS_TYPE "MSWIN32"
+      /* TODO: Enable GWW_VDB and/or MPROTECT_VDB */
+#     ifndef DATAEND
+#       define DATAEND  /* not needed */
+#     endif
+#   endif
 #   ifdef NOSYS
       /* __data_start is usually defined in the target linker script.  */
       extern int __data_start[];
@@ -2498,6 +2502,7 @@ EXTERN_C_BEGIN
 #   define OS_TYPE "LINUX"
 #   define DYNAMIC_LOADING
 #   define LINUX_STACKBOTTOM
+#   define COUNT_UNMAPPED_REGIONS
 #   define SEARCH_FOR_DATA_START
       extern int _end[];
 #   define DATAEND ((ptr_t)(_end))
@@ -2513,6 +2518,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #     define SEARCH_FOR_DATA_START
       extern int _end[];
@@ -2528,15 +2534,7 @@ EXTERN_C_BEGIN
 #   ifdef OPENBSD
 #     define OS_TYPE "OPENBSD"
 #     ifndef GC_OPENBSD_THREADS
-        EXTERN_C_END
-#       include <sys/param.h>
-#       include <uvm/uvm_extern.h>
-        EXTERN_C_BEGIN
-#       ifdef USRSTACK
-#         define STACKBOTTOM ((ptr_t)USRSTACK)
-#       else
-#         define HEURISTIC2
-#       endif
+#       define HEURISTIC2
 #     endif
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
@@ -2560,6 +2558,7 @@ EXTERN_C_BEGIN
 #   define OS_TYPE "LINUX"
 #   define DYNAMIC_LOADING
 #   define LINUX_STACKBOTTOM
+#   define COUNT_UNMAPPED_REGIONS
 #   define SEARCH_FOR_DATA_START
     extern int _end[];
 #   define DATAEND ((ptr_t)(_end))
@@ -2572,6 +2571,7 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     undef STACK_GRAN
 #     define STACK_GRAN 0x10000000
 #     define DYNAMIC_LOADING
@@ -2606,15 +2606,7 @@ EXTERN_C_BEGIN
 #       define OS_TYPE "OPENBSD"
 #       define ELF_CLASS ELFCLASS64
 #       ifndef GC_OPENBSD_THREADS
-          EXTERN_C_END
-#         include <sys/param.h>
-#         include <uvm/uvm_extern.h>
-          EXTERN_C_BEGIN
-#         ifdef USRSTACK
-#           define STACKBOTTOM ((ptr_t)USRSTACK)
-#         else
 #           define HEURISTIC2
-#         endif
 #       endif
         extern int __data_start[];
         extern int _end[];
@@ -2625,13 +2617,14 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
-#       if !defined(GC_LINUX_THREADS) || !defined(REDIRECT_MALLOC)
+#       if !defined(REDIRECT_MALLOC)
 #           define MPROTECT_VDB
 #       else
             /* We seem to get random errors in incremental mode,        */
             /* possibly because Linux threads is itself a malloc client */
             /* and can't deal with the signals.                         */
 #       endif
+#       define COUNT_UNMAPPED_REGIONS
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
             EXTERN_C_END
@@ -2700,6 +2693,11 @@ EXTERN_C_BEGIN
                 /* SIGTSTP and SIGCONT could be used alternatively.     */
 #       endif
 #       define FREEBSD_STACKBOTTOM
+#       if defined(__DragonFly__)
+            /* DragonFly BSD still has vm.max_proc_mmap, according to   */
+            /* its mmap(2) man page.                                    */
+#           define COUNT_UNMAPPED_REGIONS
+#       endif
 #       ifdef __ELF__
 #           define DYNAMIC_LOADING
 #       endif
@@ -2776,6 +2774,13 @@ EXTERN_C_BEGIN
 #         define HEAP_START DATAEND
 #       endif
 #   endif
+#   ifdef CYGWIN32
+#       define OS_TYPE "CYGWIN32"
+#       define RETRY_GET_THREAD_CONTEXT
+#       ifdef USE_MMAP
+#         define USE_MMAP_ANON
+#       endif
+#   endif
 #   ifdef MSWIN_XBOX1
 #     define NO_GETENV
 #     define DATASTART (ptr_t)ALIGNMENT
@@ -2797,6 +2802,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef MSWIN32
 #       define OS_TYPE "MSWIN32"
+#       define RETRY_GET_THREAD_CONTEXT
                 /* STACKBOTTOM and DATASTART are handled specially in   */
                 /* os_dep.c.                                            */
 #       if !defined(__GNUC__) || defined(__INTEL_COMPILER) \
@@ -2819,9 +2825,12 @@ EXTERN_C_BEGIN
 #   ifdef LINUX
 #       define OS_TYPE "LINUX"
 #       define LINUX_STACKBOTTOM
+#       define COUNT_UNMAPPED_REGIONS
 #       define MPROTECT_VDB
 #       ifdef __ELF__
-#           define DYNAMIC_LOADING
+#           if !defined(REDIRECT_MALLOC)
+#               define MPROTECT_VDB
+#           endif
             EXTERN_C_END
 #           include <features.h>
             EXTERN_C_BEGIN
@@ -2851,6 +2860,7 @@ EXTERN_C_BEGIN
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #   endif
 # endif
@@ -2869,6 +2879,7 @@ EXTERN_C_BEGIN
       extern int __data_start[];
 #     define DATASTART ((ptr_t)__data_start)
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #   endif
 # endif
@@ -2879,9 +2890,10 @@ EXTERN_C_BEGIN
 #   define ALIGNMENT (CPP_WORDSZ/8)
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
-      extern int __data_start[];
+      extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
 #     define LINUX_STACKBOTTOM
+#     define COUNT_UNMAPPED_REGIONS
 #     define DYNAMIC_LOADING
 #   endif
 # endif /* RISCV */
@@ -2889,6 +2901,10 @@ EXTERN_C_BEGIN
 #if defined(__GLIBC__) && !defined(DONT_USE_LIBC_PRIVATES)
   /* Use glibc's stack-end marker. */
 # define USE_LIBC_PRIVATES
+#endif
+
+#ifdef NO_RETRY_GET_THREAD_CONTEXT
+# undef RETRY_GET_THREAD_CONTEXT
 #endif
 
 #if defined(LINUX_STACKBOTTOM) && defined(NO_PROC_STAT) \
@@ -3100,8 +3116,12 @@ EXTERN_C_BEGIN
 # undef USE_MMAP
 #endif
 
-#if defined(LINUX) || defined(FREEBSD) || defined(SOLARIS) || defined(IRIX5) \
-    || ((defined(USE_MMAP) || defined(USE_MUNMAP)) && !defined(USE_WINALLOC))
+#if defined(DARWIN) || defined(FREEBSD) || defined(HAIKU) \
+    || defined(IRIX5) || defined(LINUX) || defined(NETBSD) \
+    || defined(OPENBSD) || defined(SOLARIS) \
+    || ((defined(CYGWIN32) || defined(USE_MMAP) || defined(USE_MUNMAP)) \
+        && !defined(USE_WINALLOC))
+  /* Try both sbrk and mmap, in that order.     */
 # define MMAP_SUPPORTED
 #endif
 
@@ -3113,6 +3133,20 @@ EXTERN_C_BEGIN
     && (defined(SN_TARGET_ORBIS) || defined(SN_TARGET_PS3) \
         || defined(SN_TARGET_PSP2) || defined(MSWIN_XBOX1))
 # define MUNMAP_THRESHOLD 2
+#endif
+
+#if defined(USE_MUNMAP) && defined(COUNT_UNMAPPED_REGIONS) \
+    && !defined(GC_UNMAPPED_REGIONS_SOFT_LIMIT)
+  /* The default limit of vm.max_map_count on Linux is ~65530.          */
+  /* There is approximately one mapped region to every unmapped region. */
+  /* Therefore if we aim to use up to half of vm.max_map_count for the  */
+  /* GC (leaving half for the rest of the process) then the number of   */
+  /* unmapped regions should be one quarter of vm.max_map_count.        */
+# if defined(__DragonFly__)
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT (1000000 / 4)
+# else
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT 16384
+# endif
 #endif
 
 #if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)
@@ -3146,6 +3180,11 @@ EXTERN_C_BEGIN
 
 /* PARALLEL_MARK does not cause undef MPROTECT_VDB any longer.  */
 
+#if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
+  /* Incremental GC is incompatible with /proc roots.   */
+# undef MPROTECT_VDB
+#endif
+
 #if defined(MPROTECT_VDB) && defined(GC_PREFER_MPROTECT_VDB)
   /* Choose MPROTECT_VDB manually (if multiple strategies available).   */
 # undef PCR_VDB
@@ -3158,6 +3197,10 @@ EXTERN_C_BEGIN
 # undef MPROTECT_VDB
 #endif
 
+#if defined(MPROTECT_VDB) && !defined(MSWIN32) && !defined(MSWINCE)
+# include <signal.h> /* for SA_SIGINFO, SIGBUS */
+#endif
+
 #if defined(SIGBUS) && !defined(HAVE_SIGBUS) && !defined(CPPCHECK)
 # define HAVE_SIGBUS
 #endif
@@ -3166,7 +3209,8 @@ EXTERN_C_BEGIN
 # define NO_SA_SIGACTION
 #endif
 
-#if defined(NO_SA_SIGACTION) && defined(MPROTECT_VDB) && !defined(DARWIN) \
+#if (defined(NO_SA_SIGACTION) || defined(GC_NO_SIGSETJMP)) \
+    && defined(MPROTECT_VDB) && !defined(DARWIN) \
     && !defined(MSWIN32) && !defined(MSWINCE)
 # undef MPROTECT_VDB
 #endif

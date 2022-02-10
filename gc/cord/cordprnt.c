@@ -52,7 +52,7 @@
 
 static int ec_len(CORD_ec x)
 {
-    return(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
+    return (int)(CORD_len(x[0].ec_cord) + (x[0].ec_bufptr - x[0].ec_buf));
 }
 
 /* Possible nonumeric precision values. */
@@ -232,7 +232,7 @@ int CORD_vsprintf(CORD * out, CORD format, va_list args)
                         } else {
                             short * pos_ptr;
                             pos_ptr = va_arg(args, short *);
-                            *pos_ptr = ec_len(result);
+                            *pos_ptr = (short)ec_len(result);
                         }
                         goto done;
                     case 'r':

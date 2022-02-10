@@ -32,12 +32,6 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 ADD_DEFINITIONS("-D_CRT_SECURE_NO_DEPRECATE
                  -DALL_INTERIOR_POINTERS -DNO_EXECUTE_PERMISSION")
 
-IF(APPLE)
-    IF("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "")
-        SET(CMAKE_OSX_ARCHITECTURES "ppc;i386;x86_64" CACHE STRING "Build architectures for Mac OS X" FORCE)
-    ENDIF()
-ENDIF(APPLE)
-
 #LIBATOMIC #TODO
 #ADD_LIBRARY(atomic_ops STATIC )
 #SET_TARGET_PROPERTIES(atomic_ops PROPERTIES COMPILE_FLAGS -DNO_DEBUGGING)
@@ -83,16 +77,17 @@ MESSAGE("HOST = ${HOST}")
 # Thread Detection.  Relying on cmake for lib and includes.
 #TODO check cmake detection
 IF(CMAKE_USE_PTHREADS_INIT)
-        SET(SRC ${SRC} pthread_start.c pthread_support.c pthread_stop_world.c)
+        SET(SRC ${SRC} gc_dlopen.c pthread_start.c pthread_stop_world.c
+                pthread_support.c)
         # Common defines for most POSIX platforms.
-        IF( HOST MATCHES .*-.*-aix.*|.*-.*-android.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-haiku.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
+        IF( HOST MATCHES .*-.*-aix.*|.*-.*-android.*|.*-.*-cygwin.*|.*-.*-darwin.*|.*-.*-.*freebsd.*|.*-.*-haiku.*|.*-.*-gnu.*|.*-.*-hpux11.*|.*-.*-irix.*|.*-.*-.*linux.*|.*-.*-msys.*|.*-.*-nacl.*|.*-.*-netbsd.*|.*-.*-openbsd.*|.*-.*-osf.*|.*-.*-solaris.*)
                 ADD_DEFINITIONS("-DGC_THREADS -D_REENTRANT")
                 IF(enable_parallel_mark)
                     ADD_DEFINITIONS("-DPARALLEL_MARK")
                 ENDIF(enable_parallel_mark)
                 IF(enable_thread_local_alloc)
                     ADD_DEFINITIONS("-DTHREAD_LOCAL_ALLOC")
-                    SET(SRC ${SRC} thread_local_alloc.c)
+                    SET(SRC ${SRC} specific.c thread_local_alloc.c)
                 ENDIF(enable_thread_local_alloc)
                 MESSAGE("Explicit GC_INIT() calls may be required.")
         ENDIF()
@@ -114,7 +109,7 @@ IF(CMAKE_USE_PTHREADS_INIT)
                     ADD_DEFINITIONS("-DHANDLE_FORK")
                 ENDIF(enable_handle_fork)
         ENDIF()
-        IF ( HOST MATCHES .*-.*-cygwin.*)
+        IF ( HOST MATCHES .*-.*-cygwin.*|.*-.*-msys.*)
                 SET(SRC ${SRC} win32_threads.c)
         ENDIF()
         IF ( HOST MATCHES .*-.*-darwin.*)
@@ -241,10 +236,6 @@ ADD_LIBRARY(          gc-lib   STATIC      ${SRC})
 SET_TARGET_PROPERTIES(gc-lib   PROPERTIES
                       COMPILE_DEFINITIONS GC_NOT_DLL)
 #TODO TARGET_LINK_LIBRARIES(...  ...  ${LIBS})
-
-ADD_LIBRARY(          gcmt-lib STATIC      ${SRC})
-SET_TARGET_PROPERTIES(gcmt-lib PROPERTIES
-                      COMPILE_DEFINITIONS GC_NOT_DLL)
 
 ADD_LIBRARY(          gcmt-dll  SHARED     ${SRC})
 

@@ -830,7 +830,7 @@ GC_API int GC_CALL GC_is_init_called(void)
       if (hU32) {
         FARPROC pfn = GetProcAddress(hU32, "MessageBoxA");
         if (pfn)
-          (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))pfn)(
+          (void)(*(int (WINAPI *)(HWND, LPCSTR, LPCSTR, UINT))(word)pfn)(
                               NULL /* hWnd */, msg, caption, flags);
         (void)FreeLibrary(hU32);
       }
@@ -957,14 +957,14 @@ GC_API void GC_CALL GC_init(void)
 #     else
         {
 #         ifndef MSWINCE
-            BOOL (WINAPI *pfn)(LPCRITICAL_SECTION, DWORD) = 0;
+            FARPROC pfn = 0;
             HMODULE hK32 = GetModuleHandle(TEXT("kernel32.dll"));
             if (hK32)
-              pfn = (BOOL (WINAPI *)(LPCRITICAL_SECTION, DWORD))
-                      GetProcAddress(hK32,
-                                     "InitializeCriticalSectionAndSpinCount");
+              pfn = GetProcAddress(hK32,
+                                   "InitializeCriticalSectionAndSpinCount");
             if (pfn) {
-              pfn(&GC_allocate_ml, SPIN_COUNT);
+              (*(BOOL (WINAPI *)(LPCRITICAL_SECTION, DWORD))(word)pfn)(
+                                &GC_allocate_ml, SPIN_COUNT);
             } else
 #         endif /* !MSWINCE */
           /* else */ InitializeCriticalSection(&GC_allocate_ml);
@@ -1087,15 +1087,12 @@ GC_API void GC_CALL GC_init(void)
         }
       }
 #   endif
-#   ifndef GC_DISABLE_INCREMENTAL
+#   if !defined(GC_DISABLE_INCREMENTAL) && !defined(NO_CLOCK)
       {
         char * time_limit_string = GETENV("GC_PAUSE_TIME_TARGET");
         if (0 != time_limit_string) {
           long time_limit = atol(time_limit_string);
-          if (time_limit < 5) {
-            WARN("GC_PAUSE_TIME_TARGET environment variable value too small "
-                 "or bad syntax: Ignoring\n", 0);
-          } else {
+          if (time_limit > 0) {
             GC_time_limit = time_limit;
           }
         }
@@ -1186,7 +1183,7 @@ GC_API void GC_CALL GC_init(void)
 #   if defined(USE_PROC_FOR_LIBRARIES) && defined(GC_LINUX_THREADS)
         WARN("USE_PROC_FOR_LIBRARIES + GC_LINUX_THREADS performs poorly.\n", 0);
         /* If thread stacks are cached, they tend to be scanned in      */
-        /* entirety as part of the root set.  This wil grow them to     */
+        /* entirety as part of the root set.  This will grow them to    */
         /* maximum size, and is generally not desirable.                */
 #   endif
 #   if defined(SEARCH_FOR_DATA_START)
@@ -1233,6 +1230,7 @@ GC_API void GC_CALL GC_init(void)
 #   ifndef GC_DISABLE_INCREMENTAL
       if (GC_incremental || 0 != GETENV("GC_ENABLE_INCREMENTAL")) {
 #       if defined(BASE_ATOMIC_OPS_EMULATED) || defined(CHECKSUMS) \
+           || defined(REDIRECT_MALLOC) || defined(REDIRECT_MALLOC_IN_HEADER) \
            || defined(SMALL_CONFIG)
           /* TODO: Implement CHECKSUMS for manual VDB. */
 #       else
@@ -1379,7 +1377,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
           LOCK();
         } else {
 #         if !defined(BASE_ATOMIC_OPS_EMULATED) && !defined(CHECKSUMS) \
-             && !defined(SMALL_CONFIG)
+             && !defined(REDIRECT_MALLOC) \
+             && !defined(REDIRECT_MALLOC_IN_HEADER) && !defined(SMALL_CONFIG)
             if (manual_vdb_allowed) {
               GC_manual_vdb = TRUE;
               GC_incremental = TRUE;
@@ -1708,10 +1707,16 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #   define WRITE(level, buf, len) switch_log_write(buf, len)
 
 #else
-# if !defined(AMIGA) && !defined(MSWIN_XBOX1) && !defined(SN_TARGET_ORBIS) \
-     && !defined(SN_TARGET_PSP2) && !defined(__CC_ARM)
-#   include <unistd.h>
-# endif
+
+# if !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+#   if !defined(AMIGA) && !defined(MSWIN_XBOX1) \
+       && !defined(__CC_ARM)
+#     include <unistd.h>
+#   endif
+#   if !defined(ECOS) && !defined(NOSYS)
+#     include <errno.h>
+#   endif
+# endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
 
   STATIC int GC_write(int fd, const char *buf, size_t len)
   {
@@ -1738,6 +1743,8 @@ GC_API void GC_CALL GC_enable_incremental(void)
 #        endif
 
          if (-1 == result) {
+             if (EAGAIN == errno) /* Resource temporarily unavailable */
+               continue;
              RESTORE_CANCEL(cancel_state);
              return(result);
          }
@@ -1793,8 +1800,13 @@ void GC_printf(const char *format, ...)
         (void)WRITE(GC_stdout, buf, strlen(buf));
         /* Ignore errors silently.      */
 #     else
-        if (WRITE(GC_stdout, buf, strlen(buf)) < 0)
+        if (WRITE(GC_stdout, buf, strlen(buf)) < 0
+#           if defined(CYGWIN32)
+              && GC_stdout != GC_DEFAULT_STDOUT_FD
+#           endif
+           ) {
           ABORT("write to stdout failed");
+        }
 #     endif
     }
 }
@@ -1815,8 +1827,13 @@ void GC_log_printf(const char *format, ...)
 #   ifdef NACL
       (void)WRITE(GC_log, buf, strlen(buf));
 #   else
-      if (WRITE(GC_log, buf, strlen(buf)) < 0)
+      if (WRITE(GC_log, buf, strlen(buf)) < 0
+#         if defined(CYGWIN32)
+            && GC_log != GC_DEFAULT_STDERR_FD
+#         endif
+         ) {
         ABORT("write to GC log failed");
+      }
 #   endif
 }
 
@@ -2201,14 +2218,6 @@ STATIC void GC_do_blocking_inner(ptr_t data, void * context GC_ATTR_UNUSED)
 
 #endif /* !THREADS */
 
-/* Wrapper for functions that are likely to block (or, at least, do not */
-/* allocate garbage collected memory and/or manipulate pointers to the  */
-/* garbage collected heap) for an appreciable length of time.           */
-/* In the single threaded case, GC_do_blocking() (together              */
-/* with GC_call_with_gc_active()) might be used to make stack scanning  */
-/* more precise (i.e. scan only stack frames of functions that allocate */
-/* garbage collected memory and/or manipulate pointers to the garbage   */
-/* collected heap).                                                     */
 GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 {
     struct blocking_data my_data;

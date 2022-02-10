@@ -3,7 +3,7 @@
  * Copyright (c) 1991-1996 by Xerox Corporation.  All rights reserved.
  * Copyright (c) 1998 by Silicon Graphics.  All rights reserved.
  * Copyright (c) 1999-2004 Hewlett-Packard Development Company, L.P.
- * Copyright (c) 2008-2018 Ivan Maidanski
+ * Copyright (c) 2008-2019 Ivan Maidanski
  *
  * THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
  * OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -124,7 +124,7 @@ const char * const GC_copyright[] =
 "Copyright (c) 1991-1995 by Xerox Corporation.  All rights reserved. ",
 "Copyright (c) 1996-1998 by Silicon Graphics.  All rights reserved. ",
 "Copyright (c) 1999-2009 by Hewlett-Packard Company.  All rights reserved. ",
-"Copyright (c) 2008-2018 Ivan Maidanski ",
+"Copyright (c) 2008-2019 Ivan Maidanski ",
 "THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY",
 " EXPRESSED OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.",
 "See source code for details." };
@@ -1261,7 +1261,7 @@ GC_INNER void GC_add_to_heap(struct hblk *p, size_t bytes)
     GC_heapsize += bytes;
 
     /* Normally the caller calculates a new GC_collect_at_heapsize,
-     * but this is also called directly from alloc_mark_stack, so
+     * but this is also called directly from GC_scratch_recycle_inner, so
      * adjust here. It will be recalculated when called from
      * GC_expand_hp_inner.
      */

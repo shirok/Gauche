@@ -1123,7 +1123,10 @@ static void fork_child_proc(void)
       /* Turn off parallel marking in the child, since we are probably  */
       /* just going to exec, and we would have to restart mark threads. */
         GC_parallel = FALSE;
-#   endif /* PARALLEL_MARK */
+#   endif
+#   ifndef GC_DISABLE_INCREMENTAL
+      GC_dirty_update_child();
+#   endif
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
     /* Even though after a fork the child only inherits the single      */
@@ -1242,11 +1245,7 @@ GC_INNER void GC_thr_init(void)
     }
   }
 
-# ifndef GC_DARWIN_THREADS
-    GC_stop_init();
-# endif
-
-  /* Set GC_nprocs.     */
+  /* Set GC_nprocs and available_markers_m1.    */
   {
     char * nprocs_string = GETENV("GC_NPROCS");
     GC_nprocs = -1;
@@ -1295,6 +1294,43 @@ GC_INNER void GC_thr_init(void)
 #   endif
   }
   GC_COND_LOG_PRINTF("Number of processors = %d\n", GC_nprocs);
+
+# if defined(BASE_ATOMIC_OPS_EMULATED) && !defined(GC_DARWIN_THREADS) \
+     && !defined(GC_OPENBSD_UTHREADS) && !defined(NACL) \
+     && !defined(SN_TARGET_ORBIS) && !defined(SN_TARGET_PSP2)
+    /* Ensure the process is running on just one CPU core.      */
+    /* This is needed because the AO primitives emulated with   */
+    /* locks cannot be used inside signal handlers.             */
+    {
+      cpu_set_t mask;
+      int cpu_set_cnt = 0;
+      int cpu_lowest_set = 0;
+      int i = GC_nprocs > 1 ? GC_nprocs : 2; /* check at least 2 cores */
+
+      if (sched_getaffinity(0 /* current process */,
+                            sizeof(mask), &mask) == -1)
+        ABORT_ARG1("sched_getaffinity failed", ": errno= %d", errno);
+      while (i-- > 0)
+        if (CPU_ISSET(i, &mask)) {
+          cpu_lowest_set = i;
+          cpu_set_cnt++;
+        }
+      if (0 == cpu_set_cnt)
+        ABORT("sched_getaffinity returned empty mask");
+      if (cpu_set_cnt > 1) {
+        CPU_ZERO(&mask);
+        CPU_SET(cpu_lowest_set, &mask); /* select just one CPU */
+        if (sched_setaffinity(0, sizeof(mask), &mask) == -1)
+          ABORT_ARG1("sched_setaffinity failed", ": errno= %d", errno);
+        WARN("CPU affinity mask is set to %p\n", (word)1 << cpu_lowest_set);
+      }
+    }
+# endif /* BASE_ATOMIC_OPS_EMULATED */
+
+# ifndef GC_DARWIN_THREADS
+    GC_stop_init();
+# endif
+
 # ifdef PARALLEL_MARK
     if (available_markers_m1 <= 0) {
       /* Disable parallel marking.      */
@@ -1827,7 +1863,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     int result;
     int detachstate;
     word my_flags = 0;
-    struct start_info * si;
+    struct start_info si;
     DCL_LOCK_STATE;
         /* This is otherwise saved only in an area mmapped by the thread */
         /* library, which isn't visible to the collector.                */
@@ -1837,21 +1873,13 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     /* responsibility.                                                  */
 
     INIT_REAL_SYMS();
-    LOCK();
-    si = (struct start_info *)GC_INTERNAL_MALLOC(sizeof(struct start_info),
-                                                 NORMAL);
-    UNLOCK();
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
-    if (EXPECT(0 == si, FALSE) &&
-        (si = (struct start_info *)
-                (*GC_get_oom_fn())(sizeof(struct start_info))) == 0)
-      return(ENOMEM);
-    if (sem_init(&(si -> registered), GC_SEM_INIT_PSHARED, 0) != 0)
+    if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
       ABORT("sem_init failed");
 
-    si -> start_routine = start_routine;
-    si -> arg = arg;
+    si.start_routine = start_routine;
+    si.arg = arg;
     LOCK();
     if (!EXPECT(GC_thr_initialized, TRUE))
       GC_thr_init();
@@ -1891,19 +1919,19 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         pthread_attr_getdetachstate(attr, &detachstate);
     }
     if (PTHREAD_CREATE_DETACHED == detachstate) my_flags |= DETACHED;
-    si -> flags = my_flags;
+    si.flags = my_flags;
     UNLOCK();
 #   ifdef DEBUG_THREADS
       GC_log_printf("About to start new thread from thread %p\n",
                     (void *)pthread_self());
 #   endif
     set_need_to_lock();
-    result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine, si);
+    result = REAL_FUNC(pthread_create)(new_thread, attr, GC_start_routine,
+                                       &si);
 
     /* Wait until child has been added to the thread table.             */
-    /* This also ensures that we hold onto si until the child is done   */
-    /* with it.  Thus it doesn't matter whether it is otherwise         */
-    /* visible to the collector.                                        */
+    /* This also ensures that we hold onto the stack-allocated si until */
+    /* the child is done with it.                                       */
     if (0 == result) {
         IF_CANCEL(int cancel_state;)
 
@@ -1913,7 +1941,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
 #       endif
         DISABLE_CANCEL(cancel_state);
                 /* pthread_create is not a cancellation point. */
-        while (0 != sem_wait(&(si -> registered))) {
+        while (0 != sem_wait(&si.registered)) {
 #           if defined(GC_HAIKU_THREADS)
               /* To workaround some bug in Haiku semaphores. */
               if (EACCES == errno) continue;
@@ -1922,11 +1950,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
         }
         RESTORE_CANCEL(cancel_state);
     }
-    sem_destroy(&(si -> registered));
-    LOCK();
-    GC_INTERNAL_FREE(si);
-    UNLOCK();
-
+    sem_destroy(&si.registered);
     return(result);
   }
 #endif /* !SN_TARGET_ORBIS && !SN_TARGET_PSP2 */
@@ -2111,22 +2135,25 @@ yield:
     }
 }
 
-#else  /* !USE_SPIN_LOCK */
+#elif defined(USE_PTHREAD_LOCKS)
 
-GC_INNER void GC_lock(void)
-{
-#ifndef NO_PTHREAD_TRYLOCK
-    if (1 == GC_nprocs || is_collecting()) {
+# ifndef NO_PTHREAD_TRYLOCK
+    GC_INNER void GC_lock(void)
+    {
+      if (1 == GC_nprocs || is_collecting()) {
         pthread_mutex_lock(&GC_allocate_ml);
-    } else {
+      } else {
         GC_generic_lock(&GC_allocate_ml);
+      }
     }
-#else  /* !NO_PTHREAD_TRYLOCK */
-    pthread_mutex_lock(&GC_allocate_ml);
-#endif /* !NO_PTHREAD_TRYLOCK */
-}
+# elif defined(GC_ASSERTIONS)
+    GC_INNER void GC_lock(void)
+    {
+      pthread_mutex_lock(&GC_allocate_ml);
+    }
+# endif
 
-#endif /* !USE_SPIN_LOCK */
+#endif /* !USE_SPIN_LOCK && USE_PTHREAD_LOCKS */
 
 #ifdef PARALLEL_MARK
 

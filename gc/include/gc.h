@@ -24,7 +24,6 @@
  * For better performance, also look at GC_MALLOC_ATOMIC, and
  * GC_enable_incremental.  If you need an action to be performed
  * immediately before an object is collected, look at GC_register_finalizer.
- * If you are using Solaris threads, look at the end of this file.
  * Everything else is best ignored unless you encounter performance
  * problems.
  */
@@ -90,11 +89,12 @@ GC_API GC_word GC_CALL GC_get_gc_no(void);
 #ifdef GC_THREADS
   GC_API GC_ATTR_DEPRECATED int GC_parallel;
                         /* GC is parallelized for performance on        */
-                        /* multiprocessors.  Currently set only         */
-                        /* implicitly if collector is built with        */
-                        /* PARALLEL_MARK defined and if either:         */
-                        /*  Env variable GC_NPROC is set to > 1, or     */
-                        /*  GC_NPROC is not set and this is an MP.      */
+                        /* multiprocessors.  Set to a non-zero value    */
+                        /* only implicitly if collector is built with   */
+                        /* PARALLEL_MARK defined, and if either         */
+                        /* GC_MARKERS (or GC_NPROCS) environment        */
+                        /* variable is set to > 1, or multiple cores    */
+                        /* (processors) are available.                  */
                         /* If GC_parallel is on (non-zero), incremental */
                         /* collection is only partially functional,     */
                         /* and may not be desirable.  The getter does   */
@@ -1534,8 +1534,13 @@ GC_API void * GC_CALL GC_call_with_stack_base(GC_stack_base_func /* fn */,
 /* the current thread (this means that the thread is not suspended and  */
 /* the thread's stack frames "belonging" to the functions in the        */
 /* "inactive" state are not scanned during garbage collections).  It is */
-/* allowed for fn to call GC_call_with_gc_active() (even recursively),  */
-/* thus temporarily toggling the collector's state back to "active".    */
+/* assumed that the collector is already initialized and the current    */
+/* thread is registered.  It is allowed for fn to call                  */
+/* GC_call_with_gc_active() (even recursively), thus temporarily        */
+/* toggling the collector's state back to "active".  The latter         */
+/* technique might be used to make stack scanning more precise (i.e.    */
+/* scan only stack frames of functions that allocate garbage collected  */
+/* memory and/or manipulate pointers to the garbage collected heap).    */
 GC_API void * GC_CALL GC_do_blocking(GC_fn_type /* fn */,
                                 void * /* client_data */) GC_ATTR_NONNULL(1);
 
@@ -1893,8 +1898,8 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
         /* Required at least if GC is in a DLL.  And doesn't hurt. */
 #elif defined(_AIX)
   extern int _data[], _end[];
-# define GC_DATASTART ((void *)((ulong)_data))
-# define GC_DATAEND ((void *)((ulong)_end))
+# define GC_DATASTART ((void *)_data)
+# define GC_DATAEND ((void *)_end)
 # define GC_INIT_CONF_ROOTS GC_add_roots(GC_DATASTART, GC_DATAEND)
 #elif (defined(HOST_ANDROID) || defined(__ANDROID__)) \
       && defined(IGNORE_DYNAMIC_LOADING)
@@ -2002,7 +2007,7 @@ GC_API int GC_CALL GC_get_force_unmap_on_gcollect(void);
 
 /* Portable clients should call this at the program start-up.  More     */
 /* over, some platforms require this call to be done strictly from the  */
-/* primordial thread.                                                   */
+/* primordial thread.  Multiple invocations are harmless.               */
 #define GC_INIT() { GC_INIT_CONF_DONT_EXPAND; /* pre-init */ \
                     GC_INIT_CONF_FORCE_UNMAP_ON_GCOLLECT; \
                     GC_INIT_CONF_MAX_RETRIES; \

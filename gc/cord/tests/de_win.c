@@ -147,7 +147,7 @@ char * plain_chars(char * text, size_t len)
 }
 
 /* Return the argument with all non-control-characters replaced by      */
-/* blank, and all control characters c replaced by c + 32.              */
+/* blank, and all control characters c replaced by c + 64.              */
 char * control_chars(char * text, size_t len)
 {
     char * result = (char *)GC_MALLOC_ATOMIC(len + 1);
@@ -156,7 +156,7 @@ char * control_chars(char * text, size_t len)
     if (NULL == result) return NULL;
     for (i = 0; i < len; i++) {
        if (iscntrl(((unsigned char *)text)[i])) {
-           result[i] = text[i] + 0x40;
+           result[i] = (char)(text[i] + 0x40);
        } else {
            result[i] = ' ';
        }

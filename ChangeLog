@@ -1,3 +1,7 @@
+2022-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* gc: Bumped bdwgc 8.0.6
+
 2022-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/libutil.scm (library-fold): Rewrote on top of glob-fold.

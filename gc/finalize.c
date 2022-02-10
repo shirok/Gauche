@@ -634,6 +634,10 @@ GC_API GC_await_finalize_proc GC_CALL GC_get_await_finalize_proc(void)
 
 /* Possible finalization_marker procedures.  Note that mark stack       */
 /* overflow is handled by the caller, and is not a disaster.            */
+#if defined(_MSC_VER) && defined(I386)
+  GC_ATTR_NOINLINE
+  /* Otherwise some optimizer bug is tickled in VC for X86 (v19, at least). */
+#endif
 STATIC void GC_normal_finalize_mark_proc(ptr_t p)
 {
     GC_mark_stack_top = GC_push_obj(p, HDR(p), GC_mark_stack_top,

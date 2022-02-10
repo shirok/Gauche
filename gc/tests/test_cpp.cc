@@ -14,7 +14,7 @@ the code was modified is included with the above copyright notice.
 usage: test_cpp number-of-iterations
 
 This program tries to test the specific C++ functionality provided by
-gc_c++.h that isn't tested by the more general test routines of the
+gc_cpp.h that isn't tested by the more general test routines of the
 collector.
 
 A recommended value for number-of-iterations is 10, which will take a
@@ -76,7 +76,8 @@ extern "C" {
         exit( 1 ); }
 
 #ifndef GC_ATTR_EXPLICIT
-# if (__cplusplus >= 201103L) || defined(CPPCHECK)
+# if __cplusplus >= 201103L && !defined(__clang__) || _MSVC_LANG >= 201103L \
+     || defined(CPPCHECK)
 #   define GC_ATTR_EXPLICIT explicit
 # else
 #   define GC_ATTR_EXPLICIT /* empty */

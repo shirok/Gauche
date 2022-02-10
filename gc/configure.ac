@@ -1,6 +1,6 @@
 # Copyright (c) 1999-2001 by Red Hat, Inc. All rights reserved.
 # Copyright (c) 2005-2009 Hewlett-Packard Development Company, L.P.
-# Copyright (c) 2009-2018 Ivan Maidanski
+# Copyright (c) 2009-2019 Ivan Maidanski
 #
 # THIS MATERIAL IS PROVIDED AS IS, WITH ABSOLUTELY NO WARRANTY EXPRESSED
 # OR IMPLIED.  ANY USE IS AT YOUR OWN RISK.
@@ -14,7 +14,7 @@
 dnl Process this file with autoconf to produce configure.
 
 dnl Initialization.
-AC_INIT(gc,8.0.4,https://github.com/ivmai/bdwgc/issues)
+AC_INIT(gc,8.0.6,https://github.com/ivmai/bdwgc/issues)
 dnl Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 AC_CONFIG_SRCDIR(gcj_mlc.c)
@@ -52,9 +52,9 @@ if test :"$GCC": = :yes: ; then
     gc_cflags="${gc_cflags} -fexceptions"
 else
     case "$host" in
-        hppa*-*-hpux* )
+      hppa*-*-hpux* )
         if test :$GCC: != :"yes": ; then
-            gc_cflags="${gc_flags} +ESdbgasm"
+            gc_cflags="${gc_cflags} +ESdbgasm"
         fi
         # :TODO: actually we should check using Autoconf if
         #     the compiler supports this option.
@@ -200,7 +200,7 @@ case "$THREADS" in
     case "$host" in
       *-*-aix* | *-*-android* | *-*-cygwin* | *-*-darwin* | *-*-dragonfly* | \
       *-*-freebsd* | *-*-haiku* | *-*-hpux11* | *-*-irix* | \
-      *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-nacl* | \
+      *-*-kfreebsd*-gnu | *-*-gnu* | *-*-*linux* | *-*-msys* | *-*-nacl* | \
       *-*-netbsd* | *-*-openbsd* | *-*-osf* | *-*-solaris*)
         AC_DEFINE(GC_THREADS)
         AC_DEFINE([_REENTRANT], [1],
@@ -241,7 +241,7 @@ case "$THREADS" in
       *-*-solaris*)
         THREADDLLIBS="-lpthread -lrt"
         ;;
-      *-*-cygwin*)
+      *-*-cygwin* | *-*-msys*)
         # Cygwin doesn't have a real libpthread, so Libtool can't link
         # against it.
         THREADDLLIBS=""
@@ -435,8 +435,8 @@ case "$host" in
   mips-sgi-irix6*) ;;
 # We never want libdl on darwin. It is a fake libdl that just ends up making
 # dyld calls anyway.  The same applies to Cygwin.
-  *-*-darwin*) ;;
-  *-*-cygwin*) ;;
+  *-*-cygwin* | *-*-darwin* | *-*-msys*)
+    ;;
   *)
     AC_CHECK_LIB(dl, dlopen, THREADDLLIBS="$THREADDLLIBS -ldl")
     ;;
@@ -497,7 +497,7 @@ AM_CONDITIONAL(CPLUSPLUS, test "${enable_cplusplus}" = yes)
 if test "$GCC" = yes; then
   if test "${enable_cplusplus}" = yes; then
     case "$host" in
-      *-*-cygwin* | *-*-mingw*)
+      *-*-cygwin* | *-*-mingw* | *-*-msys*)
         AC_MSG_CHECKING([whether libsupc++ required])
         SUPC="`$CXX -print-file-name=libsupc++.a 2>/dev/null`"
         if test -n "$SUPC" -a "$SUPC" != "libsupc++.a"; then
@@ -532,8 +532,7 @@ esac
 AC_MSG_RESULT($enable_shared)
 
 # Compile with GC_DLL defined unless building static libraries.
-if test "${enable_shared}" = yes; then
-  if test "${enable_static}" = no; then
+if test "${enable_shared}" = yes -a "${enable_static}" = no; then
     AC_DEFINE(GC_DLL)
     if test "$GCC" = yes; then
       # Pass -fvisibility=hidden option if supported
@@ -548,7 +547,16 @@ if test "${enable_shared}" = yes; then
             [CFLAGS="-DGC_NO_VISIBILITY $CFLAGS"])
       AC_MSG_RESULT($ac_cv_fvisibility_hidden)
     fi
-  fi
+else
+
+  case "$host" in
+    *-*-cygwin* | *-*-mingw* | *-*-msys*)
+      # Use inline version of GC new and delete operators in test_cpp
+      # otherwise the system ones might be used instead because of arbitrary
+      # ordering of object files when linking.
+      CXXFLAGS="$CXXFLAGS -DGC_NOT_DLL"
+      ;;
+  esac
 fi
 
 # Configuration of machine-dependent code
@@ -618,10 +626,9 @@ if false; then
   AC_EXEEXT
 fi
 
-dnl As of 4.13a2, the collector will not properly work on Solaris when
+dnl The collector might not properly work on IBM AIX when
 dnl built with gcc and -O.  So we remove -O in the appropriate case.
-dnl Not needed anymore on Solaris.
-AC_MSG_CHECKING(whether Solaris gcc optimization fix is necessary)
+AC_MSG_CHECKING(whether AIX gcc optimization fix is necessary)
 case "$host" in
  *aix*)
     if test "$GCC" = yes; then
