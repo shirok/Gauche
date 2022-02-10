@@ -87,14 +87,15 @@
 
 (define (glob-fold patterns proc seed :key (separator #[/])
                                            (folder glob-fs-folder)
-                                           (sorter sort))
-  (let1 r (fold (cut glob-fold-1 <> proc <> separator folder) seed
+                                           (sorter sort)
+                                           (prefix #f))
+  (let1 r (fold (cut glob-fold-1 <> proc <> separator folder prefix) seed
                 (fold glob-expand-braces '()
                       (if (list? patterns) patterns (list patterns))))
     (if sorter (sorter r) r)))
 
 ;; NB: we avoid util.match due to the hairy dependency problem.
-(define (glob-fold-1 pattern proc seed separator folder)
+(define (glob-fold-1 pattern proc seed separator folder prefix)
   (define (rec node matcher seed)
     (cond [(null? matcher) seed]
           [(eq? (car matcher) '**) (rec* node (cdr matcher) seed)]
@@ -105,10 +106,10 @@
     (fold (cut rec* <> matcher <>)
           (rec node matcher seed)
           (folder cons '() node #/^[^.].*$/ #t)))
-  (let1 p (glob-prepare-pattern pattern separator)
+  (let1 p (glob-prepare-pattern pattern separator prefix)
     (rec (car p) (cdr p) seed)))
 
-(define (glob-prepare-pattern pattern separator)
+(define (glob-prepare-pattern pattern separator prefix)
   (define (f comp)
     (cond [(equal? comp "") 'dir?]    ; pattern ends with '/'
           [(equal? comp "**") '**]
@@ -116,7 +117,7 @@
   (let1 comps (string-split pattern separator)
     (if (equal? (car comps) "")
       (cons #t (map f (cdr comps)))
-      (cons #f (map f comps)))))
+      (cons prefix (map f comps)))))
 
 ;; */*.{c,scm} -> '(*/*.c */*.scm)
 ;;

@@ -1,3 +1,7 @@
+2022-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/fileutil.scm (glob-fold): Add prefix keyword arg.
+
 2022-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (Scm_CharWordConstituent),
