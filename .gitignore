@@ -18,6 +18,7 @@ Makefile
 /gc/configure
 /gc/configure.gnu
 /gc/configure.gnu-gauche
+/gc/test_atomic_ops
 /gc/include/config.h
 /gc/libatomic_ops/configure
 /gc/libatomic_ops/src/config.h
