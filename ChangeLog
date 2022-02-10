@@ -1,5 +1,8 @@
 2022-02-09  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/libutil.scm (library-fold): Rewrote on top of glob-fold.
+	  This allows extended glob pattern such as {} and **.
+
 	* lib/gauche/fileutil.scm (glob-fold): Add prefix keyword arg.
 
 2022-02-02  Shiro Kawai  <shiro@acm.org>
