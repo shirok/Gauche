@@ -15,11 +15,14 @@ config.sub
 /test-driver
 autom4te.cache
 Makefile
+/gc/Makefile.in
+/gc/aclocal.m4
 /gc/configure
 /gc/configure.gnu
 /gc/configure.gnu-gauche
 /gc/test_atomic_ops
 /gc/include/config.h
+/gc/include/config.h.in
 /gc/libatomic_ops/configure
 /gc/libatomic_ops/src/config.h
 /lib/gauche/config.scm
