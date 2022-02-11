@@ -38,12 +38,24 @@
           library-has-module? library-name->module-name))
 (select-module gauche.libutil)
 
+;;
+(cond-expand
+ [gauche.os.windows
+  (define (N path)
+    (call-with-string-io path
+      (^[i o]
+        (let loop ((ch (read-char i)))
+          (unless (eof-object? ch)
+            (if (eqv? ch #\\) (write-char #\/ o) (write-char ch o))
+            (loop (read-char i)))))))]
+ [else
+  (define (N path) path)])
+
 ;; library-fold - iterate over the modules or libraries whose name matches
 ;;  the given pattern.
 ;;  proc takes the matched module/library name, full pathname, and seed value.
 ;;  This can be more involved once customized module mapping system
 ;;  is introduced; for now, we simply apply the default mapping rule.
-
 (define (library-fold pattern proc seed
                       :key (paths *load-path*) (allow-duplicates? #f)
                            (strict? #t))
@@ -57,7 +69,7 @@
 
   (define (ensure path partial)
     (if search-module?
-      (let1 modname (path->module-name (string-drop-right partial 4))
+      (let1 modname (path->module-name (N (string-drop-right partial 4)))
         (and (or (not strict?)
                  (library-has-module? path modname))
              modname))
@@ -68,13 +80,12 @@
 
   (define (fold-dirs proc seed dirname regexp)
     (fold (^[elt seed]
-            (or (and-let* ([ (not (member elt '("." ".."))) ]
-                           [ (regexp elt) ]
+            (or (and-let* ([ (regexp elt) ]
                            [path (topath dirname elt)]
                            [ (file-is-directory? path) ])
                   (proc path seed))
                 seed))
-          seed (sys-readdir dirname)))
+          seed (readdir dirname)))
 
   (define (fold-leaf proc seed prefix dirname regexp)
     (fold (^[elt seed]
@@ -83,18 +94,18 @@
                            [ (regexp base) ]
                            [path (topath dirname elt)]
                            [file (get-relative prefix path)]
-                           [key (ensure path file)])
+                           [key (ensure (N path) (N file))])
                   (if (and (not allow-duplicates?) (member key seen))
                     seed
                     (begin (push! seen key) (proc key path seed))))
                 seed))
-          seed (sys-readdir dirname)))
+          seed (readdir dirname)))
 
   (define (make-folder prefix)
     (^[proc seed parent regexp non-leaf?]
       ;; We always search to the leaf nodes, so REGEXP never be 'dir.
       (let* ([dir (if (string? parent) parent prefix)]
-             [elts (filter regexp (sys-readdir dir))])
+             [elts (filter regexp (readdir dir))])
         (if non-leaf?
           (fold-dirs proc seed dir regexp)
           (fold-leaf proc seed prefix dir regexp)))))
