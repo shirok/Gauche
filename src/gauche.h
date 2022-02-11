@@ -95,11 +95,11 @@ typedef ssize_t ScmSize;
 #include <gauche/extern.h>
 
 #if defined(LIBGAUCHE_BODY)
+/* We incoporate gc files within libgauche, so we need to refer to them
+   "internally" while we're compiling gauche body.  SCM_EXTERN handles it. */
+#define GC_API SCM_EXTERN
 #if !defined(GC_DLL)
 #define GC_DLL    /* for gc.h to handle Win32 crazyness */
-#endif
-#if !defined(GC_BUILD)
-#define GC_BUILD  /* ditto */
 #endif
 #endif /* LIBGAUCHE_BODY */
 #include <gc.h>
