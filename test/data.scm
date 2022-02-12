@@ -870,6 +870,19 @@
 (test* "skew-list ref" '(a b c d e)
        (map (cute ref (list->skew-list '(a b c d e)) <>) (iota 5)))
 
+;;;========================================================================
+;; ulid
+(test-section "data.ulid")
+(use data.ulid)
+(test-module 'data.ulid)
 
+(define-module ulid-test
+  (use gauche.test)
+  (use data.ulid)
+  (use srfi-19)
+  (use srfi-78)
+  (use scheme.base)
+  (define-syntax import (syntax-rules () [(_ . xs) (begin)]))
+  (include "include/ulid-test"))
 
 (test-end)

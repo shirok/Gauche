@@ -1,3 +1,7 @@
+2022-02-11  Shiro Kawai  <shiro@acm.org>
+
+	* data/ulid.scm: Added.  Port from https://github.com/shirok/scheme-ulid
+
 2022-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* gc: Bumped bdwgc 8.0.6
