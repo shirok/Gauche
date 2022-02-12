@@ -99,7 +99,14 @@
     (sort (hash-table-keys hits))))
 
 (define (%complete-path word)
-  (glob `(,#"~|word|*{.scm,.sci,.sld}" ,#"~|word|*/")))
+  (define (do-glob path)
+    (glob `(,#"~|path|*{.scm,.sci,.sld}" ,#"~|path|*/")))
+  (if (#/^~\// word)
+    (let ([prefix (sys-normalize-pathname "~/" :expand #t)]
+          [expanded (sys-normalize-pathname word :expand #t)])
+      (map (^p (string-replace p "~/" 0 (string-length prefix)))
+           (do-glob expanded)))
+    (do-glob word)))
 
 (define (%complete-module-name word)
   (define found (make-hash-table 'eq?))
