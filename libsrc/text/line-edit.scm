@@ -1242,8 +1242,9 @@
           (match words
             [() #f]
             [(w)
+             ;; Single candidate.  We append whitespace after it.
              (gap-buffer-move! buf start-pos)
-             (gap-buffer-replace! buf (- end-pos start-pos) w)
+             (gap-buffer-replace! buf (- end-pos start-pos) #"~|w| ")
              'redraw]
             [(w ws ...)
              (when (eq? (~ ctx'last-command) completion-command)
