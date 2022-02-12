@@ -20,4 +20,8 @@
 (use gauche.interactive.editable-reader)
 (test-module 'gauche.interactive.editable-reader)
 
+(test-section "gauche.interactive.completion")
+(use gauche.interactive.completion)
+(test-module 'gauche.interactive.completion)
+
 (test-end)
