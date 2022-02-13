@@ -1,3 +1,12 @@
+2022-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* text/line-edit.scm: Add whitespace after the completed word if
+	  the completion returns a single definite result.  It is indicated
+	  by the lister callback returning a string, rather than a list.
+	  Note that we need to distinguish the case when there's only one
+	  candidate but further search is possible (e.g. completing a directory
+	  name when searching the actula file).
+
 2022-02-11  Shiro Kawai  <shiro@acm.org>
 
 	* data/ulid.scm: Added.  Port from https://github.com/shirok/scheme-ulid

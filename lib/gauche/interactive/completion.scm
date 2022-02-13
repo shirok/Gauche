@@ -96,21 +96,32 @@
     (search mod)
     (dolist [m (module-imports mod)]
       (for-each search (module-precedence-list m)))
-    (sort (hash-table-keys hits))))
+    (match (hash-table-keys hits)
+      [(w) w]                           ;single final completion result
+      [ws (sort ws)])))
 
 (define (%complete-path word)
   (define (do-glob path)
     (glob `(,#"~|path|*{.scm,.sci,.sld}" ,#"~|path|*/")))
-  (if (#/^~\// word)
-    (let ([prefix (sys-normalize-pathname "~/" :expand #t)]
-          [expanded (sys-normalize-pathname word :expand #t)])
-      (map (^p (string-replace p "~/" 0 (string-length prefix)))
-           (do-glob expanded)))
-    (do-glob word)))
+  (define (do-complete)
+    (if (#/^~\// word)
+      (let ([prefix (sys-normalize-pathname "~/" :expand #t)]
+            [expanded (sys-normalize-pathname word :expand #t)])
+        (map (^p (string-replace p "~/" 0 (string-length prefix)))
+             (do-glob expanded)))
+      (do-glob word)))
+
+  (let1 candidates (do-complete)
+    (if (and (length=? candidates 1)
+             (#/\.(scm|sci|sld)$/ (car candidates)))
+      (car candidates)                  ;single final completion result
+      candidates)))
 
 (define (%complete-module-name word)
   (define found (make-hash-table 'eq?))
   (library-fold (string->symbol #"{~|word|*,~|word|*.**.*}")
                 (^[mod _ _] (hash-table-put! found mod #t))
                 #f)
-  (sort (map x->string (hash-table-keys found))))
+  (match (map x->string (hash-table-keys found))
+    [(w) w]                             ;single final completion result
+    [ws (sort ws)]))

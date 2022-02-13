@@ -96,8 +96,15 @@
    ;; A predicate or a char-set to determine word constituent characters
    (completion-word-constituent? :init-keyword :completion-word-constituent?
                                  :init-value #[-\w])
-   ;; <^ <string> <gap-buffer> <integer> <integer> -> <List <string>>>
-   ;; Returns list of completion candidates that match the given word.
+   ;; <^ <string> <gap-buffer> <integer> <integer>
+   ;;  -> </ <string> <List <string>>>
+   ;; Returns completion candidate(s) that match the given word.
+   ;; If a single final completed value is determined, it is returned as
+   ;; a string.  Otherwise, a list of candidates (including zero or one
+   ;; cases) is returned.  The difference between a single string and
+   ;; a list of a string is that the latter needs further completion
+   ;; (e.g. complete to a directory boundary; further completion will go
+   ;; down to the directory).
    (completion-lister :init-keyword :completion-lister :init-value #f)
 
    ;; Following slots are private.
@@ -1241,10 +1248,15 @@
                    [words (lister word buf start-pos end-pos)])
           (match words
             [() #f]
-            [(w)
-             ;; Single candidate.  We append whitespace after it.
+            [(? string?)
+             ;; Final candidate.  We append whitespace after it.
              (gap-buffer-move! buf start-pos)
-             (gap-buffer-replace! buf (- end-pos start-pos) #"~|w| ")
+             (gap-buffer-replace! buf (- end-pos start-pos) #"~|words| ")
+             'redraw]
+            [(w)
+             ;; Single candidate, but may be completed further.
+             (gap-buffer-move! buf start-pos)
+             (gap-buffer-replace! buf (- end-pos start-pos) w)
              'redraw]
             [(w ws ...)
              (when (eq? (~ ctx'last-command) completion-command)
