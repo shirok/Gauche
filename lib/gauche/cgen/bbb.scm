@@ -355,8 +355,50 @@
       (push-insn bb `(CLOSE ,reg ,lbenv))
       (pass5b/return bb ctx reg))))
 
-(define (pass5b/$CLAMBDA iform bb cenv ctx)
-  (error "[internal] CLAMBDA is not supported yet"))
+(define (pass5b/$CLAMBDA iform bb benv ctx)
+  (define (generate-closures bb lambdas benv)
+    (let loop ([bb bb] [ls lambdas] [regs '()])
+      (if (null? ls)
+        (values bb (reverse regs))
+        (receive (bb reg) (pass5b/rec (car ls) bb benv 'normal)
+          (loop bb (cdr ls) (cons reg regs))))))
+  (define (reqargs-min-max argcounts)   ;dupe from pass5/$CLAMBDA
+    (let loop ([counts argcounts] [mi #f] [mx 0])
+      (match counts
+        [() (values mi mx)]
+        [((req . _) . rest) (loop rest (if mi (min mi req) req) (max mx req))])))
+  (define (lambda-formals argcount)     ;dupe from pass5/$CLAMBdA
+    (let rec ([n (car argcount)]
+              [r (if (zero? (cdr argcount)) '() 'v)])
+      (if (zero? n) r (rec (- n 1) (cons 'v r)))))
+  (define (create-clambda iform bb ctx)
+    (receive (bb clo-regs) (generate-closures bb ($clambda-closures iform) benv)
+      (for-each (cut touch-reg! bb <>) clo-regs)
+      (receive (minarg maxarg) (reqargs-min-max ($clambda-argcounts iform))
+        (let ([closure-list-reg (make-reg bb #f)]
+              [minarg-const (make-const bb minarg)]
+              [maxarg-const (make-const bb maxarg)]
+              [formals-const (make-const bb (map lambda-formals ($clambda-argcounts iform)))]
+              [name-const (make-const bb ($clambda-name iform))]
+              [make-case-lambda-reg (make-reg bb #f)])
+          (push-insn bb `(BUILTIN LIST ,closure-list-reg ,@clo-regs))
+          (push-insn bb `(LD ,make-case-lambda-reg ,make-case-lambda.))
+          (push-insn bb `(CALL ,make-case-lambda-reg
+                               ,minarg-const
+                               ,maxarg-const
+                               ,formals-const
+                               ,closure-list-reg
+                               ,name-const))
+          (values bb #f)))))
+
+  (if (eq? ctx 'tail)
+    (create-clambda iform bb ctx)
+    (let* ([cbb (make-bb benv bb)]
+           [valreg (make-reg cbb #f)])
+      (push-insn bb `(CONT ,cbb))
+      (create-clambda iform bb ctx)      ;no need to receive result.
+      (push-insn cbb `(MOV ,valreg %VAL0))
+      (values cbb valreg))))
 
 (define (pass5b/$LABEL iform bb benv ctx)
   ;; NB: $label-label is #f at the end of pass4.  We assume that, and use

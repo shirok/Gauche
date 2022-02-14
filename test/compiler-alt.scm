@@ -68,4 +68,13 @@
    '(let ((x (list 1 2)))
       `(A ,x ,(car x) ,@x Z)))
 
+(t "case-lambda" #f '(a (b . 1) 2 (c 1 2 3) 4)
+   '(begin
+      (define f (case-lambda
+                  [() 'a]
+                  [(x) (cons 'b x)]
+                  [(x y z) (list 'c x y z)]
+                  [xs (length xs)]))
+      (list (f) (f 1) (f 1 2) (f 1 2 3) (f 1 2 3 4))))
+
 (test-end)

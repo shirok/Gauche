@@ -203,6 +203,7 @@
   (define val
     (match op
       ['APPEND (apply append (map reg-ref args))]
+      ['LIST   (apply list (map reg-ref args))]
       ['LIST*  (apply list* (map reg-ref args))]
       ['CONS   (cons (reg-ref (car args)) (reg-ref (cadr args)))]
       [opc     (error "[internal] Unsupported builtin: " opc)]))
