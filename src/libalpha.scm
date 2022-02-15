@@ -203,50 +203,45 @@
           (Scm_VMApply p (Scm_ArrayToListWithTail args (- nargs 1) rarg))))
        )))
 
- ;; NB: We keep dispatch-vector in the procedure info, so that disasm
- ;; and other inspection routines can find it.  The structure of
- ;; the procedure info here is tentative; it may be changed later.
- ;; Routines that depends on this info must be aware of that.
- (define-cproc make-case-lambda-dispatcher (dispatch-vector::<vector>
-                                            min-reqargs::<int>
-                                            name)
-   (let* ([max-optargs::int (SCM_VECTOR_SIZE dispatch-vector)]
+ ;; The compiler expands case-lambda to a call of make-case-lambda.
+ ;; It may be called during initialization, so we need it here.
+ ;; TRANSIENT: The third argument used to be a list of formals of the closures.
+ ;; We no longer need it, for we extract info from closures.  It is left for
+ ;; the backward compatibility until we switch ABI.
+ (define-cproc make-case-lambda (minarg::<int>
+                                 maxarg::<int>
+                                 _
+                                 closures
+                                 :optional (name #f))
+   (let* ([max-optargs::int (+ (- maxarg minarg) 2)]
+          [v (Scm_MakeVector max-optargs SCM_FALSE)]
           [packet::case_lambda_packet* (SCM_NEW case_lambda_packet)])
-     (set! (-> packet min_reqargs) min-reqargs
+     (for-each (lambda (c)
+                 (let* ([req::int (SCM_PROCEDURE_REQUIRED c)]
+                        [opt::int (SCM_PROCEDURE_OPTIONAL c)]
+                        [n::int minarg])
+                   (for (() (<= n (+ maxarg 1)) (post++ n))
+                     (when (and (or (== n req)
+                                    (and (> n req) (> opt 0)))
+                                (SCM_FALSEP (SCM_VECTOR_ELEMENT v (- n minarg))))
+                       (set! (SCM_VECTOR_ELEMENT v (- n minarg)) c)))))
+               closures)
+     (set! (-> packet min_reqargs) minarg
            (-> packet max_optargs) max-optargs
-           (-> packet dispatch_vector) dispatch-vector)
-     (return (Scm_MakeSubr case_lambda_dispatch packet
-                           min_reqargs max_optargs
+           (-> packet dispatch_vector) (SCM_VECTOR v))
+     ;; NB: We keep dispatch-vector in the procedure info, so that disasm
+     ;; and other inspection routines can find it.  The structure of
+     ;; the procedure info here is tentative; it may be changed later.
+     ;; Routines that depends on this info must be aware of that.
+     (let* ([r (Scm_MakeSubr case_lambda_dispatch packet
+                           minarg max_optargs
                            (SCM_LIST3 (?: (SCM_FALSEP name)
                                          'case-lambda-dispatcher
                                          name)
-                                      (SCM_MAKE_INT min-reqargs)
-                                      (SCM_OBJ dispatch-vector))))))
+                                      (SCM_MAKE_INT minarg)
+                                      v))])
+       (return r))))
  )
-
-;; The compiler expands case-lambda to a call of make-case-lambda.
-;; It may be called during initialization, so we need it here.
-(define-in-module gauche.internal (make-case-lambda minarg maxarg
-                                                    formals closures
-                                                    :optional (name #f))
-  (define (fill-dispatch-vector! v formals closure)
-    (define (%set n)
-      (let1 i (- n minarg)
-        (unless (vector-ref v i) (vector-set! v i closure))))
-    (let loop ([formals formals] [n 0])
-      (cond [(> n (+ maxarg 1))]
-            [(null? formals) (%set n)]
-            [(pair? formals) (loop (cdr formals) (+ n 1))]
-            [else (%set n) (loop formals (+ n 1))])))
-
-  (let1 v (make-vector (+ (- maxarg minarg) 2) #f)
-    ;; Avoid using for-each, since the definition of for-each itself
-    ;; nees to call make-case-lambda.
-    (let loop ([fs formals] [cs closures])
-      (unless (null? fs)
-        (fill-dispatch-vector! v (car fs) (car cs))
-        (loop (cdr fs) (cdr cs))))
-    ((with-module gauche.internal make-case-lambda-dispatcher) v minarg name)))
 
 ;; Returns ((<required args> <optional arg> <procedure>) ...)
 ;; This also depends on the structure of dispatch vector info.

@@ -1,3 +1,8 @@
+2022-02-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (make-case-lambda): No longer look at 'formals'
+	  argument; the info can be extracted from closures.
+
 2022-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_NumCmp): Make sure '=' transitivity is kept

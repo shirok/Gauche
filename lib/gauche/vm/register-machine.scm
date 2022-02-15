@@ -139,10 +139,34 @@
               [(zero? n) (hash-table-put! regs (car input) args)]
               [else (hash-table-put! regs (car input) (car args))
                     (loop (cdr args) (cdr input) (- n 1))]))))
-  (lambda args
+
+  ;; Here's the ugly part. We need to reify 'our' closure info into
+  ;; Gauche's runtime closure.  However, simply wrapping our closure
+  ;; with generic lambda won't do:
+  ;;   (lambda args             ;doesn't work
+  ;;     (let1 regs (build-input args)
+  ;;       (run-bb benv regs (~ benv'entry))))
+  ;; That's because if this closure appears within case-lambda, it needs
+  ;; actual argument count info in Gauche's runtime layer.  Wrapping with
+  ;; generic lambda will lose that info.
+  ;; Eval is our only option.
+  (define (run-it . args)
     (let1 regs (bind-input args)
       ;(dump-regs regs)
-      (run-bb benv regs (~ benv'entry)))))
+      (run-bb benv regs (~ benv'entry))))
+  (define (generate-lambda-formals reg-names)
+    (if (length>? reg-names (~ benv'input-reqargs))
+      (let1 r (reverse reg-names)
+        (fold cons (car r) (cdr r)))
+      reg-names))
+  (define (generate-apply reg-names)
+    (if (length>? reg-names (~ benv'input-reqargs))
+      `(apply ,run-it ,@reg-names)
+      `(,run-it ,@reg-names)))
+  (let1 reg-names (map (cut ~ <>'name) (~ benv'input-regs))
+    (eval `(lambda ,(generate-lambda-formals reg-names)
+             ,(generate-apply reg-names))
+          (current-module))))
 
 (define (run-asm benv regs op recv args val0)
   (define-reg-ref reg-ref regs val0)
