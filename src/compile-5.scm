@@ -632,17 +632,8 @@
       (match counts
         [() (values mi mx)]
         [((req . _) . rest) (loop rest (if mi (min mi req) req) (max mx req))])))
-  ;; TRANSIENT: We reuse make-case-lambda for now.  It requires list of
-  ;; formals only to compute possible argument count.  $LAMBDA node doesn't
-  ;; keep formals as are, so we rebuild dummy formals.
-  (define (lambda-formals argcount)
-    (let rec ([n (car argcount)]
-              [r (if (zero? (cdr argcount)) '() 'v)])
-      (if (zero? n) r (rec (- n 1) (cons 'v r)))))
-
   (let*-values ([(cs) ($clambda-closures iform)]
                 [(minarg maxarg) (reqargs-min-max ($clambda-argcounts iform))]
-                [(formals) (map lambda-formals ($clambda-argcounts iform))]
                 [merger (if (bottom-context? ctx)
                           #f
                           (compiled-code-new-label ccb))])
@@ -652,7 +643,7 @@
     (compiled-code-emit-PUSH! ccb)
     (compiled-code-emit0o! ccb CONST maxarg)
     (compiled-code-emit-PUSH! ccb)
-    (compiled-code-emit0o! ccb CONST formals)
+    (compiled-code-emit0o! ccb CONST #f)
     (let loop ([xs cs] [depth 0] [cnt 0])
       (cond
        [(null? xs)

@@ -367,10 +367,6 @@
       (match counts
         [() (values mi mx)]
         [((req . _) . rest) (loop rest (if mi (min mi req) req) (max mx req))])))
-  (define (lambda-formals argcount)     ;dupe from pass5/$CLAMBdA
-    (let rec ([n (car argcount)]
-              [r (if (zero? (cdr argcount)) '() 'v)])
-      (if (zero? n) r (rec (- n 1) (cons 'v r)))))
   (define (create-clambda iform bb ctx)
     (receive (bb clo-regs) (generate-closures bb ($clambda-closures iform) benv)
       (for-each (cut touch-reg! bb <>) clo-regs)
@@ -378,7 +374,7 @@
         (let ([closure-list-reg (make-reg bb #f)]
               [minarg-const (make-const bb minarg)]
               [maxarg-const (make-const bb maxarg)]
-              [formals-const (make-const bb (map lambda-formals ($clambda-argcounts iform)))]
+              [formals-const (make-const bb #f)]
               [name-const (make-const bb ($clambda-name iform))]
               [make-case-lambda-reg (make-reg bb #f)])
           (push-insn bb `(BUILTIN LIST ,closure-list-reg ,@clo-regs))
