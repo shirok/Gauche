@@ -168,9 +168,9 @@ void Scm_Init(const char *signature)
     /* Set up GC parameters.  We need to call finalizers at the safe
        point of VM loop, so we disable auto finalizer invocation, and
        ask GC to call us back when finalizers are queued. */
-    GC_oom_fn = oom_handler;
-    GC_finalize_on_demand = TRUE;
-    GC_finalizer_notifier = finalizable;
+    GC_set_oom_fn(oom_handler);
+    GC_set_finalize_on_demand(TRUE);
+    GC_set_finalizer_notifier(finalizable);
 
     (void)SCM_INTERNAL_MUTEX_INIT(cond_features.mutex);
 
