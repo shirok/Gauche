@@ -1,3 +1,9 @@
+2022-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (Scm_NumCmp): Make sure '=' transitivity is kept
+	  in exact v inexact comparison.
+	  https://github.com/shirok/Gauche/issues/805
+
 2022-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* text/line-edit.scm: Add whitespace after the completed word if

@@ -955,6 +955,15 @@
 
 (test* "eqv? with -0.0" #f (eqv? 0.0 -0.0)) ;R7RS requires this
 
+;; R7RS transitivity requirements
+(test* "= inexact exact 0" #t (= 1 1.0))
+(test* "= inexact exact 1" #t (= 9007199254740992.0 9007199254740992))
+(test* "= inexact exact 2" #f (= 9007199254740992.0 9007199254740993))
+(test* "= inexact exact 3" #f (= 9007199254740993 9007199254740992.0))
+(test* "= inexact exact 4" #f (= 9007199254740992.0 18014398509481985/2))
+(test* "= inexact exact 5" #f (= 18014398509481985/2 9007199254740992.0))
+
+
 ;; numeric comparison involving nan.  we should test both
 ;; inlined case and applied case
 (define-macro (test-nan-cmp op)

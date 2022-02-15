@@ -1321,22 +1321,28 @@ double Scm_UInt64ToDouble(uint64_t v)
 }
 #endif /*GAUCHE_API_VERSION < 98*/
 
-/* See if a Scheme integer si can be representable with 53bit mantissa. */
-static int double_precision(ScmObj si, int *hi, int *lo)
+/* See if a Scheme integer si can be representable with 53bit mantissa.
+   Also store the highest and lowest bit posisions in *hi and *lo
+   (if they're not NULL) */
+static int double_precision(ScmObj si, int *phi, int *plo)
 {
     if (SCM_INTP(si)) {
         ScmSmallInt i = SCM_INT_VALUE(si);
         if (i < 0) i = -i;      /* won't overflow */
         ScmBits bi = (ScmBits)i;
-        *hi = Scm_BitsHighest1(&bi, 0, SCM_WORD_BITS-1);
-        *lo = Scm_BitsLowest1(&bi, 0, SCM_WORD_BITS-1);
-        return (*hi - *lo) < 53;
+        int hi = Scm_BitsHighest1(&bi, 0, SCM_WORD_BITS-1);
+        int lo = Scm_BitsLowest1(&bi, 0, SCM_WORD_BITS-1);
+        if (phi) *phi = hi;
+        if (plo) *plo = lo;
+        return (hi - lo) < 53;
     } else {
         SCM_ASSERT(SCM_BIGNUMP(si));
         const ScmBits *bits = (ScmBits*)SCM_BIGNUM(si)->values;
-        *hi = Scm_BitsHighest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
-        *lo = Scm_BitsLowest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
-        return (*hi - *lo) < 53;
+        int hi = Scm_BitsHighest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
+        int lo = Scm_BitsLowest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
+        if (phi) *phi = hi;
+        if (plo) *plo = lo;
+        return (hi - lo) < 53;
     }
 }
 
@@ -2962,6 +2968,14 @@ int Scm_NumGE(ScmObj arg0, ScmObj arg1)
    Caveat: Scm_NumCmp returns 0 (means equal) when arg0 and/or arg1 is/are NaN.
    That's because NaN doesn't make any sense in three-way comparison.  The
    premise is that NaN has already been filtered out before NumCmp is called.
+
+   Pitfall: R7RS requires '=' transitivity.  When comparing an exact number vs
+   an inexact number, simply converting the exact one to inexact can't satisfy
+   this requirement (cf. https://github.com/shirok/Gauche/issues/805 )
+   However, we don't want to always convert the inexact one to exact, for
+   it can be expensive.  So we first compare inexactly, and only when it
+   yields equal and we determine we need more precision, we do exact
+   comparison.
  */
 int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
 {
@@ -2975,9 +2989,15 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             return 0;
         }
         if (SCM_FLONUMP(arg1)) {
-            double r = SCM_INT_VALUE(arg0) - SCM_FLONUM_VALUE(arg1);
+            double r = (double)SCM_INT_VALUE(arg0) - SCM_FLONUM_VALUE(arg1);
             if (r < 0) return -1;
             if (r > 0) return 1;
+#if SIZEOF_LONG >= 8
+            /* exact v inexact case.  see if we need more precise comparison */
+            if (!double_precision(arg0, NULL, NULL)) {
+                return Scm_NumCmp(arg0, Scm_Exact(arg1));
+            }
+#endif
             return 0;
         }
         if (SCM_BIGNUMP(arg1))
@@ -3009,6 +3029,12 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             double r = SCM_FLONUM_VALUE(arg0) - SCM_INT_VALUE(arg1);
             if (r < 0) return -1;
             if (r > 0) return 1;
+#if SIZEOF_LONG >= 8
+            /* exact v inexact case.  see if we need more precise comparison */
+            if (!double_precision(arg1, NULL, NULL)) {
+                return Scm_NumCmp(Scm_Exact(arg0), arg1);
+            }
+#endif
             return 0;
         }
         if (SCM_FLONUMP(arg1)) {
@@ -3022,10 +3048,10 @@ int Scm_NumCmp(ScmObj arg0, ScmObj arg1)
             if (SCM_IS_INF(SCM_FLONUM_VALUE(arg0))) {
                 return Scm_Sign(arg0);
             }
-            /* R7RS requires transitivity in '=', so we can't coerce
-               arg1 to inexact; we'd rather convert arg0 to exact.
-               NB: Thus we'll have a case that (= x y) => #f but
-               (- x y) => 0.0.  It's ok for the latter is inexact result. */
+            double r = SCM_FLONUM_VALUE(arg0) - Scm_GetDouble(arg1);
+            if (r < 0) return -1;
+            if (r > 0) return 1;
+            /* exact v inexact */
             return Scm_NumCmp(Scm_Exact(arg0), arg1);
         }
         badnum = arg1;
