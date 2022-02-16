@@ -36,6 +36,25 @@
 (test* "inlining const4 + constant folding" '(((CONSTI 8)) ((RET)))
        (proc->insn/split (^[] (+ (const4) (const4)))))
 
+;; Closed env (pass1/check-inlinable-lambda $LET branch)
+(define-inline lambda-with-closed-env
+  (let ((h (make-hash-table 'eq?)))
+    (^k (hash-table-ref h k #f))))
+(test* "inlining lambda with closed env" '(((GREF-PUSH) |transient id|)
+                                           ((CONST-PUSH) a)
+                                           ((CONSTF-PUSH))
+                                           ((GREF-TAIL-CALL 3) hash-table-ref)
+                                           ((RET)))
+       (map (^[insn]
+              (match insn
+                [(op (? wrapped-identifier? id))
+                 (let1 name (unwrap-syntax id)
+                   (if (symbol-interned? name)
+                     `(,op ,name)
+                     `(,op |transient id|)))]
+                [_ insn]))
+            (proc->insn/split (^[] (lambda-with-closed-env 'a)))))
+
 ;; Combinatorial
 (define-inline (make-adder n) (^m (+ n m)))
 (define-inline add4 (make-adder 4))
