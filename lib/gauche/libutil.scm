@@ -38,19 +38,6 @@
           library-has-module? library-name->module-name))
 (select-module gauche.libutil)
 
-;;
-(cond-expand
- [gauche.os.windows
-  (define (N path)
-    (call-with-string-io path
-      (^[i o]
-        (let loop ((ch (read-char i)))
-          (unless (eof-object? ch)
-            (if (eqv? ch #\\) (write-char #\/ o) (write-char ch o))
-            (loop (read-char i)))))))]
- [else
-  (define (N path) path)])
-
 ;; library-fold - iterate over the modules or libraries whose name matches
 ;;  the given pattern.
 ;;  proc takes the matched module/library name, full pathname, and seed value.
@@ -67,57 +54,62 @@
 
   (define seen '())
 
+  (define (decompose path)
+    (let1 cs (string-split path #[/\\])
+      (if (null? cs) '(".") cs)))
+
+  (define (compose components)
+    (string-join components (cond-expand
+                             [gauche.os.windows "\\"]
+                             [else "/"])))
+
   (define (ensure path partial)
     (if search-module?
-      (let1 modname (path->module-name (N (string-drop-right partial 4)))
+      (let1 modname (path->module-name (string-drop-right partial 4))
         (and (or (not strict?)
                  (library-has-module? path modname))
              modname))
       (string-drop-right partial 4)))
 
-  (define (get-relative prefix path)
-    (string-trim (string-drop path (string-length prefix)) #[/\\]))
-
-  (define (fold-dirs proc seed dirname regexp)
+  (define (fold-dirs proc seed dirpath regexp)
     (fold (^[elt seed]
             (or (and-let* ([ (regexp elt) ]
-                           [path (topath dirname elt)]
-                           [ (file-is-directory? path) ])
+                           [path (append dirpath `(,elt))]
+                           [ (file-is-directory? (compose path)) ])
                   (proc path seed))
                 seed))
-          seed (readdir dirname)))
+          seed (readdir (compose dirpath))))
 
-  (define (fold-leaf proc seed prefix dirname regexp)
+  (define (fold-leaf proc seed prefix dirpath regexp)
     (fold (^[elt seed]
             (or (and-let* ([m (#/(.*)\.sc[im]$/ elt) ]
                            [base (m 1)]
                            [ (regexp base) ]
-                           [path (topath dirname elt)]
-                           [file (get-relative prefix path)]
-                           [key (ensure (N path) (N file))])
+                           [path (append dirpath `(,elt))]
+                           [file (drop path (length prefix))]
+                           [key (ensure (compose path) (compose file))])
                   (if (and (not allow-duplicates?) (member key seen))
                     seed
-                    (begin (push! seen key) (proc key path seed))))
+                    (begin (push! seen key) (proc key (compose path) seed))))
                 seed))
-          seed (readdir dirname)))
+          seed (readdir (compose dirpath))))
 
   (define (make-folder prefix)
     (^[proc seed parent regexp non-leaf?]
       ;; We always search to the leaf nodes, so REGEXP never be 'dir.
-      (let* ([dir (if (string? parent) parent prefix)]
-             [elts (filter regexp (readdir dir))])
-        (if non-leaf?
-          (fold-dirs proc seed dir regexp)
-          (fold-leaf proc seed prefix dir regexp)))))
+      (if non-leaf?
+        (fold-dirs proc seed parent regexp)
+        (fold-leaf proc seed prefix parent regexp))))
 
   (let ([pattern (if search-module?
                    (module-name->path pattern)
                    pattern)])
     (fold (^[prefix seed]
-            (let1 prefix (sys-normalize-pathname prefix :canonicalize #t)
+            (let1 prefix ($ decompose
+                            $ sys-normalize-pathname prefix :canonicalize #t)
               (glob-fold pattern proc seed
                          :folder (make-folder prefix)
-                         :prefix (if (equal? prefix "") "." prefix)
+                         :prefix prefix
                          :sorter #f)))
           seed paths)))
 
