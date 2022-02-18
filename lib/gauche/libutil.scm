@@ -63,13 +63,15 @@
                              [gauche.os.windows "\\"]
                              [else "/"])))
 
+  ;; For module path (e.g. "util/match" for util.match), we always use '/'.
   (define (ensure path partial)
+    (define modpath (string-drop-right (string-join partial "/") 4))
     (if search-module?
-      (let1 modname (path->module-name (string-drop-right partial 4))
+      (let1 modname (path->module-name modpath)
         (and (or (not strict?)
-                 (library-has-module? path modname))
+                 (library-has-module? (compose path) modname))
              modname))
-      (string-drop-right partial 4)))
+      modpath))
 
   (define (fold-dirs proc seed dirpath regexp)
     (fold (^[elt seed]
@@ -87,7 +89,7 @@
                            [ (regexp base) ]
                            [path (append dirpath `(,elt))]
                            [file (drop path (length prefix))]
-                           [key (ensure (compose path) (compose file))])
+                           [key (ensure path file)])
                   (if (and (not allow-duplicates?) (member key seen))
                     seed
                     (begin (push! seen key) (proc key (compose path) seed))))
