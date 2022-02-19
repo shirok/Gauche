@@ -7408,7 +7408,7 @@ In Gauche, these are the same as corresponding string operations
 except that the returned string is always immutable and indexed.
 @xref{SRFI-13 String selection}, for these string procedures.
 @c JP
-Gaucheでは、結果が常に変更不可でインデックス付きになることを以外は、
+Gaucheでは、結果が常に変更不可でインデックス付きになること以外は、
 対応する文字列操作
 (@code{string-take}、@code{string-drop}、@code{string-take-right}、
 @code{string-drop-right}、@code{string-pad}、@code{string-pad-right}、
@@ -7421,9 +7421,15 @@ Gaucheでは、結果が常に変更不可でインデックス付きになる�
 @defun textual-replace textual1 textual2 start1 end1 :optional start2 end2
 [R7RS text]
 @c MOD scheme.text
+@c EN
 In Gauche, this is same as @code{string-replace},
 except that the returned string is always immutable and indexed.
 @xref{SRFI-13 Other string operations}, for the details.
+@c JP
+Gaucheでは、戻り値の文字列が常に変更不可かつインデックス付きになること以外は、
+@code{string-replace}と同じです。
+詳しくは@ref{SRFI-13 Other string operations}参照。
+@c COMMON
 @end defun
 
 @defun textual=? textual1 textual2 textual3 @dots{}
@@ -7433,10 +7439,17 @@ except that the returned string is always immutable and indexed.
 @defunx textual>=? textual1 textual2 textual3 @dots{}
 [R7RS text]
 @c MOD scheme.text
+@ EN
 In Gauche, these are just aliases of built-in
 @code{string=?}, @code{string<?}, @code{string>?},
 @code{string<=?} and @code{string>?}, respectively.
 @xref{String comparison}, for the details.
+@c JP
+Gaucheではこれらはそれぞれ組み込みの
+@code{string=?}、@code{string<?}、@code{string>?}、
+@code{string<=?}、@code{string>?}の別名です。
+詳しくは@ref{String comparison}参照。
+@c COMMON
 @end defun
 
 @defun textual-ci=? textual1 textual2 textual3 @dots{}
@@ -7446,10 +7459,17 @@ In Gauche, these are just aliases of built-in
 @defunx textual-ci>=? textual1 textual2 textual3 @dots{}
 [R7RS text]
 @c MOD scheme.text
+@c EN
 In Gauche, these are just aliases of @emph{the unicode version} of
 @code{string-ci=?}, @code{string-ci<?}, @code{string-ci>?},
 @code{string-ci<=?} and @code{string-ci>?}, respectively.
 @xref{Full string case conversion}, for the details.
+@c JP
+Gaucheではこれらはそれぞれ@emph{unicodeバージョンの}
+@code{string-ci=?}、@code{string-ci<?}、@code{string-ci>?}、
+@code{string-ci<=?}、@code{string-ci>?}と同じです。
+詳しくは@ref{Full string case conversion}参照。
+@c COMMON
 @end defun
 
 @defun textual-prefix-length textual1 textual2 :optional start1 end1 start2 end2
@@ -7458,10 +7478,17 @@ In Gauche, these are just aliases of @emph{the unicode version} of
 @defunx textual-suffix? textual1 textual2 :optional start1 end1 start2 end2
 [R7RS text]
 @c MOD scheme.text
+@c EN
 In Gauche, these are just aliases of @code{srfi-13}'s
 @code{string-prefix-length}, @code{string-suffix-length},
 @code{string-prefix?}, and @code{string-suffix?}, respectively.
 @xref{SRFI-13 String prefixes & suffixes}, for the details.
+@c JP
+Gaucheでは、これらはそれぞれ@code{srfi-13}の
+@code{string-prefix-length}、@code{string-suffix-length}、
+@code{string-prefix?}、@code{string-suffix?}の別名です。
+詳しくは@ref{SRFI-13 String prefixes & suffixes}参照。
+@c COMMON
 @end defun
 
 @defun textual-index textual pred :optional start end
@@ -7472,11 +7499,19 @@ In Gauche, these are just aliases of @code{srfi-13}'s
 @defunx textual-contains-right textual-haystack textual-needle :optional start1 end1 start2 end2
 [R7RS text]
 @c MOD scheme.text
+@c EN
 In Gauche, these are just aliases of @code{srfi-13}'s
 @code{string-index}, @code{string-index-right},
 @code{string-skip}, @code{string-skip-right},
 @code{string-contains}, and @code{string-contains-right}, respectively.
 @xref{SRFI-13 String searching}, for the details.
+@c JP
+Gaucheでは、これらはそれぞれ@code{srfi-13}の
+@code{string-index}、@code{string-index-right}、
+@code{string-skip}、@code{string-skip-right}、
+@code{string-contains}、@code{string-contains-right}の別名です。
+詳しくは@ref{SRFI-13 String searching}参照。
+@c COMMON
 @end defun
 
 @defun textual-upcase textual
@@ -7485,31 +7520,96 @@ In Gauche, these are just aliases of @code{srfi-13}'s
 @defunx textual-titlecase textual
 [R7RS text]
 @c MOD scheme.text
+@c EN
+In Gauche, these are the same as @code{string-upcase},
+@code{string-downcase}, @code{string-foldcase} and @code{string-titlecase}
+of @code{gauche.unicode}, respectively, except that the result is
+always an immutable and indexed string.
+@xref{Full string case conversion}, for the details.
+@c JP
+Gaucheでは、これらは戻り値が常に変更不可でインデックス付きの文字列になること以外は、
+@code{gauche.unicode}の@code{string-upcase}、
+@code{string-downcase}、@code{string-foldcase}、@code{string-titlecase}、
+@code{gauche.unicode}とそれぞれ同じです。
+詳しくは@ref{Full string case conversion}参照。
+@c COMMON
 @end defun
 
 @defun textual-append textual @dots{}
 @defunx textual-concatenate textual-list
 [R7RS text]
 @c MOD scheme.text
+@c EN
+In Gauche, these are the same as @code{string-append} and
+@code{string-concatenate} respectively, except that the result
+is always an immutable and indexed string.
+@c JP
+Gaucheでは、これらは戻り値が常に変更不可でインデックス付きの文字列になること以外は、
+それぞれ@code{string-append}および@code{string-concatenate}と同じです。
+@c COMMON
 @end defun
 
 @defun textual-concatenate-reversse args :optional final-textual end
 [R7RS text]
 @c MOD scheme.text
+@c EN
+The @var{args} must be a list of textuals (same as strings in Gauche).
+As to the optional arguments,
+@var{final-textual} must be a textual, and @var{end}
+must be a nonnegative exact integer, if provided.
+
+Without optional arguments, this is the same as
+@code{string-concatenate-reverse} of @code{srfi-13}
+(@pxref{SRFI-13 String reverse & append}, except that
+the result is always an immutable and indexed string.
+
+If @var{final-textual} is provided, it is appended to the last.
+If @var{end} is also provided, @code{(subtext final-textual 0 end)} is
+appended to the last.
+@c JP
+@var{args}はtextual (Gaucheでは文字列と同じ) のリストでなければなりません。
+また省略可能引数については、@var{final-textual}はtextual、
+@var{end}は非負の正確な整数でなければなりません。
+
+省略可能引数が無い場合、これは戻り値が常に変更不可でインデックス付きの文字列に
+なること以外は、@code{srfi-13}の@code{string-concatenate-reverse}と同じです
+(@ref{SRFI-13 String reverse & append}参照)。
+
+@var{final-textual}が与えられたら、それが結果の末尾に足されます。
+@var{end}も与えられたら、@code{(subtext final-textual 0 end)}が
+結果の末尾に足されます。
+@c COMMON
 @end defun
 
 @defun textual-join textual-list :optional delimiter grammar
 [R7RS text]
 @c MOD scheme.text
+@c EN
+This is the same as @code{string-join} except that the result
+is always an immutable and indexed string
+(@pxref{String utilities}).
+@c JP
+戻り値が常に変更不可でインデックス付きの文字列になることを除き、
+@code{string-join}と同じです
+(@ref{String utilities}参照)。
+@c COMMON
 @end defun
 
 @defun textual-fold kons knil textual :optional start end
 @defunx textual-fold-right kons knil textual :optional start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
+These are just aliases of @code{srfi-13}'s
+@code{string-fold} and @code{string-fold-right},
+respectively (@pxref{SRFI-13 String mapping}).
+@c JP
+これらはそれぞれ@code{srfi-13}の@code{string-fold}および@code{string-fold-right}
+の別名です (@ref{SRFI-13 String mapping}参照)。
+@c COMMON
 @end defun
 
-@defun textual-map proc textural1 textural2 @dots{}
+@defun textual-map proc textual1 textual2 @dots{}
 [R7RS text]
 @c MOD scheme.text
 @end defun
