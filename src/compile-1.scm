@@ -607,13 +607,13 @@
 
 (define (pass1/define-inline form name expr cenv)
   (let1 iform (pass1 expr (cenv-add-name cenv (variable-name name)))
-    (receive (closure closed) (pass1/check-inlinable-lambda iform)
+    (receive (closures closed) (pass1/check-inlinable-lambda iform)
       (cond
-       [(and (not closure) (not closed)) ; too complex to inline
+       [(and (null? closures) (null? closed)) ; too complex to inline
         (pass1/make-inlinable-binding form name iform cenv)]
        [(null? closed)               ; no closed env
-        (pass1/mark-closure-inlinable! closure name cenv)
-        (pass1/make-inlinable-binding form name closure cenv)]
+        (pass1/mark-closure-inlinable! (car closures) name cenv)
+        (pass1/make-inlinable-binding form name (car closures) cenv)]
        [else ; inlinable lambda has closed env.
         ;; See the comment in subst-lvars above on the transformation.
         ;; closed :: [(lvar . init-iform)]
@@ -621,7 +621,8 @@
         ;; subs :: [(lvar . iform)]  ; iform being $const or $gref
         (receive (gvars subs)
             (pass1/define-inline-classify-env name closed cenv)
-          (let1 defs (pass1/define-inline-gen-closed-env gvars cenv)
+          (let ([closure (car closures)]
+                [defs (pass1/define-inline-gen-closed-env gvars cenv)])
             ($lambda-body-set! closure
                                (subst-lvars ($lambda-body closure) subs))
             (pass1/mark-closure-inlinable! closure name cenv)
@@ -629,28 +630,34 @@
                      ,(pass1/make-inlinable-binding form name closure cenv)))))]
        ))))
 
-;; If IFORM generates a closure with local environment, returns
-;; the closure itself ($lambda node) and the environment
-;; ((lvar . init) ...).
+;; See if IFORM eventaully generate a closure (or closures).  It is the
+;; cases when the final expression in IFORM becomes $LAMBDA node or $CLAMBDA
+;; node.
+;; The closure(s) may close local environment, if the form is something like
+;; ($let ... ($lambda ...)).
+;; Returns two values:
+;;    A list of closures:   ($lambda-node ...)
+;;    Alist of closed variables: ((var . init) ...)
+
 ;; Typical case is ($let ... ($lambda ...)).  In such case this
 ;; procedure effectively strips $let nodes.
 ;; If IFORM has more complicated structure, we just return (values #f #f)
 ;; to give up inlining.
 (define (pass1/check-inlinable-lambda iform)
-  (cond [(has-tag? iform $LAMBDA) (values iform '())]
+  (cond [(has-tag? iform $LAMBDA) (values `(,iform) '())]
         [(has-tag? iform $LET)
-         (receive (closure closed)
+         (receive (closures closed)
              (pass1/check-inlinable-lambda ($let-body iform))
-           (if (and (not closure) (not closed))
-             (values #f #f) ; giveup
+           (if (and (null? closures) (null? closed))
+             (values '() '()) ; giveup
              (let loop ([lvars (reverse ($let-lvars iform))]
                         [inits (reverse ($let-inits iform))]
                         [closed closed])
                (if (null? lvars)
-                 (values closure closed)
+                 (values closures closed)
                  (loop (cdr lvars) (cdr inits)
                        (acons (car lvars) (car inits) closed))))))]
-        [else (values #f #f)]))
+        [else (values '() '())]))
 
 (define (pass1/define-inline-classify-env name lv&inits cenv)
   (define gvars '())
