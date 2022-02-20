@@ -234,13 +234,28 @@
      ;; the procedure info here is tentative; it may be changed later.
      ;; Routines that depends on this info must be aware of that.
      (let* ([r (Scm_MakeSubr case_lambda_dispatch packet
-                           minarg max_optargs
-                           (SCM_LIST3 (?: (SCM_FALSEP name)
-                                         'case-lambda-dispatcher
-                                         name)
-                                      (SCM_MAKE_INT minarg)
-                                      v))])
+                             minarg max_optargs
+                             (SCM_LIST3 (?: (SCM_FALSEP name)
+                                            'case-lambda-dispatcher
+                                            name)
+                                        (SCM_MAKE_INT minarg)
+                                        v))])
        (return r))))
+
+ ;; Returns a plist of case-lambda info if OBJ is a case lambda closure,
+ ;; otherwise #f.
+ (define-cproc %case-lambda-info (obj)
+   (if (and (SCM_SUBRP obj)
+            (== (SCM_SUBR_FUNC obj) case_lambda_dispatch))
+     (let* ([packet::case_lambda_packet* (cast case_lambda_packet*
+                                               (SCM_SUBR_DATA obj))])
+       (return (list ':min-reqargs
+                     (SCM_MAKE_INT (-> packet min_reqargs))
+                     ':max-optargs
+                     (SCM_MAKE_INT (-> packet max_optargs))
+                     ':dispatch-vector
+                     (SCM_OBJ (-> packet dispatch_vector)))))
+     (return SCM_FALSE)))
  )
 
 ;; Returns ((<required args> <optional arg> <procedure>) ...)
