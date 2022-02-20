@@ -612,8 +612,8 @@
        [(and (null? closures) (null? closed)) ; too complex to inline
         (pass1/make-inlinable-binding form name iform cenv)]
        [(null? closed)               ; no closed env
-        (pass1/mark-closure-inlinable! (car closures) name cenv)
-        (pass1/make-inlinable-binding form name (car closures) cenv)]
+        (ifor-each (cut pass1/mark-closure-inlinable! <> name cenv) closures)
+        (pass1/make-inlinable-binding form name iform cenv)]
        [else ; inlinable lambda has closed env.
         ;; See the comment in subst-lvars above on the transformation.
         ;; closed :: [(lvar . init-iform)]
@@ -621,13 +621,15 @@
         ;; subs :: [(lvar . iform)]  ; iform being $const or $gref
         (receive (gvars subs)
             (pass1/define-inline-classify-env name closed cenv)
-          (let ([closure (car closures)]
-                [defs (pass1/define-inline-gen-closed-env gvars cenv)])
-            ($lambda-body-set! closure
-                               (subst-lvars ($lambda-body closure) subs))
-            (pass1/mark-closure-inlinable! closure name cenv)
+          (let1 defs (pass1/define-inline-gen-closed-env gvars cenv)
+            (ifor-each
+             (^[closure]
+               ($lambda-body-set! closure
+                                  (subst-lvars ($lambda-body closure) subs))
+               (pass1/mark-closure-inlinable! closure name cenv))
+             closures)
             ($seq `(,@defs
-                     ,(pass1/make-inlinable-binding form name closure cenv)))))]
+                     ,(pass1/make-inlinable-binding form name iform cenv)))))]
        ))))
 
 ;; See if IFORM eventaully generate a closure (or closures).  It is the
@@ -645,6 +647,10 @@
 ;; to give up inlining.
 (define (pass1/check-inlinable-lambda iform)
   (cond [(has-tag? iform $LAMBDA) (values `(,iform) '())]
+        [(has-tag? iform $CLAMBDA)
+         ;; NB: At pass1, $clambda-closures are all $LAMBDA node.
+         ;; (Beware that we might have $LREF or $GREF in the later passes.)
+         (values ($clambda-closures iform) '())]
         [(has-tag? iform $LET)
          (receive (closures closed)
              (pass1/check-inlinable-lambda ($let-body iform))
