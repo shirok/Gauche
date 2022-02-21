@@ -154,6 +154,67 @@
                                                  ((LREF0-RET)))
        (unwrap-syntax (proc->insn/split (^x (begin0 (car x) (print "foo"))))))
 
+;; case-lambda inlining
+
+(define-inline case-lambda-inline-test-1
+  (case-lambda
+    [(a) `(one ,a)]
+    [(a b) `(two ,a ,b)]
+    [(a b c d) `(four ,a ,b ,c ,d)]
+    [(a . as) 'other]))
+
+(test* "inlining case-lambda 0" `(((GREF-TAIL-CALL 0) case-lambda-inline-test-1)
+                                  ((RET)))
+       (unwrap-syntax (proc->insn/split (^[] (case-lambda-inline-test-1)))))
+
+(test* "inlining case-lambda 1" `(((CONST-PUSH) one)
+                                  ((CONST) x)
+                                  ((LIST 2))
+                                  ((RET)))
+       (proc->insn/split (^[] (case-lambda-inline-test-1 'x))))
+
+(test* "inlining case-lambda 2" `(((CONST-PUSH) two)
+                                  ((CONST-PUSH) x)
+                                  ((CONST) y)
+                                  ((LIST 2))
+                                  ((CONS))
+                                  ((RET)))
+       (proc->insn/split (^[] (case-lambda-inline-test-1 'x 'y))))
+
+(test* "inlining case-lambda 3" `(((CONST-RET) other))
+       (proc->insn/split (^[] (case-lambda-inline-test-1 'x 'y 'z))))
+
+(test* "inlining case-lambda 4" `(((CONST-PUSH) four)
+                                  ((CONST-PUSH) x)
+                                  ((CONST-PUSH) y)
+                                  ((CONST-PUSH) z)
+                                  ((CONST) w)
+                                  ((LIST 2))
+                                  ((LIST-STAR 3))
+                                  ((CONS))
+                                  ((RET)))
+       (proc->insn/split (^[] (case-lambda-inline-test-1 'x 'y 'z 'w))))
+
+(test* "inlining case-lambda many" `(((CONST-RET) other))
+       (proc->insn/split (^[] (case-lambda-inline-test-1 'x 'y 'z
+                                                         'x 'y 'z
+                                                         'x 'y 'z))))
+
+(define-inline case-lambda-inline-test-2
+  (case-lambda
+    [() 'zero]
+    [(a) 'one]))
+
+(test* "inlining case-lambda 2-1" `(((CONST-RET) one))
+       (proc->insn/split (^[] (case-lambda-inline-test-2 'x))))
+
+(test* "inlining case-lambda 2-2" `(((CONST-PUSH) x)
+                                    ((CONST-PUSH) y)
+                                    ((GREF-TAIL-CALL 2) case-lambda-inline-test-2)
+                                    ((RET)))
+       (unwrap-syntax
+        (proc->insn/split (^[] (case-lambda-inline-test-2 'x 'y)))))
+
 (test-section "lambda lifting")
 
 ;; bug reported by teppey

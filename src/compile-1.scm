@@ -193,6 +193,43 @@
                  proc inliner)]
       )))
 
+;; This procedure is set in the inliner slot of procedure created by
+;; make-case-lambda.  If the call site knows the number of arguments,
+;; we can skip the dispatching.  Returns IForm if inlined, or #<undef>
+;; if not.
+;; NB: The expansion after procedure selection is almost dupe of
+;; pass1/expand-inliner, but we can't consoliate them because the order
+;; of applying pass1 differ: pass1/expand-inliner run pass1 on its arguments
+;; by itself, while pass1/make-case-lambda-inliner already gets pass1-ed
+;; arguments.  Call for refactoring.
+(define (pass1/make-case-lambda-inliner clambda-proc)
+  (and-let1 info (%case-lambda-info clambda-proc)
+    (let* ([min-args (get-keyword :min-reqargs info)]
+           [max-index (get-keyword :max-optargs info)]
+           [dispatch (get-keyword :dispatch-vector info)])
+      (^[src arg-iforms]
+        (let1 nargs (length arg-iforms)
+          (or (and-let* ([ (<= min-args nargs) ]
+                         [index (- nargs min-args)]
+                         [index (if (< index max-index) index (- max-index 1))]
+                         [proc (vector-ref dispatch index)]
+                         [inliner (%procedure-inliner proc)])
+                (cond
+                 [(integer? inliner)
+                  (let ([opt?  (slot-ref proc 'optional)])
+                    (if (and (argcount-ok? args (slot-ref proc 'required) opt?)
+                             (<= nargs MAX_LITERAL_ARG_COUNT))
+                      ($asm src (if opt? `(,inliner ,nargs) `(,inliner))
+                            arg-iforms)))]
+                 [(vector? inliner)
+                  (expand-inlined-procedure src (unpack-iform inliner)
+                                            arg-iforms)]
+                 [(procedure? inliner)
+                  (inliner src arg-iforms)]
+                 ;; NB: No compiler macros can apper here.
+                 [else #f]))
+              (undefined)))))))
+
 ;; Returns #t iff exp is the form (with-module module VARIABLE)
 ;; We need to check the global value of with-module, for it might
 ;; be redefined.  We assume this function is called infrequently,

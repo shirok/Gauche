@@ -38,6 +38,7 @@
 
 (inline-stub
  (declcode (.include "gauche/vminsn.h"
+                     "gauche/vm.h"
                      "gauche/priv/glocP.h"
                      "gauche/priv/macroP.h"
                      "gauche/priv/procP.h")))
@@ -203,6 +204,30 @@
           (Scm_VMApply p (Scm_ArrayToListWithTail args (- nargs 1) rarg))))
        )))
 
+ ;; A case-lambda procedure has special inliner procedure in its 'inliner' slot,
+ ;; which is made by pass1/make-case-labmda-inliner.   There's a catch,
+ ;; though.  Case-lambda procedures are made and called during booting,
+ ;; but pass1/make-case-labmda-inliner won't be available until the late
+ ;; stage of booting when the compiler is initialized.  So, if we don't
+ ;; have pass1/make-case-labmda-inliner yet, we assign
+ ;; delayed-case-lambda-inliner to delay actual calling.
+ (define-cfn delayed-case-lambda-inliner (args::ScmObj* nargs::int data::void*)
+   :static
+   (let* ([clambda-proc (SCM_OBJ data)]
+          [make-inliner
+           (Scm_GlobalVariableRef (Scm_GaucheInternalModule)
+                                  (SCM_SYMBOL 'pass1/make-case-lambda-inliner)
+                                  0)])
+     (when (SCM_UNBOUNDP make-inliner)
+       (return SCM_UNDEFINED))          ;not fully booted
+     (SCM_ASSERT (== nargs 2))
+     (let* ([src (aref args 0)]
+            [arg-iforms (aref args 1)]
+            [inliner (Scm_ApplyRec1 make-inliner clambda-proc)])
+       (SCM_ASSERT (SCM_PROCEDUREP inliner))
+       (set! (SCM_PROCEDURE_INLINER clambda-proc) inliner)
+       (return (Scm_VMApply2 inliner src arg-iforms)))))
+
  ;; The compiler expands case-lambda to a call of make-case-lambda.
  ;; It may be called during initialization, so we need it here.
  ;; TRANSIENT: The third argument used to be a list of formals of the closures.
@@ -229,17 +254,29 @@
      (set! (-> packet min_reqargs) minarg
            (-> packet max_optargs) max-optargs
            (-> packet dispatch_vector) (SCM_VECTOR v))
-     ;; NB: We keep dispatch-vector in the procedure info, so that disasm
-     ;; and other inspection routines can find it.  The structure of
+     ;; NB: We keep dispatch-vector in the procedure info, for easier
+     ;; access to the information.  The structure of
      ;; the procedure info here is tentative; it may be changed later.
      ;; Routines that depends on this info must be aware of that.
+     ;; Internal routines should use %case-lambda-info.
      (let* ([r (Scm_MakeSubr case_lambda_dispatch packet
                              minarg max_optargs
                              (SCM_LIST3 (?: (SCM_FALSEP name)
                                             'case-lambda-dispatcher
                                             name)
                                         (SCM_MAKE_INT minarg)
-                                        v))])
+                                        v))]
+            [make-inliner
+             (Scm_GlobalVariableRef (Scm_GaucheInternalModule)
+                                    (SCM_SYMBOL 'pass1/make-case-lambda-inliner)
+                                    0)])
+       (if (SCM_UNBOUNDP make-inliner)
+         (set! (SCM_PROCEDURE_INLINER r)
+               (Scm_MakeSubr delayed-case-lambda-inliner
+                             (cast void* r) 2 0
+                             'delayed-case-lambda-inliner))
+         (set! (SCM_PROCEDURE_INLINER r)
+               (Scm_ApplyRec1 make-inliner r)))
        (return r))))
 
  ;; Returns a plist of case-lambda info if OBJ is a case lambda closure,
