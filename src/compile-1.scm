@@ -198,8 +198,8 @@
 ;; we can skip the dispatching.  Returns IForm if inlined, or #<undef>
 ;; if not.
 ;; NB: The expansion after procedure selection is almost dupe of
-;; pass1/expand-inliner, but we can't consoliate them because the order
-;; of applying pass1 differ: pass1/expand-inliner run pass1 on its arguments
+;; pass1/expand-inliner, but we can't consolidate them because the order
+;; of applying pass1 differ: pass1/expand-inliner runs pass1 on its arguments
 ;; by itself, while pass1/make-case-lambda-inliner already gets pass1-ed
 ;; arguments.  Call for refactoring.
 (define (pass1/make-case-lambda-inliner clambda-proc)
@@ -226,7 +226,7 @@
                                             arg-iforms)]
                  [(procedure? inliner)
                   (inliner src arg-iforms)]
-                 ;; NB: No compiler macros can apper here.
+                 ;; NB: No compiler macros can appear here.
                  [else #f]))
               (undefined)))))))
 
