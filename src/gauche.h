@@ -1221,7 +1221,7 @@ struct ScmProcedureRec {
       is compiled as the ordinary procedure call.
 
    <procedure>: A procedural inliner.  It has signature Sexpr,[IForm] -> IForm,
-      where Sexpr is the original source of call size (just for debug info) and
+      where Sexpr is the original source of call site (just for debug info) and
       input [IForm] is the IForm for list of arguments.  See compiler-1.scm.
       It returns the modified IForm.  It can return #<undef>, to indicate
       inlining isn't possible.

@@ -116,7 +116,7 @@ ScmObj Scm_MakeClosureWithTags(ScmObj code, ScmEnvFrame *env, ScmObj tags)
     c->code = code;
     c->env = env;
     SCM_PROCEDURE(c)->inliner = SCM_COMPILED_CODE(code)->intermediateForm;
-    SCM_PROCEDURE(c)->tagsAlist = tags;    
+    SCM_PROCEDURE(c)->tagsAlist = tags;
 
     return SCM_OBJ(c);
 }
