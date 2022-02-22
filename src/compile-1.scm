@@ -1532,15 +1532,9 @@
            (car closures)
            (loop (cdr closures) argcounts))]))))
 
-(define (find-argcount-minmax formals)
-  (define (length. xs k)
-    (if (pair? xs) (length. (cdr xs) (+ k 1)) k))
-  (let loop ([formals formals] [min-req #f] [max-req 0])
-    (if (null? formals)
-      (values min-req max-req)
-      (let1 k (length. (car formals) 0)
-        (loop (cdr formals) (if min-req (min min-req k) k) (max max-req k))))))
-
+;;
+;; LET
+;;
 (define-pass1-syntax (let form cenv) :null
   (match form
     [(_ () body ...)
