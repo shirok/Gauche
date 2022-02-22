@@ -1516,6 +1516,21 @@
 (define (compute-clambda-argcounts lambda-nodes)
   (map (^l (cons ($lambda-reqargs l) ($lambda-optarg l))) lambda-nodes))
 
+;; Called during optimization.  Returns a $LAMBDA node (or, in later passes,
+;; $LREF or $GREF that points to a closure) that will be used to apply
+;; to the given ARGS.   ARGS is used only to find the number of arguments;
+;; the elements doesn't matter.  Can return #f if there's no applicable body.
+(define (select-clambda-body clambda args)
+  (let1 nargs (length args)
+    (let loop ([closures ($clambda-closures clambda)]
+               [argcounts ($clambda-argcounts clambda)])
+      (match argcounts
+        [() #f]
+        [((nreq . nopt) . argcounts)
+         (if (or (and (= nopt 0) (= nreq nargs))
+                 (and (> nopt 0) (>= nreq nargs)))
+           (car closures)
+           (loop (cdr closures) argcounts))]))))
 
 (define (find-argcount-minmax formals)
   (define (length. xs k)

@@ -523,7 +523,7 @@
 ;; Call optimization
 ;;   We try to inline the call whenever possible.
 ;;
-;;   1. If proc is $LAMBDA, we turn the whole struct into $LET.
+;;   1. If proc is $LAMBDA or $CLAMBDA, we turn the whole struct into $LET.
 ;;
 ;;        ($call ($lambda .. (LVar ...) Body) Arg ...)
 ;;         => ($let (LVar ...) (Arg ...) Body)
@@ -565,9 +565,14 @@
        [(vm-compiler-flag-noinline-locals?)
         ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
         iform]
-       [(has-tag? proc $LAMBDA) ;; ((lambda (...) ...) arg ...)
+       [(has-tag? proc $LAMBDA)  ; ((lambda (...) ...) arg ...)
         (pass2/rec (expand-inlined-procedure ($*-src iform) proc args)
                    penv tail?)]
+       [(has-tag? proc $CLAMBDA) ; ((case-lambda ...) arg ...)
+        ;; This may not happen in hand-written code, but macros may make it
+        (and-let1 body (select-clambda-body proc args)
+          ($call-proc-set! iform body))
+        iform]
        [(and ($lref? proc)
              (pass2/head-lref proc penv tail?))
         => (^[result]

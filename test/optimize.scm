@@ -215,6 +215,36 @@
        (unwrap-syntax
         (proc->insn/split (^[] (case-lambda-inline-test-2 'x 'y)))))
 
+;; This tests pass2 case-lambda inlining
+(define (case-lambda-pass2-inline-1)
+  ((case-lambda [(x) (+ x x)] [(x y) (+ x y)]) 1))
+(test* "inlining case-lambda in pass2 1-1" `(((CONSTI 2))
+                                             ((RET)))
+       (proc->insn/split case-lambda-pass2-inline-1))
+
+(define (case-lambda-pass2-inline-2)
+  ((case-lambda [(x) (+ x x)] [(x y) (+ x y)]) 1 5))
+(test* "inlining case-lambda in pass2 1-2" `(((CONSTI 6))
+                                             ((RET)))
+       (proc->insn/split case-lambda-pass2-inline-2))
+
+(define (case-lambda-pass2-inline-0)
+  ((case-lambda [(x) (+ x x)] [(x y) (+ x y)])))
+(test* "inlining case-lambda in pass2 1-0" 'make-case-lambda
+       (any (^[insn] (match insn
+                       [(_ (? identifier? z)) (unwrap-syntax z)]
+                       [_ #f]))
+            (proc->insn/split case-lambda-pass2-inline-0)))
+
+(define (case-lambda-pass2-inline-3)
+  ((case-lambda [(x) (+ x x)] [(x y) (+ x y)]) 1 5 9))
+(test* "inlining case-lambda in pass2 1-3" 'make-case-lambda
+       (any (^[insn] (match insn
+                       [(_ (? identifier? z)) (unwrap-syntax z)]
+                       [_ #f]))
+            (proc->insn/split case-lambda-pass2-inline-3)))
+
+
 (test-section "lambda lifting")
 
 ;; bug reported by teppey
