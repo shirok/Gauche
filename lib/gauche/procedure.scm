@@ -145,7 +145,7 @@
 
 (define (arity proc)
   (cond [(or (is-a? proc <procedure>) (is-a? proc <method>))
-         (if-let1 clambda (case-lambda-info proc)
+         (if-let1 clambda (case-lambda-decompose proc)
            (map (^[info] (if (cadr info)
                            (make <arity-at-least> :value (car info))
                            (car info)))
@@ -234,7 +234,7 @@
       (print ">> method " m)
     (cond [(method-code m) => dump]
           [else (print "(defined in C)")]))]
-   [(case-lambda-info proc) => dump-case-lambda]
+   [(case-lambda-decompose proc) => dump-case-lambda]
    [else (print "Disassemble not applicable for " proc)])
   (values))
 

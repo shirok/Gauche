@@ -296,28 +296,20 @@
  )
 
 ;; Returns ((<required args> <optional arg> <procedure>) ...)
-;; This also depends on the structure of dispatch vector info.
-;; Programs that needs to deal with case-lambda should use this procedure
-;; instead of directly interpret dispatch vector info.
-(define-in-module gauche (case-lambda-info proc)
-  (and (subr? proc)
-       (let1 info (procedure-info proc)
-         (and (pair? info)
-              (pair? (cdr info))
-              (integer? (cadr info))
-              (pair? (cddr info))
-              (vector? (caddr info))
-              (let* ([min-args (cadr info)]
-                     [dispatch-vec (caddr info)]
-                     [len (vector-length dispatch-vec)])
-                (let loop ([r '()] [i 0])
-                  (if (= i (- len 1))
-                    (if-let1 optproc (vector-ref dispatch-vec i)
-                      (reverse r `((,(+ min-args i -1) #t ,optproc)))
-                      (reverse r))
-                    (if-let1 proc (vector-ref dispatch-vec i)
-                      (loop (cons `(,(+ min-args i) #f ,proc) r) (+ i 1))
-                      (loop r (+ i 1))))))))))
+;; for easier introspection.
+(define-in-module gauche (case-lambda-decompose proc)
+  (and-let1 info (%case-lambda-info proc)
+    (let ([min-args (get-keyword :min-reqargs info)]
+          [len (get-keyword :max-optargs info)]
+          [dispatch-vec (get-keyword :dispatch-vector info)])
+      (let loop ([r '()] [i 0])
+        (if (= i (- len 1))
+          (if-let1 optproc (vector-ref dispatch-vec i)
+            (reverse r `((,(+ min-args i -1) #t ,optproc)))
+            (reverse r))
+          (if-let1 proc (vector-ref dispatch-vec i)
+            (loop (cons `(,(+ min-args i) #f ,proc) r) (+ i 1))
+            (loop r (+ i 1))))))))
 
 ;;;
 ;;; Transfer binding to other module

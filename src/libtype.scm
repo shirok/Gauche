@@ -509,7 +509,7 @@
 ;; Compute #<^ ...> type from the information available in the procedure.
 (define (compute-procedure-type proc)
   (define (%procedure-type proc)
-    (if-let1 clinfo (case-lambda-info proc)
+    (if-let1 clinfo (case-lambda-decompose proc)
       (construct-type </> (map (^v (%procedure-type (caddr v))) clinfo))
       (let1 top (%class->proxy <top>)
         (construct-type <^>

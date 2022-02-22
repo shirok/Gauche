@@ -1,3 +1,11 @@
+2022-02-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (case-lambda-decompose): Rename from case-lambda-info
+	  (too vague).  Use new %case-lambda-info so that it can have definite
+	  info, instead of relying procedure-info slot.
+	  This procedure hasn't been public, so name change shouldn't affect
+	  existing code.  We may come up a better name later.
+
 2022-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm, src/libalpha.scm: Global case-lambda inliner.

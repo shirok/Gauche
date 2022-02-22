@@ -239,7 +239,7 @@
   (let1 c (class-of proc)
     (cond [(eq? c <procedure>)
            (let1 nargs (length arg-types)
-             (if-let1 infos (case-lambda-info proc)
+             (if-let1 infos (case-lambda-decompose proc)
                (any (^[info] (apply [^(reqargs optarg proc)
                                       ((if optarg >= =) nargs reqargs)]
                                     info))
