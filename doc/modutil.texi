@@ -25508,7 +25508,7 @@ When the parser encounters unparsable sequence,
 it raises @code{<edn-parse-error>}.
 @c JP
 与えられた入力ポートから、EOFに達するまでEDN表現を読み込み、結果をGaucheオブジェクトの
-リストを返します。@var{iport}が省略された場合は現在の入力ポートが使われます。
+リストとして返します。@var{iport}が省略された場合は現在の入力ポートが使われます。
 
 パーズが失敗した場合は@code{<edn-parse-error>}が投げられます。
 @c COMMON
