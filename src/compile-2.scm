@@ -203,6 +203,21 @@
                     (eq? ($lambda-flag (car inits)) 'used)))
              ;; This lambda node has already been inlinded, so we can skip.
              (loop (cdr lvars) (cdr inits) new-lvars new-inits)]
+            [(has-tag? (car inits) $CLAMBDA)
+             ;; We lift component closures of case-lamdba into local bindings,
+             ;; for easier closure optimization.  The lifted local bindings
+             ;; are referred by the $CLAMBDA consturcture, we force this
+             ;; $LET type to letrec, if it is not.
+             (receive (lifted-lvars lifted-lambdas)
+                 (pass2/lift-clambda-closures (car inits) (car lvars))
+               (when (eq? ($let-type iform) 'let)
+                 ($let-type-set! iform 'rec))
+               (loop (cdr lvars) (cdr inits)
+                     (append (cons (car lvars) lifted-lvars) new-lvars)
+                     (append (cons (pass2/rec (car inits) penv #f)
+                                   (imap (cut pass2/rec <> penv #f)
+                                         lifted-lambdas))
+                             new-inits)))]
             [else
              (loop (cdr lvars) (cdr inits)
                    (cons (car lvars) new-lvars)
@@ -214,6 +229,24 @@
       ;; NB: We have to run optimize-closure after pass2 of body.
       (for-each pass2/optimize-closure lvars inits)
       (pass2/shrink-let-frame iform lvars obody))))
+
+;; Called from pass2/$LET, when a local variable LVAR is bound to
+;; $CLAMBDA node.  IFORM is the $CLAMBDA node.
+;; In this case, we lift its component closures to local varaibles,
+;; which allows furthre optimization.
+;; IForm is modified to refer to the LREFS instead of $LAMBDAs.
+;; Returns a list of newly introduced lvars and $LAMBDA nodes.
+;; NB: LVAR is only used to create names for generated lvars.
+(define (pass2/lift-clambda-closures iform lvar)
+  (define prefix (symbol-append (lvar-name lvar) '-))
+  (define orig-lambdas ($clambda-closures iform))
+  (let loop ([i 0] [lvars '()] [lambdas orig-lambdas])
+    (if (null? lambdas)
+      (let1 lvars (reverse lvars)
+        ($clambda-closures-set! iform (imap $lref lvars))
+        (values lvars orig-lambdas))
+      (let1 new-lvar (make-lvar (symbol-append prefix i) (car lambdas))
+        (loop (+ i 1) (cons new-lvar lvars) (cdr lambdas))))))
 
 (define (pass2/shrink-let-frame iform lvars obody)
   (pass2/intermediate-lref-removal lvars obody)

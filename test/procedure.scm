@@ -596,6 +596,21 @@
          (f 3 4 5 6))
   )
 
+;; Test for locally bound case-lambda
+(define (case-lambda-local-test-1 a)
+  (let ((c (case-lambda ([] a) ([x] (cons '1 x)) ([x y] (list '2 x y)))))
+    (list (c 'X) (c) (c 'X 'Y))))
+(test* "case-lambda-local-test-1" '((1 . X) foo (2 X Y))
+       (case-lambda-local-test-1 'foo))
+
+(define (case-lambda-local-test-2)
+  (define f (case-lambda ([x] x) ([x y] y)))
+  (define g (case-lambda ([x] 1) ([x y] 2)))
+  (list (f (g 'a)) (f 3 (g 'b 'c))))
+(test* "case-lambda-local-test-2" '(1 2)
+       (case-lambda-local-test-2))
+
+
 ;;-----------------------------------------------------------------------
 ;; generator-*
 (test-section "generator-*")

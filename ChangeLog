@@ -1,3 +1,14 @@
+2022-02-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-2.scm (pass2/$LET): Lift component closures of locally
+	  defined case-lambda into the same level of environment.  Expecting
+	  the later stage of case-lambda optimization to become easier.
+	  Note that this changes ordinary let frame to letrec frame (since
+	  the newly introduced variable is referred to by the case-lambda
+	  construction in the same environment).  We expect such conversion
+	  would occur rarely (if local case-lambda is introduced by internal
+	  defines, the frame is already letrec*.)
+
 2022-02-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/libalpha.scm (case-lambda-decompose): Rename from case-lambda-info
