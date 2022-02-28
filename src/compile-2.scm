@@ -319,6 +319,13 @@
 ;; form that is no longer used---that means the lambda form is inlined
 ;; elsewhere, and its body has been modified to suit the inlined environment,
 ;; so we can no longer compile the $lambda node safely.
+
+;; NB: By eliminating unused init expressions that contains LREF/LSET, the
+;; lvar reference count may change.  However, traversing entire tree could
+;; be costly, so we only do adjustment for some trival cases---pass3 runs
+;; 'reset-lvars' which correctly sets lref count after pass2-3 optimizations.
+;; This is kludge, still, and it may turn out that we should do proper
+;; refcount adjustment here.  We'll see.
 (define (pass2/remove-unused-lvars lvars type)
   (let loop ([lvars lvars] [rl '()] [ri '()] [rr '()])
     (cond [(null? lvars)
@@ -333,6 +340,11 @@
                      (cond [($lref? init)
                             (lvar-ref--! ($lref-lvar init))
                             rr]
+                           [(has-tag? init $CLAMBDA)
+                            (ifor-each (lambda (c)
+                                         (when ($lref? c)
+                                           (lvar-ref--! ($lref-lvar c))))
+                                       ($clambda-closures init))]
                            [(transparent? init) rr]
                            [else (cons init rr)]))))]
           [else
