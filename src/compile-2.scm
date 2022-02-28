@@ -587,78 +587,55 @@
 ;;        as 'rec'.
 
 (define (pass2/$CALL iform penv tail?)
-  (cond
-   [($call-flag iform) iform] ;; this node has already been visited.
-   [else
-    ;; scan OP first to give an opportunity of variable renaming
-    ($call-proc-set! iform (pass2/rec ($call-proc iform) penv #f))
+  (define (try-inline iform penv tail?) ;iform is $CALL node, proc already pass2'ed.
     (let ([proc ($call-proc iform)]
           [args ($call-args iform)])
       (cond
-       [(vm-compiler-flag-noinline-locals?)
-        ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
-        iform]
        [(has-tag? proc $LAMBDA)  ; ((lambda (...) ...) arg ...)
         (pass2/rec (expand-inlined-procedure ($*-src iform) proc args)
                    penv tail?)]
        [(has-tag? proc $CLAMBDA) ; ((case-lambda ...) arg ...)
-        ;; This may not happen in hand-written code, but macros may make it
         (and-let1 body (select-clambda-body proc args)
           ($call-proc-set! iform body))
         iform]
        [(and ($lref? proc)
-             (pass2/head-lref proc penv tail?))
-        => (^[result]
+             (lvar-const-value ($lref-lvar proc)))
+        => (^[initval]
              (cond
-              [(vector? result)
-               ;; Directly inlinable case.  NB: this only happens if the $LREF
-               ;; node is the lvar's single reference, so we know the inlined
-               ;; procedure is never called recursively.  Thus we can safely
-               ;; traverse the inlined body without going into infinite loop.
-               ;;
-               ;; We directly embed the iform (result), which is a lambda expr
-               ;; bound to PROC.  The lambda iform may not be scanned yet by
-               ;; pass2/$LET, though.  We mark the node 'used, so that
-               ;; pass2/$LET can skip processing it.
-               ($lambda-flag-set! result 'used)
-               (pass2/rec (expand-inlined-procedure ($*-src iform) result args)
-                          penv tail?)]
-              [else
-               ;; We need more info to decide optimizing this node.  For now,
-               ;; we mark the call node by the returned flag and push it
-               ;; to the $LAMBDA node.
-               (let1 lambda-node (lvar-initval ($lref-lvar proc))
-                 ($call-flag-set! iform result)
-                 ($lambda-calls-set! lambda-node
-                                     (acons iform penv
-                                            ($lambda-calls lambda-node)))
-                 ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
-                 iform)]))]
-       [else
-        ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
-        iform]))]))
+              [(has-tag? initval $LAMBDA)
+               ;; Calling $LREF bound constantly to $LAMBDA.
+               ;; If this is the only reference of $LAMBDA and
+               ;; not self-recursive, we can inline it.
+               (if-let1 call-flag (cond [(pass2/self-recursing? initval penv)
+                                    (if tail? 'tail-rec 'rec)]
+                                   [(= (lvar-ref-count ($lref-lvar proc)) 1)
+                                    #f]
+                                   [else 'local])
+                 (begin
+                   ($call-flag-set! iform call-flag)
+                   ($lambda-calls-set! initval
+                                       (acons iform penv
+                                              ($lambda-calls initval)))
+                   (pass2-args iform args penv))
+                 (begin
+                   (lvar-ref--! ($lref-lvar proc))
+                   ($lambda-flag-set! initval 'used) ; let pass2/$LET skip this
+                   ($call-proc-set! iform initval)
+                   (try-inline iform penv tail?)))]
+              [else (pass2-args iform args penv)]))]
+       [else (pass2-args iform args penv)])))
+  (define (pass2-args iform args penv)
+    ($call-args-set! iform (imap (cut pass2/rec <> penv #f) args))
+    iform)
 
-;; Check if IFORM ($LREF node) can be a target of procedure-call optimization.
-;;   - If IFORM is not statically bound to $LAMBDA node,
-;;     returns #f.
-;;   - If the $LAMBDA node that can be directly inlined, returns
-;;     the $LAMBDA node.
-;;   - If the call is self-recursing, returns 'tail-rec or 'rec, depending
-;;     on whether this call is tail call or not.
-;;   - Otherwise, returns 'local.
-
-(define (pass2/head-lref iform penv tail?)
-  (and-let* ([lvar ($lref-lvar iform)]
-             [initval (lvar-const-value lvar)]
-             [ (has-tag? initval $LAMBDA) ])
-    (cond
-     [(pass2/self-recursing? initval penv) (if tail? 'tail-rec 'rec)]
-     [(and (= (lvar-ref-count lvar) 1)
-           (lvar-immutable? lvar))
-      ;; we can inline this lambda directly.
-      (lvar-ref--! lvar)
-      initval]
-     [else 'local])))
+  (if ($call-flag iform)
+    iform ;; this node has already been visited.
+    (begin
+      ;; scan OP first to give an opportunity of variable renaming
+      ($call-proc-set! iform (pass2/rec ($call-proc iform) penv #f))
+      (if (vm-compiler-flag-noinline-locals?)
+        (pass2-args iform ($call-args iform) penv) ; don't try to inline.
+        (try-inline iform penv tail?)))))
 
 (define (pass2/self-recursing? node penv)
   (find (cut eq? node <>) penv))
