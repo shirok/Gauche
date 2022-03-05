@@ -1,5 +1,5 @@
 ;;;
-;;; scheme.mapping.hash - hasmaps (R7RS Tangerine)
+;;; scheme.mapping.hash - hashmaps (R7RS Tangerine)
 ;;;
 ;;;   Copyright (c) 2017-2021  Shiro Kawai  <shiro@acm.org>
 ;;;
