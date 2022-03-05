@@ -1,3 +1,11 @@
+2022-03-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm (chop-and-out): Make 'truncation' format directive
+	  recognize an open double quote and close it properly even if
+	  the content is truncated.  This will prevent font colorlizer
+	  (e.g. Emacs Scheme mode) from being messed up by unclosed
+	  double quotes caused by truncation.
+
 2022-02-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-2.scm (pass2/$LET): Lift component closures of locally

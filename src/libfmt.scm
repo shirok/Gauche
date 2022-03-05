@@ -395,9 +395,29 @@
                  (dotimes [_ npad] (write-char padchar port))))))))))
 
 (define (chop-and-out str limit flags port)
+  (define (quote-terminated? str limit)
+    (scan-out (open-input-string str) limit))
+  (define (scan-out p limit)
+    (or (<= limit 0)
+        (let1 c (read-char p)
+          (or (eof-object? c)
+              (cond [(eqv? c #\") (scan-in p (- limit 1))]
+                    [(eqv? c #\\) (read-char p) (scan-out p (- limit 2))]
+                    [else (scan-out p (- limit 1))])))))
+  (define (scan-in p limit)
+    (and (> limit 0)
+         (let1 c (read-char p)
+           (and (not (eof-object? c))
+                (cond [(eqv? c #\") (scan-out p (- limit 1))]
+                      [(eqv? c #\\) (read-char p) (scan-in p (- limit 2))]
+                      [else (scan-in p (- limit 1))])))))
+
   (if (has-:? flags)
-    (begin (display (substring str 0 (- limit 4)) port)
-           (display " ..." port))
+    (if (quote-terminated? str (- limit 5))
+      (begin (display (substring str 0 (- limit 4)) port)
+             (display " ..." port))
+      (begin (display (substring str 0 (- limit 5)) port)
+             (display " ...\"" port)))
     (display (substring str 0 limit) port)))
 
 ;; ~C

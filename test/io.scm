@@ -642,10 +642,12 @@
        (format "~10,,,'*,15s" '("abc" "def" "ghi" "jkl")))
 (test* "format ~s" "(\"abc\" \"def\" \"g"
        (format "~10,,,'*,15@s" '("abc" "def" "ghi" "jkl")))
-(test* "format ~s" "(\"abc\" \"def ..."
+(test* "format ~s" "(\"abc\" \"de ...\""
        (format "~10,,,'*,15:s" '("abc" "def" "ghi" "jkl")))
-(test* "format ~s" "(\"abc\" \"def ..."
+(test* "format ~s" "(\"abc\" \"de ...\""
        (format "~10,,,'*,15@:s" '("abc" "def" "ghi" "jkl")))
+(test* "format ~s" "(\"ab\\\"c\" #\\\" \"d ...\""
+       (format "~10,,,'*,20@:s" '("ab\"c" #\" "defghi")))
 
 (test* "format ~a" "abc"           (format "~a" "abc"))
 (test* "format ~a" "abc       "    (format "~10a" "abc"))
