@@ -1,3 +1,9 @@
+2022-03-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (vprintf_pass2): Fix truncation of %S and %A - it looked
+	  like we were in the middle of the change and then forgot to pick
+	  it up.
+
 2022-03-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (chop-and-out): Make 'truncation' format directive

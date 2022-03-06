@@ -1061,17 +1061,21 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                                 : ((c == 'A')
                                    ? SCM_WRITE_DISPLAY
                                    : SCM_WRITE_WRITE));
-                    int n = 0;
                     if (width <= 0) {
                         Scm_Write(val, SCM_OBJ(out), mode);
-                    } else {
+                    } if (prec <= 0) {
                         Scm_WriteLimited(val, SCM_OBJ(out), mode, width);
-                    }
-                    if (n < 0 && prec > 0) {
-                        Scm_PutzUnsafe(" ...", -1, out);
-                    }
-                    if (n > 0) {
-                        for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
+                    } else {
+                        ScmObj buf = Scm_MakeOutputStringPort(TRUE);
+                        Scm_WriteLimited(val, buf, mode, width);
+                        ScmObj s = Scm_GetOutputString(SCM_PORT(buf), 0);
+                        Scm_PutsUnsafe(SCM_STRING(s), out);
+                        ScmSmallInt n = SCM_STRING_LENGTH(s);
+                        if (n >= prec) {
+                            Scm_PutzUnsafe(" ...", -1, out);
+                        } else {
+                            for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
+                        }
                     }
                     break;
                 }
