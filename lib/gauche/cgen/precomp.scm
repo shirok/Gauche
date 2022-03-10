@@ -726,8 +726,6 @@
       ((with-module gauche.cgen.precomp handle-define-macro) f))
     (define-macro (define-hybrid-syntax . f)
       ((with-module gauche.cgen.precomp handle-define-hybrid-syntax) f))
-    (define-macro (define-inline . f)
-      ((with-module gauche.cgen.precomp handle-define-inline) f))
     ;; TODO - we need more general framework supporting various declarations.
     ;; for the time being, this ad-hoc solution suffice our needs.
     (define-macro (declare . f)
@@ -825,19 +823,6 @@
                    other than er-macro-transformer in precompiled file"
                   form)))]
     [_ (error "Malformed define-hybrid-syntax" form)]))
-
-(define (handle-define-inline form)
-  ;; In order to expand inlined procedure in the same compilation unit,
-  ;; we need to recognize it at compilng environment, too.
-  ;; NB: We should also handle (define-inline x (lambda ...)) form eventually.
-  (match form
-    [((name . formals) . body)
-     (eval-in-current-tmodule
-      `((with-module gauche define-inline) ,@form))
-     (cons '(with-module gauche define) form)]
-    [(name expr)
-     (cons '(with-module gauche define-inline) form)]
-    [_ (error "Malformed define-inline" form)]))
 
 (define (handle-define-constant form)
   (match form
