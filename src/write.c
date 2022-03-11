@@ -48,6 +48,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
 static void write_object(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
+static int double_quote_closed_p(ScmString *s);
 SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
 static const ScmWriteControls *defaultWriteControls;
@@ -1072,7 +1073,10 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                         Scm_PutsUnsafe(SCM_STRING(s), out);
                         ScmSmallInt n = SCM_STRING_LENGTH(s);
                         if (n >= prec) {
-                            Scm_PutzUnsafe(" ...", -1, out);
+                            if (double_quote_closed_p(SCM_STRING(s)))
+                                Scm_PutzUnsafe(" ...", -1, out);
+                            else
+                                Scm_PutzUnsafe("\"...", -1, out);
                         } else {
                             for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
                         }
@@ -1122,6 +1126,32 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
             Scm_Error("incomplete %%-directive in format string: %s", fmt);
         }
     }
+}
+
+/* NB: libfmt has similar routine (quote-terminated?) in 'chop-and-out'.
+   Since Scm_Printf can be called during initialiation before Scheme runtime
+   is fully up, we need this implemented in C.  */
+static int double_quote_closed_p(ScmString *s)
+{
+    ScmSmallInt siz;
+    const char *p = Scm_GetStringContent(s, &siz, NULL, NULL);
+    int inside = FALSE;
+    int escaped = FALSE;
+    for (int i = 0; i < siz; i++, p++) {
+        if (!escaped) {
+            if (*p == '"') {
+                inside = !inside;
+            }
+            if (*p == '\\') {
+                escaped = TRUE;
+            } else {
+                escaped = FALSE;
+            }
+        } else {
+            escaped = FALSE;
+        }
+    }
+    return !inside;
 }
 
 /* Public APIs */

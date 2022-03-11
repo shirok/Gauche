@@ -1,3 +1,11 @@
+2022-03-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/libfmt.scm: If string is truncated within double
+	  quotes, add '"...' (instead of ' ..."' as before).  The normal
+	  truncation is ' ...' (a whitespace before dots), so it gives a
+	  clue that the string is truncated.   We also support the same
+	  format in Scm_Printf().
+
 2022-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm: Revert commit #f5577697cf - this

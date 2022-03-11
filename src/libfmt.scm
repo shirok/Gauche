@@ -413,11 +413,10 @@
                       [else (scan-in p (- limit 1))])))))
 
   (if (has-:? flags)
-    (if (quote-terminated? str (- limit 5))
-      (begin (display (substring str 0 (- limit 4)) port)
-             (display " ..." port))
-      (begin (display (substring str 0 (- limit 5)) port)
-             (display " ...\"" port)))
+    (begin (display (substring str 0 (- limit 4)) port)
+           (if (quote-terminated? str (- limit 4))
+             (display " ..." port)
+             (display "\"..." port)))
     (display (substring str 0 limit) port)))
 
 ;; ~C
