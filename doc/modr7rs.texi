@@ -9028,6 +9028,10 @@ write such symbol as @code{|\||}.  We recommend to use @code{or} instead.
      | (word+ <cset-sre> ...)      ; A single word restricted to a cset.
      | word                        ; A single word.
 
+     | bog                         ; Beginning of a grapheme cluster.
+     | eog                         ; End of a grapheme cluster.
+     | grapheme                    ; A single grapheme cluster.
+
      | (?? <sre> ...)              ; A non-greedy pattern, 0 or 1 match.
      | (non-greedy-optional <sre> ...)
      | (*? <sre> ...)              ; Non-greedy 0 or more matches.
@@ -9548,6 +9552,7 @@ is interpreted the same way with @code{read-line}.
 
 Matches the beginning or the end of a word.
 
+
 @example
   (regexp-search '(: bow "foo") "foo") @result{} #<regexp-match>
   (regexp-search '(: bow "foo") "<foo>>") @result{} #<regexp-match>
@@ -9584,6 +9589,19 @@ sets:
 @item word
 
 A shorthand for @code{(word+ any)}.
+
+@item bog
+@itemx eog
+
+Matches the beginning or end of a graphame cluster.
+@xref{Unicode text segmentation}, for the low-level grapheme cluster
+segmentation.
+
+@item grapheme
+
+Matches a single grapheme cluster.
+@xref{Unicode text segmentation}, for the low-level grapheme cluster
+segmentation.
 
 @end table
 
