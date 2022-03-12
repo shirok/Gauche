@@ -35,6 +35,7 @@
   ;; We need to access compiler internals.  This is ugly---eventually
   ;; we want to have a separate module that exposes some compiler internals.
   (extend gauche.internal)
+  (use gauche.sequence)
   (use util.match)
   (use gauche.vm.insn)
   (export compile-b) ; just for now
@@ -655,8 +656,18 @@
   (define (assign-benv-names benv)
     (push! benv-alist (cons benv (length benv-alist)))
     (for-each assign-benv-names (reverse (~ benv'children))))
+  (define (dump-registers)
+    (format #t "~70,,,'=a\n" "Registers ")
+    (dolist [benv (reverse (map car benv-alist))]
+      (format #t " BENV ~d\n" (benvname benv))
+      (dolist [reg (reverse (~ benv'registers))]
+        (when (is-a? reg <reg>)
+          (format #t "  ~15,,,,15a ~s\n" (~ reg'name)
+                  (map bb-name (~ reg'blocks)))))))
   (assign-benv-names benv)
-  (dump-1 benv))
+  (dump-1 benv)
+  (dump-registers)
+  )
 
 ;; For now
 (define (compile-to-basic-blocks program :optional (mod (vm-current-module)))
