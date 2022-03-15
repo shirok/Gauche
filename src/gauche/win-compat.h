@@ -234,7 +234,7 @@ static inline size_t winstrftime(char *buf, size_t bufsize, const char *format, 
 {
     WCHAR *wb = NULL;
 
-    if (bufsize == 0) {
+    if (buf == NULL || bufsize == 0) {
         return 0;
     }
     size_t ret = strftime(buf, bufsize, format, timeptr);
