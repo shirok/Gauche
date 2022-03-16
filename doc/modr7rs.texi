@@ -12079,7 +12079,7 @@ not explained here.  @xref{Numerical predicates}.
 @c COMMON
 
 We also have a few constants in @code{math.const} module
-(@pxref{Mathematic constants}).
+(@pxref{Mathematical constants}).
 
 @defvr {Constant} fl-e
 [R7RS flonum]
@@ -12088,12 +12088,12 @@ We also have a few constants in @code{math.const} module
 The base of natural logarithm e.
 
 Gauche also has a constant @code{e} in @code{math.const}
-(@pxref{Mathematic constants}).
+(@pxref{Mathematical constants}).
 @c JP
 自然対数の低e。
 
 Gaucheの@code{math.const}モジュールにも定数eがあります
-(@ref{Mathematic constants}参照)。
+(@ref{Mathematical constants}参照)。
 @c COMMON
 @end defvr
 

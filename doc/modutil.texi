@@ -36,7 +36,7 @@
 * Original DBM interface::      dbm.odbm
 * Filtering file content::      file.filter
 * Filesystem utilities::        file.util
-* Mathematic constants::        math.const
+* Mathematical constants::      math.const
 * Mersenne-Twister random number generator::  math.mt-random
 * Prime numbers::               math.prime
 * Windows support::             os.windows
@@ -9814,7 +9814,7 @@ The meaning of keyword arguments are the same as @code{file-filter-fold}.
 
 
 @c ----------------------------------------------------------------------
-@node Filesystem utilities, Mathematic constants, Filtering file content, Library modules - Utilities
+@node Filesystem utilities, Mathematical constants, Filtering file content, Library modules - Utilities
 @section @code{file.util} - Filesystem utilities
 @c NODE ファイルシステムユーティリティ, @code{file.util} - ファイルシステムユーティリティ
 
@@ -11657,8 +11657,8 @@ to lock (usually it's impossible).
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Mathematic constants, Mersenne-Twister random number generator, Filesystem utilities, Library modules - Utilities
-@section @code{math.const} - Mathematic constants
+@node Mathematical constants, Mersenne-Twister random number generator, Filesystem utilities, Library modules - Utilities
+@section @code{math.const} - Mathematical constants
 @c NODE 定数, @code{math.const} - 定数
 
 @deftp {Module} math.const
@@ -11690,7 +11690,7 @@ Napier's constant.
 @end defvr
 
 @c ----------------------------------------------------------------------
-@node Mersenne-Twister random number generator, Prime numbers, Mathematic constants, Library modules - Utilities
+@node Mersenne-Twister random number generator, Prime numbers, Mathematical constants, Library modules - Utilities
 @section @code{math.mt-random} - Mersenne Twister Random number generator
 @c NODE Mersenne Twister乱数発生器, @code{math.mt-random} - Mersenne Twister乱数発生器
 
