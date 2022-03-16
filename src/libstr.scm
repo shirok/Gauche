@@ -594,6 +594,7 @@
                          [(eqv? c2 #\\)
                           (and (not (eof-object? (read-char)))
                                (begin (skip-token) (rec closer)))]
+                         [(eqv? c2 #\") (and (rec-escaped #\") (rec closer))]
                          [(eqv? c2 #\/) (and (rec-escaped #\/) (rec closer))]
                          [(eqv? c2 #\[) (and (rec-escaped #\]) (rec closer))]
                          [(eqv? c2 #\,)
