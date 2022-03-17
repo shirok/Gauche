@@ -42,6 +42,8 @@
 (sexp-tester #f " \"\\\"er\\\"")
 (sexp-tester #t " \"\\\"er\"")
 (sexp-tester #t " \"\\\"(\"")
+(sexp-tester #t "#\"\"")
+(sexp-tester #t "#\"abc\"")
 (sexp-tester #t "#\\a")
 (sexp-tester #f "#\\")
 (sexp-tester #t "#\\abunaga")
