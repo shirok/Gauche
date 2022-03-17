@@ -320,7 +320,7 @@
   [(_ conv sym) `(Scm_Cons ',sym (,conv (-> lc ,sym)))])
 )
 
-(define-cproc sys-setlocale (category::<fixnum> locale::<const-cstring>)
+(define-cproc sys-setlocale (category::<fixnum> locale::<const-cstring>?)
   ::<const-cstring>? setlocale)
 
 (define-cproc sys-localeconv ()

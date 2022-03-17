@@ -27474,17 +27474,22 @@ this routine.
 @defun sys-setlocale category locale
 [POSIX]
 @c EN
-Sets the locale of the category @var{category} to the locale @var{locale}.
+Sets/gets the locale of the category @var{category} to the locale @var{locale}.
 @var{category} must be an exact integer; the following pre-defined
-variables are available.  @var{locale} must be a string locale name.
+variables are available.  @var{locale} must be a string locale name,
+or @code{#f} if you're merely querying the current locale.
+
 Returns the locale name on success, or @code{#f} if the system
-couldn't change the locale.
+couldn't change the locale.  If you pass @code{#f} to the @var{locale},
+it returns the current locale name without changing it.
 @c JP
 カテゴリー@var{category}のロケールを@var{locale}にセットします。
 @var{category}は整数でなければなりません；以下の変数が@var{category}の
-ために定義されています。@var{locale}はロケールを表す文字列です。
+ために定義されています。@var{locale}はロケールを表す文字列か@code{#f}です。
+
 成功した場合は新しいロケール名を、ロケールが変更できなかった場合は@code{#f}を
-返します。
+返します。@var{locale}に@code{#f}を渡した場合は、ロケールの変更はせずに
+単に現在のロケールの値を文字列で返します。
 @c COMMON
 @end defun
 
