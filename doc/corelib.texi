@@ -29166,9 +29166,17 @@ POSIX 時間か SRFI 時間です。
 @c EN
 [POSIX] Converts @code{<sys-tm>} object @var{tm} to a string representation,
 according to a format string @var{format}.
+See your system's manual entry of @code{strftime} for the
+supported @var{format}.
+
+It may return an empty string if the formatting results in an unusually
+lengthy string.
 @c JP
 [POSIX] @code{<sys-tm>} オブジェクトである @var{tm} を、フォーマット文字列
 @var{format} に従って文字列表現に変換します。
+@var{format}の書き方はシステムの@code{strftime}のマニュアルエントリを参照してください。
+
+フォーマット結果が異常に長い文字列になる場合は、空文字列が返されることがあります。
 @c COMMON
 @end defun
 
