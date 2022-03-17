@@ -1097,6 +1097,49 @@ time_t Scm_GetSysTime(ScmObj val)
     }
 }
 
+/* strftime
+ *  On MinGW, strftime() returns a multibyte string in the system's language
+ *  setting.  Unfortunately, wcsftime() seems broken and unusable
+ *  (cf. https://github.com/shirok/Gauche/pull/809 )
+ *  This is the common compatibility routine.   The third argument is
+ *  reserved for future extension to specify a locale.
+ */
+ScmObj Scm_StrfTime(const char *format,
+                    const struct tm *tm,
+                    ScmObj reserved SCM_UNUSED)
+{
+    size_t bufsiz = strlen(format) + 30;
+    char *buf = SCM_NEW_ATOMIC2(char *, bufsiz);
+
+    /* NB: Zero return value may mean the buffer size is not enough, OR
+       the actual output is an empty string.  We can't know which is the
+       case.  Here we give a few tries.  */
+    size_t r = 0;
+    for (int retry = 0; retry < 3; retry++) {
+        r = strftime(buf, bufsiz, format, tm);
+        if (r > 0) break;
+        bufsiz *= 2;
+        buf = SCM_NEW_ATOMIC2(char*, bufsiz);
+    }
+    if (r == 0) return SCM_MAKE_STR_IMMUTABLE("");
+
+#if !defined(GAUCHE_WINDOWS) || !defined(UNICODE)
+    return Scm_MakeString(buf, r, -1, SCM_STRING_COPYING);
+#else  /* defined(GAUCHE_WINDOWS) && defined(UNICODE) */
+    /* Here, buf contains MB string in system's language setting.
+       Ensure we have utf-8 encoding.
+     */
+    int nc = MultiByteToWideChar(CP_ACP, 0, buf, -1, NULL, 0);
+    if (nc == 0) Scm_Error("strftime() failed (MultiByteToWideChar NULL)");
+    wchar_t *wb = SCM_NEW_ATOMIC2(wchar_t*, nc);
+    if (MultiByteToWideChar(CP_ACP, 0, buf, -1, wb, nc) == 0) {
+        Scm_Error("strftime() failed (MultiByteToWideChar)");
+    }
+    return Scm_MakeString(Scm_WCS2MBS(wb), -1, -1, SCM_STRING_COPYING);
+#endif /* defined(GAUCHE_WINDOWS) && defined(UNICODE) */
+}
+
+
 ScmObj Scm_TimeToSeconds(ScmTime *t)
 {
     if (t->nsec) {

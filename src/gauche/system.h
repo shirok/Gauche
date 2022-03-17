@@ -163,6 +163,11 @@ typedef struct ScmTimeSpecRec {
 
 SCM_EXTERN ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec);
 
+/* strftime() compatibility layer */
+SCM_EXTERN ScmObj Scm_StrfTime(const char *format,
+                               const struct tm *tm,
+                               ScmObj reserved);
+
 /* sched_yield */
 SCM_EXTERN void   Scm_YieldCPU(void);
 

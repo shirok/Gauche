@@ -227,45 +227,6 @@ _CRTIMP int __cdecl _wstat64(const wchar_t*, struct __stat64*);
 _CRTIMP int __cdecl _fstat64(int, struct __stat64*);
 #endif /* defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR) && (__MINGW32_MAJOR_VERSION < 5) */
 
-/* strftime for windows
-   NB: windows wcsftime is broken. */
-#if defined(UNICODE)
-static inline size_t winstrftime(char *buf, size_t bufsize, const char *format, const struct tm *timeptr)
-{
-    WCHAR *wb = NULL;
-
-    if (buf == NULL || bufsize == 0) {
-        return 0;
-    }
-    size_t ret = strftime(buf, bufsize, format, timeptr);
-    if (ret == 0) {
-        goto error;
-    }
-    int nc = MultiByteToWideChar(CP_ACP, 0, buf, -1, NULL, 0);
-    if (nc == 0) {
-        goto error;
-    }
-    wb = (WCHAR*)malloc(nc * sizeof(WCHAR));
-    if (MultiByteToWideChar(CP_ACP, 0, buf, -1, wb, nc) == 0) {
-        goto error;
-    }
-    const char *buf1 = Scm_WCS2MBS(wb);
-    size_t len1 = strlen(buf1);
-    if (len1 >= bufsize) {
-        goto error;
-    }
-    memcpy(buf, buf1, len1 + 1);
-    free(wb);
-    return ret;
-
-error:
-    buf[0] = '\0';
-    free(wb);
-    return 0;
-}
-#define strftime(buf, bufsize, format, timeptr) winstrftime(buf, bufsize, format, timeptr)
-#endif /*UNICODE*/
-
 /*===================================================================
  * Miscellaneous POSIX stuff
  */

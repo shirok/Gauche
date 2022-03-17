@@ -901,12 +901,12 @@
    (printer (c "tm_print")))
 
  (define-cfn tm_print (obj port::ScmPort* _::ScmWriteContext*) ::void
-   (let* ([buf::(.array char (30))]
-          [st::(struct tm*) (SCM_SYS_TM obj)])
+   (let* ([st::(struct tm*) (SCM_SYS_TM obj)]
+          [fmt::(const char*)])
      (.if (not (defined "GAUCHE_WINDOWS"))
-          (strftime buf 30 "%a %b %e %T %Y" st)
-          (strftime buf 30 "%a %b %d %H:%M:%S %Y" st))
-     (Scm_Printf port "#<sys-tm \"%s\">" buf)))
+          (set! fmt "%a %b %e %T %Y")
+          (set! fmt "%a %b %d %H:%M:%S %Y"))
+     (Scm_Printf port "#<sys-tm %S>" (Scm_StrfTime fmt st SCM_FALSE))))
  )
 
 (define-cproc sys-asctime (tm::<sys-tm>)
@@ -923,9 +923,7 @@
   (return (difftime (Scm_GetSysTime time1) (Scm_GetSysTime time0))))
 
 (define-cproc sys-strftime (format::<const-cstring> tm::<sys-tm>)
-  (let* ([tmpbuf::(.array char [256])])
-    (strftime tmpbuf (sizeof tmpbuf) format tm)
-    (return (SCM_MAKE_STR_COPYING tmpbuf))))
+  (return (Scm_StrfTime format tm SCM_FALSE)))
 
 ;; NB: Windows doesn't have gmtime_r/localtime_r, but its gmtime/localtime
 ;; is thread-safe.
