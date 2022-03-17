@@ -1108,7 +1108,20 @@ ScmObj Scm_StrfTime(const char *format,
                     const struct tm *tm,
                     ScmObj reserved SCM_UNUSED)
 {
-    size_t bufsiz = strlen(format) + 30;
+#if !defined(GAUCHE_WINDOWS) || !defined(UNICODE)
+    const char *format1 = format;
+#else  /* defined(GAUCHE_WINDOWS) && defined(UNICODE) */
+    /* convert utf-8 to MB string */
+    const wchar_t *wformat = Scm_MBS2WCS(format);
+    int nb = WideCharToMultiByte(CP_ACP, 0, wformat, -1, NULL, 0, 0, 0);
+    if (nb == 0) Scm_Error("strftime() failed (WideCharToMultiByte NULL)");
+    char *format1 = SCM_NEW_ATOMIC2(char*, nb);
+    if (WideCharToMultiByte(CP_ACP, 0, wformat, -1, format1, nb, 0, 0) == 0) {
+        Scm_Error("strftime() failed (WideCharToMultiByte)");
+    }
+#endif /* defined(GAUCHE_WINDOWS) && defined(UNICODE) */
+
+    size_t bufsiz = strlen(format1) + 30;
     char *buf = SCM_NEW_ATOMIC2(char *, bufsiz);
 
     /* NB: Zero return value may mean the buffer size is not enough, OR
@@ -1116,7 +1129,7 @@ ScmObj Scm_StrfTime(const char *format,
        case.  Here we give a few tries.  */
     size_t r = 0;
     for (int retry = 0; retry < 3; retry++) {
-        r = strftime(buf, bufsiz, format, tm);
+        r = strftime(buf, bufsiz, format1, tm);
         if (r > 0) break;
         bufsiz *= 2;
         buf = SCM_NEW_ATOMIC2(char*, bufsiz);
