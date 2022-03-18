@@ -1115,14 +1115,14 @@ ScmObj Scm_StrfTime(const char *format,
     const wchar_t *wformat = Scm_MBS2WCS(format);
     int nb = WideCharToMultiByte(CP_ACP, 0, wformat, -1, NULL, 0, 0, 0);
     if (nb == 0) Scm_Error("strftime() failed (WideCharToMultiByte NULL)");
-    char *format1 = SCM_NEW_ATOMIC2(char*, nb);
+    char *format1 = SCM_NEW_ATOMIC_ARRAY(char, nb);
     if (WideCharToMultiByte(CP_ACP, 0, wformat, -1, format1, nb, 0, 0) == 0) {
         Scm_Error("strftime() failed (WideCharToMultiByte)");
     }
 #endif /* defined(GAUCHE_WINDOWS) && defined(UNICODE) */
 
     size_t bufsiz = strlen(format1) + 30;
-    char *buf = SCM_NEW_ATOMIC2(char *, bufsiz);
+    char *buf = SCM_NEW_ATOMIC2(char*, bufsiz);
 
     /* NB: Zero return value may mean the buffer size is not enough, OR
        the actual output is an empty string.  We can't know which is the
@@ -1144,7 +1144,7 @@ ScmObj Scm_StrfTime(const char *format,
      */
     int nc = MultiByteToWideChar(CP_ACP, 0, buf, -1, NULL, 0);
     if (nc == 0) Scm_Error("strftime() failed (MultiByteToWideChar NULL)");
-    wchar_t *wb = SCM_NEW_ATOMIC2(wchar_t*, nc);
+    wchar_t *wb = SCM_NEW_ATOMIC_ARRAY(wchar_t, nc);
     if (MultiByteToWideChar(CP_ACP, 0, buf, -1, wb, nc) == 0) {
         Scm_Error("strftime() failed (MultiByteToWideChar)");
     }
