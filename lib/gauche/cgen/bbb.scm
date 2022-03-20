@@ -68,8 +68,10 @@
 ;; (JP bb)             - jump to a basic block BB.
 ;; (CONT bb)           - push continuation frame, with BB to be the
 ;;                       'next' basic block.
-;; (CALL proc arg ...) - PROC and ARGs are all registers.  Transfer control
-;;                       to PROC.
+;; (CALL bb proc arg ...) - PROC and ARGs are all registers.  Transfer control
+;;                       to PROC. If the continuation of this call is known,
+;;                       BB holds the basic block of the continuation; it is
+;;                       #f if this is a tail call.
 ;; (RET reg ...)       - Return, using values in REGs as the results.
 ;; (BUILTIN op receiver reg ...) - Builtin operation
 ;; (ASM op receiver reg ...)    - Inlined VM assembly operation
@@ -368,7 +370,7 @@
       (match counts
         [() (values mi mx)]
         [((req . _) . rest) (loop rest (if mi (min mi req) req) (max mx req))])))
-  (define (create-clambda iform bb ctx)
+  (define (create-clambda iform bb cbb ctx)
     (receive (bb clo-regs) (generate-closures bb ($clambda-closures iform) benv)
       (for-each (cut touch-reg! bb <>) clo-regs)
       (receive (minarg maxarg) (reqargs-min-max ($clambda-argcounts iform))
@@ -380,7 +382,8 @@
               [make-case-lambda-reg (make-reg bb #f)])
           (push-insn bb `(BUILTIN LIST ,closure-list-reg ,@clo-regs))
           (push-insn bb `(LD ,make-case-lambda-reg ,make-case-lambda.))
-          (push-insn bb `(CALL ,make-case-lambda-reg
+          (push-insn bb `(CALL ,cbb
+                               ,make-case-lambda-reg
                                ,minarg-const
                                ,maxarg-const
                                ,formals-const
@@ -389,11 +392,11 @@
           (values bb #f)))))
 
   (if (eq? ctx 'tail)
-    (create-clambda iform bb ctx)
+    (create-clambda iform bb #f ctx)
     (let* ([cbb (make-bb benv bb)]
            [valreg (make-reg cbb #f)])
       (push-insn bb `(CONT ,cbb))
-      (create-clambda iform bb ctx)      ;no need to receive result.
+      (create-clambda iform bb cbb ctx)      ;no need to receive result.
       (push-insn cbb `(MOV ,valreg %VAL0))
       (values cbb valreg))))
 
@@ -476,7 +479,7 @@
     (receive (bb regs) (pass5b/prepare-args bb benv ($call-args iform))
       (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
         (for-each (cut touch-reg! bb <>) regs)
-        (push-insn bb `(CALL ,proc ,@regs))
+        (push-insn bb `(CALL ,cont-bb ,proc ,@regs))
         (values (or cont-bb bb) cont-reg))))
   (case ($call-flag iform)
     [(embed) (embedded-call)]
@@ -628,7 +631,10 @@
        (format port "  (BR ~s ~a ~a)\n"
                (regname reg) (bb-name bb1) (bb-name bb2))]
       [((or 'JP 'CONT) bb)  (format port "  (~s ~a)\n" (car insn) (bb-name bb))]
-      [((or 'CALL 'RET) . regs)
+      [('CALL bb proc . regs)
+       (format port "  (CALL ~a ~s ~s)\n"
+               (and bb (bb-name bb)) (regname proc) (map regname regs))]
+      [('RET . regs)
        (format port "  ~s\n" `(,(car insn) ,@(map regname regs)))]
       [('ASM insn . args)
        (let ((insn-name (~ (vm-find-insn-info (car insn))'name)))

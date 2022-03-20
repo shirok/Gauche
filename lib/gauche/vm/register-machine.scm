@@ -105,7 +105,7 @@
       [(('CONT bb) . insns)
        (let1 val0 (loop insns #f)
          (loop (reverse (~ bb'insns)) val0))]
-      [(('CALL reg . args) . _)
+      [(('CALL _ reg . args) . _)
        (apply (reg-ref reg) (map reg-ref args))]
       [(('RET reg) . _)
        (reg-ref reg)]
