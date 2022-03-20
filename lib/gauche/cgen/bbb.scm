@@ -102,6 +102,7 @@
                                               ;  (length input-regs) otherwise.
    (entry :init-value #f)                     ; entry BB
    (blocks :init-value '())                   ; basic blocks
+   (clusters :init-value '())                 ; clusters
    (parent :init-keyword :parent)             ; parent benv
    (children :init-value '())))
 
@@ -174,6 +175,7 @@
    (upstream   :init-keyword :upstream) ; list of upstream blocks
    (downstream :init-value '())         ; list of downstream blocks
    (benv       :init-keyword :benv)
+   (cluster    :init-value #f)
    (entry?     :init-value #f)          ; #t if this BB is entered from outside
    ))
 
@@ -192,17 +194,31 @@
   (push! (~ to-bb'upstream) from-bb))
 
 (define (bb-name bb)                    ;for debug dump
-  (format "BB#~s~a" (~ bb'id) (if (~ bb'entry?) "!" "")))
+  (format "BB#~a:~s~a"
+          (and (~ bb'cluster) (~ bb'cluster'id))
+          (~ bb'id)
+          (if (~ bb'entry?) "!" "")))
 
 (define (push-insn bb insn)
   (push! (~ bb'insns) insn))
 
+(define (last-insn bb) (and (pair? (~ bb'insns)) (car (~ bb'insns))))
+
 ;; A 'complete' basic block is the one thats ends with either
 ;; CALL, BR, JP or RET insn.
 (define (bb-complete? bb)
-  (match (~ bb'insns)
+  (match (last-insn bb)
     [(((or 'CALL 'BR 'JP 'RET) . _) . _) #t]
     [_ #f]))
+
+;; A cluster is a DG of BBs that does not contain edges of CALL instructions.
+;; A cluster can be compiled into a chunk of codes that share the same
+;; stack frame.
+
+(define-class <cluster> ()
+  ((id :init-form (gensym "C"))         ;for debugging
+   (blocks :init-value '()))            ;basic blocks
+  )
 
 ;;
 ;; Conversion to basic blocks
@@ -605,6 +621,29 @@
   (scan benv))
 
 ;;
+;; Basic block clustering
+;;
+
+(define (cluster-bbs! benv)
+  (define (rec c bb)
+    (unless (~ bb'cluster)                  ; already visited
+      (push! (~ c'blocks) bb)
+      (set! (~ bb'cluster) c)
+      (match (last-insn bb)
+        [('JP bb1) (rec c bb1)]
+        [('BR _ bb1 bb2) (rec c bb1) (rec c bb2)]
+        [('CALL bb1 proc . regs)
+         (when (and bb1 (not (~ bb1 'cluster)))
+           (let1 c1 (make <cluster>)
+             (rec c1 bb1)))]
+        [_ #f])))
+  (when (null? (~ benv'clusters))
+    (let1 c (make <cluster>)
+      (push! (~ benv'clusters) c)
+      (rec c (~ benv'entry)))
+    (for-each cluster-bbs! (~ benv'children))))
+
+;;
 ;; For debugging
 ;;
 
@@ -683,6 +722,7 @@
     (let* ([benv (make-benv #f '%toplevel)]
            [bb (pass5b iform benv)])
       (simplify-bbs! benv)
+      (cluster-bbs! benv)
       benv)))
 
 (define (compile-b program)
