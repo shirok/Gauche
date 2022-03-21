@@ -24227,20 +24227,26 @@ arguments restricts the range of @var{string} to be written.
 @c EN
 Output the buffered data in @var{port}, or all ports, respectively.
 
+R7RS's @code{flush-output-port} is the same as @code{flush}.
+The @code{scheme.base} module defines the name as an alias to
+@code{flush} (@pxref{R7RS base library}).
+
 The function "flush" is called in variety of ways on the various
 Scheme implementations: @code{force-output} (Scsh, SCM),
 @code{flush-output} (Gambit), or @code{flush-output-port} (Bigloo).
 The name @code{flush} is taken from STk and STklos.
-R7RS calls this @code{flush-output-port}
 @c JP
 それぞれ、@var{port}、および全てのポートにバッファされているデータを
 全て書き出します。
+
+R7RSでは@code{flush}は@code{flush-output-port}と呼ばれています。
+Gaucheでは@code{scheme.base}モジュールで@code{flush}の別名として
+提供しています(@ref{R7RS base library}参照)。
 
 手続き"flush"はScheme実装によって様々な名前で呼ばれています：
 @code{force-output} (Scsh, SCM)、
 @code{flush-output} (Gambit)、@code{flush-output-port} (Bigloo) 等。
 @code{flush}の名前はSTkとSTklosから取りました。
-R7RSでは@code{flush-output-port}を採用しています。
 @c COMMON
 @end defun
 

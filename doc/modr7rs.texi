@@ -1142,9 +1142,9 @@ it is not closed.
 [R7RS base]
 @c MOD scheme.base
 @c EN
-An alias to @code{flush}.
+An alias to @code{flush} (@pxref{Low-level output}).
 @c JP
-@code{flush}の別名です。
+@code{flush}の別名です (@ref{Low-level output}参照)。
 @c COMMON
 @end defun
 
