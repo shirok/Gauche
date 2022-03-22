@@ -2262,6 +2262,8 @@ Returns @code{#t} if all jobs are finished.
 You can give a real number in seconds, or a @code{<time>} object
 as an absolute point of time, in @var{timeout} optional argument.
 When timeout is reached, @code{wait-all} returns @code{#f}.
+
+While this procedure is called, no new jobs should be put into @var{pool}.
 @c JP
 ジョブ待ち行列が空になり、すべての実行中のジョブも終了するまで待ちます。
 終了待ちは@var{check-interval}にナノ秒で指定される間隔でスレッドプールを
@@ -2270,6 +2272,8 @@ When timeout is reached, @code{wait-all} returns @code{#f}.
 秒数を表す実数か、絶対時刻を表す@code{<time>}オブジェクトを@var{timeout}
 引数に渡すことで、タイムアウトを指定できます。タイムアウトに達した場合は、
 @code{wait-all}は@code{#f}を返します。
+
+この手続きが呼ばれている間、新しいジョブが@var{pool}に投入されてはなりません。
 @c COMMON
 @end defun
 

@@ -1,3 +1,8 @@
+2022-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/thread-pool.scm (wait-all): Fix race condition
+	  ( https://github.com/shirok/Gauche/issues/812 )
+
 2022-03-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_StrfTime): MinGW's strftime() returns a

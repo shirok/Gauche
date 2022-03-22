@@ -131,8 +131,11 @@
           [else (error "timeout must be either a real number, a <time> object, \
                         or #f, but got:" timeout)]))
   (let loop ([now (and abstime (current-time))])
+    ;; NB: We assume the caller ensures no new jobs are inserted while calling
+    ;; wait-all.
     (cond [(and (queue-empty? (~ pool'job-queue))
-                (every (^t (not (thread-specific t))) (~ pool'pool)))]
+                (= (mtqueue-num-waiting-readers (~ pool'job-queue))
+                   (~ pool'size)))]
           [(and abstime (time>=? now abstime)) #f] ;timeout
           [else (sys-nanosleep check-interval)
                 (loop (and abstime (current-time)))])))
