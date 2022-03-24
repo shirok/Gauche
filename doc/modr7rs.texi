@@ -6869,30 +6869,115 @@ idequeを返します。元のidequeの要素数が異なる場合は、最も�
 @defun ideque-map proc idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Applies @var{proc} to each element of @var{idq}, and returns
-an ideque containins the results in order.  The dynamic order of
-calls of @var{proc} is unspecified.
+an ideque containins the results in order.
+The dynamic order of calls of @var{proc} is unspecified.
+This is O(n) operation.
+@c JP
+@var{idq}の各要素について@var{proc}を適用し、その結果を順に返す新たなidequeを
+作って返します。@var{proc}がどういう順番で要素に適用されるかは不定です。
+O(n)時間かかります。
+@c COMMON
+
+@c EN
+Note that R7RS ideque only supports single @var{idq} argument.
+It is Gauche's extension to allow more than one @var{idq} arguments;
+in that case, @var{proc} gets as many arguments
+as the given ideques, each argument taken from each ideque.
+The length of the result ideque is limited to the
+shortest length of the input ideques.
+@c JP
+R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義しています。
+@var{idq}が二つ以上の場合はGaucheの拡張としてサポートされます。
+@var{idq}が二つ以上の場合、@var{proc}は入力の@var{idq}の数だけ引数を取ります。
+また、結果のidequeの長さは最短の入力で決まります。
+@c COMMON
+
+@example
+(ideque->list (ideque-map square (ideque 1 2 3 4 5)))
+  @result{} (1 4 9 16 25)
+(ideque->list (ideque-map + (ideque 1 2 3 4 5) (ideque 2 2 2)))
+  @result{} (11 12 13)
+@end example
 @end defun
 
 @defun ideque-filter-map proc idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Applies @var{proc} to each element of @var{idq}, and returns
 an ideque containins the results in order, except @code{#f}.
 The dynamic order of calls of @var{proc} is unspecified.
+@c JP
+@var{idq}の各要素に@var{proc}を適用し、その結果のうち@code{#f}でないものを
+集めたidequeを作って返します。
+@var{proc}がどういう順番で要素に適用されるかは不定です。
+@c COMMON
+
+@c EN
+Note that R7RS ideque only supports single @var{idq} argument.
+It is Gauche's extension to allow more than one @var{idq} arguments;
+in that case, @var{proc} gets as many arguments
+as the given ideques, each argument taken from each ideque.
+The input is read until any of the @var{idq} reaches
+at the end.
+@c JP
+R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義しています。
+@var{idq}が二つ以上の場合はGaucheの拡張としてサポートされます。
+@var{idq}が二つ以上の場合、@var{proc}は@var{idq}の数だけ引数を取ります。
+また、入力の@var{idq}のいずれかの最後まで到達した時に処理が終了します。
+@c COMMON
 @end defun
 
 @defun ideque-for-each proc idq @dots{}
 @defunx ideque-for-each-right proc idq @dots{}
 [R7RS ideque]
 @c MOD scheme.ideque
+@c EN
 Applies @var{proc} to each element of @var{idq} from left to right
 (@code{ideque-for-each}) or right to left (@code{ideque-for-each-right}).
+Results of @var{proc} are discarded.
+@c JP
+@var{proc}を@var{idq}の要素に順に(@code{ideque-for-each}は左から右に、
+@code{ideque-for-each-right}は右から左に)適用します。@var{proc}の
+結果は捨てられます。
+@c COMMON
 
+@c EN
+Returns an unspecified value.
+@c JP
+戻り値は未規定です。
+@c COMMON
+
+@c EN
+Note that R7RS ideque only supports single @var{idq} argument.
 If more than one ideques are given, @var{proc} gets as many arguments
 as the given ideques, each argument taken from each ideque.
 
-Returns an unspecified value.
+@code{ideque-for-each} takes each ideque's elements from leftmost ones,
+while @code{ideque-for-each-right} takes each ideque's elements from rightmost
+ones.  Both ends when the shortest ideque is exhausted.
+@c JP
+R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義しています。
+@var{idq}が二つ以上の場合、@var{proc}は@var{idq}の数だけ引数を取ります。
+
+@code{ideque-for-each}は各idequeの要素を左から取るのに対し、
+@code{ideque-for-each-right}は各idequeの要素を右から取ります。
+どちらも最短のidequeを消費した時点で終了します。
+@c COMMON
+
+@example
+(ideque-for-each ($ display $ list $)
+                 (ideque 'a 'b 'c 'd 'e)
+                 (ideque 1 2 3))
+ @result{} @r{prints} (a 1)(b 2)(c 3)
+
+(ideque-for-each-right ($ display $ list $)
+                       (ideque 'a 'b 'c 'd 'e)
+                       (ideque 1 2 3))
+ @result{} @r{prints} (e 3)(d 2)(c 1)
+@end example
 @end defun
 
 @defun ideque-fold proc knil idq @dots{}
