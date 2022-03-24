@@ -171,17 +171,25 @@
 
 (define-cproc list-tail (list k::<fixnum> :optional fallback) :constant
   Scm_ListTail)
+
+;; list-ref and list-set! requires the first argument to be a <pair>.
+;; This catches a common mistake to pass non-list (which is, technically,
+;; a dotted list of length 0).  Passing length 0 list (proper or dotted)
+;; to list-ref and list-set! is useless anyways, so it generates a better
+;; error message.
+;; Cf. https://github.com/shirok/Gauche/issues/814
+
 ;;We need to define list-set! as cproc in order to use it in the setter clause
 ;;of list-ref.  This limitation of cgen.stub should be removed in future.
 ;;(define (list-set! lis k v) (set-car! (list-tail lis k) v))
-(define-cproc list-set! (lis k::<fixnum> v) ::<void>
-  (let* ([p (Scm_ListTail lis k SCM_FALSE)])
+(define-cproc list-set! (lis::<pair> k::<fixnum> v) ::<void>
+  (let* ([p (Scm_ListTail (SCM_OBJ lis) k SCM_FALSE)])
     (if (SCM_PAIRP p)
       (Scm_SetCar p v)
       (Scm_Error "list-set!: index out of bound: %d" k))))
-(define-cproc list-ref (list k::<fixnum> :optional fallback) :constant
+(define-cproc list-ref (lis::<pair> k::<fixnum> :optional fallback) :constant
   (setter list-set!)
-  Scm_ListRef)
+  (return (Scm_ListRef (SCM_OBJ lis) k fallback)))
 
 (define-cproc memq (obj list::<list>) :constant (inliner MEMQ) Scm_Memq)
 (define-cproc memv (obj list::<list>) :constant (inliner MEMV) Scm_Memv)
