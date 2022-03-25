@@ -129,9 +129,9 @@
 ;; uvector-size
 (inline-stub
  (define-cproc uvector-size (v::<uvector>
-                             :optional (start::<int> 0) (end::<int> -1))
-   ::<int>
-   (let* ([len::int (SCM_UVECTOR_SIZE v)])
+                             :optional (start::<fixnum> 0) (end::<fixnum> -1))
+   ::<fixnum>
+   (let* ([len::ScmSmallInt (SCM_UVECTOR_SIZE v)])
      (SCM_CHECK_START_END start end len)
      (return (* (- end start)
                 (Scm_UVectorElementSize (Scm_ClassOf (SCM_OBJ v)))))))
@@ -447,7 +447,7 @@
 
 ;; copy
 (inline-stub
- (define-cproc uvector-copy! (dest::<uvector> dstart::<int> src::<uvector>
+ (define-cproc uvector-copy! (dest::<uvector> dstart::<fixnum> src::<uvector>
                               :optional (sstart::<fixnum> 0)
                                         (send::<fixnum> -1))
    ::<void>

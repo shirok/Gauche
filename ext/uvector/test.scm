@@ -131,6 +131,13 @@
 (uvmaketest-c64 '(0 1.0+i -1.0-i))
 (uvmaketest-c128 '(0 1.0+i -1.0-i))
 
+;; uvector size handling
+;; https://github.com/shirok/Gauche/issues/816
+(let ((siz (ash 1 32)))
+  (when (fixnum? siz)
+    (test* "uvector-size over 32bit" siz
+           (uvector-size (make-u8vector siz)))))
+
 ;;-------------------------------------------------------------------
 (test-section "ref and set")
 
