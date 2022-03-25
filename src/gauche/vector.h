@@ -65,7 +65,7 @@ SCM_CLASS_DECL(Scm_VectorClass);
      ? (SCM_UVECTOR(obj)->size_flags |= 1)      \
      : (SCM_UVECTOR(obj)->size_flags &= ~1))
 #define SCM_VECTOR_SIZE_SLOT_INITIALIZER(len, imm) \
-    SCM_OBJ(((len)<<1)|(imm?1:0))
+    SCM_OBJ(SCM_WORD(((len)<<1)|((imm)?1:0)))
 #else  /* GAUCHE_API_VERSION < 98 */
 #define SCM_VECTOR_SIZE(obj)        (SCM_VECTOR(obj)->size)
 #define SCM_VECTOR_IMMUTABLE_P(obj) (!SCM_VECTORP(obj)) /* always FALSE, but need to use obj to avoid unused variable warning */
