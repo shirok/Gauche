@@ -133,10 +133,11 @@
 
 ;; uvector size handling
 ;; https://github.com/shirok/Gauche/issues/816
-(let ((siz (ash 1 32)))
-  (when (fixnum? siz)
-    (test* "uvector-size over 32bit" siz
-           (uvector-size (make-u8vector siz)))))
+;; This test doesn't run by default, for it allocates large mem.
+'(let ((siz (ash 1 32)))
+   (when (fixnum? siz)
+     (test* "uvector-size over 32bit" siz
+            (uvector-size (make-u8vector siz)))))
 
 ;;-------------------------------------------------------------------
 (test-section "ref and set")
