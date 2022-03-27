@@ -170,11 +170,11 @@
  ;; In the last example, 2 argument case matches the first procedure,
  ;; for it has precedence.
 
- "typedef struct case_lambda_packet_rec {
-    ScmVector *dispatch_vector;
-    int max_optargs;
-    int min_reqargs;
- } case_lambda_packet;"
+ (define-ctype case_lambda_packet
+   :: (.struct case_lambda_packet_rec
+               (dispatch_vector::ScmVector*
+                max_optargs::int
+                min_reqargs::int)))
 
  (define-cfn case-lambda-dispatch (args::ScmObj* nargs::int data::void*):static
    (let* ([d::case_lambda_packet* (cast case_lambda_packet* data)]
