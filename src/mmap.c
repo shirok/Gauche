@@ -86,7 +86,8 @@ static ScmObj make_memory_region(void *ptr, size_t size, int prot, int flags
     return SCM_OBJ(m);
 }
 
-static void *mmap_int(void *addrhint, size_t len, int prot, int flags,
+static void *mmap_int(void *addrhint, size_t len, int prot,
+                      int flags SCM_UNUSED, /* MinGW version ignores this */
                       int fd, size_t off
 #if defined(GAUCHE_WINDOWS)
                       , HANDLE *pmapping
