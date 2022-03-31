@@ -2134,7 +2134,7 @@ As you see in the definition, equality, ordering and hashing are
 handled by @code{equal?}, @code{compare} and @code{default-hash},
 respectively.  They takes care of builtin objects, and
 also @code{equal?} and @code{compare} handle the case
-when two objects () are of different types.
+when two objects of different types.
 @c JP
 定義からわかるように、等価述語、比較手続き、そしてハッシュ計算はそれぞれ
 @code{equal?}、@code{compare}、@code{default-hash}で処理されます。
