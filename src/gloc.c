@@ -70,13 +70,18 @@ ScmObj Scm_MakeGloc(ScmSymbol *sym, ScmModule *module)
 }
 
 /* Public accessor/mutators
-   We don't allow Scm_GlocGetValues to return SCM_UNBOUND.
+   We don't allow Scm_GlocGetValues to return SCM_UNBOUND or SCM_UNINITIALIZED.
+   (UNINITIALIZED only occurs temporarily during compilation, but we check
+   it just in case.)
 */
 ScmObj Scm_GlocGetValue(ScmGloc *gloc)
 {
     ScmObj v = SCM_GLOC_GET(gloc);
     if (SCM_UNBOUNDP(v)) {
-        Scm_Error("Attempt to dereference a phantom gloc: %S", gloc);
+        Scm_Error("unbound variable: %S", SCM_OBJ(gloc->name));
+    }
+    if (SCM_UNINITIALIZEDP(v)) {
+        Scm_Error("uninitialized variable: %S", SCM_OBJ(gloc->name));
     }
     return v;
 }

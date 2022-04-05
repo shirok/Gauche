@@ -227,11 +227,39 @@ ScmSymbol *Scm_UnwrapIdentifier(ScmIdentifier *id)
     return SCM_SYMBOL(z);
 }
 
-/* returns global binding of the identifier */
+/* Returns global binding of the identifier */
 ScmGloc *Scm_IdentifierGlobalBinding(ScmIdentifier *id)
 {
     ScmIdentifier *z = Scm_OutermostIdentifier(id);
     return Scm_FindBinding(z->module, SCM_SYMBOL(z->name), 0);
+}
+
+/* Runtime reference/mutation of global variables.  The are called
+   from VM instructoins GREF and GSET, and will also be used from
+   the AOT compiled code.
+
+   We cache the result of global variable to GLOC lookup in VM instructions,
+   so these procedures can also store the looked up GLOC in *pgloc.  You can
+   pass NULL if you don't need it.
+
+   If the referenced variable is unbound, or is immutable when attempted to
+   set!, an error is thrown.
+ */
+ScmObj Scm_IdentifierGlobalRef(ScmIdentifier *id,
+                               ScmGloc **pgloc /* out */)
+{
+    ScmGloc *gloc = Scm_IdentifierGlobalBinding(id);
+    if (gloc == NULL) {
+        Scm_Error("unbound variable: %S", SCM_OBJ(id->name));
+    }
+    if (pgloc != NULL) *pgloc = gloc;
+
+    ScmObj v = Scm_GlocGetValue(gloc);
+    if (SCM_AUTOLOADP(v)) {
+        return Scm_ResolveAutoload(SCM_AUTOLOAD(v), 0);
+    } else {
+        return v;
+    }
 }
 
 /* returns true if SYM has the same binding with ID in ENV. */

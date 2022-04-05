@@ -404,6 +404,7 @@ static ScmGloc *search_binding(ScmModule *module, ScmSymbol *symbol,
     return NULL;
 }
 
+/* See also Scm_IdentifierGlobalBinding in compaux.c */
 ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
 {
     int stay_in_module = flags&SCM_BINDING_STAY_IN_MODULE;
@@ -416,6 +417,7 @@ ScmGloc *Scm_FindBinding(ScmModule *module, ScmSymbol *symbol, int flags)
     return gloc;
 }
 
+/* See also Scm_GlobalIdentifierRef in compaux.c */
 ScmObj Scm_GlobalVariableRef(ScmModule *module,
                              ScmSymbol *symbol,
                              int flags)

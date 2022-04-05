@@ -638,32 +638,24 @@ static void vm_unregister(ScmVM *vm)
     } while (0)
 
 /* global reference.  this piece of code is used for a few GREF-something
-   combined instruction. */
+   combined instruction.
+   NB: Unbound variable situation is detected and an error is thrown
+   in Scm_GlocGetValue or Scm_IdentifierGlobalRef.
+ */
 #define GLOBAL_REF(v)                                                   \
     do {                                                                \
         ScmGloc *gloc;                                                  \
         FETCH_OPERAND(v);                                               \
         if (!SCM_GLOCP(v)) {                                            \
             VM_ASSERT(SCM_IDENTIFIERP(v));                              \
-            gloc = Scm_IdentifierGlobalBinding(SCM_IDENTIFIER(v));      \
-            if (gloc == NULL) {                                         \
-                VM_ERR(("unbound variable: %S",                         \
-                        SCM_IDENTIFIER(v)->name));                      \
-            }                                                           \
+            v = Scm_IdentifierGlobalRef(SCM_IDENTIFIER(v), &gloc);      \
             /* memorize gloc */                                         \
             *PC = SCM_WORD(gloc);                                       \
         } else {                                                        \
-            gloc = SCM_GLOC(v);                                         \
+            v = Scm_GlocGetValue(SCM_GLOC(v));                          \
         }                                                               \
-        v = SCM_GLOC_GET(gloc);                                         \
         if (SCM_AUTOLOADP(v)) {                                         \
             v = Scm_ResolveAutoload(SCM_AUTOLOAD(v), 0);                \
-        }                                                               \
-        if (SCM_UNBOUNDP(v)) {                                          \
-            VM_ERR(("unbound variable: %S", SCM_OBJ(gloc->name)));      \
-        }                                                               \
-        if (SCM_UNINITIALIZEDP(v)) {                                    \
-            VM_ERR(("uninitialized variable: %S", SCM_OBJ(gloc->name)));\
         }                                                               \
         INCR_PC;                                                        \
     } while (0)
