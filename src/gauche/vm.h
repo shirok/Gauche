@@ -225,6 +225,8 @@ SCM_EXTERN int    Scm_IdentifierBindingEqv(ScmIdentifier *id,
 SCM_EXTERN ScmIdentifier *Scm_OutermostIdentifier(ScmIdentifier *id);
 SCM_EXTERN ScmSymbol     *Scm_UnwrapIdentifier(ScmIdentifier *id);
 SCM_EXTERN ScmGloc       *Scm_IdentifierGlobalBinding(ScmIdentifier *id);
+SCM_EXTERN ScmObj         Scm_IdentifierGlobalRef(ScmIdentifier *id,
+                                                  ScmGloc **pgloc);
 
 /*
  * Escape handling
