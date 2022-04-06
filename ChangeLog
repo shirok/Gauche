@@ -1,3 +1,8 @@
+2022-04-06  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.c: Fix fd leak in <ax-tls>
+	  https://github.com/shirok/Gauche/issues/817
+
 2022-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/thread-pool.scm (wait-all): Fix race condition

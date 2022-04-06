@@ -294,7 +294,7 @@ typedef struct ScmAxTLSRec {
     SSL* conn;
     SSL_EXTENSIONS* extensions;
     ScmString *server_name;
-    int bound_sock;             /* set with bind, used by accept */
+    int sock;                   /* socket fd */
 } ScmAxTLS;
 
 static ScmAxTLS *ax_new(ScmClass *klass,
@@ -433,6 +433,7 @@ static ScmObj ax_connect_with_socket(ScmTLS* tls, int fd)
     if (r != SSL_OK) {
         Scm_Error("TLS handshake failed. Possibly no supported ciphers. (code=%d)", r);
     }
+    t->sock = fd;
     return SCM_OBJ(t);
 }
 
@@ -501,17 +502,18 @@ static ScmObj ax_accept(ScmTLS* tls) /* tls must already be bound */
 {
     ScmAxTLS *t = (ScmAxTLS*)tls;
     ax_context_check(t, "accept");
-    if (t->bound_sock < 0) Scm_Error("accept called on unbound TLS %S", t);
+    if (t->sock < 0) Scm_Error("accept called on unbound TLS %S", t);
 
     struct sockaddr addr;
     socklen_t addrlen;
-    int newsock = accept(t->bound_sock, &addr, &addrlen);
+    int newsock = accept(t->sock, &addr, &addrlen);
     if (newsock < 0) {
         Scm_Error("tls-accept failed on %S", t);
     }
 
     ScmAxTLS *nt = ax_new(&Scm_AxTLSClass, t->ctx, t->server_name);
     nt->conn = ssl_server_new(nt->ctx, newsock);
+    nt->sock = newsock;
     return SCM_OBJ(nt);
 }
 
@@ -554,7 +556,10 @@ static ScmObj ax_close(ScmTLS *tls)
         t->server_name = NULL;
         t->common.in_port = t->common.out_port = SCM_FALSE;
     }
-
+    if (t->sock >= 0) {
+        close(t->sock);
+        t->sock = -1;
+    }
     return SCM_UNDEFINED;
 }
 
@@ -589,7 +594,7 @@ ScmAxTLS *ax_new(ScmClass *klass,
     t->conn = NULL;
     t->extensions = ssl_ext_new();
     t->server_name = SCM_STRING(server_name);
-    t->bound_sock = -1;
+    t->sock = -1;
     t->common.in_port = t->common.out_port = SCM_FALSE;
 
     t->common.connect = ax_connect;
