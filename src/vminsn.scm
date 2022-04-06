@@ -800,28 +800,8 @@
     (cond
      [(SCM_GLOCP loc) (SCM_GLOC_SET (SCM_GLOC loc) VAL0)]
      [(SCM_IDENTIFIERP loc)
-      ;; If runtime flag LIMIT_MODULE_MUTATION is set,
-      ;; we search only for the id's module, so that set! won't
-      ;; mutate bindings in the other module.
-      (let* ([id::ScmIdentifier* (Scm_OutermostIdentifier (SCM_IDENTIFIER loc))]
-             [name::ScmSymbol* (SCM_SYMBOL (-> id name))]
-             [limit::int
-              (SCM_VM_RUNTIME_FLAG_IS_SET vm SCM_LIMIT_MODULE_MUTATION)]
-             [gloc::ScmGloc*
-              (Scm_FindBinding (-> id module) name
-                               (?: limit SCM_BINDING_STAY_IN_MODULE 0))])
-        (when (== gloc NULL)
-          ;; Do search again for meaningful error message
-          (when limit
-            (set! gloc (Scm_FindBinding (-> id module) name 0))
-            (when (!= gloc NULL)
-              ($vm-err "can't mutate binding of %S, \
-                        which is in another module"
-                       (-> id name)))
-            ;; FALLTHROUGH
-            )
-          ($vm-err "symbol not defined: %S" loc))
-        (SCM_GLOC_SET gloc VAL0)
+      (let* ([gloc::ScmGloc* NULL])
+        (Scm_IdentifierGlobalSet (SCM_IDENTIFIER loc) VAL0 (& gloc))
         ;; memoize gloc.
         (set! (* PC) (SCM_WORD gloc)))]
      [else ($vm-err "GSET: can't be here")])

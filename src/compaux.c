@@ -262,6 +262,33 @@ ScmObj Scm_IdentifierGlobalRef(ScmIdentifier *id,
     }
 }
 
+void Scm_IdentifierGlobalSet(ScmIdentifier *id,
+                             ScmObj val,
+                             ScmGloc **pgloc /* out */)
+{
+    /* If runtime flag LIMIT_MODULE_MUTATION is set,
+       we search only for the id's module, so that set! won't
+       mutate bindings in the other module. */
+    ScmIdentifier *z = Scm_OutermostIdentifier(id);
+    int limit = SCM_VM_RUNTIME_FLAG_IS_SET(Scm_VM(), SCM_LIMIT_MODULE_MUTATION);
+    ScmGloc *gloc = Scm_FindBinding(z->module, SCM_SYMBOL(z->name),
+                                    (limit ? SCM_BINDING_STAY_IN_MODULE : 0));
+    if (gloc == NULL) {
+        /* Search again for meaningful error message */
+        if (limit) {
+            gloc = Scm_FindBinding(z->module, SCM_SYMBOL(z->name), 0);
+            if (gloc != NULL) {
+                Scm_Error("Can't mutate binding of %S, which is in another module",
+                          z->name);
+            }
+            /* FALLTHROUGH */
+        }
+        Scm_Error("Symbol not defined: %S", z->name);
+    }
+    SCM_GLOC_SET(gloc, val);
+    if (pgloc != NULL) *pgloc = gloc;
+}
+
 /* returns true if SYM has the same binding with ID in ENV. */
 int Scm_IdentifierBindingEqv(ScmIdentifier *id, ScmSymbol *sym, ScmObj env)
 {
