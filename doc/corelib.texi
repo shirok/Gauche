@@ -25784,7 +25784,8 @@ These variables are bound to the program name and the list of command-line
 arguments, respectively.  In Gauche scripts that are invoked by @code{gosh}
 command, @code{*program-name*} is usually the name of the script, as
 given to @code{gosh}.  When @code{gosh} is invoked interactively,
-@code{*program-name*} is @code{gosh} itself.
+@code{*program-name*} contains a zero-length string @code{""},
+and @code{*argv*} is an empty list.
 
 These variables exist in @code{user} module.
 
@@ -25801,7 +25802,8 @@ using them.
 これらの変数はそれぞれ、プログラム名および、コマンドライン引数のリストに束縛されます。
 @code{gosh}を使ってGaucheスクリプトを実行しているなら、@code{*program-name*}は
 (@code{gosh}に与えられたとおりの) スクリプト名になっています。@code{gosh}が
-インタラクティブREPLとして起動された場合は@code{*program-name*}は@code{gosh}自身です。
+インタラクティブREPLとして起動された場合は@code{*program-name*}は
+空文字列@code{""}で、@code{*argv*}は空リストです。
 
 これらの変数は@code{user}モジュールにあります。
 
