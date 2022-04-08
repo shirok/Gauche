@@ -1,3 +1,10 @@
+2022-04-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/main.c (main): Noticed *program-name* and *argv* aren't defined
+	  when gosh invoked as REPL.  Although they are of little use in REPL,
+	  leaving them undefined may cause some inconvenience.  We just
+	  define "" as *program-name* and () as *argv*.
+
 2022-04-06  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.c: Fix fd leak in <ax-tls>

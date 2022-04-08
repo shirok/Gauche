@@ -860,6 +860,7 @@ int main(int ac, char **av)
     } else {
         /* For REPL, we leave command-line to the default '(""). */
         Scm_InitCommandLine2(argc, (const char**)argv, SCM_COMMAND_LINE_OS);
+        Scm_InitCommandLine2(1, (const char*[]){""}, SCM_COMMAND_LINE_SCRIPT);
     }
 
     process_command_args(Scm_Reverse(pre_cmds));
