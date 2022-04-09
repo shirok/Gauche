@@ -51,6 +51,9 @@
   )
 (select-module gauche.cgen.literal)
 
+;; <module> literal needs to access this
+(autoload gauche.cgen.tmodule all-tmodules)
+
 ;;=============================================================
 ;; Static objects
 ;;
@@ -935,6 +938,73 @@
                              Scm_Error(\"Invalid native type: %S\", ~a);"
                 (cgen-c-name self) (cgen-c-name (~ self'name))))
   (static (self) #f))
+
+;; module -------------------------------------------------------
+
+;; We recover modules at runtime.  Anonymous modules can be recovered
+;; if they are used as a proxy of a real module (via <tmodule>).
+(define-cgen-literal <cgen-module> <module>
+  ((name  :init-keyword :name)
+   (name-literal :init-keyword :name-literal))
+  (make (value)
+    (if-let1 n (predefined-module value)
+      (make <cgen-module> :value value
+            :c-name n
+            :name (~ value'name))
+      (let1 name (or (~ value'name)
+                     (any (^[tm] (and (eq? (~ tm'module) value) (~ tm'name)))
+                          (all-tmodules))
+                     (error "Cannot emit literal for anonymous module:" value))
+        (make <cgen-module> :value value
+              :c-name (cgen-allocate-static-datum)
+              :name name :name-literal (cgen-literal name)))))
+  (init (self)
+    (unless (predefined-module (~ self'value))
+      ;; Module literals are emitted only related with macro hygiene.  In that
+      ;; case, the module is created without loading its actual body, so
+      ;; we mark it as 'placeholding'.  The placeholding module won't show
+      ;; up in (all-modules).  Once (define-module ...) is evaluated by loading
+      ;; the module, it becomes 'real' module.
+      (format #t "  ~a = SCM_OBJ(Scm_FindModule(SCM_SYMBOL(~a), \
+                         SCM_FIND_MODULE_CREATE|SCM_FIND_MODULE_PLACEHOLDING)); \
+                  /* module ~a */\n"
+              (~ self'c-name)
+              (cgen-cexpr (~ self'name-literal))
+              (~ self'name))))
+  (static (self) (boolean (predefined-module (~ self'value))))
+  )
+
+(define (predefined-module module)
+  (assq-ref `((,(find-module 'null)   . "Scm_NullModule()")
+              (,(find-module 'scheme) . "Scm_SchemeModule()")
+              (,(find-module 'gauche) . "Scm_GaucheModule()")
+              (,(find-module 'gauche.internal) . "Scm_GaucheInternalModule()")
+              )
+            module))
+
+;; identiifer ---------------------------------------------------
+
+(define-cgen-literal <cgen-scheme-identifier> <identifier>
+  ((id-name        :init-keyword :id-name)
+   (module-literal :init-keyword :module-literal))
+  (make (value)
+    (unless ((with-module gauche.internal identifier-toplevel?) value)
+      (error "identifier with compiler environment can't be compiled" value))
+    (make <cgen-scheme-identifier> :value value
+          :c-name (cgen-allocate-static-datum)
+          :id-name (cgen-literal (unwrap-syntax value))
+          :module-literal (cgen-literal (~ value'module))))
+  (init (self)
+    (let ([name (cgen-cexpr (~ self'id-name))]
+          [cname (~ self'c-name)])
+      (format #t "  ~a = Scm_MakeIdentifier(~a, SCM_MODULE(~a), \
+                                            SCM_NIL); /* ~a#~a */\n"
+              cname name (cgen-cexpr (~ self'module-literal))
+              (cgen-safe-comment (~ self'module-literal'name))
+              (cgen-safe-comment (~ self'id-name'value)))))
+  (static (self) #f)
+  )
+
 
 ;;---------------------------------------------------------------
 ;; Inferring literal handlers.
