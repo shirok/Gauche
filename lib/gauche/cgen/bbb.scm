@@ -38,7 +38,11 @@
   (use gauche.sequence)
   (use util.match)
   (use gauche.vm.insn)
-  (export compile-b) ; just for now
+  (export compile-to-basic-blocks
+          compile-b  ; for debugging
+          bb-name
+          <reg>
+          <const> const-value)
   )
 (select-module gauche.cgen.bbb)
 
@@ -194,7 +198,7 @@
   (push! (~ to-bb'upstream) from-bb))
 
 (define (bb-name bb)                    ;for debug dump
-  (format "BB#~a:~s~a"
+  (format "BB_~a_~s~a"
           (and (~ bb'cluster) (~ bb'cluster'id))
           (~ bb'id)
           (if (~ bb'entry?) "!" "")))
