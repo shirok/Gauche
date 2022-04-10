@@ -98,9 +98,14 @@ typedef struct ScmTLSRec ScmTLS;
 
 struct ScmTLSRec {
     SCM_HEADER;
-    ScmObj sock;                /* <socket> */
     ScmObj in_port;
     ScmObj out_port;
+
+    /* <socket> - underlying socket.  This is only for reflection,
+       and it is managed by the TLS implementation layer.
+       Not always available -- MbedTLS 3.0 hides underlying socket,
+       so this is #f.  We'll eventually drop this.  */
+    ScmObj sock;
 
     ScmObj (*connect)(ScmTLS*, const char*, const char*, int);
     ScmObj (*connectSock)(ScmTLS*, int);
@@ -140,7 +145,7 @@ extern ScmObj Scm_TLSBind(ScmTLS *t,
 extern ScmObj Scm_TLSAccept(ScmTLS *t); /* returns connected <tls> */
 extern ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
-extern ScmObj Scm_TLSSocket(ScmTLS *t);
+extern ScmObj Scm_TLSSocket(ScmTLS *t); /* DEPRECATED */
 
 extern int    Scm_TLSSystemCABundleAvailable(void);
 
