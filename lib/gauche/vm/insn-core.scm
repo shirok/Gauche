@@ -82,14 +82,14 @@
 
 ;; API. opcode mnemonic -> <vm-insn-info>
 (define (vm-find-insn-info mnemonic-or-opcode)
-  (cond 
+  (cond
    [(and (symbol? mnemonic-or-opcode)
          (assq-ref (vm-all-insns) mnemonic-or-opcode))]
    [(and (integer? mnemonic-or-opcode)
          (any (^p (and (eqv? (~ (cdr p)'code) mnemonic-or-opcode)
                        (cdr p)))
               (vm-all-insns)))]
-   [else (error "No such VM instruction:" mnemonic)]))
+   [else (error "No such VM instruction:" mnemonic-or-opcode)]))
 
 ;; API.  Arg can be <vm-insn-info> or opcode symbol
 (define-method vm-insn-size ((info <vm-insn-info>))
