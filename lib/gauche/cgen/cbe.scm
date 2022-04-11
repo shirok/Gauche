@@ -34,6 +34,9 @@
 (define-module gauche.cgen.cbe
   (use gauche.cgen)
   (use gauche.cgen.bbb)
+  (use gauche.vm.insn)
+  (use scheme.list)
+  (use srfi-13)
   (use util.match)
   (use text.tr)
   (export compile-b->c))
@@ -41,6 +44,8 @@
 
 (define (compile-b->c toplevel-benv)
   (parameterize ([cgen-current-unit (make <cgen-unit> :name "t")])
+    (cgen-decl "#include <gauche.h>"
+               "#include <gauche/precomp.h>")
     (benv->c toplevel-benv)
     (cgen-emit-c (cgen-current-unit))))
 
@@ -81,8 +86,7 @@
                              #"   goto ~(bb-name b2);")]
     [('JP b)      (cgen-body #" goto ~(bb-name b);")]
     [('CONT b)    (cgen-body #" %%WRITEME%%Scm_VMPushCC(~(x->string b));")]
-    [('CALL bb proc r ...)
-     (cgen-body #" return %%WRITEME%%Scm_VMCall(~(reg-cexpr proc), ...);")]
+    [('CALL bb proc r ...) (gen-vmcall proc r)]
     [('RET r . rs)(cgen-body #" return ~(reg-cexpr r);")]
     [('BUILTIN op r as ...)
      (cgen-body #" ~(reg-cexpr r) =") (builtin->c op as)]
@@ -94,11 +98,52 @@
                   #" Scm_Define(~(cgen-cexpr c-id), ~(reg-cexpr r));"))]
     ))
 
+(define (gen-vmcall proc regs)
+  (cgen-body #" return Scm_VMApply(~(reg-cexpr proc), ~(gen-list regs));"))
+
+(define (c-call proc-cexpr regs)
+  (string-concatenate `("  " ,proc-cexpr "("
+                        ,@(intersperse ",\n    "
+                                       (map reg-cexpr regs))
+                        ");")))
+
 (define (asm->c op regs)
-  (cgen-body #"  %%WRITEME%%Call_Asm(~op, ~(map reg-cexpr regs));"))
+  (case (~ (vm-find-insn-info (car op))'name)
+    [(EQ) (cgen-body (c-call "SCM_EQ" regs))]
+    [(NULLP) (cgen-body (c-call "SCM_NULLP" regs))]
+    [(PAIRP) (cgen-body (c-call "SCM_PAIRP" regs))]
+    [(CAR) (cgen-body (c-call "SCM_CAR" regs))]
+    [(CDR) (cgen-body (c-call "SCM_CDR" regs))]
+    [(CAAR) (cgen-body (c-call "SCM_CAAR" regs))]
+    [(CADR) (cgen-body (c-call "SCM_CADR" regs))]
+    [(CDAR) (cgen-body (c-call "SCM_CDAR" regs))]
+    [(CDDR) (cgen-body (c-call "SCM_CDDR" regs))]
+    [(REVERSE) (cgen-body (c-call "Scm_Reverse" regs))]
+    [(NUMEQ2) (cgen-body (c-call "SCM_NUMEQ2" regs))]
+    [(NUMLT2) (cgen-body (c-call "SCM_NUMLT2" regs))]
+    [(NUMLE2) (cgen-body (c-call "SCM_NUMLE2" regs))]
+    [(NUMGT2) (cgen-body (c-call "SCM_NUMGT2" regs))]
+    [(NUMGE2) (cgen-body (c-call "SCM_NUMGE2" regs))]
+    [(NUMADD2) (cgen-body (c-call "Scm_Add" regs))]
+    [(NUMSUB2) (cgen-body (c-call "Scm_Sub" regs))]
+    [(NUMNUL2) (cgen-body (c-call "Scm_Mul" regs))]
+    [(NUMDIV2) (cgen-body (c-call "Scm_Div" regs))]
+    [(NEGATE)  (cgen-body (c-call "Scm_Negate" regs))]
+    [(LOGAND)  (cgen-body (c-call "Scm_LogAnd" regs))]
+    [(LOGIOR)  (cgen-body (c-call "Scm_LogIor" regs))]
+    [(LOGXOR)  (cgen-body (c-call "Scm_LogXor" regs))]
+    [else
+     (cgen-body #"  %%WRITEME%%Call_Asm(~op, ~(map reg-cexpr regs));")]))
 
 (define (builtin->c op regs)
   (cgen-body #"  %%WRITEME%%Call_Builtin(~op, ~(map reg-cexpr regs));"))
+
+(define (gen-list regs)
+  (define (rec regs)
+    (match regs
+      [() '("SCM_NIL")]
+      [(reg . regs) `("Scm_Cons(" ,(reg-cexpr reg) ", " ,@(rec regs) ")")]))
+  (string-concatenate (rec regs)))
 
 (define *constant-literals* (make-hash-table 'eq?)) ;; const -> <literal>
 
