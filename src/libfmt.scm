@@ -395,6 +395,16 @@
                  (dotimes [_ npad] (write-char padchar port))))))))))
 
 (define (chop-and-out str limit flags port)
+  ;; check if str chopped at limit contains terminated double-quote.
+  ;; Returns one of the tree values:
+  ;;  #t - Double-quote is terminated.  No special treatment needed.
+  ;;  #f - Double quote is not terminated, and the last character is not
+  ;;       a lone backslash.  We emit an extra double-quote.
+  ;;  #\\ - Double quote is not termianted, and the last character is
+  ;;       a lone backslash.  In this case, we need to emit extra backslash
+  ;;       before the terminating double-quote.  Otherwise, the program
+  ;;       that interprets the result (e.g. font colorizer) mistakes the
+  ;;       closing backquote as escaped.
   (define (quote-terminated? str limit)
     (scan-out (open-input-string str) limit))
   (define (scan-out p limit)
@@ -409,14 +419,18 @@
          (let1 c (read-char p)
            (and (not (eof-object? c))
                 (cond [(eqv? c #\") (scan-out p (- limit 1))]
-                      [(eqv? c #\\) (read-char p) (scan-in p (- limit 2))]
+                      [(eqv? c #\\) (read-char p)
+                       (if (= limit 1)
+                         #\\
+                         (scan-in p (- limit 2)))]
                       [else (scan-in p (- limit 1))])))))
 
-  (if (has-:? flags)
+  (if (and (has-:? flags) (>= limit 4))
     (begin (display (substring str 0 (- limit 4)) port)
-           (if (quote-terminated? str (- limit 4))
-             (display " ..." port)
-             (display "\"..." port)))
+           (case (quote-terminated? str (- limit 4))
+             [(#t) (display " ..." port)]
+             [(#f) (display "\"..." port)]
+             [(#\\) (display "\\\".." port)]))
     (display (substring str 0 limit) port)))
 
 ;; ~C

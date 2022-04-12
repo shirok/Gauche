@@ -648,6 +648,8 @@
        (format "~10,,,'*,15@:s" '("abc" "def" "ghi" "jkl")))
 (test* "format ~s" "(\"ab\\\"c\" #\\\" \"de\"..."
        (format "~10,,,'*,20@:s" '("ab\"c" #\" "defghi")))
+(test* "format ~s" "(\"ab\\\"c\" #\\\" \"d\\\\\".."
+       (format "~10,,,'*,20@:s" '("ab\"c" #\" "d\nfghi")))
 
 (test* "format ~a" "abc"           (format "~a" "abc"))
 (test* "format ~a" "abc       "    (format "~10a" "abc"))
