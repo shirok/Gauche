@@ -13,6 +13,9 @@
 (use gauche.vm.register-machine)
 (test-module 'gauche.vm.register-machine)
 
+(use gauche.cgen.cbe)
+(test-module 'gauche.cgen.cbe)
+
 
 (test-section "simple code")
 

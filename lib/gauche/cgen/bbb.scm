@@ -36,10 +36,12 @@
   ;; we want to have a separate module that exposes some compiler internals.
   (extend gauche.internal)
   (use gauche.sequence)
+  (use scheme.set)
   (use util.match)
   (use gauche.vm.insn)
-  (export compile-to-basic-blocks
-          compile-b  ; for debugging
+  (export compile-b
+          compile-b/dump  ; for debugging
+          dump-benv
           bb-name
           <reg>
           <const> const-value)
@@ -220,9 +222,11 @@
 ;; stack frame.
 
 (define-class <cluster> ()
-  ((id :init-form (gensym "C"))         ;for debugging
-   (blocks :init-value '()))            ;basic blocks
-  )
+  ((id :init-form (gensym "C")) ;for debugging
+   (entry? :init-value #f)      ;#t if this cluster is procedure entry
+   (blocks :init-value '())     ;basic blocks
+   (xregs :init-form (set eq-comparator)) ;list of regs to be carried over
+   ))
 
 ;;
 ;; Conversion to basic blocks
@@ -719,7 +723,7 @@
   )
 
 ;; For now
-(define (compile-to-basic-blocks program :optional (mod (vm-current-module)))
+(define (compile-b program :optional (mod (vm-current-module)))
   (let* ([cenv (make-bottom-cenv mod)]
          [iform (pass2-4 (pass1 program cenv) mod)])
     ;(pp-iform iform)
@@ -729,5 +733,5 @@
       (cluster-bbs! benv)
       benv)))
 
-(define (compile-b program)
-  (dump-benv (compile-to-basic-blocks program)))
+(define (compile-b/dump program)
+  (dump-benv (compile-b program)))

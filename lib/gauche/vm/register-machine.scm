@@ -45,7 +45,7 @@
 
 ;; API
 (define (run-on-register-machine program :optional (mod (vm-current-module)))
-  (let1 benv (compile-to-basic-blocks program mod)
+  (let1 benv (compile-b program mod)
     (execute-basic-blocks benv)))
 
 (define (execute-basic-blocks benv)
