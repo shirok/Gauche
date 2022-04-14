@@ -1554,15 +1554,28 @@ if you don't use other parts of the @code{cgen} modules.
 @defunx cgen-safe-string string
 @defunx cgen-safe-comment string
 @c MOD gauche.cgen
+@c EN
 Escapes characters invalid in C identifiers, C string literals or C comments.
+@c JP
+Cの識別子、文字列リテラル、あるいはコメントとして使えない文字の並びをエスケープします。
+@c COMMON
 
+@c EN
 With @code{cgen-safe-name}, characters other than ASCII alphabets
 and digits are converted to a form @code{_XX}, where @code{XX} is
 hexadecimal notation of the character code.  (Note that the character
 @code{_} is also converted.)  So the returned string can be used
 safely as a C identifier.  The mapping is injective, that is,
 if the source strings differ, the result string always differ.
+@c JP
+@code{cgen-safe-name}は、文字列中にASCIIアルファベットや数字以外の文字が
+現れたら、@code{_XX}に変換します。ここで@code{XX}はその文字の文字コードの
+16進数表現です(@code{_}自身も変換されます)。
+返される文字列はそのままCの識別子として使えます。
+この変換は全射であり、元の文字列が異なれば結果の文字列も異なったものになります。
+@c COMMON
 
+@c EN
 On the other hand, @code{cgen-safe-name-friendly} converts
 the input string into more readable C identifier.  @code{->} becomes
 @code{_TO} (e.g. @code{char->integer} becomes @code{char_TOinteger}),
@@ -1575,20 +1588,52 @@ as in @code{cgen-safe-name}.  The mapping is not injective; e.g.
 both @code{read-line} and @code{read_line} map to @code{read_line}.
 Use this only when you think some human needs to read the generated
 C code (which is not recommended, by the way.)
+@c JP
+一方、@code{cgen-safe-name-friendly}はちょっと異なり、
+文字列をより読みやすいCの識別子の名前にします。
+@code{->}は@code{_TO}に (例: @code{char->integer}は@code{char_TOinteger}に)、
+他の@code{-}および@code{_}は@code{_}へとマップされます。
+@code{?}は@code{P} (例: @code{char?}は@code{charP}に)、
+@code{!}は@code{X} (例: @code{set!}は@code{setX}に),
+@code{<}と@code{>}はそれぞれ@code{_LT}と@code{_GT}になります。
+以上の文字を除く特殊な文字は@code{cgen-safe-name}と同様に@code{_XX}になります。
+この変換は全射ではありません。@code{read-line}と@code{read_line}は
+ともに@code{read_line}になってしまいます。
+生成されたCコードを人間に読みやすくしたい場合に限り使ってください
+(ただ、生成したCコードを人間が読むことは推奨されません)。
+@c COMMON
 
+@c EN
 If you want to write out a Scheme string as a C string literal,
 you can use @code{cgen-safe-string}.  It escapes control
 characters and non-ascii characters.  If the Scheme string contains
 a character beyond ASCII, it is encoded in Gauche's native encoding.
 (NB: It also escapes @code{?}, to avoid accidenal formation of
 C trigraphs).
+@c JP
+Scheme文字列をCの文字列リテラルにしたい場合は@code{cgen-safe-string}が使えます。
+これは制御文字と非ASCII文字をエスケープします。
+ASCII範囲外の文字については、Gaucheの内部エンコーディングが使われます
+(この変換はまた、@code{?}も変換します。うっかりCのトライグラフを出力してしまわないためです)。
+@c COMMON
 
+@c EN
 Much simpler is @code{cgen-safe-comment}, which just converts
 @code{/*} and @code{*/} into @code{/ *} and @code{* /} (a space
 between those two characters), so that it won't terminate the
 comment inadvertently.  (Technically, escaping only @code{*/} suffice,
 but some simple-minded C parser might be confused by @code{/*} in the
 comments).   The conversion isn't injective as well.
+@c JP
+@code{cgen-safe-comment}はずっとシンプルで、
+@code{/*}と@code{*/}をそれぞれ@code{/ *}と@code{* /}にするだけです
+(二文字の間に空白を入れます)。これは、Scheme文字列をCコメントの内部に出力する際に
+うっかりコメントを終わらせてしまわないようにするためです。
+(厳密には、エスケープするのは@code{*/}だけで良いはずですが、
+簡易的なCパーザには余分な@code{/*}で混乱してしまうものがあるかもしれないので
+@code{/*}もエスケープしています)。
+この変換も全射ではありません。
+@c COMMON
 
 @example
 (cgen-safe-name "char-alphabetic?")
