@@ -225,7 +225,13 @@
   ((id :init-form (gensym "C")) ;for debugging
    (entry? :init-value #f)      ;#t if this cluster is procedure entry
    (blocks :init-value '())     ;basic blocks
-   (xregs :init-form (set eq-comparator)) ;list of regs to be carried over
+   ;; Register classification
+   ;;  XREGS - Regs introduced in other clusters
+   ;;  LREGS - Regs local to this cluster
+   ;;  AREGs - Regs passed as arguments
+   (xregs :init-form (set eq-comparator))
+   (lregs :init-form (set eq-comparator))
+   (aregs :init-form (set eq-comparator))
    ))
 
 ;;
@@ -645,11 +651,28 @@
            (let1 c1 (make <cluster>)
              (rec c1 bb1)))]
         [_ #f])))
+  ;; 1st pass
   (when (null? (~ benv'clusters))
     (let1 c (make <cluster>)
       (push! (~ benv'clusters) c)
       (rec c (~ benv'entry)))
-    (for-each cluster-bbs! (~ benv'children))))
+    (for-each cluster-bbs! (~ benv'children)))
+  ;; 2nd pass (register classification)
+  (dolist [c (~ benv'clusters)]
+    (classify-cluster-regs! benv c))
+  (dolist [cbenv (~ benv'children)]
+    (dolist [c (~ cbenv 'clusters)]
+      (classify-cluster-regs! cbenv c))))
+
+(define (classify-cluster-regs! benv c)
+  (dolist [reg (~ benv'registers)]
+    (when (is-a? reg <reg>)
+      (cond [(memq reg (~ benv'input-regs))
+             (update! (~ c'aregs) (cut set-adjoin! <> reg))]
+            [(every (^b (eq? (~ b'cluster) c)) (~ reg'blocks))
+             (update! (~ c'lregs) (cut set-adjoin! <> reg))]
+            [else
+             (update! (~ c'xregs) (cut set-adjoin! <> reg))]))))
 
 ;;
 ;; For debugging
