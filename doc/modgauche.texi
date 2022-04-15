@@ -1648,16 +1648,29 @@ comments).   The conversion isn't injective as well.
 @end example
 @end defun
 
-
+@c EN
 If you want to conditionalize a fragment by C preprocessor
 @code{#ifdef}s, use the following macro:
+@c JP
+コードの断片をCプリプロセッサの@code{#ifdef}で条件的に含めたい場合は、
+次のマクロが使えます。
+@c COMMON
 
 @defmac cgen-with-cpp-condition cpp-expr body @dots{}
 @c MOD gauche.cgen
+@c EN
 Code fragments submitted in @var{body} @dots{} are protected
 by @code{#if @var{cpp-expr}} and @code{#endif}.
+@c JP
+@var{body} @dots{}中で提出されたコード片が
+@code{#if @var{cpp-expr}}と@code{#endif}に囲まれて出力されます。
+@c COMMON
 
+@c EN
 If @var{cpp-expr} is a string, it is emitted literally:
+@c JP
+@var{cpp-expr}が文字列の場合は、それが条件式としてそのまま出力されます。
+@c COMMON
 
 @example
 (cgen-with-cpp-condition "defined(FOO)"
@@ -1669,7 +1682,11 @@ foo();
 #endif /* defined(FOO) */
 @end example
 
+@c EN
 You can also construct @var{cpp-expr} by S-expr.
+@c JP
+@var{cpp-expr}にS式を使うこともできます。
+@c COMMON
 
 @example
 <cpp-expr> : <string>
@@ -1684,7 +1701,11 @@ You can also construct @var{cpp-expr} by S-expr.
             | logand | logior | lognot | >> | <<
 @end example
 
+@c EN
 Example:
+@c JP
+例:
+@c COMMON
 
 @example
 (cgen-with-cpp-condition '(and (defined FOO)
@@ -1697,68 +1718,138 @@ foo();
 #endif /* ((defined FOO)&&(defined BAR)) */
 @end example
 
+@c EN
 You can nest @code{cgen-with-cpp-condition}.
+@c JP
+@code{cgen-with-cpp-condition}はネストすることもできます。
+@c COMMON
 @end defmac
 
+@c EN
 @subsubheading Submitting code fragments for more than one parts
+@c JP
+@subsubheading 二つ以上のパートにコード片を出力する
+@c COMMON
 
+@c EN
 When you try to abstract code generation process,
 calling individual procedures for each parts (e.g. @code{cgen-body}
 or @code{cgen-init}) becomes tedious, since such higher-level
 constructs are likely to require generating code fragments
 to various parts.  Instead, you can create a customized class
 that handles submission of fragments to appropriate parts.
+@c JP
+コードの生成を抽象化してゆくと、ひとつの高レベルの構造が
+複数のパートにコードを出力しなければならないことがよくあります。
+その度に@code{cgen-body}や@code{cgen-init}を個別に呼ぶのは不便です。
+そのかわりに、カスタマイズされたクラスを定義して、適切なパートへの
+コード出力を処理させることができます。
+@c COMMON
 
 @deftp {Class} <cgen-node>
 @clindex cgen-node
 @c MOD gauche.cgen
+@c EN
 A base class to represent a set of code fragments.
 
 The state of C preprocessor condition (set by @code{with-cgen-cpp-condition})
 is captured when an instance of the subclass of this class is
 created, so generating appropriate @code{#if}s and @code{#endif}s are
 automatically handled.
+@c JP
+関連するコード断片の集まりを表すベースクラスです。
+
+このクラスのサブクラスのインスタンスが作られた時点で、
+@code{with-cgen-cpp-condition}で指定されているCプリプロセッサの条件が補足され、
+コード生成時に必要な@code{#if}や@code{#endif}が出力されます。
+@c COMMON
 @end deftp
 
+@c EN
 You subclass @code{<cgen-node>}, then define method(s) to
 one or more of the following generic functions:
+@c JP
+@code{<cgen-node>}のサブクラスを定義して、それに対して以下のメソッドのうち一つ以上を
+定義してください。
+@c COMMON
 
 @deffn {Generic Function} cgen-emit-xtrn cgen-node
 @deffnx {Generic Function} cgen-emit-decl cgen-node
 @deffnx {Generic Function} cgen-emit-body cgen-node
 @deffnx {Generic Function} cgen-emit-init cgen-node
 @c MOD gauche.cgen
+@c EN
 These generic functions are called during writing out
 the C source within @code{cgen-emit-c} and @code{cgen-emit-h}.
 Inside these methods, anything written out to the
 current output port goes into the output file.
+@c JP
+@code{cgen-emit-c}や@code{cgen-emit-h}がCコードを書き出す際に、
+これらのジェネリックファンクションが呼ばれます。
+これらのメソッド内でcurrent output portに書き出されたものが、
+出力ファイルへと書き込まれます。
+@c COMMON
 
+@c EN
 While generating @code{.h} file by @code{cgen-emit-h},
 @code{cgen-emit-xtrn} method for all submitted nodes are
 called in order of submission.
+@c JP
+@code{cgen-emit-h}によって@code{.h}ファイルが生成されている最中に、
+登録されたノードの@code{cgen-emit-xtrn}メソッドが、登録された順に呼ばれます。
+@c COMMON
 
+@c EN
 While generating @code{.c} file by @code{cgen-emit-c},
 @code{cgen-emit-decl} method for all submitted nodes are
 called first, then @code{cgen-emit-body} method, then
 @code{cgen-emit-init} method.
+@c JP
+@code{cgen-emit-c}によって@code{.c}ファイルが生成されている最中に、
+登録されたノードに対し、
+まず@code{cgen-emit-decl}メソッドがまず登録された順に呼ばれ、
+次に@code{cgen-emit-body}メソッドが同じ順で呼ばれ、
+最後に@code{cgen-emit-init}メソッドが同じ順で呼ばれます。
+@c COMMON
 
+@c EN
 If you don't specialize any one of these method, it doesn't
 generate code in that part.
+@c JP
+どれかのメソッドを特殊化していなければ、該当するパートのコードは生成されません。
+@c COMMON
 @end deffn
 
+@c EN
 Once you define your subclass and create an instance,
 you can submit it to the current cgen unit by this procedure:
+@c JP
+サブクラスを定義しインスタンスを作った後で、次の手続きにより
+現在のcgen unitに対してノードを登録できます。
+@c COMMON
 
 @defun cgen-add! cgen-node
 @c MOD gauche.cgen
+@c EN
 Submit @var{cgen-node} to the current cgen unit.
 If the current unit is not set, @var{cgen-node} is simply ignored.
+@c JP
+@var{cgen-node}を現在のcgen unitに登録します。
+現在のunitがセットされていなければ、@var{cgen-node}は単に無視されます。
+@c COMMON
 @end defun
 
+@c EN
 In fact, the procedures @code{cgen-extern}, @code{cgen-decl},
 @code{cgen-body} and @code{cgen-init} are just a convenience
 wrapper to create an internal subclass specialized to generate
 code fragment only to the designated part.
+@c JP
+実のところ、手続き@code{cgen-extern}、@code{cgen-decl}、
+@code{cgen-body}、@code{cgen-init}はいずれも、
+該当するパートに出力されるメソッドだけを定義した@code{<cgen-node>}のサブクラスを
+内部的に使っています。
+@c COMMON
 
 
 @node Generating Scheme literals, Conversions between Scheme and C, Generating C source files, Generating C code
