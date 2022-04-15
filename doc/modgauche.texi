@@ -20315,7 +20315,40 @@ For example, the following test passes if @code{proc} returns either
 @example
 (test* "proc returns either 1 or 2" (test-one-of 1 2) (proc))
 @end example
+
+@c EN
+Note that @code{test-check} compares the actual result against each of
+@var{choice}s by @code{test-check} itself, that is:
+@c JP
+@code{test-check}は各@var{choice}に対して@code{test-check}を再帰的に
+呼びます。すなわち:
+@c COMMON
+
+@example
+(test-check (test-one-of choice @dots{}) result equal)
+ @equiv{} (or (test-check choice result equal) @dots{})
+@end example
+
+@c EN
+This, if you want to compare each choice
+with customized equivalence procedure, pass @code{test-check}
+with a specialized equivalence procedure as the check procedure.
+The following example compares each @var{choice} and the result
+case-insensitively:
+@c JP
+従って、各選択肢を比較する手続きをカスタマイズしたい場合は、
+それを与えた@code{test-check}手続きをチェック手続きとして渡してください。
+例えば次の例は、各選択肢と結果を@code{string-ci=?}で比較します:
+@c COMMON
+
+@example
+(test* "Using one-of with case insensitive comparison"
+       (test-one-of "abc" "def")
+       "Abc"
+       (cut test-check <> <> string-ci=?))
+@end example
 @end defun
+
 
 @defun test-none-of choice @dots{}
 @c MOD gauche.test
@@ -20329,6 +20362,14 @@ don't match any of @var{choice}s.
 テストは、テスト結果が@var{choice}のどれにもマッチしなかった時に成功となります。
 @c COMMON
 @end defun
+
+@c EN
+Note: If you want to compare inexact numeric result,
+you can use @code{approx=?} (@pxref{Numerical comparison}).
+@c JP
+註: 不正確な数値の結果を比較したい場合は、
+@code{approx=?}が使えます (@ref{Numerical comparison}参照)。
+@c COMMON
 
 @c EN
 @subheading Testing abnormal cases
