@@ -234,6 +234,10 @@
    (aregs :init-form (set eq-comparator))
    ))
 
+(define (make-cluster benv)
+  (rlet1 c (make <cluster>)
+    (push! (~ benv'clusters) c)))
+
 ;;
 ;; Conversion to basic blocks
 ;;
@@ -639,23 +643,20 @@
 ;;
 
 (define (cluster-bbs! benv)
-  (define (rec c bb)
+  (define (rec benv c bb)
     (unless (~ bb'cluster)                  ; already visited
       (push! (~ c'blocks) bb)
       (set! (~ bb'cluster) c)
       (match (last-insn bb)
-        [('JP bb1) (rec c bb1)]
-        [('BR _ bb1 bb2) (rec c bb1) (rec c bb2)]
+        [('JP bb1) (rec benv c bb1)]
+        [('BR _ bb1 bb2) (rec benv c bb1) (rec benv c bb2)]
         [('CALL bb1 proc . regs)
          (when (and bb1 (not (~ bb1 'cluster)))
-           (let1 c1 (make <cluster>)
-             (rec c1 bb1)))]
+           (rec benv (make-cluster benv) bb1))]
         [_ #f])))
   ;; 1st pass
   (when (null? (~ benv'clusters))
-    (let1 c (make <cluster>)
-      (push! (~ benv'clusters) c)
-      (rec c (~ benv'entry)))
+    (rec benv (make-cluster benv) (~ benv'entry))
     (for-each cluster-bbs! (~ benv'children)))
   ;; 2nd pass (register classification)
   (dolist [c (~ benv'clusters)]
@@ -666,7 +667,8 @@
 
 (define (classify-cluster-regs! benv c)
   (dolist [reg (~ benv'registers)]
-    (when (is-a? reg <reg>)
+    (when (and (is-a? reg <reg>)
+               (any (^b (eq? (~ b'cluster) c)) (~ reg'blocks)))
       (cond [(memq reg (~ benv'input-regs))
              (update! (~ c'aregs) (cut set-adjoin! <> reg))]
             [(every (^b (eq? (~ b'cluster) c)) (~ reg'blocks))
@@ -732,6 +734,18 @@
   (define (assign-benv-names benv)
     (push! benv-alist (cons benv (length benv-alist)))
     (for-each assign-benv-names (reverse (~ benv'children))))
+  (define (dump-clusters)
+    (format #t "~70,,,'=a\n" "Clusters ")
+    (dolist [benv (reverse (map car benv-alist))]
+      (dolist [cluster (~ benv'clusters)]
+        (format #t " CLUSTER ~a\n" (~ cluster'id))
+        (format #t "   BBs: ~s\n" (map bb-name (~ cluster'blocks)))
+        (format #t "   aregs: ~s\n" (map (cut ~ <> 'name)
+                                         (set->list (~ cluster'aregs))))
+        (format #t "   xregs: ~s\n" (map (cut ~ <> 'name)
+                                         (set->list (~ cluster'xregs))))
+        (format #t "   lregs: ~s\n" (map (cut ~ <> 'name)
+                                         (set->list (~ cluster'lregs)))))))
   (define (dump-registers)
     (format #t "~70,,,'=a\n" "Registers ")
     (dolist [benv (reverse (map car benv-alist))]
@@ -742,6 +756,7 @@
                   (map bb-name (~ reg'blocks)))))))
   (assign-benv-names benv)
   (dump-1 benv)
+  (dump-clusters)
   (dump-registers)
   )
 
