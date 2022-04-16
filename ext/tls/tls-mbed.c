@@ -42,6 +42,14 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
 
+/* NB: In only MbedTLS 3.0, the member 'fd' in mbedtls_net_context structure
+       is private and this macro is required to access it. */
+#if (MBEDTLS_VERSION_MAJOR == 3) && (MBEDTLS_VERSION_MINOR == 0)
+#define MBEDTLS_FD(x) MBEDTLS_PRIVATE(x)
+#else
+#define MBEDTLS_FD(x) x
+#endif
+
 SCM_CLASS_DECL(Scm_MbedTLSClass);
 
 #ifdef HAVE_WINCRYPT_H
@@ -206,11 +214,6 @@ static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
 
 static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
 {
-#if MBEDTLS_VERSION_MAJOR >= 3
-    Scm_Error("Making TLS connection over existing socket (%d) is not supporetd "
-              "in MbedTLS version 3 (%S)", fd, tls);
-    return SCM_UNDEFINED;       /* dummy */
-#else /*MBEDTLS_VERSION_MAJOR = 2*/
     ScmMbedTLS* t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "connect");
     const char* pers = "Gauche";
@@ -219,12 +222,11 @@ static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
         Scm_SysError("mbedtls_ctr_drbg_seed() failed");
     }
 
-    if (t->conn.fd >= 0) {
+    if (t->conn.MBEDTLS_FD(fd) >= 0) {
         Scm_Error("attempt to connect already-connected TLS %S", t);
     }
-    t->conn.fd = fd;
+    t->conn.MBEDTLS_FD(fd) = fd;
     return mbed_connect_common(t);
-#endif
 }
 
 static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
@@ -276,11 +278,6 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
 
 static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
 {
-#if MBEDTLS_VERSION_MAJOR >= 3
-    Scm_Error("Accepting TLS connection over existing socket (%d) is not supporetd "
-              "in MbedTLS version 3 (%S)", fd, tls);
-    return SCM_UNDEFINED;       /* dummy */
-#else /*MBEDTLS_VERSION_MAJOR = 2*/
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "accept");
 
@@ -290,10 +287,10 @@ static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
         Scm_SysError("mbedtls_ctr_drbg_seed() failed");
     }
 
-    if (t->conn.fd >= 0) {
+    if (t->conn.MBEDTLS_FD(fd) >= 0) {
         Scm_Error("attempt to connect already-connected TLS %S", t);
     }
-    t->conn.fd = fd;
+    t->conn.MBEDTLS_FD(fd) = fd;
 
     if (mbedtls_ssl_config_defaults(&t->conf,
                                     MBEDTLS_SSL_IS_SERVER,
@@ -324,7 +321,6 @@ static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
     }
     t->state = CONNECTED;
     return SCM_OBJ(t);
-#endif /*MBEDTLS_VERSION_MAJOR = 2*/
 }
 
 static ScmObj mbed_read(ScmTLS* tls)
