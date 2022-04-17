@@ -38,7 +38,7 @@
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z $ cut cute rec
                              guard check-arg
-                             push! pop! inc! dec! update!
+                             push! push-unique! pop! inc! dec! update!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
@@ -117,7 +117,7 @@
 
      (define (fulfill-package rest seed)
        (match rest
-         [(package) 
+         [(package)
           (or (equal? package 'gauche)
               (find-gauche-package-description package))]
          [(package version-spec)
@@ -720,6 +720,28 @@
         (quasirename r
           `(set! ,loc (cons ,val ,loc)))]
        [_ (error "malformed push!:" f)]))))
+
+(define-syntax push-unique!
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ p val) (quasirename r `(push-unique! ,p ,val eqv?))]
+       [(_ (proc arg ...) val equal)
+        (let1 vars (map (^_ (gensym)) arg)
+          (quasirename r
+            `(let ([val ,val]
+                   [getter ,proc]
+                   ,@(map list vars arg))
+               (let1 vs (getter ,@vars)
+                 (unless (member val vs ,equal)
+                   ((setter getter) ,@vars (cons val vs)))))))]
+       [(_ loc val equal)
+        (quasirename r
+          `(let ([val ,val]
+                 [vs ,loc])
+             (unless (member val vs ,equal)
+               (set! ,loc (cons val vs)))))]
+       [_ (error "malformed push-unique!:" f)]))))
 
 (define-syntax pop!
   (er-macro-transformer

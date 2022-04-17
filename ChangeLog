@@ -1,3 +1,11 @@
+2022-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (push-unique!): Added, finally.  CL's pushnew.
+	  I've been resisting the temptation to add this, for most of the
+	  times it doesn't bother me much to write out the logic explicitly.
+	  However, I hit the cases where this makes code much cleaner
+	  enough times.
+
 2022-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/main.c (main): Noticed *program-name* and *argv* aren't defined
