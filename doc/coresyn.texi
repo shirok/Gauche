@@ -1576,6 +1576,49 @@ Perlのpushオペレータの動作が必要ならQueueが使えます (@ref{Que
 @c COMMON
 @end defmac
 
+@defmac push-unique! place item [equal]
+@c EN
+The value in @var{place} must be a list.  If @var{item} isn't
+already in the value in @var{place}, @var{place} is updated
+with the cons of @var{item} and its previous value.  If @var{item}
+is already in the value, nothing is done.
+
+The equivalence is checked with @var{equal} procedure.  If omitted,
+@code{eqv?} is assumed.
+
+This is similar to Common Lisp's @code{pushnew}, but the argument
+order is flipped.
+
+See also @code{enqueue-unique!} and @code{queue-push-unique!}
+in @code{data.queue} (@ref{Queue}).
+@c JP
+@var{place}の値はリストでなければなりません。@var{item}がそのリスト中に
+なければ、@var{place}が@var{item}を先頭にコンスした値に更新されます。
+@var{item}が既に@var{place}の値の中にあれば、何も起きません。
+
+@var{item}が既にある値と等しいかどうかは@var{equal}手続きで比較されます。
+省略された場合は@code{eqv?}が使われます。
+
+Common Lispの@code{pushnew}に似ていますが、引数の順序が異なります。
+
+@code{data.queue}の@code{enqueue-unique!}と@code{queue-push-unique!}も
+参照してください(@ref{Queue})。
+@c COMMON
+
+@example
+(define v (vector '("a")))
+
+(push-unique! (vector-ref v 0) "b")
+v @result{} #(("b" "a"))
+
+(push-unique! (vector-ref v 0) "A" string-ci=?)
+v @result{} #(("b" "a"))
+
+(push-unique! (vector-ref v 0) "A")
+v @result{} #(("A" "b" "a"))
+@end example
+@end defmac
+
 @defmac pop! place
 @c EN
 Retrieves the value of @var{place}, sets its @code{cdr} back to @var{place}
