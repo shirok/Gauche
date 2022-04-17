@@ -225,6 +225,8 @@
   ((id :init-form (gensym "C")) ;for debugging
    (entry? :init-value #f)      ;#t if this cluster is procedure entry
    (blocks :init-value '())     ;basic blocks
+   (upstream :init-value '())   ;upstream clustres
+   (downstream :init-value '()) ;downstream clusters
    ;; Register classification
    ;;  XREGS - Regs introduced in other clusters
    ;;  LREGS - Regs local to this cluster
@@ -648,11 +650,21 @@
       (push! (~ c'blocks) bb)
       (set! (~ bb'cluster) c)
       (match (last-insn bb)
-        [('JP bb1) (rec benv c bb1)]
-        [('BR _ bb1 bb2) (rec benv c bb1) (rec benv c bb2)]
+        [('JP bb1)
+         (link-clusters! c (~ bb1'cluster))
+         (rec benv c bb1)]
+        [('BR _ bb1 bb2)
+         (link-clusters! c (~ bb1'cluster))
+         (link-clusters! c (~ bb2'cluster))
+         (rec benv c bb1)
+         (rec benv c bb2)]
         [('CALL bb1 proc . regs)
-         (when (and bb1 (not (~ bb1 'cluster)))
-           (rec benv (make-cluster benv) bb1))]
+         (when bb1
+           (if-let1 c2 (~ bb1 'cluster)
+             (link-clusters! c c2)
+             (let1 c2 (make-cluster benv)
+               (link-clusters! c c2)
+               (rec benv c2 bb1))))]
         [_ #f])))
   ;; 1st pass
   (when (null? (~ benv'clusters))
@@ -664,6 +676,11 @@
   (dolist [cbenv (~ benv'children)]
     (dolist [c (~ cbenv 'clusters)]
       (classify-cluster-regs! cbenv c))))
+
+(define (link-clusters! upstream downstream)
+  (when (and upstream downstream)
+    (push-unique! (~ upstream'downstream) downstream)
+    (push-unique! (~ downstream'upstream) upstream)))
 
 (define (classify-cluster-regs! benv c)
   (dolist [reg (~ benv'registers)]
@@ -719,8 +736,7 @@
                flags (regname reg))]
       [_ (format port "??~s\n" insn)]))
   (define (dump-bb bb)
-    (format port "~a\n" (bb-name bb))
-    (format port "    ~s → * → ~s\n"
+    (format port " ~a   [~a> >~a]\n" (bb-name bb)
             (map (cut ~ <> 'id) (reverse (~ bb'upstream)))
             (map (cut ~ <> 'id) (reverse (~ bb'downstream))))
     (for-each dump-insn (reverse (~ bb'insns))))
@@ -738,7 +754,9 @@
     (format #t "~70,,,'=a\n" "Clusters ")
     (dolist [benv (reverse (map car benv-alist))]
       (dolist [cluster (~ benv'clusters)]
-        (format #t " CLUSTER ~a\n" (~ cluster'id))
+        (format #t " CLUSTER ~a  [~a> >~a]\n" (~ cluster'id)
+                (map (cut ~ <> 'id) (~ cluster'upstream))
+                (map (cut ~ <> 'id) (~ cluster'downstream)))
         (format #t "   BBs: ~s\n" (map bb-name (~ cluster'blocks)))
         (format #t "   aregs: ~s\n" (map (cut ~ <> 'name)
                                          (set->list (~ cluster'aregs))))
