@@ -172,11 +172,10 @@
 (define-cproc list-tail (list k::<fixnum> :optional fallback) :constant
   Scm_ListTail)
 
-;; list-ref and list-set! requires the first argument to be a <pair>.
-;; This catches a common mistake to pass non-list (which is, technically,
-;; a dotted list of length 0).  Passing length 0 list (proper or dotted)
-;; to list-ref and list-set! is useless anyways, so it generates a better
-;; error message.
+;; list-set! requires the first argument to be a <pair>, for
+;; passing length 0 list (proper or dotted) to list-set! is useless anyways.
+;; list-ref, on the other hand, can accept non-list argument (which is
+;; technically a dotted list of length 0), as far as FALLBACK is given.
 ;; Cf. https://github.com/shirok/Gauche/issues/814
 
 ;;We need to define list-set! as cproc in order to use it in the setter clause
@@ -187,8 +186,11 @@
     (if (SCM_PAIRP p)
       (Scm_SetCar p v)
       (Scm_Error "list-set!: index out of bound: %d" k))))
-(define-cproc list-ref (lis::<pair> k::<fixnum> :optional fallback) :constant
+(define-cproc list-ref (lis k::<fixnum> :optional fallback) :constant
   (setter list-set!)
+    ;; Better error message for the common mistake
+  (when (and (SCM_UNBOUNDP fallback) (not (SCM_LISTP lis)))
+    (Scm_Error "list-ref: argument must be a list, but got: %S" lis))
   (return (Scm_ListRef (SCM_OBJ lis) k fallback)))
 
 (define-cproc memq (obj list::<list>) :constant (inliner MEMQ) Scm_Memq)
