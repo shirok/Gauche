@@ -400,7 +400,7 @@
 
 (define-form-parser declare-stub-type args
   (unless (<= 2 (length args) 6)
-    (error <cgen-stub-error> "malformed define-type: "
+    (error <cgen-stub-error> "malformed declare-stub-type: "
            `(declare-stub-type . ,args)))
   (apply (^[name c-type :optional (desc #f) (c-pred #f) (unbox #f) (box #f)]
            (make-cgen-type name #f c-type desc c-pred unbox box))
