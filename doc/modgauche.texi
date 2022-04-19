@@ -5615,8 +5615,12 @@ Produces ``Warning: XXX'' and
 ``Error: XXX'' messages, respectively.
 The @var{fmt} and @var{arg} @dots{} are passed to @code{format} to
 generate XXX part (@pxref{Formatting output}).
+Then, @code{cf-msg-error} exits with exit code 1.
+
 These corresponds to
 autoconf's @code{AC_MSG_WARN} and @code{AC_MSG_ERROR}.
+NB: @code{AC_MSG_ERROR} can specify the exit code,
+but @code{cf-msg-error} uses fixed exit code (1) for now.
 @end defun
 
 @defun cf-echo arg @dots{} [> file][>> file]
