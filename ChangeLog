@@ -1,3 +1,7 @@
+2022-04-18  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: 0.9.12_pre1
+
 2022-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (list-ref): Better error message.
