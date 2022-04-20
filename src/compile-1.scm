@@ -1862,14 +1862,14 @@
     ;; find-load-file returns either (<found-path> <rest-of-search-paths>)
     ;; or (<pseudo-path> <rest-of-search-paths> <thunk-to-open-content>)
     ;; see libeval.scm for the details.
-    (if-let1 path&rest (find-load-file path search-paths
-                                       (cons "" *load-suffixes*)
-                                       :allow-archive #t
-                                       :relative-dot-path #t)
-      (if (pair? (cddr path&rest)) ; archive hook is in effect.
-        ((caddr path&rest) (car path&rest))
-        (open-input-file (car path&rest) :encoding #t))
-      (error "include file is not readable: " path))))
+    (match (find-load-file path search-paths
+                           (cons "" *load-suffixes*)
+                           :allow-archive #t
+                           :relative-dot-path #t)
+      [(pseudo-path rest open-content)     ;archive hook is in effect
+       (open-content pseudo-path)]
+      [(found-path rest) (open-input-file found-path :encoding #t)]
+      [_ (error "Can't find the file to include: " path)])))
 
 ;; Report including.
 (define (pass1/report-include iport open?)
