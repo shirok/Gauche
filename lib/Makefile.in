@@ -124,7 +124,7 @@ SCMFILES = \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
        util/record.scm util/relation.scm util/stream.scm util/trie.scm \
        util/rbtree.scm util/sparse.scm util/dominator.scm \
-       util/levenshtein.scm util/unification.scm \
+       util/levenshtein.scm util/unification.scm util/temporal-relation.scm \
        compat/chibi-test.scm compat/jfilter.scm compat/stk.scm \
        compat/norational.scm compat/r7rs-srfi-tests.scm \
        file/filter.scm \

@@ -1205,6 +1205,11 @@
                    (list->stream '())))
 
 ;;-----------------------------------------------
+(test-section "util.temporal-relation")
+(use util.temporal-relation)
+(test-module 'util.temporal-relation)
+
+;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)
 (test-module 'util.toposort)

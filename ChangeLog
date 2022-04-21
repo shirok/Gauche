@@ -1,3 +1,7 @@
+2022-04-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/temporal-relation.scm: Added.
+
 2022-04-18  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: 0.9.12_pre1
