@@ -1209,6 +1209,45 @@
 (use util.temporal-relation)
 (test-module 'util.temporal-relation)
 
+(define-module temporal-relation-test
+  (use gauche.test)
+  (use util.temporal-relation :prefix tr:)
+  (use util.match)
+
+  (define (interval a b) (cons a b))
+  (define p tr:pair-interval-protocol)
+  (define data
+    `([,(interval 0 5) ,(interval 6 9) before]
+      [,(interval 0 5) ,(interval 5 9) meets]
+      [,(interval 0 6) ,(interval 5 9) overlaps]
+      [,(interval 0 9) ,(interval 5 9) finished-by]
+      [,(interval 0 9) ,(interval 3 8) contains]
+      [,(interval 3 8) ,(interval 3 9) starts]
+      [,(interval 3 9) ,(interval 3 9) equal]
+      [,(interval 3 9) ,(interval 3 8) started-by]
+      [,(interval 4 8) ,(interval 0 9) during]
+      [,(interval 4 9) ,(interval 0 9) finishes]
+      [,(interval 4 9) ,(interval 0 8) overlapped-by]
+      [,(interval 5 9) ,(interval 0 5) met-by]
+      [,(interval 6 9) ,(interval 0 4) after]))
+  (define point-data
+    `([,(interval 0 5) 9 before]
+      [,(interval 0 8) 8 finished-by]
+      [,(interval 0 8) 7 contains]
+      [,(interval 5 9) 5 started-by]
+      [,(interval 5 9) 0 after]))
+
+  (dolist [d data]
+    (match-let1 [x y rel] d
+      (test* #"relation? ~rel" #t (tr:relation? rel))
+      (test* #"relate ~x ~y" rel (tr:relate p x y))
+      (test* #"relate ~y ~x" rel (tr:inverse (tr:relate p y x)))))
+
+  (dolist [d point-data]
+    (match-let1 [x y rel] d
+      (test* #"relate ~x ~y" rel (tr:relate-point p x y))))
+  )
+
 ;;-----------------------------------------------
 (test-section "util.toposort")
 (use util.toposort)

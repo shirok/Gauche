@@ -43,9 +43,10 @@
   (use srfi-114 :only (if3))
   (export make-interval-protocol
           pair-interval-protocol
-          interval-relation?
-          interval-relation
-          interval-point-relation
+          relation?
+          inverse
+          relate
+          relate-point
           ))
 (select-module util.temporal-relation)
 
@@ -68,22 +69,38 @@
 
 
 ;; Interval relations
-(define (interval-relation? sym)
-  (memq sym '(before
-              meets
-              overlaps
-              finished-by
-              contains
-              starts
-              equal
-              started-by
-              during
-              finishes
-              overlapped-by
-              met-by
-              after)))
+(define (relation? sym)
+  (boolean (memq sym '(before
+                       meets
+                       overlaps
+                       finished-by
+                       contains
+                       starts
+                       equal
+                       started-by
+                       during
+                       finishes
+                       overlapped-by
+                       met-by
+                       after))))
 
-(define (interval-relation protocol int-x int-y)
+(define (inverse sym)
+  (ecase sym
+    [(before)       'after]
+    [(meets)        'met-by]
+    [(overlaps)     'overlapped-by]
+    [(finished-by)  'finishes]
+    [(contains)     'during]
+    [(starts)       'started-by]
+    [(equal)        'equal]
+    [(started-by)   'starts]
+    [(during)       'contains]
+    [(finishes)     'finished-by]
+    [(overlapped-by)'overlaps]
+    [(met-by)       'meets]
+    [(after)        'before]))
+
+(define (relate protocol int-x int-y)
   (let ([xs ((~ protocol'%start-point) int-x)]
         [xe ((~ protocol'%end-point) int-x)]
         [ys ((~ protocol'%start-point) int-y)]
@@ -109,7 +126,7 @@
               'met-by
               'after))))
 
-(define (interval-point-relation protocol int point)
+(define (relate-point protocol int point)
   (let ([s ((~ protocol'%start-point) int)]
         [e ((~ protocol'%end-point) int)]
         [cmp (~ protocol'%compare-points)])
