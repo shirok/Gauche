@@ -88,6 +88,7 @@
 * SLIB-compatible record type::  util.record
 * Relation framework::          util.relation
 * Stream library::              util.stream
+* Temporal relation::           util.temporal-relation
 * Topological sort::            util.toposort
 * Unification::                 util.unification
 * CGI utility::                 www.cgi
@@ -30298,7 +30299,7 @@ you can write like this:
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Stream library, Topological sort, Relation framework, Library modules - Utilities
+@node Stream library, Temporal relation, Relation framework, Library modules - Utilities
 @section @code{util.stream} - Stream library
 @c NODE ストリームライブラリ, @code{util.stream} - ストリームライブラリ
 
@@ -31654,7 +31655,155 @@ The optional argument is Gauche's extension.  The description of @code{reverse}
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Topological sort, Unification, Stream library, Library modules - Utilities
+@node Temporal relation, Topological sort, Stream library, Library modules - Utilities
+@section @code{util.temporal-relation} - Temporal relation
+@c NODE 時間的関係, @code{util.temporal-relation} - 時間的関係
+
+@deftp {Module} util.temporal-relation
+@mdindex util.temporal-relation
+@c EN
+Procedures to find relation between two temporal intervals,
+or a temporal interval and a point in time.
+@c JP
+二つの時間間隔、もしくは時間間隔と時刻の関係を調べる手続きを提供します。
+@c COMMON
+
+A temporal interval is represented by two points in time,
+@var{start-time} and @var{end-time}.   This module does not define
+a concrete structure for temporal intervals.  Instead, the user
+provides a @emph{interval protocol}, which specifies how to
+access start/end time and how to compare them.
+
+Given two temporal intervals x and y, there are 13 possible relations:
+
+@example
+|<-- x -->|
+             |<-- y -->|             x before y
+
+|<-- x -->|
+          |<-- y -->|                x meets y
+
+|<--- x ---->|
+         |<-- y -->|                 x overlaps y
+
+|<------ x ------->|
+         |<-- y -->|                 x finished-by y
+
+|<------- x -------->|
+    |<---- y ---->|                  x contains y
+
+   |<-- x -->|
+   |<------ y ---->|                 x starts y
+
+  |<---- x ---->|
+  |<---- y ---->|                    x equal y
+
+  |<----- x ----->|
+  |<-- y -->|                        x started-by y
+
+  |<---- x ---->|
+|<--------y -------->|               x during y
+
+         |<-- x -->|
+|<------ y ------->|                 x finishes y
+
+         |<-- x -->|
+|<----- y ---->|                     x overlapped-by y
+
+          |<-- x -->|
+|<-- y -->|                          x met-by y
+
+             |<-- x -->|
+|<-- y -->|                          x after y
+@end example
+@end deftp
+
+@defun make-interval-protocol get-start get-end :optional compare-points
+@c MOD util.temporal-relation
+Creates and returns an interval protocol.  The @var{get-start} and
+@var{get-end} arguments are procedures taking an user-defined interval
+object, and returns its start time and end time, respectively.
+The @var{compare-points} argument is a procedure that takes two points of
+time, and must return either a negative real value (if the first point is before
+the second), zero (if two points are the same), or a positive real value
+(if the first point is after the second).
+
+The actual representation of time points are up to the caller.
+
+If the @var{compare} argument is omitted, the built-in @code{compare} procedure
+is used (@pxref{Comparison}).  It is suffice for most scalar values;
+e.g. you may use real numbers, @code{<time>}, or @code{<date>} objects.
+@end defun
+
+@defvar pair-interval-protocol
+@c MOD util.temporal-relation
+Bound to @code{(amke-interval-protocol car cdr)}; that is, an interval
+represented by cons of start time and end time.
+@end defvar
+
+@defun relation? obj
+@c MOD util.temporal-relation
+Returns @code{#t} iff @var{obj} is a symbol representing
+a temporal relation.  Valid symbols are one of
+@code{before}, @code{meets}, @code{overlaps}, @code{finished-by},
+@code{contains}, @code{starts}, @code{equal}, @code{started-by},
+@code{during}, @code{finishes}, @code{overlapped-by}, @code{met-by}
+and @code{after}.
+@end defun
+
+@defun inverse rel
+@c MOD util.temporal-relation
+The argument must be a symbol representing a temporal relation.
+This procedure returns its inverse relation; that is,
+@code{(relate _ x y)} @equiv{} @code{(inverse (relate _ y x))}.
+
+An error is thrown if @var{rel} is not a valid relation.
+@end defun
+
+@defun relate proto x y
+@c MOD util.temporal-relation
+The @var{proto} argument is an interval protocol, and both @var{x} and @var{y}
+must be temporal intervals that is compatible to the protocol @var{proto}.
+
+The procedure returns a temporal relation, represented as one of
+the following symbols:
+@code{before}, @code{meets}, @code{overlaps}, @code{finished-by},
+@code{contains}, @code{starts}, @code{equal}, @code{started-by},
+@code{during}, @code{finishes}, @code{overlapped-by}, @code{met-by}
+and @code{after}.
+@end defun
+
+@defun relate-point proto x point
+@c MOD util.temporal-relation
+The @var{proto} argument is an interval protocol, and @var{x} must
+be a temporal interval that implements the protocol.  The @var{point}
+is a point of time, comparable by the compare-points procedure
+of the protocol.
+
+The possible relations are a subset of interval-interval relations:
+
+@example
+|<-- x -->|
+               p                 x before p
+
+|<--- x --->|
+            p                    x finished-by p
+
+  |<--- x --->|
+          p                      x contains p
+
+     |<--- x --->|
+     p                           x started-by p
+
+       |<-- x -->|
+   p                             x after p
+@end example
+@end defun
+
+
+
+@c ----------------------------------------------------------------------
+@node Topological sort, Unification, Temporal relation, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
 @c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
 
