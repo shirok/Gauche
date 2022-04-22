@@ -31674,7 +31674,9 @@ a concrete structure for temporal intervals.  Instead, the user
 provides a @emph{interval protocol}, which specifies how to
 access start/end time and how to compare them.
 
-Given two temporal intervals x and y, there are 13 possible relations:
+Given two temporal intervals x and y, there are 13 possible relations
+(the terms are taken from Haskell Rampart library
+@url{https://hackage.haskell.org/package/rampart-2.0.0.0/docs/Rampart.html}):
 
 @example
 |<-- x -->|
