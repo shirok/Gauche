@@ -678,6 +678,21 @@
                (date->string d "~V")))))
   ]) ; cond-expand
 
+;; object-compare for dates.
+(let ((d1 (make-date 0 0 0 0 1 1 2022 0))
+      (d2 (make-date 0 0 0 0 2 1 2022 0))
+      (d3 (make-date 0 0 0 0 2 1 2022 -36000)))
+  (define data
+    `([,d1 ,d2 -1]
+      [,d2 ,d2 0]
+      [,d2 ,d1 1]
+      [,d1 ,d3 -1]
+      [,d2 ,d3 -1]))
+  (dolist [dd data]
+    (test* #"comparing dates ~(car dd) ~(cadr dd)" (caddr dd)
+           (compare (car dd) (cadr dd))))
+  )
+
 ;;
 ;; testing srfi-43
 ;;

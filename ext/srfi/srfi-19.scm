@@ -407,6 +407,9 @@
   (every (^[slot] (= (~ a slot) (~ b slot)))
          '(nanosecond second minute hour day month year zone-offset)))
 
+(define-method object-compare ((a <date>) (b <date>))
+  (compare (date->time-monotonic a) (date->time-monotonic b)))
+
 (define (date? obj) (is-a? obj <date>))
 
 (define (make-date nanosecond second minute hour day month year zone-offset)
