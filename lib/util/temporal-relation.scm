@@ -52,17 +52,21 @@
 
 ;; Anything that conforms given interval protocol can be used as
 ;; an interval.
+;;  greater I - returns greater point of I
+;;  lesser I  - returns lesser point of I
+;;  compare P1, P2 - compare two points P1 and P2, returns negative/0/positive
+;;              real numbers.
 
 (define-class <interval-protocol> ()
-  ((%start-point :init-keyword :start-point)
-   (%end-point   :init-keyword :end-point)
-   (%compare-points :init-keyword :compare-points)))
+  ((%lesser   :init-keyword :lesser)
+   (%greater  :init-keyword :greater)
+   (%compare  :init-keyword :compare)))
 
-(define (make-interval-protocol start end :optional (compare-points compare))
+(define (make-interval-protocol lesser greater :optional (cmp compare))
   (make <interval-protocol>
-    :start-point start
-    :end-point end
-    :compare-points compare-points))
+    :lesser lesser
+    :greater greater
+    :compare cmp))
 
 (define-inline pair-interval-protocol
   (make-interval-protocol car cdr))
@@ -101,25 +105,25 @@
     [(after)        'before]))
 
 (define (relate protocol int-x int-y)
-  (let ([xs ((~ protocol'%start-point) int-x)]
-        [xe ((~ protocol'%end-point) int-x)]
-        [ys ((~ protocol'%start-point) int-y)]
-        [ye ((~ protocol'%end-point) int-y)]
-        [cmp (~ protocol'%compare-points)])
-    (if3 (cmp xs ys)
-         (if3 (cmp xe ys)
+  (let ([xl ((~ protocol'%lesser) int-x)]
+        [xg ((~ protocol'%greater) int-x)]
+        [yl ((~ protocol'%lesser) int-y)]
+        [yg ((~ protocol'%greater) int-y)]
+        [cmp (~ protocol'%compare)])
+    (if3 (cmp xl yl)
+         (if3 (cmp xg yl)
               'before
               'meets
-              (if3 (cmp xe ye)
+              (if3 (cmp xg yg)
                    'overlaps
                    'finished-by
                    'contains))
-         (if3 (cmp xe ye)
+         (if3 (cmp xg yg)
               'starts
               'equal
               'started-by)
-         (if3 (cmp xs ye)
-              (if3 (cmp xe ye)
+         (if3 (cmp xl yg)
+              (if3 (cmp xg yg)
                    'during
                    'finishes
                    'overlapped-by)
@@ -127,13 +131,13 @@
               'after))))
 
 (define (relate-point protocol int point)
-  (let ([s ((~ protocol'%start-point) int)]
-        [e ((~ protocol'%end-point) int)]
-        [cmp (~ protocol'%compare-points)])
-    (if3 (cmp e point)
+  (let ([l ((~ protocol'%lesser) int)]
+        [g ((~ protocol'%greater) int)]
+        [cmp (~ protocol'%compare)])
+    (if3 (cmp g point)
          'before
          'finished-by
-         (if3 (cmp s point)
+         (if3 (cmp l point)
               'contains
               'started-by
               'after))))

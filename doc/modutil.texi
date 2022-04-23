@@ -31669,7 +31669,7 @@ or a temporal interval and a point in time.
 @c COMMON
 
 A temporal interval is represented by two points in time,
-@var{start-time} and @var{end-time}.   This module does not define
+@var{lesser} bound and @var{greater} bound.   This module does not define
 a concrete structure for temporal intervals.  Instead, the user
 provides a @emph{interval protocol}, which specifies how to
 access start/end time and how to compare them.
@@ -31720,11 +31720,11 @@ Given two temporal intervals x and y, there are 13 possible relations
 @end example
 @end deftp
 
-@defun make-interval-protocol get-start get-end :optional compare-points
+@defun make-interval-protocol lesser greater :optional compare-points
 @c MOD util.temporal-relation
-Creates and returns an interval protocol.  The @var{get-start} and
-@var{get-end} arguments are procedures taking an user-defined interval
-object, and returns its start time and end time, respectively.
+Creates and returns an interval protocol.  The @var{lesser} and
+@var{greater} arguments are procedures taking an user-defined interval
+object, and returns its lesser bound and greater bound, respectively.
 The @var{compare-points} argument is a procedure that takes two points of
 time, and must return either a negative real value (if the first point is before
 the second), zero (if two points are the same), or a positive real value
@@ -31740,7 +31740,7 @@ e.g. you may use real numbers, @code{<time>}, or @code{<date>} objects.
 @defvar pair-interval-protocol
 @c MOD util.temporal-relation
 Bound to @code{(amke-interval-protocol car cdr)}; that is, an interval
-represented by cons of start time and end time.
+represented by cons of lesser bound and greater bound.
 @end defvar
 
 @defun relation? obj
