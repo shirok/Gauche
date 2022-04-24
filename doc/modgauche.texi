@@ -23494,24 +23494,51 @@ countスロットも同様に計算対象となります。
 @defun time-these how alist
 @defunx time-these/report how alist
 @c MOD gauche.time
+@c EN
 These procedures benchmarks multiple chunks of code to compare.
+@c JP
+複数のコード片をベンチマークして比較する手続きです。
+@c COMMON
 
+@c EN
 The @var{alist} argument must be the form of
 @code{((key . thunk) @dots{})}, where @code{key} is a symbol
 and @var{thunk} is a procedure taking no arguments.
+@c JP
+@var{alist}は@code{((key . thunk) @dots{})}という形でなければなりません。
+ここで、@code{key}はシンボル、@var{thunk}は引数を取らない手続きです。
+@c COMMON
 
+@c EN
 The @var{how} argument is the same as @code{time-this}; that is,
 either an integer for number of iterations, or a list
 @code{(cpu @var{x})} to indicate @var{x} seconds of cpu time.
+@c JP
+@var{how}引数は@code{time-this}と同じです。すなわち、
+実行の繰り返し回数を指定する整数か、
+使うCPU時間を@var{x}として@code{(cpu @var{x})}の形のリストか、です。
+@c COMMON
 
+@c EN
 @code{time-these} runs benchmarks for each thunk in @var{alist}
 using @code{time-this}, and returns the result in a list of
 the form
 @code{(@var{how} (@var{key1} . @var{result1}) (@var{key2} . @var{result2}) @dots{})},
 where each @var{result} is a @code{<time-result>} object.
+@c JP
+@code{time-these}は@var{alist}中の@var{thunk}それぞれを走らせて計測し、
+結果を
+@code{(@var{how} (@var{key1} . @var{result1}) (@var{key2} . @var{result2}) @dots{})}
+の形で返します。ここで@var{result}は@code{<time-result>}オブジェクトです。
+@c COMMON
 
+@c EN
 @code{time-these/report} outputs the benchmark results and
 comparison matrix in human readable way to the current output port.
+@c JP
+@code{time-these/report}はベンチマーク結果を、人間が読みやすい
+形式にして表示します。
+@c COMMON
 
 @smallexample
 gosh> (time-these/report '(cpu 3.0)
@@ -23529,22 +23556,40 @@ Benchmark: ran real1, real2, imag, each for at least 3.0 cpu seconds.
    imag   862069/s  0.509 0.024     --
 @end smallexample
 
+@c EN
 The first part of the report shows, for each thunks,
 the real (elapsed) time,
 the cpu time used (and its breakdown of user and system time),
 the rate of iteration per second, and the total number of iterations.
+@c JP
+レポートの最初の部分は、各thunkについて、
+実経過時間、CPU時間(およびその内訳としてのuser時間とsystem時間)、
+一秒あたりの繰り返し回数、そしてトータルの繰り返し回数です。
+@c COMMON
 
+@c EN
 The second part compares the speed between each pair of the benchmarks.
 For example, its first row tells that the benchmark @code{real1} is
 0.048 times faster than @code{real2} and 1.965 times faster than
 @code{imag}.
+@c JP
+次の部分は、ベンチマーク間の比較です。
+例えば最初の行は、@code{real1}は@code{real2}の0.048倍、
+@code{imag}の1.965倍の速度で実行されたことを示しています。
+@c COMMON
 @end defun
 
 @defun report-time-results result
 @c MOD gauche.time
+@c EN
 This is a utility procedure to create a report from
 the result of @code{time-these}.  Actually, @code{time-these/report}
 is just a combination of @code{time-these} and this procedure:
+@c JP
+これは@code{time-these}の結果を見やすいレポートとして表示する
+ユーティリティ手続きです。@code{time-these/report}は
+@code{time-these}とこの手続きを組み合わせているだけです。
+@c COMMON
 
 @example
 (define (time-these/report how samples)
