@@ -210,7 +210,7 @@
 
 (define (last-insn bb) (and (pair? (~ bb'insns)) (car (~ bb'insns))))
 
-;; A 'complete' basic block is the one thats ends with either
+;; A 'complete' basic block is the one that ends with either
 ;; CALL, BR, JP or RET insn.
 (define (bb-complete? bb)
   (match (last-insn bb)
@@ -225,6 +225,7 @@
   ((id :init-form (gensym "C")) ;for debugging
    (entry? :init-value #f)      ;#t if this cluster is procedure entry
    (blocks :init-value '())     ;basic blocks
+   (entry-blocks :init-value '()) ; BBs to be jumped from another cluster
    (upstream :init-value '())   ;upstream clustres
    (downstream :init-value '()) ;downstream clusters
    ;; Register classification
@@ -651,13 +652,16 @@
       (set! (~ bb'cluster) c)
       (match (last-insn bb)
         [('JP bb1)
+         (rec benv c bb1)
          (link-clusters! c (~ bb1'cluster))
-         (rec benv c bb1)]
+         (check-entry-bb! c bb1)]
         [('BR _ bb1 bb2)
+         (rec benv c bb1)
+         (rec benv c bb2)
          (link-clusters! c (~ bb1'cluster))
          (link-clusters! c (~ bb2'cluster))
-         (rec benv c bb1)
-         (rec benv c bb2)]
+         (check-entry-bb! c bb1)
+         (check-entry-bb! c bb2)]
         [('CALL bb1 proc . regs)
          (when bb1
            (if-let1 c2 (~ bb1 'cluster)
@@ -678,9 +682,16 @@
       (classify-cluster-regs! cbenv c))))
 
 (define (link-clusters! upstream downstream)
-  (when (and upstream downstream)
+  (when (and upstream downstream
+             (not (eq? upstream downstream)))
     (push-unique! (~ upstream'downstream) downstream)
     (push-unique! (~ downstream'upstream) upstream)))
+
+;; Called when jump from from-cluster to bb.  If bb is not in
+;; from-cluster, we need to mark bb as an entry bb
+(define (check-entry-bb! from-cluster bb)
+  (when (and (~ bb'cluster) (not (eq? from-cluster (~ bb'cluster))))
+    (push-unique! (~ bb'cluster'entry-blocks) bb)))
 
 (define (classify-cluster-regs! benv c)
   (dolist [reg (~ benv'registers)]
@@ -758,6 +769,7 @@
                 (map (cut ~ <> 'id) (~ cluster'upstream))
                 (map (cut ~ <> 'id) (~ cluster'downstream)))
         (format #t "   BBs: ~s\n" (map bb-name (~ cluster'blocks)))
+        (format #t "   Entries: ~s\n" (map bb-name (~ cluster'entry-blocks)))
         (format #t "   aregs: ~s\n" (map (cut ~ <> 'name)
                                          (set->list (~ cluster'aregs))))
         (format #t "   xregs: ~s\n" (map (cut ~ <> 'name)

@@ -35,6 +35,7 @@
   (use gauche.cgen)
   (use gauche.cgen.bbb)
   (use gauche.vm.insn)
+  (use gauche.sequence)
   (use scheme.list)
   (use scheme.set)
   (use srfi-13)
@@ -56,7 +57,7 @@
   (for-each cluster->c (~ benv'clusters)))
 
 (define (cluster->c cluster)
-  (define cfn-name (cgen-safe-name (x->string (~ cluster'id))))
+  (define cfn-name (cluster-cfn-name cluster))
   (cgen-decl #"static ScmObj ~|cfn-name|(ScmObj, void**);")
   (unless (and (set-empty? (~ cluster'xregs))
                (set-empty? (~ cluster'aregs)))
@@ -69,8 +70,7 @@
   (cgen-decl "")
   (cgen-body ""
              #"ScmObj ~|cfn-name|(ScmObj VAL0, void **DATA)"
-             #"{"
-             #" int ENTRY = (int)DATA[0];")
+             #"{")
   (unless (and (set-empty? (~ cluster'xregs))
                (set-empty? (~ cluster'aregs)))
     (cgen-body #" struct ~|cfn-name|_ENV *ENV ="
@@ -81,6 +81,12 @@
                      (map (cut reg-cexpr cluster <>)
                           (set->list (~ cluster'lregs))))
                 ";")))
+  (unless (null? (~ cluster'entry-blocks))
+    (cgen-body #" switch ((int)DATA[0]) {")
+    (for-each-with-index
+     (^[i bb] (cgen-body #"    case ~(+ i 1): goto ~(bb-name bb);"))
+     (~ cluster'entry-blocks))
+    (cgen-body #" }"))
   (for-each block->c (reverse (~ cluster'blocks)))
   (cgen-body #"}"))
 
@@ -105,10 +111,10 @@
     [('CLOSE r b) (cgen-body #" ~(reg-cexpr c r) ="
                              #"   %%WRITEME%%Scm_MakeClosure ~(x->string b);")]
     [('BR r b1 b2)(cgen-body #" if (SCM_FALSEP(~(reg-cexpr c r)))"
-                             #"   goto ~(bb-name b1);"
+                             #"   ~(jump-cstmt c b1)"
                              #" else"
-                             #"   goto ~(bb-name b2);")]
-    [('JP b)      (cgen-body #" goto ~(bb-name b);")]
+                             #"   ~(jump-cstmt c b2)")]
+    [('JP b)      (cgen-body #" ~(jump-cstmt c b)")]
     [('CONT b)    (cgen-body #" %%WRITEME%%Scm_VMPushCC(~(x->string b));")]
     [('CALL bb proc r ...) (gen-vmcall c proc r)]
     [('RET r . rs)(cgen-body #" return ~(reg-cexpr c r);")]
@@ -121,6 +127,23 @@
        (cgen-body #" /* ~(cgen-safe-comment (~ id'name)) */"
                   #" Scm_Define(~(cgen-cexpr c-id), ~(reg-cexpr c r));"))]
     ))
+
+(define (cluster-cfn-name c)
+  (cgen-safe-name (x->string (~ c'id))))
+
+(define (jump-cstmt c dest-bb)
+  (define (inter-cluster-jump dest-cluster index)
+    #"  {\
+    \n    ScmWord data[2];\
+    \n    data[0] = SCM_WORD(~index);\
+    \n    data[1] = SCM_WORD(ENV);\
+    \n    return ~(cluster-cfn-name dest-cluster)(SCM_FALSE, data);\
+    \n  }")
+  (cond
+   [(eq? c (~ dest-bb'cluster)) #"    goto ~(bb-name dest-bb);"]
+   [(find-index (cut eq? dest-bb <>) (~ dest-bb'cluster'entry-blocks))
+    => (^i (inter-cluster-jump (~ dest-bb'cluster) (+ i 1)))]
+   [else (inter-cluster-jump (~ dest-bb'cluster) 0)]))
 
 (define (gen-vmcall c proc regs)
   (cgen-body #" return Scm_VMApply(~(reg-cexpr c proc), ~(gen-list c regs));"))
