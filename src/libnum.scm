@@ -92,7 +92,9 @@
 
 ;;
 ;; Platform introspection
-;;
+;; TODO: These are not :constant for now, because of cross-compilation.
+;; We may need the means to provide target-specific constants during
+;; cross compilation.
 
 (select-module gauche)
 ;; Names are from R6RS.
@@ -282,17 +284,17 @@
            (return v))]
         [else (SCM_TYPE_ERROR num "real number") (return SCM_UNDEFINED)]))
 
-(define-cproc fmod (x::<double> y::<double>) ::<double> fmod)
+(define-cproc fmod (x::<double> y::<double>)::<double> :constant fmod)
 
-(define-cproc frexp (d::<double>) ::(<double> <int>)
+(define-cproc frexp (d::<double>) ::(<double> <int>) :constant
   (set! SCM_RESULT0 (frexp d (& SCM_RESULT1))))
 
-(define-cproc modf (x::<double>) ::(<double> <double>)
+(define-cproc modf (x::<double>) ::(<double> <double>) :constant
   (set! SCM_RESULT0 (modf x (& SCM_RESULT1))))
 
-(define-cproc ldexp (x::<double> exp::<int>) ::<double> ldexp)
+(define-cproc ldexp (x::<double> exp::<int>) ::<double> :constant ldexp)
 
-(define-cproc log10 (x::<double>) ::<double> log10)
+(define-cproc log10 (x::<double>) ::<double> :constant log10)
 
 ;; NB: Alternative implemenation of gamma and log-abs-gamma functions are
 ;; provided in Scheme (lib/gauche/numerical.scm).
@@ -306,12 +308,14 @@
      lgamma)))
 ;; Returns the HalfFloat representation as integer.  For now,
 ;; we keep it in gauche.internal.
-(define-cproc flonum->f16bits (x::<double>) ::<int> Scm_DoubleToHalf)
+(define-cproc flonum->f16bits (x::<double>) ::<int> :constant Scm_DoubleToHalf)
 
 ;;
 ;; Arithmetics
 ;;
 
+;; NB: Compile-time constant folding for these four procedures are
+;; handled in the compiler, so we don't need :constant flag here.
 (select-module scheme)
 (define-cproc * (:rest args) ::<number> :fast-flonum
   (cond [(not (SCM_PAIRP args)) (return (SCM_MAKE_INT 1))]
