@@ -110,12 +110,12 @@
                      #"                       NULL);"))]
     [('CLOSE r b) (cgen-body #" ~(reg-cexpr c r) ="
                              #"   %%WRITEME%%Scm_MakeClosure ~(x->string b);")]
-    [('BR r b1 b2)(cgen-body #" if (SCM_FALSEP(~(reg-cexpr c r)))"
-                             #"   ~(jump-cstmt c b1)"
-                             #" else"
-                             #"   ~(jump-cstmt c b2)")]
-    [('JP b)      (cgen-body #" ~(jump-cstmt c b)")]
-    [('CONT b)    (cgen-body #" %%WRITEME%%Scm_VMPushCC(~(x->string b));")]
+    [('BR r b1 b2)(cgen-body #" if (SCM_FALSEP(~(reg-cexpr c r)))")
+                  (gen-jump-cstmt c b1)
+                  (cgen-body #" else")
+                  (gen-jump-cstmt c b2)]
+    [('JP b)      (gen-jump-cstmt c b)]
+    [('CONT b)    (gen-cont-cstmt c b)]
     [('CALL bb proc r ...) (gen-vmcall c proc r)]
     [('RET r . rs)(cgen-body #" return ~(reg-cexpr c r);")]
     [('BUILTIN op r as ...)
@@ -131,19 +131,33 @@
 (define (cluster-cfn-name c)
   (cgen-safe-name (x->string (~ c'id))))
 
-(define (jump-cstmt c dest-bb)
-  (define (inter-cluster-jump dest-cluster index)
-    #"  {\
-    \n    ScmWord data[2];\
-    \n    data[0] = SCM_WORD(~index);\
-    \n    data[1] = SCM_WORD(ENV);\
-    \n    return ~(cluster-cfn-name dest-cluster)(SCM_FALSE, data);\
-    \n  }")
-  (cond
-   [(eq? c (~ dest-bb'cluster)) #"    goto ~(bb-name dest-bb);"]
-   [(find-index (cut eq? dest-bb <>) (~ dest-bb'cluster'entry-blocks))
-    => (^i (inter-cluster-jump (~ dest-bb'cluster) (+ i 1)))]
-   [else (inter-cluster-jump (~ dest-bb'cluster) 0)]))
+;; Returns bb's entry index.
+(define (entry-block-index bb)
+  (if-let1 i (find-index (cut eq? bb <>) (~ bb'cluster'entry-blocks))
+    (+ i 1)
+    0))
+
+(define (gen-jump-cstmt c dest-bb)
+  (if (eq? c (~ dest-bb'cluster))
+    (cgen-body #"  goto ~(bb-name dest-bb);")
+    (let ([index (entry-block-index dest-bb)]
+          [cfn (cluster-cfn-name (~ dest-bb'cluster))])
+      (cgen-body #"  {"
+                 #"     ScmWord data[2];"
+                 #"     data[0] = SCM_WORD(~index);"
+                 #"     data[1] = SCM_WORD(ENV);"
+                 #"     return ~|cfn|(SCM_FALSE, data);"
+                 #"  }"))))
+
+(define (gen-cont-cstmt c dest-bb)
+  (let ([index (entry-block-index dest-bb)]
+        [cfn (cluster-cfn-name (~ dest-bb'cluster))])
+    (cgen-body #" {"
+               #"   ScmWord data[2];"
+               #"   data[0] = SCM_WORD(~index);"
+               #"   data[1] = ENV;"
+               #"   Scm_VMPsuhCC(~|cfn|, data, 2);"
+               #" }")))
 
 (define (gen-vmcall c proc regs)
   (cgen-body #" return Scm_VMApply(~(reg-cexpr c proc), ~(gen-list c regs));"))
