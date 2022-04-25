@@ -206,8 +206,8 @@
 (define-cproc inexact->exact (obj) :fast-flonum :constant Scm_Exact)
 
 (select-module gauche)
-(define exact   inexact->exact)           ;R6RS
-(define inexact exact->inexact)           ;R6RS
+(define-inline exact   inexact->exact)           ;R6RS
+(define-inline inexact exact->inexact)           ;R6RS
 
 (select-module scheme)
 (define-cproc number->string (obj :optional (radix::<fixnum> 10)
