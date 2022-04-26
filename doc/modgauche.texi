@@ -1856,6 +1856,7 @@ code fragment only to the designated part.
 @subsection Generating Scheme literals
 @c NODE Schemeリテラルを生成する
 
+@c EN
 Sometimes you want to refer to a Scheme constant value in C code.
 It is trivial if the value is a simple thing like Scheme boolean
 (@code{SCM_TRUE}, @code{SCM_FALSE}), characters (@code{SCM_MAKE_CHAR(code)}),
@@ -1863,34 +1864,71 @@ small integers (@code{SCM_MAKE_INT(value)}), etc.  You can directly
 write it in C code.  However, once you step outside of these simple
 values, it gets tedious quickly, involving static data declarations
 and/or runtime initialization code.
+@c JP
+Schemeの値を定数としてCコードに埋め込みたい場合がしばしばあります。
+それが単純な値、例えばSchemeの真偽値(@code{SCM_TRUE}/@code{SCM_FALSE})、
+文字(@code{SCM_MAKE_CHAR(code)})、小さい整数(@code{SCM_MAKE_INT(value)})、
+等であれば、直接Cコードに書き込めます。
+しかし、ひとたび単純な値の範囲を離れると、
+こっちでstaticデータ宣言をしてこっちでランタイムに初期化して…といった具合に
+急速に面倒になります。
+@c COMMON
 
+@c EN
 For example, to get a Scheme value of a list of symbols @code{(a b c)},
 you have to (1) create @code{ScmString}s for the names of the symbols,
 (2) pass them to @code{Scm_Intern} to get Scheme symbols, then
 (3) call @code{Scm_Cons}es (or a convenience macro @code{SCM_LIST3}) to
 build a list.
+@c JP
+例えば、シンボルのリスト@code{(a b c)}をCに埋め込みたいとしたら、次の手順を
+踏む必要があります。
+(1) それぞれのシンボルの名前を@code{ScmString}として作る、
+(2) それを@code{ScmIntern}に渡してSchemeシンボルを作る、
+(3) @code{ScmCons} (あるいは便利なマクロ@code{SCM_LIST3}) でリストを作る。
+@c COMMON
 
+@c EN
 With @code{gauche.cgen}, those code can be generated automatically.
+@c JP
+@code{gauche.cgen}を使うと、これらのコードを自動的に生成できます。
+@c COMMON
 
+@c EN
 NOTE: If you use @code{cgen-literal}, make sure you call
 @code{(cgen-decl "#include <gauche.h>")} to include @file{gauche.h}
 before the first call of @code{cgen-literal}, which may insert
 declarations that needs @file{gauche.h}.
+@c JP
+註: @code{cgen-literal}を使う場合、最初にそれを呼ぶ前に
+@code{(cgen-decl "#include <gauche.h>")}
+を呼ぶようにしてください。@code{cgen-literal}が生成するコードは
+@file{gauche.h}内にある宣言を必要とします。
+@c COMMON
 
 @defun cgen-literal obj
 @c MOD gauche.cgen
+@c EN
 Returns an @code{<cgen-literal>} object for a Scheme object @var{obj},
 and submit necessary declarations and initialization code to the
 current cgen unit.
+@c JP
+Schemeオブジェクト@var{obj}を表す@code{<cgen-literal>}オブジェクトを返します。
+また、必要な宣言や初期化コードが現在のcgenユニットに登録されます。
+@c COMMON
+
+@c EN
+The detail of the @code{<cgen-literal>} object isn't for public use,
+but one thing you can do is to pass it to @code{cgen-cexpr}
+to obtain a C code fragment that refers to the Scheme value at runtime.
+See the example in @code{cgen-expr} entry below.
+@c JP
+@code{<cgen-literal>}オブジェクトの詳細は公開していませんが、
+@code{cgen-cexpr}にそれを渡すことで、Scheme値を実行時にCから参照するための
+Cコード断片を得ることができます。下の@code{cgen-cexpr}のエントリにある
+例を参照してください。
+@c COMMON
 @end defun
-
-For the above example, you can just call @code{(cgen-literal '(a b c))}
-and the C code to set up the Scheme literal of the list of three
-symbols will be generated.
-
-The result of @code{cgen-literal} is an instance of @code{<cgen-literal>};
-the detail of the class isn't for public use, but you can use it
-to refer the created literal in C code.
 
 @deffn {Generic Function} cgen-cexpr cgen-literal
 @c MOD gauche.cgen
