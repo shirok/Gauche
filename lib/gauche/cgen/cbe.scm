@@ -144,8 +144,9 @@
           [cfn (cluster-cfn-name (~ dest-bb'cluster))])
       (cgen-body #"  {"
                  #"     ScmWord data[2];"
-                 #"     data[0] = SCM_WORD(~index);"
-                 #"     data[1] = SCM_WORD(ENV);"
+                 #"     data[0] = SCM_WORD(~index);")
+      (prepare-env c (~ dest-bb'cluster))
+      (cgen-body #"     data[1] = SCM_WORD(EN2);"
                  #"     return ~|cfn|(SCM_FALSE, data);"
                  #"  }"))))
 
@@ -154,25 +155,46 @@
         [cfn (cluster-cfn-name (~ dest-bb'cluster))])
     (cgen-body #" {"
                #"   ScmWord data[2];"
-               #"   data[0] = SCM_WORD(~index);"
-               #"   data[1] = ENV;"
+               #"   data[0] = SCM_WORD(~index);")
+    (prepare-env c (~ dest-bb'cluster))
+    (cgen-body #"   data[1] = ENV2;"
                #"   Scm_VMPsuhCC(~|cfn|, data, 2);"
                #" }")))
 
 (define (gen-vmcall c proc regs)
   (cgen-body #" return Scm_VMApply(~(reg-cexpr c proc), ~(gen-list c regs));"))
 
-(define (c-call c proc-cexpr regs)
-  (string-concatenate `("  " ,proc-cexpr "("
+;; Generate code that construct env struct for destination cluster (dest-c)
+;; from the env of current cluster (c).  The C variable name for the new
+;; env is ENV2.
+(define (prepare-env c dest-c)
+  (cgen-body #"  struct ~(cluster-cfn-name dest-c)_ENV ENV2 {")
+  (set-for-each
+   (^r (cgen-body #"     .~(reg-safe-name r) = ~(reg-cexpr c r);"))
+   (~ dest-c'xregs))
+  (set-for-each
+   (^r (cgen-body #"     .~(reg-safe-name r) = ~(reg-cexpr c r);"))
+   (~ dest-c'aregs))
+  (cgen-body #"  };"))
+
+(define (%c-call-sub c proc-cexpr regs)
+  (string-concatenate `(,proc-cexpr "("
                         ,@(intersperse ",\n    "
                                        (map (cut reg-cexpr c <>) regs))
-                        ");")))
+                        ")")))
+
+(define (c-call c proc-cexpr regs)
+  #"  ~(%c-call-sub c proc-cexpr regs);")
+
+(define (c-call/bool c proc-cexpr regs)
+  (string-append "  SCM_MAKE_BOOL(" (%c-call-sub c proc-cexpr regs) ");"))
 
 (define (asm->c c op regs)
   (case (~ (vm-find-insn-info (car op))'name)
-    [(EQ) (cgen-body (c-call c "SCM_EQ" regs))]
-    [(NULLP) (cgen-body (c-call c "SCM_NULLP" regs))]
-    [(PAIRP) (cgen-body (c-call c "SCM_PAIRP" regs))]
+    [(EQ) (cgen-body (c-call/bool c "SCM_EQ" regs))]
+    [(NULLP) (cgen-body (c-call/bool c "SCM_NULLP" regs))]
+    [(PAIRP) (cgen-body (c-call/bool c "SCM_PAIRP" regs))]
+    [(NUMBERP) (cgen-body (c-call/bool c "SCM_NUMBERP" regs))]
     [(CONS) (cgen-body (c-call c "Scm_Cons" regs))]
     [(CAR) (cgen-body (c-call c "SCM_CAR" regs))]
     [(CDR) (cgen-body (c-call c "SCM_CDR" regs))]
@@ -181,6 +203,10 @@
     [(CDAR) (cgen-body (c-call c "SCM_CDAR" regs))]
     [(CDDR) (cgen-body (c-call c "SCM_CDDR" regs))]
     [(REVERSE) (cgen-body (c-call c "Scm_Reverse" regs))]
+    [(MEMQ)   (cgen-body (c-call c "Scm_Memq" regs))]
+    [(MEMV)   (cgen-body (c-call c "Scm_Memv" regs))]
+    [(ASSQ)   (cgen-body (c-call c "Scm_Assq" regs))]
+    [(ASSV)   (cgen-body (c-call c "Scm_Assv" regs))]
     [(NUMEQ2) (cgen-body (c-call c "SCM_NUMEQ2" regs))]
     [(NUMLT2) (cgen-body (c-call c "SCM_NUMLT2" regs))]
     [(NUMLE2) (cgen-body (c-call c "SCM_NUMLE2" regs))]
@@ -194,6 +220,7 @@
     [(LOGAND)  (cgen-body (c-call c "Scm_LogAnd" regs))]
     [(LOGIOR)  (cgen-body (c-call c "Scm_LogIor" regs))]
     [(LOGXOR)  (cgen-body (c-call c "Scm_LogXor" regs))]
+    [(SETTER)  (cgen-body (c-call c "Scm_Setter" regs))]
     [else
      (cgen-body #"  %%WRITEME%%Call_Asm(~op, ~(map (cut reg-cexpr c <>) regs));")]))
 
