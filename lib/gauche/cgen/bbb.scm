@@ -533,11 +533,26 @@
                    (push-insn cbb `(MOV ,valreg %VAL0))
                    (normal-call cbb valreg))])]))
 
+;; NB: Some ASM instructions require c-continuations internally, so
+;; so we should break them up.
 (define (pass5b/$ASM iform bb benv ctx)
   (receive (bb regs) (pass5b/prepare-args bb benv ($asm-args iform) #t)
-    (let1 receiver (make-reg bb #f)
-      (push-insn bb `(ASM ,($asm-insn iform) ,receiver ,@regs))
-      (pass5b/return bb ctx receiver))))
+    (let* ([opc ($asm-insn iform)]
+           [mnemonic (~ (vm-find-insn-info (car opc))'name)])
+      (case mnemonic
+        [(IS-A)
+         ;; TODO: If object's class is not redefined, which is almost always
+         ;; the case, we don't need to do an external call.  Need optimization.
+         (pass5b/rec ($call ($*-src iform)
+                            ($gref (make-identifier 'is-a?
+                                                    (find-module 'gauche)
+                                                    '()))
+                            ($asm-args iform))
+                     bb benv ctx)]
+        [else
+         (let1 receiver (make-reg bb #f)
+           (push-insn bb `(ASM ,opc ,receiver ,@regs))
+           (pass5b/return bb ctx receiver))]))))
 
 (define (pass5b/$CONS iform bb benv ctx)
   (pass5b/builtin-twoargs 'CONS iform bb benv ctx))
