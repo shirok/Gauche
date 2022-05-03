@@ -19772,6 +19772,7 @@ the slave pty.
 
 @defun without-echoing iport proc
 @c MOD gauche.termios
+@c EN
 If @var{iport} is an input port connected to a terminal,
 sets the terminal mode non-echoing and call @var{proc} with
 @var{iport} as an argument.  Before returning from
@@ -19779,33 +19780,71 @@ sets the terminal mode non-echoing and call @var{proc} with
 the terminal mode is reset to the original state when this
 procedure is called.  The procedure returns whatever value(s)
 @var{proc} returns.
+@c JP
+@var{iport}が端末につながった入力ポートである場合、
+端末をエコーしないモードにして@var{proc}を呼びます。@var{proc}には
+@var{iport}が引数として渡されます。
+@var{proc}から戻るか、@var{proc}がエラーを投げた場合に、
+端末は元のモードに戻されます。@var{proc}からの戻り値が@code{without-echoing}の
+戻り値となります。
+@c COMMON
 
+@c EN
 You can also pass @code{#f} to @var{iport}.  In that case,
 this procedure tries to open a console (@code{/dev/tty} on Unix,
 @code{CON} on Windows) and set the console mode, then calls
 @var{proc} with the opened input port.  An error is thrown
 if the procedure can not open a console.
+@c JP
+@var{port}に@code{#f}を渡すこともできます。その場合、
+この手続きは標準の端末 (Unixでは@code{/dev/tty}、Windowsでは@code{CON})を
+オープンし、そにこつながった入力ポートを引数に@var{proc}を呼び出します。
+標準の端末がオープンできない場合はエラーが投げられます。
+@c COMMON
 
+@c EN
 If @var{iport} is other than above, this procedure
 simply calls @var{proc} with @var{iport}.  This allows
 the caller to read password from redirected input,
 for example.
+@c JP
+@var{iport}が上記のいずれにも該当しない場合は、単に@var{proc}を@var{iport}を引数にして
+呼び出し結果を返します。
+例えば、端末からエコーなしでパスワードを読むのと、
+リダイレクトでパスワードが流し込まれるのとを、区別せずに処理できます。
+@c COMMON
 
+@c EN
 Note: Because of an implementation issue, on Windows native
 platforms this procedure always changes console mode
 of the standard input handle when @code{iport} is either
 @code{#f} or a terminal input port.
+@c JP
+註: 実装上の問題から、Windowsでは、@var{iport}が@code{#f}もしくは
+端末につながっている場合、常に標準入力ハンドルのモードが変更されます。
+@c COMMON
 @end defun
 
 @defun has-windows-console?
 @c MOD gauche.termios
+@c EN
 Returns @code{#t} iff the running Gauche is Windows-native and
-the process has attached console.  On POSIX platforms this
+the process has attached console.  On Unix platforms this
 procedure always returns @code{#f}.
+@c JP
+走っているGaucheがWindowsネイティブで、プロセスが端末を持っている場合に@code{#t}を
+返します。Unixプラットフォームでは常に@code{#f}が返されます。
+@c COMMON
 
+@c EN
 The reason that @code{cond-expand} isn't enough is that on Windows
 the program may start without console, but you can attach console
 afterwards.  @xref{Windows console API}, for the details.
+@c JP
+この用途に@code{cond-expand}は不適です。というのも、Windowsプログラムは
+端末なしで起動した後に端末をアタッチする、といったことができるからです。
+詳しくは@ref{Windows console API}参照。
+@c COMMON
 @end defun
 
 
