@@ -59,8 +59,8 @@ jobs:
     env:
       GET_GAUCHE_URL: https://raw.githubusercontent.com/shirok/get-gauche/master
       GAUCHE_TEST_PATH: ../Gauche-tmp-self-host-test/stage2
-      TESTLOG_NAME: testlog-osx
-      TESTLOG_PATH: testlog-osx
+      TESTLOG_NAME: testlog-osx-${{ matrix.os }}
+      TESTLOG_PATH: testlog-osx-${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
     - name: Install Gauche
