@@ -50,7 +50,11 @@ jobs:
         path: ${{ env.TESTLOG_PATH }}
 
   build-osx:
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, macos-12]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
       GET_GAUCHE_URL: https://raw.githubusercontent.com/shirok/get-gauche/master
