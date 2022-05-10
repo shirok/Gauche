@@ -986,7 +986,7 @@ int Scm_SigWait(ScmSysSigset *mask)
     (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
     /* we can't wait for the signals Gauche doesn't handle. */
     to_wait = mask->set;
-    for (int i=0; i<SCM_NSIG; i++) {
+    for (int i=1; i<SCM_NSIG; i++) {
         if (!sigismember(&sigHandlers.masterSigset, i)) {
             sigdelset(&to_wait, i);
         }
