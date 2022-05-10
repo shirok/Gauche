@@ -68,7 +68,7 @@ jobs:
         pwd
         curl -f -o get-gauche.sh $GET_GAUCHE_URL/get-gauche.sh
         chmod +x get-gauche.sh
-        ./get-gauche.sh --auto --home
+        ./get-gauche.sh --auto --home --skip-tests
     - name: Add Gauche path
       run: |
         echo "PATH=$HOME/bin:$PATH" >> $GITHUB_ENV
