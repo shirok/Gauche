@@ -11,22 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      GET_GAUCHE_URL: https://raw.githubusercontent.com/shirok/get-gauche/master
       GAUCHE_TEST_PATH: ../Gauche-tmp-self-host-test/stage2
       TESTLOG_NAME: testlog-linux
       TESTLOG_PATH: testlog-linux
     steps:
     - uses: actions/checkout@v2
-    - name: Install Gauche
-      run: |
-        pwd
-        curl -f -o get-gauche.sh $GET_GAUCHE_URL/get-gauche.sh
-        chmod +x get-gauche.sh
-        ./get-gauche.sh --auto --home
-    - name: Add Gauche path
-      run: |
-        echo "PATH=$HOME/bin:$PATH" >> $GITHUB_ENV
-    - name: Run Gauche once
+    - uses: shirok/setup-gauche@v2
+    - name: Run release version of Gauche
       run: |
         gosh -V
     - name: Install tools
@@ -57,22 +48,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
-      GET_GAUCHE_URL: https://raw.githubusercontent.com/shirok/get-gauche/master
       GAUCHE_TEST_PATH: ../Gauche-tmp-self-host-test/stage2
       TESTLOG_NAME: testlog-osx-${{ matrix.os }}
       TESTLOG_PATH: testlog-osx-${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Gauche
-      run: |
-        pwd
-        curl -f -o get-gauche.sh $GET_GAUCHE_URL/get-gauche.sh
-        chmod +x get-gauche.sh
-        ./get-gauche.sh --auto --home --skip-tests
-    - name: Add Gauche path
-      run: |
-        echo "PATH=$HOME/bin:$PATH" >> $GITHUB_ENV
-    - name: Run Gauche once
+    - uses: actions/checkout@v3
+    - uses: shirok/setup-gauche@v2
+    - name: Run release version of Gauche
       run: |
         gosh -V
     - name: Install tools
