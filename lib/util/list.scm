@@ -15,7 +15,7 @@
 ;;;
 
 ;; This module is obsoleted - the functions are supported in the core.
-;; We keep this module just fore the backward compatibility.
+;; We keep this module just for the backward compatibility.
 (define-module util.list
   (export take* drop* take-right* drop-right* split-at*
           slices intersperse cond-list
@@ -35,7 +35,7 @@
 (define split-at*   (with-module gauche split-at*))   ;liblist
 (define slices      (with-module gauche slices))      ;liblist
 (define intersperse (with-module gauche intersperse)) ;liblist
-(define-syntax cond-list (with-module gauche cond-list)) ;common-macros
+(define-syntax cond-list (with-module gauche cond-list)) ;libmacro
 
 (define rassoc      (with-module gauche rassoc))      ;liblist
 (define rassq       (with-module gauche rassq))       ;liblist
