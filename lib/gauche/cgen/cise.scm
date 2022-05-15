@@ -562,24 +562,25 @@
       [(':static . init-and-quals)
        (check-quals var type `(:static ,@quals) init-and-quals)]
       [((? keyword? z) . body)
-       (errorf "Invalid qualifier in define-cvar ~s: ~s" var z)]
+       (errorf "Invalid qualifier in `define-cvar ~s': ~s" var z)]
       [()
-       (case (car form)
+       (ecase (car form)
          [(define-cvar) (gen-cvar var type quals #f #f)]
          [(declare-cvar)
           (unless (null? quals)
-            (errorf "declare-cvar ~s cannot have qualifier(s)" var))
+            (errorf "`declare-cvar ~s' cannot have qualifier(s)" var))
           (gen-cvar var type '(:extern) #f #f)]
          [(define-ctype)
           (unless (null? quals)
-            (errorf "define-ctype ~s cannot have qualifier(s)" var))
+            (errorf "`define-ctype ~s' cannot have qualifier(s)" var))
           (gen-cvar var type '(:typedef) #f #f)])]
       [(init)
-       (if (eq? (car form) 'define-cvar)
-         (gen-cvar var type quals #t init)
-         (errorf "declare-cvar ~s cannot have initializer" var))]
+       (ecase (car form)
+         [(define-cvar) (gen-cvar var type quals #t init)]
+         [(declare-cvar define-ctype)
+          (errorf "`~a ~s' cannot have an initializer" (car form) var)])]
       [else
-       (errorf "Invalid syntax in ~s ~s: ~s"
+       (errorf "Invalid syntax in `~s ~s': ~s"
                (car form) var init-and-quals)]))
 
   ;; We allow define-cvar only on toplevel, but declare-cvar and
