@@ -2203,6 +2203,22 @@ A @emph{CiSE ambient} is a bundle of information that affects
 fragment translation.  It contains CiSE macro definitions,
 and also it keeps track of forward declarations.
 
+If you're not sure how a cise fragment corresponds to C code,
+you can interactively try it:
+
+@example
+gosh> (cise-render-to-string
+        '(.struct foo (i::int c::(const char*)))))
+"struct foo @{ int i; const char* c; @} "
+gosh> (cise-render-to-string
+        '(define-cfn foo (x::int) (return (+ x 3)))
+        'toplevel))
+" ScmObj foo(int x)@{@{return ((x)+(3));@}@}"
+@end example
+
+(The second argument of @code{cise-render-to-string} specifies the
+context; @pxref{CiSE procedures}, for the details.)
+
 @node CiSE syntax, CiSE procedures, CiSE overview, C in S expression
 @subsubsection CiSE syntax
 
@@ -2245,6 +2261,35 @@ These can appear in middle of the type; for example, you can write
 @code{const struct x @{int a; double b;@} *}.
 
 @deffn {CiSE Type} .array elt-type (dim @dots{})
+Expands to C array type, whose element type is of @var{elt-type}
+and dimensions are @var{dim @dots{}}.
+
+@example
+(cise-render-to-string '(.array char (3)))
+  @result{} "char [3]"
+
+(cise-render-to-string '(.array int (2 5)))
+  @result{} "int [2][5]"
+@end example
+
+The last element of @var{dim} can be @code{*}, corresponds to
+the C type without specifying the array size:
+
+@example
+(cise-render-to-string '(.array char (*)))
+  @result{} "char [3]"
+
+(cise-render-to-string '(.array int (10 *)))
+  @result{} "int [10][]"
+@end example
+
+Here's an example of global C variable definition of array type:
+
+@example
+(cise-render-to-string '(define-cvar params ::(.array int (PARAM_SIZE)))
+                       'toplevel)
+  @result{} " int params[PARAM_SIZE];"
+@end example
 @end deffn
 
 @deffn {CiSE Type} .struct [tag] [(field-spec @dots{})]
