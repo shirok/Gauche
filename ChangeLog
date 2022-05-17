@@ -1,3 +1,8 @@
+2022-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.ac: Do not compile axtls by default.  Preparing
+	  to drop axtls support in future releases.
+
 2022-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c (Scm_SigWait): Avoid using signal number 0 for

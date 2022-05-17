@@ -8,19 +8,15 @@ dnl
 dnl   --with-tls=TYPE,TYPE,...    # include TLS library TYPE, ...
 dnl   --with-tls=no               # do not include any TLS library support
 dnl
-dnl   We include all available (and supported) TLS libraries by defualt.
-dnl   This option is to _exclude_ some or all libraries that would be
-dnl   compiled otherwise.
-dnl
 
-TLSLIBS=axtls,mbedtls
+TLSLIBS=mbedtls
 AC_ARG_WITH(tls,
   AS_HELP_STRING([--with-tls=TLSLIB,...],
   [Select which TLS libraries to be compiled.  Currently we support 'axtls'
    (to use bundled source of Cameron Rich's axTLS), 'mbedtls' (to use mbed
    TLS in the system library), and 'mbedtls-internal' (to use mbed TLS
    compiled with Gauche).
-   By default, available libraries are auto-detected.
+   By default, we use mbedtls if it's available on the system.
    Specify --with-tls=no to disable tls support.]),
   [
     AS_CASE([$with_tls],
@@ -38,7 +34,7 @@ GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no=
 for tls in `echo $TLSLIBS | tr ',' ' '`
 do
 AS_CASE([$tls],
-  [axtls], [],
+  [axtls], [TLSLIBS="$TLSLIBS,axtls"],
   [mbedtls],
            [AS_IF([test $mbed_specified = yes], [
               AC_MSG_ERROR([You can only specify either one of 'mbedtls' or
