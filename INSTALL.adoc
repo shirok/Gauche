@@ -349,51 +349,57 @@ ifdef::EN[]
 endif::EN[]
 
 ifdef::JA[]
-Gaucheにはセキュアソケット通信のサポートが組み込まれています。ひとつは
-バンドルされた link:http://axtls.sourceforge.net/[axTLS]
-ライブラリを使うもので、それは自動的に含まれます。
-もうひとつは外部の link:https://tls.mbed.org/[mbedTLS]
-ライブラリを使うもので、そちらはconfigure時に
-ライブラリがみつかればコンパイルされます。もしビルドに不都合が生じてどれかの
-ライブラリを外したい場合は、次のオプションで使うライブラリを選べます。
+Gaucheのセキュアソケット通信サポートにはいくつかオプションがあります。
+ひとつはlink:https://tls.mbed.org/[MbedTLS]
+ライブラリ、もうひとつはlink:http://axtls.sourceforge.net/[AxTLS]
+ライブラリです。
+
+デフォルトでは、システムにMbedTLSライブラリがあればそれを使い、
+無ければTLSのサポートを組み込みません。
+システムにMbedTLSをインストールできない事情があったり、
+コンパイル後のバイナリだけを別環境に持ってゆくので依存ライブラリを減らしたい場合は、
+ビルド中にMbedTLSのソースをダウンロードしてGaucheに組み込んでしまうこともできます。
+
+AxTLSは小さなライブラリで、ソースがGaucheにバンドルされているので、
+外部ライブラリなしでTLSサポートを組み込めます。ただ、
+AxTLSはサポートしている暗号スイートに限りがあり、
+相手が正当な証明書を持っていても接続できないことがあります。
+どうしてもMbedTLSが使えない場合の最終手段と考えてください。
 endif::JA[]
 ifdef::EN[]
-Gauche includes secure socket connection support.  One uses
-bundled link:http://axtls.sourceforge.net/[axTLS] library,
-which is included automatically, and another
-uses external link:https://tls.mbed.org/[mbedTLS] library,
-which is compiled when we detect it
-during configuration.  If you have a problem building those libraries,
-you can selectively turn off each of them.
+Gauche includes secure socket connection support.
+One usesd link:https://tls.mbed.org/[MbedTLS] library, and the other
+uses link:http://axtls.sourceforge.net/[AxTLS] library.
+
+By default, `configure` checks if the MbedTLS library is installed
+on the system, and use it if it's available.  Otherwise, no TLS support
+is compiled.  If you can't install MbedTLS for some reason,
+or you want to bring the compiled binary to the target system that
+may not have MbedTLS library, you can specify to download MbedTLS
+source during build and compile it into Gauche binary.
+
+AxTLS is a small library and its source is included in the Gauche source
+tree.  It can be included in Gauche without relying on external libraries
+at runtime.  However, it has limited cipher and hash algorithm support.
+We suggest to use it as a fallback if you can't use MbedTLS.
 endif::EN[]
 
 [horizontal]
 `--with-tls=none`          :: do not include TLS/SSL support
-`--with-tls=axtls`         :: include only axTLS support
-`--with-tls=axtls,mbedtls` :: (default) include TLS/SSL support using
+`--with-tls=mbedtls`       :: include only axTLS support
+`--with-tls=axtls,mbedtls` :: include TLS/SSL support using
                             axTLS library (source is included in Gauche),
                             and mbedTLS library (installed on the system).
-`--with-tls=axtls,mbedtls--internal` :: During the build, MbedTLS source is downloaded
-                                and compiled with Gauche.  See below.
+`--with-tls=mbedtls--internal` :: During the build, MbedTLS source is downloaded
+                            and compiled with Gauche.  See below.
+
 
 ifdef::JA[]
-できるだけMbed TLSを使うことを推奨します。AxTLSはサポートしている暗号スイートに
-限りがあり、相手が正当な証明書を持っていても接続できないことがあります。
-詳しくはマニュアルのrfc.tlsの項を参照してください。
-endif::JA[]
-ifdef::EN[]
-We recommend using Mbed TLS, for AxTLS has less support on ciphers
-sometimes it fails to connect to a peer with a valid certificate.
-See the manual entry of rfc.tls for the details.
-endif::EN[]
-
-ifdef::JA[]
-`mbedtls` のかわりに `mbedtls-internal` を指定すると、ビルド中にMbedTLSのソースを
+`mbedtls-internal` を指定すると、ビルド中にMbedTLSのソースを
 ダウンロードして、Gaucheの拡張ライブラリの一部として組み込みます。生成されるバイナリは
 システムのMbedTLSライブラリには依存しないので、MbedTLSが入っていないターゲットシステムに
 もバイナリをそのまま持って行けます。このオプションを使う場合はビルドにCMakeが必要です。
-
-`mbedtls-internal`を使った場合、`rfc--tls--mbed.so`および`libgauche-static-*.a`に
+またその場合、`rfc--tls--mbed.so`および`libgauche-static-*.a`に
 MbedTLSのコードが含まれるため、バイナリの配布にあたってはMbedTLSのライセンスにも従う
 必要があります (Apache License 2.0)。
 endif::JA[]
@@ -402,7 +408,6 @@ If you give `mbedtls-internal` in place of `mbedtls`, the build process download
 MbedTLS source and compile it into Gauche's extension library.  The resulting
 binary doesn't depend on system's MbedTLS dynamic library, so you can move it
 to the systems that don't have MbedTLS.   You need CMake to use this option.
-
 Note that if you use `mbedtls-internal`, MbedTLS code is included in
 `rfc--tls--mbed.so` and `libgauche-static-*.a`, so they are subject to the
 MbedTLS license as well (Apache License 2.0).
