@@ -18522,33 +18522,24 @@ special @code{--with-ca-bundle} option is given.
 @subheading Supported TLS subsystems
 
 @c EN
-Gauche supports two TLS subsystems - one based on AxTLS
-(@url{http://axtls.sourceforge.net/}), and the other based on
-MbedTLS (@url{https://tls.mbed.org/}).  Whether they're included
-depends on the configuration options.  By default, AxTLS support
-is compiled in, and MbedTLS support is included if the build
-platform has MbedTLS library installed.
+Gauche supports two TLS subsystems - one based on
+MbedTLS (@url{https://tls.mbed.org/}),
+and the other based on AxTLS
+(@url{http://axtls.sourceforge.net/}).  Whether they're included
+depends on the configuration options.  By default, MbedTLS support
+is included if if the build platform has MbedTLS library installed.
+You can also include MbedTLS embedded in Gauche so that
+the runtime won't need MbedTLS library installed on the system.
+See @code{INSTALL.adoc} in the source tree for the details.
 @c JP
 Gaucheは二つのTLSサブシステムをサポートしています。
-ひとつはAxTLS(@url{http://axtls.sourceforge.net/})、
-もうひとつはMbedTLS(@url{https://tls.mbed.org/})です。
-configureのオプションによって組み込まれるものが変わりますが、
-デフォルトではAxTLSは常に組み込まれ、
-MbedTLSはビルド時にシステムにインストールされていれば組み込まれます。
-@c COMMON
-
-@c EN
-AxTLS library has advanage of being included in Gauche, so that
-it won't depend on external library, however, its supported ciphers
-are limited, and it can't connect to some https sites.  MbedTLS has
-wider cipher support, but it requires MbedTLS dynamic libraries
-(e.g. @file{libmbedtls.so}) at runtime.
-@c JP
-AxTLSライブラリはGaucheの一部としてコンパイルされるので、
-使うのに外部ライブラリに依存しないという利点がありますが、
-サポートしている暗号スイートが限られていて、時々接続できないhttpsサイトがあります。
-一方、MbedTLSは幅広い暗号スイートをサポートしていますが、実行時に
-MbedTLSの動的ライブラリ(@file{libmbedtls.so}など)を必要とします。
+ひとつはMbedTLS(@url{https://tls.mbed.org/})、です。
+もうひとつはAxTLS(@url{http://axtls.sourceforge.net/})です。
+configureのオプションによって組み込まれるものが変わります。
+デフォルトでは、ビルド時にシステムにMbedTLSがあればそれが含まれます。
+また、MbedTLSをGaucheに埋め込むことによって、
+実行時にシステムにMbedTLSライブラリを必要としないバイナリを作ることもできます。
+詳しくはソースツリーの@code{INSTALL.adoc}を参照してください。
 @c COMMON
 
 @c EN
@@ -18582,16 +18573,16 @@ Gaucheに何らかのTLSサポートが組み込まれているかどうかは�
 An abstract base class of TLS implementations.
 @end deftp
 
-@deftp {Class} <ax-tls>
-@clindex ax-tls
-@c MOD rfc.tls
-A class that implements axTLS subsystem interface.
-@end deftp
-
 @deftp {Class} <mbed-tls>
 @clindex mbed-tls
 @c MOD rfc.tls
 A class that implements mbedTLS subsystem interface.
+@end deftp
+
+@deftp {Class} <ax-tls>
+@clindex ax-tls
+@c MOD rfc.tls
+A class that implements axTLS subsystem interface.
 @end deftp
 
 @deffn {Parameter} default-tls-class :optional class
