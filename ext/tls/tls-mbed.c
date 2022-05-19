@@ -382,6 +382,12 @@ static ScmObj mbed_close(ScmTLS *tls)
     return SCM_TRUE;
 }
 
+static int mbed_getsockfd(ScmTLS* tls)
+{
+    ScmMbedTLS *t = (ScmMbedTLS*)tls;
+    return t->conn.MBEDTLS_FD(fd);
+}
+
 static ScmObj mbed_loadObject(ScmTLS* tls SCM_UNUSED,
                               ScmObj obj_type SCM_UNUSED,
                               const char *filename SCM_UNUSED,
@@ -443,6 +449,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->common.read = mbed_read;
     t->common.write = mbed_write;
     t->common.close = mbed_close;
+    t->common.getSocketFd = mbed_getsockfd;
     t->common.loadObject = mbed_loadObject;
     t->common.finalize = mbed_finalize;
     Scm_RegisterFinalizer(SCM_OBJ(t), mbed_finalize, NULL);

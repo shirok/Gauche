@@ -563,6 +563,12 @@ static ScmObj ax_close(ScmTLS *tls)
     return SCM_UNDEFINED;
 }
 
+static int ax_getsockfd(ScmTLS *tls)
+{
+    ScmAxTLS *t = (ScmAxTLS*)tls;
+    return t->sock;
+}
+
 static ScmObj ax_loadObject(ScmTLS* tls, ScmObj obj_type,
                             const char *filename, const char *password)
 {
@@ -604,6 +610,7 @@ ScmAxTLS *ax_new(ScmClass *klass,
     t->common.read = ax_read;
     t->common.write = ax_write;
     t->common.close = ax_close;
+    t->common.getSocketFd = ax_getsockfd;
     t->common.loadObject = ax_loadObject;
     t->common.finalize = ax_finalize;
     Scm_RegisterFinalizer(SCM_OBJ(t), ax_finalize, NULL);

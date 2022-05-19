@@ -115,6 +115,7 @@ struct ScmTLSRec {
     ScmObj (*read)(ScmTLS*);
     ScmObj (*write)(ScmTLS*, ScmObj);
     ScmObj (*close)(ScmTLS*);
+    int    (*getSocketFd)(ScmTLS*);
     ScmObj (*loadObject)(ScmTLS*, ScmObj, const char*, const char*);
     void   (*finalize)(ScmObj, void*);
 };
