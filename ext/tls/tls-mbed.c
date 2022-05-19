@@ -214,6 +214,11 @@ static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
 
 static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
 {
+#if MBEDTLS_VERSION_MAJOR >= 3
+    Scm_Error("Making TLS connection over existing socket (%d) is "
+              "no longer supported (%S)", fd, tls);
+    return SCM_UNDEFINED;       /* dummy */
+#else /*MBEDTLS_VERSION_MAJOR = 2*/
     ScmMbedTLS* t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "connect");
     const char* pers = "Gauche";
@@ -227,6 +232,7 @@ static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
     }
     t->conn.MBEDTLS_FD(fd) = fd;
     return mbed_connect_common(t);
+#endif /*MBEDTLS_VERSION_MAJOR = 2*/
 }
 
 static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
@@ -278,6 +284,11 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
 
 static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
 {
+#if MBEDTLS_VERSION_MAJOR >= 3
+    Scm_Error("Accepting TLS connection over existing socket (%d) "
+              "is no longer supported  (%S)", fd, tls);
+    return SCM_UNDEFINED;       /* dummy */
+#else /*MBEDTLS_VERSION_MAJOR = 2*/
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "accept");
 
@@ -321,6 +332,7 @@ static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
     }
     t->state = CONNECTED;
     return SCM_OBJ(t);
+#endif /*MBEDTLS_VERSION_MAJOR = 2*/
 }
 
 static ScmObj mbed_read(ScmTLS* tls)
