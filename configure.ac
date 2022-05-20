@@ -890,13 +890,18 @@ dnl Sets some optimization flags by heuristics.
 AC_GAUCHE_OPTFLAGS
 
 dnl ===========================================================
+dnl More tests for specific components
+dnl These are separate *.ac files for easier management
+
+m4_include([ac/net.ac])
+
+dnl ===========================================================
 dnl Tests for extensions
 
 EXT_LIBS=
 # Those *.ac's may add libraries to EXT_LIBS.
 m4_include([ext/charconv/charconv.ac])
 m4_include([ext/dbm/dbm.ac])
-m4_include([ext/net/net.ac])
 m4_include([ext/zlib/zlib.ac])
 m4_include([ext/tls/tls.ac])
 
