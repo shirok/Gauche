@@ -1,5 +1,5 @@
 /*
- * net.h - network interface
+ * gauche/net.h - Network API
  *
  *   Copyright (c) 2000-2021  Shiro Kawai  <shiro@acm.org>
  *
@@ -35,7 +35,6 @@
 #define GAUCHE_NET_H
 
 #include <sys/types.h>
-#include <gauche.h>
 #include <errno.h>
 
 #if !defined(GAUCHE_WINDOWS)

@@ -31,7 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gauche-net.h"
+#include "gauche.h"
+#include "gauche/net.h"
 
 #define DATA_BUFSIZ  980
 
@@ -537,8 +538,9 @@ ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags)
  * Initialize
  */
 
-void Scm_Init_NetDB(ScmModule *mod)
+void Scm__InitNetDb()
 {
+    ScmModule *mod = SCM_FIND_MODULE("gauche.net", 0);
     Scm_InitStaticClass(&Scm_SysHostentClass, "<sys-hostent>", mod,
                         hostent_slots, 0);
     Scm_InitStaticClass(&Scm_SysProtoentClass, "<sys-protoent>", mod,

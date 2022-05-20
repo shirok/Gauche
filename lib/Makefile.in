@@ -76,7 +76,7 @@ SCMFILES = \
        gauche/redefutil.scm \
        gauche/vecutil.scm gauche/portutil.scm \
        gauche/hashutil.scm gauche/treeutil.scm gauche/computil.scm \
-       gauche/modutil.scm gauche/libutil.scm  \
+       gauche/netutil.scm gauche/modutil.scm gauche/libutil.scm  \
        gauche/generic-sortutil.scm gauche/fileutil.scm gauche/sysutil.scm \
        gauche/regexp.scm gauche/regexp/sre.scm \
        gauche/signal.scm gauche/numerical.scm gauche/let-opt.scm \

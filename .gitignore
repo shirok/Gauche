@@ -232,6 +232,7 @@ test.record
 /src/libmisc.c
 /src/libmod.c
 /src/libnative.c
+/src/libnet.c
 /src/libnum.c
 /src/libobj.c
 /src/libomega.c

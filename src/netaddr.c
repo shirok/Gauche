@@ -31,8 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gauche-net.h"
-#include <string.h>
+#include "gauche.h"
+#include "gauche/net.h"
 
 static ScmObj key_path = SCM_FALSE;
 static ScmObj key_host = SCM_FALSE;
@@ -462,8 +462,10 @@ ScmObj Scm_InetAddressToString(ScmObj addr,  /* integer or uvector */
  * initialization stuff
  */
 
-void Scm_Init_NetAddr(ScmModule *mod)
+void Scm__InitNetAddr(void)
 {
+    ScmModule *mod = SCM_FIND_MODULE("gauche.net", 0);
+
     key_path      = SCM_MAKE_KEYWORD("path");
     key_host      = SCM_MAKE_KEYWORD("host");
     key_port      = SCM_MAKE_KEYWORD("port");

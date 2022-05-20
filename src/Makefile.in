@@ -166,7 +166,7 @@ INSTALL_SUBHEADERS = \
 	gauche/endian.h gauche/exception.h gauche/extend.h gauche/extern.h \
 	gauche/float.h gauche/gloc.h \
 	gauche/hash.h gauche/int64.h gauche/load.h \
-	gauche/module.h gauche/number.h gauche/parameter.h \
+	gauche/module.h gauche/net.h gauche/number.h gauche/parameter.h \
 	gauche/port.h gauche/prof.h gauche/pthread.h \
 	gauche/reader.h gauche/regexp.h gauche/scmconst.h \
 	gauche/static.h gauche/string.h gauche/symbol.h gauche/system.h \
@@ -236,6 +236,7 @@ libgauche_OBJECTS = \
 	gloc.$(OBJEXT) compare.$(OBJEXT) regexp.$(OBJEXT) signal.$(OBJEXT) \
 	parameter.$(OBJEXT) module.$(OBJEXT) proc.$(OBJEXT) \
 	memo.$(OBJEXT) mmap.$(OBJEXT) \
+	net.$(OBJEXT) netaddr.$(OBJEXT) netdb.$(OBJEXT) \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
 	compile.$(OBJEXT) \
@@ -245,7 +246,7 @@ libgauche_OBJECTS = \
 	liblazy.$(OBJEXT) liblist.$(OBJEXT) \
 	libmacbase.$(OBJEXT) libmacro.$(OBJEXT) libmemo.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) \
-	libnative.$(OBJEXT) libnum.$(OBJEXT) \
+	libnative.$(OBJEXT) libnet.$(OBJEXT) libnum.$(OBJEXT) \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) \
 	libparam.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
@@ -331,6 +332,7 @@ libmacro.c   : libmacro.scm $(PRECOMP_DEPENDENCY)
 libmemo.c    : libmemo.scm $(PRECOMP_DEPENDENCY)
 libmisc.c    : libmisc.scm $(PRECOMP_DEPENDENCY)
 libnative.c  : libnative.scm native-supp.scm $(PRECOMP_DEPENDENCY)
+libnet.c     : libnet.scm $(PRECOMP_DEPENDENCY)
 libnum.c     : libnum.scm $(PRECOMP_DEPENDENCY)
 libobj.c     : libobj.scm $(PRECOMP_DEPENDENCY)
 libomega.c   : libomega.scm $(PRECOMP_DEPENDENCY)

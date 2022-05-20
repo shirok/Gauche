@@ -1,5 +1,5 @@
 ;;;
-;;; netlib.stub - network interface
+;;; libnet.scm - network interface
 ;;;
 ;;;   Copyright (c) 2000-2021  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,12 +31,63 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+(declare) ;; a dummy form to suppress generation of "sci" file
+(define-module gauche.net
+  (use scheme.list)
+  (use gauche.uvector)
+  (use gauche.sequence)
+  (use gauche.lazy)
+  (use gauche.connection)
+  (export <socket> make-socket
+
+          ;; NB: Many enum symbols are conditionally exported.  They're
+          ;; handled specially in init routine.  Here's the ones
+          ;; that are always exported.
+          PF_UNSPEC PF_UNIX PF_INET AF_UNSPEC AF_UNIX AF_INET
+          SOCK_STREAM SOCK_DGRAM SOCK_RAW
+          SHUT_RD SHUT_WR SHUT_RDWR
+
+          socket-address socket-status socket-input-port socket-output-port
+          socket-shutdown socket-close socket-bind socket-connect socket-fd
+          socket-listen socket-accept socket-setsockopt socket-getsockopt
+          socket-getsockname socket-getpeername socket-ioctl
+          socket-send socket-sendto socket-sendmsg socket-buildmsg
+          socket-recv socket-recv! socket-recvfrom socket-recvfrom!
+          <sockaddr> <sockaddr-in> <sockaddr-un> make-sockaddrs
+          sockaddr-name sockaddr-family sockaddr-addr sockaddr-port
+          make-client-socket make-server-socket make-server-sockets
+          call-with-client-socket
+          <sys-hostent> sys-gethostbyname sys-gethostbyaddr
+          <sys-protoent> sys-getprotobyname sys-getprotobynumber
+          <sys-servent> sys-getservbyname sys-getservbyport
+          sys-htonl sys-htons sys-ntohl sys-ntohs
+          inet-checksum
+          inet-string->address inet-string->address! inet-address->string
+
+          ;; connection protocol - autoloaded
+          connection-self-address connection-peer-address
+          connection-input-port connection-output-port
+          connection-shutdown connection-close
+          connection-address-name
+          )
+  )
 (select-module gauche.net)
+
+;; Some generic functions needs to be defined after libobj initialization,
+;; so we delay its loading
+(autoload "gauche/netutil" sockaddr-name
+          connection-self-address
+          connection-peer-address
+          connection-input-port
+          connection-output-port
+          connection-shutdown
+          connection-close
+          connection-address-name)
 
 (inline-stub
 
  (declcode
-  (.include "gauche-net.h"))
+  (.include "gauche/net.h"))
 
  (declare-stub-type <socket-address> "ScmSockAddr*" "socket address"
    "Scm_SockAddrP" "SCM_SOCKADDR")
@@ -105,23 +156,6 @@
        (return (ntohs (ref (-> a addr) sin6_port)))))
    )
  )
-
-;; Although many systems support this feature (e.g. inet_ntop/inet_pton
-;; or WSAAdressToString/WSAStringToAddress), it would be too cumbersome
-;; to check availability of those and switch the implementation.  So we
-;; provide them in Scheme.
-
-;; API
-(define-method sockaddr-name ((addr <sockaddr-in>))
-  #"~(inet-address->string (sockaddr-addr addr) AF_INET):~(sockaddr-port addr)")
-
-;; NB: this should be conditionally defined by cond-expand at compile-time,
-;; instead of load-time dispatch.  We need to clean up cond feature management
-;; more to do so.
-(if (global-variable-bound? (find-module 'gauche.net) '<sockaddr-in6>)
-  ;; API
-  (define-method sockaddr-name ((addr <sockaddr-in6>))
-    #"[~(inet-address->string (sockaddr-addr addr) AF_INET6)]:~(sockaddr-port addr)"))
 
 ;;----------------------------------------------------------
 ;; low-level socket routines
@@ -479,6 +513,69 @@
 (define-enum-conditionally NI_DGRAM)
 
 ;;----------------------------------------------------------
+;; Conditionally export symbols
+;;
+;; We can't simply use export-if-defined, for it checks binding at
+;; macro-expansion time.  In our case, symbols are defined by the
+;; C initialization routine, which is after macros are expanded.
+
+(inline-stub
+ (define-cise-stmt export-conditionally
+   [(_ . syms)
+    `(let* ([mod::ScmModule* (Scm_CurrentModule)])
+       ,@(map (^[sym]
+                `(unless (SCM_UNBOUNDP (Scm_GlobalVariableRef mod
+                                                              (SCM_SYMBOL ',sym)
+                                                              0))
+                   (Scm_ExportSymbols mod (list ',sym))))
+              syms))])
+
+ (define-cfn export-bindings () ::void :static
+   (export-conditionally
+    IPPROTO_IP IPPROTO_ICMP IPPROTO_TCP
+    IPPROTO_UDP IPPROTO_IPV6 IPPROTO_ICMPV6 SOL_SOCKET SOMAXCONN
+    SO_ACCEPTCONN SO_BINDTODEVICE SO_BROADCAST SO_DEBUG
+    SO_DONTROUTE SO_ERROR SO_KEEPALIVE SO_LINGER SO_OOBINLINE
+    SO_PASSCRED SO_PEERCRED SO_PRIORITY SO_RCVBUF SO_RCVLOWAT
+    SO_RCVTIMEO SO_REUSEADDR SO_REUSEPORT SO_SNDBUF SO_SNDLOWAT
+    SO_SNDTIMEO SO_TIMESTAMP SO_TYPE
+    SOL_TCP TCP_NODELAY TCP_MAXSEG TCP_CORK
+    SOL_IP IP_OPTIONS
+    IP_PKTINFO IP_RECVTOS IP_RECVTTL IP_RECVOPTS IP_TOS
+    IP_TTL IP_HDRINCL IP_RECVERR IP_MTU_DISCOVER IP_MTU
+    IP_ROUTER_ALERT IP_MULTICAST_TTL IP_MULTICAST_LOOP
+    IP_ADD_MEMBERSHIP IP_DROP_MEMBERSHIP IP_MULTICAST_IF
+    MSG_CTRUNC MSG_DONTROUTE MSG_EOR MSG_OOB MSG_PEEK MSG_TRUNC
+    MSG_WAITALL
+
+    ;; Netdevice control.  OS specific.
+    SIOCGIFNAME SIOCSIFNAME SIOCGIFINDEX SIOCGIFFLAGS SIOCSIFFLAGS
+    SIOCGIFMETRIC SIOCSIFMETRIC SIOCGIFMTU SIOCSIFMTU
+    SIOCGIFHWADDR SIOCSIFHWADDR SIOCSIFHWBROADCAST
+    SIOCGIFMAP SIOCSIFMAP SIOCADDMULTI SIOCDELMULTI
+    SIOGIFTXQLEN SIOSIFTXQLEN SIOCGIFCONF
+    SIOCGIFADDR SIOCSIFADDR SIOCGIFDSTADDR SIOCSIFDSTADDR
+    SIOCGIFBRDADDR SIOCSIFBRDADDR SIOCGIFNETMASK SIOCSIFNETMASK
+
+    IFF_UP IFF_BROADCAST IFF_DEBUG IFF_LOOPBACK IFF_POINTTOPOINT
+    IFF_RUNNING IFF_NOARP IFF_PROMISC IFF_NOTRAILERS IFF_ALLMULTI
+    IFF_MASTER IFF_SLAVE IFF_MULTICAST IFF_PORTSEL IFF_AUTOMEDIA
+    IFF_DYNAMIC
+
+    ;; if ipv6 is supported, these symbols are defined in the C routine.
+    PF_INET6 AF_INET6
+    <sockaddr-in6> <sys-addrinfo> sys-getaddrinfo make-sys-addrinfo
+    AI_PASSIVE AI_CANONNAME AI_NUMERICHOST AI_NUMERICSERV
+    AI_V4MAPPED AI_ALL AI_ADDRCONFIG
+    IPV6_UNICAST_HOPS IPV6_MULTICAST_IF IPV6_MULTICAST_HOPS
+    IPV6_MULTICAST_LOOP IPV6_JOIN_GROUP IPV6_LEAVE_GROUP IPV6_V6ONLY
+    sys-getnameinfo
+    NI_NOFQDN NI_NUMERICHOST NI_NAMEREQD NI_NUMERICSERV NI_DGRAM)
+   )
+
+ (initcode "export_bindings();"))
+
+;;----------------------------------------------------------
 ;; Internet checksum (RFC1071)
 
 ;; NB: This checksum routine, a bit of modification from RFC1071,
@@ -522,6 +619,248 @@
 
 (define-cproc inet-address->string (addr proto::<int>) Scm_InetAddressToString)
 
+;; default backlog value for socket-listen
+(define-constant DEFAULT_BACKLOG 5)
+
+;; NB: we can't use (cond-expand (gauche.net.ipv6 ...) ) here, since
+;; cond-expand is expanded when netaux.scm is compiled, but at that time
+;; the feature 'gauche.net.ipv6' is not available since the gauche.net module
+;; is not yet built.  So we use a bit of kludge here.
+(define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
+
+;; NB: ipv4 preference setting for the compatibility to old windows installer.
+;; if #t, make-sockaddrs returns ipv4 socket addresses before ipv6 ones.
+(define ipv4-preferred (cond-expand [gauche.os.windows #t] [else #f]))
+
+;; API
+(define (make-sys-addrinfo :key (flags 0) (family AF_UNSPEC)
+                                (socktype 0) (protocol 0))
+  (if ipv6-capable
+    (make <sys-addrinfo>
+      :flags (if (list? flags) (apply logior flags) flags)
+      :family family :socktype socktype :protocol protocol)
+    (error "make-sys-addrinfo is available on IPv6-enabled platform")))
+
+;; Utility
+(define (address->protocol-family addr)
+  (case (sockaddr-family addr)
+    [(unix)  PF_UNIX]
+    [(inet)  PF_INET]
+    [(inet6) PF_INET6] ;;this can't happen if !ipv6-capable
+    [else (error "unknown family of socket address" addr)]))
+
+;; API
+;; High-level interface.  We need some hardcoded heuristics here.
+(define (make-client-socket proto . args)
+  (cond [(eq? proto 'unix)
+         (let-optionals* args ([path #f])
+           (unless (string? path)
+             (error "unix socket requires pathname, but got" path))
+           (make-client-socket-unix path))]
+        [(eq? proto 'inet)
+         (let-optionals* args ([host #f] [port #f])
+           (unless (and (string? host) (or (integer? port) (string? port)))
+             (errorf "inet socket requires host name and port, but got ~s and ~s"
+                     host port))
+           (make-client-socket-inet host port))]
+        [(is-a? proto <sockaddr>)
+         ;; caller provided sockaddr
+         (make-client-socket-from-addr proto)]
+        [(and (string? proto)
+              (pair? args)
+              (integer? (car args)))
+         ;; STk compatibility
+         (make-client-socket-inet proto (car args))]
+        [else
+         (error "unsupported protocol:" proto)]))
+
+(define (make-client-socket-from-addr addr)
+  (rlet1 socket (make-socket (address->protocol-family addr) SOCK_STREAM)
+    (socket-connect socket addr)))
+
+(define (make-client-socket-unix path)
+  (rlet1 socket (make-socket PF_UNIX SOCK_STREAM)
+    (socket-connect socket (make <sockaddr-un> :path path))))
+
+(define (make-client-socket-inet host port)
+  (let1 err #f
+    (define (try-connect address)
+      (guard (e [else (set! err e) #f])
+        (rlet1 socket (make-socket (address->protocol-family address)
+                                  SOCK_STREAM)
+          (socket-connect socket address))))
+    (rlet1 socket (any try-connect (make-sockaddrs host port))
+      (unless socket (raise err)))))
+
+;; API
+(define (make-server-socket proto . args)
+  (cond [(eq? proto 'unix)
+         (let-optionals* args ([path #f])
+           (unless (string? path)
+             (error "unix socket requires pathname, but got" path))
+           (apply make-server-socket-unix path (cdr args)))]
+        [(eq? proto 'inet)
+         (let-optionals* args ([port #f])
+           (define (err)
+             (error "inet socket requires integer port number or \
+                     string service name, or a list of them, but got:" port))
+           (cond [(list? port)
+                  (unless (every (any-pred integer? string?) port) (err))
+                  (apply make-server-socket-inet* port (cdr args))]
+                 [(or (integer? port) (string? port))
+                  (apply make-server-socket-inet port (cdr args))]
+                 [else (err)]))]
+        [(is-a? proto <sockaddr>)
+         ;; caller provided sockaddr
+         (apply make-server-socket-from-addr proto args)]
+        [(integer? proto)
+         ;; STk compatibility
+         (apply make-server-socket-inet proto args)]
+        [else
+         (error "unsupported protocol:" proto)]))
+
+(define (make-server-socket-from-addr addr :key (reuse-addr? #f)
+                                                (sock-init #f)
+                                                (backlog DEFAULT_BACKLOG))
+  (rlet1 socket (make-socket (address->protocol-family addr) SOCK_STREAM)
+    (when (procedure? sock-init)
+      (sock-init socket addr))
+    (when reuse-addr?
+      (socket-setsockopt socket SOL_SOCKET SO_REUSEADDR 1))
+    (socket-bind socket addr)
+    (socket-listen socket backlog)))
+
+
+(define (make-server-socket-unix path :key (backlog DEFAULT_BACKLOG))
+  (rlet1 socket (make-socket PF_UNIX SOCK_STREAM)
+    (socket-bind socket (make <sockaddr-un> :path path))
+    (socket-listen socket backlog)))
+
+(define (make-server-socket-inet port . args)
+  (apply make-server-socket-from-addr (car (make-sockaddrs #f port)) args))
+
+(define (make-server-socket-inet* ports . args) ; taking multiple ports
+  (let1 err #f
+    (define (try-bind address)
+      (guard (e [else (set! err e) #f])
+        (apply make-server-socket-from-addr address args)))
+    (rlet1 socket (any try-bind ($ lconcatenate $ lmap
+                                   (cut make-sockaddrs #f <>)
+                                   ports))
+      (unless socket (raise err)))))
+
+;; API
+;; Listen both v4 and v6 sockets, unless the system supports dual-stack
+;; socket.
+;; Heuristics - if we have both v4 and v6 sockets, we *may* need
+;; only v6 sockets if the system defaults to dual-stack socket.
+;; Unfortunately the behavior is system dependent.  So we try to
+;; open both (first v6, then v4) and if the latter fails to bind
+;; we assume v6 socket listens both.
+(define (make-server-sockets host port . args)
+  (define (v4addrs ss)
+    (filter (^s (eq? (sockaddr-family s) 'inet)) ss))
+  (define (v6addrs ss)
+    (filter (^s (eq? (sockaddr-family s) 'inet6)) ss))
+
+  ;; Kludge: These may not be bound on certain platforms,
+  ;; so we look them up at runtime.
+  (define EADDRINUSE
+    (global-variable-ref (find-module 'gauche) 'EADDRINUSE #f))
+  (define EADDRNOTAVAIL
+    (global-variable-ref (find-module 'gauche) 'EADDRNOTAVAIL #f))
+  (define <sockaddr-in6>
+    (global-variable-ref (find-module 'gauche.net) '<sockaddr-in6> #f))
+
+  (define (bind-failed? e)
+    (and (<system-error> e)
+         (memv (~ e'errno) `(,EADDRINUSE ,EADDRNOTAVAIL))))
+
+  ;; try binding v4 socket with the same port of opened v6 socket S6.
+  ;; Returns (S6 S4) on success, or (S6) on failure.
+  ;; NB: It is possible that v4's port is taken by another process,
+  ;; instead of dual-stack S6 socket.
+  (define (try-v4 s6 addrs)
+    ;; If the original port argument is 0, we take port number from
+    ;; the opened v6 socket.
+    (let1 a4s (if (zero? port)
+                ($ v4addrs $ make-sockaddrs host
+                   $ sockaddr-port $ socket-address s6)
+                (v4addrs addrs))
+      (guard (e [(bind-failed? e) (list s6)]
+                [else (raise e)])
+        (cons s6 (filter-map (cut apply make-server-socket <> args) a4s)))))
+
+  ;; try binding v6 socket on addr.  If actual-port is not #f, reallocate
+  ;; addr with the given port.  It is for the case that the given port is 0.
+  (define (try-v6 addr actual-port)
+    (let1 addr (if actual-port
+                 (make <sockaddr-in6>
+                   :host (sockaddr-addr addr) :port actual-port)
+                 addr)
+      (guard (e [(bind-failed? e) (values #f actual-port)])
+        (let1 s6 (apply make-server-socket addr args)
+          (values s6
+                  (if (zero? port)
+                    (sockaddr-port (socket-address s6))
+                    #f))))))
+
+  ;; Bind multiple v6 sockaddrs.
+  ;; If PORT is zero, we have to use the actual port number of the first
+  ;; socket we can bind.  So it's more involved than simply mapping
+  ;; make-server-socket.
+  (define (make-v6socks a6s)
+    (receive (socks _) (map-accum try-v6 #f a6s)
+      (filter identity socks)))
+
+  (let* ([ss (make-sockaddrs host port)]
+         [a6s (v6addrs ss)])
+    ;; NB: Mingw doesn't have EADDRINUSE.  it's likely not to have ipv6 either,
+    ;; so we just use the default.  NB: we can't switch here with
+    ;; gauche.sys.ipv6; see the comment on ipv6-capable definition above.
+    (if (or (null? a6s)
+            (not EADDRINUSE)
+            (not <sockaddr-in6>))
+      (map (cut apply make-server-socket <> args) ss)
+      (append-map (cut try-v4 <> ss) (make-v6socks (v6addrs ss))))))
+
+;; API
+(define (make-sockaddrs host port :optional (proto 'tcp))
+  (if ipv6-capable
+    (let* ([socktype (case proto
+                       [(tcp) SOCK_STREAM]
+                       [(udp) SOCK_DGRAM]
+                       [else (error "unsupported protocol:" proto)])]
+           [port (x->string port)]
+           [hints (make-sys-addrinfo :flags AI_PASSIVE :socktype socktype)]
+           [ss (map (cut slot-ref <> 'addr) (sys-getaddrinfo host port hints))])
+      (if ipv4-preferred
+        (append (filter (^s (eq? (sockaddr-family s) 'inet)) ss)
+                (remove (^s (eq? (sockaddr-family s) 'inet)) ss))
+        ss))
+    (let1 port (cond [(number? port) port]
+                     [(sys-getservbyname port (symbol->string proto))
+                      => (cut slot-ref <> 'port)]
+                     [else
+                      (error "couldn't find a port number of service:" port)])
+      (if host
+        (let1 hh (sys-gethostbyname host)
+          (unless hh (error "couldn't find host: " host))
+          (map (cut make <sockaddr-in> :host <> :port port)
+               (slot-ref hh 'addresses)))
+        (list (make <sockaddr-in> :host :any :port port))))))
+
+;; API
+(define (call-with-client-socket socket proc
+                                 :key (input-buffering #f) (output-buffering #f))
+  (unwind-protect
+      (proc (if input-buffering
+              (socket-input-port socket :buffering input-buffering)
+              (socket-input-port socket))
+            (if output-buffering
+              (socket-output-port socket :buffering output-buffering)
+              (socket-output-port socket)))
+    (socket-close socket)))
 
 ;; Local variables:
 ;; mode: scheme

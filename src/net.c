@@ -31,9 +31,9 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gauche-net.h"
+#include "gauche.h"
+#include "gauche/net.h"
 #include <fcntl.h>
-#include <gauche/extend.h>
 
 /*==================================================================
  * Socket
@@ -843,21 +843,8 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
  * Initialization
  */
 
-extern void Scm_Init_NetAddr(ScmModule *mod);
-extern void Scm_Init_NetDB(ScmModule *mod);
-extern void Scm_Init_netlib(ScmModule *mod);
-extern void Scm_Init_netaux(void);
-
-
-
-
-SCM_EXTENSION_ENTRY void Scm_Init_gauche__net(void)
+void Scm__InitNet(void)
 {
-    SCM_INIT_EXTENSION(gauche__net);
     ScmModule *mod = SCM_FIND_MODULE("gauche.net", SCM_FIND_MODULE_CREATE);
     Scm_InitStaticClass(&Scm_SocketClass, "<socket>", mod, NULL, 0);
-    Scm_Init_NetAddr(mod);
-    Scm_Init_NetDB(mod);
-    Scm_Init_netlib(mod);
-    Scm_Init_netaux();
 }

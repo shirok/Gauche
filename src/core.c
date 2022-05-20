@@ -89,6 +89,9 @@ extern void Scm__InitCollection(void);
 extern void Scm__InitComparator(void);
 extern void Scm__InitExecenv(void);
 extern void Scm__InitNative(void);
+extern void Scm__InitNet(void);
+extern void Scm__InitNetAddr(void);
+extern void Scm__InitNetDb(void);
 
 extern void Scm_Init_libalpha(void);
 extern void Scm_Init_libbool(void);
@@ -107,6 +110,7 @@ extern void Scm_Init_libmemo(void);
 extern void Scm_Init_libmisc(void);
 extern void Scm_Init_libmod(void);
 extern void Scm_Init_libnative(void);
+extern void Scm_Init_libnet(void);
 extern void Scm_Init_libnum(void);
 extern void Scm_Init_libobj(void);
 extern void Scm_Init_libproc(void);
@@ -200,6 +204,9 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm__InitComparator);
     CALL_INIT(Scm__InitExecenv);
     CALL_INIT(Scm__InitNative);
+    CALL_INIT(Scm__InitNet);
+    CALL_INIT(Scm__InitNetAddr);
+    CALL_INIT(Scm__InitNetDb);
 
     CALL_INIT(Scm_Init_libalpha);
     CALL_INIT(Scm_Init_libbool);
@@ -218,6 +225,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm_Init_libmisc);
     CALL_INIT(Scm_Init_libmod);
     CALL_INIT(Scm_Init_libnative);
+    CALL_INIT(Scm_Init_libnet);
     CALL_INIT(Scm_Init_libnum);
     CALL_INIT(Scm_Init_libobj);
     CALL_INIT(Scm_Init_libproc);
