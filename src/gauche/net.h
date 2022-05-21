@@ -261,6 +261,8 @@ SCM_EXTERN ScmObj Scm_SocketConnect(ScmSocket *s, ScmSockAddr *addr);
 SCM_EXTERN ScmObj Scm_SocketListen(ScmSocket *s, int backlog);
 SCM_EXTERN ScmObj Scm_SocketAccept(ScmSocket *s);
 
+SCM_EXTERN ScmObj Scm_GetSockName(int fd);
+SCM_EXTERN ScmObj Scm_GetPeerName(int fd);
 SCM_EXTERN ScmObj Scm_SocketGetSockName(ScmSocket *s);
 SCM_EXTERN ScmObj Scm_SocketGetPeerName(ScmSocket *s);
 

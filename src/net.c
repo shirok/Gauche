@@ -328,32 +328,42 @@ ScmObj Scm_SocketConnect(ScmSocket *sock, ScmSockAddr *addr)
     return SCM_OBJ(sock);
 }
 
-ScmObj Scm_SocketGetSockName(ScmSocket *sock)
+ScmObj Scm_GetSockName(int fd)
 {
     int r;
     struct sockaddr_storage addrbuf;
     socklen_t addrlen = sizeof(addrbuf);
 
-    CLOSE_CHECK(sock->fd, "get the name of", sock);
-    SCM_SYSCALL(r, getsockname(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
+    SCM_SYSCALL(r, getsockname(fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (r < 0) {
         Scm_SysError("getsockname(2) failed");
     }
     return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr*)&addrbuf, addrlen));
 }
 
-ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
+ScmObj Scm_SocketGetSockName(ScmSocket *sock)
+{
+    CLOSE_CHECK(sock->fd, "get the name of", sock);
+    return Scm_GetSockName(sock->fd);
+}
+
+ScmObj Scm_GetPeerName(int fd)
 {
     int r;
     struct sockaddr_storage addrbuf;
     socklen_t addrlen = sizeof(addrbuf);
 
-    CLOSE_CHECK(sock->fd, "get the name of", sock);
-    SCM_SYSCALL(r, getpeername(sock->fd, (struct sockaddr*)&addrbuf, &addrlen));
+    SCM_SYSCALL(r, getpeername(fd, (struct sockaddr*)&addrbuf, &addrlen));
     if (r < 0) {
         Scm_SysError("getpeername(2) failed");
     }
     return SCM_OBJ(Scm_MakeSockAddr(NULL, (struct sockaddr*)&addrbuf, addrlen));
+}
+
+ScmObj Scm_SocketGetPeerName(ScmSocket *sock)
+{
+    CLOSE_CHECK(sock->fd, "get the peer name of", sock);
+    return Scm_GetPeerName(sock->fd);
 }
 
 static const char *get_message_body(ScmObj msg, ScmSmallInt *size)
