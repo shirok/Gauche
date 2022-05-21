@@ -40,6 +40,7 @@
   (extend gauche.cgen.bbb)
   (use util.match)
   (use gauche.vm.insn)
+  (use scheme.set)
   (export run-on-register-machine))
 (select-module gauche.vm.register-machine)
 
@@ -61,6 +62,76 @@
   regs)
 
 (define *unique* (cons #f #f))
+
+(define *builtin-op-alist*
+  (rlet1 alist `((CONS . ,cons)
+                 (CAR . ,car)
+                 (CDR . ,cdr)
+                 (CAAR . ,caar)
+                 (CADR . ,caar)
+                 (CDAR . ,cdar)
+                 (CDDR . ,cddr)
+                 (LIST . ,list)
+                 (LIST* . ,list*)
+                 (LENGTH . ,length)
+                 (MEMQ . ,memq)
+                 (MEMV . ,memv)
+                 (ASSQ . ,assq)
+                 (ASSV . ,assv)
+                 (EQ . ,eq?)
+                 (EQV . ,eqv?)
+                 (APPEND . ,append)
+                 (NOT . ,not)
+                 (REVERSE . ,reverse)
+                 (APPLY . ,apply)
+                 (TAIL-APPLY . ,apply)
+                 (IS-A . ,is-a?)
+                 (NULLP . ,null?)
+                 (PAIRP . ,pair?)
+                 (CHARP . ,char?)
+                 (EOFP . ,eof-object?)
+                 (STRINGP . ,string?)
+                 (VECTORP . ,vector?)
+                 (NUMBERP . ,number?)
+                 (REALP . ,real?)
+                 (IDENTIFIERP . ,identifier?)
+                 (SETTER . ,setter)
+                 (VEC . ,vector)
+                 (LIST->VEC . ,list->vector)
+                 (APP-VEC . ,(lambda xs (list->vector (concatenate xs))))
+                 (VEC-LEN . ,vector-length)
+                 (VEC-REF . ,vector-ref)
+                 (VEC-SET . ,vector-set!)
+                 (UVEC-REF . ,uvector-ref)
+                 (NUMEQ2 . ,=)
+                 (NUMLT2 . ,<)
+                 (NUMLE2 . ,<=)
+                 (NUMGT2 . ,>)
+                 (NUMGE2 . ,>=)
+                 (NUMADD2 . ,+)
+                 (NUMSUB2 . ,-)
+                 (NUMMUL2 . ,*)
+                 (NUMDIV2 . ,/)
+                 (NUMMOD2 . ,modulo)
+                 (NUMREM2 . ,remainder)
+                 (NEGATE . ,-)
+                 (ASH . ,ash)
+                 (LOGAND . ,logand)
+                 (LOGIOR . ,logior)
+                 (LOGXOR . ,logxor)
+                 (CURIN . ,current-input-port)
+                 (CUROUT . ,current-output-port)
+                 (CURERR . ,current-error-port)
+                 (UNBOX . ,unbox)
+                 )
+    ;; Ensure we weren't missing ops
+    (unless (set=? (list->set eq-comparator (map car alist))
+                   (list->set eq-comparator (with-module gauche.cgen.bbb
+                                              *builtin-ops*)))
+      (error "Inconsistencies between builtin ops definitions:"))))
+
+(define (builtin-op opc)
+  (assq-ref *builtin-op-alist* opc))
 
 (define-syntax define-reg-ref
   (syntax-rules ()
@@ -112,11 +183,13 @@
       [(('DEF id flags reg) . insns)
        (%insert-binding (~ id'module) (~ id'name) (reg-ref reg) flags)
        (loop insns id)]
-      [(('ASM op recv . args) . insns)
-       (loop insns (run-asm benv regs op recv args val0))]
-      [(('BUILTIN op recv . args) . insns)
-       (loop insns (run-builtin benv regs op recv args val0))]
-      [(x . _) (error "[intenral] Unknown insn:" x)])))
+      [((op recv . regs) . insns)
+       (if-let1 proc (builtin-op op)
+         (let1 v (apply proc (map reg-ref regs))
+           (reg-set! recv v)
+           (loop insns v))
+         (error "Unknown builtin op: " op))]
+      [(x . _) (error "Invalid insn:" x)])))
 
 (define (close-benv parent-regs benv)
   (define newregs (rlet1 regs (hash-table-copy parent-regs)
@@ -167,77 +240,6 @@
     (eval `(lambda ,(generate-lambda-formals reg-names)
              ,(generate-apply reg-names))
           (current-module))))
-
-(define (run-asm benv regs op recv args val0)
-  (define-reg-ref reg-ref regs val0)
-  (define val
-    (case (~ (vm-find-insn-info (car op))'name)
-      [(NULLP)   (null? (reg-ref (car args)))]
-      [(PAIRP)   (pair? (reg-ref (car args)))]
-      [(CAR)     (car (reg-ref (car args)))]
-      [(CDR)     (cdr (reg-ref (car args)))]
-      [(CAAR)    (caar (reg-ref (car args)))]
-      [(CADR)    (cadr (reg-ref (car args)))]
-      [(CDAR)    (cdar (reg-ref (car args)))]
-      [(CDDR)    (cddr (reg-ref (car args)))]
-      [(CONS)    (cons (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(LIST)    (map reg-ref args)]
-      [(LIST*)   (apply list* (map reg-ref args))]
-      [(LENGTH)  (length (reg-ref (car args)))]
-      [(APPEND)  (append (map reg-ref args))]
-      [(REVERSE) (apply reverse (map reg-ref args))]
-      [(MEMQ)    (memq (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(MEMV)    (memv (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(ASSQ)    (assq (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(ASSV)    (assv (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMADD2) (+ (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMSUB2) (- (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMSUB2) (- (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMMUL2) (* (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMDIV2) (/ (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMMODI) (modulo (reg-ref (car args)) (cadr op))]
-      [(NUMREMI) (remainder (reg-ref (car args)) (cadr op))]
-      [(NUMASHI) (ash (reg-ref (car args)) (cadr op))]
-      [(NUMEQ2)  (=  (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMLT2)  (<  (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMLE2)  (<= (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMGT2)  (>  (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NUMGE2)  (>= (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NEGATE)  (- (reg-ref (car args)))]
-      [(LOGAND)  (logand (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(LOGIOR)  (logior (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(LOGXOR)  (logxor (reg-ref (car args)) (reg-ref (cadr args)))]
-      [(NOT)     (not (reg-ref (car args)))]
-      [(CURIN)   (current-input-port)]
-      [(CUROUT)  (current-output-port)]
-      [(CURERR)  (current-error-port)]
-      [(TAIL-APPLY) (apply (reg-ref (car args)) (map reg-ref (cdr args)))]
-      [else => (^[opc] (error "[internal] Unsupported asm: "
-                              (~ (vm-find-insn-info opc)'name)))]))
-  (cond [(is-a? recv <reg>)
-         (if (reg-boxed? recv)
-           (set-box! (hash-table-get regs recv) val)
-           (hash-table-put! regs recv val))
-         (undefined)]
-        [(eq? recv '%VAL0) val]
-        [else (undefined)]))
-
-(define (run-builtin benv regs op recv args val0)
-  (define-reg-ref reg-ref regs val0)
-  (define val
-    (match op
-      ['APPEND (apply append (map reg-ref args))]
-      ['LIST   (apply list (map reg-ref args))]
-      ['LIST*  (apply list* (map reg-ref args))]
-      ['CONS   (cons (reg-ref (car args)) (reg-ref (cadr args)))]
-      [opc     (error "[internal] Unsupported builtin: " opc)]))
-  (cond [(is-a? recv <reg>)
-         (if (reg-boxed? recv)
-           (set-box! (hash-table-get regs recv) val)
-           (hash-table-put! regs recv val))
-         (undefined)]
-        [(eq? recv '%VAL0) val]
-        [else (undefined)]))
 
 ;; for debug
 (define (dump-regs regs :optional (port (current-output-port)))

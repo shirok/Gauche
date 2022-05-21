@@ -63,6 +63,12 @@
 
 ;; Instructions:
 ;;
+;;  reg is either <reg>, <const> or %VAL0.  If it is <reg>, it can be 'boxed',
+;;  meaning we have one indirection to the shared box.
+;;  register is destination position is always <reg>.
+;;
+;; General instructions:
+;;
 ;; (MOV dreg sreg)     - dreg <- sreg
 ;; (MOV* r o (dreg ...) sreg) - mv bind (details TBD)
 ;; (LD reg identifier) - global load
@@ -79,15 +85,89 @@
 ;;                       BB holds the basic block of the continuation; it is
 ;;                       #f if this is a tail call.
 ;; (RET reg ...)       - Return, using values in REGs as the results.
-;; (BUILTIN op receiver reg ...) - Builtin operation
-;; (ASM op receiver reg ...)    - Inlined VM assembly operation
-;;
 ;; (DEF id flags reg)  - insert global binding of ID in the current module
 ;;                       with the value in REG.
 ;;
-;;  reg is either <reg>, <const> or %VAL0.  If it is <reg>, it can be 'boxed',
-;;  meaning we have one indirection to the shared box.
-;;  register is destination position is always <reg>.
+;; Bulitin operations:
+;;  These are tied to the builtin procedures inlined to VM ASMs.
+;;  The ones marked with (*) don't directly corresponds to VM insns, but
+;;  have a related "immediate" version of insns.
+;;
+;; (CONS reg1 reg1)
+;; (CAR reg)
+;; (CDR reg)
+;; (CAAR reg)
+;; (CADR reg)
+;; (CDAR reg)
+;; (CDDR reg)
+;; (LIST reg ...)
+;; (LIST* reg ...)
+;; (LENGTH reg)
+;; (MEMQ reg1 reg2)
+;; (MEMV reg1 reg2)
+;; (ASSQ reg1 reg2)
+;; (ASSV reg1 reg2)
+;; (EQ reg1 reg2)
+;; (EQV reg1 reg2)
+;; (APPEND reg ...)
+;; (NOT reg)
+;; (REVERSE reg)
+;; (APPLY reg ...)
+;; (TAIL-APPLY reg ...)
+;; (IS-A reg1 reg2)    - Called only the class arg isn't redefined
+;; (NULLP reg)
+;; (PAIRP reg)
+;; (CHARP reg)
+;; (EOFP reg)
+;; (STRINGP reg)
+;; (SYMBOLP reg)
+;; (VECTORP reg)
+;; (NUMBERP reg)
+;; (REALP reg)
+;; (IDENTIFIERP reg)
+;; (SETTER reg)
+;; (VEC reg ...)
+;; (LIST->VEC reg)
+;; (APP-VEC reg ...)
+;; (VEC-LEN reg)
+;; (VEC-REF reg1 reg2)
+;; (VEC-SET reg1 reg2 reg3)
+;; (UVEC-REF reg1 reg2 reg3)  - The first arg is uvector type
+;; (NUMEQ2 reg1 reg2)
+;; (NUMLT2 reg1 reg2)
+;; (NUMLE2 reg1 reg2)
+;; (NUMGT2 reg1 reg2)
+;; (NUMGE2 reg1 reg2)
+;; (NUMADD2 reg1 reg2)
+;; (NUMSUB2 reg1 reg2)
+;; (NUMMUL2 reg1 reg2)
+;; (NUMDIV2 reg1 reg2)
+;; (NUMMOD2 reg1 reg2)    - (*)
+;; (NUMREM2 reg1 reg2)    - (*)
+;; (NEGATE reg)
+;; (ASH reg1 reg2)        - (*)
+;; (LOGAND reg1 reg2)
+;; (LOGIOR reg1 reg2)
+;; (LOGXOR reg1 reg2)
+;; ;; READ-CHAR
+;; ;; PEEK-CHAR
+;; ;; WRITE-CHAR
+;; (CURIN)
+;; (CUROUT)
+;; (CURERR)
+;; ;; SLOT-REF - This may call back to VM
+;; ;; SLOT-SET - This may call back to VM
+;; (UNBOX reg)
+
+(define *builtin-ops*
+  `(CONS CAR CDR CAAR CADR CDAR CDDR LIST LIST* LENGTH
+    MEMQ MEMV ASSQ ASSV EQ EQV
+    APPEND NOT REVERSE APPLY TAIL-APPLY IS-A
+    NULLP PAIRP CHARP EOFP STRINGP VECTORP NUMBERP REALP IDENTIFIERP
+    SETTER VEC LIST->VEC APP-VEC VEC-LEN VEC-REF VEC-SET UVEC-REF
+    NUMEQ2 NUMLT2 NUMLE2 NUMGT2 NUMGE2 NUMADD2 NUMSUB2 NUMMUL2 NUMDIV2
+    NUMMOD2 NUMREM2
+    NEGATE ASH LOGAND LOGIOR LOGXOR CURIN CUROUT CURERR UNBOX))
 
 ;; Basic blocks:
 ;;   First, we convert IForm to a DG of basic blocks (BBs).
@@ -417,7 +497,7 @@
               [formals-const (make-const bb #f)]
               [name-const (make-const bb ($clambda-name iform))]
               [make-case-lambda-reg (make-reg bb #f)])
-          (push-insn bb `(BUILTIN LIST ,closure-list-reg ,@clo-regs))
+          (push-insn bb `(LIST ,closure-list-reg ,@clo-regs))
           (push-insn bb `(LD ,make-case-lambda-reg ,make-case-lambda.))
           (push-insn bb `(CALL ,cbb
                                ,make-case-lambda-reg
@@ -536,23 +616,43 @@
 ;; NB: Some ASM instructions require c-continuations internally, so
 ;; so we should break them up.
 (define (pass5b/$ASM iform bb benv ctx)
+  (define (emit bb mnemonic regs)
+    (let1 receiver (make-reg bb #f)
+      (push-insn bb `(,mnemonic ,receiver ,@regs))
+      (pass5b/return bb ctx receiver)))
   (receive (bb regs) (pass5b/prepare-args bb benv ($asm-args iform) #t)
     (let* ([opc ($asm-insn iform)]
            [mnemonic (~ (vm-find-insn-info (car opc))'name)])
       (case mnemonic
         [(IS-A)
-         ;; TODO: If object's class is not redefined, which is almost always
-         ;; the case, we don't need to do an external call.  Need optimization.
-         (pass5b/rec ($call ($*-src iform)
-                            ($gref (make-identifier 'is-a?
-                                                    (find-module 'gauche)
-                                                    '()))
-                            ($asm-args iform))
-                     bb benv ctx)]
-        [else
-         (let1 receiver (make-reg bb #f)
-           (push-insn bb `(ASM ,opc ,receiver ,@regs))
-           (pass5b/return bb ctx receiver))]))))
+         (pass5b/de-asm iform 'is-a? bb benv ctx)]
+        [(READ-CHAR)
+         (pass5b/de-asm iform 'read-char bb benv ctx)]
+        [(PEEK-CHAR)
+         (pass5b/de-asm iform 'peek-char bb benv ctx)]
+        [(SLOT-REF)
+         (pass5b/de-asm iform 'slot-ref bb benv ctx)]
+        [(SLOT-SET)
+         (pass5b/de-asm iform 'slot-set! bb benv ctx)]
+        ;; Convert immediate insns to non-immediate ones
+        ;; Be careful about the position of the immediate arg
+        [(NUMADDI) (emit bb 'NUMADD2 (cons (make-const bb (cadr opc)) regs))]
+        [(NUMSUBI) (emit bb 'NUMSUB2 (cons (make-const bb (cadr opc)) regs))]
+        [(NUMMODI) (emit bb 'NUMMOD2 (list (car regs) (make-const bb (cadr opc))))]
+        [(NUMREMI) (emit bb 'NUMREM2 (list (car regs) (make-const bb (cadr opc))))]
+        [(ASHI) (emit bb 'ASH (list (car regs) (make-const bb (cadr opc))))]
+        [else (emit bb mnemonic regs)]))))
+
+;; Some ASM insns may call back to VM, so we need to turn it back to a
+;; normal call.
+;; NAME is a symbol for Scheme procedure that does the job.
+(define (pass5b/de-asm iform name bb benv ctx)
+  (pass5b/rec ($call ($*-src iform)
+                     ($gref (make-identifier name
+                                             (find-module 'gauche)
+                                             '()))
+                     ($asm-args iform))
+              bb benv ctx))
 
 (define (pass5b/$CONS iform bb benv ctx)
   (pass5b/builtin-twoargs 'CONS iform bb benv ctx))
@@ -570,14 +670,14 @@
       (pass5b/prepare-args bb benv (list ($*-arg0 iform) ($*-arg1 iform)) #t)
     (for-each (cut touch-reg! bb <>) regs)
     (let1 receiver (make-reg bb #f)
-      (push-insn bb `(BUILTIN ,op ,receiver ,@regs))
+      (push-insn bb `(,op ,receiver ,@regs))
       (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$LIST->VECTOR iform bb benv ctx)
   (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
     (touch-reg! bb reg0)
     (let1 receiver (make-reg bb #f)
-      (push-insn bb `(BUILTIN LIST->VECTOR ,receiver ,reg0))
+      (push-insn bb `(LIST->VECTOR ,receiver ,reg0))
       (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$VECTOR iform bb benv ctx)
@@ -591,7 +691,7 @@
   (receive (bb regs) (pass5b/prepare-args bb benv ($*-args iform) #t)
     (for-each (cut touch-reg! bb <>) regs)
     (let1 receiver (make-reg bb #f)
-      (push-insn bb `(BUILTIN ,op ,receiver ,@regs))
+      (push-insn bb `(,op ,receiver ,@regs))
       (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$IT iform bb benv ctx)
@@ -751,15 +851,11 @@
                (and bb (bb-name bb)) (regname proc) (map regname regs))]
       [('RET . regs)
        (format port "  ~s\n" `(,(car insn) ,@(map regname regs)))]
-      [('ASM insn . args)
-       (let ((insn-name (~ (vm-find-insn-info (car insn))'name)))
-         (format port "  ~s\n" `(ASM (,insn-name ,@(cdr insn))
-                                     ,@(map regname args))))]
-      [('BUILTIN op . args)
-       (format port "  ~s\n" `(BUILTIN ,op ,@(map regname args)))]
       [('DEF id flags reg)
        (format port "  (DEF ~a#~a ~s ~s)\n" (~ id'module'name) (~ id'name)
                flags (regname reg))]
+      [((? (cut memq <> *builtin-ops*) op) . regs)
+       (format port "  ~s\n" `(,op ,@(map regname regs)))]
       [_ (format port "??~s\n" insn)]))
   (define (dump-bb bb)
     (format port " ~a   [~a> >~a]\n" (bb-name bb)
