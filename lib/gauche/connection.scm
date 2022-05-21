@@ -33,6 +33,10 @@
 
 
 (define-module gauche.connection
+  (use gauche.net)
+  ;; These are now set to be autoloaded in the core (libnet.scm),
+  ;; and defined in lib/gauche/netutil.scm.  We re-export them
+  ;; for the backward compatibility.
   (export connection-self-address
           connection-peer-address
           connection-input-port
@@ -71,14 +75,6 @@
 ;; and must be handled with such knowledge.  Connection interface
 ;; is useful for generic code that deals with established connections.
 
-(define-generic connection-self-address)
-(define-generic connection-peer-address)
-(define-generic connection-input-port)
-(define-generic connection-output-port)
-(define-generic connection-shutdown)
-(define-generic connection-close)
-
-(define-generic connection-address-name)
 (define-method connection-address-name ((a <top>))
   (write-to-string a display))
 
