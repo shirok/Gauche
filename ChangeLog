@@ -1,3 +1,9 @@
+2022-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/net, src/libnet.scm, src/net.c, src/netaddr.c, src/netdb.c:
+	  Move ext/net into core.  Sometimes it's handy for the extension
+	  modules to be able to call net-related C functions.
+
 2022-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.ac: Do not compile axtls by default.  Preparing
