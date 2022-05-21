@@ -159,15 +159,15 @@ SCM_CLASS_DECL(Scm_SockAddrClass);
 
 #define SCM_SOCKADDR_FAMILY(obj)   SCM_SOCKADDR(obj)->addr.sa_family
 
-int    Scm_SockAddrP(ScmObj obj);
-ScmObj Scm_SockAddrName(ScmSockAddr *addr);
-ScmObj Scm_SockAddrFamily(ScmSockAddr *addr);
-ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *addr, int len);
+SCM_EXTERN int    Scm_SockAddrP(ScmObj obj);
+SCM_EXTERN ScmObj Scm_SockAddrName(ScmSockAddr *addr);
+SCM_EXTERN ScmObj Scm_SockAddrFamily(ScmSockAddr *addr);
+SCM_EXTERN ScmObj Scm_MakeSockAddr(ScmClass *klass, struct sockaddr *addr, int len);
 
-extern ScmGeneric Scm_GenericSockAddrName;
-extern ScmGeneric Scm_GenericSockAddrFamily;
-extern ScmGeneric Scm_GenericSockAddrAddr;
-extern ScmGeneric Scm_GenericSockAddrPort;
+SCM_EXTERN ScmGeneric Scm_GenericSockAddrName;
+SCM_EXTERN ScmGeneric Scm_GenericSockAddrFamily;
+SCM_EXTERN ScmGeneric Scm_GenericSockAddrAddr;
+SCM_EXTERN ScmGeneric Scm_GenericSockAddrPort;
 
 typedef struct ScmSockAddrUnRec {
     SCM_HEADER;
@@ -202,9 +202,9 @@ SCM_CLASS_DECL(Scm_SockAddrIn6Class);
 
 #define SCM_SOCKADDR_MAXLEN    128
 
-extern ScmObj Scm_InetStringToAddress(const char *s, int *proto,
+SCM_EXTERN ScmObj Scm_InetStringToAddress(const char *s, int *proto,
                                       ScmUVector *buf);
-extern ScmObj Scm_InetAddressToString(ScmObj addr, int proto);
+SCM_EXTERN ScmObj Scm_InetAddressToString(ScmObj addr, int proto);
 
 
 /*------------------------------------------------------------------
@@ -249,39 +249,39 @@ SCM_CLASS_DECL(Scm_SocketClass);
 #define SCM_SOCKET(obj)    ((ScmSocket*)obj)
 #define SCM_SOCKETP(obj)   SCM_XTYPEP(obj, SCM_CLASS_SOCKET)
 
-extern ScmObj Scm_MakeSocket(int domain, int type, int protocol);
-extern ScmObj Scm_SocketShutdown(ScmSocket *s, int how);
-extern ScmObj Scm_SocketClose(ScmSocket *s);
+SCM_EXTERN ScmObj Scm_MakeSocket(int domain, int type, int protocol);
+SCM_EXTERN ScmObj Scm_SocketShutdown(ScmSocket *s, int how);
+SCM_EXTERN ScmObj Scm_SocketClose(ScmSocket *s);
 
-extern ScmObj Scm_SocketInputPort(ScmSocket *s, int buffered);
-extern ScmObj Scm_SocketOutputPort(ScmSocket *s, int buffered);
+SCM_EXTERN ScmObj Scm_SocketInputPort(ScmSocket *s, int buffered);
+SCM_EXTERN ScmObj Scm_SocketOutputPort(ScmSocket *s, int buffered);
 
-extern ScmObj Scm_SocketBind(ScmSocket *s, ScmSockAddr *addr);
-extern ScmObj Scm_SocketConnect(ScmSocket *s, ScmSockAddr *addr);
-extern ScmObj Scm_SocketListen(ScmSocket *s, int backlog);
-extern ScmObj Scm_SocketAccept(ScmSocket *s);
+SCM_EXTERN ScmObj Scm_SocketBind(ScmSocket *s, ScmSockAddr *addr);
+SCM_EXTERN ScmObj Scm_SocketConnect(ScmSocket *s, ScmSockAddr *addr);
+SCM_EXTERN ScmObj Scm_SocketListen(ScmSocket *s, int backlog);
+SCM_EXTERN ScmObj Scm_SocketAccept(ScmSocket *s);
 
-extern ScmObj Scm_SocketGetSockName(ScmSocket *s);
-extern ScmObj Scm_SocketGetPeerName(ScmSocket *s);
+SCM_EXTERN ScmObj Scm_SocketGetSockName(ScmSocket *s);
+SCM_EXTERN ScmObj Scm_SocketGetPeerName(ScmSocket *s);
 
-extern ScmObj Scm_SocketSend(ScmSocket *s, ScmObj msg, int flags);
-extern ScmObj Scm_SocketSendTo(ScmSocket *s, ScmObj msg, ScmSockAddr *to, int flags);
-extern ScmObj Scm_SocketSendMsg(ScmSocket *s, ScmObj msg, int flags);
-extern ScmObj Scm_SocketRecv(ScmSocket *s, int bytes, int flags);
-extern ScmObj Scm_SocketRecvX(ScmSocket *s, ScmUVector *buf, int flags);
-extern ScmObj Scm_SocketRecvFrom(ScmSocket *s, int bytes, int flags);
-extern ScmObj Scm_SocketRecvFromX(ScmSocket *s, ScmUVector *buf,
-                                  ScmObj addrs, int flags);
+SCM_EXTERN ScmObj Scm_SocketSend(ScmSocket *s, ScmObj msg, int flags);
+SCM_EXTERN ScmObj Scm_SocketSendTo(ScmSocket *s, ScmObj msg, ScmSockAddr *to, int flags);
+SCM_EXTERN ScmObj Scm_SocketSendMsg(ScmSocket *s, ScmObj msg, int flags);
+SCM_EXTERN ScmObj Scm_SocketRecv(ScmSocket *s, int bytes, int flags);
+SCM_EXTERN ScmObj Scm_SocketRecvX(ScmSocket *s, ScmUVector *buf, int flags);
+SCM_EXTERN ScmObj Scm_SocketRecvFrom(ScmSocket *s, int bytes, int flags);
+SCM_EXTERN ScmObj Scm_SocketRecvFromX(ScmSocket *s, ScmUVector *buf,
+                                      ScmObj addrs, int flags);
 
-extern ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
-                                 ScmObj control, int flags,
-                                 ScmUVector *buf);
+SCM_EXTERN ScmObj Scm_SocketBuildMsg(ScmSockAddr *name, ScmVector *iov,
+                                     ScmObj control, int flags,
+                                     ScmUVector *buf);
 
-extern ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
-                               int option, ScmObj value);
-extern ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
-                               int option, int resulttype);
-extern ScmObj Scm_SocketIoctl(ScmSocket *s, u_long requiest, ScmObj data);
+SCM_EXTERN ScmObj Scm_SocketSetOpt(ScmSocket *s, int level,
+                                   int option, ScmObj value);
+SCM_EXTERN ScmObj Scm_SocketGetOpt(ScmSocket *s, int level,
+                                   int option, int resulttype);
+SCM_EXTERN ScmObj Scm_SocketIoctl(ScmSocket *s, u_long requiest, ScmObj data);
 
 /*==================================================================
  * Netdb interface
@@ -302,9 +302,9 @@ SCM_CLASS_DECL(Scm_SysHostentClass);
 #define SCM_SYS_HOSTENT(obj)   ((ScmSysHostent*)obj)
 #define SCM_SYS_HOSTENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_HOSTENT)
 
-extern ScmObj Scm_GetHostByName(const char *name);
-extern ScmObj Scm_GetHostByAddr(const char *addr, int type);
-extern int Scm_HostNameToAddr(const char *name, char *addrbuf, int *addrlen);
+SCM_EXTERN ScmObj Scm_GetHostByName(const char *name);
+SCM_EXTERN ScmObj Scm_GetHostByAddr(const char *addr, int type);
+SCM_EXTERN int Scm_HostNameToAddr(const char *name, char *addrbuf, int *addrlen);
 
 /*
  * Protocol Entry
@@ -322,8 +322,8 @@ SCM_CLASS_DECL(Scm_SysProtoentClass);
 #define SCM_SYS_PROTOENT(obj)   ((ScmSysProtoent*)obj)
 #define SCM_SYS_PROTOENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_PROTOENT)
 
-extern ScmObj Scm_GetProtoByName(const char *name);
-extern ScmObj Scm_GetProtoByNumber(int proto);
+SCM_EXTERN ScmObj Scm_GetProtoByName(const char *name);
+SCM_EXTERN ScmObj Scm_GetProtoByNumber(int proto);
 
 /*
  * Service Entry
@@ -342,8 +342,8 @@ SCM_CLASS_DECL(Scm_SysServentClass);
 #define SCM_SYS_SERVENT(obj)   ((ScmSysServent*)obj)
 #define SCM_SYS_SERVENT_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_SERVENT)
 
-extern ScmObj Scm_GetServByName(const char *name, const char *proto);
-extern ScmObj Scm_GetServByPort(int port, const char *proto);
+SCM_EXTERN ScmObj Scm_GetServByName(const char *name, const char *proto);
+SCM_EXTERN ScmObj Scm_GetServByPort(int port, const char *proto);
 
 /*
  * Address information
@@ -367,10 +367,10 @@ SCM_CLASS_DECL(Scm_SysAddrinfoClass);
 #define SCM_SYS_ADDRINFO(obj)   ((ScmSysAddrinfo*)obj)
 #define SCM_SYS_ADDRINFO_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYS_ADDRINFO)
 
-extern ScmObj Scm_GetAddrinfo(const char *nodename,
-                              const char *servname,
-                              struct addrinfo *hints);
-extern ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags);
+SCM_EXTERN ScmObj Scm_GetAddrinfo(const char *nodename,
+                                  const char *servname,
+                                  struct addrinfo *hints);
+SCM_EXTERN ScmObj Scm_GetNameinfo(ScmSockAddr *addr, int flags);
 
 #ifndef NI_MAXHOST
 #define NI_MAXHOST  1025

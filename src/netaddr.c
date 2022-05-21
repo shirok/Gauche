@@ -31,6 +31,7 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/net.h"
 
