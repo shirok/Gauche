@@ -128,8 +128,18 @@
  (define-cproc tls-input-port (tls::<tls>) Scm_TLSInputPort)
  (define-cproc tls-output-port (tls::<tls>) Scm_TLSOutputPort)
  ;; internal
- (define-cproc tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
- (define-cproc tls-output-port-set! (tls::<tls> port) Scm_TLSOutputPortSet)
+ (define-cproc %tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
+ (define-cproc %tls-output-port-set! (tls::<tls> port) Scm_TLSOutputPortSet)
+ (define-cproc %tls-getsockname (tls::<tls>)
+   (let* ([fd::int (funcall (-> tls getSocketFd) tls)])
+     (if (>= fd 0)
+       (return (Scm_GetSockName fd))
+       (return SCM_FALSE))))
+ (define-cproc %tls-getpeername (tls::<tls>)
+   (let* ([fd::int (funcall (-> tls getSocketFd) tls)])
+     (if (>= fd 0)
+       (return (Scm_GetPeerName fd))
+       (return SCM_FALSE))))
 
  (define-cproc tls-socket (tls::<tls>) Scm_TLSSocket) ; DEPRECATED
 
@@ -145,8 +155,8 @@
     [(host port proto)
      (%tls-connect tls host port proto)]
     [_ (error "Invalid arguments:" (cons tls args))])
-  (tls-input-port-set! tls (make-tls-input-port tls))
-  (tls-output-port-set! tls (make-tls-output-port tls))
+  (%tls-input-port-set! tls (make-tls-input-port tls))
+  (%tls-output-port-set! tls (make-tls-output-port tls))
   tls)
 
 ;; API
@@ -155,8 +165,8 @@
       (if sock
         (%tls-accept-with-socket tls sock (socket-fd sock))
         (%tls-accept tls))
-    (tls-input-port-set! new-tls (make-tls-input-port new-tls))
-    (tls-output-port-set! new-tls (make-tls-output-port new-tls))))
+    (%tls-input-port-set! new-tls (make-tls-input-port new-tls))
+    (%tls-output-port-set! new-tls (make-tls-output-port new-tls))))
 
 ;; API
 (define (tls-close t)
@@ -192,11 +202,9 @@
 ;; NB: self-address and peer-address may return #f, for the info
 ;; may not be accessible with MbedTLS.
 (define-method connection-self-address ((s <tls>))
-  (and-let1 sock (tls-socket s)
-    (socket-getsockname sock)))
+  (%tls-getsockname s))
 (define-method connection-peer-address ((s <tls>))
-  (and-let1 sock (tls-socket s)
-    (socket-getpeername sock)))
+  (%tls-getpeername s))
 (define-method connection-input-port ((s <tls>))
   (tls-input-port s))
 (define-method connection-output-port ((s <tls>))

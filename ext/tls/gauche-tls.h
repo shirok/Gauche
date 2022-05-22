@@ -36,6 +36,7 @@
 #define GAUCHE_TLS_H
 
 #include <gauche.h>
+#include <gauche/net.h>
 
 #if defined(EXTTLS_EXPORTS)
 #define LIBGAUCHE_EXT_BODY
