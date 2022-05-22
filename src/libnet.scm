@@ -124,8 +124,8 @@
  ;; checking their availability and #ifdefs.
  (define-cmethod sockaddr-name ((addr "Scm_SockAddrInClass"))
    (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)]
-          [addr::ulong (ntohl (ref (-> a addr) sin_addr s_addr))]
-          [port::ushort (ntohs (ref (-> a addr) sin_port))]
+          [addr::u_long (ntohl (ref (-> a addr) sin_addr s_addr))]
+          [port::u_short (ntohs (ref (-> a addr) sin_port))]
           [buf::(.array char (10))])
      (snprintf buf 10 ":%d" port)
      (return
@@ -173,7 +173,7 @@
    (define-cmethod sockaddr-name ((addr "Scm_SockAddrIn6Class"))
      (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
             [addr (in6-addr a)]
-            [port::ushort (ntohs (ref (-> a addr) sin6_port))]
+            [port::u_short (ntohs (ref (-> a addr) sin6_port))]
             [buf::(.array char (10))])
      (snprintf buf 10 ":%d" port)
      (return
