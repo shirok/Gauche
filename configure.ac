@@ -1005,6 +1005,17 @@ This Gauche has been configured with the following parameters:
   optional modules: $OPTDBMS$OPTZLIB
 ])
 
+AS_IF([test -z "$GAUCHE_TLS_TYPES" -a "$tls_explicitly_disabled" != yes], [
+  AC_MSG_RESULT([
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! No TLS support is configured.                                         !!!
+!!! You won't be able to do TLS communication, such as connecting to      !!!
+!!! websites with https.  If this is not intended, check --with-tls       !!!
+!!! configure option (type ./configure --help for the details).           !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ])
+])
+
 AS_IF([test "$GAUCHE_CHAR_ENCODING" != utf8], [
   AC_MSG_RESULT([
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

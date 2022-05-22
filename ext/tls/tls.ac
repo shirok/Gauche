@@ -10,6 +10,7 @@ dnl   --with-tls=no               # do not include any TLS library support
 dnl
 
 TLSLIBS=mbedtls
+tls_explicitly_disabled=no
 AC_ARG_WITH(tls,
   AS_HELP_STRING([--with-tls=TLSLIB,...],
   [Select which TLS libraries to be compiled.  Currently we support 'axtls'
@@ -20,7 +21,8 @@ AC_ARG_WITH(tls,
    Specify --with-tls=no to disable tls support.]),
   [
     AS_CASE([$with_tls],
-      [no|none], [TLSLIBS=""],
+      [no|none], [TLSLIBS=""
+                  tls_explicitly_disabled=yes],
       [yes],     [],            dnl Use the default
                  [TLSLIBS="$with_tls"])
   ])
