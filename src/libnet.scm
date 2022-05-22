@@ -75,7 +75,7 @@
 
 ;; Some generic functions needs to be defined after libobj initialization,
 ;; so we delay its loading
-(autoload "gauche/netutil" sockaddr-name
+(autoload "gauche/netutil"
           connection-self-address
           connection-peer-address
           connection-input-port
@@ -120,6 +120,19 @@
         (SCM_MAKE_STR (ref (-> (cast ScmSockAddrUn* addr) addr) sun_path))
         (SCM_MAKE_STR ""))))
 
+ ;; NB: We might just use inet_ntop or WSAAddressToString, but we don't bother
+ ;; checking their availability and #ifdefs.
+ (define-cmethod sockaddr-name ((addr "Scm_SockAddrInClass"))
+   (let* ([a::ScmSockAddrIn* (cast ScmSockAddrIn* addr)]
+          [addr::ulong (ntohl (ref (-> a addr) sin_addr s_addr))]
+          [port::ushort (ntohs (ref (-> a addr) sin_port))]
+          [buf::(.array char (10))])
+     (snprintf buf 10 ":%d" port)
+     (return
+      (Scm_StringAppendC
+       (SCM_STRING (Scm_InetAddressToString (Scm_MakeIntegerU addr) AF_INET))
+       buf -1 -1))))
+
  (define-cmethod sockaddr-family ((addr "Scm_SockAddrUnClass"))
    (cast void addr)                     ; suppress unused var warning
    (return 'unix))
@@ -141,9 +154,8 @@
      (cast void addr)                     ; suppress unused var warning
      (return 'inet6))
 
-   (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
-     (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
-            [p::uint32_t*
+   (define-cfn in6-addr (a::ScmSockAddrIn6*) :static
+     (let* ([p::uint32_t*
              (cast uint32_t* (ref (-> a addr) sin6_addr s6_addr))]
             [n (Scm_MakeIntegerFromUI (ntohl (* (post++ p))))])
        (dotimes [i 3]
@@ -151,9 +163,23 @@
                              (Scm_MakeIntegerFromUI (ntohl (* (post++ p)))))))
        (return n)))
 
+   (define-cmethod sockaddr-addr ((addr "Scm_SockAddrIn6Class"))
+     (return (in6-addr (cast ScmSockAddrIn6* addr))))
+
    (define-cmethod sockaddr-port ((addr "Scm_SockAddrIn6Class")) ::<ushort>
      (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)])
        (return (ntohs (ref (-> a addr) sin6_port)))))
+
+   (define-cmethod sockaddr-name ((addr "Scm_SockAddrIn6Class"))
+     (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
+            [addr (in6-addr a)]
+            [port::ushort (ntohs (ref (-> a addr) sin6_port))]
+            [buf::(.array char (10))])
+     (snprintf buf 10 ":%d" port)
+     (return
+      (Scm_StringAppendC
+       (SCM_STRING (Scm_InetAddressToString addr AF_INET6))
+       buf -1 -1))))
    )
  )
 
