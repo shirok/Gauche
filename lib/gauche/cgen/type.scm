@@ -68,7 +68,7 @@
 ;;    as ScmObj in C-level.  Stub types only typecheck, and its boxer and
 ;;    unboxer are just identity.  It can be either purely-Scheme-defined
 ;;    objects, or an object that can take multiple representations
-;;    (e.g. <integer> cna be a fixnum or ScmBignum*, so the stub generator
+;;    (e.g. <integer> can be a fixnum or ScmBignum*, so the stub generator
 ;;    passes through it, and the C routine handles the internals.)
 ;;
 ;;  - Maybe types.  (<?> TYPE).  In stub context, we only concern maybe type
@@ -117,6 +117,9 @@
    (%maybe       :init-keyword :maybe       :init-value #f)
    ;; ::<type>? - base type, if this is 'maybe' qualified type.
    ))
+
+(define-method write-object ((ct <cgen-type>) port)
+  (format port "#<cten-type ~a>" (~ ct'name)))
 
 ;; Lookup/create a cgen type from Gauche type name
 (define (cgen-type-from-name name)
