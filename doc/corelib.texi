@@ -71,8 +71,9 @@ Gaucheでは慣習的に、型は@code{<string>}のように
 @menu
 * Prescriptive and descriptive types::
 * Generic type predicates::
-* Type expressions and type constructors::
 * Predefined classes::
+* Type expressions and type constructors::
+* Native types::
 @end menu
 
 @node Prescriptive and descriptive types, Generic type predicates, Types and classes, Types and classes
@@ -106,12 +107,16 @@ a certain expression must have.   Gauche has entities
 to represent such descriptive types separate from classes.
 Descriptive types are created with @emph{type constructors}
 (@pxref{Type expressions and type constructors}).
+We also have a set of predefined descriptive types to communicate
+to C libraries (@pxref{Native types}.
 @c JP
 型はまた、与えられた式についての制約と見ることもできます。
 つまり、型がその式が持つべき特定の性質を記述する(describe)ということです。
 Gaucheでは、クラスとは別に、そういった記述的(descriptive)な型を表現するエンティティを
 用意しています。記述的な型は型コンストラクタで作ることができます
 (@ref{Type expressions and type constructors}参照)。
+また、Cライブラリとやりとりするための記述的な型も用意されています
+(@ref{Native types}参照)。
 @c COMMON
 
 @c EN
@@ -149,7 +154,7 @@ descriptiveな型の関係は手続き@code{of-type?}で検査できます。
 @var{arg}が与えられた型の制約を満たさなければエラーを投げます。
 @c COMMON
 
-@node Generic type predicates, Type expressions and type constructors, Prescriptive and descriptive types, Types and classes
+@node Generic type predicates, Predefined classes, Prescriptive and descriptive types, Types and classes
 @subsection Generic type predicates
 @c NODE 汎用型述語
 
@@ -279,7 +284,116 @@ itself.
 @end defun
 
 
-@node Type expressions and type constructors, Predefined classes, Generic type predicates, Types and classes
+@node Predefined classes, Type expressions and type constructors, Generic type predicates, Types and classes
+@subsection Predefined classes
+@c NODE 定義済みクラス
+
+@c EN
+Predefined classes are bound to a global variable; Gauche's
+We'll introduce classes for each built-in type as we go through
+this chapter.  Here are a few basic classes to start with:
+@c JP
+組み込みの型に対応するクラスについては、この章の中で順に紹介してゆきます。
+まずは次のいくつかのクラスから始めましょう。
+@c COMMON
+
+@deftp {Builtin Class} <top>
+@clindex top
+@c EN
+This class represents the supertype of all the types in Gauche.
+That is, for any class @code{X}, @code{(subtype? X <top>)} is @code{#t},
+and for any object @code{x}, @code{(is-a? x <top>)} is @code{#t}.
+@c JP
+全ての型のスーパータイプを表現するクラスです。
+つまり、どんなクラス@code{X}に対しても@code{(subtype? X <top>)}は@code{#t}であり、
+どんなオブジェクト@code{x}に対しても@code{(is-a? x <top>)}は@code{#t}です。
+@c COMMON
+@end deftp
+
+@deftp {Builtin Class} <bottom>
+@clindex bottom
+@c EN
+This class represents the subtype of all the types in Gauche.
+For any class @code{X}, @code{(subtype? <bottom> X)} is @code{#t},
+and for any object @code{x}, @code{(is-a? x <bottom>)} is @code{#f}.
+@c JP
+全ての型のサブタイプを表現するクラスです。
+どんなクラス@code{X}に対しても@code{(subtype? <bottom> X)}は@code{#t}であり、
+どんなオブジェクト@code{x}に対しても@code{(is-a? x <bottom>)}は@code{#f}です。
+@c COMMON
+
+@c EN
+There's no instance of @code{<bottom>}.
+@c JP
+@code{<bottom>}型のインスタンスは存在しません。
+@c COMMON
+
+@c EN
+Note: Although @code{<bottom>} is subtype of other types,
+the class precedence list (CPL) of @code{<bottom>} only contains
+@code{<bottom>} and @code{<top>}.  It's because it isn't
+always possible to calculate a linear list of all the types.
+Even if it is possible, it would be expensive to check and update the
+CPL of @code{<bottom>} every time a new class is defined or
+an existing class is redefined.   Procedures @code{subtype?} and
+@code{is-a?} treat @code{<bottom>} specially.
+
+One of use case of @code{<bottom>} is @code{applicable?} procedure.
+@xref{Procedure class and applicability}.
+@c JP
+註: @code{<bottom>}は全ての型のサブタイプですが、そのクラス順位リスト
+(class precedence list, CPL)には@code{<bottom>}と@code{<top>}
+以外のクラスは含まれていません。全ての型を線形に並べることは常に可能である
+とは限らず、まだそうであったとしても新たなクラスの定義や既存のクラスの
+再定義のたびに@code{<bottom>}のCPLを検査してアップデートすることは
+高くつくでしょう。@code{subtype?}や@code{is-a?}といった手続きは
+@code{<bottom>}を特別扱いしています。
+
+@code{<bottom>}の使いどころのひとつは、@code{applicable?}手続きです。
+@ref{Procedure class and applicability}を参照のこと。
+@c COMMON
+@end deftp
+
+@deftp {Builtin Class} <object>
+@clindex object
+@c EN
+This class represents a supertype of all user-defined classes.
+@c JP
+このクラスは、ユーザ定義されたクラスのスーパータイプを表現するクラスです。
+@c COMMON
+@end deftp
+
+@defun class-of obj
+@c EN
+Returns a class metaobject of @var{obj}.
+@c JP
+@var{obj}のクラスを返します。
+@c COMMON
+
+@example
+(class-of 3)         @result{} #<class <integer>>
+(class-of "foo")     @result{} #<class <string>>
+(class-of <integer>) @result{} #<class <class>>
+@end example
+
+@c EN
+Note: In Gauche, you can redefine existing user-defined classes.
+If the new definition has different configuration of the instance,
+@code{class-of} on existing instance triggers instance updates;
+@pxref{Class redefinition} for the details.  Using
+@code{current-class-of} suppresses instance updates
+(@pxref{Accessing instance}).
+@c JP
+註: Gaucheでは、ユーザ定義クラスを再定義することができます。
+新たな定義でインスタンスの構造が変更された場合、以前のクラスから作られた
+インスタンスに@code{class-of}を適用すると、インスタンスが新しいクラスに
+適合するようにアップデートされます。詳しくは@ref{Class redefinition}を参照して
+ください。インスタンスアップデートを避けるには@code{current-class-of}を
+使います(@ref{Accessing instance}参照)。
+@c COMMON
+@end defun
+
+@node Type expressions and type constructors, Native types, Predefined classes, Types and classes
 @subsection Type expressions and type consturctors
 @c NODE 型の式と型コンストラクタ
 
@@ -473,119 +587,115 @@ When omitted, @var{min-length}
 is zero and @var{max-length} is @code{inf.0}.
 @end deftp
 
-@node Predefined classes,  , Type expressions and type constructors, Types and classes
-@subsection Predefined classes
-@c NODE 定義済みクラス
+@node Native types,  , Type expressions and type constructors, Types and classes
+@subsection ネイティブタイプ
+@c NODE ネイティブタイプ
 
-@c EN
-Predefined classes are bound to a global variable; Gauche's
-We'll introduce classes for each built-in type as we go through
-this chapter.  Here are a few basic classes to start with:
-@c JP
-組み込みの型に対応するクラスについては、この章の中で順に紹介してゆきます。
-まずは次のいくつかのクラスから始めましょう。
-@c COMMON
+Native types are a set of predefined descriptive types that bridge
+Scheme types and C types.  They can be used to access binary blobs
+passed from a foreign functions, for example.  They'll also be used
+for FFI.
 
-@deftp {Builtin Class} <top>
-@clindex top
-@c EN
-This class represents the supertype of all the types in Gauche.
-That is, for any class @code{X}, @code{(subtype? X <top>)} is @code{#t},
-and for any object @code{x}, @code{(is-a? x <top>)} is @code{#t}.
-@c JP
-全ての型のスーパータイプを表現するクラスです。
-つまり、どんなクラス@code{X}に対しても@code{(subtype? X <top>)}は@code{#t}であり、
-どんなオブジェクト@code{x}に対しても@code{(is-a? x <top>)}は@code{#t}です。
-@c COMMON
-@end deftp
-
-@deftp {Builtin Class} <bottom>
-@clindex bottom
-@c EN
-This class represents the subtype of all the types in Gauche.
-For any class @code{X}, @code{(subtype? <bottom> X)} is @code{#t},
-and for any object @code{x}, @code{(is-a? x <bottom>)} is @code{#f}.
-@c JP
-全ての型のサブタイプを表現するクラスです。
-どんなクラス@code{X}に対しても@code{(subtype? <bottom> X)}は@code{#t}であり、
-どんなオブジェクト@code{x}に対しても@code{(is-a? x <bottom>)}は@code{#f}です。
-@c COMMON
-
-@c EN
-There's no instance of @code{<bottom>}.
-@c JP
-@code{<bottom>}型のインスタンスは存在しません。
-@c COMMON
-
-@c EN
-Note: Although @code{<bottom>} is subtype of other types,
-the class precedence list (CPL) of @code{<bottom>} only contains
-@code{<bottom>} and @code{<top>}.  It's because it isn't
-always possible to calculate a linear list of all the types.
-Even if it is possible, it would be expensive to check and update the
-CPL of @code{<bottom>} every time a new class is defined or
-an existing class is redefined.   Procedures @code{subtype?} and
-@code{is-a?} treat @code{<bottom>} specially.
-
-One of use case of @code{<bottom>} is @code{applicable?} procedure.
-@xref{Procedure class and applicability}.
-@c JP
-註: @code{<bottom>}は全ての型のサブタイプですが、そのクラス順位リスト
-(class precedence list, CPL)には@code{<bottom>}と@code{<top>}
-以外のクラスは含まれていません。全ての型を線形に並べることは常に可能である
-とは限らず、まだそうであったとしても新たなクラスの定義や既存のクラスの
-再定義のたびに@code{<bottom>}のCPLを検査してアップデートすることは
-高くつくでしょう。@code{subtype?}や@code{is-a?}といった手続きは
-@code{<bottom>}を特別扱いしています。
-
-@code{<bottom>}の使いどころのひとつは、@code{applicable?}手続きです。
-@ref{Procedure class and applicability}を参照のこと。
-@c COMMON
-@end deftp
-
-@deftp {Builtin Class} <object>
-@clindex object
-@c EN
-This class represents a supertype of all user-defined classes.
-@c JP
-このクラスは、ユーザ定義されたクラスのスーパータイプを表現するクラスです。
-@c COMMON
-@end deftp
-
-@defun class-of obj
-@c EN
-Returns a class metaobject of @var{obj}.
-@c JP
-@var{obj}のクラスを返します。
-@c COMMON
+An example of native types is @code{<int16>}, which corresponds to
+C's @code{int16_t}.  You can use @code{<int16>} to check if a Scheme
+object can be treated as that type:
 
 @example
-(class-of 3)         @result{} #<class <integer>>
-(class-of "foo")     @result{} #<class <string>>
-(class-of <integer>) @result{} #<class <class>>
+(of-type? 357 <int16>)   @result{} #t
+(of-type? 50000 <int16>) @result{} #f
 @end example
 
-@c EN
-Note: In Gauche, you can redefine existing user-defined classes.
-If the new definition has different configuration of the instance,
-@code{class-of} on existing instance triggers instance updates;
-@pxref{Class redefinition} for the details.  Using
-@code{current-class-of} suppresses instance updates
-(@pxref{Accessing instance}).
-@c JP
-註: Gaucheでは、ユーザ定義クラスを再定義することができます。
-新たな定義でインスタンスの構造が変更された場合、以前のクラスから作られた
-インスタンスに@code{class-of}を適用すると、インスタンスが新しいクラスに
-適合するようにアップデートされます。詳しくは@ref{Class redefinition}を参照して
-ください。インスタンスアップデートを避けるには@code{current-class-of}を
-使います(@ref{Accessing instance}参照)。
-@c COMMON
-@end defun
+Or obtain size and alignemnt info:
 
+@example
+gosh> (describe <int16>)
+#<native-type <int16>> is an instance of class <native-type>
+slots:
+  name      : <int16>
+  super     : #<class <integer>>
+  c-type-name: "int16_t"
+  size      : 2
+  alignment : 2
+@end example
 
+@deftp {Native type} <fixnum>
+@deftpx {Native type} <int>
+@deftpx {Native type} <int8>
+@deftpx {Native type} <int16>
+@deftpx {Native type} <int32>
+@deftpx {Native type} <int64>
+@deftpx {Native type} <short>
+@deftpx {Native type} <long>
+@deftpx {Native type} <uint>
+@deftpx {Native type} <uint8>
+@deftpx {Native type} <uint16>
+@deftpx {Native type} <uint32>
+@deftpx {Native type} <uint64>
+@deftpx {Native type} <ushort>
+@deftpx {Native type} <ulong>
+@deftpx {Native type} <float>
+@deftpx {Native type} <double>
+@deftpx {Native type} <size_t>
+@deftpx {Native type} <ssize_t>
+@deftpx {Native type} <ptrdiff_t>
+@deftpx {Native type} <off_t>
+@deftpx {Native type} <void>
+@clindex fixnum
+@clindex int
+@clindex int8
+@clindex int16
+@clindex int32
+@clindex int64
+@clindex short
+@clindex long
+@clindex uint
+@clindex uint8
+@clindex uint16
+@clindex uint32
+@clindex uint64
+@clindex ushort
+@clindex ulong
+@clindex float
+@clindex double
+@clindex size_t
+@clindex ssize_t
+@clindex ptrdiff_t
+@clindex off_t
+@clindex void
+Predefined native types.  The correspondence of Scheme and C types
+are shown below:
 
+@example
+Native type  Scheme       C            Notes
+-----------------------------------------------------------------
+<fixnum>     <integer>    ScmSmallInt  Integers within fixnum range
 
+<int>        <integer>    int          Integers representable in C
+<int8>       <integer>    int8_t
+<int16>      <integer>    int16_t
+<int32>      <integer>    int32_t
+<int64>      <integer>    int64_t
+<short>      <integer>    short
+<long>       <integer>    long
+<uint>       <integer>    uint         Integers representable in C
+<uint8>      <integer>    uint8_t
+<uint16>     <integer>    uint16_t
+<uint32>     <integer>    uint32_t
+<uint6r>     <integer>    uint64_t
+<ushort>     <integer>    ushort
+<ulong>      <integer>    ulong
+<float>      <real>       float        Unboxed value casted to float
+<double>     <real>       double
 
+<size_t>     <integer>    size_t       System-dependent types
+<ssize_t>    <integer>    ssize_t
+<ptrdiff_t>  <integer>    ptrdiff_t
+<off_t>      <integer>    off_t
+
+<void>       -            void        (Used only as a return type.
+                                        Scheme function returns #<undef>)
+@end example
+@end deftp
 
 
 @node Equality and comparison, Numbers, Types and classes, Core library

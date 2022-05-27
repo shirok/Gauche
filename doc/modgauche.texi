@@ -1973,20 +1973,87 @@ behavior for new types.  The API isn't fixed yet, though.)
 @subsection Conversions between Scheme and C
 @c NODE SchemeとCの間の変換
 
-In the C world, any Scheme object is uniformly of type @code{ScmObj}.
-But it is often the case that you need to narrow down to the
-specific type and convert it to a C value.  Gauche maintains
-a database of how to typecheck and map Scheme value to C value and
-vice versa.
+In the C world, Scheme objects are uniformly represented
+as an opaque tagged pointer @code{ScmObj}.  In order to access
+the actual objects, you need to check its runtime type information
+and to retrive the actual C type out of it.
 
-Note that the mapping isn't one-to-one: Scheme @code{<integer>}
-can be mapped to C's @code{short}, @code{long}, @code{unsigned int},
-or even just @code{ScmObj} if the C routine wants to cover bignums.
-So each mapping has its own name.  For historical reasons, each
-mapping is called @emph{stub type}.  The names of stub types look
-like Scheme type but its semantics differ from Scheme type.
-Remember: Each stub type represents a specific mapping between a
-Scheme type and a C type.
+@emph{Stub types} are the objects that bridge Scheme runtime types
+and C types.  Since mappings between Scheme types and C types are
+not one-to-one, there are more stub types than either types;
+for example, Scheme @code{<integer>} type may be bridged to C @code{int}
+type by the stub type @code{<int>}, but it may also be bridged to
+C @code{short} type by the stub type @code{<short>}.
+
+Do not confuse stub types and Gauche's runtime types---stub types
+are meta information associated to runtime types.  You can look up
+a stub type by its name by @code{cgen-type-from-name}.
+The session below shows the difference of the runtime types and
+stub types:
+
+@example
+gosh> <int>
+#<native-type <int>>
+gosh> ,d
+#<native-type <int>> is an instance of class <native-type>
+slots:
+  name      : <int>
+  super     : #<class <integer>>
+  c-type-name: "int"
+  size      : 4
+  alignment : 4
+
+gosh> (cgen-type-from-name '<int>)
+#<cten-type <int>>
+gosh> ,d
+#<cten-type <int>> is an instance of class <cgen-type>
+slots:
+  name      : <int>
+  scheme-type: #<native-type <int>>
+  c-type    : "int"
+  description: "int"
+  cclass    : #f
+  %c-predicate: "SCM_INTEGERP"
+  %unboxer  : "Scm_GetInteger"
+  %boxer    : "Scm_MakeInteger"
+  %maybe    : #f
+
+gosh> <integer>
+#<class <integer>>
+gosh> ,d
+#<class <integer>> is an instance of class <integer-meta>
+slots:
+  name      : <integer>
+  cpl       : (#<class <integer>> #<class <rational>> #<class <real>> #<cl
+  direct-supers: (#<class <rational>>)
+  accessors : ()
+  slots     : ()
+  direct-slots: ()
+  num-instance-slots: 0
+  direct-subclasses: ()
+  direct-methods: ()
+  initargs  : ()
+  defined-modules: (#<module gauche>)
+  redefined : #f
+  category  : builtin
+  core-size : 0
+
+gosh> (cgen-type-from-name '<integer>)
+#<cten-type <integer>>
+gosh> ,d
+#<cten-type <integer>> is an instance of class <cgen-type>
+slots:
+  name      : <integer>
+  scheme-type: #<class <integer>>
+  c-type    : "ScmObj"
+  description: "exact integer"
+  cclass    : #f
+  %c-predicate: "SCM_INTEGERP"
+  %unboxer  : ""
+  %boxer    : "SCM_OBJ_SAFE"
+  %maybe    : #f
+
+@end example
 
 Each stub type has a @emph{C-predicate},
 a @emph{boxer} and an @emph{unboxer}, each of them is a Scheme
@@ -2001,109 +2068,34 @@ An unboxer does the opposite: takes a Scheme object and convert
 it to a C value.  The Scheme object must be checked by the C-predicate
 before being passed to the unboxer.
 
-The following table shows the predefined stub types.
-Note that the most of aggregate types has one to one mappings.
-The difficult ones are numeric types and strings.
-Scheme numbers can represent much wider range of numbers
-than C, so you have to narrow down according to the capability
-of C routine.  Scheme strings have byte size and character length,
-and the body may not be NULL-terminated; so the @code{<string>}
-stub type maps Scheme string to @code{ScmString*}.  For the convenience,
-you can use @code{<const-cstring>}, which creates NUL-terminated
-C string; beware that it may incur some copying cost.
+We have a few categories of stub types.
 
-@example
-Stub type    Scheme       C           Notes
------------------------------------------------------------------
-<fixnum>     <integer>    int         Integers within fixnum range
-<integer>    <integer>    ScmObj      Any exact integers
-<real>       <real>       double      Value converted to double
-<number>     <number>     ScmObj      Any numbers
-
-<int>        <integer>    int         Integers representable in C
-<int8>       <integer>    int
-<int16>      <integer>    int
-<int32>      <integer>    int
-<short>      <integer>    short
-<long>       <integer>    long
-<uint>       <integer>    uint        Integers representable in C
-<uint8>      <integer>    uint
-<uint16>     <integer>    uint
-<uint32>     <integer>    uint
-<ushort>     <integer>    ushort
-<ulong>      <integer>    ulong
-<float>      <real>       float       Unboxed value casted to float
-<double>     <real>       double      Alias of <real>
-
-<boolean>    <boolean>    int         Boolean value
-<char>       <char>       ScmChar     Note: not a C char
-
-<void>       -            void        (Used only as a return type.
-                                        Scheme function returns #<undef>)
-
-<string>     <string>     ScmString*  Note: not a C string
-
-<const-cstring> <string>  const char* For arguments, string is unboxed
-                                      by Scm_GetStringConst.
-                                      For return values, C string is boxed
-                                      by SCM_MAKE_STR_COPYING.
-
-<const-cstring-safe> <string> const char*  Like <const-cstring>,
-                                      but when converting from Scheme,
-                                      reject a string with NUL chars in it.
-
-<pair>       <pair>       ScmPair*
-<list>       <list>       ScmObj
-<string>     <string>     ScmString*
-<symbol>     <symbol>     ScmSymbol*
-<keyword>    <keyword>    ScmKeyword*
-<vector>     <vector>     ScmVector*
-<uvector>    <uvector>    ScmUVector*
-<s8vector>   <s8vector>   ScmS8Vector*
-<u8vector>   <u8vector>   ScmU8Vector*
-<s16vector>  <s16vector>  ScmS16Vector*
-<u16vector>  <u16vector>  ScmU16Vector*
-<s32vector>  <s32vector>  ScmS32Vector*
-<u32vector>  <u32vector>  ScmU32Vector*
-<s64vector>  <s64vector>  ScmS64Vector*
-<u64vector>  <u64vector>  ScmU64Vector*
-<f16vector>  <f16vector>  ScmF16Vector*
-<f32vector>  <f32vector>  ScmF32Vector*
-<f64vector>  <f64vector>  ScmF64Vector*
-<c32vector>  <c32vector>  ScmC32Vector*
-<c64vector>  <c64vector>  ScmC64Vector*
-<c128vector> <c128vector> ScmC128Vector*
-
-<hash-table> <hash-table> ScmHashTable*
-<tree-map>   <tree-map>   ScmTreeMap*
-
-<char-set>   <char-set>   ScmCharSet*
-<regexp>     <regexp>     ScmRegexp*
-<regmatch>   <regmatch>   ScmRegMatch*
-<port>       <port>       ScmPort*
-<input-port>  <input-port> ScmPort*
-<output-port> <output-port> ScmPort*
-<procedure>  <procedure>  ScmProcedure*
-<closure>    <closure>    ScmClosure*
-<promise>    <promise>    ScmPromise*
-
-<class>      <class>      ScmClass*
-<method>     <method>     ScmMethod*
-<module>     <module>     ScmModule*
-<thread>     <thread>     ScmVM*
-<mutex>      <mutex>      ScmMutex*
-<condition-variable> <condition-variable> ScmConditionVariable*
-@end example
-
-A stub type can have a @emph{maybe} variation, denoted by
-@code{?} suffix; e.g. @code{<string>?}.  It is a union type of
-the base type and boolean false (for @code{<string>?}, it
-can be either @code{<string>} or @code{#f}.)   In the C world,
-boolean false is mapped to @code{NULL} pointer.  It is convenient
-to pass a C value that allowed to be NULL back and forth---if
-you pass @code{#f} from the Scheme world it comes out @code{NULL} to
-the C world, and vice versa.   The maybe variation is only
-meaningful when the C type is a pointer type.
+@itemize @bullet
+@item
+Stub types corresponds to native types (@pxref{Native types}).
+@item
+Stub types corresponds to C-class types.  These are Scheme object whose structure is defined in C.
+They can be treated as ScmObj or can be casted to the specific C type;
+e.g. @code{<symbol>} can be casted to @code{ScmSymbol*}.
+Its unboxer is @code{ScmObj -> C-TYPE*},
+and boxer is @code{C-TYPE* -> ScmObj}.
+@item
+Pass-through types.  These are Scheme object that are also handled
+as ScmObj in C-level.  Stub types only typecheck, and its boxer and
+unboxer are just identity.  It can be either purely-Scheme-defined
+objects, or an object that can take multiple representations
+(e.g. @code{<integer>} can be a fixnum or @code{ScmBignum*},
+so the stub generator passes through it,
+and the C routine handles the internals.)
+@item
+Maybe stub types.  It is noted by a question mark suffix.
+In stub context, we only concern maybe type
+that can be unboxed into a C pointer type.  In addition to the objects
+of the origial type, it maps Scheme's @code{#f} to C's @code{NULL}
+and vice versa.  For example, @code{<port>?} maps Scheme's @code{<port>}
+instance to C's @code{ScmPort*},
+@emph{and} Scheme's @code{#f} to C's @code{NULL}.
+@end itemize
 
 @deftp {Class} <cgen-type>
 @clindex cgen-type
