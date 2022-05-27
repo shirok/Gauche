@@ -836,8 +836,11 @@
   ;; socket we can bind.  So it's more involved than simply mapping
   ;; make-server-socket.
   (define (make-v6socks a6s)
-    (receive (socks _) (map-accum try-v6 #f a6s)
-      (filter identity socks)))
+    (let loop ([port #f] [addrs a6s] [sockets '()])
+      (if (null? addrs)
+        (reverse sockets)
+        (receive (sock port) (try-v6 (car addrs) port)
+          (loop port (cdr addrs) (if sock (cons sock sockets) sockets))))))
 
   (let* ([ss (make-sockaddrs host port)]
          [a6s (v6addrs ss)])
