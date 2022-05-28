@@ -45,11 +45,6 @@
 (define-cproc ${t}vector-empty? (v::<${t}vector>) ::<boolean>
   (return (== (SCM_${T}VECTOR_SIZE v) 0)))
 
-(define-cproc make-${t}vector (length::<fixnum> :optional (fill 0))
-  (let* ([filler :: (${etype})])
-    (C: "${UNBOX filler fill SCM_CLAMP_ERROR}")
-    (return (Scm_Make${T}Vector length filler))))
-
 (define-cproc ${t}vector (:optarray (elts nelts 10) :rest args)
   :fast-flonum
   (cond [(SCM_NULLP args)

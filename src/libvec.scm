@@ -193,6 +193,62 @@
  (define-enum SCM_UVECTOR_F64)
  )
 
+(define-cproc make-s8vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::int8_t (Scm_GetInteger8Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeS8Vector length filler))))
+
+(define-cproc make-u8vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::uint8_t (Scm_GetIntegerU8Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeU8Vector length filler))))
+
+(define-cproc make-s16vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::int16_t (Scm_GetInteger16Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeS16Vector length filler))))
+
+(define-cproc make-u16vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::uint16_t (Scm_GetIntegerU16Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeU16Vector length filler))))
+
+(define-cproc make-s32vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::int32_t (Scm_GetInteger32Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeS32Vector length filler))))
+
+(define-cproc make-u32vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::uint32_t (Scm_GetIntegerU32Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeU32Vector length filler))))
+
+(define-cproc make-s64vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::int64_t (Scm_GetInteger64Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeS64Vector length filler))))
+
+(define-cproc make-u64vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::uint64_t (Scm_GetIntegerU64Clamp fill SCM_CLAMP_ERROR NULL)])
+    (return (Scm_MakeU64Vector length filler))))
+
+(define-cproc make-f16vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::ScmHalfFloat (Scm_DoubleToHalf (Scm_GetDouble fill))])
+    (return (Scm_MakeF16Vector length filler))))
+
+(define-cproc make-f32vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::float (cast float (Scm_GetDouble fill))])
+    (return (Scm_MakeF32Vector length filler))))
+
+(define-cproc make-f64vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::double (Scm_GetDouble fill)])
+    (return (Scm_MakeF64Vector length filler))))
+
+(define-cproc make-c32vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::ScmHalfComplex (Scm_GetHalfComplex fill)])
+    (return (Scm_MakeC32Vector length filler))))
+
+(define-cproc make-c64vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::ScmFloatComplex (Scm_GetFloatComplex fill)])
+    (return (Scm_MakeC64Vector length filler))))
+
+(define-cproc make-c128vector (length::<fixnum> :optional (fill 0))
+  (let* ([filler::ScmDoubleComplex (Scm_GetDoubleComplex fill)])
+    (return (Scm_MakeC128Vector length filler))))
+
 (define-cproc s8vector-set! (v::<s8vector> i::<fixnum> val :optional clamp)
   (return (Scm_UVectorSet v SCM_UVECTOR_S8 i val (Scm_ClampMode clamp))))
 (define-cproc s8vector-ref (v::<s8vector> i::<fixnum> :optional fallback)
