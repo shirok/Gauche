@@ -471,7 +471,8 @@ A type expression @code{(<?> <integer>)} yields such type
 例えば、@code{<?>}は''maybe''のようなオプショナルな型を作る型コンストラクタです。
 @code{(<?> <integer>)}は「@code{<integer>}か@code{#f}」を意味します
 (srfi-189 (@ref{Maybe and Either optional container types}参照) の
-Maybe型と混同しないようにしてください)
+Maybe型と混同しないようにしてください)。
+この型オブジェクトは @code{#<? <integer>>} と表示されます。
 @c COMMON
 
 @example
