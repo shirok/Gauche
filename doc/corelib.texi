@@ -13619,6 +13619,61 @@ as @code{#u8(@dots{})}.)
 @end deftp
 
 @c EN
+@subsubheading Uvector constructors
+@c JP
+@subsubheading uvectorのコンストラクタ
+@c COMMON
+
+@defun make-s8vector len :optional fill
+@defunx make-s8vector len :optional fill
+@defunx make-u8vector len :optional fill
+@defunx make-s16vector len :optional fill
+@defunx make-u16vector len :optional fill
+@defunx make-s32vector len :optional fill
+@defunx make-u32vector len :optional fill
+@defunx make-s64vector len :optional fill
+@defunx make-u64vector len :optional fill
+@defunx make-f16vector len :optional fill
+@defunx make-f32vector len :optional fill
+@defunx make-f64vector len :optional fill
+@defunx make-c32vector len :optional fill
+@defunx make-c64vector len :optional fill
+@defunx make-c128vector len :optional fill
+[R7RS vector.@@]
+@c EN
+Constructs a @@vector of length @var{len}.  The elements are
+initialized by a number @var{fill}.   For exact integer vectors,
+@var{fill} must be an exact integer and in the valid range.
+If @var{fill} is omitted, the content of the vector is undefined.
+@c JP
+長さ@var{len}の@@vectorを作成して返します。各要素は@var{fill}で
+初期化されます。正確な整数のベクタに対しては、@var{fill}は正確な整数でなければならず、
+また有効な範囲内の値でなければなりません。
+@var{fill}が省略された場合、各要素の初期値は不定です。
+@c COMMON
+@example
+(make-u8vector 4 0) @result{} #u8(0 0 0 0)
+@end example
+@end defun
+
+@defun make-uvector @code{class} @code{len} :optional @code{fill}
+@c EN
+This is a Gauche extension; instead of using separate constructor for
+each uvector type, you can pass the class of desired uvector.
+@c JP
+これはGaucheの拡張です。各ユニフォームベクタの型に対応する関数を呼ぶかわりに、
+欲しいユニフォームベクタのクラスを渡してベクタを作ることができます。
+@c COMMON
+
+@example
+(make-uvector <u8vector> 3)    @result{} #u8(0 0 0)
+(make-uvector <s8vector> 5 -1) @result{} #s8(-1 -1 -1 -1 -1)
+@end example
+@end defun
+
+
+
+@c EN
 @subsubheading Uvector generic operations
 @c JP
 @subsubheading uvectorのジェネリックな操作
@@ -13692,7 +13747,6 @@ See below for the type-specific accessors.
 @end defun
 
 @defun uvector-set! uv k val :optional clamp
-@c MOD gauche.uvector
 @c EN
 Generic uvector setter.  Mutate @var{k}-th element of
 uvector @var{uv} with @var{val}.
@@ -13750,7 +13804,6 @@ library; all the rest are in @code{scheme.vector.@@} or @code{gauche.uvector}
 @findex c64vector?
 @findex c128vector?
 [R7RS vector.@@]
-@c MOD gauche.uvector
 @c EN
 Returns @code{#t} iff @var{obj} is a @@vector, @code{#f} otherwise.
 The @code{@@} part is one of the uvector tags (@code{u8} etc.).
@@ -13776,7 +13829,6 @@ The @code{@@} part is one of the uvector tags (@code{u8} etc.).
 @findex c64vector-ref
 @findex c128vector-ref
 [R7RS vector.@@]
-@c MOD gauche.uvector
 @c EN
 Returns the @var{k}-th element of @@vector @var{vec}.
 The @code{@@} part is one of the uvector tags (@code{u8} etc.).
@@ -13836,7 +13888,6 @@ v @result{} #u8(1 99 3)
 @findex c64vector-set!
 @findex c128vector-set!
 [R7RS vector.@@]
-@c MOD gauche.uvector
 @c EN
 Sets a number @var{n} to the @var{k}-th element of @@vector @var{vec}.
 The @code{@@} part is one of the uvector tags (@code{u8} etc.).

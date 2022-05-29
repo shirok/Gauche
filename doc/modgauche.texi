@@ -24934,6 +24934,7 @@ The following procedures are built-in; @pxref{Uniform vectors}:
 @c COMMON
 
 @example
+make-@@vector
 uvector?          @@vector?
 uvector-ref       @@vector-ref
 uvector-set!      @@vector-set!
@@ -25021,55 +25022,6 @@ and in the valid range of the vector.
 @end example
 @end deffn
 
-
-@deffn {Function} make-@@vector len :optional fill
-@findex make-s8vector
-@findex make-u8vector
-@findex make-s16vector
-@findex make-u16vector
-@findex make-s32vector
-@findex make-u32vector
-@findex make-s64vector
-@findex make-u64vector
-@findex make-f16vector
-@findex make-f32vector
-@findex make-f64vector
-@findex make-c32vector
-@findex make-c64vector
-@findex make-c128vector
-[R7RS vector.@@]
-@c MOD gauche.uvector
-@c EN
-Constructs a @@vector of length @var{len}.  The elements are
-initialized by a number @var{fill}.   For exact integer vectors,
-@var{fill} must be an exact integer and in the valid range.
-If @var{fill} is omitted, the content of the vector is undefined.
-@c JP
-長さ@var{len}の@@vectorを作成して返します。各要素は@var{fill}で
-初期化されます。正確な整数のベクタに対しては、@var{fill}は正確な整数でなければならず、
-また有効な範囲内の値でなければなりません。
-@var{fill}が省略された場合、各要素の初期値は不定です。
-@c COMMON
-@example
-(make-u8vector 4 0) @result{} #u8(0 0 0 0)
-@end example
-@end deffn
-
-@defun make-uvector @code{class} @code{len} :optional @code{fill}
-@c MOD gauche.uvector
-@c EN
-This is a Gauche extension; instead of using separate constructor for
-each uvector type, you can pass the class of desired uvector.
-@c JP
-これはGaucheの拡張です。各ユニフォームベクタの型に対応する関数を呼ぶかわりに、
-欲しいユニフォームベクタのクラスを渡してベクタを作ることができます。
-@c COMMON
-
-@example
-(make-uvector <u8vector> 3)    @result{} #u8(0 0 0)
-(make-uvector <s8vector> 5 -1) @result{} #s8(-1 -1 -1 -1 -1)
-@end example
-@end defun
 
 @deffn {Function} @@vector-unfold f len seed
 @deffnx {Function} @@vector-unfold-right f len seed
