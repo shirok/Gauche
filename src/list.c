@@ -478,10 +478,14 @@ ScmObj Scm_LastPair(ScmObj l)
 {
     if (!SCM_PAIRP(l)) Scm_Error("pair required: %S", l);
 
-    ScmObj cp;
-    SCM_FOR_EACH(cp, l) {
-        ScmObj cdr = SCM_CDR(cp);
-        if (!SCM_PAIRP(cdr)) return cp;
+    ScmObj slow = l;
+    for (;;) {
+        if (!SCM_PAIRP(SCM_CDR(l))) return l;
+        l = SCM_CDR(l);
+        if (!SCM_PAIRP(SCM_CDR(l))) return l;
+        l = SCM_CDR(l);
+        slow = SCM_CDR(slow);
+        if (l == slow) Scm_Error("list is circular: %S", l);
     }
     return SCM_UNDEFINED;       /* NOTREACHED */
 }

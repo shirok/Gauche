@@ -1,3 +1,9 @@
+2022-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_LastPair): Detect circular list.  It is not required
+	  in the spec (last and last-pair), but doing so is cheap and it's
+	  something nice to have.
+
 2022-05-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/libvec.scm (make-s8vector etc.), ext/uvector/uvlib.scm.tmpl:
