@@ -174,12 +174,11 @@
      (let* ([a::ScmSockAddrIn6* (cast ScmSockAddrIn6* addr)]
             [addr (in6-addr a)]
             [port::u_short (ntohs (ref (-> a addr) sin6_port))]
-            [buf::(.array char (10))])
-     (snprintf buf 10 ":%d" port)
-     (return
-      (Scm_StringAppendC
-       (SCM_STRING (Scm_InetAddressToString addr AF_INET6))
-       buf -1 -1))))
+            [out (Scm_MakeOutputStringPort TRUE)])
+       (Scm_Printf (SCM_PORT out)
+                   "[%A]:%d"
+                   (Scm_InetAddressToString addr AF_INET6) port)
+       (return (Scm_GetOutputString (SCM_PORT out) 0))))
    )
  )
 
@@ -770,7 +769,7 @@
     (define (try-bind address)
       (guard (e [else (set! err e) #f])
         (apply make-server-socket-from-addr address args)))
-    (rlet1 socket (any try-bind ($ lconcatenate $ lmap
+    (rlet1 socket (any try-bind ($ append-map
                                    (cut make-sockaddrs #f <>)
                                    ports))
       (unless socket (raise err)))))
