@@ -539,14 +539,14 @@
 (define (${t}vector-unfold! f v start end seed)
   (let loop ([i start] [seed seed])
     (when (< i end)
-      (receive (e seed) (f seed)
+      (receive (e seed) (f i seed)
         (${t}vector-set! v i e)
         (loop (+ i 1) seed)))))
 
 (define (${t}vector-unfold-right! f v start end seed)
   (let loop ([i (- end 1)] [seed seed])
     (when (>= i start)
-      (receive (e seed) (f seed)
+      (receive (e seed) (f i seed)
         (${t}vector-set! v i e)
         (loop (- i 1) seed)))))
 
