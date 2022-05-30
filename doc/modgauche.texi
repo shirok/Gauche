@@ -25022,6 +25022,27 @@ and in the valid range of the vector.
 @end example
 @end deffn
 
+@defun make-uvector @code{class} @code{len} :optional @code{fill}
+@c MOD gauche.uvector
+@c EN
+This is a Gauche extension; instead of using separate constructor for
+each uvector type, you can pass the class of desired uvector.
+
+Type-specific constructors (@code{make-s8vector} etc.) are defined
+in the core library (@pxref{Uniform vectors}).
+@c JP
+これはGaucheの拡張です。各ユニフォームベクタの型に対応する関数を呼ぶかわりに、
+欲しいユニフォームベクタのクラスを渡してベクタを作ることができます。
+
+型ごとのコンストラクタ (@code{make-s8vector}等)はコアのライブラリで提供
+されています (@ref{Uniform vectors}参照)。
+@c COMMON
+
+@example
+(make-uvector <u8vector> 3)    @result{} #u8(0 0 0)
+(make-uvector <s8vector> 5 -1) @result{} #s8(-1 -1 -1 -1 -1)
+@end example
+@end defun
 
 @deffn {Function} @@vector-unfold f len seed
 @deffnx {Function} @@vector-unfold-right f len seed
