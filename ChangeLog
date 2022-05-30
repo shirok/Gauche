@@ -1,3 +1,7 @@
+2022-05-30  Shiro Kawai  <shiro@acm.org>
+
+	* test/net.scm: Recover gauche.net test
+
 2022-05-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_LastPair): Detect circular list.  It is not required

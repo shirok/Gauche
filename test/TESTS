@@ -36,6 +36,7 @@ version.scm
 file.scm
 selector.scm
 listener.scm
+net.scm
 dict.scm
 dbidbd.scm
 www.scm
