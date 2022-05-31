@@ -2478,7 +2478,7 @@ otherwise.
 The mapper set to this parameter is reused, or even is used
 simultaneously from multiple @code{pmap} calls.
 Pool mappers with external pool keeps a given thread pool in it,
-so you should be careful ot use such mapper as the default mapper.
+so you should be careful to use such mapper as the default mapper.
 @end deffn
 
 @defun sequential-mapper
@@ -6625,7 +6625,7 @@ Returns a skew list, each element of which is the result of
 applying @var{proc} on the element of @var{sl}.
 The order of application of @var{proc} is not specified.
 
-NB: If you want ot map over multiple skew-lists, you can use generic
+NB: If you want to map over multiple skew-lists, you can use generic
 @code{map} (@pxref{Sequence framework}).  The @code{skew-list-map} employs
 optimization that's specific to one-argument case.
 @c JP
@@ -14263,7 +14263,7 @@ returns will be the result of these procedures.
 @c COMMON
 
 @c EN
-It is an error to pass other values ot @var{cont}.
+It is an error to pass other values to @var{cont}.
 @c JP
 @var{cont}にそれ以外の値を渡すのはエラーです。
 @c COMMON
@@ -15120,7 +15120,7 @@ and the return value of @var{f} becomes the whole parser's result.
 In other words, the following equivalence holds:
 @example
 ($lift f p0 p1 @dots{})
- @equiv{} ($let ([r0a p0] [r1 p1] @dots{}) ($return (f r0 r1 @dots{})))
+ @equiv{} ($let ([r0 p0] [r1 p1] @dots{}) ($return (f r0 r1 @dots{})))
 @end example
 
 It is sometimes simpler to use @code{$lift} instead of @code{$let}.
@@ -15145,7 +15145,7 @@ Each @var{parser-bind-form} may be a parser-yielding expression, except
 that you can insert a form @code{($: var parser-expression)} anywherer in it,
 where @var{parser-expression} is an expression that yields a parser.
 The @code{$:} form is equivalent to just the @var{parser-expression}, except
-that its semantic value is bound ot a variable @var{var}.
+that its semantic value is bound to a variable @var{var}.
 
 Each parser created by @var{parser-bind-form} is applied to the input
 in sequence.  One of @var{parser-bind-form} fails, the entire parser
@@ -15158,7 +15158,7 @@ Since @code{$binding} walks entire @var{parser-bind-form} to look for
 @var{parser-bind-form}.
 
 If the parser expression associated with @var{var} fails, or never
-executed, the @var{var} is bound ot @code{#<undef>}.
+executed, the @var{var} is bound to @code{#<undef>}.
 If the parser expression succeeds multiple times, @var{var} holds
 the last value.  Also, @var{var} can appear more than one places;
 it holds the last bound value.
@@ -19367,7 +19367,7 @@ of the TLS class.
 Server name to be used for TLS Server Name Indication extension.
 @item :num-sessions
 [AxTLS only]
-The number of sessions ot be used for session caching.
+The number of sessions to be used for session caching.
 0 indicates no sessino caching.
 @item :options
 [AxTLS only]
