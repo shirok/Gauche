@@ -274,10 +274,10 @@
 ;;-----------------------------------------------------------------
 (test-section "socket")
 
-;; max size of the packet.  increase this to test robustness for
-;; buffer overrun attack.  right now, Gauche can bear fairly large
-;; packet, but got extremely inefficient.
-(define *chunk-size* 65537)
+;; Increase this to test robustness for big packets.  However,
+;; the current tests assuming one whole packet should be sent before
+;; reading it from the peer; otherwise it'll hang.
+(define *chunk-size* 1024)
 
 ;; port number to test inet socket connection.  Gauche needs some
 ;; mechanism to check if the port is in use or not.
