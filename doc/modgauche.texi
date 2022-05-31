@@ -25074,6 +25074,7 @@ in the core library (@pxref{Uniform vectors}).
 @findex c32vector-unfold-right
 @findex c64vector-unfold-right
 @findex c128vector-unfold-right
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
 Construct a @@vector of length @var{len}, with each element
@@ -25126,6 +25127,7 @@ while @@vector-unfold-right from right to left.
 @findex c32vector-unfold-right!
 @findex c64vector-unfold-right!
 @findex c128vector-unfold-right!
+[R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
 Fill an @@vector @var{vec} between @var{start}-th index (inclusive)
