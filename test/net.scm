@@ -531,32 +531,39 @@
               (receive (size f-addr) (socket-recvfrom! r-sock buf (list from))
                 (list (eq? f-addr from)
                       (equal? buf data))))))))
-(with-sr-udp
- (^[s-sock s-addr r-sock r-addr]
-   (let* ([from   (make <sockaddr-in>)]
-          [s-data (make-string 255 #\a)]
-          [v-data (make-u8vector 255 48)]
-          [data   `#(,s-data ,v-data)]
-          [sbuf   (make-u8vector 1024)]
-          [rbuf   (make-u8vector 1024 0)])
 
-     (define (xtest sbuf)
-       (socket-sendmsg s-sock (socket-buildmsg s-addr data '() 0 sbuf))
-       (receive (size f-addr) (socket-recvfrom! r-sock rbuf (list from))
-         (list (eq? f-addr from)
-               (let1 expect (make-u8vector (+ (string-length s-data)
-                                              (uvector-length v-data)))
-                 (dotimes [n (string-length s-data)]
-                   (u8vector-set! expect n (char->integer (string-ref s-data n))))
-                 (dotimes [n (uvector-length v-data)]
-                   (u8vector-set! expect (+ n (string-length s-data))
-                                  (u8vector-ref v-data n)))
-                 (every (^i (= (u8vector-ref rbuf i)
-                               (u8vector-ref expect i)))
-                        (iota size))))))
+(cond-expand
+ [gauche.os.windows
+  ;; buildmsg is not supported on MinGW
+  ]
+ [else
+  (with-sr-udp
+   (^[s-sock s-addr r-sock r-addr]
+     (let* ([from   (make <sockaddr-in>)]
+            [s-data (make-string 255 #\a)]
+            [v-data (make-u8vector 255 48)]
+            [data   `#(,s-data ,v-data)]
+            [sbuf   (make-u8vector 1024)]
+            [rbuf   (make-u8vector 1024 0)])
 
-     (test* "udp sendmsg w/sendbuf" '(#t #t) (xtest sbuf))
-     (test* "udp sendmsg w/o sendbuf" '(#t #t) (xtest #f)))))
+       (define (xtest sbuf)
+         (socket-sendmsg s-sock (socket-buildmsg s-addr data '() 0 sbuf))
+         (receive (size f-addr) (socket-recvfrom! r-sock rbuf (list from))
+           (list (eq? f-addr from)
+                 (let1 expect (make-u8vector (+ (string-length s-data)
+                                                (uvector-length v-data)))
+                   (dotimes [n (string-length s-data)]
+                     (u8vector-set! expect n (char->integer (string-ref s-data n))))
+                   (dotimes [n (uvector-length v-data)]
+                     (u8vector-set! expect (+ n (string-length s-data))
+                                    (u8vector-ref v-data n)))
+                   (every (^i (= (u8vector-ref rbuf i)
+                                 (u8vector-ref expect i)))
+                          (iota size))))))
+
+       (test* "udp sendmsg w/sendbuf" '(#t #t) (xtest sbuf))
+       (test* "udp sendmsg w/o sendbuf" '(#t #t) (xtest #f)))))
+  ])
 
 ;;-----------------------------------------------------------------------
 ;; srfi-106
