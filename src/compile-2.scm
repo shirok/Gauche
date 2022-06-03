@@ -1,7 +1,7 @@
 ;;;
 ;;; compile-2.scm - The compiler: Pass 2
 ;;;
-;;;   Copyright (c) 2004-2021  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2004-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions

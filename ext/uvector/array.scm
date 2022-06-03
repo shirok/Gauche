@@ -1,7 +1,7 @@
 ;;;
 ;;; Array operations.  This is superset of SRFI-25.
 ;;;
-;;;  Copyright (c) 2002-2021  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2002-2022  Shiro Kawai  <shiro@acm.org>
 ;;;  Copyright(C) 2004      by Alex Shinn  (foof@synthcode.com)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and

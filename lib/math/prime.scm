@@ -1,7 +1,7 @@
 ;;;
 ;;; math/prime.scm - utilities related to prime numbers
 ;;;
-;;;   Copyright (c) 2013-2021  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2013-2022  Shiro Kawai  <shiro@acm.org>
 ;;;   Copyright (c) 2013  @cddddr
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without

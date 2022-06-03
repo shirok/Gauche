@@ -1,7 +1,7 @@
 ;;;
 ;;; util/list.scm - more list library
 ;;;
-;;;  Copyright (c) 2003-2021  Shiro Kawai  <shiro@acm.org>
+;;;  Copyright (c) 2003-2022  Shiro Kawai  <shiro@acm.org>
 ;;;  Copyright(C) 2003 by Alex Shinn (foof@synthcode.com)
 ;;;
 ;;;  Permission to use, copy, modify, distribute this software and
