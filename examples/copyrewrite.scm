@@ -13,20 +13,20 @@
 
 (define (main args)
   (match (cdr args)
-    ((dir author email)
+    [(dir author email)
      (directory-fold dir
-                     (lambda (path seed)
+                     (^[path seed]
                        (when (or (#/\.(c|h|scm|stub|in|texi)$/ path)
                                  (member (sys-basename path)
                                          '("COPYING" "genstub" "geninsn")))
                          (check-file path author email)))
-                     #f))
-    (_ (usage)))
+                     #f)]
+    [_ (usage)])
   0)
 
 (define (check-file path author email)
   (define check-rx
-    (string->regexp #"[cC]opyright\\s*\\([cC]\\)\\s*(\\d+)(-\\d+)?\\s+(by\\s+)?~|author|"))
+    (string->regexp #"[cC]opyright\\s*(\\D+)?(\\d+)(-\\d+)?\\s+(by\\s+)?~|author|"))
   (define current-year (date-year (current-date)))
   (define (file->string-list+ path)
     (call-with-input-file path
@@ -35,15 +35,20 @@
             (port->string-list (open-coding-aware-port in))
           (close-input-port in)))))
   (define (rewrite line)
-    (let* ((m (check-rx line))
-           (start-year (x->integer (m 1)))
-           (years (if (= start-year current-year)
+    (let* ([m (check-rx line)]
+           [start-year (x->integer (m 2))]
+           [copyr (or (m 1) "")]
+           [by (or (m 4) " ")]
+           [years (if (= start-year current-year)
                     start-year
-                    #"~|start-year|-~|current-year|")))
-      #"~(m 'before)Copyright (c) ~years  ~author  <~|email|>"))
+                    #"~|start-year|-~|current-year|")]
+           [em (if (equal? (path-extension path) "texi")
+                 (regexp-replace #/@/ email "@@")
+                 email)])
+      #"~(m 'before)Copyright ~|copyr|~|years| ~|by|~|author|  <~|em|>"))
 
-  (and-let* ((input   (file->string-list+ path))
-             (matched (find check-rx input)))
+  (and-let* ([input   (file->string-list+ path)]
+             [matched (find check-rx input)])
     (print "Rewriting " path "...")
     (call-with-temporary-file
      (^[out tmp]
