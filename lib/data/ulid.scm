@@ -4,7 +4,7 @@
 
 ;; This is Gauche-specific port of https://github.com/shirok/scheme-ulid
 
-;; Copyright 2022 by Shiro Kawai <shiro@acm.org>
+;; Copyright 2022 by Shiro Kawai  <shiro@acm.org>
 
 ;; Permission is hereby granted, free of charge, to any person obtaining
 ;; a copy of this software and associated documentation files (the
