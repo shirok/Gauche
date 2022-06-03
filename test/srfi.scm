@@ -1919,8 +1919,15 @@
 (use srfi-116)
 (test-module 'srfi-116)
 
-(chibi-test
- (include "include/srfi-116-tests.scm"))
+(define-module srfi-116-tests
+  (use gauche.test)
+  (use srfi-128)
+  (use srfi-116)
+  (use srfi-64 :rename ((test-equal test-equal*)))
+  (define-syntax import                 ;ignore
+    (syntax-rules ()
+      [(_ . xs) (begin)]))
+  (include "include/srfi-116-tests.scm"))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-117")
