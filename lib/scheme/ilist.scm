@@ -44,6 +44,7 @@
   (use scheme.list)
   (use srfi-114 :only (make-car-comparator
                        make-cdr-comparator
+                       make-pair-comparator
                        make-improper-list-comparator))
   (use util.match)
   (export ipair                         ;builtin
@@ -173,6 +174,7 @@
           (rename make-improper-list-comparator make-improper-ilist-comparator)
           (rename make-car-comparator make-icar-comparator)
           (rename make-cdr-comparator make-icdr-comparator)
+          (rename make-pair-comparator make-ipair-comparator)
           ))
 (select-module scheme.ilist)
 
