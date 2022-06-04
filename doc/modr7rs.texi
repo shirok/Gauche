@@ -6325,6 +6325,7 @@ built-in @code{hash-table-comparator} (@pxref{Hashtables}).
 @findex make-improper-ilist-comparator
 @findex make-icar-comparator
 @findex make-icdr-comparator
+@fincex make-ipair-comparator
 @c EN
 This module provides a set of procedures that handles immutable pairs
 and lists.
@@ -6379,6 +6380,7 @@ iany              ievery            ilist-index       idrop-while
 iassoc            iassq             iassv             iapply
 make-ilist-comparator               make-improper-ilist-comparator
 make-icar-comparator                make-icdr-comparator
+make-ipair-comparator
 @end example
 @end deftp
 
