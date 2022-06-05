@@ -177,10 +177,7 @@
                                fs
                                (loop (cdr inner-fs)
                                      (pass4/add-lvar (car inner-fs) bs fs))))]))]
-  [($CLAMBDA) (let loop ([cs ($clambda-closures iform)] [fs '()])
-                (if (null? cs)
-                  fs
-                  (loop (cdr cs) (pass4/scan (car cs) bs fs t? labels))))]
+  [($CLAMBDA) (pass4/scan* ($clambda-closures iform) bs fs t? labels)]
   [($LABEL)  (cond [(label-seen? labels iform) fs]
                    [else (label-push! labels iform)
                          (pass4/scan ($label-body iform) bs fs t? labels)])]

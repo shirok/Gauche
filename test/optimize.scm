@@ -266,6 +266,23 @@
                              (f b))))
                     'CLOSURE))
 
+;; https://github.com/shirok/Gauche/issues/826
+(test* "lifting with clambda" #t
+       (procedure?
+        (eval '(letrec
+                   ((f (lambda (a.7 . rest.8)
+                         (lambda rest.9
+                           (apply (letrec ((h (case-lambda
+                                                (() h)
+                                                ((b.12 . rest.13)
+                                                 (lambda rest.14
+                                                   (apply (+ a.7 b.12)
+                                                          rest.14))))))
+                                    h)
+                                  rest.9)))))
+                 f)
+              (current-module))))
+
 ;; See if constant lambda keeps identity.
 ;; NB: This isn't a guaranteed behavior, but it holds in the
 ;; current compiler, and there's no reason to lose it.

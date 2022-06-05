@@ -1,3 +1,9 @@
+2022-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-4.scm (pass4/scan): Fix incorrect free-variable
+	  propagation in $clambda node.
+	  https://github.com/shirok/Gauche/issues/826
+
 2022-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (num-pairs): Added.
