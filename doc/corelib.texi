@@ -5565,10 +5565,16 @@ If @var{list} is a circular list, this function diverges.
 If @var{x} is a proper list, returns its length.
 For all other @var{x}, including a circular list,
 it returns @code{#f}.
+
+If you want a length of dotted list in terms of the number of pairs,
+use @var{num-pairs} below.
 @c JP
 @var{x} が真性リストなら、その長さを返します。
 @var{x} がそうでなければ(たとえ循環リストであっても)
 @code{#f} を返します。
+
+ドットリストの「長さ」を、構成するペアの数で知りたい場合は、
+下の@code{num-pairs}が使えます。
 @c COMMON
 @end defun
 
@@ -5623,6 +5629,25 @@ We don't have any better idea now, unfortunately.
 @c COMMON
 @end defun
 
+@defun num-pairs lis
+@c EN
+Returns the number of pairs that consists a (proper, dotted, or circular)
+list @var{lis}, in an exact ineger.
+If @var{lis} is a proper list, it is the same as @code{length}.
+@c JP
+リスト@var{lis}を構成するペアの数を正確な整数で返します。@var{lis}はドットリストや循環リスト
+でも構いません。@var{lis}が正しいリストなら戻り値は@code{length}と同じです。
+@c COMMON
+
+@example
+(num-pairs '(a b c d e))    @result{} 5
+(num-pairs '())             @result{} 0
+(num-pairs '(a b c d . e))  @result{} 4
+(num-pairs 'a)              @result{} 0
+(num-pairs '#0=(a b . #0#)) @result{} 2
+(num-pairs '(a . #0=(b c . #0#))) @result{} 3
+@end example
+@end defun
 
 @defun take x i
 @defunx drop x i
