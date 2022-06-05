@@ -215,6 +215,27 @@
   (let* ([i::int (Scm_Length list)])
     (if (< i 0) (return SCM_FALSE) (return (Scm_MakeInteger i)))))
 
+;; Like length, but works on dotted and circular lists.
+;; To avoid overhead for typical cases, we first use hare and tortoise to
+;; detect circle, and only use hashtable to count pairs after we determine
+;; list is circular.
+(define (num-pairs list)
+  (define (count-pairs-in-circle)
+    (let1 tab (make-hash-table 'eq?)
+      (let loop ([list list])
+        (if (hash-table-exists? tab list)
+          (hash-table-num-entries tab)
+          (begin (hash-table-put! tab list #t)
+                 (loop (cdr list)))))))
+  (let loop ([n 0] [slow list] [list list])
+    (if (pair? list)
+      (if (pair? (cdr list))
+        (if (eq? slow (cdr list))
+          (count-pairs-in-circle)
+          (loop (+ n 2) (cdr slow) (cddr list)))
+        (+ n 1))
+      n)))
+
 (define-cproc proper-list? (obj)   ::<boolean> :constant SCM_PROPER_LIST_P)
 (define-cproc dotted-list? (obj)   ::<boolean> :constant SCM_DOTTED_LIST_P)
 (define-cproc circular-list? (obj) ::<boolean> :constant SCM_CIRCULAR_LIST_P)

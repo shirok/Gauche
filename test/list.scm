@@ -71,6 +71,21 @@
   (test-length '(a . b) 1)
   (test-length '(a b c d e) 5))
 
+(test* "num-pairs (proper)" 5
+       (num-pairs '(a b c d e)))
+(test* "num-pairs (proper)" 0
+       (num-pairs '()))
+(test* "num-pairs (dotted)" 4
+       (num-pairs '(a b c d . e)))
+(test* "num-pairs (dotted)" 0
+       (num-pairs 'a))
+(test* "num-pairs (circular)" 1
+       (num-pairs '#0=(a . #0#)))
+(test* "num-pairs (circular)" 5
+       (num-pairs '#0=(a b c d e . #0#)))
+(test* "num-pairs (circular)" 5
+       (num-pairs '(a b . #0=(c d e . #0#))))
+
 ;;--------------------------------------------------------------------------
 (test-section "copy, append and reverse")
 

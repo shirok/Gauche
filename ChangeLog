@@ -1,3 +1,7 @@
+2022-06-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (num-pairs): Added.
+
 2022-05-30  Shiro Kawai  <shiro@acm.org>
 
 	* test/net.scm: Recover gauche.net test
