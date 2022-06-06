@@ -96,37 +96,110 @@
             (reverse (~ block'insns))))
 
 (define (insn->c c insn)
+  (define (R reg) (reg-cexpr c reg))
   (match insn
-    [('MOV rd rs) (cgen-body #" ~(reg-cexpr c rd) = ~(reg-cexpr c rs);")]
+    [('MOV rd rs) (cgen-body #" ~(R rd) = ~(R rs);")]
     [('LD r id)   (let1 c-id (cgen-literal id)
                     (cgen-body
-                     #" ~(reg-cexpr c r) = /* ~(cgen-safe-comment (~ id'name)) */"
+                     #" ~(R r) = /* ~(cgen-safe-comment (~ id'name)) */"
                      #"  Scm_IdentifierGlobalRef(~(cgen-cexpr c-id), NULL);"))]
     [('ST r id)   (let1 c-id (cgen-literal id)
                     (cgen-body
                      #" /* ~(cgen-safe-comment (~ id'name)) */"
                      #" Scm_GlobalVariableSet(~(cgen-cexpr c-id),"
-                     #"                       ~(reg-cexpr c r),"
+                     #"                       ~(R r),"
                      #"                       NULL);"))]
-    [('CLOSE r b) (cgen-body #" ~(reg-cexpr c r) ="
+    [('CLOSE r b) (cgen-body #" ~(R r) ="
                              #"   %%WRITEME%%Scm_MakeClosure ~(x->string b);")]
-    [('BR r b1 b2)(cgen-body #" if (SCM_FALSEP(~(reg-cexpr c r)))")
+    [('BR r b1 b2)(cgen-body #" if (SCM_FALSEP(~(R r)))")
                   (gen-jump-cstmt c b1)
                   (cgen-body #" else")
                   (gen-jump-cstmt c b2)]
     [('JP b)      (gen-jump-cstmt c b)]
     [('CONT b)    (gen-cont-cstmt c b)]
     [('CALL bb proc r ...) (gen-vmcall c proc r)]
-    [('RET r . rs)(cgen-body #" return ~(reg-cexpr c r);")]
-    [('BUILTIN op r as ...)
-     (cgen-body #" ~(reg-cexpr c r) =") (builtin->c c op as)]
-    [('ASM op r as ...)
-     (cgen-body #" ~(reg-cexpr c r) =") (asm->c c op as)]
+    [('RET r . rs)(cgen-body #" return ~(R r);")]
     [('DEF id flags r)
      (let1 c-id (cgen-literal id)
        (cgen-body #" /* ~(cgen-safe-comment (~ id'name)) */"
-                  #" Scm_Define(~(cgen-cexpr c-id), ~(reg-cexpr c r));"))]
+                  #" Scm_Define(~(cgen-cexpr c-id), ~(R r));"))]
+    ;; Builtin operations
+    [('CONS r x y) (builtin-2arg c "Scm_Cons" r x y)]
+    [('CAR r x) (builtin-1arg c "Scm_Car" r x)]
+    [('CDR r x) (builtin-1arg c "Scm_Cdr" r x)]
+    [('CAAR r x) (builtin-1arg c "Scm_Caar" r x)]
+    [('CADR r x) (builtin-1arg c "Scm_Cadr" r x)]
+    [('CDAR r x) (builtin-1arg c "Scm_Cdar" r x)]
+    [('CDDR r x) (builtin-1arg c "Scm_Cddr" r x)]
+    [('LIST r . xs) (cgen-body #"  ~(R r) = ~(gen-list c xs);")]
+    [('LIST* r . xs) (cgen-body #"  ~(R r) = ~(gen-list* c xs);")]
+    [('LENGTH r x) (builtin-1arg c "Scm_Length" r x)]
+    [('MEMQ r x y) (builtin-2arg c "Scm_Memq" r x y)]
+    [('MEMV r x y) (builtin-2arg c "Scm_Memv" r x y)]
+    [('ASSQ r x y) (builtin-2arg c "Scm_Assq" r x y)]
+    [('ASSV r x y) (builtin-2arg c "Scm_Assv" r x y)]
+    [('EQ r x y) (builtin-2arg/bool c "SCM_EQ" r x y)]
+    [('EQV r x y) (builtin-2arg/bool c "Scm_EqvP" r x y)]
+    [('APPEND r . xs) (cgen-body #" /* WRITEME: APPEND */")]
+    [('NOT r x) (cgen-body #" ~(R r) = SCM_MAKE_BOOL(SCM_FALSEP(~(R x)));")]
+    [('REVERSE r x) (builtin-1arg c "Scm_Reverse" r x)]
+    [('APPLY r . xs) (cgen-body #" /* WRITEME: APPLY */")]
+    [('TAIL-APPLY r . xs) (cgen-body #" /* WRITEME: TAIL-APPLY */")]
+    [('IS-A r x y) (builtin-2arg/bool c "SCM_ISA" r x y)]
+    [('NULLP r x) (builtin-1arg/bool c "SCM_NULLP" r x)]
+    [('PAIRP r x) (builtin-1arg/bool c "SCM_PAIRP" r x)]
+    [('CHARP r x) (builtin-1arg/bool c "SCM_CHARP" r x)]
+    [('EOFP r x) (builtin-1arg/bool c "SCM_EOFP" r x)]
+    [('STRINGP r x) (builtin-1arg/bool c "SCM_STRINGP" r x)]
+    [('SYMBOLP r x) (builtin-1arg/bool c "SCM_SYMBOLP" r x)]
+    [('VECTORP r x) (builtin-1arg/bool c "SCM_VECTORP" r x)]
+    [('NUMBERP r x) (builtin-1arg/bool c "SCM_NUMBERP" r x)]
+    [('REALP r x) (builtin-1arg/bool c "SCM_REALP" r x)]
+    [('IDENTIFIERP r x) (builtin-1arg/bool c "SCM_IDENTIFIERP" r x)]
+    [('SETTER r x) (builtin-1arg c "Scm_Setter" r x)]
+    [('VEC r . xs) (cgen-body #" /* WRITEME: VEC */")]
+    [('LIST->VEC r x) (cgen-body #" /* WRITEME: LIST->VEC */")]
+    [('APP-VEC r . xs) (cgen-body #" /* WRITEME: APP-VEC */")]
+    [('VEC-LEN r x) (builtin-1arg c "SCM_VECTOR_SIZE" r x)]
+    [('VEC-REF r x y) (cgen-body #" /* WRITEME: VEC-REF */")]
+    [('VEC-SET r x y) (cgen-body #" /* WRITEME: VEC-SET */")]
+    [('UVEC-REF r x y z) (cgen-body #" /* WRITEME: UVEC-REF */")]
+    [('NUMEQ2 r x y) (builtin-2arg/bool c "SCM_NUMEQ2" r x y)]
+    [('NUMLT2 r x y) (builtin-2arg/bool c "SCM_NUMLT2" r x y)]
+    [('NUMLE2 r x y) (builtin-2arg/bool c "SCM_NUMLE2" r x y)]
+    [('NUMGT2 r x y) (builtin-2arg/bool c "SCM_NUMGT2" r x y)]
+    [('NUMGE2 r x y) (builtin-2arg/bool c "SCM_NUMGE2" r x y)]
+    [('NUMADD2 r x y) (builtin-2arg c "Scm_Add" r x y)]
+    [('NUMSUB2 r x y) (builtin-2arg c "Scm_Sub" r x y)]
+    [('NUMMUL2 r x y) (builtin-2arg c "Scm_Mul" r x y)]
+    [('NUMDIV2 r x y) (builtin-2arg c "Scm_Div" r x y)]
+    [('NUMMOD2 r x y) (builtin-2arg c "SCM_MOD2" r x y)]
+    [('NUMREM2 r x y) (builtin-2arg c "SCM_REM2" r x y)]
+    [('NEGATE r x) (builtin-1arg c "Scm_Negate" r x)]
+    [('ASH r x y) (builtin-2arg c "Scm_Ash" r x y)]
+    [('LOGAND r x y) (builtin-2arg c "Scm_LogAnd" r x y)]
+    [('LOGIOR r x y) (builtin-2arg c "Scm_LogIor" r x y)]
+    [('LOGXOR r x y) (builtin-2arg c "Scm_LogXor" r x y)]
+    [('CURIN r) (builtin-0arg c "SCM_CURIN" r)]
+    [('CUROUT r) (builtin-0arg c "SCM_CUROUT" r)]
+    [('CURERR r) (builtin-0arg c "SCM_CURERR" r)]
+    [('UNBOX r x) (builtin-1arg c "Scm_Unbox" r x)]
     ))
+
+(define (builtin-0arg c v r)
+  (cgen-body #"  ~(reg-cexpr c r) = SCM_OBJ(~|v|);"))
+
+(define (builtin-1arg c fn r x)
+  (cgen-body #"  ~(reg-cexpr c r) = ~|fn|(~(reg-cexpr c x));"))
+
+(define (builtin-1arg/bool c fn r x)
+  (cgen-body #"  ~(reg-cexpr c r) = SCM_MAKE_BOOL(~|fn|(~(reg-cexpr c x)));"))
+
+(define (builtin-2arg c fn r x y)
+  (cgen-body #"  ~(reg-cexpr c r) = ~|fn|(~(reg-cexpr c x), ~(reg-cexpr c y));"))
+
+(define (builtin-2arg/bool c fn r x y)
+  (cgen-body #"  ~(reg-cexpr c r) = SCM_MAKE_BOOL(~|fn|(~(reg-cexpr c x), ~(reg-cexpr c y)));"))
 
 (define (cluster-cfn-name c)
   (cgen-safe-name (x->string (~ c'id))))
@@ -177,60 +250,17 @@
    (~ dest-c'aregs))
   (cgen-body #"  };"))
 
-(define (%c-call-sub c proc-cexpr regs)
-  (string-concatenate `(,proc-cexpr "("
-                        ,@(intersperse ",\n    "
-                                       (map (cut reg-cexpr c <>) regs))
-                        ")")))
-
-(define (c-call c proc-cexpr regs)
-  #"  ~(%c-call-sub c proc-cexpr regs);")
-
-(define (c-call/bool c proc-cexpr regs)
-  (string-append "  SCM_MAKE_BOOL(" (%c-call-sub c proc-cexpr regs) ");"))
-
-(define (asm->c c op regs)
-  (case (~ (vm-find-insn-info (car op))'name)
-    [(EQ) (cgen-body (c-call/bool c "SCM_EQ" regs))]
-    [(NULLP) (cgen-body (c-call/bool c "SCM_NULLP" regs))]
-    [(PAIRP) (cgen-body (c-call/bool c "SCM_PAIRP" regs))]
-    [(NUMBERP) (cgen-body (c-call/bool c "SCM_NUMBERP" regs))]
-    [(CONS) (cgen-body (c-call c "Scm_Cons" regs))]
-    [(CAR) (cgen-body (c-call c "SCM_CAR" regs))]
-    [(CDR) (cgen-body (c-call c "SCM_CDR" regs))]
-    [(CAAR) (cgen-body (c-call c "SCM_CAAR" regs))]
-    [(CADR) (cgen-body (c-call c "SCM_CADR" regs))]
-    [(CDAR) (cgen-body (c-call c "SCM_CDAR" regs))]
-    [(CDDR) (cgen-body (c-call c "SCM_CDDR" regs))]
-    [(REVERSE) (cgen-body (c-call c "Scm_Reverse" regs))]
-    [(MEMQ)   (cgen-body (c-call c "Scm_Memq" regs))]
-    [(MEMV)   (cgen-body (c-call c "Scm_Memv" regs))]
-    [(ASSQ)   (cgen-body (c-call c "Scm_Assq" regs))]
-    [(ASSV)   (cgen-body (c-call c "Scm_Assv" regs))]
-    [(NUMEQ2) (cgen-body (c-call c "SCM_NUMEQ2" regs))]
-    [(NUMLT2) (cgen-body (c-call c "SCM_NUMLT2" regs))]
-    [(NUMLE2) (cgen-body (c-call c "SCM_NUMLE2" regs))]
-    [(NUMGT2) (cgen-body (c-call c "SCM_NUMGT2" regs))]
-    [(NUMGE2) (cgen-body (c-call c "SCM_NUMGE2" regs))]
-    [(NUMADD2) (cgen-body (c-call c "Scm_Add" regs))]
-    [(NUMSUB2) (cgen-body (c-call c "Scm_Sub" regs))]
-    [(NUMNUL2) (cgen-body (c-call c "Scm_Mul" regs))]
-    [(NUMDIV2) (cgen-body (c-call c "Scm_Div" regs))]
-    [(NEGATE)  (cgen-body (c-call c "Scm_Negate" regs))]
-    [(LOGAND)  (cgen-body (c-call c "Scm_LogAnd" regs))]
-    [(LOGIOR)  (cgen-body (c-call c "Scm_LogIor" regs))]
-    [(LOGXOR)  (cgen-body (c-call c "Scm_LogXor" regs))]
-    [(SETTER)  (cgen-body (c-call c "Scm_Setter" regs))]
-    [else
-     (cgen-body #"  %%WRITEME%%Call_Asm(~op, ~(map (cut reg-cexpr c <>) regs));")]))
-
-(define (builtin->c c op regs)
-  (cgen-body #"  %%WRITEME%%Call_Builtin(~op, ~(map (cut reg-cexpr c <>) regs));"))
-
 (define (gen-list c regs)
   (define (rec regs)
     (match regs
       [() '("SCM_NIL")]
+      [(reg . regs) `("Scm_Cons(" ,(reg-cexpr c reg) ", " ,@(rec regs) ")")]))
+  (string-concatenate (rec regs)))
+
+(define (gen-list* c regs)
+  (define (rec regs)
+    (match regs
+      [(reg) (reg-cexpr c reg)]
       [(reg . regs) `("Scm_Cons(" ,(reg-cexpr c reg) ", " ,@(rec regs) ")")]))
   (string-concatenate (rec regs)))
 
