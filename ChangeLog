@@ -1,3 +1,7 @@
+2022-06-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-232.scm: Add srfi-232 Flexible curried procedures.
+
 2022-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-4.scm (pass4/scan): Fix incorrect free-variable

@@ -2757,4 +2757,15 @@
   (use srfi-229)
   (include "include/srfi-229-tests"))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-232")
+(use srfi-232)
+(test-module 'srfi-232)
+
+(define-module srfi-232-tests
+  (use gauche.test)
+  (use srfi-64)
+  (use srfi-232)
+  (include "include/srfi-232-tests"))
+
 (test-end)

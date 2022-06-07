@@ -68,6 +68,7 @@ SCMFILES = \
        srfi-192.scm srfi-193.scm srfi-196.scm srfi-197.scm \
        srfi-214.scm srfi-217.scm srfi-219.scm \
        srfi-221.scm srfi-227.scm srfi-227/*.scm srfi/227/*.scm srfi-229.scm \
+       srfi-232.scm \
        slib.scm \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
