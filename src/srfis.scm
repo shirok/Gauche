@@ -1477,3 +1477,13 @@ Supported by the module @code{srfi-229}
 手続きタグ
 @code{srfi-229}でサポートされます。
 (@ref{Tagged procedures}参照)。
+
+
+srfi-232, srfi-232
+()
+
+Flexible curried procedures
+Supported by the module @code{srfi-232}.
+
+柔軟なカリー化された手続き
+@code{srfi-232}でサポートされます。
