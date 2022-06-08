@@ -5360,7 +5360,7 @@ You have to say @code{(cond-expand (srfi-101 (use srfi-101 :prefix ra:)))},
 for example.
 @c JP
 @code{cond-expand}の特別な扱いについて: @code{cond-expand}は
-チェックした機能が使える場合には、必要なライブラリを暗黙にロードしまう。
+チェックした機能が使える場合には、必要なライブラリを暗黙にロードします。
 つまり、@code{(cond-expand (srfi-N <code>))} とした場合、@code{srfi-N}が
 サポートされていれば@code{<code>}の中で@code{(use srfi-N)}とする必要はありません。
 
@@ -5369,7 +5369,7 @@ for example.
 インポートすることはあまり実用的ではありません。@code{cond-expand}では
 インポート時のプレフィクスやリネームは指定できないので、
 @code{srfi-101}に限り、@code{cond-expand}ではインポートしないようにしています。
-@code{(cond-expand (srfi-101 (use srfi-101 :prefix ra:)))} などとしてください。
+@code{(cond-expand ((library srfi-101) (use srfi-101 :prefix ra:)))} などとしてください。
 @c COMMON
 @end deftp
 
