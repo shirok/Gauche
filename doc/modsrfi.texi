@@ -77,6 +77,7 @@ srfi N is supported by Gauche.)
 * Generator/accumulator sub-library::  srfi-221
 * Optional arguments::          srfi-227
 * Tagged procedures::           srfi-229
+* Flexible curried procedures:: srfi-232
 @end menu
 
 
@@ -11968,7 +11969,7 @@ These two forms are provided in a submodule @code{srfi-227.definitions}.
 
 
 @c ----------------------------------------------------------------------
-@node Tagged procedures,  , Optional arguments, Library modules - SRFIs
+@node Tagged procedures, Flexible curried procedures, Optional arguments, Library modules - SRFIs
 @section @code{srfi-229} - Tagged procedures
 @c NODE 手続きタグ, @code{srfi-229} - 手続きタグ
 
@@ -12048,6 +12049,112 @@ is signaled.
 @var{proc}がタグ付き手続きでなければエラーが投げられます。
 @c COMMON
 @end defun
+
+
+@c ----------------------------------------------------------------------
+@node Flexible curried procedures,  , Tagged procedures, Library modules - SRFIs
+@section @code{srfi-232} - Flexible curried procedures
+@c NODE 柔軟なカリー化された手続き, @code{srfi-232} - 柔軟なカリー化された手続き
+
+@deftp {Module} srfi-232
+@mdindex srfi-232
+This srfi provides macros to define a procedure that can accept
+less than or more than the given formal parameters.  If the number of given
+parameters is less than the required parameters, it becomes partial
+application; a procedure that will take the remaining parameters is returned.
+If the number of given parameters is more than the maximum number of
+parameters, then the excessive parameters are passed to the result
+of the original procedure, assuming the original procedure returns
+a procedure.
+
+Currying in the strict sense converts n-ary procedures to nested 1-ary
+procedures:
+
+@example
+(lambda (a b c) body)
+  @result{} (lambda (a) (lambda (b) (lambda (c) body)))
+@end example
+
+However, with Scheme, you need nested parentheses to give all
+the parameters to it:
+
+@example
+(((f 1) 2) 3)
+@end example
+
+The procedure created with this srfi allows more than one parameters
+to be passed at once.  The following calls to @code{f} all yield the
+same result:
+
+@example
+(define-curried (f a b c) body)
+
+(f 1 2 3)
+(((f 1) 2) 3)
+((f 1 2) 3)
+((f 1) 2 3)
+@end example
+
+Moreover, the procedure can take more parameters than the formals,
+assuming that the procedure with full parameters return a procedure
+that takes extra parameters.  In other words, the following
+equivalance holds:
+
+@example
+(f 1 2 3 4 5 6) @equiv{} ((f 1 2 3) 4 5 6)
+@end example
+@end deftp
+
+@defmac curried formals body @dots{}
+[SRFI-232]
+@c MOD srfi-232
+Returns a procedure just like @var{(lambda formals body @dots{})},
+except that the returned procedure may take less or more parameters
+than the specified in @var{formals}.
+
+If it is given with less parameters than the required ones, it works
+as partial application; the result is a procedure that will accept
+the remaining parameters.
+
+@example
+(define f (curried (a b c d) (+ a b c d)))
+
+(f 1 2 3 4) @result{} 10        ; ordinary application
+(f 1 2) @result{} #<procedure>  ; partial application, like (pa$ f 1 2)
+((f 1 2) 3 4) @result{} 10      ; fulfilling the remaining argument
+(((f 1 2) 3) 4) @result{} 10    ; partial application can be nested
+(((f 1) 2 3) 4) @result{} 10    ; ... and can be grouped in any way
+@end example
+
+The procedure can accept more parameters than the ones given to
+@var{formals}, even @var{formals} does not specify the ``rest'' parameter.
+If @var{formals} takes the rest parameter, the excess arguments are passed
+to it.  If not, the result of the procedure with required parameters
+are applied over the excess arguments.
+
+@example
+(define f (curried (a b c) (^[x] (* x (+ a b c)))))
+
+(f 1 2 3 4) @result{} 24  ; @equiv{} ((f 1 2 3) 4)
+@end example
+
+If no arguments are given to the procedure,
+it returls the procedure itself:
+
+@example
+(((f)) 1 2 3) @equiv{} (f 1 2 3)
+@end example
+
+As a special case, @code{(curried () body)} and @code{(curried identifier body)}
+are the same as @code{(lambda () body)} and @code{(lambda identifier body)},
+respectively.
+@end defmac
+
+@defmac define-curried (name . formals) body @dots{}
+[SRFI-232]
+@c MOD srfi-232
+A shorthand of @code{(define name (curried formals body @dots{}))}.
+@end defmac
 
 @c Local variables:
 @c mode: texinfo

@@ -1483,7 +1483,10 @@ srfi-232, srfi-232
 ()
 
 Flexible curried procedures
-Supported by the module @code{srfi-232}.
+Supported by the module @code{srfi-232}
+(@pxref{Flexible curried procedures}).
+
 
 柔軟なカリー化された手続き
-@code{srfi-232}でサポートされます。
+@code{srfi-232}でサポートされます
+(@ref{Flexible curried procedures}参照)。
