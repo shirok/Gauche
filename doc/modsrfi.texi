@@ -6849,32 +6849,78 @@ string-contains     string-contains-right
 @defunx string-skip-right string pred :optional start end
 [SRFI-130]
 @c MOD srfi-130
+@c EN
 Find the position of a character that satisfies @var{pred}
 (@code{string-index}/@code{string-index-right}), or
 does not satisfy @var{pred}
 (@code{string-skip}/@code{string-skip-right}), in a @var{string}.
+The chacter is searched from left to right in
+@code{string-index}/@code{string-skip}, and
+right to left in @code{string-index-right}/@code{string-skip-right}.
+@c JP
+@var{pred}を満たす(@code{string-index}/@code{string-index-right})
+もしくは満たさない(@code{string-skip}/@code{string-skip-right})最初の文字
+の位置を返します。
+@code{string-index}/@code{string-skip}は左から、
+@code{string-index-right}/@code{string-skip-right}は右から該当する文字を探します。
+@c COMMON
 
+@c EN
 While srfi-13's procedures of the same names returns integer index,
 these returns a string cursor instead.
+@c JP
+srfi-13の同名の手続きが整数の文字インデックスを返すのに対し、
+これらは文字列カーソルを返します。
+@c COMMON
 
-They always return a string cursor.
+@c EN
 The returned cursor from @code{string-index}/@code{string-skip}
 points the leftmost character that satisfies/does not satsify @var{pred},
 while the returned cursor from
 @code{string-index-right} points the next (right) character of the rightmost
 one that satisfies/does not satisfy @var{pred}.
-If there's no character that satisfies/does not satisfy @var{pred},
-@code{string-index} and @code{string-skip} returns a cursor at the end
-of the string, while @code{string-index-right} and @code{string-skip-right}
+If there're no characters that satisfy @var{pred},
+@code{string-index} returns a cursor at the end
+of the string, while @code{string-index-right}
 returns a cursor at the beginning of the string.
+(The @code{*-skip} variation reverses the condition).
+@c JP
+@code{string-index}が返すカーソルは、
+@var{pred}を満たす最も左の文字を指しています。
+一方、@code{string-index-right}が返すカーソルは、
+@var{pred}を満たす最も右の文字の次(一つ右)を指しています。
+また、ひとつも@var{pred}を満たす文字が無かった場合、
+@code{string-index}は文字列の最後(最後の文字の次)を指すカーソルを、
+@code{string-index-right}は文字列の先頭を指すカーソルを返します。
+(@code{*-skip}は条件が逆になるだけです)。
+@c COMMON
 
+@c EN
 (This is easier to understand if you think the cursor is between characters;
 if we scan a string from left to right, the cursor looks at the
 character on its right; if we scan from right to left, the cursor looks at
 the character on its left.)
+@c JP
+(この仕様は、カーソルが文字の「間」にあると考える方がわかりやすいかもしれません。
+左から右に文字列を見て行く時は、カーソルは自分の右側の文字を見ます。
+右から左に見て行く時は、自分の左側の文字を見ます。)
+@c COMMON
 
+@c EN
+Be aware that they still return a cursor even no characters satisfy the
+condition, while srfi-13 versions return @code{#f} in such cases.
+@c JP
+条件を満たす文字が無かった時にもカーソルが返されることに注意してください。
+srfi-13のバージョンではその場合は@code{#f}が返されていました。
+@c COMMON
+
+@c EN
 The optional @var{start}/@var{end} can be string cursors or integer
 indexes to limit the region of @var{string} to search.
+@c JP
+省略可能な@var{start}/@var{end}引数は文字列カーソルか整数の文字インデックスで、
+探索領域を限定します。
+@c COMMON
 
 @example
 (define *s* "abc def ghi")
