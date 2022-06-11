@@ -161,8 +161,21 @@
     [('LIST->VEC r x) (cgen-body #" /* WRITEME: LIST->VEC */")]
     [('APP-VEC r . xs) (cgen-body #" /* WRITEME: APP-VEC */")]
     [('VEC-LEN r x) (builtin-1arg c "SCM_VECTOR_SIZE" r x)]
-    [('VEC-REF r x y) (cgen-body #" /* WRITEME: VEC-REF */")]
-    [('VEC-SET r x y) (cgen-body #" /* WRITEME: VEC-SET */")]
+    [('VEC-REF r x y)
+     (let ([n (gensym 'n)]
+           [v (gensym 'v)])
+       (cgen-body #"  ScmSmallInt ~n = SCM_PC_GET_INDEX(~(reg-cexpr c y));"
+                  #"  ScmVector *~v = SCM_PC_ENSURE_VEC(~(reg-cexpr c x)));"
+                  #"  SCM_PC_BOUND_CHECK(SCM_VECTOR_SIZE(~v), ~n);"
+                  #"  ~(reg-cexpr c r) = SCM_VECTOR_ELEMENT(~v, ~n);"))]
+    [('VEC-SET r x y z)
+     (let ([n (gensym 'n)]
+           [v (gensym 'v)])
+       (cgen-body #"  ScmSmallInt ~n = SCM_PC_GET_INDEX(~(reg-cexpr c y));"
+                  #"  ScmVector *~v = SCM_PC_ENSURE_VEC(~(reg-cexpr c x)));"
+                  #"  SCM_PC_BOUND_CHECK(SCM_VECTOR_SIZE(~v), ~n);"
+                  #"  SCM_VECTOR_ELEMENT(~v, ~n) = ~(reg-cexpr c z);"
+                  #"  ~(reg-cexpr c r) = SCM_UNDEFINED;"))]
     [('UVEC-REF r x y z) (cgen-body #" /* WRITEME: UVEC-REF */")]
     [('NUMEQ2 r x y) (builtin-2arg/bool c "SCM_NUMEQ2" r x y)]
     [('NUMLT2 r x y) (builtin-2arg/bool c "SCM_NUMLT2" r x y)]
