@@ -6943,23 +6943,52 @@ indexes to limit the region of @var{string} to search.
 @defunx string-contains-right haystack needle :optional start1 end1 start2 end2
 [SRFI-130]
 @c MOD srfi-130
+@c EN
 Search for a substring @var{needle} in a string @var{haystack}.
 The substring is searched from left to right (@code{string-contains})
 or right to left (@code{string-contains-right}).
+@c JP
+文字列@var{haystack}の中から部分文字列@var{needle}を探します。探索方向は、
+@code{string-contains}では左から右へ@code{string-contains-right}では
+右から左です。
+@c COMMON
 
+@c EN
 While srfi-13's procedures of the same names returns an integer index
-when a substring is found, these procedures returns a string curosr
-of @var{haystack}.
+of the beginning of the substring if found,
+these procedures returns a string cursor
+of the beginning of @var{haystack}.
+@c JP
+srfi-13の同名の手続きは、見つかった部分文字列の開始位置を整数インデックスで
+返しますが、これらの手続きは文字列カーソルで返します。
+@c COMMON
 
+@c EN
 If @var{haystack} doesn't countain @var{needle}, they return @code{#f}.
+@c JP
+@var{haystack}が@var{needle}中に無ければ@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun string-for-each-cursor proc string :optional start end
 [SRFI-130]
 @c MOD srfi-130
+@c EN
 Calls @var{proc} with each cursor of @var{string}, from left to right,
 excluding the post-end cursor.  This is the cursor version of
 @code{string-for-each-index} in srfi-13 (@pxref{SRFI-13 String mapping}).
+@c JP
+@var{proc}を@var{string}中の各文字列カーソル位置(左から右へ)を引数にして
+順に呼び出します。ただし最後のカーソル(末尾文字の次の位置)については@var{proc}
+を呼びません。
+srfi-13の@code{string-for-each-index}の文字列カーソル版です。
+@c COMMON
+
+@example
+(define s "abc")
+(string-for-each-cursor (^c (display (string-ref/cursor s c))) s)
+ @result{} @r{displays} abc
+@end example
 @end defun
 
 
