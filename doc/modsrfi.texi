@@ -5913,13 +5913,46 @@ gosh> (os-version)
 
 @deftp {Module} srfi-114
 @mdindex srfi-114
+@c EN
 This module is provided for the compatibility of code using srfi-114.
 The new code should use srfi-128, which is fully built-in.
-@end deftp
+@c JP
+このモジュールはsrfi-114を使っているコードとの互換性のために提供されています。
+新規コードはsrfi-128を使ってください。そちらは組み込みになっています。
+@c COMMON
 
+@c EN
+Note that srfi-114's @code{make-comparator} has different interface from
+built-in (srfi-128) @code{make-comparator}.
+If you simply say @code{(use srfi-114)} or @code{(import (srfi 114))},
+it shadows the built-in one.  If you need to use some of srfi-114
+procedures, it's better to import them selectively.
+@c JP
+srfi-114の@code{make-comparator}は組み込み(srfi-128)の@code{make-comparator}
+と異なるインタフェースを持つことに注意してください。
+単に@code{(use srfi-114)}や@code{(import (srfi 114))}とすると、
+組み込みの@code{make-comparator}がシャドウされます。
+srfi-114のいくつかの手続きだけを使いたいなら、それらを選択的にインポートするのが良いでしょう。
+@c COMMON
+
+@c EN
+Note that comparators created with srfi-114 procedures are the same
+type as the ones created with srfi-128 procedures and can be used
+interchangebly.
+@c JP
+srfi-114手続きで作られる比較器は、srfi-128で作られる比較器と同じ型で、
+互いにどちらの手続きにも渡すことができます。
+@c COMMON
+
+@c EN
 The following procedures are built-in.  @xref{Basic comparators}, for
 the detailed documentation.   Those are also exported from @code{srfi-114}
 for the compatibility.
+@c JP
+以下の手続きは組み込みで提供されます。
+説明は@ref{Basic comparators}を参照してください。
+互換性のために、これらは@code{srfi-114}モジュールからもエクスポートされます。
+@c COMMON
 
 @table @asis
 @item Predicates
@@ -5971,22 +6004,43 @@ for the compatibility.
 @code{>=?}
 @end table
 
+@end deftp
+
 @subsubheading Basic comparator interface
 
 @defun make-comparator type-test equal compare hash :optional name
 [SRFI-114+]
 @c MOD srfi-114
+@c EN
 This is SRFI-114 style comparator constructor.  The optional @var{name}
 argument is Gauche's extension.
+@c JP
+srfi-114形式の比較器コンストラクタです。省略可能引数@var{name}はGaucheの拡張です。
+@c COMMON
 
+@c EN
 This is the same as built-in @code{make-comparator/compare}.
 @xref{Basic comparators}, for the details.
+@c JP
+この手続きは組み込みの@code{make-comparator/compare}と同じです。
+詳しくは@ref{Basic comparators}を参照してください。
+@c COMMON
 
+@c EN
 Do not confuse this with built-in (SRFI-128) @code{make-comparator};
 if you @code{(use srfi-114)}, this one shadows the built-in one.
+@c JP
+組み込み (srfi-128) の@code{make-comparator}と混同しないようにしてください。
+単に@code{(use srfi-114)}とすると、組み込みのそれがsrfi-114でシャドウされます。
+@c COMMON
 
+@c EN
 Note that a comparator works for both SRFI-114 and SRFI-128 procedures,
 regardless of how it is constructed.
+@c JP
+比較器はどちらで作られたかにかかわらず、srfi-114の手続きにもsrfi-128の手続きにも
+渡すことができます。
+@c COMMON
 @end defun
 
 @defun comparator-comparison-procedure? c
