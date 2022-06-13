@@ -618,6 +618,7 @@
 (define (pass5b/$ASM iform bb benv ctx)
   (define (emit bb mnemonic regs)
     (let1 receiver (make-reg bb #f)
+      (for-each (cut touch-reg! bb <>) regs)
       (push-insn bb `(,mnemonic ,receiver ,@regs))
       (pass5b/return bb ctx receiver)))
   (receive (bb regs) (pass5b/prepare-args bb benv ($asm-args iform) #t)
