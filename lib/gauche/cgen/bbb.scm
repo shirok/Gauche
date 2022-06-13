@@ -783,12 +783,15 @@
            (if-let1 c2 (~ bb1 'cluster)
              (link-clusters! c c2)
              (let1 c2 (make-cluster benv)
+               (push! (~ c2'entry-blocks) bb1)
                (link-clusters! c c2)
                (rec benv c2 bb1))))]
         [_ #f])))
   ;; 1st pass
   (when (null? (~ benv'clusters))
-    (rec benv (make-cluster benv) (~ benv'entry))
+    (let1 c (make-cluster benv)
+      (push! (~ c'entry-blocks) (~ benv'entry))
+      (rec benv c (~ benv'entry)))
     (for-each cluster-bbs! (~ benv'children)))
   ;; 2nd pass (register classification)
   (dolist [c (~ benv'clusters)]
