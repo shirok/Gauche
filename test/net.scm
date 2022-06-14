@@ -445,7 +445,7 @@
     ;; ipv6 may be turned off by runtime flag.  we skip in that case.
     (when server-sock
       (test* "inet client socket (ipv6)" #t
-             (and-let* ((sock (get-ipv6-sock)))
+             (if-let1 sock (get-ipv6-sock)
                (call-with-client-socket sock
                  (^[in out]
                    (do-accept)
@@ -455,7 +455,8 @@
                    (do-echo #t)
                    (string=? (read-line in)
                              (string-append "GOT:"
-                                            (make-string *chunk-size* #\a)))))))
+                                            (make-string *chunk-size* #\a)))))
+               #t)) ;; ipv6 not available
       (socket-shutdown server-sock)
       (socket-close server-sock)))
   ]
