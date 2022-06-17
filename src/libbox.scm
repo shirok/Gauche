@@ -61,7 +61,7 @@
 
  (define-ctype ScmSharedBox
    ::(.struct ScmSharedBoxRec
-              (hdr::ScmHeader
+              (SCM_HEADER:||
                counter::ScmAtomicVar
                numValues::ScmSmallInt
                values::(.array ScmObj (1)))))

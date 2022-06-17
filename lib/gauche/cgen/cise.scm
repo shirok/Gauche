@@ -1404,8 +1404,23 @@
 (define (cise-render-identifier sym)
   (cgen-safe-name-friendly (x->string sym)))
 
-;; Allow var::type as (var :: type)
+;; canonicalize-vardecl
+;;
+;; Given list of C variable declarations, possibly typed, returns a list
+;; ((var :: type [init]) ...)
+;;
+;; Allows var::type as (var :: type)
 ;; and (var::type init) as (var :: type init)
+;;
+;; It is also used to expand the field list of struct and union.
+;;
+;; Example: (foo bar::int baz::(const char*) (boom::int 0))
+;;  => ((foo :: ScmObj) (bar :: int) (baz :: (const char*)) (boom :: int 0))
+;;
+;; Note: To avoid any type decl to be generated, give || as a type, e.g.
+;; "foo::||".  It is unusual, but needed if the variable name is actually
+;; a macro to be expanded into typed variable name.  SCM_HEADER is an example.
+;; We need a placeholder || to avoid the default type ScmObj is given.
 (define (canonicalize-vardecl vardecls)
   (define (expand-type elt seed)
     (cond
@@ -1418,7 +1433,7 @@
         [#/^([^:]+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
         [#/^([^:]+)::([^:]+)$/ (_ v t)
             `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
-        [#/^([^:]+):(.+)$/ (#f #f #f) (err elt)]
+        [#/^([^:]+):(.*)$/ (#f #f #f) (err elt)]
         [else (cons elt seed)])]
      [else (cons elt seed)]))
 

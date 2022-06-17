@@ -152,7 +152,7 @@
  ;; initialization until the type is used.
  (define-ctype ScmDescriptiveType
    ::(.struct ScmDescriptiveTypeRec
-              (hdr::ScmInstance
+              (SCM_INSTANCE_HEADER::||
                name::ScmObj
                constructorArgs::ScmObj)))
 
@@ -200,7 +200,7 @@
 
  (define-ctype ScmNativeType
    ::(.struct ScmNativeTypeRec
-              (hdr::ScmInstance
+              (SCM_INSTANCE_HEADER::||
                name::ScmObj
                c-of-type::(.function (obj) ::int *)
                super::ScmObj
