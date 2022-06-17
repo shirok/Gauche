@@ -1415,9 +1415,10 @@
         [else (cons elt seed)])]
      [(symbol? elt)
       (rxmatch-case (symbol->string elt)
-        [#/^(.+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
-        [#/^(.+)::(.+)$/ (_ v t)
+        [#/^([^:]+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
+        [#/^([^:]+)::([^:]+)$/ (_ v t)
             `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
+        [#/^([^:]+):(.+)$/ (#f #f #f) (err elt)]
         [else (cons elt seed)])]
      [else (cons elt seed)]))
 

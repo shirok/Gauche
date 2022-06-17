@@ -148,6 +148,14 @@ some_trick();
   (c '(define-cvar foo::(.function (a::int b::char) ::long *))
      " long (* foo)(int a, char b);")
 
+  ;; invalid var:type format
+  (c '(define-cvar foo:int)
+     (test-error <error> #/invalid variable declaration: foo:int/))
+  (c '(define-cvar foo:::int)
+     (test-error <error> #/invalid variable declaration: foo:::int/))
+  (c '(define-cvar foo::(.struct (x:a)))
+     (test-error <error> #/invalid variable declaration: x:a/))
+
   (c '(declare-cvar foo) "extern ScmObj foo;")
   (c '(declare-cvar foo::int) "extern int foo;")
   (c '(declare-cvar foo::int 10) (test-error))
