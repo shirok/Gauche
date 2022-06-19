@@ -186,6 +186,7 @@
                                               ;  (- (length input-regs) 1) if
                                               ;  closure takes rest args.
                                               ;  (length input-regs) otherwise.
+   (input-optargs :init-value #f)             ; # of optional args.
    (entry :init-value #f)                     ; entry BB
    (blocks :init-value '())                   ; basic blocks
    (clusters :init-value '())                 ; clusters
@@ -471,6 +472,7 @@
     (set! (~ lbenv'input-regs)
           (map (cut make-reg lbb <>) ($lambda-lvars iform)))
     (set! (~ lbenv'input-reqargs) ($lambda-reqargs iform))
+    (set! (~ lbenv'input-optargs) ($lambda-optarg iform))
     (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb lbenv 'tail)
       (push-insn bb `(CLOSE ,reg ,lbenv))
       (pass5b/return bb ctx reg))))
@@ -880,9 +882,12 @@
     (format #t "~70,,,'=a\n" "Clusters ")
     (dolist [benv (reverse (map car benv-alist))]
       (dolist [cluster (~ benv'clusters)]
-        (format #t " CLUSTER ~a  [~a> >~a]\n" (~ cluster'id)
+        (format #t " CLUSTER ~a  [~a> >~a]" (~ cluster'id)
                 (map (cut ~ <> 'id) (~ cluster'upstream))
                 (map (cut ~ <> 'id) (~ cluster'downstream)))
+        (if (memq (~ benv'entry) (~ cluster'blocks) )
+          (format #t "  ; Entry of ~a\n" (benvname benv))
+          (print))
         (format #t "   BBs: ~s\n" (map bb-name (~ cluster'blocks)))
         (format #t "   Entries: ~s\n" (map bb-name (~ cluster'entry-blocks)))
         (format #t "   aregs: ~s\n" (map (cut ~ <> 'name)
