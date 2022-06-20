@@ -310,12 +310,10 @@
    (upstream :init-value '())   ;upstream clustres
    (downstream :init-value '()) ;downstream clusters
    ;; Register classification
-   ;;  XREGS - Regs introduced in other clusters
+   ;;  XREGS - Regs outlive this cluster
    ;;  LREGS - Regs local to this cluster
-   ;;  AREGs - Regs passed as arguments
    (xregs :init-form (set eq-comparator))
    (lregs :init-form (set eq-comparator))
-   (aregs :init-form (set eq-comparator))
    ))
 
 (define (make-cluster benv)
@@ -366,6 +364,7 @@
 (define (pass5b/$LSET iform bb benv ctx)
   (receive (bb val0) (pass5b/rec ($lset-expr iform) bb benv 'normal)
     (let1 r (make-reg bb ($lset-lvar iform))
+      (touch-reg! bb val0)
       (push-insn bb `(MOV ,r ,val0))
       (pass5b/return bb ctx r))))
 
@@ -455,6 +454,7 @@
         (when (memq ($let-type iform) '(rec rec*))
           (mark-reg-boxed! reg))
         (receive (bb val0) (pass5b/rec (car inits) bb benv 'normal)
+          (touch-reg! bb val0)
           (push-insn bb `(MOV ,reg ,val0))
           (loop bb (cdr vars) (cdr inits)))))))
 
@@ -573,6 +573,7 @@
                     (touch-reg! bb reg)
                     (let1 lreg (make-reg bb lvar)
                       (unless (eq? lreg reg)
+                        (touch-reg! bb reg)
                         (push-insn bb `(MOV ,lreg ,reg)))))
                   regs ($lambda-lvars proc))
         (push-insn bb `(JP ,lbb))
@@ -588,6 +589,7 @@
                     (touch-reg! bb reg)
                     (let1 lreg (make-reg bb lvar)
                       (unless (eq? lreg reg)
+                        (touch-reg! bb reg)
                         (push-insn bb `(MOV ,lreg ,reg)))))
                   regs ($lambda-lvars proc))
         (link-bb bb lbb)
@@ -800,7 +802,8 @@
     (classify-cluster-regs! benv c))
   (dolist [cbenv (~ benv'children)]
     (dolist [c (~ cbenv 'clusters)]
-      (classify-cluster-regs! cbenv c))))
+      (classify-cluster-regs! cbenv c)))
+  (adjust-cluster-regs! benv))
 
 (define (link-clusters! upstream downstream)
   (when (and upstream downstream
@@ -818,12 +821,27 @@
   (dolist [reg (~ benv'registers)]
     (when (and (is-a? reg <reg>)
                (any (^b (eq? (~ b'cluster) c)) (~ reg'blocks)))
-      (cond [(memq reg (~ benv'input-regs))
-             (update! (~ c'aregs) (cut set-adjoin! <> reg))]
-            [(every (^b (eq? (~ b'cluster) c)) (~ reg'blocks))
+      (cond [(and (every (^b (eq? (~ b'cluster) c)) (~ reg'blocks))
+                  (not (memq reg (~ benv'input-regs))))
              (update! (~ c'lregs) (cut set-adjoin! <> reg))]
             [else
              (update! (~ c'xregs) (cut set-adjoin! <> reg))]))))
+
+;; Xregs used in the downstream clusters have to be carried over
+;; through the cluster.
+(define (adjust-cluster-regs! benv)
+  (define (propagate! c changed)
+    (fold (^[up-c changed]
+            (let1 xset2 (set-union (~ up-c'xregs) (~ c'xregs))
+              (if (set=? xset2 (~ up-c'xregs))
+                changed                 ; no change for this iteration
+                (begin
+                  (set! (~ up-c'xregs) xset2)
+                  #t))))
+          changed (~ c'upstream)))
+  (let loop ()
+    (when (fold propagate! #f (~ benv'clusters))
+      (loop))))
 
 ;;
 ;; For debugging
@@ -890,8 +908,6 @@
           (print))
         (format #t "   BBs: ~s\n" (map bb-name (~ cluster'blocks)))
         (format #t "   Entries: ~s\n" (map bb-name (~ cluster'entry-blocks)))
-        (format #t "   aregs: ~s\n" (map (cut ~ <> 'name)
-                                         (set->list (~ cluster'aregs))))
         (format #t "   xregs: ~s\n" (map (cut ~ <> 'name)
                                          (set->list (~ cluster'xregs))))
         (format #t "   lregs: ~s\n" (map (cut ~ <> 'name)

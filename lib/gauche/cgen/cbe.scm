@@ -66,33 +66,16 @@
   (define cfn-name (cluster-cfn-name cluster))
   (define env-type (cluster-env-type-name cluster))
   (cgen-decl #"static ScmObj ~|cfn-name|(ScmObj, void**);")
-  (unless (and (set-empty? (~ cluster'xregs))
-               (set-empty? (~ cluster'aregs)))
+  (unless (set-empty? (~ cluster'xregs))
     (cgen-decl #"struct ~|cfn-name|_ENV {")
-    (set-for-each (^r (cgen-decl #"  ScmObj ~(reg-safe-name r);"))
+    (set-for-each (^r (cgen-decl #"  ScmObj ~(R r);"))
                   (~ cluster'xregs))
-    (set-for-each (^r (cgen-decl #"  ScmObj ~(reg-safe-name r);"))
-                  (~ cluster'aregs))
     (cgen-decl "};"))
   (cgen-decl "")
   (cgen-body ""
              #"ScmObj ~|cfn-name|(ScmObj VAL0, void **DATA)"
              #"{")
-  (unless (and (set-empty? (~ cluster'xregs))
-               (set-empty? (~ cluster'aregs)))
-    (cgen-body #"  ~env-type *ENV = (~env-type *)DATA[1];"))
-  (cgen-body (string-concatenate
-              `("  ScmObj "
-                ,@($ intersperse ","
-                     (map (cut reg-cexpr cluster <>)
-                          (set->list (~ cluster'lregs))))
-                ";")))
-  (unless (null? (~ cluster'entry-blocks))
-    (cgen-body #"  switch ((intptr_t)DATA[0]) {")
-    (for-each-with-index
-     (^[i bb] (cgen-body #"    case ~(+ i 1): goto ~(block-label bb);"))
-     (~ cluster'entry-blocks))
-    (cgen-body #"  }"))
+  (cluster-prologue cluster)
   (for-each block->c (reverse (~ cluster'blocks)))
   (cgen-body #"}"))
 
@@ -105,13 +88,12 @@
   (cgen-safe-name-friendly (bb-name block)))
 
 (define (insn->c c insn)
-  (define (R reg) (reg-cexpr c reg))
   (match insn
     [('MOV rd rs) (cgen-body #"  ~(R rd) = ~(R rs);")]
     [('LD r id)   (let1 c-id (cgen-literal id)
                     (cgen-body
                      #"  ~(R r) = /* ~(cgen-safe-comment (~ id'name)) */"
-                     #"  Scm_IdentifierGlobalRef(~(cgen-cexpr c-id), NULL);"))]
+                     #"    Scm_IdentifierGlobalRef(SCM_IDENTIFIER(~(cgen-cexpr c-id)), NULL);"))]
     [('ST r id)   (let1 c-id (cgen-literal id)
                     (cgen-body
                      #"  /* ~(cgen-safe-comment (~ id'name)) */"
@@ -119,11 +101,11 @@
                      #"                        ~(R r),"
                      #"                        NULL);"))]
     [('CLOSE r b) (cgen-body #"  ~(R r) ="
-                             #"  Scm_MakeSubr(~(benv-cfn-name b),"
-                             #"               NULL,"
-                             #"               ~(~ b'input-reqargs),"
-                             #"               ~(~ b'input-optargs),"
-                             #"               SCM_FALSE);")]
+                             #"    Scm_MakeSubr(~(benv-cfn-name b),"
+                             #"                 NULL,"
+                             #"                 ~(~ b'input-reqargs),"
+                             #"                 ~(~ b'input-optargs),"
+                             #"                 SCM_FALSE);")]
     [('BR r b1 b2)(cgen-body #"  if (SCM_FALSEP(~(R r)))")
                   (gen-jump-cstmt c b1)
                   (cgen-body #"  else")
@@ -136,7 +118,9 @@
      (let ([c-mod (cgen-literal (~ id'module))]
            [c-id (cgen-literal id)])
        (cgen-body #"  /* ~(cgen-safe-comment (~ id'name)) */"
-                  #"  Scm_Define(~(cgen-cexpr c-mod), ~(cgen-cexpr c-id), ~(R r));"))]
+                  #"  Scm_Define(SCM_MODULE(~(cgen-cexpr c-mod)),"
+                  #"             SCM_SYMBOL(~(cgen-cexpr c-id)),"
+                  #"             ~(R r));"))]
     ;; Builtin operations
     [('CONS r x y) (builtin-2arg c "Scm_Cons" r x y)]
     [('CAR r x) (builtin-1arg c "Scm_Car" r x)]
@@ -178,18 +162,18 @@
     [('VEC-REF r x y)
      (let ([n (gensym 'n)]
            [v (gensym 'v)])
-       (cgen-body #"  ScmSmallInt ~n = SCM_PC_GET_INDEX(~(reg-cexpr c y));"
-                  #"  ScmVector *~v = SCM_PC_ENSURE_VEC(~(reg-cexpr c x)));"
+       (cgen-body #"  ScmSmallInt ~n = SCM_PC_GET_INDEX(~(R y));"
+                  #"  ScmVector *~v = SCM_PC_ENSURE_VEC(~(R x)));"
                   #"  SCM_PC_BOUND_CHECK(SCM_VECTOR_SIZE(~v), ~n);"
-                  #"  ~(reg-cexpr c r) = SCM_VECTOR_ELEMENT(~v, ~n);"))]
+                  #"  ~(R r) = SCM_VECTOR_ELEMENT(~v, ~n);"))]
     [('VEC-SET r x y z)
      (let ([n (gensym 'n)]
            [v (gensym 'v)])
-       (cgen-body #"  ScmSmallInt ~n = SCM_PC_GET_INDEX(~(reg-cexpr c y));"
-                  #"  ScmVector *~v = SCM_PC_ENSURE_VEC(~(reg-cexpr c x)));"
+       (cgen-body #"  ScmSmallInt ~n = SCM_PC_GET_INDEX(~(R y));"
+                  #"  ScmVector *~v = SCM_PC_ENSURE_VEC(~(R x)));"
                   #"  SCM_PC_BOUND_CHECK(SCM_VECTOR_SIZE(~v), ~n);"
-                  #"  SCM_VECTOR_ELEMENT(~v, ~n) = ~(reg-cexpr c z);"
-                  #"  ~(reg-cexpr c r) = SCM_UNDEFINED;"))]
+                  #"  SCM_VECTOR_ELEMENT(~v, ~n) = ~(R z);"
+                  #"  ~(R r) = SCM_UNDEFINED;"))]
     [('UVEC-REF r x y z) (cgen-body #"  /* WRITEME: UVEC-REF */")]
     [('NUMEQ2 r x y) (builtin-2arg/bool c "SCM_NUMEQ2" r x y)]
     [('NUMLT2 r x y) (builtin-2arg/bool c "SCM_NUMLT2" r x y)]
@@ -214,25 +198,44 @@
     ))
 
 (define (builtin-0arg c v r)
-  (cgen-body #"  ~(reg-cexpr c r) = SCM_OBJ(~|v|);"))
+  (cgen-body #"  ~(R r) = SCM_OBJ(~|v|);"))
 
 (define (builtin-1arg c fn r x)
-  (cgen-body #"  ~(reg-cexpr c r) = ~|fn|(~(reg-cexpr c x));"))
+  (cgen-body #"  ~(R r) = ~|fn|(~(R x));"))
 
 (define (builtin-1arg/bool c fn r x)
-  (cgen-body #"  ~(reg-cexpr c r) = SCM_MAKE_BOOL(~|fn|(~(reg-cexpr c x)));"))
+  (cgen-body #"  ~(R r) = SCM_MAKE_BOOL(~|fn|(~(R x)));"))
 
 (define (builtin-2arg c fn r x y)
-  (cgen-body #"  ~(reg-cexpr c r) = ~|fn|(~(reg-cexpr c x), ~(reg-cexpr c y));"))
+  (cgen-body #"  ~(R r) = ~|fn|(~(R x), ~(R y));"))
 
 (define (builtin-2arg/bool c fn r x y)
-  (cgen-body #"  ~(reg-cexpr c r) = SCM_MAKE_BOOL(~|fn|(~(reg-cexpr c x), ~(reg-cexpr c y)));"))
+  (cgen-body #"  ~(R r) = SCM_MAKE_BOOL(~|fn|(~(R x), ~(R y)));"))
 
 (define (cluster-cfn-name c)
   (cgen-safe-name (x->string (~ c'id))))
 
 (define (cluster-env-type-name c)
   #"struct ~(cluster-cfn-name c)_ENV")
+
+(define (cluster-prologue c)
+  ;; Set up registers
+  (unless (set-empty? (~ c'xregs))
+    (cgen-body #"  ~(cluster-env-type-name c) *ENV = (~(cluster-env-type-name c) *)DATA[1];")
+    (set-for-each
+     (^r (cgen-body #"  ScmObj ~(R r) = ENV->~(R r);"))
+     (~ c'xregs)))
+  (set-for-each
+   (^r (cgen-body #"  ScmObj ~(R r);"))
+   (~ c'lregs))
+  ;; Jump table
+  (unless (null? (~ c'entry-blocks))
+    (cgen-body #"  switch ((intptr_t)DATA[0]) {")
+    (for-each-with-index
+     (^[i bb] (cgen-body #"    case ~(+ i 1): goto ~(block-label bb);"))
+     (~ c'entry-blocks))
+    (cgen-body #"  }"))
+  )
 
 ;; Returns bb's entry index.
 (define (entry-block-index bb)
@@ -241,23 +244,27 @@
     0))
 
 (define (gen-entry benv)
-  (and-let1 entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
-                                (~ benv'clusters))
+  (and-let* ([entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
+                                  (~ benv'clusters))]
+             [entry-cfn (cluster-cfn-name entry-cluster)])
     (cgen-body #"ScmObj ~(benv-cfn-name benv)("
                #"                  ScmObj *SCM_FP,"
                #"                  int SCM_ARGCNT SCM_UNUSED,"
                #"                  void *data_ SCM_UNUSED)"
-               #"{"
-               #"  ~(cluster-env-type-name entry-cluster) *ENV"
-               #"            = SCM_NEW(~(cluster-env-type-name entry-cluster));")
-    (do-ec [: ireg (index i) (~ benv'input-regs)]
-           (cgen-body #"  ENV->~(reg-safe-name ireg) = SCM_FP[~i];"))
-    (cgen-body #"  ScmWord data[2];"
-               #"  data[0] = SCM_WORD(0);"
-               #"  data[1] = SCM_WORD(ENV);"
-               #"  return ~(cluster-cfn-name entry-cluster)(SCM_FALSE, (void**)data);"
-               #"}"
-               "")
+               #"{")
+    (if (set-empty? (~ entry-cluster'xregs))
+      ;; no need to set up env
+      (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, NULL);")
+      ;; set up env
+      (let1 env-type (cluster-env-type-name entry-cluster)
+        (cgen-body #"  ~|env-type| *ENV = SCM_NEW(~|env-type|);")
+        (do-ec [: ireg (index i) (~ benv'input-regs)]
+               (cgen-body #"  ENV->~(R ireg) = SCM_FP[~i];"))
+        (cgen-body #"  ScmWord data[2];"
+                   #"  data[0] = SCM_WORD(0);"
+                   #"  data[1] = SCM_WORD(ENV);"
+                   #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")))
+    (cgen-body "}" "")
     ))
 
 (define (gen-jump-cstmt c dest-bb)
@@ -280,12 +287,12 @@
                #"    ScmWord data[2];"
                #"    data[0] = SCM_WORD(~index);")
     (prepare-env c (~ dest-bb'cluster))
-    (cgen-body #"    data[1] = ENV2;"
-               #"    Scm_VMPushCC(~|cfn|, data, 2);"
+    (cgen-body #"    data[1] = SCM_WORD(ENV2);"
+               #"    Scm_VMPushCC(~|cfn|, (void**)data, 2);"
                #"  }")))
 
 (define (gen-vmcall c proc regs)
-  (cgen-body #"  return Scm_VMApply(~(reg-cexpr c proc), ~(gen-list c regs));"))
+  (cgen-body #"  return Scm_VMApply(~(R proc), ~(gen-list c regs));"))
 
 ;; Generate code that construct env struct for destination cluster (dest-c)
 ;; from the env of current cluster (c).  The C variable name for the new
@@ -294,42 +301,34 @@
   (define env-type-name (cluster-env-type-name dest-c))
   (cgen-body #"    ~env-type-name *ENV2 = SCM_NEW(~env-type-name);")
   (set-for-each
-   (^r (cgen-body #"    ENV2->~(reg-safe-name r) = ~(reg-cexpr c r);"))
-   (~ dest-c'xregs))
-  (set-for-each
-   (^r (cgen-body #"    ENV2->~(reg-safe-name r) = ~(reg-cexpr c r);"))
-   (~ dest-c'aregs)))
+   (^r (cgen-body #"    ENV2->~(R r) = ~(R r);"))
+   (~ dest-c'xregs)))
 
 (define (gen-list c regs)
   (define (rec regs)
     (match regs
       [() '("SCM_NIL")]
-      [(reg . regs) `("Scm_Cons(" ,(reg-cexpr c reg) ", " ,@(rec regs) ")")]))
+      [(reg . regs) `("Scm_Cons(" ,(R reg) ", " ,@(rec regs) ")")]))
   (string-concatenate (rec regs)))
 
 (define (gen-list* c regs)
   (define (rec regs)
     (match regs
-      [(reg) (reg-cexpr c reg)]
-      [(reg . regs) `("Scm_Cons(" ,(reg-cexpr c reg) ", " ,@(rec regs) ")")]))
+      [(reg) (R reg)]
+      [(reg . regs) `("Scm_Cons(" ,(R reg) ", " ,@(rec regs) ")")]))
   (string-concatenate (rec regs)))
 
 (define *constant-literals* (make-hash-table 'eq?)) ;; const -> <literal>
 
-(define (reg-safe-name r)
-  (let1 m (#/^%(\d+)\.(\d+)(?:\.(.*))?/ (x->string (~ r'name)))
-    (format "R~d_~d~a" (m 1) (m 2)
-            (if-let1 name (m 3)
-              #"_~(cgen-safe-name-friendly name)"
-              ""))))
-
-(define (reg-cexpr cluster r)
+;; Register name
+(define (R r)
   (cond
    [(is-a? r <reg>)
-    (let1 name (reg-safe-name r)
-      (if (set-contains? (~ cluster'lregs) r)
-        name
-        #"ENV->~name"))]
+    (let1 m (#/^%(\d+)\.(\d+)(?:\.(.*))?/ (x->string (~ r'name)))
+      (format "R~d_~d~a" (m 1) (m 2)
+              (if-let1 name (m 3)
+                #"_~(cgen-safe-name-friendly name)"
+                "")))]
    [(is-a? r <const>)
     (let1 lit (or (hash-table-get *constant-literals* r #f)
                   (rlet1 lit (cgen-literal (const-value r))
