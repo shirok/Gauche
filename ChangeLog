@@ -1,3 +1,8 @@
+2022-06-19  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvlib.scm.tmpl (@vector-segment): Check arg to avoid
+	  infinite loop. https://github.com/shirok/Gauche/issues/828
+
 2022-06-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-232.scm: Add srfi-232 Flexible curried procedures.

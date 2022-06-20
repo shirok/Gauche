@@ -288,6 +288,9 @@
       (reverse (cons (${t}vector-copy v i) vs))
       (rec (+ i n) len
            (cons (${t}vector-copy v i (+ i n)) vs))))
+  (unless (and (exact-integer? n)
+               (positive? n))
+    (error "positive exact integer required, but got:" n))
   (rec 0 (${t}vector-length v) '()))
 (define (${t}vector= a b . rest) ; can have shortcut of 3 arg case as well
   (and (${t}vector=? a b)
