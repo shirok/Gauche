@@ -74,6 +74,9 @@
             (substring s cur end))))
 
 (define (string-segment s k)
+  (unless (and (exact-integer? k)
+               (positive? k))
+    (error "positive exact integer required, but got:" k))
   (let loop ([r '()] [s s])
     (if (< (string-length s) k)
       (if (equal? s "")
