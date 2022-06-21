@@ -11636,24 +11636,40 @@ Note that @code{(iset<? a b)} does not imply @code{(iset>=? a b)}.
 @defunx iset-union! iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that is a union of the given iset.  Functional version
+@code{iset-union} always returns a fresh iset.  Linear update version
+@code{iset-union!} may reuse @var{iset1} to produce the result.
 @end defun
 
 @defun iset-intersection iset1 iset2 iset3 @dots{}
 @defunx iset-intersection! iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that is an intersction of the given iset.  Functional version
+@code{iset-intersection} always returns a fresh iset.  Linear update version
+@code{iset-intersection!} may reuse @var{iset1} to produce the result.
 @end defun
 
 @defun iset-difference iset1 iset2 iset3 @dots{}
 @defunx iset-difference! iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that has elements in @var{iset1} but not
+in @var{iset2} @var{iset3} @dots{}.
+Functional version
+@code{iset-difference} always returns a fresh iset.  Linear update version
+@code{iset-difference!} may reuse @var{iset1} to produce the result.
 @end defun
 
-@defun iset-xor iset1 iset2 iset3 @dots{}
-@defunx iset-xor! iset1 iset2 iset3 @dots{}
+@defun iset-xor iset1 iset2
+@defunx iset-xor! iset1 iset2
 [SRFI-217]
 @c MOD srfi-217
+Returns an iset that has elements, each of which is either in @var{iset1}
+or @var{iset2} but not in both.
+Functional version
+@code{iset-xor} always returns a fresh iset.  Linear update version
+@code{iset-xor!} may reuse @var{iset1} to produce the result.
 @end defun
 
 @subheading Intervals and ranges
@@ -11664,6 +11680,25 @@ Note that @code{(iset<? a b)} does not imply @code{(iset>=? a b)}.
 @defunx iset-closed-open-interval iset low high
 [SRFI-217]
 @c MOD srfi-217
+Extract elements in @var{iset} that are in the range
+specified by @var{low} and @var{high}.
+The `open' and `close' in the name indicates whether
+the boundary is included; @code{iset-open-interval} doesn't include
+both boundary, @code{iset-close-interval} includes both
+boundary, @code{iset-open-closed-interval} includes @var{high} but
+not @var{low} @code{set-closed-open-interval} inclues @var{low}
+but not @var{high}.
+
+@example
+(iset->list (iset-open-interval (iset 2 3 5 7 11) 2 7))
+  @result{} (3 5)
+(iset->list (iset-closed-interval (iset 2 3 5 7 11) 2 7))
+  @result{} (2 3 5 7)
+(iset->list (iset-open-closed-interval (iset 2 3 5 7 11) 2 7))
+  @result{} (3 5 7)
+(iset->list (iset-closed-open-interval (iset 2 3 5 7 11) 2 7))
+  @result{} (2 3 5)
+@end example
 @end defun
 
 @defun isubset= iset k
