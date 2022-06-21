@@ -189,6 +189,12 @@
        (string->number "#x1_2345_6789"))
 (test* "Gauche extended format" #x-123456789
        (string->number "#x-123_456_789"))
+(test* "Gauche extended format (consecutive underscores not allowed)" #f
+       (string->number "#x-123_456__789"))
+(test* "Gauche extended format (can't start with a underscore)" #f
+       (string->number "#x-_123_456_789"))
+(test* "Gauche extended format (can't end with a underscore)" #f
+       (string->number "#x-123_456_789_"))
 (test* "Gauche extended format" #f
        (string->number "123_456_789"))
 (test* "Gauche extended format not allowed in r7rs strict mode"

@@ -4271,6 +4271,7 @@ static ScmObj read_uint(const char **strp, int *lenp,
     int len = *lenp;
     int radix = ctx->radix;
     int digits = 0, diglimit = longdigs[radix-SCM_RADIX_MIN];
+    int underscore_read = FALSE;
     u_long limit = longlimit[radix-SCM_RADIX_MIN], bdig = bigdig[radix-SCM_RADIX_MIN];
     u_long value_int = 0;
     ScmBignum *value_big = NULL;
@@ -4299,8 +4300,15 @@ static ScmObj read_uint(const char **strp, int *lenp,
         if (ctx->explicit && !ctx->strict && c == '_') {
             /* Gauche extension - allow '_' in digits for readability
                when number is expliticly prefixed. */
+            if (underscore_read
+                || (!digread && digits == 0)) {
+                /* Don't allow underscore at the beginning */
+                return SCM_FALSE;
+            }
+            underscore_read = TRUE;
             continue;
         }
+        underscore_read = FALSE;
         if (ctx->padread) {
             if (c == '#') digval = 0;
             else break;
@@ -4334,6 +4342,10 @@ static ScmObj read_uint(const char **strp, int *lenp,
     }
     *strp = str-1;
     *lenp = len+1;
+    if (underscore_read) {
+        /* integer literal can't end with '_' */
+        return SCM_FALSE;
+    }
 
     if (value_big == NULL) return Scm_MakeInteger(value_int);
     if (digits > 0) {
@@ -4493,6 +4505,7 @@ static ScmObj read_real(const char **strp, int *lenp,
     /* Read integral part */
     if (**strp != '.') {
         intpart = read_uint(strp, lenp, ctx, SCM_FALSE);
+        if (SCM_FALSEP(intpart)) return SCM_FALSE;
         if ((*lenp) <= 0) {
             if (minusp) intpart = Scm_Negate(intpart);
             if (ctx->exactness == INEXACT) {
@@ -4544,6 +4557,7 @@ static ScmObj read_real(const char **strp, int *lenp,
         (*strp)++; (*lenp)--;
         int lensave = *lenp;
         fraction = read_uint(strp, lenp, ctx, intpart);
+        if (SCM_FALSEP(fraction)) return SCM_FALSE;
         fracdigs = lensave - *lenp;
     } else {
         fraction = intpart;

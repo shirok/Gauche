@@ -1,3 +1,9 @@
+2022-06-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_uint): More strict check of '_' in numeric
+	  literals: No consecutive underscores, no underscore at the beginning
+	  or end.  Consistent with srfi-169.
+
 2022-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvlib.scm.tmpl (@vector-segment): Check arg to avoid
