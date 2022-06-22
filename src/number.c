@@ -4258,7 +4258,7 @@ static u_long bigdig[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
 
 static ScmObj numread_error(const char *msg, struct numread_packet *ctx);
 
-/* Returns either small integer or bignum.
+/* Returns either small integer, bignum, or #f.
    initval may be a Scheme integer that will be 'concatenated' before
    the integer to be read; it is used to read floating-point number.
    Note that value_big may keep denormalized bignum. */
@@ -4294,21 +4294,22 @@ static ScmObj read_uint(const char **strp, int *lenp,
         digread = TRUE;
     }
 
-    while (len--) {
+    for (; len > 0; str++, len--) {
         int digval = -1;
-        char c = tolower(*str++);
-        if (ctx->explicit && !ctx->strict && c == '_') {
-            /* Gauche extension - allow '_' in digits for readability
+        char c = tolower(*str);
+        if (c == '_') {
+            if (ctx->strict || str == *strp) return SCM_FALSE;
+            /* srfi-169 - allow '_' in digits for readability
                when number is expliticly prefixed. */
-            if (underscore_read
-                || (!digread && digits == 0)) {
-                /* Don't allow underscore at the beginning */
+            if (underscore_read || (!digread && digits == 0)) {
+                /* Don't allow underscore at the beginning, or
+                   consecutive underscores */
                 return SCM_FALSE;
             }
             underscore_read = TRUE;
             continue;
         }
-        underscore_read = FALSE;
+
         if (ctx->padread) {
             if (c == '#') digval = 0;
             else break;
@@ -4328,6 +4329,7 @@ static ScmObj read_uint(const char **strp, int *lenp,
             }
         }
         if (digval < 0) break;
+        underscore_read = FALSE;
         value_int = value_int * radix + digval;
         digits++;
         if (value_big == NULL) {
@@ -4340,8 +4342,8 @@ static ScmObj read_uint(const char **strp, int *lenp,
             value_int = digits = 0;
         }
     }
-    *strp = str-1;
-    *lenp = len+1;
+    if (str == *strp && SCM_FALSEP(initval)) return SCM_FALSE;
+    *strp = str; *lenp = len;
     if (underscore_read) {
         /* integer literal can't end with '_' */
         return SCM_FALSE;
@@ -4555,10 +4557,14 @@ static ScmObj read_real(const char **strp, int *lenp,
             return numread_error("(only 10-based fraction is supported)", ctx);
         }
         (*strp)++; (*lenp)--;
-        int lensave = *lenp;
+        const char *fracp = *strp;
         fraction = read_uint(strp, lenp, ctx, intpart);
         if (SCM_FALSEP(fraction)) return SCM_FALSE;
-        fracdigs = lensave - *lenp;
+        /* Count fraction digits.  we can't simply do *strp - fracp,
+           for fraction part may contain '_' (srfi-169). */
+        for (; fracp < *strp; fracp++) {
+            if (*fracp != '_') fracdigs++;
+        }
     } else {
         fraction = intpart;
     }
@@ -4579,11 +4585,18 @@ static ScmObj read_real(const char **strp, int *lenp,
             (*strp)++;
             if (--(*lenp) <= 0) return SCM_FALSE;
         }
-        while (*lenp > 0) {
+        int underscore = FALSE;
+        const char *str = *strp;
+        for (; *lenp > 0; (*strp)++, (*lenp)--) {
             int c = **strp;
+            if (c == '_') {
+                if (underscore || str == *strp || *lenp == 1) return SCM_FALSE;
+                underscore = TRUE;
+                continue;
+            }
             if (!isdigit(c)) break;
-            (*strp)++, (*lenp)--;
-            if (isdigit(c) && !exp_overflow) {
+            underscore = FALSE;
+            if (!exp_overflow) {
                 exponent = exponent * 10 + (c - '0');
                 /* Check obviously wrong exponent range.  More subtle check
                    will be done later. */

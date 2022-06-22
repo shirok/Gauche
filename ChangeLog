@@ -1,8 +1,12 @@
 2022-06-21  Shiro Kawai  <shiro@acm.org>
 
-	* src/number.c (read_uint): More strict check of '_' in numeric
-	  literals: No consecutive underscores, no underscore at the beginning
-	  or end.  Consistent with srfi-169.
+	* src/number.c (read_number): Support srfi-169, underscores in numbers.
+	  Technically this introduces incompatibility:
+	  - Tokens such as 1_2_3 is now read as a number 123, instead of
+	    a symbol.
+	  - Underscores in prefexed numeric literals must obey srfi-169
+	    instead of simply being ignored.  #x_dead_beef_ was ok before,
+	    but no longer.
 
 2022-06-19  Shiro Kawai  <shiro@acm.org>
 

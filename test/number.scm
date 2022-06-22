@@ -185,19 +185,74 @@
 (test* "base-35 reader" '(#t #t) (radix-tester 35))
 (test* "base-36 reader" '(#t #t) (radix-tester 36))
 
-(test* "Gauche extended format" #x123456789
-       (string->number "#x1_2345_6789"))
-(test* "Gauche extended format" #x-123456789
-       (string->number "#x-123_456_789"))
-(test* "Gauche extended format (consecutive underscores not allowed)" #f
-       (string->number "#x-123_456__789"))
-(test* "Gauche extended format (can't start with a underscore)" #f
-       (string->number "#x-_123_456_789"))
-(test* "Gauche extended format (can't end with a underscore)" #f
-       (string->number "#x-123_456_789_"))
-(test* "Gauche extended format" #f
-       (string->number "123_456_789"))
-(test* "Gauche extended format not allowed in r7rs strict mode"
+;; srfi-169 underscore in numbers
+(let ([data '(("0123"     . 123)
+              ("0_1_2_3"  . 123)
+              ("0_123"    . 123)
+              ("01_23"    . 123)
+              ("012_3"    . 123)
+              ("+0123"    . 123)
+              ("+0_123"   . 123)
+              ("-0123"    . -123)
+              ("-0_123"   . -123)
+              ("_0123"    . #f)
+              ("0123_"    . #f)
+              ("0123__"   . #f)
+              ("01__23"   . #f)
+              ("0_1__2___3" . #f)
+              ("+_0123"   . #f)
+              ("+0123_"   . #f)
+              ("-_0123"   . #f)
+              ("-0123_"   . #f)
+
+              ("1_2_3/4_5_6_7"  . 123/4567)
+              ("12_34/5_678"    . 1234/5678)
+              ("1_2_3/_4_5_6_7" . #f)
+              ("_12_34/5_678"   . #f)
+
+              ("0_1_23.4_5_6"   . 123.456)
+              ("1_2_3.5e6"      . 123.5e6)
+              ("1_2e1_2"        . 12e12)
+              ("_0123.456"      . #f)
+              ("0123_.456"      . #f)
+              ("0123._456"      . #f)
+              ("0123.456_"      . #f)
+              ("123_.5e6"       . #f)
+              ("123._5e6"       . #f)
+              ("123.5_e6"       . #f)
+              ("123.5e_6"       . #f)
+              ("123.5e6_"       . #f)
+              ("12_e12"         . #f)
+              ("12e_12"         . #f)
+              ("12e12_"         . #f)
+              ("12e1__2"        . #f)
+
+              ("-12_3.0_00_00-12_34.56_78i"  . -123.0-1234.5678i)
+              ("-12_3.0_00_00@-12_34.56_78"  . -123.0@-1234.5678)
+              ("-12_3.0_00_00-12_34.56_78_i" . #f)
+              ("-12_3.0_00_00-12_34.56_78i_" . #f)
+              ("-12_3.0_00_00_@-12_34.56_78" . #f)
+              ("-12_3.0_00_00@_-12_34.56_78" . #f)
+
+              ("#b10_10_10"     . #b101010)
+              ("#o23_45_67"     . #o234567)
+              ("#d45_67_89"     . #d456789)
+              ("#xAB_CD_EF"     . #xabcdef)
+              ("#x789_9B_C9_EF" . #x7899bc9ef)
+              ("#x-2_0"         . #x-20)
+              ("#o+2_345_6"     . #o+23456)
+              ("#x-_2"          . #f)
+              ("_#x-_2"         . #f)
+              ("#d_45_67_89"    . #f)
+              ("#e_45/67_89"    . #f)
+              ("#i#o_1234"      . #f)
+              ("#i_#o_1234"     . #f)
+              ("#e#x1234_"      . #f))])
+  (dolist [d data]
+    (test* (format "srfi-169 ~s" d) (cdr d)
+           (string->number (car d)))))
+
+(test* "srfi-169 not allowed in r7rs strict mode"
        (test-error <read-error> #/bad numeric format/)
        (read-from-string "#!r7rs #x1234_5678"))
 
