@@ -1239,10 +1239,10 @@ srfi-169
 ()
 
 Underscores in numbers
-Supported by the built-in reader.
+Supported by the built-in reader.  @xref{Lexical structure}.
 
 数値中のアンダースコア
-組み込みのリーダーでサポートされています。
+組み込みのリーダーでサポートされています。@ref{Lexical structure}参照。
 
 
 srfi-170, srfi-170

@@ -8124,6 +8124,26 @@ R7RSでは@code{char-title-case?}以外の手続きは
 @c COMMON
 @end defun
 
+@defun char-word-constituent? char
+@c EN
+Returns @code{#t} iff @var{char} is a character R7RS allows to be
+in an identifier name without escaping: ASCII alphanumeric characters,
+extended alphabetic characters (@code{! $ % & * + - . / : < = > ? @ ^ _ ~}),
+any characters whose category is
+Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, or Co,
+Zero width non-joiner (U+200C), and Zero width joiner (U+200D).
+@c JP
+@var{char}がR7RSで識別子にエスケープなしで使える文字ならば@code{#t}を、
+そうでなければ@code{#f}を返します。該当する文字は、ASCIIのアルファベットと数字、
+拡張アルファベット@code{! $ % & * + - . / : < = > ? @ ^ _ ~}、
+文字カテゴリが
+Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pd, Pc, Po, Sc, Sm, Sk, So, Coの
+いずれかであるもの、および
+Zero width non-joiner (U+200C)とZero width joiner (U+200D)です。
+@c COMMON
+@end defun
+
+
 @defun char-general-category char
 [R6RS]
 @c EN

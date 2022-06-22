@@ -26107,6 +26107,12 @@ Returns the current cursor position of @var{gbuf}, in a nonnegative
 exact integer.
 @end defun
 
+@defun gap-buffer-pos-at-end? gbuf pos
+@c MOD text.gap-buffer
+Returns @code{#t} if @var{pos} is at the end of @var{gbuf}, @code{#f}
+otherwise.
+@end defun
+
 @defun gap-buffer-capacity gbuf
 @c MOD text.gap-buffer
 Returns the currently allocated storage size of @var{gbuf}.
