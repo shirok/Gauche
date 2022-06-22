@@ -1235,6 +1235,16 @@ Supported by the module @code{srfi-162}.  @xref{Comparator sublibrary}.
 モジュール@code{srfi-162}でサポートされます。@ref{Comparator sublibrary}参照。
 
 
+srfi-169
+()
+
+Underscores in numbers
+Supported by the built-in reader.
+
+数値中のアンダースコア
+組み込みのリーダーでサポートされています。
+
+
 srfi-170, srfi-170
 ()
 

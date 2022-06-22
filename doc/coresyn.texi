@@ -145,11 +145,11 @@ the positive infinity, the negative infinity, and NaN,
 which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
 respectively.  (@code{-nan.0} is also read as NaN.)
 
-As an extension of Gauche, a character @code{_} can be inserted
-in or around a sequence of digits in number literals, as far as
-the literal is explicitly prefixed (@code{#e}, @code{#x}, etc).
-Those @code{_}'s are just ignored.
-It is to improve readability, e.g. @code{#b1100_1010_1111_1110}.
+Gauche supports srfi-169 (underscores in numbers) notation; you can
+insert a character @code{_} between digits in numeric literals
+to improve readability, e.g. @code{#b1100_1010_1111_1110}.
+A valid underscore must be surrounded by digits; @code{1_2_3} is ok,
+but @code{_123}, @code{123_}, and @code{12__3} are not.
 
 Gauche also adopts Common-Lisp style radix prefixed numeric literals,
 e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
@@ -184,9 +184,12 @@ gosh> 2@@-0.5pi
 それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
 表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
 
-Gaucheの拡張機能として、プレフィクス(@code{#e}, @code{#x}等)つき数値リテラル中の
-数字の中に@code{_}を自由に挿入することができます。@code{_}は単に無視されます。
-桁を適切に区切って読みやすくするのに便利です(例: @code{#b1100_1010_1111_1110})。
+Gaucheはまた、srfi-169 (数値中のアンダースコア)構文をサポートしています。
+読みやすくするために、数値中に@code{_}を挿入することができます
+(例: @code{#b1100_1010_1111_1110})。
+ただし、各アンダースコアは数字に囲まれていなければなりません。
+@code{1_2_3}はokですが、@code{_123}、@code{123_}、@code{12__3}は
+有効な数値リテラルではありません。
 
 Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
 例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
