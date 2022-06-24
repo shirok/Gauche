@@ -1932,11 +1932,35 @@ Cコード断片を得ることができます。下の@code{cgen-cexpr}のエ�
 
 @deffn {Generic Function} cgen-cexpr cgen-literal
 @c MOD gauche.cgen
+@c EN
 Returns a C code expression fragment of type @code{ScmObj},
 which represents the Scheme literal value.
+@c JP
+@var{cgen-literal}が表すSchemeリテラル値を得るCコード片を返します。
+Cでの型は@code{ScmObj}になります。
+@c COMMON
 
+@c EN
+If the Scheme object is a immediate one such as boolean or fixnum,
+the C code is a immediate code to return the value, e.g.
+@code{SCM_FALSE} or @code{SCM_MAKE_INT(1234)}.  If the Scheme object
+requires allocation, @code{cgen-literal} allocates memory and
+initializes it, and @code{cgen-cexpr} returns a pointer to that object.
+@c JP
+Schemeオブジェクトが真偽値やfixnumのような単純な即値オブジェクトの場合は、
+@code{SCM_FALSE}や@code{SCM_MAKE_INT(1234)}といったその値を生成する式が
+返されます。Schemeオブジェクトがメモリ上に置かれなければならない場合は、
+@code{cgen-literal}は必要なメモリアロケーションと初期化のコードを生成し、
+@code{cgen-cexpr}はそのオブジェクトへのポインタを返す式を返します。
+@c COMMON
+
+@c EN
 The following example creates a C function @code{printabc} that prints
 the literal value @code{(a b c)}, created by @code{cgen-literal}.
+@c JP
+次の例では、@code{cgen-literal}で作られたリテラル値@code{(a b c)}を
+表示するC関数@code{printabc}を生成しています。
+@c COMMON
 
 @example
 (define *unit* (make <cgen-unit> :name "foo"))
@@ -1948,10 +1972,15 @@ the literal value @code{(a b c)}, created by @code{cgen-literal}.
 (cgen-emit-c *unit*)
 @end example
 
+@c EN
 If you examine the generated file @file{foo.c}, you'll get a
 general idea of how it is handled.
+@c JP
+作られた@file{foo.c}を見ると、どのようにリテラル値が扱われているかわかるでしょう。
+@c COMMON
 @end deffn
 
+@c EN
 One advantage of @code{cgen-literal} is that it tries to share
 the same literal whenever possible.  If you call
 @code{(cgen-literal '(a b c))} twice in the same cgen unit,
@@ -1961,13 +1990,38 @@ of the original list @code{(a b c)}.  So you can just use
 @code{cgen-literal} whenever you need to have Scheme literal
 values, without worrying about generating excessive amount of
 duplicated code.
+@c JP
+@code{cgen-literal}を使うひとつのメリットは、共通のリテラルが共有されることです。
+ひとつのunitの中で@code{(cgen-literal '(a b c))}を2度呼ぶと、
+同じ実体が参照されます。さらに@code{(cgen-literal '(b c))}を呼ぶと、
+そのリテラルは@code{(a b c)}のリテラルの末尾部分を共有します。
+従って、リテラルが重複することを心配せずに、必要になった時に@code{cgen-literal}を
+呼ぶことができます。
+@c COMMON
 
+@c EN
+(Note that the literals registered with @code{cgen-literal} must
+be treated as immutable, just as in the Scheme world.)
+@c JP
+(@code{cgen-literal}で登録されたリテラルは変更不可なものとして扱ってください。
+Scheme界でリテラルが変更不可なのと同じです)
+@c COMMON
+
+@c EN
 Certain Scheme objects cannot be generated as a literal; for example,
 an opened port can't, since it carries lots of runtime information.
+@c JP
+Schemeオブジェクトの中にはリテラルにできないものもあります。
+例えばオープンされているポートは、実行時特有の情報を含むためリテラルにできません。
+@c COMMON
 
-(There's a machinery to allow programmers to extend the cgen-literal
+@c EN
+(There's a machinery to allow programmers to extend the @code{cgen-literal}
 behavior for new types.  The API isn't fixed yet, though.)
-
+@c JP
+(プログラマが独自の型のために@code{cgen-literal}を拡張できる仕組みもありますが、
+APIがまだ固まっていません。)
+@c COMMON
 
 @node Conversions between Scheme and C, C in S expression, Generating Scheme literals, Generating C code
 @subsection Conversions between Scheme and C
