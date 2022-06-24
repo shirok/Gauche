@@ -95,8 +95,6 @@ typedef struct ScmMbedTLSRec {
 /*
  * 'system ca-bundle support
  */
-#include "load_system_cert.c"
-
 #ifdef HAVE_WINCRYPT_H
 static int mem_loader(ScmTLS *t, BYTE *pbCertEncoded, DWORD cbCertEncoded)
 {
@@ -107,7 +105,7 @@ static int mem_loader(ScmTLS *t, BYTE *pbCertEncoded, DWORD cbCertEncoded)
 
 static ScmObj load_system_cert(ScmMbedTLS *t)
 {
-    return system_cert_loader((ScmTLS*)t, mem_loader);
+    return Scm_SystemCertLoader((ScmTLS*)t, mem_loader);
 }
 #else
 static int file_loader(ScmTLS *t, const char *path)
@@ -116,7 +114,7 @@ static int file_loader(ScmTLS *t, const char *path)
 }
 
 static ScmObj load_system_cert(ScmMbedTLS *t SCM_UNUSED) {
-    return system_cert_loader((ScmTLS*)t, file_loader);
+    return Scm_SystemCertLoader((ScmTLS*)t, file_loader);
 }
 #endif
 
