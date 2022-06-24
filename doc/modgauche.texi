@@ -7095,26 +7095,26 @@ The key comparator is returned from @code{dict-comparator}
 on the stacked map.
 @end defun
 
-@deffn {Method} staked-map-stack (smap <stacked-map>) (dic <dictionary>)
+@deffn {Method} stacked-map-stack (smap <stacked-map>) (dic <dictionary>)
 Creates a new stacked map, adding @var{dic} on top of the existing
 stacked map @var{smap}.  The key comparator is inherited from
 @var{smap}.
 @end deffn
 
-@deffn {Method} staked-map-push! (smap <stacked-map>) (dic <dictionary>)
+@deffn {Method} stacked-map-push! (smap <stacked-map>) (dic <dictionary>)
 Adds @var{dic} on top of the dictionaries @var{smap} holds.
 @end deffn
 
-@deffn {Method} staked-map-pop! (smap <stacked-map>)
+@deffn {Method} stacked-map-pop! (smap <stacked-map>)
 Remove the topmost dictionary @var{smap} holds.  An error is signaled
 if you attempt to pop from an @var{smap} that has no dictionaries.
 @end deffn
 
-@deffn {Method} staked-map-depth (smap <stacked-map>)
+@deffn {Method} stacked-map-depth (smap <stacked-map>)
 Returns a number of dictionaries @var{smap} has.
 @end deffn
 
-@deffn {Method} staked-map-entry-update! (smap <stacked-map>) key proc :optional fallback
+@deffn {Method} stacked-map-entry-update! (smap <stacked-map>) key proc :optional fallback
 Run @code{(dict-update! d @var{key} @var{proc} @var{fallback})} on the
 first dictionary @code{d} that has the given key.
 
@@ -7125,7 +7125,7 @@ then insert the result to the topmost dictionary, while the original entry
 remains intact.
 @end deffn
 
-@deffn {Method} staked-map-entry-delete! (smap <stacked-map>) key
+@deffn {Method} stacked-map-entry-delete! (smap <stacked-map>) key
 Deletes the first entry with @var{key}.  If there's another entry
 with @var{key} in a lower dictionary, it will become visible.
 
