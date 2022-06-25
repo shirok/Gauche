@@ -1,6 +1,8 @@
 /*
  * 'system' certificate loader.  This is included from both tls.c and
  * tls-mbed.c.
+ * We can't consolidate it, for tls-mbed.c may be compiled into a separate
+ * DLL, and it is cumbersome on Windows to do cross-DLL reference.
  */
 
 #ifdef HAVE_WINCRYPT_H
