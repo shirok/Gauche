@@ -11130,7 +11130,7 @@ symbols, @code{_} and @code{...}, respectively.
 
 @c EN
 Each @var{step} is @code{(@var{datum} @dots{})}, where each @var{datum}
-must be either an expression,  placeholder symbol, the ellipsis symbol.
+must be either an expression,  placeholder symbol, or the ellipsis symbol.
 The ellipsis symbol must appear in the last position, if any,
 and must immediately follow the placeholder symbol.
 @c JP
