@@ -149,15 +149,9 @@ extern ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
 extern ScmObj Scm_TLSSocket(ScmTLS *t); /* DEPRECATED */
 
-
 extern int    Scm_TLSSystemCABundleAvailable(void);
-#ifdef HAVE_WINCRYPT_H
-ScmObj Scm_SystemCertLoader(ScmTLS *t,
-                            int (*mem_loader)(ScmTLS*, BYTE*, DWORD));
-#else
-ScmObj Scm_SystemCertLoader(ScmTLS *t,
-                            int (*file_loader)(ScmTLS*, const char *));
-#endif
+
+
 
 /*
    KZ: presumably due to block sizes imposed by the crypto algorithms
