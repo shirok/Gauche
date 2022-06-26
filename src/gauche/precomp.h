@@ -83,4 +83,4 @@
             Scm_Error("index out of range: %ld", (n));  \
     } whlie (0)
 
-#endif /* GAUCHE_REGEXP_H */
+#endif /* GAUCHE_PRECOMP_H */
