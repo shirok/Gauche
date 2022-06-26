@@ -41,16 +41,22 @@
   (use srfi-13)
   (use srfi-42)
   (use util.match)
+  (use file.util)
   (use text.tr)
-  (export compile-b->c))
+  (export compile->c))
 (select-module gauche.cgen.cbe)
 
-(define (compile-b->c toplevel-benv)
-  (parameterize ([cgen-current-unit (make <cgen-unit> :name "t")])
+(define (compile->c source.scm)
+  (define (compile-toplevel form)
+    (benv->c (compile-b form)))
+  (parameterize ([cgen-current-unit (make <cgen-unit>
+                                      :name (path-sans-extension source.scm))])
     (cgen-decl "#include <gauche.h>"
                "#include <gauche/precomp.h>"
                "")
-    (benv->c toplevel-benv)
+    (with-input-from-file source.scm
+      (^[]
+        (generator-for-each compile-toplevel read)))
     (cgen-emit-c (cgen-current-unit))))
 
 (define (benv->c benv)
@@ -175,11 +181,11 @@
                   #"  SCM_VECTOR_ELEMENT(~v, ~n) = ~(R z);"
                   #"  ~(R r) = SCM_UNDEFINED;"))]
     [('UVEC-REF r x y z) (cgen-body #"  /* WRITEME: UVEC-REF */")]
-    [('NUMEQ2 r x y) (builtin-2arg/bool c "SCM_NUMEQ2" r x y)]
-    [('NUMLT2 r x y) (builtin-2arg/bool c "SCM_NUMLT2" r x y)]
-    [('NUMLE2 r x y) (builtin-2arg/bool c "SCM_NUMLE2" r x y)]
-    [('NUMGT2 r x y) (builtin-2arg/bool c "SCM_NUMGT2" r x y)]
-    [('NUMGE2 r x y) (builtin-2arg/bool c "SCM_NUMGE2" r x y)]
+    [('NUMEQ2 r x y) (builtin-2arg/bool c "SCM_PC_NUMEQ2" r x y)]
+    [('NUMLT2 r x y) (builtin-2arg/bool c "SCM_PC_NUMLT2" r x y)]
+    [('NUMLE2 r x y) (builtin-2arg/bool c "SCM_PC_NUMLE2" r x y)]
+    [('NUMGT2 r x y) (builtin-2arg/bool c "SCM_PC_NUMGT2" r x y)]
+    [('NUMGE2 r x y) (builtin-2arg/bool c "SCM_PC_NUMGE2" r x y)]
     [('NUMADD2 r x y) (builtin-2arg c "Scm_Add" r x y)]
     [('NUMSUB2 r x y) (builtin-2arg c "Scm_Sub" r x y)]
     [('NUMMUL2 r x y) (builtin-2arg c "Scm_Mul" r x y)]
