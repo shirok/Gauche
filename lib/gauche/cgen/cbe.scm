@@ -47,8 +47,6 @@
 (select-module gauche.cgen.cbe)
 
 (define (compile->c source.scm)
-  (define (compile-toplevel form)
-    (benv->c (compile-b form)))
   (parameterize ([cgen-current-unit (make <cgen-unit>
                                       :name (path-sans-extension source.scm))])
     (cgen-decl "#include <gauche.h>"
@@ -59,7 +57,11 @@
         (generator-for-each compile-toplevel read)))
     (cgen-emit-c (cgen-current-unit))))
 
-(define (benv->c benv)
+(define (compile-toplevel form)
+  (let1 toplevel-cfn (benv->c (compile-b form))
+    (cgen-init #"  ~|toplevel-cfn|(NULL, 0, NULL);")))
+
+(define (benv->c benv)                  ;returns benv's entry cfn name
   (for-each benv->c (~ benv'children))
   (for-each cluster->c (~ benv'clusters))
   (gen-entry benv))
@@ -113,19 +115,19 @@
                              #"                 ~(~ b'input-optargs),"
                              #"                 SCM_FALSE);")]
     [('BR r b1 b2)(cgen-body #"  if (SCM_FALSEP(~(R r)))")
-                  (gen-jump-cstmt c b1)
+                  (gen-jump-cstmt c b2)
                   (cgen-body #"  else")
-                  (gen-jump-cstmt c b2)]
+                  (gen-jump-cstmt c b1)]
     [('JP b)      (gen-jump-cstmt c b)]
     [('CONT b)    (gen-cont-cstmt c b)]
     [('CALL bb proc r ...) (gen-vmcall c proc r)]
     [('RET r . rs)(cgen-body #"  return ~(R r);")]
     [('DEF id flags r)
      (let ([c-mod (cgen-literal (~ id'module))]
-           [c-id (cgen-literal id)])
-       (cgen-body #"  /* ~(cgen-safe-comment (~ id'name)) */"
+           [c-name (cgen-literal (identifier->symbol id))])
+       (cgen-body #"  /* ~(cgen-safe-comment c-name) */"
                   #"  Scm_Define(SCM_MODULE(~(cgen-cexpr c-mod)),"
-                  #"             SCM_SYMBOL(~(cgen-cexpr c-id)),"
+                  #"             SCM_SYMBOL(~(cgen-cexpr c-name)),"
                   #"             ~(R r));"))]
     ;; Builtin operations
     [('CONS r x y) (builtin-2arg c "Scm_Cons" r x y)]
@@ -181,11 +183,11 @@
                   #"  SCM_VECTOR_ELEMENT(~v, ~n) = ~(R z);"
                   #"  ~(R r) = SCM_UNDEFINED;"))]
     [('UVEC-REF r x y z) (cgen-body #"  /* WRITEME: UVEC-REF */")]
-    [('NUMEQ2 r x y) (builtin-2arg/bool c "SCM_PC_NUMEQ2" r x y)]
-    [('NUMLT2 r x y) (builtin-2arg/bool c "SCM_PC_NUMLT2" r x y)]
-    [('NUMLE2 r x y) (builtin-2arg/bool c "SCM_PC_NUMLE2" r x y)]
-    [('NUMGT2 r x y) (builtin-2arg/bool c "SCM_PC_NUMGT2" r x y)]
-    [('NUMGE2 r x y) (builtin-2arg/bool c "SCM_PC_NUMGE2" r x y)]
+    [('NUMEQ2 r x y) (builtin-2arg c "SCM_PC_NUMEQ2" r x y)]
+    [('NUMLT2 r x y) (builtin-2arg c "SCM_PC_NUMLT2" r x y)]
+    [('NUMLE2 r x y) (builtin-2arg c "SCM_PC_NUMLE2" r x y)]
+    [('NUMGT2 r x y) (builtin-2arg c "SCM_PC_NUMGT2" r x y)]
+    [('NUMGE2 r x y) (builtin-2arg c "SCM_PC_NUMGE2" r x y)]
     [('NUMADD2 r x y) (builtin-2arg c "Scm_Add" r x y)]
     [('NUMSUB2 r x y) (builtin-2arg c "Scm_Sub" r x y)]
     [('NUMMUL2 r x y) (builtin-2arg c "Scm_Mul" r x y)]
@@ -249,7 +251,7 @@
     (+ i 1)
     0))
 
-(define (gen-entry benv)
+(define (gen-entry benv)                ;returns cfn name
   (and-let* ([entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
                                   (~ benv'clusters))]
              [entry-cfn (cluster-cfn-name entry-cluster)])
@@ -260,7 +262,9 @@
                #"{")
     (if (set-empty? (~ entry-cluster'xregs))
       ;; no need to set up env
-      (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, NULL);")
+      (cgen-body #"  ScmWord data[1];"
+                 #"  data[0] = SCM_WORD(0);"
+                 #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")
       ;; set up env
       (let1 env-type (cluster-env-type-name entry-cluster)
         (cgen-body #"  ~|env-type| *ENV = SCM_NEW(~|env-type|);")
@@ -271,7 +275,7 @@
                    #"  data[1] = SCM_WORD(ENV);"
                    #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")))
     (cgen-body "}" "")
-    ))
+    (benv-cfn-name benv)))
 
 (define (gen-jump-cstmt c dest-bb)
   (if (eq? c (~ dest-bb'cluster))
