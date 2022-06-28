@@ -207,7 +207,7 @@
   (%native <size_t>  "Scm_IntegerFitsSizeP" "Scm_IntegerToSize" "Scm_SizeToInteger")
   (%native <ssize_t> "Scm_IntegerFitsSsizeP" "Scm_IntegerToSsize" "Scm_SsizeToInteger")
   (%native <ptrdiff_t> "Scm_IntegerFitsPtrdiffP"  "Scm_IntegerToPtrdiff" "Scm_PtrdiffToInteger")
-  (%native <off_t>   "SCM_INTEGERP" "Scm_IntegerToOffset" "Scm_OffsetToInteger")
+  (%native <off_t>   "Scm_IntegerFitsOffsetP" "Scm_IntegerToOffset" "Scm_OffsetToInteger")
   ;; TRANSIENT: The following needs to be in after 0.9.13 release
   ;;(%native <intptr_t>   "Scm_IntegerFitsIntptrP" "Scm_IntegerToIntptr" "Scm_IntptrToInteger")
   ;;(%native <uintptr_t>   "Scm_IntegerFitsUintptrP" "Scm_IntegerToUintptr" "Scm_UintptrToInteger")
