@@ -1,3 +1,8 @@
+2022-06-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm, src/number.c: Native type support for
+	  <intptr_t> and <uintptr_t>.
+
 2022-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libalpha.scm (make-case-lambda): Make procedure-info of
