@@ -649,6 +649,8 @@
        [(null? xs)
         (compiled-code-emit1! ccb LIST (length cs))
         (compiled-code-emit-PUSH! ccb)
+        (compiled-code-emit0o! ccb CONST ($clambda-name iform))
+        (compiled-code-emit-PUSH! ccb)
         (compiled-code-emit0oi! ccb GREF make-case-lambda. make-case-lambda.)
         (compiled-code-emit1i! ccb CALL 4 ($*-src iform))
         (when merger
