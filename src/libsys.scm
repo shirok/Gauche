@@ -581,9 +581,9 @@
                           (?: (logand (-> m prot) PROT_WRITE) "w" "")
                           (?: (logand (-> m prot) PROT_EXEC) "x" ""))))))
 
-(define-cproc sys-mmap (maybe-port prot::<int> flags::<int> size::<integer>
-                                   :optional (off::<integer> 0))
-  (let* ([fd::int -1] [isize::size_t 0] [ioff::off_t 0])
+(define-cproc sys-mmap (maybe-port prot::<int> flags::<int> size::<size_t>
+                                   :optional (off::<off_t> 0))
+  (let* ([fd::int -1])
     (cond [(SCM_PORTP maybe-port)
            (set! fd (Scm_PortFileNo (SCM_PORT maybe-port)))
            (when (< fd 0)
@@ -591,13 +591,7 @@
                         maybe-port))]
           [(SCM_FALSEP maybe-port)]
           [else (SCM_TYPE_ERROR maybe-port "port or #f")])
-    (cond [(SCM_UNBOUNDP size)]
-          [(SCM_INTEGERP size) (set! isize (Scm_IntegerToSize size))]
-          [else (SCM_TYPE_ERROR size "integer suitable for size_t")])
-    (cond [(SCM_UNBOUNDP off)]
-          [(SCM_INTEGERP off) (set! ioff (Scm_IntegerToOffset off))]
-          [else (SCM_TYPE_ERROR off "integer suitable for off_t")])
-    (return (Scm_SysMmap NULL fd isize ioff prot flags))))
+    (return (Scm_SysMmap NULL fd size off prot flags))))
 
 (inline-stub
  (define-enum PROT_EXEC)
