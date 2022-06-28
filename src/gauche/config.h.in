@@ -522,6 +522,9 @@
 /* The size of `ssize_t', as computed by sizeof. */
 #undef SIZEOF_SSIZE_T
 
+/* The size of `uintptr_t', as computed by sizeof. */
+#undef SIZEOF_UINTPTR_T
+
 /* Slib installation path */
 #undef SLIB_DIR
 

@@ -3402,6 +3402,9 @@ static ScmObj SCM_SSIZE_T_MAX;
 static ScmObj SCM_SSIZE_T_MIN;
 static ScmObj SCM_PTRDIFF_T_MAX;
 static ScmObj SCM_PTRDIFF_T_MIN;
+static ScmObj SCM_INTPTR_T_MIN;
+static ScmObj SCM_INTPTR_T_MAX;
+static ScmObj SCM_UINTPTR_T_MAX;
 
 int Scm_IntegerFitsSizeP(ScmObj i)
 {
@@ -3558,6 +3561,15 @@ ScmObj Scm_OffsetToInteger(off_t off)
 #endif
 }
 
+int Scm_IntegerFitsIntptrP(ScmObj i)
+{
+    if (SCM_INTEGERP(i)) {
+        return (Scm_NumCmp(i, SCM_INTPTR_T_MIN) >= 0
+                && Scm_NumCmp(i, SCM_INTPTR_T_MAX) <= 0);
+    }
+    return FALSE;
+}
+
 intptr_t Scm_IntegerToIntptr(ScmObj i)
 {
     if (SCM_INTP(i)) {
@@ -3565,7 +3577,7 @@ intptr_t Scm_IntegerToIntptr(ScmObj i)
     } else if (SCM_BIGNUMP(i)) {
 #if SIZEOF_INTPTR_T == SIZEOF_LONG
         return (intptr_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
-#elif SIZEOF_OFF_T == 8
+#elif SIZEOF_INTPTR_T <= 8
         return (intptr_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
 #else
         /* I don't think there's such an architecture. */
@@ -3580,16 +3592,51 @@ ScmObj Scm_IntptrToInteger(intptr_t i)
 {
 #if SIZEOF_INTPTR_T == SIZEOF_LONG
     return Scm_MakeInteger(i);
-#elif SIZEOF_INTPTR_T == 8
+#elif SIZEOF_INTPTR_T <= 8
     return Scm_MakeInteger64((int64_t)i);
 #else
 # error "intptr_t size on this platform is not suported."
 #endif
 }
 
+int Scm_IntegerFitsUintptrP(ScmObj i)
+{
+    if (SCM_INTP(i)) return SCM_INT_VALUE(i) >= 0;
+    if (SCM_BIGNUMP(i)) {
+        return (SCM_BIGNUM_SIGN(i) >= 0
+                && Scm_NumCmp(i, SCM_UINTPTR_T_MAX) <= 0);
+    }
+    return FALSE;
+}
 
+uintptr_t Scm_IntegerToUintptr(ScmObj i)
+{
+    if (SCM_INTP(i)) {
+        return (uintptr_t)SCM_INT_VALUE(i);
+    } else if (SCM_BIGNUMP(i)) {
+#if SIZEOF_UINTPTR_T == SIZEOF_LONG
+        return (uintptr_t)Scm_GetIntegerClamp(i, SCM_CLAMP_ERROR, NULL);
+#elif SIZEOF_UINTPTR_T <= 8
+        return (uintptr_t)Scm_GetInteger64Clamp(i, SCM_CLAMP_ERROR, NULL);
+#else
+        /* I don't think there's such an architecture. */
+# error "uintptr_t size on this platform is not suported."
+#endif
+    }
+    Scm_Error("bad value as intptr: %S", i);
+    return (intptr_t)-1;       /* dummy */
+}
 
-
+ScmObj Scm_UintptrToInteger(uintptr_t i)
+{
+#if SIZEOF_UINTPTR_T == SIZEOF_LONG
+    return Scm_MakeIntegerU(i);
+#elif SIZEOF_UINTPTR_T <= 8
+    return Scm_MakeIntegerU64((uint64_t)i);
+#else
+# error "uintptr_t size on this platform is not suported."
+#endif
+}
 
 /*===============================================================
  * Number I/O
@@ -4905,6 +4952,14 @@ void Scm__InitNumber(void)
     SCM_SSIZE_T_MIN = Scm_MakeInteger64(-(SSIZE_MAX-1));
     SCM_PTRDIFF_T_MAX = Scm_MakeInteger64(PTRDIFF_MAX);
     SCM_PTRDIFF_T_MIN = Scm_MakeInteger64(-(PTRDIFF_MAX-1));
+    SCM_INTPTR_T_MIN = Scm_Negate(Scm_Expt(SCM_MAKE_INT(1L<<CHAR_BIT),
+                                           SCM_MAKE_INT(sizeof(intptr_t)-1)));
+    SCM_INTPTR_T_MAX = Scm_Sub(Scm_Expt(SCM_MAKE_INT(1L<<CHAR_BIT),
+                                        SCM_MAKE_INT(sizeof(intptr_t)-1)),
+                               SCM_MAKE_INT(1));
+    SCM_UINTPTR_T_MAX = Scm_Sub(Scm_Expt(SCM_MAKE_INT(1L<<CHAR_BIT),
+                                         SCM_MAKE_INT(sizeof(intptr_t))),
+                                SCM_MAKE_INT(1));
 
     dexpt2_minus_52 = ldexp(1.0, -52);
     dexpt2_minus_53 = ldexp(1.0, -53);

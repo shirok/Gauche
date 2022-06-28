@@ -209,7 +209,8 @@
   (%native <ptrdiff_t> "Scm_IntegerFitsPtrdiffP"  "Scm_IntegerToPtrdiff" "Scm_PtrdiffToInteger")
   (%native <off_t>   "SCM_INTEGERP" "Scm_IntegerToOffset" "Scm_OffsetToInteger")
   ;; TRANSIENT: The following needs to be in after 0.9.13 release
-  ;;(%native <intptr_t>   "SCM_INTEGERP" "Scm_IntegerToIntptr" "Scm_IntptrToInteger")
+  ;;(%native <intptr_t>   "Scm_IntegerFitsIntptrP" "Scm_IntegerToIntptr" "Scm_IntptrToInteger")
+  ;;(%native <uintptr_t>   "Scm_IntegerFitsUintptrP" "Scm_IntegerToUintptr" "Scm_UintptrToInteger")
 
   (%native <closure> "SCM_CLOSUREP" "SCM_CLOSURE" "SCM_OBJ")
   (%native <void>    "" "" "SCM_VOID_RETURN_VALUE")

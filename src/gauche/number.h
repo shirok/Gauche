@@ -260,6 +260,9 @@ SCM_EXTERN ScmObj    Scm_OffsetToInteger(off_t);
 SCM_EXTERN int       Scm_IntegerFitsIntptrP(ScmObj);
 SCM_EXTERN intptr_t  Scm_IntegerToIntptr(ScmObj);
 SCM_EXTERN ScmObj    Scm_IntptrToInteger(intptr_t);
+SCM_EXTERN int       Scm_IntegerFitsUintptrP(ScmObj);
+SCM_EXTERN uintptr_t Scm_IntegerToUintptr(ScmObj);
+SCM_EXTERN ScmObj    Scm_UintptrToInteger(uintptr_t);
 
 SCM_EXTERN ScmObj Scm_MakeRational(ScmObj numer, ScmObj denom);
 SCM_EXTERN ScmObj Scm_MakeRatnum(ScmObj numer, ScmObj denom);
