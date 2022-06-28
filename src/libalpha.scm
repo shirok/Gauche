@@ -239,33 +239,46 @@
                                  closures
                                  :optional (name #f))
    (let* ([max-optargs::int (+ (- maxarg minarg) 2)]
-          [v (Scm_MakeVector max-optargs SCM_FALSE)]
+          [v-closures (Scm_MakeVector max-optargs SCM_FALSE)]
+          [num-closures::int 0]
+          [v-formals]
           [packet::case_lambda_packet* (SCM_NEW case_lambda_packet)])
-     (for-each (lambda (c)
-                 (let* ([req::int (SCM_PROCEDURE_REQUIRED c)]
-                        [opt::int (SCM_PROCEDURE_OPTIONAL c)]
-                        [n::int minarg])
-                   (for (() (<= n (+ maxarg 1)) (post++ n))
-                     (when (and (or (== n req)
-                                    (and (> n req) (> opt 0)))
-                                (SCM_FALSEP (SCM_VECTOR_ELEMENT v (- n minarg))))
-                       (set! (SCM_VECTOR_ELEMENT v (- n minarg)) c)))))
-               closures)
+     (for-each
+      (lambda (c)
+        (let* ([req::int (SCM_PROCEDURE_REQUIRED c)]
+               [opt::int (SCM_PROCEDURE_OPTIONAL c)]
+               [n::int minarg])
+          (for (() (<= n (+ maxarg 1)) (post++ n))
+            (when (and (or (== n req)
+                           (and (> n req) (> opt 0)))
+                       (SCM_FALSEP (SCM_VECTOR_ELEMENT v-closures (- n minarg))))
+              (set! (SCM_VECTOR_ELEMENT v-closures (- n minarg)) c)
+              (pre++ num-closures)))))
+      closures)
+     ;; v-formals is #(<formals> ...)).  it is kept in the procedure-info
+     ;; slot.  It is only for information, the program should not count on
+     ;; its content.
+     ;; NB: We need a standard way to extract formals from a closure. Here
+     ;; I take cdr of each closure's procedure-info, but it's not guaranteed
+     ;; that they always have the formals.
+     (set! v-formals (Scm_MakeVector num-closures SCM_FALSE))
+     (let* ([i::int 0])
+       (dotimes [n max-optargs]
+         (let* ([c (SCM_VECTOR_ELEMENT v-closures n)])
+           (when (and (SCM_PROCEDUREP c)
+                      (SCM_PAIRP (SCM_PROCEDURE_INFO c)))
+             (set! (SCM_VECTOR_ELEMENT v-formals i)
+                   (SCM_CDR (SCM_PROCEDURE_INFO c)))
+             (post++ i)))))
      (set! (-> packet min_reqargs) minarg
            (-> packet max_optargs) max-optargs
-           (-> packet dispatch_vector) (SCM_VECTOR v))
-     ;; NB: We keep dispatch-vector in the procedure info, for easier
-     ;; access to the information.  The structure of
-     ;; the procedure info here is tentative; it may be changed later.
-     ;; Routines that depends on this info must be aware of that.
-     ;; Internal routines should use %case-lambda-info.
+           (-> packet dispatch_vector) (SCM_VECTOR v-closures))
      (let* ([r (Scm_MakeSubr case_lambda_dispatch packet
                              minarg max_optargs
-                             (SCM_LIST3 (?: (SCM_FALSEP name)
+                             (SCM_LIST2 (?: (SCM_FALSEP name)
                                             'case-lambda-dispatcher
                                             name)
-                                        (SCM_MAKE_INT minarg)
-                                        v))]
+                                        v-formals))]
             [make-inliner
              (Scm_GlobalVariableRef (Scm_GaucheInternalModule)
                                     (SCM_SYMBOL 'pass1/make-case-lambda-inliner)

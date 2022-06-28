@@ -1,3 +1,10 @@
+2022-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libalpha.scm (make-case-lambda): Make procedure-info of
+	  case-lambda more readable.  It is for human reader, and having
+	  #(#<closure ...> ...) is not helpful.  Now it is
+	  (<name> #(<formals> ...)).
+
 2022-06-25  Shiro Kawai  <shiro@acm.org>
 
 	* Release 0.9.12
