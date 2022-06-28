@@ -909,7 +909,7 @@
   (define-native-type <size_t>  SCM_CLASS_INTEGER size_t Scm_IntegerFitsSizeP)
   (define-native-type <ssize_t> SCM_CLASS_INTEGER ssize_t Scm_IntegerFitsSsizeP)
   (define-native-type <ptrdiff_t> SCM_CLASS_INTEGER ptrdiff_t Scm_IntegerFitsPtrdiffP)
-  (define-native-type <off_t> SCM_CLASS_INTEGER ptrdiff_t Scm_IntegerFitsOffsetP)
+  (define-native-type <off_t> SCM_CLASS_INTEGER off_t Scm_IntegerFitsOffsetP)
   (define-native-type <float>   SCM_CLASS_REAL float native_realP)
   (define-native-type <double>  SCM_CLASS_REAL double native_realP)
   (define-native-type <const-cstring> SCM_CLASS_STRING "const char*" native_cstrP)
