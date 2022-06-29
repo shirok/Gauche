@@ -816,10 +816,14 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ expr . objs)
+       [(_ expr)
         (quasirename r
           `(or ,expr
-               (error (format "Invalid assumption: ~s" ',expr) ,@objs)))]))))
+               (error (format "Invalid assumption: ~s" ',expr))))]
+       [(_ expr msg . objs)
+        (quasirename r
+          `(or ,expr
+               (error ,msg ,@objs)))]))))
 
 ;; This will eventually folded into the compiler.  The argumet must be
 ;; a literal <type>.
@@ -832,7 +836,13 @@
           `(let1 v ,expr
              (if (of-type? v ,type)
                v
-               (type-error ',expr ,type v))))]))))
+               (type-error ',expr ,type v))))]
+       [(_ expr type msg . objs)
+        (quasirename r
+          `(let1 v ,expr
+             (if (of-type? v ,type)
+               v
+               (error ,msg ,@objs))))]))))
 
 ;;; repeat construct
 

@@ -1975,7 +1975,7 @@ Otherwise, undefined value is returned.
 @c COMMON
 @end defspec
 
-@defmac assume test-expr message @dots{}
+@defmac assume test-expr [message obj @dots{}]
 [SRFI-145]
 @c EN
 Evaluates @var{text-expr} and returns its value.
@@ -2005,6 +2005,25 @@ gosh> (real-sqrt -1)
 @end example
 
 @c EN
+If optional arguments @var{message} @var{obj} @dots{} are passed, they
+are given to the @code{error} procedure when @var{test-expr} yields
+false.
+@c JP
+省略可能な引数 @var{message} @var{obj} @dots{} が与えられた場合、
+それらは@var{test-expr}が偽を返した際に@code{error}の引数に使われます。
+@c COMMON
+
+@example
+(define (real-sqrt x)
+  (assume (and (real? x) (>= x 0))
+          "Argument must be nonnegative real number, but got:" x)
+  (sqrt x))
+
+gosh> (real-sqrt -1)
+*** ERROR: Argument must be nonnegative real number, but got: -1
+@end example
+
+@c EN
 Note: This form is advisory---it isn't guaranteed for an error to be
 signaled when @var{test-expr} fails.
 For example, we may add an optimization
@@ -2028,7 +2047,7 @@ Use this form to inform the compiler and the reader your intention.
 @c COMMON
 @end defmac
 
-@defmac assume-type expr type
+@defmac assume-type expr type [message obj @dots{}]
 @c EN
 Evaluates @var{expr}, and Checks if the value has type @var{type}.
 If not, raises an error.  The result of @var{expr} is returned.
@@ -2047,6 +2066,31 @@ if it satisfies @code{(of-type? value type)}
 値がその型かどうかは@code{(of-type? value type)}で判定されます
 (@ref{Types and classes}参照)。
 @c COMMON
+
+@c EN
+If optional arguments @var{message} @var{obj} @dots{} are passed, they
+are given to the @code{error} procedure when @var{test-expr} yields
+false.
+@c JP
+省略可能な引数 @var{message} @var{obj} @dots{} が与えられた場合、
+それらは@var{test-expr}が偽を返した際に@code{error}の引数に使われます。
+@c COMMON
+
+@example
+(define (strlen s)
+  (assume-type s <string>)
+  (string-length s))
+
+gosh> (strlen 4)
+*** ERROR: s is supposed to be of type #<class <string>>, but got 4
+
+(define (strlen s)
+  (assume-type s <string> "Argument s must be a string, but got:" s)
+  (string-length s))
+
+gosh> (strlen 4)
+*** ERROR: Argument s must be a string, but got: 4
+@end example
 
 @c EN
 The type assumption may be used by the compiler

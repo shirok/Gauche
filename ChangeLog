@@ -1,5 +1,9 @@
 2022-06-28  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmacro.scm (assume-type): support optional msg objs ...
+	  arguments for the custom error message.
+	  (assume): Use custom error message if provided.
+
 	* src/libtype.scm, src/number.c: Native type support for
 	  <intptr_t> and <uintptr_t>.
 
