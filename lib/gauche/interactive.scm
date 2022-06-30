@@ -160,7 +160,13 @@
 (define-method describe ((r <rational>))
   (describe-common r)
   (when (ratnum? r)
-    (format #t "  inexact: ~s\n" (inexact r)))
+    (format #t "  inexact: ~s\n" (inexact r))
+    (and-let* ([abs-r (abs r)]
+               [ (> abs-r 1) ]
+               [intpart (floor abs-r)]
+               [mixed `(+ ,intpart ,(- abs-r intpart))]
+               [mixed. (if (negative? r) `(- ,mixed) mixed)])
+      (format #t "    mixed: ~s\n" mixed.)))
   (values))
 
 (define-method describe ((d <real>))
