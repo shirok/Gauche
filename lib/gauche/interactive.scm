@@ -191,11 +191,15 @@
   (print "methods:")
   (dolist [m (~ g'methods)]
     (let ([spnames (map class-name (~ m'specializers))]
-          [has-optional? (~ m'optional)])
-      (format #t "  ~s\n"
+          [has-optional? (~ m'optional)]
+          [srcloc (source-location m)])
+      (format #t "  ~20s ~a\n"
               (if has-optional?
                 (append spnames '_) ; this works even spnames is ()
-                spnames))))
+                spnames)
+              (if srcloc
+                (format "; ~s:~d" (car srcloc) (cadr srcloc))
+                ""))))
   (and-let1 dis ((with-module gauche.object generic-dispatcher-info) g)
     (format #t "dispatcher:\n  ~s\n" dis))
   (values))
