@@ -125,7 +125,7 @@
 ;(define-macro (define-method name [quals ...] specs . body)
 ;  (%expand-define-macro name quals specs body))
 
-(define (%expand-define-method name quals specs body)
+(define (%expand-define-method name quals specs body form)
   ;; check qualifiers.  we only support :locked for now
   ;; TRANSIENT: Must use hygienic compare.
   (if-let1 bad (find (^q (not (memq q '(:locked)))) quals)
@@ -148,12 +148,14 @@
            [real-args    (if rest
                            `(,@reqargs ,rest next-method)
                            `(,@reqargs next-method))]
-           [real-body (if opts
-                        (quasirename %id
-                          `(lambda ,real-args
-                             (apply (lambda ,opts ,@body) ,rest)))
-                        (quasirename %id
-                          `(lambda ,real-args ,@body)))])
+           [real-body ((with-module gauche.internal with-source-info)
+                       (if opts
+                         (quasirename %id
+                           `(lambda ,real-args
+                              (apply (lambda ,opts ,@body) ,rest)))
+                         (quasirename %id
+                           `(lambda ,real-args ,@body)))
+                       form)])
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym "gf")
           (quasirename %id

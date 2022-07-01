@@ -763,6 +763,7 @@
 
 (define (with-source-info obj src)
   (or (and-let* ([ (pair? obj) ]
+                 [ (pair? src) ]
                  [si (debug-source-info src)])
         (extended-cons (car obj) (cdr obj) `((source-info . ,si))))
       obj))
@@ -1899,7 +1900,7 @@
        (parse name rest (cons q quals))]
       [(specs . body)
        (pass1 (with-module gauche.object
-                (%expand-define-method name quals specs body))
+                (%expand-define-method name quals specs body form))
               cenv)]
       [_ (error "syntax-error: malformed define-method (empty body):" form)]))
   ;; Should we limit define-method only at the toplevel?  Doing so
