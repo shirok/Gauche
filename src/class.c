@@ -2139,6 +2139,11 @@ static ScmObj generic_sealed(ScmGeneric *gf)
     return SCM_GENERIC_SEALED_P(gf)? SCM_TRUE:SCM_FALSE;
 }
 
+static ScmObj generic_info(ScmGeneric *gf)
+{
+    return gf->common.info;
+}
+
 static ScmObj generic_methods(ScmGeneric *gf)
 {
     return gf->methods;
@@ -2593,6 +2598,11 @@ static ScmObj method_locked(ScmMethod *m)
 static ScmObj method_leaf(ScmMethod *m)
 {
     return SCM_MAKE_BOOL(SCM_METHOD_LEAF_P(m));
+}
+
+static ScmObj method_info(ScmMethod *m)
+{
+    return m->common.info;
 }
 
 static ScmObj method_generic(ScmMethod *m)
@@ -3299,6 +3309,7 @@ static ScmClassStaticSlotSpec class_slots[] = {
 static ScmClassStaticSlotSpec generic_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", generic_name, generic_name_set),
     SCM_CLASS_SLOT_SPEC("sealed", generic_sealed, NULL),
+    SCM_CLASS_SLOT_SPEC("info", generic_info, NULL),
     SCM_CLASS_SLOT_SPEC("methods", generic_methods, generic_methods_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
@@ -3310,6 +3321,7 @@ static ScmClassStaticSlotSpec method_slots[] = {
     SCM_CLASS_SLOT_SPEC("leaf?", method_leaf, NULL),
     SCM_CLASS_SLOT_SPEC("generic", method_generic, method_generic_set),
     SCM_CLASS_SLOT_SPEC("specializers", method_specializers, method_specializers_set),
+    SCM_CLASS_SLOT_SPEC("info", method_info, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
