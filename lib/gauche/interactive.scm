@@ -187,7 +187,8 @@
   (values))
 
 (define-method describe ((g <generic>))
-  (next-method) ; common object description
+  (describe-common g)
+  (describe-slots g)
   (print "methods:")
   (dolist [m (~ g'methods)]
     (let ([spnames (map class-name (~ m'specializers))]
@@ -202,6 +203,13 @@
                 ""))))
   (and-let1 dis ((with-module gauche.object generic-dispatcher-info) g)
     (format #t "dispatcher:\n  ~s\n" dis))
+  (values))
+
+(define-method describe ((m <method>))
+  (describe-common m)
+  (and-let1 source (source-location m)
+    (format #t "Defined at ~s:~d\n" (car source) (cadr source)))
+  (describe-slots m)
   (values))
 
 (define-method describe ((p <procedure>))
