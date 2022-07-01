@@ -199,6 +199,9 @@
     (socket                    SCM_SYM_SOCKET)
     (time-utc                  SCM_SYM_TIME_UTC)
 
+    ;; TRANSIENT: To keep binary compatibility, new symbols are added below.
+    ;; We're going to reorder symbols at the next ABI change.
+
     ;; modules addition (move this up on 1.0 release)
     (keyword                   SCM_SYM_KEYWORD)
     ;; reader addition (move this up on 1.0 release)
@@ -224,4 +227,6 @@
     (called                    SCM_SYM_CALLED)
     ;; debug-thread-log (move this up on 1.0 release)
     (debug-thread-log          SCM_SYM_DEBUG_THREAD_LOG)
+    ;; definition, to look up meta info attached to the <compiled-code>
+    (definition                SCM_SYM_DEFINITION)
     ))

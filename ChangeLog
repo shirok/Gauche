@@ -1,3 +1,10 @@
+2022-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (%expand-define-method),
+	  src/class.c (method_initialize): Set source location info to
+	  the list in <method>'info, so that it can be retrieved by
+	  source-info.
+
 2022-06-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (assume-type): support optional msg objs ...

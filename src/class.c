@@ -2519,8 +2519,6 @@ static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
         Scm_Error("generic function required for :generic argument: %S",
                   generic);
     ScmGeneric *g = SCM_GENERIC(generic);
-    if (!SCM_CLOSUREP(body))
-        Scm_Error("closure required for :body argument: %S", body);
     if ((speclen = Scm_Length(specs)) < 0)
         Scm_Error("invalid specializers list: %S", specs);
     ScmClass **specarray = class_list_to_array(specs, speclen);
@@ -2535,10 +2533,32 @@ static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
     if (speclen != req)
         Scm_Error("specializer list doesn't match with lambda list: %S",specs);
 
+    /* Attach source code location info of body to the 'info' if possible*/
+    m->common.info = Scm_ExtendedCons(g->common.info,
+                                      class_array_to_names(specarray, speclen));
+    if (!SCM_CLOSUREP(body))
+        Scm_Error("closure required for :body argument: %S", body);
+    ScmObj code = SCM_CLOSURE_CODE(body);
+    if (SCM_COMPILED_CODE_P(code)) {
+        ScmObj def = Scm_Assq(SCM_SYM_DEFINITION,
+                              SCM_COMPILED_CODE(code)->debugInfo);
+        if (SCM_PAIRP(def)) {
+            ScmObj si = Scm_Assq(SCM_SYM_SOURCE_INFO, SCM_CDR(def));
+            if (SCM_PAIRP(si) && SCM_PAIRP(SCM_CDR(si))) {
+                ScmObj loc = Scm_PairAttrGet(SCM_PAIR(SCM_CDR(si)),
+                                             SCM_SYM_SOURCE_INFO,
+                                             SCM_FALSE);
+                if (SCM_PAIRP(loc)) {
+                    Scm_PairAttrSet(SCM_PAIR(m->common.info),
+                                    SCM_SYM_SOURCE_INFO,
+                                    loc);
+                }
+            }
+        }
+    }
+
     m->common.required = req;
     m->common.optional = opt;
-    m->common.info = Scm_Cons(g->common.info,
-                              class_array_to_names(specarray, speclen));
     m->common.leaf = method_leaf_p(SCM_CLOSURE(body));
     m->generic = g;
     m->specializers = specarray;
