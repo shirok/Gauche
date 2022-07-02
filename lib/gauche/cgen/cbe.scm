@@ -40,12 +40,19 @@
   (use scheme.list)
   (use scheme.set)
   (use srfi-13)
+  (use srfi-27)
   (use srfi-42)
   (use util.match)
   (use file.util)
+  (use data.ulid)
   (use text.tr)
   (export compile->c compile-link-toplevel))
 (select-module gauche.cgen.cbe)
+
+(define name-gen
+  (let1 rs (make-random-source)
+    (random-source-randomize! rs)
+    (make-ulid-generator rs)))
 
 ;; API is experimental
 (define (compile->c source.scm)
@@ -61,7 +68,7 @@
 
 ;; For easier experiment.
 (define (compile-link-toplevel form)
-  (let1 name (x->string (gensym "cgen"))
+  (let1 name #"cgen~(ulid->string (name-gen))"
     (parameterize ([cgen-current-unit (make <cgen-unit> :name name)])
       (cgen-decl "#include <gauche.h>"
                  "#include <gauche/precomp.h>"
@@ -96,7 +103,7 @@
     (cgen-decl "};"))
   (cgen-decl "")
   (cgen-body ""
-             #"ScmObj ~|cfn-name|(ScmObj VAL0, void **DATA)"
+             #"static ScmObj ~|cfn-name|(ScmObj VAL0, void **DATA)"
              #"{")
   (cluster-prologue cluster)
   (for-each block->c (reverse (~ cluster'blocks)))
@@ -270,7 +277,7 @@
   (and-let* ([entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
                                   (~ benv'clusters))]
              [entry-cfn (cluster-cfn-name entry-cluster)])
-    (cgen-body #"ScmObj ~(benv-cfn-name benv)("
+    (cgen-body #"static ScmObj ~(benv-cfn-name benv)("
                #"                  ScmObj *SCM_FP,"
                #"                  int SCM_ARGCNT SCM_UNUSED,"
                #"                  void *data_ SCM_UNUSED)"
