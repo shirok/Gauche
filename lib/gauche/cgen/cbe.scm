@@ -147,7 +147,7 @@
     [('DEF id flags r)
      (let ([c-mod (cgen-literal (~ id'module))]
            [c-name (cgen-literal (identifier->symbol id))])
-       (cgen-body #"  /* ~(cgen-safe-comment c-name) */"
+       (cgen-body #"  /* ~(cgen-safe-comment (~ c-name'value)) */"
                   #"  Scm_Define(SCM_MODULE(~(cgen-cexpr c-mod)),"
                   #"             SCM_SYMBOL(~(cgen-cexpr c-name)),"
                   #"             ~(R r));"))]
