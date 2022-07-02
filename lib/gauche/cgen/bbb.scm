@@ -931,7 +931,7 @@
   (let* ([cenv (make-bottom-cenv mod)]
          [iform (pass2-4 (pass1 program cenv) mod)])
     ;(pp-iform iform)
-    (let* ([benv (make-benv #f '%toplevel)]
+    (let* ([benv (make-benv #f (gensym "toplevel"))]
            [bb (pass5b iform benv)])
       (simplify-bbs! benv)
       (cluster-bbs! benv)
