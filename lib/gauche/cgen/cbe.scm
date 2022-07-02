@@ -36,6 +36,7 @@
   (use gauche.cgen.bbb)
   (use gauche.vm.insn)
   (use gauche.sequence)
+  (use gauche.package.compile)
   (use scheme.list)
   (use scheme.set)
   (use srfi-13)
@@ -43,9 +44,10 @@
   (use util.match)
   (use file.util)
   (use text.tr)
-  (export compile->c))
+  (export compile->c compile-link-toplevel))
 (select-module gauche.cgen.cbe)
 
+;; API is experimental
 (define (compile->c source.scm)
   (parameterize ([cgen-current-unit (make <cgen-unit>
                                       :name (path-sans-extension source.scm))])
@@ -56,6 +58,19 @@
       (^[]
         (generator-for-each compile-toplevel read)))
     (cgen-emit-c (cgen-current-unit))))
+
+;; For easier experiment.
+(define (compile-link-toplevel form)
+  (let1 name (x->string (gensym "cgen"))
+    (parameterize ([cgen-current-unit (make <cgen-unit> :name name)])
+      (cgen-decl "#include <gauche.h>"
+                 "#include <gauche/precomp.h>"
+                 "")
+      (compile-toplevel form)
+      (cgen-emit-c (cgen-current-unit)))
+    (print #"Code generated in ~|name|.c")
+    (gauche-package-compile-and-link name `(,#"~|name|.c") :verbose #t)
+    (dynamic-load #"./~|name|" :init-function #"Scm__Init_~|name|")))
 
 (define (compile-toplevel form)
   (let1 toplevel-cfn (benv->c (compile-b form))
