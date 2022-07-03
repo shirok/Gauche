@@ -66,24 +66,24 @@ Gaucheのバージョン@VERSION@に対応します。
 @end ifnottex
 
 @menu
-* Introduction::
-* Concepts::
-* Programming in Gauche::
-* Core syntax::
-* Macros::
-* Core library::
-* Object system::
-* Library modules - Overview::
-* Library modules - Gauche extensions::
-* Library modules - R7RS standard libraries::
-* Library modules - SRFIs::
-* Library modules - Utilities::
-* C to Scheme mapping::
-* Function and Syntax Index::
-* Module Index::
-* Lexical syntax index::
-* Class Index::
-* Variable Index::
+* Introduction::                
+* Concepts::                    
+* Programming in Gauche::       
+* Core syntax::                 
+* Macros::                      
+* Core library::                
+* Object system::               
+* Library modules - Overview::  
+* Library modules - Gauche extensions::  
+* Library modules - R7RS standard libraries::  
+* Library modules - SRFIs::     
+* Library modules - Utilities::  
+* C to Scheme mapping::         
+* Function and Syntax Index::   
+* Module Index::                
+* Lexical syntax index::        
+* Class Index::                 
+* Variable Index::              
 @end menu
 
 @contents

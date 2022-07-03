@@ -28,6 +28,7 @@
 * Skew binary random-access lists::  data.skew-list
 * Sparse data containers::      data.sparse
 * Trie::                        data.trie
+* Universally unique lexicographically sortable identifier:: data.ulid
 * Database independent access layer::  dbi
 * Generic DBM interface::       dbm
 * File-system dbm::             dbm.fsdbm
@@ -6863,7 +6864,7 @@ Empties @var{st}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Trie, Database independent access layer, Sparse data containers, Library modules - Utilities
+@node Trie, Universally unique lexicographically sortable identifier, Sparse data containers, Library modules - Utilities
 @section @code{data.trie} - Trie
 @c NODE Trie, @code{data.trie} - Trie
 
@@ -7397,12 +7398,100 @@ traverse entire @var{trie} instead.
 @c COMMON
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Universally unique lexicographically sortable identifier, Database independent access layer, Trie, Library modules - Utilities
+@section @code{data.ulid} - Universally unique lexicographically sortable identifier
+@c NODE 一意で辞書順ソート可能な識別子, @code{data.ulid} - 一意で辞書順ソート可能な識別子
 
+@deftp {Module} data.ulid
+@mdindex data.ulid
+This module implements ULID (@url{https://github.com/ulid/spec}), a UUID-like
+unique identifier that can be sortable in chronological order and
+has slightly more compact string representation.
 
+@example
+(define gen-ulid (make-ulid-generator))
+
+(gen-ulid) @result{} #<ulid 01G70P3EWJT28VPQ12NTFFDSZ1>
+
+(ulid->string (gen-ulid)) @result{} "01G70P3Y72TQ1HYY90G8TJSY07"
+@end example
+@end deftp
+
+@defun make-ulid-generator :optional random-source
+@mdindex data.ulid
+Creates and returns a generator that yields a fresh ULID object
+every time it is called.  The optional @var{random-source} argument
+is a srfi-27 random source (@pxref{Sources of Random Bits})
+to be used for the random part of ULID.  When omitted,
+srfi-27's @code{default-random-source} is used.
+
+To guarantee uniqueness and monotonicity, a ULID generator needs to
+keep internal state.  If you want to share the generator among multiple threads,
+you need to manage your own lock.  Keeping the generator private in one
+thread eliminates the need of mutex (however, monotonicity is only guaranteed
+within each generator).
+@end defun
+
+@deftp {Class} ulid
+@clindex data.ulid
+@end defun
+
+@defun ulid? obj
+@mdindex data.ulid
+@end defun
+
+@defun ulid-timestamp ulid
+@mdindex data.ulid
+@end defun
+
+@defun ulid-randomness ulid
+@mdindex data.ulid
+@end defun
+
+@defun ulid=? ulid1 ulid2
+@mdindex data.ulid
+@end defun
+
+@defun ulid<? ulid1 ulid2
+@mdindex data.ulid
+@end defun
+
+@defun ulid-hash ulid
+@mdindex data.ulid
+@end defun
+
+@defvar ulid-comparator
+@mdindex data.ulid
+@end defun
+
+@defun ulid->bytevector ulid
+@mdindex data.ulid
+@end defun
+
+@defun ulid->integer ulid
+@mdindex data.ulid
+@end defun
+
+@defun ulid->string ulid
+@mdindex data.ulid
+@end defun
+
+@defun bytevector->ulid uv
+@mdindex data.ulid
+@end defun
+
+@defun integer->ulid n
+@mdindex data.ulid
+@end defun
+
+@defun string->ulid str
+@mdindex data.ulid
+@end defun
 
 @c ----------------------------------------------------------------------
 
-@node Database independent access layer, Generic DBM interface, Trie, Library modules - Utilities
+@node Database independent access layer, Generic DBM interface, Universally unique lexicographically sortable identifier, Library modules - Utilities
 @section @code{dbi} - Database independent access layer
 @c NODE データベース非依存アクセス層, @code{dbi} - データベース非依存アクセス層
 
