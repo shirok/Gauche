@@ -7422,7 +7422,7 @@ has slightly more compact string representation.
 @mdindex data.ulid
 Creates and returns a generator that yields a fresh ULID object
 every time it is called.  The optional @var{random-source} argument
-is a srfi-27 random source (@pxref{Sources of Random Bits})
+is a srfi-27 random source (@pxref{Sources of random bits})
 to be used for the random part of ULID.  When omitted,
 srfi-27's @code{default-random-source} is used.
 
@@ -7435,7 +7435,7 @@ within each generator).
 
 @deftp {Class} ulid
 @clindex data.ulid
-@end defun
+@end deftp
 
 @defun ulid? obj
 @mdindex data.ulid
@@ -7463,7 +7463,7 @@ within each generator).
 
 @defvar ulid-comparator
 @mdindex data.ulid
-@end defun
+@end defvar
 
 @defun ulid->bytevector ulid
 @mdindex data.ulid
