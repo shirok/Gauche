@@ -7431,62 +7431,85 @@ keep internal state.  If you want to share the generator among multiple threads,
 you need to manage your own lock.  Keeping the generator private in one
 thread eliminates the need of mutex (however, monotonicity is only guaranteed
 within each generator).
-@end defun
 
-@deftp {Class} ulid
-@clindex data.ulid
-@end deftp
+A ULID consists of 48bit timestamp field (milliseconds since Unix epoch)
+and 80bit randomness field.  The randomness field are generated randomly if
+it is the first ULID within the timestamp.  If more than one ULID needs
+to be generated in a millisecond window, the subsequent ULID gets randomness
+field incremented from the previous ULID, so that the chronological order
+is maintained.
+
+The ULID spec says if the randomness field overflows because so many
+ULIDs are generated within a millisecond, it is an error.  Such scenario
+is very unlikely but can occur.  In our implementation, however, we wait for the
+next millisecond boundary in case we ran out randomness field, so the generator
+never yields an error.
+@end defun
 
 @defun ulid? obj
 @mdindex data.ulid
+Returns @code{#t} iff @var{obj} is an ULID object.
 @end defun
 
 @defun ulid-timestamp ulid
 @mdindex data.ulid
+Returns the timestamp part of @var{ulid} (48bits) as an exact integer.
 @end defun
 
 @defun ulid-randomness ulid
 @mdindex data.ulid
+Returns the randomess part of @var{ulid} (80bits) as an exact integer.
 @end defun
 
 @defun ulid=? ulid1 ulid2
 @mdindex data.ulid
+Returns true if two ULIDs are equivalent.
 @end defun
 
 @defun ulid<? ulid1 ulid2
 @mdindex data.ulid
+Returns true if @var{ulid1} precedes @var{ulid2}.  If both ULIDs are
+created from the same generator, this means @var{ulid1} is created
+chronologically before @var{ulid2}.  If they are created from different
+generators, the chronological order is not guaranteed, but the discrepancy
+only occurs when two ULIDs are created at the same timestamp in
+millisecond resolution.
 @end defun
 
 @defun ulid-hash ulid
 @mdindex data.ulid
+Returns a hash value of @var{ulid} in a nonnegative exact integer.
 @end defun
 
 @defvar ulid-comparator
 @mdindex data.ulid
+Bound to a comparator suitable to compare and hash ULIDs.
 @end defvar
 
 @defun ulid->bytevector ulid
+@defunx bytevector->ulid uv
 @mdindex data.ulid
+Covvert between @var{ulid} and a u8vector of length 16.  Bits are packed
+in big-endian order (first 8 bits of timestamp to first byte, and
+so on).
 @end defun
 
 @defun ulid->integer ulid
+@defunx integer->ulid n
 @mdindex data.ulid
+Convert between @var{ulid} and an exact nonnegative integer up to 128bit.
 @end defun
 
 @defun ulid->string ulid
+@defunx string->ulid str
 @mdindex data.ulid
-@end defun
+Convert @var{ulid} to a string of Base32 representation; the
+digits are @code{0123456789ABCDEFGHJKMNPQRSTVWXYZ} (@code{I}, @code{L},
+@code{O}, and @code{U} are excluded to avoid confusion).  Length of
+the string is always 26.
 
-@defun bytevector->ulid uv
-@mdindex data.ulid
-@end defun
-
-@defun integer->ulid n
-@mdindex data.ulid
-@end defun
-
-@defun string->ulid str
-@mdindex data.ulid
+@code{ulid->string} always use uppercase characters; on the other hand,
+@code{string->ulid} allows both lowercase and uppercase characters.
 @end defun
 
 @c ----------------------------------------------------------------------

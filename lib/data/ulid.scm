@@ -34,7 +34,6 @@
   (use srfi-19)
   (use srfi-27)
   (export make-ulid-generator
-          ulid
           ulid?
           ulid-timestamp
           ulid-randomness
@@ -59,8 +58,7 @@
 (define *randomness-range* (expt 2 80))
 (define *digits* (string->vector "0123456789ABCDEFGHJKMNPQRSTVWXYZ"))
 
-;; API
-;; ulid record
+;; Ulid record
 (define-record-type ulid %make-ulid ulid?
   (timestamp ulid-timestamp)
   (randomness ulid-randomness))

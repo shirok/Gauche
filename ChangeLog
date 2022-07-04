@@ -1,3 +1,9 @@
+2022-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/ulid.scm (ulid): Drop record type name from export list.
+	  It doesn't follow Gauche's class naming convention.  We may
+	  reintroduce it as <ulid> in future, but let's see.
+
 2022-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe <generic>): Show each method's
