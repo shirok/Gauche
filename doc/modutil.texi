@@ -11847,29 +11847,69 @@ A class to encapsulate the state of Mersenne Twister RNG.
 Each instance of this class has its own state, and can be used
 as an independent source of random bits if initialized
 by individual seed.
-
-The random seed value can be given at the instantiation time
-by @code{:seed} initialization argument, or by using
-@code{mt-random-set-seed!} described below.
 @c JP
 Mersenne Twister RNGの状態をカプセル化するクラスです。
 このクラスのそれぞれのインスタンスは独自の状態を持ち、
 個別のシードで初期化されていれば、それぞれがランダムビットの
 独立したソースになり得ます。
+@c COMMON
+@end deftp
 
-ランダムシードの値は初期化引数@code{:seed}により初期化時に与えるか、
-以下で説明する@code{mt-random-set-seed!}を使います。
+@defun make-mersenne-twister :optional seed private?
+@c MOD math.mt-random
+@c EN
+Creates and returns a new @code{<mersenne-twister>} RNG instance.
+
+If @var{seed} argument is given, it must be either nonnegative exact
+integer, u32vector, or @code{#f}.  If it is an integer, at most
+the lower 19937 bits are used as a seed.
+If it is an u32vector, up to the first 623 elements are used.
+
+If @var{seed} is omitted or @code{#f}, the RNG is initialized to the fixed value,
+so that it generates the same sequences of random numbers.  If you want
+different sequence for each instance, you have to give different seeds
+explicitly, or initialize each instance with different seeds using
+@code{mt-random-set-seed!} below.
+@c JP
+新たな@code{<mersenne-twister>}のインスタンスを作って返します。
+
+@var{seed}引数が与えられたなら、それは任意の正確な非負整数か、
+@code{u32vctor}でなければなりません。整数の場合、
+最大で下から19937ビットまでが種として使われます。
+u32vectorの場合は、先頭から最大で624要素までが種として使われます。
+
+@var{seed}が省略されるか@code{#f}の場合、RNGは固定の種で初期化されるので、
+そのままだと常に同じ乱数列を生成します。
+インスタンス毎に異なる乱数列が必要なら、明示的に異なる種を渡すか、
+下の@code{mt-random-set-seed!}で種を設定してください。
+@c COMMON
+
+@c EN
+By default, the created RNG is thread-safe; you can call the generator
+from multiple thread without worrying to break its internal state.
+
+However, if you know you only use it in a single thread, or you use
+separate mutex and know the generator call is alyways protected, then
+you can give a true value to @var{private?} optional argument to avoid
+overhead of locking.
+@c JP
+デフォルトでは、作られるRNGはスレッドセーフです。
+すなわち、複数のスレッドからジェネレータを呼んでも内部状態を壊してしまうことはありません。
+
+ただ、RNGを一つのスレッドからしか使わないとか、他のロックで常に排他された環境でしか
+呼ばないということがわかっているなら、@var{private?}引数に真の値を渡すことができます。
+その場合、RNGはロックを省略します。
 @c COMMON
 
 @example
-(define m (make <mersenne-twister> :seed (sys-time)))
+(define m (make-mersenne-twister (sys-time)))
 
 (mt-random-real m) @result{} 0.10284287848537865
 (mt-random-real m) @result{} 0.463227748348805
 (mt-random-real m) @result{} 0.8628500643709712
 @dots{}
 @end example
-@end deftp
+@end defun
 
 @defun mt-random-set-seed! mt seed
 @c MOD math.mt-random
