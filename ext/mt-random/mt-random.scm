@@ -34,6 +34,7 @@
 (define-module math.mt-random
   (use gauche.uvector)
   (export <mersenne-twister>
+          make-mersenne-twister
           mt-random-get-seed
           mt-random-set-seed!
           mt-random-get-state
@@ -54,6 +55,13 @@
 
  (declare-stub-type <mersenne-twister> "ScmMersenneTwister*")
 
+ (define-cproc make-mersenne-twister (:optional (seed #f)
+                                                (private?::<boolean> #f))
+   (let* ([flags::u_int 0])
+     (when private?
+       (set! flags SCM_MERSENNE_TWISTER_PRIVATE))
+     (return (Scm_MakeMT seed flags))))
+
  (define-cproc mt-random-get-seed (mt::<mersenne-twister>)
    (return (-> mt seed)))
 
@@ -61,21 +69,11 @@
    Scm_MTSetSeed)
 
  (define-cproc mt-random-get-state (mt::<mersenne-twister>)
-   (let* ([v (Scm_MakeU32Vector (+ N 1) 0)])
-     (dotimes (i N)
-       (set! (aref (SCM_U32VECTOR_ELEMENTS v) i) (aref (-> mt mt) i)))
-     (set! (aref (SCM_U32VECTOR_ELEMENTS v) N) (-> mt mti))
-     (return v)))
+   Scm_MTGetState)
 
  (define-cproc mt-random-set-state! (mt::<mersenne-twister> state::<u32vector>)
    ::<void>
-   (unless (== (SCM_U32VECTOR_SIZE state) (+ N 1))
-     (Scm_Error "u32vector of length %d is required, but got length %d"
-                (+ N 1) (SCM_U32VECTOR_SIZE state)))
-   (dotimes [i N]
-     (set! (aref (-> mt mt) i)
-           (aref (SCM_U32VECTOR_ELEMENTS state) i)))
-   (set! (-> mt mti) (aref (SCM_U32VECTOR_ELEMENTS state) N)))
+   Scm_MTSetState)
 
  (define-cproc mt-random-real (mt::<mersenne-twister>) ::<double>
    (return (Scm_MTGenrandF64 mt TRUE)))

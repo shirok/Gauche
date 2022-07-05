@@ -65,8 +65,8 @@
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
-/* initializes mt[N] with a seed */
-void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
+/* initializes mt[N] with a seed.  caller needs to hold lock */
+static void init_by_ui(ScmMersenneTwister *mt, unsigned long s)
 {
     int mti;
     mt->mt[0]= s & 0xffffffffUL;
@@ -84,46 +84,16 @@ void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s)
     mt->seed = Scm_MakeIntegerU(s);
 }
 
-void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
-{
-    if (SCM_INTP(seed)) {
-	/* For the backward compatibility, we only use the lower 32bit. */
-	Scm_MTInitByUI(mt, (uint32_t)Scm_GetUInteger(seed));
-    } else if (SCM_BIGNUMP(seed)) {
-#if SIZEOF_LONG == 4
-	Scm_MTInitByArray(mt, (int32_t*)SCM_BIGNUM(seed)->values,
-			  (int)SCM_BIGNUM_SIZE(seed));
-#elif SIZEOF_LONG == 8
-	/* We can't just pass seed->values as (int32_t*), for the result
-	   would differ by endianness. */
-	int32_t seedv[SCM_BIGNUM_SIZE(seed)*2];
-	for (size_t i=0; i<SCM_BIGNUM_SIZE(seed); i++) {
-	    seedv[i*2] = (int32_t)(SCM_BIGNUM(seed)->values[i]&0xffffffff);
-	    seedv[i*2+1] = (int32_t)(SCM_BIGNUM(seed)->values[i]>>32);
-	}
-	Scm_MTInitByArray(mt, seedv, (int)SCM_BIGNUM_SIZE(seed)*2);
-#else
-#error "sizeof(long) must be 4 or 8"
-#endif
-    } else if (SCM_U32VECTORP(seed)) {
-	Scm_MTInitByArray(mt, (int32_t*)SCM_U32VECTOR_ELEMENTS(seed),
-			  SCM_U32VECTOR_SIZE(seed));
-    } else {
-	Scm_TypeError("random seed", "an exact integer or u32vector", seed);
-    }
-    /* NB: mt->seed is set by either Scm_MTInitByUI or Scm_MTInitByArray.  */
-}
-
-
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
 /* key_length is its length */
-void Scm_MTInitByArray(ScmMersenneTwister *mt,
-		       int32_t init_key[],
-		       unsigned long key_length)
+/* caller needs to hold lock */
+static void init_by_array(ScmMersenneTwister *mt,
+                          int32_t init_key[],
+                          unsigned long key_length)
 {
     int i, j, k;
-    Scm_MTInitByUI(mt, 19650218UL);
+    init_by_ui(mt, 19650218UL);
     i=1; j=0;
     k = (N>key_length ? N : key_length);
     for (; k; k--) {
@@ -148,8 +118,59 @@ void Scm_MTInitByArray(ScmMersenneTwister *mt,
     mt->seed = Scm_MakeU32VectorFromArray(key_length, (uint32_t*)init_key);
 }
 
-/* generates a random number on [0,0xffffffff]-interval */
-unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
+#define LOCK(mt)                                        \
+    do {                                                \
+        if (SCM_MERSENNE_TWISTER_NEED_LOCK(mt)) {       \
+            SCM_INTERNAL_MUTEX_LOCK(mt->lock);          \
+        }                                               \
+    } while (0)
+
+#define UNLOCK(mt)                                      \
+    do {                                                \
+        if (SCM_MERSENNE_TWISTER_NEED_LOCK(mt)) {       \
+            SCM_INTERNAL_MUTEX_UNLOCK(mt->lock);        \
+        }                                               \
+    } while (0)
+
+
+void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed)
+{
+    if (!(SCM_INTP(seed) || SCM_BIGNUMP(seed) || SCM_U32VECTORP(seed))) {
+	Scm_TypeError("random seed", "an exact integer or u32vector", seed);
+    }
+
+    LOCK(mt);
+    if (SCM_INTP(seed)) {
+	/* For the backward compatibility, we only use the lower 32bit. */
+	init_by_ui(mt, (uint32_t)Scm_GetUInteger(seed));
+    } else if (SCM_BIGNUMP(seed)) {
+#if SIZEOF_LONG == 4
+	init_by_array(mt, (int32_t*)SCM_BIGNUM(seed)->values,
+			  (int)SCM_BIGNUM_SIZE(seed));
+#elif SIZEOF_LONG == 8
+	/* We can't just pass seed->values as (int32_t*), for the result
+	   would differ by endianness. */
+	int32_t seedv[SCM_BIGNUM_SIZE(seed)*2];
+	for (size_t i=0; i<SCM_BIGNUM_SIZE(seed); i++) {
+	    seedv[i*2] = (int32_t)(SCM_BIGNUM(seed)->values[i]&0xffffffff);
+	    seedv[i*2+1] = (int32_t)(SCM_BIGNUM(seed)->values[i]>>32);
+	}
+	init_by_array(mt, seedv, (int)SCM_BIGNUM_SIZE(seed)*2);
+#else
+#error "sizeof(long) must be 4 or 8"
+#endif
+    } else {
+        /* seed must be u32vector */
+	init_by_array(mt, (int32_t*)SCM_U32VECTOR_ELEMENTS(seed),
+			  SCM_U32VECTOR_SIZE(seed));
+    } 
+    /* NB: mt->seed is set by either init_by_ui or init_by_array.  */
+
+    UNLOCK(mt);
+}
+
+/* internal.  caller holds the lock */
+static u_long genrand_u32(ScmMersenneTwister *mt)
 {
     unsigned long y;
     int mti = mt->mti;
@@ -159,8 +180,9 @@ unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
     if (mti >= N) { /* generate N words at one time */
 	int kk;
 
-	if (mti == N+1)   /* if Scm_MTInitByUI() has not been called, */
-	    Scm_MTInitByUI(mt, 5489UL); /* a default initial seed is used */
+	if (mti == N+1) {   /* if init_by_ui() has not been called, */
+	    init_by_ui(mt, 5489UL); /* a default initial seed is used */
+        }
 
 	for (kk=0;kk<N-M;kk++) {
 	    y = (mt->mt[kk]&UPPER_MASK)|(mt->mt[kk+1]&LOWER_MASK);
@@ -185,17 +207,57 @@ unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
     y ^= (y >> 18);
 
     mt->mti = mti;
+
     return y;
+}
+
+ScmObj Scm_MTGetState(ScmMersenneTwister *mt)
+{
+    ScmObj v = Scm_MakeU32Vector(N+1, 0);
+    LOCK(mt);
+    for (int i=0; i < N; i++) {
+        SCM_U32VECTOR_ELEMENT(v, i) = mt->mt[i];
+    }
+    SCM_U32VECTOR_ELEMENT(v, N) = mt->mti;
+    UNLOCK(mt);
+    return v;
+}
+
+void Scm_MTSetState(ScmMersenneTwister *mt, ScmU32Vector *v)
+{
+    if (SCM_U32VECTOR_SIZE(v) != N+1) {
+        Scm_Error("u32vector of length %d is required, but got length %d",
+                  N+1, SCM_U32VECTOR_SIZE(v));
+    }
+    LOCK(mt);
+    for (int i=0; i < N; i++) {
+        mt->mt[i] = SCM_U32VECTOR_ELEMENT(v, i);
+    }
+    mt->mti = SCM_U32VECTOR_ELEMENT(v, N);
+    UNLOCK(mt);
+}
+
+
+/* generates a random number on [0,0xffffffff]-interval */
+unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
+{
+    u_long r;
+    LOCK(mt);
+    r = genrand_u32(mt);
+    UNLOCK(mt);
+    return r;
 }
 
 /* generates a random number on (0,1) or [0,1) -real-interval */
 float Scm_MTGenrandF32(ScmMersenneTwister *mt, int exclude0)
 {
     float r;
+    LOCK(mt);
     do {
-	r = (float)(Scm_MTGenrandU32(mt)*(1.0/4294967296.0));
+	r = (float)(genrand_u32(mt)*(1.0/4294967296.0));
 	/* divided by 2^32 */
     } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
+    UNLOCK(mt);
     return r;
 }
 
@@ -204,11 +266,13 @@ double Scm_MTGenrandF64(ScmMersenneTwister *mt, int exclude0)
 {
     double r;
     unsigned long a, b;
+    LOCK(mt);
     do {
-	a = Scm_MTGenrandU32(mt)>>5;
-	b = Scm_MTGenrandU32(mt)>>6;
+	a = genrand_u32(mt)>>5;
+	b = genrand_u32(mt)>>6;
 	r = (a*67108864.0+b)*(1.0/9007199254740992.0);
     } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
+    UNLOCK(mt);
     return r;
 }
 
@@ -300,6 +364,20 @@ ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n)
 /*
  * Gauche specific stuff
  */
+ScmObj Scm_MakeMT(ScmObj seed, u_int flags)
+{
+    ScmMersenneTwister *mt = SCM_NEW(ScmMersenneTwister);
+    SCM_SET_CLASS(mt, &Scm_MersenneTwisterClass);
+    mt->flags = flags;
+    mt->mti = N+1;
+    mt->seed = SCM_UNDEFINED;
+    if (!SCM_FALSEP(seed)) Scm_MTSetSeed(mt, seed);
+    if (SCM_MERSENNE_TWISTER_NEED_LOCK(mt)) {
+        SCM_INTERNAL_MUTEX_INIT(mt->lock);
+    }
+    return SCM_OBJ(mt);
+}
+
 static ScmObj key_seed;
 static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs);
 SCM_DEFINE_BUILTIN_CLASS(Scm_MersenneTwisterClass,
@@ -309,14 +387,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_MersenneTwisterClass,
 static ScmObj mt_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
 {
     ScmObj seed = Scm_GetKeyword(key_seed, initargs, SCM_FALSE);
-    ScmMersenneTwister *mt;
-
-    mt = SCM_NEW(ScmMersenneTwister);
-    SCM_SET_CLASS(mt, &Scm_MersenneTwisterClass);
-    mt->mti = N+1;
-    mt->seed = SCM_UNDEFINED;
-    if (!SCM_FALSEP(seed)) Scm_MTSetSeed(mt, seed);
-    return SCM_OBJ(mt);
+    return Scm_MakeMT(seed, 0);
 }
 
 void Scm_Init_mt_random(void)

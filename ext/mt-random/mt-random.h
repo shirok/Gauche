@@ -65,23 +65,38 @@ typedef struct ScmMersenneTwisterRec {
 			    new integer random number is computed from
 			    mt[mti], incrementing mti; once it exceeds N,
 			    the entire state vector is recomputed. */
+    u_int flags;
     ScmObj seed;         /* last seed value used to initialize this instance.
 			    useful to reproduce the same random sequence. */
+    ScmInternalMutex lock;
 } ScmMersenneTwister;
+
+/* flags */
+enum {
+      /* Do not use mutex.  Faster if the user knows the generator
+         is only used in one thread, or is a part of mutexed structure.
+
+         A simple micro-benchmark shows skipping lock makes mt-random-real
+         about 20% faster.  Most use cases probably don't need to care; only
+         for performance sensitive code. */
+      SCM_MERSENNE_TWISTER_PRIVATE = (1L<<0)
+};
 
 SCM_CLASS_DECL(Scm_MersenneTwisterClass);
 #define SCM_MERSENNE_TWISTER(obj)   ((ScmMersenneTwister*)obj)
 #define SCM_MERSENNE_TWISTER_P(obj) SCM_XTYPEP(obj, &Scm_MersenneTwisterClass)
 
-extern void Scm_MTInitByUI(ScmMersenneTwister *mt, unsigned long s);
-extern void Scm_MTInitByArray(ScmMersenneTwister *mt,
-			      int32_t init_key[],
-			      unsigned long key_length);
-extern void Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed);
+#define SCM_MERSENNE_TWISTER_NEED_LOCK(m) \
+    (!((m)->flags & SCM_MERSENNE_TWISTER_PRIVATE))
 
-extern unsigned long Scm_MTGenrandU32(ScmMersenneTwister *);
-extern float         Scm_MTGenrandF32(ScmMersenneTwister *, int);
-extern double        Scm_MTGenrandF64(ScmMersenneTwister *, int);
-extern ScmObj        Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n);
+extern ScmObj Scm_MakeMT(ScmObj seed, u_int flags);
+extern void   Scm_MTSetSeed(ScmMersenneTwister *mt, ScmObj seed);
+extern ScmObj Scm_MTGetState(ScmMersenneTwister *mt);
+extern void   Scm_MTSetState(ScmMersenneTwister *mt, ScmU32Vector *v);
 
-extern void          Scm_Init_mt_random(void);
+extern u_long Scm_MTGenrandU32(ScmMersenneTwister *);
+extern float  Scm_MTGenrandF32(ScmMersenneTwister *, int);
+extern double Scm_MTGenrandF64(ScmMersenneTwister *, int);
+extern ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n);
+
+extern void   Scm_Init_mt_random(void);

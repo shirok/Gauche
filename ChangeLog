@@ -1,3 +1,7 @@
+2022-07-04  Shiro Kawai  <shiro@acm.org>
+
+	* ext/mt-random: Make mersenne twister RNG thread-safe by default.
+
 2022-07-03  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/ulid.scm (ulid): Drop record type name from export list.
