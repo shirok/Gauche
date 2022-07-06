@@ -32,7 +32,6 @@
 ;;;
 
 (define-module math.mt-random
-  (use gauche.uvector)
   (export <mersenne-twister>
           make-mersenne-twister
           mt-random-get-seed
@@ -51,9 +50,18 @@
 (inline-stub
  (declcode
   (.include "mt-random.h"))
- (initcode (Scm_Init_mt_random))
 
- (declare-stub-type <mersenne-twister> "ScmMersenneTwister*")
+ (define-cclass <mersenne-twister> "ScmMersenneTwister*" 
+   "Scm_MersenneTwisterClass"
+   (c "SCM_CLASS_DEFAULT_CPL")
+   ()                                   ;no external slot
+   (allocator (let* ([seed (Scm_GetKeyword ':seed initargs '#f)]
+                     [priv (Scm_GetKeyword ':private? initargs '#f)]
+                     [flags::u_int (?: (SCM_FALSEP priv)
+                                       0
+                                       SCM_MERSENNE_TWISTER_PRIVATE)])
+                (cast void klass)
+                (return (Scm_MakeMT seed flags)))))
 
  (define-cproc make-mersenne-twister (:optional (seed #f)
                                                 (private?::<boolean> #f))

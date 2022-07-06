@@ -413,23 +413,3 @@ ScmObj Scm_MakeMT(ScmObj seed, u_int flags)
     }
     return SCM_OBJ(mt);
 }
-
-static ScmObj key_seed;
-static ScmObj mt_allocate(ScmClass *klass, ScmObj initargs);
-SCM_DEFINE_BUILTIN_CLASS(Scm_MersenneTwisterClass,
-			 NULL, NULL, NULL, mt_allocate,
-			 NULL);
-
-static ScmObj mt_allocate(ScmClass *klass SCM_UNUSED, ScmObj initargs)
-{
-    ScmObj seed = Scm_GetKeyword(key_seed, initargs, SCM_FALSE);
-    return Scm_MakeMT(seed, 0);
-}
-
-void Scm_Init_mt_random(void)
-{
-    ScmModule *mod = SCM_FIND_MODULE("math.mt-random", SCM_FIND_MODULE_CREATE);
-    Scm_InitStaticClass(&Scm_MersenneTwisterClass, "<mersenne-twister>",
-			mod, NULL, 0);
-    key_seed = SCM_MAKE_KEYWORD("seed");
-}
