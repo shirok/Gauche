@@ -1,3 +1,8 @@
+2022-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (define-cclass): Fix cise issue in
+	  define-cclass https://github.com/shirok/Gauche/issues/832
+
 2022-07-04  Shiro Kawai  <shiro@acm.org>
 
 	* ext/mt-random: Make mersenne twister RNG thread-safe by default.

@@ -1727,12 +1727,21 @@
       [(c-type c-name cpa slot-spec . more)
        (define (get-opt opt init) (cond [(assq opt more) => cadr] [else init]))
        (define (listify x) (if (list? x) x (list x)))
+       ;; If cise is given to allocator, printer etc., we render it early
+       ;; so that quoted literals work.
+       ;; cf. https://github.com/shirok/Gauche/issues/832
+       ;; X can be #f, c-literal, string or cise
+       (define (c-code x)
+         (if (and (pair? x) (not (c-literal? x)))
+           (call-with-output-string (cut cise-render x <> #f))
+           x))
+
        (check-arg string? c-name)
        (check-arg list? cpa)
        (check-arg list? slot-spec)
-       (let* ([allocator (get-opt 'allocator #f)]
-              [printer   (get-opt 'printer #f)]
-              [comparer  (get-opt 'comparer #f)]
+       (let* ([allocator (c-code (get-opt 'allocator #f))]
+              [printer   (c-code (get-opt 'printer #f))]
+              [comparer  (c-code (get-opt 'comparer #f))]
               [dsupers   (listify (get-opt 'direct-supers '()))]
               [metaclass (get-opt 'metaclass #f)]
               [c-pred    (get-opt 'c-predicate #f)]
@@ -1788,19 +1797,19 @@
   (unless ((any-pred not c-literal?) (~ self'allocator))
     (p "static ScmObj "(c-allocator-name self)"(ScmClass *klass, ScmObj initargs)")
     (p "{")
-    (p (c-code (~ self'allocator)))
+    (p (~ self'allocator))
     (p "}")
     (p ""))
   (unless ((any-pred not c-literal?) (~ self'printer))
     (p "static void "(c-printer-name self)"(ScmObj obj, ScmPort *port, ScmWriteContext *ctx SCM_UNUSED)")
     (p "{")
-    (p (c-code (~ self'printer)))
+    (p (~ self'printer))
     (p "}")
     (p ""))
   (unless ((any-pred not c-literal?) (~ self'comparer))
     (p "static int "(c-comparer-name self)"(ScmObj x, ScmObj y, int equalp)")
     (p "{")
-    (p (c-code (~ self'comparer)))
+    (p (~ self'comparer))
     (p "}")
     (p ""))
   (emit-cpa self)
@@ -2404,12 +2413,6 @@
     [('c (? string? e)) e]
     [('c cise) (call-with-output-string (cut cise-render cise <> 'expr))]
     [else #f]))
-
-;; Given a c-code fragment in string or cise, get a C code in string.
-(define (c-code string-or-cise)
-  (if (string? string-or-cise)
-    string-or-cise
-    (call-with-output-string (cut cise-render string-or-cise <> #f))))
 
 ;;===================================================================
 ;; Main parsers
