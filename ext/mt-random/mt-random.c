@@ -249,29 +249,41 @@ unsigned long Scm_MTGenrandU32(ScmMersenneTwister *mt)
 }
 
 /* generates a random number on (0,1) or [0,1) -real-interval */
-float Scm_MTGenrandF32(ScmMersenneTwister *mt, int exclude0)
+static float genrand_f32(ScmMersenneTwister *mt, int exclude0)
 {
     float r;
-    LOCK(mt);
     do {
 	r = (float)(genrand_u32(mt)*(1.0/4294967296.0));
 	/* divided by 2^32 */
     } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
+    return r;
+}
+
+float Scm_MTGenrandF32(ScmMersenneTwister *mt, int exclude0)
+{
+    LOCK(mt);
+    float r = genrand_f32(mt, exclude0);
     UNLOCK(mt);
     return r;
 }
 
 /* generates a random number on (0,1) or [0,1) with 53-bit resolution*/
-double Scm_MTGenrandF64(ScmMersenneTwister *mt, int exclude0)
+static double genrand_f64(ScmMersenneTwister *mt, int exclude0)
 {
     double r;
     unsigned long a, b;
-    LOCK(mt);
     do {
 	a = genrand_u32(mt)>>5;
 	b = genrand_u32(mt)>>6;
 	r = (a*67108864.0+b)*(1.0/9007199254740992.0);
     } while (exclude0 && r == 0.0); /*if we get 0.0, try another one. */;
+    return r;
+}
+
+double Scm_MTGenrandF64(ScmMersenneTwister *mt, int exclude0)
+{
+    LOCK(mt);
+    double r = genrand_f64(mt, exclude0);
     UNLOCK(mt);
     return r;
 }
@@ -359,6 +371,30 @@ ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n)
   err:
     Scm_Error("bad type of argument for n: positive integer up to 2^32 is required, but got %S", n);
     return SCM_UNDEFINED; /*dummy*/
+}
+
+ScmObj Scm_MTFillUvector(ScmMersenneTwister *mt, ScmObj v)
+{
+    if (SCM_U32VECTORP(v)) {
+        LOCK(mt);
+        for (int i = 0; i < SCM_U32VECTOR_SIZE(v); i++) {
+            SCM_U32VECTOR_ELEMENT(v, i) = genrand_u32(mt);
+        }
+        UNLOCK(mt);
+    } else if (SCM_F32VECTORP(v)) {
+        LOCK(mt);
+        for (int i = 0; i < SCM_F32VECTOR_SIZE(v); i++) {
+            SCM_F32VECTOR_ELEMENT(v, i) = genrand_f32(mt, TRUE);
+        }
+        UNLOCK(mt);
+    } else if (SCM_F64VECTORP(v)) {
+        LOCK(mt);
+        for (int i = 0; i < SCM_F64VECTOR_SIZE(v); i++) {
+            SCM_F64VECTOR_ELEMENT(v, i) = genrand_f64(mt, TRUE);
+        }
+        UNLOCK(mt);
+    }
+    return v;
 }
 
 /*

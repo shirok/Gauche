@@ -88,22 +88,13 @@
    Scm_MTGenrandU32)
 
  (define-cproc mt-random-fill-u32vector! (mt::<mersenne-twister> v::<u32vector>)
-   (let* ([p::uint32_t* (SCM_U32VECTOR_ELEMENTS v)])
-     (dotimes [i (SCM_U32VECTOR_SIZE v)]
-       (set! (* (post++ p)) (Scm_MTGenrandU32 mt)))
-     (return (SCM_OBJ v))))
+   (return (Scm_MTFillUvector mt (SCM_OBJ v))))
 
  (define-cproc mt-random-fill-f32vector! (mt::<mersenne-twister> v::<f32vector>)
-   (let* ([p::float* (SCM_F32VECTOR_ELEMENTS v)])
-     (dotimes [i (SCM_F32VECTOR_SIZE v)]
-       (set! (* (post++ p)) (Scm_MTGenrandF32 mt TRUE)))
-     (return (SCM_OBJ v))))
+   (return (Scm_MTFillUvector mt (SCM_OBJ v))))
 
  (define-cproc mt-random-fill-f64vector! (mt::<mersenne-twister> v::<f64vector>)
-   (let* ([p::double* (SCM_F64VECTOR_ELEMENTS v)])
-     (dotimes [i (SCM_F64VECTOR_SIZE v)]
-       (set! (* (post++ p)) (Scm_MTGenrandF64 mt TRUE)))
-     (return (SCM_OBJ v))))
+   (return (Scm_MTFillUvector mt (SCM_OBJ v))))
  )
 
 (define (%get-nword-random-int mt n)
