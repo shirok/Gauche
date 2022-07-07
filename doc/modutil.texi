@@ -11861,9 +11861,7 @@ Mersenne Twister RNGの状態をカプセル化するクラスです。
 Creates and returns a new @code{<mersenne-twister>} RNG instance.
 
 If @var{seed} argument is given, it must be either nonnegative exact
-integer, u32vector, or @code{#f}.  If it is an integer, at most
-the lower 19937 bits are used as a seed.
-If it is an u32vector, up to the first 623 elements are used.
+integer, u32vector, or @code{#f}.  The key can be any length.
 
 If @var{seed} is omitted or @code{#f}, the RNG is initialized to the fixed value,
 so that it generates the same sequences of random numbers.  If you want
@@ -11874,9 +11872,7 @@ explicitly, or initialize each instance with different seeds using
 新たな@code{<mersenne-twister>}のインスタンスを作って返します。
 
 @var{seed}引数が与えられたなら、それは任意の正確な非負整数か、
-@code{u32vctor}でなければなりません。整数の場合、
-最大で下から19937ビットまでが種として使われます。
-u32vectorの場合は、先頭から最大で624要素までが種として使われます。
+@code{u32vctor}でなければなりません。キーの長さに制限はありません。
 
 @var{seed}が省略されるか@code{#f}の場合、RNGは固定の種で初期化されるので、
 そのままだと常に同じ乱数列を生成します。
@@ -11917,12 +11913,10 @@ overhead of locking.
 Sets random seed value @var{seed} to the Mersenne Twister RNG (MTRNG) @var{mt}.
 @var{Seed} can be an arbitrary positive exact integer,
 or arbitrary length of u32vector (@pxref{Homogeneous vectors}).
-If it is a u32vector, up to 624 elements are used for initialization.
 @c JP
 メルセンヌツイスターRNG @var{mt}にランダムシードの値@var{seed}をセットします。
 @var{seed}は任意の正の正確整数か、任意長のu32vector
 (@ref{Homogeneous vectors}参照)が使えます。
-u32vectorの場合は、初期化のために624個までの要素が使われます。
 @c COMMON
 
 @c EN
