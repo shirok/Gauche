@@ -1,5 +1,7 @@
 2022-07-06  Shiro Kawai  <shiro@acm.org>
 
+	* doc/corelib.texi (format): Description of ~nR was missing.
+
 	* lib/gauche/cgen/stub.scm (define-cclass): Fix cise issue in
 	  define-cclass https://github.com/shirok/Gauche/issues/832
 

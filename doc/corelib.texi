@@ -24127,6 +24127,40 @@ the @code{~D} directive.
   @result{} "0F7CF5A8"
 @end example
 
+@item @b{~R}
+@c EN
+Parameters: @var{radix},@var{mincol},@var{padchar},@var{commachar},@var{interval}
+
+Radix.  If the argument is an exact number,
+the directive @code{~@var{n}R} prints out the argument
+in radix @var{n}.  For example, @var{~10R} is the same as @code{~D}.
+The @var{radix} parameter must be between 2 and 36, inclusive.
+Other paramters are are the same as @code{~D} directive.
+
+If the argument is other than an exact number, it is formatted
+just as @code{~A}.
+
+Note: You can't omit @var{radix} parameter.
+In Common Lisp, omitting @var{radix} parameter makes the argument
+printed in special format such as Roman numerals.  We'll eventually
+support it, but for the time being it raises an error.
+@c JP
+パラメータ: @var{radix},@var{mincol},@var{padchar},@var{commachar},@var{interval}
+
+基数。引数が正確数であれば、
+@code{~@var{n}R}は引数を基数@var{n}の数値としてフォーマットします。
+例えば@code{~10R}は@code{~D}と同じです。
+@var{radix}パラメータは2以上36以下でなければなりません。
+他のパラメータの意味は@code{~D}と同じです。
+
+引数が正確数以外の場合は、@code{~A}のようにフォーマットします。
+
+註: @var{radix}パラメータは省略できません。
+Common Lispでは@var{radix}パラメータを省略した場合、引数をローマ数字など
+特殊な方法でフォーマットします。Gaucheでもいずれその動作をサポートする予定ですが、
+今のところはエラーになります。
+@c COMMON
+
 @item @b{~F}
 @c EN
 Parameters: @var{width},@var{digis},@var{scale},@var{ovfchar},@var{padchar}
