@@ -11920,21 +11920,20 @@ or arbitrary length of u32vector (@pxref{Homogeneous vectors}).
 @c COMMON
 
 @c EN
-Internally, MTRNG keeps its state in array of 32-bit integers.  When a fixnum
-is given, its lower 32bit is used to generate a linear congruential series
-to fill the state space.  If you do so, there is an algorithm
-that only samples a couple of result from MTRNG to calculate the original
-seed value, hence can predict entire sequence.  If you want the random
+Internally, MTRNG keeps its state in an array of 624 32-bit integers.
+If the given seed is small (e.g. fixnum), it can't create enough
+variations.  Particularly, if the seed is within 32bits, it can be
+computed by sampling a couple of result from MTRNG.  If you want the random
 sequence harder to predict, prepare your own u32vector seed filled with
 high-entroby bits.
 
 Note that Mersenne Twister is never intended for cryptograhpy, you shouldn't
 use it for security-sensitive purposes.
 @c JP
-MTRNGは32ビット整数配列を内部状態として持っています。fixnumが@var{seed}として
-与えられた場合、その下位32bitを初期値とする線形合同法で得られる数列で内部状態が初期化されます。
-そういた場合、MTRNGの二つの出力だけからシード値を逆算するアルゴリズムがあり、
-全ての乱数列の値が予測できてしまいます。
+MTRNGは32ビット整数624個の配列を内部状態として持っています。
+シード値が小さい場合(例: fixnum)、充分なバリエーションを作ることができません。
+特に、シード値が32ビットに収まる場合、MTRNGの二つの出力だけから
+シード値が逆算できてしまいます。
 もし乱数列をもっと予測しづらくしたいなら、u32vectorをエントロピーの高いビットで満たして
 それをシードとして使ってください。
 
