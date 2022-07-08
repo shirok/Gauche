@@ -30869,9 +30869,9 @@ isn't saved.   It may be changed in future.
 @c COMMON
 @end defun
 
-@defun source-location closure
+@defun source-location procedure
 @c EN
-Returns the location (a list of filename and line number) where @var{closure}
+Returns the location (a list of filename and line number) where @var{procedure}
 is defined, if available.  Otherwise, @code{#f} is returned.
 @c JP
 @var{closure}が定義された場所(ファイル名と行番号)がわかればそれをリストにして
@@ -30882,6 +30882,19 @@ is defined, if available.  Otherwise, @code{#f} is returned.
 gosh> (use rfc.http)
 gosh> (source-location http-get)
 ("/usr/share/gauche-0.9/0.9.5/lib/rfc/http.scm" 443)
+@end example
+
+@c EN
+If @var{procedure} is a subr or a precompiled closure, the filename
+may not be a complete pathname.
+@c JP
+@var{procedure}がsubrやプリコンパイルされた手続きの場合、
+ファイル名は完全なパスではないかもしれません。
+@c COMMON
+
+@example
+gosh> (source-location cons)
+("liblist.scm" 46)
 @end example
 @end defun
 
