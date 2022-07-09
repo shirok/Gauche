@@ -30874,7 +30874,7 @@ isn't saved.   It may be changed in future.
 Returns the location (a list of filename and line number) where @var{procedure}
 is defined, if available.  Otherwise, @code{#f} is returned.
 @c JP
-@var{closure}が定義された場所(ファイル名と行番号)がわかればそれをリストにして
+@var{procedure}が定義された場所(ファイル名と行番号)がわかればそれをリストにして
 返します。わからなければ@code{#f}が返ります。
 @c COMMON
 
