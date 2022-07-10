@@ -9078,11 +9078,18 @@ but potentially more efficient.
 @defunx reverse-bitvector->list/bool bv :optional start end
 [SRFI-178]
 @c MOD srfi-178
+Returns a list of integers (0 or 1) or boolean values of bitvector
+@var{bv}.  The first two procedures returns the leftmost bit first,
+while the @code{reverse-} variations returns the rightmost bit first.
+The optional @var{start}/@var{end} arguments limit the range of @var{bv}
+to be extracted.
 @end defun
 
 @defun reverse-list->bitvector lis
 [SRFI-178]
 @c MOD srfi-178
+Like @code{list->bitvector} (@pxref{Bitvectors}), but pack bits
+from right to left.
 @end defun
 
 @defun bitvector->vector/int bv :optional start end
@@ -9091,18 +9098,46 @@ but potentially more efficient.
 @defunx reverse-bitvector->vector/bool bv :optional start end
 [SRFI-178]
 @c MOD srfi-178
+Returns a vector of integers (0 or 1) or boolean values of
+bitvector @var{bv}.  The first two procedures returns the leftmost bit first,
+while the @code{reverse-} variations returns the rightmost bit first.
+The optional @var{start}/@var{end} arguments limit the range of @var{bv}
+to be extracted.
 @end defun
 
 @defun vector->bitvetor vec :optional start end
 @defunx reverse-vector->bitvector vec :optional start end
 [SRFI-178]
 @c MOD srfi-178
+Converts @var{vec} to a fresh bitvector;
+@var{vec} must be a vector of 0/1 or boolean values.
+The first procedure packs bits in the same left to right order,
+while the @code{reverse-} version reverses the order.
+The optional @var{start}/@var{end} arguments limit the range of @var{vec}
+to be extracted.
 @end defun
 
 @defun bitvector->integer bv
 @defunx integer->bitvector n :optional len
 [SRFI-178]
 @c MOD srfi-178
+Convert between bitvectors and integers.
+Note that the first bit of
+@var{bv} corresponds to the least significant bit.
+
+@example
+(bitvector->integer #*1000) @result{} 1
+(bitvector->integer #*0001) @result{} 8
+@end example
+
+This is consistent with @code{bits->list} etc. of srfi-151
+(@pxref{R7RS bitwise operations}), where least significant bit
+corresponts to the first element of the list.
+
+@code{integer->bitvector} takes an optional argument @var{len} to
+specify the number of bits in @var{n} (count from the least siginificant
+bit) to be taken.  When omitted, @code{(integer-length n)} is used
+(@pxref{Basic bitwise operations}).
 @end defun
 
 @subheading Generators
@@ -9111,11 +9146,35 @@ but potentially more efficient.
 @defunx make-bitvector/bool-generator bv
 [SRFI-178]
 @c MOD srfi-178
+Returns a generator of integers (0 or 1) and boolean values, respectively.
+The value is taken from a bitvector @var{bv} from left to right.
+
+@example
+(generator->list (make-bitvector/int-generator #*10111000))
+ @result{} (1 0 1 1 1 0 0 0)
+@end example
+
+@xref{Generators}, for the details of generators.
 @end defun
 
 @defun make-bitvector-accumulator
 [SRFI-178]
 @c MOD srfi-178
+Returns an accumulator that collects given bits, and returns
+a bitvector at the end of accumulation.
+
+@example
+(let ((a (make-bitvector-accumulator)))
+  (a 1)
+  (a 0)
+  (a 0)
+  (a 1)
+  (a 1)
+  (a (eof-object)))
+  @result{} #*10011
+@end example
+
+@xref{R7RS generators}, for the details of accumulators.
 @end defun
 
 @subheading Bitwise operations
@@ -9124,6 +9183,13 @@ but potentially more efficient.
 @defunx bitvector-not! bv
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector whose bits are logical negation of @var{bv}.
+The linear updating version @code{bitvector-not!} may reuse @var{bv} to
+produce the result.
+
+@example
+(bitvector-not #*10100) @result{} #*01011
+@end example
 @end defun
 
 @defun bitvector-and bv1 bv2 bv @dots{}
@@ -9136,6 +9202,20 @@ but potentially more efficient.
 @defunx bitvector-eqv! bv1 bv2 bv @dots{}
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector whose bits are the result of logical operaion of
+corresponding bits of the given bitvectors.
+The linear updating version (procedures with @code{!}) may reuse @var{bv1} to
+produce the result.
+
+When more than two bitvectors are given to xor and eqv, operation,
+if works associatively, that is,
+
+@example
+(bitvector-xor a b c)
+ @equiv{} (bitvector-xor (bitvector-xor a b) c)
+(bitvector-eqv a b c)
+ @equiv{} (bitvector-eqv (bitvector-eqv a b) c)
+@end example
 @end defun
 
 @defun bitvector-nand bv1 bv2
@@ -9179,6 +9259,13 @@ but potentially more efficient.
 @defun bitvector-first-bit bit bv
 [SRFI-178]
 @c MOD srfi-178
+Returns the index of the leftmost @var{bit} in @var{bv}.
+If @var{bv} doesn't have @var{bit}, returns @code{-1}.
+
+@example
+(bitvector-first-bit 1 #*0010011) @result{} 2
+(bitvector-first-bit 0 #*1111111) @result{} -1
+@end example
 @end defun
 
 @subheading Bit field operations
