@@ -787,24 +787,7 @@
         [(SCM_BIGNUMP n) (return (Scm_BignumLogCount (SCM_BIGNUM n)))]
         [else (SCM_TYPE_ERROR n "exact integer") (return 0)]))
 
-(define-cproc integer-length (n) ::<int> :constant
-  (cond [(SCM_INTP n)
-         (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
-           (if (>= (SCM_INT_VALUE n) 0)
-             (return (+ (Scm_BitsHighest1 (& z) 0 SCM_WORD_BITS) 1))
-             (return (+ (Scm_BitsHighest0 (& z) 0 SCM_WORD_BITS) 1))))]
-        [(SCM_BIGNUMP n)
-         ;; 2's complement adjustment.
-         (when (< (SCM_BIGNUM_SIGN n) 0)
-           (set! n (Scm_Add n (SCM_MAKE_INT 1))))
-         ;; The above operation may change n to fixnum, so we check again
-         (if (SCM_BIGNUMP n)
-           (let* ([z::ScmBits* (cast ScmBits* (-> (SCM_BIGNUM n) values))]
-                  [k::int (SCM_BIGNUM_SIZE n)])
-             (return (+ (Scm_BitsHighest1 z 0 (* k SCM_WORD_BITS)) 1)))
-           ;; If n+1 becomes fixnum, we know n was the least fixnum.
-           (return (+ SCM_SMALL_INT_SIZE 1)))]
-        [else (SCM_TYPE_ERROR n "exact integer") (return 0)]))
+(define-cproc integer-length (n) ::<ulong> :constant Scm_IntegerLength)
 
 ;; Returns maximum s where (expt 2 s) is a factor of n.
 ;; This can be (- (integer-length (logxor n (- n 1))) 1), but we can save

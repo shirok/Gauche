@@ -337,6 +337,7 @@ SCM_EXTERN ScmObj Scm_LogIor(ScmObj x, ScmObj y);
 SCM_EXTERN ScmObj Scm_LogXor(ScmObj x, ScmObj y);
 SCM_EXTERN ScmObj Scm_LogNot(ScmObj x);
 SCM_EXTERN ScmObj Scm_Ash(ScmObj x, ScmSmallInt cnt);
+SCM_EXTERN u_long Scm_IntegerLength(ScmObj n);
 
 enum ScmRoundMode {
     SCM_ROUND_FLOOR,

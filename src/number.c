@@ -3376,7 +3376,6 @@ ScmObj Scm_LogIor(ScmObj x, ScmObj y)
     return Scm_BignumLogIor(SCM_BIGNUM(x), SCM_BIGNUM(y));
 }
 
-
 ScmObj Scm_LogXor(ScmObj x, ScmObj y)
 {
     if (!SCM_INTEGERP(x)) Scm_Error("exact integer required, but got %S", x);
@@ -3390,6 +3389,37 @@ ScmObj Scm_LogXor(ScmObj x, ScmObj y)
         if (SCM_INTP(y)) y = Scm_MakeBignumFromSI(SCM_INT_VALUE(y));
     }
     return Scm_BignumLogXor(SCM_BIGNUM(x), SCM_BIGNUM(y));
+}
+
+/* Scheme's integer-length.  Returns minumum # of bits to represent
+   the given integer. */
+u_long Scm_IntegerLength(ScmObj n)
+{
+    if (SCM_INTP(n)) {
+        ScmBits z = (ScmBits)(long)SCM_INT_VALUE(n);
+        if (SCM_INT_VALUE(n) >= 0) {
+            return Scm_BitsHighest1(&z, 0, SCM_WORD_BITS) + 1;
+        } else {
+            return Scm_BitsHighest0(&z, 0, SCM_WORD_BITS) + 1;
+        }
+    } else if (SCM_BIGNUMP(n)) {
+        /* 2's complement adjustment */
+        if (SCM_BIGNUM_SIGN(n) < 0) {
+            n = Scm_Add(n, SCM_MAKE_INT(1));
+        }
+        /* The above operation may change n to fixnum, so we check again */
+        if (SCM_BIGNUMP(n)) {
+            ScmBits *z = (ScmBits*)SCM_BIGNUM(n)->values;
+            int k = SCM_BIGNUM_SIZE(n);
+            return Scm_BitsHighest1(z, 0, k*SCM_WORD_BITS) + 1;
+        } else {
+            /* If n+1 becomes fixnum, we know n was the least fixnum. */
+            return SCM_SMALL_INT_SIZE+1;
+        }
+    } else {
+        SCM_TYPE_ERROR(n, "exact integer");
+        return 0;               /* dummy */
+    }
 }
 
 
