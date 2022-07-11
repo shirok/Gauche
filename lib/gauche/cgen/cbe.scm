@@ -62,8 +62,7 @@
                "#include <gauche/precomp.h>"
                "")
     (with-input-from-file source.scm
-      (^[]
-        (generator-for-each compile-toplevel read)))
+      (cut generator-for-each compile-toplevel read))
     (cgen-emit-c (cgen-current-unit))))
 
 ;; For easier experiment.
@@ -76,7 +75,9 @@
       (compile-toplevel form)
       (cgen-emit-c (cgen-current-unit)))
     (print #"Code generated in ~|name|.c")
-    (gauche-package-compile-and-link name `(,#"~|name|.c") :verbose #t)
+    (gauche-package-compile-and-link name `(,#"~|name|.c")
+                                     :verbose #t
+                                     :cflags "-O2")
     (dynamic-load #"./~|name|" :init-function #"Scm__Init_~|name|")))
 
 (define (compile-toplevel form)
@@ -94,14 +95,7 @@
 
 (define (cluster->c cluster)
   (define cfn-name (cluster-cfn-name cluster))
-  (define env-type (cluster-env-type-name cluster))
   (cgen-decl #"static ScmObj ~|cfn-name|(ScmObj, void**);")
-  (unless (set-empty? (~ cluster'xregs))
-    (cgen-decl #"struct ~|cfn-name|_ENV {")
-    (set-for-each (^r (cgen-decl #"  ScmObj ~(R r);"))
-                  (~ cluster'xregs))
-    (cgen-decl "};"))
-  (cgen-decl "")
   (cgen-body ""
              #"static ScmObj ~|cfn-name|(ScmObj VAL0, void **DATA)"
              #"{")
@@ -248,13 +242,20 @@
 (define (cluster-env-type-name c)
   #"struct ~(cluster-cfn-name c)_ENV")
 
+(define (cluster-env c)
+  ;; We need to guarantee stable order, and also want to cache the result
+  ;; but for now...
+  (set->list (~ c'xregs)))
+
+(define (cluster-env-size c)
+  (size-of (~ c'xregs)))
+
 (define (cluster-prologue c)
   ;; Set up registers
   (unless (set-empty? (~ c'xregs))
-    (cgen-body #"  ~(cluster-env-type-name c) *ENV = (~(cluster-env-type-name c) *)DATA[1];")
-    (set-for-each
-     (^r (cgen-body #"  ScmObj ~(R r) = ENV->~(R r);"))
-     (~ c'xregs)))
+    (for-each-with-index
+     (^[i r] (cgen-body #"  ScmObj ~(R r) = SCM_OBJ(DATA[~(+ i 1)]);"))
+     (cluster-env c)))
   (set-for-each
    (^r (cgen-body #"  ScmObj ~(R r);"))
    (~ c'lregs))
@@ -288,14 +289,12 @@
                  #"  data[0] = SCM_WORD(0);"
                  #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")
       ;; set up env
-      (let1 env-type (cluster-env-type-name entry-cluster)
-        (cgen-body #"  ~|env-type| *ENV = SCM_NEW(~|env-type|);")
+      (let1 env-size (cluster-env-size entry-cluster)
+        (cgen-body #"  ScmWord data[~(+ env-size 1)];"
+                   #"  data[0] = SCM_WORD(0);")
         (do-ec [: ireg (index i) (~ benv'input-regs)]
-               (cgen-body #"  ENV->~(R ireg) = SCM_FP[~i];"))
-        (cgen-body #"  ScmWord data[2];"
-                   #"  data[0] = SCM_WORD(0);"
-                   #"  data[1] = SCM_WORD(ENV);"
-                   #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")))
+               (cgen-body #"  data[~(+ i 1)] = SCM_WORD(SCM_FP[~i]);"))
+        (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")))
     (cgen-body "}" "")
     (benv-cfn-name benv)))
 
@@ -305,22 +304,21 @@
     (let ([index (entry-block-index dest-bb)]
           [cfn (cluster-cfn-name (~ dest-bb'cluster))])
       (cgen-body #"  {"
-                 #"    ScmWord data[2];"
+                 #"    ScmWord data[~(+ (cluster-env-size (~ dest-bb'cluster)) 1)];"
                  #"    data[0] = SCM_WORD(~index);")
       (prepare-env c (~ dest-bb'cluster))
-      (cgen-body #"    data[1] = SCM_WORD(ENV2);"
-                 #"    return ~|cfn|(SCM_FALSE, (void**)data);"
+      (cgen-body #"    return ~|cfn|(SCM_FALSE, (void**)data);"
                  #"  }"))))
 
 (define (gen-cont-cstmt c dest-bb)
   (let ([index (entry-block-index dest-bb)]
-        [cfn (cluster-cfn-name (~ dest-bb'cluster))])
+        [cfn (cluster-cfn-name (~ dest-bb'cluster))]
+        [env-size (cluster-env-size (~ dest-bb'cluster))])
     (cgen-body #"  {"
-               #"    ScmWord data[2];"
+               #"    ScmWord data[~(+ env-size 1)];"
                #"    data[0] = SCM_WORD(~index);")
     (prepare-env c (~ dest-bb'cluster))
-    (cgen-body #"    data[1] = SCM_WORD(ENV2);"
-               #"    Scm_VMPushCC(~|cfn|, (void**)data, 2);"
+    (cgen-body #"    Scm_VMPushCC(~|cfn|, (void**)data, ~(+ env-size 1));"
                #"  }")))
 
 (define (gen-vmcall c proc regs)
@@ -331,10 +329,9 @@
 ;; env is ENV2.
 (define (prepare-env c dest-c)
   (define env-type-name (cluster-env-type-name dest-c))
-  (cgen-body #"    ~env-type-name *ENV2 = SCM_NEW(~env-type-name);")
-  (set-for-each
-   (^r (cgen-body #"    ENV2->~(R r) = ~(R r);"))
-   (~ dest-c'xregs)))
+  (for-each-with-index
+   (^[i r] (cgen-body #"    data[~(+ i 1)] = SCM_WORD(~(R r));"))
+   (cluster-env dest-c)))
 
 (define (gen-list c regs)
   (define (rec regs)
