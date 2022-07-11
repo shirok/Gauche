@@ -36,6 +36,7 @@
   (use gauche.sequence)
   (use scheme.set)
   (use util.match)
+  (use srfi-178)                        ; bitvector
   (export enum-type? enum? enum-type-contains?
           enum=? enum<? enum>? enum<=? enum>=?
           make-enum-type
@@ -96,6 +97,10 @@
   (ordinal enum-ordinal)
   (value enum-value))
 
+(define-class <enum-set> (<collection>)
+  ((enum-type :init-keyword :enum-type)
+   (members :init-keyword :members)))   ;bitvector
+
 ;; Constructor
 ;; elts : elt ...
 ;; elt : symbol | (symbol value)
@@ -109,12 +114,15 @@
          [h (make-hash-table eq-comparator)]
          [et (make <enum-type>
                :name name
-               :ordinal->name (map-to <vector> car elts.)
                :name->enum h)])
-
     (dolist [e elts.]
       (match-let1 [sym ord val] e
         (hash-table-put! h sym (%make-enum et sym ord val))))
+    (set! (~ et'%ordinal->enum)
+          (map-to <vector> (^e (hash-table-get h (car e))) elts.))
+    (unless (= (vector-lenngth (~ et'%ordinal->enum))
+               (hash-table-num-entries h))
+      (error "Duplicate enum name: " elts))
     et))
 
 ;; API
@@ -153,8 +161,76 @@
     (enum-value e)
     (errorf "enum-type ~s doesn't have enum with oridnal ~s" enum-type n)))
 
-;; enum-type-size
-;; enum-min
-;; enum-max
+(define (enum-type-size enum-type)
+  (assume-type enum-type <enum-type>)
+  (vector-length (~ enum-type'%ordinal->enum)))
 
-   
+(define (enum-min enum-type)
+  (let1 t (enum-type-size enum-type)
+    (when (zero? t)
+      (error "Cannot take enum-min from zero-element enum-type:" enum-type))
+    (~ enum-type'%ordinal->enum 0)))
+
+(define (enum-max enum-type)
+  (let1 t (enum-type-size enum-type)
+    (when (zero? t)
+      (error "Cannot take enum-min from zero-element enum-type:" enum-type))
+    (~ enum-type'%ordinal->enum (- t 1))))
+
+(define (enum-type-enums enum-type)
+  (vector->list (~ enum-type'%ordinal->enum)))
+
+(define (enum-type-names enum-type)
+  (assume-type enum-type <enum-type>)
+  (map enum-name (enum-type-enums enum-type)))
+
+(define (enum-type-values enum-type)
+  (assume-type enum-type <enum-type>)
+  (map enum-value (enum-type-enums enum-type)))
+
+  
+;;
+;; enum-set
+;;
+
+(define (enum-type->enum-set enum-type)
+  (make <enum-type>
+    :enum-type enum-type
+    :members (make-bitvector (enum-type-size enum-type) 1)))
+
+(define (enum-set enum-type . enums)
+  (list->enum-set enum-type enums))
+
+(define (list->enum-set enum-type enums)
+  (let1 members (make-bitvector (enum-type-size enum-type) 0)
+    (dolist [e enums]
+      (unless (enum-type-contains? enum-type e)
+        (errorf "enum ~s isn't a member of given enum type ~s" e enum-type))
+      (bitvetor-set! members (enum-ordinal e) 1))
+    (make <enum-type> :enum-type enum-type :members members)))
+
+;; NB: srfi isn't clear if enum-set contains an enum whose name
+;; is not in enum-type-or-set.
+(define (enum-set-projection enum-type-or-set enum-set)
+  (let1 type (cond [(enum-type? enum-type-or-set) enum-type-or-set]
+                   [(enum-set? enum-type-or-set) (enum-set-type enum-type-or-set)]
+                   [else (error "enum-type or enum-set required, but got:"
+                                enum-type-or-set)])
+    (list->enum-set type
+                    (enum-set-map->list 
+                     (^e (enum-name->enum type (enum-name e)))
+                     enums))))
+
+     
+(define (enum-set-empty? enum-set)
+  (assume-type enum-set <enum-set>)
+  (= (bitvector-first-bit 1 (~ enum-set'members)) -1))
+
+;; NB: srfi is unclear if two sets are not from the same enum-type.
+(define (enum-set-disjoint? enum-set1 enum-set2)
+  (unless (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2))
+    (error "Enum sets don't share the same type:" (list enum-set1 enum-set2)))
+  (= (bitvector-first-bit 1 (bitvector-and (~ enum-set1'members)
+                                           (~ enum-set2'members)))
+     -1))
+
