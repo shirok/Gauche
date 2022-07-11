@@ -114,10 +114,18 @@
 (define (insn->c c insn)
   (match insn
     [('MOV rd rs) (cgen-body #"  ~(R rd) = ~(R rs);")]
-    [('LD r id)   (let1 c-id (cgen-literal id)
-                    (cgen-body
-                     #"  ~(R r) = /* ~(cgen-safe-comment (~ id'name)) */"
-                     #"    Scm_IdentifierGlobalRef(SCM_IDENTIFIER(~(cgen-cexpr c-id)), NULL);"))]
+    [('LD r id) (let1 c-id (cgen-literal id)
+                  (cgen-body
+                   #"  {"
+                   #"    /* ~(cgen-safe-comment (~ id'name)) */"
+                   #"    static ScmGloc *g = NULL;"
+                   #"    if (!g) {"
+                   #"      ~(R r) = "
+                   #"        Scm_IdentifierGlobalRef(SCM_IDENTIFIER(~(cgen-cexpr c-id)), &g);"
+                   #"    } else {"
+                   #"      ~(R r) = Scm_GlocGetValue(g);"
+                   #"    }"
+                   #"  }"))]
     [('ST r id)   (let1 c-id (cgen-literal id)
                     (cgen-body
                      #"  /* ~(cgen-safe-comment (~ id'name)) */"
@@ -260,7 +268,7 @@
    (^r (cgen-body #"  ScmObj ~(R r);"))
    (~ c'lregs))
   ;; Jump table
-  (unless (null? (~ c'entry-blocks))
+  (when (length>? (~ c'entry-blocks) 1)
     (cgen-body #"  switch ((intptr_t)DATA[0]) {")
     (for-each-with-index
      (^[i bb] (cgen-body #"    case ~(+ i 1): goto ~(block-label bb);"))
@@ -322,7 +330,19 @@
                #"  }")))
 
 (define (gen-vmcall c proc regs)
-  (cgen-body #"  return Scm_VMApply(~(R proc), ~(gen-list c regs));"))
+  (case (length regs)
+    [(0)
+     (cgen-body #"  return Scm_VMApply0(~(R proc));")]
+    [(1)
+     (cgen-body #"  return Scm_VMApply1(~(R proc), ~(R (car regs)));")]
+    [(2)
+     (cgen-body #"  return Scm_VMApply2(~(R proc), ~(R (car regs)), ~(R (cadr regs)));")]
+    [(3)
+     (cgen-body #"  return Scm_VMApply3(~(R proc), ~(R (car regs)), ~(R (cadr regs)), ~(R (caddr regs)));")]
+    [(4)
+     (cgen-body #"  return Scm_VMApply4(~(R proc), ~(R (car regs)), ~(R (cadr regs)), ~(R (caddr regs)), ~(R (cadddr regs)));")]
+    [else
+     (cgen-body #"  return Scm_VMApply(~(R proc), ~(gen-list c regs));")]))
 
 ;; Generate code that construct env struct for destination cluster (dest-c)
 ;; from the env of current cluster (c).  The C variable name for the new
