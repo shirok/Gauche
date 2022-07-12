@@ -9232,6 +9232,20 @@ if works associatively, that is,
 @defunx bitvector-orc2! bv1 bv2
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector, where each bit is the result of
+logical operation of corresponding bits of @var{bv1} and @var{bv2}.
+
+@example
+nand  : (not (and bv1 bv2))
+nor   : (not (or bv1 bv2)
+andc1 : (and (not bv1) bv2)
+andc2 : (and bv1 (not bv2))
+orc1  : (or (not bv1) bv2)
+orc2  : (or bv1 (not bv2))
+@end example
+
+The linear updating version (procedures with @code{!}) may reuse @var{bv1} to
+produce the result.
 @end defun
 
 @subheading Quasi-integer operations
@@ -9239,16 +9253,30 @@ if works associatively, that is,
 @defun bitvector-logical-shift bv count bit
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector with the same length of @var{bv}, but the
+content is shifted @var{count} bits to the left (when @var{count} >= 0)
+or @var{-count} bits to the right (when @var{count} < 0).
+The vacated bits are filled with @var{bit}.
+
+@example
+(bitvector-logical-shift #*101100111000 4 1)
+  @result{} #*001110001111
+(bitvector-logical-shift #*101100111000 -4 0)
+  @result{} #*000010110011
+@end example
 @end defun
 
 @defun bitvector-count bit bv
 [SRFI-178]
 @c MOD srfi-178
+Returns the number of @var{bit} values in @var{bv}.
 @end defun
 
 @defun bitvector-count-run bit bv start
 [SRFI-178]
 @c MOD srfi-178
+Returns the number of consecutive @var{bit} values in @var{bv}, starting
+from index @var{i}.
 @end defun
 
 @defun bitvector-if bv-if bv-then bv-else
