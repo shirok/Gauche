@@ -75,9 +75,16 @@
       (compile-toplevel form)
       (cgen-emit-c (cgen-current-unit)))
     (print #"Code generated in ~|name|.c")
-    (gauche-package-compile-and-link name `(,#"~|name|.c")
-                                     :verbose #t
-                                     :cflags "-O2")
+    (let1 cppflags (cond-expand
+                    [gauche.in-place 
+                     (string-append "-I"
+                                    (sys-dirname ((with-module gauche.internal
+                                                    %gauche-libgauche-path))))]
+                    [else #f])
+      (gauche-package-compile-and-link name `(,#"~|name|.c")
+                                       :verbose #t
+                                       :cppflags cppflags
+                                       :cflags "-O2"))
     (dynamic-load #"./~|name|" :init-function #"Scm__Init_~|name|")))
 
 (define (compile-toplevel form)
