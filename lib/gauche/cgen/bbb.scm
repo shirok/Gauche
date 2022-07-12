@@ -41,6 +41,9 @@
   (use gauche.vm.insn)
   (export compile-b
           compile-b/dump  ; for debugging
+
+          cluster-needs-dispatch?
+
           dump-benv
           bb-name
           <reg>
@@ -319,6 +322,10 @@
 (define (make-cluster benv)
   (rlet1 c (make <cluster>)
     (push! (~ benv'clusters) c)))
+
+;; Does cluster needs dispatch on entry?
+(define (cluster-needs-dispatch? c)
+  (length>? (~ c'entry-blocks) 1))
 
 ;;
 ;; Conversion to basic blocks
