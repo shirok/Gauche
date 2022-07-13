@@ -173,6 +173,44 @@ int Scm_BitsIncludes(const ScmBits *a, const ScmBits *b, int s, int e)
 }
 
 /*===================================================================
+ * Bit checking
+ */
+
+int Scm_BitsAny(const ScmBits *bits, int start, int end)
+{
+    int sw = start  / SCM_WORD_BITS;
+    int ew = (end-1)/ SCM_WORD_BITS;
+    int sb = start  % SCM_WORD_BITS;
+    int eb = end    % SCM_WORD_BITS;
+
+    if (sw == ew) {
+        if (start == end) return FALSE;
+        return !!(bits[sw] & SCM_BITS_MASK(sb, eb));
+    }
+    if (bits[sw] & SCM_BITS_MASK(sb, 0)) return TRUE;
+    for (sw++; sw < ew; sw++) if (bits[sw]) return TRUE;
+    if (bits[ew] & SCM_BITS_MASK(0, eb)) return TRUE;
+    return FALSE;
+}
+
+int Scm_BitsEvery(const ScmBits *bits, int start, int end)
+{
+    int sw = start  / SCM_WORD_BITS;
+    int ew = (end-1)/ SCM_WORD_BITS;
+    int sb = start  % SCM_WORD_BITS;
+    int eb = end    % SCM_WORD_BITS;
+
+    if (sw == ew) {
+        if (start == end) return TRUE;
+        return !(~bits[sw] & SCM_BITS_MASK(sb, eb));
+    }
+    if (~bits[sw] & SCM_BITS_MASK(sb, 0)) return FALSE;
+    for (sw++; sw < ew; sw++) if (~bits[sw]) return FALSE;
+    if (~bits[ew] & SCM_BITS_MASK(0, eb)) return FALSE;
+    return TRUE;
+}
+
+/*===================================================================
  * Bit counting
  */
 

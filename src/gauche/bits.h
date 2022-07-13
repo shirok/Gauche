@@ -120,4 +120,7 @@ SCM_EXTERN int    Scm_BitsLowest0(const ScmBits *bits, int start, int end);
 SCM_EXTERN int    Scm_BitsHighest1(const ScmBits *bits, int start, int end);
 SCM_EXTERN int    Scm_BitsHighest0(const ScmBits *bits, int start, int end);
 
+SCM_EXTERN int    Scm_BitsAny(const ScmBits *bits, int start, int end);
+SCM_EXTERN int    Scm_BitsEvery(const ScmBits *bits, int start, int end);
+
 #endif /*GAUCHE_BITS_H*/
