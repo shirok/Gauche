@@ -716,9 +716,7 @@
          [bits::ScmBits* (SCM_BITVECTOR_BITS bv)]
          [i::ScmSmallInt 0])
     (SCM_CHECK_START_END start end len)
-    (for ((set! i start) (< i end) (post++ i))
-      (when (SCM_BITS_TEST bits i) (return TRUE)))
-    (return FALSE)))
+    (return (Scm_BitsAny bits start end))))
 
 (define-cproc bitvector-field-every? (bv::<bitvector>
                                       start::<fixnum>
@@ -728,9 +726,7 @@
          [bits::ScmBits* (SCM_BITVECTOR_BITS bv)]
          [i::ScmSmallInt start])
     (SCM_CHECK_START_END start end len)
-    (for (() (< i end) (post++ i))
-      (unless (SCM_BITS_TEST bits i) (return FALSE)))
-    (return TRUE)))
+    (return (Scm_BitsEvery bits start end))))
 
 (define (bitvector-field-clear bv start end)
   (bitvector-field-clear! (bitvector-copy bv) start end))
