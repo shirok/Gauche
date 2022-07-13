@@ -398,6 +398,13 @@
 (define-cproc bitvector-length (v::<bitvector>) ::<int>    ;srfi-178
   SCM_BITVECTOR_SIZE)
 
+(define-cproc bitvector-any? (v::<bitvector>) ::<boolean>
+  (return (Scm_BitsAny (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v))))
+(define-cproc bitvector-every? (v::<bitvector>) ::<boolean>
+  (return (Scm_BitsEvery (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v))))
+(define-cproc bitvector-none? (v::<bitvector>) ::<boolean>
+  (return (not (Scm_BitsAny (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v)))))
+
 (define-cproc make-bitvector (len::<fixnum> :optional (init #f)) ;srfi-178
   Scm_MakeBitvector)
 (define-cproc bitvector (:rest bits) Scm_ListToBitvector) ;srfi-178

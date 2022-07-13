@@ -1,3 +1,8 @@
+2022-07-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/libvec.scm (bitvector-any?, bitvector-every?, bitvector-none?):
+	  These are not in srfi-178 but handy to have.
+
 2022-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* doc/corelib.texi (format): Description of ~nR was missing.

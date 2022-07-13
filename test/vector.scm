@@ -107,4 +107,41 @@
   (test* "fill! to immutalbe vector" (test-error)
          (vector-fill!! '#(1 2 3) 0)))
 
+;;-------------------------------------------------------------------
+(test-section "bitvector builtins")
+
+;; we have comprehensive tests in srfi-178-tests.  here we cover
+;; non-srfi procedures.
+
+(test* "bitvector-any? 1" #t (bitvector-any? #*0001000))
+(test* "bitvector-any? 2" #t 
+       (bitvector-any? #*000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000))
+(test* "bitvector-any? 3" #t 
+       (bitvector-any? #*000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000))
+(test* "bitvector-any? 4" #f
+       (bitvector-any? #*00000000000))
+(test* "bitvector-any? 5" #f
+       (bitvector-any? #*))
+(test* "bitvector-any? 6" #f
+       (bitvector-any? #*000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000))
+
+(test* "bitvector-every? 1" #t (bitvector-every? #*11111))
+(test* "bitvector-every? 2" #t (bitvector-every? #*))
+(test* "bitvector-every? 3" #t 
+       (bitvector-every? #*11111111111111111111111111111111111111111111111111111111111111111111111111111111111111))
+(test* "bitvector-every? 4" #f (bitvector-every? #*11101))
+(test* "bitvector-every? 5" #f
+       (bitvector-every? #*11111111111111111111111111111111111111111111111111111111111111111111111111111111111110))
+(test* "bitvector-every? 6" #f
+       (bitvector-every? #*11111111101111111111111111111111111111111111111111111111111111111111111111111111111111))
+
+(test* "bitvector-none? 1" #t (bitvector-none? #*00000))
+(test* "bitvector-none? 2" #t (bitvector-none? #*))
+(test* "bitvector-none? 3" #t
+       (bitvector-none? #*00000000000000000000000000000000000000000000000000000000000000000000000000000000000000))
+(test* "bitvector-none? 4" #f 
+       (bitvector-none? #*00000000000000000000000000000000000000000000000000000000000000000000000000000000000010))
+(test* "bitvector-none? 5" #f
+       (bitvector-none? #*00000001000000000000000000000000000000000000000000000000000000000000000000000000000000))
+
 (test-end)
