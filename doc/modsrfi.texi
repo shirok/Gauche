@@ -9298,14 +9298,21 @@ If @var{bv} doesn't have @var{bit}, returns @code{-1}.
 
 @subheading Bit field operations
 
+Those procedures operates on a partial field of a bitvector,
+between @var{start}-th bit (inclusive) and @var{end}-th bit (exclusive).
+
 @defun bitvector-field-any? bv start end
 [SRFI-178]
 @c MOD srfi-178
+Returns @code{#t} iff at least one bit between @var{start} and @var{end}
+in @var{bv} is 1.
 @end defun
 
 @defun bitvector-field-every? bv start end
 [SRFI-178]
 @c MOD srfi-178
+Returns @code{#t} iff every bit between @var{start} and @var{end}
+in @var{bv} is 1.
 @end defun
 
 @defun bitvector-field-clear bv start end
