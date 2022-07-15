@@ -9321,19 +9321,62 @@ in @var{bv} is 1.
 @defunx bitvector-field-set! bv start end
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector with the same content as @var{bv}, except
+the bits between @var{start} (inclusive) and @var{end} (exclusive)
+are cleared or set, respectively.
+
+The liner-updating version may mutate @var{bv} to produce the result.
+
+@example
+(bitvector-field-clear #*10010010101001 2 7)
+ @result{} #*10000000101001
+(bitvector-field-set #*10010010101001 2 7)
+ @result{} #*10111110101001 
+@end example
 @end defun
 
 @defun bitvector-field-replace to from start end
 @defunx bitvector-field-replace! to from start end
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector with the same content as @var{to-bv}, except
+its bits between @var{start} (inclusive) and @var{end} (exclusive)
+are replaced with the content of @var{from-bv}.
+
+The liner-updating version may mutate @var{to-bv} to produce the result.
+
+@example
+(bitvector-field-replace #*10010010101001 #*110011 2 8)
+ @result{} #*10110011101001
+@end example
+
+The length of @var{from-bv} must be at least @var{end}-@var{start}.
+If it is longer, the exceeding bits are ignored.
+
+See also @code{bitvector-field-replace-same} below.
 @end defun
 
-@defun bitvector-field-replace-same to from start end
-@defunx bitvector-field-replace-same! to from start end
+@defun bitvector-field-replace-same to-bv from-bv start end
+@defunx bitvector-field-replace-same! to-bv from-bv start end
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector with the same content as @var{to-bv}, except
+its bits between @var{start} (inclusive) and @var{end} (exclusive)
+are replaced with the content of @var{from-bv} between @var{start} and
+@var{end}.
+
+The liner-updating version may mutate @var{to-bv} to produce the result.
+
+@example
+(bitvector-field-replace-same #*10010010101001 #*11001100 2 8)
+ @result{} #*10001100101001
+@end example
+
+The length of @var{from-bv} must be greater than or equal to @var{end}.
+
+See also @code{bitvector-field-replace} above.
 @end defun
+
 
 @defun bitvector-field-rotate bv count start end
 [SRFI-178]
