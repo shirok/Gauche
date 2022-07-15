@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-178 - bitvectors
+;;; gauche.bitvector - bitvectors
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,28 +31,28 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module srfi-178
+(define-module gauche.bitvector
   (use util.match)
   (use gauche.sequence)
   (export
    ;; bit conversion
-   bit->integer bit->boolean            ;built-in
+   ;bit->integer bit->boolean            ;built-in
 
    ;; constructors
-   make-bitvector bitvector             ;built-in
+   ;make-bitvector bitvector             ;built-in
    bitvector-unfold bitvector-unfold-right
-   bitvector-copy                       ;built-in
+   ;bitvector-copy                       ;built-in
    bitvector-reverse-copy
    bitvector-append bitvector-concatenate bitvector-append-subbitvectors
 
    ;; predicates
-   bitvector?                           ;built-in
+   ;bitvector?                           ;built-in
    bitvector-empty?
    bitvector=?
 
    ;; selectors
-   bitvector-ref/int bitvector-ref/bool ;built-in
-   bitvector-length                     ;built-in
+   ;bitvector-ref/int bitvector-ref/bool ;built-in
+   ;bitvector-length                     ;built-in
 
    ;; iteration
    bitvector-take bitvector-take-right
@@ -72,24 +72,24 @@
    bitvector-trim bitvector-trim-right bitvector-trim-both
 
    ;; mutators
-   bitvector-set!                       ;built-in
+   ;bitvector-set!                       ;built-in
    bitvector-swap!
    bitvector-reverse!
-   bitvector-copy!                      ;built-in
+   ;bitvector-copy!                      ;built-in
    bitvector-reverse-copy!
 
    ;; conversion
    bitvector->list/int bitvector->list/bool
    reverse-bitvector->list/int reverse-bitvector->list/bool
-   list->bitvector                      ;built-in
+   ;list->bitvector                      ;built-in
    reverse-list->bitvector
    bitvector->vector/int bitvector->vector/bool
    reverse-bitvector->vector/int reverse-bitvector->vector/bool
    vector->bitvector
    reverse-vector->bitvector
 
-   bitvector->string                    ;built-in
-   string->bitvector                    ;built-in
+   ;bitvector->string                    ;built-in
+   ;string->bitvector                    ;built-in
 
    bitvector->integer integer->bitvector
 
@@ -124,7 +124,7 @@
    bitvector-field-rotate
    bitvector-field-flip bitvector-field-flip!
    ))
-(select-module srfi-178)
+(select-module gauche.bitvector)
 
 ;; handling optional start/end parameters
 (define-syntax with-range
@@ -713,8 +713,7 @@
                                     end::<fixnum>)
   ::<boolean>
   (let* ([len::ScmSmallInt (SCM_BITVECTOR_SIZE bv)]
-         [bits::ScmBits* (SCM_BITVECTOR_BITS bv)]
-         [i::ScmSmallInt 0])
+         [bits::ScmBits* (SCM_BITVECTOR_BITS bv)])
     (SCM_CHECK_START_END start end len)
     (return (Scm_BitsAny bits start end))))
 
@@ -723,8 +722,7 @@
                                       end::<fixnum>)
   ::<boolean>
   (let* ([len::ScmSmallInt (SCM_BITVECTOR_SIZE bv)]
-         [bits::ScmBits* (SCM_BITVECTOR_BITS bv)]
-         [i::ScmSmallInt start])
+         [bits::ScmBits* (SCM_BITVECTOR_BITS bv)])
     (SCM_CHECK_START_END start end len)
     (return (Scm_BitsEvery bits start end))))
 

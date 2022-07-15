@@ -1,3 +1,9 @@
+2022-07-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/srfi/srfi-178.scm, ext/gauche/bitvector.scm, lib/srfi-178.scm:
+	  Move bitvector lib as gauche.bitvector, for we'll add some more
+	  bitvector utilities.  srfi-178 just reexport srfi procedures.
+
 2022-07-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/libvec.scm (bitvector-any?, bitvector-every?, bitvector-none?):

@@ -63,7 +63,8 @@ SCMFILES = \
        srfi-159.scm srfi-159/*.sld srfi-159/*.scm \
        srfi-159/internal/*.sld srfi-159/internal/*.scm srfi/159/*.scm \
        srfi-160.scm srfi/*.scm srfi/160/*.scm srfi-162.scm \
-       srfi-170.scm srfi-173.scm srfi-174.scm srfi-175.scm srfi-176.scm \
+       srfi-170.scm srfi-173.scm srfi-174.scm srfi-175.scm \
+       srfi-176.scm srfi-178.scm \
        srfi-180.scm srfi-181.scm srfi-185.scm srfi-189.scm \
        srfi-192.scm srfi-193.scm srfi-196.scm srfi-197.scm \
        srfi-214.scm srfi-217.scm srfi-219.scm \

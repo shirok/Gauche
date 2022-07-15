@@ -8,12 +8,10 @@ include ../Makefile.ext
 
 LIBFILES = srfi-13.$(SOEXT) \
 	   srfi-19.$(SOEXT) \
-	   srfi-43.$(SOEXT) \
-	   srfi-178.$(SOEXT)
+	   srfi-43.$(SOEXT)
 SCMFILES = srfi-13.sci \
 	   srfi-19.sci \
-	   srfi-43.sci \
-	   srfi-178.sci
+	   srfi-43.sci
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
@@ -21,8 +19,7 @@ XCLEANFILES = *.c *.sci
 
 OBJECTS = $(srfi_13_OBJECTS) \
 	  $(srfi_19_OBJECTS) \
-	  $(srfi_43_OBJECTS) \
-	  $(srfi_178_OBJECTS)
+	  $(srfi_43_OBJECTS)
 
 all : $(LIBFILES)
 
@@ -63,15 +60,3 @@ srfi-43.$(SOEXT) : $(srfi_43_OBJECTS)
 
 srfi-43.c srfi-43.sci : srfi-43.scm
 	$(PRECOMP) -e -P $(srcdir)/srfi-43.scm
-
-#
-# srfi-178
-#
-
-srfi_178_OBJECTS = srfi-178.$(OBJEXT)
-
-srfi-178.$(SOEXT) : $(srfi_178_OBJECTS)
-	$(MODLINK) srfi-178.$(SOEXT) $(srfi_178_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
-
-srfi-178.c srfi-178.sci : srfi-178.scm
-	$(PRECOMP) -e -P $(srcdir)/srfi-178.scm

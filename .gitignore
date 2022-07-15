@@ -99,6 +99,7 @@ test.record
 /ext/digest/rfc--sha.c
 /ext/fcntl/gauche--fcntl.c
 /ext/file/file--util.c
+/ext/gauche/gauche--bitvector.c
 /ext/gauche/gauche--collection.c
 /ext/gauche/gauche--dictionary.c
 /ext/gauche/gauche--hook.c

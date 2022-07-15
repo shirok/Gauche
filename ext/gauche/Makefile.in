@@ -15,7 +15,8 @@ LIBFILES = gauche--collection.$(SOEXT) \
 	   gauche--hook.$(SOEXT) \
 	   gauche--record.$(SOEXT) \
 	   gauche--generator.$(SOEXT) \
-	   gauche--unicode.$(SOEXT)
+	   gauche--unicode.$(SOEXT) \
+	   gauche--bitvector.$(SOEXT)
 SCMFILES = collection.sci \
 	   sequence.sci   \
 	   dictionary.sci \
@@ -24,7 +25,8 @@ SCMFILES = collection.sci \
 	   hook.sci \
 	   record.sci \
 	   generator.sci \
-	   unicode.sci
+	   unicode.sci \
+	   bitvector.sci
 
 CONFIG_GENERATED = Makefile
 PREGENERATED = unicode-attr.scm
@@ -40,7 +42,8 @@ OBJECTS = $(gauche-collection_OBJECTS) \
 	  $(gauche-hook_OBJECTS) \
 	  $(gauche-record_OBJECTS) \
 	  $(gauche-generator_OBJECTS) \
-	  $(gauche-unicode_OBJECTS)
+	  $(gauche-unicode_OBJECTS) \
+	  $(gauche-bitvector_OBJECTS)
 
 # gauche.collection
 gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
@@ -132,5 +135,15 @@ gauche--unicode.c unicode.sci : unicode.scm unicode-attr.scm
 gauche--unicode.$(OBJEXT) : gauche--unicode.c $(top_builddir)/src/gauche/priv/unicode_attr.h
 
 unicode-attr.scm : $(top_srcdir)/src/gen-unicode.scm $(top_srcdir)/src/unicode-data.scm
+
+# gauche.bitvector
+
+gauche-bitvector_OBJECTS = gauche--bitvector.$(OBJEXT)
+
+gauche--bitvector.$(SOEXT) : $(gauche-bitvector_OBJECTS)
+	$(MODLINK) gauche--bitvector.$(SOEXT) $(gauche-bitvector_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--bitvector.c bitvector.sci : bitvector.scm
+	$(PRECOMP) -I $(builddir) -e -P -o gauche--bitvector $(srcdir)/bitvector.scm
 
 install : install-std
