@@ -76,7 +76,7 @@
       (cgen-emit-c (cgen-current-unit)))
     (print #"Code generated in ~|name|.c")
     (let1 cppflags (cond-expand
-                    [gauche.in-place 
+                    [gauche.in-place
                      (string-append "-I"
                                     (sys-dirname ((with-module gauche.internal
                                                     %gauche-libgauche-path))))]
@@ -256,17 +256,9 @@
 (define (cluster-env-type-name c)
   #"struct ~(cluster-cfn-name c)_ENV")
 
-(define (cluster-env c)
-  ;; We need to guarantee stable order, and also want to cache the result
-  ;; but for now...
-  (set->list (~ c'xregs)))
-
-(define (cluster-env-size c)
-  (size-of (~ c'xregs)))
-
 (define (cluster-prologue c)
   ;; Set up registers
-  (unless (set-empty? (~ c'xregs))
+  (when (cluster-has-env? c)
     (let1 off (if (cluster-needs-dispatch? c) 1 0)
       (for-each-with-index
        (^[i r] (cgen-body #"  ScmObj ~(R r) = SCM_OBJ(DATA[~(+ i off)]);"))
@@ -298,13 +290,7 @@
                #"                  int SCM_ARGCNT SCM_UNUSED,"
                #"                  void *data_ SCM_UNUSED)"
                #"{")
-    (if (set-empty? (~ entry-cluster'xregs))
-      ;; no need to set up env
-      (if (cluster-needs-dispatch? entry-cluster)
-        (cgen-body #"  ScmWord data[1];"
-                   #"  data[0] = SCM_WORD(0);"
-                   #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")
-        (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, NULL);"))
+    (if (cluster-has-env? entry-cluster)
       ;; set up env
       (let* ([off (if (cluster-needs-dispatch? entry-cluster) 1 0)]
              [env-size (+ (cluster-env-size entry-cluster) off)])
@@ -312,8 +298,17 @@
         (when (cluster-needs-dispatch? entry-cluster)
           (cgen-body #"  data[0] = SCM_WORD(0);"))
         (do-ec [: ireg (index i) (~ benv'input-regs)]
-               (cgen-body #"  data[~(+ i off)] = SCM_WORD(SCM_FP[~i]);"))
-        (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")))
+               (let1 pos
+                   (find-index (cut eq? ireg <>) (cluster-env entry-cluster))
+                 (assume pos)
+                 (cgen-body #"  data[~(+ pos off)] = SCM_WORD(SCM_FP[~i]);")))
+        (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);"))
+      ;; no need to set up env
+      (if (cluster-needs-dispatch? entry-cluster)
+        (cgen-body #"  ScmWord data[1];"
+                   #"  data[0] = SCM_WORD(0);"
+                   #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")
+        (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, NULL);")))
     (cgen-body "}" "")
     (benv-cfn-name benv)))
 

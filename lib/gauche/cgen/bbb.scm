@@ -43,6 +43,7 @@
           compile-b/dump  ; for debugging
 
           cluster-needs-dispatch?
+          cluster-env cluster-env-size cluster-has-env?
 
           dump-benv
           bb-name
@@ -312,7 +313,10 @@
    (entry-blocks :init-value '()) ; BBs to be jumped from another cluster
    (upstream :init-value '())   ;upstream clustres
    (downstream :init-value '()) ;downstream clusters
-   ;; Register classification
+   ;; A vector of nonlocal registers.  This is created after all registers
+   ;; are classified.
+   (env :init-value #f)
+   ;; Register classification.  Used internally.
    ;;  XREGS - Regs outlive this cluster
    ;;  LREGS - Regs local to this cluster
    (xregs :init-form (set eq-comparator))
@@ -326,6 +330,15 @@
 ;; Does cluster needs dispatch on entry?
 (define (cluster-needs-dispatch? c)
   (length>? (~ c'entry-blocks) 1))
+
+(define (cluster-env c)
+  (~ c'env))
+
+(define (cluster-env-size c)
+  (size-of (~ c'env)))
+
+(define (cluster-has-env? c)
+  (positive? (cluster-env-size c)))
 
 ;;
 ;; Conversion to basic blocks
@@ -810,7 +823,8 @@
   (dolist [cbenv (~ benv'children)]
     (dolist [c (~ cbenv 'clusters)]
       (classify-cluster-regs! cbenv c)))
-  (adjust-cluster-regs! benv))
+  (adjust-cluster-regs! benv)
+  (create-cluster-env! benv))
 
 (define (link-clusters! upstream downstream)
   (when (and upstream downstream
@@ -849,6 +863,11 @@
   (let loop ()
     (when (fold propagate! #f (~ benv'clusters))
       (loop))))
+
+;; Set cluster's display (nonlocal environment in a flat vector)
+(define (create-cluster-env! benv)
+  (dolist [c (~ benv'clusters)]
+    (set! (~ c'env) (list->vector (set->list (~ c'xregs))))))
 
 ;;
 ;; For debugging
