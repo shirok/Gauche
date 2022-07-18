@@ -188,7 +188,7 @@
   (assume-type enum-type <enum-type>)
   (map enum-value (enum-type-enums enum-type)))
 
-  
+
 ;;
 ;; enum-set
 ;;
@@ -217,20 +217,41 @@
                    [else (error "enum-type or enum-set required, but got:"
                                 enum-type-or-set)])
     (list->enum-set type
-                    (enum-set-map->list 
+                    (enum-set-map->list
                      (^e (enum-name->enum type (enum-name e)))
                      enums))))
 
-     
+
 (define (enum-set-empty? enum-set)
   (assume-type enum-set <enum-set>)
   (= (bitvector-first-bit 1 (~ enum-set'members)) -1))
 
 ;; NB: srfi is unclear if two sets are not from the same enum-type.
 (define (enum-set-disjoint? enum-set1 enum-set2)
-  (unless (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2))
-    (error "Enum sets don't share the same type:" (list enum-set1 enum-set2)))
-  (= (bitvector-first-bit 1 (bitvector-and (~ enum-set1'members)
-                                           (~ enum-set2'members)))
-     -1))
+  (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (bitvector-zero? (bitvector-and (~ enum-set1'members)
+                                  (~ enum-set2'members))))
 
+(define (enum-set=? enum-set1 enum-set2)
+  (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (bitvector=? (~ enum-set1'members) (~ enum-set2'members)))
+
+(define (enum-set<=? enum-set1 enum-set2)
+  (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (bitvector=? (~ enum-set1'members)
+               (bitvector-and (~ enum-set1'members)
+                              (~ enum-set2'members))))
+
+(define (enum-set<? enum-set1 enum-set2)
+  (and (not (enum-set=? enum-set1 enum-set2))
+       (enum-set<=? enum-set1 enum-set2)))
+
+(define (enum-set>=? enum-set1 enum-set2)
+  (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (bitvector=? (~ enum-set2'members)
+               (bitvector-and (~ enum-set2'members)
+                              (~ enum-set1'members))))
+
+(define (enum-set>? enum-set1 enum-set2)
+  (and (not (enum-set=? enum-set1 enum-set2))
+       (enum-set>=? enum-set1 enum-set2)))
