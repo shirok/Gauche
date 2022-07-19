@@ -1515,6 +1515,16 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
     ARGP = SP = s;
 }
 
+/* Allocate SIZE words from the VM stack.  The stack may be packed
+   to make room. */
+ScmObj *Scm_vAlloca(ScmVM *vm, size_t size)
+{
+    CHECK_STACK(size);
+    ScmObj *r = SP;
+    SP += size;
+    return r;
+}
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,

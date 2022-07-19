@@ -83,4 +83,10 @@
             Scm_Error("index out of range: %ld", (n));  \
     } whlie (0)
 
+/*
+ * VM interface
+ */
+
+SCM_EXTERN ScmObj *Scm_vAlloca(ScmVM *, size_t);
+
 #endif /* GAUCHE_PRECOMP_H */
