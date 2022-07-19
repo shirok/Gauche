@@ -420,6 +420,8 @@ struct ScmVMRec {
     ScmObj val0;                /* Value register.                           */
     ScmObj vals[SCM_VM_MAX_VALUES]; /* Value register for multiple values */
     int    numVals;             /* # of values */
+    u_int  trampoline;          /* Usually 0. C-compiled subr may set >0 before
+                                   returning to trampoline to another subr. */
 
     ScmObj handlers;            /* chain of active dynamic handlers          */
 

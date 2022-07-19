@@ -189,7 +189,10 @@
 #endif
 
         SCM_PROF_COUNT_CALL(vm, VAL0);
-        VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc, SCM_SUBR(VAL0)->data);
+        vm->trampoline = 0;
+        do {
+            VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc, SCM_SUBR(VAL0)->data);
+        } while ((argc = vm->trampoline) > 0);
         /* the subr may have substituted pc, so we need to check
            if we can pop the continuation immediately. */
         if (TAIL_POS()) RETURN_OP();
