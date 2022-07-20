@@ -9331,7 +9331,7 @@ The liner-updating version may mutate @var{bv} to produce the result.
 (bitvector-field-clear #*10010010101001 2 7)
  @result{} #*10000000101001
 (bitvector-field-set #*10010010101001 2 7)
- @result{} #*10111110101001 
+ @result{} #*10111110101001
 @end example
 @end defun
 
@@ -9381,12 +9381,32 @@ See also @code{bitvector-field-replace} above.
 @defun bitvector-field-rotate bv count start end
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector whose content is the same as @var{bv} except
+the range between @var{start}-th bit (inclusive) and
+@var{end}-th bit (exclusive) being rotated by @var{count} bits toward
+right.  You can give a negative @var{count} to rotate towards left.
+
+@example
+(bitvector-field-rotate #*001100110011 1 4 8)
+ @result{} #*001101100011
+(bitvector-field-rotate #*001100110011 -1 4 8)
+ @result{} #*001110010011
+@end example
 @end defun
 
 @defun bitvector-field-flip bv start end
 @defunx bitvector-field-flip! bv start end
 [SRFI-178]
 @c MOD srfi-178
+Returns a bitvector whose content is the same as @var{bv}
+except the bits in the range
+between @var{start}-th bit (inclusive) and
+@var{end}-th bit (exclusive) are inverted.
+
+@example
+(bitvector-field-flip #*001100110011 4 8)
+ @result{} #*001111000011
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
