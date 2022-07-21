@@ -8787,9 +8787,8 @@ See also @code{digit->integer} (@pxref{Characters}).
 
 @deftp {Module} srfi-178
 @mdindex srfi-178
-Gauche supports bitvectors as a native type, but the core library only
-offers a handful of primitives.  This module complements the comprehensive
-operations on bitvectors.
+Gauche supports all srfi-178 operations by built-in procedures
+and the module @code{gauche.bitvector}.
 
 The following procedures are built-in.  @xref{Bitvectors}, for the description.
 
@@ -8801,613 +8800,61 @@ string->bitvector bitvector->string
 bitvector-ref/int bitvector-ref/bool
 bitvector-set!    bitvector-copy     bitvector-copy!
 @end example
+
+The following procedures are provided in @ref{Bitvector utilities}.
+
+@example
+bitvector-unfold  bitvector-unfold-right  bitvector-reverse-copy
+bitvector-append  bitvector-concatenate   bitvector-append-subbitvectors
+bitvector-emtpy?  bitvector=?
+bitvector-take    bitvector-take-right
+bitvector-drop    bitvector-drop-right
+bitvector-segment
+bitvector-fold/int       bitvector-fold/bool
+bitvector-fold-right/int bitvector-fold-right/bool
+bitvector-map/int        bitvetor-map/bool
+bitvector-map!/int       bitvetor-map!/bool
+bitvector-map->list/int  bitvector-map->list/bool
+bitvector-for-each/int   bitvector-for-each/bool
+bitvector-prefix-length  bitvector-suffix-length
+bitvector-prefix?        bitvector-suffix?
+bitvector-pad            bitvector-pad-right
+bitvector-trim           bitvector-trim-right        bitvector-trim-both
+bitvector-swap!          bitvector-reverse!          bitvector-reverse-copy!
+bitvector->list/int      bitvector->list/bool
+reverse-bitvector->list/int reverse-bitvector->list/bool
+reverse-list->bitvector
+bitvector->vector/int    bitvector->vector/bool
+reverse-bitvector->vector/int reverse-bitvector->vector/bool
+vector->bitvector        reverse-vector->bitvector
+bitvector->integer
+integre->bitvector
+make-bitvector/int-generator make-bitvector/bool-generator
+make-bitvector-accumulator
+bitvector-not            bitvector-not!
+bitvector-and            bitvector-and!
+bitvector-ior            bitvector-ior!
+bitvector-xor            bitvector-xor!
+bitvector-eqv            bitvector-eqv!
+bitvector-nand           bitvector-nand!
+bitvector-nor            bitvector-nor!
+bitvector-andc1          bitvector-andc1!
+bitvector-andc2          bitvector-andc2!
+bitvector-orc1           bitvector-orc1!
+bitvector-orc2           bitvector-orc2!
+bitvector-logical-shift
+bitvector-count          bitvector-count-run
+bitvector-if
+bitvector-first-bit
+bitvector-field-any?     bitvector-field-every?
+bitvector-field-clear    bitvector-field-clear!
+bitvector-field-set      bitvector-field-set!
+bitvector-field-replace  bitvector-field-replace!
+bitvector-field-replace-same bitvector-field-replace-same!
+bitvector-field-rotate
+bitvector-field-flip     bitvector-field-flip!
+@end example
 @end deftp
-
-@subheading Constructors
-
-@defun bitvector-unfold f length seed @dots{}
-@defunx bitvector-unfold-right f length seed @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Creates a bitvector of length @var{length}, and fill its contents by
-repeatedly applying @var{f}.  The procedure @var{f} must take one more
-than the number of seeds, and must return the same number
-of values.  First, @var{f} is applied to the index and @var{seed} @dots{},
-then its first return value (which must be a bit, i.e. 0, 1 or a boolean
-value) is used to initialize the first element of the bitvector,
-and the rest of the return value is used as the next argument to @var{f}.
-It is repeated @var{length} times.
-
-While @code{bitvector-unfold} fills the bits from left to right,
-@code{bitvector-unfold-right} does from right to left.
-
-@example
-(use math.prime)
-(bitvector-unfold (^[index n]
-                    (values (small-prime? n) (+ n 1)))
-                  20 0)
-  @result{} #*00110101000101000101
-(bitvector-unfold-right (^[index n]
-                          (values (small-prime? n) (+ n 1)))
-                        20 0)
-  @result{} #*10100010100010101100
-@end example
-
-Note: This procedure follows the protocol of @code{vector-unfold}
-(@pxref{R7RS vectors}), and has a different protocol from other
-@code{unfold} procedures (@pxref{R7RS lists}).
-@end defun
-
-@defun bitvector-reverse-copy bv :optional start end
-[SRFI-178]
-@c MOD srfi-178
-Copies a bitvector @var{bv} in reverse order.  Optional @var{start}
-and @var{end} arguments limits the range of the input.
-
-@example
-(bitvector-reverse-copy #*10110011100011110000 4 16)
-  @result{} #*111100011100
-@end example
-@end defun
-
-@defun bitvector-append bv @dots{}
-[SRFI-178]
-@c MOD srfi-178
-All arguments must be bytevectors.  Returns a fresh bytevector
-which is concatenation of all arguments.
-@end defun
-
-@defun bitvector-concatenate bvs
-[SRFI-178]
-The argument must be a list of bytevectors.  Returns a fresh bytevector
-which is concatenation of all arguments.
-@c MOD srfi-178
-@end defun
-
-@defun bitvector-append-subbitvectors bv start end @dots{}
-[SRFI-178]
-@c MOD srfi-178
-The number of arguments must be a multiple of 3.  Each triplet of
-the arguments is a bytevector followed by start and end index,
-specifying the input bytevector range.  Returns a fresh bytevector
-which is concatenation of all the subvectors.
-@end defun
-
-@subheading Predicates
-
-@defun bitvector-emtpy? bv
-[SRFI-178]
-@c MOD srfi-178
-Returns @code{#t} iff @var{bv} is an empty bytevector.
-@end defun
-
-@defun bitvector=? bv @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Returns @code{#t} iff all the bytevectors have the same content.
-If there's zero or one argument, it returns @code{#t}.
-@end defun
-
-@subheading Iteration
-
-@defun bitvector-take bv n
-@defunx bitvector-take-right bv n
-[SRFI-178]
-@c MOD srfi-178
-Returns a new bitvector with the first/last @var{n} bits of a bitvector @var{bv}.
-An error is thrown if length of @var{bv} is less than @var{n}.
-
-In Gauche, you can also use generic @code{(subseq bv 0 n)} to take the
-first @var{n} bits.  @xref{Sequence framework}.
-@end defun
-
-@defun bitvector-drop bv n
-@defunx bitvector-drop-right bv n
-[SRFI-178]
-@c MOD srfi-178
-Returns a new bitvector with bits except first/last @var{n} bits of
-a bitvector @var{bv}.
-An error is thrown if length of @var{bv} is less than @var{n}.
-
-In Gauche, you can also use generic @code{(subseq bv n)}
-to drop the first @var{n} bits.  @xref{Sequence framework}.
-@end defun
-
-@defun bitvector-segment bv n
-[SRFI-178]
-@c MOD srfi-178
-Slices a bitvector @var{bv} with @var{n}-bits each, and returns
-a list of bitvectors.  If the length of @var{bv} isn't a multiple
-of @var{n}, the last bitvector may be shorter.
-@end defun
-
-@defun bitvector-fold/int kons knil bv1 bv2 @dots{}
-@defunx bitvector-fold/bool kons knil bv1 bv2 @dots{}
-@defunx bitvector-fold-right/int kons knil bv1 bv2 @dots{}
-@defunx bitvector-fold-right/bool kons knil bv1 bv2 @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Fold @var{kons} over the elements of bitvectors with @var{knil} as
-the initial state value.
-
-The @var{kons} procedure is always called as
-@code{(kons state e1 e2 @dots{})}, where @var{e1} @var{e2} @dots{}
-are elements from each bitvectors, as integer 0/1 (for @code{/int} procdures)
-or boolean @code{#f}/@code{#t} (for @code{/bool} procedures).
-This is the same order as @code{vector-fold} in
-@code{scheme.vector} module (@pxref{R7RS vectors}).
-(Note that list @code{fold} procedure calls the @var{knil} procedure
-with different order; @pxref{Walking over lists}).
-
-All bitvectors must have the same length; otherwise, an error is thrown.
-@end defun
-
-@defun bitvector-map/int f bv1 bv2 @dots{}
-@defunx bitvector-map/bool f bv1 bv2 @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Apply a procedure @var{f} over each element taken from given bitvectors.
-The result of the procedure is gathered as a fresh bitvector and returned.
-
-All bitvectors must have the same length; otherwise, an error is thrown.
-@end defun
-
-@defun bitvector-map!/int f bv1 bv2 @dots{}
-@defunx bitvector-map!/bool f bv1 bv2 @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Apply a procedure @var{f} over each element taken from given bitvectors.
-The result of the procedure is set into @var{bv1}.
-
-These procedure returns undefined value; you should count on the
-side effect onto @var{bv1.}
-
-All bitvectors must have the same length; otherwise, an error is thrown.
-@end defun
-
-@defun bitvector-map->list/int f bv1 bv2 @dots{}
-@defunx bitvector-map->list/bool f bv1 bv2 @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Apply a procedure @var{f} over each element taken from given bitvectors.
-The result of the procedure is gathered as a list and returned.
-
-All bitvectors must have the same length; otherwise, an error is thrown.
-@end defun
-
-@defun bitvector-for-reach/int f bv1 bv2 @dots{}
-@defunx bitvector-for-reach/bool f bv1 bv2 @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Apply a procedure @var{f} over each element taken from given bitvectors.
-The result of the procedure is discarded.
-
-All bitvectors must have the same length; otherwise, an error is thrown.
-@end defun
-
-@subheading Prefixes, suffixes, trimming and padding
-
-@defun bitvector-prefix-length bv1 bv2
-@defunx bitvector-suffix-length bv1 bv2
-[SRFI-178]
-@c MOD srfi-178
-Returns the length of common prefix/suffix of two bitvectors
-@var{bv1} and @var{bv2}.
-
-@example
-(bitvector-prefix-length #*1100101001 #*110001101) @result{} 4
-(bitvector-suffix-length #*1100101001 #*110001101) @result{} 2
-@end example
-@end defun
-
-@defun bitvector-prefix? needle haystack
-@defunx bitvector-suffix? needle haystack
-[SRFI-178]
-@c MOD srfi-178
-Both arguments must be bitvectors.  Returns @code{#t}
-iff  @var{needle} is a prefix/suffix of @var{haystack}.
-
-@example
-(bitvector-prefix? #*101 #*1010100) @result{} #t
-(bitvector-prefix? #*101 #*1000110) @result{} #f
-(bitvector-suffix? #*110 #*1000110) @result{} #t
-(bitvector-suffix? #*110 #*1010100) @result{} #f
-@end example
-@end defun
-
-@defun bitvector-pad bit bv len
-@defunx bitvector-pad-right bit bv len
-[SRFI-178]
-@c MOD srfi-178
-If the length of a bitvector @var{bv} is smaller than @var{len},
-returns a bitvector of length @var{len} by adding @var{bit} before/after
-@var{bv}.  If the length of @var{bv} is equal to or greater than @var{len},
-@var{bv} is returned as is.
-
-@example
-(bitvector-pad 1 #*00010 10) @result{} #*1111100010
-(bitvector-pad-right 1 #*00010 10) @result{} #*0001011111
-@end example
-@end defun
-
-@defun bitvector-trim bit bv
-@defunx bitvector-trim-right bit bv
-@defunx bitvector-trim-both bit bv
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector without preceding and/or trailing consecutive
-@var{bit} from @var{bv}.
-
-@example
-(bitvector-trim 0 #*000101000) @result{} #*101000
-(bitvector-trim-right 0 #*000101000) @result{} #*000101
-(bitvector-trim-both 0 #*000101000) @result{} #*101
-@end example
-@end defun
-
-
-@subheading Mutators
-
-@defun bitvector-swap! bv i j
-[SRFI-178]
-@c MOD srfi-178
-Swap the @var{i}-th value and @var{j}-th value of a bitvector @var{bv}.
-If the index is out of range, an error is thrown.
-@end defun
-
-@defun bitvector-reverse! bv :optional start end
-[SRFI-178]
-@c MOD srfi-178
-Reverse the order of the content of a bitvector @var{bv} destructively.
-The optional @var{start}/@var{end} indexes limit the range of the operation;
-elements outside of the range won't be affected.
-@end defun
-
-@defun bitvector-reverse-copy! to tstart from :optional start end
-[SRFI-178]
-@c MOD srfi-178
-Same as @code{(bitvector-copy! to start (bitvector-reverse-copy from start end))},
-but potentially more efficient.
-@end defun
-
-@subheading Conversion
-
-@defun bitvector->list/int bv :optional start end
-@defunx bitvector->list/bool bv :optional start end
-@defunx reverse-bitvector->list/int bv :optional start end
-@defunx reverse-bitvector->list/bool bv :optional start end
-[SRFI-178]
-@c MOD srfi-178
-Returns a list of integers (0 or 1) or boolean values of bitvector
-@var{bv}.  The first two procedures returns the leftmost bit first,
-while the @code{reverse-} variations returns the rightmost bit first.
-The optional @var{start}/@var{end} arguments limit the range of @var{bv}
-to be extracted.
-@end defun
-
-@defun reverse-list->bitvector lis
-[SRFI-178]
-@c MOD srfi-178
-Like @code{list->bitvector} (@pxref{Bitvectors}), but pack bits
-from right to left.
-@end defun
-
-@defun bitvector->vector/int bv :optional start end
-@defunx bitvector->vector/bool bv :optional start end
-@defunx revrese-bitvector->vector/int bv :optional start end
-@defunx reverse-bitvector->vector/bool bv :optional start end
-[SRFI-178]
-@c MOD srfi-178
-Returns a vector of integers (0 or 1) or boolean values of
-bitvector @var{bv}.  The first two procedures returns the leftmost bit first,
-while the @code{reverse-} variations returns the rightmost bit first.
-The optional @var{start}/@var{end} arguments limit the range of @var{bv}
-to be extracted.
-@end defun
-
-@defun vector->bitvetor vec :optional start end
-@defunx reverse-vector->bitvector vec :optional start end
-[SRFI-178]
-@c MOD srfi-178
-Converts @var{vec} to a fresh bitvector;
-@var{vec} must be a vector of 0/1 or boolean values.
-The first procedure packs bits in the same left to right order,
-while the @code{reverse-} version reverses the order.
-The optional @var{start}/@var{end} arguments limit the range of @var{vec}
-to be extracted.
-@end defun
-
-@defun bitvector->integer bv
-@defunx integer->bitvector n :optional len
-[SRFI-178]
-@c MOD srfi-178
-Convert between bitvectors and integers.
-Note that the first bit of
-@var{bv} corresponds to the least significant bit.
-
-@example
-(bitvector->integer #*1000) @result{} 1
-(bitvector->integer #*0001) @result{} 8
-@end example
-
-This is consistent with @code{bits->list} etc. of srfi-151
-(@pxref{R7RS bitwise operations}), where least significant bit
-corresponts to the first element of the list.
-
-@code{integer->bitvector} takes an optional argument @var{len} to
-specify the number of bits in @var{n} (count from the least siginificant
-bit) to be taken.  When omitted, @code{(integer-length n)} is used
-(@pxref{Basic bitwise operations}).
-@end defun
-
-@subheading Generators
-
-@defun make-bitvector/int-generator bv
-@defunx make-bitvector/bool-generator bv
-[SRFI-178]
-@c MOD srfi-178
-Returns a generator of integers (0 or 1) and boolean values, respectively.
-The value is taken from a bitvector @var{bv} from left to right.
-
-@example
-(generator->list (make-bitvector/int-generator #*10111000))
- @result{} (1 0 1 1 1 0 0 0)
-@end example
-
-@xref{Generators}, for the details of generators.
-@end defun
-
-@defun make-bitvector-accumulator
-[SRFI-178]
-@c MOD srfi-178
-Returns an accumulator that collects given bits, and returns
-a bitvector at the end of accumulation.
-
-@example
-(let ((a (make-bitvector-accumulator)))
-  (a 1)
-  (a 0)
-  (a 0)
-  (a 1)
-  (a 1)
-  (a (eof-object)))
-  @result{} #*10011
-@end example
-
-@xref{R7RS generators}, for the details of accumulators.
-@end defun
-
-@subheading Bitwise operations
-
-@defun bitvector-not bv
-@defunx bitvector-not! bv
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector whose bits are logical negation of @var{bv}.
-The linear updating version @code{bitvector-not!} may reuse @var{bv} to
-produce the result.
-
-@example
-(bitvector-not #*10100) @result{} #*01011
-@end example
-@end defun
-
-@defun bitvector-and bv1 bv2 bv @dots{}
-@defunx bitvector-and! bv1 bv2 bv @dots{}
-@defunx bitvector-ior bv1 bv2 bv @dots{}
-@defunx bitvector-ior! bv1 bv2 bv @dots{}
-@defunx bitvector-xor bv1 bv2 bv @dots{}
-@defunx bitvector-xor! bv1 bv2 bv @dots{}
-@defunx bitvector-eqv bv1 bv2 bv @dots{}
-@defunx bitvector-eqv! bv1 bv2 bv @dots{}
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector whose bits are the result of logical operaion of
-corresponding bits of the given bitvectors.
-The linear updating version (procedures with @code{!}) may reuse @var{bv1} to
-produce the result.
-
-When more than two bitvectors are given to xor and eqv, operation,
-if works associatively, that is,
-
-@example
-(bitvector-xor a b c)
- @equiv{} (bitvector-xor (bitvector-xor a b) c)
-(bitvector-eqv a b c)
- @equiv{} (bitvector-eqv (bitvector-eqv a b) c)
-@end example
-@end defun
-
-@defun bitvector-nand bv1 bv2
-@defunx bitvector-nand! bv1 bv2
-@defunx bitvector-nor bv1 bv2
-@defunx bitvector-nor! bv1 bv2
-@defunx bitvector-andc1 bv1 bv2
-@defunx bitvector-andc1! bv1 bv2
-@defunx bitvector-andc2 bv1 bv2
-@defunx bitvector-andc2! bv1 bv2
-@defunx bitvector-orc1 bv1 bv2
-@defunx bitvector-orc1! bv1 bv2
-@defunx bitvector-orc2 bv1 bv2
-@defunx bitvector-orc2! bv1 bv2
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector, where each bit is the result of
-logical operation of corresponding bits of @var{bv1} and @var{bv2}.
-
-@example
-nand  : (not (and bv1 bv2))
-nor   : (not (or bv1 bv2)
-andc1 : (and (not bv1) bv2)
-andc2 : (and bv1 (not bv2))
-orc1  : (or (not bv1) bv2)
-orc2  : (or bv1 (not bv2))
-@end example
-
-The linear updating version (procedures with @code{!}) may reuse @var{bv1} to
-produce the result.
-@end defun
-
-@subheading Quasi-integer operations
-
-@defun bitvector-logical-shift bv count bit
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector with the same length of @var{bv}, but the
-content is shifted @var{count} bits to the left (when @var{count} >= 0)
-or @var{-count} bits to the right (when @var{count} < 0).
-The vacated bits are filled with @var{bit}.
-
-@example
-(bitvector-logical-shift #*101100111000 4 1)
-  @result{} #*001110001111
-(bitvector-logical-shift #*101100111000 -4 0)
-  @result{} #*000010110011
-@end example
-@end defun
-
-@defun bitvector-count bit bv
-[SRFI-178]
-@c MOD srfi-178
-Returns the number of @var{bit} values in @var{bv}.
-@end defun
-
-@defun bitvector-count-run bit bv start
-[SRFI-178]
-@c MOD srfi-178
-Returns the number of consecutive @var{bit} values in @var{bv}, starting
-from index @var{i}.
-@end defun
-
-@defun bitvector-if bv-if bv-then bv-else
-[SRFI-178]
-@c MOD srfi-178
-@end defun
-
-@defun bitvector-first-bit bit bv
-[SRFI-178]
-@c MOD srfi-178
-Returns the index of the leftmost @var{bit} in @var{bv}.
-If @var{bv} doesn't have @var{bit}, returns @code{-1}.
-
-@example
-(bitvector-first-bit 1 #*0010011) @result{} 2
-(bitvector-first-bit 0 #*1111111) @result{} -1
-@end example
-@end defun
-
-@subheading Bit field operations
-
-Those procedures operates on a partial field of a bitvector,
-between @var{start}-th bit (inclusive) and @var{end}-th bit (exclusive).
-
-@defun bitvector-field-any? bv start end
-[SRFI-178]
-@c MOD srfi-178
-Returns @code{#t} iff at least one bit between @var{start} and @var{end}
-in @var{bv} is 1.
-@end defun
-
-@defun bitvector-field-every? bv start end
-[SRFI-178]
-@c MOD srfi-178
-Returns @code{#t} iff every bit between @var{start} and @var{end}
-in @var{bv} is 1.
-@end defun
-
-@defun bitvector-field-clear bv start end
-@defunx bitvector-field-clear! bv start end
-@defunx bitvector-field-set bv start end
-@defunx bitvector-field-set! bv start end
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector with the same content as @var{bv}, except
-the bits between @var{start} (inclusive) and @var{end} (exclusive)
-are cleared or set, respectively.
-
-The liner-updating version may mutate @var{bv} to produce the result.
-
-@example
-(bitvector-field-clear #*10010010101001 2 7)
- @result{} #*10000000101001
-(bitvector-field-set #*10010010101001 2 7)
- @result{} #*10111110101001
-@end example
-@end defun
-
-@defun bitvector-field-replace to from start end
-@defunx bitvector-field-replace! to from start end
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector with the same content as @var{to-bv}, except
-its bits between @var{start} (inclusive) and @var{end} (exclusive)
-are replaced with the content of @var{from-bv}.
-
-The liner-updating version may mutate @var{to-bv} to produce the result.
-
-@example
-(bitvector-field-replace #*10010010101001 #*110011 2 8)
- @result{} #*10110011101001
-@end example
-
-The length of @var{from-bv} must be at least @var{end}-@var{start}.
-If it is longer, the exceeding bits are ignored.
-
-See also @code{bitvector-field-replace-same} below.
-@end defun
-
-@defun bitvector-field-replace-same to-bv from-bv start end
-@defunx bitvector-field-replace-same! to-bv from-bv start end
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector with the same content as @var{to-bv}, except
-its bits between @var{start} (inclusive) and @var{end} (exclusive)
-are replaced with the content of @var{from-bv} between @var{start} and
-@var{end}.
-
-The liner-updating version may mutate @var{to-bv} to produce the result.
-
-@example
-(bitvector-field-replace-same #*10010010101001 #*11001100 2 8)
- @result{} #*10001100101001
-@end example
-
-The length of @var{from-bv} must be greater than or equal to @var{end}.
-
-See also @code{bitvector-field-replace} above.
-@end defun
-
-
-@defun bitvector-field-rotate bv count start end
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector whose content is the same as @var{bv} except
-the range between @var{start}-th bit (inclusive) and
-@var{end}-th bit (exclusive) being rotated by @var{count} bits toward
-right.  You can give a negative @var{count} to rotate towards left.
-
-@example
-(bitvector-field-rotate #*001100110011 1 4 8)
- @result{} #*001101100011
-(bitvector-field-rotate #*001100110011 -1 4 8)
- @result{} #*001110010011
-@end example
-@end defun
-
-@defun bitvector-field-flip bv start end
-@defunx bitvector-field-flip! bv start end
-[SRFI-178]
-@c MOD srfi-178
-Returns a bitvector whose content is the same as @var{bv}
-except the bits in the range
-between @var{start}-th bit (inclusive) and
-@var{end}-th bit (exclusive) are inverted.
-
-@example
-(bitvector-field-flip #*001100110011 4 8)
- @result{} #*001111000011
-@end example
-@end defun
 
 @c ----------------------------------------------------------------------
 @node JSON, Custom ports, Bitvector library, Library modules - SRFIs
