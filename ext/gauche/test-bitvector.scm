@@ -22,4 +22,9 @@
 (test* "index-generator (0)" '(1 2 3 5 7 8 10)
        (generator->list (bitvector->index-generator #*100010100101 0)))
 
+(test* "index-generator (1, range)" '(6 9 11)
+       (generator->list (bitvector->index-generator #*100010100101 1 5)))
+(test* "index-generator (1, range)" '(4 6)
+       (generator->list (bitvector->index-generator #*100010100101 1 2 8)))
+
 (test-end)

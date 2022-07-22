@@ -94,10 +94,10 @@
    bitvector->integer integer->bitvector
 
    ;; generators
+   bitvector->int-generator bitvector->bool-generator ;gauche
+   bitvector->index-generator           ; gauche
    make-bitvector/int-generator make-bitvector/bool-generator
    make-bitvector-accumulator
-
-   bitvector->index-generator           ; gauche specific
 
    ;; basic operations
    bitvector-not bitvector-not!
@@ -553,31 +553,37 @@
 
 ;;; Generators
 
-(define (make-bitvector/int-generator bv)
+(define (bitvector->int-generator bv :optional (start 0) (end #f))
   (assume-type bv <bitvector>)
-  (let ([len (bitvector-length bv)]
-        [k 0])
-    (^[] (if (< k len)
+  (let ([end (or end (bitvector-length bv))]
+        [k start])
+    (^[] (if (< k end)
            (rlet1 b (bitvector-ref/int bv k)
              (inc! k))
            (eof-object)))))
 
-(define (make-bitvector/bool-generator bv)
+(define (make-bitvector/int-generator bv) ;srfi-178
+  (bitvector->int-generator bv))
+
+(define (bitvector->bool-generator bv :optional (start 0) (end #f))
   (assume-type bv <bitvector>)
-  (let ([len (bitvector-length bv)]
-        [k 0])
-    (^[] (if (< k len)
+  (let ([end (or end (bitvector-length bv))]
+        [k start])
+    (^[] (if (< k end)
            (rlet1 b (bitvector-ref/bool bv k)
              (inc! k))
            (eof-object)))))
 
-(define (bitvector->index-generator bv val)
+(define (make-bitvector/bool-generator bv)
+  (bitvector->bool-generator bv))
+
+(define (bitvector->index-generator bv val :optional (start 0) (end #f))
   (assume-type bv <bitvector>)
-  (let ([len (bitvector-length bv)]
+  (let ([end (or end (bitvector-length bv))]
         [p (if (bit->boolean val) identity not)]
-        [k 0])
+        [k start])
     (rec (gen)
-      (if (< k len)
+      (if (< k end)
         (let1 b (bitvector-ref/bool bv k)
           (inc! k)
           (if (p b) (- k 1) (gen)))
