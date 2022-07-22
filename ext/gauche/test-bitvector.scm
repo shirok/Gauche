@@ -10,8 +10,17 @@
 (use gauche.bitvector)
 (test-module 'gauche.bitvector)
 
-(test-section "index generators")
+(test-section "srfi-178 procedures")
 
+(define-module srfi-178-tests
+  (use gauche.test)
+  (use srfi-78)
+  (use srfi-178)
+  (test-module 'srfi-178)
+  (define-syntax import (syntax-rules () [(_ _) #f]))
+  (include "../../test/include/srfi-178-tests"))
+
+(test-section "extra generators")
 
 (test* "index-generator (#t)" '(0 4 6 9 11)
        (generator->list (bitvector->index-generator #*100010100101 #t)))

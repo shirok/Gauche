@@ -1275,18 +1275,4 @@
 (assert-error "reverse-list->vector e2"
               (reverse-list->vector '(0 1 2 3) 2 1))
 
-;;
-;; Test srfi-178
-;;
-
-(define-module srfi-178-test
-  (use gauche.test)
-  (use srfi-178)
-  (test-module 'srfi-178)
-  (use srfi-78)
-
-  (define-syntax import (syntax-rules () [(_ _) #f]))
-  (include "../../test/include/srfi-178-tests.scm")
-  )
-
 (test-end)
