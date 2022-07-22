@@ -97,6 +97,8 @@
    make-bitvector/int-generator make-bitvector/bool-generator
    make-bitvector-accumulator
 
+   bitvector->index-generator           ; gauche specific
+
    ;; basic operations
    bitvector-not bitvector-not!
    bitvector-and bitvector-and!
@@ -568,6 +570,18 @@
            (rlet1 b (bitvector-ref/bool bv k)
              (inc! k))
            (eof-object)))))
+
+(define (bitvector->index-generator bv val)
+  (assume-type bv <bitvector>)
+  (let ([len (bitvector-length bv)]
+        [p (if (bit->boolean val) identity not)]
+        [k 0])
+    (rec (gen)
+      (if (< k len)
+        (let1 b (bitvector-ref/bool bv k)
+          (inc! k)
+          (if (p b) (- k 1) (gen)))
+        (eof-object)))))
 
 (define (make-bitvector-accumulator)
   (define vals '())

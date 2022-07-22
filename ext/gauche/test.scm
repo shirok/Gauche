@@ -4,5 +4,6 @@
 (include "test-process.scm")
 (include "test-record.scm")
 (include "test-generator.scm")
+(include "test-bitvector.scm")
 (include "test-lazy.scm")
 (include "test-unicode.scm")
