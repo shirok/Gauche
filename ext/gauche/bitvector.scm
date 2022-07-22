@@ -65,6 +65,8 @@
    bitvector-map->list/int bitvector-map->list/bool
    bitvector-for-each/int bitvector-for-each/bool
 
+   bitvector-for-each-value             ;gauche
+
    ;; prefixes, suffixes, trimming, padding
    bitvector-prefix-length bitvector-suffix-length
    bitvector-prefix? bitvector-suffix?
@@ -348,6 +350,10 @@
 
 (define bitvector-for-each/int (%gen-for-each bitvector-ref/int))
 (define bitvector-for-each/bool (%gen-for-each bitvector-ref/bool))
+
+;; f is called on each index where (ref bv index) == val
+(define (bitvector-for-each-value f bv val)
+  (generator-for-each f (bitvector->index-generator bv val)))
 
 ;;; Prefix, suffix etc
 

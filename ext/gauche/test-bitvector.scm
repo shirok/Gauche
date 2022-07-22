@@ -20,7 +20,12 @@
   (define-syntax import (syntax-rules () [(_ _) #f]))
   (include "../../test/include/srfi-178-tests"))
 
-(test-section "extra generators")
+(test-section "extra procedures")
+
+(test* "for-each-value (#t)" '(11 9 6 4 0)
+       (rlet1 r '()
+         (bitvector-for-each-value (^i (push! r i)) #*100010100101 1)))
+
 
 (test* "index-generator (#t)" '(0 4 6 9 11)
        (generator->list (bitvector->index-generator #*100010100101 #t)))
