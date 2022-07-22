@@ -34,9 +34,9 @@
 (define-module srfi-209
   (use gauche.record)
   (use gauche.sequence)
+  (use gauche.bitvector)
   (use scheme.set)
   (use util.match)
-  (use srfi-178)                        ; bitvector
   (export enum-type? enum? enum-type-contains?
           enum=? enum<? enum>? enum<=? enum>=?
           make-enum-type
@@ -221,6 +221,24 @@
                      (^e (enum-name->enum type (enum-name e)))
                      enums))))
 
+(define (enum-set-copy enum-set)
+  (make <enum-set>
+    :enum-type (~ enum-set'enum-type)
+    :members (bitvector-copy (~ enum-set'members))))
+
+(define (enum-set? obj) (is-a? obj <enum-set>))
+
+(define (enum-set-contains? enum-set enum)
+  (assume-type enum <enum>)
+  (assume-type enum-set <enum-set>)
+  (and (eqv? (enum-type enum) (enum-set-type enum-set))
+       (bitvector-ref/bool (~ enum-set'members) (enum-ordinal enum))))
+
+;; R6RS
+(define (enum-set-member? sym enum-set)
+  (assume-type sym <symbol>)
+  (assume-type enum-set <enum-set>)
+  (boolean (enum-name->enum (enum-set-type enum-set) sym)))
 
 (define (enum-set-empty? enum-set)
   (assume-type enum-set <enum-set>)
@@ -255,3 +273,85 @@
 (define (enum-set>? enum-set1 enum-set2)
   (and (not (enum-set=? enum-set1 enum-set2))
        (enum-set>=? enum-set1 enum-set2)))
+
+;; Two enum sets can belong to different enum types.
+(define (enum-set-subset? enum-set-1 enum-set-2)
+  (enum-set-every? (^e (enum-set-member? (enum-name e) enum-set2))
+                   enum-set-1))
+
+(define (enum-set-any? pred enum-set)
+  (assume-type enum-set <enum-set>)
+  (let1 etype (enum-set-type enum-set)
+    (let/cc return
+      (bitvector-for-each-value (^i (when (pred (enum-ordinal->enum etype i))
+                                      (return #t)))
+                                (~ enum-set'members) #t)
+      #f)))
+
+(define (enum-set-every? pred enum-set)
+  (assume-type enum-set <enum-set>)
+  (let1 etype (enum-set-type enum-set)
+    (let/cc return
+      (bitvector-for-each-value (^i (unless (pred (enum-ordinal->enum etype i))
+                                      (return #f)))
+                                (~ enum-set'members) #t)
+      #t)))
+
+
+;; adjoin, delete
+
+
+;; returns new members bitvector
+(define (%update-members! enum-set bv enums value)
+  (let1 etype (enum-set-type enum-set)
+    (fold (^[e bv]
+            (assume-type e <enum>)
+            (unless (eqv? (enum-type e) etype)
+              (errorf "enum ~s doesn't belong to the same enum type of ~s"
+                      e enum-set))
+            (bitvector-set! bv (enum-ordinal e) value))
+          bv enums)))
+
+(define (enum-set-adjoin! enum-set . enums)
+  (assume-type enum-set <enum-set>)
+  (update! (~ enum-set'members) (cut %update-members! enum-set <> enums #t))
+  enum-set)
+
+(define (enum-set-adjoin enum-set . enums)
+  (apply enum-set-adjoin! (enum-set-copy enum-set) enums))
+
+(define (enum-set-delete! enum-set . enums)
+  (assume-type enum-set <enum-set>)
+  (update! (~ enum-set'members) (cut %update-members! enum-set <> enums #f))
+  enum-set)
+
+(define (enum-set-delete enum-set . enums)
+  (apply enum-set-delete! (enum-set-copy enum-set) enums))
+
+(define (enum-set-delete-all! enum-set . lists)
+  (assume-type enum-set <enum-set>)
+  (update! (~ enum-set'members)
+           (cut (fold (^[enums bv] (%update-members! enum-set <> enums #f))
+                      <> lists)))
+  enum-set)
+
+(define (enum-set-delete-all enum-set . lists)
+  (apply enum-set-delete-all! (enum-set-copy enum-set) lists))
+
+(define (enum-set-size enum-set)
+  (assume-type enum-set <enum-set>)
+  (bitvector-count #t (~ enum-set'members)))
+
+(define (enum-set->enum-list enum-set)
+  (define etype (enum-set-type enum-set))
+  (reverse
+   (rlet1 r '()
+     (bitvector-for-each-value (cut enum-ordinal->enum etype <>)
+                               (~ enum-set'members) #t))))
+
+(define (enum-set-count pred enum-set)
+  (define etype (enum-set-type enum-set))
+  (rlet1 c 0
+    (bitvector-for-each-value (^i (when (pred (enum-ordinal->enum etype i))
+                                    (inc! c)))
+                              (~ enum-set'members) #t)))
