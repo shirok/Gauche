@@ -1496,19 +1496,52 @@ bit) to be taken.  When omitted, @code{(integer-length n)} is used
 
 @subheading Generators
 
+@defun bitvector->int-generator bv :optional start end
+@defunx bitvector->bool-generator bv :optional start end
+@c MOD gauche.bitvector
+Returns a generator of integers (0 or 1) and boolean values, respectively.
+The value is taken from a bitvector @var{bv} from left to right.
+The optional @var{start}/@var{end} arguments limits the range of
+the bitvector to be used.
+
+@example
+(generator->list (bitvector->int-generator #*10111000))
+ @result{} (1 0 1 1 1 0 0 0)
+@end example
+
+The names are consistent with Gauche convention.
+Srfi-178 defines these procedures with the name
+@code{make-bitvector/int-generator} and @code{make-bitvector/bool-generator}.
+
+@xref{Generators}, for the details of generators.
+@end defun
+
+
 @defun make-bitvector/int-generator bv
 @defunx make-bitvector/bool-generator bv
 [SRFI-178]
 @c MOD gauche.bitvector
-Returns a generator of integers (0 or 1) and boolean values, respectively.
-The value is taken from a bitvector @var{bv} from left to right.
+These are same as @code{bitvector->int-generator} and
+@code{bitvector->bool-generator} except the optional arguments,
+and defined in srfi-178.
+@end defun
+
+@defun bitvector->index-generator bv val :optional start end
+@c MOD gauche.bitvector
+Returns a generator that generates indexes of @var{bv} such that
+the index-th value of @var{bv} matches @var{val}, which must
+be either 0, 1 or a boolean value.  The bitvector is scanned from
+left to right.
+The optional @var{start}/@var{end} arguments limits the range of
+the bitvector to be used.
+
+This is handy when you have a bitvector as a bitmap, and want to
+process something where bit is set (or reset).
 
 @example
-(generator->list (make-bitvector/int-generator #*10111000))
- @result{} (1 0 1 1 1 0 0 0)
+(generator->list (bitvector->index-generator #*101110001 1))
+ @result{} (0 2 3 4 8)
 @end example
-
-@xref{Generators}, for the details of generators.
 @end defun
 
 @defun make-bitvector-accumulator
