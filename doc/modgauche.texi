@@ -1145,16 +1145,30 @@ if you don't use @code{import} directly, you won't need it.)
 @c ----------------------------------------------------------------------
 @node Bitvector utilities, Generating C code, Importing gauche built-ins, Library modules - Gauche extensions
 @section @code{gauche.bitvector} - Bitvector utilities
+@c NODE ビットベクタユーティリティ, @code{gauche.bitvector} - ビットベクタユーティリティ
 
-This module adds more operations on bitvectors (@pxref{Bitvectors}).
+@c EN
+This module adds more operations on bitvectors.
 This module and built-in bitvector procedures covers srfi-178
 Bitvector library interface (@pxref{Bitvector library})
+@c JP
+このモジュールは、ビットベクタを扱う多くの操作を提供します。
+このモジュールの手続きと組み込みのビットベクタ手続きは、srfi-178のスーパーセットに
+なっています (@ref{Bitvector library}参照)。
+@c COMMON
 
 @deftp {Module} gauche.bitvector
 @mdindex gauche.bitvector
+@c EN
 Gauche supports bitvectors as a native type, but the core library only
-offers a handful of primitives.  This module complements the comprehensive
+offers a handful of primitives (@pxref{Bitvectors}).
+This module provides the comprehensive
 operations on bitvectors.
+@c JP
+Gaucheはビットベクタを組み込みでしていますが、コアで提供されるのは
+ごく基本的な手続きのみです(@ref{Bitvectors}参照)。
+このモジュールではビットベクタに対する包括的な操作を提供します。
+@c COMMON
 @end deftp
 
 @subheading Constructors
@@ -1329,8 +1343,8 @@ The result of the procedure is gathered as a list and returned.
 All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
-@defun bitvector-for-reach/int f bv1 bv2 @dots{}
-@defunx bitvector-for-reach/bool f bv1 bv2 @dots{}
+@defun bitvector-for-each/int f bv1 bv2 @dots{}
+@defunx bitvector-for-each/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
 Apply a procedure @var{f} over each element taken from given bitvectors.
@@ -1338,6 +1352,14 @@ The result of the procedure is discarded.
 
 All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
+
+@defun bitvector-for-each-value f val bv
+@c MOD gauche.bitvector
+Apply a procedure @var{f} over each index such that the index-th element
+of @var{bv} is @var{val}, which must be either a boolean value or @code{0}
+or @code{1}.
+@end defun
+
 
 @subheading Prefixes, suffixes, trimming and padding
 
