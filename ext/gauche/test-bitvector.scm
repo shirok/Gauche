@@ -22,9 +22,17 @@
 
 (test-section "extra procedures")
 
-(test* "for-each-index/value (#t)" '(11 9 6 4 0)
+(test* "value-map-index->list (#t)" '(2 6 8 11 13)
+       (bitvector-value-map-index->list (^i (+ i 2)) #*100010100101 #t))
+(test* "value-map-index->list (#f)" '(3 4 5 7 9 10 12)
+       (bitvector-value-map-index->list (^i (+ i 2)) #*100010100101 0))
+
+(test* "value-for-each-index (#t)" '(11 9 6 4 0)
        (rlet1 r '()
-         (bitvector-for-each-index/value (^i (push! r i)) #*100010100101 1)))
+         (bitvector-value-for-each-index (^i (push! r i)) #*100010100101 1)))
+(test* "value-for-each-index (#f)" '(10 8 7 5 3 2 1)
+       (rlet1 r '()
+         (bitvector-value-for-each-index (^i (push! r i)) #*100010100101 #f)))
 
 
 (test* "index-generator (#t)" '(0 4 6 9 11)

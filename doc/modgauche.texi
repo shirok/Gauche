@@ -1343,6 +1343,14 @@ The result of the procedure is gathered as a list and returned.
 All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
+@defun bitvector-value-map-index->list f val bv
+@c MOD gauche.bitvector
+Apply a procedure @var{f} over each index such that the index-th element
+of @var{bv} is @var{val}, which must be either a boolean value or @code{0}
+or @code{1}.  The result of applications are gathered into a list,
+from smaller index.
+@end defun
+
 @defun bitvector-for-each/int f bv1 bv2 @dots{}
 @defunx bitvector-for-each/bool f bv1 bv2 @dots{}
 [SRFI-178]
@@ -1353,11 +1361,11 @@ The result of the procedure is discarded.
 All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
-@defun bitvector-for-each-index/value f val bv
+@defun bitvector-value-for-each-index f val bv
 @c MOD gauche.bitvector
 Apply a procedure @var{f} over each index such that the index-th element
 of @var{bv} is @var{val}, which must be either a boolean value or @code{0}
-or @code{1}.
+or @code{1}.  The result of @var{f} is discarded.
 @end defun
 
 

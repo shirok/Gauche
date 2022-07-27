@@ -65,7 +65,8 @@
    bitvector-map->list/int bitvector-map->list/bool
    bitvector-for-each/int bitvector-for-each/bool
 
-   bitvector-for-each-index/value             ;gauche
+   bitvector-value-map-index->list       ;gauche
+   bitvector-value-for-each-index        ;gauche
 
    ;; prefixes, suffixes, trimming, padding
    bitvector-prefix-length bitvector-suffix-length
@@ -337,6 +338,9 @@
 (define bitvector-map->list/int (%gen-map->list bitvector-ref/int))
 (define bitvector-map->list/bool (%gen-map->list bitvector-ref/bool))
 
+(define (bitvector-value-map-index->list f bv val)
+  (generator-map f (bitvector->index-generator bv val)))
+
 (define (%gen-for-each ref)
   (bv-iterator ref (f bv bvs) len
                (let loop ([k 0])
@@ -352,7 +356,7 @@
 (define bitvector-for-each/bool (%gen-for-each bitvector-ref/bool))
 
 ;; f is called on each index where (ref bv index) == val
-(define (bitvector-for-each-index/value f bv val)
+(define (bitvector-value-for-each-index f bv val)
   (generator-for-each f (bitvector->index-generator bv val)))
 
 ;;; Prefix, suffix etc
