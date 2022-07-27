@@ -22,9 +22,9 @@
 
 (test-section "extra procedures")
 
-(test* "for-each-value (#t)" '(11 9 6 4 0)
+(test* "for-each-index/value (#t)" '(11 9 6 4 0)
        (rlet1 r '()
-         (bitvector-for-each-value (^i (push! r i)) #*100010100101 1)))
+         (bitvector-for-each-index/value (^i (push! r i)) #*100010100101 1)))
 
 
 (test* "index-generator (#t)" '(0 4 6 9 11)

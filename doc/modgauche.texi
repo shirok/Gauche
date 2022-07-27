@@ -1353,7 +1353,7 @@ The result of the procedure is discarded.
 All bitvectors must have the same length; otherwise, an error is thrown.
 @end defun
 
-@defun bitvector-for-each-value f val bv
+@defun bitvector-for-each-index/value f val bv
 @c MOD gauche.bitvector
 Apply a procedure @var{f} over each index such that the index-th element
 of @var{bv} is @var{val}, which must be either a boolean value or @code{0}
