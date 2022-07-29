@@ -3331,6 +3331,37 @@ static void dump_pc_offset(ScmWord *pc, ScmCompiledCode *base, ScmPort *out)
     }
 }
 
+static void print_insn(ScmObj insn, ScmPort *out)
+{
+    u_int code = SCM_VM_INSN_CODE(insn);
+    if (code >= SCM_VM_NUM_INSNS) {
+        Scm_Printf(out, "invalid insn: %08x", SCM_WORD(insn));
+    } else {
+        switch (Scm_VMInsnNumParams(code)) {
+        case 0:
+            Scm_Printf(out, "%s", Scm_VMInsnName(code));
+            break;
+        case 1:
+            Scm_Printf(out, "%s(%d)",
+                       Scm_VMInsnName(code), SCM_VM_INSN_ARG(insn));
+            break;
+        case 2:
+            Scm_Printf(out, "%s(%d,%d)",
+                       Scm_VMInsnName(code),
+                       SCM_VM_INSN_ARG0(insn),
+                       SCM_VM_INSN_ARG1(insn));
+            break;
+        }
+    }
+}
+
+static void print_insn_paren(ScmObj insn, ScmPort *out)
+{
+    Scm_Printf(out, " (");
+    print_insn(insn, out);
+    Scm_Printf(out, ")\n");
+}
+
 
 void Scm_VMDump(ScmVM *vm)
 {
@@ -3343,7 +3374,7 @@ void Scm_VMDump(ScmVM *vm)
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %p  ", vm->pc);
     dump_pc_offset(vm->pc, vm->base, out);
-    Scm_Printf(out, " (%08x)\n", *vm->pc);
+    print_insn_paren(SCM_OBJ(*vm->pc), out);
     Scm_Printf(out, "   sp: %p  [%p-%p-%p]\n", vm->sp,
                vm->stack, vm->stackBase, vm->stackEnd);
     Scm_Printf(out, " argp: %p\n", vm->argp);
@@ -3367,7 +3398,7 @@ void Scm_VMDump(ScmVM *vm)
         if (!C_CONTINUATION_P(cont)) {
             Scm_Printf(out, "               pc = %p", cont->pc);
             dump_pc_offset(cont->pc, cont->base, out);
-            Scm_Printf(out, " (%08x)\n", *cont->pc);
+            print_insn_paren(SCM_OBJ(*cont->pc), out);
         } else {
             Scm_Printf(out, "               pc = {cproc %p}\n", cont->pc);
         }
