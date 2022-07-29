@@ -1,3 +1,8 @@
+2022-07-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/scheme/regex.scm (scheme.regex): Export missing regex?
+	  https://github.com/shirok/Gauche/pull/836
+
 2022-07-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (POP_CONT): Avoid copying C continuation data into
