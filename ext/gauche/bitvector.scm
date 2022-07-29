@@ -65,6 +65,7 @@
    bitvector-map->list/int bitvector-map->list/bool
    bitvector-for-each/int bitvector-for-each/bool
 
+   bitvector-value-fold-index            ;gauche
    bitvector-value-map-index->list       ;gauche
    bitvector-value-for-each-index        ;gauche
 
@@ -337,6 +338,9 @@
 
 (define bitvector-map->list/int (%gen-map->list bitvector-ref/int))
 (define bitvector-map->list/bool (%gen-map->list bitvector-ref/bool))
+
+(define (bitvector-value-fold-index f knil bv val)
+  (generator-fold f knil (bitvector->index-generator bv val)))
 
 (define (bitvector-value-map-index->list f bv val)
   (generator-map f (bitvector->index-generator bv val)))

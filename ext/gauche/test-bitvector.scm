@@ -22,6 +22,13 @@
 
 (test-section "extra procedures")
 
+(test* "value-fold-index (#t)" '(0 4 6 9 11)
+       (reverse
+        (bitvector-value-fold-index cons '() #*100010100101 #t)))
+(test* "value-fold-index (#f)" '(1 2 3 5 7 8 10)
+       (reverse
+        (bitvector-value-fold-index cons '() #*100010100101 #f)))
+
 (test* "value-map-index->list (#t)" '(2 6 8 11 13)
        (bitvector-value-map-index->list (^i (+ i 2)) #*100010100101 #t))
 (test* "value-map-index->list (#f)" '(3 4 5 7 9 10 12)
