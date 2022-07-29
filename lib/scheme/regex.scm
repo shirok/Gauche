@@ -62,9 +62,6 @@
     (regexp-parse-sre sre)
     #t))
 
-;; regexp? is already defined by gauche.regexp and is builtin.
-;; do we even need to export it in pure R7RS environment?
-
 (define (regexp-matches re str :optional start end)
   (if (regexp? re)
       (let1 match (regexp-search re str start end)
