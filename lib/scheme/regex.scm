@@ -35,7 +35,7 @@
 (define-module scheme.regex
   (use scheme.charset)
   (use gauche.regexp.sre)
-  (export rx regexp regexp->sre char-set->sre valid-sre?
+  (export rx regexp regexp->sre char-set->sre valid-sre? regexp?
           regexp-matches regexp-matches? regexp-search
           regexp-fold regexp-extract regexp-split regexp-partition
           regexp-replace regexp-replace-all
