@@ -283,18 +283,20 @@
   (assume-type enum-set <enum-set>)
   (let1 etype (enum-set-type enum-set)
     (let/cc return
-      (bitvector-for-each-value (^i (when (pred (enum-ordinal->enum etype i))
-                                      (return #t)))
-                                (~ enum-set'members) #t)
+      ($ bitvector-value-for-each-index
+         (^i (when (pred (enum-ordinal->enum etype i))
+               (return #t)))
+         (~ enum-set'members) #t)
       #f)))
 
 (define (enum-set-every? pred enum-set)
   (assume-type enum-set <enum-set>)
   (let1 etype (enum-set-type enum-set)
     (let/cc return
-      (bitvector-for-each-value (^i (unless (pred (enum-ordinal->enum etype i))
-                                      (return #f)))
-                                (~ enum-set'members) #t)
+      ($ bitvector-value-for-each-index
+         (^i (unless (pred (enum-ordinal->enum etype i))
+               (return #f)))
+         (~ enum-set'members) #t)
       #t)))
 
 
@@ -346,12 +348,14 @@
   (define etype (enum-set-type enum-set))
   (reverse
    (rlet1 r '()
-     (bitvector-for-each-value (cut enum-ordinal->enum etype <>)
-                               (~ enum-set'members) #t))))
+     ($ bitvector-value-for-each-index
+        (cut enum-ordinal->enum etype <>)
+        (~ enum-set'members) #t))))
 
 (define (enum-set-count pred enum-set)
   (define etype (enum-set-type enum-set))
   (rlet1 c 0
-    (bitvector-for-each-value (^i (when (pred (enum-ordinal->enum etype i))
-                                    (inc! c)))
-                              (~ enum-set'members) #t)))
+    ($ bitvector-value-for-each-index
+       (^i (when (pred (enum-ordinal->enum etype i))
+             (inc! c)))
+       (~ enum-set'members) #t)))
