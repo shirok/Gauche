@@ -543,15 +543,10 @@ static void vm_unregister(ScmVM *vm)
 #define POP_CONT()                                                      \
     do {                                                                \
         if (C_CONTINUATION_P(CONT)) {                                   \
-            void *data__[SCM_CCONT_DATA_SIZE];                          \
             ScmObj v__ = VAL0;                                          \
-            ScmCContinuationProc *after__;                              \
-            void **d__ = data__;                                        \
-            void **s__ = (void**)CONT - CONT->size;                     \
-            while (s__ < (void**)CONT) {                                \
-                *d__++ = *s__++;                                        \
-            }                                                           \
-            after__ = (ScmCContinuationProc*)CONT->pc;                  \
+            ScmCContinuationProc *after__                               \
+                = (ScmCContinuationProc*)CONT->pc;                      \
+            ScmObj *data__ = (ScmObj*)CONT - CONT->size;                \
             if (IN_STACK_P((ScmObj*)CONT)) {                            \
                 SP = (ScmObj*)CONT - CONT->size;                        \
             }                                                           \
@@ -561,7 +556,7 @@ static void vm_unregister(ScmVM *vm)
             BASE = CONT->base;                                          \
             CONT = CONT->prev;                                          \
             SCM_FLONUM_ENSURE_MEM(v__);                                 \
-            VAL0 = after__(v__, data__);                                \
+            VAL0 = after__(v__, (void**)data__);                        \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = (ScmObj*)CONT;                                       \
             ENV  = CONT->env;                                           \

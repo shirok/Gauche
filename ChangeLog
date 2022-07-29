@@ -1,3 +1,12 @@
+2022-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (POP_CONT): Avoid copying C continuation data into
+	  machine stack.  The data argument of Ccont proc now points
+	  direclty to the continuation's data field.  This should be ok,
+	  for subrs aren't supposed to modify these fields.
+	  NB: There may be an issue if void* and ScmObj are different in size,
+	  though its very unlikely in modern platforms.
+
 2022-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/srfi/srfi-178.scm, ext/gauche/bitvector.scm, lib/srfi-178.scm:
