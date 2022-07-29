@@ -333,8 +333,8 @@
 (define (enum-set-delete-all! enum-set . lists)
   (assume-type enum-set <enum-set>)
   (update! (~ enum-set'members)
-           (cut (fold (^[enums bv] (%update-members! enum-set <> enums #f))
-                      <> lists)))
+           (cut fold (^[enums bv] (%update-members! enum-set <> enums #f))
+                <> lists))
   enum-set)
 
 (define (enum-set-delete-all enum-set . lists)
@@ -345,17 +345,129 @@
   (bitvector-count #t (~ enum-set'members)))
 
 (define (enum-set->enum-list enum-set)
-  (define etype (enum-set-type enum-set))
-  (reverse
-   (rlet1 r '()
-     ($ bitvector-value-for-each-index
-        (cut enum-ordinal->enum etype <>)
-        (~ enum-set'members) #t))))
+  (enum-set-map->list identity enum-set))
 
 (define (enum-set-count pred enum-set)
-  (define etype (enum-set-type enum-set))
   (rlet1 c 0
-    ($ bitvector-value-for-each-index
-       (^i (when (pred (enum-ordinal->enum etype i))
-             (inc! c)))
-       (~ enum-set'members) #t)))
+    (enum-for-each (^e (when (pred e) (inc! c))) enum-set)))
+
+(define (enum-set-filter pred enum-set)
+  (define bv (make-bitvector (bitvector-length (~ enum-set'members)) 0))
+  ($ enum-set-for-each
+     (^e (when (pred e) (bitvector-set! bv (enum-ordinal e) 1)))
+     enum-set)
+  (make <enum-set>
+    :enum-type (enum-set-type enum-set)
+    :members bv))
+
+(define (enum-set-remove pred enum-set)
+  (define bv (copy-bitvector (~ enum-set'members)))
+  ($ enum-set-for-each
+     (^e (when (pred e) (bitvector-set! bv (enum-ordinal e) 0)))
+     enum-set)
+  (make <enum-set>
+    :enum-type (enum-set-type enum-set)
+    :members bv))
+
+(define (enum-set-map->list proc enum-set)
+  (define etype (enum-set-type enum-set))
+  ($ bitvector-value-map-index->list
+     (^i (proc (enum-ordinal->enum etype i)))
+     (~ enum-set'members) #t))
+
+(define (enum-set-for-each proc enum-set)
+  (define etype (enum-set-type enum-set))
+  ($ bitvector-value-for-each-index
+     (^i (proc (enum-ordinal->enum etype i)))
+     (~ enum-set-'members) #t))
+
+(define (enum-set-fold proc seed enum-set)
+  (define etype (enum-set-type enum-set))
+  ($ bitvector-value-fold-index
+     (^[i s] (proc (enum-ordinal->enum etype i) s))
+     seed
+     (~ enum-set-'members) #t))
+
+(define (enum-set-complement enum-set)
+  (make <enum-set>
+    :enum-type (enum-set-type enum-set)
+    :members (bitvector-not (~ enum-set'members))))
+
+(define (enum-set-complement! enum-set)
+  (update! (~ enum-set'members) bitvector-not!)
+  enum-set)
+
+(define (enum-set-union enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (make <enum-set>
+    :enum-type (enum-set-type enum-set1)
+    :members (bitvector-ior (~ enum-set1'members) (~ enum-set2'members))))
+
+(define (enum-set-union! enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (update! (enum-set1'members)
+           (cute bitvector-ior! <> (~ enum-set2'members)))
+  enum-set1)
+
+(define (enum-set-intersection enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (make <enum-set>
+    :enum-type (enum-set-type enum-set1)
+    :members (bitvector-and (~ enum-set1'members) (~ enum-set2'members))))
+
+(define (enum-set-intersection! enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (update! (enum-set1'members)
+           (cute bitvector-and! <> (~ enum-set2'members)))
+  enum-set1)
+
+(define (enum-set-difference enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (make <enum-set>
+    :enum-type (enum-set-type enum-set1)
+    :members (bitvector-andc2 (~ enum-set1'members) (~ enum-set2'members))))
+
+(define (enum-set-difference! enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (update! (enum-set1'members)
+           (cute bitvector-andc2! <> (~ enum-set2'members)))
+  enum-set1)
+
+(define (enum-set-xor enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (make <enum-set>
+    :enum-type (enum-set-type enum-set1)
+    :members (bitvector-xor (~ enum-set1'members) (~ enum-set2'members))))
+
+(define (enum-set-xor! enum-set1 enum-set2)
+  (asssume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
+  (update! (enum-set1'members)
+           (cute bitvector-xor! <> (~ enum-set2'members)))
+  enum-set1)
+
+;;
+;; Syntax
+;;
+
+(define-syntax define-enum
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ type-name (name-value ...) set-ctor)
+        (let ([etype (make-enum-type name-value type-name)])
+          (quasirename r
+            `(begin
+               (define-syntax type-name
+                 (er-macro-transformer
+                  (^[ff rr cc]
+                    (match ff
+                      [(_ name) (enum-name->enum ,etype name)]
+                      [_ (error "enum type macro must take a symbol:" ff)]))))
+               (define-syntax set-ctor
+                 (er-macro-transformer
+                  (^[ff rr cc]
+                    (list->enum-set ,etype
+                                    (map (cut enum-name->enum ,etype <>)
+                                         (cdr ff))))))
+               )))]
+       ))))
