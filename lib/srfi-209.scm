@@ -237,7 +237,7 @@
 ;;
 
 (define (enum-type->enum-set etype)
-  (make <enum-type>
+  (make <enum-set>
     :enum-type etype
     :members (make-bitvector (enum-type-size etype) 1)))
 
@@ -247,7 +247,7 @@
 ;; NB: This is missing from srfi text, but exists in reference impl and tests
 (define (enum-empty-set etype)
   (assume-type etype <enum-type>)
-  (make <enum-type>
+  (make <enum-set>
     :enum-type etype
     :members (make-bitvector (enum-type-size etype) 0)))
 
@@ -262,13 +262,14 @@
                (and (enum-set-contains? etype e)
                     (enum-ordinal e))))))
 
-(define (list->enum-set enum-type enums)
-  (let1 members (make-bitvector (enum-type-size enum-type) 0)
+(define (list->enum-set etype enums)
+  (assume-type etype <enum-type>)
+  (let1 members (make-bitvector (enum-type-size etype) 0)
     (dolist [e enums]
-      (unless (enum-type-contains? enum-type e)
-        (errorf "enum ~s isn't a member of given enum type ~s" e enum-type))
+      (unless (enum-type-contains? etype e)
+        (errorf "enum ~s isn't a member of given enum type ~s" e etype))
       (bitvector-set! members (enum-ordinal e) 1))
-    (make <enum-type> :enum-type enum-type :members members)))
+    (make <enum-set> :enum-type etype :members members)))
 
 ;; NB: srfi isn't clear if enum-set contains an enum whose name
 ;; is not in enum-type-or-set.
@@ -283,6 +284,7 @@
                      enum-set))))
 
 (define (enum-set-copy eset)
+  (assume-type eset <enum-set>)
   (make <enum-set>
     :enum-type (~ eset'enum-type)
     :members (bitvector-copy (~ eset'members))))
@@ -312,14 +314,15 @@
        (bitvector-ref/bool (~ enum-set'members) (enum-ordinal enum))))
 
 ;; R6RS
-(define (enum-set-member? sym enum-set)
+(define (enum-set-member? sym eset)
   (assume-type sym <symbol>)
-  (assume-type enum-set <enum-set>)
-  (boolean (enum-name->enum (enum-set-type enum-set) sym)))
+  (assume-type eset <enum-set>)
+  (and-let1 e (enum-name->enum (enum-set-type eset) sym)
+    (bitvector-ref/bool (~ eset'members) (enum-ordinal e))))
 
-(define (enum-set-empty? enum-set)
-  (assume-type enum-set <enum-set>)
-  (= (bitvector-first-bit 1 (~ enum-set'members)) -1))
+(define (enum-set-empty? eset)
+  (assume-type eset <enum-set>)
+  (bitvector-none? (~ eset'members)))
 
 ;; NB: srfi is unclear if two sets are not from the same enum-type.
 (define (enum-set-disjoint? enum-set1 enum-set2)
