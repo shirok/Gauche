@@ -91,15 +91,30 @@
    (%name->enum :init-keyword :name->enum)       ;hashtable
    ))
 
+(define (%enum-type-name etype)
+  (cond [(~ etype'%name)]
+        [(zero? (vector-length (~ etype'%ordinal->enum))) "()"]
+        [else (format "(~s ...)"
+                      (enum-name (vector-ref (~ etype'%ordinal->enum) 0)))]))
+
+(define-method write-object ((etype <enum-type>) port)
+  (format port "#<enum-type ~a>" (%enum-type-name etype)))
+
 (define-record-type <enum> %make-enum enum?
   (type enum-type)
   (name enum-name)
   (ordinal enum-ordinal)
   (value enum-value))
 
+(define-method write-object ((enum <enum>) port)
+  (format port "#<enum ~a>" (enum-name enum)))
+
 (define-class <enum-set> (<collection>)
   ((enum-type :init-keyword :enum-type)
    (members :init-keyword :members)))   ;bitvector
+
+(define-method write-object ((eset <enum-set>) port)
+  (format port "#<enum-set from ~a>" (%enum-type-name (~ eset'enum-type))))
 
 ;; Constructor
 ;; elts : elt ...
