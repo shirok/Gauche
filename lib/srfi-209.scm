@@ -259,8 +259,12 @@
   (assume-type eset <enum-set>)
   (let1 etype (enum-set-type eset)
     (^[name] (and-let1 e (enum-name->enum etype name)
-               (and (enum-set-contains? etype e)
-                    (enum-ordinal e))))))
+               ;; NB: Discrepancy - srfi text says e must be in eset,
+               ;; but reference impl and test don't.
+               ;; (and (enum-set-contains? eset e)
+               ;;      (enum-ordinal e))
+               (enum-ordinal e)
+               ))))
 
 (define (list->enum-set etype enums)
   (assume-type etype <enum-type>)
@@ -290,11 +294,11 @@
     :members (bitvector-copy (~ eset'members))))
 
 (define (make-enumeration names)        ;R6RS
-  (enum-type->enum-set (make-enum-type names)))
+  (enum-type->enum-set (make-enum-type (map (^e `(,e ,e)) names))))
 
 (define (enum-set-universe eset)        ;R6RS
   (assume-type eset <enum-set>)
-  (enum-set (enum-set-type eset)))
+  (enum-type->enum-set (enum-set-type eset)))
 
 (define (enum-set-constructor eset)     ;R6RS
   (define etype (enum-set-type eset))
@@ -391,7 +395,8 @@
             (unless (eqv? (enum-type e) etype)
               (errorf "enum ~s doesn't belong to the same enum type of ~s"
                       e enum-set))
-            (bitvector-set! bv (enum-ordinal e) value))
+            (bitvector-set! bv (enum-ordinal e) value)
+            bv)
           bv enums)))
 
 (define (enum-set-adjoin! enum-set . enums)
@@ -488,7 +493,7 @@
 
 (define (enum-set-union! enum-set1 enum-set2)
   (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
-  (update! (enum-set1'members)
+  (update! (~ enum-set1'members)
            (cute bitvector-ior! <> (~ enum-set2'members)))
   enum-set1)
 
@@ -500,7 +505,7 @@
 
 (define (enum-set-intersection! enum-set1 enum-set2)
   (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
-  (update! (enum-set1'members)
+  (update! (~ enum-set1'members)
            (cute bitvector-and! <> (~ enum-set2'members)))
   enum-set1)
 
@@ -512,7 +517,7 @@
 
 (define (enum-set-difference! enum-set1 enum-set2)
   (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
-  (update! (enum-set1'members)
+  (update! (~ enum-set1'members)
            (cute bitvector-andc2! <> (~ enum-set2'members)))
   enum-set1)
 
@@ -524,7 +529,7 @@
 
 (define (enum-set-xor! enum-set1 enum-set2)
   (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
-  (update! (enum-set1'members)
+  (update! (~ enum-set1'members)
            (cute bitvector-xor! <> (~ enum-set2'members)))
   enum-set1)
 
