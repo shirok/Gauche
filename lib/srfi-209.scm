@@ -572,10 +572,11 @@
                  (er-macro-transformer
                   (^[ff rr cc]
                     (match ff
-                      [(_ name) (if (enum-name->enum ,etype name)
-                                  name
-                                  (errorf "enum ~s doesn't belong to ~a"
-                                          name ',type-name))]
+                      [(_ ,'name)
+                       (if (enum-name->enum ,etype ,'name)
+                         (quasirename rr `',,'name)
+                         (errorf "enum ~s doesn't belong to enum type ~a"
+                                 ,'name ',type-name))]
                       [_ (error "enum type macro must take a symbol:" ff)]))))
                (define-syntax ,set-ctor
                  (er-macro-transformer

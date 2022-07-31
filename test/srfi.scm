@@ -2597,6 +2597,9 @@
   (include "include/srfi-197-test"))
 
 ;;-----------------------------------------------------------------------
+;; NB: srfi-209 is tested with gauche.bitvector
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-217")
 (use srfi-217)
 (test-module 'srfi-217)

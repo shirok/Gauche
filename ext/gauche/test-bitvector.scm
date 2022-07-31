@@ -56,4 +56,17 @@
 (test* "index-generator (1, range)" '(4 6)
        (generator->list (bitvector->index-generator #*100010100101 1 2 8)))
 
+
+;; srfi-209 Enum set depends on gauche.bitvector
+(test-section "srfi-209")
+(use srfi-209)
+(test-module 'srfi-209)
+
+(define-module srfi-209-tests
+  (use srfi-64)
+  (use srfi-209)
+  (test-begin "srfi-209-tests")
+  (include "../../test/include/srfi-209-tests")
+  (test-end))
+
 (test-end)

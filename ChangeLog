@@ -1,3 +1,8 @@
+2022-07-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-209.scm: Added, passes the tests (tests depend on
+	  gauche.bitvector, so it is tested in ext/gauche).
+
 2022-07-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/scheme/regex.scm (scheme.regex): Export missing regex?
