@@ -658,8 +658,6 @@ SCM_EXTERN void Scm_VMPushCC(ScmCContinuationProc *func,
                              void **data,
                              int datasize);
 
-#define SCM_CCONT_DATA_SIZE 6   /* Maximum datasize for VMPushCC */
-
 /*
  * Compiler flags
  */
