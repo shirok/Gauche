@@ -72,12 +72,13 @@ srfi N is supported by Gauche.)
 * Command line::                srfi-193
 * Range objects::               srfi-196
 * Pipeline operators::          srfi-197
+* Enums and enum sets::         srfi-209
 * Integer sets::                srfi-217
 * Define higher-order lambda::  srfi-219
 * Generator/accumulator sub-library::  srfi-221
 * Optional arguments::          srfi-227
 * Tagged procedures::           srfi-229
-* Flexible curried procedures:: srfi-232
+* Flexible curried procedures::  srfi-232
 @end menu
 
 
@@ -10643,7 +10644,7 @@ vector->range      range->generator
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Pipeline operators, Integer sets, Range objects, Library modules - SRFIs
+@node Pipeline operators, Enums and enum sets, Range objects, Library modules - SRFIs
 @section @code{srfi-197} - Pipeline operators
 @c NODE パイプラインオペレータ, @code{srfi-197} - パイプラインオペレータ
 
@@ -10919,7 +10920,108 @@ this macro simply nests the steps:
 
 
 @c ----------------------------------------------------------------------
-@node Integer sets, Define higher-order lambda, Pipeline operators, Library modules - SRFIs
+@node Enums and enum sets, Integer sets, Pipeline operators, Library modules - SRFIs
+@section @code{srfi-209} - Enums and enum sets
+
+@deftp {Module} srfi-209
+@mdindex srfi-209
+@end deftp
+
+@subheading Enum types
+
+@defun make-enum-type list :optional name
+@c MOD srfi-209
+@end defun
+
+@defun enum-type? obj
+@c MOD srfi-209
+@end defun
+
+@defun enum-type-size etype
+@c MOD srfi-209
+@end defun
+
+@defun enum-min etype
+@defunx enum-max etype
+@c MOD srfi-209
+@end defun
+
+@defun enum-type-enums etype
+@c MOD srfi-209
+@end defun
+
+@defun enum-type-names etype
+@c MOD srfi-209
+@end defun
+
+@defun enum-type-values etype
+@c MOD srfi-209
+@end defun
+
+@defun enum-type-contains? etype enum
+@c MOD srfi-209
+@end defun
+
+@defun enum-name->enum etype symbol
+@c MOD srfi-209
+@end defun
+
+@defun enum-ordinal->enum etype n
+@c MOD srfi-209
+@end defun
+
+@defun enum-name->ordinal etype symbol
+@c MOD srfi-209
+@end defun
+
+@defun enum-name->value etype symbol
+@c MOD srfi-209
+@end defun
+
+@defun enum-ordinal->value etype n
+@c MOD srfi-209
+@end defun
+
+@defun make-enum-comparator etype
+@c MOD srfi-209
+@end defun
+
+@subheading Enums
+
+@defun enum-type enum
+@defunx enum-name enum
+@defunx enum-ordinal enum
+@defunx enum-value enum
+@c MOD srfi-209
+@end defun
+
+@defun enum? obj
+@c MOD srfi-209
+@end defun
+
+@defun enum=? enum0 enum1 enums ...
+@defunx enum<? enum0 enum1 enums ...
+@defunx enum<=? enum0 enum1 enums ...
+@defunx enum>? enum0 enum1 enums ...
+@defunx enum>=? enum0 enum1 enums ...
+@c MOD srfi-209
+@end defun
+
+@defun enum-next enum
+@c MOD srfi-209
+@end defun
+
+@defun enum-prev enum
+@c MOD srfi-209
+@end defun
+
+@subheading Enum sets
+
+@subheading R6RS enumeration compatibility
+
+
+@c ----------------------------------------------------------------------
+@node Integer sets, Define higher-order lambda, Enums and enum sets, Library modules - SRFIs
 @section @code{srfi-217} - Integer sets
 @c NODE 整数集合,  @code{srfi-217} - 整数集合
 

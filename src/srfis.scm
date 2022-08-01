@@ -1425,6 +1425,16 @@ Supported by the module @code{srfi-197} (@pxref{Pipeline operators}).
 モジュール@code{srfi-197}でサポートされます (@ref{Pipeline operators}参照)。
 
 
+srfi-209, srfi-209
+()
+
+Enums and enum sets
+Supported by the module @code{srfi-209} (@pxref{Enums and enum sets}).
+
+Enumとenum集合
+モジュール@code{srfi-209}でサポートされます (@ref{Enums and enum sets}参照)。
+
+
 srfi-217, srfi-217
 ()
 
