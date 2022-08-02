@@ -6160,8 +6160,8 @@ Using @code{make-key-comparator}, these cam be written as follows
 @defun make-list-comparator element-comparator
 @defunx make-vector-comparator element-comparator
 @defunx make-bytevector-comparator element-comparator
-@c MOD srfi-114
 [SRFI-114]
+@c MOD srfi-114
 Returns a new comparator that compares lists, vectors and
 bytevectors element-wise using @var{element-comparator},
 respectively.  These are more general versions of
@@ -10750,6 +10750,7 @@ Or even use multiple values:
 @end deftp
 
 @defmac chain initial-value [placeholder [ellipsis]] step @dots{}
+[SRFI-197]
 @c MOD srfi-197
 @c EN
 The optional @var{placeholder} and @var{ellipsis} are, if given,
@@ -10801,6 +10802,7 @@ or @var{initial-value} is expected to yield that many values.
 @end defmac
 
 @defmac chain-and initial-value [placeholder] step @dots{}
+[SRFI-197]
 @c MOD srfi-197
 @c EN
 A variant of @code{chain} that stops and returns @code{#f}
@@ -10832,6 +10834,7 @@ symbol.  If @var{step} doesn't contain placeholder symbol, the previous
 @end defmac
 
 @defmac chain-when initial-value [placeholder] ([guard] step) @dots{}
+[SRFI-197]
 @c MOD srfi-197
 @c EN
 A variant of @code{chain} where you can select whether each @var{step}
@@ -10871,6 +10874,7 @@ the previous value is passed through to the next step.
 @end defmac
 
 @defmac chain-lambda [placeholder [ellipsis]] step @dots{}
+[SRFI-197]
 @c MOD srfi-197
 @example
 (chain-lambda step @dots{})
@@ -10879,6 +10883,7 @@ the previous value is passed through to the next step.
 @end defmac
 
 @defmac nest [placeholder] step @dots{} initial-value
+[SRFI-197]
 @c MOD srfi-197
 @c EN
 Similar to @code{chain}, except the order of steps is right-to-left.
@@ -10899,6 +10904,7 @@ this macro simply nests the steps:
 @end defmac
 
 @defmac nest-reverse initial-value [placeholder] step @dots{}
+[SRFI-197]
 @c MOD srfi-197
 @c EN
 Similar to @code{nest} except the nesting is in reverse order.
@@ -10931,63 +10937,78 @@ this macro simply nests the steps:
 @subheading Enum types
 
 @defun make-enum-type list :optional name
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defmac define-enum type-name (name-value @dots{}) make-set
+[SRFI-209]
 @c MOD srfi-209
 @end defmac
 
 @defun enum-type? obj
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-type-size etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-min etype
 @defunx enum-max etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-type-enums etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-type-names etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-type-values etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-type-contains? etype enum
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-name->enum etype symbol
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-ordinal->enum etype n
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-name->ordinal etype symbol
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-name->value etype symbol
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-ordinal->value etype n
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun make-enum-comparator etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
@@ -10997,10 +11018,12 @@ this macro simply nests the steps:
 @defunx enum-name enum
 @defunx enum-ordinal enum
 @defunx enum-value enum
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum? obj
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
@@ -11009,56 +11032,69 @@ this macro simply nests the steps:
 @defunx enum<=? enum0 enum1 enums ...
 @defunx enum>? enum0 enum1 enums ...
 @defunx enum>=? enum0 enum1 enums ...
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-next enum
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-prev enum
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @subheading Enum sets
 
 @defun enum-type->enum-set etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set etype enum @dots{}
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-empty-set etype
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun list->enum-set etype enum-list
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-projection etype-or-eset eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-copy eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set? obj
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-contains? eset enum
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-empty? eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-disjoint? eset1 eset2
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
@@ -11067,118 +11103,144 @@ this macro simply nests the steps:
 @defunx enum-set<=? eset1 eset2
 @defunx enum-set>? eset1 eset2
 @defunx enum-set>=? eset1 eset2
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-subset? eset1 eset2
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-any? pred eset
 @defunx enum-set-every? pred eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-type eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-size eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set->enum-list eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-adjoin eset enum @dots{}
 @defunx enum-set-adjoin! eset enum @dots{}
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-delete eset enum @dots{}
 @defunx enum-set-delete! eset enum @dots{}
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-delete-all eset list @dots{}
 @defunx enum-set-delete-all! eset list @dots{}
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-count pred eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-filter pred eset
 @defunx enum-set-remove pred eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-map->list proc eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-for-each proc eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-fold kons knil eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-complement eset
 @defunx enum-set-complement! eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-union eset1 eset2
 @defunx enum-set-union! eset1 eset2
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-intersection eset1 eset2
 @defunx enum-set-intersection! eset1 eset2
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-difference eset1 eset2
 @defunx enum-set-difference! eset1 eset2
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-xor eset1 eset2
 @defunx enum-set-xor! eset1 eset2
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @subheading R6RS enumeration compatibility
 
 @defmac define-enumeration type-name (name-value @dots{}) make-set
+[SRFI-209]
 @c MOD srfi-209
 @end defmac
 
 @defun make-enumeration symbol-list
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-universe eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-costructor eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-member? symbol eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set-indexer eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
 @defun enum-set->list eset
+[SRFI-209]
 @c MOD srfi-209
 @end defun
 
