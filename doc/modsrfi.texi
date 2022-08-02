@@ -10922,6 +10922,7 @@ this macro simply nests the steps:
 @c ----------------------------------------------------------------------
 @node Enums and enum sets, Integer sets, Pipeline operators, Library modules - SRFIs
 @section @code{srfi-209} - Enums and enum sets
+@c NODE enumとenum集合,  @code{srfi-209} - enumとenum集合
 
 @deftp {Module} srfi-209
 @mdindex srfi-209
@@ -10932,6 +10933,10 @@ this macro simply nests the steps:
 @defun make-enum-type list :optional name
 @c MOD srfi-209
 @end defun
+
+@defmac define-enum type-name (name-value @dots{}) make-set
+@c MOD srfi-209
+@end defmac
 
 @defun enum-type? obj
 @c MOD srfi-209
@@ -11017,7 +11022,165 @@ this macro simply nests the steps:
 
 @subheading Enum sets
 
+@defun enum-type->enum-set etype
+@c MOD srfi-209
+@end defun
+
+@defun enum-set etype enum @dots{}
+@c MOD srfi-209
+@end defun
+
+@defun enum-empty-set etype
+@c MOD srfi-209
+@end defun
+
+@defun list->enum-set etype enum-list
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-projection etype-or-eset eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-copy eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set? obj
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-contains? eset enum
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-empty? eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-disjoint? eset1 eset2
+@c MOD srfi-209
+@end defun
+
+@defun enum-set=? eset1 eset2
+@defunx enum-set<? eset1 eset2
+@defunx enum-set<=? eset1 eset2
+@defunx enum-set>? eset1 eset2
+@defunx enum-set>=? eset1 eset2
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-subset? eset1 eset2
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-any? pred eset
+@defunx enum-set-every? pred eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-type eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-size eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set->enum-list eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-adjoin eset enum @dots{}
+@defunx enum-set-adjoin! eset enum @dots{}
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-delete eset enum @dots{}
+@defunx enum-set-delete! eset enum @dots{}
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-delete-all eset list @dots{}
+@defunx enum-set-delete-all! eset list @dots{}
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-count pred eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-filter pred eset
+@defunx enum-set-remove pred eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-map->list proc eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-for-each proc eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-fold kons knil eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-complement eset
+@defunx enum-set-complement! eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-union eset1 eset2
+@defunx enum-set-union! eset1 eset2
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-intersection eset1 eset2
+@defunx enum-set-intersection! eset1 eset2
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-difference eset1 eset2
+@defunx enum-set-difference! eset1 eset2
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-xor eset1 eset2
+@defunx enum-set-xor! eset1 eset2
+@c MOD srfi-209
+@end defun
+
 @subheading R6RS enumeration compatibility
+
+@defmac define-enumeration type-name (name-value @dots{}) make-set
+@c MOD srfi-209
+@end defmac
+
+@defun make-enumeration symbol-list
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-universe eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-costructor eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-member? symbol eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set-indexer eset
+@c MOD srfi-209
+@end defun
+
+@defun enum-set->list eset
+@c MOD srfi-209
+@end defun
 
 
 @c ----------------------------------------------------------------------
