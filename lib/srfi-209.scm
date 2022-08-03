@@ -341,13 +341,14 @@
 
 (define (enum-set-empty? eset)
   (assume-type eset <enum-set>)
-  (bitvector-none? (~ eset'members)))
+  (bitvector-every-value? (~ eset'members) 0))
 
 ;; NB: srfi is unclear if two sets are not from the same enum-type.
 (define (enum-set-disjoint? enum-set1 enum-set2)
   (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))
-  (bitvector-none? (bitvector-and (~ enum-set1'members)
-                                  (~ enum-set2'members))))
+  (bitvector-every-value? (bitvector-and (~ enum-set1'members)
+                                         (~ enum-set2'members))
+                          0))
 
 (define (enum-set=? enum-set1 enum-set2)
   (assume (eqv? (enum-set-type enum-set1) (enum-set-type enum-set2)))

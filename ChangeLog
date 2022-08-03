@@ -1,3 +1,10 @@
+2022-08-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.scm (bitvector-any-value?, bitvector-every-value?):
+	  Rename bitvector-any? and bitvector-every? and let them take the
+	  bit value to search.  This eliminates the need of bitvector-none?,
+	  and also make it symmetric (we can test 'having at least 1 zero).
+
 2022-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-209.scm: Added, passes the tests (tests depend on

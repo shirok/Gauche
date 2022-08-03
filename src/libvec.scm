@@ -398,12 +398,29 @@
 (define-cproc bitvector-length (v::<bitvector>) ::<int>    ;srfi-178
   SCM_BITVECTOR_SIZE)
 
-(define-cproc bitvector-any? (v::<bitvector>) ::<boolean>
-  (return (Scm_BitsAny (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v))))
-(define-cproc bitvector-every? (v::<bitvector>) ::<boolean>
-  (return (Scm_BitsEvery (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v))))
-(define-cproc bitvector-none? (v::<bitvector>) ::<boolean>
-  (return (not (Scm_BitsAny (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v)))))
+(define-cproc bitvector-any-value? (v::<bitvector> val) ::<boolean>
+  (cond
+   [(or (SCM_EQ val SCM_TRUE) (== val (SCM_MAKE_INT 1)))
+    (return
+     (Scm_BitsAny (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v)))]
+   [(or (SCM_FALSEP val) (== val (SCM_MAKE_INT 0)))
+    (return
+     (not (Scm_BitsEvery (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v))))]
+   [else
+    (Scm_Error "Bit value should be either 0, 1, #f, or #t, but got: %S" val)
+    (return FALSE)]))
+
+(define-cproc bitvector-every-value? (v::<bitvector> val) ::<boolean>
+  (cond
+   [(or (SCM_EQ val SCM_TRUE) (== val (SCM_MAKE_INT 1)))
+    (return
+     (Scm_BitsEvery (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v)))]
+   [(or (SCM_FALSEP val) (== val (SCM_MAKE_INT 0)))
+    (return
+     (not (Scm_BitsAny (SCM_BITVECTOR_BITS v) 0 (SCM_BITVECTOR_SIZE v))))]
+   [else
+    (Scm_Error "Bit value should be either 0, 1, #f, or #t, but got: %S" val)
+    (return FALSE)]))
 
 (define-cproc make-bitvector (len::<fixnum> :optional (init #f)) ;srfi-178
   Scm_MakeBitvector)

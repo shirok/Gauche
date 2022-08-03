@@ -113,35 +113,43 @@
 ;; we have comprehensive tests in srfi-178-tests.  here we cover
 ;; non-srfi procedures.
 
-(test* "bitvector-any? 1" #t (bitvector-any? #*0001000))
-(test* "bitvector-any? 2" #t 
-       (bitvector-any? #*000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000))
-(test* "bitvector-any? 3" #t 
-       (bitvector-any? #*000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000))
-(test* "bitvector-any? 4" #f
-       (bitvector-any? #*00000000000))
-(test* "bitvector-any? 5" #f
-       (bitvector-any? #*))
-(test* "bitvector-any? 6" #f
-       (bitvector-any? #*000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000))
+(test* "bitvector-any-value? #t 1" #t (bitvector-any-value? #*0001000 1))
+(test* "bitvector-any-value? #t 2" #t
+       (bitvector-any-value? #*000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000 #t))
+(test* "bitvector-any-value? #t 3" #t
+       (bitvector-any-value? #*000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000 1))
+(test* "bitvector-any-value? #t 4" #f
+       (bitvector-any-value? #*00000000000 1))
+(test* "bitvector-any-value? #t 5" #f
+       (bitvector-any-value? #* 1))
+(test* "bitvector-any-value? #t 6" #f
+       (bitvector-any-value? #*000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 1))
 
-(test* "bitvector-every? 1" #t (bitvector-every? #*11111))
-(test* "bitvector-every? 2" #t (bitvector-every? #*))
-(test* "bitvector-every? 3" #t 
-       (bitvector-every? #*11111111111111111111111111111111111111111111111111111111111111111111111111111111111111))
-(test* "bitvector-every? 4" #f (bitvector-every? #*11101))
-(test* "bitvector-every? 5" #f
-       (bitvector-every? #*11111111111111111111111111111111111111111111111111111111111111111111111111111111111110))
-(test* "bitvector-every? 6" #f
-       (bitvector-every? #*11111111101111111111111111111111111111111111111111111111111111111111111111111111111111))
+(test* "bitvector-any-value? #f 1" #t (bitvector-any-value? #*1110111 0))
+(test* "bitvector-any-value? #f 2" #f (bitvector-any-value? #*1111111 0))
+(test* "bitvector-any-value? #f 3" #f (bitvector-any-value? #* 0))
+(test* "bitvector-any-value? #f 4" #t
+       (bitvector-any-value? #*1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111011 0))
+(test* "bitvector-any-value? #f 5" #f
+       (bitvector-any-value? #*1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111 0))
 
-(test* "bitvector-none? 1" #t (bitvector-none? #*00000))
-(test* "bitvector-none? 2" #t (bitvector-none? #*))
-(test* "bitvector-none? 3" #t
-       (bitvector-none? #*00000000000000000000000000000000000000000000000000000000000000000000000000000000000000))
-(test* "bitvector-none? 4" #f 
-       (bitvector-none? #*00000000000000000000000000000000000000000000000000000000000000000000000000000000000010))
-(test* "bitvector-none? 5" #f
-       (bitvector-none? #*00000001000000000000000000000000000000000000000000000000000000000000000000000000000000))
+(test* "bitvector-every-value? #t 1" #t (bitvector-every-value? #*11111 1))
+(test* "bitvector-every-value? #t 2" #t (bitvector-every-value? #* #t))
+(test* "bitvector-every-value? #t 3" #t
+       (bitvector-every-value? #*11111111111111111111111111111111111111111111111111111111111111111111111111111111111111 1))
+(test* "bitvector-every-value? #t 4" #f (bitvector-every-value? #*11101 1))
+(test* "bitvector-every-value? #t 5" #f
+       (bitvector-every-value? #*11111111111111111111111111111111111111111111111111111111111111111111111111111111111110 1))
+(test* "bitvector-every-value? #t 6" #f
+       (bitvector-every-value? #*11111111101111111111111111111111111111111111111111111111111111111111111111111111111111 1))
+
+(test* "bitvector-every-value? #f 1" #t (bitvector-every-value? #*00000 0))
+(test* "bitvector-every-value? #f 2" #t (bitvector-every-value? #* #f))
+(test* "bitvector-every-value? #f 3" #t
+       (bitvector-every-value? #*00000000000000000000000000000000000000000000000000000000000000000000000000000000000000 0))
+(test* "bitvector-every-value? #f 4" #f
+       (bitvector-every-value? #*00000000000000000000000000000000000000000000000000000000000000000000000000000000000010 #f))
+(test* "bitvector-every-value? #f 5" #f
+       (bitvector-every-value? #*00000001000000000000000000000000000000000000000000000000000000000000000000000000000000 0))
 
 (test-end)
