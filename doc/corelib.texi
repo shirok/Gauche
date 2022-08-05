@@ -14107,6 +14107,15 @@ If @var{init} is omitted, the content of the bitvector is undefined
 @end example
 @end defun
 
+@defun bitvector? obj
+[SRFI-178]
+@c EN
+Return @code{#t} iff @var{obj} is an bitvector.
+@c JP
+@var{obj}がビットベクタなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
 @defun list->bitvector lis
 [SRFI-178]
 @c EN
@@ -14268,6 +14277,41 @@ from @var{tstart}, mutating @var{target}.  Optional @var{sstart} and
   @result{} #*0001101000
 @end example
 @end defun
+
+@defun bitvector-any-value? bv bit :optional start end
+@defunx bitvector-every-value? bv bit :optional start end
+@c EN
+Check if any or every bit of a bitvector @var{bv} is @var{bit}, respectively.
+You can pass a boolean value or an exact integer 0 or 1 as @var{bit}.
+
+Optional @var{start}/@var{end} arguments limit the range of bitvector
+to look at.
+@c JP
+それぞれ、ビットベクタ@var{bv}の少なくともひとつ/全てのビットが@var{bit}であるかどうかを
+調べます。@var{bit}には真偽値もしくは正確な整数0または1を渡すことができます。
+
+省略可能引数@var{start}/@var{end}は検査する範囲を指定します。
+@c COMMON
+
+@example
+;; See if at least one '1'
+(bitvector-any-value? #*000100 1)   @result{} #t
+(bitvector-any-value? #*000000 #t)  @result{} #f
+
+;; See if at least one '0'
+(bitvector-any-value? #*110111 #f)  @result{} #t
+(bitvector-any-value? #*111111 0)   @result{} #f
+
+;; See if all bits are '1'
+(bitvector-every-value? #*11111 #t) @result{} #t
+(bitvector-every-value? #*00000 1)  @result{} #f
+
+;; See if all bits are '0'
+(bitvector-every-value? #*11111 #f) @result{} #f
+(bitvector-every-value? #*00000 0)  @result{} #t
+@end example
+@end defun
+
 
 @node Weak vectors,  , Bitvectors, Vector family
 @subsection Weak vectors
