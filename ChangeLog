@@ -1,3 +1,8 @@
+2022-08-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libvec.scm (bitvector-any-value?, bitvector-every-value?):
+	  Allow start/end optional args.
+
 2022-08-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/vector.scm (bitvector-any-value?, bitvector-every-value?):

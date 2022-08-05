@@ -742,23 +742,11 @@
 
 ;;; Bit field operations
 
-(define-cproc bitvector-field-any? (bv::<bitvector>
-                                    start::<fixnum>
-                                    end::<fixnum>)
-  ::<boolean>
-  (let* ([len::ScmSmallInt (SCM_BITVECTOR_SIZE bv)]
-         [bits::ScmBits* (SCM_BITVECTOR_BITS bv)])
-    (SCM_CHECK_START_END start end len)
-    (return (Scm_BitsAny bits start end))))
+(define (bitvector-field-any? bv start end)
+  (bitvector-any-value? bv #t start end))
 
-(define-cproc bitvector-field-every? (bv::<bitvector>
-                                      start::<fixnum>
-                                      end::<fixnum>)
-  ::<boolean>
-  (let* ([len::ScmSmallInt (SCM_BITVECTOR_SIZE bv)]
-         [bits::ScmBits* (SCM_BITVECTOR_BITS bv)])
-    (SCM_CHECK_START_END start end len)
-    (return (Scm_BitsEvery bits start end))))
+(define (bitvector-field-every? bv start end)
+  (bitvector-every-value? bv #t start end))
 
 (define (bitvector-field-clear bv start end)
   (bitvector-field-clear! (bitvector-copy bv) start end))
