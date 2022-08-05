@@ -1723,6 +1723,9 @@ between @var{start}-th bit (inclusive) and @var{end}-th bit (exclusive).
 @c MOD gauche.bitvector
 Returns @code{#t} iff at least one bit between @var{start} and @var{end}
 in @var{bv} is 1.
+
+This is equivalent to @code{(bitvector-any-value? bv 1 start end)},
+using Gauche's built-in procedure (@pxref{Bitvectors}).
 @end defun
 
 @defun bitvector-field-every? bv start end
@@ -1730,6 +1733,9 @@ in @var{bv} is 1.
 @c MOD gauche.bitvector
 Returns @code{#t} iff every bit between @var{start} and @var{end}
 in @var{bv} is 1.
+
+This is equivalent to @code{(bitvector-every-value? bv 1 start end)},
+using Gauche's built-in procedure (@pxref{Bitvectors}).
 @end defun
 
 @defun bitvector-field-clear bv start end
