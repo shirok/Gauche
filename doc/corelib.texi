@@ -13966,18 +13966,23 @@ In the former view, it is similar to a uniform vector, but it has the
 interface sufficiently different from uvectors and we provided it as
 a disjoint type.
 
-Gauche provides a handful of procedures in the core.
-SRFI-178 provides comprehensive bitvector library.
-@xref{Bitvector library}, for the details.
+Gauche provides a handful of procedures in the core,
+and @code{gauche.bitvector} provides comprehensive utilities.
+@xref{Bitvector utilities}, for the details.
+For the portable programs, srfi-178 defines bitvector library,
+which is a subset of what Gauche provides (@pxref{Bitvector library}).
 @c JP
 ビットベクタはビットの並びです。各「ビット」は、0/1の数値としても、
 @code{#f}/@code{#t}の論理値としても解釈可能です。
 最初の見方では、ビットベクタをユニフォームベクタの一種と考えることもできますが、
 インタフェースがそこそこ違っているので、別の型としました。
 
-Gaucheはコアでごく基本的な手続きを提供します。
-SRFI-178に包括的なビットベクタライブラリがあります。
-@ref{Bitvector library}を参照してください。
+Gaucheはコアでごく基本的な手続きを提供し、また
+@code{gauche.bitvector}モジュールで包括的なビットベクタユーティリティを提供します
+(@ref{Bitvector utilities}参照)。
+ポータブルなプログラムを書く場合は、srfi-178がビットベクタライブラリを定義しているので
+それを使うと良いでしょう。srfi-178はGaucheの提供するもののサブセットになっています
+(@ref{Bitvector library}参照)。
 @c COMMON
 
 @deftp {Builtin class} <bitvector>
