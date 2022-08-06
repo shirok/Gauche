@@ -182,7 +182,7 @@
             (slot-set! cc sn (slot-ref c sn)))
           (loop (cdr slots)))))))
 
-;; Aliases for srfi-35/srfi-36 compatibility
+;; Srfi-35/srfi-36 compatibility
 (define &condition   <condition>)
 (define &message     <message-condition>)
 (define &serious     <serious-condition>)
@@ -193,6 +193,10 @@
 (define &i/o-write-error <io-write-error>)
 (define &i/o-closed-error <io-closed-error>)
 (define &read-error  <read-error>)
+
+(define (message-condition? obj) (is-a? obj <message-condition>))
+(define (serious-condition? obj) (is-a? obj <serious-condition>))
+(define (error? obj) (is-a? obj <error>))
 
 ;;;
 ;;; Thread exception classes

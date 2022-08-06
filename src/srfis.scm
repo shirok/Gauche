@@ -453,7 +453,7 @@ Built-in.  @xref{Exceptions}.
 
 
 srfi-35
-(make-condition-type condition-type? make-condition condition? condition-has-type? condition-ref make-compound-condition extract-condition define-condition-type condition &condition &message &serious &error)
+(make-condition-type condition-type? make-condition condition? condition-has-type? condition-ref make-compound-condition extract-condition define-condition-type condition &condition &message message-condition? condition-message &serious serious-condition? &error error?)
 
 Conditions
 Built-in.  @xref{Conditions}.
