@@ -64,7 +64,7 @@
 ;; that works.
 ;; See https://github.com/shirok/Gauche/issues/179 about 'screen'.
 (define-constant *vt100-compatible-terminals*
-  #/^(vt10[02]|vt220|xterm.*|rxvt.*|screen.*|tmux.*)$/)
+  #/^(vt10[02]|vt220|xterm.*|rxvt.*|screen.*|tmux.*|linux.*)$/)
 
 ;; Convenience API
 (define (vt100-compatible? term)
