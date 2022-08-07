@@ -20227,6 +20227,22 @@ with a message condition, like this:
 @end example
 @end deftp
 
+@defun message-condition? obj
+@defunx serious-condition? obj
+@defunx error? obj
+[SRFI-35]
+@c EN
+These are srfi-35 compatible predicates to see if @var{obj} is
+a condition of type @code{&message}, @code{&serious}, and @code{&error},
+respectively.
+@c JP
+これらはsrfi-35互換の述語で、それぞれ@var{obj}が
+@code{&message}、@code{&serious}、あるいは@code{&error}型のコンディションであるか
+どうかを検査します。
+@c COMMON
+@end defun
+
+
 @deftp {Class} <system-error>
 @clindex system-error
 @c EN
@@ -20601,6 +20617,7 @@ portability, though.
 @end defun
 
 @defun condition-message condition :optional fallback
+[SRFI-35+]
 @c EN
 This is a convenience procedure to retrieve a message if
 @var{condition} has a type @code{<message-condition>},
