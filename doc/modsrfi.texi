@@ -10932,6 +10932,32 @@ this macro simply nests the steps:
 
 @deftp {Module} srfi-209
 @mdindex srfi-209
+Enums are objects to represent a finite set of options.  Traditionally
+Lisp-family languages have used symbols or keywords for the purpose,
+but it is error prone that you can pass arbitrary symbols which can only
+be checked at runtime.
+
+The enums in this srfi allows the user to define and use enums statically,
+that is, checked at macro-expansion time.
+
+There are three kind of objects involved in the enum system:
+
+@table @strong
+@item Enum type
+An enum type defines all possible enums that can belong to the type.
+It can be created at macro-expansion time with @code{define-enum},
+or at run-time with @code{make-enum-type}.  It is an immutable object.
+@item Enum
+An enum is an object that belong to a certain enum type.  Each enum
+has a name (a symbol unique within the enum type),
+an ordinal (nonnegative contiguous exact integer), and
+a value (arbitrary Scheme value, defaults to the name).
+Enums are instantiated at the same time as an enum type is instantiated.
+It is also an immutable object.
+@item Enum set
+An enum set is a subset of enums from the enums in a certain enum type.
+An efficient set operation over an enum set is provided.
+@end table
 @end deftp
 
 @subheading Enum types
