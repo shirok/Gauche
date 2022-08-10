@@ -28,7 +28,7 @@
 * Skew binary random-access lists::  data.skew-list
 * Sparse data containers::      data.sparse
 * Trie::                        data.trie
-* Universally unique lexicographically sortable identifier:: data.ulid
+* Universally unique lexicographically sortable identifier::  data.ulid
 * Database independent access layer::  dbi
 * Generic DBM interface::       dbm
 * File-system dbm::             dbm.fsdbm
@@ -72,6 +72,7 @@
 * Gap buffer::                  text.gap-buffer
 * Localized messages::          text.gettext
 * Simple HTML document construction::  text.html-lite
+* Multicolumn formatting::      text.multicolumn
 * Display with pager::          text.pager
 * Parsing input stream::        text.parse
 * Showing progress on text terminals::  text.progress
@@ -26634,7 +26635,7 @@ accessor procedure by yourself.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Simple HTML document construction, Display with pager, Localized messages, Library modules - Utilities
+@node Simple HTML document construction, Multicolumn formatting, Localized messages, Library modules - Utilities
 @section @code{text.html-lite} - Simple HTML document construction
 @c NODE シンプルなHTMLドキュメントの構築, @code{text.html-lite} - シンプルなHTMLドキュメントの構築
 
@@ -26942,7 +26943,39 @@ approach.
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Display with pager, Parsing input stream, Simple HTML document construction, Library modules - Utilities
+@node Multicolumn formatting, Display with pager, Simple HTML document construction, Library modules - Utilities
+@section @code{text.multicolumn} - Multicolumn formatting
+@c NODE 複数列フォーマット, @code{text.multicolumn} - 複数列フォーマット
+
+@deftp {Module} text.multicolumn
+@mdindex text.multicolumn
+This module provides the means to format a list of words into
+a multicolumn text.  Think of the output of @code{ls} command.
+
+@example
+(display-multicolumn
+  (string-tokenize "The quick brown fox \
+                    jumps over the lazy dog"))
+ @result{} @r{prints}
+The     fox     the
+quick   jumps   lazy
+brown   over    dog
+@end example
+
+Various options are provided to customize the output.
+@end deftp
+
+@defun display-multicolumn strs :key width minimum-width max-columns order
+@c MOD text.multicolumn
+@end defun
+
+@defun layout-multicolumn strs :key width minimum-width max-columns order
+@c MOD text.multicolumn
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Display with pager, Parsing input stream, Multicolumn formatting, Library modules - Utilities
 @section @code{text.pager} - Display with pager
 @c NODE ページャーを用いた出力, @code{text.pager} - ページャーを用いた出力
 
