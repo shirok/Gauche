@@ -100,6 +100,13 @@
 (define-method write-object ((etype <enum-type>) port)
   (format port "#<enum-type ~a>" (%enum-type-name etype)))
 
+(define-method describe ((etype <enum-type>))
+  (describe-common etype)
+  (format #t "    name: ~s\n" (~ etype'%name))
+  (format #t "    size: ~s\n" (size-of (~ etype'%ordinal->enum)))
+  (format #t " members: ~s\n" (map enum-name (~ etype'%ordinal->enum)))
+  (values))
+
 (define-record-type <enum> %make-enum enum?
   (type enum-type)
   (name enum-name)
@@ -115,6 +122,11 @@
 
 (define-method write-object ((eset <enum-set>) port)
   (format port "#<enum-set from ~a>" (%enum-type-name (~ eset'enum-type))))
+
+(define-method describe ((eset <enum-set>))
+  (describe-common eset)
+  (format #t "    type: ~s\n" (~ eset'enum-type))
+  (format #t " members: ~s\n" (enum-set-map->list enum-name eset)))
 
 ;; Constructor
 ;; elts : elt ...
