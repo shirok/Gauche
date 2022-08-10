@@ -1,3 +1,10 @@
+2022-08-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/multicolumn.scm (layout-multicolumn): Make multicolumn
+	  formatting two-step process for flexibility; layout-multicolumn
+	  returns a list of text for each line, and display-multicolumn
+	  uses it to print out the formatted text.
+
 2022-08-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm, src/srfis.scm: Export missing identifiers from

@@ -33,26 +33,41 @@
 
 (define-module text.multicolumn
   (use util.match)
-  (export display-multicolumn))
+  (export display-multicolumn layout-multicolumn))
 (select-module text.multicolumn)
 
+;;
 ;; Show a list of words in multicolumn format (imagine output of 'ls').
+;;
 
 (define (display-multicolumn strs
                              :key (width 80) ; total width
                                   (minimum-width 8) ; minimum column width
                                   (max-columns 4)
                                   (order 'column))
+  (dolist [line (layout-multicolumn strs
+                                    :width width :minimum-width minimum-width
+                                    :max-columns max-columns :order order)]
+    (for-each display line)
+    (newline)))
+
+;; underlying utility of display-multicolumn.
+;; Returns a list of string-list; each string-list is for a line.
+(define (layout-multicolumn strs
+                            :key (width 80) ; total width
+                                 (minimum-width 8) ; minimum column width
+                                 (max-columns 4)
+                                 (order 'column))
   (let* ([col-width (max (+ 2 (apply max (map string-length strs)))
                          minimum-width)]
          [cols (min max-columns (quotient width col-width))]
          [rows (quotient (+ (length strs) cols -1) cols)])
-    (define (show-1 words)
-      (let loop ([words words])
+    (define (layout-1 words)
+      (let rec ([words words])
         (match words
-          [(w) (display w) (newline)]
-          [(w #f . _) (display w) (newline)]
-          [(w . ws) (format #t "~va" col-width w) (loop ws)])))
+          [(w) (list w)]
+          [(w #f . _) (list w)]         ; #f is padding
+          [(w . ws) (cons (format "~va" col-width w) (rec ws))])))
     (ecase order
-      [(column) ($ for-each (^ ss (show-1 ss)) $* slices strs rows #t #f)]
-      [(row) ($ for-each show-1 $ slices strs cols)])))
+      [(column) ($ map (^ ss (layout-1 ss)) $* slices strs rows #t #f)]
+      [(row) ($ map layout-1 $ slices strs cols)])))
