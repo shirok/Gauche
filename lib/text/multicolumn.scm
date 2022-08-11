@@ -33,6 +33,7 @@
 
 (define-module text.multicolumn
   (use util.match)
+  (use text.tree)
   (export display-multicolumn layout-multicolumn))
 (select-module text.multicolumn)
 
@@ -48,7 +49,7 @@
   (dolist [line (layout-multicolumn strs
                                     :width width :minimum-width minimum-width
                                     :max-columns max-columns :order order)]
-    (for-each display line)
+    (for-each write-tree line)
     (newline)))
 
 ;; underlying utility of display-multicolumn.

@@ -26967,10 +26967,43 @@ Various options are provided to customize the output.
 
 @defun display-multicolumn strs :key width minimum-width max-columns order
 @c MOD text.multicolumn
+Display items in a list of strings @var{strs} in multicolumn format.
+The width of a column is chosen to contain the longest string in @var{str}
+or @var{minimum-width}, whichever greater.
+The default of @var{minimum-width} is 8.
+
+Then as many columns are displayed as fit in @var{width} characters,
+whose default is 80.  However, the number of columns won't exceed
+@var{max-columns} if it is given and not @code{#f}.
+
+The @var{order} argument must be either a symbol @code{column} or
+@code{row}.  If it is @code{column} (default), the items are sorted
+column-first; that is, it is filled in the first column from top to
+down, then the second column from top to down, and so on.
+If it is @code{row}, the items are sorted row-first; it is filled
+in the first row from left to right, and then second row, and so on.
 @end defun
 
 @defun layout-multicolumn strs :key width minimum-width max-columns order
 @c MOD text.multicolumn
+This is an underlying procedure of @code{display-multicolumn}.  It returns
+a list of text tree (@pxref{Lazy text construction}).  Each text
+tree stands for a line, not including the newline character.
+This can be handy if you want to modify the layout.
+
+@example
+(layout-multicolumn
+  (string-tokenize "The quick brown fox \
+                    jumps over the lazy dog"))
+ @result{}
+(("The     " "fox     " "the")
+ ("quick   " "jumps   " "lazy")
+ ("brown   " "over    " "dog"))
+@end example
+
+NB: The actual structure of each text tree may be changed, but
+passing it to @code{tree->string} or @code{write-tree} produces
+the line.
 @end defun
 
 
