@@ -48,6 +48,10 @@ Copyright @copyright{} 2001-2022  Shiro Kawai  <shiro@@acm.org>
 
 @end titlepage
 
+@ifnothtml
+@contents
+@end ifnothtml
+
 @node Top, Introduction, (dir), (dir)
 
 @ifnottex
@@ -86,7 +90,9 @@ Gaucheのバージョン@VERSION@に対応します。
 * Variable Index::
 @end menu
 
+@ifhtml
 @contents
+@end ifhtml
 
 @include intro.texi
 @include concepts.texi
