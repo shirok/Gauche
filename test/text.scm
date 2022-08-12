@@ -767,6 +767,36 @@ fuga
 (test-module 'text.pager)
 
 ;;-------------------------------------------------------------------
+(test-section "segmented-match")
+(use text.segmented-match)
+(test-module 'text.segmented-match)
+
+(let ([data '(;; pattern (success-word ...) (fail-word ...)
+              ("a-b-c"
+               ("a-b-c" "a-b-c-d" "a-b-c-d-e" "a-b-c-"
+                "abc-bcd-cde" "abc-bcd-cde-def")
+               ("a-b" "ab-c" "abc-cde" "a-b-"))
+              ("abc"
+               ("abc" "abcd" "abc-abc" "abc-")
+               ("ab" "-abc" "a-bc"))
+              ("a--b"
+               ("a--b" "aaa--bbb")
+               ("a-b")))])
+  (dolist [pattest data]
+    (let ([pattern (car pattest)])
+      (dolist [succ (cadr pattest)]
+        (test* `(segmented-match ,pattern ,succ) #t
+               (segmented-match? pattern succ)))
+      (dolist [fail (caddr pattest)]
+        (test* `(segmented-match ,pattern ,fail) #f
+               (segmented-match? pattern fail)))
+      ))
+  )
+
+(test* "segmented match (alternative separator)" #t
+       (segmented-match? "/u/b/g" "/usr/bin/gosh" #\/))
+
+;;-------------------------------------------------------------------
 (test-section "template")
 (use text.template)
 (test-module 'text.template)
