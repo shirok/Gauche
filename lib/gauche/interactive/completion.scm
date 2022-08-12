@@ -107,6 +107,11 @@
       [ws (sort ws)])))
 
 (define (%complete-path word)
+  ;; Should we use segmented prefix match for pathnames?  The issue is that
+  ;; when we have foo/... and foobar/..., and the user is really looking
+  ;; for something under foo/..., segmented prefix match keep hitting
+  ;; foobar/... as well.  Emacs takes the cursor position into account
+  ;; to eliminate unnecessary candidates.  Something to consider.
   (define (do-glob path)
     (glob `(,#"~|path|*{.scm,.sci,.sld}" ,#"~|path|*/")))
   (define (do-complete)
@@ -125,7 +130,13 @@
 
 (define (%complete-module-name word)
   (define found (make-hash-table 'eq?))
-  (library-fold (string->symbol #"{~|word|*,~|word|*.**.*}")
+  (define glob-pattern
+    ;; We use glob feature to realize segmented prefix match.
+    (match (string-split word #\.)
+      [(w) #"{~|w|*,~|w|*.**.*}"]
+      [ws (let1 xw (string-join (map (^w #"~|w|*") ws) ".")
+            #"{~|xw|,~|xw|.**.*}")]))
+  (library-fold (string->symbol glob-pattern)
                 (^[mod _ _] (hash-table-put! found mod #t))
                 #f)
   (match (map x->string (hash-table-keys found))
