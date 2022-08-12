@@ -1,3 +1,7 @@
+2022-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/segmented-match.scm (text.segmented-match): Added.
+
 2022-08-09  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modutil.texi: Start adding text.multicolumn doc

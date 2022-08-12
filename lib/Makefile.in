@@ -164,7 +164,7 @@ SCMFILES = \
        text/pager.scm text/progress.scm \
        text/console/framebuffer.scm text/console/wide-char-setting.scm \
        text/console/windows.scm \
-       text/template.scm \
+       text/segmented-match.scm text/template.scm \
        text/unicode.scm text/unicode/ucd.scm text/unicode/codeset.scm \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
