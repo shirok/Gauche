@@ -41,6 +41,8 @@
   (export list-completions))
 (select-module gauche.interactive.completion)
 
+(autoload text.segmented-match make-segmented-matcher)
+
 ;; Completion (EXPERIMENTAL)
 ;; Some questions to consider
 ;;   - Should we build a trie for quick access to prefix-matching symbols?
@@ -85,13 +87,17 @@
   (let ([mod ((with-module gauche.internal vm-current-module))]
         [visited '()]
         [hits (make-hash-table 'string=?)])
+    (define matcher
+      (if (string-scan word #\- 'index)
+        (make-segmented-matcher word #\-)
+        (cut string-prefix? word <>)))
     (define (search m)
       (unless (memq m visited)
         (push! visited m)
         ($ hash-table-for-each (module-table m)
            (^[sym _]
              (let1 s (symbol->string sym)
-               (when (string-prefix? word s)
+               (when (matcher s)
                  (hash-table-put! hits s #t)))))))
     (search mod)
     (dolist [m (module-imports mod)]

@@ -1274,9 +1274,17 @@
                           $ format "Display all ~d possibilities?"
                           $ + 1 (length ws))
                      (display/pager (string-join candidates "\n"))))))
+             ;; Replace input with the longest common prefix.  This allows
+             ;; to complete 'defi' to 'define', while continuing the input.
+             ;; Note that if segmented match is used, common prefix can
+             ;; be shorter than the current input; e.g. 'c-w' lists candidates
+             ;; such as 'call-with-values' and 'char-word-consituent?', and
+             ;; the common prefix is 'c'.  In such case we leave the current
+             ;; input.
              (let1 pre (fold common-prefix w ws)
-               (gap-buffer-move! buf start-pos)
-               (gap-buffer-replace! buf (- end-pos start-pos) pre)
+               (when (> (string-length pre) (- end-pos start-pos))
+                 (gap-buffer-move! buf start-pos)
+                 (gap-buffer-replace! buf (- end-pos start-pos) pre))
                'redraw)]))
         'nop)))
 

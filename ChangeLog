@@ -1,3 +1,8 @@
+2022-08-12  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/line-edit.scm (completion-command): Allow completion
+	  with hyphenated prefxies, e.g. 'w-i-f' -> 'with-input-from-'.
+
 2022-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/segmented-match.scm (text.segmented-match): Added.
