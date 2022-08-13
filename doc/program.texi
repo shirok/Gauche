@@ -1589,6 +1589,47 @@ go back to the older killed characters.
 @c COMMON
 
 @c EN
+@subsubheading Interpolation
+@c JP
+@subsubheading 補完
+@c COMMON
+
+@c EN
+Typing TAB in or immediately after a partially typed word completes it.
+If there are multiple candidates, it completes up to the commom prefix,
+and typing TAB again shows the list of candidates.
+
+What's to be completed depends on the context.  If it is at the toplevel
+command (a word after a comma on a prompt),
+it complets toplevel commands.  If it is argument
+of @code{,load} toplevel command, it completes pathnames.
+If it is argument of @code{,use} or @code{,reload} toplevel commands,
+it completes module names.  In other contexts, it completes global bindings
+visible from the current module.
+
+For symbols and module names, segmented completion is possible; e.g.
+@code{c-w-c-c} completes to @code{call-with-current-continuation}.
+
+Currently the completion mechanism is hardcoded.  We may add a way to
+customize it in future.
+@c JP
+部分的にタイプされた単語の中、もしくは直後にTABを打つと単語が補完されます。
+複数の候補がある場合、共通するプレフィクスが補完され、そこで続けてTABを打つと候補がリストされます。
+
+何が補完されるかは文脈によります。トップレベルコマンド
+(プロンプトにおいてコンマの後に続く単語)の場合はトップレベルコマンドが、
+@code{,load}トップレベルコマンドの引数であればパス名が、
+@code{,use}や@code{,reload}トップレベルコマンドの引数であればモジュール名が、
+そしてその他の文脈では現在のモジュールから見えるグローバル束縛があるシンボルです。
+
+シンボルとモジュール名については、区切られた単語による補完が可能です。
+例えば@code{c-w-c-c}は@code{call-with-current-continuation}に補完されます。
+
+今のところ、補完メカニズムはハードコードされています。いずれカスタマイズできるように
+するかもしれません。
+@c COMMON
+
+@c EN
 @subsubheading Finishing input
 @c JP
 @subsubheading 入力の終了
