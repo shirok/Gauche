@@ -1475,6 +1475,18 @@ Supported by the module @code{srfi-221}
 (@ref{Generator/accumulator sub-library}参照)。
 
 
+srfi-222, srfi-222
+()
+
+Compound objects
+Supported by the module @code{srfi-222}
+(@pxref{Compound objects}).
+
+複合オブジェクト
+@code{srfi-222}でサポートされます
+(@ref{Compound objects}参照)。
+
+
 srfi-227, srfi-227
 ()
 

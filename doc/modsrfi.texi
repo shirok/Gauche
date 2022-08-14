@@ -76,6 +76,7 @@ srfi N is supported by Gauche.)
 * Integer sets::                srfi-217
 * Define higher-order lambda::  srfi-219
 * Generator/accumulator sub-library::  srfi-221
+* Compound objects::            srfi-222
 * Optional arguments::          srfi-227
 * Tagged procedures::           srfi-229
 * Flexible curried procedures::  srfi-232
@@ -11751,7 +11752,7 @@ R7RSで定義されているとおりの「素の」@code{define}と、
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Generator/accumulator sub-library, Optional arguments, Define higher-order lambda, Library modules - SRFIs
+@node Generator/accumulator sub-library, Compound objects, Define higher-order lambda, Library modules - SRFIs
 @section @code{srfi-221} - Generator/accumulator sub-library
 @c NODE ジェネレータ/アキュムレータ サブライブラリ, @code{srfi-221} - ジェネレータ/アキュムレータ サブライブラリ
 
@@ -11949,7 +11950,78 @@ Gaucheでは、遅延シーケンスは通常のリストと統合されてい�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Optional arguments, Tagged procedures, Generator/accumulator sub-library, Library modules - SRFIs
+@node Compound objects, Optional arguments, Generator/accumulator sub-library, Library modules - SRFIs
+@section @code{srfi-222} - Compound objects
+@c NODE 複合オブジェクト, @code{srfi-222} - 複合オブジェクト
+
+@deftp {Module} srfi-222
+@mdindex srfi-222
+Compound objects are encapsulation of an immutable sequence of objects.
+Any objects other than a compound object can be included in a compound object;
+if you try to create a compound object including compound objects,
+it is 'flattened'---that is, the source's subobjects are retrieved
+and each one is put into the new compound object.
+
+This is an abstraction of the compound condition (@pxref{Conditions}),
+although Gauche's compound conditions are not built on this.
+
+This module is mainly provided for the compatibility; used with
+R7RS records (@pxref{Record types}), you can have a portable
+multiple inheritance of records.
+@end deftp
+
+@defun make-compound obj @dots{}
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound? obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-subobjects obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-length obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-ref obj k
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-map mapper obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-map->list mapper obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-filter pred obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-predicate pred obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@defun compound-access pred acc default obj
+[SRFI-222]
+@c MOD srfi-222
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Optional arguments, Tagged procedures, Compound objects, Library modules - SRFIs
 @section @code{srfi-227} - Optional arguments
 @c NODE 省略可能引数, @code{srfi-227} - 省略可能引数
 
