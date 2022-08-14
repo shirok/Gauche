@@ -2660,6 +2660,18 @@
   (include "include/srfi-221-test"))
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-222")
+(use srfi-222)
+(test-module 'srfi-222)
+
+(define-module srfi-222-tests
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+  (use gauche.record)
+  (use srfi-64)
+  (use srfi-222)
+  (include "include/srfi-222-tests"))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-227")
 (use srfi-227)
 (test-module 'srfi-227)

@@ -177,9 +177,13 @@
         (~ (info-get-node (~ (get-info)'info) (car node&line))
            'content)))))
 
-;;
-;; Search info entries by regexp
-;;
+;; API
+;; Experimental; invoke
+
+
+;;;
+;;; Search info entries by regexp
+;;;
 
 (define (search-entries rx)
   (sort (filter (^e (rx (car e))) (hash-table->alist (~ (get-info)'index)))
