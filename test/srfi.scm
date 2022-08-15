@@ -2671,6 +2671,14 @@
   (use srfi-222)
   (include "include/srfi-222-tests"))
 
+;; Gauche object protocol
+(test* "hash function of compound" #t
+       (integer? (default-hash (make-compound 1 2 3))))
+(test* "compare function of compound" '(-1 0 1)
+       (list (compare (make-compound 1 2) (make-compound 1 2 3))
+             (compare (make-compound 1 2) (make-compound 1 2))
+             (compare (make-compound 1 2 3) (make-compound 1 2))))
+
 ;;-----------------------------------------------------------------------
 (test-section "srfi-227")
 (use srfi-227)

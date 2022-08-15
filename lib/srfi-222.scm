@@ -41,9 +41,18 @@
           ))
 (select-module srfi-222)
 
-(define-class <compound-object> ()
+(define-class <compound> ()
   ((subobjects :init-keyword :subobjects)  ; list of objects
    ))
+
+(define-method write-object ((c <compound>) port)
+  (format port "#<compound ~s>" (~ c'subobjects)))
+
+(define-method object-hash ((c <compound>) rec-hash)
+  (rec-hash (~ c'subobjects)))
+
+(define-method object-compare ((a <compound>) (b <compound>))
+  (compare (~ a'subobjects) (~ b'subobjects)))
 
 (define (%list->compound objs)
   (let1 q (make-queue)
@@ -51,11 +60,11 @@
       (if (compound? o)
         (apply enqueue! q (~ o'subobjects))
         (enqueue! q o)))
-    (make <compound-object> :subobjects (dequeue-all! q))))
+    (make <compound> :subobjects (dequeue-all! q))))
 
 (define (make-compound . objs) (%list->compound objs))
 
-(define (compound? obj) (is-a? obj <compound-object>))
+(define (compound? obj) (is-a? obj <compound>))
 
 (define (compound-subobjects obj)
   (if (compound? obj)
