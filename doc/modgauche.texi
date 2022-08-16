@@ -1171,23 +1171,41 @@ Gaucheはビットベクタを組み込みでしていますが、コアで提�
 @c COMMON
 @end deftp
 
+@c EN
 @subheading Constructors
+@c JP
+@subheading コンストラクタ
+@c COMMON
 
 @defun bitvector-unfold f length seed @dots{}
 @defunx bitvector-unfold-right f length seed @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Creates a bitvector of length @var{length}, and fill its contents by
 repeatedly applying @var{f}.  The procedure @var{f} must take one more
 than the number of seeds, and must return the same number
 of values.  First, @var{f} is applied to the index and @var{seed} @dots{},
 then its first return value (which must be a bit, i.e. 0, 1 or a boolean
-value) is used to initialize the first element of the bitvector,
+value) is used to initialize the index-th element of the bitvector,
 and the rest of the return value is used as the next argument to @var{f}.
 It is repeated @var{length} times.
+@c JP
+長さ@var{length}のビットベクタを作り、その内容を@var{f}を繰り返し呼ぶことで
+埋めて行きます。@var{f}は@var{seed} @dots{}に与えられた引数の数よりひとつ多い
+引数を取り、同じ数の戻り値を返します。まず、@var{f}はインデックスおよび@var{seed} @dots{}
+を引数として呼び出され、戻り値の最初の値(それはビット、すなわち0, 1, 真偽値のいずれかでなければなりません)がビットベクタのインデックス位置の値にセットされます。
+次の@var{f}は、新たなインデックスおよび残りの戻り値を引数として呼び出されます。
+これが@var{length}回繰り返されます。
+@c COMMON
 
+@c EN
 While @code{bitvector-unfold} fills the bits from left to right,
 @code{bitvector-unfold-right} does from right to left.
+@c JP
+@code{bitvector-unfold}はビットを左から右に、
+@code{bitvector-unfold-right}は右から左に埋めて行きます。
+@c COMMON
 
 @example
 (use math.prime)
@@ -1201,16 +1219,26 @@ While @code{bitvector-unfold} fills the bits from left to right,
   @result{} #*10100010100010101100
 @end example
 
+@c EN
 Note: This procedure follows the protocol of @code{vector-unfold}
 (@pxref{R7RS vectors}), and has a different protocol from other
 @code{unfold} procedures (@pxref{R7RS lists}).
+@c JP
+註: この手続きは@code{vector-unfold}のプロトコルに準じています (@ref{R7RS vectors}参照)。
+他の@code{unfold}のプロトコルとは異なることに注意してください (@ref{R7RS lists}参照)。
+@c COMMON
 @end defun
 
 @defun bitvector-reverse-copy bv :optional start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Copies a bitvector @var{bv} in reverse order.  Optional @var{start}
 and @var{end} arguments limits the range of the input.
+@c JP
+ビットベクタ@var{bv}の、順序を逆にしたものを新に作って返します。
+省略可能な@var{start}と@var{end}引数は入力の範囲を制限します。
+@c COMMON
 
 @example
 (bitvector-reverse-copy #*10110011100011110000 4 16)
@@ -1221,42 +1249,88 @@ and @var{end} arguments limits the range of the input.
 @defun bitvector-append bv @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 All arguments must be bytevectors.  Returns a fresh bytevector
 which is concatenation of all arguments.
+@c JP
+全ての引数はビットベクタでなければなりません。全てのビットベクタをつなげたビットベクタを
+新たに作って返します。
+@c COMMON
 @end defun
 
 @defun bitvector-concatenate bvs
 [SRFI-178]
-The argument must be a list of bytevectors.  Returns a fresh bytevector
-which is concatenation of all arguments.
 @c MOD gauche.bitvector
+@c EN
+The argument must be a list of bitvectors.  Returns a fresh bytevector
+which is concatenation of all bitvectors.
+@c JP
+引数はビットベクタのリストでなければなりません。
+その全てのビットベクタをつなげたビットベクタを新にたに作って返します。
+@c COMMON
 @end defun
 
 @defun bitvector-append-subbitvectors bv start end @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 The number of arguments must be a multiple of 3.  Each triplet of
 the arguments is a bytevector followed by start and end index,
 specifying the input bytevector range.  Returns a fresh bytevector
 which is concatenation of all the subvectors.
+@c JP
+引数の総数は3の倍数でなければなりません。それぞれの三つ組は、
+ビットベクタと、そのビットベクタに対する開始インデックス、終了インデックスです。
+それぞれのビットベクタの、インデックスで指定される範囲を抜き出したものを
+つなげたビットベクタを新たに作って返します。
+@c COMMON
+
+@example
+(bitvector-append-subbitvectors
+  #*11100011 2 6
+  #*01010101 3 8)
+ @result{} #*100010101
+@end example
 @end defun
 
+@c EN
 @subheading Predicates
+@c JP
+@subheading 述語
+@c COMMON
 
 @defun bitvector-emtpy? bv
 [SRFI-178]
 @c MOD gauche.bitvector
-Returns @code{#t} iff @var{bv} is an empty bytevector.
+@c EN
+Returns @code{#t} if @var{bv} is an empty bytevector,
+@code{#f} if it is a non-empty bitvector.
+An error is thrown if @var{bv} is not a bitvector.
+@c JP
+@var{bv}が空のビットベクタなら@code{#t}を、空でないビットベクタなら@code{#f}を返します。
+@var{bv}がビットベクタでなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun bitvector=? bv @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
-Returns @code{#t} iff all the bytevectors have the same content.
+@c EN
+All arguments must be bitvectors.
+Returns @code{#t} iff all the bitvectors have the same length and content.
 If there's zero or one argument, it returns @code{#t}.
+@c JP
+全ての引数はビットベクタでなければなりません。
+全てのビットベクタが同じ長さ、同じ内容なら@code{#t}を、そうでなければ@code{#f}を返します。
+引数が0個もしくは1個の場合は@code{#t}を返します。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Iteration
+@c JP
+@subheading 繰り返し
+@c COMMON
 
 @defun bitvector-take bv n
 @defunx bitvector-take-right bv n
