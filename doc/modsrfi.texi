@@ -11973,51 +11973,134 @@ multiple inheritance of records.
 @defun make-compound obj @dots{}
 [SRFI-222]
 @c MOD srfi-222
+Returns a compound objects having @var{obj} @dots{} as its subobjects.
+Each @var{obj} can any Scheme object, but
+if @var{obj} is a compound object itself, it is expanded into its
+subobjects:
+
+@example
+(make-compound 1 2 3)
+ @result{} #<compound-object (1 2 3)>
+(make-compund 0 (make-compound 1 2 3) 4 5)
+ @result{} #<compound-object (0 1 2 3 4 5)>
+@end example
 @end defun
 
 @defun compound? obj
 [SRFI-222]
 @c MOD srfi-222
+Returns @code{#t} iff @var{obj} is a compound object.
 @end defun
 
 @defun compound-subobjects obj
 [SRFI-222]
 @c MOD srfi-222
+If @var{obj} is a compound, returns a list of its subobjects.
+Otherwise, returns a 1-element list of @var{obj}.
 @end defun
 
 @defun compound-length obj
 [SRFI-222]
 @c MOD srfi-222
+If @var{obj} is a compound, returns the number of its subobjects.
+Otherwise, returns 1.
 @end defun
 
 @defun compound-ref obj k
 [SRFI-222]
 @c MOD srfi-222
+Returns @var{k}-th subobject of @var{obj} if it is a compound.
+Othrewise, @var{k} must be zero and @var{obj} itself is returned.
+
+An error is thrown if @var{k} is not a nonnegative exact integer
+or out of range.
 @end defun
 
 @defun compound-map mapper obj
 [SRFI-222]
 @c MOD srfi-222
+Returns a compound object whose subobjects are result of applying
+@var{mapper} on each subobject of @var{obj}.  If @var{obj} is not
+a compound, it is treated as if a compound with @var{obj} as a sole
+subobject.  Note that if @var{mapper} returns a compound, its subobjects
+are spliced in place.  Thus the number of subobjects of the result may differ
+from the number of subobjects of @var{obj}.
+
+@example
+(compound-map (cut + 1 <>) (make-compound 1 2 3))
+ @result{} #<compound (2 3 4)>
+(compound-map (cut make-compound <> 'x) (make-compound 1 2 3))
+ @result{} #<compound (1 x 2 x 3 x)>
+(compound-map (cut + 1 <>) 3)
+ @result{} #<compound (4)>
+@end example
 @end defun
 
 @defun compound-map->list mapper obj
 [SRFI-222]
 @c MOD srfi-222
+Returns a list of results of applying @var{mapper} on each subobjects
+of @var{obj}.  If @var{obj} is not a compound, @var{mapper} is directly
+applied on @var{obj}.
+
+@example
+(compound-map->list (cut + 1 <>) (make-compound 1 2 3))
+ @result{} (2 3 4)
+(compound-map->list (cut make-compound <> 'x) (make-compound 1 2 3))
+ @result{} (#<compound (1 x)> #<compound (2 x)> #<compound (3 x)>)
+(compound-map->list (cut + 1 <>) 3)
+ @result{} (4)
+@end example
 @end defun
 
 @defun compound-filter pred obj
 [SRFI-222]
 @c MOD srfi-222
+Collect subobjects of @var{obj} that satisfies @var{pred}, and
+returns a compound that consists of them.  If @var{obj} is not a compound,
+it is treated as if it is a compound with @var{obj} as a sole subobject.
+
+@example
+(compound-filter odd? (make-compound 1 2 3))
+ @result{} #<compound (1 3)>
+(compound-filter odd? 1)
+ @result{} #<compound (1)>
+(compound-filter odd? 2)
+ @result{} #<compound ()>
+@end example
 @end defun
 
 @defun compound-predicate pred obj
 [SRFI-222]
 @c MOD srfi-222
+Returns @code{#t} if @var{obj} satisfies @var{pred},
+or any of @var{obj}'s subobjects satisfies @var{pred}
+when @var{obj} is a compound.  Returns @code{#f} otherwise.
 @end defun
 
 @defun compound-access pred acc default obj
 [SRFI-222]
 @c MOD srfi-222
+If @var{obj} satisfies @var{pred}, @code{acc} is applied ot @var{obj}
+and the result is returned.  Otherwise, if @var{obj} is a compound,
+@var{pred} is applied on each subobject, and @var{acc} is applied
+on the first subobject that satisfies @var{pred}, and the result
+is returned.  If none of the case is satisfied, @var{default} is returned.
+
+@example
+(define-record-type <foo> make-foo foo?
+  (f foo-f))
+
+(define-record-type <bar> make-bar bar?
+  (b bar-b))
+
+(define c (make-compound (make-foo "foo!") (make-bar "bar!") '(ca . cd)))
+
+(compound-access foo? foo-f 'none c) @result{} "foo!"
+(compound-access bar? bar-b 'none c) @result{} "bar!"
+(compound-access pair? car  'none c) @result{} ca
+(compound-access char? char->integer 'none c) @result{} none
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
