@@ -1117,9 +1117,9 @@ wasn't a whole integer.
 @c JP
 リリース 0.8.7 までは、Gauche は正確な有理数をサポートしていませんでし
 た。@code{2/3}のような有理数リテラルを読み込むことはできていましたが、
-約分して整数になる場合をのぞいては、その場で不正確な実数に変換されてい
+約分して整数になる場合をのぞいては、その場で非正確な実数に変換されてい
 ました。正確な整数を正確な整数で割った場合も約分して整数になる場合をの
-ぞき、結果は不正確な実数になりました。
+ぞき、結果は非正確な実数になりました。
 @c COMMON
 
 @c EN
@@ -1144,7 +1144,7 @@ continue to apply exact arithmetic, performance would be
 degraded miserably.
 @c JP
 計算は正確な値でできますが、ひとつ欠点もあります。正確有理数演算は整
-数演算や不正確実数同士の演算にくらべてはるかに遅いのです。意図せず、計
+数演算や非正確実数同士の演算にくらべてはるかに遅いのです。意図せず、計
 算の初期段階で有理数を生成してしまうとその後の計算にはすべて正確な演算
 が適用されてしまい性能は悲惨なことになります。
 @c COMMON
@@ -1184,8 +1184,8 @@ rational literals with @code{#i} to force Gauche to coerce
 them to inexact reals:
 @c JP
 このモジュールは@code{/}を再定義しているだけです。したがって、コードに
-正確な有理数のリテラルが含まれていても、それは不正確な実数に変換される
-ことはなく、正確な有理数としてあつかわれます。Gaucheに不正確な実数とし
+正確な有理数のリテラルが含まれていても、それは非正確な実数に変換される
+ことはなく、正確な有理数としてあつかわれます。Gaucheに非正確な実数とし
 て有理数リテラルを扱わせるには、@code{#i}という接頭辞を追加しなければ
 なりません。
 @c COMMON
@@ -12034,7 +12034,7 @@ faster than getting one by one.
 @code{mt-random-fill-u32vector!}では、要素は0と2^32-1の間の
 正の正確整数で埋められます。
 @code{mt-random-fill-f32vector!}と@code{mt-random-fill-f64vector!}
-では、0.0と1.0(含まれない)の間の不正確実数で埋められます。
+では、0.0と1.0(含まれない)の間の非正確実数で埋められます。
 @c COMMON
 @end defun
 
@@ -17219,7 +17219,7 @@ Schemeのベクタ。 (@code{json-array-handler}で変更可能)
 Schemeの連想リスト。キーは文字列で、値はSchemeオブジェクト。
 (@code{json-object-handler}で変更可能)
 @item 数値
-Schemeの不正確な実数。
+Schemeの非正確な実数。
 @item 文字列
 Schemeの文字列。
 @c COMMON

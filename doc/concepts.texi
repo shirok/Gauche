@@ -71,7 +71,7 @@ Full numeric tower (integer, rational, real and complex numbers) are supported,
 but rationals are only exact, and complex numbers are always inexact.
 @c JP
 完全なNumeric tower(整数、有理数、実数、複素数)がサポートされますが、
-有理数は正確な表現のみで、また複素数は不正確な表現のみを持ちます。
+有理数は正確な表現のみで、また複素数は非正確な表現のみを持ちます。
 @c COMMON
 @end itemize
 

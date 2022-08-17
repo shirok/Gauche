@@ -1465,7 +1465,7 @@ Gaucheでは、ポートは同時にテキストポートでもバイナリポ�
 
 @node R7RS inexact numbers, R7RS lazy evaluation, R7RS file library, R7RS small language
 @subsection @code{scheme.inexact} - R7RS inexact numbers
-@c NODE R7RS不正確数, @code{scheme.inexact} - R7RS不正確数
+@c NODE R7RS非正確数, @code{scheme.inexact} - R7RS非正確数
 
 @deftp {Module} scheme.inexact
 @mdindex scheme.inexact

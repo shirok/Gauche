@@ -175,7 +175,7 @@ gosh> 2@@-0.5pi
 @end example
 @c JP
 @item 数値リテラル
-不正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
+非正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
 できます。例：@code{30.}, @code{.25}, @code{-.4}。
 数値のリーダは、パディングの'@code{#}'を認識します。
 複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：@code{3.0@@1.57}) でも
@@ -455,7 +455,7 @@ The table below lists sharp-syntaxes.
 @c EN
  @tab [R7RS] Inexact number prefix.
 @c JP
- @tab [R7RS] 不正確数接頭辞。
+ @tab [R7RS] 非正確数接頭辞。
 @c COMMON
 @item @code{#j}, @code{#k}, @code{#l}, @code{#m}, @code{#n}
 @c EN

@@ -187,7 +187,7 @@ but they are space efficient.
 すなわち、任意のSchemeオブジェクトを格納できる配列を実装します。
 @code{<u8array>}から@code{<f64array>}までは、
 それぞれ@code{<u8vector>}から@code{<f64vector>}をバッキングストレージとして
-用いる配列を実装し、制限された範囲の整数もしくは不正確な実数のみを
+用いる配列を実装し、制限された範囲の整数もしくは非正確な実数のみを
 効率良く格納することができます。
 @c COMMON
 @end deftp
@@ -21081,7 +21081,7 @@ procedure is to compare inexact numbers tolerating small error.
 (特別な場合については下の ``曖昧な結果をテストする'' および
 ``異常系をテストする'' の項を見てください)。
 
-特別な比較手続きのひとつの用法は、不正確な数値を、多少の誤差を許して
+特別な比較手続きのひとつの用法は、非正確な数値を、多少の誤差を許して
 比較するような場合です。
 @c COMMON
 
@@ -21306,7 +21306,7 @@ don't match any of @var{choice}s.
 Note: If you want to compare inexact numeric result,
 you can use @code{approx=?} (@pxref{Numerical comparison}).
 @c JP
-註: 不正確な数値の結果を比較したい場合は、
+註: 非正確な数値の結果を比較したい場合は、
 @code{approx=?}が使えます (@ref{Numerical comparison}参照)。
 @c COMMON
 
