@@ -234,6 +234,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->val0 = SCM_UNDEFINED;
     for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
+    v->trampoline = -1;
 
     v->handlers = SCM_NIL;
 
