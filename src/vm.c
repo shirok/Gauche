@@ -557,7 +557,12 @@ static void vm_unregister(ScmVM *vm)
             BASE = CONT->base;                                          \
             CONT = CONT->prev;                                          \
             SCM_FLONUM_ENSURE_MEM(v__);                                 \
+            vm->trampoline = -1;                                        \
             VAL0 = after__(v__, (void**)data__);                        \
+            for (int argc__ = vm->trampoline; argc__ >= 0;) {           \
+                vm->trampoline = -1;                                    \
+                VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc__, SCM_SUBR(VAL0)->data); \
+            }                                                           \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = (ScmObj*)CONT;                                       \
             ENV  = CONT->env;                                           \

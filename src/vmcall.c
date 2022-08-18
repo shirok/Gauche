@@ -188,8 +188,8 @@
         }
 #endif
 
-        SCM_PROF_COUNT_CALL(vm, VAL0);
         do {
+            SCM_PROF_COUNT_CALL(vm, VAL0);
             vm->trampoline = -1;
             VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc, SCM_SUBR(VAL0)->data);
         } while ((argc = vm->trampoline) >= 0);
