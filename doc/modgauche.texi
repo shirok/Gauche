@@ -1336,31 +1336,57 @@ If there's zero or one argument, it returns @code{#t}.
 @defunx bitvector-take-right bv n
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a new bitvector with the first/last @var{n} bits of a bitvector @var{bv}.
 An error is thrown if length of @var{bv} is less than @var{n}.
+@c JP
+ビットベクタ@var{bv}の最初から/終わりの@var{n}ビットを切り出した新たなビットベクタを
+返します。@var{bv}の長さが@var{n}より小さければエラーが投げられます。
+@c COMMON
 
+@c EN
 In Gauche, you can also use generic @code{(subseq bv 0 n)} to take the
 first @var{n} bits.  @xref{Sequence framework}.
+@c JP
+Gaucheではジェネリックな@code{(subseq bv 0 n)}で最初の@var{n}ビットを
+切り出すこともできます (@ref{Sequence framework}参照)。
+@c COMMON
 @end defun
 
 @defun bitvector-drop bv n
 @defunx bitvector-drop-right bv n
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a new bitvector with bits except first/last @var{n} bits of
 a bitvector @var{bv}.
 An error is thrown if length of @var{bv} is less than @var{n}.
+@c JP
+ビットベクタ@var{bv}の最初から/終わりの@var{n}ビットを取り除いた新たなビットベクタを
+返します。@var{bv}の長さが@var{n}より小さければエラーが投げられます。
+@c COMMON
 
+@c EN
 In Gauche, you can also use generic @code{(subseq bv n)}
 to drop the first @var{n} bits.  @xref{Sequence framework}.
+@c JP
+Gaucheではジェネリックな@code{(subseq bv n)}で最初の@var{n}ビットを
+取り除いたビットベクタを得ることもできます (@ref{Sequence framework}参照)。
+@c COMMON
 @end defun
 
 @defun bitvector-segment bv n
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Slices a bitvector @var{bv} with @var{n}-bits each, and returns
 a list of bitvectors.  If the length of @var{bv} isn't a multiple
 of @var{n}, the last bitvector may be shorter.
+@c JP
+ビットベクタ@var{bv}を@var{n}ビットごとの切片に切り分け、
+それぞれを新たなビットベクタにしたもののリストを返します。
+@var{bv}が@var{n}の倍数でなければ、最後のビットベクタは@var{n}ビット未満になります。
+@c COMMON
 @end defun
 
 @defun bitvector-fold/int kons knil bv1 bv2 @dots{}
@@ -1369,19 +1395,40 @@ of @var{n}, the last bitvector may be shorter.
 @defunx bitvector-fold-right/bool kons knil bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Fold @var{kons} over the elements of bitvectors with @var{knil} as
 the initial state value.
+@c JP
+状態値を受け渡しながら、@var{kons}をビットベクタの各要素に適用してゆきます。
+@var{knil}は最初の状態値です。
+@c COMMON
 
+@c EN
 The @var{kons} procedure is always called as
 @code{(kons state e1 e2 @dots{})}, where @var{e1} @var{e2} @dots{}
 are elements from each bitvectors, as integer 0/1 (for @code{/int} procdures)
 or boolean @code{#f}/@code{#t} (for @code{/bool} procedures).
 This is the same order as @code{vector-fold} in
 @code{scheme.vector} module (@pxref{R7RS vectors}).
-(Note that list @code{fold} procedure calls the @var{knil} procedure
+(Note that list @code{fold} procedure calls the @var{kons} procedure
 with different order; @pxref{Walking over lists}).
+@c JP
+@var{kons}は@code{(kons state e1 e2 @dots{})}のように
+呼び出されます。ここで@var{e1} @var{e2} @dots{} は引数の各ビットベクタの対応する
+要素を取り出したものです (@code{/int}の手続きでは0/1、@code{/bool}の手続きでは
+@code{#f}/@code{#t})。
+これは@code{scheme.vector}モジュールの@code{vector-fold}と同じ引数順です
+(@ref{R7RS vectors})。
+(リストについての@code{fold}手続きでは@var{kons}手続きの最後の引数として
+状態値が渡されることに注意してください。@ref{Walking over lists}参照)。
+@c COMMON
 
+@c EN
 All bitvectors must have the same length; otherwise, an error is thrown.
+@c JP
+引数の全てのビットベクタは同じ長さでなければなりません。
+そうでなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun bitvector-map/int f bv1 bv2 @dots{}
