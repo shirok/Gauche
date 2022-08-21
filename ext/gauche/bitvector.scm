@@ -242,6 +242,8 @@
     (bitvector-copy bv 0 (- len n))))
 
 (define (bitvector-segment bv n)
+  (assume (and (exact-integer? n) (positive? n))
+          "N must be exact positive integer, but got:" n)
   (let loop ([len (bitvector-length bv)]
              [k 0]
              [r '()])
