@@ -26718,6 +26718,127 @@ given @var{vec}s, using accompanied @var{start} and @var{end} index.
 @end example
 @end deffn
 
+@deffn {Function} @@vector-take vec n
+@deffnx {Function} @@vector-take-right vec n
+@deffnx {Function} @@vector-drop vec n
+@deffnx {Function} @@vector-drop-right vec n
+@findex u8vector-take
+@findex s8vector-take
+@findex u16vector-take
+@findex s16vector-take
+@findex u32vector-take
+@findex s32vector-take
+@findex u64vector-take
+@findex s64vector-take
+@findex f16vector-take
+@findex f32vector-take
+@findex f64vector-take
+@findex c32vector-take
+@findex c64vector-take
+@findex c128vector-take
+@findex u8vector-take-right
+@findex s8vector-take-right
+@findex u16vector-take-right
+@findex s16vector-take-right
+@findex u32vector-take-right
+@findex s32vector-take-right
+@findex u64vector-take-right
+@findex s64vector-take-right
+@findex f16vector-take-right
+@findex f32vector-take-right
+@findex f64vector-take-right
+@findex c32vector-take-right
+@findex c64vector-take-right
+@findex c128vector-take-right
+@findex u8vector-drop
+@findex s8vector-drop
+@findex u16vector-drop
+@findex s16vector-drop
+@findex u32vector-drop
+@findex s32vector-drop
+@findex u64vector-drop
+@findex s64vector-drop
+@findex f16vector-drop
+@findex f32vector-drop
+@findex f64vector-drop
+@findex c32vector-drop
+@findex c64vector-drop
+@findex c128vector-drop
+@findex u8vector-drop-right
+@findex s8vector-drop-right
+@findex u16vector-drop-right
+@findex s16vector-drop-right
+@findex u32vector-drop-right
+@findex s32vector-drop-right
+@findex u64vector-drop-right
+@findex s64vector-drop-right
+@findex f16vector-drop-right
+@findex f32vector-drop-right
+@findex f64vector-drop-right
+@findex c32vector-drop-right
+@findex c64vector-drop-right
+@findex c128vector-drop-right
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+Returns a new uvector that has the first @var{n} elements,
+the last @var{n} elements, the elements without the first @var{n} elements,
+and the elements without the last @var{n} elements, respectively.
+
+@var{N} must be a nonnegative exact integer no greater than the
+length of @var{vec}.
+@c JP
+それぞれ、最初の@var{n}要素、最後の@var{n}要素、最初の@var{n}要素を取り残り、
+および最後の@var{n}要素を取り除いた残り、を要素とするuvectorを作って返します。
+
+@var{n}は非負の正確な整数で、@var{vec}の長さを越えてはいけません。
+@c COMMON
+
+@example
+(u8vector-take '#u8(0 1 2 3 4 5) 4) @result{} #u8(0 1 2 3)
+(u8vector-drop '#u8(0 1 2 3 4 5) 4) @result{} #u8(4 5)
+
+(u8vector-take-right '#u8(0 1 2 3 4 5) 4) @result{} #u8(2 3 4 5)
+(u8vector-drop-right '#u8(0 1 2 3 4 5) 4) @result{} #u8(0 1)
+@end example
+@end deffn
+
+@deffn {Function} @@vector-segment vec n
+@findex u8vector-segment
+@findex s8vector-segment
+@findex u16vector-segment
+@findex s16vector-segment
+@findex u32vector-segment
+@findex s32vector-segment
+@findex u64vector-segment
+@findex s64vector-segment
+@findex f16vector-segment
+@findex f32vector-segment
+@findex f64vector-segment
+@findex c32vector-segment
+@findex c64vector-segment
+@findex c128vector-segment
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+Segment @var{vec} into fresh uvectors of length @var{n}, and returns
+a list of them.  The last uvector may be shorter than @var{n} if the
+length of @var{vec} is not a multiple of @var{n}.
+
+@var{N} must be a positive exact integer.
+@c JP
+@var{vec}を長さ@var{n}の新たなuvectorに分割し、そのリストを返します。
+@var{vec}の長さが@var{n}の倍数でなければ、最後のuvectorは@var{n}より短くなります。
+
+@var{n}は正の正確な整数でなければなりません。
+@c COMMON
+
+@example
+(u8vector-segment '#u8(0 1 2 3 4 5 6 7) 3)
+ @result{} (#u8(0 1 2) #u8(3 4 5) #u8(6 7))
+@end example
+@end deffn
+
 @defvar @@vector-comparator
 @vindex u8vector-comparator
 @vindex s8vector-comparator
