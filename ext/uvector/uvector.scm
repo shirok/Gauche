@@ -60,7 +60,8 @@
           s8vector->string u8vector->string
           s32vector->string u32vector->string
 
-          uvector-alias uvector-binary-search uvector-class-element-size
+          uvector-alias uvector-segment/shared
+          uvector-binary-search uvector-class-element-size
           uvector-copy uvector-copy! uvector-ref uvector-set! uvector-size
           uvector->list uvector->vector uvector-swap-bytes uvector-swap-bytes!
 
@@ -105,6 +106,19 @@
  (define-cproc uvector-alias
    (klass::<class> v::<uvector> :optional (start::<fixnum> 0) (end::<fixnum> -1))
    Scm_UVectorAlias)
+
+ (define-cproc uvector-segment/shared (v::<uvector> n::<fixnum>)
+   (unless (> n 0)
+     (Scm_Error "Positive exact integer required, but got: %d" n))
+   (let* ([len::ScmSmallInt (SCM_UVECTOR_SIZE v)]
+          [i::ScmSmallInt 0]
+          [h SCM_NIL] [t SCM_NIL])
+     (while (< i len)
+       (let* ([vv (Scm_UVectorAlias (Scm_ClassOf (SCM_OBJ v))
+                                    v i (?: (> (+ i n) len) len (+ i n)))])
+         (SCM_APPEND1 h t vv))
+       (set! i (+ i n)))
+     (return h)))
  )
 
 ;; byte swapping
