@@ -440,7 +440,9 @@ int Scm_PeekbUnsafe(ScmPort *p)
         b = (unsigned char)PORT_SCRATCH(p)[0];
     } else {
         SCM_GETB(b, p);
-        if (b >= 0) {
+        if (b == EOF) {
+            PORT_UNGOTTEN(p) = EOF;
+        } else if (b >= 0) {
             if (p->scrcnt > 0) {
                 /* unshift scratch buffer */
                 SCM_ASSERT(p->scrcnt < SCM_CHAR_MAX_BYTES);
@@ -530,6 +532,11 @@ int Scm_GetbUnsafe(ScmPort *p)
     if (p->scrcnt) {
         b = getb_scratch(p);
     } else if (PORT_UNGOTTEN(p) != SCM_CHAR_INVALID) {
+        if (PORT_UNGOTTEN(p) == EOF) {
+            PORT_UNGOTTEN(p) = SCM_CHAR_INVALID;
+            UNLOCK(p);
+            return EOF;
+        }
         b = getb_ungotten(p);
     } else {
         switch (SCM_PORT_TYPE(p)) {

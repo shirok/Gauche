@@ -328,7 +328,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
     ScmObj cs;
 
     ScmChar ch = Scm_GetcUnsafe(ctx->ipat);
-    if (ch == SCM_CHAR_INVALID) return SCM_EOF;
+    if (ch == EOF) return SCM_EOF;
     switch (ch) {
     case '(': return rc1_lex_open_paren(ctx);
     case ')': return SCM_SYM_CLOSE_PAREN;
@@ -343,7 +343,7 @@ static ScmObj rc1_lex(regcomp_ctx *ctx)
     case '?': return rc1_rep(ctx, SCM_SYM_QUESTION, SCM_SYM_QUESTIONQ, SCM_SYM_QUESTIONP);
     case '\\':
         ch = Scm_GetcUnsafe(ctx->ipat);
-        if (ch == SCM_CHAR_INVALID) {
+        if (ch == EOF) {
             Scm_Error("stray backslash at the end of pattern: %S",
                       ctx->pattern);
         }
@@ -520,8 +520,8 @@ static ScmObj rc1_read_integer(regcomp_ctx *ctx)
     do {
         Scm_DStringPutc(&ds, ch);
         ch = Scm_GetcUnsafe(ctx->ipat);
-    } while (ch != SCM_CHAR_INVALID && isdigit(ch));
-    if (ch != SCM_CHAR_INVALID) {
+    } while (ch != EOF && isdigit(ch));
+    if (ch != EOF) {
         Scm_UngetcUnsafe(ch, ctx->ipat);
     }
     ScmObj r = Scm_StringToNumber(SCM_STRING(Scm_DStringGet(&ds, 0)), 10, 0);
@@ -539,13 +539,13 @@ static ScmObj rc1_group_name(regcomp_ctx *ctx)
 
     for (;;) {
         ScmChar ch = Scm_GetcUnsafe(ctx->ipat);
-        if (ch == SCM_CHAR_INVALID) return SCM_FALSE;
+        if (ch == EOF) return SCM_FALSE;
         if (ch == '>') {
             return Scm_Intern(SCM_STRING(Scm_DStringGet(&ds, 0)));
         }
         if (ch == '\\') {
             ch = Scm_GetcUnsafe(ctx->ipat);
-            if (ch == SCM_CHAR_INVALID) return SCM_FALSE;
+            if (ch == EOF) return SCM_FALSE;
             /* fall through */
         }
         Scm_DStringPutc(&ds, ch);
@@ -654,7 +654,7 @@ static ScmObj rc1_lex_conditional_pattern(regcomp_ctx *ctx, int bolp,
                                           ScmObj grps)
 {
     ScmChar ch = Scm_GetcUnsafe(ctx->ipat);
-    if (ch == SCM_CHAR_INVALID)
+    if (ch == EOF)
         goto error;
     if (isdigit(ch)) {
         Scm_UngetcUnsafe(ch, ctx->ipat);

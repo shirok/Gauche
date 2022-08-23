@@ -544,7 +544,7 @@
 (define-cproc peek-char (:optional (port::<input-port> (current-input-port)))
   (inliner PEEK-CHAR)
   (let* ([ch::ScmChar (Scm_Peekc port)])
-    (return (?: (== ch SCM_CHAR_INVALID) SCM_EOF (SCM_MAKE_CHAR ch)))))
+    (return (?: (== ch EOF) SCM_EOF (SCM_MAKE_CHAR ch)))))
 
 (define-cproc eof-object? (obj) ::<boolean> :fast-flonum
   (inliner EOFP) SCM_EOFP)
