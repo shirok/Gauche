@@ -26457,6 +26457,52 @@ argument order (@pxref{Octet vectors}).
 @c COMMON
 @end deffn
 
+@deffn {Function} @@vector-reverse! vec :optional start end
+@findex u8vector-reverse!
+@findex s8vector-reverse!
+@findex u16vector-reverse!
+@findex s16vector-reverse!
+@findex u32vector-reverse!
+@findex s32vector-reverse!
+@findex u64vector-reverse!
+@findex s64vector-reverse!
+@findex f16vector-reverse!
+@findex f32vector-reverse!
+@findex f64vector-reverse!
+@findex c32vector-reverse!
+@findex c64vector-reverse!
+@findex c128vector-reverse!
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-reverse-copy! target tstart source :optional start end
+@findex u8vector-reverse-copy!
+@findex s8vector-reverse-copy!
+@findex u16vector-reverse-copy!
+@findex s16vector-reverse-copy!
+@findex u32vector-reverse-copy!
+@findex s32vector-reverse-copy!
+@findex u64vector-reverse-copy!
+@findex s64vector-reverse-copy!
+@findex f16vector-reverse-copy!
+@findex f32vector-reverse-copy!
+@findex f64vector-reverse-copy!
+@findex c32vector-reverse-copy!
+@findex c64vector-reverse-copy!
+@findex c128vector-reverse-copy!
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+
+
 @deffn {Function} @@vector-multi-copy! target tstart tstride source :optional sstart ssize sstride count
 @findex u8vector-multi-copy!
 @findex s8vector-multi-copy!
@@ -26801,6 +26847,14 @@ length of @var{vec}.
 (u8vector-take-right '#u8(0 1 2 3 4 5) 4) @result{} #u8(2 3 4 5)
 (u8vector-drop-right '#u8(0 1 2 3 4 5) 4) @result{} #u8(0 1)
 @end example
+
+@c EN
+You can also use @code{uvector-alias} to obtain a partial uvector
+that shares the storage with the original uvector, avoiding copying overhead.
+@c JP
+なお、@code{uvector-alias}を使うと、元のuvectorと記憶領域を共有する
+部分的なuvectorを得ることができます。コピーのオーバヘッドを避けることができます。
+@c COMMON
 @end deffn
 
 @deffn {Function} @@vector-segment vec n
@@ -26838,6 +26892,438 @@ length of @var{vec} is not a multiple of @var{n}.
  @result{} (#u8(0 1 2) #u8(3 4 5) #u8(6 7))
 @end example
 @end deffn
+
+@deffn {Function} @@vector-fold kons knil vec vec2 @dots{}
+@deffnx {Function} @@vector-fold-right kons knil vec vec2 @dots{}
+@findex u8vector-fold
+@findex s8vector-fold
+@findex u16vector-fold
+@findex s16vector-fold
+@findex u32vector-fold
+@findex s32vector-fold
+@findex u64vector-fold
+@findex s64vector-fold
+@findex f16vector-fold
+@findex f32vector-fold
+@findex f64vector-fold
+@findex c32vector-fold
+@findex c64vector-fold
+@findex c128vector-fold
+@findex u8vector-unfold
+@findex s8vector-unfold
+@findex u16vector-unfold
+@findex s16vector-unfold
+@findex u32vector-unfold
+@findex s32vector-unfold
+@findex u64vector-unfold
+@findex s64vector-unfold
+@findex f16vector-unfold
+@findex f32vector-unfold
+@findex f64vector-unfold
+@findex c32vector-unfold
+@findex c64vector-unfold
+@findex c128vector-unfold
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-unfold! f vec start end seed
+@deffnx {Function} @@vector-unfold-right! f vec start end seed
+@findex u8vector-unfold!
+@findex s8vector-unfold!
+@findex u16vector-unfold!
+@findex s16vector-unfold!
+@findex u32vector-unfold!
+@findex s32vector-unfold!
+@findex u64vector-unfold!
+@findex s64vector-unfold!
+@findex f16vector-unfold!
+@findex f32vector-unfold!
+@findex f64vector-unfold!
+@findex c32vector-unfold!
+@findex c64vector-unfold!
+@findex c128vector-unfold!
+@findex u8vector-unfod-right!
+@findex s8vector-unfod-right!
+@findex u16vector-unfod-right!
+@findex s16vector-unfod-right!
+@findex u32vector-unfod-right!
+@findex s32vector-unfod-right!
+@findex u64vector-unfod-right!
+@findex s64vector-unfod-right!
+@findex f16vector-unfod-right!
+@findex f32vector-unfod-right!
+@findex f64vector-unfod-right!
+@findex c32vector-unfod-right!
+@findex c64vector-unfod-right!
+@findex c128vector-unfod-right!
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+
+@deffn {Function} @@vector-map f vec vec2 @dots{}
+@deffnx {Function} @@vector-map! f vec vec2 @dots{}
+@deffnx {Function} @@vector-for-each f vec vec2 @dots{}
+@findex u8vector-map
+@findex s8vector-map
+@findex u16vector-map
+@findex s16vector-map
+@findex u32vector-map
+@findex s32vector-map
+@findex u64vector-map
+@findex s64vector-map
+@findex f16vector-map
+@findex f32vector-map
+@findex f64vector-map
+@findex c32vector-map
+@findex c64vector-map
+@findex c128vector-map
+@findex u8vector-map!
+@findex s8vector-map!
+@findex u16vector-map!
+@findex s16vector-map!
+@findex u32vector-map!
+@findex s32vector-map!
+@findex u64vector-map!
+@findex s64vector-map!
+@findex f16vector-map!
+@findex f32vector-map!
+@findex f64vector-map!
+@findex c32vector-map!
+@findex c64vector-map!
+@findex c128vector-map!
+@findex u8vector-for-each
+@findex s8vector-for-each
+@findex u16vector-for-each
+@findex s16vector-for-each
+@findex u32vector-for-each
+@findex s32vector-for-each
+@findex u64vector-for-each
+@findex s64vector-for-each
+@findex f16vector-for-each
+@findex f32vector-for-each
+@findex f64vector-for-each
+@findex c32vector-for-each
+@findex c64vector-for-each
+@findex c128vector-for-each
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-count pred vec vec2 @dots{}
+@findex u8vector-count
+@findex s8vector-count
+@findex u16vector-count
+@findex s16vector-count
+@findex u32vector-count
+@findex s32vector-count
+@findex u64vector-count
+@findex s64vector-count
+@findex f16vector-count
+@findex f32vector-count
+@findex f64vector-count
+@findex c32vector-count
+@findex c64vector-count
+@findex c128vector-count
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-cumulate f knil vec
+@findex u8vector-cumulate
+@findex s8vector-cumulate
+@findex u16vector-cumulate
+@findex s16vector-cumulate
+@findex u32vector-cumulate
+@findex s32vector-cumulate
+@findex u64vector-cumulate
+@findex s64vector-cumulate
+@findex f16vector-cumulate
+@findex f32vector-cumulate
+@findex f64vector-cumulate
+@findex c32vector-cumulate
+@findex c64vector-cumulate
+@findex c128vector-cumulate
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-take-while pred vec
+@deffnx {Function} @@vector-take-while-right pred vec
+@deffnx {Function} @@vector-drop-while pred vec
+@deffnx {Function} @@vector-drop-while-right pred vec
+@findex u8vector-take-while
+@findex s8vector-take-while
+@findex u16vector-take-while
+@findex s16vector-take-while
+@findex u32vector-take-while
+@findex s32vector-take-while
+@findex u64vector-take-while
+@findex s64vector-take-while
+@findex f16vector-take-while
+@findex f32vector-take-while
+@findex f64vector-take-while
+@findex c32vector-take-while
+@findex c64vector-take-while
+@findex c128vector-take-while
+@findex u8vector-take-while-right
+@findex s8vector-take-while-right
+@findex u16vector-take-while-right
+@findex s16vector-take-while-right
+@findex u32vector-take-while-right
+@findex s32vector-take-while-right
+@findex u64vector-take-while-right
+@findex s64vector-take-while-right
+@findex f16vector-take-while-right
+@findex f32vector-take-while-right
+@findex f64vector-take-while-right
+@findex c32vector-take-while-right
+@findex c64vector-take-while-right
+@findex c128vector-take-while-right
+@findex u8vector-drop-while
+@findex s8vector-drop-while
+@findex u16vector-drop-while
+@findex s16vector-drop-while
+@findex u32vector-drop-while
+@findex s32vector-drop-while
+@findex u64vector-drop-while
+@findex s64vector-drop-while
+@findex f16vector-drop-while
+@findex f32vector-drop-while
+@findex f64vector-drop-while
+@findex c32vector-drop-while
+@findex c64vector-drop-while
+@findex c128vector-drop-while
+@findex u8vector-drop-while-right
+@findex s8vector-drop-while-right
+@findex u16vector-drop-while-right
+@findex s16vector-drop-while-right
+@findex u32vector-drop-while-right
+@findex s32vector-drop-while-right
+@findex u64vector-drop-while-right
+@findex s64vector-drop-while-right
+@findex f16vector-drop-while-right
+@findex f32vector-drop-while-right
+@findex f64vector-drop-while-right
+@findex c32vector-drop-while-right
+@findex c64vector-drop-while-right
+@findex c128vector-drop-while-right
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-index pred vec vec2 @dots{}
+@deffnx {Function} @@vector-index-right pred vec vec2 @dots{}
+@findex u8vector-index
+@findex s8vector-index
+@findex u16vector-index
+@findex s16vector-index
+@findex u32vector-index
+@findex s32vector-index
+@findex u64vector-index
+@findex s64vector-index
+@findex f16vector-index
+@findex f32vector-index
+@findex f64vector-index
+@findex c32vector-index
+@findex c64vector-index
+@findex c128vector-index
+@findex u8vector-index-right
+@findex s8vector-index-right
+@findex u16vector-index-right
+@findex s16vector-index-right
+@findex u32vector-index-right
+@findex s32vector-index-right
+@findex u64vector-index-right
+@findex s64vector-index-right
+@findex f16vector-index-right
+@findex f32vector-index-right
+@findex f64vector-index-right
+@findex c32vector-index-right
+@findex c64vector-index-right
+@findex c128vector-index-right
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-skip pred vec vec2 @dots{}
+@deffnx {Function} @@vector-skip-right pred vec vec2 @dots{}
+@findex u8vector-skip
+@findex s8vector-skip
+@findex u16vector-skip
+@findex s16vector-skip
+@findex u32vector-skip
+@findex s32vector-skip
+@findex u64vector-skip
+@findex s64vector-skip
+@findex f16vector-skip
+@findex f32vector-skip
+@findex f64vector-skip
+@findex c32vector-skip
+@findex c64vector-skip
+@findex c128vector-skip
+@findex u8vector-skip-right
+@findex s8vector-skip-right
+@findex u16vector-skip-right
+@findex s16vector-skip-right
+@findex u32vector-skip-right
+@findex s32vector-skip-right
+@findex u64vector-skip-right
+@findex s64vector-skip-right
+@findex f16vector-skip-right
+@findex f32vector-skip-right
+@findex f64vector-skip-right
+@findex c32vector-skip-right
+@findex c64vector-skip-right
+@findex c128vector-skip-right
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-any pred vec vec2 @dots{}
+@deffnx {Function} @@vector-every pred vec vec2 @dots{}
+@findex u8vector-any
+@findex s8vector-any
+@findex u16vector-any
+@findex s16vector-any
+@findex u32vector-any
+@findex s32vector-any
+@findex u64vector-any
+@findex s64vector-any
+@findex f16vector-any
+@findex f32vector-any
+@findex f64vector-any
+@findex c32vector-any
+@findex c64vector-any
+@findex c128vector-any
+@findex u8vector-every
+@findex s8vector-every
+@findex u16vector-every
+@findex s16vector-every
+@findex u32vector-every
+@findex s32vector-every
+@findex u64vector-every
+@findex s64vector-every
+@findex f16vector-every
+@findex f32vector-every
+@findex f64vector-every
+@findex c32vector-every
+@findex c64vector-every
+@findex c128vector-every
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-partition pred vec
+@findex u8vector-partition
+@findex s8vector-partition
+@findex u16vector-partition
+@findex s16vector-partition
+@findex u32vector-partition
+@findex s32vector-partition
+@findex u64vector-partition
+@findex s64vector-partition
+@findex f16vector-partition
+@findex f32vector-partition
+@findex f64vector-partition
+@findex c32vector-partition
+@findex c64vector-partition
+@findex c128vector-partition
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+@deffn {Function} @@vector-filter pred vec
+@deffnx {Function} @@vector-remove pred vec
+@findex u8vector-filter
+@findex s8vector-filter
+@findex u16vector-filter
+@findex s16vector-filter
+@findex u32vector-filter
+@findex s32vector-filter
+@findex u64vector-filter
+@findex s64vector-filter
+@findex f16vector-filter
+@findex f32vector-filter
+@findex f64vector-filter
+@findex c32vector-filter
+@findex c64vector-filter
+@findex c128vector-filter
+@findex u8vector-remove
+@findex s8vector-remove
+@findex u16vector-remove
+@findex s16vector-remove
+@findex u32vector-remove
+@findex s32vector-remove
+@findex u64vector-remove
+@findex s64vector-remove
+@findex f16vector-remove
+@findex f32vector-remove
+@findex f64vector-remove
+@findex c32vector-remove
+@findex c64vector-remove
+@findex c128vector-remove
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
+
+@deffn {Function} make-@@vector-generator vec
+@findex make-u8vector-generator
+@findex s8ke-u8vector-generator
+@findex u16ke-u8vector-generator
+@findex s16ke-u8vector-generator
+@findex u32ke-u8vector-generator
+@findex s32ke-u8vector-generator
+@findex u64ke-u8vector-generator
+@findex s64ke-u8vector-generator
+@findex f16ke-u8vector-generator
+@findex f32ke-u8vector-generator
+@findex f64ke-u8vector-generator
+@findex c32ke-u8vector-generator
+@findex c64ke-u8vector-generator
+@findex c128ke-u8vector-generator
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
+
 
 @defvar @@vector-comparator
 @vindex u8vector-comparator
@@ -28282,6 +28768,28 @@ is used (@pxref{Endianness}).
 使われます (@ref{Endianness}参照)。
 @c COMMON
 @end defun
+
+@deffn {Function} write-@@vector vec :optional port
+@findex write-u8vector
+@findex s8ite-u8vector
+@findex u16ite-u8vector
+@findex s16ite-u8vector
+@findex u32ite-u8vector
+@findex s32ite-u8vector
+@findex u64ite-u8vector
+@findex s64ite-u8vector
+@findex f16ite-u8vector
+@findex f32ite-u8vector
+@findex f64ite-u8vector
+@findex c32ite-u8vector
+@findex c64ite-u8vector
+@findex c128ite-u8vector
+[R7RS vector.@@]
+@c MOD gauche.uvector
+@c EN
+@c JP
+@c COMMON
+@end deffn
 
 @defun write-bytevector bv :optional oport start end
 [R7RS base]
