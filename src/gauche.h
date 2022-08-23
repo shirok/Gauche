@@ -394,7 +394,7 @@ typedef struct ScmFlonumRec {
 #define SCM_CHAR_VALUE(obj)     SCM_CHAR(((unsigned long)SCM_WORD(obj)) >> 8)
 #define SCM_MAKE_CHAR(ch)       SCM_OBJ((intptr_t)(((unsigned long)(ch))<<8) + 3)
 
-#define SCM_CHAR_INVALID        ((ScmChar)(-1)) /* indicate invalid char */
+#define SCM_CHAR_INVALID        ((ScmChar)(-2)) /* indicate invalid char (-2 is used to avoid conflict with libc's EOF) */
 #define SCM_CHAR_MAX            (0xffffff)
 
 #define SCM_CHAR_ASCII_P(ch)    ((ch) < 0x80)

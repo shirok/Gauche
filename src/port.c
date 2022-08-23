@@ -1629,12 +1629,12 @@ ScmObj Scm__GetRemainingInputStringCompat(ScmPort *port)
 /* default dummy procedures */
 static int null_getb(ScmPort *dummy SCM_UNUSED)
 {
-    return SCM_CHAR_INVALID;
+    return EOF;
 }
 
 static int null_getc(ScmPort *dummy SCM_UNUSED)
 {
-    return SCM_CHAR_INVALID;
+    return EOF;
 }
 
 static ScmSize null_getz(char *buf SCM_UNUSED,
