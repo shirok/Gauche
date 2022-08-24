@@ -133,6 +133,27 @@
                              buf)))))
          (read-block 10 p)))
 
+;; regression tests for peek consuming EOF
+(test* "peek-char EOF regression" (make-list 3 (eof-object))
+       (let* ((state #f)
+              (p (make <virtual-input-port>
+                   :getc (lambda ()
+                           (set! state (not state))
+                           (if state (eof-object) #\a)))))
+         (list (peek-char p)
+               (peek-byte p)
+               (read-char p))))
+
+(test* "peek-byte EOF regression" (make-list 3 (eof-object))
+       (let* ((state #f)
+              (p (make <virtual-input-port>
+                   :getc (lambda ()
+                           (set! state (not state))
+                           (if state (eof-object) #\a)))))
+         (list (peek-byte p)
+               (peek-char p)
+               (read-byte p))))
+
 ;;-----------------------------------------------------------
 (test-section "virtual-output-port")
 
