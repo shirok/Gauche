@@ -1,0 +1,63 @@
+#!/usr/bin/env gosh
+;;; Dump module dependencies
+;;; This assumes standard Gauche module convention
+
+(use file.util)
+(use util.match)
+(use srfi-197)
+
+(define-class <modinfo> ()
+  ((name :init-keyword :name)           ;module name
+   (path :init-keyword :path)           ;source path
+   (uses :init-value '())               ;list of names
+   (extends :init-value '())            ;list of names
+   (autoloads :init-value '()))         ;list of names
+  )
+
+(define (analyze-module-1 file)         ;returns <modinfo>
+  (define (scan mod forms)
+    (dolist [f forms]
+      (match f
+        [('use nam . _) (push-unique! (~ mod'uses) nam)]
+        [('extend nam . _) (push-unique! (~ mod'extends) nam)]
+        [('autoload nam . _) (push-unique! (~ mod'autoloads) nam)]
+        [_ #f])))
+
+  (call-with-input-file file
+    (^p (match (read p)
+          [('define-module nam . rest)
+           (let1 mod (make <modinfo> :name nam :path file)
+             (scan mod rest)
+             (scan mod (port->sexp-list p))
+             mod)]
+          [_ #f]))
+    :encoding "*jp"))
+
+(define (dump-modinfo-all mods)
+  (define (dump-1 mod)
+    (format #t "// ~a\n" (~ mod'name))
+    (dolist [n (~ mod'uses)]
+      (format #t "\"~a\" -> \"~a\" [style=\"solid\"];\n" (~ mod'name) n))
+    (dolist [n (~ mod'extends)]
+      (format #t "\"~a\" -> \"~a\" [style=\"bold\"];\n" (~ mod'name) n))
+    (dolist [n (~ mod'autoloads)]
+      (format #t "\"~a\" -> \"~a\" [style=\"dotted\"];\n" (~ mod'name) n))
+    )
+
+  (format #t "digraph {\n")
+  (format #t "overlap=prism;")
+  (for-each dump-1 mods)
+  (format #t "}\n"))
+
+(define (main args)
+  (chain (glob "../{src,lib,libsrc,ext}/**/*.scm")
+         (fold (^[f ms] (if-let1 m (analyze-module-1 f)
+                          (cons m ms)
+                          ms))
+               '() _)
+         (dump-modinfo-all _))
+  0)
+
+;; Local variables:
+;; mode: scheme
+;; end:
