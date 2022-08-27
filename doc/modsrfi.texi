@@ -12100,9 +12100,25 @@ from the number of subobjects of @var{obj}.
 @defun compound-map->list mapper obj
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 Returns a list of results of applying @var{mapper} on each subobjects
 of @var{obj}.  If @var{obj} is not a compound, @var{mapper} is directly
 applied on @var{obj}.
+@c JP
+@var{mapper}を@var{obj}の各サブオブジェクトに適用し、結果のリストを返します。
+@var{obj}が複合オブジェクトでなければ、@var{mapper}を直接@var{obj}に適用し、
+結果をリストにくるんで返します。
+@c COMMON
+
+@c EN
+Unlike @code{compound-map}, the result of @var{mapper} appears as is
+in the result list, even when it is a compound object.  Hence the
+length of the result list always matches @code{(compound-length obj)}.
+@c JP
+@code{compound-map}と異なり、@var{mapper}の結果が複合オブジェクトであった場合でも
+それがそのまま結果のリストに現れます。つまり、結果のリストの長さは常に
+@code{(compound-length obj)}と同じです。
+@c COMMON
 
 @example
 (compound-map->list (cut + 1 <>) (make-compound 1 2 3))
@@ -12117,9 +12133,16 @@ applied on @var{obj}.
 @defun compound-filter pred obj
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 Collect subobjects of @var{obj} that satisfies @var{pred}, and
 returns a compound that consists of them.  If @var{obj} is not a compound,
 it is treated as if it is a compound with @var{obj} as a sole subobject.
+@c JP
+@var{obj}のサブオブジェクトにそれぞれ@var{pred}を適用し、それが真の値を返した
+サブオブジェクトのみを集めて新たな複合オブジェクトを作って返します。
+@var{obj}が複合オブジェクトでなければ、あたかもそれ自身を唯一のサブオブジェクトに持つ
+複合オブジェクトのように扱われます。
+@c COMMON
 
 @example
 (compound-filter odd? (make-compound 1 2 3))
@@ -12134,19 +12157,33 @@ it is treated as if it is a compound with @var{obj} as a sole subobject.
 @defun compound-predicate pred obj
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 Returns @code{#t} if @var{obj} satisfies @var{pred},
 or any of @var{obj}'s subobjects satisfies @var{pred}
 when @var{obj} is a compound.  Returns @code{#f} otherwise.
+@c JP
+@var{obj}が述語@var{pred}を満たすか、@var{obj}が複合オブジェクトであり
+いずれかのサブオブジェクトが@var{pred}を満たせば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun compound-access pred acc default obj
 [SRFI-222]
 @c MOD srfi-222
-If @var{obj} satisfies @var{pred}, @code{acc} is applied ot @var{obj}
+@c EN
+If @var{obj} satisfies @var{pred}, @var{acc} is applied ot @var{obj}
 and the result is returned.  Otherwise, if @var{obj} is a compound,
 @var{pred} is applied on each subobject, and @var{acc} is applied
 on the first subobject that satisfies @var{pred}, and the result
 is returned.  If none of the case is satisfied, @var{default} is returned.
+@c JP
+@var{obj}が述語@var{pred}を満たした場合、@var{obj}に@var{acc}が適用され、
+その結果が返されます。そうでなく、@var{obj}が複合オブジェクトの場合は、
+そのサブオブジェクトが順に@var{pred}を満たすかどうか検査され、最初に満たした
+サブオブジェクトに対して@var{acc}が適用され、その結果が返されます。
+全てに当てはまらない場合は@var{default}が返されます。
+@c COMMON
 
 @example
 (define-record-type <foo> make-foo foo?
