@@ -1336,14 +1336,32 @@ void Scm_VMFlushFPStack(ScmVM *vm)
  * Function application from C
  */
 
-/* The Scm_VMApply family is supposed to be called in SUBR.  It doesn't really
-   applies the function in it.  Instead, it modifies the VM state so that
-   the specified function will be called immediately after this SUBR
-   returns to the VM.   The return value of Scm_VMApply is just a PROC,
-   but it should be returned as the return value of SUBR, which will be
-   used by the VM.
-   NB: we don't check proc is a procedure or not.  It can be a non-procedure
-   object, because of the object-apply hook. */
+/* The Scm_VMApply family is supposed to be called in SUBR.  It
+   doesn't really applies the function in it.  Instead, it modifies
+   the VM state so that the specified function will be called
+   immediately after this SUBR returns to the VM.  The return value of
+   Scm_VMApply is just a PROC, but it should be returned as the return
+   value of SUBR, which will be used by the VM.
+
+   The PC is modifed to point to a CALL instruction, and arguments
+   are pushed onto the stack.  So, after returning to VM, it immediately
+   calls VAL0 (which is PROC) with the pushed arguments.
+
+   NB: We don't check proc is a procedure or not.  It can be a
+   non-procedure object, because of the object-apply hook.
+
+   NB: If we know that PROC is a subr and the number of arguments
+   matches it expects, we use "trampoline" mode---the arguments
+   are stored above SP, and vm->trampoline is set to the number
+   of arguments.  In that case, VM skips the argument-folding
+   and dispatching code, and immediately invokes returned subr.
+   This is important for precompiled-to-C code, for it tends to
+   tail-call known subrs (we need to use trampoline to ensure the
+   stack won't grow).  We avoid to use trampoline when
+   vm->attentionRequest is set, though, for the interrupt handling
+   should be done while VM is a consistent state, but the trampoline
+   is a kind of transitive state.
+ */
 
 /* Static VM instruction arrays.
    Scm_VMApplyN modifies VM's pc to point it. */
@@ -1407,6 +1425,14 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 /* shortcuts for common cases */
 ScmObj Scm_VMApply0(ScmObj proc)
 {
+    ScmVM *vm = theVM;
+    if (SCM_SUBRP(proc)
+        && SCM_PROCEDURE_REQUIRED(proc) == 0
+        && SCM_PROCEDURE_OPTIONAL(proc) == 0
+        && !vm->attentionRequest) {
+        vm->trampoline = 0;
+        return proc;
+    }
     theVM->pc = apply_calls[0];
     return proc;
 }
@@ -1415,6 +1441,14 @@ ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
 {
     ScmVM *vm = theVM;
     CHECK_STACK(1);
+    if (SCM_SUBRP(proc)
+        && SCM_PROCEDURE_REQUIRED(proc) == 1
+        && SCM_PROCEDURE_OPTIONAL(proc) == 0
+        && !vm->attentionRequest) {
+        vm->trampoline = 1;
+        SP[0] = arg;
+        return proc;
+    }
     PUSH_ARG(arg);
     PC = apply_calls[1];
     return proc;
@@ -1424,6 +1458,15 @@ ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 {
     ScmVM *vm = theVM;
     CHECK_STACK(2);
+    if (SCM_SUBRP(proc)
+        && SCM_PROCEDURE_REQUIRED(proc) == 2
+        && SCM_PROCEDURE_OPTIONAL(proc) == 0
+        && !vm->attentionRequest) {
+        vm->trampoline = 2;
+        SP[0] = arg1;
+        SP[1] = arg2;
+        return proc;
+    }
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PC = apply_calls[2];
@@ -1434,6 +1477,16 @@ ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
 {
     ScmVM *vm = theVM;
     CHECK_STACK(3);
+    if (SCM_SUBRP(proc)
+        && SCM_PROCEDURE_REQUIRED(proc) == 3
+        && SCM_PROCEDURE_OPTIONAL(proc) == 0
+        && !vm->attentionRequest) {
+        vm->trampoline = 3;
+        SP[0] = arg1;
+        SP[1] = arg2;
+        SP[2] = arg3;
+        return proc;
+    }
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PUSH_ARG(arg3);
@@ -1445,6 +1498,17 @@ ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj a
 {
     ScmVM *vm = theVM;
     CHECK_STACK(4);
+    if (SCM_SUBRP(proc)
+        && SCM_PROCEDURE_REQUIRED(proc) == 4
+        && SCM_PROCEDURE_OPTIONAL(proc) == 0
+        && !vm->attentionRequest) {
+        vm->trampoline = 4;
+        SP[0] = arg1;
+        SP[1] = arg2;
+        SP[2] = arg3;
+        SP[3] = arg4;
+        return proc;
+    }
     PUSH_ARG(arg1);
     PUSH_ARG(arg2);
     PUSH_ARG(arg3);

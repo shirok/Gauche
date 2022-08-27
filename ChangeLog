@@ -1,3 +1,10 @@
+2022-08-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMApply0, etc.): Experimentally turn on subr
+	  trampoline; if a subr is tail-called from another subr, and
+	  the number of argument matches, then we skip the usual
+	  argument folding & procedure dispatching sequence.
+
 2022-08-14  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-222.scm: Added.
