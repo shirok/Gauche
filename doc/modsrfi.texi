@@ -11956,27 +11956,52 @@ Gaucheでは、遅延シーケンスは通常のリストと統合されてい�
 
 @deftp {Module} srfi-222
 @mdindex srfi-222
+@c EN
 Compound objects are encapsulation of an immutable sequence of objects.
 Any objects other than a compound object can be included in a compound object;
 if you try to create a compound object including compound objects,
 it is 'flattened'---that is, the source's subobjects are retrieved
 and each one is put into the new compound object.
+@c JP
+複合オブジェクトは、オブジェクトの並びをまとめたもので、それ自体は変更不可なオブジェクトです。
+複合オブジェクト以外の任意オブジェクトを要素とすることができます。
+複合オブジェクトを含めようとした場合は、
+その要素が取り出されてそれぞれ結果の複合オブジェクトに埋め込まれます。
+つまり複合オブジェクトがネストすることはありません。
+@c COMMON
 
+@c EN
 This is an abstraction of the compound condition (@pxref{Conditions}),
 although Gauche's compound conditions are not built on this.
+@c JP
+これは複合コンディション (@pxref{Conditions}) の機能を抽象化したものです。
+ただし、Gaucheでは複合コンディション自体は複合オブジェクトとしては実装されていません。
+@c COMMON
 
+@c EN
 This module is mainly provided for the compatibility; used with
 R7RS records (@pxref{Record types}), you can have a portable
 multiple inheritance of records.
+@c JP
+このモジュールは主に互換性のために提供されています。
+R7RSレコード(@pxref{Record types})と併用すれば、
+移植可能な形でレコードの多重継承を扱うことができます。
+@c COMMON
 @end deftp
 
 @defun make-compound obj @dots{}
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 Returns a compound objects having @var{obj} @dots{} as its subobjects.
 Each @var{obj} can any Scheme object, but
 if @var{obj} is a compound object itself, it is expanded into its
 subobjects:
+@c JP
+@var{obj} @dots{}をサブオブジェクトとして持つ複合オブジェクトを作って返します。
+@var{obj}は任意のSchemeオブジェクトですが、それが複合オブジェクトだった場合は、
+そのサブオブジェクトがそこに展開されて使われます。
+@c COMMON
 
 @example
 (make-compound 1 2 3)
@@ -11989,42 +12014,78 @@ subobjects:
 @defun compound? obj
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 Returns @code{#t} iff @var{obj} is a compound object.
+@c JP
+@var{obj}が複合オブジェクトなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun compound-subobjects obj
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 If @var{obj} is a compound, returns a list of its subobjects.
 Otherwise, returns a 1-element list of @var{obj}.
+
+That is, it always returns a list of non-compound objects.
+@c JP
+@var{obj}が複合オブジェクトなら、そのサブオブジェクトのリストを、
+そうでなければ@var{obj}ひとつを要素とするリストを返します。
+
+すなわち、返されるのは常に、複合オブジェクトを含まないオブジェクトのリストです。
+@c COMMON
 @end defun
 
 @defun compound-length obj
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 If @var{obj} is a compound, returns the number of its subobjects.
 Otherwise, returns 1.
+@c JP
+@var{obj}が複合オブジェクトなら持っているサブオブジェクトの数を、
+そうでなければ1を返します。
+@c COMMON
 @end defun
 
 @defun compound-ref obj k
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 Returns @var{k}-th subobject of @var{obj} if it is a compound.
 Othrewise, @var{k} must be zero and @var{obj} itself is returned.
+@c JP
+@var{obj}が複合オブジェクトなら@var{k}番目のサブオブジェクトを返します。
+そうでなければ、@var{k}は0でなければならず、その場合@var{obj}自身が返されます。
+@c COMMON
 
+@c EN
 An error is thrown if @var{k} is not a nonnegative exact integer
 or out of range.
+@c JP
+@var{k}が非負の正確な整数でなかったり、指定可能範囲外であればエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun compound-map mapper obj
 [SRFI-222]
 @c MOD srfi-222
+@c EN
 Returns a compound object whose subobjects are result of applying
 @var{mapper} on each subobject of @var{obj}.  If @var{obj} is not
 a compound, it is treated as if a compound with @var{obj} as a sole
 subobject.  Note that if @var{mapper} returns a compound, its subobjects
 are spliced in place.  Thus the number of subobjects of the result may differ
 from the number of subobjects of @var{obj}.
+@c JP
+@var{obj}の持つサブオブジェクトそれぞれに@var{mapper}を適用し、その結果を集めた
+複合オブジェクトを作って返します。@var{obj}が複合オブジェクトでなければ、
+あたかも@var{obj}自身を唯一のサブオブジェクトとする複合オブジェクトであるかのように
+扱われます。@var{mapper}が複合オブジェクトを返した場合、そのサブオブジェクトが
+取り出されて結果に使われることに注意してください。つまり、
+結果の持つサブオブジェクトの数は、@var{obj}の持つサブオブジェクトと異なる場合があります。
+@c COMMON
 
 @example
 (compound-map (cut + 1 <>) (make-compound 1 2 3))
