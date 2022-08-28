@@ -10963,40 +10963,126 @@ An efficient set operation over an enum set is provided.
 
 @subheading Enum types
 
-@defun make-enum-type list :optional name
-[SRFI-209]
-@c MOD srfi-209
-@end defun
-
 @defmac define-enum type-name (name-value @dots{}) make-set
 [SRFI-209]
 @c MOD srfi-209
+The high-level declarative interface.  This defines a new
+enum type and interface macros.
+
+The enums the enum type contains are specified with @var{name-value} @dots{},
+each of which must be either a symbol, or a form @code{(symbol value)}.
+If it is a symbol, it is used both as the enum name and its value.
+If it is @code{(symbol value)}, the symbol is used as the enum name
+and the value is used as its value.
+
+The @var{type-name} argument must be an identifier and
+is bound to a macro, which takes a single
+symbol as an argument.  When invoked, it expands into an enum object.
+
+The @var{make-set} argument must also be an identifier and
+is bound to a macro, which takes zero or more symbols and
+expands into an enum set object.
+
+Since @var{type-name} and @var{make-set} are macros, the given enum name(s)
+can be statically checked at expansion time.
+
+@example
+(define-enum fruits (apple orange banana mango papaya) fruit-set)
+
+(fruits apple) @result{} #<enum apple>
+(fruits mango) @result{} #<enum mango>
+
+(fruit-set oragne mango papaya)
+  @result{} #<enum-set fruits (orange mango papaya)>
+@end example
 @end defmac
+
+@defun make-enum-type list :optional name
+[SRFI-209]
+@c MOD srfi-209
+A procedural interface to create enum type and associated enums.
+
+This procdure first creates enums according to @var{list}.
+Each element
+must be either a symbol, or a form @code{(symbol value)}.
+If it's the former, the symbol is used both as the enum name and
+its value.  If it's the latter, the symbol is used as the enum name
+and the value is used as its value.
+Note that enum objects can only be created with this procedure
+(or the high-level macro) along with an enum type.
+
+Each enum also gets a nonnegative integer @var{ordinal}, in the
+order of @var{list}, starting from zero.
+
+The optional @var{name} argument is a Gauche's extension.  It attaches
+@var{name} to the created enum-type.  It is only for debugging aid,
+and printed when you write the enum type.
+
+Enum type is immutable. Once created, its enum members cannot be changed.
+
+@example
+(make-enum-type '(one two three))
+  @result{} #<enum-type (one ...)>
+(make-enum-type '(one two three) 'counts)
+  @result{} #<enum-type counts>
+@end example
+@end defun
 
 @defun enum-type? obj
 [SRFI-209]
 @c MOD srfi-209
+Returns @code{#t} if @var{obj} is an enum-type, @code{#f} otherwise.
 @end defun
 
 @defun enum-type-size etype
 [SRFI-209]
 @c MOD srfi-209
+Returns the number of enums the enum type @var{etype} has.
 @end defun
 
 @defun enum-min etype
 @defunx enum-max etype
 [SRFI-209]
 @c MOD srfi-209
+Returns the minimun and maximum enum the enum type @var{etype} has.
+
+@example
+(define fruits (make-enum-type '(apple orange banana mango papaya)))
+
+(enum-min fruits) @result{} #<enum apple>
+(enum-max fruits) @result{} #<enum papaya>
+@end example
+
+They throw an error if @var{etype} has no enums.
 @end defun
 
 @defun enum-type-enums etype
 [SRFI-209]
 @c MOD srfi-209
+Returns a list of enums the enum type @var{etype} has, in the order
+of their ordinals.
+
+@example
+(define fruits (make-enum-type '(apple orange banana mango papaya)))
+
+(enum-type-enums fruits)
+  @result{} (#<enum apple> #<enum orange> #<enum banana>
+     #<enum mango> #<enum papaya>)
+@end example
 @end defun
 
 @defun enum-type-names etype
 [SRFI-209]
 @c MOD srfi-209
+Returns a list of names of enums the enum type @var{etype} has, in the order
+of their ordinals.
+
+@example
+(define fruits (make-enum-type '(apple orange banana mango papaya)))
+
+(enum-type-names fruits)
+  @result{} (apple orange banana mango papaya)
+@end example
 @end defun
 
 @defun enum-type-values etype
@@ -11303,9 +11389,13 @@ the general sets.
 @defun iset element @dots{}
 [SRFI-217]
 @c MOD srfi-217
-Each @var{element} must be a fixnum.
-
+@c EN
 Returns a fresh iset contains @var{element} @dots{}.
+Each @var{element} must be a fixnum.
+@c JP
+@var{element} @dots{} を要素とする新たなisetを作って返します。
+各@var{element}はfixnumでなければなりません。
+@c COMMON
 @end defun
 
 @defun iset-unfold p f g seed
