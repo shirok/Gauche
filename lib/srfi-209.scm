@@ -121,7 +121,9 @@
    (members :init-keyword :members)))   ;bitvector
 
 (define-method write-object ((eset <enum-set>) port)
-  (format port "#<enum-set from ~a>" (%enum-type-name (~ eset'enum-type))))
+  (format port "#<enum-set ~a ~,,,,50:s>"
+          (%enum-type-name (~ eset'enum-type))
+          (enum-set->list eset)))
 
 (define-method describe ((eset <enum-set>))
   (describe-common eset)
