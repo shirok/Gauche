@@ -270,16 +270,15 @@
   (when (cluster-needs-dispatch? c)
     (cgen-body #"  switch ((intptr_t)DATA[0]) {")
     (for-each-with-index
-     (^[i bb] (cgen-body #"    case ~(+ i 1): goto ~(block-label bb);"))
+     (^[i bb] (cgen-body #"    case ~|i|: goto ~(block-label bb);"))
      (~ c'entry-blocks))
     (cgen-body #"  }"))
   )
 
 ;; Returns bb's entry index.
 (define (entry-block-index bb)
-  (if-let1 i (find-index (cut eq? bb <>) (~ bb'cluster'entry-blocks))
-    (+ i 1)
-    0))
+  (assume (find-index (cut eq? bb <>) (~ bb'cluster'entry-blocks))
+          "entry-block-index fails to find index of:" bb))
 
 (define (gen-entry benv)                ;returns cfn name
   (and-let* ([entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
@@ -296,7 +295,8 @@
              [env-size (+ (cluster-env-size entry-cluster) off)])
         (cgen-body #"  ScmWord data[~(+ env-size 1)];")
         (when (cluster-needs-dispatch? entry-cluster)
-          (cgen-body #"  data[0] = SCM_WORD(0);"))
+          (let1 i (entry-block-index (last (~ entry-cluster'blocks)))
+            (cgen-body #"  data[0] = SCM_WORD(~i);")))
         (do-ec [: ireg (index i) (~ benv'input-regs)]
                (let1 pos
                    (find-index (cut eq? ireg <>) (cluster-env entry-cluster))
@@ -318,9 +318,10 @@
     (let* ([dest-c (~ dest-bb 'cluster)]
            [index (entry-block-index dest-bb)]
            [cfn (cluster-cfn-name dest-c)]
-           [off (if (cluster-needs-dispatch? dest-c) 1 0)])
+           [off (if (cluster-needs-dispatch? dest-c) 1 0)]
+           [env-size (+ (cluster-env-size dest-c) off)])
       (cgen-body #"  {"
-                 #"    ScmWord data[~(cluster-env-size dest-c)];")
+                 #"    ScmWord data[~|env-size|];")
       (when (= off 1)
         (cgen-body #"    data[0] = SCM_WORD(~index);"))
       (prepare-env c (~ dest-bb'cluster) off)
@@ -332,7 +333,7 @@
          [index (entry-block-index dest-bb)]
          [cfn (cluster-cfn-name dest-c)]
          [off (if (cluster-needs-dispatch? dest-c) 1 0)]
-         [env-size (cluster-env-size dest-c)])
+         [env-size (+ (cluster-env-size dest-c) off)])
     (cgen-body #"  {"
                #"    ScmWord data[~|env-size|];")
     (when (= off 1)
