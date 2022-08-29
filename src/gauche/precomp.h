@@ -88,5 +88,6 @@
  */
 
 SCM_EXTERN ScmObj *Scm_vAlloca(ScmVM *, size_t);
+SCM_EXTERN ScmObj *Scm_vPushCC(ScmVM*, ScmCContinuationProc, int);
 
 #endif /* GAUCHE_PRECOMP_H */

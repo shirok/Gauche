@@ -1592,6 +1592,26 @@ ScmObj *Scm_vAlloca(ScmVM *vm, size_t size)
     return r;
 }
 
+/* Like VMPushCC, but we just make room for data and return the
+   pointer to it, letting caller to fill it.  Supposed to be
+   used by machine-generated C code. */
+ScmObj *Scm_vPushCC(ScmVM *vm, ScmCContinuationProc *after, int datasize)
+{
+    CHECK_STACK(CONT_FRAME_SIZE+datasize);
+    ScmObj *s = SP;
+    ScmContFrame *cc = (ScmContFrame*)(s + datasize);
+    cc->prev = CONT;
+    cc->env = &ccEnvMark;
+    cc->size = datasize;
+    cc->marker = 0;
+    cc->cpc = NULL;
+    cc->pc = (ScmWord*)after;
+    cc->base = BASE;
+    CONT = cc;
+    ARGP = SP = s + datasize + CONT_FRAME_SIZE;
+    return s;
+}
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,

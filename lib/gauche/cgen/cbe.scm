@@ -335,12 +335,12 @@
          [off (if (cluster-needs-dispatch? dest-c) 1 0)]
          [env-size (+ (cluster-env-size dest-c) off)])
     (cgen-body #"  {"
-               #"    ScmWord data[~|env-size|];")
+               #"    ScmVM *vm = Scm_VM();"
+               #"    ScmWord *data = (ScmWord*)(Scm_vPushCC(vm, ~|cfn|, ~|env-size|));")
     (when (= off 1)
-      (cgen-body #"    data[0] = SCM_WORD(~index);"))
+      (cgen-body #"    data[0] = SCM_OBJ(~index);"))
     (prepare-env c dest-c off)
-    (cgen-body #"    Scm_VMPushCC(~|cfn|, (void**)data, ~|env-size|);"
-               #"  }")))
+    (cgen-body #"  }")))
 
 (define (gen-vmcall c proc regs)
   (case (length regs)
