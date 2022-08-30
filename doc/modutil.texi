@@ -24827,10 +24827,10 @@ string, which will be used as the indentation unit.
 @c COMMON
 
 @c EN
-@code{omit-xml-declaration?} - Whether the XML declaration should be
+@code{omit-xml-declaration} - Whether the XML declaration should be
 omitted.  Default: @code{#t}.
 @c JP
-@code{omit-xml-declaration?} - XML宣言を省略するかどうか。デフォルトは
+@code{omit-xml-declaration} - XML宣言を省略するかどうか。デフォルトは
 @code{#t}。
 @c COMMON
 
@@ -24927,7 +24927,7 @@ value ::= (listof (cons prefix namespace-uri))
 prefix ::= symbol
 namespace-uri ::= string
 
-omit-xml-declaration?
+omit-xml-declaration
 value ::= 'yes | #t | 'no | #f
 
 standalone
