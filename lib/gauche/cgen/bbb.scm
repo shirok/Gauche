@@ -67,9 +67,10 @@
 
 ;; Instructions:
 ;;
-;;  reg is either <reg>, <const> or %VAL0.  If it is <reg>, it can be 'boxed',
-;;  meaning we have one indirection to the shared box.
-;;  register is destination position is always <reg>.
+;;  REG is either <reg>, <const> or %VAL0.
+;;  The register is destination position is always <reg>.
+;;  If a <reg> can be set!, the register is 'boxed'.  The boxing/unboxing
+;;  aren't explicit in the instruction.
 ;;
 ;; General instructions:
 ;;
@@ -77,18 +78,18 @@
 ;; (MOV* r o (dreg ...) sreg) - mv bind (details TBD)
 ;; (LD reg identifier) - global load
 ;; (ST reg identifier) - global store
-;; (CLOSE reg bb)      - make a closure with current env and a basic block BB,
-;;                       leave it in REG.
+;; (CLOSE reg bb)      - make a closure with current env and a basic block
+;;                       BB, leave it in REG.
 ;; (BR reg bb1 bb2)    - if the value of register REG is true, jump to
 ;;                       a basic block BB1.  Otherwise, jump to BB2.
 ;; (JP bb)             - jump to a basic block BB.
 ;; (CONT bb)           - push continuation frame, with BB to be the
 ;;                       'next' basic block.
-;; (CALL bb proc arg ...) - PROC and ARGs are all registers.  Transfer control
-;;                       to PROC. If the continuation of this call is known,
-;;                       BB holds the basic block of the continuation; it is
-;;                       #f if this is a tail call.
-;; (RET reg ...)       - Return, using values in REGs as the results.
+;; (CALL bb proc arg ...) - PROC and ARGs are all registers.
+;;                       Transfer control to PROC. If the continuation of
+;;                       this call is known, BB holds the basic block of
+;;                       the continuation; it is #f if this is a tail call.
+;; (RET reg ...)       - Return, using values in REGs as the result(s).
 ;; (DEF id flags reg)  - insert global binding of ID in the current module
 ;;                       with the value in REG.
 ;;
@@ -175,7 +176,7 @@
 
 ;; Basic blocks:
 ;;   First, we convert IForm to a DG of basic blocks (BBs).
-;;   BB has one entry point and multiple exit point.
+;;   BB has one entry point and multiple exit points.
 
 ;; Block environment.  Keep track of allocated registers and blocks
 ;; per compile unit (usually each toplevel form)
@@ -235,9 +236,10 @@
         (push! (~ reg'blocks) bb)
         (when lvar (hash-table-put! (~ bb'benv'regmap) lvar reg))))))
 
+;; If reg is used within BB, record the fact.
 (define (touch-reg! bb reg)
-  (when (and (is-a? reg <reg>) (not (memq bb (~ reg'blocks))))
-    (push! (~ reg'blocks) bb))
+  (when (is-a? reg <reg>)
+    (push-unique! (~ reg'blocks) bb))
   reg)
 
 (define (mark-reg-boxed! reg) (set! (~ reg'boxed) #t))
@@ -269,7 +271,6 @@
    (cluster    :init-value #f)
    (entry?     :init-value #f)          ; #t if this BB is entered from outside
    ))
-
 
 (define (make-bb benv . upstreams)
   (rlet1 bb (make <basic-block>
