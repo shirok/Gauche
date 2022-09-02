@@ -76,6 +76,7 @@
 * Display with pager::          text.pager
 * Parsing input stream::        text.parse
 * Showing progress on text terminals::  text.progress
+* Segmented string matching::   text.segmented-match
 * SQL parsing and construction::  text.sql
 * Simple template expander::    text.template
 * Transliterate characters::    text.tr
@@ -27278,7 +27279,7 @@ Olegのライブラリに依存しているコードの互換性のために用�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Showing progress on text terminals, SQL parsing and construction, Parsing input stream, Library modules - Utilities
+@node Showing progress on text terminals, Segmented string matching, Parsing input stream, Library modules - Utilities
 @section @code{text.progress} - Showing progress on text terminals
 @c NODE テキスト端末上で進捗を表示する, @code{text.progress} - テキスト端末上で進捗を表示する
 
@@ -27585,7 +27586,32 @@ Here's a simple example, using customized numeric part:
 @end example
 
 @c ----------------------------------------------------------------------
-@node SQL parsing and construction, Simple template expander, Showing progress on text terminals, Library modules - Utilities
+@node Segmented string matching, SQL parsing and construction, Showing progress on text terminals, Library modules - Utilities
+@section @code{text.segmented-match} - Segmented string matching
+@c NODE 区切られた文字列のマッチ, @code{text.segmented-match} - 区切られた文字列のマッチ
+
+@deftp {Module} text.segmented-match
+@mdindex text.segmented-match
+Sometimes you want to search for a group of words concatenated with
+a delimiter, using only the prefixes of each words.  For example:
+you want to search @code{call-with-current-continuation} using
+@code{c-w-c-c}.  One of its popular applications is symbol completion,
+which Gauche provides on REPL (@pxref{Input editing}).
+
+This module provides basic parts to perform such searching.
+@end deftp
+
+@defun segmented-match? pattern word :optional separator
+@c MOD text.segmented-match
+@end defun
+
+@defun make-segmented-matcher pattern separator
+@c MOD text.segmented-match
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node SQL parsing and construction, Simple template expander, Segmented string matching, Library modules - Utilities
 @section @code{text.sql} - SQL parsing and construction
 @c NODE SQLのパーズと構築, @code{text.sql} - SQLのパーズと構築
 
