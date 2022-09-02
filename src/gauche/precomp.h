@@ -84,10 +84,16 @@
     } whlie (0)
 
 /*
- * VM interface
+ * Precompiled code specific API
+ *
+ *   These are to be called from machine-generated code, and not for
+ *   general use.  Some APIs require specific precondition/postcondition
+ *   about VM state.
+ *   Those APIs takes ScmVM* pointer, which should match the executing
+ *   thread's VM.  It is merely to avoid overhead of calling Scm_VM().
  */
 
-SCM_EXTERN ScmObj *Scm_vAlloca(ScmVM *, size_t);
-SCM_EXTERN ScmObj *Scm_vPushCC(ScmVM*, ScmCContinuationProc, int);
+SCM_EXTERN ScmObj *Scm_pc_Alloca(ScmVM*, size_t);
+SCM_EXTERN ScmObj *Scm_pc_PushCC(ScmVM*, ScmCContinuationProc, int);
 
 #endif /* GAUCHE_PRECOMP_H */

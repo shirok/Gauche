@@ -1422,7 +1422,7 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 #endif
 }
 
-/* shortcuts for common cases */
+/* Shortcuts for common cases */
 ScmObj Scm_VMApply0(ScmObj proc)
 {
     ScmVM *vm = theVM;
@@ -1584,7 +1584,7 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
 
 /* Allocate SIZE words from the VM stack.  The stack may be packed
    to make room. */
-ScmObj *Scm_vAlloca(ScmVM *vm, size_t size)
+ScmObj *Scm_pc_Alloca(ScmVM *vm, size_t size)
 {
     CHECK_STACK(size);
     ScmObj *r = SP;
@@ -1595,7 +1595,7 @@ ScmObj *Scm_vAlloca(ScmVM *vm, size_t size)
 /* Like VMPushCC, but we just make room for data and return the
    pointer to it, letting caller to fill it.  Supposed to be
    used by machine-generated C code. */
-ScmObj *Scm_vPushCC(ScmVM *vm, ScmCContinuationProc *after, int datasize)
+ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmCContinuationProc *after, int datasize)
 {
     CHECK_STACK(CONT_FRAME_SIZE+datasize);
     ScmObj *s = SP;

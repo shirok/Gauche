@@ -336,7 +336,7 @@
          [env-size (+ (cluster-env-size dest-c) off)])
     (cgen-body #"  {"
                #"    ScmVM *vm = Scm_VM();"
-               #"    ScmWord *data = (ScmWord*)(Scm_vPushCC(vm, ~|cfn|, ~|env-size|));")
+               #"    ScmWord *data = (ScmWord*)(Scm_pc_PushCC(vm, ~|cfn|, ~|env-size|));")
     (when (= off 1)
       (cgen-body #"    data[0] = SCM_OBJ(~index);"))
     (prepare-env c dest-c off)
