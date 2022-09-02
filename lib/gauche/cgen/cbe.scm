@@ -257,6 +257,7 @@
   #"struct ~(cluster-cfn-name c)_ENV")
 
 (define (cluster-prologue c)
+  (cgen-body #"  ScmVM *vm = Scm_VM();")
   ;; Set up registers
   (when (cluster-has-env? c)
     (let1 off (if (cluster-needs-dispatch? c) 1 0)
@@ -335,7 +336,6 @@
          [off (if (cluster-needs-dispatch? dest-c) 1 0)]
          [env-size (+ (cluster-env-size dest-c) off)])
     (cgen-body #"  {"
-               #"    ScmVM *vm = Scm_VM();"
                #"    ScmWord *data = (ScmWord*)(Scm_pc_PushCC(vm, ~|cfn|, ~|env-size|));")
     (when (= off 1)
       (cgen-body #"    data[0] = SCM_OBJ(~index);"))
@@ -345,15 +345,15 @@
 (define (gen-vmcall c proc regs)
   (case (length regs)
     [(0)
-     (cgen-body #"  return Scm_VMApply0(~(R proc));")]
+     (cgen-body #"  return Scm_pc_Apply0(vm, ~(R proc));")]
     [(1)
-     (cgen-body #"  return Scm_VMApply1(~(R proc), ~(R (car regs)));")]
+     (cgen-body #"  return Scm_pc_Apply1(vm, ~(R proc), ~(R (car regs)));")]
     [(2)
-     (cgen-body #"  return Scm_VMApply2(~(R proc), ~(R (car regs)), ~(R (cadr regs)));")]
+     (cgen-body #"  return Scm_pc_Apply2(vm, ~(R proc), ~(R (car regs)), ~(R (cadr regs)));")]
     [(3)
-     (cgen-body #"  return Scm_VMApply3(~(R proc), ~(R (car regs)), ~(R (cadr regs)), ~(R (caddr regs)));")]
+     (cgen-body #"  return Scm_pc_Apply3(vm, ~(R proc), ~(R (car regs)), ~(R (cadr regs)), ~(R (caddr regs)));")]
     [(4)
-     (cgen-body #"  return Scm_VMApply4(~(R proc), ~(R (car regs)), ~(R (cadr regs)), ~(R (caddr regs)), ~(R (cadddr regs)));")]
+     (cgen-body #"  return Scm_pc_Apply4(vm, ~(R proc), ~(R (car regs)), ~(R (cadr regs)), ~(R (caddr regs)), ~(R (cadddr regs)));")]
     [else
      (cgen-body #"  return Scm_VMApply(~(R proc), ~(gen-list c regs));")]))
 

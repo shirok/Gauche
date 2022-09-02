@@ -1347,6 +1347,9 @@ void Scm_VMFlushFPStack(ScmVM *vm)
    are pushed onto the stack.  So, after returning to VM, it immediately
    calls VAL0 (which is PROC) with the pushed arguments.
 
+   The Scm_pc_Apply* are more "internal" API that are only supposed
+   to be called from the machine generated code.
+
    NB: We don't check proc is a procedure or not.  It can be a
    non-procedure object, because of the object-apply hook.
 
@@ -1423,9 +1426,8 @@ ScmObj Scm_VMApply(ScmObj proc, ScmObj args)
 }
 
 /* Shortcuts for common cases */
-ScmObj Scm_VMApply0(ScmObj proc)
+ScmObj Scm_pc_Apply0(ScmVM *vm, ScmObj proc)
 {
-    ScmVM *vm = theVM;
     if (SCM_SUBRP(proc)
         && SCM_PROCEDURE_REQUIRED(proc) == 0
         && SCM_PROCEDURE_OPTIONAL(proc) == 0
@@ -1433,13 +1435,17 @@ ScmObj Scm_VMApply0(ScmObj proc)
         vm->trampoline = 0;
         return proc;
     }
-    theVM->pc = apply_calls[0];
+    vm->pc = apply_calls[0];
     return proc;
 }
 
-ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
+ScmObj Scm_VMApply0(ScmObj proc)
 {
-    ScmVM *vm = theVM;
+    return Scm_pc_Apply0(theVM, proc);
+}
+
+ScmObj Scm_pc_Apply1(ScmVM *vm, ScmObj proc, ScmObj arg)
+{
     CHECK_STACK(1);
     if (SCM_SUBRP(proc)
         && SCM_PROCEDURE_REQUIRED(proc) == 1
@@ -1454,9 +1460,13 @@ ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
     return proc;
 }
 
-ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
+ScmObj Scm_VMApply1(ScmObj proc, ScmObj arg)
 {
-    ScmVM *vm = theVM;
+    return Scm_pc_Apply1(theVM, proc, arg);
+}
+
+ScmObj Scm_pc_Apply2(ScmVM *vm, ScmObj proc, ScmObj arg1, ScmObj arg2)
+{
     CHECK_STACK(2);
     if (SCM_SUBRP(proc)
         && SCM_PROCEDURE_REQUIRED(proc) == 2
@@ -1473,9 +1483,14 @@ ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
     return proc;
 }
 
-ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
+ScmObj Scm_VMApply2(ScmObj proc, ScmObj arg1, ScmObj arg2)
 {
-    ScmVM *vm = theVM;
+    return Scm_pc_Apply2(theVM, proc, arg1, arg2);
+}
+
+ScmObj Scm_pc_Apply3(ScmVM *vm, ScmObj proc,
+                     ScmObj arg1, ScmObj arg2, ScmObj arg3)
+{
     CHECK_STACK(3);
     if (SCM_SUBRP(proc)
         && SCM_PROCEDURE_REQUIRED(proc) == 3
@@ -1494,9 +1509,14 @@ ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
     return proc;
 }
 
-ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
+ScmObj Scm_VMApply3(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3)
 {
-    ScmVM *vm = theVM;
+    return Scm_pc_Apply3(theVM, proc, arg1, arg2, arg3);
+}
+
+ScmObj Scm_pc_Apply4(ScmVM *vm, ScmObj proc,
+                     ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
+{
     CHECK_STACK(4);
     if (SCM_SUBRP(proc)
         && SCM_PROCEDURE_REQUIRED(proc) == 4
@@ -1515,6 +1535,13 @@ ScmObj Scm_VMApply4(ScmObj proc, ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj a
     PUSH_ARG(arg4);
     PC = apply_calls[4];
     return proc;
+}
+
+
+ScmObj Scm_VMApply4(ScmObj proc,
+                    ScmObj arg1, ScmObj arg2, ScmObj arg3, ScmObj arg4)
+{
+    return Scm_pc_Apply4(theVM, proc, arg1, arg2, arg3, arg4);
 }
 
 static ScmObj eval_restore_env(ScmObj *args SCM_UNUSED,

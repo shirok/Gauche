@@ -96,4 +96,10 @@
 SCM_EXTERN ScmObj *Scm_pc_Alloca(ScmVM*, size_t);
 SCM_EXTERN ScmObj *Scm_pc_PushCC(ScmVM*, ScmCContinuationProc, int);
 
+SCM_EXTERN ScmObj Scm_pc_Apply0(ScmVM*, ScmObj);
+SCM_EXTERN ScmObj Scm_pc_Apply1(ScmVM*, ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_pc_Apply2(ScmVM*, ScmObj, ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_pc_Apply3(ScmVM*, ScmObj, ScmObj, ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_pc_Apply4(ScmVM*, ScmObj, ScmObj, ScmObj, ScmObj, ScmObj);
+
 #endif /* GAUCHE_PRECOMP_H */
