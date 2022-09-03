@@ -41,7 +41,7 @@
   (export list-completions))
 (select-module gauche.interactive.completion)
 
-(autoload text.segmented-match make-segmented-matcher)
+(autoload text.segmented-match make-segmented-prefix-matcher)
 
 ;; Completion (EXPERIMENTAL)
 ;; Some questions to consider
@@ -89,7 +89,7 @@
         [hits (make-hash-table 'string=?)])
     (define matcher
       (if (string-scan word #\- 'index)
-        (make-segmented-matcher word #\-)
+        (make-segmented-prefix-matcher word #\-)
         (cut string-prefix? word <>)))
     (define (search m)
       (unless (memq m visited)

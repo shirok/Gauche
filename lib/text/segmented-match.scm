@@ -35,7 +35,7 @@
 
 (define-module text.segmented-match
   (use srfi-13)
-  (export make-segmented-matcher
+  (export make-segmented-prefix-matcher
           segmented-prefix?))
 (select-module text.segmented-match)
 
@@ -46,12 +46,12 @@
 (define (segmented-prefix? pattern word :optional (separator #\-))
   (assume-type pattern <string>)
   (assume-type word <string>)
-  ((make-segmented-matcher pattern separator) word))
+  (boolean ((make-segmented-prefix-matcher pattern separator) word)))
 
 ;; API
-(define (make-segmented-matcher pattern separator)
+(define (make-segmented-prefix-matcher pattern separator)
   (define (rec segs rest)
-    (cond [(null? segs) #t]
+    (cond [(null? segs) rest]
           [(string-prefix? (car segs) rest)
            (if-let1 r (string-scan rest separator 'after)
              (rec (cdr segs) r)
