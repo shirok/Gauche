@@ -785,16 +785,16 @@ fuga
   (dolist [pattest data]
     (let ([pattern (car pattest)])
       (dolist [succ (cadr pattest)]
-        (test* `(segmented-match ,pattern ,succ) #t
-               (segmented-match? pattern succ)))
+        (test* `(segmented-prefix ,pattern ,succ) #t
+               (segmented-prefix? pattern succ)))
       (dolist [fail (caddr pattest)]
-        (test* `(segmented-match ,pattern ,fail) #f
-               (segmented-match? pattern fail)))
+        (test* `(segmented-prefix ,pattern ,fail) #f
+               (segmented-prefix? pattern fail)))
       ))
   )
 
 (test* "segmented match (alternative separator)" #t
-       (segmented-match? "/u/b/g" "/usr/bin/gosh" #\/))
+       (segmented-prefix? "/u/b/g" "/usr/bin/gosh" #\/))
 
 ;;-------------------------------------------------------------------
 (test-section "template")

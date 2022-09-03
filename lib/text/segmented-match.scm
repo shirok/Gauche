@@ -1,5 +1,5 @@
 ;;;
-;;; text.segmented-match - Find matching multiwords
+;;; text.segmented-match - Prefix match with segmented words
 ;;;
 ;;;   Copyright (c) 2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -36,14 +36,14 @@
 (define-module text.segmented-match
   (use srfi-13)
   (export make-segmented-matcher
-          segmented-match?))
+          segmented-prefix?))
 (select-module text.segmented-match)
 
 ;; This can be accelearated if we preprocess the corpus into a trie,
 ;; but let's start a simple case.
 
 ;; API
-(define (segmented-match? pattern word :optional (separator #\-))
+(define (segmented-prefix? pattern word :optional (separator #\-))
   (assume-type pattern <string>)
   (assume-type word <string>)
   ((make-segmented-matcher pattern separator) word))
