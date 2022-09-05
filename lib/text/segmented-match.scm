@@ -52,10 +52,9 @@
 (define (make-segmented-prefix-matcher pattern separator)
   (define (rec segs rest)
     (cond [(null? segs) rest]
-          [(string-prefix? (car segs) rest)
-           (if-let1 r (string-scan rest separator 'after)
-             (rec (cdr segs) r)
-             (null? (cdr segs)))]
+          [(string-prefix? (car segs) rest) ;(car segs) never contain separator
+           (rec (cdr segs)
+             (or (string-scan rest separator 'after) ""))]
           [else #f]))
   (define segments (string-split pattern separator))
   (^[word] (rec segments word)))
