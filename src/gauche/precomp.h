@@ -93,8 +93,11 @@
  *   thread's VM.  It is merely to avoid overhead of calling Scm_VM().
  */
 
+typedef ScmObj ScmPContinuationProc(ScmVM *vm, ScmContFrame *cont,
+                                    ScmObj val0, ScmObj *data);
+
 SCM_EXTERN ScmObj *Scm_pc_Alloca(ScmVM*, size_t);
-SCM_EXTERN ScmObj *Scm_pc_PushCC(ScmVM*, ScmCContinuationProc, int);
+SCM_EXTERN ScmObj *Scm_pc_PushCC(ScmVM*, ScmPContinuationProc, int);
 
 SCM_EXTERN ScmObj Scm_pc_Apply0(ScmVM*, ScmObj);
 SCM_EXTERN ScmObj Scm_pc_Apply1(ScmVM*, ScmObj, ScmObj);

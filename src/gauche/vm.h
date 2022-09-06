@@ -125,8 +125,26 @@ typedef struct ScmEnvFrameRec {
  *   +--------+
  *   :        :
  *
- *  If env is a special value (&ccEnvMark), this is a C continuation
- *  and pc contains a C function pointer.
+ *  If env is a special value (&ccEnvMark), this is a C continuation.
+ *  Some fields are used differently:
+ *
+ *   |  base   |
+ *   |   pc    |  <-- PCont procedure
+ *   |  cpc    |  <-- Ccont procedure
+ *   | marker  |  <-- 0 : CCont, 1 : PCont
+ *   | size=N  |
+ *   |  env    |  <-- &ccEnvMark
+ *   |..prev.. |
+ *   |data[N-1]|
+ *   |data[N-2]|
+ *   :         :
+ *   | data[0] |
+ *   +---------+
+ *
+ *  The difference between CCont and PCont is purely historical.
+ *  CCont is the original C continuation.  It takes one result and
+ *  the data array.  PCont is introduced to support precompile-to-C
+ *  code, and it takes ScmVM* in addition to the result and data array.
  */
 
 /* NB: The size of continuation frame (in words) is embedded in the precompiled

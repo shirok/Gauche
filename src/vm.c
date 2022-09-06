@@ -42,6 +42,7 @@
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"
+#include "gauche/precomp.h"
 
 /* Experimental code to use custom mark procedure for stack gc.
    Currently it doens't show any improvement, so we disable it
@@ -544,26 +545,24 @@ static void vm_unregister(ScmVM *vm)
 #define POP_CONT()                                                      \
     do {                                                                \
         if (C_CONTINUATION_P(CONT)) {                                   \
-            ScmObj v__ = VAL0;                                          \
-            ScmCContinuationProc *after__                               \
-                = (ScmCContinuationProc*)CONT->pc;                      \
-            ScmObj *data__ = (ScmObj*)CONT - CONT->size;                \
-            if (IN_STACK_P((ScmObj*)CONT)) {                            \
-                SP = (ScmObj*)CONT - CONT->size;                        \
+            ScmContFrame *cont = CONT;                                  \
+            ScmObj v = VAL0;                                            \
+            if (IN_STACK_P((ScmObj*)cont)) {                            \
+                SP = (ScmObj*)cont - cont->size;                        \
             }                                                           \
             ENV = NULL;                                                 \
             ARGP = SP;                                                  \
             PC = PC_TO_RETURN;                                          \
-            BASE = CONT->base;                                          \
-            CONT = CONT->prev;                                          \
-            SCM_FLONUM_ENSURE_MEM(v__);                                 \
+            BASE = cont->base;                                          \
+            CONT = cont->prev;                                          \
+            SCM_FLONUM_ENSURE_MEM(v);                                   \
             vm->trampoline = -1;                                        \
-            VAL0 = after__(v__, (void**)data__);                        \
-            for (int argc__ = vm->trampoline;                           \
-                 argc__ >= 0;                                           \
-                 argc__ = vm->trampoline) {                             \
+            ScmPContinuationProc *cproc = (ScmPContinuationProc*)cont->pc; \
+            ScmObj *data = (ScmObj*)cont - cont->size;                  \
+            VAL0 = cproc(vm, cont, v, data);                            \
+            for (int argc = vm->trampoline; argc >= 0; argc = vm->trampoline) { \
                 vm->trampoline = -1;                                    \
-                VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc__, SCM_SUBR(VAL0)->data); \
+                VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc, SCM_SUBR(VAL0)->data); \
             }                                                           \
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = (ScmObj*)CONT;                                       \
@@ -1583,6 +1582,14 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     }
 }
 
+/* This is a trick to keep the backward compatibility. */
+static ScmObj ccont_adapter(ScmVM *vm SCM_UNUSED, ScmContFrame *cont,
+                            ScmObj val0, ScmObj *data)
+{
+    ScmCContinuationProc *ccont = (ScmCContinuationProc*)cont->cpc;
+    return ccont(val0, (void**)data);
+}
+
 /* Arrange C function AFTER to be called after the procedure returns.
  * Usually followed by Scm_VMApply* function.
  */
@@ -1602,8 +1609,8 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
     cc->env = &ccEnvMark;
     cc->size = datasize;
     cc->marker = 0;
-    cc->cpc = NULL;
-    cc->pc = (ScmWord*)after;
+    cc->cpc = (ScmWord*)after;
+    cc->pc = (ScmWord*)ccont_adapter;
     cc->base = BASE;
     CONT = cc;
     ARGP = SP = s;
@@ -1622,7 +1629,7 @@ ScmObj *Scm_pc_Alloca(ScmVM *vm, size_t size)
 /* Like VMPushCC, but we just make room for data and return the
    pointer to it, letting caller to fill it.  Supposed to be
    used by machine-generated C code. */
-ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmCContinuationProc *after, int datasize)
+ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
 {
     CHECK_STACK(CONT_FRAME_SIZE+datasize);
     ScmObj *s = SP;
