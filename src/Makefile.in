@@ -510,6 +510,15 @@ install-check :
 	  "${bindir}/gosh" ../test/$$f install-check >> test.log; \
 	done
 
+# PushCC benchmark code.  Not build by default.
+bench-pushcc$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) bench-pushcc.$(OBJEXT)
+	$(LINK) -o bench-pushcc$(EXEEXT) bench-pushcc.$(OBJEXT) $(gosh_LDADD) $(LIBS)
+
+bench-pushcc.$(OBJEXT) : bench-pushcc.c $(HEADERS)
+
+bench-pushcc.c : bench-pushcc.scm
+	$(BUILD_GOSH) $(PRECOMP) bench-pushcc.scm
+
 # clean ------------------------------------------------
 PREGENERATED = compile.c autoloads.c builtin-syms.c \
 	       gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
@@ -534,7 +543,8 @@ clean :
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c \
 	       staticinit.c staticinit_gdbm.c staticinit_mbed.c \
-	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c
+	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
+	       bench-pushcc$(EXEEXT) bench-pushcc.c
 
 distclean : clean
 	rm -f $(CONFIG_GENERATED)
