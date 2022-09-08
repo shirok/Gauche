@@ -67,7 +67,7 @@
 
 ;; For easier experiment.
 (define (compile-link-toplevel form)
-  (let1 name #"cgen~(ulid->string (name-gen))"
+  (let1 name #"cgen_~(ulid->string (name-gen))"
     (parameterize ([cgen-current-unit (make <cgen-unit> :name name)])
       (cgen-decl "#include <gauche.h>"
                  "#include <gauche/precomp.h>"
@@ -84,8 +84,9 @@
       (gauche-package-compile-and-link name `(,#"~|name|.c")
                                        :verbose #t
                                        :cppflags cppflags
-                                       :cflags "-O2"))
-    (dynamic-load #"./~|name|" :init-function #"Scm__Init_~|name|")))
+                                       :cflags "-O3"))
+    (dynamic-load #"./~|name|"
+                  :init-function #"Scm__Init_~(cgen-safe-name name)")))
 
 (define (compile-toplevel form)
   (let1 toplevel-cfn (benv->c (compile-b form))
