@@ -43,7 +43,7 @@
  * Numeric comparison ops
  */
 
-#define SCM_PC_NUMCMP2(a, b, op)                           \
+#define SCM_PC_NUMCMP2(a, b, op)                        \
     (((SCM_INTP(a) && SCM_INTP(b))                      \
       ? (SCM_INT_VALUE(a) op SCM_INT_VALUE(b))          \
       : ((SCM_FLONUMP(a) && SCM_FLONUMP(b))             \
@@ -57,6 +57,21 @@
 #define SCM_PC_NUMLE2(a, b)  SCM_PC_NUMCMP2(a, b, <=)
 #define SCM_PC_NUMGT2(a, b)  SCM_PC_NUMCMP2(a, b, >)
 #define SCM_PC_NUMGE2(a, b)  SCM_PC_NUMCMP2(a, b, >=)
+
+#define SCM_PC_NUMCMPI(a, b, op)                        \
+    (((SCM_INTP(a))                                     \
+      ? (SCM_INT_VALUE(a) op b)                         \
+      : ((SCM_FLONUMP(a))                               \
+         ? (SCM_FLONUM_VALUE(a) op (double)(b))         \
+         : (Scm_NumCmp(a, SCM_MAKE_INT(b)) op 0)))      \
+     ? SCM_TRUE                                         \
+     : SCM_FALSE)
+
+#define SCM_PC_NUMEQI(a, b)  SCM_PC_NUMCMPI(a, b, ==)
+#define SCM_PC_NUMLTI(a, b)  SCM_PC_NUMCMPI(a, b, <)
+#define SCM_PC_NUMLEI(a, b)  SCM_PC_NUMCMPI(a, b, <=)
+#define SCM_PC_NUMGTI(a, b)  SCM_PC_NUMCMPI(a, b, >)
+#define SCM_PC_NUMGEI(a, b)  SCM_PC_NUMCMPI(a, b, >=)
 
 /*
  * Arithmetic ops
@@ -75,6 +90,19 @@ static inline ScmObj SCM_PC_NUMADD2(ScmObj a, ScmObj b)
     return Scm_Add(a, b);
 }
 
+static inline ScmObj SCM_PC_NUMADDI(ScmObj a, ScmSmallInt b)
+{
+    if (SCM_INTP(a)) {
+        ScmSmallInt r = SCM_INT_VALUE(a) + b;
+        if (SCM_SMALL_INT_FITS(r)) return SCM_MAKE_INT(r);
+        else return Scm_MakeInteger(r);
+    }
+    if (SCM_FLONUMP(a)) {
+        return Scm_MakeFlonum(SCM_FLONUM_VALUE(a) + (double)b);
+    }
+    return Scm_Add(a, SCM_MAKE_INT(b));
+}
+
 static inline ScmObj SCM_PC_NUMSUB2(ScmObj a, ScmObj b)
 {
     if (SCM_INTP(a) && SCM_INTP(b)) {
@@ -86,6 +114,19 @@ static inline ScmObj SCM_PC_NUMSUB2(ScmObj a, ScmObj b)
         return Scm_MakeFlonum(SCM_FLONUM_VALUE(a) - SCM_FLONUM_VALUE(b));
     }
     return Scm_Add(a, b);
+}
+
+static inline ScmObj SCM_PC_NUMSUBI(ScmObj a, ScmSmallInt b)
+{
+    if (SCM_INTP(a)) {
+        ScmSmallInt r = SCM_INT_VALUE(a) - b;
+        if (SCM_SMALL_INT_FITS(r)) return SCM_MAKE_INT(r);
+        else return Scm_MakeInteger(r);
+    }
+    if (SCM_FLONUMP(a)) {
+        return Scm_MakeFlonum(SCM_FLONUM_VALUE(a) - (double)b);
+    }
+    return Scm_Add(a, SCM_MAKE_INT(b));
 }
 
 /*

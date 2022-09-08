@@ -213,13 +213,13 @@
                   #"  SCM_VECTOR_ELEMENT(~v, ~n) = ~(R z);"
                   #"  ~(R r) = SCM_UNDEFINED;"))]
     [('UVEC-REF r x y z) (cgen-body #"  /* WRITEME: UVEC-REF */")]
-    [('NUMEQ2 r x y) (builtin-2arg c "SCM_PC_NUMEQ2" r x y)]
-    [('NUMLT2 r x y) (builtin-2arg c "SCM_PC_NUMLT2" r x y)]
-    [('NUMLE2 r x y) (builtin-2arg c "SCM_PC_NUMLE2" r x y)]
-    [('NUMGT2 r x y) (builtin-2arg c "SCM_PC_NUMGT2" r x y)]
-    [('NUMGE2 r x y) (builtin-2arg c "SCM_PC_NUMGE2" r x y)]
-    [('NUMADD2 r x y) (builtin-2arg c "SCM_PC_NUMADD2" r x y)]
-    [('NUMSUB2 r x y) (builtin-2arg c "SCM_PC_NUMSUB2" r x y)]
+    [('NUMEQ2 r x y) (builtin-2arg/arith c "SCM_PC_NUMEQ2" "SCM_PC_NUMEQI" r x y)]
+    [('NUMLT2 r x y) (builtin-2arg/arith c "SCM_PC_NUMLT2" "SCM_PC_NUMLTI" r x y)]
+    [('NUMLE2 r x y) (builtin-2arg/arith c "SCM_PC_NUMLE2" "SCM_PC_NUMLEI" r x y)]
+    [('NUMGT2 r x y) (builtin-2arg/arith c "SCM_PC_NUMGT2" "SCM_PC_NUMGTI" r x y)]
+    [('NUMGE2 r x y) (builtin-2arg/arith c "SCM_PC_NUMGE2" "SCM_PC_NUMGEI" r x y)]
+    [('NUMADD2 r x y) (builtin-2arg/arith c "SCM_PC_NUMADD2" "SCM_PC_NUMADDI" r x y)]
+    [('NUMSUB2 r x y) (builtin-2arg/arith c "SCM_PC_NUMSUB2" "SCM_PC_NUMSUBI" r x y)]
     [('NUMMUL2 r x y) (builtin-2arg c "Scm_Mul" r x y)]
     [('NUMDIV2 r x y) (builtin-2arg c "Scm_Div" r x y)]
     [('NUMMOD2 r x y) (builtin-2arg c "SCM_MOD2" r x y)]
@@ -249,6 +249,13 @@
 
 (define (builtin-2arg/bool c fn r x y)
   (cgen-body #"  ~(R r) = SCM_MAKE_BOOL(~|fn|(~(R x), ~(R y)));"))
+
+(define (builtin-2arg/arith c fn fni r x y)
+  (if (and (is-a? y <const>)
+           (exact-integer? (const-value y))
+           (fixnum? (const-value y)))
+    (cgen-body #"  ~(R r) = ~|fni|(~(R x), ~(const-value y)L);")
+    (cgen-body #"  ~(R r) = ~|fn|(~(R x), ~(R y));")))
 
 (define (cluster-cfn-name c)
   (cgen-safe-name (x->string (~ c'id))))
