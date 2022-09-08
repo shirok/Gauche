@@ -555,11 +555,12 @@ static void vm_unregister(ScmVM *vm)
             PC = PC_TO_RETURN;                                          \
             BASE = cont->base;                                          \
             CONT = cont->prev;                                          \
+            vm->ccont = cont->cpc;                                      \
             SCM_FLONUM_ENSURE_MEM(v);                                   \
             vm->trampoline = -1;                                        \
             ScmPContinuationProc *cproc = (ScmPContinuationProc*)cont->pc; \
             ScmObj *data = (ScmObj*)cont - cont->size;                  \
-            VAL0 = cproc(vm, cont, v, data);                            \
+            VAL0 = cproc(vm, v, data);                                  \
             for (int argc = vm->trampoline; argc >= 0; argc = vm->trampoline) { \
                 vm->trampoline = -1;                                    \
                 VAL0 = SCM_SUBR(VAL0)->func(ARGP, argc, SCM_SUBR(VAL0)->data); \
@@ -1583,15 +1584,29 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
 }
 
 /* This is a trick to keep the backward compatibility. */
-static ScmObj ccont_adapter(ScmVM *vm SCM_UNUSED, ScmContFrame *cont,
-                            ScmObj val0, ScmObj *data)
+static ScmObj ccont_adapter(ScmVM *vm, ScmObj val0, ScmObj *data)
 {
-    ScmCContinuationProc *ccont = (ScmCContinuationProc*)cont->cpc;
+    ScmCContinuationProc *ccont = (ScmCContinuationProc*)vm->ccont;
     return ccont(val0, (void**)data);
 }
 
 /* Arrange C function AFTER to be called after the procedure returns.
  * Usually followed by Scm_VMApply* function.
+ *
+ * This is an 'old' protocol (after procedure does not take VM pointer).
+ * For the backward compatibility, we support this type of C continuation
+ * with this kludge:
+ *
+ *  - We save 'after' CCont pointer in cont->cpc, and set the PCont
+ *    pointer (cont->pc) with ccont_adapter().
+ *  - In POP_CONT, when we pop the C continuation frame, cont->cpc
+ *    is saved in vm->ccont immediately before PCont procedure is
+ *    called.
+ *  - In ccont_adapter, the original 'after' pointer is retrieved
+ *    from vm->ccont and called.
+ *
+ * This incurs a slight overhead for the old protocol, but does not
+ * tax the new protocol.
  */
 void Scm_VMPushCC(ScmCContinuationProc *after,
                   void **data, int datasize)

@@ -435,6 +435,12 @@ struct ScmVMRec {
                                    to the incomplete environment frame
                                    being accumulated.  This is a part of
                                    continuation.                             */
+    void *ccont;                /* This is to support old C continuation
+                                   protocol with the new protool.  It is
+                                   set with CCont procedure right before
+                                   PCont procedure is called.  See the
+                                   comment on Scm_VMPushCC in vm.c.
+                                */
     ScmObj val0;                /* Value register.                           */
     ScmObj vals[SCM_VM_MAX_VALUES]; /* Value register for multiple values */
     int    numVals;             /* # of values */
