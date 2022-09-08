@@ -261,9 +261,6 @@
 (with-module gauche.internal
   (set! %transfer-bindings #f))
 
-(select-module gauche)
-(include "pushcc_bench.scm")
-
 ;;
 ;; Turn on generic dispatcher on selected gfs.
 ;; Eventually, we automate attaching dispacher whenever gf meets certain
