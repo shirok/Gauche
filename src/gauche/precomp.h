@@ -59,6 +59,36 @@
 #define SCM_PC_NUMGE2(a, b)  SCM_PC_NUMCMP2(a, b, >=)
 
 /*
+ * Arithmetic ops
+ */
+
+static inline ScmObj SCM_PC_NUMADD2(ScmObj a, ScmObj b)
+{
+    if (SCM_INTP(a) && SCM_INTP(b)) {
+        ScmSmallInt r = SCM_INT_VALUE(a) + SCM_INT_VALUE(b);
+        if (SCM_SMALL_INT_FITS(r)) return SCM_MAKE_INT(r);
+        else return Scm_MakeInteger(r);
+    }
+    if (SCM_FLONUMP(a) && SCM_FLONUMP(b)) {
+        return Scm_MakeFlonum(SCM_FLONUM_VALUE(a) + SCM_FLONUM_VALUE(b));
+    }
+    return Scm_Add(a, b);
+}
+
+static inline ScmObj SCM_PC_NUMSUB2(ScmObj a, ScmObj b)
+{
+    if (SCM_INTP(a) && SCM_INTP(b)) {
+        ScmSmallInt r = SCM_INT_VALUE(a) - SCM_INT_VALUE(b);
+        if (SCM_SMALL_INT_FITS(r)) return SCM_MAKE_INT(r);
+        else return Scm_MakeInteger(r);
+    }
+    if (SCM_FLONUMP(a) && SCM_FLONUMP(b)) {
+        return Scm_MakeFlonum(SCM_FLONUM_VALUE(a) - SCM_FLONUM_VALUE(b));
+    }
+    return Scm_Add(a, b);
+}
+
+/*
  * Index extraction
  */
 
