@@ -102,9 +102,9 @@
 
 (define (cluster->c cluster)
   (define cfn-name (cluster-cfn-name cluster))
-  (cgen-decl #"static ScmObj ~|cfn-name|(ScmObj, void**);")
+  (cgen-decl #"static ScmObj ~|cfn-name|(ScmVM*, ScmObj, ScmObj*);")
   (cgen-body ""
-             #"static ScmObj ~|cfn-name|(ScmObj VAL0, void **DATA)"
+             #"static ScmObj ~|cfn-name|(ScmVM *vm, ScmObj VAL0, ScmObj *DATA)"
              #"{")
   (cluster-prologue cluster)
   (for-each block->c (reverse (~ cluster'blocks)))
@@ -257,12 +257,11 @@
   #"struct ~(cluster-cfn-name c)_ENV")
 
 (define (cluster-prologue c)
-  (cgen-body #"  ScmVM *vm = Scm_VM();")
   ;; Set up registers
   (when (cluster-has-env? c)
     (let1 off (if (cluster-needs-dispatch? c) 1 0)
       (for-each-with-index
-       (^[i r] (cgen-body #"  ScmObj ~(R r) = SCM_OBJ(DATA[~(+ i off)]);"))
+       (^[i r] (cgen-body #"  ScmObj ~(R r) = DATA[~(+ i off)];"))
        (cluster-env c))))
   (set-for-each
    (^r (cgen-body #"  ScmObj ~(R r);"))
@@ -294,22 +293,22 @@
       ;; set up env
       (let* ([off (if (cluster-needs-dispatch? entry-cluster) 1 0)]
              [env-size (+ (cluster-env-size entry-cluster) off)])
-        (cgen-body #"  ScmWord data[~(+ env-size 1)];")
+        (cgen-body #"  ScmObj data[~(+ env-size 1)];")
         (when (cluster-needs-dispatch? entry-cluster)
           (let1 i (entry-block-index (last (~ entry-cluster'blocks)))
-            (cgen-body #"  data[0] = SCM_WORD(~i);")))
+            (cgen-body #"  data[0] = SCM_OBJ(~i);")))
         (do-ec [: ireg (index i) (~ benv'input-regs)]
                (let1 pos
                    (find-index (cut eq? ireg <>) (cluster-env entry-cluster))
                  (assume pos)
-                 (cgen-body #"  data[~(+ pos off)] = SCM_WORD(SCM_FP[~i]);")))
-        (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);"))
+                 (cgen-body #"  data[~(+ pos off)] = SCM_FP[~i];")))
+        (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);"))
       ;; no need to set up env
       (if (cluster-needs-dispatch? entry-cluster)
-        (cgen-body #"  ScmWord data[1];"
-                   #"  data[0] = SCM_WORD(0);"
-                   #"  return ~|entry-cfn|(SCM_FALSE, (void**)data);")
-        (cgen-body #"  return ~|entry-cfn|(SCM_FALSE, NULL);")))
+        (cgen-body #"  ScmObj data[1];"
+                   #"  data[0] = SCM_OBJ(0);"
+                   #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);")
+        (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, NULL);")))
     (cgen-body "}" "")
     (benv-cfn-name benv)))
 
@@ -322,11 +321,11 @@
            [off (if (cluster-needs-dispatch? dest-c) 1 0)]
            [env-size (+ (cluster-env-size dest-c) off)])
       (cgen-body #"  {"
-                 #"    ScmWord data[~|env-size|];")
+                 #"    ScmOBj data[~|env-size|];")
       (when (= off 1)
-        (cgen-body #"    data[0] = SCM_WORD(~index);"))
+        (cgen-body #"    data[0] = SCM_OBJ(~index);"))
       (prepare-env c (~ dest-bb'cluster) off)
-      (cgen-body #"    return ~|cfn|(SCM_FALSE, (void**)data);"
+      (cgen-body #"    return ~|cfn|(vm, SCM_FALSE, data);"
                  #"  }"))))
 
 (define (gen-cont-cstmt c dest-bb)
@@ -336,7 +335,7 @@
          [off (if (cluster-needs-dispatch? dest-c) 1 0)]
          [env-size (+ (cluster-env-size dest-c) off)])
     (cgen-body #"  {"
-               #"    ScmWord *data = (ScmWord*)(Scm_pc_PushCC(vm, ~|cfn|, ~|env-size|));")
+               #"    ScmObj *data = Scm_pc_PushCC(vm, ~|cfn|, ~|env-size|);")
     (when (= off 1)
       (cgen-body #"    data[0] = SCM_OBJ(~index);"))
     (prepare-env c dest-c off)
@@ -363,7 +362,7 @@
 (define (prepare-env c dest-c offset)
   (define env-type-name (cluster-env-type-name dest-c))
   (for-each-with-index
-   (^[i r] (cgen-body #"    data[~(+ i offset)] = SCM_WORD(~(R r));"))
+   (^[i r] (cgen-body #"    data[~(+ i offset)] = ~(R r);"))
    (cluster-env dest-c)))
 
 (define (gen-list c regs)
