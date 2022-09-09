@@ -212,7 +212,8 @@
   ((lvar :init-keyword :lvar)           ; source LVAR; can be #f
    (name :init-keyword :name)           ; given temporary name
    (boxed :init-value #f)               ; #t if this reg should be in a box
-   (blocks :init-value '())             ; BBs using this register.
+   (introduced :init-keyword :introduced) ; BB that introduced this reg.
+   (blocks :init-value '())             ; BBs using this reg.
    ))
 
 (define-method write-object ((reg <reg>) port)
@@ -231,7 +232,7 @@
            [name (string->symbol (format "%~d.~d~a" (benv-depth (~ bb'benv))
                                          (length (~ bb'benv'registers))
                                          (if symname #".~symname" "")))])
-      (rlet1 reg (make <reg> :name name :lvar lvar)
+      (rlet1 reg (make <reg> :name name :lvar lvar :introduced bb)
         (push! (~ bb'benv'registers) reg)
         (push! (~ reg'blocks) bb)
         (when lvar (hash-table-put! (~ bb'benv'regmap) lvar reg))))))
