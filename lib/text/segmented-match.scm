@@ -49,12 +49,18 @@
   (boolean ((make-segmented-prefix-matcher pattern separator) word)))
 
 ;; API
+;; Returns a procedure that takes a string and...
+;;  - Returns #f if pattern doesn't consist a segmented prefix
+;;  - Returns #t if every segments of pattern is corresponding segments
+;;    of input, and no more segments left in the input
+;;  - Returns a string, which is a remaining segments of the input.
 (define (make-segmented-prefix-matcher pattern separator)
   (define (rec segs rest)
     (cond [(null? segs) rest]
           [(string-prefix? (car segs) rest) ;(car segs) never contain separator
-           (rec (cdr segs)
-             (or (string-scan rest separator 'after) ""))]
+           (if-let1 rest (string-scan rest separator 'after)
+             (rec (cdr segs) rest)
+             (null? (cdr segs)))]
           [else #f]))
   (define segments (string-split pattern separator))
   (^[word] (rec segments word)))
