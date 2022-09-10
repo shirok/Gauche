@@ -27601,12 +27601,53 @@ which Gauche provides on REPL (@pxref{Input editing}).
 This module provides basic parts to perform such searching.
 @end deftp
 
-@defun segmented-match? pattern word :optional separator
+@defun segmented-prefix? pattern word :optional separator
 @c MOD text.segmented-match
+The @var{pattern} and @var{word} arguments must be a string, and
+@var{separator} must be either a character, a character set,
+a regexp, a predicate taking a character, or a string.
+When @var{separator} is omitted, @code{#\-} is assumed.
+
+First, @var{pattern} and @var{word} are splitted into segments
+using @code{string-split} (@pxref{String utilities}).  If every
+segments from @var{pattern} consist a prefix of the corresponding
+segments from @var{word}, it returns @code{#t}.  It is allowed
+for @var{word} to have more segments than @var{pattern}.
+
+@example
+(segmented-match? "a-b-c" "alpha-bravo-charlie") @result{} #t
+(segmented-match? "a-b" "alpha-bravo-charlie") @result{} #t
+(segmented-match? "al-br-char" "alpha-bravo-charlie") @result{} #t
+(segmented-match? "a-b" "alpha-delta-charlie") @result{} #t
+@end example
 @end defun
 
-@defun make-segmented-matcher pattern separator
+@defun make-segmented-prefix-matcher pattern separator
 @c MOD text.segmented-match
+This is a subfunction of @code{segmented-match?}.
+
+Returns a procedure that takes a string @var{word}, and sees if
+each segment of @var{pattern} is a prefix of corresponding segment
+of @var{word}.  If any of the @var{pattern}'s segment is not a
+prefix of the corresponding @var{word}'s segment, @code{#f} is
+returned.  Otherwise, it returns a true value: If the number of
+@var{word}'s segments is the same as the @var{pattern}'s, @code{#t}
+is retured; if @var{word} has more segments, the remaining part
+of the @var{word} (exclusing leading separator) is returned.
+
+@example
+((make-segmented-prefix-matcher "a-b-c" #\-) "alpha-bravo-charlie")
+ @result{} #t
+((make-segmented-prefix-matcher "a-b" #\-) "alpha-bravo-charlie-delta")
+ @result{} "charlie-delta"
+((make-segmented-prefix-matcher "a-b" #\-) "alpha-charlie-delta")
+ @result{} #f
+@end example
+
+This preprocesses @var{pattern}, so if you want to match
+many words against a single pattern, it is faster to get
+predicates with this procedure than applying @code{segmented-prefix?}
+repeatedly.
 @end defun
 
 
