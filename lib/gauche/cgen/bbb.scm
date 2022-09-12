@@ -43,7 +43,9 @@
           compile-b/dump  ; for debugging
 
           cluster-needs-dispatch?
-          cluster-env cluster-env-size cluster-has-env?
+          cluster-ephemeral-regs
+          cluster-incoming-regs cluster-has-incoming-regs?
+          cluster-outgoing-regs cluster-has-outgoing-regs?
 
           dump-benv
           bb-name
@@ -311,13 +313,21 @@
 (define-class <cluster> ()
   ((id :init-form (gensym "C")) ;for debugging
    (entry? :init-value #f)      ;#t if this cluster is procedure entry
+   (benv :init-keyword :benv)
    (blocks :init-value '())     ;basic blocks
    (entry-blocks :init-value '()) ; BBs to be jumped from another cluster
    (upstream :init-value '())   ;upstream clustres
    (downstream :init-value '()) ;downstream clusters
-   ;; A vector of nonlocal registers.  This is created after all registers
-   ;; are classified.
-   (env :init-value #f)
+   ;; Classified register mappings.  Each contains a vector of registers.
+   ;; These are set after all registers are classified.  Use accessor proc
+   ;; to obtain these values.
+   ;;  EPHEMERAL-REGS - registers only live within this cluster.
+   ;;  INCOMING-REGS - registers created in an upstream cluster.
+   ;;  OUTGOING-REGS - registers introduced in this cluster and carried over
+   ;;                  to other clusters
+   (ephemeral-regs :init-value #f)
+   (incoming-regs :init-value #f)
+   (outgoing-regs :init-value #f)
    ;; Register classification.  Used internally.
    ;;  XREGS - Regs outlive this cluster
    ;;  LREGS - Regs local to this cluster
@@ -326,21 +336,36 @@
    ))
 
 (define (make-cluster benv)
-  (rlet1 c (make <cluster>)
+  (rlet1 c (make <cluster> :benv benv)
     (push! (~ benv'clusters) c)))
 
 ;; Does cluster needs dispatch on entry?
 (define (cluster-needs-dispatch? c)
   (length>? (~ c'entry-blocks) 1))
 
-(define (cluster-env c)
-  (~ c'env))
+(define (cluster-ephemeral-regs c)
+  (or (~ c'ephemeral-regs)
+      (list->vector (set->list (~ c'lregs)))))
 
-(define (cluster-env-size c)
-  (size-of (~ c'env)))
+(define (cluster-incoming-regs c)
+  (or (~ c'incoming-regs)
+      ($ list->vector
+         $ remove (^r (and (memq (~ r'introduced) (~ c'blocks))
+                           (not (memq r (~ c'benv'input-regs)))))
+         $ set->list (~ c'xregs))))
 
-(define (cluster-has-env? c)
-  (positive? (cluster-env-size c)))
+(define (cluster-has-incoming-regs? c)
+  (> (vector-length (cluster-incoming-regs c)) 0))
+
+(define (cluster-outgoing-regs c)
+  (or (~ c'outgoing-regs)
+      ($ list->vector
+         $ filter (^r (and (memq (~ r'introduced) (~ c'blocks))
+                           (not (memq r (~ c'benv'input-regs)))))
+         $ set->list (~ c'xregs))))
+
+(define (cluster-has-outgoing-regs? c)
+  (> (vector-length (cluster-outgoing-regs c)) 0))
 
 ;;
 ;; Conversion to basic blocks
@@ -784,6 +809,38 @@
   (scan benv))
 
 ;;
+;; lifetime analysis
+;;
+
+(define (mark-live-path-bbs! reg)
+  (define (step! bb routes visited)
+    (cond [(set-contains? routes bb) (values #t routes visited)]
+          [(set-contains? visited bb) (values #f routes visited)]
+          [else (let loop ([bbs (~ bb'upstream)]
+                           [alive #f]
+                           [routes routes]
+                           [visited (set-adjoin! visited bb)])
+                  (if (null? bbs)
+                    (begin
+                      (when alive (push-unique! (~ reg'blocks) bb))
+                      (values alive
+                              (if alive (set-adjoin! routes bb) routes)
+                              visited))
+                    (receive (pass? routes visited)
+                        (step! (car bbs) routes visited)
+                      (loop (cdr bbs) pass? routes visited))))]))
+  (dolist [bb (~ reg'blocks)]
+    (step! bb (set eq-comparator (~ reg'introduced)) (set eq-comparator))))
+
+(define (mark-all-live-paths! benv)
+  (define (rec benv)
+    (dolist [reg (~ benv'registers)]
+      (when (is-a? reg <reg>)
+        (mark-live-path-bbs! reg)))
+    (for-each rec (~ benv'children)))
+  (rec benv))
+
+;;
 ;; Basic block clustering
 ;;
 
@@ -825,8 +882,7 @@
   (dolist [cbenv (~ benv'children)]
     (dolist [c (~ cbenv 'clusters)]
       (classify-cluster-regs! cbenv c)))
-  (adjust-cluster-regs! benv)
-  (create-cluster-env! benv))
+  )
 
 (define (link-clusters! upstream downstream)
   (when (and upstream downstream
@@ -849,27 +905,6 @@
              (update! (~ c'lregs) (cut set-adjoin! <> reg))]
             [else
              (update! (~ c'xregs) (cut set-adjoin! <> reg))]))))
-
-;; Xregs used in the downstream clusters have to be carried over
-;; through the cluster.
-(define (adjust-cluster-regs! benv)
-  (define (propagate! c changed)
-    (fold (^[up-c changed]
-            (let1 xset2 (set-union (~ up-c'xregs) (~ c'xregs))
-              (if (set=? xset2 (~ up-c'xregs))
-                changed                 ; no change for this iteration
-                (begin
-                  (set! (~ up-c'xregs) xset2)
-                  #t))))
-          changed (~ c'upstream)))
-  (let loop ()
-    (when (fold propagate! #f (~ benv'clusters))
-      (loop))))
-
-;; Set cluster's display (nonlocal environment in a flat vector)
-(define (create-cluster-env! benv)
-  (dolist [c (~ benv'clusters)]
-    (set! (~ c'env) (list->vector (set->list (~ c'xregs))))))
 
 ;;
 ;; For debugging
@@ -962,6 +997,7 @@
     (let* ([benv (make-benv #f (gensym "toplevel"))]
            [bb (pass5b iform benv)])
       (simplify-bbs! benv)
+      (mark-all-live-paths! benv)
       (cluster-bbs! benv)
       benv)))
 

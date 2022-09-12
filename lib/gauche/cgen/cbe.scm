@@ -261,19 +261,19 @@
 (define (cluster-cfn-name c)
   (cgen-safe-name (x->string (~ c'id))))
 
-(define (cluster-env-type-name c)
-  #"struct ~(cluster-cfn-name c)_ENV")
-
 (define (cluster-prologue c)
   ;; Set up registers
-  (when (cluster-has-env? c)
+  (when (cluster-has-incoming-regs? c)
     (let1 off (if (cluster-needs-dispatch? c) 1 0)
       (for-each-with-index
        (^[i r] (cgen-body #"  ScmObj ~(R r) = DATA[~(+ i off)];"))
-       (cluster-env c))))
-  (set-for-each
+       (cluster-incoming-regs c))))
+  (for-each
    (^r (cgen-body #"  ScmObj ~(R r);"))
-   (~ c'lregs))
+   (cluster-outgoing-regs c))
+  (for-each
+   (^r (cgen-body #"  ScmObj ~(R r);"))
+   (cluster-ephemeral-regs c))
   ;; Jump table
   (when (cluster-needs-dispatch? c)
     (cgen-body #"  switch ((intptr_t)DATA[0]) {")
@@ -297,17 +297,19 @@
                #"                  int SCM_ARGCNT SCM_UNUSED,"
                #"                  void *data_ SCM_UNUSED)"
                #"{")
-    (if (cluster-has-env? entry-cluster)
+    (if (cluster-has-incoming-regs? entry-cluster)
       ;; set up env
       (let* ([off (if (cluster-needs-dispatch? entry-cluster) 1 0)]
-             [env-size (+ (cluster-env-size entry-cluster) off)])
+             [env-size (+ (size-of (cluster-incoming-regs entry-cluster))
+                          off)])
         (cgen-body #"  ScmObj data[~(+ env-size 1)];")
         (when (cluster-needs-dispatch? entry-cluster)
           (let1 i (entry-block-index (last (~ entry-cluster'blocks)))
             (cgen-body #"  data[0] = SCM_OBJ(~i);")))
         (do-ec [: ireg (index i) (~ benv'input-regs)]
                (let1 pos
-                   (find-index (cut eq? ireg <>) (cluster-env entry-cluster))
+                   (find-index (cut eq? ireg <>)
+                               (cluster-incoming-regs entry-cluster))
                  (assume pos)
                  (cgen-body #"  data[~(+ pos off)] = SCM_FP[~i];")))
         (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);"))
@@ -327,7 +329,8 @@
            [index (entry-block-index dest-bb)]
            [cfn (cluster-cfn-name dest-c)]
            [off (if (cluster-needs-dispatch? dest-c) 1 0)]
-           [env-size (+ (cluster-env-size dest-c) off)])
+           [env-size (+ (size-of (cluster-incoming-regs dest-c))
+                        off)])
       (cgen-body #"  {"
                  #"    ScmOBj data[~|env-size|];")
       (when (= off 1)
@@ -341,7 +344,7 @@
          [index (entry-block-index dest-bb)]
          [cfn (cluster-cfn-name dest-c)]
          [off (if (cluster-needs-dispatch? dest-c) 1 0)]
-         [env-size (+ (cluster-env-size dest-c) off)])
+         [env-size (+ (size-of (cluster-incoming-regs dest-c)) off)])
     (cgen-body #"  {"
                #"    ScmObj *data = Scm_pc_PushCC(vm, ~|cfn|, ~|env-size|);")
     (when (= off 1)
@@ -368,10 +371,9 @@
 ;; from the env of current cluster (c).  The C variable name for the new
 ;; env is ENV2.
 (define (prepare-env c dest-c offset)
-  (define env-type-name (cluster-env-type-name dest-c))
   (for-each-with-index
    (^[i r] (cgen-body #"    data[~(+ i offset)] = ~(R r);"))
-   (cluster-env dest-c)))
+   (cluster-incoming-regs dest-c)))
 
 (define (gen-list c regs)
   (define (rec regs)
