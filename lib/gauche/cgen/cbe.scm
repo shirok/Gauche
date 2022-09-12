@@ -332,7 +332,7 @@
            [env-size (+ (size-of (cluster-incoming-regs dest-c))
                         off)])
       (cgen-body #"  {"
-                 #"    ScmOBj data[~|env-size|];")
+                 #"    ScmObj data[~|env-size|];")
       (when (= off 1)
         (cgen-body #"    data[0] = SCM_OBJ(~index);"))
       (prepare-env c (~ dest-bb'cluster) off)
