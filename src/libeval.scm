@@ -651,7 +651,7 @@
             (begin
               (when (and (pair? (cddr si))
                          (not (eq? (car trace) (caddr si))))
-                (format port "        expanded from ~,,,,60s\n" (caddr si)))
+                (format port "        expanded from ~,,,,60:s\n" (caddr si)))
               (format port "        at ~s:~d\n" (car si) (cadr si)))
             (format port "        [unknown location]\n")))))))
 
