@@ -879,9 +879,6 @@
   ;; 2nd pass (register classification)
   (dolist [c (~ benv'clusters)]
     (classify-cluster-regs! benv c))
-  (dolist [cbenv (~ benv'children)]
-    (dolist [c (~ cbenv 'clusters)]
-      (classify-cluster-regs! cbenv c)))
   )
 
 (define (link-clusters! upstream downstream)
