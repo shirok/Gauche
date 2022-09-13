@@ -288,6 +288,9 @@
   (push! (~ from-bb'downstream) to-bb)
   (push! (~ to-bb'upstream) from-bb))
 
+(define (mark-entry-bb! bb)
+  (set! (~ bb'entry?) #t))
+
 (define (bb-name bb)                    ;for debug dump
   (format "BB_~a_~s~a"
           (and (~ bb'cluster) (~ bb'cluster'id))
@@ -867,6 +870,7 @@
              (link-clusters! c c2)
              (let1 c2 (make-cluster benv)
                (push! (~ c2'entry-blocks) bb1)
+               (mark-entry-bb! bb1)
                (link-clusters! c c2)
                (rec benv c2 bb1))))]
         [_ #f])))
@@ -891,6 +895,7 @@
 ;; from-cluster, we need to mark bb as an entry bb
 (define (check-entry-bb! from-cluster bb)
   (when (and (~ bb'cluster) (not (eq? from-cluster (~ bb'cluster))))
+    (mark-entry-bb! bb)
     (push-unique! (~ bb'cluster'entry-blocks) bb)))
 
 (define (classify-cluster-regs! benv c)
