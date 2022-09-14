@@ -48,22 +48,22 @@
 (select-module gauche.package.fetch)
 
 ;; Default programs
-(define *wget-program*     (find-file-in-paths "wget"))
-(define *ncftpget-program* (find-file-in-paths "ncftpget"))
+(define *wget-program*     (%find-file-in-paths "wget"))
+(define *ncftpget-program* (%find-file-in-paths "ncftpget"))
 
 (define (gauche-package-ensure uri :key (config '()))
   (let* ([build-dir (assq-ref config 'build-dir ".")]
-         [wget      (assq-ref config 'wget *wget-program*)]
-         [ncftpget  (assq-ref config 'ncftpget *ncftpget-program*)]
+         [wget      (%fix-path (assq-ref config 'wget *wget-program*))]
+         [ncftpget  (%fix-path (assq-ref config 'ncftpget *ncftpget-program*))]
          [dest      (build-path build-dir (sys-basename uri))])
     (rxmatch-case uri
       (#/^https?:/ (#f)
                    (sys-unlink dest)
-                   (run #"~wget -P \"~build-dir\" \"~uri\"")
+                   (run (%shell #"~wget -P ~(%fix-path build-dir) \"~uri\""))
                    dest)
       (#/^ftp:/ (#f)
                 (guard (e (else (sys-unlink dest) (raise e)))
-                  (run #"~ncftpget -c \"~uri\" > \"~dest\""))
+                  (run (%shell #"~ncftpget -c \"~uri\" > ~(%fix-path dest)")))
                 dest)
       (else
        (unless (file-is-readable? uri)

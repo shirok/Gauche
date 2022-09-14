@@ -44,8 +44,42 @@
   (use text.tr)
   (use srfi-13)
   (export run dry-run verbose-run get-password copy-templates
-          find-package-name-and-version))
+          find-package-name-and-version
+          %gosh %shell %fix-path %find-file-in-paths))
 (select-module gauche.package.util)
+
+;; for windows (Msys)
+(define (%gosh script)
+  (cond-expand
+   [gauche.os.windows #"gosh ~script"]
+   [else script]))
+
+;; for windows (Msys)
+(define (%shell command)
+  (cond-expand
+   [gauche.os.windows
+    (if-let1 sh (sys-getenv "SHELL")
+      `("cmd.exe" "/c" ,sh "-c" ,command)
+      `("cmd.exe" "/c" ,command))]
+   [else command]))
+
+;; for windows (Msys)
+(define (%fix-path path)
+  (cond-expand
+   [gauche.os.windows
+    (and path
+         (if (sys-getenv "MSYSTEM")
+           (shell-escape-string path 'posix)
+           path))]
+   [else path]))
+
+;; for windows (Msys)
+(define (%find-file-in-paths name)
+  (cond-expand
+   [gauche.os.windows
+    (find-file-in-paths name :extensions '("exe"))]
+   [else
+    (find-file-in-paths name)]))
 
 (define dry-run     (make-parameter #f))
 (define verbose-run (make-parameter #f))
@@ -55,7 +89,10 @@
     (print cmdline))
   (unless (dry-run)
     (let1 p (run-process (cond-expand
-                          [gauche.os.windows (shell-tokenize-string cmdline 'posix)]
+                          [gauche.os.windows
+                           (if (string? cmdline)
+                             (shell-tokenize-string cmdline 'posix)
+                             cmdline)]
                           [else `("/bin/sh" "-c" ,cmdline)])
                          :input (if stdin-string :pipe :null)
                          :wait #f)
@@ -178,7 +215,7 @@
 
 ;; Retrieve author name and email from git config, if possible
 (define (%author-name)
-  (or (and-let* ([git (find-file-in-paths "git" :extensions '("exe"))]
+  (or (and-let* ([git (%find-file-in-paths "git")]
                  [name  (process-output->string '(git config user.name)
                                                 :error :null
                                                 :on-abnormal-exit :ignore)]
