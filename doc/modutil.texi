@@ -19997,9 +19997,29 @@ The meaning of @var{window-bits} is almost the same,
 except that if a value increased by 32 is given, the inflating port
 automatically detects whether the source stream is
 zlib or gzip by its header.
+
+That is, you can specify between 8 to 15 to read zlib,
+24 to 31 to read gzip, or 40 to 47 to use automatic detection.
+
+The window bits must be equal to or greater than the window bits
+used to compress the source,
+or a @code{<zlib-data-error>} condition is thrown.
+If you don't know the compression
+parameters of the input (which is most likely the case), you need to
+specify the maximum value, i.e. 15 for zlib, 31 for gzip, or 47 to
+autodetect.
 @c JP
 @var{window-bits}の意味もほぼ同じですが、
-32が足された値が与えられた場合にはZLIBとGZIPのヘッダ自動判定が有効になります。
+32が足された値が与えられた場合にはzlibとgzipのヘッダ自動判定が有効になります。
+
+すなわち、zlibを読む場合は8から15、gzipを読む場合は24から31、自動判定を使う場合は
+40から47の値を指定することになります。
+
+このwindow bitsは、入力が圧縮された時に使われたwindow bits以上でなければならず、
+小さいと@code{<zlib-data-error>}コンディションが投げられます。
+入力の圧縮時のパラメータを知らない場合(通常そうだと思います)、
+最大の値を指定するのが良いでしょう。つまり、
+zlibなら15、gzipなら31、自動判定を使うなら47です。
 @c COMMON
 
 @c EN
