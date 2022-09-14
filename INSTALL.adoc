@@ -386,11 +386,11 @@ endif::EN[]
 
 [horizontal]
 `--with-tls=none`          :: do not include TLS/SSL support
-`--with-tls=mbedtls`       :: include only axTLS support
+`--with-tls=mbedtls`       :: include only mbedTLS support
 `--with-tls=axtls,mbedtls` :: include TLS/SSL support using
                             axTLS library (source is included in Gauche),
                             and mbedTLS library (installed on the system).
-`--with-tls=mbedtls--internal` :: During the build, MbedTLS source is downloaded
+`--with-tls=mbedtls-internal` :: During the build, MbedTLS source is downloaded
                             and compiled with Gauche.  See below.
 
 
