@@ -215,7 +215,9 @@
    (name :init-keyword :name)           ; given temporary name
    (boxed :init-value #f)               ; #t if this reg should be in a box
    (introduced :init-keyword :introduced) ; BB that introduced this reg.
-   (blocks :init-value '())             ; BBs using this reg.
+   (assigned :init-value '())           ; BBs that assigns this reg. Exclusive
+                                        ;   with introduced.
+   (used :init-value '())               ; BBs using this reg. Includes assigned.
    ))
 
 (define-method write-object ((reg <reg>) port)
@@ -229,20 +231,22 @@
         (and-let1 parent (~ benv'parent)
           (lookup parent lvar))))
   (if-let1 reg (lookup (~ bb'benv) lvar)
-    (touch-reg! bb reg)
+    (use-reg! bb reg)
     (let* ([symname (and lvar (unwrap-syntax (lvar-name lvar)))]
            [name (string->symbol (format "%~d.~d~a" (benv-depth (~ bb'benv))
                                          (length (~ bb'benv'registers))
                                          (if symname #".~symname" "")))])
       (rlet1 reg (make <reg> :name name :lvar lvar :introduced bb)
         (push! (~ bb'benv'registers) reg)
-        (push! (~ reg'blocks) bb)
+        (push! (~ reg'used) bb)
         (when lvar (hash-table-put! (~ bb'benv'regmap) lvar reg))))))
 
 ;; If reg is used within BB, record the fact.
-(define (touch-reg! bb reg)
+(define (use-reg! bb reg :optional (assign? #f))
   (when (is-a? reg <reg>)
-    (push-unique! (~ reg'blocks) bb))
+    (push-unique! (~ reg'used) bb)
+    (when (and assign? (not (memq bb (~ reg'introduced))))
+      (push-unique! (~ reg'assigned) bb)))
   reg)
 
 (define (mark-reg-boxed! reg) (set! (~ reg'boxed) #t))
@@ -414,7 +418,7 @@
 (define (pass5b/$LSET iform bb benv ctx)
   (receive (bb val0) (pass5b/rec ($lset-expr iform) bb benv 'normal)
     (let1 r (make-reg bb ($lset-lvar iform))
-      (touch-reg! bb val0)
+      (use-reg! bb val0 #t)
       (push-insn bb `(MOV ,r ,val0))
       (pass5b/return bb ctx r))))
 
@@ -445,13 +449,13 @@
 (define (pass5b/$IF iform bb benv ctx)
   (define (if-branch iform bb benv ctx test-result)
     (if (has-tag? iform $IT)
-      (begin (touch-reg! bb test-result)
+      (begin (use-reg! bb test-result)
              (pass5b/return bb ctx test-result))
       (pass5b/rec iform bb benv ctx)))
   (receive (bb val0) (pass5b/rec ($if-test iform) bb benv 'normal)
     (let ([then-bb (make-bb benv bb)]
           [else-bb (make-bb benv bb)])
-      (touch-reg! bb val0)
+      (use-reg! bb val0)
       (push-insn bb `(BR ,val0 ,then-bb ,else-bb))
       (receive (tbb tval0) (if-branch ($if-then iform) then-bb benv ctx val0)
         (receive (ebb eval0) (if-branch ($if-else iform) else-bb benv ctx val0)
@@ -465,8 +469,8 @@
                  (let* ([cbb (make-bb benv ebb)]
                         [r (and (eq? ctx 'normal) eval0
                                 (rlet1 r (make-reg cbb #f)
-                                  (touch-reg! ebb eval0)
-                                  (touch-reg! ebb r)
+                                  (use-reg! ebb eval0)
+                                  (use-reg! ebb r #t)
                                   (push-insn ebb `(MOV ,r ,eval0))))])
                    (push-insn ebb `(JP ,cbb))
                    (values cbb r)))
@@ -474,8 +478,8 @@
                  (let* ([cbb (make-bb benv tbb)]
                         [r (and (eq? ctx 'normal) tval0
                                 (rlet1 r (make-reg cbb #f)
-                                  (touch-reg! tbb tval0)
-                                  (touch-reg! tbb r)
+                                  (use-reg! tbb tval0)
+                                  (use-reg! tbb r #t)
                                   (push-insn tbb `(MOV ,r ,tval0))))])
                    (push-insn ebb `(JP ,cbb))
                    (values cbb r))
@@ -483,13 +487,13 @@
                         [r (and (eq? ctx 'normal)
                                 (make-reg cbb #f))])
                    (when (and (eq? ctx 'normal) tval0)
-                     (touch-reg! tbb tval0)
-                     (touch-reg! tbb r)
+                     (use-reg! tbb tval0)
+                     (use-reg! tbb r #t)
                      (push-insn tbb `(MOV ,r ,tval0)))
                    (push-insn tbb `(JP ,cbb))
                    (when (and (eq? ctx 'normal) eval0)
-                     (touch-reg! ebb eval0)
-                     (touch-reg! ebb r)
+                     (use-reg! ebb eval0)
+                     (use-reg! ebb r #t)
                      (push-insn ebb `(MOV ,r ,eval0)))
                    (push-insn ebb `(JP ,cbb))
                    (values cbb r))))]))))))
@@ -504,7 +508,8 @@
         (when (memq ($let-type iform) '(rec rec*))
           (mark-reg-boxed! reg))
         (receive (bb val0) (pass5b/rec (car inits) bb benv 'normal)
-          (touch-reg! bb val0)
+          (use-reg! bb val0)
+          (use-reg! bb reg #t)
           (push-insn bb `(MOV ,reg ,val0))
           (loop bb (cdr vars) (cdr inits)))))))
 
@@ -541,7 +546,7 @@
         [((req . _) . rest) (loop rest (if mi (min mi req) req) (max mx req))])))
   (define (create-clambda iform bb cbb ctx)
     (receive (bb clo-regs) (generate-closures bb ($clambda-closures iform) benv)
-      (for-each (cut touch-reg! bb <>) clo-regs)
+      (for-each (cut use-reg! bb <>) clo-regs)
       (receive (minarg maxarg) (reqargs-min-max ($clambda-argcounts iform))
         (let ([closure-list-reg (make-reg bb #f)]
               [minarg-const (make-const bb minarg)]
@@ -620,10 +625,11 @@
              [label ($lambda-body proc)]  ; $LABEL mode
              [lbb (make-bb benv bb)])
         (for-each (^[reg lvar]
-                    (touch-reg! bb reg)
+                    (use-reg! bb reg)
                     (let1 lreg (make-reg bb lvar)
                       (unless (eq? lreg reg)
-                        (touch-reg! bb reg)
+                        (use-reg! bb reg)
+                        (use-reg! bb lreg #t)
                         (push-insn bb `(MOV ,lreg ,reg)))))
                   regs ($lambda-lvars proc))
         (push-insn bb `(JP ,lbb))
@@ -636,10 +642,11 @@
              [label ($lambda-body proc)]      ; $LABEL node
              [lbb ($label-label label)])
         (for-each (^[reg lvar]
-                    (touch-reg! bb reg)
+                    (use-reg! bb reg)
                     (let1 lreg (make-reg bb lvar)
                       (unless (eq? lreg reg)
-                        (touch-reg! bb reg)
+                        (use-reg! bb reg)
+                        (use-reg! bb lreg #t)
                         (push-insn bb `(MOV ,lreg ,reg)))))
                   regs ($lambda-lvars proc))
         (link-bb bb lbb)
@@ -649,7 +656,7 @@
     (when cont-bb (set! (~ cont-bb'entry?) #t))
     (receive (bb regs) (pass5b/prepare-args bb benv ($call-args iform))
       (receive (bb proc) (pass5b/rec ($call-proc iform) bb benv 'normal)
-        (for-each (cut touch-reg! bb <>) regs)
+        (for-each (cut use-reg! bb <>) regs)
         (push-insn bb `(CALL ,cont-bb ,proc ,@regs))
         (values (or cont-bb bb) cont-reg))))
   (case ($call-flag iform)
@@ -672,7 +679,8 @@
 (define (pass5b/$ASM iform bb benv ctx)
   (define (emit bb mnemonic regs)
     (let1 receiver (make-reg bb #f)
-      (for-each (cut touch-reg! bb <>) regs)
+      (for-each (cut use-reg! bb <>) regs)
+      (use-reg! bb receiver #t)
       (push-insn bb `(,mnemonic ,receiver ,@regs))
       (pass5b/return bb ctx receiver)))
   (receive (bb regs) (pass5b/prepare-args bb benv ($asm-args iform) #t)
@@ -723,15 +731,17 @@
 (define (pass5b/builtin-twoargs op iform bb benv ctx)
   (receive (bb regs)
       (pass5b/prepare-args bb benv (list ($*-arg0 iform) ($*-arg1 iform)) #t)
-    (for-each (cut touch-reg! bb <>) regs)
+    (for-each (cut use-reg! bb <>) regs)
     (let1 receiver (make-reg bb #f)
+      (use-reg! bb receiver #t)
       (push-insn bb `(,op ,receiver ,@regs))
       (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$LIST->VECTOR iform bb benv ctx)
   (receive (bb reg0) (pass5b/rec ($*-arg0 iform) bb benv 'normal)
-    (touch-reg! bb reg0)
+    (use-reg! bb reg0)
     (let1 receiver (make-reg bb #f)
+      (use-reg! bb receiver #t)
       (push-insn bb `(LIST->VECTOR ,receiver ,reg0))
       (pass5b/return bb ctx receiver))))
 
@@ -744,8 +754,9 @@
 
 (define (pass5b/builtin-nargs op iform bb benv ctx)
   (receive (bb regs) (pass5b/prepare-args bb benv ($*-args iform) #t)
-    (for-each (cut touch-reg! bb <>) regs)
+    (for-each (cut use-reg! bb <>) regs)
     (let1 receiver (make-reg bb #f)
+      (use-reg! bb receiver #t)
       (push-insn bb `(,op ,receiver ,@regs))
       (pass5b/return bb ctx receiver))))
 
@@ -825,14 +836,14 @@
                            [visited (set-adjoin! visited bb)])
                   (if (null? bbs)
                     (begin
-                      (when alive (push-unique! (~ reg'blocks) bb))
+                      (when alive (push-unique! (~ reg'used) bb))
                       (values alive
                               (if alive (set-adjoin! routes bb) routes)
                               visited))
                     (receive (pass? routes visited)
                         (step! (car bbs) routes visited)
                       (loop (cdr bbs) pass? routes visited))))]))
-  (dolist [bb (~ reg'blocks)]
+  (dolist [bb (~ reg'used)]
     (step! bb (set eq-comparator (~ reg'introduced)) (set eq-comparator))))
 
 (define (mark-all-live-paths! benv)
@@ -901,8 +912,8 @@
 (define (classify-cluster-regs! benv c)
   (dolist [reg (~ benv'registers)]
     (when (and (is-a? reg <reg>)
-               (any (^b (eq? (~ b'cluster) c)) (~ reg'blocks)))
-      (cond [(and (every (^b (eq? (~ b'cluster) c)) (~ reg'blocks))
+               (any (^b (eq? (~ b'cluster) c)) (~ reg'used)))
+      (cond [(and (every (^b (eq? (~ b'cluster) c)) (~ reg'used))
                   (not (memq reg (~ benv'input-regs))))
              (update! (~ c'lregs) (cut set-adjoin! <> reg))]
             [else
@@ -918,7 +929,7 @@
     #"~(assq-ref benv-alist benv).~(~ benv'name)")
   (define (regname reg)
     (if (is-a? reg <reg>)
-      (if (length>? (~ reg'blocks) 1)
+      (if (length>? (~ reg'used) 1)
         (string->symbol #"~(~ reg'name)*")
         (~ reg'name))
       reg))
@@ -987,7 +998,7 @@
       (dolist [reg (reverse (~ benv'registers))]
         (when (is-a? reg <reg>)
           (format #t "  ~15,,,,15a ~s\n" (~ reg'name)
-                  (map bb-name (~ reg'blocks)))))))
+                  (map bb-name (~ reg'used)))))))
   (assign-benv-names benv)
   (dump-1 benv)
   (dump-clusters)
