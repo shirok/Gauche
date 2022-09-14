@@ -24,7 +24,7 @@ SCMFILES  = $(srcdir)/@@modpath@@.scm
 
 GENERATED =
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
-                   configure.lineno autom4te*.cache $(PACKAGE).gpd
+		   configure.lineno autom4te*.cache $(PACKAGE).gpd
 
 GAUCHE_PKGINCDIR  = "$(DESTDIR)@GAUCHE_PKGINCDIR@"
 GAUCHE_PKGLIBDIR  = "$(DESTDIR)@GAUCHE_PKGLIBDIR@"
@@ -52,3 +52,7 @@ distclean : clean
 
 maintainer-clean : clean
 	rm -rf $(CONFIG_GENERATED) @@configure@@ VERSION
+
+# Local variables:
+# mode: Makefile
+# end:
