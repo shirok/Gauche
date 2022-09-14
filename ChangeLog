@@ -1,3 +1,8 @@
+2022-09-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls-mbed.c: Show string error message for mbedtls errors,
+	  along the error code.
+
 2022-08-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_VMApply0, etc.): Experimentally turn on subr

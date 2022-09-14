@@ -37,6 +37,7 @@
 #if defined(GAUCHE_USE_MBEDTLS)
 
 #include <mbedtls/version.h>
+#include <mbedtls/error.h>
 #include <mbedtls/ssl.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
@@ -120,6 +121,14 @@ static ScmObj load_system_cert(ScmMbedTLS *t SCM_UNUSED) {
 }
 #endif
 
+/* fmt must contain one %s and one %d. */
+static void mbed_error(const char *fmt, int errcode)
+{
+    const int bufsiz = 4096;
+    char buf[bufsiz];
+    mbedtls_strerror(errcode, buf, bufsiz);
+    Scm_Error(fmt, buf, errcode);
+}
 
 static void mbed_context_check(ScmMbedTLS* t SCM_UNUSED,
                                const char* op SCM_UNUSED)
@@ -182,7 +191,7 @@ static ScmObj mbed_connect_common(ScmMbedTLS *t)
 
     int r = mbedtls_ssl_handshake(&t->ctx);
     if (r != 0) {
-        Scm_Error("TLS handshake failed: %d", r);
+        mbed_error("TLS handshake failed: %s (%d)", r);
     }
     t->state = CONNECTED;
     return SCM_OBJ(t);
@@ -207,7 +216,7 @@ static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
 
     int r = mbedtls_net_connect(&t->conn, host, port, mbedtls_proto);
     if (r != 0) {
-        Scm_Error("mbedtls_net_connect() failed (%d)", r);
+        mbed_error("mbedtls_net_connect() failed: %s (%d)", r);
     }
     return mbed_connect_common(t);
 }
@@ -248,7 +257,7 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
                                   &t->entropy,
                                   (const unsigned char *)pers, strlen(pers));
     if(r != 0) {
-        Scm_Error("mbedtls_ctr_drbg_seed() failed (%d)", r);
+        mbed_error("mbedtls_ctr_drbg_seed() failed: %s (%d)", r);
     }
 
     r = mbedtls_ssl_config_defaults(&t->conf,
@@ -256,19 +265,19 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
                                     MBEDTLS_SSL_TRANSPORT_STREAM,
                                     MBEDTLS_SSL_PRESET_DEFAULT);
     if (r != 0) {
-        Scm_Error("mbedtls_ssl_config_defaults() failed (%d)", r);
+        mbed_error("mbedtls_ssl_config_defaults() failed: %s (%d)", r);
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
     r = mbedtls_ssl_setup(&t->ctx, &t->conf);
-    if(r != 0) {
-        Scm_Error("mbedtls_ssl_setup() failed (%d)", r);
+    if (r != 0) {
+        mbed_error("mbedtls_ssl_setup() failed: %s (%d)", r);
     }
 
     /* TODO: Take client address info and save it to newt. */
     r = mbedtls_net_accept(&servt->conn, &t->conn, NULL, 0, NULL);
     if (r != 0) {
-        Scm_Error("mbedtls_net_accept() failed (%d)", r);
+        mbed_error("mbedtls_net_accept() failed: %s (%d)", r);
     }
 
     mbedtls_ssl_set_bio(&t->ctx, &t->conn,
@@ -276,7 +285,7 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
 
     r = mbedtls_ssl_handshake(&t->ctx);
     if (r != 0) {
-        Scm_Error("TLS handshake failed: %d", r);
+        mbed_error("TLS handshake failed: %s (%d)", r);
     }
     t->state = CONNECTED;
     return SCM_OBJ(t);
@@ -328,7 +337,7 @@ static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
 
     int r = mbedtls_ssl_handshake(&t->ctx);
     if (r != 0) {
-        Scm_Error("TLS handshake failed: %d", r);
+        mbed_error("TLS handshake failed: %s (%d)", r);
     }
     t->state = CONNECTED;
     return SCM_OBJ(t);
