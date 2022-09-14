@@ -46,28 +46,28 @@
 (select-module gauche.package.build)
 
 ;; Default programs
-(define *cat-program*   (find-file-in-paths "cat"))
-(define *tar-program*   (find-file-in-paths "tar"))
-(define *gzip-program*  (find-file-in-paths "gzip"))
-(define *bzip2-program* (find-file-in-paths "bzip2"))
-(define *make-program*  (or (find-file-in-paths "gmake")
-                            (find-file-in-paths "make")))
-(define *sudo-program*  (find-file-in-paths "sudo"))
-(define *rm-program*    (find-file-in-paths "rm"))
+(define *cat-program*   (%find-file-in-paths "cat"))
+(define *tar-program*   (%find-file-in-paths "tar"))
+(define *gzip-program*  (%find-file-in-paths "gzip"))
+(define *bzip2-program* (%find-file-in-paths "bzip2"))
+(define *make-program*  (or (%find-file-in-paths "gmake")
+                            (%find-file-in-paths "make")))
+(define *sudo-program*  (%find-file-in-paths "sudo"))
+(define *rm-program*    (%find-file-in-paths "rm"))
 
 (define (untar config file)
   (let ([build-dir (assq-ref config 'build-dir ".")]
-        [cat   (assq-ref config 'cat   *cat-program*)]
-        [tar   (assq-ref config 'tar   *tar-program*)]
-        [gzip  (assq-ref config 'gzip  *gzip-program*)]
-        [bzip2 (assq-ref config 'bzip2 *bzip2-program*)])
+        [cat   (%fix-path (assq-ref config 'cat   *cat-program*))]
+        [tar   (%fix-path (assq-ref config 'tar   *tar-program*))]
+        [gzip  (%fix-path (assq-ref config 'gzip  *gzip-program*))]
+        [bzip2 (%fix-path (assq-ref config 'bzip2 *bzip2-program*))])
     (rxmatch-case (sys-basename file)
       (#/(?:\.tar\.gz|\.tgz|\.taz)$/ (#f)
-       (run #"\"~cat\" \"~file\" | \"~gzip\" -d | \"~tar\" xfC - \"~build-dir\""))
+       (run (%shell #"~cat ~(%fix-path file) | ~gzip -d | ~tar xfC - ~(%fix-path build-dir)")))
       (#/(?:\.tar\.bz|\.tar\.bz2|\.tbz|\.tbz2)$/ (#f)
-       (run #"\"~cat\" \"~file\" | \"~bzip2\" -d | \"~tar\" xfC - \"~build-dir\""))
+       (run (%shell #"~cat ~(%fix-path file) | ~bzip2 -d | ~tar xfC - ~(%fix-path build-dir)")))
       (#/\.tar$/ (#f)
-       (run #"\"~tar\" xfC \"~file\" \"~build-dir\""))
+       (run (%shell #"~tar xfC ~(%fix-path file) ~(%fix-path build-dir)")))
       (else
        (error "can't decide the package format of " file)))))
 
@@ -88,27 +88,27 @@
                    [gpd (find-gauche-package-description package-name)])
           (ref gpd 'configure))]
        [else "./configure"])
-    (run #"cd \"~dir\"; ~conf-cmd")))
+    (run (%shell #"cd ~(%fix-path dir); ~(%gosh conf-cmd)"))))
 
 (define (make config dir)
-  (let1 make (assq-ref config 'make *make-program*)
-    (run #"cd \"~dir\"; \"~make\"")))
+  (let1 make (%fix-path (assq-ref config 'make *make-program*))
+    (run (%shell #"cd ~(%fix-path dir); ~make"))))
 
 (define (make-check config dir)
-  (let1 make (assq-ref config 'make *make-program*)
-    (run #"cd \"~dir\"; \"~make\" check")))
+  (let1 make (%fix-path (assq-ref config 'make *make-program*))
+    (run (%shell #"cd ~(%fix-path dir); ~make check"))))
 
 (define (make-install config dir sudo-user sudo-pass)
-  (let ([make (assq-ref config 'make *make-program*)]
-        [sudo (assq-ref config 'sudo *sudo-program*)])
+  (let ([make (%fix-path (assq-ref config 'make *make-program*))]
+        [sudo (%fix-path (assq-ref config 'sudo *sudo-program*))])
     (if sudo-user
-      (run #"cd \"~dir\"; \"~sudo\" -u \"~sudo-user\" -S \"~make\" install"
+      (run (%shell #"cd ~(%fix-path dir); ~sudo -u \"~sudo-user\" -S ~make install")
            :stdin-string sudo-pass)
-      (run #"cd \"~dir\"; \"~make\" install"))))
+      (run (%shell #"cd ~(%fix-path dir); ~make install")))))
 
 (define (clean config dir)
-  (let1 rm (assq-ref config 'rm *rm-program*)
-    (run #"\"~rm\" -rf \"~dir\"")))
+  (let1 rm (%fix-path (assq-ref config 'rm *rm-program*))
+    (run (%shell #"~rm -rf ~(%fix-path dir)"))))
 
 ;; extracting package name from directory name (PACKAGE-VERSION)
 (define (package-name basename)
@@ -164,9 +164,9 @@
 (define (gauche-package-tarball :key (config '())
                                      ((:dry-run dry?) #f)
                                      (verbose #f))
-  (define tar  (assq-ref config 'tar *tar-program*))
-  (define make (assq-ref config 'make *make-program*))
-  (define gzip (assq-ref config 'gzip *gzip-program*))
+  (define tar  (%fix-path (assq-ref config 'tar *tar-program*)))
+  (define make (%fix-path (assq-ref config 'make *make-program*)))
+  (define gzip (%fix-path (assq-ref config 'gzip *gzip-program*)))
   (define-values (package version)
     (match (find-package-name-and-version)
       [(p v) (=> fail) (if (and p v) (values p v) (fail))]
@@ -174,11 +174,11 @@
   (define pkgname #"~|package|-~|version|")
   (parameterize ((dry-run dry?))
     (when (file-exists? "Makefile")
-      (run #"\"~make\" maintainer-clean"))
+      (run (%shell #"~make maintainer-clean")))
     (when (file-exists? "DIST")
-      (run #"./DIST gen"))
-    (run "./configure")
-    (run #"\"~make\" distclean")
+      (run (%shell #"./DIST gen")))
+    (run (%gosh "./configure"))
+    (run (%shell #"~make distclean"))
     (with-output-to-file "DIST_EXCLUDE_X"
       (^[]
         (print "DIST")
@@ -193,8 +193,8 @@
       (when (file-exists? target)
         (remove-directory* target))
       (make-directory* target #o755)
-      (run #"\"~tar\" c -X DIST_EXCLUDE_X --exclude-vcs -f - . | (cd ~target ; \"~tar\" xf -)")
-      (run #"(cd ~|target|/..; \"~tar\" c~(if verbose 'v \"\")f - ~pkgname | \"~gzip\" -9) > ../~|pkgname|.tgz")
+      (run (%shell #"~tar c -X DIST_EXCLUDE_X --exclude-vcs -f - . | (cd ~(%fix-path target) ; ~tar xf -)"))
+      (run (%shell #"(cd ~(%fix-path target)/..; ~tar c~(if verbose 'v \"\")f - ~pkgname | ~gzip -9) > ../~|pkgname|.tgz"))
       (remove-directory* target))
     (sys-unlink "DIST_EXCLUDE_X")
     (print #"../~|pkgname|.tgz is ready")))
