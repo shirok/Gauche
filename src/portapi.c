@@ -818,7 +818,7 @@ ScmSize Scm_GetzUnsafe(char *buf, ScmSize buflen, ScmPort *p)
         SAFE_CALL(p, siz = bufport_read(p, buf, buflen));
         PORT_BYTES(p) += siz;
         UNLOCK(p);
-        if (siz == 0) return EOF;
+        if (siz == 0 && buflen != 0) return EOF;
         else return siz;
     }
     case SCM_PORT_ISTR: {

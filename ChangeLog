@@ -1,5 +1,10 @@
 2022-09-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/portapi.c (Scm_Getz): Bug fix: We've treated bufport_filler
+	  returning 0 as EOF, but that's not always the case---if the requested
+	  size is 0, e.g. via (read-bytevector 0), returning 0 is a valid
+	  return value without meaning EOF.
+
 	* ext/tls/tls-mbed.c: Show string error message for mbedtls errors,
 	  along the error code.
 
