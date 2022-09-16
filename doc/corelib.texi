@@ -30508,7 +30508,7 @@ is unmapped.
 @defun make-view-uvector mem class length :optional offset immutable?
 @c EN
 This procedure creates a uniform vector that works as a ``window''
-to hte memory region @var{mem}, which must be
+to the memory region @var{mem}, which must be
 a @code{<memory-region>} object.  If the underlying memory content
 changes, it is visible through the uvector.  If the memory region is
 writeble and you mutate the uvector, it is reflected to the underlying
