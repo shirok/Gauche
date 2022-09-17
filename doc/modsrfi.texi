@@ -12550,6 +12550,7 @@ is signaled.
 
 @deftp {Module} srfi-232
 @mdindex srfi-232
+@c EN
 This srfi provides macros to define a procedure that can accept
 less than or more than the given formal parameters.  If the number of given
 parameters is less than the required parameters, it becomes partial
@@ -12558,25 +12559,47 @@ If the number of given parameters is more than the maximum number of
 parameters, then the excessive parameters are passed to the result
 of the original procedure, assuming the original procedure returns
 a procedure.
+@c JP
+このモジュールは、定義時に指定された仮引数よりも少なかったり多かったりする実引数を取れる
+手続きを定義するマクロを提供します。
+このマクロで定義された手続きが、仮引数よりも少ない実引数を渡された場合は、
+部分適用となり、残りの引数を受け取る手続きが返されます。
+もし仮引数よりも多い実引数が渡された場合、仮引数分の実引数が手続きにまず渡され、
+その戻り値(手続きであることが期待されます)に残りの実引数が渡されます。
+@c COMMON
 
+@c EN
 Currying in the strict sense converts n-ary procedures to nested 1-ary
 procedures:
+@c JP
+厳密な意味でのカリー化は、n引数の手続きをネストした1引数の手続きに変換することです。
+@c COMMON
 
 @example
 (lambda (a b c) body)
   @result{} (lambda (a) (lambda (b) (lambda (c) body)))
 @end example
 
+@c EN
 However, with Scheme, you need nested parentheses to give all
 the parameters to it:
+@c JP
+Schemeでは、この方法でカリー化された手続きにすべての引数を渡そうとすると、
+括弧をネストしなければなりません。
+@c COMMON
 
 @example
 (((f 1) 2) 3)
 @end example
 
+@c EN
 The procedure created with this srfi allows more than one parameters
 to be passed at once.  The following calls to @code{f} all yield the
 same result:
+@c JP
+これに対し、このsrfiで作られる手続きには、複数の引数をまとめて渡すことができます。
+以下の例で、@code{f}の呼び出しはすべて同じ動作となります。
+@c COMMON
 
 @example
 (define-curried (f a b c) body)
@@ -12587,10 +12610,16 @@ same result:
 ((f 1) 2 3)
 @end example
 
+@c EN
 Moreover, the procedure can take more parameters than the formals,
 assuming that the procedure with full parameters return a procedure
 that takes extra parameters.  In other words, the following
 equivalance holds:
+@c JP
+さらに、仮引数よりも多くの実引数を@code{f}に渡すことができます。ここで、
+@code{f}は(追加の引数を取る)手続きを返すことが期待されています。
+つまり、次のような等価性が成り立ちます。
+@c COMMON
 
 @example
 (f 1 2 3 4 5 6) @equiv{} ((f 1 2 3) 4 5 6)
@@ -12600,29 +12629,55 @@ equivalance holds:
 @defmac curried formals body @dots{}
 [SRFI-232]
 @c MOD srfi-232
+@c EN
 Returns a procedure just like @var{(lambda formals body @dots{})},
 except that the returned procedure may take less or more parameters
 than the specified in @var{formals}.
+@c JP
+@var{(lambda formals body @dots{})}と同じように手続きを作って返しますが、
+作られた手続きは@var{formals}で指定されるより少なかったり多かったりする引数を
+取ることができます。
+@c COMMON
 
+@c EN
 If it is given with less parameters than the required ones, it works
 as partial application; the result is a procedure that will accept
 the remaining parameters.
+@c JP
+呼び出し時に渡される引数が過少な場合は、部分適用として動作し、
+残りの引数を受け取る手続きが返されます。
+@c COMMON
 
 @example
 (define f (curried (a b c d) (+ a b c d)))
 
+@c EN
 (f 1 2 3 4) @result{} 10        ; ordinary application
 (f 1 2) @result{} #<procedure>  ; partial application, like (pa$ f 1 2)
 ((f 1 2) 3 4) @result{} 10      ; fulfilling the remaining argument
 (((f 1 2) 3) 4) @result{} 10    ; partial application can be nested
 (((f 1) 2 3) 4) @result{} 10    ; ... and can be grouped in any way
+@c JP
+(f 1 2 3 4) @result{} 10        ; 通常の呼び出し
+(f 1 2) @result{} #<procedure>  ; 部分適用。(pa$ f 1 2)と同じ
+((f 1 2) 3 4) @result{} 10      ; 残りの引数を提供
+(((f 1 2) 3) 4) @result{} 10    ; 部分適用はネストでき、
+(((f 1) 2 3) 4) @result{} 10    ; ... また一回の呼び出しでいくつも引数を渡せる
+@c COMMON
 @end example
 
+@c EN
 The procedure can accept more parameters than the ones given to
 @var{formals}, even @var{formals} does not specify the ``rest'' parameter.
 If @var{formals} takes the rest parameter, the excess arguments are passed
 to it.  If not, the result of the procedure with required parameters
 are applied over the excess arguments.
+@c JP
+また、@var{formals}が「残余引数」を指定していなくても、返される手続きは@var{formals}より
+多くの引数を取ることができます。@var{formals}が残余引数を取る場合は、
+余分な実引数は残余引数として渡されます。そうでなければ、必要な引数だけが手続きにまず
+渡され、その戻り値がもう一度、残りの引数とともに呼び出されます。
+@c COMMON
 
 @example
 (define f (curried (a b c) (^[x] (* x (+ a b c)))))
@@ -12630,22 +12685,36 @@ are applied over the excess arguments.
 (f 1 2 3 4) @result{} 24  ; @equiv{} ((f 1 2 3) 4)
 @end example
 
+@c EN
 If no arguments are given to the procedure,
 it returls the procedure itself:
+@c JP
+引数が渡されなかった場合は、手続き自身が返ります。
+@c COMMON
 
 @example
 (((f)) 1 2 3) @equiv{} (f 1 2 3)
 @end example
 
+@c EN
 As a special case, @code{(curried () body)} and @code{(curried identifier body)}
 are the same as @code{(lambda () body)} and @code{(lambda identifier body)},
 respectively.
+@c JP
+特別な場合として、
+@code{(curried () body)}および@code{(curried identifier body)}は、それぞれ
+@code{(lambda () body)}および@code{(lambda identifier body)}と同じです。
+@c COMMON
 @end defmac
 
 @defmac define-curried (name . formals) body @dots{}
 [SRFI-232]
 @c MOD srfi-232
+@c EN
 A shorthand of @code{(define name (curried formals body @dots{}))}.
+@c JP
+@code{(define name (curried formals body @dots{}))}の略記です。
+@c COMMON
 @end defmac
 
 @c Local variables:
