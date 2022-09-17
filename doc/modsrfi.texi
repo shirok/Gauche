@@ -11657,40 +11657,71 @@ The linear-update version @code{iset-partition!} may reuse given @var{iset}
 to store one of the results.
 @end defun
 
+@c EN
 @subheading Copying and conversion
+@c JP
+@subheading コピーと変換
+@c COMMON
 
 @defun iset-copy iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns a copy of @var{iset}.
+@c JP
+@var{iset}のコピーを返します。
+@c COMMON
 @end defun
 
 @defun iset->list iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns a list of elements in @var{iset}, in increasing order.
+@c JP
+@var{iset}の要素を昇順に並べたリストを返します。
+@c COMMON
 @end defun
 
 @defun list->iset list
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that contains elements in @var{list}.  The elements
-in @var{list} must be exact integers.  Duplicate elements are omitted.
+in @var{list} must be exact integers.  Duplicate elements are consolidated.
+@c JP
+@var{list}は正確な整数のリストでなければなりません。
+それらを要素として持つ整数集合を作って返します。重複する要素はひとつにまとめられます。
+@c COMMON
 @end defun
 
 @defun list->iset! iset list
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset consists of the elements from @var{iset} and @var{list}.
 It may reuse the given @var{iset} to store the result.
+@c JP
+@var{iset}に、正確な整数のリスト@var{list}を要素として足した整数集合を返します。
+引数@var{iset}は結果を作るために破壊的に再利用されるかもしれません。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Subsets
+@c JP
+@subheading 部分集合
+@c COMMON
 
 @defun iset=? iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
-Returns @code{#t} iff given isets are equal to each other as sets.
+@c EN
+Returns @code{#t} iff all given isets contains the same elements.
+@c JP
+与えられた整数集合すべてが同じ要素を含んでいれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun iset<? iset1 iset2 iset3 @dots{}
@@ -11699,56 +11730,99 @@ Returns @code{#t} iff given isets are equal to each other as sets.
 @defunx iset>=? iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 These compares subset relationships between isets.
 @code{(iset<=? iset1 iset2)} is @code{#t} iff every element of @var{iset1}
 is contained in @var{iset2}, and so on.
-
-Note that @code{(iset<? a b)} does not imply @code{(iset>=? a b)}.
+@c JP
+整数集合間の包含関係を比較します。
+例えば@code{(iset<=? iset1 iset2)}は、@var{iset1}の全ての要素が@var{iset2}に
+含まれている場合(@var{iset1}が@var{iset2}の部分集合である場合)に@code{#t}、
+そうでなければ@code{#f}となります。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Set theory operations
+@c JP
+@subheading 集合演算
+@c COMMON
 
 @defun iset-union iset1 iset2 iset3 @dots{}
 @defunx iset-union! iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
-Returns an iset that is a union of the given iset.  Functional version
+@c EN
+Returns an iset that is a union of given isets.  Functional version
 @code{iset-union} always returns a fresh iset.  Linear update version
 @code{iset-union!} may reuse @var{iset1} to produce the result.
+@c JP
+与えられた整数集合の和集合を返します。
+@code{iset-union}は関数的で、常に新たな整数集合を作って返します。
+線形更新版の@code{iset-union!}は、結果を作るために@var{iset1}を破壊的に再利用する
+かもしれません。
+@c COMMON
 @end defun
 
 @defun iset-intersection iset1 iset2 iset3 @dots{}
 @defunx iset-intersection! iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that is an intersction of the given iset.  Functional version
 @code{iset-intersection} always returns a fresh iset.  Linear update version
 @code{iset-intersection!} may reuse @var{iset1} to produce the result.
+@c JP
+与えられた整数集合全てに共通する要素を含む整数集合を返します。
+@code{iset-intersection}は関数的で、常に新たな整数集合を作って返します。
+線形更新版の@code{iset-intersection!}は、結果を作るために@var{iset1}を破壊的に再利用する
+かもしれません。
+@c COMMON
 @end defun
 
 @defun iset-difference iset1 iset2 iset3 @dots{}
 @defunx iset-difference! iset1 iset2 iset3 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that has elements in @var{iset1} but not
 in @var{iset2} @var{iset3} @dots{}.
 Functional version
 @code{iset-difference} always returns a fresh iset.  Linear update version
 @code{iset-difference!} may reuse @var{iset1} to produce the result.
+@c JP
+@var{iset1}の要素のうち、@var{iset2}, @code{iset3} @dots{}に含まれないものを
+集めた整数集合を返します。
+@code{iset-difference}は関数的で、常に新たな整数集合を作って返します。
+線形更新版の@code{iset-difference!}は、結果を作るために@var{iset1}を破壊的に再利用する
+かもしれません。
+@c COMMON
 @end defun
 
 @defun iset-xor iset1 iset2
 @defunx iset-xor! iset1 iset2
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that has elements, each of which is either in @var{iset1}
 or @var{iset2} but not in both.
 Functional version
 @code{iset-xor} always returns a fresh iset.  Linear update version
 @code{iset-xor!} may reuse @var{iset1} to produce the result.
+@c JP
+@var{iset1}と@var{iset2}のどちらか一方のみに含まれている要素を集めた整数集合を
+返します。
+@code{iset-xor}は関数的で、常に新たな整数集合を作って返します。
+線形更新版の@code{iset-xor!}は、結果を作るために@var{iset1}を破壊的に再利用する
+かもしれません。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Intervals and ranges
+@c JP
+@subheading 区間
+@c COMMON
 
 @defun iset-open-interval iset low high
 @defunx iset-closed-interval iset low high
@@ -11756,14 +11830,24 @@ Functional version
 @defunx iset-closed-open-interval iset low high
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Extract elements in @var{iset} that are in the range
-specified by @var{low} and @var{high}.
+specified by @var{low} and @var{high}, which must be real numbers.
 The `open' and `close' in the name indicates whether
 the boundary is included; @code{iset-open-interval} doesn't include
 both boundary, @code{iset-close-interval} includes both
 boundary, @code{iset-open-closed-interval} includes @var{high} but
 not @var{low} @code{set-closed-open-interval} inclues @var{low}
 but not @var{high}.
+@c JP
+@var{iset}の要素のうち、実数@var{low}と@var{high}で指定される区間内の
+要素のみを含む@var{iset}を返します。下限@var{low}、上限@var{high}それぞれを
+区間に含むか含まないかで4種類のバリエーションがあります。
+@code{iset-open-interval}は共に含まず、
+@code{iset-close-interval}は共に含み、
+@code{iset-open-closed-interval}は@var{low}を含まず@var{high}は含み、
+@code{iset-closed-open-interval}は@var{low}を含み@var{high}は含みません。
+@c COMMON
 
 @example
 (iset->list (iset-open-interval (iset 2 3 5 7 11) 2 7))
@@ -11784,9 +11868,18 @@ but not @var{high}.
 @defunx isubset>= iset k
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns a subset of @var{iset} whose elements are equal to,
 less than, less than or equal to, greater than, and greater than or
-equal to, @var{k}.
+equal to, @var{k}, which must be a real number.
+@c JP
+@var{iset}の要素のうち、それぞれ、
+実数@var{k}と等しい要素のみを含む部分集合、
+@var{k}未満の要素のみを含む部分集合、
+@var{k}以下の要素のみを含む部分集合、
+@var{k}超過の要素のみを含む部分集合、
+@var{k}以上の要素のみを含む部分集合を返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
