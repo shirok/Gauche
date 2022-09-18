@@ -11478,41 +11478,78 @@ Returns the minimum and the maximum element in @var{iset}.  If
 @var{iset} is empty, returns @code{#f}.
 @end defun
 
-
+@c EN
 @subheading Updaters
+@c JP
+@subheading 更新
+@c COMMON
 
 @defun iset-adjoin iset elt1 elt2 @dots{}
 @defunx iset-adjoin! iset elt1 elt2 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that includes all the elements in @var{iset},
 plus @var{elt1} @var{elt2} @dots{}.
+An error is thrown if @var{elt1} @var{elt2} @dots{} include other than
+fixnums.
+@c JP
+@var{iset}の要素に、@var{elt1} @var{elt2} @dots{}を加えたものを要素として持つ
+整数集合を返します。@var{elt1} @var{elt2} @dots{} にfixnum以外のものが
+含まれていたらエラーが投げられます。
+@c COMMON
 
-The linear update version @var{iset-adjoin!} may reuse @var{iset}
+@c EN
+The linear update version @code{iset-adjoin!} may reuse @var{iset}
 to store the result, but the caller must always use its return value.
+@c JP
+線形更新版@code{iset-adjoin!}は結果を作るのに@var{iset}を再利用するかもしれません。
+ただしそれは保証されていないので、呼び出し側は常に返り値を利用してください。
+@c COMMON
 @end defun
 
 @defun iset-delete iset elt1 elt2 @dots{}
 @defunx iset-delete! iset elt1 elt2 @dots{}
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that includes the elements in @var{iset}
 except the ones matching one of @var{elt1} @var{elt2} @dots{}.
+@c JP
+@var{iset}の要素から、@var{elt1} @var{elt2} @dots{}を除いたものを含む
+整数集合を返します。
+@c COMMON
 
-The linear update version @var{iset-delete!} may reuse @var{iset}
+@c EN
+The linear update version @code{iset-delete!} may reuse @var{iset}
 to store the result, but the caller must always use its return value.
+@c JP
+線形更新版@code{iset-delete!}は結果を作るのに@var{iset}を再利用するかもしれません。
+ただしそれは保証されていないので、呼び出し側は常に返り値を利用してください。
+@c COMMON
 @end defun
 
 @defun iset-delete-all iset elt-list
 @defunx iset-delete-all! iset elt-list
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 The @var{elt-list} argument must be a list of fixnums.
 Returns an iset that includes the elements in @var{iset}
 except the ones in @var{elt-list}.
+@c JP
+@var{elt-list}引数はfixnumのリストでなければなりません。
+@var{iset}の要素から、@var{elt-list}に含まれるfixnumを取り除いたものを要素とする
+整数集合を返します。
+@c COMMON
 
-The linear update version @var{iset-delete-all!} may reuse @var{iset}
+@c EN
+The linear update version @code{iset-delete-all!} may reuse @var{iset}
 to store the result, but the caller must always use its return value.
+@c JP
+線形更新版@code{iset-delete-all!}は結果を作るのに@var{iset}を再利用するかもしれません。
+ただしそれは保証されていないので、呼び出し側は常に返り値を利用してください。
+@c COMMON
 @end defun
 
 @defun iset-delete-min iset
@@ -11521,140 +11558,286 @@ to store the result, but the caller must always use its return value.
 @defunx iset-delete-max! iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns two values: The minimum or the maximum element in @var{iset},
-and a new iset taht contains elements in @var{iset} except the
+and a new iset that contains elements in @var{iset} except the
 minimum/maximum element.   An error is thrown if @var{iset} is empty.
+@c JP
+二つの値を返します。@var{iset}の最小もしくは最大の要素と、
+その要素を取り除いた整数集合です。@var{iset}が空の場合はエラーが投げられます。
+@c COMMON
 
+@c EN
 The linear update version @code{iset-delete-min!}/@code{iset-delete-max!}
 may reuse @var{iset} to store the result,
 but the caller must always use its return value.
+@c JP
+線形更新版@code{iset-delete-min!}/@code{iset-delete-mac!}は結果を作るのに
+@var{iset}を再利用するかもしれません。
+ただしそれは保証されていないので、呼び出し側は常に返り値を利用してください。
+@c COMMON
 @end defun
 
 @defun iset-search iset element failure success
 @defunx iset-search! iset element failure success
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Search @var{iset} for matching @var{element} from lowest to highest value.
 They return two values, a (possibly updated) iset, and auxiliary
-value as explained below.
+value as explained below.  The @var{failure} and @var{success}
+arguments are both procedures.
+@c JP
+@var{iset}の要素のうち@var{element}と一致するものを下から順に探します。
+戻り値は二つで、一つ目は整数集合、二つ目は以下に説明する補助値です。
+@var{failure}と@var{success}はともに手続きです。
+@c COMMON
 
+@c EN
 If @var{element} is found, the @var{success} procedure is called
 with three arguments: the matching element of @var{iset}, a procedure
-@var{update}, and a procedure @var{remove}.  The @var{update} procedure
+@var{update}, and a procedure @var{remove}.  The @var{success} procedure
+can either return or tail call one of either @var{update} or @var{remove}.
+@c JP
+@var{element}が見つかった場合、@var{success}が3つの引数で呼び出されます:
+マッチした要素、手続き@var{update}、そいて手続き@var{remove}です。
+@var{success}手続きはそのまま戻るか、@var{update}か@var{remove}のどちらかを
+末尾呼び出しすることができます。
+@c COMMON
+
+@c EN
+The @var{update} procedure
 can be invoked with two arguments, @var{new-element} and @var{obj}; if
 called, @var{new-element} replaces @var{element} in @var{iset}, and
 @code{iset-search} returns the new iset and @var{obj}.
 The @var{remove} procedure can be invoked with one argument, @var{obj}.
 It removes the matching element from @var{iset} and @code{iset-search}
 returns the new iset and @var{obj}.
+When those procedures are tail-called from @var{success}, those values
+become the return values of @code{iset-search}.
+@c JP
+@var{update}手続きは二つの引数@var{new-element}と@var{obj}を取ります。
+呼ばれると、この手続きは@var{iset}の要素@var{element}を@var{new-element}
+で置き換えた整数集合および@var{obj}を戻り値として返します。
+@var{remove}手続きは一つの引数@var{obj}を取り、@var{iset}から@var{element}
+を除いた整数集合および@var{obj}を戻り値として返します。
+@var{success}手続きからこれらの手続きが末尾呼び出しされていれば、
+この整数集合と@var{obj}がそのまま@code{iset-search}の戻り値となります。
+@c COMMON
 
+@c EN
 If @var{element} is not found, the @var{failure} procedure is called
-with two arguments, @var{insert} and @var{ignore}, both procedures.
+with two arguments, @var{insert} and @var{ignore}, both procedures
+and @var{failure} is expected to tail-call one of them.
+@c JP
+@var{element}が見つからなかった場合、@var{failure}手続きが二つの引数、
+@var{insert}と@var{ignore}を伴って呼ばれます。これらはそれぞれが手続きで、
+@var{failure}はどちらかを末尾呼び出ししなければなりません。
+@c COMMON
+
+@c EN
 The @var{insert} procedure can be called with one argument, @var{obj}.
 It causes @code{iset-search} to return a new iset that contains all
 the elements from @var{iset} plus @var{element}, and @var{obj}.
 The @var{ignore} procedure can be called with one argument, @var{obj}.
 It causes @code{iset-search} to return the original @var{iset} and
 @var{obj}.
+@c JP
+@var{insert}手続きはひとつの引数@var{obj}を取り、
+@var{element}を@var{iset}に追加した整数集合と@var{obj}を戻り値とします。
+@var{ignore}手続きはひとつの引数@var{obj}を取り、
+@var{iset}そのものと@var{obj}を戻り値とします。
+@c COMMON
 
+@c EN
 The linear update version, @code{iset-search!}, may reuse @var{iset}
 for the updated iset.
+@c JP
+線形更新版の@code{iset-search!}では、結果の整数集合を作るために
+@var{iset}が破壊的に変更されるかもしれません。
+@c COMMON
 @end defun
 
+@c EN
 @subheading The whole iset
+@c JP
+@subheading 集合全体への操作
+@c COMMON
 
 @defun iset-size iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns the number of elements in @var{iset}.
+@c JP
+@var{iset}の要素数を返します。
+@c COMMON
 @end defun
 
 @defun iset-find pred iset failure
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns the smallest element of @var{iset} that satisfies @var{pred}.
 If no element satisfies @var{pred}, @var{failure} is called with no
 arguments, and its result is returned from @code{iset-find}.
+@c JP
+@var{iset}の要素のうち、述語@var{pred}を満たす最小の要素を返します。
+もし@var{pred}を満たす要素が見つからなかったら、手続き@var{failure}を引数無しで
+呼び出しその結果を返します。
+@c COMMON
 @end defun
 
 @defun iset-count pred iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns the number of elements in @var{iset} that satisfy @var{pred}.
+@c JP
+@var{iset}の要素のうち、述語@var{pred}を満たすものの個数を返します。
+@c COMMON
 @end defun
 
 @defun iset-any? pred iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns @code{#t} if any element in @var{iset} satisfies @var{pred},
 @code{#f} otherwise.
+@c JP
+@var{iset}の要素のうち@var{pred}を満たすものがひとつでもあれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@c COMMON
 @end defun
 
 @defun iset-every? pred iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
 @code{#f} otherwise.
+@c JP
+@var{iset}の要素が全て@var{pred}を満たしたら@code{#t}を、そうでなければ@code{#f}を
+返します。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Mapping and folding
+@c JP
+@subheading マップとfold
+@c COMMON
 
 @defun iset-map proc iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Creates and returns a new iset whose elements consist of
 the result of @var{proc} applied to each element of the given @var{iset}.
 An error is signaled if @var{proc} doesn't return an exact integer.
+@c JP
+@var{iset}の各要素に@var{proc}を適用し、その結果を集めた@var{iset}を作って返します。
+@var{proc}の戻り値が正確な整数でなければエラーが投げられます。
+@c COMMON
 
+@c EN
 Note that the size of the result set may be smaller than the input,
 if @var{proc} isn't injective.
+@c JP
+@var{proc}が単射でなければ、返される整数集合は元の@var{iset}より小さくなります。
+@c COMMON
 
+@c EN
 The order of @var{proc}'s application is unspecified.
+@c JP
+@var{proc}が適用される順序は不定です。
+@c COMMON
 @end defun
 
 @defun iset-for-each proc iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Applies @var{proc} to each element in @var{iset} in increasing order.
 The result of @var{proc} is discarded.  Returns unspecified result.
+@c JP
+@var{proc}を@var{iset}の各要素に、要素の昇順に適用します。
+@var{proc}の結果は捨てられます。戻り値は指定されません。
+@c COMMON
 @end defun
 
 @defun iset-fold kons knil iset
 @defunx iset-fold-right kons knil iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Like @code{fold}/@code{fold-right}, apply @var{kons} on each element
-in @var{iset}, passing the result to the next @var{kons}.
+in @var{iset}, increasing or decreasing order,
+passing the result to the previous @var{kons}, or @var{knil}
+for the first iteration.  Returns the last result of @var{kons}.
+If @var{iset} is empty, @var{kons} is never called and @var{knil} is
+returned as is.
+@c JP
+@code{fold}/@code{fold-right}と同じように、@var{kons}を@var{iset}の各要素と
+直前の@var{kons}の結果を引数にして呼び出してゆきます。最初の@var{kons}の呼び出しには
+@var{knil}が使われます。要素はそれぞれ昇順/降順に呼び出されます。
+最後の@var{kons}の結果が戻り値になります。
+@var{iset}が空なら、@var{kons}は呼ばれず@var{knil}がそのまま返されます。
+@c COMMON
+
+@example
+(iset-fold cons '() (iset 2 3 5 7 11))
+  @result{} (11 7 5 3 2)
+(iset-fold-right cons '() (iset 2 3 5 7 11))
+  @result{} (2 3 5 7 11)
+@end example
 @end defun
 
 @defun iset-filter pred iset
 @defunx iset-filter! pred iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that contains the elements in @var{iset} that satisfy @var{pred}.
 The linear-update version @code{iset-filter!} may reuse given @var{iset}
 to store the result.
+@c JP
+@var{iset}の要素のうち、述語@var{pred}を満たすものだけを集めた整数集合を作って返します。
+線形更新版@code{iset-filter!}は結果を作るために@var{iset}を再利用するかもしれません。
+@c COMMON
 @end defun
 
 @defun iset-remove pred iset
 @defunx iset-remove! pred iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns an iset that contains the elements in @var{iset} that do not satisfy
 @var{pred}.
 The linear-update version @code{iset-remove!} may reuse given @var{iset}
 to store the result.
+@c JP
+@var{iset}の要素のうち、述語@var{pred}を満たさないものだけを集めた整数集合を作って返します。
+線形更新版@code{iset-remove!}は結果を作るために@var{iset}を再利用するかもしれません。
+@c COMMON
 @end defun
 
 @defun iset-partition pred iset
 @defunx iset-partition! pred iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns two isets, first one consisting of the elements in @var{iset} that
 satisfy @var{pred}, and the second one consisting of the elements that
 don't.
 The linear-update version @code{iset-partition!} may reuse given @var{iset}
 to store one of the results.
+@c JP
+ふたつの整数集合を返します。一つ目は、@var{iset}の要素のうち述語@var{pred}を満たすもの、
+二つ目は満たさないものを集めた集合です。
+線形更新版@code{iset-partition!}は結果を作るために@var{iset}を再利用するかもしれません。
+@c COMMON
 @end defun
 
 @c EN
