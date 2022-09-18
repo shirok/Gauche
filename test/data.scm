@@ -675,6 +675,10 @@
        (range->list (string-range "abcdefg" 2)))
 (test* "string-range start/end" '(#\c #\d #\e)
        (range->list (string-range "abcdefg" 2 5)))
+(test* "bitvector/bool-range" '(#t #f #t #t)
+       (range->list (bitvector/bool-range #*0101100 1 5)))
+(test* "bitvector/int-range" '(0 1 1 0 0)
+       (range->list (bitvector/int-range #*0101100 2)))
 
 ;; sequence protocol
 (test* "range as a sequence (ref)" 3 (~ (numeric-range 1 6) 2))

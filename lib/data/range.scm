@@ -44,7 +44,8 @@
    <range-meta> <range>
 
    ;; Constructors
-   range numeric-range iota-range vector-range uvector-range string-range
+   range numeric-range iota-range vector-range string-range
+   uvector-range bitvector/bool-range bitvector/int-range
    range-append range-reverse
 
    ;; Predicates
@@ -89,20 +90,32 @@
   (format port "#<range (~d)>" (~ r'length)))
 
 ;; special case, where indexer is simply a indexed reference from a sequence
+;; raw-indexer, storage and offset must be given at initialization; indexer
+;; is computed based on the initialized value.  Changing them later will have
+;; no effect.
 (define-class <flat-range> (<range>)
-  ((indexer :init-value (^[o i]
-                          (assume (exact-integer? i))
-                          (assume (< -1 i (~ o'length)))
-                          (let1 off (+ (~ o'offset) i)
-                            (ref (~ o'storage) off))))
+  ((raw-indexer :init-keyword :raw-indexer :init-value ref)
    (storage :init-keyword :storage)
    (offset :init-keyword :offset :init-value 0)))
+
+(define-method initialize ((r <flat-range>) initargs)
+  (next-method)
+  (let ([raw-indexer (~ r'raw-indexer)]
+        [offset (~ r'offset)]
+        [storage (~ r'storage)]
+        [length (~ r'length)])
+    (set! (~ r'indexer)
+          (^[o i]
+            (assume (and (exact-integer? i)
+                         (<=:< 0 i length))
+                    "Index out of range:" i)
+            (raw-indexer storage (+ offset i))))))
 
 ;; appended ranges.
 ;; ranges slot contains #((offset . subrange) ...)
 (define (%appended-range-index range i)
-  (assume (exact-integer? i))
-  (assume (< -1 i (~ range'length)))
+  (assume (exact-integer? i) "Range index must be an exact integer:" i)
+  (assume (<=:< 0 i (~ range'length)) "Range index out of range:" i)
   (let* ([vec (~ range'ranges)]
          [len (vector-length vec)])
     (define (call-indexer p i)
@@ -141,7 +154,8 @@
 ;;;
 
 (define (range length indexer)
-  (assume (and (exact-integer? length) (>= length 0)))
+  (assume (and (exact-integer? length) (>= length 0))
+          "Range length must be exact nonnnegative integer:" length)
   (make <range> :length length :indexer (^[_ i] (indexer i))))
 
 (define (numeric-range start end :optional (step 1))
@@ -157,17 +171,19 @@
 ;; optional arguments are Gauche-specific
 (define (vector-range vec :optional (start 0) (end (vector-length vec)))
   (assume-type vec <vector>)
-  (assume (<= 0 start end (vector-length vec)))
+  (assume (<= 0 start end (vector-length vec))
+          "Start or end index is inconsistent:" start end)
   (make <flat-range>
     :length (- end start)
-    :indexer vector-ref
+    :raw-indexer vector-ref
     :storage vec
     :offset start))
 
 ;; optional arguments are Gauche-specific
 (define (string-range str :optional (start 0) (end (string-length str)))
   (assume-type str <string>)
-  (assume (<= 0 start end (string-length str)))
+  (assume (<= 0 start end (string-length str))
+          "Start or end index is inconsistent:" start end)
   (make <flat-range>
     :length (- end start)
     :indexer string-ref
@@ -177,10 +193,36 @@
 ;; Gauche extension
 (define (uvector-range uvec :optional (start 0) (end (uvector-length uvec)))
   (assume-type uvec <uvector>)
-  (assume (<= 0 start end (uvector-length uvec)))
+  (assume (<= 0 start end (uvector-length uvec))
+          "Start or end index is inconsistent:" start end)
   (make <flat-range>
     :length (- end start)
+    :raw-indexer uvector-ref
     :storage uvec
+    :offset start))
+
+;; Gauche extension
+(define (bitvector/bool-range bvec
+                              :optional (start 0) (end (bitvector-length bvec)))
+  (assume-type bvec <bitvector>)
+  (assume (<= 0 start end (bitvector-length bvec))
+          "Start or end index is inconsistent:" start end)
+  (make <flat-range>
+    :length (- end start)
+    :raw-indexer bitvector-ref/bool
+    :storage bvec
+    :offset start))
+
+;; Gauche extension
+(define (bitvector/int-range bvec
+                              :optional (start 0) (end (bitvector-length bvec)))
+  (assume-type bvec <bitvector>)
+  (assume (<= 0 start end (bitvector-length bvec))
+          "Start or end index is inconsistent:" start end)
+  (make <flat-range>
+    :length (- end start)
+    :raw-indexer bitvector-ref/int
+    :storage bvec
     :offset start))
 
 (define (range-append . ranges)
@@ -195,7 +237,8 @@
 
  (define (range-reverse rg :optional (start 0) (end (range-length rg)))
   (assume-type rg <range>)
-  (assume (<= 0 start end (range-length rg)))
+  (assume (<= 0 start end (range-length rg))
+          "Start or end index is inconsistent:" start end)
   (if (is-a? rg <subrange>)
     (if (%subrange-reversed? rg)
       (make <subrange>

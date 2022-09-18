@@ -1,3 +1,9 @@
+2022-09-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/range.scm (bitvector/bool-range, bitvector/int-range):
+	  Added bitvector to range constructors.  Also revised <flat-range>
+	  definition to allow raw-indexer customization and optimization.
+
 2022-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* tools/tls/Makefile.in: Use mbedtls 3.2.1 for mbedtls-internal
