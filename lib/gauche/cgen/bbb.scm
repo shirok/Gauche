@@ -36,6 +36,7 @@
   ;; we want to have a separate module that exposes some compiler internals.
   (extend gauche.internal)
   (use gauche.sequence)
+  (use scheme.list)
   (use scheme.set)
   (use util.match)
   (use gauche.vm.insn)
@@ -239,6 +240,7 @@
       (rlet1 reg (make <reg> :name name :lvar lvar :introduced bb)
         (push! (~ bb'benv'registers) reg)
         (push! (~ reg'used) bb)
+        (use-reg! bb reg #t)
         (when lvar (hash-table-put! (~ bb'benv'regmap) lvar reg))))))
 
 ;; If reg is used within BB, record the fact.
@@ -246,7 +248,9 @@
   (when (is-a? reg <reg>)
     (push-unique! (~ reg'used) bb)
     (when (and assign? (not (memq bb (~ reg'introduced))))
-      (push-unique! (~ reg'assigned) bb)))
+      (push-unique! (~ reg'assigned) bb))
+    (unless (assq reg (~ bb'reg-use))
+      (push! (~ bb'reg-use) (cons reg (if assign? 'w 'r)))))
   reg)
 
 (define (mark-reg-boxed! reg) (set! (~ reg'boxed) #t))
@@ -275,6 +279,9 @@
    (upstream   :init-keyword :upstream) ; list of upstream blocks
    (downstream :init-value '())         ; list of downstream blocks
    (benv       :init-keyword :benv)
+   (reg-use    :init-value '())         ; register usage alist
+   ;; reg-use keeps how a register is used in the BB first time; it can be
+   ;; either w (written) or r (read).
    (cluster    :init-value #f)
    (entry?     :init-value #f)          ; #t if this BB is entered from outside
    ))
@@ -418,7 +425,8 @@
 (define (pass5b/$LSET iform bb benv ctx)
   (receive (bb val0) (pass5b/rec ($lset-expr iform) bb benv 'normal)
     (let1 r (make-reg bb ($lset-lvar iform))
-      (use-reg! bb val0 #t)
+      (use-reg! bb val0)
+      (use-reg! bb r #t)
       (push-insn bb `(MOV ,r ,val0))
       (pass5b/return bb ctx r))))
 
@@ -518,6 +526,8 @@
     (receive (bb val0) (pass5b/rec ($receive-expr iform) bb benv 'normal)
       (push-insn bb `(MOV* ,($receive-reqargs iform) ,($receive-optarg iform)
                            ,regs ,val0))
+      (for-each (cut use-reg! bb <> #t) regs)
+      (use-reg! bb val0)
       (pass5b/rec ($receive-body iform) bb benv ctx))))
 
 (define (pass5b/$LAMBDA iform bb benv ctx)
@@ -572,6 +582,7 @@
       (push-insn bb `(CONT ,cbb))
       (create-clambda iform bb cbb ctx)      ;no need to receive result.
       (push-insn cbb `(MOV ,valreg %VAL0))
+      (use-reg! bb valreg #t)
       (values cbb valreg))))
 
 (define (pass5b/$LABEL iform bb benv ctx)
@@ -606,12 +617,14 @@
         (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
           (let1 reg (if (eq? reg '%VAL0)
                       (rlet1 reg (make-reg bb #f)
+                        (use-reg! bb reg #t)
                         (push-insn bb `(MOV ,reg %VAL0)))
                       reg)
             (values bb (reverse (cons reg regs)))))
         (receive (bb reg) (pass5b/rec (car args) bb benv 'normal)
           (if (eq? reg '%VAL0)
             (let1 reg (make-reg bb #f)
+              (use-reg! bb reg #t)
               (push-insn bb `(MOV ,reg %VAL0))
               (loop bb (cdr args) (cons reg regs)))
             (loop bb (cdr args) (cons reg regs))))))))
@@ -671,6 +684,7 @@
        [(normal) (let* ([cbb (make-bb benv bb)]
                         [valreg (make-reg cbb #f)])
                    (push-insn bb `(CONT ,cbb))
+                   (use-reg! bb valreg #t)
                    (push-insn cbb `(MOV ,valreg %VAL0))
                    (normal-call cbb valreg))])]))
 
@@ -855,6 +869,23 @@
   (rec benv))
 
 ;;
+;; BB entry register setup
+;;
+
+(define (bb-assigning-registers bb)
+  (filter (^r (and (is-a? r <reg>)
+                   (memq bb (~ r'assigned))))
+          (~ bb'benv'registers)))
+
+(define (bb-using-registers bb)
+  (filter (^r (and (is-a? r <reg>)
+                   (memq bb (~ r'used))))
+          (~ bb'benv'registers)))
+
+(define (bb-receiving-registers bb)
+  (lset-difference eq? (bb-using-registers bb) (bb-assigning-registers bb)))
+
+;;
 ;; Basic block clustering
 ;;
 
@@ -957,17 +988,19 @@
       [((? (cut memq <> *builtin-ops*) op) . regs)
        (format port "  ~s\n" `(,op ,@(map regname regs)))]
       [_ (format port "??~s\n" insn)]))
-  (define (dump-bb bb)
+  (define (dump-bb bb benv)
     (format port " ~a   [~a> >~a]\n" (bb-name bb)
             (map (cut ~ <> 'id) (reverse (~ bb'upstream)))
             (map (cut ~ <> 'id) (reverse (~ bb'downstream))))
+    (format port "   reg-use: ~s\n"
+            (map (^p (cons (~ (car p)'name) (cdr p))) (~ bb'reg-use)))
     (for-each dump-insn (reverse (~ bb'insns))))
   (define (dump-1 benv)
     (let1 n (x->string (benvname benv))
       (format port "BENV ~a ~a\n"
               n (make-string (- 65 (string-length n)) #\=)))
     (format port "   args: ~s\n" (map regname (~ benv'input-regs)))
-    (for-each dump-bb (reverse (~ benv'blocks)))
+    (for-each (cut dump-bb <> benv) (reverse (~ benv'blocks)))
     (for-each dump-1 (reverse (~ benv'children))))
   (define (assign-benv-names benv)
     (push! benv-alist (cons benv (length benv-alist)))
