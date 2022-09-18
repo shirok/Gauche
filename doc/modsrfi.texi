@@ -11088,41 +11088,64 @@ of their ordinals.
 @defun enum-type-values etype
 [SRFI-209]
 @c MOD srfi-209
+Returns a list of the values of the enums the enum type @var{etype} has,
+in the order of their ordinals.
 @end defun
 
 @defun enum-type-contains? etype enum
 [SRFI-209]
 @c MOD srfi-209
+Returns @code{#t} iff enum type @var{etype} contains @var{enum},
+@code{#f} otherwise.
 @end defun
 
 @defun enum-name->enum etype symbol
 [SRFI-209]
 @c MOD srfi-209
+Returns an enum object in @var{etype} whose name is @var{symbol}.
+If @var{etype} doesn't have an enum of such name, @code{#f} is returned.
 @end defun
 
 @defun enum-ordinal->enum etype n
 [SRFI-209]
 @c MOD srfi-209
+Returns @var{n}-th enum of @var{etype}.
+If @var{n} is over the range of enums in @var{etype}, @code{#f} is returned.
 @end defun
 
 @defun enum-name->ordinal etype symbol
 [SRFI-209]
 @c MOD srfi-209
+Returns the ordinal of the enum in @var{etype} whose name is @var{symbol}.
+An error is thrown if @var{etype} doesn't have such symbol.
 @end defun
 
 @defun enum-name->value etype symbol
 [SRFI-209]
 @c MOD srfi-209
+Returns the value of the enum in @var{etype} whose name is @var{symbol}.
+An error is thrown if @var{etype} doesn't have such symbol.
+@end defun
+
+@defun enum-ordinal->name etype n
+[SRFI-209]
+@c MOD srfi-209
+Returns the name of the @var{n}-th enum of @var{etype}.
+An error is thrown if @var{n} is out of the range.
 @end defun
 
 @defun enum-ordinal->value etype n
 [SRFI-209]
 @c MOD srfi-209
+Returns the value of the @var{n}-th enum of @var{etype}.
+An error is thrown if @var{n} is out of the range.
 @end defun
 
 @defun make-enum-comparator etype
 [SRFI-209]
 @c MOD srfi-209
+Returns a comparator that can compare two enums that belong to @var{etype}.
+@xref{Comparators}, for the details of comparators.
 @end defun
 
 @subheading Enums
@@ -11401,6 +11424,7 @@ Each @var{element} must be a fixnum.
 @defun iset-unfold p f g seed
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Constructs an iset whose element is computed procedurally.
 
 The @var{p} argument is called with a current seed value.  If it returns
@@ -11413,6 +11437,17 @@ The @var{g} argument is called with a current seed value, and returns
 the next seed value.
 
 The @var{seed} argument gives the initial seed.
+@c JP
+手続的に要素を計算して整数集合を作ります。
+
+@var{p}は現在の状態値を引数に取り、それが@code{#t}を返せば繰り返しを終了します。
+
+@var{f}は現在の状態値を引数に取り、集合に含めるべきfixnumを返します。
+
+@var{g}は現在の状態値を引数に取り、次の状態値を返します。
+
+@var{seed}は状態値の初期値を指定します。
+@c COMMON
 
 @example
 (iset->list
@@ -11424,9 +11459,15 @@ The @var{seed} argument gives the initial seed.
 @defun make-range-iset start end :optional step
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Creates an iset that contains each fixnum in
 @code{(numeric-range @var{start} @var{end} @var{step})}.
 @xref{Range}, for the details of ranges.
+@c JP
+@code{(numeric-range @var{start} @var{end} @var{step})}で生成されるレンジ
+に含まれるfixnumを要素とする整数集合を作って返します。
+レンジについては@ref{Range}を参照してください。
+@c COMMON
 
 @example
 (iset->list (make-range-iset 0 5))
@@ -11434,48 +11475,83 @@ Creates an iset that contains each fixnum in
 @end example
 @end defun
 
+@c EN
 @subheading Predicates
+@c JP
+@subheading 述語
+@c COMMON
 
 @defun iset? obj
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns @code{#t} iff @var{obj} is an iset.
+@c JP
+@var{obj}が整数集合なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun iset-contains? iset element
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns @code{#t} iff @var{iset} contains @var{element}.
+@c JP
+@var{iset}が@var{element}を要素に持っていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun iset-empty? iset
 [SRFI-217]
 @c MOD srfi-217
-Returns @code{#t} iff @var{iset} is empty.  An error is thrown if
-an object other than an iset is passed.
+@c EN
+Returns @code{#t} iff @var{iset} is empty.
+@c JP
+@var{iset}が空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun iset-disjoint? iset1 iset2
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Both arguments must be an iset.  Returns @code{#t} iff no element belongs
 to both isets.
+@c JP
+引数はともに整数集合でなければなりません。
+両方に共通する要素が無ければ@code{#t}を、あれば@code{#f}を返します。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Accessors
+@c JP
+@subheading アクセサ
+@c COMMON
 
 @defun iset-member iset element default
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns @var{element} if it is contained in @var{iset}, otherwise @var{default}.
+@c JP
+@var{element}が@var{iset}の要素であればそれを、
+でなければ@var{default}を返します。
+@c COMMON
 @end defun
 
 @defun iset-min iset
 @defunx iset-max iset
 [SRFI-217]
 @c MOD srfi-217
+@c EN
 Returns the minimum and the maximum element in @var{iset}.  If
 @var{iset} is empty, returns @code{#f}.
+@c JP
+@var{iset}の最小または最大の要素を返します。
+@var{iset}が空の場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
 @c EN
@@ -11735,10 +11811,10 @@ Returns @code{#t} if every element in @var{iset} satisfies @var{pred},
 @c EN
 Creates and returns a new iset whose elements consist of
 the result of @var{proc} applied to each element of the given @var{iset}.
-An error is signaled if @var{proc} doesn't return an exact integer.
+An error is signaled if @var{proc} doesn't return a fixnum.
 @c JP
 @var{iset}の各要素に@var{proc}を適用し、その結果を集めた@var{iset}を作って返します。
-@var{proc}の戻り値が正確な整数でなければエラーが投げられます。
+@var{proc}の戻り値がfixnumでなければエラーが投げられます。
 @c COMMON
 
 @c EN
@@ -11871,9 +11947,9 @@ Returns a list of elements in @var{iset}, in increasing order.
 @c MOD srfi-217
 @c EN
 Returns an iset that contains elements in @var{list}.  The elements
-in @var{list} must be exact integers.  Duplicate elements are consolidated.
+in @var{list} must be fixnums.  Duplicate elements are consolidated.
 @c JP
-@var{list}は正確な整数のリストでなければなりません。
+@var{list}はfixnumのリストでなければなりません。
 それらを要素として持つ整数集合を作って返します。重複する要素はひとつにまとめられます。
 @c COMMON
 @end defun
@@ -11883,9 +11959,10 @@ in @var{list} must be exact integers.  Duplicate elements are consolidated.
 @c MOD srfi-217
 @c EN
 Returns an iset consists of the elements from @var{iset} and @var{list}.
+All the elements must be fixnums.
 It may reuse the given @var{iset} to store the result.
 @c JP
-@var{iset}に、正確な整数のリスト@var{list}を要素として足した整数集合を返します。
+@var{iset}に、fixnumのリスト@var{list}を要素として足した整数集合を返します。
 引数@var{iset}は結果を作るために破壊的に再利用されるかもしれません。
 @c COMMON
 @end defun
