@@ -264,7 +264,8 @@
 
 (define (range=? elt= . ranges)
   (or (null? ranges)
-      (and (assume (range? (car ranges))) (null? (cdr ranges)))
+      (and (assume (range? (car ranges)) "Range required, but got:" (car ranges))
+           (null? (cdr ranges)))
       (let1 len (range-length (car ranges))
         (every?-ec (: r (cdr ranges))
                    (and (= len (range-length r))
@@ -277,7 +278,7 @@
 ;;;
 
 (define (range-length range)
-  (assume (range? range))
+  (assume (range? range) "Range required, but got:" range)
   (~ range'length))
 
 ;; The optional fallback is Gauche extension
@@ -313,9 +314,9 @@
 
 (define (subrange range start end)
   (assume-type range <range>)
-  (if (> (- end start) (range-length range))
-    (error "subrange start/end index out of original range:"
-           (list range start end)))
+  (assume (<= start end (range-length range))
+          "Subrange start/end index out of original range:"
+          range start end)
   (if (is-a? range <subrange>)
     ;; We flatten the range
     (make <subrange>
