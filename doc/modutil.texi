@@ -5122,6 +5122,19 @@ The optional @var{start} and @var{end} arguments limits the
 range of the uniorm vector to be used.
 @end defun
 
+@defun bitvector/bool-range bvec :optional start end
+@defunx bitvector/int-range bvec :optional start end
+@c MOD data.range
+Returns a range over the given bitvector @var{bvec}.
+@code{Bitvector/bool-range} regards @var{bvec} as a boolean vector,
+while @code{bitvector/int-range} regards it as a vector of 0 and 1.
+@xref{Bitvectors}, for the details of bitvectors.
+Note that @var{bvec} is kept in the range, so you shouldn't mutate @var{uvec}.
+
+The optional @var{start} and @var{end} arguments limits the
+range of the uniorm vector to be used.
+@end defun
+
 @defun string-range str :optional start end
 [SRFI-196]
 @c MOD data.range
