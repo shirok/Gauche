@@ -11156,11 +11156,19 @@ Returns a comparator that can compare two enums that belong to @var{etype}.
 @defunx enum-value enum
 [SRFI-209]
 @c MOD srfi-209
+Returns enum's type (@code{<enum-type>} instance), enum's name (symbol),
+enum's ordinal (nonnegative exact integer), and enum's value (any object),
+respectively.
+
+Note that enum objects can only be constructed with the enum type
+it belongs (by @code{define-enum} or @code{make-enum-type}), and
+they are immutable.
 @end defun
 
 @defun enum? obj
 [SRFI-209]
 @c MOD srfi-209
+Returns @code{#t} if @var{obj} is an enum, @code{#f} otherwise.
 @end defun
 
 @defun enum=? enum0 enum1 enums ...
@@ -11170,16 +11178,26 @@ Returns a comparator that can compare two enums that belong to @var{etype}.
 @defunx enum>=? enum0 enum1 enums ...
 [SRFI-209]
 @c MOD srfi-209
+These comapres enums by its ordinals.  All the enums must belong
+to the same enum type, or an error is thrown.
 @end defun
 
 @defun enum-next enum
 [SRFI-209]
 @c MOD srfi-209
+Returns the next enum of @var{enum}, that is,
+an enum that belongs to the same enum type as @var{enum} and
+has an incremented ordinal.  If @var{enum} is the last enum of
+its type, @code{#f} is returned.
 @end defun
 
 @defun enum-prev enum
 [SRFI-209]
 @c MOD srfi-209
+Returns the previous enum of @var{enum}, that is,
+an enum that belongs to the same enum type as @var{enum} and
+has a decremented ordinal.  If @var{enum} is the first enum of
+its type, @code{#f} is returned.
 @end defun
 
 @subheading Enum sets
@@ -11187,51 +11205,72 @@ Returns a comparator that can compare two enums that belong to @var{etype}.
 @defun enum-type->enum-set etype
 [SRFI-209]
 @c MOD srfi-209
+Returns an enum set that contains all enums in the enum type @var{etype}.
 @end defun
 
 @defun enum-set etype enum @dots{}
 [SRFI-209]
 @c MOD srfi-209
+Returns an enum set that contains @var{enum} @dots{} of an enum type
+@var{etype}.  An error is thrown unless all @var{enum} @dots{} belong
+to @var{etype}.
 @end defun
 
 @defun enum-empty-set etype
 [SRFI-209]
 @c MOD srfi-209
+Returns an empty enum set for the enum type @var{etype}.
 @end defun
 
 @defun list->enum-set etype enum-list
 [SRFI-209]
 @c MOD srfi-209
+Returns an enum set of an enum type @var{etype}, contaning enums
+listed in @var{enum-list}.  If @var{enum-list} contains anything
+other than enums from @var{etype}, an error is thrown.
 @end defun
 
 @defun enum-set-projection etype-or-eset eset
 [SRFI-209]
 @c MOD srfi-209
+The @var{etype-or-eset} argument must be an enum type or an enum set.
+Returns a new enum set on an enum type @var{etype-or-eset} (if it is
+an enum set, its enum type is used), which contains enums
+having the same names as the names of enums contained in @var{eset}.
+The @var{eset}'s enum type doesn't need to be the same as the
+result enum set.
 @end defun
 
 @defun enum-set-copy eset
 [SRFI-209]
 @c MOD srfi-209
+Returns a copy of an enum set @var{eset}.
 @end defun
 
 @defun enum-set? obj
 [SRFI-209]
 @c MOD srfi-209
+Returns @code{#t} if @var{obj} is an enum set, @code{#f} otherwise.
 @end defun
 
 @defun enum-set-contains? eset enum
 [SRFI-209]
 @c MOD srfi-209
+Returns @code{#t} if @var{enum} is a member of @var{eset}, @code{#f} otherwise.
 @end defun
 
 @defun enum-set-empty? eset
 [SRFI-209]
 @c MOD srfi-209
+Returns a@code{#t} if @var{eset} is empty.
 @end defun
 
 @defun enum-set-disjoint? eset1 eset2
 [SRFI-209]
 @c MOD srfi-209
+Returns @var{#t} if two enum sets on the same enum type share
+no common enums.  An error is thrown unless @var{eset1} and @var{eset2}
+are for the same enum type..
 @end defun
 
 @defun enum-set=? eset1 eset2
@@ -11241,6 +11280,8 @@ Returns a comparator that can compare two enums that belong to @var{etype}.
 @defunx enum-set>=? eset1 eset2
 [SRFI-209]
 @c MOD srfi-209
+This determines subset relationship of two enum sets.  Both enum sets
+must be for the same enum type, or an error is thrown.
 @end defun
 
 @defun enum-set-subset? eset1 eset2
