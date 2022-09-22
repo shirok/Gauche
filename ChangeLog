@@ -1,3 +1,8 @@
+2022-09-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (write-object <class>): Show 'redefined' for
+	  class objects with custom metaclass.
+
 2022-09-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/range.scm (bitvector/bool-range, bitvector/int-range):

@@ -500,11 +500,23 @@
 (define (class-slot-bound? class slot-name)
   (apply (%class-slot-gns class slot-name 'bound?) '(#f)))
 
-;; default class printer.  Avoid using class-name so that in case
-;; when obj's class has been redefined, this wouldn't trigger updating obj.
+;; Default class printer.  This is only called if the class is an instance
+;; of a metaclass other than <class>.  (If it's <class>, built-in print
+;; method is called; see class.c)
+;; Avoid using directly access the slots of obj, so that it won't trigger
+;; updating obj in case when obj's class has been redefined.
+;; We also need a cproc to check if OBJ is redefined; for, accessing
+;; 'redefined' slot needs to lock OBJ, which blocks when OBJ is being
+;; redefined.
 (define-method write-object ((obj <class>) out)
-  (format out "#<class ~a>"
-          (slot-ref-using-class (current-class-of obj) obj 'name)))
+  (let1 name (slot-ref-using-class (current-class-of obj) obj 'name)
+    (if (%class-redefined? obj)
+      (format out "#<class ~a (redefined)>" name)
+      (format out "#<class ~a>" name))))
+
+(define-cproc %class-redefined? (obj) ::<boolean>
+  (return (and (SCM_ISA obj SCM_CLASS_CLASS)
+               (not (SCM_FALSEP (-> (cast ScmClass* obj) redefined))))))
 
 ;; convenient routine to push/pop a value to the slot.
 ;; this can be optimized later.
