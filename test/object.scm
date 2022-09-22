@@ -1040,6 +1040,16 @@
        '(A b C x Y z)
        (map (cut slot-ref *docu-sub* <>) '(a b c x y z)))
 
+
+;; https://github.com/shirok/Gauche/issues/845
+(define-class <issue845-meta> (<class>) ())
+(define-class <issue845> () () :metaclass <issue845-meta>)
+(define issue845 (make <issue845>))
+(define-class <issue845-meta> (<class>) ())
+(define-class <issue845> () () :metaclass <issue845-meta>)
+(test* "refefinition of metaclass" #t
+       (is-a? issue845 <issue845>))
+
 ;;----------------------------------------------------------------
 (test-section "metaclass/bound-slot")
 

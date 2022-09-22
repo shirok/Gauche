@@ -57,14 +57,23 @@
 
 (define-generic class-redefinition)
 (define-method class-redefinition ((old <class>) (new <class>))
+  ;; Be careful to access slot values of OLD.  If OLD has a metaclass
+  ;; which itself is redefined, using slot-ref triggers update-instance
+  ;; on OLD and we lose old'redefined.
   (for-each (^m (if (is-a? m <accessor-method>)
                   (delete-method! (slot-ref m 'generic) m)
                   (update-direct-method! m old new)))
-            (class-direct-methods old))
+            (slot-ref-using-class (current-class-of old)
+                                  old
+                                  'direct-methods))
   (for-each (^[sup] (%delete-direct-subclass! sup old))
-            (class-direct-supers old))
+            (slot-ref-using-class (current-class-of old)
+                                  old
+                                  'direct-supers))
   (for-each (^[sub] (update-direct-subclass! sub old new))
-            (class-direct-subclasses old))
+            (slot-ref-using-class (current-class-of old)
+                                  old
+                                  'direct-subclasses))
   )
 
 (define-generic update-direct-subclass!)

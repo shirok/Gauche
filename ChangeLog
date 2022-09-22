@@ -1,5 +1,9 @@
 2022-09-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/redefutil.scm (class-redefinition): Fix redefining
+	  a class with redefined metaclass
+	  https://github.com/shirok/Gauche/issues/845
+
 	* src/libobj.scm (write-object <class>): Show 'redefined' for
 	  class objects with custom metaclass.
 
