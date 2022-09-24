@@ -226,22 +226,27 @@
     (format port "#<reg ~a(~a)>" (~ reg'name) (lvar-name lvar))
     (format port "#<reg ~a>" (~ reg'name))))
 
-(define (make-reg bb lvar)
+;; The ARG? argument is #t iff reg is for lambda formals.  In that case,
+;; created reg is introduced in the entry BB, but it is only read in the
+;; BB, not written.
+(define (make-reg bb lvar :optional (arg? #f))
   (define (lookup benv lvar)
     (or (hash-table-get (~ benv'regmap) lvar #f)
         (and-let1 parent (~ benv'parent)
           (lookup parent lvar))))
   (if-let1 reg (lookup (~ bb'benv) lvar)
     (use-reg! bb reg)
-    (let* ([symname (and lvar (unwrap-syntax (lvar-name lvar)))]
-           [name (string->symbol (format "%~d.~d~a" (benv-depth (~ bb'benv))
-                                         (length (~ bb'benv'registers))
+    (let* ([benv (~ bb'benv)]
+           [symname (and lvar (unwrap-syntax (lvar-name lvar)))]
+           [name (string->symbol (format "%~d.~d~a" (benv-depth benv)
+                                         (length (~ benv'registers))
                                          (if symname #".~symname" "")))])
       (rlet1 reg (make <reg> :name name :lvar lvar :introduced bb)
-        (push! (~ bb'benv'registers) reg)
-        (push! (~ reg'used) bb)
-        (use-reg! bb reg #t)
-        (when lvar (hash-table-put! (~ bb'benv'regmap) lvar reg))))))
+        (push! (~ benv'registers) reg)
+        (when bb
+          (push! (~ reg'used) bb)
+          (use-reg! bb reg (if arg? #f #t)))
+        (when lvar (hash-table-put! (~ benv'regmap) lvar reg))))))
 
 ;; If reg is used within BB, record the fact.
 (define (use-reg! bb reg :optional (assign? #f))
@@ -535,7 +540,7 @@
          [lbb (~ lbenv'entry)]
          [reg (make-reg bb #f)])
     (set! (~ lbenv'input-regs)
-          (map (cut make-reg lbb <>) ($lambda-lvars iform)))
+          (map (cut make-reg lbb <> #t) ($lambda-lvars iform)))
     (set! (~ lbenv'input-reqargs) ($lambda-reqargs iform))
     (set! (~ lbenv'input-optargs) ($lambda-optarg iform))
     (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb lbenv 'tail)
@@ -850,7 +855,7 @@
                            [visited (set-adjoin! visited bb)])
                   (if (null? bbs)
                     (begin
-                      (when alive (push-unique! (~ reg'used) bb))
+                      (when alive (use-reg! bb reg))
                       (values alive
                               (if alive (set-adjoin! routes bb) routes)
                               visited))
