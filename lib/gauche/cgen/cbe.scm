@@ -263,11 +263,9 @@
 
 (define (cluster-prologue c)
   ;; Set up registers
-  (when (cluster-has-incoming-regs? c)
-    (let1 off (if (cluster-needs-dispatch? c) 1 0)
-      (for-each-with-index
-       (^[i r] (cgen-body #"  ScmObj ~(R r) = DATA[~(+ i off)];"))
-       (cluster-incoming-regs c))))
+  (for-each
+   (^r (cgen-body #"  ScmObj ~(R r);"))
+   (cluster-incoming-regs c))
   (for-each
    (^r (cgen-body #"  ScmObj ~(R r);"))
    (cluster-outgoing-regs c))
@@ -275,12 +273,21 @@
    (^r (cgen-body #"  ScmObj ~(R r);"))
    (cluster-ephemeral-regs c))
   ;; Jump table
-  (when (cluster-needs-dispatch? c)
-    (cgen-body #"  switch ((intptr_t)DATA[0]) {")
+  (if (cluster-needs-dispatch? c)
+    (begin
+      (cgen-body #"  switch ((intptr_t)DATA[0]) {")
+      (for-each-with-index
+       (^[i bb]
+         (cgen-body #"    case ~|i|:")
+         (for-each-with-index
+          (^[i r] (cgen-body #"      ~(R r) = DATA[~(+ i 1)];"))
+          (bb-incoming-regs bb))
+         (cgen-body #"      goto ~(block-label bb);"))
+       (~ c'entry-blocks))
+      (cgen-body #"  }"))
     (for-each-with-index
-     (^[i bb] (cgen-body #"    case ~|i|: goto ~(block-label bb);"))
-     (~ c'entry-blocks))
-    (cgen-body #"  }"))
+     (^[i r] (cgen-body #"  ~(R r) = DATA[~i];"))
+     (bb-incoming-regs (car (~ c'entry-blocks)))))
   )
 
 ;; Returns bb's entry index.
@@ -291,6 +298,7 @@
 (define (gen-entry benv)                ;returns cfn name
   (and-let* ([entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
                                   (~ benv'clusters))]
+             [entry-block (last (~ entry-cluster'blocks))]
              [entry-cfn (cluster-cfn-name entry-cluster)])
     (cgen-body #"static ScmObj ~(benv-cfn-name benv)("
                #"                  ScmObj *SCM_FP,"
@@ -300,18 +308,17 @@
     (if (cluster-has-incoming-regs? entry-cluster)
       ;; set up env
       (let* ([off (if (cluster-needs-dispatch? entry-cluster) 1 0)]
-             [env-size (+ (size-of (cluster-incoming-regs entry-cluster))
-                          off)])
-        (cgen-body #"  ScmObj data[~(+ env-size 1)];")
+             [env-size (+ (size-of (bb-incoming-regs entry-block)) off)])
+        (cgen-body #"  ScmObj data[~env-size];")
         (when (cluster-needs-dispatch? entry-cluster)
-          (let1 i (entry-block-index (last (~ entry-cluster'blocks)))
+          (let1 i (entry-block-index entry-block)
             (cgen-body #"  data[0] = SCM_OBJ(~i);")))
         (do-ec [: ireg (index i) (~ benv'input-regs)]
                (let1 pos
                    (find-index (cut eq? ireg <>)
-                               (cluster-incoming-regs entry-cluster))
+                               (bb-incoming-regs entry-block))
                  (assume pos)
-                 (cgen-body #"  data[~(+ pos off)] = SCM_FP[~i];")))
+                 (cgen-body #"  data[~(+ pos off)] = SCM_FP[~i]; /* ~(~ ireg'name) */")))
         (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);"))
       ;; no need to set up env
       (if (cluster-needs-dispatch? entry-cluster)
@@ -329,13 +336,13 @@
            [index (entry-block-index dest-bb)]
            [cfn (cluster-cfn-name dest-c)]
            [off (if (cluster-needs-dispatch? dest-c) 1 0)]
-           [env-size (+ (size-of (cluster-incoming-regs dest-c))
+           [env-size (+ (size-of (bb-incoming-regs dest-bb))
                         off)])
       (cgen-body #"  {"
                  #"    ScmObj data[~|env-size|];")
       (when (= off 1)
         (cgen-body #"    data[0] = SCM_OBJ(~index);"))
-      (prepare-env c (~ dest-bb'cluster) off)
+      (prepare-env c dest-bb off)
       (cgen-body #"    return ~|cfn|(vm, SCM_FALSE, data);"
                  #"  }"))))
 
@@ -344,12 +351,12 @@
          [index (entry-block-index dest-bb)]
          [cfn (cluster-cfn-name dest-c)]
          [off (if (cluster-needs-dispatch? dest-c) 1 0)]
-         [env-size (+ (size-of (cluster-incoming-regs dest-c)) off)])
+         [env-size (+ (size-of (bb-incoming-regs dest-bb)) off)])
     (cgen-body #"  {"
                #"    ScmObj *data = Scm_pc_PushCC(vm, ~|cfn|, ~|env-size|);")
     (when (= off 1)
       (cgen-body #"    data[0] = SCM_OBJ(~index);"))
-    (prepare-env c dest-c off)
+    (prepare-env c dest-bb off)
     (cgen-body #"  }")))
 
 (define (gen-vmcall c proc regs)
@@ -367,13 +374,12 @@
     [else
      (cgen-body #"  return Scm_VMApply(~(R proc), ~(gen-list c regs));")]))
 
-;; Generate code that construct env struct for destination cluster (dest-c)
-;; from the env of current cluster (c).  The C variable name for the new
-;; env is ENV2.
-(define (prepare-env c dest-c offset)
+;; Generate code that construct env struct for destination BB (dest-bb)
+;; from the env of current cluster (c).
+(define (prepare-env c dest-bb offset)
   (for-each-with-index
    (^[i r] (cgen-body #"    data[~(+ i offset)] = ~(R r);"))
-   (cluster-incoming-regs dest-c)))
+   (bb-incoming-regs dest-bb)))
 
 (define (gen-list c regs)
   (define (rec regs)

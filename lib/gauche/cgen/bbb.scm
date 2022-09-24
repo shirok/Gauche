@@ -43,13 +43,14 @@
   (export compile-b
           compile-b/dump  ; for debugging
 
+          bb-name bb-incoming-regs
+
           cluster-needs-dispatch?
           cluster-ephemeral-regs
           cluster-incoming-regs cluster-has-incoming-regs?
           cluster-outgoing-regs cluster-has-outgoing-regs?
 
           dump-benv
-          bb-name
           <reg>
           <const> const-value)
   )
@@ -317,6 +318,13 @@
   (push! (~ bb'insns) insn))
 
 (define (last-insn bb) (and (pair? (~ bb'insns)) (car (~ bb'insns))))
+
+;; Returns a vetor of registers that needs to be received from a caller,
+;; if this bb is an entry bb.
+;; Need to be called after register lifetime analysis.
+(define (bb-incoming-regs bb)
+  (list->vector (filter-map (^p (and (eq? (cdr p) 'r) (car p)))
+                            (reverse (~ bb'reg-use)))))
 
 ;; A 'complete' basic block is the one that ends with either
 ;; CALL, BR, JP or RET insn.
