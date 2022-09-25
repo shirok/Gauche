@@ -279,15 +279,7 @@
 
 (define (cluster-prologue c)
   ;; Set up registers
-  (for-each
-   (^r (cgen-body #"  ScmObj ~(R r);"))
-   (cluster-incoming-regs c))
-  (for-each
-   (^r (cgen-body #"  ScmObj ~(R r);"))
-   (cluster-outgoing-regs c))
-  (for-each
-   (^r (cgen-body #"  ScmObj ~(R r);"))
-   (cluster-ephemeral-regs c))
+  (dolist [r (cluster-regs c)] (cgen-body #"  ScmObj ~(R r);"))
   ;; Jump table
   (if (cluster-needs-dispatch? c)
     (begin

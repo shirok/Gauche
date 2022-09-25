@@ -45,10 +45,8 @@
 
           bb-name bb-incoming-regs
 
+          cluster-regs
           cluster-needs-dispatch?
-          cluster-ephemeral-regs
-          cluster-incoming-regs
-          cluster-outgoing-regs cluster-has-outgoing-regs?
 
           dump-benv
           <reg>
@@ -346,16 +344,6 @@
    (entry-blocks :init-value '()) ; BBs to be jumped from another cluster
    (upstream :init-value '())   ;upstream clustres
    (downstream :init-value '()) ;downstream clusters
-   ;; Classified register mappings.  Each contains a vector of registers.
-   ;; These are set after all registers are classified.  Use accessor proc
-   ;; to obtain these values.
-   ;;  EPHEMERAL-REGS - registers only live within this cluster.
-   ;;  INCOMING-REGS - registers created in an upstream cluster.
-   ;;  OUTGOING-REGS - registers introduced in this cluster and carried over
-   ;;                  to other clusters
-   (ephemeral-regs :init-value #f)
-   (incoming-regs :init-value #f)
-   (outgoing-regs :init-value #f)
    ;; Register classification.  Used internally.
    ;;  XREGS - Regs outlive this cluster
    ;;  LREGS - Regs local to this cluster
@@ -371,26 +359,9 @@
 (define (cluster-needs-dispatch? c)
   (length>? (~ c'entry-blocks) 1))
 
-(define (cluster-ephemeral-regs c)
-  (or (~ c'ephemeral-regs)
-      (list->vector (set->list (~ c'lregs)))))
-
-(define (cluster-incoming-regs c)
-  (or (~ c'incoming-regs)
-      ($ list->vector
-         $ remove (^r (and (memq (~ r'introduced) (~ c'blocks))
-                           (not (memq r (~ c'benv'input-regs)))))
-         $ set->list (~ c'xregs))))
-
-(define (cluster-outgoing-regs c)
-  (or (~ c'outgoing-regs)
-      ($ list->vector
-         $ filter (^r (and (memq (~ r'introduced) (~ c'blocks))
-                           (not (memq r (~ c'benv'input-regs)))))
-         $ set->list (~ c'xregs))))
-
-(define (cluster-has-outgoing-regs? c)
-  (> (vector-length (cluster-outgoing-regs c)) 0))
+;; Retunrs a list of cluster registers.  The order is undefined.
+(define (cluster-regs c)
+  (set-fold cons (set-fold cons '() (~ c'lregs)) (~ c'xregs)))
 
 ;;
 ;; Conversion to basic blocks
