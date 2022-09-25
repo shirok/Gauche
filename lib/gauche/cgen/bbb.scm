@@ -199,6 +199,7 @@
    (entry :init-value #f)                     ; entry BB
    (blocks :init-value '())                   ; basic blocks
    (clusters :init-value '())                 ; clusters
+   (globals :init-value '())                  ; list of global identifiers
    (parent :init-keyword :parent)             ; parent benv
    (children :init-value '())))
 
@@ -446,11 +447,13 @@
 (define (pass5b/$GREF iform bb benv ctx)
   (let1 r (make-reg bb #f)
     (push-insn bb `(LD ,r ,($gref-id iform)))
+    (push-unique! (~ bb'benv'globals) ($gref-id iform))
     (pass5b/return bb ctx r)))
 
 (define (pass5b/$GSET iform bb benv ctx)
   (receive (bb val0) (pass5b/rec ($gset-expr iform) bb benv 'normal)
     (push-insn bb `(ST ,val0 ,($gref-id iform)))
+    (push-unique! (~ bb'benv'globals) ($gref-id iform))
     (pass5b/return bb ctx #f)))
 
 (define (pass5b/$CONST iform bb benv ctx)
