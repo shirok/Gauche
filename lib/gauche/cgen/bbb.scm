@@ -47,7 +47,7 @@
 
           cluster-needs-dispatch?
           cluster-ephemeral-regs
-          cluster-incoming-regs cluster-has-incoming-regs?
+          cluster-incoming-regs
           cluster-outgoing-regs cluster-has-outgoing-regs?
 
           dump-benv
@@ -381,9 +381,6 @@
          $ remove (^r (and (memq (~ r'introduced) (~ c'blocks))
                            (not (memq r (~ c'benv'input-regs)))))
          $ set->list (~ c'xregs))))
-
-(define (cluster-has-incoming-regs? c)
-  (> (vector-length (cluster-incoming-regs c)) 0))
 
 (define (cluster-outgoing-regs c)
   (or (~ c'outgoing-regs)

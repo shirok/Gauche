@@ -315,32 +315,26 @@
   (and-let* ([entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
                                   (~ benv'clusters))]
              [entry-block (last (~ entry-cluster'blocks))]
-             [entry-cfn (cluster-cfn-name entry-cluster)])
+             [entry-cfn (cluster-cfn-name entry-cluster)]
+             [incoming-regs (bb-incoming-regs entry-block)])
     (cgen-body #"static ScmObj ~(benv-cfn-name benv)("
                #"                  ScmObj *SCM_FP,"
                #"                  int SCM_ARGCNT SCM_UNUSED,"
                #"                  void *data_ SCM_UNUSED)"
                #"{")
-    (if (cluster-has-incoming-regs? entry-cluster)
-      ;; set up env
-      (let* ([off (if (cluster-needs-dispatch? entry-cluster) 1 0)]
-             [env-size (+ (size-of (bb-incoming-regs entry-block)) off)])
-        (cgen-body #"  ScmObj data[~env-size];")
-        (when (cluster-needs-dispatch? entry-cluster)
-          (let1 i (entry-block-index entry-block)
-            (cgen-body #"  data[0] = SCM_OBJ(~i);")))
-        (do-ec [: ireg (index i) (~ benv'input-regs)]
-               (let1 pos
-                   (find-index (cut eq? ireg <>)
-                               (bb-incoming-regs entry-block))
-                 (assume pos)
-                 (cgen-body #"  data[~(+ pos off)] = SCM_FP[~i]; /* ~(~ ireg'name) */")))
-        (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);"))
-      ;; no need to set up env
-      (if (cluster-needs-dispatch? entry-cluster)
-        (cgen-body #"  ScmObj data[1];"
-                   #"  data[0] = SCM_OBJ(0);"
-                   #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);")
+    (let* ([off (if (cluster-needs-dispatch? entry-cluster) 1 0)]
+           [env-size (+ (size-of incoming-regs) off)])
+      (when (> env-size 0)
+        (cgen-body #"  ScmObj data[~env-size];"))
+      (when (cluster-needs-dispatch? entry-cluster)
+        (let1 i (entry-block-index entry-block)
+          (cgen-body #"  data[0] = SCM_OBJ(~i);")))
+      (do-ec [: ireg (index i) (~ benv'input-regs)]
+             (let1 pos (find-index (cut eq? ireg <>) incoming-regs)
+               (assume pos)
+               (cgen-body #"  data[~(+ pos off)] = SCM_FP[~i]; /* ~(~ ireg'name) */")))
+      (if (> env-size 0)
+        (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);")
         (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, NULL);")))
     (cgen-body "}" "")
     (benv-cfn-name benv)))
