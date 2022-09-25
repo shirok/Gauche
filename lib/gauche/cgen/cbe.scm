@@ -49,6 +49,16 @@
   (export compile->c compile-link-toplevel))
 (select-module gauche.cgen.cbe)
 
+;; We track global variable reference for entire compilation unit, so that
+;; gloc lookup is done in init routine at once.
+;; GLOBALS slot maps identifier to C variable name that keeps gloc.
+(define-class <cbe-unit> (<cgen-unit>)
+  ((globals :init-form (make-hash-table (make-comparator wrapped-identifier?
+                                                         free-identifier=?
+                                                         #f
+                                                         default-hash)))))
+
+;; Generate unique name for temporary files
 (define name-gen
   (let1 rs (make-random-source)
     (random-source-randomize! rs)
@@ -56,7 +66,7 @@
 
 ;; API is experimental
 (define (compile->c source.scm)
-  (parameterize ([cgen-current-unit (make <cgen-unit>
+  (parameterize ([cgen-current-unit (make <cbe-unit>
                                       :name (path-sans-extension source.scm))])
     (cgen-decl "#include <gauche.h>"
                "#include <gauche/precomp.h>"
@@ -68,7 +78,7 @@
 ;; For easier experiment.
 (define (compile-link-toplevel form)
   (let1 name #"cgen_~(ulid->string (name-gen))"
-    (parameterize ([cgen-current-unit (make <cgen-unit> :name name)])
+    (parameterize ([cgen-current-unit (make <cbe-unit> :name name)])
       (cgen-decl "#include <gauche.h>"
                  "#include <gauche/precomp.h>"
                  "")
@@ -89,8 +99,27 @@
                   :init-function #"Scm__Init_~(cgen-safe-name name)")))
 
 (define (compile-toplevel form)
-  (let1 toplevel-cfn (benv->c (compile-b form))
-    (cgen-init #"  ~|toplevel-cfn|(NULL, 0, NULL);")))
+  (let1 benv (compile-b form)
+    (register-globals (cgen-current-unit) benv)
+    (let1 toplevel-cfn (benv->c (compile-b form))
+      (cgen-init #"  ~|toplevel-cfn|(NULL, 0, NULL);"))))
+
+;; scan benvs to register globals
+(define (register-globals unit benv)
+  (dolist [g (~ benv'globals)]
+    (or (hash-table-get (~ unit'globals) g #f)
+        (let* ([gname (identifier->symbol g)]
+               [cname (symbol-append (gensym "global_") "_"
+                                     (cgen-safe-name (symbol->string gname)))]
+               [lit-module (cgen-literal (~ g'module))]
+               [lit-name (cgen-literal gname)])
+          (cgen-decl #"static ScmGloc *~|cname|;")
+          (cgen-init #"  ~cname = Scm_FindBinding("
+                     #"    SCM_MODULE(~(cgen-cexpr lit-module)),"
+                     #"    SCM_SYMBOL(~(cgen-cexpr lit-name)),"
+                     #"    0);")
+          (hash-table-put! (~ unit'globals) g cname))))
+  (dolist [b (~ benv'children)] (register-globals unit b)))
 
 (define (benv->c benv)                  ;returns benv's entry cfn name
   (for-each benv->c (~ benv'children))
@@ -122,23 +151,10 @@
 (define (insn->c c insn)
   (match insn
     [('MOV rd rs) (cgen-body #"  ~(R rd) = ~(R rs);")]
-    [('LD r id) (let1 c-id (cgen-literal id)
-                  (cgen-body
-                   #"  {"
-                   #"    /* ~(cgen-safe-comment (~ id'name)) */"
-                   #"    static ScmGloc *g = NULL;"
-                   #"    if (!g) {"
-                   #"      ~(R r) = Scm_IdentifierGlobalRef(SCM_IDENTIFIER(~(cgen-cexpr c-id)), &g);"
-                   #"    } else {"
-                   #"      ~(R r) = Scm_GlocGetValue(g);"
-                   #"    }"
-                   #"  }"))]
-    [('ST r id)   (let1 c-id (cgen-literal id)
-                    (cgen-body
-                     #"  /* ~(cgen-safe-comment (~ id'name)) */"
-                     #"  Scm_GlobalVariableSet(~(cgen-cexpr c-id),"
-                     #"                        ~(R r),"
-                     #"                        NULL);"))]
+    [('LD r id) (let1 cname (hash-table-get (~ (cgen-current-unit)'globals) id)
+                  (cgen-body #"  ~(R r) = Scm_GlocGetValue(~cname);"))]
+    [('ST r id) (let1 cname (hash-table-get (~ (cgen-current-unit)'globals) id)
+                  (cgen-body #"  Scm_GlocSetValue(~|cname|, ~(R r));"))]
     [('CLOSE r b) (cgen-body #"  ~(R r) ="
                              #"    Scm_MakeSubr(~(benv-cfn-name b),"
                              #"                 NULL,"
