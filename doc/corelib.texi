@@ -30877,7 +30877,7 @@ To show all the information, set @code{#f} to this parameter.
 @c COMMON
 @end deffn
 
-@defmac debug-funcall (proc arg ...)
+@defmac debug-funcall (proc arg @dots{})
 @c EN
 This macro prints the value of @var{arg}s right before calling
 @var{proc} and the result(s) of the call afterwards.
@@ -30901,6 +30901,45 @@ details.
 @c JP
 特別なリーダ構文 @code{#?,@var{expr}} は @code{(debug-funcall @var{expr})}
 に展開されます。詳しくは @ref{Debugging} を参照してください。
+@c COMMON
+@end defmac
+
+@defmac debug-print-conditionally test expr
+@defmacx debug-funcall-conditionally test (proc arg @dots{})
+@c EN
+Works like @code{debug-print} and @code{debug-funcall}, but
+prints out the debug info ony when @var{test} evaluates to true.
+
+These are functionally equivalent to the following code:
+@c JP
+@code{debug-print}および@code{debug-funcall}のように動作しますが、
+@var{test}が真の値に評価された時のみデバッグ出力を表示します。
+
+これらは次のコードと機能的には同じです。
+@c COMMON
+
+@example
+(if test
+  (debug-print expr)
+  expr)
+
+(if test
+  (debug-funcall (proc arg @dots{}))
+  (proc arg @dots{}))
+@end example
+
+@c EN
+The special reader syntax @code{#??=@var{test} @var{expr}} and
+@code{#??,@var{test} @var{expr}} are expanded into
+@code{(debug-print-conditionally @var{test} @var{expr})} and
+@code{(debug-funcall-conditionally @var{test} @var{expr})}, respectively.
+See @ref{Debugging}, for the details.
+@c JP
+特別なリーダ構文 @code{#??=@var{test} @var{expr}} および
+@code{#??,@var{test} @var{expr}} はそれぞれ
+@code{(debug-print-conditionally @var{test} @var{expr})} と
+@code{(debug-funcall-conditionally @var{test} @var{expr})} に展開されます。
+詳しくは @ref{Debugging} を参照してください。
 @c COMMON
 @end defmac
 
