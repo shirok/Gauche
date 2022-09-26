@@ -2103,6 +2103,55 @@ extra parenthesis, and
 (2)デバッグスタブをエディタで探したり取り除いたりするのが極めて簡単、というものです。
 @c COMMON
 
+@c EN
+Simple debug stubs may produce too many output, and you may
+want to limit them when certain conditions are met.  A reader syntax
+@code{#??=@var{test} @var{expr}} and
+@code{#??,@var{test} @var{procedure-call}} works much like
+@code{#??=@var{expr}} and @code{#?,@var{procedure-call}}, but
+only when @var{test} yields true:
+@c JP
+単純なデバッグスタブではしばしば大量にデバッグ出力が出てしまうので、
+特定の条件に合致した時のみ出力を見たいことがあるかもしれません。
+リーダー構文@code{#??=@var{test} @var{expr}}と
+@code{#??,@var{test} @var{procedure-call}}は、
+@var{test}が真に評価される時だけそれぞれ
+@code{#??=@var{expr}}および@code{#?,@var{procedure-call}}のように
+動作します。
+@c COMMON
+
+@example
+(define (fib n)
+  (if (< n 2)
+    1
+    #??,(= n 5) (+ (fib (- n 1)) (fib (- n 2)))))
+
+gosh> (fib 7)
+#?,calling `+' with args:
+#?,> 5
+#?,> 3
+#?-    8
+#?,calling `+' with args:
+#?,> 5
+#?,> 3
+#?-    8
+21
+@end example
+
+@c EN
+Internally, @code{#??=@var{test} @var{expr}} and
+@code{#??,@var{test} @var{procedure-call}} are expanded to
+macro calls @code{(debug-print-conditionally @var{test} @var{expr})}
+and @code{(debug-funcallt-conditionally @var{test} @var{procedure-call})}.
+@c JP
+内部的には、@code{#??=@var{test} @var{expr}}と
+@code{#??,@var{test} @var{procedure-call}}はそれぞれマクロ呼び出し
+@code{(debug-print-conditionally @var{test} @var{expr})}と
+@code{(debug-funcallt-conditionally @var{test} @var{procedure-call})}に
+展開されます。
+@c COMMON
+
+
 @c ----------------------------------------------------------------------
 @node Platform-dependent features, Profiling and tuning, Debugging, Programming in Gauche
 @section Using platform-dependent features
