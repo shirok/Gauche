@@ -577,6 +577,21 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                     ScmObj form = read_item(port, ctx);
                     return SCM_LIST2(SCM_SYM_DEBUG_FUNCALL, form);
                 }
+                case '?': {
+                    /* #??= or #??, - conditinal debug stub */
+                    ScmObj sym = SCM_FALSE;
+                    int c3 = Scm_GetcUnsafe(port);
+                    switch (c3) {
+                    case '=': sym = SCM_SYM_DEBUG_PRINT_CONDITIONALLY; break;
+                    case ',': sym = SCM_SYM_DEBUG_FUNCALL_CONDITIONALLY; break;
+                    default:
+                        Scm_ReadError(port, "unsupported #?-syntax: #??%C", c3);
+                        return SCM_UNDEFINED; /* dummy */
+                    }
+                    ScmObj test = read_item(port, ctx);
+                    ScmObj form = read_item(port, ctx);
+                    return SCM_LIST3(sym, test, form);
+                }
                 case '@': {
                     int c3 = Scm_GetcUnsafe(port);
                     switch (c3) {

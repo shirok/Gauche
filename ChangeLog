@@ -1,3 +1,10 @@
+2022-09-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/vm/debugger.scm (debug-print-conditionally)
+	  (debug-funcall-conditionally),
+	  src/read.c (read_internal): Add "#??=" and "#??," debug helper
+	  syntax, to print info only when condition is met.
+
 2022-09-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/redefutil.scm (class-redefinition): Fix redefining

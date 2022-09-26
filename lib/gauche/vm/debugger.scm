@@ -34,7 +34,9 @@
 (define-module gauche.vm.debugger
   (use scheme.list)
   (use srfi-13)
-  (export debug-print debug-print-width
+  (export debug-print debug-print-conditionally
+          debug-funcall debug-funcall-conditionally
+          debug-print-width
           debug-print-pre debug-print-post
           debug-source-info
           debug-thread-log debug-thread-pre debug-thread-post))
@@ -51,6 +53,16 @@
        (debug-print-pre '?form)
        (receive vals ?form
          (debug-print-post vals)))]))
+
+(define-syntax debug-print-conditionally
+  (syntax-rules ()
+    [(_ ?test ?form)
+     (let1 t ?test
+       (when t (debug-print-pre '?form))
+       (receive vals ?form
+         (if t
+           (debug-print-post vals)
+           (apply values vals))))]))
 
 ;; These are internal APIs, but we need to export them in order to
 ;; autoload gauche.vm.debug from precompiled code works.
@@ -92,6 +104,18 @@
 (define-syntax debug-funcall
   (syntax-rules ()
     [(_ ?form) (debug-funcall-aux ?form ?form)]))
+
+(define-syntax debug-funcall-conditionally
+  ;; NB: This isn't ideal, for form is placed twice in the output,
+  ;; causing source code bloat if nested.
+  ;; Usually #??, is less likely to be nested than #??=, so we keep it
+  ;; for now.
+  (syntax-rules ()
+    [(_ ?test ?form)
+     (let1 t ?test
+       (if t
+         (debug-funcall-aux ?form ?form)
+         ?form))]))
 
 (define-syntax debug-funcall-aux
   (syntax-rules ()

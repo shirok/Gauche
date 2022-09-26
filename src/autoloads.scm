@@ -120,7 +120,9 @@
 (autoload gauche.time (:macro time))
 
 (autoload gauche.vm.debugger
-          (:macro debug-print debug-funcall debug-thread-log)
+          (:macro debug-print debug-print-conditionally
+                  debug-funcall debug-funcall-conditionally
+                  debug-thread-log)
           debug-print-width debug-print-pre debug-print-post debug-funcall-pre
           debug-thread-pre debug-thread-post)
 

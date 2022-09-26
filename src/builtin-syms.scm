@@ -229,4 +229,7 @@
     (debug-thread-log          SCM_SYM_DEBUG_THREAD_LOG)
     ;; definition, to look up meta info attached to the <compiled-code>
     (definition                SCM_SYM_DEFINITION)
+    ;; additional debug helper
+    (debug-print-conditionally SCM_SYM_DEBUG_PRINT_CONDITIONALLY)
+    (debug-funcall-conditionally SCM_SYM_DEBUG_FUNCALL_CONDITIONALLY)
     ))
