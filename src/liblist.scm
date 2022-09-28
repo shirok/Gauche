@@ -117,16 +117,16 @@
 ;; primitives for immutable pars
 (define-cproc ipair? (obj) ::<boolean> Scm_ImmutablePairP)
 (define-cproc ipair (car cdr) ::<pair>
-  (return (SCM_PAIR (Scm_MakeImmutablePair car cdr))))
+  (return (SCM_PAIR (Scm_MakeImmutablePair car cdr SCM_NIL))))
 (define-cproc ilist (:rest args) ::<list>
   (if (SCM_NULLP args)
     (return SCM_NIL)
     (let* ([h SCM_NIL] [t SCM_NIL])
       (dopairs (cp args)
         (if (SCM_NULLP t)
-          (set! h (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL)
+          (set! h (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL SCM_NIL)
                 t h)
-          (let* ([p (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL)])
+          (let* ([p (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL SCM_NIL)])
             (SCM_SET_CDR_UNCHECKED t p)
             (set! t p))))
       (return h))))

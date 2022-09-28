@@ -33,4 +33,16 @@
                      [_ #f])
                    (call/cc (^x (ra x) #f))))
 
+
+(test-section "source location track")
+
+;; source info of quoted literals
+;; https://github.com/shirok/Gauche/issues/847
+(test* "source info of quoted literals" #t
+       (let1 s (debug-source-info '(a b c))
+         (and (pair? s)
+              (string? (car s))
+              (#/debug\.scm$/ (car s))
+              (integer? (cadr s)))))
+
 (test-end)

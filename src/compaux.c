@@ -434,11 +434,24 @@ static ScmObj unwrap_rec(ScmObj form, unwrap_ctx *ctx)
         if (ca == SCM_CAR(form) && cd == SCM_CDR(form)
             && (!ctx->immutable || Scm_ImmutablePairP(form))) {
             fill_history(e, form);
+            /* no need to create a new cons */
             return form;
         }
-        ScmObj p = (ctx->immutable
-                    ? Scm_MakeImmutablePair(ca, cd)
-                    : Scm_Cons(ca, cd));
+        /* We have to create a new cons.  Make sure to keep attributes. */
+        ScmObj p = SCM_NIL;
+        if (SCM_EXTENDED_PAIR_P(form)) {
+            if (ctx->immutable || Scm_ImmutablePairP(form)) {
+                p = Scm_MakeImmutablePair(ca, cd, Scm_PairAttr(SCM_PAIR(form)));
+            } else {
+                p = Scm_MakeExtendedPair(ca, cd, Scm_PairAttr(SCM_PAIR(form)));
+            }
+        } else {
+            if (ctx->immutable) {
+                p = Scm_MakeImmutablePair(ca, cd, SCM_NIL);
+            } else {
+                p = Scm_Cons(ca, cd);
+            }
+        }
         fill_history(e, p);
         register_location(ctx, &SCM_PAIR(p)->car, ca);
         register_location(ctx, &SCM_PAIR(p)->cdr, cd);

@@ -894,11 +894,10 @@ static ScmExtendedPairDescriptor ipair_desc = {
     NULL
 };
 
-ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr)
+ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr, ScmObj attrs)
 {
-    return make_extended_pair(&ipair_desc, car, cdr, SCM_NIL);
+    return make_extended_pair(&ipair_desc, car, cdr, attrs);
 }
-
 
 void Scm__InitList()
 {

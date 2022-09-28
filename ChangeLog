@@ -1,3 +1,13 @@
+2022-09-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/list.c (Scm_MakeImmutablePair): C API INCOMPATIBLE CHANGE:
+	  Now it takes the third argument, attrs, being parallel to
+	  Scm_MakeExtendedPair, for the consistency.  We expect the API
+	  isn't used by external libraries, for the immutable pairs are
+	  recent addition.
+	* Bug fix on debug source info of quoted literals.
+	  https://github.com/shirok/Gauche/issues/847
+
 2022-09-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/vm/debugger.scm (debug-print-conditionally)

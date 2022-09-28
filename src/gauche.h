@@ -877,7 +877,7 @@ enum {
 
 SCM_EXTERN ScmObj Scm_Cons(ScmObj car, ScmObj cdr);
 SCM_EXTERN ScmObj Scm_Acons(ScmObj caar, ScmObj cdar, ScmObj cdr);
-SCM_EXTERN ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr);
+SCM_EXTERN ScmObj Scm_MakeImmutablePair(ScmObj car, ScmObj cdr, ScmObj attrs);
 SCM_EXTERN ScmObj Scm_List(ScmObj elt, ...);
 SCM_EXTERN ScmObj Scm_Conses(ScmObj elt, ...);
 SCM_EXTERN ScmObj Scm_VaList(va_list elts);
