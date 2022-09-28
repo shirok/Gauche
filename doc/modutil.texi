@@ -11844,11 +11844,13 @@ Makoto MatsumotoとTakuji Nishimuraにより開発された、
 @c EN
 For typical use cases of random number generators,
 we recommend to use @code{srfi-27} which is implemented
-on top of this module and provides portable API.
+on top of this module and provides portable API
+(@pxref{Sources of random bits}).
 You should use this module directly only when you need
 functions that aren't available through @code{srfi-27}.
 @c JP
-乱数発生器の通常の用途には、@code{srfi-27}を使うことをお勧めします。
+乱数発生器の通常の用途には、@code{srfi-27}を使うことをお勧めします
+(@ref{Sources of random bits}参照)。
 @code{srfi-27}はこのモジュールの上に実装されていますが、ポータブルなAPIを提供しています。
 @code{srfi-27}にない機能が必要な時のみこのモジュールを直接使うようにしてください。
 @c COMMON

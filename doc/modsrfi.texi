@@ -2488,6 +2488,14 @@ using Mersenne Twister algorithm
 (@ref{Mersenne-Twister random number generator} 参照)
 を基礎に用いたSRFI-27疑似乱数発生器インタフェースを提供します。
 @c COMMON
+
+@c EN
+The random sources provided in this module is thread safe; multiple thread
+can use the same random source without breaking its internal state.
+@c JP
+このモジュールが提供する乱数発生源はスレッドセーフです。
+複数のスレッドが同じ乱数発生源を使っても内部状態を壊してしまうことはありません。
+@c COMMON
 @end deftp
 
 @defun random-integer n
