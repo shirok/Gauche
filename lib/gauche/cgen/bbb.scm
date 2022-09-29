@@ -180,8 +180,11 @@
 ;;   First, we convert IForm to a DG of basic blocks (BBs).
 ;;   BB has one entry point and multiple exit points.
 
-;; Block environment.  Keep track of allocated registers and blocks
-;; per compile unit (usually each toplevel form)
+;; Block environment.  Keep track of allocated registers and blocks,
+;; per each closure or toplevel form.
+;;
+;; BBs are pushed in BLOCKS slot.  For closures, the first BB, BB#0,
+;; is a dummy BB to track argument registers and has no insns.
 (define-class <benv> ()
   ((name :init-keyword :name)                 ; possible name (for info)
    (registers :init-form '())                 ; (<List> (</> <reg> <const>))
@@ -226,10 +229,7 @@
     (format port "#<reg ~a(~a)>" (~ reg'name) (lvar-name lvar))
     (format port "#<reg ~a>" (~ reg'name))))
 
-;; The ARG? argument is #t iff reg is for lambda formals.  In that case,
-;; created reg is introduced in the entry BB, but it is only read in the
-;; BB, not written.
-(define (make-reg bb lvar :optional (arg? #f))
+(define (make-reg bb lvar)
   (define (lookup benv lvar)
     (or (hash-table-get (~ benv'regmap) lvar #f)
         (and-let1 parent (~ benv'parent)
@@ -245,7 +245,7 @@
         (push! (~ benv'registers) reg)
         (when bb
           (push! (~ reg'used) bb)
-          (use-reg! bb reg (if arg? #f #t)))
+          (use-reg! bb reg #t))
         (when lvar (hash-table-put! (~ benv'regmap) lvar reg))))))
 
 ;; If reg is used within BB, record the fact.
@@ -517,14 +517,16 @@
 (define (pass5b/$LAMBDA iform bb benv ctx)
   (let* ([lbenv (make-benv benv ($lambda-name iform))]
          [lbb (~ lbenv'entry)]
-         [reg (make-reg bb #f)])
+         [lbb2 (make-bb lbenv lbb)])
     (set! (~ lbenv'input-regs)
-          (map (cut make-reg lbb <> #t) ($lambda-lvars iform)))
+          (map (cut make-reg lbb <>) ($lambda-lvars iform)))
     (set! (~ lbenv'input-reqargs) ($lambda-reqargs iform))
     (set! (~ lbenv'input-optargs) ($lambda-optarg iform))
-    (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb lbenv 'tail)
-      (push-insn bb `(CLOSE ,reg ,lbenv))
-      (pass5b/return bb ctx reg))))
+    (push-insn lbb `(JP ,lbb2))
+    (receive (cbb val0) (pass5b/rec ($lambda-body iform) lbb2 lbenv 'tail)
+      (let1 reg (make-reg bb #f)
+        (push-insn bb `(CLOSE ,reg ,lbenv))
+        (pass5b/return bb ctx reg)))))
 
 (define (pass5b/$CLAMBDA iform bb benv ctx)
   (define (generate-closures bb lambdas benv)
@@ -566,7 +568,6 @@
       (push-insn bb `(CONT ,cbb))
       (create-clambda iform bb cbb ctx)      ;no need to receive result.
       (push-insn cbb `(MOV ,valreg %VAL0))
-      (use-reg! bb valreg #t)
       (values cbb valreg))))
 
 (define (pass5b/$LABEL iform bb benv ctx)
@@ -665,12 +666,12 @@
        [(stmt)   (let1 cbb (make-bb benv bb)
                    (push-insn bb `(CONT ,cbb))
                    (normal-call cbb #f))]
-       [(normal) (let* ([cbb (make-bb benv bb)]
-                        [valreg (make-reg cbb #f)])
+       [(normal) (let* ([cbb (make-bb benv bb)])
                    (push-insn bb `(CONT ,cbb))
-                   (use-reg! bb valreg #t)
-                   (push-insn cbb `(MOV ,valreg %VAL0))
-                   (normal-call cbb valreg))])]))
+                   (receive (cbb _) (normal-call cbb #f)
+                     (let1 valreg (make-reg cbb #f)
+                       (push-insn cbb `(MOV ,valreg %VAL0))
+                       (values cbb valreg))))])]))
 
 ;; NB: Some ASM instructions require c-continuations internally,
 ;; so we should break them up.
