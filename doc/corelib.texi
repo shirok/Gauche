@@ -27260,12 +27260,12 @@ it passes @code{#f}, as the initial @var{parent} value.
 The @var{regexp} argument is used to filter the child nodes.
 It should be matched against the component name of the child,
 not including its directory names.  As a special case, it can
-be a symbol @code{dir}; if that's the case, the folder should
+be a symbol @code{dir?}; if that's the case, the folder should
 return @var{node} itself, but it may indicate @var{node}
 @emph{as a directory}; e.g. if @var{node} is represented as a pathname,
 the folder returns a pathname with trailing directory separator.
 As special cases,
-if @var{node} is a boolean value and @var{regexp} is @code{dir},
+if @var{node} is a boolean value and @var{regexp} is @code{dir?},
 the folder should return the node representing root node or
 current node, respectively; e.g. if @var{node} is represented
 as a pathname, the folder may return @code{"/"} and @code{"./"}
@@ -27273,12 +27273,12 @@ for those cases.
 @c JP
 @var{regexp}引数は子ノードをフィルターするのに使い、ディレクトリ名を含
 まない、子のコンポーネントである名前に対して照合されるものです。特別な
-場合として、シンボル@code{dir}にすることができます。この場合は、folder
+場合として、シンボル@code{dir?}にすることができます。この場合は、folder
 は@var{node}そのものを返し、@var{node}は@emph{ディレクトリ}と見なされ
 ます。すなわち、@var{node}がパス名を表わす場合には、folderはディレクト
 リ区切り子が最後に付いたパス名を返します。
 特別な場合として、@var{node}がブール値でかつ
-@var{regexp}が@code{dir}である場合、folderはルートノードをあらわすノー
+@var{regexp}が@code{dir?}である場合、folderはルートノードをあらわすノー
 ドあるいはカレントノードを返すことになっています。すなわち、@var{node}
 はパス名を表す場合、folderは@code{"/"}または@code{"./"}を返します。
 @c COMMON
