@@ -50,6 +50,8 @@
           condition-variable-specific condition-variable-specific-set!
           condition-variable-signal! condition-variable-broadcast!
 
+          current-time time? time->seconds seconds->time
+
           join-timeout-exception? abandoned-mutex-exception?
           terminated-thread-exception? uncaught-exception?
           uncaught-exception-reason
