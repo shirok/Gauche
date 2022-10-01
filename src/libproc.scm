@@ -74,7 +74,9 @@
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
 (define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
-(define-cproc %reset (proc) (return (Scm_VMReset proc)))
+(define-cproc %reset (proc) (return (Scm_VMReset proc SCM_FALSE)))
+(define-cproc %reset-with-cont-frame-wrapper (proc)
+  (return (Scm_VMReset proc SCM_TRUE)))
 
 ;;;
 ;;; Useful gadgets

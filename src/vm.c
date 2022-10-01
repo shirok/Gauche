@@ -3006,14 +3006,43 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     return Scm_VMApply1(proc, contproc);
 }
 
-ScmObj Scm_VMReset(ScmObj proc)
+static ScmObj reset_proc2(ScmObj result, void **data SCM_UNUSED)
+{
+    return result;
+}
+
+static ScmObj reset_proc1(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data)
+{
+    ScmObj proc = SCM_OBJ(data);
+
+    /* Add a continuation frame so that the end marker of partial
+       continuation can be set. */
+    Scm_VMPushCC(reset_proc2, NULL, 0);
+
+    return Scm_VMApply0(proc);
+}
+
+ScmObj Scm_VMReset(ScmObj proc, ScmObj use_cont_frame_wrapper)
 {
     ScmVM *vm = theVM;
+    ScmObj ret;
 
-    /* push/pop reset-chain for reset/shift */
+    /* push reset-chain for reset/shift */
     vm->resetChain = Scm_Cons(Scm_Cons(SCM_FALSE, vm->handlers),
                               vm->resetChain);
-    ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
+
+    /* check whether to use a wrapper procedure */
+    if (SCM_FALSEP(use_cont_frame_wrapper)) {
+        /* normal case */
+        ret = Scm_ApplyRec(proc, SCM_NIL);
+    } else {
+        /* We use a wrapper procedure to add a continuation frame for the
+           end of partial continuation. */
+        ScmObj proc1 = Scm_MakeSubr(reset_proc1, proc, 0, 0, SCM_FALSE);
+        ret = Scm_ApplyRec(proc1, SCM_NIL);
+    }
+
+    /* pop reset-chain for reset/shift */
     SCM_ASSERT(SCM_PAIRP(vm->resetChain));
     vm->resetChain = SCM_CDR(vm->resetChain);
     return ret;
