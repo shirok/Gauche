@@ -825,25 +825,49 @@
 ;; lifetime analysis
 ;;
 
+;; Make sure a register REG is alive in all paths between its introduction
+;; and its use.
+;; At the beginning, only the BBs that explicitly use REG are marked so.
+;; We have to mark the intermediate BBs of all possible paths.
+;;
+;; We start from a set of BBs that explicitly use REG (input set), and
+;; going upstreams with recording intermediate BBs that are not marked.
+;; Once the path hits a BB that introduces REG, mark all intermediate
+;; BBs.
+
 (define (mark-live-path-bbs! reg)
-  (define (step! bb routes visited)
-    (cond [(set-contains? routes bb) (values #t routes visited)]
-          [(set-contains? visited bb) (values #f routes visited)]
-          [else (let loop ([bbs (~ bb'upstream)]
-                           [alive #f]
-                           [routes routes]
-                           [visited (set-adjoin! visited bb)])
-                  (if (null? bbs)
-                    (begin
-                      (when alive (use-reg! bb reg))
-                      (values alive
-                              (if alive (set-adjoin! routes bb) routes)
-                              visited))
-                    (receive (pass? routes visited)
-                        (step! (car bbs) routes visited)
-                      (loop (cdr bbs) pass? routes visited))))]))
-  (dolist [bb (~ reg'used)]
-    (step! bb (set eq-comparator (~ reg'introduced)) (set eq-comparator))))
+  ;; path - hash BB -> (BB1 ...).  Representing we followed BB1 to BB.
+  ;;        If we hit 'using' BB, we mark all BBs chained in this path
+  ;;        as 'using'.  Note that there can be cycles.
+  (define root ($ alist->tree-map
+                  (filter-map (^b (and (not (eq? b (~ reg'introduced)))
+                                       (list b)))
+                              (~ reg'used))
+                  eq-comparator))
+  (define path (make-hash-table eq-comparator))
+  (define (mark-path! bb)
+    (unless (memq bb (~ reg'used))
+      (use-reg! bb reg)
+      (for-each mark-path! (hash-table-get path bb '()))))
+
+  (let repeat ()
+    (and-let* ([p (tree-map-pop-min! root)]
+               [bb0 (car p)])
+      (let loop ([bbs (~ bb0'upstream)])
+        (if (null? bbs)
+          (repeat)
+          (cond [(eq? (car bbs) (~ reg'introduced))
+                 (mark-path! bb0)
+                 (repeat)]
+                [(memq (car bbs) (~ reg'used))
+                 (mark-path! bb0)
+                 (repeat)]
+                [(tree-map-exists? root (car bbs)) (loop (cdr bbs))]
+                [(hash-table-exists? path (car bbs)) (loop (cdr bbs))]
+                [else
+                 (tree-map-put! root (car bbs) '())
+                 (hash-table-push! path (car bbs) bb0)
+                 (loop (cdr bbs))]))))))
 
 (define (mark-all-live-paths! benv)
   (define (rec benv)
