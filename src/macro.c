@@ -313,6 +313,30 @@ static inline ScmObj add_pvar(PatternContext *ctx,
     return pvref;
 }
 
+/* Like SCM_APPEND1, but try to preserve source info of the input */
+static inline void template_append1(ScmObj *head, ScmObj *tail,
+                                    ScmObj elt, ScmObj source)
+{
+    if (SCM_NULLP(*head)) {
+        if (SCM_PAIRP(source)) {
+            ScmObj info = Scm_PairAttrGet(SCM_PAIR(source),
+                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
+            if (SCM_PAIRP(info)) {
+                ScmObj attrs = Scm_Acons(SCM_SYM_SOURCE_INFO, info, SCM_NIL);
+                ScmObj p = Scm_MakeExtendedPair(elt, SCM_NIL, attrs);
+                *head = *tail = p;
+                return;
+            }
+        }
+        *head = *tail = Scm_Cons(elt, SCM_NIL);
+        return;
+    }
+    ScmObj p = Scm_Cons(elt, SCM_NIL);
+    SCM_SET_CDR(*tail, p);
+    *tail = p;
+}
+
+
 /* returns pvref corresponds to the given pvar in template compilation.
    if pvar is not a valid pvar, returns pvar itself. */
 static inline ScmObj pvar_to_pvref(PatternContext *ctx,
@@ -464,7 +488,7 @@ static ScmObj compile_rule1(ScmObj form,
                 }
                 outer->pattern = compile_rule1(base, outer, ctx, patternp);
                 outermost->vars = outer->vars;
-                SCM_APPEND1(h, t, SCM_OBJ(outermost));
+                template_append1(&h, &t, SCM_OBJ(outermost), form);
                 if (!patternp) {
                     ScmObj vp;
                     if (SCM_NULLP(outermost->vars)) {
@@ -485,8 +509,9 @@ static ScmObj compile_rule1(ScmObj form,
                 }
                 spat->vars = Scm_Append2(spat->vars, outermost->vars);
             } else {
-                SCM_APPEND1(h, t,
-                            compile_rule1(SCM_CAR(pp), spat, ctx, patternp));
+                template_append1(&h, &t,
+                                 compile_rule1(SCM_CAR(pp), spat, ctx, patternp),
+                                 form);
             }
         }
         if (!SCM_NULLP(pp))
@@ -859,7 +884,7 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
  * pattern language transformer
  */
 
-/* If a pattern variable is exhausted, SCM_UNDEFINED is returned. */
+/* If a pattern variable is exhausted, SCM_UNBOUND is returned. */
 static ScmObj realize_template_rec(ScmSyntaxRules *sr,
                                    ScmObj template,
                                    MatchVar *mvec,
@@ -879,7 +904,7 @@ static ScmObj realize_template_rec(ScmSyntaxRules *sr,
             } else {
                 ScmObj r = realize_template_rec(sr, e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
-                SCM_APPEND1(h, t, r);
+                template_append1(&h, &t, r, template);
             }
             template = SCM_CDR(template);
         }
