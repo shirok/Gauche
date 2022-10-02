@@ -313,7 +313,8 @@ static inline ScmObj add_pvar(PatternContext *ctx,
     return pvref;
 }
 
-/* Like SCM_APPEND1, but try to preserve source info of the input */
+/* Like SCM_APPEND1 and SCM_APPEND, but try to preserve source info
+   of the input (source) */
 static inline void template_append1(ScmObj *head, ScmObj *tail,
                                     ScmObj elt, ScmObj source)
 {
@@ -334,6 +335,31 @@ static inline void template_append1(ScmObj *head, ScmObj *tail,
     ScmObj p = Scm_Cons(elt, SCM_NIL);
     SCM_SET_CDR(*tail, p);
     *tail = p;
+}
+
+static inline void template_append(ScmObj *head, ScmObj *tail,
+                                   ScmObj rest, ScmObj source)
+{
+    if (SCM_NULLP(*head)) {
+        if (SCM_PAIRP(source) && SCM_PAIRP(rest)) {
+            ScmObj info = Scm_PairAttrGet(SCM_PAIR(source),
+                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
+            if (SCM_PAIRP(info)) {
+                ScmObj attrs = Scm_Acons(SCM_SYM_SOURCE_INFO, info, SCM_NIL);
+                ScmObj p = Scm_MakeExtendedPair(SCM_CAR(rest), SCM_CDR(rest),
+                                                attrs);
+                *head = p;
+                *tail = Scm_LastPair(p);
+                return;
+            }
+        }
+        *head = rest;
+        *tail = SCM_PAIRP(rest)? Scm_LastPair(rest) : rest;
+        return;
+    }
+    SCM_SET_CDR(*tail, rest);
+    /* rest can be () */
+    if (SCM_PAIRP(rest)) *tail = Scm_LastPair(rest);
 }
 
 
@@ -515,7 +541,8 @@ static ScmObj compile_rule1(ScmObj form,
             }
         }
         if (!SCM_NULLP(pp))
-            SCM_APPEND(h, t, compile_rule1(pp, spat, ctx, patternp));
+            template_append(&h, &t, compile_rule1(pp, spat, ctx, patternp),
+                            form);
         return h;
     }
     else if (SCM_VECTORP(form)) {
@@ -900,7 +927,7 @@ static ScmObj realize_template_rec(ScmSyntaxRules *sr,
             if (SCM_SYNTAX_PATTERN_P(e)) {
                 ScmObj r = realize_template_rec(sr, e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
-                SCM_APPEND(h, t, r);
+                template_append(&h, &t, r, template);
             } else {
                 ScmObj r = realize_template_rec(sr, e, mvec, level, indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
@@ -912,7 +939,7 @@ static ScmObj realize_template_rec(ScmSyntaxRules *sr,
             ScmObj r = realize_template_rec(sr, template, mvec, level, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return r;
             if (SCM_NULLP(h)) return r; /* (a ... . b) and a ... is empty */
-            SCM_APPEND(h, t, r);
+            template_append(&h, &t, r, template);
         }
         return h;
     }
