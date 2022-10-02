@@ -232,4 +232,6 @@
     ;; additional debug helper
     (debug-print-conditionally SCM_SYM_DEBUG_PRINT_CONDITIONALLY)
     (debug-funcall-conditionally SCM_SYM_DEBUG_FUNCALL_CONDITIONALLY)
+    ;; source info tracking
+    (original                  SCM_SYM_ORIGINAL)
     ))

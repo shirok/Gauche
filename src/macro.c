@@ -314,20 +314,35 @@ static inline ScmObj add_pvar(PatternContext *ctx,
 }
 
 /* Like SCM_APPEND1 and SCM_APPEND, but try to preserve source info
-   of the input (source) */
-static inline void template_append1(ScmObj *head, ScmObj *tail,
-                                    ScmObj elt, ScmObj source)
+   of the input.  SOURCE is the macro source in its definition, ORIGIN is
+   the macro expansion input in its entirety.  ORIGIN is #f while compiling
+   a macro; only given when expanding it.
+*/
+static ScmObj get_source_info_attrs(ScmObj source, ScmObj origin)
+{
+    ScmObj attrs = SCM_NIL;
+    if (SCM_PAIRP(source)) {
+        ScmObj info = Scm_PairAttrGet(SCM_PAIR(source),
+                                      SCM_SYM_SOURCE_INFO, SCM_FALSE);
+        if (SCM_PAIRP(info))
+            attrs = Scm_Acons(SCM_SYM_SOURCE_INFO, info, attrs);
+    }
+    if (SCM_PAIRP(origin)) {
+        attrs = Scm_Acons(SCM_SYM_ORIGINAL, origin, attrs);
+    }
+    return attrs;
+}
+
+
+static void template_append1(ScmObj *head, ScmObj *tail,
+                             ScmObj elt, ScmObj source, ScmObj origin)
 {
     if (SCM_NULLP(*head)) {
-        if (SCM_PAIRP(source)) {
-            ScmObj info = Scm_PairAttrGet(SCM_PAIR(source),
-                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
-            if (SCM_PAIRP(info)) {
-                ScmObj attrs = Scm_Acons(SCM_SYM_SOURCE_INFO, info, SCM_NIL);
-                ScmObj p = Scm_MakeExtendedPair(elt, SCM_NIL, attrs);
-                *head = *tail = p;
-                return;
-            }
+        ScmObj attrs = get_source_info_attrs(source, origin);
+        if (SCM_PAIRP(attrs)) {
+            ScmObj p = Scm_MakeExtendedPair(elt, SCM_NIL, attrs);
+            *head = *tail = p;
+            return;
         }
         *head = *tail = Scm_Cons(elt, SCM_NIL);
         return;
@@ -337,15 +352,13 @@ static inline void template_append1(ScmObj *head, ScmObj *tail,
     *tail = p;
 }
 
-static inline void template_append(ScmObj *head, ScmObj *tail,
-                                   ScmObj rest, ScmObj source)
+static void template_append(ScmObj *head, ScmObj *tail,
+                            ScmObj rest, ScmObj source, ScmObj origin)
 {
     if (SCM_NULLP(*head)) {
-        if (SCM_PAIRP(source) && SCM_PAIRP(rest)) {
-            ScmObj info = Scm_PairAttrGet(SCM_PAIR(source),
-                                          SCM_SYM_SOURCE_INFO, SCM_FALSE);
-            if (SCM_PAIRP(info)) {
-                ScmObj attrs = Scm_Acons(SCM_SYM_SOURCE_INFO, info, SCM_NIL);
+        if (SCM_PAIRP(rest)) {
+            ScmObj attrs = get_source_info_attrs(source, origin);
+            if (SCM_PAIRP(attrs)) {
                 ScmObj p = Scm_MakeExtendedPair(SCM_CAR(rest), SCM_CDR(rest),
                                                 attrs);
                 *head = p;
@@ -514,7 +527,7 @@ static ScmObj compile_rule1(ScmObj form,
                 }
                 outer->pattern = compile_rule1(base, outer, ctx, patternp);
                 outermost->vars = outer->vars;
-                template_append1(&h, &t, SCM_OBJ(outermost), form);
+                template_append1(&h, &t, SCM_OBJ(outermost), form, SCM_FALSE);
                 if (!patternp) {
                     ScmObj vp;
                     if (SCM_NULLP(outermost->vars)) {
@@ -537,12 +550,12 @@ static ScmObj compile_rule1(ScmObj form,
             } else {
                 template_append1(&h, &t,
                                  compile_rule1(SCM_CAR(pp), spat, ctx, patternp),
-                                 form);
+                                 form, SCM_FALSE);
             }
         }
         if (!SCM_NULLP(pp))
             template_append(&h, &t, compile_rule1(pp, spat, ctx, patternp),
-                            form);
+                            form, SCM_FALSE);
         return h;
     }
     else if (SCM_VECTORP(form)) {
@@ -912,7 +925,8 @@ static int match_synrule(ScmObj form, ScmObj pattern, ScmObj mod, ScmObj env,
  */
 
 /* If a pattern variable is exhausted, SCM_UNBOUND is returned. */
-static ScmObj realize_template_rec(ScmSyntaxRules *sr,
+static ScmObj realize_template_rec(ScmObj src,
+                                   ScmSyntaxRules *sr,
                                    ScmObj template,
                                    MatchVar *mvec,
                                    int level,
@@ -925,21 +939,24 @@ static ScmObj realize_template_rec(ScmSyntaxRules *sr,
         while (SCM_PAIRP(template)) {
             ScmObj e = SCM_CAR(template);
             if (SCM_SYNTAX_PATTERN_P(e)) {
-                ScmObj r = realize_template_rec(sr, e, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(src, sr, e, mvec, level,
+                                                indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
-                template_append(&h, &t, r, template);
+                template_append(&h, &t, r, template, src);
             } else {
-                ScmObj r = realize_template_rec(sr, e, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(src, sr, e, mvec, level,
+                                                indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
-                template_append1(&h, &t, r, template);
+                template_append1(&h, &t, r, template, src);
             }
             template = SCM_CDR(template);
         }
         if (!SCM_NULLP(template)) {
-            ScmObj r = realize_template_rec(sr, template, mvec, level, indices, idlist, exlev);
+            ScmObj r = realize_template_rec(src, sr, template, mvec, level,
+                                            indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return r;
             if (SCM_NULLP(h)) return r; /* (a ... . b) and a ... is empty */
-            template_append(&h, &t, r, template);
+            template_append(&h, &t, r, template, src);
         }
         return h;
     }
@@ -951,7 +968,8 @@ static ScmObj realize_template_rec(ScmSyntaxRules *sr,
         ScmObj h = SCM_NIL, t = SCM_NIL;
         indices[level+1] = 0;
         for (;;) {
-            ScmObj r = realize_template_rec(sr, pat->pattern, mvec, level+1, indices, idlist, exlev);
+            ScmObj r = realize_template_rec(src, sr, pat->pattern, mvec,
+                                            level+1, indices, idlist, exlev);
             if (SCM_UNBOUNDP(r)) return (*exlev < pat->level)? r : h;
             if (SCM_SYNTAX_PATTERN_P(pat->pattern)) {
                 SCM_APPEND(h, t, r);
@@ -968,11 +986,13 @@ static ScmObj realize_template_rec(ScmSyntaxRules *sr,
 
         for (int i=0; i<len; i++, pe++) {
             if (SCM_SYNTAX_PATTERN_P(*pe)) {
-                ScmObj r = realize_template_rec(sr, *pe, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(src, sr, *pe, mvec, level,
+                                                indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND(h, t, r);
             } else {
-                ScmObj r = realize_template_rec(sr, *pe, mvec, level, indices, idlist, exlev);
+                ScmObj r = realize_template_rec(src, sr, *pe, mvec, level,
+                                                indices, idlist, exlev);
                 if (SCM_UNBOUNDP(r)) return r;
                 SCM_APPEND1(h, t, r);
             }
@@ -987,7 +1007,8 @@ static ScmObj realize_template_rec(ScmSyntaxRules *sr,
 
 #define DEFAULT_MAX_LEVEL  10
 
-static ScmObj realize_template(ScmSyntaxRules *sr,
+static ScmObj realize_template(ScmObj src,
+                               ScmSyntaxRules *sr,
                                ScmSyntaxRuleBranch *branch,
                                MatchVar *mvec)
 {
@@ -998,7 +1019,7 @@ static ScmObj realize_template(ScmSyntaxRules *sr,
     if (branch->maxLevel > DEFAULT_MAX_LEVEL)
         indices = SCM_NEW_ATOMIC2(int*, (branch->maxLevel+1) * sizeof(int));
     for (int i=0; i<=branch->maxLevel; i++) indices[i] = 0;
-    return realize_template_rec(sr, branch->template, mvec, 0,
+    return realize_template_rec(src, sr, branch->template, mvec, 0,
                                 indices, &idlist, &exlev);
 }
 
@@ -1019,7 +1040,7 @@ static ScmObj synrule_expand(ScmObj form, ScmObj mod, ScmObj env, ScmSyntaxRules
             Scm_Printf(SCM_CUROUT, "success #%d:\n", i);
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);
 #endif
-            ScmObj expanded = realize_template(sr, &sr->rules[i], mvec);
+            ScmObj expanded = realize_template(form, sr, &sr->rules[i], mvec);
 #ifdef DEBUG_SYNRULE
             Scm_Printf(SCM_CUROUT, "result: %S\n", expanded);
 #endif

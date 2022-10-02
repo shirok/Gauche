@@ -647,6 +647,7 @@
       (unless (> skip 0)
         (format port "~3d  ~,,,,65:s\n" depth (unwrap-syntax (car trace)))
         (let1 sis (%source-info (car trace))
+          (print "*** " sis)
           (if-let1 si (find (^[si] (and (car si) (cadr si))) (reverse sis))
             (begin
               (when (and (pair? (cddr si))
