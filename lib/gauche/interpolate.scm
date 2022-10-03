@@ -91,13 +91,13 @@
   )
 (select-module gauche.interpolate)
 
-(define (string-interpolate str :optional (legacy? #f))
+(define (string-interpolate str :optional (legacy? #f) (file #f) (line -1))
   (if (string? str)
     `(string-interpolate*
-      ,(parse-string-interpolation-template str (if legacy? #\, #\~)))
+      ,(parse-string-interpolation-template str (if legacy? #\, #\~) file line))
     (errorf "malformed string-interpolate: ~s" (list 'string-interpolate str))))
 
-(define (parse-string-interpolation-template str unquote-char)
+(define (parse-string-interpolation-template str unquote-char file line)
   (define (accum c acc)
     (cond [(eof-object? c)
            (let1 r (get-output-string acc)
@@ -119,6 +119,8 @@
                             (errorf "unmatched parenthesis in interpolating string: ~s" str)])
                    (read))]
            [rest (accum (read-char) (open-output-string))])
+      (when (and (extended-pair? item) file (>= line 0))
+        (pair-attribute-set! item 'source-info (list file line)))
       (cons item rest)))
   (with-input-from-string str
     (^[] (accum (read-char) (open-output-string)))))

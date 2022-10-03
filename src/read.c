@@ -536,7 +536,9 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 ScmObj form = read_item(port, ctx);
                 return process_sharp_comma(port, line,
                                            SCM_SYM_STRING_INTERPOLATE,
-                                           SCM_LIST2(form, SCM_FALSE),
+                                           SCM_LIST4(form, SCM_FALSE,
+                                                     Scm_PortName(port),
+                                                     SCM_MAKE_INT(line)),
                                            ctx, FALSE);
             }
             case '/':
@@ -562,7 +564,9 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 ScmObj form = read_item(port, ctx);
                 return process_sharp_comma(port, line,
                                            SCM_SYM_STRING_INTERPOLATE,
-                                           SCM_LIST2(form, SCM_TRUE),
+                                           SCM_LIST4(form, SCM_TRUE,
+                                                     Scm_PortName(port),
+                                                     SCM_MAKE_INT(line)),
                                            ctx, FALSE);
             }
             case '?': {
