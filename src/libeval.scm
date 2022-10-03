@@ -32,6 +32,7 @@
 ;;;
 
 (select-module gauche.internal)
+(use util.match)
 
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
@@ -646,15 +647,24 @@
                [else #f])]
       (unless (> skip 0)
         (format port "~3d  ~,,,,65:s\n" depth (unwrap-syntax (car trace)))
+        ;; Each source info consists of (<file> <line> <form>).
+        ;; The first <form> is the same as (car trace), so we omit it.
         (let1 sis (%source-info (car trace))
-          (print "*** " sis)
-          (if-let1 si (find (^[si] (and (car si) (cadr si))) (reverse sis))
-            (begin
-              (when (and (pair? (cddr si))
-                         (not (eq? (car trace) (caddr si))))
-                (format port "        expanded from ~,,,,60:s\n" (caddr si)))
-              (format port "        at ~s:~d\n" (car si) (cadr si)))
-            (format port "        [unknown location]\n")))))))
+          (match sis
+            [((file line  _) . rest)
+             (when (and file line)
+               (format port "        at ~s:~d\n" file line))
+             (let loop ([sis rest])
+               (match sis
+                 [() #f]
+                 [((file line form) . rest)
+                  (format port "        expanded from ~,,,,57:s\n"
+                          (unwrap-syntax form))
+                  (when (and file line)
+                    (format port "        at ~s:~d\n" file line))
+                  (loop rest)]
+                 [(_ . rest) (loop rest)]))]
+            [_ #f]))))))
 
 ;; API
 (select-module gauche.internal)
