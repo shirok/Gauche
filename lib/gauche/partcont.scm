@@ -8,9 +8,7 @@
 (define %call/pc (with-module gauche.internal %call/pc))
 
 (define-syntax reset
-  (syntax-rules (shift)
-    [(reset expr1 ... (shift k expr2 ...))
-     (%reset (^[] expr1 ... (shift k expr2 ...)))]
+  (syntax-rules ()
     [(reset expr ...)
      (%reset-with-cont-frame-wrapper (^[] expr ...))]))
 

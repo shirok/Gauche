@@ -2760,6 +2760,8 @@ static void call_dynamic_handlers(ScmObj target, ScmObj current)
 
 static ScmObj throw_cont_cc(ScmObj, void **);
 
+static ScmObj reset_proc2(ScmObj result, void **data SCM_UNUSED);
+
 static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*/
                               ScmEscapePoint *ep, /* target continuation */
                               ScmObj args)        /* args to pass to the
@@ -2817,8 +2819,15 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     /* restore reset-chain for reset/shift */
     if (ep->cstack) vm->resetChain = ep->resetChain;
 
+    /* Fix memory leak of the empty partial continuation. */
+    if (ep->cstack == NULL &&
+        (ep->cont && (ep->cont->cpc == (SCM_PCTYPE)reset_proc2))) {
+        ep->cont = NULL;
+    }
+
     nargs = Scm_Length(args);
     if (nargs == 1) {
+        vm->numVals = 1;
         return SCM_CAR(args);
     } else if (nargs < 1) {
         vm->numVals = 0;
