@@ -1,3 +1,8 @@
+2022-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (quasirename): Attach source info of the
+	  quasirename constructed lists.
+
 2022-10-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (process_sharp_comma): Attach source info to the

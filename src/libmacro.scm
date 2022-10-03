@@ -181,6 +181,7 @@
        (and (identifier? x)
             (c (r x) quasiquote.)))
      (define cons. (r'cons))
+     (define extended-cons. (r'extended-cons))
      (define list. (r'list))
      (define append. (r'append))
      (define vector. (r'vector))
@@ -248,7 +249,9 @@
              [yys (quasi* ys level)])
          (if (and (eq? x xx) (eq? ys yys))
            objs
-           `(,cons. ,xx ,yys))))
+           (if-let1 si (pair-attribute-get objs 'source-info #f)
+             `(,extended-cons. ,xx ,yys '((source-info ,@si)))
+             `(,cons. ,xx ,yys)))))
 
      (define (quasi-vector obj level)
        (if (vector-has-splicing? obj)
