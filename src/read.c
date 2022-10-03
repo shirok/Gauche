@@ -70,7 +70,8 @@ static ScmObj read_regexp(ScmPort *port);
 static ScmObj read_charset(ScmPort *port);
 static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx);
-static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
+static ScmObj process_sharp_comma(ScmPort *port, int line,
+                                  ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref);
 static ScmObj read_shebang(ScmPort *port, ScmReadContext *ctx);
 static ScmObj read_num_prefixed(ScmPort *port, ScmChar ch, ScmReadContext *ctx);
@@ -531,8 +532,9 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
                 /* #"..." - string interpolation  */
                 reject_in_r7(port, ctx, "#\"...\"");
                 Scm_UngetcUnsafe(c1, port);
+                int line = Scm_PortLine(port);
                 ScmObj form = read_item(port, ctx);
-                return process_sharp_comma(port,
+                return process_sharp_comma(port, line,
                                            SCM_SYM_STRING_INTERPOLATE,
                                            SCM_LIST2(form, SCM_FALSE),
                                            ctx, FALSE);
@@ -556,8 +558,9 @@ static ScmObj read_internal(ScmPort *port, ScmReadContext *ctx)
             case '`': {
                 /* #`"..." - Legacy string interpolation syntax */
                 reject_in_r7(port, ctx, "#`\"...\"");
+                int line = Scm_PortLine(port);
                 ScmObj form = read_item(port, ctx);
-                return process_sharp_comma(port,
+                return process_sharp_comma(port, line,
                                            SCM_SYM_STRING_INTERPOLATE,
                                            SCM_LIST2(form, SCM_TRUE),
                                            ctx, FALSE);
@@ -1632,12 +1635,13 @@ static ScmObj read_sharp_comma(ScmPort *port, ScmReadContext *ctx)
     if (len <= 0) {
         Scm_ReadError(port, "bad #,-form: #,%S", form);
     }
-    ScmObj r = process_sharp_comma(port, SCM_CAR(form), SCM_CDR(form), ctx,
+    ScmObj r = process_sharp_comma(port, line, SCM_CAR(form), SCM_CDR(form), ctx,
                                    has_ref);
     return r;
 }
 
-static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
+static ScmObj process_sharp_comma(ScmPort *port, int line,
+                                  ScmObj key, ScmObj args,
                                   ScmReadContext *ctx, int has_ref)
 {
     if (ctx->flags & RCTX_DISABLE_CTOR) return SCM_FALSE;
@@ -1648,6 +1652,11 @@ static ScmObj process_sharp_comma(ScmPort *port, ScmObj key, ScmObj args,
 
     if (!SCM_PAIRP(e)) Scm_ReadError(port, "unknown #,-key: %S", key);
     ScmObj r = Scm_ApplyRec(SCM_CAR(e), args);
+    if (SCM_PAIRP(r) && (ctx->flags & RCTX_SOURCE_INFO) && line >= 0) {
+        r = Scm_ExtendedCons(SCM_CAR(r), SCM_CDR(r));
+        Scm_PairAttrSet(SCM_PAIR(r), SCM_SYM_SOURCE_INFO,
+                        SCM_LIST2(Scm_PortName(port), SCM_MAKE_INT(line)));
+    }
     if (has_ref) ref_push(ctx, r, SCM_CDR(e));
     return r;
 }

@@ -1,3 +1,17 @@
+2022-10-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/read.c (process_sharp_comma): Attach source info to the
+	  output of sharp-comma constructor, if it yields a pair.
+	  Notably, this results source info attached to string
+	  interpolations.
+
+2022-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* macro.c (compile_rule1, realize_template_rec): Carry over
+	  source info of macro template and macro input.
+	* libeva.scm (%show-stack-trace): Show all macro expansion
+	  history along the source info.
+
 2022-09-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c (Scm_MakeImmutablePair): C API INCOMPATIBLE CHANGE:
