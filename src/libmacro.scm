@@ -250,7 +250,11 @@
          (if (and (eq? x xx) (eq? ys yys))
            objs
            (if-let1 si (pair-attribute-get objs 'source-info #f)
-             `(,extended-cons. ,xx ,yys '((source-info ,@si)))
+             (let1 orig (assoc-ref ((with-module gauche.internal %procedure-tags-alist) r)
+                                   'macro-input)
+               `(,extended-cons. ,xx ,yys '((source-info ,@si)
+                                            ,@(cond-list
+                                               [orig `(original . ,orig)]))))
              `(,cons. ,xx ,yys)))))
 
      (define (quasi-vector obj level)
