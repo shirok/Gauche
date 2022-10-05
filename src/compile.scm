@@ -1638,14 +1638,17 @@
     (define use-frames (cenv-frames use-env))
     (let1 dict '()
       (define %rename
-        ;; NB: We attach macro input in the procedure tag, so that quasirename
-        ;; can attach it to the constructed form.
+        ;; NB: We attach macro input in a procedure tag value (not the srfi-229
+        ;; tag, but using the native alist tag.)  Quasirename retrieves this
+        ;; info and attach it to the output.
+        ;; For now, we don't have lambda/tags-alist, so we have to copy
+        ;; the procedure.
         (%procedure-copy
          (lambda (sym)
            (receive [id dict_] (er-rename sym dict def-module def-frames)
              (set! dict dict_)
              id))
-         `((macro-input . ,form))))
+         `((macro-input . ,(unwrap-syntax form)))))
       (define (%compare a b) (er-compare a b use-module use-frames))
       (define (%inject sym)
         (receive [id dict_] (er-rename sym dict use-module use-frames)
