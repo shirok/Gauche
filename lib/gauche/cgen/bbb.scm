@@ -518,6 +518,7 @@
   (let* ([lbenv (make-benv benv ($lambda-name iform))]
          [lbb (~ lbenv'entry)]
          [lbb2 (make-bb lbenv lbb)])
+    (set! (~ lbenv'entry) lbb2) ; skip the dummy block
     (set! (~ lbenv'input-regs)
           (map (cut make-reg lbb <>) ($lambda-lvars iform)))
     (set! (~ lbenv'input-reqargs) ($lambda-reqargs iform))
