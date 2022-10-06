@@ -342,8 +342,6 @@
    (benv :init-keyword :benv)
    (blocks :init-value '())     ;basic blocks
    (entry-blocks :init-value '()) ; BBs to be jumped from another cluster
-   (upstream :init-value '())   ;upstream clustres
-   (downstream :init-value '()) ;downstream clusters
    ;; Register classification.  Used internally.
    ;;  XREGS - Regs outlive this cluster
    ;;  LREGS - Regs local to this cluster
@@ -907,24 +905,18 @@
       (match (last-insn bb)
         [('JP bb1)
          (rec benv c bb1)
-         (link-clusters! c (~ bb1'cluster))
          (check-entry-bb! c bb1)]
         [('BR _ bb1 bb2)
          (rec benv c bb1)
          (rec benv c bb2)
-         (link-clusters! c (~ bb1'cluster))
-         (link-clusters! c (~ bb2'cluster))
          (check-entry-bb! c bb1)
          (check-entry-bb! c bb2)]
         [('CALL bb1 proc . regs)
-         (when bb1
-           (if-let1 c2 (~ bb1 'cluster)
-             (link-clusters! c c2)
-             (let1 c2 (make-cluster benv)
-               (push! (~ c2'entry-blocks) bb1)
-               (mark-entry-bb! bb1)
-               (link-clusters! c c2)
-               (rec benv c2 bb1))))]
+         (when (and bb1 (not (~ bb1 'cluster)))
+           (let1 c2 (make-cluster benv)
+             (push! (~ c2'entry-blocks) bb1)
+             (mark-entry-bb! bb1)
+             (rec benv c2 bb1)))]
         [_ #f])))
   ;; 1st pass
   (when (null? (~ benv'clusters))
@@ -936,12 +928,6 @@
   (dolist [c (~ benv'clusters)]
     (classify-cluster-regs! benv c))
   )
-
-(define (link-clusters! upstream downstream)
-  (when (and upstream downstream
-             (not (eq? upstream downstream)))
-    (push-unique! (~ upstream'downstream) downstream)
-    (push-unique! (~ downstream'upstream) upstream)))
 
 ;; Called when jump from from-cluster to bb.  If bb is not in
 ;; from-cluster, we need to mark bb as an entry bb
@@ -1019,9 +1005,7 @@
     (format #t "~70,,,'=a\n" "Clusters ")
     (dolist [benv (reverse (map car benv-alist))]
       (dolist [cluster (~ benv'clusters)]
-        (format #t " CLUSTER ~a  [~a> >~a]" (~ cluster'id)
-                (map (cut ~ <> 'id) (~ cluster'upstream))
-                (map (cut ~ <> 'id) (~ cluster'downstream)))
+        (format #t " CLUSTER ~a" (~ cluster'id))
         (if (memq (~ benv'entry) (~ cluster'blocks) )
           (format #t "  ; Entry of ~a\n" (benvname benv))
           (print))
