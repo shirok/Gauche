@@ -305,9 +305,9 @@
           "entry-block-index fails to find index of:" bb))
 
 (define (gen-entry benv)                ;returns cfn name
-  (and-let* ([entry-cluster (find (^c (memq (~ benv'entry) (~ c'blocks)))
+  (and-let* ([entry-block (~ benv'entry)]
+             [entry-cluster (find (^c (memq entry-block (~ c'blocks)))
                                   (~ benv'clusters))]
-             [entry-block (last (~ entry-cluster'blocks))]
              [entry-cfn (cluster-cfn-name entry-cluster)]
              [incoming-regs (bb-incoming-regs entry-block)])
     (cgen-body #"static ScmObj ~(benv-cfn-name benv)("
