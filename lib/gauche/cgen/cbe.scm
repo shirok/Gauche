@@ -293,10 +293,11 @@
          (cgen-body #"      goto ~(block-label bb);"))
        (~ c'entry-blocks))
       (cgen-body #"  }"))
-    (for-each-with-index
-     (^[i r] (cgen-body #"  ~(R r) = DATA[~i];"))
-     (bb-incoming-regs (car (~ c'entry-blocks)))))
-  )
+    (let1 eb (car (~ c'entry-blocks))
+      (for-each-with-index
+       (^[i r] (cgen-body #"  ~(R r) = DATA[~i];"))
+       (bb-incoming-regs eb))
+      (cgen-body #"  goto ~(block-label eb);"))))
 
 ;; Returns bb's entry index.
 (define (entry-block-index bb)
@@ -323,7 +324,7 @@
           (cgen-body #"  data[0] = SCM_OBJ(~i);")))
       (do-ec [: ireg (index i) (~ benv'input-regs)]
              (let1 pos (find-index (cut eq? ireg <>) incoming-regs)
-               (assume pos)
+               (assume pos "Can't find ireg:" ireg incoming-regs)
                (cgen-body #"  data[~(+ pos off)] = SCM_FP[~i]; /* ~(~ ireg'name) */")))
       (if (> env-size 0)
         (cgen-body #"  return ~|entry-cfn|(Scm_VM(), SCM_FALSE, data);")
