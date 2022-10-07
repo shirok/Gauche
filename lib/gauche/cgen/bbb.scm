@@ -897,33 +897,46 @@
 ;; Basic block clustering
 ;;
 
+
 (define (cluster-bbs! benv)
-  (define (rec benv c bb)
-    (unless (~ bb'cluster)                  ; already visited
-      (push! (~ c'blocks) bb)
-      (set! (~ bb'cluster) c)
-      (match (last-insn bb)
-        [('JP bb1)
-         (rec benv c bb1)
-         (check-entry-bb! c bb1)]
-        [('BR _ bb1 bb2)
-         (rec benv c bb1)
-         (rec benv c bb2)
-         (check-entry-bb! c bb1)
-         (check-entry-bb! c bb2)]
-        [('CALL bb1 proc . regs)
-         (when (and bb1 (not (~ bb1 'cluster)))
-           (let1 c2 (make-cluster benv)
-             (push! (~ c2'entry-blocks) bb1)
-             (mark-entry-bb! bb1)
-             (rec benv c2 bb1)))]
-        [_ #f])))
+  (define (visit-1 c bb)
+    (cond
+     [(eq? (~ bb'cluster) c)]
+     [(~ bb'cluster) (error "[internal] something wrong")]
+     [else (set! (~ bb'cluster) c)
+           (push! (~ c'blocks) bb)
+           (visit* c (find-downstream-connections bb))
+           (visit* c (find-upstream-connections bb))]))
+  (define (visit* c bbs)
+    (for-each (cut visit-1 c <>) bbs))
+  (define (find-downstream-connections bb)
+    (match (last-insn bb)
+      [('JP bb1) (list bb1)]
+      [('BR _ bb1 bb2) (list bb1 bb2)]
+      [_ '()]))
+  (define (find-upstream-connections bb)
+    (filter (^[ubb] (memq bb (find-downstream-connections ubb)))
+            (~ bb'upstream)))
+  (define (pick-unvisited bbs)
+    (find (^[bb] (not (~ bb'cluster))) bbs))
+  (define (gen-clusters cs)
+    (if-let1 bb (pick-unvisited (~ benv'blocks))
+      (let1 c (make-cluster benv)
+        (visit-1 c bb)
+        (gen-clusters (cons c cs)))
+      cs))
+  (define (set-entry-blocks! c)
+    (dolist [bb (~ c'blocks)]
+      (when (or (eq? bb (~ benv'entry))
+                (any (^[ubb] (not (memq bb (find-downstream-connections ubb))))
+                     (~ bb'upstream)))
+        (push! (~ c'entry-blocks) bb))))
+
   ;; 1st pass
-  (when (null? (~ benv'clusters))
-    (let1 c (make-cluster benv)
-      (push! (~ c'entry-blocks) (~ benv'entry))
-      (rec benv c (~ benv'entry)))
-    (for-each cluster-bbs! (~ benv'children)))
+  (let1 clusters (gen-clusters '())
+    (for-each set-entry-blocks! clusters)
+    (set! (~ benv'clusters) clusters))
+  (for-each cluster-bbs! (~ benv'children))
   ;; 2nd pass (register classification)
   (dolist [c (~ benv'clusters)]
     (classify-cluster-regs! benv c))
@@ -1030,7 +1043,6 @@
 (define (compile-b program :optional (mod (vm-current-module)))
   (let* ([cenv (make-bottom-cenv mod)]
          [iform (pass2-4 (pass1 program cenv) mod)])
-    ;(pp-iform iform)
     (let* ([benv (make-benv #f (gensym "toplevel"))]
            [bb (pass5b iform benv)])
       (simplify-bbs! benv)
