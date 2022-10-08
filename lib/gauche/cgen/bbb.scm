@@ -200,7 +200,10 @@
    (entry :init-value #f)                     ; entry BB
    (blocks :init-value '())                   ; basic blocks
    (clusters :init-value '())                 ; clusters
-   (globals :init-value '())                  ; list of global identifiers
+   (globals :init-form (make-hash-table default-comparator))
+                                              ; <identifier> -> usage
+                                              ;  usage being a list of
+                                              ;  def, read, write
    (parent :init-keyword :parent)             ; parent benv
    (children :init-value '())))
 
@@ -393,6 +396,7 @@
     (values bb reg)))
 
 (define (pass5b/$DEFINE iform bb benv ctx)
+  (hash-table-push! (~ bb'benv'globals) ($define-id iform) 'def)
   (receive (bb val0) (pass5b/rec ($define-expr iform) bb benv 'normal)
     (push-insn bb `(DEF ,($define-id iform)
                         ,($define-flags iform)
@@ -413,13 +417,13 @@
 (define (pass5b/$GREF iform bb benv ctx)
   (let1 r (make-reg bb #f)
     (push-insn bb `(LD ,r ,($gref-id iform)))
-    (push-unique! (~ bb'benv'globals) ($gref-id iform))
+    (hash-table-push! (~ bb'benv'globals) ($gref-id iform) 'read)
     (pass5b/return bb ctx r)))
 
 (define (pass5b/$GSET iform bb benv ctx)
   (receive (bb val0) (pass5b/rec ($gset-expr iform) bb benv 'normal)
     (push-insn bb `(ST ,val0 ,($gref-id iform)))
-    (push-unique! (~ bb'benv'globals) ($gref-id iform))
+    (hash-table-push! (~ bb'benv'globals) ($gref-id iform) 'write)
     (pass5b/return bb ctx #f)))
 
 (define (pass5b/$CONST iform bb benv ctx)

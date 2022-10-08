@@ -106,8 +106,9 @@
 
 ;; scan benvs to register globals
 (define (register-globals unit benv)
-  (dolist [g (~ benv'globals)]
+  (dolist [g (hash-table-keys (~ benv'globals))]
     (or (hash-table-get (~ unit'globals) g #f)
+        (equal? (hash-table-get (~ benv'globals) g) '(def))
         (let* ([gname (identifier->symbol g)]
                [cname (symbol-append (gensym "global_") "_"
                                      (cgen-safe-name (symbol->string gname)))]
