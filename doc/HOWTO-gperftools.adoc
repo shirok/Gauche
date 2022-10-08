@@ -73,3 +73,8 @@ And this shows samples per instruction:
 ----
 $ pprof --disasm=<function-name> gosh prof.out
 ----
+
+NB: Some versions of gperftools dumps the profiler output to a
+file prof.out_{PID} where PID is the profiled process id.  If that's the
+case, prof.out itself is empty.  Check the directory before referring
+to the profiler output.
