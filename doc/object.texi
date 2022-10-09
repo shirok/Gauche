@@ -3989,29 +3989,63 @@ gosh> (ref foo'v)
 @c NODE クラスの再定義のカスタマイズ
 
 @deffn {Generic Function} class-redefinition old-class new-class
+@c EN
 When a class is redefined (@pxref{Class redefinition}),
 a new class metaobject is instantiated by
 @code{(make @var{metaclass} @var{initargs} @dots{})},
-then generic function is called with the old class metaobject and
+then this generic function is called with the old class metaobject and
 new class metaobject.  It should transform the information in the
 old class into the new class.
+@c JP
+クラスが再定義されると(@ref{Class redefinition}参照)、
+まず新たなクラスメタオブジェクトが
+@code{(make @var{metaclass} @var{initargs} @dots{})}によって生成され、
+それからこのジェネリックファンクションが旧クラスメタオブジェクトと
+新クラスメタオブジェクトを引数にして呼ばれます。
+このジェネリックファンクションは、旧クラスの必要な情報を
+新クラスに移行する役割を担います。
+@c COMMON
 
+@c EN
 The default method, @code{(class-redefinition @var{<class>} @var{<class>})},
 takes care of updating all the methods referencing to the old class,
 and propagate changes to the superclasses and subclasses.  If you
-customize this method, you should call the default method
+customize this generic function, you should call the default method
 with @code{next-method} to make sure those basic bookkeeping is done,
 or unexpected things can happen.
+@c JP
+デフォルトメソッド、@code{(class-redefinition @var{<class>} @var{<class>})}は、
+旧クラスを参照している全てのメソッドを更新し、
+スーパークラスとサブクラスに変更を伝搬します。
+このジェネリックファンクションをカスタマイズする際には、
+@code{next-method}でデフォルトメソッドを呼び出して、
+基本的な更新操作が行われるようにしてください。デフォルトメソッドが呼ばれなかった場合、
+意図しない影響が現れるかもしれません。
+@c COMMON
 
+@c EN
 Class redefinition mutates lots of structures.  If you throw an error
 in middle of it, the internal state can be left inconsistent.
+@c JP
+クラス再定義はたくさんの構造を変更します。途中でエラーを投げて中断してしまった場合、
+内部状態の一貫性が失われるかもしれません。
+@c COMMON
 
+@c EN
 Internally, the system uses a single mutex dedicated for the class redefition
 so that only one thread can execute it at a time.  You don't need to worry
 about other thread stepping on during @code{class-redefinition} method
 (Other thread can still be running for other operations, though, so
 if you touch objects that can be touched from outside of class redefinition,
 you should mutex it.)
+@c JP
+内部的に、システムはクラス再定義のためのグローバルなmutexを持っていて、
+再定義はたかだか一つのスレッドで処理されるようになっていあす。
+従って@code{class-redefinition}の途中で他のスレッドが割り込んでクラス構造が
+変更する心配はしなくて大丈夫です。
+(他の操作に関してはマルチスレッドが走っているので、
+クラス再定義に関する構造以外の構造を触る時は排他制御が必要です。)
+@c COMMON
 @end deffn
 
 
