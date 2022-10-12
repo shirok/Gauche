@@ -1959,10 +1959,20 @@
 ;;
 
 (inline-stub
- ;; standard
- (define-constant ENV_HEADER_SIZE  (c "SCM_MAKE_INT(ENV_SIZE(0))"))
- (define-constant CONT_FRAME_SIZE (c "SCM_MAKE_INT(CONT_FRAME_SIZE)"))
+ (define-cproc %get-env-frame-size () ::<fixnum>
+   (return (ENV_SIZE 0)))
 
+ (define-cproc %get-cont-frame-size () ::<fixnum>
+   (return CONT_FRAME_SIZE))
+
+ )
+
+;; These values can be overridden when we cross-compile (including
+;; inter-version compiling).
+(define ENV_HEADER_SIZE (%get-env-frame-size))
+(define CONT_FRAME_SIZE (%get-cont-frame-size))
+
+(inline-stub
  ;; Eval situation flag (for eval-when constrcut)
  (define-cproc vm-eval-situation (:optional val) ::<int>
    (let* ([vm::ScmVM* (Scm_VM)])
@@ -2021,6 +2031,10 @@
 ;; Initialization
 ;;
 
+;; This is called after all built-in procedures and compilers are
+;; brought up.  Remaining initializations are autoloads and cond-features.
+;; We can put miscellaneous bookkeeping here.  Be careful not to trigger
+;; autoloads, for it requires the compiler being functional.
 (define (init-compiler)
   #f
   )
