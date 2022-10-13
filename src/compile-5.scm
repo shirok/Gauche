@@ -85,6 +85,13 @@
   (and (<= 0 depth  (- (ash 1 VM_INSN_ARG0_BITS) 1))
        (<= 0 offset (- (ash 1 VM_INSN_ARG1_BITS) 1))))
 
+;; For brevity, these macro assumes variable 'target'.
+(define-macro (cont-frame-size)
+  '(ctarget-cont-frame-size target))
+(define-macro (env-header-size)
+  '(ctarget-env-header-size target))
+
+
 ;; Dispatch pass5 handler.
 ;; *pass5-dispatch-table* is defined below, after all handlers are defined.
 (define-inline (pass5/rec iform target renv ctx)
@@ -445,7 +452,7 @@
              (let1 dbody (pass5/rec body target (cons lvars renv) ctx)
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
-               (imax dinit (+ dbody ENV_HEADER_SIZE nlocals))))]
+               (imax dinit (+ dbody (env-header-size) nlocals))))]
           [else
            (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
            (let1 dinit (pass5/prepare-args inits target renv ctx)
@@ -455,7 +462,7 @@
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (imax dinit
-                     (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))])]
+                     (+ dbody (cont-frame-size) (env-header-size) nlocals))))])]
         [(rec rec*)
          (receive (closures others)
              (partition-letrec-inits inits target (cons lvars renv) 0 '() '())
@@ -469,7 +476,7 @@
                     [dbody (pass5/rec body target (cons lvars renv) ctx)])
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
-               (+ ENV_HEADER_SIZE nlocals (imax dinit dbody)))]
+               (+ (env-header-size) nlocals (imax dinit dbody)))]
             [else
              (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
@@ -480,7 +487,7 @@
                     [dbody (pass5/rec body target (cons lvars renv) 'tail)])
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
-               (+ CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals
+               (+ (cont-frame-size) (env-header-size) nlocals
                   (imax dinit dbody)))]))]
         [else
          (error "[internal error]: pass5/$LET got unknown let type:"
@@ -579,7 +586,7 @@
         (let1 dbody (pass5/rec body target (cons lvars renv) ctx)
           (unless (tail-context? ctx)
             (compiled-code-emit0! ccb POP-LOCAL-ENV))
-          (imax dinit (+ nargs optarg ENV_HEADER_SIZE dbody))))]
+          (imax dinit (+ nargs optarg (env-header-size) dbody))))]
      [else
       (let ([merge-label (compiled-code-new-label ccb)]
             [dinit (pass5/rec expr target renv (normal-context ctx))])
@@ -589,7 +596,7 @@
         (let1 dbody (pass5/rec body target (cons lvars renv) 'tail)
           (compiled-code-emit-RET! ccb)
           (compiled-code-set-label! ccb merge-label)
-          (imax dinit (+ nargs optarg CONT_FRAME_SIZE ENV_HEADER_SIZE dbody))))]
+          (imax dinit (+ nargs optarg (cont-frame-size) (env-header-size) dbody))))]
      )))
 
 (define (pass5/$LAMBDA iform target renv ctx)
@@ -741,7 +748,7 @@
 ;; stack depth of $CALL nodes:
 ;;  - if nargs >= 1, we need (# of args) + (env header) slots
 ;;  - if generic call, +2 for possible object-apply hack and next-method.
-;;  - if non-tail call, + CONT_FRAME_SIZE.
+;;  - if non-tail call, + (cont-frame-size).
 
 (define (pass5/$CALL iform target renv ctx)
   (case ($call-flag iform)
@@ -766,7 +773,7 @@
       (let1 dinit (pass5/prepare-args args target renv ctx)
         (pass5/rec ($call-proc iform) target renv 'normal/top)
         (compiled-code-emit1i! ccb LOCAL-ENV-TAIL-CALL nargs ($*-src iform))
-        (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
+        (if (= nargs 0) 0 (imax dinit (+ nargs (env-header-size)))))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let1 dinit (pass5/prepare-args args target renv ctx)
@@ -774,8 +781,8 @@
           (compiled-code-emit1i! ccb LOCAL-ENV-CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
           (if (= nargs 0)
-            CONT_FRAME_SIZE
-            (imax dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE))))))))
+            (cont-frame-size)
+            (imax dinit (+ nargs (env-header-size) (cont-frame-size)))))))))
 
 ;; Embedded call
 ;;   $call-proc has $lambda node.  We inline its body.
@@ -803,8 +810,8 @@
         (compiled-code-emit-RET! ccb)
         (compiled-code-set-label! ccb merge-label)
         (if (= nargs 0)
-          (+ CONT_FRAME_SIZE dbody)
-          (imax dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE dbody)))))
+          (+ (cont-frame-size) dbody)
+          (imax dinit (+ nargs (env-header-size) (cont-frame-size) dbody)))))
     ))
 
 ;; Jump call
@@ -828,7 +835,7 @@
           (pass5/emit-local-env-jump ccb lvars (length renv-diff)
                                      (pass5/ensure-label ccb label)
                                      ($*-src iform))
-          (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
+          (if (= nargs 0) 0 (imax dinit (+ nargs (env-header-size)))))
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
           (let1 dinit (pass5/prepare-args args target renv ctx)
@@ -837,8 +844,8 @@
                                        ($*-src iform))
             (compiled-code-set-label! ccb merge-label)
             (if (= nargs 0)
-              CONT_FRAME_SIZE
-              (imax dinit (+ nargs ENV_HEADER_SIZE CONT_FRAME_SIZE)))))
+              (cont-frame-size)
+              (imax dinit (+ nargs (env-header-size) (cont-frame-size))))))
         ))))
 
 (define (pass5/emit-local-env-jump ccb lvars env-depth label src)
@@ -862,7 +869,7 @@
                                target renv (normal-context ctx))]
              [dinit (pass5/prepare-args args target renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
-        (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
+        (imax dinit (+ nargs dproc (env-header-size))))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let* ([dproc (pass5/rec ($call-proc iform)
@@ -870,7 +877,7 @@
                [dinit (pass5/prepare-args args target renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
-          (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
+          (+ (cont-frame-size) (imax dinit (+ nargs dproc (env-header-size))))))
       )))
 
 ;; Normal call
@@ -882,14 +889,14 @@
       (let* ([dinit (pass5/prepare-args args target renv ctx)]
              [dproc (pass5/rec ($call-proc iform) target renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
-        (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
+        (imax dinit (+ nargs dproc (env-header-size))))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let* ([dinit (pass5/prepare-args args target renv ctx)]
                [dproc (pass5/rec ($call-proc iform) target renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
-          (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
+          (+ (cont-frame-size) (imax dinit (+ nargs dproc (env-header-size))))))
       )))
 
 (define (all-args-simple? args)
@@ -956,7 +963,7 @@
           (compiled-code-emit0oi! ccb PRE-CALL merge-label info)
           (let1 d (pass5/asm-generic target insn args info renv)
             (compiled-code-set-label! ccb merge-label)
-            (+ CONT_FRAME_SIZE d 1))))]
+            (+ (cont-frame-size) d 1))))]
      [else
       (pass5/asm-generic target insn args info renv)])))
 
