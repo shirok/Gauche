@@ -87,66 +87,66 @@
 
 ;; Dispatch pass5 handler.
 ;; *pass5-dispatch-table* is defined below, after all handlers are defined.
-(define-inline (pass5/rec iform ccb renv ctx)
+(define-inline (pass5/rec iform target renv ctx)
   ((vector-ref *pass5-dispatch-table* (vector-ref iform 0))
-   iform ccb renv ctx))
+   iform target renv ctx))
 
 ;;
 ;; Pass 5 main entry.  Returns <compiled-code>
 ;;
-(define (pass5 iform ccb initial-renv ctx)
-  (let1 maxstack (pass5/rec iform ccb initial-renv ctx)
-    (compiled-code-emit-RET! ccb)
-    (compiled-code-finish-builder ccb maxstack)
-    ccb))
+(define (pass5 iform target initial-renv ctx)
+  (let1 maxstack (pass5/rec iform target initial-renv ctx)
+    (rlet1 ccb (ctarget-ccb target)
+      (compiled-code-emit-RET! ccb)
+      (compiled-code-finish-builder ccb maxstack))))
 
 ;;
 ;; Pass 5 intermediate tree handlers
 ;;
 
-(define (pass5/$DEFINE iform ccb renv ctx)
-  (let ([d (pass5/rec ($define-expr iform) ccb renv 'normal/bottom)]
+(define (pass5/$DEFINE iform target renv ctx)
+  (let ([d (pass5/rec ($define-expr iform) target renv 'normal/bottom)]
         [f (cond [(memq 'const ($define-flags iform)) SCM_BINDING_CONST]
                  [(memq 'inlinable ($define-flags iform)) SCM_BINDING_INLINABLE]
                  [else 0])])
-    (compiled-code-emit1oi! ccb DEFINE f ($define-id iform) ($*-src iform))
+    (compiled-code-emit1oi! (ctarget-ccb target) DEFINE f
+                            ($define-id iform) ($*-src iform))
     d))
 
-(define (pass5/$LREF iform ccb renv ctx)
+(define (pass5/$LREF iform target renv ctx)
   (receive (depth offset) (renv-lookup renv ($lref-lvar iform))
     (if (small-env? depth offset)
-      (compiled-code-emit2i! ccb LREF depth offset
+      (compiled-code-emit2i! (ctarget-ccb target) LREF depth offset
                              (lvar-name ($lref-lvar iform)))
-      (compiled-code-emit1oi! ccb XLREF offset depth
+      (compiled-code-emit1oi! (ctarget-ccb target) XLREF offset depth
                               (lvar-name ($lref-lvar iform))))
     (unless (lvar-immutable? ($lref-lvar iform))
-      (compiled-code-emit0! ccb UNBOX))
+      (compiled-code-emit0! (ctarget-ccb target) UNBOX))
     0))
 
-(define (pass5/$LSET iform ccb renv ctx)
+(define (pass5/$LSET iform target renv ctx)
   (receive (depth offset) (renv-lookup renv ($lset-lvar iform))
-    (rlet1 d (pass5/rec ($lset-expr iform) ccb renv (normal-context ctx))
+    (rlet1 d (pass5/rec ($lset-expr iform) target renv (normal-context ctx))
       (if (small-env? depth offset)
-        (compiled-code-emit2i! ccb LSET depth offset
+        (compiled-code-emit2i! (ctarget-ccb target) LSET depth offset
                                (lvar-name ($lset-lvar iform)))
-        (compiled-code-emit1oi! ccb XLSET offset depth
+        (compiled-code-emit1oi! (ctarget-ccb target) XLSET offset depth
                                 (lvar-name ($lset-lvar iform)))))))
 
-(define (pass5/$GREF iform ccb renv ctx)
+(define (pass5/$GREF iform target renv ctx)
   (let1 id ($gref-id iform)
-    (compiled-code-emit0oi! ccb GREF id id)
+    (compiled-code-emit0oi! (ctarget-ccb target) GREF id id)
     0))
 
-(define (pass5/$GSET iform ccb renv ctx)
-  (let ([d (pass5/rec ($gset-expr iform) ccb renv (normal-context ctx))]
-        [id ($gset-id iform)])
-    (compiled-code-emit0oi! ccb GSET id id)
-    d))
+(define (pass5/$GSET iform target renv ctx)
+  (rlet1 d (pass5/rec ($gset-expr iform) target renv (normal-context ctx))
+    (let1 id ($gset-id iform)
+      (compiled-code-emit0oi! (ctarget-ccb target) GSET id id))))
 
-(define (pass5/$CONST iform ccb renv ctx)
+(define (pass5/$CONST iform target renv ctx)
   ;; if the context is stmt-context, value won't be used so we drop it.
   (unless (stmt-context? ctx)
-    (compiled-code-emit0o! ccb CONST ($const-value iform)))
+    (compiled-code-emit0o! (ctarget-ccb target) CONST ($const-value iform)))
   0)
 
 ;; Branch peephole optimization
@@ -157,7 +157,7 @@
 ;;   if we can strip extra NOT operation.  Note that it is only possible
 ;;   if the result of test isn't used directly (that is, neither then nor
 ;;   else clause is ($IT)), thus we treat such a case specially.
-(define (pass5/$IF iform ccb renv ctx)
+(define (pass5/$IF iform target renv ctx)
   (cond
    [(and (not ($it? ($if-then iform)))
          (not ($it? ($if-else iform)))
@@ -167,11 +167,11 @@
                     (car ($asm-args ($if-test iform)))
                     ($if-else iform)
                     ($if-then iform))
-               ccb renv ctx)]
+               target renv ctx)]
    [else
-    (pass5/branch-core iform ccb renv ctx)]))
+    (pass5/branch-core iform target renv ctx)]))
 
-(define (pass5/branch-core iform ccb renv ctx)
+(define (pass5/branch-core iform target renv ctx)
   (let1 test ($if-test iform)
     ;; Select an appropriate branch instruction
     (cond
@@ -181,107 +181,107 @@
         (cond
          [(eqv? code NULLP)
           (pass5/if-final iform (car args) BNNULL 0 0
-                          ($*-src test) ccb renv ctx)]
+                          ($*-src test) target renv ctx)]
          [(eqv? code EQ)
           (pass5/if-eq iform (car args) (cadr args)
-                       ($*-src test) ccb renv ctx)]
+                       ($*-src test) target renv ctx)]
          [(eqv? code EQV)
           (pass5/if-eqv iform (car args) (cadr args)
-                        ($*-src test) ccb renv ctx)]
+                        ($*-src test) target renv ctx)]
          [(eqv? code NUMEQ2)
           (pass5/if-numeq iform (car args) (cadr args)
-                          ($*-src test) ccb renv ctx)]
+                          ($*-src test) target renv ctx)]
          [(eqv? code NUMLE2)
           (pass5/if-numcmp iform (car args) (cadr args)
-                           BNLE ($*-src test) ccb renv ctx)]
+                           BNLE ($*-src test) target renv ctx)]
          [(eqv? code NUMLT2)
           (pass5/if-numcmp iform (car args) (cadr args)
-                           BNLT ($*-src test) ccb renv ctx)]
+                           BNLT ($*-src test) target renv ctx)]
          [(eqv? code NUMGE2)
           (pass5/if-numcmp iform (car args) (cadr args)
-                           BNGE ($*-src test) ccb renv ctx)]
+                           BNGE ($*-src test) target renv ctx)]
          [(eqv? code NUMGT2)
           (pass5/if-numcmp iform (car args) (cadr args)
-                           BNGT ($*-src test) ccb renv ctx)]
+                           BNGT ($*-src test) target renv ctx)]
          [else
-          (pass5/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx)]
+          (pass5/if-final iform test BF 0 0 ($*-src iform) target renv ctx)]
          ))]
      [(has-tag? test $EQ?)
       (pass5/if-eq iform ($*-arg0 test) ($*-arg1 test)
-                   ($*-src iform) ccb renv ctx)]
+                   ($*-src iform) target renv ctx)]
      [(has-tag? test $EQV?)
       (pass5/if-eqv iform ($*-arg0 test) ($*-arg1 test)
-                    ($*-src iform) ccb renv ctx)]
+                    ($*-src iform) target renv ctx)]
      [($const? test)   ; this may occur as a result of macro expansion
       (pass5/rec (if ($const-value test)
                    (if ($it? ($if-then iform)) test ($if-then iform))
                    (if ($it? ($if-else iform)) test ($if-else iform)))
-                 ccb renv ctx)]
+                 target renv ctx)]
      [else
-      (pass5/if-final iform test BF 0 0 ($*-src iform) ccb renv ctx)]
+      (pass5/if-final iform test BF 0 0 ($*-src iform) target renv ctx)]
      )))
 
 ;;
-(define (pass5/if-eq iform x y info ccb renv ctx)
+(define (pass5/if-eq iform x y info target renv ctx)
   (cond
    [($const? x) (pass5/if-final iform y BNEQC ($const-value x)
-                                0 info ccb renv ctx)]
+                                0 info target renv ctx)]
    [($const? y) (pass5/if-final iform x BNEQC ($const-value y)
-                                0 info ccb renv ctx)]
+                                0 info target renv ctx)]
    [else
-    (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-      (compiled-code-emit-PUSH! ccb)
+    (let1 depth (imax (pass5/rec x target renv (normal-context ctx)) 1)
+      (compiled-code-emit-PUSH! (ctarget-ccb target))
       (pass5/if-final iform #f BNEQ 0
-                      (imax (pass5/rec y ccb renv 'normal/top) depth)
-                      info ccb renv ctx))]))
+                      (imax (pass5/rec y target renv 'normal/top) depth)
+                      info target renv ctx))]))
 
-(define (pass5/if-eqv iform x y info ccb renv ctx)
+(define (pass5/if-eqv iform x y info target renv ctx)
   (cond
    [($const? x) (pass5/if-final iform y BNEQVC ($const-value x)
-                                0 info ccb renv ctx)]
+                                0 info target renv ctx)]
    [($const? y) (pass5/if-final iform x BNEQVC ($const-value y)
-                                0 info ccb renv ctx)]
+                                0 info target renv ctx)]
    [else
-    (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-      (compiled-code-emit-PUSH! ccb)
+    (let1 depth (imax (pass5/rec x target renv (normal-context ctx)) 1)
+      (compiled-code-emit-PUSH! (ctarget-ccb target))
       (pass5/if-final iform #f BNEQV 0
-                      (imax (pass5/rec y ccb renv 'normal/top) depth)
-                      info ccb renv ctx))]))
+                      (imax (pass5/rec y target renv 'normal/top) depth)
+                      info target renv ctx))]))
 
-(define (pass5/if-numeq iform x y info ccb renv ctx)
+(define (pass5/if-numeq iform x y info target renv ctx)
   (or (and ($const? x)
            (integer-fits-insn-arg? ($const-value x))
            (pass5/if-final iform y BNUMNEI ($const-value x)
                            0
-                           info ccb renv ctx))
+                           info target renv ctx))
       (and ($const? y)
            (integer-fits-insn-arg? ($const-value y))
            (pass5/if-final iform x BNUMNEI ($const-value y)
                            0
-                           info ccb renv ctx))
+                           info target renv ctx))
       (and ($lref? x)
            (lvar-immutable? ($lref-lvar x))
            (receive (depth offset) (renv-lookup renv ($lref-lvar x))
              (and (small-env? depth offset)
                   (pass5/if-final iform #f LREF-VAL0-BNUMNE
                                   (pass5/if-numcmp-lrefarg x renv)
-                                  (pass5/rec y ccb renv (normal-context ctx))
-                                  info ccb renv ctx))))
+                                  (pass5/rec y target renv (normal-context ctx))
+                                  info target renv ctx))))
       (and ($lref? y)
            (lvar-immutable? ($lref-lvar y))
            (receive (depth offset) (renv-lookup renv ($lref-lvar y))
              (and (small-env? depth offset)
                   (pass5/if-final iform #f LREF-VAL0-BNUMNE
                                   (pass5/if-numcmp-lrefarg y renv)
-                                  (pass5/rec x ccb renv (normal-context ctx))
-                                  info ccb renv ctx))))
-      (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-        (compiled-code-emit-PUSH! ccb)
+                                  (pass5/rec x target renv (normal-context ctx))
+                                  info target renv ctx))))
+      (let1 depth (imax (pass5/rec x target renv (normal-context ctx)) 1)
+        (compiled-code-emit-PUSH! (ctarget-ccb target))
         (pass5/if-final iform #f BNUMNE 0
-                        (imax (pass5/rec y ccb renv 'normal/top) depth)
-                        info ccb renv ctx))))
+                        (imax (pass5/rec y target renv 'normal/top) depth)
+                        info target renv ctx))))
 
-(define (pass5/if-numcmp iform x y insn info ccb renv ctx)
+(define (pass5/if-numcmp iform x y insn info target renv ctx)
   (define .fwd. `((,BNLT . ,LREF-VAL0-BNLT) (,BNLE . ,LREF-VAL0-BNLE)
                   (,BNGT . ,LREF-VAL0-BNGT) (,BNGE . ,LREF-VAL0-BNGE)))
   (define .rev. `((,BNLT . ,LREF-VAL0-BNGT) (,BNLE . ,LREF-VAL0-BNGE)
@@ -292,21 +292,21 @@
              (and (small-env? depth offset)
                   (pass5/if-final iform #f (cdr (assv insn .fwd.))
                                   (pass5/if-numcmp-lrefarg x renv)
-                                  (pass5/rec y ccb renv (normal-context ctx))
-                                  info ccb renv ctx))))
+                                  (pass5/rec y target renv (normal-context ctx))
+                                  info target renv ctx))))
       (and ($lref? y)
            (lvar-immutable? ($lref-lvar y))
            (receive (depth offset) (renv-lookup renv ($lref-lvar y))
              (and (small-env? depth offset)
                   (pass5/if-final iform #f (cdr (assv insn .rev.))
                                   (pass5/if-numcmp-lrefarg y renv)
-                                  (pass5/rec x ccb renv (normal-context ctx))
-                                  info ccb renv ctx))))
-      (let1 depth (imax (pass5/rec x ccb renv (normal-context ctx)) 1)
-        (compiled-code-emit-PUSH! ccb)
+                                  (pass5/rec x target renv (normal-context ctx))
+                                  info target renv ctx))))
+      (let1 depth (imax (pass5/rec x target renv (normal-context ctx)) 1)
+        (compiled-code-emit-PUSH! (ctarget-ccb target))
         (pass5/if-final iform #f insn 0
-                        (imax (pass5/rec y ccb renv 'normal/top) depth)
-                        info ccb renv ctx))))
+                        (imax (pass5/rec y target renv 'normal/top) depth)
+                        info target renv ctx))))
 
 ;; helper fn
 (define (pass5/if-numcmp-lrefarg lref renv)
@@ -359,9 +359,9 @@
 (define-constant .branch-insn-extra-operand.
   `(,BNEQC ,BNEQVC))
 
-(define (pass5/if-final iform test code arg0/opr depth info ccb renv ctx)
+(define (pass5/if-final iform test code arg0/opr depth info target renv ctx)
   (let ([depth (if test
-                 (imax (pass5/rec test ccb renv (normal-context ctx)) depth)
+                 (imax (pass5/rec test target renv (normal-context ctx)) depth)
                  depth)]
         [then-form ($if-then iform)]
         [else-form ($if-else iform)])
@@ -370,41 +370,43 @@
       (or (and (eqv? code BF)
                (cond
                 [($it? then-form)
-                 (compiled-code-emit0i! ccb RT info)
-                 (imax (pass5/rec else-form ccb renv ctx) depth)]
+                 (compiled-code-emit0i! (ctarget-ccb target) RT info)
+                 (imax (pass5/rec else-form target renv ctx) depth)]
                 [($it? else-form)
-                 (compiled-code-emit0i! ccb RF info)
-                 (imax (pass5/rec then-form ccb renv ctx) depth)]
+                 (compiled-code-emit0i! (ctarget-ccb target) RF info)
+                 (imax (pass5/rec then-form target renv ctx) depth)]
                 [(and (has-tag? then-form $LABEL)
                       ($label-label then-form))
                  => (^[label]
-                      (compiled-code-emit0o! ccb BT label)
-                      (imax (pass5/rec else-form ccb renv ctx) depth))]
+                      (compiled-code-emit0o! (ctarget-ccb target) BT label)
+                      (imax (pass5/rec else-form target renv ctx) depth))]
                 [else #f]))
-          (let1 elselabel (compiled-code-new-label ccb)
+          (let* ([ccb (ctarget-ccb target)]
+                 [elselabel (compiled-code-new-label ccb)])
             (if (memv code .branch-insn-extra-operand.)
               (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
               (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
-            (set! depth (imax (pass5/rec then-form ccb renv ctx) depth))
+            (set! depth (imax (pass5/rec then-form target renv ctx) depth))
             (compiled-code-emit-RET! ccb)
             (compiled-code-set-label! ccb elselabel)
-            (imax (pass5/rec else-form ccb renv ctx) depth)))]
+            (imax (pass5/rec else-form target renv ctx) depth)))]
      [else
-      (let ([elselabel  (compiled-code-new-label ccb)]
-            [mergelabel (compiled-code-new-label ccb)])
+      (let* ([ccb (ctarget-ccb target)]
+             [elselabel  (compiled-code-new-label ccb)]
+             [mergelabel (compiled-code-new-label ccb)])
         (if (memv code .branch-insn-extra-operand.)
           (compiled-code-emit0oi! ccb code (list arg0/opr elselabel) info)
           (compiled-code-emit1oi! ccb code arg0/opr elselabel info))
-        (set! depth (imax (pass5/rec then-form ccb renv ctx) depth))
+        (set! depth (imax (pass5/rec then-form target renv ctx) depth))
         (unless ($it? else-form)
           (compiled-code-emit0o! ccb JUMP mergelabel))
         (compiled-code-set-label! ccb elselabel)
         (unless ($it? else-form)
-          (set! depth (imax (pass5/rec else-form ccb renv ctx) depth)))
+          (set! depth (imax (pass5/rec else-form target renv ctx) depth)))
         (compiled-code-set-label! ccb mergelabel)
         depth)])))
 
-(define (pass5/$IT iform ccb renv ctx) 0)
+(define (pass5/$IT iform target renv ctx) 0)
 
 ;; $LET stack estimate
 ;;   normal let: Each init clause is evaluated while preceding results
@@ -417,7 +419,7 @@
 ;;     stack is: total env frame size + max of stack depth consumed by
 ;;     one of inits or the body.
 ;;
-(define (pass5/$LET iform ccb renv ctx)
+(define (pass5/$LET iform target renv ctx)
   (when (and (has-tag? ($let-body iform) $LET)
              (eq? ($let-type iform) 'let))
     (pass5/flatten-let*! iform))
@@ -427,43 +429,44 @@
         [body  ($let-body iform)]
         [merge-label (if (bottom-context? ctx)
                        #f
-                       (compiled-code-new-label ccb))])
+                       (compiled-code-new-label (ctarget-ccb target)))])
     (when (> (length lvars) (- (ash 1 VM_INSN_ARG_BITS) 1))
       (errorf "[internal] Local frame size (~a) exceeded compiler limitation (~a)."
               (length lvars) (- (ash 1 VM_INSN_ARG_BITS) 1)))
-    (let1 nlocals (length lvars)
+    (let ([nlocals (length lvars)]
+          [ccb (ctarget-ccb target)])
       (case ($let-type iform)
         [(let)
          (cond
           [(bottom-context? ctx)
-           (let1 dinit (pass5/prepare-args inits ccb renv ctx)
+           (let1 dinit (pass5/prepare-args inits target renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
              (pass5/box-mutable-lvars lvars ccb)
-             (let1 dbody (pass5/rec body ccb (cons lvars renv) ctx)
+             (let1 dbody (pass5/rec body target (cons lvars renv) ctx)
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
                (imax dinit (+ dbody ENV_HEADER_SIZE nlocals))))]
           [else
            (compiled-code-emit1oi! ccb PRE-CALL nlocals merge-label info)
-           (let1 dinit (pass5/prepare-args inits ccb renv ctx)
+           (let1 dinit (pass5/prepare-args inits target renv ctx)
              (compiled-code-emit1i! ccb LOCAL-ENV nlocals info)
              (pass5/box-mutable-lvars lvars ccb)
-             (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
+             (let1 dbody (pass5/rec body target (cons lvars renv) 'tail)
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (imax dinit
                      (+ dbody CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals))))])]
         [(rec rec*)
          (receive (closures others)
-             (partition-letrec-inits inits ccb (cons lvars renv) 0 '() '())
+             (partition-letrec-inits inits target (cons lvars renv) 0 '() '())
            (cond
             [(bottom-context? ctx)
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
                                      closures info)
              (emit-letrec-boxers ccb lvars nlocals)
-             (let* ([dinit (emit-letrec-inits others lvars nlocals ccb
+             (let* ([dinit (emit-letrec-inits others lvars nlocals target
                                               (cons lvars renv) 0)]
-                    [dbody (pass5/rec body ccb (cons lvars renv) ctx)])
+                    [dbody (pass5/rec body target (cons lvars renv) ctx)])
                (unless (tail-context? ctx)
                  (compiled-code-emit0! ccb POP-LOCAL-ENV))
                (+ ENV_HEADER_SIZE nlocals (imax dinit dbody)))]
@@ -472,9 +475,9 @@
              (compiled-code-emit1oi! ccb LOCAL-ENV-CLOSURES nlocals
                                      closures info)
              (emit-letrec-boxers ccb lvars nlocals)
-             (let* ([dinit (emit-letrec-inits others lvars nlocals ccb
+             (let* ([dinit (emit-letrec-inits others lvars nlocals target
                                               (cons lvars renv) 0)]
-                    [dbody (pass5/rec body ccb (cons lvars renv) 'tail)])
+                    [dbody (pass5/rec body target (cons lvars renv) 'tail)])
                (compiled-code-emit-RET! ccb)
                (compiled-code-set-label! ccb merge-label)
                (+ CONT_FRAME_SIZE ENV_HEADER_SIZE nlocals
@@ -518,21 +521,21 @@
 ;; returns two lists: a list of init values (closures or #under values)
 ;; corresponding to lvar list, and non-closure init iforms, each
 ;; paired with an lvar count.
-(define (partition-letrec-inits inits ccb renv cnt closures others)
+(define (partition-letrec-inits inits target renv cnt closures others)
   (if (null? inits)
     (values (reverse closures) (reverse others))
     (let1 init (car inits)
       (cond
        [(has-tag? init $LAMBDA)
-        (partition-letrec-inits (cdr inits) ccb renv (+ cnt 1)
-                                (cons (pass5/lambda init ccb renv) closures)
+        (partition-letrec-inits (cdr inits) target renv (+ cnt 1)
+                                (cons (pass5/lambda init target renv) closures)
                                 others)]
        [($const? init)
-        (partition-letrec-inits (cdr inits) ccb renv (+ cnt 1)
+        (partition-letrec-inits (cdr inits) target renv (+ cnt 1)
                                 (cons ($const-value init) closures)
                                 others)]
        [else
-        (partition-letrec-inits (cdr inits) ccb renv (+ cnt 1)
+        (partition-letrec-inits (cdr inits) target renv (+ cnt 1)
                                 (cons (undefined) closures)
                                 (acons cnt init others))]))))
 
@@ -548,59 +551,62 @@
 ;; emit LSET or ENV-SET insn to initialize lvars that aren't closures or
 ;; constants.  init-alist is the second value partition-letrec-inits
 ;; returned, which is a list of (<lvar-count> <init-iform>).
-(define (emit-letrec-inits init-alist lvars nlocals ccb renv depth)
+(define (emit-letrec-inits init-alist lvars nlocals target renv depth)
   (if (null? init-alist)
     depth
     (let* ([off&expr (car init-alist)]
-           [d (pass5/rec (cdr off&expr) ccb renv 'normal/bottom)]
-           [lvar (list-ref lvars (car off&expr))])
+           [d (pass5/rec (cdr off&expr) target renv 'normal/bottom)]
+           [lvar (list-ref lvars (car off&expr))]
+           [ccb (ctarget-ccb target)])
       (if (lvar-immutable? lvar)
         (compiled-code-emit1! ccb ENV-SET (- nlocals 1 (car off&expr)))
         (compiled-code-emit2! ccb LSET 0 (- nlocals 1 (car off&expr))))
-      (emit-letrec-inits (cdr init-alist) lvars nlocals ccb renv
+      (emit-letrec-inits (cdr init-alist) lvars nlocals target renv
                          (imax depth d)))))
 
-(define (pass5/$RECEIVE iform ccb renv ctx)
+(define (pass5/$RECEIVE iform target renv ctx)
   (let ([nargs  ($receive-reqargs iform)]
         [optarg ($receive-optarg iform)]
         [lvars  ($receive-lvars iform)]
         [expr   ($receive-expr iform)]
-        [body   ($receive-body iform)])
+        [body   ($receive-body iform)]
+        [ccb    (ctarget-ccb target)])
     (cond
      [(bottom-context? ctx)
-      (let1 dinit (pass5/rec expr ccb renv (normal-context ctx))
+      (let1 dinit (pass5/rec expr target renv (normal-context ctx))
         (compiled-code-emit2i! ccb TAIL-RECEIVE nargs optarg ($*-src iform))
         (emit-letrec-boxers ccb lvars (length lvars))
-        (let1 dbody (pass5/rec body ccb (cons lvars renv) ctx)
+        (let1 dbody (pass5/rec body target (cons lvars renv) ctx)
           (unless (tail-context? ctx)
             (compiled-code-emit0! ccb POP-LOCAL-ENV))
           (imax dinit (+ nargs optarg ENV_HEADER_SIZE dbody))))]
      [else
       (let ([merge-label (compiled-code-new-label ccb)]
-            [dinit (pass5/rec expr ccb renv (normal-context ctx))])
+            [dinit (pass5/rec expr target renv (normal-context ctx))])
         (compiled-code-emit2oi! ccb RECEIVE nargs optarg
                                 merge-label ($*-src iform))
         (emit-letrec-boxers ccb lvars (length lvars))
-        (let1 dbody (pass5/rec body ccb (cons lvars renv) 'tail)
+        (let1 dbody (pass5/rec body target (cons lvars renv) 'tail)
           (compiled-code-emit-RET! ccb)
           (compiled-code-set-label! ccb merge-label)
           (imax dinit (+ nargs optarg CONT_FRAME_SIZE ENV_HEADER_SIZE dbody))))]
      )))
 
-(define (pass5/$LAMBDA iform ccb renv ctx)
-  (let ([code (pass5/lambda iform ccb renv)]
+(define (pass5/$LAMBDA iform target renv ctx)
+  (let ([code (pass5/lambda iform target renv)]
         [info ($*-src iform)])
-    (compiled-code-emit0oi! ccb CLOSURE code info))
+    (compiled-code-emit0oi! (ctarget-ccb target) CLOSURE code info))
   0)
 
-(define (pass5/lambda iform ccb renv)
+(define (pass5/lambda iform target renv)
   (let* ([inliner (let1 v ($lambda-flag iform)
                    (and (vector? v) v))]
          [ccb (make-compiled-code-builder ($lambda-reqargs iform)
                                           ($lambda-optarg iform)
                                           ($lambda-name iform)
-                                          ccb  ; parent
-                                          inliner)])
+                                          (ctarget-ccb target) ; parent
+                                          inliner)]
+         [ntarget (make-child-compile-target ccb target)])
     (compiled-code-attach-source-info! ccb ($lambda-src iform))
 
     ;; If any of procedure parameters are set!, we should box it
@@ -620,19 +626,20 @@
                              'unused-args uargs)))
     ;; Run pass5 on body
     (pass5 ($lambda-body iform)
-           ccb
+           ntarget
            (if (null? ($lambda-lvars iform))
              renv
              (cons ($lambda-lvars iform) renv))
            'tail)))
 
-(define (pass5/$CLAMBDA iform ccb renv ctx)
+(define (pass5/$CLAMBDA iform target renv ctx)
   (define (reqargs-min-max argcounts)
     (let loop ([counts argcounts] [mi #f] [mx 0])
       (match counts
         [() (values mi mx)]
         [((req . _) . rest) (loop rest (if mi (min mi req) req) (max mx req))])))
   (let*-values ([(cs) ($clambda-closures iform)]
+                [(ccb) (ctarget-ccb target)]
                 [(minarg maxarg) (reqargs-min-max ($clambda-argcounts iform))]
                 [merger (if (bottom-context? ctx)
                           #f
@@ -658,29 +665,30 @@
         (+ depth 3)]
        [else
         (compiled-code-emit-PUSH! ccb)
-        (let1 d (pass5/rec (car xs) ccb renv 'normal/top)
+        (let1 d (pass5/rec (car xs) target renv 'normal/top)
           (loop (cdr xs) (imax depth (+ d cnt 1)) (+ cnt 1)))]))))
 
-(define (pass5/$LABEL iform ccb renv ctx)
-  (let1 label ($label-label iform)
+(define (pass5/$LABEL iform target renv ctx)
+  (let ([label ($label-label iform)]
+        [ccb (ctarget-ccb target)])
     ;; NB: $LABEL node in the PROC position of $CALL node is handled by $CALL.
     (cond
      [label (compiled-code-emit0oi! ccb JUMP label ($*-src iform))
             0]
      [else  (compiled-code-set-label! ccb (pass5/ensure-label ccb iform))
-            (pass5/rec ($label-body iform) ccb renv ctx)])))
+            (pass5/rec ($label-body iform) target renv ctx)])))
 
-(define (pass5/$SEQ iform ccb renv ctx)
+(define (pass5/$SEQ iform target renv ctx)
   (let1 exprs ($seq-body iform)
     (cond
      [(null? exprs) 0]
-     [(null? (cdr exprs)) (pass5/rec (car exprs) ccb renv ctx)]
+     [(null? (cdr exprs)) (pass5/rec (car exprs) target renv ctx)]
      [else
       (let loop ([exprs exprs] [depth 0])
         (if (null? (cdr exprs))
-          (imax (pass5/rec (car exprs) ccb renv ctx) depth)
+          (imax (pass5/rec (car exprs) target renv ctx) depth)
           (loop (cdr exprs)
-                (imax (pass5/rec (car exprs) ccb renv (stmt-context ctx))
+                (imax (pass5/rec (car exprs) target renv (stmt-context ctx))
                       depth))))])))
 
 ;; $CALL.
@@ -735,33 +743,34 @@
 ;;  - if generic call, +2 for possible object-apply hack and next-method.
 ;;  - if non-tail call, + CONT_FRAME_SIZE.
 
-(define (pass5/$CALL iform ccb renv ctx)
+(define (pass5/$CALL iform target renv ctx)
   (case ($call-flag iform)
-    [(local) (pass5/local-call iform ccb renv ctx)]
-    [(embed) (pass5/embed-call iform ccb renv ctx)]
-    [(jump)  (pass5/jump-call  iform ccb renv ctx)]
+    [(local) (pass5/local-call iform target renv ctx)]
+    [(embed) (pass5/embed-call iform target renv ctx)]
+    [(jump)  (pass5/jump-call  iform target renv ctx)]
     [else
      (if (and (bottom-context? ctx)
               (has-tag? ($call-proc iform) $LET)
               (all-args-simple? ($call-args iform))
               (not (vm-compiler-flag-is-set? SCM_COMPILE_NOCOMBINE)))
-       (pass5/head-heavy-call iform ccb renv ctx)
-       (pass5/normal-call iform ccb renv ctx))]))
+       (pass5/head-heavy-call iform target renv ctx)
+       (pass5/normal-call iform target renv ctx))]))
 
 ;; Local call
 ;;   PROC is always $LREF.
-(define (pass5/local-call iform ccb renv ctx)
+(define (pass5/local-call iform target renv ctx)
   (let* ([args ($call-args iform)]
-         [nargs (length args)])
+         [nargs (length args)]
+         [ccb (ctarget-ccb target)])
     (if (tail-context? ctx)
-      (let1 dinit (pass5/prepare-args args ccb renv ctx)
-        (pass5/rec ($call-proc iform) ccb renv 'normal/top)
+      (let1 dinit (pass5/prepare-args args target renv ctx)
+        (pass5/rec ($call-proc iform) target renv 'normal/top)
         (compiled-code-emit1i! ccb LOCAL-ENV-TAIL-CALL nargs ($*-src iform))
         (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
-        (let1 dinit (pass5/prepare-args args ccb renv ctx)
-          (pass5/rec ($call-proc iform) ccb renv 'normal/top)
+        (let1 dinit (pass5/prepare-args args target renv ctx)
+          (pass5/rec ($call-proc iform) target renv 'normal/top)
           (compiled-code-emit1i! ccb LOCAL-ENV-CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
           (if (= nargs 0)
@@ -772,24 +781,25 @@
 ;;   $call-proc has $lambda node.  We inline its body.
 ;;   We also record the RENV to the current node, so that the jump calls
 ;;   to the inlined body can adjust env frame properly.
-(define (pass5/embed-call iform ccb renv ctx)
+(define (pass5/embed-call iform target renv ctx)
   (let* ([proc ($call-proc iform)]
          [args ($call-args iform)]
          [nargs (length args)]
          [label ($lambda-body proc)]
          [lvars ($lambda-lvars proc)]
          [newenv (if (= nargs 0) renv (cons lvars renv))]
+         [ccb (ctarget-ccb target)]
          [merge-label (compiled-code-new-label ccb)])
     ($call-renv-set! iform (reverse renv))
     (unless (tail-context? ctx)
       (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform)))
     (let1 dinit (if (> nargs 0)
-                  (rlet1 d (pass5/prepare-args args ccb renv ctx)
+                  (rlet1 d (pass5/prepare-args args target renv ctx)
                     (compiled-code-emit1i! ccb LOCAL-ENV nargs ($*-src iform))
                     (pass5/box-mutable-lvars lvars ccb))
                   0)
       (compiled-code-set-label! ccb (pass5/ensure-label ccb label))
-      (let1 dbody (pass5/rec ($label-body label) ccb newenv 'tail)
+      (let1 dbody (pass5/rec ($label-body label) target newenv 'tail)
         (compiled-code-emit-RET! ccb)
         (compiled-code-set-label! ccb merge-label)
         (if (= nargs 0)
@@ -801,9 +811,10 @@
 ;;   $call-proc has a $call[embed] node, whose proc slot has $lambda
 ;;   node, whose proc slot has $label node.
 ;; NB: we're not sure whether we'll have non-tail jump call yet.
-(define (pass5/jump-call iform ccb renv ctx)
+(define (pass5/jump-call iform target renv ctx)
   (let ([args ($call-args iform)]
-        [embed-node ($call-proc iform)])
+        [embed-node ($call-proc iform)]
+        [ccb (ctarget-ccb target)])
     (let ([nargs (length args)]
           [label ($lambda-body ($call-proc embed-node))]
           [lvars ($lambda-lvars ($call-proc embed-node))]
@@ -813,14 +824,14 @@
         (errorf "[internal error] $call[jump] appeared out of context of related $call[embed] (~s vs ~s)"
                 ($call-renv embed-node) renv))
       (if (tail-context? ctx)
-        (let1 dinit (pass5/prepare-args args ccb renv ctx)
+        (let1 dinit (pass5/prepare-args args target renv ctx)
           (pass5/emit-local-env-jump ccb lvars (length renv-diff)
                                      (pass5/ensure-label ccb label)
                                      ($*-src iform))
           (if (= nargs 0) 0 (imax dinit (+ nargs ENV_HEADER_SIZE))))
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
-          (let1 dinit (pass5/prepare-args args ccb renv ctx)
+          (let1 dinit (pass5/prepare-args args target renv ctx)
             (pass5/emit-local-env-jump ccb lvars (length renv-diff)
                                        (pass5/ensure-label ccb label)
                                        ($*-src iform))
@@ -842,38 +853,40 @@
            (loop (cdr lvs))])))
 
 ;; Head-heavy call
-(define (pass5/head-heavy-call iform ccb renv ctx)
+(define (pass5/head-heavy-call iform target renv ctx)
   (let* ([args ($call-args iform)]
-         [nargs (length args)])
+         [nargs (length args)]
+         [ccb (ctarget-ccb target)])
     (if (tail-context? ctx)
       (let* ([dproc (pass5/rec ($call-proc iform)
-                               ccb renv (normal-context ctx))]
-             [dinit (pass5/prepare-args args ccb renv 'normal/top)])
+                               target renv (normal-context ctx))]
+             [dinit (pass5/prepare-args args target renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
         (let* ([dproc (pass5/rec ($call-proc iform)
-                                 ccb renv (normal-context ctx))]
-               [dinit (pass5/prepare-args args ccb renv 'normal/top)])
+                                 target renv (normal-context ctx))]
+               [dinit (pass5/prepare-args args target renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
           (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
       )))
 
 ;; Normal call
-(define (pass5/normal-call iform ccb renv ctx)
+(define (pass5/normal-call iform target renv ctx)
   (let* ([args ($call-args iform)]
-         [nargs (length args)])
+         [nargs (length args)]
+         [ccb (ctarget-ccb target)])
     (if (tail-context? ctx)
-      (let* ([dinit (pass5/prepare-args args ccb renv ctx)]
-             [dproc (pass5/rec ($call-proc iform) ccb renv 'normal/top)])
+      (let* ([dinit (pass5/prepare-args args target renv ctx)]
+             [dproc (pass5/rec ($call-proc iform) target renv 'normal/top)])
         (compiled-code-emit1i! ccb TAIL-CALL nargs ($*-src iform))
         (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))
       (let1 merge-label (compiled-code-new-label ccb)
         (compiled-code-emit1oi! ccb PRE-CALL nargs merge-label ($*-src iform))
-        (let* ([dinit (pass5/prepare-args args ccb renv ctx)]
-               [dproc (pass5/rec ($call-proc iform) ccb renv 'normal/top)])
+        (let* ([dinit (pass5/prepare-args args target renv ctx)]
+               [dproc (pass5/rec ($call-proc iform) target renv 'normal/top)])
           (compiled-code-emit1i! ccb CALL nargs ($*-src iform))
           (compiled-code-set-label! ccb merge-label)
           (+ CONT_FRAME_SIZE (imax dinit (+ nargs dproc ENV_HEADER_SIZE)))))
@@ -902,72 +915,74 @@
 ;; $ASMs.  For some instructions, we may pick more specialized one
 ;; depending on its arguments.
 
-(define (pass5/$ASM iform ccb renv ctx)
+(define (pass5/$ASM iform target renv ctx)
   (let ([info ($*-src iform)]
         [insn ($asm-insn iform)]
         [args ($asm-args iform)])
     (case/unquote
      (car insn)
      [(EQ)
-      (pass5/asm-eq  info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-eq  info (car args) (cadr args) target renv ctx)]
      [(EQV)
-      (pass5/asm-eqv info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-eqv info (car args) (cadr args) target renv ctx)]
      [(NUMEQ2)
-      (pass5/asm-numeq2 info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-numeq2 info (car args) (cadr args) target renv ctx)]
      [(NUMLT2 NUMLE2 NUMGT2 NUMGE2)
-      (pass5/asm-numcmp info (car insn) (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-numcmp info (car insn) (car args) (cadr args) target renv ctx)]
      [(NUMADD2)
-      (pass5/asm-numadd2 info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-numadd2 info (car args) (cadr args) target renv ctx)]
      [(NUMSUB2)
-      (pass5/asm-numsub2 info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-numsub2 info (car args) (cadr args) target renv ctx)]
      [(NUMMUL2)
-      (pass5/asm-nummul2 info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-nummul2 info (car args) (cadr args) target renv ctx)]
      [(NUMDIV2)
-      (pass5/asm-numdiv2 info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-numdiv2 info (car args) (cadr args) target renv ctx)]
      [(LOGAND LOGIOR LOGXOR)
-      (pass5/asm-bitwise info (car insn) (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-bitwise info (car insn) (car args) (cadr args) target renv ctx)]
      [(VEC-REF)
-      (pass5/asm-vec-ref info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-vec-ref info (car args) (cadr args) target renv ctx)]
      [(VEC-SET)
-      (pass5/asm-vec-set info (car args) (cadr args) (caddr args) ccb renv ctx)]
+      (pass5/asm-vec-set info (car args) (cadr args) (caddr args) target renv ctx)]
      [(SLOT-REF)
-      (pass5/asm-slot-ref info (car args) (cadr args) ccb renv ctx)]
+      (pass5/asm-slot-ref info (car args) (cadr args) target renv ctx)]
      [(SLOT-SET)
-      (pass5/asm-slot-set info (car args) (cadr args) (caddr args) ccb renv ctx)]
+      (pass5/asm-slot-set info (car args) (cadr args) (caddr args) target renv ctx)]
      [(TAIL-APPLY)
       ;; TAIL-APPLY pushes restarg onto stack, thus +1.
       (if (tail-context? ctx)
-        (+ 1 (pass5/asm-generic ccb insn args info renv))
-        (let1 merge-label (compiled-code-new-label ccb)
+        (+ 1 (pass5/asm-generic target insn args info renv))
+        (let* ([ccb (ctarget-ccb target)]
+               [merge-label (compiled-code-new-label ccb)])
           (compiled-code-emit0oi! ccb PRE-CALL merge-label info)
-          (let1 d (pass5/asm-generic ccb insn args info renv)
+          (let1 d (pass5/asm-generic target insn args info renv)
             (compiled-code-set-label! ccb merge-label)
             (+ CONT_FRAME_SIZE d 1))))]
      [else
-      (pass5/asm-generic ccb insn args info renv)])))
+      (pass5/asm-generic target insn args info renv)])))
 
-(define (pass5/asm-generic ccb insn args info renv)
+(define (pass5/asm-generic target insn args info renv)
   ;; general case
-  (case (length args)
-    [(0) (pass5/emit-asm! ccb insn info) 0]
-    [(1) (rlet1 d (pass5/rec (car args) ccb renv 'normal/top)
-           (pass5/emit-asm! ccb insn info))]
-    [(2) (let1 d0 (pass5/rec (car args) ccb renv 'normal/top)
-           (compiled-code-emit-PUSH! ccb)
-           (let1 d1 (pass5/rec (cadr args) ccb renv 'normal/top)
-             (pass5/emit-asm! ccb insn info)
-             (imax d0 (+ d1 1))))]
-    [else
-     (let loop ([args args] [depth 0] [cnt 0])
-       (cond [(null? (cdr args))
-              (let1 d (pass5/rec (car args) ccb renv 'normal/top)
-                (pass5/emit-asm! ccb insn info)
-                (imax depth (+ cnt d)))]
-             [else
-              (let1 d (pass5/rec (car args) ccb renv 'normal/top)
-                (compiled-code-emit-PUSH! ccb)
-                (loop (cdr args) (imax depth (+ d cnt)) (+ cnt 1)))]))]
-    ))
+  (let1 ccb (ctarget-ccb target)
+    (case (length args)
+      [(0) (pass5/emit-asm! ccb insn info) 0]
+      [(1) (rlet1 d (pass5/rec (car args) target renv 'normal/top)
+             (pass5/emit-asm! ccb insn info))]
+      [(2) (let1 d0 (pass5/rec (car args) target renv 'normal/top)
+             (compiled-code-emit-PUSH! ccb)
+             (let1 d1 (pass5/rec (cadr args) target renv 'normal/top)
+               (pass5/emit-asm! ccb insn info)
+               (imax d0 (+ d1 1))))]
+      [else
+       (let loop ([args args] [depth 0] [cnt 0])
+         (cond [(null? (cdr args))
+                (let1 d (pass5/rec (car args) target renv 'normal/top)
+                  (pass5/emit-asm! ccb insn info)
+                  (imax depth (+ cnt d)))]
+               [else
+                (let1 d (pass5/rec (car args) target renv 'normal/top)
+                  (compiled-code-emit-PUSH! ccb)
+                  (loop (cdr args) (imax depth (+ d cnt)) (+ cnt 1)))]))]
+      )))
 
 (define (pass5/emit-asm! ccb insn info)
   (match insn
@@ -975,92 +990,92 @@
     [(code arg0)      (compiled-code-emit1i! ccb code arg0 info)]
     [(code arg0 arg1) (compiled-code-emit2i! ccb code arg0 arg1 info)]))
 
-;; Utility macros.  Assumes ccb, renv and ctx are visible.
+;; Utility macros.  Assumes target, renv and ctx are visible.
 
 (define-macro (pass5/builtin-twoargs info code param arg0 arg1)
   (let ([d0 (gensym)]
         [d1 (gensym)])
-    `(let1 ,d0 (pass5/rec ,arg0 ccb renv (normal-context ctx))
-       (compiled-code-emit-PUSH! ccb)
-       (let1 ,d1 (pass5/rec ,arg1 ccb renv 'normal/top)
+    `(let1 ,d0 (pass5/rec ,arg0 target renv (normal-context ctx))
+       (compiled-code-emit-PUSH! (ctarget-ccb target))
+       (let1 ,d1 (pass5/rec ,arg1 target renv 'normal/top)
          ,(if (equal? param 0)
-            `(compiled-code-emit0i! ccb ,code ,info)
-            `(compiled-code-emit1i! ccb ,code ,param ,info))
+            `(compiled-code-emit0i! (ctarget-ccb target) ,code ,info)
+            `(compiled-code-emit1i! (ctarget-ccb target) ,code ,param ,info))
          (imax ,d0 (+ ,d1 1))))))
 
 (define-macro (pass5/builtin-onearg info code param arg0)
   (let1 d (gensym)
-    `(rlet1 ,d (pass5/rec ,arg0 ccb renv (normal-context ctx))
+    `(rlet1 ,d (pass5/rec ,arg0 target renv (normal-context ctx))
        ,(if (equal? param 0)
-          `(compiled-code-emit0i! ccb ,code ,info)
-          `(compiled-code-emit1i! ccb ,code ,param ,info)))))
+          `(compiled-code-emit0i! (ctarget-ccb target) ,code ,info)
+          `(compiled-code-emit1i! (ctarget-ccb target) ,code ,param ,info)))))
 
 (define-macro (pass5/builtin-onearg+operand info code param operand arg0)
   (let1 d (gensym)
-    `(rlet1 ,d (pass5/rec ,arg0 ccb renv (normal-context ctx))
+    `(rlet1 ,d (pass5/rec ,arg0 target renv (normal-context ctx))
        ,(if (equal? param 0)
-          `(compiled-code-emit0oi! ccb ,code ,operand ,info)
-          `(compiled-code-emit1oi! ccb ,code ,param ,operand ,info)))))
+          `(compiled-code-emit0oi! (ctarget-ccb target) ,code ,operand ,info)
+          `(compiled-code-emit1oi! (ctarget-ccb target) ,code ,param ,operand ,info)))))
 
 (define-macro (pass5/builtin-nargs info code args)
-  `(%pass5/builtin-nargs ccb ,info ,code ,args ccb renv))
+  `(%pass5/builtin-nargs target ,info ,code ,args (ctarget-ccb target) renv))
 
-(define (%pass5/builtin-nargs ccb info code args ccb renv)
+(define (%pass5/builtin-nargs target info code args ccb renv)
   (if (null? args)
     (begin (compiled-code-emit0i! ccb code info) 0)
     (let loop ([as args] [depth 0] [cnt 0])
       (cond [(null? (cdr as))
-             (let1 d (pass5/rec (car as) ccb renv 'normal/top)
+             (let1 d (pass5/rec (car as) target renv 'normal/top)
                (compiled-code-emit1i! ccb code (length args) info)
                (imax (+ d cnt) depth))]
             [else
-             (let1 d (pass5/rec (car as) ccb renv 'normal/top)
+             (let1 d (pass5/rec (car as) target renv 'normal/top)
                (compiled-code-emit-PUSH! ccb)
                (loop (cdr as) (imax (+ d cnt) depth) (+ cnt 1)))]))))
 
-(define (pass5/$CONS iform ccb renv ctx)
+(define (pass5/$CONS iform target renv ctx)
   (pass5/builtin-twoargs ($*-src iform)
                          CONS 0 ($*-arg0 iform) ($*-arg1 iform)))
 
-(define (pass5/$APPEND iform ccb renv ctx)
+(define (pass5/$APPEND iform target renv ctx)
   (pass5/builtin-twoargs ($*-src iform) APPEND 2 ($*-arg0 iform) ($*-arg1 iform)))
 
-(define (pass5/$LIST iform ccb renv ctx)
+(define (pass5/$LIST iform target renv ctx)
   (pass5/builtin-nargs ($*-src iform) LIST ($*-args iform)))
 
-(define (pass5/$LIST* iform ccb renv ctx)
+(define (pass5/$LIST* iform target renv ctx)
   (pass5/builtin-nargs ($*-src iform) LIST-STAR ($*-args iform)))
 
-(define (pass5/$VECTOR iform ccb renv ctx)
+(define (pass5/$VECTOR iform target renv ctx)
   (pass5/builtin-nargs ($*-src iform) VEC ($*-args iform)))
 
-(define (pass5/$LIST->VECTOR iform ccb renv ctx)
+(define (pass5/$LIST->VECTOR iform target renv ctx)
   (pass5/builtin-onearg ($*-src iform) LIST2VEC 0 ($*-arg0 iform)))
 
-(define (pass5/$MEMV iform ccb renv ctx)
+(define (pass5/$MEMV iform target renv ctx)
   (pass5/builtin-twoargs ($*-src iform) MEMV 0 ($*-arg0 iform) ($*-arg1 iform)))
 
-(define (pass5/$EQ? iform ccb renv ctx)
-  (pass5/asm-eq ($*-src iform) ($*-arg0 iform) ($*-arg1 iform) ccb renv ctx))
+(define (pass5/$EQ? iform target renv ctx)
+  (pass5/asm-eq ($*-src iform) ($*-arg0 iform) ($*-arg1 iform) target renv ctx))
 
-(define (pass5/$EQV? iform ccb renv ctx)
-  (pass5/asm-eqv ($*-src iform) ($*-arg0 iform) ($*-arg1 iform) ccb renv ctx))
+(define (pass5/$EQV? iform target renv ctx)
+  (pass5/asm-eqv ($*-src iform) ($*-arg0 iform) ($*-arg1 iform) target renv ctx))
 
 ;; handlers to emit specialized instruction when applicable
 
-(define (pass5/asm-eq info x y ccb renv ctx)
+(define (pass5/asm-eq info x y target renv ctx)
   (pass5/builtin-twoargs info EQ 0 x y))
 
-(define (pass5/asm-eqv info x y ccb renv ctx)
+(define (pass5/asm-eqv info x y target renv ctx)
   (pass5/builtin-twoargs info EQV 0 x y))
 
-(define (pass5/asm-numeq2 info x y ccb renv ctx)
+(define (pass5/asm-numeq2 info x y target renv ctx)
   (pass5/builtin-twoargs info NUMEQ2 0 x y))
 
-(define (pass5/asm-numcmp info code x y ccb renv ctx)
+(define (pass5/asm-numcmp info code x y target renv ctx)
   (pass5/builtin-twoargs info code 0 x y))
 
-(define (pass5/asm-numadd2 info x y ccb renv ctx)
+(define (pass5/asm-numadd2 info x y target renv ctx)
   (or (and ($const? x)
            (integer-fits-insn-arg? ($const-value x))
            (pass5/builtin-onearg info NUMADDI ($const-value x) y))
@@ -1081,7 +1096,7 @@
                                         (+ (ash offset 10) depth) y))))
       (pass5/builtin-twoargs info NUMADD2 0 x y)))
 
-(define (pass5/asm-numsub2 info x y ccb renv ctx)
+(define (pass5/asm-numsub2 info x y target renv ctx)
   (or (and ($const? x)
            (integer-fits-insn-arg? ($const-value x))
            (pass5/builtin-onearg info NUMSUBI ($const-value x) y))
@@ -1090,14 +1105,14 @@
            (pass5/builtin-onearg info NUMADDI (- ($const-value y)) x))
       (pass5/builtin-twoargs info NUMSUB2 0 x y)))
 
-(define (pass5/asm-nummul2 info x y ccb renv ctx)
+(define (pass5/asm-nummul2 info x y target renv ctx)
   (pass5/builtin-twoargs info NUMMUL2 0 x y))
 
-(define (pass5/asm-numdiv2 info x y ccb renv ctx)
+(define (pass5/asm-numdiv2 info x y target renv ctx)
   (pass5/builtin-twoargs info NUMDIV2 0 x y))
 
 ;; if one of arg is constant, it's always x.  see builtin-inline-bitwise below.
-(define (pass5/asm-bitwise info insn x y ccb renv ctx)
+(define (pass5/asm-bitwise info insn x y target renv ctx)
   (define lookup `((,LOGAND . ,LOGANDC)
                    (,LOGIOR . ,LOGIORC)
                    (,LOGXOR . ,LOGXORC)))
@@ -1106,47 +1121,49 @@
                                   0 ($const-value x) y)
     (pass5/builtin-twoargs info insn 0 x y)))
 
-(define (pass5/asm-vec-ref info vec k ccb renv ctx)
+(define (pass5/asm-vec-ref info vec k target renv ctx)
   (cond [(and ($const? k)
               (unsigned-integer-fits-insn-arg? ($const-value k)))
          (pass5/builtin-onearg info VEC-REFI ($const-value k) vec)]
         [else
          (pass5/builtin-twoargs info VEC-REF 0 vec k)]))
 
-(define (pass5/asm-vec-set info vec k obj ccb renv ctx)
+(define (pass5/asm-vec-set info vec k obj target renv ctx)
   (cond [(and ($const? k)
               (unsigned-integer-fits-insn-arg? ($const-value k)))
          (pass5/builtin-twoargs info VEC-SETI ($const-value k) vec obj)]
         [else
-         (let1 d0 (pass5/rec vec ccb renv (normal-context ctx))
-           (compiled-code-emit-PUSH! ccb)
-           (let1 d1 (pass5/rec k   ccb renv 'normal/top)
-             (compiled-code-emit-PUSH! ccb)
-             (let1 d2 (pass5/rec obj ccb renv 'normal/top)
-               (compiled-code-emit0i! ccb VEC-SET info)
+         (let1 d0 (pass5/rec vec target renv (normal-context ctx))
+           (compiled-code-emit-PUSH! (ctarget-ccb target))
+           (let1 d1 (pass5/rec k target renv 'normal/top)
+             (compiled-code-emit-PUSH! (ctarget-ccb target))
+             (let1 d2 (pass5/rec obj target renv 'normal/top)
+               (compiled-code-emit0i! (ctarget-ccb target) VEC-SET info)
                (imax d0 (+ d1 1) (+ d2 2)))))]))
 
-(define (pass5/asm-slot-ref info obj slot ccb renv ctx)
+(define (pass5/asm-slot-ref info obj slot target renv ctx)
   (cond [($const? slot)
-         (rlet1 d (pass5/rec obj ccb renv (normal-context ctx))
-           (compiled-code-emit0oi! ccb SLOT-REFC ($const-value slot) info))]
+         (rlet1 d (pass5/rec obj target renv (normal-context ctx))
+           (compiled-code-emit0oi! (ctarget-ccb target)
+                                   SLOT-REFC ($const-value slot) info))]
         [else
          (pass5/builtin-twoargs info SLOT-REF 0 obj slot)]))
 
-(define (pass5/asm-slot-set info obj slot val ccb renv ctx)
+(define (pass5/asm-slot-set info obj slot val target renv ctx)
   (cond [($const? slot)
-         (let1 d0 (pass5/rec obj ccb renv (normal-context ctx))
-           (compiled-code-emit-PUSH! ccb)
-           (let1 d1 (pass5/rec val ccb renv 'normal/top)
-             (compiled-code-emit0oi! ccb SLOT-SETC ($const-value slot) info)
+         (let1 d0 (pass5/rec obj target renv (normal-context ctx))
+           (compiled-code-emit-PUSH! (ctarget-ccb target))
+           (let1 d1 (pass5/rec val target renv 'normal/top)
+             (compiled-code-emit0oi! (ctarget-ccb target)
+                                     SLOT-SETC ($const-value slot) info)
              (imax d0 (+ d1 1))))]
         [else
-         (let1 d0 (pass5/rec obj ccb renv (normal-context ctx))
-           (compiled-code-emit-PUSH! ccb)
-           (let1 d1 (pass5/rec slot ccb renv 'normal/top)
-             (compiled-code-emit-PUSH! ccb)
-             (let1 d2 (pass5/rec val ccb renv 'normal/top)
-               (compiled-code-emit0i! ccb SLOT-SET info)
+         (let1 d0 (pass5/rec obj target renv (normal-context ctx))
+           (compiled-code-emit-PUSH! (ctarget-ccb target))
+           (let1 d1 (pass5/rec slot target renv 'normal/top)
+             (compiled-code-emit-PUSH! (ctarget-ccb target))
+             (let1 d2 (pass5/rec val target renv 'normal/top)
+               (compiled-code-emit0i! (ctarget-ccb target) SLOT-SET info)
                (imax d0 (+ d1 1) (+ d2 2)))))]))
 
 ;; Dispatch table.
@@ -1174,11 +1191,11 @@
 ;; into the stack one by one.  Returns the maximum depth of the stack.
 ;; lvars is #f for regular call sequence, or a list of lvars of the same
 ;; length of args for $LET or local calls.
-(define (pass5/prepare-args args ccb renv ctx)
+(define (pass5/prepare-args args target renv ctx)
   (if (null? args)
     0
-    (let1 d (pass5/rec (car args) ccb renv (normal-context ctx))
-      (compiled-code-emit-PUSH! ccb)
+    (let1 d (pass5/rec (car args) target renv (normal-context ctx))
+      (compiled-code-emit-PUSH! (ctarget-ccb target))
       ;; NB: We check termination condition here.  This routine is called
       ;; lots of times, and (length args) is usually small (<=2 covers almost
       ;; half of the cases, and <=3 covers over 80%).  Check termination
@@ -1189,8 +1206,8 @@
         (let loop ([args  (cdr args)]
                    [depth (+ d 1)]
                    [cnt  1])
-          (let1 d (pass5/rec (car args) ccb renv 'normal/top)
-            (compiled-code-emit-PUSH! ccb)
+          (let1 d (pass5/rec (car args) target renv 'normal/top)
+            (compiled-code-emit-PUSH! (ctarget-ccb target))
             (if (null? (cdr args))
               (imax depth d)
               (loop (cdr args) (imax depth (+ d cnt 1)) (+ cnt 1)))))))))

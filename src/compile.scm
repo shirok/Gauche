@@ -1478,6 +1478,27 @@
 ;; Some inline stuff
 (define-inline (pass2-4 iform module) (pass4 (pass3 (pass2 iform) #f) module))
 
+;; Compile target.  Used in pass5 to represent
+
+(define-simple-struct ctarget #f %make-compile-target
+  (ccb                                ;compiled code builder
+   env-header-size
+   cont-frame-size))
+
+(define (make-compile-target :optional
+                             (env-header-size ENV_HEADER_SIZE)
+                             (cont-frame-size CONT_FRAME_SIZE))
+  (%make-compile-target
+   (make-compiled-code-builder 0 0 '%toplevel #f #f)
+   env-header-size
+   cont-frame-size))
+
+(define (make-child-compile-target new-ccb parent-target)
+  (%make-compile-target
+   new-ccb
+   (ctarget-env-header-size parent-target)
+   (ctarget-cont-frame-size parent-target)))
+
 ;;============================================================
 ;; Entry points
 ;;
@@ -1497,7 +1518,7 @@
                ($ raise $ make-compound-condition e
                   $ make <compile-error-mixin> :expr program)])
       (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-             (make-compiled-code-builder 0 0 '%toplevel #f #f)
+             (make-compile-target)
              '() 'tail))))
 
 ;; stub for future extension
@@ -1521,7 +1542,7 @@
 (define (compile-p5 program :optional (env (vm-current-module)))
   (let1 cenv (make-bottom-cenv env)
     (vm-dump-code (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-                         (make-compiled-code-builder 0 0 '%toplevel #f #f)
+                         (make-compile-target)
                          '() 'tail))))
 
 (include "compile-1")
