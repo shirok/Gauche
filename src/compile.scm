@@ -1486,12 +1486,12 @@
    cont-frame-size))
 
 (define (make-compile-target :optional
-                             (env-header-size ENV_HEADER_SIZE)
-                             (cont-frame-size CONT_FRAME_SIZE))
+                             (env-header-size #f)
+                             (cont-frame-size #f))
   (%make-compile-target
    (make-compiled-code-builder 0 0 '%toplevel #f #f)
-   env-header-size
-   cont-frame-size))
+   (or env-header-size ENV_HEADER_SIZE)
+   (or cont-frame-size CONT_FRAME_SIZE)))
 
 (define (make-child-compile-target new-ccb parent-target)
   (%make-compile-target
@@ -1508,22 +1508,37 @@
 ;;     #f, #<unbound> - compile on bottom env of the current module
 ;;     module - compile on bottom env of the given module
 ;;     cenv   - compile on the given cenv
-(define (compile program env)
+;;
+;; target-params is an key-value list, with the following keys
+;; recognized.
+;;    :env-header-size  - size of environment frame header
+;;    :cont-frame-size  - size of continuation frame
+(define (compile program env :key (target-params '()))
   (let1 cenv (cond [(module? env) (make-bottom-cenv env)]
                    [(vector? env) env] ; assumes env is cenv
                    [else (make-bottom-cenv)]) ; use default module
-    (guard (e [else
-               ;; TODO: check if e is an expected error (such as syntax error)
-               ;; or an unexpected error (compiler bug).
-               ($ raise $ make-compound-condition e
-                  $ make <compile-error-mixin> :expr program)])
-      (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-             (make-compile-target)
-             '() 'tail))))
+    (receive (env-header-size cont-frame-size)
+        (parse-target-params target-params)
+      (guard (e [else
+                 ;; TODO: check if e is an expected error (such as syntax error)
+                 ;; or an unexpected error (compiler bug).
+                 ($ raise $ make-compound-condition e
+                    $ make <compile-error-mixin> :expr program)])
+        (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
+               (make-compile-target env-header-size cont-frame-size)
+               '() 'tail)))))
 
 ;; stub for future extension
 (define (compile-partial program module) #f)
 (define (compile-finish cc) #f)
+
+(define (parse-target-params target-params)
+  (let-keywords target-params ((env-header-size #f)
+                               (cont-frame-size #f)
+                               . other-keys)
+    (unless (null? other-keys)
+      (error "Unrecognized compiler target parameter key:" other-keys))
+    (values env-header-size cont-frame-size)))
 
 ;; For testing
 (define (compile-p1 program :optional (env (vm-current-module)))
