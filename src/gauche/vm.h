@@ -130,8 +130,8 @@ typedef struct ScmEnvFrameRec {
  *
  *   |  base   |
  *   |   pc    |  <-- PCont procedure
- *   |  cpc    |  <-- Ccont procedure
- *   | marker  |  <-- 0 : CCont, 1 : PCont
+ *   |  cpc    |  <-- CCont procedure
+ *   | marker  |
  *   | size=N  |
  *   |  env    |  <-- &ccEnvMark
  *   |..prev.. |
