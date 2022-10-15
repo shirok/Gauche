@@ -49,6 +49,14 @@
   (export compile->c compile-link-toplevel))
 (select-module gauche.cgen.cbe)
 
+;; Parameters to control compilation
+
+;; all-defines-final - If true, toplevel variables defined in the
+;; compilation unit and not explicitly set! are assumed to be immutable,
+;; and the code generator uses the fact to optimize.
+(define all-defines-final (make-parameter #t))
+
+
 ;; We track global variable reference for entire compilation unit, so that
 ;; gloc lookup is done in init routine at once.
 
