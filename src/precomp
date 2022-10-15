@@ -58,6 +58,7 @@
          [single-sci         "single-interface"]
          [subinits           "s|sub-initializers=s"]
          [dso-name           "d|dso-name=s"]
+         [target-config      "target-config=s"]
          [ext-module         "ext-module=s" #f] ;for backward compatibility
          [#f "D=s" => (^[sym] (push! predef-syms sym))]
          [else (opt . _) (usage #"Unrecognized option: ~opt")]
@@ -65,7 +66,10 @@
       (let ([mtk      (split-to-symbols keep-private-macro)]
             [subinits (split-to-symbols subinits)]
             [extini   (or ext-module ext-main)]
-            [prefix   (or xprefix-all xprefix)])
+            [prefix   (or xprefix-all xprefix)]
+            [tparams  (if target-config
+                        (load-target-config target-config)
+                        '())])
         (match args
           [() (usage #f)]
           [(src)
@@ -80,6 +84,7 @@
                             :sub-initializers subinits
                             :dso-name dso-name
                             :predef-syms predef-syms
+                            :target-parameters tparams
                             :macros-to-keep mtk)]
           [(srcs ...)
            (when out.sci
@@ -90,6 +95,7 @@
                                   :single-sci-file single-sci
                                   :dso-name dso-name
                                   :predef-syms predef-syms
+                                  :target-parameters tparams
                                   :macros-to-keep mtk)]))))
   0)
 
@@ -104,12 +110,21 @@
   (print "  -o,--output=FILE.C")
   (print "  -p,--strip-prefix=PREFIX")
   (print "  -P,--strip-prefix-all")
+  (print "  --target-config=FILE")
   (exit 0))
 
 (define (split-to-symbols arg)
   (if arg
     ($ map string->symbol $ string-split arg #\,)
     '()))
+
+
+(define (load-target-config file)
+  (guard (e [(<read-error> e)
+             (error "Invalid target-parameter file ~s: ~a" file (~ e'message))]
+            [else
+             (error "Can't read target-parameter file ~s" file)])
+    (with-input-from-file file read)))
 
 ;; Local variables:
 ;; mode: scheme
