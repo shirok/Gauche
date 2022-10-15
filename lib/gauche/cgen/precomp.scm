@@ -360,7 +360,9 @@
     (define CONT_FRAME_SIZE %cf-orig))
   (if old-setting
     (sys-setenv "GAUCHE_SUPPRESS_WARNING" old-setting #t)
-    (sys-unsetenv "GAUCHE_SUPPRESS_WARNING"))]
+    (cond-expand
+     [gauche.os.windows]                ;it doesn't have unsetenv
+     [else (sys-unsetenv "GAUCHE_SUPPRESS_WARNING")]))]
  [else])
 
 ;;================================================================
