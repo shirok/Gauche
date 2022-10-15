@@ -169,6 +169,7 @@ typedef struct ScmContFrameRec {
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
+    ScmObj marks;                 /* continuation marks */
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))

@@ -93,7 +93,7 @@ POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LI
 PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT); \
 	       TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT)
 
-PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY
+PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY --target-config $(srcdir)/target-config-0.9.13.scm
 
 # Gosh command used to build static library.  In case of cross compiling
 # we can't use freshly built gosh.
