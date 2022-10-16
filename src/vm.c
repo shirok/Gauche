@@ -536,6 +536,7 @@ static void vm_unregister(ScmVM *vm)
         newcont->cpc = PC;                              \
         newcont->pc = next_pc;                          \
         newcont->base = BASE;                           \
+        newcont->marks = SCM_NIL;                       \
         CONT = newcont;                                 \
         SP += CONT_FRAME_SIZE;                          \
         ARGP = SP;                                      \
@@ -2921,6 +2922,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = vm->cont;
+    ep->floating = NULL;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
@@ -2965,6 +2967,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
+    ep->floating = NULL;
     ep->handlers = SCM_NIL; /* don't use for partial continuation */
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */
