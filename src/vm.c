@@ -2361,6 +2361,17 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
         int numVals = 0;
 
+        /* Save continuation chains into heap.  This has non-negligible
+           overhead, but we need to keep all active EPs' cont field valid.
+           Without this, a complication occurs when save_cont occurs during
+           executing the error handler and it returns subsequently.
+           Ep->floating was introduced to deal with it, but it turned out
+           not covering all cases.  Until we find a good way to keep track
+           of all active EPs, we fall back to this slow-but-safe approach.
+           See https://github.com/shirok/Gauche/issues/852 for the details.
+         */
+        save_cont(vm);
+
 #if GAUCHE_SPLIT_STACK
         vm->lastErrorCont = vm->cont;
         vm->stackBase = vm->sp;
@@ -2377,14 +2388,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             call_dynamic_handlers(ep->handlers, vm->handlers);
         }
 
-        /* Call the error handler and save the results.
-           NB: before calling the error handler, we need to pop
-           vm->escapePoint, so that the error occurred during
-           the error handler should be dealt with the upstream error
-           handler.  We keep ep in vm->escapePoint->floating, so that
-           ep->cont can be updated when stack overflow occurs during the
-           error handler.  See also the description of ScmEscapePoint in
-           gauche/vm.h. */
+        /* Pop the EP and run the error handler. */
         vm->escapePoint = ep->prev;
         SCM_VM_FLOATING_EP_SET(vm, ep);
 
