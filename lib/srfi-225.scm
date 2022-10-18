@@ -75,7 +75,7 @@
 
 (define-proc-ids
   dictionary?-id dict-find-update!-id dict-comaprator-id
-  dict-map-id dict-pure?id dict-remove-id dict-size-id dict->alist-id
+  dict-map-id dict-pure?-id dict-remove-id dict-size-id dict->alist-id
   dict-adjoin!-accumulator-id dict-adjoin!-id dict-any-id
   dict-contains?-id dict-count-id dict-delete-all!-id dict-delete!-id
   dict-empty?-id dict-entries-id dict-every-id dict-filter-id
@@ -91,7 +91,7 @@
    (dict-find-update!-id :init-keyword :dict-find-update!-id)
    (dict-comaprator-id :init-keyword :dict-comaprator-id)
    (dict-map-id :init-keyword :dict-map-id)
-   (dict-pure?id :init-keyword :dict-pure?id)
+   (dict-pure?-id :init-keyword :dict-pure?-id)
    (dict-remove-id :init-keyword :dict-remove-id)
    (dict-size-id :init-keyword :dict-size-id)
    ;; optional proc-ids
@@ -124,7 +124,9 @@
    (dict-update/default!-id :init-keyword :dict-update/default!-id)
    (dict-values-id :init-keyword :dict-values-id)
    (dict=?-id :init-keyword :dict=?-id)
-   (dict->generator-id) :init-keyword :dict->generator-id))
+   (dict->generator-id :init-keyword :dict->generator-id)
+   ;; Gauche extension
+   (name :init-keyword :name)))
 
 ;; API
 ;; portable constructor
@@ -142,3 +144,39 @@
          (unless (memq proc-id *proc-ids*)
            (error "Unknown proc-id:" proc-id))
          (loop rest (cons* proc (make-keyword proc-id) r))]))))
+
+;; API
+(define (dictionary? dto obj)
+  (assume-type dto <dto>)
+  ((~ dto'dictionary?-id) obj))
+
+
+(define-inline (assume-dict dto dict)
+  (unless ((~ dto'dictionary?-id) dict)
+    (if-let1 name (~ dto'name)
+      (errorf "Argument is not a supposed dictionary (~a): ~s" name dict)
+      (errorf "Argument is not a supposed dictionary: ~s" dict))))
+
+;; API
+(define (dict-empty? dto dict)
+  (assume-type dto <dto>)
+  (assume-dict dto dict)
+  ((~ dto 'dict-empty?-id) dict))
+
+;; API
+(define (dict-contains? dto dict key)
+  (assume-type dto <dto>)
+  (assume-dict dto dict)
+  ((~ dto 'dict-contains?-id) dict key))
+
+;; API
+(define (dict=? dto dict1 dict2)
+  (assume-type dto <dto>)
+  (assume-dict dto dict1)
+  (assume-dict dto dict2)
+  ((~ dto 'dict=?-id) dict1 dict2))
+
+;; API
+(define (dict-pure? dti dict)
+  (assume-type dto <dto>)
+  ((~ dti 'dict-pure?-id) dict))
