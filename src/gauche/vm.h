@@ -487,6 +487,11 @@ struct ScmVMRec {
     int escapeReason;           /* temporary storage to pass data across
                                    longjmp(). */
     void *escapeData[2];        /* ditto. */
+    int errorHandlerContinuable; /* A transient flag, set by the error handler
+                                    as a result of 'guard' expansion to tell
+                                    that the control should return to 'raise'
+                                    after handler returns.  See %reraise
+                                    in libexc.scm as well. */
 
     /* Custom debugger or error reporter */
     ScmObj customErrorReporter; /* If set, Scm_ReportError (report-error) calls

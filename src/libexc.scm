@@ -117,10 +117,11 @@
 
 ;; For r7rs compatible guard.
 ;; %reraise must be called at the tail position of the error handler.
-;; What it does is to restore escape point and set ep->reraied flag, then
-;; return.  Subsequently the control returns from the error handler to
-;; Scm_VMDefaultExceptionHandler, which restores dynamic environment
-;; and returns to the original caller of raise.
+;; It tells the VM that the error handler returns from handling a continuable
+;; exception.
+;; After this returns, the control gets back to Scm_VMDefaultExceptionHandler,
+;; which restores dynamic environment and returns to the original caller
+;; of raise-continuable.
 (define-cproc %reraise ()
   (return (Scm_VMReraise)))
 

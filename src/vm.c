@@ -245,6 +245,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
+    v->errorHandlerContinuable = FALSE;
     v->customErrorReporter = (proto? proto->customErrorReporter : SCM_FALSE);
 #if GAUCHE_SPLIT_STACK
     v->lastErrorCont = NULL;
@@ -2392,6 +2393,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         vm->escapePoint = ep->prev;
         SCM_VM_FLOATING_EP_SET(vm, ep);
 
+        vm->errorHandlerContinuable = FALSE;
+
         SCM_UNWIND_PROTECT {
             result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
 
@@ -2417,8 +2420,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         /* If exception is reraised, the exception handler can return
            to the caller. */
-        if (ep->reraised) {
-            ep->reraised = FALSE;
+        if (vm->errorHandlerContinuable) {
+            vm->errorHandlerContinuable = FALSE;
 
             /* recover escape point */
             vm->escapePoint = ep;
@@ -2622,7 +2625,6 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->errorReporting =
         SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
     ep->rewindBefore = rewindBefore;
-    ep->reraised = FALSE;
 
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
@@ -2644,8 +2646,7 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
 
 ScmObj Scm_VMReraise()
 {
-    ScmEscapePoint *ep = SCM_VM_FLOATING_EP(theVM);
-    if (ep) ep->reraised = TRUE;
+    Scm_VM()->errorHandlerContinuable = TRUE;
     return SCM_UNDEFINED;
 }
 
