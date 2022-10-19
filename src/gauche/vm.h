@@ -480,10 +480,6 @@ struct ScmVMRec {
                                    continuation).  used by system's default
                                    exception handler to escape from the error
                                    handlers. */
-    ScmEscapePoint *escapePointFloating;
-                                /* reverse link of escape point chain
-                                   to keep 'active' EPs.
-                                   See ScmEscapePoint definition above. */
     int escapeReason;           /* temporary storage to pass data across
                                    longjmp(). */
     void *escapeData[2];        /* ditto. */

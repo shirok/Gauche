@@ -77,7 +77,6 @@ SCM_DECL_BEGIN
  */
 typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *prev;
-    struct ScmEscapePointRec *floating;
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
     ScmObj handlers;            /* saved dynamic handler chain */
@@ -103,18 +102,6 @@ typedef struct ScmEscapePointRec {
                                    but SRFI-34's guard needs the former model.
                                 */
 } ScmEscapePoint;
-
-/* Link management */
-#define SCM_VM_FLOATING_EP(vm) \
-    ((vm)->escapePoint? (vm)->escapePoint->floating : vm->escapePointFloating)
-#define SCM_VM_FLOATING_EP_SET(vm, ep)          \
-    do {                                        \
-        if ((vm)->escapePoint) {                \
-            (vm)->escapePoint->floating = (ep); \
-        } else {                                \
-            (vm)->escapePointFloating = (ep);   \
-        }                                       \
-    } while (0)
 
 /* Escape types */
 #define SCM_VM_ESCAPE_NONE   0

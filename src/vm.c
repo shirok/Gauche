@@ -241,7 +241,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     v->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     v->exceptionHandlerStack = SCM_NIL;
-    v->escapePoint = v->escapePointFloating = NULL;
+    v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
@@ -1111,11 +1111,6 @@ static void save_cont(ScmVM *vm)
         }
     }
     for (ScmEscapePoint *ep = vm->escapePoint; ep; ep = ep->prev) {
-        if (FORWARDED_CONT_P(ep->cont)) {
-            ep->cont = FORWARDED_CONT(ep->cont);
-        }
-    }
-    for (ScmEscapePoint *ep = SCM_VM_FLOATING_EP(vm); ep; ep = ep->floating) {
         if (FORWARDED_CONT_P(ep->cont)) {
             ep->cont = FORWARDED_CONT(ep->cont);
         }
@@ -2366,9 +2361,6 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
            overhead, but we need to keep all active EPs' cont field valid.
            Without this, a complication occurs when save_cont occurs during
            executing the error handler and it returns subsequently.
-           Ep->floating was introduced to deal with it, but it turned out
-           not covering all cases.  Until we find a good way to keep track
-           of all active EPs, we fall back to this slow-but-safe approach.
            See https://github.com/shirok/Gauche/issues/852 for the details.
          */
         save_cont(vm);
@@ -2391,32 +2383,22 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         /* Pop the EP and run the error handler. */
         vm->escapePoint = ep->prev;
-        SCM_VM_FLOATING_EP_SET(vm, ep);
 
         vm->errorHandlerContinuable = FALSE;
 
-        SCM_UNWIND_PROTECT {
-            result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
+        result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
 
-            /* save return values */
-            /* NB: for loop is slightly faster than memcpy */
-            numVals = vm->numVals;
-            if (numVals > 1) {
-                for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
-            }
+        /* save return values */
+        /* NB: for loop is slightly faster than memcpy */
+        numVals = vm->numVals;
+        if (numVals > 1) {
+            for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
+        }
 
-            /* call dynamic handlers to rewind */
-            if (!ep->rewindBefore) {
-                call_dynamic_handlers(ep->handlers, vm->handlers);
-            }
+        /* call dynamic handlers to rewind */
+        if (!ep->rewindBefore) {
+            call_dynamic_handlers(ep->handlers, vm->handlers);
         }
-        SCM_WHEN_ERROR {
-            /* make sure the floating pointer is reset when an error is
-               signalled during handlers */
-            SCM_VM_FLOATING_EP_SET(vm, ep->floating);
-            SCM_NEXT_HANDLER;
-        }
-        SCM_END_PROTECT;
 
         /* If exception is reraised, the exception handler can return
            to the caller. */
@@ -2425,7 +2407,6 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
             /* recover escape point */
             vm->escapePoint = ep;
-            SCM_VM_FLOATING_EP_SET(vm, ep->floating);
 
             /* call dynamic handlers to reenter dynamic-winds */
             call_dynamic_handlers(vmhandlers, ep->handlers);
@@ -2433,11 +2414,9 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             /* reraise and return */
             vm->exceptionHandler = ep->xhandler;
             vm->escapePoint = ep->prev;
-            SCM_VM_FLOATING_EP_SET(vm, ep);
             result = Scm_VMThrowException(vm, e, 0);
             vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
             vm->escapePoint = ep;
-            SCM_VM_FLOATING_EP_SET(vm, ep->floating);
             return result;
         }
 
@@ -2450,7 +2429,6 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         /* Install the continuation */
         vm->cont = ep->cont;
-        SCM_VM_FLOATING_EP_SET(vm, ep->floating);
         if (ep->errorReporting) {
             SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
@@ -2614,7 +2592,6 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
      * ep is valid.
      */
     ep->prev = vm->escapePoint;
-    ep->floating = SCM_VM_FLOATING_EP(vm);
     ep->ehandler = handler;
     ep->cont = vm->cont;
     ep->handlers = vm->handlers;
@@ -2927,7 +2904,6 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = vm->cont;
-    ep->floating = NULL;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
@@ -2972,7 +2948,6 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
-    ep->floating = NULL;
     ep->handlers = SCM_NIL; /* don't use for partial continuation */
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */
