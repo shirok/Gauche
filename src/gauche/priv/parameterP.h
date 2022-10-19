@@ -34,6 +34,21 @@
 #ifndef GAUCHE_PRIV_PARAMETERP_H
 #define GAUCHE_PRIV_PARAMETERP_H
 
+/* In Gauche, parameters have been taking two roles: Dynamic binding and
+ * thread-local storage.  In the discussions of srfi-226, it turned out
+ * conflating those two isn't right.  A continuation that captures dynamic
+ * enrivonment may be invoked in a different thread, and the code must work
+ * the same way as it is invoked in the same thread; it is wrong if the former
+ * sees a different dynamic bindings than another.
+ *
+ * We gradually move to separete those two.  The foundation of parameter
+ * storage is really a thread local storage, so first we rename it to
+ * threadLocals, and provide srfi-226 thread local API on top of it,
+ * while the parameters are still built on top of it.  Then, gradually
+ * we'll replace parameters to the new mechanism.
+ */
+
+
 /* We keep the definition private, so that we can extend it later. */
 
 struct ScmPrimitiveParameterRec {
@@ -49,12 +64,12 @@ struct ScmPrimitiveParameterRec {
    We might swap this to more sophisticated data structure than
    a simple flat vector in future.
  */
-struct ScmVMParameterTableRec {
+struct ScmVMThreadLocalTableRec {
     ScmSize size;
     ScmObj *vector;
 };
 
-SCM_EXTERN ScmVMParameterTable *Scm__MakeVMParameterTable(ScmVM *base);
+SCM_EXTERN ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base);
 
 
 #endif /*GAUCHE_PRIV_PARAMETERP_H*/

@@ -202,7 +202,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
     v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
 
-    v->parameters = Scm__MakeVMParameterTable(proto);
+    v->threadLocals = Scm__MakeVMThreadLocalTable(proto);
 
     v->compilerFlags = proto? proto->compilerFlags : 0;
     v->runtimeFlags = proto? proto->runtimeFlags : 0;

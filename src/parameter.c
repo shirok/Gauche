@@ -37,6 +37,11 @@
 #include "gauche/priv/parameterP.h"
 
 /*
+ * Note: We're moving towards splitting thread local storage and parameters.
+ * The following is a description of old model.  Eventually parameters won't
+ * be thread-specific.
+ *
+ *
  * Parameters keep thread-local states.   When a thread is created,
  * it inherits the set of parameters from its creator (except the
  * primordial thread).
@@ -61,14 +66,14 @@
  * they are accessed.
  */
 
-#define PARAMETER_INIT_SIZE 64
-#define PARAMETER_GROW      16
+#define THREAD_LOCAL_INIT_SIZE 64
+#define THREAD_LOCAL_GROW      16
 
 /* Every time a new parameter is created (in any thread), it is
  * given a unique index in the process.
  */
-static ScmSize next_parameter_index = 0;
-static ScmInternalMutex parameter_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
+static ScmSize next_tl_index = 0;
+static ScmInternalMutex tl_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 /* :name and :initial-value.  These keywords are set on-demand,
    since at the time of Scm_InitParameter we haven't initialized
@@ -88,22 +93,22 @@ SCM_DEFINE_BASE_CLASS(Scm_PrimitiveParameterClass, ScmPrimitiveParameter,
  * thread, base is the current thread (this must be called from the
  * creator thread).
  */
-ScmVMParameterTable *Scm__MakeVMParameterTable(ScmVM *base)
+ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base)
 {
-    ScmVMParameterTable *table = SCM_NEW(ScmVMParameterTable);
+    ScmVMThreadLocalTable *table = SCM_NEW(ScmVMThreadLocalTable);
 
     if (base) {
         /* NB: In this case, the caller is the owner thread of BASE,
            so we don't need to worry about base->parameters being
            modified during copying. */
-        table->vector = SCM_NEW_ARRAY(ScmObj, base->parameters->size);
-        table->size = base->parameters->size;
+        table->vector = SCM_NEW_ARRAY(ScmObj, base->threadLocals->size);
+        table->size = base->threadLocals->size;
         for (ScmSize i=0; i<table->size; i++) {
-            table->vector[i] = base->parameters->vector[i];
+            table->vector[i] = base->threadLocals->vector[i];
         }
     } else {
-        table->vector = SCM_NEW_ARRAY(ScmObj, PARAMETER_INIT_SIZE);
-        table->size = PARAMETER_INIT_SIZE;
+        table->vector = SCM_NEW_ARRAY(ScmObj, THREAD_LOCAL_INIT_SIZE);
+        table->size = THREAD_LOCAL_INIT_SIZE;
         for (ScmSize i=0; i<table->size; i++) {
             table->vector[i] = SCM_UNBOUND;
         }
@@ -121,10 +126,11 @@ static void pparam_print(ScmObj obj,
                obj);
 }
 
-static void ensure_parameter_slot(ScmVMParameterTable *p, ScmSize index)
+static void ensure_tl_slot(ScmVMThreadLocalTable *p, ScmSize index)
 {
     if (index >= p->size) {
-        ScmSize newsiz = ((index+PARAMETER_GROW)/PARAMETER_GROW)*PARAMETER_GROW;
+        ScmSize newsiz =
+            ((index+THREAD_LOCAL_GROW)/THREAD_LOCAL_GROW)*THREAD_LOCAL_GROW;
         ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
 
         ScmSize i;
@@ -140,7 +146,7 @@ static void ensure_parameter_slot(ScmVMParameterTable *p, ScmSize index)
     }
 }
 
-static void ensure_parameter_init_keywords()
+static void ensure_tl_init_keywords()
 {
     /* idempotency is ensured in SCM_MAKE_KEYWORD. */
     if (SCM_FALSEP(key_name)) {
@@ -153,7 +159,7 @@ static void ensure_parameter_init_keywords()
 
 static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ensure_parameter_init_keywords();
+    ensure_tl_init_keywords();
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     ScmObj initval = Scm_GetKeyword(key_initial_value, initargs, SCM_FALSE);
     ScmPrimitiveParameter *p =
@@ -169,10 +175,10 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                   ScmObj initval,
                                                   u_long flags)
 {
-    SCM_INTERNAL_MUTEX_LOCK(parameter_mutex);
-    ScmSize index = next_parameter_index++;
-    SCM_INTERNAL_MUTEX_UNLOCK(parameter_mutex);
-    ensure_parameter_slot(Scm_VM()->parameters, index);
+    SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
+    ScmSize index = next_tl_index++;
+    SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
+    ensure_tl_slot(Scm_VM()->threadLocals, index);
 
     /* This is called _before_ class stuff is initialized, in which case
        we can't call SCM_NEW_INSTANCE.  We know such cases only happens
@@ -249,7 +255,7 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
  */
 ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
-    ScmVMParameterTable *t = vm->parameters;
+    ScmVMThreadLocalTable *t = vm->threadLocals;
     ScmObj result;
     if (p->index >= t->size) {
         result = p->initialValue;
@@ -267,9 +273,9 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
                                  ScmObj val)
 {
     ScmObj oldval = SCM_UNBOUND;
-    ScmVMParameterTable *t = vm->parameters;
+    ScmVMThreadLocalTable *t = vm->threadLocals;
     if (p->index >= t->size) {
-        ensure_parameter_slot(t, p->index);
+        ensure_tl_slot(t, p->index);
     } else {
         oldval = t->vector[p->index];
     }
@@ -300,7 +306,7 @@ ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
 
 void Scm__InitParameter(void)
 {
-    SCM_INTERNAL_MUTEX_INIT(parameter_mutex);
+    SCM_INTERNAL_MUTEX_INIT(tl_mutex);
     /* We don't initialize Scm_PrimitiveParameterClass yet, since class
        stuff is not initialized yet.  The class is initialized in
        class.c. */
