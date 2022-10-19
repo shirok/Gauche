@@ -1,3 +1,14 @@
+2022-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/vmP.h (ScmEscapePoint),
+	  src/vm.c (Scm_VMDefaultExceptionHandler, Scm_VMReraise),
+	  src/libexc.scm (%reraise): Address the issue that escapePoint
+	  in the floating chain loses pointer to the continuation frames.
+	  https://github.com/shirok/Gauche/issues/852
+	  We fell back to safe-but-slow option: Continuation chains are
+	  saved as soon as default exception handler is invoked, so that
+	  all active EPs point to contFrames on heap.
+
 2022-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (quasirename): Attach source info of the
