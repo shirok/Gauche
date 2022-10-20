@@ -85,6 +85,10 @@ static ScmObj key_initial_value = SCM_FALSE;
 static void pparam_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED);
 
+SCM_DEFINE_BASE_CLASS(Scm_ThreadLocalClass, ScmThreadLocal,
+                      pparam_print, NULL, NULL, pparam_allocate,
+                      SCM_CLASS_OBJECT_CPL);
+
 SCM_DEFINE_BASE_CLASS(Scm_PrimitiveParameterClass, ScmPrimitiveParameter,
                       pparam_print, NULL, NULL, pparam_allocate,
                       SCM_CLASS_OBJECT_CPL);
@@ -168,12 +172,12 @@ static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
 }
 
 /*
- * Create a primitive parameter
+ * Create a thread local
  */
-ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
-                                                  ScmObj name,
-                                                  ScmObj initval,
-                                                  u_long flags)
+ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
+                                    ScmObj name,
+                                    ScmObj initval,
+                                    u_long flags)
 {
     SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
     ScmSize index = next_tl_index++;
@@ -182,22 +186,37 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
 
     /* This is called _before_ class stuff is initialized, in which case
        we can't call SCM_NEW_INSTANCE.  We know such cases only happens
-       with klass == SCM_CLASS_PRIMITIVE_PARAMETER, so we hard-wire the
+       with klass == SCM_CLASS_THRAED_LOCAL, so we hard-wire the
        case.
      */
-    ScmPrimitiveParameter *p;
-    if (SCM_EQ(klass, SCM_CLASS_PRIMITIVE_PARAMETER)) {
-        p = SCM_NEW(ScmPrimitiveParameter);
-        SCM_SET_CLASS(p, SCM_CLASS_PRIMITIVE_PARAMETER);
-        SCM_INSTANCE(p)->slots = NULL;        /* no extra slots */
+    ScmThreadLocal *tl;
+    if (SCM_EQ(klass, SCM_CLASS_THREAD_LOCAL)
+        || SCM_EQ(klass, SCM_CLASS_PRIMITIVE_PARAMETER)) {
+        tl = SCM_NEW(ScmThreadLocal);
+        SCM_SET_CLASS(tl, klass);
+        SCM_INSTANCE(tl)->slots = NULL;        /* no extra slots */
     } else {
-        p = SCM_NEW_INSTANCE(ScmPrimitiveParameter, klass);
+        tl = SCM_NEW_INSTANCE(ScmThreadLocal, klass);
     }
-    p->name = name;
-    p->index = index;
-    p->initialValue = initval;
-    p->flags = flags;
-    return p;
+    tl->name = name;
+    tl->index = index;
+    tl->initialValue = initval;
+    tl->flags = flags;
+    return tl;
+}
+
+/*
+ * Create a primitive parameter
+ * For now, it is just the same as thread local, but we'll gradually
+ * modify it for the new parameter semantics.
+ */
+ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
+                                                  ScmObj name,
+                                                  ScmObj initval,
+                                                  u_long flags)
+{
+    /* TRANSIENT */
+    return (ScmPrimitiveParameter*)Scm_MakeThreadLocal(klass, name, initval, flags);
 }
 
 /*
@@ -253,40 +272,55 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
 /*
  * Accessor & modifier
  */
-ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
+ScmObj Scm_ThreadLocalRef(ScmVM *vm, const ScmThreadLocal *tl)
 {
     ScmVMThreadLocalTable *t = vm->threadLocals;
     ScmObj result;
-    if (p->index >= t->size) {
-        result = p->initialValue;
+    if (tl->index >= t->size) {
+        result = tl->initialValue;
     } else {
-        result = t->vector[p->index];
+        result = t->vector[tl->index];
         if (SCM_UNBOUNDP(result)) {
-            result = t->vector[p->index] = p->initialValue;
+            result = t->vector[tl->index] = tl->initialValue;
         }
     }
-    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(result);
+    if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(result);
     else return result;
+}
+
+
+ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
+{
+    /* TRANSIENT */
+    return Scm_ThreadLocalRef(vm, (const ScmThreadLocal*)p);
+}
+
+
+ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
+                          ScmObj val)
+{
+    ScmObj oldval = SCM_UNBOUND;
+    ScmVMThreadLocalTable *t = vm->threadLocals;
+    if (tl->index >= t->size) {
+        ensure_tl_slot(t, tl->index);
+    } else {
+        oldval = t->vector[tl->index];
+    }
+    if (SCM_UNBOUNDP(oldval)) {
+        oldval = tl->initialValue;
+    }
+
+    t->vector[tl->index] = val;
+
+    if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(oldval);
+    else return oldval;
 }
 
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
                                  ScmObj val)
 {
-    ScmObj oldval = SCM_UNBOUND;
-    ScmVMThreadLocalTable *t = vm->threadLocals;
-    if (p->index >= t->size) {
-        ensure_tl_slot(t, p->index);
-    } else {
-        oldval = t->vector[p->index];
-    }
-    if (SCM_UNBOUNDP(oldval)) {
-        oldval = p->initialValue;
-    }
-
-    t->vector[p->index] = val;
-
-    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(oldval);
-    else return oldval;
+    /* TRANSIENT */
+    return Scm_ThreadLocalSet(vm, (const ScmThreadLocal*)p, val);
 }
 
 /* Convenience function.  Create a primitive parameter subr and bind

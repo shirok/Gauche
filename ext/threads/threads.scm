@@ -50,6 +50,8 @@
           condition-variable-specific condition-variable-specific-set!
           condition-variable-signal! condition-variable-broadcast!
 
+          make-thread-local thread-local? tlref tlset!
+
           current-time time? time->seconds seconds->time
 
           join-timeout-exception? abandoned-mutex-exception?
@@ -66,7 +68,8 @@
 
 (inline-stub
  (declcode
-  (.include "threads.h"))
+  (.include "threads.h")
+  (.include "gauche/parameter.h"))
 
  (declare-cfn Scm_Init_mutex (mod::ScmModule*) ::void)
  (declare-cfn Scm_Init_threads (mod::ScmModule*) ::void)
@@ -240,6 +243,28 @@
   (define-cproc condition-variable-broadcast! (cv::<condition-variable>)
     Scm_ConditionVariableBroadcast)
   )
+
+;;===============================================================
+;; Thread locals (srfi-226)
+;;
+
+;; TRANSIENT: To compile 0.9.13 with 0.9.12
+(inline-stub
+ (declare-stub-type <thread-local> "ScmThreadLocal*")
+ )
+
+(define-cproc make-thread-local (initval :optional (name #f))
+  (return
+   (SCM_OBJ (Scm_MakeThreadLocal SCM_CLASS_THREAD_LOCAL name initval 0))))
+
+(define-cproc thread-local? (obj) ::<boolean>
+  (return (SCM_THREAD_LOCAL_P obj)))
+
+(define-cproc tlref (tl::<thread-local>)
+  (return (Scm_ThreadLocalRef (Scm_VM) tl)))
+
+(define-cproc tlset! (tl::<thread-local> obj) ::<void>
+  (Scm_ThreadLocalSet (Scm_VM) tl obj))
 
 ;;===============================================================
 ;; Exceptions

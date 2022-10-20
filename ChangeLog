@@ -1,3 +1,8 @@
+2022-10-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c, ext/threads/threads.scm (make-thread-local):
+	  Add srfi-226 thread-local APIs.
+
 2022-10-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/vmP.h (ScmEscapePoint),

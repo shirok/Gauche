@@ -51,7 +51,7 @@
 
 /* We keep the definition private, so that we can extend it later. */
 
-struct ScmPrimitiveParameterRec {
+struct ScmThreadLocalRec {
     SCM_INSTANCE_HEADER;
     ScmObj name;                /* for debugging. #f or symbol. */
     ScmSize index;

@@ -297,6 +297,7 @@
    (%cclass <compiled-code> "ScmCompiledCode*")
    (%cclass <foreign-pointer> "ScmForeignPointer*")
    (%cclass <box>  "ScmBox*")
+   ;(%cclass <thread-local> "ScmThreadLocal*")
    (%cclass <primitive-parameter> "ScmPrimitiveParameter*")
    (%cclass <dlobj> "ScmDLObj*")
    (%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")

@@ -3706,6 +3706,7 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_INTEGER,          "<integer>");
 
     /* parameter.c */
+    CINIT(SCM_CLASS_THREAD_LOCAL,     "<thread-local>");
     BINIT(SCM_CLASS_PRIMITIVE_PARAMETER, "<primitive-parameter>", NULL);
 
     /* port.c */
