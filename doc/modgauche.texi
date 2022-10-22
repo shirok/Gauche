@@ -22019,6 +22019,7 @@ SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポー�
 @menu
 * Thread programming tips::
 * Thread procedures::
+* Thread local storage::
 * Synchronization primitives::
 * Thread exceptions::
 @end menu
@@ -22286,7 +22287,7 @@ For the time being, you can lift the call to loop outside of
 @end example
 
 
-@node Thread procedures, Synchronization primitives, Thread programming tips, Threads
+@node Thread procedures, Thread local storage, Thread programming tips, Threads
 @subsection Thread procedures
 @c NODE スレッド手続き
 
@@ -22875,7 +22876,55 @@ if given, or raises @code{<join-timeout-exception>}.
 @c COMMON
 @end defun
 
-@node Synchronization primitives, Thread exceptions, Thread procedures, Threads
+@node Thread local storage, Synchronization primitives, Thread procedures, Threads
+@subsection Thread local storage
+@c NODE スレッドローカル領域
+
+@c EN
+A thread local is an object that can hold per-thread value.
+@c JP
+スレッドローカルはスレッドごとの値を格納できるオブジェクトです。
+@c COMMON
+
+@c EN
+Note: Parameters used to be the way to keep per-thread value, but
+we've decided to split thread local storage from dyncamic binding.
+Parameters should be used for dynamic binding, and thread locals should
+be used for per-thread value.
+If your existing code uses parameters for the per-thread value,
+update it to use thread locals.  Parameters will eventually share
+the storage across threads.
+@c JP
+註: これまで、パラメータがスレッド毎の値を格納するためにも使われてきましたが、
+動的束縛とスレッドローカル領域を切り離すことにしました。
+パラメータは動的束縛のためだけに使われるべきで、スレッド毎の値を保持するには
+スレッドローカルを使うようにしてください。
+既存のコードで、スレッド毎の値を保持するためにパラメータを使っている場合は、
+スレッドローカルを使うようにアップデートしてください。
+いずれ、パラメータでは領域をスレッド間で共有するようになります。
+@c COMMON
+
+
+@defun make-thread-local init-value :optional name
+Returns a new thread local, with @var{init-value} as an initial value.
+The optional @var{name} argument specifies thread local's name;
+it is only used for debugging purpose.
+@end defun
+
+@defun thread-local? obj
+Returns @code{#t} if @var{obj} is a thread local, @code{#f} otherwise.
+@end defun
+
+@defun tlref tl
+Returns the value of a thread local @var{tl}.
+@end defun
+
+@defun tlset! tl val
+Modifies the value of a thread local @var{tl} with @var{val}.
+@end defun
+
+
+@node Synchronization primitives, Thread exceptions, Thread local storage, Threads
 @subsection Synchronization primitives
 @c NODE 同期プリミティブ
 
