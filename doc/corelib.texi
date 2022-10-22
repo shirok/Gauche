@@ -17651,11 +17651,9 @@ you can use @code{gfilter} and @code{generator->list}.
 
 @c EN
 A @emph{parameter} is Scheme's way to implement dynamically scoped states.
-In Gauche, it also realizes thread-local storage.
 It is codified in srfi-39 and incorporated into R7RS.
 @c JP
 「パラメータ」はSchemeで動的スコープを持つ状態を実現します。
-Gaucheではスレッドローカルな状態の格納にも使えます。
 もともとsrfi-39で仕様が定められ、R7RSからは言語の一部になりました。
 @c COMMON
 
@@ -17707,49 +17705,39 @@ it is accessed.
 @c COMMON
 
 @c EN
-Gauche enhances R7RS parameters in a few ways.
+A parameter's value can be mutated by calling the parameter with
+the new value:
 @c JP
-GaucheはR7RSのパラメータを次のとおり拡張しています。
+パラメータの値はまた、新たな値を引数としてパラメータを呼ぶことで変更することができます。
 @c COMMON
 
-@itemize @bullet
-@item
-@c EN
-It is thread-local.  A parameter created in one thread can be used
-from other threads, but the storage is independent.  When a new thread
-is created, it inherits the values of existing parameters.
-@c JP
-スレッドローカルです。ひとつのスレッドで作られたパラメータは他のスレッドからも
-アクセスできますが、参照される領域はスレッドごとに独立しています。
-新たなスレッドが作られた時、それまでにあるパラメータの値は引き継がれます。
-@c COMMON
-@item
-@c EN
-You can attach observer procedures to a parameter, which is invoked
-whenever the value of the parameter is altered, either directly
-or by @code{parameterize}.   (This feature is only available
-when you use @code{gauche.parameter} module, @pxref{Parameters (extra)}).
-@c JP
-パラメータに監視手続きをつけることができます。パラメータの値が変わる度に
-(@code{parameterize}でも直接設定でも)監視手続きが呼ばれます。
-(この機能は@code{gauche.parameter}をuseすることで使えるようになります。
-@ref{Parameters (extra)}参照。
-@c COMMON
-@item
-@c EN
-You can use generaized @code{set!} with parameters.
-@c JP
-パラメータに対しても一般化された@code{set!}を使えます。
-@c COMMON
 @example
-(define p (make-parameter 'a))
-(p) @result{} a
-(set! (p) 'b)
-(p) @result{} b
+(define var (make-parameter 0))
+
+(var) ; @result{} 0
+
+(var 1)
+
+(var) ; @result{} 1
+
+;; Gauche extension: you can use set! too
+(set! (var) 2)
+
+(var) ; @result{} 2
 @end example
-@end itemize
+
+@c EN
+Note: As of 0.9.13, Gauche's parameter is thread-local: Changes of its
+value aren't visible from other threads.  This is going to be changed.
+If you need a thread specific storage, use @emph{thread locals}
+(@pxref{Thread local storage}).
 @c JP
+註: 0.9.13時点では、Gaucheのパラメータはスレッドローカルです。すなわち、
+パラメータの値の変更は他のスレッドからは見えません。しかしこれは変更が予定されています。
+スレッドローカルな格納領域が必要なら、@emph{thread local}オブジェクトを
+使うようにしてください (@ref{Thread local storage}参照)。
 @c COMMON
+
 
 @defun make-parameter value :optional filter
 [R7RS base]
