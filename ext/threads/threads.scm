@@ -50,7 +50,8 @@
           condition-variable-specific condition-variable-specific-set!
           condition-variable-signal! condition-variable-broadcast!
 
-          make-thread-local thread-local? tlref tlset!
+          make-thread-local make-thread-local-inheritable
+          thread-local? tlref tlset!
 
           current-time time? time->seconds seconds->time
 
@@ -256,6 +257,11 @@
 (define-cproc make-thread-local (initval :optional (name #f))
   (return
    (SCM_OBJ (Scm_MakeThreadLocal SCM_CLASS_THREAD_LOCAL name initval 0))))
+
+(define-cproc make-thread-local-inheritable (initval :optional (name #f))
+  (return
+   (SCM_OBJ (Scm_MakeThreadLocal SCM_CLASS_THREAD_LOCAL name initval
+                                 SCM_THREAD_LOCAL_INHERITABLE))))
 
 (define-cproc thread-local? (obj) ::<boolean>
   (return (SCM_THREAD_LOCAL_P obj)))

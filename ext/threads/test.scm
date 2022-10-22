@@ -467,6 +467,27 @@
                  (thread-join! t2)
                  (thread-join! t3)))))
 
+(define tl2 (make-thread-local-inheritable 0))
+
+(test* "thread local (inheritable)" '(200 100)
+       (let1 handshake #f
+         (let* ([t2 #f]
+                [t1 (make-thread (^[]
+                                   (tlset! tl2 100)
+                                   (set! t2 (make-thread
+                                             (^[]
+                                               (until handshake
+                                                 (sys-nanosleep 500000))
+                                               (tlref tl2))))
+                                   (tlset! tl2 200)
+                                   (thread-start! t2)
+                                   (until handshake (sys-nanosleep 500000))
+                                   (tlref tl2)))])
+           (thread-start! t1)
+           (set! handshake #t)
+           (list (thread-join! t1)
+                 (thread-join! t2)))))
+
 ;;---------------------------------------------------------------------
 (test-section "thread-local parameters")
 
