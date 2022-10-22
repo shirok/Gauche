@@ -22906,21 +22906,38 @@ the storage across threads.
 
 
 @defun make-thread-local init-value :optional name
+@c EN
 Returns a new thread local, with @var{init-value} as an initial value.
 The optional @var{name} argument specifies thread local's name;
 it is only used for debugging purpose.
+@c JP
+@var{init-value}を初期値とするあらたなスレッドローカルを作って返します。
+省略可能な@var{name}引数は、スレッドローカルに名前を与えます。デバッグ時にのみ使われます。
+@c COMMON
 @end defun
 
 @defun thread-local? obj
+@c EN
 Returns @code{#t} if @var{obj} is a thread local, @code{#f} otherwise.
+@c JP
+@var{obj}がスレッドローカルなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun tlref tl
+@c EN
 Returns the value of a thread local @var{tl}.
+@c JP
+スレッドローカル@var{tl}の呼び出しスレッドでの値を返します。
+@c COMMON
 @end defun
 
 @defun tlset! tl val
+@c EN
 Modifies the value of a thread local @var{tl} with @var{val}.
+@c JP
+スレッドローカル@var{tl}の呼び出しスレッドでの値を@var{val}に設定します。
+@c COMMON
 @end defun
 
 
