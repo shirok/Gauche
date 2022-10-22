@@ -54,7 +54,7 @@
 struct ScmThreadLocalRec {
     SCM_INSTANCE_HEADER;
     ScmObj name;                /* for debugging. #f or symbol. */
-    ScmSize index;
+    ScmSize index;              /* negative for inheritable */
     ScmObj initialValue;
     u_long flags;
 };
@@ -64,9 +64,18 @@ struct ScmThreadLocalRec {
    We might swap this to more sophisticated data structure than
    a simple flat vector in future.
  */
-struct ScmVMThreadLocalTableRec {
+typedef struct ScmVMThreadLocalVectorRec {
     ScmSize size;
     ScmObj *vector;
+} ScmVMThreadLocalVector;
+
+struct ScmVMThreadLocalTableRec {
+    ScmVMThreadLocalVector vs[2];
+};
+
+enum {
+      SCM_THREAD_LOCAL_VECTOR_INHERITABLE = 0,
+      SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE = 1
 };
 
 SCM_EXTERN ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base);

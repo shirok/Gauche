@@ -69,10 +69,12 @@
 #define THREAD_LOCAL_INIT_SIZE 64
 #define THREAD_LOCAL_GROW      16
 
-/* Every time a new parameter is created (in any thread), it is
- * given a unique index in the process.
+/* Every time a new thread local is created (in any thread), it is
+ * given a unique index in the process.  Negative index is for
+ * inheritable thread locals (-index-1 gives the index to the vector).
  */
-static ScmSize next_tl_index = 0;
+static ScmSize next_tl_noninheritable_index = 0;
+static ScmSize next_tl_inheritable_index = -1;
 static ScmInternalMutex tl_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 /* :name and :initial-value.  These keywords are set on-demand,
@@ -97,27 +99,40 @@ SCM_DEFINE_BASE_CLASS(Scm_PrimitiveParameterClass, ScmPrimitiveParameter,
  * thread, base is the current thread (this must be called from the
  * creator thread).
  */
-ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base)
+static void fill_tl_vector(ScmVMThreadLocalVector *dst,
+                           const ScmVMThreadLocalVector *base)
 {
-    ScmVMThreadLocalTable *table = SCM_NEW(ScmVMThreadLocalTable);
-
     if (base) {
         /* NB: In this case, the caller is the owner thread of BASE,
            so we don't need to worry about base->parameters being
            modified during copying. */
-        table->vector = SCM_NEW_ARRAY(ScmObj, base->threadLocals->size);
-        table->size = base->threadLocals->size;
-        for (ScmSize i=0; i<table->size; i++) {
-            table->vector[i] = base->threadLocals->vector[i];
+        dst->vector = SCM_NEW_ARRAY(ScmObj, base->size);
+        dst->size = base->size;
+        for (ScmSize i=0; i<dst->size; i++) {
+            dst->vector[i] = base->vector[i];
         }
     } else {
-        table->vector = SCM_NEW_ARRAY(ScmObj, THREAD_LOCAL_INIT_SIZE);
-        table->size = THREAD_LOCAL_INIT_SIZE;
-        for (ScmSize i=0; i<table->size; i++) {
-            table->vector[i] = SCM_UNBOUND;
+        dst->vector = SCM_NEW_ARRAY(ScmObj, THREAD_LOCAL_INIT_SIZE);
+        dst->size = THREAD_LOCAL_INIT_SIZE;
+        for (ScmSize i=0; i<dst->size; i++) {
+            dst->vector[i] = SCM_UNBOUND;
         }
     }
-    return table;
+}
+
+
+ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base)
+{
+    ScmVMThreadLocalTable *t = SCM_NEW(ScmVMThreadLocalTable);
+    if (base) {
+        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_INHERITABLE],
+                       &base->threadLocals->vs[SCM_THREAD_LOCAL_VECTOR_INHERITABLE]);
+        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE], NULL);
+    } else {
+        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_INHERITABLE], NULL);
+        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE], NULL);
+    }
+    return t;
 }
 
 static void pparam_print(ScmObj obj,
@@ -130,9 +145,23 @@ static void pparam_print(ScmObj obj,
                obj);
 }
 
-static void ensure_tl_slot(ScmVMThreadLocalTable *p, ScmSize index)
+static ScmVMThreadLocalVector *get_tl_vector(ScmVMThreadLocalTable *t,
+                                             ScmSize index,
+                                             ScmSize *vindex)
 {
-    if (index >= p->size) {
+    int kind = (index < 0
+                ? SCM_THREAD_LOCAL_VECTOR_INHERITABLE
+                : SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE);
+    *vindex = index < 0 ? (-index-1) : index;
+    return &t->vs[kind];
+}
+
+static void ensure_tl_slot(ScmVMThreadLocalTable *t, ScmSize index)
+{
+    ScmSize vindex;
+    ScmVMThreadLocalVector *p = get_tl_vector(t, index, &vindex);
+
+    if (vindex >= p->size) {
         ScmSize newsiz =
             ((index+THREAD_LOCAL_GROW)/THREAD_LOCAL_GROW)*THREAD_LOCAL_GROW;
         ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
@@ -179,8 +208,14 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
                                     ScmObj initval,
                                     u_long flags)
 {
+    ScmSize index;
+
     SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
-    ScmSize index = next_tl_index++;
+    if (flags & SCM_THREAD_LOCAL_INHERITABLE) {
+        index = next_tl_inheritable_index++;
+    } else {
+        index = next_tl_noninheritable_index--;
+    }
     SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
     ensure_tl_slot(Scm_VM()->threadLocals, index);
 
@@ -216,7 +251,10 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                   u_long flags)
 {
     /* TRANSIENT */
-    return (ScmPrimitiveParameter*)Scm_MakeThreadLocal(klass, name, initval, flags);
+    ScmThreadLocal *tl =
+        Scm_MakeThreadLocal(klass, name, initval,
+                            flags & SCM_THREAD_LOCAL_INHERITABLE);
+    return (ScmPrimitiveParameter*)tl;
 }
 
 /*
@@ -274,14 +312,16 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
  */
 ScmObj Scm_ThreadLocalRef(ScmVM *vm, const ScmThreadLocal *tl)
 {
-    ScmVMThreadLocalTable *t = vm->threadLocals;
+    ScmSize vindex;
+    ScmVMThreadLocalVector *t = get_tl_vector(vm->threadLocals,
+                                              tl->index, &vindex);
     ScmObj result;
-    if (tl->index >= t->size) {
+    if (vindex >= t->size) {
         result = tl->initialValue;
     } else {
-        result = t->vector[tl->index];
+        result = t->vector[vindex];
         if (SCM_UNBOUNDP(result)) {
-            result = t->vector[tl->index] = tl->initialValue;
+            result = t->vector[vindex] = tl->initialValue;
         }
     }
     if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(result);
@@ -300,17 +340,19 @@ ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
                           ScmObj val)
 {
     ScmObj oldval = SCM_UNBOUND;
-    ScmVMThreadLocalTable *t = vm->threadLocals;
-    if (tl->index >= t->size) {
-        ensure_tl_slot(t, tl->index);
+    ScmSize vindex;
+    ScmVMThreadLocalVector *t = get_tl_vector(vm->threadLocals,
+                                              tl->index, &vindex);
+    if (vindex >= t->size) {
+        ensure_tl_slot(vm->threadLocals, tl->index);
     } else {
-        oldval = t->vector[tl->index];
+        oldval = t->vector[vindex];
     }
     if (SCM_UNBOUNDP(oldval)) {
         oldval = tl->initialValue;
     }
 
-    t->vector[tl->index] = val;
+    t->vector[vindex] = val;
 
     if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(oldval);
     else return oldval;
