@@ -439,6 +439,35 @@
 ;(test "catching signal by primordial thread" (make-list 10 'int)
 
 ;;---------------------------------------------------------------------
+(test-section "thread-locals")
+
+(define tl1 (make-thread-local 0))
+
+(test* "thread-local?" #t (thread-local? tl1))
+(test* "thread-local (default value)" 0 (tlref tl1))
+
+(test* "thread local" '(1 2 0)
+       (let1 handshake #f
+         (let ([t1 (make-thread (^[]
+                                  (tlset! tl1 1)
+                                  (until handshake (sys-nanosleep 500000))
+                                  (tlref tl1)))]
+               [t2 (make-thread (^[]
+                                  (tlset! tl1 2)
+                                  (until handshake (sys-nanosleep 500000))
+                                  (tlref tl1)))]
+               [t3 (make-thread (^[]
+                                  (until handshake (sys-nanosleep 500000))
+                                  (tlref tl1)))])
+           (thread-start! t1)
+           (thread-start! t2)
+           (thread-start! t3)
+           (set! handshake #t)
+           (list (thread-join! t1)
+                 (thread-join! t2)
+                 (thread-join! t3)))))
+
+;;---------------------------------------------------------------------
 (test-section "thread-local parameters")
 
 (define *thr1-val* #f)
@@ -855,7 +884,7 @@
     (rlet1 vec (make-vector 256)
       (dotimes [n (vector-length vec)]
         ($ vector-set! vec n
-           $ list->string 
+           $ list->string
            $ map (^_ (integer->char (+ (random-integer 95) 32))) (iota 5)))))
 
   (define (string-hash-test)
@@ -873,10 +902,10 @@
 
   (test* "memoizing string hash" #t
          (let/cc return
-           ($ for-each thread-join! 
+           ($ for-each thread-join!
               $ map thread-start!
               $ map (^_ (make-thread string-hash-test)) (iota 100))
-           (positive? 
+           (positive?
             (count (^s (receive (val exists?)
                            (memo-table-get2 string-hash-tab (list s (box s)))
                          (and exists?
