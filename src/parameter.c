@@ -59,23 +59,7 @@
  * to parameters), and eagerly copies the vector at the creation of the
  * thread.  Since thread creation in Gauche is already heavy anyway,
  * I take Guile's approach.
- *
- * TODO: We now need to allocate a parameter slot to every thread (although
- * allocation is done lazily).  We may be able to use a tree instead of
- * a flat vector so that we can avoid allocation of leaf nodes until
- * they are accessed.
  */
-
-#define THREAD_LOCAL_INIT_SIZE 64
-#define THREAD_LOCAL_GROW      16
-
-/* Every time a new thread local is created (in any thread), it is
- * given a unique index in the process.  Negative index is for
- * inheritable thread locals (-index-1 gives the index to the vector).
- */
-static ScmSize next_tl_noninheritable_index = 0;
-static ScmSize next_tl_inheritable_index = -1;
-static ScmInternalMutex tl_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 /* :name and :initial-value.  These keywords are set on-demand,
    since at the time of Scm_InitParameter we haven't initialized
@@ -87,53 +71,10 @@ static ScmObj key_initial_value = SCM_FALSE;
 static void pparam_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED);
 
-SCM_DEFINE_BASE_CLASS(Scm_ThreadLocalClass, ScmThreadLocal,
-                      pparam_print, NULL, NULL, pparam_allocate,
-                      SCM_CLASS_OBJECT_CPL);
-
 SCM_DEFINE_BASE_CLASS(Scm_PrimitiveParameterClass, ScmPrimitiveParameter,
                       pparam_print, NULL, NULL, pparam_allocate,
                       SCM_CLASS_OBJECT_CPL);
 
-/* Init table.  For primordial thread, base == NULL.  For non-primordial
- * thread, base is the current thread (this must be called from the
- * creator thread).
- */
-static void fill_tl_vector(ScmVMThreadLocalVector *dst,
-                           const ScmVMThreadLocalVector *base)
-{
-    if (base) {
-        /* NB: In this case, the caller is the owner thread of BASE,
-           so we don't need to worry about base->parameters being
-           modified during copying. */
-        dst->vector = SCM_NEW_ARRAY(ScmObj, base->size);
-        dst->size = base->size;
-        for (ScmSize i=0; i<dst->size; i++) {
-            dst->vector[i] = base->vector[i];
-        }
-    } else {
-        dst->vector = SCM_NEW_ARRAY(ScmObj, THREAD_LOCAL_INIT_SIZE);
-        dst->size = THREAD_LOCAL_INIT_SIZE;
-        for (ScmSize i=0; i<dst->size; i++) {
-            dst->vector[i] = SCM_UNBOUND;
-        }
-    }
-}
-
-
-ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base)
-{
-    ScmVMThreadLocalTable *t = SCM_NEW(ScmVMThreadLocalTable);
-    if (base) {
-        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_INHERITABLE],
-                       &base->threadLocals->vs[SCM_THREAD_LOCAL_VECTOR_INHERITABLE]);
-        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE], NULL);
-    } else {
-        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_INHERITABLE], NULL);
-        fill_tl_vector(&t->vs[SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE], NULL);
-    }
-    return t;
-}
 
 static void pparam_print(ScmObj obj,
                          ScmPort *out,
@@ -145,41 +86,7 @@ static void pparam_print(ScmObj obj,
                obj);
 }
 
-static ScmVMThreadLocalVector *get_tl_vector(ScmVMThreadLocalTable *t,
-                                             ScmSize index,
-                                             ScmSize *vindex)
-{
-    int kind = (index < 0
-                ? SCM_THREAD_LOCAL_VECTOR_INHERITABLE
-                : SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE);
-    *vindex = index < 0 ? (-index-1) : index;
-    return &t->vs[kind];
-}
-
-static void ensure_tl_slot(ScmVMThreadLocalTable *t, ScmSize index)
-{
-    ScmSize vindex;
-    ScmVMThreadLocalVector *p = get_tl_vector(t, index, &vindex);
-
-    if (vindex >= p->size) {
-        ScmSize newsiz =
-            ((index+THREAD_LOCAL_GROW)/THREAD_LOCAL_GROW)*THREAD_LOCAL_GROW;
-        ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
-
-        ScmSize i;
-        for (i=0; i < p->size; i++) {
-            newvec[i] = p->vector[i];
-            p->vector[i] = SCM_FALSE; /*be friendly to GC*/
-        }
-        for (; i < newsiz; i++) {
-            newvec[i] = SCM_UNBOUND;
-        }
-        p->vector = newvec;
-        p->size = newsiz;
-    }
-}
-
-static void ensure_tl_init_keywords()
+static void ensure_parameter_init_keywords()
 {
     /* idempotency is ensured in SCM_MAKE_KEYWORD. */
     if (SCM_FALSEP(key_name)) {
@@ -192,52 +99,12 @@ static void ensure_tl_init_keywords()
 
 static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
 {
-    ensure_tl_init_keywords();
+    ensure_parameter_init_keywords();
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     ScmObj initval = Scm_GetKeyword(key_initial_value, initargs, SCM_FALSE);
     ScmPrimitiveParameter *p =
         Scm_MakePrimitiveParameter(klass, name, initval, 0);
     return SCM_OBJ(p);
-}
-
-/*
- * Create a thread local
- */
-ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
-                                    ScmObj name,
-                                    ScmObj initval,
-                                    u_long flags)
-{
-    ScmSize index;
-
-    SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
-    if (flags & SCM_THREAD_LOCAL_INHERITABLE) {
-        index = next_tl_inheritable_index++;
-    } else {
-        index = next_tl_noninheritable_index--;
-    }
-    SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
-    ensure_tl_slot(Scm_VM()->threadLocals, index);
-
-    /* This is called _before_ class stuff is initialized, in which case
-       we can't call SCM_NEW_INSTANCE.  We know such cases only happens
-       with klass == SCM_CLASS_THRAED_LOCAL, so we hard-wire the
-       case.
-     */
-    ScmThreadLocal *tl;
-    if (SCM_EQ(klass, SCM_CLASS_THREAD_LOCAL)
-        || SCM_EQ(klass, SCM_CLASS_PRIMITIVE_PARAMETER)) {
-        tl = SCM_NEW(ScmThreadLocal);
-        SCM_SET_CLASS(tl, klass);
-        SCM_INSTANCE(tl)->slots = NULL;        /* no extra slots */
-    } else {
-        tl = SCM_NEW_INSTANCE(ScmThreadLocal, klass);
-    }
-    tl->name = name;
-    tl->index = index;
-    tl->initialValue = initval;
-    tl->flags = flags;
-    return tl;
 }
 
 /*
@@ -310,52 +177,10 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
 /*
  * Accessor & modifier
  */
-ScmObj Scm_ThreadLocalRef(ScmVM *vm, const ScmThreadLocal *tl)
-{
-    ScmSize vindex;
-    ScmVMThreadLocalVector *t = get_tl_vector(vm->threadLocals,
-                                              tl->index, &vindex);
-    ScmObj result;
-    if (vindex >= t->size) {
-        result = tl->initialValue;
-    } else {
-        result = t->vector[vindex];
-        if (SCM_UNBOUNDP(result)) {
-            result = t->vector[vindex] = tl->initialValue;
-        }
-    }
-    if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(result);
-    else return result;
-}
-
-
 ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
     /* TRANSIENT */
     return Scm_ThreadLocalRef(vm, (const ScmThreadLocal*)p);
-}
-
-
-ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
-                          ScmObj val)
-{
-    ScmObj oldval = SCM_UNBOUND;
-    ScmSize vindex;
-    ScmVMThreadLocalVector *t = get_tl_vector(vm->threadLocals,
-                                              tl->index, &vindex);
-    if (vindex >= t->size) {
-        ensure_tl_slot(vm->threadLocals, tl->index);
-    } else {
-        oldval = t->vector[vindex];
-    }
-    if (SCM_UNBOUNDP(oldval)) {
-        oldval = tl->initialValue;
-    }
-
-    t->vector[vindex] = val;
-
-    if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(oldval);
-    else return oldval;
 }
 
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
@@ -382,7 +207,6 @@ ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
 
 void Scm__InitParameter(void)
 {
-    SCM_INTERNAL_MUTEX_INIT(tl_mutex);
     /* We don't initialize Scm_PrimitiveParameterClass yet, since class
        stuff is not initialized yet.  The class is initialized in
        class.c. */

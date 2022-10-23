@@ -239,6 +239,7 @@ libgauche_OBJECTS = \
 	net.$(OBJEXT) netaddr.$(OBJEXT) netdb.$(OBJEXT) \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
+	threadlocal.$(OBJEXT) \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libbox.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \

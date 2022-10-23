@@ -77,6 +77,7 @@ extern void Scm__InitWrite(void);
 extern void Scm__InitCompaux(void);
 extern void Scm__InitMacro(void);
 extern void Scm__InitLoad(void);
+extern void Scm__InitThreadLocal(void);
 extern void Scm__InitParameter(void);
 extern void Scm__InitProc(void);
 extern void Scm__InitRegexp(void);
@@ -180,6 +181,7 @@ void Scm_Init(const char *signature)
 
     /* Initialize components.  The order is important, for some components
        rely on the other components to be initialized. */
+    CALL_INIT(Scm__InitThreadLocal);
     CALL_INIT(Scm__InitParameter);
     CALL_INIT(Scm__InitVM);
     CALL_INIT(Scm__InitHash);
