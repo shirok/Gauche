@@ -453,7 +453,7 @@
                                   (until handshake (sys-nanosleep 500000))
                                   (tlref tl1)))]
                [t2 (make-thread (^[]
-                                  (tlset! tl1 2)
+                                  (set! (tlref tl1) 2)
                                   (until handshake (sys-nanosleep 500000))
                                   (tlref tl1)))]
                [t3 (make-thread (^[]

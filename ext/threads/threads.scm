@@ -266,11 +266,13 @@
 (define-cproc thread-local? (obj) ::<boolean>
   (return (SCM_THREAD_LOCAL_P obj)))
 
-(define-cproc tlref (tl::<thread-local>)
-  (return (Scm_ThreadLocalRef (Scm_VM) tl)))
-
 (define-cproc tlset! (tl::<thread-local> obj) ::<void>
   (Scm_ThreadLocalSet (Scm_VM) tl obj))
+
+(define-cproc tlref (tl::<thread-local>)
+  (setter tlset!)
+  (return (Scm_ThreadLocalRef (Scm_VM) tl)))
+
 
 ;;===============================================================
 ;; Exceptions
