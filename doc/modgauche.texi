@@ -22906,6 +22906,7 @@ the storage across threads.
 
 
 @defun make-thread-local init-value :optional name
+@defunx make-thread-local-inheritable init-value :optional name
 @c EN
 Returns a new thread local, with @var{init-value} as an initial value.
 The optional @var{name} argument specifies thread local's name;
@@ -22913,6 +22914,33 @@ it is only used for debugging purpose.
 @c JP
 @var{init-value}を初期値とするあらたなスレッドローカルを作って返します。
 省略可能な@var{name}引数は、スレッドローカルに名前を与えます。デバッグ時にのみ使われます。
+@c COMMON
+
+@c EN
+A thread local is a handle to thread specific storage that can contain
+single Scheme value.  You can retrieve its value with @code{tlref}
+and set a new value with @code{tlset!}.
+Once a thread local is created, it can be used from all existing
+and future threads.
+@c JP
+スレッドローカルは一つのScheme値を格納できるスレッド毎の固有領域へのハンドルです。
+@code{tlref}でその値を読み出し、@code{tlset!}で新たな値をセットできます。
+一度スレッドローカルが作られると、それはその時点で存在する、あるいはこれから作られる
+全てのスレッドで利用可能になります。
+@c COMMON
+
+@c EN
+A thread local created by @code{make-thread-local} is @code{tlref}-ed
+first time in a thread, it returns @code{init-value}.
+On the other hand, @code{make-thread-local-inheritable} creates
+an inheritable thread local, which copies the value when a thread
+is created, from the creator thread.
+@c JP
+@code{make-thread-local}で作られたスレッドローカルが最初に@code{tlref}
+されると、@code{init-value}が返ります。
+一方、@code{make-thread-local-inheritable}が作るスレッドローカルは
+継承可能、すなわち、スレッドが作られた時点で、それを作ったスレッドのスレッドローカルの
+値が初期値として使われます。
 @c COMMON
 @end defun
 
