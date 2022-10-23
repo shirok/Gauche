@@ -22966,6 +22966,16 @@ Modifies the value of a thread local @var{tl} with @var{val}.
 @c JP
 スレッドローカル@var{tl}の呼び出しスレッドでの値を@var{val}に設定します。
 @c COMMON
+
+@c EN
+As Gauche's extension, you can also use @code{set!} with @code{tlref}:
+@c JP
+Gaucheの拡張として、@code{tlref}と@code{set!}を使うこともできます:
+@c COMMON
+
+@example
+(set! (tlref tl) obj) @equiv{} (tlset! tl obj)
+@end example
 @end defun
 
 
