@@ -33,8 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
-#include "gauche/vm.h"
-#include "gauche/priv/parameterP.h"
+#include "gauche/priv/vmP.h"
 
 /* Thread local storage are kept in each VM, and each thread local object
  * has index of it.   Thread locals are used in the core so we define
@@ -170,20 +169,8 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
     SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
     ensure_tl_slot(Scm_VM()->threadLocals, index);
 
-    /* This is called _before_ class stuff is initialized, in which case
-       we can't call SCM_NEW_INSTANCE.  We know such cases only happens
-       with klass == SCM_CLASS_THRAED_LOCAL, so we hard-wire the
-       case.
-     */
-    ScmThreadLocal *tl;
-   if (SCM_EQ(klass, SCM_CLASS_THREAD_LOCAL)
-        || SCM_EQ(klass, SCM_CLASS_PRIMITIVE_PARAMETER)) {
-        tl = SCM_NEW(ScmThreadLocal);
-        SCM_SET_CLASS(tl, klass);
-        SCM_INSTANCE(tl)->slots = NULL;        /* no extra slots */
-    } else {
-        tl = SCM_NEW_INSTANCE(ScmThreadLocal, klass);
-    }
+    ScmThreadLocal *tl = SCM_NEW(ScmThreadLocal);
+    SCM_SET_CLASS(tl, SCM_CLASS_THREAD_LOCAL);
     tl->name = name;
     tl->index = index;
     tl->initialValue = initval;

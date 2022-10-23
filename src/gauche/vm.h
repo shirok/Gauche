@@ -74,7 +74,8 @@ typedef struct ScmCompiledCodeRec ScmCompiledCode;
 /* Actual structure is defined in priv/vmP.h */
 typedef struct ScmCallTraceRec ScmCallTrace;
 
-/* Actual structure is defined in priv/parameterP.h */
+/* Actual structure is defined in priv/vmP.h */
+typedef struct ScmThreadLocalRec ScmThreadLocal;
 typedef struct ScmVMThreadLocalTableRec ScmVMThreadLocalTable;
 
 /*
@@ -178,6 +179,36 @@ SCM_EXTERN void Scm_CallCC(ScmObj body);
 
 SCM_EXTERN int  Scm__VMProtectStack(ScmVM *vm);
 SCM_EXTERN void Scm__VMUnprotectStack(ScmVM *vm);
+
+/*
+ * Thread Locals
+ *  See also priv/vmP.h for private definitions
+ */
+
+SCM_CLASS_DECL(Scm_ThreadLocalClass);
+#define SCM_CLASS_THREAD_LOCAL  (&Scm_ThreadLocalClass)
+#define SCM_THREAD_LOCAL(obj)   ((ScmThreadLocal*)obj)
+#define SCM_THREAD_LOCAL_P(obj) SCM_ISA(obj,SCM_CLASS_THREAD_LOCAL)
+
+/* Flag value for Scm_MakeThreadLocal */
+enum {
+    /* Whether the initial value is inherited from the parent thread.
+       Thread locals are noninheritable by default, while parameters are
+       inheritable. */
+    SCM_THREAD_LOCAL_INHERITABLE = (1UL << 0)
+
+};
+
+SCM_EXTERN ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
+                                               ScmObj name,
+                                               ScmObj initval,
+                                               u_long flags);
+SCM_EXTERN ScmObj Scm_ThreadLocalRef(ScmVM *vm,
+                                     const ScmThreadLocal *tl);
+SCM_EXTERN ScmObj Scm_ThreadLocalSet(ScmVM *vm,
+                                     const ScmThreadLocal *tl,
+                                     ScmObj val);
+
 
 /*
  * Syntactic closure

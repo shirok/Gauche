@@ -45,11 +45,6 @@
 #ifndef GAUCHE_PARAMETER_H
 #define GAUCHE_PARAMETER_H
 
-/* ScmThreadLocal is an opaque struct (Definition is
-   in priv/parameterP.h) that implements a simple thread-local
-   storage. */
-typedef struct ScmThreadLocalRec ScmThreadLocal;
-
 /* ScmPrimitiveParameter is a basic parameter object.
    It doesn't have extra features such as filter
    procedure or hooks.  It is useful for the parameter that needs
@@ -58,26 +53,12 @@ typedef struct ScmThreadLocalRec ScmThreadLocal;
    ScmParameter is Scheme's <parameter> object.  It inherits
    primitive parameter, but adds some bells and whistles.
 */
-typedef ScmThreadLocal ScmPrimitiveParameter;
-
-SCM_CLASS_DECL(Scm_ThreadLocalClass);
-#define SCM_CLASS_THREAD_LOCAL  (&Scm_ThreadLocalClass)
-#define SCM_THREAD_LOCAL(obj)   ((ScmThreadLocal*)obj)
-#define SCM_THREAD_LOCAL_P(obj) SCM_ISA(obj,SCM_CLASS_THREAD_LOCAL)
+typedef struct ScmPrimitiveParameterRec ScmPrimitiveParameter;
 
 SCM_CLASS_DECL(Scm_PrimitiveParameterClass);
 #define SCM_CLASS_PRIMITIVE_PARAMETER  (&Scm_PrimitiveParameterClass)
 #define SCM_PRIMITIVE_PARAMETER(obj)   ((ScmPrimitiveParameter*)obj)
 #define SCM_PRIMITIVE_PARAMETER_P(obj) SCM_ISA(obj,SCM_CLASS_PRIMITIVE_PARAMETER)
-
-/* Flag value for Scm_MakeThreadLocal */
-enum {
-    /* Whether the initial value is inherited from the parent thread.
-       Thread locals are noninheritable by default, while parameters are
-       inheritable. */
-    SCM_THREAD_LOCAL_INHERITABLE = (1UL << 0)
-
-};
 
 /* Flag value for Scm_MakePrimitiveParameter
    For the time being, we share flags field of ThreadLocal.  The
@@ -86,17 +67,6 @@ enum {
     /* value may be a promise; dereference automaticlaly forces it */
     SCM_PARAMETER_LAZY = (1UL << 1),
 };
-
-SCM_EXTERN ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
-                                               ScmObj name,
-                                               ScmObj initval,
-                                               u_long flags);
-SCM_EXTERN ScmObj Scm_ThreadLocalRef(ScmVM *vm,
-                                     const ScmThreadLocal *tl);
-SCM_EXTERN ScmObj Scm_ThreadLocalSet(ScmVM *vm,
-                                     const ScmThreadLocal *tl,
-                                     ScmObj val);
-
 
 SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                              ScmObj name,

@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/priv/vmP.h"
 #include "gauche/priv/parameterP.h"
 
 /*
@@ -82,7 +83,7 @@ static void pparam_print(ScmObj obj,
 {
     Scm_Printf(out, "#<%A %S @%p>",
                Scm_ShortClassName(Scm_ClassOf(obj)),
-               SCM_PRIMITIVE_PARAMETER(obj)->name,
+               SCM_PRIMITIVE_PARAMETER(obj)->tl->name,
                obj);
 }
 
@@ -117,11 +118,22 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
                                                   ScmObj initval,
                                                   u_long flags)
 {
-    /* TRANSIENT */
-    ScmThreadLocal *tl =
+    /* This is called _before_ class stuff is initialized, in which case
+       we can't call SCM_NEW_INSTANCE.  We know such cases only happens
+       with klass == SCM_CLASS_PRIMIVITE_PARAMETER, so we hard-wire the
+       case. */
+    ScmPrimitiveParameter *p;
+    if (SCM_EQ(klass, SCM_CLASS_PRIMITIVE_PARAMETER)) {
+        p = SCM_NEW(ScmPrimitiveParameter);
+        SCM_SET_CLASS(p, klass);
+        SCM_INSTANCE(p)->slots = NULL;        /* no extra slots */
+    } else {
+        p = SCM_NEW_INSTANCE(ScmPrimitiveParameter, klass);
+    }
+    p->tl =
         Scm_MakeThreadLocal(klass, name, initval,
                             flags & SCM_THREAD_LOCAL_INHERITABLE);
-    return (ScmPrimitiveParameter*)tl;
+    return p;
 }
 
 /*
@@ -179,15 +191,13 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
  */
 ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
-    /* TRANSIENT */
-    return Scm_ThreadLocalRef(vm, (const ScmThreadLocal*)p);
+    return Scm_ThreadLocalRef(vm, p->tl);
 }
 
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
                                  ScmObj val)
 {
-    /* TRANSIENT */
-    return Scm_ThreadLocalSet(vm, (const ScmThreadLocal*)p, val);
+    return Scm_ThreadLocalSet(vm, p->tl, val);
 }
 
 /* Convenience function.  Create a primitive parameter subr and bind
@@ -201,7 +211,7 @@ ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
         Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
                                    SCM_INTERN(name), initval, flags);
     ScmObj subr = Scm_MakePrimitiveParameterSubr(p);
-    Scm_Define(mod, SCM_SYMBOL(p->name), subr);
+    Scm_Define(mod, SCM_SYMBOL(p->tl->name), subr);
     return p;
 }
 

@@ -135,6 +135,40 @@ ScmCallTrace *Scm__MakeCallTraceQueue(u_long size);
 SCM_EXTERN int Scm_VMUndefinedBool(ScmVM*); /* in boolean.c */
 
 
+/*
+ * Thread Locals
+ *   We keep the definition private, so that we can extend it later.
+ */
+
+struct ScmThreadLocalRec {
+    SCM_HEADER;
+    ScmObj name;                /* for debugging. #f or symbol. */
+    ScmSize index;              /* negative for inheritable */
+    ScmObj initialValue;
+    u_long flags;
+};
+
+/* Each VM has vector of parameter values.  vm->parameters points to this.
+   The vector is extended on demand.
+   We might swap this to more sophisticated data structure than
+   a simple flat vector in future.
+ */
+typedef struct ScmVMThreadLocalVectorRec {
+    ScmSize size;
+    ScmObj *vector;
+} ScmVMThreadLocalVector;
+
+struct ScmVMThreadLocalTableRec {
+    ScmVMThreadLocalVector vs[2];
+};
+
+enum {
+      SCM_THREAD_LOCAL_VECTOR_INHERITABLE = 0,
+      SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE = 1
+};
+
+SCM_EXTERN ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base);
+
 SCM_DECL_END
 
 #endif /*GAUCHE_PRIV_VMP_H*/
