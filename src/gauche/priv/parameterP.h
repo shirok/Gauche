@@ -41,16 +41,14 @@
  * the same way as it is invoked in the same thread; it is wrong if the former
  * sees a different dynamic bindings than another.
  *
- * We gradually move to separete those two.  The foundation of parameter
- * storage is really a thread local storage, so first we rename it to
- * threadLocals, and provide srfi-226 thread local API on top of it,
- * while the parameters are still built on top of it.  Then, gradually
- * we'll replace parameters to the new mechanism.
+ * We gradually move to separete those two.  For the time being, though,
+ * we implement parameters on top of thread locals.
  */
 
 struct ScmPrimitiveParameterRec {
     SCM_INSTANCE_HEADER;
     ScmThreadLocal *tl;
+    u_long flags;
 };
 
 #endif /*GAUCHE_PRIV_PARAMETERP_H*/

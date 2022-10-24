@@ -130,9 +130,9 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     } else {
         p = SCM_NEW_INSTANCE(ScmPrimitiveParameter, klass);
     }
-    p->tl =
-        Scm_MakeThreadLocal(klass, name, initval,
-                            flags & SCM_THREAD_LOCAL_INHERITABLE);
+    p->tl = Scm_MakeThreadLocal(klass, name, initval,
+                                SCM_THREAD_LOCAL_INHERITABLE);
+    p->flags = flags;
     return p;
 }
 
@@ -191,13 +191,17 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
  */
 ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
-    return Scm_ThreadLocalRef(vm, p->tl);
+    ScmObj v = Scm_ThreadLocalRef(vm, p->tl);
+    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(v);
+    else return v;
 }
 
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
                                  ScmObj val)
 {
-    return Scm_ThreadLocalSet(vm, p->tl, val);
+    ScmObj v = Scm_ThreadLocalSet(vm, p->tl, val);
+    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(v);
+    else return v;
 }
 
 /* Convenience function.  Create a primitive parameter subr and bind

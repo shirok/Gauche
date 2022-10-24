@@ -60,12 +60,10 @@ SCM_CLASS_DECL(Scm_PrimitiveParameterClass);
 #define SCM_PRIMITIVE_PARAMETER(obj)   ((ScmPrimitiveParameter*)obj)
 #define SCM_PRIMITIVE_PARAMETER_P(obj) SCM_ISA(obj,SCM_CLASS_PRIMITIVE_PARAMETER)
 
-/* Flag value for Scm_MakePrimitiveParameter
-   For the time being, we share flags field of ThreadLocal.  The
-   flag value may change in the later version. */
+/* Flag value for Scm_MakePrimitiveParameter */
 enum {
     /* value may be a promise; dereference automaticlaly forces it */
-    SCM_PARAMETER_LAZY = (1UL << 1),
+    SCM_PARAMETER_LAZY = (1UL << 0),
 };
 
 SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,

@@ -196,8 +196,7 @@ ScmObj Scm_ThreadLocalRef(ScmVM *vm, const ScmThreadLocal *tl)
             result = t->vector[vindex] = tl->initialValue;
         }
     }
-    if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(result);
-    else return result;
+    return result;
 }
 
 ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
@@ -218,8 +217,7 @@ ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
 
     t->vector[vindex] = val;
 
-    if (tl->flags & SCM_PARAMETER_LAZY) return Scm_Force(oldval);
-    else return oldval;
+    return oldval;
 }
 
 void Scm__InitThreadLocal(void)
