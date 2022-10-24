@@ -162,9 +162,9 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
 
     SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
     if (flags & SCM_THREAD_LOCAL_INHERITABLE) {
-        index = next_tl_inheritable_index++;
+        index = next_tl_inheritable_index--;
     } else {
-        index = next_tl_noninheritable_index--;
+        index = next_tl_noninheritable_index++;
     }
     SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
     ensure_tl_slot(Scm_VM()->threadLocals, index);
