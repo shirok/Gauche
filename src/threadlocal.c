@@ -62,9 +62,9 @@ static ScmInternalMutex tl_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 static void tl_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 
-SCM_DEFINE_BASE_CLASS(Scm_ThreadLocalClass, ScmThreadLocal,
-                      tl_print, NULL, NULL, NULL,
-                      SCM_CLASS_OBJECT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_ThreadLocalClass,
+                         tl_print, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
 
 static void tl_print(ScmObj obj,
                      ScmPort *out,
@@ -153,8 +153,7 @@ static void ensure_tl_slot(ScmVMThreadLocalTable *t, ScmSize index)
 /*
  * Create a thread local
  */
-ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
-                                    ScmObj name,
+ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
                                     ScmObj initval,
                                     u_long flags)
 {

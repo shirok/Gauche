@@ -199,8 +199,7 @@ enum {
 
 };
 
-SCM_EXTERN ScmThreadLocal *Scm_MakeThreadLocal(ScmClass *klass,
-                                               ScmObj name,
+SCM_EXTERN ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
                                                ScmObj initval,
                                                u_long flags);
 SCM_EXTERN ScmObj Scm_ThreadLocalRef(ScmVM *vm,

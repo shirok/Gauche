@@ -256,12 +256,11 @@
 
 (define-cproc make-thread-local (initval :optional (name #f))
   (return
-   (SCM_OBJ (Scm_MakeThreadLocal SCM_CLASS_THREAD_LOCAL name initval 0))))
+   (SCM_OBJ (Scm_MakeThreadLocal name initval 0))))
 
 (define-cproc make-thread-local-inheritable (initval :optional (name #f))
   (return
-   (SCM_OBJ (Scm_MakeThreadLocal SCM_CLASS_THREAD_LOCAL name initval
-                                 SCM_THREAD_LOCAL_INHERITABLE))))
+   (SCM_OBJ (Scm_MakeThreadLocal name initval SCM_THREAD_LOCAL_INHERITABLE))))
 
 (define-cproc thread-local? (obj) ::<boolean>
   (return (SCM_THREAD_LOCAL_P obj)))

@@ -130,8 +130,7 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     } else {
         p = SCM_NEW_INSTANCE(ScmPrimitiveParameter, klass);
     }
-    p->tl = Scm_MakeThreadLocal(klass, name, initval,
-                                SCM_THREAD_LOCAL_INHERITABLE);
+    p->tl = Scm_MakeThreadLocal(name, initval, SCM_THREAD_LOCAL_INHERITABLE);
     p->flags = flags;
     return p;
 }
