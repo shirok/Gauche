@@ -57,7 +57,7 @@
  * inheritable thread locals (-index-1 gives the index to the vector).
  */
 static ScmSize next_tl_noninheritable_index = 0;
-static ScmSize next_tl_inheritable_index = -1;
+static ScmSize next_tl_inheritable_index = 0;
 static ScmInternalMutex tl_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 static void tl_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
@@ -116,23 +116,18 @@ ScmVMThreadLocalTable *Scm__MakeVMThreadLocalTable(ScmVM *base)
     return t;
 }
 
-static ScmVMThreadLocalVector *get_tl_vector(ScmVMThreadLocalTable *t,
-                                             ScmSize index,
-                                             ScmSize *vindex)
+static int tl_kind(const ScmThreadLocal *tl)
 {
-    int kind = (index < 0
-                ? SCM_THREAD_LOCAL_VECTOR_INHERITABLE
-                : SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE);
-    *vindex = index < 0 ? (-index-1) : index;
-    return &t->vs[kind];
+    if (tl->flags & SCM_THREAD_LOCAL_INHERITABLE)
+        return SCM_THREAD_LOCAL_VECTOR_INHERITABLE;
+    else
+        return SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE;
 }
 
-static void ensure_tl_slot(ScmVMThreadLocalTable *t, ScmSize index)
+static void ensure_tl_slot(ScmVMThreadLocalTable *t, ScmSize index, int kind)
 {
-    ScmSize vindex;
-    ScmVMThreadLocalVector *p = get_tl_vector(t, index, &vindex);
-
-    if (vindex >= p->size) {
+    ScmVMThreadLocalVector *p = &t->vs[kind];
+    if (index >= p->size) {
         ScmSize newsiz =
             ((index+THREAD_LOCAL_GROW)/THREAD_LOCAL_GROW)*THREAD_LOCAL_GROW;
         ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
@@ -158,15 +153,18 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
                                     u_long flags)
 {
     ScmSize index;
+    int kind;
 
     SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
     if (flags & SCM_THREAD_LOCAL_INHERITABLE) {
-        index = next_tl_inheritable_index--;
+        index = next_tl_inheritable_index++;
+        kind = SCM_THREAD_LOCAL_VECTOR_INHERITABLE;
     } else {
         index = next_tl_noninheritable_index++;
+        kind = SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE;
     }
     SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
-    ensure_tl_slot(Scm_VM()->threadLocals, index);
+    ensure_tl_slot(Scm_VM()->threadLocals, index, kind);
 
     ScmThreadLocal *tl = SCM_NEW(ScmThreadLocal);
     SCM_SET_CLASS(tl, SCM_CLASS_THREAD_LOCAL);
@@ -183,16 +181,15 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
 
 ScmObj Scm_ThreadLocalRef(ScmVM *vm, const ScmThreadLocal *tl)
 {
-    ScmSize vindex;
-    ScmVMThreadLocalVector *t = get_tl_vector(vm->threadLocals,
-                                              tl->index, &vindex);
+    ScmVMThreadLocalVector *t = &vm->threadLocals->vs[tl_kind(tl)];
+
     ScmObj result;
-    if (vindex >= t->size) {
+    if (tl->index >= t->size) {
         result = tl->initialValue;
     } else {
-        result = t->vector[vindex];
+        result = t->vector[tl->index];
         if (SCM_UNBOUNDP(result)) {
-            result = t->vector[vindex] = tl->initialValue;
+            result = t->vector[tl->index] = tl->initialValue;
         }
     }
     return result;
@@ -202,19 +199,18 @@ ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
                           ScmObj val)
 {
     ScmObj oldval = SCM_UNBOUND;
-    ScmSize vindex;
-    ScmVMThreadLocalVector *t = get_tl_vector(vm->threadLocals,
-                                              tl->index, &vindex);
-    if (vindex >= t->size) {
-        ensure_tl_slot(vm->threadLocals, tl->index);
+    ScmVMThreadLocalVector *t = &vm->threadLocals->vs[tl_kind(tl)];
+
+    if (tl->index >= t->size) {
+        ensure_tl_slot(vm->threadLocals, tl->index, tl_kind(tl));
     } else {
-        oldval = t->vector[vindex];
+        oldval = t->vector[tl->index];
     }
     if (SCM_UNBOUNDP(oldval)) {
         oldval = tl->initialValue;
     }
 
-    t->vector[vindex] = val;
+    t->vector[tl->index] = val;
 
     return oldval;
 }
