@@ -79,7 +79,7 @@ typedef struct ScmThreadLocalRec ScmThreadLocal;
 typedef struct ScmVMThreadLocalTableRec ScmVMThreadLocalTable;
 
 /*
- * Environment frame
+ * Static environment frame
  *
  *   :        :
  *   +--------+
@@ -117,6 +117,7 @@ typedef struct ScmEnvFrameRec {
  *   |  cpc   |
  *   | marker |
  *   | size=N |
+ *   |  denv  |
  *   |  env   |
  *   |..prev..|<--- ScmContFrame* cont
  *   |arg[N-1]|
@@ -134,6 +135,7 @@ typedef struct ScmEnvFrameRec {
  *   |  cpc    |  <-- CCont procedure
  *   | marker  |
  *   | size=N  |
+ *   |  denv   |
  *   |  env    |  <-- &ccEnvMark
  *   |..prev.. |
  *   |data[N-1]|
@@ -160,6 +162,7 @@ typedef struct ScmEnvFrameRec {
 typedef struct ScmContFrameRec {
     struct ScmContFrameRec *prev; /* previous frame */
     ScmEnvFrame *env;             /* saved environment */
+    ScmObj denv;                  /* dynamic environment links */
 #if SIZEOF_LONG == 4
     long size : 31;               /* size of argument frame */
     u_long marker : 1;            /* end marker of partial continuation */
@@ -170,7 +173,6 @@ typedef struct ScmContFrameRec {
     SCM_PCTYPE cpc;               /* current PC (for debugging info) */
     SCM_PCTYPE pc;                /* next PC */
     ScmCompiledCode *base;        /* base register value */
-    ScmObj marks;                 /* continuation marks */
 } ScmContFrame;
 
 #define CONT_FRAME_SIZE  (sizeof(ScmContFrame)/sizeof(ScmObj))
@@ -461,6 +463,7 @@ struct ScmVMRec {
     SCM_PCTYPE pc;              /* Program pointer.  Points into the code
                                    vector. (base->code) */
     ScmEnvFrame *env;           /* Current environment.                      */
+    ScmObj denv;                /* Current dynamic environment. */
     ScmContFrame *cont;         /* Current continuation.                     */
     ScmObj *argp;               /* Current argument pointer.  Points
                                    to the incomplete environment frame

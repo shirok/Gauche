@@ -228,6 +228,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 #endif /* GAUCHE_FFX */
 
     v->env = NULL;
+    v->denv = SCM_NIL;
     v->argp = v->stack;
     v->cont = NULL;
     v->pc = PC_TO_RETURN;
@@ -532,12 +533,12 @@ static void vm_unregister(ScmVM *vm)
         ScmContFrame *newcont = (ScmContFrame*)SP;      \
         newcont->prev = CONT;                           \
         newcont->env = ENV;                             \
+        newcont->denv = vm->denv;                       \
         newcont->size = (int)(SP - ARGP);               \
         newcont->marker = 0;                            \
         newcont->cpc = PC;                              \
         newcont->pc = next_pc;                          \
         newcont->base = BASE;                           \
-        newcont->marks = SCM_NIL;                       \
         CONT = newcont;                                 \
         SP += CONT_FRAME_SIZE;                          \
         ARGP = SP;                                      \
@@ -553,6 +554,7 @@ static void vm_unregister(ScmVM *vm)
                 SP = (ScmObj*)cont - cont->size;                        \
             }                                                           \
             ENV = NULL;                                                 \
+            vm->denv = cont->denv;                                      \
             ARGP = SP;                                                  \
             PC = PC_TO_RETURN;                                          \
             BASE = cont->base;                                          \
@@ -570,6 +572,7 @@ static void vm_unregister(ScmVM *vm)
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = (ScmObj*)CONT;                                       \
             ENV  = CONT->env;                                           \
+            vm->denv = CONT->denv;                                      \
             ARGP = SP - CONT->size;                                     \
             PC   = CONT->pc;                                            \
             BASE = CONT->base;                                          \
@@ -578,6 +581,7 @@ static void vm_unregister(ScmVM *vm)
             int size__ = CONT->size;                                    \
             ARGP = SP = vm->stackBase;                                  \
             ENV = CONT->env;                                            \
+            vm->denv = CONT->denv;                                      \
             PC = CONT->pc;                                              \
             BASE = CONT->base;                                          \
             if (size__) {                                               \
