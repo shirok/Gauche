@@ -1623,6 +1623,7 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
     s += CONT_FRAME_SIZE;
     cc->prev = CONT;
     cc->env = &ccEnvMark;
+    cc->denv = vm->denv;
     cc->size = datasize;
     cc->marker = 0;
     cc->cpc = (ScmWord*)after;
@@ -1652,6 +1653,7 @@ ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
     ScmContFrame *cc = (ScmContFrame*)(s + datasize);
     cc->prev = CONT;
     cc->env = &ccEnvMark;
+    cc->denv = vm->denv;
     cc->size = datasize;
     cc->marker = 0;
     cc->cpc = NULL;
