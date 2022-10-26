@@ -106,6 +106,30 @@ typedef struct ScmEnvFrameRec {
 #define ENV_DATA(env, num) (*(((ScmObj*)(env))-(num)-1))
 
 /*
+ * Dynamic environment
+ *
+ *  Dynamic environment is just an alist pointed from vm->denv.
+ *  It is a part of continuation---when a continuation frame is pushed,
+ *  the tip of denv is saved with it.  When a continuation frame is
+ *  popped, the saved denv is restored.
+ *  This means that you don't ever need to worry about popping denv.
+ */
+
+SCM_EXTERN void   Scm_VMPushDynamicEnv(ScmObj key, ScmObj val);
+SCM_EXTERN ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback);
+
+typedef struct ScmContinuationMarkSetRec ScmContinuationMarkSet;
+
+SCM_CLASS_DECL(Scm_ContinuationMarkSetClass);
+#define SCM_CLASS_CONTINUATION_MARK_SET (&Scm_ContinuationMarkSetClass)
+#define SCM_CONTINUATION_MARK_SET(obj)  ((ScmContinuationMarkSet*)obj)
+#define SCM_CONTINUATION_MARK_SET_P(obj) SCM_ISA(obj,SCM_CLASS_CONTINUATION_MARK_SET)
+
+SCM_EXTERN ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag);
+SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
+                                                ScmObj);
+
+/*
  * Continuation frame
  *
  *  Continuation is represented as a chain of ScmContFrames.

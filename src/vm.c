@@ -1332,6 +1332,24 @@ void Scm_VMFlushFPStack(ScmVM *vm)
 
 #endif /*GAUCHE_FFX*/
 
+/*
+ * Dynamic environment public API
+ */
+
+void Scm_VMPushDynamicEnv(ScmObj key, ScmObj val)
+{
+    ScmVM *vm = theVM;
+    vm->denv = Scm_Acons(key, val, vm->denv);
+}
+
+ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
+{
+    ScmVM *vm = theVM;
+    ScmObj p = Scm_Assq(key, vm->denv);
+    if (SCM_PAIRP(p)) return SCM_CDR(p);
+    else return fallback;
+}
+
 
 /*==================================================================
  * Function application from C
@@ -1662,6 +1680,58 @@ ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
     CONT = cc;
     ARGP = SP = s + datasize + CONT_FRAME_SIZE;
     return s;
+}
+
+/*
+ * Continuation marks
+ */
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_ContinuationMarkSetClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+
+ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag SCM_UNUSED)
+{
+    ScmVM *vm = theVM;
+    save_cont(vm);
+
+    ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
+    SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
+    cm->cont = vm->cont;
+    cm->denv = vm->denv;
+    return SCM_OBJ(cm);
+}
+
+ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
+                                     ScmObj key)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmContFrame *c = cmset->cont;
+    ScmObj p = cmset->denv;
+    if (c && c->denv == p) {
+        /* no new marks in the current frame */
+        c = c->prev;
+    }
+    while (SCM_PAIRP(p)) {
+        Scm_Printf(SCM_CURERR, "-- %S\n", p);
+        if (SCM_CAAR(p) == key) {
+            Scm_Printf(SCM_CURERR, "Yot!\n");
+            SCM_APPEND1(h, t, SCM_CDAR(p));
+            /* skip to the next continuation frame */
+            if (c == NULL) break;
+            for (p = SCM_CDR(p); SCM_PAIRP(p); p = SCM_CDR(p)) {
+                if (c->denv == p) {
+                    Scm_Printf(SCM_CURERR, "Damonde\n");
+                    c = c->prev;
+                    break;
+                }
+            }
+            continue;
+        } else {
+            p = SCM_CDR(p);
+        }
+    }
+    return h;
 }
 
 /*-------------------------------------------------------------

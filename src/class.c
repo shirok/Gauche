@@ -3670,6 +3670,9 @@ void Scm__InitClass(void)
     /* connection.c */
     BINIT(SCM_CLASS_CONNECTION, "<connection>", NULL);
 
+    /* contmarks.c */
+    CINIT(SCM_CLASS_CONTINUATION_MARK_SET, "<continuation-mark-set>");
+
     /* comparator.c */
     /* initialized in Scm__InitComparator */
 
