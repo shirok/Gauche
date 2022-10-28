@@ -1708,21 +1708,20 @@ ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmContFrame *c = cmset->cont;
     ScmObj p = cmset->denv;
-    if (c && c->denv == p) {
+    while (c && c->denv == p) {
         /* no new marks in the current frame */
         c = c->prev;
     }
     while (SCM_PAIRP(p)) {
-        Scm_Printf(SCM_CURERR, "-- %S\n", p);
         if (SCM_CAAR(p) == key) {
-            Scm_Printf(SCM_CURERR, "Yot!\n");
             SCM_APPEND1(h, t, SCM_CDAR(p));
             /* skip to the next continuation frame */
             if (c == NULL) break;
             for (p = SCM_CDR(p); SCM_PAIRP(p); p = SCM_CDR(p)) {
                 if (c->denv == p) {
-                    Scm_Printf(SCM_CURERR, "Damonde\n");
-                    c = c->prev;
+                    do {
+                        c = c->prev;
+                    } while (c && c->denv == p);
                     break;
                 }
             }
