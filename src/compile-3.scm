@@ -91,6 +91,10 @@
 (define (pass3/$CONST iform labels) iform)
 (define (pass3/$IT iform labels) iform)
 
+(define (pass3/$DYNENV iform labels)
+  ;;WRITEME
+  iform)
+
 ;; If optimization:
 ;;
 ;;  If the 'test' clause of $IF node contains another $IF that has $IT in

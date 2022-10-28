@@ -919,6 +919,11 @@
       (rlet1 lab (compiled-code-new-label ccb)
         ($label-label-set! label-node lab))))
 
+;; $DYNENV
+(define (pass5/$DYNENV iform target renv ctx)
+  ;;WRITEME
+  (error "$DYNENV not supported yet"))
+
 ;; $ASMs.  For some instructions, we may pick more specialized one
 ;; depending on its arguments.
 

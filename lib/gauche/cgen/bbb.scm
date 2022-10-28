@@ -762,6 +762,9 @@
       (push-insn bb `(,op ,receiver ,@regs))
       (pass5b/return bb ctx receiver))))
 
+(define (pass5b/$DYNENV iform bb benv ctx)
+  (error "[Internal] $DYNENV isn't supported yet."))
+
 (define (pass5b/$IT iform bb benv ctx)
   (error "[Intenral] $IT node should be handled by the parent."))
 

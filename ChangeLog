@@ -1,3 +1,8 @@
+2022-10-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile.scm ($DYNENV): New IForm node for supporting
+	  continuation marks.
+
 2022-10-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c, ext/threads/threads.scm (make-thread-local):

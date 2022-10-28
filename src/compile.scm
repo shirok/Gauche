@@ -167,6 +167,7 @@
   $EQ?
   $EQV?
   $IT
+  $DYNENV
   )
 
 ;; Define constants for VM instructions.
@@ -638,6 +639,18 @@
 (define $it (let ((c `#(,$IT))) (^[] c)))
 (define-inline ($it? x) (has-tag? x $IT))
 
+;; $dynenv <src> (<key> <value>) <expr>
+;;   Extend the dynamic environment and evaluate <expr>.
+;;   If this is at the tail context, the dynenv of the current
+;;   continuation is extended.  Otherwise, a new continuation frame is
+;;   pushed, dynenv is extended and <expr> is evalutaed in a tail
+;;   context.
+(define-simple-struct $dynenv $DYNENV $dynenv
+  (src       ; original source for debugging
+   kvs       ; (key value) exprs
+   body      ; body expression
+   ))
+
 ;; The followings are builtin version of standard procedures.
 ;;
 (define-simple-struct $cons $CONS #f (src arg0 arg1))
@@ -806,6 +819,14 @@
         (display "($LIST->VECTOR ")
         (rec (+ ind 14) (vector-ref iform 2))
         (display ")")]
+       [($DYNENV)
+        (display "($DYNENV (")
+        (rec (+ ind 10) (car ($dynenv-kvs iform)))
+        (nl (+ ind 10))
+        (rec (+ ind 10) (cadr ($dynenv-kvs iform)))
+        (nl (+ ind 2))
+        (rec (+ ind 2) ($dynenv-body iform))
+        (display ")")]
        [else (error "pp-iform: unknown tag:" (iform-tag iform))]))
     (newline)))
 
@@ -903,6 +924,9 @@
      [($LIST*)  (put!-nary iform '$LIST*)]
      [($LIST->VECTOR) (put! iform '$LIST->VECTOR ($*-src iform)
                             (get-ref ($*-arg0 iform)))]
+     [($DYNENV) (put! iform '$DYNENV ($*-src iform)
+                      (map get-ref ($dynenv-kvs iform))
+                      (get-ref ($dynenv-body iform)))]
      [('lvar)   (put! iform 'lvar (lvar-name iform))]
      [else (errorf "[internal-error] unknown IForm in pack-iform: ~S" iform)]
      ))
@@ -967,6 +991,7 @@
        [($LIST)   ($list (V i 1) (map unpack-rec (V i 2)))]
        [($LIST*)  ($list* (V i 1) (map unpack-rec (V i 2)))]
        [($LIST->VECTOR) ($list->vector (V i 1) (unpack-rec (V i 2)))]
+       [($DYNENV) ($dynenv (V i 1) (map unpack-rec (V i 2)) (V i 3))]
        [(lvar)    (make-lvar (V i 1))]
        [else
         (errorf "[internal error] unpack-iform: ivec broken at ~a (tag=~s): ~S"
@@ -1007,6 +1032,8 @@
         (sum-items (+ cnt 1) ($*-arg0 iform) ($*-arg1 iform))]
        [($VECTOR $LIST $LIST*) (sum-items (+ cnt 1) (* ($*-args iform)))]
        [($LIST->VECTOR) (sum-items (+ cnt 1) ($*-arg0 iform))]
+       [($DYNENV) (sum-items (+ cnt 1) (* ($dynenv-kvs iform))
+                             ($dynenv-body iform))]
        [($IT) cnt]
        [else
         (error "[internal error] iform-count-size-upto: unknown iform tag:"
@@ -1117,6 +1144,9 @@
                      (iform-copy ($*-arg0 iform) lv-alist)
                      (iform-copy ($*-arg1 iform) lv-alist))]
    [($IT) ($it)]
+   [($DYNENV) ($dynenv ($*-src iform)
+                       (imap (cut iform-copy <> lv-alist) ($dynenv-kvs iform))
+                       (iform-copy ($dynenv-body iform)))]
    [else iform]))
 
 (define (iform-copy-zip-lvs orig-lvars lv-alist)
@@ -1201,6 +1231,9 @@
                        (rec ($*-arg0 iform))
                        (rec ($*-arg1 iform)))]
      [($IT) ($it)]
+     [($DYNENV) ($dynenv ($*-src iform)
+                         (imap rec ($dynenv-kvs iform))
+                         (rec ($dynenv-body iform)))]
      [else iform]))
 
   (pack-iform (rec (unpack-iform src))))
@@ -1251,6 +1284,8 @@
      [($LIST->VECTOR) (rec ($*-arg0 iform) labels)]
      [($IT) #t] ; this branch is only executed when $if-test of the parent is
                                         ; transparent, thus this node is also transparent.
+     [($DYNENV) (and (everyc rec ($dynenv-kvs iform) labels)
+                     (rec ($dynenv-body iform) labels))]
      [else #f]))
   (rec iform (make-label-dic #f)))
 
@@ -1293,6 +1328,8 @@
              (reset-lvars/rec ($*-arg1 iform) labels)]
   [($VECTOR $LIST $LIST*) (reset-lvars/rec* ($*-args iform) labels)]
   [($LIST->VECTOR) (reset-lvars/rec ($*-arg0 iform) labels)]
+  [($DYNENV) (reset-lvars/rec* ($dynenv-kvs iform) labels)
+             (reset-lvars/rec ($dynenv-body iform) labels)]
   [else #f])
 
 ;; Replaces $LREF of matching lvar with given expression.
@@ -1392,6 +1429,9 @@
      [($VECTOR $LIST $LIST*) (subst/* iform mapping dict)]
      [($LIST->VECTOR) ($list->vector ($*-src iform)
                                      (subst ($*-arg0 iform) mapping dict))]
+     [($DYNENV) ($dynenv ($*-src iform)
+                         (imap (cut subst <> mapping dict) ($dynenv-kvs iform))
+                         (subst ($dynenv-body iform) mapping dict))]
      [else iform]))
   (define (subst/2 iform mapping dict)
     (vector (vector-ref iform 0) ($*-src iform)
@@ -1472,6 +1512,8 @@
      [($LIST->VECTOR) `(list->vector ,(rec ($*-arg0 iform)))]
      [($IT) ; ($IT) node must have been handled by $IF
       (error "[internal] Stray $IT node.")]
+     [($DYNENV) `(with-continuation-mark ,(map rec ($dynenv-kvs iform))
+                     ,(rec ($dynenv-body iform)))]
      [else (error "Cannot convert IForm:" (iform-tag-name (iform-tag iform)))]))
   (rec iform))
 

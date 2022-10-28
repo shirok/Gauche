@@ -652,6 +652,13 @@
 (define (pass2/self-recursing? node penv)
   (find (cut eq? node <>) penv))
 
+;;
+;; DYNENV
+;;
+(define (pass2/$DYNENV iform penv tail?)
+  ;;WRITEME
+  iform)
+
 ;; Recognize the pattern like:
 ;;   ($let ([args ($LIST x y z ...)])
 ;;      ...
