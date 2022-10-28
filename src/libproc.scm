@@ -87,8 +87,7 @@
  (declare-stub-type <continuation-mark-set> "ScmContinuationMarkSet*")
  )
 
-(define-cproc continuation-mark-set->list (cmset::<continuation-mark-set>
-                                           key)
+(define-cproc continuation-mark-set->list (cmset::<continuation-mark-set> key)
   (return (Scm_ContinuationMarkSetToList cmset key)))
 
 ;;;

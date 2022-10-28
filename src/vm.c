@@ -1339,6 +1339,25 @@ void Scm_VMFlushFPStack(ScmVM *vm)
 void Scm_VMPushDynamicEnv(ScmObj key, ScmObj val)
 {
     ScmVM *vm = theVM;
+    /* If we have duplicate key in the current continuation frame,
+       we need an extra care not to increase the dynenv chain.
+       (See the discussion in srfi-226)
+     */
+    ScmContFrame *c = vm->cont;
+    ScmObj limit = (c? c->denv : SCM_NIL);
+
+    for (ScmObj p = vm->denv; SCM_PAIRP(p); p = SCM_CDR(p)) {
+        if (SCM_EQ(p, limit)) break;
+        if (SCM_EQ(SCM_CAAR(p), key)) {
+            /* Remove duplicate key */
+            ScmObj h = SCM_NIL, t = SCM_NIL;
+            for (ScmObj q = vm->denv; !SCM_EQ(q, p); q = SCM_CDR(q)) {
+                SCM_APPEND1(h, t, SCM_CAR(q));
+            }
+            SCM_APPEND(h, t, SCM_CDR(p));
+            vm->denv = h;
+        }
+    }
     vm->denv = Scm_Acons(key, val, vm->denv);
 }
 
