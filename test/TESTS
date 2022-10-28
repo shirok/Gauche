@@ -13,7 +13,7 @@ compare.scm
 treemap.scm
 io.scm
 procedure.scm
-dynwind.scm
+continuation.scm
 load.scm
 srfi.scm
 object.scm

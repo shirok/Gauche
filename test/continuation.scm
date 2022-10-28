@@ -1,10 +1,10 @@
 ;;
-;; Test dynamic-wind, call/cc and related stuff
+;; Test continuations and related stuff
 ;;
 
 (use gauche.test)
 
-(test-start "dynamic-wind and call/cc")
+(test-start "continuations")
 
 (define c #f)
 
