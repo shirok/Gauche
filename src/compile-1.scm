@@ -1686,6 +1686,16 @@
     [(_ expr) (pass1 `(,lazy. (,eager. ,expr)) cenv)]
     [_ (error "syntax-error: malformed delay:" form)]))
 
+;; Control flow ..............................................
+
+(define-pass1-syntax (with-continuation-mark form cenv) :gauche
+  (match form
+    [(_ key val expr)
+     ($dynenv form `(,(pass1 key cenv)
+                     ,(pass1 val cenv))
+              (pass1 expr cenv))]
+    [_ (error "syntax-error: malformed with-continuation-mark:" form)]))
+
 ;; Module related ............................................
 
 (define-pass1-syntax (define-module form cenv) :gauche

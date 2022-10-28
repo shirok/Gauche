@@ -931,4 +931,62 @@
                  (display "[d13]"))
             (^[] (display "[d14]"))))))
 
+;;
+;; Continuation marks
+;;
+
+(test-section "continuation marks")
+
+(test* "continuation marks 1" '(1)
+       (let ((key (vector 'key)))
+         (with-continuation-mark key 1
+           (continuation-mark-set->list (current-continuation-marks) key))))
+
+(test* "continuation marks 2" '(foo 2 1)
+       (let ((key (vector 'key)))
+         (with-continuation-mark key 1
+           (cons 'foo
+                 (with-continuation-mark key 2
+                   (continuation-mark-set->list (current-continuation-marks) key))))))
+
+(test* "continuation marks 3" '(2)
+       (let ((key (vector 'key)))
+         (with-continuation-mark key 1
+           (with-continuation-mark key 2
+             (continuation-mark-set->list (current-continuation-marks) key)))))
+
+(define-module ccm-fact
+  (use gauche.test)
+
+  (define %key (vector 'key))
+
+  (define (ccm)
+    (continuation-mark-set->list (current-continuation-marks) %key))
+
+  (define (fact1 n)
+    (let loop ((n n))
+      (if (zero? n)
+        (begin
+          (display (ccm))
+          (newline)
+          1)
+        (with-continuation-mark %key n (* n (loop (- n 1)))))))
+
+  (define (fact2 n)
+    (let loop ((n n) (a 1))
+      (if (zero? n)
+        (begin
+          (display (ccm))
+          (newline)
+          a)
+        (with-continuation-mark %key n (loop (- n 1) (* n a))))))
+
+  (define (t f)
+    (read-from-string (with-output-to-string (cut f 3))))
+
+  (test* "non-tail-recursive fact" '(1 2 3)
+         (t fact1))
+  (test* "tail-recursive fact" '(1)
+         (t fact2)))
+
 (test-end)

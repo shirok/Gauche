@@ -654,10 +654,16 @@
 
 ;;
 ;; DYNENV
+;;   We always evaluate EXPR as tail expr; even
+;;
 ;;
 (define (pass2/$DYNENV iform penv tail?)
-  ;;WRITEME
-  iform)
+  (let ([key (pass2/rec (car ($dynenv-kvs iform)) penv #f)]
+        [val (pass2/rec (cadr ($dynenv-kvs iform)) penv #f)]
+        [expr (pass2/rec ($dynenv-body iform) penv #t)])
+    ($dynenv-kvs-set! iform `(,key ,val))
+    ($dynenv-body-set! iform expr)
+    iform))
 
 ;; Recognize the pattern like:
 ;;   ($let ([args ($LIST x y z ...)])

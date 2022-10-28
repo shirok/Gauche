@@ -1512,3 +1512,26 @@
     INCR-PC
     ($lset (SCM_INT_VALUE dep_s)        ; depth
            (SCM_VM_INSN_ARG code))))    ; offset
+
+;; EXTEND-DENV addr
+;; TAIL-EXTEND-DENV
+;;   Push new key-value pair on the current denv.
+;;   VAL0 holds the key, and stack top holds the value.
+;;   EXTEND-DENV is for non-tail calls, and a continuation is pushed
+;;   before adding key-value pair.
+(define-insn EXTEND-DENV 0 addr #f
+  (let* ([arg] [next::ScmWord*])
+    (SCM_FLONUM_ENSURE_MEM VAL0)
+    (POP-ARG arg)
+    (FETCH-LOCATION next)
+    INCR_PC
+    (PUSH-CONT next)
+    (Scm_VMPushDynamicEnv arg VAL0)
+    NEXT))
+
+(define-insn TAIL-EXTEND-DENV 0 none #f
+  (let* ([arg])
+    (SCM_FLONUM_ENSURE_MEM VAL0)
+    (POP-ARG arg)
+    (Scm_VMPushDynamicEnv arg VAL0)
+    NEXT))

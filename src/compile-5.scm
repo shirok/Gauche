@@ -921,8 +921,20 @@
 
 ;; $DYNENV
 (define (pass5/$DYNENV iform target renv ctx)
-  ;;WRITEME
-  (error "$DYNENV not supported yet"))
+  (let ([ccb (ctarget-ccb target)]
+        [dkey (pass5/rec (car ($dynenv-kvs iform)) target renv ctx)])
+    (compiled-code-emit-PUSH! ccb)
+    (let* ([dval (pass5/rec (cadr ($dynenv-kvs iform)) target renv ctx)]
+           [dkv  (imax dkey (+ dval 1))])
+      (if (tail-context? ctx)
+        (begin
+          (compiled-code-emit0i! ccb TAIL-EXTEND-DENV ($*-src iform))
+          (imax dkv (pass5/rec ($dynenv-body iform) target renv 'tail)))
+        (let1 merge-label (compiled-code-new-label ccb)
+          (compiled-code-emit0oi! ccb EXTEND-DENV merge-label ($*-src iform))
+          (let1 dbody (pass5/rec ($dynenv-body iform) target renv 'tail)
+            (compiled-code-set-label! ccb merge-label)
+            (imax dkv dbody)))))))
 
 ;; $ASMs.  For some instructions, we may pick more specialized one
 ;; depending on its arguments.

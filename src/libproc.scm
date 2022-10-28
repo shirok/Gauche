@@ -35,6 +35,7 @@
 (inline-stub
  (declcode (.include "gauche/vminsn.h"
                      "gauche/prof.h"
+                     "gauche/priv/vmP.h"
                      "gauche/priv/procP.h")))
 
 ;;;
@@ -75,6 +76,20 @@
 ;; for partial continuation.  See lib/gauche/partcont.scm
 (define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
 (define-cproc %reset (proc) (return (Scm_VMReset proc)))
+
+;; Continuation marks
+(select-module gauche)
+(define-cproc current-continuation-marks ()
+  (return (Scm_CurrentContinuationMarks SCM_UNDEFINED)))
+
+;; TRANSIENT: To compile 0.9.13 with 0.9.12
+(inline-stub
+ (declare-stub-type <continuation-mark-set> "ScmContinuationMarkSet*")
+ )
+
+(define-cproc continuation-mark-set->list (cmset::<continuation-mark-set>
+                                           key)
+  (return (Scm_ContinuationMarkSetToList cmset key)))
 
 ;;;
 ;;; Useful gadgets

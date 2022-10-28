@@ -1,3 +1,7 @@
+2022-10-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-*.scm: Support with-continuation-mark.
+
 2022-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm ($DYNENV): New IForm node for supporting
