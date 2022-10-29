@@ -1,3 +1,9 @@
+2022-10-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: VM inherits denv from calling thread.
+
+	* src/list.c (Scm_AlistCopy): Implement in C.
+
 2022-10-28  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-*.scm: Support with-continuation-mark.
