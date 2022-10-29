@@ -228,7 +228,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 #endif /* GAUCHE_FFX */
 
     v->env = NULL;
-    v->denv = SCM_NIL;
     v->argp = v->stack;
     v->cont = NULL;
     v->pc = PC_TO_RETURN;
@@ -237,6 +236,13 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
     v->trampoline = -1;
+
+    /* Thread inherits dynamic environment.
+       TRANSIENT: For the full srfi-226 compatibility, we can just share
+       the denv.  However, for the backward compatible mode where parameters
+       aren't shared between threads, we copy denv.  We'll eventually
+       drop copying.  */
+    v->denv = (proto? Scm_AlistCopy(proto->denv) : SCM_NIL);
 
     v->handlers = SCM_NIL;
 
