@@ -458,6 +458,17 @@
               [y (alist-copy x)])
          (set-cdr! (assq 'a y) (list 2))
          (list (assq 'a x) (assq 'a y))))
+(test* "alist-copy (circular)" (test-error)
+       (alist-copy '((a . 1) . #0=((b . 2) (c . 3) . #0#))))
+(test* "alist-copy (dotted)" (test-error)
+       (alist-copy '((a . 1) (b . 2) . c)))
+(test* "alist-copy (non-pair)" '(((a . 1) b (c . 2))
+                                 ((a . 1) b (c . 3)))
+       (let* ([orig '((a . 1) b (c . 2))]
+              [copy (alist-copy orig)])
+         (set-cdr! (assq 'c copy) 3)
+         (list orig copy)))
+
 (test* "alist-delete" '((a 1) (b 2) (c 3))
        (alist-delete 'x '((a 1) (b 2) (c 3))))
 (test* "alist-delete" '((b 2) (c 3))

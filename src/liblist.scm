@@ -731,6 +731,9 @@
 ;; Assoc lists
 ;;
 
+(select-module gauche)
+(define-cproc alist-copy (alist) Scm_AlistCopy)
+
 (select-module gauche.internal)
 (define-in-module scheme (assoc x lis . args)
   (%case-by-cmp args =
@@ -738,9 +741,6 @@
                 (assv x lis)
                 (%assoc x lis)
                 (find (^[entry] (= x (car entry))) lis)))
-
-(define-in-module gauche (alist-copy alist)
-  (map (^[elt] (cons (car elt) (cdr elt))) alist))
 
 (define-in-module gauche (alist-delete key alist . args)
   (%case-by-cmp args =

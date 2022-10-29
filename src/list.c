@@ -274,6 +274,7 @@ ScmSize Scm_Length(ScmObj obj)
 /* Scm_CopyList(list)
  *   Copy toplevel list LIST.  LIST can be improper.
  *   If LIST is not a pair, return LIST itself.
+ *   Note: For the naming consistency, this should be Scm_ListCopy().
  */
 
 ScmObj Scm_CopyList(ScmObj list)
@@ -298,6 +299,46 @@ ScmObj Scm_CopyList(ScmObj list)
     if (!SCM_NULLP(hare)) SCM_SET_CDR_UNCHECKED(last, hare);
     return start;
 }
+
+/* Scm_AlistCopy(alist)
+ *   Copy the spine and each pair of alist.  If there's non-pair element
+ *   it's included as is.  We detect a cycle.
+ *   NB: We won't allow 'dotted' alist.
+ */
+ScmObj Scm_AlistCopy(ScmObj alist)
+{
+    if (!SCM_PAIRP(alist)) return alist;
+    ScmObj tortoise = alist, hare = alist;
+
+    ScmObj start = SCM_NIL, last = SCM_NIL;
+    for (;;) {
+        if (!SCM_PAIRP(hare)) break;
+        if (SCM_PAIRP(SCM_CAR(hare))) {
+            ScmObj p = Scm_Cons(SCM_CAAR(hare), SCM_CDAR(hare));
+            SCM_APPEND1(start, last, p);
+        } else {
+            SCM_APPEND1(start, last, SCM_CAR(hare));
+        }
+        hare = SCM_CDR(hare);
+
+        if (!SCM_PAIRP(hare)) break;
+        if (SCM_PAIRP(SCM_CAR(hare))) {
+            ScmObj p = Scm_Cons(SCM_CAAR(hare), SCM_CDAR(hare));
+            SCM_APPEND1(start, last, p);
+        } else {
+            SCM_APPEND1(start, last, SCM_CAR(hare));
+        }
+        hare = SCM_CDR(hare);
+
+        tortoise = SCM_CDR(tortoise);
+        if (hare == tortoise) {
+            Scm_Error("Attempt to copy a circular alist: %S", alist);
+        }
+    }
+    if (!SCM_NULLP(hare)) Scm_Error("Dotted alist isn't allowed: %S", alist);
+    return start;
+}
+
 
 /* Scm_MakeList(len, fill)
  *    Make a list of specified length.

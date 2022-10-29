@@ -902,6 +902,7 @@ SCM_EXTERN void   Scm_SetCdr(ScmObj pair, ScmObj value);
 SCM_EXTERN ScmSize Scm_Length(ScmObj obj);
 SCM_EXTERN ScmObj Scm_CopyList(ScmObj list);
 SCM_EXTERN ScmObj Scm_MakeList(ScmSmallInt len, ScmObj fill);
+SCM_EXTERN ScmObj Scm_AlistCopy(ScmObj alist);
 SCM_EXTERN ScmObj Scm_Append2X(ScmObj list, ScmObj obj);
 SCM_EXTERN ScmObj Scm_Append2(ScmObj list, ScmObj obj);
 SCM_EXTERN ScmObj Scm_Append(ScmObj args);
