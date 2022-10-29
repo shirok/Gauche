@@ -76,6 +76,9 @@ SCM_DEFINE_BASE_CLASS(Scm_PrimitiveParameterClass, ScmPrimitiveParameter,
                       pparam_print, NULL, NULL, pparam_allocate,
                       SCM_CLASS_OBJECT_CPL);
 
+SCM_DEFINE_BUILTIN_CLASS(Scm_ParameterKeyClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
 
 static void pparam_print(ScmObj obj,
                          ScmPort *out,
@@ -132,6 +135,13 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     }
     p->tl = Scm_MakeThreadLocal(name, initval, SCM_THREAD_LOCAL_INHERITABLE);
     p->flags = flags;
+
+    /* <parameter-key> is always 1:1 to a parameter object.
+       It is never allocated separately. */
+    ScmParameterKey *k = SCM_NEW(ScmParameterKey);
+    SCM_SET_CLASS(k, SCM_CLASS_PARAMETER_KEY);
+    k->p = p;
+    p->key = SCM_OBJ(k);
     return p;
 }
 

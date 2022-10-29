@@ -41,6 +41,7 @@
 #include "gauche/priv/pairP.h"
 #include "gauche/priv/writerP.h"
 #include "gauche/priv/dispatchP.h"
+#include "gauche/priv/parameterP.h"
 #include "gauche/priv/procP.h"
 #include "gauche/priv/stringP.h"
 
@@ -3709,8 +3710,8 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_INTEGER,          "<integer>");
 
     /* parameter.c */
-    CINIT(SCM_CLASS_THREAD_LOCAL,     "<thread-local>");
     BINIT(SCM_CLASS_PRIMITIVE_PARAMETER, "<primitive-parameter>", NULL);
+    CINIT(SCM_CLASS_PARAMETER_KEY,    "<parameter-key>");
 
     /* port.c */
     /* initialized in Scm__InitPort */
@@ -3742,6 +3743,9 @@ void Scm__InitClass(void)
 
     /* system.c */
     /* initialized in Scm__InitSystem */
+
+    /* threadlocal.c */
+    CINIT(SCM_CLASS_THREAD_LOCAL,     "<thread-local>");
 
     /* treemap.c */
     CINIT(SCM_CLASS_TREE_MAP,         "<tree-map>");
