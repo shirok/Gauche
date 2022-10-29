@@ -937,6 +937,8 @@
 
 (test-section "continuation marks")
 
+;; Examples from srfi-157
+
 (test* "continuation marks 1" '(1)
        (let ((key (vector 'key)))
          (with-continuation-mark key 1
@@ -988,5 +990,38 @@
          (t fact1))
   (test* "tail-recursive fact" '(1)
          (t fact2)))
+
+;; call-with-immediate-continuation-mark
+
+(test* "call-with-immediate-continuation-mark" 'mark
+       (with-continuation-mark 'key 'mark
+         (call-with-immediate-continuation-mark 'key values)))
+
+(test* "call-with-immediate-continuation-mark" '(foo . default)
+       (with-continuation-mark 'key 'mark
+         (cons 'foo
+               (call-with-immediate-continuation-mark 'key values 'default))))
+
+(test* "call-with-immediate-continuation-mark" #f
+       (with-continuation-mark 'key 'mark
+         (call-with-immediate-continuation-mark '#:nonexistent values)))
+
+;; continuation-mark-set-first
+
+(test* "continuation-mark-set-first" 'mark2
+       (with-continuation-mark 'key 'mark1
+         (with-continuation-mark 'key 'mark2
+           (continuation-mark-set-first #f 'key 'default))))
+
+(test* "continuation-mark-set-first" 'mark1
+       (with-continuation-mark 'key 'mark1
+         (let1 cm (current-continuation-marks)
+           (with-continuation-mark 'key 'mark2
+             (continuation-mark-set-first cm 'key 'default)))))
+
+(test* "continuation-mark-set-first" 'default
+       (with-continuation-mark 'key 'mark1
+         (with-continuation-mark 'key 'mark2
+           (continuation-mark-set-first #f 'key2 'default))))
 
 (test-end)

@@ -82,6 +82,20 @@
 (define-cproc current-continuation-marks ()
   (return (Scm_CurrentContinuationMarks SCM_UNDEFINED)))
 
+(define-cproc continuation-marks? (obj) ::<boolean>
+  (return (SCM_CONTINUATION_MARK_SET_P obj)))
+
+(define-cproc call-with-immediate-continuation-mark (key proc
+                                                     :optional (fallback #f))
+  (let* ([vm::ScmVM* (Scm_VM)]
+         [p (-> vm denv)])
+    (for [() (SCM_PAIRP p) (set! p (SCM_CDR p))]
+      (cond [(and (-> vm cont) (SCM_EQ p (-> vm cont denv)))
+             (return (Scm_VMApply1 proc fallback))]
+            [(SCM_EQ (SCM_CAAR p) key)
+             (return (Scm_VMApply1 proc (SCM_CDAR p)))]))
+    (return (Scm_VMApply1 proc fallback))))
+
 ;; TRANSIENT: To compile 0.9.13 with 0.9.12
 (inline-stub
  (declare-stub-type <continuation-mark-set> "ScmContinuationMarkSet*")
@@ -89,6 +103,17 @@
 
 (define-cproc continuation-mark-set->list (cmset::<continuation-mark-set> key)
   (return (Scm_ContinuationMarkSetToList cmset key)))
+
+(define-cproc continuation-mark-set-first (cmset::<continuation-mark-set>?
+                                           key :optional (fallback #f))
+  (let* ([cms::ScmContinuationMarkSet*
+          (?: cmset cmset
+              (SCM_CONTINUATION_MARK_SET (Scm_CurrentContinuationMarks SCM_UNDEFINED)))]
+         [p (-> cms denv)])
+    (for [() (SCM_PAIRP p) (set! p (SCM_CDR p))]
+      (when (SCM_EQ (SCM_CAAR p) key)
+        (return (SCM_CDAR p))))
+    (return fallback)))
 
 ;;;
 ;;; Useful gadgets
