@@ -147,6 +147,7 @@ static void   vm_finalize(ScmObj vm, void *data);
 static int    check_arglist_tail_for_apply(ScmVM *vm, ScmObj restargs, int max_count);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
+static ScmObj get_denv(ScmVM *vm);
 
 static void   call_error_reporter(ScmObj e);
 
@@ -242,7 +243,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
        the denv.  However, for the backward compatible mode where parameters
        aren't shared between threads, we copy denv.  We'll eventually
        drop copying.  */
-    v->denv = (proto? Scm_AlistCopy(proto->denv) : SCM_NIL);
+    v->denv = get_denv(proto);
 
     v->handlers = SCM_NIL;
 
@@ -1170,6 +1171,20 @@ static ScmEnvFrame *get_env(ScmVM *vm)
     }
     return e;
 }
+
+/* Obtain calling thread's dynamic environment.
+ * Under srfi-226 model, this can simply return vm->denv, for dynamic
+ * environments are shared.  However, backward-compatible mode requires
+ * parameters to be thread-local, so we need to copy denv.
+ * We'll switch two modes at runtime flag, then eventually move to
+ * full srfi-226 model.
+ */
+ScmObj get_denv(ScmVM *vm)
+{
+    if (vm == NULL) return SCM_NIL;
+    return Scm_AlistCopy(vm->denv); /* for now */
+}
+
 
 /* When VM stack has incomplete stack frame (that is, SP != ARGP or
  * *PC != SCM_VM_RET), and we need to run something on VM, we should
