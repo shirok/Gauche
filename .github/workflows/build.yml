@@ -15,7 +15,7 @@ jobs:
       TESTLOG_NAME: testlog-linux
       TESTLOG_PATH: testlog-linux
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: shirok/setup-gauche@v2
     - name: Run release version of Gauche
       run: |
@@ -35,7 +35,7 @@ jobs:
         cp $GAUCHE_TEST_PATH/ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
     - name: Upload testlog
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.TESTLOG_NAME }}
         path: ${{ env.TESTLOG_PATH }}
@@ -72,7 +72,7 @@ jobs:
         cp $GAUCHE_TEST_PATH/ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
     - name: Upload testlog
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.TESTLOG_NAME }}
         path: ${{ env.TESTLOG_PATH }}
@@ -99,7 +99,7 @@ jobs:
       TESTLOG_PATH: testlog-windows-${{ matrix.arch }}
     steps:
     - run: git config --global core.autocrlf false
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW${{ matrix.bit }}
@@ -161,13 +161,13 @@ jobs:
         cp ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
     - name: Upload testlog
       if: always()
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ env.TESTLOG_NAME }}
         path: ${{ env.TESTLOG_PATH }}
     #- name: Upload result
     #  if: always()
-    #  uses: actions/upload-artifact@v1
+    #  uses: actions/upload-artifact@v3
     #  with:
     #    name: Gauche-${{ matrix.arch }}
     #    path: ../Gauche-mingw-dist/Gauche-${{ matrix.arch }}
