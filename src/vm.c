@@ -506,6 +506,7 @@ static void vm_unregister(ScmVM *vm)
 #define SP    (vm->sp)
 #define VAL0  (vm->val0)
 #define ENV   (vm->env)
+#define DENV  (vm->denv)
 #define CONT  (vm->cont)
 #define ARGP  (vm->argp)
 #define BASE  (vm->base)
@@ -540,7 +541,7 @@ static void vm_unregister(ScmVM *vm)
         ScmContFrame *newcont = (ScmContFrame*)SP;      \
         newcont->prev = CONT;                           \
         newcont->env = ENV;                             \
-        newcont->denv = vm->denv;                       \
+        newcont->denv = DENV;                           \
         newcont->size = (int)(SP - ARGP);               \
         newcont->marker = 0;                            \
         newcont->cpc = PC;                              \
@@ -561,7 +562,7 @@ static void vm_unregister(ScmVM *vm)
                 SP = (ScmObj*)cont - cont->size;                        \
             }                                                           \
             ENV = NULL;                                                 \
-            vm->denv = cont->denv;                                      \
+            DENV = cont->denv;                                          \
             ARGP = SP;                                                  \
             PC = PC_TO_RETURN;                                          \
             BASE = cont->base;                                          \
@@ -579,7 +580,7 @@ static void vm_unregister(ScmVM *vm)
         } else if (IN_STACK_P((ScmObj*)CONT)) {                         \
             SP   = (ScmObj*)CONT;                                       \
             ENV  = CONT->env;                                           \
-            vm->denv = CONT->denv;                                      \
+            DENV = CONT->denv;                                          \
             ARGP = SP - CONT->size;                                     \
             PC   = CONT->pc;                                            \
             BASE = CONT->base;                                          \
@@ -588,7 +589,7 @@ static void vm_unregister(ScmVM *vm)
             int size__ = CONT->size;                                    \
             ARGP = SP = vm->stackBase;                                  \
             ENV = CONT->env;                                            \
-            vm->denv = CONT->denv;                                      \
+            DENV = CONT->denv;                                          \
             PC = CONT->pc;                                              \
             BASE = CONT->base;                                          \
             if (size__) {                                               \
@@ -1182,7 +1183,7 @@ static ScmEnvFrame *get_env(ScmVM *vm)
 ScmObj get_denv(ScmVM *vm)
 {
     if (vm == NULL) return SCM_NIL;
-    return Scm_AlistCopy(vm->denv); /* for now */
+    return Scm_AlistCopy(DENV); /* for now */
 }
 
 
@@ -1681,7 +1682,7 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
     s += CONT_FRAME_SIZE;
     cc->prev = CONT;
     cc->env = &ccEnvMark;
-    cc->denv = vm->denv;
+    cc->denv = DENV;
     cc->size = datasize;
     cc->marker = 0;
     cc->cpc = (ScmWord*)after;
@@ -1711,7 +1712,7 @@ ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
     ScmContFrame *cc = (ScmContFrame*)(s + datasize);
     cc->prev = CONT;
     cc->env = &ccEnvMark;
-    cc->denv = vm->denv;
+    cc->denv = DENV;
     cc->size = datasize;
     cc->marker = 0;
     cc->cpc = NULL;
@@ -1737,8 +1738,8 @@ ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag SCM_UNUSED)
 
     ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
     SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
-    cm->cont = vm->cont;
-    cm->denv = vm->denv;
+    cm->cont = CONT;
+    cm->denv = DENV;
     return SCM_OBJ(cm);
 }
 
