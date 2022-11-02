@@ -11295,66 +11295,103 @@ must be for the same enum type, or an error is thrown.
 @defun enum-set-subset? eset1 eset2
 [SRFI-209]
 @c MOD srfi-209
+Returns @code{#t} if the @emph{names} of the member of enum set @var{eset1}
+is a subset of the names of the member of @var{eset2}.  Otherwise
+returns @code{#f}.  Unlike @code{enum-set<?}, two enum set can be
+of different enum types.  Comparison is done with the names only.
 @end defun
 
 @defun enum-set-any? pred eset
 @defunx enum-set-every? pred eset
 [SRFI-209]
 @c MOD srfi-209
+Returns @code{#t} if any or every application of @var{proc} to the
+elemens of enum set @var{eset} yields true.  Otherwise returns @code{#f}.
 @end defun
 
 @defun enum-set-type eset
 [SRFI-209]
 @c MOD srfi-209
+Returns the enum type of the enum set @var{eset}.
 @end defun
 
 @defun enum-set-size eset
 [SRFI-209]
 @c MOD srfi-209
+Returns the number of elements in the enum set @var{eset}.
 @end defun
 
 @defun enum-set->enum-list eset
 [SRFI-209]
 @c MOD srfi-209
+Returns a list of enums contained in the enum set @var{eset},
+in the increasing order of enumcs.
 @end defun
 
 @defun enum-set-adjoin eset enum @dots{}
 @defunx enum-set-adjoin! eset enum @dots{}
 [SRFI-209]
 @c MOD srfi-209
+Returns an enum set that contains all the members in the enum set @var{eset}
+plus @var{enum} @dots{}.  All @var{enum}s must belong to the same enum type
+of @var{eset}.
+
+The linear update version @code{enum-set-adjoin!} may modify @var{eset}
+to produce the result.
 @end defun
 
 @defun enum-set-delete eset enum @dots{}
 @defunx enum-set-delete! eset enum @dots{}
 [SRFI-209]
 @c MOD srfi-209
+Returns an enum set that contains all the members in the enum set @var{eset}
+except @var{enum} @dots{}.  All @var{enum}s must belong to the same enum type
+of @var{eset}.
+
+The linear update version @code{enum-set-delete!} may modify @var{eset}
+to produce the result.
 @end defun
 
 @defun enum-set-delete-all eset list @dots{}
 @defunx enum-set-delete-all! eset list @dots{}
 [SRFI-209]
 @c MOD srfi-209
+Returns an enum set that contains all the members in the enum set @var{eset}
+the enums in @var{list}.  An error is thrown if
+@var{list} contains non-enums, or enums that do not belong to the same
+enum type of @var{eset}.
+
+The linear update version @code{enum-set-delete-all!} may modify @var{eset}
+to produce the result.
 @end defun
 
 @defun enum-set-count pred eset
 [SRFI-209]
 @c MOD srfi-209
+Applies @var{pred} on each enum in @var{eset}, and returns the number
+of times when @var{pred} yields a true value.
 @end defun
 
 @defun enum-set-filter pred eset
 @defunx enum-set-remove pred eset
 [SRFI-209]
 @c MOD srfi-209
+Returns a new enum set that contains the enums that satisfy or
+do not satisfy @var{pred}.
 @end defun
 
 @defun enum-set-map->list proc eset
 [SRFI-209]
 @c MOD srfi-209
+Applies @var{proc} on each enum in @var{eset},
+and returns a list of the results, in the increasing order of enums.
 @end defun
 
 @defun enum-set-for-each proc eset
 [SRFI-209]
 @c MOD srfi-209
+Applies @var{proc} on each enum in @var{eset} in the increasing order.
+The results of @var{proc} are discarded.
 @end defun
 
 @defun enum-set-fold kons knil eset
