@@ -22882,13 +22882,16 @@ if given, or raises @code{<join-timeout-exception>}.
 
 @c EN
 A thread local is an object that can hold per-thread value.
+It is defined in srfi-226.
 @c JP
 スレッドローカルはスレッドごとの値を格納できるオブジェクトです。
+srfi-226で規定されています。
 @c COMMON
 
 @c EN
 Note: Parameters used to be the way to keep per-thread value, but
-we've decided to split thread local storage from dyncamic binding.
+we've decided to split thread local storage from dyncamic binding
+to eventually conform srfi-226.
 Parameters should be used for dynamic binding, and thread locals should
 be used for per-thread value.
 If your existing code uses parameters for the per-thread value,
@@ -22896,6 +22899,7 @@ update it to use thread locals.  Parameters will eventually share
 the storage across threads.
 @c JP
 註: これまで、パラメータがスレッド毎の値を格納するためにも使われてきましたが、
+将来的にsrfi-226に準拠するために、
 動的束縛とスレッドローカル領域を切り離すことにしました。
 パラメータは動的束縛のためだけに使われるべきで、スレッド毎の値を保持するには
 スレッドローカルを使うようにしてください。
@@ -22907,6 +22911,8 @@ the storage across threads.
 
 @defun make-thread-local init-value :optional name
 @defunx make-thread-local-inheritable init-value :optional name
+[SRFI-226]
+@c MOD gauche.threads
 @c EN
 Returns a new thread local, with @var{init-value} as an initial value.
 The optional @var{name} argument specifies thread local's name;
@@ -22942,9 +22948,19 @@ is created, from the creator thread.
 継承可能、すなわち、スレッドが作られた時点で、それを作ったスレッドのスレッドローカルの
 値が初期値として使われます。
 @c COMMON
+
+@c EN
+Srfi-226 defines @code{make-thread-local}.  Inheritable
+thread locals are Gauche's extension.
+@c JP
+srfi-226は@code{make-thread-local}を定義しています。
+継承可能なスレッドローカルはGaucheの拡張です。
+@c COMMON
 @end defun
 
 @defun thread-local? obj
+[SRFI-226]
+@c MOD gauche.threads
 @c EN
 Returns @code{#t} if @var{obj} is a thread local, @code{#f} otherwise.
 @c JP
@@ -22953,6 +22969,8 @@ Returns @code{#t} if @var{obj} is a thread local, @code{#f} otherwise.
 @end defun
 
 @defun tlref tl
+[SRFI-226]
+@c MOD gauche.threads
 @c EN
 Returns the value of a thread local @var{tl}.
 @c JP
@@ -22961,6 +22979,8 @@ Returns the value of a thread local @var{tl}.
 @end defun
 
 @defun tlset! tl val
+[SRFI-226]
+@c MOD gauche.threads
 @c EN
 Modifies the value of a thread local @var{tl} with @var{val}.
 @c JP
