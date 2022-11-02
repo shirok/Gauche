@@ -519,13 +519,13 @@ static void vm_unregister(ScmVM *vm)
  */
 
 #if GAUCHE_SPLIT_STACK
-#define IN_STACK_P(ptr)                         \
+#define IN_STACK_P(ptr)                                 \
     ((ptr) >= vm->stackBase && (ptr) < vm->stackEnd)
-#define IN_FULL_STACK_P(ptr)                    \
+#define IN_FULL_STACK_P(ptr)                            \
     ((ptr) >= vm->stack && (ptr) < vm->stackEnd)
 #else  /*!GAUCHE_SPLIT_STACK*/
-#define IN_STACK_P(ptr)                                                 \
-      ((unsigned long)((ptr) - vm->stack) < SCM_VM_STACK_SIZE)
+#define IN_STACK_P(ptr)                                         \
+    ((unsigned long)((ptr) - vm->stack) < SCM_VM_STACK_SIZE)
 #define IN_FULL_STACK_P(ptr) IN_STACK_P(ptr)
 #endif /*!GAUCHE_SPLIT_STACK*/
 
@@ -696,9 +696,9 @@ static void vm_unregister(ScmVM *vm)
     } while (0)
 
 #define VM_ERR(errargs)                         \
-   do {                                         \
-      Scm_Error errargs;                        \
-   } while (0)
+    do {                                        \
+        Scm_Error errargs;                      \
+    } while (0)
 
 /* Discard the current procedure's local frame before performing a tail call.
    Just before the tail call, the typical stack position is like this:
