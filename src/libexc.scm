@@ -103,7 +103,7 @@
 
 (select-module gauche)
 (define-cproc current-exception-handler ()
-  (return (-> (Scm_VM) exceptionHandler)))
+  Scm_VMCurrentExceptionHandler)
 
 (define-cproc with-exception-handler (handler thunk)
   Scm_VMWithExceptionHandler)

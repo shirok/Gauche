@@ -86,6 +86,11 @@ static ScmEnvFrame ccEnvMark = {
 
 #define C_CONTINUATION_P(cont)  ((cont)->env == &ccEnvMark)
 
+/* Unique dynamic env keys for system.  We use uninterned symbol for
+   this purpose, for it is easier while debugging.
+   They're set during initialization. */
+static ScmObj denv_key_exception_handler = SCM_UNBOUND;
+
 /* A dummy compiled code structure used as 'fill-in', when Scm_Apply
    is called without any VM code running.  See Scm_Apply below. */
 static ScmCompiledCode internal_apply_compiled_code =
@@ -247,8 +252,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     v->handlers = SCM_NIL;
 
-    v->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
-    v->exceptionHandlerStack = SCM_NIL;
     v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
@@ -2528,10 +2531,10 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             call_dynamic_handlers(vmhandlers, ep->handlers);
 
             /* reraise and return */
-            vm->exceptionHandler = ep->xhandler;
+            Scm_VMPushExceptionHandler(ep->xhandler);
             vm->escapePoint = ep->prev;
             result = Scm_VMThrowException(vm, e, 0);
-            vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
+            Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
             vm->escapePoint = ep;
             return result;
         }
@@ -2639,15 +2642,9 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
 {
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_HANDLED);
 
-    ScmObj eh = vm->exceptionHandler;
-    ScmObj ehstack = vm->exceptionHandlerStack;
-
     /* SRFI-34/R7RS semantics - we invoke exception handler while the handler
        chain is popped. */
-    if (!SCM_NULLP(ehstack)) {
-        vm->exceptionHandler = SCM_CAR(ehstack);
-        vm->exceptionHandlerStack = SCM_CDR(ehstack);
-    }
+    ScmObj eh = Scm_VMPopExceptionHandler();
 
     if (eh != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_ApplyRec(eh, SCM_LIST1(exception));
@@ -2657,12 +2654,11 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
                shouldn't.  In order to prevent infinite loop, we should
                pop the erroneous handler.  For now, we just reset
                the current exception handler. */
-            vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
+            Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
         /* Continuable exception. Recover exception handler settings. */
-        vm->exceptionHandler = eh;
-        vm->exceptionHandlerStack = ehstack;
+        Scm_VMPushExceptionHandler(eh);
         return vm->val0;
     }
     return Scm_VMDefaultExceptionHandler(exception);
@@ -2677,7 +2673,6 @@ static ScmObj install_ehandler(ScmObj *args SCM_UNUSED,
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
-    vm->exceptionHandler = DEFAULT_EXCEPTION_HANDLER;
     vm->escapePoint = ep;
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
     return SCM_UNDEFINED;
@@ -2690,7 +2685,6 @@ static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
     ScmVM *vm = theVM;
     vm->escapePoint = ep->prev;
-    vm->exceptionHandler = ep->xhandler;
     if (ep->errorReporting) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
     }
@@ -2712,7 +2706,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->cont = vm->cont;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
-    ep->xhandler = vm->exceptionHandler;
+    ep->xhandler = Scm_VMCurrentExceptionHandler();
     ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
     ep->errorReporting =
@@ -2722,6 +2716,12 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
                              to redirect ep->cont */
+
+    /* We use default exception handler that does the main work.
+       We no longer need to rely on before/after handlers to swap exception
+       handlers, for it is handled automatically with vm->denv. */
+    Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
+
     ScmObj before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
     return Scm_VMDynamicWind(before, thunk, after);
@@ -2744,31 +2744,52 @@ ScmObj Scm_VMReraise()
 }
 
 /*
- * with-exception-handler
+ * Exception handlers
  *
  *   This primitive gives the programmer whole responsibility of
  *   dealing with exceptions.
+ *
+ *   Exception handler chain is kept in DENV, with the key
+ *   denv_key_exception_handler.  Its value is a pair,
+ *   (<handler> . <prev-entry>) where <prev-entry> points to the
+ *   previous entry or ().
  */
 
-static ScmObj install_xhandler(ScmObj *args SCM_UNUSED,
-                               int nargs SCM_UNUSED,
-                               void *data)
+ScmObj Scm_VMCurrentExceptionHandler()
 {
-    ScmVM *vm = theVM;
-    ScmObj chain = SCM_OBJ(data);
-    vm->exceptionHandler = SCM_CAR(chain);
-    vm->exceptionHandlerStack = SCM_CDR(chain);
-    return SCM_UNDEFINED;
+    ScmObj entry = Scm_VMFindDynamicEnv(denv_key_exception_handler, SCM_NIL);
+    if (SCM_PAIRP(entry)) return SCM_CAR(entry);
+    else return DEFAULT_EXCEPTION_HANDLER;
+}
+
+void Scm_VMPushExceptionHandler(ScmObj handler)
+{
+    ScmObj prev = Scm_VMFindDynamicEnv(denv_key_exception_handler, SCM_NIL);
+    Scm_VMPushDynamicEnv(denv_key_exception_handler,
+                         Scm_Cons(handler, prev));
+}
+
+/* Set the current exception handler to the 'previous' one, returning
+   the current handler.
+   Note that this does not actually 'pop' the DENV; instead, we push the
+   previous entry in DENV.
+*/
+ScmObj Scm_VMPopExceptionHandler()
+{
+    ScmObj current = Scm_VMFindDynamicEnv(denv_key_exception_handler, SCM_NIL);
+    if (SCM_PAIRP(current)) {
+        ScmObj h = SCM_CAR(current);
+        Scm_VMPushDynamicEnv(denv_key_exception_handler, SCM_CDR(current));
+        return h;
+    } else {
+        return DEFAULT_EXCEPTION_HANDLER;
+    }
 }
 
 ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
 {
-    ScmVM *vm = theVM;
-    ScmObj oldchain = Scm_Cons(vm->exceptionHandler, vm->exceptionHandlerStack);
-    ScmObj newchain = Scm_Cons(handler, oldchain);
-    ScmObj before = Scm_MakeSubr(install_xhandler, newchain, 0, 0, SCM_FALSE);
-    ScmObj after  = Scm_MakeSubr(install_xhandler, oldchain, 0, 0, SCM_FALSE);
-    return Scm_VMDynamicWind(before, thunk, after);
+    Scm_VMPushExceptionHandler(handler);
+    return Scm_VMApply0(thunk);
 }
 
 /*==============================================================
@@ -3723,6 +3744,14 @@ void Scm__InitVM(void)
     Scm_HashCoreInitSimple(&vm_table, SCM_HASH_EQ, 8, NULL);
     SCM_INTERNAL_MUTEX_INIT(vm_table_mutex);
     SCM_INTERNAL_MUTEX_INIT(vm_id_mutex);
+
+    /* Prepare dynamic environemnt keys
+       NB: At this moment, symbols are not initialized.  However,
+       we can safely allocate *uninterned* symbols, for it doesn't
+       require hashtables. */
+    denv_key_exception_handler =
+        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("exception-handler")),
+                       FALSE);
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));

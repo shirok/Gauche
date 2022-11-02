@@ -530,9 +530,6 @@ struct ScmVMRec {
 #endif
 
     /* Escape handling */
-    ScmObj exceptionHandler;    /* the current exception handler installed by
-                                   with-exception-handler. */
-    ScmObj exceptionHandlerStack; /* chained previous handlers. */
     ScmEscapePoint *escapePoint;/* chain of escape points (a kind of one-shot
                                    continuation).  used by system's default
                                    exception handler to escape from the error
@@ -594,6 +591,10 @@ SCM_EXTERN int    Scm_AttachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_DetachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMDefaultExceptionHandler(ScmObj exc);
+SCM_EXTERN ScmObj Scm_VMCurrentExceptionHandler();
+SCM_EXTERN void   Scm_VMPushExceptionHandler(ScmObj eh);
+SCM_EXTERN ScmObj Scm_VMPopExceptionHandler();
+SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj eh, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exc, u_long flags);
 SCM_EXTERN ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *code, SCM_PCTYPE pc);
 SCM_EXTERN ScmObj Scm_VMGetBindInfo(ScmCompiledCode *code, SCM_PCTYPE pc);

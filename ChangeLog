@@ -1,3 +1,7 @@
+2022-11-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: Store exception handler in DENV.
+
 2022-10-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c: VM inherits denv from calling thread.
