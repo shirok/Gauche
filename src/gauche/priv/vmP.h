@@ -53,6 +53,14 @@ struct ScmContinuationMarkSetRec {
     ScmObj denv;                /* vm->denv */
 };
 
+/* To obtain denv keys */
+typedef enum {
+    SCM_DENV_KEY_EXCEPTION_HANDLER,
+    SCM_DENV_KEY_PARAMETERIZATION,
+} ScmDenvKeyName;
+
+SCM_EXTERN ScmObj Scm__GetDenvKey(ScmDenvKeyName name);
+
 /*
  * Escape point
  *

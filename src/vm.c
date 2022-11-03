@@ -90,6 +90,7 @@ static ScmEnvFrame ccEnvMark = {
    this purpose, for it is easier while debugging.
    They're set during initialization. */
 static ScmObj denv_key_exception_handler = SCM_UNBOUND;
+static ScmObj denv_key_parameterization = SCM_UNBOUND;
 
 /* A dummy compiled code structure used as 'fill-in', when Scm_Apply
    is called without any VM code running.  See Scm_Apply below. */
@@ -2744,6 +2745,22 @@ ScmObj Scm_VMReraise()
 }
 
 /*
+ * Returns internal denv keys (internal API)
+ *   These keys are uninterned symbols so that they wouldn't conflict
+ *   with user provided keys.
+ */
+ScmObj Scm__GetDenvKey(ScmDenvKeyName name)
+{
+    switch (name) {
+    case SCM_DENV_KEY_EXCEPTION_HANDLER:
+        return denv_key_exception_handler;
+    case SCM_DENV_KEY_PARAMETERIZATION:
+        return denv_key_parameterization;
+    }
+    return SCM_UNDEFINED;       /* dummy */
+}
+
+/*
  * Exception handlers
  *
  *   This primitive gives the programmer whole responsibility of
@@ -3750,8 +3767,9 @@ void Scm__InitVM(void)
        we can safely allocate *uninterned* symbols, for it doesn't
        require hashtables. */
     denv_key_exception_handler =
-        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("exception-handler")),
-                       FALSE);
+        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("exception-handler")), FALSE);
+    denv_key_parameterization =
+        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("parameterization")), FALSE);
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
