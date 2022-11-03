@@ -35,8 +35,11 @@
 ;; booted.
 
 (select-module gauche)
-
 (use util.match)
+
+(inline-stub
+ (declcode (.include <gauche/priv/parameterP.h>)))
+
 (declare (keep-private-macro parameterize))
 
 ;;;
@@ -52,6 +55,8 @@
   (return (Scm_PrimitiveParameterSet (Scm_VM) p val)))
 (define-cproc %make-parameter-subr (p::<primitive-parameter>)
   Scm_MakePrimitiveParameterSubr)
+(define-cproc %push-parameterization (params vals) ::<void>
+  Scm_PushParameterization)
 
 ;;;
 ;;; Generic parameters
@@ -124,42 +129,36 @@
     ((with-module gauche.internal %primitive-parameter-set!) param prev-val)]
    [else (param prev-val)]))
 
+;; Actual processing of the parameterization.
+;; gauche.internal#%parameterize is embedded in the copiled code, so do not
+;; change the API across releases.
+(define (%parameterize params orig-vals thunk)
+  (let ([restarted #f]
+        [saved '()])
+    (dynamic-wind
+      (^[] (set! saved
+                 (if restarted
+                   (map (^[p v] (%restore-parameter p v)) params saved)
+                   (map (^[p] (p)) params))))
+      (^[] (unless restarted
+             (set! saved (map (^[p v] (p v)) params orig-vals)))
+        (thunk))
+      (^[] (set! restarted #t)
+        (set! saved (map (^[p v] (%restore-parameter p v)) params saved))))))
+
 (select-module gauche)
 
 (define-syntax parameterize
   (er-macro-transformer
    (^[f r c]
-     (define %restore ((with-module gauche.internal make-identifier)
-                       '%restore-parameter
-                       (find-module 'gauche.internal)
-                       '()))
+     (define %parameterize ((with-module gauche.internal make-identifier)
+                            '%parameterize
+                            (find-module 'gauche.internal)
+                            '()))
      (match f
        [(_ () . body) (quasirename r `(let () ,@body))]
-       [(_ ((param val)) . body)
-        ;; shortcut for single-parameter case
-        (quasirename r
-          `(let ([P ,param] [V ,val] [restarted #f])
-             (dynamic-wind
-               (^[] (if restarted
-                      (set! V (,%restore P V))
-                      (set! V (P V))))
-               (^[] ,@body)
-               (^[] (set! restarted #t)
-                 (set! V (,%restore P V))))))]
+       ;; TODO: shortcut for single-parameter case
        [(_ ((param val) ...) . body)
-        ;; general case
         (quasirename r
-          `(let ([P (list ,@param)]
-                 [V (list ,@val)]
-                 [S '()]                      ;saved values
-                 [restarted #f])
-             (dynamic-wind
-               (^[] (if restarted
-                      (set! S (map (^[p v] (,%restore p v)) P S))
-                      (set! S (map (^[p] (p)) P))))
-               (^[] (unless restarted
-                      (set! S (map (^[p v] (p v)) P V)))
-                 (let () ,@body))
-               (^[] (set! restarted #t)
-                 (set! S (map (^[p v] (,%restore p v)) P S))))))]
+          `(,%parameterize (list ,@param) (list ,@val) (^[] ,@body)))]
        [(_ . x) (error "Invalid parameterize form:" f)]))))
