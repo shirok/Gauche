@@ -72,4 +72,7 @@ typedef struct ScmParameterKeyRec {
     ScmPrimitiveParameter *p;
 } ScmParameterKey;
 
+
+SCM_EXTERN void Scm_PushParameterization(ScmObj params, ScmObj vals);
+
 #endif /*GAUCHE_PRIV_PARAMETERP_H*/

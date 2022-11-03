@@ -196,10 +196,44 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
 }
 
 /*
+ * Parameterization
+ *
+ *  A parameterization is kept in DENV.
+ *  (#:parameterization (<parameter> . <value>) ...)
+ *  Note that the tail of parameter alist is shared with the
+ *  outer parameterization.
+ */
+
+void Scm_PushParameterization(ScmObj params, ScmObj vals)
+{
+    if (Scm_Length(params) != Scm_Length(vals)) {
+        Scm_Error("[internal] parameterize: parameters and values don't match.");
+    }
+
+    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
+    ScmObj prev = Scm_VMFindDynamicEnv(k, SCM_NIL);
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+
+    while (SCM_PAIRP(params)) {
+        SCM_APPEND1(h, t, Scm_Cons(SCM_CAR(params), SCM_CAR(vals)));
+        params = SCM_CDR(params);
+        vals = SCM_CDR(vals);
+    }
+    SCM_APPEND(h, t, prev);
+    Scm_VMPushDynamicEnv(k, h);
+}
+
+
+/*
  * Accessor & modifier
  */
 ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 {
+    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
+    ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
+    ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
+    if (SCM_PAIRP(r)) return SCM_CDR(r);
+
     ScmObj v = Scm_ThreadLocalRef(vm, p->tl);
     if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(v);
     else return v;
@@ -208,9 +242,18 @@ ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
                                  ScmObj val)
 {
-    ScmObj v = Scm_ThreadLocalSet(vm, p->tl, val);
-    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(v);
-    else return v;
+    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
+    ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
+    ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
+    if (SCM_PAIRP(r)) {
+        ScmObj old = SCM_CDR(r);
+        SCM_SET_CDR(r, val);
+        return old;
+    } else {
+        ScmObj v = Scm_ThreadLocalSet(vm, p->tl, val);
+        if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(v);
+        else return v;
+    }
 }
 
 /* Convenience function.  Create a primitive parameter subr and bind
