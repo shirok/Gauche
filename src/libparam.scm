@@ -55,8 +55,9 @@
   (return (Scm_PrimitiveParameterSet (Scm_VM) p val)))
 (define-cproc %make-parameter-subr (p::<primitive-parameter>)
   Scm_MakePrimitiveParameterSubr)
-(define-cproc %push-parameterization (params vals) ::<void>
-  Scm_PushParameterization)
+(define-cproc %with-parameterization (params vals thunk)
+  (Scm_PushParameterization params vals)
+  (return (Scm_VMApply0 thunk)))
 
 ;;;
 ;;; Generic parameters
