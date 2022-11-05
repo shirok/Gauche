@@ -22909,8 +22909,7 @@ the storage across threads.
 @c COMMON
 
 
-@defun make-thread-local init-value :optional name
-@defunx make-thread-local-inheritable init-value :optional name
+@defun make-thread-local init-value :optional inheritable? name
 [SRFI-226]
 @c MOD gauche.threads
 @c EN
@@ -22936,25 +22935,18 @@ and future threads.
 @c COMMON
 
 @c EN
-A thread local created by @code{make-thread-local} is @code{tlref}-ed
+If @code{#f} is specified in @var{inheritable?} (default),
+when a thread local is @code{tlref}-ed
 first time in a thread, it returns @code{init-value}.
-On the other hand, @code{make-thread-local-inheritable} creates
-an inheritable thread local, which copies the value when a thread
-is created, from the creator thread.
+If a true value is specified in @var{inheritable?},
+on the other hand, the initial value of the thread local
+inherits the value of the creator thread at the moment
+the thread is created.
 @c JP
-@code{make-thread-local}で作られたスレッドローカルが最初に@code{tlref}
-されると、@code{init-value}が返ります。
-一方、@code{make-thread-local-inheritable}が作るスレッドローカルは
-継承可能、すなわち、スレッドが作られた時点で、それを作ったスレッドのスレッドローカルの
-値が初期値として使われます。
-@c COMMON
-
-@c EN
-Srfi-226 defines @code{make-thread-local}.  Inheritable
-thread locals are Gauche's extension.
-@c JP
-srfi-226は@code{make-thread-local}を定義しています。
-継承可能なスレッドローカルはGaucheの拡張です。
+@var{inheritable?}引数が@code{#f}の場合(デフォルト)、
+スレッドローカルが最初に@code{tlref}されると、@code{init-value}が返ります。
+一方、@var{inheritable?}に真の値を指定すると、
+スレッドが作られた時点で、それを作ったスレッドのスレッドローカルの値が初期値として使われます。
 @c COMMON
 @end defun
 

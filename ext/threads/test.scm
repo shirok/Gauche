@@ -467,7 +467,7 @@
                  (thread-join! t2)
                  (thread-join! t3)))))
 
-(define tl2 (make-thread-local-inheritable 0))
+(define tl2 (make-thread-local 0 #t))
 
 (test* "thread local (inheritable)" '(200 100)
        (let1 handshake #f
