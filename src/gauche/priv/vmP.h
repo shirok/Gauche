@@ -39,6 +39,15 @@
 SCM_DECL_BEGIN
 
 /*
+ * Prompt tag
+ */
+
+struct ScmPromptTagRec {
+    SCM_HEADER;
+    ScmObj name;
+};
+
+/*
  * Continuation mark set
  *
  *   Continuation mark set is an opaque object to extract a set of continuation

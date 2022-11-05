@@ -75,6 +75,7 @@ typedef struct ScmCompiledCodeRec ScmCompiledCode;
 typedef struct ScmCallTraceRec ScmCallTrace;
 
 /* Actual structure is defined in priv/vmP.h */
+typedef struct ScmPromptTagRec ScmPromptTag;
 typedef struct ScmThreadLocalRec ScmThreadLocal;
 typedef struct ScmVMThreadLocalTableRec ScmVMThreadLocalTable;
 
@@ -234,6 +235,18 @@ SCM_EXTERN ScmObj Scm_ThreadLocalSet(ScmVM *vm,
                                      const ScmThreadLocal *tl,
                                      ScmObj val);
 
+
+/*
+ * Prompt tags
+ */
+
+SCM_CLASS_DECL(Scm_PromptTagClass);
+#define SCM_CLASS_PROMPT_TAG   (&Scm_PromptTagClass)
+#define SCM_PROMPT_TAG(obj)    ((ScmPromptTag*)obj)
+#define SCM_PROMPT_TAG_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_PROMPT_TAG)
+
+SCM_EXTERN ScmObj Scm_MakePromptTag(ScmObj name);
+SCM_EXTERN ScmObj Scm_DefaultPromptTag();
 
 /*
  * Syntactic closure

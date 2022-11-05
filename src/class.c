@@ -3769,6 +3769,9 @@ void Scm__InitClass(void)
     CINIT(SCM_CLASS_C128VECTOR,       "<c128vector>");
     CINIT(SCM_CLASS_BITVECTOR,        "<bitvector>");
 
+    /* vm.c */
+    CINIT(SCM_CLASS_PROMPT_TAG,       "<prompt-tag>");
+
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");
     CINIT(SCM_CLASS_WEAK_HASH_TABLE,  "<weak-hash-table>");

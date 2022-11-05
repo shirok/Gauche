@@ -64,6 +64,17 @@ static int vm_stack_mark_proc;
 #define EX_SOFTWARE 70
 #endif
 
+/* Prompt tag.  Class initialization is done in class.c */
+static void prompt_tag_print(ScmObj obj, ScmPort *out,
+                             ScmWriteContext *ctx SCM_UNUSED)
+{
+    Scm_Printf(out, "#<prompt-tag %S>", SCM_PROMPT_TAG(obj)->name);
+}
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
+                         prompt_tag_print, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+
 /* An object to mark the boundary frame. */
 static ScmWord boundaryFrameMark = SCM_VM_INSN(SCM_VM_NOP);
 
@@ -2810,6 +2821,30 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
 }
 
 /*==============================================================
+ * Continuation prompt tag
+ */
+
+static ScmPromptTag defaultPromptTag; /* initialized in initVM */
+#define DEFAULT_PROMPT_TAG_NAME "default-prompt-tag"
+static ScmString defaultPromptTagName =
+    SCM_STRING_CONST_INITIALIZER(DEFAULT_PROMPT_TAG_NAME,
+                                 sizeof(DEFAULT_PROMPT_TAG_NAME)-1,
+                                 sizeof(DEFAULT_PROMPT_TAG_NAME)-1);
+
+ScmObj Scm_MakePromptTag(ScmObj name)
+{
+    ScmPromptTag *pt = SCM_NEW(ScmPromptTag);
+    SCM_SET_CLASS(pt, SCM_CLASS_PROMPT_TAG);
+    pt->name = name;
+    return SCM_OBJ(pt);
+}
+
+ScmObj Scm_DefaultPromptTag()
+{
+    return SCM_OBJ(&defaultPromptTag);
+}
+
+/*==============================================================
  * Call With Current Continuation
  */
 
@@ -3770,6 +3805,12 @@ void Scm__InitVM(void)
         Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("exception-handler")), FALSE);
     denv_key_parameterization =
         Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("parameterization")), FALSE);
+
+    /* Initialize statically allocated default prompt tag.
+       Again, be aware that most modules are not initialized yet.
+    */
+    SCM_SET_CLASS(&defaultPromptTag, SCM_CLASS_PROMPT_TAG);
+    defaultPromptTag.name = SCM_OBJ(&defaultPromptTagName);
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));

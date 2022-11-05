@@ -77,6 +77,15 @@
 (define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
 (define-cproc %reset (proc) (return (Scm_VMReset proc)))
 
+;; Continuaton prompt tags
+(select-module gauche)
+(define-cproc make-continuation-prompt-tag (:optional (name #f))
+  Scm_MakePromptTag)
+(define-cproc default-continuation-prompt-tag ()
+  Scm_DefaultPromptTag)
+(define-cproc continuation-prompt-tag? (obj) ::<boolean>
+  SCM_PROMPT_TAG_P)
+
 ;; Continuation marks
 (select-module gauche)
 (define-cproc current-continuation-marks ()

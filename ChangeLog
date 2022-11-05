@@ -1,3 +1,8 @@
+2022-11-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/class.c, src/libproc.scm (make-continuation-prompt-tag,
+	  default-continuation-prompt-tag): Add continuation prompt tag.
+
 2022-11-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c: Store exception handler in DENV.
