@@ -1,5 +1,8 @@
 2022-11-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/compaux.c, src/libmacbase.scm: Remove syntactic closure support.
+	  They haven't been used at all.
+
 	* src/vm.c, src/class.c, src/libproc.scm (make-continuation-prompt-tag,
 	  default-continuation-prompt-tag): Add continuation prompt tag.
 

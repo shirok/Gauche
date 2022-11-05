@@ -190,9 +190,6 @@
 (define-cproc make-syntax (name::<symbol> module::<module> proc)
   Scm_MakeSyntax)
 
-(define-cproc make-syntactic-closure (env literals expr)
-  Scm_MakeSyntacticClosure)
-
 (define-cproc call-syntax-handler (syn program cenv)
   (SCM_ASSERT (SCM_SYNTAXP syn))
   (return (Scm_VMApply2 (-> (SCM_SYNTAX syn) handler) program cenv)))

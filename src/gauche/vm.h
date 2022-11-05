@@ -249,30 +249,6 @@ SCM_EXTERN ScmObj Scm_MakePromptTag(ScmObj name);
 SCM_EXTERN ScmObj Scm_DefaultPromptTag();
 
 /*
- * Syntactic closure
- *
- *   Syntactic closure encapsulates compile-time environment for
- *   hygienic macro expansion.
- *   See Bawden & Rees, Syntactic Closures, MIT AI Memo 1049, June 1988.
- */
-
-typedef struct ScmSyntacticClosureRec {
-    ScmObj env;                 /* compile-time environment */
-    ScmObj literals;            /* literal symbols */
-    ScmObj expr;                /* expression */
-} ScmSyntacticClosure;
-
-SCM_CLASS_DECL(Scm_SyntacticClosureClass);
-#define SCM_CLASS_SYNTACTIC_CLOSURE   (&Scm_SyntacticClosureClass)
-
-#define SCM_SYNTACTIC_CLOSURE(obj)   ((ScmSyntacticClosure*)(obj))
-#define SCM_SYNTACTIC_CLOSURE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_SYNTACTIC_CLOSURE)
-
-SCM_EXTERN ScmObj Scm_MakeSyntacticClosure(ScmObj env,
-                                           ScmObj literals,
-                                           ScmObj expr);
-
-/*
  * Identifier
  *
  *   Identifier wraps a symbol with its lexical environment.  This
