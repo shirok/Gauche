@@ -44,8 +44,15 @@ SCM_DECL_BEGIN
 
 struct ScmPromptTagRec {
     SCM_HEADER;
-    ScmObj name;
+    ScmObj name;                /* arbitrary object for debugging */
+    ScmWord insn;               /* a dummy field contains RET insn.
+                                   We make cont->pc point to here
+                                   for the prompt-tag marked continuation,
+                                   so that VM won't crash if it tries
+                                   to execute it accidentally. */
 };
+
+#define SCM_PROMPT_TAG_PC(ptag)   (&SCM_PROMPT_TAG(ptag)->insn)
 
 /*
  * Continuation mark set

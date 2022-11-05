@@ -2836,6 +2836,7 @@ ScmObj Scm_MakePromptTag(ScmObj name)
     ScmPromptTag *pt = SCM_NEW(ScmPromptTag);
     SCM_SET_CLASS(pt, SCM_CLASS_PROMPT_TAG);
     pt->name = name;
+    pt->insn = SCM_VM_INSN(SCM_VM_RET);
     return SCM_OBJ(pt);
 }
 
@@ -3811,6 +3812,7 @@ void Scm__InitVM(void)
     */
     SCM_SET_CLASS(&defaultPromptTag, SCM_CLASS_PROMPT_TAG);
     defaultPromptTag.name = SCM_OBJ(&defaultPromptTagName);
+    defaultPromptTag.insn = SCM_VM_INSN(SCM_VM_RET);
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
