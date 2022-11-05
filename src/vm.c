@@ -75,14 +75,18 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
                          prompt_tag_print, NULL, NULL, NULL,
                          SCM_CLASS_OBJECT_CPL);
 
-/* An object to mark the boundary frame. */
-static ScmWord boundaryFrameMark = SCM_VM_INSN(SCM_VM_NOP);
+/* bitflags for ScmContFrame->marker */
+enum {
+      SCM_CONT_SHIFT_MARKER = (1L<<0),
+      SCM_CONT_RESET_MARKER = (1L<<1),
+};
+
 
 /* return true if cont is a boundary continuation frame */
-#define BOUNDARY_FRAME_P(cont) ((cont)->pc == &boundaryFrameMark)
+#define BOUNDARY_FRAME_P(cont) ((cont)->marker & SCM_CONT_RESET_MARKER)
 
 /* return true if cont has the end marker of partial continuation */
-#define MARKER_FRAME_P(cont)   ((cont)->marker == 1)
+#define MARKER_FRAME_P(cont)   ((cont)->marker & SCM_CONT_SHIFT_MARKER)
 
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
@@ -565,6 +569,12 @@ static void vm_unregister(ScmVM *vm)
         CONT = newcont;                                 \
         SP += CONT_FRAME_SIZE;                          \
         ARGP = SP;                                      \
+    } while (0)
+
+#define PUSH_BOUNDARY_CONT(tag)                 \
+    do {                                        \
+        PUSH_CONT(SCM_PROMPT_TAG_PC(tag));      \
+        CONT->marker = SCM_CONT_RESET_MARKER;   \
     } while (0)
 
 /* pop a continuation frame, i.e. return from a procedure. */
@@ -1825,7 +1835,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
     CHECK_STACK(CONT_FRAME_SIZE);
-    PUSH_CONT(&boundaryFrameMark);
+    PUSH_BOUNDARY_CONT(Scm_DefaultPromptTag());
     SCM_ASSERT(SCM_COMPILED_CODE_P(program));
     vm->base = SCM_COMPILED_CODE(program);
     if (codevec != NULL) {
@@ -3127,7 +3137,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
 
     /* set the end marker of partial continuation */
     if (cp && !MARKER_FRAME_P(cp)) {
-        cp->marker = 1;
+        cp->marker |= SCM_CONT_SHIFT_MARKER;
         /* also set the delimited flag in reset information */
         if (SCM_PAIRP(vm->resetChain)) {
             SCM_SET_CAR_UNCHECKED(SCM_CAR(vm->resetChain), SCM_TRUE);

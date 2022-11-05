@@ -189,8 +189,8 @@ typedef struct ScmContFrameRec {
     ScmEnvFrame *env;             /* saved environment */
     ScmObj denv;                  /* dynamic environment links */
 #if SIZEOF_LONG == 4
-    long size : 31;               /* size of argument frame */
-    u_long marker : 1;            /* end marker of partial continuation */
+    long size : 30;               /* size of argument frame */
+    u_long marker : 2;            /* end marker of partial continuation */
 #else
     int size;                     /* size of argument frame */
     int marker;                   /* end marker of partial continuation */
