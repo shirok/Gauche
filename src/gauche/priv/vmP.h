@@ -69,11 +69,15 @@ struct ScmPromptTagRec {
 
 #define SCM_PROMPT_TAG_PC(ptag)   (&SCM_PROMPT_TAG(ptag)->insn)
 
+/* ScmPromptData is allocated on the VM stack.  The size must be
+   multiple of ScmWord. */
 typedef struct ScmPromptDataRec {
     ScmWord dummy;              /* RET insn */
     ScmObj abortHandler;        /* abort handler */
     ScmObj dynamicHandlers;     /* dynamic-wind handler chain */
 } ScmPromptData;
+
+#define PROMPT_DATA_SIZE       sizeof(ScmPromptData)/sizeof(ScmWord)
 
 /*
  * Continuation mark set

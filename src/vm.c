@@ -75,6 +75,8 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
                          prompt_tag_print, NULL, NULL, NULL,
                          SCM_CLASS_OBJECT_CPL);
 
+static ScmPromptTag defaultPromptTag; /* initialized in initVM */
+
 /* bitflags for ScmContFrame->marker */
 enum {
       SCM_CONT_SHIFT_MARKER = (1L<<0),
@@ -1099,6 +1101,14 @@ static void save_cont_1(ScmVM *vm, ScmContFrame *c)
             }
         }
 
+        /* for boundary frame, we also need to copy promptdata */
+        if (BOUNDARY_FRAME_P(c)) {
+            ScmPromptData *psrc = (ScmPromptData*)c->cpc;
+            ScmPromptData *psave = SCM_NEW(ScmPromptData);
+            *psave = *psrc;
+            csave->cpc = &psave->dummy;
+        }
+
         /* make the orig frame forwarded */
         if (prev) prev->prev = csave;
         prev = csave;
@@ -1814,7 +1824,10 @@ ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
  *   frame pointer) in cstack.cont.
  */
 
-static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
+static ScmObj user_eval_inner(ScmObj program,
+                              ScmWord *codevec,
+                              ScmObj promptTag,
+                              ScmObj abortHandler)
 {
     ScmCStack cstack;
     ScmVM * volatile vm = theVM;
@@ -1824,12 +1837,16 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     ScmObj vmhandlers = vm->handlers;
     ScmObj vmresetChain = vm->resetChain;
 
+    if (SCM_FALSEP(promptTag)) {
+        promptTag = SCM_OBJ(&defaultPromptTag);
+    }
+
     /* Push extra continuation.  This continuation frame is a 'boundary
        frame' and marked by pc == &boundaryFrameMark.   VM loop knows
        it should return to C frame when it sees a boundary frame.
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
-    push_boundary_cont(vm, Scm_DefaultPromptTag(), SCM_FALSE);
+    push_boundary_cont(vm, promptTag, abortHandler);
     SCM_ASSERT(SCM_COMPILED_CODE_P(program));
     vm->base = SCM_COMPILED_CODE(program);
     if (codevec != NULL) {
@@ -1939,12 +1956,28 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
 
 void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
 {
-    ScmPromptData *a = SCM_NEW(ScmPromptData);
+    /* We want to allocate ScmPromptData on stack.  If there's already
+       an unfinished argument frame, however, we need to insert ScmPromptData
+       before it (for other parts of code assumes unfinished argument frame
+       immediately precedes cont frame).
+    */
+    CHECK_STACK(CONT_FRAME_SIZE + PROMPT_DATA_SIZE + (SP - ARGP));
+
+    ScmPromptData *a = (ScmPromptData*)ARGP;
+
+    if (SP - ARGP > 0) {
+        for (ScmWord *s = SP-1, *d = SP+PROMPT_DATA_SIZE-1;
+             s >= ARGP;
+             s--, d--) {
+            *d = *s;
+        }
+        SP += PROMPT_DATA_SIZE;
+        ARGP += PROMPT_DATA_SIZE;
+    }
+
     a->dummy = SCM_VM_INSN(SCM_VM_RET);
     a->abortHandler = abortHandler;
     a->dynamicHandlers = vm->handlers;
-
-    CHECK_STACK(CONT_FRAME_SIZE);
     PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
     CONT->cpc = &a->dummy;
     CONT->marker = SCM_CONT_RESET_MARKER;
@@ -1961,7 +1994,7 @@ ScmObj Scm_EvalRec(ScmObj expr, ScmObj e)
     if (SCM_VM_COMPILER_FLAG_IS_SET(theVM, SCM_COMPILE_SHOWRESULT)) {
         Scm_CompiledCodeDump(SCM_COMPILED_CODE(v));
     }
-    return user_eval_inner(v, NULL);
+    return user_eval_inner(v, NULL, SCM_FALSE, SCM_FALSE);
 }
 
 /* NB: The ApplyRec family can be called in an inner loop (e.g. the display
@@ -1979,7 +2012,7 @@ static ScmObj apply_rec(ScmVM *vm, ScmObj proc, int nargs)
     vm->val0 = proc;
     ScmObj program = vm->base?
             SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
-    return user_eval_inner(program, code);
+    return user_eval_inner(program, code, SCM_FALSE, SCM_FALSE);
 }
 
 ScmObj Scm_ApplyRec(ScmObj proc, ScmObj args)
@@ -2841,7 +2874,6 @@ ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk)
  * Continuation prompt tag
  */
 
-static ScmPromptTag defaultPromptTag; /* initialized in initVM */
 #define DEFAULT_PROMPT_TAG_NAME "default-prompt-tag"
 static ScmString defaultPromptTagName =
     SCM_STRING_CONST_INITIALIZER(DEFAULT_PROMPT_TAG_NAME,
