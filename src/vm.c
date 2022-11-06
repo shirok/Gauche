@@ -81,6 +81,7 @@ enum {
       SCM_CONT_RESET_MARKER = (1L<<1),
 };
 
+static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 
 /* return true if cont is a boundary continuation frame */
 #define BOUNDARY_FRAME_P(cont) ((cont)->marker & SCM_CONT_RESET_MARKER)
@@ -569,12 +570,6 @@ static void vm_unregister(ScmVM *vm)
         CONT = newcont;                                 \
         SP += CONT_FRAME_SIZE;                          \
         ARGP = SP;                                      \
-    } while (0)
-
-#define PUSH_BOUNDARY_CONT(tag)                 \
-    do {                                        \
-        PUSH_CONT(SCM_PROMPT_TAG_PC(tag));      \
-        CONT->marker = SCM_CONT_RESET_MARKER;   \
     } while (0)
 
 /* pop a continuation frame, i.e. return from a procedure. */
@@ -1834,8 +1829,7 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
        it should return to C frame when it sees a boundary frame.
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
-    CHECK_STACK(CONT_FRAME_SIZE);
-    PUSH_BOUNDARY_CONT(Scm_DefaultPromptTag());
+    push_boundary_cont(vm, Scm_DefaultPromptTag(), SCM_FALSE);
     SCM_ASSERT(SCM_COMPILED_CODE_P(program));
     vm->base = SCM_COMPILED_CODE(program);
     if (codevec != NULL) {
@@ -1941,6 +1935,19 @@ static ScmObj user_eval_inner(ScmObj program, ScmWord *codevec)
     }
     vm->cstack = vm->cstack->prev;
     return vm->val0;
+}
+
+void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
+{
+    ScmPromptData *a = SCM_NEW(ScmPromptData);
+    a->dummy = SCM_VM_INSN(SCM_VM_RET);
+    a->abortHandler = abortHandler;
+    a->dynamicHandlers = vm->handlers;
+
+    CHECK_STACK(CONT_FRAME_SIZE);
+    PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
+    CONT->cpc = &a->dummy;
+    CONT->marker = SCM_CONT_RESET_MARKER;
 }
 
 /* API for recursive call to VM.  Exceptions are not captured.

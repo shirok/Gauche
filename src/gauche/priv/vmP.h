@@ -39,7 +39,22 @@
 SCM_DECL_BEGIN
 
 /*
- * Prompt tag
+ * Tagged continuation frame
+ *
+ *   A continuation frame can be tagged with call-with-continuation-prompt,
+ *   and it marks the bottom of a delimited continuation chain.
+ *   The tagged continuation frame is indicated by SCM_CONT_RESET_MARKER
+ *   bit in the marker field.
+ *
+ *   A prompt tag is an ScmObj to distinguish tagged continuation frame.
+ *   ScmContFrame->pc points to &(ScmPromptTag->insn), which contains dummy
+ *   RET instruction (so that it won't confuse codes that inspect VM state.)
+ *
+ *   A tagged continuation frame also points ScmPromptData from
+ *   ScmContFrame->cpc.  ScmPromptData is not an ScmObj.  It is a struct
+ *   to hold abort handler and some dynamic states.  The first word of
+ *   ScmPromptData contains a dummy RET instruction, so that it won't confuse
+ *   codes that inspect VM state.
  */
 
 struct ScmPromptTagRec {
@@ -53,6 +68,12 @@ struct ScmPromptTagRec {
 };
 
 #define SCM_PROMPT_TAG_PC(ptag)   (&SCM_PROMPT_TAG(ptag)->insn)
+
+typedef struct ScmPromptDataRec {
+    ScmWord dummy;              /* RET insn */
+    ScmObj abortHandler;        /* abort handler */
+    ScmObj dynamicHandlers;     /* dynamic-wind handler chain */
+} ScmPromptData;
 
 /*
  * Continuation mark set
