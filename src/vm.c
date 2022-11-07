@@ -3749,7 +3749,8 @@ void Scm_VMDump(ScmVM *vm)
 
     Scm_Printf(out, "conts:\n");
     while (cont) {
-        Scm_Printf(out, "   %p\n", cont);
+        Scm_Printf(out, "   %p %s\n", cont,
+                   (BOUNDARY_FRAME_P(cont) ? "*boundary*" : ""));
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             size = %d\n", cont->size);
         Scm_Printf(out, "             base = %p\n", cont->base);
