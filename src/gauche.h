@@ -671,6 +671,9 @@ SCM_EXTERN ScmObj Scm_VMCallPC(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMReset(ScmObj proc);
 SCM_EXTERN ScmObj Scm_VMDynamicWind(ScmObj pre, ScmObj body, ScmObj post);
 
+SCM_EXTERN ScmObj Scm_VMCallWithContinuationPrompt(ScmObj, ScmObj, ScmObj);
+SCM_EXTERN ScmObj Scm_VMAbortCurrentContinuation(ScmObj, ScmObj);
+
 SCM_EXTERN ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk);
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj handler, ScmObj thunk);

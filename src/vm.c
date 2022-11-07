@@ -1966,14 +1966,14 @@ void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     ScmPromptData *a = (ScmPromptData*)ARGP;
 
     if (SP - ARGP > 0) {
-        for (ScmWord *s = SP-1, *d = SP+PROMPT_DATA_SIZE-1;
+        for (ScmObj *s = SP-1, *d = SP+PROMPT_DATA_SIZE-1;
              s >= ARGP;
              s--, d--) {
             *d = *s;
         }
-        SP += PROMPT_DATA_SIZE;
-        ARGP += PROMPT_DATA_SIZE;
     }
+    SP += PROMPT_DATA_SIZE;
+    ARGP += PROMPT_DATA_SIZE;
 
     a->dummy = SCM_VM_INSN(SCM_VM_RET);
     a->abortHandler = abortHandler;
@@ -2893,6 +2893,81 @@ ScmObj Scm_DefaultPromptTag()
 {
     return SCM_OBJ(&defaultPromptTag);
 }
+
+/*==============================================================
+ * Continuation prompts
+ */
+
+ScmObj Scm_VMCallWithContinuationPrompt(ScmObj thunk,
+                                        ScmObj promptTag,
+                                        ScmObj abortHandler)
+{
+    if (!(SCM_PROMPT_TAG_P(promptTag) || SCM_FALSEP(promptTag))) {
+        SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
+    }
+
+    /* Similar trick with apply_rec.  Maye we can refactor it later. */
+    static ScmWord code[] = {
+        SCM_VM_INSN1(SCM_VM_VALUES_APPLY, 0),
+        SCM_VM_INSN(SCM_VM_RET)
+    };
+
+    ScmVM *vm = theVM;
+    vm->val0 = thunk;
+    ScmObj program = vm->base?
+            SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
+    return user_eval_inner(program, code, promptTag, abortHandler);
+}
+
+static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
+{
+    if (!SCM_PROMPT_TAG(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
+    ScmWord *pc = SCM_PROMPT_TAG_PC(promptTag);
+    for (ScmContFrame *c = vm->cont; c; c = c->prev) {
+        if (BOUNDARY_FRAME_P(c) && c->pc == pc) {
+            return c;
+        }
+    }
+    return NULL;
+}
+
+
+ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
+{
+    if (!(SCM_PROMPT_TAG_P(promptTag) || SCM_FALSEP(promptTag))) {
+        SCM_TYPE_ERROR(promptTag, "prompt tag or #f");
+    }
+    ScmVM *vm = theVM;
+    ScmContFrame *abortTo = find_prompt_frame(vm, promptTag);
+    if (abortTo == NULL) {
+        Scm_Error("Attempt to abort to stale prompt tag: %S", promptTag);
+    }
+
+    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
+    SCM_ASSERT(pd->dummy == SCM_VM_INSN(SCM_VM_RET));
+
+    ScmObj abortHandler = pd->abortHandler;
+    ScmObj targetHandlers = pd->dynamicHandlers;
+
+    /* Discard continuation up to abortTo frame. */
+    CONT = abortTo;
+    POP_CONT();
+    call_dynamic_handlers(targetHandlers, vm->handlers);
+
+    if (SCM_FALSEP(abortHandler)) {
+        if (!(Scm_Length(args) == 1
+              && SCM_PROCEDUREP(SCM_CAR(args))
+              && SCM_PROCEDURE_REQUIRED(SCM_CAR(args)) == 0)) {
+            Scm_Error("default abort-handler requires exactly one argument, "
+                      "which must be a thunk, but got: %S", args);
+        }
+        push_boundary_cont(vm, promptTag, abortHandler);
+        return Scm_VMApply0(SCM_CAR(args));
+    } else {
+        return Scm_VMApply(abortHandler, args);
+    }
+}
+
 
 /*==============================================================
  * Call With Current Continuation
