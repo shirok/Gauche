@@ -68,6 +68,8 @@ struct ScmPromptTagRec {
 };
 
 #define SCM_PROMPT_TAG_PC(ptag)   (&SCM_PROMPT_TAG(ptag)->insn)
+#define SCM_PC_TO_PROMPT_TAG(pc)  \
+    ((ScmPromptTag*)((char*)(pc) - offsetof(ScmPromptTag, insn)))
 
 /* ScmPromptData is allocated on the VM stack.  The size must be
    multiple of ScmWord. */

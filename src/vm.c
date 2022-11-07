@@ -2931,7 +2931,6 @@ static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
     return NULL;
 }
 
-
 ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
 {
     if (!(SCM_PROMPT_TAG_P(promptTag) || SCM_FALSEP(promptTag))) {
@@ -3824,8 +3823,14 @@ void Scm_VMDump(ScmVM *vm)
 
     Scm_Printf(out, "conts:\n");
     while (cont) {
-        Scm_Printf(out, "   %p %s\n", cont,
-                   (BOUNDARY_FRAME_P(cont) ? "*boundary*" : ""));
+        Scm_Printf(out, "   %p", cont);
+        if (BOUNDARY_FRAME_P(cont)) {
+            ScmPromptTag *t = SCM_PC_TO_PROMPT_TAG(cont->pc);
+            SCM_ASSERT(t->insn == SCM_VM_INSN(SCM_VM_RET));
+            Scm_Printf(out, "::%S\n", t);
+        } else {
+            Scm_Printf(out, "\n");
+        }
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             size = %d\n", cont->size);
         Scm_Printf(out, "             base = %p\n", cont->base);
