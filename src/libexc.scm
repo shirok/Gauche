@@ -199,6 +199,16 @@
 (define (serious-condition? obj) (is-a? obj <serious-condition>))
 (define (error? obj) (is-a? obj <error>))
 
+;; Srfi-226
+(define &continuation <continuation-violation>)
+(define (make-continuation-violation tag)
+  (make <continuation-violation> :prompt-tag tag))
+(define (continuation-violation? obj)
+  (is-a? obj <continuation-violation>))
+(define (continuation-violation-prompt-tag condition)
+  (assume-type condition <continuation-violation>)
+  (~ condition 'prompt-tag))
+
 ;;;
 ;;; Thread exception classes
 ;;;
