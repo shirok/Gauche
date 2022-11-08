@@ -2939,7 +2939,11 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     ScmVM *vm = theVM;
     ScmContFrame *abortTo = find_prompt_frame(vm, promptTag);
     if (abortTo == NULL) {
-        Scm_Error("Attempt to abort to stale prompt tag: %S", promptTag);
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                           "prompt-tag", promptTag,
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "Attempt to abort to stale prompt tag: %S",
+                           promptTag);
     }
 
     ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
@@ -2950,7 +2954,6 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
 
     /* Discard continuation up to abortTo frame. */
     CONT = abortTo;
-    POP_CONT();
     call_dynamic_handlers(targetHandlers, vm->handlers);
 
     if (SCM_FALSEP(abortHandler)) {
@@ -2960,7 +2963,6 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
             Scm_Error("default abort-handler requires exactly one argument, "
                       "which must be a thunk, but got: %S", args);
         }
-        push_boundary_cont(vm, promptTag, abortHandler);
         return Scm_VMApply0(SCM_CAR(args));
     } else {
         return Scm_VMApply(abortHandler, args);
