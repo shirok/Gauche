@@ -47,6 +47,7 @@ static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj conterror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj compound_allocate(ScmClass *klass, ScmObj initargs);
 
 /* Setting up CPL is a bit tricky, since we have multiple
@@ -243,6 +244,10 @@ SCM_DEFINE_BASE_CLASS(Scm_IOInvalidPositionErrorClass, ScmIOInvalidPositionError
                       Scm_MessageConditionPrint, NULL, NULL,
                       porterror_allocate, porterror_cpl);
 
+SCM_DEFINE_BASE_CLASS(Scm_ContinuationErrorClass, ScmContinuationError,
+                      Scm_MessageConditionPrint, NULL, NULL,
+                      conterror_allocate, error_cpl);
+
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
 {
     ScmSystemError *e = SCM_NEW_INSTANCE(ScmSystemError, klass);
@@ -275,6 +280,14 @@ static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     e->common.message = SCM_FALSE; /* set by initialize */
     e->port = NULL;                /* set by initialize */
     e->auxinfo = SCM_NIL;          /* set by initialize */
+    return SCM_OBJ(e);
+}
+
+static ScmObj conterror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
+{
+    ScmContinuationError *e = SCM_NEW_INSTANCE(ScmContinuationError, klass);
+    e->common.message = SCM_FALSE; /* set by initialize */
+    e->promptTag = SCM_FALSE;      /* set by initialize */
     return SCM_OBJ(e);
 }
 
@@ -398,6 +411,17 @@ static void porterror_position_set(ScmPortError *obj, ScmObj val)
     porterror_auxinfo_setter(obj, sym_position, val);
 }
 
+static ScmObj conterror_prompt_tag_get(ScmContinuationError *obj)
+{
+    return obj->promptTag;
+}
+
+static void conterror_prompt_tag_set(ScmContinuationError *obj, ScmObj val)
+{
+    obj->promptTag = val;
+}
+
+
 static ScmClassStaticSlotSpec syserror_slots[] = {
     SCM_CLASS_SLOT_SPEC("errno", syserror_number_get, syserror_number_set),
     SCM_CLASS_SLOT_SPEC_END()
@@ -435,6 +459,13 @@ static ScmClassStaticSlotSpec invalidpositionerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("position",
                         porterror_position_get,
                         porterror_position_set),
+    SCM_CLASS_SLOT_SPEC_END()
+};
+
+static ScmClassStaticSlotSpec conterror_slots[] = {
+    SCM_CLASS_SLOT_SPEC("prompt-tag",
+                        conterror_prompt_tag_get,
+                        conterror_prompt_tag_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
@@ -1195,6 +1226,11 @@ void Scm__InitExceptions(void)
                                 "<io-invalid-position-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 invalidpositionerror_slots, 0);
+
+    Scm_InitStaticClassWithMeta(SCM_CLASS_CONTINUATION_ERROR,
+                                "<continuation-violation>",
+                                mod, cond_meta, SCM_FALSE,
+                                conterror_slots, 0);
 
     Scm_InitStaticClassWithMeta(SCM_CLASS_COMPOUND_CONDITION,
                                 "<compound-condition>",

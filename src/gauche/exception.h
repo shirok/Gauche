@@ -46,14 +46,15 @@
     |         +- <unhandled-signal-error>
     |         +- <read-error> ; srfi-36
     |         +- <io-error>   ; srfi-36
-    |              +- <port-error> ; srfi-36
-    |                   +- <io-read-error>   ; srfi-36
-    |                        +- <io-decoding-error>  ; (srfi-186)
-    |                   +- <io-write-error>  ; srfi-36
-    |                        +- <io-encoding-error>  ; (srfi-186)
-    |                   +- <io-closed-error> ; srfi-36
-    |                   +- <io-unit-error>
-    |                   +- <io-invalid-position-error> ; srfi-192
+    |         |    +- <port-error> ; srfi-36
+    |         |         +- <io-read-error>   ; srfi-36
+    |         |         |    +- <io-decoding-error>  ; (srfi-186)
+    |         |         +- <io-write-error>  ; srfi-36
+    |         |         |    +- <io-encoding-error>  ; (srfi-186)
+    |         |         +- <io-closed-error> ; srfi-36
+    |         |         +- <io-unit-error>
+    |         |         +- <io-invalid-position-error> ; srfi-192
+    |         +- <continuation-error>     ; srfi-226
     +- <thread-exception> ; srfi-18
     |    +- <join-timeout-exception>      ; srfi-18
     |    +- <abandoned-mutex-exception>   ; srfi-18
@@ -230,6 +231,16 @@ SCM_CLASS_DECL(Scm_IOEncodingErrorClass);
 #define SCM_CLASS_IO_ENCODING_ERROR  (&Scm_IOEncodingErrorClass)
 SCM_CLASS_DECL(Scm_IOInvalidPositionErrorClass);
 #define SCM_CLASS_IO_INVALID_POSITION_ERROR  (&Scm_IOInvalidPositionErrorClass)
+
+/* <continuation-error> */
+typedef struct ScmContinuationErrorRec {
+    ScmError common;
+    ScmObj promptTag;
+} ScmContinuationError;
+
+SCM_CLASS_DECL(Scm_ContinuationErrorClass);
+#define SCM_CLASS_CONTINUATION_ERROR   (&Scm_ContinuationErrorClass)
+#define SCM_CONTINUATION_ERROR_P(obj)  SCM_ISA(obj, SCM_CLASS_CONTINUATION_ERROR)
 
 /*---------------------------------------------------
  * Compounders
