@@ -104,6 +104,17 @@ static ScmEnvFrame ccEnvMark = {
 
 #define C_CONTINUATION_P(cont)  ((cont)->env == &ccEnvMark)
 
+/* If you have ScmContFrame *cont and you'll do something that can trigger
+   saving frames, you have to call this first to ensure that your
+   cont frame keeps pointing a valid frame. */
+#define ENSURE_SAVE_CONT(cont)                  \
+    do {                                        \
+        save_cont(vm);                          \
+        if (FORWARDED_CONT_P(cont)) {           \
+            cont = FORWARDED_CONT(cont);        \
+        }                                       \
+    } while (0)
+
 /* Unique dynamic env keys for system.  We use uninterned symbol for
    this purpose, for it is easier while debugging.
    They're set during initialization. */
@@ -2931,6 +2942,47 @@ static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
     return NULL;
 }
 
+static ScmObj vm_abort_cc(ScmObj val0, void *data[]);
+
+static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
+{
+    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
+    ScmObj abortHandler = pd->abortHandler;
+
+    if (SCM_FALSEP(abortHandler)) {
+        if (!(Scm_Length(args) == 1
+              && SCM_PROCEDUREP(SCM_CAR(args))
+              && SCM_PROCEDURE_REQUIRED(SCM_CAR(args)) == 0)) {
+            Scm_Error("default abort-handler requires exactly one argument, "
+                      "which must be a thunk, but got: %S", args);
+        }
+        return Scm_VMApply0(SCM_CAR(args));
+    } else {
+        /* TODO: In this case, we should run abortHandler _after_ the
+           abortTo frame is popped.  We need some more tweaks to realize it.
+        */
+        return Scm_VMApply(abortHandler, args);
+    }
+}
+
+static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
+{
+    ScmContFrame *abortTo = data[0];
+    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
+    ScmObj targetHandlers = pd->dynamicHandlers;
+    ScmVM *vm = theVM;
+    if (targetHandlers != vm->handlers && SCM_PAIRP(vm->handlers)) {
+        Scm_VMPushCC(vm_abort_cc, data, 2);
+        ScmObj after = SCM_CDAR(vm->handlers);
+        vm->handlers = SCM_CDR(vm->handlers);
+        return Scm_VMApply0(after);
+    } else {
+        ScmObj args = SCM_OBJ(data[1]);
+        return vm_abort_body(abortTo, args);
+    }
+}
+
+
 ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
 {
     if (!(SCM_PROMPT_TAG_P(promptTag) || SCM_FALSEP(promptTag))) {
@@ -2948,24 +3000,23 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
 
     ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
     SCM_ASSERT(pd->dummy == SCM_VM_INSN(SCM_VM_RET));
-
-    ScmObj abortHandler = pd->abortHandler;
     ScmObj targetHandlers = pd->dynamicHandlers;
 
     /* Discard continuation up to abortTo frame. */
     CONT = abortTo;
-    call_dynamic_handlers(targetHandlers, vm->handlers);
 
-    if (SCM_FALSEP(abortHandler)) {
-        if (!(Scm_Length(args) == 1
-              && SCM_PROCEDUREP(SCM_CAR(args))
-              && SCM_PROCEDURE_REQUIRED(SCM_CAR(args)) == 0)) {
-            Scm_Error("default abort-handler requires exactly one argument, "
-                      "which must be a thunk, but got: %S", args);
-        }
-        return Scm_VMApply0(SCM_CAR(args));
+    if (targetHandlers != vm->handlers && SCM_PAIRP(vm->handlers)) {
+        ENSURE_SAVE_CONT(abortTo);
+
+        void *data[2];
+        data[0] = abortTo;
+        data[1] = args;
+        Scm_VMPushCC(vm_abort_cc, data, 2);
+        ScmObj after = SCM_CDAR(vm->handlers);
+        vm->handlers = SCM_CDR(vm->handlers);
+        return Scm_VMApply0(after);
     } else {
-        return Scm_VMApply(abortHandler, args);
+        return vm_abort_body(abortTo, args);
     }
 }
 
