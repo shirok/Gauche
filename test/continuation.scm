@@ -423,6 +423,64 @@
       (^[] (call/cc (^c (0 (c 1))))))
 
 ;;-----------------------------------------------------------------------
+;; Continuation prompts
+;;
+
+(test-section "continuation prompts")
+
+(test* "continuation-prompt-tag" #t
+       (continuation-prompt-tag? (make-continuation-prompt-tag)))
+(test* "continuation-prompt-tag" #t
+       (continuation-prompt-tag? (make-continuation-prompt-tag 'a)))
+(test* "continuation-prompt-tag" #t
+       (continuation-prompt-tag? (default-continuation-prompt-tag)))
+(test* "continuation-prompt-tag" #f
+       (equal? (make-continuation-prompt-tag)
+               (default-continuation-prompt-tag)))
+(test* "continuation-prompt-tag" #f
+       (equal? (make-continuation-prompt-tag)
+               (make-continuation-prompt-tag)))
+
+(test* "call-with-continuation-prompt basic 1" 1
+       (call-with-continuation-prompt (lambda () 1)))
+(test* "call-with-continuation-prompt basic 1" 1
+       (call-with-continuation-prompt (lambda () 1)
+                                      (make-continuation-prompt-tag)))
+(test* "call-with-continuation-prompt basic 1" 1
+       (call-with-continuation-prompt (lambda () 1)
+                                      (make-continuation-prompt-tag)
+                                      list))
+
+(test* "abort-current-continuation" '(foo bar)
+       (let ([tag (make-continuation-prompt-tag)])
+         (call-with-continuation-prompt
+          (lambda ()
+            (+ 1
+               (abort-current-continuation tag 'foo 'bar)
+               2))
+          tag
+          list)))
+
+(test* "abort-current-continuation (default handler)" 'aborted
+       (let ([tag (make-continuation-prompt-tag)])
+         (define (abt)
+           (abort-current-continuation tag (lambda () 'aborted)))
+         (call-with-continuation-prompt
+          (lambda () (abt) 'normal)
+          tag)))
+
+(test* "abort-current-continuation (default handler, nested)" 'aborted
+       (let ([tag (make-continuation-prompt-tag)])
+         (define (abt)
+           ($ abort-current-continuation tag
+              (lambda () (abort-current-continuation tag
+                           (lambda () 'aborted)))))
+         (call-with-continuation-prompt
+          (lambda () (abt) 'normal)
+          tag)))
+
+
+;;-----------------------------------------------------------------------
 ;; Partial continuations
 
 (test-section "partial continuations")
