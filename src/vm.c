@@ -3294,6 +3294,11 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     return Scm_VMApply1(proc, contproc);
 }
 
+int Scm_ContinuationP(ScmObj proc)
+{
+    return (SCM_SUBRP(proc) && SCM_PROCEDURE_INFO(proc) == continuation_symbol);
+}
+
 /* call with partial continuation.  this corresponds to the 'shift' operator
    in shift/reset controls (Gasbichler&Sperber, "Final Shift for Call/cc",
    ICFP02.)   Note that we treat the boundary frame as the bottom of

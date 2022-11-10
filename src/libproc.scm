@@ -72,6 +72,9 @@
 
 (define-in-module scheme call/cc call-with-current-continuation)
 
+;; srfi-226
+(define-cproc continuation? (obj) ::<boolean> Scm_ContinuationP)
+
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
 (define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
