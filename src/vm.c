@@ -115,6 +115,9 @@ static ScmEnvFrame ccEnvMark = {
         }                                       \
     } while (0)
 
+/* Unique uninterned symbol to indicate continuation procedure. */
+static ScmObj continuation_symbol = SCM_UNBOUND;
+
 /* Unique dynamic env keys for system.  We use uninterned symbol for
    this purpose, for it is easier while debugging.
    They're set during initialization. */
@@ -3287,7 +3290,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->partHandlers = SCM_NIL;
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
-                                   SCM_MAKE_STR("continuation"));
+                                   continuation_symbol);
     return Scm_VMApply1(proc, contproc);
 }
 
@@ -4000,6 +4003,8 @@ void Scm__InitVM(void)
         Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("exception-handler")), FALSE);
     denv_key_parameterization =
         Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("parameterization")), FALSE);
+    continuation_symbol =
+        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("continuation")), FALSE);
 
     /* Initialize statically allocated default prompt tag.
        Again, be aware that most modules are not initialized yet.
