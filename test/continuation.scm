@@ -479,6 +479,23 @@
           (lambda () (abt) 'normal)
           tag)))
 
+(test* "abort-current-continuation (invalid tag)"
+       (test-error <continuation-violation>)
+       (let ([tag1 (make-continuation-prompt-tag)]
+             [tag2 (make-continuation-prompt-tag)])
+         (call-with-continuation-prompt
+          (lambda ()
+            (abort-current-continuation tag2 'foo))
+          tag1)))
+
+(let ([tag1 (make-continuation-prompt-tag 'stray)])
+  (test* "abort-current-continuation (&continuation violation)"
+         tag1
+         (guard (e [(continuation-violation? e)
+                    (continuation-violation-prompt-tag e)])
+           (call-with-continuation-prompt
+            (lambda ()
+              (abort-current-continuation tag1 'foo))))))
 
 ;;-----------------------------------------------------------------------
 ;; Partial continuations
