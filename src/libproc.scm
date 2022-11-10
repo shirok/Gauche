@@ -95,8 +95,8 @@
 
 ;; Continuation marks
 (select-module gauche)
-(define-cproc current-continuation-marks ()
-  (return (Scm_CurrentContinuationMarks SCM_UNDEFINED)))
+(define-cproc current-continuation-marks (:optional (prompt-tag #f))
+  (return (Scm_CurrentContinuationMarks prompt-tag)))
 
 (define-cproc continuation-marks? (obj) ::<boolean>
   (return (SCM_CONTINUATION_MARK_SET_P obj)))

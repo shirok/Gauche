@@ -92,8 +92,9 @@ typedef struct ScmPromptDataRec {
 
 struct ScmContinuationMarkSetRec {
     SCM_HEADER;
-    ScmContFrame *cont;
+    ScmContFrame *cont;         /* current cont frame */
     ScmObj denv;                /* vm->denv */
+    ScmObj bottomDenv;          /* limit of denv to look for */
 };
 
 /* To obtain denv keys */

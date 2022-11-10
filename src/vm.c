@@ -1764,57 +1764,6 @@ ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
     return s;
 }
 
-/*
- * Continuation marks
- */
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_ContinuationMarkSetClass,
-                         NULL, NULL, NULL, NULL,
-                         SCM_CLASS_OBJECT_CPL);
-
-ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag SCM_UNUSED)
-{
-    ScmVM *vm = theVM;
-    save_cont(vm);
-
-    ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
-    SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
-    cm->cont = CONT;
-    cm->denv = DENV;
-    return SCM_OBJ(cm);
-}
-
-ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
-                                     ScmObj key)
-{
-    ScmObj h = SCM_NIL, t = SCM_NIL;
-    ScmContFrame *c = cmset->cont;
-    ScmObj p = cmset->denv;
-    while (c && c->denv == p) {
-        /* no new marks in the current frame */
-        c = c->prev;
-    }
-    while (SCM_PAIRP(p)) {
-        if (SCM_CAAR(p) == key) {
-            SCM_APPEND1(h, t, SCM_CDAR(p));
-            /* skip to the next continuation frame */
-            if (c == NULL) break;
-            for (p = SCM_CDR(p); SCM_PAIRP(p); p = SCM_CDR(p)) {
-                if (c->denv == p) {
-                    do {
-                        c = c->prev;
-                    } while (c && c->denv == p);
-                    break;
-                }
-            }
-            continue;
-        } else {
-            p = SCM_CDR(p);
-        }
-    }
-    return h;
-}
-
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,
@@ -3020,6 +2969,68 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     }
 }
 
+/*
+ * Continuation marks
+ */
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_ContinuationMarkSetClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+
+ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag)
+{
+    ScmVM *vm = theVM;
+    save_cont(vm);
+    if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
+
+    ScmContFrame *bottom = find_prompt_frame(vm, promptTag);
+    if (bottom == NULL) {
+        Scm_RaiseCondition(SCM_OBJ(SCM_CLASS_CONTINUATION_ERROR),
+                           "prompt-tag", promptTag,
+                           SCM_RAISE_CONDITION_MESSAGE,
+                           "Stale prompt tag: %S",
+                           promptTag);
+    }
+
+    ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
+    SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
+    cm->cont = CONT;
+    cm->denv = DENV;
+    cm->bottomDenv = bottom->denv;
+    return SCM_OBJ(cm);
+}
+
+ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
+                                     ScmObj key)
+{
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmContFrame *c = cmset->cont;
+    ScmObj p = cmset->denv;
+    while (c && c->denv == p) {
+        /* no new marks in the current frame */
+        c = c->prev;
+    }
+    while (SCM_PAIRP(p)) {
+        if (p == cmset->bottomDenv) break;
+        if (SCM_CAAR(p) == key) {
+            SCM_APPEND1(h, t, SCM_CDAR(p));
+            /* skip to the next continuation frame */
+            if (c == NULL) break;
+            for (p = SCM_CDR(p); SCM_PAIRP(p); p = SCM_CDR(p)) {
+                if (c->denv == p) {
+                    do {
+                        c = c->prev;
+                    } while (c && c->denv == p);
+                    break;
+                }
+            }
+            continue;
+        } else {
+            p = SCM_CDR(p);
+        }
+    }
+    return h;
+}
 
 /*==============================================================
  * Call With Current Continuation

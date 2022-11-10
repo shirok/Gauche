@@ -1066,6 +1066,25 @@
   (test* "tail-recursive fact" '(1)
          (t fact2)))
 
+;; delimited
+(test* "current-continuation-marks w/tag" '(d c)
+       (let* ([tag (make-continuation-prompt-tag)]
+              [cms
+               (with-continuation-mark 'a 'b
+                 (call-with-continuation-prompt
+                  (^[]
+                    (with-continuation-mark 'a 'c
+                      (apply identity
+                             (list (with-continuation-mark 'a 'd
+                                     (current-continuation-marks tag))))))
+                  tag))])
+         (continuation-mark-set->list cms 'a)))
+
+(test* "current-continuation-marks w/tag"
+       (test-error <continuation-violation>)
+       (let1 tag (make-continuation-prompt-tag)
+         (current-continuation-marks tag)))
+
 ;; call-with-immediate-continuation-mark
 
 (test* "call-with-immediate-continuation-mark" 'mark
