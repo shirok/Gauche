@@ -98,6 +98,8 @@
 
 ;; Continuation marks
 (select-module gauche)
+(define-cproc continuation-marks (cont :optional (prompt-tag #f))
+  (return (Scm_ContinuationMarks cont prompt-tag)))
 (define-cproc current-continuation-marks (:optional (prompt-tag #f))
   (return (Scm_CurrentContinuationMarks prompt-tag)))
 

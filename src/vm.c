@@ -2980,10 +2980,11 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_ContinuationMarkSetClass,
                          NULL, NULL, NULL, NULL,
                          SCM_CLASS_OBJECT_CPL);
 
-ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag)
+static ScmObj make_continuation_mark_set(ScmVM *vm,
+                                         ScmContFrame *cont,
+                                         ScmObj denv,
+                                         ScmObj promptTag)
 {
-    ScmVM *vm = theVM;
-    save_cont(vm);
     if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
 
     ScmContFrame *bottom = find_prompt_frame(vm, promptTag);
@@ -2997,10 +2998,28 @@ ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag)
 
     ScmContinuationMarkSet *cm = SCM_NEW(ScmContinuationMarkSet);
     SCM_SET_CLASS(cm, SCM_CLASS_CONTINUATION_MARK_SET);
-    cm->cont = CONT;
-    cm->denv = DENV;
+    cm->cont = cont;
+    cm->denv = denv;
     cm->bottomDenv = bottom->denv;
     return SCM_OBJ(cm);
+}
+
+ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag)
+{
+    if (!Scm_ContinuationP(contProc)) {
+        SCM_TYPE_ERROR(contProc, "continuation");
+    }
+    ScmEscapePoint *ep = (ScmEscapePoint*)SCM_SUBR(contProc)->data;
+    ScmContFrame *cont = ep->cont;
+    return make_continuation_mark_set(Scm_VM(), cont, cont->denv, promptTag);
+}
+
+
+ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag)
+{
+    ScmVM *vm = theVM;
+    save_cont(vm);
+    return make_continuation_mark_set(vm, CONT, DENV, promptTag);
 }
 
 ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,

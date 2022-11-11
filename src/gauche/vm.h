@@ -126,6 +126,7 @@ SCM_CLASS_DECL(Scm_ContinuationMarkSetClass);
 #define SCM_CONTINUATION_MARK_SET(obj)  ((ScmContinuationMarkSet*)obj)
 #define SCM_CONTINUATION_MARK_SET_P(obj) SCM_ISA(obj,SCM_CLASS_CONTINUATION_MARK_SET)
 
+SCM_EXTERN ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag);
 SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
                                                 ScmObj);
