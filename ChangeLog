@@ -1,3 +1,9 @@
+2022-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/time.scm (time-these/report, report-time-results):
+	  Allow measure/report using not only cpu times, but also real,
+	  user or sys.
+
 2022-11-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compaux.c, src/libmacbase.scm: Remove syntactic closure support.

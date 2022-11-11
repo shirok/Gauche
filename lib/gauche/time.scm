@@ -121,9 +121,22 @@
 (define (time-result- t1 t2 :key (with-count #f))
   (%time-result-op - t1 t2 with-count))
 
+(define (metric? sym)
+  (case sym
+    [(cpu user sys real) sym]
+    [else
+     (error "Metric must be one of cpu, user, sys, or real, but got:" sym)]))
+
+(define (metric-time metric result)
+  (ecase metric
+    [(cpu)  (+ (time-result-user result) (time-result-sys result))]
+    [(user) (time-result-user result)]
+    [(sys)  (time-result-sys result)]
+    [(real) (time-result-real result)]))
+
 ;; one sample.
 ;; config := <integer>     ; number of repetition
-;;        |  (cpu <real>)  ; at least <real> seconds in cpu time
+;;        |  (<metric> <real>)  ; at least <real> seconds in <metric> time
 (define (time-this config thunk)
   (define (with-times count thunk)
     (%with-times (thunk) ()
@@ -132,29 +145,27 @@
     (let* ([body (with-times count (^() (dotimes [n count] (thunk))))]
            [skin (with-times count (^() (dotimes [n count] #f)))])
       (time-result- body skin)))
-  (define (cputime result)
-    (+ (time-result-user result) (time-result-sys result)))
 
   ;; Determine the unit repetition count which takes at least 0.3 cpu secs.
-  (define (estimate rep)
+  (define (estimate rep metric)
     (let* ([result (run rep)]
-           [t      (cputime result)])
-      (cond [(< t 0.01) (estimate (* rep 50))]
-            [(< t 0.05) (estimate (* rep 10))]
+           [t      (metric-time metric result)])
+      (cond [(< t 0.01) (estimate (* rep 50) metric)]
+            [(< t 0.05) (estimate (* rep 10) metric)]
             [else (ceiling->exact (* (/. rep t) 0.3))])))
 
   (match config
     [(? integer?) (run config)]
-    [('cpu (? real? secs))
+    [((and metric? metric) (? real? secs))
      (when (< secs 1.0)
        (error "Benchmark duration (cpu time) should be greater than 1.0 for \
                reliable measurement.  We got:" config))
-     (let1 unit (estimate 1)
+     (let1 unit (estimate 1 metric)
        (let loop ([cumu 0] [r #f])
          (if (>= cumu secs)
            r
            (let1 r1 (run unit)
-             (loop (+ cumu (cputime r1))
+             (loop (+ cumu (metric-time metric r1))
                    (if r
                      (time-result+ r r1 :with-count #t)
                      r1))))))]))
@@ -166,11 +177,25 @@
   (cons config
         (map (^s (cons (car s) (time-this config (cdr s)))) samples)))
 
-(define (time-these/report config samples :key (metric 'cpu))
+(define (time-these/report config samples :key (metric #f))
   (report-time-results (time-these config samples) metric))
 
 ;; Show the result of time-these nicely.
-(define (report-time-results result :optional (metric 'cpu))
+(define (report-time-results result :optional (%metric #f))
+  ;; check valid format of the alist part
+  (define (valid-alist? alist)
+    (and (every pair? alist) (every (.$ time-result? cdr) alist)))
+
+  ;; decompose RESULT argument
+  ;;  (<config> (<name> . <time-result>) ...)
+  (define-values [metric config result-alist]
+    (match result
+      [((? integer? config) . (? valid-alist? alist))
+       (values (or %metric 'cpu) config alist)]
+      [((and ((? metric? m) (? real?)) config) . (? valid-alist? alist))
+       (values m config alist)]
+      [_ (error "the argument doesn't seem like a time-these result:" result)]))
+
   ;; returns list of formatted strings and maximum width
   (define (fmt+w formatter vals)
     (let1 fs (map formatter vals)
@@ -180,70 +205,54 @@
   (define (usertime result) (~ result'user))
   (define (systime result)  (~ result'sys))
   (define (cputime result)  (+ (usertime result) (systime result)))
-  (define (rate result)
-    (/. (~ result'count)
-        (case metric
-          [(cpu)  (cputime result)]
-          [(user) (usertime result)]
-          [(sys)  (systime result)]
-          [(real) (realtime result)]
-          [else (error "Metric argument must be either one of (cpu \
-                        user sys real), but got:" metric)])))
+  (define (rate result) (/. (~ result'count) (metric-time metric result)))
   ;; compare rates.  x, y :: <time-result>
   (define (ratio x y) (ff (/ (rate x) (rate y)) 3))
-  ;; show the report
-  (define (show)
-    (match-let1 (config . alist) result
-      ;; header
-      (format #t "Benchmark: ran ~a, each for ~a.\n"
-              (string-join (map (.$ x->string car) alist) ", ")
-              (match config
-                [('cpu secs) (format "at least ~a cpu seconds" secs)]
-                [count       (format "~a times" count)]))
-      ;; individual results
-      (let*-values
-          ([(ts) (map cdr alist)] ;<time-result>s
-           [(ks kw) (fmt+w (.$ x->string car) alist)]    ;key
-           [(rs rw) (fmt+w (^t (ff (realtime t) 3)) ts)]  ;real time
-           [(ps pw) (fmt+w (^t (ff (cputime  t)  3)) ts)] ;cpu time
-           [(us uw) (fmt+w (^t (ff (usertime t) 3)) ts)]  ;user time
-           [(ss sw) (fmt+w (^t (ff (systime  t) 3)) ts)]  ;sys time
-           [(cs cw) (fmt+w (^t (ff (rate t) 2)) ts)]      ;count/s
-           )
-        (for-each
-         (^(k r p u s c n)
-           (format #t
-                   "  ~v@a: ~v@a real, ~v@a cpu (~v@a user + ~v@a sys)@~v@a/s n=~a\n"
-                   kw k rw r pw p uw u sw s cw c n))
-         ks rs ps us ss cs (map (cut ref <> 'count) ts))
-        ;; matrix
-        (let1 mat (map (^y (map (^x (if (eq? x y) "--" (ratio y x))) ts)) ts)
-          (receive (Cs Cw) (fmt+w (^t (if (finite? (rate t))
-                                        ($ x->string $ x->integer $ rate t)
-                                        ($ x->string $ rate t)))
-                                  ts)
-            (let1 Cw (max (+ Cw 2) 4)   ; minimum width for "Rate"
-              (format #t "\n  ~v@a ~v@a" kw "" Cw "Rate")
-              (let1 col-widths (map (pa$ apply max)
-                                    (map (pa$ map string-length)
-                                         (map cons ks (apply map list mat))))
-                (for-each (^(key col-width) (format #t " ~v@a" col-width key))
-                          ks col-widths)
-                (for-each (^(key row C)
-                            (format #t "\n  ~v@a ~v@a/s" kw key (- Cw 2) C)
-                            (for-each (^(col col-width)
-                                        (format #t " ~v@a" col-width col))
-                                      row col-widths))
-                          ks mat Cs))))))
-      (newline)))
-  ;; check valid format of the alist part
-  (define (valid-alist? alist)
-    (and (every pair? alist) (every (.$ time-result? cdr) alist)))
 
-  (match result
-    [((? integer?) . (? valid-alist? alist))     (show)]
-    [(('cpu (? real?)) . (? valid-alist? alist)) (show)]
-    [else (error "the argument doesn't seem like a time-these result:" result)]))
+  ;; main body
+  ;; header
+  (format #t "Benchmark: ran ~a, each for ~a.\n"
+          (string-join (map (.$ x->string car) result-alist) ", ")
+          (match config
+            [(_ secs) (format "at least ~a ~a seconds" secs metric)]
+            [count    (format "~a times" count)]))
+  ;; individual results
+  (let*-values
+      ([(ts) (map cdr result-alist)] ;<time-result>s
+       [(ks kw) (fmt+w (.$ x->string car) result-alist)] ;name
+       [(rs rw) (fmt+w (^t (ff (realtime t) 3)) ts)]  ;real time
+       [(ps pw) (fmt+w (^t (ff (cputime  t)  3)) ts)] ;cpu time
+       [(us uw) (fmt+w (^t (ff (usertime t) 3)) ts)]  ;user time
+       [(ss sw) (fmt+w (^t (ff (systime  t) 3)) ts)]  ;sys time
+       [(cs cw) (fmt+w (^t (ff (rate t) 2)) ts)]      ;count/s
+       )
+    (for-each
+     (^(k r p u s c n)
+       (format #t
+               "  ~v@a: ~v@a real, ~v@a cpu (~v@a user + ~v@a sys)@~v@a/s n=~a\n"
+               kw k rw r pw p uw u sw s cw c n))
+     ks rs ps us ss cs (map (cut ref <> 'count) ts))
+    ;; matrix
+    (let1 mat (map (^y (map (^x (if (eq? x y) "--" (ratio y x))) ts)) ts)
+      (receive (Cs Cw) (fmt+w (^t (if (finite? (rate t))
+                                    ($ x->string $ x->integer $ rate t)
+                                    ($ x->string $ rate t)))
+                              ts)
+        (let1 Cw (max (+ Cw 2) 4)   ; minimum width for "Rate"
+          (format #t "\n  ~v@a ~v@a" kw "" Cw "Rate")
+          (let1 col-widths (map (pa$ apply max)
+                                (map (pa$ map string-length)
+                                     (map cons ks (apply map list mat))))
+            (for-each (^(key col-width) (format #t " ~v@a" col-width key))
+                      ks col-widths)
+            (for-each (^(key row C)
+                        (format #t "\n  ~v@a ~v@a/s" kw key (- Cw 2) C)
+                        (for-each (^(col col-width)
+                                    (format #t " ~v@a" col-width col))
+                                  row col-widths))
+                      ks mat Cs))))))
+    (newline))
+
 ;; Timers ---------------------------------------------
 
 (define-class <time-counter> ()
