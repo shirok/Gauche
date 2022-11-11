@@ -166,11 +166,11 @@
   (cons config
         (map (^s (cons (car s) (time-this config (cdr s)))) samples)))
 
-(define (time-these/report config samples)
-  (report-time-results (time-these config samples)))
+(define (time-these/report config samples :key (metric 'cpu))
+  (report-time-results (time-these config samples) metric))
 
 ;; Show the result of time-these nicely.
-(define (report-time-results result)
+(define (report-time-results result :optional (metric 'cpu))
   ;; returns list of formatted strings and maximum width
   (define (fmt+w formatter vals)
     (let1 fs (map formatter vals)
@@ -180,7 +180,15 @@
   (define (usertime result) (~ result'user))
   (define (systime result)  (~ result'sys))
   (define (cputime result)  (+ (usertime result) (systime result)))
-  (define (rate result)     (/. (~ result'count) (cputime result)))
+  (define (rate result)
+    (/. (~ result'count)
+        (case metric
+          [(cpu)  (cputime result)]
+          [(user) (usertime result)]
+          [(sys)  (systime result)]
+          [(real) (realtime result)]
+          [else (error "Metric argument must be either one of (cpu \
+                        user sys real), but got:" metric)])))
   ;; compare rates.  x, y :: <time-result>
   (define (ratio x y) (ff (/ (rate x) (rate y)) 3))
   ;; show the report
