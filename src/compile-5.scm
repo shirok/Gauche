@@ -933,6 +933,7 @@
         (let1 merge-label (compiled-code-new-label ccb)
           (compiled-code-emit0oi! ccb EXTEND-DENV merge-label ($*-src iform))
           (let1 dbody (pass5/rec ($dynenv-body iform) target renv 'tail)
+            (compiled-code-emit-RET! ccb)
             (compiled-code-set-label! ccb merge-label)
             (imax dkv dbody)))))))
 
