@@ -24451,12 +24451,16 @@ It calls @var{thunk} as many times as the given number.
 @c JP
 指定された回数だけ、@var{thunk}を呼びます。
 @c COMMON
-@item (cpu @var{real})
+@item (@var{metric} @var{real})
 @c EN
-It calls @var{thunk} as many times as the total cpu time exceeds
-the given number of seconds.
+It calls @var{thunk} as many times as the total time exceeds
+the given number of seconds.  @var{Metric} is either one of symbols
+@code{cpu}, @code{user}, @code{sys}, or @code{real}, to specify how
+the time is measured.
 @c JP
-CPU時間の合計が指定された数値(秒)を越えるまで@var{thunk}を繰り返し呼びます。
+時間の合計が指定された数値(秒)を越えるまで@var{thunk}を繰り返し呼びます。
+@var{metric}はシンボル@code{cpu}、@code{user}、@code{sys}、@code{real}の
+いずれかで、どの時間で測るかを指定します。
 @c COMMON
 @end table
 
@@ -24677,15 +24681,17 @@ For example, its first row tells that the benchmark @code{real1} is
 @c COMMON
 
 @c EN
-By default, comparison matrix uses execution rates based on CPU time.
-You can change it by the @var{metric} keyword argument, which can be
-one of the following symbols: @code{cpu} (default), @code{real},
-@code{user}, or @code{sys}.
+The @var{metric} argument specifies which time metric should be used
+for rate calculation and comparison.  It must be either @code{#f}
+or one of the symbols @code{cpu}, @code{user}, @code{sys}, or @code{real}.
+If it is @code{#f} (default), the same metric as @var{how} argument is used
+(if @var{how} is an integer count, @code{cpu} is assumed).
 @c JP
-デフォルトでは、比較マトリクスはCPU時間で計算した実行速度を使います。
-@var{metric}キーワード引数で基づく時間を変更することができます。
-有効な値は次のシンボルのいずれかです：@code{cpu} (デフォルト)、@code{real}、
-@code{user}、@code{sys}。
+@var{metric}引数は、速度計算および比較マトリクスにどの時間を使うかを指定します。
+渡す値は@code{#f}か、シンボル@code{cpu}、@code{real}、
+@code{user}、@code{sys}のいずれかでなければなりません。
+デフォルトは@code{#f}で、その場合は@var{how}に渡したメトリックが使われます
+(@var{how}が回数を指定する整数の場合は、@code{cpu}が使われます)。
 @c COMMON
 @end defun
 
@@ -24704,11 +24710,9 @@ is just a combination of @code{time-these} and this procedure:
 @c EN
 The meaning of the optional @var{metric} argument is the same
 as the @var{metric} keyword argument of @code{time-these/report}.
-If omitted, @code{cpu} is assumed.
 @c JP
 省略可能な@var{metric}引数の意味は、
 @code{time-these/report}の@var{metric}キーワード引数と同じです。
-省略された場合は@code{cpu}が使われます。
 @c COMMON
 
 @example
