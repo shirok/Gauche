@@ -1032,6 +1032,23 @@
            (with-continuation-mark key 2
              (continuation-mark-set->list (current-continuation-marks) key)))))
 
+(test* "continuation marks w/ captured cont 1" '(1)
+       (let ((key '#:key))
+         (with-continuation-mark key 1
+           (let/cc k
+             (with-continuation-mark key 2
+               (continuation-mark-set->list (continuation-marks k) key))))))
+
+(test* "continuation marks w/ captured cont 1" '(2 1)
+       (let* ([key '#:key]
+              [p (with-continuation-mark key 1
+                   (cons (with-continuation-mark key 2
+                           (let/cc k
+                             (with-continuation-mark key 3
+                               (continuation-marks k))))
+                         'a))])
+         (continuation-mark-set->list (car p) key)))
+
 (define-module ccm-fact
   (use gauche.test)
 
