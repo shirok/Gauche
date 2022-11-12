@@ -1887,6 +1887,7 @@ static ScmObj user_eval_inner(ScmObj program,
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep && ep->cstack == vm->cstack) {
                 vm->cont = ep->cont;
+                vm->denv = ep->denv;
                 vm->pc = PC_TO_RETURN;
                 /* restore reset-chain for reset/shift */
                 if (ep->cstack) vm->resetChain = ep->resetChain;
@@ -2573,6 +2574,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         /* Install the continuation */
         vm->cont = ep->cont;
+        vm->denv = ep->denv;
         if (ep->errorReporting) {
             SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
         }
@@ -2729,6 +2731,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->prev = vm->escapePoint;
     ep->ehandler = handler;
     ep->cont = vm->cont;
+    ep->denv = vm->denv;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->xhandler = Scm_VMCurrentExceptionHandler();
@@ -3011,7 +3014,7 @@ ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag)
     }
     ScmEscapePoint *ep = (ScmEscapePoint*)SCM_SUBR(contProc)->data;
     ScmContFrame *cont = ep->cont;
-    return make_continuation_mark_set(Scm_VM(), cont, cont->denv, promptTag);
+    return make_continuation_mark_set(Scm_VM(), cont, ep->denv, promptTag);
 }
 
 
@@ -3028,6 +3031,7 @@ ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmContFrame *c = cmset->cont;
     ScmObj p = cmset->denv;
+
     while (c && c->denv == p) {
         /* no new marks in the current frame */
         c = c->prev;
@@ -3196,6 +3200,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
      */
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
+    vm->denv = ep->denv;
     /* restore reset-chain for reset/shift */
     if (ep->cstack) vm->resetChain = ep->resetChain;
 
@@ -3299,10 +3304,12 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ScmVM *vm = theVM;
 
     save_cont(vm);
+
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = vm->cont;
+    ep->denv = vm->denv;
     ep->handlers = vm->handlers;
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
@@ -3352,6 +3359,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
+    ep->denv = vm->denv;
     ep->handlers = SCM_NIL; /* don't use for partial continuation */
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */

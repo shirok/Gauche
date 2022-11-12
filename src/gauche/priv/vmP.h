@@ -146,6 +146,7 @@ typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *prev;
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
+    ScmObj denv;                /* saved denv */
     ScmObj handlers;            /* saved dynamic handler chain */
     ScmCStack *cstack;          /* vm->cstack when escape point is created.
                                    this will be used to rewind cstack.
