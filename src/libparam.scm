@@ -131,9 +131,35 @@
    [else (param prev-val)]))
 
 ;; Actual processing of the parameterization.
-;; gauche.internal#%parameterize is embedded in the copiled code, so do not
-;; change the API across releases.
+;;  gauche.internal#%parameterize is embedded in the compiled code, so do not
+;;  change the API across releases.
 (define (%parameterize params orig-vals thunk)
+  ;; Returns list of filters if all params are parameter procedures.
+  ;; If not, we fallback to the old parameterize.
+  (define (gather-filters params)
+    (cond [(null? params) '()]
+          [(compatible-parameter (car params))
+           => (^p (and-let1 tail (gather-filters (cdr params))
+                    (cons (or (slot-ref p 'filter) identity) tail)))]
+          [else #f]))
+  (define (compatible-parameter param)
+    (and-let1 p (procedure-parameter param)
+      (and (not (slot-bound? p 'pre-observers))
+           (not (slot-bound? p 'post-observers))
+           p)))
+  (define (apply-filters filters vals)
+    (if (null? filters)
+      '()
+      (cons ((car filters) (car vals))
+            (apply-filters (cdr filters) (cdr vals)))))
+
+  (if-let1 filters (gather-filters params)
+    (%with-parameterization (map procedure-parameter params)
+                            (apply-filters filters orig-vals)
+                            thunk)
+    (%parameterize-old params orig-vals thunk)))
+
+(define (%parameterize-old params orig-vals thunk)
   (let ([restarted #f]
         [saved '()])
     (dynamic-wind
@@ -146,6 +172,7 @@
         (thunk))
       (^[] (set! restarted #t)
         (set! saved (map (^[p v] (%restore-parameter p v)) params saved))))))
+
 
 (select-module gauche)
 

@@ -3396,6 +3396,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
         vm->cont = NULL;
     } else {
         vm->cont = c;
+        vm->denv = cp ? cp->denv : c->denv;
     }
 
     return Scm_VMApply1(proc, contproc);

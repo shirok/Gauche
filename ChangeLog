@@ -1,3 +1,8 @@
+2022-11-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/libparam.scm (%parameterize): Start using dynamic env to keep
+	  ordinary parameters.
+
 2022-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/time.scm (time-these/report, report-time-results):
