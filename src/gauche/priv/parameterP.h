@@ -75,4 +75,7 @@ typedef struct ScmParameterKeyRec {
 
 SCM_EXTERN void Scm_PushParameterization(ScmObj params, ScmObj vals);
 
+/* Obtain uninterned symbol saved in the info slot of parameter subr. */
+SCM_EXTERN ScmObj Scm__GetParameterSymbol();
+
 #endif /*GAUCHE_PRIV_PARAMETERP_H*/

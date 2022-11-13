@@ -86,14 +86,13 @@
      (^[val] ((slot-ref p 'setter) val)))))
 
 (define (parameter? obj)
-  (and (procedure? obj)
-       (is-a? (procedure-info obj) <parameter>)))
+  (boolean (procedure-parameter obj)))
 
-(define (procedure-parameter proc)
-  (and-let* ([ (procedure? proc) ]
-             [p (procedure-info proc)]
-             [ (is-a? p <primitive-parameter>) ])
-    p))
+(define-cproc procedure-parameter (proc)
+  (if (and (SCM_SUBRP proc)
+           (SCM_EQ (SCM_PROCEDURE_INFO proc) (Scm__GetParameterSymbol)))
+    (return (SCM_OBJ (SCM_SUBR_DATA proc)))
+    (return SCM_FALSE)))
 
 (select-module gauche.internal)
 

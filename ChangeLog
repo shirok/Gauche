@@ -1,5 +1,12 @@
 2022-11-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/parameter.c: Change how parameter procedure keeps parameter
+	  object.  Now we emply the same way as continuation procedure;
+	  that is, SCM_PROCEDURE_INFO holds a unique uninterned symbol,
+	  and the extractino procedure can use SCM_SUBR_DATA.
+	  NB: With this change, parameter? returns #t for primitive parameter
+	  procedures as well.  It should be.
+
 	* src/libparam.scm (%parameterize): Start using dynamic env to keep
 	  ordinary parameters.
 

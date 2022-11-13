@@ -68,6 +68,10 @@
 static ScmObj key_name = SCM_FALSE;
 static ScmObj key_initial_value = SCM_FALSE;
 
+/* #:parameter, to mark parameter procedure.
+   Initialized in Scm__InitParameter */
+static ScmObj sym_parameter = SCM_FALSE;
+
 /* Class stuff */
 static void pparam_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
 static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED);
@@ -187,11 +191,10 @@ static ScmObj general_param_proc(ScmObj *argv, int argc, void *data)
 
 ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
 {
-    /* NB: We save p to the info field as well for the introspection. */
     if (SCM_EQ(Scm_ClassOf(SCM_OBJ(p)), SCM_CLASS_PRIMITIVE_PARAMETER)) {
-        return Scm_MakeSubr(prim_param_proc, p, 0, 1, SCM_OBJ(p));
+        return Scm_MakeSubr(prim_param_proc, p, 0, 1, sym_parameter);
     } else {
-        return Scm_MakeSubr(general_param_proc, p, 0, 1, SCM_OBJ(p));
+        return Scm_MakeSubr(general_param_proc, p, 0, 1, sym_parameter);
     }
 }
 
@@ -271,11 +274,21 @@ ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
     return p;
 }
 
+ScmObj Scm__GetParameterSymbol()
+{
+    return sym_parameter;
+}
+
 void Scm__InitParameter(void)
 {
     /* We don't initialize Scm_PrimitiveParameterClass yet, since class
        stuff is not initialized yet.  The class is initialized in
        class.c. */
+
+    /* NB: At this moment, symbols are not initialized, but making uninterned
+       symbol is ok. */
+    sym_parameter =
+        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("parameter")), FALSE);
 }
 
 #if GAUCHE_API_VERSION < 98
