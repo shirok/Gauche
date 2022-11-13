@@ -92,7 +92,7 @@
 (define (procedure-parameter proc)
   (and-let* ([ (procedure? proc) ]
              [p (procedure-info proc)]
-             [ (is-a? p <parameter>) ])
+             [ (is-a? p <primitive-parameter>) ])
     p))
 
 (select-module gauche.internal)
@@ -140,13 +140,17 @@
     (cond [(null? params) '()]
           [(compatible-parameter (car params))
            => (^p (and-let1 tail (gather-filters (cdr params))
-                    (cons (or (slot-ref p 'filter) identity) tail)))]
+                    (if (is-a? p <parameter>)
+                      (cons (or (slot-ref p 'filter) identity) tail)
+                      (cons identity tail))))]
           [else #f]))
   (define (compatible-parameter param)
-    (and-let1 p (procedure-parameter param)
-      (and (not (slot-bound? p 'pre-observers))
-           (not (slot-bound? p 'post-observers))
-           p)))
+    (and-let* ([p (procedure-parameter param)]
+               [ (if (is-a? p <parameter>)
+                   (and (not (slot-bound? p 'pre-observers))
+                        (not (slot-bound? p 'post-observers)))
+                   (is-a? p <primitive-parameter>)) ])
+      p))
   (define (apply-filters filters vals)
     (if (null? filters)
       '()
