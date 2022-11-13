@@ -1135,4 +1135,11 @@
          (with-continuation-mark 'key 'mark2
            (continuation-mark-set-first #f 'key2 'default))))
 
+;; See if parameterize body is evaluated in tail context
+;; (srfi-226)
+(test* "parameterize body in tail context" #t
+       (with-continuation-mark 'in-tail-context #t
+         (parameterize ([(make-parameter 0) 1])
+           (call-with-immediate-continuation-mark 'in-tail-context identity))))
+
 (test-end)
