@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "gauche.h"
 #include "gauche/vm.h"
+#include "gauche/priv/vmP.h"
 
 int errcount = 0;
 
@@ -20,16 +21,35 @@ void message(FILE *out, const char *m, int filler)
     putc('\n', out);
 }
 
+int is_valid_stack_outcome(ScmObj *pre_sp, ScmVM *post_vm)
+{
+    ScmObj *post_sp = post_vm->sp;
+
+    if (pre_sp == post_sp) return TRUE;
+
+    /* Boundary cont frame pushes ScmPromptData before it.  After boundary
+       cont frame is popped, ScmPromptData still remains.  (It will eventually
+       be GC-ed when active frames get moved to the heap.)
+    */
+    if (pre_sp + (sizeof(ScmPromptData)/sizeof(ScmObj)) == post_sp)
+        return TRUE;
+
+    /* Stack has been emptied. */
+    if (post_sp == post_vm->stack) return TRUE;
+
+    return FALSE;
+}
+
 void test_eval(const char *msg, const char *sexp)
 {
-    ScmObj *pre_stack = Scm_VM()->sp, *post_stack;
+    ScmVM *vm = Scm_VM();
+    ScmObj *pre_sp = vm->sp;
     ScmObj x = Scm_ReadFromCString(sexp);
     printf("%s ... ", msg);
     Scm_Eval(x, SCM_UNBOUND, NULL); /* ignore errors */
 
-    post_stack = Scm_VM()->sp;
-    if (pre_stack != post_stack) {
-        printf("ERROR.\n");
+    if (!is_valid_stack_outcome(pre_sp, vm)) {
+        printf("ERROR\n");
         errcount++;
     } else {
         printf("ok\n");
@@ -66,9 +86,10 @@ int main(int argc SCM_UNUSED, char **argv SCM_UNUSED)
     if (errcount) {
         fprintf(stderr, "failed.\n");
         fprintf(stdout, "failed.\n");
+        return 1;
     } else {
         fprintf(stderr, "passed.\n");
         fprintf(stdout, "passed.\n");
+        return 0;
     }
-    return 0;
 }
