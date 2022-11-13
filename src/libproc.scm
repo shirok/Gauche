@@ -136,6 +136,15 @@
         (return (SCM_CDAR p))))
     (return fallback)))
 
+;; srfi-226
+;; We use uninterned symbols for unique continuation mark key.
+;; Since we don't have specialized procedures for the keys specifically
+;; created with make-continuation-mark-key, our continuation-mark-key?
+;; returns #t for all objects.
+(define (make-continuation-mark-key :optional (name 'continuation-mark-key-))
+  (gensym (x->string name)))
+(define (continuation-mark-key? obj) #t)
+
 ;;;
 ;;; Useful gadgets
 ;;;
