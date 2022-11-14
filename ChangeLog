@@ -1,3 +1,7 @@
+2022-11-13  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi-236.scm: Added.
+
 2022-11-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c: Change how parameter procedure keeps parameter

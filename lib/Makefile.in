@@ -70,7 +70,7 @@ SCMFILES = \
        srfi-209.scm srfi-214.scm srfi-217.scm srfi-219.scm \
        srfi-221.scm srfi-222.scm srfi-227.scm \
        srfi-227/*.scm srfi/227/*.scm srfi-229.scm \
-       srfi-232.scm \
+       srfi-232.scm srfi-236.scm \
        slib.scm \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
