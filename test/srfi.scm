@@ -2791,4 +2791,16 @@
   (use srfi-232)
   (include "include/srfi-232-tests"))
 
+;;-----------------------------------------------------------------------
+(test-section "srfi-236")
+(use srfi-236)
+(test-module 'srfi-236)
+
+(define-module srfi-236-tests
+  (use gauche.test)
+  (use srfi-78)
+  (use srfi-236)
+  (define-syntax import (syntax-rules () [(_ . x) #f]))
+   (include "include/srfi-236-tests"))
+
 (test-end)
