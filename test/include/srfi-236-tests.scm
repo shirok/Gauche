@@ -16,13 +16,16 @@
    v)
  => '(ok . #f))
 
+(define (set-car+cdr! p x y)
+  (independently
+   (set-car! p x)
+   (set-cdr! p y)))
+
 (check
- (let ((v (list 1 2)))
-   (independently
-    (list-set! v 0 10)
-    (list-set! v 1 10))
-   (+ (car v) (cadr v)))
- => 20)
+ (let ((p (cons 1 2)))
+   (set-car+cdr! p 10 20)
+   p)
+ => '(10 . 20))
 
 (check
  (let ((v (vector 1 2 3)))
@@ -32,5 +35,13 @@
     (vector-set! v 2 30))
    v)
  => '#(10 20 30))
+
+(check
+ (let ((x '()))
+   (independently
+    (set! x (cons 1 x))
+    (set! x (cons 2 x)))
+   (apply + x))
+ => 3)
 
 (check-report)
