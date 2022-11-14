@@ -45,6 +45,7 @@
                              assume assume-type
                              dotimes dolist do-plist doplist
                              ecase cond-list define-condition-type condition
+                             with-continuation-marks
                              unwind-protect
                              let-keywords let-keywords* let-optionals*
                              lcons lcons* llist*
@@ -1040,6 +1041,19 @@
                      [_ (error "malformed condition:" f)])
                    type-field-binding)))]
        [_ (error "malformed condition:" f)]))))
+
+;;; continuation marks
+
+(define-syntax with-continuation-marks
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ () . body) (quasirename r `(let () ,@body))]
+       [(_ ((key val) . rest) . body)
+        (quasirename r
+          `(with-continuation-mark ,key ,val
+             (with-continuation-marks ,rest ,@body)))]
+       [_ (error "malformed with-continuation-marks:" f)]))))
 
 
 ;;; unwind-protect

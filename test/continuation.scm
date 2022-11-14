@@ -1083,6 +1083,16 @@
   (test* "tail-recursive fact" '(1)
          (t fact2)))
 
+(test* "with-continuation-marks"
+       '((5 1) (2) (4 3))
+       (let1 p (with-continuation-marks (['a 1] ['b 2] ['c 3])
+                 (cons (with-continuation-marks (['c 4] ['a 5])
+                         (current-continuation-marks))
+                       3))
+         (list (continuation-mark-set->list (car p) 'a)
+               (continuation-mark-set->list (car p) 'b)
+               (continuation-mark-set->list (car p) 'c))))
+
 ;; delimited
 (test* "current-continuation-marks w/tag" '(d c)
        (let* ([tag (make-continuation-prompt-tag)]
