@@ -74,7 +74,7 @@ SCMFILES = \
        slib.scm \
        check-script \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
-       gauche/test/diff.scm \
+       gauche/test/diff.scm gauche/test/include.scm \
        gauche/time.scm gauche/connection.scm \
        gauche/redefutil.scm \
        gauche/vecutil.scm gauche/portutil.scm \
