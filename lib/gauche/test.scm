@@ -86,6 +86,8 @@
           test-module test-script test*/diff
           test-error test-one-of test-none-of
           test-check test-check-diff
+          test-include-r7
+
           test-report-failure test-report-failure-plain
           test-report-failure-diff
           test-record-file test-summary-check
@@ -99,6 +101,7 @@
 (autoload "gauche/test/script" test-script)
 (autoload "gauche/test/diff"
           (:macro test*/diff) test-check-diff test-report-failure-diff)
+(autoload "gauche/test/include" (:macro test-include-r7))
 
 ;; An object to represent error.  This class isn't exported; the user
 ;; must use `test-error' procedure to create an instance.

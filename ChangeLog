@@ -1,3 +1,8 @@
+2022-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test/include.scm (test-include-r7): Added.  Make it easier
+	  to include r7rs test script in Gauche tests.
+
 2022-11-13  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-236.scm: Added.
