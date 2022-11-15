@@ -85,7 +85,7 @@
                   If you intend to import Gauche's built-in bindings, \
                   say (import (gauche base)).\n"))
          (list (library-name->module-name import-set))]))
-    (let1 import-spec (rec import-set)
+    (let1 import-spec (rec (unwrap-syntax import-set))
       `((,require-if-module-doesnt-exist. ,(car import-spec))
         (,import. ,import-spec)))))
 
