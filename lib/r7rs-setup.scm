@@ -46,7 +46,7 @@
 (define-module r7rs.import
   (use util.match)
   (use scheme.list)
-  (export (rename import r7rs-import))
+  (export r7rs-import)
 
   ;; A trick - must be replaced once we have explicit-renaming macro.
   (define import.  ((with-module gauche.internal make-identifier)
