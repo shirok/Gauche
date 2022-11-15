@@ -1921,13 +1921,9 @@
 
 (define-module srfi-116-tests
   (use gauche.test)
-  (use srfi-128)
   (use srfi-116)
-  (use srfi-64 :rename ((test-equal test-equal*)))
-  (define-syntax import                 ;ignore
-    (syntax-rules ()
-      [(_ . xs) (begin)]))
-  (include "include/srfi-116-tests.scm"))
+  (test-include-r7 "include/srfi-116-tests.scm"
+                   (exclude (ilists ilists))))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-117")
@@ -2202,17 +2198,15 @@
 
 (define-module srfi-135-tests
   (use gauche.test)
-  (use gauche.uvector)
-  (use srfi-135)
+  ;; srfi-135-tests.scm rolls its own test framework; this hack adapts them
+  ;; to Gauche's.
   (define-syntax orig-or (with-module gauche or))
   (define-syntax or
     (syntax-rules (fail)
       [(_ x (fail 'what))
        (test* (format "~a: ~s" 'what 'x) #t x)]
       [(_ . xs) (orig-or . xs)]))
-  (define-syntax import
-    (syntax-rules () [(_ . x) #f]))
-  (include "include/srfi-135-tests.scm"))
+  (test-include-r7 "include/srfi-135-tests.scm"))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-141")
@@ -2570,11 +2564,8 @@
 (test-module 'srfi-189)
 
 (define-module srfi-189-tests
-  (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (use srfi-189)
-  (use srfi-78)                         ; check
-  (use scheme.base :only (raise-continuable error-object?))
-  (include "include/srfi-189-tests"))
+  (use gauche.test)
+  (test-include-r7 "include/srfi-189-tests"))
 
 ;;-----------------------------------------------------------------------
 ;; NB: srfi-192 is tested in gauche.vport
@@ -2605,11 +2596,8 @@
 (test-module 'srfi-217)
 
 (define-module srfi-217-tests
-  (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (use scheme.list)
-  (use srfi-78)                         ; check
-  (use srfi-217)
-  (include "include/srfi-217-test"))
+  (use gauche.test)
+  (test-include-r7 "include/srfi-217-test"))
 
 ;; Here are some tests specifically tailored to check
 ;; the corner case of Gauche's implementation
@@ -2652,12 +2640,8 @@
 (test-module 'srfi-221)
 
 (define-module srfi-221-tests
-  (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (use srfi-41)
-  (use srfi-158)
-  (use srfi-64)
-  (use srfi-221)
-  (include "include/srfi-221-test"))
+  (use gauche.test)
+  (test-include-r7 "include/srfi-221-test"))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-222")
@@ -2665,11 +2649,10 @@
 (test-module 'srfi-222)
 
 (define-module srfi-222-tests
-  (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (use gauche.record)
-  (use srfi-64)
+  (use gauche.test)
   (use srfi-222)
-  (include "include/srfi-222-tests"))
+  (test-include-r7 "include/srfi-222-tests"
+                   (exclude (compounds))))
 
 ;; Gauche object protocol
 (test* "hash function of compound" #t
@@ -2775,10 +2758,8 @@
 (test-module 'srfi-229)
 
 (define-module srfi-229-tests
-  (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (use srfi-64)
-  (use srfi-229)
-  (include "include/srfi-229-tests"))
+  (use gauche.test)
+  (test-include-r7 "include/srfi-229-tests"))
 
 ;;-----------------------------------------------------------------------
 (test-section "srfi-232")
@@ -2801,6 +2782,6 @@
   (use srfi-78)
   (use srfi-236)
   (define-syntax import (syntax-rules () [(_ . x) #f]))
-   (include "include/srfi-236-tests"))
+  (include "include/srfi-236-tests"))
 
 (test-end)
