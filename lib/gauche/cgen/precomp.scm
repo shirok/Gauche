@@ -339,7 +339,7 @@
             (set! CONT_FRAME_SIZE %cf-orig))
           (compile expr mod))))]
    [else
-    (compile expr mod (target-parameters))]))
+    (compile expr mod :target-params (target-parameters))]))
 
 ;; TRNASIENT: !!!KLUGE!!!
 ;; This is only to compile 0.9.13 by 0.9.12.  Remove this after 0.9.13 release.
