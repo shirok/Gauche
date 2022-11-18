@@ -3384,7 +3384,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     call_dynamic_handlers(reset_handlers, vm->handlers);
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
-                                   SCM_MAKE_STR("continuation"));
+                                   continuation_symbol);
     /* Remove the saved continuation chain.
        NB: vm->cont can be NULL if we've been executing a partial continuation.
            It's ok, for a continuation pointed by cstack will be restored
