@@ -790,6 +790,22 @@
            (k2)
            (k1))))
 
+(let ([p (make-parameter 0)]
+      [c #f])
+  (define (foo)
+    (reset
+     (display (p))
+     (parameterize ((p 1))
+       (let/cc cont
+         (display (p))
+         (shift k (display (p)) (cont k))
+         (display (p))))))
+  (test* "reset/shift + call/cc + parameterize" "010"
+         (with-output-to-string
+           (^[] (set! c (foo)))))
+  (test* "reset/shift + call/cc + parameterize" "1"
+         (with-output-to-string c)))
+
 (test* "reset/shift + with-error-handler 1"
        "[E01][E02]"
        (with-output-to-string
