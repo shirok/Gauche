@@ -96,7 +96,7 @@ SCMFILES = \
        gauche/selector.scm gauche/logger.scm \
        gauche/common-macros.scm gauche/singleton.scm gauche/validator.scm \
        gauche/version.scm gauche/version-alist.scm \
-       gauche/partcont.scm gauche/partcont-meta \
+       gauche/partcont.scm gauche/partcont-meta.scm \
        gauche/lazy.scm gauche/base.scm \
        gauche/interpolate.scm gauche/listener.scm \
        gauche/config.scm gauche/configure.scm gauche/reload.scm \
