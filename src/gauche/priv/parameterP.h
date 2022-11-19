@@ -48,30 +48,8 @@
 struct ScmPrimitiveParameterRec {
     SCM_INSTANCE_HEADER;
     ScmThreadLocal *tl;
-    ScmObj key;                 /* ScmParameterKey.  See below. */
     u_long flags;
 };
-
-/* Parameter bindings (other than the global ones) are kept in VM's
- * dynamic environment (denv), using a special internal object
- * ScmParameterKey as keys.
- *
- * We don't use parameters as keys, for a user can use parameters
- * as keys for their own purpose, and we don't want
- * (with-continuation-mark <parameter> <obj> <expr>) interfere with
- * parameterization.
- */
-
-SCM_CLASS_DECL(Scm_ParameterKeyClass);
-#define SCM_CLASS_PARAMETER_KEY  (&Scm_ParameterKeyClass)
-#define SCM_PARAMETER_KEY(obj)   ((ScmParameterKey*)obj)
-#define SCM_PARAMETER_KEY_P(obj) SCM_ISA(obj,SCM_CLASS_PARAMETER_KEY)
-
-typedef struct ScmParameterKeyRec {
-    SCM_HEADER;
-    ScmPrimitiveParameter *p;
-} ScmParameterKey;
-
 
 SCM_EXTERN void Scm_PushParameterization(ScmObj params, ScmObj vals);
 

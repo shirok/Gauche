@@ -3711,7 +3711,6 @@ void Scm__InitClass(void)
 
     /* parameter.c */
     BINIT(SCM_CLASS_PRIMITIVE_PARAMETER, "<primitive-parameter>", NULL);
-    CINIT(SCM_CLASS_PARAMETER_KEY,    "<parameter-key>");
 
     /* port.c */
     /* initialized in Scm__InitPort */
