@@ -498,6 +498,38 @@
               (abort-current-continuation tag1 'foo))))))
 
 ;;-----------------------------------------------------------------------
+;; Parameterizations
+;;
+
+(test-section "parameterization")
+
+;; from srfi-226
+(let ()
+  (define p (make-parameter 10 (^x (* x x))))
+  (define ps #f)
+
+  (test* "parameter" 100 (p))
+  (test* "parameter" 100 (p 12))
+  (test* "parameter" 144 (p))
+  (test* "parameter?" #t (parameter? p))
+
+  (test* "current-parameterization" 20736
+         (parameterize ([p (p)])
+           (set! ps (current-parameterization))
+           (p)))
+  (test* "parameter restore" 144 (p))
+
+  (test* "parameterization?" #t (parameterization? ps))
+
+  (test* "call-with-parameterization" '((20736 0) 144)
+         (let1 r (call-with-parameterization ps
+                   (^[] (let ([x (p)])
+                          (p 0)
+                          (list x (p)))))
+           (list r (p))))
+  )
+
+;;-----------------------------------------------------------------------
 ;; Partial continuations
 
 (test-section "partial continuations")
