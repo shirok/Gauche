@@ -38,7 +38,8 @@
 (use util.match)
 
 (inline-stub
- (declcode (.include <gauche/priv/parameterP.h>)))
+ (declcode (.include <gauche/priv/parameterP.h>
+                     <gauche/priv/vmP.h>)))
 
 (declare (keep-private-macro parameterize))
 
@@ -193,3 +194,20 @@
         (quasirename r
           `(,%parameterize (list ,@param) (list ,@val) (^[] ,@body)))]
        [(_ . x) (error "Invalid parameterize form:" f)]))))
+
+(define-cproc current-parameterization ()
+  Scm_CurrentParameterization)
+
+(define-cproc parameterization? (obj) ::<boolean>
+  SCM_PARAMETERIZATIONP)
+
+;; TRANSIENT: To compile 0.9.13 with 0.9.12
+(inline-stub
+ (declare-stub-type <parameterization> "ScmParameterization*")
+ )
+
+(define-cproc call-with-parameterization (parameterization::<parameterization>
+                                          thunk)
+  (let* ([k (Scm__GetDenvKey SCM_DENV_KEY_PARAMETERIZATION)])
+    (Scm_VMPushDynamicEnv k (-> parameterization parameterization))
+    (return (Scm_VMApply0 thunk))))

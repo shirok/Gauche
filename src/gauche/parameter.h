@@ -85,6 +85,21 @@ SCM_EXTERN ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
                                                              ScmObj initval,
                                                              u_long flags);
 
+/*
+ * Parameterization
+ *   An object to take the parameterization (entire mapping from parameter
+ *   objects to the current dynamic values) into Scheme world.
+ */
+
+typedef struct ScmParameterizationRec ScmParameterization;
+
+SCM_CLASS_DECL(Scm_ParameterizationClass);
+#define SCM_CLASS_PARAMETERIZATION  (&Scm_ParameterizationClass)
+#define SCM_PARAMETERIZATION(obj)   ((ScmParameterization*)obj)
+#define SCM_PARAMETERIZATIONP(obj)  SCM_ISA(obj,SCM_CLASS_PARAMETERIZATION)
+
+SCM_EXTERN ScmObj Scm_CurrentParameterization();
+
 /* TRANSIENT - exposed only for the backward compatibility - will be gone by 1.0 */
 #if GAUCHE_API_VERSION < 98
 typedef struct ScmParameterLocRec {

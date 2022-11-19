@@ -80,6 +80,10 @@ SCM_DEFINE_BASE_CLASS(Scm_PrimitiveParameterClass, ScmPrimitiveParameter,
                       pparam_print, NULL, NULL, pparam_allocate,
                       SCM_CLASS_OBJECT_CPL);
 
+SCM_DEFINE_BUILTIN_CLASS(Scm_ParameterizationClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+
 static void pparam_print(ScmObj obj,
                          ScmPort *out,
                          ScmWriteContext *ctx SCM_UNUSED)
@@ -195,6 +199,17 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
  *  Note that the tail of parameter alist is shared with the
  *  outer parameterization.
  */
+
+ScmObj Scm_CurrentParameterization()
+{
+    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
+    ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
+
+    ScmParameterization *pz = SCM_NEW(ScmParameterization);
+    SCM_SET_CLASS(pz, SCM_CLASS_PARAMETERIZATION);
+    pz->parameterization = parameterization;
+    return SCM_OBJ(pz);
+}
 
 void Scm_PushParameterization(ScmObj params, ScmObj vals)
 {

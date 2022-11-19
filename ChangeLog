@@ -1,3 +1,8 @@
+2022-11-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c, src/libparam.scm (current-parameterization),
+	  (parameterization?, call-with-parameterization): Added.
+
 2022-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test/include.scm (test-include-r7): Added.  Make it easier

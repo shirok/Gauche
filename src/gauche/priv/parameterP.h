@@ -53,6 +53,11 @@ struct ScmPrimitiveParameterRec {
 
 SCM_EXTERN void Scm_PushParameterization(ScmObj params, ScmObj vals);
 
+struct ScmParameterizationRec {
+    SCM_HEADER;
+    ScmObj parameterization;
+};
+
 /* Obtain uninterned symbol saved in the info slot of parameter subr. */
 SCM_EXTERN ScmObj Scm__GetParameterSymbol();
 
