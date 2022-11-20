@@ -31,6 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <gauche/priv/atomicP.h>
+
 #ifndef GAUCHE_PRIV_PARAMETERP_H
 #define GAUCHE_PRIV_PARAMETERP_H
 
@@ -41,14 +43,20 @@
  * the same way as it is invoked in the same thread; it is wrong if the former
  * sees a different dynamic bindings than another.
  *
- * We gradually move to separete those two.  For the time being, though,
+ * We gradually move to separate those two.  For the time being, though,
  * we implement parameters on top of thread locals.
  */
 
 struct ScmPrimitiveParameterRec {
     SCM_INSTANCE_HEADER;
-    ScmThreadLocal *tl;
     u_long flags;
+    ScmObj name;
+
+    /* 'global' value of the parameter. */
+    union {
+        ScmThreadLocal *tl;     /* thread-local parameter */
+        ScmAtomicVar v;         /* 'shared' parameter */
+    } g;
 };
 
 SCM_EXTERN void Scm_PushParameterization(ScmObj params, ScmObj vals);

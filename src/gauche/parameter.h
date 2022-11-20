@@ -64,6 +64,9 @@ SCM_CLASS_DECL(Scm_PrimitiveParameterClass);
 enum {
     /* value may be a promise; dereference automaticlaly forces it */
     SCM_PARAMETER_LAZY = (1UL << 0),
+
+    /* non-thread-local (srfi-226) parameters */
+    SCM_PARAMETER_SHARED = (1UL << 1),
 };
 
 SCM_EXTERN ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,

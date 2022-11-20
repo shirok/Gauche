@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/vm.h"
 #include "gauche/priv/vmP.h"
+#include "gauche/priv/atomicP.h"
 #include "gauche/priv/parameterP.h"
 
 /*
@@ -62,11 +63,12 @@
  * I take Guile's approach.
  */
 
-/* :name and :initial-value.  These keywords are set on-demand,
+/* :name, :initial-value, and :shared.  These keywords are set on-demand,
    since at the time of Scm_InitParameter we haven't initialized
    symbol subsystem yet.  */
 static ScmObj key_name = SCM_FALSE;
 static ScmObj key_initial_value = SCM_FALSE;
+static ScmObj key_shared = SCM_FALSE;
 
 /* #:parameter, to mark parameter procedure.
    Initialized in Scm__InitParameter */
@@ -88,9 +90,11 @@ static void pparam_print(ScmObj obj,
                          ScmPort *out,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
-    Scm_Printf(out, "#<%A %S @%p>",
+    ScmPrimitiveParameter *p = SCM_PRIMITIVE_PARAMETER(obj);
+    Scm_Printf(out, "#<%A %S %s@%p>",
                Scm_ShortClassName(Scm_ClassOf(obj)),
-               SCM_PRIMITIVE_PARAMETER(obj)->tl->name,
+               p->name,
+               (p->flags & SCM_PARAMETER_SHARED ? "(shared) " : ""),
                obj);
 }
 
@@ -103,6 +107,9 @@ static void ensure_parameter_init_keywords()
     if (SCM_FALSEP(key_initial_value)) {
         key_initial_value = SCM_MAKE_KEYWORD("initial-value");
     }
+    if (SCM_FALSEP(key_shared)) {
+        key_shared = SCM_MAKE_KEYWORD("shared");
+    }
 }
 
 static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
@@ -110,8 +117,13 @@ static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
     ensure_parameter_init_keywords();
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     ScmObj initval = Scm_GetKeyword(key_initial_value, initargs, SCM_FALSE);
+    ScmObj shared = Scm_GetKeyword(key_shared, initargs, SCM_FALSE);
+    u_long flags = 0;
+    if (!SCM_FALSEP(shared)) {
+        flags |= SCM_PARAMETER_SHARED;
+    }
     ScmPrimitiveParameter *p =
-        Scm_MakePrimitiveParameter(klass, name, initval, 0);
+        Scm_MakePrimitiveParameter(klass, name, initval, flags);
     return SCM_OBJ(p);
 }
 
@@ -137,8 +149,14 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     } else {
         p = SCM_NEW_INSTANCE(ScmPrimitiveParameter, klass);
     }
-    p->tl = Scm_MakeThreadLocal(name, initval, SCM_THREAD_LOCAL_INHERITABLE);
     p->flags = flags;
+    p->name = name;
+    if (flags & SCM_PARAMETER_SHARED) {
+        AO_store(&p->g.v, SCM_WORD(initval));
+    } else {
+        p->g.tl = Scm_MakeThreadLocal(name, initval,
+                                      SCM_THREAD_LOCAL_INHERITABLE);
+    }
     return p;
 }
 
@@ -222,7 +240,7 @@ void Scm_PushParameterization(ScmObj params, ScmObj vals)
     ScmObj h = SCM_NIL, t = SCM_NIL;
 
     while (SCM_PAIRP(params)) {
-        SCM_APPEND1(h, t, Scm_Cons(SCM_CAR(params), SCM_CAR(vals)));
+        SCM_APPEND1(h, t, SCM_LIST2(SCM_CAR(params), SCM_CAR(vals)));
         params = SCM_CDR(params);
         vals = SCM_CDR(vals);
     }
@@ -239,9 +257,15 @@ ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
     ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
     ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
     ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
-    if (SCM_PAIRP(r)) return SCM_CDR(r);
 
-    ScmObj v = Scm_ThreadLocalRef(vm, p->tl);
+    if (SCM_PAIRP(r)) return SCM_CADR(r);
+
+    ScmObj v;
+    if (p->flags & SCM_PARAMETER_SHARED) {
+        v = SCM_OBJ(AO_load(&p->g.v));
+    } else {
+        v = Scm_ThreadLocalRef(vm, p->g.tl);
+    }
     if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(v);
     else return v;
 }
@@ -252,15 +276,23 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
     ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
     ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
     ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
+
     if (SCM_PAIRP(r)) {
-        ScmObj old = SCM_CDR(r);
-        SCM_SET_CDR(r, val);
+        ScmObj old = SCM_CADR(r);
+        SCM_SET_CAR(SCM_CDR(r), val);
         return old;
-    } else {
-        ScmObj v = Scm_ThreadLocalSet(vm, p->tl, val);
-        if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(v);
-        else return v;
     }
+
+    ScmObj old;
+    if (p->flags & SCM_PARAMETER_SHARED) {
+        old = SCM_OBJ(AO_load(&p->g.v));
+        AO_store(&p->g.v, SCM_WORD(val));
+    } else {
+        old = Scm_ThreadLocalSet(vm, p->g.tl, val);
+    }
+
+    if (p->flags & SCM_PARAMETER_LAZY) return Scm_Force(old);
+    else return old;
 }
 
 /* Convenience function.  Create a primitive parameter subr and bind
@@ -274,7 +306,7 @@ ScmPrimitiveParameter *Scm_BindPrimitiveParameter(ScmModule *mod,
         Scm_MakePrimitiveParameter(SCM_CLASS_PRIMITIVE_PARAMETER,
                                    SCM_INTERN(name), initval, flags);
     ScmObj subr = Scm_MakePrimitiveParameterSubr(p);
-    Scm_Define(mod, SCM_SYMBOL(p->tl->name), subr);
+    Scm_Define(mod, SCM_SYMBOL(p->name), subr);
     return p;
 }
 
