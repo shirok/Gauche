@@ -1,3 +1,7 @@
+2022-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/compat/chibi-test.scm (chibi-test): Support test-equal.
+
 2022-11-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c, src/libparam.scm (current-parameterization),

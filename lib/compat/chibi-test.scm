@@ -59,6 +59,14 @@
                (,(r'test*) 'expr #t (,(r'boolean) expr))]
               [(_ name expr)
                (,(r'test*) name #t (,(r'boolean) expr))])]
+           [test-equal
+            (syntax-rules ()
+              [(_ equal name expect expr)
+               (,(r'parameterize) ((current-test-comparator equal))
+                (,(r'test*) name expect expr))]
+              [(_ equal expect expr)
+               (,(r'parameterize) ((current-test-comparator equal))
+                (,(r'test*) 'expr expect expr))])]
            [test-not
             (syntax-rules ()
               [(_ expr)
