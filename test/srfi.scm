@@ -2753,6 +2753,20 @@
   )
 
 ;;-----------------------------------------------------------------------
+(test-section "srfi-228")
+(use srfi-228)
+(test-module 'srfi-228)
+
+(define-module srfi-228-tests
+  (use gauche.test)
+  (use compat.chibi-test)
+  (use scheme.base)
+  (use srfi-132 :only (list-sort))
+  (use srfi-228)
+  (chibi-test
+   (include "include/srfi-228-test.scm")))
+
+;;-----------------------------------------------------------------------
 (test-section "srfi-229")
 (use srfi-229)
 (test-module 'srfi-229)

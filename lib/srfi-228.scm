@@ -42,13 +42,13 @@
    type-test
    (^[a b] (=? contents-comparator (unwrap a) (unwrap b)))
    (and (comparator-ordered? contents-comparator)
-        (^[a b] (comparator-compare contents-comparator (unwrap a) (unwrap b))))
-   (and (comaprator-hashable? contents-comparator)
+        (^[a b] (<? contents-comparator (unwrap a) (unwrap b))))
+   (and (comparator-hashable? contents-comparator)
         (^[a] (comparator-hash contents-comparator (unwrap a))))))
 
 (define (make-product-comparator . cmps)
   (make-comparator
-   (^[a] (every (cut comparator-check-type <> a) cmps))
+   (^[a] (every (cut comparator-test-type <> a) cmps))
    (^[a b] (let loop ([cmps cmps])
              (cond [(null? cmps) #t]
                    [(=? (car cmps) a b) (loop (cdr cmps))]
@@ -60,8 +60,39 @@
                         [(=? (car cmps) a b) (loop (cdr cmps))]
                         [else #f]))))
    (and (every comparator-hashable? cmps)
-        (^[a] (let loop ([cmps cmps] [h (hash-salt)])
-                (if (null? cmps)
-                  h
-                  (loop (cdr cmps)
-                        (combine-hash-value (comparator-hash (car cmps) a)))))))))
+        (^[a]
+          (let loop ([cmps cmps] [h (hash-salt)])
+            (if (null? cmps)
+              h
+              (loop (cdr cmps)
+                    (combine-hash-value h (comparator-hash (car cmps) a)))))))))
+
+(define (select-cmp cmps obj)
+  (let loop ((cmps cmps) (index 0))
+    (cond [(null? cmps) (values #f #f)]
+          [(comparator-test-type (car cmps) obj) (values (car cmps) index)]
+          [else (loop (cdr cmps) (+ index 1))])))
+
+(define (make-sum-comparator . cmps)
+  (make-comparator
+   (^[a] (any (cut comparator-test-type <> a) cmps))
+   (^[a b] (let loop ([cmps cmps])
+             (cond [(null? cmps) #f]
+                   [(comparator-test-type (car cmps) a)
+                    (and (comparator-test-type (car cmps) b)
+                         (=? (car cmps) a b))]
+                   [else (loop (cdr cmps))])))
+   (and (every comparator-ordered? cmps)
+        (^[a b]
+          (let loop ([cmps cmps])
+            (cond [(null? cmps) #f]
+                  [(comparator-test-type (car cmps) a)
+                   (if (comparator-test-type (car cmps) b)
+                     (<? (car cmps) a b)
+                     #t)]
+                  [(comparator-test-type (car cmps) b) #f]
+                  [else (loop (cdr cmps))]))))
+   (and (every comparator-hashable? cmps)
+        (^[a] (if-let1 cmp (find (cut comparator-test-type <> a) cmps)
+                (comparator-hash cmp a)
+                0)))))
