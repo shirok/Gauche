@@ -79,6 +79,7 @@ SCM_EXTERN ScmObj Scm_PrimitiveParameterRef(ScmVM *vm,
 SCM_EXTERN ScmObj Scm_PrimitiveParameterSet(ScmVM *vm,
                                             const ScmPrimitiveParameter *p,
                                             ScmObj val);
+SCM_EXTERN int Scm_PrimitiveParameterSharedP(const ScmPrimitiveParameter *p);
 
 /* A convenience function to create a new ScmPrimitiveParameter
    and bind it to NAME in MOD.  Returns a newly created primitive

@@ -1218,18 +1218,53 @@ static ScmEnvFrame *get_env(ScmVM *vm)
 }
 
 /* Obtain calling thread's dynamic environment.
- * Under srfi-226 model, this can simply return vm->denv, for dynamic
- * environments are shared.  However, backward-compatible mode requires
- * parameters to be thread-local, so we need to copy denv.
- * We'll switch two modes at runtime flag, then eventually move to
- * full srfi-226 model.
+ * To support thread parameters, we have to copy the parameter alist.
  */
 ScmObj get_denv(ScmVM *vm)
 {
     if (vm == NULL) return SCM_NIL;
-    return Scm_AlistCopy(DENV); /* for now */
-}
 
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmObj orig = vm->denv, cp;
+
+    /* Inner parameterization list usually shares its tail with outer
+       parameterization, and we need to preserve that relationship.
+       This table maps old parameter pair -> new parameter pair.
+     */
+    ScmHashCore ptable;
+    Scm_HashCoreInitSimple(&ptable, SCM_HASH_EQ, 0, NULL);
+
+    SCM_FOR_EACH(cp, orig) {
+        if (!SCM_PAIRP(SCM_CAR(cp))) continue; /* can't happen, just in case */
+        if (SCM_EQ(SCM_CAAR(cp), denv_key_parameterization)) {
+            ScmObj hh = SCM_NIL, tt = SCM_NIL, ccp;
+            SCM_FOR_EACH(ccp, SCM_CDAR(cp)) {
+                ScmObj p = SCM_CAR(ccp);  /* (<parameter> <value>) */
+                ScmDictEntry *e = Scm_HashCoreSearch(&ptable,
+                                                     (intptr_t)p,
+                                                     SCM_DICT_GET);
+                if (e) {
+                    SCM_APPEND(hh, tt, SCM_DICT_VALUE(e));
+                    break;
+                }
+                SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(SCM_CAR(p)));
+                ScmPrimitiveParameter *param =
+                    SCM_PRIMITIVE_PARAMETER(SCM_CAR(p));
+                ScmObj newp = p;
+                if (!Scm_PrimitiveParameterSharedP(param)) {
+                    newp = Scm_Cons(SCM_CAR(newp), SCM_CDR(newp));
+                }
+                e = Scm_HashCoreSearch(&ptable, (intptr_t)p, SCM_DICT_CREATE);
+                (void)SCM_DICT_SET_VALUE(e, newp);
+                SCM_APPEND1(hh, tt, newp);
+            }
+            SCM_APPEND1(h, t, Scm_Cons(SCM_CAAR(cp), hh));
+        } else {
+            SCM_APPEND1(h, t, SCM_CAR(cp));
+        }
+    }
+    return h;
+}
 
 /* When VM stack has incomplete stack frame (that is, SP != ARGP or
  * *PC != SCM_VM_RET), and we need to run something on VM, we should

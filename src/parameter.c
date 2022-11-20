@@ -161,6 +161,14 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
 }
 
 /*
+ * External accessor
+ */
+int Scm_PrimitiveParameterSharedP(const ScmPrimitiveParameter *p)
+{
+    return (p->flags & SCM_PARAMETER_SHARED)? TRUE : FALSE;
+}
+
+/*
  * Create a SUBR that embeds a primitive parameter.
  */
 static ScmObj prim_param_proc(ScmObj *argv, int argc, void *data)
