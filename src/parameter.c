@@ -152,7 +152,7 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     p->flags = flags;
     p->name = name;
     if (flags & SCM_PARAMETER_SHARED) {
-        p->g.v = SCM_OBJ(Scm_MakeBox(initval));
+        p->g.v = Scm_MakeBox(initval);
     } else {
         p->g.tl = Scm_MakeThreadLocal(name, initval,
                                       SCM_THREAD_LOCAL_INHERITABLE);
@@ -224,6 +224,10 @@ ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
  *  (#:parameterization (<parameter> . <value>) ...)
  *  Note that the tail of parameter alist is shared with the
  *  outer parameterization.
+ *
+ *  If <parameter> is shared, the pair (<parameter> . <value>) is shared.
+ *  Otherwise, the pair is copied when a new thread is created.
+ *  (See get_denv() in vm.c)
  */
 
 ScmObj Scm_CurrentParameterization()
@@ -248,7 +252,7 @@ void Scm_PushParameterization(ScmObj params, ScmObj vals)
     ScmObj h = SCM_NIL, t = SCM_NIL;
 
     while (SCM_PAIRP(params)) {
-        SCM_APPEND1(h, t, SCM_LIST2(SCM_CAR(params), SCM_CAR(vals)));
+        SCM_APPEND1(h, t, Scm_Cons(SCM_CAR(params), SCM_CAR(vals)));
         params = SCM_CDR(params);
         vals = SCM_CDR(vals);
     }
@@ -266,7 +270,7 @@ ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
     ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
     ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
 
-    if (SCM_PAIRP(r)) return SCM_CADR(r);
+    if (SCM_PAIRP(r)) return SCM_CDR(r);
 
     ScmObj v;
     if (p->flags & SCM_PARAMETER_SHARED) {
@@ -286,8 +290,8 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
     ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
 
     if (SCM_PAIRP(r)) {
-        ScmObj old = SCM_CADR(r);
-        SCM_SET_CAR(SCM_CDR(r), val);
+        ScmObj old = SCM_CDR(r);
+        SCM_SET_CDR(r, val);
         return old;
     }
 

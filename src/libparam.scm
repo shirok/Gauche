@@ -77,11 +77,12 @@
    (post-observers)
    ))
 
-(define (make-parameter value :optional (filter #f))
+(define (make-parameter value :optional (filter #f) (shared? #f))
   (let* ([v (if filter (filter value) value)]
          [p (make <parameter>
               :filter filter
-              :initial-value v)])
+              :initial-value v
+              :shared shared?)])
     (getter-with-setter
      ((with-module gauche.internal %make-parameter-subr) p)
      (^[val] ((slot-ref p 'setter) val)))))
