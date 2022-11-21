@@ -24,4 +24,7 @@
 
           =? <? >? <=? >=?
 
-          comparator-if<=>))
+          comparator-if<=>)
+
+  ;; srfi-162 adds a few more.
+  (extend srfi-162))

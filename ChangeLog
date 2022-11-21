@@ -1,5 +1,7 @@
 2022-11-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/scheme/comparator.scm: Incorporate srfi-162 as sell.
+
 	* lib/compat/chibi-test.scm (chibi-test): Support test-equal.
 
 2022-11-18  Shiro Kawai  <shiro@acm.org>
