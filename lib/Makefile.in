@@ -69,7 +69,7 @@ SCMFILES = \
        srfi-192.scm srfi-193.scm srfi-196.scm srfi-197.scm \
        srfi-209.scm srfi-214.scm srfi-217.scm srfi-219.scm \
        srfi-221.scm srfi-222.scm srfi-227.scm \
-       srfi-227/*.scm srfi/227/*.scm srfi-229.scm \
+       srfi-227/*.scm srfi/227/*.scm srfi-228.scm srfi-229.scm \
        srfi-232.scm srfi-236.scm \
        slib.scm \
        check-script \
