@@ -152,7 +152,7 @@ ScmPrimitiveParameter *Scm_MakePrimitiveParameter(ScmClass *klass,
     p->flags = flags;
     p->name = name;
     if (flags & SCM_PARAMETER_SHARED) {
-        AO_store(&p->g.v, SCM_WORD(initval));
+        p->g.v = SCM_OBJ(Scm_MakeBox(initval));
     } else {
         p->g.tl = Scm_MakeThreadLocal(name, initval,
                                       SCM_THREAD_LOCAL_INHERITABLE);
@@ -270,7 +270,7 @@ ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
 
     ScmObj v;
     if (p->flags & SCM_PARAMETER_SHARED) {
-        v = SCM_OBJ(AO_load(&p->g.v));
+        v = SCM_BOX_VALUE(p->g.v);
     } else {
         v = Scm_ThreadLocalRef(vm, p->g.tl);
     }
@@ -293,8 +293,9 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
 
     ScmObj old;
     if (p->flags & SCM_PARAMETER_SHARED) {
-        old = SCM_OBJ(AO_load(&p->g.v));
-        AO_store(&p->g.v, SCM_WORD(val));
+        /* TODO: need atomic operation */
+        old = SCM_BOX_VALUE(p->g.v);
+        SCM_BOX_SET(p->g.v, val);
     } else {
         old = Scm_ThreadLocalSet(vm, p->g.tl, val);
     }

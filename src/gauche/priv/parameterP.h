@@ -55,7 +55,8 @@ struct ScmPrimitiveParameterRec {
     /* 'global' value of the parameter. */
     union {
         ScmThreadLocal *tl;     /* thread-local parameter */
-        ScmAtomicVar v;         /* 'shared' parameter */
+        ScmBox *v;              /* 'shared' parameter
+                                   Should be replaced for AtomicBox later. */
     } g;
 };
 
