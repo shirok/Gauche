@@ -489,28 +489,52 @@
                  (thread-join! t2)))))
 
 ;;---------------------------------------------------------------------
-(test-section "thread-local parameters")
+(test-section "parameters and threads")
 
-(define *thr1-val* #f)
-(define *thr2-val* #f)
+(let ()
+  (define *thr1-val* #f)
+  (define *thr2-val* #f)
+  (define pl (make-thread-parameter 3))
+  (define ps (make-shared-parameter 5))
 
-(define p (make-parameter 3))
+  (test* "thread parameter: check locality of parameters" '(3 4 5)
+         (let ([th1 (make-thread (^[] (pl 4) (set! *thr1-val* (pl))))]
+               [th2 (make-thread (^[] (pl 5) (set! *thr2-val* (pl))))])
+           (thread-start! th1)
+           (thread-start! th2)
+           (thread-join! th1)
+           (thread-join! th2)
+           (list (pl) *thr1-val* *thr2-val*)))
 
-(test* "check locality of parameters" '(3 4 5)
-       (let ([th1 (make-thread (^[] (p 4) (set! *thr1-val* (p))))]
-             [th2 (make-thread (^[] (p 5) (set! *thr2-val* (p))))])
-         (thread-start! th1)
-         (thread-start! th2)
-         (thread-join! th1)
-         (thread-join! th2)
-         (list (p) *thr1-val* *thr2-val*)))
+  (test* "shared parameter (global)"
+         '((-5 6)
+           (5 6)
+           6)
+         (let1 b (make-barrier 2)
+           (let ([th1 (make-thread (^[]
+                                     (barrier-await b)
+                                     (let1 v1 (ps 6)
+                                       (barrier-await b)
+                                       (list v1 (ps)))))]
+                 [th2 (make-thread (^[]
+                                     (let1 v0 (ps -5)
+                                       (barrier-await b)
+                                       (barrier-await b)
+                                       (list v0 (ps)))))])
+           (thread-start! th1)
+           (thread-start! th2)
+           (list (thread-join! th1)
+                 (thread-join! th2)
+                 (ps)))))
+
+)
 
 ;; Parameters that are created in a different thread
 ;; We used to prohibit accessing parameters that are created by different
 ;; threads (up to 0.9.2).  But it caused annoyance when a module creating
 ;; parameters is loaded after some threads are already started.
 
-(test* "parameters created by different thread" '(2 1 3)
+(test* "thread parameter: parameters created by different thread" '(2 1 3)
        (let ([p #f]
              [handshake #f]
              [val1 #f]
