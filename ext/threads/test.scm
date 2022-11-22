@@ -712,8 +712,8 @@
          [z (delay (begin (set! count (+ count 1))
                           (if (> count x)
                             count
-                            (force p))))])
-  (test* "concurrent forcing w/ recursive force" 1
+                            (force z))))])
+  (test* "concurrent forcing w/ recursive force" 6
          (let ([ts (map (^_ (make-thread (^[] (force z)))) (iota 10))])
            (for-each thread-start! ts)
            (for-each thread-join! ts)
