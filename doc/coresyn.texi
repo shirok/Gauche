@@ -10,7 +10,7 @@
 * Assignments::
 * Conditionals::
 * Binding constructs::
-* Sequencing::
+* Grouping::
 * Iteration::
 * Quasiquotation::
 * Definitions::
@@ -2114,7 +2114,7 @@ that the check is performed, nor @var{expr} is evaluated.
 @c COMMON
 @end defmac
 
-@node Binding constructs, Sequencing, Conditionals, Core syntax
+@node Binding constructs, Grouping, Conditionals, Core syntax
 @section Binding constructs
 @c NODE 変数束縛
 
@@ -2593,9 +2593,9 @@ Some examples:
 @end example
 @end defmac
 
-@node Sequencing, Iteration, Binding constructs, Core syntax
-@section Sequencing
-@c NODE 順次実行
+@node Grouping, Iteration, Binding constructs, Core syntax
+@section Grouping
+@c NODE 式をまとめる
 
 
 @defspec begin form @dots{}
@@ -2674,8 +2674,37 @@ for the @code{begin0} form is expanded as follows.
 @end example
 @end defmac
 
+@defmac independently exp @dots{}
+[SRFI-236]
+@c EN
+Evaluates @var{exp} @dots{} in an unspecified order, and returns
+an undefined result.  This form is defined in srfi-236.
 
-@node Iteration, Quasiquotation, Sequencing, Core syntax
+You can use @code{begin} to group multiple expressions, but @code{begin}
+also specifies the order of evaluation even when it's unnecessary.
+Using @code{independently}, you can express the intention to the readers
+that the order does not matter, and also gives the compiler
+more opportunities for optimization.
+
+As the order doesn't matter, srfi-236 does not specify the return
+value of this form.  Gauche returns @code{#<undef>}, but the caller
+shoudn't rely on it.
+@c JP
+@var{exp} @dots{}を順序を問わずに評価し、未定義値を返します。
+このフォームはsrfi-236で定義されました。
+
+複数の式を評価するのには@code{begin}が使えますが、
+@code{begin}は順序も指定してしまいます。
+@code{independently}は、コードを読む人に順序が関係ないことを伝え、
+またコンパイラにより多くの最適化の機会を与えます。
+
+式がどういう順で評価されるかわからないので、srfi-236では結果の値は指定されていません。
+Gaucheは@code{#<undef>}を返しますが、返り値に依存するコードは書くべきではありません。
+@c COMMON
+@end defmac
+
+
+@node Iteration, Quasiquotation, Grouping, Core syntax
 @section Iteration
 @c NODE 繰り返し
 
@@ -3642,11 +3671,11 @@ Gaucheは特にエラーを出しません。
 @c COMMON
 
 @c EN
-Note that @code{begin} (@pxref{Sequencing}) doesn't introduce a new scope.
+Note that @code{begin} (@pxref{Grouping}) doesn't introduce a new scope.
 @code{Define}s in the @code{begin} act as if @code{begin} and surrounding
 parenthesis are not there.  Thus these two forms are equivalent.
 @c JP
-@code{begin}は新しいスコープを作らないことに注意してください(@ref{Sequencing}参照)。
+@code{begin}は新しいスコープを作らないことに注意してください(@ref{Grouping}参照)。
 @code{begin}の中に現われる@code{define}は、あたかも@code{begin}とそれを囲む
 括弧が無いかのように振舞います。すなわち、以下の2つの形式は等価です。
 @c COMMON

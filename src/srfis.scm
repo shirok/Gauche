@@ -1528,8 +1528,7 @@ srfi-236
 (independently)
 
 Evaluating expressions in an unspecified order
-Built-in.
+Built-in. @xref{Grouping}.
 
 順序を問わない式の評価
-組み込みです。
-
+組み込みです。@ref{Grouping}参照。
