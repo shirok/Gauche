@@ -527,7 +527,45 @@
                  (thread-join! th2)
                  (ps)))))
 
-)
+  (test* "shared parameter (dynamic)"
+         '((-1 -1)
+           (99 198)
+           (99 198)
+           -1)
+         (let ([b (make-barrier 3)]
+               [g (make-latch 1)])
+           (let1 th1 (make-thread (^[] 
+                                    (latch-await g)
+                                    (let1 v1 (ps)
+                                      (barrier-await b)
+                                      (barrier-await b)
+                                      (list v1 (ps)))))
+             (receive (th2 th3)
+                 (parameterize ((ps 99))
+                   (values (make-thread (^[]
+                                          (latch-await g)
+                                          (let1 v1 (ps)
+                                            (barrier-await b)
+                                            (ps 198)
+                                            (barrier-await b)
+                                            (list v1 (ps)))))
+                           (make-thread (^[]
+                                          (latch-await g)
+                                          (let1 v1 (ps)
+                                            (barrier-await b)
+                                            (barrier-await b)
+                                            (list v1 (ps)))))))
+               (thread-start! th1)
+               (thread-start! th2)
+               (thread-start! th3)
+               (ps -1)
+               (latch-clear! g)
+
+               (list (thread-join! th1)
+                     (thread-join! th2)
+                     (thread-join! th3)
+                     (ps))))))
+  )
 
 ;; Parameters that are created in a different thread
 ;; We used to prohibit accessing parameters that are created by different
