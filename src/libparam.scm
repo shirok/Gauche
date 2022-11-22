@@ -77,6 +77,10 @@
    (post-observers)
    ))
 
+;; We're switching to the srfi-226  model that parameter bindings are shared 
+;; among threads by default.  The legacy code that requires thread-local
+;; parameters need to move to make-thread-parameter.  To ease transition,
+;; we also provide make-shared-parameter.
 (define (make-parameter value :optional (filter #f) (shared? #f))
   (let* ([v (if filter (filter value) value)]
          [p (make <parameter>
@@ -86,6 +90,13 @@
     (getter-with-setter
      ((with-module gauche.internal %make-parameter-subr) p)
      (^[val] ((slot-ref p 'setter) val)))))
+
+(define (make-thread-parameter value :optional (filter #f))
+  (make-parameter value filter #f))
+
+;; this is srfi-226 make-parameter
+(define (make-shared-parameter value :optional (filter #f))
+  (make-parameter value filter #t))
 
 (define (parameter? obj)
   (boolean (procedure-parameter obj)))
