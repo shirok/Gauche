@@ -50,6 +50,7 @@
                              let-keywords let-keywords* let-optionals*
                              lcons lcons* llist*
                              rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
+                             independently
                              define-compiler-macro))
 
 ;; This file defines built-in macros.
@@ -1440,6 +1441,17 @@
              ,(loop clauses)))]
        [_ (error "malformed rxmatch-case:" f)]))))
 
+
+;;; srfi-236
+
+(define-syntax independently
+  (er-macro-transformer
+   (^[f r c]
+     (quasirename r
+       `(let ,(map (^[expr] (quasirename r
+                              `(,(gensym) (begin ,expr #f))))
+                   (cdr f))
+          (undefined))))))
 
 ;;;
 ;;; OBSOLETED - Tentative compiler macro

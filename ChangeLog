@@ -1,3 +1,9 @@
+2022-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (independently), src/srfis.scm (srfi-236):
+	  As srfi-236 is finalized, support this officially.  It's general
+	  enough to be built-in.
+
 2022-11-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/scheme/comparator.scm: Incorporate srfi-162 as sell.

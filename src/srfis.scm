@@ -1522,3 +1522,14 @@ Supported by the module @code{srfi-232}
 柔軟なカリー化された手続き
 @code{srfi-232}でサポートされます
 (@ref{Flexible curried procedures}参照)。
+
+
+srfi-236
+(independently)
+
+Evaluating expressions in an unspecified order
+Built-in.
+
+順序を問わない式の評価
+組み込みです。
+
