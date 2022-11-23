@@ -41,7 +41,7 @@
  (declcode (.include <gauche/priv/parameterP.h>
                      <gauche/priv/vmP.h>)))
 
-(declare (keep-private-macro parameterize))
+(declare (keep-private-macro parameterize with))
 
 ;;;
 ;;; Primitive parameters
@@ -212,6 +212,31 @@
 
 (define-cproc parameterization? (obj) ::<boolean>
   SCM_PARAMETERIZATIONP)
+
+;; srfi-226
+(define-syntax with
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [( () . body) (quasirename r `(let () ,@body))]
+       [(_ ((param-like val) ...) . body)
+        (let ([Ps (map (^_ (gensym)) param-like)]
+              [Vs (map (^_ (gensym)) val)])
+          (quasirename r
+            `(let (,@(map list Ps param-like)
+                   ,@(map list Vs val))
+               (dynamic-wind
+                 (^[] ,@(map (^[p v] 
+                               (quasirename r
+                                 `(let ((tmp (,p))) (,p ,v) (set! ,v tmp))))
+                             Ps Vs))
+                 (^[] ,@body)
+                 (^[] ,@(map (^[p v] 
+                               (quasirename r
+                                 `(let ((tmp (,p))) (,p ,v) (set! ,v tmp))))
+                             Ps Vs))))))]
+       [_ (error "Invalid with form:" f)]))))
+
 
 ;; TRANSIENT: To compile 0.9.13 with 0.9.12
 (inline-stub
