@@ -1,5 +1,10 @@
 2022-11-23  Shiro Kawai  <shiro@acm.org>
 
+	* libsrc/gauche/parameter.scm: Export parameterize as an alias of
+	  parameterize/dynwind, so that the legacy code gets
+	  backward-compatible parameterize.  New code shouldn't use this
+	  module.
+
 	* src/libparam.scm (parameterize/dynwind): Provide backward-compatible
 	  parameterize under this name.
 

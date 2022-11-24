@@ -31,18 +31,23 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; The basic parameter support is now built-in.  The following procedures
-;; and a macro is defined in src/libparam.scm:
+;; This module is for the backward compatibility.  Parameter is a built-in now,
+;; so the new code no longer needs to use this module.
 ;;
-;;    <parameter>, make-parameter, parameter?, procedure-parameter
-;;    parameterize
+;; An important compatibility node: As of 0.9.13, Gauche's built-in parameterize
+;; becomes to be based on srfi-226 rather than dynamic-wind.  The former
+;; has a nicer property that the body of parameterize can be tail context.
+;; Other than that, the two works almost the same, except when a delimited
+;; continuation is involved.  See the discussion of srfi-226.
 ;;
-;; This module serves two purposes:
-;;   - Make existing code that uses gauche.parameter keep working
-;;   - Augument parameters with the less-frequently used feature, observers.
+;; Since legacy code uses this module, we export backward-compatible
+;; parameterize/dynwind as parameterize from this module.  That is,
+;; if the code (use gauche.parameter), parameterize works exactly as the
+;; older versions.
 ;;
-;; New code doesn't need to use gauche.parameter unless it uses the
-;; observer feature.
+;; This module also provides the 'hook' feature of parameters; they're
+;; deprecated and we'll eventually drop its support; but meantime, legacy
+;; code can keep working as far as it uses gauche.parameter.
 ;;
 ;; Note: (object-apply <parameter> ...) is only defined here.  Since
 ;; make-parameter returns a procedure rather than <parameter>, it is no
@@ -54,7 +59,7 @@
           make-parameter                ;built-in
           parameter?                    ;built-in
           procedure-parameter           ;built-in
-          parameterize                  ;built-in
+          parameterize
           parameter-pre-observers
           parameter-post-observers
           parameter-observer-add!
@@ -63,6 +68,10 @@
 (select-module gauche.parameter)
 
 (autoload gauche.hook make-hook add-hook! delete-hook! run-hook)
+
+(declare (keep-private-macro parameterize))
+
+(define-syntax parameterize parameterize/dynwind)
 
 ;; When an observer is first set, replace setter and restorer
 ;; to take into account of observers.
