@@ -1,3 +1,8 @@
+2022-11-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libparam.scm (parameterize/dynwind): Provide backward-compatible
+	  parameterize under this name.
+
 2022-11-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (independently), src/srfis.scm (srfi-236):

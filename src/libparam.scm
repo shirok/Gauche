@@ -41,7 +41,7 @@
  (declcode (.include <gauche/priv/parameterP.h>
                      <gauche/priv/vmP.h>)))
 
-(declare (keep-private-macro parameterize with))
+(declare (keep-private-macro parameterize parameterize/dynwind with))
 
 ;;;
 ;;; Primitive parameters
@@ -173,9 +173,9 @@
     (%with-parameterization (map procedure-parameter params)
                             (apply-filters filters orig-vals)
                             thunk)
-    (%parameterize-old params orig-vals thunk)))
+    (%parameterize/dynwind params orig-vals thunk)))
 
-(define (%parameterize-old params orig-vals thunk)
+(define (%parameterize/dynwind params orig-vals thunk)
   (let ([restarted #f]
         [saved '()])
     (dynamic-wind
@@ -195,16 +195,33 @@
 (define-syntax parameterize
   (er-macro-transformer
    (^[f r c]
-     (define %parameterize ((with-module gauche.internal make-identifier)
-                            '%parameterize
-                            (find-module 'gauche.internal)
-                            '()))
+     (define %parameterize
+       ((with-module gauche.internal make-identifier)
+        '%parameterize
+        (find-module 'gauche.internal)
+        '()))
      (match f
        [(_ () . body) (quasirename r `(let () ,@body))]
        ;; TODO: shortcut for single-parameter case
        [(_ ((param val) ...) . body)
         (quasirename r
           `(,%parameterize (list ,@param) (list ,@val) (^[] ,@body)))]
+       [(_ . x) (error "Invalid parameterize form:" f)]))))
+
+(define-syntax parameterize/dynwind
+  (er-macro-transformer
+   (^[f r c]
+     (define %parameterize/dynwind
+       ((with-module gauche.internal make-identifier)
+        '%parameterize/dynwind
+        (find-module 'gauche.internal)
+        '()))
+     (match f
+       [(_ () . body) (quasirename r `(let () ,@body))]
+       ;; TODO: shortcut for single-parameter case
+       [(_ ((param val) ...) . body)
+        (quasirename r
+          `(,%parameterize/dynwind (list ,@param) (list ,@val) (^[] ,@body)))]
        [(_ . x) (error "Invalid parameterize form:" f)]))))
 
 (define-cproc current-parameterization ()
