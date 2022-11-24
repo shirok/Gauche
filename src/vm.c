@@ -945,7 +945,7 @@ static void local_env_shift(ScmVM *vm, int env_depth)
 /*===================================================================
  * Main loop of VM
  */
-static ScmObj make_handler_entry(ScmObj, ScmObj, ScmObj);
+static ScmObj make_handler_entry(ScmVM*, ScmObj, ScmObj, ScmObj);
 
 static void run_loop()
 {
@@ -2275,64 +2275,69 @@ bad_list:
  *   keeps the "before" and "after" thunk of the dynamic-wind.
  *
  *   <handler-entry> should be treated as an opaque object except
- *   a handful of API.  Currently, it can be one of the following
- *   forms:
+ *   a handful of API.  Currently, it is a list of the following form:
  *
- *   (<thunk> . <thunk>) - A cons of before thunk and after thunk.
- *   (<proc> <proc> . args) - Before and after procedure, followed
- *   by arguments.  Each procedure will be called as (apply <proc> args).
+ *   (<before-proc> <after-proc> <denv> <args> ...)
  *
- *   The second form is to enable lambda-lifting before/after thunks.
+ *   <before-proc> and <after-proc> are before and after procedures.  With
+ *   the basic dynamic-wind, they're thunks.  When optimized, <before-proc>
+ *   and <after-proc> may take arguments <args> ....
+ *   <denv> is the dynamic environment on which handlers should be called.
  */
 
 /* Handler-chain internal API */
-static ScmObj make_handler_entry(ScmObj before, ScmObj after, ScmObj args)
+static ScmObj make_handler_entry(ScmVM *vm, 
+                                 ScmObj before, ScmObj after, ScmObj args)
 {
-    if (SCM_NULLP(args)) {
-        return Scm_Cons(before, after);
-    } else {
-        return Scm_Cons(before, Scm_Cons(after, args));
-    }
+    return Scm_Cons(before, Scm_Cons(after, Scm_Cons(vm->denv, args)));
 }
 
-static void call_before_thunk(ScmObj handler_entry)
+static void call_before_thunk(ScmVM *vm, ScmObj handler_entry)
 {
-    SCM_ASSERT(SCM_PAIRP(handler_entry));
-    if (SCM_PAIRP(SCM_CDR(handler_entry))) {
-        Scm_ApplyRec(SCM_CAR(handler_entry), SCM_CDDR(handler_entry));
-    } else {
-        Scm_ApplyRec(SCM_CAR(handler_entry), SCM_NIL);
-    }
+    SCM_ASSERT(SCM_PAIRP(handler_entry)
+               && SCM_PAIRP(SCM_CDR(handler_entry))
+               && SCM_PAIRP(SCM_CDDR(handler_entry)));
+    ScmObj proc = SCM_CAR(handler_entry);
+    ScmObj denv = SCM_CAR(SCM_CDDR(handler_entry));
+    ScmObj args = SCM_CDR(SCM_CDDR(handler_entry));
+    vm->denv = denv;
+    Scm_ApplyRec(proc, args);
 }
 
-static void call_after_thunk(ScmObj handler_entry)
+static void call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 {
-    SCM_ASSERT(SCM_PAIRP(handler_entry));
-    if (SCM_PAIRP(SCM_CDR(handler_entry))) {
-        Scm_ApplyRec(SCM_CADR(handler_entry), SCM_CDDR(handler_entry));
-    } else {
-        Scm_ApplyRec(SCM_CDR(handler_entry), SCM_NIL);
-    }
+    SCM_ASSERT(SCM_PAIRP(handler_entry)
+               && SCM_PAIRP(SCM_CDR(handler_entry))
+               && SCM_PAIRP(SCM_CDDR(handler_entry)));
+    ScmObj proc = SCM_CADR(handler_entry);
+    ScmObj denv = SCM_CAR(SCM_CDDR(handler_entry));
+    ScmObj args = SCM_CDR(SCM_CDDR(handler_entry));
+    vm->denv = denv;
+    Scm_ApplyRec(proc, args);
 }
 
-static ScmObj vm_call_before_thunk(ScmObj handler_entry)
+static ScmObj vm_call_before_thunk(ScmVM *vm, ScmObj handler_entry)
 {
-    SCM_ASSERT(SCM_PAIRP(handler_entry));
-    if (SCM_PAIRP(SCM_CDR(handler_entry))) {
-        return Scm_VMApply(SCM_CAR(handler_entry), SCM_CDDR(handler_entry));
-    } else {
-        return Scm_VMApply0(SCM_CAR(handler_entry));
-    }
+    SCM_ASSERT(SCM_PAIRP(handler_entry)
+               && SCM_PAIRP(SCM_CDR(handler_entry))
+               && SCM_PAIRP(SCM_CDDR(handler_entry)));
+    ScmObj proc = SCM_CAR(handler_entry);
+    ScmObj denv = SCM_CAR(SCM_CDDR(handler_entry));
+    ScmObj args = SCM_CDR(SCM_CDDR(handler_entry));
+    vm->denv = denv;
+    return Scm_VMApply(proc, args);
 }
 
-static ScmObj vm_call_after_thunk(ScmObj handler_entry)
+static ScmObj vm_call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 {
     SCM_ASSERT(SCM_PAIRP(handler_entry));
-    if (SCM_PAIRP(SCM_CDR(handler_entry))) {
-        return Scm_VMApply(SCM_CADR(handler_entry), SCM_CDDR(handler_entry));
-    } else {
-        return Scm_VMApply0(SCM_CDR(handler_entry));
-    }
+    SCM_ASSERT(SCM_PAIRP(SCM_CDR(handler_entry)));
+    SCM_ASSERT(SCM_PAIRP(SCM_CDDR(handler_entry)));
+    ScmObj proc = SCM_CADR(handler_entry);
+    ScmObj denv = SCM_CAR(SCM_CDDR(handler_entry));
+    ScmObj args = SCM_CDR(SCM_CDDR(handler_entry));
+    vm->denv = denv;
+    return Scm_VMApply(proc, args);
 }
 /* End of handler-chain internal API */
 
@@ -2363,7 +2368,7 @@ static ScmObj dynwind_before_cc(ScmObj result SCM_UNUSED, void **data)
     ScmVM *vm = theVM;
 
     d[0] = (void*)after;
-    vm->handlers = Scm_Cons(make_handler_entry(before, after, SCM_NIL),
+    vm->handlers = Scm_Cons(make_handler_entry(vm, before, after, SCM_NIL),
                             vm->handlers);
     Scm_VMPushCC(dynwind_body_cc, d, 1);
     return Scm_VMApply0(body);
@@ -2625,7 +2630,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         SCM_FOR_EACH(hp, vm->handlers) {
             ScmObj handler_entry = SCM_CAR(hp);
             vm->handlers = SCM_CDR(hp);
-            call_after_thunk(handler_entry);
+            call_after_thunk(vm, handler_entry);
         }
     }
 
@@ -2963,9 +2968,9 @@ static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
     ScmVM *vm = theVM;
     if (targetHandlers != vm->handlers && SCM_PAIRP(vm->handlers)) {
         Scm_VMPushCC(vm_abort_cc, data, 2);
-        ScmObj after = SCM_CDAR(vm->handlers);
+        ScmObj handler_entry = SCM_CAR(vm->handlers);
         vm->handlers = SCM_CDR(vm->handlers);
-        return Scm_VMApply0(after);
+        return vm_call_after_thunk(vm, handler_entry);
     } else {
         ScmObj args = SCM_OBJ(data[1]);
         return vm_abort_body(abortTo, args);
@@ -3002,9 +3007,9 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
         data[0] = abortTo;
         data[1] = args;
         Scm_VMPushCC(vm_abort_cc, data, 2);
-        ScmObj after = SCM_CDAR(vm->handlers);
+        ScmObj handler_entry = SCM_CAR(vm->handlers);
         vm->handlers = SCM_CDR(vm->handlers);
-        return Scm_VMApply0(after);
+        return vm_call_after_thunk(vm, handler_entry);
     } else {
         return vm_abort_body(abortTo, args);
     }
@@ -3171,9 +3176,9 @@ static void call_dynamic_handlers(ScmObj target, ScmObj current)
         ScmObj handler_entry = SCM_CAR(chain);
         if (SCM_FALSEP(before_flag)) {
             vm->handlers = SCM_CDR(chain);
-            call_after_thunk(handler_entry);
+            call_after_thunk(vm, handler_entry);
         } else {
-            call_before_thunk(handler_entry);
+            call_before_thunk(vm, handler_entry);
             vm->handlers = chain;
         }
     }
@@ -3207,10 +3212,10 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
         if (SCM_FALSEP(before_flag)) {
             /* after handler */
             vm->handlers = SCM_CDR(chain);
-            return vm_call_after_thunk(SCM_CAR(chain));
+            return vm_call_after_thunk(vm, SCM_CAR(chain));
         } else {
             /* before handler.  chain is restored in throw_cont_cc. */
-            return vm_call_before_thunk(SCM_CAR(chain));
+            return vm_call_before_thunk(vm, SCM_CAR(chain));
         }
     }
 
@@ -3394,7 +3399,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->prev = NULL;
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
-    ep->denv = vm->denv;
+    ep->denv = c? c->denv : (cp? cp->denv : SCM_NIL);
     ep->handlers = SCM_NIL; /* don't use for partial continuation */
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */

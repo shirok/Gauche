@@ -1,3 +1,11 @@
+2022-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: Ensure dynamic handlers are invoked on a proper dynamic
+	  environment.  This is important to ensure 'with' and delimited
+	  continuations work together.
+	  The entry of dynamic handler chain is changed.  They should be
+	  treated opaque outside of vm.c.
+
 2022-11-23  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/parameter.scm: Export parameterize as an alias of

@@ -1430,7 +1430,7 @@
     (SCM_FLONUM_ENSURE_MEM before)
     (SCM_FLONUM_ENSURE_MEM after)
     (set! (-> vm handlers)
-          (Scm_Cons (make_handler_entry before after args)
+          (Scm_Cons (make_handler_entry vm before after args)
                     (-> vm handlers)))
     NEXT))
 
