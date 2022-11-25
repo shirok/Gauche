@@ -190,8 +190,8 @@
   [($CONS $APPEND $MEMV $EQ? $EQV?) (pass4/scan2 iform bs fs t? labels)]
   [($VECTOR $LIST $LIST*) (pass4/scan* ($*-args iform) bs fs t? labels)]
   [($LIST->VECTOR) (pass4/scan ($*-arg0 iform) bs fs t? labels)]
-  [($DYNENV) (let1 fs (pass4/scan* ($dynenv-kvs iform) bs fs t? labels)
-               (pass4/scan ($dynenv-body iform) bs fs #f labels))]
+  [($DYNENV) (let1 fs (pass4/scan* ($dynenv-kvs iform) bs fs #f labels)
+               (pass4/scan ($dynenv-body iform) bs fs t? labels))]
   [else fs])
 
 (define (pass4/scan2 iform bs fs t? labels)
