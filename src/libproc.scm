@@ -145,6 +145,10 @@
   (gensym (x->string name)))
 (define (continuation-mark-key? obj) #t)
 
+(select-module gauche.internal)
+(define-cproc %expression-name-mark-key ()
+  (return (Scm__GetDenvKey SCM_DENV_KEY_EXPRESSION_NAME)))
+
 ;;;
 ;;; Useful gadgets
 ;;;

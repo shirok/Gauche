@@ -101,6 +101,7 @@ struct ScmContinuationMarkSetRec {
 typedef enum {
     SCM_DENV_KEY_EXCEPTION_HANDLER,
     SCM_DENV_KEY_PARAMETERIZATION,
+    SCM_DENV_KEY_EXPRESSION_NAME,
 } ScmDenvKeyName;
 
 SCM_EXTERN ScmObj Scm__GetDenvKey(ScmDenvKeyName name);
