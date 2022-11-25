@@ -763,7 +763,11 @@
       (pass5b/return bb ctx receiver))))
 
 (define (pass5b/$DYNENV iform bb benv ctx)
-  (error "[Internal] $DYNENV isn't supported yet."))
+  ;; TODO: A provisional implementation, ignoring denv key&val.
+  ;; A new compiler wraps definition expression with $DYNENV; it only
+  ;; adds debug information, so we can ignore it now.
+  (pass5b/rec ($dynenv-body iform) bb benv ctx)
+  )
 
 (define (pass5b/$IT iform bb benv ctx)
   (error "[Intenral] $IT node should be handled by the parent."))

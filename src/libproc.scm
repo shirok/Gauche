@@ -106,16 +106,26 @@
 (define-cproc continuation-marks? (obj) ::<boolean>
   (return (SCM_CONTINUATION_MARK_SET_P obj)))
 
-(define-cproc call-with-immediate-continuation-mark (key proc
-                                                     :optional (fallback #f))
-  (let* ([vm::ScmVM* (Scm_VM)]
-         [p (-> vm denv)])
+(define-cfn find-immediate-continuation-mark (vm::ScmVM* key fallback) :static
+  (let* ([p (-> vm denv)])
     (for [() (SCM_PAIRP p) (set! p (SCM_CDR p))]
       (cond [(and (-> vm cont) (SCM_EQ p (-> vm cont denv)))
-             (return (Scm_VMApply1 proc fallback))]
+             (return fallback)]
             [(SCM_EQ (SCM_CAAR p) key)
-             (return (Scm_VMApply1 proc (SCM_CDAR p)))]))
-    (return (Scm_VMApply1 proc fallback))))
+             (return (SCM_CDAR p))]))
+    (return fallback)))
+
+(define-cproc call-with-immediate-continuation-mark (key proc
+                                                     :optional (fallback #f))
+  (let* ([val (find-immediate-continuation-mark (Scm_VM) key fallback)])
+    (return (Scm_VMApply1 proc val))))
+
+(define-cproc call-with-current-expression-name (proc)
+  (let* ([name (find-immediate-continuation-mark
+                (Scm_VM)
+                (Scm__GetDenvKey SCM_DENV_KEY_EXPRESSION_NAME)
+                SCM_FALSE)])
+    (return (Scm_VMApply1 proc name))))
 
 ;; TRANSIENT: To compile 0.9.13 with 0.9.12
 (inline-stub

@@ -513,6 +513,7 @@
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
 (define %with-inline-transformer.      (global-id% '%with-inline-transformer))
+(define %expression-name-mark-key. (global-id% '%expression-name-mark-key))
 
 ;; Returns an IForm for (values) - useful for define-pass1-syntax that does
 ;; compile-time things and returns nothing.  The delay trick is to create
@@ -593,12 +594,25 @@
          (unless (vm-compiler-flag-is-set? SCM_COMPILE_LEGACY_DEFINE)
            (%insert-binding module (unwrap-syntax name)
                             (%uninitialized) '(fresh)))
-         ($define oform flags id (pass1 expr cenv))))]
+         ($define oform flags id
+                  (%wrap-as-named-expression oform (pass1 expr cenv) id))))]
     [_ (error "syntax-error:" oform)]))
 
 (define (%rename-toplevel-identifier! identifier)
   (slot-set! identifier 'name (gensym #"~(identifier->symbol identifier)."))
   identifier)
+
+;; Wrap IFORM with $dynenv to carry ID as the name of the expression.
+;; Effectively it is the same as
+;;   (with-continuation-mark '#:expression-name 'id <body>)
+;; During evaluation of IFORM, the name can be retrieved from the
+;; continuation mark.  Note that the name is meaningful
+;; only when an expression is in the tail context, so
+;; call-with-immediate-continuation-mark should be used.
+(define (%wrap-as-named-expression src iform id)
+  ($dynenv src (list ($call src ($gref %expression-name-mark-key.) '())
+                     ($const (unwrap-syntax id)))
+           iform))
 
 ;; Inlinable procedure.
 ;;   Inlinable procedure has both properties of a macro and a procedure.
