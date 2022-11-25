@@ -77,19 +77,26 @@
    (post-observers)
    ))
 
+(define-method write-object ((p <parameter>) port)
+  (format port "#<parameter ~a>" 
+          ((with-module gauche.internal %parameter-name) p)))
+
 ;; We're switching to the srfi-226  model that parameter bindings are shared 
 ;; among threads by default.  The legacy code that requires thread-local
 ;; parameters need to move to make-thread-parameter.  To ease transition,
 ;; we also provide make-shared-parameter.
 (define (make-parameter value :optional (filter #f) (shared? #f))
-  (let* ([v (if filter (filter value) value)]
-         [p (make <parameter>
-              :filter filter
-              :initial-value v
-              :shared shared?)])
-    (getter-with-setter
-     ((with-module gauche.internal %make-parameter-subr) p)
-     (^[val] ((slot-ref p 'setter) val)))))
+  (call-with-current-expression-name
+   (^[name]
+     (let* ([v (if filter (filter value) value)]
+            [p (make <parameter>
+                 :filter filter
+                 :initial-value v
+                 :shared shared?
+                 :name name)])
+       (getter-with-setter
+        ((with-module gauche.internal %make-parameter-subr) p)
+        (^[val] ((slot-ref p 'setter) val)))))))
 
 (define (make-thread-parameter value :optional (filter #f))
   (make-parameter value filter #f))
@@ -108,6 +115,11 @@
     (return SCM_FALSE)))
 
 (select-module gauche.internal)
+
+(define-cproc %parameter-name (param)
+  (unless (SCM_PRIMITIVE_PARAMETER_P param)
+    (SCM_TYPE_ERROR param "<parameter>"))
+  (return (-> (SCM_PRIMITIVE_PARAMETER param) name)))
 
 (define (%parameter-set! param val)     ;called from general_param_proc
   ((slot-ref param 'setter) val))
