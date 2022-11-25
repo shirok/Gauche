@@ -41,7 +41,14 @@
                      "gauche/vm.h"
                      "gauche/priv/glocP.h"
                      "gauche/priv/macroP.h"
-                     "gauche/priv/procP.h")))
+                     "gauche/priv/procP.h"
+                     "gauche/priv/vmP.h")))
+
+;; This is referred from the compiled code of toplevel definitions, so
+;; we need it before anything else.
+(select-module gauche.internal)
+(define-cproc %expression-name-mark-key ()
+  (return (Scm__GetDenvKey SCM_DENV_KEY_EXPRESSION_NAME)))
 
 ;;;
 ;;;  errors
