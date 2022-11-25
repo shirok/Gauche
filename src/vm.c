@@ -1438,9 +1438,8 @@ void Scm_VMFlushFPStack(ScmVM *vm)
  * Dynamic environment public API
  */
 
-void Scm_VMPushDynamicEnv(ScmObj key, ScmObj val)
+static void push_dynamic_env(ScmVM *vm, ScmObj key, ScmObj val)
 {
-    ScmVM *vm = theVM;
     /* If we have duplicate key in the current continuation frame,
        we need an extra care not to increase the dynenv chain.
        (See the discussion in srfi-226)
@@ -1463,12 +1462,23 @@ void Scm_VMPushDynamicEnv(ScmObj key, ScmObj val)
     vm->denv = Scm_Acons(key, val, vm->denv);
 }
 
-ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
+/* Public API */
+void Scm_VMPushDynamicEnv(ScmObj key, ScmObj val)
 {
-    ScmVM *vm = theVM;
+    push_dynamic_env(theVM, key, val);
+}
+
+static ScmObj find_dynamic_env(ScmVM *vm, ScmObj key, ScmObj fallback)
+{
     ScmObj p = Scm_Assq(key, vm->denv);
     if (SCM_PAIRP(p)) return SCM_CDR(p);
     else return fallback;
+}
+
+/* Public API */
+ScmObj Scm_VMFindDynamicEnv(ScmObj key, ScmObj fallback)
+{
+    return find_dynamic_env(theVM, key, fallback);
 }
 
 
