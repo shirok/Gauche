@@ -56,10 +56,10 @@
 
 (define-module gauche.parameter
   (export <parameter>                   ;built-in
-          make-parameter                ;built-in
           parameter?                    ;built-in
           procedure-parameter           ;built-in
-          parameterize
+          make-parameter                ;core's make-thread-parameter
+          parameterize                  ;core's parameterize/dynwind
           parameter-pre-observers
           parameter-post-observers
           parameter-observer-add!
@@ -72,6 +72,7 @@
 (declare (keep-private-macro parameterize))
 
 (define-syntax parameterize parameterize/dynwind)
+(define make-parameter make-thread-parameter)
 
 ;; When an observer is first set, replace setter and restorer
 ;; to take into account of observers.
