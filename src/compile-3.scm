@@ -92,8 +92,12 @@
 (define (pass3/$IT iform labels) iform)
 
 (define (pass3/$DYNENV iform labels)
-  ;;WRITEME
-  iform)
+  (let ([key (pass3/rec (car ($dynenv-kvs iform)) labels)]
+        [val (pass3/rec (cadr ($dynenv-kvs iform)) labels)]
+        [expr (pass3/rec ($dynenv-body iform) labels)])
+    ($dynenv-kvs-set! iform `(,key ,val))
+    ($dynenv-body-set! iform expr)
+    iform))
 
 ;; If optimization:
 ;;

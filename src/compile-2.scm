@@ -654,12 +654,12 @@
 
 ;;
 ;; DYNENV
-;;   We always evaluate EXPR as tail expr; even
-;;
 ;;
 (define (pass2/$DYNENV iform penv tail?)
   (let ([key (pass2/rec (car ($dynenv-kvs iform)) penv #f)]
         [val (pass2/rec (cadr ($dynenv-kvs iform)) penv #f)]
+        ;; We always evaluate EXPR as tail expr.  EXTEND-DENV instruction
+        ;; pushes extra continuation.
         [expr (pass2/rec ($dynenv-body iform) penv #t)])
     ($dynenv-kvs-set! iform `(,key ,val))
     ($dynenv-body-set! iform expr)
