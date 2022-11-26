@@ -179,6 +179,7 @@ static void save_stack(ScmVM *vm);
 static ScmSubr default_exception_handler_rec;
 #define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current);
+static void   push_dynamic_handlers(ScmVM*, ScmObj, ScmObj, ScmObj);
 static void   call_dynamic_handlers(ScmObj target, ScmObj current);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
@@ -946,8 +947,6 @@ static void local_env_shift(ScmVM *vm, int env_depth)
 /*===================================================================
  * Main loop of VM
  */
-static ScmObj make_handler_entry(ScmVM*, ScmObj, ScmObj, ScmObj);
-
 static void run_loop()
 {
     ScmVM *vm = theVM;
@@ -2297,10 +2296,17 @@ bad_list:
  */
 
 /* Handler-chain internal API */
-static ScmObj make_handler_entry(ScmVM *vm, 
-                                 ScmObj before, ScmObj after, ScmObj args)
+static void push_dynamic_handlers(ScmVM *vm, 
+                                  ScmObj before, ScmObj after, ScmObj args)
 {
-    return Scm_Cons(before, Scm_Cons(after, Scm_Cons(vm->denv, args)));
+    ScmObj entry = Scm_Cons(before, Scm_Cons(after, Scm_Cons(vm->denv, args)));
+    vm->handlers = Scm_Cons(entry, vm->handlers);
+}
+
+static void pop_dynamic_handlers(ScmVM *vm)
+{
+    SCM_ASSERT(SCM_PAIRP(vm->handlers));
+    vm->handlers = SCM_CDR(vm->handlers);
 }
 
 static void call_before_thunk(ScmVM *vm, ScmObj handler_entry)
@@ -2352,6 +2358,12 @@ static ScmObj vm_call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 }
 /* End of handler-chain internal API */
 
+/* public api */
+void Scm_VMPushDynamicHandlers(ScmObj before, ScmObj after, ScmObj args)
+{
+    push_dynamic_handlers(Scm_VM(), before, after, args);
+}
+
 static ScmCContinuationProc dynwind_before_cc;
 static ScmCContinuationProc dynwind_body_cc;
 static ScmCContinuationProc dynwind_after_cc;
@@ -2379,8 +2391,7 @@ static ScmObj dynwind_before_cc(ScmObj result SCM_UNUSED, void **data)
     ScmVM *vm = theVM;
 
     d[0] = (void*)after;
-    vm->handlers = Scm_Cons(make_handler_entry(vm, before, after, SCM_NIL),
-                            vm->handlers);
+    push_dynamic_handlers(vm, before, after, SCM_NIL);
     Scm_VMPushCC(dynwind_body_cc, d, 1);
     return Scm_VMApply0(body);
 }
@@ -2391,8 +2402,7 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
     void *d[3];
     ScmVM *vm = theVM;
 
-    SCM_ASSERT(SCM_PAIRP(vm->handlers));
-    vm->handlers = SCM_CDR(vm->handlers);
+    pop_dynamic_handlers(vm);
 
     /* Save return values.
        We could avoid malloc when numVals is small (we can push

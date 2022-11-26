@@ -1429,9 +1429,7 @@
     (POP-ARG before)
     (SCM_FLONUM_ENSURE_MEM before)
     (SCM_FLONUM_ENSURE_MEM after)
-    (set! (-> vm handlers)
-          (Scm_Cons (make_handler_entry vm before after args)
-                    (-> vm handlers)))
+    (push_dynamic_handlers vm before after args)
     NEXT))
 
 (define-insn POP-HANDLERS 0 none #f     ; pop dynamic handlers

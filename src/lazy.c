@@ -132,19 +132,15 @@ static ScmObj release_promise(ScmObj *args SCM_UNUSED,
     return SCM_UNDEFINED;
 }
 
-static void install_release_thunk(ScmVM *vm, ScmObj promise)
+static void install_release_thunk(ScmVM *vm SCM_UNUSED, ScmObj promise)
 {
     /* TODO: the before thunk must be something that
        prevents restarting the execution process. */
-    /* TODO: The handler entry must be created with make_handler_entry
-       in vm.c */
-    vm->handlers =
-        Scm_Cons(SCM_LIST3(Scm_NullProc(),
-                           Scm_MakeSubr(release_promise,
-                                        (void*)promise, 0, 0,
-                                        SCM_MAKE_STR("promise_release")),
-                           SCM_NIL),
-                 vm->handlers);
+    Scm_VMPushDynamicHandlers(Scm_NullProc(),
+                              Scm_MakeSubr(release_promise,
+                                           (void*)promise, 0, 0,
+                                           SCM_MAKE_STR("promise_release")),
+                              SCM_NIL);
 }
 
 static ScmObj force_cc(ScmObj result, void **data)
