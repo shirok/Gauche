@@ -118,7 +118,7 @@ static ScmEnvFrame ccEnvMark = {
 /* Unique uninterned symbol to indicate continuation procedure. */
 static ScmObj continuation_symbol = SCM_UNBOUND;
 
-/* Unique dynamic env keys for system.  We use uninterned symbol for
+/* Unique dynamic env keys for system use.  We use uninterned symbol for
    this purpose, for it is easier while debugging.
    They're set during initialization. */
 static ScmObj denv_key_exception_handler = SCM_UNBOUND;
@@ -144,7 +144,7 @@ static unsigned long vminsn_offsets[SCM_VM_NUM_INSNS] = { 0, };
  *
  *   VM encapsulates the dynamic status of the current execution.
  *   In Gauche, there's always one active virtual machine per thread,
- *   referred by Scm_VM().   From Scheme, VM is seen as a <thread> object.
+ *   referred by Scm_VM().
  *
  *   From Scheme, VM is viewed as <thread> object.  The class definition
  *   is in thrlib.stub.
@@ -445,7 +445,7 @@ DWORD Scm_VMKey(void)
 #endif /*GAUCHE_USE_WTHREADS*/
 
 /* Warn if VM is terminated by uncaught exception, and GC-ed without
-   joining.  It is cleary an unexpected case and worth reporting. */
+   joining.  It is clearly an unexpected case and worth reporting. */
 static void vm_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmVM *vm = SCM_VM(obj);
@@ -2383,17 +2383,17 @@ static ScmObj vm_call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 /* public api */
 void Scm_VMPushDynamicHandlers(ScmObj before, ScmObj after, ScmObj args)
 {
-    push_dynamic_handlers(Scm_VM(), before, after, args);
+    push_dynamic_handlers(theVM, before, after, args);
 }
 
 ScmObj Scm_VMGetDynamicHandlers()
 {
-    return get_dynamic_handlers(Scm_VM());
+    return get_dynamic_handlers(theVM);
 }
 
 void Scm_VMSetDynamicHandlers(ScmObj handlers)
 {
-    set_dynamic_handlers(Scm_VM(), handlers);
+    set_dynamic_handlers(theVM, handlers);
 }
 
 static ScmCContinuationProc dynwind_before_cc;
@@ -2702,7 +2702,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
    to prevent infinite loop. */
 static void call_error_reporter(ScmObj e)
 {
-    ScmVM *vm = Scm_VM();
+    ScmVM *vm = theVM;
 
     if (SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED)) {
         /* An _uncaptured_ error occurred during reporting an error.
@@ -2863,7 +2863,7 @@ ScmObj Scm_VMWithGuardHandler(ScmObj handler, ScmObj thunk)
 
 ScmObj Scm_VMReraise()
 {
-    Scm_VM()->errorHandlerContinuable = TRUE;
+    theVM->errorHandlerContinuable = TRUE;
     return SCM_UNDEFINED;
 }
 
@@ -3120,7 +3120,7 @@ ScmObj Scm_ContinuationMarks(ScmObj contProc, ScmObj promptTag)
     }
     ScmEscapePoint *ep = (ScmEscapePoint*)SCM_SUBR(contProc)->data;
     ScmContFrame *cont = ep->cont;
-    return make_continuation_mark_set(Scm_VM(), cont, ep->denv, promptTag);
+    return make_continuation_mark_set(theVM, cont, ep->denv, promptTag);
 }
 
 
@@ -3256,7 +3256,7 @@ static void call_dynamic_handlers(ScmVM *vm, ScmObj target, ScmObj current)
    we detect error in Scm_Apply. */
 void Scm_VMFlushDynamicHandlers()
 {
-    ScmVM *vm = Scm_VM();
+    ScmVM *vm = theVM;
     ScmObj hp;
     SCM_FOR_EACH(hp, get_dynamic_handlers(vm)) {
         ScmObj handler_entry = SCM_CAR(hp);
@@ -4155,16 +4155,12 @@ void Scm__InitVM(void)
        NB: At this moment, symbols are not initialized.  However,
        we can safely allocate *uninterned* symbols, for it doesn't
        require hashtables. */
-    denv_key_exception_handler =
-        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("exception-handler")), FALSE);
-    denv_key_exception_handler =
-        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("dynamic-handler")), FALSE);
-    denv_key_parameterization =
-        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("parameterization")), FALSE);
-    denv_key_expression_name =
-        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("expression-name")), FALSE);
-    continuation_symbol =
-        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("continuation")), FALSE);
+#define UNINTERNED(name) Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR(#name)), FALSE)
+    denv_key_exception_handler = UNINTERNED(exception-handler);
+    denv_key_exception_handler = UNINTERNED(dynamic-handler);
+    denv_key_parameterization  = UNINTERNED(parameterization);
+    denv_key_expression_name   = UNINTERNED(expression-name);
+    continuation_symbol        = UNINTERNED(continuation);
 
     /* Initialize statically allocated default prompt tag.
        Again, be aware that most modules are not initialized yet.
