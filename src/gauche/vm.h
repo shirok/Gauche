@@ -582,6 +582,7 @@ SCM_EXTERN void   Scm_DetachVM(ScmVM *vm);
 SCM_EXTERN void   Scm_VMDump(ScmVM *vm);
 SCM_EXTERN ScmObj Scm_VMDefaultExceptionHandler(ScmObj exc);
 SCM_EXTERN ScmObj Scm_VMCurrentExceptionHandler();
+SCM_EXTERN ScmObj Scm_VMExceptionHandlerStack();
 SCM_EXTERN void   Scm_VMPushExceptionHandler(ScmObj eh);
 SCM_EXTERN ScmObj Scm_VMPopExceptionHandler();
 SCM_EXTERN ScmObj Scm_VMWithExceptionHandler(ScmObj eh, ScmObj thunk);

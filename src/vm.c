@@ -2869,6 +2869,12 @@ ScmObj Scm_VMCurrentExceptionHandler()
     else return DEFAULT_EXCEPTION_HANDLER;
 }
 
+ScmObj Scm_VMExceptionHandlerStack()
+{
+    ScmObj entry = Scm_VMFindDynamicEnv(denv_key_exception_handler, SCM_NIL);
+    return Scm_CopyList(entry);
+}
+
 void Scm_VMPushExceptionHandler(ScmObj handler)
 {
     ScmObj prev = Scm_VMFindDynamicEnv(denv_key_exception_handler, SCM_NIL);

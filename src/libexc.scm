@@ -98,13 +98,12 @@
                actual-object))
 
 ;;;
-;;; Srfi-18 primitives
+;;; Srfi-18, Srfi-226 primitives
 ;;;
 
 (select-module gauche)
-(define-cproc current-exception-handler ()
-  Scm_VMCurrentExceptionHandler)
-
+(define-cproc current-exception-handler () Scm_VMCurrentExceptionHandler)
+(define-cproc exception-handler-stack () Scm_VMExceptionHandlerStack)
 (define-cproc with-exception-handler (handler thunk)
   Scm_VMWithExceptionHandler)
 
