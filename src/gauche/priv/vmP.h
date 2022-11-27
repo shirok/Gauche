@@ -100,6 +100,7 @@ struct ScmContinuationMarkSetRec {
 /* To obtain denv keys */
 typedef enum {
     SCM_DENV_KEY_EXCEPTION_HANDLER,
+    SCM_DENV_KEY_DYNAMIC_HANDLER,
     SCM_DENV_KEY_PARAMETERIZATION,
     SCM_DENV_KEY_EXPRESSION_NAME,
 } ScmDenvKeyName;

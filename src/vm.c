@@ -122,6 +122,7 @@ static ScmObj continuation_symbol = SCM_UNBOUND;
    this purpose, for it is easier while debugging.
    They're set during initialization. */
 static ScmObj denv_key_exception_handler = SCM_UNBOUND;
+static ScmObj denv_key_dynamic_handler = SCM_UNBOUND;
 static ScmObj denv_key_parameterization = SCM_UNBOUND;
 static ScmObj denv_key_expression_name = SCM_UNBOUND;
 
@@ -2842,6 +2843,8 @@ ScmObj Scm__GetDenvKey(ScmDenvKeyName name)
     switch (name) {
     case SCM_DENV_KEY_EXCEPTION_HANDLER:
         return denv_key_exception_handler;
+    case SCM_DENV_KEY_DYNAMIC_HANDLER:
+        return denv_key_dynamic_handler;
     case SCM_DENV_KEY_PARAMETERIZATION:
         return denv_key_parameterization;
     case SCM_DENV_KEY_EXPRESSION_NAME:
@@ -4103,6 +4106,8 @@ void Scm__InitVM(void)
        require hashtables. */
     denv_key_exception_handler =
         Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("exception-handler")), FALSE);
+    denv_key_exception_handler =
+        Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("dynamic-handler")), FALSE);
     denv_key_parameterization =
         Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("parameterization")), FALSE);
     denv_key_expression_name =
