@@ -177,11 +177,17 @@ static ScmVM *theVM;
 
 static void save_stack(ScmVM *vm);
 
+static ScmObj find_dynamic_env(ScmVM *vm, ScmObj key, ScmObj fallback);
+static void push_dynamic_env(ScmVM *vm, ScmObj key, ScmObj val);
+
 static ScmSubr default_exception_handler_rec;
 #define DEFAULT_EXCEPTION_HANDLER  SCM_OBJ(&default_exception_handler_rec)
 static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current);
+static ScmObj get_dynamic_handlers(ScmVM*);
+static void   set_dynamic_handlers(ScmVM*, ScmObj);
 static void   push_dynamic_handlers(ScmVM*, ScmObj, ScmObj, ScmObj);
-static void   call_dynamic_handlers(ScmObj target, ScmObj current);
+static ScmObj pop_dynamic_handlers(ScmVM*);
+static void   call_dynamic_handlers(ScmVM*, ScmObj target, ScmObj current);
 static ScmObj throw_cont_body(ScmObj, ScmEscapePoint*, ScmObj);
 static void   process_queued_requests(ScmVM *vm);
 static void   vm_finalize(ScmObj vm, void *data);
@@ -286,7 +292,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
        drop copying.  */
     v->denv = get_denv(proto);
 
-    v->handlers = SCM_NIL;
+    v->dynamicHandlers = SCM_NIL;
 
     v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
@@ -1843,7 +1849,7 @@ static ScmObj user_eval_inner(ScmObj program,
     /* Save prev_pc, for the boundary continuation uses pc slot
        to mark the boundary. */
     ScmWord * volatile prev_pc = PC;
-    ScmObj vmhandlers = vm->handlers;
+    ScmObj vmhandlers = get_dynamic_handlers(vm);
     ScmObj vmresetChain = vm->resetChain;
 
     if (SCM_FALSEP(promptTag)) {
@@ -1893,7 +1899,8 @@ static ScmObj user_eval_inner(ScmObj program,
             }
 
             /* call dynamic handlers for returning to the caller */
-            call_dynamic_handlers(vmhandlers, vm->handlers);
+            call_dynamic_handlers(vm, vmhandlers, 
+                                  get_dynamic_handlers(vm));
 
             /* restore return values */
             vm->val0 = val0;
@@ -1916,8 +1923,9 @@ static ScmObj user_eval_inner(ScmObj program,
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
-                ScmObj handlers = throw_cont_calculate_handlers(ep->handlers,
-                                                                vm->handlers);
+                ScmObj handlers = 
+                    throw_cont_calculate_handlers(ep->handlers,
+                                                  get_dynamic_handlers(vm));
                 /* force popping continuation when restarted */
                 vm->pc = PC_TO_RETURN;
                 vm->val0 = throw_cont_body(handlers, ep, vm->escapeData[1]);
@@ -1987,7 +1995,7 @@ void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
 
     a->dummy = SCM_VM_INSN(SCM_VM_RET);
     a->abortHandler = abortHandler;
-    a->dynamicHandlers = vm->handlers;
+    a->dynamicHandlers = get_dynamic_handlers(vm);
     PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
     CONT->cpc = &a->dummy;
     CONT->marker = SCM_CONT_RESET_MARKER;
@@ -2282,7 +2290,7 @@ bad_list:
 
 /* On <handler-chain>
  *
- *   vm->handlers is a list of <handler-entry>.  Each <handler-entry>
+ *   Dynamic handlers is a list of <handler-entry>.  Each <handler-entry>
  *   keeps the "before" and "after" thunk of the dynamic-wind.
  *
  *   <handler-entry> should be treated as an opaque object except
@@ -2297,17 +2305,30 @@ bad_list:
  */
 
 /* Handler-chain internal API */
+static ScmObj get_dynamic_handlers(ScmVM *vm)
+{
+    return vm->dynamicHandlers;
+    //return find_dynamic_env(vm, denv_key_dynamic_handlers, SCM_NIL);
+}
+
+static void set_dynamic_handlers(ScmVM *vm, ScmObj handlers)
+{
+    vm->dynamicHandlers = handlers;
+}
+
 static void push_dynamic_handlers(ScmVM *vm, 
                                   ScmObj before, ScmObj after, ScmObj args)
 {
     ScmObj entry = Scm_Cons(before, Scm_Cons(after, Scm_Cons(vm->denv, args)));
-    vm->handlers = Scm_Cons(entry, vm->handlers);
+    set_dynamic_handlers(vm, Scm_Cons(entry, get_dynamic_handlers(vm)));
 }
 
-static void pop_dynamic_handlers(ScmVM *vm)
+static ScmObj pop_dynamic_handlers(ScmVM *vm)
 {
-    SCM_ASSERT(SCM_PAIRP(vm->handlers));
-    vm->handlers = SCM_CDR(vm->handlers);
+    ScmObj handlers = get_dynamic_handlers(vm);
+    SCM_ASSERT(SCM_PAIRP(handlers));
+    set_dynamic_handlers(vm, SCM_CDR(handlers));
+    return SCM_CAR(handlers);
 }
 
 static void call_before_thunk(ScmVM *vm, ScmObj handler_entry)
@@ -2363,6 +2384,16 @@ static ScmObj vm_call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 void Scm_VMPushDynamicHandlers(ScmObj before, ScmObj after, ScmObj args)
 {
     push_dynamic_handlers(Scm_VM(), before, after, args);
+}
+
+ScmObj Scm_VMGetDynamicHandlers()
+{
+    return get_dynamic_handlers(Scm_VM());
+}
+
+void Scm_VMSetDynamicHandlers(ScmObj handlers)
+{
+    set_dynamic_handlers(Scm_VM(), handlers);
 }
 
 static ScmCContinuationProc dynwind_before_cc;
@@ -2560,7 +2591,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
     if (ep) {
         /* There's an escape point defined by with-error-handler. */
-        ScmObj vmhandlers = vm->handlers;
+        ScmObj vmhandlers = get_dynamic_handlers(vm);
         ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
         int numVals = 0;
 
@@ -2585,7 +2616,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
            If an error is raised within the dynamic handlers, it will be
            captured by the same error handler. */
         if (ep->rewindBefore) {
-            call_dynamic_handlers(ep->handlers, vm->handlers);
+            call_dynamic_handlers(vm, ep->handlers, 
+                                  get_dynamic_handlers(vm));
         }
 
         /* Pop the EP and run the error handler. */
@@ -2604,7 +2636,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         /* call dynamic handlers to rewind */
         if (!ep->rewindBefore) {
-            call_dynamic_handlers(ep->handlers, vm->handlers);
+            call_dynamic_handlers(vm, ep->handlers,
+                                  get_dynamic_handlers(vm));
         }
 
         /* If exception is reraised, the exception handler can return
@@ -2616,7 +2649,8 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
             vm->escapePoint = ep;
 
             /* call dynamic handlers to reenter dynamic-winds */
-            call_dynamic_handlers(vmhandlers, ep->handlers);
+            call_dynamic_handlers(vm, vmhandlers,
+                                  get_dynamic_handlers(vm));
 
             /* reraise and return */
             Scm_VMPushExceptionHandler(ep->xhandler);
@@ -2649,9 +2683,9 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
         call_error_reporter(e);
         /* unwind the dynamic handlers */
         ScmObj hp;
-        SCM_FOR_EACH(hp, vm->handlers) {
+        SCM_FOR_EACH(hp, get_dynamic_handlers(vm)) {
             ScmObj handler_entry = SCM_CAR(hp);
-            vm->handlers = SCM_CDR(hp);
+            set_dynamic_handlers(vm, SCM_CDR(hp));
             call_after_thunk(vm, handler_entry);
         }
     }
@@ -2794,7 +2828,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->ehandler = handler;
     ep->cont = vm->cont;
     ep->denv = vm->denv;
-    ep->handlers = vm->handlers;
+    ep->handlers = get_dynamic_handlers(vm);
     ep->cstack = vm->cstack;
     ep->xhandler = Scm_VMCurrentExceptionHandler();
     ep->resetChain = vm->resetChain;
@@ -2998,10 +3032,10 @@ static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])
     ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
     ScmObj targetHandlers = pd->dynamicHandlers;
     ScmVM *vm = theVM;
-    if (targetHandlers != vm->handlers && SCM_PAIRP(vm->handlers)) {
+    ScmObj currentHandlers = get_dynamic_handlers(vm);
+    if (targetHandlers != currentHandlers && SCM_PAIRP(currentHandlers)) {
         Scm_VMPushCC(vm_abort_cc, data, 2);
-        ScmObj handler_entry = SCM_CAR(vm->handlers);
-        vm->handlers = SCM_CDR(vm->handlers);
+        ScmObj handler_entry = pop_dynamic_handlers(vm);
         return vm_call_after_thunk(vm, handler_entry);
     } else {
         ScmObj args = SCM_OBJ(data[1]);
@@ -3032,15 +3066,15 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
     /* Discard continuation up to abortTo frame. */
     CONT = abortTo;
 
-    if (targetHandlers != vm->handlers && SCM_PAIRP(vm->handlers)) {
+    ScmObj currentHandlers = get_dynamic_handlers(vm);
+    if (targetHandlers != currentHandlers && SCM_PAIRP(currentHandlers)) {
         ENSURE_SAVE_CONT(abortTo);
 
         void *data[2];
         data[0] = abortTo;
         data[1] = args;
         Scm_VMPushCC(vm_abort_cc, data, 2);
-        ScmObj handler_entry = SCM_CAR(vm->handlers);
-        vm->handlers = SCM_CDR(vm->handlers);
+        ScmObj handler_entry = pop_dynamic_handlers(vm);
         return vm_call_after_thunk(vm, handler_entry);
     } else {
         return vm_abort_body(abortTo, args);
@@ -3197,9 +3231,8 @@ static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
     return h;
 }
 
-static void call_dynamic_handlers(ScmObj target, ScmObj current)
+static void call_dynamic_handlers(ScmVM *vm, ScmObj target, ScmObj current)
 {
-    ScmVM *vm = theVM;
     ScmObj hdlist = throw_cont_calculate_handlers(target, current);
     ScmObj p;
     SCM_FOR_EACH(p, hdlist) {
@@ -3207,14 +3240,35 @@ static void call_dynamic_handlers(ScmObj target, ScmObj current)
         ScmObj chain         = SCM_CDAR(p);
         ScmObj handler_entry = SCM_CAR(chain);
         if (SCM_FALSEP(before_flag)) {
-            vm->handlers = SCM_CDR(chain);
+            set_dynamic_handlers(vm, SCM_CDR(chain));
             call_after_thunk(vm, handler_entry);
         } else {
             call_before_thunk(vm, handler_entry);
-            vm->handlers = chain;
+            set_dynamic_handlers(vm, chain);
         }
     }
 }
+
+/* This is to execute pending dynamic handlers upon exit.
+   NB: we ignore errors here.  It may not be accurate behavior, though.
+   (A handler may intentionally raise an error to skip the rest of
+   handlers).  We may change to break from SCM_FOR_EACH in case if
+   we detect error in Scm_Apply. */
+void Scm_VMFlushDynamicHandlers()
+{
+    ScmVM *vm = Scm_VM();
+    ScmObj hp;
+    SCM_FOR_EACH(hp, get_dynamic_handlers(vm)) {
+        ScmObj handler_entry = SCM_CAR(hp);
+        set_dynamic_handlers(vm, SCM_CDR(hp));
+        ScmObj proc = SCM_CADR(handler_entry);
+        ScmObj denv = SCM_CAR(SCM_CDDR(handler_entry));
+        ScmObj args = SCM_CDR(SCM_CDDR(handler_entry));
+        vm->denv = denv;
+        Scm_Apply(proc, args, NULL);
+    }
+}
+
 
 static ScmObj throw_cont_cc(ScmObj, void **);
 
@@ -3243,7 +3297,7 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
         Scm_VMPushCC(throw_cont_cc, data, 4);
         if (SCM_FALSEP(before_flag)) {
             /* after handler */
-            vm->handlers = SCM_CDR(chain);
+            set_dynamic_handlers(vm, SCM_CDR(chain));
             return vm_call_after_thunk(vm, SCM_CAR(chain));
         } else {
             /* before handler.  chain is restored in throw_cont_cc. */
@@ -3304,7 +3358,7 @@ static ScmObj throw_cont_cc(ScmObj result SCM_UNUSED, void **data)
     if (data[3]) {
         /* restore chain only after 'before' thunk. */
         ScmObj chain = SCM_OBJ(data[3]);
-        vm->handlers = chain;
+        set_dynamic_handlers(vm, chain);
     }
     return throw_cont_body(hdlist, ep, args);
 }
@@ -3358,15 +3412,16 @@ static ScmObj throw_continuation(ScmObj *argframe,
     }
 
     ScmObj hdlist;
+    ScmObj currentHandlers = get_dynamic_handlers(vm);
     if (ep->cstack) {
         /* for full continuation */
-        hdlist = throw_cont_calculate_handlers(ep->handlers, vm->handlers);
+        hdlist = throw_cont_calculate_handlers(ep->handlers, currentHandlers);
     } else {
         /* for partial continuation */
         hdlist
             = throw_cont_calculate_handlers(Scm_Append2(ep->partHandlers,
-                                                        vm->handlers),
-                                            vm->handlers);
+                                                        currentHandlers),
+                                            currentHandlers);
     }
     return throw_cont_body(hdlist, ep, args);
 }
@@ -3382,7 +3437,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->ehandler = SCM_FALSE;
     ep->cont = vm->cont;
     ep->denv = vm->denv;
-    ep->handlers = vm->handlers;
+    ep->handlers = get_dynamic_handlers(vm);
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
@@ -3446,14 +3501,14 @@ ScmObj Scm_VMCallPC(ScmObj proc)
 
     /* cut the dynamic handlers chain from current to reset */
     ScmObj h = SCM_NIL, t = SCM_NIL, p;
-    SCM_FOR_EACH(p, vm->handlers) {
+    SCM_FOR_EACH(p, get_dynamic_handlers(vm)) {
         if (p == reset_handlers) break;
         SCM_APPEND1(h, t, SCM_CAR(p));
     }
     ep->partHandlers = h;
 
     /* call dynamic handlers for exiting reset */
-    call_dynamic_handlers(reset_handlers, vm->handlers);
+    call_dynamic_handlers(vm, reset_handlers, get_dynamic_handlers(vm));
 
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
@@ -3479,7 +3534,7 @@ ScmObj Scm_VMReset(ScmObj proc)
     ScmVM *vm = theVM;
 
     /* push/pop reset-chain for reset/shift */
-    vm->resetChain = Scm_Cons(Scm_Cons(SCM_FALSE, vm->handlers),
+    vm->resetChain = Scm_Cons(Scm_Cons(SCM_FALSE, get_dynamic_handlers(vm)),
                               vm->resetChain);
     ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
     SCM_ASSERT(SCM_PAIRP(vm->resetChain));
@@ -4033,11 +4088,7 @@ void Scm_VMDump(ScmVM *vm)
         }
         ep = ep->prev;
     }
-    if (vm->handlers) {
-        Scm_Printf(out, "dynenv: %S\n", vm->handlers);
-    } else {
-        Scm_Printf(out, "dynenv: #NULL\n");
-    }
+    Scm_Printf(out, "dyn_handlers: %S\n", get_dynamic_handlers(vm));
 
     Scm_Printf(out, "reset-chain-length: %d\n", (int)Scm_Length(vm->resetChain));
     if (vm->base) {

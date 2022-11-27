@@ -169,7 +169,7 @@ static ScmObj force_cc(ScmObj result, void **data)
         p->content->owner = NULL;
         SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
     }
-    Scm_VM()->handlers = handlers;
+    Scm_VMSetDynamicHandlers(handlers);
     SCM_RETURN(Scm_VMForce(SCM_OBJ(p)));
 }
 
@@ -185,7 +185,7 @@ ScmObj Scm_VMForce(ScmObj obj)
             ScmVM *vm = Scm_VM();
             void *data[2];
             data[0] = obj;
-            data[1] = vm->handlers;
+            data[1] = Scm_VMGetDynamicHandlers();
 
             if (c->owner == vm) {
                 /* we already have the lock and evaluating this promise. */

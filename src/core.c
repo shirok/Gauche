@@ -428,17 +428,7 @@ void Scm_Cleanup(void)
     if (!cleanup.dirty) return;
     cleanup.dirty = FALSE;
 
-    /* Execute pending dynamic handlers.
-       NB: we ignore errors here.  It may not be accurate behavior, though.
-       (A handler may intentionally raise an error to skip the rest of
-       handlers).  We may change to break from SCM_FOR_EACH in case if
-       we detect error in Scm_Apply. */
-    ScmVM *vm = Scm_VM();
-    ScmObj hp;
-    SCM_FOR_EACH(hp, vm->handlers) {
-        vm->handlers = SCM_CDR(hp);
-        Scm_Apply(SCM_CDAR(hp), SCM_NIL, NULL);
-    }
+    Scm_VMFlushDynamicHandlers();
 
     /* Call the C-registered cleanup handlers. */
     for (struct cleanup_handler_rec *ch = cleanup.handlers; ch; ch = ch->next) {

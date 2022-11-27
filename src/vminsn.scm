@@ -1434,8 +1434,7 @@
 
 (define-insn POP-HANDLERS 0 none #f     ; pop dynamic handlers
   (begin
-    (VM-ASSERT (SCM_PAIRP (-> vm handlers)))
-    (set! (-> vm handlers) (SCM_CDR (-> vm handlers)))
+    (pop_dynamic_handlers vm)
     NEXT))
 
 ;;

@@ -496,7 +496,7 @@ struct ScmVMRec {
                                    before returning to trampoline to another
                                    subr. */
 
-    ScmObj handlers;            /* chain of active dynamic handlers          */
+    ScmObj dynamicHandlers;     /* chain of active dynamic handlers          */
 
     ScmObj *sp;                 /* stack pointer */
     ScmObj *stack;              /* bottom of allocated stack area */
@@ -690,6 +690,10 @@ typedef enum {
 SCM_EXTERN long Scm_VMUnwindProtect(ScmVM *vm, ScmCStack *cstack);
 SCM_EXTERN void Scm_VMNextHandler(ScmVM *vm);
 SCM_EXTERN void Scm_VMRewindProtect(ScmVM *vm);
+
+SCM_EXTERN ScmObj Scm_VMGetDynamicHandlers(void);
+SCM_EXTERN void   Scm_VMSetDynamicHandlers(ScmObj handlers);
+SCM_EXTERN void   Scm_VMFlushDynamicHandlers(void);
 
 #if GAUCHE_API_VERSION < 98
 /* Deprecated - not that useful */
