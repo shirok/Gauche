@@ -473,7 +473,7 @@
 
 (define-module scheme.time
   (export current-jiffy jiffies-per-second current-second)
-  (define-constant tai-utc 35) ; TAI is ahead of this amount as of 2014
+  (define-constant tai-utc 37) ; TAI is ahead of this amount as of 2017
   (define-constant tai-off 8)  ; TAI epoch is ahead of this amount
   ;; We reduce resolution in 32bit platform so that we have more time
   ;; before current-jiffy falls out of fixnum range.  On 32bit machines,

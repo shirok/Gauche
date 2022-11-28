@@ -1750,15 +1750,15 @@ R7RSプログラムからは、
 Returns a real number represents the number of seconds since
 the midnight of Jan. 1, 1970 TAI (which is 23:59:52, Dec 31, 1969 UTC, that
 is, -8 seconds before Unix Epoch.)  Number of leap seconds were
-inserted since then, and as of 2014, UTC is 35 seconds behind TAI.  That means
-the number returned is 27 seconds larger than the unix time,
+inserted since then, and as of 2017, UTC is 37 seconds behind TAI.  That means
+the number returned is 29 seconds larger than the unix time,
 which is returned from @code{sys-time} or @code{sys-gettimeofday}.
 @c JP
 国際原子時(TAI)の1970年1月1日0時から現在までの経過秒数を実数で返します。
 (これは、Unix Epochの8秒前、国際標準時(UTC)で1969年12月31日23:59:52に相当します)。
-この起点以来、閏秒がしばしば挿入されてきて、2014年現在、UTCはTAIより35秒遅れています。
+この起点以来、閏秒がしばしば挿入されてきて、2017年現在、UTCはTAIより37秒遅れています。
 すなわち、この手続きが返す秒数は、@code{sys-time}や@code{sys-gettimeofday}が
-返すUnix timeより27秒大きい値です。
+返すUnix timeより29秒大きい値です。
 @c COMMON
 
 @c EN
