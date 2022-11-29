@@ -4157,7 +4157,7 @@ void Scm__InitVM(void)
        require hashtables. */
 #define UNINTERNED(name) Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR(#name)), FALSE)
     denv_key_exception_handler = UNINTERNED(exception-handler);
-    denv_key_exception_handler = UNINTERNED(dynamic-handler);
+    denv_key_dynamic_handler   = UNINTERNED(dynamic-handler);
     denv_key_parameterization  = UNINTERNED(parameterization);
     denv_key_expression_name   = UNINTERNED(expression-name);
     continuation_symbol        = UNINTERNED(continuation);
