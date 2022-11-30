@@ -238,7 +238,7 @@ struct ScmThreadLocalRec {
     u_long flags;
 };
 
-/* Each VM has vector of parameter values.  vm->parameters points to this.
+/* Each VM has vector of thread-local values.  vm->threadLocals points to this.
    The vector is extended on demand.
    We might swap this to more sophisticated data structure than
    a simple flat vector in future.
