@@ -44,6 +44,7 @@
 #include "gauche/priv/parameterP.h"
 #include "gauche/priv/procP.h"
 #include "gauche/priv/stringP.h"
+#include "gauche/priv/vmP.h"
 
 /* Some routines uses small array on stack to keep data about
    arguments to dispatch.  If the # of args used for dispach is bigger
@@ -3771,6 +3772,7 @@ void Scm__InitClass(void)
 
     /* vm.c */
     CINIT(SCM_CLASS_PROMPT_TAG,       "<prompt-tag>");
+    CINIT(SCM_CLASS_DYNAMIC_HANDLER_ENTRY, "<dynamic-handler-entry>");
 
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");

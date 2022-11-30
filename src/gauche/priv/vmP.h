@@ -108,6 +108,26 @@ typedef enum {
 SCM_EXTERN ScmObj Scm__GetDenvKey(ScmDenvKeyName name);
 
 /*
+ * Dynamic handler entry
+ *
+ *   Dynamic-wind creates this entry, packaging before/after handler,
+ *   the dynamic env on which it should be run, and extra arguments
+ *   for the handlers.
+ */
+typedef struct ScmDynamicHandlerEntryRec {
+    SCM_HEADER;
+    ScmObj before;
+    ScmObj after;
+    ScmObj denv;
+    ScmObj args;
+} ScmDynamicHandlerEntry;
+
+SCM_CLASS_DECL(Scm_DynamicHandlerEntryClass);
+#define SCM_CLASS_DYNAMIC_HANDLER_ENTRY  (&Scm_DynamicHandlerEntryClass)
+#define SCM_DYNAMIC_HANDLER_ENTRY(obj)   ((ScmDynamicHandlerEntry*)obj)
+#define SCM_DYNAMIC_HANDLER_ENTRY_P(obj) SCM_ISA(obj,SCM_CLASS_DYNAMIC_HANDLER_ENTRY)
+
+/*
  * Escape point
  *
  *  EscapePoint (EP) structure keeps certain point of continuation chain
