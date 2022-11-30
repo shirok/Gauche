@@ -114,18 +114,18 @@ SCM_EXTERN ScmObj Scm__GetDenvKey(ScmDenvKeyName name);
  *   the dynamic env on which it should be run, and extra arguments
  *   for the handlers.
  */
-typedef struct ScmDynamicHandlerEntryRec {
+typedef struct ScmDynamicHandlerRec {
     SCM_HEADER;
     ScmObj before;
     ScmObj after;
     ScmObj denv;
     ScmObj args;
-} ScmDynamicHandlerEntry;
+} ScmDynamicHandler;
 
-SCM_CLASS_DECL(Scm_DynamicHandlerEntryClass);
-#define SCM_CLASS_DYNAMIC_HANDLER_ENTRY  (&Scm_DynamicHandlerEntryClass)
-#define SCM_DYNAMIC_HANDLER_ENTRY(obj)   ((ScmDynamicHandlerEntry*)obj)
-#define SCM_DYNAMIC_HANDLER_ENTRY_P(obj) SCM_ISA(obj,SCM_CLASS_DYNAMIC_HANDLER_ENTRY)
+SCM_CLASS_DECL(Scm_DynamicHandlerClass);
+#define SCM_CLASS_DYNAMIC_HANDLER  (&Scm_DynamicHandlerClass)
+#define SCM_DYNAMIC_HANDLER(obj)   ((ScmDynamicHandler*)obj)
+#define SCM_DYNAMIC_HANDLER_P(obj) SCM_ISA(obj,SCM_CLASS_DYNAMIC_HANDLER)
 
 /*
  * Escape point

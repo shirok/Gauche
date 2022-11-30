@@ -3772,7 +3772,7 @@ void Scm__InitClass(void)
 
     /* vm.c */
     CINIT(SCM_CLASS_PROMPT_TAG,       "<prompt-tag>");
-    CINIT(SCM_CLASS_DYNAMIC_HANDLER_ENTRY, "<dynamic-handler-entry>");
+    CINIT(SCM_CLASS_DYNAMIC_HANDLER, "<dynamic-handler>");
 
     /* weak.c */
     CINIT(SCM_CLASS_WEAK_VECTOR,      "<weak-vector>");

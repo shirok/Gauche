@@ -2293,7 +2293,7 @@ bad_list:
  *   Dynamic handlers is a list of <handler-entry>.  Each <handler-entry>
  *   keeps the "before" and "after" thunk of the dynamic-wind.
  *
- *   <handler-entry> is ScmDynamicHandlerEntry object.  It should be 
+ *   <handler-entry> is ScmDynamicHandler object.  It should be 
  *   treated as an opaque object except in vm.c
  *
  *   It has the following memberS:
@@ -2310,23 +2310,22 @@ bad_list:
  */
 
 /* Class stuff */
-static void dynamic_handler_entry_print(ScmObj obj, ScmPort *out, 
+static void dynamic_handler_print(ScmObj obj, ScmPort *out, 
                                         ScmWriteContext *ctx SCM_UNUSED)
 {
-    Scm_Printf(out, "#<dyn-handler %S %S>",
-               SCM_DYNAMIC_HANDLER_ENTRY(obj)->before,
-               SCM_DYNAMIC_HANDLER_ENTRY(obj)->after);
+    Scm_Printf(out, "#<dynamic-handler %S %S>",
+               SCM_DYNAMIC_HANDLER(obj)->before,
+               SCM_DYNAMIC_HANDLER(obj)->after);
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_DynamicHandlerEntryClass,
-                         dynamic_handler_entry_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_DynamicHandlerClass,
+                         dynamic_handler_print, NULL, NULL, NULL,
                          SCM_CLASS_DEFAULT_CPL);
 
-ScmObj make_dynamic_handler_entry(ScmVM *vm, 
-                                  ScmObj before, ScmObj after, ScmObj args)
+ScmObj make_dynamic_handler(ScmVM *vm, ScmObj before, ScmObj after, ScmObj args)
 {
-    ScmDynamicHandlerEntry *e = SCM_NEW(ScmDynamicHandlerEntry);
-    SCM_SET_CLASS(e, SCM_CLASS_DYNAMIC_HANDLER_ENTRY);
+    ScmDynamicHandler *e = SCM_NEW(ScmDynamicHandler);
+    SCM_SET_CLASS(e, SCM_CLASS_DYNAMIC_HANDLER);
     e->before = before;
     e->after = after;
     e->denv = vm->denv;
@@ -2349,7 +2348,7 @@ static void set_dynamic_handlers(ScmVM *vm, ScmObj handlers)
 static void push_dynamic_handlers(ScmVM *vm, 
                                   ScmObj before, ScmObj after, ScmObj args)
 {
-    ScmObj entry = make_dynamic_handler_entry(vm, before, after, args);
+    ScmObj entry = make_dynamic_handler(vm, before, after, args);
     set_dynamic_handlers(vm, Scm_Cons(entry, get_dynamic_handlers(vm)));
 }
 
@@ -2363,34 +2362,34 @@ static ScmObj pop_dynamic_handlers(ScmVM *vm)
 
 static void call_before_thunk(ScmVM *vm, ScmObj handler_entry)
 {
-    SCM_ASSERT(SCM_DYNAMIC_HANDLER_ENTRY_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->denv;
-    Scm_ApplyRec(SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->before,
-                 SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->args);
+    SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
+    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
+    Scm_ApplyRec(SCM_DYNAMIC_HANDLER(handler_entry)->before,
+                 SCM_DYNAMIC_HANDLER(handler_entry)->args);
 }
 
 static void call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 {
-    SCM_ASSERT(SCM_DYNAMIC_HANDLER_ENTRY_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->denv;
-    Scm_ApplyRec(SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->after,
-                 SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->args);
+    SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
+    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
+    Scm_ApplyRec(SCM_DYNAMIC_HANDLER(handler_entry)->after,
+                 SCM_DYNAMIC_HANDLER(handler_entry)->args);
 }
 
 static ScmObj vm_call_before_thunk(ScmVM *vm, ScmObj handler_entry)
 {
-    SCM_ASSERT(SCM_DYNAMIC_HANDLER_ENTRY_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->denv;
-    return Scm_VMApply(SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->before,
-                       SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->args);
+    SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
+    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
+    return Scm_VMApply(SCM_DYNAMIC_HANDLER(handler_entry)->before,
+                       SCM_DYNAMIC_HANDLER(handler_entry)->args);
 }
 
 static ScmObj vm_call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 {
-    SCM_ASSERT(SCM_DYNAMIC_HANDLER_ENTRY_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->denv;
-    return Scm_VMApply(SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->after,
-                       SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->args);
+    SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
+    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
+    return Scm_VMApply(SCM_DYNAMIC_HANDLER(handler_entry)->after,
+                       SCM_DYNAMIC_HANDLER(handler_entry)->args);
 }
 /* End of handler-chain internal API */
 
@@ -3230,13 +3229,13 @@ static ScmObj throw_cont_calculate_handlers(ScmObj target, ScmObj current)
     if (target == current) return SCM_NIL;
 
     SCM_FOR_EACH(p, current) {
-        SCM_ASSERT(SCM_DYNAMIC_HANDLER_ENTRY_P(SCM_CAR(p)));
+        SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), target))) break;
         /* push 'after' handlers to be called */
         SCM_APPEND1(h, t, Scm_Cons(SCM_FALSE, p));
     }
     SCM_FOR_EACH(p, target) {
-        SCM_ASSERT(SCM_DYNAMIC_HANDLER_ENTRY_P(SCM_CAR(p)));
+        SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(SCM_CAR(p)));
         if (!SCM_FALSEP(Scm_Memq(SCM_CAR(p), current))) break;
         /* push 'before' handlers to be called */
         h2 = Scm_Cons(Scm_Cons(SCM_TRUE, p), h2);
@@ -3275,9 +3274,9 @@ void Scm_VMFlushDynamicHandlers()
     SCM_FOR_EACH(hp, get_dynamic_handlers(vm)) {
         ScmObj handler_entry = SCM_CAR(hp);
         set_dynamic_handlers(vm, SCM_CDR(hp));
-        vm->denv = SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->denv;
-        ScmObj proc = SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->after;
-        ScmObj args = SCM_DYNAMIC_HANDLER_ENTRY(handler_entry)->args;
+        vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
+        ScmObj proc = SCM_DYNAMIC_HANDLER(handler_entry)->after;
+        ScmObj args = SCM_DYNAMIC_HANDLER(handler_entry)->args;
         Scm_Apply(proc, args, NULL);
     }
 }
