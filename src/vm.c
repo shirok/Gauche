@@ -73,7 +73,7 @@ static void prompt_tag_print(ScmObj obj, ScmPort *out,
 
 SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
                          prompt_tag_print, NULL, NULL, NULL,
-                         SCM_CLASS_OBJECT_CPL);
+                         SCM_CLASS_DEFAULT_CPL);
 
 static ScmPromptTag defaultPromptTag; /* initialized in initVM */
 
