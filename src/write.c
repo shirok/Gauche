@@ -51,6 +51,8 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs, ScmGeneric *gf);
 static int double_quote_closed_p(ScmString *s);
 SCM_DEFINE_GENERIC(Scm_GenericWriteObject, write_object_fallback, NULL);
 
+static void call_pprint(ScmObj obj, ScmPort *out);
+
 static const ScmWriteControls *defaultWriteControls;
 
 /*============================================================
@@ -842,9 +844,9 @@ void Scm_Format(ScmPort *out SCM_UNUSED,
  *
  *        %[width][.prec]A    - Same as %S, but use DISPLAY mode.
  *
- *        %C                  - Take ScmChar argument and outputs it.
+ *        %W                  - Call pprint.
  *
- *  Both functions return a number of characters written.
+ *        %C                  - Take ScmChar argument and outputs it.
  *
  *  A pound flag '#' for the S directive causes circular-safe output.
  *
@@ -859,6 +861,10 @@ void Scm_Format(ScmPort *out SCM_UNUSED,
  * It is necessary because we need to do the printing part within a closure
  * called by Scm_WithPortLocking.  On some architecture, we can't pass
  * va_list type of argument in a closure packet easily.
+ */
+/* NB: It is tempting to write the logic in Scheme, but we keep the main
+ * feature in C so that Scm_Printf is available to debug Scheme code.
+ * The exception is %W which need to call pprint.
  */
 
 /* Pass 1.  Pop vararg and make a list of arguments.
@@ -919,7 +925,7 @@ static ScmObj SCM_NOINLINE vprintf_pass1(ScmPort *out,
                     SCM_APPEND1(h, t, Scm_MakeIntegerU((u_long)(intptr_t)val));
                     break;
                 }
-            case 'S': case 'A':
+            case 'S': case 'A': case 'W':
                 {
                     ScmObj o = va_arg(ap, ScmObj);
                     SCM_APPEND1(h, t, o);
@@ -1084,6 +1090,14 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                     }
                     break;
                 }
+            case 'W':
+                {
+                    SCM_ASSERT(SCM_PAIRP(args));
+                    ScmObj val = SCM_CAR(args);
+                    args = SCM_CDR(args);
+                    call_pprint(val, out);
+                    break;
+                }
             case 'C':
                 {
                     SCM_ASSERT(SCM_PAIRP(args));
@@ -1153,6 +1167,16 @@ static int double_quote_closed_p(ScmString *s)
         }
     }
     return !inside;
+}
+
+static void call_pprint(ScmObj obj, ScmPort *out)
+{
+    /* Provisional.  We need to set proper indent if %W does not begin
+       at the beginning of line. */
+    ScmWriteControls *wc = Scm_MakeWriteControls(NULL);
+    wc->printPretty = TRUE;
+    wc->printWidth = 79;
+    Scm_WriteWithControls(obj, SCM_OBJ(out), SCM_WRITE_WRITE, wc);
 }
 
 /* Public APIs */
