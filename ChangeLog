@@ -1,3 +1,9 @@
+2022-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c, src/io.scm: Add indent slot to <write-controls>
+	* lib/gauche/pprint.scm: Add indentation according to the indent
+	  value of the controls.
+
 2022-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c: Ensure dynamic handlers are invoked on a proper dynamic
