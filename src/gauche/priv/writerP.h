@@ -43,6 +43,8 @@ struct ScmWriteControlsRec {
     int printBase;              /* 2-36 */
     int printRadix;             /* boolean, #t to print radix for all numbers */
     int printPretty;            /* boolean, #t to use pretty printer */
+    int printIndent;            /* >=0 extra indent to be added after each
+                                   newline when pretty printing. */
 };
 
 SCM_CLASS_DECL(Scm_WriteControlsClass);

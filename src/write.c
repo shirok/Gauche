@@ -129,6 +129,7 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->printBase = 10;
         p->printRadix = FALSE;
         p->printPretty = FALSE;
+        p->printIndent = 0;
     }
     return p;
 }

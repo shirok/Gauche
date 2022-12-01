@@ -907,7 +907,8 @@
             :base   ,(~ obj'base)
             :radix  ,(~ obj'radix)
             :pretty ,(~ obj'pretty)
-            :width  ,(~ obj'width))))
+            :width  ,(~ obj'width)
+            :indent ,(~ obj'indent))))
 
 ;;----------------------------------------------------------------
 ;; Describe
