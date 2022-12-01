@@ -1899,7 +1899,7 @@ static ScmObj user_eval_inner(ScmObj program,
             }
 
             /* call dynamic handlers for returning to the caller */
-            call_dynamic_handlers(vm, vmhandlers, 
+            call_dynamic_handlers(vm, vmhandlers,
                                   get_dynamic_handlers(vm));
 
             /* restore return values */
@@ -1923,7 +1923,7 @@ static ScmObj user_eval_inner(ScmObj program,
         if (vm->escapeReason == SCM_VM_ESCAPE_CONT) {
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
-                ScmObj handlers = 
+                ScmObj handlers =
                     throw_cont_calculate_handlers(ep->handlers,
                                                   get_dynamic_handlers(vm));
                 /* force popping continuation when restarted */
@@ -2293,7 +2293,7 @@ bad_list:
  *   Dynamic handlers is a list of <handler-entry>.  Each <handler-entry>
  *   keeps the "before" and "after" thunk of the dynamic-wind.
  *
- *   <handler-entry> is ScmDynamicHandler object.  It should be 
+ *   <handler-entry> is ScmDynamicHandler object.  It should be
  *   treated as an opaque object except in vm.c
  *
  *   It has the following memberS:
@@ -2310,7 +2310,7 @@ bad_list:
  */
 
 /* Class stuff */
-static void dynamic_handler_print(ScmObj obj, ScmPort *out, 
+static void dynamic_handler_print(ScmObj obj, ScmPort *out,
                                         ScmWriteContext *ctx SCM_UNUSED)
 {
     Scm_Printf(out, "#<dynamic-handler %S %S>",
@@ -2345,7 +2345,7 @@ static void set_dynamic_handlers(ScmVM *vm, ScmObj handlers)
     vm->dynamicHandlers = handlers;
 }
 
-static void push_dynamic_handlers(ScmVM *vm, 
+static void push_dynamic_handlers(ScmVM *vm,
                                   ScmObj before, ScmObj after, ScmObj args)
 {
     ScmObj entry = make_dynamic_handler(vm, before, after, args);
@@ -2629,7 +2629,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
            If an error is raised within the dynamic handlers, it will be
            captured by the same error handler. */
         if (ep->rewindBefore) {
-            call_dynamic_handlers(vm, ep->handlers, 
+            call_dynamic_handlers(vm, ep->handlers,
                                   get_dynamic_handlers(vm));
         }
 
