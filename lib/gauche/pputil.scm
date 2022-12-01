@@ -31,8 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Experimental
-
 (define-module gauche.pputil
   (use util.match)
   (export pprint))
@@ -83,6 +81,7 @@
 (define-inline (rp-length c) (~ c 'controls 'length))
 (define-inline (rp-level c)  (~ c 'controls 'level))
 (define-inline (rp-width c)  (~ c 'controls 'width))
+(define-inline (rp-indent c) (~ c 'controls 'indent))
 
 (define simple-obj?
   (any-pred number? boolean? char? port? symbol? null?
@@ -320,8 +319,10 @@
                   :shared shared-table)
     (let* ([layouter (layout obj 0 context)]
            [memo (make-memo-hash)]
-           [fstree (car (layouter (rp-width context) memo))])
-      (render fstree 0 port))))
+           [fstree (car (layouter (-* (rp-width context)
+                                      (rp-indent context)) 
+                                  memo))])
+      (render fstree (rp-indent context) port))))
 
 ;; Write controls used by pprint
 (define *default-controls* (make-write-controls :length #f
@@ -333,12 +334,13 @@
 (define (pprint obj
                 :key (port (current-output-port))
                      (controls *default-controls*)
-                     width length level
+                     width length level indent
                      ((:newline nl) #t))
   (let1 controls (write-controls-copy controls
                                       :width width
                                       :length length
                                       :level level
-                                      :pretty #t)
+                                      :pretty #t
+                                      :indent indent)
     (write obj port controls)
     (when nl (newline port))))
