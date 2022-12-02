@@ -81,7 +81,11 @@
 (define-inline (rp-length c) (~ c 'controls 'length))
 (define-inline (rp-level c)  (~ c 'controls 'level))
 (define-inline (rp-width c)  (~ c 'controls 'width))
-(define-inline (rp-indent c) (~ c 'controls 'indent))
+
+;; TRANSIENT: To compile 0.9.13 with 0.9.12
+(cond-expand
+ [gauche-0.9.12 (define-inline (rp-indent c) 0)]
+ [else (define-inline (rp-indent c) (~ c 'controls 'indent))])
 
 (define simple-obj?
   (any-pred number? boolean? char? port? symbol? null?
@@ -320,7 +324,7 @@
     (let* ([layouter (layout obj 0 context)]
            [memo (make-memo-hash)]
            [fstree (car (layouter (-* (rp-width context)
-                                      (rp-indent context)) 
+                                      (rp-indent context))
                                   memo))])
       (render fstree (rp-indent context) port))))
 
@@ -336,11 +340,20 @@
                      (controls *default-controls*)
                      width length level indent
                      ((:newline nl) #t))
-  (let1 controls (write-controls-copy controls
-                                      :width width
-                                      :length length
-                                      :level level
-                                      :pretty #t
-                                      :indent indent)
+  (let1 controls (cond-expand
+                  ;; TRANSIENT: Remove thos conditional after 0.9.13 release
+                  [gauche-0.9.12
+                   (write-controls-copy controls
+                                        :width width
+                                        :length length
+                                        :level level
+                                        :pretty #t)]
+                  [else
+                   (write-controls-copy controls
+                                        :width width
+                                        :length length
+                                        :level level
+                                        :pretty #t
+                                        :indent indent)])
     (write obj port controls)
     (when nl (newline port))))
