@@ -215,6 +215,7 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     port->lockCount = 0;
     port->writeState = NULL;
     port->line = 1;
+    port->bytes = 0;
     /* We set name attribute as read-only attribute.  See portapi.c
        for the format of attrs. */
     port->attrs = SCM_LIST1(Scm_Cons(SCM_SYM_NAME, Scm_Cons(name, SCM_FALSE)));
