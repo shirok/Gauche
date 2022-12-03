@@ -23441,6 +23441,32 @@ column width used for pretty printing.
 @c COMMON
 @end defivar
 
+@defivar <write-controls> indent
+@c EN
+This slot must be a nonnegative exact integer.  If this is greater than zero,
+and the @code{pretty} slot is true,
+that number of whitespaces are written out after the pretty printer emits
+a newline.  That is, the second and after lines are indented.
+If the @code{pretty} slot is false, this slot is ignored and no indentation
+is done.
+
+Note that the first line is not indended; the intention is that pretty
+printing begins at a certain column, so that no whitespace insetion
+is needed for the first line but the rest of lines need to be indented
+to align to the beginning of pretty print.
+@c JP
+このスロットの値は非負の正確な整数でなければなりません。
+このスロットの値がゼロより大きく、@code{pretty}スロットが偽でなければ、
+プリティプリンタは改行文字を出力した後にこのスロットの数だけ空白文字を出力します。
+つまり、2行め以降がインデントされることになります。
+@code{pretty}スロットが偽であればこのスロットは無視されインデントも行われません。
+
+最初の行はインデントされないことに注意してください。
+想定する使い方は、あるカラムからプリティプリントを開始することです。この場合、
+1行目はそのまま出力できますが、2行目以降を1行目と揃うようにインデントする必要があります。
+@c COMMON
+@end defivar
+
 @c EN
 A write-controls object is immutable.  If you need a controls object
 with a slight variation of an existing controls object,
@@ -23473,7 +23499,7 @@ Common Lispのスペシャル変数の名前をそのまま反映した
 @c COMMON
 @end deftp
 
-@defun make-write-controls :key length level base radix pretty width
+@defun make-write-controls :key length level base radix pretty width indent
 @c EN
 Creates and returns a write-controls object.
 @c JP
@@ -23481,7 +23507,7 @@ Creates and returns a write-controls object.
 @c COMMON
 @end defun
 
-@defun write-controls-copy controls :key length level base radix pretty width
+@defun write-controls-copy controls :key length level base radix pretty width indent
 @c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the
@@ -23697,7 +23723,7 @@ then writes a newline.
 @c COMMON
 @end defun
 
-@defun pprint obj :key port controls width length level newline
+@defun pprint obj :key port controls width length level newline indent
 @c EN
 Pretty prints @var{obj} to @var{port}, which is defaulted to the current
 output port.  The same effect is achieved by passing the @code{write} procedure
@@ -23713,7 +23739,8 @@ argument.
 To customize pretty printing, you can pass a write control object
 to the @var{controls} keyword argument (the @code{pretty} slot of
 @var{controls} is ignored; it'll always printed prettily).
-Furthermore, you can override @code{width}, @code{length} and @code{level}
+Furthermore, you can override @code{width}, @code{length}, @code{level},
+and @code{indent}
 slots of @var{controls}.  If you omit @var{controls}, a reasonable default
 value is assumed.
 @xref{Output controls}, for the detail of write controls.
@@ -23731,7 +23758,7 @@ value is assumed.
 出力の整形をカスタマイズするには、@var{controls}キーワード引数に出力制御オブジェクトを
 渡します(渡された制御オブジェクトの@code{pretty}スロットは無視されます;
 常に出力は整形されます)。さらに、出力制御オブジェクトの
-@code{width}、@code{length}、@code{level}スロットを、
+@code{width}、@code{length}、@code{level}、@code{indent}スロットを、
 それぞれのキーワード引数でオーバライドできます。
 @var{controls}を省略した場合は適切なデフォルト値が使われます。
 出力制御の詳細については@ref{Output controls}を参照してください。
