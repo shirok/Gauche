@@ -17728,19 +17728,27 @@ the new value:
 
 @c EN
 Note: As of 0.9.13, Gauche's parameter is thread-local: Changes of its
-value aren't visible from other threads.  This is going to be changed.
-If you need a thread specific storage, use @emph{thread locals}
+value aren't visible from other threads.  This is going to change.
+If you're using a parameter simply for thread specific storage,
+consider replacing it with a @emph{thread local}
 (@pxref{Thread local storage}).
+If you want a parameter that's thread-local,
+use @code{make-thread-parameter} instead of @code{make-parameter}.
 @c JP
 註: 0.9.13時点では、Gaucheのパラメータはスレッドローカルです。すなわち、
 パラメータの値の変更は他のスレッドからは見えません。しかしこれは変更が予定されています。
-スレッドローカルな格納領域が必要なら、@emph{thread local}オブジェクトを
-使うようにしてください (@ref{Thread local storage}参照)。
+もし今、単にスレッドローカルな格納領域のために使っているパラメータがあれば、
+かわりに@emph{thread local}オブジェクトを使ってください
+(@ref{Thread local storage}参照)。
+スレッドローカルなパラメータが必要ならば、
+@code{make-paremeter}のかわりに@code{make-thread-parameter}を使ってください。
 @c COMMON
 
 
 @defun make-parameter value :optional filter
-[R7RS base]
+@defunx make-thread-parameter value :optional filter
+@defunx make-shared-parameter value :optional filter
+[R7RS base][SRFI-226]
 @c EN
 Creates a parameter whose initial value is @var{value}.
 If an optional argument @var{filter} is given, it must be
@@ -17760,13 +17768,55 @@ can raise an error or reject to change the parameter's value.
 @c COMMON
 
 @c EN
+A parameter can be a @emph{thread parameter} or a @emph{shared parameter}.
+When you mutate a thread parameter, the change is only visible in the
+same thread; the value in other threads isn't affected.  On the other hand,
+the storage of a shared parameter is shared by all threads, and mutation
+is visible from all threads.  However, once you parameterize it, mutation
+is only visible from the thread that shares the same parameterization.
+
+R7RS only defines @code{make-parameter} and does not specify the behavior
+with threads.  Up until 0.9.12, Gauche made the default parameter thread-local.
+However, SRFI-226 specifies the default parameter shared,
+and specify @code{make-thread-parameter} to be used to create
+a thread parameter.
+
+For the backward compatibility, @code{make-parameter} still returns
+a thread parameter for the time being, unless you explicitly use
+@code{srfi-226}.  Eventually we switch @code{make-parameter} to return
+a shared parameter, so you want to replace it with @code{make-thread-parameter}
+if that's what you want.
+During transition, you can use @code{make-shared-parameter}
+(Gauche specific procedure)
+to explicitly create a shared parameter.
+@c JP
+パラメータには、@emph{スレッドパラメータ}と@emph{共有パラメータ}があります。
+スレッドパラメータの値を破壊的変更した場合、その変更は同じスレッドにしか見えません。
+一方、共有パラメータの値を破壊的変更すると、それは全てのスレッドで共有されます。
+但し、@code{parameterize}で動的環境を作っている場合は、破壊的変更の影響は
+その動的環境を共有しているスレッド間に制限されます。
+
+R7RSは@code{make-parameter}だけを定義し、マルチスレッド時の振る舞いについて規定
+していませんでした。
+Gaucheは0.9.12まで、@code{make-parameter}はスレッドパラメータを返していました。
+SRFI-226でパラメータとスレッドの関係が明確化され、@code{make-parameter}は
+スレッドパラメータを返すように定義されました。
+互換性のため、当分はGaucheの@code{make-parameter}は (@code{srfi-226}を@code{use}
+しない限り) スレッドパラメータを返します。
+その間に、スレッドパラメータが必要な場所では@code{make-thread-parameter}を使うように
+してください。
+また、移行期間中に明示的に共有パラメータが必要な場合は、
+@code{make-shared-parameter}を使ってください。これはGaucheの独自拡張です。
+@c COMMON
+
+@c EN
 NB: In 0.9.9 and before, this procedure returns a parameter
 object, and we used @code{object-apply} method to make it behave
 like a procedure.  However, R7RS explicitly defines the return
 values to be a procedure; notably, portable code expects
 @code{(procedure? (make-parameter 'z))} returns @code{#t}.
 
-As of 0.9.10, we switched @code{make-procedure} to return
+As of 0.9.10, we switched @code{make-parameter} to return
 a procedure.  It won't change the external behavior, except
 when you test the parameter @var{p} with
 @code{(is-a? p <parameter>)}; you have to use @code{parameter?} instead.
@@ -17777,7 +17827,7 @@ when you test the parameter @var{p} with
 規定しており、ポータブルなコードでは
 @code{(procedure? (make-parameter 'z))}は@code{#t}でなければなりません。
 
-0.9.10から、@code{make-procedure}は手続きを返すようになりました。
+0.9.10から、@code{make-parameter}は手続きを返すようになりました。
 通常のパラメータの使い方をしている限り、外部に見える振る舞いは変わりません。
 ただし、@code{make-parameter}で作られたオブジェクトかどうかを
 @code{(is-a? p <parameter>)}でテストしているコードは
