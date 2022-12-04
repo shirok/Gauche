@@ -59,6 +59,7 @@
 #define PORT_SCRATCH(p)   (P_(p)->scratch)
 #define PORT_LINE(p)      (P_(p)->line)
 #define PORT_BYTES(p)     (P_(p)->bytes)
+#define PORT_COLUMN(p)    (P_(p)->column)
 #define PORT_ATTRS(p)     (P_(p)->attrs)
 #define PORT_SAVED_POS(p) (P_(p)->savedPos)
 
@@ -216,6 +217,7 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     port->writeState = NULL;
     port->line = 1;
     port->bytes = 0;
+    port->column = 0;
     /* We set name attribute as read-only attribute.  See portapi.c
        for the format of attrs. */
     port->attrs = SCM_LIST1(Scm_Cons(SCM_SYM_NAME, Scm_Cons(name, SCM_FALSE)));
@@ -278,6 +280,11 @@ ScmSize Scm_PortLine(ScmPort *port)
 ScmSize Scm_PortBytes(ScmPort *port)
 {
     return PORT_BYTES(port);
+}
+
+ScmSize Scm_PortColumn(ScmPort *port)
+{
+    return PORT_COLUMN(port);
 }
 
 static void port_print(ScmObj obj, ScmPort *port,

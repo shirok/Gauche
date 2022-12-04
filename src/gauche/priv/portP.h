@@ -76,16 +76,17 @@ typedef struct ScmPortImplRec {
 
     ScmWriteState *writeState;  /* used internally */
 
-    /* Input counters.  these doesn't take account of ungetting and
+    /* Counters.  These doesn't take account of ungetting and
        seeking: Ungetting doesn't affect those counters (you can think
        that ungetting are handled above the counting layer).
        Seeking invalidates counters; if you seek, the values of the counters
        become bogus.
-       We don't have character counter, since it is difficult to track
-       (read-line uses byte read; see Scm_ReadLine in portapi.c).
+       Gauche doesn't distinguish textual and binary ports.  But once
+       you mix binary and textual I/O, line and column becomes unreliable.
      */
-    ScmSize line;               /* line counter */
-    ScmSize bytes;              /* byte counter */
+    ScmSize line;               /* line counter (input only).  1-base */
+    ScmSize bytes;              /* byte counter (input only) */
+    ScmSize column;             /* column tracker (output only).  0-base */
 
     /* The source or the sink of the port.   Use specialized accessor
        functions to retrieve one of those union members. */

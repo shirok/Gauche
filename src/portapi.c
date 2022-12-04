@@ -104,6 +104,35 @@
     } while (0)
 #endif /* WALKER_CHECK */
 
+/* A utility to compute the current position for Puts and Putz.
+   We only need to count from the last newline.  If the string
+   doesn't contain a newline, returns -1.
+   TODO: Should we consider character width? */
+#ifndef COLUMN_COUNT
+#define COLUMN_COUNT
+static int length_count(const u_char *start, const u_char *end)
+{
+    int col = 0;
+    while (start < end) {
+        u_char b = *start;
+        int i = SCM_CHAR_NFOLLOWS(b);
+        if (i < 0) break;
+        col++;
+        start += i+1;
+    }
+    return col;
+}
+
+static int column_count(const u_char *start, const u_char *end)
+{
+    const u_char *p = end-1;
+    for (; p >= start; p--) {
+        if (*p == '\n') return length_count(p+1, end);
+    }
+    return -1;
+}
+#endif /*COLUMN_COUNT*/
+
 /*=================================================================
  * Putb
  */
@@ -145,6 +174,10 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
         Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
                       "bad port type for output: %S", p);
     }
+
+    /* Binary output doesn't increment column count, but we can reset
+       it when newline is put. */
+    if (b == '\n') PORT_COLUMN(p) = 0;
 }
 
 /*=================================================================
@@ -196,6 +229,10 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
                       "bad port type for output: %S", p);
     }
+
+    /* TODO: Should we consider character width? */
+    if (c == '\n') PORT_COLUMN(p) = 0;
+    else PORT_COLUMN(p)++;
 }
 
 /*=================================================================
@@ -248,6 +285,12 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
         Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
                       "bad port type for output: %S", p);
     }
+
+    const ScmStringBody *sb = SCM_STRING_BODY(s);
+    int col = column_count((const u_char*)SCM_STRING_BODY_START(sb),
+                           (const u_char*)SCM_STRING_BODY_END(sb));
+    if (col < 0) PORT_COLUMN(p) += SCM_STRING_BODY_LENGTH(sb);
+    else PORT_COLUMN(p) = col;
 }
 
 /*=================================================================
@@ -255,7 +298,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
  */
 
 #ifdef SAFE_PORT_OP
-void Scm_Putz(const char *s, volatile ScmSize siz, ScmPort *p)
+void Scm_Putz(const char * volatile s, volatile ScmSize siz, ScmPort *p)
 #else
 void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
 #endif
@@ -295,6 +338,14 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
         UNLOCK(p);
         Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
                       "bad port type for output: %S", p);
+    }
+
+    {
+        const u_char *start = (const u_char*)s;
+        const u_char *end = (const u_char*)(s + siz);
+        int col = column_count(start, end);
+        if (col < 0) PORT_COLUMN(p) += length_count(start, end);
+        else PORT_COLUMN(p) = col;
     }
 }
 
