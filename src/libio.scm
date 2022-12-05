@@ -526,6 +526,12 @@
     (set! (%port-write-state port) #f)
     (%port-unlock! port)))
 
+;; For the time being, we keep this in gauche.internal, for we don't know
+;; how complete column count feature can be.
+(define-cproc port-column (port::<port>) ::<fixnum>
+  (return (Scm_PortColumn port)))
+
+
 ;;;
 ;;; Input
 ;;;

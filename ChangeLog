@@ -1,5 +1,8 @@
 2022-12-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/libio.scm (port-column): Expose this to Scheme (but only for
+	  gauche.internal module, for now)
+
 	* src/libfmt.scm (make-format-pprint): Support ~:w (pretty print)
 	  and ~@w.
 

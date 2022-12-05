@@ -350,6 +350,7 @@ SCM_EXTERN void   Scm_FlushAllPorts(int exitting);
 SCM_EXTERN ScmObj Scm_PortName(ScmPort *port);
 SCM_EXTERN ScmSize Scm_PortLine(ScmPort *port);
 SCM_EXTERN ScmSize Scm_PortBytes(ScmPort *port);
+SCM_EXTERN ScmSize Scm_PortColumn(ScmPort *port);
 SCM_EXTERN ScmObj Scm_GetPortPosition(ScmPort *port);
 SCM_EXTERN ScmObj Scm_GetPortPositionUnsafe(ScmPort *port);
 SCM_EXTERN ScmObj Scm_SetPortPosition(ScmPort *port, ScmObj pos);
