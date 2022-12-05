@@ -441,7 +441,12 @@
       (cond-list [(has-:? flags) @ '(:pretty #t :width 79)]
                  [(has-@? flags) @ '(:length #f :level #f)])
     (^[argptr port ctrl]
-      (let1 arg (fr-next-arg! fmtstr argptr)
+      (let ([arg (fr-next-arg! fmtstr argptr)]
+            [ctrl-args (list* :indent
+                              ((with-module gauche.internal port-column) port)
+                              ctrl-args)])
+        (display ((with-module gauche.internal port-column) port)
+                 (current-error-port))
         (write-shared arg port
                       (if ctrl
                         (apply write-controls-copy ctrl ctrl-args)
