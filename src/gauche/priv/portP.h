@@ -100,6 +100,12 @@ typedef struct ScmPortImplRec {
     /* Port attibutes.  Use Scm_PortAttr* API to access. */
     ScmObj attrs;
 
+    /* Linked port. An input port and an output port may be linked.  Whenever
+       a read is attempted from the iport, the linked oport is automatically
+       flushed and its column count is reset to zero.
+     */
+    ScmObj link;
+
 } ScmPortImpl;
 
 #define P_(p)   ((ScmPortImpl*)(p))

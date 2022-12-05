@@ -62,6 +62,7 @@
 #define PORT_COLUMN(p)    (P_(p)->column)
 #define PORT_ATTRS(p)     (P_(p)->attrs)
 #define PORT_SAVED_POS(p) (P_(p)->savedPos)
+#define PORT_LINK(p)      (P_(p)->link)
 
 /* Parameter location for the global reader lexical mode, from which
    ports inherit. */
@@ -221,6 +222,7 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     /* We set name attribute as read-only attribute.  See portapi.c
        for the format of attrs. */
     port->attrs = SCM_LIST1(Scm_Cons(SCM_SYM_NAME, Scm_Cons(name, SCM_FALSE)));
+    port->link = SCM_FALSE;
 
     Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
 
@@ -247,6 +249,22 @@ void Scm_ClosePort(ScmPort *port)
                    } while (0), /*no cleanup*/);
     PORT_UNLOCK(port);
 }
+
+/*
+ * Link
+ */
+void Scm_LinkPorts(ScmPort *iport, ScmPort *oport)
+{
+    if (!SCM_IPORTP(iport)) {
+        Scm_Error("input port required, but got: %S", iport);
+    }
+    if (!SCM_OPORTP(oport)) {
+        Scm_Error("output port required, but got: %S", oport);
+    }
+    PORT_LINK(iport) = SCM_OBJ(oport);
+    PORT_LINK(oport) = SCM_OBJ(iport);
+}
+
 
 /*===============================================================
  * Locking ports
