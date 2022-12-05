@@ -359,8 +359,7 @@
                ,@body))
            (^[argptr port ctrl] ,@body))))))
 
-;; ~S, ~A, ~W
-;; NB: ~W doesn't take params, so justifying part won't be called for ~W.
+;; ~S, ~A
 (define (make-format-expr fmtstr params flags printer)
   (if (null? params)
     (^[argptr port ctrl]
@@ -432,6 +431,21 @@
              [(#f) (display "\"..." port)]
              [(#\\) (display "\\\".." port)]))
     (display (substring str 0 limit) port)))
+
+;; ~W
+;; Without flags, just behave like ~S.
+;; With ':'-flag, pretty print.
+;; With '@'-flag, remove level and length limits.
+(define (make-format-pprint fmtstr flags)
+  (let1 ctrl-args
+      (cond-list [(has-:? flags) @ '(:pretty #t :width 79)]
+                 [(has-@? flags) @ '(:length #f :level #f)])
+    (^[argptr port ctrl]
+      (let1 arg (fr-next-arg! fmtstr argptr)
+        (write-shared arg port
+                      (if ctrl
+                        (apply write-controls-copy ctrl ctrl-args)
+                        (apply make-write-controls ctrl-args)))))))
 
 ;; ~C
 ;; The "spelling out" mode (~:C) isn't supported yet.
@@ -638,7 +652,7 @@
     [('S fs . ps) (make-format-expr src ps fs write)]
     [('A fs . ps) (make-format-expr src ps fs display)]
     [('C fs . ps) (make-format-char src fs)]
-    [('W fs . ps) (make-format-expr src ps fs write-shared)]
+    [('W fs . ps) (make-format-pprint src fs)]
     [('D fs . ps) (make-format-num src ps fs 10 #f)]
     [('B fs . ps) (make-format-num src ps fs 2 #f)]
     [('O fs . ps) (make-format-num src ps fs 8 #f)]
