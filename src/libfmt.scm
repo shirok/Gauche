@@ -445,8 +445,6 @@
             [ctrl-args (list* :indent
                               ((with-module gauche.internal port-column) port)
                               ctrl-args)])
-        (display ((with-module gauche.internal port-column) port)
-                 (current-error-port))
         (write-shared arg port
                       (if ctrl
                         (apply write-controls-copy ctrl ctrl-args)
