@@ -114,6 +114,11 @@ static void set_port_sigpipe_sensitive(ScmPort *port, ScmObj val)
     Scm_SetPortBufferSigpipeSensitive(port, SCM_BOOL_VALUE(val));
 }
 
+static ScmObj get_port_link(ScmPort *port)
+{
+    return PORT_LINK(port);
+}
+
 static ScmClassStaticSlotSpec port_slots[] = {
     SCM_CLASS_SLOT_SPEC("name", get_port_name, NULL),
     SCM_CLASS_SLOT_SPEC("buffering", get_port_buffering,
@@ -121,6 +126,7 @@ static ScmClassStaticSlotSpec port_slots[] = {
     SCM_CLASS_SLOT_SPEC("sigpipe-sensitive?", get_port_sigpipe_sensitive,
                         set_port_sigpipe_sensitive),
     SCM_CLASS_SLOT_SPEC("current-line", get_port_current_line, NULL),
+    SCM_CLASS_SLOT_SPEC("link", get_port_link, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
