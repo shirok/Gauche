@@ -316,13 +316,22 @@ void Scm_UnlinkPorts(ScmPort *port)
     }
 }
 
-static void flush_linked_port(ScmPort *iport)
+static inline void flush_linked_port(ScmPort *iport)
 {
     ScmObj p = PORT_LINK(iport);
     if (SCM_OPORTP(p)) Scm_Flush(SCM_PORT(p));
 }
 
 #define CLEAR_FLUSHED(p)   (P_(p)->flushed = FALSE)
+
+static inline void reset_linked_column(ScmPort *iport)
+{
+    ScmObj p = PORT_LINK(iport);
+    /* We don't lock p.  If another thread is writing to a linked port
+       something's already wrong, and even so, stepping on each other
+       about the column count won't create havoc. */
+    if (SCM_OPORTP(p))  PORT_COLUMN(p) = 0;
+}
 
 /*===============================================================
  * Locking ports

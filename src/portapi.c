@@ -624,7 +624,10 @@ int Scm_GetbUnsafe(ScmPort *p)
         }
         PORT_BYTES(p)++;
         /* we may mix binary/textual input, so we keep lines updated too. */
-        if (b == '\n') PORT_LINE(p)++;
+        if (b == '\n') {
+            PORT_LINE(p)++;
+            reset_linked_column(p);
+        }
     }
     UNLOCK(p);
     return b;
@@ -751,7 +754,10 @@ int Scm_GetcUnsafe(ScmPort *p)
             PORT_BYTES(p) += nb;
         } else {
             c = first;
-            if (c == '\n') PORT_LINE(p)++;
+            if (c == '\n') {
+                PORT_LINE(p)++;
+                reset_linked_column(p);
+            }
         }
         UNLOCK(p);
         return c;
@@ -777,7 +783,10 @@ int Scm_GetcUnsafe(ScmPort *p)
             PORT_BYTES(p) += nb;
         } else {
             c = first;
-            if (c == '\n') PORT_LINE(p)++;
+            if (c == '\n') {
+                PORT_LINE(p)++;
+                reset_linked_column(p);
+            }
         }
         UNLOCK(p);
         return c;
@@ -786,7 +795,10 @@ int Scm_GetcUnsafe(ScmPort *p)
         int c = 0;
         UNSAVE_POS(p);
         SAFE_CALL(p, c = PORT_VT(p)->Getc(p));
-        if (c == '\n') PORT_LINE(p)++;
+        if (c == '\n') {
+            PORT_LINE(p)++;
+            reset_linked_column(p);
+        }
         UNLOCK(p);
         return c;
     }
@@ -946,6 +958,7 @@ ScmObj readline_body(ScmPort *p)
         b1 = Scm_GetbUnsafe(p);
     }
     PORT_LINE(p)++;
+    reset_linked_column(p);
     return Scm_DStringGet(&ds, 0);
 }
 #endif /* READLINE_AUX */

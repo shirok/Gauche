@@ -1,6 +1,8 @@
 2022-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (port-link!, port-unlink!): Added.
+	* src/port.c: Reset output column count when linked input port
+	  reads '\n', so that ~:W indent correctly during interactive REPL.
 
 2022-12-05  Shiro Kawai  <shiro@acm.org>
 
