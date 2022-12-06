@@ -105,7 +105,9 @@ typedef struct ScmPortImplRec {
        flushed and its column count is reset to zero.
      */
     ScmObj link;
-
+    int flushed;                /* output only. TRUE when the port is flushed,
+                                   FALSE if anything is written after the
+                                   flush.*/
 } ScmPortImpl;
 
 #define P_(p)   ((ScmPortImpl*)(p))

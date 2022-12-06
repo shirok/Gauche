@@ -1,6 +1,8 @@
 2022-12-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/priv/portP.h, src/port.c: Add port linking.
+	  Stdin and stdout is linked by default; reading from stdin
+	  causes flushing stdout.
 
 2022-12-04  Shiro Kawai  <shiro@acm.org>
 

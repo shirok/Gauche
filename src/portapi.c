@@ -148,6 +148,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
+    CLEAR_FLUSHED(p);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -195,6 +196,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
+    CLEAR_FLUSHED(p);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
@@ -250,6 +252,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
+    CLEAR_FLUSHED(p);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
@@ -308,6 +311,7 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
+    CLEAR_FLUSHED(p);
     if (siz < 0) siz = (ScmSize)strlen(s);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -363,6 +367,7 @@ void Scm_FlushUnsafe(ScmPort *p)
     SHORTCUT(p, Scm_FlushUnsafe(p); return);
     WALKER_CHECK(p);
     LOCK(p);
+    if (P_(p)->flushed) return;
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -381,6 +386,7 @@ void Scm_FlushUnsafe(ScmPort *p)
         Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
                       "bad port type for output: %S", p);
     }
+    P_(p)->flushed = TRUE;
 }
 
 /*=================================================================
@@ -487,6 +493,7 @@ int Scm_PeekbUnsafe(ScmPort *p)
     VMDECL;
     SHORTCUT(p, return Scm_PeekbUnsafe(p));
     LOCK(p);
+    flush_linked_port(p);
     if (p->scrcnt > 0) {
         b = (unsigned char)PORT_SCRATCH(p)[0];
     } else {
@@ -578,6 +585,7 @@ int Scm_GetbUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_GetbUnsafe(p));
     LOCK(p);
     CLOSE_CHECK(p);
+    flush_linked_port(p);
 
     /* check if there's "pushed back" stuff */
     if (p->scrcnt) {
@@ -676,6 +684,7 @@ int Scm_GetcUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_GetcUnsafe(p));
     LOCK(p);
     CLOSE_CHECK(p);
+    flush_linked_port(p);
     if (p->scrcnt > 0) {
         int r = GETC_SCRATCH(p);
         UNLOCK(p);
@@ -848,6 +857,7 @@ ScmSize Scm_GetzUnsafe(char *buf, ScmSize buflen, ScmPort *p)
     SHORTCUT(p, return Scm_GetzUnsafe(buf, buflen, p));
     LOCK(p);
     CLOSE_CHECK(p);
+    flush_linked_port(p);
 
     if (p->scrcnt) {
         ScmSize r = GETZ_SCRATCH(buf, buflen, p);
@@ -951,6 +961,7 @@ ScmObj Scm_ReadLineUnsafe(ScmPort *p)
     SHORTCUT(p, return Scm_ReadLineUnsafe(p));
 
     LOCK(p);
+    flush_linked_port(p);
     SAFE_CALL(p, r = readline_body(p));
     UNLOCK(p);
     return r;

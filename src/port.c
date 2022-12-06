@@ -265,6 +265,13 @@ void Scm_LinkPorts(ScmPort *iport, ScmPort *oport)
     PORT_LINK(oport) = SCM_OBJ(iport);
 }
 
+static void flush_linked_port(ScmPort *iport)
+{
+    ScmObj p = PORT_LINK(iport);
+    if (SCM_OPORTP(p)) Scm_Flush(SCM_PORT(p));
+}
+
+#define CLEAR_FLUSHED(p)   (P_(p)->flushed = FALSE)
 
 /*===============================================================
  * Locking ports
@@ -2086,9 +2093,11 @@ void Scm__InitPort(void)
 
     /* The root VM is initialized with bogus standard ports; we need to
        reset them. */
-    Scm_VM()->curin  = SCM_PORT(scm_stdin);
-    Scm_VM()->curout = SCM_PORT(scm_stdout);
-    Scm_VM()->curerr = SCM_PORT(scm_stderr);
+    ScmVM *vm = Scm_VM();
+    vm->curin  = SCM_PORT(scm_stdin);
+    vm->curout = SCM_PORT(scm_stdout);
+    vm->curerr = SCM_PORT(scm_stderr);
+    Scm_LinkPorts(vm->curin, vm->curout);
 
     key_full   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("full")));
     key_modest = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("modest")));
