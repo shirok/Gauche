@@ -153,6 +153,9 @@
     (logior= (SCM_PORT_FLAGS port) SCM_PORT_CASE_FOLD)
     (logand= (SCM_PORT_FLAGS port) (lognot SCM_PORT_CASE_FOLD))))
 
+(define-cproc port-link! (iport::<input-port> oport::<output-port>) ::<void>
+  Scm_LinkPorts)
+
 ;;
 ;; Open and close
 ;;

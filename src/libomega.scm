@@ -254,6 +254,17 @@
 (define *read-edit* (not (sys-getenv "GAUCHE_NO_READ_EDIT")))
 
 ;;;
+;;; Stdio setup
+;;;
+
+(with-module gauche.internal
+  (when (or (and (sys-isatty (standard-input-port))
+                 (sys-isatty (standard-output-port)))
+            (and (%sys-mintty? (standard-input-port))
+                 (%sys-mintty? (standard-output-port))))
+    (port-link! (standard-input-port) (standard-output-port))))
+
+;;;
 ;;; Miscellaneous
 ;;;
 

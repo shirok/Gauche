@@ -2097,7 +2097,6 @@ void Scm__InitPort(void)
     vm->curin  = SCM_PORT(scm_stdin);
     vm->curout = SCM_PORT(scm_stdout);
     vm->curerr = SCM_PORT(scm_stderr);
-    Scm_LinkPorts(vm->curin, vm->curout);
 
     key_full   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("full")));
     key_modest = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("modest")));
