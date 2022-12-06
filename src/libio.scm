@@ -156,6 +156,8 @@
 (define-cproc port-link! (iport::<input-port> oport::<output-port>) ::<void>
   Scm_LinkPorts)
 
+(define-cproc port-unlink! (port::<port>) ::<void> Scm_UnlinkPorts)
+
 ;;
 ;; Open and close
 ;;

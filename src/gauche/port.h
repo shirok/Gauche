@@ -348,6 +348,7 @@ SCM_EXTERN int    Scm_PortPositionable(ScmPort *port, int setp);
 SCM_EXTERN void   Scm_FlushAllPorts(int exitting);
 
 SCM_EXTERN void   Scm_LinkPorts(ScmPort *iport, ScmPort *oport);
+SCM_EXTERN void   Scm_UnlinkPorts(ScmPort *port);
 
 SCM_EXTERN ScmObj Scm_PortName(ScmPort *port);
 SCM_EXTERN ScmSize Scm_PortLine(ScmPort *port);

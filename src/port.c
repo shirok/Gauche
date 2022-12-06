@@ -258,6 +258,7 @@ void Scm_ClosePort(ScmPort *port)
 
 /*
  * Link
+ *   NB: Always lock from iport, then oport, to avoid deadlock.
  */
 void Scm_LinkPorts(ScmPort *iport, ScmPort *oport)
 {
@@ -267,8 +268,52 @@ void Scm_LinkPorts(ScmPort *iport, ScmPort *oport)
     if (!SCM_OPORTP(oport)) {
         Scm_Error("output port required, but got: %S", oport);
     }
-    PORT_LINK(iport) = SCM_OBJ(oport);
-    PORT_LINK(oport) = SCM_OBJ(iport);
+
+    int aborted = FALSE;
+    ScmVM *vm = Scm_VM();
+    PORT_LOCK(iport, vm);
+    PORT_LOCK(oport, vm);
+    if (!SCM_FALSEP(PORT_LINK(iport))
+        || !SCM_FALSEP(PORT_LINK(oport))) {
+        aborted = TRUE;
+    } else {
+        PORT_LINK(iport) = SCM_OBJ(oport);
+        PORT_LINK(oport) = SCM_OBJ(iport);
+    }
+    PORT_UNLOCK(oport);
+    PORT_UNLOCK(iport);
+
+    if (aborted) {
+        Scm_Error("Port(s) are already linked.  Unlink them first.  (%S, %S)",
+                  iport, oport);
+    }
+}
+
+void Scm_UnlinkPorts(ScmPort *port)
+{
+    ScmObj link = PORT_LINK(port);
+    if (SCM_PORTP(link)) {
+        ScmVM *vm = Scm_VM();
+        if (SCM_IPORTP(port)) {
+            PORT_LOCK(port, vm);
+            PORT_LOCK(link, vm);
+            if (PORT_LINK(port) == link) {
+                PORT_LINK(port) = SCM_FALSE;
+                PORT_LINK(link) = SCM_FALSE;
+            }
+            PORT_UNLOCK(link);
+            PORT_UNLOCK(port);
+        } else {
+            PORT_LOCK(link, vm);
+            PORT_LOCK(port, vm);
+            if (PORT_LINK(port) == link) {
+                PORT_LINK(port) = SCM_FALSE;
+                PORT_LINK(link) = SCM_FALSE;
+            }
+            PORT_UNLOCK(port);
+            PORT_UNLOCK(link);
+        }
+    }
 }
 
 static void flush_linked_port(ScmPort *iport)
