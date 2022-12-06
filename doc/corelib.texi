@@ -17800,7 +17800,9 @@ R7RSは@code{make-parameter}だけを定義し、マルチスレッド時の振�
 していませんでした。
 Gaucheは0.9.12まで、@code{make-parameter}はスレッドパラメータを返していました。
 SRFI-226でパラメータとスレッドの関係が明確化され、@code{make-parameter}は
-スレッドパラメータを返すように定義されました。
+共有パラメータを返すように定義されました。スレッドパラメータを作るには
+@code{make-thread-parameter}を使う必要があります。
+
 互換性のため、当分はGaucheの@code{make-parameter}は (@code{srfi-226}を@code{use}
 しない限り) スレッドパラメータを返します。
 その間に、スレッドパラメータが必要な場所では@code{make-thread-parameter}を使うように
