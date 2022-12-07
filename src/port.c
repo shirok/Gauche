@@ -91,6 +91,11 @@ static ScmObj get_port_current_line(ScmPort *port)
     return SCM_MAKE_INT(Scm_PortLine(port));
 }
 
+static ScmObj get_port_current_column(ScmPort *port)
+{
+    return SCM_MAKE_INT(Scm_PortColumn(port));
+}
+
 static ScmObj get_port_buffering(ScmPort *port)
 {
     return Scm_GetPortBufferingModeAsKeyword(port);
@@ -126,6 +131,7 @@ static ScmClassStaticSlotSpec port_slots[] = {
     SCM_CLASS_SLOT_SPEC("sigpipe-sensitive?", get_port_sigpipe_sensitive,
                         set_port_sigpipe_sensitive),
     SCM_CLASS_SLOT_SPEC("current-line", get_port_current_line, NULL),
+    SCM_CLASS_SLOT_SPEC("current-column", get_port_current_column, NULL),
     SCM_CLASS_SLOT_SPEC("link", get_port_link, NULL),
     SCM_CLASS_SLOT_SPEC_END()
 };
