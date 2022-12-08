@@ -797,6 +797,12 @@
 (define-cproc newline (:optional (port::<output-port> (current-output-port)))
   ::<void> (SCM_PUTC #\newline port))
 
+(define-cproc fresh-line (:optional (port::<output-port> (current-output-port)))
+  ::<boolean>
+  (if (== (Scm_PortColumn port) 0)
+    (return FALSE)
+    (begin (SCM_PUTC #\newline port) (return TRUE))))
+
 (define-cproc write-char
   (ch::<char> :optional (port::<output-port> (current-output-port)))
   ::<void> (inliner WRITE-CHAR) (SCM_PUTC ch port))

@@ -1,3 +1,8 @@
+2022-12-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (fresh-line): As a side-effect from port column
+	  counting, we can now easily have CL's fresh-line.
+
 2022-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (port-link!, port-unlink!): Added.
