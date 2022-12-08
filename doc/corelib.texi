@@ -24127,6 +24127,40 @@ S式出力。対応する引数が@code{write}を使ってフォーマットさ�
 @c COMMON
 @end example
 
+@item @b{~W}
+@c EN
+Parametres: None
+
+Write prettily.  Without flags, it just works like @code{~S}.  If
+a colon flag is given, it works like pretty print, i.e. @code{pretty}
+slot of the write context is true.  If an atmark flag is given,
+it works like @code{length} and @code{level} slots of the write
+context is @code{#f}, i.e. temporarily turn off length and level limits.
+
+The indent of pretty print is set at the posiision where @code{~W} beings,
+so that if the output spans multiple lines, the second and following lines
+are indented properly.
+@c JP
+きれいな出力。フラグが無ければ@code{~S}と全く同じですが、
+コロンフラグが与えられるとプリティプリントを行います。つまり、
+@code{<write-context>}の@code{pretty}スロットが一時的に真になります。
+また、アトマークフラグが与えられると、S式の長さ制限および深さ制限を一時的にオフにします。
+つまり、@code{<write-context>}の@code{length}と@code{level}スロットを@code{#f}
+にします。
+
+プリティプリントのインデントは@code{~W}の出力開始位置にセットされるので、
+プリティプリントによって出力が複数行になった場合も開始位置に揃うようにインデントされます。
+@c COMMON
+
+@example
+(format #t "Result: ~:w\n" (make-list 40 'aaaa))
+@r {prints:}
+Result: (aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa
+         aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa
+         aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa)
+@end example
+
+
 @item @b{~C}
 @c EN
 Parameters: None
