@@ -350,6 +350,11 @@
 
 ;; error printing will be handled by the original read-eval-print-loop
 (define (%evaluator expr env)
+  ;; Kludge - If read edit mode is ON, the final '\n' is consumed by
+  ;; the read-line/edit and the column count isn't reset.  To ensure
+  ;; proper indentation of output during eval, we forcibly reset the
+  ;; column count.
+  (set! (~ (current-output-port)'current-column) 0)
   (guard (e [else (%set-history-exception! e) (raise e)])
     (receive r (eval expr env)
       (%set-history-expr! r)
