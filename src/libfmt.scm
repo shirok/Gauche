@@ -67,10 +67,12 @@
 (define formatter-lex
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
-    (define (directive? c) (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%tT|(){}[];" c))
+    (define (directive? c)
+      (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%&tT|(){}[];" c))
     (define directive-param-spec ; (type max-#-of-params [token-id])
       '((S 5) (A 5) (W 0) (C 0)
         (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5) ($ 4) (? 0)
+        (& 1)
         ;; single-character instertion
         (~ 1 #\~) (% 1 #\newline) (T 1 #\tab) (|\|| 1 #\page)
         ;; tokens for structures
@@ -203,6 +205,7 @@
 ;;      | ($ flags digits pre-digits width padchar)
 ;;      | (* flags count)
 ;;      | (? flags)
+;;      | (& flags count)
 ;;      | (char flags <char> count)
 ;;
 ;; argcnt : An integer if the formatter takes fixed number of arguments,
@@ -639,6 +642,14 @@
          (fr-jump-arg! argptr count)
          (fr-jump-arg-relative! argptr count)))))
 
+;; ~&
+(define (make-format-fresh-line fmtstr params flags)
+  ($ with-format-params ([count 1])
+     (when (>= count 1)
+       (fresh-line port)
+       (when (>= count 2)
+         (dotimes [(- count 1)] (display "\n" port))))))
+
 ;; ~t, ~%, ~~
 (define (make-format-single fmtstr ch params flags)
   ($ with-format-params ([count 1])
@@ -666,6 +677,7 @@
     [((or 'R 'r) fs . ps) (make-format-r src ps fs (eq? (car tree) 'R))]
     [('? fs)      (make-format-recur src fs)]
     [('* fs . ps) (make-format-jump src ps fs)]
+    [('& fs . ps) (make-format-fresh-line src ps fs)]
     [('char fs c . ps) (make-format-single src c ps fs)]
     [_ (error "Unsupported formatter directive:" tree)]))
 

@@ -824,6 +824,14 @@
 (test* "format ~@*" "1 2 5"
        (format "~a ~a ~4@*~a" 1 2 3 4 5))
 
+(test* "format ~&" "abc" (format "~&abc"))
+(test* "format ~&" "abc\ndef" (format "abc~&def"))
+(test* "format ~&" "abc\ndef" (format "abc\n~&def"))
+(test* "format ~&" "abc\ndef" (format "abc~%~&def"))
+(test* "format ~&" "abc\ndef" (format "abc~%~&~&def"))
+(test* "format ~n&" "\n\nabc" (format "~3&abc"))
+(test* "format ~n&" "abc\n\n\ndef" (format "abc~3&def"))
+
 (test* "format single character"
        '(("~" "~~~" "~~~~~")
          ("\t" "\t\t\t" "\t\t\t\t\t")

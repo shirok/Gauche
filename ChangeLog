@@ -1,5 +1,7 @@
 2022-12-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/libfmt.scm: Add ~&.
+
 	* src/libio.scm (fresh-line): As a side-effect from port column
 	  counting, we can now easily have CL's fresh-line.
 
