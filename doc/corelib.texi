@@ -23863,6 +23863,24 @@ This is equivalent to @code{(write-char #\newline port)},
 @c COMMON
 @end defun
 
+@defun fresh-line :optional port
+@c EN
+If the output position is at the beginning of line, do nothing and
+returns @code{#f}.  Otherwise, writes a newline character and returns @code{#t}.
+It is handy when you want to make sure the next output starts
+from the beginning of line, but do not want to produce an extra blank line.
+
+This procedure is taken from Common Lisp.
+@c JP
+出力位置が行頭であれば何もせず@code{#f}を返します。そうでなければ@code{#\newline}
+を出力して@code{#t}を返します。
+次の出力を行頭から始めたいけれど、余分な空行は出力したくない、という時に便利です。
+
+この手続きはCommon Lispから取りました。
+@c COMMON
+@end defun
+
+
 
 @node Formatting output, Low-level output, Object output, Output
 @subsubsection Formatting output
