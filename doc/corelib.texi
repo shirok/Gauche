@@ -24566,6 +24566,28 @@ absolute position of the arguments, starting from 0.
 0が最初の引数です。
 @c COMMON
 
+@item @b{~&}
+@c EN
+Parameter: @var{count}
+
+Fresh line.  If the output position is at the beginning of line,
+do nothing; otherwise, output @code{#\newline}, just like
+@code{fresh-line} procedure (@pxref{Object output}).
+
+If @var{count} is given and greater than 1, output @code{(- count 1)}
+newline characters after the fresh line operation.  If @var{count} is 0,
+do nothing.
+@c JP
+パラメータ: @var{count}
+
+出力位置が行の頭なら何もせず、そうでなければ@code{#\newline}文字を出力します。
+@code{fresh-line}手続きと同じです (@ref{Object output}参照)。
+
+もし@var{count}が与えられて1より大きければ、@code{fresh-line}の後に
+@code{(- count 1)}個の@code{#\newline}を出力します。
+@var{count}が0なら何もしません。
+@c COMMON
+
 @item @b{~~}
 @itemx @b{~%}
 @itemx @b{~t}
