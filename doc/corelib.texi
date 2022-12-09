@@ -24159,6 +24159,8 @@ The indent of pretty print is set at the posiision where @code{~W} beings,
 so that if the output spans multiple lines, the second and following lines
 are indented properly.
 @c JP
+パラメータ: なし
+
 きれいな出力。フラグが無ければ@code{~S}と全く同じですが、
 コロンフラグが与えられるとプリティプリントを行います。つまり、
 @code{<write-context>}の@code{pretty}スロットが一時的に真になります。
