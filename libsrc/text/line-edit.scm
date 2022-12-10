@@ -168,7 +168,7 @@
 
 (define (%load-history ctx path)
   (with-input-from-file path
-    (lambda ()
+    (^[]
       (read)                            ; ignore version for now
       (do-generator [line read-line]    ; for now, one sexpr per line
         (guard (e [else #f])
@@ -186,14 +186,13 @@
 
 (define (%save-history ctx path)
   (call-with-temporary-file
-    (lambda (port name)
+    (^[port name]
       (write '(gauche-history-version 1) port)
       (display #\newline port)
-      (for-each
-       (lambda (i)
-         (write (ring-buffer-ref (~ ctx'history) i) port)
-         (display "\n" port))
-       (reverse (iota (history-size ctx))))
+      (for-each (^i
+                 (write (ring-buffer-ref (~ ctx'history) i) port)
+                 (display "\n" port))
+                (reverse (iota (history-size ctx))))
       (close-output-port port) ;; necessary on MinGW
       (sys-rename name path))
     :directory (sys-dirname path)))
@@ -474,7 +473,7 @@
 (define (%redisplay ctx buffer)
 
   ;; check a initial position
-  (if (< (~ ctx'initpos-y) 0)
+  (when (< (~ ctx'initpos-y) 0)
     (set! (~ ctx'initpos-y) 0))
 
   (let* ([con     (~ ctx'console)]
@@ -915,7 +914,7 @@
     [(_ (name . args) docstring . body)
      (define name (make <edit-command>
                     :name 'name
-                    :handler (lambda args . body)
+                    :handler (^ args . body)
                     :docstring docstring))]))
 
 

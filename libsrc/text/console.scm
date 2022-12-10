@@ -77,10 +77,7 @@
 ;; with a message describing why.
 ;; We use some heuristics to recognize vt100 compatible terminals.
 (define (make-default-console :key (if-not-available :error))
-  (define (e s)
-    (if (eq? if-not-available :error)
-      (error s)
-      #f))
+  (define (e s) (and (eq? if-not-available :error) (error s)))
   (cond [(not (memv if-not-available '(#f :error)))
          (error "if-not-available argument must be either #f or :error, \
                  but got:" if-not-available)]
