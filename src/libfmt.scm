@@ -650,7 +650,7 @@
        (when (>= count 2)
          (dotimes [(- count 1)] (display "\n" port))))))
 
-;; ~t, ~%, ~~
+;; ~t, ~%, ~~, ~|
 (define (make-format-single fmtstr ch params flags)
   ($ with-format-params ([count 1])
      (display (make-string count ch) port)))

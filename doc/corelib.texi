@@ -24512,6 +24512,8 @@ Gauche特有の機能として、数値は表示に基づいた丸め(notational
 
 @item @b{~?}
 @c EN
+Parameters: None
+
 Recursive formatting.  The argument for this directive must be a string
 which is interpreted as a format string.  The arguments for the given directive
 should be given in the next argument, as a list.
@@ -24529,6 +24531,8 @@ is taken from the following arguments.
   @result{} "<a b>"
 @end example
 @c JP
+パラメータ: なし
+
 再帰的フォーマッティング。この指示子はまず文字列を引数に取り、それをフォーマット文字列と
 解釈します。そしてさらに次の引数(それはリストでなければなりません)を、そのフォーマット文字列
 への引数と解釈します。
