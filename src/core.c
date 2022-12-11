@@ -679,9 +679,12 @@ void Scm_SimpleMain(int argc, const char *argv[],
 
         ScmEvalPacket epak;
         int r = Scm_Apply(run_main_proc, SCM_LIST2(mainproc, args), &epak);
-        SCM_ASSERT(r == 1 && SCM_INTP(epak.results[0]));
-        Scm_Exit(SCM_INT_VALUE(epak.results[0]));
+        if (r >= 0 && SCM_INTP(epak.results[0])) {
+            Scm_Exit(SCM_INT_VALUE(epak.results[0]));
+        } else {
+            Scm_Exit(70);       /* EX_SOFTWARE */
+        }
     } else {
-        Scm_Exit(70);
+        Scm_Exit(0);
     }
 }

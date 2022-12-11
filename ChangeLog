@@ -1,3 +1,8 @@
+2022-12-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_SimpleMain): Fix exit status alined with script
+	  execution.  https://github.com/shirok/Gauche/issues/861
+
 2022-12-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (formatter-lex): Support ~ + newline
