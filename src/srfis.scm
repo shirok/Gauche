@@ -1499,6 +1499,16 @@ Supported by the module @code{srfi-227}
 (@ref{Optional arguments}参照)。
 
 
+srfi-228, srfi-228
+()
+
+Composing comparators
+Supported by the module @code{srfi-228}
+
+比較器の合成
+@code{srfi-228}でサポートされます。
+
+
 srfi-229, srfi-229
 ()
 
