@@ -18,6 +18,49 @@
    (make-wrapper-comparator person? person-last-name string-ci-comparator)
    (make-wrapper-comparator person? person-first-name string-ci-comparator)))
 
+
+(test-group "base cases"
+
+  (test-equal eqv? #t (comparator? comparator-one))
+  (test-equal eqv? #t (comparator? comparator-zero))
+
+  (define data `(a 1 "a" (a) #(a) ,(make-person "John" "Doe")))
+
+  (test-equal equal?
+    '(#t #t #t #t #t #t)
+    (map (lambda (d) (comparator-test-type comparator-one d)) data))
+  (test-equal equal?
+    '(#t #t #t #t #t #t)
+    (map (lambda (d) (comparator-test-type (make-product-comparator) d)) data))
+
+  (test-equal equal?
+    '(#f #f #f #f #f #f)
+    (map (lambda (d) (comparator-test-type comparator-zero d)) data))
+  (test-equal equal?
+    '(#f #f #f #f #f #f)
+    (map (lambda (d) (comparator-test-type (make-sum-comparator) d)) data))
+
+  (test-equal equal?
+    '(#f #f #f #f #f #f)
+    (map (lambda (d) (<? comparator-one d d)) data))
+  (test-equal equal?
+    '(#f #f #f #f #f #f)
+    (map (lambda (d) (<? (make-product-comparator) d d)) data))
+
+  (test-equal eqv? #f (comparator-ordered? comparator-zero))
+  (test-equal eqv? #f (comparator-ordered? (make-sum-comparator)))
+
+  (test-equal equal?
+    '(0 0 0 0 0 0)
+    (map (lambda (d) (comparator-hash comparator-one d)) data))
+  (test-equal equal?
+    '(0 0 0 0 0 0)
+    (map (lambda (d) (comparator-hash (make-product-comparator) d)) data))
+
+  (test-equal eqv? #f (comparator-hashable? comparator-zero))
+  (test-equal eqv? #f (comparator-hashable? (make-sum-comparator)))
+  )
+
 (test-group "simple"
   (test-equal eq?
     #t
