@@ -24611,6 +24611,40 @@ of characters.
 ひとつ出力します。@var{count}が与えられた場合はその個数出力します。
 @c COMMON
 
+@item @b{~} + newline
+@c EN
+Parameters: none
+
+Ignored newline.  As Scheme supports backslash-newline escape in
+string literals, this is not necessary, but provided for Common Lisp
+compatibility.  Without flags, the newline after the tilde, and any
+following whitespace characters (@code{char-whitespace?}) are ignored.
+With a colon flag, the newline immediately after the tilde is ignored
+but the following whitespace characters are preserved.  With an atmark
+flag, the newline immediately after the tilde is kept
+but the following whitespace characters are ignored.
+@c JP
+パラメータ: なし
+
+改行の無視。Schemeはリテラル文字列の中でバックスラッシュ+改行のエスケープで
+無視される改行を入れられるのでこれは必要ないのですが、Common Lispとの互換性のために
+サポートされています。
+フラグが無ければ、チルドに続く改行文字と、そのあとに続く空白文字(@code{char-whitespace?})
+を無視します。コロンフラグが与えられたら、チルドの直後の改行文字だけ無視します。
+アトマークフラグが与えられたら、
+チルド直後の改行文字は残しますが、その後に続く空白文字は無視します。
+@c COMMON
+
+@example
+(format "abc~\n   def") @result{} "abcdef"
+(format "abc~:\n   def") @result{} "abc   def"
+(format "abc~@\n   def") @result{} "abc\ndef"
+
+(format "abc~:\n   \ndef") @result{} "abc   \ndef"
+@end example
+
+
+
 @end table
 @end defun
 
