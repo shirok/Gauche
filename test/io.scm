@@ -853,6 +853,26 @@
 (test* "format nested ~@?" "<[<<{\"O\" O}>>]>"
        (format "~s[~@?]~s" '< "~s{~@?}~s" '<< "~s ~a" "O" "O" '>> '>))
 
+
+(test* "format ~ + newline" "abcdef"
+       (format "abc~\ndef"))
+(test* "format ~ + newline" "abcdef"
+       (format "abc~\n     def"))
+(test* "format ~ + newline" "abcdef"
+       (format "abc~\n    \n    def"))
+(test* "format ~@ + newline" "abc\ndef"
+       (format "abc~@\ndef"))
+(test* "format ~@ + newline" "abc\ndef"
+       (format "abc~@\n    def"))
+(test* "format ~@ + newline" "abc\ndef"
+       (format "abc~@\n    \ndef"))
+(test* "format ~: + newline" "abcdef"
+       (format "abc~:\ndef"))
+(test* "format ~: + newline" "abc   def"
+       (format "abc~:\n   def"))
+(test* "format ~: + newline" "abc   \n   def"
+       (format "abc~:\n   \n   def"))
+
 (test* "format incomplete tilde sequence" (test-error)
        (format "~"))
 (test* "format incomplete tilde sequence" (test-error)

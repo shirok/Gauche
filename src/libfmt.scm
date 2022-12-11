@@ -87,9 +87,8 @@
       (let loop ([cs (list c)])
         (let1 c (read-char p)
           (cond [(eof-object? c) (list (list->string (reverse cs)))]
-                [(eqv? c #\~)
-                 (cons (list->string (reverse cs))
-                       (directive p (next p)))]
+                [(eqv? c #\~) (cons (list->string (reverse cs))
+                                    (directive p (next p)))]
                 [else (loop (cons c cs))]))))
     ;; NB: this keeps params and flags in reverse order.
     ;; check-param reverses them.
@@ -97,11 +96,19 @@
       (let loop ([params '()] [c c])
         (receive (param c) (fc-param p c params)
           (cond [param (loop (cons param params) c)]
+                [(eqv? c #\newline)  ;; tilde-newline
+                 (if (memq #\@ params)
+                   (if (memq #\: params)
+                     (error "@ and : flags can't be specified simultaneously \
+                             for the ~ + newline directive: " (fmtstr p))
+                     (begin (skip-ws p) (cons "\n" (init p)))) ; ~@\newline
+                   (if (memq #\: params)
+                     (init p)           ; ~:\newline
+                     (begin (skip-ws p) (init p))))] ; ~\newline
                 [(directive? c)
-                 (let1 directive
-                     ($ string->symbol $ string
-                        $ if (memv c '(#\x #\r)) c (char-upcase c))
-                   (acons directive params (init p)))]
+                 (let1 dir ($ string->symbol $ string
+                              $ if (memv c '(#\x #\r)) c (char-upcase c))
+                   (acons dir params (init p)))]
                 [else (errorf "Invalid format directive character `~a' in ~s"
                               c (fmtstr p))]))))
     ;; initial state
@@ -149,6 +156,11 @@
           (if-let1 d (digit->integer c)
             (loop (+ (* val 10) d))
             (values (* val sign) (ensure-param-delimiter p c))))))
+    ;; for tilde-newline.  skip following whitespaces.
+    (define (skip-ws p)
+      (let loop ([c (peek-char p)])
+        (when (char-whitespace? c)
+          (begin (read-char p) (loop (peek-char p))))))
     ;; Check directive parameters vailidity.  This also normalize
     ;; the use of 'empty.  Returns normalized directive.
     (define (check-param directive p)
