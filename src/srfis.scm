@@ -7,8 +7,7 @@
 ;;
 ;;   src/libsrfis.scm  - sets up cond-expand feature identifier list
 ;;                       and exported symbols for built-in srfis.
-;;   lib/srfi/*.scm    - Dummy modules to allow (import (srfi N))
-;;                       to work.
+;;   lib/srfi-*.scm    - Dummy modules for the backward compatibility.
 ;;   doc/srfis.texi    - Incorporated into concepts.texi for the
 ;;                       list of supported srfis.
 
@@ -86,24 +85,26 @@
       (print "(inline-stub (initcode")
       (dolist [rec records]
         (match-let1 (n mod . _) rec
-          (format #t "(Scm_AddFeature \"srfi-~d\" ~s)\n" n (or mod 'NULL))))
+          (format #t "(Scm_AddFeature \"srfi-~d\" ~s)\n" n
+                  (if mod
+                    (regexp-replace #/\-/ mod ".")
+                    'NULL))))
       (print "))")
       (dolist [rec records]
         (match-let1 (n _ exports . _) rec
           (unless (null? exports)
-            (write `(define-module ,(string->symbol #"srfi-~n")
+            (write `(define-module ,(string->symbol #"srfi.~n")
                       (export ,@exports)))
             (newline))))
       )))
 
 (define (generate-srfi-modules records top_builddir)
-  (make-directory* (build-path top_builddir "lib/srfi"))
   (dolist [rec records]
     (let1 n (car rec)
-      (with-output-to-file (build-path top_builddir "lib/srfi" #"~|n|.scm")
+      (with-output-to-file (build-path top_builddir #"lib/srfi-~|n|.scm")
         (^[]
           (print ";; Generated automatically.  Do not edit.")
-          (print #"(define-module srfi.~n (extend srfi-~n))"))))))
+          (print #"(define-module srfi-~n (extend srfi.~n))"))))))
 
 
 (define (generate self top_builddir)

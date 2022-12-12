@@ -122,9 +122,9 @@ test.record
 /ext/scheme/scheme--list.c
 /ext/scheme/scheme--vector.c
 /ext/sparse/data--sparse.c
-/ext/srfi/srfi-13.c
-/ext/srfi/srfi-19.c
-/ext/srfi/srfi-43.c
+/ext/srfi/srfi--13.c
+/ext/srfi/srfi--19.c
+/ext/srfi/srfi--43.c
 /ext/srfi/srfi-178.c
 /ext/sxml/sxml--serializer.c
 /ext/sxml/sxml--ssax.c
@@ -194,7 +194,7 @@ test.record
 /lib/rfc/tls/mbed.scm
 /lib/rfc/tls/get-cacert.scm
 /lib/rfc/zlib.scm
-/lib/srfi/*.scm
+/lib/srfi-*.scm
 /lib/sxml/
 /src/autoloads.c
 /src/builtin-syms.c

@@ -299,14 +299,14 @@ vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 features.c features.flags : gen-features.sh gauche/config.h
 	$(srcdir)/gen-features.sh $(top_srcdir) $(top_builddir)
 
-# NB: libsrfis.scm, lib/srfi/*.scm and doc/srfis.texi are all generated
-# by srfis.scm.  However, if we don't have srfi/0.scm but have libsrfis.scm,
-# we fail to regenerate srfi/0.scm since nothing depends on it.  So
-# we introduce fake dependency from libsrfis.scm to srfi/0.scm.
-$(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi/0.scm : srfis.scm
+# NB: libsrfis.scm, lib/srfi-*.scm and doc/srfis.texi are all generated
+# by srfis.scm.  However, if we don't have srfi-0.scm but have libsrfis.scm,
+# we fail to regenerate srfi-0.scm since nothing depends on it.  So
+# we introduce fake dependency from libsrfis.scm to srfi-0.scm.
+$(top_builddir)/doc/srfis.texi $(top_builddir)/lib/srfi-0.scm : srfis.scm
 	$(BUILD_GOSH) $(srcdir)/srfis.scm $(top_builddir)
 
-libsrfis.scm : $(top_builddir)/lib/srfi/0.scm $(top_builddir)/doc/srfis.texi
+libsrfis.scm : $(top_builddir)/lib/srfi-0.scm $(top_builddir)/doc/srfis.texi
 	@:
 
 native-supp.scm : gen-native.scm

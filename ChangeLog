@@ -1,5 +1,8 @@
 2022-12-11  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi-*.scm, lib/srfi/*.scm: Make srfi/*.scm main implementation
+	  files https://github.com/shirok/Gauche/issues/680
+
 	* src/core.c (Scm_SimpleMain): Fix exit status alined with script
 	  execution.  https://github.com/shirok/Gauche/issues/861
 

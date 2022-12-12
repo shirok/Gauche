@@ -2,16 +2,16 @@ srcdir       = @srcdir@
 top_builddir = @top_builddir@
 top_srcdir   = @top_srcdir@
 
-SCM_CATEGORY =
+SCM_CATEGORY = srfi
 
 include ../Makefile.ext
 
-LIBFILES = srfi-13.$(SOEXT) \
-	   srfi-19.$(SOEXT) \
-	   srfi-43.$(SOEXT)
-SCMFILES = srfi-13.sci \
-	   srfi-19.sci \
-	   srfi-43.sci
+LIBFILES = srfi--13.$(SOEXT) \
+	   srfi--19.$(SOEXT) \
+	   srfi--43.$(SOEXT)
+SCMFILES = 13.sci \
+	   19.sci \
+	   43.sci
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
@@ -29,34 +29,34 @@ install : install-std
 # srfi-13
 #
 
-srfi_13_OBJECTS = srfi-13.$(OBJEXT)
+srfi_13_OBJECTS = srfi--13.$(OBJEXT)
 
-srfi-13.$(SOEXT) : $(srfi_13_OBJECTS)
-	$(MODLINK) srfi-13.$(SOEXT) $(srfi_13_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+srfi--13.$(SOEXT) : $(srfi_13_OBJECTS)
+	$(MODLINK) srfi--13.$(SOEXT) $(srfi_13_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-srfi-13.c srfi-13.sci : $(top_srcdir)/libsrc/srfi-13.scm
-	$(PRECOMP) -e -i srfi-13.sci $(top_srcdir)/libsrc/srfi-13.scm
+srfi--13.c 13.sci : $(top_srcdir)/libsrc/srfi/13.scm
+	$(PRECOMP) -e -P -i 13.sci -o srfi--13 $(top_srcdir)/libsrc/srfi/13.scm
 
 #
 # srfi-19
 #
 
-srfi_19_OBJECTS = srfi-19.$(OBJEXT)
+srfi_19_OBJECTS = srfi--19.$(OBJEXT)
 
-srfi-19.$(SOEXT) : $(srfi_19_OBJECTS)
-	$(MODLINK) srfi-19.$(SOEXT) $(srfi_19_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+srfi--19.$(SOEXT) : $(srfi_19_OBJECTS)
+	$(MODLINK) srfi--19.$(SOEXT) $(srfi_19_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-srfi-19.c srfi-19.sci : srfi-19.scm
-	$(PRECOMP) -e -P $(srcdir)/srfi-19.scm
+srfi--19.c 19.sci : 19.scm
+	$(PRECOMP) -e -P -o srfi--19 $(srcdir)/19.scm
 
 #
 # srfi-43
 #
 
-srfi_43_OBJECTS = srfi-43.$(OBJEXT)
+srfi_43_OBJECTS = srfi--43.$(OBJEXT)
 
-srfi-43.$(SOEXT) : $(srfi_43_OBJECTS)
-	$(MODLINK) srfi-43.$(SOEXT) $(srfi_43_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+srfi--43.$(SOEXT) : $(srfi_43_OBJECTS)
+	$(MODLINK) srfi--43.$(SOEXT) $(srfi_43_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-srfi-43.c srfi-43.sci : srfi-43.scm
-	$(PRECOMP) -e -P $(srcdir)/srfi-43.scm
+srfi--43.c 43.sci : 43.scm
+	$(PRECOMP) -e -P -o srfi--43 $(srcdir)/43.scm
