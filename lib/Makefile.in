@@ -33,8 +33,8 @@ CONFIG_GENERATED = Makefile
 SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
 	   gauche/package gauche/cgen gauche/experimental gauche/test \
 	   gauche/regexp \
-	   srfi srfi/160 srfi-29 srfi-146 \
-	   srfi-159 srfi-159/internal srfi/159 \
+	   srfi srfi/160 srfi-29 srfi/29 srfi/146 \
+	   srfi-159 srfi-159/internal srfi/159 srfi/160 \
 	   srfi/227 \
 	   binary control data dbd dbm math util compat file \
 	   parser parser/peg rfc rfc/http \
