@@ -14,4 +14,4 @@
 ;; native 'format', use srfi.bundle instead.
 
 (define-module srfi.29
-  (extend srfi-29.bundle srfi-29.format))
+  (extend srfi.29.bundle srfi.29.format))
