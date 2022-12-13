@@ -6,9 +6,7 @@
 
 ;; SLIB module exports all symbols for compatibility.
 (define-module slib
-  (use srfi-0)
-  (use srfi-13)
-  (use srfi-111)        ;; For make-exchanger
+  (use srfi.13)
   (extend util.record)  ;; SLIB-compatible make-record-type
   (use file.util)
   (use gauche.uvector)  ;; Used to implement 'byte' API
