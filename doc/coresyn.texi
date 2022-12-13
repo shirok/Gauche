@@ -5664,7 +5664,7 @@ inheritance information calculated from given modules.
 A new module inherits from @code{gauche} module when created.
 If you put @code{(extend scheme)} in that module, for example,
 the module resets to inherit directly from @code{scheme} module
-that has only bindings defined in R5RS, hence, after the export
+that has only bindings defined in R5RS, hence, after the extend
 form, you can't use 'import' or any other @code{gauche}-specific
 bindings in the module.
 @c JP
