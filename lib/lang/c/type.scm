@@ -37,7 +37,7 @@
 (define-module lang.c.type
   (use gauche.dictionary)
   (use util.match)
-  (use srfi-13)
+  (use srfi.13)
   (export grok-c-type
           c-primary-type
           c-basic-type-integral?

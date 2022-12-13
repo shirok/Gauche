@@ -33,7 +33,7 @@
 
 (select-module gauche.charconv)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 (use gauche.sequence)
 (autoload gauche.vport
           open-input-uvector open-output-uvector get-output-uvector)

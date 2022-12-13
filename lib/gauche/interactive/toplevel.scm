@@ -50,7 +50,7 @@
   (use gauche.generator)
   (use gauche.sequence)
   (use gauche.process)
-  (use srfi-13)
+  (use srfi.13)
   (use util.match)
   (use data.trie)
   (export handle-toplevel-command toplevel-command-matches)

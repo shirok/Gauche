@@ -33,7 +33,7 @@
 
 (define-module gauche.libutil
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (export library-exists? library-fold library-map library-for-each
           library-has-module? library-name->module-name))
 (select-module gauche.libutil)

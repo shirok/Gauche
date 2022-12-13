@@ -37,7 +37,7 @@
 
 (define-module control.thread-pool
   (use scheme.list)
-  (use srfi-19)
+  (use srfi.19)
   (use data.queue)
   (use util.match)
   (use gauche.threads)

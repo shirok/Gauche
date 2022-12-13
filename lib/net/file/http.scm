@@ -2,7 +2,7 @@
 
 (define-module net.file.http
   (use scheme.list) ;; list library
-  (use srfi-13)  ;; string library
+  (use srfi.13)  ;; string library
   (use net.http)
   (extend net.file.base)
   (export uri->http-object))

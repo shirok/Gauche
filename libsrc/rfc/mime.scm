@@ -43,7 +43,7 @@
 ;;            Character Sets, Languages, and Continuations
 
 (define-module rfc.mime
-  (use srfi-13)
+  (use srfi.13)
   (use scheme.charset)
   (use rfc.822)
   (use util.match)
@@ -67,7 +67,7 @@
 (autoload gauche.charconv
           ces-upper-compatible? ces-conversion-supported? ces-convert)
 (autoload rfc.mime-port make-mime-port)
-(autoload srfi-27 random-integer)       ;for MIME boundary generation
+(autoload srfi.27 random-integer)       ;for MIME boundary generation
 
 ;;===============================================================
 ;; Basic utility

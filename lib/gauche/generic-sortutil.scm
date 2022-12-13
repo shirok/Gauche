@@ -7,7 +7,7 @@
 ;; this module directly.
 
 (define-module gauche.generic-sortutil
-  (use srfi-42)
+  (use srfi.42)
   (use gauche.sequence)
   (export %generic-sorted? %generic-sort %generic-sort!))
 (select-module gauche.generic-sortutil)

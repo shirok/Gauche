@@ -38,7 +38,7 @@
   (use binary.io)
   (use util.match)
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (export ip-version ip-header-length ip-protocol
           ip-source-address ip-destination-address
           ipv4-global-address?

@@ -19,7 +19,6 @@
 
 (define-module gauche.array
   (use scheme.list)
-  (use srfi-11)
   (use gauche.uvector)
   (use gauche.collection)
   (use gauche.sequence)

@@ -71,7 +71,7 @@
 ;;  (_ "Hello, World!")
 
 (define-module text.gettext
-  (use srfi-13)   ;; string library
+  (use srfi.13)   ;; string library
   (use rfc.822)   ;; message headers parsing (same syntax for .po meta-data)
   (use file.util) ;; file-is-readable?
   (use binary.io)          ;; unpacking .mo files

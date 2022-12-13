@@ -33,8 +33,8 @@
 
 (define-module gauche.cgen.stub
   (use scheme.list)
-  (use srfi-13)
-  (use srfi-42)
+  (use srfi.13)
+  (use srfi.42)
   (use util.match)
   (use text.tr)
   (use text.tree)

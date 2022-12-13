@@ -42,7 +42,7 @@
 
 (define-module scheme.ilist
   (use scheme.list)
-  (use srfi-114 :only (make-car-comparator
+  (use srfi.114 :only (make-car-comparator
                        make-cdr-comparator
                        make-pair-comparator
                        make-improper-list-comparator))

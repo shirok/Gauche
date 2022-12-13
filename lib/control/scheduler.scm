@@ -36,7 +36,7 @@
   (use gauche.dictionary)
   (use data.queue)
   (use data.priority-map)               ;id -> (thunk time)
-  (use srfi-19)
+  (use srfi.19)
   (use control.job)
   (export <scheduler>
           scheduler-schedule!

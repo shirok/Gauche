@@ -3,7 +3,7 @@
 ;;
 
 (use file.util)
-(use srfi-13)
+(use srfi.13)
 (use util.match)
 
 (define (usage)

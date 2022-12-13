@@ -44,7 +44,7 @@
 ;;;
 
 (define-module file.filter
-  (use srfi-13)
+  (use srfi.13)
   (use file.util)
   (export file-filter file-filter-fold file-filter-map file-filter-for-each))
 (select-module file.filter)

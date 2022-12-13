@@ -36,7 +36,7 @@
 
 (define-module gauche.cgen.precomp
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use gauche.cgen)
   (use gauche.cgen.stub)
   (use gauche.cgen.tmodule)

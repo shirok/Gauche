@@ -35,7 +35,7 @@
 
 (define-module gauche.logger
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use gauche.fcntl)
   (export <log-drain>
           log-open

@@ -37,7 +37,7 @@
 (define-module srfi.135
   (use gauche.unicode)
   (use gauche.lazy)
-  (use srfi-152)
+  (use srfi.152)
   (export text? textual? textual-null? textual-every textual-any
           make-text text text-tabulate text-unfold text-unfold-right
           textual->text textual->string textual->vector textual->list

@@ -44,7 +44,7 @@
 
 (define-module compat.jfilter
   (use gauche.charconv)
-  (use srfi-13)
+  (use srfi.13)
   (export cv-file
           cv-string
           judge-file))

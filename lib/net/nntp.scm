@@ -2,7 +2,7 @@
 
 (define-module net.nntp
   (use scheme.list) ;; list library
-  (use srfi-13)     ;; string library
+  (use srfi.13)     ;; string library
   (use gauche.net)
   (use net.client)
   (use net.smtp)

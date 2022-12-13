@@ -40,7 +40,7 @@
   (use gauche.record)
   (use data.queue)
   (use util.match)
-  (use srfi-114)
+  (use srfi.114)
   (export <imap> <imap-meta>
           make-imap alist->imap tree-map->imap
           imap? imap-empty?

@@ -33,7 +33,6 @@
 
 (define-module srfi.37
   (use scheme.list)
-  (use srfi-11)
   (export option option-names option-required-arg? option-optional-arg?
           option-processor option? args-fold)
   )

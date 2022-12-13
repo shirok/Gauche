@@ -3,7 +3,7 @@
 (use data.sparse)
 (use util.match)
 (use gauche.time)
-(use srfi-27)
+(use srfi.27)
 
 (define *problem-size* 200000)
 

@@ -53,9 +53,9 @@
 (select-module gauche.sequence)
 
 ;; used by shuffle
-(autoload srfi-27 default-random-source random-source-make-integers)
+(autoload srfi.27 default-random-source random-source-make-integers)
 
-(autoload srfi-152 string-fold-right)
+(autoload srfi.152 string-fold-right)
 (autoload scheme.vector vector-fold-right)
 
 (define-method referencer ((obj <list>))   list-ref)

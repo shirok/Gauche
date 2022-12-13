@@ -35,7 +35,7 @@
 (define-module parser.peg
   (use scheme.list)
   (use scheme.charset)
-  (use srfi-13)
+  (use srfi.13)
   (use gauche.collection)
   (use gauche.generator)
   (use gauche.lazy)

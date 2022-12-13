@@ -4,7 +4,7 @@
 
 (define-module sxml.adaptor
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (export ascii->char ucscode->char char-return char-tab char-newline
           make-char-quotator assert |--| parser-error cout cerr nl
           string-rindex pp substring?))

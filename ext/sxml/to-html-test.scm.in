@@ -8,7 +8,6 @@
 (test-start "SXML->HTML")
 
 (add-load-path "..")
-(use srfi-0)
 (use sxml.to-html)
 (select-module sxml.to-html)
 (load "./test-common")

@@ -36,8 +36,8 @@
 ;; RFC 2428 FTP Extensions for IPv6 and NATs
 
 (define-module rfc.ftp
-  (use srfi-13)
-  (use srfi-19)
+  (use srfi.13)
+  (use srfi.19)
   (use rfc.uri)
   (use gauche.net)
   (use gauche.logger)

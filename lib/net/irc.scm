@@ -2,8 +2,8 @@
 
 (define-module net.irc
   (use scheme.list) ;; list library
-  (use srfi-13)     ;; string library
-  (use srfi-19)     ;; time and date library
+  (use srfi.13)     ;; string library
+  (use srfi.19)     ;; time and date library
   (use gauche.net)
   (use gauche.charconv)
   (use net.client)

@@ -35,8 +35,8 @@
   (use gauche.fcntl)
   (use gauche.generator)
   (use data.random)
-  (use srfi-13)
-  (use srfi-19)
+  (use srfi.13)
+  (use srfi.19)
   (use file.util)
   (export posix-error? posix-error-name posix-error-message
 

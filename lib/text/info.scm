@@ -32,7 +32,7 @@
 ;;;
 
 (define-module text.info
-  (use srfi-13)
+  (use srfi.13)
   (use scheme.charset)
   (use text.parse)
   (use gauche.process)

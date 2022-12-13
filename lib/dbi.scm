@@ -36,7 +36,7 @@
   (use text.sql)
   (use file.util)
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use util.match)
   (extend util.relation)
   (export <dbi-error> <dbi-nonexistent-driver-error>

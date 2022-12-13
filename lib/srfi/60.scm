@@ -6,7 +6,7 @@
 
 (define-module srfi.60
   (use gauche.sequence)
-  (use srfi-42)
+  (use srfi.42)
   (export logand bitwise-and
           logior bitwise-ior
           logxor bitwise-xor

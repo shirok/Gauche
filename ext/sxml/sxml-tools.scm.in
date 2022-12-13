@@ -7,9 +7,8 @@
 ;;;
 
 (define-module sxml.tools
-  (use srfi-1)
-  (use srfi-11)
-  (use srfi-13)
+  (use scheme.list)
+  (use srfi.13)
   (use text.parse)
   (use sxml.adaptor)
   (export sxml:attr-list-node

@@ -8,7 +8,6 @@
 (test-start "SSAX")
 
 (add-load-path ".")
-(use srfi-0)
 (use sxml.ssax)
 (select-module sxml.ssax)
 ;#include-body "test-common.scm"

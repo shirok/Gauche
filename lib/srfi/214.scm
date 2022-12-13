@@ -33,8 +33,8 @@
 
 ;; We use data.ring-buffer to implement flexvector
 ;;
-(define srfi-214
-  (use srfi-42)
+(define-module srfi.214
+  (use srfi.42)
   (use data.ring-buffer)
   (export make-flexvector flexvector
           flexvector-unfold flexvector-unfold-right

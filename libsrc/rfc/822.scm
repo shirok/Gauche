@@ -37,8 +37,8 @@
 
 (define-module rfc.822
   (use scheme.list)
-  (use srfi-13)
-  (use srfi-19)
+  (use srfi.13)
+  (use srfi.19)
   (use text.parse)
   (use gauche.regexp)
   (use util.match)

@@ -6,7 +6,7 @@
 (define-module srfi.155
   (use scheme.lazy :rename ((delay scheme-delay)
                             (delay-force scheme-delay-force)))
-  (use srfi-154)
+  (use srfi.154)
   (export delay delay-force force
           make-promise promise?
           forcing-extent dynamic-extent?))

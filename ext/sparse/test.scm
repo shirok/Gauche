@@ -7,7 +7,7 @@
 (use data.random)
 (use util.match)
 (use scheme.list)
-(use srfi-27)
+(use srfi.27)
 
 (test-start "data.sparse")
 (use data.sparse)

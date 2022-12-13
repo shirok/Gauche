@@ -11,10 +11,9 @@
 ;; ssax source for R5RS macro version and 'extend' should go away.
 
 (define-module sxml.ssax
-  (use srfi-1)
-  (use srfi-13)
-  (use gauche.parameter)
-  (extend srfi-11 sxml.adaptor text.parse)
+  (use scheme.list)
+  (use srfi.13)
+  (extend sxml.adaptor text.parse)
   (export-all)
   )
 (select-module sxml.ssax)

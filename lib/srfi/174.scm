@@ -7,7 +7,7 @@
 ;;;
 
 (define-module srfi.174
-  (use srfi-19)
+  (use srfi.19)
   (export timespec timespec?
           timespec-seconds timespec-nanoseconds
           inexact->timespec timespec->inexact

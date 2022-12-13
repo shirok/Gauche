@@ -33,8 +33,8 @@
 ;;;
 
 (define-module math.prime
-  (use srfi-27)
-  (use srfi-42)
+  (use srfi.27)
+  (use srfi.42)
   (use gauche.uvector)
   (use gauche.generator)
   (use gauche.sequence)

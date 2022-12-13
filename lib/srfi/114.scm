@@ -45,7 +45,7 @@
 
 (define-module srfi.114
   (use gauche.uvector)
-  (use srfi-162) ; comparator-min, comparator-max
+  (use srfi.162) ; comparator-min, comparator-max
   (export comparator?                   ;builtin (srfi-128)
           comparator-comparison-procedure?
           comparator-hash-function?

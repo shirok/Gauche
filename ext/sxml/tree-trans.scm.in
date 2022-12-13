@@ -7,7 +7,6 @@
 ;;;
 
 (define-module sxml.tree-trans
-  (use srfi-11)
   (use text.parse)
   (use sxml.adaptor)
   (export SRV:send-reply

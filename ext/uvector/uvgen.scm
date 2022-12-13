@@ -2,7 +2,7 @@
 ;; Generates uvector.c, uvector.h and uvlib.scm the corresponding *.tmpl file
 ;;
 
-(use srfi-13)
+(use srfi.13)
 (use text.tree)
 (use file.util)
 (use gauche.sequence)

@@ -5,7 +5,7 @@
 (use gauche.uvector)
 (use gauche.sequence)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 
 (let* ((strs '("kana" "kanaono" "kanawai" "kanawai koa"
                "kanawai mele" "kane" "Kane" "kane make" "kane makua"

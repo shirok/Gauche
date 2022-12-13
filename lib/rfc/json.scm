@@ -39,8 +39,8 @@
   (use gauche.unicode)
   (use scheme.charset)
   (use parser.peg)
-  (use srfi-13)
-  (use srfi-113)
+  (use srfi.13)
+  (use srfi.113)
   (export <json-parse-error> <json-construct-error>
           parse-json parse-json-string
           parse-json*

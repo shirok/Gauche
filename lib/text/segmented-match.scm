@@ -34,7 +34,7 @@
 ;; match c-w-i-f with call-with-input-file etc.
 
 (define-module text.segmented-match
-  (use srfi-13)
+  (use srfi.13)
   (export make-segmented-prefix-matcher
           segmented-prefix?))
 (select-module text.segmented-match)

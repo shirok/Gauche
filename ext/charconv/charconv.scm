@@ -33,7 +33,7 @@
 
 (define-module gauche.charconv
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use gauche.sequence)
   (export open-input-conversion-port
           open-output-conversion-port

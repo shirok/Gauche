@@ -39,7 +39,7 @@
 
 (define-module www.cgi
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use rfc.uri)
   (use rfc.mime)
   (use rfc.822)

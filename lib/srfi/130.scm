@@ -3,7 +3,7 @@
 ;;
 
 (define-module srfi.130
-  (use srfi-13)
+  (use srfi.13)
   (export string-contains
           string-contains-right
           string-fold
@@ -82,16 +82,16 @@
 (define substring/cursors substring)
 
 (define (string-index . args)
-  (values-ref (apply (with-module srfi-13 %string-index) args) 0))
+  (values-ref (apply (with-module srfi.13 %string-index) args) 0))
 
 (define (string-index-right . args)
-  (values-ref (apply (with-module srfi-13 %string-index-right) args) 0))
+  (values-ref (apply (with-module srfi.13 %string-index-right) args) 0))
 
 (define (string-skip . args)
-  (values-ref (apply (with-module srfi-13 %string-skip) args) 0))
+  (values-ref (apply (with-module srfi.13 %string-skip) args) 0))
 
 (define (string-skip-right . args)
-  (values-ref (apply (with-module srfi-13 %string-skip-right) args) 0))
+  (values-ref (apply (with-module srfi.13 %string-skip-right) args) 0))
 
 (define (string-for-each-cursor proc s :optional
                                 (start 0)

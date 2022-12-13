@@ -2,10 +2,10 @@
 
 (define-module test-srfi-180
   (use gauche.test)
-  (use srfi-180)
+  (use srfi.180)
   (use gauche.generator)
 
-  (test-module 'srfi-180)
+  (test-module 'srfi.180)
 
   (let ()
     (define (parse-with-generator str)

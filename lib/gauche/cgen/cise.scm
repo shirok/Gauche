@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.cgen.cise
-  (use srfi-13)
+  (use srfi.13)
   (use gauche.sequence)
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)

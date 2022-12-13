@@ -3,9 +3,9 @@
 ;;;
 
 (define-module srfi.152
-  (use srfi-13)
+  (use srfi.13)
   ;; Note, 130 version returns a cursor, not an index
-  (use srfi-130
+  (use srfi.130
        :only (string-index string-index-right)
        :rename ((string-index %string-index)
                 (string-index-right %string-index-right)))

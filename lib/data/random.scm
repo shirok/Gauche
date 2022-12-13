@@ -34,8 +34,8 @@
 (define-module data.random
   (use scheme.list)
   (use scheme.charset)
-  (use srfi-27)
-  (use srfi-42)
+  (use srfi.27)
+  (use srfi.42)
   (use util.match)
   (use math.const)
   (use math.mt-random)

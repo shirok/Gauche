@@ -35,7 +35,7 @@
 
 (define-module srfi.120
   (use control.scheduler)
-  (use srfi-19)
+  (use srfi.19)
   (export make-timer timer? timer-cancel!
           timer-schedule! timer-reschedule!
           timer-task-remove! timer-task-exists?

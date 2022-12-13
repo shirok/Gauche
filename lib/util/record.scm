@@ -18,7 +18,7 @@
 ;;; module.
 
 (define-module util.record
-  (extend srfi-9)
+  (extend srfi.9)
   (use scheme.list)
   (export record? make-record-type
           record-constructor record-predicate record-accessor

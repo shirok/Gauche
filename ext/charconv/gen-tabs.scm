@@ -7,7 +7,7 @@
 
 (use gauche.cgen)
 (use gauche.mop.instance-pool)
-(use srfi-42)
+(use srfi.42)
 (use util.match)
 
 ;;

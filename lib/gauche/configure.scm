@@ -84,8 +84,8 @@
   (use file.util)
   (use text.tr)
   (use text.tree)
-  (use srfi-13)
-  (use srfi-113) ; sets & bags
+  (use srfi.13)
+  (use scheme.set)
   (extend gauche.config)
   (export cf-init cf-init-gauche-extension
           cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref

@@ -59,7 +59,7 @@
   (use gauche.record)
   (use gauche.sequence)
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use binary.io)
   (use util.match)
   (export

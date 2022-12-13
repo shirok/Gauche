@@ -39,7 +39,7 @@
   (use gauche.threads)
   (use gauche.parameter)                ; we use hooks
   (use binary.io)
-  (use srfi-27)
+  (use srfi.27)
   (export <uuid> uuid-value uuid-version
           uuid1 uuid4 nil-uuid
           uuid-random-source

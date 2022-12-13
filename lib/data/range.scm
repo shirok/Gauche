@@ -37,7 +37,7 @@
   (use gauche.sequence)
   (use scheme.list)
   (use scheme.division)
-  (use srfi-42)
+  (use srfi.42)
   (export
    ;; we expose only the root classes (not the subclasses; they're
    ;; internal details)

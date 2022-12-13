@@ -8,7 +8,6 @@
 (test-start "tree-trans")
 
 (add-load-path "..")
-(use srfi-0)
 (use sxml.tree-trans)
 (select-module sxml.tree-trans)
 (load "./test-common")

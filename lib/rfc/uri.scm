@@ -46,7 +46,7 @@
 ;; Also supports 'data' uri scheme specified in RFC2397.
 
 (define-module rfc.uri
-  (use srfi-13)
+  (use srfi.13)
   (use util.match)
   (use gauche.regexp)
   (use gauche.charconv)

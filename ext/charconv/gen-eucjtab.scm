@@ -32,7 +32,6 @@
 ;;;
 
 (use scheme.list)
-(use srfi-11)
 (use gauche.collection)
 
 (define (output-file-header)

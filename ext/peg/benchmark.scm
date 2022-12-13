@@ -1,7 +1,7 @@
 (use parser.peg)
 (use gauche.charconv)
-(use srfi-13)
-(use srfi-42)
+(use srfi.13)
+(use srfi.42)
 
 (define data
   (let1 s (call-with-input-file "data/13tokyo.csv"

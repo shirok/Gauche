@@ -10,7 +10,7 @@
 (use gauche.collection)
 (use gauche.cgen)
 (use util.match)
-(use srfi-42)
+(use srfi.42)
 
 (define-class <latin-ces> ()
   ((n :init-keyword :n)                 ; iso8859-N

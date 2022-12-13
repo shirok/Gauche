@@ -43,7 +43,7 @@
 ;; at any time.)
 
 (define-module text.parse
-  (use srfi-13)
+  (use srfi.13)
   (use scheme.charset)
   (use util.match)
   (export find-string-from-port?

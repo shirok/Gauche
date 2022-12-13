@@ -1,5 +1,5 @@
 (use gauche.test)
-(use srfi-13)
+(use srfi.13)
 (use gauche.uvector)
 (test-start "bcrypt")
 

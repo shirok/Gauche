@@ -33,7 +33,7 @@
 
 (define-module gauche.interactive.info
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use text.info)
   (use text.pager)
   (use file.util)

@@ -35,8 +35,8 @@
   (use gauche.uvector)
   (use gauche.generator)
   (use scheme.charset)
-  (use srfi-13)
-  (use srfi-42)
+  (use srfi.13)
+  (use srfi.42)
   (export ascii-codepoint? ascii-bytevector?
           ascii-char? ascii-string?
           ascii-control? ascii-non-control?

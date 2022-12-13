@@ -40,7 +40,7 @@
 ;; https://hackage.haskell.org/package/rampart-2.0.0.0/docs/Rampart.html
 
 (define-module util.temporal-relation
-  (use srfi-114 :only (if3))
+  (use srfi.114 :only (if3))
   (export make-interval-protocol
           pair-interval-protocol
           relation?

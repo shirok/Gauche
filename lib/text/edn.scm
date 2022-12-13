@@ -61,7 +61,7 @@
   (use gauche.lazy)
   (use gauche.generator)
   (use gauche.threads)
-  (use srfi-13)
+  (use srfi.13)
   (use scheme.set)
   (use parser.peg)
 

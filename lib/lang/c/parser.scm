@@ -42,7 +42,7 @@
   (use control.cseq)
   (use lang.c.lexer)
   (use lang.c.type)
-  (use srfi-13)
+  (use srfi.13)
   (use lang.c.parameter)
 
   (export c-tokenize-file

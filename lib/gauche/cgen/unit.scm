@@ -32,8 +32,8 @@
 ;;;
 
 (define-module gauche.cgen.unit
-  (use srfi-13)
-  (use srfi-42)
+  (use srfi.13)
+  (use srfi.42)
   (use util.match)
   (use file.util)
   (use gauche.sequence)

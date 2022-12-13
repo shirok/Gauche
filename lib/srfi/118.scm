@@ -39,7 +39,7 @@
 ;; We include srfi-118 for the portability.
 
 (define-module srfi.118
-  (use srfi-13)
+  (use srfi.13)
   (export string-append!
           string-replace!))
 (select-module srfi.118)

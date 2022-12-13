@@ -37,7 +37,7 @@
 ;; reuse the argument of linear-update procedures.
 
 (define-module srfi.185
-  (use srfi-13)
+  (use srfi.13)
   (export string-append-linear!
           string-replace-linear!
           string-append!

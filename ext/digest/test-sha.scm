@@ -3,8 +3,8 @@
 ;;
 
 (test-section "sha1")
-(use srfi-13)
-(use srfi-42)
+(use srfi.13)
+(use srfi.42)
 (use file.util)
 (use util.match)
 

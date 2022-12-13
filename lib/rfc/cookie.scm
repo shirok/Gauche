@@ -44,8 +44,8 @@
   (use scheme.list)
   (use gauche.threads)
   (use gauche.sequence)
-  (use srfi-13)
-  (use srfi-19)
+  (use srfi.13)
+  (use srfi.19)
   (use util.match)
   (export parse-cookie-string
           construct-cookie-string

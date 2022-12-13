@@ -40,7 +40,7 @@
   (use gauche.generator)
   (use gauche.connection)
   (use scheme.charset)
-  (use srfi-13)
+  (use srfi.13)
   (export <process> <process-abnormal-exit>
           run-process do-process do-process!
           process? process-alive? process-pid
@@ -78,7 +78,7 @@
           write-uvector)
 
 ;; Avoid build dependency issue
-(autoload srfi-19
+(autoload srfi.19
           make-time add-duration time>?)
 
 (define-class <process> ()

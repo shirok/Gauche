@@ -48,7 +48,7 @@
 
 ;; Originally srfi-113
 (define-module scheme.set
-  (use srfi-114)
+  (use srfi.114)
   (use gauche.collection)
   (use gauche.generator)
   (export set set-unfold

@@ -13,8 +13,7 @@
 
 (define-module sxml.sxpath
   (use scheme.list)
-  (use srfi-11)
-  (use srfi-13)
+  (use srfi.13)
   (use text.parse)
   (use sxml.adaptor)
   (export sxpath nodeset? as-nodeset sxml:element? ntype-names??

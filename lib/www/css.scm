@@ -39,7 +39,7 @@
   (use util.match)
   (use text.tree)
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (export construct-css simple-selector?
           parse-css parse-css-file
           parse-css-selector-string)

@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.cgen.type
-  (use srfi-13)
+  (use srfi.13)
   (use text.tr)
   (use gauche.mop.instance-pool)
   (export <cgen-type> cgen-type-from-name make-cgen-type

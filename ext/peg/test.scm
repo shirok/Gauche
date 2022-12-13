@@ -33,7 +33,7 @@
 
 (use gauche.test)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 (use gauche.generator)
 (use gauche.lazy)
 

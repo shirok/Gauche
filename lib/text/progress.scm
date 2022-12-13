@@ -32,7 +32,7 @@
 ;;;
 
 (define-module text.progress
-  (use srfi-19)
+  (use srfi.19)
   (export make-text-progress-bar))
 (select-module text.progress)
 

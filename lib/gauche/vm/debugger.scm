@@ -33,7 +33,7 @@
 
 (define-module gauche.vm.debugger
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (export debug-print debug-print-conditionally
           debug-funcall debug-funcall-conditionally
           debug-print-width

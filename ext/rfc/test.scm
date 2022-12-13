@@ -4,7 +4,7 @@
 
 (use gauche.test)
 (use util.match)
-(use srfi-19)
+(use srfi.19)
 (use gauche.sequence)
 
 (test-start "precompiled rfc modules")

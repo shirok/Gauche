@@ -35,7 +35,7 @@
 
 (define-module text.tr
   (use scheme.list)
-  (use srfi-13)
+  (use srfi.13)
   (use gauche.generator)
   (export tr transliterate string-tr string-transliterate
           build-transliterator)

@@ -36,7 +36,7 @@
 (define-module scheme.bitwise
   (use scheme.list)
   (use scheme.vector)
-  (use srfi-60)
+  (use srfi.60)
   (use gauche.generator)
   (export bitwise-not                   ; srfi-60
           bitwise-and                   ; srfi-60

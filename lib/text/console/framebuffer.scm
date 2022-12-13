@@ -1,5 +1,5 @@
 (define-module text.console.framebuffer
-  (use srfi-13)
+  (use srfi.13)
   (use text.console)
   (use text.console.wide-char-setting)
   (export <framebuffer-console> init-framebuffer draw-framebuffer))

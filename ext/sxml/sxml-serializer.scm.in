@@ -15,7 +15,7 @@
 ;;;   IT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
 
 (define-module sxml.serializer
-  (use srfi-1)
+  (use scheme.list)
   (export srl:sxml->string srl:display-sxml srl:parameterizable
           srl:sxml->xml srl:sxml->xml-noindent srl:sxml->html
           srl:sxml->html-noindent ))

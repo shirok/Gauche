@@ -22,7 +22,7 @@
 
 (define-module gauche.reload
   (use file.util)
-  (use srfi-13)
+  (use srfi.13)
   (use gauche.libutil)
   (export reload reload-modified-modules
           module-reload-rules reload-verbose)

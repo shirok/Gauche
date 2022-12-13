@@ -2,7 +2,7 @@
 
 (define-module net.client
   (use scheme.list) ;; list library
-  (use srfi-13)     ;; string library
+  (use srfi.13)     ;; string library
   (use rfc.base64)
   (use gauche.net)
   (use gauche.threads)

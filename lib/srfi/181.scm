@@ -8,7 +8,7 @@
   (use gauche.vport)
   (use gauche.uvector)
   (use gauche.charconv)
-  (use srfi-42)
+  (use srfi.42)
   (export make-custom-binary-input-port
           make-custom-textual-input-port
           make-custom-binary-output-port

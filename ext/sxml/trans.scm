@@ -3,7 +3,7 @@
 ;;;
 
 
-(use srfi-13)
+(use srfi.13)
 
 ;; The conversion procedure:
 ;;

@@ -27,4 +27,4 @@
           comparator-if<=>)
 
   ;; srfi-162 adds a few more.
-  (extend srfi-162))
+  (extend srfi.162))

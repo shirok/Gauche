@@ -81,7 +81,7 @@
   (use gauche.dictionary)
   (use data.queue)
   (use data.heap)
-  (use srfi-114)
+  (use srfi.114)
   (export <cache>
           ;; Protocol
           cache-storage cache-comparator

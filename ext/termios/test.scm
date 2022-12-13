@@ -8,7 +8,7 @@
 (test-start "termios")
 (use gauche.termios)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 (test-module 'gauche.termios)
 
 (cond-expand

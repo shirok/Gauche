@@ -34,7 +34,7 @@
 ;; This module is autoloaded from gauche.interactive.editable-reader.
 
 (define-module gauche.interactive.completion
-  (use srfi-13)
+  (use srfi.13)
   (use text.gap-buffer)
   (use util.match)
   (use gauche.interactive.toplevel)

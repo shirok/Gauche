@@ -33,8 +33,8 @@
 
 (define-module gauche.cgen.literal
   (use scheme.list)
-  (use srfi-13)
-  (use srfi-42)
+  (use srfi.13)
+  (use srfi.42)
   (use gauche.sequence)
   (use gauche.cgen.unit)
   (use util.match)

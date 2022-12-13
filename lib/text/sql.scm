@@ -38,7 +38,7 @@
 ;; modules.
 
 (define-module text.sql
-  (use srfi-13)
+  (use srfi.13)
   (use util.match)
   (export <sql-parse-error>
           sql-tokenize

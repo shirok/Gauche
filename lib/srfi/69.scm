@@ -5,7 +5,7 @@
 ;; This is a thin wrapper to the Gauche's native hashtable support.
 
 (define-module srfi.69
-  (use srfi-13 :prefix srfi-13:) ; string-hash
+  (use srfi.13 :prefix srfi-13:) ; string-hash
   (export make-hash-table hash-table? alist->hash-table
           hash-table-equivalence-function hash-table-hash-function
           hash-table-ref hash-table-ref/default

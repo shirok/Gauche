@@ -34,7 +34,7 @@
 ;; provides functions useful to implement a repl listener
 
 (define-module gauche.listener
-  (use srfi-13)
+  (use srfi.13)
   (export <listener>
           listener-read-handler
           listener-show-prompt

@@ -44,7 +44,6 @@
   (use gauche.record)
   (use scheme.list)
   (use util.match)
-  (use srfi-11)
   (export lcs lcs-with-positions lcs-fold lcs-edit-list
           lcs-edit-list/context lcs-edit-list/unified))
 (select-module util.lcs)

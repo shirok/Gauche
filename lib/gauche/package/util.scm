@@ -42,7 +42,7 @@
   (use file.util)
   (use file.filter)
   (use text.tr)
-  (use srfi-13)
+  (use srfi.13)
   (export run dry-run verbose-run get-password copy-templates
           find-package-name-and-version
           %gosh %shell %fix-path %find-file-in-paths))

@@ -32,7 +32,7 @@
 ;;;
 
 (define-module util.dominator
-  (use srfi-42)
+  (use srfi.42)
   (export calculate-dominators))
 (select-module util.dominator)
 

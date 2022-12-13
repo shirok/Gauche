@@ -37,7 +37,7 @@
   (use gauche.generator)
   (use scheme.list)
   (use util.match)
-  (use srfi-42)
+  (use srfi.42)
   (export iset iset-unfold make-range-iset
           iset? iset-contains? iset-empty? iset-disjoint?
           iset-member iset-min iset-max

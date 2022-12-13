@@ -30,9 +30,9 @@
   (use gauche.uvector)
   (use scheme.bitwise)
   (use scheme.vector)
-  (use srfi-13)
-  (use srfi-19)
-  (use srfi-27)
+  (use srfi.13)
+  (use srfi.19)
+  (use srfi.27)
   (export make-ulid-generator
           ulid?
           ulid-timestamp

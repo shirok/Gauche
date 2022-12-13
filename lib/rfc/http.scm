@@ -44,8 +44,7 @@
 ;; The features required for typical client usage are implemented first.
 
 (define-module rfc.http
-  (use srfi-11)
-  (use srfi-13)
+  (use srfi.13)
   (use rfc.822)
   (use rfc.uri)
   (use rfc.base64)

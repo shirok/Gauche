@@ -2,7 +2,7 @@
 
 (define-module net.file.mailto
   (use scheme.list) ;; list library
-  (use srfi-13)  ;; string library
+  (use srfi.13)  ;; string library
   (use net.smtp)
   (extend net.file.base)
   (export uri->mailto-object))
