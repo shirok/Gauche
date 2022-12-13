@@ -610,10 +610,7 @@
 
   (test-module 'srfi.181)
   (test-module 'srfi.192)
-
-  (define-syntax import (syntax-rules () ((_ . _) #f)))
-
-  (include "../../test/include/srfi-181-192-tests.scm")
+  (test-include-r7 "../../test/include/srfi-181-192-tests.scm")
   )
 
 ;; Auxiliary srfi-181 tests

@@ -17,8 +17,7 @@
   (use srfi.78)
   (use srfi.178)
   (test-module 'srfi.178)
-  (define-syntax import (syntax-rules () [(_ _) #f]))
-  (include "../../test/include/srfi-178-tests"))
+  (test-include-r7 "../../test/include/srfi-178-tests"))
 
 (test-section "extra procedures")
 

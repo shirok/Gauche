@@ -3056,7 +3056,6 @@
   (test-module 'srfi.236)
 
   (use srfi.78)
-  (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (include "include/srfi-236-tests"))
+  (test-include-r7 "include/srfi-236-tests"))
 
 (test-end)
