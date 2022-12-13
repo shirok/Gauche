@@ -14,9 +14,9 @@
 
 (define-module srfi-178-tests
   (use gauche.test)
-  (use srfi-78)
-  (use srfi-178)
-  (test-module 'srfi-178)
+  (use srfi.78)
+  (use srfi.178)
+  (test-module 'srfi.178)
   (define-syntax import (syntax-rules () [(_ _) #f]))
   (include "../../test/include/srfi-178-tests"))
 
@@ -59,14 +59,16 @@
 
 ;; srfi-209 Enum set depends on gauche.bitvector
 (test-section "srfi-209")
-(use srfi-209)
-(test-module 'srfi-209)
 
 (define-module srfi-209-tests
-  (use srfi-64)
-  (use srfi-209)
-  (test-begin "srfi-209-tests")
+  (use gauche.test)
+  (use srfi.209)
+  (test-module 'srfi.209)
+
+  (use srfi.64)
+  (test-begin "srfi-298-tests") ; needed to set up test-runner
   (include "../../test/include/srfi-209-tests")
-  (test-end))
+  (test-end)
+  )
 
 (test-end)

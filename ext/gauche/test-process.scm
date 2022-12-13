@@ -3,7 +3,7 @@
 ;;
 
 (use gauche.test)
-(use srfi-13)
+(use srfi.13)
 (test-start "gauche.process")
 
 (use gauche.process)

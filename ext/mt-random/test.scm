@@ -5,7 +5,7 @@
 (use gauche.test)
 (use gauche.collection)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 (use gauche.uvector)
 
 (test-start "mt-random")
@@ -125,8 +125,8 @@
 ;; srfi-27 is built on top of mt-random, so we test it here.
 (test-section "srfi-27")
 
-(use srfi-27)
-(test-module 'srfi-27)
+(use srfi.27)
+(test-module 'srfi.27)
 
 (let ([s0 (make-random-source)]
       [s1 (make-random-source)]

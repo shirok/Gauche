@@ -5,7 +5,7 @@
 (use gauche.test)
 (use gauche.sequence)
 (use gauche.time)
-(use srfi-19)
+(use srfi.19)
 (add-load-path ".")
 
 (test-start "threads")
@@ -534,7 +534,7 @@
            -1)
          (let ([b (make-barrier 3)]
                [g (make-latch 1)])
-           (let1 th1 (make-thread (^[] 
+           (let1 th1 (make-thread (^[]
                                     (latch-await g)
                                     (let1 v1 (ps)
                                       (barrier-await b)

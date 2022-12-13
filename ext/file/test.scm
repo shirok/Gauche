@@ -4,7 +4,7 @@
 
 (use gauche.test)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 (use gauche.uvector)
 
 (test-start "file.util")

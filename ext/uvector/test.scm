@@ -2642,7 +2642,7 @@
 ;;-------------------------------------------------------------------
 (test-section "binary search")
 
-(use srfi-42)
+(use srfi.42)
 
 
 (let ([data '(;; NB: keep the length of vector a multiple of 6 for skip test

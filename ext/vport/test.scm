@@ -10,7 +10,7 @@
 (use gauche.sequence)
 (use gauche.generator)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 (use file.util)
 (test-module 'gauche.vport)
 
@@ -599,17 +599,17 @@
   (use gauche.test)
   (use gauche.uvector)
   (use scheme.list)
-  (use srfi-13)
-  (use srfi-64)
-  (use srfi-181)
-  (use srfi-192)
+  (use srfi.13)
+  (use srfi.64)
+  (use srfi.181)
+  (use srfi.192)
   (use scheme.base :only (bytevector
                           bytevector-copy
                           bytevector-u8-ref
                           flush-output-port))
 
-  (test-module 'srfi-181)
-  (test-module 'srfi-192)
+  (test-module 'srfi.181)
+  (test-module 'srfi.192)
 
   (define-syntax import (syntax-rules () ((_ . _) #f)))
 
@@ -621,8 +621,8 @@
 ;; i/o-invalid-position-error
 (define-module srfi-181-tests-2
   (use gauche.test)
-  (use srfi-181)
-  (use srfi-192)
+  (use srfi.181)
+  (use srfi.192)
   (define p (make-custom-binary-input-port
              'invalid-position-error-test
              (^ _ 1)
@@ -643,7 +643,7 @@
   (use gauche.vport)
   (use gauche.charconv) ; chaconv is tested before vport
   (use gauche.uvector)  ; uvector is tested before vport
-  (use srfi-181)
+  (use srfi.181)
 
   (define (import-test codec external-data internal-string handling)
     (let1 native-codec (~ (native-transcoder)'codec)

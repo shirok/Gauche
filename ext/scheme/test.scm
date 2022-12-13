@@ -197,7 +197,7 @@
 (test-module 'scheme.vector)
 
 (use compat.chibi-test)
-(use srfi-11)
+(use srfi.11)
 
 (chibi-test
  (include "../../test/include/vectors-test.scm"))

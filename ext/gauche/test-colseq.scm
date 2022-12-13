@@ -5,7 +5,7 @@
 
 (use data.queue)
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 (use gauche.collection)
 (use gauche.sequence)
 

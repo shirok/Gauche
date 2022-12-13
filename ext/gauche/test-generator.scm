@@ -8,8 +8,8 @@
 (use gauche.test)
 (use gauche.sequence)
 (use scheme.list)
-(use srfi-13)
-(use srfi-60)
+(use srfi.13)
+(use srfi.60)
 (test-start "generators")
 
 (use gauche.generator)
@@ -448,7 +448,7 @@
 
 ;; srfi-42+generator
 ;; NB: This test should be moved to ext/srfi when srfi-42 becomes precompiled.
-(use srfi-42)
+(use srfi.42)
 
 (test* "srfi-42 + generator" '(0 2 4 6 8 10)
        (list-ec (:while (:generator x (giota)) (<= x 5))
