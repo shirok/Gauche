@@ -84,7 +84,7 @@
 (define-module gauche.test
   (export test test* test-start test-end test-running? test-section test-log
           test-module test-script test*/diff
-          test-error test-one-of test-none-of
+          test-error test-one-of test-none-of test-truthy
           test-check test-check-diff
           test-include-r7
 
@@ -150,6 +150,14 @@
 ;; API
 (define (test-none-of . choices) (make <test-none-of> :choices choices))
 
+;; An object to represent "any true value"
+(define-class <test-truthy> () ())
+(define-method write-object ((obj <test-truthy>) out)
+  (format out "#<test-truthy>"))
+
+;; API
+(define (test-truthy) (make <test-truthy>))
+
 ;; API
 ;; We don't use generic function dispatch (at least for the time being),
 ;; to make it easy to troubleshoot when object system gets messed up.
@@ -172,6 +180,7 @@
         [(is-a? expected <test-none-of>)
          (every (lambda (choice) (not (test-check choice result fallback)))
                 (slot-ref expected 'choices))]
+        [(is-a? expected <test-truthy>) result]
         [else (fallback expected result)]))
 
 (define *test-error* (make <test-error>)) ;DEPRECATED
