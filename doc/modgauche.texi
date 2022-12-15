@@ -21606,6 +21606,14 @@ Gaucheプログラム中にR7RSプログラムをインクルードした場合�
 かわりに、下のマクロ@code{test-include-r7}が使えます。
 @c COMMON
 
+@c EN
+NB: If the external test is written for Chibi Scheme,
+you can use @code{chibi-test} instead (@pxref{Running Chibi-scheme test suite}).
+@c JP
+註: 外部テストがChibi Scheme向けに書かれている場合、
+@code{chibi-test}が使えます(@ref{Running Chibi-scheme test suite}参照)。
+@c COMMON
+
 @defmac test-include-r7 path [exclude-clause]
 @c MOD gauche.test
 @c EN
