@@ -24638,7 +24638,7 @@ but the following whitespace characters are ignored.
 @example
 (format "abc~\n   def") @result{} "abcdef"
 (format "abc~:\n   def") @result{} "abc   def"
-(format "abc~@\n   def") @result{} "abc\ndef"
+(format "abc~@@\n   def") @result{} "abc\ndef"
 
 (format "abc~:\n   \ndef") @result{} "abc   \ndef"
 @end example
