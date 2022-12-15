@@ -3054,8 +3054,6 @@
   (use gauche.test)
   (use srfi.236)                          ;NB: srfi-236 is built-in
   (test-module 'srfi.236)
-
-  (use srfi.78)
   (test-include-r7 "include/srfi-236-tests"))
 
 (test-end)
