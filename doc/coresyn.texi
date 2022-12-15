@@ -6146,7 +6146,20 @@ quote them, import @code{gauche.keyword} separately.
 (gauche/sys-exec "ls" '("ls" "-l") :directory "/")
 @end example
 
+@end deftp
 
+@deftp {Builtin Module} gauche.require-base
+@c EN
+This is a module when @code{use} or @code{require} load the file.
+This is not meant to be @code{use}d directly; just to prevent
+library files lacking module switching from causing unexpected
+side effects. @xref{Using modules}, for more details.
+@c JP
+このモジュールは@code{use}や@code{require}がファイルを読み込む際に
+設定するモジュールです。@code{use}するものではなく、
+モジュール指定を欠いたライブラリファイルが予期せぬ副作用を起こすことを
+防ぐためのものです。詳しくは@ref{Using modules} を参照してください。
+@c COMMON
 @end deftp
 
 
