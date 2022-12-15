@@ -20842,11 +20842,18 @@ srfiのテストがGaucheのテストとして走るようになっています�
 @c COMMON
 @end deftp
 
-@c EN
-@subheading Structuring a test file
-@c JP
-@subheading テストファイルの構造
-@c COMMON
+
+@menu
+* Structuring a test file::
+* Individual test::
+* Incorporating external tests::
+* Better test failure reporting::
+* Quasi-static checks::
+@end menu
+
+@node Structuring a test file, Individual test, Unit testing, Unit testing
+@subsection Structuring a test file
+@c NODE テストファイルの構造
 
 @defun test-start module-name
 @c MOD gauche.test
@@ -21072,11 +21079,87 @@ with status 1 if there has been any failure.
 @c COMMON
 @end defun
 
+@node Individual test, Incorporating external tests, Structuring a test file, Unit testing
+@subsection Individual test
+@c NODE 個々のテスト
+
 @c EN
-@subheading Individual tests
+Most test frameworks have various test procedures such as @code{test-assert},
+@code{test-equal}, etc., depending on what you want to test.
+We have only one, @code{test}, and its thin wrapper
+@code{test*}.  It takes a thunk (or an expression) to run, the expected
+result, and an optional check predicate to compare the expected result against
+the actual result.  Various conditions, such as testing the actual
+result is a true value,
+or testing the expression raising a specific error, can be handled
+by the check predicate.  The default check predicate handles typical cases:
 @c JP
-@subheading 個々のテスト
+多くのテストフレームワークでは、何をテストするかによって@code{test-assert}や
+@code{test-equal}などの様々なテスト手続きを提供しています。
+Gaucheではテスト手続きは@code{test} (およびそのラッパーである@code{test*}) だけです。
+@code{test}はテストする式(のサンク)、期待される結果、そして省略可能な検査述語を取り、
+式の実際の結果と期待される結果を検査述語で比較します。
+単純に値を比較する、エラーが投げられることを確認する、など様々なテストは
+検査述語によって処理されます。デフォルトの検査述語でも、
+以下のような色々なテストに対応できます。
 @c COMMON
+
+@itemize @bullet
+@item
+@c EN
+Compare the expected result with the actual result.
+@c JP
+期待される結果と実際の結果を比較する。
+@c COMMON
+@example
+(test* "one plus one equals two"
+       2
+       (+ 1 1))
+@end example
+@item
+@c EN
+Assert the expression returns true value (i.e. not @code{#f}).
+@c JP
+式が真となる値(@code{#f}でない値)を返すことを確認する。
+@c COMMON
+@example
+(test* "'any' returns non-false value"
+       (test-truthy)
+       (any integer? '(1.2 3/4 5)))
+@end example
+@item
+@c EN
+Check if the actual result is one of possible values.
+@c JP
+実際の結果が可能ないくつかの結果のうちのひとつであることを確認する。
+@c COMMON
+@example
+(test* "get random ineteger between 0 and 5"
+       (test-one-of 0 1 2 3 4 5)
+       (random-integer 6))
+@end example
+
+@item
+@c EN
+Check if the expression raises an expected error.
+@c JP
+式が期待するエラーを投げることを確認する。
+@c COMMON
+@example
+(test* "expects read error"
+       (test-error <read-error>)
+       (read-from-string "(a .)"))
+@end example
+@end itemize
+
+@c EN
+With this way, it is easier to parameterize tests, e.g.
+loop over a list of expected result and test thunks.
+@c JP
+このようにしておくと、例えば期待される結果とテストサンクのリストを用意して
+ループするような、テストのパラメタライズが容易にできます。
+@c COMMON
+
 
 @defmac test* name expected expr :optional check hook
 @c MOD gauche.test
@@ -21218,7 +21301,7 @@ in future releases.
 註: 0.9.10では@var{report}引数がありませんでした。@var{report}引数を追加するに
 当たって、それを最後の省略可能引数ではなく、2番目の省略可能引数として
 @var{hook}引数をずらすことにしました。
-@var{hook}引数は滅多に使われないだろうという判断でう。
+@var{hook}引数は滅多に使われないだろうという判断です。
 互換性のため、@var{report}引数に4引数の手続きが渡された場合は
 警告を出したうえでそれを@var{hook}として扱うコードが今は入っています。
 将来のリリースではこの互換性コードは取り除かれます。
@@ -21264,9 +21347,9 @@ See @code{test-report-failure-diff} below, for example.
 @end defun
 
 @c EN
-@subheading Testing ambiguous results
+@subsubheading Testing ambiguous results
 @c JP
-@subheading 曖昧な結果をテストする
+@subsubheading 曖昧な結果をテストする
 @c COMMON
 
 @defun test-one-of choice @dots{}
@@ -21357,10 +21440,24 @@ you can use @code{approx=?} (@pxref{Numerical comparison}).
 @code{approx=?}が使えます (@ref{Numerical comparison}参照)。
 @c COMMON
 
+
+@defun test-truthy
+@c MOD gauche.test
 @c EN
-@subheading Testing abnormal cases
+Returns a special object that expects a true value, e.g. anything
+but @code{#f}.　Use it to assert the test expression returns a true value
+but not necessarily @code{#t}.
 @c JP
-@subheading 異常系をテストする
+真の値、つまり@code{#f}以外のあらゆる値を期待するオブジェクトを返します。
+テストする式が真の値を返す(が、@code{#t}とは限らない)場合に便利です。
+@c COMMON
+@end defun
+
+
+@c EN
+@subsubheading Testing abnormal cases
+@c JP
+@subsubheading 異常系をテストする
 @c COMMON
 
 @defun test-error :optional (condition-type <error>) (message #f)
@@ -21467,10 +21564,122 @@ env GAUCHE_TEST_REPORT_ERROR=1 gosh mytest.scm
 @end example
 @end defvar
 
+@node Incorporating external tests, Better test failure reporting, Individual test, Unit testing
+@subsection Incorporating external tests
+@c NODE 外部のテストの取り込み
+
 @c EN
-@subheading Better failure reporting
+Sometimes you implment an existing specification that comes with tests.
+If tests are written in R7RS Scheme, you can run it by itself;
+however, you might want to run it as a part of larger test suite
+managed by @code{gauche.test}.  By doing so, you can get consolidated
+test result reports, for Gauche integrates SRFI test frameworks
+such as @code{srfi-64} and @code{srfi-78}.
 @c JP
-@subheading 見やすい失敗の報告
+しばしば、既存の仕様を実装していて、テストコードがその仕様に付属していることがあります。
+テストがR7RSで書かれていればそれ自体をGaucheで実行することはできますが、
+@code{gauche.test}で管理されるより大きなテストスイートの一部として
+与えられたテストを実行したい場合もあるでしょう。
+Gaucheではテスト用SRFIである@code{srfi-64}や@code{srfi-78}が@code{gauche.test}
+と連携するようになっているので、テスト結果がまとめて報告されます。
+@c COMMON
+
+@c EN
+If the test file is written in R7RS format, however, you may
+not be able to simply @code{include} the test file into Gauche's
+test suite.  As R7RS @code{import} differs from Gauche's, we have
+some black magic to switch R7RS/Gauche namespace based on
+whether the first form in the file is R7RS @code{import} form
+or not (@pxref{Three forms of import}).  If you include R7RS program into
+Gauche's program, the @code{import} in the R7RS code is interpreted
+as Gauche's and doesn't work.  The macro @code{test-include-r7} can
+be used instead.
+@c JP
+ただ、テストがR7RS形式で書かれている場合、それをGaucheのテストスイートに
+単純に@code{include}するだけではうまくいかないことがあります。
+Gaucheにもともとあった@code{import}とR7RSの@code{import}は異なっているので、
+Gaucheは実行時に、
+プログラム中で最初に出会う@code{import}でどちらかを切り替える黒魔術を使っています
+(@ref{Three forms of import}参照)。
+Gaucheプログラム中にR7RSプログラムをインクルードした場合、R7RSプログラム中の
+@code{import}がGaucheの@code{import}と解釈されてしまうのでうまくありません。
+かわりに、下のマクロ@code{test-include-r7}が使えます。
+@c COMMON
+
+@defmac test-include-r7 path [exclude-clause]
+@c MOD gauche.test
+@c EN
+Like @code{include} form (@pxref{Inclusions}), expands the content of
+the file specified by @var{path} in place of this form.
+If @var{path} is relative, it is relative from the includer.
+@c JP
+@code{include}フォーム (@ref{Inclusions}参照) と同じように、
+@var{path}で指定されるファイルの内容をこのマクロの位置に挿入します。
+@var{path}が相対パスの場合は、インクルードしているファイルからの相対になります。
+@c COMMON
+
+@c EN
+The code is included in the environment where @code{import} is bound
+to R7RS's, so that a test script written for R7RS can be included as is.
+@c JP
+ファイル中のコードは、@code{import}がR7RSの@code{import}に束縛された
+環境で挿入されます。したがってR7RSで書かれたテストスクリプトがそのまま実行できます。
+@c COMMON
+
+@c EN
+A recommended usage is to create a submodule in Gauche's test script:
+@c JP
+推奨される使い方は、Gaucheのテストスクリプト中に別のモジュールを作ってその中で
+インクルードする方法です。
+@c COMMON
+
+@example
+(use gauche.test)
+(test-start ...)
+     :
+(test-section "xxx-tests")
+(define-module xxx-tests
+  (use gauche.test)
+  (test-include-r7 "xxx-tests"))
+@end example
+
+@c EN
+Sometimes the external script refers to a library that's not
+corresponds to what Gauche provides (e.g.
+@file{tests/include/srfi-222-tests.scm}
+imports @code{(compounds)} library, but Gauche provides it as @code{srfi.222}.)
+You can list such libraries to @code{exclude clause} so that import won't
+load it:
+@c JP
+しばしば、与えられたテストスクリプトが、Gaucheにない名前でライブラリを参照
+していることがあります (例えば@file{tests/include/srfi-222-tests.scm}
+は@code{(compounds)}というライブラリをインポートしていますが、
+Gaucheではそのライブラリは@code{srfi.222}という名前で提供されています)
+その場合、Gaucheに無いモジュールを@var{exclude-clause}に列挙することで、
+@code{import}がそのモジュールを無視するようにできます:
+@c COMMON
+
+@example
+(define-module srfi-222-tests
+  (use gauche.test)
+  (use srfi-222)
+  (test-include-r7 "include/srfi-222-tests" (exclude (compounds))))
+@end example
+
+@c EN
+The format of @var{exclude-clause} is as follows:
+@c JP
+@var{exclude-clause}は次の形式を取ります:
+@c COMMON
+
+@example
+<exclude-clause> : (exclude @var{r7rs-library-name} @dots{})
+@end example
+@end defmac
+
+@node Better test failure reporting, Quasi-static checks, Incorporating external tests, Unit testing
+@subsection Better test failure reporting
+@c NODE 見やすいテスト失敗の報告
 @c COMMON
 
 @c EN
@@ -21674,11 +21883,9 @@ check and report procedures, respectively.
 @end example
 @end defmac
 
-@c EN
-@subheading Quasi-static checks
-@c JP
-@subheading 準静的検査
-@c COMMON
+@node Quasi-static checks,  , Better test failure reporting, Unit testing
+@subsection Quasi-static checks
+@c NODE 準静的検査
 
 @c EN
 Scheme is dynamically typed, which is convenient for incremental
