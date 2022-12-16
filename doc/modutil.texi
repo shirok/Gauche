@@ -3386,7 +3386,7 @@ Creates an ideque of length @var{n} with all the elements being
 @var{init}.  If @var{init} is omitted, @code{#f} is used.
 
 This is provided just for the symmetry with other container data
-structures; it's not in srfi-134, and the portable code can use
+structures; it's not in SRFI-134, and the portable code can use
 @code{ideque-tabulate}.
 @end defun
 
@@ -4997,7 +4997,7 @@ It also allows certain operations efficient, such as taking subsequence
 or appending sequences.
 
 A range object can be used with @code{:range} qualifier in the
-srfi-42 eager comprehension (@pxref{Eager comprehensions}).
+SRFI-42 eager comprehension (@pxref{Eager comprehensions}).
 @c JP
 レンジオブジェクトはO(1)で要素にアクセスでき、
 そして各要素が手続き的に計算されるような不変なシーケンスです。
@@ -5008,21 +5008,21 @@ srfi-42 eager comprehension (@pxref{Eager comprehensions}).
 レンジはまた、一部分だけ取り出したレンジを作ったり、
 レンジ同士をつなげたりする操作を効率的に行えます。
 
-レンジオブジェクトはsrfi-42 先行評価的内包表記の@code{:range} qualifierに
+レンジオブジェクトはSRFI-42 先行評価的内包表記の@code{:range} qualifierに
 渡すこともできます (@ref{Eager comprehensions}参照)。
 @c COMMON
 
 @c EN
-A portable range object interface is defined in @code{srfi-196}.
+A portable range object interface is defined in @code{srfi.196}.
 We implement the range object as a @code{<sequence>}, so that all
 sequence framework interface can be used on the ranges
 (@pxref{Sequence framework}).  We also provide some additional
-procedures that are not in srfi-196.
+procedures that are not in SRFI-196.
 @c JP
-ポータブルなレンジオブジェクトのインタフェースは@code{srfi-196}で
+ポータブルなレンジオブジェクトのインタフェースは@code{srfi.196}で
 規定されています。Gaucheではレンジオブジェクトを@code{<sequence>}として
 実装し、シーケンスプロトコルも使えるようにしています
-(@ref{Sequence framework}参照)。またこのモジュールでは@code{srfi-196}にない
+(@ref{Sequence framework}参照)。またこのモジュールでは@code{srfi.196}にない
 手続きも提供されます。
 @c COMMON
 @end deftp
@@ -5102,7 +5102,7 @@ The vector is kept in the range, so you shouldn't mutate @var{vec}.
 
 The optional @var{start} and @var{end} arguments limits the
 range of the vector to be used.
-They are Gauche's extension and not in srfi-196.
+They are Gauche's extension and not in SRFI-196.
 
 @example
 (range->list (vector-range '#(a b c)))
@@ -5143,7 +5143,7 @@ The string is kept in the range, so you shouldn't mutate @var{str}.
 
 The optional @var{start} and @var{end} arguments limits the
 range of the vector to be used.
-They are Gauche's extension and not in srfi-196.
+They are Gauche's extension and not in SRFI-196.
 
 @example
 (range->list (string-range "abc"))
@@ -5168,7 +5168,7 @@ in reverse order.
 
 The optional @var{start} and @var{end} arguments limits the
 range of the vector to be used.
-They are Gauche's extension and not in srfi-196.
+They are Gauche's extension and not in SRFI-196.
 
 @example
 (range->list (range-reverse (string-range "abc")))
@@ -5220,7 +5220,7 @@ Returns the @var{i}-th element of @var{range}.  The index
 
 If @var{i} is negative, or greater than or equal to the length of @var{range},
 @var{fallback} is returned if given, or an error is signaled.
-The @var{fallback} argument is Gauche's extension and not in srfi-196.
+The @var{fallback} argument is Gauche's extension and not in SRFI-196.
 @end defun
 
 @defun range-first range :optional fallback
@@ -5230,7 +5230,7 @@ Returns the first element of @var{range}.
 
 If the range is empty,
 @var{fallback} is returned if given, or an error is signaled.
-The @var{fallback} argument is Gauche's extension and not in srfi-196.
+The @var{fallback} argument is Gauche's extension and not in SRFI-196.
 @end defun
 
 @defun range-last range :optional fallback
@@ -5240,7 +5240,7 @@ Returns the last element of @var{range}.
 
 If the range is empty,
 @var{fallback} is returned if given, or an error is signaled.
-The @var{fallback} argument is Gauche's extension and not in srfi-196.
+The @var{fallback} argument is Gauche's extension and not in SRFI-196.
 @end defun
 
 @subheading Iteration
@@ -7437,9 +7437,9 @@ has slightly more compact string representation.
 @mdindex data.ulid
 Creates and returns a generator that yields a fresh ULID object
 every time it is called.  The optional @var{random-source} argument
-is a srfi-27 random source (@pxref{Sources of random bits})
+is a SRFI-27 random source (@pxref{Sources of random bits})
 to be used for the random part of ULID.  When omitted,
-srfi-27's @code{default-random-source} is used.
+SRFI-27's @code{default-random-source} is used.
 
 To guarantee uniqueness and monotonicity, a ULID generator needs to
 keep internal state.  If you want to share the generator among multiple threads,
@@ -10223,7 +10223,7 @@ The following example returns a list of pathnames of the emacs backup files
 のリストを返します。
 @c COMMON
 @example
-(use srfi-13) ;; for string-suffix?
+(use srfi.13) ;; for string-suffix?
 (directory-fold path
                 (lambda (entry result)
                   (if (string-suffix? "~" entry)
@@ -11843,16 +11843,16 @@ Makoto MatsumotoとTakuji Nishimuraにより開発された、
 
 @c EN
 For typical use cases of random number generators,
-we recommend to use @code{srfi-27} which is implemented
+we recommend to use @code{srfi.27} which is implemented
 on top of this module and provides portable API
 (@pxref{Sources of random bits}).
 You should use this module directly only when you need
-functions that aren't available through @code{srfi-27}.
+functions that aren't available through @code{srfi.27}.
 @c JP
-乱数発生器の通常の用途には、@code{srfi-27}を使うことをお勧めします
+乱数発生器の通常の用途には、@code{srfi.27}を使うことをお勧めします
 (@ref{Sources of random bits}参照)。
-@code{srfi-27}はこのモジュールの上に実装されていますが、ポータブルなAPIを提供しています。
-@code{srfi-27}にない機能が必要な時のみこのモジュールを直接使うようにしてください。
+@code{srfi.27}はこのモジュールの上に実装されていますが、ポータブルなAPIを提供しています。
+@code{srfi.27}にない機能が必要な時のみこのモジュールを直接使うようにしてください。
 @c COMMON
 @end deftp
 
@@ -19515,13 +19515,13 @@ UUID同士を比較したりハッシュ値を取れる比較器です。
 @c EN
 We use PRNG to generate UUIDs.  By default, we internally creates
 a random source and randomize it.  You can alter the random source
-using @code{parameterize}.  The value must be a srfi-27 random source
+using @code{parameterize}.  The value must be a SRFI-27 random source
 (@pxref{Sources of random bits}).
 @c JP
 UUIDを生成するのに乱数発生器を使います。
 デフォルトでは、内部的に乱数源を作って乱数化したものを使いますが、
 このパラメータを@code{parameterize}することで独自の乱数源を使うことができます。
-パラメータの値はsrfi-27の規定する乱数源でなければなりません
+パラメータの値はSRFI-27の規定する乱数源でなければなりません
 (@ref{Sources of random bits}参照)。
 @c COMMON
 @end deffn
@@ -20296,14 +20296,14 @@ NB: SLIB probes available srfis during initialization, and by the way
 it does so, all available srfis are loaded,
 regardless of whether you @code{require} it or not.  This may
 introduce unexpected side effects; for example, Gauche's built-in
-@code{regexp-replace} is shadowed by @code{srfi-115}'s one
+@code{regexp-replace} is shadowed by @code{srfi.115}'s one
 (@pxref{R7RS regular expressions}), which has slightly different API.
 @c JP
 註: SLIBは初期化時にサポートされているsrfiを自動的に検出しますが、
 その副作用として、@code{require}するか否かにかかわらず
 検出されたsrfiが全てロードされてしまいます。
 これは思いがけない作用をもたらすことがあります。例えばGaucheの組み込みの
-@code{regexp-replace}は、やや異なるAPIを持つ@code{srfi-115}の
+@code{regexp-replace}は、やや異なるAPIを持つ@code{srfi.115}の
 同名の手続きによってシャドウされてしまいます
 (@ref{R7RS regular expressions}参照)。
 @c COMMON
@@ -26457,7 +26457,7 @@ It supports multiple locale/domain simultaneously.
 
 @c EN
 SRFI-29 (@pxref{Localization}) provides another means of message
-localization.  A portable program may wish to use srfi-29, but
+localization.  A portable program may wish to use SRFI-29, but
 generally @code{text.gettext} is recommended in Gauche scripts
 because of its flexibility and compatibility to existing message files.
 @c JP
@@ -30617,7 +30617,7 @@ you can write like this:
 @mdindex util.stream
 @c EN
 This module provides a library of lazy streams, including the
-functions and syntaxes defined in srfi-40 and srfi-41,
+functions and syntaxes defined in SRFI-40 and SRFI-41,
 the latter of which became a part of R7RS large (as @code{(scheme stream)},
 
 Gauche has a built-in lazy sequences (@pxref{Lazy sequences}), which is
@@ -30628,7 +30628,7 @@ but it is strictly lazy (while a lazy sequence evaluates one element ahead)
 and portable.
 @c JP
 このモジュールは遅延ストリームのライブラリを提供します。このモジュール
-にはsrfi-40とsrfi-41で定義されている関数および構文が含まれています。
+にはSRFI-40とSRFI-41で定義されている関数および構文が含まれています。
 後者は@code{(scheme stream)}としてR7RS largeの一部になっています。
 
 Gaucheには遅延ストリームとリストを統合したような、組み込みの遅延シーケンスがあります
@@ -30774,12 +30774,12 @@ Returns a new stream whose elements are @var{obj} @dots{}.
 @c COMMON
 
 @c EN
-Note: This differs from srfi-41's (@code{scheme.stream}'s) @code{stream},
-which is a macro so that arguments are lazily evaluated.  Srfi-41's
+Note: This differs from SRFI-41's (@code{scheme.stream}'s) @code{stream},
+which is a macro so that arguments are lazily evaluated.  SRFI-41's
 @code{stream} is provided as @code{stream+} in this module.
 @c JP
-註：これはsrfi-41 (@code{scheme.stream})の@code{stream}とは異なります。
-srfi-41の方はマクロで、引数の評価が遅延されます。srfi-41版はこのモジュールでは
+註：これはSRFI-41 (@code{scheme.stream})の@code{stream}とは異なります。
+SRFI-41の方はマクロで、引数の評価が遅延されます。SRFI-41版はこのモジュールでは
 @code{stream+}と言う名前で提供されます。
 @c COMMON
 
@@ -30794,12 +30794,12 @@ srfi-41の方はマクロで、引数の評価が遅延されます。srfi-41版
 @c EN
 Returns a new stream whose elements are the result of @var{expr} @dots{}.
 
-This is the same as srfi-41(@code{scheme.stream})'s @code{stream}.
+This is the same as SRFI-41(@code{scheme.stream})'s @code{stream}.
 Each @var{expr} isn't evaluated until it is accessed.
 @c JP
 要素が@var{expr} @dots{}の結果であるような新たなストリームを作って返します。
 
-これはsrfi-41(@code{scheme.stream})の@code{stream}と同じです。
+これはSRFI-41(@code{scheme.stream})の@code{stream}と同じです。
 各@var{expr}はアクセスされるまで評価されません。
 @c COMMON
 
@@ -31804,7 +31804,7 @@ the given stream has less than @var{count} elements.
  @result{} (1 2)
 @end example
 
-Note: srfi-41 (@code{scheme.stream}) also defines @code{stream-take}, but
+Note: SRFI-41 (@code{scheme.stream}) also defines @code{stream-take}, but
 the argument order is reversed, and also it allows @var{stream} to have
 less than @code{count} elements.
 @end defun
@@ -31819,7 +31819,7 @@ If the given stream has less than @var{count} elements,
 if its element is accessed, and @code{stream-drop-safe}
 returns an empty stream.
 
-Note: srfi-41 (@code{scheme.stream}) also defines @code{stream-drop}, but
+Note: SRFI-41 (@code{scheme.stream}) also defines @code{stream-drop}, but
 the argument order is reversed, and also it allows @var{stream} to have
 less than @code{count} elements.
 @end defun

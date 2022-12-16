@@ -1214,8 +1214,8 @@ gosh> ,info append
      last list argument.  The last argument may actually be any object;
      an improper list results if the last argument is not a proper list.
 
-gosh> ,info srfi-19
- -- Module: srfi-19
+gosh> ,info srfi.19
+ -- Module: srfi.19
      This SRFI defines various representations of time and date, and
      conversion methods among them.
 
@@ -1231,7 +1231,7 @@ gosh> ,info <list>
      Note that a circular list is also an instance of the '<list>'
      class, while 'list?' returns false on the circular lists and dotted
      lists.
-          (use srfi-1)
+          (use srfi.1)
           (list? (circular-list 1 2)) => #f
           (is-a? (circular-list 1 2) <list>) => #t
 @end example
@@ -2364,13 +2364,13 @@ feature requirements).
 @c COMMON
 
 @c EN
-By the definition of @code{srfi-0}, @code{cond-expand} raises an error
+By the definition of SRFI-0, @code{cond-expand} raises an error
 if no feature requirements are satisfied and there's no @code{else}
 clause.  A rule of thumb is to provide @code{else} clause always,
 even it does nothing (like the above example that has empty @code{else}
 clause).
 @c JP
-@code{srfi-0}の定義により、機能要求が満されず、かつ@code{else}節がない
+SRFI-0の定義により、機能要求が満されず、かつ@code{else}節がない
 場合には@code{cond-expand}はエラーをあげます。常に@code{else}を書いて
 おくのがよいでしょう。 上の例のように、@code{else}節でなにもしないとき
 でも、空の@code{else}節を書くのがよいでしょう。

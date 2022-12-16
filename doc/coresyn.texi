@@ -145,7 +145,7 @@ the positive infinity, the negative infinity, and NaN,
 which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
 respectively.  (@code{-nan.0} is also read as NaN.)
 
-Gauche supports srfi-169 (underscores in numbers) notation; you can
+Gauche supports SRFI-169 (underscores in numbers) notation; you can
 insert a character @code{_} between digits in numeric literals
 to improve readability, e.g. @code{#b1100_1010_1111_1110}.
 A valid underscore must be surrounded by digits; @code{1_2_3} is ok,
@@ -184,7 +184,7 @@ gosh> 2@@-0.5pi
 それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
 表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
 
-Gaucheはまた、srfi-169 (数値中のアンダースコア)構文をサポートしています。
+Gaucheはまた、SRFI-169 (数値中のアンダースコア)構文をサポートしています。
 読みやすくするために、数値中に@code{_}を挿入することができます
 (例: @code{#b1100_1010_1111_1110})。
 ただし、各アンダースコアは数字に囲まれていなければなりません。
@@ -2678,7 +2678,7 @@ for the @code{begin0} form is expanded as follows.
 [SRFI-236]
 @c EN
 Evaluates @var{exp} @dots{} in an unspecified order, and returns
-an undefined result.  This form is defined in srfi-236.
+an undefined result.  This form is defined in SRFI-236.
 
 You can use @code{begin} to group multiple expressions, but @code{begin}
 also specifies the order of evaluation even when it's unnecessary.
@@ -2686,19 +2686,19 @@ Using @code{independently}, you can express the intention to the readers
 that the order does not matter, and also gives the compiler
 more opportunities for optimization.
 
-As the order doesn't matter, srfi-236 does not specify the return
+As the order doesn't matter, SRFI-236 does not specify the return
 value of this form.  Gauche returns @code{#<undef>}, but the caller
 shoudn't rely on it.
 @c JP
 @var{exp} @dots{}を順序を問わずに評価し、未定義値を返します。
-このフォームはsrfi-236で定義されました。
+このフォームはSRFI-236で定義されました。
 
 複数の式を評価するのには@code{begin}が使えますが、
 @code{begin}は順序も指定してしまいます。
 @code{independently}は、コードを読む人に順序が関係ないことを伝え、
 またコンパイラにより多くの最適化の機会を与えます。
 
-式がどういう順で評価されるかわからないので、srfi-236では結果の値は指定されていません。
+式がどういう順で評価されるかわからないので、SRFI-236では結果の値は指定されていません。
 Gaucheは@code{#<undef>}を返しますが、返り値に依存するコードは書くべきではありません。
 @c COMMON
 @end defmac
@@ -5538,7 +5538,7 @@ are passed to @code{import} as the import options.
 @c COMMON
 
 @example
-(use srfi-1 :only (iota) :prefix srfi-1:)
+(use srfi.1 :only (iota) :prefix srfi-1:)
 
 (srfi-1:iota 3) @result{} (0 1 2)
 @end example

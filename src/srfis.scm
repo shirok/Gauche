@@ -176,12 +176,12 @@ srfi-4, gauche.uvector
 
 Homogeneous numeric vector datatypes.
 The module @code{gauche.uvector} provides a superset of
-@code{srfi-4} procedures, including arithmetic operations and
+@code{srfi.4} procedures, including arithmetic operations and
 generic interface on the SRFI-4 vectors.  @xref{Uniform vectors}.
 
 一様な数値ベクタ型
 モジュール@code{gauche.uvector}が
-@code{srfi-4}の上位互換手続きを提供します。
+@code{srfi.4}の上位互換手続きを提供します。
 同モジュールにはSRFI-4の手続きに加え、
 算術演算やジェネリックなインタフェースが定義されています。@ref{Uniform vectors}参照。
 
@@ -190,11 +190,11 @@ srfi-5, srfi-5
 ()
 
 A compatible let form with signatures and rest arguments
-Supported by the module @code{srfi-5}.
+Supported by the module @code{srfi.5}.
 @xref{A compatible let form with signatures and rest arguments}.
 
 シグネチャとrest引数に互換性のあるlet形式
-モジュール@code{srfi-5}でサポートされます。
+モジュール@code{srfi.5}でサポートされます。
 @ref{A compatible let form with signatures and rest arguments}参照。
 
 
@@ -268,11 +268,11 @@ srfi-13, srfi-13
 ()
 
 String library
-Supported by the module @code{srfi-13}.  @xref{String library}.
+Supported by the module @code{srfi.13}.  @xref{String library}.
 (Some of SRFI-13 procedures are built-in).
 
 文字列ライブラリ
-モジュール@code{srfi-13}でサポートされます。@ref{String library}参照。
+モジュール@code{srfi.13}でサポートされます。@ref{String library}参照。
 (SRFI-13の手続きのいくつかは組み込みになっています。)
 
 srfi-14, srfi-14
@@ -332,12 +332,12 @@ srfi-19, srfi-19
 
 Time Data Types and Procedures.
 Time data type is Gauche built-in (@pxref{Time}).
-Complete set of SRFI-19 is supported by the module @code{srfi-19}.
+Complete set of SRFI-19 is supported by the module @code{srfi.19}.
 @xref{Time data types and procedures}.
 
 時間データの型と手続き
 時間のデータ型はGauche組み込みです(@ref{Time}参照)。
-SRFI-19の完全なサポートはモジュール@code{srfi-19}で提供されています。
+SRFI-19の完全なサポートはモジュール@code{srfi.19}で提供されています。
 @ref{Time data types and procedures}参照。
 
 
@@ -389,10 +389,10 @@ srfi-27, srfi-27
 ()
 
 Sources of Random Bits.
-Supported by the module @code{srfi-27}.  @xref{Sources of random bits}.
+Supported by the module @code{srfi.27}.  @xref{Sources of random bits}.
 
 ランダムビットのソース
-モジュール@code{srfi-27}でサポートされます。@ref{Sources of random bits}参照。
+モジュール@code{srfi.27}でサポートされます。@ref{Sources of random bits}参照。
 
 
 srfi-28
@@ -411,11 +411,11 @@ srfi-29, srfi-29
 ()
 
 Localization
-Supported by the module @code{srfi-29}.
+Supported by the module @code{srfi.29}.
 @xref{Localization}.
 
 地域化
-モジュール@code{srfi-29}でサポートされます。
+モジュール@code{srfi.29}でサポートされます。
 @ref{Localization}参照。
 
 
@@ -477,11 +477,11 @@ srfi-37, srfi-37
 ()
 
 args-fold: a program argument processor
-Supported by the module @code{srfi-37}.
+Supported by the module @code{srfi.37}.
 @xref{A program argument processor}.
 
 args-fold: プログラム引数処理
-モジュール@code{srfi-37}でサポートされます。
+モジュール@code{srfi.37}でサポートされます。
 @ref{A program argument processor}参照。
 
 
@@ -537,11 +537,11 @@ srfi-42, srfi-42
 ()
 
 Eager comprehensions
-Supported by the module @code{srfi-42}.
+Supported by the module @code{srfi.42}.
 @xref{Eager comprehensions}.
 
 先行評価的内包表記
-モジュール@code{srfi-42}でサポートされます。
+モジュール@code{srfi.42}でサポートされます。
 @ref{Eager comprehensions}参照。
 
 
@@ -549,16 +549,16 @@ srfi-43, srfi-43
 ()
 
 Vector library
-Supported by the module @code{srfi-43}.
+Supported by the module @code{srfi.43}.
 @xref{Vector library (Legacy)}.
 Note that this srfi is superseded by R7RS @code{scheme.vector}
-library (formerly known as @code{srfi-133}).  @xref{R7RS vectors}.
+library (formerly known as @code{srfi.133}).  @xref{R7RS vectors}.
 
 ベクタライブラリ
-モジュール@code{srfi-43}でサポートされます。
+モジュール@code{srfi.43}でサポートされます。
 @ref{Vector library (Legacy)}参照。
 註：このsrfiはR7RSの@code{scheme.vector}ライブラリ
-(@code{srfi-133}として導入されたもの)により置き換えられました。
+(@code{srfi.133}として導入されたもの)により置き換えられました。
 @ref{R7RS vectors}参照。
 
 
@@ -605,11 +605,11 @@ srfi-60, srfi-60
 
 Integers as bits
 Most procedures are built-in: @xref{R7RS bitwise operations}.
-The complete support is in @code{srfi-60} module: @xref{Integers as bits}.
+The complete support is in @code{srfi.60} module: @xref{Integers as bits}.
 
 整数に対するビット操作
 ほとんどの手続きは組み込みになっています。@ref{R7RS bitwise operations}参照。
-完全なサポートは@code{srfi-60}モジュールで提供されます。
+完全なサポートは@code{srfi.60}モジュールで提供されます。
 @ref{Integers as bits}参照。
 
 
@@ -639,22 +639,22 @@ srfi-64, srfi-64
 ()
 
 A Scheme API for test suites
-Supported by the module @code{srfi-64}. @xref{A Scheme API for test suites}.
+Supported by the module @code{srfi.64}. @xref{A Scheme API for test suites}.
 
 テストスイートのためのScheme API
-モジュール@code{srfi-64}でサポートされます。@ref{A Scheme API for test suites}参照。
+モジュール@code{srfi.64}でサポートされます。@ref{A Scheme API for test suites}参照。
 
 
 srfi-66, srfi-66
 ()
 
 Octet vectors
-Supported by the module @code{srfi-66} (@pxref{Octet vectors}).
+Supported by the module @code{srfi.66} (@pxref{Octet vectors}).
 This is mostly a subset of @code{gauche.uvector}, but has one
 slight difference.
 
 オクテットベクタ
-モジュール@code{srfi-66}でサポートされます (@ref{Octet vectors}参照)。
+モジュール@code{srfi.66}でサポートされます (@ref{Octet vectors}参照)。
 ほぼ@code{gauche.uvector}のサブセットですが、
 一ヶ所だけ違いがあります。
 
@@ -663,15 +663,15 @@ srfi-69, srfi-69
 ()
 
 Basic hash tables
-Supported by the module @code{srfi-69} (@pxref{Basic hash tables}).
+Supported by the module @code{srfi.69} (@pxref{Basic hash tables}).
 Note that this srfi is superseded by R7RS @code{scheme.hash-table}
-library (formerly known as @code{srfi-125}).
+library (formerly known as @code{srfi.125}).
 @xref{R7RS hash tables}.
 
 基本的なハッシュテーブル
-モジュール@code{srfi-69}でサポートされます (@ref{Basic hash tables}参照)。
+モジュール@code{srfi.69}でサポートされます (@ref{Basic hash tables}参照)。
 このsrfiはR7RSの@code{scheme.hash-table}
-(@code{srfi-125}として導入されたもの) で置き換えられました。
+(@code{srfi.125}として導入されたもの) で置き換えられました。
 詳しくは@ref{R7RS hash tables}を参照してください。
 
 
@@ -679,10 +679,10 @@ srfi-74, srfi-74
 ()
 
 Octet-addressed binary blocks
-Supported by the module @code{srfi-74} (@pxref{Octet-addressed binary blocks}).
+Supported by the module @code{srfi.74} (@pxref{Octet-addressed binary blocks}).
 
 オクテット毎にアクセス可能なバイナリブロック
-モジュール@code{srfi-74}でサポートされます (@ref{Octet-addressed binary blocks}参照)。
+モジュール@code{srfi.74}でサポートされます (@ref{Octet-addressed binary blocks}参照)。
 
 
 
@@ -690,11 +690,11 @@ srfi-78, srfi-78
 ()
 
 Lightweight testing
-Supported by the module @code{srfi-78}.
+Supported by the module @code{srfi.78}.
 It can work with @code{gauche.test}.  @xref{Lightweight testing}.
 
 軽いテストフレームワーク
-モジュール@code{srfi-78}でサポートされます。
+モジュール@code{srfi.78}でサポートされます。
 @code{gauche.test}と一緒に使うこともできます。@ref{Lightweight testing}参照。
 
 
@@ -740,10 +740,10 @@ srfi-98, srfi-98
 ()
 
 An interface to access environment variables
-Supported by the module @code{srfi-98}.  @xref{Accessing environment variables}.
+Supported by the module @code{srfi.98}.  @xref{Accessing environment variables}.
 
 環境変数にアクセスするためのインタフェース
-モジュール@code{srfi-98}でサポートされます。@ref{Accessing environment variables}参照。
+モジュール@code{srfi.98}でサポートされます。@ref{Accessing environment variables}参照。
 
 srfi-99, gauche.record
 ()
@@ -777,10 +777,10 @@ srfi-106, srfi-106
 ()
 
 Basic socket interface
-Supported by the module @code{srfi-106}.  @xref{Basic socket interface}.
+Supported by the module @code{srfi.106}.  @xref{Basic socket interface}.
 
 基本的なソケットインタフェース
-モジュール@code{srfi-106}でサポートされます。@ref{Basic socket interface}参照。
+モジュール@code{srfi.106}でサポートされます。@ref{Basic socket interface}参照。
 
 
 srfi-111
@@ -799,11 +799,11 @@ srfi-112, srfi-112
 ()
 
 Environment inquiry
-Supported by the module @code{srfi-112}.
+Supported by the module @code{srfi.112}.
 @xref{Portable runtime environment inquiry}.
 
 環境の問い合わせ
-モジュール@code{srfi-112}でサポートされます。
+モジュール@code{srfi.112}でサポートされます。
 @ref{Portable runtime environment inquiry}参照。
 
 
@@ -824,10 +824,10 @@ srfi-114, srfi-114
 ()
 
 Comparators
-Some of the features are built-in (@pxref{Basic comparators}).  Full srfi spec is supported by the module @code{srfi-114} (@pxref{Comparators}).
+Some of the features are built-in (@pxref{Basic comparators}).  Full srfi spec is supported by the module @code{srfi.114} (@pxref{Comparators}).
 
 比較器
-いくつかの機能は組み込みです(@ref{Basic comparators}参照)。srfiの完全な仕様はモジュール@code{srfi-114}でサポートされます(@ref{Comparators}参照)。
+いくつかの機能は組み込みです(@ref{Basic comparators}参照)。srfiの完全な仕様はモジュール@code{srfi.114}でサポートされます(@ref{Comparators}参照)。
 
 
 srfi-115, srfi-115
@@ -875,11 +875,11 @@ srfi-118, srfi-118
 ()
 
 Simple adjustable-size strings
-Supported by the module @code{srfi-118}.
+Supported by the module @code{srfi.118}.
 (@pxref{Simple adjustable-size strings})
 
 簡単な可変長文字列
-モジュール@code{srfi-118}でサポートされます。
+モジュール@code{srfi.118}でサポートされます。
 (@ref{Simple adjustable-size strings}参照)
 
 
@@ -887,11 +887,11 @@ srfi-120, srfi-120
 ()
 
 Timer APIs
-Supported by the module @code{srfi-120} (@pxref{Timer APIs}).
+Supported by the module @code{srfi.120} (@pxref{Timer APIs}).
 It is a wrapper of @code{control.scheduler} (@pxref{Scheduler}).
 
 タイマーAPI
-モジュール@code{srfi-120}でサポートされます (@ref{Timer APIs}参照)。
+モジュール@code{srfi.120}でサポートされます (@ref{Timer APIs}参照)。
 これは@code{control.scheduler}のラッパーです (@ref{Scheduler}参照)。
 
 
@@ -1138,22 +1138,22 @@ srfi-149
 (syntax-rules)
 
 Basic syntax-rules template extensions
-The built-in @code{syntax-rules} support @code{srfi-149}.
+The built-in @code{syntax-rules} support @code{srfi.149}.
 
 基本的なsyntax-rulesの拡張
-組み込みの@code{syntax-rules}は@code{srfi-149}に対応しています。
+組み込みの@code{syntax-rules}は@code{srfi.149}に対応しています。
 
 
 srfi-151, srfi-151
 ()
 
 Bitwise operations
-Supported by the module @code{srfi-151} (@pxref{R7RS bitwise operations}).
+Supported by the module @code{srfi.151} (@pxref{R7RS bitwise operations}).
 Note that many equivalent procedures are provided built-in
 (@pxref{Basic bitwise operations}).
 
 ビット演算
-モジュール@code{srfi-151}でサポートされます (@ref{R7RS bitwise operations}参照)。
+モジュール@code{srfi.151}でサポートされます (@ref{R7RS bitwise operations}参照)。
 なお、組み込みでも多くの手続きについては同等の手続きが提供されています
 (@ref{Basic bitwise operations}参照).
 
@@ -1162,20 +1162,20 @@ srfi-152, srfi-152
 ()
 
 String library (reduced)
-Supported by the module @code{srfi-152} (@pxref{String library (reduced)}).
+Supported by the module @code{srfi.152} (@pxref{String library (reduced)}).
 
 文字列ライブラリ(簡略版)
-モジュール@code{srfi-152}でサポートされます (@ref{String library (reduced)}参照)。
+モジュール@code{srfi.152}でサポートされます (@ref{String library (reduced)}参照)。
 
 
 srfi-154, srfi-154
 ()
 
 First-class dynamic extents
-Suppored by the module @code{srfi-154}.  (@pxref{First-class dynamic extents}).
+Suppored by the module @code{srfi.154}.  (@pxref{First-class dynamic extents}).
 
 第一級の動的エクステント
-モジュール@code{srfi-154}でサポートされます。(@ref{First-class dynamic extents}参照)。
+モジュール@code{srfi.154}でサポートされます。(@ref{First-class dynamic extents}参照)。
 
 
 srfi-158, srfi-158
@@ -1230,10 +1230,10 @@ srfi-162, srfi-162
 ()
 
 Comparators sublibrary
-Supported by the module @code{srfi-162}.  @xref{Comparator sublibrary}.
+Supported by the module @code{srfi.162}.  @xref{Comparator sublibrary}.
 
 比較器のサブライブラリ
-モジュール@code{srfi-162}でサポートされます。@ref{Comparator sublibrary}参照。
+モジュール@code{srfi.162}でサポートされます。@ref{Comparator sublibrary}参照。
 
 
 srfi-169
@@ -1250,21 +1250,21 @@ srfi-170, srfi-170
 ()
 
 POSIX API
-Supported by the module @code{srfi-170}.  @xref{POSIX API}.
+Supported by the module @code{srfi.170}.  @xref{POSIX API}.
 
 POSIX API
-モジュール@code{srfi-170}でサポートされます。@ref{POSIX API}参照。
+モジュール@code{srfi.170}でサポートされます。@ref{POSIX API}参照。
 
 
 srfi-173, srfi-173
 ()
 
 Hooks
-Supported by the module @code{srfi-173} (@pxref{Hooks (srfi)}),
+Supported by the module @code{srfi.173} (@pxref{Hooks (srfi)}),
 which is a thin layer on top of @code{gauche.hook} (@pxref{Hooks})
 
 フック
-モジュール@code{srfi-173}でサポートされます (@ref{Hooks (srfi)}参照) 。
+モジュール@code{srfi.173}でサポートされます (@ref{Hooks (srfi)}参照) 。
 それ自体は@code{gauche.hook}の上にかぶせた薄いレイヤです (@ref{Hooks}参照)。
 
 
@@ -1272,12 +1272,12 @@ srfi-174, srfi-174
 ()
 
 POSIX Timespecs
-Supported by the module @code{srfi-174} (@pxref{POSIX timespecs}).
+Supported by the module @code{srfi.174} (@pxref{POSIX timespecs}).
 In Gauche, the timespec type is the same as built-in @code{<time>}
 object, which is also the same as srfi-19 time.
 
 POSIX Timespec
-モジュール@code{srfi-174}でサポートされます (@ref{POSIX timespecs}参照)。
+モジュール@code{srfi.174}でサポートされます (@ref{POSIX timespecs}参照)。
 Gaucheでは、timespecオブジェクトは組み込みの@code{<time>}オブジェクトであり、
 またsrfi-19のtimeオブジェクトとも共通です。
 
@@ -1286,10 +1286,10 @@ srfi-175, srfi-175
 ()
 
 ASCII character library
-Supported by the module @code{srfi-175} (@pxref{ASCII character library}).
+Supported by the module @code{srfi.175} (@pxref{ASCII character library}).
 
 ASCII文字ライブラリ
-モジュール@code{srfi-175}でサポートされます(@ref{ASCII character library}参照)。
+モジュール@code{srfi.175}でサポートされます(@ref{ASCII character library}参照)。
 
 
 srfi-176, srfi-176
@@ -1309,24 +1309,24 @@ srfi-178, srfi-178
 
 Bitvector library
 The basic support is built-in (@pxref{Bitvectors}).
-Complete support is in the module @code{srfi-178} (@pxref{Bitvector library}.
+Complete support is in the module @code{srfi.178} (@pxref{Bitvector library}.
 
 ビットベクタライブラリ
 基本的なサポートは組み込みです (@ref{Bitvectors}参照)。
-完全なサポートはモジュール@code{srfi-178}にあります(@ref{Bitvector library}参照)。
+完全なサポートはモジュール@code{srfi.178}にあります(@ref{Bitvector library}参照)。
 
 
 srfi-180, srfi-180
 ()
 
 JSON
-Supported by the module @code{srfi-180} (@pxref{JSON}).
+Supported by the module @code{srfi.180} (@pxref{JSON}).
 Note that Gauche also has @code{rfc.json},
-and @code{srfi-180} is implemented on top of it.
+and @code{srfi.180} is implemented on top of it.
 
 JSON
-モジュール@code{srfi-180}でサポートされます (@ref{JSON}参照)。
-Gaucheには@code{rfc.json}もあって、@code{srfi-180}は
+モジュール@code{srfi.180}でサポートされます (@ref{JSON}参照)。
+Gaucheには@code{rfc.json}もあって、@code{srfi.180}は
 @code{rfc.json}の上に実装されています。
 
 
@@ -1334,12 +1334,12 @@ srfi-181, srfi-181
 ()
 
 Custom ports
-Supported by the module @code{srfi-181} (@pxref{Custom ports}).
+Supported by the module @code{srfi.181} (@pxref{Custom ports}).
 Gauche has an original custom port mechanism (@pxref{Virtual ports}), and
 This srfi is built in top of it.
 
 カスタムポート
-モジュール@code{srfi-181}でサポートされます (@ref{Custom ports}参照)。
+モジュール@code{srfi.181}でサポートされます (@ref{Custom ports}参照)。
 Gaucheは独自のカスタムポートメカニズムを持っており(@ref{Virtual ports}参照)、
 このsrfiはその上に作られています。
 
@@ -1348,11 +1348,11 @@ srfi-185, srfi-185
 ()
 
 Linear adjustable-length strings
-Supported by the module @code{srfi-185}.
+Supported by the module @code{srfi.185}.
 @xref{Linear adjustable-length strings}.
 
 線形更新な可変長文字列
-モジュール@code{srfi-185}でサポートされます。
+モジュール@code{srfi.185}でサポートされます。
 @ref{Linear adjustable-length strings}参照。
 
 
@@ -1360,10 +1360,10 @@ srfi-189, srfi-189
 ()
 
 Maybe and Either: optional container types
-Supported by the module @code{srfi-189}.
+Supported by the module @code{srfi.189}.
 
 MaybeとEither: オプショナルなコンテナ型
-モジュール@code{srfi-189}でサポートされます。
+モジュール@code{srfi.189}でサポートされます。
 
 
 srfi-192, srfi-192
@@ -1372,13 +1372,13 @@ srfi-192, srfi-192
 Port positioning
 Gauche's port already has positining mechanism, so main procedures
 are built-in (@pxref{Common port operations}).
-A few additional procedures are provided by the module @code{srfi-192}
+A few additional procedures are provided by the module @code{srfi.192}
 (@pxref{Port positioning}).
 
 ポート位置
 Gaucheのポートは既に位置の問い合わせと設定機能を持っており、
 主要な手続きは組み込みになっています(@ref{Common port operations}参照)。
-組み込みでない追加手続きはモジュール@code{srfi-192}にあります
+組み込みでない追加手続きはモジュール@code{srfi.192}にあります
 (@ref{Port positioning}参照)。
 
 
@@ -1387,12 +1387,12 @@ srfi-193, srfi-193
 
 Command line
 Two procedures, @code{command-line} and @code{script-file}, are
-built-in.  Other APIs are provided by the module @code{srfi-193}
+built-in.  Other APIs are provided by the module @code{srfi.193}
 (@pxref{Command line}).
 
 コマンドライン
 @code{command-line}と@code{script-file}の二つの手続きは組み込みです。
-他のAPIはモジュール@code{srfi-193}で提供されます (@ref{Command line}参照)。
+他のAPIはモジュール@code{srfi.193}で提供されます (@ref{Command line}参照)。
 
 
 srfi-195
@@ -1409,10 +1409,10 @@ srfi-196, srfi-196
 ()
 
 Range objects
-Suppored by the module @code{srfi-196}.  Also the @code{data.range}
+Suppored by the module @code{srfi.196}.  Also the @code{data.range}
 module is the superset of this srfi (@pxref{Range}).
 
-モジュール@code{srfi-196}でサポートされます。また、@code{data.range}モジュールは
+モジュール@code{srfi.196}でサポートされます。また、@code{data.range}モジュールは
 このsrfiの上位互換になっています (@ref{Range}参照)。
 
 
@@ -1420,31 +1420,31 @@ srfi-197, srfi-197
 ()
 
 Pipeline operators
-Supported by the module @code{srfi-197} (@pxref{Pipeline operators}).
+Supported by the module @code{srfi.197} (@pxref{Pipeline operators}).
 
 パイプラインオペレータ
-モジュール@code{srfi-197}でサポートされます (@ref{Pipeline operators}参照)。
+モジュール@code{srfi.197}でサポートされます (@ref{Pipeline operators}参照)。
 
 
 srfi-209, srfi-209
 ()
 
 Enums and enum sets
-Supported by the module @code{srfi-209} (@pxref{Enums and enum sets}).
+Supported by the module @code{srfi.209} (@pxref{Enums and enum sets}).
 
 Enumとenum集合
-モジュール@code{srfi-209}でサポートされます (@ref{Enums and enum sets}参照)。
+モジュール@code{srfi.209}でサポートされます (@ref{Enums and enum sets}参照)。
 
 
 srfi-217, srfi-217
 ()
 
 Integer sets
-Supported by the module @code{srfi-217}
+Supported by the module @code{srfi.217}
 (@pxref{Integer sets}).
 
 整数集合
-@code{srfi-217}でサポートされます
+@code{srfi.217}でサポートされます
 (@ref{Integer sets}参照)。
 
 
@@ -1468,11 +1468,11 @@ srfi-221, srfi-221
 ()
 
 Generator/accumulator sub-library
-Supported by the module @code{srfi-221}
+Supported by the module @code{srfi.221}
 (@pxref{Generator/accumulator sub-library}).
 
 ジェネレータ/アキュムレータ サブライブラリ
-@code{srfi-221}でサポートされます
+@code{srfi.221}でサポートされます
 (@ref{Generator/accumulator sub-library}参照)。
 
 
@@ -1480,11 +1480,11 @@ srfi-222, srfi-222
 ()
 
 Compound objects
-Supported by the module @code{srfi-222}
+Supported by the module @code{srfi.222}
 (@pxref{Compound objects}).
 
 複合オブジェクト
-@code{srfi-222}でサポートされます
+@code{srfi.222}でサポートされます
 (@ref{Compound objects}参照)。
 
 
@@ -1492,11 +1492,11 @@ srfi-227, srfi-227
 ()
 
 Optional arguments
-Supported by the module @code{srfi-227}
+Supported by the module @code{srfi.227}
 (@pxref{Optional arguments}).
 
 省略可能引数
-モジュール@code{srfi-227}でサポートされます
+モジュール@code{srfi.227}でサポートされます
 (@ref{Optional arguments}参照)。
 
 
@@ -1504,21 +1504,21 @@ srfi-228, srfi-228
 ()
 
 Composing comparators
-Supported by the module @code{srfi-228}
+Supported by the module @code{srfi.228}
 
 比較器の合成
-@code{srfi-228}でサポートされます。
+@code{srfi.228}でサポートされます。
 
 
 srfi-229, srfi-229
 ()
 
 Tagged procedures
-Supported by the module @code{srfi-229}
+Supported by the module @code{srfi.229}
 (@pxref{Tagged procedures}).
 
 手続きタグ
-@code{srfi-229}でサポートされます。
+@code{srfi.229}でサポートされます。
 (@ref{Tagged procedures}参照)。
 
 
@@ -1526,12 +1526,12 @@ srfi-232, srfi-232
 ()
 
 Flexible curried procedures
-Supported by the module @code{srfi-232}
+Supported by the module @code{srfi.232}
 (@pxref{Flexible curried procedures}).
 
 
 柔軟なカリー化された手続き
-@code{srfi-232}でサポートされます
+@code{srfi.232}でサポートされます
 (@ref{Flexible curried procedures}参照)。
 
 

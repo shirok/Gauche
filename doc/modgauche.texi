@@ -55,7 +55,7 @@
 @c EN
 This module provides multi-dimensional array data type and operations.
 The primitive API follows SRFI-25.
-Besides a generic srfi-25 array that can store any Scheme objects,
+Besides a generic SRFI-25 array that can store any Scheme objects,
 this module also provides array classes that stores numeric objects
 efficiently, backed up by
 homogeneous numeric vectors (@pxref{Uniform vectors}).
@@ -176,14 +176,14 @@ you should use one of the following concrete array classes.
 @clindex f64array
 @c MOD gauche.array
 @c EN
-Concrete array classes.  The @code{<array>} class implements srfi-25
+Concrete array classes.  The @code{<array>} class implements SRFI-25
 compatible array, i.e. an array that can store any Scheme objects.
 The @code{<u8array>} class through @code{<f64array>} classes uses
 a @code{<u8vector>} through @code{<f64vector>} as a backing storage,
 and can only store a limited range of integers or inexact real numbers,
 but they are space efficient.
 @c JP
-具体配列クラスです。@code{<array>}クラスはsrfi-25互換の配列、
+具体配列クラスです。@code{<array>}クラスはSRFI-25互換の配列、
 すなわち、任意のSchemeオブジェクトを格納できる配列を実装します。
 @code{<u8array>}から@code{<f64array>}までは、
 それぞれ@code{<u8vector>}から@code{<f64vector>}をバッキングストレージとして
@@ -1149,11 +1149,11 @@ if you don't use @code{import} directly, you won't need it.)
 
 @c EN
 This module adds more operations on bitvectors.
-This module and built-in bitvector procedures covers srfi-178
+This module and built-in bitvector procedures covers SRFI-178
 Bitvector library interface (@pxref{Bitvector library})
 @c JP
 このモジュールは、ビットベクタを扱う多くの操作を提供します。
-このモジュールの手続きと組み込みのビットベクタ手続きは、srfi-178のスーパーセットに
+このモジュールの手続きと組み込みのビットベクタ手続きは、SRFI-178のスーパーセットに
 なっています (@ref{Bitvector library}参照)。
 @c COMMON
 
@@ -1635,7 +1635,7 @@ Note that the first bit of
 (bitvector->integer #*0001) @result{} 8
 @end example
 
-This is consistent with @code{bits->list} etc. of srfi-151
+This is consistent with @code{bits->list} etc. of SRFI-151
 (@pxref{R7RS bitwise operations}), where least significant bit
 corresponts to the first element of the list.
 
@@ -1661,7 +1661,7 @@ the bitvector to be used.
 @end example
 
 The names are consistent with Gauche convention.
-Srfi-178 defines these procedures with the name
+SRFI-178 defines these procedures with the name
 @code{make-bitvector/int-generator} and @code{make-bitvector/bool-generator}.
 
 @xref{Generators}, for the details of generators.
@@ -1674,7 +1674,7 @@ Srfi-178 defines these procedures with the name
 @c MOD gauche.bitvector
 These are same as @code{bitvector->int-generator} and
 @code{bitvector->bool-generator} except the optional arguments,
-and defined in srfi-178.
+and defined in SRFI-178.
 @end defun
 
 @defun bitvector->index-generator bv val :optional start end
@@ -8585,20 +8585,20 @@ generators.  This module provides them.
 @c COMMON
 
 @c EN
-Srfi-121 (Generators) is a subset of this module.
-Since @code{gauche.generator} predates srfi-121, we have different
+SRFI-121 (Generators) is a subset of this module.
+Since @code{gauche.generator} predates SRFI-121, we have different
 names for some procedures; for the compatibility, we provide
-both names.  Srfi-151 (Generators and accumulators) adds some more
+both names.  SRFI-151 (Generators and accumulators) adds some more
 generator procedures, which is also included (but accumulator procedures
-are left to srfi-158. @xref{R7RS generators}.)
+are left to SRFI-158. @xref{R7RS generators}.)
 @c JP
-srfi-121 (Generators) はこのモジュールのサブセットです。
-@code{gauche.generator}はsrfi-121より前からあったので、
+SRFI-121 (Generators) はこのモジュールのサブセットです。
+@code{gauche.generator}はSRFI-121より前からあったので、
 いくつかの手続きについては異なる名前を使っていました。互換性のため、
 それらの手続きは両方の名前を定義しています。
-srfi-158 (Generators and accumulators)はさらに追加のジェネレータ手続きを
+SRFI-158 (Generators and accumulators)はさらに追加のジェネレータ手続きを
 定義していますが、それらもこのモジュールに含まれています
-(ただし、アキュムレータについてはsrfi-158モジュールに分けてあります。
+(ただし、アキュムレータについてはSRFI-158モジュールに分けてあります。
 @ref{R7RS generators}参照)。
 @c COMMON
 @end deftp
@@ -8832,15 +8832,15 @@ it to @code{g}.
 Returns a generator that yields each item in the given argument.
 A generator returned from @code{reverse-*} procedures runs in
 reverse order.
-Srfi-121 defines these except @code{uvector->generator}, which can
-take any type of uniform vectors.  The srfi-121 version,
+SRFI-121 defines these except @code{uvector->generator}, which can
+take any type of uniform vectors.  The SRFI-121 version,
 @code{bytevector->generator}, limits the argument to @code{u8vector}.
 @c JP
 実引数の各要素を生成するジェネレータを返します。
 @code{reverse-*}は、逆順で値を生成します。
-srfi-121は@code{uvector->generator}以外の手続きを定義しています。
+SRFI-121は@code{uvector->generator}以外の手続きを定義しています。
 @code{uvector->generator}は全ての種類のユニフォームベクタを取ることができます。
-一方、srfi-121も定義する@code{bytevector->generator}は@code{u8vector}だけを
+一方、SRFI-121も定義する@code{bytevector->generator}は@code{u8vector}だけを
 対象とします。
 @c COMMON
 
@@ -9236,7 +9236,7 @@ also accept any collection to @var{gen} and @var{gen2} parameters;
 if a collection is passed where a generator is expected,
 it is implicitly coerced into a generator.
 
-(NB: This is Gauche's extension.  For portable srfi-121/srfi-158 programs,
+(NB: This is Gauche's extension.  For portable SRFI-121/SRFI-158 programs,
 you shouldn't rely on this behavior; instead, explicitly convert
 collections to generators.)
 @c JP
@@ -9246,7 +9246,7 @@ collections to generators.)
 想定されているところにコレクションが渡されると、暗黙のうちにジェネレータ
 へと変換されるのです。
 
-(註：これはGauche独自の拡張です。ポータブルなsrfi-121/158プログラムは、
+(註：これはGauche独自の拡張です。ポータブルなSRFI-121/158プログラムは、
 この振る舞いに依存してはいけません。明示的にコレクションをジェネレータに
 変換してください。)
 @c COMMON
@@ -9468,9 +9468,9 @@ and the next seed.
 @c COMMON
 
 @c EN
-NB: This is called @code{gcombine} in srfi-121.
+NB: This is called @code{gcombine} in SRFI-121.
 @c JP
-註：これはsrfi-121の@code{gcombine}と同じものです。
+註：これはSRFI-121の@code{gcombine}と同じものです。
 @c COMMON
 @end defun
 
@@ -9478,9 +9478,9 @@ NB: This is called @code{gcombine} in srfi-121.
 [SRFI-158]
 @c MOD gauche.generator
 @c EN
-An alias of @code{gmap-accum}, provided for the compatibility of srfi-121.
+An alias of @code{gmap-accum}, provided for the compatibility of SRFI-121.
 @c JP
-@code{gmap-accum}の別名です。srfi-121との互換性のため提供されています。
+@code{gmap-accum}の別名です。SRFI-121との互換性のため提供されています。
 @c COMMON
 @end defun
 
@@ -9700,11 +9700,11 @@ from the input generator, you may want to use @code{gslices} below.
 @c EN
 Note for the compatibility: Until 0.9.4, @code{gtake} takes two optional
 arguments, @var{fill?} and @var{padding}.  That is consistent with
-Gauche's builtin @code{take*}, but incompatible to srfi-121's @code{gtake}.
-We think srfi-121's interface is more compact and intuitive, so we
+Gauche's builtin @code{take*}, but incompatible to SRFI-121's @code{gtake}.
+We think SRFI-121's interface is more compact and intuitive, so we
 renamed the original one to @code{gtake*} (emphasizing
 the similarity to @code{take*}), and made @code{gtake} compatible to
-srfi-121.
+SRFI-121.
 To ease transition, the current @code{gtake} allows two optional arguments
 (four in total),
 in which case we assume the caller wants to call @code{gtake*}; so
@@ -9713,9 +9713,9 @@ both pre-0.9.4 and 0.9.5.
 @c JP
 互換性への註: 0.9.4までは、@code{gtake}は@var{fill?}と@var{padding}の
 ふたつの省略可能引数を取りました。これはもともとGauche組み込み@code{take*}に合わせて
-いたのですが、srfi-121に採用された@code{gtake}とは非互換になりました。
-srfi-121の方が簡潔で直感的なので、0.9.5からは元の@code{gtake}を(@code{take*}との
-類似性を強調して)@code{gtake*}とリネームし、@code{gtake}はsrfi-121に合わせることと
+いたのですが、SRFI-121に採用された@code{gtake}とは非互換になりました。
+SRFI-121の方が簡潔で直感的なので、0.9.5からは元の@code{gtake}を(@code{take*}との
+類似性を強調して)@code{gtake*}とリネームし、@code{gtake}はSRFI-121に合わせることと
 しました。
 移行をスムースにするため、@code{gtake}は二つの省略可能引数(合計4つの引数)を取ることを
 許します。その場合、@code{gtake*}が呼ばれたのと同じ動作になります。
@@ -9810,13 +9810,13 @@ Returns a generator lists of @var{k} elements taken from @var{gen}.
 If @var{padding} is omitted, it works just as @code{(gslices gen k)}.
 If @var{padding} is given, it works just as @code{(gslices gen k #t padding)}.
 
-This is defined in srfi-158, and more portable than @code{gslices}.
+This is defined in SRFI-158, and more portable than @code{gslices}.
 @c JP
 @var{gen}から@var{k}要素づつ取って作ったリストを次々と生成するジェネレータを返します。
 @var{padding}が省略された時は@code{(gslices gen k)}と同じ、
 @var{padding}が与えられた時は@code{(gslices gen k #t padding)}と同じになります。
 
-この手続きはsrfi-158で定義されたので、@code{gslices}よりポータブルでしょう。
+この手続きはSRFI-158で定義されたので、@code{gslices}よりポータブルでしょう。
 @c COMMON
 @end defun
 
@@ -9904,7 +9904,7 @@ conform the condition.
 
 @example
 ;; This example takes advantage of Gauche's auto-coercing
-;; list to generator.  For portable srfi-121 programs,
+;; list to generator.  For portable SRFI-121 programs,
 ;; you need list->generator for each argument:
 (generator->list (gindex '(a b c d e) '(0 2 3)))
   @result{} (a c d)
@@ -9932,7 +9932,7 @@ source generators is exhausted.
 
 @example
 ;; This example takes advantage of Gauche's auto-coercing
-;; list to generator.  For portable srfi-121 programs,
+;; list to generator.  For portable SRFI-121 programs,
 ;; you need list->generator for each argument:
 (generator->list (gselect '(a b c d e) '(#t #t #f #t #f)))
   @result{} (a b d)
@@ -10347,10 +10347,10 @@ Guileとの互換性のために、@code{remove-hook!}が@code{delete-hook!}の
 @end itemize
 
 @c EN
-If you're writing portable code, srfi-173 provides the basic
+If you're writing portable code, SRFI-173 provides the basic
 hook functionality (@pxref{Hooks (srfi)}).
 @c JP
-ポータブルなコードを書いているなら、srfi-173が基本的なフック機能を
+ポータブルなコードを書いているなら、SRFI-173が基本的なフック機能を
 提供しています (@ref{Hooks (srfi)}参照)。
 @c COMMON
 @end deftp
@@ -10535,11 +10535,11 @@ Some examples:
 (apropos 'string)
 
 @c EN
-;; @r{Search in srfi-14 module}
+;; @r{Search in srfi.14 module}
 @c JP
-;; @r{srfi-14モジュールの中のみを検索}
+;; @r{srfi.14モジュールの中のみを検索}
 @c COMMON
-(apropos 'char 'srfi-14)
+(apropos 'char 'srfi.14)
 @end example
 @end defmac
 
@@ -12925,10 +12925,10 @@ IPv6が使えるかどうかを調べるには、
 
 @c EN
 Note: If you want to write a portable program using network,
-take a look at @code{srfi-106} (@pxref{Basic socket interface}).
+take a look at @code{srfi.106} (@pxref{Basic socket interface}).
 @c JP
 ネットワークを使うポータブルなコードを書きたい場合は、
-@code{srfi-106}を見てください (@ref{Basic socket interface}参照)。
+@code{srfi.106}を見てください (@ref{Basic socket interface}参照)。
 @c COMMON
 
 @menu
@@ -19431,10 +19431,10 @@ returned.  Otherwise @code{#f} is returned.  The keyword argument
 @end example
 
 @c EN
-This can be regarded as generalization of @code{string-contains} in srfi-13
+This can be regarded as generalization of @code{string-contains} in SRFI-13
 (@pxref{SRFI-13 String searching}).
 @c JP
-これは、srfi-13の@code{string-contains}を一般化したものとみることもできます
+これは、SRFI-13の@code{string-contains}を一般化したものとみることもできます
 (@ref{SRFI-13 String searching}参照)。
 @c COMMON
 @end deffn
@@ -19916,11 +19916,11 @@ procedure is applied (default @code{identity}), then compared with
 @end example
 
 @c EN
-For strings, @code{srfi-13} has a specific function with
+For strings, SRFI-13 has a specific function with
 related feature: @code{string-prefix-length}
 (@pxref{SRFI-13 String prefixes & suffixes}).
 @c JP
-文字列については、@code{srfi-13}に似た機能を持つ手続き
+文字列については、SRFI-13に似た機能を持つ手続き
 @code{string-prefix-length}があります。
 (@ref{SRFI-13 String prefixes & suffixes}参照)。
 @c COMMON
@@ -20054,11 +20054,11 @@ in which elements are randomly permuted.
 @end example
 
 @c EN
-This generic function uses @code{srfi-27} (@pxref{Sources of random bits}).
+This generic function uses SRFI-27 (@pxref{Sources of random bits}).
 By default it uses @code{default-random-source}, but you can pass
 an alternative random source by the optional argument.
 @c JP
-このジェネリックファンクションは@code{srfi-27} (@ref{Sources of random bits}参照)
+このジェネリックファンクションはSRFI-27 (@ref{Sources of random bits}参照)
 を使っています。デフォルトでは乱数源として@code{default-random-source}が
 使われますが、省略可能引数に乱数源を渡すこともできます。
 @c COMMON
@@ -21574,13 +21574,13 @@ If tests are written in R7RS Scheme, you can run it by itself;
 however, you might want to run it as a part of larger test suite
 managed by @code{gauche.test}.  By doing so, you can get consolidated
 test result reports, for Gauche integrates SRFI test frameworks
-such as @code{srfi-64} and @code{srfi-78}.
+such as @code{srfi.64} and @code{srfi.78}.
 @c JP
 しばしば、既存の仕様を実装していて、テストコードがその仕様に付属していることがあります。
 テストがR7RSで書かれていればそれ自体をGaucheで実行することはできますが、
 @code{gauche.test}で管理されるより大きなテストスイートの一部として
 与えられたテストを実行したい場合もあるでしょう。
-Gaucheではテスト用SRFIである@code{srfi-64}や@code{srfi-78}が@code{gauche.test}
+Gaucheではテスト用SRFIである@code{srfi.64}や@code{srfi.78}が@code{gauche.test}
 と連携するようになっているので、テスト結果がまとめて報告されます。
 @c COMMON
 
@@ -21670,7 +21670,7 @@ Gaucheではそのライブラリは@code{srfi.222}という名前で提供さ�
 @example
 (define-module srfi-222-tests
   (use gauche.test)
-  (use srfi-222)
+  (use srfi.222)
   (test-include-r7 "include/srfi-222-tests" (exclude (compounds))))
 @end example
 
@@ -22053,14 +22053,14 @@ The meaning of keyword arguments is the same as @code{test-module}.
 @c EN
 Note that the toplevel forms in @var{filename} are evaluated, so scripts that
 relies on the actions of toplevel forms could cause unwanted side-effects.
-This check works best for the scripts written in @code{srfi-22} convention,
+This check works best for the scripts written in SRFI-22 convention,
 that is, calling actions from @code{main} procedure instead of toplevel
 forms.  R7RS scripts relies on actions in toplevel forms and can't be
 tested with this procedure.
 @c JP
 @var{filename}中のトップレベルフォームは評価されるので、
 トップレベルフォームのアクションに依存したスクリプトは望ましくない副作用を生じるでしょう。
-この検査は、スクリプトが@code{srfi-22}形式、
+この検査は、スクリプトがSRFI-22形式、
 つまりアクションを@code{main}手続きから呼ぶようになっているとうまくいきます。
 R7RSスクリプトはトップレベルフォームのアクションに頼らざるを得ないので
 この手続きではうまく検査できません。
@@ -22223,12 +22223,11 @@ It's a historical overlook, stuck for the backward compatibility.)
 @end defun
 
 @c EN
-Scheme-level thread API conforms SRFI-18, "Multithreading support"
-(@uref{https://srfi.schemers.org/srfi-18/srfi-18.html}), wrapped around Gauche's object interface.
+Scheme-level thread API conforms SRFI-18, "Multithreading support",
+wrapped around Gauche's object interface.
 @c JP
-SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポート''
-(@uref{https://srfi.schemers.org/srfi-18/srfi-18.html})を満たし、Gaucheのオブジェクトの
-インターフェースでラップされます。
+SchemeレベルのスレッドAPIはSRFI-18、``マルチスレッドサポート''を満たし、
+Gaucheのオブジェクトのインターフェースでラップされます。
 @c COMMON
 
 @menu
@@ -23097,16 +23096,16 @@ if given, or raises @code{<join-timeout-exception>}.
 
 @c EN
 A thread local is an object that can hold per-thread value.
-It is defined in srfi-226.
+It is defined in SRFI-226.
 @c JP
 スレッドローカルはスレッドごとの値を格納できるオブジェクトです。
-srfi-226で規定されています。
+SRFI-226で規定されています。
 @c COMMON
 
 @c EN
 Note: Parameters used to be the way to keep per-thread value, but
 we've decided to split thread local storage from dyncamic binding
-to eventually conform srfi-226.
+to eventually conform SRFI-226.
 Parameters should be used for dynamic binding, and thread locals should
 be used for per-thread value.
 If your existing code uses parameters for the per-thread value,
@@ -23114,7 +23113,7 @@ update it to use thread locals.  Parameters will eventually share
 the storage across threads.
 @c JP
 註: これまで、パラメータがスレッド毎の値を格納するためにも使われてきましたが、
-将来的にsrfi-226に準拠するために、
+将来的にSRFI-226に準拠するために、
 動的束縛とスレッドローカル領域を切り離すことにしました。
 パラメータは動的束縛のためだけに使われるべきで、スレッド毎の値を保持するには
 スレッドローカルを使うようにしてください。
@@ -23212,7 +23211,7 @@ Gaucheの拡張として、@code{tlref}と@code{set!}を使うこともできま
 
 @c EN
 Mutexes and condition variables are the low-level synchronization devices.
-Defined in srfi-18 and srfi-21, they are portable across Scheme implementations
+Defined in SRFI-18 and SRFI-21, they are portable across Scheme implementations
 that supports one of those srfis.
 (@xref{Mutex}, and @pxref{Condition variable}, for the details.)
 
@@ -23220,7 +23219,7 @@ However, in most cases you want to
 use following higher-level synchronization utilities:
 @c JP
 mutexと条件変数が低レベルの同期デバイスとして提供されます。
-これらはsrfi-18とsrfi-21で定義されているので、サポートしているScheme実装間では
+これらはSRFI-18とSRFI-21で定義されているので、サポートしているScheme実装間では
 ポータブルです。
 (@ref{Mutex}、@ref{Condition variable}参照)。
 
@@ -25866,7 +25865,7 @@ Then the created generator works as follows:
 @c EN
 Converts the case of given @var{string}
 using language-independent full case folding defined by Unicode standard.
-They differ from srfi-13's procedures
+They differ from SRFI-13's procedures
 with the same names (@pxref{SRFI-13 String case mapping}),
 which simply uses character-by-character case mapping.
 Notably, the length of resulting string may differ from the source string,
@@ -25876,7 +25875,7 @@ to UAX #29 text segmentation rules.
 @c JP
 与えられた文字列@var{string}の大文字小文字を、Unicodeで定義された
 言語独立のcase folding規則に基づいて変換します。
-srfi-13にも同名の手続きがありますが、そちらは文字ごとに変換する点で
+SRFI-13にも同名の手続きがありますが、そちらは文字ごとに変換する点で
 これらの手続きと異なります(@ref{SRFI-13 String case mapping}参照)。
 特に、こちらの手続きは元の文字列と変換後の文字列の長さが異なる場合があり、
 また文字が単語境界にあるかどうかで変換が変わることもあります。
@@ -25997,12 +25996,12 @@ The meaning of this property is explained in Unicode standard annex #11,
 Provides procedures that work on uniform vectors
 (@pxref{Uniform vectors}).
 This module is a superset of R7RS uniform vector library
-(@code{scheme.vector.@@}) and srfi-4.
+(@code{scheme.vector.@@}) and SRFI-4.
 @c JP
 ユニフォームベクタを扱う手続きを提供します
 (@ref{Uniform vectors}参照)。
 このモジュールは、R7RSユニフォームベクタライブラリ
-(@code{scheme.vector.@@})とsrfi-4のスーパーセットです。
+(@code{scheme.vector.@@})とSRFI-4のスーパーセットです。
 @c COMMON
 
 @c EN
@@ -26019,7 +26018,7 @@ The @code{@@} part is actually one of @code{u8}, @code{s8}, @code{u16},
 @end deftp
 
 @c EN
-Gauche's extension to srfi-160 is as follows:
+Gauche's extension to SRFI-160 is as follows:
 @c JP
 Gaucheで拡張されている機能は次のとおりです:
 @c COMMON
@@ -26055,7 +26054,7 @@ can be used.
 Some routines takes optional parameters: @code{@@vector-ref}
 takes optional fallback value.
 @c JP
-いくつかの手続きはsrfi-160に無い省略可能な引数を取ります。
+いくつかの手続きはSRFI-160に無い省略可能な引数を取ります。
 例えば@code{@@vector-ref}は省略可能なデフォルト値を取ります。
 @c COMMON
 @end itemize
@@ -26594,13 +26593,13 @@ Gaucheでは、uvectorは@code{equal?}で比較することができます。
 [SRFI-66]
 @c MOD gauche.uvector
 @c EN
-Note: This is provided only for the srfi-66 compatibility.
+Note: This is provided only for the SRFI-66 compatibility.
 Use @code{@@vector=} instead.
 
 Both arguments must be a @@vector.  Returns @code{#t} if
 @var{vec1} and @var{vec2} are equal to each other, @code{#f} otherwise.
 @c JP
-註: これはsrfi-66との互換性のためだけに提供されています。
+註: これはSRFI-66との互換性のためだけに提供されています。
 @code{@@vector=} を使ってください。
 
 引数はどちらも@@vectorでなければなりません。
@@ -26795,7 +26794,7 @@ overlapping.
 @emph{Note:} This procedure used to take just two uniform vectors, @var{target}
 and @var{source}, and just copies contents of @var{source} to @var{target}.
 Both vectors had to be the same type and same length.  The API is revised
-according to srfi-160.  The old interface is still supported
+according to SRFI-160.  The old interface is still supported
 for the backward compatibility, but it is deprecated and will be gone
 in the future releases.
 
@@ -26805,11 +26804,11 @@ argument order (@pxref{Octet vectors}).
 @emph{注意事項:} この手続きは以前はユニフォームベクタ @var{target} および
 @var{source} のみを引数としてとり、@var{source} の内容を @var{target} へ
 コピーするためだけに使われました。両方のベクタは同じ型で、同じ長さでなけ
-ればなりませんでした。この API はsrfi-160にあわせて現在の形式に改訂されています。
+ればなりませんでした。この API はSRFI-160にあわせて現在の形式に改訂されています。
 旧来のインタフェースも後方互換性のためにサポートされて
 いますが、これは廃止予定で、将来のリリースではサポートされなくなります。
 
-また、srfi-66も@code{u8vector-copy!}を提供していますが、
+また、SRFI-66も@code{u8vector-copy!}を提供していますが、
 引数の順序が異なります(@ref{Octet vectors}参照)。
 @c COMMON
 @end deffn

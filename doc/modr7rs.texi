@@ -213,11 +213,11 @@ Gaucheライブラリの@code{foo.bar}をR7RSコードから使うには、
 @c EN
 For SRFI modules, R7RS implementations have a convention to
 name it as @code{(srfi n)}, and Gauche follows it.
-The following code loads srfi-1 and srfi-13 from R7RS code:
+The following code loads SRFI-1 and SRFI-13 from R7RS code:
 @c JP
 SRFIモジュールについては、R7RSでは慣習的に@code{(srfi n)}という
 名前を使うので、Gaucheもそれに合わせています。R7RSコードから
-srfi-1とsrfi-13を使うには、次のようにします。
+SRFI-1とSRFI-13を使うには、次のようにします。
 @c COMMON
 
 @example
@@ -1644,7 +1644,7 @@ command-line exit
 The following bindings are the same as SRFI-98
 (@pxref{Accessing environment variables}):
 @c JP
-次の束縛はsrfi-98のものと同じです
+次の束縛はSRFI-98のものと同じです
 (@ref{Accessing environment variables}参照)：
 @c COMMON
 
@@ -1792,13 +1792,13 @@ Just be aware the difference, or you'll be surprised if you
 pass the return value of @code{current-second} to the UTC time
 formatter such as @code{sys-strftime}, or compare it with
 the file timestamps which uses the unix time.  You can convert
-between TAI and UTC using srfi-19 (@pxref{SRFI-19 Date}).
+between TAI and UTC using SRFI-19 (@pxref{SRFI-19 Date}).
 @c JP
 この差異があることは頭の隅に留めておいてください。
 でないと、@code{current-second}の戻り値を
 @code{sys-strftime}などUTC時刻のフォーマッタに渡したり、
 Unix Timeで表されたタイムスタンプと比較した時にびっくりするかもしれません。
-TAIとUTCはsrfi-19で変換できます (@ref{SRFI-19 Date})。
+TAIとUTCはSRFI-19で変換できます (@ref{SRFI-19 Date})。
 @c COMMON
 @end defun
 
@@ -2000,7 +2000,7 @@ and Gauche supports them.
 @mdindex scheme.list
 @c EN
 This module is a rich collection of list manipulation procedures,
-and same as @code{srfi-1}.
+and same as @code{srfi.1}.
 
 Note that Gauche supports quite a few @code{scheme.list}
 procedures as built-in.
@@ -2008,7 +2008,7 @@ The following procedures can be used
 without loading @code{scheme.list} module.  For the manual entries of
 these procedures, @ref{Pairs and lists}.
 @c JP
-このモジュールは、豊富なリスト操作手続きのコレクションです (srfi-1と同じです)。
+このモジュールは、豊富なリスト操作手続きのコレクションです (@code{srfi.1}と同じです)。
 
 Gaucheは@code{scheme.list}の手続きの多くを組み込みで提供しています。
 以下に挙げる手続きは@code{scheme.list}モジュールをロードしなくても使えます。
@@ -2625,14 +2625,14 @@ vector-map           vector-map!          vector-for-each
 @end example
 
 @c EN
-This module is @code{srfi-133}, which supersedes @code{srfi-43}
+This module is @code{srfi.133}, which supersedes @code{srfi.43}
 (@pxref{Vector library (Legacy)}).
-Note that the interface of following procedures in @code{srfi-43}
+Note that the interface of following procedures in @code{srfi.43}
 are changed for the consistency:
 @c JP
-このモジュールは@code{srfi-133}として制定され、
-@code{srfi-43}(@ref{Vector library (Legacy)})を置き換えるものです。
-@code{srfi-43}の手続きのうち、以下のものは一貫性からインタフェースが
+このモジュールは@code{srfi.133}として制定され、
+@code{srfi.43}(@ref{Vector library (Legacy)})を置き換えるものです。
+@code{srfi.43}の手続きのうち、以下のものは一貫性からインタフェースが
 変更されていることに注意してください。
 @c COMMON
 
@@ -2643,15 +2643,15 @@ vector-fold          vector-fold-right    vector-count
 
 @c EN
 Some of the functionalities
-of @code{srfi-43} version is supported by built-in procedures
+of @code{srfi.43} version is supported by built-in procedures
 (e.g. Built-in @code{vector-map-with-index} is the same as
-@code{srfi-43}'s @code{vector-map}).  So there's little point
-for new code to use @code{srfi-43}.
+@code{srfi.43}'s @code{vector-map}).  So there's little point
+for new code to use @code{srfi.43}.
 @c JP
-@code{srfi-43}から削られた機能の一部は、
+@code{srfi.43}から削られた機能の一部は、
 Gaucheの組み込み手続きでサポートされています
-(例えば@code{srfi-43}の@code{vector-map}は組み込みの@code{vector-map-with-index}と
-同じです)。新しいコードで@code{srfi-43}を使う必要はほとんどないでしょう。
+(例えば@code{srfi.43}の@code{vector-map}は組み込みの@code{vector-map-with-index}と
+同じです)。新しいコードで@code{srfi.43}を使う必要はほとんどないでしょう。
 @c COMMON
 @end deftp
 
@@ -3395,10 +3395,10 @@ details.
 @mdindex scheme.sort
 @c EN
 Provides utilities to sort, and to work on sorted lists/vectors.
-This module is the same as @code{srfi-132}.
+This module is the same as @code{srfi.132}.
 @c JP
 ソートおよびソート済みのリストやベクタに関する手続きを提供します。
-このモジュールは@code{srfi-132}と同じです。
+このモジュールは@code{srfi.132}と同じです。
 @c COMMON
 
 @c EN
@@ -3923,10 +3923,10 @@ to order the elements) but has to have a hash function.
 @c COMMON
 
 @c EN
-This module is originally specified as @code{srfi-113}, and then
+This module is originally specified as @code{srfi.113}, and then
 incorporated to R7RS large.
 @c JP
-このモジュールは当初@code{srfi-113}として定義され、のちにR7RS largeに
+このモジュールは当初@code{srfi.113}として定義され、のちにR7RS largeに
 採用されました。
 @c COMMON
 
@@ -5639,10 +5639,10 @@ Returns two values, the result of
 @deftp {Module} scheme.hash-table
 @mdindex scheme.hash-table
 @c EN
-This module provides hash table library, originally defined as @code{srfi-125}.
+This module provides hash table library, originally defined as @code{srfi.125}.
 
 Hash table provided with this module is the same as Gauche's built-in
-hash table.  However, srfi-125 introduces procedures that conflict
+hash table.  However, SRFI-125 introduces procedures that conflict
 with Gauche's original procedures, so Gauche provides those procedures
 built-in but under aliases.
 @xref{Hashtables}, for the built-in hash table procedures.
@@ -5650,10 +5650,10 @@ built-in but under aliases.
 With this module, procedures are provided as defined in R7RS.  Use this
 module when you're writing portable code.
 @c JP
-このモジュールは、元々@code{srfi-125}で定義されていたハッシュテーブルのライブラリです。
+このモジュールは、元々@code{srfi.125}で定義されていたハッシュテーブルのライブラリです。
 
 このモジュールで提供されるハッシュテーブルはGaucheの組み込みハッシュテーブルそのものです。
-ただ、srfi-125はいくつか、Gaucheの元々持っていた手続きと名前が衝突する手続きを
+ただ、SRFI-125はいくつか、Gaucheの元々持っていた手続きと名前が衝突する手続きを
 定義しています。Gaucheはそれらの手続きに関しては異なる名前で組み込み手続きを
 用意しています。組み込みのハッシュテーブル手続きについては
 @ref{Hashtables}を参照してください。
@@ -5663,11 +5663,11 @@ module when you're writing portable code.
 @c COMMON
 
 @c EN
-Srfi-125 also defines compatibility procedures with srfi-69, although saying
+SRFI-125 also defines compatibility procedures with SRFI-69, although saying
 they're deprecated.  Those deprecated procedures are supported in this
 module, too.
 @c JP
-srfi-125はまた、srfi-69で定義されたいくつかの手続きを、非推奨ながら
+SRFI-125はまた、SRFI-69で定義されたいくつかの手続きを、非推奨ながら
 互換性のためにサポートしています。これらの非推奨手続きも
 このモジュールで提供されます。
 @c COMMON
@@ -5716,9 +5716,9 @@ hash-table-prune!
 @c MOD scheme.hash-table
 @c EN
 This enhances built-in @code{make-hash-table} with the second form,
-that takes two procedures instead of one comparator, as srfi-69.
+that takes two procedures instead of one comparator, as SRFI-69.
 
-In the srfi-69 form, @var{equal-proc} is a procedure taking two keys
+In the SRFI-69 form, @var{equal-proc} is a procedure taking two keys
 to see if they are the same, and @var{hash-proc} is a procedure taking
 a key to calculate its hash value (nonnegative fixnum).
 The compatibility form is deprecated and should be avoided in the new code.
@@ -5728,9 +5728,9 @@ and specify various properties of the created hash table.
 They are ignored in Gauche.
 @c JP
 この手続きは、組み込みの@code{make-hash-table}を拡張して二番目の形式を許したものです。
-二番目の形式は比較器のかわりに二つの手続きをとるもので、srfi-69互換です。
+二番目の形式は比較器のかわりに二つの手続きをとるもので、SRFI-69互換です。
 
-srfi-69互換形式では、@var{equal-proc}はふたつのキーを取りそれが等しいかどうかを
+SRFI-69互換形式では、@var{equal-proc}はふたつのキーを取りそれが等しいかどうかを
 返す述語、@var{hash-proc}は一つのキーを取りそのハッシュ値を非負の正確な整数で
 返す手続きです。
 この互換係式は非推奨で、新たなコードでは使うべきではありません。
@@ -5751,7 +5751,7 @@ populated by @var{key} @var{value} @dots{}, which is a list with
 keys and values appear alternatively.  It is an error if the length
 of key-value list is not even.
 
-Note that srfi-125 defines this procedure to return an immutable
+Note that SRFI-125 defines this procedure to return an immutable
 hash table if the implementation supports one.  Gauche doesn't provide
 immutable hash tables (we do have immutable map
 instead, @pxref{Immutable map}), but when you're writing a portable
@@ -5764,7 +5764,7 @@ program, be careful not to modify the table returned by this procedure.
 ここで引数はキーと値が交互に並んだものです。@var{key} @var{value} @dots{}部分の
 長さが偶数でなければエラーが投げられます。
 
-srfi-125では、この手続きは(実装がサポートしていれば)変更不可なハッシュテーブルを
+SRFI-125では、この手続きは(実装がサポートしていれば)変更不可なハッシュテーブルを
 返すと規定されています。Gaucheは変更不可なハッシュテーブルを持っていないので、
 変更可能なハッシュテーブルが返りますが、ポータブルなコードを書く際には
 返されたテーブルを変更しないようにしてください。
@@ -5778,9 +5778,9 @@ srfi-125では、この手続きは(実装がサポートしていれば)変更�
 @c MOD scheme.hash-table
 @c EN
 This enhances built-in @code{alist->hash-table} with the second form,
-that takes two procedures instead of one comparator, as srfi-69.
+that takes two procedures instead of one comparator, as SRFI-69.
 
-In the srfi-69 form, @var{equal-proc} is a procedure taking two keys
+In the SRFI-69 form, @var{equal-proc} is a procedure taking two keys
 to see if they are the same, and @var{hash-proc} is a procedure taking
 a key to calculate its hash value (nonnegative fixnum).
 The compatibility form is deprecated and should be avoided in the new code.
@@ -5790,9 +5790,9 @@ and specify various properties of the created hash table.
 They are ignored in Gauche.
 @c JP
 この手続きは、組み込みの@code{alist->hash-table}を拡張して二番目の形式を許したものです。
-二番目の形式は比較器のかわりに二つの手続きをとるもので、srfi-69互換です。
+二番目の形式は比較器のかわりに二つの手続きをとるもので、SRFI-69互換です。
 
-srfi-69互換形式では、@var{equal-proc}はふたつのキーを取りそれが等しいかどうかを
+SRFI-69互換形式では、@var{equal-proc}はふたつのキーを取りそれが等しいかどうかを
 返す述語、@var{hash-proc}は一つのキーを取りそのハッシュ値を非負の正確な整数で
 返す手続きです。
 この互換係式は非推奨で、新たなコードでは使うべきではありません。
@@ -6044,13 +6044,13 @@ result of @var{proc} is discarded.  Returns an unspecified value.
 This procedure allows arguments in both order for the compatibility---
 the first way is the @code{scheme.hash-table} recommended one,
 which is the same as built-in @code{hash-table-for-each-r7},
-and the latter way is compatible with srfi-69, which is
+and the latter way is compatible with SRFI-69, which is
 the same as built-in @code{hash-table-for-each}.
 @c JP
 この手続きは、互換性のために2通りの順序で引数を取ります。
 @code{scheme.hash-table}が推奨するのは最初の方法です。
 組み込みの@code{hash-table-for-each-r7}も同じです。
-二番目の呼び出しはsrfi-69で規定されていた方法で、
+二番目の呼び出しはSRFI-69で規定されていた方法で、
 組み込みの@code{hash-table-for-each}はこちらの順序です。
 @c COMMON
 
@@ -6099,13 +6099,13 @@ Returns the result of the last call of @var{seed}.
 This procedure allows arguments in both order for the compatibility---
 the first way is the @code{scheme.hash-table} recommended one,
 which is the same as built-in @code{hash-table-fold-r7},
-and the latter way is compatible with srfi-69, which is
+and the latter way is compatible with SRFI-69, which is
 the same as built-in @code{hash-table-fold}.
 @c JP
 この手続きもまた、互換性のために二つのインタフェースを用意しています。
 最初のインタフェースは@code{scheme.hash-table}ライブラリ推奨のもので、
 Gauche組み込みの@code{hash-table-fold-r7}と同じです。
-後者はsrfi-69およびGauche組み込みの@code{hash-table-fold}と同じです。
+後者はSRFI-69およびGauche組み込みの@code{hash-table-fold}と同じです。
 @c COMMON
 
 @c EN
@@ -6147,10 +6147,10 @@ This procedure returns an unspecified value.
 @c MOD scheme.hash-table
 @c EN
 This is the same as @code{hash-table-union!}, and provided just
-for the compatibility with srfi-69.  Deprecated.
+for the compatibility with SRFI-69.  Deprecated.
 @c JP
 これは@code{hash-table-union!}と同じで、
-srfi-69との互換性のためだけに提供されています。非推奨です。
+SRFI-69との互換性のためだけに提供されています。非推奨です。
 @c COMMON
 @end defun
 
@@ -6161,9 +6161,9 @@ srfi-69との互換性のためだけに提供されています。非推奨で�
 [R7RS hash-table]
 @c MOD scheme.hash-table
 @c EN
-Provided for the compatibility with srfi-69, and are deprecated.
+Provided for the compatibility with SRFI-69, and are deprecated.
 @c JP
-srfi-69互換性のために提供されているハッシュ関数です。非推奨です。
+SRFI-69互換性のために提供されているハッシュ関数です。非推奨です。
 @c COMMON
 
 @c EN
@@ -6172,7 +6172,7 @@ The first three are the same as built-in @code{default-hash},
 these accept an optional second argument, which is ignored.
 Note that @code{hash-by-identity} is also defined as the same
 as @code{default-hash} except the ignored optional second argument,
-per srfi-125, although the name suggests that it would work as if
+per SRFI-125, although the name suggests that it would work as if
 @code{eq-hash}.
 @c JP
 最初の3つの手続きは、無視される省略可能引数を取ることを除いて、
@@ -6180,7 +6180,7 @@ per srfi-125, although the name suggests that it would work as if
 とそれぞれ同じです。
 @code{hash-by-identity}も省略可能引数を除いては@code{default-hash}と
 同じです。名前から@code{eq-hash}のように思えるかもしれませんが、
-srfi-125で@code{default-hash}と同じと規定されています。
+SRFI-125で@code{default-hash}と同じと規定されています。
 @c COMMON
 
 @c EN
@@ -6206,9 +6206,9 @@ and use @code{default-hash} and @code{eq-hash} instead.
 [R7RS hash-table]
 @c MOD scheme.hash-table
 @c EN
-Provided for the compatibility with srfi-69, and are deprecated.
+Provided for the compatibility with SRFI-69, and are deprecated.
 @c JP
-srfi-69との互換性のために提供されている手続きで、非推奨です。
+SRFI-69との互換性のために提供されている手続きで、非推奨です。
 @c COMMON
 
 @c EN
@@ -6218,13 +6218,13 @@ Returns the equivalence function and hash function of a hash table @var{ht}.
 @c COMMON
 
 @c EN
-Note that srfi-69's hash function takes an optional @var{bound} argument;
+Note that SRFI-69's hash function takes an optional @var{bound} argument;
 so, if you build @var{ht} with a comparator or a hash function that does
 not take optional argument, @code{hash-table-hash-function} wraps the
 real hash function with a procedure that allows optional @var{bound}
 argument.
 @c JP
-srfi-69ではハッシュ関数は省略可能な@var{bound}引数を取るというプロトコルになっています。
+SRFI-69ではハッシュ関数は省略可能な@var{bound}引数を取るというプロトコルになっています。
 そこで、@var{ht}が比較器、もしくは省略可能引数を取らないハッシュ関数から
 作られていた場合、@code{hash-table-hash-function}は元のハッシュ関数をラップして、
 省略可能引数@var{bound}を取るようにした手続きを返します。
@@ -6394,12 +6394,12 @@ make-ipair-comparator
 This module provides an alternative datatype for pairs and lists,
 which are immutable and allows O(log n) random access, while
 maintaining O(1) @code{car} and @code{cdr} operations.
-This is originally defined as @code{srfi-101}.  We call this datatype
+This is originally defined as @code{srfi.101}.  We call this datatype
 @emph{rlist} in the following explanation.
 @c JP
 このモジュールは、変更不可で、ランダムアクセスがO(log n)であるような、
 ペアとリストに替わるデータ構造を提供します。@code{car}と@code{cdr}はO(1)です。
-元は@code{srfi-101}として定められました。
+元は@code{srfi.101}として定められました。
 ここでは、このデータ型を@emph{rlist}と呼ぶことにします。
 @c COMMON
 
@@ -6582,10 +6582,10 @@ deque, you can also use @code{data.ring-buffer} as a deque
 @c COMMON
 
 @c EN
-This module was originally defined as @code{srfi-134}, then
+This module was originally defined as @code{srfi.134}, then
 became a part of R7RS large.
 @c JP
-このモジュールは@code{srfi-134}として定義され、R7RS largeに取り込まれました。
+このモジュールは@code{srfi.134}として定義され、R7RS largeに取り込まれました。
 @c COMMON
 
 @c EN
@@ -7054,11 +7054,11 @@ R7RSのidequeライブラリは@var{idq}が一つの場合のみを定義して�
 @mdindex scheme.text
 @c EN
 This module provides @emph{text} type, an immutable string
-with O(1) random access.  This is originally defined in srfi-135.
+with O(1) random access.  This is originally defined in SRFI-135.
 @c JP
 このモジュールは@emph{text}と呼ばれる、O(1)ランダムアクセスができる
 変更不可な文字列へのインタフェースを提供します。
-元はsrfi-135として規定されました。
+元はSRFI-135として規定されました。
 @c COMMON
 
 @c EN
@@ -7376,11 +7376,11 @@ limits the input range of @var{bytevector}.
 @c EN
 If the input contains an invalid utf-8 sequence, and Gauche's native
 encoding is utf-8, it is replaced by a unicode replacement character
-U+FFFD.  (NB: Srfi-135 says it is an error.)
+U+FFFD.  (NB: SRFI-135 says it is an error.)
 @c JP
 入力にutf-8として不正なオクテットが含まれており、Gaucheが内部エンコーディングutf-8で
 コンパイルされていれば、そのオクテットはUnicode置換文字U+FFFDに変換されます。
-(SRFI-134ではその場合は「エラーである」と規定されているので、
+(SRFI-135ではその場合は「エラーである」と規定されているので、
 実際の処理は処理系依存になります)。
 @c COMMON
 @end defun
@@ -7426,11 +7426,11 @@ isn't even, an error is thrown.
 @c EN
 If the input contains an invalid utf-16 sequence (unpaired surrogates),
 it is replaced by a unicode replacement character U+FFFD.
-(NB: Srfi-135 says it is an error.)
+(NB: SRFI-135 says it is an error.)
 @c JP
 入力にutf-16として不正な列 (対になっていないサロゲート) が含まれていた
 場合、それはUnicode置換文字U+FFFDに変換されます。
-(SRFI-134ではその場合は「エラーである」と規定されているので、
+(SRFI-135ではその場合は「エラーである」と規定されているので、
 実際の処理は処理系依存になります)。
 @c COMMON
 @end defun
@@ -7462,13 +7462,13 @@ textまたは文字列のコピーをtextとして返します。
 @c COMMON
 
 @c EN
-Srfi-135 specifies that even the input is a text, the returned one
+SRFI-135 specifies that even the input is a text, the returned one
 must be freshly allocated (as opposed to @code{subtextual}, which
 is allowed to return the result sharing the input).
 In Gauche, string body is immutable anyway,
 so it isn't a big deal.
 @c JP
-srfi-135は、@code{textual-copy}が常に新たなtextをアロケートして返すことを
+SRFI-135は、@code{textual-copy}が常に新たなtextをアロケートして返すことを
 要求しています (@code{subtextual}は戻り値が入力と共有されることを許します)。
 Gaucheでは、文字列本体はimmutableであり、
 文字列のコピーは文字列本体へのポインタをコピーするだけなので、
@@ -7566,12 +7566,12 @@ Gaucheではこれらはそれぞれ@emph{unicodeバージョンの}
 [R7RS text]
 @c MOD scheme.text
 @c EN
-In Gauche, these are just aliases of @code{srfi-13}'s
+In Gauche, these are just aliases of @code{srfi.13}'s
 @code{string-prefix-length}, @code{string-suffix-length},
 @code{string-prefix?}, and @code{string-suffix?}, respectively.
 @xref{SRFI-13 String prefixes & suffixes}, for the details.
 @c JP
-Gaucheでは、これらはそれぞれ@code{srfi-13}の
+Gaucheでは、これらはそれぞれ@code{srfi.13}の
 @code{string-prefix-length}、@code{string-suffix-length}、
 @code{string-prefix?}、@code{string-suffix?}の別名です。
 詳しくは@ref{SRFI-13 String prefixes & suffixes}参照。
@@ -7587,13 +7587,13 @@ Gaucheでは、これらはそれぞれ@code{srfi-13}の
 [R7RS text]
 @c MOD scheme.text
 @c EN
-In Gauche, these are just aliases of @code{srfi-13}'s
+In Gauche, these are just aliases of @code{srfi.13}'s
 @code{string-index}, @code{string-index-right},
 @code{string-skip}, @code{string-skip-right},
 @code{string-contains}, and @code{string-contains-right}, respectively.
 @xref{SRFI-13 String searching}, for the details.
 @c JP
-Gaucheでは、これらはそれぞれ@code{srfi-13}の
+Gaucheでは、これらはそれぞれ@code{srfi.13}の
 @code{string-index}、@code{string-index-right}、
 @code{string-skip}、@code{string-skip-right}、
 @code{string-contains}、@code{string-contains-right}の別名です。
@@ -7646,7 +7646,7 @@ As to the optional arguments,
 must be a nonnegative exact integer, if provided.
 
 Without optional arguments, this is the same as
-@code{string-concatenate-reverse} of @code{srfi-13}
+@code{string-concatenate-reverse} of @code{srfi.13}
 (@pxref{SRFI-13 String reverse & append}, except that
 the result is always an immutable and indexed string.
 
@@ -7659,7 +7659,7 @@ appended to the last.
 @var{end}は非負の正確な整数でなければなりません。
 
 省略可能引数が無い場合、これは戻り値が常に変更不可でインデックス付きの文字列に
-なること以外は、@code{srfi-13}の@code{string-concatenate-reverse}と同じです
+なること以外は、@code{srfi.13}の@code{string-concatenate-reverse}と同じです
 (@ref{SRFI-13 String reverse & append}参照)。
 
 @var{final-textual}が与えられたら、それが結果の末尾に足されます。
@@ -7687,11 +7687,11 @@ is always an immutable and indexed string
 [R7RS text]
 @c MOD scheme.text
 @c EN
-These are just aliases of @code{srfi-13}'s
+These are just aliases of @code{srfi.13}'s
 @code{string-fold} and @code{string-fold-right},
 respectively (@pxref{SRFI-13 String mapping}).
 @c JP
-これらはそれぞれ@code{srfi-13}の@code{string-fold}および@code{string-fold-right}
+これらはそれぞれ@code{srfi.13}の@code{string-fold}および@code{string-fold-right}
 の別名です (@ref{SRFI-13 String mapping}参照)。
 @c COMMON
 @end defun
@@ -7748,24 +7748,24 @@ immutable and indexed.  @xref{String utilities}, for the details.
 @mdindex scheme.generator
 @c EN
 This module provides generators and accumulators.
-They were first defined in srfi-121,
-then enhanced in srfi-158, and finally
+They were first defined in SRFI-121,
+then enhanced in SRFI-158, and finally
 incorporated R7RS large as @code{(scheme generator)}.
 @c JP
 このモジュールは、ジェネレータとアキュムレータを提供します。
-これらは最初にsrfi-121で定義され、srfi-158で拡張された後、
+これらは最初にSRFI-121で定義され、SRFI-158で拡張された後、
 @code{(scheme generator)}としてR7RS largeに取り込まれました。
 @c COMMON
 
 @c EN
 A generator is a thunk to generate a sequence of values, potentially
 terminated by EOF.  Procedures to deal with generators are
-provided by @code{gauche.generator}, which is a superset of srfi-121.
+provided by @code{gauche.generator}, which is a superset of SRFI-121.
 @xref{Generators}, for the details.
 @c JP
 ジェネレータは引数と取らない手続きで、呼ばれる度に値を次々に返し、
 EOFを以って終端を示すものです。ジェネレータを扱う手続きは
-srfi-121のスーパーセットである@code{gauche.generator}で提供されています。
+SRFI-121のスーパーセットである@code{gauche.generator}で提供されています。
 詳しくは@ref{Generators}を参照してください。
 @c COMMON
 
@@ -7798,13 +7798,13 @@ if other values are passed after EOF is passed.
 The accumulator can be used to parameterize procedures that yield
 aggregate objects.  Consider the following procedure, which
 takes items from two generators and accumulate them alternatively.
-(Note that @code{glet*} is Gauche's procedure but not in srfi-158).
+(Note that @code{glet*} is Gauche's procedure but not in SRFI-158).
 @c JP
 アキュムレータは、複合的なオブジェクトを生成する手続きで、
 実際に生成される値の型をパラメタライズするのに使えます。
 次の手続きを見てみましょう。これは二つのジェネレータから交互に値を取り、
 それを蓄積して返す手続きです。
-(@code{glet*}はGaucheの手続きですがsrfi-158には含まれていません。)
+(@code{glet*}はGaucheの手続きですがSRFI-158には含まれていません。)
 @c COMMON
 
 @example
@@ -8043,7 +8043,7 @@ take cdr of a lazy pair, we automatically forces the generator so
 it is indistinguishable from an ordinary pair, modulo side effects.
 @xref{Lazy sequences}.
 
-Srfi-127, the original srfi for this module,
+SRFI-127, the original srfi for this module,
 is a bit ambiguous whether its lazy sequence @emph{must} be
 implemented with a pair whose cdr is a generator procedure, or
 it refers to the pair+generator as a conceptual model.  Considering
@@ -8062,7 +8062,7 @@ to the ordinary list.
 
 @example
 (procedure? (generator->lseq (generator 1)))
-  ;; => #t, in srfi-127 reference implementation,
+  ;; => #t, in SRFI-127 reference implementation,
   ;;    #f, in our implementation.
 @end example
 @end deftp
@@ -8264,11 +8264,11 @@ Arguments won't be evaluated until required.
 @c COMMON
 
 @c EN
-This differs from srfi-40 and @code{util.stream}'s @code{stream},
+This differs from SRFI-40 and @code{util.stream}'s @code{stream},
 which is a procedure so arguments are evaluated
 (@pxref{Stream constructors}, for the details).
 @c JP
-srfi-40および@code{util.stream}の@code{stream}は単なる手続きであり、
+SRFI-40および@code{util.stream}の@code{stream}は単なる手続きであり、
 各@var{expr}は呼び出し時に評価されてしまうことが異なります
 (@ref{Stream constructors}参照)。
 @c COMMON
@@ -8758,11 +8758,11 @@ The results are discarded.
 @c EN
 This module defined @emph{ephemerons}, a weak reference
 structure to hold key-value association.  This is originally
-defined as srfi-142.
+defined as SRFI-142.
 @c JP
 このモジュールは@emph{ephemeron}と呼ばれる、
 キーとそれに関連づけられたデータについて弱参照を保持する構造を提供します。
-元々はsrfi-142で定義されました。
+元々はSRFI-142で定義されました。
 @c COMMON
 
 @c EN
@@ -8844,11 +8844,11 @@ to trigger the collection of the datum.
 
 @c EN
 Since the timing of collection isn't specified in the spec,
-Gauche's implementation still conforms srfi-142, but in practice
+Gauche's implementation still conforms SRFI-142, but in practice
 you need to be aware of these limitations.  Eventually we want
 to support full ephemeron integrated with GC.
 @c JP
-いつ回収されるかについての規定は仕様にないので、Gaucheの現在の実装もsrfi-142の
+いつ回収されるかについての規定は仕様にないので、Gaucheの現在の実装もSRFI-142の
 仕様は満たしているのですが、実際に使うにあたっては上記の制限を意識する必要があるでしょう。
 将来的にはGCと統合されたephemeronをサポートしたいと思っています。
 @c COMMON
@@ -8959,10 +8959,10 @@ until returning from this procedure.
 @mdindex scheme.comparator
 @c EN
 This module defines comparators and related procedures.
-Originally called @code{srfi-128}.
+Originally called @code{srfi.128}.
 @c JP
 このモジュールは、比較器(comparator)とそれに関わる手続きを提供します。
-元々は@code{srfi-128}で定義されました。
+元々は@code{srfi.128}で定義されました。
 @c COMMON
 
 @c EN
@@ -9006,10 +9006,10 @@ comparator-test-type comparator-check-type comparator-hash
 @c COMMON
 @c EN
 This module provides operations on Scheme Regular Expressions (SRE).
-Originally defined as srfi-115.
+Originally defined as @code{srfi.115}.
 @c JP
 このモジュールは、Scheme正規表現(Scheme Regular Expressions, SRE)の操作を提供します。
-元々は@code{srfi-115}で定義されました。
+元々は@code{srfi.115}で定義されました。
 @c COMMON
 
 @c EN
@@ -10087,7 +10087,7 @@ This is an alias of @code{rxmatch-substrings}
 @mdindex scheme.mapping.hash
 @c EN
 This module defines immutable mappings from keys to values.
-Originally called @code{srfi-146} and @code{srfi-146.hash}.
+Originally called @code{srfi.146} and @code{srfi.146.hash}.
 
 The @code{scheme.mapping} module provides @emph{mapping} objects,
 where keys have total order.  The @code{scheme.mapping.hash} module
@@ -10109,7 +10109,7 @@ You should always use the returned value of the linear update APIs,
 for the side effect isn't guaranteed.
 @c JP
 このモジュールは、キーから値への変更不可なマッピングを提供します。
-元は@code{srfi-146}および@code{srfi-146.hash}として規定されました。
+元は@code{srfi.146}および@code{srfi.146.hash}として規定されました。
 
 @code{scheme.mapping}モジュールは、キー間に全順序を定義できる@emph{mapping}オブジェクトを、
 @code{scheme.mapping.hash}モジュールは、ハッシュ可能なキーを使う@emph{hashmap}オブジェクト
@@ -11237,19 +11237,19 @@ Balancedバージョンは@code{-abs(d/2) <= remainder < abs(d/2)}という
 @mdindex scheme.bitwise
 @c EN
 This module provides comprehensive bitwise operations.
-Originally it was srfi-151.
-It is mostly a superset of srfi-60, with some change of names for the consistency
-and the compatibility (@pxref{Integers as bits}).  We keep srfi-60 for
+Originally it was SRFI-151.
+It is mostly a superset of SRFI-60, with some change of names for the consistency
+and the compatibility (@pxref{Integers as bits}).  We keep SRFI-60 for
 legacy code, while recommend this module to be used in the new code.
 
 The following procedures are Gauche built-in.
 @xref{Basic bitwise operations}, for the description.
 @c JP
 このモジュールは包括的なビット演算手続きを提供します。
-元はsrfi-151で、
-ほぼsrfi-60のスーパーセットですが、いくつかの手続きは一貫性と互換性のために
-名前が変わりました(srfi-60については@ref{Integers as bits}参照)。
-srfi-60も以前のコードとの互換性のため残されますが、新たに書くコードは
+元はSRFI-151で、
+ほぼSRFI-60のスーパーセットですが、いくつかの手続きは一貫性と互換性のために
+名前が変わりました(SRFI-60については@ref{Integers as bits}参照)。
+SRFI-60も以前のコードとの互換性のため残されますが、新たに書くコードは
 このモジュールを使うことを推奨します。
 
 以下の手続きはGauche組み込みになっています。
@@ -11632,10 +11632,10 @@ When @var{len} is omitted, @code{(integer-length n)} is used.
 @end example
 
 @c EN
-Note: Srfi-60 has a similar @code{integer->list}, but the order of
+Note: SRFI-60 has a similar @code{integer->list}, but the order of
 bits is reversed.
 @c JP
-註: srfi-60には@code{integer->list}という似た手続きがありますが、
+註: SRFI-60には@code{integer->list}という似た手続きがありますが、
 ビットの順番が逆です。
 @c COMMON
 @end defun
@@ -11659,10 +11659,10 @@ LSBから対応するビットを詰めた正確な整数を返します。
 @end example
 
 @c EN
-Note: Srfi-60 has a similar @code{list->integer}, but the order of
+Note: SRFI-60 has a similar @code{list->integer}, but the order of
 bits is reversed.
 @c JP
-註: srfi-60には@code{list->integer}という似た手続きがありますが、
+註: SRFI-60には@code{list->integer}という似た手続きがありますが、
 ビットの順番が逆です。
 @c COMMON
 @end defun
@@ -11684,10 +11684,10 @@ The result will never be negative.
 @end example
 
 @c EN
-Note: Srfi-60 has a similar @code{booleans->integer}, but the order of
+Note: SRFI-60 has a similar @code{booleans->integer}, but the order of
 bits is reversed.
 @c JP
-註: srfi-60には@code{booleans->integer}という似た手続きがありますが、
+註: SRFI-60には@code{booleans->integer}という似た手続きがありますが、
 ビットの順番が逆です。
 @c COMMON
 @end defun
@@ -11801,14 +11801,14 @@ length of @var{n} (@pxref{Generators}).
 @mdindex scheme.finxum
 @c EN
 This module provides a set of fixnum-specific operations.
-Originally defined as srfi-143.
+Originally defined as SRFI-143.
 
 A fixnum is a small exact integer that can be handled very efficiently.
 In Gauche, fixnum is 62bit wide on 64bit platforms, and
 30bit wide on 32bit platforms.
 @c JP
 このモジュールはfixnumに特化した操作を提供します。
-srfi-143として制定されました。
+SRFI-143として制定されました。
 
 fixnumは絶対値が小さめの正確な整数で、極めて効率的に処理できます。
 Gaucheのfixnumは、64ビット環境では62ビット、32ビット環境では30ビットの幅を持ちます。
@@ -12092,14 +12092,14 @@ except that you should use these only for fixnums.
 [R7RS fixnum]
 @c MOD scheme.fixnum
 @c EN
-These are equivalent to srfi-60's
+These are equivalent to SRFI-60's
 @code{bitwise-if}, @code{rotate-bit-field} and
 @code{reverse-bit-field},
 except that you should use these only for fixnums.
 @xref{Integers as bits}.
 @c JP
 これらはfixnumのみに適用しなければならないことを除き、
-srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
+SRFI-60の@code{bitwise-if}、@code{rotate-bit-field}、
 @code{reverse-bit-field}と同じです。
 @ref{Integers as bits}参照。
 @c COMMON
@@ -12115,12 +12115,12 @@ srfi-60の@code{bitwise-if}、@code{rotate-bit-field}、
 @mdindex scheme.flonum
 @c EN
 This module provides a set of flonum-specific operations.
-Originally defined as srfi-144.
+Originally defined as SRFI-144.
 
 In Gauche, a flonum is IEEE 754 double-precision floating point numbers.
 @c JP
 このモジュールはflonumに特化した操作を提供します。
-srfi-144として制定されました。
+SRFI-144として制定されました。
 
 Gaucheでは、flonumはIEEE754倍精度浮動小数点数です。
 @c COMMON
@@ -12506,7 +12506,7 @@ Returns a flonum that's equal to or (if there's no equivalent flnoum)
 the closest to @var{number}.
 
 If @var{number} is not a real number,
-@code{+nan.0} is returned.  (Note: srfi-144 recommends it, but
+@code{+nan.0} is returned.  (Note: SRFI-144 recommends it, but
 a conformant implementation may signal an error in such case.
 Portable code shouldn't rely on this behavior.)
 @c JP
@@ -12514,7 +12514,7 @@ Portable code shouldn't rely on this behavior.)
 flonumを返します。
 
 @var{number}が実数でなければ@code{+nan.0}が返されます
-(これはsrfi-144で推奨されている動作ですが、処理系によってはエラーを投げても良いことに
+(これはSRFI-144で推奨されている動作ですが、処理系によってはエラーを投げても良いことに
 なっているので、ポータブルなコードを書くときは注意してください。)
 @c COMMON
 @end defun
@@ -12576,7 +12576,7 @@ part of @var{x}.  Same as @code{modf} (@pxref{Numerical conversions}).
 If @var{x} is @code{+inf.0}, @code{+inf.0} and @code{0.0} is returned.
 If @var{x} is @code{-inf.0}, @code{-inf.0} and @code{-0.0} is returned.
 If @var{x} is @code{+nan.0}, @code{+nan.0} and @code{+nan.0} is returned.
-(These corner cases are not explicit in srfi-144, but follows
+(These corner cases are not explicit in SRFI-144, but follows
 the POSIX specification of @code{modf}.)
 @c JP
 flonum @var{x}の整数部と小数部をそれぞれflonumとして返します。
@@ -12585,7 +12585,7 @@ Gaucheの@code{modf}と同じです (@ref{Numerical conversions}参照)。
 @var{x}が@code{+inf.0}なら、@code{+inf.0}と@code{0.0}が、
 @var{x}が@code{-inf.0}なら、@code{-inf.0}と@code{-0.0}が、
 そして@var{x}が@code{+nan.0}なら、@code{+nan.0}と@code{+nan.0}が返されます。
-(この動作はsrfi-144では指定されていません。GaucheはPOSIXの@code{modf}の動作に
+(この動作はSRFI-144では指定されていません。GaucheはPOSIXの@code{modf}の動作に
 準じています)。
 @c COMMON
 
@@ -12666,7 +12666,7 @@ flonum @var{x}の正規化された仮数部 (符号は@var{x}と同じ)をflonu
 @c EN
 If @var{x} is non-zero finite value, the first value
 falls between 0.5 (inclusive) and 1.0 (exclusive).
-The corner cases are not explicit in srfi-144, but Gauche follows
+The corner cases are not explicit in SRFI-144, but Gauche follows
 @code{frexp}: If @var{x} is (minus) zero, it returns
 (minus) zero and 0; if @var{x} is infinity, it returns
 infinity (of the same sign) and 0; if @var{x} is @code{+nan.0},
@@ -12674,7 +12674,7 @@ it returns @code{+nan.0} and 0.
 @c JP
 @var{x}がゼロでない有限の値ならば、
 最初の返り値は0.5以上で1.0より小さな値になります。
-コーナーケースについてはsrfi-144では規程されていませんが、Gaucheは
+コーナーケースについてはSRFI-144では規程されていませんが、Gaucheは
 @code{frexp}の仕様に沿って、次のようにしています。
 @var{x}が@code{0.0}(か@code{-0.0})なら、結果は@code{0.0}(か@code{-0.0})と@code{0}。
 @var{x}が無限大なら、同じ符号の無限大と@code{0}。

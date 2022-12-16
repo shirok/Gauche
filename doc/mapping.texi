@@ -675,12 +675,12 @@ Gauche の @code{frexp}。
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
-@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+@code{string-tokenize} in @code{srfi.14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expressions}).
 @c JP
 サポートしていません。一般的にはパーザを書かねばなりません。
 データを S式で保持しているなら、@code{read} が使えます。
-構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
+構文がごく単純なら、@code{srfi.14} (@ref{String library}) の
 @code{string-tokenize} や、正規表現 (@ref{Regular expressions}) が使えるでしょう。
 @c COMMON
 @item fseek
@@ -862,10 +862,10 @@ Gauche の @code{sys-isatty}。@ref{Other file operations} 参照。
 @item iscntrl
 @c EN
 Not directly supported, but you can use
-@code{(char-set-contains? char-set:iso-control c)} with @code{srfi-14}.
+@code{(char-set-contains? char-set:iso-control c)} with @code{srfi.14}.
 @xref{R7RS character sets}.
 @c JP
-直接はサポートされていませんが、@code{srfi-14} で
+直接はサポートされていませんが、@code{srfi.14} で
 @code{(char-set-contains? char-set:iso-control c)} が使えます。
 @ref{R7RS character sets} 参照。
 @c COMMON
@@ -873,19 +873,19 @@ Not directly supported, but you can use
 @c EN
 R7RS @code{char-numeric?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:digit c)}
-with @code{srfi-14}.   @xref{R7RS character sets}.
+with @code{srfi.14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-numeric?}。@ref{Characters} 参照。
-@code{srfi-14} で、@code{(char-set-contains? char-set:digit c)} も
+@code{srfi.14} で、@code{(char-set-contains? char-set:digit c)} も
 使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isgraph
 @c EN
 Not directly supported, but you can use
-@code{(char-set-contains? char-set:graphic c)} with @code{srfi-14}.
+@code{(char-set-contains? char-set:graphic c)} with @code{srfi.14}.
 @xref{R7RS character sets}.
 @c JP
-直接はサポートされていませんが、@code{srfi-14} で
+直接はサポートされていませんが、@code{srfi.14} で
 @code{(char-set-contains? char-set:graphic c)} が使えます。
 @ref{R7RS character sets} 参照。
 @c COMMON
@@ -893,29 +893,29 @@ Not directly supported, but you can use
 @c EN
 R7RS @code{char-lower-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:lower-case c)}
-with @code{srfi-14}.   @xref{R7RS character sets}.
+with @code{srfi.14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-lower-case?}。@ref{Characters} 参照。
-@code{srfi-14} で @code{(char-set-contains? char-set:lower-case c)}
+@code{srfi.14} で @code{(char-set-contains? char-set:lower-case c)}
 も使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isprint
 @c EN
 Not directly supported, but you can use
-@code{(char-set-contains? char-set:printing c)} with @code{srfi-14}.
+@code{(char-set-contains? char-set:printing c)} with @code{srfi.14}.
 @xref{R7RS character sets}.
 @c JP
-直接はサポートされていませんが、@code{srfi-14} で
+直接はサポートされていませんが、@code{srfi.14} で
 @code{(char-set-contains? char-set:printing c)} が使えます。
 @ref{R7RS character sets} 参照。
 @c COMMON
 @item ispunct
 @c EN
 Not directly supported, but you can use
-@code{(char-set-contains? char-set:punctuation c)} with @code{srfi-14}.
+@code{(char-set-contains? char-set:punctuation c)} with @code{srfi.14}.
 @xref{R7RS character sets}.
 @c JP
-直接はサポートされていませんが、@code{srfi-14} で
+直接はサポートされていませんが、@code{srfi.14} で
 @code{(char-set-contains? char-set:punctuation c)} が使えます。
 @ref{R7RS character sets} 参照。
 @c COMMON
@@ -923,29 +923,29 @@ Not directly supported, but you can use
 @c EN
 R7RS @code{char-whitespace?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:whitespace c)}
-with @code{srfi-14}.   @xref{R7RS character sets}.
+with @code{srfi.14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-whitespace?}。@ref{Characters} 参照。
-@code{srfi-14} で @code{(char-set-contains? char-set:whitespace c)}
+@code{srfi.14} で @code{(char-set-contains? char-set:whitespace c)}
 も使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isupper
 @c EN
 R7RS @code{char-upper-case?}.  @xref{Characters}.
 You can also use @code{(char-set-contains? char-set:upper-case c)}
-with @code{srfi-14}.   @xref{R7RS character sets}.
+with @code{srfi.14}.   @xref{R7RS character sets}.
 @c JP
 R7RS の @code{char-upper-case?}。@ref{Characters} 参照。
-@code{srfi-14} で @code{(char-set-contains? char-set:upper-case c)}
+@code{srfi.14} で @code{(char-set-contains? char-set:upper-case c)}
 も使えます。@ref{R7RS character sets} 参照。
 @c COMMON
 @item isxdigit
 @c EN
 Not directly supported, but you can use
-@code{(char-set-contains? char-set:hex-digit c)} with @code{srfi-14}.
+@code{(char-set-contains? char-set:hex-digit c)} with @code{srfi.14}.
 @xref{R7RS character sets}.
 @c JP
-直接はサポートされていませんが、@code{srfi-14} で
+直接はサポートされていませんが、@code{srfi.14} で
 @code{(char-set-contains? char-set:hex-digit c)} が使えます。
 @ref{R7RS character sets} 参照。
 @c COMMON
@@ -1272,12 +1272,12 @@ Gauche の @code{sys-rmdir}。@ref{Directory manipulation}参照。
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
-@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+@code{string-tokenize} in @code{srfi.14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expressions}).
 @c JP
 サポートしていません。一般的にはパーザを書かねばなりません。
 データを S式で保持できるなら、@code{read} が使えます。
-構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
+構文がごく単純なら、@code{srfi.14} (@ref{String library}) の
 @code{string-tokenize} や、正規表現 (@ref{Regular expressions})
 が使えるでしょう。
 @c COMMON
@@ -1455,12 +1455,12 @@ The @code{math.mt-random} module provides much superior RNG
 Not supported.  For general case, you have to write a parser.
 If you can keep the data in S-exp, you can use @code{read}.
 If the syntax is very simple, you may be able to utilize
-@code{string-tokenize} in @code{srfi-14} (@ref{String library}),
+@code{string-tokenize} in @code{srfi.14} (@ref{String library}),
 and/or regular expression stuff (@ref{Regular expressions}).
 @c JP
 サポートしていません。一般的にはパーザを書かねばなりません。
 データを S式で保持できるなら、@code{read} が使えます。
-構文がごく単純なら、@code{srfi-14} (@ref{String library}) の
+構文がごく単純なら、@code{srfi.14} (@ref{String library}) の
 @code{string-tokenize} や、正規表現 (@ref{Regular expressions})
 が使えるでしょう。
 @c COMMON

@@ -464,13 +464,13 @@ So, at runtime you only see the resulting derived type instance.
 For example, @code{<?>} is a type constructor that creates
 ``maybe''-like type, e.g. ``an integer or @code{#f}''.
 (Do not confuse this with Maybe type
-defined in srfi-189, @pxref{Maybe and Either optional container types}).
+defined in SRFI-189, @pxref{Maybe and Either optional container types}).
 A type expression @code{(<?> <integer>)} yields such type
 (printed as @code{#<? <integer>>}):
 @c JP
 例えば、@code{<?>}は''maybe''のようなオプショナルな型を作る型コンストラクタです。
 @code{(<?> <integer>)}は「@code{<integer>}か@code{#f}」を意味します
-(srfi-189 (@ref{Maybe and Either optional container types}参照) の
+(SRFI-189 (@ref{Maybe and Either optional container types}参照) の
 Maybe型と混同しないようにしてください)。
 この型オブジェクトは @code{#<? <integer>>} と表示されます。
 @c COMMON
@@ -502,7 +502,7 @@ that the value is invalid (e.g. the return value of @code{assoc}).
 
 This type has ambiguity when @code{#f} can be a meaningful value, but
 traditionally been used a lot in Scheme, for it is lightweight.
-We also have a ``proper'' Maybe type in srfi-189
+We also have a ``proper'' Maybe type in SRFI-189
 (@pxref{Maybe and Either optional container types}) but that involves
 extra allocation to wrap the value.
 @end deftp
@@ -1010,12 +1010,12 @@ is greater than @var{obj2}.
 If @var{obj1} and @var{obj2} are incomparable, an error is signalled.
 However, @code{compare} defines total order between most Scheme objects,
 so that you can use it on wide variety of objects.  The definition is
-upper-compatible to the order defined in @code{srfi-114}.
+upper-compatible to the order defined in SRFI-114.
 @c JP
 @var{obj1}と@var{obj2}が比較できない場合はエラーとなりますが、
 @code{compare}は多くのSchemeオブジェクト間に全順序を定義しているので、
 様々なオブジェクトの比較に使うことができます。この全順序は、
-@code{srfi-114}で定義されているものの上位互換です。
+SRFI-114で定義されているものの上位互換です。
 @c COMMON
 
 @c EN
@@ -1085,10 +1085,10 @@ a generic function @code{object-compare} is called.
 @c EN
 If two objects are of different types and at least one of them
 isn't @code{<object>}, then they are ordered by their types.
-@code{Srfi-114} defines the order of builtin types as follows:
+SRFI-114 defines the order of builtin types as follows:
 @c JP
 二つのオブジェクトが異なる型で、少なくとも一方が@code{<object>}でない時は、
-両者の型により順序が決まります。@code{srfi-114}は組み込み型について
+両者の型により順序が決まります。SRFI-114は組み込み型について
 次の順序を定めています。
 @c COMMON
 
@@ -1267,7 +1267,7 @@ are not guaranteed to be @code{eq?} even if they are numerically equal.
 @c EN
 This is a hash function suitable to be used with @code{equal?}.
 In R7RS, this is defined in @code{scheme.comparator} (originally
-in @code{srfi-128}).
+in @code{srfi.128}).
 
 If @var{obj} is either a number, a boolean, a character,
 a symbol, a keyword, a string, a list, a vector or a uniform vector,
@@ -1281,7 +1281,7 @@ for every run of the process.
 @c JP
 @code{equal?}と一緒に使うのに適したハッシュ関数です。
 R7RSでは、@code{scheme.comparator}ライブラリで定義されています
-(元は@code{srfi-128})。
+(元は@code{srfi.128})。
 
 @var{obj} が、数値、真理値、文字、シンボル、キーワード、文字列、リスト、
 ベクタ、ユニフォームベクタのいずれかならば、そのハッシュ値を求めるのには内部ハッシュ関数を
@@ -1700,23 +1700,23 @@ a record that bundles closely-related comparison procedures together.
 
 @c EN
 There are two SRFIs that define comparators.  The one that was originally
-called @code{srfi-128} has now become a part of R7RS large as
+called SRFI-128 has now become a part of R7RS large as
 @code{scheme.comparator}, and we recommend new code to use it.
 Gauche has all of @code{scheme.comparator}
-procedures built-in.  The older, and rather complex one is @code{srfi-114};
+procedures built-in.  The older, and rather complex one is SRFI-114;
 Gauche also supports it mainly for the backward compatibility.
 Importantly, Gauche's native @code{<comparator>} object is compatible
 to both @code{scheme.comparator} and @code{srfi-114}
 comparators.
 @c JP
-比較器を定義したSRFIは二つあります。@code{srfi-128}と呼ばれていた規格は
+比較器を定義したSRFIは二つあります。SRFI-128と呼ばれていた規格は
 R7RS largeに取り込まれ、@code{scheme.comparator}になりました。
 新しいコードではそちらを使うべきです。
 Gaucheは@code{scheme.comparator}のAPIを全て組み込みで提供します。
-古く、より複雑なのが@code{srfi-114}で、Gaucheはそちらは主に後方互換性のために
+古く、より複雑なのがSRFI-114で、Gaucheはそちらは主に後方互換性のために
 サポートしています。重要なのは、Gaucheの組み込みの@code{<comparator>}オブジェクトは
 @code{scheme.comparator}の比較器としても
-@code{srfi-114}の比較器としても使えるということです。
+SRFI-114の比較器としても使えるということです。
 @c COMMON
 
 @menu
@@ -1842,17 +1842,17 @@ R7RSではこの関数は@code{scheme.comparator}で定義されています。
 
 @c EN
 Note: Both @code{scheme.comparator}
-and @code{srfi-114} defines @code{make-comparator},
+and @code{srfi.114} defines @code{make-comparator},
 but where @code{scheme.comparator} takes @var{order} argument,
-@code{srfi-114} takes @var{compare} argument.
+@code{srfi.114} takes @var{compare} argument.
 Since @code{scheme.comparator} is preferable, we adopt
 it for the built-in interface, and give a different name
 (@code{make-comparator/compare}) for SRFI-114 constructor.
 @c JP
-註: @code{scheme.comparator}と@code{srfi-114}は両方とも
+註: @code{scheme.comparator}と@code{srfi.114}は両方とも
 @code{make-comparator}を定義していますが、
 @code{scheme.comparator}が@var{order}手続きを取るところで
-@code{srfi-114}は@var{compare}手続きを取ります。
+@code{srfi.114}は@var{compare}手続きを取ります。
 @code{scheme.comparator}の方が推奨されるので、
 Gaucheでは組み込みの@code{make-comparator}を@code{scheme.comparator}に合わせ、
 SRFI-114の方は@code{make-comparator/compare}という名前にしてあります。
@@ -1934,14 +1934,14 @@ printing the comparator, to help debugging.
 @c EN
 This is SRFI-114 comparator constructor.  In SRFI-114, this is called
 @code{make-comparator}.  Avoiding name conflict, we renamed it.
-If you @code{(use srfi-114)} you get the original name @code{make-comparator}
+If you @code{(use srfi.114)} you get the original name @code{make-comparator}
 (and the built-in @code{make-comparator} is shadowed).
 This is provided for the backward
 compatibility, and new code should use built-in @code{make-comparator} above.
 @c JP
 これはSRFI-114比較器のコンストラクタです。SRFI-114ではこれが
 @code{make-comparator}と呼ばれていますが、名前の衝突を避けるために別の名前を用意しました。
-@code{(use srfi-114)}した場合は、SRFI-114のコンストラクタが元の名前
+@code{(use srfi.114)}した場合は、SRFI-114のコンストラクタが元の名前
 で使えるようになります(組み込みの@code{make-comparator}がシャドウされます。)
 これは後方互換性のために提供されています。
 新たなコードは上に示した組み込みの@code{make-comparator}を使ってください。
@@ -2051,7 +2051,7 @@ wants to optimize for the underlying comparator implementation.
 @c JP
 @var{cmpr}が@code{scheme.comparator}コンストラクタで作られた場合は
 シンボル@code{ordering}を、
-srfi-114コンストラクタで作られた場合はシンボル@code{comparison}を返します。
+SRFI-114コンストラクタで作られた場合はシンボル@code{comparison}を返します。
 
 アプリケーションは通常両者を区別する必要はありません。一方の比較器は
 もう一方の比較器としても使うことができるからです。
@@ -2200,7 +2200,7 @@ Objects must satisfy @var{cmpr}'s type test predicate.
 
 A simple comparison can be done by @code{<?} etc, but sometimes
 three-way comparison comes handy.  So we adopt this procedure
-from srfi-114.
+from SRFI-114.
 @c JP
 ふたつのオブジェクト@var{a}と@var{b}の順序を調べ、
 @var{a}が先 (小さい) なら -1を、
@@ -2209,7 +2209,7 @@ from srfi-114.
 @var{a}と@var{b}はともに@var{cmpr}の型検査述語を満たさねばなりません。
 
 単純な比較なら@code{<?}等の手続きでできますが、
-時に3分岐の比較が便利なこともあります。そのため、srfi-114から
+時に3分岐の比較が便利なこともあります。そのため、SRFI-114から
 この手続きを採用しました。
 @c COMMON
 @end defun
@@ -2448,7 +2448,7 @@ compared first by their real components, and then their imaginary
 components only if the real components are the same.
 
 Note that those comparator rejects NaN.
-You need @code{make-inexact-real-comparator} in @code{srfi-114} module
+You need @code{make-inexact-real-comparator} in @code{srfi.114} module
 to compare NaNs with your own discretion.
 @xref{Comparators}, for the details.
 @c JP
@@ -2461,7 +2461,7 @@ Gaucheでは@code{number-comparator}は@code{complex-comparator}と同じです�
 虚部の大小が比べられます。
 
 これらの比較器はNaNを扱いません。
-NaNを扱いたい場合は、@code{srfi-114}モジュールの@code{make-inexact-real-comparator}
+NaNを扱いたい場合は、@code{srfi.114}モジュールの@code{make-inexact-real-comparator}
 手続きを使って、NaNの比較方法を指定する必要があります。
 詳しくは@ref{Comparators}を参照してください。
 @c COMMON
@@ -4669,10 +4669,10 @@ is for speed to save creating intermediate numbers when @var{n} is bignum.
 @end example
 
 @c EN
-This procedure is also equivalent to srfi-60's @code{log2-binary-factors} and
+This procedure is also equivalent to SRFI-60's @code{log2-binary-factors} and
 @code{first-set-bit} (@pxref{Integers as bits}).
 @c JP
-この手続きはまた、srfi-60の@code{log2-binary-factors}および
+この手続きはまた、SRFI-60の@code{log2-binary-factors}および
 @code{first-set-bit}と等価です(@ref{Integers as bits}参照)。
 @c COMMON
 @end defun
@@ -5057,7 +5057,7 @@ dotted lists.
 @code{list?}は偽の値を返すことに注意して下さい。
 @c COMMON
 @lisp
-(use srfi-1)
+(use srfi.1)
 (list? (circular-list 1 2)) @result{} #f
 (is-a? (circular-list 1 2) <list>) @result{} #t
 @end lisp
@@ -6270,7 +6270,7 @@ element of the input lists
 Note: Most functional languages have left- and right- associative
 fold operations, which correspond to @code{fold-left} and @code{fold-right},
 respectively.
-(e.g. Haskell's @code{foldl} and @code{foldr}).  In Scheme, @code{SRFI-1}
+(e.g. Haskell's @code{foldl} and @code{foldr}).  In Scheme, SRFI-1
 first introduced @code{fold} and @code{fold-right}.  R6RS introduced
 @code{fold-left}.  (However, in R6RS the behavior is undefined if the lengths of
 @code{clist1} @code{clist2} @dots{} aren't the same, while in Gauche
@@ -6279,7 +6279,7 @@ first introduced @code{fold} and @code{fold-right}.  R6RS introduced
 註：多くの関数型言語で左結合および右結合の畳み込み操作が定義されていますが、
 それは@code{fold-left}と@code{fold-right}に相当します。
 (例: Haskellの@code{foldl}と@code{foldr}。)
-Schemeでは、まず@code{SRFI-1}によって@code{fold}と@code{fold-right}が
+Schemeでは、まずSRFI-1によって@code{fold}と@code{fold-right}が
 左/右結合の畳み込み演算として導入され、R6RSで@code{fold-left}が定義されました。
 (但し、R6RSの@code{fold-left}では@code{clist1} @code{clist2} @dots{}の
 長さがすべて同じでない場合の動作は未定義ですが、Gaucheでは
@@ -6607,10 +6607,10 @@ The rationale is the following correspondence:
 [R7RS list]
 @c EN
 Equivalent to the two-argument @code{reverse} and @code{reverse!}.
-Provided for srfi-1 (R7RS @code{(scheme list)}) compatibility.
+Provided for SRFI-1 (R7RS @code{(scheme list)}) compatibility.
 @c JP
 2引数の@code{reverse}および@code{reverse!}と同等です。
-srfi-1 (R7RS @code{(scheme list)}) との互換のために用意されています。
+SRFI-1 (R7RS @code{(scheme list)}) との互換のために用意されています。
 @c COMMON
 @end defun
 
@@ -7196,11 +7196,11 @@ dictionary, so such symbols with the same name can't be @code{eq?}.
 
 @c EN
 When an S-expression including uninterned symbols are printed,
-the srfi-38 syntax is used to indicate which uninterned symbol
+the SRFI-38 syntax is used to indicate which uninterned symbol
 is the same (@code{eq?}) to which.
 @c JP
 インターンされていないシンボルが含まれるS式を、シンボルの同一性を保って
-表記するには、@code{srfi-38}記法が使えます。
+表記するには、SRFI-38記法が使えます。
 @c COMMON
 
 @example
@@ -9949,12 +9949,12 @@ cursors. Relying on this though is unportable. For example, the
 @code{substring} procedure in RnRS standards does not mention anything
 about cursors even though the Gauche version accepts cursors. For
 portable programs, you should only use cursors on procedures from
-srfi-130 module (@pxref{Cursor-based string library}).
+@code{srfi.130} module (@pxref{Cursor-based string library}).
 @c JP
 文字インデックスを取るGaucheの文字列手続きのほとんどはカーソルも受け付けます。
 但し、それに依存したコードは移植性がありません。例えば@code{substring}は、
 Gauche版ではインデックスもカーソルも使えますが、RnRSではインデックスしか許していません。
-移植性のあるプログラムを書く際には、srfi-130モジュールにある手続きでのみ
+移植性のあるプログラムを書く際には、@code{srfi.130}モジュールにある手続きでのみ
 カーソルを使うようにしてください (@ref{Cursor-based string library}参照)。
 @c COMMON
 
@@ -10141,14 +10141,14 @@ O(1)ランダムアクセスを実現する方法は二つばかりあります�
 @c EN
 First, instead of integer character indexes,
 you can use string cursors (@pxref{String cursors}).  It is defined
-by @code{srfi-130}, and you can use the code that's using srfi-130
+by @code{srfi.130}, and you can use the code that's using SRFI-130
 as is, without worring about slow access.  However, if external interface
 gives you integer character index, converting index to cursor and vice versa
 takes O(N) after all.
 @c JP
 一つは、文字へのインデックスのかわりに、
 文字列カーソルを使うことです(@ref{String cursors}参照)。
-文字列カーソルは@code{srfi-130}で定義され、srfi-130のインタフェースを使っている
+文字列カーソルは@code{srfi.130}で定義され、SRFI-130のインタフェースを使っている
 コードはそのまま、効率的に動きます。ただ、もし外部に向けたインタフェースが
 文字インデックスを要求していたなら、カーソルとインデックス間の相互変換のところで
 O(N)時間がかかってしまいます。
@@ -10170,11 +10170,11 @@ actual string body).
 @c COMMON
 
 @c EN
-For portability, srfi-135 Immutable Texts provides O(1) accessible string
+For portability, SRFI-135 Immutable Texts provides O(1) accessible string
 as ``texts''.  On Gauche, a text is just an immutable string with
 index attached.
 @c JP
-srfi-135 (変更不可なテキスト) はO(1)アクセス可能な文字列を「テキスト」という型で
+SRFI-135 (変更不可なテキスト) はO(1)アクセス可能な文字列を「テキスト」という型で
 扱っています。Gaucheでは、テキストは単に文字列索引つきの変更不可な文字列です。
 @c COMMON
 
@@ -10600,9 +10600,9 @@ See @code{substring} above for the condition that @var{start} and
 
 @c EN
 Node: R7RS's destructive version @code{string-copy!} is provided
-by @code{srfi-13} module (@pxref{String library}).
+by @code{srfi.13} module (@pxref{String library}).
 @c JP
-註: R7RSの破壊的バージョン@code{string-copy!}は@code{srfi-13}モジュールで
+註: R7RSの破壊的バージョン@code{string-copy!}は@code{srfi.13}モジュールで
 提供されます (@ref{String library}参照)。
 @c COMMON
 @end defun
@@ -10843,7 +10843,7 @@ Splits @var{string} by @var{splitter} and returns a list of strings.
 a regexp, or a procedure.
 
 If @var{splitter} is a character or a string, it is
-used as a delimiter.  Note that srfi-152's @code{string-split}
+used as a delimiter.  Note that SRFI-152's @code{string-split}
 only allows strings for @var{splitter} (it also interprets the first
 optional argument as a grammar; see below for the compatibility note.)
 
@@ -10859,7 +10859,7 @@ character in @var{string}, and the consecutive characters that caused
 使えます。
 
 @var{splitter} が文字か文字列の場合、それがそのままデリミタとして使われます。
-なお、srfi-152の@code{string-split}はデリミタとして文字列しか許しません。
+なお、SRFI-152の@code{string-split}はデリミタとして文字列しか許しません。
 (また、省略可能引数の最初のものは常に@var{grammar}として扱われます。
 後述する互換性への註を参照)。
 
@@ -10933,20 +10933,20 @@ as is.
 @c EN
 Compatibility note:
 The @var{grammar} argument is added for the consistency of srfis
-(srfi-130, srfi-152, @pxref{String library (reduced)}).
+(SRFI-130, SRFI-152, @pxref{String library (reduced)}).
 However, for the backward compatibility and
 the convenience, it also accepts @var{limit} without @var{grammar} argument;
 it is distinguishable since @var{grammar} is a symbol and
 @var{limit} is an integer.
-For the code that's compatible to srfi-152, use the first form that takes
+For the code that's compatible to SRFI-152, use the first form that takes
 @var{grammar} argument.
 @c JP
 互換性への註:
-@var{grammar}引数はsrfi-130およびsrfi-152(@ref{String library (reduced)}参照)
+@var{grammar}引数はSRFI-130およびSRFI-152(@ref{String library (reduced)}参照)
 との一貫性のために追加されました。
 しかし、互換性および簡便性のため、@var{grammar}を省略して@var{limit}を与えることも
 できます。@var{grammar}はシンボルで@var{limit}は整数なので判別可能です。
-srfi-152と互換性のあるコードを書く場合は@var{grammar}引数を取る最初の形式を使ってください。
+SRFI-152と互換性のあるコードを書く場合は@var{grammar}引数を取る最初の形式を使ってください。
 @c COMMON
 
 @example
@@ -10986,7 +10986,7 @@ This is defined in R7RS-small, and consistent with @code{map},
 
 The second one takes only one string argument, and optional start/end
 arguments, which may be nonnegative integer indexes or string cursors
-to limit the input range of the string.  This is defined in srfi-13,
+to limit the input range of the string.  This is defined in SRFI-13,
 string library.
 
 The order in which @var{proc} is applied is not guaranteed to be left to right.
@@ -11031,13 +11031,13 @@ Applies @var{proc} over each character in the input string in left-to-right
 order.  The results of @var{proc} is discarded.
 
 Because of historical reasons, this procedure has two interfaces,
-first one defined in R7RS and second one defined in srfi-13.
+first one defined in R7RS and second one defined in SRFI-13.
 See @code{string-map} above for the explanation.
 @c JP
 @var{proc}を入力文字列の各文字に左から右の順で適用します。@var{proc}の結果は捨てられます。
 
 歴史的経緯から、この手続きは2種類のインタフェースを持ちます。
-最初のインタフェースはR7RSで、二番目のインタフェースはsrfi-13で定義されています。
+最初のインタフェースはR7RSで、二番目のインタフェースはSRFI-13で定義されています。
 詳しくは上の@code{string-map}の項を参照してください。
 @c COMMON
 @end defun
@@ -12751,7 +12751,7 @@ Parses @var{sre} as a Scheme Regular Expression (SRE) as described in
 SRFI-115 and returns its AST.
 @xref{R7RS regular expressions}
 @c JP
-@var{sre}をsrfi-115で定義されるScheme正規表現(SRE)としてパーズし、
+@var{sre}をSRFI-115で定義されるScheme正規表現(SRE)としてパーズし、
 結果をASTで返します。
 SREについて詳しくは@ref{R7RS regular expressions}を参照してください。
 @c COMMON
@@ -13414,12 +13414,12 @@ This is equivalent to SRFI-43's @code{vector-for-each}.
 @c EN
 Uniform vectors, or homogeneous numeric vectors, are a special
 type of vectors whose elements are of the same numeric type.
-It was introduced originally as srfi-4, revised by srfi-160,
+It was introduced originally as SRFI-4, revised by SRFI-160,
 and now a part of R7RS large (as @code{scheme.vector.@@}).
 @c JP
 ユニフォームベクタ、あるいは同質な数値ベクタは、
 要素として特定の数値型のみを格納する特別なベクタです。
-もともとsrfi-4として導入され、srfi-160で改訂されたのち、
+もともとSRFI-4として導入され、SRFI-160で改訂されたのち、
 R7RS largeの一部となりました(@code{scheme.vector.@@}モジュール)。
 @c COMMON
 
@@ -13969,7 +13969,7 @@ a disjoint type.
 Gauche provides a handful of procedures in the core,
 and @code{gauche.bitvector} provides comprehensive utilities.
 @xref{Bitvector utilities}, for the details.
-For the portable programs, srfi-178 defines bitvector library,
+For the portable programs, SRFI-178 defines bitvector library,
 which is a subset of what Gauche provides (@pxref{Bitvector library}).
 @c JP
 ビットベクタはビットの並びです。各「ビット」は、0/1の数値としても、
@@ -13980,8 +13980,8 @@ which is a subset of what Gauche provides (@pxref{Bitvector library}).
 Gaucheはコアでごく基本的な手続きを提供し、また
 @code{gauche.bitvector}モジュールで包括的なビットベクタユーティリティを提供します
 (@ref{Bitvector utilities}参照)。
-ポータブルなプログラムを書く場合は、srfi-178がビットベクタライブラリを定義しているので
-それを使うと良いでしょう。srfi-178はGaucheの提供するもののサブセットになっています
+ポータブルなプログラムを書く場合は、SRFI-178がビットベクタライブラリを定義しているので
+それを使うと良いでしょう。SRFI-178はGaucheの提供するもののサブセットになっています
 (@ref{Bitvector library}参照)。
 @c COMMON
 
@@ -15198,7 +15198,7 @@ omitted, @code{(lambda () #f)} is assumed.
 @c COMMON
 
 @c EN
-Note: The convention starting from srfi-1 is that
+Note: The convention starting from SRFI-1 is that
 @code{*-find} returns an item in the collection that
 satisfy the predicate, while @code{*-any} returns a non-false
 value the predicate returns.  SRFI-125 broke the convention.
@@ -15207,7 +15207,7 @@ was that the ``any'' semantics is strictly upper-compatible to the
 ``find'' semantics so we can combine two.  So far, though, SRFI-125
 is the only exception of this convention.
 @c JP
-註: srfi-1から始まった慣習では、@code{*-find}というAPIは
+註: SRFI-1から始まった慣習では、@code{*-find}というAPIは
 述語を満たすようなコレクション内の要素を返し、@code{*-any}というAPIが
 述語が偽でない値を返した時にその値をそのまま返り値とします。
 SRFI-125が慣習を破った理由は、
@@ -16475,7 +16475,7 @@ Partial application versions of @code{apply}, @code{map} and @code{for-each}.
 @defunx delete$ pred
 @defunx assoc$ item
 @c EN
-Partial application versions of some srfi-1 (R7RS @code{(scheme list)})
+Partial application versions of some SRFI-1 (R7RS @code{(scheme list)})
 procedures (@pxref{R7RS lists}).
 @c JP
 SRFI-1 (R7RS @code{(scheme list)})
@@ -16537,14 +16537,14 @@ commonly used for function composition in literatures and some
 programming languages, and that Gauche uses suffix @code{$} to
 indicate combinators.   However, since it is not a valid R7RS
 identifier, portable programs may want to use the alias @code{compose},
-with which you can easily add a portable definition using @code{srfi-0},
+with which you can easily add a portable definition using SRFI-0,
 for example.
 @c JP
 註: @code{.$}という名前は、文献やいくつかの他のプログラミング言語で
 @code{.}が関数合成によく使われること、そしてGaucheではコンビネータの末尾に
 @code{$}をつける習慣があることから来ています。ただ、これはR7RSの
 範囲内では有効な識別子でないので、ポータビリティを考えるプログラムは
-別名の@code{compose}を使った方が良いでしょう。そうすれば@code{srfi-0}などを
+別名の@code{compose}を使った方が良いでしょう。そうすればSRFI-0などを
 使って容易に移植が可能です。
 @c COMMON
 @end defun
@@ -17651,10 +17651,10 @@ you can use @code{gfilter} and @code{generator->list}.
 
 @c EN
 A @emph{parameter} is Scheme's way to implement dynamically scoped states.
-It is codified in srfi-39 and incorporated into R7RS.
+It is codified in SRFI-39 and incorporated into R7RS.
 @c JP
 「パラメータ」はSchemeで動的スコープを持つ状態を実現します。
-もともとsrfi-39で仕様が定められ、R7RSからは言語の一部になりました。
+もともとSRFI-39で仕様が定められ、R7RSからは言語の一部になりました。
 @c COMMON
 
 @c EN
@@ -17783,7 +17783,7 @@ a thread parameter.
 
 For the backward compatibility, @code{make-parameter} still returns
 a thread parameter for the time being, unless you explicitly use
-@code{srfi-226}.  Eventually we switch @code{make-parameter} to return
+@code{srfi.226}.  Eventually we switch @code{make-parameter} to return
 a shared parameter, so you want to replace it with @code{make-thread-parameter}
 if that's what you want.
 During transition, you can use @code{make-shared-parameter}
@@ -17803,7 +17803,7 @@ SRFI-226でパラメータとスレッドの関係が明確化され、@code{mak
 共有パラメータを返すように定義されました。スレッドパラメータを作るには
 @code{make-thread-parameter}を使う必要があります。
 
-互換性のため、当分はGaucheの@code{make-parameter}は (@code{srfi-226}を@code{use}
+互換性のため、当分はGaucheの@code{make-parameter}は (@code{srfi.226}を@code{use}
 しない限り) スレッドパラメータを返します。
 その間に、スレッドパラメータが必要な場所では@code{make-thread-parameter}を使うように
 してください。
@@ -17900,8 +17900,8 @@ However, such datatypes imply sequences of objects,   Using boxes
 emphasizes your intention is just for indirection, and not so much for
 sequencing.
 
-It is originally introduced by srfi-111, which was later adopted in
-R7RS-large as @code{scheme.box}.  Srfi-195 enhances it to deal with
+It is originally introduced by SRFI-111, which was later adopted in
+R7RS-large as @code{scheme.box}.  SRFI-195 enhances it to deal with
 multiple values.
 
 The srfis leave some details to implementations.  Here are our choices:
@@ -17975,12 +17975,12 @@ standard: You mark
 an expression to be evaluated lazily by @code{delay},
 and you use @code{force} to make the evaluation happen when
 needed.  Gauche also support another primitive @code{lazy},
-as defined in srfi-45, for space-efficient tail-recursive
+as defined in SRFI-45, for space-efficient tail-recursive
 lazy algorithms.
 @c JP
 ひとつめはScheme標準で定められている、明示的なメカニズムです。遅延評価したい式を
 @code{delay}構文でマークし、値が必要になったところで@code{force}により
-評価を強制します。Gaucheはさらに、srfi-45で導入された、
+評価を強制します。Gaucheはさらに、SRFI-45で導入された、
 末尾再帰アルゴリズムでメモリを効率的に利用するための@code{lazy}というプリミティブも
 サポートしています。
 @c COMMON
@@ -18015,9 +18015,9 @@ using @code{delay} and @code{force}.  After R5RS, however,
 it is found that it didn't mix well with tail-recursive
 algorithms: It required unbound memory, despite that the
 body of the algorithm could be expressed in iterative manner.
-Srfi-45 showed that introducing another primitive syntax @code{lazy}
+SRFI-45 showed that introducing another primitive syntax @code{lazy}
 addresses the issue.
-For the detailed explanation please look at the srfi-45 document.
+For the detailed explanation please look at the SRFI-45 document.
 Here we explain how to use those primitives.
 @c JP
 Schemeは伝統的に、@code{delay}と@code{force}を使った
@@ -18273,21 +18273,21 @@ Gaucheの遅延シーケンスは、常に@emph{ひとつ余分に}評価しま�
 @end enumerate
 
 @c EN
-Note: R7RS @code{scheme.lseq} (srfi-127)
+Note: R7RS @code{scheme.lseq} (SRFI-127)
 provides a portable alternative of lazy sequence
 (@pxref{R7RS lazy sequences}).  It uses
 dedicated APIs (e.g. @code{lseq-cdr}) to operate on lazy sequences
 so that portable implementation is possible.  In Gauche, we just
-use our built-in lazy sequence as srfi-127 lazy sequence; if you
-want your code to be portable, consider using srfi-127, but be careful
+use our built-in lazy sequence as SRFI-127 lazy sequence; if you
+want your code to be portable, consider using SRFI-127, but be careful
 not to mix lazy sequences and ordinary lists; Gauche won't complain,
 but other Scheme implementation may choke on it.
 @c JP
-註: ポータブルな遅延シーケンスはR7RSの@code{scheme.lseq} (srfi-127)でも提供されています
-(@ref{R7RS lazy sequences}参照)。srfi-127では、遅延シーケンスを扱う
+註: ポータブルな遅延シーケンスはR7RSの@code{scheme.lseq} (SRFI-127)でも提供されています
+(@ref{R7RS lazy sequences}参照)。SRFI-127では、遅延シーケンスを扱う
 専用のAPI (@code{lseq-cdr}等) を提供することで、ポータブルな実装を可能にしています。
-Gaucheではsrfi-127の遅延シーケンスはGaucheの組み込み遅延シーケンスそのものです。
-移植性が重要であれば、srfi-127を使うのが良いでしょう。但し、遅延シーケンスと
+GaucheではSRFI-127の遅延シーケンスはGaucheの組み込み遅延シーケンスそのものです。
+移植性が重要であれば、SRFI-127を使うのが良いでしょう。但し、遅延シーケンスと
 通常のリストを混ぜないように気をつけてください。Gaucheは問題なく処理しますが、
 他のScheme処理系は喉を詰まらせてしまうかもしれません。
 @c COMMON
@@ -18341,10 +18341,10 @@ way to build lazy sequences.
 @c COMMON
 
 @c EN
-Note: Srfi-127 also has @code{generator->lseq}, which is exactly
+Note: SRFI-127 also has @code{generator->lseq}, which is exactly
 the same as this in Gauche.
 @c JP
-註: srfi-127も@code{generator->lseq}を定義していますが、Gaucheではそれは
+註: SRFI-127も@code{generator->lseq}を定義していますが、Gaucheではそれは
 この手続きと同じものです。
 @c COMMON
 @end defun
@@ -19245,11 +19245,11 @@ Gauche のフレームワーク(SRFI-35)に適合させるためには、新し�
 @c EN
 One way of ensuring the above convention as well as increasing
 portability is to use @code{define-condition-type} macro, defined
-in @code{SRFI-35}.
+in @code{srfi.35}.
 @c JP
 可搬性を増すと同時に上の慣例を確実にするための方法のひとつは、
 @code{define-condition-type}マクロを使うことです。これは、
-@code{SRFI-35}で定義されています。
+@code{srfi.35}で定義されています。
 @c COMMON
 
 @example
@@ -20272,11 +20272,11 @@ with a message condition, like this:
 @defunx error? obj
 [SRFI-35]
 @c EN
-These are srfi-35 compatible predicates to see if @var{obj} is
+These are SRFI-35 compatible predicates to see if @var{obj} is
 a condition of type @code{&message}, @code{&serious}, and @code{&error},
 respectively.
 @c JP
-これらはsrfi-35互換の述語で、それぞれ@var{obj}が
+これらはSRFI-35互換の述語で、それぞれ@var{obj}が
 @code{&message}、@code{&serious}、あるいは@code{&error}型のコンディションであるか
 どうかを検査します。
 @c COMMON
@@ -20540,7 +20540,7 @@ a variable @var{accessor-name} will be bound to a procedure that
 accesses the field.   In Gauche, each field becomes a slot of
 the created class.
 
-Gauche extends srfi-35 to allow @var{predicate} and/or @code{accessor-name}
+Gauche extends SRFI-35 to allow @var{predicate} and/or @code{accessor-name}
 to be @code{#f}, or @code{accessor-name} to be omitted,
 if you don't need to them to be defined.
 @c JP
@@ -20550,7 +20550,7 @@ if you don't need to them to be defined.
 束縛されます。Gauche では、それぞれのフィールドは生成された
 クラスのスロットとなります。
 
-Gaucheはsrfi-35を拡張して、@var{predicate}や@var{accessor-name}を
+GaucheはSRFI-35を拡張して、@var{predicate}や@var{accessor-name}を
 定義する必要が無い場合はその位置に@code{#f}を指定できるようにしています。
 @var{accessor-name}が必要無い場合はそれを省略することもできます。
 @c COMMON
@@ -21400,7 +21400,7 @@ An error is thrown if @var{port} doesn't support port positions.
 You can use @code{port-has-port-position?} to check if the port supports
 port positions.
 
-For portable code: srfi-192 defines the following conditions.
+For portable code: SRFI-192 defines the following conditions.
 
 @itemize @bullet
 @item
@@ -21428,7 +21428,7 @@ exact integer, it represents the byte offset of the position.
 @var{port}がポート位置をサポートしていなければエラーが投げられます。
 ポート位置をサポートしているかどうかは@code{port-has-port-position?}で調べられます。
 
-ポータブルなコードを書くときは、以下のsrfi-192の条件に気をつけてください。
+ポータブルなコードを書くときは、以下のSRFI-192の条件に気をつけてください。
 
 @itemize @bullet
 @item
@@ -22567,10 +22567,10 @@ GaucheはR7RSに定義されている構文要素に加え、@ref{Lexical struct
 @defunx read/ss :optional iport
 [SRFI-38]
 @c EN
-These procedures are defined in srfi-38 to recognize shared substructure
+These procedures are defined in SRFI-38 to recognize shared substructure
 notation (@code{#n=}, @code{#n#}).   Gauche's builtin @code{read} recognizes
-the srfi-38 notation, so these are just synonyms to @code{read}; these
-are only provided for srfi-38 compatibility.
+the SRFI-38 notation, so these are just synonyms to @code{read}; these
+are only provided for SRFI-38 compatibility.
 @c JP
 これらの手続きは、SRFI-38 で定義されていて、共有構造を表す記法
 (@code{#n=}, @code{#n#})を認識できます。Gauche の組み込み @code{read} は
@@ -23727,7 +23727,7 @@ and @code{write/ss}.  These names are kept for the backward compatibility.
 New code should use @code{write-shared}.
 @c JP
 Gaucheは、STklosから取った@code{write*}という名前を長く使ってきましたが、
-srfi-38によって@code{write-with-shared-structure}と@code{write/ss}が
+SRFI-38によって@code{write-with-shared-structure}と@code{write/ss}が
 定義されました。これらの名前は互換性のためだけに残してあります。
 新たなコードには@code{write-shared}を使ってください。
 @c COMMON
@@ -23898,12 +23898,12 @@ This procedure is taken from Common Lisp.
 Format @var{arg} @dots{} according to @var{string}.
 This function is a subset of CommonLisp's @code{format} function,
 with a bit of extension.  It is also a superset of SRFI-28,
-Basic format strings (@uref{https://srfi.schemers.org/srfi-28/srfi-28.html}).
+Basic format strings.
 @c JP
 @var{string} の指示に従い、@var{arg} @dots{}をフォーマットします。
 この手続きはCommonLispの@code{format}のサブセットに、Gauche独自の拡張を
 加えたものです。また、これはSRFI-28 "Basic format strings" のスーパーセットに
-なっています (@uref{https://srfi.schemers.org/srfi-28/srfi-28.html})。
+なっています。
 @c COMMON
 
 @c EN
@@ -25451,60 +25451,42 @@ Here are some examples (the result may differ in your environment).
 @c COMMON
 @c EN
 @example
-(library-fold 'srfi-1 acons '())
- @result{} ((srfi-1 . "../lib/srfi-1.scm"))
+(library-fold 'srfi.1 acons '())
+ @result{} ((srfi.1 . "../lib/srfi/1.scm"))
 
-(library-fold "srfi-1" acons '())
- @result{} (("srfi-1" . "../lib/srfi-1.scm"))
+(library-fold "srfi.1" acons '())
+ @result{} (("srfi.1" . "../lib/srfi/1.scm"))
 
 ;; Note the returned list is in a reverse order of
 ;; how @code{acons} is called.
-(library-fold 'srfi-1 acons '() :allow-duplicates? #t)
- @result{} ((srfi-1 . "/usr/share/gauche/0.7.1/lib/srfi-1.scm")
-   (srfi-1 . "../lib/srfi-1.scm"))
-
-;; In the following cases, the module name doesn't match,
-;; but the filename does.
-(library-fold 'srfi-19.* acons '())
- @result{} ()
-
-(library-fold "srfi-19/*" acons '())
- @result{} (("srfi-19/read-tai" . "../lib/srfi-19/read-tai.scm")
-   ("srfi-19/format" . "../lib/srfi-19/format.scm"))
+(library-fold 'srfi.1 acons '() :allow-duplicates? #t)
+ @result{} ((srfi.1 . "/usr/share/gauche-0.98/0.9.13/lib/srfi/1.scm")
+   (srfi.1 . "../lib/srfi.1.scm"))
 
 ;; Finds available dbm implementations
 (library-fold 'dbm.* acons '())
- @result{} ((dbm.cdb . "/usr/share/gauche/0.7.1/lib/dbm/cdb.scm")
+ @result{} ((dbm.cdb . "/usr/share/gauche-0.98/0.9.13/lib/dbm/cdb.scm")
    (dbm.gdbm . "../lib/dbm/gdbm.scm")
    (dbm.ndbm . "../lib/dbm/ndbm.scm")
    (dbm.odbm . "../lib/dbm/odbm.scm"))
 @end example
 @c JP
 @example
-(library-fold 'srfi-1 acons '())
- @result{} ((srfi-1 . "../lib/srfi-1.scm"))
+(library-fold 'srfi.1 acons '())
+ @result{} ((srfi.1 . "../lib/srfi/1.scm"))
 
-(library-fold "srfi-1" acons '())
- @result{} (("srfi-1" . "../lib/srfi-1.scm"))
+(library-fold "srfi.1" acons '())
+ @result{} (("srfi.1" . "../lib/srfi/1.scm"))
 
 ;; @code{acons} が呼ばれるのとは逆順のリストが
 ;; 返ることに注意してください
-(library-fold 'srfi-1 acons '() :allow-duplicates? #t)
- @result{} ((srfi-1 . "/usr/share/gauche/0.7.1/lib/srfi-1.scm")
-   (srfi-1 . "../lib/srfi-1.scm"))
-
-;; 以下の場合は、モジュール名ではマッチしませんが、
-;; ファイル名ではマッチします
-(library-fold 'srfi-19.* acons '())
- @result{} ()
-
-(library-fold "srfi-19/*" acons '())
- @result{} (("srfi-19/read-tai" . "../lib/srfi-19/read-tai.scm")
-   ("srfi-19/format" . "../lib/srfi-19/format.scm"))
+(library-fold 'srfi.1 acons '() :allow-duplicates? #t)
+ @result{} ((srfi.1 . "/usr/share/gauche-0.98/0.9.13/lib/srfi/1.scm")
+   (srfi.1 . "../lib/srfi.1.scm"))
 
 ;; 利用可能な dbm の実装を見付けます
 (library-fold 'dbm.* acons '())
- @result{} ((dbm.cdb . "/usr/share/gauche/0.7.4.2/lib/dbm/cdb.scm")
+ @result{} ((dbm.cdb . "/usr/share/gauche-0.98/0.9.13/lib/dbm/cdb.scm")
    (dbm.gdbm . "../lib/dbm/gdbm.scm")
    (dbm.ndbm . "../lib/dbm/ndbm.scm")
    (dbm.odbm . "../lib/dbm/odbm.scm"))
@@ -25534,9 +25516,9 @@ the results.
 @c COMMON
 
 @example
-(library-map 'srfi-4 list :allow-duplicates? #t)
- @result{} ((srfi-4 "../lib/srfi-4.scm")
-            (srfi-4 "/usr/share/gauche/0.7.1/lib/srfi-4.scm"))
+(library-map 'srfi.4 list :allow-duplicates? #t)
+ @result{} ((srfi.4 "../lib/srfi/4.scm")
+            (srfi.4 "/usr/share/gauche-0.98/0.9.13/lib/srfi/4.scm"))
 
 (library-map 'dbm.* (lambda (m p) m))
  @result{} (dbm.odbm dbm.ndbm dbm.gdbm dbm.cdb)

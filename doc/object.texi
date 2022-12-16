@@ -190,10 +190,10 @@ STklos からとりました。
 
 @c EN
 Gauche also provides a shorter name, @code{ref}, which can also
-be used in srfi-17's generalized @code{set!} syntax:
+be used in SRFI-17's generalized @code{set!} syntax:
 @c JP
 Gauche では、より短かい名前 @code{ref} も使えます。これを使えば
-srfi-17 の一般化された @code{set!} の構文が使えます。
+SRFI-17 の一般化された @code{set!} の構文が使えます。
 @c COMMON
 @example
 (ref a-point 'x) @result{} 10.0
@@ -564,7 +564,7 @@ gosh> d-vector
 @end example
 
 @c EN
-If you customize the printed representation to conform srfi-10
+If you customize the printed representation to conform SRFI-10
 format, and define a corresponding read-time constructor,
 you can make your instances to be written-out and read-back
 just like built-in objects.  See @ref{Read-time constructor} for
@@ -575,7 +575,7 @@ functionality for user-defined objects.  For example, if
 you specialize a generic function @code{object-equal?},
 you can compare the instances by @code{equal?}:
 @c JP
-srfi-10 のフォーマットを満すように印字表現をカスタマイズし、読み込み時
+SRFI-10 のフォーマットを満すように印字表現をカスタマイズし、読み込み時
 構築子を定義すれば、自分の定義したクラスのインスタンスを、組み込み
 オブジェクトと同様に書き出し、読み戻しできます。詳しくは
 @ref{Read-time constructor} を見てください。
@@ -904,7 +904,6 @@ Then we can write some simple figures @dots{}.
 
 @c COMMON
 @example
-(use srfi-1)      ;; for iota
 (use math.const)  ;; for constant pi
 
 (define (shape-sample)
