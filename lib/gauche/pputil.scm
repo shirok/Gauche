@@ -299,7 +299,7 @@
 ;; B's insert a newline and a proper indentation.
 (define (render stree indent port)
   (define (next-line col) (newline port) (dotimes [i col] (display " " port)))
-  (define (drop-while pred xs) ; avoid depending on srfi-1 (for now)
+  (define (drop-while pred xs) ; avoid depending on SRFI-1 (for now)
     (cond [(null? xs) '()]
           [(pred (car xs)) (drop-while pred (cdr xs))]
           [else xs]))

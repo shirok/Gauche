@@ -1,5 +1,5 @@
 ;;
-;; test for srfi-4 module
+;; test for SRFI-4 module
 ;;
 
 (use gauche.test)
@@ -287,7 +287,7 @@
                 list->f32vector
                 list->f64vector))
 
-;; srfi-66 procedures
+;; SRFI-66 procedures
 ;;  Internally we just call builtin equal? and compare, so here we just
 ;;  check it can be callable.
 (test* "u8vector=?" #t (u8vector=? '#u8(1 2 3) '#u8(1 2 3)))
@@ -2763,7 +2763,7 @@
                vec)))
 
 ;;-------------------------------------------------------------------
-;; (test-section "srfi-160 interface")
+;; (test-section "SRFI-160 interface")
 
 (use gauche.uvector.u8)
 (test-module 'gauche.uvector.u8)

@@ -1,8 +1,8 @@
 ;;;
-;;; srfi-64
+;;; SRFI-64
 ;;;
 
-;; This file is based on srfi-64 reference implementation,
+;; This file is based on SRFI-64 reference implementation,
 ;; but modified to work cooperatively with gauche's test framework.
 
 ;; Original copyright follows:

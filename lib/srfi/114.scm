@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-114 - comparators
+;;; SRFI-114 - comparators
 ;;;
 ;;;   Copyright (c) 2014-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -33,20 +33,20 @@
 
 ;; Basic support of comparators are built-in, for the built-in
 ;; data structures such as hashtables would make use of them.
-;; This module provides complete set of srfi-114
+;; This module provides complete set of SRFI-114
 
-;; TODO: Importing srfi-114 shadows make-comparator, but many procedures
+;; TODO: Importing SRFI-114 shadows make-comparator, but many procedures
 ;; here are generally useful.  We might want to split those procs
 ;; in separate module so that they can be used without worring
 ;; different make-comparator APIs.
-;; TODO: Comparator combinators are written for srfi-114 and assumes
+;; TODO: Comparator combinators are written for SRFI-114 and assumes
 ;; the given comparator has comparison proc.  We might be able to optimize
-;; it by checking if the passed one is srfi-128.
+;; it by checking if the passed one is SRFI-128.
 
 (define-module srfi.114
   (use gauche.uvector)
   (use srfi.162) ; comparator-min, comparator-max
-  (export comparator?                   ;builtin (srfi-128)
+  (export comparator?                   ;builtin (SRFI-128)
           comparator-comparison-procedure?
           comparator-hash-function?
 
@@ -99,7 +99,7 @@
           in-open-interval? in-closed-interval?
           in-open-closed-interval? in-closed-open-interval?
 
-          comparator-min comparator-max ;srfi-162
+          comparator-min comparator-max ;SRFI-162
           ))
 (select-module srfi.114)
 
@@ -107,11 +107,11 @@
 ;;; Predicates
 ;;;
 (define (comparator-comparison-procedure? c)
-  (comparator-ordered? c))              ;srfi-128
+  (comparator-ordered? c))              ;SRFI-128
 (define (comparator-hash-function? c)
-  (comparator-hashable? c))             ;srfi-128
+  (comparator-hashable? c))             ;SRFI-128
 (define (comparator-type-test-procedure c)
-  (comparator-type-test-predicate c))   ;srfi-128
+  (comparator-type-test-predicate c))   ;SRFI-128
 (define (comparator-equal? c a b) (=? c a b))
 
 ;;;
@@ -176,10 +176,10 @@
   (make-key-comparator comparator pair? cdr))
 
 (define (make-listwise-comparator test elt-comparator null? car cdr)
-  (make-list-comparator elt-comparator test null? car cdr)) ; srfi-128
+  (make-list-comparator elt-comparator test null? car cdr)) ; SRFI-128
 
 (define (make-vectorwise-comparator test elt-comparator len ref)
-  (make-vector-comparator elt-comparator test len ref)) ; srfi-128
+  (make-vector-comparator elt-comparator test len ref)) ; SRFI-128
 
 (define (make-bytevector-comparator elt-comparator)
   (make-vectorwise-comparator u8vector? elt-comparator

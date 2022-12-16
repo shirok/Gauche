@@ -593,7 +593,7 @@
            finished)))
 
 ;;-----------------------------------------------------------
-(test-section "srfi-181 and 192")
+(test-section "SRFI-181 and 192")
 
 (define-module srfi-181-tests
   (use gauche.test)
@@ -613,7 +613,7 @@
   (test-include-r7 "../../test/include/srfi-181-192-tests.scm")
   )
 
-;; Auxiliary srfi-181 tests
+;; Auxiliary SRFI-181 tests
 
 ;; i/o-invalid-position-error
 (define-module srfi-181-tests-2

@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-133
+;; Originally SRFI-133
 (define-module scheme.vector
   (use util.match)
   (export
@@ -234,7 +234,7 @@
     [() #t]
     [(vec) (assume-type vec <vector>) #t]
     [(v . vecs)
-     ;; we could use srfi-114 make-vector-comparator but the overhead of
+     ;; we could use SRFI-114 make-vector-comparator but the overhead of
      ;; creating a comparator might be too much.
      (assume-type v <vector>)
      (let1 len (vector-length v)

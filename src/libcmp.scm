@@ -34,14 +34,14 @@
 (select-module gauche.internal)
 
 ;;;
-;;; Comparator (a la srfi-114/128)
+;;; Comparator (a la SRFI-114/128)
 ;;;
 
-;; Our built-in comparator is compatible to *both* srfi-114 and srfi-128;
+;; Our built-in comparator is compatible to *both* SRFI-114 and SRFI-128;
 ;; we automatically "fill-in" the difference (comparison-proc vs ordering-pred)
 ;; as needed.  The only incompatibility is the constructor---both srfi
 ;; uses the same name but the mearning of arguments differ.  We provide
-;; srfi-114 constructor under different name (make-comparator/compare).
+;; SRFI-114 constructor under different name (make-comparator/compare).
 ;;
 ;; Because of this on-demand filling, the internal accessors are a
 ;; bit complicated; it is justified by the simple api with low overhead
@@ -87,7 +87,7 @@
   (cond [(or (eq? hash #f) (applicable? hash <bottom>)) hash]
         [else (error "make-comparator needs a procedure or #f as hash, but got:" hash)]))
 
-;; API - srfi-114 constructor
+;; API - SRFI-114 constructor
 (define-in-module gauche (make-comparator/compare type-test equality-test
                                                   comparison-proc hash
                                                   :optional (name #f))
@@ -106,7 +106,7 @@
                       (eq? equality-test #t)
                       #f)))
 
-;; API - srfi-128 constructor
+;; API - SRFI-128 constructor
 (define-in-module gauche (make-comparator type-test equality-test
                                           ordering-pred hash
                                           :optional (name #f))

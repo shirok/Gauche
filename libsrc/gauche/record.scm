@@ -45,7 +45,7 @@
   )
 (select-module gauche.record)
 
-;; <record> is srfi-9 and srif-99 compatible record types, integrated
+;; <record> is SRFI-9 and srif-99 compatible record types, integrated
 ;; into Gauche object system, and implemented for efficiency.
 ;;
 ;; rtd is a Gauche class with metaclass <record-meta>.  It has more

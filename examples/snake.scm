@@ -5,7 +5,7 @@
 (use gauche.termios)
 (use gauche.array)
 (use util.match)
-(use srfi-27)
+(use srfi.27)
 (use text.console)
 
 (define (main args)

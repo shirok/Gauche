@@ -206,7 +206,7 @@
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
-(use srfi-13)
+(use srfi.13)
 
 (test* "string-every" #t (string-every #\あ ""))
 (test* "string-every" #t (string-every #\あ "ああああ"))

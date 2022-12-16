@@ -70,7 +70,7 @@
 (define (build-object pairs) ((json-object-handler) pairs))
 (define (build-special symbol) ((json-special-handler) symbol))
 
-;; This is to bail out the input nesting is too deep (see srfi-180)
+;; This is to bail out the input nesting is too deep (see SRFI-180)
 (define json-nesting-depth-limit (make-parameter +inf.0))
 (define json-current-nesting-depth (make-parameter 0))
 

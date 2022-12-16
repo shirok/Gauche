@@ -2,7 +2,7 @@
 
 (use gauche.test)
 (use gauche.process)
-(use srfi-13)
+(use srfi.13)
 (use file.util)
 (use file.filter)
 (use gauche.config)
@@ -82,7 +82,7 @@
              (process-output->string '("./gosh" "-ftest" "test.o")))
          (delete-files "test.o")))
 
-(test* "r7rs + srfi-22 by interpreter name" "baz bar"
+(test* "r7rs + SRFI-22 by interpreter name" "baz bar"
        (unwind-protect
            (begin
              (delete-files "test.o" "scheme-r7rs")
@@ -641,7 +641,7 @@
   )
 
 (add-load-path "test.o")
-(use srfi-42)
+(use srfi.42)
 (use scheme.vector :only (vector-every))
 
 (define (precomp-test-2)

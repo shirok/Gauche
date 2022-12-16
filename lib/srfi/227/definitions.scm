@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-227 sublibrary
+;;; SRFI-227 sublibrary
 ;;;
 
 (define-module srfi.227.definitions

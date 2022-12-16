@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-189 - Maybe and Either
+;;; SRFI-189 - Maybe and Either
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

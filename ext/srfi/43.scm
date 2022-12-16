@@ -1,9 +1,9 @@
 ;;;
-;;; Vector library (srfi-43)
+;;; Vector library (SRFI-43)
 ;;;
 
 ;; This is kept only for the backward compatibility.
-;; Most functions are covered by srfi-133.   A few have the same
+;; Most functions are covered by SRFI-133.   A few have the same
 ;; functionality with diffrent names in the core.
 
 (define-module srfi.43
@@ -11,7 +11,7 @@
                          vector-map vector-map! vector-for-each
                          vector-count))
   (export
-   ;; Those are either built-in or srfi-133
+   ;; Those are either built-in or SRFI-133
    vector-unfold vector-unfold-right
    vector-reverse-copy vector-append vector-concatenate
    vector-empty? vector=
@@ -22,7 +22,7 @@
    vector-copy! vector-swap! vector-reverse! vector-reverse-copy!
    reverse-vector->list reverse-list->vector
 
-   ;; srfi-43 specific procedures
+   ;; SRFI-43 specific procedures
    vector-fold vector-fold-right vector-count
    (rename vector-map-with-index vector-map) ; built-in
    (rename vector-map-with-index! vector-map!) ; built-in

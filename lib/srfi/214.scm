@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-214 - flexvector
+;;; SRFI-214 - flexvector
 ;;;
 ;;;   Copyright (c) 2021-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

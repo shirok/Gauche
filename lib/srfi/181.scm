@@ -1,5 +1,5 @@
 ;;
-;; Taken from srfi-181 reference implementation by Shiro Kawai
+;; Taken from SRFI-181 reference implementation by Shiro Kawai
 ;; MIT License.
 ;;
 
@@ -33,7 +33,7 @@
 (define-constant *buffer-size* 1024)
 
 ;; If set-position! method raises a condition <io-invalid-position-error>
-;; using srfi-192's make-i/o-invalid-position-error, we intercept it
+;; using SRFI-192's make-i/o-invalid-position-error, we intercept it
 ;; to add port info.
 (define-syntax wrap-setpos
   (syntax-rules ()
@@ -173,7 +173,7 @@
 ;;; Transcoders
 ;;;
 
-;; Since we already have gauche.charconv, we don't use srfi-181 layer
+;; Since we already have gauche.charconv, we don't use SRFI-181 layer
 ;; to implement transcoded ports.
 
 ;; TODO: newline style and decoding/encoding error is temporarily
@@ -200,7 +200,7 @@
   (format port "#<codec ~s>" (codec-name c)))
 
 ;; CES 'none' is kind of special---you can treat octet stream as any
-;; single-byte encoding.  However, srfi-181 transcoder needs to assume
+;; single-byte encoding.  However, SRFI-181 transcoder needs to assume
 ;; specific internal encoding, so we treat 'none' as Latin1.
 (define *native-codec-name*
   (cond-expand
@@ -356,7 +356,7 @@
   (if (eq? (~ transcoder'eol-style) 'none)
     ;; ces-convert-to doesn't distinguish 'decoding' and 'encoding', so
     ;; it always raises <io-decoding-error> if input is invalid.
-    ;; In srfi-181, we should treat it as encoding error.
+    ;; In SRFI-181, we should treat it as encoding error.
     (guard (e [(<io-decoding-error> e)
                (error <io-encoding-error>
                       :port (~ e'port)

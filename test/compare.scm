@@ -171,7 +171,7 @@
        ((comparator-hash-procedure (make-comparator/compare #t eq? #f #f)) 'a))
 
 ;; comparing comparators
-;; this is undefined in srfi-114; we compare the slots.
+;; this is undefined in SRFI-114; we compare the slots.
 (test* "comparing comparator 1" #t
        (equal? (make-comparator/compare #t eq? #f #f)
                (make-comparator/compare #t eq? #f #f)))

@@ -1,6 +1,6 @@
 ;; -*- coding:utf-8 -*-
 ;;;
-;;; srfi-154
+;;; SRFI-154
 ;;;
 
 ;; Based on the reference implementation, modified to fit Gauche style.

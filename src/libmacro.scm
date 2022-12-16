@@ -423,7 +423,7 @@
                   `(,(r'lambda) ,arg ,($-fold (cdr f) '() arg)))]
                [else ($-fold (cdr f) '() #f)]))))))
 
-;;; cut, cute (srfi-26)
+;;; cut, cute (SRFI-26)
 
 (define-syntax cut
   (er-macro-transformer
@@ -477,7 +477,7 @@
        `(,(r'letrec) ,binds
          (,(r'lambda) ,tmps ,elts))))))
 
-;;; rec (srfi-31)
+;;; rec (SRFI-31)
 
 (define-syntax rec
   (er-macro-transformer
@@ -491,7 +491,7 @@
           `(letrec ((,name ,expr)) ,name))]
        [_ (error "malformed rec:" f)]))))
 
-;;; guard (srfi-34)
+;;; guard (SRFI-34)
 
 (define-syntax guard
   (er-macro-transformer
@@ -818,7 +818,7 @@
           `(set! ,loc (,updater ,@val ,loc)))]
        [_ (error "malformed update!:" f)]))))
 
-;;; assume (srfi-145) and co.
+;;; assume (SRFI-145) and co.
 
 ;; We might add run-time optimization switch to expand assume to nothing.
 (define-syntax assume
@@ -983,9 +983,9 @@
                (if tmp (cons (begin ,@expr) r) r)))]
          )))))
 
-;;; srfi-35 condition macros
+;;; SRFI-35 condition macros
 
-;; we extend srfi-35 to allow #f as predicate and accessors, as well as
+;; we extend SRFI-35 to allow #f as predicate and accessors, as well as
 ;; omitting accessors.
 
 (define-syntax define-condition-type
@@ -1442,7 +1442,7 @@
        [_ (error "malformed rxmatch-case:" f)]))))
 
 
-;;; srfi-236
+;;; SRFI-236
 
 (define-syntax independently
   (er-macro-transformer

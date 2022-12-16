@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-173 hooks
+;;; SRFI-173 hooks
 ;;;
 
 (define-module srfi.173

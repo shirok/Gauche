@@ -223,7 +223,7 @@
               comparator))
      ;; If comparator's equality predicate is eq?/eqv?, we ignore
      ;; the its hash function and force using eq-/eqv-hash,
-     ;; as permitted in srfi-125.  It allows object that doesn't have
+     ;; as permitted in SRFI-125.  It allows object that doesn't have
      ;; custom hash method can still be used with hashtables based on
      ;; (make-eq[v]-comparator).
      ;; https://github.com/shirok/Gauche/issues/708
@@ -332,8 +332,8 @@
 
 (select-module gauche)
 (define-cproc hash-table-copy (ht::<hash-table> :optional _)
-  ;; we don't have immutable hash table, and ignore the optional 
-  ;; mutable? argument (srfi-125)
+  ;; we don't have immutable hash table, and ignore the optional
+  ;; mutable? argument (SRFI-125)
   (return (Scm_HashTableCopy ht)))
 (define-cproc hash-table-keys (ht::<hash-table>)   Scm_HashTableKeys)
 (define-cproc hash-table-values (ht::<hash-table>) Scm_HashTableValues)
@@ -360,7 +360,7 @@
 (define unique (cons #f #f))
 
 ;; vararg constructor 'hash-table' has conflicting API between
-;; legacy Gauche and R7RS scheme.hash-table (srfi-125).
+;; legacy Gauche and R7RS scheme.hash-table (SRFI-125).
 ;; R7RS's API is more convenient to use, so we eventually
 ;; switch to it.  Meantime, we provide original hash-table
 ;; with a different name, hash-table-from-pairs, and R7RS
@@ -554,7 +554,7 @@
 
 ;; We delegate most hash calculation to the built-in default-hash.
 ;; These type-specific hash functions are mostly
-;; for the compatibility of srfi-128.
+;; for the compatibility of SRFI-128.
 
 (define (boolean-hash obj)
   (assume-type obj <boolean>)
@@ -580,7 +580,7 @@
   (assume-type obj <number>)
   (default-hash obj))
 
-;; This is a placeholder to conform srfi-128.
+;; This is a placeholder to conform SRFI-128.
 (define (hash-bound) (greatest-fixnum))
 
 ;; Compare two hash-tables as sets.

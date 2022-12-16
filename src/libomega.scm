@@ -82,7 +82,7 @@
 
 ;; Built-in comparators.  These are here instead of libcmp.scm, for
 ;; hash functions need to be defined before this.
-;; NB: These are in srfi-114 but not in srfi-128.  We provide them
+;; NB: These are in SRFI-114 but not in SRFI-128.  We provide them
 ;; so that when they are used as the argument of make-hash-table,
 ;; we can recognize so and use more efficient built-in hash types.
 (define eq-comparator
@@ -98,12 +98,12 @@
   (make-comparator/compare #t (with-module gauche.internal default-comparator-equal?)
                            compare default-hash 'default-comparator))
 
-;; NB: srfi-128's make-eq-comparator and make-eqv-comparator will NOT
+;; NB: SRFI-128's make-eq-comparator and make-eqv-comparator will NOT
 ;; return eq-comparator and eqv-comparator.  They're defined in computil.scm.
-(define-inline (make-equal-comparator) equal-comparator); srfi-128
-(define-inline (make-default-comparator) default-comparator) ;srfi-128
+(define-inline (make-equal-comparator) equal-comparator); SRFI-128
+(define-inline (make-default-comparator) default-comparator) ;SRFI-128
 
-(define (comparator-register-default! cmpr) ;srfi-128
+(define (comparator-register-default! cmpr) ;SRFI-128
   (unless (is-a? cmpr <comparator>)
     (error "Comparator required, but got:" cmpr))
   (with-module gauche.internal
@@ -126,7 +126,7 @@
            (eqv? (~ x'hash) (~ y'hash)))
        (equal? (slot-ref x 'name) (slot-ref y 'name))))
 
-;; Extend default-comparator by srfi-128 way
+;; Extend default-comparator by SRFI-128 way
 ;;
 ;;  Our default-comparator already handles any type of objects,
 ;;  and delegates customized behavior for object-equal?, object-compare

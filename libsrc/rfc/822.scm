@@ -252,7 +252,7 @@
                (and dow (dow->number dow))))
      (else (values #f #f #f #f #f #f #f #f))))
 
-;; returns it by srfi-19 date
+;; returns it by SRFI-19 date
 (define (rfc822-date->date string)
   (receive (year month day hour min sec tz . rest)
       (rfc822-parse-date string)
@@ -261,7 +261,7 @@
                     (receive (quot rem) (quotient&remainder tz 100)
                       (+ (* quot 3600) (* rem 60)))))))
 
-;; inverse of rfc822-date->date.  Take srfi-19 date and returns
+;; inverse of rfc822-date->date.  Take SRFI-19 date and returns
 ;; formatted string.
 (define (date->rfc822-date date)
   (let1 tz (date-zone-offset date)

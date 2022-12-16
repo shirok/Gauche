@@ -39,8 +39,8 @@
 ;;   See doc/HOWTO-unicode.txt for the details.
 
 (use scheme.list)
-(use srfi-13)
-(use srfi-42)
+(use srfi.13)
+(use srfi.42)
 (use text.csv)
 (use util.match)
 (use file.util)
@@ -686,7 +686,7 @@
           :name (string->symbol (substring (symbol->string (car gcats)) 0 1)))
       (for-each (^c (walker (cut register cs c <> <>))) gcats)
       (hash-table-put! sets (~ cs'name) cs)))
-  ;; srfi-14 charsets (the ones that has equivalent set in general category set
+  ;; SRFI-14 charsets (the ones that has equivalent set in general category set
   ;; is handled implicitly.
   (hash-table-put! sets 'ASCII_UPPER
                    (rlet1 cs (make <char-code-set> :name 'ASCII_UPPER)

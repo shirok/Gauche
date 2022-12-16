@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-170 - POSIX API
+;;; SRFI-170 - POSIX API
 ;;;
 ;;;   Copyright (c) 2021-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -380,7 +380,7 @@
 
 (define (set-umask! umask) (sys-umask umask) (undefined))
 
-;; srfi-170#current-directory is a subset of file.util#current-directory
+;; srfi.170#current-directory is a subset of file.util#current-directory
 
 (define (set-current-directory! dir) (current-directory dir) (undefined))
 
@@ -431,7 +431,7 @@
   (~ uinfo'gecos))
 (define (user-info:parsed-full-name uinfo)
   (assume-type uinfo <sys-passwd>)
-  ;; This cond-expand is based on the srfi-170 spec
+  ;; This cond-expand is based on the SRFI-170 spec
   (cond-expand
    [gauche.os.windows (list (~ uinfo'gecos))]
    [else (let1 fields (string-split (~ uinfo'gecos) ",")

@@ -3,7 +3,7 @@
 ;;
 
 (use gauche.time)
-(use srfi-42)
+(use srfi.42)
 
 (define-constant *count* 1000000)
 

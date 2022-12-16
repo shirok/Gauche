@@ -7,11 +7,11 @@
 (use gauche.lazy)
 (use file.util)
 (use scheme.list)
-(use srfi-42)
+(use srfi.42)
 
 ;; Compare crating list of integers (0 ... N-1) with
 ;;  - simple loop
-;;  - srfi-42 list-ec
+;;  - SRFI-42 list-ec
 ;;  - generator
 ;;  - lazy sequence
 ;;  - co-recursion using lcons

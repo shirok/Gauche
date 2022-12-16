@@ -82,7 +82,7 @@
 ;; it is expected to belong gauche.uvector.
 (autoload gauche.vport open-output-uvector get-output-uvector)
 
-;; referenced from srfi-160 make-TAGvector-generator
+;; referenced from SRFI-160 make-TAGvector-generator
 (autoload gauche.generator uvector->generator)
 
 (inline-stub
@@ -299,7 +299,7 @@
  )
 
 ;; search
-;; rounding can be #f, 'floor or 'ceiling  (srfi-114 also uses symbols
+;; rounding can be #f, 'floor or 'ceiling  (SRFI-114 also uses symbols
 ;; for rounding.  we don't use 'round and 'truncate, though, for
 ;; it doesn't make much sense.)
 (inline-stub
@@ -742,7 +742,7 @@
     (get-output-uvector p :shared #t)))
 
 ;;-------------------------------------------------------------
-;; Element range check (srfi-160)
+;; Element range check (SRFI-160)
 ;;
 
 (define-cproc u8? (v) ::<boolean>

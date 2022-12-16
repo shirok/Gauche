@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-227 - Optional arguments
+;;; SRFI-227 - Optional arguments
 ;;;
 
 ;; Its let-optionals* differ from Gauche's builtin.

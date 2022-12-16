@@ -239,7 +239,7 @@
 (test* "char-set?" #f (char-set? 5))
 (test-cs "char-set?" #t char-set? (char-set #\a #\e #\i #\o #\u))
 
-;; N-ary comparison procedures are provided in srfi-14.  We test primitive
+;; N-ary comparison procedures are provided in SRFI-14.  We test primitive
 ;; ones here.
 (test-cs "%char-set-equal?" #t
          (with-module gauche.internal %char-set-equal?)

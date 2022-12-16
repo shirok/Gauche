@@ -993,7 +993,7 @@
 
 (define-insn APPLY       1 none #f
   ;; this instruction will go away soon.  for now it only appears
-  ;; as the result of 'cond' with srfi-61 extension.
+  ;; as the result of 'cond' with SRFI-61 extension.
   (let* ([nargs::int (SCM_VM_INSN_ARG code)] [cp])
     (SCM_FLONUM_ENSURE_MEM VAL0)
     (while (> (pre-- nargs) 1)

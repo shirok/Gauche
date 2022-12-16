@@ -80,8 +80,8 @@
 ;; for the single-variable case, even though we don't.
 ;;
 ;; One idea is to use curly-braces: ~{foo}.  Instead of having it a 'special'
-;; syntax, we can interpret it as a srfi-105 (curly-infix) syntax, in which
-;; {expr} is just expr.  If we support srfi-105 by default, this feature comes
+;; syntax, we can interpret it as a SRFI-105 (curly-infix) syntax, in which
+;; {expr} is just expr.  If we support SRFI-105 by default, this feature comes
 ;; for free.  We don't know yet, though.
 
 (define-module gauche.interpolate

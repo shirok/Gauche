@@ -1013,8 +1013,8 @@
 ;;  constructor is defined.
 
 ;;  NB: this routine writes value to a string and read it back (sans
-;;  srfi-10 prefix if any).   If the written out value contains *nested*
-;;  srfi-10 syntax, reader constructor of the inner srfi-10 is invoked
+;;  SRFI-10 prefix if any).   If the written out value contains *nested*
+;;  SRFI-10 syntax, reader constructor of the inner srfi-10 is invoked
 ;;  in this process.  If the reader constructor have side effects, this
 ;;  routine may cause undesirable side effects as well.  There's no way
 ;;  we can know if it is safe.
@@ -1038,7 +1038,7 @@
 
 (define (infer-literal-handler value)
   (and-let* ([s (guard (e [else #f]) (write-to-string value))]
-             [m (#/#,\(/ s)]  ; srfi-10 syntax
+             [m (#/#,\(/ s)]  ; SRFI-10 syntax
              [xpr (guard (e [else #f]) (read-from-string (string-drop s 2)))])
     (match xpr
       [(tag . args)

@@ -120,7 +120,7 @@
 (define-cproc opt-substring (str::<string> :optional start end)
   Scm_MaybeSubstring)
 
-;; bound argument is for srfi-13
+;; bound argument is for SRFI-13
 (define-cproc %hash-string (str::<string> :optional bound) ::<ulong>
   (let* ([modulo::u_long 0])
     (cond [(or (SCM_UNBOUNDP bound) (SCM_UNDEFINEDP bound))
@@ -172,7 +172,7 @@
 ;; string-split
 ;; Generic string-split
 ;;  splitter can be a character, a char-set, a string, or a regexp.
-;;  NB: To adapt to srfi-152, we changed the optional argument - now the
+;;  NB: To adapt to SRFI-152, we changed the optional argument - now the
 ;;  'grammar' argument comes before 'limit'.  For the bacward compatibility,
 ;;  we recognize an integer argument in 'grammar' as 'limit'.
 (define (string-split string splitter
@@ -396,7 +396,7 @@
 
 ;; We have two kinds of string-{map|for-each}.  SRFI-13 takes one string
 ;; with optional start/end arguments.  R7RS takes one or more string arguments.
-;; In retrospect, R7RS is more consistent, but srfi-13 is very frequently
+;; In retrospect, R7RS is more consistent, but SRFI-13 is very frequently
 ;; imported and it is bothersome to avoid name conflicts.  So we have
 ;; single implementation that handles both.
 
@@ -411,7 +411,7 @@
                    (string-cursor? (cadr rest)))
              (if (null? (cddr rest))
                (proc-single proc (opt-substring str (car rest) (cadr rest)))
-               (errorf "Too many arguments for srfi-13 style ~a" name))
+               (errorf "Too many arguments for SRFI-13 style ~a" name))
              (error "Integer or string-cursor expected, but got:" (cadr rest))))]
         [(string? (car rest))
          (if-let1 bad (find (^s (not (string? s))) (cdr rest))

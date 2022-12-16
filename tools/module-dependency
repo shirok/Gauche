@@ -4,7 +4,7 @@
 
 (use file.util)
 (use util.match)
-(use srfi-197)
+(use srfi.197)
 
 (define-class <modinfo> ()
   ((name :init-keyword :name)           ;module name

@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-232 - Flexible curried procedures
+;;; SRFI-232 - Flexible curried procedures
 ;;;
 ;;;   Copyright (c) 2022  Shiro Kawai  <shiro@acm.org>
 ;;;

@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-217 - Integer sets
+;;; SRFI-217 - Integer sets
 ;;;
 ;;;   Copyright (c) 2021-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

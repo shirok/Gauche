@@ -46,7 +46,7 @@
 ;;; SRFI.  Unfortunately, hash-table-fold is incompatible between the two
 ;;; and so is not usable.
 
-;; Originally srfi-113
+;; Originally SRFI-113
 (define-module scheme.set
   (use srfi.114)
   (use gauche.collection)

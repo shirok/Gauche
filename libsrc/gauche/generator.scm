@@ -60,7 +60,7 @@
           gtake gtake* gdrop gtake-while gdrop-while grxmatch gslices
           glet* glet1 do-generator
 
-          ;; srfi-121 compatibility
+          ;; SRFI-121 compatibility
           generator make-iota-generator make-range-generator
           make-coroutine-generator bytevector->generator
           make-for-each-generator make-unfold-generator gcombine
@@ -508,7 +508,7 @@
 
 ;; NB: The signature of gtake used to be:
 ;;   gtake gen n :optional (fill? #f) (padding #f)
-;; It is changed to be in sync with srfi-121
+;; It is changed to be in sync with SRFI-121
 ;;   gtake gen n :optional fill
 ;; We keep the old signature under the name gtake*, for it's
 ;; consistent with take*.
@@ -640,7 +640,7 @@
                  [fill? (append elts (make-list (- k len) padding))]
                  [else elts])))))
 
-(define (gindex vgen igen) ;srfi-121
+(define (gindex vgen igen) ;SRFI-121
   (let ([vgen (%->gen vgen)]
         [igen (%->gen igen)])
     (define (skip n)
@@ -657,7 +657,7 @@
                    (set! prev i))))
              (eof-object))))))
 
-(define (gselect vgen bgen) ;srfi-121
+(define (gselect vgen bgen) ;SRFI-121
   (let ([vgen (%->gen vgen)]
         [bgen (%->gen bgen)])
     (rec (g)
@@ -771,9 +771,9 @@
 (define (generator-unfold gen unfold . args)
   (apply unfold eof-object? identity (^_ (gen)) (gen) args))
 
-;; srfi-121 compatibility aliases
+;; SRFI-121 compatibility aliases
 ;; NB: We're not sure if we should put them here, or split them to
-;; srfi-121 module.
+;; SRFI-121 module.
 
 (define (generator . args) (list->generator args))
 (define (make-iota-generator count . args) (apply giota count args))
@@ -787,7 +787,7 @@
 (define (make-unfold-generator p f g seed) (gunfold p f g seed))
 (define (gcombine proc seed gen . gens) (apply gmap-accum proc seed gen gens))
 
-;; srfi-158 auxiliary procedures
+;; SRFI-158 auxiliary procedures
 (define (ggroup gen k :optional padding)
   (if (undefined? padding)
     (gslices gen k)

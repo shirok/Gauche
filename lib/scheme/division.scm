@@ -2,7 +2,7 @@
 ;;;scheme.division -  R7RS Tangerine
 ;;;
 
-;; Originally srfi-141
+;; Originally SRFI-141
 (define-module scheme.division
   (export ceiling/ ceiling-quotient ceiling-remainder
           round/ round-quotient round-remainder

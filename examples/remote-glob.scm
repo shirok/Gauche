@@ -6,7 +6,7 @@
 
 (use gauche.process)
 (use file.util :only (build-path))
-(use srfi-13 :only (string-trim-right string-drop-right))
+(use srfi.13 :only (string-trim-right string-drop-right))
 
 (define (make-remote-folder host)
   (^[proc seed parent regexp non-leaf?]

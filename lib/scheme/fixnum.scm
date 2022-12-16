@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-143
+;; Originally SRFI-143
 (define-module scheme.fixnum
   (use srfi.60 :only (bitwise-if rotate-bit-field reverse-bit-field))
   (use scheme.division :only (balanced/))

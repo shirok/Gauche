@@ -1,4 +1,4 @@
-;; srfi-7 implementation, taken from Richard Kelsey's reference implementation.
+;; SRFI-7 implementation, taken from Richard Kelsey's reference implementation.
 ;; Gauche module stuff added by Alex Shinn.
 
 ;; Copyright (C) Richard Kelsey (1999). All Rights Reserved.
@@ -16,7 +16,7 @@
 ;; followed, or as required to translate it into languages other than
 ;; English.
 
-;; [SK] the srfi-7 reference implementation using cond-expand expands
+;; [SK] the SRFI-7 reference implementation using cond-expand expands
 ;; a form that ends with (begin), although the empty begin isn't defined
 ;; in R5RS.
 ;; Gauche usually compiles (begin) into a code that does nothing.
@@ -24,7 +24,7 @@
 ;; compiler optimizer removes <constant> as well.
 ;; A user might be surprised when he finds (program (code 4))
 ;; returns #<undef> ---but note that 'program' form isn't an expression
-;; anyway, so expecting its result is beyond the scope of srfi-7.
+;; anyway, so expecting its result is beyond the scope of SRFI-7.
 
 (define-module srfi.7
   (export program))

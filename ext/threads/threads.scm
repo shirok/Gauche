@@ -246,7 +246,7 @@
   )
 
 ;;===============================================================
-;; Thread locals (srfi-226)
+;; Thread locals (SRFI-226)
 ;;
 
 ;; TRANSIENT: To compile 0.9.13 with 0.9.12
@@ -516,4 +516,3 @@
              (condition-variable-broadcast! (~ barrier'cv))
              (mutex-unlock! (~ barrier'mutex))
              timeout-val]))))
-

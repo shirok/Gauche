@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-135 Immutable Texts
+;;; SRFI-135 Immutable Texts
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

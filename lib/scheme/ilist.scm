@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-116
+;; Originally SRFI-116
 
 ;; Gauche supports immutable pairs natively.  They work transparently
 ;; as mutable pairs, except set-car! and set-cdr!.
@@ -255,7 +255,7 @@
 
 (define (izip lis1 . liss) (apply imap ilist lis1 liss))
 
-;; These are dupe of srfi-1.scm except map/cons replaced with imap/ipair
+;; These are dupe of SRFI-1.SCM except map/cons replaced with imap/ipair
 (define (iunzip1 lis) (imap car lis))
 
 (define (iunzip2 lis)

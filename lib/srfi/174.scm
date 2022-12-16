@@ -1,8 +1,8 @@
 ;;;
-;;; srfi-174 - POSIX Timespecs
+;;; SRFI-174 - POSIX Timespecs
 ;;;
 ;;;   Shiro Kawai
-;;;   This is simply a wrapper of srfi-19 time type.
+;;;   This is simply a wrapper of SRFI-19 time type.
 ;;;   I put this in Public Domain.
 ;;;
 

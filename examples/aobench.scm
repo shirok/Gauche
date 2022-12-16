@@ -47,7 +47,7 @@
 (use gauche.threads)
 (use control.thread-pool)
 (use math.const)
-(use srfi-27)
+(use srfi.27)
 
 (define-constant WIDTH       256)
 (define-constant HEIGHT      256)

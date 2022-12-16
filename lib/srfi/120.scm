@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-120 - Timer
+;;; SRFI-120 - Timer
 ;;;
 ;;;   Copyright (c) 2021-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-69  Basic Hash Tables
+;;; SRFI-69  Basic Hash Tables
 ;;;
 
 ;; This is a thin wrapper to the Gauche's native hashtable support.
@@ -46,7 +46,7 @@
 (define (hash-table-equivalence-function ht)
   (comparator-equality-predicate (hash-table-comparator ht)))
 
-;; NB: srfi-69's hash function must take second argument.
+;; NB: SRFI-69's hash function must take second argument.
 (define (hash-table-hash-function ht)
   (let1 h (comparator-hash-function (hash-table-comparator ht))
     (^[obj :optional (bound #f)]

@@ -119,7 +119,7 @@
   (make-parameter
    (rlet1 s (make-random-source)
      (random-source-randomize! s))
-   (^x (assume random-source? "srfi-27 random source required, but got:" x) x)))
+   (^x (assume random-source? "SRFI-27 random source required, but got:" x) x)))
 
 (define %uuid-random-int
   (random-source-make-integers (uuid-random-source)))

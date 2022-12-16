@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-228 - Composing comparators
+;;; SRFI-228 - Composing comparators
 ;;;
 ;;;   Copyright (c) 2022  Shiro Kawai  <shiro@acm.org>
 ;;;

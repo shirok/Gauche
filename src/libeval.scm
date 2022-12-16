@@ -207,7 +207,7 @@
     (let* ([base (sys-basename dsopath)]
            [stem (or (string-scan-right base #\. 'before) base)])
       (string-append "_Scm_Init_"
-                     ;; string-map is in srfi-13, so we roll our own.
+                     ;; string-map is in SRFI-13, so we roll our own.
                      ;; This looks awful, but we don't call this frequently.
                      (list->string
                       (map (^c (cond [(char-alphabetic? c) (char-downcase c)]

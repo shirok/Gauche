@@ -1,5 +1,5 @@
 ;;
-;; srfi-42 - eager comprehension
+;; SRFI-42 - eager comprehension
 ;;
 ;;  This is a port of Sebastian Egner's reference implementation to Gauche.
 ;;  Ported by Alex Shinn.

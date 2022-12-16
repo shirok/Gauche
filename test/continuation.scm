@@ -503,7 +503,7 @@
 
 (test-section "parameterization")
 
-;; from srfi-226
+;; from SRFI-226
 (let ()
   (define p (make-parameter 10 (^x (* x x))))
   (define ps #f)
@@ -1077,7 +1077,7 @@
 
 (test-section "continuation marks")
 
-;; Examples from srfi-157
+;; Examples from SRFI-157
 
 (test* "continuation marks 1" '(1)
        (let ((key (vector 'key)))
@@ -1211,7 +1211,7 @@
            (continuation-mark-set-first #f 'key2 'default))))
 
 ;; See if parameterize body is evaluated in tail context
-;; (srfi-226)
+;; (SRFI-226)
 (test* "parameterize body in tail context" #t
        (with-continuation-mark 'in-tail-context #t
          (parameterize ([(make-parameter 0) 1])

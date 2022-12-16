@@ -2,7 +2,7 @@
 
 (use gauche.generator)
 (use gauche.process)
-(use srfi-13)
+(use srfi.13)
 (use file.util)
 
 ;; Global parameters

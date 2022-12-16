@@ -137,7 +137,7 @@
       [(include-ci)  `(,include-ci. ,@(cdr decl))]
       [(cond-expand)
        ;; cond-expand needs special handling.  The expansion logic is the
-       ;; same as srfi-0 cond-expand, but we have to treat the expanded
+       ;; same as SRFI-0 cond-expand, but we have to treat the expanded
        ;; form as library-declarations instead of ordinary Scheme expressions.
        ;; The current implementation relies on how cond-expand constructs
        ;; the output; if we change cond-expand, we may need to tweak this
@@ -395,9 +395,9 @@
   (define+ string-ci>?  gauche.unicode)   ; not gauche's.
   (define+ string-ci<=? gauche.unicode)   ; not gauche's.
   (define+ string-ci>=? gauche.unicode)   ; not gauche's.
-  (define+ string-upcase gauche.unicode)   ; not srfi-13's.
-  (define+ string-downcase gauche.unicode) ; not srfi-13's.
-  (define+ string-foldcase gauche.unicode) ; not srfi-13's.
+  (define+ string-upcase gauche.unicode)   ; not SRFI-13's.
+  (define+ string-downcase gauche.unicode) ; not SRFI-13's.
+  (define+ string-foldcase gauche.unicode) ; not SRFI-13's.
   (provide "scheme/char"))
 
 (define-module scheme.complex

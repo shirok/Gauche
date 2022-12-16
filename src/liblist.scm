@@ -211,7 +211,7 @@
 ;;
 
 (select-module gauche)
-(define-cproc length+ (list) ::<integer>? :constant ;; srfi-1
+(define-cproc length+ (list) ::<integer>? :constant ;; SRFI-1
   (let* ([i::int (Scm_Length list)])
     (if (< i 0) (return SCM_FALSE) (return (Scm_MakeInteger i)))))
 
@@ -300,16 +300,16 @@
           (loop cdrs))))))
 
 (select-module gauche)
-(define-inline (null-list? l)           ;srfi-1
+(define-inline (null-list? l)           ;SRFI-1
   (cond [(null? l)]
         [(pair? l) #f]
         [else (error "argument must be a list, but got:" l)]))
 
-(define-inline cons* list*)             ;srfi-1
+(define-inline cons* list*)             ;SRFI-1
 
-(define (last lis) (car (last-pair lis))) ;srfi-1
+(define (last lis) (car (last-pair lis))) ;SRFI-1
 
-(define (iota count :optional (start 0) (step 1)) ;srfi-1
+(define (iota count :optional (start 0) (step 1)) ;SRFI-1
   (unless (and (integer? count) (>= count 0))
     (error "count must be nonnegative integer: " count))
   (if (and (exact? start) (exact? step))
@@ -553,8 +553,8 @@
         (f head (rec (car lis) (cdr lis)))
         head))))
 
-(define (append-reverse list tail)  (reverse list tail)) ;srfi-1 compat
-(define (append-reverse! list tail) (reverse! list tail));srfi-1 compat
+(define (append-reverse list tail)  (reverse list tail)) ;SRFI-1 compat
+(define (append-reverse! list tail) (reverse! list tail));SRFI-1 compat
 
 (define (concatenate  lists) (reduce-right append  '() lists))
 (define (concatenate! lists) (reduce-right append! '() lists))
@@ -601,7 +601,7 @@
           [else (loop (- i 1) (cdr rest) rest)])))
 
 ;; partition is here, for gauche.procedure has partition$ and we don't
-;; want it to depend on srfi-1.  partition! is left in srfi-1, for its
+;; want it to depend on SRFI-1.  partition! is left in SRFI-1, for its
 ;; optimized version is rather complicated.
 (define (partition pred lis)
   (let rec ([lis lis] [xs '()] [ys '()])
@@ -619,7 +619,7 @@
                          ~a elements, but only ~a elements long): ~,,,,70s"
                         k (- k j) list)])))
 
-(define drop list-tail)  ; srfi-1
+(define drop list-tail)  ; SRFI-1
 
 (define (take-right lis k)
   (let loop ([p0 (list-tail lis k)] [p1 lis])

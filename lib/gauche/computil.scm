@@ -63,18 +63,18 @@
 ;; eq-comparator, eqv-comparator, equal-comparator,
 ;; default-comparator - in libomega.scm
 
-;; NB: srfi-128 specifies the comparators returned by make-eq-comparator
+;; NB: SRFI-128 specifies the comparators returned by make-eq-comparator
 ;; and make-eqv-comparator must use default-hash.  So they can be a lot
 ;; more inefficient than eq-comparator and eqv-comparator, and they can't
 ;; be used to hash mutable objects based on their identity.
-(define make-eq-comparator            ; srfi-128
+(define make-eq-comparator            ; SRFI-128
   (let1 c (make-comparator/compare #t eq? eq-compare default-hash) ; singleton
     (^[] c)))
-(define make-eqv-comparator           ; srfi-128
+(define make-eqv-comparator           ; SRFI-128
   (let1 c (make-comparator/compare #t eqv? #f default-hash) ; singleton
     (^[] c)))
 
-;; srfi-114 type-specific comparators
+;; SRFI-114 type-specific comparators
 ;; They are useful to build more complex comparators using aggegate
 ;; comparator constructors.
 (define boolean-comparator
@@ -278,7 +278,7 @@
    (and (comparator-hashable? comparator)
         (comparator-hash-function comparator))))
 
-;; This is not in srfi-114, but generally useful.
+;; This is not in SRFI-114, but generally useful.
 ;; Compare with (accessor obj).
 (define (make-key-comparator comparator test key)
   (let ([ts  (comparator-type-test-predicate comparator)]

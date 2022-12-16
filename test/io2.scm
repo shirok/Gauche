@@ -51,7 +51,7 @@
 ;; SRFI-10 Reader constructor (#,)
 ;;
 
-(test-section "srfi-10 reader constructor")
+(test-section "SRFI-10 reader constructor")
 
 (test "read ctor 1a" '(1 2 #f "4 5")
       (lambda ()
@@ -298,7 +298,7 @@
        isomorphic?)
 
 ;;===============================================================
-;; These test is here since srfi-0 must have been tested before.
+;; These test is here since SRFI-0 must have been tested before.
 ;;
 (test-section "whitespaces")
 
@@ -311,10 +311,10 @@
          [else "a"])))
 
 ;;===============================================================
-;; Interference between srfi-10 and shared structure
+;; Interference between SRFI-10 and shared structure
 ;;
 
-(test-section "combine srfi-10 and srfi-38")
+(test-section "combine SRFI-10 and SRFI-38")
 
 ;; NB: this is an experimental feature.  Do not count on this API!
 (define-reader-ctor 'foo

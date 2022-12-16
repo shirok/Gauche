@@ -6,7 +6,7 @@
 (use gauche.generator)
 (test-start "file utilities")
 (use scheme.list)
-(use srfi-13)
+(use srfi.13)
 
 ;; shorthand of normalizing pathname.  this doesn't do anything on
 ;; unix, but on Windows the separator in PATHNAME is replaced.

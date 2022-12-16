@@ -1,8 +1,8 @@
 ;;;
-;;; srfi-162 - comparator sublibraries
+;;; SRFI-162 - comparator sublibraries
 ;;;
 
-;; This is an addition to srfi-128.
+;; This is an addition to SRFI-128.
 
 (define-module srfi.162
   (export comparator-min comparator-max

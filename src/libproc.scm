@@ -72,7 +72,7 @@
 
 (define-in-module scheme call/cc call-with-current-continuation)
 
-;; srfi-226
+;; SRFI-226
 (define-cproc continuation? (obj) ::<boolean> Scm_ContinuationP)
 
 (select-module gauche.internal)
@@ -146,7 +146,7 @@
         (return (SCM_CDAR p))))
     (return fallback)))
 
-;; srfi-226
+;; SRFI-226
 ;; We use uninterned symbols for unique continuation mark key.
 ;; Since we don't have specialized procedures for the keys specifically
 ;; created with make-continuation-mark-key, our continuation-mark-key?

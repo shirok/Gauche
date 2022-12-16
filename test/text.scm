@@ -133,7 +133,7 @@
 ;;-------------------------------------------------------------------
 (test-section "diff")
 (use text.diff)
-(use srfi-13)
+(use srfi.13)
 (test-module 'text.diff)
 
 (define diff-a "foo
@@ -227,7 +227,7 @@ fuga
 ;;-------------------------------------------------------------------
 (test-section "edn")
 (use text.edn)
-(use srfi-13)
+(use srfi.13)
 (use gauche.uvector)
 (test-module 'text.edn)
 
@@ -321,7 +321,7 @@ fuga
 ;;-------------------------------------------------------------------
 (test-section "html-lite")
 (use text.html-lite)
-(use srfi-13)
+(use srfi.13)
 (test-module 'text.html-lite)
 
 (test* "html-escape-string"
@@ -355,7 +355,7 @@ fuga
        (map string-trim-both
             (string-split (html-doctype :type :xhtml-1.0) #\newline)))
 
-(use srfi-13)
+(use srfi.13)
 
 (let ()
   ;; NB: avoid using tree->string, for we haven't tested it yet.

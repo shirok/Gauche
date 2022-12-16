@@ -205,7 +205,7 @@
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
-(use srfi-13)
+(use srfi.13)
 
 (test* "string-every" #t (string-every #\‚  ""))
 (test* "string-every" #t (string-every #\‚  "‚ ‚ ‚ ‚ "))

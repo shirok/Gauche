@@ -59,8 +59,8 @@
 (select-module data.random)
 
 ;; API
-;;  Use srfi-27's default-random-source as the default, for the compatibility
-;;  to srfi-194.
+;;  Use SRFI-27's default-random-source as the default, for the compatibility
+;;  to SRFI-194.
 ;;  In the current implementation, this is <mersenne-twister> instance, and
 ;;  unless the user explicitly randomize it, it uses a fixed predetermined
 ;;  seed.  It guarantees reproducibility.
@@ -68,7 +68,7 @@
   (make-parameter default-random-source))
 
 ;; random-data-seed and with-random-data-seed are intended to reproduce
-;; sequences that has been generated.  If you simply using srfi-27
+;; sequences that has been generated.  If you simply using SRFI-27
 ;; random-source as a parameter, you can't retrieve its seed value,
 ;; so you can't reproduce the sequence unless you remember what seed value
 ;; you used to initialize the random-source.
@@ -77,7 +77,7 @@
 ;; only for the backward compatibility.
 
 ;; Deprecated API
-;; NB: Currently the only srfi-27 random-source is <mersenne-twister>,
+;; NB: Currently the only SRFI-27 random-source is <mersenne-twister>,
 ;; but we may add other kind of random-source in future.
 (define random-data-seed
   (getter-with-setter

@@ -287,7 +287,7 @@
 
 ;;-------------------------------------------------------------------
 (test-section "string-library")
-(use srfi-13)
+(use srfi.13)
 
 (test "string-every" #t (lambda () (string-every #\あ "")))
 (test "string-every" #t (lambda () (string-every #\あ "ああああ")))

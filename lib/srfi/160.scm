@@ -1,4 +1,4 @@
-;; srfi-160 - Homogeneous numeric vector libraries
+;; SRFI-160 - Homogeneous numeric vector libraries
 
 (define-module srfi.160
   (extend gauche.uvector.u8

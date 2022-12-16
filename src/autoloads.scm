@@ -129,8 +129,8 @@
 (autoload gauche.vm.profiler
           profiler-show profiler-show-load-stats with-profiler)
 
-(autoload srfi-7  (:macro program))
-(autoload srfi-55 (:macro require-extension))
+(autoload srfi.7  (:macro program))
+(autoload srfi.55 (:macro require-extension))
 
 (autoload gauche.interpolate string-interpolate
                              (:macro string-interpolate*))

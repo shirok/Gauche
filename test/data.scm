@@ -299,7 +299,7 @@
 (chibi-test
  (include "include/ideque-tests"))
 
-;; non-srfi-134 api
+;; non-SRFI-134 api
 (test* "make-ideque" '(a a a a a)
        (ideque->list (make-ideque 5 'a)))
 
@@ -413,7 +413,7 @@
 (test-module 'data.heap)
 
 (use scheme.list)
-(use srfi-27)
+(use srfi.27)
 (use gauche.sequence)
 (use util.match)
 
@@ -631,14 +631,14 @@
 (use data.range)
 (test-module 'data.range)
 
-;; srfi-196 is a subset of data.range, and we test it here.
+;; SRFI-196 is a subset of data.range, and we test it here.
 
 (define-module srfi-196-tests
   (define-syntax import (syntax-rules () [(_ . x) #f]))
   (use scheme.list)
-  (use srfi-78)                         ; check
-  (use srfi-158)                        ; generator->list
-  (use srfi-196)
+  (use srfi.78)                         ; check
+  (use srfi.158)                        ; generator->list
+  (use srfi.196)
   (include "include/srfi-196-test"))
 
 ;; gauche extensions
@@ -691,12 +691,12 @@
 (test* "range as a sequence (subseq)" '(3 4 5 6 7)
        (range->list (subseq (numeric-range 0 10) 3 8)))
 
-;; srfi-42 extension
+;; SRFI-42 extension
 (define-module range-srfi-42-test
   (use gauche.test)
   (use data.range)
-  (use srfi-42)
-  (test* "srfi-42 :range" '((a 0) (b 1) (c 2) (d 3) (e 4))
+  (use srfi.42)
+  (test* "SRFI-42 :range" '((a 0) (b 1) (c 2) (d 3) (e 4))
          (list-ec (: v (index k) (vector-range '#(a b c d e)))
                   (list v k)))
   )
@@ -883,8 +883,8 @@
 (define-module ulid-test
   (use gauche.test)
   (use data.ulid)
-  (use srfi-19)
-  (use srfi-78)
+  (use srfi.19)
+  (use srfi.78)
   (use scheme.base)
   (define-syntax import (syntax-rules () [(_ . xs) (begin)]))
   (include "include/ulid-test"))

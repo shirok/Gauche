@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-146
+;; Originally SRFI-146
 (define-module scheme.mapping
   (export mapping mapping-unfold mapping/ordered mapping-unfold/ordered
           mapping? mapping-contains? mapping-empty? mapping-disjoint?

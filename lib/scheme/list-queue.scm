@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-117
+;; Originally SRFI-117
 
 ;; Implemented on top of data.queue in Gauche
 

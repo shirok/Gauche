@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-144
+;; Originally SRFI-144
 (define-module scheme.flonum
   (use math.const :prefix const:)
   (export fl-e fl-1/e fl-e-2 fl-e-pi/4 fl-log2-e fl-log10-e

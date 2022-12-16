@@ -42,7 +42,7 @@
   ;; before this form.   Furthermore, the semantics of this form is ambigous
   ;; when used except top-level.  It's not very nice, so you should
   ;; avoid this form unless you really need it.
-  ;; NB: filter is in srfi-1, and we don't want to load it here.  Ugh.
+  ;; NB: filter is in SRFI-1, and we don't want to load it here.  Ugh.
   `(export
     ,@(let loop ([syms symbols] [r '()])
         (cond [(null? syms) (reverse! r)]

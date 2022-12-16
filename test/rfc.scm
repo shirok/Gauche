@@ -6,7 +6,7 @@
 (use gauche.sequence)
 (use gauche.process)
 (use util.match)
-(use srfi-19)
+(use srfi.19)
 (test-start "rfc")
 
 ;; rfc.822 test is in ext/rfc
@@ -135,7 +135,7 @@
 (use rfc.cookie)
 (test-module 'rfc.cookie)
 (use scheme.list)
-(use srfi-19)
+(use srfi.19)
 
 (test* "parse, old" '(("foo" "bar")
                       ("aaa" "bbb" :path "/a/b" :domain "a.b.com")
@@ -185,8 +185,8 @@
          "guest-account=87975348;Domain=zzz.com;Path=/zzz;Secure;Comment=\"ZzzZzz, OooOoo\";CommentURL=\"http://foo.com/hogehoge\"")
        (construct-cookie-string *cookie-spec* 1))
 
-;; test for formatting srfi-19 time/date
-(test* "cookie, old, srfi-19 date"
+;; test for formatting SRFI-19 time/date
+(test* "cookie, old, SRFI-19 date"
        '("foo=bar;Expires=Sun, 09-Sep-2001 01:46:40 GMT"
          "foo=baz;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
        (construct-cookie-string
@@ -810,8 +810,8 @@
 
 (use rfc.uuid)
 (test-module 'rfc.uuid)
-(use srfi-13)
-(use srfi-27)
+(use srfi.13)
+(use srfi.27)
 
 (let1 u "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
   (test* "uuid-parse & write 1" u

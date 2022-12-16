@@ -31,27 +31,27 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-151
+;; Originally SRFI-151
 
 (define-module scheme.bitwise
   (use scheme.list)
   (use scheme.vector)
   (use srfi.60)
   (use gauche.generator)
-  (export bitwise-not                   ; srfi-60
-          bitwise-and                   ; srfi-60
-          bitwise-ior                   ; srfi-60
-          bitwise-xor                   ; srfi-60
+  (export bitwise-not                   ; SRFI-60
+          bitwise-and                   ; SRFI-60
+          bitwise-ior                   ; SRFI-60
+          bitwise-xor                   ; SRFI-60
           bitwise-eqv
           bitwise-nand  bitwise-nor
           bitwise-andc1 bitwise-andc2
           bitwise-orc1  bitwise-orc2
 
-          arithmetic-shift              ; srfi-60
+          arithmetic-shift              ; SRFI-60
           bit-count                     ; builtin
           integer-length                ; builtin
 
-          bitwise-if                    ; srfi-60
+          bitwise-if                    ; SRFI-60
           bit-set?                      ; builtin
           copy-bit                      ; builtin
           bit-swap
@@ -118,8 +118,8 @@
 (define (bit-field-replace-same dst src start end)
   (copy-bit-field dst (bit-field src start end) start end))
 
-(define bit-field-rotate rotate-bit-field) ;srfi-60
-(define bit-field-reverse reverse-bit-field) ;srfi-60
+(define bit-field-rotate rotate-bit-field) ;SRFI-60
+(define bit-field-reverse reverse-bit-field) ;SRFI-60
 
 (define (bits->list n . opts)
   (assume (not (negative? n)))

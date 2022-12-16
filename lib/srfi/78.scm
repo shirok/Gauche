@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-78 - Lightweight testing
+;;; SRFI-78 - Lightweight testing
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; If srfi-78 is used within gauche.test framework, we integrate
+;; If SRFI-78 is used within gauche.test framework, we integrate
 ;; it into gauche.test---that is, check works as a wrapper of test*.
 ;; Otherwise, check bookkeeps its own testing.
 
@@ -46,7 +46,7 @@
 (define check-mode (make-parameter 'report))
 
 ;; API
-;; NB: If srfi-78 runs within gauche.test, it doesn't do any reporting
+;; NB: If SRFI-78 runs within gauche.test, it doesn't do any reporting
 ;; by itself.
 (define (check-set-mode! mode)
   (ecase mode

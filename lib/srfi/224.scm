@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-224 - Integer Mappings
+;;; SRFI-224 - Integer Mappings
 ;;;
 ;;;   Copyright (c) 2021-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

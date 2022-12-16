@@ -185,7 +185,7 @@
 (test* "base-35 reader" '(#t #t) (radix-tester 35))
 (test* "base-36 reader" '(#t #t) (radix-tester 36))
 
-;; srfi-169 underscore in numbers
+;; SRFI-169 underscore in numbers
 (let ([data '(("0123"     . 123)
               ("0_1_2_3"  . 123)
               ("0_123"    . 123)
@@ -249,10 +249,10 @@
               ("#i_#o_1234"     . #f)
               ("#e#x1234_"      . #f))])
   (dolist [d data]
-    (test* (format "srfi-169 ~s" d) (cdr d)
+    (test* (format "SRFI-169 ~s" d) (cdr d)
            (string->number (car d)))))
 
-(test* "srfi-169 not allowed in r7rs strict mode"
+(test* "SRFI-169 not allowed in r7rs strict mode"
        (test-error <read-error> #/bad numeric format/)
        (read-from-string "#!r7rs #x1234_5678"))
 
@@ -2163,7 +2163,7 @@
 (test* "logior (error)" (test-error) (logior 3 1/2))
 (test* "logxor (error)" (test-error) (logxor 3 1/2))
 
-;; zero and one-argument bitops a la srfi-60
+;; zero and one-argument bitops a la SRFI-60
 (test* "logand (0arg)" -1 (logand))
 (test* "logand (1arg)" 1 (logand 1))
 (test* "logand (1arg)" (test-error) (logand 3.14))

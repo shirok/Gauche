@@ -198,7 +198,7 @@
 ;; <init-value> (or #f if <init-value> is omitted).
 
 (define-macro (define-simple-struct name tag constructor :optional (slot-defs '()))
-  (define (take l n) ; we can't use srfi-1 take, so here it is.
+  (define (take l n) ; we can't use SRFI-1 take, so here it is.
     (if (zero? n) '() (cons (car l) (take (cdr l) (- n 1)))))
   (define (make-constructor)
     (let ([args (gensym)]

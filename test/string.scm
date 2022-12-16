@@ -51,11 +51,11 @@
 (test* "string->list" '(#\a #\b #\c #\d #\e #\f #\g)
        (string->list "abcdefg"))
 (test* "string->list" '(#\c #\d #\e #\f #\g)
-       (string->list "abcdefg" 2)) ;srfi-13 extension
+       (string->list "abcdefg" 2)) ;SRFI-13 extension
 (test* "string->list" '(#\c #\d #\e)
-       (string->list "abcdefg" 2 5)) ;srfi-13 extension
+       (string->list "abcdefg" 2 5)) ;SRFI-13 extension
 (test* "string->list" '(#\a)
-       (string->list "abcdefg" 0 1)) ;srfi-13 extension
+       (string->list "abcdefg" 0 1)) ;SRFI-13 extension
 (test* "string->list" '() (string->list ""))
 
 (test* "string-copy" '("abcde" #f)
@@ -492,9 +492,9 @@
 (test* "string-map, multi arg" "orpng"
        (string-map (^[a b] (if (char>? a b) a b))
                    "apple" "orange"))
-(test* "string-map, srfi-13 style" "CALIFRAGILISTICEXPIALIDOCIOUS"
+(test* "string-map, SRFI-13 style" "CALIFRAGILISTICEXPIALIDOCIOUS"
        (string-map char-upcase "supercalifragilisticexpialidocious" 5))
-(test* "string-map, srfi-13 style" "CALIFRAGILISTIC"
+(test* "string-map, SRFI-13 style" "CALIFRAGILISTIC"
        (string-map char-upcase "supercalifragilisticexpialidocious" 5 20))
 (test* "string-map, bad arg" (test-error)
        (string-map (^ _ #\space) "abc" 'def))
@@ -511,7 +511,7 @@
        (with-output-to-string
          (cut string-for-each (^[a b] (write-char (if (char>? a b) a b)))
               "Kaua'i" "Ni'ihau")))
-(test* "string-for-each srfi-13 style" "califragilistic"
+(test* "string-for-each SRFI-13 style" "califragilistic"
        (with-output-to-string
          (cut string-for-each write-char
               "supercalifragilisticexpialidocious" 5 20)))

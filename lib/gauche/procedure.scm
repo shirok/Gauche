@@ -73,7 +73,7 @@
 (define (for-each$ proc) (pa$ for-each proc))
 (define (apply$ proc)    (pa$ apply proc))
 
-;; partial evaluation version of srfi-1 procedures
+;; partial evaluation version of SRFI-1 procedures
 (define (count$ pred) (pa$ count pred))
 (define (fold$ kons . maybe-knil)
   (^ lists (apply fold kons (append maybe-knil lists))))

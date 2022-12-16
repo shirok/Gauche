@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-176 version-alist - autoloaded
+;;; SRFI-176 version-alist - autoloaded
 ;;;
 
 (define-module gauche.version-alist

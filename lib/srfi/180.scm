@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-180 - JSON
+;;; SRFI-180 - JSON
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -201,7 +201,7 @@
             [else (rec (proc tok seed) stack)])))
   (rec seed '()))
 
-;; Common utility to adapt rfc.json with srfi-180 API.  We skip
+;; Common utility to adapt rfc.json with SRFI-180 API.  We skip
 ;; json-fold/json-generator stuff entirely.
 (define (with-json-parser proc lseq)
   (parameterize ((json-special-handler (^x (case x

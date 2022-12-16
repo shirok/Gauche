@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-193 - Command line
+;;; SRFI-193 - Command line
 ;;;
 ;;;   Public Domain
 ;;;

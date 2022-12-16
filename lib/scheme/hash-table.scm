@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-125.
+;; Originally SRFI-125.
 
 ;; Most of procedures are built-in, though some of them have different names
 ;; to avoid conflict with traditional Gauche procedures.
@@ -95,7 +95,7 @@
           ))
 (select-module scheme.hash-table)
 
-;; srfi-69 compatibility layer
+;; SRFI-69 compatibility layer
 
 (define %make-hash-table (with-module gauche make-hash-table))
 (define %alist->hash-table (with-module gauche alist->hash-table))
@@ -109,7 +109,7 @@
         [else (make-comparator #t eq-fn #f default-hash)]))
 
 (define (make-hash-table cmpr . args)
-  (if (procedure? cmpr)                 ; srfi-69
+  (if (procedure? cmpr)                 ; SRFI-69
     (if (and (pair? args) (procedure? (car args)))
       (%make-hash-table (make-comparator #t cmpr #f (car args)))
       (%make-hash-table (%eq-fn->comparator cmpr)))
@@ -121,7 +121,7 @@
          (if (pair? kvs)
            (apply hash-table-r7 (make-comparator #t cmpr #f (cadr kvs))
                   (cdr kvs))
-           (error "missing hash function in hash-table (srfi-69 compatibility):"
+           (error "missing hash function in hash-table (SRFI-69 compatibility):"
                   (list 'hash-table cmpr)))]
         [else (error "comparator or procedure expected, but got:" cmpr)]))
 
@@ -129,7 +129,7 @@
   ;; ignore args
   (cond [(comparator? cmpr) (%alist->hash-table alist cmpr)]
         [(procedure? cmpr)
-         ;; srfi-69 compatibility
+         ;; SRFI-69 compatibility
          (if (null? args)
            (%alist->hash-table alist (%eq-fn->comparator cmpr))
            (let* ([eq-proc cmpr]
@@ -152,14 +152,14 @@
 (define (hash-table-merge! ht1 ht2) (hash-table-union! ht1 ht2))
 
 (define (hash obj :optional ignore)
-  (warn "srfi-69 `hash' is deprecated.  Use `default-hash' instead.")
+  (warn "SRFI-69 `hash' is deprecated.  Use `default-hash' instead.")
   (default-hash obj))
 (define (string-hash obj :optional ignore)
   ((with-module gauche string-hash) obj))
 (define (string-ci-hash obj :optional ignore)
   ((with-module gauche string-ci-hash) obj))
 (define (hash-by-identity obj :optional ignore)
-  (warn "srfi-69 `hash-by-identity' is deprecated and does not work compatible way with Gauche's eq-hash.")
+  (warn "SRFI-69 `hash-by-identity' is deprecated and does not work compatible way with Gauche's eq-hash.")
   (default-hash obj))
 
 (define (hash-table-equivalence-function ht)

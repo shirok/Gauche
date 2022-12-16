@@ -552,7 +552,7 @@
                  (if (= i -1) (values 0 #f) (loop i)))))))))
 
 ;; Search NEEDLE from SEQ.  Returns index if found, #f if not.
-;; The name is aligned to string-contains in srfi-13.
+;; The name is aligned to string-contains in SRFI-13.
 (define-method sequence-contains ((hay <sequence>) (needle <sequence>)
                                   :key ((:test test-proc) eqv?))
   (if-let1 stepper (sequence->kmp-stepper needle :test test-proc)

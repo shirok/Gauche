@@ -1716,7 +1716,7 @@
     (define use-frames (cenv-frames use-env))
     (let1 dict '()
       (define %rename
-        ;; NB: We attach macro input in a procedure tag value (not the srfi-229
+        ;; NB: We attach macro input in a procedure tag value (not the SRFI-229
         ;; tag, but using the native alist tag.)  Quasirename retrieves this
         ;; info and attach it to the output.
         ;; For now, we don't have lambda/tags-alist, so we have to copy

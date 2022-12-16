@@ -2,8 +2,8 @@
 ;;; SRFI-121 Generators
 ;;;
 
-;; Procedures of srfi-121 are provided from gauche.generator
-;; We re-export srfi-121 specific bindings
+;; Procedures of SRFI-121 are provided from gauche.generator
+;; We re-export SRFI-121 specific bindings
 
 (define-module srfi.121
   (use gauche.generator)

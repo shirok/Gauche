@@ -394,8 +394,8 @@
 ;;; Bitvectors
 ;;;
 
-(define-cproc bitvector? (obj) ::<boolean> SCM_BITVECTORP) ;srfi-178
-(define-cproc bitvector-length (v::<bitvector>) ::<int>    ;srfi-178
+(define-cproc bitvector? (obj) ::<boolean> SCM_BITVECTORP) ;SRFI-178
+(define-cproc bitvector-length (v::<bitvector>) ::<int>    ;SRFI-178
   SCM_BITVECTOR_SIZE)
 
 (define-cproc bitvector-any-value? (v::<bitvector> bit
@@ -418,20 +418,20 @@
       (return (Scm_BitsEvery (SCM_BITVECTOR_BITS v) start end))
       (return (not (Scm_BitsAny (SCM_BITVECTOR_BITS v) start end))))))
 
-(define-cproc make-bitvector (len::<fixnum> :optional (init #f)) ;srfi-178
+(define-cproc make-bitvector (len::<fixnum> :optional (init #f)) ;SRFI-178
   Scm_MakeBitvector)
-(define-cproc bitvector (:rest bits) Scm_ListToBitvector) ;srfi-178
-(define-cproc list->bitvector (bits) Scm_ListToBitvector) ;srfi-178
+(define-cproc bitvector (:rest bits) Scm_ListToBitvector) ;SRFI-178
+(define-cproc list->bitvector (bits) Scm_ListToBitvector) ;SRFI-178
 
-(define-cproc string->bitvector (s::<string>) ;srfi-178
+(define-cproc string->bitvector (s::<string>) ;SRFI-178
   (return (Scm_StringToBitvector s TRUE)))
-(define-cproc bitvector->string (v::<bitvector>) ;srfi-178
+(define-cproc bitvector->string (v::<bitvector>) ;SRFI-178
   (return (Scm_BitvectorToString v TRUE)))
 
-(define-cproc bit->integer (bit) ::<int> Scm_Bit2Int) ;srfi-178
-(define-cproc bit->boolean (bit) ::<boolean> Scm_Bit2Int) ;srfi-178
+(define-cproc bit->integer (bit) ::<int> Scm_Bit2Int) ;SRFI-178
+(define-cproc bit->boolean (bit) ::<boolean> Scm_Bit2Int) ;SRFI-178
 
-(define-cproc bitvector-set! (v::<bitvector> i::<fixnum> b) ::<void> ;srfi-178
+(define-cproc bitvector-set! (v::<bitvector> i::<fixnum> b) ::<void> ;SRFI-178
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
     (Scm_Error "bitvector index out of range: %ld" i))
   (SCM_BITVECTOR_CHECK_MUTABLE v)
@@ -439,7 +439,7 @@
     (SCM_BITS_SET (SCM_BITVECTOR_BITS v) i)
     (SCM_BITS_RESET (SCM_BITVECTOR_BITS v) i)))
 
-(define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum> ;srfi-178
+(define-cproc bitvector-ref/int (v::<bitvector> i::<fixnum> ;SRFI-178
                                                 :optional fallback)
   (setter bitvector-set!)
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
@@ -450,7 +450,7 @@
               (SCM_MAKE_INT 1)
               (SCM_MAKE_INT 0))))
 
-(define-cproc bitvector-ref/bool (v::<bitvector> i::<fixnum> ;srfi-178
+(define-cproc bitvector-ref/bool (v::<bitvector> i::<fixnum> ;SRFI-178
                                                  :optional fallback)
   (setter bitvector-set!)
   (when (or (< i 0) (>= i (SCM_BITVECTOR_SIZE v)))
@@ -461,14 +461,14 @@
 
 (define-cproc bitvector-copy (v::<bitvector>
                               :optional (start::<fixnum> 0)
-                                        (end::<fixnum> -1)) ;srfi-178
+                                        (end::<fixnum> -1)) ;SRFI-178
   Scm_BitvectorCopy)
 
 (define-cproc bitvector-copy! (dest::<bitvector>
                                dstart::<fixnum>
                                src::<bitvector>
                                :optional (start::<fixnum> 0)
-                                         (end::<fixnum> -1)) ;srfi-178
+                                         (end::<fixnum> -1)) ;SRFI-178
   Scm_BitvectorCopyX)
 
 ;;;

@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-132
+;; Originally SRFI-132
 (define-module scheme.sort
   (use gauche.sequence)
   (use gauche.generator)

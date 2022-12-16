@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Superset of srfi-196
+;; Superset of SRFI-196
 
 (define-module data.range
   (use gauche.sequence)
@@ -75,7 +75,7 @@
 (select-module data.range)
 
 ;; The classes <range> and <flat-range> are private.  Users must use
-;; srfi-196 API.
+;; SRFI-196 API.
 
 ;; In Gauche, a range is a sequence whose element may be computed from
 ;; the index.

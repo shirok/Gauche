@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-209 - Enums and enum sets
+;;; SRFI-209 - Enums and enum sets
 ;;;
 ;;;   Copyright (c) 2022  Shiro Kawai  <shiro@acm.org>
 ;;;

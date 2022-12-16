@@ -35,10 +35,10 @@
 ;; so the new code no longer needs to use this module.
 ;;
 ;; An important compatibility node: As of 0.9.13, Gauche's built-in parameterize
-;; becomes to be based on srfi-226 rather than dynamic-wind.  The former
+;; becomes to be based on SRFI-226 rather than dynamic-wind.  The former
 ;; has a nicer property that the body of parameterize can be tail context.
 ;; Other than that, the two works almost the same, except when a delimited
-;; continuation is involved.  See the discussion of srfi-226.
+;; continuation is involved.  See the discussion of SRFI-226.
 ;;
 ;; Since legacy code uses this module, we export backward-compatible
 ;; parameterize/dynwind as parameterize from this module.  That is,

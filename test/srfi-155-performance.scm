@@ -1,6 +1,6 @@
 (use gauche.time)
 
-(use srfi-155 :prefix srfi-155:)
+(use srfi.155 :prefix srfi-155:)
 (use scheme.lazy :prefix lazy:)
 
 (define *count* 0)

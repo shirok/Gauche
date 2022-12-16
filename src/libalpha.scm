@@ -63,7 +63,7 @@
       (loop (cddr args) (list* (cadr args) (car args) keys))
       (values (reverse! keys) args))))
 
-(define (%make-error-message msg args) ; srfi-23 style message
+(define (%make-error-message msg args) ; SRFI-23 style message
   (let1 p (open-output-string)
     (display msg p)
     (dolist [obj args] (display " " p) (write/ss obj p))
@@ -110,7 +110,7 @@
 (define-cproc make-vector (k::<fixnum> :optional fill) Scm_MakeVector)
 
 ;;;
-;;;  srfi-17 support
+;;;  SRFI-17 support
 ;;;
 
 ;; some libraries needs to set the setter procedures during initialization,

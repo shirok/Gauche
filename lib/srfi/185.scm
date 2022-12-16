@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-185 - Linear adjustable-length strings
+;;; SRFI-185 - Linear adjustable-length strings
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

@@ -2,7 +2,7 @@
 
 (use gauche.test)
 (use scheme.list)
-(use srfi-19)
+(use srfi.19)
 (use data.queue)
 
 (test-start "control")
@@ -401,15 +401,15 @@
          (scheduler-terminate! sched))
   )
 
-;; srfi-120 is a wrapper of control.scheduler
-(use srfi-120)
-(test-module 'srfi-120)
+;; SRFI-120 is a wrapper of control.scheduler
+(use srfi.120)
+(test-module 'srfi.120)
 
 (define-module srfi-120-test
-  (use srfi-64)
-  (use srfi-18)
-  (use srfi-19)
-  (use srfi-120)
+  (use srfi.64)
+  (use srfi.18)
+  (use srfi.19)
+  (use srfi.120)
   (define-syntax import (syntax-rules () ([_ . x] '())))
   (define-syntax cond-expand (syntax-rules () ([_ . x] '())))
   (define (error-object? x) (<error> x))

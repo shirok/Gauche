@@ -18,7 +18,7 @@
 
 ;;-----------------------------------------------------------------------
 ;; Feature-based conditional expansion
-(test-section "srfi-0")
+(test-section "SRFI-0")
 
 (define-module srfi-0-tests
   (use gauche.test)
@@ -26,21 +26,21 @@
   (test-module 'srfi.0)
 
   (test* "cond-expand" 0
-         (cond-expand [(library srfi-0) 0] [else 1]))
+         (cond-expand [(library srfi.0) 0] [else 1]))
   (test* "cond-expand" 1
          (cond-expand [hogehoge 0] [else 1]))
   (test* "cond-expand" 0
-         (cond-expand [(and (library srfi-0) (library srfi-1)) 0] [else 1]))
+         (cond-expand [(and (library srfi.0) (library srfi.1)) 0] [else 1]))
   (test* "cond-expand" #t
-         (cond-expand [(and (library srfi-2) (library srfi-1))
-                       (use srfi-1) (procedure? xcons)]
+         (cond-expand [(and (library srfi.2) (library srfi.1))
+                       (use srfi.1) (procedure? xcons)]
                       [else #f]))
   (test* "cond-expand" 0
-         (cond-expand [(or hogehoge (library srfi-1)) 0] [else 1]))
+         (cond-expand [(or hogehoge (library srfi.1)) 0] [else 1]))
   (test* "cond-expand" 0
-         (cond-expand [(or (library srfi-1) hogehoge) 0] [else 1]))
+         (cond-expand [(or (library srfi.1) hogehoge) 0] [else 1]))
   (test* "cond-expand" 1
-         (cond-expand [(or (not (library srfi-1)) hogehoge) 0] [else 1]))
+         (cond-expand [(or (not (library srfi.1)) hogehoge) 0] [else 1]))
   (test* "cond-expand" 0
          (cond-expand [gauche 0] [else 1]))
   (test* "cond-expand" 0
@@ -50,11 +50,11 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; srfi-1 is scheme.list
+;; SRFI-1 is scheme.list
 
 ;;-----------------------------------------------------------------------
 ;; And-let*
-(test-section "srfi-2")
+(test-section "SRFI-2")
 
 (define-module srfi-2-tests
   (use gauche.test)
@@ -87,7 +87,7 @@
 ;;-----------------------------------------------------------------------
 ;; A compatible let form with signatures and rest arguments
 
-(test-section "srfi-5")
+(test-section "SRFI-5")
 
 (define-module srfi-5-test
   (use gauche.test)
@@ -131,9 +131,9 @@
 
 ;;-----------------------------------------------------------------------
 ;; Feature-based program configuration language
-(test-section "srfi-7")
+(test-section "SRFI-7")
 
-;; NB: srfi-7 is a "meta-language".   The 'program' form doesn't need
+;; NB: SRFI-7 is a "meta-language".   The 'program' form doesn't need
 ;; to be evaluated within Scheme---an implementation can use a preprocessor
 ;; to produce an evaluatable form from the 'program' form.
 ;; Gauche directly expands it within the macro processor and evaluates it.
@@ -219,14 +219,14 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; srfi-14 charset : moved to ext/scheme
+;; SRFI-14 charset : moved to ext/scheme
 
 ;;-----------------------------------------------------------------------
-;; srfi-16 case-lambda : moved to procedure.scm (builtin)
+;; SRFI-16 case-lambda : moved to procedure.scm (builtin)
 
 ;;-----------------------------------------------------------------------
 ;; Generalized set!
-(test-section "srfi-17")
+(test-section "SRFI-17")
 
 (define-module srfi-17-tests
   (use gauche.test)
@@ -316,7 +316,7 @@
 ;;-----------------------------------------------------------------------
 ;; Notation for specializing parameters without currying
 
-(test-section "srfi-26")
+(test-section "SRFI-26")
 
 (define-module srfi-26-tests
   (use gauche.test)
@@ -364,19 +364,19 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; srfi-27 depends on mt-random, and will be tested in ext/mt-random/test.scm
+;; SRFI-27 depends on mt-random, and will be tested in ext/mt-random/test.scm
 
 ;;-----------------------------------------------------------------------
 ;; Localization
 
-(test-section "srfi-29")
+(test-section "SRFI-29")
 
 (define-module srfi-29-tests
   (use gauche.test)
   (use srfi.29)
   (test-module 'srfi.29)
 
-  ;; test taken from the example of srfi-29 document.
+  ;; test taken from the example of SRFI-29 document.
   (let ((translations
          '(((en) . ((time . "Its ~a, ~a.")
                     (goodbye . "Goodbye, ~a.")))
@@ -417,18 +417,18 @@
 ;;-----------------------------------------------------------------------
 ;; Nested multi-line comments
 
-(test-section "srfi-30")
+(test-section "SRFI-30")
 
 (define-module srfi-30-tests
   (use gauche.test)
 
-  (test "srfi-30" 1
+  (test "SRFI-30" 1
         (^[] #|hohoho|# 1))
 
-  (test "srfi-30" '(1)
+  (test "SRFI-30" '(1)
         (^[] '(#|hohoho|# 1)))
 
-  (test "srfi-30, multiline" '(1)
+  (test "SRFI-30, multiline" '(1)
         (^[]
           '(
             #|
@@ -436,7 +436,7 @@
             |#
             1)))
 
-  (test "srfi-30, multiline" '(1)
+  (test "SRFI-30, multiline" '(1)
         (^[]
           '(1
             #|
@@ -444,7 +444,7 @@
             |#
             )))
 
-  (test "srfi-30, multiline" '()
+  (test "SRFI-30, multiline" '()
         (^[]
           '(
             #|
@@ -452,19 +452,19 @@
             |#
             )))
 
-  (test "srfi-30, nesting" '(1)
+  (test "SRFI-30, nesting" '(1)
         (^[]
           '(#| nested #| nested |# nested |# 1)))
 
-  (test "srfi-30, nesting" '(1)
+  (test "SRFI-30, nesting" '(1)
         (^[]
           '(#| nested #| nested; |# nested |# 1)))
 
-  (test "srfi-30, nesting" '(1)
+  (test "SRFI-30, nesting" '(1)
         (^[]
           '(#|##|###|#|||#### ||#|||||#|#1)))
 
-  (test "srfi-30, intertwined" '(1)
+  (test "SRFI-30, intertwined" '(1)
         (^[]
           '(;; #| this is a single-line comment
             1 #|
@@ -476,11 +476,11 @@
                                         ;and this is in single-line comment
             )))
 
-  (test "srfi-30, dot syntax" '(1 . 1)
+  (test "SRFI-30, dot syntax" '(1 . 1)
         (^[]
           '(1 . #|foo bar|#1)))
 
-  (test "srfi-30, quasiquote" '(1 #(2 3))
+  (test "SRFI-30, quasiquote" '(1 #(2 3))
         (^[]
           (let ([x 1] [y 2])
             `(#|foo|# ,x #|foo|# #(#|,|# ,y ,(+ #|x|# x y #|y|#) #|foo|#)))))
@@ -489,14 +489,14 @@
 ;;-----------------------------------------------------------------------
 ;; A special form 'rec'
 
-(test-section "srfi-31")
+(test-section "SRFI-31")
 
 (define-module srfi-31-tests
   (use gauche.test)
   (use srfi.31)
   (test-module 'srfi.31)
 
-  ;; taken from srfi-31 document
+  ;; taken from SRFI-31 document
 
   (define f (rec (f n)
               ((rec (g k l)
@@ -504,10 +504,10 @@
                    l
                    (g (- k 1) (* k l)))) n 1)))
 
-  (test "srfi-31" 1 (^[] (f 0)))
-  (test "srfi-31" 3628800 (^[] (f 10)))
+  (test "SRFI-31" 1 (^[] (f 0)))
+  (test "SRFI-31" 3628800 (^[] (f 10)))
 
-  (test "srfi-31" "11111"
+  (test "SRFI-31" "11111"
         (^[] (with-output-to-string
                (^[] (let loop ([i 0]
                                [stream (rec s (cons 1 (delay s)))])
@@ -519,7 +519,7 @@
 ;;-----------------------------------------------------------------------
 ;; args-fold
 
-(test-section "srfi-37")
+(test-section "SRFI-37")
 
 (define-module srfi-37-tests
   (use gauche.test)
@@ -554,41 +554,41 @@
                    '() '())
       (list (reverse opts) (reverse operands))))
 
-  (test* "srfi-37 (short)" '((i l b) ())
+  (test* "SRFI-37 (short)" '((i l b) ())
          (test-options "-ilb"))
 
-  (test* "srfi-37 (short, arg)" '((i (o . "foo") l (d . "8")) ())
+  (test* "SRFI-37 (short, arg)" '((i (o . "foo") l (d . "8")) ())
          (test-options "-iofoo" "-l" "-d8"))
 
-  (test* "srfi-37 (short, arg)" '(((o . "foo") (d . #f)) ("bar"))
+  (test* "SRFI-37 (short, arg)" '(((o . "foo") (d . #f)) ("bar"))
          (test-options "-o" "foo" "-d" "bar"))
 
-  (test* "srfi-37 (short, missing arg)" '(((o . "-d")) ("bar"))
+  (test* "SRFI-37 (short, missing arg)" '(((o . "-d")) ("bar"))
          (test-options "-o" "-d" "bar"))
 
-  (test* "srfi-37 (short, missing arg)" '(((o . #f)) ())
+  (test* "SRFI-37 (short, missing arg)" '(((o . #f)) ())
          (test-options "-o"))
 
-  (test* "srfi-37 (long, arg)" '((l i (d . "v") b (d . #f)) ())
+  (test* "SRFI-37 (long, arg)" '((l i (d . "v") b (d . #f)) ())
          (test-options "--long-display" "--interactive" "--debug=v" "-bd"))
 
-  (test* "srfi-37 (long, arg)" '((l i (d . "v") b (d . #f)) ())
+  (test* "SRFI-37 (long, arg)" '((l i (d . "v") b (d . #f)) ())
          (test-options "--long-display" "--interactive" "--debug=v" "-bd"))
 
-  (test* "srfi-37 (operand)" '((i b) ("foo" "bar"))
+  (test* "SRFI-37 (operand)" '((i b) ("foo" "bar"))
          (test-options "-i" "foo" "-b" "bar"))
 
-  (test* "srfi-37 (operand)" '((i) ("foo" "-b" "bar"))
+  (test* "SRFI-37 (operand)" '((i) ("foo" "-b" "bar"))
          (test-options "-i" "--" "foo" "-b" "bar"))
 
-  (test* "srfi-37 (operand)" '((i b) ("-" "foo" "bar"))
+  (test* "SRFI-37 (operand)" '((i b) ("-" "foo" "bar"))
          (test-options "-i" "-" "foo" "-b" "bar"))
   )
 
 ;;-----------------------------------------------------------------------
 ;;  streams
 
-(test-section "srfi-41")
+(test-section "SRFI-41")
 
 (define-module srfi-41-tests
   (use gauche.test)
@@ -598,14 +598,14 @@
 ;;-----------------------------------------------------------------------
 ;; Eager comprehension
 
-(test-section "srfi-42")
+(test-section "SRFI-42")
 
 (define-module srfi-42-tests
   (use gauche.test)
   (use srfi.42)
   (test-module 'srfi.42)
 
-  ;; tests took from examples of srfi-42 reference implementation.
+  ;; tests took from examples of SRFI-42 reference implementation.
 
   (test* "do-ec" 1
          (let ([x 0]) (do-ec (set! x (+ x 1))) x))
@@ -1077,7 +1077,7 @@
 ;;-----------------------------------------------------------------------
 ;; Integers as bits
 
-(test-section "srfi-60")
+(test-section "SRFI-60")
 
 (define-module srfi-60-tests
   (use gauche.test)
@@ -1134,7 +1134,7 @@
 ;;-----------------------------------------------------------------------
 ;; A Scheme API for test suites
 
-(test-section "srfi-64")
+(test-section "SRFI-64")
 
 (define-module srfi-64-tests
   (use gauche.test)
@@ -1145,18 +1145,18 @@
 ;;-----------------------------------------------------------------------
 ;; Octet vectors
 
-(test-section "srfi-66")
+(test-section "SRFI-66")
 
 (define-module srfi-66-tests
   (use gauche.test)
   (use gauche.uvector)
 
-  ;; srfi-66 provides u8vector-copy! with different argument order,
+  ;; SRFI-66 provides u8vector-copy! with different argument order,
   ;; so import it with prefix to avoid conflict.
   (use srfi.66 :prefix srfi-66:)
   (test-module 'srfi.66)
 
-  (test* "srfi-66 uvector-copy!" '#u8(0 0 1 2 3 0 0)
+  (test* "SRFI-66 uvector-copy!" '#u8(0 0 1 2 3 0 0)
          (rlet1 v (u8vector 0 0 0 0 0 0 0)
            (srfi-66:u8vector-copy! '#u8(0 1 2 3 4) 1 v 2 3)))
   )
@@ -1164,7 +1164,7 @@
 ;;-----------------------------------------------------------------------
 ;; Basic hash tables
 
-(test-section "srfi-69")
+(test-section "SRFI-69")
 
 (define-module srfi-69-tests
   (use gauche.test)
@@ -1366,7 +1366,7 @@
 ;;-----------------------------------------------------------------------
 ;; Octed-addressed binary blocks
 
-(test-section "srfi-74")
+(test-section "SRFI-74")
 
 (define-module srfi-74-tests
   (use gauche.test)
@@ -1456,10 +1456,10 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; Lightweight testing.  srfi-78 is used in other srfi's testing, so
+;; Lightweight testing.  SRFI-78 is used in other srfi's testing, so
 ;; we only check module bindings.
 
-(test-section "srfi-78")
+(test-section "SRFI-78")
 
 (define-module srfi-78-tests
   (use gauche.test)
@@ -1470,7 +1470,7 @@
 ;;-----------------------------------------------------------------------
 ;; An interface to access environment variables.  Just aliases of built-ins.
 
-(test-section "srfi-98")
+(test-section "SRFI-98")
 
 (define-module srfi-98-tests
   (use gauche.test)
@@ -1481,7 +1481,7 @@
 ;;-----------------------------------------------------------------------
 ;; (scheme.rlist) Purely functional random-access pairs and lists
 
-(test-section "srfi-101")
+(test-section "SRFI-101")
 
 (define-module srfi-101-tests
   (use gauche.test)
@@ -1635,12 +1635,12 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; srfi-106 will be tested in test/net.scm
+;; SRFI-106 will be tested in test/net.scm
 
 ;;-----------------------------------------------------------------------
 ;; Boxes & Multiple-vlaue boxes
 
-(test-section "srfi-111 & srfi-195")
+(test-section "SRFI-111 & SRFI-195")
 
 (define-module srfi-111-195-tests
   (use gauche.test)
@@ -1721,9 +1721,9 @@
 ;;-----------------------------------------------------------------------
 ;; Comparators
 ;;
-;; srfi-113 depends on srfi-114, so we test this first.
+;; SRFI-113 depends on SRFI-114, so we test this first.
 
-(test-section "srfi-114")
+(test-section "SRFI-114")
 
 (define-module srfi-114-tests
   (use gauche.test)
@@ -1862,7 +1862,7 @@
 ;;-----------------------------------------------------------------------
 ;; Sets and bags
 
-(test-section "srfi.113")
+(test-section "SRFI-113")
 
 (define-module srfi-113-tests
   (use gauche.test)
@@ -1874,7 +1874,7 @@
    (include "include/sets-test"))
 
   ;; collection framework test
-  ;; (we use srfi-1 with prefix not to mess gauche.collection#fold etc.)
+  ;; (we use SRFI-1 with prefix not to mess gauche.collection#fold etc.)
   (use srfi.1 :prefix srfi-1:)
   (use gauche.collection :prefix col:)
   (test* "coerce-to" '(a b)
@@ -1888,7 +1888,7 @@
 ;;-----------------------------------------------------------------------
 ;; Scheme regular expressions
 
-(test-section "srfi-115")
+(test-section "SRFI-115")
 
 (define-module srfi-115-tests
   (use gauche.test)
@@ -2049,7 +2049,7 @@
 ;;-----------------------------------------------------------------------
 ;; Immutable list library
 
-(test-section "srfi-116")
+(test-section "SRFI-116")
 
 (define-module srfi-116-tests
   (use gauche.test)
@@ -2061,7 +2061,7 @@
 ;;-----------------------------------------------------------------------
 ;; Queues based on lists
 
-(test-section "srfi-117")
+(test-section "SRFI-117")
 
 (define-module srfi-117-tests
   (use gauche.test)
@@ -2075,7 +2075,7 @@
 ;;-----------------------------------------------------------------------
 ;; Simple adjustable-size strings
 
-(test-section "srfi-118")
+(test-section "SRFI-118")
 
 (define-module srfi-118-tests
   (use gauche.test)
@@ -2096,12 +2096,12 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; srfi-120 depends on control.scheduler, so tested in control.scm
+;; SRFI-120 depends on control.scheduler, so tested in control.scm
 
 ;;-----------------------------------------------------------------------
 ;; Generators
 
-(test-section "srfi-121")
+(test-section "SRFI-121")
 
 (define-module srfi-121-tests
   (use gauche.test)
@@ -2128,7 +2128,7 @@
 ;;-----------------------------------------------------------------------
 ;; Ephemerons
 
-(test-section "srfi-124")
+(test-section "SRFI-124")
 
 (define-module srfi-124-tests
   (use gauche.test)
@@ -2180,7 +2180,7 @@
 ;;-----------------------------------------------------------------------
 ;; Intermediate hash tables
 
-(test-section "srfi-125")
+(test-section "SRFI-125")
 
 (define-module srfi-125-tests
   (use gauche.test :only (test* test-module))
@@ -2200,7 +2200,7 @@
   (define-syntax test-deny
     (syntax-rules ()
       [(_ expr) (test* 'expr #f expr)]))
-  ;; srfi-125-tests includes deprecated srfi-69 procedures tests.
+  ;; srfi-125-tests includes deprecated SRFI-69 procedures tests.
   ;; some of them emits warnings in Gauche, so we use dummies here.
   (define (hash x . _) (default-hash x))
   (define (hash-by-identity x . _) (eq-hash x))
@@ -2211,7 +2211,7 @@
 ;;-----------------------------------------------------------------------
 ;; Lazy sequences
 
-(test-section "srfi-127")
+(test-section "SRFI-127")
 
 (define-module srfi-127-tests
   (use gauche.test)
@@ -2226,7 +2226,7 @@
 ;;-----------------------------------------------------------------------
 ;; Comparators (reduced)
 
-(test-section "srfi-128")
+(test-section "SRFI-128")
 
 (define-module srfi-128-tests
   ;; everything is built-in, so we just test bindings.
@@ -2238,7 +2238,7 @@
 ;;-----------------------------------------------------------------------
 ;; Cursor-based string library
 
-(test-section "srfi-130")
+(test-section "SRFI-130")
 
 (define-module srfi-130-tests
   (use gauche.test)
@@ -2250,7 +2250,7 @@
 ;;-----------------------------------------------------------------------
 ;; Sort libraries
 
-(test-section "srfi-132")
+(test-section "SRFI-132")
 
 (define-module srfi-132-tests
   (use gauche.test)
@@ -2372,7 +2372,7 @@
 ;;-----------------------------------------------------------------------
 ;; Immutable texts
 
-(test-section "srfi-135")
+(test-section "SRFI-135")
 
 (define-module srfi-135-tests
   (use gauche.test)
@@ -2391,7 +2391,7 @@
 ;;-----------------------------------------------------------------------
 ;; Integer division
 
-(test-section "srfi-141")
+(test-section "SRFI-141")
 
 (define-module srfi-141-tests
   (use gauche.test)
@@ -2427,7 +2427,7 @@
         ]
     (define (t-1 numer denom floor truncate ceiling round euclidean balanced)
       (define (t name x-/ x-quotient x-remainder answers)
-        (test* #"srfi-141 ~name ~|numer|/~|denom|"
+        (test* #"SRFI-141 ~name ~|numer|/~|denom|"
                (list answers answers
                      (map inexact answers) (map inexact answers)
                      (map inexact answers) (map inexact answers))
@@ -2453,7 +2453,7 @@
 ;;-----------------------------------------------------------------------
 ;; Fixnums
 
-(test-section "srfi-143")
+(test-section "SRFI-143")
 
 (define-module srfi-143-tests
   (use gauche.test)
@@ -2467,7 +2467,7 @@
 ;;----------------------------------------------------------------------
 ;; Mappings
 
-(test-section "srfi-146")
+(test-section "SRFI-146")
 
 (define-module srfi-146-tests
   (use gauche.test)
@@ -2492,7 +2492,7 @@
 ;;-----------------------------------------------------------------------
 ;; Custom macro transformers
 
-(test-section "srfi-147")
+(test-section "SRFI-147")
 
 (define-module srfi-147-tests
   (use gauche.test)
@@ -2507,7 +2507,7 @@
 ;;-----------------------------------------------------------------------
 ;; Bitwise operations
 
-(test-section "srfi-151")
+(test-section "SRFI-151")
 
 (define-module srfi-151-tests
   (use gauche.test)
@@ -2522,7 +2522,7 @@
 ;;-----------------------------------------------------------------------
 ;; String library (reduced)
 
-(test-section "srfi-152")
+(test-section "SRFI-152")
 
 (define-module srfi-152-tests
   (use gauche.test)
@@ -2536,7 +2536,7 @@
 ;;-----------------------------------------------------------------------
 ;; First-class dynamic extents
 
-(test-section "srfi-154")
+(test-section "SRFI-154")
 
 (define-module srfi-154-tests
   (use gauche.test)
@@ -2551,7 +2551,7 @@
 ;;-----------------------------------------------------------------------
 ;; Promises
 
-(test-section "srfi-155")
+(test-section "SRFI-155")
 
 (define-module srfi-155-tests
   (use gauche.test)
@@ -2567,7 +2567,7 @@
 ;;-----------------------------------------------------------------------
 ;; Generators and accumulators
 
-(test-section "srfi-158")
+(test-section "SRFI-158")
 
 (define-module srfi-158-tests
   (use gauche.test)
@@ -2585,7 +2585,7 @@
 ;;-----------------------------------------------------------------------
 ;; Combinator formatting
 
-(test-section "srfi-159")
+(test-section "SRFI-159")
 
 (define-module srfi-159-tests
   (use gauche.test)
@@ -2601,7 +2601,7 @@
 ;;-----------------------------------------------------------------------
 ;; Homogeneous numeric vector libraries
 
-(test-section "srfi-160")
+(test-section "SRFI-160")
 
 (define-module srfi-160-tests
   (use gauche.test)
@@ -2617,7 +2617,7 @@
 ;;-----------------------------------------------------------------------
 ;; Comparators sublibrary
 
-(test-section "srfi-162")
+(test-section "SRFI-162")
 
 (define-module srfi-160-tests
   (use gauche.test)
@@ -2629,9 +2629,9 @@
 ;;-----------------------------------------------------------------------
 ;; POSIX API
 
-(test-section "srfi-170")
+(test-section "SRFI-170")
 
-;; srfi-170 is a thin wrapper of Gauche's builtins.  We only test
+;; SRFI-170 is a thin wrapper of Gauche's builtins.  We only test
 ;; procedures that are doing something more.
 
 (define-module srfi-170-tests
@@ -2694,7 +2694,7 @@
 ;;-----------------------------------------------------------------------
 ;; Hooks
 
-(test-section "srfi-173")
+(test-section "SRFI-173")
 
 (define-module srfi-173-tests
   (use gauche.test)
@@ -2708,7 +2708,7 @@
 ;;-----------------------------------------------------------------------
 ;; POSIX timespecs
 
-(test-section "srfi-174")
+(test-section "SRFI-174")
 
 (define-module srfi-174-tests
   (use gauche.test)
@@ -2749,7 +2749,7 @@
 ;;-----------------------------------------------------------------------
 ;; ASCII character library
 
-(test-section "srfi-175")
+(test-section "SRFI-175")
 
 (define-module srfi-175-tests
   (use gauche.test)
@@ -2763,14 +2763,14 @@
   (include "include/srfi-175-tests"))
 
 ;;-----------------------------------------------------------------------
-;; NB: srfi-180 depends on ext/peg, so it is tested in it.
+;; NB: SRFI-180 depends on ext/peg, so it is tested in it.
 
 ;;-----------------------------------------------------------------------
-;; NB: srfi-181 is tested in gauche.vport
+;; NB: SRFI-181 is tested in gauche.vport
 
 ;;-----------------------------------------------------------------------
 ;; Linear adjustable-length strings
-(test-section "srfi-185")
+(test-section "SRFI-185")
 
 (define-module srfi-185-tests
   (use gauche.test)
@@ -2804,7 +2804,7 @@
 ;;-----------------------------------------------------------------------
 ;; Maybe and either
 
-(test-section "srfi-189")
+(test-section "SRFI-189")
 
 (define-module srfi-189-tests
   (use gauche.test)
@@ -2813,15 +2813,15 @@
   (test-include-r7 "include/srfi-189-tests"))
 
 ;;-----------------------------------------------------------------------
-;; NB: srfi-192 is tested in gauche.vport
+;; NB: SRFI-192 is tested in gauche.vport
 
 ;;-----------------------------------------------------------------------
-;; NB: srfi-196 is tested with data.range
+;; NB: SRFI-196 is tested with data.range
 
 ;;-----------------------------------------------------------------------
 ;; Pipeline operators
 
-(test-section "srfi-197")
+(test-section "SRFI-197")
 
 (define-module srfi-197-tests
   (use gauche.test)
@@ -2835,12 +2835,12 @@
   (include "include/srfi-197-test"))
 
 ;;-----------------------------------------------------------------------
-;; NB: srfi-209 is tested with gauche.bitvector
+;; NB: SRFI-209 is tested with gauche.bitvector
 
 ;;-----------------------------------------------------------------------
 ;; Integer sets
 
-(test-section "srfi-217")
+(test-section "SRFI-217")
 
 (define-module srfi-217-tests
   (use gauche.test)
@@ -2887,7 +2887,7 @@
 ;;-----------------------------------------------------------------------
 ;; Generator/accumulator sublibrary
 
-(test-section "srfi-221")
+(test-section "SRFI-221")
 
 (define-module srfi-221-tests
   (use gauche.test)
@@ -2898,7 +2898,7 @@
 ;;-----------------------------------------------------------------------
 ;; Compound objects
 
-(test-section "srfi-222")
+(test-section "SRFI-222")
 
 (define-module srfi-222-tests
   (use gauche.test)
@@ -2918,7 +2918,7 @@
 
 ;;-----------------------------------------------------------------------
 ;; Optional arguments
-(test-section "srfi-227")
+(test-section "SRFI-227")
 
 (define-module srfi-227-tests
   (use gauche.test)
@@ -3008,7 +3008,7 @@
 ;;-----------------------------------------------------------------------
 ;; Composing comparators
 
-(test-section "srfi-228")
+(test-section "SRFI-228")
 
 (define-module srfi-228-tests
   (use gauche.test)
@@ -3024,7 +3024,7 @@
 ;;-----------------------------------------------------------------------
 ;; Tagged procedures
 
-(test-section "srfi-229")
+(test-section "SRFI-229")
 
 (define-module srfi-229-tests
   (use gauche.test)
@@ -3035,7 +3035,7 @@
 ;;-----------------------------------------------------------------------
 ;; Flexible curried procedures
 
-(test-section "srfi-232")
+(test-section "SRFI-232")
 
 (define-module srfi-232-tests
   (use gauche.test)
@@ -3048,11 +3048,11 @@
 ;;-----------------------------------------------------------------------
 ;; Evaluating expressiosn in an unspecified order
 
-(test-section "srfi-236")
+(test-section "SRFI-236")
 
 (define-module srfi-236-tests
   (use gauche.test)
-  (use srfi.236)                          ;NB: srfi-236 is built-in
+  (use srfi.236)                          ;NB: SRFI-236 is built-in
   (test-module 'srfi.236)
   (test-include-r7 "include/srfi-236-tests"))
 

@@ -124,7 +124,7 @@
 (define-cproc %reraise ()
   (return (Scm_VMReraise)))
 
-;; srfi-18 raise
+;; SRFI-18 raise
 (define-in-module gauche (raise c) (%raise c))
 
 ;;;
@@ -182,7 +182,7 @@
             (slot-set! cc sn (slot-ref c sn)))
           (loop (cdr slots)))))))
 
-;; Srfi-35/srfi-36 compatibility
+;; SRFI-35/SRFI-36 compatibility
 (define &condition   <condition>)
 (define &message     <message-condition>)
 (define &serious     <serious-condition>)
@@ -327,9 +327,9 @@
    ((expr))
    (allocator (c "compile_error_mixin_allocate")))
 
- ;; Filename errors are defined in srfi-36.  Internally most of those filename
+ ;; Filename errors are defined in SRFI-36.  Internally most of those filename
  ;; errors occur as <system-error> first; we compound the following conditions
- ;; as needed.  In C name we use "Mixin", but in Scheme we follow srfi-36
+ ;; as needed.  In C name we use "Mixin", but in Scheme we follow SRFI-36
  ;; names and drop "-mixin".
  ;; In C-level all filename mixin classes share one struct definition, and
  ;; one allocator.

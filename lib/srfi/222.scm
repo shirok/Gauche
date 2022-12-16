@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-222 - Compound objects
+;;; SRFI-222 - Compound objects
 ;;;
 ;;;   Copyright (c) 2022  Shiro Kawai  <shiro@acm.org>
 ;;;

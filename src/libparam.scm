@@ -78,10 +78,10 @@
    ))
 
 (define-method write-object ((p <parameter>) port)
-  (format port "#<parameter ~a>" 
+  (format port "#<parameter ~a>"
           ((with-module gauche.internal %parameter-name) p)))
 
-;; We're switching to the srfi-226  model that parameter bindings are shared 
+;; We're switching to the SRFI-226  model that parameter bindings are shared
 ;; among threads by default.  The legacy code that requires thread-local
 ;; parameters need to move to make-thread-parameter.  To ease transition,
 ;; we also provide make-shared-parameter.
@@ -101,7 +101,7 @@
 (define (make-thread-parameter value :optional (filter #f))
   (make-parameter value filter #f))
 
-;; this is srfi-226 make-parameter
+;; this is SRFI-226 make-parameter
 (define (make-shared-parameter value :optional (filter #f))
   (make-parameter value filter #t))
 
@@ -242,7 +242,7 @@
 (define-cproc parameterization? (obj) ::<boolean>
   SCM_PARAMETERIZATIONP)
 
-;; srfi-226
+;; SRFI-226
 (define-syntax with
   (er-macro-transformer
    (^[f r c]
@@ -255,12 +255,12 @@
             `(let (,@(map list Ps param-like)
                    ,@(map list Vs val))
                (dynamic-wind
-                 (^[] ,@(map (^[p v] 
+                 (^[] ,@(map (^[p v]
                                (quasirename r
                                  `(let ((tmp (,p))) (,p ,v) (set! ,v tmp))))
                              Ps Vs))
                  (^[] ,@body)
-                 (^[] ,@(map (^[p v] 
+                 (^[] ,@(map (^[p v]
                                (quasirename r
                                  `(let ((tmp (,p))) (,p ,v) (set! ,v tmp))))
                              Ps Vs))))))]

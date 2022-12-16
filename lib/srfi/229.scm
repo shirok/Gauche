@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-229 - Procedure Tags
+;;; SRFI-229 - Procedure Tags
 ;;;
 ;;;   Copyright (c) 2021-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -40,7 +40,7 @@
 (define %procedure-tags-alist
   (with-module gauche.internal %procedure-tags-alist))
 
-;; srfi-229 is implemented on top of Gauche's internal procedure tags.
+;; SRFI-229 is implemented on top of Gauche's internal procedure tags.
 (define-syntax lambda/tag
   (syntax-rules ()
     [(lambda/tag tag-expr formals body ...)

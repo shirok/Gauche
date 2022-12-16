@@ -567,9 +567,9 @@
   ])
 
 ;;-----------------------------------------------------------------------
-;; srfi-106
-(test-section "srfi-106")
-(use srfi-106)
-(test-module 'srfi-106)
+;; SRFI-106
+(test-section "SRFI-106")
+(use srfi.106)
+(test-module 'srfi.106)
 
 (test-end)

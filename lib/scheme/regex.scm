@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-115
+;; Originally SRFI-115
 (define-module scheme.regex
   (use scheme.charset)
   (use gauche.regexp.sre)

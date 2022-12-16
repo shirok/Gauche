@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-225 - Dictionaries
+;;; SRFI-225 - Dictionaries
 ;;;
 ;;;   Copyright (c) 2022  Shiro Kawai  <shiro@acm.org>
 ;;;

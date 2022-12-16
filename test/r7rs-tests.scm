@@ -119,7 +119,7 @@
           (find-module 'user))))
 
 ;; This test uses srfi-N as a feature identifier; we deprecate such usage.
-;; ;; in this test, cond-expand inserts (use srfi-42).  see we can handle it.
+;; ;; in this test, cond-expand inserts (use SRFI-42).  see we can handle it.
 ;; (define-module cond-expand-test3.user)
 ;; (test* "cond-expand in library decl 3" '(0 1 2 3 4 5 6 7 8 9)
 ;;        (begin

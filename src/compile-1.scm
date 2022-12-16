@@ -1514,7 +1514,7 @@
 
   (parse-kargs cenv kargs '() '() #f #f))
 
-;; case-lambda (srfi-16)
+;; case-lambda (SRFI-16)
 ;;   we recognize it here so that we can do aggressive inlining.
 (define-pass1-syntax (case-lambda form cenv) :gauche
   (match form
@@ -1669,7 +1669,7 @@
 (define-pass1-syntax (set! form cenv) :null
   (match form
     [(_ (op . args) expr)
-     ;; srfi-17.  We recurse to pass1 on expanded form, for (setter op) might
+     ;; SRFI-17.  We recurse to pass1 on expanded form, for (setter op) might
      ;; have a chance of optimization.
      (pass1 (with-original-source `((,setter. ,op) ,@args ,expr) form) cenv)]
     [(_ name expr)

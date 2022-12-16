@@ -40,13 +40,13 @@
 ;; realized in a given lseq, so no portable code should count on
 ;; (cdr lseq) => <generator>.
 ;;
-;; One deviation of srfi-127 is the constructor generator->lseq: It
+;; One deviation of SRFI-127 is the constructor generator->lseq: It
 ;; explicitly specifies to return (x . Generator) of the given generator
 ;; yields non-EOF object.  We return Gauche's built-in lseq, which is
-;; operationally equivalent to srfi-127's lseq but you cannot get
+;; operationally equivalent to SRFI-127's lseq but you cannot get
 ;; the generator itself in the cdr.
 
-;; Originall srfi-127
+;; Originall SRFI-127
 (define-module scheme.lseq
   (use scheme.list)
   (use gauche.lazy)

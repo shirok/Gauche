@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-74 - Octet-addressed binary blocks
+;;; SRFI-74 - Octet-addressed binary blocks
 ;;;
 
 ;; On Gauche, a blob is just an u8vector.

@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-101
+;; Originally SRFI-101
 (define-module scheme.rlist
   (use gauche.record)
   (use gauche.sequence)
@@ -105,7 +105,7 @@
     last-cdr
     (%make-ra spine last-cdr)))
 
-;; This is not in srfi-101, but for the convenience
+;; This is not in SRFI-101, but for the convenience
 (define-method write-object ((x <ra-list>) port)
   (display "#,(rlist (" port)
   (skew-list-fold (ra-spine x)

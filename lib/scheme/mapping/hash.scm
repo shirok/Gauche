@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-146.hash
+;; Originally srfi.146.hash
 (define-module scheme.mapping.hash
   (export hashmap hashmap-unfold
           hashmap? hashmap-contains? hashmap-empty? hashmap-disjoint?

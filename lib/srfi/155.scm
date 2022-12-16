@@ -1,6 +1,6 @@
 ; -*- coding:utf-8 -*-
 ;;;
-;;; srfi-155
+;;; SRFI-155
 ;;;
 
 (define-module srfi.155

@@ -1,4 +1,4 @@
-(test-section "srfi-180")
+(test-section "SRFI-180")
 
 (define-module test-srfi-180
   (use gauche.test)

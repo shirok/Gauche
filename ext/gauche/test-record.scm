@@ -84,7 +84,7 @@
          (map (^f ((rtd-accessor rtd2 f) r2)) '(a b c d)))
   )
 
-;; srfi-99 example
+;; SRFI-99 example
 
 (let ()
   (define rtd1
@@ -130,13 +130,13 @@
              (^[x5 x6]
                (maker3 x1 x2 x3 x4 x5 x6)))))))))
 
-  (test* "srfi-99 example 1" '(3 5 9 11 15 17)
+  (test* "SRFI-99 example 1" '(3 5 9 11 15 17)
          (let1 r (make-rtd3 1 2 3 4 5 6 7 8 9)
            (map (^f ((rtd-accessor rtd3 f) r))
                 '(x1 x2 x3 x4 x5 x6))))
   )
 
-;; srfi-99 example 2
+;; SRFI-99 example 2
 (let ()
   (define point (make-rtd 'point '#((mutable x) (mutable y))))
 
@@ -209,7 +209,7 @@
 ;;--------------------------------------------------------------------
 (test-section "syntactic layer")
 
-;; srfi-9 compatibility
+;; SRFI-9 compatibility
 (define-record-type pare
   (kons x y)
   pare?
@@ -310,7 +310,7 @@
                      (,p2-y-set! v 20)
                      (,p2-z-set! v 30)
                      v))
-       (test* (format "~a record srfi-17 mutator" (class-name ,base-class))
+       (test* (format "~a record SRFI-17 mutator" (class-name ,base-class))
               (coerce-to <list> (,maker 15 25 35))
               (begin (set! (,p2-x v) 15)
                      (set! (,p2-y v) 25)

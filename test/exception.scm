@@ -25,7 +25,7 @@
          (map (cut ref e <>) '(message errno))))
 
 ;;--------------------------------------------------------------------
-(test-section "srfi-35 constructors, predicates and accessors")
+(test-section "SRFI-35 constructors, predicates and accessors")
 
 (test* "make-condition <error>" '(#t #t #f "moo")
        (let ((e (make-condition <error> 'message "moo")))
@@ -115,7 +115,7 @@
          ))
 
 ;;--------------------------------------------------------------------
-(test-section "srfi-35 style condition definitions")
+(test-section "SRFI-35 style condition definitions")
 
 (define-condition-type &c &condition
   c?

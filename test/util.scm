@@ -598,7 +598,7 @@
 (test-section "util.rbtree")
 (use util.rbtree)
 (use gauche.sequence)
-(use srfi-27)
+(use srfi.27)
 (test-module 'util.rbtree)
 
 (define rbtree-check

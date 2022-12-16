@@ -4,7 +4,7 @@
 
 (use gauche.test)
 (use scheme.list)
-(use srfi-14)
+(use srfi.14)
 
 (test-start "regexp")
 

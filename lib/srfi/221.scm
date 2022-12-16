@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-221 - Generator/accumulator sub-library
+;;; SRFI-221 - Generator/accumulator sub-library
 ;;;
 ;;;   Copyright (c) 2021-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

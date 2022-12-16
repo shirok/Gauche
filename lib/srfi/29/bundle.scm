@@ -1,13 +1,13 @@
 ;;;
-;;; srfi-29 - Localization
+;;; SRFI-29 - Localization
 ;;;
 ;;;  Alex Shinn
 ;;;
 
-;; This module provides basic support for srfi-29 API.
+;; This module provides basic support for SRFI-29 API.
 ;;
 ;; load-bundle! and store-bundle! don't actually load/store the bundle
-;; and they return #f (permitted in srfi-29 spec).
+;; and they return #f (permitted in SRFI-29 spec).
 
 (define-module srfi.29.bundle
   (use srfi.13)

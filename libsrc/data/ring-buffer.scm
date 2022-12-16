@@ -76,7 +76,7 @@
 ;;
 ;; Originally, ring-buffer is only supposed to grow by one item
 ;; at a time, so overflow-handler only needs to expand a storage at least one.
-;; However, we decdied to use ring-buffer as a basis of flexvector (srfi-214)
+;; However, we decdied to use ring-buffer as a basis of flexvector (SRFI-214)
 ;; and needs some additional features, including the ability to extend
 ;; the storage in arbitrary length.  We think it is slightly out-of-scope
 ;; as a feature of a ring-buffer, so for now we keep it unofficial.

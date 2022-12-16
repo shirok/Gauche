@@ -2,7 +2,7 @@
 ;;; scheme.list - List processing library (R7RS Red)
 ;;;
 
-;; Originally srfi-1
+;; Originally SRFI-1
 
 ;; This code is based on the reference implementation by Olin Shivers
 ;;
@@ -14,7 +14,7 @@
 ;; by Gauche core, and tweaked some functions that works well in Gauche.
 ;; You can obtain the original version from http://srfi.schemers.org
 ;; NB: Gauche 0.8.5 and before included some optional procedures (such
-;; as fold$) in srfi-1 module.  As of 0.8.6, they're moved to gauche.procedure,
+;; as fold$) in SRFI-1 module.  As of 0.8.6, they're moved to gauche.procedure,
 ;; which is autoloaded.  The user doesn't need to see this change.
 
 (define-module scheme.list

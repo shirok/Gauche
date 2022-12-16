@@ -211,7 +211,7 @@
   (assume-type bv <bitvector>)
   (zero? (bitvector-length bv)))
 
-(define (bitvector=? . vs)             ;srfi-178
+(define (bitvector=? . vs)             ;SRFI-178
   ;; we can compare bitvectors using equal?.  just extra type checking.
   (or (null? vs)
       (if-let1 z (find (^x (not (bitvector? x))) vs)
@@ -578,7 +578,7 @@
              (inc! k))
            (eof-object)))))
 
-(define (make-bitvector/int-generator bv) ;srfi-178
+(define (make-bitvector/int-generator bv) ;SRFI-178
   (bitvector->int-generator bv))
 
 (define (bitvector->bool-generator bv :optional (start 0) (end #f))
@@ -736,7 +736,7 @@
     (return (Scm_BitsLowest1 (SCM_BITVECTOR_BITS bv) 0 (SCM_BITVECTOR_SIZE bv)))
     (return (Scm_BitsLowest0 (SCM_BITVECTOR_BITS bv) 0 (SCM_BITVECTOR_SIZE bv)))))
 
-;; NB: This is not in srfi-178, but useful in bitvector-trim-right
+;; NB: This is not in SRFI-178, but useful in bitvector-trim-right
 (define-cproc bitvector-last-bit (bit bv::<bitvector>) ::<int>
   (if (Scm_Bit2Int bit)
     (return (Scm_BitsHighest1 (SCM_BITVECTOR_BITS bv) 0 (SCM_BITVECTOR_SIZE bv)))

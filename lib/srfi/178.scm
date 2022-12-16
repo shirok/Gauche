@@ -1,7 +1,7 @@
 ;;
-;; srfi-178 Bitvectors
+;; SRFI-178 Bitvectors
 ;;
-;;  gauche.bitvector is a superset of srfi-178.  we just reexport
+;;  gauche.bitvector is a superset of SRFI-178.  we just reexport
 ;;  srfi-defined procedures.
 ;;
 (define-module srfi.178

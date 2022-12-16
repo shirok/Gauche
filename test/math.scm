@@ -1,8 +1,8 @@
 ;; Testing math.* that depends on other extension modules.
 
 (use gauche.test)
-(use srfi-27)
-(use srfi-42)
+(use srfi.27)
+(use srfi.42)
 
 (test-start "math.* modules")
 

@@ -1,8 +1,8 @@
 ;;;
-;;; srfi-66 - Octet vectors
+;;; SRFI-66 - Octet vectors
 ;;;
 
-;; It is mostly a subset of srfi-4, except
+;; It is mostly a subset of SRFI-4, except
 
 ;;  u8vector=?       - gauche.uvector provides this
 ;;  u8vector-compare - gauche.uvector provides this

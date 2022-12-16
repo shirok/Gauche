@@ -31,8 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-158
-;; (In R7RS Red edition, it was srfi-121).
+;; Originally SRFI-158
+;; (In R7RS Red edition, it was SRFI-121).
 ;; Generator library is built-in.   We provide accumulator implementation here.
 
 (define-module scheme.generator

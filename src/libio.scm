@@ -378,7 +378,7 @@
     (return (Scm_MakeBufferedPort SCM_CLASS_PORT SCM_FALSE SCM_PORT_OUTPUT
                                   TRUE (& bufrec)))))
 
-;; String ports (srfi-6)
+;; String ports (SRFI-6)
 ;;   By default, string ports are named as "(input string port)" and
 ;;   "(output string port)", which aren't very informative.  The caller
 ;;   can specify alternative name with :name keyword argument. NB: Currently,
@@ -417,7 +417,7 @@
 ;; Miscellaneous
 ;;
 
-;; srfi-191
+;; SRFI-191
 (define-cproc port-has-port-position? (port::<port>) ::<boolean>
   (return (Scm_PortPositionable port FALSE)))
 (define-cproc port-has-set-port-position!? (port::<port>) ::<boolean>
@@ -695,7 +695,7 @@
 (define-cproc %port-ungotten-bytes (port::<input-port>)
   Scm_UngottenBytes)
 
-;; Read time constructor (srfi-10)
+;; Read time constructor (SRFI-10)
 (select-module gauche)
 
 (define-cproc define-reader-ctor (symbol proc :optional (finisher #f))
@@ -733,7 +733,7 @@
     (Scm_Error "read reference hasn't been resolved"))
   (return (-> ref value)))
 
-;; srfi-38
+;; SRFI-38
 (define-in-module gauche read-with-shared-structure read)
 (define-in-module gauche read/ss read)
 
@@ -876,7 +876,7 @@
 
 (select-module gauche.internal)
 
-;; srfi-38
+;; SRFI-38
 (define-in-module gauche (write-with-shared-structure obj :optional (port (current-output-port)))
   (write* obj port))
 (define-in-module gauche write/ss write-with-shared-structure)
@@ -885,7 +885,7 @@
 
 ;;
 ;; Write controls
-;;  For performance reasons, we don't make them a srfi-39 parameters.
+;;  For performance reasons, we don't make them a SRFI-39 parameters.
 ;;
 
 (select-module gauche)
@@ -1117,7 +1117,7 @@
   (^[sym port ctx]
     (warn "Reading R6RS source file.  Note that Gauche is not R6RS compliant.")
     ;; TODO: we could do some adjustments, such as switching the semantics of
-    ;; '#,' from srfi-10 to r6rs 'unsyntax'.
+    ;; '#,' from SRFI-10 to r6rs 'unsyntax'.
     (values)))
 
 (define-reader-directive 'fold-case

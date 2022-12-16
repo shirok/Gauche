@@ -1,6 +1,6 @@
-;; srfi.29.format - srfi-29 compatible 'format'.
+;; srfi.29.format - SRFI-29 compatible 'format'.
 
-;; Taken from srfi-29 reference implementation.
+;; Taken from SRFI-29 reference implementation.
 ;;
 ;; Copyright (C) Scott G. Miller (2002). All Rights Reserved.
 ;;

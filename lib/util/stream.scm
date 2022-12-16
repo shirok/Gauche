@@ -1,5 +1,5 @@
 ;;;
-;;; util.stream - stream library (srfi-40, 41 & more)
+;;; util.stream - stream library (SRFI-40, 41 & more)
 ;;;
 ;;;   [SK] This module includes code from streams-ext.scm,
 ;;;   written by Alejandro Forero Cuervo and released in Public Domain
@@ -40,12 +40,12 @@
   (use scheme.list)
   (use util.match)
   (export
-   ;;  srfi-40
+   ;;  SRFI-40
    stream? stream-null stream-cons stream-null?
    stream-pair? stream-car stream-cdr stream-delay stream
    stream-unfoldn stream-map stream-for-each stream-filter
 
-   ;; srfi-41 additions
+   ;; SRFI-41 additions
    stream+ stream-lambda define-stream stream-unfold stream-unfolds
    list->stream port->stream stream->list stream-append stream-concat
    stream-constant stream-drop-while stream-take-while
@@ -101,17 +101,17 @@
 ;;; Primitives
 ;;;
 
-;; srfi-40, 41
+;; SRFI-40, 41
 ;; A singleton instance of null stream
 (define stream-null (%make-stream (delay '())))
 
-;; srfi-40, 41
+;; SRFI-40, 41
 (define-syntax stream-cons
   (syntax-rules ()
     [(stream-cons obj strm)
      (%make-stream (delay (cons obj strm)))]))
 
-;; stri-40, 41
+;; SRFI-40, 41
 (define-inline (stream-null? obj)
   (and (stream? obj) (null? (force obj))))
 (define-inline (stream-pair? obj)
@@ -119,13 +119,13 @@
 (define-inline (stream-car s) (car (force s)))
 (define-inline (stream-cdr s) (cdr (force s)))
 
-;; srfi-40
+;; SRFI-40
 (define-syntax stream-delay
   (syntax-rules ()
     [(stream-delay expr)
      (%make-stream (lazy expr))]))
 
-;; srfi-41
+;; SRFI-41
 (define-syntax stream-lambda
   (syntax-rules ()
     [(_ formals body0 body1 ...)
@@ -135,33 +135,33 @@
 ;;; Derived
 ;;;
 
-;; srfi-40 (objs are evaluated first)
+;; SRFI-40 (objs are evaluated first)
 (define (stream . objs)
   (if (null? objs)
     stream-null
     (stream-cons (car objs) (apply stream (cdr objs)))))
 
-;; srfi-41's stream (evaluation of objs are delayed)
+;; SRFI-41's stream (evaluation of objs are delayed)
 (define-syntax stream+
   (syntax-rules ()
     [(_) stream-null]
     [(_ x y ...) (stream-cons x (stream+ y ...))]))
 
-;; srfi-41
+;; SRFI-41
 (define-syntax define-stream
   (syntax-rules ()
     [(_ (name . formal) body0 body1 ...)
      (define name (stream-lambda formal body0 body1 ...))]))
 
-;; srfi-41
-;; NB: The argument order differs from srfi-1#unfold. Also, predicate is
-;; to continue, as oppsed to the stop predicate in srfi-1#unfold.
+;; SRFI-41
+;; NB: The argument order differs from srfi.1#unfold. Also, predicate is
+;; to continue, as oppsed to the stop predicate in srfi.1#unfold.
 (define-stream (stream-unfold f p g seed)
   (if (p seed)
     (stream-cons (f seed) (stream-unfold f p g (g seed)))
     stream-null))
 
-;; srfi-40
+;; SRFI-40
 (define (stream-unfoldn f seed n)
   ;; stream of N-tuples of the results
   (define rstream
@@ -179,14 +179,14 @@
              [else stream-null]))))
   (apply values (map (cute nth-stream rstream <>) (iota n))))
 
-;; srfi-41
+;; SRFI-41
 ;; Similar to stream-unfoldn, but the number of result streams is inferred
 ;; from the number of returned values from f.
 (define (stream-unfolds f seed)
   (receive vs (f seed)
     (stream-unfoldn f seed (- (length vs) 1))))
 
-;; srfi-40, 41
+;; SRFI-40, 41
 (define (stream-map f s . ss)
   (if (null? ss)
     (let loop [(s s)]
@@ -201,7 +201,7 @@
          (stream-cons (apply f (map stream-car ss))
                       (loop (map stream-cdr ss))))))))
 
-;; srfi-40, 41
+;; SRFI-40, 41
 (define (stream-for-each f s . ss)
   (if (null? ss)
     (let loop [(s s)]
@@ -213,14 +213,14 @@
         (apply f (map stream-car ss))
         (loop (map stream-cdr ss))))))
 
-;; srfi-40, 41
+;; SRFI-40, 41
 (define-stream (stream-filter p s)
   (cond [(stream-null? s) s]
         [(p (stream-car s)) (stream-cons (stream-car s)
                                          (stream-filter p (stream-cdr s)))]
         [else (stream-filter p (stream-cdr s))]))
 
-;; srfi-41
+;; SRFI-41
 (define (list->stream lis)
   (stream-unfold car pair? cdr lis))
 
@@ -233,7 +233,7 @@
                stream-null]
               [else (stream-cons v (next))]))))))
 
-;; srfi-41
+;; SRFI-41
 ;; reader and close-at-eof are Gauche extension.
 (define (port->stream :optional (in (current-input-port))
                                 (reader read-char)
@@ -241,7 +241,7 @@
   (generator->stream (cut reader in)
                      (^[] (when close-at-eof (close-at-eof in)))))
 
-;; srfi-41
+;; SRFI-41
 (define stream->list
   (case-lambda
     [(n s)
@@ -258,7 +258,7 @@
          (reverse r)
          (loop (stream-cdr s) (cons (stream-car s) r))))]))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-append . ss)
   (stream-delay
    (cond [(null? ss) stream-null]
@@ -270,7 +270,7 @@
                (apply stream-append ss)
                (stream-cons (stream-car s) (loop (stream-cdr s) ss)))))])))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-concat ss)
   (stream-delay
    (if (stream-null? ss)
@@ -281,35 +281,35 @@
 ;; for the backward compatibility
 (define stream-concatenate stream-concat)
 
-;; srfi-41
+;; SRFI-41
 (define (stream-constant . objs)
   (list->stream (apply circular-list objs)))
 
-;; srfi-41
+;; SRFI-41
 (define-stream (stream-drop-while pred s)
   (if (or (stream-null? s) (not (pred (stream-car s))))
     s
     (stream-drop-while pred (stream-cdr s))))
 
-;; srfi-41
+;; SRFI-41
 (define-stream (stream-take-while pred s)
   (if (or (stream-null? s) (not (pred (stream-car s))))
     stream-null
     (stream-cons (stream-car s)
                  (stream-take-while pred (stream-cdr s)))))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-fold f seed s)
   (let loop ([seed seed] [s s])
     (if (stream-null? s)
       seed
       (loop (f seed (stream-car s)) (stream-cdr s)))))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-from start :optional (step 1))
   (stream-range start +inf.0 step))
 
-;; srfi-41
+;; SRFI-41
 ;; NB: End being optional is Gauche's extension
 (define (stream-range start :optional (end +inf.0) step)
   (assume real? start)
@@ -333,40 +333,40 @@
              (stream-cons v (loop (+ k 1)))
              stream-null)))))))
 
-;; srfi-41
+;; SRFI-41
 (define-stream (stream-iterate proc base)
   (stream-cons base (stream-iterate proc (proc base))))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-length s)
   (let loop ([n 0] [s s])
     (if (stream-null? s) n (loop (+ n 1) (stream-cdr s)))))
 
-;; srfi-41
+;; SRFI-41
 (define-syntax stream-let
   (syntax-rules ()
     [(_ tag ((var expr) ...) body0 body1 ...)
      ((letrec ((tag (stream-lambda (var ...) body0 body1 ...))) tag)
       expr ...)]))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-ref s n)
   (if (zero? n)
     (stream-car s)
     (stream-ref (stream-cdr s) (- n 1))))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-reverse s)
   (stream-fold stream-xcons stream-null s))
 
-;; srfi-41
+;; SRFI-41
 (define-stream (stream-scan f seed s)
   (if (stream-null? s)
     (stream-cons seed stream-null)
     (stream-cons seed
                  (stream-scan f (f seed (stream-car s)) (stream-cdr s)))))
 
-;; srfi-41
+;; SRFI-41
 (define (stream-zip . ss)
   (define-stream (rec ss)
     (if (any stream-null? ss)
@@ -375,7 +375,7 @@
   (rec ss))
 
 ;;;
-;;; srfi-41 matcher
+;;; SRFI-41 matcher
 ;;;
 
 (define-syntax stream-match
@@ -438,10 +438,10 @@
     (cons (stream-car s) (stream->list+stream (stream-cdr s) (- n 1)))))
 
 ;;;
-;;; srfi-41 comprehension
+;;; SRFI-41 comprehension
 ;;;
 
-;; The following 'stream-of' definition is taken from srfi-41 reference
+;; The following 'stream-of' definition is taken from SRFI-41 reference
 ;; implementation.  This kind of code is where syntax-rules shines.
 ;;
 ;; Copyright (C) Philip L. Bewig (2007). All Rights Reserved.
@@ -477,7 +477,7 @@
     ((stream-of-aux expr base pred? rest ...)
      (if pred? (stream-of-aux expr base rest ...) base))))
 
-;; End of excerpt from srfi-41 reference implementation
+;; End of excerpt from SRFI-41 reference implementation
 
 ;;;
 ;;; Extras
@@ -674,7 +674,7 @@
      str
      (stream-drop-safe (stream-cdr str) (- count 1)))))
 
-;; NB: srfi-41 has arguments reversed
+;; NB: SRFI-41 has arguments reversed
 (define (stream-take stream count)
   (stream-delay
    (if (zero? count)
@@ -682,7 +682,7 @@
      (stream-cons (stream-car stream)
                   (stream-take (stream-cdr stream) (- count 1))))))
 
-;; NB: srfi-41 has arguments reversed
+;; NB: SRFI-41 has arguments reversed
 (define (stream-drop str count)
   (stream-delay
    (if (zero? count)

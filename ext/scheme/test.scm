@@ -7,7 +7,7 @@
 (test-start "extension scheme modules")
 
 ;;;
-;;; scheme.list (srfi-1)
+;;; scheme.list (SRFI-1)
 ;;;
 
 (test-section "scheme.list")
@@ -188,7 +188,7 @@
 
 
 ;;;
-;;; scheme.vector (srfi-133)
+;;; scheme.vector (SRFI-133)
 ;;;
 
 (test-section "scheme.vector")
@@ -203,7 +203,7 @@
  (include "../../test/include/vectors-test.scm"))
 
 ;;;
-;;; scheme.charset (srfi-14)
+;;; scheme.charset (SRFI-14)
 ;;;
 
 (test-section "scheme.charset")
@@ -542,7 +542,7 @@
                    char-set:full)))
 
 ;;;
-;;; scheme.flonum (srfi-144)
+;;; scheme.flonum (SRFI-144)
 ;;;
 
 (test-section "scheme.flonum")

@@ -1,8 +1,8 @@
 ;;;
-;;;  srfi-60 - integers as bits
+;;;  SRFI-60 - integers as bits
 ;;;
 ;;;  Since most procedures are already supported as builtins, this
-;;;  module only provides a thin wrapper to cover the complete srfi-60 spec.
+;;;  module only provides a thin wrapper to cover the complete SRFI-60 spec.
 
 (define-module srfi.60
   (use gauche.sequence)

@@ -1,6 +1,6 @@
 ;;
 ;; test for bitvectors
-;;   Note - srfi-178 procedures are tested with srfi
+;;   Note - SRFI-178 procedures are tested with srfi
 ;;
 
 (use gauche.test)
@@ -10,7 +10,7 @@
 (use gauche.bitvector)
 (test-module 'gauche.bitvector)
 
-(test-section "srfi-178 procedures")
+(test-section "SRFI-178 procedures")
 
 (define-module srfi-178-tests
   (use gauche.test)
@@ -56,8 +56,8 @@
        (generator->list (bitvector->index-generator #*100010100101 1 2 8)))
 
 
-;; srfi-209 Enum set depends on gauche.bitvector
-(test-section "srfi-209")
+;; SRFI-209 Enum set depends on gauche.bitvector
+(test-section "SRFI-209")
 
 (define-module srfi-209-tests
   (use gauche.test)

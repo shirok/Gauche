@@ -122,8 +122,8 @@
                      ))))
 
 ;;-------------------------------------------------------------------
-;; srfi-27 is built on top of mt-random, so we test it here.
-(test-section "srfi-27")
+;; SRFI-27 is built on top of mt-random, so we test it here.
+(test-section "SRFI-27")
 
 (use srfi.27)
 (test-module 'srfi.27)

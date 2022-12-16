@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-175 - ASCII character library
+;;; SRFI-175 - ASCII character library
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

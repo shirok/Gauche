@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-14
+;; Originally SRFI-14
 ;; Basic operators are built in the Gauche kernel.  This module
 ;; defines auxiliary procedures.
 ;;

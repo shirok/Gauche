@@ -1,8 +1,8 @@
 ;;;
-;;; srfi-106 - socket interface
+;;; SRFI-106 - socket interface
 ;;;
 
-;; NB: Test for srfi-106 is in ext/net.
+;; NB: Test for SRFI-106 is in ext/net.
 
 (define-module srfi.106
   (use gauche.uvector)

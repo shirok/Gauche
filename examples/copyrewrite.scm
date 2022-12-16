@@ -5,7 +5,7 @@
 
 (use file.util)
 (use util.match)
-(use srfi-19)
+(use srfi.19)
 
 (define (usage)
   (print "Usage: gosh copyrewrite.scm <directory> <author> <email>")

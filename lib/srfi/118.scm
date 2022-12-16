@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-118 - simple adjustable-size strings
+;;; SRFI-118 - simple adjustable-size strings
 ;;;
 ;;;   Copyright (c) 2015-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -36,7 +36,7 @@
 ;; implement size-changing mutation, but it doesn't give you
 ;; any performance advantage---the cost of string-append! and string-replace!
 ;; are the same as string-append and string-replace, respectively.
-;; We include srfi-118 for the portability.
+;; We include SRFI-118 for the portability.
 
 (define-module srfi.118
   (use srfi.13)

@@ -1,5 +1,5 @@
 ;;
-;; srfi-130 - Cursor-based string library
+;; SRFI-130 - Cursor-based string library
 ;;
 
 (define-module srfi.130
@@ -55,7 +55,7 @@
 
           ;; Gauche supports the following functions natively, but
           ;; we re-export them so that they will be available by
-          ;; importing srfi-130 into vanilla environment.
+          ;; importing SRFI-130 into vanilla environment.
           string-cursor->index
           string-cursor-back
           string-cursor-diff
@@ -125,6 +125,6 @@
                                 (string-index->cursor s1 start1)
                                 (string-cursor->index str1 res)))))
 
-;; 'to' is not optional in srfi-130
+;; 'to' is not optional in SRFI-130
 (define (string-replicate s from to :optional start end)
   (xsubstring s from to start end))

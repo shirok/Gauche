@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-190 - Coroutine generator
+;;; SRFI-190 - Coroutine generator
 ;;;
 ;;;   Copyright (c) 2020-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -32,7 +32,7 @@
 ;;;
 
 ;; EXPERIMENTAL - not using identifier syntax
-;; NB: This isn't correct.  See the mail archive of srfi-190.
+;; NB: This isn't correct.  See the mail archive of SRFI-190.
 
 (define-module srfi.190
   (use gauche.generator)

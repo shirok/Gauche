@@ -451,7 +451,7 @@
 
 ;; Read the first form.
 ;; We don't read the entire content of the file, since it may contain
-;; srfi-10 read-time constructor that we don't know about yet.
+;; SRFI-10 read-time constructor that we don't know about yet.
 (define (first-form src) (with-input-from-file src read))
 
 ;; Check if the first form is define-module.

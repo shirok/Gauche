@@ -1,7 +1,7 @@
 (define-module scheme.stream.derived
   (use util.stream :except (stream-take stream-drop))
   (export define-stream list->stream port->stream
-          (rename stream+ stream) ;; differs from srfi-40
+          (rename stream+ stream) ;; differs from SRFI-40
           stream->list stream-append stream-concat stream-constant
           stream-drop stream-drop-while stream-filter stream-fold
           stream-for-each stream-from stream-iterate stream-length

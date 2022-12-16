@@ -417,7 +417,7 @@
 
 (define-syntax nest6 (syntax-rules ()
                        ((_ (?a ...) ...)
-                        (?a ... ...)))) ;srfi-149
+                        (?a ... ...)))) ;SRFI-149
 (test-macro "nest6" (a b c d e f g h i j)
             (nest6 (a b c d) (e f g) (h i) (j)))
 (test-macro "nest6" (a b c d e f g)
@@ -425,7 +425,7 @@
 
 (define-syntax nest7 (syntax-rules ()
                        ((_ (?a ...) ...)
-                        (?a ... ... z ?a ... ...)))) ;srfi-149
+                        (?a ... ... z ?a ... ...)))) ;SRFI-149
 (test-macro "nest7" (a b c d e f g h i j z a b c d e f g h i j)
             (nest7 (a b c d) (e f g) (h i) (j)))
 (test-macro "nest7" (a b c d e f g z a b c d e f g)
@@ -433,13 +433,13 @@
 
 (define-syntax nest8 (syntax-rules ()
                        ((_ ((?a ...) ...) ...)
-                        (?a ... ... ... z)))) ;srfi-149
+                        (?a ... ... ... z)))) ;SRFI-149
 (test-macro "nest8" (a b c d e f g h i j z)
             (nest8 ((a b c d) (e f g)) ((h i) (j))))
 (test-macro "nest8" (a b c d e f g h i j z)
             (nest8 ((a b c d) () (e f g)) () ((h i) () (j) ())))
 
-;; mixlevel is allowed by srfi-149
+;; mixlevel is allowed by SRFI-149
 (define-syntax mixlevel1 (syntax-rules ()
                            ((_ (?a ?b ...)) ((?a ?b) ...))))
 
@@ -1947,12 +1947,12 @@
 
 
 ;;----------------------------------------------------------------------
-;; srfi-147 begin
+;; SRFI-147 begin
 ;; (not yest supported)
 
-'(test-section "srfi-147 begin")
+'(test-section "SRFI-147 begin")
 
-'(test "srfi-147 begin (internal) 1"
+'(test "SRFI-147 begin (internal) 1"
       '(yes no)
       (lambda ()
         (define-syntax foo
@@ -1962,7 +1962,7 @@
         (list (foo 'yes 'no (zero? 0))
               (foo 'yes 'no (zero? 1)))))
 
-'(test "srfi-147 begin (internal) 2"
+'(test "SRFI-147 begin (internal) 2"
       11
       (lambda ()
         (let-syntax ([foo (syntax-rules ()

@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-27.scm - Sources of Random Bits
+;;; SRFI-27.SCM - Sources of Random Bits
 ;;;
 ;;;   Copyright (c) 2000-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

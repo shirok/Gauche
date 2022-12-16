@@ -48,7 +48,7 @@
 (select-module gauche)
 (define-cproc promise? (obj) ::<boolean> :constant
   (return (SCM_XTYPEP obj SCM_CLASS_PROMISE)))
-(define-cproc eager (obj)              ;srfi-45
+(define-cproc eager (obj)              ;SRFI-45
   (return (Scm_MakePromise TRUE obj)))
 (define-cproc promise-kind (p::<promise>)
   (setter (p::<promise> obj) ::<void> (set! (-> p kind) obj))

@@ -38,7 +38,7 @@
               [eager list])
           (delay (force 3)))))
 
-;; srfi-45 test suite
+;; srfi.45 test suite
 (test* "memoize 1" 1
        (let1 count 0
          (define s (delay (begin (set! count (+ count 1)) 1)))
@@ -77,7 +77,7 @@
            (car (force (stream-drop s 4)))
            count)))
 
-(test* "reentrancy 1" 'second       ;; see srfi-40 post-discussion
+(test* "reentrancy 1" 'second       ;; see srfi.40 post-discussion
        (let ()
          (define f
            (let1 first? #t
@@ -274,7 +274,7 @@
 
 ;; lcons
 (let ()
-  (define (take xs n) ; avoid depending srfi-1
+  (define (take xs n) ; avoid depending SRFI-1
     (if (= n 0)
       '()
       (cons (car xs) (take (cdr xs) (- n 1)))))

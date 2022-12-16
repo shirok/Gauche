@@ -824,7 +824,7 @@
 ;; Allowing to use user-defined objects in a hashtable with
 ;; a comparator with default-hash.
 ;; We use eq-/eqv-hash regardless of the compoarator's hash setting
-;; If the equality predicate is eq?/eqv?.  See srfi-125.
+;; If the equality predicate is eq?/eqv?.  See SRFI-125.
 ;; Also https://github.com/shirok/Gauche/issues/708
 (define-class <user-defined-hashed> ()
   ((a :init-keyword :a)))

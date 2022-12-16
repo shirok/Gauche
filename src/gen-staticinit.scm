@@ -31,8 +31,8 @@
 (use util.match)
 (use gauche.cgen)
 (use text.tr)
-(use srfi-13)
-(use srfi-42)
+(use srfi.13)
+(use srfi.42)
 
 (define top-srcdir   (make-parameter ".."))
 (define top-builddir (make-parameter ".."))

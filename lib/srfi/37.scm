@@ -28,7 +28,7 @@
 
 ;;; Modified by Shiro Kawai to adapt to Gauche
 ;;;  * Module stuff added.
-;;;  * Replaced a srfi-9 record type for a class.
+;;;  * Replaced a SRFI-9 record type for a class.
 ;;;  * Replaced some expressions to utilize Gauche's native features.
 
 (define-module srfi.37

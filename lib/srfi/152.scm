@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-152 - String Library (reduced)
+;;; SRFI-152 - String Library (reduced)
 ;;;
 
 (define-module srfi.152
@@ -96,6 +96,6 @@
 (define string-drop-while-right string-trim-right)
 (define string-remove string-delete)
 
-;; 'to' is not optional in srfi-152
+;; 'to' is not optional in SRFI-152
 (define (string-replicate s from to :optional start end)
   (xsubstring s from to start end))

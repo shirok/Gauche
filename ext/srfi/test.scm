@@ -7,10 +7,10 @@
 (test-start "extension srfi modules")
 
 ;;;
-;;; test srfi-13
+;;; test SRFI-13
 ;;;
 
-(test-section "srfi-13")
+(test-section "SRFI-13")
 
 (define-module srfi-13-tests
   (use gauche.test)
@@ -461,10 +461,10 @@
   )
 
 ;;;
-;;; testing srfi-19
+;;; testing SRFI-19
 ;;;
 
-(test-section "srfi-19")
+(test-section "SRFI-19")
 
 (define-module srfi-19-tests
   (use gauche.test)
@@ -702,10 +702,10 @@
   )
 
 ;;
-;; testing srfi-43
+;; testing SRFI-43
 ;;
 
-(test-section "srfi-43")
+(test-section "SRFI-43")
 
 (define-module srfi-43-tests
   (use gauche.test)

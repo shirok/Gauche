@@ -359,7 +359,7 @@
        (return SCM_POSITIVE_INFINITY))))
 
  ;; caller must hold big lock
- ;; %qtail isn't used in data.queue, but used by srfi-117
+ ;; %qtail isn't used in data.queue, but used by SRFI-117
  (define-cproc %qhead (q::<queue>) (return (Q_HEAD q)))
  (define-cproc %qtail (q::<queue>) (return (Q_TAIL q)))
 

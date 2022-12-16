@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; Originally srfi-124
+;; Originally SRFI-124
 
 ;; NB: This is an *incomplete* emulation of ephemerons.  Notably,
 ;; if a key has a strong reference from its datum, the key won't be

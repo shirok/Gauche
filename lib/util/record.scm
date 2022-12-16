@@ -14,7 +14,7 @@
 ;;;
 
 ;;; This code is originally written by Alex Shinn as a patch to
-;;; srfi-9.  Shiro Kawai modified it slightly to be an independent
+;;; SRFI-9.  Shiro Kawai modified it slightly to be an independent
 ;;; module.
 
 (define-module util.record

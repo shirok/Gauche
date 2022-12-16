@@ -1,9 +1,9 @@
 ;;;
-;;; srfi-196 - Range objects
+;;; SRFI-196 - Range objects
 ;;;
 
-;; data.range is a superset of srfi-196.
-;; We simply re-export srfi-196 bindings.
+;; data.range is a superset of SRFI-196.
+;; We simply re-export SRFI-196 bindings.
 
 (define-module srfi.196
   (use data.range)

@@ -1420,7 +1420,7 @@
 (define (command-name->keystroke-string km command-name)
   (and-let1 ks (command-name->keystrokes km command-name)
     (let1 s (keys->string ks #f)
-      (substring s 0 (- (string-length s) 1))))) ;avoid depending srfi-13
+      (substring s 0 (- (string-length s) 1))))) ;avoid depending SRFI-13
 
 (define-syntax define-key
   (syntax-rules ()

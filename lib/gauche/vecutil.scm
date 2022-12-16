@@ -76,7 +76,7 @@
       (%vector-update! vec (apply min (map vector-length vecs))
                        (^i (apply proc (map (^v (vector-ref v i)) vecs)))))))
 
-;; srfi-43 vector-map.  passing the index to PROC as the first arg.
+;; SRFI-43 vector-map.  passing the index to PROC as the first arg.
 (define (vector-map-with-index proc vec . more)
   (assume-type vec <vector>)
   (if (null? more)
@@ -86,7 +86,7 @@
       (vector-tabulate (apply min (map vector-length vecs))
                        (^i (apply proc i (map (^v (vector-ref v i)) vecs)))))))
 
-;; srfi-43 vector-map!
+;; SRFI-43 vector-map!
 (define (vector-map-with-index! proc vec . more)
   (assume-type vec <vector>)
   (if (null? more)
@@ -104,7 +104,7 @@
       (dotimes [i (apply min (map vector-length vecs))]
         (apply proc (map (^v (vector-ref v i)) vecs))))))
 
-;; srfi-43 vector-for-each
+;; SRFI-43 vector-for-each
 (define (vector-for-each-with-index proc vec . more)
   (assume-type vec <vector>)
   (if (null? more)

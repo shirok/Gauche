@@ -1,5 +1,5 @@
 ;;;
-;;; srfi-129 - Titlecase procedures
+;;; SRFI-129 - Titlecase procedures
 ;;;
 
 ;; This is just an adaptor.
