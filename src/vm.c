@@ -64,8 +64,6 @@ static int vm_stack_mark_proc;
 #define EX_SOFTWARE 70
 #endif
 
-//#define DH_IN_DENV 1
-
 /* Prompt tag.  Class initialization is done in class.c */
 static void prompt_tag_print(ScmObj obj, ScmPort *out,
                              ScmWriteContext *ctx SCM_UNUSED)
@@ -2338,20 +2336,12 @@ ScmObj make_dynamic_handler(ScmVM *vm, ScmObj before, ScmObj after, ScmObj args)
 /* Handler-chain internal API */
 static ScmObj get_dynamic_handlers(ScmVM *vm)
 {
-#ifdef DH_IN_DENV
-    return find_dynamic_env(vm, denv_key_dynamic_handler, SCM_NIL);
-#else
     return vm->dynamicHandlers;
-#endif
 }
 
 static void set_dynamic_handlers(ScmVM *vm, ScmObj handlers)
 {
-#ifdef DH_IN_DENV
-    push_dynamic_env(vm, denv_key_dynamic_handler, handlers);
-#else
     vm->dynamicHandlers = handlers;
-#endif
 }
 
 static ScmObj push_dynamic_handlers(ScmVM *vm,
@@ -2425,17 +2415,6 @@ static ScmCContinuationProc dynwind_after_cc;
 
 ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 {
-#ifdef DH_IN_DENV
-    void *data[2];
-    ScmVM *vm = theVM;
-
-    /* NB: we don't check types of arguments, since they can be non-procedure
-       objects with object-apply hooks. */
-    data[0] = push_dynamic_handlers(vm, before, after, SCM_NIL);
-    data[1] = body;
-    Scm_VMPushCC(dynwind_before_cc, data, 2);
-    return vm_call_before_thunk(vm, data[0]);
-#else
     void *data[3];
 
     /* NB: we don't check types of arguments, since they can be non-procedure
@@ -2446,18 +2425,10 @@ ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 
     Scm_VMPushCC(dynwind_before_cc, data, 3);
     return Scm_VMApply0(before);
-#endif
 }
 
 static ScmObj dynwind_before_cc(ScmObj result SCM_UNUSED, void **data)
 {
-#ifdef DH_IN_DENV
-    ScmObj body = SCM_OBJ(data[1]);
-
-    /* carry on data[0] = handler_entry */
-    Scm_VMPushCC(dynwind_body_cc, data, 1);
-    return Scm_VMApply0(body);
-#else
     ScmObj before = SCM_OBJ(data[0]);
     ScmObj body   = SCM_OBJ(data[1]);
     ScmObj after  = SCM_OBJ(data[2]);
@@ -2468,22 +2439,15 @@ static ScmObj dynwind_before_cc(ScmObj result SCM_UNUSED, void **data)
     push_dynamic_handlers(vm, before, after, SCM_NIL);
     Scm_VMPushCC(dynwind_body_cc, d, 1);
     return Scm_VMApply0(body);
-#endif
 }
 
 static ScmObj dynwind_body_cc(ScmObj result, void **data)
 {
-#ifdef DH_IN_DENV
-    ScmObj handler_entry = SCM_OBJ(data[0]);
-    void *d[3];
-    ScmVM *vm = theVM;
-#else
     ScmObj after = SCM_OBJ(data[0]);
     void *d[3];
     ScmVM *vm = theVM;
 
     pop_dynamic_handlers(vm);
-#endif
 
     /* Save return values.
        We could avoid malloc when numVals is small (we can push
@@ -2502,11 +2466,7 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
     } else {
         Scm_VMPushCC(dynwind_after_cc, d, 2);
     }
-#ifdef DH_IN_DENV
-    return vm_call_after_thunk(vm, handler_entry);
-#else
     return Scm_VMApply0(after);
-#endif
 }
 
 static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
