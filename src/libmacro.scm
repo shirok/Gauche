@@ -68,6 +68,7 @@
      (define use. (r 'use))
      (define begin. (r 'begin))
      (define else. (r 'else))
+     (define allow-srfi-feature-id? #f)
 
      ;; Check feature requirement.  Returns #f if requirement is not
      ;; satisfied.  Returns a list of features to be use'd if requirement
@@ -77,7 +78,10 @@
        (cond
         [(identifier? req)
          (and-let1 p (assq (identifier->symbol req) features)
-           ((with-module gauche.internal %check-feature-id) (car p))
+           (unless allow-srfi-feature-id?
+             ((with-module gauche.internal %check-feature-id)
+              (car p)
+              (debug-source-info f)))
            (if (null? (cdr p)) seed (cons (cadr p) seed)))]
         [(not (pair? req)) (error "Invalid cond-expand feature-id:" req)]
         [else
@@ -146,15 +150,32 @@
                         ,@(cdar cls)))]
         [else (rec (cdr cls))]))
 
-     (rec (cdr f)))))
+     ;; :allow-srfi-feature-id is a hidden extension to skip checking
+     ;; of srfi-N feature identifier. They're deprecated and warned,
+     ;; but certain legacy srfis such as SRFI-7 that expands to cond-expand
+     ;; do not provide alternative (library (srfi N)) form.  We only support
+     ;; such srfis for the legacy code, and it's simpler to use this
+     ;; compatibility mode rather than changing those srfis to use
+     ;; library clause.
+     (match f
+       [(_ ':allow-srfi-feature-id . clauses)
+        (set! allow-srfi-feature-id? #t)
+        (rec clauses)]
+       [(_ . clauses)
+        (rec clauses)]))))
 
 ;; transitional
 (with-module gauche.internal
-  (define (%check-feature-id sym)
-    (when (and (#/^srfi-\d+$/ (symbol->string sym))
-               (not (vm-compiler-flag-is-set? SCM_COMPILE_SRFI_FEATURE_ID)))
-      (warn "Feature identifier ~a is deprecated.  Use (library ~a)\n"
-            sym sym))))
+  (define (%check-feature-id sym source-info)
+    (let1 s (symbol->string sym)
+      (when (and (#/^srfi-\d+$/ s)
+                 (not (vm-compiler-flag-is-set? SCM_COMPILE_SRFI_FEATURE_ID)))
+        (warn "Feature identifier '~a' is deprecated~a.  Use (library ~a)\n"
+              sym
+              (if source-info
+                (format ", at ~s:~a" (car source-info) (cadr source-info))
+                "")
+              (regexp-replace #/^srfi-(\d+)$/ s "srfi.\\1"))))))
 
 ;;; quasirename
 

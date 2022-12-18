@@ -36,7 +36,7 @@
      (begin))
     ((program (requires feature-id ...)
               more ...)
-     (begin (cond-expand ((and feature-id ...) 'okay))
+     (begin (cond-expand :allow-srfi-feature-id ((and feature-id ...) 'okay))
             (program more ...)))
     ((program (files filename ...)
               more ...)
@@ -48,5 +48,6 @@
             (program more ...)))
     ((program (feature-cond (requirement stuff ...) ...)
               more ...)
-     (begin (cond-expand (requirement (program stuff ...)) ...)
+     (begin (cond-expand :allow-srfi-feature-id
+                         (requirement (program stuff ...)) ...)
             (program more ...)))))
