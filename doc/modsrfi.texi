@@ -37,56 +37,10 @@ a R7RS library).
 R7RSライブラリとしては@code{(srfi 13)})ということに注意してください。
 @c COMMON
 
-@c EN
-To test availability of a SRFI with @code{cond-expand}
-(@pxref{Feature conditional}), you can use @code{(library library-name)}
-feature requirement.  You can use both Gauche-style and R7RS-style
-library name notation.
-@c JP
-特定のSRFIが使えるかどうかを@code{cond-expand}で検査する場合は、機能要請式
-@code{(library @code{library-name})}が使えます (@ref{Feature conditional}参照)。
-@var{library-name}のにはGauche方式のモジュール名もR7RS方式のライブラリ名も使えます。
-@c COMMON
-
-@example
-;; Use 'library' feature requirement with Gauche module name
-(cond-expand
-  [(library srfi.13) (use srfi.13) ...]
-  [else ...])
-
-;; Use 'library' feature requirement with R7RS library name
-(cond-expand
-  [(library (srfi 13)) (import (srfi 13)) ...]
-  [else ...])
-@end example
-
-@c EN
-Alternatively you can use a SRFI name as a feature identifier.
-@emph{This use is deprecated}.  This is an old style used before R7RS.
-With this style, if the feature is fulfilled, the necessary libraries
-are implicitly imported, so you don't need to have @code{use} or
-@code{import} forms (but that means you can't control the imports
-with @code{only}, @code{rename}, @code{prefix} etc.)
-@c JP
-他に、SRFI名を直接機能識別子として使うこともできます。
-@emph{ただし、この機能は非推奨です}。これはR7RS以前の方式です。
-この指定を使った場合、機能条件が満たされたならば、必要なモジュールは自動的にインポート
-されているので、@code{use}や@code{import}でインポートする必要はありません。
-ただそれは、@code{only}、@code{rename}、@code{prefix}節などでインポートする
-識別子を制御できないということでもあります。
-@c COMMON
-
-@example
-;; DEPRECATED.  Use 'srfi-N' feature identifier.
-;; If the feature is fulfilled, you can assume the module is already 'use'd.
-(cond-expand
-  [srfi-13 ...]
-  [else ...])
-@end example
-
 
 @c ----------------------------------------------------------------------
 @menu
+* Testing availability of SRFIs::
 * SRFIs that have become R7RS-large::
 * Homogeneous vectors::         srfi.4
 * A compatible let form with signatures and rest arguments::  srfi.5
@@ -141,8 +95,72 @@ with @code{only}, @code{rename}, @code{prefix} etc.)
 * Flexible curried procedures::  srfi.232
 @end menu
 
+@node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
+@section Testing availability of SRFIs
+@c NODE SRFIが使えるかどうかテストする
 
-@node SRFIs that have become R7RS-large, Homogeneous vectors, Library modules - SRFIs, Library modules - SRFIs
+@c EN
+To test availability of a SRFI with @code{cond-expand}
+(@pxref{Feature conditional}), you can use @code{(library library-name)}
+feature requirement.  You can use both Gauche-style and R7RS-style
+library name notation.
+@c JP
+特定のSRFIが使えるかどうかを@code{cond-expand}で検査する場合は、機能要請式
+@code{(library @code{library-name})}が使えます (@ref{Feature conditional}参照)。
+@var{library-name}のにはGauche方式のモジュール名もR7RS方式のライブラリ名も使えます。
+@c COMMON
+
+@example
+;; Use 'library' feature requirement with Gauche module name
+(cond-expand
+  [(library srfi.13) (use srfi.13) ...]
+  [else ...])
+
+;; Use 'library' feature requirement with R7RS library name
+(cond-expand
+  [(library (srfi 13)) (import (srfi 13)) ...]
+  [else ...])
+@end example
+
+@c EN
+Alternatively you can use a SRFI name as a feature identifier.
+@emph{This use is deprecated}.  This is an old style used before R7RS.
+With this style, if the feature is fulfilled, the necessary libraries
+are implicitly imported, so you don't need to have @code{use} or
+@code{import} forms (but that means you can't control the imports
+with @code{only}, @code{rename}, @code{prefix} etc.)
+@c JP
+他に、SRFI名を直接機能識別子として使うこともできます。
+@emph{ただし、この機能は非推奨です}。これはR7RS以前の方式です。
+この指定を使った場合、機能条件が満たされたならば、必要なモジュールは自動的にインポート
+されているので、@code{use}や@code{import}でインポートする必要はありません。
+ただそれは、@code{only}、@code{rename}、@code{prefix}節などでインポートする
+識別子を制御できないということでもあります。
+@c COMMON
+
+@example
+;; DEPRECATED.  Use 'srfi-N' feature identifier.
+;; If the feature is fulfilled, you can assume the module is already 'use'd.
+(cond-expand
+  [srfi-13 ...]
+  [else ...])
+@end example
+
+@c EN
+If @code{srfi-N} is used as a feature identifier, a warning is
+issued when an environment variable @code{GAUCHE_WARN_SRFI_FEATURE_ID} is
+set.  In future this warning will be the default.  We urge the users
+to update their code to use @code{(libraru srfi.N)} form.
+@c JP
+@code{srfi-N}が機能識別子として使われた場合、
+環境変数@code{GAUCHE_WARN_SRFI_FEATURE_ID}がセットされていれば
+警告が表示されます。将来はデフォルトで警告するようになります。
+@code{srfi-N}機能識別子を使っているユーザは、なるべく早く
+@code{(libraru srfi.N)}へと書き換えるようにしてください。
+@c COMMON
+
+
+@node SRFIs that have become R7RS-large, Homogeneous vectors, Testing availability of SRFIs, Library modules - SRFIs
 @section SRFIs that have become R7RS-large
 @c NODE R7RS-largeになったSRFI
 

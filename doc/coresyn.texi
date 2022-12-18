@@ -4639,15 +4639,16 @@ of @var{feature-requirement}s to compose more complex conditions.
 
 @c EN
 The form @code{(library @var{library-name})} is added in R7RS,
-and it is fulfilled when the named library is available.  Since
-this is R7RS construct, you have to use R7RS-style library name---
-list of symbols/integers, e.g. @code{(gauche net)} instead of
-@code{gauche.net}.
+and it is fulfilled when the named library is available.  For the
+@var{library-name}, you can use both R7RS library name
+(e.g. @code{(srfi 13)}) and traditional Gauche module name
+(e.g. @code{srfi.13}).
 @c JP
 @code{(library @var{library-name})}という形式はR7RSで追加されたもので、
 指定されるライブラリが使える場合に条件が満たされます。
-これはR7RSの形式なので、ライブラリ名はリスト形式で指定します
-(@code{gauche.net}のかわりに@code{(gauche net)}等)。
+@var{library-name}は、R7RS形式
+(例: @code{(srfi 13)}) も伝統的なGaucheのモジュール名
+(例: @code{srfi.13}) も使えます。
 @c COMMON
 
 @c EN
@@ -4714,6 +4715,33 @@ in cross-compiling situation in general.)
 条件選択はマクロ展開をするプラットフォームの機能に応じて行われ、
 それはコードを実行するプラットフォームの機能とは一致しないかもしれません
 (これはもちろん、クロスコンパイルで常に問題となることです。)
+@c COMMON
+
+@c EN
+NB: When @code{cond-expand} was defined as SRFI-0, there was no standard
+way to name Scheme libraries.  So SRFI-0 suggested to use @code{srfi-N}
+as feature identifier to check the support of a specific srfi.
+@b{We deprecate this usage}.  It should be replaced with
+@code{(library srfi.N)}.  @xref{Testing availability of SRFIs}, for the
+details.
+
+As of 0.9.13, a warning is issued when @code{srfi-N} feature identifier
+is used in @code{cond-expand}
+if the environment variable @code{GAUCHE_WARN_SRFI_FEATURE_ID} is set.
+In future versions the warning will be default; we recommend to
+set this environment variable to detect code to update.
+@c JP
+註: @code{cond-expand}がSRFI-0として定義された時には、
+Schemeライブラリの命名法の標準が決まっていませんでした。
+SRFI-0のドキュメントでは@code{srfi-N}という形式の機能識別子で特定のsrfiが
+サポートされているかどうかを検査するように推奨されていました。
+@b{この使い方は現在は非推奨です}。@code{(library srfi.N)}で検査するように
+変更してください。詳しくは@ref{Testing availability of SRFIs}参照。
+
+0.9.13時点では、環境変数@code{GAUCHE_WARN_SRFI_FEATURE_ID}が
+セットされている場合に限り、機能識別子@code{srfi-N}が使われた時に
+警告が出されます。将来はデフォルトで警告を出すようにするので、
+いまのうちにこの環境変数をセットして古いコードを見つけて書き換えておくと良いでしょう。
 @c COMMON
 
 @c EN
