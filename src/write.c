@@ -1079,7 +1079,7 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                         ScmObj s = Scm_GetOutputString(SCM_PORT(buf), 0);
                         Scm_PutsUnsafe(SCM_STRING(s), out);
                         ScmSmallInt n = SCM_STRING_LENGTH(s);
-                        if (n >= prec) {
+                        if (n > width) {
                             if (double_quote_closed_p(SCM_STRING(s)))
                                 Scm_PutzUnsafe(" ...", -1, out);
                             else
