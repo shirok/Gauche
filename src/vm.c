@@ -1739,6 +1739,32 @@ ScmObj Scm_VMEval(ScmObj expr, ScmObj e)
     }
 }
 
+/*
+ * C continuation
+ *
+ *   This is a bit messy due to the historical evolution of C continuations.
+ */
+
+/* Common ccont frame constructor */
+static ScmObj *new_ccont(ScmVM *vm, ScmPContinuationProc *after,
+                         ScmWord *cpcdata, int datasize)
+{
+    CHECK_STACK(CONT_FRAME_SIZE+datasize);
+    ScmObj *s = SP;
+    ScmContFrame *cc = (ScmContFrame*)(s + datasize);
+    cc->prev = CONT;
+    cc->env = &ccEnvMark;
+    cc->denv = DENV;
+    cc->size = datasize;
+    cc->marker = 0;
+    cc->cpc = cpcdata;
+    cc->pc = (ScmWord*)after;
+    cc->base = BASE;
+    CONT = cc;
+    ARGP = SP = s + datasize + CONT_FRAME_SIZE;
+    return s;
+}
+
 /* This is a trick to keep the backward compatibility. */
 static ScmObj ccont_adapter(ScmVM *vm, ScmObj val0, ScmObj *data)
 {
@@ -1768,24 +1794,10 @@ void Scm_VMPushCC(ScmCContinuationProc *after,
                   void **data, int datasize)
 {
     ScmVM *vm = theVM;
-
-    CHECK_STACK(CONT_FRAME_SIZE+datasize);
-    ScmObj *s = SP;
+    ScmObj *buf = new_ccont(vm, ccont_adapter, (ScmWord*)after, datasize);
     for (int i=0; i<datasize; i++) {
-        *s++ = SCM_OBJ(data[i]);
+        buf[i] = SCM_OBJ(data[i]);
     }
-    ScmContFrame *cc = (ScmContFrame*)s;
-    s += CONT_FRAME_SIZE;
-    cc->prev = CONT;
-    cc->env = &ccEnvMark;
-    cc->denv = DENV;
-    cc->size = datasize;
-    cc->marker = 0;
-    cc->cpc = (ScmWord*)after;
-    cc->pc = (ScmWord*)ccont_adapter;
-    cc->base = BASE;
-    CONT = cc;
-    ARGP = SP = s;
 }
 
 /* Allocate SIZE words from the VM stack.  The stack may be packed
@@ -1803,20 +1815,7 @@ ScmObj *Scm_pc_Alloca(ScmVM *vm, size_t size)
    used by machine-generated C code. */
 ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
 {
-    CHECK_STACK(CONT_FRAME_SIZE+datasize);
-    ScmObj *s = SP;
-    ScmContFrame *cc = (ScmContFrame*)(s + datasize);
-    cc->prev = CONT;
-    cc->env = &ccEnvMark;
-    cc->denv = DENV;
-    cc->size = datasize;
-    cc->marker = 0;
-    cc->cpc = NULL;
-    cc->pc = (ScmWord*)after;
-    cc->base = BASE;
-    CONT = cc;
-    ARGP = SP = s + datasize + CONT_FRAME_SIZE;
-    return s;
+    return new_ccont(vm, after, NULL, datasize);
 }
 
 /*-------------------------------------------------------------
