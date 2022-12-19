@@ -81,6 +81,7 @@ static ScmPromptTag defaultPromptTag; /* initialized in initVM */
 enum {
       SCM_CONT_SHIFT_MARKER = (1L<<0),
       SCM_CONT_RESET_MARKER = (1L<<1),
+      SCM_CONT_DYNWIND_MARKER = (1L<<2),
 };
 
 static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
@@ -90,6 +91,10 @@ static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 
 /* return true if cont has the end marker of partial continuation */
 #define MARKER_FRAME_P(cont)   ((cont)->marker & SCM_CONT_SHIFT_MARKER)
+
+/* return true if cont is of dynamic-wind body */
+#define DYNWIND_FRAME_P(cont)  ((cont)->marker & SCM_CONT_DYNWIND_MARKER)
+
 
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
@@ -1818,6 +1823,16 @@ ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
     return new_ccont(vm, after, NULL, datasize);
 }
 
+/* A special internal procedure to push C continuation with dynamic
+   handlers.  Only used for dynamic-wind. */
+static ScmObj *push_dynamic_handler_cc(ScmVM *vm, ScmPContinuationProc *after,
+                                       ScmObj dh, int datasize)
+{
+    ScmObj *data = new_ccont(vm, after, (ScmWord*)dh, datasize);
+    CONT->marker |= SCM_CONT_DYNWIND_MARKER;
+    return data;
+}
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,
@@ -2408,43 +2423,39 @@ void Scm_VMSetDynamicHandlers(ScmObj handlers)
     set_dynamic_handlers(theVM, handlers);
 }
 
-static ScmCContinuationProc dynwind_before_cc;
-static ScmCContinuationProc dynwind_body_cc;
-static ScmCContinuationProc dynwind_after_cc;
+static ScmPContinuationProc dynwind_before_cc;
+static ScmPContinuationProc dynwind_body_cc;
+static ScmPContinuationProc dynwind_after_cc;
 
 ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
 {
-    void *data[3];
-
+    ScmVM *vm = Scm_VM();
     /* NB: we don't check types of arguments, since they can be non-procedure
        objects with object-apply hooks. */
-    data[0] = (void*)before;
-    data[1] = (void*)body;
-    data[2] = (void*)after;
-
-    Scm_VMPushCC(dynwind_before_cc, data, 3);
+    ScmObj *data = Scm_pc_PushCC(vm, dynwind_before_cc, 3);
+    data[0] = before;
+    data[1] = body;
+    data[2] = after;
     return Scm_VMApply0(before);
 }
 
-static ScmObj dynwind_before_cc(ScmObj result SCM_UNUSED, void **data)
+static ScmObj dynwind_before_cc(ScmVM *vm,
+                                ScmObj result SCM_UNUSED,
+                                ScmObj *data)
 {
-    ScmObj before = SCM_OBJ(data[0]);
-    ScmObj body   = SCM_OBJ(data[1]);
-    ScmObj after  = SCM_OBJ(data[2]);
-    void *d[1];
-    ScmVM *vm = theVM;
+    ScmObj before = data[0];
+    ScmObj body   = data[1];
+    ScmObj after  = data[2];
 
-    d[0] = (void*)after;
-    push_dynamic_handlers(vm, before, after, SCM_NIL);
-    Scm_VMPushCC(dynwind_body_cc, d, 1);
+    ScmObj dhentry = push_dynamic_handlers(vm, before, after, SCM_NIL);
+    ScmObj *d = push_dynamic_handler_cc(vm, dynwind_body_cc, dhentry, 1);
+    d[0] = after;
     return Scm_VMApply0(body);
 }
 
-static ScmObj dynwind_body_cc(ScmObj result, void **data)
+static ScmObj dynwind_body_cc(ScmVM *vm, ScmObj result, ScmObj *data)
 {
-    ScmObj after = SCM_OBJ(data[0]);
-    void *d[3];
-    ScmVM *vm = theVM;
+    ScmObj after = data[0];
 
     pop_dynamic_handlers(vm);
 
@@ -2455,23 +2466,24 @@ static ScmObj dynwind_body_cc(ScmObj result, void **data)
        effect.  So we keep it simple here.
      */
     int nvals = vm->numVals;
-    d[0] = (void*)result;
-    d[1] = (void*)(intptr_t)nvals;
     if (nvals > 1) {
         ScmObj *vals = SCM_NEW_ARRAY(ScmObj, nvals-1);
         memcpy(vals, vm->vals, sizeof(ScmObj)*(nvals-1));
-        d[2] = (void*)vals;
-        Scm_VMPushCC(dynwind_after_cc, d, 3);
+        ScmObj *d = Scm_pc_PushCC(vm, dynwind_after_cc, 3);
+        d[0] = result;
+        d[1] = SCM_OBJ((intptr_t)nvals);
+        d[2] = SCM_OBJ(vals);
     } else {
-        Scm_VMPushCC(dynwind_after_cc, d, 2);
+        ScmObj *d = Scm_pc_PushCC(vm, dynwind_after_cc, 2);
+        d[0] = result;
+        d[1] = SCM_OBJ((intptr_t)nvals);
     }
     return Scm_VMApply0(after);
 }
 
-static ScmObj dynwind_after_cc(ScmObj result SCM_UNUSED, void **data)
+static ScmObj dynwind_after_cc(ScmVM *vm, ScmObj result SCM_UNUSED,
+                               ScmObj *data)
 {
-    ScmVM *vm = theVM;
-
     /* Restore return values. */
     ScmObj val0 = SCM_OBJ(data[0]);
     int nvals = (int)(intptr_t)data[1];

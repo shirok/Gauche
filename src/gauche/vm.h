@@ -158,7 +158,7 @@ SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
  *
  *   |  base   |
  *   |   pc    |  <-- PCont procedure
- *   |  cpc    |  <-- CCont procedure
+ *   |  cpc    |  <-- CCont procedure, NULL, or #<dynamic-handler>
  *   | marker  |
  *   | size=N  |
  *   |  denv   |
@@ -174,6 +174,18 @@ SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
  *  CCont is the original C continuation.  It takes one result and
  *  the data array.  PCont is introduced to support precompile-to-C
  *  code, and it takes ScmVM* in addition to the result and data array.
+ *
+ *  When C continuation frame is popped, the value of cpc is temporaily
+ *  saved in vm->ccont, and PCont procedure is invoked with vm, val0,
+ *  and pointer to the data array.  If the C continuation frame is
+ *  pushed with Scm_pc_PushCC, vm->ccont is NULL (unused).
+ *  If the C continuation frame is pushed with Scm_VMPushCC, PCont
+ *  procedure is set to ccont_adapter() which invokes vm->ccont as
+ *  CCont procedure.
+ *
+ *  A special case is a C continuation frame pushed for execution of
+ *  body thunk of dynamic-wind.  It contains #<dynamic-handler>,
+ *  so that stack rewinder can find dynamic handlers.
  */
 
 /* NB: The size of continuation frame (in words) is embedded in the precompiled
