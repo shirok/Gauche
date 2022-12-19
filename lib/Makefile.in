@@ -173,7 +173,7 @@ uninstall:
 # installation script.
 slibcat :
 	if test -f "$(SLIB_DIR)/require.scm" && test $(build) = $(host) ; then \
-	  "$(exec_prefix)/bin/gosh" -ftest -uslib -E"require 'new-catalog" -Eexit;\
+	  "$(exec_prefix)/bin/gosh" -ftest -fno-warn-srfi-feature-id -uslib -E"require 'new-catalog" -Eexit;\
 	fi
 
 # Some package systems don't allow to run postinstall commands.  For such

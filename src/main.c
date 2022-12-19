@@ -157,6 +157,10 @@ void usage(int errorp)
             "                      without installing.\n"
             "      warn-legacy-syntax\n"
             "                      print warning when legacy Gauche syntax is encountered\n"
+            "      warn-srfi-feature-id\n"
+            "                      print warning when srfi-N is used as a feature id."
+            "      no-warn-srfi-feature-id\n"
+            "                      don't print warning when srfi-N is used as a feature id."
             "Environment variables:\n"
             "  GAUCHE_AVAILABLE_PROCESSORS\n"
             "      Value must be an integer.  If set, it overrides the number of\n"
@@ -307,6 +311,12 @@ void further_options(const char *optarg)
         /* standard input port is already initialized, so we should switch it */
         Scm_SetPortReaderLexicalMode(SCM_CURIN, SCM_INTERN("warn-legacy"));
     }
+    else if (strcmp(optarg, "warn-srfi-feature-id") == 0) {
+        SCM_VM_COMPILER_FLAG_CLEAR(vm, SCM_COMPILE_SRFI_FEATURE_ID);
+    }
+    else if (strcmp(optarg, "no-warn-srfi-feature-id") == 0) {
+        SCM_VM_COMPILER_FLAG_SET(vm, SCM_COMPILE_SRFI_FEATURE_ID);
+    }
     else if (strcmp(optarg, "test") == 0) {
         test_mode = TRUE;
     }
@@ -348,7 +358,9 @@ void further_options(const char *optarg)
                 "-fno-inline-constants, -fno-inline-setters, -fno-source-info, "
                 "-fno-post-inline-pass, -fno-lambda-lifting-pass, "
                 "-fread-edit, -fno-read-edit, "
-                "-fsafe-string-cursors, -fwarn-legacy-syntax, or -ftest\n");
+                "-fsafe-string-cursors, -fwarn-legacy-syntax, "
+                "-fwarn-srfi-feature-id, -fno-warn-srfi-feature-id, "
+                "or -ftest\n");
         exit(1);
     }
 }

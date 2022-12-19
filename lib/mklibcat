@@ -9,7 +9,7 @@ set -e
 
 GOSH=$1
 
-$GOSH -ftest -uslib  \
+$GOSH -ftest -fno-warn-srfi-feature-id -uslib  \
     -E'with-module slib (define (implementation-vicinity) "./")' \
     -E"require 'new-catalog" \
     -Eexit
