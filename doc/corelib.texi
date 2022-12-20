@@ -589,7 +589,7 @@ is zero and @var{max-length} is @code{inf.0}.
 @end deftp
 
 @node Native types,  , Type expressions and type constructors, Types and classes
-@subsection ネイティブタイプ
+@subsection Native types
 @c NODE ネイティブタイプ
 
 Native types are a set of predefined descriptive types that bridge
