@@ -177,7 +177,7 @@
       [(buffer-line)  (if in? :modest :line)]))
   ;; We don't distinguish textual/binary port.
   (ecase port-type
-    [(binary-input textual-nput)
+    [(binary-input textual-input)
      (open-input-fd-port fd :buffering (%bufmode buffer-mode #t) :owner? #t)]
     [(binary-output textual-output)
      (open-output-fd-port fd :buffering (%bufmode buffer-mode #f) :owner? #t)]
