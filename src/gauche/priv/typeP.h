@@ -40,7 +40,7 @@
    See src/libtype.scm for the detailed explanations of those types
    and their usage. */
 
-/* <type-consturtor-meta> in Scheme.
+/* <type-constructor-meta> in Scheme.
    It inherits <class> in C level. */
 typedef struct ScmTypeConstructorRec {
     ScmClass common;

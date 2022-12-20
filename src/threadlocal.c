@@ -42,7 +42,7 @@
  * We have inheritable and non-inheritable thread locals.  Inheritable
  * thread locals are initialized with the value of the thread that calls
  * make-thread.  Non-inheritable ones are initialized by the init-value
- * given to the thread local consturctor.
+ * given to the thread local constructor.
  *
  * TODO: We now need to allocate tl slots to every thread.
  * We may be able to use a tree instead of a flat vector so that we

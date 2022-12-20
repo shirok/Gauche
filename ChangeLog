@@ -11260,7 +11260,7 @@
 	* src/extlib.stub, src/scmlib.scm (regexp->string): Changed
 	  regexp->string so that if the 'pattern' field of ScmRegexp is
 	  #f (i.e. the regexp is directly created from AST), it uses
-	  regexp-unparse to reconsturct the string representation.  The
+	  regexp-unparse to reconstruct the string representation.  The
 	  constructed string is set to the 'pattern' field so that the
 	  subsequent call of regexp->string will use it.
 	* src/autoloads.scm: Mark regexp-unparse autoload.
