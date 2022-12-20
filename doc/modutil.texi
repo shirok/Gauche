@@ -14491,7 +14491,7 @@ a parser.
 Unlike @code{let}, the parsers in @var{binding} @dots{} are always applied
 to the input sequentially.  The difference of @code{$let} and
 @code{$let*} is the scope.  With @code{$let*}, the variables bound
-in earlier @var{binding} can be used to consturct the @var{parser} later.
+in earlier @var{binding} can be used to construct the @var{parser} later.
 
 This means @code{$let} can evaluate all the parsers beforehand, while
 @code{$let*} may need to construct parsers at the time of processing

@@ -64,7 +64,7 @@
   (root-ast)
   (offending-item))
 
-;; Reconsturct string representation of regexp from the parsed tree.
+;; Reconstruct string representation of regexp from the parsed tree.
 (define (regexp-unparse ast :key (on-error :error))
   (define (doit) (call-with-output-string (cut regexp-unparse-int ast <>)))
   (case on-error

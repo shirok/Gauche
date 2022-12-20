@@ -394,7 +394,7 @@ If the new definition has different configuration of the instance,
 @end defun
 
 @node Type expressions and type constructors, Native types, Predefined classes, Types and classes
-@subsection Type expressions and type consturctors
+@subsection Type expressions and type constructors
 @c NODE 型の式と型コンストラクタ
 
 @c EN

@@ -73,7 +73,7 @@ struct ScmCompiledCodeRec {
                                    to inline this procedure.  Only set if
                                    the procedure is defined with define-inline.
                                    #f otherwise. (*5) */
-    void *builder;              /* An opaque data used during consturcting
+    void *builder;              /* An opaque data used during constructing
                                    the code vector.  Usually NULL. */
 };
 

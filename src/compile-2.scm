@@ -206,7 +206,7 @@
             [(has-tag? (car inits) $CLAMBDA)
              ;; We lift component closures of case-lamdba into local bindings,
              ;; for easier closure optimization.  The lifted local bindings
-             ;; are referred by the $CLAMBDA consturcture, we force this
+             ;; are referred by the $CLAMBDA constructure, we force this
              ;; $LET type to letrec, if it is not.
              (receive (lifted-lvars lifted-lambdas)
                  (pass2/lift-clambda-closures (car inits) (car lvars))
