@@ -150,8 +150,13 @@
    (undo-stack :init-form (make-queue))
    (redo-queue :init-form (make-queue))
 
-   ;; Keystroke queue
+   ;; Keyboard input
+   ;; timer-callback is, if set, fired after waiting for keyboard input
+   ;; for 1 sec, or a new keyboard input, whichever comes first.  It is
+   ;; invoked with the key input or #f (timeout); it is one-shot, so
+   ;; automatially cleared.
    (keystroke-queue :init-form (make-queue))
+   (timed-callback :init-value #f)
 
    ;; History
    ;; Global history is kept in the ring buffer, index 0 being the most recent.
@@ -432,15 +437,25 @@
 ;; those keys, then raises 'sigcont-received, which causes read-line/edit
 ;; to reset the terminal mode and redisplay the buffer.
 (define (next-keystroke ctx)
+  (define (call-timed-callback arg)
+    (and-let1 cb (~ ctx'timed-callback)
+      (set! (~ ctx'timed-callback) #f)
+      (cb arg)))
   (if (queue-empty? (~ ctx'keystroke-queue))
-    (let1 ch (getch (~ ctx'console))
-      (if (and (%sigcont-received?)
-               (canonical-mode? (~ ctx'console)))
-        (let loop ()
-          (let1 ch (getch (~ ctx'console) 10000) ;10ms wait
-            (unless ch (raise 'sigcont-received))
-            (loop)))
-        ch))
+    (let1 ch (getch (~ ctx'console)
+                    (and (~ ctx'timed-callback) 1.0e6)) ;1s timeout delay
+      (cond [(not ch)                   ;timeout
+             (call-timed-callback #f)
+             (next-keystroke ctx)]
+            [(and (%sigcont-received?)
+                  (canonical-mode? (~ ctx'console)))
+             (let loop ()
+               (let1 ch (getch (~ ctx'console) 10000) ;10ms wait
+                 (unless ch (raise 'sigcont-received))
+                 (loop)))]
+            [else
+             (call-timed-callback ch)
+             ch]))
     (queue-pop! (~ ctx'keystroke-queue))))
 
 ;; Show prompt.  Returns the current column.
