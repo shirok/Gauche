@@ -26333,7 +26333,7 @@ If @var{index} is out of range, an error is signaled.
 Moves the cursor position of @var{gbuf} to a position @var{pos}, which
 must be an exact integer.  The position @var{pos} is relative to
 @var{whence}, which must be either one of the symbols @code{beginning},
-@var{current} or @code{end}.
+@code{current} or @code{end}.
 @end defun
 
 @defun gap-buffer-insert! gbuf content
