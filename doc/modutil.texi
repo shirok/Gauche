@@ -26407,6 +26407,8 @@ then insert @var{string}.
 Here, @var{pos} must be a nonnegative exact integer specifying the
 position in the gap buffer.
 
+It returns another edit-command that undo the change.
+
 One of the appliations of this procedure is to handle undo/redo list.
 @end defun
 
