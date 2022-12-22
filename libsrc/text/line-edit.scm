@@ -119,6 +119,9 @@
    (lastpos-y)
    (lastpos-x)
 
+   ;; A position of a highlighting parenthesis
+   (paren-pos :init-value #f)
+
    ;; The last executed editor command.  Completion command behaves differently
    ;; if invoked more than once immediately.
    (last-command :init-value #f)
@@ -497,7 +500,6 @@
          [w       (~ ctx'screen-width)]
          [h       (~ ctx'screen-height)]
          [sel     (selected-range ctx buffer)]
-         [oparen  (buffer-find-matching-paren-on-cursor buffer)]
          [oldattr '(#f #f)]
          [newattr '(#f #f)]
          [disp-x  x]
@@ -542,7 +544,7 @@
       (glet1 ch (g)
 
         ;; set character attributes
-        (set! newattr (current-char-attr n sel oparen))
+        (set! newattr (current-char-attr n sel (~ ctx'paren-pos)))
         (switch-char-attr-when-needed con oldattr newattr)
         (set! oldattr newattr)
 
@@ -944,6 +946,19 @@
   "Read next keystroke and insert it into the buffer at the cursor."
   (let1 ch (next-keystroke ctx) ; TODO: octal digits input
     (gap-buffer-edit! buf `(i #f ,(x->string ch)))))
+
+(define-edit-command (insert-closing-paren ctx buf key)
+  "Insert closing paren, and highlight corresponding opening paren."
+  (reset-last-yank! ctx)
+  (break-undo-sequence! ctx)
+  (clear-mark! ctx buf)
+  (begin0
+      (gap-buffer-edit! buf `(i #f ")"))
+    (let1 open-pos (buffer-find-matching-paren buf 0 (- (gap-buffer-pos buf) 1))
+      (set! (~ ctx'paren-pos) open-pos)
+      (set! (~ ctx'timed-callback)
+            (^_ (set! (~ ctx'paren-pos) #f)
+                (redisplay ctx buf))))))
 
 (define-edit-command (insert-parentheses ctx buf key)
   "Insert a pair of parentheses at the cursor, and position the cursor \
@@ -1577,7 +1592,10 @@
 
 (do ([c #x20 (+ c 1)])
     [(= c #x7f)]
-  (define-key *default-keymap* (integer->char c) self-insert-command))
+  (unless (= c #x29) ;close paren
+    (define-key *default-keymap* (integer->char c) self-insert-command)))
+
+(define-key *default-keymap* #\)   insert-closing-paren)
 
 (define-key *default-keymap* (alt #\null) nop-command) ; for windows (ime on/off)
 ;;(define-key *default-keymap* (alt #\space) undefined-command) ; should be set-mark

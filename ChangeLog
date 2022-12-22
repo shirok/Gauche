@@ -1,3 +1,9 @@
+2022-12-21  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/line-edit.scm (insert-closing-paren): Change paren
+	  highlight.  Now it highlighs opening paren for a short period of
+	  time when closing paren is inserted.
+
 2022-12-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi-*.scm, lib/srfi/*.scm: Make srfi/*.scm main implementation
