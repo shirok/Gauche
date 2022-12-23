@@ -1,3 +1,7 @@
+2022-12-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/172.scm, lib/srfi/172/functional.scm: Added.
+
 2022-12-21  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/line-edit.scm (insert-closing-paren): Change paren

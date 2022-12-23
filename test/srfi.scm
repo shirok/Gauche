@@ -2692,6 +2692,21 @@
   )
 
 ;;-----------------------------------------------------------------------
+;; Two safer subsets of R7RS
+
+(test-section "SRFI-172")
+
+(define-module srfi-172-tests
+  (use gauche.test)
+  (use srfi.172)
+  (test-module 'srfi.172))
+
+(define-module srfi-172-functional-tests
+  (use gauche.test)
+  (use srfi.172.functional)
+  (test-module 'srfi.172.functional))
+
+;;-----------------------------------------------------------------------
 ;; Hooks
 
 (test-section "SRFI-173")
