@@ -1256,6 +1256,16 @@ POSIX API
 モジュール@code{srfi.170}でサポートされます。@ref{POSIX API}参照。
 
 
+srfi-172, srfi-172
+()
+
+Two safer subsets of R7RS
+Supported by the modules @code{srfi.172} and @code{srfi.172.functional}.
+
+二つの安全なR7RSサブセット
+モジュール@code{srfi.172}と@code{srfi.172.functional}でサポートされます。
+
+
 srfi-173, srfi-173
 ()
 
