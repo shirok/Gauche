@@ -10,6 +10,7 @@
 ;;
 
 (use gauche.collection)
+(use gauche.charconv)
 (use gauche.sequence)
 (use gauche.dictionary)
 (use gauche.hook)
