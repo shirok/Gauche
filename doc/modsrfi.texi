@@ -73,6 +73,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Homogeneous numeric vector libraries::  srfi.160
 * Comparator sublibrary::       srfi.162
 * POSIX API::                   srfi.170
+* Two safer subsets of R7RS::   srfi.172
 * Hooks (srfi)::                srfi.173
 * POSIX timespecs::             srfi.174
 * ASCII character library::     srfi.175
@@ -7652,7 +7653,7 @@ by @var{comparator}.  It is an error if @var{list} is empty.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node POSIX API, Hooks (srfi), Comparator sublibrary, Library modules - SRFIs
+@node POSIX API, Two safer subsets of R7RS, Comparator sublibrary, Library modules - SRFIs
 @section @code{srfi.170} - POSIX API
 
 @deftp {Module} srfi.170
@@ -8176,7 +8177,151 @@ Gauche's @code{sys-isatty}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Hooks (srfi), POSIX timespecs, POSIX API, Library modules - SRFIs
+@node Two safer subsets of R7RS, Hooks (srfi), POSIX API, Library modules - SRFIs
+@section @code{srfi.172} - Two safer subsets of R7RS
+@c NODE 二つの安全なR7RSサブセット, @code{srfi.172} - 二つの安全なR7RSサブセット
+
+@deftp {Module} srfi.172
+@deftpx {Module} srfi.172.functional
+@mdindex srfi.172
+@mdindex srfi.172.functional
+@c EN
+This module exports a subset of R7RS-small bindings that can be used
+relatively safely in the quasi-sandbox environment.  To realize
+a true sandbox, the runtime needs more measures such as preventing
+resource hogging and the data structure that allows
+loopholes from being passed to those procedures.
+However, this module can be a good starting point.
+@c JP
+このモジュールは、R7RS-smallのうちほぼサンドボックスとして使えるような、
+制限された比較的安全な束縛をエクスポートします。
+「ほぼ」というのは、完全に安全なサンドボックスにするには束縛の制限以外の対策も
+必要だからです。例えばリソースを無制限に消費するコードを走るのを防いだり、
+渡すことでループホールが作られてしまうようなデータが渡らないようにする、等です。
+このモジュールはそういった環境を作る起点として使えるでしょう。
+@c COMMON
+
+@c EN
+The submodule @code{srfi.172.functional} further resricts exported
+bindings to side-effect free ones.
+@c JP
+サブモジュール@code{srfi.172.functional}は、そこからさらに副作用の無い関数のみに
+限定した束縛をエクスポートします。
+@c COMMON
+
+@c EN
+The bindings exported by @code{srfi.172} are as follows:
+@c JP
+@code{srfi.172}がエクスポートする束縛は次のとおりです:
+@c COMMON
+
+@example
+- * / + < <= = => > >= abs acos and angle append apply asin assoc assq
+assv atan begin boolean? boolean=? bytevector bytevector?
+bytevector-append bytevector-copy bytevector-copy!
+bytevector-length bytevector-u8-ref bytevector-u8-set! caaaar
+caaadr caaar caadar caaddr caadr caar cadaar cadadr cadar caddar
+cadddr caddr cadr call/cc call-with-current-continuation
+call-with-port call-with-values car case case-lambda cdaaar cdaadr
+cdaar cdadar cdaddr cdadr cdar cddaar cddadr cddar cdddar cddddr
+cdddr cddr cdr ceiling char? char<? char<=? char=? char>? char>=?
+char->integer char-alphabetic? char-ci<? char-ci<=? char-ci=?
+char-ci>? char-ci>=? char-downcase char-foldcase char-lower-case?
+char-numeric? char-upcase char-upper-case? char-whitespace?
+close-input-port close-output-port close-port complex? cond
+cond-expand cons cos delay delay-force denominator digit-value do
+dynamic-wind else eof-object eof-object? eq? equal? eqv? error
+error-object? error-object-irritants error-object-message even?
+exact exact? exact-integer? exact-integer-sqrt exp expt finite?
+floor floor/ floor-quotient floor-remainder force for-each gcd
+get-output-bytevector get-output-string guard if imag-part inexact
+inexact? infinite? input-port? integer? integer->char lambda lcm
+length let let* let*-values letrec letrec* let-values list list?
+list->string list->vector list-copy list-ref list-set! list-tail
+log magnitude make-bytevector make-list make-parameter make-polar
+make-promise make-rectangular make-string make-vector map max
+member memq memv min modulo nan? negative? newline not null?
+number? number->string numerator odd? open-input-bytevector
+open-input-string open-output-bytevector open-output-string or
+output-port? pair? peek-char peek-u8 parameterize port? positive?
+procedure? promise? quasiquote quote quotient raise
+raise-continuable rational? rationalize read-bytevector
+read-bytevector! read-char read-error? read-line read-string
+read-u8 real? real-part remainder reverse round set! set-car!
+set-cdr! sin sqrt square string string? string<? string<=?
+string=? string>? string>=? string->list string->number
+string->utf8 string->vector string-append string-ci<? string-ci<=?
+string-ci=? string-ci>? string-ci>=? string-copy string-copy!
+string-downcase string-fill! string-foldcase string-for-each
+string-length string-map string-ref string-set! string-upcase
+substring symbol? symbol=? symbol->string tan textual-port?
+truncate truncate/ truncate-quotient truncate-remainder unless
+unquote unquote-splicing utf8->string values vector vector?
+vector->list vector->string vector-append vector-copy vector-copy!
+vector-fill! vector-for-each vector-length vector-map vector-ref
+vector-set! when with-exception-handler write-bytevector
+write-char write-string write-u8 zero?
+@end example
+
+@c EN
+The module @code{srfi.172.functional} exports the above bindings
+except for:
+@c JP
+@code{srfi.172.functional}がエクスポートするのは、上のリストから
+以下のものを除いた束縛です。
+@c COMMON
+
+@itemize @bullet
+@item
+@code{set!}
+@item
+@c EN
+Procedures whose names end with @code{!}:
+@c JP
+@code{!}で終わる手続き:
+@c COMMON
+@code{bytevector-copy!}, @code{bytevector-u8-set!}, @code{list-set!},
+@code{read-bytevector!}, @code{set-car!}, @code{set-cdr!},
+@code{string-copy!}, @code{string-fill!}, @code{string-set!},
+@code{vector-copy!}, @code{vector-fill!}, @code{vector-set!}
+@item
+@c EN
+Procedures whose names contain @code{port}:
+@c JP
+@code{port}が含まれる手続き:
+@c COMMON
+@code{call-with-port}, @code{close-input-port},
+@code{close-output-port}, @code{close-port}, @code{input-port?},
+@code{output-port?}, @code{port?}, @code{textual-port?}
+@item
+@c EN
+Procedures whose names begin with @code{read}:
+@c JP
+@code{read}で始まる手続き:
+@c COMMON
+@code{read-bytevector}, @code{read-bytevector!}, @code{read-char},
+@code{read-error?}, @code{read-line}, @code{read-string},
+@code{read-u8}
+@item
+@c EN
+Procedures whose names begin with @code{peek}:
+@c JP
+@code{peek}で始まる手続き:
+@c COMMON
+@code{peek-char}, @code{peek-u8}
+@item
+@c EN
+Procedures whose names begin with @code{write}:
+@c JP
+@code{write}で始まる手続き:
+@c COMMON
+@code{write-bytevector}, @code{write-char},
+@code{write-string}, @code{write-u8}
+@end itemize
+@end deftp
+
+@c ----------------------------------------------------------------------
+@node Hooks (srfi), POSIX timespecs, Two safer subsets of R7RS, Library modules - SRFIs
 @section @code{srfi.173} - Hooks (srfi)
 @c NODE フック(srfi), @code{srfi.173} - フック(srfi)
 

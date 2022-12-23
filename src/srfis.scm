@@ -1261,9 +1261,11 @@ srfi-172, srfi-172
 
 Two safer subsets of R7RS
 Supported by the modules @code{srfi.172} and @code{srfi.172.functional}.
+@xref{Two safer subsets of R7RS}.
 
 二つの安全なR7RSサブセット
 モジュール@code{srfi.172}と@code{srfi.172.functional}でサポートされます。
+@ref{Two safer subsets of R7RS}参照。
 
 
 srfi-173, srfi-173
