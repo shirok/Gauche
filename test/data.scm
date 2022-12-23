@@ -634,12 +634,8 @@
 ;; SRFI-196 is a subset of data.range, and we test it here.
 
 (define-module srfi-196-tests
-  (define-syntax import (syntax-rules () [(_ . x) #f]))
-  (use scheme.list)
-  (use srfi.78)                         ; check
-  (use srfi.158)                        ; generator->list
-  (use srfi.196)
-  (include "include/srfi-196-test"))
+  (use gauche.test)
+  (test-include-r7 "include/srfi-196-test"))
 
 ;; gauche extensions
 
@@ -883,10 +879,6 @@
 (define-module ulid-test
   (use gauche.test)
   (use data.ulid)
-  (use srfi.19)
-  (use srfi.78)
-  (use scheme.base)
-  (define-syntax import (syntax-rules () [(_ . xs) (begin)]))
-  (include "include/ulid-test"))
+  (test-include-r7 "include/ulid-test" (exclude (ulid))))
 
 (test-end)

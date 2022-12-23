@@ -406,13 +406,14 @@
 (test-module 'srfi.120)
 
 (define-module srfi-120-test
-  (use srfi.64)
+  (use gauche.test)
   (use srfi.18)
   (use srfi.19)
+  (use srfi.64)
   (use srfi.120)
-  (define-syntax import (syntax-rules () ([_ . x] '())))
+  ;; we don't want to use cond-expand gauche clause in the srfi-120 test;
+  ;; rather we want to let it use SRFI-64.
   (define-syntax cond-expand (syntax-rules () ([_ . x] '())))
-  (define (error-object? x) (<error> x))
-  (include "include/srfi-120-tests"))
+  (test-include-r7 "include/srfi-120-tests" (exclude (timer))))
 
 (test-end)
