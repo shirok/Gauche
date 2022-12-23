@@ -9016,10 +9016,18 @@ See also @code{digit->integer} (@pxref{Characters}).
 
 @deftp {Module} srfi.178
 @mdindex srfi.178
+@c EN
 Gauche supports all SRFI-178 operations by built-in procedures
 and the module @code{gauche.bitvector}.
+@c JP
+GaucheはSRFI-178の全ての手続きを、組み込みか@code{gauche.bitvector}モジュールでサポートしています。
+@c COMMON
 
+@c EN
 The following procedures are built-in.  @xref{Bitvectors}, for the description.
+@c JP
+以下の手続きは組み込みです。@ref{Bitvectors}を参照してください。
+@c COMMON
 
 @example
 bit->integer      bit->boolean
@@ -9030,7 +9038,11 @@ bitvector-ref/int bitvector-ref/bool
 bitvector-set!    bitvector-copy     bitvector-copy!
 @end example
 
+@c EN
 The following procedures are provided in @ref{Bitvector utilities}.
+@c JP
+以下の手続きは@ref{Bitvector utilities}で説明されます。
+@c COMMON
 
 @example
 bitvector-unfold  bitvector-unfold-right  bitvector-reverse-copy
@@ -9489,32 +9501,65 @@ don't need a special cleanup.
 @defunx make-custom-textual-output-port id write! get-pos set-pos! close :optional flush
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Creates a new binary and textual out port and returns it, respectively.
+@c JP
+それぞれ、バイナリ出力ポートおよびテキスト出力ポートを作成して返します。
+@c COMMON
 
-The @var{id} argument is an arbitrary Scheme procedure.  SRFI doesn't
+@c EN
+The @var{id} argument is an arbitrary Scheme object.  This SRFI doesn't
 specify how it is used.  In Gauche, @var{id} will be returned
 with @code{port-name} procedure (@pxref{Common port operations}).
+@c JP
+@var{id}は任意のSchemeオブジェクトです。このSRFIはその用途について特に規定しません。
+Gaucheでは、@code{port-name}手続きによって@var{id}を得ることができます
+(@ref{Common port operations}参照)。
+@c COMMON
 
+@c EN
 The @var{write!} argument is a procedure to be called as
 @code{(write! @var{buffer} @var{start} @var{count})}.
 For @code{make-custom-binary-output-port}, @var{buffer} is a bytevector.
 For @code{make-custom-textual-output-port}, @var{buffer} is either
 a string or a vector of characters (Gauche's implementation always
 use a vector, but portable code should handle both).
+@c JP
+@var{write!}引数は、@code{(write! @var{buffer} @var{start} @var{count})}のように
+呼び出される手続きです。@code{make-custom-binary-output-port}では
+@var{buffer}はバイトベクタで、@code{make-custom-textual-output-port}では
+@var{buffer}は文字列もしくは文字のベクタです(Gaucheでは常にベクタが渡されますが、
+ポータブルなコードではどちらが来ても良いように書いておく必要があります)。
+@c COMMON
 
-The @var{write!} procedure needs to consume data in @var{buffer}
-starting from @var{start}, upto @var{count} items.  It must return
-the actual number of items consumed.
+@c EN
+The @var{write!} procedure writes data in @var{buffer}
+starting from @var{start}, upto @var{count} items at maximum,
+to the external sink.  It must return the number
+of actual items written.
+@c JP
+@var{write!}手続きは、@var{buffer}のインデックス@var{start}から最大@var{count}要素
+を外部のシンクへと書き出し、実際に書き出された要素数を返します。
+@c COMMON
 
+@c EN
 The @var{get-pos} argument should be a procedure without taking argument,
 or @code{#f}.  If it is a procedure, it should return the position
 of the sink where the next @var{write!} writes to.  The position
 can be an arbitrary Scheme object, but for
 @code{make-custom-binary-output-port}, a position represented as
 an exact integer should correspond to the byte offset in the port.
+@c JP
+@var{get-pos}引数は、引数を取らない手続きか@code{#f}でなければなりません。
+手続きの場合、呼ばれたら、次の@var{write!}が書き込むであろうシンクの位置を返します。
+位置は任意のSchemeオブジェクトが許されますが、
+@code{make-custom-binary-output-port}の場合、@var{get-pos}が
+正確な整数を返すならそれはポートのバイトオフセットでなければなりません。
+@c COMMON
 
+@c EN
 The @var{set-pos!} argument is a procedure to be called with one argument,
-a new position.
+a new position, or @code{#f}.
 It should set the sink's position so that next @var{write!} starts
 to write data from there.  The passed position is something that has
 been returned by @var{get-pos}, or, for @code{make-custom-binary-output-port},
@@ -9522,21 +9567,50 @@ an exact integer that indicates the byte offset from the beginning of
 the output.   This argument can be @code{#f} if the port doesn't
 support setting positions.  The returned value of @var{set-pos!} is
 ignored.
+@c JP
+@var{set-pos!}引数は引数をひとつ取る手続きか@code{#f}でなければなりません。
+手続きの場合、引数はシンクの位置を示すオブジェクトで、次の@var{write!}が
+その位置から書き込まれるようにポートと状態をセットします。
+位置を示すオブジェクトは、同じポートに対して@var{get-pos}が以前返した位置か、
+もしくは@code{make-custom-binary-output-port}の場合、ポートの先頭からの
+バイトオフセットを示す正確な整数です。@var{set-pos!}が@code{#f}の場合は、
+ポートは位置を変える手段を持ちません。@var{set-pos!}の戻り値は無視されます。
+@c COMMON
 
+@c EN
 If the position passed to @var{set-pos!} is invalid,
 an error that satisfy @code{i/o-invalid-position-error?} should be
 thrown.  Portably, it can be done by throwing a condition created
 by @code{make-i/o-invalid-position-error} (@pxref{Port positioning}).
 For Gauche-specific code, you can throw a condition
 @code{<io-invalid-position-error>}.
+@c JP
+@var{set-pos!}に渡された引数が位置を示すオブジェクトとして不適切だった場合は、
+述語@code{i/o-invalid-position-error?}を満たすエラーを投げなければなりません。
+ポータブルなコードでは、@code{make-i/o-invalid-position-error}を使って
+そのようなエラーを作ることができます (@ref{Port positioning}参照)。
+Gauche特有のコードなら、@code{<io-invalid-position-error>}コンディションを
+投げることもできます。
+@c COMMON
 
+@c EN
 The @var{close} argument is a procedure to be called without
 argument, when the port is closed.  It can be @code{#f} if you
 don't need a special cleanup.
+@c JP
+@var{close}引数は引数を取らない手続きで、ポートが閉じられた時に呼ばれます。
+ポートが閉じられた時に特にすることが無ければ@code{#f}を渡しても構いません。
+@c COMMON
 
+@c EN
 The @var{flush} argument, if provided and not @code{#f},
 should be a procedure taking no arguments.  It is called when
 the port is requested to flush the data buffered in the sink, if any.
+@c JP
+@var{flush}引数は、引数を取らない手続きか@code{#f}です。
+ポートが、バッファされたデータが確実にシンクに書き出されたことを保証したい時に
+呼ばれます。
+@c COMMON
 @end defun
 
 @defun make-custom-binary-input/output-port id read! write! get-pos set-pos! close :optional flush
