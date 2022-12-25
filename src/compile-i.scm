@@ -294,6 +294,8 @@
              [r (make-lvar 'tmp)])
          (if (constant-lambda? a)
            ;; when after thunk is dummy, we don't bother to call it.
+           ;; NB: POP-HANDLERS does not affect value registers, so we don't
+           ;; need to save the result of thunk.
            ($let src 'let `(,at ,bt ,tt) `(,a ,b ,t)
                  ($seq
                   `(,($call ($*-src b) ($lref bt) '())
