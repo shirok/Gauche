@@ -1,3 +1,13 @@
+2022-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-i.scm (dynamic-wind): Optimized version of inlined
+	  dynamic-wind incorrectly omitted POP-HANDLERS.  It's rare that
+	  this optimization is triggered (after thunk must be a constant
+	  lambda, which is not common), and probably that's why this
+	  hasn't been revealed.
+	  Existing code precompiled with 0.9.12 and before may contain
+	  erroneous code (though it's very unlikely).
+
 2022-12-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/172.scm, lib/srfi/172/functional.scm: Added.
