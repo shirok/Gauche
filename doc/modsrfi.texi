@@ -9616,27 +9616,58 @@ the port is requested to flush the data buffered in the sink, if any.
 @defun make-custom-binary-input/output-port id read! write! get-pos set-pos! close :optional flush
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Creates a bidirectional binary i/o port.  Since Gauche doesn't distinguish
 binary and textual ports, you can use the returned port for textual i/o as well,
 but portable code must avoid it.
+@c JP
+バイナリ入出力ポートを作って返します。Gaucheはバイナリポートと
+テキストポートを区別しないので、作られたポートをテキスト入出力に使うこともできますが、
+ポータブルなコードではそれは避けるべきでしょう。
+@c COMMON
 
+@c EN
 (The reason textual input/output port is not defined in the SRFI is that
 it is difficult to define a consistent semantics agnostic to the internal
 representation of character stream.  In Gauche, we immediately convert
 characters to the octet stream of internal character encoding.)
+@c JP
+(このSRFIではテキスト入出力ポートは定義されません。
+というのも、文字ストリームの内部表現とは独立した一貫性のあるセマンティクスを
+定義するのが難しいからです。Gaucheでは文字の入出力は
+内部エンコーディングに従ったオクテット列の入出力とみなします。)
+@c COMMON
 
+@c EN
 The arguments, @var{id}, @var{read!}, @var{write!},
 @var{get-pos}, @var{set-pos!}, @var{close} and @var{flush} are
 the same as @code{make-custom-binary-input-port} and
 @code{make-custom-binary-output-port}.
+@c JP
+引数@var{id}、@var{read!}、@var{write!}、@var{get-pos}、@var{set-pos!}、
+@var{close}、@var{flush}の意味は、
+@code{make-custom-binary-input-port}および@code{make-custom-binary-output-port}
+のそれらと同じです。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Transcoded ports
+@c JP
+@subheading 符号変換ポート
+@c COMMON
 
+@c EN
 A transcoded port is a portable way to read/write characters in
 an encodings other than the system's default one.  This API is
 defined first in R6RS, and adopted in SRFI-181.
+@c JP
+符号変換ポートとは、システムの文字エンコーディング以外の符号化方式でエンコードされた
+文字の読み書きをポータブルにする方法です。
+このAPIは当初R6RSで定義され、SRFI-181に採用されました。
+@c COMMON
 
+@c EN
 In SRFI-181 (and R6RS) world, strings and characters are all
 an abstract entity without the concept of encodings (internally,
 you can think them being encoded in the system's native encoding),
@@ -9645,25 +9676,137 @@ resource, e.g. files or a binary data represented in a bytevector.
 Therefore, conversions are only defined between binary ports (external world)
 and textual ports (internal), or a bytevector (external world) and
 a string (internal).
+@c JP
+SRFI-181(およびR6RS)の世界では、文字列と文字はエンコーディングという概念を持たない
+抽象化されたオブジェクトです (内部的には、システムのネイティブエンコーディングで
+保持されていると考えて良いでしょう)。
+従って、エンコーディングを考える必要があるのは、
+外部から与えられる、ファイルやバイトベクタに格納されたバイナリデータを扱いたい時だけです。
+従って符号変換は、バイナリポート(外部世界)とテキストポート(内部世界)の間か、
+バイトベクタ(外部世界)と文字列(内部世界)の間でのみ定義されます。
+@c COMMON
 
+@c EN
 Here's some terms:
+@c JP
+用語の定義:
+@c COMMON
 
+@c EN
 @table @emph
 @item Codec
-A codec names a character encoding scheme.
+A codec specifies a character encoding scheme.
 @item EOL-style
 Specifies (non)converson of EOL character(s).
 @item Transcoder
 A transcoder bundles a codec, an eol-style, and error handling mode.
 @end table
+@c JP
+@table @emph
+@item コーデック
+文字エンコーディング方式(CES)を特定するオブジェクトです
+@item 行末スタイル
+行末文字の扱いを指定する名前
+@item トランスコーダ
+コーデック、行末スタイル、エラー処理をまとめるオブジェクト
+@end table
+@c COMMON
 
+@c EN
+NB: For Gauche-specific code, you can use @code{gauche.charconv} module
+(@pxref{Character code conversion}) that provides more options.
+@c JP
+註: Gauche特有のコードなら、@code{gauche.charconv}モジュールがさらに柔軟な
+機能を提供しています(@ref{Character code conversion}参照)。
+@c COMMON
+
+@c EN
 @subsubheading Transcoders
+@c JP
+@subsubheading トランスコーダ
+@c COMMON
 
-@defun make-transcoder codec eol-style handling-mode
+@defun make-transcoder codec eol-style error-handling
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Creates and returns a transcoder with the given parameters.
 A transcoder is an immutable object.
+@c JP
+与えられたパラメータをまとめたトランスコーダを作って返します。
+トランスコーダは変更不可なオブジェクトです。
+@c COMMON
+
+@c EN
+The @var{codec} argument must be a codec object, either created by
+@code{make-codec} or one of the predefined codecs; see below.
+@c JP
+@var{codec}引数は@code{make-codec}で作られるか、あらかじめ作られている
+コーデックオブジェクトです。下で説明します。
+@c COMMON
+
+@c EN
+The @var{eol-style} argument is one of the following symbols to specify
+End-of-likne style:
+@c JP
+@var{eol-style}引数は行末文字の処理を指定する、次のシンボルのいずれかです。
+@c COMMON
+
+@table @code
+@item none
+@c EN
+End-of-line character is passed as-is.
+@c JP
+行末文字の変換を行いません。
+@c COMMON
+@item lf
+@c EN
+Output port converts @code{#\newline} to @code{LF} octet.
+Input port converts any line ending to @code{#\newline}.
+@c JP
+出力ポートは@code{#\nelwine}文字を@code{LF}オクテットに変換します。
+入力ポートはどんな行末文字でも@code{#\newline}に変換します。
+@c COMMON
+@item crlf
+@c EN
+Output port converts @code{#\newline} to @code{CR-LF} octet sequence.
+Input port converts any line ending to @code{#\newline}.
+@c JP
+出力ポートは@code{#\nelwine}文字を@code{CR-LF}オクテット列に変換します。
+入力ポートはどんな行末文字でも@code{#\newline}に変換します。
+@c COMMON
+@end table
+
+@c EN
+The @var{error-handling} argument is a symbol to specify the behavior
+when an encoding or decoding error occurs.
+It can be one of the following symbols.
+@c JP
+@var{error-handling}引数は、エンコードもしくはデコードできない文字があったときの
+振る舞いを指定する、以下のシンボルのいずれかです。
+@c COMMON
+
+@table @code
+@item replace
+@c EN
+Octets that do not consist a valid character encoding are replaced
+with @code{#\xFFFD} (or @code{#\?} if the target encoding of an output
+transcoding port does not contain @code{#\xFFFD}.)
+@c JP
+有効な文字エンコーディングにならないオクテットは文字@code{#\xFFFD}に置き換えられます
+(出力変換ポートで変換先の文字セットが@code{#\xFFFD}を持っていない場合は@code{#\?}が
+使われます)。
+@c COMMON
+@item raise
+@c EN
+Raise an error with a condition satisfying @code{i/o-encoding-error?}.
+The erroneous octet are consumed and next I/O on the port continues
+with the next character.
+@c JP
+@code{i/o-encoding-error?}を満たすコンディションを伴ってエラーを投げます。
+原因になったオクテットは消費され、次のI/Oは次の文字から続行されます。
+@c COMMON
+@end table
 @end defun
 
 @defun native-transcoder
@@ -9717,7 +9860,7 @@ It is a wrapper of Gauche's @code{ces-convert-to}; @pxref{Conversion ports}.
 @defun make-codec name
 [SRFI-181]
 @c MOD srfi.181
-Returns a coded representing a character encoding scheme named by
+Returns a codec representing a character encoding scheme named by
 @var{name}.  A portable code should only use string for @var{name},
 while Gauche accepts a symbol as well.
 
