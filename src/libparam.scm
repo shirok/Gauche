@@ -110,7 +110,9 @@
 
 (define-cproc procedure-parameter (proc)
   (if (and (SCM_SUBRP proc)
-           (SCM_EQ (SCM_PROCEDURE_INFO proc) (Scm__GetParameterSymbol)))
+           (SCM_PAIRP (SCM_PROCEDURE_INFO proc))
+           (SCM_EQ (SCM_CAR (SCM_PROCEDURE_INFO proc))
+                   (Scm__GetParameterSymbol)))
     (return (SCM_OBJ (SCM_SUBR_DATA proc)))
     (return SCM_FALSE)))
 

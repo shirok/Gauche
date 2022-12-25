@@ -71,7 +71,11 @@ static ScmObj key_initial_value = SCM_FALSE;
 static ScmObj key_shared = SCM_FALSE;
 
 /* #:parameter, to mark parameter procedure.
-   Initialized in Scm__InitParameter */
+   Initialized in Scm__InitParameter
+   A parameter needs to be a procedure (R7RS); in Gauche, it is a SUBR
+   holding a parameter object as data.  It is recognized as a parameter
+   by having (#:parameter <name>) in the procedure info of the subr.
+*/
 static ScmObj sym_parameter = SCM_FALSE;
 
 /* Class stuff */
@@ -210,10 +214,11 @@ static ScmObj general_param_proc(ScmObj *argv, int argc, void *data)
 
 ScmObj Scm_MakePrimitiveParameterSubr(ScmPrimitiveParameter *p)
 {
+    ScmObj info = SCM_LIST2(sym_parameter, p->name);
     if (SCM_EQ(Scm_ClassOf(SCM_OBJ(p)), SCM_CLASS_PRIMITIVE_PARAMETER)) {
-        return Scm_MakeSubr(prim_param_proc, p, 0, 1, sym_parameter);
+        return Scm_MakeSubr(prim_param_proc, p, 0, 1, info);
     } else {
-        return Scm_MakeSubr(general_param_proc, p, 0, 1, sym_parameter);
+        return Scm_MakeSubr(general_param_proc, p, 0, 1, info);
     }
 }
 
