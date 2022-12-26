@@ -158,7 +158,7 @@ jobs:
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
         cp src/test.log $TESTLOG_PATH/$TESTLOG_NAME
-        cp ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
+        for d in ext/*; do mkdir -p $TESTLOG_PATH/$TESTLOG_NAME/$d; cp $d/test.log $TESTLOG_PATH/$TESTLOG_NAME/$d; done
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v3
