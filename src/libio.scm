@@ -61,33 +61,7 @@
 ;; Preexisting ports
 ;;
 
-(select-module scheme)
-
-(define-cproc current-input-port (:optional newport)
-  (cond [(SCM_IPORTP newport)
-         (return (Scm_SetCurrentInputPort (SCM_PORT newport)))]
-        [(not (SCM_UNBOUNDP newport))
-         (Scm_TypeError "current-input-port" "input port" newport)
-         (return SCM_UNDEFINED)]
-        [else (return (SCM_OBJ SCM_CURIN))]))
-
-(define-cproc current-output-port (:optional newport)
-  (cond [(SCM_OPORTP newport)
-         (return (Scm_SetCurrentOutputPort (SCM_PORT newport)))]
-        [(not (SCM_UNBOUNDP newport))
-         (Scm_TypeError "current-output-port" "output port" newport)
-         (return SCM_UNDEFINED)]
-        [else (return (SCM_OBJ SCM_CUROUT))]))
-
 (select-module gauche)
-
-(define-cproc current-error-port (:optional newport)
-  (cond
-   [(SCM_OPORTP newport) (return (Scm_SetCurrentErrorPort (SCM_PORT newport)))]
-   [(not (SCM_UNBOUNDP newport))
-    (Scm_TypeError "current-error-port" "output port" newport)
-    (return SCM_UNDEFINED)]
-   [else (return (SCM_OBJ SCM_CURERR))]))
 
 (define-cproc standard-input-port (:optional (p::<input-port>? #f))
   (return (?: p (Scm_SetStdin p) (Scm_Stdin))))

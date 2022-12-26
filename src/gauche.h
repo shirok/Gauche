@@ -602,10 +602,6 @@ typedef ScmObj ScmSubrProc(ScmObj *, int, void*);
 #define SCM_VM(obj)          ((ScmVM *)(obj))
 #define SCM_VMP(obj)         SCM_XTYPEP(obj, SCM_CLASS_VM)
 
-#define SCM_VM_CURRENT_INPUT_PORT(vm)   (SCM_VM(vm)->curin)
-#define SCM_VM_CURRENT_OUTPUT_PORT(vm)  (SCM_VM(vm)->curout)
-#define SCM_VM_CURRENT_ERROR_PORT(vm)   (SCM_VM(vm)->curerr)
-
 SCM_EXTERN ScmVM *Scm_VM(void);     /* Returns the current VM */
 
 /* The new APIs to run Scheme code from C.

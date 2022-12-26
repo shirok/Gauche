@@ -1,3 +1,13 @@
+2022-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/vm.c: Switch current-*-port and SCM_CUR* to
+	  parameters; R7RS specifies them to be so, and we want new
+	  parameterization scheme to work on these values too.
+	  NB: This requires recompilation of extension modules, for
+	  the code that refers to SCM_CUROUT etc. is compiled to refer
+	  to the VM slots directly, which no longer exist.
+	  This change may also affect performance; need to take benchmark.
+
 2022-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-i.scm (dynamic-wind): Optimized version of inlined

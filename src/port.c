@@ -2097,34 +2097,44 @@ DEFSTDPORT(Stdin, scm_stdin)
 DEFSTDPORT(Stdout, scm_stdout)
 DEFSTDPORT(Stderr, scm_stderr)
 
+/* Parameters */
+static ScmPrimitiveParameter *scm_curin = NULL;
+static ScmPrimitiveParameter *scm_curout = NULL;
+static ScmPrimitiveParameter *scm_curerr = NULL;
+
+ScmPort *Scm_CurrentInputPort()
+{
+    return SCM_PORT(Scm_PrimitiveParameterRef(Scm_VM(), scm_curin));
+}
+
+ScmPort *Scm_CurrentOutputPort()
+{
+    return SCM_PORT(Scm_PrimitiveParameterRef(Scm_VM(), scm_curout));
+}
+
+ScmPort *Scm_CurrentErrorPort()
+{
+    return SCM_PORT(Scm_PrimitiveParameterRef(Scm_VM(), scm_curerr));
+}
+
 ScmObj Scm_SetCurrentInputPort(ScmPort *port)
 {
-    ScmVM *vm = Scm_VM();
-    ScmObj oldp = SCM_OBJ(SCM_VM_CURRENT_INPUT_PORT(vm));
-    SCM_VM_CURRENT_INPUT_PORT(vm) = port;
-    return oldp;
+    return Scm_PrimitiveParameterSet(Scm_VM(), scm_curin, SCM_OBJ(port));
 }
 
 ScmObj Scm_SetCurrentOutputPort(ScmPort *port)
 {
-    ScmVM *vm = Scm_VM();
-    ScmObj oldp = SCM_OBJ(SCM_VM_CURRENT_OUTPUT_PORT(vm));
-    SCM_VM_CURRENT_OUTPUT_PORT(vm) = port;
-    return oldp;
+    return Scm_PrimitiveParameterSet(Scm_VM(), scm_curout, SCM_OBJ(port));
 }
 
 ScmObj Scm_SetCurrentErrorPort(ScmPort *port)
 {
-    ScmVM *vm = Scm_VM();
-    ScmObj oldp = SCM_OBJ(SCM_VM_CURRENT_ERROR_PORT(vm));
-    SCM_VM_CURRENT_ERROR_PORT(vm) = port;
-    return oldp;
+    return Scm_PrimitiveParameterSet(Scm_VM(), scm_curerr, SCM_OBJ(port));
 }
 
 /*===============================================================
  * Initialization
  */
-
 void Scm__InitPort(void)
 {
     if (sizeof(ScmPort) < sizeof(ScmPortImpl)) {
@@ -2165,12 +2175,15 @@ void Scm__InitPort(void)
                                      | SCM_PORT_BUFFER_SIGPIPE_SENSITIVE),
                                     TRUE);
 
-    /* The root VM is initialized with bogus standard ports; we need to
-       reset them. */
-    ScmVM *vm = Scm_VM();
-    vm->curin  = SCM_PORT(scm_stdin);
-    vm->curout = SCM_PORT(scm_stdout);
-    vm->curerr = SCM_PORT(scm_stderr);
+    scm_curin  = Scm_BindPrimitiveParameter(Scm_SchemeModule(),
+                                            "current-input-port",
+                                            scm_stdin, 0);
+    scm_curout = Scm_BindPrimitiveParameter(Scm_SchemeModule(),
+                                            "current-output-port",
+                                            scm_stdout, 0);
+    scm_curerr = Scm_BindPrimitiveParameter(Scm_GaucheModule(),
+                                            "current-error-port",
+                                            scm_stderr, 0);
 
     key_full   = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("full")));
     key_modest = Scm_MakeKeyword(SCM_STRING(SCM_MAKE_STR("modest")));

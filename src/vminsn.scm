@@ -1362,11 +1362,11 @@
     ($result SCM_UNDEFINED)))
 
 (define-insn CURIN       0 none #f      ; current-input-port
-  ($result (SCM_OBJ (-> vm curin))))
+  ($result (SCM_OBJ SCM_CURIN)))
 (define-insn CUROUT      0 none #f      ; current-output-port
-  ($result (SCM_OBJ (-> vm curout))))
+  ($result (SCM_OBJ SCM_CUROUT)))
 (define-insn CURERR      0 none #f      ; current-error-port
-  ($result (SCM_OBJ (-> vm curerr))))
+  ($result (SCM_OBJ SCM_CURERR)))
 
 (define-insn SLOT-REF    0 none #f      ; slot-ref
   ($w/argp obj

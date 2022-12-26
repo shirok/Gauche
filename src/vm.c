@@ -251,10 +251,6 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->module = proto ? proto->module : Scm_SchemeModule();
     v->cstack = NULL;
 
-    v->curin  = proto? proto->curin  : SCM_PORT(Scm_Stdin());
-    v->curout = proto? proto->curout : SCM_PORT(Scm_Stdout());
-    v->curerr = proto? proto->curerr : SCM_PORT(Scm_Stderr());
-
     v->threadLocals = Scm__MakeVMThreadLocalTable(proto);
 
     v->compilerFlags = proto? proto->compilerFlags : 0;
@@ -4047,7 +4043,7 @@ static void print_insn_paren(ScmObj insn, ScmPort *out)
 
 void Scm_VMDump(ScmVM *vm)
 {
-    ScmPort *out = vm->curerr;
+    ScmPort *out = SCM_CURERR;
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
     ScmCStack *cstk = vm->cstack;

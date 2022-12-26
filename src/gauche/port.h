@@ -439,9 +439,13 @@ SCM_EXTERN ScmObj Scm_SetStdin(ScmPort *port);
 SCM_EXTERN ScmObj Scm_SetStdout(ScmPort *port);
 SCM_EXTERN ScmObj Scm_SetStderr(ScmPort *port);
 
-#define SCM_CURIN    SCM_VM_CURRENT_INPUT_PORT(Scm_VM())
-#define SCM_CUROUT   SCM_VM_CURRENT_OUTPUT_PORT(Scm_VM())
-#define SCM_CURERR   SCM_VM_CURRENT_ERROR_PORT(Scm_VM())
+SCM_EXTERN ScmPort *Scm_CurrentInputPort(void);
+SCM_EXTERN ScmPort *Scm_CurrentOutputPort(void);
+SCM_EXTERN ScmPort *Scm_CurrentErrorPort(void);
+
+#define SCM_CURIN    Scm_CurrentInputPort()
+#define SCM_CUROUT   Scm_CurrentOutputPort()
+#define SCM_CURERR   Scm_CurrentErrorPort()
 
 SCM_EXTERN ScmObj Scm_SetCurrentInputPort(ScmPort *port);
 SCM_EXTERN ScmObj Scm_SetCurrentOutputPort(ScmPort *port);

@@ -479,9 +479,6 @@ struct ScmVMRec {
                                    ext/threads/threads.c, and turned off by
                                    process_queued_requests() in vm.c */
 
-    ScmPort *curin;             /* current input port */
-    ScmPort *curout;            /* current output port */
-    ScmPort *curerr;            /* current error port */
     ScmVMThreadLocalTable *threadLocals; /* thread local table */
 
     /* Registers */

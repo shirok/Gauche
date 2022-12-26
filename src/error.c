@@ -1076,7 +1076,7 @@ void Scm_ShowStackTrace(ScmPort *out, ScmObj stacklite,
 void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
 {
     if (vm == NULL) vm = Scm_VM();
-    if (port == NULL) port = SCM_VM_CURRENT_ERROR_PORT(vm);
+    if (port == NULL) port = SCM_CURERR;
     ScmObj stack = Scm_VMGetStackLite(vm);
     ScmObj calls = Scm_VMGetCallTraceLite(vm);
     SCM_PUTZ("Stack Trace:\n", -1, port);
@@ -1132,11 +1132,11 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
 ScmObj Scm_ReportError(ScmObj e, ScmObj out)
 {
     ScmVM *vm = Scm_VM();
-    ScmPort *port = SCM_VM_CURRENT_ERROR_PORT(vm);
+    ScmPort *port = SCM_CURERR;
     if (SCM_FALSEP(out)) {
         port = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
     } else if (SCM_TRUEP(out)) {
-        port = SCM_VM_CURRENT_OUTPUT_PORT(vm);
+        port = SCM_CUROUT;
     } else if (SCM_OPORTP(out)) {
         port = SCM_PORT(out);
     }
