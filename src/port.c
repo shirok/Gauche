@@ -2369,9 +2369,9 @@ void Scm__SetupPortsForWindows(int has_console)
             scm_stderr = make_trapper_port(SCM_MAKE_STR("(standard error output)"),
                                            SCM_PORT_OUTPUT, 2,
                                            SCM_PORT_BUFFER_NONE);
-            Scm_VM()->curin  = SCM_PORT(scm_stdin);
-            Scm_VM()->curout = SCM_PORT(scm_stdout);
-            Scm_VM()->curerr = SCM_PORT(scm_stderr);
+            Scm_SetCurrentInputPort(SCM_PORT(scm_stdin));
+            Scm_SetCurrentOutputPort(SCM_PORT(scm_stdout));
+            Scm_SetCurrentErrorPort(SCM_PORT(scm_stderr));
         }
         (void)orig_stdin;  /* suppress unused var warning */
         (void)orig_stdout; /* suppress unused var warning */
