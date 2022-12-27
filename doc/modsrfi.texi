@@ -9812,16 +9812,24 @@ with the next character.
 @defun native-transcoder
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Returns a singleton of the transcoder representing systems native
 (internal) codec and eol-style.  In Gauche, the native codec
-is the same as Gauche's native encoding
+is the codec uses Gauche's native encoding
 (returned by @code{gauche-character-encoding}, @pxref{Characters}),
 and eol-style is @code{none}.
+@c JP
+システム内部で使われているコーデックおよび行末スタイルを表すトランスコーダを返します。
+Gaucheでは、内部コーデックは内部文字エンコーディング
+(@code{gauche-character-encoding}が返すもの。@ref{Characters}参照)
+を使うコーデックで、行末スタイルは@code{none}です。
+@c COMMON
 @end defun
 
 @defun transcoded-port binary-port transcoder
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Creates a transcoded port wrapping @var{binary-port}, performing the
 conversion specified by @var{transcoder}.
 
@@ -9835,24 +9843,52 @@ converting the system's native encoding to the CES specified in
 
 In Gauche, conversion is done by conversion ports.
 @xref{Conversion ports}, for the details.
+@c JP
+@var{binary-port}をラップし、@var{transcoder}により符号変換を行うポートを返します。
+
+@var{binary-port}が入力ポートなら、返されるのはテキスト入力ポートで、
+@var{transcoder}が指定する方式で符号化された外部データを読み込む際に
+内部エンコーディングへと変換します。
+
+@var{binary-port}が出力ポートなら、返されるのはテキスト出力ポートで、
+内部エンコーディングによる文字や文字列を出力する際に、
+@var{transcoder}が指定する方式へと変換します。
+
+Gaucheでは符号変換は変換ポートで行われます。
+詳しくは@ref{Conversion ports}を参照してください。
+@c COMMON
 @end defun
 
 @defun bytevector->string bytevector transcoder
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Decode the binary data in @var{bytevector} as the CES specified
 by @var{transcoder}, and returns a string in the native encoding.
 
 It is a wrapper of Gauche's @code{ces-convert}; @pxref{Conversion ports}.
+@c JP
+@var{bytevector}に格納されたバイナリデータを、
+@var{transcoder}で指定される符号化方式によるものとみなして、
+それを内部エンコーディングによる文字列に変換したものを返します。
+
+Gaucheの@code{ces-convert}のラッパーです (@ref{Conversion ports}参照)。
+@c COMMON
 @end defun
 
 @defun string->bytevector string transcoder
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Encode the string in the CES specified by @var{transcoder},
 and returns a bytevector.
 
 It is a wrapper of Gauche's @code{ces-convert-to}; @pxref{Conversion ports}.
+@c JP
+文字列を、@var{transcoder}が指定する符号化方式に変換したものをバイトベクタとして返します。
+
+Gaucheの@code{ces-convert-to}のラッパーです (@ref{Conversion ports}参照)。
+@c COMMON
 @end defun
 
 @subsubheading Codecs
