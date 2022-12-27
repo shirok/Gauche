@@ -51,6 +51,7 @@ while [ "$#" -gt 0 ]; do
     --with-installer) INSTALLER=yes; shift;;
     --with-mbedtls) MBEDTLS=yes; shift;;
     --with-mbedtls=dll) MBEDTLS=dll; shift;;
+    --without-axtls) AXTLS=no; shift;;
     --with-zip) ZIP_ARCHIVE=yes; shift;;
     --skip-config) SKIP_CONFIG=yes; shift;;
     -*)
@@ -68,6 +69,7 @@ while [ "$#" -gt 0 ]; do
      echo "      * If you say --with-mbedtls=dll, we build to link with MbedTLS"
      echo "        DLL installed on the system.  You need mingw-w64-{i686|x86_64}-mbedtls."
      echo "        If you choose this option, those DLLs in turn depends on libgcc DLL."
+     echo "  --without-axtls: Exclude axTLS support."
      echo "  --with-zip:  Creates Zip archive using p7zip. '7z.exe' must be visible"
      echo "      in PATH."
      echo "  --skip-config:  Skip cleanup and configuration."
@@ -88,12 +90,16 @@ if [ "$INSTALLER" = yes ]; then
   fi
 fi
 
-if [ "$MBEDTLS" = yes ]; then
-  tlslibs=axtls,mbedtls-internal
-elif [ "$MBEDTLS" = dll ]; then
-  tlslibs=axtls,mbedtls
+if [ "$AXTLS" = no ]; then
+  tlslibs=
 else
-  tlslibs=axtls
+  tlslibs=axtls,
+fi
+
+if [ "$MBEDTLS" = yes ]; then
+  tlslibs=${tlslibs}mbedtls-internal
+elif [ "$MBEDTLS" = dll ]; then
+  tlslibs=${tlslibs}mbedtls
 fi
 
 # check gosh
