@@ -37,7 +37,6 @@
 ;;   ../lib/gauche/vm/insn.scm
 
 (use gauche.cgen)
-(use gauche.parameter)
 (use gauche.sequence)
 (use gauche.vm.insn-core)
 (use gauche.mop.instance-pool)
