@@ -36,15 +36,14 @@
 ;;   gauche/vminsn.h
 ;;   ../lib/gauche/vm/insn.scm
 
+(use file.util)
 (use gauche.cgen)
+(use gauche.mop.instance-pool)
 (use gauche.sequence)
 (use gauche.vm.insn-core)
-(use gauche.mop.instance-pool)
-(use srfi-13)
+(use srfi.13)
 (use text.tr)
-(use file.util)
 (use util.match)
-(use util.list)
 
 (define (c-insn-name name)
   (string-append "SCM_VM_" (string-tr (x->string name) "-" "_")))
