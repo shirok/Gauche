@@ -34,11 +34,11 @@
 ;; RFC4122 https://tools.ietf.org/html/rfc4122
 
 (define-module rfc.uuid
-  (use gauche.record)
-  (use gauche.uvector)
-  (use gauche.threads)
-  (use gauche.parameter)                ; we use hooks
   (use binary.io)
+  (use gauche.record)
+  (use gauche.threads)
+  (use gauche.uvector)
+  (use math.mt-random)
   (use srfi.27)
   (export <uuid> uuid-value uuid-version
           uuid1 uuid4 nil-uuid
@@ -51,6 +51,9 @@
 
 ;; value is 16-element u8vector
 (define-record-type <uuid> %make-uuid uuid? (value uuid-value))
+
+(define-method write-object ((u <uuid>) out)
+  (format out "#<uuid v~a ~s>" (uuid-version u) (uuid->string u)))
 
 ;;;
 ;;;I/O
@@ -115,19 +118,20 @@
 ;;;Generation
 ;;;
 
+;; NB: We use mt-random-integer instead of SRFI-27' random-integer, for
+;; we want to honor the dynamci value of uuid-random-source parameter.
+;; Once we provide a generic RNG interface that can work with parameterization
+;; of random source, rewrite it.
+
 (define uuid-random-source
   (make-parameter
    (rlet1 s (make-random-source)
      (random-source-randomize! s))
-   (^x (assume random-source? "SRFI-27 random source required, but got:" x) x)))
+   (^x (assume (random-source? x) "SRFI-27 random source required, but got:" x)
+       x)))
 
-(define %uuid-random-int
-  (random-source-make-integers (uuid-random-source)))
-
-(parameter-observer-add! uuid-random-source
-                         (^[old new]
-                           (set! %uuid-random-int
-                                 (random-source-make-integers new))))
+(define (%uuid-random-int n)
+  (mt-random-integer (uuid-random-source) n))
 
 ;; Deprecated.  Use parameter.
 (define (uuid-random-source-set! s) (uuid-random-source s))
