@@ -108,11 +108,11 @@
   )
 
 ;; Obtain generators from random source.
-(define (random-source-make-integers source)
+(define-inline (random-source-make-integers source)
   (assume (random-source? source))
   (^n (mt-random-integer source n)))
 
-(define random-source-make-reals
+(define-inline random-source-make-reals
   (case-lambda
     [(source)
      (assume (random-source? source))

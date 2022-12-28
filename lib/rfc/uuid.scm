@@ -38,7 +38,6 @@
   (use gauche.record)
   (use gauche.threads)
   (use gauche.uvector)
-  (use math.mt-random)
   (use srfi.27)
   (export <uuid> uuid-value uuid-version
           uuid1 uuid4 nil-uuid
@@ -118,11 +117,6 @@
 ;;;Generation
 ;;;
 
-;; NB: We use mt-random-integer instead of SRFI-27' random-integer, for
-;; we want to honor the dynamci value of uuid-random-source parameter.
-;; Once we provide a generic RNG interface that can work with parameterization
-;; of random source, rewrite it.
-
 (define uuid-random-source
   (make-parameter
    (rlet1 s (make-random-source)
@@ -131,7 +125,7 @@
        x)))
 
 (define (%uuid-random-int n)
-  (mt-random-integer (uuid-random-source) n))
+  ((random-source-make-integers (uuid-random-source)) n))
 
 ;; Deprecated.  Use parameter.
 (define (uuid-random-source-set! s) (uuid-random-source s))
