@@ -317,6 +317,16 @@
            ;; call ($call ($lambda ...) args ...)
            (has-tag? proc $LAMBDA)
            (pass3/inline-call iform proc args labels)]
+          [;; Similar to above, but ($call ($seq ... ($lambda ..)) args ...)
+           ;; We can convert it ot ($seq ... ($call ($lamba ...) args...))
+           (and (has-tag? proc $SEQ)
+                (has-tag? (last ($seq-body proc)) $LAMBDA))
+           (pass3/$SEQ ($seq `(,@(drop-right ($seq-body proc) 1)
+                               ,($call ($*-src iform)
+                                       (last ($seq-body proc)) ;$lambda
+                                       ($call-args iform)
+                                       ($call-flag iform))))
+                       labels)]
           [;; If we get ($call ($gref proc) args ...) and proc is inlinable,
            ;; we can inline the call.
            (and-let* ([ (has-tag? proc $GREF) ]
