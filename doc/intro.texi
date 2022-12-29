@@ -349,12 +349,20 @@ The following categories will appear in this manual:
 @c COMMON
 @item Parameter
 @c EN
-@tab A parameter, which is a procedure that follows a certain
-protocol and used to manipulate the dynamic environment.
-@xref{Parameters}, for the details.
+@tab A parameter, an object to realize dynamically-bound variables.
+@xref{Parameters and dynamic states}, for the details.
 @c JP
-@tab パラメータ。特定のプロトコルに従う手続きで、動的環境の操作に使われるもの。
-詳しくは@ref{Parameters}参照。
+@tab パラメータ。動的束縛を実現するオブジェクト。
+詳しくは@ref{Parameters and dynamic states}参照。
+@c COMMON
+@item Dynamic state
+@c EN
+@tab A procedure that follows a protocol to manage the state by
+dynamic scope.
+@xref{Parameters and dynamic states}, for the details.
+@c JP
+@tab 動的状態。動的スコープで状態を切り替えるプロトコルに従う手続きです。
+詳しくは@ref{Parameters and dynamic states}参照。
 @c COMMON
 @item Generic application
 @c EN

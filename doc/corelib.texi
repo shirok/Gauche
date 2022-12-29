@@ -19,7 +19,7 @@
 * Vector family::
 * Dictionaries::
 * Procedures and continuations::
-* Parameters::
+* Parameters and dynamic states::
 * Boxes::
 * Lazy evaluation::
 * Exceptions::
@@ -15989,7 +15989,7 @@ of tree maps which share the same comparator.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Procedures and continuations, Parameters, Dictionaries, Core library
+@node Procedures and continuations, Parameters and dynamic states, Dictionaries, Core library
 @section Procedures and continuations
 @c NODE 手続きと継続
 
@@ -17645,24 +17645,30 @@ you can use @code{gfilter} and @code{generator->list}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parameters, Boxes, Procedures and continuations, Core library
-@section Parameters
-@c NODE パラメータ
+@node Parameters and dynamic states, Boxes, Procedures and continuations, Core library
+@section Parameters and dynamic states
+@c NODE パラメータと動的状態
 
 @c EN
-A @emph{parameter} is Scheme's way to implement dynamically scoped states.
+A @emph{parameter} is Scheme's way to implement dynamically scoped variables.
 It is codified in SRFI-39 and incorporated into R7RS.
 @c JP
-「パラメータ」はSchemeで動的スコープを持つ状態を実現します。
+「パラメータ」はSchemeで動的スコープを持つ変数を実現します。
 もともとSRFI-39で仕様が定められ、R7RSからは言語の一部になりました。
 @c COMMON
 
 @c EN
 It is a special procedure created by @code{make-parameter}.  It accepts
 zero or one argument.  When called without an argument, it returns the
-current value.  If an argument is passed, it alters its current value
-with the given value, and returns the previous value.
+value in the current dynamic environment.
+If an argument is passed, it alters its value
+with the given value in the current dynamic environment,
+and returns the previous value.
 @c JP
+パラメータは@code{make-parameter}で作られる特殊な手続きで、
+ゼロ個または1個の引数を取ります。引数無しで呼ばれた場合は現在の動的環境での値を返し、
+引数つきで呼び出された場合はその引数を現在の動的環境での値にセットして
+以前の値を返します。
 @c COMMON
 
 @c EN
@@ -17695,16 +17701,6 @@ rather than lexically.
 @end example
 
 @c EN
-If a control trasfers from or to @code{parameterize}'s body by
-continuations,
-the parameter refers to the value corresponding the dynamic envrionment
-it is accessed.
-@c JP
-継続などにより制御が@code{parameterize}の本体から飛び出したり本体へ飛び込んだり
-した場合、パラメータは常にそれがアクセスされる動的環境のもとでの値を返します。
-@c COMMON
-
-@c EN
 A parameter's value can be mutated by calling the parameter with
 the new value:
 @c JP
@@ -17727,43 +17723,61 @@ the new value:
 @end example
 
 @c EN
-Note: As of 0.9.13, Gauche's parameter is thread-local: Changes of its
-value aren't visible from other threads.  This is going to change.
-If you're using a parameter simply for thread specific storage,
-consider replacing it with a @emph{thread local}
-(@pxref{Thread local storage}).
-If you want a parameter that's thread-local,
-use @code{make-thread-parameter} instead of @code{make-parameter}.
+Originally, parameters in Scheme were simply a hack with an ordinary procedure
+and @code{dynamic-wind} to emulate dynamically scoped variables.
+The same mechanism have been used to manage dynamically scoped states, too.
+
+As the experience accumulated, however, it is learned that it's better
+to treat dynamically scoped variables and dynamically scoped states
+differently; efficient implementations differ, and they have slightly
+different semantics with delimited continuations.  SRFI-226 incorporated
+this distinction.
+
+As of Gauche 0.9.13, we adopt this distinction, too.
+@xref{Difference of parameters and dynamic states}, for the details.
 @c JP
-註: 0.9.13時点では、Gaucheのパラメータはスレッドローカルです。すなわち、
-パラメータの値の変更は他のスレッドからは見えません。しかしこれは変更が予定されています。
-もし今、単にスレッドローカルな格納領域のために使っているパラメータがあれば、
-かわりに@emph{thread local}オブジェクトを使ってください
-(@ref{Thread local storage}参照)。
-スレッドローカルなパラメータが必要ならば、
-@code{make-paremeter}のかわりに@code{make-thread-parameter}を使ってください。
+元々、Schemeのパラメータは通常の手続きと@code{dynamic-wind}を使って
+動的束縛の変数をエミュレートするハックでした。
+同じメカニズムはまた、動的な状態の管理にも使うことができました。
+
+しかし使い込まれてゆくうちに、動的変数と動的状態は別に扱った方が良いという
+知見が得られてきました。効率の良い実装が異なるのと、
+限定継続があると振る舞いに差があるためです。
+SRFI-226でこの違いが明確化されました。
+
+Gaucheも0.9.13からこの区別を採り入れています。
+詳しくは@ref{Difference of parameters and dynamic states}を参照してください。
 @c COMMON
 
+@menu
+* Parameters::
+* Dynamic states::
+* Difference of parameters and dynamic states::
+@end menu
 
-@defun make-parameter value :optional filter
-@defunx make-thread-parameter value :optional filter
-@defunx make-shared-parameter value :optional filter
+@node Parameters, Dynamic states, Parameters and dynamic states, Parameters and dynamic states
+@subsection Parameters
+@c NODE パラメータ
+
+@defun make-parameter value :optional converter
+@defunx make-thread-parameter value :optional converter
+@defunx make-shared-parameter value :optional converter
 [R7RS base][SRFI-226]
 @c EN
 Creates a parameter whose initial value is @var{value}.
-If an optional argument @var{filter} is given, it must be
+If an optional argument @var{converter} is given, it must be
 a procedure that takes one argument and returns one value;
 whenever the parameter's value is about to change, the procedure
 is called with the given value, and the value the procedure
-returns will be the parameter's value.  The filter procedure
+returns will be the parameter's value.  The converter procedure
 can raise an error or reject to change the parameter's value.
 @c JP
 初期値が@var{value}であるパラメータを作成します。
-もし省略可能な引数@var{filter}が与えられた場合、
+もし省略可能な引数@var{converter}が与えられた場合、
 それは一つの引数を取る手続きでなければなりません。
-パラメータの値が変更されようとした時、@var{filter}は与えられた値を
-引数として呼ばれ、@var{filter}が返した値がパラメータの新しい値と
-なります。@var{filter}はエラーを報告したりパラメータの値を変えずに置くことも
+パラメータの値が変更されようとした時、@var{converter}は与えられた値を
+引数として呼ばれ、@var{converter}が返した値がパラメータの新しい値と
+なります。@var{converter}はエラーを報告したりパラメータの値を変えずに置くことも
 可能です。
 @c COMMON
 
@@ -17874,20 +17888,63 @@ Returns @code{#t} iff @var{obj} is an object created by
 @var{obj}が@code{make-parameter}で作られたものであった場合は@code{#t}を、
 そうでなければ@code{#f}を返します。
 @c COMMON
-
-@c EN
-Note: Some built-in procedures such as @code{current-input-port}
-behaves like parameters.  They aren't created by @code{make-parameter},
-though, and returns @code{#f} for @code{parameter?}.
-@c JP
-註: 組み込みの手続きの中には、パラメータのように動作するものがあります
-(例: @code{current-input-port})。しかしそれらは、@code{make-parameter}で
-作られたものでない限り、@code{parameter?}に対して@code{#f}を返します。
-@c COMMON
 @end defun
 
+@node Dynamic states, Difference of parameters and dynamic states, Parameters, Parameters and dynamic states
+@subsection Dynamic states
+@c NODE 動的状態
+
+A dynamic state is a state that is kept during a certain dynamic extent
+of the code execution.  It can be managed with a procedure that
+follows this protocol:
+
+@itemize @bullet
+@item
+The procedure can be called with zero or one argument.
+@item
+If it is called without arguments, it returns the current state.
+@item
+If it is called with one argument, the state is set to the argument.
+@end itemize
+
+You can use @code{with} macro in place of @code{parameterize} to
+change the state dynamically.
+
+@example
+(define state
+  (let val 0
+    (case-lambda
+      [() val]
+      [(newval) (set! val newval)])))
+
+(define (get-state) (state))
+
+(get-state) @result{} 0
+
+(with ([state 1])
+  (get-state)) @result{} 1
+@end example
+
+If you just manage a value, it is not much different from a parameter
+(without a converter) and @code{parameterize}.
+However, unlike @code{parameterize}, it is guaranteed that state is
+reset when the control goes out of the dynamic scope.  You can do
+more than just changing the internal values inside the procedure,
+such as switching state of external resource.
+
+@defmac with ((proc value) @dots{}) body @dots{}
+@end defmac
+
+
+@node Difference of parameters and dynamic states,  , Dynamic states, Parameters and dynamic states
+@subsection Difference of parameters and dynamic states
+@c NODE パラメータと動的状態の違い
+
+
+
+
 @c ------------------------------------------------------------
-@node Boxes, Lazy evaluation, Parameters, Core library
+@node Boxes, Lazy evaluation, Parameters and dynamic states, Core library
 @section  Boxes
 @c NODE ボックス
 
