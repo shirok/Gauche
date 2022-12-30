@@ -866,8 +866,10 @@
                   [setter-gens '()]
                   [locs (cdr f)])
          (if (null? locs)
-           (let ([getters-rot (cons (car getters)
-                                    (reverse (cdr getters)))]
+           (let ([getters-rot (let* ([tail (list #f)]
+                                     [r (reverse getters tail)])
+                                (set! (car tail) (car r))
+                                (cdr r))]
                  [tmps (map (^_ (gensym)) getters)])
              (quasirename r
                `(let ,(concatenate (reverse binds))
