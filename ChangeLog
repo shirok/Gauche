@@ -1,3 +1,7 @@
+2022-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (rotate!): Added.  CL's rotatef.
+
 2022-12-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/vm.c: Switch current-*-port and SCM_CUR* to

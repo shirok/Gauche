@@ -38,7 +38,7 @@
                              ^ ^_ ^a ^b ^c ^d ^e ^f ^g ^h ^i ^j ^k ^l ^m ^n
                              ^o ^p ^q ^r ^s ^t ^u ^v ^w ^x ^y ^z $ cut cute rec
                              guard check-arg
-                             push! push-unique! pop! inc! dec! update!
+                             push! push-unique! pop! inc! dec! update! rotate!
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
@@ -838,6 +838,47 @@
         (quasirename r
           `(set! ,loc (,updater ,@val ,loc)))]
        [_ (error "malformed update!:" f)]))))
+
+(define-syntax rotate!
+  (er-macro-transformer
+   (^[f r c]
+     ;; Returns
+     ;;  - list of bindings
+     ;;  - expression to get value
+     ;;  - a procedure returns an expression to set value
+     (define (gen-bind loc)
+       (match loc
+         [(proc arg ...)
+          (let ([gettervar (gensym)]
+                [argvars (map (^_ (gensym)) arg)])
+            (values `((,gettervar ,proc) ,@(map list argvars arg))
+                    `(,gettervar ,@argvars)
+                    (^[val] (quasirename r
+                              `((setter ,gettervar) ,@argvars ,val)))))]
+         [loc (values '()
+                      loc
+                      (^[val] (quasirename r
+                                `(set! ,loc ,val))))]))
+     (if (null? (cdr f))
+       (quasirename r `(begin)) ; special case
+       (let loop ([binds '()]
+                  [getters '()]
+                  [setter-gens '()]
+                  [locs (cdr f)])
+         (if (null? locs)
+           (let ([getters-rot (cons (car getters)
+                                    (reverse (cdr getters)))]
+                 [tmps (map (^_ (gensym)) getters)])
+             (quasirename r
+               `(let ,(concatenate (reverse binds))
+                  (let ,(map list tmps getters-rot)
+                    ,@(map (^[gen tmp] (gen tmp)) (reverse setter-gens) tmps)))))
+           (receive (b g s) (gen-bind (car locs))
+             (loop (cons b binds)
+                   (cons g getters)
+                   (cons s setter-gens)
+                   (cdr locs))))))
+     )))
 
 ;;; assume (SRFI-145) and co.
 
