@@ -1695,6 +1695,48 @@ a @result{} (6 . 0)
 @end example
 @end defmac
 
+@defmac rotate! place0 place1 @dots{} placeN
+@c EN
+It is roughly equivalent to:
+@c JP
+次のコードと概ね同じです:
+@c COMMON
+
+@example
+(let ((tmp0 place0) (tmp1 place1) ... (tmpN placeN))
+  (set! place0 tmp1)
+  (set! place1 tmp2)
+    :
+  (set! placeN tmp0))
+@end example
+
+@c EN
+However, if @code{place} is the form @code{(proc arg ...)}, then
+each @var{arg} is evaluated only once.
+@c JP
+但し、@code{place}が@code{(proc arg ...)}の形であった場合、
+各@var{arg}は1度しか評価されません。
+@c COMMON
+
+@c EN
+It can be used to swap values of two locations:
+@c JP
+二ヶ所の値を交換するのにも使えます:
+@c COMMON
+
+@example
+(let ((x (vector 1 2)))
+  (rotate! (~ x 0) (~ x 1))
+  x)  @result{} #(2 1)
+@end example
+
+@c EN
+This is similar to Common Lisp's @code{rotatef}.
+@c JP
+これはCommon Lispの@code{rotatef}に似ています。
+@c COMMON
+@end defmac
+
 @c ----------------------------------------------------------------------
 @node Conditionals, Binding constructs, Assignments, Core syntax
 @section Conditionals
