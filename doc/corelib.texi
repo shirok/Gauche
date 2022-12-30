@@ -17863,6 +17863,36 @@ Returns the value(s) of the result of the last @var{body}.
 但し、@var{body} @dots{} の実行中のみ、パラメータ@var{param}の値を
 @var{value}に変更します。最後の@var{body}の返した値を返します。
 @c COMMON
+
+@c EN
+If @code{parameterize} form is at a tail position and all @var{param}s
+are parameter objects , @var{body} is
+also evaluated at a tail position.  (This is required by SRFI-226,
+though not required by R7RS).
+@c JP
+@code{parameterize}フォームが末尾位置にあり、
+全ての@var{param}がパラメータに評価された場合、
+@var{body}は末尾位置で評価されます。
+(これはR7RSでは要請されていませんが、SRFI-226で要請されます)。
+@c COMMON
+
+@c EN
+Note that R7RS and SRFI-226 requires @var{param} to be evaluated
+to a parameter.  Gauche's @code{parameterize} has been acceping
+dynamic states as well, but such usage is
+deprecated; you should use @code{with} instead (@pxref{Dynamic states}).
+In fact, Gauche checks if every @var{param} yields a parameter, at
+runtime, and if not, it switches to the legacy implementation
+which does @emph{not} evaluate @var{body} at a tail position.
+@c JP
+R7RSとSRFI-226は@var{param}がパラメータへと評価されることを要求しています。
+Gaucheは伝統的に、@var{param}に動的状態も許してきましたが、
+そのような使い方は非推奨となりました。動的状態の切り替えには@code{with}を
+使うようにしてください (@ref{Dynamic states}参照)。
+実のところ、Gaucheは実行時に全ての@var{param}がパラメータに評価されたかどうかを
+チェックし、パラメータ以外のものが混じっている場合は旧式の実装へと切り替えます。
+その場合、@var{body}は末尾位置では評価されません。
+@c COMMON
 @end defmac
 
 @c EN
@@ -17928,11 +17958,23 @@ change the state dynamically.
 If you just manage a value, it is not much different from a parameter
 (without a converter) and @code{parameterize}.
 However, unlike @code{parameterize}, it is guaranteed that state is
-reset when the control goes out of the dynamic scope.  You can do
+reset by calling the dynamic state with the previous value,
+when the control goes out of the dynamic scope.
+You can do
 more than just changing the internal values inside the procedure,
 such as switching state of external resource.
 
 @defmac with ((proc value) @dots{}) body @dots{}
+Evaluates @var{proc}s and @var{value}s.  Each @var{proc} must yield a
+dynamic state, i.e. a procedure that takes zero or one arguments.
+
+Then the current state each @var{proc} represents is changed
+to @var{value} during evaluating @var{body} @dots{}.  The state
+is restored when the control leaves @var{body} @dots{}.
+The results of the last expression of @var{body} will be returned.
+
+Whenver control trasfers out of @var{body}, or reenters to @var{body},
+the state of each @var{proc} is saved and restored.
 @end defmac
 
 
