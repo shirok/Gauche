@@ -17990,33 +17990,70 @@ the state of each @var{proc} is saved and restored.
 @section  Boxes
 @c NODE ボックス
 
+@c EN
 A box is a mutable container that can hold (possibly multiple) values.
 It can be used as a minimal data storage, or a sort of mutable indirect
 ``pointer''.
+@c JP
+ボックスは0個以上の値を格納できる変更可能なコンテナです。
+小さなデータストア、あるいは間接参照のための「ポインタ」として使うことができます。
+@c COMMON
 
+@c EN
 Traditionally, a list or a vector has been used for this purpose.
 However, such datatypes imply sequences of objects,   Using boxes
 emphasizes your intention is just for indirection, and not so much for
 sequencing.
+@c JP
+伝統的に、この目的にはリストやベクタが使われてきました。
+しかし、リストやベクタはオブジェクトの列を扱うものと考えられます。
+ボックスを使うことにより、目的がオブジェクトの列ではなく間接参照であると強調できます。
+@c COMMON
 
+@c EN
 It is originally introduced by SRFI-111, which was later adopted in
 R7RS-large as @code{scheme.box}.  SRFI-195 enhances it to deal with
 multiple values.
+@c JP
+ボックスはSRFI-111で導入され、R7RS-largeに@code{scheme.box}として採り入れられました。
+SRFI-195はボックスを多値に拡張しました。
+@c COMMON
 
+@c EN
 The srfis leave some details to implementations.  Here are our choices:
+@c JP
+SRFIではいくつかの詳細を実装依存にしています。Gaucheの選択は次のとおりです。
+@c COMMON
 @itemize
 @item
+@c EN
 We don't support autoboxing; that is, it is an error to pass non-box
 value to the procedure expecting boxed value and vice versa.
+@c JP
+暗黙に値とボックスを変換するオートボクシングはサポートしません。つまり、
+ボックスを期待しているところにそうでない値を渡したり、その逆をするとエラーになります。
+@c COMMON
 @item
+@c EN
 Comparing two boxes with @code{equal?} compares their contents when
 two are not @code{eqv?}.  In the spec, when two boxes are @code{eqv?}
 then they must also be @code{equal?} to each other, but it's up
 to the implementation when two are not @code{eqv?}.
+@c JP
+二つのボックスを@code{equal?}で比較すると、ボックス自体が@code{eqv?}でない場合、
+その内容を@code{equal?}で比較します。
+SRFIでは、二つのボックスが@code{eqv?}でない場合の@code{equal?}の振る舞いは
+規定されていません。
+@c COMMON
 @end itemize
 
+@c EN
 When you're writing portable code, be careful not to depend on the
 @code{equal?} behavior.
+@c JP
+ポータブルなコードを書いている時は、上記@code{equal?}の振る舞いに依存しないように
+気をつけてください。
+@c COMMON
 
 @defun box val @dots{}
 [R7RS box][SRFI-195]
