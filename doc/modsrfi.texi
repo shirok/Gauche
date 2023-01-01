@@ -9891,32 +9891,55 @@ Gaucheの@code{ces-convert-to}のラッパーです (@ref{Conversion ports}参�
 @c COMMON
 @end defun
 
+@c EN
 @subsubheading Codecs
+@c JP
+@subsubheading コーデック
+@c COMMON
 
 @defun make-codec name
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Returns a codec representing a character encoding scheme named by
 @var{name}.  A portable code should only use string for @var{name},
 while Gauche accepts a symbol as well.
 
 If @var{name} isn't recognized as a supported codec name,
 a condition that satisfies @code{unknown-encoding-error?} is thrown.
+@c JP
+@var{name}で指定される文字符号化方式を表すコーデックを返します。
+ポータブルなコードでは@var{name}に文字列を渡してください。Gaucheではシンボルも
+受け付けます。
+
+@var{name}がサポートされているコーデックの名前でなければ、
+述語@code{unknown-encoding-error?}を満たすコンディションを伴ってエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun unknown-encoding-error? obj
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 If the system sees unknown or unsupported codec, a condition
 that satisfies this predicate is thrown.
+@c JP
+システムが認識しないあるいはサポートしないコーデックを使うように指示された場合、
+この述語を満たすコンディションが投げられます。
+@c COMMON
 @end defun
 
 @defun unknown-encoding-error-name obj
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 The argument must be an unknown encoding error condition
 that satisfies @code{unknown-encoding-error?}.  It returns
 the name that caused the condition to be thrown.
+@c JP
+引数は述語@code{unknown-encoding-error?}を満たすコンディションでなければなりません。
+このコンディションの原因となったコーデック名を返します。
+@c COMMON
 @end defun
 
 @defun latin-1-codec
@@ -9924,48 +9947,90 @@ the name that caused the condition to be thrown.
 @defunx utf-16-codec
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 A pre-defined codecs for @code{latin-1} (ISO8859-1),
 @code{utf-8}, and @code{utf-16}.
+@c JP
+あらかじめ作られている、
+@code{latin-1} (ISO8859-1)、@code{utf-8}、および@code{utf-16}コーデックを返します。
+@c COMMON
 
+@c EN
 The @code{utf-16} codec recognizes
 BOM when used for input; if no BOM is found, UTF-16BE is assumed.
 When used for output, @code{utf-16} always attaches BOM.
+@c JP
+@code{utf-16}コーデックは入力にBOMがあればそのバイトオーダーを使い、
+無ければUTF-16BEを使います。
+出力に使われた場合は常にBOMを出力します。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading EOL style
+@c JP
+@subsubheading 行末スタイル
+@c COMMON
 
 @defun native-eol-style
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Returns the default eol style.  In Gauche, it is @code{none}.
+@c JP
+デフォルトの行末スタイルを返します。Gaucheでは@code{none}です。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Transcoding errors
+@c JP
+@subsubheading 変換エラー
+@c COMMON
 
 @defun i/o-decoding-error? obj
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 When an input transcoded port encounters a sequence that's not valid
 for the input codec, a condition that satisfies this predicate
 is thrown.
 
 In Gauche, such condition is @code{<io-decoding-error>}.
+@c JP
+入力変換ポートがコーデックとして不正なバイトシーケンスに出会った場合、
+この述語を満たすコンディションが投げられます。
+
+Gaucheではそのコンディションは@code{<io-decoding-error>}のインスタンスです。
+@c COMMON
 @end defun
 
 @defun i/o-encoding-error? obj
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 When an output transcoded port encounters a character that can't be
 encoded in the output codec, and the handling mode is @code{raise},
 a condition that satisfies this predicate is thrown.
 
 In Gauche, such condition is @code{<io-encoding-error>}.
+@c JP
+出力変換ポートが出力しようとした文字がコーデックで表わせず、
+エラーハンドリングモードが@code{raise}である場合、
+この述語を満たすコンディションが投げられます。
+
+Gaucheではそのコンディションは@code{<io-encoding-error>}のインスタンスです。
+@c COMMON
 @end defun
 
 @defun i/o-encoding-error-char i/o-encoding-condition
 [SRFI-181]
 @c MOD srfi.181
+@c EN
 Retries the character that caused the @code{<io-encoding-error>} is thrown.
+@c JP
+@code{<io-encoding-error>}コンディションの原因となった文字を返します。
+@c COMMON
 @end defun
 
 
