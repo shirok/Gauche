@@ -572,7 +572,7 @@ static void vm_unregister(ScmVM *vm)
 #define IN_FULL_STACK_P(ptr) IN_STACK_P(ptr)
 #endif /*!GAUCHE_SPLIT_STACK*/
 
-/* Check if stack has room at least size bytes. */
+/* Check if stack has room at least size words. */
 #define CHECK_STACK(size)                                       \
     do {                                                        \
         if (MOSTLY_FALSE(SP >= vm->stackEnd - (size))) {        \
