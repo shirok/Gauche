@@ -21298,7 +21298,6 @@ in typical cases.
 @c COMMON
 
 @example
-(use gauche.parameter)
 (let1 os (open-output-string)
   (parameterize ((current-output-port os))
     (display "foo"))

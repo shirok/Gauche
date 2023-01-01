@@ -2,10 +2,10 @@
 ;; Convert plain text COPYING into rtf format, for Wix needs it.
 ;;
 
-(use file.util)
 (use file.filter)
+(use file.util)
+(use srfi.13)
 (use util.match)
-(use srfi-13)
 
 (define (main args)
   (match args

@@ -37,7 +37,6 @@
 ;; This is just a front-end.
 
 (use gauche.parseopt)
-(use gauche.parameter)
 (use gauche.cgen)
 (use gauche.cgen.stub)
 (use file.util)

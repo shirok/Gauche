@@ -1,10 +1,10 @@
 ;; -*- coding:utf-8 -*-
 
+(use file.util)
 (use gauche.process)
 (use gauche.version)
-(use file.util)
+(use srfi.13)
 (use util.match)
-(use srfi-13)
 
 ;;;
 ;;;  Call makeinfo to generate various document output

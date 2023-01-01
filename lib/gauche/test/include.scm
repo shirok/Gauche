@@ -60,7 +60,7 @@
 ;;
 ;;   (define-module srfi-222-tests
 ;;     (use gauche.test)
-;;     (use srfi-222)
+;;     (use srfi.222)
 ;;     (test-include-r7 "include/srfi-222-tests" (exclude (compounds))))
 ;;
 

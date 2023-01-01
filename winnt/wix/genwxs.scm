@@ -1,13 +1,13 @@
-(use srfi-13)
+(use file.util)
+(use gauche.parseopt)
+(use gauche.process)
+(use srfi.13)
 (use sxml.serializer)
-(use sxml.sxpath)
 (use sxml.ssax)
+(use sxml.sxpath)
 (use sxml.tools)
 (use sxml.tree-trans)
-(use file.util)
-(use gauche.process)
 (use util.match)
-(use gauche.parseopt)
 
 (define *wix-ns* "http://schemas.microsoft.com/wix/2006/wi")
 (define *program-files-folder* "ProgramFilesFolder")
@@ -285,7 +285,7 @@
    #/^(\d+\.\d+(?:\.\d+)).*$/
    (process-output->string '("Gauche/bin/gauche-config" "-V"))
    "\\1"))
-  
+
 
 ;; Generate an XML Directory node of the installation tree.
 ;; Currently we rely on the 'heat.exe' that comes with Wix SDK.

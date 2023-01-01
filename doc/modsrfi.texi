@@ -151,13 +151,13 @@ with @code{only}, @code{rename}, @code{prefix} etc.)
 If @code{srfi-N} is used as a feature identifier, a warning is
 issued when an environment variable @code{GAUCHE_WARN_SRFI_FEATURE_ID} is
 set.  In future this warning will be the default.  We urge the users
-to update their code to use @code{(libraru srfi.N)} form.
+to update their code to use @code{(library srfi.N)} form.
 @c JP
 @code{srfi-N}が機能識別子として使われた場合、
 環境変数@code{GAUCHE_WARN_SRFI_FEATURE_ID}がセットされていれば
 警告が表示されます。将来はデフォルトで警告するようになります。
 @code{srfi-N}機能識別子を使っているユーザは、なるべく早く
-@code{(libraru srfi.N)}へと書き換えるようにしてください。
+@code{(library srfi.N)}へと書き換えるようにしてください。
 @c COMMON
 
 
@@ -5444,7 +5444,7 @@ and use @code{srfi.101} with your desired prefix, e.g.
 @code{cond-expand}の特別な扱いについて: @code{cond-expand}は
 チェックした機能が使える場合には、必要なライブラリを暗黙にロードします。
 つまり、@code{(cond-expand (srfi-N <code>))} とした場合、@code{srfi-N}が
-サポートされていれば@code{<code>}の中で@code{(use srfi-N)}とする必要はありません。
+サポートされていれば@code{<code>}の中で@code{(use srfi.N)}とする必要はありません。
 
 しかし、@code{srfi-101}は組み込みの重要なリストやペア操作手続きと同じ名前の
 手続きをたくさんエクスポートしているので、プレフィクスやリネーム無しで

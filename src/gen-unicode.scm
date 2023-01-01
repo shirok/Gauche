@@ -38,18 +38,18 @@
 ;;   You might need to adjust code for newer version of Unicode.
 ;;   See doc/HOWTO-unicode.txt for the details.
 
+(use file.util)
+(use gauche.charconv)
+(use gauche.dictionary)
+(use gauche.generator)
+(use gauche.record)
+(use gauche.sequence)
+(use gauche.uvector)
 (use scheme.list)
 (use srfi.13)
 (use srfi.42)
 (use text.csv)
 (use util.match)
-(use file.util)
-(use gauche.dictionary)
-(use gauche.generator)
-(use gauche.sequence)
-(use gauche.record)
-(use gauche.charconv)
-(use gauche.uvector)
 
 ;; needs to load from source
 (add-load-path "../lib" :relative)

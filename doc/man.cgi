@@ -5,13 +5,13 @@
 ;;; GET request with p=<topic> query to appropriate page.
 ;;; <topic> can be a procedure/syntax/macro/variable name or a node name.
 
-(use srfi-13)
 (use file.util)
-(use util.match)
-(use text.html-lite)
-(use www.cgi)
 (use gauche.charconv)
 (use gauche.lazy)
+(use srfi.13)
+(use text.html-lite)
+(use util.match)
+(use www.cgi)
 
 (define (pick-from-file rx file)
   (call-with-input-file file

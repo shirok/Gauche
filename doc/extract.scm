@@ -13,10 +13,10 @@
 ;;;  for any damages arising out of the use of this software.
 ;;;
 
-(use gauche.parseopt)
-(use gauche.charconv)
-(use srfi-13)
 (use file.util)
+(use gauche.charconv)
+(use gauche.parseopt)
+(use srfi.13)
 (use util.levenshtein)
 
 (define *version*

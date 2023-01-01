@@ -975,13 +975,13 @@ srfi-129, srfi-129
 Titlecase procedures
 The procedures @code{char-title-case?} and @code{char-titlecase} are
 built-in, and @code{string-titlecase} is in @code{gauche.unicode}.
-For the compatibility, you can @code{(use srfi-129)} or
+For the compatibility, you can @code{(use srfi.129)} or
 @code{(import (srfi 129))} to get these three procedures.
 
 Titlecase手続き
 @code{char-title-case?}と@code{char-titlecase}は組み込みで、
 @code{string-titlecase}は@code{gauche.unicode}モジュールにあります。
-互換性のため、@code{(use srfi-129)}や@code{(import (srfi 129))}とすれば
+互換性のため、@code{(use srfi.129)}や@code{(import (srfi 129))}とすれば
 この3つの手続きがインポートされます。
 
 

@@ -36,11 +36,11 @@
 ;;; C data structure, so that it can be linked into libgauche.
 ;;;
 
-(use gauche.parseopt)
-(use gauche.cgen.precomp)
-(use srfi-1)
-(use srfi-13)
 (use file.util)
+(use gauche.cgen.precomp)
+(use gauche.parseopt)
+(use scheme.list)
+(use srfi.13)
 (use util.match)
 
 (define (main args)

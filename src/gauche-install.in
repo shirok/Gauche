@@ -38,13 +38,10 @@
 ;; is avilable on the target system.  Assuming minimum featured install
 ;; program makes makefile messy.
 
-(use srfi-1)
-(use srfi-2)
-(use srfi-13)
-(use gauche.parseopt)
-(use gauche.parameter)
 (use file.util)
-(use util.list)
+(use gauche.parseopt)
+(use scheme.list)
+(use srfi.13)
 (use util.match)
 
 (define (error-exit fmtstr . args)
