@@ -9368,11 +9368,14 @@ Gaucheのポートはバイナリもテキストもどちらも読み書きで�
 @c COMMON
 @end deftp
 
-@c EN
-@subheading Creating custom ports
-@c JP
-@subheading カスタムポートの作成
-@c COMMON
+@menu
+* Creating custom ports::
+* Transcoded ports::
+@end menu
+
+@node Creating custom ports, Transcoded ports, Custom ports, Custom ports
+@subsection Creating custom ports
+@c NODE カスタムポートの作成
 
 @defun make-custom-binary-input-port id read! get-pos set-pos! close
 @defunx make-custom-textual-input-port id read! get-pos set-pos! close
@@ -9651,11 +9654,9 @@ the same as @code{make-custom-binary-input-port} and
 @c COMMON
 @end defun
 
-@c EN
-@subheading Transcoded ports
-@c JP
-@subheading 符号変換ポート
-@c COMMON
+@node Transcoded ports,  , Creating custom ports, Custom ports
+@subsection Transcoded ports
+@c NODE 符号変換ポート
 
 @c EN
 A transcoded port is a portable way to read/write characters in

@@ -3785,6 +3785,14 @@ is given to the file stream creating functions
 @code{call-with-output-file}等のファイルストリームを作成する手続きに
 @code{:encoding}キーワード引数が与えられた場合に暗黙にロードされます。
 @c COMMON
+
+@c EN
+For the portable programs, you can use @emph{transcoded ports}
+defined in SRFI-181 (@pxref{Transcoded ports}).
+@c JP
+ポータブルなコードには、SRFI-181で定義される@emph{符号変換ポート}を使うこともできます
+(@ref{Transcoded ports}参照)。
+@c COMMON
 @end deftp
 
 @menu
@@ -4317,6 +4325,14 @@ For example, the following code copies a file @file{unknown.txt} to a file
                  :owner? #t)       ;@r{close unknown.txt afterwards}
                out)))
 @end example
+
+@c EN
+For the portable code, you can also use SRFI-181 @code{transcoded-port}
+(@pxref{Transcoded ports}).
+@c JP
+ポータブルなコードでは、SRFI-181の@code{transcoded-port}を使うこともできます
+(@ref{Transcoded ports}参照)。
+@c COMMON
 @end defun
 
 
@@ -4364,6 +4380,14 @@ as @code{open-input-conversion-port}.
 @c JP
 @var{illegal-output}キーワード引数は、
 @code{open-input-conversion-port}と同じです。
+@c COMMON
+
+@c EN
+For the portable code, you can also use SRFI-181 @code{transcoded-port}
+(@pxref{Transcoded ports}).
+@c JP
+ポータブルなコードでは、SRFI-181の@code{transcoded-port}を使うこともできます
+(@ref{Transcoded ports}参照)。
 @c COMMON
 @end defun
 
@@ -4426,6 +4450,16 @@ the behavior depends on the external library.
 説明を参照してください。デフォルトでは@code{<io-encoding-error>}が投げられます
 (ただし、変換が@code{iconv(3)}に任された場合、
 その振る舞いは外部ライブラリの実装に依存します)。
+@c COMMON
+
+@c EN
+For the portable code, you can also use SRFI-181 @code{bytevector->string}
+and @code{string->bytevector}
+(@pxref{Transcoded ports}).
+@c JP
+ポータブルなコードでは、SRFI-181の@code{bytevector->string}
+および@code{string->bytevector}を使うこともできます
+(@ref{Transcoded ports}参照)。
 @c COMMON
 @end defun
 
