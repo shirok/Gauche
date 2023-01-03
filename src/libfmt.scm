@@ -534,7 +534,11 @@
 ;; ~R
 (define (make-format-r fmtstr params flags upcase)
   (if (null? params)
-    (^[argptr port ctrl] (error "Roman numerals not implemented yet"))
+    (^[argptr port ctrl]
+      (format-numeral-R port
+                        (fr-next-arg! fmtstr argptr)
+                        (has-@? flags)
+                        (has-:? flags)))
     ($ with-format-params ([radix 10]
                            [mincol 0]
                            [padchar #\space]

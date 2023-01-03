@@ -57,7 +57,7 @@ SCMFILES = \
        gauche/test.scm gauche/test/generative.scm gauche/test/script.scm \
        gauche/test/diff.scm gauche/test/include.scm \
        gauche/time.scm gauche/connection.scm \
-       gauche/redefutil.scm \
+       gauche/fmtutil.scm gauche/redefutil.scm \
        gauche/vecutil.scm gauche/portutil.scm \
        gauche/hashutil.scm gauche/treeutil.scm gauche/computil.scm \
        gauche/netutil.scm gauche/modutil.scm gauche/libutil.scm  \

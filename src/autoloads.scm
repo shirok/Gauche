@@ -164,6 +164,8 @@
           sys-stat->atime sys-stat->mtime sys-stat->ctime
           sys-stat->type sys-tm->alist)
 
+(autoload gauche.fmtutil format-numeral-R)
+
 (autoload gauche.hashutil string-ci-hash)
 
 (autoload gauche.treeutil make-tree-map tree-map-empty?
