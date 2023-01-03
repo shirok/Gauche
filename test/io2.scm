@@ -248,6 +248,36 @@
          (format/ss "The answer is ~s ~s" a a)))
 
 ;;---------------------------------------------------------------
+(test-section "obscure format features")
+
+(test* "format roman numerals"
+       '("I" "II" "III" "IV" "V" "VI" "VII" "VIII" "IX" "X")
+       (map (^i (format "~@r" i)) (iota 10 1)))
+(test* "format roman numerals"
+       '("I" "II" "III" "IIII" "V" "VI" "VII" "VIII" "VIIII" "X")
+       (map (^i (format "~:@r" i)) (iota 10 1)))
+(test* "format roman numerals"
+       '("X" "XX" "XXX" "XL" "L" "LX" "LXX" "LXXX" "XC" "C")
+       (map (^i (format "~@r" i)) (iota 10 10 10)))
+(test* "format roman numerals"
+       '("C" "CC" "CCC" "CD" "D" "DC" "DCC" "DCCC" "CM" "M")
+       (map (^i (format "~@r" i)) (iota 10 100 100)))
+
+(let1 data '((39 "XXXIX")
+             (246 "CCXLVI")
+             (789 "DCCLXXXIX")
+             (2421 "MMCDXXI")
+             (160 "CLX")
+             (207 "CCVII")
+             (1009 "MIX")
+             (1066 "MLXVI")
+             (1776 "MDCCLXXVI")
+             (1918 "MCMXVIII")
+             (2014 "MMXIV"))
+  (dolist [d data] (test* "format roman numeral" (cadr d)
+                          (format "~@r" (car d)))))
+
+;;---------------------------------------------------------------
 (test-section "read/ss basic")
 
 ;; NB: in gauche, read/ss is just an alias of read.
