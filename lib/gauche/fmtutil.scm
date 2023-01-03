@@ -1,7 +1,7 @@
 ;;;
 ;;; gauche.fmtutil - less-used format features
 ;;;
-;;;   Copyright (c) 2019  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2023  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
 ;;;   modification, are permitted provided that the following conditions
@@ -39,32 +39,35 @@
 (select-module gauche.fmtutil)
 
 ;; Entry point
-(define (format-numeral-R port value atflag colon)
+(define (format-numeral-R port value atflag colon upcase?)
   (if atflag
-    (format-roman port value colon)
-    (format-english port value colon)))
+    (format-roman port value colon upcase?)
+    (format-english port value colon upcase?)))
 
-(define (format-english port value ordinal?)
-  (error "Not implemented yet"))
+(define (format-english port value ordinal? upcase?)
+  (error "English notation is not implemented yet"))
 
 
 ;; Unicode roman numerals
-(define *rn-1000* "\u2180")             ; just in case; usually "M"
-(define *rn-5000* "\u2181")
-(define *rn-10000* "\u2182")
-(define *rn-50000* "\u2187")
-(define *rn-100000* "\u2188")
+(define *rn-1000* #\u2180)             ; just in case; usually "M"
+(define *rn-5000* #\u2181)
+(define *rn-10000* #\u2182)
+(define *rn-50000* #\u2187)
+(define *rn-100000* #\u2188)
 
 ;; Roman numerals
 (define *rns*
   `((10000 ,*rn-10000* ,*rn-50000* ,*rn-100000*)
-    ( 1000 "M" ,*rn-5000* ,*rn-10000*)
-    (  100 "C" "D" "M")
-    (   10 "X" "L" "C")
-    (    1 "I" "V" "X")))
+    ( 1000 #\m ,*rn-5000* ,*rn-10000*)
+    (  100 #\c #\d #\m)
+    (   10 #\x #\l #\c)
+    (    1 #\i #\v #\x)))
 
-(define (format-roman port value old?)
-  (define (P s) (display s port))
+(define (format-roman port value old? upcase?)
+  (define (P c)
+    (if upcase?
+      (display (char-upcase c) port)
+      (display c port)))
   (assume (and (exact-integer? value)
                (< 0 value 1000000))
           "Value is out of domain for Roman numeral:" value)

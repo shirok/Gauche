@@ -538,7 +538,8 @@
       (format-numeral-R port
                         (fr-next-arg! fmtstr argptr)
                         (has-@? flags)
-                        (has-:? flags)))
+                        (has-:? flags)
+                        upcase))
     ($ with-format-params ([radix 10]
                            [mincol 0]
                            [padchar #\space]
