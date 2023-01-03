@@ -151,18 +151,7 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
  *      (lambda () ...)      ;; <- (2)this is executed while EP1 is current
  *
  *  If the error handler returns, we pass its result to the continuation of
- *  with-error-handler, which is kept in EP1->cont.  The problem arises
- *  if a stack overflow occurs within the error handler, continuation frames
- *  in the stack are relocated to the heap, but EP1->cont isn't updated
- *  since it is out of vm->escapePoint chain.
- *
- *  'Floating' pointer is used to catch such case.  When an EP is popped
- *  before an error handler is ivoked, EP0's floating pointer is set to
- *  point EP1.  When a new EP is pushed, it inherits the previous EP's
- *  floating pointer.  With this scheme, active floating EPs are always
- *  reachable from vm->esapePoint->floating chain.  (NB: the chain length
- *  can be more than 1, if with-error-handler is used within an error handler
- *  and an error is signalled in its body.
+ *  with-error-handler, which is kept in EP1->cont.
  */
 typedef struct ScmEscapePointRec {
     struct ScmEscapePointRec *prev;
