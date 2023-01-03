@@ -2831,6 +2831,16 @@
 ;; NB: SRFI-192 is tested in gauche.vport
 
 ;;-----------------------------------------------------------------------
+;; Random data generators
+
+(test-section "SRFI-194")
+
+(define-module srfi-194-tests
+  (use gauche.test)
+  (use srfi.194)
+  (test-module 'srfi.194))
+
+;;-----------------------------------------------------------------------
 ;; NB: SRFI-196 is tested with data.range
 
 ;;-----------------------------------------------------------------------

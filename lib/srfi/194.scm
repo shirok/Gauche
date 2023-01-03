@@ -34,7 +34,29 @@
 (define-module srfi.194
   (use data.random)
   (use math.const)
-  (use srfi.27))
+  (use srfi.27)
+  (export current-random-source with-random-source
+          make-random-source-generator
+          make-random-integer-generator
+          make-random-u1-generator
+          make-random-u8-generator
+          make-random-s8-generator
+          make-random-u16-generator
+          make-random-s16-generator
+          make-random-u32-generator
+          make-random-s32-generator
+          make-random-u64-generator
+          make-random-s64-generator
+          clamp-real-number
+          make-random-real-generator
+          make-random-rectangular-generator
+          make-random-polar-generator
+          make-random-boolean-generator
+          make-random-char-generator
+          make-random-string-generator
+
+          make-bernoulli-generator
+          ))
 (select-module srfi.194)
 
 (define current-random-source random-data-random-source)
@@ -46,8 +68,9 @@
 (define (make-random-source-generator i)
   (let1 j 0
     (^[]
-      (rlet1 fs (make-random-source)
-        (random-source-pseudo-randomize! rs i j)))))
+      (rlet1 rs (make-random-source)
+        (random-source-pseudo-randomize! rs i j)
+        (inc! j)))))
 
 (define (make-random-integer-generator lb ub)
   (assume-type lb <fixnum>)
@@ -63,7 +86,7 @@
 (define (make-random-s8-generator)  int8s)
 (define (make-random-s16-generator) int16s)
 (define (make-random-s32-generator) int32s)
-(define (make-random-s32-generator) int64s)
+(define (make-random-s64-generator) int64s)
 
 (define (clamp-real-number lb ub value)
   (assume-type lb <real>)
@@ -101,5 +124,11 @@
 
 (define (make-random-string-generator k str)
   (assume (exact-integer? k))
-  (asume-type str <string>)
+  (assume-type str <string>)
   (strings-of k (samples$ str)))
+
+(define (make-bernoulli-generator p)
+  (assume-type p <real>)
+  (assume (<= 0.0 p 1.0))
+  (^[] (let1 r ((random-source-make-reals (current-random-source)))
+         (if (< r p) 1 0))))
