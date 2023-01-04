@@ -19378,7 +19378,7 @@ Bitflags of options.  Logical OR of the following numeric constants.
 @item SSL_SERVER_VERIFY_LATER
 (client only) Let handshake success even the server authentication fails.
 @item SSL_CLIENT_AUTHENTICATION
-(server only) Request client sertificate to be authenticated.
+(server only) Request client certificate to be authenticated.
 @end table
 @end defun
 
