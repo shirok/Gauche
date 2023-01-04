@@ -540,6 +540,8 @@
 ;; various systems.
 (define-cproc sys-strerror (errno_::<int>) ::<const-cstring> strerror)
 
+(define-cproc sys-strsignal (signum::<int>) ::<const-cstring> strsignal)
+
 ;;---------------------------------------------------------------------
 ;; sys/loadavg.h
 
