@@ -16037,6 +16037,7 @@ Gaucheをセットアップすることができます。
 
 @node Procedure class and applicability, Universal accessor, Procedures and continuations, Procedures and continuations
 @subsection Procedure class and applicability
+@c NODE procedureクラスと適用可能性
 
 @deftp {Builtin Class} <procedure>
 @clindex procedure
