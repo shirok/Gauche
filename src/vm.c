@@ -1934,7 +1934,7 @@ static ScmObj user_eval_inner(ScmObj program,
             ScmEscapePoint *ep = (ScmEscapePoint*)vm->escapeData[0];
             if (ep->cstack == vm->cstack) {
                 ScmObj handlers =
-                    throw_cont_calculate_handlers(ep->handlers,
+                    throw_cont_calculate_handlers(ep->dynamicHandlers,
                                                   get_dynamic_handlers(vm));
                 /* force popping continuation when restarted */
                 vm->pc = PC_TO_RETURN;
@@ -2636,7 +2636,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
            If an error is raised within the dynamic handlers, it will be
            captured by the same error handler. */
         if (ep->rewindBefore) {
-            call_dynamic_handlers(vm, ep->handlers,
+            call_dynamic_handlers(vm, ep->dynamicHandlers,
                                   get_dynamic_handlers(vm));
         }
 
@@ -2656,7 +2656,7 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 
         /* call dynamic handlers to rewind */
         if (!ep->rewindBefore) {
-            call_dynamic_handlers(vm, ep->handlers,
+            call_dynamic_handlers(vm, ep->dynamicHandlers,
                                   get_dynamic_handlers(vm));
         }
 
@@ -2848,7 +2848,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ep->ehandler = handler;
     ep->cont = vm->cont;
     ep->denv = vm->denv;
-    ep->handlers = get_dynamic_handlers(vm);
+    ep->dynamicHandlers = get_dynamic_handlers(vm);
     ep->cstack = vm->cstack;
     ep->xhandler = Scm_VMCurrentExceptionHandler();
     ep->resetChain = vm->resetChain;
@@ -3434,7 +3434,8 @@ static ScmObj throw_continuation(ScmObj *argframe,
     ScmObj currentHandlers = get_dynamic_handlers(vm);
     if (ep->cstack) {
         /* for full continuation */
-        hdlist = throw_cont_calculate_handlers(ep->handlers, currentHandlers);
+        hdlist = throw_cont_calculate_handlers(ep->dynamicHandlers,
+                                               currentHandlers);
     } else {
         /* for partial continuation */
         hdlist
@@ -3456,7 +3457,7 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     ep->ehandler = SCM_FALSE;
     ep->cont = vm->cont;
     ep->denv = vm->denv;
-    ep->handlers = get_dynamic_handlers(vm);
+    ep->dynamicHandlers = get_dynamic_handlers(vm);
     ep->cstack = vm->cstack;
     ep->resetChain = vm->resetChain;
     ep->partHandlers = SCM_NIL;
@@ -3506,7 +3507,7 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
     ep->denv = c? c->denv : (cp? cp->denv : SCM_NIL);
-    ep->handlers = SCM_NIL; /* don't use for partial continuation */
+    ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
     ep->cstack = NULL; /* so that the partial continuation can be run
                           on any cstack state. */
     ep->resetChain = (SCM_PAIRP(vm->resetChain)?

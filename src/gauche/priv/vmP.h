@@ -158,7 +158,7 @@ typedef struct ScmEscapePointRec {
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
     ScmObj denv;                /* saved denv */
-    ScmObj handlers;            /* saved dynamic handler chain */
+    ScmObj dynamicHandlers;     /* saved dynamic handler chain */
     ScmCStack *cstack;          /* vm->cstack when escape point is created.
                                    this will be used to rewind cstack.
                                    this is NULL for partial continuations,
