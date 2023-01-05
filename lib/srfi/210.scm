@@ -51,6 +51,7 @@
 
 (define-syntax call/mv
   (syntax-rules ()
+    [(_ consumer) (consumer)]
     [(_ consumer producer ... last-producer)
      (apply consumer (append (values->list producer) ...)
             (values->list last-producer))]))
