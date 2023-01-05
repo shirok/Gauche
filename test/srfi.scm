@@ -2863,6 +2863,17 @@
 ;; NB: SRFI-209 is tested with gauche.bitvector
 
 ;;-----------------------------------------------------------------------
+;; Procedures and syntax for multiple values
+
+(test-section "SRFI-210")
+
+(define-module srfi-210-tests
+  (use gauche.test)
+  (use srfi.210)
+  (test-module 'srfi.210)
+  (test-include-r7 "include/srfi-210-tests"))
+
+;;-----------------------------------------------------------------------
 ;; Integer sets
 
 (test-section "SRFI-217")

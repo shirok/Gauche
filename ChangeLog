@@ -1,5 +1,7 @@
 2023-01-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi/210.scm: Added SRFI-210.
+
 	* src/libmacro.scm (set!-values): Allow improper list in the var list
 	  for the consistency.
 

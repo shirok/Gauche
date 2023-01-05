@@ -1448,6 +1448,16 @@ Enumとenum集合
 モジュール@code{srfi.209}でサポートされます (@ref{Enums and enum sets}参照)。
 
 
+srfi-210, srfi-210
+()
+
+Procedures and syntax for multiple values
+Supported by the module @code{srfi.210}.
+
+多値のための手続きと構文
+モジュール@code{srfi.210}でサポートされます。
+
+
 srfi-217, srfi-217
 ()
 
