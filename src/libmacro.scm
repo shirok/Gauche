@@ -683,11 +683,15 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ (var ...) expr)
-        (let1 tmps (map (^_ (gensym)) var)
+       [(_ formals expr)
+        (let1 tmps (map* (^_ (gensym)) (^r (if (null? r) r (gensym))) formals)
           (quasirename r
             `(receive ,tmps ,expr
-               ,@(map (^[v t] (quasirename r `(set! ,v ,t))) var tmps)
+               ,@(map* (^[v t] (quasirename r `(set! ,v ,t)))
+                       (^[v t] (if (null? v)
+                                 '()
+                                 (quasirename r `((set! ,v ,t)))))
+                       formals tmps)
                (undefined))))]
        [_ (error "Malformed set!-values:" f)]))))
 

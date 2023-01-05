@@ -1,3 +1,8 @@
+2023-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (set!-values): Allow improper list in the var list
+	  for the consistency.
+
 2023-01-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/fmtutil.scm: Support ~@r roman numeral formatter.
