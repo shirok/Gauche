@@ -1415,6 +1415,9 @@ x                    @result{} (5 2)
 @end defspec
 
 @defmac set!-values (var @dots{}) expr
+@defmacx set!-values (var @dots{} . varn) expr
+@defmacx set!-values var expr
+[SRFI-210]
 @c EN
 Sets values of multiple variables at once.  @var{Expr} must yield
 as many values as @var{var} @dots{}.  Each value is set to
@@ -1427,13 +1430,24 @@ the corresponding @var{var}.
 @example
 (define a 0)
 (define b 1)
+(define c 2)
 (set!-values (a b) (values 3 4))
 a @result{} 3
 b @result{} 4
 (set!-values (a b) (values b a))
 a @result{} 4
 b @result{} 3
+(set!-values (a b . c) (values 1 2 3 4))
+a @result{} 1
+b @result{} 2
+c @result{} (3 4)
 @end example
+
+@c EN
+See also @code{define-values} (@ref{Definitions}).
+@c JP
+@code{define-values}も参照 (@ref{Definitions})。
+@c COMMON
 @end defmac
 
 @defun setter proc
