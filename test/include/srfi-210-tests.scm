@@ -62,6 +62,8 @@
       (test-values ('a 'b 'c) (unbox (box/mv 'a (values 'b 'c))))
       (test-values ('a 'b 'c 'd) (unbox (box/mv 'a 'b (values 'c 'd))))
 
+      (test-equal 'a (value/mv 0 (values 'a 'b)))
+      (test-equal 'b (value/mv 1 (values 'a 'b)))
       (test-equal 'a (value/mv 0 'a (values 'b 'c)))
       (test-equal 'b (value/mv 1 'a (values 'b 'c)))
       (test-equal 'c (value/mv 2 'a (values 'b 'c)))

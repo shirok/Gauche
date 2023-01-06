@@ -46,32 +46,39 @@
 
 (define-syntax apply/mv
   (syntax-rules ()
+    [(_ operator producer)
+     (with-values producer operator)]
     [(_ operator operand ... producer)
      (apply operator operand ... (values->list producer))]))
 
 (define-syntax call/mv
   (syntax-rules ()
     [(_ consumer) (consumer)]
+    [(_ consumer producer) (with-values producer consumer)]
     [(_ consumer producer ...)
      (apply consumer (append (values->list producer) ...))]))
 
 (define-syntax list/mv
   (syntax-rules ()
+    [(_ producer) (values->list producer)]
     [(_ element ... producer)
      (list* element ... (values->list producer))]))
 
 (define-syntax vector/mv
   (syntax-rules ()
+    [(_ producer) (with-values producer vector)]
     [(_ element ... producer)
      (apply vector element ... (values->list producer))]))
 
 (define-syntax box/mv
   (syntax-rules ()
+    [(_ producer) (with-values producer box)]
     [(_ element ... producer)
      (apply box element ... (values->list producer))]))
 
 (define-syntax value/mv
   (syntax-rules ()
+    [(_ index producer) (values-ref producer index)]
     [(_ index element ... producer)
      (apply value index element ... (values->list producer))]))
 
