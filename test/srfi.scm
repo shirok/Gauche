@@ -2871,7 +2871,8 @@
   (use gauche.test)
   (use srfi.210)
   (test-module 'srfi.210)
-  (test-include-r7 "include/srfi-210-tests"))
+  (test-include-r7 "include/srfi-210-tests")
+  (with-module srfi.210.test (run-tests)))
 
 ;;-----------------------------------------------------------------------
 ;; Integer sets

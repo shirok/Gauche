@@ -52,9 +52,8 @@
 (define-syntax call/mv
   (syntax-rules ()
     [(_ consumer) (consumer)]
-    [(_ consumer producer ... last-producer)
-     (apply consumer (append (values->list producer) ...)
-            (values->list last-producer))]))
+    [(_ consumer producer ...)
+     (apply consumer (append (values->list producer) ...))]))
 
 (define-syntax list/mv
   (syntax-rules ()
@@ -117,7 +116,7 @@
       (if (null? transducer*)
         transducer1
         (^ xs (apply/mv (rec (car transducer*) (cdr transducer*))
-                        (transducer1 xs)))))))
+                        (apply transducer1 xs)))))))
 
 (define (compose-right . transducers)
   (if (null? transducers)
@@ -127,7 +126,7 @@
       (if (null? transducer*)
         transducer1
         (^ xs (apply/mv transducer1
-                        ((rec (car transducer*) (cdr transducer*)) xs)))))))
+                        (apply (rec (car transducer*) (cdr transducer*)) xs)))))))
 
 (define (map-values proc)
   (^ xs (list-values (map proc xs))))
@@ -137,7 +136,7 @@
     [() (list-values lis)]
     [(transducer) (apply transducer lis)]
     [(transducer . transducers)
-     (apply bind/list (apply transducer lis) transducers)]))
+     (apply bind/list (values->list (apply transducer lis)) transducers)]))
 
 (define (bind/box bx . transducers)
   (apply bind/list (values->list (unbox bx)) transducers))
