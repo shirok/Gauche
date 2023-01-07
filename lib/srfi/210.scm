@@ -92,7 +92,8 @@
 (define-syntax with-values
   (syntax-rules ()
     [(_ producer consumer)
-     (call-with-values (^[] producer) consumer)]))
+     (receive vals producer
+       (apply consumer vals))]))
 
 (define-syntax case-receive
   (syntax-rules ()
