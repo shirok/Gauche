@@ -540,6 +540,19 @@
 ;; various systems.
 (define-cproc sys-strerror (errno_::<int>) ::<const-cstring> strerror)
 
+;; Added in POSIX.1-2008.  We could do something more meaningful if
+;; the platform doesn't have it, but this is the minimum support.
+;; TODO: strsignal() isn't MT-safe; not only with another thread
+;; calling strsignal(), but also with setlocale().  Eventually we'll
+;; add manual global lock.
+;; POSIX also doesn't say anything when signum isn't a supported signal
+;; number.  We can't do much about it, though, so it's better just to expose
+;; the underlying function.
+(define-cproc sys-strsignal (signum::<int>) ::<const-cstring>?
+  (.if HAVE_STRSIGNAL
+    (return (strsignal signum))
+    (return NULL)))
+
 ;;---------------------------------------------------------------------
 ;; sys/loadavg.h
 
