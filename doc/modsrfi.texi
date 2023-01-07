@@ -87,6 +87,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Range objects::               srfi.196
 * Pipeline operators::          srfi.197
 * Enums and enum sets::         srfi.209
+* Procedures and syntax for multiple values::  srfi.210
 * Integer sets::                srfi.217
 * Define higher-order lambda::  srfi.219
 * Generator/accumulator sub-library::  srfi.221
@@ -11473,7 +11474,7 @@ this macro simply nests the steps:
 
 
 @c ----------------------------------------------------------------------
-@node Enums and enum sets, Integer sets, Pipeline operators, Library modules - SRFIs
+@node Enums and enum sets, Procedures and syntax for multiple values, Pipeline operators, Library modules - SRFIs
 @section @code{srfi.209} - Enums and enum sets
 @c NODE enumとenum集合,  @code{srfi.209} - enumとenum集合
 
@@ -12004,9 +12005,119 @@ The results of @var{proc} are discarded.
 @c MOD srfi.209
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Procedures and syntax for multiple values, Integer sets, Enums and enum sets, Library modules - SRFIs
+@section @code{srfi.210} - Procedures and syntax for multiple values
+@c NODE 多値のための手続きと構文,  @code{srfi.210} - 多値のための手続きと構文
+
+@deftp {Module} srfi.210
+@mdindex srfi.210
+This module provides macros and procedures to blend multiple-value
+expressions naturally into the orinary single-value expressions.
+@end deftp
+
+@defmac with-values producer consumer
+[SRFI-210]
+@c MOD srfi.210
+A shorthand notation of @code{(call-with-values (^[] producer) consumer)}.
+@end defmac
+
+@defmac case-receive producer clause @dots{}
+[SRFI-210]
+@c MOD srfi.210
+A shorthand notation of
+@code{(with-values producer (case-lambda clause @dots{}))}.
+@end defmac
+
+@defmac apply/mv operator operand @dots{} producer
+[SRFI-210]
+@c MOD srfi.210
+Similar to @code{apply}, but the multiple values yielded
+from the last argument (@var{producer}) is turned into the tail of
+the argument list; that is,
+@code{(apply operator operand @dots{} (values->list producer))}.
+@end defmac
+
+@defmac call/mv proc producer @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defmac
+
+@defmac list/mv element @dots{} producer
+@defmacx vector/mv element @dots{} producer
+@defmacx box/mv element @dots{} producer
+[SRFI-210]
+@c MOD srfi.210
+@end defmac
+
+@defmac value/mv index element @dots{} producer
+[SRFI-210]
+@c MOD srfi.210
+@end defmac
+
+@defmac coarity producer
+[SRFI-210]
+@c MOD srfi.210
+@end defmac
+
+@defmac bind/mv producer transducer @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defmac
+
+@defun list-values lis
+@defunx vector-values vec
+@defunx box-values box
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
+@defun value index obj @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
+@defun identity obj @dots{}
+[SRFI-210]
+@c MOD srfi.210
+Synonym of @code{values}.  Note that this is different from
+Gauche's built-in @code{identity}, which takes exactly one argument
+(@pxref{Combinators}).
+@end defun
+
+@defun compose-left transducer @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
+@defun compose-right transducer @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
+@defun map-values proc
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
+@defun bind/list lis transducer @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
+@defun bind/box box transducer @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
+@defun bind obj transducer @dots{}
+[SRFI-210]
+@c MOD srfi.210
+@end defun
+
 
 @c ----------------------------------------------------------------------
-@node Integer sets, Define higher-order lambda, Enums and enum sets, Library modules - SRFIs
+@node Integer sets, Define higher-order lambda, Procedures and syntax for multiple values, Library modules - SRFIs
 @section @code{srfi.217} - Integer sets
 @c NODE 整数集合,  @code{srfi.217} - 整数集合
 

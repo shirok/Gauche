@@ -16552,9 +16552,21 @@ for example.
 
 @defun identity obj
 @c EN
-Returns @var{obj}.
+Returns @var{obj}.  You can use @code{values} to get the same
+effect for the porable code,
+but using this emphasizes that you're dealing with exactly one value.
 @c JP
-@var{obj}を返します。
+@var{obj}を返します。ポータブルなコードでは@code{values}を使って同じ効果を
+得ることができますが、これを使うことにより単一の値を扱っていることを強調できます。
+@c COMMON
+
+@c EN
+Note: SRFI-210 introduces multi-valued @code{identity} (unfortunately), which is
+a synonym to @code{values} (@pxref{Procedures and syntax for multiple values}).
+@c JP
+註: SRFI-210は複数の値を扱う@code{identity}を(残念ながら)導入してしまいました。
+それは@code{values}の別名にすぎません。
+@ref{Procedures and syntax for multiple values}参照。
 @c COMMON
 @end defun
 

@@ -1452,10 +1452,12 @@ srfi-210, srfi-210
 ()
 
 Procedures and syntax for multiple values
-Supported by the module @code{srfi.210}.
+Supported by the module @code{srfi.210}
+(@pxref{Procedures and syntax for multiple values}).
 
 多値のための手続きと構文
-モジュール@code{srfi.210}でサポートされます。
+モジュール@code{srfi.210}でサポートされます
+(@ref{Procedures and syntax for multiple values}参照)。
 
 
 srfi-217, srfi-217
