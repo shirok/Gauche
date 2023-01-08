@@ -72,7 +72,7 @@
   (f64vector-set! v 1 (- (* (vec-z v0) (vec-x v1)) (* (vec-x v0) (vec-z v1))))
   (f64vector-set! v 2 (- (* (vec-x v0) (vec-y v1)) (* (vec-y v0) (vec-x v1)))))
 (define-inline (vnormalize! v)
-  (let1 size (%sqrt (vdot v v))
+  (let1 size (real-sqrt (vdot v v))
     (when (> (abs size) 1.0e-17)
       (f64vector-div! v size))))
 (define-inline (vec-diff v0 v1) (f64vector-sub v0 v1))
@@ -119,7 +119,7 @@
          [C  (- (vdot rs rs) (square (sphere-radius sphere)))]
          [D  (- (* B B) C)])
     (when (> D 0.0)
-      (let1 t (- (+ B (%sqrt D)))
+      (let1 t (- (+ B (real-sqrt D)))
         (when (< 0.0 t (isect-t isect))
           (isect-t-set! isect t)
           (isect-hit-set! isect #t)
@@ -177,11 +177,11 @@
     (ortho-basis! b0 b1 b2 (isect-n isect))
     (dotimes [j ntheta]
       (dotimes [i nphi]
-        (let ([theta (%sqrt (random-real))]
+        (let ([theta (real-sqrt (random-real))]
               [phi   (* 2.0 pi (random-real))])
-          (let ([x (* (%cos phi) theta)]
-                [y (* (%sin phi) theta)]
-                [z (%sqrt (- 1.0 (* theta theta)))])
+          (let ([x (* (real-cos phi) theta)]
+                [y (* (real-sin phi) theta)]
+                [z (real-sqrt (- 1.0 (* theta theta)))])
             (let ([rx (+ (* x (vec-x b0)) (* y (vec-x b1)) (* z (vec-x b2)))]
                   [ry (+ (* x (vec-y b0)) (* y (vec-y b1)) (* z (vec-y b2)))]
                   [rz (+ (* x (vec-z b0)) (* y (vec-z b1)) (* z (vec-z b2)))])

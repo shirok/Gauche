@@ -1,5 +1,13 @@
 2023-01-07  Shiro Kawai  <shiro@acm.org>
 
+	* src/libnum.scm: Change %expt -> real-expt etc.  The real-only
+	  versions (%expt, %sin, etc.) are undocumented but used internally
+	  when the domain and range are real.  SRFI-94 already defines
+	  real-only names, so we name them accordingly and make them official.
+	  NB: If an external program uses unofficial names, they would raise an
+	  error.  If that causes a serious problem, we'll provide compatibility
+	  layer.
+
 	* src/libsys.scm (sys-strsignal): Added.
 
 2023-01-04  Shiro Kawai  <shiro@acm.org>

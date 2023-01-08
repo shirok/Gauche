@@ -102,7 +102,7 @@
 ;; Procedures that require additional definitions
 ;; Can be more efficient.
 
-(define *modulo* (%expt 2 (fixnum-width)))
+(define *modulo* (ash 2 (- (fixnum-width) 1)))
 
 (define (fx+/carry i j k)
   (let1 v (+ i j k)

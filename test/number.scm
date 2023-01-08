@@ -469,9 +469,9 @@
 (test* "exact fractonal number" -12345/1000000
        (string->number "#e-1.2345e-2"))
 
-(test* "exact fractonal number" (%expt 10 296)
+(test* "exact fractonal number" (real-expt 10 296)
        (string->number "#e0.0001e300"))
-(test* "exact fractonal number" (- (%expt 10 296))
+(test* "exact fractonal number" (- (real-expt 10 296))
        (string->number "#e-0.0001e300"))
 
 (test* "exact fractonal number" (test-error)
@@ -726,9 +726,9 @@
      ))
  `((0  . 0.0)
    (1  . 1.0)
-   (,(%expt 2 52) . ,(%expt 2.0 52))
-   (,(%expt 2 53) . ,(%expt 2.0 53))
-   (,(%expt 2 54) . ,(%expt 2.0 54))
+   (,(real-expt 2 52) . ,(real-expt 2.0 52))
+   (,(real-expt 2 53) . ,(real-expt 2.0 53))
+   (,(real-expt 2 54) . ,(real-expt 2.0 54))
 
    (1/2 . 0.5)
    (3/4 . 0.75)
@@ -2353,7 +2353,7 @@
 
 (test* "sqrt, inexact" 4.0 (sqrt 16.0) eqv?)
 (test* "sqrt, inexact" +4.0i (sqrt -16.0) eqv?)
-(test* "sqrt, inexact" (%sqrt (- (expt 2 64) 1))
+(test* "sqrt, inexact" (real-sqrt (- (expt 2 64) 1))
        (sqrt (- (expt 2 64) 1)) eqv?)
 
 (test* "sqrt, exact" 1/4 (sqrt 1/16) eqv?)
@@ -2363,7 +2363,7 @@
        (sqrt (/ (expt 2 128) (expt 3 60))) eqv?)
 
 (test* "sqrt, inexact" 0.25 (sqrt (exact->inexact 1/16)) eqv?)
-(test* "sqrt, inexact" (%sqrt (/ (- (expt 2 64) 1) (expt 3 30)))
+(test* "sqrt, inexact" (real-sqrt (/ (- (expt 2 64) 1) (expt 3 30)))
        (sqrt (/ (- (expt 2 64) 1) (expt 3 30))) eqv?)
 
 ;;------------------------------------------------------------------
@@ -2430,15 +2430,15 @@
 (let ()
   (define (check msg fn %fn val)
     (test* msg (exact (%fn val)) (fn val) eqv?))
-  (check "exact (sin 0)" sin %sin 0)
-  (check "exact (cos 0)" cos %cos 0)
-  (check "exact (tan 0)" tan %tan 0)
-  (check "exact (sinh 0)" sinh %sinh 0)
-  (check "exact (cosh 0)" cosh %cosh 0)
-  (check "exact (tanh 0)" tanh %tanh 0)
-  (check "exact (asin 0)" asin %asin 0)
-  (check "exact (acos 1)" acos %acos 1)
-  (check "exact (atan 0)" atan %atan 0))
+  (check "exact (sin 0)" sin real-sin 0)
+  (check "exact (cos 0)" cos real-cos 0)
+  (check "exact (tan 0)" tan real-tan 0)
+  (check "exact (sinh 0)" sinh real-sinh 0)
+  (check "exact (cosh 0)" cosh real-cosh 0)
+  (check "exact (tanh 0)" tanh real-tanh 0)
+  (check "exact (asin 0)" asin real-asin 0)
+  (check "exact (acos 1)" acos real-acos 1)
+  (check "exact (atan 0)" atan real-atan 0))
 
 (let ()
   (define (check trig trig-pi)
@@ -2453,9 +2453,9 @@
             (loop (+ x 1/16))
             `(((,trig (* pi ,x)) ,t0)
               ((,trig-pi ,x) ,t1)))))))
-  (test* "sin vs sinpi" #f (check %sin %sinpi))
-  (test* "cos vs cospi" #f (check %cos %cospi))
-  (test* "tan vs tanpi" #f (check %tan %tanpi)))
+  (test* "sin vs sinpi" #f (check real-sin real-sinpi))
+  (test* "cos vs cospi" #f (check real-cos real-cospi))
+  (test* "tan vs tanpi" #f (check real-tan real-tanpi)))
 
 (let ()
   (test* "cos + degrees->radians" -1

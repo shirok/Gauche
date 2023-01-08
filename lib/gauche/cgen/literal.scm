@@ -54,6 +54,12 @@
 ;; <module> literal needs to access this
 (autoload gauche.cgen.tmodule all-tmodules)
 
+;; TRANSIENT: integer-expt is defined in 0.9.13.  This module needs to be
+;; read into 0.9.12 to compile 0.9.13.  Remove this after releasing 0.9.13.
+(cond-expand
+ [gauche-0.9.12 (define integer-expt %expt)]
+ [else])
+
 ;;=============================================================
 ;; Static objects
 ;;
@@ -547,13 +553,13 @@
     (cond
      ;; We don't use fixnum?, since we may be cross-compiling on 64bit
      ;; machine for 32bit machine.  This is the range of 30bit fixnum.
-     [(< (- (%expt 2 29)) value (- (%expt 2 29) 1))
+     [(< (- (integer-expt 2 29)) value (- (integer-expt 2 29) 1))
       (make <cgen-scheme-integer> :value value :c-name #f)]
      ;; Integers that doesn't fit in 30bit fixnum but the literal number
      ;; can fit in C 32bit integers.  Note: We can use both signed and
      ;; unsigned literals, so the upper bound is 2^32-1, while
      ;; the lower bound is -2^31.
-     [(< (- (%expt 2 31)) value (- (%expt 2 32) 1))
+     [(< (- (integer-expt 2 31)) value (- (integer-expt 2 32) 1))
       (make <cgen-scheme-integer> :value value
             :c-name (cgen-allocate-static-datum))]
      [else
@@ -572,9 +578,9 @@
       ;; we can use 64bit literal, but we'll leave it for later revision.
       (let ([val   (~ self'value)]
             [cname (cgen-c-name self)])
-        (cond [(< (- (%expt 2 31)) val 0)
+        (cond [(< (- (integer-expt 2 31)) val 0)
                (print "  " cname " = Scm_MakeInteger("val");")]
-              [(<= 0 val (- (%expt 2 32) 1))
+              [(<= 0 val (- (integer-expt 2 32) 1))
                (print "  " cname " = Scm_MakeIntegerU("val"U);")]
               [else
                (print "  " cname " = Scm_StringToNumber(SCM_STRING("
@@ -807,14 +813,14 @@
     (format #t "~dl,\n" v)
     (print "#else  /*SIZEOF_LONG == 4*/")
     (format #t " (((int64_t)~dl << 32)|~dl),\n"
-            (ash v -32) (logand v (- (%expt 2 32) 1)))
+            (ash v -32) (logand v (- (integer-expt 2 32) 1)))
     (print "#endif /*SIZEOF_LONG == 4*/")]
    [(eq? class <u64vector>)
     (print "#if SIZEOF_LONG == 8")
     (format #t "~dlu,\n" v)
     (print "#else  /*SIZEOF_LONG == 4*/")
     (format #t " (((int64_t)~dlu << 32)|~dlu),\n"
-            (ash v -32) (logand v (- (%expt 2 32) 1)))
+            (ash v -32) (logand v (- (integer-expt 2 32) 1)))
     (print "#endif /*SIZEOF_LONG == 4*/")]
    [(eq? class <f16vector>) (pr-half-float v) (print ",")]
    [(eq? class <f32vector>) (pr-float v) (print ",")]

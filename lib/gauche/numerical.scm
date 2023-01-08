@@ -333,7 +333,7 @@
 
 ;; reverse of decode-float, for the convenience
 (define (encode-float vec)
-  (define max-mantissa (- (%expt 2 53) 1))
+  (define max-mantissa (- (integer-expt 2 53) 1))
   (define max-exponent (- 1024 53))
   (define min-exponent (- -1023 51))
   (unless (and (vector? vec)
