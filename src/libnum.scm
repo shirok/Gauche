@@ -428,6 +428,7 @@
     (Scm_Error "Argument must be nonnegative real number: %lf" y))
   (return (/ (log x) (log y))))
 
+(select-module gauche.internal)
 (define-cproc %log (x) ::<number> :fast-flonum :constant
   (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
   (when (Scm_InfiniteP x)
@@ -448,6 +449,7 @@
       (return (Scm_MakeComplex (+ (log (- d)) shift) M_PI))
       (return (Scm_VMReturnFlonum (+ (log d) shift))))))
 
+(select-module gauche)
 (define-cproc real-sin (x::<double>) ::<double> :fast-flonum :constant sin)
 (define-cproc real-cos (x::<double>) ::<double> :fast-flonum :constant cos)
 (define-cproc real-tan (x::<double>) ::<double> :fast-flonum :constant tan)
@@ -523,6 +525,7 @@
         [(complex? z) (make-polar (real-exp (real-part z)) (imag-part z))]
         [else (error "number required, but got" z)]))
 
+(select-module gauche.internal)
 (define-in-module scheme (log z . base)
   (if (null? base)
     (cond [(real? z) (%log z)]
@@ -530,7 +533,6 @@
           [else (error "number required, but got" z)])
     (/ (log z) (log (car base)))))  ; R6RS addition
 
-(select-module gauche.internal)
 (define-in-module scheme (sqrt z)
   (cond
    [(%sqrt-fast-path z)] ; fast-path check
