@@ -415,18 +415,13 @@
 
 (select-module gauche)
 (define-cproc real-exp (x::<double>) ::<double> :fast-flonum :constant exp)
-
 (define-cproc real-ln (x::<double>) ::<double> :fast-flonum :constant
   (when (< (Scm_FlonumSign x) 0)
     (Scm_Error "Argument must be nonnegative real number: %lf" x))
   (return (log x)))
 
-(define-cproc real-log (x::<double> y::<double>) ::<double> :fast-flonum :constant
-  (when (< (Scm_FlonumSign x) 0)
-    (Scm_Error "Argument must be nonnegative real number: %lf" x))
-  (when (< (Scm_FlonumSign y) 0)
-    (Scm_Error "Argument must be nonnegative real number: %lf" y))
-  (return (/ (log x) (log y))))
+;; NB: We don't support 'real-log' of SRFI-94.  It takes base number first,
+;; which is reverse of R7RS 'log'.  It would be too confusing.
 
 (select-module gauche.internal)
 (define-cproc %log (x) ::<number> :fast-flonum :constant
