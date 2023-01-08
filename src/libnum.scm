@@ -416,6 +416,18 @@
 (select-module gauche)
 (define-cproc real-exp (x::<double>) ::<double> :fast-flonum :constant exp)
 
+(define-cproc real-ln (x::<double>) ::<double> :fast-flonum :constant
+  (when (< (Scm_FlonumSign x) 0)
+    (Scm_Error "Argument must be nonnegative real number: %lf" x))
+  (return (log x)))
+
+(define-cproc real-log (x::<double> y::<double>) ::<double> :fast-flonum :constant
+  (when (< (Scm_FlonumSign x) 0)
+    (Scm_Error "Argument must be nonnegative real number: %lf" x))
+  (when (< (Scm_FlonumSign y) 0)
+    (Scm_Error "Argument must be nonnegative real number: %lf" y))
+  (return (/ (log x) (log y))))
+
 (define-cproc %log (x) ::<number> :fast-flonum :constant
   (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
   (when (Scm_InfiniteP x)
@@ -514,7 +526,7 @@
 (define-in-module scheme (log z . base)
   (if (null? base)
     (cond [(real? z) (%log z)]
-          [(complex? z) (make-rectangular (%log (magnitude z)) (angle z))]
+          [(complex? z) (make-rectangular (real-ln (magnitude z)) (angle z))]
           [else (error "number required, but got" z)])
     (/ (log z) (log (car base)))))  ; R6RS addition
 

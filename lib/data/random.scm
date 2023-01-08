@@ -201,7 +201,7 @@
 ;; so the difference of cost of log or sin from the primitive
 ;; addition/multiplication are negligible.
 (define (reals-normal$ :optional (mean 0) (deviation 1))
-  (^[] (let ([r (real-sqrt (* -2 (%log (%rand-real))))]
+  (^[] (let ([r (real-sqrt (* -2 (real-ln (%rand-real))))]
              [theta (* 2pi (%rand-real))])
          (+ mean (* deviation r (real-sin theta))))))
 

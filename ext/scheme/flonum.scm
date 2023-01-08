@@ -83,13 +83,13 @@
 (define-constant fl-1/e (/ const:e))
 (define-constant fl-e-2 7.38905609893065) ; e*e yields 1ulp error
 (define-constant fl-e-pi/4 (real-exp (/ const:pi 4)))
-(define-constant fl-log2-e (/ (%log 2)))
-(define-constant fl-log10-e 0.4342944819032518); (/ (%log 10)) yiels 1ulp error
-(define-constant fl-log-2 (%log 2))
-(define-constant fl-1/log-2 (/ (%log 2)))
-(define-constant fl-log-3 (%log 3))
-(define-constant fl-log-pi (%log const:pi))
-(define-constant fl-log-10 (%log 10))
+(define-constant fl-log2-e (/ (real-ln 2)))
+(define-constant fl-log10-e 0.4342944819032518); (/ (real-ln 10)) yiels 1ulp error
+(define-constant fl-log-2 (real-ln 2))
+(define-constant fl-1/log-2 (/ (real-ln 2)))
+(define-constant fl-log-3 (real-ln 3))
+(define-constant fl-log-pi (real-ln const:pi))
+(define-constant fl-log-10 (real-ln 10))
 (define-constant fl-1/log-10 0.4342944819032518); (/ (%log 10)) yiels 1ulp error
 (define-constant fl-pi const:pi)
 (define-constant fl-1/pi (/ const:pi))
@@ -109,7 +109,7 @@
 (define-constant fl-cbrt-3 (real-expt 3 1/3))
 (define-constant fl-4thrt-2 (real-expt 2 1/4))
 (define-constant fl-phi (/ (+ 1 (real-sqrt 5)) 2))
-(define-constant fl-log-phi (%log fl-phi))
+(define-constant fl-log-phi (real-ln fl-phi))
 (define-constant fl-1/log-phi 2.07808692123502753); (/ fl-log-phi) yields 1ulp error
 (define-constant fl-euler 0.5772156649015329)
 (define-constant fl-e-euler (exp fl-euler))
@@ -265,11 +265,11 @@
 (define-cproc flhypot (x::<double> y::<double>)
   ::<double> :fast-flonum :constant hypot)
 (define-inline (flexpt x y) (real-expt x y))
-(define-inline (fllog x) (%log x))
+(define-inline (fllog x) (real-ln x))
 (define-cproc fllog1+ (x::<double>) ::<double> :fast-flonum :constant log1p)
 (define-cproc fllog2 (x::<double>) ::<double> :fast-flonum :constant log2)
 (define-cproc fllog10 (x::<double>) ::<double> :fast-flonum :constant log10)
-(define (make-fllog-base base) (^x (/. (%log x) (%log base))))
+(define (make-fllog-base base) (^x (/. (real-ln x) (real-ln base))))
 
 (define-inline (flsin x) (real-sin x))
 (define-inline (flcos x) (real-cos x))
