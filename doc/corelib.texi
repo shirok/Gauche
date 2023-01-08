@@ -3769,6 +3769,12 @@ The two-argument version of @code{atan} returns
 実数@var{x}と@var{y}に対して
 @code{(angle (make-rectangular x y))}を返します。
 @c COMMON
+
+@c EN
+See also @code{real-exp} etc. below, for real-only version of these functions.
+@c JP
+実数に限定したこれらの関数については、下の@code{real-exp}等も参照してください。
+@c COMMON
 @end defun
 
 @defun sinh z
@@ -3779,8 +3785,12 @@ The two-argument version of @code{atan} returns
 @defunx atanh z
 @c EN
 Hyperbolic trigonometric functions.  Work for complex numbers as well.
+
+See also @code{real-sinh} etc. below, for real-only version of these functions.
 @c JP
 双曲線関数です。複素数も扱えます。
+
+実数に限定したこれらの関数については、下の@code{real-sinh}等も参照してください。
 @c COMMON
 @end defun
 
@@ -3817,6 +3827,12 @@ is also an exact number.
 (sqrt 256.0)  @result{} 16.0
 (sqrt 81/169) @result{} 9/13
 @end example
+
+@c EN
+See also @code{real-sqrt} below, for inexact-real-only version of @code{sqrt}.
+@c JP
+不正確な実数に限定した@code{sqrt}については、下の@code{real-sqrt}も参照してください。
+@c COMMON
 @end defun
 
 @defun exact-integer-sqrt k
@@ -3887,6 +3903,87 @@ M_74207281 (2^74207281 - 1)
 @end example
 @end defun
 
+@defun real-exp x
+@defunx real-expt x y
+@defunx real-ln x
+@defunx real-sqrt x
+@defunx real-sin x
+@defunx real-cos x
+@defunx real-tan x
+@defunx real-asin x
+@defunx real-acos x
+@defunx real-atan x
+@defunx real-atan y x
+[SRFI-94]
+@c EN
+Real-only version of elementary functions.  An error is signaled
+unless the arguments are real numbers.
+
+These are useful for performance-sensitive code, for they don't need to
+check whether the input is complex.  Furthermore, they are subject to
+constant folding.
+
+Those names are defined in SRFI-94.  However, for the portable programs,
+you may want to use @code{scheme.flonum} module, which is a part of
+R7RS-large and defines
+flonum-only versions of elementary functions (@pxref{R7RS flonum}).
+@c JP
+実数の範囲に限定した初等関数です。引数が実数でなかったらエラーが投げられます。
+
+性能を気にするコードでは有用です。複素数の処理のためのチェックが省かれるのと、
+定数畳み込みが行われやすくなります。
+
+これらの名前はSRFI-94で定義されています。ただ、今ポータブルなコードを書きたいなら、
+R7RS-largeの一部である@code{scheme.flonum}を使う方が良いでしょう。
+そこではflonum限定の初等関数が定義されています(@ref{R7RS flonum}参照)。
+@c COMMON
+
+@c EN
+Note: SRFI-95 defines @code{real-log}, which is a two-argument version
+of real-only @code{log}, but it takes base argument first, which is
+different from R7RS two-argument @code{log}.  To avoid confusion,
+we don't support @code{real-log} in the core.
+@c JP
+註：SRFI-95は実数限定の2引数の@code{log}である@code{real-log}も定義しているのですが、
+対数の底を最初の引数に取るようになっていて、R7RSの@code{log}とは逆です。
+混乱を避けるため、コアでは@code{real-log}は提供していません。
+@c COMMON
+@end defun
+
+@defun real-sinpi x
+@defunx real-cospi x
+@defunx real-tanpi x
+@c EN
+Returns sin(πx), cos(πx), and tan(πx), respectively.
+An error is signaled if the argument is not a real number.
+These come handy sometimes, as the following example show:
+@c JP
+それぞれsin(πx)、cos(πx)、tan(πx)を返します。
+引数が実数でなければエラーを投げます。
+下の例が示すように、これらはしばしば便利です：
+@c COMMON
+
+@example
+(use math.const)
+(real-sin pi)     @result{} 1.2246467991473532e-16
+(real-sinpi 1.0)  @result{} 0.0
+
+(real-cos (/ pi 2)) @result{} 6.123233995736766e-17
+(real-cospi 0.5)    @result{} 0.0
+@end example
+@end defun
+
+@defun real-sinh x
+@defunx real-cosh x
+@defunx real-tanh x
+@c EN
+Real-only version of @code{sinh}, @code{cosh}, and @code{tanh}.
+An error is signaled if the argument is not a real number.
+@c JP
+実数限定の@code{sinh}、@code{cosh}、@code{tanh}です。
+引数が実数でなければエラーが投げられます。
+@c COMMON
+@end defun
 
 @defun gamma x
 @defunx lgamma x
