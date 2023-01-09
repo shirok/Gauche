@@ -794,14 +794,14 @@
           [(infinite? v) (display (if (> v 0)
                                     "SCM_FLT_POSITIVE_INFINITY"
                                     "SCM_FLT_NEGATIVE_INFINITY"))]
-          [(-zero? v) (display "-0.0f")]
+          [(negative-zero? v) (display "-0.0f")]
           [else (format #t "~sf" v)]))
   (define (pr-double v)
     (cond [(nan? v) (display "SCM_DBL_NAN")]
           [(infinite? v) (display (if (> v 0)
                                     "SCM_DBL_POSITIVE_INFINITY"
                                     "SCM_DBL_NEGATIVE_INFINITY"))]
-          [(-zero? v) (display "-0.0")]
+          [(negative-zero? v) (display "-0.0")]
           [else (format #t "~s" v)]))
   (cond
    [(memq class `(,<s8vector> ,<s16vector> ,<s32vector>))

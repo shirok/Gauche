@@ -295,7 +295,7 @@
         ;; Wrap the sign of a real number, forcing a + prefix or using
         ;; parentheses (n) for negatives according to sign-rule.
         (define (negative?* n)
-          (or (negative? n) (-zero? n)))
+          (or (negative? n) (negative-zero? n)))
         (define (wrap-sign n sign-rule)
           (cond
            ((negative?* n)

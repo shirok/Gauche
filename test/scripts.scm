@@ -659,7 +659,7 @@
           [(number? x)
            (and (number? y)
                 (cond [(nan? x) (nan? y)]
-                      [(-zero? x) (-zero? y)]
+                      [(negative-zero? x) (negative-zero? y)]
                       [else (= x y)]))]
           [else (equal? x y)]))
 

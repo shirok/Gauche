@@ -7,7 +7,7 @@
    output-default extract-shared-objects write-to-string write-with-shares
    call-with-shared-ref call-with-shared-ref/cdr)
   (import (scheme base) (scheme write) (scheme complex) (scheme inexact)
-          (only (gauche base) let-optionals* -zero?)
+          (only (gauche base) let-optionals* negative-zero?)
           (srfi 1) (srfi 69) (srfi 130))
   (include "monad.scm")
   (include "base.scm")

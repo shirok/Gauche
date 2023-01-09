@@ -1,3 +1,9 @@
+2023-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (negative-zero?): Rename undocumented '-zero?' to
+	  'negative-zero?' and make it official.  Replaced internal use of
+	  '-zero?' to 'negative-zero?'.
+
 2023-01-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm: Change %expt -> real-expt etc.  The real-only

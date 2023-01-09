@@ -2826,6 +2826,7 @@ Returns @code{#t} if a number @var{z} equals to zero.
 (zero? 1)        @result{} #f
 (zero? 0)        @result{} #t
 (zero? 0.0)      @result{} #t
+(zero? -0.0)     @result{} #t
 (zero? 0.0+0.0i) @result{} #t
 @end example
 @end defun
@@ -2839,6 +2840,23 @@ respectively.  It is an error to pass a non-real number.
 @c JP
 実数@var{x}がそれぞれ正または負なら@code{#t}を返します。
 非実数を渡すとエラーになります。
+@c COMMON
+
+@c EN
+Note that minus zero (@code{-0.0}) is zero, not negative.
+@c JP
+マイナスゼロ(@code{-0.0})はゼロであって負ではないことに注意してください。
+@c COMMON
+@end defun
+
+@defun negative-zero? x
+@c EN
+Returns @code{#t} if a number @var{x} is a minus zero (@code{-0.0}),
+@code{#f} otherwise.
+An error is signaled if @var{x} is not a number.
+@c JP
+数値@var{x}がマイナスゼロ(@code{-0.0})の場合に@code{#t}を、
+そうでなければ@code{#f}を返します。@var{x}が数値でなければエラーが投げられます。
 @c COMMON
 @end defun
 

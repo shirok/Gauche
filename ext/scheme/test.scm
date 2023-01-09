@@ -559,7 +559,7 @@
       (cond [(flonum? a)
              (and (flonum? b)
                   (cond [(nan? a) (nan? b)]
-                        [(-zero? a) (-zero? b)]
+                        [(negative-zero? a) (negative-zero? b)]
                         [else (eqv? a b)]))]
             [(list? a)
              (and (list? b) (= (length a) (length b))
