@@ -322,8 +322,7 @@
 ;;
 ;;   cgen-box-tail-expr can be used when the generated value will be
 ;;   immediately returned from SUBR.  The only difference from cgen-box-expr
-;;   is the case for <real>, that can use register-allocated flonumbs
-;;   in that case.
+;;   is the case for flonums, where we can use Scm_VMReturnFlonum.
 ;;
 
 (define (cgen-box-expr type c-expr)
@@ -333,7 +332,7 @@
       #"~|boxer|(~c-expr)")))
 
 (define (cgen-box-tail-expr type c-expr)
-  (let1 boxer (if (memq (~ type'name) '(<real> <float>))
+  (let1 boxer (if (memq (~ type'name) '(<real> <float> <double>))
                 "Scm_VMReturnFlonum"
                 (or (~ type'%boxer) ""))
     (if (cgen-type-maybe? type)
