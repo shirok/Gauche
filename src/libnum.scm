@@ -510,7 +510,7 @@
 (define-cproc exact-expt (x y::<integer>) :constant
   (unless (SCM_EXACTP x) (SCM_TYPE_ERROR x "exact real number"))
   (return (Scm_ExactIntegerExpt x y)))
-(define-cproc integer-expt (x::<integer> y::<integer>) :constant
+(define-cproc integer-expt (x::<integer> y::<integer>) ::<integer> :constant
   Scm_ExactIntegerExpt)
 
 ;; Now, handles complex numbers.
@@ -766,9 +766,9 @@
 
 (select-module gauche)
 
-(define-cproc ash (num cnt::<fixnum>) :constant Scm_Ash)
+(define-cproc ash (num cnt::<fixnum>) ::<integer> :constant Scm_Ash)
 
-(define-cproc lognot (x) :constant Scm_LogNot)
+(define-cproc lognot (x::<integer>) ::<integer>  :constant Scm_LogNot)
 
 (inline-stub
  (define-cise-stmt logop
@@ -784,14 +784,14 @@
               (return r))])])
  )
 
-(define-cproc logand (:optarray (arg2 optcnt 2) :rest args) :constant
+(define-cproc logand (:optarray (arg2 optcnt 2) :rest args) ::<integer> :constant
   (logop Scm_LogAnd (SCM_MAKE_INT -1)))
-(define-cproc logior (:optarray (arg2 optcnt 2) :rest args) :constant
+(define-cproc logior (:optarray (arg2 optcnt 2) :rest args) ::<integer> :constant
   (logop Scm_LogIor (SCM_MAKE_INT 0)))
-(define-cproc logxor (:optarray (arg2 optcnt 2) :rest args) :constant
+(define-cproc logxor (:optarray (arg2 optcnt 2) :rest args) ::<integer> :constant
   (logop Scm_LogXor (SCM_MAKE_INT 0)))
 
-(define-cproc logcount (n) ::<int> :constant
+(define-cproc logcount (n::<integer>) ::<int> :constant
   (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (return 0)]
         [(SCM_INTP n)
          (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
@@ -801,12 +801,12 @@
         [(SCM_BIGNUMP n) (return (Scm_BignumLogCount (SCM_BIGNUM n)))]
         [else (SCM_TYPE_ERROR n "exact integer") (return 0)]))
 
-(define-cproc integer-length (n) ::<ulong> :constant Scm_IntegerLength)
+(define-cproc integer-length (n::<integer>) ::<ulong> :constant Scm_IntegerLength)
 
 ;; Returns maximum s where (expt 2 s) is a factor of n.
 ;; This can be (- (integer-length (logxor n (- n 1))) 1), but we can save
 ;; creating intermediate numbers by providing this natively.
-(define-cproc twos-exponent-factor (n) ::<int> :constant
+(define-cproc twos-exponent-factor (n::<integer>) ::<int> :constant
   (cond [(SCM_EQ n (SCM_MAKE_INT 0)) (return -1)]
         [(SCM_INTP n)
          (let* ([z::ScmBits (cast ScmBits (cast long (SCM_INT_VALUE n)))])
@@ -817,11 +817,9 @@
            (return (Scm_BitsLowest1 z 0 (* k SCM_WORD_BITS))))]
         [else (SCM_TYPE_ERROR n "exact integer") (return 0)]))
 
-(define-cproc twos-exponent (n) :constant
-  (if (SCM_INTEGERP n) ; exact integer only
-    (let* ([i::long (Scm_TwosPower n)])
-      (return (?: (>= i 0) (Scm_MakeInteger i) SCM_FALSE)))
-    (begin (SCM_TYPE_ERROR n "exact integer") (return SCM_FALSE))))
+(define-cproc twos-exponent (n::<integer>) ::<integer>? :constant
+  (let* ([i::long (Scm_TwosPower n)])
+    (return (?: (>= i 0) (Scm_MakeInteger i) SCM_FALSE))))
 
 ;; As of 0.8.8 we started to support exact rational numbers.  Some existing
 ;; code may count on exact integer division to be coerced to flonum
@@ -884,9 +882,9 @@
 ;;
 
 (select-module scheme)
-(define-cproc make-rectangular (a::<double> b::<double>) :constant
+(define-cproc make-rectangular (a::<double> b::<double>) ::<number> :constant
   Scm_MakeComplex)
-(define-cproc make-polar (r::<double> t::<double>) :constant
+(define-cproc make-polar (r::<double> t::<double>) ::<number> :constant
   Scm_MakeComplexPolar)
 
 ;; we don't use Scm_RealPart and Scm_ImagPart, for preserving exactness
@@ -901,8 +899,8 @@
         [(SCM_REALP z)  (return (Scm_VMReturnFlonum 0.0))]
         [else (return (Scm_VMReturnFlonum (SCM_COMPNUM_IMAG z)))]))
 
-(define-cproc magnitude (z) :fast-flonum :constant Scm_VMAbs)
-(define-cproc angle (z)     ::<double> :fast-flonum :constant Scm_Angle)
+(define-cproc magnitude (z::<number>) ::<number> :fast-flonum :constant Scm_VMAbs)
+(define-cproc angle (z::<number>) ::<double> :fast-flonum :constant Scm_Angle)
 
 ;; Utility to recognize clamp mode symbols and returns C enum
 ;; (Mostly used in uvector-related apis)
