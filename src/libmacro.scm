@@ -179,11 +179,21 @@
 
 ;;; quasirename
 
+(with-module gauche.internal
+  (define *quasirename-mode*
+    (and-let1 m (sys-getenv "GAUCHE_QUASIRENAME_MODE")
+      (cond [(equal? m "legacy") 'legacy]
+            [(equal? m "compatible") 'compatible]
+            [(equal? m "strict") 'strict]
+            [(equal? m "warn") 'warn]
+            [else (warn "Invalid GAUCHE_QUASIRENAME_MODE value; must be one \
+                         of compatible, legacy, warn or strict, but got: ~s\n"
+                        m)]))))
+
 ;; NB: The walk code has the same structure as quasiquote expander; the
 ;; output is different, however, and it's not so straightforward to refactor
 ;; them.  We'll eventually make a generic walker, but for now we have
 ;; two separately.
-
 (define-syntax quasirename
   (er-macro-transformer
    (^[f r c]
@@ -299,12 +309,6 @@
                      (unquote-splicing? (car (vector-ref obj i))))]
                [else (loop (+ i 1))])))
 
-     ;; TRANSIENT: For the backward compatibility with legacy quasirename form.
-     ;; *quasirename-mode* is set according to GAUCHE_QUASIRENAME_MODE env var.
-     ;; see below.  We use global-variable-ref, since while compiling
-     ;; this with 0.9.7 *quasirename-mode* isn't defined.
-     (define qmode
-       (global-variable-ref 'gauche.internal '*quasirename-mode* #f))
      (define (legacy-message f)
        (if-let1 srcinfo (debug-source-info f)
          (format "Legacy quasirename form (~a:~a): ~s"
@@ -313,13 +317,13 @@
 
      (match f
        [(_ rr ((? quasiquote? qq) ff))
-        (if (eq? qmode 'legacy)
+        (if (eq? (with-module gauche.internal *quasirename-mode*) 'legacy)
           `(,let. ((,rename. ,rr))
               ,(quasi `(,qq ,ff) 0))
           `(,let. ((,rename. ,rr))
               ,(quasi ff 0)))]
        [(_ rr ff)                       ; old format
-        (case qmode
+        (case (with-module gauche.internal *quasirename-mode*)
           [(warn) (let1 srcinfo (debug-source-info f)
                     (warn "~a\n" (legacy-message f)))]
           [(strict) (let1 srcinfo (debug-source-info f)
@@ -327,17 +331,6 @@
         `(,let. ((,rename. ,rr))
            ,(quasi ff 0))]
        [_ (error "malformed quasirename:" f)]))))
-
-(with-module gauche.internal
-  (define *quasirename-mode*
-    (and-let1 m (sys-getenv "GAUCHE_QUASIRENAME_MODE")
-      (cond [(equal? m "legacy") 'legacy]
-            [(equal? m "compatible") 'compatible]
-            [(equal? m "strict") 'strict]
-            [(equal? m "warn") 'warn]
-            [else (warn "Invalid GAUCHE_QUASIRENAME_MODE value; must be one \
-                         of compatible, legacy, warn or strict, but got: ~s\n"
-                        m)]))))
 
 ;;; syntax-error msg arg ...
 ;;; syntax-errorf fmtstr arg ...
