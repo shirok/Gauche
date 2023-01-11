@@ -109,7 +109,7 @@ library name notation.
 @c JP
 特定のSRFIが使えるかどうかを@code{cond-expand}で検査する場合は、機能要請式
 @code{(library @code{library-name})}が使えます (@ref{Feature conditional}参照)。
-@var{library-name}のにはGauche方式のモジュール名もR7RS方式のライブラリ名も使えます。
+@var{library-name}にはGauche方式のモジュール名もR7RS方式のライブラリ名も使えます。
 @c COMMON
 
 @example
