@@ -180,6 +180,9 @@ typedef struct ScmEscapePointRec {
                                    with-error-handler uses the latter model,
                                    but SRFI-34's guard needs the former model.
                                 */
+
+    ScmObj promptTag;
+    ScmObj abortHandler;
 } ScmEscapePoint;
 
 /* Escape types */
