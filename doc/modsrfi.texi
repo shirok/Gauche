@@ -12041,6 +12041,14 @@ the argument list; that is,
 @defmac call/mv proc producer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+Calls @var{proc} with the argument produced by the expression
+@var{producer} @dots{} and 'splicing' their result(s) into a single
+argument list.
+
+@example
+(call/mv list (values 1 2 3) (values 4 5 6))
+  @result{} (1 2 3 4 5 6)
+@end example
 @end defmac
 
 @defmac list/mv element @dots{} producer
@@ -12048,11 +12056,27 @@ the argument list; that is,
 @defmacx box/mv element @dots{} producer
 [SRFI-210]
 @c MOD srfi.210
+Returns a list, a vector, or a box, consisting of @var{element} @dots{}
+and the value(s) produced by @var{producer}.
+
+Single-argument @code{list/mv} is the same as Gauche's @code{values->list}
+(@pxref{Multiple values}).
+
+@example
+(list/mv 1 2 (values 3 4 5))   @result{} (1 2 3 4 5)
+(vector/mv 1 2 (values 3 4 5)) @result{} #(1 2 3 4 5)
+(box/mv 1 2 (values 3 4 5))    @result{} #<mv-box[5] 1 2 3 4 5>
+@end example
 @end defmac
 
 @defmac value/mv index element @dots{} producer
 [SRFI-210]
 @c MOD srfi.210
+Returns the same value as
+@code{(list-ref (list/mv element @dots{} producer) index)}.
+
+With no @var{element} @dots{}, it is the same as Gauche's @code{values-ref}
+(@pxref{Multiple values}).
 @end defmac
 
 @defmac coarity producer
