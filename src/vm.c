@@ -66,6 +66,7 @@ static int vm_stack_mark_proc;
 
 /* Define this to try new partcont implementation (WIP) */
 #undef NEW_PARTCONT
+/*#define NEW_PARTCONT 1*/
 
 /* Prompt tag.  Class initialization is done in class.c */
 static void prompt_tag_print(ScmObj obj, ScmPort *out,
@@ -1832,6 +1833,33 @@ static ScmObj *push_dynamic_handler_cc(ScmVM *vm, ScmPContinuationProc *after,
     return data;
 }
 
+/*
+ * EscapePoint allocation
+ */
+static ScmEscapePoint *new_ep(ScmVM *vm,
+                              ScmObj errorHandler,
+                              int rewindBefore,
+                              ScmObj promptTag,
+                              ScmObj abortHandler)
+{
+    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    ep->prev = vm->escapePoint;
+    ep->ehandler = errorHandler;
+    ep->cont = vm->cont;
+    ep->denv = vm->denv;
+    ep->dynamicHandlers = get_dynamic_handlers(vm);
+    ep->cstack = vm->cstack;
+    ep->xhandler = Scm_VMCurrentExceptionHandler();
+    ep->resetChain = vm->resetChain;
+    ep->partHandlers = SCM_NIL;
+    ep->errorReporting =
+        SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
+    ep->rewindBefore = rewindBefore;
+    ep->promptTag = promptTag;
+    ep->abortHandler = abortHandler;
+    return ep;
+}
+
 /*-------------------------------------------------------------
  * User level eval and apply.
  *   When the C routine wants the Scheme code to return to it,
@@ -1873,20 +1901,7 @@ static ScmObj user_eval_inner(ScmObj program,
     }
 
 #if NEW_PARTCONT
-    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
-    ep->prev = vm->escapePoint;
-    ep->ehandler = SCM_FALSE;
-    ep->cont = vm->cont;
-    ep->denv = vm->denv;
-    ep->dynamicHandlers = get_dynamic_handlers(vm);
-    ep->cstack = vm->cstack;
-    ep->xhandler = Scm_VMCurrentExceptionHandler();
-    ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_NIL;
-    ep->errorReporting = FALSE;
-    ep->rewindBefore = FALSE;
-    ep->promptTag = promptTag;
-    ep->abortHandler = SCM_FALSE;
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, promptTag, SCM_FALSE);
     vm->escapePoint = ep;
 #endif
 
@@ -2868,28 +2883,8 @@ static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
 static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                                  ScmObj thunk, int rewindBefore)
 {
-    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
-
-    /* NB: we can save pointer to the stack area (vm->cont) to ep->cont,
-     * since such ep is always accessible via vm->escapePoint chain and
-     * ep->cont is redirected whenever the continuation is captured while
-     * ep is valid.
-     */
-    ep->prev = vm->escapePoint;
-    ep->ehandler = handler;
-    ep->cont = vm->cont;
-    ep->denv = vm->denv;
-    ep->dynamicHandlers = get_dynamic_handlers(vm);
-    ep->cstack = vm->cstack;
-    ep->xhandler = Scm_VMCurrentExceptionHandler();
-    ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_NIL;
-    ep->errorReporting =
-        SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
-    ep->rewindBefore = rewindBefore;
-    ep->promptTag = SCM_FALSE;
-    ep->abortHandler = SCM_FALSE;
-
+    ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
+                                SCM_FALSE, SCM_FALSE);
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
                              to redirect ep->cont */
@@ -3034,22 +3029,7 @@ ScmObj Scm_VMCallWithContinuationPrompt(ScmObj thunk,
 
 #if NEW_PARTCONT
     ScmVM *vm = Scm_VM();
-    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
-    ep->prev = vm->escapePoint;
-    ep->ehandler = SCM_FALSE;
-    ep->cont = vm->cont;
-    ep->denv = vm->denv;
-    ep->dynamicHandlers = get_dynamic_handlers(vm);
-    ep->cstack = vm->cstack;
-    ep->xhandler = Scm_VMCurrentExceptionHandler();
-    ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_NIL;
-    ep->errorReporting =
-        SCM_VM_RUNTIME_FLAG_IS_SET(vm, SCM_ERROR_BEING_REPORTED);
-    ep->rewindBefore = TRUE;
-    ep->promptTag = promptTag;
-    ep->abortHandler = abortHandler;
-
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, TRUE, promptTag, abortHandler);
     vm->escapePoint = ep;
     return Scm_pc_Apply0(vm, thunk);
 #else
@@ -3553,18 +3533,8 @@ ScmObj Scm_VMCallCC(ScmObj proc)
 
     save_cont(vm);
 
-    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
     ep->prev = NULL;
-    ep->ehandler = SCM_FALSE;
-    ep->cont = vm->cont;
-    ep->denv = vm->denv;
-    ep->dynamicHandlers = get_dynamic_handlers(vm);
-    ep->cstack = vm->cstack;
-    ep->resetChain = vm->resetChain;
-    ep->partHandlers = SCM_NIL;
-    ep->promptTag = SCM_FALSE;
-    ep->abortHandler = SCM_FALSE;
-
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
@@ -3616,9 +3586,11 @@ ScmObj Scm_VMCallPC(ScmObj proc)
         }
     }
 
-    ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    /* We need some special setup of EscapePoint for partial continaution.
+       Hoping these tricks won't be necessary once we ovehauled partcont
+       handling. */
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
     ep->prev = NULL;
-    ep->ehandler = SCM_FALSE;
     ep->cont = (cp? vm->cont : NULL);
     ep->denv = c? c->denv : (cp? cp->denv : SCM_NIL);
     ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
@@ -3627,9 +3599,6 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     ep->resetChain = (SCM_PAIRP(vm->resetChain)?
                       Scm_Cons(Scm_Cons(SCM_FALSE, SCM_NIL), SCM_NIL) :
                       SCM_NIL); /* used only to detect reset missing */
-    ep->partHandlers = SCM_NIL;
-    ep->promptTag = SCM_FALSE;
-    ep->abortHandler = SCM_FALSE;
 
     /* get the dynamic handlers chain saved on reset */
     ScmObj reset_handlers = (SCM_PAIRP(vm->resetChain)?
