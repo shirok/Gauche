@@ -66,7 +66,7 @@ static int vm_stack_mark_proc;
 
 /* Define this to try new partcont implementation (WIP) */
 #undef NEW_PARTCONT
-/*#define NEW_PARTCONT 1*/
+//#define NEW_PARTCONT 1
 
 /* Prompt tag.  Class initialization is done in class.c */
 static void prompt_tag_print(ScmObj obj, ScmPort *out,
@@ -3650,16 +3650,20 @@ ScmObj Scm_VMCallPC(ScmObj proc)
 ScmObj Scm_VMReset(ScmObj proc)
 {
     ScmVM *vm = theVM;
-
+#if NEW_PARTCONT
+    save_cont(vm);
+    ScmContFrame *c = vm->cont;
+    vm->cont = NULL;
+#endif
     /* push/pop reset-chain for reset/shift */
     vm->resetChain = Scm_Cons(Scm_Cons(SCM_FALSE, get_dynamic_handlers(vm)),
                               vm->resetChain);
-#if NEW_PARTCONT
-    vm->cont = NULL;
-#endif
     ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
     SCM_ASSERT(SCM_PAIRP(vm->resetChain));
     vm->resetChain = SCM_CDR(vm->resetChain);
+#if NEW_PARTCONT
+    vm->cont = c;
+#endif
     return ret;
 }
 
