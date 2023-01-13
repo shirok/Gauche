@@ -3083,7 +3083,10 @@ static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
 #endif
 {
 #if NEW_PARTCONT
+    ScmVM *vm = theVM;
     ScmObj abortHandler = abortTo->abortHandler;
+    CONT = abortTo->cont;
+    DENV = abortTo->denv;
 #else
     ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
     ScmObj abortHandler = pd->abortHandler;
@@ -3150,6 +3153,7 @@ ScmObj Scm_VMAbortCurrentContinuation(ScmObj promptTag, ScmObj args)
 #if NEW_PARTCONT
     ScmObj targetHandlers = abortTo->dynamicHandlers;
     CONT = abortTo->cont;
+    DENV = abortTo->denv;
 #else
     ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
     SCM_ASSERT(pd->dummy == SCM_VM_INSN(SCM_VM_RET));
@@ -3426,7 +3430,13 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
      */
     vm->pc = PC_TO_RETURN;
     vm->cont = ep->cont;
-    vm->denv = ep->denv;
+#if NEW_PARTCONT
+    if (ep->cstack != NULL) {
+#endif
+        vm->denv = ep->denv;
+#if NEW_PARTCONT
+    }
+#endif
     /* restore reset-chain for reset/shift */
     if (ep->cstack) vm->resetChain = ep->resetChain;
 
@@ -3570,6 +3580,28 @@ ScmObj Scm_VMCallPC(ScmObj proc)
        performance we'll optimize it later. */
     save_cont(vm);
 
+#if NEW_PARTCONT
+    /* Partial continaution uses CONT and DENV when it is invoked
+       (as opposed to when it is captured), so we nullify those slots.
+       ep->cstack == NULL indicates it's a partial continuation.
+    */
+    ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
+    ep->prev = NULL;
+    ep->cont = NULL;
+    ep->denv = SCM_NIL;
+    ep->cstack = NULL;
+
+    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
+                                   continuation_symbol);
+    ScmObj *shift_data = SCM_NEW_ARRAY(ScmObj, 2);
+    shift_data[0] = proc;
+    shift_data[1] = contproc;
+    ScmObj bodyproc = Scm_MakeSubr(shift_body, shift_data, 0, 0,
+                                   SCM_FALSE);
+
+    return Scm_VMAbortCurrentContinuation(Scm_DefaultPromptTag(),
+                                          SCM_LIST1(bodyproc));
+#else
     /* find the latest boundary frame */
     ScmContFrame *c, *cp;
     for (c = vm->cont, cp = NULL;
@@ -3612,18 +3644,6 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     }
     ep->partHandlers = h;
 
-#if NEW_PARTCONT
-    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
-                                   continuation_symbol);
-    ScmObj *shift_data = SCM_NEW_ARRAY(ScmObj, 2);
-    shift_data[0] = proc;
-    shift_data[1] = contproc;
-    ScmObj bodyproc = Scm_MakeSubr(shift_body, shift_data, 0, 0,
-                                   SCM_FALSE);
-
-    return Scm_VMAbortCurrentContinuation(Scm_DefaultPromptTag(),
-                                          SCM_LIST1(bodyproc));
-#else
     /* call dynamic handlers for exiting reset */
     call_dynamic_handlers(vm, reset_handlers, get_dynamic_handlers(vm));
 
