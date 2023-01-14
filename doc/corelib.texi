@@ -28446,6 +28446,27 @@ handler to a set of signals at once.
 ひとつのシグナルハンドラを多数のシグナルに同時に設定したりする際に使えます。
 @c COMMON
 
+@defun sys-strsignal signum
+[POSIX]
+@c EN
+Interface to @code{strsignal(3)}.  The argument must be an exact
+integer.
+
+Returns the system message associated with the signal with the number
+@var{signum}, as a string.
+if no such message is available, or @var{signum} is not a valid signal number,
+this function may return @code{#f} or some generic message provided
+by the system.
+@c JP
+@code{strsignal(3)}へのインタフェースです。引数は正確な整数でなければなりません。
+
+シグナル番号@var{signum}のシグナルに結びつけられたメッセージを文字列で返します。
+もしメッセージが無かったり、@var{signum}が有効なシグナル番号でなかったら、
+この関数は@code{#f}を返すか、システムが提供する一般的なメッセージを返します。
+@c COMMON
+@end defun
+
+
 @deftp {Class} <sys-sigset>
 @clindex sys-sigset
 @c EN
