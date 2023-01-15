@@ -18185,41 +18185,72 @@ When you're writing portable code, be careful not to depend on the
 
 @defun box val @dots{}
 [R7RS box][SRFI-195]
+@c EN
 Returns a fresh box object that contains the value @code{val} @dots{}.
+@c JP
+@code{val} @dots{}を内容とする新たなボックスを作って返します。
+@c COMMON
 @end defun
 
 @defun box? obj
 [R7RS box]
+@c EN
 Returns @code{#t} iff @var{obj} is a box object.
+@c JP
+@var{obj}がボックスなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun box-arity box
 [SRFI-195]
+@c EN
 Returns the number of values @var{box} holds.
+@c JP
+@var{box}が保持している値の数を返します。
+@c COMMON
 @end defun
 
 @defun unbox box
 [R7RS box]
-Returns @var{box}'s content.  If @var{box} has @var{n} values,
-it returns @var{n} values.
+@c EN
+Returns @var{box}'s content.  If @var{box} has N values,
+it returns N values.
+@c JP
+@var{box}の内容を返します。@var{box}がN個の値を保持していれば、N個の値が返されます。
+@c COMMON
 @end defun
 
 @defun unbox-value box i
 [SRFI-195]
+@c EN
 Returns @var{i}-th value held in @var{box}.
+@c JP
+@var{box}の値のうち、@var{i}番めのものを返します。
+@c COMMON
 @end defun
 
 @defun set-box! box val @dots{}
 [R7RS box][SRFI-195]
+@c EN
 Alters the content of @var{box} with @var{val} @dots{}.
 The numer of values must match the arity of the box.
 Returns unspecified value.
+@c JP
+@var{box}の内容を@var{val} @dots{}で置き換えます。
+値の数はボックスのアリティと同じでなければなりません。
+戻り値は未定義です。
+@c COMMON
 @end defun
 
 @defun set-box-value! box i val
 [SRFI-195]
+@c EN
 Alters @var{i}-th value of @var{box} with @var{val}.
 Returns unspecified value.
+@c JP
+@var{box}の@var{i}番めの値を@var{val}で置き換えます。
+戻り値は未定義です。
+@c COMMON
 @end defun
 
 @c ------------------------------------------------------------
