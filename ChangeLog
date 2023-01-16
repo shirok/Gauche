@@ -1,3 +1,8 @@
+2023-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* ext/vport/vport.scm (open-tapping-port): Experimentally added.
+	  We might make a separate module for it, so do not count on this.
+
 2023-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (negative-zero?): Rename undocumented '-zero?' to
