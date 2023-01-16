@@ -326,7 +326,20 @@
 ;; might want to split this to a separate module (either util.* or control.*)
 ;; but not sure which.
 
-(define (open-tapping-port iport oport)
+;; open-tapping-port iport oport :key close-output
+;;   Run a thread that copies data from iport and oport.  Returns an
+;;   input port, from which you can read the data read from iport;
+;;   that is, you can 'tap' the data stream flowing from iport to oport.
+;;
+;;   Note that the tapped data is accumulated until it si read from
+;;   the returned port.  If you're done with tapping, you can close the
+;;   returned port to prevent further accumulation of the data.
+;;   The dataflow from iport to oport keeps running until iport reaches EOF.
+;;
+;;   Once iport reaches EOF, the thread terminates.  Additionally, oport is
+;;   closed if :close-output argument is #t.
+
+(define (open-tapping-port iport oport :key (close-output #f))
   (define mtq (make-mtqueue))
   (define tee-closed #f)
   (define straight-closed #f)
@@ -356,7 +369,8 @@
                     (if (eof-object? data)
                       (begin
                         (set! straight-closed #t)
-                        (close-output-port oport))
+                        (when close-output
+                          (close-output-port oport)))
                       (begin
                         (write-uvector data oport)
                         (flush oport))))
