@@ -495,47 +495,98 @@ signatureInfo: ((#f))
 
 @deftp {Type Constructor} <?> type
 @clindex ?
+@c EN
 @var{Type} must be a type expression.
 This creates a maybe-like type, that is, the object is either
 of @var{type} or @code{#f}.   Usually, @code{#f} indicates
 that the value is invalid (e.g. the return value of @code{assoc}).
+@c JP
+@var{type}は型の式でなければなりません。
+この型の式はmaybe型に似た型を作ります。オブジェクトは型@var{type}を持つか@code{#f}です。
+@code{#f}は通常、それが無効な値であることを示します
+(例: @code{assoc}の戻り値)。
+@c COMMON
 
+@c EN
 This type has ambiguity when @code{#f} can be a meaningful value, but
 traditionally been used a lot in Scheme, for it is lightweight.
 We also have a ``proper'' Maybe type in SRFI-189
 (@pxref{Maybe and Either optional container types}) but that involves
 extra allocation to wrap the value.
+@c JP
+この型は、@code{#f}が意味を担う場合に曖昧性があるのですが、
+軽量であるゆえにSchemeでは伝統的に多用されてきました。
+「正しい」MaybeについてはSRFI-189 (@ref{Maybe and Either optional container types}参照)
+により提供されているのですが、値をラップするごとに新たなアロケーションを必要とします。
+@c COMMON
+
+@c EN
+So, those who came from functional programming may find this isn't
+a right abstraction, but it has its place in the Scheme world.
+@c JP
+関数型言語から来た人には、これは正しい抽象化には見えないかもしれませんが、
+Scheme界の中ではそれなりに実用的な型です。
+@c COMMON
 @end deftp
 
 @deftp {Type Constructor} </> type @dots{}
-@clindex ?
+@clindex /
+@c EN
 @var{Type} @dots{} must be type expressions.
 This creates a @emph{sum type} of @var{type} @dots{}.
 For example, @code{(</> <string> <symbol>)} is a type that is
 either a string or a symbol.
+@c JP
+@var{type} @dots{} はそれぞれ型の式でなければなりません。
+この型コンストラクタは、@var{type} @dots{} の直和型を作ります。
+例えば@code{(</> <string> <symbol>)}は文字列かシンボルであるような型を表します。
+@c COMMON
 @end deftp
 
 @deftp {Type Constructor} <Tuple> type @dots{}
 @clindex Tuple
+@c EN
 @var{Type} @dots{} must be type expressions, except that the
 last argument that may be an identifier @code{*}.
 This creates a @emph{product type} of @var{type} @dots{}.
+@c JP
+@var{type} @dots{}はそれぞれ型の式でなければなりません。
+ただ、最後の要素にはシンボル@code{*}も許されます。
+この型コンストラクタは、@var{type} @dots{} の直積型を作ります。
+@c COMMON
 
+@c EN
 Actually, this type is looser than the product types in typical
 statically-typed languages.  Our tuple is a subtype of list, with
 types of each positional element are restricted with @var{type} @dots{}.
 For example, @code{(<Tuple> <integer> <string>)} is a list of two
 elements, the first one being an integer and the second being a string.
+@c JP
+実のところ、これは静的型付け言語の直積型よりも緩い型です。
+Gaucheではタプルはリストのサブタイプで、リストの各位置の要素が
+対応する@var{type}で制約されているものです。
+例えば@code{(<Tuple> <integer> <string>)}は2要素のリストで、
+最初が整数、次が文字列であるようなものを表します。
+@c COMMON
 
 @example
 (of-type? '(3 "abc") (<Tuple> <integer> <string>)) @result{} #t
 @end example
 
+@c EN
 If you need a more strict and disjoint product type, you can just create
 a class or a record.
+@c JP
+より厳密な、他の型とは別であるような直積型が必要なら、クラスやレコードを作ってください。
+@c COMMON
 
+@c EN
 If the last argument is @code{*}, the resulting type allows
 extra elements after the typed elements.
+@c JP
+最後の要素が@code{*}である場合、結果の型は、
+型が指定された要素のあとに任意個の要素を許します。
+@c COMMON
 
 @example
 (of-type? '(3 "abc" 1 2) (<Tuple> <integer> <string> *)) @result{} #t
