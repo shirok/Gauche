@@ -338,11 +338,24 @@
 ;;
 ;;   Once iport reaches EOF, the thread terminates.  Additionally, oport is
 ;;   closed if :close-output argument is #t.
+;;
+;;   :unit is similar to the :unit argument of copy-port.
 
-(define (open-tapping-port iport oport :key (close-output #f))
+(define (open-tapping-port iport oport :key (close-output #f)
+                                            (unit 0))
   (define mtq (make-mtqueue))
   (define tee-closed #f)
   (define straight-closed #f)
+  (define-values (reader writer)
+    (case unit
+      [(:byte) (values read-byte write-byte)]
+      [(:char) (values read-char write-char)]
+      [else (assume (and (exact-integer? unit) (>= unit 0))
+                    "A nonnegative exact integer, :byte, or :char expected \
+                     for unit argument, but got: " unit)
+            (let1 chunk-size (if (zero? unit) 4096 unit)
+              (values (^[port] (read-uvector <u8vector> chunk-size port))
+                      (^[obj port] (write-uvector obj port))))]))
   (define (filler buf)
     (let ([len (u8vector-length buf)]
           [data (dequeue/wait! mtq)])     ;this may block
@@ -362,7 +375,7 @@
       ;; However, it has a risk to go into busy loop if error condition
       ;; persists.  We'll revisit this later.
       (unless (guard [e (else #f)]
-                (let1 data (read-uvector <u8vector> 4096 iport)
+                (let1 data (reader iport)
                   (unless tee-closed
                     (enqueue/wait! mtq data))
                   (unless straight-closed
@@ -371,9 +384,7 @@
                         (set! straight-closed #t)
                         (when close-output
                           (close-output-port oport)))
-                      (begin
-                        (write-uvector data oport)
-                        (flush oport))))
+                      (writer data oport)))
                   (when (eof-object? data)
                     (close-input-port iport))
                   (and tee-closed straight-closed)))
