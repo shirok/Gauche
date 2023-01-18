@@ -416,4 +416,11 @@
   (define-syntax cond-expand (syntax-rules () ([_ . x] '())))
   (test-include-r7 "include/srfi-120-tests" (exclude (timer))))
 
+;;--------------------------------------------------------------------
+;; control.port
+;;
+(test-section "control.port")
+(use control.port)
+(test-module 'control.port)
+
 (test-end)

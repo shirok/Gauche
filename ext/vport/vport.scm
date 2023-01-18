@@ -50,8 +50,6 @@
           get-remaining-input-generator
           open-output-char-accumulator open-output-byte-accumulator
           open-output-accumulator
-
-          open-tapping-port
           ))
 (select-module gauche.vport)
 
@@ -317,77 +315,3 @@
   (define (puts s) (acc s))
   (define (close) (acc (eof-object)))
   (make <virtual-output-port> :putb putb :putc putc :puts puts :close close))
-
-;;=======================================================
-;; Tapping port
-;;
-
-;; EXPERIMENTAL - This depends on gauche.threads and data.queue, so we
-;; might want to split this to a separate module (either util.* or control.*)
-;; but not sure which.
-
-;; open-tapping-port iport oport :key close-output
-;;   Run a thread that copies data from iport and oport.  Returns an
-;;   input port, from which you can read the data read from iport;
-;;   that is, you can 'tap' the data stream flowing from iport to oport.
-;;
-;;   Note that the tapped data is accumulated until it si read from
-;;   the returned port.  If you're done with tapping, you can close the
-;;   returned port to prevent further accumulation of the data.
-;;   The dataflow from iport to oport keeps running until iport reaches EOF.
-;;
-;;   Once iport reaches EOF, the thread terminates.  Additionally, oport is
-;;   closed if :close-output argument is #t.
-;;
-;;   :unit is similar to the :unit argument of copy-port.
-
-(define (open-tapping-port iport oport :key (close-output #f)
-                                            (unit 0))
-  (define mtq (make-mtqueue))
-  (define tee-closed #f)
-  (define straight-closed #f)
-  (define-values (reader writer)
-    (case unit
-      [(:byte) (values read-byte write-byte)]
-      [(:char) (values read-char write-char)]
-      [else (assume (and (exact-integer? unit) (>= unit 0))
-                    "A nonnegative exact integer, :byte, or :char expected \
-                     for unit argument, but got: " unit)
-            (let1 chunk-size (if (zero? unit) 4096 unit)
-              (values (^[port] (read-uvector <u8vector> chunk-size port))
-                      (^[obj port] (write-uvector obj port))))]))
-  (define (filler buf)
-    (let ([len (u8vector-length buf)]
-          [data (dequeue/wait! mtq)])     ;this may block
-      (cond [(eof-object? data) data]
-            [(<= (u8vector-length data) len)
-             (u8vector-copy! buf 0 data 0)
-             (u8vector-length data)]
-            [else
-             (u8vector-copy! buf 0 data 0 len)
-             (queue-push/wait! mtq (uvector-alias <u8vector> data len))
-             len])))
-  (define (closer)
-    (set! tee-closed #t))
-  (define (handler)
-    (let loop ()
-      ;; We ignore error; it prevents the thread to exit inadvertently.
-      ;; However, it has a risk to go into busy loop if error condition
-      ;; persists.  We'll revisit this later.
-      (unless (guard [e (else #f)]
-                (let1 data (reader iport)
-                  (unless tee-closed
-                    (enqueue/wait! mtq data))
-                  (unless straight-closed
-                    (if (eof-object? data)
-                      (begin
-                        (set! straight-closed #t)
-                        (when close-output
-                          (close-output-port oport)))
-                      (writer data oport)))
-                  (when (eof-object? data)
-                    (close-input-port iport))
-                  (and tee-closed straight-closed)))
-        (loop))))
-  (thread-start! (make-thread handler))
-  (make <buffered-input-port> :fill filler :close closer))
