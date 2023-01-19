@@ -100,8 +100,9 @@
                     (if (eof-object? data)
                       (when oport-owned? (close-output-port oport))
                       (writer data oport)))
-                  (when input-callback (input-callback data))
-                  (eof-object? data)))
+                  (if (eof-object? data)
+                    (begin (close-input-port iport) #t)
+                    (begin (when input-callback (input-callback data)) #f))))
         (loop))))
   (make-thread handler))
 
@@ -157,27 +158,11 @@
              len])))
   (define (closer)
     (set! tee-closed #t))
-  (define (handler)
-    (let loop ()
-      ;; We ignore error; it prevents the thread to exit inadvertently.
-      ;; However, it has a risk to go into busy loop if error condition
-      ;; persists.  We'll revisit this later.
-      (unless (guard [e (else #f)]
-                (let1 data (reader iport)
-                  (unless tee-closed
-                    (enqueue/wait! mtq data))
-                  (unless straight-closed
-                    (if (eof-object? data)
-                      (begin
-                        (set! straight-closed #t)
-                        (when close-output
-                          (close-output-port oport)))
-                      (writer data oport)))
-                  (when (eof-object? data)
-                    (close-input-port iport))
-                  (and tee-closed straight-closed)))
-        (loop))))
-  (define thread (make-thread handler))
+  (define (input-callback data)
+    (unless tee-closed
+      (enqueue/wait! mtq data)))
+  (define thread (%make-pump-1 iport oport close-output reader writer
+                               input-callback))
   (define (accessor key . args)
     (cond
      [(eq? key plumbing-thread) thread]
