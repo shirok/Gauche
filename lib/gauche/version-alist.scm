@@ -19,10 +19,10 @@
       (build.configure ,@($ cdr $ shell-tokenize-string
                             $ gauche-config "--reconfigure"))
       (scheme.path ,@*load-path*)
-      (gauche.threads ,(cond
-                        [(assq 'gauche.sys.pthreads fs) 'pthreads]
-                        [(assq 'gauche.sys.wthreads fs) 'wthreads]
-                        [else 'none]))
+      (threads ,(cond
+                 [(assq 'gauche.sys.pthreads fs) 'pthreads]
+                 [(assq 'gauche.sys.wthreads fs) 'wthreads]
+                 [else 'none]))
       (gauche.net.tls ,@(cond-list
                          [(assq 'gauche.net.tls.axtls fs) 'axtls]
                          [(assq 'gauche.net.tls.mbedtls fs) 'mbedtls])))))
