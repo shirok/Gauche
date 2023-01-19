@@ -42,7 +42,7 @@
   (use gauche.uvector)
   (use gauche.vport)
 
-  (export open-tapping-pump-port)
+  (export open-pump open-tapping-pump-port)
   )
 (select-module control.plumbing)
 
@@ -62,6 +62,56 @@
 
 (define-method plumbing-thread ((c <plumbing>))
   ((~ c'accessor) plumbing-thread))
+
+;;=======================================================
+;; Pumps
+;;
+
+;; A pump is a device to pull the data from the given iport(s) and
+;; feed it to the given oport(s).   It spawns thread(s) to handle the
+;; data, so that the data feed is handled autonomously.
+
+;; Common routine to handle 'unit' keyword argument.  Returns a reader
+;; and a writer.
+(define (%unit-reader&writer unit)
+  (case unit
+    [(:byte) (values read-byte write-byte)]
+    [(:char) (values read-char write-char)]
+    [else (assume (and (exact-integer? unit) (>= unit 0))
+                  "A nonnegative exact integer, :byte, or :char expected \
+                   for unit argument, but got: " unit)
+          (let1 chunk-size (if (zero? unit) 4096 unit)
+            (values (^[port] (read-uvector <u8vector> chunk-size port))
+                    (^[obj port] (write-uvector obj port))))]))
+
+;; internal routine to connect iport and oport, returns the handler thread
+;; without starting.
+(define (%make-pump-1 iport oport oport-owned?
+                      reader writer
+                      input-callback)
+  (define (handler)
+    (let loop ()
+      ;; We ignore errors; it prevents the thread to exit inadvertently.
+      ;; However, it has a risk to go into busy loop if error condition
+      ;; persists.  We'll revisit this later.
+      (unless (guard [e (else #f)]
+                (let1 data (reader iport)
+                  (unless (port-closed? oport)
+                    (if (eof-object? data)
+                      (when oport-owned? (close-output-port oport))
+                      (writer data oport)))
+                  (when input-callback (input-callback data))
+                  (eof-object? data)))
+        (loop))))
+  (make-thread handler))
+
+(define (open-pump iport oport
+                   :key (own-output #f)
+                        (unit 0))
+  (define-values (reader writer) (%unit-reader&writer unit))
+  (define thread (%make-pump-1 iport oport own-output
+                               reader writer #f))
+  (thread-start! thread))
 
 ;;=======================================================
 ;; Tapping ports
@@ -93,16 +143,7 @@
   (define tee-closed #f)
   (define straight-closed #f)
   (define queue-size 0)
-  (define-values (reader writer)
-    (case unit
-      [(:byte) (values read-byte write-byte)]
-      [(:char) (values read-char write-char)]
-      [else (assume (and (exact-integer? unit) (>= unit 0))
-                    "A nonnegative exact integer, :byte, or :char expected \
-                     for unit argument, but got: " unit)
-            (let1 chunk-size (if (zero? unit) 4096 unit)
-              (values (^[port] (read-uvector <u8vector> chunk-size port))
-                      (^[obj port] (write-uvector obj port))))]))
+  (define-values (reader writer) (%unit-reader&writer unit))
   (define (filler buf)
     (let ([len (u8vector-length buf)]
           [data (dequeue/wait! mtq)])     ;this may block
