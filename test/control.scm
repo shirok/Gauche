@@ -419,8 +419,8 @@
 ;;--------------------------------------------------------------------
 ;; control.port
 ;;
-(test-section "control.port")
-(use control.port)
-(test-module 'control.port)
+(test-section "control.plumbing")
+(use control.plumbing)
+(test-module 'control.plumbing)
 
 (test-end)

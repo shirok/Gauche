@@ -1,6 +1,6 @@
 2023-01-18  Shiro Kawai  <shiro@acm.org>
 
-	* lib/contro/port.scm: Move tapping port from gauche.vport.
+	* lib/contro/plumbing.scm: Move tapping port from gauche.vport.
 
 2023-01-15  Shiro Kawai  <shiro@acm.org>
 

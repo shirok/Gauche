@@ -1,5 +1,5 @@
 ;;;
-;;; control.port - Ports as communication channel
+;;; control.plumbing - Ports as communication channel
 ;;;
 ;;;   Copyright (c) 2023  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -36,18 +36,35 @@
 ;; This module provides utilities that uses ports for communication
 ;; between threads and/or processes.
 
-(define-module control.port
+(define-module control.plumbing
   (use data.queue)
   (use gauche.threads)
   (use gauche.uvector)
   (use gauche.vport)
 
-  (export open-tapping-port)
+  (export open-tapping-pump-port)
   )
-(select-module control.port)
+(select-module control.plumbing)
+
+;; A common structure to access and control particular configuration of
+;; a plubming system.
+;; The internal data access is hidden within the 'accessor' closure.
+
+(define-class <plumbing> ()
+  ;; closure to hide internals
+  ((accessor :init-keyword :accessor)))
+
+(define-generic plumbing-queue-size)
+(define-generic plumbing-thread)
+
+(define-method plumbing-queue-size ((c <plumbing>))
+  ((~ c'accessor) plumbing-queue-size))
+
+(define-method plumbing-thread ((c <plumbing>))
+  ((~ c'accessor) plumbing-thread))
 
 ;;=======================================================
-;; Tapping port
+;; Tapping ports
 ;;
 
 ;; EXPERIMENTAL - This depends on gauche.threads and data.queue, so we
@@ -69,11 +86,13 @@
 ;;
 ;;   :unit is similar to the :unit argument of copy-port.
 
-(define (open-tapping-port iport oport :key (close-output #f)
-                                            (unit 0))
+(define (open-tapping-pump-port iport oport
+                                :key (close-output #f)
+                                     (unit 0))
   (define mtq (make-mtqueue))
   (define tee-closed #f)
   (define straight-closed #f)
+  (define queue-size 0)
   (define-values (reader writer)
     (case unit
       [(:byte) (values read-byte write-byte)]
@@ -117,5 +136,12 @@
                     (close-input-port iport))
                   (and tee-closed straight-closed)))
         (loop))))
-  (thread-start! (make-thread handler))
-  (make <buffered-input-port> :fill filler :close closer))
+  (define thread (make-thread handler))
+  (define (accessor key . args)
+    (cond
+     [(eq? key plumbing-thread) thread]
+     [(eq? key plumbing-queue-size) queue-size]
+     [else (error "Unsupported method:" key)]))
+  (thread-start! thread)
+  (rlet1 p (make <buffered-input-port> :fill filler :close closer)
+    (port-attribute-set! p 'plumbing (make <plumbing> :accessor accessor))))
