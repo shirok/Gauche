@@ -432,9 +432,10 @@
   (define t
     (thread-start! (make-thread (^[] (let loop ()
                                        (let1 c (read-char outlet)
-                                         (unless (eof-object? c)
-                                           (push! r c)
-                                           (loop))))))))
+                                         (if (eof-object? c)
+                                           'done
+                                           (begin (push! r c)
+                                                  (loop)))))))))
 
   (define (gather-result expected-length)
     (if (= (length r) expected-length)
@@ -449,6 +450,10 @@
   (display "de" inlet)
   (flush inlet)
   (test* "simple pipe, flushed" "abcde" (gather-result 5))
+
+  (close-output-port inlet)
+  (test* "closing inlet causes EOF on outlet" 'done
+         (thread-join! t))
   )
 
 

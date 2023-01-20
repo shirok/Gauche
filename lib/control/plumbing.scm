@@ -87,9 +87,15 @@
               (^d (dolist [q (~ d'qs)]
                     (enqueue/wait! q data))))
       (u8vector-length data)))
-  (rlet1 p (make <buffered-output-port> :flush flusher)
+  (define (closer)
     (atomic pipe-device
-            (^d (push! (~ d'inlets) p)))))
+            (^d (update! (~ d'inlets) (cut delete port <>))
+                (when (null? (~ d'inlets))
+                  (dolist [q (~ d'qs)] (enqueue/wait! q (eof-object)))))))
+  (define port
+    (make <buffered-output-port> :flush flusher :close closer))
+  (atomic pipe-device (^d (push! (~ d'inlets) port)))
+  port)
 
 (define (open-pipe-outlet pipe-device)
   ($ atomic pipe-device
