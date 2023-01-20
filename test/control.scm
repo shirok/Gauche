@@ -423,4 +423,33 @@
 (use control.plumbing)
 (test-module 'control.plumbing)
 
+(let ()
+  (define r '())
+  (define pi (make-pipe-device))
+  (define inlet (open-pipe-inlet pi))
+  (define outlet (open-pipe-outlet pi))
+
+  (define t
+    (thread-start! (make-thread (^[] (let loop ()
+                                       (let1 c (read-char outlet)
+                                         (unless (eof-object? c)
+                                           (push! r c)
+                                           (loop))))))))
+
+  (define (gather-result expected-length)
+    (if (= (length r) expected-length)
+      (list->string (reverse r))
+      (begin (sys-nanosleep #e1e6) (gather-result expected-length))))
+
+  (display "abc" inlet)
+  (test* "simple pipe, not flushed" '() r)
+  (flush inlet)
+  (test* "simple pipe, flushed" "abc" (gather-result 3))
+
+  (display "de" inlet)
+  (flush inlet)
+  (test* "simple pipe, flushed" "abcde" (gather-result 5))
+  )
+
+
 (test-end)
