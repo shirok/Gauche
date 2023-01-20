@@ -38,11 +38,13 @@
 
 (define-module control.plumbing
   (use data.queue)
+  (use gauche.record)
   (use gauche.threads)
   (use gauche.uvector)
   (use gauche.vport)
 
-  (export open-pump open-tapping-pump-port)
+  (export make-pipe-device open-pipe-inlet open-pipe-outlet
+          make-pump open-tapping-pump-port)
   )
 (select-module control.plumbing)
 
@@ -50,18 +52,64 @@
 ;; a plubming system.
 ;; The internal data access is hidden within the 'accessor' closure.
 
-(define-class <plumbing> ()
+(define-class <plumbing-device> ()
   ;; closure to hide internals
   ((accessor :init-keyword :accessor)))
 
-(define-generic plumbing-queue-size)
-(define-generic plumbing-thread)
+(define-generic plumbing-device-queue-size)
+(define-generic plumbing-device-thread)
 
-(define-method plumbing-queue-size ((c <plumbing>))
-  ((~ c'accessor) plumbing-queue-size))
+(define-method plumbing-device-queue-size ((c <plumbing-device>))
+  ((~ c'accessor) plumbing-device-queue-size))
 
-(define-method plumbing-thread ((c <plumbing>))
-  ((~ c'accessor) plumbing-thread))
+(define-method plumbing-device-thread ((c <plumbing-device>))
+  ((~ c'accessor) plumbing-device-thread))
+
+;;=======================================================
+;; Pipes
+;;
+
+;; A pipe is a device to receive data from oport(s) and make it
+;; available to iport(s).
+
+(define-class <pipe-device> ()
+  ([qs :init-keyword :qs]
+   [inlets :init-value '()]
+   [outlets :init-value '()]))
+
+(define (make-pipe-device)
+  (atom (make <pipe-device> :qs (list (make-mtqueue)))))
+
+(define (open-pipe-inlet pipe-device)
+  (define (flusher buffer flag)
+    (let1 data (u8vector-copy buffer)
+      (atomic pipe-device
+              (^d (dolist [q (~ d'qs)]
+                    (enqueue/wait! q data))))
+      (u8vector-length data)))
+  (rlet1 p (make <buffered-output-port> :flush flusher)
+    (atomic pipe-device
+            (^d (push! (~ d'inlets) p)))))
+
+(define (open-pipe-outlet pipe-device)
+  ($ atomic pipe-device
+     (^d (let1 mtq (if (null? (~ d'outlets))
+                     (car (~ d'qs))
+                     (rlet1 q (make-mtqueue)
+                       (push! (~ d'qs) q)))
+           (define (filler buf)
+             (let ([len (u8vector-length buf)]
+                   [data (dequeue/wait! mtq)])     ;this may block
+               (cond [(eof-object? data) data]
+                     [(<= (u8vector-length data) len)
+                      (u8vector-copy! buf 0 data 0)
+                      (u8vector-length data)]
+                     [else
+                      (u8vector-copy! buf 0 data 0 len)
+                      (queue-push/wait! mtq (uvector-alias <u8vector> data len))
+                      len])))
+           (rlet1 p (make <buffered-input-port> :fill filler)
+             (push! (~ d'outlets) p))))))
 
 ;;=======================================================
 ;; Pumps
@@ -106,13 +154,17 @@
         (loop))))
   (make-thread handler))
 
-(define (open-pump iport oport
+(define (make-pump iport oport
                    :key (own-output #f)
                         (unit 0))
   (define-values (reader writer) (%unit-reader&writer unit))
   (define thread (%make-pump-1 iport oport own-output
                                reader writer #f))
-  (thread-start! thread))
+  (define (accessor key . args)
+    (cond
+     [(eq? key plumbing-device-thread) thread]
+     [else (error "Unsupported method:" key)]))
+  (make <plumbing-device> :accessor accessor))
 
 ;;=======================================================
 ;; Tapping ports
@@ -165,9 +217,10 @@
                                input-callback))
   (define (accessor key . args)
     (cond
-     [(eq? key plumbing-thread) thread]
-     [(eq? key plumbing-queue-size) queue-size]
+     [(eq? key plumbing-device-thread) thread]
+     [(eq? key plumbing-device-queue-size) queue-size]
      [else (error "Unsupported method:" key)]))
   (thread-start! thread)
   (rlet1 p (make <buffered-input-port> :fill filler :close closer)
-    (port-attribute-set! p 'plumbing (make <plumbing> :accessor accessor))))
+    (port-attribute-set! p 'plumbing-device
+                         (make <plumbing-device> :accessor accessor))))
