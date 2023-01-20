@@ -1,3 +1,7 @@
+2023-01-19  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/data/ring-buffer.scm (ring-buffer-room): API Added.
+
 2023-01-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/contro/plumbing.scm: Move tapping port from gauche.vport.

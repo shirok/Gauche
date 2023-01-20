@@ -43,8 +43,8 @@
   (export make-ring-buffer
           make-overflow-doubler
           ring-buffer?
-          ring-buffer-empty? ring-buffer-num-entries ring-buffer-capacity
-          ring-buffer-full?
+          ring-buffer-empty? ring-buffer-full?
+          ring-buffer-num-entries ring-buffer-capacity ring-buffer-room
           ring-buffer-front ring-buffer-back
           ring-buffer-add-front! ring-buffer-add-back!
           ring-buffer-remove-front! ring-buffer-remove-back!
@@ -229,6 +229,10 @@
 ;; API
 (define (ring-buffer-full? rb)
   (= (ring-buffer-num-entries rb) (ring-buffer-capacity rb)))
+
+;; API
+(define (ring-buffer-room rb)
+  (- (ring-buffer-capacity rb) (ring-buffer-num-entries rb)))
 
 (define (%ensure-nonempty rb)
   (when (ring-buffer-empty? rb)
