@@ -2,6 +2,7 @@ primsyn.scm
 error.scm
 module.scm
 macro.scm
+errsyn.scm
 number.scm
 char.scm
 string.scm

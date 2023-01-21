@@ -7,6 +7,8 @@
 (test-start "primitive syntax")
 
 ;; We use prim-test instead of test, for error-handler is not tested yet.
+;; NB: errsyn.scm has tests for invalid syntax.  It is run after
+;; error-handler and macro tests.
 
 ;;----------------------------------------------------------------
 (test-section "conditionals")

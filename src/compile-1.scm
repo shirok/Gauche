@@ -290,7 +290,7 @@
   (define (dupe-check var mframe vframe)
     (when (or (and (pair? mframe) (assq var mframe))
               (and (pair? vframe) (assq var vframe)))
-      (error "Duplicate internal definition of " var)))
+      (error "Duplicate internal definitions of" var)))
   (match exprs
     [(((op . args) . src) . rest)
      (or (and-let* ([ (or (not vframe) (not (assq op vframe))) ]
