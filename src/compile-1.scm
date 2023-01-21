@@ -287,6 +287,10 @@
 ;; expressions, we re-evaluate <init-expr> and replace the frame entry with
 ;;    (<name> . <lvar>)
 (define (pass1/body-rec exprs mframe vframe cenv)
+  (define (dupe-check var mframe vframe)
+    (when (or (and (pair? mframe) (assq var mframe))
+              (and (pair? vframe) (assq var vframe)))
+      (error "Duplicate internal definition of " var)))
   (match exprs
     [(((op . args) . src) . rest)
      (or (and-let* ([ (or (not vframe) (not (assq op vframe))) ]
@@ -316,6 +320,7 @@
                             (error "define without expression is not allowed in R7RS" (caar exprs))
                             `(,var :rec ,(undefined) . ,src))]
                          [_ (error "malformed internal define:" (caar exprs))])
+               (dupe-check (car def) mframe vframe)
                (if (not mframe)
                  (let* ([cenv (cenv-extend cenv '() SYNTAX)]
                         [mframe (car (cenv-frames cenv))]
@@ -328,6 +333,7 @@
             [(global-identifier=? head define-syntax.) ; internal syntax definition
              (match args
                [(name trans-spec)
+                (dupe-check name mframe vframe)
                 (if (not mframe)
                  (let* ([cenv (cenv-extend cenv `((,name)) SYNTAX)]
                         [mframe (car (cenv-frames cenv))]

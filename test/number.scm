@@ -2482,14 +2482,14 @@
   ;;
   ;; normal quantile function (probit function)
   ;;
-  (define (probit p)
+  (define (probit-ok p)
     (define (probit>0 p)
       (* (inverse-erf (- (* p 2) 1)) (sqrt 2))) ;; OK
     (if (< p 0)
       (- 1 (probit>0 (- p)))
       (probit>0 p) ))
 
-  (define (probit p)
+  (define (probit-ng p)
     (define (probit>0 p)
       (* (sqrt 2) (inverse-erf (- (* p 2) 1)))) ;; NG
     (if (< p 0)
@@ -2531,8 +2531,10 @@
   ;;
   ;; TEST
   ;;
-  (test* "probit(0.025)" -1.959964 (probit 0.025) ~=)
-  (test* "probit(0.975)" 1.959964 (probit 0.975) ~=)
+  (test* "probit(0.025) ok pattern" -1.959964 (probit-ok 0.025) ~=)
+  (test* "probit(0.025) ng pattern" -1.959964 (probit-ng 0.025) ~=)
+  (test* "probit(0.975) ok pattern" 1.959964 (probit-ok 0.975) ~=)
+  (test* "probit(0.975) ng pattern" 1.959964 (probit-ng 0.975) ~=)
   )
 
 ;;------------------------------------------------------------------

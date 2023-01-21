@@ -1,3 +1,9 @@
+2023-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (pass1/body-rec): Make duplicate internal
+	  definitions an error.
+	  https://github.com/shirok/Gauche/issues/872
+
 2023-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/data/ring-buffer.scm (ring-buffer-room): API Added.
