@@ -43,7 +43,8 @@
   (use gauche.uvector)
   (use gauche.vport)
 
-  (export make-pipe-device open-pipe-inlet open-pipe-outlet
+  (export make-pipe pipe-inlet? pipe-outlet?
+          duplicate-pipe-inlet duplicate-pipe-outlet
           make-pump open-tapping-pump-port)
   )
 (select-module control.plumbing)
@@ -69,36 +70,46 @@
 ;; Pipes
 ;;
 
-;; A pipe is a device to receive data from oport(s) and make it
-;; available to iport(s).
+;; A pipe is a passive device that has one or more inlets (output ports)
+;; and one or more outlets (input ports).  Data pushed into the inlets
+;; will be available to read from outlets.
+;; It is passive, that is, no active thread is monitoring inputs.
+;; If all inlets are closed, the outlets read EOF.
+;;
+;; Unlike sys-pipe, each outlets have individual buffers, so each reader
+;; gets the entire contents independently.  In general, you want to use
+;; sys-pipe when you do inter-process communication, while this pipe is
+;; handy for intra-thread communication.
 
-(define-class <pipe-device> ()
+(define-class <pipe-impl> ()
   ([qs :init-keyword :qs]
    [inlets :init-value '()]
    [outlets :init-value '()]))
 
-(define (make-pipe-device)
-  (atom (make <pipe-device> :qs (list (make-mtqueue)))))
+(define-class <pipe> ()
+  (;; All slots are private
+   [impl :init-keyword :impl]))         ;(atom <pipe-impl>)
 
-(define (open-pipe-inlet pipe-device)
+(define (%open-pipe-inlet pipe)
   (define (flusher buffer flag)
     (let1 data (u8vector-copy buffer)
-      (atomic pipe-device
+      (atomic (~ pipe'impl)
               (^d (dolist [q (~ d'qs)]
                     (enqueue/wait! q data))))
       (u8vector-length data)))
   (define (closer)
-    (atomic pipe-device
+    (atomic (~ pipe'impl)
             (^d (update! (~ d'inlets) (cut delete port <>))
                 (when (null? (~ d'inlets))
                   (dolist [q (~ d'qs)] (enqueue/wait! q (eof-object)))))))
   (define port
     (make <buffered-output-port> :flush flusher :close closer))
-  (atomic pipe-device (^d (push! (~ d'inlets) port)))
+  (port-attribute-set! port 'plumbing-device pipe)
+  (atomic (~ pipe'impl) (^d (push! (~ d'inlets) port)))
   port)
 
-(define (open-pipe-outlet pipe-device)
-  ($ atomic pipe-device
+(define (%open-pipe-outlet pipe)
+  ($ atomic (~ pipe'impl)
      (^d (let1 mtq (if (null? (~ d'outlets))
                      (car (~ d'qs))
                      (rlet1 q (make-mtqueue)
@@ -114,14 +125,45 @@
                       (u8vector-copy! buf 0 data 0 len)
                       (queue-push/wait! mtq (uvector-alias <u8vector> data len))
                       len])))
-           (rlet1 p (make <buffered-input-port> :fill filler)
-             (push! (~ d'outlets) p))))))
+           (define port (make <buffered-input-port> :fill filler))
+           (port-attribute-set! port 'plumbing-device pipe)
+           (push! (~ d'outlets) port)
+           port))))
+
+(define (%port-pipe port)
+  (port-attribute-ref port 'plumbing-device #f))
+
+;; Returns two values, an iport and an oport.  The iport is the pipe's outlet,
+;; and the oport is the pipe's inlet.
+(define (make-pipe)
+  (let1 device (make <pipe>
+                 :impl (atom (make <pipe-impl> :qs (list (make-mtqueue)))))
+    (values (%open-pipe-outlet device)
+            (%open-pipe-inlet device))))
+
+(define (pipe-inlet? oport)
+  (and (output-port? oport)
+       (is-a? (%port-pipe oport) <pipe>)))
+
+(define (pipe-outlet? iport)
+  (and (input-port? iport)
+       (is-a? (%port-pipe iport) <pipe>)))
+
+;; Create another pipe inlet from the existing pipe inlet
+(define (duplicate-pipe-inlet oport)
+  (assume (pipe-inlet? oport) "Argument is not a pipe inlet:" oport)
+  (%open-pipe-inlet (%port-pipe oport)))
+
+;; Create another pipe outlet from the existing pipe outlet
+(define (duplicate-pipe-outlet iport)
+  (assume (pipe-outlet? iport) "Argument is not a pipe outlet:" iport)
+  (%open-pipe-outlet (%port-pipe iport)))
 
 ;;=======================================================
 ;; Pumps
 ;;
 
-;; A pump is a device to pull the data from the given iport(s) and
+;; A pump is an active device to pull the data from the given iport(s) and
 ;; feed it to the given oport(s).   It spawns thread(s) to handle the
 ;; data, so that the data feed is handled autonomously.
 

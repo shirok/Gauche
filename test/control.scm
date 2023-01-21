@@ -426,9 +426,7 @@
 ;; pipe, 1-in 1-out
 (let ()
   (define r '())
-  (define pi (make-pipe-device))
-  (define inlet (open-pipe-inlet pi))
-  (define outlet (open-pipe-outlet pi))
+  (define-values (outlet inlet) (make-pipe))
 
   (define t
     (thread-start! (make-thread (^[] (let loop ()
@@ -442,6 +440,13 @@
     (if (= (length r) expected-length)
       (list->string (reverse r))
       (begin (sys-nanosleep #e1e6) (gather-result expected-length))))
+
+  (test* "predicates" '(#t #f #f #t #f)
+         (list (pipe-inlet? inlet)
+               (pipe-inlet? outlet)
+               (pipe-outlet? inlet)
+               (pipe-outlet? outlet)
+               (pipe-inlet? (current-input-port))))
 
   (display "abc" inlet)
   (test* "simple pipe, not flushed" '() r)
@@ -461,33 +466,41 @@
 (let ()
   (define r0 (box '()))
   (define r1 (box '()))
-  (define pi (make-pipe-device))
-  (define inlet0 (open-pipe-inlet pi))
-  (define inlet1 (open-pipe-inlet pi))
+  (define-values (outlet0 inlet0) (make-pipe))
+  (define inlet1)
+  (define outlet1)
   (define t0)                      ;will assign later
   (define t1)                      ;will assing later
 
-  (define (make-reader acc)
-    (let1 outlet (open-pipe-outlet pi)
-      (rec (loop)
-        (let1 c (read-char outlet)
-          (if (eof-object? c)
-            'done
-            (begin (set-box! acc (cons c (unbox acc)))
-                   (loop)))))))
+  (define (make-reader outlet acc)
+    (rec (loop)
+      (let1 c (read-char outlet)
+        (if (eof-object? c)
+          'done
+          (begin (set-box! acc (cons c (unbox acc)))
+                 (loop))))))
 
   (define (gather-result acc expected-length)
     (if (= (length (unbox acc)) expected-length)
       (list->string (reverse (unbox acc)))
       (begin (sys-nanosleep #e1e6) (gather-result acc expected-length))))
 
+
+  (test* "duplicate-pipe-inlet" #t
+         (begin (set! inlet1 (duplicate-pipe-inlet inlet0))
+                (pipe-inlet? inlet1)))
+
   (display "abc" inlet0)
   (flush inlet0)
 
-  (set! t0 (thread-start! (make-thread (make-reader r0))))
+  (set! t0 (thread-start! (make-thread (make-reader outlet0 r0))))
   (test* "2-to-1 pipe" "abc" (gather-result r0 3))
 
-  (set! t1 (thread-start! (make-thread (make-reader r1))))
+  (test* "duplicate-pipe-outlet" #t
+         (begin (set! outlet1 (duplicate-pipe-outlet outlet0))
+                (pipe-outlet? outlet1)))
+
+  (set! t1 (thread-start! (make-thread (make-reader outlet1 r1))))
 
   (display "de" inlet1)
   (flush inlet1)
