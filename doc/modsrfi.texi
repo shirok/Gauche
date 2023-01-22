@@ -12082,11 +12082,20 @@ With no @var{element} @dots{}, it is the same as Gauche's @code{values-ref}
 @defmac coarity producer
 [SRFI-210]
 @c MOD srfi.210
+Evaluate @var{producer}, and returns the number of values it yielded.
 @end defmac
 
 @defmac bind/mv producer transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+Evaluate @var{producer}, and passes its results to the first @var{transducer}
+as arguments.  The values returned by the first @var{transducer}
+are passed to the next @var{transducer} as arguments, and so on.
+Returns the results of the last @var{transducer}.
+The call to the last @var{transducer} is tail-call.
+
+If no @var{transducer}s are given, it returns the results of
+@var{producer}.
 @end defmac
 
 @defun list-values lis
@@ -12094,11 +12103,16 @@ With no @var{element} @dots{}, it is the same as Gauche's @code{values-ref}
 @defunx box-values box
 [SRFI-210]
 @c MOD srfi.210
+Turn the content of @var{lis}, @var{vec} or @var{box} into multiple values.
+
+Note that @code{box-values} is the same as @code{unbox}, but provided here
+for the naming consistency (@pxref{Boxes}).
 @end defun
 
 @defun value index obj @dots{}
 [SRFI-210]
 @c MOD srfi.210
+Evaluates @var{obj} @dots{}, and returns the @var{index}-th value.
 @end defun
 
 @defun identity obj @dots{}
