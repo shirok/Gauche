@@ -63,12 +63,16 @@
   (timestamp ulid-timestamp)
   (randomness ulid-randomness))
 
+(define ulid-random-source
+  (rlet1 s (make-random-source)
+    (random-source-randomize! s)))
+
 ;; API
 ;; NB: The ULID spec says ULID generation may fail if randomness is very close
 ;; to 2^80 and lots of ULIDs are generated in the same millisecond, causing
 ;; randomness field to overflow.  We can, however, wait just one millisecond
 ;; to overcome that situation.
-(define (make-ulid-generator :optional (random-source default-random-source))
+(define (make-ulid-generator :optional (random-source ulid-random-source))
   (let ((randomness (random-source-make-integers random-source))
         (last-ts 0)
         (last-rn 0))

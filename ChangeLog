@@ -1,3 +1,11 @@
+2023-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/ulid.scm (make-ulid-generator): Use internal random source
+	  when random-source argument is omitted.  Using default-random-source
+	  causes ULID conflict for multiple runs if the user didn't randomize
+	  it beforehand.
+	  https://github.com/shirok/Gauche/issues/873
+
 2023-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/body-rec): Make duplicate internal

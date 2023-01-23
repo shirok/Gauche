@@ -7439,7 +7439,7 @@ Creates and returns a generator that yields a fresh ULID object
 every time it is called.  The optional @var{random-source} argument
 is a SRFI-27 random source (@pxref{Sources of random bits})
 to be used for the random part of ULID.  When omitted,
-SRFI-27's @code{default-random-source} is used.
+an internal random source is used.
 
 To guarantee uniqueness and monotonicity, a ULID generator needs to
 keep internal state.  If you want to share the generator among multiple threads,
