@@ -2882,11 +2882,11 @@ double Scm_SinPi(double x)
     double xx = trig_pi_reduce_range(x);
     if (xx >= 0) {
         if (xx > 0.5)  xx = 1 - xx;
-        if (xx > 0.25) return cos(M_PI*(0.5-xx));
+        if (xx >= 0.25) return cos(M_PI*(0.5-xx));
         else return sin(M_PI*xx);
     } else {
         if (xx < -0.5) xx = -1 - xx;
-        if (xx < -0.25) return -cos(M_PI*(-0.5-xx));
+        if (xx <= -0.25) return -cos(M_PI*(-0.5-xx));
         else return sin(M_PI*xx);
     }
 }
