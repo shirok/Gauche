@@ -1,3 +1,18 @@
+2023-01-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (define-method): Bind the method closure to a
+	  module-local hidden toplevel variable, so that test-module
+	  can find the method body and scan for undefined variable
+	  references.
+	  Note: This forces define-method to be on toplevel.  Although
+	  it hasn't been explicitly documented, it's been assumed that
+	  they're toplevel forms as the name suggests.  The code that has
+	  been used define-method in non-toplevel raises an error after
+	  this change; they should be rewritten to make define-method
+	  toplevel.
+	  Technically it can appear in the internal definition context,
+	  but we're not sure about its semantics.
+
 2023-01-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (Scm_SinPi): Make sure

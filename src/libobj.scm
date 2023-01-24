@@ -155,21 +155,29 @@
                               (apply (lambda ,opts ,@body) ,rest)))
                          (quasirename %id
                            `(lambda ,real-args ,@body)))
-                       form)])
+                       form)]
+           ;; We bind method body to an artificially weird module-local name,
+           ;; so that test-module can find and scan the method's body.
+           [method-unique-name (symbol-append name specs)]
+           )
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym "gf")
           (quasirename %id
-            `(rlet1 ,gf (%ensure-generic-function ',true-name (current-module))
-               (add-method! ,gf (make <method>
-                                  ':generic ,gf
-                                  ':specializers (list ,@specializers)
-                                  ':lambda-list ',lambda-list
-                                  ':method-locked (boolean (memq ':locked ',quals))
-                                  ':body ,real-body))
-               ,@(cond-list [getter-name
-                             (quasirename %id
-                               `(unless (has-setter? ,getter-name)
-                                  (set! (setter ,getter-name) ,gf)))]))))))))
+            `(begin
+               (define ,method-unique-name
+                 (rlet1 ,method-unique-name ,real-body
+                   (let1 ,gf (%ensure-generic-function ',true-name (current-module))
+                     (add-method! ,gf (make <method>
+                                        ':generic ,gf
+                                        ':specializers (list ,@specializers)
+                                        ':lambda-list ',lambda-list
+                                        ':method-locked (boolean (memq ':locked ',quals))
+                                        ':body ,method-unique-name))
+                     ,@(cond-list [getter-name
+                                   (quasirename %id
+                                     `(unless (has-setter? ,getter-name)
+                                        (set! (setter ,getter-name) ,gf)))]))))
+               ,true-name)))))))
 
 (inline-stub
  ;; internal for %ensure-generic-function
