@@ -1027,7 +1027,7 @@
                      '("FILE *f = fopen(\"conftest.out\", \"w\");\n"
                        "return ferror(f) || fclose(f) != 0;")))
 
-(define-method cf-lang-call-m ((lang <c-language>) prologue body)
+(define-method cf-lang-call-m ((lang <c-language>) prologue func-name)
   ($ cf-lang-program-m lang
      (if (equal? func-name "main")
        `(,prologue
