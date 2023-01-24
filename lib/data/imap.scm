@@ -247,6 +247,10 @@
   (proc (^p (push! alist p))
         (^[] (alist->imap alist comparator))))
 
+;; Key comparator
+(define (imap-comparator imap)
+  (slot-ref imap 'comparator))
+
 ;; A couple of conversion methods for the efficiency
 (define-method coerce-to ((c <imap-meta>) (src <list>))
   (alist->imap src))
