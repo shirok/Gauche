@@ -84,14 +84,9 @@
   (next-method)
   (let ((name (class-name class)))
     (when name
-      (define-method write-object ((self class) port)
-        (format port "#,(~A ~S" name (array->list (array-shape self)))
-        (array-for-each (cut format port " ~S" <>) self)
-        (format port ")"))
       (define-reader-ctor name
         (^[sh . inits]
           (list-fill-array! (make-array-internal class (apply shape sh)) inits))))))
-
 
 (define-class <array-base> ()
   ((start-vector    :init-keyword :start-vector :getter start-vector-of)
@@ -110,6 +105,12 @@
         [store (backing-storage-of self)])
     (set! (slot-ref self 'getter) (^[index] (get store index)))
     (set! (slot-ref self 'setter) (^[index value] (set store index value)))))
+
+(define-method write-object ((self <array-base>) port)
+  (format port "#,(~A ~S" (class-name (class-of self))
+          (array->list (array-shape self)))
+  (array-for-each (cut format port " ~S" <>) self)
+  (format port ")"))
 
 (define-class <array> (<array-base>)
   ()
