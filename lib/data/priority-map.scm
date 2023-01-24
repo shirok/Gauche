@@ -38,6 +38,7 @@
 (define-module data.priority-map
   (use gauche.sequence)
   (use gauche.dictionary)
+  (use gauche.generator)
   (use util.match)
   (export <priority-map>
           make-priority-map
@@ -101,7 +102,7 @@
         [vmap (~ pmap 'value-map)]
         [vcmp (~ pmap 'value-cmpr)])
     (and-let* ([v (hash-table-get kmap key #f)]
-               [ (not (comparator-equal? vcmp v value)) ])
+               [ (not (=? vcmp v value)) ])
       ($ tree-map-update! vmap v
          (cute remove key <> (comparator-equality-predicate kcmp)) '()))
     (tree-map-push! vmap value key)
@@ -131,7 +132,7 @@
 
 (define-method dict-fold-right ((pmap <priority-map>) proc seed)
   ($ tree-map-fold-right (~ pmap 'value-map)
-     (^[v ks s] (fold-right (^[k s] (proc k v s)) s ks) seed)))
+     (^[v ks s] (fold-right (^[k s] (proc k v s)) s ks)) seed))
 
 ;; specific stuff
 
