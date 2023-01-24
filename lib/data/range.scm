@@ -605,6 +605,6 @@
 
 ;; some shortcuts
 (define-method subseq ((r <range>) s e) (subrange r s e))
-(define-method subseq ((r <range>) s) (subrange r s (range-length e)))
+(define-method subseq ((r <range>) s) (subrange r s (range-length r)))
 (define-method coerce-to ((r <range-meta>) (v <vector>)) (vector-range v))
 (define-method coerce-to ((r <range-meta>) (v <string>)) (string-range v))
