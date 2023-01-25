@@ -1908,49 +1908,6 @@
     (format (current-error-port) ";;~a including ~s\n"
             (if open? "Begin" "End") (port-name iport))))
 
-;; Class stuff ........................................
-
-;; KLUDGES.  They should be implemented as macros, but the
-;; current compiler doesn't preserve macro definitions.
-;; These syntax handler merely expands the given form to
-;; the call to internal procedures of objlib.scm, which
-;; returns the macro expanded form.
-
-(define-pass1-syntax (define-generic form cenv) :gauche
-  (match form
-    [(_ name . opts)
-     (check-toplevel form cenv)
-     (pass1 (with-module gauche.object (%expand-define-generic name opts)) cenv)]
-    [_ (error "syntax-error: malformed define-generic:" form)]))
-
-'(define-pass1-syntax (define-method form cenv) :gauche
-  (define (parse name rest quals)
-    (match rest
-      [((? keyword? q) . rest)
-       (parse name rest (cons q quals))]
-      [(specs . body)
-       (pass1 (with-module gauche.object
-                (%expand-define-method name quals specs body form))
-              cenv)]
-      [_ (error "syntax-error: malformed define-method (empty body):" form)]))
-  ;; Should we limit define-method only at the toplevel?  Doing so
-  ;; is consistent with toplevel define and define-syntax.  Allowing
-  ;; define-method in non-toplevel is rather CL-ish and not like Scheme.
-  ;; (check-toplevel form cenv)
-  (match form
-    [(_ name . rest)
-     (parse name rest '())]
-    [_ (error "syntax-error: malformed define-method:" form)]))
-
-(define-pass1-syntax (define-class form cenv) :gauche
-  (match form
-    [(_ name supers slots . options)
-     (check-toplevel form cenv)
-     (pass1 (with-module gauche.object
-              (%expand-define-class name supers slots options))
-            cenv)]
-    [_ (error "syntax-error: malformed define-class:" form)]))
-
 ;; Black magic ........................................
 
 (define-pass1-syntax (eval-when form cenv) :gauche

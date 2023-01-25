@@ -48,7 +48,7 @@
                              with-continuation-marks
                              unwind-protect
                              let-keywords let-keywords* let-optionals*
-                             define-method
+                             define-class define-generic define-method
                              lcons lcons* llist*
                              rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
                              independently
@@ -1367,6 +1367,24 @@
 ;;; object system
 
 (select-module gauche)
+
+(define-syntax define-class
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ name supers slots . options)
+        ($ (with-module gauche.object %expand-define-class)
+           name supers slots options)]
+       [_ (error "syntax-error: malformed define-class:" f)]))))
+
+(define-syntax define-generic
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ name . opts)
+        ((with-module gauche.object %expand-define-generic) name opts)]
+       [_ (error "syntax-error: malformed define-generic:" f)]))))
+
 (define-syntax define-method
   (er-macro-transformer
    (^[f r c]

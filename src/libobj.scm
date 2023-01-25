@@ -84,9 +84,7 @@
 ;; Generic function
 ;;
 
-;(define-macro (define-generic name . opts)
-;  (%expand-define-generic name opts))
-
+;; Called from define-generic macro expander in libmacro.scm
 (define (%expand-define-generic name opts)
   (receive (true-name getter-name) (%check-setter-name name)
     (let ([class (get-keyword :class opts <generic>)]
@@ -236,15 +234,7 @@
           [(eqv? key (unwrap-syntax-1 (car as))) (cadr as)]
           [else (loop (cddr as))])))
 
-;; TRANSIENT: We should employ er-macro-transformer to expand
-;; define-class etc., but this file need to be compiled by 0.9.5
-;; and we've improved the transformer since then.  So we postponed
-;; rewriting these after 0.9.6 release.  Meanwhile, we manually
-;; replacing identifiers.
-
-;(define-macro (define-class name supers slots . options)
-;  (%expand-define-class name supers slots options))
-
+;; Called from define-class macro expander in libmacro.scm
 (define (%expand-define-class name supers slots options)
   (let* ([metaclass (or (%get-keyword :metaclass options #f)
                         (quasirename %id

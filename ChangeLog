@@ -1,5 +1,14 @@
 2023-01-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmacro.scm (define-class, define-generic, define-method):
+	  Turn them into a macro rather than compiler-builtin, finally.
+	  This, however, has a little side-effect; they expand to define
+	  forms, so they can now appear in the declaration context,
+	  not necessarily at the top-level.
+	  We don't officially support non-toplevel use of these forms yet,
+	  for these forms have global effect and we're not sure how they
+	  should interact with lexical scope.
+
 	* src/libobj.scm (define-method): Bind the method closure to a
 	  module-local hidden toplevel variable, so that test-module
 	  can find the method body and scan for undefined variable
