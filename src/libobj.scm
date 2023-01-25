@@ -122,9 +122,7 @@
 ;; Method
 ;;
 
-;(define-macro (define-method name [quals ...] specs . body)
-;  (%expand-define-macro name quals specs body))
-
+;; Called from define-method macro expander in libmacro.scm
 (define (%expand-define-method name quals specs body form)
   ;; check qualifiers.  we only support :locked for now
   ;; TRANSIENT: Must use hygienic compare.
@@ -163,21 +161,20 @@
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym "gf")
           (quasirename %id
-            `(begin
-               (define ,method-unique-name
-                 (rlet1 ,method-unique-name ,real-body
-                   (let1 ,gf (%ensure-generic-function ',true-name (current-module))
-                     (add-method! ,gf (make <method>
-                                        ':generic ,gf
-                                        ':specializers (list ,@specializers)
-                                        ':lambda-list ',lambda-list
-                                        ':method-locked (boolean (memq ':locked ',quals))
-                                        ':body ,method-unique-name))
-                     ,@(cond-list [getter-name
-                                   (quasirename %id
-                                     `(unless (has-setter? ,getter-name)
-                                        (set! (setter ,getter-name) ,gf)))]))))
-               ,true-name)))))))
+            `(define ,method-unique-name
+               (rlet1 ,method-unique-name ,real-body
+                 (let1 ,gf (%ensure-generic-function ',true-name (current-module))
+                   (add-method! ,gf (make <method>
+                                      ':generic ,gf
+                                      ':specializers (list ,@specializers)
+                                      ':lambda-list ',lambda-list
+                                      ':method-locked (boolean (memq ':locked ',quals))
+                                      ':body ,method-unique-name))
+                   ,@(cond-list [getter-name
+                                 (quasirename %id
+                                   `(unless (has-setter? ,getter-name)
+                                      (set! (setter ,getter-name) ,gf)))]))))
+            ))))))
 
 (inline-stub
  ;; internal for %ensure-generic-function

@@ -48,6 +48,7 @@
                              with-continuation-marks
                              unwind-protect
                              let-keywords let-keywords* let-optionals*
+                             define-method
                              lcons lcons* llist*
                              rxmatch-let rxmatch-if rxmatch-cond rxmatch-case
                              independently
@@ -1362,6 +1363,24 @@
     [_ (errorf "Malformed ~a: ~S"
                (if (eq? %let 'let) 'let-keywords 'let-keywords*)
                form)]))
+
+;;; object system
+
+(select-module gauche)
+(define-syntax define-method
+  (er-macro-transformer
+   (^[f r c]
+     (define (gather-quals name rest quals)
+       (match rest
+         [((? keyword? q) . rest)
+          (gather-quals name rest (cons q quals))]
+         [(specs . body)
+          ($ (with-module gauche.object %expand-define-method)
+             name (reverse quals) specs body f)]
+         [_ (error "syntax-error: malformed define-method (empty body):" f)]))
+     (match f
+       [(_ name . rest) (gather-quals name rest '())]
+       [_ (error "syntax-error: malformed define-method:" f)]))))
 
 ;;; lseq
 (select-module gauche)

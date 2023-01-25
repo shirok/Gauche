@@ -1923,7 +1923,7 @@
      (pass1 (with-module gauche.object (%expand-define-generic name opts)) cenv)]
     [_ (error "syntax-error: malformed define-generic:" form)]))
 
-(define-pass1-syntax (define-method form cenv) :gauche
+'(define-pass1-syntax (define-method form cenv) :gauche
   (define (parse name rest quals)
     (match rest
       [((? keyword? q) . rest)
