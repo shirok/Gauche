@@ -46,6 +46,8 @@
   (export make-plumbing
           open-inlet-output-port add-inlet-input-port!
           open-outlet-input-port add-outlet-output-port!
+
+          make-pump
           )
   )
 (select-module control.plumbing)
@@ -175,3 +177,17 @@
   (atomic (~ plumbing'impl)
           (^d (push! (~ d'outlets) outlet)))
   port)
+
+;;;
+;;; Convenience utilities
+;;;
+
+;; Create a 'pump' - a device that reads from inlet-iport and
+;; writes out to outlet-oport, run in an independent thread.
+;; Returns a plumbing.
+(define (make-pump inlet-iport outlet-oport :key (close-on-eof #f))
+  (assume (input-port? inlet-iport))
+  (assume (output-port? outlet-oport))
+  (rlet1 plumbing (make-plumbing)
+    (add-inlet-input-port! plumbing inlet-iport)
+    (add-outlet-output-port! plumbing outlet-oport :close-on-eof close-on-eof)))
