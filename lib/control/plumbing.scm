@@ -144,10 +144,12 @@
 ;; outlets
 ;;
 
-(define (add-outlet-output-port! plumbing oport)
+(define (add-outlet-output-port! plumbing oport :key (close-on-eof #f))
   (define outlet (make <plumbing-outlet>
                    :put (cut write-uvector <> oport)
-                   :close (cut close-output-port oport)))
+                   :close (if close-on-eof
+                            (cut close-output-port oport)
+                            (constantly #f))))
   (atomic (~ plumbing'impl)
           (^d (push! (~ d'outlets) outlet)))
   plumbing)

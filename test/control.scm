@@ -457,4 +457,24 @@
          (thread-join! t))
   )
 
+;; closing outlet automatically
+(let ()
+  (define plumbing (make-plumbing))
+  (define inlet (open-inlet-output-port plumbing))
+  (define outlet0 (open-output-string))
+  (define outlet1 (open-output-string))
+  (add-outlet-output-port! plumbing outlet0)
+  (add-outlet-output-port! plumbing outlet1 :close-on-eof #t)
+
+  (test* "closing outlet ports" '(#f #t)
+         (begin
+           (display "a" inlet)
+           (close-output-port inlet)
+           (list (port-closed? outlet0)
+                 (port-closed? outlet1))))
+  (test* "outlet content" '("a" "a")
+         (list (get-output-string outlet0)
+               (get-output-string outlet1)))
+  )
+
 (test-end)
