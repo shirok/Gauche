@@ -460,19 +460,27 @@
 ;; closing outlet automatically
 (let ()
   (define plumbing (make-plumbing))
-  (define inlet (open-inlet-output-port plumbing))
+  (define inlet0 (open-inlet-output-port plumbing))
+  (define inlet1 (open-inlet-output-port plumbing))
   (define outlet0 (open-output-string))
   (define outlet1 (open-output-string))
   (add-outlet-output-port! plumbing outlet0)
   (add-outlet-output-port! plumbing outlet1 :close-on-eof #t)
 
-  (test* "closing outlet ports" '(#f #t)
+  (test* "closing outlet ports (not yet)" '(#f #f)
          (begin
-           (display "a" inlet)
-           (close-output-port inlet)
+           (display "a" inlet0)
+           (close-output-port inlet0)
            (list (port-closed? outlet0)
                  (port-closed? outlet1))))
-  (test* "outlet content" '("a" "a")
+  (test* "closing outlet ports" '(#f #t)
+         (begin
+           (display "b" inlet1)
+           (close-output-port inlet1)
+           (list (port-closed? outlet0)
+                 (port-closed? outlet1))))
+
+  (test* "outlet content" '("ab" "ab")
          (list (get-output-string outlet0)
                (get-output-string outlet1)))
   )
