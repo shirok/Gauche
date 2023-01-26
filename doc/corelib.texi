@@ -24917,6 +24917,38 @@ absolute position of the arguments, starting from 0.
 0が最初の引数です。
 @c COMMON
 
+@item @b{~P}
+@c EN
+Parameters: none
+
+Plural.  If argument is an exact integer 1, do nothing.  Otherwise,
+print @code{s}.
+
+If an atmark-flag is given, print @code{y} for the argument 1, and
+print @code{ies} for other argument values.
+
+If a colon-flag is given, back up one argument before processing.
+
+Note: 1.0 is regarded as plural.
+@c JP
+パラメータ: なし
+
+複数形(plural)。引数が正確な1であれば何もせず、そうでなければ@code{s}を出力します。
+
+アトマークフラグが与えられた場合は、引数が正確な1なら@code{y}を、
+そうでなければ@code{ies}を出力します。
+
+コロンフラグが与えられた場合は、引数をひとつ戻ってから処理します。
+
+註: 1.0は複数とみなされます。
+@c COMMON
+
+@example
+(format "~a book~:p, ~a book~:p, ~a pon~:@@p, ~a pon~:@@p" 1 2 1 2)
+ @result{} "1 book, 2 books, 1 pony, 2 ponies"
+@end example
+
+
 @item @b{~&}
 @c EN
 Parameter: @var{count}
