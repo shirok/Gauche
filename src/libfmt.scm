@@ -58,6 +58,8 @@
 ;;         | ($ flags digits pre-digits width padchar)
 ;;         | (* flags count)
 ;;         | (? flags)
+;;         | (& flags count)
+;;         | (P flags)
 ;;         | (char flags <char> count) ; single-character insertion
 ;; flags : '() | (Cons #\@ flags) | (Cons #\: flags)
 
@@ -68,11 +70,11 @@
   (let ()
     (define (fmtstr p) (port-attribute-ref p 'format-string))
     (define (directive? c)
-      (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%&tT|(){}[];" c))
+      (string-scan "sSaAcCwWdDbBoOxXrR*?fF$~%&pPtT|(){}[];" c))
     (define directive-param-spec ; (type max-#-of-params [token-id])
       '((S 5) (A 5) (W 0) (C 0)
         (D 4) (B 4) (O 4) (X 4) (x 4) (* 1) (R 5) (r 5) (F 5) ($ 4) (? 0)
-        (& 1)
+        (& 1) (P 0)
         ;; single-character instertion
         (~ 1 #\~) (% 1 #\newline) (T 1 #\tab) (|\|| 1 #\page)
         ;; tokens for structures
@@ -218,6 +220,7 @@
 ;;      | (* flags count)
 ;;      | (? flags)
 ;;      | (& flags count)
+;;      | (P flags)
 ;;      | (char flags <char> count)
 ;;
 ;; argcnt : An integer if the formatter takes fixed number of arguments,
@@ -667,6 +670,20 @@
        (when (>= count 2)
          (dotimes [(- count 1)] (display "\n" port))))))
 
+;; ~P
+(define (make-format-plural fmtstr flags)
+  (^[argptr port ctl]
+    (when (has-:? flags)
+      (fr-jump-arg-relative! argptr -1))
+    (let1 arg (fr-next-arg! fmtstr argptr)
+      ;; NB: Only exact 1 is singular.
+      (if (eqv? arg 1)
+        (when (has-@? flags)
+          (display "y" port))
+        (if (has-@? flags)
+          (display "ies" port)
+          (display "s" port))))))
+
 ;; ~t, ~%, ~~, ~|
 (define (make-format-single fmtstr ch params flags)
   ($ with-format-params ([count 1])
@@ -695,6 +712,7 @@
     [('? fs)      (make-format-recur src fs)]
     [('* fs . ps) (make-format-jump src ps fs)]
     [('& fs . ps) (make-format-fresh-line src ps fs)]
+    [('P fs)      (make-format-plural src fs)]
     [('char fs c . ps) (make-format-single src c ps fs)]
     [_ (error "Unsupported formatter directive:" tree)]))
 

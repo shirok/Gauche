@@ -1,3 +1,7 @@
+2023-01-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm (make-format-plural): Support ~P.
+
 2023-01-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (define-class, define-generic, define-method):

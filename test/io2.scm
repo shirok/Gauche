@@ -250,6 +250,16 @@
 ;;---------------------------------------------------------------
 (test-section "obscure format features")
 
+(test* "format plural" "0 books, 1 book, 2 books, 1.0 books"
+       (format "~a book~p, ~a book~p, ~a book~p, ~a book~p"
+               0 0 1 1 2 2 1.0 1.0))
+(test* "format plural" "0 pens, 1 pen, 2 pens, 1.0 pens"
+       (format "~a pen~:p, ~a pen~:p, ~a pen~:p, ~a pen~:p"
+               0 1 2 1.0))
+(test* "format plural" "0 ponies, 1 pony, 2 ponies, 1.0 ponies"
+       (format "~a pon~:@p, ~a pon~:@p, ~a pon~:@p, ~a pon~:@p"
+               0 1 2 1.0))
+
 (test* "format roman numerals"
        '("I" "II" "III" "IV" "V" "VI" "VII" "VIII" "IX" "X")
        (map (^i (format "~@R" i)) (iota 10 1)))
