@@ -36,6 +36,8 @@
 ;; This module provides utilities that uses ports for communication
 ;; between threads and/or processes.
 
+;; TODO: Flow control.  Hold inlets if internal buffer reaches a certain limit.
+
 (define-module control.plumbing
   (use data.queue)
   (use gauche.record)
@@ -105,100 +107,117 @@
 (define (make-plumbing)
   (make <plumbing> :impl (atom (make <plumbing-impl>))))
 
+
+(define-syntax %with-locked-plumbing
+  (syntax-rules ()
+    [(_ plumbing proc)
+     (atomic (~ plumbing'impl) proc)]))
+
+;; impl is assumed to be locked in the following procedures
+(define (%add-inlet! plumbing impl inlet)
+  (push! (~ impl'inlets) inlet)
+  (set! (~ plumbing'num-inlets) (length (~ impl'inlets))))
+
+(define (%delete-inlet! plumbing impl inlet)
+  (update! (~ impl'inlets) (cut delete inlet <>))
+  (set! (~ plumbing'num-inlets) (length (~ impl'inlets))))
+
+(define (%add-outlet! plumbing impl outlet)
+  (push! (~ impl'outlets) outlet)
+  (set! (~ plumbing'num-outlets) (length (~ impl'outlets))))
+
+(define (%delete-outlet! plumbing impl outlet)
+  (update! (~ impl'outlets) (cut delete outlet <>))
+  (set! (~ plumbing'num-outlets) (length (~ impl'outlets))))
+
 ;;----------------------------------------------------------
 ;; inlets
 ;;
 
+;; API
 (define (open-inlet-output-port plumbing)
   (define inlet (make <plumbing-inlet> :thread #f))
   (define (flusher buffer flag)
     (let1 data (u8vector-copy buffer)
-      (atomic (~ plumbing'impl)
-              (^d (dolist [o (~ d'outlets)]
-                    ((~ o'put) d data))))
+      ($ %with-locked-plumbing plumbing
+         (^[impl] (dolist [o (~ impl'outlets)]
+                    ((~ o'put) impl data))))
       (u8vector-length data)))
   (define (closer)
-    (atomic (~ plumbing'impl)
-            (^d (update! (~ d'inlets) (cut delete inlet <>))
-                (set! (~ plumbing'num-inlets) (length (~ d'inlets)))
-                (when (null? (~ d'inlets))
-                  (dolist [o (~ d'outlets)]
-                    ((~ o'close) d))))))
+    ($ %with-locked-plumbing plumbing
+       (^[impl]
+         (%delete-inlet! plumbing impl inlet)
+         (when (null? (~ impl'inlets))
+           (dolist [o (~ impl'outlets)]
+             ((~ o'close) impl))))))
   (define port
     (make <buffered-output-port> :flush flusher :close closer))
   (port-attribute-set! port 'plumbing plumbing)
   (set! (~ inlet'port) port)
-  (atomic (~ plumbing'impl)
-          (^d (push! (~ d'inlets) inlet)
-              (set! (~ plumbing'num-inlets) (length (~ d'inlets)))))
+  (%with-locked-plumbing plumbing (cut %add-inlet! plumbing <> inlet))
   port)
 
+;; API
 (define (add-inlet-input-port! plumbing iport)
   (define inlet (make <plumbing-inlet> :port iport))
   (define (pump)
     (let1 data (read-uvector <u8vector> 4096 iport)
       (if (eof-object? data)
-        (atomic (~ plumbing'impl)
-                (^d (update! (~ d'inlets) (cut delete inlet <>))
-                    (set! (~ plumbing'num-inlets) (length (~ d'inlets)))
-                    (when (null? (~ d'inlets))
-                      (dolist [o (~ d'outlets)]
-                        ((~ o'close) d)))))
+        ($ %with-locked-plumbing plumbing
+           (^[impl]
+             (%delete-inlet! plumbing impl inlet)
+             (when (null? (~ impl'inlets))
+               (dolist [o (~ impl'outlets)]
+                 ((~ o'close) impl)))))
         (begin
-          (atomic (~ plumbing'impl)
-                  (^d (dolist [o (~ d'outlets)]
-                        ((~ o'put) d data))))
+          ($ %with-locked-plumbing plumbing
+             (^[impl]
+               (dolist [o (~ impl'outlets)]
+                 ((~ o'put) impl data))))
           (pump)))))
   (define thread (make-thread pump))
   (set! (~ inlet'thread) thread)
-  (atomic (~ plumbing'impl)
-          (^d (push! (~ d'inlets) inlet)
-              (set! (~ plumbing'num-inlets) (length (~ d'inlets)))))
+  (%with-locked-plumbing plumbing (cut %add-inlet! plumbing <> inlet))
   plumbing)
 
 ;;----------------------------------------------------------
 ;; outlets
 ;;
 
+;; API
 (define (add-outlet-output-port! plumbing oport :key (close-on-eof #f))
   (define outlet (make <plumbing-outlet>
-                   :put (^[d data] (write-uvector data oport))
-                   :close (^[d]
+                   :put (^[impl data] (write-uvector data oport))
+                   :close (^[impl]
                             (when close-on-eof
                               (close-output-port oport))
-                            (update! (~ d'outlets) (cut delete outlet <>))
-                            (set! (~ plumbing'num-outlets)
-                                  (length (~ d'outlets))))))
-  (atomic (~ plumbing'impl)
-          (^d (push! (~ d'outlets) outlet)
-              (set! (~ plumbing'num-outlets) (length (~ d'outlets)))))
+                            (%delete-outlet! plumbing impl outlet))))
+  (%with-locked-plumbing plumbing (cut %add-outlet! plumbing <> outlet))
   plumbing)
 
+;; API
 (define (open-outlet-input-port plumbing)
   (define mtq (make-mtqueue))
   (define outlet
     (make <plumbing-outlet>
-      :put (^[d data] (enqueue/wait! mtq data))
-      :close (^[d] (enqueue/wait! mtq (eof-object)))))
+      :put (^[impl data] (enqueue/wait! mtq data))
+      :close (^[impl] (enqueue/wait! mtq (eof-object)))))
   (define (filler buf)
     (let ([len (u8vector-length buf)]
           [data (dequeue/wait! mtq)])     ;this may block
       (cond [(eof-object? data)
-             (atomic (~ plumbing'impl)
-                     (^d (update! (~ d'outlets) (cut delete outlet <>))
-                         (set! (~ plumbing'num-outlets) (length (~ d'outlets)))))
+             ($ %with-locked-plumbing plumbing
+                (cut %delete-outlet! plumbing <> outlet))
              data]
             [(<= (u8vector-length data) len)
-                      (u8vector-copy! buf 0 data 0)
-                      (u8vector-length data)]
-                     [else
-                      (u8vector-copy! buf 0 data 0 len)
-                      (queue-push/wait! mtq (uvector-alias <u8vector> data len))
-                      len])))
+             (u8vector-copy! buf 0 data 0)
+             (u8vector-length data)]
+            [else
+             (u8vector-copy! buf 0 data 0 len)
+             (queue-push/wait! mtq (uvector-alias <u8vector> data len))
+             len])))
   (define port (make <buffered-input-port> :fill filler))
-  (atomic (~ plumbing'impl)
-          (^d (push! (~ d'outlets) outlet)
-              (set! (~ plumbing'num-outlets) (length (~ d'outlets)))))
+  (%with-locked-plumbing plumbing (cut %add-outlet! plumbing <> outlet))
   port)
 
 ;;;
