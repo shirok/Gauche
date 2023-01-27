@@ -72,9 +72,7 @@
 (define (hash-table-update! ht key proc :optional (thunk no-key-thunk))
   ((with-module gauche hash-table-update!)
    ht key
-   (^[v] (if (eq? v *unique*)
-           (thunk)
-           (proc v)))
+   (^[v] (proc (if (eq? v *unique*) (thunk) v)))
    *unique*))
 
 (define (hash-table-update!/default ht key proc default)
