@@ -44,11 +44,13 @@
   (use gauche.threads)
   (use gauche.uvector)
   (use gauche.vport)
+  (use util.match)
 
   (export make-plumbing
           open-inlet-output-port add-inlet-input-port!
           open-outlet-input-port add-outlet-output-port!
 
+          open-broadcast-output-port
           make-pump
           )
   )
@@ -223,6 +225,22 @@
 ;;;
 ;;; Convenience utilities
 ;;;
+
+;; CL's make-broadcast-stream
+;; Each arg can be an output port, or (<oport> <close-on-eof?>)
+(define (open-broadcast-output-port . destinations)
+  (define port&flags
+    (map (^d (match d
+               [(? output-port? oport) `(,oport #f)]
+               [((? output-port? oport) flag) `(,oport ,(boolean flag))]
+               [_ (error "An output port, or (<output-port> <flag>) is
+                          expected, but got" d)]))
+         destinations))
+  (define plumbing (make-plumbing))
+  (for-each (^p (add-outlet-output-port! plumbing (car p)
+                                         :close-on-eof (cadr p)))
+            port&flags)
+  (open-inlet-output-port plumbing))
 
 ;; Create a 'pump' - a device that reads from inlet-iport and
 ;; writes out to outlet-oport, run in an independent thread.

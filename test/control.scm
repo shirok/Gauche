@@ -485,4 +485,24 @@
                (get-output-string outlet1)))
   )
 
+(let ()
+  (define outlet0 (open-output-string))
+  (define outlet1 (open-output-string))
+  (define outlet2 (open-output-string))
+  (define inlet
+    (open-broadcast-output-port outlet0 `(,outlet1 #t) `(,outlet2 #f)))
+
+  (test* "broadcast output port" '(#f #t #f)
+         (begin
+           (display "a" inlet)
+           (close-output-port inlet)
+           (list (port-closed? outlet0)
+                 (port-closed? outlet1)
+                 (port-closed? outlet2))))
+  (test* "broadcast output port" '("a" "a" "a")
+         (list (get-output-string outlet0)
+               (get-output-string outlet1)
+               (get-output-string outlet2)))
+  )
+
 (test-end)
