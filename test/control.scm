@@ -443,6 +443,13 @@
       (list->string (reverse r))
       (begin (sys-nanosleep #e1e6) (gather-result expected-length))))
 
+  (test* "simple pipe, accessors" `((,inlet) (,outlet))
+         (list (plumbing-inlet-ports plumbing)
+               (plumbing-outlet-ports plumbing)))
+  (test* "simple pipe, port to plumbing" `(,plumbing ,plumbing)
+         (list (port-plumbing inlet)
+               (port-plumbing outlet)))
+
   (display "abc" inlet)
   (test* "simple pipe, not flushed" '() r)
   (flush inlet)
@@ -466,6 +473,18 @@
   (define outlet1 (open-output-string))
   (add-outlet-output-port! plumbing outlet0)
   (add-outlet-output-port! plumbing outlet1 :close-on-eof #t)
+
+  (test* "multi inlets, accessors" (list inlet0 inlet1)
+         (plumbing-inlet-ports plumbing)
+         (cut lset= eq? <> <>))
+  (test* "multi outlets, accessors" (list outlet0 outlet1)
+         (plumbing-outlet-ports plumbing)
+         (cut lset= eq? <> <>))
+  (test* "multi inlets/outlets, plumbing access" `(,plumbing ,plumbing #f #f)
+         (list (port-plumbing inlet0)
+               (port-plumbing inlet1)
+               (port-plumbing outlet0)
+               (port-plumbing outlet1)))
 
   (test* "closing outlet ports (not yet)" '(#f #f)
          (begin

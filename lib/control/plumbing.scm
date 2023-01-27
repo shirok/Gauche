@@ -46,7 +46,8 @@
   (use gauche.vport)
   (use util.match)
 
-  (export make-plumbing
+  (export make-plumbing plumbing-inlet-ports plumbing-outlet-ports
+          port-plumbing
           open-inlet-output-port add-inlet-input-port!
           open-outlet-input-port add-outlet-output-port!
 
@@ -75,18 +76,23 @@
           (~ p'num-inlets)
           (~ p'num-outlets)))
 
-;; Private classes
+;; Private classes - they're not exposed to outside.
 (define-class <plumbing-impl> ()
   ((outlets :init-value '())
    (inlets :init-value '())))
 
 (define-class <plumbing-outlet> ()
-  ((put :init-keyword :put)
-   (close :init-keyword :close)))
+  ((port  :init-keyword :port)
+   (put   :init-keyword :put)     ; (^ impl u8vector) -> void
+   (close :init-keyword :close))) ; (^ impl) -> void
 
 (define-class <plumbing-inlet> ()
   ((port :init-keyword :port)
    (thread :init-keyword :thread)))
+
+;; Key for port attributes.  Ports created by this module
+;; holds the originating <plumbing> object in this attribute.
+(define *plumbing-key* '#:plumbing)
 
 ;; The direction of the port (input/output) and whether it is used
 ;; as inlet or outlet for a plumbing is independent.  We have the
@@ -109,11 +115,27 @@
 (define (make-plumbing)
   (make <plumbing> :impl (atom (make <plumbing-impl>))))
 
-
 (define-syntax %with-locked-plumbing
   (syntax-rules ()
     [(_ plumbing proc)
      (atomic (~ plumbing'impl) proc)]))
+
+;; API
+(define (plumbing-inlet-ports plumbing)
+  (assume-type plumbing <plumbing>)
+  ($ %with-locked-plumbing plumbing
+     (^[impl] (map (cut ~ <> 'port) (~ impl'inlets)))))
+
+;; API
+(define (plumbing-outlet-ports plumbing)
+  (assume-type plumbing <plumbing>)
+  ($ %with-locked-plumbing plumbing
+     (^[impl] (map (cut ~ <> 'port) (~ impl'outlets)))))
+
+;; API
+(define (port-plumbing port)
+  (assume-type port <port>)
+  (port-attribute-ref port *plumbing-key* #f))
 
 ;; impl is assumed to be locked in the following procedures
 (define (%add-inlet! plumbing impl inlet)
@@ -154,7 +176,7 @@
              ((~ o'close) impl))))))
   (define port
     (make <buffered-output-port> :flush flusher :close closer))
-  (port-attribute-set! port 'plumbing plumbing)
+  (port-attribute-set! port *plumbing-key* plumbing)
   (set! (~ inlet'port) port)
   (%with-locked-plumbing plumbing (cut %add-inlet! plumbing <> inlet))
   port)
@@ -189,6 +211,7 @@
 ;; API
 (define (add-outlet-output-port! plumbing oport :key (close-on-eof #f))
   (define outlet (make <plumbing-outlet>
+                   :port oport
                    :put (^[impl data] (write-uvector data oport))
                    :close (^[impl]
                             (when close-on-eof
@@ -219,6 +242,8 @@
              (queue-push/wait! mtq (uvector-alias <u8vector> data len))
              len])))
   (define port (make <buffered-input-port> :fill filler))
+  (set! (~ outlet'port) port)
+  (port-attribute-set! port *plumbing-key* plumbing)
   (%with-locked-plumbing plumbing (cut %add-outlet! plumbing <> outlet))
   port)
 
