@@ -44,6 +44,7 @@
   (use gauche.threads)
   (use gauche.uvector)
   (use gauche.vport)
+  (use scheme.list)                     ;list-tabulate
   (use util.match)
 
   (export make-plumbing plumbing-inlet-ports plumbing-outlet-ports
@@ -52,7 +53,8 @@
           open-outlet-input-port add-outlet-output-port!
 
           open-broadcast-output-port
-          make-pump
+          make-pipe make-pump
+          open-tapping-input-port
           )
   )
 (select-module control.plumbing)
@@ -202,6 +204,7 @@
   (define thread (make-thread pump))
   (set! (~ inlet'thread) thread)
   (%with-locked-plumbing plumbing (cut %add-inlet! plumbing <> inlet))
+  (thread-start! thread)
   plumbing)
 
 ;;----------------------------------------------------------
@@ -244,6 +247,7 @@
   (define port (make <buffered-input-port> :fill filler))
   (set! (~ outlet'port) port)
   (port-attribute-set! port *plumbing-key* plumbing)
+  (set! (port-buffering port) :none)
   (%with-locked-plumbing plumbing (cut %add-outlet! plumbing <> outlet))
   port)
 
@@ -267,6 +271,19 @@
             port&flags)
   (open-inlet-output-port plumbing))
 
+;; Pipe owns one or more inlet oports and one or more outlet iports.
+;; Returns a list of inlet oports and a list of outlet iports.
+(define (make-pipe :key (num-inlets 1) (num-outlets 1))
+  (assume (and (exact-integer? num-inlets)
+               (>= num-inlets 1))
+          "One or more exact integer is expected, but got" num-inlets)
+  (assume (and (exact-integer? num-outlets)
+               (>= num-outlets 1))
+          "One or more exact integer is expected, but got" num-outlets)
+  (let1 plumbing (make-plumbing)
+    (values (list-tabulate num-inlets (^_ (open-inlet-output-port plumbing)))
+            (list-tabulate num-outlets (^_ (open-outlet-input-port plumbing))))))
+
 ;; Create a 'pump' - a device that reads from inlet-iport and
 ;; writes out to outlet-oport, run in an independent thread.
 ;; Returns a plumbing.
@@ -276,3 +293,13 @@
   (rlet1 plumbing (make-plumbing)
     (add-inlet-input-port! plumbing inlet-iport)
     (add-outlet-output-port! plumbing outlet-oport :close-on-eof close-on-eof)))
+
+;; Similar to CL's make-echo-stream, but we support only reading from
+;; the craeted port.  We may make it bidirectional stream later.
+(define (open-tapping-input-port inlet-iport outlet-oport :key (close-on-eof #f))
+  (assume (input-port? inlet-iport))
+  (assume (output-port? outlet-oport))
+  (let1 plumbing (make-plumbing)
+    (add-inlet-input-port! plumbing inlet-iport)
+    (add-outlet-output-port! plumbing outlet-oport :close-on-eof close-on-eof)
+    (open-outlet-input-port plumbing)))

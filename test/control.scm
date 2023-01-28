@@ -426,6 +426,8 @@
 ;; pipe, 1-in 1-out
 (let ()
   (define r '())
+
+  ;;  >[inlet]===[outlet]>
   (define plumbing (make-plumbing))
   (define inlet (open-inlet-output-port plumbing))
   (define outlet (open-outlet-input-port plumbing))
@@ -466,6 +468,10 @@
 
 ;; closing outlet automatically
 (let ()
+  ;;  >[inlet0]==\   /=> {outlet0}
+  ;;              +=+
+  ;;  >[inlet1]==/   \=> {outlet1}
+
   (define plumbing (make-plumbing))
   (define inlet0 (open-inlet-output-port plumbing))
   (define inlet1 (open-inlet-output-port plumbing))
@@ -505,6 +511,9 @@
   )
 
 (let ()
+  ;;  {outlet0} >=\
+  ;;               +===> {outlet2}
+  ;;  {outlet1} >=/
   (define outlet0 (open-output-string))
   (define outlet1 (open-output-string))
   (define outlet2 (open-output-string))
