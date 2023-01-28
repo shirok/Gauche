@@ -255,16 +255,19 @@
 ;;; Convenience utilities
 ;;;
 
+;; outlet output port may be given as #<oport> or (#<oport> flags)
+(define (%oport&flags opspecs)
+  (map (^d (match d
+             [(? output-port? oport) `(,oport #f)]
+             [((? output-port? oport) flag) `(,oport ,(boolean flag))]
+             [_ (error "An output port, or (<output-port> <flag>) is
+                        expected, but got" d)]))
+       opspecs))
+
 ;; CL's make-broadcast-stream
 ;; Each arg can be an output port, or (<oport> <close-on-eof?>)
 (define (open-broadcast-output-port . destinations)
-  (define port&flags
-    (map (^d (match d
-               [(? output-port? oport) `(,oport #f)]
-               [((? output-port? oport) flag) `(,oport ,(boolean flag))]
-               [_ (error "An output port, or (<output-port> <flag>) is
-                          expected, but got" d)]))
-         destinations))
+  (define port&flags (%oport&flags destinations))
   (define plumbing (make-plumbing))
   (for-each (^p (add-outlet-output-port! plumbing (car p)
                                          :close-on-eof (cadr p)))
@@ -284,15 +287,18 @@
     (values (list-tabulate num-inlets (^_ (open-inlet-output-port plumbing)))
             (list-tabulate num-outlets (^_ (open-outlet-input-port plumbing))))))
 
-;; Create a 'pump' - a device that reads from inlet-iport and
-;; writes out to outlet-oport, run in an independent thread.
+;; Create a 'pump' - a device that reads from inlet-iport(s) and
+;; writes out to outlet-oport(s), run in an independent thread.
 ;; Returns a plumbing.
-(define (make-pump inlet-iport outlet-oport :key (close-on-eof #f))
-  (assume (input-port? inlet-iport))
-  (assume (output-port? outlet-oport))
+(define (make-pump inlet-iports outlet-oports)
+  (define oport&flags (%oport&flags outlet-oports))
+  (assume (every input-port? inlet-iports))
   (rlet1 plumbing (make-plumbing)
-    (add-inlet-input-port! plumbing inlet-iport)
-    (add-outlet-output-port! plumbing outlet-oport :close-on-eof close-on-eof)))
+    (dolist [ip inlet-iports]
+      (add-inlet-input-port! plumbing ip))
+    (dolist [op&f oport&flags]
+      (add-outlet-output-port! plumbing (car op&f)
+                               :close-on-eof (cadr op&f)))))
 
 ;; Similar to CL's make-echo-stream, but we support only reading from
 ;; the craeted port.  We may make it bidirectional stream later.
