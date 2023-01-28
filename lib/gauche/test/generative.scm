@@ -155,7 +155,7 @@
                   (parameterize ([%current-data data]
                                  [%current-count n])
                     (apply proc data)))))
-            (format #t "Passes ~a check~a.\n" c (if (= c 1) "" "s"))
+            (format #t "Passes ~a check~:p.\n" c)
             #t))))))
 
 (define (%ensure qexpr expected thunk :optional (cmp test-check))

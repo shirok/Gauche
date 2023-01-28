@@ -83,7 +83,7 @@
                              (all-modules))
     (if (null? bindings)
       (format #t "No known bindings for variable ~a.\n" sym)
-      (begin (format #t "Known binding~a for variable ~a:\n"
-                     (if (null? (cdr bindings)) "" "s") sym)
+      (begin (format #t "Known binding~p for variable ~a:\n"
+                     (length bindings) sym)
              (for-each (cut apply describe-binding <>) bindings))))
   (values))
