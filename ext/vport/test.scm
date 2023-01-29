@@ -323,6 +323,16 @@
            (list a b s c)))
   )
 
+;; buffered input port and buffering mode
+(let ()
+  (define p (make <buffered-input-port>
+              :fill (^[buf] (u8vector-set! buf 0 #x20) 1)
+              :ready (^[] #f)))
+  (set! (port-buffering p) :none)
+  (test* "buffered-input-port premature return" '#u8(#x20)
+         (read-uvector <u8vector> 20 p))
+  )
+
 ;;-----------------------------------------------------------
 (test-section "buffered-output-port")
 
