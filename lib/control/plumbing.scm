@@ -226,25 +226,31 @@
 ;; API
 (define (open-outlet-input-port plumbing)
   (define mtq (make-mtqueue))
+  (define eof-reached? #f)
   (define outlet
     (make <plumbing-outlet>
       :put (^[impl data] (enqueue/wait! mtq data))
       :close (^[impl] (enqueue/wait! mtq (eof-object)))))
   (define (filler buf)
-    (let ([len (u8vector-length buf)]
-          [data (dequeue/wait! mtq)])     ;this may block
-      (cond [(eof-object? data)
-             ($ %with-locked-plumbing plumbing
-                (cut %delete-outlet! plumbing <> outlet))
-             data]
-            [(<= (u8vector-length data) len)
-             (u8vector-copy! buf 0 data 0)
-             (u8vector-length data)]
-            [else
-             (u8vector-copy! buf 0 data 0 len)
-             (queue-push/wait! mtq (uvector-alias <u8vector> data len))
-             len])))
-  (define port (make <buffered-input-port> :fill filler))
+    (if eof-reached?
+      (eof-object)
+      (let ([len (u8vector-length buf)]
+            [data (dequeue/wait! mtq)])     ;this may block
+        (cond [(eof-object? data)
+               (set! eof-reached? #t)
+               ($ %with-locked-plumbing plumbing
+                  (cut %delete-outlet! plumbing <> outlet))
+               data]
+              [(<= (u8vector-length data) len)
+               (u8vector-copy! buf 0 data 0)
+               (u8vector-length data)]
+              [else
+               (u8vector-copy! buf 0 data 0 len)
+               (queue-push/wait! mtq (uvector-alias <u8vector> data len))
+               len]))))
+  (define (ready?)
+    (or eof-reached? (not (queue-empty? mtq))))
+  (define port (make <buffered-input-port> :fill filler :ready ready?))
   (set! (~ outlet'port) port)
   (port-attribute-set! port *plumbing-key* plumbing)
   (set! (port-buffering port) :none)

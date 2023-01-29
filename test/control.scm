@@ -1,6 +1,8 @@
 ;; Tests for control.* modules
 
 (use gauche.test)
+(use gauche.vport)
+(use gauche.threads)
 (use scheme.list)
 (use srfi.19)
 (use data.queue)
@@ -508,8 +510,10 @@
   (test* "outlet content" '("ab" "ab")
          (list (get-output-string outlet0)
                (get-output-string outlet1)))
+
   )
 
+;; broadcast output port
 (let ()
   ;;  {outlet0} >=\
   ;;               +===> {outlet2}
@@ -531,6 +535,105 @@
          (list (get-output-string outlet0)
                (get-output-string outlet1)
                (get-output-string outlet2)))
+  )
+
+;; pipe
+(let ()
+  ;;  >[in0]==\    /==[out0]>
+  ;;           +==+
+  ;;  >[in1]==/    \==[out1]>
+  (define-values (ins outs) (make-pipe :num-inlets 2 :num-outlets 2))
+  (define-values (in0 in1) (apply values ins))
+  (define-values (out0 out1) (apply values outs))
+  (test* "pipe" '("abcdef" "ghij")
+         (begin
+           (display "abcde" in0)
+           (flush in0)
+           (display "f\nghij\n" in1)
+           (flush in1)
+           (let* ([a (read-line out0)]
+                  [b (read-line out0)])
+             (list a b))))
+  (test* "pipe, flush on close" "klmno"
+         (begin
+           (display "klmno\n" in0)
+           (close-output-port in0)
+           (read-line out0)))
+  (test* "pipe, closing propagation (not yet)" #f
+         (port-closed? out0))
+  (test* "pipe, closing propagation" (eof-object)
+         (begin
+           (close-output-port in1)
+           (read-line out0)))
+  (test* "pipe, closing" "abcdef\nghij\nklmno\n"
+         (port->string out1))
+  )
+
+;; pump
+(let ()
+  ;; {in} >====> {out}
+  (define mtq (make-mtqueue))
+  (define in (let ([eof? #f])
+               (make <buffered-input-port>
+                 :fill (^[buf]
+                         (if eof?
+                           (eof-object)
+                           (let1 ch (dequeue/wait! mtq)
+                             (if (eof-object? ch)
+                               (begin (set! eof? #t) ch)
+                               (begin (set! (~ buf 0) (char->integer ch)) 1)))))
+                 :ready (^[] (or eof? (not (queue-empty? mtq)))))))
+  (define out (open-output-string))
+  (define pump (make-pump `(,in) `((,out #t))))
+
+  (set! (port-buffering in) :none)
+  (test* "pump" ""
+         (get-output-string out))
+  (test* "pump" "a"
+         (begin (enqueue/wait! mtq #\a)
+                (sys-nanosleep #e5e6)
+                (get-output-string out)))
+  (test* "pump" "ab"
+         (begin (enqueue/wait! mtq #\b)
+                (sys-nanosleep #e5e6)
+                (get-output-string out)))
+  (test* "pump" "ab"
+         (begin (enqueue/wait! mtq (eof-object))
+                (sys-nanosleep #e5e6)
+                (get-output-string out)))
+  (test* "pump" #t
+         (port-closed? out))
+  )
+
+
+;; tapping
+(let ()
+  ;;          pipe               tapping
+  ;;  {feed} >===[intermediate]>>==+==> {outlet}
+  ;;                                \
+  ;;                                 =[tap]>
+  (define-values (feeds intermediates) (make-pipe))
+  (define outlet (open-output-string))
+  (define tap (open-tapping-input-port (car intermediates)
+                                       outlet :close-on-eof #t))
+  (test* "pipe & tap (tap)" "abcde"
+         (begin
+           (display "abcde\n" (car feeds))
+           (flush (car feeds))
+           (read-line tap)))
+  (test* "pipe & tap (outlet)" "abcde\nfghij\n"
+         (begin
+           (display "fghij\n" (car feeds))
+           (close-output-port (car feeds))
+           (while (not (port-closed? outlet))
+             (sys-nanosleep #e5e7))
+           (get-output-string outlet)))
+  (test* "pipe & tap (outlet, close)" #t
+         (port-closed? outlet))
+  (test* "pipe & tap (tap)" "fghij"
+         (read-line tap))
+  (test* "pipe & tap (eof)" (eof-object)
+         (read-line tap))
   )
 
 (test-end)
