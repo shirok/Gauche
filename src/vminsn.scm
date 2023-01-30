@@ -790,6 +790,28 @@
   ($lset (SCM_VM_INSN_ARG0 code)        ; depth
          (SCM_VM_INSN_ARG1 code)))      ; offset
 
+;; XLSET(offset) depth
+;;   LSET, but used when depth and/or offset can't fit in the params field.
+(define-insn XLSET 1 obj #f
+  (let* ([dep_s])
+    (FETCH-OPERAND dep_s)
+    INCR-PC
+    ($lset (SCM_INT_VALUE dep_s)        ; depth
+           (SCM_VM_INSN_ARG code))))    ; offset
+
+;; ENV-SET(offset)
+;;  Mutate the top env's specified slot with VAL0
+;;  This is used with LOCAL-ENV-CLOSURES to initialize non-procedure
+;;  slots of the env.  We used to use LSET for this purpose, but now
+;;  LSET counts on that all mutable lvars are boxed, so we need a separete
+;;  insn that directly initialize the env frame.
+(define-insn ENV-SET 1 none #f
+  (let* ([off::int (SCM_VM_INSN_ARG code)])
+    (VM-ASSERT (> (-> ENV size) off))
+    (SCM_FLONUM_ENSURE_MEM VAL0)
+    (set! (ENV-DATA ENV off) VAL0)
+    NEXT))
+
 ;; GSET <location>
 ;;  LOCATION may be a symbol or gloc
 ;;
@@ -848,6 +870,15 @@
 (define-insn LREF30-PUSH 0 none  (LREF30 PUSH))
 
 (define-insn-lref* LREF-RET 0 none (LREF RET))
+
+;; XLREF(offset) depth
+;;   LREF, but used when depth and/or offset can't fit in the params field.
+(define-insn XLREF 1 obj #f
+  (let* ([dep_s])
+    (FETCH-OPERAND dep_s)
+    INCR-PC
+    ($lref (SCM_INT_VALUE dep_s)          ;depth
+           (SCM_VM_INSN_ARG code))))      ;offset
 
 ;; GREF <location>
 ;;  LOCATION may be a symbol or GLOC object.
@@ -1459,19 +1490,6 @@
                  (set! (ENV-DATA ENV off) (SCM_OBJ b)))))])
     NEXT))
 
-;; ENV-SET(offset)
-;;  Mutate the top env's specified slot with VAL0
-;;  This is used with LOCAL-ENV-CLOSURES to initialize non-procedure
-;;  slots of the env.  We used to use LSET for this purpose, but now
-;;  LSET counts on that all mutable lvars are boxed, so we need a separete
-;;  insn that directly initialize the env frame.
-(define-insn ENV-SET 1 none #f
-  (let* ([off::int (SCM_VM_INSN_ARG code)])
-    (VM-ASSERT (> (-> ENV size) off))
-    (SCM_FLONUM_ENSURE_MEM VAL0)
-    (set! (ENV-DATA ENV off) VAL0)
-    NEXT))
-
 ;; UNBOX
 ;;  VAL0 <- unbox(VAL0)
 (define-insn UNBOX 0 none #f
@@ -1489,26 +1507,6 @@
   (begin
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     NEXT))
-
-;; TRANSIENT: TODO: Move these up below LREF on 1.0 release
-
-;; XLREF(offset) depth
-;;   LREF, but used when depth and/or offset can't fit in the params field.
-(define-insn XLREF 1 obj #f
-  (let* ([dep_s])
-    (FETCH-OPERAND dep_s)
-    INCR-PC
-    ($lref (SCM_INT_VALUE dep_s)          ;depth
-           (SCM_VM_INSN_ARG code))))      ;offset
-
-;; XLSET(offset) depth
-;;   LSET, but used when depth and/or offset can't fit in the params field.
-(define-insn XLSET 1 obj #f
-  (let* ([dep_s])
-    (FETCH-OPERAND dep_s)
-    INCR-PC
-    ($lset (SCM_INT_VALUE dep_s)        ; depth
-           (SCM_VM_INSN_ARG code))))    ; offset
 
 ;; EXTEND-DENV addr
 ;; TAIL-EXTEND-DENV
