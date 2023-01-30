@@ -892,7 +892,7 @@ static struct {
     int flags;                  /* flags */
 } insn_table[] = {
 #define DEFINSN(sym, nam, np, type, flags)                     \
-    { nam, np, SCM_CPP_CAT(SCM_VM_OPERAND_, type), flags },
+    [sym] = { nam, np, SCM_CPP_CAT(SCM_VM_OPERAND_, type), flags },
 #include "vminsn.c"
 #undef DEFINSN
 };

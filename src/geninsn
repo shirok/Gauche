@@ -447,7 +447,7 @@
       (cgen-extern "enum {")
       (cgen-body "#ifdef DEFINSN")
       (dolist [insn insns]
-        (cgen-extern #"  ~(c-insn-name (~ insn'name)),")
+        (cgen-extern #"  ~(c-insn-name (~ insn'name)) = ~(~ insn'code),")
         (cgen-body (format "DEFINSN(~a, \"~a\", ~a, ~a, ~a)"
                            (c-insn-name (~ insn'name)) (~ insn'name)
                            (~ insn'num-params)
