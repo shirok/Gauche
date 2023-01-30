@@ -548,7 +548,7 @@
   (define outlet1 (open-output-string))
   (define outlet2 (open-output-string))
   (define inlet
-    (open-broadcast-output-port outlet0 `(,outlet1 #t) `(,outlet2 #f)))
+    (open-broadcast-output-port outlet0 `(,outlet1 coe) `(,outlet2 async)))
 
   (test* "broadcast output port" '(#f #t #f)
          (begin
@@ -610,7 +610,7 @@
                                (begin (set! (~ buf 0) (char->integer ch)) 1)))))
                  :ready (^[] (or eof? (not (queue-empty? mtq)))))))
   (define out (open-output-string))
-  (define pump (make-pump `(,in) `((,out #t))))
+  (define pump (make-pump `(,in) `((,out coe))))
 
   (set! (port-buffering in) :none)
   (test* "pump" ""

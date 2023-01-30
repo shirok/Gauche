@@ -290,11 +290,24 @@
 ;;; Convenience utilities
 ;;;
 
-;; outlet output port may be given as #<oport> or (#<oport> flags)
+;; outlet output port may be given as #<oport> or (#<oport> <option> ...)
+;; <option> can be one of those symbols:
+;;   coe :   close-on-eof flag
+;;   async : asynchronous flag
+;; Returns a list of (<oport> <close-on-eof> <async>)
 (define (%oport&flags opspecs)
   (map (^d (match d
-             [(? output-port? oport) `(,oport #f)]
-             [((? output-port? oport) flag) `(,oport ,(boolean flag))]
+             [(? output-port? oport) `(,oport #f #f)]
+             [((? output-port? oport) . flags)
+              (let loop ([flags flags]
+                         [coe #f]
+                         [async #f])
+                (match flags
+                  [() `(,oport ,coe ,async)]
+                  [('coe . flags) (loop flags #t async)]
+                  [('async . flags) (loop flags coe #t)]
+                  [(bad . _) (errorf "Unrecognized outlet flag ~s in ~s"
+                                     bad opspecs)]))]
              [_ (error "An output port, or (<output-port> <flag>) is
                         expected, but got" d)]))
        opspecs))
@@ -304,8 +317,11 @@
 (define (open-broadcast-output-port . destinations)
   (define port&flags (%oport&flags destinations))
   (define plumbing (make-plumbing))
-  (for-each (^p (add-outlet-output-port! plumbing (car p)
-                                         :close-on-eof (cadr p)))
+  (for-each (match-lambda
+              [(oport coe async)
+               (add-outlet-output-port! plumbing oport
+                                        :close-on-eof coe
+                                        :asynchronous async)])
             port&flags)
   (open-inlet-output-port plumbing))
 
@@ -332,8 +348,10 @@
     (dolist [ip inlet-iports]
       (add-inlet-input-port! plumbing ip))
     (dolist [op&f oport&flags]
-      (add-outlet-output-port! plumbing (car op&f)
-                               :close-on-eof (cadr op&f)))))
+      (match-let1 (oport coe async) op&f
+        (add-outlet-output-port! plumbing oport
+                                 :close-on-eof coe
+                                 :asynchronous async)))))
 
 ;; Similar to CL's make-echo-stream, but we support only reading from
 ;; the craeted port.  We may make it bidirectional stream later.
