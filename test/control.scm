@@ -554,6 +554,7 @@
          (begin
            (display "a" inlet)
            (close-output-port inlet)
+           (sys-nanosleep #e5e6)
            (list (port-closed? outlet0)
                  (port-closed? outlet1)
                  (port-closed? outlet2))))
