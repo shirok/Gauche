@@ -86,7 +86,8 @@
 (define-class <plumbing-outlet> ()
   ((port  :init-keyword :port)
    (put   :init-keyword :put)     ; (^ impl u8vector) -> void
-   (close :init-keyword :close))) ; (^ impl) -> void
+   (close :init-keyword :close)   ; (^ impl) -> void
+   (thread :init-value #f)))
 
 (define-class <plumbing-inlet> ()
   ((port :init-keyword :port)
@@ -212,7 +213,17 @@
 ;;
 
 ;; API
-(define (add-outlet-output-port! plumbing oport :key (close-on-eof #f))
+(define (add-outlet-output-port! plumbing oport
+                                 :key (close-on-eof #f)
+                                      (asynchronous #f))
+  (define outlet
+    (if asynchronous
+      (%make-async-output-outlet! plumbing oport close-on-eof)
+      (%make-simple-output-outlet! plumbing oport close-on-eof)))
+  (%with-locked-plumbing plumbing (cut %add-outlet! plumbing <> outlet))
+  plumbing)
+
+(define (%make-simple-output-outlet! plumbing oport close-on-eof)
   (define outlet (make <plumbing-outlet>
                    :port oport
                    :put (^[impl data] (write-uvector data oport))
@@ -220,8 +231,26 @@
                             (when close-on-eof
                               (close-output-port oport))
                             (%delete-outlet! plumbing impl outlet))))
-  (%with-locked-plumbing plumbing (cut %add-outlet! plumbing <> outlet))
-  plumbing)
+  outlet)
+
+(define (%make-async-output-outlet! plumbing oport close-on-eof)
+  (define mtq (make-mtqueue))
+  (define (feeder)
+    (let1 data (dequeue/wait! mtq)
+      (if (eof-object? data)
+        (begin (when close-on-eof
+                 (close-output-port oport))
+               ($ %with-locked-plumbing plumbing
+                  (cut %delete-outlet! plumbing <> outlet)))
+        (begin (write-uvector data oport)
+               (feeder)))))
+  (define outlet
+    (make <plumbing-outlet>
+      :port oport
+      :put (^[impl data] (enqueue/wait! mtq data))
+      :close (^[impl] (enqueue/wait! mtq (eof-object)))))
+  (set! (~ outlet'thread) (thread-start! (make-thread feeder)))
+  outlet)
 
 ;; API
 (define (open-outlet-input-port plumbing)

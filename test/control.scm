@@ -513,11 +513,37 @@
 
   )
 
+;; asynchronous output outlet
+(let ()
+  ;; >[inlet] ==> {outlet}
+  (define outlet (open-output-string))
+  (define plumbing (make-plumbing))
+  (define inlet (open-inlet-output-port plumbing))
+
+  (test* "async outlet output" "a"
+         (begin
+           (add-outlet-output-port! plumbing outlet
+                                    :asynchronous #t
+                                    :close-on-eof #t)
+           (display "a" inlet)
+           (flush inlet)
+           (sys-nanosleep #e5e6)
+           (get-output-string outlet)))
+  (test* "async outlet output" "abc"
+         (begin
+           (display "bc" inlet)
+           (close-output-port inlet)
+           (sys-nanosleep #e5e6)
+           (get-output-string outlet)))
+  (test* "async outlet output" #t
+         (port-closed? outlet))
+  )
+
 ;; broadcast output port
 (let ()
-  ;;  {outlet0} >=\
-  ;;               +===> {outlet2}
-  ;;  {outlet1} >=/
+  ;;              /=> {outlet0]
+  ;;  >[inlet] ==+==> {outlet1}
+  ;;              \=> {outlet2}
   (define outlet0 (open-output-string))
   (define outlet1 (open-output-string))
   (define outlet2 (open-output-string))
