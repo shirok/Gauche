@@ -181,8 +181,10 @@ typedef struct ScmEscapePointRec {
                                    but SRFI-34's guard needs the former model.
                                 */
 
+    /* The following fields are used for new implementation of partial cont. */
     ScmObj promptTag;
     ScmObj abortHandler;
+    struct ScmEscapePointRec *bottom;
 } ScmEscapePoint;
 
 /* Escape types */

@@ -655,6 +655,16 @@ static void vm_unregister(ScmVM *vm)
     } while (0)
 
 /* return operation. */
+#if NEW_PARTCONT
+#define RETURN_OP()                                     \
+    do {                                                \
+        if (CONT == NULL || BOUNDARY_FRAME_P(CONT)) {   \
+            return; /* no more continuations */         \
+        } else {                                        \
+            POP_CONT();                                 \
+        }                                               \
+    } while (0)
+#else
 #define RETURN_OP()                                     \
     do {                                                \
         if (CONT == NULL || BOUNDARY_FRAME_P(CONT)) {   \
@@ -667,6 +677,7 @@ static void vm_unregister(ScmVM *vm)
             POP_CONT();                                 \
         }                                               \
     } while (0)
+#endif
 
 /* push environment header to finish the environment frame.
    env, sp, argp is updated. */
@@ -1857,6 +1868,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
     ep->rewindBefore = rewindBefore;
     ep->promptTag = promptTag;
     ep->abortHandler = abortHandler;
+    ep->bottom = NULL;
     return ep;
 }
 
@@ -3566,6 +3578,28 @@ static ScmObj shift_body(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED,
 }
 #endif
 
+#if NEW_PARTCONT
+/* Invoke partial continuation.  We extend the current continuation
+   with the delimited continuation. */
+static ScmObj throw_partial_continuation(ScmObj *argv, int argc, void *data)
+{
+    ScmVM *vm = theVM;
+    ScmEscapePoint *ep = (ScmEscapePoint*)data;
+    SCM_ASSERT(argc == 1);
+    ScmObj args = argv[0];
+
+    fprintf(stderr, "ZZZZpp\n");
+
+    save_cont(vm);
+
+    vm->escapePoint =
+        new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
+    vm->cont = ep->cont;
+    return Scm_Values(args);
+}
+#endif //NEW_PARTCONT
+
+
 /* call with partial continuation.  this corresponds to the 'shift' operator
    in shift/reset controls (Gasbichler&Sperber, "Final Shift for Call/cc",
    ICFP02.)   Note that we treat the boundary frame as the bottom of
@@ -3581,17 +3615,22 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     save_cont(vm);
 
 #if NEW_PARTCONT
-    /* Partial continaution uses CONT and DENV when it is invoked
+    /* Partial continuation uses DENV when it is invoked
        (as opposed to when it is captured), so we nullify those slots.
        ep->cstack == NULL indicates it's a partial continuation.
     */
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
     ep->prev = NULL;
-    ep->cont = NULL;
     ep->denv = SCM_NIL;
     ep->cstack = NULL;
 
-    ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
+    ScmEscapePoint *bottom = find_prompt_frame(vm, Scm_DefaultPromptTag());
+    if (bottom == NULL) {
+        Scm_Error("shift called without reset");
+    }
+    ep->bottom = bottom;
+
+    ScmObj contproc = Scm_MakeSubr(throw_partial_continuation, ep, 0, 1,
                                    continuation_symbol);
     ScmObj *shift_data = SCM_NEW_ARRAY(ScmObj, 2);
     shift_data[0] = proc;
