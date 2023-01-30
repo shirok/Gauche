@@ -39,6 +39,7 @@
 (use file.util)
 (use gauche.cgen)
 (use gauche.mop.instance-pool)
+(use gauche.parseopt)
 (use gauche.sequence)
 (use gauche.vm.insn-core)
 (use srfi.13)
@@ -369,14 +370,14 @@
 ;;
 ;; Parse a single define-insn form
 ;;
-(define (parse-define-insn insn-num definsn)
+(define (parse-define-insn definsn)
   (match definsn
     [(_ name num-params operand-type . opts)
      (let-optionals* opts ([combined #f]
                            [body #f]
                            . flags)
        (make <vm-insn-info>
-         :name name :code insn-num
+         :name name
          :num-params (if (pair? num-params) (car num-params) num-params)
          :alt-num-params (if (pair? num-params) (cdr num-params) '())
          :operand-type operand-type :combined combined
@@ -386,12 +387,23 @@
          :fold-lref (boolean (memq :fold-lref flags))))]
     [else (errorf "unrecognized define-insn form: ~s" definsn)]))
 
+;; opcmap :: ((NAME . CODE) ...)
+(define (assign-opcode! insns opcmap)
+  (define code (find-max opcmap :key cdr :default -1))
+  (dolist [insn insns]
+    (if-let1 c (assq-ref opcmap (~ insn'name))
+      (set! (~ insn'code) c)
+      (begin
+        (inc! code)
+        (set! (~ insn'code) code)))))
+
 ;;
 ;; From S-expr of define-insns, create <vm-insn-info> instances
 ;; and make necessary wiring.
 ;;
-(define (populate-insn-info definsns)
-  (rlet1 insns (map-with-index parse-define-insn definsns)
+(define (populate-insn-info definsns opcmap)
+  (let1 insns (map parse-define-insn definsns)
+    (assign-opcode! insns opcmap)
     ;; Set up insn relationships
     (dolist [insn insns]
       (and-let* ([comb (~ insn'combined)])
@@ -405,16 +417,32 @@
 
         (case (car (last-pair comb))
           [(PUSH) (wire "PUSH" 'push-variant)]
-          [(RET)  (wire "RET"  'ret-variant)])))))
+          [(RET)  (wire "RET"  'ret-variant)])))
+    (sort-by insns (cut ~ <> 'code))))
 
 ;;
-;; Main
+;; opcode map
 ;;
-(define (main args)
+(define (read-opcmap opcmap)
+  (if-let1 p (and opcmap (open-input-file opcmap :if-does-not-exist #f))
+    (begin0 (port->sexp-list p) (close-port p))
+    '()))
+
+(define (gen-opcmap insns)
+  (print ";; VM instruction name to opcode map")
+  (print ";; To regenerate this, run 'make generate-opcode-map'")
+  (print)
+  (dolist [insn insns]
+    (format #t "(~s . ~s)\n" (~ insn'name) (~ insn'code)))
+  )
+
+;;
+;; Operations
+;;
+(define (generate vminsn.scm opcmap.scm opcmap.out)
   (parameterize ([cgen-current-unit *unit*])
-    (let1 insns ($ populate-insn-info $ reverse $ expand-toplevels
-                   $ get-optional (cdr args) "vminsn.scm")
-
+    (let1 insns (populate-insn-info (reverse (expand-toplevels vminsn.scm))
+                                    (read-opcmap opcmap.scm))
       ;; Generate insn names and DEFINSN macros
       (cgen-extern "enum {")
       (cgen-body "#ifdef DEFINSN")
@@ -449,7 +477,21 @@
       (cgen-emit-h (cgen-current-unit))
       (cgen-emit-c (cgen-current-unit))
       (gen-gauche.vm.insn insns)
-      0)))
+      (when opcmap.out
+        (with-output-to-file opcmap.out
+          (cut gen-opcmap insns)))
+      )))
+
+;;
+;; Main
+;;
+(define (main args)
+  (let-args (cdr args) ([vminsn.scm "vminsn=s" "vminsn.scm"]
+                        [opcmap.scm "opcode-map=s" #f]
+                        [opcmap.out "gen-opcode-map=s" #f])
+    #?=(list vminsn.scm opcmap.scm opcmap.out)
+    (generate vminsn.scm opcmap.scm opcmap.out))
+  0)
 
 ;; Local variables:
 ;; mode: scheme

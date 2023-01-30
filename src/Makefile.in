@@ -294,10 +294,16 @@ builtin-syms.c gauche/priv/builtin-syms.h : builtin-syms.scm
 	$(BUILD_GOSH) builtin-syms.scm
 
 vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
-	$(BUILD_GOSH) geninsn $(srcdir)/vminsn.scm
+	$(BUILD_GOSH) geninsn --vminsn $(srcdir)/vminsn.scm \
+			      --opcode-map $(srcdir)/vm-opcode-map.scm
 
 features.c features.flags : gen-features.sh gauche/config.h
 	$(srcdir)/gen-features.sh $(top_srcdir) $(top_builddir)
+
+generate-opcode-map :
+	$(BUILD_GOSH) geninsn --vminsn $(srcdir)/vminsn.scm \
+			      --opcode-map $(srcdir)/vm-opcode-map.scm \
+			      --gen-opcode-map $(srcdir)/vm-opcode-map.scm
 
 # NB: libsrfis.scm, lib/srfi-*.scm and doc/srfis.texi are all generated
 # by srfis.scm.  However, if we don't have srfi-0.scm but have libsrfis.scm,
