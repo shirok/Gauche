@@ -147,9 +147,9 @@
  ;; NB: On MinGW, if we try to create a file and a directory with the
  ;; same name exists, open(2) throws EACCES.  Weird, eh?  We don't want
  ;; to catch EACCES on other platforms, hence this dirty trick.
- (if "defined(GAUCHE_WINDOWS)"
-   "#define DIRECTORY_GETS_IN_WAY(x) ((x)==EACCES)"
-   "#define DIRECTORY_GETS_IN_WAY(x) FALSE")
+ (.if (defined GAUCHE_WINDOWS)
+   (.define DIRECTORY_GETS_IN_WAY (x) (== x EACCES))
+   (.define DIRECTORY_GETS_IN_WAY (x) FALSE))
 
  ;; Some cise macros for common idioms
  (define-cise-expr %open/allow-noexist?
@@ -183,10 +183,10 @@
                 (SCM_EQ element-type ':binary))
       (Scm_Error "bad element-type argument: either :character or :binary \
                   expected, but got %S" element-type))
-    (.if "defined(O_BINARY) && defined(O_TEXT)"
-         (if (SCM_EQ element-type ':character)
-           (logior= flags O_TEXT)
-           (logior= flags O_BINARY)))
+    (.if (and (defined O_BINARY) (defined O_TEXT))
+      (if (SCM_EQ element-type ':character)
+        (logior= flags O_TEXT)
+        (logior= flags O_BINARY)))
     (let* ([bufmode::int (Scm_BufferingMode buffering SCM_PORT_INPUT
                                             SCM_PORT_BUFFER_FULL)]
            [o (Scm_OpenFilePort (Scm_GetStringConst path)
@@ -209,10 +209,10 @@
                 (SCM_EQ element-type ':binary))
       (Scm_Error "bad element-type argument: either :character or :binary \
                   expected, but got %S" element-type))
-    (.if "defined(O_BINARY) && defined(O_TEXT)"
-         (if (SCM_EQ element-type ':character)
-           (logior= flags O_TEXT)
-           (logior= flags O_BINARY)))
+    (.if (and (defined O_BINARY) (defined O_TEXT))
+      (if (SCM_EQ element-type ':character)
+        (logior= flags O_TEXT)
+        (logior= flags O_BINARY)))
     ;; check if-exists flag
     (cond
      [(SCM_EQ if-exists ':append) (logior= flags O_APPEND)]
