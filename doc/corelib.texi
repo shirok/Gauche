@@ -24210,18 +24210,29 @@ This is equivalent to @code{(write-char #\newline port)},
 
 @defun fresh-line :optional port
 @c EN
-If the output position is at the beginning of line, do nothing and
+If the output column is at the beginning of line, do nothing and
 returns @code{#f}.  Otherwise, writes a newline character and returns @code{#t}.
 It is handy when you want to make sure the next output starts
 from the beginning of line, but do not want to produce an extra blank line.
 
 This procedure is taken from Common Lisp.
 @c JP
-出力位置が行頭であれば何もせず@code{#f}を返します。そうでなければ@code{#\newline}
+出力カラムが行頭であれば何もせず@code{#f}を返します。そうでなければ@code{#\newline}
 を出力して@code{#t}を返します。
 次の出力を行頭から始めたいけれど、余分な空行は出力したくない、という時に便利です。
 
 この手続きはCommon Lispから取りました。
+@c COMMON
+
+@c EN
+Not all situations allow this procedure to know the port's output column;
+especially, if you mix textual and binary data to output, the column
+tracking becomes unreliable.  If this procedure can't detrmine the
+column position, it emits a newline character.
+@c JP
+常にポートの出力カラムがわかるとは限りません。特に、テキスト出力とバイナリ出力を
+混ぜた場合、出力カラムのトラッキングは信頼できないものとなります。
+出力カラムが特定できない場合は、この手続きは改行文字を出力します。
 @c COMMON
 @end defun
 
@@ -24233,11 +24244,11 @@ This procedure is taken from Common Lisp.
 
 
 
-@defun format dest controls string arg @dots{}
-@defunx format controls dest string arg @dots{}
+@defun format string arg @dots{}
 @defunx format dest string arg @dots{}
 @defunx format controls string arg @dots{}
-@defunx format string arg @dots{}
+@defunx format dest controls string arg @dots{}
+@defunx format controls dest string arg @dots{}
 [SRFI-28+]
 @c EN
 Format @var{arg} @dots{} according to @var{string}.
