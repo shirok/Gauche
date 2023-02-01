@@ -38,9 +38,9 @@
                      <gauche/priv/bignumP.h>
                      <stdlib.h>
                      <float.h>
-                     <math.h>))
- (when "!defined(M_PI)"
-   (declcode "#define M_PI 3.1415926535897932384")))
+                     <math.h>)
+           (.when (not (defined M_PI))
+             (.define M_PI 3.1415926535897932384))))
 
 ;;
 ;; Predicates
