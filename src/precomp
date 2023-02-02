@@ -67,6 +67,7 @@
             [subinits (split-to-symbols subinits)]
             [extini   (or ext-module ext-main)]
             [prefix   (or xprefix-all xprefix)]
+            [omit-source-info (sys-getenv "GAUCHE_PRECOMP_OMIT_SOURCE_INFO")]
             [tparams  (if target-config
                         (load-target-config target-config)
                         '())])
@@ -83,6 +84,7 @@
                             :ext-initializer extini
                             :sub-initializers subinits
                             :dso-name dso-name
+                            :omit-source-info omit-source-info
                             :predef-syms predef-syms
                             :target-parameters tparams
                             :macros-to-keep mtk)]
@@ -94,6 +96,7 @@
                                   :strip-prefix prefix
                                   :single-sci-file single-sci
                                   :dso-name dso-name
+                                  :omit-source-info omit-source-info
                                   :predef-syms predef-syms
                                   :target-parameters tparams
                                   :macros-to-keep mtk)]))))

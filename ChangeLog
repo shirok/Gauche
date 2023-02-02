@@ -1,5 +1,10 @@
 2023-02-01  Shiro Kawai  <shiro@acm.org>
 
+	* src/precomp, lib/gauche/cgen/precomp.scm: Allow to suppress
+	  #line directives with environment variable
+	  GAUCHE_PRECOMP_OMIT_SOURCE_INFO.  Sometimes the error position
+	  in *.scm is unreliable for troubleshooting.
+
 	* ext/file/event.scm: Start adding file event API; inotify for
 	  the starter.  We'll provide high-level API that hides
 	  difference of subsystems.
