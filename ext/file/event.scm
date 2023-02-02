@@ -51,7 +51,11 @@
               :c-name "data->mask")
       (cookie :type <uint32>
               :c-name "data->cookie")
-      (name   :getter "return Scm_MakeString(obj->data->name, obj->data->len, -1, 0);"
+      (name   :getter "if (obj->data->len) {\
+                         return SCM_MAKE_STR_IMMUTABLE(obj->data->name);\
+                       } else {\
+                         return SCM_FALSE;\
+                       }"
               :setter #f)
      ))
 
