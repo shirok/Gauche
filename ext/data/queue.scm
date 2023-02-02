@@ -441,12 +441,13 @@
 
  ;; API
  (define-cproc enqueue! (q::<queue> obj :rest more-objs)
-   (let* ([head (Scm_Cons obj more-objs)] [tail] [cnt::ScmSmallInt])
+   (let* ([head (Scm_Cons obj more-objs)] [tail] [cnt::ScmSmallInt]
+          [qq::(Queue* volatile) q])
      (if (SCM_NULLP more-objs)
        (set! tail head cnt 1)
        (set! tail (Scm_LastPair more-objs) cnt (Scm_Length head)))
-     (q-write-op enqueue_int q cnt head tail)
-     (return (SCM_OBJ q))))
+     (q-write-op enqueue_int qq cnt head tail)
+     (return (SCM_OBJ qq))))
 
  ;; API
  (define-cproc enqueue/wait! (q::<mtqueue> obj
@@ -496,14 +497,15 @@
      (set! (Q_LENGTH q) (+ (Q_LENGTH q) cnt))))
 
  (define-cproc queue-push! (q::<queue> obj :rest more-objs)
-   (let* ([objs (Scm_Cons obj more-objs)] [head] [tail] [cnt::ScmSmallInt])
+   (let* ([objs (Scm_Cons obj more-objs)] [head] [tail] [cnt::ScmSmallInt]
+          [qq::(Queue* volatile) q])
      (if (SCM_NULLP more-objs)
        (set! head objs tail objs cnt 1)
        (set! head (Scm_ReverseX objs)
              tail (Scm_LastPair head)
              cnt  (Scm_Length head)))
-     (q-write-op queue-push-int q cnt head tail)
-     (return (SCM_OBJ q))))
+     (q-write-op queue-push-int qq cnt head tail)
+     (return (SCM_OBJ qq))))
 
  (define-cproc queue-push/wait! (q::<mtqueue> obj
                                               :optional (timeout #f)
