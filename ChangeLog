@@ -1,3 +1,9 @@
+2023-02-01  Shiro Kawai  <shiro@acm.org>
+
+	* ext/file/event.scm: Start adding file event API; inotify for
+	  the starter.  We'll provide high-level API that hides
+	  difference of subsystems.
+
 2023-01-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/geninsn: Add feature to load/save insn to opcode map.

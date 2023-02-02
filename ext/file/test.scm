@@ -7,7 +7,9 @@
 (use srfi.13)
 (use gauche.uvector)
 
-(test-start "file.util")
+(test-start "file.*")
+
+(test-section "file.util")
 (use file.util)
 (cond-expand
  [gauche.os.windows
@@ -782,5 +784,10 @@
         )
     (cleanup))
   )
+
+;;=====================================================================
+(test-section "file.event")
+(use file.event)
+(test-module 'file.event)
 
 (test-end)

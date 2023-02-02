@@ -428,6 +428,9 @@ AC_CHECK_HEADERS(stdalign.h)
 dnl glibc specific
 AC_CHECK_HEADERS(fpu_control.h)
 
+dnl Linux specific
+AC_CHECK_HEADERS(sys/inotify.h)
+
 dnl solaris specific
 AC_CHECK_HEADERS(sunmath.h)
 

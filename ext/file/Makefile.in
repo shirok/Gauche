@@ -6,21 +6,31 @@ SCM_CATEGORY = file
 
 include ../Makefile.ext
 
-LIBFILES = file--util.$(SOEXT)
-SCMFILES = util.sci
+LIBFILES = file--util.$(SOEXT) file--event.$(SOEXT)
+SCMFILES = util.sci event.sci
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = *.c util.sci
-
-OBJECTS = file--util.$(OBJEXT)
+XCLEANFILES = *.c util.sci event.sci
 
 all : $(LIBFILES)
 
-file--util.$(SOEXT) : $(OBJECTS)
-	$(MODLINK) file--util.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+OBJECTS = $(util_OBJECTS) $(event_OBJECTS)
+
+util_OBJECTS = file--util.$(OBJEXT)
+
+file--util.$(SOEXT) : $(util_OBJECTS)
+	$(MODLINK) file--util.$(SOEXT) $(util_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 file--util.c util.sci : $(top_srcdir)/libsrc/file/util.scm
 	$(PRECOMP) -e -P -o file--util $(top_srcdir)/libsrc/file/util.scm
+
+event_OBJECTS = file--event.$(OBJEXT)
+
+file--event.$(SOEXT) : $(event_OBJECTS)
+	$(MODLINK) file--event.$(SOEXT) $(event_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+file--event.c event.sci : event.scm
+	$(PRECOMP) -e -P -o file--event $(srcdir)/event.scm
 
 install : install-std
