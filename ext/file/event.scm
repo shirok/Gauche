@@ -36,6 +36,9 @@
 (select-module file.event)
 
 (inline-stub
+ ;;
+ ;; Linux (inotify)
+ ;;
  (.when (defined HAVE_SYS_INOTIFY_H)
    (.include <sys/inotify.h>)
 
@@ -148,4 +151,104 @@
     (Scm_AddFeature "gauche.sys.inotify"  NULL))
 
    ) ;; defined(HAVE_SYS_INOTIFY_H)
+
+ ;;
+ ;; OSX
+ ;;
+ (when (and (defined __APPLE__) (defined __MACH__))
+   (declcode
+    (.include <CoreServices/CoreServices.h>))
+
+   (define-ctype ScmSysFileSystemEventStream
+     ::(.struct
+        (SCM_HEADER :: ""
+         data::FSEventStreamRef
+         queue
+         closed::int)))
+
+   (define-cclass <file-system-event-stream> :private
+     ScmSysFileSystemEventStream* "Scm_SysFileSystemEventStreamClass" ()
+     ())
+
+   (define-ctype ScmSysFileSystemEvent
+     ::(.struct
+        (SCM_HEADER :: ""
+         name             ; <string>
+         flags
+         id)))
+
+   (define-cclass <file-system-event> :private
+     ScmSysFileSystemEvent* "Scm_SysFileSystemEventClass" ()
+     ((name)
+      (flags)
+      (id)))
+
+   (define-cfn fsestream-finalize (stream _::void*) ::void :static
+     (let* ([z::ScmSysFileSystemEventStream*
+             (cast ScmSysFileSystemEventStream* stream)])
+       (unless (-> z closed)
+         (FSEventStreamStop (-> z data))
+         (FSEventStreamInvalidate (-> z data))
+         (FSEventStreamRelease (-> z data))
+         (set! (-> z closed) TRUE))))
+
+   (define-cfn make-fsevent (path::char* flags::uint64_t id::uint64_t)
+     (let* ([z::ScmSysFileSystemEvent* (SCM_NEW ScmSysFileSystemEvent)])
+       (SCM_SET_CLASS z (& Scm_SysFileSystemEventClass))
+       (set! (-> z name) (SCM_MAKE_STR_COPYING path))
+       (set! (-> z flags) (Scm_MakeIntegerU64 flags))
+       (set! (-> z id)   (Scm_MakeIntegerU64 id))
+       (return (SCM_OBJ z))))
+
+   (define-cfn fsestream-callback (_::ConstFSEventStreamRef
+                                   streamobj::void*
+                                   num-events::size_t
+                                   event-paths::void*
+                                   event-flags::(const FSEventStreamEventFlags*)
+                                   event-ids::(const FSEventStreamEventId*))
+     ::void :static
+     (let* ([stream::ScmSysFileSystemEventStream*
+             (cast ScmSysFileSystemEventStream* streamobj)]
+            [paths::char** (cast char** event-paths)]
+            [h (-> stream queue)]
+            [t (?: (SCM_PAIRP h) (Scm_LastPair h) SCM_NIL)]
+            [i::size_t 0])
+       (while (< i num-events)
+         (let* ([ev (make-fsevent (aref paths i)
+                                  (aref event-flags i)
+                                  (aref event-ids i))])
+           (SCM_APPEND1 h t ev))
+         (pre++ i))
+       (set! (-> stream queue) h)))
+
+   (define-cproc make-file-system-event-stream (path::<const-cstring>
+                                                flags::<uint64>
+                                                id::<uint64>
+                                                latency::<double>)
+     (let* ([cfpath::CFStringRef
+             (CFStringCreateWithCString kCFAllocatorDefault
+                                        path
+                                        kCFStringEncodingUTF8)]
+            [cfpatharray::CFArrayRef
+             (CFArrayCreate NULL
+                            (cast (const void**) cfpath)
+                            1 NULL)]
+            [stream::ScmSysFileSystemEventStream*
+             (SCM_NEW ScmSysFileSystemEventStream)])
+       (SCM_SET_CLASS stream (& Scm_SysFileSystemEventStreamClass))
+       (set! (-> stream data) NULL
+             (-> stream queue) SCM_NIL
+             (-> stream closed) FALSE)
+       (Scm_RegisterFinalizer (SCM_OBJ stream) fsestream-finalize NULL)
+       (set! (-> stream data)
+             (FSEventStreamCreate NULL
+                                  (& fsestream-callback)
+                                  (cast void* stream)
+                                  cfpatharray
+                                  id
+                                  latency
+                                  flags))
+       ;; TODO: We need a run loop to handle the events.
+       (return (SCM_OBJ stream))))
+   ) ;; defined(__APPLE__) && defined(__MACH__)
  )
