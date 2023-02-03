@@ -919,6 +919,11 @@ dnl Setup STATIC_LIBS
 #done
 STATIC_LIBS="$EXT_LIBS $LIBS"
 STATIC_LIBS="`echo $LIBGAUCHE_STATIC | sed s/^lib/-l/` $STATIC_LIBS"
+AS_CASE([$host],
+  [*darwin*], [
+    STATIC_LIBS="-framework CoreServices -framework CoreFoundation $STATIC_LIBS"
+    ],
+  [])
 AC_SUBST(STATIC_LIBS)
 
 dnl ===========================================================
