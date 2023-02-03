@@ -489,7 +489,6 @@
   (let-args (cdr args) ([vminsn.scm "vminsn=s" "vminsn.scm"]
                         [opcmap.scm "opcode-map=s" #f]
                         [opcmap.out "gen-opcode-map=s" #f])
-    #?=(list vminsn.scm opcmap.scm opcmap.out)
     (generate vminsn.scm opcmap.scm opcmap.out))
   0)
 
