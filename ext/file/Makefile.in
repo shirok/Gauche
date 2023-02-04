@@ -7,11 +7,11 @@ SCM_CATEGORY = file
 include ../Makefile.ext
 
 LIBFILES = file--util.$(SOEXT) file--event.$(SOEXT)
-SCMFILES = util.sci event.sci
+SCMFILES = util.sci event.scm
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = *.c util.sci event.sci
+XCLEANFILES = file--util.c event-core.c util.sci
 
 all : $(LIBFILES)
 
@@ -25,12 +25,11 @@ file--util.$(SOEXT) : $(util_OBJECTS)
 file--util.c util.sci : $(top_srcdir)/libsrc/file/util.scm
 	$(PRECOMP) -e -P -o file--util $(top_srcdir)/libsrc/file/util.scm
 
-event_OBJECTS = file--event.$(OBJEXT)
+event_OBJECTS = event.$(OBJEXT) event-core.$(OBJEXT)
 
 file--event.$(SOEXT) : $(event_OBJECTS)
 	$(MODLINK) file--event.$(SOEXT) $(event_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
-
-file--event.c event.sci : event.scm
-	$(PRECOMP) -e -P -o file--event $(srcdir)/event.scm
+event-core.c : event-core.scm
+	$(PRECOMP) $(srcdir)/event-core.scm
 
 install : install-std
