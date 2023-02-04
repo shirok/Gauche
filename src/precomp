@@ -104,16 +104,43 @@
 
 (define (usage msg)
   (when msg (print msg))
-  (print "Usage: gosh precomp [options] <file.scm> ...")
-  (print "Options:")
-  (print "  --keep-private-macro=NAME,NAME,...")
-  (print "  -i,--interface=FILE.SCI   (valid only for single input file)")
-  (print "  --single-interface        (valid only for multiple input files)")
-  (print "  -e,--ext-main")
-  (print "  -o,--output=FILE.C")
-  (print "  -p,--strip-prefix=PREFIX")
-  (print "  -P,--strip-prefix-all")
-  (print "  --target-config=FILE")
+  (print
+   "Usage: gosh precomp [options] <file.scm> ...\
+  \nOptions:\
+  \n  -i,--interface=FILE.SCI\
+  \n      Specify output interface file.  Valid only for single input file.\
+  \n      If omitted, input filename with '.sci' extension is used.\
+  \n  --single-interface\
+  \n      Generate single interface file, instead of one for each input file.\
+  \n      Valid only for multiple input files.  The first source file name\
+  \n      is used, except the extension is swapped for '.sci'.\
+  \n  -o,--output=FILE.C\
+  \n      Specifies output file name.  If omitted, the input file name with\
+  \n      '.c' extension is used.  Valid only for single input file.\
+  \n  -D=NAME\
+  \n      Insert '#define NAME' at the beginning of output file.  This option\
+  \n      can be specified multiple times.\
+  \n  -p,--strip-prefix=PREFIX\
+  \n      Remove PREFIX from the input file names to produce output file names.\
+  \n      Useful if the source files are in a separate directory.\
+  \n  -P,--strip-prefix-all\
+  \n      Remove all directory names from the input file names, just use their\
+  \n      basenames, to produce output file names.\
+  \n  --ext-main\
+  \n      Generate source for an extension module rather than a standalone\
+  \n      executable.  The initialization function follows the protocol of\
+  \n      Gauche extension initializer.\
+  \n  --keep-private-macro=NAME,NAME,...\
+  \n      If a macro is not exported, it won't be emitted to the precompiled\
+  \n      file by default.  With this option, the named macros are kept in\
+  \n      the output even if they're private to the module.\
+  \n  --omit-source-info\
+  \n      Do not emit '#line' directives into the output, so that C compiler\
+  \n      error messages points to the lines in the generated C files, instead\
+  \n      of the source scm files.\
+  \n  --target-config=FILE\
+  \n      Give the target parameter configuration, if it is different\
+  \n      from the compiling gosh.")
   (exit 0))
 
 (define (split-to-symbols arg)
