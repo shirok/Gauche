@@ -431,7 +431,10 @@ AC_CHECK_HEADERS(fpu_control.h)
 dnl Linux specific
 AC_CHECK_HEADERS(sys/inotify.h)
 
-dnl solaris specific
+dnl BSD specific
+AC_CHECK_HEADERS(sys/event.h)
+
+dnl Solaris specific
 AC_CHECK_HEADERS(sunmath.h)
 
 dnl OSX specific.  If this header exists, we assume that extern char **environ

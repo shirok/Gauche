@@ -153,6 +153,69 @@
    ) ;; defined(HAVE_SYS_INOTIFY_H)
 
  ;;
+ ;; kqueue (BSD)
+ ;;
+ (when (defined HAVE_SYS_EVENT_H)
+   (declcode
+    (.include <sys/event.h>)
+
+    (define-ctype ScmSysKevent
+      ::(.struct
+         (SCM_HEADER :: ""
+          data::(struct kevent*))))     ;memory managed by Gauche
+   )
+
+   (define-cclass <kevent> :private
+     ScmSysKevent* "Scm_SysKeventClass" ()
+     ())
+
+   (define-enum EV_ADD)
+   (define-enum EV_ENABLE)
+   (define-enum EV_DISABLE)
+   (define-enum EV_DISPATCH)
+   (define-enum EV_DELETE)
+   (define-enum EV_RECEIPT)
+   (define-enum EV_ONESHOT)
+   (define-enum EV_CLEAR)
+   (define-enum EV_EOF)
+   (define-enum EV_ERROR)
+
+   (define-enum EVFILT_VNODE)
+
+   (define-enum NOTE_ATTRIB)
+   ;(define-enum NOTE_CLOSE)
+   ;(define-enum NOTE_CLOSE_WRITE)
+   (define-enum NOTE_DELETE)
+   (define-enum NOTE_LINK)
+   ;(define-enum NOTE_OPEN)
+   ;(define-enum NOTE_READ)
+   (define-enum NOTE_RENAME)
+   (define-enum NOTE_REVOKE)
+   (define-enum NOTE_WRITE)
+
+   (define-cproc ev-set! (kev::<kevent>
+                          fd::<int>
+                          filter::<short>
+                          flags::<ushort>
+                          fflags::<uint>
+                          data::<int64>)
+     ::<void>
+     (EV_SET (-> kev data) fd filter flags fflags data
+             (cast void* kev)))
+
+   (define-cproc kevent (kq::<int>
+                         changeList
+                         timeout)
+     ::<int>
+     (cast void kq)
+     (cast void changeList)
+     (cast void timeout)
+     ;; WRITEME
+     (return 0))
+
+   ) ;; defined(HAVE_SYS_EVENT_H)
+
+ ;;
  ;; OSX
  ;;
  (when (and (defined __APPLE__) (defined __MACH__))
