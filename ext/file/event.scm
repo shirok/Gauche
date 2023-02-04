@@ -162,10 +162,10 @@
     (define-ctype ScmSysKevent
       ::(.struct
          (SCM_HEADER :: ""
-          data::(struct kevent*))))     ;memory managed by Gauche
+          data::(struct kevent))))
    )
 
-   (define-cclass <kevent> :private
+   (define-cclass <sys-kevent> :private
      ScmSysKevent* "Scm_SysKeventClass" ()
      ())
 
@@ -193,25 +193,69 @@
    (define-enum NOTE_REVOKE)
    (define-enum NOTE_WRITE)
 
-   (define-cproc ev-set! (kev::<kevent>
-                          fd::<int>
-                          filter::<short>
-                          flags::<ushort>
-                          fflags::<uint>
-                          data::<int64>)
-     ::<void>
-     (EV_SET (-> kev data) fd filter flags fflags data
-             (cast void* kev)))
+   (define-cproc make-kevent (fd::<int>
+                              filter::<short>
+                              flags::<ushort>
+                              fflags::<uint>
+                              data::<int64>)
+     (let* ([kev::ScmSysKevent* (SCM_NEW ScmSysKevent)])
+       (SCM_SET_CLASS kev (& Scm_SysKeventClass))
+       (EV_SET (& (-> kev data)) fd filter flags fflags data
+               (cast void* kev))
+       (return (SCM_OBJ kev))))
+
+   (define-cfn list->keventArray (lis nelts::int*)
+     ::(struct kevent*) :static
+     (let* ([n::ScmSmallInt (Scm_Length lis)])
+       (when (< n 0)
+         (Scm_Error "list of <sys-kevent> required, but got: %S" lis))
+       (let* ([p::(struct kevent*)
+                  (?: n (SCM_NEW_ATOMIC_ARRAY (struct kevent) n) NULL)]
+              [i::ScmSmallInt 0])
+         (while (< i n)
+           (unless (SCM_SYS_KEVENT_P (SCM_CAR lis))
+             (Scm_Error "<sys-kevent> required, but got: %S" (SCM_CAR lis)))
+           (let* ([kev::ScmSysKevent* (SCM_SYS_KEVENT (SCM_CAR lis))])
+             (EV_SET (+ p i)
+                     (ref (-> kev data) ident)
+                     (ref (-> kev data) filter)
+                     (ref (-> kev data) flags)
+                     (ref (-> kev data) fflags)
+                     (ref (-> kev data) data)
+                     (cast void* kev)))
+           (pre++ i)
+           (set! lis (SCM_CDR lis)))
+         (set! (* nelts) (cast int n))
+         (return p))))
+
+   (define-cfn keventArray->list (p::(struct kevent*) nelts::int)
+     (let* ([h SCM_NIL] [t SCM_NIL] [i::int 0])
+       (while (< i nelts)
+         (let* ([kev::ScmSysKevent* (SCM_NEW ScmSysKevent)])
+           (EV_SET (& (-> kev data))
+                   (-> p ident)
+                   (-> p filter)
+                   (-> p flags)
+                   (-> p fflags)
+                   (-> p data)
+                   kev)
+           (SCM_SET_CLASS kev (& Scm_SysKeventClass))
+           (SCM_APPEND1 h t (SCM_OBJ kev))))
+       (return h)))
 
    (define-cproc kevent (kq::<int>
                          changeList
                          timeout)
-     ::<int>
-     (cast void kq)
-     (cast void changeList)
-     (cast void timeout)
-     ;; WRITEME
-     (return 0))
+     (let* ([ts::ScmTimeSpec]
+            [pts::ScmTimeSpec* (Scm_GetTimeSpec timeout (& ts))]
+            [ncl::int]
+            [pcl::(struct kevent*) (list->keventArray changeList (& ncl))]
+            [res::(.array (struct kevent) [128])]
+            [r::int 0])
+       (SCM_SYSCALL r (kevent kq pcl ncl res 128 pts))
+       (cond [(< r 0) (Scm_SysError "kqueue failed" r)]
+             [(== r 0) (return SCM_NIL)]
+             [else (return (keventArray->list res r))])))
 
    ) ;; defined(HAVE_SYS_EVENT_H)
 
