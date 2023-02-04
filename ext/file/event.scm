@@ -157,25 +157,26 @@
  ;;
  (when (and (defined __APPLE__) (defined __MACH__))
    (declcode
-    (.include <CoreServices/CoreServices.h>))
+    (.include <CoreServices/CoreServices.h>)
 
-   (define-ctype ScmSysFileSystemEventStream
-     ::(.struct
-        (SCM_HEADER :: ""
-         data::FSEventStreamRef
-         queue
-         closed::int)))
+    (define-ctype ScmSysFileSystemEventStream
+      ::(.struct
+         (SCM_HEADER :: ""
+          data::FSEventStreamRef
+          queue
+          closed::int)))
+
+    (define-ctype ScmSysFileSystemEvent
+      ::(.struct
+         (SCM_HEADER :: ""
+          name             ; <string>
+          flags
+          id)))
+    )
 
    (define-cclass <file-system-event-stream> :private
      ScmSysFileSystemEventStream* "Scm_SysFileSystemEventStreamClass" ()
      ())
-
-   (define-ctype ScmSysFileSystemEvent
-     ::(.struct
-        (SCM_HEADER :: ""
-         name             ; <string>
-         flags
-         id)))
 
    (define-cclass <file-system-event> :private
      ScmSysFileSystemEvent* "Scm_SysFileSystemEventClass" ()
@@ -183,14 +184,16 @@
       (flags)
       (id)))
 
+   (define-cfn fsestream-cleanup (stream::ScmSysFileSystemEventStream*)
+     ::void :static
+     (unless (-> stream closed)
+       (FSEventStreamStop (-> stream data))
+       (FSEventStreamInvalidate (-> stream data))
+       (FSEventStreamRelease (-> stream data))
+       (set! (-> stream closed) TRUE)))
+
    (define-cfn fsestream-finalize (stream _::void*) ::void :static
-     (let* ([z::ScmSysFileSystemEventStream*
-             (cast ScmSysFileSystemEventStream* stream)])
-       (unless (-> z closed)
-         (FSEventStreamStop (-> z data))
-         (FSEventStreamInvalidate (-> z data))
-         (FSEventStreamRelease (-> z data))
-         (set! (-> z closed) TRUE))))
+     (fsestream-cleanup (cast ScmSysFileSystemEventStream* stream)))
 
    (define-cfn make-fsevent (path::char* flags::uint64_t id::uint64_t)
      (let* ([z::ScmSysFileSystemEvent* (SCM_NEW ScmSysFileSystemEvent)])
@@ -250,5 +253,9 @@
                                   flags))
        ;; TODO: We need a run loop to handle the events.
        (return (SCM_OBJ stream))))
+
+   (define-cproc close-file-system-event-stream (stream::<file-system-event-stream>)
+     ::<void>
+     (fsestream-cleanup stream))
    ) ;; defined(__APPLE__) && defined(__MACH__)
  )
