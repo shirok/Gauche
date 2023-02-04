@@ -257,6 +257,9 @@
              [(== r 0) (return SCM_NIL)]
              [else (return (keventArray->list res r))])))
 
+   (initcode
+    (Scm_AddFeature "gauche.sys.kqueue"  NULL))
+
    ) ;; defined(HAVE_SYS_EVENT_H)
 
  ;;
