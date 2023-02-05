@@ -7,7 +7,8 @@ SCM_CATEGORY = file
 include ../Makefile.ext
 
 LIBFILES = file--util.$(SOEXT) file--event.$(SOEXT)
-SCMFILES = util.sci event.scm
+SCMFILES = util.sci event.scm event/common.scm event/generic.scm \
+	   event/inotify.scm event/kqueue.scm
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =

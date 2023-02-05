@@ -31,12 +31,52 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module file.event)
-(select-module file.event)
+;; This module is not meant to be directly used.  Using file.event
+;; loads appropriate subsystem, which in turn use this module.
+(define-module file.event.common
+  (use gauche.record)
+  (use data.queue))
+(select-module file.event.common)
 
-(dynamic-load "file--event")
+(define-class <file-event-queue> ()
+  (;; All slots are private
+   (thread :init-keyword :thread)
+   (filters :init-keyword :filters)
+   (mtq :init-form (make-mtq))
+   ))
 
-(cond-expand
- [gauche.sys.inotify (use file.event.inotify)]
- [gauche.sys.kqueue (use file.event.kqueue)]
- [else (use file.event.generic)])
+(define (file-event-queue feq)
+  (assume-type feq <file-event-queue>)
+  (~ feq'mtq))
+
+(define-constant *event-filter-type*
+  '(created
+    updated
+    removed
+    renamed
+    owner-modified
+    attribute-modified
+    moved-from
+    moved-to
+    file?
+    directory?
+    symlink?
+    link-count-changed
+    ))
+
+(define-record-type <file-event-filter>
+    %make-file-event-filter
+    file-event-filter?
+  (path file-event-filter-path)
+  (types file-event-filter-types)
+  )
+
+(define (make-file-event-filter path types)
+  (%make-file-event-filter path types))
+
+(define-record-type <file-event>
+    %make-file-event
+    file-event?
+  (path file-event-path)
+  (types file-event-types)
+  )

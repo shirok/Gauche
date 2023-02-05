@@ -1,5 +1,5 @@
 ;;;
-;;; file.event - Interface for system file event API
+;;; file.event.generic - Fallback submodule for file event adapter
 ;;;
 ;;;   Copyright (c) 2023  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,12 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module file.event)
-(select-module file.event)
-
-(dynamic-load "file--event")
-
-(cond-expand
- [gauche.sys.inotify (use file.event.inotify)]
- [gauche.sys.kqueue (use file.event.kqueue)]
- [else (use file.event.generic)])
+;; This module is not meant to be directly used.  It's loaded into
+;; fine.event module conditionally.
+(define-module file.event.generic
+  (use file.event.common))
+(select-module file.event.generic)
