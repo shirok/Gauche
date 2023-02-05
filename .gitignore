@@ -178,6 +178,7 @@ test.record
 /gc/tests/.deps/
 /lib/binary/io.scm
 /lib/file/event.scm
+/lib/file/event/
 /lib/gauche/array.scm
 /lib/gauche/charconv.scm
 /lib/gauche/exports.scm
