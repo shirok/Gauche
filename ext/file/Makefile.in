@@ -12,7 +12,7 @@ SCMFILES = util.sci event.scm event/common.scm event/generic.scm \
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = file--util.c event-core.c util.sci
+XCLEANFILES = file--util.c event-core.c event-core.sci util.sci
 
 all : $(LIBFILES)
 
