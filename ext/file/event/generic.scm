@@ -34,5 +34,12 @@
 ;; This module is not meant to be directly used.  It's loaded into
 ;; fine.event module conditionally.
 (define-module file.event.generic
-  (use file.event.common))
+  (extend file.event.common)
+  (export file-event-queue-class))
 (select-module file.event.generic)
+
+(define-class <file-event-queue-generic> (<file-event-queue>)
+  ())
+
+;; Protocol
+(define (file-event-queue-class) <file-event-queue-generic>)

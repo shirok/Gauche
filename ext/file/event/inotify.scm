@@ -34,5 +34,17 @@
 ;; This module is not meant to be directly used.  It's loaded into
 ;; fine.event module conditionally.
 (define-module file.event.inotify
-  (use file.event.common))
+  (extend file.event.common)
+  (export file-event-queue-class))
 (select-module file.event.inotify)
+
+(define-class <file-event-queue-inotify> (<file-event-queue>)
+  (;; All slots are private
+   (fd  :init-keywor :fd)))
+
+;; Protocol
+(define (file-event-queue-class) <file-event-queue-inotify>)
+
+(define-method initialize ((q <file-event-queue-inotify>) initargs)
+  (next-method)
+  )

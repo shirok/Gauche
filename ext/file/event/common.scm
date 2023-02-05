@@ -42,7 +42,7 @@
   (;; All slots are private
    (thread :init-keyword :thread)
    (filters :init-keyword :filters)
-   (mtq :init-form (make-mtq))
+   (mtq :init-form (make-mtqueue))
    ))
 
 (define (file-event-queue feq)

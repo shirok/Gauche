@@ -789,5 +789,19 @@
 (test-section "file.event")
 (use file.event)
 (test-module 'file.event)
+(test-module 'file.event.common)        ;loaded via file.event
+
+(define-module file-event-generic-test
+  (use gauche.test)
+  (use file.event.generic)
+  (test-module 'file.event.generic))
+
+(define-module file-event-specific-test
+  (use gauche.test)
+  ;; Those submodules are already loaded via file.event
+  (cond-expand
+   [gauche.sys.inotify (test-module 'file.event.inotify)]
+   [gauche.sys.kqueue (test-module 'file.event.kqueue)]
+   [else]))
 
 (test-end)

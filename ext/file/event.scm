@@ -31,7 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module file.event)
+(define-module file.event
+  (export make-file-event-queue))
 (select-module file.event)
 
 (dynamic-load "file--event")
@@ -40,3 +41,6 @@
  [gauche.sys.inotify (use file.event.inotify)]
  [gauche.sys.kqueue (use file.event.kqueue)]
  [else (use file.event.generic)])
+
+(define (make-file-event-queue filters)
+  (make (file-event-queue-class) :filters filters))
