@@ -1,3 +1,7 @@
+2023-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm (srfi-244): Supported (it's already in the core).
+
 2023-02-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/precomp, lib/gauche/cgen/precomp.scm: Allow to suppress

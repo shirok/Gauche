@@ -1567,3 +1567,13 @@ Built-in. @xref{Grouping}.
 
 順序を問わない式の評価
 組み込みです。@ref{Grouping}参照。
+
+
+srfi-244
+(define-values)
+
+Multiple-value definitions
+Built-in. @xref{Definitions}.
+
+多値定義
+組み込みです。@ref{Definitions}参照。
