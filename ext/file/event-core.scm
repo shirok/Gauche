@@ -31,7 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module file.event)
 (select-module file.event)
 
 (inline-stub
