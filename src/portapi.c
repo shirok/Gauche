@@ -367,7 +367,10 @@ void Scm_FlushUnsafe(ScmPort *p)
     SHORTCUT(p, Scm_FlushUnsafe(p); return);
     WALKER_CHECK(p);
     LOCK(p);
-    if (P_(p)->flushed) return;
+    if (P_(p)->flushed) {
+        UNLOCK(p);
+        return;
+    }
     CLOSE_CHECK(p);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:

@@ -1,3 +1,9 @@
+2023-02-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/portapi.c (Scm_Flush): Fix bug that stdout is locked
+	  by the primoridal thread in REPL (or any thread that first
+	  calls flush).  https://github.com/shirok/Gauche/issues/876
+
 2023-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfis.scm (srfi-244): Supported (it's already in the core).
