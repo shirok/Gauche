@@ -1,3 +1,15 @@
+2023-02-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (load): Change return value - on successful loading,
+	  return the actual filename loaded.  It is useful, for 'load' tries
+	  a few things to find the actual file (look for search paths, adding
+	  file suffixes, etc.) so the actual file path may not be tha same
+	  as the 'file' argument.
+	  This is technically an incompatible change: Before, 'load' returns
+	  #t on success, and it is documented.  We think returning pathname
+	  is better, and the code that treats the return value as a
+	  generalized boolean still works.
+
 2023-02-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c (Scm_Flush): Fix bug that stdout is locked

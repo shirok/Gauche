@@ -92,11 +92,13 @@
                 (if hooked? " (hooked) " "")))
       (if (not (input-port? port))
         (and error-if-not-found (raise port))
-        (load-from-port (if ignore-coding
-                          port
-                          (open-coding-aware-port port))
-                        :environment environment
-                        :paths remaining-paths)))))
+        (begin
+          (load-from-port (if ignore-coding
+                            port
+                            (open-coding-aware-port port))
+                          :environment environment
+                          :paths remaining-paths)
+          path)))))
 
 
 (select-module gauche.internal)

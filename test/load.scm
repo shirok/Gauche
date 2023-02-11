@@ -223,7 +223,7 @@
   (^[] (write '(expt 2 3))))
 
 (test* "autoload environment" #t
-       (load "./test.o/l0.scm"))
+       (boolean (load "./test.o/l0.scm")))
 
 (rmrf "test.o")
 
