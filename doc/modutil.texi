@@ -26217,19 +26217,34 @@ Otherwise, @code{#f} is returned.
 
 @deftp {Module} text.gap-buffer
 @mdindex text.gap-buffer
+@c EN
 This module provides a gap buffer, a data structure useful for
 editable text.
+@c JP
+ギャップバッファは、編集可能なテキストを実装するのに便利なデータ構造です。
+@c COMMON
 
+@c EN
 A gap buffer is a vector of characters with a ``cursor'', where
 you can insert or delete a character in O(1) time.  Most of
 the editing API operate on the current cursor position.
+@c JP
+ギャップバッファは、「カーソル」を持つ文字のベクタと考えることができます。
+カーソル位置への文字の挿入、もしくはカーソル位置の文字の削除はO(1)時間でできます。
+ほとんどの編集APIは現在のカーソル位置を対象にします。
+@c COMMON
 @end deftp
 
 @defun make-gap-buffer :key initial-capacity
 @c MOD text.gap-buffer
+@c EN
 Creates a fresh gap buffer and returns it.  The initial content
-is emtpy.
+is empty.
+@c JP
+新たなギャップバッファを作って返します。初期状態では中身は空です。
+@c COMMON
 
+@c EN
 The keyword argument
 @var{initial-capacity} must be a positive exact integer if given,
 and specifies the initial capacity of the buffer.  The buffer is
@@ -26237,13 +26252,25 @@ automatically extended if necessary, so the argument is only a
 hint; if you know you'll insert a long string, for example,
 you can create a buffer that's large enough to hold it to avoid
 reallocation overhead.
+@c JP
+キーワード引数@var{initial-capacity}は、正の正確な整数でなければならず、
+初期状態のバッファの大きさを指定します。バッファは必要に応じて自動的に拡張されるので、
+この引数は単なるヒントです。例えば最初に大きな文字列を挿入することがわかっていれば、
+あらかじめ大きなバッファを取っておくことで再アロケーションのオーバヘッドを避けることが
+できます。
+@c COMMON
 @end defun
 
 @defun string->gap-buffer string :optional pos whence start end
 @c MOD text.gap-buffer
-Creates a gap buffer large enough to contain the given @var{string},
+@c EN
+Creates a gap buffer that contains the given @var{string},
 and returns it.
+@c JP
+与えられた文字列@var{string}を保持するギャップバッファを作って返します。
+@c COMMON
 
+@c EN
 The initial cursor position is set at the end of the string by default.
 The @var{pos} and @var{whence} argument can set the initial
 cursor position.  The @var{whence} argument must be either a symbol
@@ -26254,20 +26281,44 @@ of the string from the beginning, and @var{pos} = -1 and @var{whence} =
 @code{end} sets the cursor position at one character before the end
 of the string.  If the combination of @var{pos} and @var{whence}
 points the outside of the string, an error is signaled.
+@c JP
+カーソルの初期位置は、デフォルトでは文字列の最後です。
+@var{pos}と@var{whence}引数で初期位置を変更することができます。
+@var{whence}はシンボル@code{beginning}か@code{end}で、@var{pos}は
+whenceからのオフセットを表す正確な整数です。例えば@var{pos}が10で
+@var{whence}が@code{beginning}なら、文字列の先頭から10番目の文字にカーソルが
+置かれます。@var{pos}が-1で@var{whence}が@code{end}なら、文字列の最後から
+ひとつ手前の文字にカーソルが置かれます。@var{pos}と@var{whence}の組み合わせが
+文字列をはみ出してしまう場合はエラーが投げられます。
+@c COMMON
 
+@c EN
 The optional @var{start} and @var{end} trims the input string before
 creating the gap buffer.
+@c JP
+省略可能な@var{start}と@var{end}引数は、ギャップバッファを作る前に
+入力文字列の範囲を制限します。
+@c COMMON
 @end defun
 
 @defun gap-buffer? obj
 @c MOD text.gap-buffer
+@c EN
 Returns @code{#t} iff @var{obj} is a gap buffer.
+@c JP
+@var{obj}がギャップバッファなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun gap-buffer-copy gbuf
 @c MOD text.gap-buffer
+@c EN
 Returns a fresh copy of a gap buffer @var{gbuf}, with the same content
 and cursor position.
+@c JP
+ギャップバッファ@var{gbuf}の新たなコピーを作って返します。内容およびカーソル位置は
+@var{gbuf}と同じになります。
+@c COMMON
 @end defun
 
 @defun gap-buffer->string gbuf :optional start end
