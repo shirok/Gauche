@@ -25140,7 +25140,8 @@ stored in a variable @code{*load-path*}.
 Or you can explicitly specify the search path by passing
 a list of directory names to the keyword argument @var{paths}.
 
-On success, @code{load} returns @code{#t}.
+On success, @code{load} returns the string pathname of the file
+actually loaded.
 If the specified file is not found, an error is signaled unless
 the keyword argument @var{error-if-not-found} is @code{#f}, in
 which case @code{load} returns @code{#f}.
@@ -25177,7 +25178,7 @@ If you want to load a library file, it's better to use `@code{use}'
 の中から該当ファイルが探されます。あるいは、キーワード引数@var{paths}にディレクトリ名の
 リストを渡すことによりサーチパスを指定することもできます。
 
-ロードに成功した場合は@code{#t}が返されます。
+ロードに成功した場合は、実際にロードされたファイルのパス名が文字列で返されます。
 指定ファイルがみつからない場合はエラーとなりますが、もしキーワード引数
 @code{error-if-not-found}に@code{#f}が与えられていれば単に@code{load}から
 @code{#f}が返されます。
