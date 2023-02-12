@@ -26324,145 +26324,297 @@ and cursor position.
 @defun gap-buffer->string gbuf :optional start end
 @defunx gap-buffer->generator gbuf :optional start end
 @c MOD text.gap-buffer
+@c EN
 Retrieve the content of a gap buffer @var{gbuf} as a string or
 a generator of characters, respectively.  The optional @var{start} and
 @var{end} arguments are nonnegative exact integers of character index
 in the content of the buffer, and limits the output within the specified
 range.
+@c JP
+ギャップバッファ@var{gbuf}の内容を文字列もしくは文字のジェネレータとして取り出します。
+省略可能な@var{start}と@var{end}はバッファ内の文字インデックスを指定する非負の正確な整数で、
+取り出す内容の範囲を制限します。
+@c COMMON
 
+@c EN
 If you modify the content of gap buffer before the returned generator
 is exhausted, consistent behavior isn't guaranteed.
+@c JP
+返ってきたジェネレータを最後まで読む前にギャップバッファの内容を変えた場合、
+一貫性のある振る舞いは保証されません。
+@c COMMON
 @end defun
 
 @defun gap-buffer-pos gbuf
 @c MOD text.gap-buffer
+@c EN
 Returns the current cursor position of @var{gbuf}, in a nonnegative
 exact integer.
+@c JP
+ギャップバッファ@var{gbuf}の現在のカーソル位置を非負の正確な整数で返します。
+@c COMMON
 @end defun
 
 @defun gap-buffer-pos-at-end? gbuf pos
 @c MOD text.gap-buffer
-Returns @code{#t} if @var{pos} is at the end of @var{gbuf}, @code{#f}
-otherwise.
+@c EN
+Returns @code{#t} if @var{pos}, a position in nonnegative integer,
+is at the end of @var{gbuf}, @code{#f} otherwise.
+@c JP
+位置を表す非負整数@var{pos}がギャップバッファ@var{gbuf}の末尾を差していれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun gap-buffer-capacity gbuf
 @c MOD text.gap-buffer
-Returns the currently allocated storage size of @var{gbuf}.
+@c EN
+Returns the currently allocated storage size of @var{gbuf}, in character count.
 If you insert more characters into @var{gbuf}, the storage is automatically
 expanded.
+@c JP
+ギャップバッファ@var{gbuf}に現在アロケートされているストレージの大きさを
+文字数で返します。@var{gbuf}に格納する文字がそれを越えたら、ストレージは自動的に拡張されます。
+@c COMMON
 @end defun
 
 @defun gap-buffer-content-length gbuf
 @c MOD text.gap-buffer
+@c EN
 Returns the length of current content of @var{gbuf},
 in the number of characters.
+@c JP
+ギャップバッファ@var{gbuf}に現在格納されている内容の大きさを、文字数で返します。
+@c COMMON
 @end defun
 
 @defun gap-buffer-gap-at? gbuf whence
 @c MOD text.gap-buffer
+@c EN
 The @var{whence} argument must be either a symbol @code{beginning}
 or a symbol @code{end}.  Returns @code{#t} iff the current cursor position
 of @var{gbuf} is at the beginning or at the end, respectively.
+@c JP
+@var{whence}引数はシンボル@code{beginning}か@code{end}のいずれかです。
+ギャップバッファ@var{gbuf}の現在のカーソル位置がそれぞれバッファの先頭または末尾
+である場合に@code{#t},をそうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun gap-buffer-ref gbuf index :optional fallback
 @c MOD text.gap-buffer
+@c EN
 Returns @var{index}-th character of @var{gbuf}.  If @var{index} is
 out of range, @var{fallback} is returned if given, or an error
 is raised.
+@c JP
+ギャップバッファ@var{gbuf}の@var{index}番目の文字を返します。@var{index}が
+範囲外の場合、@var{fallback}が与えられればそれを返し、無ければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun gap-buffer-set! gbuf index char
 @c MOD text.gap-buffer
+@c EN
 Replaces @var{index}-th character of @var{gbuf} with @var{char}.
 If @var{index} is out of range, an error is signaled.
+@c JP
+ギャップバッファ@var{gbuf}の@var{index}番目の文字を@var{char}で置き換えます。
+@var{index}が範囲外の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun gap-buffer-move! gbuf pos :optional whence
 @c MOD text.gap-buffer
+@c EN
 Moves the cursor position of @var{gbuf} to a position @var{pos}, which
 must be an exact integer.  The position @var{pos} is relative to
 @var{whence}, which must be either one of the symbols @code{beginning},
-@code{current} or @code{end}.
+@code{current} or @code{end}.  If omitted, @code{beginning} is assumed.
+@c JP
+@var{gbuf}のカーソル位置を@var{pos}に移動します。@var{pos}は正確な整数でなければなりません。
+@var{pos}は@var{whence}からの相対位置と解釈されます。@var{whence}は
+シンボル@code{beginning}、@code{current}、@code{end}のいずれかです。
+省略された場合は@code{beginning}と同等です。
+@c COMMON
 @end defun
 
 @defun gap-buffer-insert! gbuf content
 @c MOD text.gap-buffer
+@c EN
 Inserts @var{content}, which must be a character or a string,
 at the current cursor position of @var{gbuf}.
 The current cursor position is moved to the end of the inserted content.
+@c JP
+@var{content}は文字または文字列です。@var{content}wお@var{gbuf}の
+現在のカーソル位置に挿入します。
+カーソルは、挿入された内容の末尾へと移動します。
+@c COMMON
 @end defun
 
 @defun gap-buffer-delete! gbuf size
 @c MOD text.gap-buffer
+@c EN
 Delets @var{size} characters from the current cursor position
-of @var{gbuf}.  It is an error if @var{size} overruns.
+of @var{gbuf}.  The @var{size} argument must be a nonnegative exact integer.
+It is an error if @var{size} overruns.
+@c JP
+@var{gbuf}の現在のカーソル位置から@var{size}文字を削除します。
+@var{size}は非負の正確な整数でなければなりません。
+@var{size}が現在の内容を越えてしまう場合はエラーとなります。
+@c COMMON
 @end defun
 
 @defun gap-buffer-clear! gbuf
 @c MOD text.gap-buffer
+@c EN
 Makes @var{gbuf} empty.
+@c JP
+@var{gbuf}を空にします。
+@c COMMON
 @end defun
 
 @defun gap-buffer-replace! gbuf size content
 @c MOD text.gap-buffer
+@c EN
 This is a combination of @code{(gap-buffer-delete! gbuf size)} and
 @code{(gap-buffer-insert! gbuf content)}.
 The @var{size} argument must be a nonnegative exact integer,
 and the @var{content} argument must be either a string or a character.
+@c JP
+これは@code{(gap-buffer-delete! gbuf size)}と
+@code{(gap-buffer-insert! gbuf content)}を続けて実行するのと同じです。
+@var{size}は非負の正確な整数でなければならず、
+@var{content}は文字か文字列でなければなりません。
+@c COMMON
 @end defun
 
 @defun gap-buffer-contains gbuf str :optional gstart gend sstart send
 @c MOD text.gap-buffer
+@c EN
 Search a string @var{str} in a gap buffer @var{gbuf}.  If found,
 returns the integer index of the beginning of @var{str} in @var{gbuf}.
 If not found, returns @code{#f}.
+@c JP
+文字列@var{str}をギャップバッファ@var{gbuf}の中から探します。
+見つかったら、その先頭の文字インデックスを返します。
+見つからなかったら@code{#f}を返します。
+@c COMMON
 
+@c EN
 The optional arguments @var{gstart} and @var{gend}
 restricts the range of @var{gbuf} to be searched, by integer indexes.
 The default is the entire buffer.
 You can pass @code{#f} to indicate to use the
 default value.
+@c JP
+省略可能引数@var{start}と@var{gend}は、@var{gbuf}内で検索すべき範囲を
+制限する整数インデックスです。デフォルトではバッファ全体が検索対象となります。
+@code{#f}を渡すことでデフォルトの動作とすることができます。
+@c COMMON
 
+@c EN
 The optional arguments @var{sstart} and @var{send} restricts
 the span of @var{str} to be searched, by integer indexes.
 You can pass @code{#f} to indicate to use the
 default value.
+@c JP
+省略可能引数@var{sstart}と@var{send}は、@var{str}から
+検索文字列を切り出す整数インデックスです。
+@code{#f}を渡すことでデフォルトの動作とすることができます。
+@c COMMON
 @end defun
 
 @defun gap-buffer-looking-at? gbuf str :optional point
 @c MOD text.gap-buffer
+@c EN
 Returns @code{#t} iff the content immeidately following @var{point}
 matches a string @var{str}.  If @var{point} is omitted or @code{#f},
 the current cursor position is used.
+@c JP
+整数インデックス@var{point}以降の内容の先頭が文字列@var{str}と一致する場合に
+@code{#t}を、そうでなければ@code{#f}を返します。
+@var{point}が@code{#f}か省略された場合は現在のカーソル位置が使われます。
+@c COMMON
 @end defun
 
 
 @defun gap-buffer-edit! gbuf edit-command
 @c MOD text.gap-buffer
+@c EN
 This is a convenience procedure to ``replay'' editing of the gap buffer
 @var{gbuf}.  The @var{edit-command} argument must be either one of the
 following:
+@c JP
+これはギャップバッファ@var{gbuf}に対する編集を「リプレイ」するのに便利な手続きです。
+@var{edit-command}引数は、次のいずれかの形のフォームです。
+@c COMMON
 
 @table @code
 @item (i @var{pos} @var{string})
+@c EN
 Insert @var{string} at a position @var{pos}.
+@c JP
+@var{string}を@var{pos}位置に挿入　(<b>I</b>nsert)。
+@c COMMON
 @item (d @var{pos} @var{length})
+@c EN
 Delete @var{length} characters from a position @var{pos}.
+@c JP
+@var{pos}位置から@var{length}j文字を削除 (<b>D</b>elete)。
+@c COMMON
 @item (c @var{pos} @var{length} @var{string})
-Change: Delets @var{length} characters from a position @var{pos},
+@c EN
+Change: Deletes @var{length} characters from a position @var{pos},
 then insert @var{string}.
+@c JP
+@var{pos}位置からの@var{length}文字を@var{string}へと変更 (<b>C</b>hange)。
+@c COMMON
 @end table
 
+@c EN
 Here, @var{pos} must be a nonnegative exact integer specifying the
 position in the gap buffer.
+@c JP
+ただし、@var{pos}はバッファ先頭からの文字位置を示す非負の正確な整数です。
+@c COMMON
 
+@c EN
 It returns another edit-command that undo the change.
+@c JP
+この手続きは、加えた変更を元に戻す編集コマンドを返します。
+@c COMMON
 
+@c EN
 One of the appliations of this procedure is to handle undo/redo list.
-@end defun
+@c JP
+この手続きの使用場面のひとつは、undo/redoリストの処理です。
+@c COMMON
 
+@example
+(define buf (string->gap-buffer "Hello, World!"))
+
+(gap-buffer-edit! buf '(d 0 5))
+  @result{} (i 0 "Hello")
+
+(gap-buffer-edit! buf '(i 0 "Konnichiwa"))
+  @result{} (d 0 10)
+
+(gap-buffer->string buf)
+  @result{} "Aloha, World!"
+
+@c EN
+;; Giving the returned values of gap-buffer-edit! in reverse order,
+;; you can undo the changes:
+@c JP
+;; gap-buffer-edit!の戻り値を逆順に適用すると元に戻せる
+@c COMMON
+
+(for-each (cut gap-buffer-edit! buf <>) '((d 0 10) (i 0 "Hello")))
+(gap-buffer->string buf)
+  @result{} "Hello, World!"
+@end example
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Localized messages, Simple HTML document construction, Gap buffer, Library modules - Utilities
