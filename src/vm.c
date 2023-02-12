@@ -3588,8 +3588,6 @@ static ScmObj throw_partial_continuation(ScmObj *argv, int argc, void *data)
     SCM_ASSERT(argc == 1);
     ScmObj args = argv[0];
 
-    fprintf(stderr, "ZZZZpp\n");
-
     save_cont(vm);
 
     vm->escapePoint =
