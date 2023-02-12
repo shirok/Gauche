@@ -1041,3 +1041,14 @@ AS_IF([test "$GAUCHE_CHAR_ENCODING" != utf8], [
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ])
 ])
+
+AS_IF([test "$GAUCHE_THREAD_TYPE" = none], [
+  AC_MSG_RESULT([
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! Compiling without thread support is deprecated.                       !!!
+!!! In future releases, we plan to compile always with thread support.    !!!
+!!! If you have a reason not to compile with thread, please contact us    !!!
+!!! and let us know what prevents your use case from using threads.       !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ])
+])
