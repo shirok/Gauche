@@ -228,7 +228,7 @@
     [(SCM_SOCKET_STATUS_BOUND)     (return 'bound)]
     [(SCM_SOCKET_STATUS_LISTENING) (return 'listening)]
     [(SCM_SOCKET_STATUS_CONNECTED) (return 'connected)]
-    [(SCM_SOCKET_STATUS_SHUTDOWN)  (return 'shutdonw)]
+    [(SCM_SOCKET_STATUS_SHUTDOWN)  (return 'shutdown)]
     [(SCM_SOCKET_STATUS_CLOSED)    (return 'closed)]
     [else
      (Scm_Error "invalid state of socket %S: implementation bugs?" sock)
