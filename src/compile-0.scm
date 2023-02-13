@@ -1,5 +1,5 @@
 ;;;
-;;; comppile-0.scm - Utility macros for the compiler
+;;; compile-0.scm - Utility macros for the compiler
 ;;;
 ;;;   Copyright (c) 2004-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

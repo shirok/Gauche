@@ -421,7 +421,7 @@
 ;; Pass1 utilities
 ;;
 
-;; get symbol or id, and returns identiier.
+;; get symbol or id, and returns identifier.
 (define (ensure-identifier sym-or-id cenv)
   (if (symbol? sym-or-id)
     (make-identifier sym-or-id (cenv-module cenv) (cenv-frames cenv))
