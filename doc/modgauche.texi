@@ -1165,7 +1165,7 @@ offers a handful of primitives (@pxref{Bitvectors}).
 This module provides the comprehensive
 operations on bitvectors.
 @c JP
-Gaucheはビットベクタを組み込みでしていますが、コアで提供されるのは
+Gaucheはビットベクタを組み込みでサポートしていますが、コアで提供されるのは
 ごく基本的な手続きのみです(@ref{Bitvectors}参照)。
 このモジュールではビットベクタに対する包括的な操作を提供します。
 @c COMMON
@@ -1435,41 +1435,101 @@ All bitvectors must have the same length; otherwise, an error is thrown.
 @defunx bitvector-map/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Apply a procedure @var{f} over each element taken from given bitvectors.
 The result of the procedure is gathered as a fresh bitvector and returned.
+@c JP
+手続き@var{f}を与えられたビットベクタから取り出したビットに対して適用し、
+その結果を新たなビットベクタにまとめて返します。
+@c COMMON
 
+@example
+(bitvector-map/int logand #*10101 #*00111)
+  @result{} #*00101
+@end example
+
+@c EN
 All bitvectors must have the same length; otherwise, an error is thrown.
+@c JP
+引数の全てのビットベクタは同じ長さでなければなりません。
+そうでなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun bitvector-map!/int f bv1 bv2 @dots{}
 @defunx bitvector-map!/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Apply a procedure @var{f} over each element taken from given bitvectors.
 The result of the procedure is set into @var{bv1}.
+@c JP
+手続き@var{f}を与えられたビットベクタから取り出したビットに対して適用し、
+その結果を@var{bv1}に破壊的代入します。
+@c COMMON
 
+@c EN
 These procedure returns undefined value; you should count on the
-side effect onto @var{bv1.}
+side effect onto @var{bv1}.  In other words, they are not
+linear-updating procedures.
+@c JP
+これらの手続きは未定義値を返します。呼び出し側は@var{bv1}への副作用を使わなければ
+なりません。言い換えれば、これらの手続きは線形更新手続きではありません。
+@c COMMON
 
+@c EN
 All bitvectors must have the same length; otherwise, an error is thrown.
+@c JP
+引数の全てのビットベクタは同じ長さでなければなりません。
+そうでなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun bitvector-map->list/int f bv1 bv2 @dots{}
 @defunx bitvector-map->list/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Apply a procedure @var{f} over each element taken from given bitvectors.
 The result of the procedure is gathered as a list and returned.
+@c JP
+手続き@var{f}を与えられたビットベクタから取り出したビットに対して適用し、
+その結果をリストに集めて返します。
+@c COMMON
 
+@c EN
 All bitvectors must have the same length; otherwise, an error is thrown.
+@c JP
+引数の全てのビットベクタは同じ長さでなければなりません。
+そうでなければエラーが投げられます。
+@c COMMON
 @end defun
 
-@defun bitvector-value-map-index->list f val bv
+@defun bitvector-value-map-index->list f bv val
 @c MOD gauche.bitvector
+@c EN
 Apply a procedure @var{f} over each index such that the index-th element
 of @var{bv} is @var{val}, which must be either a boolean value or @code{0}
 or @code{1}.  The result of applications are gathered into a list,
 from smaller index.
+@c JP
+ビットベクタ@var{bv}の要素のうち、それが@var{val}とビットとして
+一致するもの (@code{#t}か@code{1}なら真と一致、@code{#f}か@code{0}なら偽と一致)
+について、それぞれそのインデックスを引数に手続き@var{f}を呼びます。結果は
+インデックスの小さい順にリストに集められて返されます。
+@c COMMON
+
+@c EN
+For example, the following returns a list of indices where the
+bit is true.
+@c JP
+下の例はビットベクタのビットが真であるインデックスのリストを返します。
+@c COMMON
+
+@example
+(bitvector-value-map-index->list identity #*10011 #t)
+  @result{} (0 3 4)
+@end example
 @end defun
 
 @defun bitvector-for-each/int f bv1 bv2 @dots{}
