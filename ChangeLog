@@ -1,3 +1,10 @@
+2023-02-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/Makefile.in (BUILD_GOSH_VERSION): Give -v option to BUILD_GOSH
+	  so that precompilation of core is guaranteed to be done with the
+	  specified version of Gauche.  Without this, sometimes the changes
+	  in the prerelease version caused build problems.
+
 2023-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (load): Change return value - on successful loading,
