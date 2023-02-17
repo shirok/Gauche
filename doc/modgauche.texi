@@ -1536,28 +1536,74 @@ bit is true.
 @defunx bitvector-for-each/bool f bv1 bv2 @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Apply a procedure @var{f} over each element taken from given bitvectors.
 The result of the procedure is discarded.
+@c JP
+与えられたビットベクタの各ビットに対して@var{f}を適用します。@var{f}の結果は捨てられます。
+@c COMMON
 
+@c EN
 All bitvectors must have the same length; otherwise, an error is thrown.
+@c JP
+引数の全てのビットベクタは同じ長さでなければなりません。
+そうでなければエラーが投げられます。
+@c COMMON
+
+@example
+(bitvector-for-each/int print #*11100 #*01110 #00111)
+  @result{} @r{prints}
+100
+110
+111
+011
+001
+@end example
 @end defun
 
-@defun bitvector-value-for-each-index f val bv
+@defun bitvector-value-for-each-index f bv val
 @c MOD gauche.bitvector
+@c EN
 Apply a procedure @var{f} over each index such that the index-th element
 of @var{bv} is @var{val}, which must be either a boolean value or @code{0}
 or @code{1}.  The result of @var{f} is discarded.
+@c JP
+@var{bv}の各ビットを最初から走査し、そのビットが@var{val}とビットとして一致したものについて、
+そのインデックスを引数に@var{f}を呼び出します。@var{f}の結果は捨てられます。
+@c COMMON
+
+@example
+(bitvector-value-for-each-index print #*1101111010 #f)
+ @result{} @r{prints}
+2
+7
+9
+@end example
+
+@c EN
+See also @code{bitvector-value-map-index->list} above.
+@c JP
+上の@code{bitvector-value-map-index->list}も参照。
+@c COMMON
 @end defun
 
-
+@c EN
 @subheading Prefixes, suffixes, trimming and padding
+@c JP
+@subheading プレフィクス、サフィックス、トリム、パディング
+@c COMMON
 
 @defun bitvector-prefix-length bv1 bv2
 @defunx bitvector-suffix-length bv1 bv2
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns the length of common prefix/suffix of two bitvectors
 @var{bv1} and @var{bv2}.
+@c JP
+二つのビットベクタ@var{bv1}、@var{bv2}に共通するプレフィクスまたはサフィックスの
+長さを返します。
+@c COMMON
 
 @example
 (bitvector-prefix-length #*1100101001 #*110001101) @result{} 4
@@ -1569,8 +1615,14 @@ Returns the length of common prefix/suffix of two bitvectors
 @defunx bitvector-suffix? needle haystack
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Both arguments must be bitvectors.  Returns @code{#t}
 iff  @var{needle} is a prefix/suffix of @var{haystack}.
+@c JP
+引数はどちらもビットベクタでなければなりません。
+@var{needle}が@var{haystack}のプレフィックスまたはサフィックスになっている時に
+@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 
 @example
 (bitvector-prefix? #*101 #*1010100) @result{} #t
