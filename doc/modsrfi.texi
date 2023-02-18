@@ -93,6 +93,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Generator/accumulator sub-library::  srfi.221
 * Compound objects::            srfi.222
 * Optional arguments::          srfi.227
+* Composing comparators::       srfi.228
 * Tagged procedures::           srfi.229
 * Flexible curried procedures::  srfi.232
 @end menu
@@ -13418,7 +13419,7 @@ is returned.  If none of the case is satisfied, @var{default} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Optional arguments, Tagged procedures, Compound objects, Library modules - SRFIs
+@node Optional arguments, Composing comparators, Compound objects, Library modules - SRFIs
 @section @code{srfi.227} - Optional arguments
 @c NODE 省略可能引数, @code{srfi.227} - 省略可能引数
 
@@ -13587,7 +13588,44 @@ These two forms are provided in a submodule @code{srfi.227.definitions}.
 
 
 @c ----------------------------------------------------------------------
-@node Tagged procedures, Flexible curried procedures, Optional arguments, Library modules - SRFIs
+@node Composing comparators, Tagged procedures, Optional arguments, Library modules - SRFIs
+@section @code{srfi.228} - Composing comparators
+@c NODE 比較器の合成, @code{srfi.228} - 比較器の合成
+
+@deftp {Module} srfi.228
+@mdindex srfi.228
+This module provides a few utility procedures to compose
+comparators for typical aggregates.  For the details
+of comparators, @pxref{Basic comparators}, and @pxref{Comparators}.
+@end deftp
+
+@defun make-wrapper-comparator type-test unwrap contents-comparator
+[SRFI-228]
+@c MOD srfi.228
+@end defun
+
+@defun make-product-comparator comparator @dots{}
+[SRFI-228]
+@c MOD srfi.228
+@end defun
+
+@defun make-sum-comparator comparator @dots{}
+[SRFI-228]
+@c MOD srfi.228
+@end defun
+
+@defvar comparator-one
+[SRFI-228]
+@c MOD srfi.228
+@end defvar
+
+@defvar comparator-zero
+[SRFI-228]
+@c MOD srfi.228
+@end defvar
+
+@c ----------------------------------------------------------------------
+@node Tagged procedures, Flexible curried procedures, Composing comparators, Library modules - SRFIs
 @section @code{srfi.229} - Tagged procedures
 @c NODE 手続きタグ, @code{srfi.229} - 手続きタグ
 
