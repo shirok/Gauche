@@ -3097,4 +3097,36 @@
   (test-module 'srfi.236)
   (test-include-r7 "include/srfi-236-tests"))
 
+;;-----------------------------------------------------------------------
+;; Destructuring lists
+
+(test-section "SRFI-239")
+
+(define-module srfi-239-tests
+  (use gauche.test)
+  (use srfi.239)
+  (test-module 'srfi.239)
+
+  (test* "list-case pair" 1
+         (list-case '(1 2 3) [(h . _) h]))
+  (test* "list-case pair" '(2 3)
+         (list-case '(1 2 3) [(_ . t) t]))
+  (test* "list-case pair vs null" (test-error)
+         (list-case '(1 2 3) [() 'a]))
+  (test* "list-case pair vs atom" (test-error)
+         (list-case '(1 2 3) [v v]))
+  (test* "list-case atom" 1
+         (list-case 1 [(h . t) 'a] [() 'b] [v v]))
+
+  (define type-of
+    (^x (list-case x
+          [(_ . _) 'pair]
+          [() 'null]
+          [_ 'atom])))
+  (test* "list-case type-of" '(atom null pair)
+         (list (type-of 'a)
+               (type-of ())
+               (type-of '(1 2 3))))
+  )
+
 (test-end)

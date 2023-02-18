@@ -1569,6 +1569,16 @@ Built-in. @xref{Grouping}.
 組み込みです。@ref{Grouping}参照。
 
 
+srfi-239, srfi-239
+()
+
+Destructuring lists
+Supported by the module @code{srfi.239}
+
+リストの分解
+@code{srfi.239}でサポートされます。
+
+
 srfi-244
 (define-values)
 
