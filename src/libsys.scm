@@ -42,17 +42,17 @@
   (.cond ["TIME_WITH_SYS_TIME" (.include <sys/time.h> <time.h>)]
          ["HAVE_SYS_TIME_H"    (.include <sys/time.h>)]
          [else                 (.include <time.h>)])
-  (.if "!defined(GAUCHE_WINDOWS)"
-       (.include <grp.h> <pwd.h> <sys/wait.h> <utime.h>
-                 <sys/times.h> <sys/utsname.h>))
+  (.unless (defined "GAUCHE_WINDOWS")
+    (.include <grp.h> <pwd.h> <sys/wait.h> <utime.h>
+              <sys/times.h> <sys/utsname.h>))
   (.if "HAVE_CRYPT_H"        (.include <crypt.h>))
   (.if "HAVE_SYS_RESOURCE_H" (.include <sys/resource.h>))
   (.if "HAVE_SYS_LOADAVG_H"  (.include <sys/loadavg.h>))
   (.if "HAVE_UNISTD_H"       (.include <unistd.h>))
   (.if "HAVE_SYS_MMAN_H"     (.include <sys/mman.h>))
 
-  (.if "defined(GAUCHE_WINDOWS)"
-       (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
+  (.when (defined "GAUCHE_WINDOWS")
+    (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
   ))
 
 ;;---------------------------------------------------------------------
@@ -147,12 +147,12 @@
 (define-macro (define-errno symbol)
   `(inline-stub
     (initcode
-     (.if ,#"defined(~symbol)"
-          (begin
-            (Scm_Define (Scm_GaucheModule)
-                        (SCM_SYMBOL ',symbol) (SCM_MAKE_INT ,symbol))
-            (Scm_HashTableSet errno_n2y (SCM_MAKE_INT ,symbol) ',symbol 0)
-            (Scm_HashTableSet errno_y2n ',symbol (SCM_MAKE_INT ,symbol) 0))))))
+     (.when (defined ,symbol)
+       (begin
+         (Scm_Define (Scm_GaucheModule)
+                     (SCM_SYMBOL ',symbol) (SCM_MAKE_INT ,symbol))
+         (Scm_HashTableSet errno_n2y (SCM_MAKE_INT ,symbol) ',symbol 0)
+         (Scm_HashTableSet errno_y2n ',symbol (SCM_MAKE_INT ,symbol) 0))))))
 
 (define-cproc sys-errno->symbol (num::<fixnum>)
   (return (Scm_HashTableRef errno_n2y (SCM_MAKE_INT num) SCM_FALSE)))
@@ -424,12 +424,13 @@
                           newname::<const-cstring>)
   ::<void>
   (let* ([r::int])
-    (.if "defined(GAUCHE_WINDOWS)"
-         ;; Windows doesn't allow renaming to the existing file, so we unlink
-         ;; it first.  This breaks the atomicity of rename operation.
-         ;; We don't check and raise an error here, since the error will be
-         ;; caught by rename() call.
-         (begin (chmod newname #o666) (unlink newname)))
+    (.when (defined "GAUCHE_WINDOWS")
+      ;; Windows doesn't allow renaming to the existing file, so we unlink
+      ;; it first.  This breaks the atomicity of rename operation.
+      ;; We don't check and raise an error here, since the error will be
+      ;; caught by rename() call.
+      (chmod newname #o666)
+      (unlink newname))
     (SCM_SYSCALL r (rename oldname newname))
     (when (< r 0) (Scm_SysError "renaming %s to %s failed" oldname newname))))
 
@@ -451,10 +452,10 @@
 
 ;; ctermid
 (define-cproc sys-ctermid ()
-  (.if "defined(GAUCHE_WINDOWS)"
-       (return '"CON")
-       (let* ([buf::(.array char [(+ L_ctermid 1)])])
-         (return (SCM_MAKE_STR_COPYING (ctermid buf))))))
+  (.if (defined "GAUCHE_WINDOWS")
+    (return '"CON")
+    (let* ([buf::(.array char [(+ L_ctermid 1)])])
+      (return (SCM_MAKE_STR_COPYING (ctermid buf))))))
 
 ;;---------------------------------------------------------------------
 ;; stdlib.h
@@ -475,9 +476,9 @@
     (SCM_SYSCALL SCM_RESULT (system command))))
 
 (define-cproc sys-random () ::<long>
-  (.cond ["defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
+  (.cond [(and (defined "HAVE_RANDOM") (defined "HAVE_SRANDOM"))
           (return (random))]
-         ["defined(LRAND48) && defined(SRAND48)"
+         [(and (defined "LRAND48") (defined "SRAND48"))
           (return (lrand48))]
          [else
           ;; fallback - we don't want to use rand(), for it is not
@@ -486,9 +487,9 @@
 
 (define-cproc sys-srandom (seed) ::<void>
   (unless (SCM_EXACTP seed) (Scm_Error "exact integer required: %S" seed))
-  (.cond ["defined(HAVE_RANDOM) && defined(HAVE_SRANDOM)"
+  (.cond [(and (defined "HAVE_RANDOM") (defined "HAVE_SRANDOM"))
           (srandom (Scm_GetUInteger seed))]
-         ["defined(LRAND48) && defined(SRAND48)"
+         [(and (defined "LRAND48") (defined "SRAND48"))
           (srand48 (Scm_GetUInteger seed))]
          [else
           ;; fallback - we don't want to use rand(), for it is not
@@ -619,7 +620,7 @@
 ;; sys/resource.h
 
 (inline-stub
- (when "defined(HAVE_SYS_RESOURCE_H)"
+ (.when (defined "HAVE_SYS_RESOURCE_H")
    "
 #if SIZEOF_RLIM_T == 4
 #  define MAKERLIMIT(val)  Scm_MakeIntegerU(val)
@@ -690,7 +691,7 @@
  ;; except if we're stat()-ing the root directory.  For the convenience
  ;; we remove the trailing separator if any.  It is quite complicated,
  ;; for we have to deal with optional drive letters.
- (when "defined(GAUCHE_WINDOWS)"
+ (.when (defined "GAUCHE_WINDOWS")
    (define-cfn check-trailing-separator (path::(const char*))
      ::(const char*) :static
      (let* ([size::int (strlen path)]
@@ -710,7 +711,7 @@
            (set! (aref pcopy (- size 1)) 0)
            (set! path (cast (const char *) pcopy))))
        (return path))))
- (when "!defined(GAUCHE_WINDOWS)"
+ (.unless (defined "GAUCHE_WINDOWS")
    (define-cfn check-trailing-separator (path::(const char*))
      ::(const char*) :static (return path)))
 
@@ -722,14 +723,13 @@
  ;; Since lstat() works identical to stat() if the path is a symlink, and
  ;; on Windows path can never be a symlink, so we can just make sys-lstat
  ;; work the same as sys-stat.
- (when "!defined(GAUCHE_WINDOWS)"
+ (.if (not (defined "GAUCHE_WINDOWS"))
    (define-cproc sys-lstat (path::<const-cstring>) ::<sys-stat>
-     (stat-common lstat)))
- (when "defined(GAUCHE_WINDOWS)"
+     (stat-common lstat))
    (define-cproc sys-lstat (path::<const-cstring>) ::<sys-stat>
      (stat-common stat)))
 
- (when "!defined(GAUCHE_WINDOWS)"
+ (.unless (defined "GAUCHE_WINDOWS")
    (define-cproc sys-mkfifo (path::<const-cstring> mode::<int>) ::<int>
      (SCM_SYSCALL SCM_RESULT (mkfifo path mode))
      (when (< SCM_RESULT 0) (Scm_SysError "mkfifo failed on %s" path))))
@@ -800,11 +800,11 @@
   (let* ([info::(struct tms)] [r::clock_t] [tick::long])
     (SCM_SYSCALL3 r (times (& info)) (== r (cast clock_t -1)))
     (when (== r (cast clock_t -1)) (Scm_SysError "times failed"))
-    (.if "defined(_SC_CLK_TCK)"
-         (set! tick (sysconf _SC_CLK_TCK))
-         (.if "defined(CLK_TCK)"
-              (set! tick CLK_TCK)   ; older name
-              (set! tick 100)))     ; fallback
+    (.if (defined "_SC_CLK_TCK")
+      (set! tick (sysconf _SC_CLK_TCK))
+      (.if (defined "CLK_TCK")
+        (set! tick CLK_TCK)   ; older name
+        (set! tick 100)))     ; fallback
     (return (list (Scm_MakeInteger (ref info tms_utime))
                   (Scm_MakeInteger (ref info tms_stime))
                   (Scm_MakeInteger (ref info tms_cutime))
@@ -815,16 +815,16 @@
 ;; sys/utsname.h
 
 (define-cproc sys-uname ()
-  (.if "!defined(GAUCHE_WINDOWS)"
-       (let* ([info::(struct utsname)])
-         (when (< (uname (& info)) 0) (Scm_SysError "uname failed"))
-         (return (list (SCM_MAKE_STR_COPYING (ref info sysname))
-                       (SCM_MAKE_STR_COPYING (ref info nodename))
-                       (SCM_MAKE_STR_COPYING (ref info release))
-                       (SCM_MAKE_STR_COPYING (ref info version))
-                       (SCM_MAKE_STR_COPYING (ref info machine)))))
-       ;; TODO: Fill with appropriate info.
-       (return (list SCM_FALSE SCM_FALSE SCM_FALSE SCM_FALSE SCM_FALSE))))
+  (.if (not (defined "GAUCHE_WINDOWS"))
+    (let* ([info::(struct utsname)])
+      (when (< (uname (& info)) 0) (Scm_SysError "uname failed"))
+      (return (list (SCM_MAKE_STR_COPYING (ref info sysname))
+                    (SCM_MAKE_STR_COPYING (ref info nodename))
+                    (SCM_MAKE_STR_COPYING (ref info release))
+                    (SCM_MAKE_STR_COPYING (ref info version))
+                    (SCM_MAKE_STR_COPYING (ref info machine)))))
+    ;; TODO: Fill with appropriate info.
+    (return (list SCM_FALSE SCM_FALSE SCM_FALSE SCM_FALSE SCM_FALSE))))
 
 ;;---------------------------------------------------------------------
 ;; sys/wait.h
@@ -911,8 +911,8 @@
    (let* ([st::(struct tm*) (SCM_SYS_TM obj)]
           [fmt::(const char*)])
      (.if (not (defined "GAUCHE_WINDOWS"))
-          (set! fmt "%a %b %e %T %Y")
-          (set! fmt "%a %b %d %H:%M:%S %Y"))
+       (set! fmt "%a %b %e %T %Y")
+       (set! fmt "%a %b %d %H:%M:%S %Y"))
      (Scm_Printf port "#<sys-tm %S>" (Scm_StrfTime fmt st SCM_FALSE))))
  )
 
@@ -939,19 +939,19 @@
 ;; auto-boxing feature but manually call Scm_Make_sys_tm.
 (define-cproc sys-gmtime (time)
   (.if (defined "GAUCHE_WINDOWS")
-       (let* ([tim::time_t (Scm_GetSysTime time)])
-         (return (Scm_Make_sys_tm (gmtime (& tim)))))
-       (let* ([tim::time_t (Scm_GetSysTime time)]
-              [buf::(struct tm)])
-         (return (Scm_Make_sys_tm (gmtime_r (& tim) (& buf)))))))
+    (let* ([tim::time_t (Scm_GetSysTime time)])
+      (return (Scm_Make_sys_tm (gmtime (& tim)))))
+    (let* ([tim::time_t (Scm_GetSysTime time)]
+           [buf::(struct tm)])
+      (return (Scm_Make_sys_tm (gmtime_r (& tim) (& buf)))))))
 
 (define-cproc sys-localtime (time)
   (.if (defined "GAUCHE_WINDOWS")
-       (let* ([tim::time_t (Scm_GetSysTime time)])
-         (return (Scm_Make_sys_tm (localtime (& tim)))))
-       (let* ([tim::time_t (Scm_GetSysTime time)]
-              [buf::(struct tm)])
-         (return (Scm_Make_sys_tm (localtime_r (& tim) (& buf)))))))
+    (let* ([tim::time_t (Scm_GetSysTime time)])
+      (return (Scm_Make_sys_tm (localtime (& tim)))))
+    (let* ([tim::time_t (Scm_GetSysTime time)]
+           [buf::(struct tm)])
+      (return (Scm_Make_sys_tm (localtime_r (& tim) (& buf)))))))
 
 (define-cproc sys-mktime (tm::<sys-tm>)
   (return (Scm_MakeSysTime (mktime tm))))
@@ -985,7 +985,7 @@
     (when (< r 0) (Scm_SysError "chmod failed"))))
 
 (inline-stub
- (when "!defined(GAUCHE_WINDOWS)"
+ (.unless (defined "GAUCHE_WINDOWS")
    (define-cproc sys-fchmod (port-or-fd mode::<int>) ::<void>
      (let* ([r::int] [fd::int (Scm_GetPortFd port-or-fd TRUE)])
        (SCM_SYSCALL r (fchmod fd mode))
@@ -998,14 +998,14 @@
   ::<int>
   (cast void owner) ; suppress unused var warning
   (cast void group) ; suppress unused var warning
-  (.if "!defined(GAUCHE_WINDOWS)"
-       (SCM_SYSCALL SCM_RESULT (chown path owner group))
-       (set! SCM_RESULT 0))
+  (.if (not (defined "GAUCHE_WINDOWS"))
+    (SCM_SYSCALL SCM_RESULT (chown path owner group))
+    (set! SCM_RESULT 0))
   (when (< SCM_RESULT 0) (Scm_SysError "chown failed on %s" path)))
 
 (inline-stub
  ;; lchown
- (when "defined HAVE_LCHOWN"
+ (.when (defined "HAVE_LCHOWN")
    (define-cproc sys-lchown (path::<const-cstring> owner::<int> group::<int>)
      ::<int>
      (SCM_SYSCALL SCM_RESULT (lchown path owner group))
@@ -1074,7 +1074,7 @@
 (define-cproc sys-getppid () ::<int> getppid)
 
 (inline-stub
- (when "!defined(GAUCHE_WINDOWS)"
+ (.unless (defined "GAUCHE_WINDOWS")
    (define-cproc sys-setgid (gid::<int>) ::<int>
      (SCM_SYSCALL SCM_RESULT (setgid gid))
      (when (< SCM_RESULT 0) (Scm_SysError "setgid failed on %d" gid)))
@@ -1092,7 +1092,7 @@
    ;;      if (r < 0) Scm_SysError(\"setpgrp failed\");
    ;;      SCM_RETURN(Scm_MakeInteger(r));"))
 
-   (when "defined HAVE_GETPGID"
+   (.when (defined "HAVE_GETPGID")
      (define-cproc sys-getpgid (pid::<int>) ::<int>
        (SCM_SYSCALL SCM_RESULT (cast int (getpgid pid)))
        (when (< SCM_RESULT 0) (Scm_SysError "getpgid failed")))
@@ -1140,7 +1140,7 @@
                       (set! pglist (SCM_NEW_ATOMIC_ARRAY gid_t size))]
                      [else (Scm_SysError "getgroups failed")])))))
 
-   (when "defined HAVE_SETGROUPS"
+   (.when (defined "HAVE_SETGROUPS")
      (define-cproc sys-setgroups (gids) ::<void>
        (let* ([ngid::int (Scm_Length gids)]
               [glist::gid_t* NULL]
@@ -1206,9 +1206,9 @@
 (define-cproc sys-mkdir (pathname::<const-cstring> mode::<int>) ::<void>
   (let* ([r::int])
     (cast void mode) ; suppress unused var warning
-    (.if "!defined(GAUCHE_WINDOWS)"
-         (SCM_SYSCALL r (mkdir pathname mode))
-         (SCM_SYSCALL r (mkdir pathname)))
+    (.if (not (defined "GAUCHE_WINDOWS"))
+      (SCM_SYSCALL r (mkdir pathname mode))
+      (SCM_SYSCALL r (mkdir pathname)))
     (when (< r 0) (Scm_SysError "mkdir failed on %s" pathname))))
 
 (define-cproc sys-rmdir (pathname::<const-cstring>) ::<void>
@@ -1228,18 +1228,18 @@
                          :optional (no-retry::<boolean> #f))
   ::<int>
   (cast void no-retry) ; suppress unused var warning
-  (.if "defined(GAUCHE_WINDOWS)"
-       (begin (Sleep (* seconds 1000)) (return 0))
-       (let* ([k::u_int (cast (u_int) seconds)]
-              [vm::ScmVM* (Scm_VM)])
-         (while (> k 0)
-           (set! k (sleep k))
-           (SCM_SIGCHECK vm)
-           (when no-retry (break)))
-         (return k))))
+  (.if (defined "GAUCHE_WINDOWS")
+    (begin (Sleep (* seconds 1000)) (return 0))
+    (let* ([k::u_int (cast (u_int) seconds)]
+           [vm::ScmVM* (Scm_VM)])
+      (while (> k 0)
+        (set! k (sleep k))
+        (SCM_SIGCHECK vm)
+        (when no-retry (break)))
+      (return k))))
 
 (inline-stub
- (when "defined(HAVE_NANOSLEEP) || defined(GAUCHE_WINDOWS)"
+ (.when (or (defined "HAVE_NANOSLEEP") (defined "GAUCHE_WINDOWS"))
    (define-cproc sys-nanosleep (nanoseconds
                                 :optional (no-retry::<boolean> #f))
      (let* ([spec::ScmTimeSpec] [rem::ScmTimeSpec]
@@ -1277,11 +1277,11 @@
 
 (define-cproc sys-unlink (pathname::<const-cstring>)
   (let* ([r::int])
-    (.if "defined(GAUCHE_WINDOWS)"
-         ;; Windows doesn't allow unlinking a read-only file.  We don't check
-         ;; an error here, since the error will be caught by next unlink call.
-         (when (not (access pathname F_OK))
-           (chmod pathname #o600)))
+    (.if (defined "GAUCHE_WINDOWS")
+      ;; Windows doesn't allow unlinking a read-only file.  We don't check
+      ;; an error here, since the error will be caught by next unlink call.
+      (when (not (access pathname F_OK))
+        (chmod pathname #o600)))
     (SCM_SYSCALL r (unlink pathname))
     (if (< r 0)
       (begin
@@ -1313,7 +1313,7 @@
  ;; NB. Linux needs _XOPEN_SOURCE defined before unistd.h to get crypt()
  ;; prototype.  However, it screws up something else.  Just for now I
  ;; cast the return value of crypt() to avoid it...such a kludge...
- (when "defined(HAVE_CRYPT)"
+ (.when (defined "HAVE_CRYPT")
    (define-cproc sys-crypt (key::<const-cstring> salt::<const-cstring>)
      ::<const-cstring> (return (cast (const char *) (crypt key salt))))
    )
@@ -1325,22 +1325,22 @@
 #endif")
 
 (define-cproc sys-gethostname ()
-  (.if "defined HAVE_GETHOSTNAME"
-       (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
-         (SCM_SYSCALL r (gethostname buf HOSTNAMELEN))
-         (when (< r 0) (Scm_SysError "gethostname failed"))
-         (return (SCM_MAKE_STR_COPYING buf)))
-       ;; TODO: find better alternative
-       (return (SCM_MAKE_STR_IMMUTABLE "localhost"))))
+  (.if (defined "HAVE_GETHOSTNAME")
+    (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
+      (SCM_SYSCALL r (gethostname buf HOSTNAMELEN))
+      (when (< r 0) (Scm_SysError "gethostname failed"))
+      (return (SCM_MAKE_STR_COPYING buf)))
+    ;; TODO: find better alternative
+    (return (SCM_MAKE_STR_IMMUTABLE "localhost"))))
 
 (define-cproc sys-getdomainname ()
-  (.if "defined HAVE_GETDOMAINNAME"
-       (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
-         (SCM_SYSCALL r (getdomainname buf HOSTNAMELEN))
-         (when (< r 0) (Scm_SysError "getdomainame failed"))
-         (return (SCM_MAKE_STR_COPYING buf)))
-       ;; TODO: find better alternative
-       (return (SCM_MAKE_STR_IMMUTABLE "local"))))
+  (.if (defined "HAVE_GETDOMAINNAME")
+    (let* ([buf::(.array char [HOSTNAMELEN])] [r::int])
+      (SCM_SYSCALL r (getdomainname buf HOSTNAMELEN))
+      (when (< r 0) (Scm_SysError "getdomainame failed"))
+      (return (SCM_MAKE_STR_COPYING buf)))
+    ;; TODO: find better alternative
+    (return (SCM_MAKE_STR_IMMUTABLE "local"))))
 
 ;; not supported yet:
 ;;  fpathconf lseek pathconf read sysconf write
@@ -1349,7 +1349,7 @@
 ;; symbolic link
 
 (inline-stub
- (when "defined(HAVE_SYMLINK)"
+ (.when (defined "HAVE_SYMLINK")
    (define-cproc sys-symlink (existing::<const-cstring>
                               newpath::<const-cstring>)
      ::<void>
@@ -1359,7 +1359,7 @@
          (Scm_SysError "symlink from %s to %s failed" newpath existing))))
    )
 
- (when "defined(HAVE_READLINK)"
+ (.when (defined "HAVE_READLINK")
    (define-cproc sys-readlink (path::<const-cstring>)
      (let* ([buf::(.array char [1024])] ; TODO: needs to be configured
             [n::int])
@@ -1374,19 +1374,19 @@
 ;; select
 
 (inline-stub
- (when "defined(HAVE_SELECT)"
+ (.when (defined "HAVE_SELECT")
    ;; NB: On Windows, FD_SETSIZE merely indicates the maximum # of socket
    ;; descriptors fd_set can contain, and unrelated to the actual value
    ;; of the descriptor.  This check is thus only valid on unixen.
    (define-cise-stmt check-fd-range
      [(_ fd)
       (let1 fd_ (gensym)
-        `(.if "!defined(GAUCHE_WINDOWS)"
-              (let* ((,fd_ :: int ,fd))
-                (when (or (< ,fd_ 0) (>= ,fd_ FD_SETSIZE))
-                  (Scm_Error "File descriptor value is out of range: %d \
+        `(.unless (defined "GAUCHE_WINDOWS")
+           (let* ((,fd_ :: int ,fd))
+             (when (or (< ,fd_ 0) (>= ,fd_ FD_SETSIZE))
+               (Scm_Error "File descriptor value is out of range: %d \
                          (must be between 0 and %d, inclusive)"
-                             ,fd_ (- FD_SETSIZE 1))))))])
+                          ,fd_ (- FD_SETSIZE 1))))))])
 
    (define-cproc sys-fdset-ref (fdset::<sys-fdset> pf) ::<boolean>
      (setter sys-fdset-set!)
@@ -1443,7 +1443,7 @@
 ;;;
 
 (inline-stub
- (when "defined(GAUCHE_WINDOWS)"
+ (.when (defined "GAUCHE_WINDOWS")
    ;; Windows HANDLE wrapper
    ;; We use foreign pointer for HANDLE.  If the type of handle is known at
    ;; the creation time, it is attached as the foreign pointer attribute
