@@ -13602,26 +13602,113 @@ of comparators, @pxref{Basic comparators}, and @pxref{Comparators}.
 @defun make-wrapper-comparator type-test unwrap contents-comparator
 [SRFI-228]
 @c MOD srfi.228
+Creates a comparator for objects that wraps other entities.
+
+First it tests the given object with @var{type-test}; then, it calls
+@var{unwrap} on it to extract contents, and use @code{contents-comparator}
+on the exracted contents.
+
+For example, suppose you want to deal with a string inside a box.
+You can create a comparator for such structs (@code{strbox-comparator})
+as follows:
+
+@example
+(define (strbox? obj)
+  (and (box? obj) (string? (unbox obj))))
+
+(define strbox-comparator
+  (make-wrapper-comparator strbox? unbox string-comparator))
+@end example
+
+Then you can compare to strboxes with @code{<?} etc., or make
+a hashtable or treemap by passing @code{strbox-comparator} as a comparator.
 @end defun
 
 @defun make-product-comparator comparator @dots{}
 [SRFI-228]
 @c MOD srfi.228
+Creates a comparator for objects of a @emph{common} type of the types
+dealt with given comparators.  Combined with @code{make-wrapper-creator},
+this can also be used to create a comparator for the product types.
+
+The type predicate of the resulting comparator is satisfied iff
+the object satisfies every type predicates of @var{comparator}s.
+
+The equality predicate is satisfied iff two objects are equal
+to each other according to all @var{comparator}s.
+
+The ordering predicate is defined only if all the @var{comparator}s
+have ordering predicate.   Two objects can be ordered by applying
+ordering predicate of @var{comparator}s left to right.  If an ordering
+predicate returns true, the ordering predicate of the product comparator
+immediately returns true.  Otherwise, two objects are checked with
+the equality predicate of the current comparator.  If two objects are
+not equal, or no more comparators are left, then the ordering predicate
+of the product comparator returns @code{#f}.  Otherwise, the next
+comparator is tried.
+
+The hash function is defined only if all the @var{comparator}s
+have hash functions.  Each hash function is called, and the
+results are combined to produce the final hash value.
+
+The following example defines a comparator of a record type
+based on the comparators of the fields.
+
+@example
+(define-record-type <member> make-member member?
+  (name member-name)  ; string
+  (age member-age))   ; integer
+
+(define member-comparator
+  (make-product-comparator
+   (make-wrapper-comparator member? member-name string-comparator)
+   (make-wrapper-comparator member? member-age integer-comparator)))
+@end example
 @end defun
 
 @defun make-sum-comparator comparator @dots{}
 [SRFI-228]
 @c MOD srfi.228
+Creates a comparator for objects of a @emph{union} type of the types
+dealt with the given comparators.
+
+The type predicate is satisfied if the given object satisfies a type
+predicate of any one of the given comparators.  The leftmost comparator
+that the object satisfies is called the @emph{relevant comparator}.
+
+The equality predicate is satisfied if the two objects share the
+relevant comparator and are equal to each other with regard to the
+comparator.
+
+The ordering predicate works as follows: First, relevant comparators
+of two given objects are picked.  If the relevant comparator of
+the first object is to the left of the relevant comparator of
+the second, the ordering predicate of the sum comparator is satisfied.
+If the first one is to the right of the second one, the ordering predicate
+is unsatisfied.  If two objects share the relevant comparator,
+they are oreder by the ordering predicate of the relevant comparator.
+
+The hash function returns the hash value computed by the relevant
+comparator of the given object.
 @end defun
 
 @defvar comparator-one
 [SRFI-228]
 @c MOD srfi.228
+This is a comparator that works as a unit element for the product
+comparator.  It accepts any object and all values are equal; that is,
+its type predcate and its equality predicate always return @code{#t},
+its ordering predicate always returns @code{#f}, and its hash
+function always returns 0.
 @end defvar
 
 @defvar comparator-zero
 [SRFI-228]
 @c MOD srfi.228
+This is a comparator that works as a unit element for the sum
+comparator.  Its domain is empty; that is, its type predicate always
+returns @code{#f}, and it is an error to invoke its equality predicate,
+ordering predicate and hash function.
 @end defvar
 
 @c ----------------------------------------------------------------------
