@@ -2545,6 +2545,15 @@ shorter ones are ordered first (
 @c COMMON
 @end defvar
 
+@defvar time-comparator
+@c EN
+A comparator to compare @code{<time>} objects (@pxref{Time}).
+@c JP
+@code{<time>}オブジェクトを比較する比較器です。@ref{Time}参照。
+@c COMMON
+@end defvar
+
+
 @node Combining comparators,  , Predefined comparators, Basic comparators
 @subsubsection Combining comparators
 @c NODE 比較器を組み合わせる
@@ -2643,6 +2652,13 @@ userレコードの@code{username}スロットだけを見て比較を行いま�
   (make-tree-map
     (make-key-comparator string-comparator user? user-username)))
 @end example
+
+@c EN
+@xref{Composing comparators}, for additional procedures
+to create comparator of aggregate types.
+@c JP
+集合型の比較器を作る手続きについては、@ref{Composing comparators}も参照してください。
+@c COMMON
 @end defun
 
 @defun make-tuple-comparator cmpr1 cmpr2 @dots{}
@@ -2658,6 +2674,13 @@ second elements by @var{c2} and third elements by @var{c3}.
 例えば@code{(make-tuple-comparator c1 c2 c3)}が返すのは、
 3要素のリストを受け入れ、最初の要素が@var{c1}で、二番目の要素が@var{c2}で、
 最後の要素が@var{c3}で比較されるような比較器です。
+@c COMMON
+
+@c EN
+@xref{Composing comparators}, for additional procedures
+to create comparator of aggregate types.
+@c JP
+集合型の比較器を作る手続きについては、@ref{Composing comparators}も参照してください。
 @c COMMON
 @end defun
 
