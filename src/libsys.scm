@@ -891,6 +891,12 @@
 (define-cproc seconds->time (t::<double>) ;SRFI-18
   Scm_RealSecondsToTime)
 
+(define time-comparator
+  (make-comparator time?
+                   (^[a b] (zero? (compare a b)))
+                   (^[a b] (< (compare a b) 0))
+                   default-hash))
+
 (inline-stub
  (declare-cfn tm_print (obj port::ScmPort* ctx::ScmWriteContext*)
               ::void :static)
