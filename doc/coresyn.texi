@@ -3750,7 +3750,7 @@ parenthesis are not there.  Thus these two forms are equivalent.
 @defmac define-values (var @dots{}) expr
 @defmacx define-values (var var1 @dots{} . var2) expr
 @defmacx define-values var expr
-[R7RS base]
+[R7RS base][SRFI-244]
 @c EN
 @var{Expr} is evaluated, and each value of the result
 is bound to each @var{var}s.  In the first form, it is an error

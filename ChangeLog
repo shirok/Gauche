@@ -1,3 +1,7 @@
+2023-02-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/239.scm: Add srfi-239 (documented).
+
 2023-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm (time-comparator): Added.  Although <time> can be

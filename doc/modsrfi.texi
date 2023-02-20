@@ -96,6 +96,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Composing comparators::       srfi.228
 * Tagged procedures::           srfi.229
 * Flexible curried procedures::  srfi.232
+* Destructuring lists::         srfi.239
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -13795,7 +13796,7 @@ is signaled.
 
 
 @c ----------------------------------------------------------------------
-@node Flexible curried procedures,  , Tagged procedures, Library modules - SRFIs
+@node Flexible curried procedures, Destructuring lists, Tagged procedures, Library modules - SRFIs
 @section @code{srfi.232} - Flexible curried procedures
 @c NODE 柔軟なカリー化された手続き, @code{srfi.232} - 柔軟なカリー化された手続き
 
@@ -13967,6 +13968,62 @@ A shorthand of @code{(define name (curried formals body @dots{}))}.
 @code{(define name (curried formals body @dots{}))}の略記です。
 @c COMMON
 @end defmac
+
+@c ----------------------------------------------------------------------
+@node Destructuring lists,  , Flexible curried procedures, Library modules - SRFIs
+@section @code{srfi.239} - Destructuring lists
+@c NODE リストの分解, @code{srfi.239} - リストの分解
+
+@deftp {Module} srfi.239
+@mdindex srfi.239
+This module provides a pattarn-matching macro specialized for
+the common pattern appearing frequently in list processing code.
+It can be seen as a subset of @code{match} (@pxref{Pattern matching});
+if you're writing Gauche-specific code, you don't need this module.
+However, this is useful for portable code.
+@end deftp
+
+@defmac list-case expr clause @dots{}
+[SRFI-239]
+@c MOD srfi.239
+Each @var{clause} must be one of the following forms:
+
+@itemize @bullet
+@item
+@code{((@var{var1} . @var{var2}) @var{body} @dots{})}
+@item
+@code{(() @var{body} @dots{})}
+@item
+@code{(@var{var} @var{body} @dots{})}
+@end itemize
+
+Here, @var{var}, @var{var1}, @var{var2} are identifiers.
+The order of clauses does not matter, and not all three forms need
+to be present.
+
+First @var{expr} is evaluated.  If it is a pair, the first type of
+clause is selected, and @var{body} @dots{} are evaluated with
+the environment where the pair's car is bound to @var{var1} and the pair's
+cdr is bound to @var{var2}.
+If it is an empty list, the second type of clause is selected,
+and its @var{body} @dots{} are evaluated.
+Otherwise, the third type of clause is selected,
+its @var{body} @dots{} are evaluated where
+the value of @var{expr} is bound to @var{var}.
+
+The identifier @code{_} has special meaning in @var{var}, @var{var1},
+or @var{var2}; it is not bound and the corresponding value is simply discarded.
+
+If not all three forms are present and the result of @var{expr} does not
+match the provided clauses, an error is thrown.
+
+In Gauche, you can use @code{util.match} and just replacing @code{list-case}
+with @code{match} would work (except that @code{list-case} generates
+more specific error message when no matching clause is provided).
+However, this type of pattern matching appears very frequently in
+list processing code, and you can use this module for portable code.
+@end defmac
+
 
 @c Local variables:
 @c mode: texinfo

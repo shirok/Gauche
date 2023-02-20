@@ -1576,9 +1576,11 @@ srfi-239, srfi-239
 
 Destructuring lists
 Supported by the module @code{srfi.239}
+(@pxref{Destructuring lists}).
 
 リストの分解
-@code{srfi.239}でサポートされます。
+@code{srfi.239}でサポートされます
+(@ref{Destructuring lists}参照)。
 
 
 srfi-244
