@@ -12,6 +12,7 @@
 * Concurrent sequences::        control.cseq
 * Futures::                     control.future
 * A common job descriptor for control modules::  control.job
+* Plumbing ports::              control.plumbing
 * Parallel map::                control.pmap
 * Scheduler::                   control.scheduler
 * Thread pools::                control.thread-pool
@@ -1481,7 +1482,7 @@ Returns @code{#t} if computation in @var{future} is finished,
 
 
 @c ----------------------------------------------------------------------
-@node A common job descriptor for control modules, Parallel map, Futures, Library modules - Utilities
+@node A common job descriptor for control modules, Plumbing ports, Futures, Library modules - Utilities
 @section @code{control.job} - A common job descriptor for control modules
 @c NODE 制御モジュールのための汎用ジョブ記述子, @code{control.job} - 制御モジュールのための汎用ジョブ記述子
 
@@ -1712,7 +1713,78 @@ always returns @code{#f}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Parallel map, Scheduler, A common job descriptor for control modules, Library modules - Utilities
+@node Plumbing ports, Parallel map, A common job descriptor for control modules, Library modules - Utilities
+@section @code{control.plumbing} - Plumbing ports
+@c NODE ポートの配管, @code{control.plumbing} - ポートの配管
+
+@deftp {Module} control.plumbing
+@mdindex control.plumbing
+This module provides utilities to use ports as communication channles
+between threads.  Although some use cases don't involve threads,
+the general mechanism implicitly use threads.   For example, a @emph{pump}
+connects an input port and an output port, making the data available
+from the input port to be written to the output port.  It spawns a
+thread to read from the given input.
+
+With this module, you can construct a system that takes data from
+ports, and delivers it to other ports.  It is like you construct
+plumbing system with multiple inlets and outlets; hence we named it
+@emph{plumbing}.
+
+See @code{make-plumbing} below for the complete specification of
+plumbing.
+@end deftp
+
+@defun make-plumbing
+@c MOD control.plumbing
+Creates and returns a new plumbing.
+
+To function, a plumbing need to have one or more @emph{inlets} and
+one or more @emph{outlets}.  Data flowing in from inlets will flow out to
+outlets.
+
+Each inlet/outlet port can be either an input port or an output port; so
+we'll have the following four cases:
+
+@table @asis
+@item Inlet input port
+An input port that provides data from a producer.  A dedicated thread
+is spanwed to read and handle the data from this port. One of the use
+case is the process output port (@pxref{Process ports}), which is an
+input port from which you can read the external process's output.
+@item Inlet output port
+An output port, to which a producer can write data.  Data written to
+this port will be available to outlet ports.
+@item Outlet input port
+An input port from which a consumer can read data.  It has an internal buffer
+to keep data flowed in from inlets.
+@item Outlet output port
+An output port to which the data will be written.
+@end table
+
+All read/write operations are mutexed, so you can use a plumbing
+as a communication channel between threads.
+
+The following example connects subprocess's stdout and stderr into
+the current output port:
+
+@example
+(use gauche.process)
+(use control.plumbing)
+
+(let ([p (run-process '(ping "127.0.0.1") :output :pipe :error :pipe)]
+      [plumbing (make-plumbing)])
+  (add-inlet-input-port! plumbing (process-output p))
+  (add-inlet-input-port! plumbing (process-error p))
+  (add-outlet-output-port! plumbing (current-output-port)))
+
+@end example
+@end defun
+
+
+
+@c ----------------------------------------------------------------------
+@node Parallel map, Scheduler, Plumbing ports, Library modules - Utilities
 @section @code{control.pmap} - Parallel map
 @c NODE 並列map, @code{control.pmap} - 並列map
 
@@ -1940,7 +2012,6 @@ It is useful when I/O operations may take too long and you
 want to guarantee the entire operation finishes within certain
 time limit.
 @end defun
-
 
 @c ----------------------------------------------------------------------
 @node Scheduler, Thread pools, Parallel map, Library modules - Utilities
