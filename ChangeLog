@@ -1,3 +1,11 @@
+2023-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/plumbing.scm: Allow optional names to inlets/outlets
+	  so that ports can be extracted from a plumbing by name.
+	  NB: API of add-outlet-output-port! has changed.
+	  We'll likely to change convenience utilities to accept names
+	  as well.
+
 2023-02-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/239.scm: Add srfi-239 (documented).

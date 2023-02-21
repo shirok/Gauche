@@ -46,7 +46,7 @@
   (use util.match)
 
   (export make-plumbing plumbing? plumbing-inlet-ports plumbing-outlet-ports
-          port-plumbing
+          plumbing-get-port port-plumbing
           open-inlet-output-port add-inlet-input-port!
           open-outlet-input-port add-outlet-output-port!
 
@@ -82,13 +82,15 @@
    (inlets :init-value '())))
 
 (define-class <plumbing-outlet> ()
-  ((port  :init-keyword :port)
+  ((name :init-keyword :name)
+   (port  :init-keyword :port)
    (put   :init-keyword :put)     ; (^ impl u8vector) -> void
    (close :init-keyword :close)   ; (^ impl) -> void
    (thread :init-value #f)))
 
 (define-class <plumbing-inlet> ()
-  ((port :init-keyword :port)
+  ((name :init-keyword :name)
+   (port :init-keyword :port)
    (thread :init-keyword :thread)))
 
 ;; Key for port attributes.  Ports created by this module
@@ -137,6 +139,16 @@
      (^[impl] (map (cut ~ <> 'port) (~ impl'outlets)))))
 
 ;; API
+(define (plumbing-get-port plumbing name)
+  (assume-type plumbing <plumbing>)
+  (assume-type name <symbol>)
+  ($ %with-locked-plumbing plumbing
+     (^[impl]
+       (define (port-with-name x) (and (eq? (~ x'name) name) (~ x'port)))
+       (or (any port-with-name (~ impl'outlets))
+           (any port-with-name (~ impl'inlets))))))
+
+;; API
 (define (port-plumbing port)
   (assume-type port <port>)
   (port-attribute-ref port *plumbing-key* #f))
@@ -163,8 +175,8 @@
 ;;
 
 ;; API
-(define (open-inlet-output-port plumbing)
-  (define inlet (make <plumbing-inlet> :thread #f))
+(define (open-inlet-output-port plumbing :optional (name #f))
+  (define inlet (make <plumbing-inlet> :thread #f :name name))
   (define (flusher buffer flag)
     (let1 data (u8vector-copy buffer)
       ($ %with-locked-plumbing plumbing
@@ -186,8 +198,8 @@
   port)
 
 ;; API
-(define (add-inlet-input-port! plumbing iport)
-  (define inlet (make <plumbing-inlet> :port iport))
+(define (add-inlet-input-port! plumbing iport :optional (name #f))
+  (define inlet (make <plumbing-inlet> :port iport :name name))
   (define (pump)
     (let1 data (read-uvector <u8vector> 4096 iport)
       (if (eof-object? data)
@@ -215,17 +227,19 @@
 
 ;; API
 (define (add-outlet-output-port! plumbing oport
+                                 :optional (name #f)
                                  :key (close-on-eof #f)
                                       (asynchronous #f))
   (define outlet
     (if asynchronous
-      (%make-async-output-outlet! plumbing oport close-on-eof)
-      (%make-simple-output-outlet! plumbing oport close-on-eof)))
+      (%make-async-output-outlet! plumbing oport name close-on-eof)
+      (%make-simple-output-outlet! plumbing oport name close-on-eof)))
   (%with-locked-plumbing plumbing (cut %add-outlet! plumbing <> outlet))
   plumbing)
 
-(define (%make-simple-output-outlet! plumbing oport close-on-eof)
+(define (%make-simple-output-outlet! plumbing oport name close-on-eof)
   (define outlet (make <plumbing-outlet>
+                   :name name
                    :port oport
                    :put (^[impl data] (write-uvector data oport))
                    :close (^[impl]
@@ -234,7 +248,7 @@
                             (%delete-outlet! plumbing impl outlet))))
   outlet)
 
-(define (%make-async-output-outlet! plumbing oport close-on-eof)
+(define (%make-async-output-outlet! plumbing oport name close-on-eof)
   (define mtq (make-mtqueue))
   (define (feeder)
     (let1 data (dequeue/wait! mtq)
@@ -247,6 +261,7 @@
                (feeder)))))
   (define outlet
     (make <plumbing-outlet>
+      :name name
       :port oport
       :put (^[impl data] (enqueue/wait! mtq data))
       :close (^[impl] (enqueue/wait! mtq (eof-object)))))
@@ -254,11 +269,12 @@
   outlet)
 
 ;; API
-(define (open-outlet-input-port plumbing)
+(define (open-outlet-input-port plumbing :optional (name #f))
   (define mtq (make-mtqueue))
   (define eof-reached? #f)
   (define outlet
     (make <plumbing-outlet>
+      :name name
       :put (^[impl data] (enqueue/wait! mtq data))
       :close (^[impl] (enqueue/wait! mtq (eof-object)))))
   (define (filler buf)
@@ -320,7 +336,7 @@
   (define plumbing (make-plumbing))
   (for-each (match-lambda
               [(oport coe async)
-               (add-outlet-output-port! plumbing oport
+               (add-outlet-output-port! plumbing oport #f
                                         :close-on-eof coe
                                         :asynchronous async)])
             port&flags)
@@ -350,7 +366,7 @@
       (add-inlet-input-port! plumbing ip))
     (dolist [op&f oport&flags]
       (match-let1 (oport coe async) op&f
-        (add-outlet-output-port! plumbing oport
+        (add-outlet-output-port! plumbing oport #f
                                  :close-on-eof coe
                                  :asynchronous async)))))
 
@@ -361,5 +377,5 @@
   (assume (output-port? outlet-oport))
   (let1 plumbing (make-plumbing)
     (add-inlet-input-port! plumbing inlet-iport)
-    (add-outlet-output-port! plumbing outlet-oport :close-on-eof close-on-eof)
+    (add-outlet-output-port! plumbing outlet-oport #f :close-on-eof close-on-eof)
     (open-outlet-input-port plumbing)))

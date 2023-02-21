@@ -475,12 +475,12 @@
   ;;  >[inlet1]==/   \=> {outlet1}
 
   (define plumbing (make-plumbing))
-  (define inlet0 (open-inlet-output-port plumbing))
-  (define inlet1 (open-inlet-output-port plumbing))
+  (define inlet0 (open-inlet-output-port plumbing 'inlet0))
+  (define inlet1 (open-inlet-output-port plumbing 'inlet1))
   (define outlet0 (open-output-string))
   (define outlet1 (open-output-string))
-  (add-outlet-output-port! plumbing outlet0)
-  (add-outlet-output-port! plumbing outlet1 :close-on-eof #t)
+  (add-outlet-output-port! plumbing outlet0 'outlet0)
+  (add-outlet-output-port! plumbing outlet1 'outlet1 :close-on-eof #t)
 
   (test* "multi inlets, accessors" (list inlet0 inlet1)
          (plumbing-inlet-ports plumbing)
@@ -493,6 +493,11 @@
                (port-plumbing inlet1)
                (port-plumbing outlet0)
                (port-plumbing outlet1)))
+  (test* "access by name" (list inlet0 inlet1 outlet0 outlet1)
+         (list (plumbing-get-port plumbing 'inlet0)
+               (plumbing-get-port plumbing 'inlet1)
+               (plumbing-get-port plumbing 'outlet0)
+               (plumbing-get-port plumbing 'outlet1)))
 
   (test* "closing outlet ports (not yet)" '(#f #f)
          (begin
@@ -522,7 +527,7 @@
 
   (test* "async outlet output" "a"
          (begin
-           (add-outlet-output-port! plumbing outlet
+           (add-outlet-output-port! plumbing outlet #f
                                     :asynchronous #t
                                     :close-on-eof #t)
            (display "a" inlet)
