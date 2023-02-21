@@ -31,8 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; EXPERIMENTAL
-
 ;; This module provides utilities that uses ports for communication
 ;; between threads and/or processes.
 
@@ -47,7 +45,7 @@
   (use scheme.list)                     ;list-tabulate
   (use util.match)
 
-  (export make-plumbing plumbing-inlet-ports plumbing-outlet-ports
+  (export make-plumbing plumbing? plumbing-inlet-ports plumbing-outlet-ports
           port-plumbing
           open-inlet-output-port add-inlet-input-port!
           open-outlet-input-port add-outlet-output-port!
@@ -117,6 +115,9 @@
 ;; API
 (define (make-plumbing)
   (make <plumbing> :impl (atom (make <plumbing-impl>))))
+
+;; API
+(define (plumbing? obj) (is-a? obj <plumbing>))
 
 (define-syntax %with-locked-plumbing
   (syntax-rules ()
