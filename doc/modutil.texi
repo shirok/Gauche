@@ -1735,6 +1735,8 @@ See @code{make-plumbing} below for the complete specification of
 plumbing.
 @end deftp
 
+@subheading Plumbing system
+
 @defun make-plumbing
 @c MOD control.plumbing
 Creates and returns a new plumbing.
@@ -1749,9 +1751,7 @@ we'll have the following four cases:
 @table @asis
 @item Inlet input port
 An input port that provides data from a producer.  A dedicated thread
-is spanwed to read and handle the data from this port. One of the use
-case is the process output port (@pxref{Process ports}), which is an
-input port from which you can read the external process's output.
+is spanwed to read and handle the data from this port.
 @item Inlet output port
 An output port, to which a producer can write data.  Data written to
 this port will be available to outlet ports.
@@ -1777,11 +1777,164 @@ the current output port:
   (add-inlet-input-port! plumbing (process-output p))
   (add-inlet-input-port! plumbing (process-error p))
   (add-outlet-output-port! plumbing (current-output-port)))
-
 @end example
 @end defun
 
+@defun plumbing? obj
+@c MOD control.plumbing
+Returns @code{#t} if @var{obj} is a plumbing, @code{#f} if not.
+@end defun
 
+@defun plumbing-inlet-ports plumbing
+@defunx plumbing-outlet-ports plumbing
+@c MOD control.plumbing
+Returns a list of ports connected to the @var{plumbing}'s inlets
+and outlets, respectively.
+@end defun
+
+@defun plumbing-get-port plumbing name
+@c MOD control.plumbing
+The @var{name} argument must be a symbol.
+Returns a port connected to @var{plumbing} and with @var{name}.
+Returns @code{#f} if there's no such ports.
+@end defun
+
+@defun port-plumbing port
+@c MOD control.plumbing
+A port opened for a plumbing with @code{open-outlet-input-port},
+@code{open-inlet-output-port}, or other utility procedures, keeps
+which plumbing it belongs to.  This procedure returns the plumbing
+associated with @var{port}.  If @var{port} is not made from
+a plumbing, @code{#f} is returned.
+
+Note that an existing port added to a plumbing by
+@code{add-inlet-output-port!} etc. does not keep the plumbing
+it is attached to, and this procedure returns @code{#f} on such a port.
+@end defun
+
+@subheading Creating and attaching ports to plumbing
+
+@defun open-inlet-output-port plumbing :optional name
+@c MOD control.plumbing
+Creates an output port connected to @var{plumbing}'s inlet; that is,
+the data written to the port will flow to @var{plumbing}'s outlets.
+
+The optional @var{name} should be a symbol or @code{#f}.  If it is
+a symbol, the port will be retrieved from @var{plumbing} with
+@code{plumbing-get-port}.
+
+Applying @code{port-plumbing} on the returned port returns @var{plumbing}.
+
+Once you close the returned port, the port is removed from @var{plumbing}.
+Once all inlet ports are closed, the outlet ports of @var{plumbing}
+get EOF.
+@end defun
+
+@defun add-inlet-input-port! plumbing iport :optional name
+@c MOD control.plumbing
+Connects an existing input port @var{iport} to @var{plumbing}'s inlet.
+A thread in @var{plumbing} reads from @var{iport} and feeds the data
+to its outlets.
+
+The optional @var{name} should be a symbol or @code{#f}.  If it is
+a symbol, the port will be retrieved from @var{plumbing} with
+@code{plumbing-get-port}.
+
+Once EOF is read from @var{iport}, it is removed from @var{plumbing}.
+Once all inlet ports are closed, the outlet ports of @var{plumbing}
+get EOF.
+@end defun
+
+@defun open-outlet-input-port plumbing :optional name
+@c MOD control.plumbing
+Creates an input port connected to @var{plumbing}'s outlet; that is,
+from that port you can read the data fed to @var{plumbing}'s inlets.
+
+The optional @var{name} should be a symbol or @code{#f}.  If it is
+a symbol, the port will be retrieved from @var{plumbing} with
+@code{plumbing-get-port}.
+
+Applying @code{port-plumbing} on the returned port returns @var{plumbing}.
+
+Once all inlets are closed, the returned port yields EOF.
+You can close the returned port at any time; then the port is removed
+from @var{plumbing}'s outlets and no data will be delivered to it.
+@end defun
+
+@defun add-outlet-output-port! plumbing oport :optional name :key close-on-eof asynchronous
+@c MOD control.plumbing
+Connects an existing output port @var{iport} to @var{plumbing}'s outlet.
+Data flowed in from @var{plumbing}'s inlet will be written to @var{oport}.
+
+The optional @var{name} should be a symbol or @code{#f}.  If it is
+a symbol, the port will be retrieved from @var{plumbing} with
+@code{plumbing-get-port}.
+
+You can close the returned port at any time; then the port is removed
+from @var{plumbing}'s outlets and no data will be delivered to it.
+
+By default, @var{oport} is left as is after all inlets are closed;
+@var{plumbing} won't write anything to @var{oport} but you can still write to
+it.  If you specify a true value to the @var{close-on-eof} keyword argument,
+however, @var{plumbing} will close @var{oport} when all of its inlets are closed.
+It is useful, for example, when @var{oport} is a file output port and
+you want to close it once @var{plumbing} is done.  However, if @var{oport}
+is a standard output port for loggin purpose, you don't want it to be
+automatically closed.
+
+If a true value is given to the @var{asynchronous} keyword argument,
+a thread is spawn to feed the data to @var{oport}; it is useful if
+@var{oport} can be blocked, e.g. a pipe or a socket.
+Without @var{asynchronous}, blocked output to @var{oport} causes
+data flow to inlets to be blocked as well.  With @var{asynchronous},
+other threads can keep feeding to inlets.
+@end defun
+
+@subheading Preconfigured plumbings
+
+@defun make-pipe :key num-inlets num-outlets
+@c MOD control.plumbing
+A pipe is a passive plumbing device with @code{num-inlets} inlet output ports
+and @var{num-outlets} outlet input ports.
+Data written to the inlet output ports
+will be buffered and available to read from the outlet input ports.
+
+Both @var{num-inlets}
+and @var{num-outlets} should be a positive exact integer.  If omitted,
+1 is assumed.
+
+If there are more than one outlets, data is duplicated; each consumer
+reads the same data.  Buffers are attached to each outlet, so each
+consumer can read the outlet in its own pace.
+
+This bahavior is similar to @code{sys-pipe}, which creates a pair
+of ports using OS's pipe mechanism.  However, the pipe device
+created by @code{make-pipe} is a user-land construct and only for
+inter-thread communication; it can't be used for inter-process
+communication.  On the other hand, you can have n-in m-out pipe
+using @code{make-pipe}.
+@end defun
+
+@defun make-pump inlet-iports outlet-oports
+@c MOD control.plumbing
+A pump is an active plumbing device that reads data from
+the given inlet input ports, and write it out to the given
+outlet output ports.
+
+The @var{inlet-iports} argument must be a list of input ports,
+and @var{outlet-oports} argument must be a list of output ports.
+
+A dedicated thread is spawn to each inlet input port to read
+from it.
+@end defun
+
+@defun open-broadcast-output-port destination @dots{}
+@c MOD control.plumbing
+@end defun
+
+@defun open-tapping-input-port inlet-iport outlet-oport :key close-on-eof
+@c MOD control.plumbing
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Parallel map, Scheduler, Plumbing ports, Library modules - Utilities
