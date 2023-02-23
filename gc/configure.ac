@@ -14,13 +14,13 @@
 dnl Process this file with autoconf to produce configure.
 
 dnl Initialization.
-AC_INIT(gc,8.0.6,https://github.com/ivmai/bdwgc/issues)
+AC_INIT([gc],[8.0.6],[https://github.com/ivmai/bdwgc/issues])
 dnl Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
-AC_PREREQ(2.61)
+AC_PREREQ([2.71])
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign nostdinc subdir-objects])
 AC_CONFIG_HEADERS([include/config.h])
@@ -37,7 +37,7 @@ LT_INIT([disable-static])
 # Only the shared libraries are produced by default, use "--enable-static"
 # option to override it.
 dnl Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED, or
-dnl AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
+dnl LT_INIT) is undefined, Libtool installation should be checked.
 
 # Special CFLAGS to use when building
 gc_cflags=""
@@ -99,7 +99,7 @@ dnl Extra user-defined flags to pass both to C and C++ compilers.
 AC_SUBST([CFLAGS_EXTRA])
 
 AC_ARG_ENABLE(threads,
-  [AC_HELP_STRING([--enable-threads=TYPE], [choose threading package])],
+  [AS_HELP_STRING([--enable-threads=TYPE],[choose threading package])],
   THREADS=$enableval,
   [ AC_MSG_CHECKING([for thread model used by GCC])
     THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
@@ -117,8 +117,7 @@ AC_ARG_ENABLE(threads,
     AC_MSG_RESULT([$THREADS]) ])
 
 AC_ARG_ENABLE(parallel-mark,
-   [AC_HELP_STRING([--disable-parallel-mark],
-        [do not parallelize marking and free list construction])],
+   [AS_HELP_STRING([--disable-parallel-mark],[do not parallelize marking and free list construction])],
    [case "$THREADS" in
       no | none | single)
         if test "${enable_parallel_mark}" != no; then
@@ -149,7 +148,7 @@ if test "${enable_threads_discovery}" = no; then
 fi
 
 AC_ARG_ENABLE(cplusplus,
-    [AC_HELP_STRING([--enable-cplusplus], [install C++ support])])
+    [AS_HELP_STRING([--enable-cplusplus],[install C++ support])])
 
 dnl Features which may be selected in the following thread-detection switch.
 AH_TEMPLATE([PARALLEL_MARK], [Define to enable parallel marking.])
@@ -363,15 +362,15 @@ if test "$GCC" = yes; then
   AC_MSG_CHECKING([whether compiler supports -Wextra])
   old_CFLAGS="$CFLAGS"
   CFLAGS="-Wextra $CFLAGS"
-  AC_TRY_COMPILE([],[], [ac_cv_cc_wextra=yes], [ac_cv_cc_wextra=no])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[ac_cv_cc_wextra=yes],[ac_cv_cc_wextra=no])
   CFLAGS="$old_CFLAGS"
   AC_MSG_RESULT($ac_cv_cc_wextra)
   AS_IF([test "$ac_cv_cc_wextra" = yes], [WEXTRA="-Wextra"], [WEXTRA="-W"])
   AC_MSG_CHECKING([whether compiler supports -Wpedantic])
   CFLAGS="-Wpedantic -Wno-long-long $CFLAGS"
-  AC_TRY_COMPILE([],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
     extern int quiet;
-  ], [ac_cv_cc_pedantic=yes], [ac_cv_cc_pedantic=no])
+  ]])],[ac_cv_cc_pedantic=yes],[ac_cv_cc_pedantic=no])
   CFLAGS="$old_CFLAGS"
   AC_MSG_RESULT($ac_cv_cc_pedantic)
   WPEDANTIC=
@@ -382,11 +381,11 @@ if test "$GCC" = yes; then
 fi
 
 AC_MSG_CHECKING(for xlc)
-AC_TRY_COMPILE([],[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
  #ifndef __xlC__
  # error
  #endif
-], [compiler_xlc=yes], [compiler_xlc=no])
+]])],[compiler_xlc=yes],[compiler_xlc=no])
 AC_MSG_RESULT($compiler_xlc)
 if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   # the darwin stack-frame-walking code is completely broken on xlc
@@ -414,7 +413,7 @@ if test "$GCC" = yes; then
   if test "$ac_cv_fno_strict_aliasing" != skipped; then
     old_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS -fno-strict-aliasing"
-    AC_TRY_COMPILE([],[], [ac_cv_fno_strict_aliasing=yes], [])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[ac_cv_fno_strict_aliasing=yes],[])
     CFLAGS="$old_CFLAGS"
     AS_IF([test "$ac_cv_fno_strict_aliasing" = yes],
           [CFLAGS="$CFLAGS -fno-strict-aliasing"], [])
@@ -539,8 +538,7 @@ if test "${enable_shared}" = yes -a "${enable_static}" = no; then
       AC_MSG_CHECKING([whether compiler supports -fvisibility])
       old_CFLAGS="$CFLAGS"
       CFLAGS="-Werror -fvisibility=hidden $CFLAGS"
-      AC_TRY_COMPILE([],[], [ac_cv_fvisibility_hidden=yes],
-                     [ac_cv_fvisibility_hidden=no])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[ac_cv_fvisibility_hidden=yes],[ac_cv_fvisibility_hidden=no])
       CFLAGS="$old_CFLAGS"
       AS_IF([test "$ac_cv_fvisibility_hidden" = yes],
             [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"],
@@ -606,7 +604,7 @@ addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
 AC_SUBST(addlibs)
 
-AC_PROG_LIBTOOL
+LT_INIT
 
 dnl We use these options to decide which functions to include.
 AC_ARG_WITH(target-subdir,
@@ -667,7 +665,7 @@ dnl
 dnl By default, make the library as general as possible.
 dnl enable_gcj_support=no
 AC_ARG_ENABLE(gcj-support,
-    [AC_HELP_STRING([--disable-gcj-support], [disable support for gcj])])
+    [AS_HELP_STRING([--disable-gcj-support],[disable support for gcj])])
 if test x"$enable_gcj_support" != xno; then
     AC_DEFINE(GC_GCJ_SUPPORT, 1, [Define to include support for gcj.])
     case "$host" in
@@ -687,8 +685,7 @@ fi
 
 dnl Interaction with other programs that might use signals.
 AC_ARG_ENABLE(sigrt-signals,
-    [AC_HELP_STRING([--enable-sigrt-signals],
-        [force GC to use SIGRTMIN-based signals for thread suspend/resume])])
+    [AS_HELP_STRING([--enable-sigrt-signals],[force GC to use SIGRTMIN-based signals for thread suspend/resume])])
 if test x"${enable_sigrt_signals}" = xyes; then
     AC_DEFINE([GC_USESIGRT_SIGNALS], 1,
               [Force the GC to use signals based on SIGRTMIN+k.])
@@ -706,8 +703,7 @@ AH_TEMPLATE([SAVE_CALL_COUNT],
              debugging API.])
 UNWINDLIBS=
 AC_ARG_ENABLE(gc-debug,
-[AC_HELP_STRING([--enable-gc-debug],
-    [include full support for pointer backtracing etc.])],
+[AS_HELP_STRING([--enable-gc-debug],[include full support for pointer backtracing etc.])],
 [ if test "$enable_gc_debug" = "yes"; then
     AC_MSG_WARN("Should define GC_DEBUG and use debug alloc in clients.")
     AC_DEFINE([KEEP_BACK_PTRS], 1,
@@ -747,12 +743,12 @@ AC_MSG_CHECKING(for dladdr)
 have_dladdr=no
 old_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $CFLAGS_EXTRA"
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE 1
-#include <dlfcn.h>], [{
+#include <dlfcn.h>]], [[{
     Dl_info info;
     (void)dladdr("", &info);
-}], [ have_dladdr=yes ])
+}]])],[ have_dladdr=yes ],[])
 CFLAGS="$old_CFLAGS"
 AC_MSG_RESULT($have_dladdr)
 if test x"$have_dladdr" = xyes; then
@@ -763,10 +759,7 @@ fi
 AC_MSG_CHECKING(for sigsetjmp)
 old_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $CFLAGS_EXTRA"
-AC_TRY_LINK([#include <setjmp.h>],
-            [sigjmp_buf t; sigsetjmp(t, 0)],
-  [AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <setjmp.h>]], [[sigjmp_buf t; sigsetjmp(t, 0)]])],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
    AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp function.])])
 CFLAGS="$old_CFLAGS"
 
@@ -789,23 +782,20 @@ if test $ac_is_dgux = yes; then
 fi
 
 AC_ARG_ENABLE(java-finalization,
-    [AC_HELP_STRING([--disable-java-finalization],
-                    [disable support for java finalization])])
+    [AS_HELP_STRING([--disable-java-finalization],[disable support for java finalization])])
 if test x"$enable_java_finalization" != xno; then
     AC_DEFINE([JAVA_FINALIZATION], 1, [See doc/README.macros.])
 fi
 
 AC_ARG_ENABLE(atomic-uncollectable,
-    [AC_HELP_STRING([--disable-atomic-uncollectible],
-                    [disable support for atomic uncollectible allocation])])
+    [AS_HELP_STRING([--disable-atomic-uncollectible],[disable support for atomic uncollectible allocation])])
 if test x"$enable_atomic_uncollectible" != x"no"; then
     AC_DEFINE([GC_ATOMIC_UNCOLLECTABLE], 1,
         [Define to enable atomic uncollectible allocation.])
 fi
 
 AC_ARG_ENABLE(redirect-malloc,
-    [AC_HELP_STRING([--enable-redirect-malloc],
-                    [redirect malloc and friends to GC routines])])
+    [AS_HELP_STRING([--enable-redirect-malloc],[redirect malloc and friends to GC routines])])
 
 if test "${enable_redirect_malloc}" = yes; then
     if test "${enable_gc_debug}" = yes; then
@@ -822,8 +812,7 @@ if test "${enable_redirect_malloc}" = yes; then
 fi
 
 AC_ARG_ENABLE(disclaim,
-    [AC_HELP_STRING([--disable-disclaim],
-        [disable alternative (more efficient) finalization interface])])
+    [AS_HELP_STRING([--disable-disclaim],[disable alternative (more efficient) finalization interface])])
 if test x"$enable_disclaim" != xno; then
     AC_DEFINE(ENABLE_DISCLAIM, 1,
         [Define to enable alternative finalization interface.])
@@ -832,8 +821,7 @@ AM_CONDITIONAL(ENABLE_DISCLAIM,
     [test x"$enable_disclaim" != xno])
 
 AC_ARG_ENABLE(large-config,
-    [AC_HELP_STRING([--enable-large-config],
-        [optimize for large (> 100 MB) heap or root set])])
+    [AS_HELP_STRING([--enable-large-config],[optimize for large (> 100 MB) heap or root set])])
 if test "${enable_large_config}" = yes; then
     AC_DEFINE(LARGE_CONFIG, 1,
               [Define to optimize for large heaps or root sets.])
@@ -856,8 +844,7 @@ fi
 AC_SUBST(UNWINDLIBS)
 
 AC_ARG_ENABLE(gc-assertions,
-    [AC_HELP_STRING([--enable-gc-assertions],
-        [collector-internal assertion checking])])
+    [AS_HELP_STRING([--enable-gc-assertions],[collector-internal assertion checking])])
 if test "${enable_gc_assertions}" = yes; then
     AC_DEFINE([GC_ASSERTIONS], 1,
               [Define to enable internal debug assertions.])
@@ -869,8 +856,7 @@ AC_ARG_ENABLE(mmap,
     gc_use_mmap=$enableval)
 
 AC_ARG_ENABLE(munmap,
-    [AC_HELP_STRING([--enable-munmap=N],
-                    [return page to the OS if empty for N collections
+    [AS_HELP_STRING([--enable-munmap=N],[return page to the OS if empty for N collections
                      (default: 6)])],
     MUNMAP_THRESHOLD=$enableval)
 if test x$enable_munmap != xno; then
@@ -944,8 +930,7 @@ fi
 AC_SUBST([WERROR_CFLAGS])
 
 AC_ARG_ENABLE(single-obj-compilation,
-   [AC_HELP_STRING([--enable-single-obj-compilation],
-                   [compile all libgc source files into single .o
+   [AS_HELP_STRING([--enable-single-obj-compilation],[compile all libgc source files into single .o
                     (default: yes if static libraries are disabled)])],
    [], [ AS_IF([test x"$enable_static" = xno],
                [enable_single_obj_compilation=yes]) ])
@@ -967,8 +952,7 @@ if test "$enable_gcov" = "yes"; then
 fi
 
 AC_ARG_ENABLE(docs,
-        [AC_HELP_STRING([--disable-docs],
-                        [do not build and install documentation])])
+        [AS_HELP_STRING([--disable-docs],[do not build and install documentation])])
 AM_CONDITIONAL(ENABLE_DOCS, test x$enable_docs != xno)
 
 AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
@@ -991,10 +975,8 @@ if test x"$with_libatomic_ops" = xcheck; then
   old_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $CFLAGS_EXTRA -DGC_BUILTIN_ATOMIC"
   CFLAGS="$CFLAGS -I${srcdir}/include -I${srcdir}/tests"
-  AC_TRY_RUN([#include "test_atomic_ops.c"],
-    [AC_MSG_RESULT(yes)
-     with_libatomic_ops=none],
-    [AC_MSG_RESULT(no)], [AC_MSG_RESULT(skipped because cross-compiling)])
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include "test_atomic_ops.c"]])],[AC_MSG_RESULT(yes)
+     with_libatomic_ops=none],[AC_MSG_RESULT(no)],[AC_MSG_RESULT(skipped because cross-compiling)])
   CFLAGS="$old_CFLAGS"
 fi
 
@@ -1061,20 +1043,14 @@ AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
     [ old_CFLAGS="$CFLAGS"
       CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
       AC_MSG_CHECKING([for lock-free AO_or primitive])
-      AC_TRY_LINK([#include "atomic_ops.h"],
-                  [AO_t x=0;AO_or(&x,1)],
-        [ AC_MSG_RESULT(yes)
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "atomic_ops.h"]], [[AO_t x=0;AO_or(&x,1)]])],[ AC_MSG_RESULT(yes)
           AC_DEFINE([HAVE_LOCKFREE_AO_OR], [1],
-            [libatomic_ops AO_or primitive implementation is lock-free.]) ],
-        [ AC_MSG_RESULT(no) ])
+            [libatomic_ops AO_or primitive implementation is lock-free.]) ],[ AC_MSG_RESULT(no) ])
       AC_MSG_CHECKING([for lock-free AO load/store, test-and-set primitives])
-      AC_TRY_LINK([#include "atomic_ops.h"],
- [AO_t x=0;unsigned char c=0;AO_TS_t z=AO_TS_INITIALIZER;
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "atomic_ops.h"]], [[AO_t x=0;unsigned char c=0;AO_TS_t z=AO_TS_INITIALIZER;
   (void)AO_test_and_set_acquire(&z);AO_CLEAR(&z);AO_compiler_barrier();
   AO_store(&x,AO_load(&x)+1);AO_char_store(&c,AO_char_load(&c)+1);
-  AO_store_release(&x,AO_load_acquire(&x)+1)],
-        [ AC_MSG_RESULT(yes) ],
-        [ AC_MSG_RESULT(no)
+  AO_store_release(&x,AO_load_acquire(&x)+1)]])],[ AC_MSG_RESULT(yes) ],[ AC_MSG_RESULT(no)
           use_thread_local_alloc=no
           AC_DEFINE([BASE_ATOMIC_OPS_EMULATED], [1],
                     [AO load, store and/or test-and-set primitives are
@@ -1082,12 +1058,8 @@ AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
       AS_IF([test x$use_parallel_mark != xno],
         [ AC_MSG_CHECKING(
                 [for lock-free compare-and-swap and fetch-and-add primitives])
-          AC_TRY_LINK(
- [#define AO_REQUIRE_CAS
-  #include "atomic_ops.h"],
- [AO_t x=0;(void)AO_fetch_and_add(&x,1);(void)AO_compare_and_swap(&x,1,2)],
-                    [ AC_MSG_RESULT(yes) ],
-                    [ AC_MSG_RESULT(no)
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define AO_REQUIRE_CAS
+  #include "atomic_ops.h"]], [[AO_t x=0;(void)AO_fetch_and_add(&x,1);(void)AO_compare_and_swap(&x,1,2)]])],[ AC_MSG_RESULT(yes) ],[ AC_MSG_RESULT(no)
                       use_parallel_mark=no ]) ])
       CFLAGS="$old_CFLAGS" ])
 
@@ -1098,8 +1070,7 @@ AS_IF([test x$use_thread_local_alloc != xno],
 AM_CONDITIONAL(THREAD_LOCAL_ALLOC, test x$use_thread_local_alloc != xno)
 
 AC_ARG_ENABLE(handle-fork,
-    [ AC_HELP_STRING([--enable-handle-fork[=yes|no|auto|manual]],
-                     [attempt to ensure a usable collector after fork()
+    [ AS_HELP_STRING([--enable-handle-fork[=yes|no|auto|manual]],[attempt to ensure a usable collector after fork()
                       in multi-threaded programs (default: auto;
                       manual: GC_atfork_prepare/parent/child should be
                       called by the client)]) ])
