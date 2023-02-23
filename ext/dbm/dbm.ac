@@ -5,7 +5,7 @@ dnl
 
 # ext/dbm -------------------------------------------------
 
-AC_CONFIG_HEADER(ext/dbm/dbmconf.h)
+AC_CONFIG_HEADERS([ext/dbm/dbmconf.h])
 
 dnl with-dbm option
 dnl

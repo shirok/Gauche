@@ -1,11 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.68])
-AC_INIT([Gauche],[0.9.13_pre2],[shiro@acm.org],,[https://practical-scheme.net/gauche/])
+AC_PREREQ([2.71])
+AC_INIT([Gauche],[0.9.13_pre2],[shiro@acm.org],[],[https://practical-scheme.net/gauche/])
 BUILD_GOSH_VERSION=0.9.12  # Host Gauche version required to build from scratch
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AC_CONFIG_HEADER([src/gauche/config.h])
+AC_CONFIG_HEADERS([src/gauche/config.h])
 AC_CONFIG_MACRO_DIRS([m4])
 
 # ABI_VERSION is set to major.minor of Gauche version by default.
@@ -375,7 +375,6 @@ case $host in
 esac
 
 AC_PROG_CC
-AC_PROG_CC_STDC
 AC_C_CONST
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
@@ -413,8 +412,8 @@ dnl ===========================================================
 dnl Checks for header files.
 dnl   We check sys/types.h merely to include it in the following tests,
 dnl   for some tests needs it.
-AC_HEADER_STDC
-AC_HEADER_TIME
+
+AC_CHECK_HEADERS_ONCE([sys/time.h])
 AC_CHECK_HEADERS(time.h sys/time.h sys/types.h glob.h dlfcn.h getopt.h sched.h)
 AC_CHECK_HEADERS(unistd.h rpc/types.h malloc.h)
 AC_CHECK_HEADERS(syslog.h crypt.h)
@@ -449,8 +448,7 @@ dnl ===========================================================
 dnl Checks processor type, for processor-specific stuff
 AS_CASE([$host],
   [i?86-apple-darwin*], [
-    AC_CHECK_DEFINED(i386,
-      AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations]))],
+    AC_CHECK_DEFINE([i386],[AC_DEFINE(SCM_TARGET_I386,1,Define to use i386 optimizations)])],
   [i?86-*], [
     AC_DEFINE(SCM_TARGET_I386,1,[Define to use i386 optimizations])],
   [x86_64-*], [
@@ -507,14 +505,13 @@ AC_CHECK_MEMBERS([struct passwd.pw_passwd,
 
 dnl checks if time_t is integer or flonum
 AC_CACHE_CHECK(time_t is integral, ac_cv_type_time_t_integral, [
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <time.h>
 int main()
 {
    time_t t = 3.14;
    return (t == 3.14);
-}], ac_cv_type_time_t_integral=yes, ac_cv_type_time_t_integral=no,
-ac_cv_type_time_t_integral=yes)])
+}]])],[ac_cv_type_time_t_integral=yes],[ac_cv_type_time_t_integral=no],[ac_cv_type_time_t_integral=yes])])
 
 if test "$ac_cv_type_time_t_integral" = yes; then
 AC_DEFINE(INTEGRAL_TIME_T,1,[Define if time_t is typedef'ed to an integral type])
