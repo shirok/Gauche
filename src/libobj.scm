@@ -942,8 +942,7 @@
 (let ((xfer (with-module gauche.internal %transfer-bindings)))
   (xfer (current-module)
         (find-module 'gauche)
-        '(;define-generic define-method define-class
-          compute-slots
+        '(compute-slots
           compute-get-n-set compute-slot-accessor
           class-slot-ref class-slot-set! class-slot-bound?
           slot-push! slot-pop! slot-unbound slot-missing
@@ -968,12 +967,4 @@
           x->string x->integer x->number ref |setter of ref|
           ~ ref*
           describe describe-common describe-slots
-
-          ;; These shouldn't be necessary to be injected into gauche
-          ;; module; unfortunately, the current define-method and
-          ;; define-class are unhygienic, and we need them visible
-          ;; from the expanded code.  Should be removed once we rewrite
-          ;; related macros hygienic.
-          %ensure-generic-function
-          %check-class-binding
           )))
