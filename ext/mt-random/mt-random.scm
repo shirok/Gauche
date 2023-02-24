@@ -51,7 +51,7 @@
  (declcode
   (.include "mt-random.h"))
 
- (define-cclass <mersenne-twister> "ScmMersenneTwister*" 
+ (define-cclass <mersenne-twister> "ScmMersenneTwister*"
    "Scm_MersenneTwisterClass"
    (c "SCM_CLASS_DEFAULT_CPL")
    ()                                   ;no external slot
