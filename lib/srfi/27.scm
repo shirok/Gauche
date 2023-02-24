@@ -45,14 +45,9 @@
           ))
 (select-module srfi.27)
 
-;; Assumes random source is <mersenne-twister> random object for now.
-;; It is possible that I extend the implementation so that users can
-;; specify the class of random source in future.
-(define-constant random-source <mersenne-twister>)
-
 ;; Operations on random source
-(define (make-random-source) (make random-source))
-(define (random-source? obj) (is-a? obj random-source))
+(define (make-random-source) (make-mersenne-twister))
+(define (random-source? obj) (is-a? obj <mersenne-twister>))
 (define default-random-source (make-random-source))
 
 (define (random-source-state-ref source)
