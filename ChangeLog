@@ -1,3 +1,8 @@
+2023-02-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/math/const.scm: Add greek identifiers (π).  UTF-8 has become
+	  ubiquitous and we don't need to hesitate using them.
+
 2023-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/plumbing.scm: Allow optional names to inlets/outlets
