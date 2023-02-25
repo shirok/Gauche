@@ -1769,7 +1769,9 @@ line like these
 #!/usr/bin/env gosh
   @r{or,}
 #!/bin/sh
-:; exec gosh -- $0 "$@@"
+#|
+exec gosh -- $0 "$@@"
+|#
 @end example
 
 The second and third form uses a ``shell trampoline'' technique
@@ -1786,7 +1788,9 @@ has limitations for the number of arguments to pass the interpreter.
 #!/usr/bin/env gosh
   @r{または,}
 #!/bin/sh
-:; exec gosh -- $0 "$@@"
+#|
+exec gosh -- $0 "$@@"
+|#
 @end example
 
 後の2つは「シェルトランポリン」テクニックを用いて、@code{gosh}がPATHにあるディレクトリの
