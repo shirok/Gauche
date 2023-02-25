@@ -1928,12 +1928,39 @@ A dedicated thread is spawn to each inlet input port to read
 from it.
 @end defun
 
-@defun open-broadcast-output-port destination @dots{}
+@defun open-broadcast-output-port oport @dots{}
 @c MOD control.plumbing
+The arguments must be output ports.
+Returns an output port such that data written to it go to every @var{oport}.
+Internally, it creates a plumbing, adds @var{oport}s to its outlet,
+and returns a new inlet output port.  The plumbing can be retrieved
+by calling @code{port-plumbing} on the returned port.
+
+This is Common Lisp's @code{make-broadcast-stream}.
 @end defun
 
 @defun open-tapping-input-port inlet-iport outlet-oport :key close-on-eof
 @c MOD control.plumbing
+It creates a pump, a plumbing that reads from @var{inlet-iport} and
+writes out the read data to @var{outlet-oport}.  Additionally, it creates
+and returns an outlet input port, from which you can read the data
+flowing in the pump.
+
+An example use case is to monitor process output.  You spawn a process
+with its stdout connected to a pipe, then call
+@code{(open-tapping-input-port (process-output subprocess) (current-output-port))}.
+With this, the subprocess's output automatically flows to your process's output.
+However, that data is also available from the returned input port,
+and you can check it.
+
+Note that the data passed from @var{inlet-iport} to @var{outlet-oport} are
+buffered for the returend input port until you read from it.  If you're
+done with monitoring, you can close the returned input port safely; the
+data will no longer be buffered, but the pump will keep running until
+the input reaches EOF.
+
+The pump plumbing is available by calling @code{port-plumbing} on the
+returned input port.
 @end defun
 
 @c ----------------------------------------------------------------------
