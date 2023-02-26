@@ -21346,11 +21346,13 @@ Some ports can be used to convert a data stream from one format
 to another; one of such applications is character code conversion
 ports, provided by @code{gauche.charconv} module
 (@pxref{Character code conversion}, for details).
+SRFI-181 also provides this feature (@pxref{Transcoded ports}).
 @c JP
 @item 変換
 ポートはまた、データストリームを変換するのにも使えます。例えば@code{gauche.charconv}
 モジュールでは、文字コード間の変換を行うポートを提供しています
 (詳しくは@ref{Character code conversion}を参照)。
+SRFI-181もこの機能を提供します(@ref{Transcoded ports}参照)。
 @c COMMON
 
 @c EN
@@ -21360,7 +21362,11 @@ A coding-aware port (@pxref{Coding-aware ports}) recognizes a special
 "magic comment" in the file to know which character encoding the
 file is written.
 Virtual ports (@pxref{Virtual ports}) allows you to program the
-behavior of the port in Scheme.
+behavior of the port in Scheme.  It is also provided by
+SRFI-181 (@pxref{Custom ports}).
+
+Ports can be combined to provide communication channel.
+@xref{Plumbing ports}, for utilities to do so.
 @c JP
 @item 追加機能
 また、特殊な機能を実現するポートもあります。
@@ -21368,7 +21374,11 @@ behavior of the port in Scheme.
 ファイル中の特殊なコメントを認識して、そのファイルがどの文字エンコーディング
 で書かれているかを検出します。
 仮想ポート(@ref{Virtual ports}参照)はSchemeでふるまいをプログラムできる
-ポートを提供します。
+ポートを提供します。同様の機能はSRFI-181にもあります
+(@ref{Custom ports})。
+
+ポートを組み合わせて通信チャネルを作ることもできます。
+@ref{Plumbing ports}で説明しています。
 @c COMMON
 @end table
 
