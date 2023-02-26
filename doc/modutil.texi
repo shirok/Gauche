@@ -2208,7 +2208,7 @@ with the mapper.
 @item
 The mapper keeps the given thread pool and reuses it every time
 it is passed to @code{pmap} etc., so you have to make sure that
-one mapper is used simultaneously in more than one @code{pmap} etc..
+one mapper is not used simultaneously in more than one @code{pmap} etc..
 Be careful using this type of pool mapper as the default mapper.
 @end itemize
 @end defun
