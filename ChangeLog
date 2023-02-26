@@ -1,3 +1,9 @@
+2023-02-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/plumbing.scm (plumbing): Add generic utility.
+	  Simplify make-pump etc. just to take oports (without options).
+	  If the user wants to specify options, they can use 'plumbing'.
+
 2023-02-23  Shiro Kawai  <shiro@acm.org>
 
 	* lib/math/const.scm: Add greek identifiers (π).  UTF-8 has become

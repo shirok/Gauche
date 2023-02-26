@@ -50,9 +50,9 @@
           open-inlet-output-port add-inlet-input-port!
           open-outlet-input-port add-outlet-output-port!
 
-          open-broadcast-output-port
+          open-broadcast-output-port open-tapping-input-port
           make-pipe make-pump
-          open-tapping-input-port
+          plumbing
           )
   )
 (select-module control.plumbing)
@@ -307,39 +307,11 @@
 ;;; Convenience utilities
 ;;;
 
-;; outlet output port may be given as #<oport> or (#<oport> <option> ...)
-;; <option> can be one of those symbols:
-;;   coe :   close-on-eof flag
-;;   async : asynchronous flag
-;; Returns a list of (<oport> <close-on-eof> <async>)
-(define (%oport&flags opspecs)
-  (map (^d (match d
-             [(? output-port? oport) `(,oport #f #f)]
-             [((? output-port? oport) . flags)
-              (let loop ([flags flags]
-                         [coe #f]
-                         [async #f])
-                (match flags
-                  [() `(,oport ,coe ,async)]
-                  [('coe . flags) (loop flags #t async)]
-                  [('async . flags) (loop flags coe #t)]
-                  [(bad . _) (errorf "Unrecognized outlet flag ~s in ~s"
-                                     bad opspecs)]))]
-             [_ (error "An output port, or (<output-port> <flag>) is
-                        expected, but got" d)]))
-       opspecs))
-
 ;; CL's make-broadcast-stream
-;; Each arg can be an output port, or (<oport> <close-on-eof?>)
-(define (open-broadcast-output-port . destinations)
-  (define port&flags (%oport&flags destinations))
+(define (open-broadcast-output-port . oports)
   (define plumbing (make-plumbing))
-  (for-each (match-lambda
-              [(oport coe async)
-               (add-outlet-output-port! plumbing oport #f
-                                        :close-on-eof coe
-                                        :asynchronous async)])
-            port&flags)
+  (dolist [oport oports]
+    (add-outlet-output-port! plumbing oport #f))
   (open-inlet-output-port plumbing))
 
 ;; Pipe owns one or more inlet oports and one or more outlet iports.
@@ -359,16 +331,13 @@
 ;; writes out to outlet-oport(s), run in an independent thread.
 ;; Returns a plumbing.
 (define (make-pump inlet-iports outlet-oports)
-  (define oport&flags (%oport&flags outlet-oports))
   (assume (every input-port? inlet-iports))
+  (assume (every output-port? outlet-oports))
   (rlet1 plumbing (make-plumbing)
     (dolist [ip inlet-iports]
       (add-inlet-input-port! plumbing ip))
-    (dolist [op&f oport&flags]
-      (match-let1 (oport coe async) op&f
-        (add-outlet-output-port! plumbing oport #f
-                                 :close-on-eof coe
-                                 :asynchronous async)))))
+    (dolist [op outlet-oports]
+      (add-outlet-output-port! plumbing op #f))))
 
 ;; Similar to CL's make-echo-stream, but we support only reading from
 ;; the craeted port.  We may make it bidirectional stream later.
@@ -379,3 +348,41 @@
     (add-inlet-input-port! plumbing inlet-iport)
     (add-outlet-output-port! plumbing outlet-oport #f :close-on-eof close-on-eof)
     (open-outlet-input-port plumbing)))
+
+;; A convenience routine to create a plumbing and attach inlets&outlets.
+;;
+;; Each argument can be one of the following forms:
+;;   (< #<iport> [name])  ; add iport as inlet
+;;   (< name)             ; create inlet oport with the name
+;;   (> #<oport> [name] [(option ...)]) ; add oport as outlet
+;;   (> name)             ; create outlet iport with the name
+;;
+;; NAME is a symbol.  OPTION can be :coe, :close-on-eof, or :async.
+;;
+;; Returns a plumbing.  Created ports can be accessed by their name.
+
+(define (plumbing . args)
+  (rlet1 p (make-plumbing)
+    (define (add-oo! port name opts)
+      ($ apply add-outlet-output-port! p port name
+         $ fold-right (^[opt r]
+                        (case opt
+                          [(:coe :close-on-eof) `(:close-on-eof #t ,@r)]
+                          [(:async :asynchronous) `(:asynchronous #t ,@r)]
+                          [else (error "Unrecognized outlet option:" opt)]))
+         '() opts))
+    (dolist [arg args]
+      (match arg
+        [('< (? symbol? name)) (open-inlet-output-port p name)]
+        [('< (? input-port? port)) (add-inlet-input-port! p port)]
+        [('< (? input-port? port) (? symbol? name))
+         (add-inlet-input-port! p port name)]
+        [('< . _) (error "Invalid inlet spec:" arg)]
+        [('> (? symbol? name)) (open-outlet-input-port p name)]
+        [('> (? output-port? port)) (add-oo! port #f '())]
+        [('> (? output-port? port) (? symbol? name)) (add-oo! port name '())]
+        [('> (? output-port? port) (opts ...)) (add-oo! port #f opts)]
+        [('> (? output-port? port) (? symbol? name) (opts ...))
+         (add-oo! port name opts)]
+        [('> . _) (error "Invalid outlet spec:" arg)]
+        [_ (error "Invalid plumbing spec:" arg)]))))

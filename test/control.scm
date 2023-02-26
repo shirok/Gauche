@@ -553,20 +553,16 @@
   (define outlet1 (open-output-string))
   (define outlet2 (open-output-string))
   (define inlet
-    (open-broadcast-output-port outlet0 `(,outlet1 coe) `(,outlet2 async)))
+    (open-broadcast-output-port outlet0 outlet1 outlet2))
 
-  (test* "broadcast output port" '(#f #t #f)
+  (test* "broadcast output port" '("a" "a" "a")
          (begin
            (display "a" inlet)
            (close-output-port inlet)
            (sys-nanosleep #e5e6)
-           (list (port-closed? outlet0)
-                 (port-closed? outlet1)
-                 (port-closed? outlet2))))
-  (test* "broadcast output port" '("a" "a" "a")
-         (list (get-output-string outlet0)
-               (get-output-string outlet1)
-               (get-output-string outlet2)))
+           (list (get-output-string outlet0)
+                 (get-output-string outlet1)
+                 (get-output-string outlet2))))
   )
 
 ;; pipe
@@ -616,7 +612,7 @@
                                (begin (set! (~ buf 0) (char->integer ch)) 1)))))
                  :ready (^[] (or eof? (not (queue-empty? mtq)))))))
   (define out (open-output-string))
-  (define pump (make-pump `(,in) `((,out coe))))
+  (define pump (make-pump `(,in) `(,out)))
 
   (set! (port-buffering in) :none)
   (test* "pump" ""
@@ -633,8 +629,6 @@
          (begin (enqueue/wait! mtq (eof-object))
                 (sys-nanosleep #e5e6)
                 (get-output-string out)))
-  (test* "pump" #t
-         (port-closed? out))
   )
 
 
@@ -666,6 +660,48 @@
          (read-line tap))
   (test* "pipe & tap (eof)" (eof-object)
          (read-line tap))
+  )
+
+;; plumbing
+(let ()
+  (define-values (feeds inlets) (make-pipe))
+  (define inlet0 (car inlets))
+  (define outlet0 (open-output-string))
+  (define pl (plumbing `(< ,inlet0 inlet0)
+                       `(< inlet1)
+                       `(> ,outlet0 (:coe :async))
+                       `(> outlet1)))
+  (define inlet1 (plumbing-get-port pl 'inlet1))
+  (define outlet1 (plumbing-get-port pl 'outlet1))
+
+  (test* "plumbing - created ports" '(#t #t)
+         (list (output-port? inlet1)
+               (input-port? outlet1)))
+
+  (test* "plumbing - feed inlet0" "abc"
+         (begin
+           (display "abc" (car feeds))
+           (flush (car feeds))
+           (sys-nanosleep #e5e7)
+           (get-output-string outlet0)))
+
+  (test* "plumbing - feed inlet1" (test-one-of "abcdefxyz" "abcxyzdef")
+         (begin
+           (display "def" (car feeds))
+           (close-port (car feeds))
+           (display "xyz" inlet1)
+           (flush inlet1)
+           (sys-nanosleep #e5e7)
+           (get-output-string outlet0)))
+
+  (test* "plumbing - reading outlet1" (test-one-of "abcdefxyz" "abcxyzdef")
+         (begin
+           (close-port inlet1)
+           (sys-nanosleep #e5e7)
+           (port->string outlet1)))
+
+  (test* "plumbing - coe" #t
+         (port-closed? outlet0))
   )
 
 (test-end)
