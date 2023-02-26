@@ -1890,7 +1890,44 @@ data flow to inlets to be blocked as well.  With @var{asynchronous},
 other threads can keep feeding to inlets.
 @end defun
 
+@defun plumbing spec @dots{}
+@c MOD control.plumbing
+A utility plumbing constructor.  It creates a new plumbing,
+and adds inlets and outlets as specified by @var{spec}s,
+then returns the plumbing.  Each @var{spec} must be one of
+the following forms.  In the description, @var{iport}
+is an input port, @var{oport} is an output port, and
+@var{name} is a symbol.
+
+@table @code
+@item (< @var{iport})
+@itemx (< @var{iport} @var{name})
+Adds @var{iport} to the plumbing's inlet, optionally naming it
+with @var{name}.
+@item (< @var{name})
+Creates an inlet output port with name @var{name}.
+The output port can be retrieved by @code{plumbing-get-port}.
+@item (> @var{oport})
+@itemx (> @var{oport} @var{name})
+@itemx (> @var{oport} (@var{option} @dots{}))
+@itemx (> @var{oport} @var{name} (@var{option} @dots{}))
+Adds @var{oport} to the plumbing's outlet, optional naming it
+with @var{name}.  Options can be one of the keywords @code{:close-on-eof},
+@code{:coe}, @code{asynchronous}, and @code{:async}.  @code{:close-on-eof}
+and @code{asynchronous} has the effect of giving true to those keyword
+arguments to @code{add-outlet-output-port!}.  @code{:coe} and @code{:async}
+are synonyms of @code{:close-on-eof} and @code{:asynchronous}, respectively.
+@item (> @var{name})
+Creates an outlet input port with name @code{name}.
+The output port can be retrieved by @code{plumbing-get-port}.
+@end table
+@end defun
+
+
 @subheading Preconfigured plumbings
+
+The following are convenience procedures to construct typical
+plumbings.
 
 @defun make-pipe :key num-inlets num-outlets
 @c MOD control.plumbing
