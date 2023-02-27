@@ -39,17 +39,14 @@
  (declcode
   (.include <gauche/priv/mmapP.h>)
   (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
-  (.cond ["TIME_WITH_SYS_TIME" (.include <sys/time.h> <time.h>)]
-         ["HAVE_SYS_TIME_H"    (.include <sys/time.h>)]
-         [else                 (.include <time.h>)])
   (.unless (defined "GAUCHE_WINDOWS")
     (.include <grp.h> <pwd.h> <sys/wait.h> <utime.h>
               <sys/times.h> <sys/utsname.h>))
-  (.if "HAVE_CRYPT_H"        (.include <crypt.h>))
-  (.if "HAVE_SYS_RESOURCE_H" (.include <sys/resource.h>))
-  (.if "HAVE_SYS_LOADAVG_H"  (.include <sys/loadavg.h>))
-  (.if "HAVE_UNISTD_H"       (.include <unistd.h>))
-  (.if "HAVE_SYS_MMAN_H"     (.include <sys/mman.h>))
+  (.when "HAVE_CRYPT_H"        (.include <crypt.h>))
+  (.when "HAVE_SYS_RESOURCE_H" (.include <sys/resource.h>))
+  (.when "HAVE_SYS_LOADAVG_H"  (.include <sys/loadavg.h>))
+  (.when "HAVE_UNISTD_H"       (.include <unistd.h>))
+  (.when "HAVE_SYS_MMAN_H"     (.include <sys/mman.h>))
 
   (.when (defined "GAUCHE_WINDOWS")
     (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
