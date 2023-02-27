@@ -30413,11 +30413,47 @@ expression, then match the result with @var{pat}.
 
 @item
 @c EN
-@code{(and pat @dots{})}, @code{(or pat @dots{})}, and
-@code{(not pat @dots{})} are boolean operations of patterns.
+@code{(and pat @dots{})} matches when all @var{pat} matches the
+corresponding subtree.  A common idiom to realize ``as'' matching,
+with which you can bind the entire tree as well as its substrees,
+can be written with @code{and} operator.  For example,
+@code{(and (x . y) p)} matches a pair, binding its cdr to @var{x},
+its car to @var{y}, and the entire pair to @var{p}.
 @c JP
-@code{(and pat @dots{})}、@code{(or pat @dots{})} および
-@code{(not pat @dots{})} はパターンの真偽値演算子です。
+@code{(and pat @dots{})}は、対応する式が全ての@var{pat}にマッチした時に
+マッチに成功します。よく使われるイディオムとして、@code{and}で「asマッチング」、
+つまり部分式ごとにマッチした全体を別の変数にマッチさせることができます。
+例えば@code{(and (x . y) p)}はペアにマッチし、そのcarを@var{x}に、
+cdrを@var{y}に、そしてペア全体を@var{p}に束縛します。
+@c COMMON
+
+@item
+@c EN
+@code{(or pat @dots{})} tries to match each @var{pat} against
+the corresponding subtree, and if any succeeds, the entire @code{or}
+pattern succeeds.  If no @var{pat} matches the subtree, the entire
+@code{or} pattern fails.
+If there're pattern variables in @var{pat}, the set of variables
+in each @var{pat} must be the same: That is,
+@code{(or (_ x y) (_ x y _))} is ok but @code{(or (_ x _) (_ x y _))} is not.
+It is because the latter may leave some of pattern variables
+unbound even match succeeds.
+@c JP
+@code{(or pat @dots{})}は対応する式に対して@var{pat}を順に試し、
+マッチするものがあればそこで成功、ひとつもマッチしなければ失敗とします。
+パターン変数を使う場合、各@var{pat}中のパターン変数は同じでなければなりません。
+つまり@code{(or (_ x y) (_ x y _))} はokですが、
+@code{(or (_ x _) (_ x y _))} は許されません。
+マッチする@var{pat}によっては束縛されないパターン変数が出てしまうからです。
+@c COMMON
+
+@item
+@c EN
+@code{(not pat @dots{})} matches when none of @var{pat} matches
+the corresponding subtree.
+@c JP
+@code{(not pat @dots{})} はどの@var{pat}も式にマッチしない場合に
+マッチ成功となります。
 @c COMMON
 
 @item
