@@ -18082,14 +18082,14 @@ though not required by R7RS).
 Note that R7RS and SRFI-226 requires @var{param} to be evaluated
 to a parameter.  Gauche's @code{parameterize} has been acceping
 dynamic states as well, but such usage is
-deprecated; you should use @code{with} instead (@pxref{Dynamic states}).
+deprecated; you should use @code{temporarily} instead (@pxref{Dynamic states}).
 In fact, Gauche checks if every @var{param} yields a parameter, at
 runtime, and if not, it switches to the legacy implementation
 which does @emph{not} evaluate @var{body} at a tail position.
 @c JP
 R7RSとSRFI-226は@var{param}がパラメータへと評価されることを要求しています。
 Gaucheは伝統的に、@var{param}に動的状態も許してきましたが、
-そのような使い方は非推奨となりました。動的状態の切り替えには@code{with}を
+そのような使い方は非推奨となりました。動的状態の切り替えには@code{temporarily}を
 使うようにしてください (@ref{Dynamic states}参照)。
 実のところ、Gaucheは実行時に全ての@var{param}がパラメータに評価されたかどうかを
 チェックし、パラメータ以外のものが混じっている場合は旧式の実装へと切り替えます。
@@ -18139,7 +18139,7 @@ If it is called without arguments, it returns the current state.
 If it is called with one argument, the state is set to the argument.
 @end itemize
 
-You can use @code{with} macro in place of @code{parameterize} to
+You can use @code{temporarily} macro in place of @code{parameterize} to
 change the state dynamically.
 
 @example
@@ -18153,7 +18153,7 @@ change the state dynamically.
 
 (get-state) @result{} 0
 
-(with ([state 1])
+(temporarily ([state 1])
   (get-state)) @result{} 1
 @end example
 
@@ -18166,7 +18166,7 @@ You can do
 more than just changing the internal values inside the procedure,
 such as switching state of external resource.
 
-@defmac with ((proc value) @dots{}) body @dots{}
+@defmac temporarily ((proc value) @dots{}) body @dots{}
 Evaluates @var{proc}s and @var{value}s.  Each @var{proc} must yield a
 dynamic state, i.e. a procedure that takes zero or one arguments.
 
