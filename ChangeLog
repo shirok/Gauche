@@ -1,3 +1,8 @@
+2023-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libparam.scm (temporarily): 'with' -> 'temporarily', according
+	  to srfi-226 revision.
+
 2023-02-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/plumbing.scm (plumbing): Add generic utility.

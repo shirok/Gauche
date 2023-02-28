@@ -41,7 +41,7 @@
  (declcode (.include <gauche/priv/parameterP.h>
                      <gauche/priv/vmP.h>)))
 
-(declare (keep-private-macro parameterize parameterize/dynwind with))
+(declare (keep-private-macro parameterize parameterize/dynwind temporarily))
 
 ;;;
 ;;; Primitive parameters
@@ -245,7 +245,7 @@
   SCM_PARAMETERIZATIONP)
 
 ;; SRFI-226
-(define-syntax with
+(define-syntax temporarily
   (er-macro-transformer
    (^[f r c]
      (match f
@@ -266,7 +266,7 @@
                                (quasirename r
                                  `(let ((tmp (,p))) (,p ,v) (set! ,v tmp))))
                              Ps Vs))))))]
-       [_ (error "Invalid with form:" f)]))))
+       [_ (error "Invalid temporarily form:" f)]))))
 
 
 ;; TRANSIENT: To compile 0.9.13 with 0.9.12

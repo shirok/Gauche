@@ -845,14 +845,14 @@
     (parameterize ((p 2))
       (reset
        (display (p))
-       (with ((p 3))
+       (temporarily ((p 3))
          (display (p))
          (shift k (display (p)) (set! c k))
          (display (p)))
        (display (p)))))
-  (test* "reset/shift + with + parameterize" "232"
+  (test* "reset/shift + temporarily + parameterize" "232"
          (with-output-to-string foo))
-  (test* "reset/shift + with + parameterize (cont)" "32"
+  (test* "reset/shift + temporarily + parameterize (cont)" "32"
          (with-output-to-string c)))
 
 (test* "reset/shift + with-error-handler 1"
