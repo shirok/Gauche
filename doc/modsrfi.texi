@@ -13595,9 +13595,15 @@ These two forms are provided in a submodule @code{srfi.227.definitions}.
 
 @deftp {Module} srfi.228
 @mdindex srfi.228
+@c EN
 This module provides a few utility procedures to compose
 comparators for typical aggregates.  For the details
 of comparators, @pxref{Basic comparators}, and @pxref{Comparators}.
+@c JP
+このモジュールは、典型的な集合型のために比較器を合成するいくつかのユーティリティを
+提供します。比較器については
+@ref{Basic comparators}と@ref{Comparators}を参照してください。
+@c COMMON
 @end deftp
 
 @defun make-wrapper-comparator type-test unwrap contents-comparator
@@ -13976,17 +13982,29 @@ A shorthand of @code{(define name (curried formals body @dots{}))}.
 
 @deftp {Module} srfi.239
 @mdindex srfi.239
+@c EN
 This module provides a pattarn-matching macro specialized for
 the common pattern appearing frequently in list processing code.
 It can be seen as a subset of @code{match} (@pxref{Pattern matching});
 if you're writing Gauche-specific code, you don't need this module.
 However, this is useful for portable code.
+@c JP
+このモジュールは、リスト処理のコードで頻繁に現れるパターンに特化した
+パターンマッチングの機能を提供します。
+Gauche用のコードを書いているなら、機能としてはGaucheの@code{match}のサブセットになるので
+このモジュールを使う必要はありません(@ref{Pattern matching}参照)が、
+ポータブルなコードを書いている時は有用でしょう。
+@c COMMON
 @end deftp
 
 @defmac list-case expr clause @dots{}
 [SRFI-239]
 @c MOD srfi.239
+@c EN
 Each @var{clause} must be one of the following forms:
+@c JP
+各@var{clause}は以下のいずれかの形をとります。
+@c COMMON
 
 @itemize @bullet
 @item
@@ -13997,10 +14015,16 @@ Each @var{clause} must be one of the following forms:
 @code{(@var{var} @var{body} @dots{})}
 @end itemize
 
+@c EN
 Here, @var{var}, @var{var1}, @var{var2} are identifiers.
 The order of clauses does not matter, and not all three forms need
 to be present.
+@c JP
+ここで、@var{var}、@var{var1}、@var{var2}は識別子です。
+@var{clause}は順不同で、3つ全てが揃っていなくても構いません。
+@c COMMON
 
+@c EN
 First @var{expr} is evaluated.  If it is a pair, the first type of
 clause is selected, and @var{body} @dots{} are evaluated with
 the environment where the pair's car is bound to @var{var1} and the pair's
@@ -14010,18 +14034,37 @@ and its @var{body} @dots{} are evaluated.
 Otherwise, the third type of clause is selected,
 its @var{body} @dots{} are evaluated where
 the value of @var{expr} is bound to @var{var}.
+@c JP
+まず@var{expr}が評価されます。それがペアなら、最初の形式の節が選択され、
+@var{var1}がペアのcarに、@var{var2}がcdrに束縛された環境で@var{body} @dots{}が
+評価されます。
+@var{expr}の値が空リストなら2番めの形式の節が選択され、
+@var{body} @dots{}が評価されます。
+それ以外の場合は3番めの形式の節が選択され、
+@var{expr}の値が@var{var}に束縛された環境で
+@var{body} @dots{}が評価されます。
+@c COMMON
 
+@c EN
 The identifier @code{_} has special meaning in @var{var}, @var{var1},
-or @var{var2}; it is not bound and the corresponding value is simply discarded.
+and @var{var2}; it is not bound and the corresponding value is simply discarded.
+@c JP
+@var{var}、@var{var1}、@var{var2}に@code{_}が使われた場合、
+該当する値は束縛されず捨てられます。
+@c COMMON
 
+@c EN
 If not all three forms are present and the result of @var{expr} does not
 match the provided clauses, an error is thrown.
-
-In Gauche, you can use @code{util.match} and just replacing @code{list-case}
-with @code{match} would work (except that @code{list-case} generates
-more specific error message when no matching clause is provided).
-However, this type of pattern matching appears very frequently in
-list processing code, and you can use this module for portable code.
+Note that, unlike @code{match},
+if the first type of clause isn't provided, a pair does not
+match the third type of clause
+@c JP
+3つ全ての節が揃っていなくて、@var{expr}の結果にマッチする節がなければ、
+エラーが報告されます。
+@code{match}と違い、最初の形式の節が指定されていない場合に、
+ペアは3番めの形式の節とはマッチしません。
+@c COMMON
 @end defmac
 
 
