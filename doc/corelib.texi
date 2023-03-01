@@ -16789,6 +16789,36 @@ false, and vice versa.
 @end example
 @end defun
 
+@defun flip proc
+[SRFI-235]
+@c EN
+Returns a procedure that passes its arguments to @var{proc} in
+reverse order, that is, @code{((flip proc) a b @dots{} y z)} is
+@code{(proc z y @dots{} b a)}.
+@c JP
+渡された引数を逆順で@var{proc}に渡すような手続きを返します。すなわち、
+@code{((flip proc) a b @dots{} y z)}は
+@code{(proc z y @dots{} b a)}と同じです。
+@c COMMON
+@end defun
+
+@defun swap proc
+[SRFI-235]
+@c EN
+@var{Proc} must be a procedure that takes two arguments or more.
+Returns a procedure that passes its first and second arguments
+swapped to @var{proc}, that is,
+@code{((swap proc) a b arg @dots{})} is
+@code{(proc b a arg @dots{})}.
+@c JP
+@var{proc}は2つ以上の引数を取る手続きでなければなりません。
+渡された引数の最初と2番めの引数の順序を入れ替えて@var{proc}を呼び出す手続きを
+返します。すなわち、
+@code{((swap proc) a b arg @dots{})}は
+@code{(proc b a arg @dots{})}と同じです。
+@c COMMON
+@end defun
+
 @defun any-pred pred @dots{}
 @c EN
 Returns a procedure which applies given argument(s) to
