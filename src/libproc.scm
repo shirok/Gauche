@@ -164,8 +164,12 @@
 ;; we're dealing with a single value.
 (define-inline (identity x) x)
 
-;; more verbose than its definition, but it shows the intention clearly.
-(define-inline (constantly val) (^ _ val))
+;; SRFI-235
+;; using case-lambda allows optimized code in inlined applications
+(define-inline constantly
+  (case-lambda
+    [(val) (^ _ val)]
+    [vals (^ _ (apply values vals))]))
 
 ;;;
 ;;; Generator primitives

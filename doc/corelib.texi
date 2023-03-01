@@ -16759,17 +16759,20 @@ a synonym to @code{values} (@pxref{Procedures and syntax for multiple values}).
 @c COMMON
 @end defun
 
-@defun constantly obj
+@defun constantly obj @dots{}
+[SRFI-235]
 @c EN
 Returns a procedure that takes arbitrary number of arguments, discards
-them, and returns @var{obj}.  Same as @code{(^ _ obj)}.
+them, and returns @var{obj} obj @dots{}.
+Same as @code{(^ _ (values obj @dots{}))}.
 @c JP
 任意個の引数をとり、それらを無視して@var{obj}を返す関数を返します。
-@code{(^ _ obj)}と同じです。
+@code{(^ _ (values obj @dots{}))}と同じです。
 @c COMMON
 @end defun
 
 @defun complement pred
+[SRFI-235]
 @c EN
 Returns a procedure that reverses the meaning of the predicate @var{pred}.
 That is, for the arguments for which @var{pred} returns true return

@@ -1,3 +1,8 @@
+2023-02-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/libproc.scm (constantly): Allow to return multiple values, adopting
+	  SRFI-235.
+
 2023-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libparam.scm (temporarily): 'with' -> 'temporarily', according
