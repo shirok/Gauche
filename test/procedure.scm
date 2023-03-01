@@ -51,6 +51,17 @@
 (test "compose" 'a (lambda () ((compose car) '(a b c))))
 (test "compose" '(a b c) (lambda () ((compose) '(a b c))))
 
+(test "constantly" '(3 3 3)
+      (lambda ()
+        (list ((constantly 3))
+              ((constantly 3) 1)
+              ((constantly 3) 1 2))))
+(test "constantly" '((1 2) (1 2) (1 2))
+      (lambda ()
+        (list (values->list ((constantly 1 2)))
+              (values->list ((constantly 1 2) 3))
+              (values->list ((constantly 1 2) 3 4)))))
+
 (test "complement" '(#t #f #t)
       (lambda () (map (complement even?) '(1 2 3))))
 (test "complement" '(#t #f #t)
@@ -61,6 +72,19 @@
       (lambda () (map (complement (lambda (x y) (= x y))) '(1 2 3) '(1 1 3))))
 (test "complement" #t
       (lambda () ((complement (lambda () #f)))))
+
+(test "flip" '(() (1) (2 1) (3 2 1) (4 3 2 1))
+      (lambda ()
+        (list ((flip list))
+              ((flip list) 1)
+              ((flip list) 1 2)
+              ((flip list) 1 2 3)
+              ((flip list) 1 2 3 4))))
+(test "swap" '((2 1) (2 1 3) (2 1 3 4))
+      (lambda ()
+        (list ((swap list) 1 2)
+              ((swap list) 1 2 3)
+              ((swap list) 1 2 3 4))))
 
 (test "compose, apply$, map$" 32
       (lambda ()

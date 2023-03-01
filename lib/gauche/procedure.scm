@@ -70,6 +70,22 @@
     [(2) (^[x y] (not (fn x y)))]
     [else (^ args (not (apply fn args)))]))
 
+;; SRFI-235
+(define (flip proc)
+  (case (arity proc)
+    [(0 1) proc]
+    [(2) (^[x y] (proc y x))]
+    [(3) (^[x y z] (proc z y x))]
+    [else (^ args (apply proc (reverse args)))]))
+
+;; SRFI-235
+(define (swap proc)
+  (case (arity proc)
+    [(0 1) (error "procedure must take more than two arguments")]
+    [(2) (^[x y] (proc y x))]
+    [(3) (^[x y z] (proc y x z))]
+    [else (^[x y . args] (apply proc y x args))]))
+
 (define (map$ proc)      (pa$ map proc))
 (define (for-each$ proc) (pa$ for-each proc))
 (define (apply$ proc)    (pa$ apply proc))

@@ -2,6 +2,8 @@
 
 	* src/libproc.scm (constantly): Allow to return multiple values, adopting
 	  SRFI-235.
+	* lib/gauche/procedure.scm (flip, swap): Added a couple of SRFI-235
+	  procedures.
 
 2023-02-27  Shiro Kawai  <shiro@acm.org>
 
