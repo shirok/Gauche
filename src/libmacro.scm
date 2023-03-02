@@ -1216,7 +1216,7 @@
   (er-macro-transformer
    (^[f r c]
      (match f
-       [(_ arg specs . body)
+       [(_ arg (? pair? specs) . body)
         (define (rec arg vars&inits rest)
           (cond
            [(null? (cdr vars&inits))
@@ -1251,6 +1251,12 @@
                               (^_ '()) ; ignore last cdr of dotted list
                               specs)
                       (cdr (last-pair specs))))))]
+       [(_ arg (? identifier? var) . body)
+        ;; A special case when the optional binding list is ().  This may
+        ;; occur as a result of macro expansion, and it's convenient to
+        ;; handle it here instead of each macro expander special-case it.
+        (quasirename r
+          `(let ((,var ,arg)) ,@body))]
        [_ (error "Malformed let-optionals*:" f)]))))
 
 (select-module gauche)

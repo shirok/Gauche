@@ -3010,6 +3010,10 @@
   (test* "opt-lambda rest 3" '(10 20 (30))   (g+ 10 20 30))
   (test* "opt-lambda rest 3" '(10 20 (30 40))(g+ 10 20 30 40))
 
+  ;; https://github.com/shirok/Gauche/issues/881
+  (test* "opt-lambda corner case 1" 1 ((opt-lambda (a) a) 1))
+  (test* "opt*-lambda corner case 2" 2 ((opt*-lambda (a) a) 2))
+
   (test* "let-optionals*" '(1 2 4)
          (let ((y -2) (z -3))
            (let-optionals* '(1 2)
