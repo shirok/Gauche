@@ -16820,12 +16820,20 @@ swapped to @var{proc}, that is,
 @end defun
 
 @defun any-pred pred @dots{}
+@defunx disjoin pred @dots{}
+[SRFI-235]
 @c EN
+These are the same procedures; @code{any-pred} has been in Gauche,
+and @code{disjoin} is defined in SRFI-235.
+
 Returns a procedure which applies given argument(s) to
 each predicate @var{pred}.  If any @var{pred} returns
 a non-@code{#f} value, the value is returned.  If all the @var{pred}s
 return @code{#f}, @code{#f} is returned.
 @c JP
+これらは同じ手続きです。@code{any-pred}は昔からGaucheにあった手続きで、
+@code{disjoin}はSRFI-235で与えられた名前です。
+
 与えられた引数をそれぞれ述語@var{pred}に適用する手続きを返します。
 いずれかの@var{pred}が@code{#f}でない値を返す場合、その値を返します。
 全ての@var{pred}が@code{#f}を返す場合、@code{#f}を返します。
@@ -16848,13 +16856,20 @@ return @code{#f}, @code{#f} is returned.
 @end defun
 
 @defun every-pred pred @dots{}
+@defunx conjoin pred @dots{}
 @c EN
+These are the same procedures; @code{every-pred} has been in Gauche,
+and @code{conjoin} is defined in SRFI-235.
+
 Returns a procedure which applies given argument(s) to
 each predicate @var{pred}.  If every @var{pred} returns
 a non-@code{#f} value, the value returned by the last @var{pred}
 is returned.  If any @var{pred} returns @code{#f}, @code{every-pred}
 returns @code{#f} without calling further @var{pred}s.
 @c JP
+これらは同じ手続きです。@code{every-pred}は昔からGaucheにあった手続きで、
+@code{conjoin}はSRFI-235で与えられた名前です。
+
 与えられた引数をそれぞれ述語@var{pred}に適用する手続きを返します。
 全ての@var{pred}が@code{#f}でない値を返す場合、戻り値は最後の
 @var{pred}の戻り値になります。いずれかの@var{pred}が@code{#f}を

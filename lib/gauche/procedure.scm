@@ -37,7 +37,7 @@
           count$ fold$ fold-right$ reduce$ reduce-right$
           filter$ partition$ remove$ find$ find-tail$
           any$ every$ delete$ member$ assoc$
-          any-pred every-pred
+          any-pred disjoin every-pred conjoin
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value
           source-code source-location disasm
@@ -118,6 +118,7 @@
             (cond [(null? preds) #f]
                   [(apply (car preds) args)]
                   [else (loop (cdr preds))]))))
+(define disjoin any-pred)
 
 (define (every-pred . preds)
   (if (null? preds)
@@ -126,6 +127,7 @@
               (cond [(null? (cdr preds)) (apply (car preds) args)]
                     [(apply (car preds) args) (loop (cdr preds))]
                     [else #f])))))
+(define conjoin every-pred)
 
 ;; Curryable procedures ------------------------------------
 

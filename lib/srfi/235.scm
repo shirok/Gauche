@@ -39,8 +39,8 @@
           swap                          ;builtin
           on-left
           on-right
-          conjoin
-          disjoin
+          conjoin                       ;builtin
+          disjoin                       ;builtin
           each-of
           all-of
           any-of
@@ -51,28 +51,6 @@
 
 (define (on-left proc) (^[x y] (proc x)))
 (define (on-right proc) (^[x y] (proc y)))
-
-(define conjoin
-  (case-lambda
-    [() (constantly #t)]
-    [(pred) (apply pred args)]
-    [preds (^ args
-             (let loop ([preds preds])
-               (match preds
-                 [(pred) (apply pred args)]
-                 [(pred . preds) (and (apply pred args)
-                                      (loop preds))])))]))
-
-(define disjoin
-  (case-lambda
-    [() #f]
-    [(pred) (apply pred args)]
-    [preds (^ args
-             (let loop ([preds preds])
-               (match preds
-                 [(pred) (apply pred args)]
-                 [(pred . preds) (or (apply pred args)
-                                     (loop preds))])))]))
 
 (define (each-of . procs)
   (^ args
