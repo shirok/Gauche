@@ -3087,6 +3087,16 @@
   (include "include/srfi-232-tests"))
 
 ;;-----------------------------------------------------------------------
+;; Combinators
+
+(test-section "SRFI-235")
+
+(define-module srfi-235-tests
+  (use gauche.test)
+  (use srfi.235)
+  (test-module 'srfi.235))
+
+;;-----------------------------------------------------------------------
 ;; Evaluating expressiosn in an unspecified order
 
 (test-section "SRFI-236")
