@@ -13609,15 +13609,30 @@ of comparators, @pxref{Basic comparators}, and @pxref{Comparators}.
 @defun make-wrapper-comparator type-test unwrap contents-comparator
 [SRFI-228]
 @c MOD srfi.228
+@c EN
 Creates a comparator for objects that wraps other entities.
+@c JP
+何らかの要素をくるむオブジェクトのための比較器を作ります。
+@c COMMON
 
+@c EN
 First it tests the given object with @var{type-test}; then, it calls
 @var{unwrap} on it to extract contents, and use @code{contents-comparator}
 on the exracted contents.
+@c JP
+作られた比較器は、@var{type-test}で適合性を調べ、適合するなら
+@var{unwrap}をオブジェクトに適用して、得られた結果について
+@code{contents-comparator}を使って比較します。
+@c COMMON
 
+@c EN
 For example, suppose you want to deal with a string inside a box.
 You can create a comparator for such structs (@code{strbox-comparator})
 as follows:
+@c JP
+例えば、文字列をboxに入れたものを扱うとしましょう。
+そういうオブジェクトのための比較器@code{strbox-comparator}は、次のとおり定義できます。
+@c COMMON
 
 @example
 (define (strbox? obj)
@@ -13627,23 +13642,44 @@ as follows:
   (make-wrapper-comparator strbox? unbox string-comparator))
 @end example
 
+@c EN
 Then you can compare to strboxes with @code{<?} etc., or make
 a hashtable or treemap by passing @code{strbox-comparator} as a comparator.
+@c JP
+こう定義しておけば、boxに入った文字列を@code{<?}等で比較したり、
+ハッシュテーブルやツリーマップに格納したりすることができます。
+@c COMMON
 @end defun
 
 @defun make-product-comparator comparator @dots{}
 [SRFI-228]
 @c MOD srfi.228
+@c EN
 Creates a comparator for objects of a @emph{common} type of the types
-dealt with given comparators.  Combined with @code{make-wrapper-creator},
+dealt with given comparators.  Combined with @code{make-wrapper-comparator},
 this can also be used to create a comparator for the product types.
+@c JP
+与えられた比較器が扱う型に共通する型のための比較器を作ります。
+@code{make-wrapper-comparator}と合わせると、直積型の比較器を簡単に作れます。
+@c COMMON
 
+@c EN
 The type predicate of the resulting comparator is satisfied iff
 the object satisfies every type predicates of @var{comparator}s.
+@c JP
+作られる比較器の型検査述語は、与えられた@var{comparator}の型検査述語全てを満たす時に
+満たされるものです。
+@c COMMON
 
+@c EN
 The equality predicate is satisfied iff two objects are equal
 to each other according to all @var{comparator}s.
+@c JP
+作られる比較器の等価判定述語は、全ての@var{comparator}の等価判定を満たす時に
+満たされます。
+@c COMMON
 
+@c EN
 The ordering predicate is defined only if all the @var{comparator}s
 have ordering predicate.   Two objects can be ordered by applying
 ordering predicate of @var{comparator}s left to right.  If an ordering
@@ -13653,13 +13689,32 @@ the equality predicate of the current comparator.  If two objects are
 not equal, or no more comparators are left, then the ordering predicate
 of the product comparator returns @code{#f}.  Otherwise, the next
 comparator is tried.
+@c JP
+順序判定述語は、@var{comparator}全てが順序判定述語を持つ場合に限り定義され、
+次のとおり動作します。二つのオブジェクトは、@var{comparator}の左から順に、
+その順序判定述語に渡されます。最初の@var{comparator}の順序判定述語が真を返したら
+全体の順序判定述語は直ちに真を返します。そうでなければ、最初の@var{comparator}の
+等価判定述語が呼ばれ、それが偽を返したら全体の順序判定述語は直ちに偽を返します。
+最初の@var{comparator}の等価判定述語が真であれば、次の@var{comparator}に進み、
+同様に繰り返します。次の@var{comparator}が無くなれば偽が返されます。
+@c COMMON
 
+@c EN
 The hash function is defined only if all the @var{comparator}s
 have hash functions.  Each hash function is called, and the
 results are combined to produce the final hash value.
+@c JP
+ハッシュ関数は@var{comparator}全てがハッシュ関数を持つ場合に限り定義されます。
+それぞれの@var{comparator}のハッシュ関数がオブジェクトに対して呼ばれ、
+そのハッシュ値を組み合わせたものが全体のハッシュ値となります。
+@c COMMON
 
+@c EN
 The following example defines a comparator of a record type
 based on the comparators of the fields.
+@c JP
+次の例は、レコード型の比較器を、フィールドの比較器から合成します。
+@c COMMON
 
 @example
 (define-record-type <member> make-member member?
