@@ -39,8 +39,6 @@
           swap                          ;builtin
           on-left
           on-right
-          conjoin                       ;builtin
-          disjoin                       ;builtin
           each-of
           all-of
           any-of

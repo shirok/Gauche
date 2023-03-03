@@ -109,7 +109,7 @@
           count$ fold$ fold-right$ reduce$ reduce-right$
           filter$ partition$ remove$ find$ find-tail$
           any$ every$ delete$ member$ assoc$
-          any-pred disjoin every-pred conjoin
+          any-pred every-pred
           ;;(:macro curry-lambda) (:macro define-curry)
           arity procedure-arity-includes?
           <arity-at-least> arity-at-least? arity-at-least-value

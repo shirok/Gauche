@@ -16820,12 +16820,7 @@ swapped to @var{proc}, that is,
 @end defun
 
 @defun any-pred pred @dots{}
-@defunx disjoin pred @dots{}
-[SRFI-235]
 @c EN
-These are the same procedures; @code{any-pred} has been in Gauche,
-and @code{disjoin} is defined in SRFI-235.
-
 Returns a procedure which applies given argument(s) to
 each predicate @var{pred}.  If any @var{pred} returns
 a non-@code{#f} value, the value is returned.  If all the @var{pred}s
@@ -16856,11 +16851,7 @@ return @code{#f}, @code{#f} is returned.
 @end defun
 
 @defun every-pred pred @dots{}
-@defunx conjoin pred @dots{}
 @c EN
-These are the same procedures; @code{every-pred} has been in Gauche,
-and @code{conjoin} is defined in SRFI-235.
-
 Returns a procedure which applies given argument(s) to
 each predicate @var{pred}.  If every @var{pred} returns
 a non-@code{#f} value, the value returned by the last @var{pred}
