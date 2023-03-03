@@ -39,6 +39,8 @@
           swap                          ;builtin
           on-left
           on-right
+          conjoin
+          disjoin
           each-of
           all-of
           any-of
@@ -49,6 +51,18 @@
 
 (define (on-left proc) (^[x y] (proc x)))
 (define (on-right proc) (^[x y] (proc y)))
+
+(define (conjoin . preds)
+  (if (null? preds)
+    (constantly #t)
+    (let1 pred* (apply every-pred preds)
+      (^ args (every pred* args)))))
+
+(define (disjoin . preds)
+  (if (null? preds)
+    (constantly #f)
+    (let1 pred* (apply any-pred preds)
+      (^ args (any pred* args)))))
 
 (define (each-of . procs)
   (^ args
