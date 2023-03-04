@@ -32,19 +32,21 @@
 ;;;
 
 (define-module srfi.235
+  (use gauche.collection)               ;group-collection
   (use util.match)
   (export constantly                    ;builtin
           complement                    ;builtin
           flip                          ;builtin
           swap                          ;builtin
-          on-left
-          on-right
-          conjoin
-          disjoin
-          each-of
-          all-of
-          any-of
+          on-left on-right
+          conjoin disjoin
+          each-of all-of any-of
           on
+          left-section right-section
+          apply-chain
+          arguments-drop arguments-drop-right
+          arguments-take arguments-take-right
+          group-by
           )
   )
 (select-module srfi.235)
@@ -76,3 +78,27 @@
 
 (define (on reducer mapper)
   (^[xs] (apply reducer (map mapper xs))))
+
+(define (left-section proc . args)
+  (apply pa$ proc args))
+
+(define (right-section proc . args)
+  (let1 rargs (reverse args)
+    (^ more-args (apply proc (append more-args rargs)))))
+
+;; Same as 'compose' except at least one proc is required.
+(define (apply-chain proc . procs) (apply compose proc procs))
+
+(define (arguments-drop proc n)
+  (^ args (apply proc (drop args n))))
+(define (arguments-drop-right proc n)
+  (^ args (apply proc (drop-right args n))))
+(define (arguments-take proc n)
+  (^ args (apply proc (take args n))))
+(define (arguments-take-right proc n)
+  (^ args (apply proc (take-right args n))))
+
+(define (group-by key-proc :optional (= equal?))
+  (^[lis]
+    (assume-type lis <list>)
+    (group-collection lis :key key-proc :test =)))
