@@ -16737,6 +16737,14 @@ for example.
 別名の@code{compose}を使った方が良いでしょう。そうすればSRFI-0などを
 使って容易に移植が可能です。
 @c COMMON
+
+@c EN
+SRFI-210 provides @code{compose-left} and @code{compose-right};
+@pxref{Procedures and syntax for multiple values}.
+@c JP
+なお、SRFI-210に@code{compose-left}と@code{compose-right}が定義されています。
+@ref{Procedures and syntax for multiple values}参照。
+@c COMMON
 @end defun
 
 @defun identity obj

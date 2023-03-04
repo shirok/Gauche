@@ -12128,11 +12128,33 @@ Gauche's built-in @code{identity}, which takes exactly one argument
 @defun compose-left transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+Each @var{transducer} must be a procedure.
+Returns a procedure that applies the first @var{transducer} to its
+arguments, then applies the next @var{transducer} to the result(s)
+of the first one, and so on.  Returns the result(s) returned from
+the last @var{transducer}.  If no @var{tranducer}s are given,
+returned procedure is the same as @code{values}.
+
+This can be written using Gauche's built-in @code{compose} as follows
+(@pxref{Combinators}):
+
+@example
+(define (compose-left . procs) (apply compose (reverse procs)))
+@end example
 @end defun
 
 @defun compose-right transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+Each @var{transducer} must be a procedure.
+Returns a procedure that applies the last @var{transducer} to its
+arguments, then applies the previous @var{transducer} to the result(s)
+of the last one, and so on.  Returns the result(s) returned from
+the first @var{transducer}.  If no @var{tranducer}s are given,
+returned procedure is the same as @code{values}.
+
+This is the same as Gauche's built-in @code{compose}
+(@pxref{Combinators}).
 @end defun
 
 @defun map-values proc
