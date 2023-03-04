@@ -116,25 +116,9 @@
 
 (define identity values) ;; This differs from Gauche's built-in
 
-(define (compose-left . transducers)
-  (if (null? transducers)
-    values
-    (let rec ([transducer1 (car transducers)]
-              [transducer* (cdr transducers)])
-      (if (null? transducer*)
-        transducer1
-        (^ xs (apply/mv (rec (car transducer*) (cdr transducer*))
-                        (apply transducer1 xs)))))))
+(define (compose-left . transducers) (apply compose (reverse transducers)))
 
-(define (compose-right . transducers)
-  (if (null? transducers)
-    values
-    (let rec ([transducer1 (car transducers)]
-              [transducer* (cdr transducers)])
-      (if (null? transducer*)
-        transducer1
-        (^ xs (apply/mv transducer1
-                        (apply (rec (car transducer*) (cdr transducer*)) xs)))))))
+(define (compose-right . transducers) (apply compose transducers))
 
 (define (map-values proc)
   (^ xs (list-values (map proc xs))))
