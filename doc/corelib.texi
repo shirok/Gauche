@@ -5024,6 +5024,7 @@ Returns @code{#t} if @var{obj} is a boolean value.
 @end defun
 
 @defun boolean obj
+[SRFI-235]
 @c EN
 Returns @code{#f} iff @var{obj} is @code{#f}, and returns @code{#t}
 otherwise.  Convenient to coerce a value to boolean.

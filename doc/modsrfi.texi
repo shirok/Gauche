@@ -14087,7 +14087,161 @@ constantly  complement  flip  swap  boolean
 @end example
 @end deftp
 
+@subheading Combinator utilities
 
+Prorcedures that takes procedure(s) and returns a procedure.
+
+@defun on-left proc
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun on-right proc
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun conjoin pred @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun disjoin pred @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun each-of proc @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun all-of pred
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun any-of pred
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun on reducer mapper
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun left-section proc arg @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun right-section proc arg @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun apply-chain proc proc2 @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun arguments-drop proc n
+@defunx arguments-drop-right proc n
+@defunx arguments-take proc n
+@defunx arguments-take-right proc n
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun group-by key-proc :optional equal
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@subheading Syntax-like procedures
+
+@defun begin-procedure thunk @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun if-procedure value then-thunk else-thunk
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun when-procedure value thunk @dots{}
+@defunx unless-procedure value thunk @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun value-procedure value then-proc else-thunk
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun case-procedure value then-alist :optional else-thunk
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun and-procedure thunk @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun eager-and-procedure thunk @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun or-procedure thunk @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun eager-or-procedure thunk @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun and-procedure thunk @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun funcall-procedure thunk
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun loop-procedure thunk
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun while-procedure thunk
+@defunx until-procedure thunk
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+
+@subheading Auxiliary utilities
+
+@defun always obj @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+@defun never obj @dots{}
+[SRFI-235]
+@c MOD srfi.235
+@end defun
+
+Note: @code{boolean} is provided in the core (@pxref{Booleans}).
 
 @c ----------------------------------------------------------------------
 @node Destructuring lists,  , Combinators (SRFI), Library modules - SRFIs
