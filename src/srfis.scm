@@ -1373,9 +1373,11 @@ srfi-189, srfi-189
 
 Maybe and Either: optional container types
 Supported by the module @code{srfi.189}.
+@xref{Maybe and Either optional container types}.
 
 MaybeとEither: オプショナルなコンテナ型
 モジュール@code{srfi.189}でサポートされます。
+@ref{Maybe and Either optional container types}参照。
 
 
 srfi-192, srfi-192
@@ -1559,6 +1561,18 @@ Supported by the module @code{srfi.232}
 柔軟なカリー化された手続き
 @code{srfi.232}でサポートされます
 (@ref{Flexible curried procedures}参照)。
+
+
+srfi-235, srfi-235
+()
+
+Combinators (SRFI)
+Supported by the module @code{srfi.235}
+(@pxref{Combinators (SRFI)}).
+
+コンビネータ (SRFI)
+@code{srfi.235}でサポートされます
+(@ref{Combinators (SRFI)}参照)。
 
 
 srfi-236

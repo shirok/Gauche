@@ -96,6 +96,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Composing comparators::       srfi.228
 * Tagged procedures::           srfi.229
 * Flexible curried procedures::  srfi.232
+* Combinators (SRFI)::          srfi.235
 * Destructuring lists::         srfi.239
 @end menu
 
@@ -13896,7 +13897,7 @@ is signaled.
 
 
 @c ----------------------------------------------------------------------
-@node Flexible curried procedures, Destructuring lists, Tagged procedures, Library modules - SRFIs
+@node Flexible curried procedures, Combinators (SRFI), Tagged procedures, Library modules - SRFIs
 @section @code{srfi.232} - Flexible curried procedures
 @c NODE 柔軟なカリー化された手続き, @code{srfi.232} - 柔軟なカリー化された手続き
 
@@ -14070,7 +14071,26 @@ A shorthand of @code{(define name (curried formals body @dots{}))}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Destructuring lists,  , Flexible curried procedures, Library modules - SRFIs
+@node Combinators (SRFI), Destructuring lists, Flexible curried procedures, Library modules - SRFIs
+@section @code{srfi.235} - Combinators (SRFI)
+@c NODE コンビネータ (SRFI), @code{srfi.235} - コンビネータ (SRFI)
+
+@deftp {Module} srfi.235
+@mdindex srfi.235
+This srfi defines combinator utilities.  Gauche provides some frequently-used
+combinators built-in.  This module augments it.
+
+The following procedures are built-in; @pxref{Combinators}, for the details.
+
+@example
+constantly  complement  flip  swap  boolean
+@end example
+@end deftp
+
+
+
+@c ----------------------------------------------------------------------
+@node Destructuring lists,  , Combinators (SRFI), Library modules - SRFIs
 @section @code{srfi.239} - Destructuring lists
 @c NODE リストの分解, @code{srfi.239} - リストの分解
 
