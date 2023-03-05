@@ -12160,23 +12160,40 @@ This is the same as Gauche's built-in @code{compose}
 @defun map-values proc
 [SRFI-210]
 @c MOD srfi.210
+Returns a procedure that takes any number of arguments, applys @var{proc}
+on each argument, and returns the results as multiple values.
+The behavior is undefined if @var{proc} doesn't return a single value.
+
+@example
+((map-values (cut + <> 1)) 1 2 3)
+  @result{} 2, 3, 4
+@end example
 @end defun
 
 @defun bind/list lis transducer @dots{}
+@defunx bind/box box transducer @dots{}
+@defunx bind obj transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
-@end defun
+These are @emph{bind} operation in Monads.  The first argument
+is the source of data; they're first expanded into values (for
+@code{bind/list}, each element of @var{lis} is taken; for @code{bind/box},
+it is unboxed, and for @code{bind}, @var{obj} is the singleton value).
+Those values are passed as arguments to the first @var{transducer},
+and its result(s) are passed as argumenst to the second @var{transducer}
+and so on.  The value(s) returned by the last @var{transducer} becomes
+the result(s) of those procedures.  These can be written using
+@code{compose-left} and procedure application:
 
-@defun bind/box box transducer @dots{}
-[SRFI-210]
-@c MOD srfi.210
+@example
+(bind/list lis proc @dots{})
+  @equiv{} (apply (compose-left proc @dots{}) lis)
+(bind/box box proc @dots{})
+  @equiv{} (apply/mv (compose-left proc @dots{}) (unbox box))
+(bind obj proc @dots{})
+  @equiv{} ((compose-left proc @dots{}) obj)
+@end example
 @end defun
-
-@defun bind obj transducer @dots{}
-[SRFI-210]
-@c MOD srfi.210
-@end defun
-
 
 @c ----------------------------------------------------------------------
 @node Integer sets, Define higher-order lambda, Procedures and syntax for multiple values, Library modules - SRFIs
