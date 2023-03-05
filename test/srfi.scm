@@ -3098,7 +3098,8 @@
 (define-module srfi-235-tests
   (use gauche.test)
   (use srfi.235)
-  (test-module 'srfi.235))
+  (test-module 'srfi.235)
+  (test-include-r7 "include/srfi-235-test"))
 
 ;;-----------------------------------------------------------------------
 ;; Evaluating expressiosn in an unspecified order

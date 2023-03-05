@@ -89,7 +89,7 @@
   (^[xs] (any pred xs)))
 
 (define (on reducer mapper)
-  (^[xs] (apply reducer (map mapper xs))))
+  (^ xs (apply reducer (map mapper xs))))
 
 (define (left-section proc . args)
   (apply pa$ proc args))
@@ -156,7 +156,7 @@
   (any identity (map funcall-procedure thunks)))
 
 (define (funcall-procedure thunk)
-  ((thunk)))
+  (thunk))
 
 (define (loop-procedure thunk)
   (let loop () (thunk) (loop)))
