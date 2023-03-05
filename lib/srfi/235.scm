@@ -47,6 +47,18 @@
           arguments-drop arguments-drop-right
           arguments-take arguments-take-right
           group-by
+          begin-procedure
+          if-procedure
+          when-procedure
+          unless-procedure
+          value-procedure
+          case-procedure
+          and-procedure eager-and-procedure
+          or-procedure eager-or-procedure
+          funcall-procedure loop-procedure
+          while-procedure until-procedure
+          always never
+          boolean                       ;builtin
           )
   )
 (select-module srfi.235)
@@ -102,3 +114,60 @@
   (^[lis]
     (assume-type lis <list>)
     (group-collection lis :key key-proc :test =)))
+
+(define begin-procedure
+  (case-lambda
+    [() (undefined)]
+    [thunks
+     (let loop ([thunks thunks])
+       (if (null? (cdr thunks))
+         ((car thunks))
+         (begin ((car thunks)) (loop (cdr thunks)))))]))
+
+(define (if-procedure value then-thunk else-thunk)
+  (if value (then-thunk) (else-thunk)))
+
+(define (when-procedure value . thunks)
+  (when value
+    (apply begin-procedure thunks) (undefined)))
+
+(define (unless-procedure value . thunks)
+  (unless value
+    (apply begin-procedure thunks) (undefined)))
+
+(define (value-procedure value then-proc :optional (else-thunk undefined))
+  (if value (then-proc value) (else-thunk)))
+
+(define (case-procedure value thunk-alist :optional (else-thunk undefined))
+  (if-let1 p (assv value thunk-alist)
+    ((cdr p))
+    (else-thunk)))
+
+(define (and-procedure . thunks)
+  (every funcall-procedure thunks))
+
+(define (eager-and-procedure . thunks)
+  (every identity (map funcall-procedure thunks)))
+
+(define (or-procedure . thunks)
+  (any funcall-procedure thunks))
+
+(define (eager-or-procedure . thunks)
+  (any identity (map funcall-procedure thunks)))
+
+(define (funcall-procedure thunk)
+  ((thunk)))
+
+(define (loop-procedure thunk)
+  (let loop () (thunk) (loop)))
+
+(define (while-procedure thunk)
+  (let loop ()
+    (when (thunk) (loop))))
+
+(define (until-procedure thunk)
+  (let loop ()
+    (unless (thunk) (loop))))
+
+(define (always . objs) #t)
+(define (never . objs) #f)
