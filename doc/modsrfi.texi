@@ -14077,33 +14077,92 @@ A shorthand of @code{(define name (curried formals body @dots{}))}.
 
 @deftp {Module} srfi.235
 @mdindex srfi.235
-This srfi defines combinator utilities.  Gauche provides some frequently-used
+@c EN
+This srfi provides combinator utilities.  Gauche provides some frequently-used
 combinators built-in.  This module augments it.
+@c JP
+このSRFIはコンビネータのユーティリティを提供します。
+Gaucheは組み込みでよく使われるコンビネータを持っていますが、このSRFIはそれを補強します。
+@c COMMON
 
+@c EN
 The following procedures are built-in; @pxref{Combinators}, for the details.
+@c JP
+以下の手続きは組み込みです。詳しくは@ref{Combinators}を参照してください。
+@c COMMON
 
 @example
 constantly  complement  flip  swap  boolean
 @end example
 @end deftp
 
+@c EN
 @subheading Combinator utilities
+@c JP
+@subheading コンビネータユーティリティ
+@c COMMON
 
-Prorcedures that takes procedure(s) and returns a procedure.
+@c EN
+Procedures that takes procedure(s) and returns a procedure.
+@c JP
+手続きを取って手続きを返す手続きです。
+@c COMMON
 
 @defun on-left proc
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+Returns a two argument procedure, which ignores its right argument
+and calls @var{proc} with the left argument.
+@c JP
+2つの引数を取る手続きを返します。その手続きが呼ばれると、右側の引数を無視して
+左側の引数を@var{proc}に渡します。
+@c COMMON
+
+@example
+((on-left car) '(a b) '(c d)) @result{} a
+@end example
 @end defun
 
 @defun on-right proc
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+Returns a two argument procedure, which ignores its left argument
+and calls @var{proc} with the right argument.
+@c JP
+2つの引数を取る手続きを返します。その手続きが呼ばれると、左側の引数を無視して
+右側の引数を@var{proc}に渡します。
+@c COMMON
+
+@example
+((on-right car) '(a b) '(c d)) @result{} c
+@end example
 @end defun
 
 @defun conjoin pred @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+Returns a procedure taking any number of arguments and that behaves
+as follows: For each argument, calls @var{pred} @dots{} left to right;
+if any of @var{pred} returns @code{#f}, stop and immediately returns
+@code{#f}.  If all predicates returns a true value for all arguments,
+returns the last result.  If no @var{pred}s are given, or no arguments are given,
+returns @code{#t}.
+@c JP
+任意個の引数を取る、次の動作をする関数を返します。
+各引数に対し、@var{pred} @dots{}を左から順に適用します。@var{pred}が@code{#f}を
+返したらただちに@code{#f}を返します。全ての引数に対し、全ての@var{pred}が真の値を
+返したら、最後の評価値を返します。@var{pred}がゼロ個の場合、もしくは返された関数が
+引数無しで呼び出された場合は@code{#t}を返します。
+@c COMMON
+
+@example
+((conjoin char? digit->integer) #\1 #\2 #\3) @result{} 3
+((conjoin char? digit->integer) #\1 #\a #\3) @result{} #f
+@end example
+
 @end defun
 
 @defun disjoin pred @dots{}
@@ -14159,7 +14218,11 @@ Prorcedures that takes procedure(s) and returns a procedure.
 @c MOD srfi.235
 @end defun
 
+@c EN
 @subheading Syntax-like procedures
+@c JP
+@subheading 構文に対応する手続き
+@c COMMON
 
 @defun begin-procedure thunk @dots{}
 [SRFI-235]
@@ -14190,58 +14253,96 @@ Prorcedures that takes procedure(s) and returns a procedure.
 @defun and-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+Calls @var{thunk} @dots{} left to right, until it yields
+@code{#f}, and returns @code{#f}.  If all @var{thunk}s yields
+true value, returns the result of the last @code{thunk}.
+If no @var{thunk}s are given, returns @code{#t}.
 @end defun
 
 @defun eager-and-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+Calls all @var{thunk}s, then checks their results.  If any
+of the result is @code{#f}, returns @code{#f}.
+Otherwise, returns the last result of @var{thunk}.
+If no @var{thunk}s are given, returns @code{#t}.
 @end defun
 
 @defun or-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+Calls @var{thunk} @dots{} left to right, until it yields
+a true value, and returns that value.  If all @var{thunk}s yields
+@code{#f}, returns @code{#f}.  If no @var{thunk}s are given,
+returns @code{#f}.
 @end defun
 
 @defun eager-or-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
-@end defun
-
-@defun and-procedure thunk @dots{}
-[SRFI-235]
-@c MOD srfi.235
+Calls all @var{thunk}s, then checks their results from left to right,
+and returns the first true value.  If all the results are @code{#f},
+or no @var{thunk}s are given, returns @code{#f}.
 @end defun
 
 @defun funcall-procedure thunk
 [SRFI-235]
 @c MOD srfi.235
+Just call @var{thunk} and returns its result(s).
+This is useful to pass to other procedures, e.g.
+@code{(map funcall-procedure list-of-procedures)}.
 @end defun
 
 @defun loop-procedure thunk
 [SRFI-235]
 @c MOD srfi.235
+Calls @var{thunk} repeatedly forever.  Nonlocal escape is the only
+way to break out.
 @end defun
 
 @defun while-procedure thunk
 @defunx until-procedure thunk
 [SRFI-235]
 @c MOD srfi.235
+Calls @var{thunk} repeatedly while/until it returns a true value,
+respectively.
 @end defun
 
-
+@c EN
 @subheading Auxiliary utilities
+@c JP
+@subheading 補助ユーティリティ
+@c COMMON
 
 @defun always obj @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+Ignores arguments and always returns @code{#t}.
+Same as @code{(constantly #t)}.
+@c JP
+引数を無視して常に@code{#t}を返す手続きです。
+@code{(constantly #t)}と同じです。
+@c COMMON
 @end defun
 
 @defun never obj @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+Ignores arguments and always returns @code{#f}.
+Same as @code{(constantly #f)}.
+@c JP
+引数を無視して常に@code{#f}を返す手続きです。
+@code{(constantly #f)}と同じです。
+@c COMMON
 @end defun
 
+@c EN
 Note: @code{boolean} is provided in the core (@pxref{Booleans}).
+@c JP
+註: @code{boolean}は組み込みです (@ref{Booleans}参照)。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Destructuring lists,  , Combinators (SRFI), Library modules - SRFIs
