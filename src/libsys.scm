@@ -876,11 +876,28 @@
       (begin (set! SCM_RESULT0 SCM_FALSE)
              (set! SCM_RESULT1 SCM_FALSE)))))
 
-(define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21
+(define-cproc current-time ()           ;SRFI-18, SRFI-19, SRFI-21, SRFI-226
   Scm_CurrentTime)
 
-(define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21
+(define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21, SRFI-226
   ::<boolean> SCM_TIMEP)
+
+(define-cproc seconds+ (t::<time> x::<number>) ;SRFI-226
+  (cond [(SCM_INTP x)
+         (return (Scm_MakeTime64 (-> t type)
+                                 (+ (-> t sec) (SCM_INT_VALUE x))
+                                 (-> t nsec)))]
+        [(or (SCM_RATNUMP x) (SCM_FLONUMP x))
+         (let* ([secs::double]
+                [subsecs::double (modf (Scm_GetDouble x) (& secs))])
+           (return
+            (Scm_MakeTime64 (-> t type)
+                            (+ (-> t sec) (cast int64_t secs))
+                            (+ (-> t nsec)
+                               (cast int64_t (* subsecs 1000000000))))))]
+        [else
+         (Scm_Error "Real number required, but got: %S" x)
+         (return SCM_UNDEFINED)]))      ;dummy
 
 (define-cproc time->seconds (t::<time>) ;SRFI-18
   Scm_TimeToSeconds)
