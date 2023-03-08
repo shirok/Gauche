@@ -30195,23 +30195,36 @@ timeの型を指定するオプショナル引数を受け付けるようにさ�
 @end defun
 
 @defun time? obj
-@c EN
 [SRFI-18][SRFI-19][SRFI-21]
+@c EN
 Returns @code{#t} if @var{obj} is a time object.
 @c JP
-[SRFI-18][SRFI-19][SRFI-21]
 @var{obj}がtimeオブジェクトなら@code{#t}を返します。
+@c COMMON
+@end defun
+
+@defun seconds+ time x
+[SRFI-226]
+@c EN
+Returns a time object that is @var{x} seconds after the given @var{time}.
+The type of returned time object is the same as @var{time}.
+The argument @var{x} must be a finite real number.  If it is negative,
+returnd time is before the given time.
+@c JP
+与えられた@var{time}より@var{x}秒後を表すtimeオブジェクトを作って返します。
+返されるtimeオブジェクトの型は@var{time}と同じです。
+@var{x}は有限の実数でなければなりません。@var{x}が負の場合は、
+与えられた時間より前の時間が返ります。
 @c COMMON
 @end defun
 
 @defun time->seconds time
 @defunx seconds->time seconds
-@c EN
 [SRFI-18][SRFI-21]
+@c EN
 Converts between time object and the number of seconds (POSIX-time).
 @var{Time} argument of @code{time->seconds} has to be a @code{<time>} object.
 @c JP
-[SRFI-18][SRFI-21]
 timeオブジェクトと秒数(POSIX時間)を変換します。
 @code{time->seconds}の引数@var{time}は、@code{<time>}オブジェクトで
 なければなりません。
