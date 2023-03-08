@@ -30210,11 +30210,17 @@ Returns a time object that is @var{x} seconds after the given @var{time}.
 The type of returned time object is the same as @var{time}.
 The argument @var{x} must be a finite real number.  If it is negative,
 returnd time is before the given time.
+
+@xref{SRFI-19 Time procedures}, for another way to compute with time
+difference by @code{add-duration}/@code{subtract-duration}.
 @c JP
 与えられた@var{time}より@var{x}秒後を表すtimeオブジェクトを作って返します。
 返されるtimeオブジェクトの型は@var{time}と同じです。
 @var{x}は有限の実数でなければなりません。@var{x}が負の場合は、
 与えられた時間より前の時間が返ります。
+
+時間の計算には、SRFI-19の@code{add-duration}/@code{subtract-duration}
+も使えます。@ref{SRFI-19 Time procedures}を参照してください。
 @c COMMON
 @end defun
 

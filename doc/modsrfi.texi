@@ -2012,12 +2012,16 @@ Type of returned time is the same as @var{time0}.  Type of
 @var{time-duration} must be @code{time-duration}.
 @code{add-duration!} and @code{subtract-duration!} reuse
 @var{time0} to store the result.
+
+See also @code{seconds+} (@ref{Time}).
 @c JP
 @var{time-duration}を@var{time0}に加算、または@var{time0}から減算します。
 返される時間のタイプは@var{time0}と同じです。@var{time-duration}のタイプは
 @code{time-duration}でなければなりません。
 @code{add-duration!}と@code{subtract-duration!}は結果を格納するのに
 @var{time0}を再利用します。
+
+@ref{Time}の@code{seconds+}も参照してください。
 @c COMMON
 @end defun
 
