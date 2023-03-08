@@ -14168,6 +14168,26 @@ returns @code{#t}.
 @defun disjoin pred @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+Returns a procedure taking any number of arguments and that behaves
+as follows: For each argument, calls @var{pred} @dots{} left to right;
+if any of @var{pred} returns a true value, stop and immediately returns
+that value.  If all predicates returns @code{#f} for all arguments,
+returns @code{#f}.  If no @var{pred}s are given, or no arguments are given,
+returns @code{#f}.
+@c JP
+任意個の引数を取る、次の動作をする関数を返します。
+各引数に対し、@var{pred} @dots{}を左から順に適用します。@var{pred}が真の値を
+返したらただちにその値を返します。全ての引数に対し、全ての@var{pred}が@code{#f}を
+返したら、@code{#f}を返します。@var{pred}がゼロ個の場合、もしくは返された関数が
+引数無しで呼び出された場合は@code{#f}を返します。
+@c COMMON
+
+@example
+((disjoin integer? char?) 'a 'b 'c) @result{} #f
+((disjoin integer? char?) #\a 'b 'c) @result{} #t
+@end example
+
 @end defun
 
 @defun each-of proc @dots{}
@@ -14227,11 +14247,31 @@ returns @code{#t}.
 @defun begin-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+Calls @var{thunk} @dots{} from left to right.  Discats their results
+except the last one(s), which will be the result(s) of this procedure.
+@c JP
+@var{thunk} @dots{}を左から順に呼び出します。最後の@var{thunk}の呼び出し
+以外の結果は捨てられます。最後の@var{thunk}の呼び出し結果が返されます。
+@c COMMON
+
+@c EN
+If no @var{thunk}s are given, returns @code{#<undef>}.
+@c JP
+@var{thunk}がひとつも与えられなかった場合は@code{#<undef>}が返されます。
+@c COMMON
 @end defun
 
 @defun if-procedure value then-thunk else-thunk
 [SRFI-235]
 @c MOD srfi.235
+@c EN
+If @var{value} is true, calls @var{then-thunk} and returns its
+result(s).  Otherwise, calls @var{else-thunk} and returns its result(s).
+@c JP
+@var{value}が真なら@var{then-thunk}を呼び、その結果を返します。
+そうでなければ@var{else-thunk}を呼び、その結果を返します。
+@c COMMON
 @end defun
 
 @defun when-procedure value thunk @dots{}
@@ -14288,24 +14328,40 @@ or no @var{thunk}s are given, returns @code{#f}.
 @defun funcall-procedure thunk
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Just call @var{thunk} and returns its result(s).
 This is useful to pass to other procedures, e.g.
 @code{(map funcall-procedure list-of-procedures)}.
+@c JP
+@var{thunk}を呼び出しその結果を返します。
+これは他の手続きに渡すのに便利です。例えば：
+@code{(map funcall-procedure list-of-procedures)}。
+@c COMMON
 @end defun
 
 @defun loop-procedure thunk
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Calls @var{thunk} repeatedly forever.  Nonlocal escape is the only
 way to break out.
+@c JP
+繰り返し@var{thunk}を呼びます。@var{thunk}からの大域脱出のみが
+ループを抜ける方法です。
+@c COMMON
 @end defun
 
 @defun while-procedure thunk
 @defunx until-procedure thunk
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Calls @var{thunk} repeatedly while/until it returns a true value,
 respectively.
+@c JP
+それぞれ、@var{thunk}が真の値を返す限り(while)、あるいは真の値を返すまで(until)、
+繰り返し@var{thunk}を呼びつづけます。
+@c COMMON
 @end defun
 
 @c EN
