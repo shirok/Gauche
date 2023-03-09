@@ -1719,54 +1719,139 @@ always returns @code{#f}.
 
 @deftp {Module} control.plumbing
 @mdindex control.plumbing
+@c EN
 This module provides utilities to use ports as communication channles
 between threads.  Although some use cases don't involve threads,
 the general mechanism implicitly use threads.   For example, a @emph{pump}
 connects an input port and an output port, making the data available
 from the input port to be written to the output port.  It spawns a
 thread to read from the given input.
+@c JP
+このモジュールは、ポートをスレッド間のコミュニケーションチャネルとして使う
+ユーティリティを提供します。ユースケースによってはスレッドを必ずしも必要としませんが、
+一般的なメカニズムとして、暗黙のスレッドが使われることがあります。
+例えば「ポンプ」と呼ばれるデバイスは入力ポートと出力ポートをつなぎ、
+入力ポートに届いたデータを自動的に出力ポートに送ります。
+このデバイスは内部で入力ポートからデータを読み出すスレッドをspawnします。
+@c COMMON
 
+@c EN
 With this module, you can construct a system that takes data from
 ports, and delivers it to other ports.  It is like you construct
 plumbing system with multiple inlets and outlets; hence we named it
 @emph{plumbing}.
+@c JP
+このモジュールを使って、1つ以上のポートからデータを吸い出しし、それを1つ以上のポートへと
+送り届けるシステムを作ることができます。
+あたかも注水口(inlet)と排水口(outlet)がある配管(plumbing)システムを作るような
+ものなので、このシステムを@emph{plumbing}と呼びます。
+@c COMMON
 
+@c EN
 See @code{make-plumbing} below for the complete specification of
 plumbing.
+@c JP
+plumbingの完全な仕様については下の@code{make-plumbing}の項を参照してください。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Plumbing system
+@c JP
+@subheading 配管システム
+@c COMMON
 
 @defun make-plumbing
 @c MOD control.plumbing
+@c EN
 Creates and returns a new plumbing.
+@c JP
+新たなplumbingを作って返します。
+@c COMMON
 
+@c EN
 To function, a plumbing need to have one or more @emph{inlets} and
 one or more @emph{outlets}.  Data flowing in from inlets will flow out to
 outlets.
+@c JP
+機能させるためには、plumbingは1つ以上の@emph{inlet} (注水口) と
+1つ以上の@emph{outlet} (排水口)を持つ必要があります。
+データはinletaから流れ込み、outletから流れ出してゆきます。
+@c COMMON
 
+@c EN
 Each inlet/outlet port can be either an input port or an output port; so
 we'll have the following four cases:
+@c JP
+inlet, outletそれぞれどちらにも、入力ポート、出力ポートのいずれもつなぐことができます。
+すなわち、次の4つの組み合わせがあり得ます。
+@c COMMON
 
 @table @asis
+@c EN
 @item Inlet input port
+@c JP
+@item Inlet入力ポート
+@c COMMON
+@c EN
 An input port that provides data from a producer.  A dedicated thread
 is spanwed to read and handle the data from this port.
+@c JP
+生産者から送られるデータを読み出せる入力ポートです。
+このポートが繋がれた場合、専用のスレッドが作られポートからデータを読み出します。
+@c COMMON
+@c EN
 @item Inlet output port
+@c JP
+@item Inlet出力ポート
+@c COMMON
+@c EN
 An output port, to which a producer can write data.  Data written to
 this port will be available to outlet ports.
+@c JP
+このポートに書き込まれたデータが配管システムに流れてゆきます。
+@c COMMON
+@c EN
 @item Outlet input port
+@c JP
+@item Outlet入力ポート
+@c COMMON
+@c EN
 An input port from which a consumer can read data.  It has an internal buffer
 to keep data flowed in from inlets.
+@c JP
+配管を流れたデータが送られて、消費者がそこから流されたデータを読み出すことができる
+入力ポートです。内部に、送られたデータを読み出されるまで保持しておくバッファを持っています。
+@c COMMON
+@c EN
 @item Outlet output port
+@c JP
+@item Outlet出力ポート
+@c COMMON
+@c EN
 An output port to which the data will be written.
+@c JP
+配管を流れたデータが送られる出力ポートです。
+@c COMMON
 @end table
 
+@c EN
 All read/write operations are mutexed, so you can use a plumbing
 as a communication channel between threads.
+@c JP
+読み書きの動作は排他制御されているので、plumbingをスレッド間のコミュニケーションチャネル
+として使うことができます。
+@c COMMON
 
+@c EN
 The following example connects subprocess's stdout and stderr into
-the current output port:
+the current output port.  Both output of the subprocess is automatically
+read from the pipe and sent to the current output port as produced.
+@c JP
+下の例は、サブプロセスのstdoutとstderrを現在の出力ポートにつなぐ例です。
+サブプロセスからの両出力は、自動的にパイプから読み出されて逐次
+現在の出力ポートへと送られます。
+@c COMMON
 
 @example
 (use gauche.process)
