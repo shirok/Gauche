@@ -1340,9 +1340,8 @@
  )
 
 (inline-stub
- "#ifndef HOSTNAMELEN
-#define HOSTNAMELEN 1024
-#endif")
+ (.when (not (defined HOSTNAMELEN))
+   (.define HOSTNAMELEN 1024)))
 
 (define-cproc sys-gethostname ()
   (.if (defined "HAVE_GETHOSTNAME")
