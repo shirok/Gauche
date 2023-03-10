@@ -2423,6 +2423,7 @@
 
 ;; deprecated
 (define-form-parser if (test then . maybe-else)
+  (warn "Deprecated use of 'if' stub directive.  Use '.if' instead.")
   (cgen-with-cpp-condition test
     (cgen-stub-parse-form then))
   (unless (null? maybe-else)
@@ -2441,6 +2442,7 @@
 
 ;; deprecated
 (define-form-parser when (test . forms)
+  (warn "Deprecated use of 'when' stub directive.  Use '.when' instead.")
   (cgen-with-cpp-condition test
     (for-each cgen-stub-parse-form forms)))
 

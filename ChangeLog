@@ -1,3 +1,10 @@
+2023-03-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (if, when): Warn when these obsoleted
+	  stub toplevel forms are used.  These are never officially documented
+	  and we switched to .if/.when for years ago, but just in case we
+	  keep them a bit more.
+
 2023-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (.error): Add CiSE macro to
