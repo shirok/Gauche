@@ -368,8 +368,10 @@
 (export-toplevel-cise-form define-ctype)
 (export-toplevel-cise-form define-cvar)
 
-; CiSE forms .if, .cond, .when and .unless are not exported because
-; there are (or will be) stub replacements of the same name.
+;; CiSE forms .if, .cond, .when and .unless are not exported because
+;; when used at toplevel these macros need to handle stub toplevel forms.
+;; These macros inside another CiSE forms are handled as CiSE macros.
+;; NB: .cond for stub toplevel isn't defined yet.
 (export-toplevel-cise-form .define)
 (export-toplevel-cise-form .error)
 (export-toplevel-cise-form .include)
