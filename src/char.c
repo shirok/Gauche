@@ -693,8 +693,8 @@ int Scm_CharSetEq(ScmCharSet *x, ScmCharSet *y)
         cs_iter xi, yi;
         cs_iter_init(&xi, x);
         cs_iter_init(&yi, y);
+        ScmChar xl = 0, xh = 0, yl = 0, yh = 0;
         for (;;) {
-            ScmChar xl, xh, yl, yh;
             int xr = cs_iter_next(&xi, &xl, &xh);
             int yr = cs_iter_next(&yi, &yl, &yh);
             if (xr == FALSE && yr == FALSE) return TRUE;
