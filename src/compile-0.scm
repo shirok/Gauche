@@ -187,8 +187,16 @@
 ;; For each <slot-spec>, the following accessor/modifier are automatically
 ;; generated.
 ;;
-;;   NAME-SLOT      - accessor (macro)
-;;   NAME-SLOT-set! - modifier (macro)
+;;   NAME-SLOT        - accessor (macro)
+;;   NAME-SLOT-set!   - modifier (macro)
+;;   NAME-SLOT-offset - a macro that expands into the offset of the slot
+;;
+;; The following two CiSE expression is also defined.
+;;
+;;   NAME-SLOT-offset - expands into the integer offset of the slot
+;;   NAME-size        - expands into the integer size of the offset.
+;;
+;; The *-offset and *-size macros/cise-exprs takes the tag into account.
 ;;
 ;; If a symbol is given as <constructor>, it becomes a macro to construct
 ;; the structure.  It can take zero to as many arguments as the # of slots.
@@ -230,10 +238,13 @@
          '())
      ,@(let loop ((s slot-defs) (i (if tag 1 0)) (r '()))
          (if (null? s)
-           (reverse r)
+           (reverse r `((inline-stub
+                         (define-cise-expr ,(string->symbol #"~|name|-size")
+                           [(_) ,i]))))
            (let* ([slot-name (if (pair? (car s)) (caar s) (car s))]
                   [acc (string->symbol #"~|name|-~|slot-name|")]
-                  [mod (string->symbol #"~|name|-~|slot-name|-set!")])
+                  [mod (string->symbol #"~|name|-~|slot-name|-set!")]
+                  [off (string->symbol #"~|name|-~|slot-name|-offset")])
              (loop (cdr s)
                    (+ i 1)
                    (list*
@@ -241,6 +252,10 @@
                        `(vector-ref ,obj ,,i))
                     `(define-macro (,mod obj val)
                        `(vector-set! ,obj ,,i ,val))
-                    `(declare (keep-private-macro ,acc ,mod))
+                    `(define-macro (,off) ,i)
+                    `(inline-stub
+                      (define-cise-expr ,off
+                        [(_) ,i]))
+                    `(declare (keep-private-macro ,acc ,mod ,off))
                     r))))))
   )

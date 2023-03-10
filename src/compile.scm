@@ -239,13 +239,12 @@
 
 ;; implemented in C for better performance.
 (inline-stub
- ;; offsets must be in sync with lvar definition above
- "#define LVAR_OFFSET_TAG        0"
- "#define LVAR_OFFSET_NAME       1"
- "#define LVAR_OFFSET_INITVAL    2"
- "#define LVAR_OFFSET_REF_COUNT  3"
- "#define LVAR_OFFSET_SET_COUNT  4"
- "#define LVAR_SIZE              5"
+ (.define LVAR_OFFSET_TAG       0)
+ (.define LVAR_OFFSET_NAME      (lvar-name-offset))
+ (.define LVAR_OFFSET_INITVAL   (lvar-initval-offset))
+ (.define LVAR_OFFSET_REF_COUNT (lvar-ref-count-offset))
+ (.define LVAR_OFFSET_SET_COUNT (lvar-set-count-offset))
+ (.define LVAR_SIZE             (lvar-size))
 
  ;; Specialized routine for (map (lambda (name) (make-lvar name)) objs)
  (define-cproc %map-make-lvar (names)
