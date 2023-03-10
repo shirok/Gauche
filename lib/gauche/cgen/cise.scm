@@ -1029,6 +1029,14 @@
           item)]
     [(_ . other) (error "malformed .include:" form)]))
 
+;; [cise toplevel/stmt] .error TOKEN ...
+;;   c preprocessor #error directive
+(define-cise-macro (.error form env)
+  (ensure-stmt-or-toplevel-ctx form env)
+  (match form
+    [(_ item ...) `("#error " ,@($ intersperse " "
+                                   $ map (cut format "~s" <>) item))]))
+
 (define-cise-macro |#if| .if)           ;backward compat.
 
 ;;------------------------------------------------------------

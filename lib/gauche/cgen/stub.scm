@@ -371,6 +371,7 @@
 ; CiSE forms .if, .cond, .when and .unless are not exported because
 ; there are (or will be) stub replacements of the same name.
 (export-toplevel-cise-form .define)
+(export-toplevel-cise-form .error)
 (export-toplevel-cise-form .include)
 (export-toplevel-cise-form .undef)
 

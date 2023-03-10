@@ -618,17 +618,16 @@
 
 (inline-stub
  (.when (defined "HAVE_SYS_RESOURCE_H")
-   "
-#if SIZEOF_RLIM_T == 4
-#  define MAKERLIMIT(val)  Scm_MakeIntegerU(val)
-#  define GETRLIMIT(obj)   Scm_GetIntegerU(obj)
-#elif SIZEOF_RLIM_T == 8
-#  define MAKERLIMIT(val)  Scm_MakeIntegerU64(val)
-#  define GETRLIMIT(obj)   Scm_GetIntegerU64(obj)
-#else
-#  error \"rlim_t must be 32bit or 64bit\"
-#endif
-"
+   (.if (== SIZEOF_RLIM_T 4)
+     (begin
+       (.define MAKERLIMIT (val) (Scm_MakeIntegerU val))
+       (.define GETRLIMIT (obj)  (Scm_GetIntegerU obj)))
+     (.if (== SIZEOF_RLIM_T 8)
+       (begin
+         (.define MAKERLIMIT (val) (Scm_MakeIntegerU64 val))
+         (.define GETRLIMIT (obj)  (Scm_GetIntegerU64 obj)))
+       (.error "rlim_t must be 32bit or 64bit")))
+
    (define-cproc sys-getrlimit (rsrc::<int>) ::(<integer> <integer>)
      (let* ([limit::(struct rlimit)] [ret::int])
        (SCM_SYSCALL ret (getrlimit rsrc (& limit)))
