@@ -89,6 +89,7 @@ extern void Scm__InitAutoloads(void);
 extern void Scm__InitCollection(void);
 extern void Scm__InitComparator(void);
 extern void Scm__InitExecenv(void);
+extern void Scm__InitLazy(void);
 extern void Scm__InitNative(void);
 extern void Scm__InitNet(void);
 extern void Scm__InitNetAddr(void);

@@ -1,3 +1,13 @@
+2023-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_MakePromise, Scm_VMForce): Run delayed thunk in
+	  the parameterization of the time the promise is created.
+	  This is for SRFI-226, but divergence from R7RS.
+	  Note that this change breaks the current implementation of
+	  SRFI-155 in a subtle way.  Once SRFI-226 is adopted, however,
+	  SRFI-155 semantics is supported natively.  For now, we just
+	  suppress the test that relies on the broken implementation.
+
 2023-03-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (if, when): Warn when these obsoleted

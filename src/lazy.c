@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/priv/atomicP.h"
 #include "gauche/priv/pairP.h"
+#include "gauche/priv/parameterP.h"
 
 /*==================================================================
  * Promise
@@ -76,6 +77,7 @@
 typedef struct ScmPromiseContentRec {
     int forced;                 /* TRUE if code has a thunk */
     ScmObj code;                /* thunk or value */
+    ScmObj parameterization;    /* parameterization of delay form */
     ScmInternalMutex mutex;
     ScmVM *owner;               /* who is working on this? */
     int count;                  /* count for recursive lock */
@@ -112,6 +114,11 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
     c->owner = NULL;
     c->count = 0;
     c->forced = forced;
+    if (!forced) {
+        c->parameterization = Scm_CurrentParameterization();
+    } else {
+        c->parameterization = SCM_FALSE;
+    }
     c->code = code;
     p->content = c;
     p->kind = SCM_FALSE;
@@ -191,6 +198,9 @@ ScmObj Scm_VMForce(ScmObj obj)
                 /* we already have the lock and evaluating this promise. */
                 c->count++;
                 Scm_VMPushCC(force_cc, data, 2);
+                if (SCM_PARAMETERIZATIONP(c->parameterization)) {
+                    Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
+                }
                 SCM_RETURN(Scm_VMApply0(c->code));
             } else {
                 /* TODO: check if the executing thread terminates
@@ -206,6 +216,9 @@ ScmObj Scm_VMForce(ScmObj obj)
                 c->count++;
                 /* mutex is unlocked by force_cc. */
                 Scm_VMPushCC(force_cc, data, 2);
+                if (SCM_PARAMETERIZATIONP(c->parameterization)) {
+                    Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
+                }
                 SCM_RETURN(Scm_VMApply0(c->code));
             }
         }

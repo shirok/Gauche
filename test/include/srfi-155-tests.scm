@@ -65,7 +65,10 @@
   (test-equal 6 (begin (set! x 10)
 		       (force p)))
 
-  (test-equal "Dynamic extents"
+  ;; SRFI-226 is not compatible with forcing-extent.
+  ;; We may either deprecate SRFI-154/155 or reimplement it as a compatible
+  ;; layer upon finalization of SRFI-226.
+  '(test-equal "Dynamic extents"
     '((1 2) 2)
     (let ((x (make-parameter 1)))
       (let ((p
