@@ -2566,7 +2566,16 @@
   (use srfi.154)
   (use compat.r7rs-srfi-tests)
   (include "include/srfi-155-tests.scm")
-  (run-tests))
+  (run-tests)
+
+  (test-section "srfi-155 additional")
+  (test* "extent" 1
+         (let ()
+           (define x (make-parameter 1))
+           (define p (delay (x)))
+           (define (g p) (parameterize ((x 2)) (force p)))
+           (g p)))
+  )
 
 ;;-----------------------------------------------------------------------
 ;; Generators and accumulators
