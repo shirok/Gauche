@@ -276,6 +276,5 @@
 
 (define-cproc call-with-parameterization (parameterization::<parameterization>
                                           thunk)
-  (let* ([k (Scm__GetDenvKey SCM_DENV_KEY_PARAMETERIZATION)])
-    (Scm_VMPushDynamicEnv k (-> parameterization parameterization))
-    (return (Scm_VMApply0 thunk))))
+  (Scm_InstallParameterization parameterization)
+  (return (Scm_VMApply0 thunk)))

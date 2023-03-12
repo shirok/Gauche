@@ -61,6 +61,7 @@ struct ScmPrimitiveParameterRec {
 };
 
 SCM_EXTERN void Scm_PushParameterization(ScmObj params, ScmObj vals);
+SCM_EXTERN void Scm_InstallParameterization(ScmParameterization *pz);
 
 struct ScmParameterizationRec {
     SCM_HEADER;

@@ -265,6 +265,15 @@ void Scm_PushParameterization(ScmObj params, ScmObj vals)
     Scm_VMPushDynamicEnv(k, h);
 }
 
+/* Replace VM's current parameterization with PZ. 
+   Note that the PZ is effective until the current continuation frame
+   is popped. So typically you have to call Scm_VMApply etc.
+ */
+void Scm_InstallParameterization(ScmParameterization *pz)
+{
+    ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
+    Scm_VMPushDynamicEnv(k, pz->parameterization);
+}
 
 /*
  * Accessor & modifier
