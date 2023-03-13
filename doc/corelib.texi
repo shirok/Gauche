@@ -18499,6 +18499,27 @@ you may want to check the implementation of @code{util.stream}
 @code{lazy}の実用的な使用例については@code{util.stream}
 (@ref{Stream library})の実装をチェックするといいでしょう。
 @c COMMON
+
+@c EN
+Note that @var{expression} may be evaluated more than once;
+it may require the value of its own promise recursively, or more than one
+thread may evaluate @var{expression} simultaneously.
+In general, you shouldn't have side-effecting computation
+in @var{expression}---even if it is only evaluated once,
+you may not exactly know when the evaluation occur, so
+having side-effects there is a bad ides.
+(See @code{force} below for multi-thread semantics).
+@c JP
+@var{expression}は一回以上評価され得ることに気をつけてください。
+@var{expression}の評価中に再帰的にそれ自身のプロミスの値を必要とするかも
+しれませんし、複数のスレッドが@var{expression}の計算を並行して行うかもしれません。
+一般的に、@var{expression}の中に副作用を持つ式を入れるべきではありません。
+たとえ@var{expression}が一度しか評価されないとしても、
+それがいつ評価されるかわからないかもしれないわけですから、
+副作用を持つのはまずいでしょう。
+(複数のスレッドがある場合のセマンティクスについては下の@code{force}を
+参照してください)。
+@c COMMON
 @end defspec
 
 @defun eager obj
@@ -18524,7 +18545,8 @@ If @var{promise} is not a promise, it is just returned.
 
 Otherwise, if @var{promise}'s value hasn't been computed,
 @code{force} makes @var{promise}'s encapsulated expression
-be evaluated, and returns the result.
+be evaluated in the same parameterization where the promise
+is created, and returns the result.
 
 Once @var{promise}'s value is computed, it is memorized in it
 so that subsequent @code{force} on it won't cause the computation.
@@ -18532,11 +18554,44 @@ so that subsequent @code{force} on it won't cause the computation.
 もし、@var{promise}がプロミスでなければ、それをそのまま返します。
 
 そうではない場合で、もし@var{promise}の値がまだ計算されていない場合には、
-@code{force}は@var{promise}が内包している式を評価し、その結果を返します。
+@code{force}は@var{promise}が内包している式を
+@var{promise}が作られた時点でのパラメタライゼーションで評価し、その結果を返します。
 
 いったん、@var{promise}の値が計算されると、その値はメモ化され、あとで
 再び@code{force}されても、再計算がおこなわれることはありません。
 @c COMMON
+
+@c EN
+Note that if uncomputed promise is forced simultaneously
+by more than one thread, its expression may be evaluated concurrently.
+The first delivered value becomes the value of the promise; if another
+thread finishes computation and see the value of promise is already
+determined, it discards its computation result and returns the determined
+value.
+@c JP
+まだ計算されていないプロミスが複数のスレッドで同時にforceされた場合、
+プロミスに内包される式の計算は複数のスレッドで並行して進行します。
+一番最初に出た結果がプロミスの値として確定します。
+他のスレッドは、自分の計算が終わった時に既にプロミスの値が確定していたら、
+自分の計算結果を捨てて確定済みの値を返します。
+@c COMMON
+
+@c EN
+The following example shows the promise is evaluated with the
+parameterization of @code{delay}:
+@c JP
+下の例は、プロミスが@code{delay}のあるパラメタライゼーションで評価される
+ことを示しています:
+@c COMMON
+
+@example
+(define p (make-parameter 1))
+
+(let1 v (parameterize ((p 2)) (delay (p)))
+  (parameterize ((p 3))
+    (force v)))
+  @result{} 2
+@end example
 @end defun
 
 @defun promise? obj
