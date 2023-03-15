@@ -32396,6 +32396,7 @@ must be a nonnegative exact integer.
 @defun stream-take stream count
 @defunx stream-take-safe stream count
 @c MOD util.stream
+@c EN
 Returns a new stream that consists of the first @var{count} elements
 of the given stream.   If the given stream has less than
 @var{count} elements, the stream returned by @code{stream-take}
@@ -32403,6 +32404,14 @@ would raise an error when the elements beyond the original stream
 is accessed.  On the other hand, the stream returned by
 @code{stream-take-safe} will return a shortened stream when
 the given stream has less than @var{count} elements.
+@c JP
+与えられたストリームのうち、最初の@var{count}要素だけを含むストリームを返します。
+与えられたストリームが@var{count}要素より少ない要素しか持っていなかった場合、
+@code{stream-take}が返すストリームは、元のストリームの終端を越えてアクセスしようとした時に
+エラーを投げます。一方、@code{stream-take-safe}が返すストリームは、
+元のストリームが@var{count}要素より少なかった場合に、その要素までを返すストリームを
+返します。
+@c COMMON
 
 @example
 (stream->list (stream-take (stream-iota -1) 10))
@@ -32418,24 +32427,44 @@ the given stream has less than @var{count} elements.
  @result{} (1 2)
 @end example
 
+@c EN
 Note: SRFI-41 (@code{scheme.stream}) also defines @code{stream-take}, but
 the argument order is reversed, and also it allows @var{stream} to have
 less than @code{count} elements.
+@c JP
+註: SRFI-41 (@code{scheme.stream}) も@code{stream-take}を提供していますが、
+引数の順序が逆になっています。また、SRFI-41の@code{stream-take}は
+元のストリームが@var{count}以下の要素しか持っていなかった場合でもエラーとしません。
+@c COMMON
 @end defun
 
 @defun stream-drop stream count
 @defunx stream-drop-safe stream count
 @c MOD util.stream
+@c EN
 Returns a new stream that consists of the elements in the given
 stream except the first @var{count} elements.
 If the given stream has less than @var{count} elements,
 @code{stream-drop} returns a stream that raises an error
 if its element is accessed, and @code{stream-drop-safe}
 returns an empty stream.
+@c JP
+与えられたストリームのうち、最初の@var{count}要素を取り除いたストリームを返します。
+与えられたストリームが@var{count}要素より少ない要素しか持っていなかった場合、
+@code{stream-drop}は、アクセスされるとエラーを投げるストリームを返します。
+一方、@code{stream-drop-safe}は空のストリームを返します。
+@c COMMON
 
+@c EN
 Note: SRFI-41 (@code{scheme.stream}) also defines @code{stream-drop}, but
 the argument order is reversed, and also it allows @var{stream} to have
 less than @code{count} elements.
+@c JP
+註: SRFI-41 (@code{scheme.stream}) も@code{stream-drop}を提供していますが、
+引数の順序が逆になっています。また、SRFI-41の@code{stream-drop}は
+元のストリームが@var{count}以下の要素しか持っていなかった場合にエラーとせず
+空のストリームを返します。
+@c COMMON
 @end defun
 
 @defun stream-intersperse stream element
