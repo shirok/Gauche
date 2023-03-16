@@ -39,13 +39,15 @@
           (delay (force 3)))))
 
 (let* ([count 0]
+       [sentinel #t]
        [z (delay (if (= count 0)
-                   (begin (set! count 1) (raise 'foo))
+                   (begin (set! count 1) (raise 'foo) (set! sentinel #f))
                    'ok))])
-  (test* "delay exception handling" 'foo
+  (test* "delay exception handling" '(foo #t)
          (begin
            (guard (e [else #f]) (force z))
-           (guard (e [(eq? e 'foo) e]) (force z)))))
+           (guard (e [(eq? e 'foo) (list e sentinel)]) (force z)))))
+
 
 ;; srfi.45 test suite
 (test* "memoize 1" 1

@@ -147,9 +147,13 @@ ScmObj Scm_MakePromise(ScmPromiseState state, ScmObj obj)
 
 static ScmObj force_exc_handler(ScmObj *argv, int argc, void *data)
 {
-    ScmPromise *p = (ScmPromise*)data;
-    ScmPromiseContent *c = p->content;
     SCM_ASSERT(argc == 1);
+    SCM_ASSERT(SCM_PAIRP(SCM_OBJ(data)));
+    ScmPromise *p = (ScmPromise*)SCM_CAR(SCM_OBJ(data));
+    ScmObj prev_handler = SCM_CDR(SCM_OBJ(data));
+
+    ScmPromiseContent *c = p->content;
+
     SCM_INTERNAL_MUTEX_LOCK(c->mutex);
     if (c->state == SCM_PROMISE_UNFORCED) {
         c->code = argv[0];      /* condition object */
@@ -157,7 +161,9 @@ static ScmObj force_exc_handler(ScmObj *argv, int argc, void *data)
         c->state = SCM_PROMISE_EXCEPTION;
     }
     SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
-    SCM_RETURN(Scm_VMForce(SCM_OBJ(p)));
+
+    Scm_VMPushExceptionHandler(prev_handler);
+    SCM_RETURN(Scm_Raise(c->code, SCM_RAISE_NON_CONTINUABLE));
 }
 
 static ScmObj force_cc(ScmObj result, void **data)
@@ -218,9 +224,11 @@ ScmObj Scm_VMForce(ScmObj obj)
         if (SCM_PARAMETERIZATIONP(c->parameterization)) {
             Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
         }
-        ScmObj exc_handler = Scm_MakeSubr(force_exc_handler, SCM_PROMISE(obj),
-                                          1, 0,
-                                          SCM_INTERN("force-exc-handler"));
+        ScmObj exc_handler =
+            Scm_MakeSubr(force_exc_handler,
+                         Scm_Cons(obj, Scm_VMCurrentExceptionHandler()),
+                         1, 0,
+                         SCM_INTERN("force-exc-handler"));
         Scm_VMPushExceptionHandler(exc_handler);
         SCM_RETURN(Scm_VMApply0(c->code));
     }
