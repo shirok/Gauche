@@ -137,6 +137,14 @@
          (car (force (stream-filter (^n (= n 10000000))
                                     (from 0))))))
 
+(test* "multi-valued delay" '(1 2 3)
+       (let ((z (delay (values 1 2 3))))
+         (values->list (force z))))
+
+(test* "multi-valued delay" '()
+       (let ((z (delay (values))))
+         (values->list (force z))))
+
 ;;----------------------------------------------------------------
 (test-section "lazy pairs")
 

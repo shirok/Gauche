@@ -495,6 +495,7 @@
 (define define-inline.  (global-id 'define-inline))
 (define define-syntax.  (global-id 'define-syntax))
 (define lambda.         (global-id 'lambda))
+(define apply.          (global-id 'apply))
 (define r5rs-define.    (make-identifier 'define (find-module 'null) '()))
 (define r5rs-lambda.    (make-identifier 'lambda (find-module 'null) '()))
 (define setter.         (global-id 'setter))
@@ -503,6 +504,7 @@
 (define values.         (global-id 'values))
 (define begin.          (global-id 'begin))
 (define let.            (global-id 'let))
+(define receive.        (global-id 'receive))
 (define include.        (global-id 'include))
 (define include-ci.     (global-id 'include-ci))
 (define else.           (global-id 'else))
@@ -1701,9 +1703,13 @@
                     (list (pass1 `(,lambda. () ,expr) cenv)))]
     [_ (error "syntax-error: malformed lazy:" form)]))
 
+;; (delay expr) == (lazy (receive vals expr (apply eager vals)))
 (define-pass1-syntax (delay form cenv) :null
   (match form
-    [(_ expr) (pass1 `(,lazy. (,eager. ,expr)) cenv)]
+    [(_ expr) (let1 vals (gensym "vals")
+                (pass1 `(,lazy. (,receive. ,vals ,expr
+                                   (,apply. ,eager. ,vals)))
+                       cenv))]
     [_ (error "syntax-error: malformed delay:" form)]))
 
 ;; Control flow ..............................................

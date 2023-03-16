@@ -4,6 +4,7 @@
 	  a promise simultaneously, as SRFI-226 semantics.  We only guarantee
 	  that the force value is always the same - the first delivered result
 	  takes precedence.
+	* src/compile-1.scm (delay): Support mv-delivering delay.
 
 2023-03-11  Shiro Kawai  <shiro@acm.org>
 
