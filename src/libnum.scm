@@ -300,10 +300,10 @@
 ;; provided in Scheme (lib/gauche/numerical.scm).
 (select-module gauche.internal)
 (inline-stub
- (if "defined(HAVE_TGAMMA)"
+ (.when (defined HAVE_TGAMMA)
    (define-cproc %gamma (x::<double>) ::<double> :fast-flonum :constant
      tgamma))
- (if "defined(HAVE_LGAMMA)"
+ (.when (defined HAVE_LGAMMA)
    (define-cproc %lgamma (x::<double>) ::<double> :fast-flonum :constant
      lgamma)))
 ;; Returns the HalfFloat representation as integer.  For now,

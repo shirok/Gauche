@@ -1858,7 +1858,7 @@
 ;;   I still don't feel "right" about having this hack here, though.
 ;;   Just keep it for now, for the record.
 (inline-stub
- (if "defined(RECORD_DEPENDED_MODULES)"
+ (.if (defined RECORD_DEPENDED_MODULES)
    (begin
      "static ScmModule *stdmods[3];"
 

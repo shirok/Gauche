@@ -153,7 +153,7 @@
  ;;
  ;; kqueue (BSD)
  ;;
- (when (defined HAVE_SYS_EVENT_H)
+ (.when (defined HAVE_SYS_EVENT_H)
    (declcode
     (.include <sys/event.h>)
 
@@ -263,7 +263,7 @@
  ;;
  ;; OSX
  ;;
- (when (and (defined __APPLE__) (defined __MACH__))
+ (.when (and (defined __APPLE__) (defined __MACH__))
    (declcode
     (.include <CoreServices/CoreServices.h>)
 

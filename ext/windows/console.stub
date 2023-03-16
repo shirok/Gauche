@@ -38,7 +38,7 @@
 ;; little usable.  Nevertheless, I put it here hoping someday the
 ;; issue is addressed.
 
-(when "defined(GAUCHE_WINDOWS)"
+(.when (defined GAUCHE_WINDOWS)
 
 ;; ConsoleBufferHandle
 ;(define-cfn make_console_buffer (h::HANDLE) :static
