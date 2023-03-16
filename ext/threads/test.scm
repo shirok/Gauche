@@ -761,13 +761,13 @@
 
 (use scheme.list)
 
-(letrec ([x 0]
-         [z (delay (begin (sys-nanosleep 100000) (inc! x) 'ok))])
-  (test* "concurrent forcing" 1
-         (let ([ts (map (^_ (make-thread (^[] (force z)))) (iota 10))])
+(letrec ([z (delay (begin (sys-nanosleep 100000)
+                          (values-ref (sys-gettimeofday) 1)))])
+  (test* "concurrent forcing" #t
+         (let1 ts (map (^_ (make-thread (cut force z))) (iota 10))
            (for-each thread-start! ts)
-           (for-each thread-join! ts)
-           x)))
+           (let1 rs (map thread-join! ts)
+             (every (cut = (car rs) <>) (cdr rs))))))
 
 (letrec ([count 0]
          [x 5]

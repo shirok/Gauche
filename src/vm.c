@@ -39,6 +39,7 @@
 #include "gauche/priv/glocP.h"
 #include "gauche/priv/identifierP.h"
 #include "gauche/priv/parameterP.h"
+#include "gauche/priv/promiseP.h"
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/prof.h"

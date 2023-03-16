@@ -35,6 +35,9 @@
 
 (declare (keep-private-macro lcons lcons* llist*))
 
+(inline-stub
+ (.include <gauche/priv/promiseP.h>))
+
 ;;;
 ;;; delay/force/lazy/eager
 ;;;
@@ -48,8 +51,8 @@
 (select-module gauche)
 (define-cproc promise? (obj) ::<boolean> :constant
   (return (SCM_XTYPEP obj SCM_CLASS_PROMISE)))
-(define-cproc eager (obj)              ;SRFI-45
-  (return (Scm_MakePromise TRUE obj)))
+(define-cproc eager (:rest objs)              ;SRFI-45
+  (return (Scm_MakePromise SCM_PROMISE_FORCED objs)))
 (define-cproc promise-kind (p::<promise>)
   (setter (p::<promise> obj) ::<void> (set! (-> p kind) obj))
   (return (-> p kind)))

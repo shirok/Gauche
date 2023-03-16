@@ -1,3 +1,10 @@
+2023-03-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_VMForce): Allowing multiple threads to force
+	  a promise simultaneously, as SRFI-226 semantics.  We only guarantee
+	  that the force value is always the same - the first delivered result
+	  takes precedence.
+
 2023-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/lazy.c (Scm_MakePromise, Scm_VMForce): Run delayed thunk in

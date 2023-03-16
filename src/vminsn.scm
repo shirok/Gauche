@@ -905,7 +905,7 @@
 ;;  object.
 ;;
 (define-insn PROMISE  0 none #f
-  ($result (Scm_MakePromise FALSE VAL0)))
+  ($result (Scm_MakePromise SCM_PROMISE_UNFORCED VAL0)))
 
 ;; VALUES-APPLY(nargs) <args>
 ;;  This instruction only appears in the code generated dynamically

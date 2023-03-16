@@ -1496,7 +1496,6 @@ SCM_CLASS_DECL(Scm_PromiseClass);
 #define SCM_PROMISE(obj)            ((ScmPromise*)(obj))
 #define SCM_PROMISEP(obj)           SCM_XTYPEP(obj, SCM_CLASS_PROMISE)
 
-SCM_EXTERN ScmObj Scm_MakePromise(int forced, ScmObj code);
 SCM_EXTERN ScmObj Scm_VMForce(ScmObj p); /* CPS, lightweight */
 SCM_EXTERN ScmObj Scm_Force(ScmObj p);
 

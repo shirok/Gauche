@@ -36,6 +36,7 @@
 #include "gauche/priv/atomicP.h"
 #include "gauche/priv/pairP.h"
 #include "gauche/priv/parameterP.h"
+#include "gauche/priv/promiseP.h"
 
 /*==================================================================
  * Promise
@@ -75,7 +76,7 @@
  * The body of promise
  */
 typedef struct ScmPromiseContentRec {
-    int forced;                 /* TRUE if code has a thunk */
+    ScmPromiseState state;
     ScmObj code;                /* thunk or value */
     ScmObj parameterization;    /* parameterization of delay form */
     ScmInternalMutex mutex;
@@ -91,7 +92,17 @@ static void promise_print(ScmObj obj, ScmPort *port,
                           ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmPromise *p = (ScmPromise*)obj;
-    const char *forced = p->content->forced? " (forced)" : "";
+    const char *forced = "";
+    switch (p->content->state) {
+    case SCM_PROMISE_FORCED:
+        forced = " (forced)";
+        break;
+    case SCM_PROMISE_EXCEPTION:
+        forced = " (exception)";
+        break;
+    case SCM_PROMISE_UNFORCED:
+        break;
+    }
     if (SCM_FALSEP(p->kind)) {
         Scm_Printf(port, "#<promise %p%s>", p, forced);
     } else {
@@ -105,7 +116,7 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PromiseClass, promise_print);
  * promise object
  */
 
-ScmObj Scm_MakePromise(int forced, ScmObj code)
+ScmObj Scm_MakePromise(ScmPromiseState state, ScmObj obj)
 {
     ScmPromise *p = SCM_NEW(ScmPromise);
     ScmPromiseContent *c = SCM_NEW(ScmPromiseContent);
@@ -113,13 +124,22 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
     SCM_INTERNAL_MUTEX_INIT(c->mutex);
     c->owner = NULL;
     c->count = 0;
-    c->forced = forced;
-    if (!forced) {
+    c->parameterization = SCM_FALSE;
+    c->state = state;
+
+    switch (state) {
+    case SCM_PROMISE_UNFORCED:
+        c->code = obj;          /* obj is a thunk */
         c->parameterization = Scm_CurrentParameterization();
-    } else {
-        c->parameterization = SCM_FALSE;
+        break;
+    case SCM_PROMISE_FORCED:
+        if (!SCM_LISTP(obj)) SCM_TYPE_ERROR(obj, "list");
+        c->code = obj;          /* obj is a list of values */
+        break;
+    case SCM_PROMISE_EXCEPTION:
+        c->code = obj;          /* obj is a condition */
+        break;
     }
-    c->code = code;
     p->content = c;
     p->kind = SCM_FALSE;
     return SCM_OBJ(p);
@@ -129,101 +149,70 @@ ScmObj Scm_MakePromise(int forced, ScmObj code)
  * force
  */
 
-static ScmObj release_promise(ScmObj *args SCM_UNUSED,
-                              int nargs SCM_UNUSED,
-                              void *data)
-{
-    ScmPromise *p = SCM_PROMISE(data);
-    p->content->owner = NULL;
-    SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
-    return SCM_UNDEFINED;
-}
-
-static void install_release_thunk(ScmVM *vm SCM_UNUSED, ScmObj promise)
-{
-    /* TODO: the before thunk must be something that
-       prevents restarting the execution process. */
-    Scm_VMPushDynamicHandlers(Scm_NullProc(),
-                              Scm_MakeSubr(release_promise,
-                                           (void*)promise, 0, 0,
-                                           SCM_MAKE_STR("promise_release")),
-                              SCM_NIL);
-}
-
 static ScmObj force_cc(ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
+    ScmPromiseContent *c = p->content;
     ScmObj handlers = (ScmObj)data[1];
 
-    /* Check if the original promise is forced by evaluating
-       the delayed expr to detect recursive force situation */
-    if (!p->content->forced) {
+    SCM_INTERNAL_MUTEX_LOCK(c->mutex);
+    if (c->state == SCM_PROMISE_UNFORCED) {
+        /* It is critical to set code first, then state.  The reader will
+           check state first; if it's eitehr FORCED or EXCEPTION, it's sure
+           that c->code holds results/exception.
+         */
         if (SCM_PROMISEP(result)) {
             /* Deal with a recursive promise introduced by lazy operation.
                See srfi-45 for the details. */
-            p->content->forced = SCM_PROMISE(result)->content->forced;
-            p->content->code   = SCM_PROMISE(result)->content->code;
+            p->content->code  = SCM_PROMISE(result)->content->code;
+            AO_nop_full();
+            p->content->state = SCM_PROMISE(result)->content->state;
             SCM_PROMISE(result)->content = p->content;
         } else {
             /* This isn't supposed to happen if 'lazy' is used properly
                on the promise-yielding procedure, but we can't prevent
                one from writing (lazy 3).  So play safe. */
-            p->content->forced = TRUE;
             p->content->code = result;
+            AO_nop_full();
+            p->content->state = SCM_PROMISE_FORCED;
         }
     }
-    if (--p->content->count == 0) {
-        p->content->owner = NULL;
-        SCM_INTERNAL_MUTEX_UNLOCK(p->content->mutex);
-    }
+    SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
     Scm_VMSetDynamicHandlers(handlers);
+    /* We recursively call force to deliver the result. */
     SCM_RETURN(Scm_VMForce(SCM_OBJ(p)));
 }
 
 ScmObj Scm_VMForce(ScmObj obj)
 {
-    if (!SCM_PROMISEP(obj)) {
-        SCM_RETURN(obj);
-    } else {
-        ScmPromiseContent *c = SCM_PROMISE(obj)->content;
+    if (!SCM_PROMISEP(obj)) SCM_RETURN(obj);
 
-        if (c->forced) SCM_RETURN(c->code);
-        else {
-            ScmVM *vm = Scm_VM();
-            void *data[2];
-            data[0] = obj;
-            data[1] = Scm_VMGetDynamicHandlers();
+    ScmPromiseContent *c = SCM_PROMISE(obj)->content;
+    ScmVM *vm = Scm_VM();
 
-            if (c->owner == vm) {
-                /* we already have the lock and evaluating this promise. */
-                c->count++;
-                Scm_VMPushCC(force_cc, data, 2);
-                if (SCM_PARAMETERIZATIONP(c->parameterization)) {
-                    Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
-                }
-                SCM_RETURN(Scm_VMApply0(c->code));
-            } else {
-                /* TODO: check if the executing thread terminates
-                   prematurely */
-                SCM_INTERNAL_MUTEX_LOCK(c->mutex);
-                if (c->forced) {
-                    SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
-                    SCM_RETURN(c->code);
-                }
-                SCM_ASSERT(c->owner == NULL);
-                c->owner = vm;
-                install_release_thunk(vm, obj);
-                c->count++;
-                /* mutex is unlocked by force_cc. */
-                Scm_VMPushCC(force_cc, data, 2);
-                if (SCM_PARAMETERIZATIONP(c->parameterization)) {
-                    Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
-                }
-                SCM_RETURN(Scm_VMApply0(c->code));
-            }
+    switch (c->state) {
+    case SCM_PROMISE_FORCED:
+        /* already forced. c->code has values. */
+        return Scm_Values(c->code);
+    case SCM_PROMISE_EXCEPTION:
+        /* evaluation of promise ended up exception. */
+        return Scm_VMThrowException(vm, c->code, 0);
+    case SCM_PROMISE_UNFORCED:
+        void *data[2];
+        data[0] = obj;
+        data[1] = Scm_VMGetDynamicHandlers();
+        Scm_VMPushCC(force_cc, data, 2);
+        if (SCM_PARAMETERIZATIONP(c->parameterization)) {
+            Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
         }
+        SCM_RETURN(Scm_VMApply0(c->code));
     }
+    return SCM_UNDEFINED;       /* dummy */
 }
+
+/* TODO: The caller assumes only one result, but we extended force to
+ * return multiple values.  Need the way to update API.
+ */
 
 ScmObj Scm_Force(ScmObj obj)
 {
@@ -231,7 +220,10 @@ ScmObj Scm_Force(ScmObj obj)
         SCM_RETURN(obj);
     } else {
         ScmPromiseContent *c = SCM_PROMISE(obj)->content;
-        if (c->forced) SCM_RETURN(c->code);
+        if (c->state == SCM_PROMISE_FORCED) {
+            SCM_ASSERT(SCM_PAIRP(c->code));
+            return SCM_CAR(c->code);
+        }
 
         static ScmObj force = SCM_UNDEFINED;
         SCM_BIND_PROC(force, "force", Scm_SchemeModule());
