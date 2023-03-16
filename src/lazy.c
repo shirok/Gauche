@@ -80,8 +80,6 @@ typedef struct ScmPromiseContentRec {
     ScmObj code;                /* thunk or value */
     ScmObj parameterization;    /* parameterization of delay form */
     ScmInternalMutex mutex;
-    ScmVM *owner;               /* who is working on this? */
-    int count;                  /* count for recursive lock */
 } ScmPromiseContent;
 
 /*
@@ -122,8 +120,6 @@ ScmObj Scm_MakePromise(ScmPromiseState state, ScmObj obj)
     ScmPromiseContent *c = SCM_NEW(ScmPromiseContent);
     SCM_SET_CLASS(p, SCM_CLASS_PROMISE);
     SCM_INTERNAL_MUTEX_INIT(c->mutex);
-    c->owner = NULL;
-    c->count = 0;
     c->parameterization = SCM_FALSE;
     c->state = state;
 
