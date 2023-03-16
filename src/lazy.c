@@ -217,10 +217,12 @@ ScmObj Scm_VMForce(ScmObj obj)
         /* evaluation of promise ended up exception. */
         return Scm_VMThrowException(vm, c->code, 0);
     case SCM_PROMISE_UNFORCED:
-        void *data[2];
-        data[0] = obj;
-        data[1] = Scm_VMGetDynamicHandlers();
-        Scm_VMPushCC(force_cc, data, 2);
+        {
+            void *data[2];
+            data[0] = obj;
+            data[1] = Scm_VMGetDynamicHandlers();
+            Scm_VMPushCC(force_cc, data, 2);
+        }
         if (SCM_PARAMETERIZATIONP(c->parameterization)) {
             Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
         }
