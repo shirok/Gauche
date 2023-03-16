@@ -38,6 +38,15 @@
               [eager list])
           (delay (force 3)))))
 
+(let* ([count 0]
+       [z (delay (if (= count 0)
+                   (begin (set! count 1) (raise 'foo))
+                   'ok))])
+  (test* "delay exception handling" 'foo
+         (begin
+           (guard (e [else #f]) (force z))
+           (guard (e [(eq? e 'foo) e]) (force z)))))
+
 ;; srfi.45 test suite
 (test* "memoize 1" 1
        (let1 count 0

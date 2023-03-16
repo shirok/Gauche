@@ -771,10 +771,10 @@
 
 (letrec ([count 0]
          [x 5]
-         [z (delay (begin (set! count (+ count 1))
-                          (if (> count x)
-                            count
-                            (force z))))])
+         [z (delay (let ((c count))
+                     (when (<= c x)
+                       (set! count (+ c 1))
+                       (force z))))])
   (test* "concurrent forcing w/ recursive force" 6
          (let ([ts (map (^_ (make-thread (^[] (force z)))) (iota 10))])
            (for-each thread-start! ts)

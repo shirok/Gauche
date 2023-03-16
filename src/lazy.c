@@ -149,6 +149,21 @@ ScmObj Scm_MakePromise(ScmPromiseState state, ScmObj obj)
  * force
  */
 
+static ScmObj force_exc_handler(ScmObj *argv, int argc, void *data)
+{
+    ScmPromise *p = (ScmPromise*)data;
+    ScmPromiseContent *c = p->content;
+    SCM_ASSERT(argc == 1);
+    SCM_INTERNAL_MUTEX_LOCK(c->mutex);
+    if (c->state == SCM_PROMISE_UNFORCED) {
+        c->code = argv[0];      /* condition object */
+        AO_nop_full();
+        c->state = SCM_PROMISE_EXCEPTION;
+    }
+    SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
+    SCM_RETURN(Scm_VMForce(SCM_OBJ(p)));
+}
+
 static ScmObj force_cc(ScmObj result, void **data)
 {
     ScmPromise *p = (ScmPromise*)data[0];
@@ -164,17 +179,19 @@ static ScmObj force_cc(ScmObj result, void **data)
         if (SCM_PROMISEP(result)) {
             /* Deal with a recursive promise introduced by lazy operation.
                See srfi-45 for the details. */
-            p->content->code  = SCM_PROMISE(result)->content->code;
+            ScmPromiseContent *cc = SCM_PROMISE(result)->content;
+            c->code  = cc->code;
             AO_nop_full();
-            p->content->state = SCM_PROMISE(result)->content->state;
-            SCM_PROMISE(result)->content = p->content;
+            c->state = cc->state;
+            SCM_PROMISE(result)->content = c;
         } else {
             /* This isn't supposed to happen if 'lazy' is used properly
                on the promise-yielding procedure, but we can't prevent
                one from writing (lazy 3).  So play safe. */
-            p->content->code = result;
+            SCM_ASSERT(SCM_LISTP(result));
+            c->code = result;
             AO_nop_full();
-            p->content->state = SCM_PROMISE_FORCED;
+            c->state = SCM_PROMISE_FORCED;
         }
     }
     SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
@@ -205,6 +222,10 @@ ScmObj Scm_VMForce(ScmObj obj)
         if (SCM_PARAMETERIZATIONP(c->parameterization)) {
             Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
         }
+        ScmObj exc_handler = Scm_MakeSubr(force_exc_handler, SCM_PROMISE(obj),
+                                          1, 0,
+                                          SCM_INTERN("force-exc-handler"));
+        Scm_VMPushExceptionHandler(exc_handler);
         SCM_RETURN(Scm_VMApply0(c->code));
     }
     return SCM_UNDEFINED;       /* dummy */
