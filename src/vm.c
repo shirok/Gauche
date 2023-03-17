@@ -89,6 +89,7 @@ enum {
       SCM_CONT_DYNWIND_MARKER = (1L<<2),
 };
 
+static void push_prompt_cont(ScmVM*, ScmObj, ScmObj);
 static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 
 /* return true if cont is a boundary continuation frame */
@@ -2037,7 +2038,7 @@ static ScmObj user_eval_inner(ScmObj program,
     return vm->val0;
 }
 
-void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
+void push_prompt_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
 {
     /* We want to allocate ScmPromptData on stack.  If there's already
        an unfinished argument frame, however, we need to insert ScmPromptData
@@ -2063,6 +2064,12 @@ void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
     a->dynamicHandlers = get_dynamic_handlers(vm);
     PUSH_CONT(SCM_PROMPT_TAG_PC(promptTag));
     CONT->cpc = &a->dummy;
+}
+
+void push_boundary_cont(ScmVM *vm, ScmObj promptTag, ScmObj abortHandler)
+{
+    /* Boundary continuation is a prompt cont with CONT_RESET_MARKER */
+    push_prompt_cont(vm, promptTag, abortHandler);
     CONT->marker = SCM_CONT_RESET_MARKER;
 }
 
@@ -3046,17 +3053,8 @@ ScmObj Scm_VMCallWithContinuationPrompt(ScmObj thunk,
     vm->escapePoint = ep;
     return Scm_pc_Apply0(vm, thunk);
 #else
-    /* Similar trick with apply_rec.  Maye we can refactor it later. */
-    static ScmWord code[] = {
-        SCM_VM_INSN1(SCM_VM_VALUES_APPLY, 0),
-        SCM_VM_INSN(SCM_VM_RET)
-    };
-
-    ScmVM *vm = theVM;
-    vm->val0 = thunk;
-    ScmObj program = vm->base?
-            SCM_OBJ(vm->base) : SCM_OBJ(&internal_apply_compiled_code);
-    return user_eval_inner(program, code, promptTag, abortHandler);
+    push_prompt_cont(Scm_VM(), promptTag, abortHandler);
+    return Scm_VMApply0(thunk);
 #endif
 }
 
@@ -3078,7 +3076,7 @@ static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
     if (!SCM_PROMPT_TAG(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
     ScmWord *pc = SCM_PROMPT_TAG_PC(promptTag);
     for (ScmContFrame *c = vm->cont; c; c = c->prev) {
-        if (BOUNDARY_FRAME_P(c) && c->pc == pc) {
+        if (c->pc == pc) {
             return c;
          }
      }

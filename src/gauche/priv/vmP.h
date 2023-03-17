@@ -43,8 +43,6 @@ SCM_DECL_BEGIN
  *
  *   A continuation frame can be tagged with call-with-continuation-prompt,
  *   and it marks the bottom of a delimited continuation chain.
- *   The tagged continuation frame is indicated by SCM_CONT_RESET_MARKER
- *   bit in the marker field.
  *
  *   A prompt tag is an ScmObj to distinguish tagged continuation frame.
  *   ScmContFrame->pc points to &(ScmPromptTag->insn), which contains dummy
