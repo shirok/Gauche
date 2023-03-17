@@ -3020,12 +3020,17 @@ static ScmString defaultPromptTagName =
                                  sizeof(DEFAULT_PROMPT_TAG_NAME)-1,
                                  sizeof(DEFAULT_PROMPT_TAG_NAME)-1);
 
+static void init_prompt_tag(ScmPromptTag *tag, ScmObj name)
+{
+    SCM_SET_CLASS(tag, SCM_CLASS_PROMPT_TAG);
+    tag->name = name;
+    tag->insn = SCM_VM_INSN(SCM_VM_RET);
+}
+
 ScmObj Scm_MakePromptTag(ScmObj name)
 {
     ScmPromptTag *pt = SCM_NEW(ScmPromptTag);
-    SCM_SET_CLASS(pt, SCM_CLASS_PROMPT_TAG);
-    pt->name = name;
-    pt->insn = SCM_VM_INSN(SCM_VM_RET);
+    init_prompt_tag(pt, name);
     return SCM_OBJ(pt);
 }
 
@@ -4346,9 +4351,7 @@ void Scm__InitVM(void)
     /* Initialize statically allocated default prompt tag.
        Again, be aware that most modules are not initialized yet.
     */
-    SCM_SET_CLASS(&defaultPromptTag, SCM_CLASS_PROMPT_TAG);
-    defaultPromptTag.name = SCM_OBJ(&defaultPromptTagName);
-    defaultPromptTag.insn = SCM_VM_INSN(SCM_VM_RET);
+    init_prompt_tag(&defaultPromptTag, SCM_OBJ(&defaultPromptTagName));
 
     /* Create root VM */
     rootVM = Scm_NewVM(NULL, SCM_MAKE_STR_IMMUTABLE("root"));
