@@ -1920,7 +1920,7 @@ static ScmObj user_eval_inner(ScmObj program,
 #endif
 
     /* Push extra continuation.  This continuation frame is a 'boundary
-       frame' and marked by pc == &boundaryFrameMark.   VM loop knows
+       frame' and marked by marker == SCM_CONT_RESET_MARKER.   VM loop knows
        it should return to C frame when it sees a boundary frame.
        A boundary frame also keeps the unfinished argument frame at
        the point when Scm_Eval or Scm_Apply is called. */
