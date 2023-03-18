@@ -208,6 +208,7 @@ static ScmEnvFrame *get_env(ScmVM *vm);
 static ScmObj get_denv(ScmVM *vm);
 
 static void   call_error_reporter(ScmObj e);
+static ScmObj call_abort_handler(ScmObj, ScmObj);
 
 /*#define COUNT_INSN_FREQUENCY*/
 #ifdef COUNT_INSN_FREQUENCY
@@ -2026,6 +2027,24 @@ static ScmObj user_eval_inner(ScmObj program,
                 vm->cstack = vm->cstack->prev;
                 siglongjmp(vm->cstack->jbuf, 1);
             }
+#if NEW_PARTCONT
+        } else if (vm->escapeReason == SCM_VM_ESCAPE_ABORT) {
+            ScmEscapePoint *abortTo = (ScmEscapePoint*)vm->escapeData[0];
+            ScmObj args = SCM_OBJ(vm->escapeData[1]);
+            if (abortTo->cstack == vm->cstack) {
+                vm->cont = abortTo->cont;
+                vm->denv = abortTo->denv;
+                vm->val0 = call_abort_handler(abortTo->abortHandler, args);
+                goto restart;
+            } else if (vm->cstack->prev == NULL) {
+                Scm_Abort("Aborting to nonexistent C stack frame");
+            } else {
+                vm->cont = cstack.cont;
+                POP_CONT();
+                vm->cstack = vm->cstack->prev;
+                siglongjmp(vm->cstack->jbuf, 1);
+            }
+#endif
         } else {
             Scm_Panic("invalid longjmp");
         }
@@ -3092,22 +3111,8 @@ static ScmContFrame *find_prompt_frame(ScmVM *vm, ScmObj promptTag)
 
 static ScmObj vm_abort_cc(ScmObj val0, void *data[]);
 
-#if NEW_PARTCONT
-static ScmObj vm_abort_body(ScmEscapePoint *abortTo, ScmObj args)
-#else
-static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
-#endif
+static ScmObj call_abort_handler(ScmObj abortHandler, ScmObj args)
 {
-#if NEW_PARTCONT
-    ScmVM *vm = theVM;
-    ScmObj abortHandler = abortTo->abortHandler;
-    CONT = abortTo->cont;
-    DENV = abortTo->denv;
-#else
-    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
-    ScmObj abortHandler = pd->abortHandler;
-#endif
-
     if (SCM_FALSEP(abortHandler)) {
         if (!(Scm_Length(args) == 1
               && SCM_PROCEDUREP(SCM_CAR(args))
@@ -3122,6 +3127,32 @@ static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
         */
         return Scm_VMApply(abortHandler, args);
     }
+}
+
+#if NEW_PARTCONT
+static ScmObj vm_abort_body(ScmEscapePoint *abortTo, ScmObj args)
+#else
+static ScmObj vm_abort_body(ScmContFrame *abortTo, ScmObj args)
+#endif
+{
+#if NEW_PARTCONT
+    ScmVM *vm = theVM;
+    ScmObj abortHandler = abortTo->abortHandler;
+
+    if (vm->cstack != abortTo->cstack) {
+        vm->escapeReason = SCM_VM_ESCAPE_ABORT;
+        vm->escapeData[0] = abortTo;
+        vm->escapeData[1] = args;
+        siglongjmp(vm->cstack->jbuf, 1);
+    }
+
+    CONT = abortTo->cont;
+    DENV = abortTo->denv;
+#else
+    ScmPromptData *pd = (ScmPromptData*)abortTo->cpc;
+    ScmObj abortHandler = pd->abortHandler;
+#endif
+    return call_abort_handler(abortHandler, args);
 }
 
 static ScmObj vm_abort_cc(ScmObj val0 SCM_UNUSED, void *data[])

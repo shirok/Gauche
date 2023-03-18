@@ -497,6 +497,14 @@
             (lambda ()
               (abort-current-continuation tag1 'foo))))))
 
+'(let ([tag (make-continuation-prompt-tag 'tag)])
+  (test* "abort-current-continuation crosses cstack boundary"
+         '(a)
+         (call-with-continuation-prompt
+          (^[] (with-error-handler (^e (abort-current-continuation tag 'a))
+                 (^[] (car 1))))
+          tag list)))
+
 ;;-----------------------------------------------------------------------
 ;; Parameterizations
 ;;

@@ -189,6 +189,7 @@ typedef struct ScmEscapePointRec {
 #define SCM_VM_ESCAPE_NONE   0
 #define SCM_VM_ESCAPE_ERROR  1
 #define SCM_VM_ESCAPE_CONT   2
+#define SCM_VM_ESCAPE_ABORT  4
 #define SCM_VM_ESCAPE_EXIT   3
 
 /*
