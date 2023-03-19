@@ -1204,6 +1204,28 @@
                    (list->stream '("1" "2"))
                    (list->stream '())))
 
+(test* "stream-intersperse" '(1 0 2 0 3)
+       (stream->list (stream-intersperse (stream 1 2 3) 0)))
+(test* "stream-intersperse" '()
+       (stream->list (stream-intersperse (stream) 0)))
+
+(test* "stream-split" '((1 3) (5 7 9) () (1))
+       (stream->list
+        (stream-map stream->list
+                    (stream-split (stream 1 3 2 5 7 9 6 8 1) even?))))
+
+(test* "stream-last" 3
+       (stream-last (stream 1 2 3)))
+(test* "stream-last" (test-error)
+       (stream-last (stream)))
+
+(test* "stream-last-n" '(3 4 5)
+       (stream->list (stream-last-n (stream 1 2 3 4 5) 3)))
+(test* "stream-last-n" '(1 2)
+       (stream->list (stream-last-n (stream 1 2) 3)))
+(test* "stream-last" '()
+       (stream->list (stream-last-n (stream) 3)))
+
 ;;-----------------------------------------------
 (test-section "util.temporal-relation")
 (use util.temporal-relation)
