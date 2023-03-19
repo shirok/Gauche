@@ -1027,7 +1027,7 @@ static void run_loop()
  * Stack management
  */
 
-/* We have 'fowarding pointer' for env and cont frames being moved.
+/* We have 'forwarding pointer' for env and cont frames being moved.
    Forwarding pointers are resolved within these internal routines
    and should never leak out.
 
