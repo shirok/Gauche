@@ -14197,26 +14197,73 @@ returns @code{#f}.
 @defun each-of proc @dots{}
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure that works, when applied to arguments, applies
+each @var{proc} on the arguments in turn.  The result of
+@var{proc}s are discarded.
+
+@example
+(define (f x y) (print (+ x y)))
+(define (g x y) (print (* x y)))
+
+((each-of f g) 2 7)
+  @result{} #<undef>; @r{prints} 9 @r{and} 14
+@end example
 @end defun
 
 @defun all-of pred
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure that takes one argument, a list.
+The returned procedure tries to apply @var{pred} to each element
+of @var{list} in turn.
+If @var{pred} returns @var{#f}, immediately returns @var{#f}.  Otherwise,
+returns the last result of @var{pred}. If the returned procedure
+is applied to an empty list, @code{#t} is returned.
+
+The following equivalence holds:
+@example
+((all-of pred) list) @equiv{} (every pred list)
+@end example
 @end defun
 
 @defun any-of pred
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure that takes one argument, a list.
+The returned procedure applies @var{pred} to each element
+of @var{list} in turn.
+If @var{pred} returns a true value, immediately returns it.  Otherwise,
+returns @code{#f}.   If the returned procedure
+is applied to an empty list, @code{#f} is returned.
+
+The following equivalence holds:
+@example
+((any-of pred) list) @equiv{} (any pred list)
+@end example
 @end defun
 
 @defun on reducer mapper
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure such that @code{(apply (on reducer mapper) args)}
+works as if @code{(apply reducer (map mapper args))}.
+
+@example
+(define square-sum (on + square))
+
+(square-sum 1 2 3 4 5) @result{} 55
+@end example
 @end defun
 
 @defun left-section proc arg @dots{}
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure such that, when applied to more args, calls @var{proc}
+with @var{arg} @dots{} and the given args.  In other words,
+returns a specialized procedure with the left argumen(s) are given
+as @var{arg} @dots{}.
+
+In Gauche, this is the same as @code{(pa$ arg @dots{})} (@pxref{Combinators}).
 @end defun
 
 @defun right-section proc arg @dots{}

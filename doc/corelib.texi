@@ -16632,6 +16632,14 @@ SRFI-26で定義されているマクロ@code{cut}と@code{cute}も似たよう�
 方法を提供しますが、@code{pa$}より多少柔軟性が高く、その分やや冗長です。
 @ref{Making procedures}を参照して下さい。
 @c COMMON
+
+@c EN
+SRFI-235 defines @code{left-section}, which is effectively the same
+as @code{pa$} (@pxref{Combinators (SRFI)}).
+@c JP
+SRFI-235で定義される@code{left-section}は実質的に@code{pa$}と同じです。
+@ref{Combinators (SRFI)}参照。
+@c COMMON
 @end defun
 
 @defun apply$ proc
