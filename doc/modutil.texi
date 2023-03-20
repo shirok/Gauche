@@ -1867,37 +1867,69 @@ read from the pipe and sent to the current output port as produced.
 
 @defun plumbing? obj
 @c MOD control.plumbing
+@c EN
 Returns @code{#t} if @var{obj} is a plumbing, @code{#f} if not.
+@c JP
+@var{obj}がplumbingeであれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun plumbing-inlet-ports plumbing
 @defunx plumbing-outlet-ports plumbing
 @c MOD control.plumbing
+@c EN
 Returns a list of ports connected to the @var{plumbing}'s inlets
 and outlets, respectively.
+@c JP
+それぞれ、@var{plumbing}のinletおよびoutletに接続されたポートのリストを返します。
+@c COMMON
 @end defun
 
 @defun plumbing-get-port plumbing name
 @c MOD control.plumbing
+@c EN
 The @var{name} argument must be a symbol.
 Returns a port connected to @var{plumbing} and with @var{name}.
 Returns @code{#f} if there's no such ports.
+@c JP
+@var{name}引数はシンボルでなければなります。
+@var{plumbing}に接続されたポートで、名前@var{name}を持つものを返します。
+該当するポートが無ければ@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @defun port-plumbing port
 @c MOD control.plumbing
+@c EN
 A port opened for a plumbing with @code{open-outlet-input-port},
 @code{open-inlet-output-port}, or other utility procedures, keeps
 which plumbing it belongs to.  This procedure returns the plumbing
 associated with @var{port}.  If @var{port} is not made from
 a plumbing, @code{#f} is returned.
+@c JP
+@code{open-outlet-input-port}や@code{open-inlet-output-port}、あるいは
+それらを使うユーティリティ手続きによって、plumbingのために作られたポートは、
+そのプロパティとして元になったplumbingへの参照を保持しています。
+この手続きは@var{port}が保持しているplumbingを返します。
+@var{port}がplumbingによって作られたものでない場合は@code{#f}が返されます。
+@c COMMON
 
+@c EN
 Note that an existing port added to a plumbing by
 @code{add-inlet-output-port!} etc. does not keep the plumbing
 it is attached to, and this procedure returns @code{#f} on such a port.
+@c JP
+既にあるポートを@code{add-inlet-output-port!}等でplumbingに接続した場合は、
+そのポートはplumbingによって作られたわけではないので、この手続きは@code{#f}を返す
+ことに注意してください。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Creating and attaching ports to plumbing
+@c JP
+@subheading plumbingにポートを作ったり接続したりする
+@c COMMON
 
 @defun open-inlet-output-port plumbing :optional name
 @c MOD control.plumbing
