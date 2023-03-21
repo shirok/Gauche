@@ -79,4 +79,44 @@
            (map (^[ps] (apply * (map (cut - <> 1) ps))) p2s)
            (map (^[ps] (totient (apply * ps))) p2s))))
 
+;;;
+;;;  math.simplex
+;;;
+
+(test-section "math.simplex")
+(use math.simplex)
+(test-module 'math.simplex)
+
+(define (test-simplex cnt A b c result)
+  (test* #"simplex test ~cnt"
+         result
+         (simplex-solve A b c)
+         (^[a b]
+           (every (^i (approx=? (~ a i) (~ b i) 1e-5))
+                  (iota (uvector-length a))))))
+
+(test-simplex 1
+              #,(<array> (0 2 0 2) 1 0.5 3 2)
+              #f64(2 12)
+              #f64(-1 -1)
+              #f64(0 4))
+
+(test-simplex 2
+              #,(<array> (0 3 0 3) 8 6 1 4 2 1.5 2 1.5 0.5)
+              #f64(48 20 8)
+              #f64(-60 -30 -20)
+              #f64(2 0 8))
+
+(test-simplex 3
+              #,(<array> (0 3 0 4) 3 2 1 2  1 1 1 1  4 3 3 4)
+              #f64(225 117 420)
+              #f64(-19 -13 -12 -17)
+              #f64(39 0 48 30))
+
+(test-simplex 4
+              #,(<array> (0 3 0 4) 2 3 1 1 1 2 2 3 2 1 0 1)
+              #f64(18 20 16)
+              #f64(-3 -5 -4 -2)
+              #f64(5.333333 0 7.33333 0))
+
 (test-end)

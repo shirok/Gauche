@@ -1,5 +1,8 @@
 2023-03-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/math/simplex.scm: Added.  There are lots of room of optimization,
+	  though it's working.
+
 	* ext/uvector/matrix.scm (array-vector-mul, vector-array-mul):
 	  Add (u)vector and array multiplication, for they appear frequently.
 	  We may make array-mul to accept vector arguments, but it can be

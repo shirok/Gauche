@@ -104,7 +104,7 @@ SCMFILES = \
        lang/asm/x86_64.scm \
        lang/c/parameter.scm lang/c/lexer.scm lang/c/parser.scm \
        lang/c/type.scm \
-       math/const.scm math/prime.scm \
+       math/const.scm math/prime.scm math/simplex.scm \
        util/isomorph.scm util/toposort.scm util/tree.scm util/queue.scm \
        util/digest.scm util/combinations.scm util/lcs.scm util/list.scm \
        util/record.scm util/relation.scm util/stream.scm util/trie.scm \
