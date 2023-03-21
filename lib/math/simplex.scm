@@ -107,7 +107,7 @@
                             (* (uvector-ref cc (uvector-ref IxB j))
                                (array-ref B^ j i))))))
 
-  (define (find-incoming-variable)
+  (define (find-entering-variable)
     (compute-multiplier-vector!)
     (let loop ([i 0]                    ;loop over IxN
                [min-negative +inf.0]
@@ -124,7 +124,7 @@
             (loop (+ i 1) c_in i)
             (loop (+ i 1) min-negative min-index))))))
 
-  (define (find-outgoing-row A_i x_k)
+  (define (find-leaving-row A_i x_k)
     (let loop ([i 0]
                [min-ratio +inf.0]
                [min-row-index -1])
@@ -135,28 +135,28 @@
             (loop (+ i 1) ratio i)
             (loop (+ i 1) min-ratio min-row-index))))))
 
-  (define (pivot incoming outgoing x_k)
-    (let ([factor (/ (f64vector-ref p outgoing)
-                     (f64vector-ref x_k outgoing))])
-      ;; Make x_k[outgoing] 1, and adjust the same row of B^
+  (define (pivot! entering leaving x_k)
+    (let ([factor (/ (f64vector-ref p leaving)
+                     (f64vector-ref x_k leaving))])
+      ;; Make x_k[leaving] 1, and adjust the same row of B^
       (dotimes [j n]
-        (array-set! B^ outgoing j
-                    (/ (array-ref B^ outgoing j)
-                       (f64vector-ref x_k outgoing))))
-      (f64vector-set! p outgoing factor)
+        (array-set! B^ leaving j
+                    (/ (array-ref B^ leaving j)
+                       (f64vector-ref x_k leaving))))
+      (f64vector-set! p leaving factor)
       ;; Make x_k[i] zero, and adjust the same row of B^
       (dotimes [i n]
-        (unless (= i outgoing)
+        (unless (= i leaving)
           (dotimes [j n]
             (array-set! B^ i j
                         (- (array-ref B^ i j)
                            (* (f64vector-ref x_k i)
-                              (array-ref B^ outgoing j)))))
+                              (array-ref B^ leaving j)))))
           (f64vector-set! p i
                           (- (f64vector-ref p i)
                              (* (f64vector-ref x_k i) factor)))))
       ;; Swap pivotted index
-      (rotate! (u32vector-ref IxB outgoing) (u32vector-ref IxN incoming))
+      (rotate! (u32vector-ref IxB leaving) (u32vector-ref IxN entering))
       ))
 
   ;; (print "cc=" cc)
@@ -165,22 +165,22 @@
   ;; (print "p=" p)
   ;; (pretty-print-array A #t :readable? #f :left #\[ :right #\])
 
-  (let loop ([incoming (find-incoming-variable)]
+  (let loop ([entering (find-entering-variable)]
              [iter 0])
-    (and incoming
+    (and entering
          (let* ([A_i (map-to <f64vector>
-                             (^i (array-ref AA i incoming))
+                             (^i (array-ref AA i entering))
                              (iota n))]
                 [x_k (array-vector-mul B^ A_i)]
-                [outgoing (find-outgoing-row A_i x_k)])
+                [leaving (find-leaving-row A_i x_k)])
            ;; (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
            ;; (format #t "π = ~s\n" π)
            ;; (format #t "A_i = ~s\n" A_i)
            ;; (format #t "x_k = ~s\n" x_k)
-           ;; (format #t "incoming = ~s\n" incoming)
-           ;; (format #t "outgoing = ~s\n" outgoing)
+           ;; (format #t "entering = ~s\n" entering)
+           ;; (format #t "leaving = ~s\n" leaving)
 
-           (pivot incoming outgoing x_k)
+           (pivot! entering leaving x_k)
 
            ;; (print "pivot!")
            ;; (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
@@ -188,7 +188,7 @@
            ;; (print "IxB=" IxB)
            ;; (print "IxN=" IxN)
 
-           (loop (find-incoming-variable) (+ iter 1))
+           (loop (find-entering-variable) (+ iter 1))
            )))
 
   (rlet1 rvec (make-f64vector m 0)
@@ -204,4 +204,10 @@
           "Rank 2 array is required, but got:" a)
   (assume (every (^i (zero? (array-start a i))) '(0 1))
           "Array index must be 0-based, but got:" a)
-  (values (array-length a 0) (array-length a 1)))
+  (let ([rows (array-length a 0)]
+        [cols (array-length a 1)])
+    (assume (= cols (size-of c))
+            "Coefficient vector and matrix size don't match:" c)
+    (assume (= rows (size-of b))
+            "Limit value vector and matrix size don't match:" b)
+    (values rows cols)))
