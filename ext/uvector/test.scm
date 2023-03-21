@@ -2284,6 +2284,16 @@
       #,(<f64array> (0 2 0 2) 22 28 49 64))
      )))
 
+(test* "array-vector-mul"
+       '#s32(3 5 7 9)
+       (array-vector-mul '#,(<u32array> (0 4 0 2) 1 2 3 4 5 6 7 8)
+                         '#s32(-1 2)))
+
+(test* "vector-array-mul"
+       '#s32(1 2)
+       (vector-array-mul '#s32(1 -1 2 -1)
+                         '#,(<u32array> (0 4 0 2) 1 2 3 4 5 6 7 8)))
+
 (let ((i 0))
   (for-each
    (^t (let-optionals* t (a pow b)

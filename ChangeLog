@@ -1,3 +1,10 @@
+2023-03-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/matrix.scm (array-vector-mul, vector-array-mul):
+	  Add (u)vector and array multiplication, for they appear frequently.
+	  We may make array-mul to accept vector arguments, but it can be
+	  done later.
+
 2023-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/lazy.c (Scm_VMForce): Allowing multiple threads to force

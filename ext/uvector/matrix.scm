@@ -273,9 +273,9 @@
         '(when (and r (not (and (= n (array-length r 0))
                                (= p (array-length r 1)))))
           (errof "result array can't hold the result of multiplication"))
-        (let1 res (or r (make-minimal-backend-array (list a b) (shape 0 n 0 p)))
+        (rlet1 res (or r (make-minimal-backend-array (list a b) (shape 0 n 0 p)))
           (do ([i a-start-row (+ i 1)])       ; for-each row of a
-              [(= i a-end-row) res]
+              [(= i a-end-row)]
             (do ([k b-start-col (+ k 1)])     ; for-each col of b
                 [(= k b-end-col)]
               (let1 tmp 0
@@ -286,6 +286,87 @@
                 (array-set! res (- i a-start-row) (- k b-start-col) tmp)))))))))
 
 (define (array-mul a b) (%array-mul #f a b))
+
+;; array and vector multiplication utility
+;; We can do better to avoid runtime dispatching every time.  Optimization
+;; will come later.
+(define (vref v i)
+  (if (vector? v)
+    (vector-ref v i)
+    (uvector-ref v i)))
+
+(define (vset! v i n)
+  (if (vector? v)
+    (vector-set! v i n)
+    (uvector-set! v i n)))
+
+(define (vlen v)
+  (if (vector? v)
+    (vector-length v)
+    (uvector-length v)))
+
+(define (make-v class len)
+  (if (eq? class <vector>)
+    (make-vector len 0)
+    (make-uvector class len 0)))
+
+;; Array x vector
+(define (%array-vector-mul r a v)
+  (let ([a-start (start-vector-of a)]
+        [a-end (end-vector-of a)])
+    (assume (= 2 (s32vector-length a-start))
+            "array-vector-mul matrices must be of rank 2")
+    (assume (or (vector? v) (uvector? v))
+            "vector or uvector required, but got:" v)
+    (let ([a-start-row (s32vector-ref a-start 0)]
+          [a-end-row (s32vector-ref a-end 0)]
+          [a-start-col (s32vector-ref a-start 1)]
+          [a-end-col (s32vector-ref a-end 1)])
+      (let ([n (- a-end-row a-start-row)]
+            [m (- a-end-col a-start-col)])
+        (unless (= m (vlen v))
+          (errorf "dimension mismatch: can't multiply shapes ~S and ~S"
+                  (array-shape a) (vlen v)))
+        (rlet1 r (or r (make-v (class-of v) n))
+          (do ([i a-start-row (+ i 1)])       ; for-each row of a
+              [(= i a-end-row)]
+            (let1 tmp 0
+              (do ([j a-start-col (+ j 1)] ; for-each col of a & b
+                   [k 0 (+ k 1)])
+                  [(= j a-end-col)]
+                  (inc! tmp (* (array-ref a i j) (vref v k))))
+              (vset! r i tmp))))))))
+
+(define (array-vector-mul a v) (%array-vector-mul #f a v))
+
+;; Vector x array
+(define (%vector-array-mul r v a)
+  (let ([a-start (start-vector-of a)]
+        [a-end (end-vector-of a)])
+    (assume (= 2 (s32vector-length a-start))
+            "array-vector-mul matrices must be of rank 2")
+    (assume (or (vector? v) (uvector? v))
+            "vector or uvector required, but got:" v)
+    (let ([a-start-row (s32vector-ref a-start 0)]
+          [a-end-row (s32vector-ref a-end 0)]
+          [a-start-col (s32vector-ref a-start 1)]
+          [a-end-col (s32vector-ref a-end 1)])
+      (let ([n (- a-end-row a-start-row)]
+            [m (- a-end-col a-start-col)])
+        (unless (= n (vlen v))
+          (errorf "dimension mismatch: can't multiply shapes ~S and ~S"
+                  (vlen v) (array-shape a)))
+        (rlet1 r (or r (make-v (class-of v) m))
+          (do ([i a-start-col (+ i 1)])       ; for-each col of a
+              [(= i a-end-col)]
+            (let1 tmp 0
+              (do ([j a-start-row (+ j 1)] ; for-each row of a & b
+                   [k 0 (+ k 1)])
+                  [(= j a-end-row)]
+                  (inc! tmp (* (vref v k) (array-ref a j i))))
+              (vset! r i tmp))))))))
+
+(define (vector-array-mul a v) (%vector-array-mul #f a v))
 
 (define (array-div-left a b)
   (if-let1 b-1 (array-inverse b)

@@ -43,7 +43,7 @@
           array-concatenate array-transpose array-rotate-90
           array-flip array-flip!
           identity-array array-inverse determinant determinant!
-          array-mul array-expt
+          array-mul array-vector-mul vector-array-mul array-expt
           array-div-left array-div-right
           array-add-elements array-add-elements!
           array-sub-elements array-sub-elements!
@@ -57,7 +57,8 @@
 
 (autoload "gauche/matrix"
   array-concatenate array-transpose array-rotate-90 array-flip array-flip!
-  identity-array array-inverse determinant determinant! array-mul array-expt
+  identity-array array-inverse determinant determinant!
+  array-mul array-vector-mul vector-array-mul array-expt
   array-div-left array-div-right
   array-add-elements array-add-elements!
   array-sub-elements array-sub-elements!
