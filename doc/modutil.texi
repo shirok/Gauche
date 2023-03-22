@@ -1933,78 +1933,173 @@ it is attached to, and this procedure returns @code{#f} on such a port.
 
 @defun open-inlet-output-port plumbing :optional name
 @c MOD control.plumbing
+@c EN
 Creates an output port connected to @var{plumbing}'s inlet; that is,
 the data written to the port will flow to @var{plumbing}'s outlets.
+@c JP
+@var{plumbing}のinletに接続された出力ポートを作って返します。
+このポートに書き込まれたデータは、@var{plumbing}を通ってそのoutletに流れてゆきます。
+@c COMMON
 
+@c EN
 The optional @var{name} should be a symbol or @code{#f}.  If it is
 a symbol, the port will be retrieved from @var{plumbing} with
 @code{plumbing-get-port}.
+@c JP
+省略可能な@var{name}引数はシンボルか@code{#f}でなければなりません。
+これがシンボルの場合、作られたポートは@code{plumbing-get-port}で
+@var{plumbing}から取り出すことができます。
+@c COMMON
 
+@c EN
 Applying @code{port-plumbing} on the returned port returns @var{plumbing}.
+@c JP
+また、返されたポートに@code{port-plumbing}を適用すると@var{plumbing}が得られます。
+@c COMMON
 
+@c EN
 Once you close the returned port, the port is removed from @var{plumbing}.
 Once all inlet ports are closed, the outlet ports of @var{plumbing}
 get EOF.
+@c JP
+返されたポートをクローズすると、それは@var{plumbing}から取り除かれます。
+全てのinletポートがクローズされた時に、@var{plumbing}のoutletポートはEOFを受け取ります。
+@c COMMON
 @end defun
 
 @defun add-inlet-input-port! plumbing iport :optional name
 @c MOD control.plumbing
+@c EN
 Connects an existing input port @var{iport} to @var{plumbing}'s inlet.
 A thread in @var{plumbing} reads from @var{iport} and feeds the data
 to its outlets.
+@c JP
+既存の入力ポート@var{iport}を@var{plumbing}のinletに接続します。
+@var{iport}からデータを読み出し、それを@var{plumbing}のoutletに送るための
+スレッドが作られます。
+@c COMMON
 
+@c EN
 The optional @var{name} should be a symbol or @code{#f}.  If it is
 a symbol, the port will be retrieved from @var{plumbing} with
 @code{plumbing-get-port}.
+@c JP
+省略可能な@var{name}引数はシンボルか@code{#f}でなければなりません。
+これがシンボルの場合、作られたポートは@code{plumbing-get-port}で
+@var{plumbing}から取り出すことができます。
+@c COMMON
 
+@c EN
 Once EOF is read from @var{iport}, it is removed from @var{plumbing}.
 Once all inlet ports are closed, the outlet ports of @var{plumbing}
 get EOF.
+@c JP
+@var{iport}からEOFが読まれたら、そのポートは@var{plumbing}から取り除かれます。
+全てのinletポートがクローズされた時に、@var{plumbing}のoutletポートはEOFを受け取ります。
+@c COMMON
 @end defun
 
 @defun open-outlet-input-port plumbing :optional name
 @c MOD control.plumbing
+@c EN
 Creates an input port connected to @var{plumbing}'s outlet; that is,
 from that port you can read the data fed to @var{plumbing}'s inlets.
+@c JP
+@var{plumbing}のoutletに接続された入力ポートを作って返します。
+@var{plumbing}のinletに流れ込んだデータをそのポートから読み出すことができます。
+@c COMMON
 
+@c EN
 The optional @var{name} should be a symbol or @code{#f}.  If it is
 a symbol, the port will be retrieved from @var{plumbing} with
 @code{plumbing-get-port}.
+@c JP
+省略可能な@var{name}引数はシンボルか@code{#f}でなければなりません。
+これがシンボルの場合、作られたポートは@code{plumbing-get-port}で
+@var{plumbing}から取り出すことができます。
+@c COMMON
 
+@c EN
 Applying @code{port-plumbing} on the returned port returns @var{plumbing}.
+@c JP
+返されたポートに@code{port-plumbing}を適用すると@var{plumbing}が得られます。
+@c COMMON
 
+@c EN
 Once all inlets are closed, the returned port yields EOF.
 You can close the returned port at any time; then the port is removed
 from @var{plumbing}'s outlets and no data will be delivered to it.
+@c JP
+全てのinletがクローズされると、返されたポートからEOFが読まれます。
+返されたポートはいつでもクローズできます。クローズされるとそれは
+@var{plumbing}のoutletから取り除かれ、データは送られなくなります。
+@c COMMON
 @end defun
 
 @defun add-outlet-output-port! plumbing oport :optional name :key close-on-eof asynchronous
 @c MOD control.plumbing
-Connects an existing output port @var{iport} to @var{plumbing}'s outlet.
+@c EN
+Connects an existing output port @var{oport} to @var{plumbing}'s outlet.
 Data flowed in from @var{plumbing}'s inlet will be written to @var{oport}.
+@c JP
+既存の出力ポート@var{oport}を@var{plumbing}のoutletに接続します。
+@var{plumbing}に流れ込んだデータはその都度@var{oport}に送られます。
+@c COMMON
 
+@c EN
 The optional @var{name} should be a symbol or @code{#f}.  If it is
 a symbol, the port will be retrieved from @var{plumbing} with
 @code{plumbing-get-port}.
+@c JP
+省略可能な@var{name}引数はシンボルか@code{#f}でなければなりません。
+これがシンボルの場合、作られたポートは@code{plumbing-get-port}で
+@var{plumbing}から取り出すことができます。
+@c COMMON
 
+@c EN
 You can close the returned port at any time; then the port is removed
 from @var{plumbing}'s outlets and no data will be delivered to it.
+@c JP
+返されたポートはいつでもクローズできます。クローズされるとそれは
+@var{plumbing}のoutletから取り除かれ、データは送られなくなります。
+@c COMMON
 
+@c EN
 By default, @var{oport} is left as is after all inlets are closed;
 @var{plumbing} won't write anything to @var{oport} but you can still write to
 it.  If you specify a true value to the @var{close-on-eof} keyword argument,
 however, @var{plumbing} will close @var{oport} when all of its inlets are closed.
 It is useful, for example, when @var{oport} is a file output port and
 you want to close it once @var{plumbing} is done.  However, if @var{oport}
-is a standard output port for loggin purpose, you don't want it to be
+is a standard output port for logging purpose, you don't want it to be
 automatically closed.
+@c JP
+デフォルトでは、全てのinletがクローズされた後でも@var{oport}はオープンしたままにされます。
+@var{plumbing}がそれ以降そこに書き込むことはありませんが、
+@var{oport}に追加で出力することはできます。
+ただし、@var{close-on-eof}キーワード引数に真の値を指定すると、
+@var{plumbing}は全てのinletがクローズされた時点で@var{oport}をクローズします。
+これは、例えばファイルを出力用にオープンしてそのポートを@var{oport}として
+渡し、データが来なくなったら自動的にクローズしたい、という場合に便利です。
+けれども、例えばログ出力を監視するために@var{oport}に標準出力を渡すといった場合は、
+勝手にクローズされると困るでしょう。
+@c COMMON
 
+@c EN
 If a true value is given to the @var{asynchronous} keyword argument,
 a thread is spawn to feed the data to @var{oport}; it is useful if
-@var{oport} can be blocked, e.g. a pipe or a socket.
+@var{oport} can be blocked, e.g. an OS pipe or a socket.
 Without @var{asynchronous}, blocked output to @var{oport} causes
 data flow to inlets to be blocked as well.  With @var{asynchronous},
 other threads can keep feeding to inlets.
+@c JP
+@var{asynchronous}キーワード引数に真の値が渡された場合、
+@var{oport}にデータを送るための専用スレッドが作られます。
+これは、@var{oport}がOSのパイプやソケットのようにブロックする可能性がある場合に
+便利です。@var{asynchronous}が無い場合、@var{oport}がブロックすると
+plumbing全体がブロックしてしまう可能性があります。
+@var{asynchronous}を指定しておくと、このポートへの出力以外は動きつづけます。
+@c COMMON
 @end defun
 
 @defun plumbing spec @dots{}
