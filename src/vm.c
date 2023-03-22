@@ -460,7 +460,8 @@ static void vm_finalize(ScmObj obj, void *data SCM_UNUSED)
     ScmObj re = vm->resultException;
 
     if (SCM_UNCAUGHT_EXCEPTION_P(re)) {
-        Scm_Warn("A thread %S (%lu) died a lonely death with uncaught exception %S.",
+        Scm_Warn("A thread %S (%lu) died a lonely death"
+                 " with an uncaught exception %S.",
                  vm->name, vm->vmid, SCM_THREAD_EXCEPTION(re)->data);
     }
 #ifdef GAUCHE_USE_WTHREADS
@@ -471,8 +472,8 @@ static void vm_finalize(ScmObj obj, void *data SCM_UNUSED)
 #endif /*GAUCHE_USE_WTHREADS*/
 }
 
-/* Thread specific storage may not be scanned by GC.  We keep pointer
-   to the live VM in the global hashtable. */
+/* Thread specific storage may not be scanned by GC.  We keep pointers
+   to the live VMs in the global hashtable. */
 static void vm_register(ScmVM *vm)
 {
     SCM_INTERNAL_MUTEX_LOCK(vm_table_mutex);
@@ -550,10 +551,10 @@ static void vm_unregister(ScmVM *vm)
         for (c=0; c<(size); c++, f++, t++) *t = *f;     \
     } while (0)
 
-/* VM registers.  We've benchmarked if keeping some of those registers
-   local variables makes VM loop run faster; however, it turned out
+/* VM registers.  We benchmarked if keeping some of those registers
+   in local variables makes VM loop run faster; however, it turned out
    that more local variables tended to make them spill from machine
-   registers and didn't improve performance.  Having only vm, a pointer
+   registers and didn't improve performance.  Having only 'vm', a pointer
    to the current VM, on register is enough. */
 #define PC    (vm->pc)
 #define SP    (vm->sp)
@@ -579,7 +580,8 @@ static void vm_unregister(ScmVM *vm)
 #define IN_FULL_STACK_P(ptr) IN_STACK_P(ptr)
 #endif /*!GAUCHE_SPLIT_STACK*/
 
-/* Check if stack has room at least size words. */
+/* Check if stack has room at least SIZE words.  If not, active frames
+   are moved to the heap to make room. */
 #define CHECK_STACK(size)                                       \
     do {                                                        \
         if (MOSTLY_FALSE(SP >= vm->stackEnd - (size))) {        \
