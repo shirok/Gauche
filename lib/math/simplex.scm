@@ -34,10 +34,10 @@
 ;; Linear program solver using Revised simplex method
 
 (define-module math.simplex
-  (use srfi-42)
-  (use gauche.sequence)
   (use gauche.array)
+  (use gauche.sequence)
   (use gauche.uvector)
+  (use srfi.42)
   (export simplex-solve)
   )
 (select-module math.simplex)
@@ -77,7 +77,7 @@
 ;;
 ;; Then the initial tableau will be as follows:
 ;;
-;;    c0  c1  c2  b0  b1  b2  b3
+;;    c0  c1  c2   0   0   0   0
 ;;
 ;;    a00 a01 a02  1   0   0   0    b0
 ;;    a10 a11 a12  0   1   0   0    b1
@@ -87,16 +87,15 @@
 ;; The initial IxB is [3 4 5 6], IxN is [0 1 2].
 ;; Basic feasible solution is [0 0 0 b0 b1 b2 b3]
 ;;
-;;
 
 (define (simplex-solve A b c)
   (define-values (n m) (array2d-size-check A b c))
+  (define AA  (array-concatenate A (identity-array n <f64array>) 1)) ; extended
+  (define cc  (f64vector-append c (make-f64vector n 0))) ; extended
   ;; The following variables are updated for each iteration
   (define IxB (list->u32vector (iota n m))) ; basis indices
   (define IxN (list->u32vector (iota m)))   ; non-basis indices
-  (define cc  (f64vector-append c (make-f64vector n 0))) ; extended
   (define B^  (identity-array n <f64array>)) ; inverse of basis array
-  (define AA  (array-concatenate A B^ 1))   ; extended
   (define π   (make-f64vector n 0))     ;cc↑B . B^
   (define p   (f64vector-copy b))
 
