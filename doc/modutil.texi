@@ -2104,77 +2104,162 @@ plumbing全体がブロックしてしまう可能性があります。
 
 @defun plumbing spec @dots{}
 @c MOD control.plumbing
+@c EN
 A utility plumbing constructor.  It creates a new plumbing,
 and adds inlets and outlets as specified by @var{spec}s,
 then returns the plumbing.  Each @var{spec} must be one of
 the following forms.  In the description, @var{iport}
 is an input port, @var{oport} is an output port, and
 @var{name} is a symbol.
+@c JP
+plumbingを簡単に組み立てるためのユーティリティです。
+新しいplumbingを作り、@var{spec}に従ってinletとoutletを接続して、
+作られたplumbingを返します。各@var{spec}は以下に挙げる形式のいずれかです。
+説明中、@var{iport}は入力ポート、@var{oport}は出力ポート、
+@var{name}はシンボルです。
+@c COMMON
 
 @table @code
 @item (< @var{iport})
 @itemx (< @var{iport} @var{name})
+@c EN
 Adds @var{iport} to the plumbing's inlet, optionally naming it
 with @var{name}.
+@c JP
+@var{iport}をplumbingのinletに接続します。名前@var{name}をつけることもできます。
+@c COMMON
 @item (< @var{name})
+@c EN
 Creates an inlet output port with name @var{name}.
 The output port can be retrieved by @code{plumbing-get-port}.
+@c JP
+名前@var{name}を持つinlet出力ポートを作ります。
+作られた出力ポートは@code{plumbing-get-port}で取り出すことができます。
+@c COMMON
 @item (> @var{oport})
 @itemx (> @var{oport} @var{name})
 @itemx (> @var{oport} (@var{option} @dots{}))
 @itemx (> @var{oport} @var{name} (@var{option} @dots{}))
+@c EN
 Adds @var{oport} to the plumbing's outlet, optional naming it
 with @var{name}.  Options can be one of the keywords @code{:close-on-eof},
 @code{:coe}, @code{asynchronous}, and @code{:async}.  @code{:close-on-eof}
 and @code{asynchronous} has the effect of giving true to those keyword
 arguments to @code{add-outlet-output-port!}.  @code{:coe} and @code{:async}
 are synonyms of @code{:close-on-eof} and @code{:asynchronous}, respectively.
+@c JP
+@var{oport}をplumbingのouletに接続します。@var{name}が与えられればそれが
+名前になります。また、@var{option}としてキーワード
+@code{:close-on-eof}、@var{:coe}、@code{:asynchronous}、@code{:async}の
+組み合わせを指定することができます。@code{:close-on-eof}、@code{:asynchronous}は
+@code{add-outlet-output-port!}で同名のキーワード引数に真の値を指定するのと同じ効果
+を持ちます。@code{:coe}と@code{:async}はそれぞれ@code{:close-on-eof}と
+@code{:asynchronous}の省略形です。
+@c COMMON
 @item (> @var{name})
-Creates an outlet input port with name @code{name}.
+@c EN
+Creates an outlet input port with name @var{name}.
 The output port can be retrieved by @code{plumbing-get-port}.
+@c JP
+名前@var{name}を持つoutlet入力ポートを作ります。
+作られたポートは@code{plumbing-get-port}で取り出せます。
+@c COMMON
 @end table
 @end defun
 
-
+@c EN
 @subheading Preconfigured plumbings
+@c JP
+@subheading 組み立て済みplumbing
+@c COMMON
 
+@c EN
 The following are convenience procedures to construct typical
 plumbings.
+@c JP
+以下に挙げるのは、典型的な組み立てのplumbingを作る便利手続きです。
+@c COMMON
 
 @defun make-pipe :key num-inlets num-outlets
 @c MOD control.plumbing
-A pipe is a passive plumbing device with @code{num-inlets} inlet output ports
-and @var{num-outlets} outlet input ports.
+@c EN
+A pipe is a passive plumbing device that has inlet output port(s) and
+outlet input port(s).
 Data written to the inlet output ports
 will be buffered and available to read from the outlet input ports.
+This procedure creates and returns a pipe
+with @var{num-inlets} inlet output ports
+and @var{num-outlets} outlet input ports.
+@c JP
+パイプはinlet出力ポートとoutlet入力ポートを持つ受動的なplumbingです。
+inlet出力ポートに書き込まれたデータは各outlet入力ポートにバッファされ、
+読み出されるのを待ちます。
+この手続きは、@var{num-inlets}個のinlet出力ポートと、
+@var{num-outlets}個のoutlett出力ポートを持つパイプを作って返します。
+@c COMMON
 
+@c EN
 Both @var{num-inlets}
 and @var{num-outlets} should be a positive exact integer.  If omitted,
 1 is assumed.
+@c JP
+@var{num-inlets}と@var{num-outlets}はともに正の正確な整数でなければなりません。
+省略された場合は1とみなされます。
+@c COMMON
 
+@c EN
 If there are more than one outlets, data is duplicated; each consumer
 reads the same data.  Buffers are attached to each outlet, so each
 consumer can read the outlet in its own pace.
+@c JP
+outletが複数ある場合、データは複製されます。つまり、それぞれの消費者は
+同じデータを読み出します。それぞれのoutletが独立したバッファを持つので、
+各消費者はそれぞれのペースで読み出すことができます。
+@c COMMON
 
-This bahavior is similar to @code{sys-pipe}, which creates a pair
-of ports using OS's pipe mechanism.  However, the pipe device
+@c EN
+This procedure is similar to @code{sys-pipe}, which creates a pair
+of ports using OS's pipe mechanism (@pxref{Other file operations}).
+However, the pipe device
 created by @code{make-pipe} is a user-land construct and only for
 inter-thread communication; it can't be used for inter-process
 communication.  On the other hand, you can have n-in m-out pipe
 using @code{make-pipe}.
+@c JP
+この手続きは@code{sys-pipe}と似ていますが、
+@code{sys-pipe}はOSのパイプを使い、その両端に繋がれた入力ポートと出力ポートを
+返します (@ref{Other file operations}参照)。
+@code{make-pipe}が作るパイプはあくまでユーザ空間の構築物で、
+プロセス間通信には使えず、スレッド間通信にしか使えません。
+一方、@code{make-pipe}はn-入力/m-出力のパイプを作ることができます。
+@c COMMON
 @end defun
 
 @defun make-pump inlet-iports outlet-oports
 @c MOD control.plumbing
+@c EN
 A pump is an active plumbing device that reads data from
 the given inlet input ports, and write it out to the given
 outlet output ports.
+@c JP
+ポンプは与えられた入力ポートからデータを読み出し、それを
+与えられた出力ポートへと送り出す、アクティブなplumbingです。
+@c COMMON
 
+@c EN
 The @var{inlet-iports} argument must be a list of input ports,
 and @var{outlet-oports} argument must be a list of output ports.
+@c JP
+@var{inlet-iports}引数は入力ポートのリスト、
+@var{outlet-oports}引数は出力ポートのリストでなければなりません。
+@c COMMON
 
+@c EN
 A dedicated thread is spawn to each inlet input port to read
 from it.
+@c JP
+各inlet入力ポートそれぞれに対し、そこから読み出すスレッドがスポーンされます。
+@c COMMON
 @end defun
 
 @defun open-broadcast-output-port oport @dots{}
