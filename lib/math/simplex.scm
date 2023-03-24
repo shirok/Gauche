@@ -42,6 +42,13 @@
   )
 (select-module math.simplex)
 
+(define-constant *debug-trace* #f)
+
+(define-macro (debug-trace . exprs)
+  (if *debug-trace*
+    `(begin ,@exprs)
+    `(begin)))
+
 ;; Input and output:
 ;;  A is an m x n array
 ;;  b is a uvector of length n (bounds)
@@ -106,6 +113,7 @@
                             (* (uvector-ref cc (uvector-ref IxB j))
                                (array-ref B^ j i))))))
 
+  ;; Returns i such that IxN[i] identifies the entering variable
   (define (find-entering-variable)
     (compute-multiplier-vector!)
     (let loop ([i 0]                    ;loop over IxN
@@ -127,12 +135,22 @@
     (let loop ([i 0]
                [min-ratio +inf.0]
                [min-row-index -1])
-      (if (= i n)
-        min-row-index
-        (let ([ratio (/ (f64vector-ref p i) (f64vector-ref x_k i))])
-          (if (and (positive? (f64vector-ref x_k i)) (< ratio min-ratio))
-            (loop (+ i 1) ratio i)
-            (loop (+ i 1) min-ratio min-row-index))))))
+      (cond [(= i n)
+             (debug-trace
+              (format #t"found leaving row: ~s\n" min-row-index))
+             min-row-index]
+            [(zero? (f64vector-ref x_k i))
+             (loop (+ i 1) min-ratio min-row-index)]
+            [else
+             (let ([ratio (/ (f64vector-ref p i) (f64vector-ref x_k i))])
+               (debug-trace
+                (format #t "ratio[~s] = ~s\n" i ratio))
+               (if (and (or (positive? ratio)
+                            (and (zero? ratio)
+                                 (positive? (f64vector-ref x_k i))))
+                        (< ratio min-ratio))
+                 (loop (+ i 1) ratio i)
+                 (loop (+ i 1) min-ratio min-row-index)))])))
 
   (define (pivot! entering leaving x_k)
     (let ([factor (/ (f64vector-ref p leaving)
@@ -158,37 +176,41 @@
       (rotate! (u32vector-ref IxB leaving) (u32vector-ref IxN entering))
       ))
 
-  ;; (print "cc=" cc)
-  ;; (print "IxB=" IxB)
-  ;; (print "IxN=" IxN)
-  ;; (print "p=" p)
-  ;; (pretty-print-array A #t :readable? #f :left #\[ :right #\])
+  (debug-trace
+   (print "cc=" cc)
+   (print "IxB=" IxB)
+   (print "IxN=" IxN)
+   (print "p=" p)
+   (pretty-print-array A #t :readable? #f :left #\[ :right #\]))
 
   (let loop ([entering (find-entering-variable)]
              [iter 0])
-    (and entering
-         (let* ([A_i (map-to <f64vector>
-                             (^i (array-ref AA i entering))
-                             (iota n))]
-                [x_k (array-vector-mul B^ A_i)]
-                [leaving (find-leaving-row A_i x_k)])
-           ;; (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
-           ;; (format #t "π = ~s\n" π)
-           ;; (format #t "A_i = ~s\n" A_i)
-           ;; (format #t "x_k = ~s\n" x_k)
-           ;; (format #t "entering = ~s\n" entering)
-           ;; (format #t "leaving = ~s\n" leaving)
+    (when entering
+      (let* ([A_i (map-to <f64vector>
+                          (^i (array-ref AA i (u32vector-ref IxN entering)))
+                          (iota n))]
+             [x_k (array-vector-mul B^ A_i)]
+             [leaving (find-leaving-row A_i x_k)])
+        (when (>= leaving 0)
+          (debug-trace
+           (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
+           (format #t "π = ~s\n" π)
+           (format #t "A_i = ~s\n" A_i)
+           (format #t "x_k = ~s\n" x_k)
+           (format #t "entering = ~s\n" entering)
+           (format #t "leaving = ~s\n" leaving))
 
-           (pivot! entering leaving x_k)
+          (pivot! entering leaving x_k)
 
-           ;; (print "pivot!")
-           ;; (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
-           ;; (format #t "p=~s\n" p)
-           ;; (print "IxB=" IxB)
-           ;; (print "IxN=" IxN)
+          (debug-trace
+           (print "pivot!")
+           (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
+           (format #t "p=~s\n" p)
+           (print "IxB=" IxB)
+           (print "IxN=" IxN))
 
-           (loop (find-entering-variable) (+ iter 1))
-           )))
+          (loop (find-entering-variable) (+ iter 1))
+          ))))
 
   (rlet1 rvec (make-f64vector m 0)
     (dotimes [i n]
