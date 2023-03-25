@@ -42,10 +42,10 @@
   )
 (select-module math.simplex)
 
-(define-constant *debug-trace* #f)
+(define-constant *debug-dump* #f)
 
-(define-macro (debug-trace . exprs)
-  (if *debug-trace*
+(define-macro (debug-dump . exprs)
+  (if *debug-dump*
     `(begin ,@exprs)
     `(begin)))
 
@@ -106,6 +106,8 @@
   (define π   (make-f64vector n 0))     ;cc↑B . B^
   (define p   (f64vector-copy b))
 
+  (define pivot-selection-rule 'bland)
+
   (define (compute-multiplier-vector!)
     (dotimes [i n]
       (uvector-set! π i
@@ -116,6 +118,10 @@
   ;; Returns i such that IxN[i] identifies the entering variable
   (define (find-entering-variable)
     (compute-multiplier-vector!)
+    (debug-dump
+     (display "B^:")
+     (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
+     (format #t "π = ~s\n" π))
     (let loop ([i 0]                    ;loop over IxN
                [min-negative +inf.0]
                [min-index #f])
@@ -126,29 +132,39 @@
                         (sum-ec (: j n)
                                 (* (uvector-ref π j)
                                    (array-ref AA j in))))])
+          (debug-dump
+           (print "c_in[" (u32vector-ref IxN i) "] = " c_in))
           (if (and (negative? c_in)
-                   (< c_in min-negative))
+                   (ecase pivot-selection-rule
+                     [(min-ratio) (< c_in min-negative)]
+                     [(bland) (or (not min-index)
+                                  (< in (u32vector-ref IxN min-index)))]))
             (loop (+ i 1) c_in i)
             (loop (+ i 1) min-negative min-index))))))
 
   (define (find-leaving-row A_i x_k)
+    (debug-dump
+     (format #t "A_i = ~s\n" A_i)
+     (format #t "x_k = ~s\n" x_k))
     (let loop ([i 0]
                [min-ratio +inf.0]
                [min-row-index -1])
       (cond [(= i n)
-             (debug-trace
-              (format #t"found leaving row: ~s\n" min-row-index))
+             (debug-dump
+              (format #t "leaving row: ~s\n" min-row-index))
              min-row-index]
-            [(zero? (f64vector-ref x_k i))
+            [(<= (f64vector-ref x_k i) 0)
              (loop (+ i 1) min-ratio min-row-index)]
             [else
              (let ([ratio (/ (f64vector-ref p i) (f64vector-ref x_k i))])
-               (debug-trace
+               (debug-dump
                 (format #t "ratio[~s] = ~s\n" i ratio))
-               (if (and (or (positive? ratio)
-                            (and (zero? ratio)
-                                 (positive? (f64vector-ref x_k i))))
-                        (< ratio min-ratio))
+               (if (case pivot-selection-rule
+                     [(min-ratio) (< ratio min-ratio)]
+                     [(bland) (or (< ratio min-ratio)
+                                  (and (= ratio min-ratio)
+                                       (< (u32vector-ref IxB i)
+                                          (u32vector-ref IxB min-row-index))))])
                  (loop (+ i 1) ratio i)
                  (loop (+ i 1) min-ratio min-row-index)))])))
 
@@ -176,35 +192,30 @@
       (rotate! (u32vector-ref IxB leaving) (u32vector-ref IxN entering))
       ))
 
-  (debug-trace
+  (debug-dump
    (print "cc=" cc)
    (print "IxB=" IxB)
    (print "IxN=" IxN)
    (print "p=" p)
+   (display "A:")
    (pretty-print-array A #t :readable? #f :left #\[ :right #\]))
 
   (let loop ([entering (find-entering-variable)]
              [iter 0])
     (when entering
+      (debug-dump
+       (format #t "entering var = ~s\n" (u32vector-ref IxN entering)))
       (let* ([A_i (map-to <f64vector>
                           (^i (array-ref AA i (u32vector-ref IxN entering)))
                           (iota n))]
              [x_k (array-vector-mul B^ A_i)]
              [leaving (find-leaving-row A_i x_k)])
         (when (>= leaving 0)
-          (debug-trace
-           (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
-           (format #t "π = ~s\n" π)
-           (format #t "A_i = ~s\n" A_i)
-           (format #t "x_k = ~s\n" x_k)
-           (format #t "entering = ~s\n" entering)
-           (format #t "leaving = ~s\n" leaving))
 
           (pivot! entering leaving x_k)
 
-          (debug-trace
+          (debug-dump
            (print "pivot!")
-           (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
            (format #t "p=~s\n" p)
            (print "IxB=" IxB)
            (print "IxN=" IxN))
