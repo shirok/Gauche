@@ -2264,13 +2264,25 @@ from it.
 
 @defun open-broadcast-output-port oport @dots{}
 @c MOD control.plumbing
-The arguments must be output ports.
+@c EN
+All the arguments must be output ports.
 Returns an output port such that data written to it go to every @var{oport}.
 Internally, it creates a plumbing, adds @var{oport}s to its outlet,
 and returns a new inlet output port.  The plumbing can be retrieved
 by calling @code{port-plumbing} on the returned port.
+@c JP
+引数は全て出力ポートでなければなりません。
+新たな出力ポートを返します。そのポートに書かれたデータは、全ての@var{oport}へと送られます。
+内部的には、この手続きはplumbingを作り、@var{oport} @dots{}をoutletに接続し、
+そしてinlet出力ポートを返します。返されたポートに@code{port-plumbing}を適用すれば
+plumbingが得られます。
+@c COMMON
 
+@c EN
 This is Common Lisp's @code{make-broadcast-stream}.
+@c JP
+これはCommon Lispの@code{make-broadcast-stream}にあたります。
+@c COMMON
 @end defun
 
 @defun open-tapping-input-port inlet-iport outlet-oport :key close-on-eof
