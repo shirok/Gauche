@@ -611,28 +611,45 @@ DEF_UVCTOR_ARRAY(C128,ScmDoubleComplex)
  */
 ScmObj Scm_ReadUVector(ScmPort *port, const char *tag, ScmReadContext *ctx)
 {
+    ScmObj uv;
     ScmChar c;
     SCM_GETC(c, port);
-    if (c != '(') Scm_Error("bad uniform vector syntax for %s", tag);
-    ScmObj list = Scm_ReadList(SCM_OBJ(port), ')');
-    ScmClass *klass = NULL;
-    if (strcmp(tag, "s8") == 0)        klass = SCM_CLASS_S8VECTOR;
-    else if (strcmp(tag, "u8") == 0)   klass = SCM_CLASS_U8VECTOR;
-    else if (strcmp(tag, "s16") == 0)  klass = SCM_CLASS_S16VECTOR;
-    else if (strcmp(tag, "u16") == 0)  klass = SCM_CLASS_U16VECTOR;
-    else if (strcmp(tag, "s32") == 0)  klass = SCM_CLASS_S32VECTOR;
-    else if (strcmp(tag, "u32") == 0)  klass = SCM_CLASS_U32VECTOR;
-    else if (strcmp(tag, "s64") == 0)  klass = SCM_CLASS_S64VECTOR;
-    else if (strcmp(tag, "u64") == 0)  klass = SCM_CLASS_U64VECTOR;
-    else if (strcmp(tag, "f16") == 0)  klass = SCM_CLASS_F16VECTOR;
-    else if (strcmp(tag, "f32") == 0)  klass = SCM_CLASS_F32VECTOR;
-    else if (strcmp(tag, "f64") == 0)  klass = SCM_CLASS_F64VECTOR;
-    else if (strcmp(tag, "c32") == 0)  klass = SCM_CLASS_C32VECTOR;
-    else if (strcmp(tag, "c64") == 0)  klass = SCM_CLASS_C64VECTOR;
-    else if (strcmp(tag, "c128") == 0) klass = SCM_CLASS_C128VECTOR;
-    else Scm_Error("invalid unform vector tag: %s", tag);
 
-    ScmObj uv = Scm_ListToUVector(klass, list, 0);
+    if (c == '"' && strcmp(tag, "u8") == 0) {
+        /* SRFI-207 string-notated bytevector.
+           TODO: SRFI-207 is stricter than what Scm_ReadStringLiteral allows.
+           We might want better error checking.
+           TODO: Avoid copying the string content. */
+        ScmObj s = Scm_ReadStringLiteral(port, ctx, SCM_STRING_INCOMPLETE,
+                                         SCM_CHAR_INVALID);
+        SCM_ASSERT(SCM_STRINGP(s));
+        const ScmStringBody *sb = SCM_STRING_BODY(SCM_STRING(s));
+        char *content = Scm_StrdupPartial(SCM_STRING_BODY_START(sb),
+                                          SCM_STRING_BODY_SIZE(sb));
+        uv = Scm_MakeUVector(SCM_CLASS_U8VECTOR, SCM_STRING_BODY_SIZE(sb),
+                             content);
+    } else {
+        if (c != '(') Scm_Error("bad uniform vector syntax for %s", tag);
+        ScmObj list = Scm_ReadList(SCM_OBJ(port), ')');
+        ScmClass *klass = NULL;
+        if (strcmp(tag, "s8") == 0)        klass = SCM_CLASS_S8VECTOR;
+        else if (strcmp(tag, "u8") == 0)   klass = SCM_CLASS_U8VECTOR;
+        else if (strcmp(tag, "s16") == 0)  klass = SCM_CLASS_S16VECTOR;
+        else if (strcmp(tag, "u16") == 0)  klass = SCM_CLASS_U16VECTOR;
+        else if (strcmp(tag, "s32") == 0)  klass = SCM_CLASS_S32VECTOR;
+        else if (strcmp(tag, "u32") == 0)  klass = SCM_CLASS_U32VECTOR;
+        else if (strcmp(tag, "s64") == 0)  klass = SCM_CLASS_S64VECTOR;
+        else if (strcmp(tag, "u64") == 0)  klass = SCM_CLASS_U64VECTOR;
+        else if (strcmp(tag, "f16") == 0)  klass = SCM_CLASS_F16VECTOR;
+        else if (strcmp(tag, "f32") == 0)  klass = SCM_CLASS_F32VECTOR;
+        else if (strcmp(tag, "f64") == 0)  klass = SCM_CLASS_F64VECTOR;
+        else if (strcmp(tag, "c32") == 0)  klass = SCM_CLASS_C32VECTOR;
+        else if (strcmp(tag, "c64") == 0)  klass = SCM_CLASS_C64VECTOR;
+        else if (strcmp(tag, "c128") == 0) klass = SCM_CLASS_C128VECTOR;
+        else Scm_Error("invalid unform vector tag: %s", tag);
+
+        uv = Scm_ListToUVector(klass, list, 0);
+    }
 
     /* If we are reading source file, let literal uvectors be immutable. */
     if (Scm_ReadContextLiteralImmutable(ctx)) {

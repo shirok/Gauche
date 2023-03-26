@@ -1,3 +1,8 @@
+2023-03-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/vector.c (Scm_ReadUVector): Preliminary support of
+	  SRFI-207 string-notated bytevectors.
+
 2023-03-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/math/simplex.scm: Added.  There are lots of room of optimization,
