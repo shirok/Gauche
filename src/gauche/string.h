@@ -240,6 +240,9 @@ SCM_EXTERN char **Scm_ListToCStringArray(ScmObj lis, int errp,
 SCM_EXTERN ScmObj  Scm_StringToList(ScmString *str);
 SCM_EXTERN ScmObj  Scm_ListToString(ScmObj chars);
 
+SCM_EXTERN ScmObj  Scm_ReadStringLiteral(ScmPort*, ScmReadContext*,
+                                         u_long, ScmChar);
+
 /* OBSOLETED */
 SCM_EXTERN ScmObj  Scm_StringCompleteToIncomplete(ScmString *);
 SCM_EXTERN ScmObj  Scm_StringIncompleteToComplete(ScmString *, int, ScmChar);

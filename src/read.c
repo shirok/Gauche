@@ -1043,6 +1043,20 @@ static ScmObj read_quoted(ScmPort *port, ScmObj quoter, ScmReadContext *ctx)
  * String
  */
 
+/* Utility API to read string-literal like thingy.
+ * The caller already read and consumed the opening double-quote.
+ *
+ * FLAGS are ScmStringFlags.  Only SCM_STRING_INCOMPLETE is recognized.
+ */
+ScmObj Scm_ReadStringLiteral(ScmPort *port,
+                             ScmReadContext *ctx, /* can be NULL */
+                             u_long flags,
+                             ScmChar terminator SCM_UNUSED) /* reserved */
+{
+    int incompletep = flags & SCM_STRING_INCOMPLETE;
+    return read_string(port, incompletep, ctx);
+}
+
 /* Handling \xNN;, \uNNNN, \UNNNNNNNN escapes.  To make it easier
    to support both legacy \xN{2} syntax and new \xN{1,} syntax,
    we read-ahead as many hexdigits as possible first, then parse it,
