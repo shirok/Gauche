@@ -1,5 +1,8 @@
 2023-03-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/base64.scm: Allow :digits keyword argument to specify
+	  alternative digits.
+
 	* src/vector.c (Scm_ReadUVector): Preliminary support of
 	  SRFI-207 string-notated bytevectors.
 

@@ -38,6 +38,8 @@
 ;; TODO: using uvector for binary source/sink
 
 (define-module rfc.base64
+  (use gauche.sequence)
+  (use srfi.42)
   (export base64-encode base64-encode-string
           base64-decode base64-decode-string))
 (select-module rfc.base64)
@@ -98,8 +100,37 @@
     #\=
   ))
 
-(define (base64-decode :key (url-safe #f))
-  (define table (if url-safe *url-safe-decode-table* *standard-decode-table*))
+(define (%digits->decode-table digits)
+  (define rvec (make-vector 64 #f))
+  (unless (and (or (string? digits) (vector? digits))
+               (= (size-of digits) 64))
+    (error "Digits must be a string or vector of length 64, but got:" digits))
+
+  (do-ec (: c (index i) digits)
+         (begin
+           (unless (char? c) (error "Invalid element in digits:" c))
+           (let1 b (char->integer c)
+             (unless (<= 32 b 127)
+               (error "Invalid char in digits:" c))
+             (vector-set! rvec c i))))
+  rvec)
+
+(define (%digits->encode-table digits)
+  (define (err)
+    (error "Digits must be a string or vector of length 64, but got:" digits))
+  (cond
+   [(string? digits) (unless (= (string-length digits) 64) (err))
+    (string->vector digits)]
+   [(vector? digits) (unless (= (vector-length digits) 64) (err))
+    (unless (every char? digits)
+      (error "Digits vector must be all characters, but got:" digits))
+    digits]
+   [else (err)]))
+
+(define (base64-decode :key (url-safe #f) (digits #f))
+  (define table (cond [url-safe *url-safe-decode-table*]
+                      [digits (%digits->decode-table digits)]
+                      [else *standard-decode-table*]))
   (let-syntax ([lookup (syntax-rules ()
                          [(_ c)
                           (let1 i (char->integer c)
@@ -142,8 +173,10 @@
   (with-output-to-string
     (cut with-input-from-string string (cut apply base64-decode opts))))
 
-(define (base64-encode :key (line-width 76) (url-safe #f))
-  (define table (if url-safe *url-safe-encode-table* *standard-encode-table*))
+(define (base64-encode :key (line-width 76) (url-safe #f) (digits #f))
+  (define table (cond [url-safe *url-safe-encode-table*]
+                      [digits (%digits->encode-table digits)]
+                      [else *standard-encode-table*]))
   (define maxcol (and line-width (> line-width 0) (- line-width 1)))
 
   (letrec-syntax ([emit*
