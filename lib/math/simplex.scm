@@ -112,18 +112,18 @@
    (display "AA:")
    (pretty-print-array AA #t :readable? #f :left #\[ :right #\]))
   (if (zero? Na)
-    (%solve-1-phase n m Na AA cc p B^ IxB IxN #f maximize?)
-    (%solve-2-phase n m Na AA c cc p B^ IxB IxN #f maximize?)))
+    (%solve-1-phase n m Na AA cc p B^ IxB IxN maximize?)
+    (%solve-2-phase n m Na AA c cc p B^ IxB IxN maximize?)))
 
-(define (%solve-1-phase n m Na AA cc p B^ IxB IxN #f maximize?)
+(define (%solve-1-phase n m Na AA cc p B^ IxB IxN maximize?)
   (receive (AA p B^ IxB IxN)
-      (%simplex-solve n m Na AA cc p B^ IxB IxN #f maximize?)
+      (%simplex-solve n m Na AA cc p B^ IxB IxN maximize?)
     (%result-variable-vector n m p IxB)))
 
-(define (%solve-2-phase n m Na AA c cc p B^ IxB IxN #f maximize?)
+(define (%solve-2-phase n m Na AA c cc p B^ IxB IxN maximize?)
   (define AN (%project-columns AA IxN))
   (receive (AA p B^ IxB IxN)
-      (%simplex-solve n m Na AA cc p B^ IxB IxN #t #f)
+      (%simplex-solve n m Na AA cc p B^ IxB IxN #f)
     (debug-dump
      (print "\nPhase 1 solution:")
      (print "IxB=" IxB)
@@ -148,7 +148,7 @@
             (display "AA:")
             (pretty-print-array AA #t :readable? #f :left #\[ :right #\]))
            (receive (AA p B^ IxB IxN)
-               (%simplex-solve n m 0 AA cc p B^ IxB IxN #f maximize?)
+               (%simplex-solve n m 0 AA cc p B^ IxB IxN maximize?)
              (%result-variable-vector n m p IxB))))))
 
 ;; Returns the following values:
@@ -218,7 +218,7 @@
         (values n m Na AA cc p B^ IxB IxN)))))
 
 ;; Returns solved AA, p, B^, IxB, IxN.
-(define (%simplex-solve n m Na AA cc p B^ IxB IxN two-phase? maximize?)
+(define (%simplex-solve n m Na AA cc p B^ IxB IxN maximize?)
   (define π   (make-f64vector n 0))     ;cc↑B . B^
 
   (define pivot-selection-rule 'bland)
@@ -285,11 +285,6 @@
                  (loop (+ i 1) ratio i)
                  (loop (+ i 1) min-ratio min-row-index)))])))
 
-  (define (find-leaving-row-special)
-    (rlet1 r (find-min (iota n) :key (^i (~ p i)))
-      (debug-dump
-       (format #t "leaving row (special): ~s\n" r))))
-
   (define (pivot! entering leaving x_k)
     (let ([factor (/ (f64vector-ref p leaving)
                      (f64vector-ref x_k leaving))])
@@ -323,10 +318,7 @@
                           (^i (array-ref AA i (u32vector-ref IxN entering)))
                           (iota n))]
              [x_k (array-vector-mul B^ A_i)]
-             [leaving
-              (if (and two-phase? (zero? iter))
-                (find-leaving-row-special)
-                (find-leaving-row A_i x_k))])
+             [leaving (find-leaving-row A_i x_k)])
 
         (when (>= leaving 0)
 
