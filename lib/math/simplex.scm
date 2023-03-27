@@ -56,6 +56,8 @@
 ;;  Compute x, uvector of length n, that minimizes or maximizes
 ;;  Z = c^T . x under the constraint of Ax <= b, x_i >= 0.
 
+;; Returns uvector of length m for solution x, or #f if it's unsolvable.
+
 ;; Terminology:
 ;;  IxB : u32vector of length n, indices of basic variables
 ;;  IxN : u32vector of length m, indices of non-basic variabls
@@ -92,6 +94,7 @@
 ;; The initial IxB is [3 4 5 6], IxN is [0 1 2].
 ;; Basic feasible solution is [0 0 0 b0 b1 b2 b3]
 
+;; If any of elements in b is negative, we switch to two-phase simplex method.
 
 (define (simplex-solve A b goal c)
   (define maximize?
