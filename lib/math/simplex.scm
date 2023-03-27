@@ -53,16 +53,14 @@
 ;;  A is an m x n array
 ;;  b is a uvector of length n (bounds)
 ;;  c is a uvector of length m (coefficients)
-;;  Compute x, uvector of length n, that minimizes c^T . x under the constraint
-;;  of Ax <= b.
-;;  NB: A and c do not contain entries for slack variables.
-;;  Elements of x are all non-negative.
+;;  Compute x, uvector of length n, that minimizes or maximizes
+;;  Z = c^T . x under the constraint of Ax <= b, x_i >= 0.
 
 ;; Terminology:
 ;;  IxB : u32vector of length n, indices of basic variables
 ;;  IxN : u32vector of length m, indices of non-basic variabls
 ;;  B^  : n x n matrix, inverse of basis matrix.
-;;  β   : u64vector of length n, basic solution
+;;  p   : f64vector of length n, RHS values.
 
 ;; We first extend the matrix A  by adding an nxn identity matrix on its right,
 ;; and extend c accordingly.
@@ -84,7 +82,7 @@
 ;;
 ;; Then the initial tableau will be as follows:
 ;;
-;;    c0  c1  c2   0   0   0   0
+;;    -c0 -c1 -c2  0   0   0   0
 ;;
 ;;    a00 a01 a02  1   0   0   0    b0
 ;;    a10 a11 a12  0   1   0   0    b1
@@ -93,18 +91,97 @@
 ;;
 ;; The initial IxB is [3 4 5 6], IxN is [0 1 2].
 ;; Basic feasible solution is [0 0 0 b0 b1 b2 b3]
-;;
 
-(define (simplex-solve A b c)
+
+(define (simplex-solve A b goal c)
+  (define maximize?
+    (case goal
+      [(:minimize) #f]
+      [(:maximize) #t]
+      [else (error "Goal must be either :minimize or :maximize, but got:"
+                   goal)]))
+  (define-values (n m Na AA cc p B^ IxB IxN) (%canonicalize A b c))
+  (debug-dump
+   (print "cc=" cc)
+   (print "IxB=" IxB)
+   (print "IxN=" IxN)
+   (print "p=" p)
+   (display "A:")
+   (pretty-print-array A #t :readable? #f :left #\[ :right #\]))
+  (if (zero? Na)
+    (receive (AA p IxB)
+        (%simplex-solve n m Na AA cc p B^ IxB IxN #f maximize?)
+      (%result-variable-vector n m p IxB))
+    (error "To be written - We need 2-phase method")))
+
+;; Returns the following values:
+;;   n, m - # of rows and columns of original problem
+;;   Na   - # of auxiliary variables.  If this is >zero, we need 2-phase
+;;         method.
+;;   AA  - n x (m + n + Na) Matrix extended with slack and artificial
+;;         varaibles.
+;;   cc   - m + n + Na element vector of coefficient row.
+;;   p   - n element vector for RHS.  All elements are posivitive.
+;;   B^  - n x n matrix, the inverse of basis array.  Initially it is
+;;         an identity matrix.
+;;   IxB - n element integer vector for basis indices
+;;   IxN - m + Na element integer vector for non-basis indices
+(define (%canonicalize A b c)
   (define-values (n m) (array2d-size-check A b c))
-  (define AA  (array-concatenate A (identity-array n <f64array>) 1)) ; extended
-  (define cc  (f64vector-append c (make-f64vector n 0))) ; extended
-  ;; The following variables are updated for each iteration
-  (define IxB (list->u32vector (iota n m))) ; basis indices
-  (define IxN (list->u32vector (iota m)))   ; non-basis indices
-  (define B^  (identity-array n <f64array>)) ; inverse of basis array
+  (let1 Na (f64vector-count negative? b)
+    (if (zero? Na)
+      ;; single-phase
+      (let ([AA (array-concatenate A (identity-array n <f64array>) 1)]
+            [cc (f64vector-append (f64vector-mul c -1)
+                                  (make-f64vector n 0))]
+            [p  (f64vector-copy b)]
+            [B^ (identity-array n <f64array>)]
+            [IxB (list->u32vector (iota n m))]
+            [IxN (list->u32vector (iota m))])
+        (values n m Na AA cc p B^ IxB IxN))
+      ;; phase 1 for two-phase
+      (let ([AA (make-f64array (shape 0 n 0 (+ m n Na)) 0)]
+            [cc (make-f64vector (+ m n Na) 0)]
+            [p  (f64vector-copy b)]
+            [B^ (identity-array n <f64array>)]
+            [IxB (make-u32vector n)]
+            [IxN (make-u32vector (+ m Na))])
+        (let loop-rows ([i 0]
+                        [cs m]          ; slack var column
+                        [ca (+ m n)])   ; aux var column
+          (when (< i n)
+            (cond [(not (negative? (~ b i)))
+                   ;; We copy original A row and add a slack var.
+                   ;; The slack var consists one of the basis.
+                   (do-ec (: j m)
+                          (array-set! AA i m (array-ref A i m)))
+                   (array-set! AA i cs 1)
+                   (set! (~ p i) (~ b i))
+                   (set! (~ IxB i) cs)
+                   (loop-rows (+ i 1) (+ cs 1) ca)]
+                  [else
+                   ;; We negate the original A row, subtract a slack var,
+                   ;; and add an aux var  The aux var consists one of the basis.
+                   (do-ec (: j m)
+                          (array-set! AA i m (- (array-ref A i m))))
+                   (array-set! AA i cs -1)
+                   (array-set! AA i ca 1)
+                   (set! (~ p i) (- (~ b i)))
+                   (set! (~ IxB i) ca)
+                   (loop-rows (+ i 1) (+ cs 1) (+ ca 1))])))
+        ;; Fill IxN
+        (let loop-cols ([j 0] [in 0] [cn 0])
+          (when (< j (+ m Na))
+            (if (find (cut = <> j) IxB)
+              (loop-cols (+ j 1) in cn)
+              (begin
+                (set! (~ IxN in) cn)
+                (loop-cols (+ j 1) (+ in 1) (+ cn 1))))))
+        (values n m Na AA cc p B^ IxB IxN)))))
+
+;; Returns solved AA, p, IxB
+(define (%simplex-solve n m Na AA cc p B^ IxB IxN two-phase? maximize?)
   (define π   (make-f64vector n 0))     ;cc↑B . B^
-  (define p   (f64vector-copy b))
 
   (define pivot-selection-rule 'bland)
 
@@ -123,10 +200,10 @@
      (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
      (format #t "π = ~s\n" π))
     (let loop ([i 0]                    ;loop over IxN
-               [min-negative +inf.0]
-               [min-index #f])
+               [picked-value #f]
+               [picked-index #f])
       (if (= i m)
-        min-index                       ;if #f, we're optimal
+        picked-index                    ;if #f, we're optimal
         (let* ([in (u32vector-ref IxN i)]
                [c_in (- (uvector-ref cc in)
                         (sum-ec (: j n)
@@ -134,13 +211,15 @@
                                    (array-ref AA j in))))])
           (debug-dump
            (print "c_in[" (u32vector-ref IxN i) "] = " c_in))
-          (if (and (negative? c_in)
+          (if (and ((if maximize? negative? positive?) c_in)
                    (ecase pivot-selection-rule
-                     [(min-ratio) (< c_in min-negative)]
-                     [(bland) (or (not min-index)
-                                  (< in (u32vector-ref IxN min-index)))]))
+                     [(min-ratio) (if maximize?
+                                    (< c_in picked-value)
+                                    (> c_in picked-value))]
+                     [(bland) (or (not picked-index)
+                                  (< in (u32vector-ref IxN picked-index)))]))
             (loop (+ i 1) c_in i)
-            (loop (+ i 1) min-negative min-index))))))
+            (loop (+ i 1) picked-value picked-index))))))
 
   (define (find-leaving-row A_i x_k)
     (debug-dump
@@ -168,6 +247,11 @@
                  (loop (+ i 1) ratio i)
                  (loop (+ i 1) min-ratio min-row-index)))])))
 
+  (define (find-leaving-row-special)
+    (rlet1 r (find-min (iota n) :key (^i (~ p i)))
+      (debug-dump
+       (format #t "leaving row (special): ~s\n" r))))
+
   (define (pivot! entering leaving x_k)
     (let ([factor (/ (f64vector-ref p leaving)
                      (f64vector-ref x_k leaving))])
@@ -192,14 +276,6 @@
       (rotate! (u32vector-ref IxB leaving) (u32vector-ref IxN entering))
       ))
 
-  (debug-dump
-   (print "cc=" cc)
-   (print "IxB=" IxB)
-   (print "IxN=" IxN)
-   (print "p=" p)
-   (display "A:")
-   (pretty-print-array A #t :readable? #f :left #\[ :right #\]))
-
   (let loop ([entering (find-entering-variable)]
              [iter 0])
     (when entering
@@ -209,7 +285,11 @@
                           (^i (array-ref AA i (u32vector-ref IxN entering)))
                           (iota n))]
              [x_k (array-vector-mul B^ A_i)]
-             [leaving (find-leaving-row A_i x_k)])
+             [leaving
+              (if (and two-phase? (zero? iter))
+                (find-leaving-row-special)
+                (find-leaving-row A_i x_k))])
+
         (when (>= leaving 0)
 
           (pivot! entering leaving x_k)
@@ -223,12 +303,17 @@
           (loop (find-entering-variable) (+ iter 1))
           ))))
 
+  (values AA p IxB)
+  )
+
+;; Create a result vector of variables
+(define (%result-variable-vector n m p IxB)
   (rlet1 rvec (make-f64vector m 0)
     (dotimes [i n]
       (when (< (u32vector-ref IxB i) m)
         (f64vector-set! rvec (u32vector-ref IxB i)
-                        (f64vector-ref p i)))))
-  )
+                        (f64vector-ref p i))))))
+
 
 ;; returns m, n of 2d array, with argument check
 (define (array2d-size-check a b c)
