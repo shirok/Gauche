@@ -150,4 +150,11 @@
               :minimize #f64(-10 57 9 24)
               #f64(0.5 0 0.5 0))
 
+;; Negative rhs
+(test-simplex 10
+              #,(<array> (0 2 0 2) -2 -1 -1 -7)
+              #f64(-4 -7)
+              :minimize #f64(1 1)
+              #f64(21/13 10/13))
+
 (test-end)
