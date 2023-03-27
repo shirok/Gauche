@@ -112,30 +112,44 @@
    (display "AA:")
    (pretty-print-array AA #t :readable? #f :left #\[ :right #\]))
   (if (zero? Na)
-    (receive (AA p B^ IxB IxN)
-        (%simplex-solve n m Na AA cc p B^ IxB IxN #f maximize?)
-      (%result-variable-vector n m p IxB))
-    (receive (AA p B^ IxB IxN)
-        (%simplex-solve n m Na AA cc p B^ IxB IxN #t #f)
-      (and (%phase2-feasible? IxB n m)
-           ;; Constrct the second phase tableau.  Non-basis columns
-           ;; are the negation of the corresponding column of B^
-           (let* ([cc (f64vector-append (f64vector-mul c -1)
-                                        (make-f64vector n 0))]
-                  [IxN (%prepare-phase2-non-basis n m IxN)]
-                  [AA (%prepare-phase2-matrix n m B^ IxB IxN)]
-                  [B^ (identity-array n <f64array>)])
-             (debug-dump
-              (print "Phase 2:")
-              (print "cc=" cc)
-              (print "IxB=" IxB)
-              (print "IxN=" IxN)
-              (print "p=" p)
-              (display "AA:")
-              (pretty-print-array AA #t :readable? #f :left #\[ :right #\]))
-             (receive (AA p B^ IxB IxN)
-                 (%simplex-solve n m 0 AA cc p B^ IxB IxN #f maximize?)
-               (%result-variable-vector n m p IxB)))))))
+    (%solve-1-phase n m Na AA cc p B^ IxB IxN #f maximize?)
+    (%solve-2-phase n m Na AA c cc p B^ IxB IxN #f maximize?)))
+
+(define (%solve-1-phase n m Na AA cc p B^ IxB IxN #f maximize?)
+  (receive (AA p B^ IxB IxN)
+      (%simplex-solve n m Na AA cc p B^ IxB IxN #f maximize?)
+    (%result-variable-vector n m p IxB)))
+
+(define (%solve-2-phase n m Na AA c cc p B^ IxB IxN #f maximize?)
+  (define AN (%project-columns AA IxN))
+  (receive (AA p B^ IxB IxN)
+      (%simplex-solve n m Na AA cc p B^ IxB IxN #t #f)
+    (debug-dump
+     (print "\nPhase 1 solution:")
+     (print "IxB=" IxB)
+     (print "IxN=" IxN)
+     (print "p=" p)
+     (display "B^:")
+     (pretty-print-array B^ #t :readable? #f :left #\[ :right #\]))
+    (and (%phase2-feasible? p IxB n m)
+         ;; Constrct the second phase tableau.  Non-basis columns
+         ;; are the negation of the corresponding column of B^
+         (let* ([cc (f64vector-append (f64vector-mul c -1)
+                                      (make-f64vector n 0))]
+                [IxN (%prepare-phase2-non-basis n m IxN)]
+                [AA (%prepare-phase2-matrix n m AN B^ IxB IxN)]
+                [B^ (identity-array n <f64array>)])
+           (debug-dump
+            (print "\nPhase 2:")
+            (print "cc=" cc)
+            (print "IxB=" IxB)
+            (print "IxN=" IxN)
+            (print "p=" p)
+            (display "AA:")
+            (pretty-print-array AA #t :readable? #f :left #\[ :right #\]))
+           (receive (AA p B^ IxB IxN)
+               (%simplex-solve n m 0 AA cc p B^ IxB IxN #f maximize?)
+             (%result-variable-vector n m p IxB))))))
 
 ;; Returns the following values:
 ;;   n, m - # of rows and columns of original problem
@@ -177,7 +191,7 @@
                    ;; We copy original A row and add a slack var.
                    ;; The slack var consists one of the basis.
                    (do-ec (: j m)
-                          (array-set! AA i m (array-ref A i m)))
+                          (array-set! AA i j (array-ref A i j)))
                    (array-set! AA i cs 1)
                    (set! (~ p i) (~ b i))
                    (set! (~ IxB i) cs)
@@ -194,13 +208,13 @@
                    (set! (~ IxB i) ca)
                    (loop-rows (+ i 1) (+ cs 1) (+ ca 1))])))
         ;; Fill IxN
-        (let loop-cols ([j 0] [in 0] [cn 0])
-          (when (< j (+ m Na))
+        (let loop-cols ([j 0] [in 0])
+          (when (< j (+ m n Na))
             (if (find (cut = <> j) IxB)
-              (loop-cols (+ j 1) in cn)
+              (loop-cols (+ j 1) in)
               (begin
-                (set! (~ IxN in) cn)
-                (loop-cols (+ j 1) (+ in 1) (+ cn 1))))))
+                (set! (~ IxN in) j)
+                (loop-cols (+ j 1) (+ in 1))))))
         (values n m Na AA cc p B^ IxB IxN)))))
 
 ;; Returns solved AA, p, B^, IxB, IxN.
@@ -340,11 +354,12 @@
 
 
 ;; See the phase-1 result of two-phase method to see if there's a feasible
-;; answer.  We add aux var at the end of the tableau.  If no aux var is
-;; included in the optimal basis of phase 1, we can proceed.
-(define (%phase2-feasible? IxB n m)
-  (every?-ec (: col IxB)
-             (< col (+ n m))))
+;; answer.  We add aux var at the end of the tableau.  If all aux vars
+;; in the solution is 0, it is feasible.
+(define (%phase2-feasible? p IxB n m)
+  (every?-ec (: col (index ib) IxB)
+             (or (< col (+ n m))
+                 (zero? (uvector-ref p ib)))))
 
 ;; Returns a non-basis mapping vec that excludes aux vars.
 (define (%prepare-phase2-non-basis n m IxN)
@@ -353,24 +368,23 @@
             (if (< j (+ n m)))
             j)))
 
+;; From array X, constract a subarray Y by picking rows listed in V.
+(define (%project-columns X V)
+  (let ([rows (array-length X 0)]
+        [cols (array-length X 1)]
+        [new-cols (size-of V)])
+    (rlet1 Y (make-f64array (shape 0 rows 0 new-cols) 0)
+      (do-ec (: c (index j) V)
+             (: r rows)
+             (array-set! Y r j (array-ref X r c))))))
+
 ;; Construct the subject matrix for phase 2.
+;; AN is the non-basis columns of original array.
 ;; B^ and IxB are from the phase1 result.
 ;; IxN is from the phase1 result, minus aux var columns.
-(define (%prepare-phase2-matrix n m B^ IxB IxN)
-  (rlet1 AA (make-f64array (shape 0 n 0 (+ m n)) 0.0)
-    ;; Fill the basis
-    (do-ec (: i n)
-           (array-set! AA i (u32vector-ref IxB i) 1.0))
-    ;; Fill the non-basis
-    (let loop-col ([nj 0] [bj 0])
-      (when (< nj (u32vector-length IxN))
-        (let1 j (u32vector-ref IxN nj)
-          (let loop-row ([i 0])
-            (if (= i n)
-              (loop-col (+ nj 1) (+ bj 1))
-              (begin
-                (array-set! AA i j (- (array-ref B^ i bj)))
-                (loop-row (+ i 1))))))))))
+(define (%prepare-phase2-matrix n m AN B^ IxB IxN)
+  (define AA* (array-concatenate (array-mul B^ AN) B^ 1))
+  (%project-columns AA* (iota (+ n m))))
 
 ;; returns m, n of 2d array, with argument check
 (define (array2d-size-check a b c)

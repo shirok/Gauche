@@ -92,8 +92,10 @@
          result
          (simplex-solve A b goal c)
          (^[a b]
-           (every (^i (approx=? (~ a i) (~ b i) 1e-5))
-                  (iota (uvector-length a))))))
+           (or (eqv? a b)
+               (and (uvector? a) (uvector? b)
+                    (every (^i (approx=? (~ a i) (~ b i) 1e-5))
+                           (iota (uvector-length a))))))))
 
 (test-simplex 1
               #,(<array> (0 2 0 2) 1 0.5 3 2)
@@ -156,5 +158,27 @@
               #f64(-4 -7)
               :minimize #f64(1 1)
               #f64(21/13 10/13))
+
+(test-simplex 11
+              #,(<array> (0 2 0 2) 2 3 -3 -1)
+              #f64(6 -3)
+              :maximize #f64(4 5)
+              #f64(3 0))
+
+;; Negative rhs, fails in phase 1
+(test-simplex 12
+              #,(<array> (0 4 0 2) 1/2 1/4 -1 -3 1 1 -1 -1)
+              #f64(4 -36 10 -10)
+              :minimize #f64(2 3)
+              #f)
+
+(test-simplex 13
+              #,(<array> (0 3 0 2)
+                         -3 -2
+                         -1 -4
+                         1 1)
+              #f64(-3 -4 5)
+              :maximize #f64(5 8)
+              #f64(0 5))
 
 (test-end)
