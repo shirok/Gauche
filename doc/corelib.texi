@@ -31628,8 +31628,8 @@ To show all the information, set @code{#f} to this parameter.
 This macro prints the value of @var{arg}s right before calling
 @var{proc} and the result(s) of the call afterwards.
 @c JP
-このマクロは@var{proc}を呼び出す直前に全ての@var{arg}の価を表示し、
-そして@var{proc}の呼び出し後に全ての戻り価を表示します。
+このマクロは@var{proc}を呼び出す直前に全ての@var{arg}の値を表示し、
+そして@var{proc}の呼び出し後に全ての戻り値を表示します。
 @c COMMON
 
 @c EN
