@@ -5892,13 +5892,13 @@ an error is signaled.  If it is @code{#f}, @code{#f} is returned.
 
 @c EN
 Note that creating modules on-the-fly isn't usually necessary
-for ordinal scripts, since to execute already written program requires modules
+for ordinal scripts, since executing already written program requires modules
 to be specified by name, i.e. syntax @code{define-module}, @code{import},
 @code{extend}, @code{with-module} all take module names, not
 module objects.
 It is because module are inherently compile-time structures.
 However, there are some cases that dynamically created modules
-are useful, especially the program itself is dynamically created.
+are useful, especially when the program itself is dynamically created.
 You can pass a module to @code{eval} to compile and
 evaluate such dynamically created
 programs in it (@pxref{Eval and repl}).
