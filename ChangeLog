@@ -1,3 +1,8 @@
+2023-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/math/simplex.scm: Allow any sequence to be b an c vectors;
+	  we copy them internally anyway.
+
 2023-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* 0.9.13_pre3
