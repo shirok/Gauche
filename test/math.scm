@@ -98,21 +98,21 @@
                            (iota (uvector-length a))))))))
 
 (test-simplex 1
-              #,(<array> (0 2 0 2) 1 0.5 3 2)
+              #,(<f64array> (0 2 0 2) 1 0.5 3 2)
               #f64(2 12)
               :maximize #f64(1 1)
               #f64(0 4))
 
 (test-simplex 2
               #,(<array> (0 3 0 3) 8 6 1 4 2 1.5 2 1.5 0.5)
-              #f64(48 20 8)
-              :maximize #f64(60 30 20)
+              #(48 20 8)
+              :maximize #(60 30 20)
               #f64(2 0 8))
 
 (test-simplex 3
               #,(<array> (0 3 0 4) 3 2 1 2  1 1 1 1  4 3 3 4)
-              #f64(225 117 420)
-              :maximize #f64(19 13 12 17)
+              #u32(225 117 420)
+              :maximize #u32(19 13 12 17)
               #f64(39 0 48 30))
 
 (test-simplex 4

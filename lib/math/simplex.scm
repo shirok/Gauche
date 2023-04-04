@@ -165,13 +165,15 @@
 ;;   IxN - m + Na element integer vector for non-basis indices
 (define (%canonicalize A b c)
   (define-values (n m) (array2d-size-check A b c))
-  (let1 Na (f64vector-count negative? b)
+  (let1 Na (fold (^[e cnt] (if (negative? e) (+ cnt 1) cnt)) 0 b)
     (if (zero? Na)
       ;; single-phase
       (let ([AA (array-concatenate A (identity-array n <f64array>) 1)]
-            [cc (f64vector-append (f64vector-mul c -1)
+            [cc (f64vector-append (if (f64vector? c)
+                                    (f64vector-mul c -1)
+                                    (map-to <f64vector> - c))
                                   (make-f64vector n 0))]
-            [p  (f64vector-copy b)]
+            [p (coerce-to <f64vector> b)]
             [B^ (identity-array n <f64array>)]
             [IxB (list->u32vector (iota n m))]
             [IxN (list->u32vector (iota m))])
@@ -179,7 +181,7 @@
       ;; phase 1 for two-phase
       (let ([AA (make-f64array (shape 0 n 0 (+ m n Na)) 0)]
             [cc (make-f64vector (+ m n Na) 0)]
-            [p  (f64vector-copy b)]
+            [p  (coerce-to <f64vector> b)]
             [B^ (identity-array n <f64array>)]
             [IxB (make-u32vector n)]
             [IxN (make-u32vector (+ m Na))])
