@@ -8679,7 +8679,7 @@ that the application closes queries explicitly.
 Executes a query created by @code{dbi-prepare}.  You should pass
 the same number of @var{parameter}s as the query expects.
 @c JP
-@code{dbi-prepare}によって作成さればクエリを実行します。当該クエリが期
+@code{dbi-prepare}によって作成されたクエリを実行します。当該クエリが期
 待するのと同じ数のパラメータを渡す必要があります。
 @c COMMON
 
