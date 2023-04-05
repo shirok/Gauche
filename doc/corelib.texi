@@ -187,7 +187,6 @@ of descendants of @var{class}.
 (is-a? 3 <integer>)   @result{} #t
 (is-a? 3 <real>)      @result{} #t
 (is-a? 5+3i <real>)   @result{} #f
-(is-a? :foo <symbol>) @result{} #f
 @end example
 
 @c EN
