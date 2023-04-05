@@ -30956,17 +30956,17 @@ quasipatternの例です。最初の式では、パターンのうち@code{value
 @example
 (match '(the answer is 42)
   [`(the answer is ,value) value]
-  [else #f])
+  [_ #f])
  @result{} 42
 
 (match '(the answer was 42)
   [`(the answer is ,value) value]
-  [else #f])
+  [_ #f])
  @result{} #f
 
 (match '(a b c d)
   [(the answer is value) value]
-  [else #f])
+  [_ #f])
  @result{} d
 @end example
 
@@ -30990,7 +30990,7 @@ operation to balance a red-black tree.
          ($ T 'B a x ($ T 'R ($ T 'R b y c) z d))
          ($ T 'B a x ($ T 'R b y ($ T 'R c z d))))
      (make-T 'R (make-T 'B a x b) y (make-T 'B c z d))]
-    [else t]))
+    [_ t]))
 @end example
 
 @c ----------------------------------------------------------------------
