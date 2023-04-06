@@ -248,6 +248,12 @@
 (define-builtin-inliner-uvref f32 F32)
 (define-builtin-inliner-uvref f64 F64)
 
+(define-builtin-inliner uvector-ref
+  (^[src args]
+    (match args
+      [(vec ind) ($asm src `(,UVEC-REF ,SCM_UVECTOR_GENERIC) `(,vec ,ind))]
+      [else (undefined)])))
+
 (define-builtin-inliner zero?
   (^[src args]
     (match args

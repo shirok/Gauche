@@ -191,6 +191,7 @@
  (define-enum SCM_UVECTOR_F16)
  (define-enum SCM_UVECTOR_F32)
  (define-enum SCM_UVECTOR_F64)
+ (define-enum SCM_UVECTOR_GENERIC)
  )
 
 (define-cproc make-s8vector (length::<fixnum> :optional (fill 0))

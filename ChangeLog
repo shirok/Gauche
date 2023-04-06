@@ -1,3 +1,8 @@
+2023-04-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-i.scm, src/vminsn.scm, src/vector.c: Allow uvector-ref
+	  to be inlined.  UVEC-REF can now handle generic uvector.
+
 2023-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/math/simplex.scm: Allow any sequence to be b an c vectors;
