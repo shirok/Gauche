@@ -325,6 +325,7 @@ static u_long internal_uvector_hash(ScmUVector *u, u_long salt, int portable)
         case SCM_UVECTOR_C128:
         case SCM_UVECTOR_RESERVED2:
         case SCM_UVECTOR_INVALID:
+        case SCM_UVECTOR_GENERIC:
             Scm_Panic("invalid uvector class.");
         }
         return 0;           /* dummy */

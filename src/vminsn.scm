@@ -1195,13 +1195,10 @@
 (define-insn UVEC-REF    1 none #f    ; uvector-ref
   (let* ([k VAL0]
          [utype::int (SCM_VM_INSN_ARG code)])
+    ;; Validation of utype and vec, and the range of k, is done in
+    ;; Scm_VMUVectorRef.
     ($w/argp vec
-      (unless (SCM_UVECTOR_SUBTYPE_P vec utype)
-        ($vm-err "%s required, but got %S" (Scm_UVectorTypeName utype) vec))
       ($type-check k SCM_INTP "fixnum")
-      (when (or (< (SCM_INT_VALUE k) 0)
-                (>= (SCM_INT_VALUE k) (SCM_UVECTOR_SIZE vec)))
-        ($vm-err "uvector-ref index out of range: %S" k))
       ($result (Scm_VMUVectorRef (SCM_UVECTOR vec) utype (SCM_INT_VALUE k)
                                  SCM_UNBOUND)))))
 

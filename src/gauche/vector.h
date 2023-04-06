@@ -153,7 +153,8 @@ typedef enum {
     SCM_UVECTOR_C64,
     SCM_UVECTOR_C128,
     SCM_UVECTOR_RESERVED2,      /* reserved for c256 */
-    SCM_UVECTOR_INVALID = -1
+    SCM_UVECTOR_INVALID = -1,
+    SCM_UVECTOR_GENERIC = -2    /* can appear in inline asm of uvector-ref */
 } ScmUVectorType;
 
 #define SCM_UVECTOR_SUBTYPE_P(obj, type) \
