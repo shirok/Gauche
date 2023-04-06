@@ -13048,32 +13048,70 @@ so it may take very long if @var{n} contains large prime factors.
 
 @deftp {Module} math.simplex
 @mdindex math.simplex
+@c EN
 Implements the simplex algorithm to solve linear programming problems.
+@c JP
+線形計画問題をシンプレックス法で解く実装です。
+@c COMMON
 @end deftp
 
 @defun simplex-solve A b goal c
+@c MOD math.simplex
+@c EN
 @var{A} is an m x n array of numbers, @var{b} is a sequence of
-@var{m} numbers, @var{c} is a sequence of @code{n} numbers,
+m numbers, @var{c} is a sequence of n numbers,
 and @var{goal} is either @code{:maximize} or @code{:minimize}.
-Returns an f64vector @var{x}, such that it maximizes or minimizes
+Returns an f64vector @var{x} of length n,
+such that it maximizes or minimizes
 the inner product @var{c} . @var{x}, while satisfying
 the constraint @code{A}@var{x} <= @var{b} and @var{x} >= 0.
+@c JP
+@var{A}は m x n の数値配列、@var{b}は @var{m}個の数値のシーケンス、
+@var{c}は@var{n}個の数値のシーケンスで、また@var{goal}は
+@code{:maximize}か@code{:minimize}です。
+この手続きは次の制約を満たす長さnのf64vectorである@var{x}を返します:
+制約条件 @code{A}@var{x} <= @var{b} および @var{x} >= 0 のもとで、
+内積 @var{c} . @var{x} が最大値もしくは最小値を取る@var{x}。
+@c COMMON
 
+@c EN
 The array can be any type of arrays (@pxref{Arrays}) and the
 two sequences can be any type of sequence, as far as they only
 contain real numbers.  Internally it uses @code{f64vector} and
 @code{f64array} for calculation.
 The arguments aren't mutated during computation.
+@c JP
+配列と2つのシーケンスは、全ての要素が数値でさえあればどんな型でも渡せます
+(配列については@ref{Arrays}参照)。内部的には、@code{f64vector}と
+@code{f64array}が計算に使われます。
+引数に渡した配列とシーケンスは変更されません。
+@c COMMON
 
+@c EN
 You can have negative entries in @var{b}; the procedure uses two-phase
 simplex method in that case.
+@c JP
+@var{b}の要素は負であっても構いません。負の数がある場合、この手続きは
+2-phaseシンプレックス法を使います。
+@c COMMON
 
+@c EN
 If you have a '>=' constraint, you can negate both sides to make it a '<='
 constraint.  If you have an equality in the constraint, you can either
 use it to reduce one variable, or add both '>=' and '<=' constraints.
+@c JP
+制約が「定数項以上」である場合は、両辺の符号を反転して「定数項以下」の制約にしてください。
+等しい制約がある場合は、あらかじめその関係を使って変数を減らすか、
+「定数項以上」と「定数項以下」の制約を同時に与えることで解けます。
+@c COMMON
 
+@c EN
 If there can be multiple solutions, the procedure returns one of them.
 If there's no solutions, it returns @code{#f}.
+@c JP
+複数の解がある場合はどれか一つが返されます。
+解が無い場合は@code{#f}が返されます。
+@c COMMON
 
 @example
 ;; Maximize x1 + x2 under constraints of
