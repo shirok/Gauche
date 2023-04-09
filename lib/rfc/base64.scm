@@ -103,28 +103,46 @@
 (define (%digits->decode-table digits)
   (define rvec (make-vector 64 #f))
   (unless (and (or (string? digits) (vector? digits))
-               (= (size-of digits) 64))
-    (error "Digits must be a string or vector of length 64, but got:" digits))
+               (memv (size-of digits) '(2 64)))
+    (error "Digits must be a string or vector of length 2 or 64, but got:"
+           digits))
 
-  (do-ec (: c (index i) digits)
-         (begin
-           (unless (char? c) (error "Invalid element in digits:" c))
-           (let1 b (char->integer c)
-             (unless (<= 32 b 127)
-               (error "Invalid char in digits:" c))
-             (vector-set! rvec c i))))
+  (case (size-of digits)
+    [(64)
+     (do-ec (: c (index i) digits)
+            (begin
+              (unless (char? c) (error "Invalid element in digits:" c))
+              (let1 b (char->integer c)
+                (unless (<= 32 b 127)
+                  (error "Invalid char in digits:" c))
+                (vector-set! rvec c i))))]
+    [(2)
+     (vector-copy! rvec 0 *standard-decode-table*)
+     (vector-set! rvec 62 (~ digits 0))
+     (vector-set! rvec 63 (~ digits 1))])
   rvec)
 
 (define (%digits->encode-table digits)
   (define (err)
-    (error "Digits must be a string or vector of length 64, but got:" digits))
+    (error "Digits must be a string or vector of length 2 or 64, but got:"
+           digits))
   (cond
-   [(string? digits) (unless (= (string-length digits) 64) (err))
-    (string->vector digits)]
-   [(vector? digits) (unless (= (vector-length digits) 64) (err))
+   [(string? digits)
+    (case (string-length digits)
+      [(64) (string->vector digits)]
+      [(2) (rlet1 v (vector-copy *standard-encode-table*)
+             (vector-set! v 62 (string-ref digits 0))
+             (vector-set! v 63 (string-ref digits 1)))]
+      [else (err)])]
+   [(vector? digits)
     (unless (every char? digits)
       (error "Digits vector must be all characters, but got:" digits))
-    digits]
+    (case (vector-length digits)
+      [(64) digits]
+      [(2) (rlet1 v (vector-copy *standard-encode-table*)
+             (vector-set! v 62 (vector-ref digits 0))
+             (vector-set! v 63 (vector-ref digits 1)))]
+      [else (err)])]
    [else (err)]))
 
 (define (base64-decode :key (url-safe #f) (digits #f))
