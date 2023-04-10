@@ -35,6 +35,7 @@
   (use gauche.unicode)
   (use gauche.uvector)
   (use rfc.base64)
+  (use srfi.42)
   (use util.match)
   (export bytestring make-bytestring
           bytevector->hex-string hex-string->bytevector
@@ -127,3 +128,25 @@
                 (assume aa "Invalid hexdigit char:" a)
                 (assume bb "Invalid hexdigit char:" b)
                 (u8vector-set! bv i (+ (* aa 16) bb))))))))))
+
+(define (bytevector->base64 bv :optional (digits #f))
+  (assume-type bv <u8vector>)
+  (assume-type digits (<?> <string>))
+  (base64-encode-bytevector bv :digits digits))
+
+(define (base64->bytevector string :optional (digits #f))
+  (assume-type string <string>)
+  (assume-type digits (<?> <string>))
+  (base64-decode-bytevector string :digits digits))
+
+(define (%byte->elt b)
+  (if (<= 32 b 127)
+    (integer->char b)
+    b))
+
+(define (bytestring->list bv :optional (start 0) (end -1))
+  (assume-type bv <u8vector>)
+  (let ([end (if (and end (>= end 0)) end (u8vector-length bv))])
+    (assume (<= 0 start end (u8vector-length bv)))
+    (list-ec (: i start end)
+             (%byte->elt (u8vector-ref bv i)))))
