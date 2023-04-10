@@ -16009,15 +16009,17 @@ is false.
 @end defun
 
 @defun base64-encode-string string :key line-width url-safe
+@defunx base64-encode-bytevector u8vector :key line-width url-safe
 @c MOD rfc.base64
 @c EN
-Converts contents of @var{string} to Base64 encoded format.
-Input string can be either complete or incomplete string;
+Converts contents of @var{string}/@var{u8vector} to Base64 encoded format.
+For @code{base64-encode-string},
+input string can be either complete or incomplete string;
 it is always interpreted as a byte sequence.
 @c JP
-@var{string} の内容を Base64 でエンコードされたフォーマットに変換します。
-入力となる文字列は、完全文字列でも不完全文字列でも良いです。
-常にバイト・シーケンスとして扱われます。
+@var{string}/@var{u8vector} の内容を Base64 でエンコードされたフォーマットに変換します。
+@code{base64-encode-string}の入力となる文字列は、
+完全文字列でも不完全文字列でも良いです。常にバイト・シーケンスとして扱われます。
 @c COMMON
 @end defun
 
@@ -16038,18 +16040,30 @@ Base64 でエンコードされた文字として適当でない文字は沈黙�
 @end defun
 
 @defun base64-decode-string string :key url-safe
+@defunx base64-decode-bytevector u8vector :key url-safe
 @c MOD rfc.base64
 @c EN
 Decodes a Base64 encoded string @var{string} and returns
-the result as a string.
+the result as a string or a u8vector, respectively.
 The conversion terminates at the end of @var{string} or
 the termination character (@code{=}).
 The characters which does not in legal Base64 encoded character
 set are silently ignored.
 @c JP
-Base64 でエンコードされた文字列 @var{string} をデコードして文字列を返します。
+Base64 でエンコードされた文字列 @var{string} をデコードしてそれぞれ文字列
+あるいはu8vectorとして返します。
 変換は @var{string} の終わりか、終端文字 (@code{=}) で終了します。
 Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
+@c COMMON
+
+@c EN
+Note that @code{base64-decode-string} may return an incomplete string.
+If you know you're handling binary data, @code{base64-decode-bytevector}
+would be a better choice.
+@c JP
+@code{base64-decode-string}は不完全な文字列を返すかもしれません。
+バイナリデータを扱っていることがわかっている場合は、
+@code{base64-decode-bytevector}を使う方が良いでしょう。
 @c COMMON
 @end defun
 
