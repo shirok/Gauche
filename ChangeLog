@@ -1,3 +1,9 @@
+2023-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/base64.scm (base64-encode-bytevector),
+	  (base64-decode-bytevector): Added.  They depend on gauche.vport,
+	  and their tests are done separately in ext/vport.
+
 2023-04-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-i.scm, src/vminsn.scm, src/vector.c: Allow uvector-ref

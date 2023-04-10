@@ -16,6 +16,8 @@
 (use rfc.base64)
 (test-module 'rfc.base64)
 
+;; NB: encode from/decode to uvector are tested in gauche.vport.
+
 (test* "encode" "" (base64-encode-string ""))
 (test* "encode" "YQ==" (base64-encode-string "a"))
 (test* "encode" "MA==" (base64-encode-string "0"))

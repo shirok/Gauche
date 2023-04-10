@@ -35,14 +35,14 @@
 ;; Ref: RFC2045 section 6.8  <http://www.rfc-editor.org/rfc/rfc2045.txt>
 ;; and RFC3548 <http://www.rfc-editor.org/rfc/rfc3548.txt>
 
-;; TODO: using uvector for binary source/sink
-
 (define-module rfc.base64
   (use gauche.sequence)
   (use srfi.42)
-  (export base64-encode base64-encode-string
-          base64-decode base64-decode-string))
+  (export base64-encode base64-encode-string base64-encode-bytevector
+          base64-decode base64-decode-string base64-decode-bytevector))
 (select-module rfc.base64)
+
+(autoload gauche.vport open-input-uvector open-output-uvector get-output-uvector)
 
 (define *standard-decode-table*
   ;;    !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
@@ -101,7 +101,7 @@
   ))
 
 (define (%digits->decode-table digits)
-  (define rvec (make-vector 64 #f))
+  (define rvec (make-vector 96 #f))
   (unless (and (or (string? digits) (vector? digits))
                (memv (size-of digits) '(2 64)))
     (error "Digits must be a string or vector of length 2 or 64, but got:"
@@ -115,11 +115,11 @@
               (let1 b (char->integer c)
                 (unless (<= 32 b 127)
                   (error "Invalid char in digits:" c))
-                (vector-set! rvec c i))))]
+                (vector-set! rvec (- b 32) i))))]
     [(2)
      (vector-copy! rvec 0 *standard-decode-table*)
-     (vector-set! rvec 62 (~ digits 0))
-     (vector-set! rvec 63 (~ digits 1))])
+     (vector-set! rvec (- (char->integer (~ digits 0)) 32) 62)
+     (vector-set! rvec (- (char->integer (~ digits 1)) 32) 63)])
   rvec)
 
 (define (%digits->encode-table digits)
@@ -191,6 +191,12 @@
   (with-output-to-string
     (cut with-input-from-string string (cut apply base64-decode opts))))
 
+(define (base64-decode-bytevector string . opts)
+  (let1 out (open-output-uvector)
+    (with-input-from-string string
+      (cut with-output-to-port out (cut apply base64-decode opts)))
+    (get-output-uvector out)))
+
 (define (base64-encode :key (line-width 76) (url-safe #f) (digits #f))
   (define table (cond [url-safe *url-safe-encode-table*]
                       [digits (%digits->encode-table digits)]
@@ -230,3 +236,9 @@
 
 (define (base64-encode-string string . opts)
   (with-string-io string (cut apply base64-encode opts)))
+
+(define (base64-encode-bytevector vec . opts)
+  (assume-type vec <u8vector>)
+  (with-output-to-string
+    (^[] (with-input-from-port (open-input-uvector vec)
+           (cut apply base64-encode opts)))))

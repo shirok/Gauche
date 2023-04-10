@@ -727,4 +727,32 @@
    [else])
   )
 
+;;-----------------------------------------------------------
+(test-section "Base64 with uvector")
+
+(use rfc.base64)
+
+(test* "base64 encode from uvector"
+       '("" "AA==" "//79/Pv6")
+       (list (base64-encode-bytevector '#u8())
+             (base64-encode-bytevector '#u8(0))
+             (base64-encode-bytevector '#u8(255 254 253 252 251 250))))
+
+(test* "base64 decode to uvector"
+       '(#u8() #u8(0) #u8(255 254 253 252 251 250))
+       (list (base64-decode-bytevector "")
+             (base64-decode-bytevector "AA==")
+             (base64-decode-bytevector "//79/Pv6")))
+
+(test* "base64 encode from uvector (digits)"
+       "__79+_z6"
+       (base64-encode-bytevector '#u8(255 254 253 251 252 250)
+                                 :digits "+_"))
+
+(test* "base64 decode from uvector (digits)"
+       '#u8(255 254 253 251 252 250)
+       (base64-decode-bytevector "__79+_z6"
+                                 :digits #(#\+ #\_)))
+
+
 (test-end)
