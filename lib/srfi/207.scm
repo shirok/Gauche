@@ -144,9 +144,35 @@
     (integer->char b)
     b))
 
+(define (%elt->byte e)
+  (cond [(char? e)
+         (let1 b (char->integer e)
+           (unless (<= 32 b 127)
+             (error "Invalid char for bytestring:" e))
+           b)]
+        [(exact-integer? e)
+         (unless (<= 32 e 127)
+           (error "Integer out of range for bytestring:" e))
+         e]
+        [else (error "Invalid element for bytestring:" e)]))
+
 (define (bytestring->list bv :optional (start 0) (end -1))
   (assume-type bv <u8vector>)
   (let ([end (if (and end (>= end 0)) end (u8vector-length bv))])
     (assume (<= 0 start end (u8vector-length bv)))
     (list-ec (: i start end)
              (%byte->elt (u8vector-ref bv i)))))
+
+;;make-bytestring-generator
+
+(define (%bytestring-pad bv len elt where)
+  (assume-type bv <u8vector>)
+  (if (>= (u8vector-length bv) len)
+    (u8vector-copy bv)                  ;; required to allocate
+    (rlet1 rv (make-u8vector bv (%elt->byte elt))
+      (case where
+        [(left)  (u8vector-copy! rv (- len (u8vector-length bv)) bv)]
+        [(right) (u8vector-copy! rv 0 bv)]))))
+
+(define (bytestring-pad bv len elt) (%bytestring-pad bv len elt 'left))
+(define (bytestring-pad-right bv len elt) (%bytestring-pad bv len elt 'right))
