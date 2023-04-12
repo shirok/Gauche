@@ -1686,6 +1686,12 @@ SCM_EXTERN void   Scm_SetSigmask(sigset_t *mask);
 #include <gauche/load.h>
 
 /*---------------------------------------------------
+ * THREADS
+ */
+
+#include <gauche/thread.h>
+
+/*---------------------------------------------------
  * PROFILER INTERFACE
  */
 

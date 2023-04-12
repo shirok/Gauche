@@ -1,5 +1,5 @@
 @SET_MAKE@
-SUBDIRS= gauche util data scheme srfi uvector threads charconv binary termios \
+SUBDIRS= gauche util data scheme srfi uvector charconv binary termios \
 	 fcntl file sxml syslog dbm mt-random bcrypt digest vport \
 	 text rfc zlib sparse peg windows tls native
 
@@ -45,7 +45,7 @@ srfi: scheme
 
 text: uvector gauche data srfi charconv windows
 
-threads bcrypt sxml mt-random digest zlib termios windows: uvector
+bcrypt sxml mt-random digest zlib termios windows: uvector
 
 vport: gauche uvector
 
@@ -53,7 +53,7 @@ tls: vport
 
 bcrypt: mt-random
 
-dbm : gauche threads
+dbm : gauche
 
 data : uvector srfi
 
@@ -61,7 +61,7 @@ peg : gauche
 
 rfc: gauche srfi util
 
-native: peg gauche srfi util data threads
+native: peg gauche srfi util data
 
 test : check
 

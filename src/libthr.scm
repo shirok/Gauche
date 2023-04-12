@@ -31,8 +31,8 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+(declare) ;; a dummy form to suppress generation of "sci" file
 (define-module gauche.threads
-  (use gauche.record)
   (export gauche-thread-type
           current-thread                ;re-exporting the builtin
 
@@ -69,15 +69,8 @@
 
 (inline-stub
  (declcode
-  (.include "threads.h")
   (.include "gauche/parameter.h"))
-
- (declare-cfn Scm_Init_mutex (mod::ScmModule*) ::void)
- (declare-cfn Scm_Init_threads (mod::ScmModule*) ::void)
-
- (initcode
-  (Scm_Init_threads (Scm_CurrentModule))
-  (Scm_Init_mutex (Scm_CurrentModule))))
+)
 
 ;;===============================================================
 ;; System query
@@ -296,9 +289,15 @@
 ;; Atom
 ;;
 
-(define-record-type <atom> %make-atom atom?
-  (applier atom-applier)
-  (updater atom-updater))
+(define-class <atom> ()
+  ((applier :init-keyword :applier
+            ;;:immutable #t
+            )
+   (updater :init-keyword :updater
+            ;;:immutable #t
+            )))
+
+(define (atom? obj) (is-a? obj <atom>))
 
 (define (atom . vals)
   (define m (make-mutex))
@@ -315,45 +314,55 @@
                        (mutex-unlock! m)))])])
     ;; TODO: we may expand special cases like vals is 1 to 3 elements long,
     ;; avoiding creation of lists every time updater is called.
-    (%make-atom
-     (^[proc timeout timeout-val timeout-vals]
-       (with-lock timeout timeout-val timeout-vals (apply proc vals)))
-     (^[proc timeout timeout-val timeout-vals]
-       (with-lock timeout timeout-val timeout-vals
-                  (receive newvals (apply proc vals)
-                    (unless (>= (length newvals) (length vals))
-                      (errorf "atomic-update!: procedure returned too few \
+    (make <atom>
+      :applier
+      (^[proc timeout timeout-val timeout-vals]
+        (with-lock timeout timeout-val timeout-vals (apply proc vals)))
+      :updater
+      (^[proc timeout timeout-val timeout-vals]
+        (with-lock timeout timeout-val timeout-vals
+                   (receive newvals (apply proc vals)
+                     (unless (>= (length newvals) (length vals))
+                       (errorf "atomic-update!: procedure returned too few \
                                    number of values (~a, while ~a expected)"
-                              (length newvals) (length vals)))
-                    (set! vals (take newvals (length vals)))
-                    (apply values newvals)))))))
+                               (length newvals) (length vals)))
+                     (set! vals (take newvals (length vals)))
+                     (apply values newvals)))))))
 
 (define (atomic atom proc :optional (timeout #f) (timeout-val #f) :rest vals)
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-applier atom) proc timeout timeout-val vals))
+  ((~ atom'applier) proc timeout timeout-val vals))
 
 (define (atomic-update! atom proc :optional (timeout #f) (timeout-val #f) :rest vals)
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-updater atom) proc timeout timeout-val vals))
+  ((~ atom'updater) proc timeout timeout-val vals))
 
 (define (atom-ref atom :optional (index 0) (timeout #f) (timeout-val #f))
   (unless (atom? atom) (error "atom required, but got:" atom))
-  ((atom-applier atom) (^ xs (list-ref xs index)) timeout timeout-val '()))
+  ((~ atom'applier) (^ xs (list-ref xs index)) timeout timeout-val '()))
 
 ;;===============================================================
 ;; Semaphore
 ;;
 
-(define-record-type <semaphore> %make-semaphore semaphore?
-  name                                  ; for information only
-  (count)
-  mutex
-  cv)
+(define-class <semaphore> ()
+  ((name :init-keyword :name            ;for information only
+         ;;:immutable #t
+         )
+   (count :init-keyword :count)
+   (mutex :init-keyword :mutex
+          ;;:immutable #t
+          )
+   (cv    :init-keyword :cv
+          ;;:immutable #t
+          )))
 
 (define (make-semaphore :optional (init-value 0) (name #f))
-  (%make-semaphore name init-value
-                   (make-mutex)
-                   (make-condition-variable)))
+  (make <semaphore>
+    :name name :count init-value
+    :mutex (make-mutex) :cv (make-condition-variable)))
+
+(define (semaphore? obj) (is-a? obj <semaphore>))
 
 (define-method write-object ((s <semaphore>) port)
   (format port "#<semaphore ~d" (~ s'count))
@@ -389,16 +398,26 @@
 ;; Latch
 ;;
 
-(define-record-type <latch> %make-latch latch?
-  name                                  ; for information only
-  (count)
-  mutex
-  cv)
+(define-class <latch> ()
+  ((name :init-keyword :name            ; for information only
+         ;;:immutable #t
+         )
+   (count :init-keyword :count)
+   (mutex :init-keyword :mutex
+          ;;:immutable #t
+          )
+   (cv    :init-keyword :cv
+          ;;:immutable #t
+          )))
 
 (define (make-latch initial-count :optional (name #f))
   (assume (and (exact-integer? initial-count)
                (positive? initial-count)))
-  (%make-latch name initial-count (make-mutex) (make-condition-variable)))
+  (make <latch>
+    :name name :count initial-count
+    :mutex (make-mutex) :cv (make-condition-variable)))
+
+(define (latch? obj) (is-a? obj <latch>))
 
 (define-method write-object ((l <latch>) port)
   (format port "#<latch ~d" (~ l'count))
@@ -441,19 +460,33 @@
 ;; Barrier
 ;;
 
-(define-record-type <barrier> %make-barrier barrier?
-  name                                  ; for information only
-  threshold
-  (count)
-  (generation)
-  (broken)
-  action
-  mutex
-  cv)
+(define-class <barrier> ()
+  ((name :init-keyword :name            ; for information only
+         ;;:immutable #t
+         )
+   (threshold :init-keyword :threshold
+              ;;:immutable #t
+              )
+   (count :init-keyword :count)
+   (generation :init-keyword :generation)
+   (broken :init-keyword :broken)
+   (action :init-keyword :action
+           ;;:immutable #t
+           )
+   (mutex  :init-keyword :mutex
+           ;;:immutable #t
+           )
+   (cv     :init-keyword :cv
+           ;;:immutable #t
+           )))
 
 (define (make-barrier threshold :optional (action #f) (name #f))
-  (%make-barrier name threshold 0 0 #f action
-                 (make-mutex) (make-condition-variable)))
+  (make <barrier>
+    :name name :threshold threshold :count 0 :generation 0 :broken #f
+    :action action
+    :mutex (make-mutex) :cv (make-condition-variable)))
+
+(define (barrier? obj) (is-a? obj <barrier>))
 
 (define-method write-object ((b <barrier>) port)
   (format port "#<barrier ~d/~d" (~ b'count) (~ b'threshold))

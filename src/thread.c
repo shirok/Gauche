@@ -33,10 +33,8 @@
 
 #include <gauche.h>
 #include <gauche/vm.h>
-#include <gauche/extend.h>
 #include <gauche/exception.h>
 #include <gauche/priv/vmP.h>
-#include "threads.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -510,7 +508,7 @@ ScmObj Scm_ThreadTerminate(ScmVM *target, u_long flags)
 /*
  * Initialization.
  */
-void Scm_Init_threads(ScmModule *mod SCM_UNUSED)
+void Scm__InitThreads()
 {
 #ifdef GAUCHE_USE_PTHREADS
     sigfillset(&threadrec.defaultSigmask);

@@ -1,5 +1,5 @@
 /*
- * threads.h - Gauche threads support
+ * thread.h - Gauche threads support
  *
  *   Copyright (c) 2000-2022  Shiro Kawai  <shiro@acm.org>
  *
@@ -31,13 +31,8 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GAUCHE_THREADS_H
-#define GAUCHE_THREADS_H
-
-#if defined(EXTTHREADS_EXPORTS)
-#define LIBGAUCHE_EXT_BODY
-#endif
-#include <gauche/extern.h>      /* redefine SCM_EXTERN */
+#ifndef GAUCHE_THREAD_H
+#define GAUCHE_THREAD_H
 
 /*---------------------------------------------------------
  * Scheme-level thread API
@@ -53,13 +48,13 @@ enum {
     SCM_THREAD_START_TRYSTART = 1
 };
 
-extern ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
-extern ScmObj Scm_ThreadStart(ScmVM *vm, u_long flags);
-extern ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
-extern ScmObj Scm_ThreadStop(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
-extern ScmObj Scm_ThreadCont(ScmVM *vm);
-extern ScmObj Scm_ThreadSleep(ScmObj timeout);
-extern ScmObj Scm_ThreadTerminate(ScmVM *vm, u_long flags);
+SCM_EXTERN ScmObj Scm_MakeThread(ScmProcedure *thunk, ScmObj name);
+SCM_EXTERN ScmObj Scm_ThreadStart(ScmVM *vm, u_long flags);
+SCM_EXTERN ScmObj Scm_ThreadJoin(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
+SCM_EXTERN ScmObj Scm_ThreadStop(ScmVM *vm, ScmObj timeout, ScmObj timeoutval);
+SCM_EXTERN ScmObj Scm_ThreadCont(ScmVM *vm);
+SCM_EXTERN ScmObj Scm_ThreadSleep(ScmObj timeout);
+SCM_EXTERN ScmObj Scm_ThreadTerminate(ScmVM *vm, u_long flags);
 
 /*---------------------------------------------------------
  * SYNCHRONIZATION DEVICES
@@ -84,9 +79,9 @@ SCM_CLASS_DECL(Scm_ConditionVariableClass);
 #define SCM_CONDITION_VARIABLE(obj)   ((ScmConditionVariable*)obj)
 #define SCM_CONDITION_VARIABLE_P(obj) SCM_XTYPEP(obj, SCM_CLASS_CONDITION_VARIABLE)
 
-ScmObj Scm_MakeConditionVariable(ScmObj name);
-ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond);
-ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond);
+SCM_EXTERN ScmObj Scm_MakeConditionVariable(ScmObj name);
+SCM_EXTERN ScmObj Scm_ConditionVariableSignal(ScmConditionVariable *cond);
+SCM_EXTERN ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond);
 
 /*
  * Scheme mutex.
@@ -112,10 +107,10 @@ SCM_CLASS_DECL(Scm_MutexClass);
 #define SCM_MUTEX(obj)         ((ScmMutex*)obj)
 #define SCM_MUTEXP(obj)        SCM_XTYPEP(obj, SCM_CLASS_MUTEX)
 
-ScmObj Scm_MakeMutex(ScmObj name);
-ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner);
-ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout);
-ScmObj Scm_MutexLocker(ScmMutex *mutex);
-ScmObj Scm_MutexUnlocker(ScmMutex *mutex);
+SCM_EXTERN ScmObj Scm_MakeMutex(ScmObj name);
+SCM_EXTERN ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner);
+SCM_EXTERN ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout);
+SCM_EXTERN ScmObj Scm_MutexLocker(ScmMutex *mutex);
+SCM_EXTERN ScmObj Scm_MutexUnlocker(ScmMutex *mutex);
 
-#endif /*GAUCHE_THREADS_H*/
+#endif /*GAUCHE_THREAD_H*/

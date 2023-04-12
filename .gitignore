@@ -113,8 +113,6 @@ test.record
 /ext/gauche/unicode-attr.scm
 /ext/mt-random/math--mt-random.c
 /ext/native/gauche--ffitest.c
-/ext/net/netaux.c
-/ext/net/netlib.c
 /ext/peg/parser--peg.c
 /ext/rfc/rfc--822.c
 /ext/rfc/rfc--mime.c
@@ -144,7 +142,6 @@ test.record
 /ext/text/text--gettext.c
 /ext/text/text--line-edit.c
 /ext/text/text--tr.c
-/ext/threads/gauche--threads.c
 /ext/tls/axTLS/ssl/ssltest
 /ext/tls/axTLS/ssl/test/ssltest.mod.c
 /ext/tls/axtls_dirs
@@ -248,6 +245,7 @@ test.record
 /src/libstr.c
 /src/libsym.c
 /src/libsys.c
+/src/libthr.c
 /src/libtype.c
 /src/libvec.c
 /src/makeverslink

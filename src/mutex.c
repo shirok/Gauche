@@ -33,8 +33,6 @@
 
 #include <math.h>
 #include <gauche.h>
-#include <gauche/exception.h>
-#include "threads.h"
 
 /*=====================================================
  * Mutex
@@ -363,8 +361,9 @@ ScmObj Scm_ConditionVariableBroadcast(ScmConditionVariable *cond)
  * Initialization
  */
 
-void Scm_Init_mutex(ScmModule *mod)
+void Scm__InitMutex()
 {
+    ScmModule *mod = SCM_FIND_MODULE("gauche.threads", SCM_FIND_MODULE_CREATE);
     sym_not_owned     = SCM_INTERN("not-owned");
     sym_abandoned     = SCM_INTERN("abandoned");
     sym_not_abandoned = SCM_INTERN("not-abandoned");

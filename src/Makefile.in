@@ -171,8 +171,9 @@ INSTALL_SUBHEADERS = \
 	gauche/port.h gauche/precomp.h gauche/prof.h gauche/pthread.h \
 	gauche/reader.h gauche/regexp.h gauche/scmconst.h \
 	gauche/static.h gauche/string.h gauche/symbol.h gauche/system.h \
-	gauche/treemap.h gauche/uthread.h gauche/vector.h gauche/vm.h \
-	gauche/vminsn.h gauche/weak.h gauche/win-compat.h gauche/writer.h \
+	gauche/treemap.h gauche/thread.h gauche/uthread.h \
+	gauche/vector.h gauche/vm.h gauche/vminsn.h \
+	gauche/weak.h gauche/win-compat.h gauche/writer.h \
 	gauche/wthread.h
 
 INSTALL_LIBS = $(LIBGAUCHE).$(SOEXT) $(LIBGAUCHE_STATIC).a
@@ -240,7 +241,7 @@ libgauche_OBJECTS = \
 	net.$(OBJEXT) netaddr.$(OBJEXT) netdb.$(OBJEXT) \
 	number.$(OBJEXT) bignum.$(OBJEXT) load.$(OBJEXT) \
 	lazy.$(OBJEXT) repl.$(OBJEXT) autoloads.$(OBJEXT) system.$(OBJEXT) \
-	threadlocal.$(OBJEXT) \
+	mutex.$(OBJEXT) thread.$(OBJEXT) threadlocal.$(OBJEXT) \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libbox.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
@@ -252,7 +253,7 @@ libgauche_OBJECTS = \
 	libobj.$(OBJEXT) libomega.$(OBJEXT) \
 	libparam.$(OBJEXT) libproc.$(OBJEXT) \
 	librx.$(OBJEXT) libsrfis.$(OBJEXT) libstr.$(OBJEXT) libsym.$(OBJEXT) \
-	libsys.$(OBJEXT) libtype.$(OBJEXT) libvec.$(OBJEXT)
+	libsys.$(OBJEXT) libthr.$(OBJEXT) libtype.$(OBJEXT) libvec.$(OBJEXT)
 libgauche_LDFLAGS = $(SONAME_FLAG) @SHLIB_DYLIB_LDFLAGS@
 
 libgc_pic_OBJECTS = $(wildcard $(top_builddir)/gc/.libs/*.$(OBJEXT)) \
@@ -351,6 +352,7 @@ libsrfis.c   : libsrfis.scm $(PRECOMP_DEPENDENCY)
 libstr.c     : libstr.scm $(PRECOMP_DEPENDENCY)
 libsym.c     : libsym.scm $(PRECOMP_DEPENDENCY)
 libsys.c     : libsys.scm $(PRECOMP_DEPENDENCY)
+libthr.c     : libthr.scm $(PRECOMP_DEPENDENCY)
 libtype.c    : libtype.scm $(PRECOMP_DEPENDENCY)
 libvec.c     : libvec.scm $(PRECOMP_DEPENDENCY)
 libextra.c   : libextra.scm $(PRECOMP_DEPENDENCY)

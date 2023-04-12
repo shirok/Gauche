@@ -973,7 +973,6 @@ AC_CONFIG_FILES([
           ext/tls/Makefile
           ext/termios/Makefile
           ext/text/Makefile
-          ext/threads/Makefile
           ext/util/Makefile
           ext/uvector/Makefile
           ext/vport/Makefile

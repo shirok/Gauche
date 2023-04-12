@@ -94,6 +94,8 @@ extern void Scm__InitNative(void);
 extern void Scm__InitNet(void);
 extern void Scm__InitNetAddr(void);
 extern void Scm__InitNetDb(void);
+extern void Scm__InitMutex(void);
+extern void Scm__InitThreads(void);
 
 extern void Scm_Init_libalpha(void);
 extern void Scm_Init_libbool(void);
@@ -121,6 +123,7 @@ extern void Scm_Init_libsrfis(void);
 extern void Scm_Init_libstr(void);
 extern void Scm_Init_libsym(void);
 extern void Scm_Init_libsys(void);
+extern void Scm_Init_libthr(void);
 extern void Scm_Init_libtype(void);
 extern void Scm_Init_libvec(void);
 extern void Scm_Init_libmacbase(void);
@@ -210,6 +213,8 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm__InitNet);
     CALL_INIT(Scm__InitNetAddr);
     CALL_INIT(Scm__InitNetDb);
+    CALL_INIT(Scm__InitMutex);
+    CALL_INIT(Scm__InitThreads);
 
     CALL_INIT(Scm_Init_libalpha);
     CALL_INIT(Scm_Init_libbool);
@@ -245,6 +250,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm_Init_libmacro);
     CALL_INIT(Scm_Init_libparam);
     CALL_INIT(Scm_Init_libtype);
+    CALL_INIT(Scm_Init_libthr);
     CALL_INIT(Scm_Init_libomega);
 
     CALL_INIT(Scm__InitCompaux);
