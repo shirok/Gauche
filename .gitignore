@@ -103,12 +103,12 @@ test.record
 /ext/gauche/gauche--bitvector.c
 /ext/gauche/gauche--collection.c
 /ext/gauche/gauche--dictionary.c
+/ext/gauche/gauche--generator.c
 /ext/gauche/gauche--hook.c
 /ext/gauche/gauche--parameter.c
 /ext/gauche/gauche--process.c
-/ext/gauche/gauche--sequence.c
 /ext/gauche/gauche--record.c
-/ext/gauche/gauche--generator.c
+/ext/gauche/gauche--sequence.c
 /ext/gauche/gauche--unicode.c
 /ext/gauche/unicode-attr.scm
 /ext/mt-random/math--mt-random.c
@@ -124,7 +124,6 @@ test.record
 /ext/srfi/srfi--13.c
 /ext/srfi/srfi--19.c
 /ext/srfi/srfi--43.c
-/ext/srfi/srfi-178.c
 /ext/sxml/sxml--serializer.c
 /ext/sxml/sxml--ssax.c
 /ext/sxml/sxml--sxpath.c
