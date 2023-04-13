@@ -291,11 +291,9 @@
 
 (define-class <atom> ()
   ((applier :init-keyword :applier
-            ;;:immutable #t
-            )
+            :init-once #t)
    (updater :init-keyword :updater
-            ;;:immutable #t
-            )))
+            :init-once #t)))
 
 (define (atom? obj) (is-a? obj <atom>))
 
@@ -347,15 +345,12 @@
 
 (define-class <semaphore> ()
   ((name :init-keyword :name            ;for information only
-         ;;:immutable #t
-         )
+         :init-once #t)
    (count :init-keyword :count)
    (mutex :init-keyword :mutex
-          ;;:immutable #t
-          )
+          :init-once #t)
    (cv    :init-keyword :cv
-          ;;:immutable #t
-          )))
+          :init-once #t)))
 
 (define (make-semaphore :optional (init-value 0) (name #f))
   (make <semaphore>
@@ -400,15 +395,12 @@
 
 (define-class <latch> ()
   ((name :init-keyword :name            ; for information only
-         ;;:immutable #t
-         )
+         :init-once #t)
    (count :init-keyword :count)
    (mutex :init-keyword :mutex
-          ;;:immutable #t
-          )
+          :init-once #t)
    (cv    :init-keyword :cv
-          ;;:immutable #t
-          )))
+          :init-once #t)))
 
 (define (make-latch initial-count :optional (name #f))
   (assume (and (exact-integer? initial-count)
@@ -462,23 +454,18 @@
 
 (define-class <barrier> ()
   ((name :init-keyword :name            ; for information only
-         ;;:immutable #t
-         )
+         :init-once #t)
    (threshold :init-keyword :threshold
-              ;;:immutable #t
-              )
+              :init-once #t)
    (count :init-keyword :count)
    (generation :init-keyword :generation)
    (broken :init-keyword :broken)
    (action :init-keyword :action
-           ;;:immutable #t
-           )
+           :init-once #t)
    (mutex  :init-keyword :mutex
-           ;;:immutable #t
-           )
+           :init-once #t)
    (cv     :init-keyword :cv
-           ;;:immutable #t
-           )))
+           :init-once #t)))
 
 (define (make-barrier threshold :optional (action #f) (name #f))
   (make <barrier>
