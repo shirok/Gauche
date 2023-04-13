@@ -32,7 +32,6 @@ jobs:
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
         cp $GAUCHE_TEST_PATH/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
-        cp $GAUCHE_TEST_PATH/ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v3
@@ -69,7 +68,6 @@ jobs:
       run: |
         mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
         cp $GAUCHE_TEST_PATH/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
-        cp $GAUCHE_TEST_PATH/ext/threads/test.log $TESTLOG_PATH/$TESTLOG_NAME/test-threads.log
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v3
