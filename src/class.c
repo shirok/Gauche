@@ -74,7 +74,7 @@ static void   initialize_builtin_cpl(ScmClass *klass, ScmObj supers);
 static ScmObj instance_class_redefinition(ScmObj obj, ScmClass *old);
 static ScmObj slot_set_using_accessor(ScmObj obj, ScmSlotAccessor *sa,
                                       ScmObj val);
-static void   init_once_setter(ScmObj, ScmObj);
+static void   immutable_setter(ScmObj, ScmObj);
 static ScmObj instance_allocate(ScmClass *klass, ScmObj initargs);
 
 static ScmObj fallback_compare(ScmObj *, int, ScmGeneric *);
@@ -1621,7 +1621,7 @@ ScmObj slot_set_using_accessor(ScmObj obj,
                                ScmSlotAccessor *sa,
                                ScmObj val)
 {
-    if (sa->setter && sa->setter != init_once_setter) {
+    if (sa->setter && sa->setter != immutable_setter) {
         sa->setter(obj, val);
     } else if (sa->slotNumber >= 0) {
         ScmClass *k = sa->klass;
@@ -1629,7 +1629,7 @@ ScmObj slot_set_using_accessor(ScmObj obj,
             Scm_Error("slot accessor %S has an invalid instance slot number "
                       "for %S", SCM_OBJ(sa), obj);
         }
-        if (sa->setter == init_once_setter
+        if (sa->setter == immutable_setter
             && !SCM_UNBOUNDP(SCM_INSTANCE_SLOTS(obj)[sa->slotNumber])) {
             Scm_Error("Instance slot %S is immutable for object %S",
                       SCM_OBJ(sa), obj);
@@ -1890,9 +1890,9 @@ static void slot_accessor_print(ScmObj obj, ScmPort *out,
     Scm_Printf(out, ">");
 }
 
-/* A special 'setter' value to indicate init-once instance slot.
+/* A special 'setter' value to indicate immutable instance slot.
    The procedure itself is never called. */
-static void init_once_setter(ScmObj obj SCM_UNUSED, ScmObj val SCM_UNUSED)
+static void immutable_setter(ScmObj obj SCM_UNUSED, ScmObj val SCM_UNUSED)
 {
 }
 
@@ -1951,17 +1951,17 @@ static void slot_accessor_init_thunk_set(ScmSlotAccessor *sa, ScmObj v)
     sa->initThunk = v;
 }
 
-static ScmObj slot_accessor_init_once(ScmSlotAccessor *sa)
+static ScmObj slot_accessor_immutable(ScmSlotAccessor *sa)
 {
-    return SCM_MAKE_BOOL(sa->setter == init_once_setter);
+    return SCM_MAKE_BOOL(sa->setter == immutable_setter);
 }
 
-static void slot_accessor_init_once_set(ScmSlotAccessor *sa, ScmObj v)
+static void slot_accessor_immutable_set(ScmSlotAccessor *sa, ScmObj v)
 {
     /* NB: Calling this with v == #f on the slot accessor with C setter
        would cause inconsistency. */
     if (SCM_FALSEP(v)) sa->setter = NULL;
-    else sa->setter = init_once_setter;
+    else sa->setter = immutable_setter;
 }
 
 static ScmObj slot_accessor_slot_number(ScmSlotAccessor *sa)
@@ -3400,8 +3400,8 @@ static ScmClassStaticSlotSpec slot_accessor_slots[] = {
                         slot_accessor_init_keyword_set),
     SCM_CLASS_SLOT_SPEC("init-thunk", slot_accessor_init_thunk,
                         slot_accessor_init_thunk_set),
-    SCM_CLASS_SLOT_SPEC("init-once", slot_accessor_init_once,
-                        slot_accessor_init_once_set),
+    SCM_CLASS_SLOT_SPEC("immutable", slot_accessor_immutable,
+                        slot_accessor_immutable_set),
     SCM_CLASS_SLOT_SPEC("initializable", slot_accessor_initializable,
                         slot_accessor_initializable_set),
     SCM_CLASS_SLOT_SPEC("settable", slot_accessor_settable,

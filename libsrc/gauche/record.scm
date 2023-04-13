@@ -142,7 +142,7 @@
              (if-let1 i (get-keyword :index (cdr slotdef) #f)
                (cons i
                      (cons (cut instance-slot-ref <> i <...>)
-                           (and (not (get-keyword :init-once (cdr slotdef) #f))
+                           (and (not (get-keyword :immutable (cdr slotdef) #f))
                                 (cut instance-slot-set! <> i <>))))
                (errorf "Record type definition has non-instance slots `~s': \
                         MOP implementation error?" (car slotdef))))
@@ -188,7 +188,7 @@
        [('mutable   name)
         `(,(unwrap-syntax name) :index ,(+ k offset))]
        [('immutable name)
-        `(,(unwrap-syntax name) :init-once #t :index ,(+ k offset))]
+        `(,(unwrap-syntax name) :immutable #t :index ,(+ k offset))]
        [name `(,(unwrap-syntax name) :index ,(+ k offset))]))
    specs))
 
@@ -229,7 +229,7 @@
 (define (rtd-field-mutable? rtd field)
   (%check-rtd rtd)
   (if-let1 s (assq field (class-slots rtd))
-    (not (slot-definition-option s :init-once #f))
+    (not (slot-definition-option s :immutable #f))
     (error "rtd-mutable?: ~a does not have a slot ~a" rtd field)))
 
 ;; We need to specialize this, for the default method uses slot names;
@@ -368,7 +368,7 @@
   (%check-rtd rtd)
   (if-let1 s (assq field (class-slots rtd))
     (values (slot-definition-option s :index)
-            (slot-definition-option s :init-once #f))
+            (slot-definition-option s :immutable #f))
     (errorf "record ~s does not have a slot named ~s" rtd field)))
 
 (define-macro (define-rtd-methods rtd-meta ctor-name-base referencer* mutator*)

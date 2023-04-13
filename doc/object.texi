@@ -1115,14 +1115,12 @@ of the slot, if the slot is not initialized by the keyword argument
 at the creation time.  To give a value to @code{:init-form}
 is equivalent to give @code{(lambda () value)} to @code{:init-thunk}.
 
-@item :init-once
-If not false, this slot can only be set once; that is, @code{slot-set!}
-succeeds only when the slot is previously unbound, and an error is thrown
-in the second time and after.
-This effectively makes the slot immutable, for the very first set! is done at the
-initialization time (either via init-keyword, init-value, init-form,
-or init-thunk).  If the slot is left unbound by @code{initialize} method,
-it can be set later, but only once.
+@item :immutable
+If not false, this slot is immutable.  To be precise, you can set the
+slot value only once, which usually happens at instance initializaiton.
+The slot setter raises an error unless the slot is previously unbound.
+If the slot is left unbound by @code{initialize} method,
+it can be set later.  It is regarded as a delayed initialization.
 
 @item :getter
 Takes a symbol, and a getter method is created and bound to the
@@ -1239,13 +1237,13 @@ thunk を与えます。もし、当該スロットが生成時にキーワー�
 @code{:init-form} に @code{value} を与えることと、@code{:init-thunk}
 に @code{(lambda () value)} を与えることは同じことです。
 
-@item :init-once
-偽でない場合、このスロットは一回のみsetできます。すなわち、@code{slot-set!}
-はそのスロットが未束縛であった場合にのみ成功し、そうでなければエラーが投げられます。
-これは実効的に、スロットを読み出し専用にします。というのも最初のsetは初期化時に
-行われるからです (init-keyword, init-value, init-form, init-thunkなどによって)。
-もし@code{initialize}メソッド内でスロットの初期化が行われなかった場合、
-後で一回だけスロットに値をsetすることができます。
+@item :immutable
+偽でない場合、このスロットは変更不可となります。
+正確には、このスロットには一回だけ値をセットできます。通常それは初期化時に行われます。
+スロットのセッターは、スロットが未束縛であった場合のみ成功し、そうでなければ
+エラーを投げます。
+もし@code{initialize}メソッド内でスロットの初期化が行われなかった場合は、
+後で一回だけスロットに値をセットできます。これは遅延された初期化とみなせます。
 
 @item :getter
 シンボルをとり、getter メソッドを生成し、同じ名前のジェネリック関数に

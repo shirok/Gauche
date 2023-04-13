@@ -291,9 +291,9 @@
 
 (define-class <atom> ()
   ((applier :init-keyword :applier
-            :init-once #t)
+            :immutable #t)
    (updater :init-keyword :updater
-            :init-once #t)))
+            :immutable #t)))
 
 (define (atom? obj) (is-a? obj <atom>))
 
@@ -345,12 +345,12 @@
 
 (define-class <semaphore> ()
   ((name :init-keyword :name            ;for information only
-         :init-once #t)
+         :immutable #t)
    (count :init-keyword :count)
    (mutex :init-keyword :mutex
-          :init-once #t)
+          :immutable #t)
    (cv    :init-keyword :cv
-          :init-once #t)))
+          :immutable #t)))
 
 (define (make-semaphore :optional (init-value 0) (name #f))
   (make <semaphore>
@@ -395,12 +395,12 @@
 
 (define-class <latch> ()
   ((name :init-keyword :name            ; for information only
-         :init-once #t)
+         :immutable #t)
    (count :init-keyword :count)
    (mutex :init-keyword :mutex
-          :init-once #t)
+          :immutable #t)
    (cv    :init-keyword :cv
-          :init-once #t)))
+          :immutable #t)))
 
 (define (make-latch initial-count :optional (name #f))
   (assume (and (exact-integer? initial-count)
@@ -454,18 +454,18 @@
 
 (define-class <barrier> ()
   ((name :init-keyword :name            ; for information only
-         :init-once #t)
+         :immutable #t)
    (threshold :init-keyword :threshold
-              :init-once #t)
+              :immutable #t)
    (count :init-keyword :count)
    (generation :init-keyword :generation)
    (broken :init-keyword :broken)
    (action :init-keyword :action
-           :init-once #t)
+           :immutable #t)
    (mutex  :init-keyword :mutex
-           :init-once #t)
+           :immutable #t)
    (cv     :init-keyword :cv
-           :init-once #t)))
+           :immutable #t)))
 
 (define (make-barrier threshold :optional (action #f) (name #f))
   (make <barrier>

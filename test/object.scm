@@ -305,29 +305,29 @@
              (method-leaf? (car (slot-ref nm-2 'methods)))))
 
 ;;----------------------------------------------------------------
-(test-section "init-once slots")
+(test-section "immutable slots")
 
-(define-class <init-once-class> ()
-  ((a :init-keyword :a :init-once #t)
-   (b :init-thunk (^[] *init-once-b*) :init-once #t)))
-(define *init-once-b* 5)
+(define-class <immutable-slot-class> ()
+  ((a :init-keyword :a :immutable #t)
+   (b :init-thunk (^[] *immutable-b*) :immutable #t)))
+(define *immutable-b* 5)
 
-(test* "init-once, initialization" 3
-       (let1 v (make <init-once-class> :a 3)
+(test* "immutable, initialization" 3
+       (let1 v (make <immutable-slot-class> :a 3)
          (slot-ref v 'a)))
 
-(test* "init-once, reject" (test-error)
-       (let1 v (make <init-once-class> :a 3)
+(test* "immutable, reject" (test-error)
+       (let1 v (make <immutable-slot-class> :a 3)
          (slot-set! v 'a 5)
          (slot-ref v 'a)))
 
-(test* "init-once, delayed initialization" 3
-       (let1 v (make <init-once-class>)
+(test* "immutable, delayed initialization" 3
+       (let1 v (make <immutable-slot-class>)
          (slot-set! v 'a 3)
          (slot-ref v 'a)))
 
-(test* "init-once, initialization by a thunk" 5
-       (let1 v (make <init-once-class>)
+(test* "immutable, initialization by a thunk" 5
+       (let1 v (make <immutable-slot-class>)
          (slot-ref v 'b)))
 
 ;;----------------------------------------------------------------

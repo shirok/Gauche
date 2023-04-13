@@ -1,3 +1,10 @@
+2023-04-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c: Changed my mind.  Say :immutable instead of :init-once,
+	  for the option is exacly for immutable slots.  Besides, init-once
+	  is weird, for 'initialization' occurs once regardless of slot's
+	  immutablility.  (Set-once would probably have been closer.)
+
 2023-04-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c: Support :init-once slot option.  This limits slot-set!
