@@ -308,7 +308,9 @@
 (test-section "init-once slots")
 
 (define-class <init-once-class> ()
-  ((a :init-keyword :a :init-once #t)))
+  ((a :init-keyword :a :init-once #t)
+   (b :init-thunk (^[] *init-once-b*) :init-once #t)))
+(define *init-once-b* 5)
 
 (test* "init-once, initialization" 3
        (let1 v (make <init-once-class> :a 3)
@@ -323,6 +325,10 @@
        (let1 v (make <init-once-class>)
          (slot-set! v 'a 3)
          (slot-ref v 'a)))
+
+(test* "init-once, initialization by a thunk" 5
+       (let1 v (make <init-once-class>)
+         (slot-ref v 'b)))
 
 ;;----------------------------------------------------------------
 (test-section "method sorting")
