@@ -305,6 +305,26 @@
              (method-leaf? (car (slot-ref nm-2 'methods)))))
 
 ;;----------------------------------------------------------------
+(test-section "init-once slots")
+
+(define-class <init-once-class> ()
+  ((a :init-keyword :a :init-once #t)))
+
+(test* "init-once, initialization" 3
+       (let1 v (make <init-once-class> :a 3)
+         (slot-ref v 'a)))
+
+(test* "init-once, reject" (test-error)
+       (let1 v (make <init-once-class> :a 3)
+         (slot-set! v 'a 5)
+         (slot-ref v 'a)))
+
+(test* "init-once, delayed initialization" 3
+       (let1 v (make <init-once-class>)
+         (slot-set! v 'a 3)
+         (slot-ref v 'a)))
+
+;;----------------------------------------------------------------
 (test-section "method sorting")
 
 ;; Corner cases of method sorting.

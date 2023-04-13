@@ -1,5 +1,11 @@
 2023-04-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/class.c: Support :init-once slot option.  This limits slot-set!
+	  to a slot that's previously unbound.  If the slot already has a value,
+	  an error is signaled.  This effectively works as an immutable
+	  slot.  Note that the slot initialization calls the internal setter,
+	  so we need to allow the first set!.
+
 	* ext/threads, src/thread.c, src/mutex.c, src/libthr.scm,
 	  src/gauche/thread.h: Move ext/threads into core.
 	  Cf. https://github.com/shirok/Gauche/issues/893

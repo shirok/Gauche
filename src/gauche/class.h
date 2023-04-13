@@ -484,7 +484,9 @@ SCM_EXTERN ScmObj    Scm_ProxyTypeId(ScmProxyType *p);
 
 /*
  * SlotAccessor
- *  - Packages slot initialization and accessing methods.
+ *  Packages slot initialization and accessing methods.
+ *  This struct is statically allocated in extension modules, so changing it
+ *  breaks binary compatibility.
  */
 typedef struct ScmSlotAccessorRec {
     SCM_HEADER;
@@ -492,13 +494,22 @@ typedef struct ScmSlotAccessorRec {
                                    need to be checked before used, for the
                                    class may be changed. */
     ScmObj name;                /* slot name (symbol) */
-    ScmObj (*getter)(ScmObj instance); /* getter for C accessor */
-    void (*setter)(ScmObj instance, ScmObj value); /* setter for C accessor */
+    ScmObj (*getter)(ScmObj instance);
+                                /* getter for C accessor.  If non-NULL,
+                                   this takes precedence. */
+    void (*setter)(ScmObj instance, ScmObj value);
+                                /* setter for C accessor. If non-NULL,
+                                   this takes precedence.
+                                   Can be a special unique value to
+                                   indicate init-once instance slot. */
     ScmObj initValue;           /* :init-value */
     ScmObj initKeyword;         /* :init-keyword */
     ScmObj initThunk;           /* :initform or :init-thunk */
-    int initializable;          /* is this slot initializable? */
-    int slotNumber;             /* for :instance slot access */
+    int initializable;          /* Is this slot initializable?
+                                   Slots are initializable by default; but
+                                   virtual slots are not. */
+    int slotNumber;             /* for :instance slot access.  Negative for
+                                   a non-instance-allocated slot. */
     ScmObj schemeGetter;        /* for :virtual slot getter; #f if N/A */
     ScmObj schemeSetter;        /* for :virtual slot setter; #f if N/A */
     ScmObj schemeBoundp;        /* for :virtual slot bound?; #f if N/A */
