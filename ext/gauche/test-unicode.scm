@@ -393,4 +393,21 @@
   (dolist [f data2] (apply width-test f))
   )
 
+(cond-expand
+ [gauche.ces.none]
+ [else
+  (test* "string-east-asian-width" 7
+         (string-east-asian-width "a\u3000b\u30a2c"))
+  (test* "string-east-asian-width" 5
+         (string-east-asian-width "a\u3000b\u30a2c" :F 1 :W 1))
+  (test* "string-take-width" "a\u3000"
+         (string-take-width "a\u3000\u30a2bc" 4))
+  (test* "string-take-width" "a\u3000\u30a2"
+         (string-take-width "a\u3000\u30a2bc" 5))
+  (test* "string-drop-width" "\u30a2bc"
+         (string-drop-width "a\u3000\u30a2bc" 4))
+  (test* "string-drop-width" "bc"
+         (string-drop-width "a\u3000\u30a2bc" 5))
+  ])
+
 (test-end)

@@ -54,7 +54,9 @@
           codepoints-upcase codepoints-downcase codepoints-titlecase
           codepoints-foldcase
 
-          char-east-asian-width
+          char-east-asian-width string-east-asian-width
+          string-take-width
+          string-drop-width
 
           string-ci=? string-ci<? string-ci<=? string-ci>? string-ci>=?
           )
@@ -1141,6 +1143,49 @@
 ;; returns a symbol
 (define (char-east-asian-width char-or-code)
   (vector-ref *east-asian-widths* (width-property char-or-code)))
+
+(define (%char->width ch kargs)
+  (let-keywords* kargs ((F 2)  ;full-width
+                        (H 1)  ;half-width
+                        (W 2)  ;wide
+                        (Na 1) ;narrow
+                        (N 1)  ;neutral
+                        (A 2)) ;ambiguous
+    (case (char-east-asian-width ch)
+      [(F) F]
+      [(H) H]
+      [(W) W]
+      [(Na) Na]
+      [(N) N]
+      [(A) A])))
+
+;; compute the on-screen 'width' according to the East Asian Width property.
+;; See UAX #11 https://www.unicode.org/reports/tr11/tr11-40.html
+(define (string-east-asian-width str :key F H W Na N A :rest keys)
+  (generator-fold (^[ch sum]
+                    (+ sum (%char->width ch keys)))
+                  0 (string->generator str)))
+
+(define (string-take-width str max-take-width :key F H W Na N A :rest keys)
+  (with-string-io str
+    (^[] (let loop ([w 0] [ch (read-char)])
+           (unless (eof-object? ch)
+             (let1 w1 (%char->width ch keys)
+               (unless (> (+ w w1) max-take-width)
+                 (write-char ch)
+                 (loop (+ w w1) (read-char)))))))))
+
+(define (string-drop-width str min-drop-width :key F H W Na N A :rest keys)
+  (call-with-string-io str
+    (^[in out]
+      (let loop ([w 0] [ch (read-char in)])
+        (unless (eof-object? ch)
+          (let1 w1 (%char->width ch keys)
+            (if (> (+ w w1) min-drop-width)
+              (begin
+                (write-char ch out)
+                (copy-port in out))
+              (loop (+ w w1) (read-char in)))))))))
 
 ;;;
 ;;; String casing

@@ -1,3 +1,8 @@
+2023-04-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/unicode.scm (string-east-asian-width, string-take-width)
+	  (string-drop-width): Added.
+
 2023-04-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c: Changed my mind.  Say :immutable instead of :init-once,
