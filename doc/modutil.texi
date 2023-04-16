@@ -28528,27 +28528,54 @@ Here's a simple example, using customized numeric part:
 
 @deftp {Module} text.segmented-match
 @mdindex text.segmented-match
+@c EN
 Sometimes you want to search for a group of words concatenated with
 a delimiter, using only the prefixes of each words.  For example:
 you want to search @code{call-with-current-continuation} using
 @code{c-w-c-c}.  One of its popular applications is symbol completion,
 which Gauche provides on REPL (@pxref{Input editing}).
+@c JP
+しばしば、複数の単語をデリミタでつないだ文字列を、各単語のプレフィクスだけを指定して
+サーチしたいことがあります。例えば@code{c-w-c-c}を指定して
+@code{call-with-current-continuation}を探す、というようなことです。
+これはシンボルの補完などによく使わ、
+GaucheのREPLでも採用しています (@ref{Input editing}参照)。
+@c COMMON
 
+@c EN
 This module provides basic parts to perform such searching.
+@c JP
+このモジュールは、そういうサーチをするための基本的な部品を提供します。
+@c COMMON
 @end deftp
 
 @defun segmented-prefix? pattern word :optional separator
 @c MOD text.segmented-match
+@c EN
 The @var{pattern} and @var{word} arguments must be a string, and
 @var{separator} must be either a character, a character set,
 a regexp, a predicate taking a character, or a string.
 When @var{separator} is omitted, @code{#\-} is assumed.
+@c JP
+@var{pattern}と@var{word}はともに文字列、@var{separator}は
+文字、文字集合、正規表現、文字を取る述語、あるいは文字列のいずれかでなければなりません。
+@var{separator}が省略された場合は@var{#\-}が使われます。
+@c COMMON
 
+@c EN
 First, @var{pattern} and @var{word} are splitted into segments
+by @var{separator},
 using @code{string-split} (@pxref{String utilities}).  If every
 segments from @var{pattern} consist a prefix of the corresponding
 segments from @var{word}, it returns @code{#t}.  It is allowed
 for @var{word} to have more segments than @var{pattern}.
+@c JP
+まず@var{pattern}と@var{word}が@var{separator}を区切りとして
+@code{string-split}により分割されます (@ref{String utilities}参照)。
+そして、@var{pattern}の分割されたそれぞれの断片が全て@var{word}の分割された対応する
+断片のプレフィクスになっている場合に@code{#t}が、そうでなければ@code{#f}が返されます。
+@var{word}の断片の方が@var{pattern}の断片より多い場合は、余った分は無視されます。
+@c COMMON
 
 @example
 (segmented-match? "a-b-c" "alpha-bravo-charlie") @result{} #t
@@ -28560,8 +28587,13 @@ for @var{word} to have more segments than @var{pattern}.
 
 @defun make-segmented-prefix-matcher pattern separator
 @c MOD text.segmented-match
+@c EN
 This is a subfunction of @code{segmented-match?}.
+@c JP
+@code{segmented-match?}の下請け手続きです。
+@c COMMON
 
+@c EN
 Returns a procedure that takes a string @var{word}, and sees if
 each segment of @var{pattern} is a prefix of corresponding segment
 of @var{word}.  If any of the @var{pattern}'s segment is not a
@@ -28570,6 +28602,14 @@ returned.  Otherwise, it returns a true value: If the number of
 @var{word}'s segments is the same as the @var{pattern}'s, @code{#t}
 is retured; if @var{word} has more segments, the remaining part
 of the @var{word} (exclusing leading separator) is returned.
+@c JP
+一つの文字列引数@var{word}を取る述語関数を返します。その関数は、
+@var{pattern}のそれぞれの断片のうち、@var{word}の対応する断片の
+プレフィクスになっていないものがひとつでもあれば@code{#f}を返します。
+そうでない場合、@var{word}の断片の数と@var{pattern}の断片の数が同じであれば
+@code{#t}が、@var{word}の断片の数が多ければ、@var{word}のマッチしなかった
+残りの部分 (先頭の@var{separator}は除く) が返されます。
+@c COMMON
 
 @example
 ((make-segmented-prefix-matcher "a-b-c" #\-) "alpha-bravo-charlie")
@@ -28580,10 +28620,16 @@ of the @var{word} (exclusing leading separator) is returned.
  @result{} #f
 @end example
 
+@c EN
 This preprocesses @var{pattern}, so if you want to match
 many words against a single pattern, it is faster to get
 predicates with this procedure than applying @code{segmented-prefix?}
 repeatedly.
+@c JP
+この手続きは@var{pattern}をプリプロセスするので、一つのパターンに対して
+多くの単語をマッチさせたい場合は、毎回@code{segmented-prefix?}を呼び出すより
+効率的です。
+@c COMMON
 @end defun
 
 
