@@ -27951,41 +27951,79 @@ the line.
 
 @deftp {Module} text.pager
 @mdindex text.pager
+@c EN
 A convenience module to present long text nicely to the user.
+@c JP
+長いテキストをユーザに見やすく呈示するための便利モジュールです。
+@c COMMON
 @end deftp
 
 @deffn {Parameter} pager-program
 @c MOD text.pager
+@c EN
 A parameter containing a list of pager program and its arguments
 (e.g. @code{("/usr/bin/less" "-M")}).
+@c JP
+ページャーとして使うプログラムとその引数のリストを保持するパラメータです。
+例: @code{("/usr/bin/less" "-M")}。
+@c COMMON
 
+@c EN
 The program must take input from the standard input.
+@c JP
+プログラムは標準入力から入力を取らなければなりません。
+@c COMMON
 
+@c EN
 The default value is taken from the environment variable @code{PAGER}
 if set, or either @code{less} or @code{more} if those programs are
-available on the system.
+available on the system.  If none is found, @code{#f} is set.
+@c JP
+デフォルトの値は、環境変数@code{PAGER}がセットされていればその値、
+そうでなければ、システムに@code{less}または@code{more}があればそれを使います。
+いずれにも該当しなければ@code{#f}になっています。
+@c COMMON
 @end deffn
 
 @defun display/pager string
 @c MOD text.pager
+@c EN
 Display @var{string} by a pager subprocess specified by the parameter
 @code{pager-program}.  The procedure returns when the subprocess exits.
+@c JP
+パラメータ@code{pager-program}で指定されるプログラムをサブプロセスとして起動し、
+@var{string}を表示させます。サブプロセスが終了するまでこの手続きは返ってきません。
+@c COMMON
 
+@c EN
 If the terminal is not suitable for control
 (e.g. @code{TERM} is @code{dumb} or @code{emacs}), @var{string} is
 simply @code{display}ed without a pager.
+@c JP
+端末がページングに適さない場合 (例えば@code{TERM}が@code{dumb}や@code{emacs}である
+場合)は、@var{string}が単に@code{display}で表示されます。
+@c COMMON
 
+@c EN
 If you're running MinGW version of @code{gosh} on mintty,
 calling subprocess pager doesn't work well, so the procedure
 emulate the pager behavior (@code{pager-program} is ignored).
+@c JP
+MinGWバージョンの@code{gosh}をminttyで使っている場合、
+サブプロセス経由のページングはうまく動かないので、
+この手続きがページャの動作をエミュレートします (@code{pager-program}は無視されます)。
+@c COMMON
 @end defun
 
 @defun with-output-to-pager thunk
 @c MOD text.pager
+@c EN
 Call @var{thunk} with its current output port to a string buffer,
 then show the buffered output using @code{display/pager}.
-
-Note that the output begins after @var{thunk} returns.
+@c JP
+現在の出力ポートを文字列のバッファにして@var{thunk}を呼び出し、
+結果を@code{display/pager}で表示します。
+@c COMMON
 @end defun
 
 
