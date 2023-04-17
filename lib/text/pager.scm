@@ -36,6 +36,7 @@
 (define-module text.pager
   (use gauche.process)
   (use gauche.termios)
+  (use gauche.vport)
   (use text.console)
   (use file.util)
   (export display/pager
@@ -107,7 +108,16 @@
     (unicode->ascii s)
     s))
 
-(define (run-pager s)
+(define (pager-filter-port oport)
+  (if (limited-output?)
+    (make <virtual-output-port>
+      :putc (^c (display (unicode->ascii (string c)) oport))
+      :puts (^s (display (unicode->ascii s) oport))
+      :flush (^[] (flush oport))
+      :close (^[] (close-port oport)))
+    oport))
+
+(define (run-pager proc)
   ;; We need to ensure the terminal mode is restored even the pager process
   ;; died unexpectedly.
   (with-terminal-mode
@@ -120,7 +130,7 @@
     (let* ([omask (sys-sigmask SIG_BLOCK (sys-sigset SIGINT))]
            [p (run-process (pager-program) :input :pipe :sigmask (sys-sigset))])
       (unwind-protect
-          (display s (process-input p))
+          (proc p)
         (close-output-port (process-input p))
         (process-wait p)
         (sys-sigmask SIG_SETMASK omask))))))
@@ -172,8 +182,13 @@
     (cond
      [(pager-unavailable?) (display s)]
      [(mintty?)            (mintty-pager s)]
-     [else                 (run-pager s)])))
+     [else                 (run-pager (^p (display s (process-input p))))])))
 
 ;; Another convenience API
 (define (with-output-to-pager thunk)
-  (display/pager (with-output-to-string thunk)))
+  (cond
+   [(pager-unavailable?) (display (pager-filter (with-output-to-string thunk)))]
+   [(mintty?) (mintty-pager (pager-filter (with-output-to-string thunk)))]
+   [else (run-pager
+          (^p (with-output-to-port (pager-filter-port (process-input p))
+                thunk)))]))
