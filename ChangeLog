@@ -1,3 +1,9 @@
+2023-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/lazy.c (Scm_VMForce): Fix a race condition; there was a hazard
+	  when one thread reads promise's state and goes to evaluate thunk,
+	  while another thread changes them simultaneously.
+
 2023-04-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/unicode.scm (string-east-asian-width, string-take-width)

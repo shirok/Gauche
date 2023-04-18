@@ -769,17 +769,20 @@
            (let1 rs (map thread-join! ts)
              (every (cut = (car rs) <>) (cdr rs))))))
 
-(letrec ([count 0]
-         [x 5]
-         [z (delay (let ((c count))
-                     (when (<= c x)
-                       (set! count (+ c 1))
-                       (force z))))])
+(letrec ([r 0]
+         [count (make-thread-local 0)]
+         [z (delay (if (<= (tlref count) 5)
+                     (begin
+                       (thread-yield!)
+                       (tlset! count (+ (tlref count) 1))
+                       (force z))
+                     (tlref count)))])
   (test* "concurrent forcing w/ recursive force" 6
-         (let ([ts (map (^_ (make-thread (^[] (force z)))) (iota 10))])
+         (let1 ts (map (^_ (make-thread (^[] (set! r (force z)))))
+                       (iota 10))
            (for-each thread-start! ts)
            (for-each thread-join! ts)
-           count)))
+           r)))
 
 ;;---------------------------------------------------------------------
 (test-section "threads and lazy sequences")

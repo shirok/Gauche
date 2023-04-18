@@ -114,6 +114,12 @@ SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_PromiseClass, promise_print);
  * promise object
  */
 
+/* Promise can be initialized in one of UNFORCED, FORCED or EXCEPTION state.
+ * UNFORCED can change to FORCED or EXCEPTION.  Once it becomes FORCED
+ * or EXCEPTION, the state never changes.
+ * The value of ScmPromise->content->code depends on the state.
+ */
+
 ScmObj Scm_MakePromise(ScmPromiseState state, ScmObj obj)
 {
     ScmPromise *p = SCM_NEW(ScmPromise);
@@ -209,6 +215,7 @@ ScmObj Scm_VMForce(ScmObj obj)
     ScmPromiseContent *c = SCM_PROMISE(obj)->content;
     ScmVM *vm = Scm_VM();
 
+ retry:
     switch (c->state) {
     case SCM_PROMISE_FORCED:
         /* already forced. c->code has values. */
@@ -218,21 +225,38 @@ ScmObj Scm_VMForce(ScmObj obj)
         return Scm_VMThrowException(vm, c->code, 0);
     case SCM_PROMISE_UNFORCED:
         {
+            /* State and code may be changed by another thread, so we
+               take the snapshot. */
+            ScmPromiseState state;
+            ScmObj code;
+            SCM_INTERNAL_MUTEX_LOCK(c->mutex);
+            state = c->state;
+            code = c->code;
+            SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
+            if (state != SCM_PROMISE_UNFORCED) {
+                /* another thread already forced. */
+                goto retry;
+            }
+            /* From now on, it is ok that another thread changes the promise's
+               state.  We go on to evaluate thunk anyway, and we'll check
+               the promise's state at the moment we try to set the result.
+             */
             void *data[2];
             data[0] = obj;
             data[1] = Scm_VMGetDynamicHandlers();
             Scm_VMPushCC(force_cc, data, 2);
+
+            if (SCM_PARAMETERIZATIONP(c->parameterization)) {
+                Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
+            }
+            ScmObj exc_handler =
+                Scm_MakeSubr(force_exc_handler,
+                             Scm_Cons(obj, Scm_VMCurrentExceptionHandler()),
+                             1, 0,
+                             SCM_INTERN("force-exc-handler"));
+            Scm_VMPushExceptionHandler(exc_handler);
+            SCM_RETURN(Scm_VMApply0(code));
         }
-        if (SCM_PARAMETERIZATIONP(c->parameterization)) {
-            Scm_InstallParameterization(SCM_PARAMETERIZATION(c->parameterization));
-        }
-        ScmObj exc_handler =
-            Scm_MakeSubr(force_exc_handler,
-                         Scm_Cons(obj, Scm_VMCurrentExceptionHandler()),
-                         1, 0,
-                         SCM_INTERN("force-exc-handler"));
-        Scm_VMPushExceptionHandler(exc_handler);
-        SCM_RETURN(Scm_VMApply0(c->code));
     }
     return SCM_UNDEFINED;       /* dummy */
 }
