@@ -26127,9 +26127,67 @@ The meaning of this property is explained in Unicode standard annex #11,
 各シンボルの意味についてはUnicode standard annex #11を参照してください:
 @url{http://unicode.org/reports/tr11/}。
 @c COMMON
-
 @end defun
 
+@defun string-east-asian-width str :key F H W Na N A
+@c MOD gauche.unicode
+Computes the 'width' of the given string @var{str}, taking each character's
+East Asian Width int account.  It gives you a rough estimate of
+how much space the string will occupy on the screen, when displayed
+with monospace fonts.
+
+Although it is true that the exact width is generally undecidable without
+actually rendering them with glyphs, heuristics can give a good estimate
+if the string consists of limited scripts.  For example, if the string
+is with ASCII and CJK ideographs, computing 'Full-width' and 'Wide'
+letters as twice wide as ASCII character is likely to work.
+
+This procedure assigns the following widths for each character's
+East Asian Width category.  They can be altered by giving
+keyword arguments @code{F}, @code{H}, @code{W}, @code{Na}, @code{N},
+and @code{A}, respectively:
+
+@table @asis
+@item F (Full width)
+2
+@item H (Half width)
+1
+@item W (Wide)
+2
+@item Na (Narrow)
+1
+@item N (Neutral)
+1
+@item A (Ambiguous)
+2
+@end table
+
+See UAX #11 (@url{http://unicode.org/reports/tr11/}), section 5,
+for more detailed discussions of computing the width of displayed strings.
+
+@example
+(string-east-asian-width "abc") @result{} 3
+(string-east-asian-width "いろは") @result{} 6
+(string-east-asian-width "1番目" :W 1.5) @result{} 4.0
+@end example
+@end defun
+
+@defun string-take-width str width :key F H W Na N A
+@defunx string-drop-width str width :key F H W Na N A
+@c MOD gauche.unicode
+Like @code{string-take} and @code{string-drop}, returns a prefix and
+suffix of the input string @var{str}, but using the string's width
+instead of the number of characters.
+
+@code{string-take-width} returns the longest prefix of a
+string @var{str} such that its @code{string-east-asian-width} does
+not exceed @var{width}.  On the other hand, @code{string-drop-width}
+removes such prefix from @var{str} and returns the rest.
+
+The keyword arguments are to customize mappings of East Asian Width
+categories to numerical widths.  See @code{string-east-asian-width}
+above for the details.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Uniform vector library, Comparing version numbers, Unicode utilities, Library modules - Gauche extensions

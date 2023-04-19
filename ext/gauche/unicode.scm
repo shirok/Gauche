@@ -1166,22 +1166,22 @@
                     (+ sum (%char->width ch keys)))
                   0 (string->generator str)))
 
-(define (string-take-width str max-take-width :key F H W Na N A :rest keys)
+(define (string-take-width str width :key F H W Na N A :rest keys)
   (with-string-io str
     (^[] (let loop ([w 0] [ch (read-char)])
            (unless (eof-object? ch)
              (let1 w1 (%char->width ch keys)
-               (unless (> (+ w w1) max-take-width)
+               (unless (> (+ w w1) width)
                  (write-char ch)
                  (loop (+ w w1) (read-char)))))))))
 
-(define (string-drop-width str min-drop-width :key F H W Na N A :rest keys)
+(define (string-drop-width str width :key F H W Na N A :rest keys)
   (call-with-string-io str
     (^[in out]
       (let loop ([w 0] [ch (read-char in)])
         (unless (eof-object? ch)
           (let1 w1 (%char->width ch keys)
-            (if (> (+ w w1) min-drop-width)
+            (if (> (+ w w1) width)
               (begin
                 (write-char ch out)
                 (copy-port in out))
