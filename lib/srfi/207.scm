@@ -32,6 +32,8 @@
 ;;;
 
 (define-module srfi.207
+  (use gauche.generator)
+  (use gauche.lazy)
   (use gauche.unicode)
   (use gauche.uvector)
   (use rfc.base64)
@@ -163,7 +165,15 @@
     (list-ec (: i start end)
              (%byte->elt (u8vector-ref bv i)))))
 
-;;make-bytestring-generator
+(define (make-bytestring-generator . objs)
+  (define gens (lmap ($ uvector->generator $ x->u8vector $) objs))
+  (rec (gen)
+    (if (null? gens)
+      (eof-object)
+      (let1 v ((car gens))
+        (if (eof-object? v)
+          (begin (pop! gens) (gen))
+          v)))))
 
 (define (%bytestring-pad bv len elt where)
   (assume-type bv <u8vector>)
