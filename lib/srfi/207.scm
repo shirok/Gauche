@@ -186,3 +186,35 @@
 
 (define (bytestring-pad bv len elt) (%bytestring-pad bv len elt 'left))
 (define (bytestring-pad-right bv len elt) (%bytestring-pad bv len elt 'right))
+
+(define (bytestring-trim bv pred)
+  (define len (u8vector-length bv))
+  (let loop ([i 0])
+    (cond [(= i len) (u8vector)]
+          [(pred (u8vector-ref bv i)) (loop (+ i 1))]
+          [else (u8vector-copy bv i len)])))
+
+(define (bytestring-trim-right bv pred)
+  (define len (u8vector-length bv))
+  (let loop ([i (- len 1)])
+    (cond [(< i 0) (u8vector)]
+          [(pred (u8vector-ref bv i)) (loop (- i 1))]
+          [else (u8vector-copy bv 0 i)])))
+
+(define (bytestring-trimp-both bv pred)
+  (define len (u8vector-length bv))
+  (let leading ([i 0])
+    (cond [(= i len) (u8vector)]
+          [(pred (u8vector-ref bv i)) (leading (+ i 1))]
+          [else
+           (let trailing ([j (- len 1)])
+             (if (pred (u8vector-ref bv j))
+               (trailing (- j 1))
+               (u8vector-copy bv i j)))])))
+
+(define (bytestring-replace bv1 bv2 start1 end1 :optional (start2 0) (end2 #f))
+  (assume-type bv1 <u8vector>)
+  (assume-type bv2 <u8vector>)
+  (u8vector-append-subvectors bv1 0 start1
+                              bv2 start2 (or end2 (u8vector-length bv2))
+                              bv1 end1 (u8vector-length bv1)))
