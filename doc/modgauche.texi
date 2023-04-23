@@ -26131,21 +26131,41 @@ The meaning of this property is explained in Unicode standard annex #11,
 
 @defun string-east-asian-width str :key F H W Na N A
 @c MOD gauche.unicode
+@c EN
 Computes the 'width' of the given string @var{str}, taking each character's
 East Asian Width int account.  It gives you a rough estimate of
 how much space the string will occupy on the screen, when displayed
 with monospace fonts.
+@c JP
+東アジア文字幅プロパティを考慮して、文字列@var{str}の「幅」を計算して返します。
+この幅は、概ね文字列を等幅フォントでターミナルに表示した場合の近似と考えることが
+できます。
+@c COMMON
 
+@c EN
 Although it is true that the exact width is generally undecidable without
 actually rendering them with glyphs, heuristics can give a good estimate
 if the string consists of limited scripts.  For example, if the string
 is with ASCII and CJK ideographs, computing 'Full-width' and 'Wide'
 letters as twice wide as ASCII character is likely to work.
+@c JP
+もちろん実際に文字列が表示された時にどのくらいの幅を取るかは、実際にグリフを使って
+レンダリングしてみないとわかりません。が、文字列の構成要素がある程度限られている
+場合は、ヒューリスティクスでだいたいうまくいきます。
+例えば文字列がASCII文字とCJK漢字からなる場合、'Full-width'と'Wide'
+プロパティの文字をASCII文字の2倍幅とみなすことができるでしょう。
+@c COMMON
 
+@c EN
 This procedure assigns the following widths for each character's
 East Asian Width category.  They can be altered by giving
 keyword arguments @code{F}, @code{H}, @code{W}, @code{Na}, @code{N},
 and @code{A}, respectively:
+@c JP
+この手続きは、各文字の「東アジア文字幅プロパティ」カテゴリに次の幅を割り当てます。
+キーワード引数@code{F}, @code{H}, @code{W}, @code{Na}, @code{N}, @code{A}
+によってそれぞれの幅に違う値を割り当てることも可能です。
+@c COMMON
 
 @table @asis
 @item F (Full width)
@@ -26162,8 +26182,13 @@ and @code{A}, respectively:
 2
 @end table
 
+@c EN
 See UAX #11 (@url{http://unicode.org/reports/tr11/}), section 5,
 for more detailed discussions of computing the width of displayed strings.
+@c JP
+文字幅の考慮について詳しくは、UAX #11 (@url{http://unicode.org/reports/tr11/})
+の5節を見てください。
+@c COMMON
 
 @example
 (string-east-asian-width "abc") @result{} 3
