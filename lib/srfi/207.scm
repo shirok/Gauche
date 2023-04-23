@@ -218,3 +218,43 @@
   (u8vector-append-subvectors bv1 0 start1
                               bv2 start2 (or end2 (u8vector-length bv2))
                               bv1 end1 (u8vector-length bv1)))
+
+(define (bytestring<? bv1 bv2)
+  (assume-type bv1 <u8vector>)
+  (assume-type bv2 <u8vector>)
+  (<? bytevector-comparator bv1 bv2))
+
+(define (bytestring>? bv1 bv2)
+  (assume-type bv1 <u8vector>)
+  (assume-type bv2 <u8vector>)
+  (>? bytevector-comparator bv1 bv2))
+
+(define (bytestring<=? bv1 bv2)
+  (assume-type bv1 <u8vector>)
+  (assume-type bv2 <u8vector>)
+  (<=? bytevector-comparator bv1 bv2))
+
+(define (bytestring>=? bv1 bv2)
+  (assume-type bv1 <u8vector>)
+  (assume-type bv2 <u8vector>)
+  (>=? bytevector-comparator bv1 bv2))
+
+;; These differ from u8vector-index/u8vector-index-right, so we
+;; scan by our own.
+(define (bytestring-index bv pred :optional (start 0) (end #f))
+  (assume-type bv <u8vector>)
+  (let1 end (or end (u8vector-length bv))
+    (let loop ([i start])
+      (and (< i end)
+           (if (pred (u8vector-ref bv i))
+             i
+             (loop (+ i 1)))))))
+
+(define (bytestring-index-right bv pred :optional (start 0) (end #f))
+  (assume-type bv <u8vector>)
+  (let1 end (or end (u8vector-length bv))
+    (let loop ([i (- end 1)])
+      (and (>= i start)
+           (if (pred (u8vector-ref bv i))
+             i
+             (loop (- i 1)))))))
