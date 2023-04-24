@@ -26200,18 +26200,36 @@ for more detailed discussions of computing the width of displayed strings.
 @defun string-take-width str width :key F H W Na N A
 @defunx string-drop-width str width :key F H W Na N A
 @c MOD gauche.unicode
-Like @code{string-take} and @code{string-drop}, returns a prefix and
+@c EN
+Like @code{string-take} and @code{string-drop} (@pxref{String library}),
+returns a prefix and
 suffix of the input string @var{str}, but using the string's width
 instead of the number of characters.
+@c JP
+@code{string-take}と@code{string-drop} (@ref{String library}参照) のように、
+文字列@var{str}を指定箇所で切った前部分と後部分を返しますが、
+文字数で切るかわりに文字の幅で切ります。
+@c COMMON
 
+@c EN
 @code{string-take-width} returns the longest prefix of a
 string @var{str} such that its @code{string-east-asian-width} does
 not exceed @var{width}.  On the other hand, @code{string-drop-width}
 removes such prefix from @var{str} and returns the rest.
+@c JP
+@code{string-take-width}は、@var{str}のプレフィクスのうち、
+その@code{string-east-asian-width}が@var{width}を越えない部分を返します。
+一方@code{string-drop-width}はそのプレフィクスを取り除いた部分を返します。
+@c COMMON
 
+@c EN
 The keyword arguments are to customize mappings of East Asian Width
 categories to numerical widths.  See @code{string-east-asian-width}
 above for the details.
+@c JP
+キーワード引数は東アジア文字幅のカテゴリから幅へのマッピングをカスタマイズするものです。
+詳しくは上の@code{string-east-asian-width}の説明を見てください。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
