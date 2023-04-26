@@ -258,3 +258,29 @@
            (if (pred (u8vector-ref bv i))
              i
              (loop (- i 1)))))))
+
+(define (bytestring-break bv pred)
+  (assume-type bv <u8vector>)
+  (if-let1 i (bytestring-index bv pred)
+    (values (u8vector-copy bv 0 i)
+            (u8vector-copy bv i))
+    (values bv (u8vector))))
+
+(define (bytestring-span bv pred)
+  (assume-type bv <u8vector>)
+  (if-let1 i (bytestring-index bv (complement pred))
+    (values (u8vector-copy bv 0 i)
+            (u8vector-copy bv i))
+    (values bv (u8vector))))
+
+(define (bytestring-join bvs delim :optional (grammar 'infix))
+  (ecase grammar
+    [(infix) (u8vector-concatenate (intersperse (x->u8vector delim) bvs))]
+    [(strict-infix)
+     (if (null? bvs)
+       (error "Zero bytevectors cannot be joined with strict-infix grammar.")
+       (bytestring-join bvs delim 'infix))]
+    [(suffix) (u8vector-concatenate
+               (append-map (cute list <> (x->u8vector delim)) bvs))]
+    [(prefix) (u8vector-concatenate
+               (append-map (cute list (x->u8vector delim) <>) bvs))]))
