@@ -38,6 +38,7 @@
   (use gauche.uvector)
   (use rfc.base64)
   (use srfi.42)
+  (use srfi.175)
   (use util.match)
   (export bytestring make-bytestring
           bytevector->hex-string hex-string->bytevector
@@ -73,17 +74,18 @@
          (if (and (exact-integer? obj) (<= 0 obj 255))
            (u8vector obj)
            (error <bytestring-error>
-                  "Out of range number for an element of bytevector:" obj))]
+                  "Out of range number for an element of bytestring:" obj))]
         [(char? obj)
-         ;; SRFI-207 only allows ASCII; we interpret non-ASCII chars
-         ;; as utf8 octet sequence.
          (let1 c (char->integer obj)
            (if (<= 0 c 127)
              (u8vector c)
-             (string->utf8 (string c))))]
+             (error <bytestring-error>
+                    "Out of range character for an element of bytestring:" obj)))]
         [(string? obj)
-         ;; SRFI-207 only allows ASCII strings; we allow any string and
-         ;; interpret it as utf8 octet sequence.
+         (unless (ascii-string? obj)
+           (error <bytestring-error>
+                  "Only ASCII string is allowed for bytestring:" obj))
+
          (cond-expand
           [gauche.ces.utf8 (string->u8vector obj 0 -1 #t)] ;avoid copying
           [else (string->utf8 obj)])]
@@ -113,23 +115,25 @@
 (define (bytevector->hex-string bv)
   (assume-type bv <u8vector>)
   (with-output-to-string
-    (^[] (u8vector-for-each (^b (format "~2,'0x" b)) bv))))
+    (^[] (u8vector-for-each (^b (format #t "~2,'0x" b)) bv))))
 
 (define (hex-string->bytevector str)
   (assume-type str <string>)
   (let1 slen (string-length str)
-    (assume (even? slen) "Hex string must have an even length:" str)
+    (assume (even? slen) <bytestring-error>
+            "Hex string must have an even length:" str)
     (rlet1 bv (make-u8vector (ash slen -1))
       (let1 in (open-input-string str)
         (let loop ([i 0])
-          (let* ([a (read-char)]
-                 [b (read-char)])
+          (let* ([a (read-char in)]
+                 [b (read-char in)])
             (unless (eof-object? a)
               (let ([aa (digit->integer a 16)]
                     [bb (digit->integer b 16)])
-                (assume aa "Invalid hexdigit char:" a)
-                (assume bb "Invalid hexdigit char:" b)
-                (u8vector-set! bv i (+ (* aa 16) bb))))))))))
+                (assume aa <bytestring-error> "Invalid hexdigit char:" a)
+                (assume bb <bytestring-error> "Invalid hexdigit char:" b)
+                (u8vector-set! bv i (+ (* aa 16) bb))
+                (loop (+ i 1))))))))))
 
 (define (bytevector->base64 bv :optional (digits #f))
   (assume-type bv <u8vector>)
@@ -201,7 +205,7 @@
           [(pred (u8vector-ref bv i)) (loop (- i 1))]
           [else (u8vector-copy bv 0 i)])))
 
-(define (bytestring-trimp-both bv pred)
+(define (bytestring-trim-both bv pred)
   (define len (u8vector-length bv))
   (let leading ([i 0])
     (cond [(= i len) (u8vector)]
@@ -284,3 +288,27 @@
                (append-map (cute list <> (x->u8vector delim)) bvs))]
     [(prefix) (u8vector-concatenate
                (append-map (cute list (x->u8vector delim) <>) bvs))]))
+
+(define (bytestring-split bv delim :optional (grammar 'infix))
+  (define dbyte
+    (cond [(and (char? delim) (#[\x00-\x7f] delim)) (char->integer delim)]
+          [(and (exact-integer? delim) (<= 0 delim 255)) delim]
+          [else (error "Delimiter out of domain:" delim)]))
+  (assume-type bv <u8vector>)
+  (let1 end (u8vector-length bv)
+    (let loop ([i 0] [s 0] [r '()])
+      (cond [(= i end)
+             (let1 r (cons (u8vector-copy bv s i) r)
+               (ecase grammar
+                 [(infix strict-infix) (reverse r)]
+                 [(prefix) (let1 rr (reverse r)
+                             (match rr
+                               [("" . rr) rr]
+                               [_ rr]))]
+                 [(suffix) (match r
+                             [("" . rr) (reverse rr)]
+                             [_ (reverse rr)])]))]
+            [(= (u8vector-ref bv i) dbyte)
+             (loop (+ i 1) (+ i 1) (cons (u8vector-copy bv s i) r))]
+            [else
+             (loop (+ i 1) s r)]))))
