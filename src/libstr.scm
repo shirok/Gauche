@@ -173,7 +173,7 @@
 ;; Generic string-split
 ;;  splitter can be a character, a char-set, a string, or a regexp.
 ;;  NB: To adapt to SRFI-152, we changed the optional argument - now the
-;;  'grammar' argument comes before 'limit'.  For the bacward compatibility,
+;;  'grammar' argument comes before 'limit'.  For the backward compatibility,
 ;;  we recognize an integer argument in 'grammar' as 'limit'.
 (define (string-split string splitter
                       :optional (grammar 'infix) (limit #f) start end)
