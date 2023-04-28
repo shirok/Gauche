@@ -30,8 +30,15 @@ jobs:
     - name: Copy testlog
       if: always()
       run: |
-        mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
-        cp $GAUCHE_TEST_PATH/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+        cd $GAUCHE_TEST_PATH
+        mkdir -p $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME
+        cp src/test.log $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME
+        for d in ext/*; do
+          if test -f $d/test.log; then
+            mkdir -p $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME/$d
+            cp $d/test.log $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME/$d
+          fi
+        done
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v3
@@ -66,8 +73,15 @@ jobs:
     - name: Copy testlog
       if: always()
       run: |
-        mkdir -p $TESTLOG_PATH/$TESTLOG_NAME
-        cp $GAUCHE_TEST_PATH/src/test.log $TESTLOG_PATH/$TESTLOG_NAME
+        cd $GAUCHE_TEST_PATH
+        mkdir -p $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME
+        cp src/test.log $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME
+        for d in ext/*; do
+          if test -f $d/test.log; then
+            mkdir -p $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME/$d
+            cp $d/test.log $GITHUB_WORKSPACE/$TESTLOG_PATH/$TESTLOG_NAME/$d
+          fi
+        done
     - name: Upload testlog
       if: always()
       uses: actions/upload-artifact@v3
@@ -133,8 +147,6 @@ jobs:
     - name: Install tools
       shell: msys2 {0}
       run: |
-        #pacman -S --noconfirm msys/winpty
-        #winpty --version
         where openssl
         echo 'Rename unavailable openssl.exe'
         mv /mingw${{ matrix.bit }}/bin/openssl.exe /mingw${{ matrix.bit }}/bin/openssl_NG.exe

@@ -135,7 +135,7 @@ if [ "$SKIP_CONFIG" != yes ]; then
               --with-tls=$tlslibs \
               --with-dbm=ndbm,odbm $buildopt
 fi
-make
+make BUILD_GOSH_FLAGS=
 
 if [ $? -ne 0 ]; then
   echo "Build failed.  Aborting packaging."

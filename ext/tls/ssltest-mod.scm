@@ -52,7 +52,11 @@
   ;;  We ensure SECLEVEL=1 with the command line.
   ;;  Note that @SECLEVEL thing isn't supported in openssl 1.0.x.
   ;;  https://sourceforge.net/p/gauche/mailman/gauche-devel/thread/87tvew1hri.fsf%40karme.de/
-  (define openssl-1.1>=?
+  ;;
+  ;;  Also, openssl version 3 requires SECLEVEL=0 and legacy_server_connect
+  ;;  option for these tests.
+  ;;
+  (define openssl-version
     (let1 ssl-version ($ rxmatch-substrings
                          $ rxmatch #/(\w+)\s+([\d\.]+)/
                          $ process-output->string
@@ -63,18 +67,35 @@
                                        '("cmd.exe" "/c" openssl version)]
                                       [else
                                        '(openssl version)]))
-      (and (list? ssl-version)
-           (string=? (~ ssl-version 1) "OpenSSL")
-           (version>=? (~ ssl-version 2) "1.1"))))
+      (if (and (list? ssl-version)
+               (string=? (~ ssl-version 1) "OpenSSL"))
+        (~ ssl-version 2)
+        "0.0")))
 
   (define add-seclevel-client
-    (if openssl-1.1>=?
-      (^m #"~(m 0)@SECLEVEL=1")
-      (^m (m 0))))
+    (cond
+     [(version>=? openssl-version "3.0")
+      (^m #"~(m 0):@SECLEVEL=0")]
+     [(version>=? openssl-version "1.1")
+      (^m #"~(m 0):@SECLEVEL=1")]
+     [else
+      (^m (m 0))]))
+  (define add-legacyopt-client
+    (cond
+     [(version>=? openssl-version "3.0")
+      (^m #"~(m 0) -legacy_server_connect")]
+     [(version>=? openssl-version "1.1")
+      (^m (m 0))]
+     [else
+      (^m (m 0))]))
   (define add-seclevel-server
-    (if openssl-1.1>=?
-      (^m #"~(m 0) -cipher DEFAULT@SECLEVEL=1")
-      (^m (m 0))))
+    (cond
+     [(version>=? openssl-version "3.0")
+      (^m #"~(m 0) -cipher DEFAULT:@SECLEVEL=0")]
+     [(version>=? openssl-version "1.1")
+      (^m #"~(m 0) -cipher DEFAULT:@SECLEVEL=1")]
+     [else
+      (^m (m 0))]))
 
   (p "/* This is generated file. Don't edit! */"
      "static int safe_system(const char *);")
@@ -85,6 +106,7 @@
      ;; before kicker-replace.
      ($ format #t "~a\n" $ regexp-replace-all* line
         #/-cipher [\w-]+/ add-seclevel-client
+        #/openssl s_client/ add-legacyopt-client
         #/openssl s_server/ add-seclevel-server
         #/\.\.\/ssl\// srcpath-replace
         #/openssl /    kicker-replace
