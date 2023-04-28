@@ -36,7 +36,7 @@ GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no=
 for tls in `echo $TLSLIBS | tr ',' ' '`
 do
 AS_CASE([$tls],
-  [axtls], [TLSLIBS="$TLSLIBS,axtls"],
+  [axtls], [],
   [mbedtls],
            [AS_IF([test $mbed_specified = yes], [
               AC_MSG_ERROR([You can only specify either one of 'mbedtls' or
