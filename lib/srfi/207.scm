@@ -40,7 +40,7 @@
   (use srfi.42)
   (use srfi.175)
   (use util.match)
-  (export bytestring make-bytestring
+  (export bytestring make-bytestring make-bytestring!
           bytevector->hex-string hex-string->bytevector
           bytevector->base64 base64->bytevector
           bytestring->list make-bytestring-generator
@@ -48,14 +48,14 @@
           bytestring-pad bytestring-pad-right
           bytestring-trim bytestring-trim-right bytestring-trim-both
           bytestring-replace
-          bytestreing<? bytestring>? bytestring<=? bytestring>=?
+          bytestring<? bytestring>? bytestring<=? bytestring>=?
 
           bytestring-index bytestring-index-right
           bytestring-break bytestring-span
           bytestring-join bytestring-split
 
-          read-textual-bytestring write-textual-bytestring
-          write-binary-bytestring
+          ;read-textual-bytestring write-textual-bytestring
+          ;write-binary-bytestring
 
           bytestring-error?)
   )
@@ -138,7 +138,7 @@
 (define (bytevector->base64 bv :optional (digits #f))
   (assume-type bv <u8vector>)
   (assume-type digits (<?> <string>))
-  (base64-encode-bytevector bv :digits digits))
+  (base64-encode-bytevector bv :line-width #f :digits digits))
 
 (define (base64->bytevector string :optional (digits #f))
   (assume-type string <string>)
@@ -170,7 +170,8 @@
              (%byte->elt (u8vector-ref bv i)))))
 
 (define (make-bytestring-generator . objs)
-  (define gens (lmap ($ uvector->generator $ x->u8vector $) objs))
+  ;; We must check all args before start generating bytes
+  (define gens (map ($ uvector->generator $ x->u8vector $) objs))
   (rec (gen)
     (if (null? gens)
       (eof-object)
@@ -181,12 +182,13 @@
 
 (define (%bytestring-pad bv len elt where)
   (assume-type bv <u8vector>)
-  (if (>= (u8vector-length bv) len)
-    (u8vector-copy bv)                  ;; required to allocate
-    (rlet1 rv (make-u8vector bv (%elt->byte elt))
-      (case where
-        [(left)  (u8vector-copy! rv (- len (u8vector-length bv)) bv)]
-        [(right) (u8vector-copy! rv 0 bv)]))))
+  (let1 origlen (u8vector-length bv)
+    (if (>= origlen len)
+      (u8vector-copy bv)                  ;; required to allocate
+      (rlet1 rv (make-u8vector len (%elt->byte elt))
+        (case where
+          [(left)  (u8vector-copy! rv (- len origlen) bv)]
+          [(right) (u8vector-copy! rv 0 bv)])))))
 
 (define (bytestring-pad bv len elt) (%bytestring-pad bv len elt 'left))
 (define (bytestring-pad-right bv len elt) (%bytestring-pad bv len elt 'right))
@@ -203,7 +205,7 @@
   (let loop ([i (- len 1)])
     (cond [(< i 0) (u8vector)]
           [(pred (u8vector-ref bv i)) (loop (- i 1))]
-          [else (u8vector-copy bv 0 i)])))
+          [else (u8vector-copy bv 0 (+ i 1))])))
 
 (define (bytestring-trim-both bv pred)
   (define len (u8vector-length bv))
@@ -214,7 +216,7 @@
            (let trailing ([j (- len 1)])
              (if (pred (u8vector-ref bv j))
                (trailing (- j 1))
-               (u8vector-copy bv i j)))])))
+               (u8vector-copy bv i (+ j 1))))])))
 
 (define (bytestring-replace bv1 bv2 start1 end1 :optional (start2 0) (end2 #f))
   (assume-type bv1 <u8vector>)
@@ -278,16 +280,19 @@
     (values bv (u8vector))))
 
 (define (bytestring-join bvs delim :optional (grammar 'infix))
-  (ecase grammar
+  (case grammar
     [(infix) (u8vector-concatenate (intersperse (x->u8vector delim) bvs))]
     [(strict-infix)
      (if (null? bvs)
-       (error "Zero bytevectors cannot be joined with strict-infix grammar.")
+       (error <bytestring-error>
+              "Zero bytevectors cannot be joined with strict-infix grammar.")
        (bytestring-join bvs delim 'infix))]
     [(suffix) (u8vector-concatenate
                (append-map (cute list <> (x->u8vector delim)) bvs))]
     [(prefix) (u8vector-concatenate
-               (append-map (cute list (x->u8vector delim) <>) bvs))]))
+               (append-map (cute list (x->u8vector delim) <>) bvs))]
+    [else (error <bytestring-error>
+                 "Invalid grammar argument:" grammar)]))
 
 (define (bytestring-split bv delim :optional (grammar 'infix))
   (define dbyte
@@ -299,15 +304,17 @@
     (let loop ([i 0] [s 0] [r '()])
       (cond [(= i end)
              (let1 r (cons (u8vector-copy bv s i) r)
-               (ecase grammar
-                 [(infix strict-infix) (reverse r)]
+               (case grammar
+                 [(infix strict-infix) (if (equal? r '(#u8())) '() (reverse r))]
                  [(prefix) (let1 rr (reverse r)
-                             (match rr
-                               [("" . rr) rr]
-                               [_ rr]))]
-                 [(suffix) (match r
-                             [("" . rr) (reverse rr)]
-                             [_ (reverse rr)])]))]
+                             (if (and (pair? rr) (equal? #u8() (car rr)))
+                               (cdr rr)
+                               rr))]
+                 [(suffix) (if (and (pair? r) (equal? #u8() (car r)))
+                             (reverse (cdr r))
+                             (reverse r))]
+                 [else (error <bytestring-error>
+                              "Invalid grammar argument:" grammar)]))]
             [(= (u8vector-ref bv i) dbyte)
              (loop (+ i 1) (+ i 1) (cons (u8vector-copy bv s i) r))]
             [else
