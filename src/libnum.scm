@@ -477,7 +477,9 @@
 (define-cproc real-sinh (x::<double>) ::<double> :fast-flonum :constant sinh)
 (define-cproc real-cosh (x::<double>) ::<double> :fast-flonum :constant cosh)
 (define-cproc real-tanh (x::<double>) ::<double> :fast-flonum :constant tanh)
-;; NB: asinh and acosh are not in POSIX.
+(define-cproc real-asinh (x::<double>) ::<double> :fast-flonum :constant asinh)
+(define-cproc real-acosh (x::<double>) ::<double> :fast-flonum :constant acosh)
+(define-cproc real-atanh (x::<double>) ::<double> :fast-flonum :constant atanh)
 
 (define-cproc real-sqrt (x::<double>) :fast-flonum :constant
   (if (< x 0)
@@ -715,12 +717,12 @@
         [else (error "number required, but got" z)]))
 
 (define (asinh z)
-  (if (eqv? z 0)
-    0
+  (if (real? z)
+    (real-asinh z)
     (let1 zz (+ z (sqrt (+ (* z z) 1)))
       (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
         (make-rectangular +nan.0 +nan.0)
-        (log (+ z (sqrt (+ (* z z) 1))))))))
+        (log zz)))))
 
 (define-in-module scheme (acos z)
   (cond [(real? z) (if (eqv? z 1) 0 (real-acos z))]
@@ -734,8 +736,8 @@
         [else (error "number required, but got" z)]))
 
 (define (acosh z)
-  (if (eqv? z 1)
-    0
+  (if (real? z)
+    (real-acosh z)
     ;; See the discussion of CLtL2, pp. 313-314
     (* 2 (log (+ (sqrt (/ (+ z 1) 2))
                  (sqrt (/ (- z 1) 2)))))))
@@ -754,8 +756,8 @@
       (real-atan z (car x)))))
 
 (define (atanh z)
-  (if (eq? z 0)
-    0
+  (if (real? z)
+    (real-atanh z)
     (/ (- (log (+ 1 z)) (log (- 1 z))) 2)))
 
 (select-module gauche)
