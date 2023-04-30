@@ -3845,11 +3845,15 @@ R7RSではこれらの手続きは@code{(scheme inexact)}モジュールにあ�
 @c COMMON
 
 @c EN
+@code{exp} returns @i{e} raised to the power of @var{z}.  The one-argument
+version of @code{log} returns the natural logarithm of @var{z}.
 The two-argument version of @code{log} is added in R6RS, and returns
 base-@var{z2} logarithm of @var{z1}.
 @c JP
-2引数の@code{log}はR6RSで追加されたもので、@var{z2}を底とした@var{z1}の対数を
-返します。
+@code{exp}は@i{e}の@var{z}乗を返します。
+1引数の@code{log}は@var{z}の自然対数を返します。
+2引数の@code{log}はR6RSで追加されたもので、
+@var{z2}を底とした@var{z1}の対数を返します。
 @c COMMON
 
 @c EN
@@ -4067,11 +4071,14 @@ These come handy sometimes, as the following example show:
 @defun real-sinh x
 @defunx real-cosh x
 @defunx real-tanh x
+@defunx real-asinh x
+@defunx real-acosh x
+@defunx real-atanh x
 @c EN
-Real-only version of @code{sinh}, @code{cosh}, and @code{tanh}.
+Real-only version of hyperbolic functions and their inverses.
 An error is signaled if the argument is not a real number.
 @c JP
-実数限定の@code{sinh}、@code{cosh}、@code{tanh}です。
+実数限定の双曲線関数とその逆関数です。
 引数が実数でなければエラーが投げられます。
 @c COMMON
 @end defun
