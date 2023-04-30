@@ -9,6 +9,7 @@
 * Packing binary data::         binary.pack
 * Running Chibi-scheme test suite::  compat.chibi-test
 * Rational-less arithmetic::    compat.norational
+* Backward-compatible real elementary functions:: compat.real-elementary-functions
 * Concurrent sequences::        control.cseq
 * Futures::                     control.future
 * A common job descriptor for control modules::  control.job
@@ -1102,7 +1103,7 @@ Gaucheのソースツリーの@file{test/srfi.scm}に実際の使用例を見る
 
 @c ----------------------------------------------------------------------
 
-@node Rational-less arithmetic, Concurrent sequences, Running Chibi-scheme test suite, Library modules - Utilities
+@node Rational-less arithmetic, Backward-compatible real elementary functions, Running Chibi-scheme test suite, Library modules - Utilities
 @section @code{compat.norational} - Rational-less arithmetic
 @c NODE 有理数のない算術演算, @code{compat.norational} - 有理数のない算術演算
 
@@ -1201,7 +1202,68 @@ gosh> #i1/3
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Concurrent sequences, Futures, Rational-less arithmetic, Library modules - Utilities
+@node Backward-compatible real elementary functions, Concurrent sequences, Rational-less arithmetic, Library modules - Utilities
+@section @code{compat.real-elementary-functions} - Backward-compatible real elementary functions
+@c NODE 後方互換な実数初等関数, @code{compat.real-elementary-functions} - 後方互換な実数初等関数
+
+@deftp {Module} compat.real-elementary-functions
+@mdindex compat.real-elementary-functions
+Gauche 0.9.12 and earlier had undocumented real-only elementary functions,
+such as @code{%sin} and @code{%exp}.  They were intended to be a building
+block of the complex elementation functions, hence prefixed with @code{%}.
+However, they were visible in @code{gauche} module, and sometimes used
+directly because they were fast.
+
+SRFI-94 introduced names for real-only elementation functions
+such as @code{real-sin}, so we changed built-in @code{%sin} etc.
+to follow that names.  @xref{Arithmetics}, for those real-only
+elementatry functions.
+
+This module is to ease migration from the legacy code that uses
+old names.  Just add the following form at the beginning of
+old code and the source would work with both versions.
+
+@example
+(cond-expand
+  [(library compat.real-elementary-functions)
+   (use compat.real-elementary-functions)]
+  [else])
+@end example
+@end deftp
+
+@defun %exp x
+@defunx %sin x
+@defunx %cos x
+@defunx %tan x
+@defunx %sinpi x
+@defunx %cospi x
+@defunx %tanpi x
+@defunx %asin x
+@defunx %acos x
+@defunx %atan x
+@defunx %sinh x
+@defunx %cosh x
+@defunx %tanh x
+@defunx %sqrt x
+@defunx %expt x a
+@c MOD compat.real-elementary-functions
+These are the same as the built-in procedures replacing preceding @code{%}
+with @code{real-}; e.g. @code{%exp} @equiv{} @code{real-exp}.
+@xref{Arithmetics}, for the description of built-in procedures.
+@end defun
+
+@defun %log x :optional base
+@c MOD compat.real-elementary-functions
+This is a real-only logarithm.  If @var{base} is omitted, Napier's number
+is assumed.
+
+Gauche does not have built-in @code{real-log}, to avoid conflict with
+SRFI-94's @code{real-log} which takes @var{base} argument first.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Concurrent sequences, Futures, Backward-compatible real elementary functions, Library modules - Utilities
 @section @code{control.cseq} - Concurrent sequences
 @c NODE 並行シーケンス, @code{control.cseq} - 並行シーケンス
 
