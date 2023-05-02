@@ -412,37 +412,26 @@
 
 ;; Transcedental functions.   First, real-only versions.
 ;; The name real-* is coined in SRFI-94.
-
-(select-module gauche)
-(define-cproc real-exp (x::<double>) ::<double> :fast-flonum :constant exp)
-(define-cproc real-ln (x::<double>) ::<double> :fast-flonum :constant
-  (when (< (Scm_FlonumSign x) 0)
-    (Scm_Error "Argument must be nonnegative real number: %lf" x))
-  (return (log x)))
-
 ;; NB: We don't support 'real-log' of SRFI-94.  It takes base number first,
 ;; which is reverse of R7RS 'log'.  It would be too confusing.
-
-(select-module gauche.internal)
-(define-cproc %log (x) ::<number> :fast-flonum :constant
+(select-module gauche)
+(define-cproc real-exp (x::<double>) ::<double> :fast-flonum :constant exp)
+(define-cproc real-ln (x::<number>) ::<double> :fast-flonum :constant
   (unless (SCM_REALP x) (SCM_TYPE_ERROR x "real number"))
-  (when (Scm_InfiniteP x)
-    (if (> (Scm_Sign x) 0)
-      (return SCM_POSITIVE_INFINITY)
-      (return (Scm_MakeComplex SCM_DBL_POSITIVE_INFINITY M_PI))))
-  (let* ([d::double (Scm_GetDouble x)]
-         [shift::double 0.0])
-    (when (or (== d SCM_DBL_POSITIVE_INFINITY)  ; SCM_IS_INF isn't visible...
-              (== d SCM_DBL_NEGATIVE_INFINITY))
-      (SCM_ASSERT (SCM_BIGNUMP x))  ; the arg is too big to represent in double
-      (let* ([z::ScmBits* (cast ScmBits* (-> (SCM_BIGNUM x) values))]
-             [scale::long (Scm_BitsHighest1 z 0 (* (SCM_BIGNUM_SIZE x) SCM_WORD_BITS))])
-        (set! shift (* scale (log 2.0)))
-        (set! d (Scm_GetDouble
-                 (Scm_DivInexact x (Scm_Ash (SCM_MAKE_INT 1) scale))))))
-    (if (< (Scm_FlonumSign d) 0)
-      (return (Scm_MakeComplex (+ (log (- d)) shift) M_PI))
-      (return (Scm_VMReturnFlonum (+ (log d) shift))))))
+  (when (< (Scm_Sign x) 0)
+    (Scm_Error "Argument must be nonnegative real number: %S" x))
+  ;; We can't simply cast x to double, for x can be a large bignum
+  ;; outside of double.
+  (let* ([d::double (Scm_GetDouble x)])
+    (when (== d SCM_DBL_POSITIVE_INFINITY)
+      (if (SCM_BIGNUMP x)
+        (let* ([z::ScmBits* (cast ScmBits* (-> (SCM_BIGNUM x) values))]
+               [scale::long (Scm_BitsHighest1 z 0 (* (SCM_BIGNUM_SIZE x) SCM_WORD_BITS))])
+          (return (+ (log (Scm_GetDouble
+                           (Scm_DivInexact x (Scm_Ash (SCM_MAKE_INT 1) scale))))
+                     (* scale (log 2.0)))))
+        (return SCM_DBL_POSITIVE_INFINITY)))
+    (return (log d))))
 
 (select-module gauche)
 (define-cproc real-sin (x::<double>) ::<double> :fast-flonum :constant sin)
@@ -522,14 +511,19 @@
         [(complex? z) (make-polar (real-exp (real-part z)) (imag-part z))]
         [else (error "number required, but got" z)]))
 
-(select-module gauche.internal)
 (define-in-module scheme (log z . base)
   (if (null? base)
-    (cond [(real? z) (%log z)]
+    (cond [(real? z)
+           (if (<= 0 z)
+             (real-ln z)
+             ;; The constant pi is not avaialble here, but (* 4 (real-atan 1))
+             ;; is constand-foled to pi.
+             (make-rectangular (real-ln (- z)) (* 4 (real-atan 1))))]
           [(complex? z) (make-rectangular (real-ln (magnitude z)) (angle z))]
           [else (error "number required, but got" z)])
     (/ (log z) (log (car base)))))  ; R6RS addition
 
+(select-module gauche.internal)
 (define-in-module scheme (sqrt z)
   (cond
    [(%sqrt-fast-path z)] ; fast-path check
@@ -589,7 +583,7 @@
                   (if (and (zero? x) (positive? ry))
                     (if (exact? x) 0 0.0)
                     (* (real-expt x ry)
-                       (exp (* +i (imag-part y) (%log x))))))]
+                       (exp (* +i (imag-part y) (real-ln x))))))]
                [else (error "number required, but got" y)])]
         [(number? x) (exp (* y (log x)))]
         [else (error "number required, but got" x)]))

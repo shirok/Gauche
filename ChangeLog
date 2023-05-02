@@ -1,3 +1,11 @@
+2023-05-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm: Dropped hidden real-only versions of elementary
+	  functions, e.g. %sin, replacing with SRFI-94 real-sin etc.
+	  They were never documented.  Now we document real-* version.
+	* lib/compat/real-elementary-functions: Compatibility module to
+	  provide the old names such as %sin etc.
+
 2023-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/lazy.c (Scm_VMForce): Fix a race condition; there was a hazard
