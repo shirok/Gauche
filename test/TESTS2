@@ -11,3 +11,4 @@ scripts.scm
 interactive.scm
 r7rs-tests.scm
 r7rs-aux.scm
+compat.scm
