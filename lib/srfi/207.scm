@@ -55,7 +55,7 @@
           bytestring-join bytestring-split
 
           ;read-textual-bytestring write-textual-bytestring
-          ;write-binary-bytestring
+          write-binary-bytestring
 
           bytestring-error?)
   )
@@ -319,3 +319,7 @@
              (loop (+ i 1) (+ i 1) (cons (u8vector-copy bv s i) r))]
             [else
              (loop (+ i 1) s r)]))))
+
+(define (write-binary-bytestring port . args)
+  ;; TODO: We can avoid intermediate u8vectors.
+  (for-each (^x (write-uvector (x->u8vector x) port)) args))
