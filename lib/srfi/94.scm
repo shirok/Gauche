@@ -33,6 +33,10 @@
 
 (define (ln z) (log z))
 
+(define (abs x)
+  (assume (real? x))
+  ((with-module gauche abs) x))
+
 ;; quo and rem is a kind of middle-ground between R6RS div/mod
 ;; and R7RS truncate-quotient/trunctate-remainder.
 ;; They allow non-integer arguments like the former, but round
