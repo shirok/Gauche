@@ -54,7 +54,8 @@
           bytestring-break bytestring-span
           bytestring-join bytestring-split
 
-          ;read-textual-bytestring write-textual-bytestring
+          read-textual-bytestring
+          write-textual-bytestring
           write-binary-bytestring
 
           bytestring-error?)
@@ -319,6 +320,70 @@
              (loop (+ i 1) (+ i 1) (cons (u8vector-copy bv s i) r))]
             [else
              (loop (+ i 1) s r)]))))
+
+(define (read-textual-bytestring prefix :optional (port (current-input-port)))
+  (define (err msg . args) (apply error <bytestring-error> msg args))
+  (define (ensure char expected)
+    (unless (eqv? char expected)
+      (err (format "Bad bytestring sytnax. '~s' expected, but got:" expected)
+           char)))
+  (define (premature)
+    (error <bytestring-error> "Premature end of bytestring literal"))
+  (define (badhex c)
+    (error <bytestring-error>
+           "Invalid hexadecimal digit in bytestring literal:" c))
+  (define (skip-ws next bytes)
+    (let1 ch (read-char port)
+      (cond [(eof-object? ch) (premature)]
+            [(char-whitespace? ch) (skip-ws next bytes)]
+            [else (next ch bytes)])))
+  (when prefix
+    (ensure (read-char port) #\#)
+    (ensure (read-char port) #\u)
+    (ensure (read-char port) #\8))
+  (ensure (read-char port) #\")
+  (let loop ((ch (read-char port))
+             (bytes '()))
+    (when (eof-object? ch) (premature))
+    (cond [(eqv? ch #\") (list->u8vector (reverse bytes))]
+          [(eqv? ch #\\)
+           (let1 ch2 (read-char port)
+             (case ch2
+               [(#\a) (loop (read-char port) (cons 7 bytes))]
+               [(#\b) (loop (read-char port) (cons 8 bytes))]
+               [(#\t) (loop (read-char port) (cons 9 bytes))]
+               [(#\n) (loop (read-char port) (cons 10 bytes))]
+               [(#\r) (loop (read-char port) (cons 13 bytes))]
+               [(#\|) (loop (read-char port) (cons 124 bytes))]
+               [(#\" #\\)
+                (loop (read-char port) (cons (char->integer ch2) bytes))]
+               [(#\x)
+                (let* ([x0 (read-char port)]
+                       [x1 (read-char port)])
+                  (unless (and (char? x0) (char? x1)) (premature))
+                  (ensure (read-char port) #\;)
+                  (let ([d0 (digit->integer x0 16)]
+                        [d1 (digit->integer x1 16)])
+                    (unless d0 (badhex x0))
+                    (unless d1 (badhex x1))
+                    (loop (read-char port) (cons (+ (* d0 16) d1) bytes))))]
+               [(#\tab #\space #\newline) (skip-ws loop bytes)]
+               [else
+                (err "Invalid escape sequence in bytestring literal:" ch2)]))]
+          [(ascii-char? ch)
+           (loop (read-char port) (cons (char->integer ch) bytes))]
+          [else (err "Non-ascii character in bytestring literal:" ch)])))
+
+(define (write-textual-bytestring bv :optional (port (current-output-port)))
+  (assume-type bv <u8vector>)
+  (display "#u8\"" port)
+  (do-ec (: byte bv)
+         (cond
+          [(eq? byte (char->integer #\")) (display "\\\"" port)]
+          [(eq? byte (char->integer #\\)) (display "\\\\" port)]
+          [(<= #x20 byte #x7e) (display (integer->char byte) port)]
+          [else (format port "\\x~2,'0x;" byte)]))
+  (display "\"" port))
 
 (define (write-binary-bytestring port . args)
   ;; TODO: We can avoid intermediate u8vectors.
