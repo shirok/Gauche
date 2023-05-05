@@ -7211,11 +7211,24 @@ of memory than the ordinary pairs.
 @c COMMON
 
 @c EN
+Pair attributes are not written out in the external representation,
+and not copied by @code{copy-list} and many other list procedures
+that constructs the output list from the input list.
+That is, they are easily lost.   Use them for the ancillary information
+which is nice to have but not mandatory.
+@c JP
+ペア属性は外部表現には書き出されませんし、@code{copy-list}や、出力リストを
+入力リストを元に新たに組み立てる多くのリスト手続きでコピーされません。
+つまり、ペア属性は簡単に失われます。「あったら良いけど、必須ではない」という
+補助的な情報に使うのが良いでしょう。
+@c COMMON
+
+@c EN
 Keep in mind that code using extended pairs is not easily ported to
 other Scheme implementations, although the
 feature can be emulated with a separate weak hash table.
 @c JP
-拡張ペアを使ったコードは、弱参照ハッシュテーブルでエミュレートできるとはいえ、
+また、拡張ペアを使ったコードは、弱参照ハッシュテーブルでエミュレートできるとはいえ、
 他のScheme処理系には簡単に移植できないことに留意してください。
 @c COMMON
 
