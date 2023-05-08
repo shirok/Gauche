@@ -363,6 +363,18 @@ dnl the use of ac_configure_args depends on autoconf 2.52.
 GAUCHE_CONFIGURE_ARGS=`echo "$ac_configure_args" | sed 's/@<:@\\"\`\$@:>@/\\\\&/g'`
 AC_SUBST(GAUCHE_CONFIGURE_ARGS)
 
+
+dnl ===========================================================
+dnl Set up gosh flags for build.
+dnl On MinGW, gosh -v option doesn't work, so we disable it.
+BUILD_GOSH_FLAGS='-v$(BUILD_GOSH_VERSION)'
+AS_CASE([$host],
+   [*mingw*], [
+     BUILD_GOSH_FLAGS=""
+     ])
+AC_SUBST(BUILD_GOSH_FLAGS)
+
+
 dnl ==========================================================
 dnl Checks for programs.
 
