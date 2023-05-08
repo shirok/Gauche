@@ -18123,7 +18123,7 @@ when you test the parameter @var{p} with
 @end defun
 
 @defmac parameterize ((param value) @dots{}) body @dots{}
-[R7RS base]
+[R7RS base][SRFI-226]
 @c EN
 Evaluates @var{body} @dots{}, with
 change parameter @var{param}'s value to the given @var{value} within
@@ -18190,6 +18190,20 @@ Returns @code{#t} iff @var{obj} is an object created by
 そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
+
+@defmac parameterize/dynwind ((param value) @dots{}) body @dots{}
+This handles the parameter bindings using @code{dynamic-wind}.
+It is fully compatible with pre-0.9.13 @code{parameterize}.
+
+Notably, this can handle the 'observer' feature of the legacy
+parameters introduced by @code{gauche.parameter}.  Our experience
+shows the feature has been hardly used, and is incompatible with SRFI-226
+semantics, so we deprecated it.
+
+This form is provided for the legacy code that requires the legacy
+behavior.
+@end defmac
+
 
 @node Dynamic states, Difference of parameters and dynamic states, Parameters, Parameters and dynamic states
 @subsection Dynamic states
