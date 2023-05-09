@@ -472,6 +472,8 @@
 ;;;
 ;;; Invoke other version of gosh
 ;;;   This is called when gosh gets -vVERSION option.
+;;;   On success, this never returns.
+;;;   On failure, returns a globpath that is tried to find the other versions.
 ;;;
 (select-module gauche.internal)
 (define (%invoke-other-version version args)
@@ -495,10 +497,9 @@
                        [(equal? (car args) "-v") (loop (cddr args) r)]
                        [(#/^-v/ (car args)) (loop (cdr args) r)]
                        [else (loop (cdr args) (cons (car args) r))]))])
-    (unless (pair? goshes)
-      (exit 1 "No installed Gauche with version ~a under ~a.\n"
-            version prefix))
-    (sys-exec (car goshes) (cons (car goshes) args))))
+    (if (pair? goshes)
+      (sys-exec (car goshes) (cons (car goshes) args)) ;never return
+      prefix)))
 
 ;;;
 ;;; System termination

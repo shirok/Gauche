@@ -1,5 +1,9 @@
 2023-05-08  Shiro Kawai  <shiro@acm.org>
 
+	* src/main.c, src/libeval.scm (%invoke-other-version): Extend -v option
+	  so that -v:VERSION tries to run VERSION, but if it can't find one,
+	  falls back to the current version.
+
 	* lib/gauche/fileutil.scm, src/libsys.scm: Move glob to libsys.scm.
 	  Before, '%invoke-other-version' triggered autoload of fileutil,
 	  but that caused some issue when the user use gosh -vVERSION

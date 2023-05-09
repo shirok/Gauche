@@ -254,14 +254,36 @@ void invoke_other_version(const char *version, int argc, char **argv)
     static ScmObj invoke_other_version = SCM_UNDEFINED;
     SCM_BIND_PROC(invoke_other_version, "%invoke-other-version",
                   Scm_GaucheInternalModule());
+
+    int allow_fallback = FALSE;
+    if (*version == ':') {
+        allow_fallback = TRUE;
+        version++;
+    }
+
     ScmEvalPacket epkt;
-    Scm_Apply(invoke_other_version,
-              SCM_LIST2(SCM_MAKE_STR_COPYING(version),
-                        Scm_CStringArrayToList((const char**)argv, argc, 0)),
-              &epkt);
-    /* %invoke-other-version won't return.  If we're here,
-       we even failed to call it. */
-    Scm_Panic("Failed to call %%invoke-other-version.  Installation problem?");
+    int r = Scm_Apply(invoke_other_version,
+                      SCM_LIST2(SCM_MAKE_STR_COPYING(version),
+                                Scm_CStringArrayToList((const char**)argv, argc, 0)),
+                      &epkt);
+    /* If %invoke-other-version returns normally, it couldn't find the
+       specified version.
+     */
+    if (r < 0) {
+        Scm_Panic("Failed to call %%invoke-other-version. "
+                  "Installation problem?");
+    }
+    SCM_ASSERT(r == 1);
+    if (!allow_fallback) {
+        Scm_Printf(SCM_CURERR,
+                   "No installed Gauche with version %s under %A.\n",
+                   version, epkt.results[0]);
+        Scm_Exit(1);
+    } else {
+        Scm_Warn("No installed Gauche with version %s under %A. "
+                 "Using the current version.",
+                 version, epkt.results[0]);
+    }
 }
 
 void further_options(const char *optarg)
