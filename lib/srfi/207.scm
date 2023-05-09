@@ -332,11 +332,14 @@
   (define (badhex c)
     (error <bytestring-error>
            "Invalid hexadecimal digit in bytestring literal:" c))
-  (define (skip-ws next bytes)
+  (define (skip-ws next bytes newline-seen?)
     (let1 ch (read-char port)
       (cond [(eof-object? ch) (premature)]
-            [(char-whitespace? ch) (skip-ws next bytes)]
-            [else (next ch bytes)])))
+            [(eqv? ch #\newline) (skip-ws next bytes #t)]
+            [(char-whitespace? ch) (skip-ws next bytes newline-seen?)]
+            [else (if newline-seen?
+                    (next ch bytes)
+                    (err "Invalid \\+newline sequence"))])))
   (when prefix
     (ensure (read-char port) #\#)
     (ensure (read-char port) #\u)
@@ -367,7 +370,8 @@
                     (unless d0 (badhex x0))
                     (unless d1 (badhex x1))
                     (loop (read-char port) (cons (+ (* d0 16) d1) bytes))))]
-               [(#\tab #\space #\newline) (skip-ws loop bytes)]
+               [(#\tab #\space) (skip-ws loop bytes #f)]
+               [(#\newline) (skip-ws loop bytes #t)]
                [else
                 (err "Invalid escape sequence in bytestring literal:" ch2)]))]
           [(ascii-char? ch)
@@ -381,6 +385,12 @@
          (cond
           [(eq? byte (char->integer #\")) (display "\\\"" port)]
           [(eq? byte (char->integer #\\)) (display "\\\\" port)]
+          [(eq? byte #x07) (display "\\a" port)]
+          [(eq? byte #x08) (display "\\b" port)]
+          [(eq? byte #x09) (display "\\t" port)]
+          [(eq? byte #x0a) (display "\\n" port)]
+          [(eq? byte #x0d) (display "\\r" port)]
+          [(eq? byte #x7c) (display "\\|" port)]
           [(<= #x20 byte #x7e) (display (integer->char byte) port)]
           [else (format port "\\x~2,'0x;" byte)]))
   (display "\"" port))
