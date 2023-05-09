@@ -18,7 +18,7 @@
 (define (md p) (sys-mkdir p #o777))
 (define (mf p) (with-output-to-file p (cut display "z")))
 
-(and glob (test-module 'gauche.fileutil)) ;; trigger autoload
+(and sys-tm->alist (test-module 'gauche.fileutil)) ;; trigger autoload
 
 (test-remove-files "tmp1.o")
 

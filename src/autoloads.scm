@@ -157,7 +157,6 @@
           (:macro comparator-if<=>))
 
 (autoload gauche.fileutil
-          glob glob-fold sys-glob glob-component->regexp make-glob-fs-fold
           sys-stat->file-type sys-stat->mode sys-stat->ino
           sys-stat->dev sys-stat->rdev sys-stat->nlink
           sys-stat->size sys-stat->uid sys-stat->gid

@@ -1,3 +1,10 @@
+2023-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/fileutil.scm, src/libsys.scm: Move glob to libsys.scm.
+	  Before, '%invoke-other-version' triggered autoload of fileutil,
+	  but that caused some issue when the user use gosh -vVERSION
+	  from the uninstalled source tree.
+
 2023-05-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm: Dropped hidden real-only versions of elementary
