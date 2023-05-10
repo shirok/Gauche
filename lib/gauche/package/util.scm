@@ -153,7 +153,9 @@
                         :key (module-name #f)
                              (use-autoconf #f)
                              (scheme-only #f)
-                             (verbose #f))
+                             (verbose #f)
+                             (copyright-type #f)
+                             (copyright-holder #f))
   (assume-type package-name <string>)
   (let* ([extension-name (string-tr package-name "A-Za-z_-" "a-za-z__")]
          [module-name (or module-name
@@ -180,7 +182,11 @@
                             #/@@EXTNAME@@/ EXTENSION-NAME
                             #/@@configure@@/ configure-name
                             #/@@gauche-version@@/ gversion
-                            #/@@author@@/ author-name)
+                            #/@@author@@/ author-name
+                            #/@@year@@/ ($ sys-strftime "%Y" $ sys-localtime
+                                           $ sys-time)
+                            #/@@copyright-holder@@/ (or copyright-holder
+                                                        author-name))
                            out)
                           (newline out))
                         (cut read-line in)))
@@ -199,13 +205,19 @@
                             '("Makefile.in" "extension.c"
                               "extension.h" "extensionlib.stub"
                               "module.scm" ))
+                          (case copyright-type
+                            [(bsd bsd3) '("COPYING--bsd3")]
+                            [(mit) '("COPYING--mit")]
+                            [(#f) '()])
                           '("package.scm" "test.scm"))]
       (let* ([src-path (build-path srcdir file)]
              [dst-name (regexp-replace*
                         file
                         #/extension/ extension-name
                         #/module/ (sys-basename module-path)
-                        #/-pure-scheme/ "")]
+                        #/-pure-scheme/ ""
+                        #/--bsd3/ ""
+                        #/--mit/ "")]
              [dst-path (if (#/^module/ file)
                          (build-path dstdir dst-subdir dst-name)
                          (build-path dstdir dst-name))])
