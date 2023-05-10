@@ -169,6 +169,7 @@
                      (dolist [line (port->string-list in)]
                        (display ($ regexp-replace-all* line
                                    #/@@author@@/ ""
+                                   #/@@license@@/ ""
                                    #/@@/ ""
                                    #/\(cf-output-default\)/
                                    "(cf-define 'HAVE_STDIO_H \"1\")\n\
@@ -276,6 +277,7 @@
                      (dolist [line (port->string-list in)]
                        (display (regexp-replace-all* line
                                                      #/@@author@@/ ""
+                                                     #/@@license@@/ ""
                                                      #/@@/ "")
                                 out)
                        (newline out)))

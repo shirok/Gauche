@@ -383,6 +383,9 @@ Options:
                        they are stored along installed Gauche libraries.
   --package-dir=DIR  : the directory where the files are generated.  By default,
                        the package name is used as the directory name.
+  --license=TYPE     : Include license info in package.scm and COPYING file.
+                       Currently, 'BSD' and 'MIT' are supported as
+                       TYPE.  (Both 'BSD' and 'BSD3' are for 3-clause BSD).
   -v|verbose         : operate verbosely.
 ")
   (let-args args ([autoconf "autoconf"]
@@ -390,6 +393,7 @@ Options:
                   [scheme-only "S|scheme-only"]
                   [tmpl-dir "template-dir=s"]
                   [pkg-dir  "package-dir=s"]
+                  [license "license=s"]
                   . args)
     (let-optionals* args ([package-name #f]
                           [module-name #f]
@@ -399,18 +403,22 @@ Options:
         (exit 1 "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
       (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
         (exit 1 "Invalid character in module-name ~s" module-name))
+      (unless (member license '(#f "BSD" "BSD3" "MIT"))
+        (exit 1 "License ~s is unsupported.  You need to add license description manually after the project is generated."))
       (let* ([package-name*  (rxmatch-case package-name
                                (#/^Gauche-(.*)/ (#f rest) rest)
                                (else package-name))]
              [srcdir (or tmpl-dir
                          (build-path (sys-dirname (gauche-library-directory))
                                      "package-templates"))]
-             [dstdir (or pkg-dir package-name)])
+             [dstdir (or pkg-dir package-name)]
+             [lic (and license (string->symbol (string-downcase license)))])
         (copy-templates srcdir dstdir package-name
                         :module-name (and module-name
                                           (string->symbol module-name))
                         :scheme-only scheme-only
                         :use-autoconf autoconf
+                        :license lic
                         :verbose verbose)))))
 
 ;;------------------------------------------------------

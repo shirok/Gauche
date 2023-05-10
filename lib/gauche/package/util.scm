@@ -154,8 +154,8 @@
                              (use-autoconf #f)
                              (scheme-only #f)
                              (verbose #f)
-                             (copyright-type #f)
-                             (copyright-holder #f))
+                             (license #f)
+                             (licensor #f))
   (assume-type package-name <string>)
   (let* ([extension-name (string-tr package-name "A-Za-z_-" "a-za-z__")]
          [module-name (or module-name
@@ -163,33 +163,44 @@
          [module-path (module-name->path module-name)]
          [dst-subdir  (sys-dirname module-path)]
          [gversion    (gauche-version)]
-         [author-name (%author-name)])
+         [author-name (%author-name)]
+         [license-name (ecase license
+                         [(bsd bsd3) "BSD"]
+                         [(mit) "MIT"]
+                         [(#f) #f])])
 
     (define (filter-copy src dst executables configure-name)
       (let1 EXTENSION-NAME (string-upcase extension-name)
         (when verbose
           (format #t "Installing ~a as ~a\n" src dst))
-        (file-filter (^[in out]
-                       (port-for-each
-                        (^[line]
-                          (display
-                           (regexp-replace-all*
-                            line
-                            #/@@package@@/ package-name
-                            #/@@modname@@/ (x->string module-name)
-                            #/@@modpath@@/ (module-name->path module-name)
-                            #/@@extname@@/ extension-name
-                            #/@@EXTNAME@@/ EXTENSION-NAME
-                            #/@@configure@@/ configure-name
-                            #/@@gauche-version@@/ gversion
-                            #/@@author@@/ author-name
-                            #/@@year@@/ ($ sys-strftime "%Y" $ sys-localtime
-                                           $ sys-time)
-                            #/@@copyright-holder@@/ (or copyright-holder
-                                                        author-name))
-                           out)
-                          (newline out))
-                        (cut read-line in)))
+        (file-filter
+         (^[in out]
+           (port-for-each
+            (^[line]
+              (display
+               (regexp-replace-all*
+                line
+                #/@@package@@/ package-name
+                #/@@modname@@/ (x->string module-name)
+                #/@@modpath@@/ (module-name->path module-name)
+                #/@@extname@@/ extension-name
+                #/@@EXTNAME@@/ EXTENSION-NAME
+                #/@@configure@@/ configure-name
+                #/@@gauche-version@@/ gversion
+                #/@@author@@/ (if author-name
+                                (write-to-string author-name)
+                                "")
+                #/@@year@@/ ($ sys-strftime "%Y" $ sys-localtime
+                               $ sys-time)
+                #/@@licensor@@/ (or licensor
+                                    author-name
+                                    "COPYRIGHT HOLDER")
+                #/@@license@@/ (if license-name
+                                 (write-to-string license-name)
+                                 ""))
+               out)
+              (newline out))
+            (cut read-line in)))
                      :input src
                      :output dst)
         (when (member (sys-basename dst) executables)
@@ -205,7 +216,7 @@
                             '("Makefile.in" "extension.c"
                               "extension.h" "extensionlib.stub"
                               "module.scm" ))
-                          (case copyright-type
+                          (case license
                             [(bsd bsd3) '("COPYING--bsd3")]
                             [(mit) '("COPYING--mit")]
                             [(#f) '()])
@@ -227,14 +238,13 @@
 
 ;; Retrieve author name and email from git config, if possible
 (define (%author-name)
-  (or (and-let* ([git (%find-file-in-paths "git")]
-                 [name  (process-output->string '(git config user.name)
-                                                :error :null
-                                                :on-abnormal-exit :ignore)]
-                 [ (and name (not (string-null? name))) ]
-                 [email (process-output->string '(git config user.email)
-                                                :error :null
-                                                :on-abnormal-exit :ignore)]
-                 [ (and email (not (string-null? email))) ])
-        (write-to-string #"~name <~|email|>"))
-      ""))
+  (and-let* ([git (%find-file-in-paths "git")]
+             [name  (process-output->string '(git config user.name)
+                                            :error :null
+                                            :on-abnormal-exit :ignore)]
+             [ (and name (not (string-null? name))) ]
+             [email (process-output->string '(git config user.email)
+                                            :error :null
+                                            :on-abnormal-exit :ignore)]
+             [ (and email (not (string-null? email))) ])
+    #"~name <~|email|>"))

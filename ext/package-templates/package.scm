@@ -35,7 +35,7 @@
 
   ;; List licenses
   ;; e.g. ("BSD")
-  :licenses ()
+  :licenses (@@license@@)
 
   ;; Homepage URL, if any.
   ; :homepage "http://example.com/@@package@@/"
