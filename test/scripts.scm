@@ -180,8 +180,6 @@
                    :output outfile))
     (filter-copy (build-path extdir "package-templates" "configure")
                  "test.o/configure")
-    (filter-copy (build-path extdir "package-templates" "configure-compat")
-                 "test.o/configure-compat")
     (filter-copy (build-path extdir "package-templates" "package.scm")
                  "test.o/package.scm")
     (filter-copy (build-path extdir "package-templates" "Makefile.in")

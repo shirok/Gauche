@@ -192,7 +192,7 @@
     (make-directory* (build-path dstdir dst-subdir))
     (dolist [file (append (if use-autoconf
                             '("configure.ac")
-                            '("configure" "configure-compat"))
+                            '("configure"))
                           (if scheme-only
                             '("Makefile-pure-scheme.in"
                               "module-pure-scheme.scm")
