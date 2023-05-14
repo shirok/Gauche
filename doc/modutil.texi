@@ -1804,7 +1804,7 @@ ports, and delivers it to other ports.  It is like you construct
 plumbing system with multiple inlets and outlets; hence we named it
 @emph{plumbing}.
 @c JP
-このモジュールを使って、1つ以上のポートからデータを吸い出しし、それを1つ以上のポートへと
+このモジュールを使って、1つ以上のポートからデータを吸い出し、それを1つ以上のポートへと
 送り届けるシステムを作ることができます。
 あたかも注水口(inlet)と排水口(outlet)がある配管(plumbing)システムを作るような
 ものなので、このシステムを@emph{plumbing}と呼びます。
@@ -1839,7 +1839,7 @@ outlets.
 @c JP
 機能させるためには、plumbingは1つ以上の@emph{inlet} (注水口) と
 1つ以上の@emph{outlet} (排水口)を持つ必要があります。
-データはinletaから流れ込み、outletから流れ出してゆきます。
+データはinletから流れ込み、outletから流れ出してゆきます。
 @c COMMON
 
 @c EN
@@ -1926,6 +1926,16 @@ read from the pipe and sent to the current output port as produced.
   (add-inlet-input-port! plumbing (process-error p))
   (add-outlet-output-port! plumbing (current-output-port)))
 @end example
+
+@c EN
+For typical plumbing configurations, there are utility procedures
+defined so that you don't need to connect pots manually; see
+``Preconfigured plumbings'' section below.
+@c JP
+典型的な配管構成については、ユーティリティ手続きが定義されていて
+いちいちポートをひとつづつ繋がなくても良いようになっています。
+下の ``組み立て済みplumbing'' の項を参照してください。
+@c COMMON
 @end defun
 
 @defun plumbing? obj
@@ -1933,7 +1943,7 @@ read from the pipe and sent to the current output port as produced.
 @c EN
 Returns @code{#t} if @var{obj} is a plumbing, @code{#f} if not.
 @c JP
-@var{obj}がplumbingeであれば@code{#t}を、そうでなければ@code{#f}を返します。
+@var{obj}がplumbingであれば@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
 
@@ -1955,7 +1965,7 @@ The @var{name} argument must be a symbol.
 Returns a port connected to @var{plumbing} and with @var{name}.
 Returns @code{#f} if there's no such ports.
 @c JP
-@var{name}引数はシンボルでなければなります。
+@var{name}引数はシンボルでなければなりません。
 @var{plumbing}に接続されたポートで、名前@var{name}を持つものを返します。
 該当するポートが無ければ@code{#f}が返ります。
 @c COMMON
