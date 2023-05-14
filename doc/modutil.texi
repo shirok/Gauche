@@ -2260,15 +2260,17 @@ A pipe is a passive plumbing device that has inlet output port(s) and
 outlet input port(s).
 Data written to the inlet output ports
 will be buffered and available to read from the outlet input ports.
-This procedure creates and returns a pipe
+This procedure creates a pipe
 with @var{num-inlets} inlet output ports
-and @var{num-outlets} outlet input ports.
+and @var{num-outlets} outlet input ports,
+and returns two values, a list of inlet ports and a list of outlet ports.
 @c JP
 パイプはinlet出力ポートとoutlet入力ポートを持つ受動的なplumbingです。
 inlet出力ポートに書き込まれたデータは各outlet入力ポートにバッファされ、
 読み出されるのを待ちます。
 この手続きは、@var{num-inlets}個のinlet出力ポートと、
-@var{num-outlets}個のoutlett出力ポートを持つパイプを作って返します。
+@var{num-outlets}個のoutlet出力ポートを持つパイプを作り、
+inletポートのリストとoutletポートのリストの2つの値を返します。
 @c COMMON
 
 @c EN
@@ -2288,6 +2290,14 @@ consumer can read the outlet in its own pace.
 outletが複数ある場合、データは複製されます。つまり、それぞれの消費者は
 同じデータを読み出します。それぞれのoutletが独立したバッファを持つので、
 各消費者はそれぞれのペースで読み出すことができます。
+@c COMMON
+
+@c EN
+The created plumbing can be obtained by applying @code{port-plumbing}
+to any of the returned ports.
+@c JP
+作られたplumbingを得るには、返されたポートのいずれかに@code{port-plumbing}を
+適用します。
 @c COMMON
 
 @c EN
@@ -2360,26 +2370,51 @@ This is Common Lisp's @code{make-broadcast-stream}.
 
 @defun open-tapping-input-port inlet-iport outlet-oport :key close-on-eof
 @c MOD control.plumbing
+@c EN
 It creates a pump, a plumbing that reads from @var{inlet-iport} and
 writes out the read data to @var{outlet-oport}.  Additionally, it creates
 and returns an outlet input port, from which you can read the data
 flowing in the pump.
+@c JP
+これは、@var{inlet-port}からデータを吸出し@var{outlet-oport}に送り出すポンプを
+作りますが、同時にそこに流れるデータを読み出せるoutlet入力ポートを作って返します。
+@c COMMON
 
+@c EN
 An example use case is to monitor process output.  You spawn a process
 with its stdout connected to a pipe, then call
 @code{(open-tapping-input-port (process-output subprocess) (current-output-port))}.
 With this, the subprocess's output automatically flows to your process's output.
 However, that data is also available from the returned input port,
 and you can check it.
+@c JP
+例えばそれは、プロセスの出力を監視するのに使えます。
+標準出力をパイプに流す子プロセスを作り、
+@code{(open-tapping-input-port (process-output subprocess) (current-output-port))} を呼びます。
+すると、子プロセスの出力は自動的に現在の出力ポートに流されますが、
+そのデータは戻り値の入力ポートから読み出せるので、そこで監視することができます。
+@c COMMON
 
+@c EN
 Note that the data passed from @var{inlet-iport} to @var{outlet-oport} are
-buffered for the returend input port until you read from it.  If you're
+buffered for the returned input port until you read from it.  If you're
 done with monitoring, you can close the returned input port safely; the
 data will no longer be buffered, but the pump will keep running until
 the input reaches EOF.
+@c JP
+@var{inlet-iport}から読み出され@var{outlet-oport}に送られるデータは、
+戻り値の入力ポートからも読み出せるようにバッファされることに注意してください。
+監視する必要がなくなったらいつでも、戻り値の入力ポートを閉じることができます。
+そうすれば流れるデータはバッファされなくなりますが、ポンプはinletからのデータが
+EOFに達するまで動きつづけます。
+@c COMMON
 
+@c EN
 The pump plumbing is available by calling @code{port-plumbing} on the
 returned input port.
+@c JP
+ポンプのplumbingは、戻り値の入力ポートに@code{port-plumbing}を適用すると得られます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
