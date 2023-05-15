@@ -1208,20 +1208,40 @@ gosh> #i1/3
 
 @deftp {Module} compat.real-elementary-functions
 @mdindex compat.real-elementary-functions
+@c EN
 Gauche 0.9.12 and earlier had undocumented real-only elementary functions,
 such as @code{%sin} and @code{%exp}.  They were intended to be a building
 block of the complex elementation functions, hence prefixed with @code{%}.
 However, they were visible in @code{gauche} module, and sometimes used
 directly because they were fast.
+@c JP
+Gauche 0.9.12とそれ以前のバージョンでは、正式にドキュメントされていませんでしたが、
+実数のみを対象とした@code{%sin}や@code{%exp}といった初等関数が提供されていました。
+複素数までを対象にした初等関数はそれらの上に構築されていて、
+実数対象バージョンは内部ルーチンという意図でした(なので@code{%}が頭についています)が、
+@code{gauche}モジュールで見えるようになっていたのと、複素数バージョンより速かったので、
+過去のコードでこれらの関数を直接呼んでいるコードがあります。
+@c COMMON
 
+@c EN
 SRFI-94 introduced names for real-only elementation functions
 such as @code{real-sin}, so we changed built-in @code{%sin} etc.
 to follow that names.  @xref{Arithmetics}, for those real-only
 elementatry functions.
+@c JP
+SRFI-94で、実数のみ対象の初等関数に@code{real-sin}などの名前が規定されたので、
+0.9.13から@code{%sin}などを@code{real-sin}にリネームした上で正式にドキュメントしました。
+@ref{Arithmetics}に説明があります。
+@c COMMON
 
+@c EN
 This module is to ease migration from the legacy code that uses
 old names.  Just add the following form at the beginning of
 old code and the source would work with both versions.
+@c JP
+このモジュールは、古い名前を使っている既存のコードからの移行を補助するためのものです。
+次のフォームを付け加えてやれば、古いコードはどのバージョンのGaucheでも動きます。
+@c COMMON
 
 @example
 (cond-expand
@@ -1229,6 +1249,12 @@ old code and the source would work with both versions.
    (use compat.real-elementary-functions)]
   [else])
 @end example
+
+@c EN
+New code must use @code{real-sin} etc. instead of the names provided here.
+@c JP
+新規コードは、このモジュールにある名前ではなく@code{real-sin}などの名前を使ってください。
+@c COMMON
 @end deftp
 
 @defun %exp x
@@ -1247,18 +1273,51 @@ old code and the source would work with both versions.
 @defunx %sqrt x
 @defunx %expt x a
 @c MOD compat.real-elementary-functions
+@c EN
 These are the same as the built-in procedures replacing preceding @code{%}
 with @code{real-}; e.g. @code{%exp} @equiv{} @code{real-exp}.
 @xref{Arithmetics}, for the description of built-in procedures.
+@c JP
+これらは、@code{%}を@code{real-}で置き換えた組み込み手続きと同じです。
+(例: @code{%exp} @equiv{} @code{real-exp})。
+これらの組み込み手続きについては@ref{Arithmetics}を参照してください。
+@c COMMON
 @end defun
 
 @defun %log x :optional base
 @c MOD compat.real-elementary-functions
-This is a real-only logarithm.  If @var{base} is omitted, Napier's number
-is assumed.
+@c EN
+This is a real-only logarithm of @var{x} base @var{base}.
+@var{x} must be a non-negative real
+number, and @var{base} must be a positive real number.
+If @var{base} is omitted, Napier's number is assumed, that is,
+it returns a natural logarithm of @var{x}.
+If @var{x} is 0, @code{-inf.0} is returned.
+@c JP
+これは実数のみを対象とした、@var{base}を底とする@var{x}の対数関数です。
+@var{x}は非負実数、@var{base}は正の実数でなければなりません
+@var{base}が省略された時はネイピア数が使われます。
+すなわち、@var{x}の自然対数を返します。
+@var{x}が0の時は@code{-inf.0}が返されます。
+@c COMMON
 
+@c EN
 Gauche does not have built-in @code{real-log}, to avoid conflict with
 SRFI-94's @code{real-log} which takes @var{base} argument first.
+For real-only natural logarithm, Gauche has @code{real-ln}.
+@c JP
+Gaucheは組み込みでは@code{real-log}を提供しません。
+SRFI-94が底を第一引数にする@code{real-logを}を定義しているので、混同を避けるためです。
+実数対象の自然対数には、組み込みの@code{real-ln}が使えます。
+@c COMMON
+
+@c EN
+@xref{R7RS flonum}, which defines flonum-only version of logarithms
+sich as @code{fllog}, @code{fllog2}, and @code{fllog10}.
+@c JP
+また、@ref{R7RS flonum}には、flonum専用の対数関数である
+@code{fllog}、@code{fllog2}、@code{fllog10}等が定義されています。
+@c COMMON
 @end defun
 
 
