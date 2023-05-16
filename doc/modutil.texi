@@ -1245,7 +1245,7 @@ old code and the source would work with both versions.
 
 @example
 (cond-expand
-  [(library compat.real-elementary-functions)
+  [(library (compat real-elementary-functions))
    (use compat.real-elementary-functions)]
   [else])
 @end example
