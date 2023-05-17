@@ -6,6 +6,10 @@
 	  are updated.  NB: lib/gauche/cgen/precomp.scm is used to compile
 	  0.9.13, so it needs to work on both old and new gosh.  For now,
 	  we use an ugly kludge for transition.
+	  Also put port-case-fold in gauche.internal.  case-fold flag has
+	  global effect and accidentally changing it can cause a wreak havoc.
+	  There are already scope-delimited way to change the mode (#!fold-case
+	  directive, or include-ci form).
 
 2023-05-09  Shiro Kawai  <shiro@acm.org>
 

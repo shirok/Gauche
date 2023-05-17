@@ -725,7 +725,9 @@
          [(or gauche-0.9.12 gauche-0.9.13_pre1 gauche-0.9.13_pre2 gauche-0.9.13_pre3)
           (port-case-fold-set! (current-input-port) case-fold?)]
          [else
-          (set! (port-case-fold (current-input-port)) case-fold?)])
+          (set! ((with-module gauche.internal port-case-fold)
+                 (current-input-port))
+                case-fold?)])
         (unwind-protect
             (generator-fold compile-toplevel-form seed read)
           (close-port (current-input-port))))))

@@ -122,6 +122,12 @@
            port (Scm_BufferingMode mode (-> port direction) -1)))
   (return (Scm_GetPortBufferingModeAsKeyword port)))
 
+(define-cproc port-link! (iport::<input-port> oport::<output-port>) ::<void>
+  Scm_LinkPorts)
+
+(define-cproc port-unlink! (port::<port>) ::<void> Scm_UnlinkPorts)
+
+(select-module gauche.internal)
 (define-cproc port-case-fold (port::<port>) ::<boolean>
   (setter (port::<port> flag::<boolean>) ::<void>
           (if flag
@@ -129,10 +135,6 @@
             (logand= (SCM_PORT_FLAGS port) (lognot SCM_PORT_CASE_FOLD))))
   (return (logand (SCM_PORT_FLAGS port) SCM_PORT_CASE_FOLD)))
 
-(define-cproc port-link! (iport::<input-port> oport::<output-port>) ::<void>
-  Scm_LinkPorts)
-
-(define-cproc port-unlink! (port::<port>) ::<void> Scm_UnlinkPorts)
 
 ;;
 ;; Open and close
@@ -1098,12 +1100,12 @@
 
 (define-reader-directive 'fold-case
   (^[sym port ctx]
-    (set! (port-case-fold port) #t)
+    (set! ((with-module gauche.internal port-case-fold) port) #t)
     (values)))
 
 (define-reader-directive 'no-fold-case
   (^[sym port ctx]
-    (set! (port-case-fold port) #f)
+    (set! ((with-module gauche.internal port-case-fold) port) #f)
     (values)))
 
 (define-reader-directive 'gauche-legacy
