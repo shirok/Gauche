@@ -246,12 +246,13 @@
 ;;; Read-edit mode flag
 ;;;
 
-(with-module gauche.internal)
-;; This variable affects how gauche.interactive handles input; if true,
-;; it sets up the input editor if possible.  This is also modified by
-;; main.c with -fread-edit/-fno-read-edit flag.
-;; Note that once gauche.interactive is loaded, this variable has no effect.
-(define *read-edit* (not (sys-getenv "GAUCHE_NO_READ_EDIT")))
+(with-module gauche.internal
+  ;; This variable affects how gauche.interactive handles input; if true,
+  ;; it sets up the input editor if possible.  This is also modified by
+  ;; main.c with -fread-edit/-fno-read-edit flag.
+  ;; Note that once gauche.interactive is loaded, this variable has no effect.
+  (define *read-edit* (not (sys-getenv "GAUCHE_NO_READ_EDIT")))
+  )
 
 ;;;
 ;;; Stdio setup
