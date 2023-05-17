@@ -4114,11 +4114,20 @@ before comparison.
 
 @deftp {Module} data.ideque
 @mdindex data.ideque
+@c EN
 This module provides a functional double-ended queue (deque,
 pronounced as ``deck'').
+@c JP
+このモジュールは、両端キュー (deque、「デック」と読みます) の機能を提供します。
+@c COMMON
 
+@c EN
 Almost all procedures in this module are now a part of R7RS large.
 @xref{R7RS immutable deques}, for description of the following
+@c JP
+このモジュールのほぼ全ての手続きは、R7RS-largeに取り込まれました。
+以下の手続きについては@ref{R7RS immutable deques}を参照してください。
+@c COMMON
 procedures:
 
 @example
@@ -4146,12 +4155,23 @@ ideque->generator    generator->ideque
 
 @defun make-ideque n :optional init
 @c MOD data.ideque
+@c EN
 Creates an ideque of length @var{n} with all the elements being
 @var{init}.  If @var{init} is omitted, @code{#f} is used.
+@c JP
+@var{n}個の@var{init}で初期化されたidequeを作って返します。
+@var{init}が省略された場合は@code{#f}が使われます。
+@c COMMON
 
+@c EN
 This is provided just for the symmetry with other container data
 structures; it's not in SRFI-134, and the portable code can use
 @code{ideque-tabulate}.
+@c JP
+この手続きは、他のデータ構造との対称性のためだけに提供されていて、
+SRFI-134には含まれていません。ポータブルなコードは
+@code{ideque-tabulate}を使って同じようなことができます。
+@c COMMON
 @end defun
 
 
