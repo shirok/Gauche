@@ -1,3 +1,12 @@
+2023-05-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm (port-case-fold): Drop port-case-fold-set! (previously
+	  undocumented) and replace (setter port-case-fold), for the API
+	  consistency.  A few references to the old name in the source tree
+	  are updated.  NB: lib/gauche/cgen/precomp.scm is used to compile
+	  0.9.13, so it needs to work on both old and new gosh.  For now,
+	  we use an ugly kludge for transition.
+
 2023-05-09  Shiro Kawai  <shiro@acm.org>
 
 	* ext/package-templates/configure-compat: Remove compatibility hack.

@@ -122,10 +122,12 @@
            port (Scm_BufferingMode mode (-> port direction) -1)))
   (return (Scm_GetPortBufferingModeAsKeyword port)))
 
-(define-cproc port-case-fold-set! (port::<port> flag::<boolean>) ::<void>
-  (if flag
-    (logior= (SCM_PORT_FLAGS port) SCM_PORT_CASE_FOLD)
-    (logand= (SCM_PORT_FLAGS port) (lognot SCM_PORT_CASE_FOLD))))
+(define-cproc port-case-fold (port::<port>) ::<boolean>
+  (setter (port::<port> flag::<boolean>) ::<void>
+          (if flag
+            (logior= (SCM_PORT_FLAGS port) SCM_PORT_CASE_FOLD)
+            (logand= (SCM_PORT_FLAGS port) (lognot SCM_PORT_CASE_FOLD))))
+  (return (logand (SCM_PORT_FLAGS port) SCM_PORT_CASE_FOLD)))
 
 (define-cproc port-link! (iport::<input-port> oport::<output-port>) ::<void>
   Scm_LinkPorts)
@@ -1096,12 +1098,12 @@
 
 (define-reader-directive 'fold-case
   (^[sym port ctx]
-    (port-case-fold-set! port #t)
+    (set! (port-case-fold port) #t)
     (values)))
 
 (define-reader-directive 'no-fold-case
   (^[sym port ctx]
-    (port-case-fold-set! port #f)
+    (set! (port-case-fold port) #f)
     (values)))
 
 (define-reader-directive 'gauche-legacy

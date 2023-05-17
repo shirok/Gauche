@@ -1877,7 +1877,7 @@
     (unless (string? filename)
       (error "include requires literal string, but got:" filename))
     (let1 iport (pass1/open-include-file filename (cenv-source-path cenv))
-      (port-case-fold-set! iport case-fold?)
+      (set! (port-case-fold iport) case-fold?)
       (pass1/report-include iport #t)
       (unwind-protect
           ;; This could be written simpler using port->sexp-list, but it would
