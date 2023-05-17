@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This must be the first form to prevents generation of *.sci file
+;; This must be the first form to prevent generation of *.sci file
 (declare)
 
 ;; In Gauche, types are a data structure that appears in both compile-time

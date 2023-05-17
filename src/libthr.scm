@@ -1,5 +1,5 @@
 ;;;
-;;; threads.scm - thread related procedures.  to be autoloaded
+;;; threads.scm - thread related procedures.
 ;;;
 ;;;   Copyright (c) 2000-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
