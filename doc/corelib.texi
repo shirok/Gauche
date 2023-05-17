@@ -21879,6 +21879,54 @@ applied to ports other than file ports, it signals an error.
 @c COMMON
 @end defun
 
+@defun port-link! input-port output-port
+@defunx port-unlink! port
+@c EN
+An input port and an output port can be @emph{linked}.  After being
+linked, attempt to read from @var{input-port} causes flushing
+@var{output-port}'s buffer.  A port cannot be linked to more
+than one port.
+@c JP
+入力ポートと出力ポートを@emph{リンク}することができます。
+リンクされている入力ポートから読み出そうとすると、まず出力ポートのバッファが
+フラッシュされます。ポートは2つ以上のポートとリンクすることはできません。
+@c COMMON
+
+@c EN
+By default, standard input port is linked to standard output port.
+@c JP
+デフォルトでは、標準入力ポートと標準出力ポートがリンクされています。
+@c COMMON
+
+@c EN
+The @code{port-link!} procedure links the given input port and
+output port.  Both port must not be already linked, or an error
+is signaled.
+@c JP
+@code{port-link!}は引数の入力ポートと出力ポートをリンクします。
+どちらのポートもリンクされていない状態でなければなりません。
+さもなくばエラーが投げられます。
+@c COMMON
+
+@c EN
+The @code{port-unlink!} procedure removes the link between the given
+port and another port, if there's a link.  If the given port
+is not linked, it does nothing.
+@c JP
+@code{port-unlink!}は、与えられたポートが他のポートとリンクされていたら
+そのリンクを解除します。リンクされていないポートが与えられた場合は何もしません。
+@c COMMON
+
+@c EN
+You can use @code{link} slot of the port to see if a port is
+linked or not, and if linked, to which port.
+@c JP
+ポートの@code{link}スロットを見れば、ポートがリンクされているか、
+またされている場合はどのポートか、がわかります。
+@c COMMON
+@end defun
+
+
 @defun port-current-line port
 @c EN
 Returns the current line count of @var{port}.  This information is
