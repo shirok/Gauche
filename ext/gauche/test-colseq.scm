@@ -754,6 +754,11 @@
 (test* "common-prefix" "ABC"
        (common-prefix "ABCE" "abcd" :test char-ci=?))
 
+(test* "inverse-permuter"  '#(4 3 0 2 1)
+       (inverse-permuter '#(2 4 3 1 0)))
+(test* "inverse-permuter" '(4 3 0 2 1)
+       (inverse-permuter '(2 4 3 1 0)))
+
 (define (permute-tester msg expected source order . fallback)
   (define (unit type elt-coercer order-type)
     (test* #"permute~msg ~type by ~order-type"

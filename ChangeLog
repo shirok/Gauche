@@ -1,3 +1,8 @@
+2023-05-19  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/sequence.scm (inverse-permuter): Added.  The name
+	  can be better.  Let's see.
+
 2023-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm (port-case-fold): Drop port-case-fold-set! (previously
@@ -10,6 +15,7 @@
 	  global effect and accidentally changing it can cause a wreak havoc.
 	  There are already scope-delimited way to change the mode (#!fold-case
 	  directive, or include-ci form).
+	* 0.9.13_pre4, because of the above change.
 
 2023-05-09  Shiro Kawai  <shiro@acm.org>
 

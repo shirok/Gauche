@@ -47,6 +47,7 @@
           sequence->kmp-stepper sequence-contains
           break-list-by-sequence! break-list-by-sequence
           common-prefix-to common-prefix
+          inverse-permuter
           permute-to permute permute!
           shuffle-to shuffle shuffle!)
   )
@@ -625,7 +626,31 @@
 
 ;; TODO: suffix
 
-;; permute -------------------------------------------------------
+;;
+;; Permuter
+;;
+
+;; 'permuter' is a sequence of exact integers, [X_0 X_1 ... X_i ... X_n],
+;; specifying the i-th element of the original sequence to be mapped to X_i.
+;; `inverse-permuter` returns a sequence of exact integers that does the
+;; inverse, that is, X_i-th index contains i.
+;; For now, we only support surjective mappings.
+
+(define-method inverse-permuter ((permuter <sequence>))
+  (rlet1 r (subseq permuter)            ; generic copy
+    (with-iterator (permuter end? next)
+      (do ([i 0 (+ i 1)])
+          [(end?)]
+        (set! (~ r (next)) i)))))
+
+(define-method inverse-permuter ((permuter <list>))
+  ;; for list, avoid random access
+  (vector->list
+   (rlet1 r (make-vector (size-of permuter))
+     (with-iterator (permuter end? next)
+       (do ([i 0 (+ i 1)])
+           [(end?)]
+         (set! (~ r (next)) i))))))
 
 (define-method permute-to ((class <class>) (src <sequence>) (ord <sequence>)
                            . maybe-fallback)
