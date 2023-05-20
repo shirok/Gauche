@@ -1,7 +1,7 @@
 2023-05-19  Shiro Kawai  <shiro@acm.org>
 
-	* libsrc/gauche/sequence.scm (inverse-permuter): Added.  The name
-	  can be better.  Let's see.
+	* libsrc/gauche/sequence.scm (inverse-permuter, unpermute): Added.
+	  The names can be better.  Let's see.
 
 2023-05-16  Shiro Kawai  <shiro@acm.org>
 

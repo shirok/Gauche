@@ -49,6 +49,7 @@
           common-prefix-to common-prefix
           inverse-permuter
           permute-to permute permute!
+          unpermute-to unpermute unpermute!
           shuffle-to shuffle shuffle!)
   )
 (select-module gauche.sequence)
@@ -683,6 +684,16 @@
   ;; for string, this one is faster.
   (%permute!-arg-check seq ord)
   ((with-module gauche.internal %string-replace-body!) seq (permute seq ord)))
+
+(define-method unpermute-to ((class <class>) (src <sequence>) (ord <sequence>)
+                             . maybe-fallback)
+  (apply permute-to class src (inverse-permuter ord) maybe-fallback))
+
+(define-method unpermute ((src <sequence>) (ord <sequence>) . maybe-fallback)
+  (apply permute src (inverse-permuter ord) maybe-fallback))
+
+(define-method unpermute! ((seq <sequence>) (ord <sequence>))
+  (permute! seq (inverse-permuter ord)))
 
 (define (%permute!-arg-check seq ord)
   (unless (= (size-of seq) (size-of ord))

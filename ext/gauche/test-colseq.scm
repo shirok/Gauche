@@ -788,6 +788,11 @@
 (permute-tester " (short)" '(d a) '(a b c d) '(3 0))
 (permute-tester " (long)"  '(d a z c b) '(a b c d) '(3 0 4 2 1) 'z)
 
+(test* "unpermute" '#(a b c d e f g)
+       (unpermute (permute '#(a b c d e f g)
+                           '#(3 6 2 0 1 5 4))
+                  '#(3 6 2 0 1 5 4)))
+
 (define (shuffle-tester source)
   (define (cmp a b)
     (lset= eqv? (coerce-to <list> a) (coerce-to <list> b)))
