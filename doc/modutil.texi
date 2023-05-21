@@ -2634,31 +2634,64 @@ this mapper is the default value of @code{default-mapper}.
 
 @deffn {Parameter} default-mapper
 @c MOD control.pmap
+@c EN
 A parameter keeping a mapper to be used by @code{pmap} etc. when no
 mapper is specified.
+@c JP
+@code{pmap}等が使うmapperの省略時の値を保持するパラメータです。
+@c COMMON
 
+@c EN
 The default is a static mapper (with the number of threads same as
-the number of available cores) if Gauche is configured with threads
-and the running system has more than one core, or a sequential mapper
-otherwise.
+the number of available cores) if Gauche is running system with
+more than one core, or a sequential mapper otherwise.
+@c JP
+Gaucheが複数コアのシステム上で走っている場合はコア数と同じスレッドを使う
+static mapperが、そうでなければsequential mapperが初期値となります。
+@c COMMON
 
+@c EN
 The mapper set to this parameter is reused, or even is used
 simultaneously from multiple @code{pmap} calls.
 Pool mappers with external pool keeps a given thread pool in it,
 so you should be careful to use such mapper as the default mapper.
+@c JP
+このパラメータにセットされたmapperは再利用されたり、複数の@code{pmap}呼び出しから
+同時に使われたりする可能性があります。
+外部スレッドプールを使うpool mapperはスレッドプールを共有するので、
+それをデフォルトのmapperに設定する時は注意してください。
+@c COMMON
 @end deffn
 
 @defun sequential-mapper
 @c MOD control.pmap
+@c EN
 Returns a sigleton instance of the sequential mapper.
+@c JP
+sequential mapperのシングルトンインスタンスを返します。
+@c COMMON
 @end defun
 
 @defun make-static-mapper :optional num-threads
 @c MOD control.pmap
+@c EN
 Returns a new instance of a static mapper, which spawns @var{num-threads}
 threads on execution, each of which handles evenly divided tasks.
 This mapper is suitable if you have large number of small tasks with
 even load.
+
+If @var{num-threads} is omitted, the number of available
+processors returned by @code{sys-available-processors}
+is used (@pxref{Environment inquiry}).
+@c JP
+static mapperの新しいインスタンスを作って返します。
+このmapperは@code{pmap}の実行のたびに@var{num-threads}のスレッドを作成し、
+必要な仕事を均等に割り振ります。小さく均等なタスクを大量にこなす場合に便利です。
+
+@var{num-threads}が省略された場合は、@code{sys-available-processors}
+が返すプロセッサ数を使います
+(@ref{Environment inquiry}参照)。
+@c COMMON
 @end defun
 
 @defun make-pool-mapper :optional external-pool
