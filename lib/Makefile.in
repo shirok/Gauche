@@ -84,6 +84,7 @@ SCMFILES = \
        gauche/mop/bound-slot.scm \
        gauche/mop/instance-pool.scm gauche/mop/validator.scm \
        gauche/mop/propagate.scm gauche/mop/singleton.scm \
+       gauche/mop/typed-slot.scm \
        gauche/cgen.scm gauche/cgen/unit.scm gauche/cgen/literal.scm \
        gauche/cgen/cise.scm gauche/cgen/type.scm gauche/cgen/stub.scm \
        gauche/cgen/precomp.scm gauche/cgen/optimizer.scm \

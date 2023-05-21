@@ -1093,6 +1093,12 @@
        (is-a? (make <bound-slot-A> :a 3) <bound-slot-A>))
 
 ;;----------------------------------------------------------------
+(test-section "metaclass/typed-slot")
+
+(use gauche.mop.typed-slot)
+(test-module 'gauche.mop.typed-slot)
+
+;;----------------------------------------------------------------
 (test-section "metaclass/singleton")
 
 (use gauche.mop.singleton)

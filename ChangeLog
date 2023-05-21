@@ -1,3 +1,7 @@
+2023-05-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/mop/typed-slot.scm: Added experimentally.
+
 2023-05-19  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/sequence.scm (inverse-permuter, unpermute): Added.
