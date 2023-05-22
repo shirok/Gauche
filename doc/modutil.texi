@@ -2696,34 +2696,67 @@ static mapperの新しいインスタンスを作って返します。
 
 @defun make-pool-mapper :optional external-pool
 @c MOD control.pmap
+@c EN
 Returns a new instance of a pool mapper, which uses a thread pool
 (@pxref{Thread pools}) to run the tasks.  It is suitable when the load
 of tasks varies a lot.
+@c JP
+スレッドプールを使うpool mapperの新たなインスタンスを作って返します。
+タスクごとに計算負荷が大きく変動する場合に適しています。
+@c COMMON
 
+@c EN
 If @var{external-pool} is not given, the mapper creats a thread
 pool, and shut it down, every time high-level mapping operation is called.
 This usage is local; that is, the thread pool is contained within
 one call of @code{pmap} etc., and won't be shared.
+@c JP
+@var{external-pool}が指定されなければ、mapperは高レベルのマッピング操作が呼ばれる
+度に新たなスレッドプールを作り、マッピング操作が終わったらプールをシャットダウンします。
+この場合、ひとつのスレッドプールは一回の@code{pmap}などの呼び出しだけに使われ、
+他と共有されることはありません。
+@c COMMON
 
+@c EN
 Alternatively, you can pass an existing thread pool to @var{external-pool}
 to be used.  The pool will be reused every time you use this mapper instance.
 Using an external pool will eliminate overhead of thread pool creation and
 shutting down every time you run @code{pmap}; however, you have to be
 aware of those caveats:
+@c JP
+あるいは、既にあるスレッドプールを@var{external-pool}引数に渡すこともできます。
+その場合、このmapperインスタンスが使われる場面全てで、そのスレッドプールは再利用されます。
+外部スレッドプールを使うことで、@code{pmap}を呼ぶ度にスレッドプールを作ったり
+シャットダウンしたりするオーバヘッドを避けることができます。
+しかし、次の点に注意しなければなりません。
+@c COMMON
 @itemize @bullet
 @item
+@c EN
 It's your responsibility to shut down the thread pool after you're done
 with the mapper.
+@c JP
+mapperをもう使わなくなってからスレッドプールをシャットダウンするのは、
+ユーザの責任です。
+@c COMMON
 @item
+@c EN
 The mapper keeps the given thread pool and reuses it every time
 it is passed to @code{pmap} etc., so you have to make sure that
 one mapper is not used simultaneously in more than one @code{pmap} etc..
 Be careful using this type of pool mapper as the default mapper.
+@c JP
+mapperは渡されたスレッドプールを@code{pmap}の呼び出しに使いまわすので、
+ひとつのpool mapperが複数の@code{pmap}呼び出しで同時に使われることがないように
+管理してやる必要があります。特に、デフォルトのmappersとして外部スレッドプールを
+使うpool mapperを設定するのは危険です。
+@c COMMON
 @end itemize
 @end defun
 
 @defun make-fully-concurrent-mapper :optional timeout timeout-val
 @c MOD control.pmap
+@c EN
 Returns a new instance of a fully-concurrent mapper, which spawns
 as many threads as the elements in the given collection to perform
 the operation concurrently.  It is suitable when you don't have
@@ -2731,12 +2764,25 @@ many tasks, but each task may perform blocking I/O calls.
 The overhead of creating threads are relatively large, but
 you may be able to utilize CPU more while most of the threads are
 waiting I/O.
+@c JP
+タスクの数だけスレッドを作成し、全てを並行に評価する完全並行mapperを作って返します。
+タスクの数が比較的少数で、各タスクがI/Oなどでブロックする場合に適しています。
+スレッドを作成するオーバヘッドが比較的大きいですが、スレッドがI/O待ちの間に
+CPUを有効活用できます。
+@c COMMON
 
+@c EN
 The optional @var{timeout} and @var{timeout-val} arguments are
 passed to @code{thread-join!} (@pxref{Thread procedures}).
 It is useful when I/O operations may take too long and you
 want to guarantee the entire operation finishes within certain
 time limit.
+@c JP
+省略可能な@var{timeout}と@var{timeout-val}は@code{thread-join!}に渡されます
+(@ref{Thread procedures}参照)。
+I/O操作が非常に長くかかる可能性があり、@code{pmap}呼び出しにかかる時間を
+制限したい場合に便利です。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
@@ -2746,38 +2792,77 @@ time limit.
 
 @deftp {Module} control.scheduler
 @mdindex control.scheduler
+@c EN
 A scheduler is a device to run tasks in scheduled time.
+@c JP
+スケジューラは、予定された時刻にタスクを走らせるデバイスです。
+@c COMMON
 
+@c EN
 Each scheduler manages one or more tasks.  Each task has attached
 time to run.  A task can be run once, or can be run periodically.
+@c JP
+各スケジューラは一つ以上のタスクを管理します。各タスクには、それがいつ走るかを
+指定する時刻が付随します。タスクは一回だけ走らせることも、
+定期的に走らせることもできます。
+@c COMMON
 @end deftp
 
 @deftp {Class} <scheduler>
 @clindex scheduler
 @c MOD control.scheduler
+@c EN
 A device to run tasks in scheduled time.  Each instance of this class
 have its own thread, and maintains a list of tasks along the information
 when each task should be run.  Tasks can be registered by
 @code{scheduler-schedule!}.
+@c JP
+タスクを予定された時刻に走らせるデバイスです。
+各スケジューラインスタンスは独自のスレッドを持ち、
+タスクとそれをいつ走らせるかのリストを管理しています。
+タスクは@code{scheduler-schedule!}で登録できます。
+@c COMMON
 
+@c EN
 If a task throws an error, a procedure bound to @code{error-handler}
 slot is invoked with the thrown condition as the only argument.
 If no @code{error-handler} is registered, or @code{error-handler}
 throws an error again, then the scheduler stops.  The thrown condition
 is kept in the scheduler and can be retrieved with
 @code{scheduler-terminate!}.
+@c JP
+タスクがエラーを投げた場合、@code{error-handler}スロットに格納された手続きが、
+コンディションオブジェクトを引数として呼ばれます。
+@code{error-handler}が設定されていない場合、あるいは@code{error-handler}が
+エラーを投げた場合はスケジューラが停止します。
+投げられたコンディションはスケジューラの中に保存され、
+@code{scheduler-terminate!}で取り出せます。
+@c COMMON
 
 @defivar {<scheduler>} error-handler
+@c EN
 This slot can be initialized with @code{:error-handler} keyword argument.
 It must be either @code{#f} or a procedure that takes one argument.
 If it is a procedure, it is invoked when a task throws an error,
 and the argument is the raised condition.
+The result of @code{error-handler} procedure is discarded.
+@c JP
+このスロットは@code{:error-handler}キーワード引数で初期化できます。
+値は@code{#f}もしくは引数をひとつ取る手続きでなければなりません。
+手続きの場合、それはタスクがエラーを投げた時に、
+投げられたコンディションオブジェクトを引数として呼び出されます。
+手続きの戻り値は捨てられます。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun scheduler-running? scheduler
 @c MOD control.scheduler
+@c EN
 Returns @code{#t} iff @var{scheduler} is running.
+@c JP
+@var{scheduler}が動作中なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 
