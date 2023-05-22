@@ -55,15 +55,22 @@
       (errorf "Slot ~a of ~a must be of type ~a, but got: ~s"
               (slot-definition-name slotdef)
               (class-name class) (~ type 'name) v)))
-
+  ;; TODO: Probably we should have a built-in utility to create a
+  ;; 'wrapper' accessor.
   (make <slot-accessor>
     :class class :name (slot-definition-name slotdef)
     :getter (^o (slot-ref-using-accessor o accessor))
     :setter (^[o v] (check v) (slot-set-using-accessor! o accessor v))
     :bound? (^o (slot-bound-using-accessor? o accessor))
     :initializable (~ accessor'initializable)
-    :init-value (~ accessor'init-value)
-    :init-keyword (~ accessor'init-keyword)
-    :init-thunk (~ accessor'init-thunk)
+    :init-value (if (slot-bound? accessor 'init-value)
+                  (~ accessor'init-value)
+                  (undefined))
+    :init-keyword (if (slot-bound? accessor 'init-keyword)
+                    (~ accessor'init-keyword)
+                    (undefined))
+    :init-thunk (if (slot-bound? accessor 'init-thunk)
+                  (~ accessor'init-thunk)
+                  (undefined))
     :immutable (~ accessor'immutable)
     ))

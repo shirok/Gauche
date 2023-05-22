@@ -1098,6 +1098,46 @@
 (use gauche.mop.typed-slot)
 (test-module 'gauche.mop.typed-slot)
 
+(define-class <typed-slot-A> (<typed-slot-mixin>)
+  ((a :init-keyword :a
+      :type <integer>)
+   (b :init-keyword :b
+      :type (</> <string> <symbol>))
+   (c :init-keyword :c
+      :type (<?> <string>))
+   ))
+
+(test* "<typed-slot-A> ok" '(1 a #f)
+       (let1 z (make <typed-slot-A> :a 1 :b 'a :c #f)
+         (map (cut ~ z <>) '(a b c))))
+
+(test* "<typed-slot-A> set! check" '(2 "b" "c")
+       (let1 z (make <typed-slot-A>)
+         (set! (~ z 'a) 2)
+         (set! (~ z 'b) "b")
+         (set! (~ z 'c) "c")
+         (map (cut ~ z <>) '(a b c))))
+
+(test* "<typed-slot-A> init error a"
+       (test-error <error> #/Slot a of <typed-slot-A> must be of type/)
+       (make <typed-slot-A> :a 3.4))
+(test* "<typed-slot-A> init error b"
+       (test-error <error> #/Slot b of <typed-slot-A> must be of type/)
+       (make <typed-slot-A> :b 3))
+(test* "<typed-slot-A> init error c"
+       (test-error <error> #/Slot c of <typed-slot-A> must be of type/)
+       (make <typed-slot-A> :c 'c))
+
+(test* "<typed-slot-A> set! error a"
+       (test-error <error> #/Slot a of <typed-slot-A> must be of type/)
+       (set! (~ (make <typed-slot-A>) 'a) #f))
+(test* "<typed-slot-A> set! error b"
+       (test-error <error> #/Slot b of <typed-slot-A> must be of type/)
+       (set! (~ (make <typed-slot-A>) 'b) #f))
+(test* "<typed-slot-A> set! error c"
+       (test-error <error> #/Slot c of <typed-slot-A> must be of type/)
+       (set! (~ (make <typed-slot-A>) 'c) 5))
+
 ;;----------------------------------------------------------------
 (test-section "metaclass/singleton")
 
