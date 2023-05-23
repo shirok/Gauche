@@ -2773,7 +2773,7 @@
                vec)))
 
 ;;-------------------------------------------------------------------
-;; (test-section "SRFI-160 interface")
+(test-section "SRFI-160 interface")
 
 (use gauche.uvector.u8)
 (test-module 'gauche.uvector.u8)
@@ -2803,5 +2803,15 @@
 (test-module 'gauche.uvector.c64)
 (use gauche.uvector.c128)
 (test-module 'gauche.uvector.c128)
+
+;;-------------------------------------------------------------------
+;; SRFI-207 depends on gauche.uvector, gauche.unicode and gauche.generator,
+;; so we test it after those dependencies are tested.
+(test-section "SRFI-207 bytestring")
+
+(use srfi.207)
+(test-module 'srfi.207)
+
+(test-include-r7 "../../test/include/srfi-207-test.scm")
 
 (test-end)

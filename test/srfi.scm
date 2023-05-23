@@ -2509,6 +2509,9 @@
   (run-tests))
 
 ;;-----------------------------------------------------------------------
+;; NB: SRFI-150 is tested in ext/gauche
+
+;;-----------------------------------------------------------------------
 ;; Bitwise operations
 
 (test-section "SRFI-151")
@@ -2871,6 +2874,9 @@
   (use scheme.write)
   (use srfi.64)
   (include "include/srfi-197-test"))
+
+;;-----------------------------------------------------------------------
+;; NB: SRFI-207 is tested with gauche.uvector
 
 ;;-----------------------------------------------------------------------
 ;; NB: SRFI-209 is tested with gauche.bitvector
