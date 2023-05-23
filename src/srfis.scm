@@ -1440,6 +1440,20 @@ Supported by the module @code{srfi.197} (@pxref{Pipeline operators}).
 モジュール@code{srfi.197}でサポートされます (@ref{Pipeline operators}参照)。
 
 
+srfi-207, srfi-207
+()
+
+String-notated bytevectors
+Bytestring literals are supported by the core.  Bytestring procedures
+are available in the module @code{srfi.207}
+(@pxref{String-notated bytevectors}).
+
+文字列表示のバイトベクタ
+バイトストリングリテラルは組み込みでサポートされます。
+バイトストリングを扱う手続きはモジュール@code{srfi.207}で提供されます
+(@ref{String-notated bytevectors}参照)。
+
+
 srfi-209, srfi-209
 ()
 

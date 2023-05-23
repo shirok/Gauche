@@ -1,4 +1,4 @@
-@node Library modules - Gauche extensions
+@node Library modules - Gauche extensions, Library modules - R7RS standard libraries, Library modules - Overview, Top
 @chapter Library modules - Gauche extensions
 @c NODE ライブラリモジュール - Gauche拡張モジュール
 

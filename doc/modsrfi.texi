@@ -86,6 +86,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Command line::                srfi.193
 * Range objects::               srfi.196
 * Pipeline operators::          srfi.197
+* String-notated bytevectors::  srfi.207
 * Enums and enum sets::         srfi.209
 * Procedures and syntax for multiple values::  srfi.210
 * Integer sets::                srfi.217
@@ -11199,7 +11200,7 @@ vector->range      range->generator
 @end deftp
 
 @c ----------------------------------------------------------------------
-@node Pipeline operators, Enums and enum sets, Range objects, Library modules - SRFIs
+@node Pipeline operators, String-notated bytevectors, Range objects, Library modules - SRFIs
 @section @code{srfi.197} - Pipeline operators
 @c NODE パイプラインオペレータ, @code{srfi.197} - パイプラインオペレータ
 
@@ -11479,9 +11480,20 @@ this macro simply nests the steps:
 @end example
 @end defmac
 
+@c ----------------------------------------------------------------------
+@node String-notated bytevectors, Enums and enum sets, Pipeline operators, Library modules - SRFIs
+@section @code{srfi.207} - String-notated bytevectors
+@c NODE 文字列表示のバイトベクタ, @code{srfi.207} - 文字列表示のバイトベクタ
+
+@deftp {Module} srfi.207
+@mdindex srfi.207
+This SRFI defines an alternative representation of bytevectors, and
+provides a bunch of procedures that can treat a bytevector as a bytestring.
+@end deftp
+
 
 @c ----------------------------------------------------------------------
-@node Enums and enum sets, Procedures and syntax for multiple values, Pipeline operators, Library modules - SRFIs
+@node Enums and enum sets, Procedures and syntax for multiple values, String-notated bytevectors, Library modules - SRFIs
 @section @code{srfi.209} - Enums and enum sets
 @c NODE enumとenum集合,  @code{srfi.209} - enumとenum集合
 

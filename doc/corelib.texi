@@ -13870,6 +13870,26 @@ as @code{#u8(@dots{})}.)
 #u32(4154 88357 2 323)
 #f32(3.14 0.554525 -3.342)
 @end example
+
+@c EN
+Gauche also supports SRFI-207 (String-notated bytevector) style bytevector
+literal.  It is a prefix @code{#u8} followed by a string literal, in which
+only ASCII characters and escaped single-octets (i.e. @code{\xNN;} where
+@code{N} is a hexadecimal digit) are allowed.  It allows to naturally
+use bytevectors as a bytestring.
+@xref{String-notated bytevectors}, for operations on bytestrings.
+@c JP
+Gaucheはまた、SRFI-207 (文字列表示のバイトベクタ) 形式の
+バイトベクタリテラルをサポートします。これは、@code{#u8}プレフィクスの後に
+文字列リテラルが続くものです。ただしその文字列リテラルには、
+ASCII文字か@code{\xNN;} (@code{N}は十六進数) でエスケープされたオクテットのみが
+許されます。この表記で、バイトベクタをバイトストリングとして自然に扱うことができます。
+バイトストリングの操作に関しては@ref{String-notated bytevectors}を参照してください。
+@c COMMON
+
+@example
+#u8"ABC\x00;D" @result{} #u8(65 66 67 0 68)
+@end example
 @end deftp
 
 @c EN
