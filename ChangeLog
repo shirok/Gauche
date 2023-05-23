@@ -1,3 +1,7 @@
+2023-05-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/base64.scm (base64-decode): Add :strict keyword argument.
+
 2023-05-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/mop/typed-slot.scm: Added experimentally.

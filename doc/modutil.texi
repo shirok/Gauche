@@ -16327,37 +16327,54 @@ it is always interpreted as a byte sequence.
 @c COMMON
 @end defun
 
-@defun base64-decode :key url-safe
+@defun base64-decode :key url-safe strict
 @c MOD rfc.base64
 @c EN
 Reads character stream from the current input port, decodes it from Base64
 format and writes the result byte stream to the current output port.
 The conversion ends when it reads EOF or the termination character
-(@code{=}).  The characters which does not in legal Base64 encoded character
-set are silently ignored.
+(@code{=}).
 @c JP
 現在の入力ポートから文字ストリームを読み込み、それを Base64 フォーマットとして
 デコードし、現在の出力ポートにバイトストリームとして書き出します。
 変換は EOF か、終端文字 (@code{=}) を読み込むと終了します。
-Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
+@c COMMON
+
+@c EN
+The characters which does not in legal Base64 encoded character set are
+silently ignored by default.  If a true value is given to the
+@var{strict} keyword argument, however, non-whitespace out-of-set characters
+in the input raises an error.
+@c JP
+Base64 でエンコードされた文字として適当でない文字は、デフォルトでは黙って無視されます。
+ただし、@var{strict}キーワード引数に真の値が与えられた場合は、
+空白文字以外の不適切な文字が入力にあったらそこでエラーが投げられます。
 @c COMMON
 @end defun
 
-@defun base64-decode-string string :key url-safe
-@defunx base64-decode-bytevector u8vector :key url-safe
+@defun base64-decode-string string :key url-safe strict
+@defunx base64-decode-bytevector u8vector :key url-safe strict
 @c MOD rfc.base64
 @c EN
 Decodes a Base64 encoded string @var{string} and returns
 the result as a string or a u8vector, respectively.
 The conversion terminates at the end of @var{string} or
 the termination character (@code{=}).
-The characters which does not in legal Base64 encoded character
-set are silently ignored.
 @c JP
 Base64 でエンコードされた文字列 @var{string} をデコードしてそれぞれ文字列
 あるいはu8vectorとして返します。
 変換は @var{string} の終わりか、終端文字 (@code{=}) で終了します。
-Base64 でエンコードされた文字として適当でない文字は沈黙のまま無視されます。
+@c COMMON
+
+@c EN
+The characters which does not in legal Base64 encoded character set are
+silently ignored by default.  If a true value is given to the
+@var{strict} keyword argument, however, non-whitespace out-of-set characters
+in the input raises an error.
+@c JP
+Base64 でエンコードされた文字として適当でない文字は、デフォルトでは黙って無視されます。
+ただし、@var{strict}キーワード引数に真の値が与えられた場合は、
+空白文字以外の不適切な文字が入力にあったらそこでエラーが投げられます。
 @c COMMON
 
 @c EN

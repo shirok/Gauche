@@ -145,10 +145,12 @@
       [else (err)])]
    [else (err)]))
 
-(define (base64-decode :key (url-safe #f) (digits #f))
+(define (base64-decode :key (url-safe #f) (digits #f) (strict #f))
   (define table (cond [url-safe *url-safe-decode-table*]
                       [digits (%digits->decode-table digits)]
                       [else *standard-decode-table*]))
+  (define (invalid c) (error "Invalid base64 input character" c))
+  (define (premature) (when strict (error "Premature end of base64 input")))
   (let-syntax ([lookup (syntax-rules ()
                          [(_ c)
                           (let1 i (char->integer c)
@@ -159,30 +161,34 @@
       (cond [(eof-object? c)]
             [(eqv? c #\=)]
             [(lookup c) => (^v (d1 (read-char) v))]
+            [(and strict (not (char-whitespace? c))) (invalid c)]
             [else (d0 (read-char))]))
 
     (define (d1 c hi)
-      (cond [(eof-object? c)]
+      (cond [(eof-object? c) (premature)]
             [(eqv? c #\=)]
             [(lookup c) => (^[lo]
                              (write-byte (+ (* hi 4) (quotient lo 16)))
                              (d2 (read-char) (modulo lo 16)))]
+            [(and strict (not (char-whitespace? c))) (invalid c)]
             [else (d1 (read-char) hi)]))
 
     (define (d2 c hi)
-      (cond [(eof-object? c)]
+      (cond [(eof-object? c) (premature)]
             [(eqv? c #\=)]
             [(lookup c) => (^[lo]
                              (write-byte (+ (* hi 16) (quotient lo 4)))
                              (d3 (read-char) (modulo lo 4)))]
+            [(and strict (not (char-whitespace? c))) (invalid c)]
             [else (d2 (read-char) hi)]))
 
     (define (d3 c hi)
-      (cond [(eof-object? c)]
+      (cond [(eof-object? c) (premature)]
             [(eqv? c #\=)]
             [(lookup c) => (^[lo]
                              (write-byte (+ (* hi 64) lo))
                              (d0 (read-char)))]
+            [(and strict (not (char-whitespace? c))) (invalid c)]
             [else (d3 (read-char) hi)]))
 
     (d0 (read-char))))
