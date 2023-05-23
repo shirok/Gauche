@@ -144,7 +144,9 @@
 (define (base64->bytevector string :optional (digits #f))
   (assume-type string <string>)
   (assume-type digits (<?> <string>))
-  (base64-decode-bytevector string :digits digits))
+  (guard (e [else (raise (make-condition <bytestring-error>
+                                         'message (~ e'message)))])
+    (base64-decode-bytevector string :digits digits :strict #t)))
 
 (define (%byte->elt b)
   (if (<= 32 b 127)
