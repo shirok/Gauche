@@ -3,7 +3,6 @@
 ;;;
 
 (define-module srfi.226.interrupt
-  (use gauche.thread)
   (export ;; current-interrupt-level
           ;; disable-interrupts!
           ;; enable-interrupts!

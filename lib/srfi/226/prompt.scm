@@ -9,7 +9,7 @@
           continuation-violation?
           continuation-violation-prompt-tag
           make-continuation-prompt-tag
-          defualt-continuation-prompt-tag
+          default-continuation-prompt-tag
           continuation-prompt-tag?
           call-with-continuation-prompt
           abort-current-continuation))

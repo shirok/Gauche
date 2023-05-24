@@ -3,7 +3,7 @@
 ;;;
 
 (define-module srfi.226.thread-local
-  (use gauche.thread)
+  (use gauche.threads)
   (export make-thread-local
           thread-local?
           tlref

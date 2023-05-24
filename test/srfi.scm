@@ -3066,6 +3066,17 @@
   )
 
 ;;-----------------------------------------------------------------------
+;; Control Features
+
+(test-section "SRFI-226")
+
+(define-module srfi-228-tests
+  (use gauche.test)
+  (use srfi.226)
+  (test-module 'srfi.226)
+  )
+
+;;-----------------------------------------------------------------------
 ;; Composing comparators
 
 (test-section "SRFI-228")

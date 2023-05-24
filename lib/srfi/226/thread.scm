@@ -3,7 +3,7 @@
 ;;;
 
 (define-module srfi.226.thread
-  (use gauche.thread)
+  (use gauche.threads)
   (export ;;  &thread
           ;; make-thread-condition
           ;; thread-condition?
