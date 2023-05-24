@@ -1,3 +1,9 @@
+2023-05-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs-setup.scm, src/libexc.scm, src/liblazy.scm:
+	  Move raise-continuable and make-promise to the core, for
+	  they are exported from srfi.226 as well.
+
 2023-05-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/base64.scm (base64-decode): Add :strict keyword argument.

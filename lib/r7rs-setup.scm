@@ -323,10 +323,10 @@
   ;; 6.11 Exceptions
   ;; error - built-in
   ;; with-exception-handler - built-in
+  ;; raise-continuable - built-in
 
-  ;; NB: In Gauche, 'raise' is continuable as far as the thrown exception
-  ;; isn't fatal.
-  (define (raise-continuable c) (raise c))
+  ;; NB: Gauche's internal 'raise' let the condition choose whether it is
+  ;; continuable or not.  R7RS raise forbid 'raise' to continue.
   (define (r7rs:raise c) ((with-module gauche.internal %raise) c #t))
 
   (define (error-object? e) (condition-has-type? e <error>))
@@ -443,7 +443,6 @@
   (import r7rs.aux)
   (export delay force delay-force promise? make-promise)
   (define-syntax delay-force (with-module gauche lazy))
-  (define (make-promise obj) (if (promise? obj) obj (delay obj)))
   (provide "scheme/lazy"))
 
 (define-module scheme.load

@@ -56,6 +56,8 @@
 (define-cproc promise-kind (p::<promise>)
   (setter (p::<promise> obj) ::<void> (set! (-> p kind) obj))
   (return (-> p kind)))
+(define (make-promise obj)              ;R7RS
+  (if (promise? obj) obj (delay obj)))
 
 ;;;
 ;;; lazy sequence

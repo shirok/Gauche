@@ -127,6 +127,9 @@
 ;; SRFI-18 raise
 (define-in-module gauche (raise c) (%raise c))
 
+;; R7RS raise-continuable is effectively same as Gauche's raise
+(define-in-module gauche (raise-continuable c) (raise c))
+
 ;;;
 ;;; Srfi-35
 ;;;
