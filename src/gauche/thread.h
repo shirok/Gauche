@@ -40,7 +40,11 @@
 
 /* flag for Scm_ThreadTerminate */
 enum {
-    SCM_THREAD_TERMINATE_FORCIBLE = 1
+    SCM_THREAD_TERMINATE_FORCIBLE = (1L<<0), /* If graceful termination fails,
+                                                take the extreme means to
+                                                terminate the thread. */
+    SCM_THREAD_TERMINATE_SCHEDULE = (1L<<1), /* Request termination but
+                                                do not wait. */
 };
 
 /* flag for Scm_ThreadStart */

@@ -462,6 +462,7 @@ ScmObj Scm_ThreadTerminate(ScmVM *target, u_long flags)
                     /* First try */
                     target->stopRequest = SCM_VM_REQUEST_TERMINATE;
                     target->attentionRequest = TRUE;
+                    if (flags & SCM_THREAD_TERMINATE_SCHEDULE) break;
                     if (wait_for_termination(target)) break;
 
                     /* Second try */

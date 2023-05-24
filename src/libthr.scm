@@ -39,7 +39,8 @@
           thread? make-thread thread-name thread-specific-set! thread-specific
           thread-state thread-start! thread-try-start!
           thread-yield! thread-sleep!
-          thread-join! thread-terminate! thread-stop! thread-cont!
+          thread-join! thread-terminate! thread-schedule-terminate!
+          thread-stop! thread-cont!
 
           mutex? make-mutex mutex-name mutex-state
           mutex-specific-set! mutex-specific
@@ -140,6 +141,9 @@
      (when (not (SCM_FALSEP force))
        (set! flags SCM_THREAD_TERMINATE_FORCIBLE))
      (return (Scm_ThreadTerminate vm flags))))
+
+ (define-cproc thread-schedule-terminate! (vm::<thread>) ::<void> ;SRFI-226
+   (Scm_ThreadTerminate vm SCM_THREAD_TERMINATE_SCHEDULE))
 
  (define-cproc thread-stop! (target::<thread>
                              :optional (timeout #f) (timeout-val #f))

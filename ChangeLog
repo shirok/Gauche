@@ -1,5 +1,9 @@
 2023-05-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/thread.c (Scm_ThreadTerminate): Support
+	  SCM_THREAD_TERMINATE_SCHEDULE flag.
+	* src/libthr.scm (thread-schedule-terminate!): Added.
+
 	* lib/r7rs-setup.scm, src/libexc.scm, src/liblazy.scm:
 	  Move raise-continuable and make-promise to the core, for
 	  they are exported from srfi.226 as well.
