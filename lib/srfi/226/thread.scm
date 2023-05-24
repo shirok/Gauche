@@ -30,7 +30,7 @@
           thread-start!
           thread-yield!
           thread-terminate!
-          ;; thread-schedule-terminate!
+          thread-schedule-terminate!
           thread-join!
           make-mutex
           mutex?

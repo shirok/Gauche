@@ -12,7 +12,7 @@
           call-with-immediate-continuation-mark
           continuation-marks
           current-continuation-marks
-          ;;continuation-mark-set?
+          continuation-mark-set?
           continuation-mark-set->list
           ;;continuation-mark-set->list*
           ;;continuation-mark-set->iterator
