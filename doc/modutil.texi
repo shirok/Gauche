@@ -16325,6 +16325,14 @@ it is always interpreted as a byte sequence.
 @code{base64-encode-string}の入力となる文字列は、
 完全文字列でも不完全文字列でも良いです。常にバイト・シーケンスとして扱われます。
 @c COMMON
+
+@c EN
+For the portable code, you may want to use @code{bytestring->base64}
+in @code{srfi.207} (@pxref{String-notated bytevectors}).
+@c JP
+ポータブルなコードでは、@code{srfi.207}の@code{bytestring->base64}を使うことができます
+(@ref{String-notated bytevectors}参照)。
+@c COMMON
 @end defun
 
 @defun base64-decode :key url-safe strict
@@ -16385,6 +16393,14 @@ would be a better choice.
 @code{base64-decode-string}は不完全な文字列を返すかもしれません。
 バイナリデータを扱っていることがわかっている場合は、
 @code{base64-decode-bytevector}を使う方が良いでしょう。
+@c COMMON
+
+@c EN
+For the portable code, you may want to use @code{base64->bytestring}
+in @code{srfi.207} (@pxref{String-notated bytevectors}).
+@c JP
+ポータブルなコードでは、@code{srfi.207}の@code{base64->bytestring}を使うことができます
+(@ref{String-notated bytevectors}参照)。
 @c COMMON
 @end defun
 

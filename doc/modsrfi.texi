@@ -11491,6 +11491,92 @@ This SRFI defines an alternative representation of bytevectors, and
 provides a bunch of procedures that can treat a bytevector as a bytestring.
 @end deftp
 
+@defun bytestring arg @dots{}
+@mdindex srfi.207
+@end defun
+
+@defun make-bytestring lis
+@mdindex srfi.207
+@end defun
+
+@defun make-bytestring! bv at lis
+@mdindex srfi.207
+@end defun
+
+@defun bytevector->hex-string bv
+@defunx hex-string->bytevector string
+@mdindex srfi.207
+@end defun
+
+@defun bytevector->base64 bv :optional digits
+@defunx base64->bytevector string :optional digits
+@mdindex srfi.207
+@end defun
+
+@defun bytestring->list bv :optional start end
+@mdindex srfi.207
+@end defun
+
+@defun make-bytestring-generator arg @dots{}
+@mdindex srfi.207
+@end defun
+
+@defun bytestring-pad bv len char-or-u8
+@defunx bytestring-pad-right bv len char-or-u8
+@mdindex srfi.207
+@end defun
+
+@defun bytestring-trim bv pred
+@defunx bytestring-trim-right bv pred
+@defunx bytestring-trim-both bv pred
+@mdindex srfi.207
+@end defun
+
+@defun bytrestring-replace bv1 bv2 start1 end1 :optional start2 end2
+@mdindex srfi.207
+@end defun
+
+@defun bytestring<? bv1 bv2
+@defunx bytestring<=? bv1 bv2
+@defunx bytestring>? bv1 bv2
+@defunx bytestring>=? bv1 bv2
+@mdindex srfi.207
+@end defun
+
+@defun bytestring-index bv pred :optional start end
+@defunx bytestring-index-right bv pred :optional start end
+@mdindex srfi.207
+@end defun
+
+@defun bytestring-break bv pred
+@defunx bytestring-span bv pred
+@mdindex srfi.207
+@end defun
+
+@defun bytestring-join bv-list delim :optional grammar
+@mdindex srfi.207
+@end defun
+
+@defun bytestring-split bv delim :optional grammar
+@mdindex srfi.207
+@end defun
+
+@defun read-textual-bytestring prefix :optional port
+@mdindex srfi.207
+@end defun
+
+@defun write-txtual-bytestring bv :optional port
+@mdindex srfi.207
+@end defun
+
+@defun write-bintary-bitestring port arg @dots{}
+@mdindex srfi.207
+@end defun
+
+@defun bytestring-error? obj
+@mdindex srfi.207
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Enums and enum sets, Procedures and syntax for multiple values, String-notated bytevectors, Library modules - SRFIs
