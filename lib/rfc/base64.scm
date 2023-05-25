@@ -37,12 +37,17 @@
 
 (define-module rfc.base64
   (use gauche.sequence)
+  (use gauche.threads)
   (use srfi.42)
   (export base64-encode base64-encode-string base64-encode-bytevector
           base64-decode base64-decode-string base64-decode-bytevector))
 (select-module rfc.base64)
 
 (autoload gauche.vport open-input-uvector open-output-uvector get-output-uvector)
+
+;; Mapping tables
+;;  Decode table is a 96-element vector, maps charcode-32 to integer 0-63.
+;;  Encode table is a 65-element vector, maps 0-63 and padding to a character.
 
 (define *standard-decode-table*
   ;;    !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
@@ -103,47 +108,21 @@
 (define (%digits->decode-table digits)
   (define rvec (make-vector 96 #f))
   (unless (and (or (string? digits) (vector? digits))
-               (memv (size-of digits) '(2 64)))
-    (error "Digits must be a string or vector of length 2 or 64, but got:"
-           digits))
+               (eqv? (size-of digits) 2))
+    (error "Digits must be a string or vector of length 2, but got:" digits))
 
-  (case (size-of digits)
-    [(64)
-     (do-ec (: c (index i) digits)
-            (begin
-              (unless (char? c) (error "Invalid element in digits:" c))
-              (let1 b (char->integer c)
-                (unless (<= 32 b 127)
-                  (error "Invalid char in digits:" c))
-                (vector-set! rvec (- b 32) i))))]
-    [(2)
-     (vector-copy! rvec 0 *standard-decode-table*)
-     (vector-set! rvec (- (char->integer (~ digits 0)) 32) 62)
-     (vector-set! rvec (- (char->integer (~ digits 1)) 32) 63)])
+  (vector-copy! rvec 0 *standard-decode-table*)
+  (vector-set! rvec (- (char->integer (~ digits 0)) 32) 62)
+  (vector-set! rvec (- (char->integer (~ digits 1)) 32) 63)
   rvec)
 
 (define (%digits->encode-table digits)
-  (define (err)
-    (error "Digits must be a string or vector of length 2 or 64, but got:"
-           digits))
-  (cond
-   [(string? digits)
-    (case (string-length digits)
-      [(64) (string->vector digits)]
-      [(2) (rlet1 v (vector-copy *standard-encode-table*)
-             (vector-set! v 62 (string-ref digits 0))
-             (vector-set! v 63 (string-ref digits 1)))]
-      [else (err)])]
-   [(vector? digits)
-    (unless (every char? digits)
-      (error "Digits vector must be all characters, but got:" digits))
-    (case (vector-length digits)
-      [(64) digits]
-      [(2) (rlet1 v (vector-copy *standard-encode-table*)
-             (vector-set! v 62 (vector-ref digits 0))
-             (vector-set! v 63 (vector-ref digits 1)))]
-      [else (err)])]
-   [else (err)]))
+  (unless (and (or (string? digits) (vector? digits))
+               (eqv? (size-of digits) 2))
+    (error "Digits must be a string or vector of length 2, but got:" digits))
+  (rlet1 v (vector-copy *standard-encode-table*)
+    (vector-set! v 62 (~ digits 0))
+    (vector-set! v 63 (~ digits 1))))
 
 (define (base64-decode :key (url-safe #f) (digits #f) (strict #f))
   (define table (cond [url-safe *url-safe-decode-table*]
