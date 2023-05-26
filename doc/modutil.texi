@@ -16274,7 +16274,7 @@ and RFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt}).
 @c COMMON
 @end deftp
 
-@defun base64-encode :key line-width url-safe
+@defun base64-encode :key line-width digits url-safe
 @c MOD rfc.base64
 @c EN
 Reads byte stream from the current input port, encodes it in Base64
@@ -16297,23 +16297,35 @@ RFC2045に従い76となっています。@var{line-width}に@code{#f}または@
 @c COMMON
 
 @c EN
-If a true value is given to @var{url-safe},
-the input bytes will be encoded with an
-alternative encoding table, which substitutes @code{+} instead of
-@code{-} and @code{/} instead of @code{_}. The result will contain
-filename and url safe characters only.  Default value of @var{url-safe}
-is false.
+Base64 can have different mappings in the digit of 62 and 63; the ``standard''
+encoding uses @code{+} and @code{/}, and the ``url-safe'' encoding
+uses @code{-} and @code{_}.  You can specify which to use by either
+@var{url-safe} or @var{digits}.
 @c JP
-@var{url-safe}に真の値を与えると、標準の Base64 と異なったエンコーディングテーブルを使って
-入力をエンコードします。このエンコーディングでは、@code{+}の代わりに
-@code{-}が、@code{/}の代わりに@code{_}が使われます。このエンコーディングは
-ファイル名やURLの一部として使うのに適しています。@var{url-safe}の
-デフォルト値は偽です。
+Base64は62と63を表現するのにいくつかの異なるマッピングがあります。
+「標準の」エンコーディングでは@code{+}と@code{/}が、
+「URL安全」なエンコーディングでは@code{-}と@code{_}がそれぞれ使われます。
+どちらを使うかは@var{url-safe}または@var{digits}引数で制御できます。
+@c COMMON
+
+@c EN
+If a true value is given to @var{url-safe},
+the input bytes will be encoded with ``url-safe'' encoding.
+Otherwise, you can give a two-letter string to @var{digits} argument,
+in which case the first character is used for digit 62 and the
+second character is used for digit 63.  The @var{digits} argument
+is added to support SRFI-207 (@pxref{String-notated bytevectors}).
+@c JP
+@var{url-safe}に真の値を与えると、URL安全なエンコーディングが使われます。
+そうでない場合、@var{digits}に2文字からなる文字列を渡すことができ、
+1文字目が62を、2文字目が63を現す文字として使われます。
+@var{digits}引数はSRFI-207をサポートするために追加されました
+(@ref{String-notated bytevectors}参照)。
 @c COMMON
 @end defun
 
-@defun base64-encode-string string :key line-width url-safe
-@defunx base64-encode-bytevector u8vector :key line-width url-safe
+@defun base64-encode-string string :key line-width digits url-safe
+@defunx base64-encode-bytevector u8vector :key line-width digits url-safe
 @c MOD rfc.base64
 @c EN
 Converts contents of @var{string}/@var{u8vector} to Base64 encoded format.
@@ -16327,6 +16339,13 @@ it is always interpreted as a byte sequence.
 @c COMMON
 
 @c EN
+The @var{digits} and @var{url-safe} arguments are the same as
+@code{base64-encode}.
+@c JP
+@var{digits}と@var{url-safe}引数は@code{base64-encode}と同じです。
+@c COMMON
+
+@c EN
 For the portable code, you may want to use @code{bytestring->base64}
 in @code{srfi.207} (@pxref{String-notated bytevectors}).
 @c JP
@@ -16335,7 +16354,7 @@ in @code{srfi.207} (@pxref{String-notated bytevectors}).
 @c COMMON
 @end defun
 
-@defun base64-decode :key url-safe strict
+@defun base64-decode :key digits url-safe strict
 @c MOD rfc.base64
 @c EN
 Reads character stream from the current input port, decodes it from Base64
@@ -16358,6 +16377,15 @@ Base64 でエンコードされた文字として適当でない文字は、デ�
 ただし、@var{strict}キーワード引数に真の値が与えられた場合は、
 空白文字以外の不適切な文字が入力にあったらそこでエラーが投げられます。
 @c COMMON
+
+@c EN
+The @var{digits} and @var{url-safe} keyword arguments can be used
+to choose different mappings of digit 62 and 63.  See @code{base64-encode}
+above for the details.
+@c JP
+@var{digits}と@var{url-safe}キーワード引数は62と63の異なるエンコーディングを
+指定するのに使えます。詳しくは上の@code{base64-encod}のエントリを参照してください。
+@c COMMON
 @end defun
 
 @defun base64-decode-string string :key url-safe strict
@@ -16375,7 +16403,7 @@ Base64 でエンコードされた文字列 @var{string} をデコードして�
 @c COMMON
 
 @c EN
-The characters which does not in legal Base64 encoded character set are
+The characters which are not in legal Base64 encoded character set are
 silently ignored by default.  If a true value is given to the
 @var{strict} keyword argument, however, non-whitespace out-of-set characters
 in the input raises an error.
@@ -16393,6 +16421,13 @@ would be a better choice.
 @code{base64-decode-string}は不完全な文字列を返すかもしれません。
 バイナリデータを扱っていることがわかっている場合は、
 @code{base64-decode-bytevector}を使う方が良いでしょう。
+@c COMMON
+
+@c EN
+The @var{digits} and @var{url-safe} arguments are the same as
+@code{base64-encode}.
+@c JP
+@var{digits}と@var{url-safe}引数は@code{base64-encode}と同じです。
 @c COMMON
 
 @c EN
