@@ -105,24 +105,37 @@
     #\=
   ))
 
+(define (%standard-digits? digit0 digit1)
+  (and (eqv? digit0 #\+) (eqv? digit1 #\/)))
+
+(define (%url-safe-digits? digit0 digit1)
+  (and (eqv? digit0 #\-) (eqv? digit1 #\_)))
+
 (define (%digits->decode-table digits)
-  (define rvec (make-vector 96 #f))
   (unless (and (or (string? digits) (vector? digits))
                (eqv? (size-of digits) 2))
     (error "Digits must be a string or vector of length 2, but got:" digits))
-
-  (vector-copy! rvec 0 *standard-decode-table*)
-  (vector-set! rvec (- (char->integer (~ digits 0)) 32) 62)
-  (vector-set! rvec (- (char->integer (~ digits 1)) 32) 63)
-  rvec)
+  (let ([digit0 (~ digits 0)]
+        [digit1 (~ digits 1)])
+    (cond [(%standard-digits? digit0 digit1) *standard-decode-table*]
+          [(%url-safe-digits? digit0 digit1) *url-safe-decode-table*]
+          [else
+           (rlet1 v (vector-copy *standard-decode-table*)
+             (vector-set! v (- (char->integer digit0) 32) 62)
+             (vector-set! v (- (char->integer digit1) 32) 63))])))
 
 (define (%digits->encode-table digits)
   (unless (and (or (string? digits) (vector? digits))
                (eqv? (size-of digits) 2))
     (error "Digits must be a string or vector of length 2, but got:" digits))
-  (rlet1 v (vector-copy *standard-encode-table*)
-    (vector-set! v 62 (~ digits 0))
-    (vector-set! v 63 (~ digits 1))))
+  (let ([digit0 (~ digits 0)]
+        [digit1 (~ digits 1)])
+    (cond [(%standard-digits? digit0 digit1) *standard-encode-table*]
+          [(%url-safe-digits? digit0 digit1) *url-safe-encode-table*]
+          [else
+           (rlet1 v (vector-copy *standard-encode-table*)
+             (vector-set! v 62 digit0)
+             (vector-set! v 63 digit1))])))
 
 (define (base64-decode :key (url-safe #f) (digits #f) (strict #f))
   (define table (cond [url-safe *url-safe-decode-table*]
