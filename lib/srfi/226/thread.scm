@@ -4,22 +4,22 @@
 
 (define-module srfi.226.thread
   (use gauche.threads)
-  (export ;;  &thread
-          ;; make-thread-condition
-          ;; thread-condition?
-          ;; &uncaught-exception
-          ;; make-uncaught-exception-condition
-          ;; uncaught-exception-condition?
-          ;; uncaught-exception-condition-reason
-          ;; &thread-already-terminated
-          ;; make-thread-already-terminated-condition
-          ;; thread-already-terminated-condition?
-          ;; &thread-timeout
-          ;; make-thread-timeout-condition
-          ;; thread-timeout-condition?
-          ;; &thread-abandoned-mutex
-          ;; make-thread-abandoned-mutex-condition
-          ;; thread-abandoned-mutex-condition?
+  (export &thread
+          make-thread-condition
+          thread-condition?
+          &uncaught-exception
+          make-uncaught-exception-condition
+          uncaught-exception-condition?
+          uncaught-exception-condition-reason
+          &thread-already-terminated
+          make-thread-already-terminated-condition
+          thread-already-terminated-condition?
+          &thread-timeout
+          make-thread-timeout-condition
+          thread-timeout-condition?
+          &thread-abandoned-mutex
+          make-thread-abandoned-mutex-condition
+          thread-abandoned-mutex-condition?
           ;; &concurrent-modification
           ;; make-concurrent-modification-violation
           ;; concurrent-modification-violation?

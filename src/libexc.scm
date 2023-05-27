@@ -201,7 +201,7 @@
 (define (serious-condition? obj) (is-a? obj <serious-condition>))
 (define (error? obj) (is-a? obj <error>))
 
-;; Srfi-226
+;; SRFI-226
 (define &continuation <continuation-violation>)
 (define (make-continuation-violation tag)
   (make <continuation-violation> :prompt-tag tag))
@@ -290,6 +290,40 @@
    (printer   (c "uncaught_exception_print"))
    (unboxer   "SCM_THREAD_EXCEPTION"))
  )
+
+;; SRFI-226
+(define &thread <thread-exception>)
+(define (make-thread-condition) (make <thread-exception>))
+(define (thread-condition? obj) (is-a? obj <thread-exception>))
+
+(define &uncaught-exception <uncaught-exception>)
+(define (make-uncaught-exception-condition obj)
+  (make <uncaught-exception> :reason obj))
+(define (uncaught-exception-condition? obj) (is-a? obj <uncaught-exception>))
+(define (uncaught-exception-condition-reason obj)
+  (assume-type obj <uncaught-exception>)
+  (slot-ref obj 'readon))
+
+(define &thread-already-terminated <terminated-thread-exception>)
+(define (make-thread-already-terminated-condition)
+  (make <terminated-thread-exception>))
+(define (thread-already-terminated-condition? obj)
+  (is-a obj <terminated-thread-exception>))
+
+(define &thread-timeout <join-timeout-exception>)
+(define (make-thread-timeout-condition)
+  (make <join-timeout-exception>))
+(define (thread-timeout-condition? obj)
+  (is-a? obj <join-timeout-exception>))
+
+(define &thread-abandoned-mutex <abandoned-mutex-exception>)
+(define (make-thread-abandoned-mutex-condition)
+  (make <abandoned-mutex-condition>))
+(define (thread-abandoned-mutex-condition? obj)
+  (is-a? obj <abandoned-mutex-condition>))
+
+;; &concurrent-modification
+
 
 ;;;
 ;;; Mixin classes
