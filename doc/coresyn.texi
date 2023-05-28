@@ -1877,7 +1877,7 @@ may be an ``else clause,'' which has the form
 
 First, @var{key} is evaluated and its result is compared against each
 @var{datum}.  If the result of evaluating @var{key} is equivalent
-(using @code{eqv?}, @pxref{Equality}), to a @var{datum},
+(using @code{eqv?}, @pxref{Equality}) to a @var{datum},
 then the expressions in the corresponding clause are evaluated
 sequentially, and the result(s) of the last expression in the
 @var{clause} is(are) returned from the case expression.
@@ -1948,7 +1948,7 @@ While @code{case} form returns undefined value for such case,
 @var{ecase} raises an error.
 
 It is taken from Common Lisp.  It's a convenient form when
-you want to detect when unexpected value is passed just in case.
+you want to detect unexpected value getting passed just in case.
 @c JP
 このフォームはほぼ@code{case}と同等ですが、@code{else}節が与えられず、
 @var{key}の値が@var{clause}中のどの@var{datum}とも一致しなかった場合の
@@ -2039,7 +2039,7 @@ Evaluates @var{text-expr} and returns its value.
 Also, this form declares the programmer's intent that the code following
 this path always satisfy @var{test-expr}.
 
-Currently, Gauche always signals an error with @var{message} @dots{}
+Currently, Gauche always signals an error
 if @var{text-expr} evaluates to @code{#f}.
 @c JP
 @var{test-expr}を評価してその値を返します。
@@ -2048,15 +2048,14 @@ if @var{text-expr} evaluates to @code{#f}.
 というプログラマの意図を宣言します。
 
 Gaucheでは今のところ、@var{text-expr}が偽となった場合は常にエラーが投げられます。
-@var{message} @dots{}がエラーメッセージに使われます。
 @c COMMON
 
 @example
-(define (real-sqrt x)
+(define (rsqrt x)
   (assume (and (real? x) (>= x 0)))
   (sqrt x))
 
-gosh> (real-sqrt -1)
+gosh> (rsqrt -1)
 *** ERROR: Invalid assumption: (and (real? x) (>= x 0))
 @end example
 
@@ -2070,12 +2069,12 @@ false.
 @c COMMON
 
 @example
-(define (real-sqrt x)
+(define (rsqrt x)
   (assume (and (real? x) (>= x 0))
           "Argument must be nonnegative real number, but got:" x)
   (sqrt x))
 
-gosh> (real-sqrt -1)
+gosh> (rsqrt -1)
 *** ERROR: Argument must be nonnegative real number, but got: -1
 @end example
 

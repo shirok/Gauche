@@ -11493,10 +11493,35 @@ provides a bunch of procedures that can treat a bytevector as a bytestring.
 
 @defun bytestring arg @dots{}
 @mdindex srfi.207
+Each argument must be either one of the followings, and the procedure
+returns a new bytevector which is concatenation of the given arguments.
+
+@itemize @bullet
+@item
+An exact integer, between 0 and 255 inclusive.
+@item
+An ASCII character.
+@item
+A bytevector
+@item
+A string of ASCII characters
+@end itemize
+
+An error is signaled if anything other than above is given.
+
+@example
+(bytestring "lor" #\r #\x65 #u8(#x6d))
+  @result{} #u8(108 111 114 114 101 109)  ; #u8"lorem"
+@end example
 @end defun
 
 @defun make-bytestring lis
 @mdindex srfi.207
+Returns a new bytevector whose content is a concatenation of
+elements in @var{lis}.  Each element must be either an exact integer
+between 0 and 255 inclusive, an ASCII character, a bytevector
+or an ASCII string.  It is effectively the same as
+@code{(apply bytestring lis)}.
 @end defun
 
 @defun make-bytestring! bv at lis
