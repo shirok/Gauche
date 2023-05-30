@@ -123,7 +123,7 @@
                            'uvector-comparator))
 (define bytevector-comparator
   ;; u8vector hash support
-  (make-comparator/compare (cut is-a? <> <u8vector>) equal? compare default-hash
+  (make-comparator/compare u8vector? equal? compare default-hash
                            'bytevector-comparator))
 
 (define (make-pair-comparator car-comparator cdr-comparator)
