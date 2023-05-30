@@ -1,5 +1,5 @@
 ;;;
-;;; logical.scm - logical (bitwise) operations.  to be autoloaded.
+;;; logutil.scm - logical (bitwise) operations.  to be autoloaded.
 ;;;
 ;;;   Copyright (c) 2000-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

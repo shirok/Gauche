@@ -1,5 +1,5 @@
 ;;;
-;;; signal.scm - with-signal-handlers
+;;; sigutil.scm - with-signal-handlers (to be autoloaded)
 ;;;
 ;;;   Copyright (c) 2000-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -30,8 +30,6 @@
 ;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
-
-;; This file is to be autoloaded
 
 (select-module gauche)
 (use scheme.list)

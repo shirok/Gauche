@@ -1,3 +1,9 @@
+2023-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numerical.scm, lib/gauche/logical.scm,
+	  lib/gauche/signal.scm: Renamed to numutil.scm, logutil.scm and
+	  sigutil.scm, respectively, for the consistency of autoloaded files.
+
 2023-05-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/thread.c (Scm_ThreadTerminate): Support

@@ -1,5 +1,5 @@
 ;;;
-;;; numerical.scm - auxiliary numerical functions - to be autoloaded
+;;; numutil.scm - auxiliary numerical functions - to be autoloaded
 ;;;
 ;;;   Copyright (c) 2000-2022  Shiro Kawai  <shiro@acm.org>
 ;;;

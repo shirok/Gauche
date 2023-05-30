@@ -68,7 +68,7 @@
   `(register-autoload 'scheme ',file ',vars))
 
 ;;==========================================================
-(autoload "gauche/numerical"
+(autoload "gauche/numutil"
           exact-integer-sqrt
           continued-fraction real->rational
           expt-mod gamma lgamma
@@ -85,13 +85,13 @@
 
 (autoload gauche.charconv %open-input-file/conv %open-output-file/conv)
 
-(autoload "gauche/signal" (:macro with-signal-handlers))
+(autoload "gauche/sigutil" (:macro with-signal-handlers))
 
 (autoload gauche.modutil (:macro export-if-defined use-version))
 
 (autoload gauche.portutil copy-port)
 
-(autoload "gauche/logical"
+(autoload "gauche/logutil"
           logtest logbit? copy-bit bit-field copy-bit-field)
 
 (autoload gauche.common-macros
