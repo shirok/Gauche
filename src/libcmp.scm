@@ -228,6 +228,21 @@
 ;;;   so we fiddle with C.
 ;;;
 
+;; Common routine
+;; TODO: Ideally, we want to use trampoline to call typeFn so that
+;; we won't recurse to VM loop.
+(inline-stub
+ (define-cfn cmpr-typecheck (c::ScmComparator* a b rest) ::void :static
+   (when (SCM_FALSEP (Scm_ApplyRec1 (-> c typeFn) a))
+     (Scm_Error "Object is not suitable for a comparator %S: %S" c a))
+   (when (SCM_FALSEP (Scm_ApplyRec1 (-> c typeFn) b))
+     (Scm_Error "Object is not suitable for a comparator %S: %S" c b))
+   (for-each
+    (lambda (z)
+      (unless (Scm_ApplyRec1 (-> c typeFn) z)
+        (Scm_Error "Object is not suitable for a comparator %S: %S" c z)))
+    rest)))
+
 ;;; =?
 (inline-stub
  (define-cfn cmpr-eq (c::ScmComparator* a b more) :static
@@ -240,6 +255,7 @@
      (return (Scm_VMApply2 (-> c eqFn) a b))))
 
  (define-cproc =? (c::<comparator> a b :rest more)
+   (cmpr-typecheck c a b more)
    (return (cmpr-eq c a b more))))
 
 ;;; <?
@@ -265,6 +281,7 @@
        (return (SCM_MAKE_BOOL (< (SCM_INT_VALUE r) 0))))))
 
  (define-cproc <? (c::<comparator> a b :rest more)
+   (cmpr-typecheck c a b more)
    (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
           (when (SCM_FALSEP (-> c orderFn))
             (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
@@ -305,6 +322,7 @@
        (return (SCM_MAKE_BOOL (<= (SCM_INT_VALUE r) 0))))))
 
  (define-cproc <=? (c::<comparator> a b :rest more)
+   (cmpr-typecheck c a b more)
    (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
           (when (SCM_FALSEP (-> c orderFn))
             (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
@@ -347,6 +365,7 @@
        (return (SCM_MAKE_BOOL (> (SCM_INT_VALUE r) 0))))))
 
  (define-cproc >? (c::<comparator> a b :rest more)
+   (cmpr-typecheck c a b more)
    (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
           (when (SCM_FALSEP (-> c orderFn))
             (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
@@ -381,6 +400,7 @@
        (return (SCM_MAKE_BOOL (>= (SCM_INT_VALUE r) 0))))))
 
  (define-cproc >=? (c::<comparator> a b :rest more)
+   (cmpr-typecheck c a b more)
    (cond [(logand (-> c flags) SCM_COMPARATOR_SRFI_128)
           (when (SCM_FALSEP (-> c orderFn))
             (Scm_Error "%S doesn't have ordering predicate" (SCM_OBJ c)))
