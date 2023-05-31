@@ -394,7 +394,12 @@
           [(eq? byte #x0d) (display "\\r" port)]
           [(eq? byte #x7c) (display "\\|" port)]
           [(<= #x20 byte #x7e) (display (integer->char byte) port)]
-          [else (format port "\\x~2,'0x;" byte)]))
+          [else
+           ;;(format port "\\x~2,'0x;" byte)
+           (display "\\x" port)
+           (display (integer->digit (ash byte -4) 16) port)
+           (display (integer->digit (logand byte #x0f) 16) port)
+           (display ";" port)]))
   (display "\"" port))
 
 (define (write-binary-bytestring port . args)
