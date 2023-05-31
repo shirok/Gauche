@@ -24664,31 +24664,90 @@ An exception that caused the termination of the thread.
 @end deftp
 
 @defun join-timeout-exception? obj
-@defunx abandoned-mutex-exception? obj
-@defunx terminated-thread-exception? obj
-@defunx uncaught-exception? obj
-[SRFI-18], [SRFI-21]
+@defunx thread-timeout-condition? obj
+[SRFI-18], [SRFI-21], [SRFI-226]
 @c MOD gauche.threads
 @c EN
-These procedures checks if @var{obj} is a certain type of exception.
-Provided for the compatibility to SRFI-18.
+Returns @code{#t} if @var{obj} is an instance of
+@code{<join-timeout-exception>}, @code{#f} otherwise.
+The name @code{join-timeout-exception?} is defined by SRFI-18/21,
+and @code{join-timeout-condition?} is by SRFI-226. They are the same.
 @c JP
-これらの手続きは、@var{obj}が特定のタイプの例外かどうかを検査します。
-SRFI-18との互換性のために提供されています。
+@var{obj}が@code{<join-timeout-exception>}のインスタンスなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+@code{join-timeout-exception?}はSRFI-18/21で、
+@code{join-timeout-condition?}はSRFI-226で定義された名前です。どちらも同じです。
 @c COMMON
 @end defun
 
+@defun abandoned-mutex-exception? obj
+@defunx thread-abandoned-mutex-condition? obj
+[SRFI-18], [SRFI-21], [SRFI-226]
+@c MOD gauche.threads
+@c EN
+Returns @code{#t} if @var{obj} is an instance of
+@code{<abandoned-mutex-exception>}, @code{#f} otherwise.
+The name @code{abandoned-mutex-exception?} is defined by SRFI-18/21,
+and @code{thread-abandoned-mutex-condition?} is by SRFI-226. They are the same.
+@c JP
+@var{obj}が@code{<abandoned-mutex-exception>}のインスタンスなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+@code{abandoned-mutex-exception?}はSRFI-18/21で、
+@code{thread-abandoned-mutex-condition?}はSRFI-226で定義された名前です。どちらも同じです。
+@end defun
+
+@defun terminated-thread-exception? obj
+@defunx thread-already-terminated-condition? obj
+[SRFI-18], [SRFI-21], [SRFI-226]
+@c MOD gauche.threads
+@c EN
+Returns @code{#t} if @var{obj} is an instance of
+@code{<terminated-thread-exception>}, @code{#f} otherwise.
+The name @code{terminated-thread-exception?} is defined by SRFI-18/21,
+and @code{thread-already-terminated-condition?} is by SRFI-226. They are the same.
+@c JP
+@var{obj}が@code{<terminated-thread-exception>}のインスタンスなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+@code{terminated-thread-exception?}はSRFI-18/21で、
+@code{thread-already-termianted-condition?}はSRFI-226で定義された名前です。どちらも同じです。
+@end defun
+
+@defun uncaught-exception? obj
+@defunx uncaught-exception-condition? obj
+[SRFI-18], [SRFI-21], [SRFI-226]
+@c MOD gauche.threads
+@c EN
+Returns @code{#t} if @var{obj} is an instance of
+@code{<uncaught-exception>}, @code{#f} otherwise.
+The name @code{uncaught-exception?} is defined by SRFI-18/21,
+and @code{uncaught-exception-condition?} is by SRFI-226. They are the same.
+@c JP
+@var{obj}が@code{<uncaught-exception>}のインスタンスなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+@code{uncaught-exception?}はSRFI-18/21で、
+@code{uncaught-exception-condition?}はSRFI-226で定義された名前です。どちらも同じです。
+@end defun
+
 @defun uncaught-exception-reason exc
-[SRFI-18], [SRFI-21]
+@defunx uncaught-exception-condition-reason exc
+[SRFI-18], [SRFI-21], [SRFI-226]
 @c MOD gauche.threads
 @c EN
 Returns the value of @code{reason} slot of @code{<uncaught-exception>}
 object.
-Provided for the compatibility to SRFI-18.
 @c JP
 @code{<uncaught-exception>}オブジェクトの@code{reason}スロットの値を
 返します。
-SRFI-18との互換性のために提供されています。
+@c COMMON
+
+@c EN
+The name @code{uncaught-exception-reason} is defined in
+SRFI-18/21, and @code{uncaught-exception-condition-reason} is
+defined in SRFI-226.  Both works the same.
+@c JP
+@code{uncaught-exception-reason}はSRFI-18/21で、
+@code{uncaught-exception-condition-reason}はSRFI-226で定義された名前です。
+どちらも同じ動作です。
 @c COMMON
 @end defun
 
