@@ -11492,7 +11492,8 @@ provides a bunch of procedures that can treat a bytevector as a bytestring.
 @end deftp
 
 @defun bytestring arg @dots{}
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 Each argument must be either one of the followings, and the procedure
 returns a new bytevector which is concatenation of the given arguments.
 
@@ -11516,7 +11517,8 @@ An error is signaled if anything other than above is given.
 @end defun
 
 @defun make-bytestring lis
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 Returns a new bytevector whose content is a concatenation of
 elements in @var{lis}.  Each element must be either an exact integer
 between 0 and 255 inclusive, an ASCII character, a bytevector
@@ -11525,81 +11527,136 @@ or an ASCII string.  It is effectively the same as
 @end defun
 
 @defun make-bytestring! bv at lis
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
+Fill a bytevector @var{bv} starting from index @var{at} with the
+elements in @var{lis}.  Each element must be either an exact integer
+between 0 and 255 inclusive, an ASCII character, a bytevector
+or an ASCII string.
+
+Returns an undefined value.
+
+@example
+(rlet1 bv (make-u8vector 10)
+  (make-bytestring! bv 1 '("ab" #\c #u8"de")))
+  @result{} #u8(0 97 98 99 100 101 0 0 0 0)
+@end example
 @end defun
 
 @defun bytevector->hex-string bv
 @defunx hex-string->bytevector string
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
+Convert a bytevector to hexadecimal digit string, and vice versa.
+
+A condition that satisfies @code{bytestring-error?} is thrown
+by @code{hex-string->bytevector} if @var{string} contains a letter
+not valid as a hexadecimal digits.
+
+@example
+(bytevector->hex-string #u8"aloha")
+  @result{} "616c6f6861"
+(hex-string->bytevector "616C6F6861")
+  @result{} #u8(97 108 111 104 97)  ; #u8"aloha"
+@end example
 @end defun
 
 @defun bytevector->base64 bv :optional digits
 @defunx base64->bytevector string :optional digits
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
+Encode a bytevector @var{bv} to Base64 encoded string, and vice versa.
+
+A condition that satisfies @code{bytestring-error?} is thrown
+by @code{base64->bytevector} if @var{string} contains a letter
+not valid as a hexadecimal digits.  Whitespace characters in @var{string}
+are silently ignored, though.
+
+By default, they use standard Base64 mappings.  You can specify
+a string of two ASCII characters in @var{digits} to alter
+mapping of 62nd and 63rd digits; the 'URL-safe' variant
+of Base64 can be achieved by passing @code{"-_"} as @var{digits}.
+
+@xref{Base64 encoding/decoding}, for Gauche-specific Base64 library
+that provides more APIs.
 @end defun
 
 @defun bytestring->list bv :optional start end
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun make-bytestring-generator arg @dots{}
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring-pad bv len char-or-u8
 @defunx bytestring-pad-right bv len char-or-u8
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring-trim bv pred
 @defunx bytestring-trim-right bv pred
 @defunx bytestring-trim-both bv pred
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytrestring-replace bv1 bv2 start1 end1 :optional start2 end2
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring<? bv1 bv2
 @defunx bytestring<=? bv1 bv2
 @defunx bytestring>? bv1 bv2
 @defunx bytestring>=? bv1 bv2
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring-index bv pred :optional start end
 @defunx bytestring-index-right bv pred :optional start end
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring-break bv pred
 @defunx bytestring-span bv pred
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring-join bv-list delim :optional grammar
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring-split bv delim :optional grammar
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun read-textual-bytestring prefix :optional port
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun write-txtual-bytestring bv :optional port
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun write-bintary-bitestring port arg @dots{}
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 @defun bytestring-error? obj
-@mdindex srfi.207
+[SRFI-207]
+@c MOD srfi.207
 @end defun
 
 
