@@ -4279,7 +4279,12 @@ void Scm_VMDump(ScmVM *vm)
         }
         Scm_Printf(out, "              env = %p\n", cont->env);
         Scm_Printf(out, "             size = %d\n", cont->size);
-        Scm_Printf(out, "             base = %p\n", cont->base);
+        Scm_Printf(out, "             base = %p", cont->base);
+        if (cont->base && SCM_COMPILED_CODE_P(cont->base)) {
+            Scm_Printf(out, "  %S\n", cont->base->name);
+        } else {
+            Scm_Printf(out, "\n");
+        }
         if (!C_CONTINUATION_P(cont)) {
             Scm_Printf(out, "               pc = %p", cont->pc);
             dump_pc_offset(cont->pc, cont->base, out);
