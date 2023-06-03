@@ -208,7 +208,7 @@ struct ScmCallTraceRec {
 };
 
 ScmCallTrace *Scm__MakeCallTraceQueue(u_long size);
-
+ScmCallTrace *Scm__CopyCallTraceQueue(ScmCallTrace *master);
 
 /* For BF and BT instructions, we check for #<undef>.
    This macro assumes to the local variable VM holding ScmVM*.

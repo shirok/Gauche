@@ -345,6 +345,113 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     return v;
 }
 
+/*
+ * Taking a snapshot of VM.
+ *   Copying VM is mainly to preserve a snapshot of VM for analysis.
+ *   Note that internal states of some system construct (e.g. mutex) aren't
+ *   be copied, so it is not
+ */
+
+ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
+{
+    ScmVM *v = SCM_NEW(ScmVM);
+
+    SCM_SET_CLASS(v, SCM_CLASS_VM);
+    v->state = master->state;
+    (void)SCM_INTERNAL_MUTEX_INIT(v->vmlock);
+    (void)SCM_INTERNAL_COND_INIT(v->cond);
+    v->canceller = master->canceller;
+    v->inspector = master->inspector;
+    v->name = master->name;
+    v->specific = master->specific;
+    v->thunk = master->thunk;
+    v->result = master->result;
+    v->resultException = master->resultException;
+    v->module = master->module;
+    v->cstack = master->cstack;
+
+    v->threadLocals = Scm__MakeVMThreadLocalTable(master);
+
+    v->compilerFlags = master->compilerFlags;
+    v->runtimeFlags = master->runtimeFlags;
+    v->attentionRequest = master->attentionRequest;
+    v->signalPending = master->signalPending;
+    v->finalizerPending = master->finalizerPending;
+    v->stopRequest = master->stopRequest;
+
+#ifdef USE_CUSTOM_STACK_MARKER
+    v->stack = (ScmObj*)GC_generic_malloc((SCM_VM_STACK_SIZE+1)*sizeof(ScmObj),
+                                          vm_stack_kind);
+    *v->stack++ = SCM_OBJ(v);
+#else  /*!USE_CUSTOM_STACK_MARKER*/
+    v->stack = SCM_NEW_ARRAY(ScmObj, SCM_VM_STACK_SIZE);
+#endif /*!USE_CUSTOM_STACK_MARKER*/
+    v->sp = v->stack;
+    v->stackBase = v->stack;
+    v->stackEnd = v->stack + SCM_VM_STACK_SIZE;
+    memcpy(v->stack, master->stack, SCM_VM_STACK_SIZE*sizeof(ScmObj));
+
+#if GAUCHE_FFX
+    v->fpstack = SCM_NEW_ATOMIC_ARRAY(ScmFlonum, SCM_VM_STACK_SIZE);
+    v->fpstackEnd = v->fpstack + SCM_VM_STACK_SIZE;
+    v->fpsp = v->fpstack;
+    memcpy(v->fpstack, master->fpstack, SCM_VM_STACK_SIZE*sizeof(ScmFlonum));
+#endif /* GAUCHE_FFX */
+
+    v->env = master->env;
+    v->argp = master->argp;
+    v->cont = master->cont;
+    v->pc = master->pc;
+    v->base = master->base;
+    v->val0 = master->val0;
+    for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = master->vals[i];
+    v->numVals = master->numVals;
+    v->trampoline = master->trampoline;
+    v->denv = master->denv;
+    v->dynamicHandlers = master->dynamicHandlers;
+
+    v->escapePoint = master->escapePoint;
+    v->escapeReason = master->escapeReason;
+    v->escapeData[0] = master->escapeData[0];
+    v->escapeData[1] = master->escapeData[1];
+    v->errorHandlerContinuable = master->errorHandlerContinuable;
+    v->customErrorReporter = master->customErrorReporter;
+#if GAUCHE_SPLIT_STACK
+    v->lastErrorCont = master->lastErrorCont;
+#endif /*GAUCHE_SPLIT_STACK*/
+
+    v->evalSituation = master->evalSituation;
+
+    sigemptyset(&v->sigMask);
+    Scm_SignalQueueInit(&v->sigq); /* TODO: Copy signal queue content */
+
+    /* stats */
+    v->stat.sovCount = master->stat.sovCount;
+    v->stat.sovTime = master->stat.sovTime;
+    v->stat.loadStat = master->stat.loadStat;
+    v->profilerRunning = master->profilerRunning;
+    v->prof = master->prof;     /* TODO: Should we copy this? */
+
+    v->thread = master->thread;
+
+#if defined(GAUCHE_USE_WTHREADS)
+    v->winCleanup = master->winCleanup;
+#endif /*defined(GAUCHE_USE_WTHREADS)*/
+
+    v->vmid = master->vmid;
+    v->callTrace = (master->callTrace
+                    ? Scm__CopyCallTraceQueue(master->callTrace)
+                    : NULL);
+    v->codeCache = NULL;        /* We might need to copy this as well
+                                   if we want to debug JIT code cache */
+
+    v->resetChain = master->resetChain;
+    /* NB: We don't register the finalizer vm_finalize to the snapshot,
+       for we do not want the associated system resources to be cleaned
+       up when the snapshot is GCed. */
+    return v;
+}
+
 /* Attach the thread to the current thread.
    See the notes of Scm_NewVM above.
    Returns TRUE on success, FALSE on failure. */
@@ -4054,6 +4161,21 @@ ScmCallTrace *Scm__MakeCallTraceQueue(u_long size)
     return ct;
 }
 
+ScmCallTrace *Scm__CopyCallTraceQueue(ScmCallTrace *master)
+{
+    u_long size = master->size;
+    ScmCallTrace *ct = SCM_NEW2(ScmCallTrace*,
+                                sizeof(ScmCallTrace)
+                                + (size-1)*sizeof(ScmCallTraceEntry));
+    ct->size = size;
+    ct->top = master->top;
+    for (u_long i=0; i<size; i++) {
+        ct->entries[i].base = master->entries[i].base;
+        ct->entries[i].pc = master->entries[i].pc;
+    }
+    return ct;
+}
+
 ScmObj Scm_VMGetCallTraceLite(ScmVM *vm)
 {
     ScmObj trace = SCM_NIL, tail = SCM_NIL;
@@ -4240,9 +4362,12 @@ static void print_insn_paren(ScmObj insn, ScmPort *out)
     Scm_Printf(out, ")\n");
 }
 
-
-void Scm_VMDump(ScmVM *vm)
+void Scm_VMDump(ScmVM *vm_to_dump)
 {
+    /* We first take a snapshot of the given VM, so that the act of
+       dumping won't interfere with the state of the target.
+     */
+    ScmVM *vm = Scm_VMTakeSnapshot(vm_to_dump);
     ScmPort *out = SCM_CURERR;
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;

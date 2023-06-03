@@ -1,3 +1,10 @@
+2023-06-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_VMTakeSnapshot): Added.  Since VMDump calls high-level
+	  output routine that may call back to Scheme code, the dump routine
+	  itself may change VM state during dumping.  To prevent that, we
+	  take snapshot of VM before dumping.
+
 2023-05-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numerical.scm, lib/gauche/logical.scm,
