@@ -11584,17 +11584,33 @@ that provides more APIs.
 @defun bytestring->list bv :optional start end
 [SRFI-207]
 @c MOD srfi.207
+Converts each element of a bytevector @var{bv} to
+either a character (if the element is an integer between 32 and 127,
+inclusive) or an integer, and returns a list of converted elements.
+If you pass the resulting list to @code{make-bytestring}, you can obtain
+the same bytevector as @var{bv}.
+
+If you pass the optional @var{start} and @var{end} indexes,
+only the specified range of @var{bv} is considered.
 @end defun
 
 @defun make-bytestring-generator arg @dots{}
 [SRFI-207]
 @c MOD srfi.207
+Returns a generator that works as the same as
+@code{(uvector->generator (bytestring @var{arg} @dots{}))},
+but this can skip creating intermediate bytestrings.
 @end defun
 
 @defun bytestring-pad bv len char-or-u8
 @defunx bytestring-pad-right bv len char-or-u8
 [SRFI-207]
 @c MOD srfi.207
+Returns a newly allocated bytevector of at least @var{len} long.
+If @var{bv} is shorter than @var{len}, the rest is padded with
+@var{char-or-u8} (which can be either an ASCII character or
+an exact integer between 0 and 255).  The pad is added to the left
+with @code{bytestring-pad}, and to the right with @code{bytestring-pad-right}.
 @end defun
 
 @defun bytestring-trim bv pred
