@@ -940,19 +940,23 @@
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
            [signature-info (cgen-literal (serializable-signature-info code))]
+           [debug-info (cgen-literal (serializable-debug-info code))]
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
                 (cgen-safe-comment (~ code'name)))
         (format #t "            (ScmWord*)(~a), ~a,\n"
                 cvn (length cv))
-        (format #t "            ~a, ~a, ~a, ~a, SCM_NIL, ~a,\n"
+        (format #t "            ~a, ~a, ~a, ~a, ~a, ~a,\n"
                 (~ code'max-stack)
                 (~ code'required-args)
                 (~ code'optional-args)
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
+                (if (cgen-literal-static? debug-info)
+                  (cgen-cexpr debug-info)
+                  "SCM_NIL")
                 (if (cgen-literal-static? signature-info)
                   (cgen-cexpr signature-info)
                   "SCM_FALSE"))
@@ -999,6 +1003,14 @@
                            => (^x `(unused-args . ,x))]))
             (unwrap-syntax (cdr sig)))
       (unwrap-syntax sig))))
+
+;; Construct serializable debug info.
+;;   See code.c Scm_CompiledCodePushInfo for the format of debug-info.
+(define (serializable-debug-info code)
+  (map (^[entry]
+         (cons (car entry)            ; integer or 'definition
+               (unwrap-syntax (cdr entry))))
+       (or (~ code'debug-info) '())))
 
 ;; Returns a list of the same length of CODE, which includes the
 ;; <cgen-literal>s corresponding to the literal values in CODE.
