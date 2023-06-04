@@ -1527,7 +1527,7 @@ It works as
 Returns a new string whose content is a copy of a string @var{s1}, except
 the part beginning from the index
 @var{start1} (inclusive) and ending at the index @var{end1} (exclusive)
-are replaced by a string @var{s2}.   When optional @var{start2} and @var{end2}
+is replaced by a string @var{s2}.   When optional @var{start2} and @var{end2}
 arguments are given, @var{s2} is trimmed first according to them.
 The size of the @emph{gap}, @code{(- @var{end1} @var{start1})}, doesn't
 need to be the same as the size of the inserted string.
@@ -11611,6 +11611,9 @@ If @var{bv} is shorter than @var{len}, the rest is padded with
 @var{char-or-u8} (which can be either an ASCII character or
 an exact integer between 0 and 255).  The pad is added to the left
 with @code{bytestring-pad}, and to the right with @code{bytestring-pad-right}.
+
+This is a bytestring version of @code{string-pad} and @code{string-pad-right}
+(@pxref{SRFI-13 String selection}).
 @end defun
 
 @defun bytestring-trim bv pred
@@ -11618,11 +11621,38 @@ with @code{bytestring-pad}, and to the right with @code{bytestring-pad-right}.
 @defunx bytestring-trim-both bv pred
 [SRFI-207]
 @c MOD srfi.207
+Remove octets that satisfies @var{pred}
+at the beginning / at the end / at both ends of a bitvector @var{bv}.
+The procedure @var{pred} receives an exact integer between 0 and 255.
+
+They always return a fresh bytevector, even when no octets are trimmed.
+
+This is a bytestring version of @code{string-trim},
+@code{string-trim-right}, and @code{string-trim-both}
+(@pxref{SRFI-13 String selection}).
 @end defun
 
 @defun bytrestring-replace bv1 bv2 start1 end1 :optional start2 end2
 [SRFI-207]
 @c MOD srfi.207
+Returns a new bytevector whose content is a copy of a bytevector
+@var{bv1}, except the part beginning from the index
+@var{start1} (inclusive) and ending at the index @var{end1} (exclusive)
+is replaced by a byvetvector @var{bv2}.
+When optional @var{start2} and @var{end2}
+arguments are given, @var{bv2} is trimmed first accordingly.
+The size of the @emph{gap}, @code{(- @var{end1} @var{start1})}, doesn't
+need to be the same as the size of the inserted bytevector.
+Effectively, this is the same as the following code.
+
+@example
+(bytevector-append (subseq bv1 0 start1)
+                   (subseq bv2 start2 end2)
+                   (subseq bv1 end1 (bytevector-length bv1)))
+@end example
+
+This is a bytestring version of @code{string-replace}
+(@pxref{SRFI-13 Other string operations}).
 @end defun
 
 @defun bytestring<? bv1 bv2
@@ -11631,12 +11661,37 @@ with @code{bytestring-pad}, and to the right with @code{bytestring-pad-right}.
 @defunx bytestring>=? bv1 bv2
 [SRFI-207]
 @c MOD srfi.207
+Compare two bytevectors lexicographically.  These are bytestring
+version of @code{string<?} (@pxref{String comparison}).
+
+There's no @code{bytestring=?}, for you can check equality of bytevectors
+by @code{bytevector=?} in @code{scheme.bytevector} and
+@code{gauche.uvector} (@pxref{Bytevector compatibility}).
+
+Note that @code{bytevector-comparator} compares bytevectors
+differently.  The comparator first compares the lengths, and only
+uses elements when both vectors are of the same length
+(@pxref{Predefined comparators}).
+
+@example
+(bytestring<? #u8"abc" #u8"ac") @result{} #t
+(<? bytevector-comparator #u8"abc" #u8"ac") @result{} #f
+@end example
+
+This contrasts SRFI-207's view of bytevectors as a string of bytes,
+with the view of them as an array of bytes.
 @end defun
 
 @defun bytestring-index bv pred :optional start end
 @defunx bytestring-index-right bv pred :optional start end
 [SRFI-207]
 @c MOD srfi.207
+Returns the first or last index of the octet that satisfies @var{pred}
+in a bytevector @var{bv}.  The optional @var{start} and @var{end}
+arguments limit the range to search.
+
+These are bytestring version of @code{string-index} and
+@code{string-index-right} (@pxref{SRFI-13 String searching}).
 @end defun
 
 @defun bytestring-break bv pred
@@ -11660,7 +11715,7 @@ with @code{bytestring-pad}, and to the right with @code{bytestring-pad-right}.
 @c MOD srfi.207
 @end defun
 
-@defun write-txtual-bytestring bv :optional port
+@defun write-textual-bytestring bv :optional port
 [SRFI-207]
 @c MOD srfi.207
 @end defun
