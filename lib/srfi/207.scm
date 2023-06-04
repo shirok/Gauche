@@ -228,25 +228,24 @@
                               bv2 start2 (or end2 (u8vector-length bv2))
                               bv1 end1 (u8vector-length bv1)))
 
-(define (bytestring<? bv1 bv2)
+(define (%bytestring-compare bv1 bv2)
   (assume-type bv1 <u8vector>)
   (assume-type bv2 <u8vector>)
-  (<? bytevector-comparator bv1 bv2))
+  (let ([len1 (u8vector-length bv1)]
+        [len2 (u8vector-length bv2)])
+    (let loop ([k 0])
+      (cond [(= k len1) (if (= k len2) 0 -1)]
+            [(= k len2) 1]
+            [else (let ([b1 (u8vector-ref bv1 k)]
+                        [b2 (u8vector-ref bv2 k)])
+                    (cond [(< b1 b2) -1]
+                          [(> b1 b2) 1]
+                          [else (loop (+ k 1))]))]))))
 
-(define (bytestring>? bv1 bv2)
-  (assume-type bv1 <u8vector>)
-  (assume-type bv2 <u8vector>)
-  (>? bytevector-comparator bv1 bv2))
-
-(define (bytestring<=? bv1 bv2)
-  (assume-type bv1 <u8vector>)
-  (assume-type bv2 <u8vector>)
-  (<=? bytevector-comparator bv1 bv2))
-
-(define (bytestring>=? bv1 bv2)
-  (assume-type bv1 <u8vector>)
-  (assume-type bv2 <u8vector>)
-  (>=? bytevector-comparator bv1 bv2))
+(define (bytestring<? bv1 bv2)  (< (%bytestring-compare bv1 bv2) 0))
+(define (bytestring>? bv1 bv2)  (> (%bytestring-compare bv1 bv2) 0))
+(define (bytestring<=? bv1 bv2) (<= (%bytestring-compare bv1 bv2) 0))
+(define (bytestring>=? bv1 bv2) (>= (%bytestring-compare bv1 bv2) 0))
 
 ;; These differ from u8vector-index/u8vector-index-right, so we
 ;; scan by our own.
