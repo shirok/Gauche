@@ -43,7 +43,7 @@ typedef int (GC_CALLBACK * GC_disclaim_proc)(void * /*obj*/);
 /* No-op in the leak-finding mode.                                      */
 GC_API void GC_CALL GC_register_disclaim_proc(int /*kind*/,
                                 GC_disclaim_proc /*proc*/,
-                                int /*mark_from_all*/) GC_ATTR_NONNULL(2);
+                                int /*mark_from_all*/);
 
 /* The finalizer closure used by GC_finalized_malloc.                   */
 struct GC_finalizer_closure {
@@ -63,6 +63,7 @@ struct GC_finalizer_closure {
 /* slightly bigger than the specified allocation size, and that GC_base */
 /* result points to a word prior to the start of the allocated object.  */
 /* The disclaim procedure is not invoked in the leak-finding mode.      */
+/* There is no debugging version of this allocation API.                */
 GC_API GC_ATTR_MALLOC GC_ATTR_ALLOC_SIZE(1) void * GC_CALL
         GC_finalized_malloc(size_t /*size*/,
                 const struct GC_finalizer_closure * /*fc*/) GC_ATTR_NONNULL(2);

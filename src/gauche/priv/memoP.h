@@ -102,7 +102,7 @@
   Lookup
 
    - Compute a hash value modulo table capacity.
-   - Start probing form entries[hashval%capacity]
+   - Start probing from entries[hashval%capacity]
        - h = LOAD(entry->hashval)
        - if h == 0
           probe failed.
@@ -145,7 +145,7 @@
      value during insertion.  The same keys always yield the same value, so
      there's no race.
 
-   - Key becomes 0 - The entry become invalid, for it will never match
+   - Key becomes 0 - The entry becomes invalid, for it will never match
      valid keys.
 
    When these conditions are found during traversal, we set the value to 0

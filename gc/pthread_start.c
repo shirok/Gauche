@@ -22,7 +22,7 @@
 /* case at the top of the file.  FIXME: it's still unclear whether this */
 /* will actually cause the exit handler to be invoked last when         */
 /* thread_exit is called (and if -fexceptions is used).                 */
-#if defined(__GNUC__) && defined(__linux__)
+#if !defined(DONT_UNDEF_EXCEPTIONS) && defined(__GNUC__) && defined(__linux__)
   /* We undefine __EXCEPTIONS to avoid using GCC __cleanup__ attribute. */
   /* The current NPTL implementation of pthread_cleanup_push uses       */
   /* __cleanup__ attribute when __EXCEPTIONS is defined (-fexceptions). */
@@ -60,10 +60,12 @@ GC_INNER_PTHRSTART void * GC_CALLBACK GC_inner_start_routine(
 # endif
   me -> status = result;
   GC_end_stubborn_change(me); /* cannot use GC_dirty */
-# ifndef NACL
+  /* Cleanup acquires lock, ensuring that we can't exit while   */
+  /* a collection that thinks we're alive is trying to stop us. */
+# ifdef NACL
+    GC_thread_exit_proc((void *)me);
+# else
     pthread_cleanup_pop(1);
-    /* Cleanup acquires lock, ensuring that we can't exit while         */
-    /* a collection that thinks we're alive is trying to stop us.       */
 # endif
   return result;
 }

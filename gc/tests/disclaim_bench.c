@@ -22,8 +22,7 @@
 
 #include "gc_disclaim.h"
 
-/* Include gc_priv.h is done after including GC public headers, so      */
-/* that GC_BUILD has no effect on the public prototypes.                */
+#define NOT_GCBUILD
 #include "private/gc_priv.h" /* for CLOCK_TYPE, COVERT_DATAFLOW, GC_random */
 
 #ifdef LINT2
@@ -62,18 +61,20 @@ testobj_t testobj_new(int model)
 {
     testobj_t obj;
     switch (model) {
+#     ifndef GC_NO_FINALIZATION
         case 0:
-            obj = GC_NEW(struct testobj_s);
+            obj = (struct testobj_s *)GC_malloc(sizeof(struct testobj_s));
             if (obj != NULL)
-              GC_REGISTER_FINALIZER_NO_ORDER(obj, testobj_finalize,
+              GC_register_finalizer_no_order(obj, testobj_finalize,
                                              &free_count, NULL, NULL);
             break;
+#     endif
         case 1:
             obj = (testobj_t)GC_finalized_malloc(sizeof(struct testobj_s),
                                                  &fclos);
             break;
         case 2:
-            obj = GC_NEW(struct testobj_s);
+            obj = (struct testobj_s *)GC_malloc(sizeof(struct testobj_s));
             break;
         default:
             exit(-1);
@@ -116,15 +117,18 @@ int main(int argc, char **argv)
         model_min = model_max = (int)COVERT_DATAFLOW(atoi(argv[1]));
         if (model_min < 0 || model_max > 2)
             exit(2);
-    }
-    else {
+    } else {
+#     ifndef GC_NO_FINALIZATION
         model_min = 0;
+#     else
+        model_min = 1;
+#     endif
         model_max = 2;
     }
     if (GC_get_find_leak())
         printf("This test program is not designed for leak detection mode\n");
 
-    keep_arr = (testobj_t *)GC_MALLOC(sizeof(void *) * KEEP_CNT);
+    keep_arr = (testobj_t *)GC_malloc(sizeof(void *) * KEEP_CNT);
     if (NULL == keep_arr) {
         fprintf(stderr, "Out of memory!\n");
         exit(3);
