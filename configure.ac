@@ -15,6 +15,8 @@ GAUCHE_ABI_VERSION=0.98
 
 AC_CHECK_TOOL(RC, windres, false)
 
+LT_INIT
+
 dnl ==========================================================
 dnl Process args given to configure
 dnl
