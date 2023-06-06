@@ -1,5 +1,5 @@
 ;;;
-;;; procedure.scm - auxiliary procedure utilities.  to be autoloaded.
+;;; procutil.scm - auxiliary procedure utilities.  to be autoloaded.
 ;;;
 ;;;   Copyright (c) 2000-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module gauche.procedure
+(define-module gauche.procutil
   (export compose .$ complement flip swap
           pa$ map$ for-each$ apply$
           count$ fold$ fold-right$ reduce$ reduce-right$
@@ -45,7 +45,7 @@
           port-fold port-fold-right port-for-each port-map
           ))
 
-(select-module gauche.procedure)
+(select-module gauche.procutil)
 
 ;; Combinator utilities -----------------------------------------
 

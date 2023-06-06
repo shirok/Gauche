@@ -1,3 +1,8 @@
+2023-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/procedure.scm: Renamed to procutil.scm for the
+	  consistency.
+
 2023-06-04  Shiro Kawai  <shiro@acm.org>
 
 	* gc/: bumped bdwgc 8.2.4

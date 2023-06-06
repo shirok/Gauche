@@ -104,7 +104,7 @@
 (autoload gauche.regexp.sre
           regexp-parse-sre sre->regexp regexp->sre)
 
-(autoload gauche.procedure
+(autoload gauche.procutil
           compose .$ complement flip swap pa$ map$ for-each$ apply$
           count$ fold$ fold-right$ reduce$ reduce-right$
           filter$ partition$ remove$ find$ find-tail$
