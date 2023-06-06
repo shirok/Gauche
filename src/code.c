@@ -217,10 +217,10 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                     Scm_Putc(' ', SCM_CUROUT);
                 }
                 if (SCM_FALSEP(srcinfo)) {
-                    Scm_Printf(SCM_CUROUT, "; lambda %#40.1S\n",
+                    Scm_Printf(SCM_CUROUT, "; lambda %40.1S\n",
                                SCM_CDR(bindinfo));
                 } else {
-                    Scm_Printf(SCM_CUROUT, "; %#40.1S\n",
+                    Scm_Printf(SCM_CUROUT, "; %40.1S\n",
                                Scm_UnwrapSyntax2(SCM_CDR(srcinfo), FALSE));
                 }
             }
