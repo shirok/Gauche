@@ -1,3 +1,13 @@
+2023-06-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/code.c (Scm_CompiledCodeFinishBuilder): Revive NOSOURCE
+	  compiler flag (it's been ineffective after some big compiler
+	  rewrite).
+	  For now, we handle source-info just the same and discard them
+	  at the last moment of the code generation.  We may as well ignore
+	  source-info in earlier stage, but we expect using this option
+	  is relatively rare so it may not worth doing so.  Let's see.
+
 2023-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/procedure.scm: Renamed to procutil.scm for the

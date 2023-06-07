@@ -629,7 +629,9 @@ void Scm_CompiledCodeFinishBuilder(ScmCompiledCode *cc, int maxstack)
     cc_builder_jumpopt(cc);
 
     /* record debug info */
-    cc->debugInfo = b->debugInfo;
+    if (!SCM_VM_COMPILER_FLAG_IS_SET(Scm_VM(), SCM_COMPILE_NOSOURCE)) {
+        cc->debugInfo = b->debugInfo;
+    }
 
     /* set max stack depth */
     cc->maxstack = maxstack;
