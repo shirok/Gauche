@@ -9,6 +9,7 @@
 	  for now.  Adding source info makes compile.c too big to compile
 	  on memory-tight machines.  Note: We may be able to revert this
 	  once we split compile.c.
+	* ext/uvector/Makefile.in: Ditto for gauche--uvector.c
 
 2023-06-06  Shiro Kawai  <shiro@acm.org>
 
