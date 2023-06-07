@@ -67,7 +67,8 @@
             [subinits (split-to-symbols subinits)]
             [extini   (or ext-module ext-main)]
             [prefix   (or xprefix-all xprefix)]
-            [omit-source-info (sys-getenv "GAUCHE_PRECOMP_OMIT_SOURCE_INFO")]
+            [omit-line-directives
+             (sys-getenv "GAUCHE_PRECOMP_OMIT_LINE_DIRECTIVES")]
             [tparams  (if target-config
                         (load-target-config target-config)
                         '())])
@@ -84,7 +85,7 @@
                             :ext-initializer extini
                             :sub-initializers subinits
                             :dso-name dso-name
-                            :omit-source-info omit-source-info
+                            :omit-line-directives omit-line-directives
                             :predef-syms predef-syms
                             :target-parameters tparams
                             :macros-to-keep mtk)]
@@ -96,7 +97,7 @@
                                   :strip-prefix prefix
                                   :single-sci-file single-sci
                                   :dso-name dso-name
-                                  :omit-source-info omit-source-info
+                                  :omit-line-directives omit-line-directives
                                   :predef-syms predef-syms
                                   :target-parameters tparams
                                   :macros-to-keep mtk)]))))
@@ -134,10 +135,6 @@
   \n      If a macro is not exported, it won't be emitted to the precompiled\
   \n      file by default.  With this option, the named macros are kept in\
   \n      the output even if they're private to the module.\
-  \n  --omit-source-info\
-  \n      Do not emit '#line' directives into the output, so that C compiler\
-  \n      error messages points to the lines in the generated C files, instead\
-  \n      of the source scm files.\
   \n  --target-config=FILE\
   \n      Give the target parameter configuration, if it is different\
   \n      from the compiling gosh.")

@@ -1,5 +1,15 @@
 2023-06-06  Shiro Kawai  <shiro@acm.org>
 
+	* src/precomp, lib/gauche/cgen/precomp.scm: Rename omit-source-info
+	  keyword arg to omit-line-directives.  We'll add option to omit
+	  debug source info in the output, so the previous name is too
+	  confusing.
+	  Although this flag is in the output of 'usage' of precomp command,
+	  it has never been implemented as a command-line option; the flag
+	  can be turned on via an environment variable, which is not
+	  documented.  So we blatantly change the name without caring
+	  the backard compatibility.
+
 	* src/code.c (Scm_CompiledCodeFinishBuilder): Revive NOSOURCE
 	  compiler flag (it's been ineffective after some big compiler
 	  rewrite).
