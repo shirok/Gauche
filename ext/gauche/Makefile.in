@@ -103,13 +103,15 @@ gauche--hook.c hook.sci : $(top_srcdir)/libsrc/gauche/hook.scm
 	$(PRECOMP) -e -P -o gauche--hook $(top_srcdir)/libsrc/gauche/hook.scm
 
 # gauche.record
+# TRANSIENT: Use --omit-debug-source-info to suppress the size of generated
+# .c file for memory-tight machines.
 gauche-record_OBJECTS = gauche--record.$(OBJEXT)
 
 gauche--record.$(SOEXT) : $(gauche-record_OBJECTS)
 	$(MODLINK) gauche--record.$(SOEXT) $(gauche-record_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 gauche--record.c record.sci : $(top_srcdir)/libsrc/gauche/record.scm
-	$(PRECOMP) -e -P -o gauche--record $(top_srcdir)/libsrc/gauche/record.scm
+	$(PRECOMP) -e -P --omit-debug-source-info -o gauche--record $(top_srcdir)/libsrc/gauche/record.scm
 
 # gauche.generator
 gauche-generator_OBJECTS = gauche--generator.$(OBJEXT)
