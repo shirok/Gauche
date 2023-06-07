@@ -320,9 +320,14 @@ libsrfis.scm : $(top_builddir)/lib/srfi-0.scm $(top_builddir)/doc/srfis.texi
 native-supp.scm : gen-native.scm
 	$(BUILD_GOSH) $(srcdir)/gen-native.scm $(builddir)
 
+# TRANSIENT: Omit debug-source-info for compile.c, since adding it make
+# the generated C file too big to compile on memory-tight machines.
+# This will be lifted once we split compile.c (issue #901)
 compile.c  : compile.scm compile-0.scm compile-1.scm compile-2.scm \
 	     compile-3.scm compile-4.scm compile-5.scm compile-i.scm \
 	     compile-t.scm $(PRECOMP_DEPENDENCY)
+	$(BUILD_GOSH) $(PRECOMP) --omit-debug-source-info $(srcdir)/compile.scm
+
 libalpha.c   : libalpha.scm $(PRECOMP_DEPENDENCY)
 libbool.c    : libbool.scm $(PRECOMP_DEPENDENCY)
 libbox.c     : libbox.scm $(PRECOMP_DEPENDENCY)
