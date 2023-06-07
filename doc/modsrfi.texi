@@ -14026,17 +14026,34 @@ based on the comparators of the fields.
 @defun make-sum-comparator comparator @dots{}
 [SRFI-228]
 @c MOD srfi.228
+@c EN
 Creates a comparator for objects of a @emph{union} type of the types
 dealt with the given comparators.
+@c JP
+与えられた比較器が扱う型の直和型を扱える比較器を作ります。
+@c COMMON
 
-The type predicate is satisfied if the given object satisfies a type
+@c EN
+The type predicate of the created comparator
+is satisfied if the given object satisfies a type
 predicate of any one of the given comparators.  The leftmost comparator
 that the object satisfies is called the @emph{relevant comparator}.
+@c JP
+返される型検査述語は、与えられたオブジェクトが@var{comparator} @dots{}の
+型検査述語のいすれかを満たせば真を返します。
+最初に型検査述語が満たされた比較器を「妥当な比較器」と呼びます。
+@c COMMON
 
+@c EN
 The equality predicate is satisfied if the two objects share the
 relevant comparator and are equal to each other with regard to the
 comparator.
+@c JP
+等価判定述語は、二つの引数の妥当な比較器が等しく、
+その比較器の等価判定述語が真を返した場合にのみ真となります。
+@c COMMON
 
+@c EN
 The ordering predicate works as follows: First, relevant comparators
 of two given objects are picked.  If the relevant comparator of
 the first object is to the left of the relevant comparator of
@@ -14044,28 +14061,53 @@ the second, the ordering predicate of the sum comparator is satisfied.
 If the first one is to the right of the second one, the ordering predicate
 is unsatisfied.  If two objects share the relevant comparator,
 they are oreder by the ordering predicate of the relevant comparator.
+@c JP
+順序判定述語は次のとおり動作します。
+まず、各引数の妥当な比較器が選ばれます。最初の引数の妥当な比較器が
+二番目の引数の妥当な比較器より左にあれば、順序判定述語は満たされます
+(つまり最初の引数の方が「小さい」とみなされます)。
+最初の引数の妥当な比較器が二番目のそれより右にあれば、順序判定述語は満たされません。
+二つの引数の妥当な比較器が等しければ、その順序判定述語の結果がそのまま返されます。
+@c COMMON
 
+@c EN
 The hash function returns the hash value computed by the relevant
 comparator of the given object.
+@c JP
+ハッシュ関数は、引数の妥当な比較器のハッシュ関数をそのまま使います。
+@c COMMON
 @end defun
 
 @defvar comparator-one
 [SRFI-228]
 @c MOD srfi.228
+@c EN
 This is a comparator that works as a unit element for the product
 comparator.  It accepts any object and all values are equal; that is,
 its type predcate and its equality predicate always return @code{#t},
 its ordering predicate always returns @code{#f}, and its hash
 function always returns 0.
+@c JP
+これは直積型の比較器の単位元として動作する比較器です。
+いかなるオブジェクトも許容し、全てのオブジェクトを等価とみなします。
+つまり、その型検査述語と等価判定述語は常に@code{#t}を返します。
+順序判定述語は常に@code{#f}を返し、ハッシュ関数は常に0を返します。
+@c COMMON
 @end defvar
 
 @defvar comparator-zero
 [SRFI-228]
 @c MOD srfi.228
+@c EN
 This is a comparator that works as a unit element for the sum
 comparator.  Its domain is empty; that is, its type predicate always
 returns @code{#f}, and it is an error to invoke its equality predicate,
 ordering predicate and hash function.
+@c JP
+これは直和型の比較器の単位元として動作する比較器です。
+この比較器が対象とする定義域は空集合です。すなわち、型検査述語は常に@code{#f}を返します。
+等価判定述語、順序判定述語、およびハッシュ関数はエラーを投げます。
+@c COMMON
 @end defvar
 
 @c ----------------------------------------------------------------------
