@@ -170,6 +170,7 @@
                                     ((:strip-prefix prefix) #f)
                                     ((:dso-name dso) #f)
                                     (omit-line-directives #f)
+                                    ((:omit-debug-source-info no-source) #f)
                                     (predef-syms '())
                                     (macros-to-keep '())
                                     (single-sci-file #f)
@@ -184,6 +185,7 @@
                         :out.c out.c
                         :dso-name (or dso (basename-sans-extension main))
                         :omit-line-directives omit-line-directives
+                        :omit-debug-source-info no-source
                         :predef-syms predef-syms
                         :strip-prefix prefix
                         :macros-to-keep macros-to-keep
@@ -229,6 +231,7 @@
                           :key (out.c #f)
                                (out.sci #f)
                                (omit-line-directives #f)
+                               ((:omit-debug-source-info no-source) #f)
                                ((:strip-prefix prefix) #f)
                                (ext-initializer #f)
                                ((:dso-name dso) #f)
@@ -241,6 +244,7 @@
                                (extra-optimization #f))
   (define (do-it)
     (parameterize ([omitted-code '()]
+                   [omit-debug-source-info no-source]
                    [target-parameters tparams])
       (setup ext-initializer sub-initializers)
       (with-input-from-file src
@@ -405,6 +409,9 @@
 
 ;; Compile target parameters.  See 'compile' entry in compile.scm
 (define target-parameters (make-parameter '(:cont-frame-size 7)))
+
+;; Do not emit debug-source-info with the compiled code
+(define omit-debug-source-info (make-parameter #f))
 
 ;;================================================================
 ;; Bridge to the internal stuff
@@ -940,7 +947,9 @@
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
            [signature-info (cgen-literal (serializable-signature-info code))]
-           [debug-info (cgen-literal (serializable-debug-info code))]
+           [debug-info (if (omit-debug-source-info)
+                         #f
+                         (cgen-literal (serializable-debug-info code)))]
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
@@ -954,7 +963,7 @@
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
-                (if (cgen-literal-static? debug-info)
+                (if (and debug-info (cgen-literal-static? debug-info))
                   (cgen-cexpr debug-info)
                   "SCM_NIL")
                 (if (cgen-literal-static? signature-info)

@@ -59,6 +59,7 @@
          [subinits           "s|sub-initializers=s"]
          [dso-name           "d|dso-name=s"]
          [target-config      "target-config=s"]
+         [omit-debug-source-info "omit-debug-source-info"]
          [ext-module         "ext-module=s" #f] ;for backward compatibility
          [#f "D=s" => (^[sym] (push! predef-syms sym))]
          [else (opt . _) (usage #"Unrecognized option: ~opt")]
@@ -86,6 +87,7 @@
                             :sub-initializers subinits
                             :dso-name dso-name
                             :omit-line-directives omit-line-directives
+                            :omit-debug-source-info omit-debug-source-info
                             :predef-syms predef-syms
                             :target-parameters tparams
                             :macros-to-keep mtk)]
@@ -98,6 +100,7 @@
                                   :single-sci-file single-sci
                                   :dso-name dso-name
                                   :omit-line-directives omit-line-directives
+                                  :omit-debug-source-info omit-debug-source-info
                                   :predef-syms predef-syms
                                   :target-parameters tparams
                                   :macros-to-keep mtk)]))))
