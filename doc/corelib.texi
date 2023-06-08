@@ -834,15 +834,13 @@ use @code{eqv?} below.
 When @var{obj1} and @var{obj2} are both exact or both inexact numbers
 (except NaN or -0.0),
 @code{eqv?} returns @code{#t} iff @code{(= @var{obj1} @var{obj2})} is true.
--0.0 is only @code{eqv?} to -0.0, and
-NaN is never @code{eqv?} to anything (including itself).
+-0.0 is only @code{eqv?} to -0.0.
 @c JP
 @var{obj1}と@var{obj2}がともに正確な数値、もしくはともに
 (NaN、-0.0以外の)非正確な数値である場合、
 @code{(= @var{obj1} @var{obj2})}が真であれば@code{#t}が、偽であれば@code{#f}が
 返されます。
--0.0は-0.0とだけ@code{eqv?}であり、またNaNはいかなるオブジェクト(NaN自身も含めて)と
-@code{eqv?}ではありません。
+-0.0は-0.0とだけ@code{eqv?}です。
 @c COMMON
 
 @c EN
