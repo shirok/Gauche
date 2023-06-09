@@ -47,7 +47,7 @@
   (let ([predef-syms '()]
         [includes '()])
     (let-args (cdr args)
-        ([help               "h|help" => (^_ (usage #f))]
+        ([help               "h|help" => (^[] (usage #f))]
          [inc                "I=s" => (^v (push! includes v))]
          [keep-private-macro "M|keep-private-macro=s"]
          [ext-main           "e|ext-main"]
@@ -138,6 +138,10 @@
   \n      If a macro is not exported, it won't be emitted to the precompiled\
   \n      file by default.  With this option, the named macros are kept in\
   \n      the output even if they're private to the module.\
+  \n  --omit-debug-source-info\
+  \n      Do not include debug source info to the precompiled code.  This\
+  \n      does not affect the behavior of the code, but disassembling\
+  \n      won't show the source info.\
   \n  --target-config=FILE\
   \n      Give the target parameter configuration, if it is different\
   \n      from the compiling gosh.")
