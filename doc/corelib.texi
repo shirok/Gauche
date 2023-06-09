@@ -4529,6 +4529,8 @@ is Gauche's extension, and it must be either @code{#f} (default),
 a symbol @code{exact}, or a symbol @code{inexact}.
 If it is either symbol, it sets the exactness of the number if
 no exactness prefix (@code{#e} or @code{#i}) is given.
+If @var{string} has an exactness prefix, @var{default-exactness}
+is irrelevant.
 @c JP
 これらの手続きは数値とそれを@var{radix}進数で表現する文字列とを変換します。
 @var{radix}は2から36の間でなければなりません。省略された場合は10進数とみなされます。
@@ -4548,6 +4550,8 @@ no exactness prefix (@code{#e} or @code{#i}) is given.
 いずれかでなければなりません。
 シンボルが与えられた場合は、正確数か非正確数かがプレフィクス(@code{#e}もしくは@code{#i})
 で明示されていない場合の正確性の解釈を指定します。
+文字列に正確性のプレフィクスがついていた場合は@var{default-exactness}
+の指定は無視されます。
 @c COMMON
 
 @example
