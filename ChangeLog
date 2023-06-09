@@ -1,3 +1,10 @@
+2023-06-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/precomp, lib/tools/precomp: Start moving standard scripts
+	  to tools/ namespace, e.g. one will say 'gosh tools/precomp ...'
+	  instead of 'gosh precomp ...'.
+	  https://github.com/shirok/Gauche/issues/891
+
 2023-06-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/precomp, lib/gauche/cgen/precomp.scm: Add --omit-debug-source-info

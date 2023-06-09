@@ -92,7 +92,7 @@ POSTINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) $(LI
 PREUNINSTALL = TARGETLIB="$(TARGETLIB)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT); \
 	       TARGETLIB="$(LIB_INSTALL_DIR)" DESTDIR="$(DESTDIR)" $(MAKEVERSLINK) -d $(LIBGAUCHE).$(SOEXT)
 
-PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY --target-config $(srcdir)/target-config-0.9.13.scm
+PRECOMP   = $(top_srcdir)/lib/tools/precomp -D LIBGAUCHE_BODY --target-config $(srcdir)/target-config-0.9.13.scm
 
 # Gosh command used to build static library.  In case of cross compiling
 # we can't use freshly built gosh.
@@ -110,7 +110,9 @@ PRECOMP   = $(srcdir)/precomp -D LIBGAUCHE_BODY --target-config $(srcdir)/target
 # require regeneration.)
 GENSTUB_DEPENDENCY = genstub \
 		     $(top_srcdir)/lib/gauche/cgen/stub.scm
-PRECOMP_DEPENDENCY = precomp vminsn.scm ../lib/gauche/vm/insn.scm \
+PRECOMP_DEPENDENCY = $(top_srcdir)/lib/tools/precomp \
+		     vminsn.scm \
+		     ../lib/gauche/vm/insn.scm \
 		     $(GENSTUB_DEPENDENCY)
 
 # for cross build

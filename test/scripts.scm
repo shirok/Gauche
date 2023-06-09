@@ -578,7 +578,7 @@
 (define (do-precomp! files extra-options)
   (do-process! `("../../src/gosh" "-ftest"
                  ,#"-I~|*top-srcdir*|/test/test-precomp"
-                 ,(build-path *top-srcdir* "src/precomp")
+                 ,(build-path *top-srcdir* "lib/tools/precomp")
                  "--strip-prefix"
                  ,(fix-path (build-path *top-srcdir* "test/test-precomp"))
                  ,@extra-options
