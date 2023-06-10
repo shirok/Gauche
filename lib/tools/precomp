@@ -99,6 +99,7 @@
                                   :strip-prefix prefix
                                   :single-sci-file single-sci
                                   :dso-name dso-name
+                                  :load-paths (reverse includes)
                                   :omit-line-directives omit-line-directives
                                   :omit-debug-source-info omit-debug-source-info
                                   :predef-syms predef-syms
