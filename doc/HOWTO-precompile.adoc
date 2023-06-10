@@ -95,13 +95,13 @@ Suppose we have `greet.scm`:
   #"~(car *message*)~|who|~(cadr *message*)")
 ---------------------------------
 
-Run `precomp` subcommand as follows.  The `-e` option is important -- that
+Run `tools/precomp` subcommand as follows.  The `-e` option is important -- that
 tells `precomp` to create a C file suitable for Gauche extension module
 on its own.
 
 [source,console]
 ----
-$ gosh precomp -e greet.scm
+$ gosh tools/precomp -e greet.scm
 ----
 
 Now you see two files are generated: `greet.c` and `greet.sci`
@@ -219,7 +219,7 @@ link all together.
 
 [source,console]
 ----
-$ gosh -I. precomp -e foo.scm foo/boo.scm foo/woo.scm
+$ gosh -I. tools/precomp -e foo.scm foo/boo.scm foo/woo.scm
 $ ls
 foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
 $ ls foo
@@ -268,7 +268,7 @@ option to precomp.
 
 [source,console]
 ----
-$ gosh -I. precomp -e --single-interface foo.scm foo/boo.scm foo/woo.scm
+$ gosh -I. tools/precomp -e --single-interface foo.scm foo/boo.scm foo/woo.scm
 $ ls
 foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
 $ ls foo

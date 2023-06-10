@@ -3137,7 +3137,7 @@ the generated code to figure out what went wrong.  We hope this
 will be improved in future.
 
 In Gauche source code, CiSE is extensively used in precompiled Scheme
-files and recognized by the precompiler (@code{precomp}).  However,
+files and recognized by the precompiler.  However,
 @code{gauche.cgen.cise} is an independent module only relies
 on @code{gauche.cgen} basic features, so you can plug it
 to your own C code generating programs.
