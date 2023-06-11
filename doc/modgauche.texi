@@ -15644,6 +15644,39 @@ command line arguments match an option spec @code{"prefix=s"}.
 --prefix=/home/shiro
 @end example
 
+@c EN
+If the option consists of a single letter and takes arguments,
+the first argument can follow immediately after the option letter
+without a  whitespace.  If you have an option spec @code{"I=s"},
+all the following command line arguments are recognized:
+@c JP
+オプションが一文字からなり、引数を取る場合、
+最初の引数はスペースなしでオプション文字の直後に置かれても構いません。
+例えばオプション仕様@code{"I=s"}は、以下のコマンドライン引数のいずれも認識します。
+@c COMMON
+@example
+-I/foo
+-I /foo
+-I=/foo
+--I/foo
+--I /foo
+--I=/foo
+@end example
+
+@c EN
+If there's an ambiguity between a long option and a single-letter
+option plus an argument, the long option takes precedence.
+If you have an option spec @code{"long"} and @code{"l=s"}, command
+line arguments @code{-long} is recognized as the former,
+not @code{-l} option with arguments @code{ong}.
+@c JP
+長いオプション名と、一文字のオプション＋引数、の間で曖昧性が生じた場合は、
+長いオプションの方が優先されます。例えば@code{"long"}および@code{"l=s"}という
+オプション仕様があった場合、コマンドライン引数@code{-long}は
+@code{-l}オプション＋引数@code{ong}@emph{ではなく}、ひとつのオプション@code{-long}と
+解釈されます。
+@c COMMON
+
 @subheading Error handling
 
 @deftp {Condition Type} <parseopt-error>
