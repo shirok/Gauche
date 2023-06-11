@@ -219,16 +219,15 @@ link all together.
 
 [source,console]
 ----
-$ gosh tools/precomp -I . -e foo.scm foo/boo.scm foo/woo.scm
+$ gosh tools/precomp -I. -e foo.scm foo/boo.scm foo/woo.scm
 $ ls
 foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
 $ ls foo
 boo.sci  boo.scm  woo.sci  woo.scm
 ----
 
-Note the `-I .` option, which allows `precomp` to find
+Note the `-I.` option, which allows `precomp` to find
 `foo/util1.scm` and `foo/util2.scm` referred from `foo.scm`.
-For the time being, you need a whitespace between `-I` and `.`.
 
 You see C files are generated in the current directory, while
 SCI files are on the side of each file under the subdirectory.
@@ -265,7 +264,7 @@ option to precomp.
 
 [source,console]
 ----
-$ gosh tools/precomp -I . -e --single-interface foo.scm foo/boo.scm foo/woo.scm
+$ gosh tools/precomp -I. -e --single-interface foo.scm foo/boo.scm foo/woo.scm
 $ ls
 foo/  foo--boo.c  foo--woo.c  foo.c  foo.sci  foo.scm
 $ ls foo
