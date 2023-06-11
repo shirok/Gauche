@@ -77,6 +77,23 @@
            (string-split optnames #\|))
       (error "unrecognized option spec:" optspec))))
 
+;; Find an optspec that matches the given option.
+;; A special handling is needed for a single-letter option taking arguments;
+;; fof such an option, we allow its argument to be concatenated with the
+;; option itself; e.g. "I=s" spec can accept '-I arg', '-I=arg', and '-Iarg'.
+(define (find-matching-optspec option optspecs)
+  (define (optspec-long-match? optspec option)
+    (equal? option (~ optspec'name)))
+  (define (optspec-short-match? optspec option)
+    (and (not (null? (~ optspec'args)))
+         (= (string-length (~ optspec'name)) 1)
+         (eqv? (string-ref option 0) (string-ref (~ optspec'name) 0))))
+  ;; It is imperative to search long option first, then search short options.
+  ;; If we have "long" and "l=s", "--long" matches the first one, while
+  ;; "-lfoo" matches the second one.
+  (or (find (cut optspec-long-match? <> option) optspecs)
+      (find (cut optspec-short-match? <> option) optspecs)))
+
 ;; From the args given at the command line, get a next option.
 ;; Returns option string and rest args.
 (define (next-option args)
@@ -89,7 +106,7 @@
 
 ;; From the list of optarg spec and given command line arguments,
 ;; get a list of optargs.  Returns optargs and unconsumed args.
-(define (get-optargs optspec args)
+(define (get-optargs optspec option args)
   (define (get-number arg)
     (or (string->number arg)
         (errorf <parseopt-error> :option-name (~ optspec 'name)
@@ -115,7 +132,7 @@
                        "the argument for option ~a is not valid sexp: ~s"
                        (~ optspec 'name) arg)])
       (read-from-string arg)))
-  (define (process-args)
+  (define (process-args args)
     (let loop ([spec (~ optspec 'args)]
                [args args]
                [optargs '()])
@@ -139,22 +156,26 @@
                [else (error "unknown option argument spec:" (car spec))])])
       ))
 
-  (if (~ optspec 'arg-optional?)
-    (if (or (null? args)
-            (#/^-/ (car args)))
-      (values (make-list (length (~ optspec 'args)) #f) args)
-      (process-args))
-    (process-args))
-  )
+  (cond [(~ optspec 'arg-optional?)
+         (if (or (null? args)
+                 (#/^-/ (car args)))
+           (values (make-list (length (~ optspec 'args)) #f) args)
+           (process-args args))]
+        [(and (= (string-length (~ optspec'name)) 1)
+              (> (string-length option) 1))
+         ;; single-letter with concatenated argument
+         (process-args (cons (substring option 1 (string-length option)) args))]
+        [else
+         (process-args args)]))
 
 ;; Now, this is the argument parser body.
 (define (parse-cmdargs args speclist fallback)
   (let loop ([args args])
     (receive (option nextargs) (next-option args)
       (if option
-        (cond [(find (^e (equal? option (~ e'name))) speclist)
+        (cond [(find-matching-optspec option speclist)
                => (^[entry] (receive (optargs nextargs)
-                                (get-optargs entry nextargs)
+                                (get-optargs entry option nextargs)
                               (apply (~ entry'handler) optargs)
                               (loop nextargs)))]
               [else (fallback option nextargs loop)])

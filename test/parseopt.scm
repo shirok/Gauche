@@ -15,6 +15,7 @@
    (("help" => help)
     ("a"        ()          (format #t "a,"))
     ("bb=s"     (arg)       (format #t "bb=~a," arg))
+    ("b=s"      (arg)       (format #t "b=~a," arg))
     ("cc=ss"    (arg1 arg2) (format #t "cc=(~a ~a)," arg1 arg2))
     ("ddd=sss"  args        (format #t "ddd=~a," args))
     ("eee=i"    (arg)       (format #t "eee=~s," arg))
@@ -84,6 +85,11 @@
 (test "-j"   '("j=#f,")  (tester "-j"))
 (test "-k"   '("k=(1 2 3),a,") (tester "-k" "1" "2" "3" "-a"))
 (test "-k"   '("k=(#f #f #f),a,") (tester "-k" "-a"))
+
+(test "-b 1"   '("b=abc,") (tester "-b" "abc"))
+(test "-b 2"   '("b=abc,") (tester "-b=abc"))
+(test "-b 3"   '("b=abc,") (tester "-babc"))
+(test "-b (long option match)"   '("bb=abc,") (tester "-bb" "abc"))
 
 (test "--" '("bb=x," "-a" "-cc") (tester "-bb" "x" "--" "-a" "-cc"))
 (test "--" '("" "-bb" "x" "--" "-a" "-cc") (tester "--" "-bb" "x" "--" "-a" "-cc"))
