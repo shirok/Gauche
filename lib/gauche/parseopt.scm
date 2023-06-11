@@ -32,6 +32,7 @@
 ;;;
 
 (define-module gauche.parseopt
+  (use util.match)
   (export make-option-parser parse-options let-args <parseopt-error>))
 (select-module gauche.parseopt)
 
@@ -57,13 +58,21 @@
 ;;  (<option-spec> ...)
 ;; <a-spec> is (<optspec> <handler>) or
 ;; ((<optspec> <help-string>) <handler>)
+;; TRANSIENT: Better to have explanatory message for assume-type, but
+;; 0.9.12's assume-type doesn't take extra message arg.  Update after 0.9.13
+;; release.
 (define (compose-entry a-spec)
-  (let ([optspec (if (pair? (car a-spec)) (caar a-spec) (car a-spec))]
-        [helpstr (and (not (length<=? (car a-spec) 1))
-                      (cadar a-spec))]
-        [handler (cadr a-spec)])
-    (unless (string? optspec)
-      (error "option spec must be a string, but got" optspec))
+  (define (parse-spec a-spec)
+    (match a-spec
+      [((spec help-string) handler)
+       (values (assume-type spec <string>)
+               (assume-type help-string <string>)
+               handler)]
+      [(spec handler)
+       (values (assume-type spec <string>)
+               #f handler)]
+      [_ (error "Invalid command-line argument specification:" a-spec)]))
+  (receive (optspec helpstr handler) (parse-spec a-spec)
     (rxmatch-if (rxmatch #/^-*([-+\w|]+)(\*)?(?:([=:])(.+))?$/ optspec)
         (#f optnames plural? optional?  argspec)
       (map (cute make <option-spec>
