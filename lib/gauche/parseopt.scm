@@ -77,16 +77,19 @@
            (string-split optnames #\|))
       (error "unrecognized option spec:" optspec))))
 
+(define (optspec-short? optspec) (= (string-length (~ optspec'name)) 1))
+(define (optspec-take-args? optspec) (not (null? (~ optspec'args))))
+
 ;; Find an optspec that matches the given option.
 ;; A special handling is needed for a single-letter option taking arguments;
 ;; fof such an option, we allow its argument to be concatenated with the
 ;; option itself; e.g. "I=s" spec can accept '-I arg', '-I=arg', and '-Iarg'.
 (define (find-matching-optspec option optspecs)
   (define (optspec-long-match? optspec option)
-    (equal? option (~ optspec'name)))
+    (equal? (rxmatch->string #/^[^=]+/ option) (~ optspec'name)))
   (define (optspec-short-match? optspec option)
-    (and (not (null? (~ optspec'args)))
-         (= (string-length (~ optspec'name)) 1)
+    (and (optspec-take-args? optspec)
+         (optspec-short? optspec)
          (eqv? (string-ref option 0) (string-ref (~ optspec'name) 0))))
   ;; It is imperative to search long option first, then search short options.
   ;; If we have "long" and "l=s", "--long" matches the first one, while
@@ -95,13 +98,12 @@
       (find (cut optspec-short-match? <> option) optspecs)))
 
 ;; From the args given at the command line, get a next option.
-;; Returns option string and rest args.
+;; Returns option string (potentially followed by arg) and rest args.
 (define (next-option args)
   (cond
    [(null? args) (values #f '())]
    [(string=? (car args) "--") (values #f (cdr args))]
-   [(#/^--?(\w[-+\w]*)(=)?/ (car args))
-    => (^m (values (m 1) (if (m 2) (cons (m'after) (cdr args)) (cdr args))))]
+   [(#/^--?(\w.*)/ (car args)) => (^m (values (m 1) (cdr args)))]
    [else (values #f args)]))
 
 ;; From the list of optarg spec and given command line arguments,
@@ -156,15 +158,19 @@
                [else (error "unknown option argument spec:" (car spec))])])
       ))
 
-  (cond [(~ optspec 'arg-optional?)
+  (cond [(and (#/^[^=]+=/ option))
+         => (^m (let1 arg (rxmatch-after m)
+                  (process-args (cons arg args))))]
+        [(and (optspec-short? optspec)
+              (optspec-take-args? optspec)
+              (> (string-length option) 1))
+         ;; single-letter with concatenated argument
+         (process-args (cons (substring option 1 (string-length option)) args))]
+        [(~ optspec 'arg-optional?)
          (if (or (null? args)
                  (#/^-/ (car args)))
            (values (make-list (length (~ optspec 'args)) #f) args)
            (process-args args))]
-        [(and (= (string-length (~ optspec'name)) 1)
-              (> (string-length option) 1))
-         ;; single-letter with concatenated argument
-         (process-args (cons (substring option 1 (string-length option)) args))]
         [else
          (process-args args)]))
 
@@ -178,6 +184,15 @@
                                 (get-optargs entry option nextargs)
                               (apply (~ entry'handler) optargs)
                               (loop nextargs)))]
+              ;; For unknown options including '=', we split at the first '='
+              ;; and take the first part as an unknown option.  This is not
+              ;; exactly the right thing; if we get "--unknown=--known" in
+              ;; command line, where 'unknown' is an unknown option and
+              ;; 'known' is a known option, this passes 'unknown' to the
+              ;; fallback handler, but keep processing 'known' as an option.
+              ;; However, we need this behavior for the backward compatibility.
+              [(#/^([^=]+)=/ option)
+               => (^m (fallback (m 1) (cons (m 'after) nextargs) loop))]
               [else (fallback option nextargs loop)])
         nextargs))))
 
