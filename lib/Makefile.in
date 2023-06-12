@@ -153,7 +153,7 @@ SCMFILES = \
        text/console/windows.scm \
        text/segmented-match.scm text/template.scm \
        text/unicode.scm text/unicode/ucd.scm text/unicode/codeset.scm \
-       tools/precomp \
+       tools/genstub tools/precomp \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
 all:

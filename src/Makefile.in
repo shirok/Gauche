@@ -23,7 +23,7 @@
 	$(COMPILE) -c $<
 
 .stub.c:
-	$(BUILD_GOSH) ./genstub -D LIBGAUCHE_BODY $<
+	$(BUILD_GOSH) $(top_srcdir)/lib/tools/genstub -D LIBGAUCHE_BODY $<
 
 .scm.c:
 	$(BUILD_GOSH) $(PRECOMP) $<
@@ -108,7 +108,7 @@ PRECOMP   = $(top_srcdir)/lib/tools/precomp -D LIBGAUCHE_BODY --target-config $(
 # touched, stub files in src/ need to be regenerated.  (NB: Regeneration of
 # those files requires installed Gauche.  So only list files that absolutely
 # require regeneration.)
-GENSTUB_DEPENDENCY = genstub \
+GENSTUB_DEPENDENCY = $(top_srcdir)/lib/tools/genstub \
 		     $(top_srcdir)/lib/gauche/cgen/stub.scm
 PRECOMP_DEPENDENCY = $(top_srcdir)/lib/tools/precomp \
 		     vminsn.scm \
