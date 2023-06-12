@@ -1,3 +1,9 @@
+2023-06-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm: Allow omitting whitespace between
+	  single-letter option and its argument.
+	  https://github.com/shirok/Gauche/issues/904
+
 2023-06-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/precomp, lib/tools/precomp: Start moving standard scripts
