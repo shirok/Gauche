@@ -14185,6 +14185,297 @@ if you import @code{gauche.collection}.
 @end example
 @end deffn
 
+@c EN
+@subsubheading Conversion between strings and uvectors
+@c JP
+@subsubheading 文字列とuvectorの変換
+@c COMMON
+
+@c EN
+Two sets of conversion procedures are provided.  The first set is
+to convert strings to u8/s8 vector and vice versa, taking multibyte
+representation of a string as a byte vector.  The second set is
+to convert strings to u32/s32 vector and vice versa, regarding
+a string as a sequence of Unicode codepoints.
+@c JP
+二種類の変換手続きが提供されます。
+最初のは、文字列とu8/s8ベクタとを相互に変換するもので、
+文字列のマルチバイト表現をバイトベクタとみなします。
+もうひとつは文字列とu32/s32ベクタとを相互に変換するもので、
+文字列をUnicodeコードポイントの列とみなします。
+@c COMMON
+
+@c EN
+For portable Scheme code, SRFI-181 provides conversion between
+strings and bytevectors, specifying character encodings
+(@pxref{Transcoded ports}).
+@c JP
+ポータブルなSchemekコードを書くには、SRFI-181が提供する
+文字列とバイトベクタの変換手続きが使えるでしょう。
+文字エンコーディングを指定することもできます
+(@ref{Transcoded ports}参照)。
+@c COMMON
+
+@defun string->s8vector string :optional start end immutable?
+@defunx string->u8vector string :optional start end immutable?
+@c EN
+Returns an s8vector or u8vector whose byte sequence is the same
+as the internal representation of the given string.
+Optional range arguments @var{start} and @var{end} specifies
+the @emph{character position} (not the byte position) inside @var{string} to be
+converted.
+
+By default, the content of the string is copied to a newly created
+mutable uvector.  However, if a true value is given to the
+optional @var{immutable?} argument, the result is an immutable
+uvector, and it may avoid copying the string body (note that
+in Gauche, the body of string is immutable; @code{string-set!} creates
+a new body, so changing the original string won't affect the
+uvector created by @code{string->u8vector} with @code{immutable?} flag.)
+
+These procedures are useful when you want to access byte
+sequence of the string randomly.
+@c JP
+与えられた文字列の内部表現のバイト列と同じバイト列を持つs8vectorもしくは
+u8vectorを返します。省略可能な範囲引数@var{start}、@var{end}は、
+変換される文字列中の文字位置を指定します (バイト位置ではないことに注意)。
+
+デフォルトでは、元の文字列の内容が新たに作られる変更可能なユニフォームベクタへと
+コピーされ、そのベクタが返されます。しかし、省略可能引数@var{immutable?}に
+真の値が渡された場合、返されるユニフォームベクタは変更不可能となり、
+また文字列本体のコピーが避けられる可能性があります。
+(Gaucheでは、文字列本体は変更不可能で、@code{string-set!}は新たな
+文字列本体を作り出します。したがって@code{string->u8vector}の
+@code{immutable?}に@code{#t}を渡してユニフォームベクタを作った後、
+元の文字列を変更しても、作られたユニフォームベクタは変更されません。)
+
+これらの手続きは、文字を構成するバイト列をランダムにアクセスしたい場合などに
+有用です。
+@c COMMON
+
+@example
+(string->u8vector "abc") @result{} #u8(97 98 99)
+
+@c JP
+;; 内部コードがEUCの場合
+(string->u8vector "いろは") @result{} #u8(164 164 164 237 164 207)
+@c COMMON
+@end example
+
+@example
+(string->u8vector "very large string .... " 0 -1 #t)
+@c EN
+  @result{} #u8(...)  ; @r{immutable, sharing content with the original string}
+@c JP
+  @result{} #u8(...)  ; @r{変更不可、元の文字列と内容を共有}
+@c COMMON
+@end example
+
+@end defun
+
+@defun string->s8vector! target tstart string :optional start end
+@defunx string->u8vector! target tstart string :optional start end
+@c EN
+@var{Target} must be an s8vector or a u8vector, respectively.
+@var{Target} must be mutable.
+Like copies the raw byte representation of @var{string}
+into @var{target} beginning from index @var{tstart}.
+@c JP
+@var{target} は、それぞれ s8vector あるいは u8vector でなければなりません。
+@var{target} は、変更可能でなければなりません。
+@var{string} の生バイト表現を @var{target} へインデックス @var{tstart}
+からコピーします。
+@c COMMON
+
+@c EN
+Returns @var{target}.
+@c JP
+@var{target} を返します。
+@c COMMON
+
+@example
+(let ((target (make-u8vector 10 0)))
+  (string->u8vector! target 3 "abcde"))
+ @result{} #u8(0 0 0 97 98 99 100 101 0 0)
+@end example
+
+@end defun
+
+@defun s8vector->string vec :optional start end terminator
+@defunx u8vector->string vec :optional start end terminator
+@c EN
+Converts a byte sequence in s8vector or u8vector to a string that
+has the same byte sequence.  Optional range arguments @var{start} and
+@var{end} specifies the byte position in @var{vec} to be converted.
+
+The optional @var{terminator} argument can be an exact integer or
+@code{#f} (default).  If it is an exact integer, and it appears
+in @var{vec}, the string terminates right before it.
+For example, you can give 0 as @var{terminator}
+to read a NUL-terminated string from a buffer.
+
+@example
+(u8vector->string '#u8(65 66 0 67 68) 0 5)   @result{} "AB\0CD"
+(u8vector->string '#u8(65 66 0 67 68) 0 5 0) @result{} "AB"
+@end example
+
+Note that these procedure may result an incomplete string if
+@var{vec} contains a byte sequence invalid as the internal encoding
+of the string.
+@c JP
+与えられたs8vectorもしくはu8vector @var{vec}のバイト列と同じ内部バイト列を
+持つ文字列を作成して返します。省略可能な範囲引数@var{start}、@var{end}は、
+@var{vec}中の変換されるべき範囲をバイト位置で指定します。
+
+省略可能引数@var{terminator}は正確な整数か@code{#f}でなければなりません
+(@code{#f}がデフォルト)。正確な整数が与えられた場合、@var{vec}の中に
+その数値が現れれば、その直前までが結果の文字列となります。
+例えば0を与えることで、バッファからNUL終端された文字列を読むことができます。
+
+@example
+(u8vector->string '#u8(65 66 0 67 68) 0 5)   @result{} "AB\0CD"
+(u8vector->string '#u8(65 66 0 67 68) 0 5 0) @result{} "AB"
+@end example
+
+@var{vec}中のバイト列が文字列の内部表現として不正な値を持っていた場合は、
+不完全な文字列が返されます。
+@c COMMON
+@end defun
+
+@defun string->s32vector string :optional start end endian
+@defunx string->u32vector string :optional start end endian
+@c EN
+Returns an s32vector or u32vector whose elements are
+the internal codes of the characters in the string.
+Optional range arguments @var{start} and @var{end} specifies
+the @emph{character position} inside @var{string} to be
+converted.
+@c JP
+与えられた文字列@var{string}の各文字の内部コードを値として持つ
+s32vectorもしくはu32vectorを返します。
+省略可能な範囲引数@var{start}、@var{end}は、
+変換される文字列中の文字位置を指定します。
+@c COMMON
+
+@c EN
+The optional @var{endian} argument specifies the endianness to store
+codepoint value into the uvector.  When omitted or @code{#f},
+we use the platform's
+native endianness.  You can give a symbol @code{big-endian}, @code{big},
+@code{little-endian}, @code{little} or @code{arm-little-endian} to use a specific
+endianness.  Note that when you access the resulting uvector,
+the platform's native endianness is used.
+@c JP
+省略可能な@var{endian}引数は、uvectorにコードポイント値を格納する際の
+バイトオーダーを指定します。省略された場合や@code{#f}の場合は、
+プラットフォームのネイティブバイトオーダーが使われます。
+シンボル@code{big-endian}、@code{big}、
+@code{little-endian}、@code{little}、@code{arm-little-endian}で
+特定のバイトオーダーを指定できます。
+結果のuvectorにアクセスする時にはネイティブバイトオーダーが使われることに注意してください。
+@c COMMON
+
+@c EN
+These procedures are useful when you want to access
+the characters in the string randomly.
+@c JP
+これらの手続きは、文字列中の文字をランダムにアクセスする場合に便利です。
+@c COMMON
+
+
+@end defun
+
+@defun string->s32vector! target tstart string :optional start end endian
+@defunx string->u32vector! target tstart string :optional start end endian
+@c EN
+@var{Target} must be a mutable s32vector or u32vector, respectively.
+Fill the @var{target} from position @var{tstart} with the codepoint
+of each character of @var{string}, until either @var{string} is exhausted
+or @var{target} is filled to the end.
+
+Optional range arguments @var{start} and @var{end} specifies
+the @emph{character position} inside @var{string} to be
+considered.
+@c JP
+@var{target}は変更可能なs32vectorもしくはu32vectorでなければなりません。
+@var{target}の場所@var{tstart}から、@var{string}の各文字のコードポイントを
+順に埋めてゆきます。@var{target}ベクタの終端に達するか、文字が無くなるまで繰り返します。
+
+省略可能な引数@var{start}と@var{end}は@var{string}内の文字位置のインデックスで、
+考慮する@var{string}の範囲を制限します。
+@c COMMON
+
+@c EN
+The optional @var{endian} argument specifies the endianness to store
+codepoint value into the uvector.  When omitted or @code{#f},
+we use the platform's
+native endianness.  You can give a symbol @code{big-endian}, @code{big},
+@code{little-endian}, @code{little} or @code{arm-little-endian} to use a specific
+endianness.  Note that when you access the resulting uvector,
+the platform's native endianness is used.
+@c JP
+省略可能な@var{endian}引数は、uvectorにコードポイント値を格納する際の
+バイトオーダーを指定します。省略された場合や@code{#f}の場合は、
+プラットフォームのネイティブバイトオーダーが使われます。
+シンボル@code{big-endian}、@code{big}、
+@code{little-endian}、@code{little}、@code{arm-little-endian}で
+特定のバイトオーダーを指定できます。
+結果のuvectorにアクセスする時にはネイティブバイトオーダーが使われることに注意してください。
+@c COMMON
+@end defun
+
+@defun s32vector->string vec :optional start end terminator endian
+@defunx u32vector->string vec :optional start end terminator endian
+@c EN
+Without @var{start} and @var{end}, these procedures work like this:
+@c JP
+@var{start}と@var{end}を考えなければ、
+これらの手続きは次のコードのような動作をします：
+@c COMMON
+@example
+(lambda (vec) (map-to <string> integer->char vec)))
+@end example
+@c EN
+Optional range arguments @var{start} and @var{end} limits
+the range of conversion between them.
+@c JP
+省略可能な範囲引数@var{start}、@var{end}は、
+@var{vec}中の変換されるべき範囲を指定します。
+@c COMMON
+
+@c EN
+The optional @var{terminator} argument must be an exact
+integer or @code{#f} (default).  If an integer is given,
+and the integer is found in the input,
+the output string terminates right before it.
+@c JP
+省略可能引数@var{terminator}は、正確な整数か@code{#f}でなければ
+なりません (@code{#f}がデフォルト)。正確な整数が与えられ、
+入力にその数値が見つかった場合は、出力の文字列はその直前で
+打ちきられます。
+@c COMMON
+
+@c EN
+The optional @var{endian} argument specifies the endianness to store
+codepoint value into the uvector.  When omitted or @code{#f},
+we use the platform's
+native endianness.  You can give a symbol @code{big-endian}, @code{big},
+@code{little-endian}, @code{little} or @code{arm-little-endian} to use a specific
+endianness.
+@c JP
+省略可能な@var{endian}引数は、uvectorにコードポイント値を格納する際の
+バイトオーダーを指定します。省略された場合や@code{#f}の場合は、
+プラットフォームのネイティブバイトオーダーが使われます。
+シンボル@code{big-endian}、@code{big}、
+@code{little-endian}、@code{little}、@code{arm-little-endian}で
+特定のバイトオーダーを指定できます。
+@c COMMON
+
+@example
+(u32vector->string '#u32(65 66 0 67 68) 0 5 0) @result{} "AB"
+@end example
+@end defun
+
 
 @node Bitvectors, Weak vectors, Uniform vectors, Vector family
 @subsection Bitvectors
