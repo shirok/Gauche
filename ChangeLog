@@ -1,3 +1,8 @@
+2023-06-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/libvec.scm, ext/uvector/uvector.scm: Move string <-> uvector
+	  conversion routines to core, to avoid dependency issues.
+
 2023-06-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/genstub, lib/tools/genstub: Move genstub to tools subdir.
