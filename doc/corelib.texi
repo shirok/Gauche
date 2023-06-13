@@ -13151,7 +13151,7 @@ you can use various generic functions such as @code{map} and @code{fold}
 on it.   @xref{Collection framework}, and @xref{Sequence framework}.
 
 If you keep only a homogeneous numeric type, you may be able
-to use SRFI-4 homogeneous vectors (@pxref{Homogeneous vectors}).
+to use uniform vectors (@pxref{Uniform vectors}).
 
 R7RS defines bytevectors; in Gauche, they're just @code{u8vector}s
 in @code{gauche.uvector} module (r7rs modules defines aliases.
@@ -13168,8 +13168,8 @@ in @code{gauche.uvector} module (r7rs modules defines aliases.
 @ref{Collection framework} と
 @ref{Sequence framework} を参照して下さい。
 
-数値しか要素に持たないベクタを使う場合、SRFI-4の
-単一型ベクタも使えるかもしれません (@ref{Homogeneous vectors}参照)。
+数値しか要素に持たないベクタを使う場合、
+ユニフォームベクタも使えるかもしれません (@ref{Uniform vectors}参照)。
 
 R7RSはバイトベクタを定義しています。Gaucheではそれは単に
 @code{gauche.uvector}モジュールの@code{u8vector}です
