@@ -184,7 +184,7 @@
 ;; internal type
 (define-class <decoder> ()
   ((buf :init-keyword :buf)        ;u8vector
-   (const :init-keyword :const)    ;constant vector
+   (consts :init-keyword :consts)  ;constant vector
    (pos :init-value 0)             ;next position to read
    (len)                           ;(u8vector-length buffer)
    (tab :init-form (make-hash-table 'eqv?)) ;index -> pair
@@ -224,7 +224,7 @@
                      (decode-index (logand b #x1f) (logbit? 7 b) decoder)
                      #f)
                   (error "Stray pair reference"))]
-      [(#x20) (or ($ vector-ref (~ decoder'const)
+      [(#x20) (or ($ vector-ref (~ decoder'consts)
                      (decode-index (logand b #x1f) (logbit? 7 b) decoder))
                   (error "Constant vector index out-of-range"))]
       [(#x40) (decode-index (logand b #x1f) (logbit? 7 b) decoder)]
@@ -247,5 +247,5 @@
               (set-cdr! pair (decode-list decoder)))])))
 
 (define (decode-debug-info bytevector constvector)
-  (let1 decoder (make <decoder> :buf bytevector :cosnt constvector)
+  (let1 decoder (make <decoder> :buf bytevector :consts constvector)
     (decode-item decoder)))

@@ -1,6 +1,6 @@
 ;; Test to access debug information.
 ;;
-;; NB: The format of information these test acquires from the runing VM
+;; NB: The format of information these test acquires from the running VM
 ;; is not fixed yet; they may change at any time as VM evolves.
 
 (use gauche.test)
@@ -44,5 +44,33 @@
               (string? (car s))
               (#/debug\.scm$/ (car s))
               (integer? (cadr s)))))
+
+(test-section "packing debug-info")
+
+(use gauche.vm.debug-info)
+(test-module 'gauche.vm.debug-info)
+
+(use util.isomorph)
+
+(define (test-debug-info data :optional (msg #f))
+  (test* (or msg (write-to-string data write-shared))
+         data
+         (receive [bv const] (encode-debug-info data)
+           (decode-debug-info bv const))
+         isomorphic?))
+
+(test-debug-info 1)
+(test-debug-info 'abc)
+(test-debug-info '(a b () c))
+(test-debug-info '#0=(a b . #0#))
+(test-debug-info '#0=(a b #0#))
+(test-debug-info '(a #1=(b) #1#))
+(test-debug-info '(a #1=(b) (#1#)))
+(test-debug-info '(a #1=(b) . #1#))
+(test-debug-info '#0=(1 . #1=(2 #2=(3) #0# #1# . #2#)))
+
+(let1 xs (make-list 234 0)
+  (test-debug-info `(12345 123456789 123456789012345 ,@xs #0=(1234567) . #0#)
+                   "big data"))
 
 (test-end)
