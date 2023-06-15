@@ -18505,16 +18505,73 @@ Returns @code{#t} iff @var{obj} is an object created by
 @end defun
 
 @defmac parameterize/dynwind ((param value) @dots{}) body @dots{}
+@c EN
 This handles the parameter bindings using @code{dynamic-wind}.
 It is fully compatible with pre-0.9.13 @code{parameterize}.
+This form is mainly provided to make legacy code work.
+@c JP
+これは@code{dynamic-wind}を使ってパラメータ束縛を管理するフォームです。
+0.9.13より前の@code{parameterize}と全く同じ動作をします。
+このフォームは主に、レガシーコードを動かすために提供されています。
+@c COMMON
 
-Notably, this can handle the 'observer' feature of the legacy
+@c EN
+This differs from the current @code{parameterize} in the following points:
+@c JP
+これは現在の@var{parameterize}と、次の点が異なります。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+You can use non-parameter procedure (a procedure which isn't
+created by @code{make-parameter}) as @var{param}, as long as it
+follows the parameter protocol.  Note that if you want to use
+such 'parameter-like' procedures to manage dynamic states,
+you should use @code{temporarily} below (@pxref{Dynamic states}).
+@c JP
+パラメータと同じプロトコルに従う限り、@code{make-parameter}で作られたのではない
+手続きを@var{param}に渡すことができます。
+新しいコードでそのような「パラメータっぽい」手続きを動的状態の管理に使いたい場合は、
+下の@code{temporarily}を使ってください (@ref{Dynamic states}参照)。
+@c COMMON
+
+@item
+@c EN
+The last expression of @var{body} is @emph{not} evaluated in the
+tail context, even this form itself is in the tail context.
+@c JP
+このフォーム自体が末尾位置にあっても、@var{body}の最後の式は
+末尾コンテクストでは評価されません。
+@c COMMON
+
+@item
+@c EN
+This can handle the 'observer' feature of the legacy
 parameters introduced by @code{gauche.parameter}.  Our experience
 shows the feature has been hardly used, and is incompatible with SRFI-226
 semantics, so we deprecated it.
+@c JP
+@code{gauche.parameter}モジュールで有効になる、
+レガシーなパラメータの 'observer' 機能は、このフォームを使わないと実現できません。
+ただ、我々ののこれまでの経験ではこの機能はほとんど使われておらず、
+SRFI-226とも非互換なので、今後は非推奨としました。
+@c COMMON
+@end itemize
 
-This form is provided for the legacy code that requires the legacy
-behavior.
+@c EN
+Note: If you use @code{gauche.parameter} module, it shadows built-in
+@code{parameterize} with its own @code{parameterize}, the latter of which
+is an alias of @code{parameterize/dynwind}, so that the compatibility
+is kept.  New code should not use @code{gauche.parameter} module.
+@xref{Parameters (legacy)}.
+@c JP
+註：@code{gauche.parameter}モジュールをuserすると、組み込みの@code{parameterize}
+の束縛はモジュール独自の@code{parameterize}でシャドウされ、それは
+@code{parameterize/dynwind}の別名となります。これはコードの互換性を保つためです。
+新しいコードでは@code{gauche.parmaeter}をuseすべきではありません。
+詳しくは@ref{Parameters (legacy)}参照。
+@c COMMON
 @end defmac
 
 
