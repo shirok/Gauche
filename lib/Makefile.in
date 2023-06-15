@@ -67,7 +67,8 @@ SCMFILES = \
        gauche/regexp.scm gauche/regexp/sre.scm \
        gauche/sigutil.scm gauche/numutil.scm gauche/let-opt.scm \
        gauche/logutil.scm \
-       gauche/vm/debugger.scm gauche/vm/insn-core.scm gauche/vm/insn.scm \
+       gauche/vm/debugger.scm gauche/vm/debug-info.scm \
+       gauche/vm/insn-core.scm gauche/vm/insn.scm \
        gauche/vm/profiler.scm gauche/vm/register-machine.scm \
        gauche/pputil.scm gauche/procutil.scm \
        gauche/serializer.scm gauche/serializer/aserializer.scm \
