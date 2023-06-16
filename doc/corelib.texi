@@ -18495,6 +18495,7 @@ Some examples:
 @end example
 
 @defun parameter? obj
+[SRFI-226]
 @c EN
 Returns @code{#t} iff @var{obj} is an object created by
 @code{make-parameter}.
@@ -18503,6 +18504,51 @@ Returns @code{#t} iff @var{obj} is an object created by
 そうでなければ@code{#f}を返します。
 @c COMMON
 @end defun
+
+@defun current-parameterization
+[SRFI-226]
+@c EN
+Returns a @emph{parameterization} object that reifies
+the current dynamic bindings of parameters.  It can be
+passed to @code{call-with-parameterization} to carry over
+the parameterization.
+@c JP
+現在のパラメータの動的束縛の状態を具体化した@emph{パラメタライゼーション}オブジェクト
+を返します。@emph{パラメタライゼーション}は@code{call-with-parameterization}に
+渡すことで別の継続へと受け渡すことができます。
+@c COMMON
+@end defun
+
+@defun parameterization? obj
+[SRFI-226]
+@c EN
+Returns @code{#t} if @var{obj} is a parameterization,
+@code{#f} otherwise.
+@c JP
+@var{obj}がパラメタライゼーションなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun call-with-parameterization parameterization thunk
+[SRFI-226]
+@c EN
+Invoke @var{thunk} with a continuation same as
+the call of @code{call-with-parameterization} except its
+parameterization is swapped with @var{parameterization}.
+That is, if the call to this form is in a tail context,
+the call to @var{thunk} is also a tail context.
+@c JP
+@code{call-with-parameterization}の呼び出しの継続から
+パラメタライゼーションだけ@var{parameterization}と置き換えた継続のもとで
+@var{thunk}を呼び出します。
+すなわち、この手続きが末尾コンテクストで呼ばれたなら、
+@var{thunk}の呼び出しも末尾コンテクストになります。
+@c COMMON
+
+@example
+@end example
+@end defun
+
 
 @defmac parameterize/dynwind ((param value) @dots{}) body @dots{}
 @c EN
@@ -18579,21 +18625,50 @@ is kept.  New code should not use @code{gauche.parameter} module.
 @subsection Dynamic states
 @c NODE 動的状態
 
-A dynamic state is a state that is kept during a certain dynamic extent
-of the code execution.  It can be managed with a procedure that
+@c EN
+A dynamic state is a state associated to a certain dynamic extent
+of the code execution. (In SRFI-226, it is called ``parameter-like objects'').
+
+It can be managed with a procedure that
 follows this protocol:
+@c JP
+動的状態とは、特定の動的エクステントに結びつけられた状態です。
+(SRFI-226では「パラメータのようなオブジェクト(parameter-like object)」と
+呼ばれています)。
+
+動的状態は次のプロトコルを持つ手続きにより実現されます:
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 The procedure can be called with zero or one argument.
+@c JP
+手続きは0個または1個の引数を取る
+@c COMMON
 @item
+@c EN
 If it is called without arguments, it returns the current state.
+@c JP
+引数なしで呼ばれた場合、現在の値を返す
+@c COMMON
 @item
+@c EN
 If it is called with one argument, the state is set to the argument.
+(The return value is ignored).
+@c JP
+1引数で呼ばれた場合、引数を状態の新たな値とする。
+(戻り値は無視される)
+@c COMMON
 @end itemize
 
+@c EN
 You can use @code{temporarily} macro in place of @code{parameterize} to
 change the state dynamically.
+@c JP
+@code{parameterize}のかわりに@code{temporarily}マクロを使って
+状態を動的に変えることができます。
+@c COMMON
 
 @example
 (define state
@@ -18610,6 +18685,7 @@ change the state dynamically.
   (get-state)) @result{} 1
 @end example
 
+@c EN
 If you just manage a value, it is not much different from a parameter
 (without a converter) and @code{parameterize}.
 However, unlike @code{parameterize}, it is guaranteed that state is
@@ -18618,6 +18694,14 @@ when the control goes out of the dynamic scope.
 You can do
 more than just changing the internal values inside the procedure,
 such as switching state of external resource.
+@c JP
+値を変えるだけなら、これは(converterなしの)パラメータと@code{parameterize}を
+使うのと大して変わらないように見えるでしょう。
+けれど、@code{parameterize}と違って、@code{temporarily}の動的環境から
+出たり再入したりした場合に、手続きが1引数で呼ばれることが保証されています。
+従って、その時に外部リソースの状態も一緒に変えるなど、
+値を保存する以外のアクションを取ることができます。
+@c COMMON
 
 @defmac temporarily ((proc value) @dots{}) body @dots{}
 Evaluates @var{proc}s and @var{value}s.  Each @var{proc} must yield a
@@ -18637,8 +18721,39 @@ the state of each @var{proc} is saved and restored.
 @subsection Difference of parameters and dynamic states
 @c NODE パラメータと動的状態の違い
 
+From the API, parameters and dynamic states look almost identical; both
+are procedures taking zero or one arguments; when called with no arguments,
+it returns the ``current'' value; when called with one argument,
+it replaces the ``current'' value with the given argument.
 
+The difference is that the ``state'' of a parameter, or a parameterization,
+is tied to a continuation.
+If a continuation frame where @code{parameterize} is evaluated is
+popped, the parameterization simply goes away with it, and the previous
+parameterization (tied to the previous continuation) automatically
+becomes visible, instead of the explicit operation of restoring
+the previous value.   That's why the body of @code{parameterize}
+can be evaluated in tail context---we don't have a restore
+operation to perform after the body is evaluated.
 
+On the other hand, dynamic states rely on the `after' handler
+of @code{dyanmic-wind} to restore the state, hence
+the body in @code{temporarily} can't be evaluated in a tail context.
+
+You want to use dynamic states when the change of state requires
+some actions other than storing a value, e.g. notifying the change
+to a resource manager.  When a dynamic state procedure is called with
+a new value, you can take necessary actions.
+Restoration of parameter values after
+leaving a dynamic extent is implicit; you can't know when the
+parameter value is restored.
+
+Parameters can have @emph{converter} procedure to coerce
+the value to be set.  Dynamic states aren't supposed to have the
+converter procedure, though.  If the dynamic state is suspended and then
+resumed by continuations, the dynamic value needs to be restored
+without passing through the converter procedure, so it requires
+additional protocol, which isn't standardized.
 
 @c ------------------------------------------------------------
 @node Boxes, Lazy evaluation, Parameters and dynamic states, Core library
