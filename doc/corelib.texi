@@ -18704,16 +18704,33 @@ such as switching state of external resource.
 @c COMMON
 
 @defmac temporarily ((proc value) @dots{}) body @dots{}
+@c EN
 Evaluates @var{proc}s and @var{value}s.  Each @var{proc} must yield a
 dynamic state, i.e. a procedure that takes zero or one arguments.
+@c JP
+まず@var{proc}と@var{value}が評価されます。@var{proc}は動的状態、
+すなわち0個または1個の引数をとる手続きを返さなければなりません。
+@c COMMON
 
+@c EN
 Then the current state each @var{proc} represents is changed
 to @var{value} during evaluating @var{body} @dots{}.  The state
 is restored when the control leaves @var{body} @dots{}.
 The results of the last expression of @var{body} will be returned.
+@c JP
+そして、@var{proc}が保持する値が@var{value}に置き換えられ、
+@var{body} @dots{} が評価されます。制御が@var{body} @dots{}を
+離れる際に、@var{proc}が保持する値が元の値に復元されます。
+@var{body}の最後の式の値が@code{temporarily}の値となります。
+@c COMMON
 
+@c EN
 Whenver control trasfers out of @var{body}, or reenters to @var{body},
 the state of each @var{proc} is saved and restored.
+@c JP
+制御が@var{body}から脱出したり、再入したりする度に、
+そえぞれの@var{proc}が保持する値が回復されます。
+@c COMMON
 @end defmac
 
 
@@ -18721,11 +18738,19 @@ the state of each @var{proc} is saved and restored.
 @subsection Difference of parameters and dynamic states
 @c NODE パラメータと動的状態の違い
 
-From the API, parameters and dynamic states look almost identical; both
+@c EN
+At a first grance, parameters and dynamic states look almost same; both
 are procedures taking zero or one arguments; when called with no arguments,
 it returns the ``current'' value; when called with one argument,
 it replaces the ``current'' value with the given argument.
+@c JP
+一見すると、パラメータと動的状態はほとんど同じに見えます。
+どちらも0個または1個の引数を取る手続きで、
+引数無しで呼ばれたら「現在の」値を返し、
+引数つきで呼ばれたら「現在の」値を置き換えると。
+@c COMMON
 
+@c EN
 The difference is that the ``state'' of a parameter, or a parameterization,
 is tied to a continuation.
 If a continuation frame where @code{parameterize} is evaluated is
@@ -18735,11 +18760,27 @@ becomes visible, instead of the explicit operation of restoring
 the previous value.   That's why the body of @code{parameterize}
 can be evaluated in tail context---we don't have a restore
 operation to perform after the body is evaluated.
+@c JP
+違いは、パラメータの状態、「パラメタライゼーション」が継続と結びつけられていることです。
+@code{parameterize}が評価される継続フレームがポップされると、
+それに結びつけられていたパラメタライゼーションは消滅し、
+ポップ後に見えている継続に結びつけられていたパラメタライゼーションが
+自動的に見えるようになります。つまり、明示的に
+「@code{parameterize}の外側の値を回復する」というアクションが不要です。
+これが、@code{parameterize}のボディが末尾コンテクストで実行可能な理由です。
+ボディを実行した後で値を回復するというアクションを走らせる必要がないからです。
+@c COMMON
 
+@c EN
 On the other hand, dynamic states rely on the `after' handler
 of @code{dyanmic-wind} to restore the state, hence
 the body in @code{temporarily} can't be evaluated in a tail context.
+@c JP
+一方、動的状態は@code{dynamic-wind}のafterサンクを使って状態の復帰を行います。
+なので@code{temporarily}のボディは末尾コンテクストでは実行されません。
+@c COMMON
 
+@c EN
 You want to use dynamic states when the change of state requires
 some actions other than storing a value, e.g. notifying the change
 to a resource manager.  When a dynamic state procedure is called with
@@ -18747,13 +18788,29 @@ a new value, you can take necessary actions.
 Restoration of parameter values after
 leaving a dynamic extent is implicit; you can't know when the
 parameter value is restored.
+@c JP
+単に値を置き換える以外のアクション、例えば状態の変更をリソース管理モジュールに
+通知したい、といったものがあるなら、動的状態を使うのが良いでしょう。
+動的状態の値が変更されるときは必ず動的状態手続きが引数つきで呼ばれるので、
+その時に必要なアクションをトリガできます。
+パラメータだと、動的エクステントを離れる時に値は暗黙に復帰されるので、
+値が変わったことの通知を受けることができません。
+@c COMMON
 
+@c EN
 Parameters can have @emph{converter} procedure to coerce
 the value to be set.  Dynamic states aren't supposed to have the
-converter procedure, though.  If the dynamic state is suspended and then
+converter procedure, though.  If the dynamic extent is inactivated and then
 resumed by continuations, the dynamic value needs to be restored
 without passing through the converter procedure, so it requires
 additional protocol, which isn't standardized.
+@c JP
+パラメータはまた、converter手続きを使って、セットされる値を変換することができますが、
+動的状態はconvertert手続きを使いません。
+というのも、継続によって動的エクステントが一時中断され後で復帰した場合に、
+動的状態の値を戻すためにはconverterをバイパスして値をセットしなければならないからです。
+そうするためには別のプロトコルが必要ですが、その点に関しては標準と呼べるものがありません。
+@c COMMON
 
 @c ------------------------------------------------------------
 @node Boxes, Lazy evaluation, Parameters and dynamic states, Core library
