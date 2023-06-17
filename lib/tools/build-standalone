@@ -1,0 +1,91 @@
+;;;
+;;; build-standalone
+;;;
+;;;   Copyright (c) 2000-2014  Shiro Kawai  <shiro@acm.org>
+;;;
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
+
+(use gauche.cgen.standalone)
+(use gauche.parseopt)
+
+(define (usage)
+  (print "Usage: build-standalone [-o outfile][-I dir][--header-dir dir][--library-dir dir] main.scm lib/library.scm ...")
+  (print)
+  (print "  -o outfile  Specify output file name.  When omitted, the basename of ")
+  (print "              the main source file is used.")
+  (print "  -I dir      Specify the search path of extra files (lib/library.scm ...)")
+  (print "              if they're not relative to the current directory.  This option")
+  (print "              can be given multiple times.")
+  (print "  -D var[=val]")
+  (print "              Add C preprocessor definitions while compiling the generated")
+  (print "              C code.  This option can be given multiple times.")
+  (print "  --header-dir dir")
+  (print "              Alternative include directory to find gauche.h etc.  Specify")
+  (print "              this if you don't want to use installed Gauche header files.")
+  (print "              This option can be given multiple times.")
+  (print "  --library-dir dir")
+  (print "              Alternative library directory to find libgauche-static.  Specify")
+  (print "              this if you don't want to use installed Gauche library.")
+  (print "              This option can be given multiple times.")
+  (print "  --keep-c-file")
+  (print "              Do not delete intermediate C file after compilation.  This is")
+  (print "              for troubleshooting.")
+  (print)
+  (print "The file <main.scm> is the main script file; usually it contains 'main'")
+  (print "procedure.  Other files <lib/library.scm> ... are extra library files needed")
+  (print "by <main.scm>.  They are loaded before executing main.scm.")
+  (exit 1))
+
+(define (main args)
+  (define incdirs '())
+  (define defs '())
+  (define hdrdirs '())
+  (define libdirs '())
+  (let-args (cdr args) ([outfile "o=s" #f]
+                        [#f "I=s" #f => (^x (push! incdirs x) #f)]
+                        [#f "D=s" #f => (^x (push! defs x) #f)]
+                        [#f "header-dir=s" => (^x (push! hdrdirs x) #f)]
+                        [#f "library-dir=s" => (^x (push! libdirs x) #f)]
+                        [keepc "keep-c-file"]
+                        [else _ (usage)]
+                        . files)
+    (when (null? files) (usage))
+    (build-standalone (car files)
+                      :outfile outfile
+                      :extra-files (cdr files)
+                      :include-dirs (reverse incdirs)
+                      :cpp-definitions (reverse defs)
+                      :header-dirs (reverse hdrdirs)
+                      :library-dirs (reverse libdirs)
+                      :keep-c-file keepc))
+  0)
+
+;; Local variables:
+;; mode: scheme
+;; end:

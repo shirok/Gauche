@@ -787,12 +787,12 @@
 (test-section "build-standalone")
 
 (test-script
- (build-path (or (sys-getenv "top_srcdir") "..") "src" "build-standalone"))
+ (build-path (or (sys-getenv "top_srcdir") "..") "lib" "tools" "build-standalone"))
 
 (define (run-build-static opts args)
   (do-process `("../../src/gosh" "-ftest"
+                ,(build-path *top-srcdir* "lib/tools/build-standalone")
                 ,#"-I=~|*top-srcdir*|/test/test-static"
-                ,(build-path *top-srcdir* "src/build-standalone")
                 ,#"--header-dir=~|*top-srcdir*|/src"
                 ,#"--header-dir=~|*top-builddir*|/src"
                 ,#"--header-dir=~|*top-srcdir*|/gc/include"
