@@ -68,6 +68,24 @@ SCM_EXTERN void   Scm_CompiledCodeEmit(ScmCompiledCode *cc,
                                        ScmObj operand,
                                        ScmObj info);
 
+/* Packed debug info
+ * Debug info of precompiled code is saved in a special 'packed' format
+ * to reduce the size of generated C code.
+ * See lib/gauche/vm/debug-info.scm for the packed format.
+ */
+typedef struct ScmPackedDebugInfoRec {
+    SCM_HEADER;
+    size_t codeSize;            /* size of codeVector */
+    uint8_t *codeVector;        /* byte-encoded structure */
+    ScmObj constVector;         /* <vector> */
+    ScmObj decoded;             /* decoded structure */
+} ScmPackedDebugInfo;
+
+#define SCM_CLASS_PACKED_DEBUG_INFO   (&Scm_PackedDebugInfoClass)
+
+#define SCM_PACKED_DEBUG_INFO(obj)    ((ScmPackedDebugInfo*)(obj))
+#define SCM_PACKED_DEBUG_INFO_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_PACKED_DEBUG_INFO)
+
 SCM_DECL_END
 
 #endif /* GAUCHE_PRIV_CODEP_H */

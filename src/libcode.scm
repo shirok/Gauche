@@ -227,3 +227,12 @@
                         (Scm_CompiledCodeFullName (SCM_COMPILED_CODE obj))
                         obj)))
  )
+
+(select-module gauche.internal)
+(inline-stub
+  ;; <compiled-code> class is visible
+ (define-cclass <packed-debug-info>
+   "ScmPackedDebugInfo*" "Scm_PackedDebugInfoClass"
+   (c "SCM_CLASS_DEFAULT_CPL")
+   ())
+ )

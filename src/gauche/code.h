@@ -89,6 +89,10 @@ struct ScmCompiledCodeRec {
  *       <offset> is either an instruction offset or 'definition (for the
  *       entire closure).
  *       At this moment, only used <info> is (source-info . <source>).
+ *       For the precompiled code, this slot may contain <packed-debug-info>
+ *       object at the startup.  Scheme slot accessor unpacks the object
+ *       and returns the unpacked info, so Scheme program will never see
+ *       <packed-debug-info> objects.
  *   *4) (<signature> <info> ...)
  *       <signature> is (<procedure-name> <formal> ...)
  *       <procedure-name> may be just a symbol, or a list (in case of internal

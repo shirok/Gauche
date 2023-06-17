@@ -129,6 +129,8 @@
 (autoload gauche.vm.profiler
           profiler-show profiler-show-load-stats with-profiler)
 
+(autoload gauche.vm.debug-info decode-debug-info)
+
 (autoload srfi.7  (:macro program))
 (autoload srfi.55 (:macro require-extension))
 

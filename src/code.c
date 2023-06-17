@@ -987,3 +987,7 @@ ScmWord Scm_VMInsnBuild(ScmObj obj)
     Scm_Error("Bad VM insn spec: %S", obj);
     return 0;       /* dummy */
 }
+
+/*===========================================================
+ * Packed debug info
+ */
