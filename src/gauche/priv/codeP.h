@@ -81,10 +81,13 @@ typedef struct ScmPackedDebugInfoRec {
     ScmObj decoded;             /* decoded structure */
 } ScmPackedDebugInfo;
 
+SCM_CLASS_DECL(Scm_PackedDebugInfoClass);
 #define SCM_CLASS_PACKED_DEBUG_INFO   (&Scm_PackedDebugInfoClass)
 
 #define SCM_PACKED_DEBUG_INFO(obj)    ((ScmPackedDebugInfo*)(obj))
 #define SCM_PACKED_DEBUG_INFO_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_PACKED_DEBUG_INFO)
+
+SCM_EXTERN ScmObj Scm_MakePackedDebugInfo(ScmUVector*, ScmVector*);
 
 SCM_DECL_END
 

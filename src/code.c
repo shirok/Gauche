@@ -991,3 +991,15 @@ ScmWord Scm_VMInsnBuild(ScmObj obj)
 /*===========================================================
  * Packed debug info
  */
+
+ScmObj Scm_MakePackedDebugInfo(ScmUVector *packedVector,
+                               ScmVector *constVector)
+{
+    ScmPackedDebugInfo *z = SCM_NEW(ScmPackedDebugInfo);
+    SCM_SET_CLASS(z, SCM_CLASS_PACKED_DEBUG_INFO);
+    z->codeSize = SCM_UVECTOR_SIZE(packedVector);
+    z->codeVector = SCM_U8VECTOR_ELEMENTS(packedVector);
+    z->constVector = SCM_OBJ(constVector);
+    z->decoded = SCM_FALSE;
+    return SCM_OBJ(z);
+}

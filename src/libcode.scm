@@ -230,9 +230,33 @@
 
 (select-module gauche.internal)
 (inline-stub
-  ;; <compiled-code> class is visible
+
+ (define-cfn get_packed_vector (s::ScmPackedDebugInfo*) :static
+   ;; This is called only during precomp, so we don't need to worry
+   ;; about allocation.
+   (return (Scm_MakeU8VectorFromArray (-> s codeSize) (-> s codeVector))))
+
+  ;; <packed-debug-info> is internal
  (define-cclass <packed-debug-info>
    "ScmPackedDebugInfo*" "Scm_PackedDebugInfoClass"
    (c "SCM_CLASS_DEFAULT_CPL")
-   ())
+   ((packed-vector :setter #f
+                   :getter (c "get_packed_vector"))
+    (const-vector  :setter #f
+                   :c-name "constVector"))
+   )
+
+ (define-cproc %make-packed-debug-info (bv::<u8vector> constv::<vector>)
+   Scm_MakePackedDebugInfo)
+
+ (define-cproc decode-packed-debug-info (p::<packed-debug-info>)
+   (when (SCM_FALSEP (-> p decoded))
+     (let* ([decode-debug-info SCM_UNDEFINED])
+       (SCM_BIND_PROC decode-debug-info "decode-debug-info"
+                      (Scm_GaucheInternalModule))
+       (let* ([decoded (Scm_ApplyRec2 decode-debug-info
+                                      (get_packed_vector p)
+                                      (-> p constVector))])
+         (set! (-> p decoded) decoded))))
+   (return (-> p decoded)))
  )
