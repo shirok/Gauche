@@ -2894,6 +2894,17 @@
   (with-module srfi.210.test (run-tests)))
 
 ;;-----------------------------------------------------------------------
+;; SCIP prerequisites
+
+(test-section "SRFI-216")
+
+(define-module srfi-216-test
+  (use gauche.test)
+  (use srfi.216)
+  (test-module 'srfi.216)
+  )
+
+;;-----------------------------------------------------------------------
 ;; Integer sets
 
 (test-section "SRFI-217")

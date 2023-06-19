@@ -28,5 +28,22 @@
     (random-integer n)
     (inexact (random-integer (ceiling->exact n)))))
 
-(define (pararallel-execute thunk1 . thunks)
+(define (parallel-execute thunk1 . thunks)
   (pmap (^p (p)) (cons thunk1 thunks) (make-fully-concurrent-mapper)))
+
+(define *global-lock* (make-mutex))     ;for test-and-set!
+
+(define (test-and-set! cell)
+  (assume cell <pair>)
+  (with-locking-mutex *global-lock*
+    (^[] (if (car cell)
+           #t
+           (begin (set! (car cell) #t) #f)))))
+
+(define-syntax cons-stream
+  (syntax-rules ()
+    ([_ a b] (let ([aa a]) (stream-cons aa b)))))
+
+(define the-empty-stream stream-null)
+
+;; stream-null? is as defined in util.stream
