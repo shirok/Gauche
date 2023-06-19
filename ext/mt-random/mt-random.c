@@ -369,7 +369,7 @@ ScmObj Scm_MTGenrandInt(ScmMersenneTwister *mt, ScmObj n)
     }
 #endif
   err:
-    Scm_Error("bad type of argument for n: positive integer up to 2^32 is required, but got %S", n);
+    Scm_Error("bad type of argument for n: positive exact integer up to 2^32 is required, but got %S", n);
     return SCM_UNDEFINED; /*dummy*/
 }
 
