@@ -2,10 +2,12 @@
 ;; srfi.216 - SICP prerequisites
 ;;
 
+;; NB: It is better to use Gauche-compat-sicp, which is more comprehensive
+;; than this SRFI.  We have this for the compatibility.
+
 (define-module srfi.216
   (use control.pmap)
   (use gauche.threads)
-  (use util.stream)
   (use srfi.27)
   (export false true nil runtime random
           parallel-execute test-and-set!
@@ -42,8 +44,7 @@
 
 (define-syntax cons-stream
   (syntax-rules ()
-    ([_ a b] (let ([aa a]) (stream-cons aa b)))))
+    ([_ a b] (cons a (delay b)))))
 
-(define the-empty-stream stream-null)
-
-;; stream-null? is as defined in util.stream
+(define-constant the-empty-stream '#:the-empty-stream)
+(define (stream-null? obj) (eq? obj the-empty-stream))
