@@ -1,3 +1,7 @@
+2023-06-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/216.scm, src/srfis.scm: Support SRFI-216, SICP prerequisites.
+
 2023-06-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/libvec.scm, ext/uvector/uvector.scm: Move string <-> uvector

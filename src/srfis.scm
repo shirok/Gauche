@@ -1476,6 +1476,16 @@ Supported by the module @code{srfi.210}
 (@ref{Procedures and syntax for multiple values}参照)。
 
 
+srfi-216, srfi-216
+()
+
+SICP Prerequisites
+Supporetd by the module @code{srfi.216}
+
+SICP用ライブラリ
+モジュール@code{srfi.216}でサポートされます
+
+
 srfi-217, srfi-217
 ()
 
