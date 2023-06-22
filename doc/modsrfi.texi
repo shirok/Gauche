@@ -89,6 +89,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * String-notated bytevectors::  srfi.207
 * Enums and enum sets::         srfi.209
 * Procedures and syntax for multiple values::  srfi.210
+* SICP prerequisites::
 * Integer sets::                srfi.217
 * Define higher-order lambda::  srfi.219
 * Generator/accumulator sub-library::  srfi.221
@@ -12264,7 +12265,7 @@ The results of @var{proc} are discarded.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Procedures and syntax for multiple values, Integer sets, Enums and enum sets, Library modules - SRFIs
+@node Procedures and syntax for multiple values, SICP prerequisites, Enums and enum sets, Library modules - SRFIs
 @section @code{srfi.210} - Procedures and syntax for multiple values
 @c NODE 多値のための手続きと構文,  @code{srfi.210} - 多値のための手続きと構文
 
@@ -12452,7 +12453,96 @@ the result(s) of those procedures.  These can be written using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Integer sets, Define higher-order lambda, Procedures and syntax for multiple values, Library modules - SRFIs
+@node SICP prerequisites, Integer sets, Procedures and syntax for multiple values, Library modules - SRFIs
+@section @code{srfi.216} - SICP prerequisites
+@c NODE SICP用ライブラリ,  @code{srfi.216} - SICP用ライブラリ
+
+@deftp {Module} srfi.216
+@mdindex srfi.216
+This module provides several utility procedures to write code and
+implement exercises of ``Structure and Interpretation of Computer Programs''.
+
+We provide this module for the portability, i.e. to run existing
+code that depends on this module.  If you're studying SICP and
+writing code by yourself using Gauche, we recommend you to
+install Gauche-compat-sicp extension
+(@url{https://github.com/shirok/Gauche-compat-sicp}), for it takes care
+of Gauche-specific matters.
+@end deftp
+
+@defvr {Constant} true
+@defvrx {Constant} false
+@defvrx {Constant} nil
+[SRFI-216]
+@c MOD srfi.216
+Constants bound to @code{#t}, @code{#f}, and @code{()}, respectively.
+@end defvr
+
+@defun runtime
+[SRFI-216]
+@c MOD srfi.216
+Returns an exact integer monotonically increasing from certain point
+of time in the past.  The absolute value doesn't matter, but you can
+use differences of calls to @code{runtime} to compare relative elapsed time.
+@end defun
+
+@defun random n
+[SRFI-216]
+@c MOD srfi.216
+The argument @var{n} must be a positive real number.  Returns a random
+nonnegative integer less than @var{n}.
+
+If @var{n} is exact, an exact inteegr is returned.  Otherwise, an inexact
+integer is returned.
+@end defun
+
+@defun parallel-execute thunk thunk2 @dots{}
+[SRFI-216]
+@c MOD srfi.216
+Run given thunks in parallel using threads.  Returns an undefined
+value after all thunks are completed.
+@end defun
+
+@defun test-and-set! pair
+[SRFI-216]
+@c MOD srfi.216
+The argument must be a mutable pair.
+If its @code{car} is @code{#f}, set it to @code{#t} and returns @code{#f}.
+Otherwise returns @code{#t}.  The operation is performed atomically.
+@end defun
+
+@defmac cons-stream a b
+[SRFI-216]
+@c MOD srfi.216
+Expands into @code{(cons a (delay b))}.  Note that the @code{car} side
+of stream (@var{a}) is eagerly evaluated.
+
+This is not compatible with @code{util.stream}'s @code{stream-cons}
+(@pxref{Stream primitives}).  The reason SICP need this as primitive
+is that SICP does not use macros, so it can't define its own
+syntactic abstraction.
+@end defmac
+
+@defvr {Constant} the-empty-stream
+[SRFI-216]
+@c MOD srfi.216
+A singleton instance of the empty stream.  This should be used with
+the following @code{stream-null?}.  Note that this is not compatible with
+@code{stream-null} of @code{util.stream} (@pxref{Stream primitives}).
+@end defvr
+
+@defun stream-null? obj
+[SRFI-216]
+@c MOD srfi.216
+Returns @code{#t} if @var{obj} is equivalent to @code{the-empty-stream},
+@code{#f} otherwise.
+Note that this is not the same as @code{stream-null?} of @code{util.stream}
+(@pxref{Stream primitives}).
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Integer sets, Define higher-order lambda, SICP prerequisites, Library modules - SRFIs
 @section @code{srfi.217} - Integer sets
 @c NODE 整数集合,  @code{srfi.217} - 整数集合
 

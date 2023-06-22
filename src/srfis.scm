@@ -1481,9 +1481,11 @@ srfi-216, srfi-216
 
 SICP Prerequisites
 Supporetd by the module @code{srfi.216}
+(@pxref{SICP prerequisites}).
 
 SICP用ライブラリ
 モジュール@code{srfi.216}でサポートされます
+(@ref{SICP prerequisites}参照)。
 
 
 srfi-217, srfi-217
