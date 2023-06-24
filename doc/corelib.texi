@@ -594,33 +594,70 @@ extra elements after the typed elements.
 
 @deftp {Type Constructor} <^> type @dots{} @code{->} type @dots{}
 @clindex ^
-@var{Type} @dots{} must be type expressions, except that the
+@c EN
+Each @var{type} must be type expressions, except that the
 one right before @code{->} and the last one may be an identifier @code{*}.
+
 This creates a procedure type, with the constraints in
 arguments and return types.
 The @var{type} @dots{} before @code{->} are the argument types,
 and the ones after @code{->} are the result types.
+@c JP
+@var{type} @dots{} はそれぞれ型の式でなければなりません。ただし、
+@code{->} の直前、および最後の@var{type}は識別子@code{*}も許されます。
 
+この型コンストラクタは引数および戻り値の型を制約する手続き型を作ります。
+@code{->} の前の@var{type} @dots{} は引数の型を、
+@code{->} の後のは戻り値の型を指定します。
+@c COMMON
+
+@c EN
 The @code{*} in the last of argument type list and/or result type list
 indicates extra elements are allowed.
+@c JP
+引数の型リストの最後に@code{*}がある場合は省略可能な追加の引数を、
+戻り値の型リストの最後に@code{*}がある場合は追加の戻り値があることを示します。
+@c COMMON
 
+@c EN
 In vanilla Scheme, all procedures belong to just one type, that responds
 true to @code{procedure?}.  It is simple and flexible, but sometimes the
 resolution is too coarse to do reasoning on the program.
+@c JP
+素のSchemedでは、全ての手続き@code{procedure?}が真を返すという意味で
+はひとつの型に属しています。これは簡単で柔軟ですが、
+プログラムの解析をしたい場合には粗すぎる分類です。
+@c COMMON
 
+@c EN
 In Gauche, we can attach more detailed type information in procedures.
 In the current version, some built-in procedures already have such
 type information, that can be retrieved with @code{procedure-type}:
+@c JP
+Gaucheでは手続きオブジェクトがより詳しい型情報を持てます。
+現在のバージョンでは、組み込み手続きの一部に既に詳しい型情報が付加されていて、
+@code{procedure-type}によって取り出すことができます。
+@c COMMON
 
 @example
 (procedure-type cons) @result{} #<^ <top> <top> -> <pair>>
 @end example
 
+@c EN
 Not all procedures have such information, though.  Do not expect the
 rigorousness of statically typed languages.
+@c JP
+ただ、全ての手続きにこの情報が付加されているわけではありません。
+静的型付け言語のような厳密さを期待しないでください。
+@c COMMON
 
+@c EN
 At this moment, Scheme-defined procedures treats all argument types
 as @code{<top>}.  We'll provide a way to attach type info in future.
+@c JP
+今のところ、Schemeで定義された手続きは全ての引数や戻り値を@code{<top>}型として
+扱います。いずれより詳しい型情報を指定できるようにする予定です。
+@c COMMON
 @end deftp
 
 @deftp {Type Constructor} <List> type :optional min-length max-length
