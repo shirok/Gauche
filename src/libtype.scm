@@ -741,6 +741,30 @@
   :subtype? (make-subtype-Seq <vector>))
 
 ;;;
+;;; Class: <Singleton>
+;;;   A type whose sole member is an object, compared by eqv?.
+;;;
+
+(define-class <Singleton> (<descriptive-type>)
+  ((instance :init-keyword :instance))
+  :metaclass <type-constructor-meta>
+  :initializer (^[type args]
+                 (match args
+                   [(obj)
+                    (let1 ins (unwrap-syntax obj)
+                      (slot-set! type 'name
+                                 (string->symbol
+                                  (string-append
+                                   "<Singleton " (x->string ins) ">")))
+                      (slot-set! type 'instance ins))]
+                   [_ (error "Bad argument for <Singleton> type constructor:"
+                             args)]))
+  :deconstructor (^[type] (list (~ type'instance)))
+  :validator (^[type obj] (eqv? (~ type'instance) obj))
+  :subtype? (^[type super] (of-type? (~ type'instance) super))
+  :supertype? (^[type sub] #f))
+
+;;;
 ;;; Types for bridging Scheme and C
 ;;;
 
@@ -931,7 +955,7 @@
         '(<type-constructor-meta>
           <descriptive-type>
           <native-type>
-          <^> </> <?> <Tuple> <List> <Vector>
+          <^> </> <?> <Tuple> <List> <Vector> <Singleton>
           subtype? of-type?))
   (xfer (current-module)
         (find-module 'gauche.internal)
