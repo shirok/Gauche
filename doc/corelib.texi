@@ -665,14 +665,33 @@ as @code{<top>}.  We'll provide a way to attach type info in future.
 @clindex List
 @clindex Vector
 @var{Type} must be a type expression.
+@c EN
 These create a list or a vector type whose elements are of @var{type},
 respectively.
 For example, @code{(<List> <string>)} is a list of strings.
+@c JP
+各要素が@var{type}であるようなリストもしくはベクタの型を作ります。
+例えば@code{(<List> <string>)}は文字列のリストです。
+@c COMMON
 
+@c EN
 The optional arguments must be a literal real numbers that limit
-the minimum and maximum length of the list or the vector.
+the minimum and maximum (inclusive) length of the list or the vector.
 When omitted, @var{min-length}
 is zero and @var{max-length} is @code{inf.0}.
+@c JP
+省略可能引数はどちらも実数でなければならず、
+それぞれリストやベクタの長さの最小値と最大値(両端含む)を指定します。
+省略された場合、@var{min-length}は0、@var{max-length}は無限大です。
+@c COMMON
+
+@c EN
+Note: @code{subtype?} uses covariant subtyping, that is,
+@code{(subtype? (<List> <string>) <list>)} is @code{#t}.
+@c JP
+註: @code{subtype?}は共変関係を見ます。つまり、
+@code{(subtype? (<List> <string>) <list>)}は@code{#t}です。
+@c COMMON
 @end deftp
 
 @node Native types,  , Type expressions and type constructors, Types and classes
