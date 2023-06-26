@@ -764,6 +764,22 @@
   :subtype? (^[type super] (of-type? (~ type'instance) super))
   :supertype? (^[type sub] #f))
 
+(define-class <Singleton-set> (<descriptive-type>)
+  ((instances :init-keyword :instances))
+  :metaclass <type-constructor-meta>
+  :initializer (^[type args]
+                 (define objs (map unwrap-syntax args))
+                 (slot-set! type 'name
+                            (string->symbol
+                             (string-append
+                              "<Singleton-set " (x->string objs) ">")))
+                 (slot-set! type 'instances objs))
+  :deconstructor (^[type] (list (~ type'instances)))
+  :validator (^[type obj] (boolean (memv obj (~ type'instances))))
+  :subtype? (^[type super] (every (^[obj] (of-type? obj super))
+                                  (~ type'instances)))
+  :supertype? (^[type sub] #f))
+
 ;;;
 ;;; Types for bridging Scheme and C
 ;;;
@@ -955,7 +971,7 @@
         '(<type-constructor-meta>
           <descriptive-type>
           <native-type>
-          <^> </> <?> <Tuple> <List> <Vector> <Singleton>
+          <^> </> <?> <Tuple> <List> <Vector> <Singleton> <Singleton-set>
           subtype? of-type?))
   (xfer (current-module)
         (find-module 'gauche.internal)
