@@ -1736,18 +1736,42 @@ Returns an undefined value.
 @defunx reverse-bitvector->list/bool bv :optional start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a list of integers (0 or 1) or boolean values of bitvector
 @var{bv}.  The first two procedures returns the leftmost bit first,
 while the @code{reverse-} variations returns the rightmost bit first.
 The optional @var{start}/@var{end} arguments limit the range of @var{bv}
 to be extracted.
+@c JP
+ビットベクタ@var{bv}の内容を整数0または1のリスト、あるいは真偽値のリストとして
+返します。最初の2つの手続きは左から、@code{reverse-}のつく2つの手続きは
+右からビットを取ります。省略可能な@var{start}/@var{end}引数は
+取り出すビットの範囲を指定します。
+@c COMMON
+
+@example
+(bitvector->list/int #*010011000111 2 10)
+ @result{} (0 0 1 1 0 0 0 1)
+(reverse-bitvector->list/int #*010011000111 2 10)
+ @result{} (1 0 0 0 1 1 0 0)
+@end example
 @end defun
 
 @defun reverse-list->bitvector lis
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Like @code{list->bitvector} (@pxref{Bitvectors}), but pack bits
 from right to left.
+@c JP
+@code{list->bitvector}(@ref{Bitvectors}参照)と似ていますが、
+ビットを右から左に詰めてゆきます。
+@c COMMON
+
+@example
+(reverse-list->bitvector '(1 0 #f #f #t #t))
+ @result{} #*110001
+@end example
 @end defun
 
 @defun bitvector->vector/int bv :optional start end
@@ -1756,49 +1780,97 @@ from right to left.
 @defunx reverse-bitvector->vector/bool bv :optional start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a vector of integers (0 or 1) or boolean values of
 bitvector @var{bv}.  The first two procedures returns the leftmost bit first,
 while the @code{reverse-} variations returns the rightmost bit first.
 The optional @var{start}/@var{end} arguments limit the range of @var{bv}
 to be extracted.
+@c JP
+ビットベクタ@var{bv}の内容を整数0または1のベクタ、あるいは真偽値のベクタとして
+返します。最初の2つの手続きは左から、@code{reverse-}のつく2つの手続きは
+右からビットを取ります。省略可能な@var{start}/@var{end}引数は
+取り出すビットの範囲を指定します。
+@c COMMON
 @end defun
 
 @defun vector->bitvetor vec :optional start end
 @defunx reverse-vector->bitvector vec :optional start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Converts @var{vec} to a fresh bitvector;
 @var{vec} must be a vector of 0/1 or boolean values.
 The first procedure packs bits in the same left to right order,
 while the @code{reverse-} version reverses the order.
 The optional @var{start}/@var{end} arguments limit the range of @var{vec}
 to be extracted.
+@c JP
+ベクタ@var{vec}を新たなビットベクタに変換します。@var{vec}の要素は
+0、1、あるいは真偽値でなければなりません。
+最初の手続きはビットを左から右に同じ順で、@code{reverse-}のつく手続きは
+逆順で詰めてゆきます。
+省略可能な@var{start}/@var{end}引数は@var{vec}から取り出すビットの範囲を指定します。
+@c COMMON
+
+@example
+(vector->bitvector #(0 0 1 1 #t #f #t #t) 2 7)
+  @result{} #*11101
+(reverse-vector->bitvector #(0 0 1 1 #t #f #t #t) 2 7)
+  @result{} #*10111
+@end example
 @end defun
 
 @defun bitvector->integer bv
 @defunx integer->bitvector n :optional len
 [SRFI-178]
 @c MOD gauche.bitvector
-Convert between bitvectors and integers.
-Note that the first bit of
+@c EN
+Convert between bitvectors and exact nonnegative integers.
+Note that the leftmost bit of
 @var{bv} corresponds to the least significant bit.
+@c JP
+ビットベクタと正確な非負整数とを相互変換します。
+@var{bv}の最初(最左)のビットは、整数の最下位のビットに対応することに注意してください。
+@c COMMON
 
 @example
 (bitvector->integer #*1000) @result{} 1
 (bitvector->integer #*0001) @result{} 8
 @end example
 
+@c EN
 This is consistent with @code{bits->list} etc. of SRFI-151
 (@pxref{R7RS bitwise operations}), where least significant bit
 corresponts to the first element of the list.
+@c JP
+SRFI-151の@code{bits->list}等は最下位ビットから順にビットをリストにするので、
+それと一貫性があります(@ref{R7RS bitwise operations}参照)。
+@c COMMON
 
+@c EN
 @code{integer->bitvector} takes an optional argument @var{len} to
 specify the number of bits in @var{n} (count from the least siginificant
 bit) to be taken.  When omitted, @code{(integer-length n)} is used
 (@pxref{Basic bitwise operations}).
+@c JP
+@code{integer->bitvector}はさらに省略可能な@var{len}引数で、
+引数の整数@var{n}の最下位から何ビット目までを取るかを指定できます。
+省略時は@code{(integer-length n)}の値が使われます
+(@ref{Basic bitwise operations}参照)。
+@c COMMON
+
+@example
+(integer->bitvector 11)   @result{} #*1101
+(integer->bitvector 11 8) @result{} #*11010000
+@end example
 @end defun
 
+@c EN
 @subheading Generators
+@c JP
+@subheading ジェネレータ
+@c COMMON
 
 @defun bitvector->int-generator bv :optional start end
 @defunx bitvector->bool-generator bv :optional start end
