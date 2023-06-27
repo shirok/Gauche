@@ -402,13 +402,13 @@
 
 (define (bitvector-pad bit bv len)
   (if (>= (bitvector-length bv) len)
-    bv
+    (bitvector-copy bv)
     (rlet1 r (make-bitvector len bit)
       (bitvector-copy! r (- len (bitvector-length bv)) bv))))
 
 (define (bitvector-pad-right bit bv len)
   (if (>= (bitvector-length bv) len)
-    bv
+    (bitvector-copy bv)
     (rlet1 r (make-bitvector len bit)
       (bitvector-copy! r 0 bv))))
 
@@ -448,7 +448,7 @@
       (when (< s e)
         (bitvector-swap! bv s e)
         (loop (+ s 1) (- e 1))))
-    bv))
+    (undefined)))
 
 (define (bitvector-reverse-copy! target tstart src :optional sstart send)
   (with-range (src sstart send)
@@ -457,7 +457,7 @@
       (when (<= sstart i)
         (bitvector-set! target j (bitvector-ref/int src i))
         (loop (- i 1) (+ j 1))))
-    target))
+    (undefined)))
 
 ;;; Conversion
 
