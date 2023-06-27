@@ -1636,10 +1636,17 @@ iff  @var{needle} is a prefix/suffix of @var{haystack}.
 @defunx bitvector-pad-right bit bv len
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 If the length of a bitvector @var{bv} is smaller than @var{len},
 returns a bitvector of length @var{len} by adding @var{bit} before/after
 @var{bv}.  If the length of @var{bv} is equal to or greater than @var{len},
-@var{bv} is returned as is.
+a copy of @var{bv} is returned as is.
+@c JP
+ビットベクタ@var{bv}の長さが@var{len}未満であれば、
+長さが@var{len}になるまで@var{bv}の先頭もしくは末尾に@var{bit}を付加した
+ビットベクタを作って返します。@var{bv}の長さが@var{len}以上の場合は
+@var{bv}のコピーを返します。
+@c COMMON
 
 @example
 (bitvector-pad 1 #*00010 10) @result{} #*1111100010
@@ -1652,8 +1659,13 @@ returns a bitvector of length @var{len} by adding @var{bit} before/after
 @defunx bitvector-trim-both bit bv
 [SRFI-178]
 @c MOD gauche.bitvector
-Returns a bitvector without preceding and/or trailing consecutive
+@c EN
+Returns a fresh bitvector without preceding and/or trailing consecutive
 @var{bit} from @var{bv}.
+@c JP
+ビットベクタ@var{bv}の先頭、末尾、あるいは両方から、連続する@var{bit}をできる限り
+除いたビットベクタを新たに作って返します。
+@c COMMON
 
 @example
 (bitvector-trim 0 #*000101000) @result{} #*101000
@@ -1662,32 +1674,61 @@ Returns a bitvector without preceding and/or trailing consecutive
 @end example
 @end defun
 
-
+@c EN
 @subheading Mutators
+@c JP
+@subheading 破壊的変更
+@c COMMON
 
 @defun bitvector-swap! bv i j
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Swap the @var{i}-th value and @var{j}-th value of a bitvector @var{bv}.
+Returns an undefined value.
 If the index is out of range, an error is thrown.
+@c JP
+ビットベクタ@var{bv}の@var{i}番目と@var{j}番目のビットを入れ替えます。
+戻り値は未定義です。
+インデックスが範囲外であればエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun bitvector-reverse! bv :optional start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Reverse the order of the content of a bitvector @var{bv} destructively.
 The optional @var{start}/@var{end} indexes limit the range of the operation;
 elements outside of the range won't be affected.
+Returns an undefined value.
+@c JP
+ビットベクタ@var{bv}のビット順を破壊的に反転します。
+省略可能な@var{start}/@var{end}が与えられた場合は、
+それらのインデックスで指定される範囲内だけが変更対象となります。
+戻り値は未定義です。
+@c COMMON
 @end defun
 
 @defun bitvector-reverse-copy! to tstart from :optional start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Same as @code{(bitvector-copy! to start (bitvector-reverse-copy from start end))},
 but potentially more efficient.
+Returns an undefined value.
+@c JP
+@code{(bitvector-copy! to start (bitvector-reverse-copy from start end))}
+と意味的に同じですが、より効率が良いかもしれません。
+戻り値は未定義です。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Conversion
+@c JP
+@subheading 変換
+@c COMMON
 
 @defun bitvector->list/int bv :optional start end
 @defunx bitvector->list/bool bv :optional start end
