@@ -55,15 +55,18 @@
   ;; This regexp picks potential typo of extract directives.
   (define suspicious
     #/^@c ([A-Za-z]{2,7}:?)(?![,-])\s*(.*)/)
-  (define (in line)
+  ;; Loop for 'active' lines.
+  ;; MODTAG tracks whether the previous line was "[SRFI-nn]", "@c MOD ...", or
+  ;; something else.  It is to detect the error when those two are reversed.
+  (define (in line modtag)
     (rxmatch-case line
       [test eof-object?]
-      [pattern-in () (in (read-line))]
+      [pattern-in () (in (read-line) #f)]
       [pattern-out () (out (read-line))]
       [#/^@include\s+(\S+)/ (#f file)
         (with-input-from-file (find-included-file file)
           (cut filter pattern-in pattern-out) :encoding 'utf8)
-        (in (read-line))]
+        (in (read-line) #f)]
       ;; Extract-time include.  @include will be tracked by
       ;; texinfo-multiple-files-update and the includee must have @node
       ;; at the toplevel, so this can be used to include files without
@@ -71,39 +74,45 @@
       [#/^@c xinclude\s+(\S+)/ (#f file)
         (with-input-from-file (find-included-file file)
           (cut filter pattern-in pattern-out) :encoding 'utf8)
-        (in (read-line))]
-      [#/^@c COMMON$/ () (in (read-line))]
+        (in (read-line) #f)]
+      [#/^@c COMMON$/ () (in (read-line) #f)]
       [#/^@c MOD\s+(\S+)$/ (#f module)
              (display #"@{@t{~|module|}@}\n")
-             (in (read-line))]
-      [suspicious (#f word rest) (check-typo word rest line) (in (read-line))]
+             (in (read-line) 'mod)]
+      [#/^\[SRFI/ (#f)
+            (when (eq? modtag 'mod)
+              (warn #"SRFI tag follows MOD directive: ~|line|\n"))
+            (display line)
+            (in (read-line) 'srfi)]
+      [suspicious (#f word rest) (check-typo word rest line) (in (read-line) #f)]
       [test (^_ (eq? (lang) 'en))
             (display (regexp-replace-all #/@VERSION@/ line *version*))
-            (newline) (in (read-line))]
+            (newline) (in (read-line) #f)]
       [#/^@node\s+(.*)$/ (#f nodedesc)
-        (process-node nodedesc) (in (read-line))]
+        (process-node nodedesc) (in (read-line) #f)]
       [#/^@(chapter|(sub)*section|appendix\w*)\s+(.*)/ (#f cmd #f header)
-        (process-header cmd header) (in (read-line))]
+        (process-header cmd header) (in (read-line) #f)]
       [#/^\* ([^:]+)::(.*)?/ (#f node desc)
-        (process-menu node #f desc) (in (read-line))]
+        (process-menu node #f desc) (in (read-line) #f)]
       [#/^\* ([^:]+):\s+([^\)]+\))\.(.*)?/ (#f tag node desc)
-        (process-menu node tag desc) (in (read-line))]
+        (process-menu node tag desc) (in (read-line) #f)]
       [else (display
              ($ regexp-replace-all* line
                 #/@VERSION@/ *version*
                 #/(@(?:px|x)?ref)\{([^\}]+)\}/ process-ref))
             (newline)
-            (in (read-line))]))
+            (in (read-line) #f)]))
 
+  ;; Loop for 'inactive' lines.
   (define (out line)
     (rxmatch-case line
       [test eof-object?]
-      [pattern-in ()  (in (read-line))]
-      [#/^@c COMMON$/ () (in (read-line))]
+      [pattern-in ()  (in (read-line) #f)]
+      [#/^@c COMMON$/ () (in (read-line) #f)]
       [suspicious (#f word rest) (check-typo word rest line) (out (read-line))]
       [else (out (read-line))]))
 
-  (in (read-line)))
+  (in (read-line) #f))
 
 ;; Detect potential typo of extract directives.
 ;; It is a bit complicated, since we need to allow general comment after @c.
