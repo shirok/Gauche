@@ -9,7 +9,7 @@
 * Packing binary data::         binary.pack
 * Running Chibi-scheme test suite::  compat.chibi-test
 * Rational-less arithmetic::    compat.norational
-* Backward-compatible real elementary functions:: compat.real-elementary-functions
+* Backward-compatible real elementary functions::  compat.real-elementary-functions
 * Concurrent sequences::        control.cseq
 * Futures::                     control.future
 * A common job descriptor for control modules::  control.job
@@ -50,7 +50,7 @@
 * HTTP cookie handling::        rfc.cookie
 * FTP::                         rfc.ftp
 * HMAC keyed-hashing::          rfc.hmac
-* HTTP::                        rfc.http
+* HTTP client::                 rfc.http
 * ICMP packets::                rfc.icmp
 * IP packets::                  rfc.ip
 * JSON parsing and construction::  rfc.json
@@ -17102,7 +17102,7 @@ name @var{to-name}.  Returns the final response of the server.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node HMAC keyed-hashing, HTTP, FTP, Library modules - Utilities
+@node HMAC keyed-hashing, HTTP client, FTP, Library modules - Utilities
 @section @code{rfc.hmac} - HMAC keyed-hashing
 @c NODE HMAC鍵付きハッシング, @code{rfc.hmac} - HMAC鍵付きハッシング
 
@@ -17213,8 +17213,9 @@ then returns the hashed result in an incomplete string.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node HTTP, ICMP packets, HMAC keyed-hashing, Library modules - Utilities
-@section @code{rfc.http} - HTTP
+@node HTTP client, ICMP packets, HMAC keyed-hashing, Library modules - Utilities
+@section @code{rfc.http} - HTTP client
+@c NODE HTTPクライアント, @code{rfc.http} - HTTPクライアント
 
 @deftp {Module} rfc.http
 @mdindex rfc.http
@@ -17228,16 +17229,20 @@ HTTP/1.1, defined in RFC2616, "Hypertext Transfer Protocol -- HTTP/1.1"
 (@uref{https://www.ietf.org/rfc/rfc2616.txt}).
 
 @c EN
-Current API implements only a part of the protocol.
-It doesn't talk with HTTP/1.0 server yet,
-and it doesn't support HTTP/1.1 advanced features
-such as persistent connection.
-Support for those features may be added in the future versions.
+Current API implements only a part of HTTP/1.1 protocol.
+Support for some advanced features such as persistent connection
+may be added in the future versions.
 @c JP
-現在のAPIは、プロトコルの一部のみ実装されています。
-HTTP/1.0のサーバーとはうまく通信できません。
-また、HTTP/1.1の先進的機能、例えば永続的接続などはサポートしていません。
-これらの機能は、将来のバージョンで追加されるでしょう。
+現在のAPIは、HTTP/1.1のプロトコルの一部のみ実装されています。
+より先進的な機能、例えば永続的接続などは将来のバージョンで追加されるでしょう。
+@c COMMON
+
+@c EN
+If you're looking a library to write HTTP @emph{server}, see
+Gauche-makiki (@url{https://github.com/shirok/Gauche-makiki}).
+@c JP
+HTTPサーバを書くためのライブラリを探しているなら、
+Gauche-makikiを見てください (@url{https://github.com/shirok/Gauche-makiki})。
 @c COMMON
 @end deftp
 
@@ -17999,7 +18004,7 @@ Returns @code{#t} if running Gauche can use secure connection of the given type,
 @end defun
 
 @c ----------------------------------------------------------------------
-@node ICMP packets, IP packets, HTTP, Library modules - Utilities
+@node ICMP packets, IP packets, HTTP client, Library modules - Utilities
 @section @code{rfc.icmp} - ICMP packets
 @c NODE ICMPパケット, @code{rfc.icmp} - ICMPパケット
 
@@ -18583,13 +18588,13 @@ This module mainly focuses on providing low-level building-block procedures,
 on top of which application-specific modules are to be built.
 For example, @code{rfc.http} uses this module to compose
 @code{multipart/form-data} message for the body of POST requests
-(@pxref{HTTP}).
+(@pxref{HTTP client}).
 @c JP
 このモジュールは主としてビルディングブロックとなる低レベルの手続きに
 フォーカスしており、アプリケーション特有のモジュールがこの上に
 構築されることを意図しています。例えば@code{rfc.http}はPOSTリクエストの
 ボディを@code{multipart/form-data}として構築する際にこのモジュールを
-利用します(@ref{HTTP}参照)。
+利用します(@ref{HTTP client}参照)。
 @c COMMON
 
 @c EN
@@ -19613,11 +19618,11 @@ in an incomplete string.
 @c EN
 This module handles secure connection over TCP socket.
 This module is used by @code{rfc.http} to realize https connection
-(@pxref{HTTP}).
+(@pxref{HTTP client}).
 @c JP
 このモジュールはTCPソケット上のセキュアな接続を処理します。
 @code{rfc.http}で、https接続を実現するのに使われています
-(@ref{HTTP}参照)。
+(@ref{HTTP client}参照)。
 @c COMMON
 @end deftp
 

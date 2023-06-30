@@ -691,14 +691,14 @@ handles specific protocols (e.g. http).
 @c EN
 The @code{gauche.net} module (@ref{Networking}) provides the bottom
 and middle layer.  For the top layer, look for @code{rfc.*} modules,
-e.g. @code{rfc.http} (@ref{HTTP}).
+e.g. @code{rfc.http} (@ref{HTTP client}).
 More protocol support is coming (there are @code{rfc.ftp} and
 @code{rfc.imap4} written by users, which are waiting for being
 integrated into Gauche---maybe in next release).
 @c JP
 @code{gauche.net}モジュール(@ref{Networking})は最下層と中間層を提供し
 ています。最上層については@code{rfc.*}モジュールを探してみて下さい。
-たとえば @code{rfc.http} (@ref{HTTP})です。
+たとえば @code{rfc.http} (@ref{HTTP client})です。
 その他のプロトコルについてもまもなくサポートされる予定です。
 @code{rfc.ftp}や@code{rfc.imap4}はすでにユーザの方々が書いてくれていて、
 Gaucheにとりこまれるのを待っている状態にあります。おそらく次のリリース
