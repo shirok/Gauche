@@ -170,7 +170,7 @@
 ;;             appropriate error is thrown from http-request.
 ;;
 ;;   sender  - A procedure that handles sending the request body.
-;;             It takes three arguments: tantative list of headers,
+;;             It takes three arguments: tentative list of headers,
 ;;             the value given to :request-encoding argument,
 ;;             and a procedure HEADER-SINK.
 ;;
