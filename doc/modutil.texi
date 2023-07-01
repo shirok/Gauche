@@ -17259,6 +17259,16 @@ header fields.  Inherits @code{<error>}.
 @c COMMON
 @end deftp
 
+@menu
+* Http client mid-level API::
+* Http client utilities::
+* Secure http connection::
+@end menu
+
+@node Http client mid-level API, Http client utilities, HTTP client, HTTP client
+@subsection Http client mid-level API
+@c NODE HTTPクライアント中間レベルAPI
+
 @defun http-get server request-uri :key sink flusher redirect-handler secure @dots{}
 @defunx http-head server request-uri :key redirect-handler secure @dots{}
 @defunx http-post server request-uri body :key sink flusher redirect-handler secure @dots{}
@@ -17711,6 +17721,10 @@ without allocating (potentially very big) string buffer.
 
 @end defun
 
+@node Http client utilities, Secure http connection, Http client mid-level API, HTTP client
+@subsection Http client utilities
+@c NODE HTTPクライアントユーティリティ
+
 The module also provides some utility procedures.
 
 @deffn {Parameter} http-user-agent :optional value
@@ -17930,12 +17944,9 @@ HTTPステータスコード@code{code}の簡単な説明を返します。
 @end example
 @end defun
 
-
-@c EN
-@subheading Secure connection
-@c JP
-@subheading セキュアな接続
-@c COMMON
+@node Secure http connection,  , Http client utilities, HTTP client
+@subsection Secure http connection
+@c NODE セキュアhttpコネクション
 
 @c EN
 When you pass a true value to @code{secure} keyword argument,
