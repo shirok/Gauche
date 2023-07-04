@@ -155,6 +155,7 @@ SCMFILES = \
        text/segmented-match.scm text/template.scm \
        text/unicode.scm text/unicode/ucd.scm text/unicode/codeset.scm \
        tools/build-standalone tools/genstub tools/precomp \
+       tools/preprocess-info \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
 all:

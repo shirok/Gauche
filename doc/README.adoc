@@ -4,7 +4,7 @@ This directory contains a source of texinfo document of Gauche
 reference manual.   The info file is not built by default.
 
 The source file, `gauche-ref.texi`,  contains English and Japanese
-version in one document.  The `extract.scm` script generates
+version in one document.  The `lib/tools/preprocess-info` script generates
 monolingual versions.   Once you built and installed Gauche,
 
 [source,console]

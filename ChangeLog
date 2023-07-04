@@ -1,3 +1,8 @@
+2023-07-03  Shiro Kawai  <shiro@acm.org>
+
+	* doc/extract.scm, lib/tools/preprocess-info: Rename extract script
+	  and make it avaialble as a tool script.
+
 2023-06-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/216.scm, src/srfis.scm: Support SRFI-216, SICP prerequisites.

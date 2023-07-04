@@ -1,5 +1,5 @@
 ;;;
-;;; extract - filter bilingual texinfo document
+;;; tools/preprocess-info - filter bilingual texinfo document
 ;;;
 ;;;  Copyright (c) 2001-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -167,7 +167,7 @@
     (format #f "~a{~a}" cmd (lookup node *node-table*))))
 
 (define (usage)
-  (display "Usage: extract [-en|-jp][-o outfile] infile\n")
+  (display "Usage: gosh tools/preprocess-info [-en|-jp][-o outfile] infile\n")
   (exit 1))
 
 (define (main args)

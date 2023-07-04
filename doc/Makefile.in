@@ -20,6 +20,7 @@ MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 MAKEINFO     = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
 VERSION_INFO = @PACKAGE_STRING@
+PREPROCESSOR = $(top_srcdir)/lib/tools/preprocess-info
 
 MAKEDOC = $(GOSH) $(srcdir)/makedoc.scm
 
@@ -120,17 +121,17 @@ dvi : gauche-refe.dvi gauche-refj.dvi
 pdf : gauche-refe.pdf gauche-refj.pdf
 info : gauche-refe.info.gz gauche-refj.info.gz
 
-gauche-refe.texi : $(TEXIS) extract.scm
-	$(GOSH) $(srcdir)/extract.scm -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
+gauche-refe.texi : $(TEXIS) $(PREPROCESSOR)
+	$(GOSH) $(PREPROCESSOR) -en -o gauche-refe.texi $(srcdir)/gauche-ref.texi
 
-gauche-refj.texi : $(TEXIS) extract.scm
-	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
+gauche-refj.texi : $(TEXIS) $(PREPROCESSOR)
+	$(GOSH) $(PREPROCESSOR) -jp -o gauche-refj.texi $(srcdir)/gauche-ref.texi
 
-gauche-deve.texi : gauche-dev.texi extract.scm
-	$(GOSH) $(srcdir)/extract.scm -en -o gauche-deve.texi gauche-dev.texi
+gauche-deve.texi : gauche-dev.texi $(PREPROCESSOR)
+	$(GOSH) $(PREPROCESSOR) -en -o gauche-deve.texi gauche-dev.texi
 
-gauche-devj.texi : gauche-dev.texi extract.scm
-	$(GOSH) $(srcdir)/extract.scm -jp -o gauche-devj.texi gauche-dev.texi
+gauche-devj.texi : gauche-dev.texi $(PREPROCESSOR)
+	$(GOSH) $(PREPROCESSOR) -jp -o gauche-devj.texi gauche-dev.texi
 
 clean:
 	rm -f core *~ \
