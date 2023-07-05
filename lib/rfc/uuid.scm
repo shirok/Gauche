@@ -88,7 +88,7 @@
 
 (define (uuid->string uuid) (call-with-output-string (cut write-uuid uuid <>)))
 
-(define (parse-uuid str)
+(define (parse-uuid str :key (if-invalid :error))
   (define (make-uuidx tl tm th cl nd)
     (let1 v (make-u8vector 16)
       (put-u32be! v 0 (string->number tl 16))
@@ -99,6 +99,9 @@
         (put-u16be! v 10 (ash nnd -32))
         (put-u32be! v 12 (logand nnd #xffffffff)))
       (%make-uuid v)))
+
+  (assume (memq if-invalid '(#f :error))
+          "if-invalid argument must be either #f or :error, but got:" if-invalid)
 
   (rxmatch-case str
     [#/^(?:urn:uuid:)?([[:xdigit:]]{8})-([[:xdigit:]]{4})-([[:xdigit:]]{4})-([[:xdigit:]]{4})-([[:xdigit:]]{12})$/
@@ -111,7 +114,11 @@
      (let1 v (make-u8vector 16)
        (put-uint! 16 v 0 (string->number xx 16) 'big-endian)
        (%make-uuid v))]
-    [else (error "Invalid UUID format: " str)]))
+    ;; invalid input
+    [else
+     (if if-invalid
+       (error "Invalid UUID format: " str)
+       #f)]))
 
 ;;;
 ;;;Generation

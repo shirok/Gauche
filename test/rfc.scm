@@ -829,6 +829,11 @@
          (uuid->string (parse-uuid #"{~u}")))
   (test* "uuid-parse & write 4" u
          (uuid->string (parse-uuid (string-delete #\- u))))
+
+  (test* "uuid-parse error case" (test-error)
+         (parse-uuid "kaboom"))
+  (test* "uuid-parse error case (#f)" #f
+         (parse-uuid "kaboom" :if-invalid #f))
   )
 
 (let* ([u1 (uuid1)]
