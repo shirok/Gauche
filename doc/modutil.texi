@@ -20658,15 +20658,18 @@ Returns a nil-UUID (all bits zero).
 @c COMMON
 @end defun
 
-@defun parse-uuid string
+@defun parse-uuid string :key if-invalid
 @c MOD rfc.uuid
 @c EN
 Takes a string representation of UUID, parses it and returns
 an uuid instance.  If the string isn't a valid UUID representation,
-an error is thrown.
+an error is thrown if the @var{if-invalid} keyword argument is omitted
+or @code{:error}, and @code{#f} is returned if @var{if-invalid} is @code{#f}.
 @c JP
 UUIDの文字列表現をパーズし、UUIDインスタンスにして返します。
-文字列が有効なUUID表現でなければエラーが投げられます。
+文字列が有効なUUID表現でない場合、@var{if-invalid}キーワード引数が
+省略されるか@code{:error}であればエラーが投げられ、
+@var{if-invalid}が@code{#f}であれば@code{#f}が返されます。
 @c COMMON
 
 @c EN
