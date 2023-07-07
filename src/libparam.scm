@@ -148,7 +148,10 @@
 ;; procedures.
 (define (%restore-parameter param prev-val)
   (cond
-   [(procedure-parameter param) => (^p ((slot-ref p'restorer) prev-val))]
+   [(procedure-parameter param) =>
+    (^p (if (is-a? p <parameter>)
+          ((slot-ref p'restorer) prev-val)
+          ((with-module gauche.internal %primitive-parameter-set!) p prev-val)))]
    ;; <parameter> and <primitive-parameter> should never be used directly,
    ;; but for the backward compatibility:
    [(is-a? param <parameter>) ((slot-ref param'restorer) prev-val)]
