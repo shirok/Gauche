@@ -452,7 +452,7 @@ void Scm__InitCurrentRecursiveHash()
 {
     SCM_DEFINE(Scm_GaucheInternalModule(),
                "%current-recursive-hash",
-               SCM_OBJ(current_recursive_hash));
+               Scm_MakePrimitiveParameterSubr(current_recursive_hash));
 }
 
 /* 'Portable' general hash function.
