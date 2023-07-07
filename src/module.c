@@ -979,6 +979,8 @@ ScmModule *Scm_CurrentModule(void)
     return Scm_VM()->module;
 }
 
+extern void Scm__InitCurrentRecursiveHash();
+
 /* NB: we don't need to lock the global module table in initialization */
 #define INIT_MOD(mod, mname, mpl, inttab)                                   \
     do {                                                                    \
@@ -1039,6 +1041,10 @@ void Scm__InitModule(void)
     for (modname = builtin_modules; *modname; modname++) {
         (void)SCM_FIND_MODULE(*modname, SCM_FIND_MODULE_CREATE);
     }
+
+    /* Bind %current-recursive-hash.  It can't be done in Scm__InitHash, for
+       it needs symbol and module to be initialized. */
+    Scm__InitCurrentRecursiveHash();
 }
 
 void Scm__FinishModuleInitialization(void)

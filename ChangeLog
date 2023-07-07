@@ -1,3 +1,13 @@
+2023-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c, src/libdict.scm (%current-recursive-hash), src/module.c,
+	  src/libomega.scm (object-hash):
+	  Make %current-recursive-hash a proper parameter.
+	  https://github.com/shirok/Gauche/issues/879
+	  NB: This commit drops Scm_CurrentRecursiveHash().  It has only been
+	  used from libdict.scm.  Technically this is incompatible change,
+	  but we bet nobody else depend on this.
+
 2023-07-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uuid.scm (parse-uuid): Add if-invalid keyword argument to

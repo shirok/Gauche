@@ -214,16 +214,12 @@
   (object-hash obj (if salt (^o (hash o salt)) hash)))
 
 ;; This is the fallback in case we have legacy one-argument object-hash.
-;; We don't need full-brown parameterize, for %current-recursive-hash
-;; isn't supposed to be changed other than this method.
 (define-method object-hash (obj hash)
   (let1 h (%current-recursive-hash)
     (if (eq? h hash)
       (object-hash obj) ; shortcut
-      (dynamic-wind
-        (^[] (%current-recursive-hash hash))
-        (^[] (object-hash obj))
-        (^[] (%current-recursive-hash h))))))
+      (parameterize ([%current-recursive-hash hash])
+        (object-hash obj)))))
 
 ;; Make hashtable hashable.  For the time being, we ignore hashtable's
 ;; comparators.

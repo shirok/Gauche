@@ -446,13 +446,13 @@ static u_long equal_hash_common(ScmObj obj, u_long salt, int portable)
    and object-hash definitions in libomega.scm. */
 static ScmPrimitiveParameter *current_recursive_hash;
 
-ScmObj Scm_CurrentRecursiveHash(ScmObj newval)
+/* This must be called after symbols and modules are initialized.
+   See Scm__InitModule(). */
+void Scm__InitCurrentRecursiveHash()
 {
-    if (newval == SCM_UNBOUND) {
-        return Scm_PrimitiveParameterRef(Scm_VM(), current_recursive_hash);
-    } else {
-        return Scm_PrimitiveParameterSet(Scm_VM(), current_recursive_hash, newval);
-    }
+    SCM_DEFINE(Scm_GaucheInternalModule(),
+               "%current-recursive-hash",
+               SCM_OBJ(current_recursive_hash));
 }
 
 /* 'Portable' general hash function.

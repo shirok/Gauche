@@ -131,8 +131,6 @@ SCM_EXTERN ScmSmallInt Scm_HashSaltRef(void);
 SCM_EXTERN ScmSmallInt Scm_HashSaltSet(ScmSmallInt);
 SCM_EXTERN ScmSmallInt Scm_PortableHashSalt(ScmObj newval);
 
-SCM_EXTERN ScmObj Scm_CurrentRecursiveHash(ScmObj);
-
 SCM_EXTERN u_long Scm_Hash(ScmObj obj); /* DEPRECATED */
 
 /*================================================================

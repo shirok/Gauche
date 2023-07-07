@@ -128,9 +128,6 @@
        )])
  )
 
-(select-module gauche.internal)
-(define-cproc %current-recursive-hash (:optional obj) Scm_CurrentRecursiveHash)
-
 (select-module gauche)
 (define-cproc hash-salt () ::<fixnum> Scm_HashSaltRef)
 
