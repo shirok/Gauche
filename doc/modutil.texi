@@ -33332,31 +33332,56 @@ this procedure won't return.
 
 @defun stream-butlast stream
 @c MOD util.stream
+@c EN
 Returns a stream which is the same as @var{stream} but without the
 last element.  If @var{stream} is empty, an empty stream is returned.
+immediately.  The argument can be an infinite stream.
+@c JP
+@var{stream}の最後の要素を除く内容を持つストリームを返します。
+@var{stream}が空の場合は空のストリームが返されます。
+@var{stream}は無限ストリームであっても構いません。
+@c COMMON
 @end defun
 
 @defun stream-butlast-n stream count
 @c MOD util.stream
+@c EN
 Returns a stream which is the same as @var{stream} but without the
 last @var{count} elements.  The @var{count} argument must be a nonnegative exact
 integer.  If @var{stream} is shorter than @var{count}, a null stream
-is returned.
+is returned.  @var{Stream} can be infinite.
+@c JP
+@var{stream}の最後の@var{count}要素を除いた内容を持つストリームを作って返します。
+@var{count}は非負の正確な整数でなければなりません。
+@var{stream}の要素数が@var{count}より少なければ、空のストリームが返されます。
+@var{stream}は無限ストリームであっても構いません。
+@c COMMON
 @end defun
 
 @defun stream-length stream
 [R7RS stream]
 @c MOD util.stream
+@c EN
 Returns the number of elements in @var{stream}.  It diverges if @var{stream}
 is infinite.
+@c JP
+@var{stream}の要素数を返します。
+@var{stream}が無限ストリームの時は戻ってきません。
+@c COMMON
 @end defun
 
 @defun stream-length>= stream n
 @defunx stream-length= stream n
 @c MOD util.stream
+@c EN
 Returns true iff the length of @var{stream} is greater than or equal to,
 and exactly equal to, @var{n}, respectively.
 These procedures only realizes @var{stream} up to @var{n} elements.
+@c JP
+@var{stream}の要素数が、それぞれ@var{n}以上か、@var{n}と等しければ@code{#t}を、
+そうでなければ@code{#f}を返します。
+これらの手続きは@var{stream}の最初の@var{n}要素のみを現実化します。
+@c COMMON
 @end defun
 
 @defun stream-reverse stream :optional tail-stream
