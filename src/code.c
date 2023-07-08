@@ -1003,3 +1003,15 @@ ScmObj Scm_MakePackedDebugInfo(ScmUVector *packedVector,
     z->decoded = SCM_FALSE;
     return SCM_OBJ(z);
 }
+
+ScmObj Scm_CodeDebugInfo(ScmCompiledCode *cc)
+{
+    if (SCM_PACKED_DEBUG_INFO_P(cc->debugInfo)) {
+        ScmObj decode_packed_debug_info = SCM_UNDEFINED;
+        SCM_BIND_PROC(decode_packed_debug_info, "decode-packed-debug-info",
+                      Scm_GaucheInternalModule());
+        cc->debugInfo =
+            Scm_ApplyRec1(decode_packed_debug_info, SCM_OBJ(cc->debugInfo));
+    }
+    return cc->debugInfo;
+}

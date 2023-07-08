@@ -215,7 +215,7 @@
    (c "SCM_CLASS_DEFAULT_CPL")
    ((parent :setter #f)
     (signature-info :c-name "signatureInfo")
-    (debug-info :c-name "debugInfo" :setter #f)
+    (debug-info :c-spec "Scm_CodeDebugInfo(obj)" :setter #f)
     (required-args :type <fixnum> :c-name "requiredArgs" :setter #f)
     (optional-args :type <fixnum> :c-name "optionalArgs" :setter #f)
     (name :setter #f)
