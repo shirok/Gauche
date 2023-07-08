@@ -232,8 +232,8 @@
 (inline-stub
 
  (define-cfn get_packed_vector (s::ScmPackedDebugInfo*) :static
-   ;; This is called only during precomp, so we don't need to worry
-   ;; about allocation.
+   ;; This is called only during precomp, or once during decoding,
+   ;; so we don't need to worry about allocation.
    (return (Scm_MakeU8VectorFromArray (-> s codeSize) (-> s codeVector))))
 
   ;; <packed-debug-info> is internal

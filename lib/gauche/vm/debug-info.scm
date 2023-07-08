@@ -98,10 +98,19 @@
 ;; dependency issue.
 
 (define-module gauche.vm.debug-info
-  (export encode-debug-info
+  (export make-packed-debug-info
+          encode-debug-info
           decode-debug-info)
   )
 (select-module gauche.vm.debug-info)
+
+;;
+;; Constructor
+;; Only to be used by the precompiler.
+
+(define (make-packed-debug-info debug-info-alist)
+  (receive (codev constv) (encode-debug-info debug-info-alist)
+    ((with-module gauche.internal %make-packed-debug-info codev constv))))
 
 ;;
 ;; Encoder
