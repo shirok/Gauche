@@ -33362,8 +33362,8 @@ is returned.  @var{Stream} can be infinite.
 [R7RS stream]
 @c MOD util.stream
 @c EN
-Returns the number of elements in @var{stream}.  It diverges if @var{stream}
-is infinite.
+Returns the number of elements in @var{stream}.
+It diverges if @var{stream} is infinite.
 @c JP
 @var{stream}の要素数を返します。
 @var{stream}が無限ストリームの時は戻ってきません。
@@ -33404,44 +33404,168 @@ The optional argument is Gauche's extension.  The description of @code{reverse}
 
 @defun stream-count pred stream @dots{}
 @c MOD util.stream
+@c EN
+The predicate @var{pred} is called with each of the first element of
+@var{stream} @dots{}, then each of the second element, and so on, until
+any of the stream is exhausted.  Then returns the number that
+@var{pred} returns a true value.
+At least one stream needs to be finite.
+@c JP
+@var{pred}は、まず@var{stream} @dots{}それぞれの最初の要素を引数として呼び出され、
+次にそれぞれの2番目の要素を引数として呼ばれ、以降いずれかの@var{stream}が尽きるまで
+呼ばれます。そして、そのうち@var{pred}が真の値を返した数が戻り値となります。
+少なくとも@var{stream}のうちのひとつは有限でなければなりません。
+@c COMMON
+
+@example
+(stream-count < (stream 1 2 3 4 5) (stream 2 2 2 10 10))
+ @result{} 3
+@end example
 @end defun
 
 @defun stream-find pred stream
 @c MOD util.stream
+@c EN
+The predicate @var{pred} is applied to each element of @var{stream} in turn,
+and as soon as the @var{pred} returns true, returns the element that
+caused @var{pred} to return true.  Remaining elements of @var{stream}
+won't be realized.
+
+If no elements in @var{stream} satisfy @var{pred}, @code{#f} is returned.
+@c JP
+@var{pred}を@var{stream}の要素に順に適用し、@var{pred}が真の値を返したら
+直ちにその要因となった要素を返します。@var{stream}の残りは現実化されません。
+
+@var{stream}の要素の中に@var{pred}を満たすものが無かった場合は@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @defun stream-find-tail pred stream
 @c MOD util.stream
+@c EN
+The predicate @var{pred} is applied to each element of @var{stream} in turn,
+and as soon as the @var{pred} returns true, returns a stream
+that contains the element and the rest of the input stream.
+Remaining elements of @var{stream} won't be realized.
+
+If no elements in @var{stream} satisfy @var{pred}, the empty stream is returned.
+@c JP
+@var{pred}を@var{stream}の要素に順に適用し、@var{pred}が真の値を返したら
+その要素およびそれ以降の要素からなるストリームを返します。
+@var{stream}の残りは現実化されません。
+
+@var{stream}の要素の中に@var{pred}を満たすものが無かった場合は空のストリームが返ります。
+@c COMMON
 @end defun
 
 @defun stream-take-while pred stream
+@defunx stream-drop-while pred stream
 [R7RS stream]
 @c MOD util.stream
-@end defun
+@c EN
+Returns a stream that contains or excludes initial consecutive elements
+of @var{stream} that satisfy @var{pred}, respectively.
+@c JP
+それぞれ、@var{stream}の最初から連続する、@var{pred}を満たす要素だけからなる
+ストリームと、それらの要素を除いたストリームを返します。
+@c COMMON
 
-@defun stream-drop-while pred stream
-[R7RS stream]
-@c MOD util.stream
+@example
+(stream->list (stream-take-while even? (stream 2 4 6 1 4 2)))
+ @result{} (2 4 6)
+(stream->list (stream-drop-while even? (stream 2 4 6 1 4 2)))
+ @result{} (1 4 2)
+@end example
 @end defun
 
 @defun stream-span pred stream
+@defunx stream-break pred stream
 @c MOD util.stream
+@c EN
+Return two streams; the first one consists of the initial consequent
+elements of @var{stream} that satisfy or dissatisfy @var{pred},
+and the second one is the rest of the stream.
+@c JP
+ふたつのストリームを返します。最初のストリームは、@var{stream}の最初から連続する、
+@var{pred}を満たす/満たさない要素からなるストリームで、
+二番目のストリームは残りのストリームです。
+@c COMMON
+
+@example
+(map stream->list
+     (values->list (stream-span even? (stream 2 4 6 1 4 2))))
+ @result{} ((2 4 6) (1 4 2))
+(map stream->list
+     (values->list (stream-break even? (stream 1 9 6 1 4 2))))
+ @result{} ((1 9) (6 1 4 2))
+@end example
 @end defun
 
-@defun stream-break pred stream
-@c MOD util.stream
-@end defun
 
 @defun stream-any pred stream @dots{}
+@defunx stream-every pred stream @dots{}
 @c MOD util.stream
-@end defun
+@c EN
+The predicate @var{pred} is applied to each of the first elements of
+@var{stream} @dots{}, then second, and so on.
+When @var{pred} returns a true value, @code{stream-any} returns
+the value immediately without looking further.
+When @var{pred} returns @code{#f}, @code{stream-every} returns @code{#f}
+immediately without looking further.
 
-@defun stream-every pred stream @dots{}
-@c MOD util.stream
+If none of applications of @var{pred} returns a true value
+until one of the streams is exhausted, @code{stream-any} returns @code{#f}.
+If none of applications of @var{pred} returns @code{#f}
+until one of the streams is exhausted, @code{stream-every} returns
+the last result of @var{pred}.
+@c JP
+@var{pred}は、まず@var{stream} @dots{}それぞれの最初の要素を引数として、
+次にそれぞれの2番目の要素を引数として、と順次呼ばれます。
+@code{stream-any}は@var{pred}が真の値を返したらただちに評価を打ち切り、
+@var{pred}が返した値をそのまま返します。
+@code{stream-every}は@var{pred}が@code{#f}を返したらただちに
+評価を打ち切り、@code{#f}を返します。
+
+streamのいずれかが終端に達するまでに@code{pred}が一度も真の値を返さなければ、
+@code{stream-any}は@code{#f}を返します。
+streamのいずれかが終端に達するまでに@code{pred}が一度も偽の値を返さなければ、
+@code{stream-every}は最後の@var{pred}の結果を返します。
+@c COMMON
+
+@example
+(stream-any (^[x y] (and (> x y) (list x y)))
+            (stream 1 2 3 4 5)
+            (stream 3 3 3 3 3))
+ @result{} (4 3)
+
+(stream-every (^[x y] (and (> x y) (list x y)))
+              (stream 6 6 6 6 6)
+              (stream 1 2 3 4 5))
+ @result{} (6 5)
+@end example
 @end defun
 
 @defun stream-index pred stream @dots{}
 @c MOD util.stream
+@c EN
+The predicate @var{pred} is applied to each of the first elements of
+@var{stream} @dots{}, then second, and so on.  If it returns a true
+value, @code{stream-index} returns immediately with the index.
+If @var{pred} never returns a true value until one of
+the streams is exhausted, @code{stream-index} returns #f.
+@c JP
+@var{pred}は、まず@var{stream} @dots{}それぞれの最初の要素を引数として、
+次にそれぞれの2番目の要素を引数として、と順次呼ばれます。
+@var{pred}が真の値を返したら@code{stream-index}は評価を打ち切り、
+そのインデックスを返します。
+streamのいずれかが終端に達するまでに@code{pred}が一度も真の値を返さなければ、
+@code{#f}が返されます。
+@c COMMON
+
+@example
+(stream-index odd? (stream 2 4 6 7 8))
+ @result{} 3
+@end example
 @end defun
 
 @defun stream-member obj stream :optional elt=
