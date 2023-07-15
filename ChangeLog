@@ -1,3 +1,7 @@
+2023-07-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (logset+clear): Added.
+
 2023-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c, src/libdict.scm (%current-recursive-hash), src/module.c,

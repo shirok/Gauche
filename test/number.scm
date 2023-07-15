@@ -2199,6 +2199,9 @@
 (test* "logbit?" '(#f #t #f #t #f #t #t)
               (map (^i (logbit? i #b-10110)) '(0 1 2 3 4 5 6)))
 
+(test* "logset+clear" #b01100101
+       (logset+clear #b11001100 #b01100001 #b10001000))
+
 (test* "copy-bit" #b11010110
       (copy-bit 4 #b11000110 #t))
 (test* "copy-bit" #b11000110

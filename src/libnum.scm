@@ -797,6 +797,10 @@
         [(SCM_BIGNUMP n) (return (Scm_BignumLogCount (SCM_BIGNUM n)))]
         [else (SCM_TYPE_ERROR n "exact integer") (return 0)]))
 
+(define-cproc logset+clear (n::<integer> sets::<integer> clears::<integer>)
+  ::<integer> :constant
+  (return (Scm_LogAnd (Scm_LogIor n sets) (Scm_LogNot clears))))
+
 (define-cproc integer-length (n::<integer>) ::<ulong> :constant Scm_IntegerLength)
 
 ;; Returns maximum s where (expt 2 s) is a factor of n.

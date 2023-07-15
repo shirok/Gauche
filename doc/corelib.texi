@@ -4749,6 +4749,27 @@ Returns @code{#t} if @var{index}-th bit of integer @var{n} is 1,
 @c COMMON
 @end defun
 
+@defun logset+clear n set-bits clear-bits
+@c EN
+Returns an integer such that @var{n}'s bit is set where @var{set-bits} is 1,
+and cleared where @var{clear-bits} is 1.  If a bit is included in both
+@var{set-bits} and @var{clear-bits}, it is cleared.
+
+It is effectively the same as
+@code{(logand (logior n set-bits) (lognot clear-bits))}.
+@c JP
+@var{n}のビットのうち、@var{set-bits}で1が立っているビットを立て、
+@var{clear-bits}で1が立っているビットをクリアした整数を返します。
+
+実質的に@code{(logand (logior n set-bits) (lognot clear-bits))}と同じです。
+@c COMMON
+
+@example
+(logset+clear #b11000011 #b00001100 #b01000001)
+  @result{} 142  ;; #b10001110
+@end example
+@end defun
+
 @defun bit-field n start end
 [R7RS bitwise]
 @c EN
