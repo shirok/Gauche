@@ -438,40 +438,55 @@
          (define saved-buffering (port-buffering port))
          (define new-attr
            (rlet1 attr (sys-termios-copy saved-attr)
+             ;; NB: See cfmakeraw(3) for raw mode setting.
              (case mode
                [(raw)
-                (set! (~ attr'iflag)
-                      (logand (~ attr'iflag)
-                              (lognot (logior BRKINT ICRNL INPCK ISTRIP IXON))))
-                (set! (~ attr'oflag) (logand (~ attr'oflag) (lognot OPOST)))
-                (set! (~ attr'cflag)
-                      (logior (logand (~ attr'cflag)
-                                      (lognot (logior CSIZE PARENB)))
-                              CS8))
-                (set! (~ attr'lflag)
-                      (logand (~ attr'lflag)
-                              (lognot (logior ECHO ICANON IEXTEN ISIG))))]
+                (update! (~ attr'iflag)
+                         (cut logset+clear <>
+                              0
+                              (logior BRKINT ICRNL INPCK ISTRIP IXON)))
+                (update! (~ attr'oflag)
+                         (cut logset+clear <>
+                              0
+                              OPOST))
+                (update! (~ attr'cflag)
+                         (cut logset+clear <>
+                              CS8
+                              (logior CSIZE PARENB)))
+                (update! (~ attr'lflag)
+                         (cut logset+clear <>
+                              0
+                              (logior ECHO ICANON IEXTEN ISIG)))]
                [(rare)
-                (set! (~ attr'iflag)
-                      (logior BRKINT
-                              (logand (~ attr'iflag)
-                                      (lognot (logior ICRNL INPCK ISTRIP IXON)))))
-                (set! (~ attr'oflag) (logand (~ attr'oflag) (lognot OPOST)))
-                (set! (~ attr'cflag)
-                      (logior (logand (~ attr'cflag)
-                                      (lognot (logior CSIZE PARENB)))
-                              CS8))
-                (set! (~ attr'lflag)
-                      (logior ISIG
-                              (logand (~ attr'lflag)
-                                      (lognot (logior ECHO ICANON IEXTEN)))))]
+                (update! (~ attr'iflag)
+                         (cut logset+clear <>
+                              BRKINT
+                              (logior ICRNL INPCK ISTRIP IXON)))
+                (update! (~ attr'oflag)
+                         (cut logset+clear <>
+                              0
+                              OPOST))
+                (update! (~ attr'cflag)
+                         (cut logset+clear <>
+                              CS8
+                              (logior CSIZE PARENB)))
+                (update! (~ attr'lflag)
+                         (cut logset+clear <>
+                              ISIG
+                              (logior ECHO ICANON IEXTEN)))]
                [(cooked)
-                (set! (~ attr'iflag)
-                      (logior (~ attr'iflag)
-                              BRKINT ICRNL INPCK ISTRIP IXON))
-                (set! (~ attr'oflag) (logior (~ attr'oflag) OPOST))
-                (set! (~ attr'lflag)
-                      (logior (~ attr'lflag) ECHO ICANON IEXTEN ISIG))]
+                (update! (~ attr'iflag)
+                         (cut logset+clear <>
+                              (logior BRKINT ICRNL INPCK ISTRIP IXON)
+                              0))
+                (update! (~ attr'oflag)
+                         (cut logset+clear <>
+                              OPOST
+                              0))
+                (update! (~ attr'lflag)
+                         (cut logset+clear <>
+                              (logior ECHO ICANON IEXTEN ISIG)
+                              0))]
                [else
                 (error "terminal mode needs to be one of cooked, rare or raw, \
                           but got:" mode)])))
