@@ -1,3 +1,7 @@
+2023-07-15  Shiro Kawai  <shiro@acm.org>
+
+	* tools/make-export-list: Added.
+
 2023-07-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (logset+clear): Added.

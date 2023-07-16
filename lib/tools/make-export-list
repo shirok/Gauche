@@ -1,0 +1,85 @@
+;;;
+;;; tools/make-export-list
+;;;
+;;;   Copyright (c) 2023  Shiro Kawai  <shiro@acm.org>
+;;;
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
+
+(use gauche.parseopt)
+(use util.match)
+
+;; List toplevel bindings in the given module---useful to create an export list.
+;; EXCLUDE-PREDICATES is a list of predicates to exclude names.  Each predicate
+;; takes a symbol.  You can pass a regexp as a predicate, though, in that
+;; case the symbol is converted to a string to match the predicate.
+
+(define (list-toplevel-bindings mod-or-name :optional (exclude-predicates '()))
+  (define mod
+    (cond [(module? mod-or-name) mod]
+          [(symbol? mod-or-name)
+           (or (find-module mod-or-name)
+               (error "Don't know such module:" mod-or-name))]
+          [else (error "Module or a symbol module name is expected, but got:"
+                       mod-or-name)]))
+  (define (make-pred pred)
+    (if (regexp? pred)
+      (^y (rxmatch pred (x->string y)))
+      pred))
+
+  ($ sort $ remove (apply any-pred (map make-pred exclude-predicates))
+     $ hash-table-keys $ module-table mod))
+
+(define (usage)
+  (print "Usage: gosh tools/make-export-list [-x regexp] module\
+        \n  Loads the given module and lists its toplevel bindings, excluding \
+        \n  the ones that matches REGEXP. \
+        \n  For example, -x '^%' excludes symbols beginning with '%'.\
+        \n  Note that the specified module is actually loaded into the process.")
+  (exit 1))
+
+(define (main args)
+  (define rxs '())
+  (let-args (cdr args) ([#f "x=s" => (^x (push! rxs (string->regexp x)))]
+                        [else => (^ _ (usage))]
+                        . rest)
+    (match rest
+      [() (usage)]
+      [(module)
+       (let1 modsym (string->symbol module)
+         (eval `(require ,(module-name->path modsym))
+               (find-module 'user))
+         ;; We limit width to 65, so that it can be easily cut&pasted
+         ;; to the 'export' list.
+         (pprint (list-toplevel-bindings modsym rxs) :width 65))]
+      [_ (usage)]))
+  0)
+
+;; Local variables:
+;; mode: scheme
+;; end:
