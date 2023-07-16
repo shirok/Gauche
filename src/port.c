@@ -50,6 +50,8 @@
     (PORT_BUF(p)->mode & SCM_PORT_BUFFER_MODE_MASK)
 #define PORT_BUFFER_SIGPIPE_SENSITIVE_P(p) \
     (PORT_BUF(p)->mode & SCM_PORT_BUFFER_SIGPIPE_SENSITIVE)
+#define PORT_TERMINAL_MODE(p) \
+    (PORT_BUF(p)->mode & SCM_PORT_TERMINAL_MODE_MASK)
 #define PORT_BUFFER_ROOM(p) \
     (PORT_BUF(p)->buffer + PORT_BUF(p)->size - PORT_BUF(p)->end)
 #define PORT_BUFFER_AVAIL(p) \
@@ -500,6 +502,23 @@ void Scm_SetPortBufferSigpipeSensitive(ScmPort *port, int sensitive)
     } else {
         PORT_BUF(port)->mode &= ~SCM_PORT_BUFFER_SIGPIPE_SENSITIVE;
     }
+}
+
+int Scm_GetPortTerminalMode(ScmPort *port)
+{
+    if (port->type == SCM_PORT_FILE) return PORT_TERMINAL_MODE(port);
+    else return SCM_PORT_TERMINAL_RAW;
+}
+
+void Scm_SetPortTerminalMode(ScmPort *port, int tmode)
+{
+    if (port->type != SCM_PORT_FILE) {
+        Scm_Error("Can't set terminal mode to non-buffered port: %S",
+                  port);
+    }
+    PORT_BUF(port)->mode =
+        (PORT_BUF(port)->mode & ~SCM_PORT_TERMINAL_MODE_MASK)
+        | (tmode & SCM_PORT_TERMINAL_MODE_MASK);
 }
 
 /* Port case folding mode is usually set at port creation, according

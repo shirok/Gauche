@@ -1,5 +1,9 @@
 2023-07-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/port.c (Scm_GetPortTerminalMode, Scm_SetPortTerminalMode):
+	Added.  This is to address managing output while editable REPL
+	is active. https://github.com/shirok/Gauche/issues/877
+
 	* tools/make-export-list: Added.
 
 2023-07-14  Shiro Kawai  <shiro@acm.org>

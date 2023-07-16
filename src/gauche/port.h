@@ -222,6 +222,17 @@ enum ScmPortDirection {
     SCM_PORT_OUTPUT_TRANSIENT = 4+SCM_PORT_OUTPUT
 };
 
+/*
+ * The 'mode' flags
+ *
+ *   Bit 0, 1, 2 - ScmPortBufferingMode
+ *   Bit 3 - Reserved
+ *   Bit 4, 5, 6 - ScmPortTerminalMode
+ *   Bit 7 - Reserved
+ *   Bit 8 - SCM_PORT_BUFFER_SIGPIPE_SENSITIVE
+ */
+
+
 /* Port buffering mode */
 enum ScmPortBufferMode {
     SCM_PORT_BUFFER_FULL = 0,       /* full buffering */
@@ -236,6 +247,20 @@ enum ScmPortBufferMode {
    stdout ports; it is to emulate default Unix behavior.  On Windows platform
    this flag is ignored, for we don't have SIGPIPE.  */
 #define SCM_PORT_BUFFER_SIGPIPE_SENSITIVE  (1L<<8)
+
+/* If the port is connected to a terminal, this reflects the termianl mode.
+   See gauche.termios.  These bits are also stored in the 'mode' field.
+   NB: This should be considered as a cache of the state of the terminal
+   beyond the port.  We could query the state to the terminal, but it would
+   be slow.  We assume the temrinal mode is changed only via gauche.termios.
+ */
+enum ScmPortTerminalMode {
+    SCM_PORT_TERMINAL_RAW = 0L<<4,
+    SCM_PORT_TERMINAL_RARE = 1L<<4,
+    SCM_PORT_TERMINAL_COOKED = 2L<<4,
+
+    SCM_PORT_TERMINAL_MODE_MASK = 0x70
+};
 
 /* Port types.  The type is also represented by a port's class, but
    C routine can dispatch quicker using these flags.  User code
