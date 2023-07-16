@@ -255,9 +255,9 @@ enum ScmPortBufferMode {
    be slow.  We assume the temrinal mode is changed only via gauche.termios.
  */
 enum ScmPortTerminalMode {
-    SCM_PORT_TERMINAL_RAW = 0L<<4,
-    SCM_PORT_TERMINAL_RARE = 1L<<4,
-    SCM_PORT_TERMINAL_COOKED = 2L<<4,
+    SCM_PORT_TERMINAL_COOKED = 0L<<4,
+    SCM_PORT_TERMINAL_RAW = 1L<<4,
+    SCM_PORT_TERMINAL_RARE = 2L<<4,
 
     SCM_PORT_TERMINAL_MODE_MASK = 0x70
 };
