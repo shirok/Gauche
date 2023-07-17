@@ -204,6 +204,18 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
         if (PORT_BUF(p)->current+nb > PORT_BUF(p)->end) {
             SAFE_CALL(p, bufport_flush(p, PORT_BUF(p)->current - PORT_BUF(p)->buffer, FALSE));
         }
+        if (c == '\n') {
+            switch (PORT_TERMINAL_MODE(p)) {
+            case SCM_PORT_TERMINAL_RAW:;
+            case SCM_PORT_TERMINAL_RARE:
+                /* If the file port is connected to a terminal with 'raw'
+                   or 'rare' mode, we translate LF into CRLF. */
+                SCM_ASSERT(PORT_BUF(p)->current+nb <= PORT_BUF(p)->end);
+                SCM_CHAR_PUT(PORT_BUF(p)->current, '\r');
+            default:
+                break;
+            }
+        }
         SCM_ASSERT(PORT_BUF(p)->current+nb <= PORT_BUF(p)->end);
         SCM_CHAR_PUT(PORT_BUF(p)->current, c);
         PORT_BUF(p)->current += nb;
@@ -242,6 +254,30 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
  */
 
 #ifdef SAFE_PORT_OP
+/* When bufport is connected to a terminal with raw or rare mode,
+   we should translate LR to CRLF. */
+static void bufport_trans_crlf(ScmPort *p, const char *ss, ScmSmallInt size)
+{
+    const char *cp = ss;
+    const char *prev = ss;
+    const char *end = ss + size;
+    for (;;) {
+        if (cp >= end) {
+            if (prev < cp) {
+                bufport_write(p, prev, cp - prev);
+            }
+            return;
+        }
+        if (*cp == '\n') {
+            bufport_write(p, prev, cp - prev);
+            bufport_write(p, "\r\n", 2);
+            prev = ++cp;
+        } else {
+            cp++;
+        }
+    }
+}
+
 void Scm_Puts(ScmString *s, ScmPort *p)
 #else
 void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
@@ -258,7 +294,11 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
     case SCM_PORT_FILE: {
         ScmSmallInt size;
         const char *ss = Scm_GetStringContent(s, &size, NULL, NULL);
-        SAFE_CALL(p, bufport_write(p, ss, size));
+        if (PORT_TERMINAL_MODE(p) == SCM_PORT_TERMINAL_COOKED) {
+            SAFE_CALL(p, bufport_write(p, ss, size));
+        } else {
+            SAFE_CALL(p, bufport_trans_crlf(p, ss, size));
+        }
 
         if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             const char *cp = PORT_BUF(p)->current;
@@ -315,7 +355,11 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
     if (siz < 0) siz = (ScmSize)strlen(s);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
-        SAFE_CALL(p, bufport_write(p, s, siz));
+        if (PORT_TERMINAL_MODE(p) == SCM_PORT_TERMINAL_COOKED) {
+            SAFE_CALL(p, bufport_write(p, s, siz));
+        } else {
+            SAFE_CALL(p, bufport_trans_crlf(p, s, siz));
+        }
         if (PORT_BUFFER_MODE(p) == SCM_PORT_BUFFER_LINE) {
             const char *cp = PORT_BUF(p)->current;
             while (cp-- > PORT_BUF(p)->buffer) {
