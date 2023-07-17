@@ -2,6 +2,8 @@
 
 	* src/portapi.c: (Scm_Putc, Scm_Puts, Scm_Putz): Honor port terminal
 	  mode.
+	* ext/termios/termios.scm: Switch port terminal mode along the
+	  actial terminal state changes.
 
 2023-07-15  Shiro Kawai  <shiro@acm.org>
 
