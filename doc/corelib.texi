@@ -23902,6 +23902,23 @@ EOFを返します。
 @c COMMON
 @end defun
 
+@defun consume-trailing-whitespaces :optional iport
+Reads and dicards consecutive whitespace characters up to (includling)
+the first EOL, from @var{iport}.  If @var{iport} is omitted,
+the current input port is used.
+
+This is mainly for interactive REPL when the input is line
+buffered.  Suppose you're reading user's input using @code{read}.
+If the input is line buffered, @code{read} won't see any input until
+the user type @code{RET}.  It means if the user type
+@code{(read-line)RET}, then @code{read} returns @code{(read-line)},
+and if you evaluate it immediately, it reads @code{RET}.
+
+That is not users typically expect; the user wants to type the
+input for @code{read-line}.  Hence, it is useful to consume trailing
+@code{RET} after reading the user input.
+@end defun
+
 @defun read-block nbytes :optional iport
 @c EN
 This procedure is deprecated - use @code{read-uvector} instead
