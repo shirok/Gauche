@@ -1,0 +1,71 @@
+\ Dissecting line-edit feature
+
+You can use line editing on gosh REPL if the terminal is capable.  The
+feature is implemented entirely in Gauche itself, instead of relying on
+external libraries such as libreadline.  This document describes the
+internals of the line editing feature for those who want to fix bugs
+or add new features.
+
+## Modules involved in the line editing feature
+
+There are number of modules involved in this feature.
+
+- `gauche.interactive.editable-reader` : This module is autoloaded
+   when `gosh` is invoked in the interactive mode.  First it tries to
+   obtain a default console (`text.console`), and if it succeeds, create
+   a line editor instance (`text.line-edit`) and returns several procedures
+   to be called from `read-eval-print-loop`.  If it can't get a default
+   console (e.g. the termianl is not capable, or the stdios are connected
+   to non-terminal device), then it returns false values and
+   `read-eval-print-loop` falls back to a basic I/O without editing
+   capability.
+   This module also calls load/save edit history API in the appropriate
+   time.
+
+- `text.console`: This module provides an abstract API to control consoles
+   such as cursor placements.
+   Currently it supports VT100-compatible console and Windows console.
+   It used to be a standard to use termcap/terminfo to abstract the device
+   difference, and curses for high-level console manipulations.  However,
+   the world has moved on.  We no longer have wide variations of terminal
+   controls, so that adding dependencies to those external libraries is
+   overkill.  Besides, Windows console requires totally different controls
+   than the traditional Unix consoles.  So we decided to roll our own.
+
+- `text.line-edit`: This module effectively implements a text editor.
+   It uses `text.gap-buffer` for the buffer structure and `data.ring-buffer`
+   for the kill ring.  It uses `text.console` for drawing, so it is
+   independent from the actual console device.  It also supports
+   unlimied undoing, and save/load histories.
+
+- `text.gap-buffer`: Implements a gap buffer, suitable for the back-end
+   of text editor.
+
+## Startup sequence - what happens before you get `gosh$` prompt
+
+The main program of `gosh` calls `user#read-eval-print-loop` if no
+script file is given.  If `-q` option is given to `gosh`, it is
+`gauche#read-eval-print-loop` (defined in `libeval.scm`), which only
+provides very basic REPL.  However, if `-q` option isn't given,
+`gauche.interactive` is loaded first which shadows `read-eval-print-loop`,
+so that `gauche.interactive#read-eval-print-loop` is invoked instead.
+
+While loading `gauche.interactive`, `make-editable-reader` of
+`gauche.inetractive.editable-reader` is invoked.  It tries to get
+a default console by `text.console#make-default-console`.  If it can,
+it returns four values - A procedure to read an S-expr, to read a line,
+a thunk to skip trailing whitespaces, and `<line-edit-context>`.
+The returned readers are line-edit enabled.
+
+The first three procedures are passed to `gauche.interactive#make-repl-reader`,
+which returns a reader that (1) recognizes top-level REPL commands,
+and (2) consume trailing whitespaces after S-expression input.
+
+If line editing is not enabled (by `-fno-line-edit` option, or from
+an enviornment variable), or `make-editable-reader` can't obtain
+a default console, a repl reader is creaded with
+`(make-repl-reader read read-line consume-trailing-whitespaces)`.
+Thus, it recognizes the toplevel REPL commands, but does not use
+line editing.
+
+...(to be continued)...
