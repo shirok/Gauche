@@ -160,7 +160,9 @@
    ))
 
 (define-method call-with-console ((con <vt100>) proc :key (mode 'rare))
-  (with-terminal-mode (~ con'iport) mode
+  ;; NB: We use oport so that the port's TERMINAL_MODE flag can affect
+  ;; side-channel output of '\n'.
+  (with-terminal-mode (~ con'oport) mode
                       (^_ (proc con))
                       (^[]
                         (reset-character-attribute con)

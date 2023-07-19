@@ -212,6 +212,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
                    or 'rare' mode, we translate LF into CRLF. */
                 SCM_ASSERT(PORT_BUF(p)->current+nb <= PORT_BUF(p)->end);
                 SCM_CHAR_PUT(PORT_BUF(p)->current, '\r');
+                PORT_BUF(p)->current++;
             default:
                 break;
             }

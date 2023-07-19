@@ -1,3 +1,8 @@
+2023-07-19  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/console.scm (call-with-console), src/portapi.c:
+	  Fix port terminal mode handling.
+
 2023-07-16  Shiro Kawai  <shiro@acm.org>
 
 	* src/portapi.c: (Scm_Putc, Scm_Puts, Scm_Putz): Honor port terminal
