@@ -23903,20 +23903,41 @@ EOFを返します。
 @end defun
 
 @defun consume-trailing-whitespaces :optional iport
-Reads and dicards consecutive whitespace characters up to (includling)
+@c EN
+Reads and discards consecutive whitespace characters up to (including)
 the first EOL, from @var{iport}.  If @var{iport} is omitted,
 the current input port is used.
+@c JP
+@var{iport}から、連続する空白文字を、最初の行末文字を読むまで読み込んで捨てます。
+@var{iport}が省略された場合は現在の入力ポートが使われます。
+@c COMMON
 
+@c EN
 This is mainly for interactive REPL when the input is line
 buffered.  Suppose you're reading user's input using @code{read}.
 If the input is line buffered, @code{read} won't see any input until
 the user type @code{RET}.  It means if the user type
 @code{(read-line)RET}, then @code{read} returns @code{(read-line)},
 and if you evaluate it immediately, it reads @code{RET}.
+@c JP
+これは主にラインバッファリングがある入力でインタラクティブなREPLを走らせる
+ためのものです。入力を@code{read}で読み込んでいるとしましょう。
+入力がラインバッファされていたら、ユーザがRETをタイプしてはじめて@code{read}が
+入力を読むことになります。ということは、ユーザが@code{(read-line)RET}とタイプしたなら、
+@code{read}は@code{(read-line)}を返し、もしそれを即座にevalするなら、
+それは入力に残っているRETを読み込むことになるでしょう。
+@c COMMON
 
+@c EN
 That is not users typically expect; the user wants to type the
 input for @code{read-line}.  Hence, it is useful to consume trailing
-@code{RET} after reading the user input.
+@code{RET} after reading the user's initial input.
+@c JP
+これはユーザが通常期待する動作とは異なります。
+ユーザは、@code{read-line}が実行された時点で、入力にタイプした行を読んで欲しいと
+思うでしょう。したがって、ユーザの最初の入力のあと、バフぁFに残っているRETを含めた
+空白文字を捨てておくことが役に立ちます。
+@c COMMON
 @end defun
 
 @defun read-block nbytes :optional iport
