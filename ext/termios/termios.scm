@@ -510,8 +510,8 @@
                               (logior ICRNL INPCK ISTRIP IXON)))
                 (update! (~ attr'oflag)
                          (cut logset+clear <>
-                              0
-                              OPOST))
+                              OPOST
+                              0))
                 (update! (~ attr'cflag)
                          (cut logset+clear <>
                               CS8
