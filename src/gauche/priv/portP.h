@@ -142,12 +142,6 @@ void Scm__SetupPortsForWindows(int has_console);
 #define PORT_OSTR(port)    (&P_(port)->src.ostr)
 #define PORT_VT(port)      (&P_(port)->src.vt)
 
-/* Manipulating port terminal mode.  Should only be called from
- * gauche.termios.
- */
-SCM_EXTERN int Scm_GetPortTerminalMode(ScmPort *);
-SCM_EXTERN void Scm_SetPortTerminalMode(ScmPort *, int);
-
 /*================================================================
  * Locking the ports
  *

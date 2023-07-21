@@ -331,26 +331,6 @@
      )
 
    ) ;; !defined(GAUCHE_WINDOWS)
-
- ;; port terminal mode tracking
- (define-cproc %port-terminal-mode (port::<port> :optional (mode #f))
-   (let* ([prev 'cooked]
-          [newmode::int 0])
-     (case (Scm_GetPortTerminalMode port)
-       [(SCM_PORT_TERMINAL_COOKED)]
-       [(SCM_PORT_TERMINAL_RAW) (set! prev 'raw)]
-       [(SCM_PORT_TERMINAL_RARE) (set! prev 'rare)]
-       [else (Scm_Warn "Invalid port terminal mode: %d"
-                       (Scm_GetPortTerminalMode port))])
-     (cond
-      [(SCM_FALSEP mode) (return prev)] ; just getting
-      [(SCM_EQ mode 'raw) (set! newmode SCM_PORT_TERMINAL_RAW)]
-      [(SCM_EQ mode 'rare) (set! newmode SCM_PORT_TERMINAL_RARE)]
-      [(SCM_EQ mode 'cooked) (set! newmode SCM_PORT_TERMINAL_COOKED)]
-      [else (Scm_Error "Invalid mode argument.  Must be either #f, raw, rare,\
-                        or cooled, but got: %S" mode)])
-     (Scm_SetPortTerminalMode port newmode)
-     (return prev)))
  ) ;; inline-stub
 
 ;;
@@ -481,7 +461,6 @@
        (let ()
          (define saved-attr (sys-tcgetattr port))
          (define saved-buffering (port-buffering port))
-         (define saved-termmode (%port-terminal-mode port))
          (define new-attr
            (rlet1 attr (sys-termios-copy saved-attr)
              ;; NB: See cfmakeraw(3) for raw mode setting.
@@ -539,12 +518,10 @@
          (define (set)
            (sys-tcsetattr port TCSANOW new-attr)
            (when (memq mode '(raw rare))
-             (set! (port-buffering port) :none)
-             (%port-terminal-mode port mode)))
+             (set! (port-buffering port) :none)))
          (define (reset)
            (sys-tcsetattr port TCSANOW saved-attr)
            (set! (port-buffering port) saved-buffering)
-           (%port-terminal-mode port saved-termmode)
            (when cleanup (cleanup)))
          (unwind-protect (begin (set) (proc port)) (reset))))]))
 

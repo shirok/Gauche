@@ -1,3 +1,10 @@
+2023-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c, src/portapi.c: Remove port terminal mode; it was a wrong
+	  abstraction, for multiple ports can be connected to a terminal.
+	  The actual issue https://github.com/shirok/Gauche/issues/877 has
+	  been addressed with termios.
+
 2023-07-19  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/console.scm (call-with-console), src/portapi.c:
