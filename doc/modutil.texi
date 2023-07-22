@@ -25636,11 +25636,15 @@ returns @code{#t} if the terminal can be handled by @code{<vt100>} console,
 @c COMMON
 @end defun
 
-
+@c EN
 @subheading Console control
+@c JP
+@subheading コンソール制御
+@c COMMON
 
 @deffn {Generic function} call-with-console console proc :key mode
 @c MOD text.console
+@c EN
 Takes over the control of the console, and calls @var{proc} with
 @var{console} as the only argument.   The console is set to
 the @var{mode}, which must be a symbol @code{with-terminal-mode}
@@ -25649,42 +25653,85 @@ the console is set to @code{rare} mode, which turn off the echoing
 and passes most of keystrokes to the program, but it intercepts
 terminal controls (like @code{Ctrl-C} for interrupt and
 @code{Ctrl-Z} for suspend; the actual key depends on terminal
-settings, though.)
+settings, though. @xref{Terminal control}, for the details.)
+@c JP
+コンソールの制御を取得した状態で、@var{proc}を@var{console}を唯一の引数として
+呼び出します。コンソールは@var{mode}で指定されるモードにセットされます。
+@var{mode}は@code{with-terminal-mode}が受け付けるシンボル、
+すなわち@code{raw}、@code{rare}、@code{cooked}のいずれかでなければなりません。
+省略された場合は@code{rare}になります。
+このモードは、端末でのエコーを抑止し、ほぼ全てのキーストロークを
+プログラムにそのまま渡しますが、端末制御機能はシステム側で処理します
+(割り込みの@code{Ctrl-C}、プロセス一時停止の@code{Ctrl-Z}など。実際のキー割り当ては
+端末制御で変更可能です。詳しくは@ref{Terminal control}参照。)
+@c COMMON
 
+@c EN
 If @var{proc} raises an unhandled error, this generic function
 resets the terminal mode before returning.  It does not clear
 the screen.
+@c JP
+@var{proc}が捕捉されない例外を投げた場合、このジェネリック関数は
+端末モードを元に戻します。ただ、スクリーンはクリアされません。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} putch console char
 @c MOD text.console
+@c EN
 Display a character at the current cursor position, and
 move the current cursor position.
+@c JP
+文字@var{char}をコンソールの現在のカーソル位置に出力し、カーソルをその分進めます。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} putstr console string
 @c MOD text.console
+@c EN
 Display a string from the current cursor position, and
 move the current cursor position.
+@c JP
+文字列@var{string}コンソールの現在のカーソル位置に出力し、カーソルをその分進めます。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} beep console
 @c MOD text.console
+@c EN
 Ring the beep, or flash the screen (visible bell) if possible.
+@c JP
+可能なら、端末のビープ音を鳴らすか、画面をフラッシュさせます(visual bell)。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} getch console
 @c MOD text.console
+@c EN
 Fetch a keypress from the console.  This blocks until
 any key is pressed.
 
 The return value may be one of the following values:
+@c JP
+コンソールからキー入力を読み取ります。何らかのキーが押されるまでブロックします。
+
+戻り値は以下の値のいずれかです。
+@c COMMON
+
 
 @table @asis
+@c EN
 @item A character
 A key for the character is pressed.  It may be a control code
 if the control key is pressed with the key; that is, if the user
 presses Ctrl-A, @code{#\x01} will be returned.
+@c JP
+@item 文字
+その文字に該当するキーが押された場合。
+コントロールキーと一緒に押された場合は、制御文字が返ります。
+例えばユーザがCtrl-Aをタイプしたら@code{#\x01}が返ります。
+@c COMMON
+@c EN
 @item A symbol
 Indicates a special key; the following keys are supported:
 @code{KEY_UP}, @code{KEY_DOWN}, @code{KEY_LEFT}, @code{KEY_RIGHT},
@@ -25695,14 +25742,36 @@ Indicates a special key; the following keys are supported:
 @code{KEY_F11}, @code{KEY_F12}.
 (Note: DELETE key is usually mapped to @code{#\x7f}, but it depends on
 the terminal).
+@c JP
+@item シンボル
+特殊キーの場合です。以下のキーがサポートされています。
+@code{KEY_UP}, @code{KEY_DOWN}, @code{KEY_LEFT}, @code{KEY_RIGHT},
+@code{KEY_HOME}, @code{KEY_END}, @code{KEY_INS}, @code{KEY_DEL},
+@code{KEY_PGDN}, @code{KEY_PGUP}, @code{KEY_F1}, @code{KEY_F2},
+@code{KEY_F3}, @code{KEY_F4}, @code{KEY_F5}, @code{KEY_F6},
+@code{KEY_F7}, @code{KEY_F8}, @code{KEY_F9}, @code{KEY_F10},
+@code{KEY_F11}, @code{KEY_F12}。
+(註: DELETEキーは通常@code{#\x7f}にマップされていますが、
+端末設定で変更可能です)。
+@c COMMON
+@c EN
 @item A list of symbol @code{ALT} and a character.
 Indicates the character key is pressed with Alt key.  For example,
-if the user presses Alt-a, @code{(ALT #\a)} is returned (assuming
-CAPSLOCK is off).
+if the user presses Alt-a, @code{(ALT #\a)} is returned.
+@c JP
+@item シンボル@code{ALT}と文字のリスト
+文字キーがAltキーと同時に押されたことを示します。
+例えばユーザがAlt-aを押したなら、@code{(ALT #\a)}が返されます。
+@c COMMON
 @item EOF
+@c EN
 Indicates the input is closed somehow.
+@c JP
+入力がクローズされたことを示します。
+@c COMMON
 @end table
 
+@c EN
 Modifier keys except @code{ALT} are not treated separately but
 included in the returned keycode.  Assuming CAPSLOCK is off,
 if the user press @code{a}, @code{Shift}+@code{a}, and @code{Ctrl}+@code{a},
@@ -25711,6 +25780,16 @@ the returned value is @code{#\a}, @code{#\A} and @code{#\x01}, respectively.
 @code{Ctrl}+@code{a}.  @code{ALT}+@code{a}, @code{ALT}+@code{Shift}+@code{a},
 and @code{ALT}+@code{Ctrl}+@code{a} will be @code{(ALT #\a)},
 @code{(ALT #\A)} and @code{(ALT #\x01)}, respectively.
+@c JP
+@code{ALT}以外のモディファイアキーは別扱いではなく返される文字コードにエンコードされます。
+CAPSLOCKがoffであるとき、ユーザが
+@code{a}、@code{Shift}+@code{a}、@code{Ctrl}+@code{a}をタイプしたとすると、
+戻り値はそれぞれ@code{#\a}、@code{#\A}、@code{#\x01}となります。
+@code{Ctrl}+@code{Shift}+@code{a}は@code{Ctrl}+@code{a}と区別できません。
+@code{ALT}+@code{a}、@code{ALT}+@code{Shift}+@code{a}、
+@code{ALT}+@code{Ctrl}+@code{a}の戻り値はそれぞれ、
+@code{(ALT #\a)}、@code{(ALT #\A)}、@code{(ALT #\x01)}となります。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} chready? console
