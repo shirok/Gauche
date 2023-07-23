@@ -36,7 +36,16 @@
 (inline-stub
  (declcode (.include <gauche/vminsn.h>
                      <gauche/priv/bignumP.h>
-                     <gauche/priv/stringP.h>)))
+                     <gauche/priv/stringP.h>
+                     <gauche/priv/writerP.h>)))
+
+;; Ellipsis, used when output is truncated.
+(select-module gauche.internal)
+(define-cproc string-ellipsis ()
+  (let* ([elli::(static ScmObj) SCM_UNDEFINED])
+    (when (SCM_UNDEFINEDP elli)
+      (set! elli (SCM_MAKE_STR_IMMUTABLE SCM_WRITTEN_ELLIPSIS)))
+    (return elli)))
 
 ;;
 ;; Predicates

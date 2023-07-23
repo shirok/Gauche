@@ -1610,9 +1610,7 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             }
         }
         if (trimmed) {
-            /* Once we drop 'none' encoding support, we could use
-               an ellipsis character.  */
-            SCM_PUTZ("...", 3, port);
+            SCM_PUTZ(SCM_WRITTEN_ELLIPSIS, -1, port);
         }
         SCM_PUTC('"', port);
     }

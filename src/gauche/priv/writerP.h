@@ -53,6 +53,14 @@ SCM_CLASS_DECL(Scm_WriteControlsClass);
 #define SCM_WRITE_CONTROLS(obj)   ((ScmWriteControls*)(obj))
 #define SCM_WRITE_CONTROLS_P(obj) SCM_XTYPEP(obj, SCM_CLASS_WRITE_CONTROLS)
 
+/* Ellipsis when output is truncated */
+#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
+#define SCM_WRITTEN_ELLIPSIS "\xe2\x80\xa6"
+#else
+#define SCM_WRITTEN_ELLIPSIS "..."
+#endif
+
+
 /* WriteContext and WriteState
 
    WriteContext affects write operation below the current subtree.

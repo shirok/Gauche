@@ -670,7 +670,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             if (wp->printLength == 0) {
                 /* in this case we don't print the elements at all, so we need
                    to treat this specially. */
-                Scm_PutzUnsafe("(...)", -1, port);
+                Scm_PutzUnsafe("(" SCM_WRITTEN_ELLIPSIS ")", -1, port);
                 if (st) st->currentLevel--;
                 goto next;
             }
@@ -687,7 +687,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             if (wp->printLength == 0) {
                 /* in this case we don't print the elements at all, so we need
                    to treat this specially. */
-                Scm_PutzUnsafe("#(...)", -1, port);
+                Scm_PutzUnsafe("#(" SCM_WRITTEN_ELLIPSIS ")", -1, port);
                 if (st) st->currentLevel--;
                 goto next;
             }
@@ -719,7 +719,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     Scm_PutcUnsafe(')', port);
                     POP();
                 } else if (wp->printLength >= 0 && wp->printLength <= i) {
-                    Scm_PutzUnsafe(" ...)", -1, port);
+                    Scm_PutzUnsafe(" " SCM_WRITTEN_ELLIPSIS ")", -1, port);
                     POP();
                 } else {
                     Scm_PutcUnsafe(' ', port);
@@ -757,7 +757,7 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
                     }
                 } else if (wp->printLength >= 0 && wp->printLength <= count) {
                     /* print-length limit reached */
-                    Scm_PutzUnsafe(" ...)", -1, port);
+                    Scm_PutzUnsafe(" " SCM_WRITTEN_ELLIPSIS ")", -1, port);
                     POP();
                 } else if (ht && !SCM_EQ(Scm_HashTableRef(ht, v, SCM_MAKE_INT(1)), SCM_MAKE_INT(1)))  {
                     /* cdr part is shared */
@@ -1082,9 +1082,11 @@ static void vprintf_pass2(ScmPort *out, const char *fmt, ScmObj args)
                         ScmSmallInt n = SCM_STRING_LENGTH(s);
                         if (n > width) {
                             if (double_quote_closed_p(SCM_STRING(s)))
-                                Scm_PutzUnsafe(" ...", -1, out);
+                                Scm_PutzUnsafe(" " SCM_WRITTEN_ELLIPSIS,
+                                               -1, out);
                             else
-                                Scm_PutzUnsafe("\"...", -1, out);
+                                Scm_PutzUnsafe("\"" SCM_WRITTEN_ELLIPSIS,
+                                               -1, out);
                         } else {
                             for (; n < prec; n++) Scm_PutcUnsafe(' ', out);
                         }

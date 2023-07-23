@@ -212,7 +212,14 @@
          (layout-simple (sprefix obj (write-to-string obj (rec-writer c)) c))]))
 
 ;; :: Layouter
-(define dots (^[w m] '("...." . 4)))
+(define dots
+  ;; TRANSIENT: string-ellipsis isn't in 0.9.12.  Once we release 0.9.13,
+  ;; replace it with (with-module gauche.internal (string-ellipsis)).
+  (let* ([elli ((global-variable-ref (find-module 'gauche.internal)
+                                     'string-ellipsis
+                                     (^[] "...")))]
+         [val (cons elli (string-length elli))])
+    (^[w m] val)))
 (define dot  (^[w m] '("." . 1)))
 
 ;; layout-simple :: String -> Layouter

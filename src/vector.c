@@ -680,7 +680,7 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
         T elt = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(obj)[i];         \
         if (i != 0) Scm_Printf(out, " ");                               \
         if (wp->printLength >= 0 && i >= wp->printLength) {             \
-            Scm_Printf(out, "...");                                     \
+            Scm_Printf(out, SCM_WRITTEN_ELLIPSIS);                      \
             break;                                                      \
         }                                                               \
         pr(out, elt);                                                   \

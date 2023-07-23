@@ -460,15 +460,17 @@
   (define (write-to-string/ctx obj . args)
     ($ write-to-string obj
        (^x (write x (apply make-write-controls args)))))
+  (define elli (with-module gauche.internal (string-ellipsis)))
 
-  (test* "print-length" '("(0 1 2 3 4)"
-                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
-                          ("(0 1 2 3 ...)" "#(0 1 2 3 ...)" "#u8(0 1 2 3 ...)")
-                          ("(0 1 2 ...)"   "#(0 1 2 ...)"   "#u8(0 1 2 ...)")
-                          ("(0 1 2 3 4)"   "#(0 1 2 3 4)"   "#u8(0 1 2 3 4)")
-                          ("(0 1 ...)"     "#(0 1 ...)"     "#u8(0 1 ...)")
-                          ("(0 ...)"       "#(0 ...)"       "#u8(0 ...)")
-                          ("(...)"         "#(...)"         "#u8(...)"))
+  (test* "print-length"
+         `("(0 1 2 3 4)"
+           ("(0 1 2 3 4)"       "#(0 1 2 3 4)"       "#u8(0 1 2 3 4)")
+           (,#"(0 1 2 3 ~elli)" ,#"#(0 1 2 3 ~elli)" ,#"#u8(0 1 2 3 ~elli)")
+           (,#"(0 1 2 ~elli)"   ,#"#(0 1 2 ~elli)"   ,#"#u8(0 1 2 ~elli)")
+           ("(0 1 2 3 4)"       "#(0 1 2 3 4)"       "#u8(0 1 2 3 4)")
+           (,#"(0 1 ~elli)"     ,#"#(0 1 ~elli)"     ,#"#u8(0 1 ~elli)")
+           (,#"(0 ~elli)"       ,#"#(0 ~elli)"       ,#"#u8(0 ~elli)")
+           (,#"(~elli)"         ,#"#(~elli)"         ,#"#u8(~elli)"))
          (let ([z (map (^n (list (write-to-string/ctx data :length n)
                                  (write-to-string/ctx (list->vector data)
                                                       :length n)
@@ -485,14 +487,14 @@
               '(() #() #u8())))
 
   (test* "print-length (nested)"
-         '(("(...)"
-            "#(...)")
-           ("((0 ...) ...)"
-            "#(#(0 ...) ...)")
-           ("((0 1 ...) (0 1 ...) ...)"
-            "#(#(0 1 ...) #(0 1 ...) ...)")
-           ("((0 1 2 ...) (0 1 2 ...) (0 1 2 ...) ...)"
-            "#(#(0 1 2 ...) #(0 1 2 ...) #(0 1 2 ...) ...)"))
+         `((,#"(~elli)"
+            ,#"#(~elli)")
+           (,#"((0 ~elli) ~elli)"
+            ,#"#(#(0 ~elli) ~elli)")
+           (,#"((0 1 ~elli) (0 1 ~elli) ~elli)"
+            ,#"#(#(0 1 ~elli) #(0 1 ~elli) ~elli)")
+           (,#"((0 1 2 ~elli) (0 1 2 ~elli) (0 1 2 ~elli) ~elli)"
+            ,#"#(#(0 1 2 ~elli) #(0 1 2 ~elli) #(0 1 2 ~elli) ~elli)"))
          (map (^n (list (write-to-string/ctx data2 :length n)
                         (write-to-string/ctx
                          (list->vector (map list->vector data2))
@@ -533,18 +535,19 @@
 (let* ([level-length '((0 1) (1 1) (1 2) (1 3) (1 4)
                        (2 1) (2 2) (2 3) (3 2) (3 3) (3 4))]
        [data '(if (member x y) (+ (car x) 3) '(foo . #(a b c d "Baz")))])
+  (define elli (with-module gauche.internal (string-ellipsis)))
   (test* "print-level & print-length"
-         '("0 1 -- #"
-           "1 1 -- (if ...)"
-           "1 2 -- (if # ...)"
-           "1 3 -- (if # # ...)"
-           "1 4 -- (if # # #)"
-           "2 1 -- (if ...)"
-           "2 2 -- (if (member x ...) ...)"
-           "2 3 -- (if (member x y) (+ # 3) ...)"
-           "3 2 -- (if (member x ...) ...)"
-           "3 3 -- (if (member x y) (+ (car x) 3) ...)"
-           "3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ...)))")
+         `(,#"0 1 -- #"
+           ,#"1 1 -- (if ~elli)"
+           ,#"1 2 -- (if # ~elli)"
+           ,#"1 3 -- (if # # ~elli)"
+           ,#"1 4 -- (if # # #)"
+           ,#"2 1 -- (if ~elli)"
+           ,#"2 2 -- (if (member x ~elli) ~elli)"
+           ,#"2 3 -- (if (member x y) (+ # 3) ~elli)"
+           ,#"3 2 -- (if (member x ~elli) ~elli)"
+           ,#"3 3 -- (if (member x y) (+ (car x) 3) ~elli)"
+           ,#"3 4 -- (if (member x y) (+ (car x) 3) '(foo . #(a b c d ~elli)))")
          (map (^z (let1 c (make-write-controls
                            :level (car z) :length (cadr z))
                     (format c "~d ~d -- ~s" (car z) (cadr z) data)))
@@ -673,6 +676,7 @@
   (define (t name expect data . args)
     (test* #"~|name| ~|args|" expect
            (with-output-to-string (^[] (apply pprint data args)))))
+  (define elli (with-module gauche.internal (string-ellipsis)))
   (let-syntax
       ([t* (syntax-rules ()
              [(_ (data . args) expect)
@@ -697,13 +701,13 @@
        \n eiusmod tempor incididunt ut labore\
        \n et dolore)\n")
     (t* (data1 :length 5)
-        "(Lorem ipsum dolor sit amet ....)\n")
+        #"(Lorem ipsum dolor sit amet ~elli)\n")
     (t* (data1 :length 1)
-        "(Lorem ....)\n")
+        #"(Lorem ~elli)\n")
     (t* (data1 :length 0)
-        "(....)\n")
+        #"(~elli)\n")
     (t* (data1 :level 1 :length 5)
-        "(Lorem ipsum dolor sit amet ....)\n")
+        #"(Lorem ipsum dolor sit amet ~elli)\n")
     (t* (data1 :level 0 :length 5)
         "#\n")
     (t* ('a :level 0)

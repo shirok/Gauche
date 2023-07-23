@@ -1,3 +1,11 @@
+2023-07-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/libstr.scm (string-ellipsis), lib/gauche/pputil.scm, etc.:
+	  EXPERIMENTAL: If native CES is utf-8, use Unicode ellipsis (U+2026)
+	  instead of three periods when the output is truncated.
+	  We hope it makes easier to distinguish whether the output is actually
+	  truncated, or there is indeed an ellipsis in the data.
+
 2023-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/portapi.c: Remove port terminal mode; it was a wrong
