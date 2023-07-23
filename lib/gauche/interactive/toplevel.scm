@@ -403,7 +403,10 @@
   \n                        the pretty printer.  #f for unlimited.  [default: ~(~ default-pm'width)]\
   \n  base <integer>      - Base radix of showing whole numbers.  [default: ~(~ default-pm'base)]\
   \n  radix <boolean>     - Add radix prefix ('#x' etc.) befors whole numbers.\
-  \n                        [default: ~(~ default-pm'radix)]"
+  \n                        [default: ~(~ default-pm'radix)]\
+  \n  string-length <integer>|#f\
+  \n                      - Max length of string literals before abbreviated."
+
   (^[args]
     (match args
       [() #f]
@@ -414,19 +417,21 @@
        (apply print-mode
               (append-map
                (^[kv]
-                 `(,(if (memq (car kv) '(pretty length level width base radix))
+                 `(,(if (memq (car kv) '(pretty length level width base radix
+                                                string-length))
                       (make-keyword (car kv))
                       (error "print-mode: unrecognized key:" (car kv)))
                    ,(cadr kv)))
                (slices kvs 2)))])
     (let1 c (print-mode)
       (format #t "Current print mode:\n")
-      (format #t "  length : ~3d\n"  (~ c'length))
-      (format #t "   level : ~3d\n"  (~ c'level))
-      (format #t "  pretty : ~3@a\n" (~ c'pretty))
-      (format #t "   width : ~3d\n"  (~ c'width))
-      (format #t "    base : ~3d\n"  (~ c'base))
-      (format #t "   radix : ~3d\n"  (~ c'radix)))
+      (format #t "        length : ~3d\n"  (~ c'length))
+      (format #t "         level : ~3d\n"  (~ c'level))
+      (format #t "        pretty : ~3@a\n" (~ c'pretty))
+      (format #t "         width : ~3d\n"  (~ c'width))
+      (format #t "          base : ~3d\n"  (~ c'base))
+      (format #t "         radix : ~3d\n"  (~ c'radix))
+      (format #t " string-length : ~3d\n"  (~ c'string-length)))
     *no-value*))
 
 (define-toplevel-command (print-all pa) :read
