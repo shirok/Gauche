@@ -1,5 +1,10 @@
 2023-07-23  Shiro Kawai  <shiro@acm.org>
 
+	* src/libio.scm, src/string.c, lib/gauche/interactive.scm:
+	  Add string-lenght slot to <write-controls>, which can limit the
+	  display length of strings.
+	  https://github.com/shirok/Gauche/issues/908
+
 	* src/libstr.scm (string-ellipsis), lib/gauche/pputil.scm, etc.:
 	  EXPERIMENTAL: If native CES is utf-8, use Unicode ellipsis (U+2026)
 	  instead of three periods when the output is truncated.
