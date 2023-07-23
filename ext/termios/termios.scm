@@ -42,23 +42,24 @@
   [gauche.os.windows
    (export msys-get-stty)]
   [else
-   (export <sys-termios-meta> <sys-termios> B0 B110 B115200 B1200 B134 B150
-           B1800 B19200 B200 B230400 B2400 B300 B38400 B4800 B50 B57600
-           B600 B75 B9600 BRKINT BS0 BS1 BSDLY CIBAUD CLOCAL CR0 CR1 CR2
-           CR3 CRDLY CREAD CRTSCTS CS5 CS6 CS7 CS8 CSIZE CSTOPB ECHO
-           ECHOCTL ECHOE ECHOK ECHOKE ECHONL ECHOPRT FF0 FF1 FFDLY HUPCL
-           ICANON ICRNL IEXTEN IGNBRK IGNCR IGNPAR IMAXBEL INLCR INPCK
-           ISIG ISTRIP IUCLC IXANY IXOFF IXON NCCS NL0 NL1 NLDLY NOFLSH
-           OCRNL OFDEL OFILL OLCUC ONLCR ONLRET ONOCR OPOST PARENB PARODD
-           PENDIN TCIFLUSH TCIOFF TCIOFLUSH TCION TCOFLUSH TCOOFF TCOON
-           TCSADRAIN TCSAFLUSH TCSANOW TOSTOP VDISCARD VEOF VEOL VEOL2
-           VERASE VINTR VKILL VLNEXT VMIN VQUIT VREPRINT VSTART VSTOP
-           VSUSP VSWTC VT0 VT1 VTDLY VTIME VWERASE XCASE _POSIX_VDISABLE
-           sys-cfgetispeed sys-cfgetospeed
-           sys-cfsetispeed sys-cfsetospeed sys-forkpty
-           sys-forkpty-and-exec sys-openpty sys-tcdrain sys-tcflow
-           sys-tcflush sys-tcgetattr sys-tcgetpgrp sys-tcsendbreak
-           sys-tcsetattr sys-tcsetpgrp sys-termios-copy)])
+   (export-if-defined
+    <sys-termios-meta> <sys-termios> B0 B110 B115200 B1200 B134 B150
+    B1800 B19200 B200 B230400 B2400 B300 B38400 B4800 B50 B57600
+    B600 B75 B9600 BRKINT BS0 BS1 BSDLY CIBAUD CLOCAL CR0 CR1 CR2
+    CR3 CRDLY CREAD CRTSCTS CS5 CS6 CS7 CS8 CSIZE CSTOPB ECHO
+    ECHOCTL ECHOE ECHOK ECHOKE ECHONL ECHOPRT FF0 FF1 FFDLY HUPCL
+    ICANON ICRNL IEXTEN IGNBRK IGNCR IGNPAR IMAXBEL INLCR INPCK
+    ISIG ISTRIP IUCLC IXANY IXOFF IXON NCCS NL0 NL1 NLDLY NOFLSH
+    OCRNL OFDEL OFILL OLCUC ONLCR ONLRET ONOCR OPOST PARENB PARODD
+    PENDIN TCIFLUSH TCIOFF TCIOFLUSH TCION TCOFLUSH TCOOFF TCOON
+    TCSADRAIN TCSAFLUSH TCSANOW TOSTOP VDISCARD VEOF VEOL VEOL2
+    VERASE VINTR VKILL VLNEXT VMIN VQUIT VREPRINT VSTART VSTOP
+    VSUSP VSWTC VT0 VT1 VTDLY VTIME VWERASE XCASE _POSIX_VDISABLE
+    sys-cfgetispeed sys-cfgetospeed
+    sys-cfsetispeed sys-cfsetospeed sys-forkpty
+    sys-forkpty-and-exec sys-openpty sys-tcdrain sys-tcflow
+    sys-tcflush sys-tcgetattr sys-tcgetpgrp sys-tcsendbreak
+    sys-tcsetattr sys-tcsetpgrp sys-termios-copy)])
  )
 
  ;;---------------------------------------------------------------------
