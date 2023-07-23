@@ -903,7 +903,8 @@
             :radix  ,(~ obj'radix)
             :pretty ,(~ obj'pretty)
             :width  ,(~ obj'width)
-            :indent ,(~ obj'indent))))
+            :indent ,(~ obj'indent)
+            :string-length ,(~ obj'string-length))))
 
 ;;----------------------------------------------------------------
 ;; Describe

@@ -45,6 +45,7 @@ struct ScmWriteControlsRec {
     int printPretty;            /* boolean, #t to use pretty printer */
     int printIndent;            /* >=0 extra indent to be added after each
                                    newline when pretty printing. */
+    int stringLength;           /* -1 for no limit.  Length of literal string */
 };
 
 SCM_CLASS_DECL(Scm_WriteControlsClass);

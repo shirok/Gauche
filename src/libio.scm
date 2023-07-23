@@ -910,13 +910,21 @@
     (indent :type <int>     :c-name "printIndent"
             :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
                        obj->printIndent = SCM_INT_VALUE(value); \
-                     else obj->printIndent = 0;"))
+                     else obj->printIndent = 0;")
+    (string-length :type <int> :c-name "stringLength"
+                   :getter "if (obj->stringLength < 0) return SCM_FALSE; \
+                            else return SCM_MAKE_INT(obj->stringLength);"
+                   :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
+                              obj->stringLength = SCM_INT_VALUE(value); \
+                            else obj->stringLength = -1;")
+    )
    (allocator (c "write_controls_allocate")))
  ;; NB: Printer is defined in libobj.scm via write-object method
  )
 
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (make-write-controls :key length level width base radix pretty indent
+                                  string-length
                                   print-length print-level print-width
                                   print-base print-radix print-pretty)
   (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
@@ -927,6 +935,7 @@
     :base   (arg base   print-base)
     :radix  (arg radix  print-radix)
     :pretty (arg pretty print-pretty)
+    :string-length string-length
     :indent indent))
 
 ;; Returns fresh write-controls where the specified slot value is replaced
@@ -936,6 +945,7 @@
 ;; (Maybe we should write this in C to avoid overhead.)
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (write-controls-copy wc :key length level width base radix pretty indent
+                                     string-length
                                      print-length print-level print-width
                                      print-base print-radix print-pretty)
   (let-syntax [(select
@@ -952,14 +962,18 @@
           [base   (select base   print-base)]
           [radix  (select radix  print-radix)]
           [pretty (select pretty print-pretty)]
-          [indent (if (undefined? indent) (slot-ref wc 'indent) indent)])
+          [indent (if (undefined? indent) (slot-ref wc 'indent) indent)]
+          [string-length (if (undefined? string-length)
+                           (slot-ref wc 'string-length)
+                           string-length)])
       (if (and (eqv? length (slot-ref wc 'length))
                (eqv? level  (slot-ref wc 'level))
                (eqv? width  (slot-ref wc 'width))
                (eqv? base   (slot-ref wc 'base))
                (eqv? radix  (slot-ref wc 'radix))
                (eqv? pretty (slot-ref wc 'pretty))
-               (eqv? indent (slot-ref wc 'indent)))
+               (eqv? indent (slot-ref wc 'indent))
+               (eqv? string-length (slot-ref wc 'string-length)))
         wc
         (make <write-controls>
           :length length
@@ -968,7 +982,8 @@
           :base   base
           :radix  radix
           :pretty pretty
-          :indent indent)))))
+          :indent indent
+          :string-length string-length)))))
 
 ;;;
 ;;; With-something
