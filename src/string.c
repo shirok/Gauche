@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/stringP.h"
+#include "gauche/priv/writerP.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -1568,13 +1569,21 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 {
     ScmString *str = SCM_STRING(obj);
+    int limit = (ctx->controls? ctx->controls->stringLength : -1);
+    int trimmed = FALSE;
+
     if (Scm_WriteContextMode(ctx) == SCM_WRITE_DISPLAY) {
+        /* Display mode isn't affected by string-length control */
         SCM_PUTS(str, port);
     } else {
         const ScmStringBody *b = SCM_STRING_BODY(str);
         if (SCM_STRING_BODY_SINGLE_BYTE_P(b)) {
             const char *cp = SCM_STRING_BODY_START(b);
             ScmSmallInt size = SCM_STRING_BODY_SIZE(b);
+            if (limit >= 0 && limit < size) {
+                trimmed = TRUE; size = limit;
+            }
+
             if (SCM_STRING_BODY_INCOMPLETE_P(b)) {
                 /* TODO: Should we provide legacy-compatible writer mode,
                    which puts #*"..." instead? */
@@ -1582,20 +1591,28 @@ static void string_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
             } else {
                 SCM_PUTC('"', port);
             }
-            while (size--) {
+            while (--size >= 0) {
                 string_putc(*cp++, port, SCM_STRING_BODY_INCOMPLETE_P(b));
             }
         } else {
             const char *cp = SCM_STRING_BODY_START(b);
             ScmSmallInt len = SCM_STRING_BODY_LENGTH(b);
+            if (limit >= 0 && limit < len) {
+                trimmed = TRUE; len = limit;
+            }
 
             SCM_PUTC('"', port);
-            while (len--) {
+            while (--len >= 0) {
                 ScmChar ch;
                 SCM_CHAR_GET(cp, ch);
                 string_putc(ch, port, FALSE);
                 cp += SCM_CHAR_NBYTES(ch);
             }
+        }
+        if (trimmed) {
+            /* Once we drop 'none' encoding support, we could use
+               an ellipsis character.  */
+            SCM_PUTZ("...", 3, port);
         }
         SCM_PUTC('"', port);
     }
