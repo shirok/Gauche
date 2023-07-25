@@ -24683,14 +24683,14 @@ print control variables):
 @c EN
 If this slot has a nonnegative integer, it determines the maximum number
 of items displayed for lists and vectors (including uniform vectors).
-If the sequence has more elements than the limit, @code{...} is printed
+If the sequence has more elements than the limit, an ellipsis is printed
 in place.  If this slot is @code{#f} (default), sequence will be written
 out fully.
 @c JP
 このスロットが非負整数の場合、それはリストとベクタ(ユニフォームベクタを含む)の
 要素が表示される最大数を指定します。もしリストやベクタがその最大数より
 多くの要素を持っている場合、残りの要素は表示されず、代わりに
-@code{...}が表示されます。このスロットが@code{#f}(デフォルト)であれば、
+エリプシスが表示されます。このスロットが@code{#f}(デフォルト)であれば、
 すべての要素が表示されます。
 @c COMMON
 @end defivar
@@ -24778,6 +24778,19 @@ to align to the beginning of pretty print.
 @c COMMON
 @end defivar
 
+@defivar <write-controls> string-length
+@c EN
+This slot must be a nonnegative exact integer or @code{#f}.
+If its value is an integer, string literals longer than the value
+are truncated during output; an ellipsis is shown after truncated
+content, before closing double-quotes.
+@c JP
+このスロットは非負整数か@code{#f}です。非負整数の場合、その長さ以上の文字列リテラルは
+切り詰めて表示されます。このスロットの値ぶんの文字が出力されたのち、
+エリプシスとダブルクオートが出力されます。
+@c COMMON
+@end defivar
+
 @c EN
 A write-controls object is immutable.  If you need a controls object
 with a slight variation of an existing controls object,
@@ -24810,7 +24823,7 @@ Common Lispのスペシャル変数の名前をそのまま反映した
 @c COMMON
 @end deftp
 
-@defun make-write-controls :key length level base radix pretty width indent
+@defun make-write-controls :key length level base radix pretty width indent string-length
 @c EN
 Creates and returns a write-controls object.
 @c JP
@@ -24818,7 +24831,7 @@ Creates and returns a write-controls object.
 @c COMMON
 @end defun
 
-@defun write-controls-copy controls :key length level base radix pretty width indent
+@defun write-controls-copy controls :key length level base radix pretty width indent string-length
 @c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the
@@ -25092,7 +25105,7 @@ value is assumed.
 
 (pprint (make-list 6 '(gauche droite)) :length 3)
  @result{} @r{prints}
-  ((gauche droite) (gauche droite) (gauche droite) ....)
+  ((gauche droite) (gauche droite) (gauche droite) …)
 
 (pprint (make-list 6 '(gauche droite)) :level 1)
  @result{} @r{prints}
