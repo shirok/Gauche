@@ -698,21 +698,37 @@ Note: @code{subtype?} uses covariant subtyping, that is,
 @subsection Native types
 @c NODE ネイティブタイプ
 
+@c EN
 Native types are a set of predefined descriptive types that bridge
 Scheme types and C types.  They can be used to access binary blobs
 passed from a foreign functions, for example.  They'll also be used
 for FFI.
+@c JP
+ネイティブタイプは、Schemeの型とCの型の橋渡しをするためにあらかじめ定義されている型です。
+外部の関数から渡されたバイナリデータの中身にアクセスする時などに使えます。
+将来的にはFFIにも使う予定です。
+@c COMMON
 
+@c EN
 An example of native types is @code{<int16>}, which corresponds to
 C's @code{int16_t}.  You can use @code{<int16>} to check if a Scheme
 object can be treated as that type:
+@c JP
+ネイティブタイプの一例は@code{<int16>}です。これはCの@code{int16_t}に相当します。
+例えばCの@code{int16_t}としてSchemeオブジェクトを渡せるかどうかを
+次のとおり検査できます。
+@c COMMON
 
 @example
 (of-type? 357 <int16>)   @result{} #t
 (of-type? 50000 <int16>) @result{} #f
 @end example
 
-Or obtain size and alignemnt info:
+@c EN
+Or obtain size and alignemnt info on the running platform:
+@c JP
+また、実行中のプラットフォームにおけるその型のデータの大きさやアラインメントを知ることもできます。
+@c COMMON
 
 @example
 gosh> (describe <int16>)
@@ -769,8 +785,13 @@ slots:
 @clindex ptrdiff_t
 @clindex off_t
 @clindex void
+@c EN
 Predefined native types.  The correspondence of Scheme and C types
 are shown below:
+@c JP
+定義済みのネイティブタイプです。
+Cの型との関係は次の表のとおりです。
+@c COMMON
 
 @example
 Native type  Scheme       C            Notes
@@ -11361,9 +11382,10 @@ It used to be a way to handle byte strings, but now we have
 u8vector (@pxref{Uniform vectors}) for that purpose.
 In fact, we're planning to remove it in the future releases.
 @c JP
-不完全文字列は例外的な状況であるとみなすべきです。これまではバイト列処
-理を使っていましたが、現在はu8vector (@ref{Uniform vectors}参照)を使うこ
-とができますので、将来のリリースでは削除する計画です。
+不完全文字列は例外的な状況であるとみなすべきです。以前はバイト列を処理するのに
+不完全文字列が使われていましたが、
+現在はu8vector (@ref{Uniform vectors}参照)を使うことができるので、
+将来のリリースでは削除する計画です。
 @c COMMON
 
 @c EN
@@ -19188,12 +19210,12 @@ having side-effects there is a bad ides.
 Returns a promise that returns @var{obj} @dots{}.
 Since that @code{eager} is a procedure, arguments are evaluated
 before @var{eager} is called; so it works as a type converter
-(<code>a -> Promise a</code>) without delaying the evaluation.
+(@code{a -> Promise a}) without delaying the evaluation.
 Used mainly to construct promise-returning functions.
 @c JP
 @var{obj} @dots{}を返すプロミスを作って返します。
 @code{eager}は通常の手続きなので、引数の評価は遅延されせん。
-評価を遅延することなく型変換(<code>a -> Promise a</code>)だけを行いたい
+評価を遅延することなく型変換(@code{a -> Promise a})だけを行いたい
 場合に使います。プロミスを返すことが要求される手続きで使われます。
 @c COMMON
 
