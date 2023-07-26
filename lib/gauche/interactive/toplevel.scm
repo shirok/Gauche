@@ -436,17 +436,18 @@
 
 (define-toplevel-command (print-all pa) :read
   "\
- \nPrint previous result (*1) without abbreviation.\
+ \nPrint the last result(s) without abbreviation.\
  \nThis is useful when you want the entire S-expression printed out in the\
  \nbuffer, for the copy&paste, etc."
   (^[exprs]
     (match exprs
       ;; TODO: Get console width if possible
       [()
-       (write *1 (write-controls-copy (print-mode)
-                                      :pretty #t :width 79
-                                      :length #f :level #f
-                                      :string-length #f))
-       (newline)]
+       (dolist [v *1+]
+         (write v (write-controls-copy (print-mode)
+                                       :pretty #t :width 79
+                                       :length #f :level #f
+                                       :string-length #f))
+         (newline))]
       [_ (usage)])
     *no-value*))
