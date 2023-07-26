@@ -445,7 +445,8 @@
       [()
        (write *1 (write-controls-copy (print-mode)
                                       :pretty #t :width 79
-                                      :length #f :level #f))
+                                      :length #f :level #f
+                                      :string-length #f))
        (newline)]
       [_ (usage)])
     *no-value*))
