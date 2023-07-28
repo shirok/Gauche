@@ -89,7 +89,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * String-notated bytevectors::  srfi.207
 * Enums and enum sets::         srfi.209
 * Procedures and syntax for multiple values::  srfi.210
-* SICP prerequisites::
+* SICP prerequisites::          srfi.216
 * Integer sets::                srfi.217
 * Define higher-order lambda::  srfi.219
 * Generator/accumulator sub-library::  srfi.221
