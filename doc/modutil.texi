@@ -16513,28 +16513,22 @@ Note: To retrieve the value of a specific cookie conveniently, you can use
 Given list of cookie specs, creates a cookie string suitable for
 @code{Set-cookie2} or @code{Set-cookie} header.
 
-Optional @var{version} argument specifies cookie protocol version.
-0 for the old Netscape style format, and 1 for RFC2965 style format.
-When omitted, version 1 is assumed.
+Optional @var{version} argument is accepted but ignored; it's for the backward
+compatibility.
 
 Each cookie spec has the following format.
 @c JP
 与えられたクッキーの仕様のリストから、@code{Set-cookie2} か
 @code{Set-cookie} ヘッダに適切なクッキー文字列を作ります。
 
-オプションの @var{version} 引数は、クッキー・プロトコルのバージョンを
-指定するものです。0 は古い Netscape スタイルのフォーマットで、1 は
-RFC2965 スタイルのフォーマットです。省略された場合、1 が指定されたものと
-されます。
+オプションの @var{version} 引数は、互換性のために受容されますが無視されます。
 
 クッキーの仕様は以下のフォーマットを持ちます。
 @c COMMON
 @example
-(<name> <value> [:comment <comment>] [:comment-url <url>]
-                [:discard <bool>] [:domain <domain>]
-                [:max-age <age>] [:path <path>]
-                [:port <port-list>] [:secure <bool>] [:http-only <bool>]
-                [:version <version>] [:expires <date>])
+(<name> <value> [:expires <data/time>] [:max-age <age>]
+                [:domain <domain>] [:path <path>]
+                [:secure <boolean>] [:http-only <boolean>]
 @end example
 @c EN
 Where,
@@ -16543,15 +16537,16 @@ Where,
 A string.  Name of the cookie.
 @item <value>
 Value of the cookie.  May be a string, or @code{#f} if no value is needed.
-@item <comment> <url> <domain> <path> <port-list>
+@item <domain> <path>
 Strings.
-@item <bool>
+@item <boolean>
 Boolean value
-@item <age> <version>
-Integers
-@item <date>
-Either an integer (seconds since Epoch) or a formatted date string
-following the netscape cookie specification.
+@item <age>
+Non-negative exact integers
+@item <date/time>
+Either an integer (seconds since Epoch), a formatted date string,
+@code{<time>} or @code{<date>} objects
+(@pxref{Time}, @pxref{Time data types and procedures}).
 @end table
 @c JP
 @table @code
@@ -16559,22 +16554,28 @@ following the netscape cookie specification.
 文字列。クッキーの名前。
 @item <value>
 クッキーの値。文字列か、値が必要なければ @code{#f} 。
-@item <comment> <url> <domain> <path> <port-list>
+@item <domain> <path>
 文字列。
-@item <bool>
+@item <boolean>
 真偽値。
-@item <age> <version>
-整数。
-@item <date>
+@item <age>
+非負の正確な整数。
+@item <date/time>
 整数(エポックからの秒数)か、Netscape のクッキー仕様に従うフォーマットされた
-日付文字列。
+日付文字列か、@code{<time>}もしくは@code{<date>}オブジェクト
+(@ref{Time},および @ref{Time data types and procedures}参照)。
 @end table
 @c COMMON
 
 @c EN
-The attribute values are quoted appropriately.  If the specified attribute
-is irrelevant for the @var{version}, it is ignored.  So you can pass
-the same specs to generate both old-style and new-style cookie strings.
+The order of attributes does not matter.
+The attribute values are quoted appropriately.
+
+For the backward compatibility to the older specification
+(RFC2965, RFC2109, and old Netscape cookie specification), it
+recognizes a few more attributes (@code{comment}, @code{comment-url},
+@code{discard}, @code{port}, and @code{version}).  They are rendered
+to the output, but the new code should not use them.
 
 Return value is a list of cookie strings, each of which stands for
 each cookie.  For old-style protocol (using @code{Set-cookie} header)
@@ -16582,31 +16583,26 @@ you must send each of them by individual header.  For new-style
 protocol (using @code{Set-cookie2} header), you can join them
 with comma and send it at once.  See RFC6265 for further details.
 
-Some examples:
+Example:
 @c JP
-属性値は適切にクォートされます。指定された属性が @var{version} に不適切な
-場合は無視されます。古いスタイルと新しいスタイルの両方のクッキー文字列を
-作るために同じ仕様を渡すことができます。
+属性の指定は順不同です。属性値は適切にクォートされます。
+
+互換性のために、古い規格(RFC2965, RFC2109, 古のNetscape cookie specificaiton)
+で指定されていたいくつかの属性も認識され出力に含められます
+(@code{comment}, @code{comment-url}, @code{discard}, @code{port},
+@code{version})。が、新規のコードではこれらの属性を使うべきではありません。
 
 戻り値はそれぞれのクッキー文字列のリストです。(@code{Set-cookie} を使う)
 古いスタイルのプロトコルでは、それぞれを独立したヘッダとして送らなければ
 なりません。(@code{Set-cookie2} ヘッダを使う)新しいプロトコルでは、
 それらをカンマで繋ぎ、一度に送ることができます。詳細は RFC6265 を見て下さい。
 
-いくつかの例を示します。
+例:
 @c COMMON
 @example
 (construct-cookie-string
-   `(("name" "foo" :domain "foo.com" :path "/"
-                   :expires ,(+ (sys-time) 86400) :max-age 86400)))
+   `(("name" "foo" :domain "foo.com" :path "/" :max-age 86400)))
  @result{} ("name=foo;Domain=foo.com;Path=/;Max-age=86400")
-
-(construct-cookie-string
-   `(("name" "foo" :domain "foo.com" :path "/"
-                   :expires ,(+ (sys-time) 86400) :max-age 86400))
-   0)
- @result{}
- ("name=foo;Domain=foo.com;Path=/;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
 @end example
 @end defun
 
