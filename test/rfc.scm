@@ -182,18 +182,13 @@
      :discard #f :secure #t :comment "ZzzZzz, OooOoo"
      :comment-url "http://foo.com/hogehoge")))
 
-(test* "cookie, old"
-       '("guest-id=foo123;Domain=foo.com;Path=/abc;Expires=Sun, 09-Sep-2001 01:46:40 GMT"
-         "guest-account=87975348;Domain=zzz.com;Path=/zzz;Secure")
-       (construct-cookie-string *cookie-spec* 0))
-
-(test* "cookie, new"
-       '("guest-id=foo123;Domain=foo.com;Path=/abc;Max-Age=864000;Discard;Comment=hogehoge;CommentURL=\"http://foo.com/hogehoge\";Port=\"80, 8080\";Version=1"
+(test* "cookie"
+       '("guest-id=foo123;Domain=foo.com;Path=/abc;Expires=Sun, 09-Sep-2001 01:46:40 GMT;Max-Age=864000;Discard;Comment=hogehoge;CommentURL=\"http://foo.com/hogehoge\";Port=\"80, 8080\";Version=1"
          "guest-account=87975348;Domain=zzz.com;Path=/zzz;Secure;Comment=\"ZzzZzz, OooOoo\";CommentURL=\"http://foo.com/hogehoge\"")
-       (construct-cookie-string *cookie-spec* 1))
+       (construct-cookie-string *cookie-spec*))
 
 ;; test for formatting SRFI-19 time/date
-(test* "cookie, old, SRFI-19 date"
+(test* "cookie, SRFI-19 date"
        '("foo=bar;Expires=Sun, 09-Sep-2001 01:46:40 GMT"
          "foo=baz;Expires=Sun, 09-Sep-2001 01:46:40 GMT")
        (construct-cookie-string

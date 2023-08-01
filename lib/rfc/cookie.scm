@@ -161,24 +161,34 @@
 ;; Construct a cookie string suitable for Set-Cookie or Set-Cookie2 header.
 ;; specs is the following format.
 ;;
-;;   ((<name> <value> [:comment <comment>] [:comment-url <comment-url>]
-;;                    [:discard <bool>] [:domain <domain>] [:http-only <bool>]
-;;                    [:max-age <age>] [:path <value>] [:port <port-list>]
-;;                    [:secure <bool>] [:version <version>] [:expires <date>]
-;;    ) ...)
+;;   ((<name> <value> <key> <val> ...) ...)
+;;
+;; Recognized options:
+;;    :expires <time-like>
+;;        The value can be a <date>, a <time>, integer unix seconds,
+;;        or preformatted datetime string.
+;;    :max-age <nonnegative-integer>
+;;    :domain <domain>
+;;    :path <path>
+;;    :secure <boolean>
+;;    :http-only <boolean>
+;;
+;; The following options are supported for the backward compatibility:
+;;    :comment <string>
+;;    :comment-url <url>
+;;    :discard <boolean>
+;;    :port <port-list>
+;;    :version <version>
 ;;
 ;; Returns a list of cookie strings for each <name>=<value> pair.  In the
 ;; ``new cookie'' implementation, you can join them by comma and send it
 ;; at once with Set-cookie2 header.  For the old netscape protocol, you
 ;; must send each of them by Set-cookie header.
 
-(define (construct-cookie-string specs . version)
-  (let1 ver (if (and (pair? version) (integer? (car version)))
-              (car version)
-              1)
-    (map (^[spec] (construct-cookie-string-1 spec ver)) specs)))
+(define (construct-cookie-string specs :optional version_ignore)
+  (map construct-cookie-string-1 specs))
 
-(define (construct-cookie-string-1 spec ver)
+(define (construct-cookie-string-1 spec)
   (when (< (length spec) 2)
     (error "bad cookie spec: at least <name> and <value> required" spec))
   (let ([name (car spec)]
@@ -194,40 +204,29 @@
        [(null? attr) (string-join (reverse r) ";")]
        [(null? (cdr attr))
         (errorf "bad cookie spec: attribute ~s requires value" (car attr))]
-       [(eqv? :comment (car attr))
-        (if (> ver 0)
-          (next (string-append "Comment=" (quote-if-needed (cadr attr))))
-          (ignore))]
-       [(eqv? :comment-url (car attr))
-        (if (> ver 0)
-          (next (string-append "CommentURL=" (quote-value (cadr attr))))
-          (ignore))]
-       [(eqv? :discard (car attr))
-        (if (and (> ver 0) (cadr attr)) (next "Discard") (ignore))]
+       [(eqv? :expires (car attr))
+        (next (make-expires-attr (cadr attr)))]
+       [(eqv? :max-age (car attr))
+        (next (format #f "Max-Age=~a" (cadr attr)))]
        [(eqv? :domain (car attr))
         (next (string-append "Domain=" (cadr attr)))]
-       [(eqv? :max-age (car attr))
-        (if (> ver 0)
-          (next (format #f "Max-Age=~a" (cadr attr)))
-          (ignore))]
        [(eqv? :path (car attr))
         (next (string-append "Path=" (quote-if-needed (cadr attr))))]
-       [(eqv? :port (car attr))
-        (if (> ver 0)
-          (next (string-append "Port=" (quote-value (cadr attr))))
-          (ignore))]
        [(eqv? :secure (car attr))
         (if (cadr attr) (next "Secure") (ignore))]
        [(eqv? :http-only (car attr))
         (if (cadr attr) (next "HttpOnly") (ignore))]
+       ;; Below are for the backward compatibility:
+       [(eqv? :comment (car attr))
+        (next (string-append "Comment=" (quote-if-needed (cadr attr))))]
+       [(eqv? :comment-url (car attr))
+        (next (string-append "CommentURL=" (quote-value (cadr attr))))]
+       [(eqv? :discard (car attr))
+        (if (cadr attr) (next "Discard") (ignore))]
+       [(eqv? :port (car attr))
+        (next (string-append "Port=" (quote-value (cadr attr))))]
        [(eqv? :version (car attr))
-        (if (> ver 0)
-          (next (format #f "Version=~a" (cadr attr)))
-          (ignore))]
-       [(eqv? :expires (car attr))
-        (if (> ver 0)
-          (ignore)
-          (next (make-expires-attr (cadr attr))))]
+        (next (format #f "Version=~a" (cadr attr)))]
        [else (error "Unknown cookie attribute" (car attr))])
       ))
   )
