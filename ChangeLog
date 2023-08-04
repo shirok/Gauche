@@ -13,7 +13,7 @@
 2023-07-23  Shiro Kawai  <shiro@acm.org>
 
 	* src/libio.scm, src/string.c, lib/gauche/interactive.scm:
-	  Add string-lenght slot to <write-controls>, which can limit the
+	  Add string-length slot to <write-controls>, which can limit the
 	  display length of strings.
 	  https://github.com/shirok/Gauche/issues/908
 
