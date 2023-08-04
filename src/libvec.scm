@@ -143,15 +143,32 @@
 (define-cproc vector-immutable? (v::<vector>) ::<boolean>
   SCM_VECTOR_IMMUTABLE_P)
 
-;; TRANSIENT: :optional thing will be expanded unhygienically, inserting
-;; reference to 'error'.  If we define these within #<module scheme> it
-;; would cause 'error' to be unbound.  Better fix would be to make
-;; expansion hygienic, but this is a quick remedy.
 (select-module gauche)
-(define-in-module scheme (vector->string v :optional (start 0) (end -1)) ;;R7RS
-  (list->string (vector->list v start end))) ; TODO: can be more efficient
-(define-in-module scheme (string->vector s :optional (start 0) (end -1)) ;;R7RS
-  (list->vector (string->list s start end))) ; TOOD: can be more efficient
+;; R7RS
+(define-in-module scheme (vector->string v :optional (start 0)
+                                                     (end (vector-length v)))
+  (assume-type v <vector>)
+  (assume (exact-integer? start))
+  (assume (exact-integer? end))
+  (with-output-to-string
+    (^[]
+      (do ([i start (+ i 1)])
+          ((>= i end))
+        (write-char (vector-ref v i))))))
+(define-in-module scheme (string->vector s :optional
+                                           (start (string-cursor-start s))
+                                           (end (string-cursor-end s)))
+  (assume-type s <string>)
+  (let* ([ss (string-index->cursor s start)]
+         [ee (string-index->cursor s end)]
+         [size (string-cursor-diff s ss ee)])
+    (when (< size 0)
+      (error "End point precedes start point" (list start end)))
+    (rlet1 v (make-vector size)
+      (do ([ss ss (string-cursor-next s ss)]
+           [i 0 (+ i 1)])
+          [(string-cursor>=? ss ee)]
+        (vector-set! v i (string-ref s ss))))))
 
 ;;;
 ;;; Weak vectors
