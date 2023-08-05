@@ -33750,15 +33750,31 @@ or a temporal interval and a point in time.
 二つの時間間隔、もしくは時間間隔と時刻の関係を調べる手続きを提供します。
 @c COMMON
 
+@c EN
 A temporal interval is represented by two points in time,
 @var{lesser} bound and @var{greater} bound.   This module does not define
 a concrete structure for temporal intervals.  Instead, the user
 provides a @emph{interval protocol}, which specifies how to
 access start/end time and how to compare them.
+@c JP
+時間間隔は、開始時刻(@emph{lesser bound})と終了時刻(@emph{greater bound})
+で表されるオブジェクトです。
+このモジュールは、時間間隔についての具体的なデータ構造は定めません。
+代わりに、ユーザは自分の好みのデータ構造が時間間隔として
+扱えるような@emph{時間間隔プロトコル}を提供します。
+@emph{時間間隔プロトコル}は、時間間隔の開始時刻と終了時刻へのアクセサおよび
+時間の比較方法をまとめたものです。
+@c COMMON
 
+@c EN
 Given two temporal intervals x and y, there are 13 possible relations
 (the terms are taken from Haskell Rampart library
 @url{https://hackage.haskell.org/package/rampart-2.0.0.0/docs/Rampart.html}):
+@c JP
+二つの時間間隔xとyがある時、その関係は13種類に分類できます
+(用語はHaskellのRampartライブラリから取りました
+@url{https://hackage.haskell.org/package/rampart-2.0.0.0/docs/Rampart.html}):
+@c COMMON
 
 @example
 |<-- x -->|
@@ -33804,6 +33820,7 @@ Given two temporal intervals x and y, there are 13 possible relations
 
 @defun make-interval-protocol lesser greater :optional compare-points
 @c MOD util.temporal-relation
+@c EN
 Creates and returns an interval protocol.  The @var{lesser} and
 @var{greater} arguments are procedures taking an user-defined interval
 object, and returns its lesser bound and greater bound, respectively.
@@ -33811,60 +33828,131 @@ The @var{compare-points} argument is a procedure that takes two points of
 time, and must return either a negative real value (if the first point is before
 the second), zero (if two points are the same), or a positive real value
 (if the first point is after the second).
+@c JP
+時間間隔プロトコルを作って返します。
+@var{lesser}と@var{greater}は、ユーザが使いたい時間間隔オブジェクトを引数にとって
+それぞれ開始時刻と終了時刻を返す手続きです。
+@var{compare-points}は二つの時刻a, bを取り、aの方がbより時間的に前なら
+負の実数を、aとbが同時刻なら0を、aの方がbより時間的に後なら正の実数を返す
+手続きです。
+@c COMMON
 
+@c EN
 The actual representation of time points are up to the caller.
+@c JP
+時刻をどう表現するかはユーザに任されます。
+@c COMMON
 
-If the @var{compare} argument is omitted, the built-in @code{compare} procedure
+@c EN
+If the @var{compare-points} argument is omitted,
+the built-in @code{compare} procedure
 is used (@pxref{Comparison}).  It is suffice for most scalar values;
 e.g. you may use real numbers, @code{<time>}, or @code{<date>} objects.
+@c JP
+@var{compare-points}が省略された場合は、
+組み込みの@code{compare}が使われます(@ref{Comparison}参照)。
+ほとんどのスカラー値はそれで充分です。
+例えば実数や、@code{<time>}オブジェクト、@code{<date>}オブジェクトなどはそのまま
+時刻を表す値として使えます。
+@c COMMON
 @end defun
 
 @defvar pair-interval-protocol
 @c MOD util.temporal-relation
-Bound to @code{(amke-interval-protocol car cdr)}; that is, an interval
+@c EN
+Bound to @code{(make-interval-protocol car cdr)}; that is, an interval
 represented by cons of lesser bound and greater bound.
+@c JP
+@code{(make-interval-protocol car cdr)}の値に束縛されています。
+すなわち、開始時刻と終了時刻のペアで時間間隔を表すプロトコルです。
+@c COMMON
 @end defvar
 
 @defun relation? obj
 @c MOD util.temporal-relation
+@c EN
 Returns @code{#t} iff @var{obj} is a symbol representing
 a temporal relation.  Valid symbols are one of
 @code{before}, @code{meets}, @code{overlaps}, @code{finished-by},
 @code{contains}, @code{starts}, @code{equal}, @code{started-by},
 @code{during}, @code{finishes}, @code{overlapped-by}, @code{met-by}
 and @code{after}.
+@c JP
+@var{obj}が時間的関係を表すシンボルであれば@code{#t}を、そうでなければ
+@code{#f}を返します。有効なシンボルは以下のいずれかです:
+@code{before}, @code{meets}, @code{overlaps}, @code{finished-by},
+@code{contains}, @code{starts}, @code{equal}, @code{started-by},
+@code{during}, @code{finishes}, @code{overlapped-by}, @code{met-by},
+@code{after}。
+@c COMMON
 @end defun
 
 @defun inverse rel
 @c MOD util.temporal-relation
-The argument must be a symbol representing a temporal relation.
+@c EN
+The argument must be a symbol representing a temporal relation
+(see @code{relation?} above for the valid symbols).
 This procedure returns its inverse relation; that is,
-@code{(relate _ x y)} @equiv{} @code{(inverse (relate _ y x))}.
+@code{(relate _ x y)} @equiv{} @code{(inverse (relate _ y x))},
+where @code{_} is an interval protocol.
+@c JP
+引数@var{rel}は時間的関係を表すシンボルでなければなりません
+(有効なシンボルについては上の@code{relation?}の項を参照)。
+この手続きは、@var{rel}の逆になる関係を表すシンボルを返します。
+すなわち、@code{_}を時間間隔プロトコルとした時に、
+@code{(relate _ x y)} @equiv{} @code{(inverse (relate _ y x))}が常に成り立ちます。
+@c COMMON
 
+@c EN
 An error is thrown if @var{rel} is not a valid relation.
+@c JP
+@var{rel}が有効な時間的関係でなければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun relate proto x y
 @c MOD util.temporal-relation
+@c EN
 The @var{proto} argument is an interval protocol, and both @var{x} and @var{y}
 must be temporal intervals that is compatible to the protocol @var{proto}.
+@c JP
+@var{proto}は時間間隔プロトコル、@var{x}と@var{y}はそのプロトコルが有効な
+時間間隔でなければなりません。
+@c COMMON
 
+@c EN
 The procedure returns a temporal relation, represented as one of
 the following symbols:
 @code{before}, @code{meets}, @code{overlaps}, @code{finished-by},
 @code{contains}, @code{starts}, @code{equal}, @code{started-by},
 @code{during}, @code{finishes}, @code{overlapped-by}, @code{met-by}
 and @code{after}.
+@c JP
+この手続きは二つの時間間隔の時間的関係を返します。返り値は次のシンボルのいずれかです:
+@code{before}, @code{meets}, @code{overlaps}, @code{finished-by},
+@code{contains}, @code{starts}, @code{equal}, @code{started-by},
+@code{during}, @code{finishes}, @code{overlapped-by}, @code{met-by},
+@code{after}。
+@c COMMON
 @end defun
 
 @defun relate-point proto x point
 @c MOD util.temporal-relation
+@c EN
 The @var{proto} argument is an interval protocol, and @var{x} must
 be a temporal interval that implements the protocol.  The @var{point}
 is a point of time, comparable by the compare-points procedure
 of the protocol.
+@c JP
+@var{proto}は時間間隔プロトコル、@var{x}はそのプロトコルが有効な時間間隔、
+@var{point}は@var{proto}の時刻比較手続きに渡せる時刻でなければなりません。
+@c COMMON
 
+@c EN
 The possible relations are a subset of interval-interval relations:
+@c JP
+返される時間関係は、時間間隔と時間間隔の間の関係のサブセットになります。
+@c COMMON
 
 @example
 |<-- x -->|
@@ -33883,7 +33971,6 @@ The possible relations are a subset of interval-interval relations:
    p                             x after p
 @end example
 @end defun
-
 
 
 @c ----------------------------------------------------------------------
