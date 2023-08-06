@@ -35293,7 +35293,7 @@ SxCSSを取り、与えられたポートにCSSを書き出します。@var{opor
 
 @defun parse-css :optional iport
 @c MOD www.css
-@c JP
+@c EN
 Read CSS from the given port, defaulted to the current input port,
 and returns SxCSS.
 
