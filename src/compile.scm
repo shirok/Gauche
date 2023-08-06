@@ -679,7 +679,9 @@
 (define-simple-struct $list*  $LIST*  $list*  (src args))
 (define-simple-struct $list->vector $LIST->VECTOR $list->vector (src arg0))
 
-;; common accessors
+;; Common accessors
+;; NB: These slots are not universal.  Make sure you have proper IForm type
+;; before using them.
 (define-inline ($*-src  iform)  (vector-ref iform 1))
 (define-inline ($*-args iform)  (vector-ref iform 2))
 (define-inline ($*-arg0 iform)  (vector-ref iform 2))
@@ -687,6 +689,20 @@
 (define-inline ($*-args-set! iform val)  (vector-set! iform 2 val))
 (define-inline ($*-arg0-set! iform val)  (vector-set! iform 2 val))
 (define-inline ($*-arg1-set! iform val)  (vector-set! iform 3 val))
+
+;; Extract src info from iform.  Most of the time, source extraction
+;; is done after handlers are dispatched by iform types, so you can
+;; use $*-src instead (b/c you already know the type of the iform).
+;; You want this only in the custom inlininer that generates iforms.
+(define (iform-src iform)
+  (case/unquote
+   (iform-tag iform)
+   [($LREF) (lvar-name ($lref-lvar iform))]
+   [($LSET) (lvar-name ($lset-lvar iform))]
+   [($GREF) ($gref-id iform)]
+   [($GSET) ($gset-id iform)]
+   [($CONST) ($const-value iform)]
+   [else ($*-src iform)]))
 
 ;; look up symbolic name of iform tag (for debugging)
 (define (iform-tag-name tag)

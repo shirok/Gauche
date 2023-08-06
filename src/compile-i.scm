@@ -304,20 +304,20 @@
            ;; need to save the result of thunk.
            ($let src 'let `(,at ,bt ,tt) `(,a ,b ,t)
                  ($seq
-                  `(,($call ($*-src b) ($lref bt) '())
+                  `(,($call (iform-src b) ($lref bt) '())
                     ,($asm src `(,PUSH-HANDLERS 0) `(,($lref bt) ,($lref at)))
-                    ,($call ($*-src t) ($lref tt) '())
+                    ,($call (iform-src t) ($lref tt) '())
                     ,($asm src `(,POP-HANDLERS) '()))))
            ;; normal path
            ($let src 'let `(,at ,bt ,tt) `(,a ,b ,t)
                  ($seq
-                  `(,($call ($*-src b) ($lref bt) '())
+                  `(,($call (iform-src b) ($lref bt) '())
                     ,($asm src `(,PUSH-HANDLERS 0) `(,($lref bt) ,($lref at)))
                     ,($receive #f 0 1 (list r)
-                               ($call ($*-src t) ($lref tt) '())
+                               ($call (iform-src t) ($lref tt) '())
                                ($seq
                                 `(,($asm src `(,POP-HANDLERS) '())
-                                  ,($call ($*-src a) ($lref at) '())
+                                  ,($call (iform-src a) ($lref at) '())
                                   ,($asm #f `(,TAIL-APPLY 2)
                                          (list ($gref values.) ($lref r))))))
                     )))))]
