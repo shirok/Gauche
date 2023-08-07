@@ -1,3 +1,8 @@
+2023-08-07  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/scheduler.scm (scheduler-reschedule!): Allow to change
+	  only time or duration argument, leaving the other intact.
+
 2023-08-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/extended-lambda-body): Expand :optional

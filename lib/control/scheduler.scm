@@ -185,15 +185,20 @@
 
 ;; API
 (define (scheduler-reschedule! s task-id when :optional (interval #f))
-  (validate-time when)
-  (and interval (validate-time interval))
+  (or (eq? when 'unchanged)
+      (validate-time when))
+  (or (eq? interval 'unchanged)
+      (not interval)
+      (validate-time interval))
   ($ request-response s
      (^[]
        (if-let1 task (dict-get (~ s'task-queue) task-id #f)
          (begin
            (dict-delete! (~ s'task-queue) task-id)
-           (set! (~ task'time) (absolute-time when))
-           (set! (~ task'interval) 0)
+           (unless (eq? when 'unchanged)
+             (set! (~ task'time) (absolute-time when)))
+           (unless (eq? when 'unchanged)
+             (set! (~ task'interval) interval))
            (dict-put! (~ s'task-queue) task-id task)
            task-id)
          (condition
