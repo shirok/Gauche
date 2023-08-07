@@ -51,7 +51,7 @@
   ((error-handler :init-keyword :error-handler :init-value #f)
    ;; The following slots are private.  Only the scheduler's thread
    ;; modifies those data structures.  The client thread (the caller of
-   ;; API just inserts request to the queue.
+   ;; API) just inserts request to the queue.
    (request-queue :init-form (make-mtqueue :max-length 0))
    (task-queue :init-form (make-priority-map :value-comparator task-comparator))
    (next-task-id :init-value 0)
@@ -75,6 +75,8 @@
       r)))
 
 ;; Task queue is a queue of <task>s.
+;; For periodical tasks, time slot is updated to the next absolute time
+;; after the task is run.
 (define-class <task> ()
   ((id :init-keyword :id)
    (thunk :init-keyword :thunk)
@@ -123,6 +125,8 @@
 (define (make-scheduler-thread s)
   (thread-start! (make-thread (scheduler-thread-proc s))))
 
+(define-constant *zero-duration* (make-time 'time-duration 0 0))
+
 ;; Run tasks ready to execute
 (define (run-ready-tasks! task-queue)
   (and-let* ([p (priority-map-min task-queue)]
@@ -131,7 +135,9 @@
     (when (time<=? (~ task'time) (current-time))
       (dict-delete! task-queue id)
       ((~ task'thunk))
-      (when (and (~ task'interval) (not (eqv? (~ task'interval) 0)))
+      (when (and (~ task'interval)
+                 (not (eqv? (~ task'interval) 0))
+                 (not (equal? (~ task'interval) *zero-duration*)))
         (set! (~ task'time) (absolute-time (~ task'interval)))
         (dict-put! task-queue id task))
       (run-ready-tasks! task-queue))))
