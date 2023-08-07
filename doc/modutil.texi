@@ -2868,78 +2868,164 @@ Returns @code{#t} iff @var{scheduler} is running.
 
 @defun scheduler-schedule! scheduler thunk when :optional interval
 @c MOD control.scheduler
+@c EN
 Inserts a new tasks that runs @var{thunk} into @var{scheduler}.
 The task can be run once, or periodically.
+@c JP
+@var{thunk}を走らせる新たなタスクを@var{scheduler}に加えます。
+タスクは一回だけ走らせることも、定期的に走らせることもできます。
+@c COMMON
 
+@c EN
 The @var{when} argument specifies when the task should first run.
 It can be either one of the followings:
+@c JP
+@var{when}引数が、最初にタスクを走らせるタイミングを指定します。
+次のいずれかの値が使えます。
+@c COMMON
 
 @table @asis
+@c EN
 @item @code{<time>} object of @code{type-utc} or @code{time-tai} type
 Specifies the aboslute point of time.
+@c JP
+@item @code{type-utc}か@code{time-tai}型の@code{<time>}オブジェクト
+絶対的な時刻を指定します。
+@c COMMON
+@c EN
 @item @code{<time>} object of @code{time-duration} type
 Specifies the relative time since this procedure is called.
+@c JP
+@item @code{time-duration}型の@code{<time>}オブジェクト
+この手続きを呼んだ時点からの相対的な時刻を指定します。
+@c COMMON
+@c EN
 @item real number
 Specifies the relative time in seconds since this procedure is called.
+@c JP
+@item 実数
+この手続きを呼んだ時点からの秒数を指定します。
+@c COMMON
 @end table
 
+@c EN
 The optional @var{interval} argument can be @code{#f}, real number
 or @code{<time>} object of @code{time-duration} type.  If it is @code{#f}
 or 0, the task is one-shot, that is, not repeated.  Otherwise,
 the task is repeated with the specified interval---the real number
 specifies the number of seconds.
+@c JP
+省略可能な@var{interval}引数は、@code{#f}、実数、もしくは@code{time-duration}型の
+@code{<time>}オブジェクトです。@code{#f}または@code{0}の場合、
+タスクは一回だけ実行され、繰りかえされません。
+そうでなければ、タスクは指定の時間間隔で繰り返し実行されます。
+実数の場合の単位は秒です。
+@c COMMON
 
+@c EN
 Returns an integer that identifies the task.  The task id can
 be used to cancel or reschedule the task.
+@c JP
+手続きは、タスクを指定する整数を返します。この値は後でタスクをリスケジュールしたり
+キャンセルするのに使えます。
+@c COMMON
 @end defun
 
 
 @defun scheduler-reschedule! scheduler task-id when :optional interval
 @c MOD control.scheduler
+@c EN
 Change the schedule of the task specified by @var{task-id} in the
 scheduler.  The meaning of @var{when} and @var{interval} argument is
 the same as @code{scheduler-schedule!}.
+@c JP
+@var{task-id}で指定されるタスクのスケジュールを変更します。
+@var{when}および@var{interval}の意味は@code{scheduler-schedule!}と同じです。
+@c COMMON
 
+@c EN
 If the scheduler doesn't have a task with @var{task-id}, an exception
 is raised.
+@c JP
+@var{task-id}に該当するタスクがなければエラーが投げられます。
+@c COMMON
 @end defun
 
 
 @defun scheduler-remove! scheduler task-id
 @c MOD control.scheduler
+@c EN
 Remove the task specified by @var{task-id} from the scheduler.
 If the task is actually removed, @code{#t} is returned.
 If the scheduler doesn't have a task with @var{task-id}, @code{#f} is returned.
+@c JP
+@var{task-id}で指定されるタスクをスケジューラから取り除きます。
+実際にタスクが取り除かれたら@code{#t}を、
+該当するタスクが無かった場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
 
 @defun scheduler-exists? scheduler task-id
 @c MOD control.scheduler
+@c EN
 Returns @code{#t} iff the scheduler has the task with @var{task-id}
 in the queue.  Note that once the task is executed and not repeating,
 the task is removed from the queue.
+@c JP
+スケジューラが@var{task-id}で指定されるタスクを持っていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+繰り返さないタスクは一度実行されたらスケジューラから取り除かれることに注意してください。
+@c COMMON
 @end defun
 
 @defun scheduler-terminate! scheduler :key on-error
 @c MOD control.scheduler
+@c EN
 Stop the scheduler.  Tasks still in the scheduler's queue won't executed,
 and no new task will be accepted.   Once the scheduler is terminated,
 it can't be restarted.
+@c JP
+スケジューラを停止します。スケジューラのキューに残っているタスクはもう実行されず、
+また新しいタスクを追加することもできなくなります。
+一度停止したスケジューラを再起動することはできません。
+@c COMMON
 
+@c EN
 If no task has raised an exception, or all exceptions are handled
 by the error-handler of the scheduler, this procedure returns @code{#t}
 after the scheduler is stopped.
+@c JP
+タスクがこれまで例外をあげたことがないか、スケジューラの@code{error-handler}で
+例外が全て処理済みであった場合、この手続きはスケジューラが停止した後で
+@code{#t}を返します。
+@c COMMON
 
+@c EN
 If any task has raised an exception and not handled by
 the error-handler, the behavior depends on the @var{on-error}
 keyword argumnent, which should be one of the following:
+@c JP
+タスクが例外を上げていてスケジューラの@code{error-handler}で処理されて
+いなかった場合、この手続きの振る舞いは@var{on-error}引数で決まります。
+可能な値は次のいずれかです。
+@c COMMON
 
 @table @code
 @item :reraise
+@c EN
 The exception is reraised from @code{scheduler-terminate!}.
 This is the default.
+@c JP
+処理されなかった例外が、@code{scheduler-terminate!}から改めて投げられます。
+これがデフォルトの振る舞いです。
+@c COMMON
 @item :return
+@c EN
 The exception is returned from @code{scheduler-terminate!}.
+@c JP
+処理されなかった例外が@code{scheduler-terminate!}の戻り値として返されます。
+@c COMMON
 @end table
 @end defun
 
