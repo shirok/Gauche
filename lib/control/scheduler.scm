@@ -152,6 +152,11 @@
       (and (time? when) (memq (time-type when) '(time-duration time-utc)))
       (error "Nonnegative real number or <time> is expected, but got:" when)))
 
+(define (validate-duration dur)
+  (or (and (real? dur) (>= dur 0))
+      (and (time? dur) (eq? (time-type dur) 'time-duration))
+      (error "Nonnegative real number or <time> of time-duration is expected, but got:" when)))
+
 (define (absolute-time when)
   (cond [(real? when)
          (receive (dfrac dsec) (modf when)
@@ -176,7 +181,7 @@
 ;; Returns task id
 (define (scheduler-schedule! s thunk when :optional (interval #f))
   (validate-time when)
-  (and interval (validate-time interval))
+  (and interval (validate-duration interval))
   ($ request-response s
      (^[]
        (let1 task (make-task s thunk (absolute-time when) interval)
@@ -189,7 +194,7 @@
       (validate-time when))
   (or (eq? interval 'unchanged)
       (not interval)
-      (validate-time interval))
+      (validate-duration interval))
   ($ request-response s
      (^[]
        (if-let1 task (dict-get (~ s'task-queue) task-id #f)
