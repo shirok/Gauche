@@ -2944,6 +2944,22 @@ the same as @code{scheduler-schedule!}.
 @c COMMON
 
 @c EN
+The same types of values as @code{scheduler-schedule!} are allowed for
+@var{when} and @var{interval} arguments, as well as a symbol
+@code{unchanged}, which indicates that value is left alone by
+the operation.  Note that omitting @var{interval} means task will be
+non-repeating.  If you want to change just the next time the repeating
+task is executed, pass @code{unchanged} to the @var{interval}.
+@c JP
+@var{when}と@var{interval}引数は、@code{scheduler-schedule!}と同じものの他、
+シンボル@code{unchanged}も許されます。@code{unchanged}が渡された場合は
+その引数に関して以前の設定が引き継がれます。@var{interval}を省略することは
+タスクを繰り返さないという指定になることに注意してください。
+次にタスクが実行される時刻を変更したいが、繰り返しの周期はそのままにしておきたい、
+という場合は@var{interval}に@code{unchanged}を渡してください。
+@c COMMON
+
+@c EN
 If the scheduler doesn't have a task with @var{task-id}, an exception
 is raised.
 @c JP
