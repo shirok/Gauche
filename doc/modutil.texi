@@ -4489,19 +4489,35 @@ both must accept two keys.  This interface is consistent with
 @defunx alist->imap alist comparator
 @defunx alist->imap alist key=? key<?
 @c MOD data.imap
-Creates a new empty immutable map, populates it with
-key-value association list @var{alist}, and returns it.
+@c EN
+Creates and returns an immutable map containing
+key-value associations given by an assoc-list @var{alist}.
 This may be a bit more efficient than creating an empty map with
 @code{make-imap} and populates it with @code{imap-put}
 one by one.
+@c JP
+連想リスト@var{alist}で指定されるキーと値の組み合わせを持つ変更不可なマップを新たに作って返します。
+これは@code{make-imap}で空のimapを作ってから@code{imap-put}で一要素づつ値を追加するよりも効率的です。
+@c COMMON
 
+@c EN
 The @var{comparator} argument specifies how to compare the keys.
 It must have comparison procedure.  If omitted, @code{default-comparator}
 is used.  @xref{Basic comparators}, for the details.
+@c JP
+@var{comparator}引数はキーの比較に使うので比較手続きを持っていなければなりません。
+省略された場合は@code{default-comparator}が使われます。
+比較器について詳しくは@ref{Basic comparators}を参照してください。
+@c COMMON
 
+@c EN
 The third form creates a key comparator from a equality
-predicate @var{key=?} and less-than predicate @code{key<=?},
+predicate @var{key=?} and less-than predicate @code{key<?},
 both must accept two keys.
+@c JP
+三つ目の形式は、等価判定述語@var{key=?}と比較述語@var{key<?}の組み合わせで
+キーの比較方法を指定するものです。どちらの述語も二つのキーを取ります。
+@c COMMON
 
 @example
 (define m (alist->imap '((a . 1) (b . 2))))
@@ -4513,25 +4529,42 @@ both must accept two keys.
 
 @defun tree-map->imap tree-map
 @c MOD data.imap
+@c EN
 Returns a new immutable map with the same content (and the same comparator)
 as @var{tree-map}.
+@c JP
+@var{tree-map}と同じ内容、同じ比較器を持つ変更不可なマップを返します。
+@c COMMON
 @end defun
 
 @defun imap? obj
 @c MOD data.imap
+@c EN
 Returns @code{#t} if @var{obj} is an immutable map,
 @code{#f} otherwise.
+@c JP
+@var{obj}が変更不可なマップなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun imap-empty? immap
 @c MOD data.imap
+@c EN
 Returns @code{#t} if an immutable map @var{immap} is empty,
 @code{#f} otherwise.
+@c JP
+変更不可なマップ@var{immap}が空なら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun imap-exists? immap key
 @c MOD data.imap
+@c EN
 Returns @code{#t} if @var{key} exists in an immutable map @var{immap}.
+@c JP
+変更不可なマップ@var{immap}がキー@var{key}を持っていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun imap-get immap key :optional default
