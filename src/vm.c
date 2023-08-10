@@ -4261,112 +4261,6 @@ ScmObj Scm_VMGetStack(ScmVM *vm SCM_UNUSED /* temporary*/)
  *  displayed as #NULL.
  */
 
-/* Extracting VM debug info.
- *
- *  The decoder is implemented in C, since this can be called during examining
- *  VM state, thus the decoder should not change VM state.
- *  See lib/gauche/vm/debug-info.scm for the details of packed debug info.
- */
-typedef struct debug_info_decoder {
-    uint8_t *packed;
-    ScmObj *consts;
-    int pos;
-    int len;
-    ScmHashCore table;          /* index -> pair */
-} debug_info_decoder;
-
-static ScmObj decode_list(debug_info_decoder *decoder);
-
-static void init_decoder(debug_info_decoder *decoder,
-                         uint8_t *packed,
-                         int packed_len,
-                         ScmObj const_vector)
-{
-    decoder->packed = packed;
-    decoder->len = packed_len;
-    decoder->consts = SCM_VECTOR_ELEMENTS(const_vector);
-    decoder->pos = 0;
-    Scm_HashCoreInitSimple(&decoder->table, SCM_HASH_EQV, 0, NULL);
-}
-
-static int next_byte(debug_info_decoder *decoder)
-{
-    if (decoder->pos < decoder->len) {
-        return decoder->packed[decoder->pos++];
-    } else {
-        return -1;
-    }
-}
-
-static void save_pair(debug_info_decoder *decoder, ScmObj pair)
-{
-    ScmDictEntry *e = Scm_HashCoreSearch(&decoder->table,
-                                         (intptr_t)decoder->pos,
-                                         SCM_DICT_CREATE);
-    (void)SCM_DICT_SET_VALUE(e, pair);
-}
-
-static int decode_index(debug_info_decoder *decoder, int msbs, _Bool cont)
-{
-    if (cont) {
-        for (;;) {
-            int b = next_byte(decoder);
-            if (b < 0) Scm_Error("Premature end of packed debug info");
-            if (b < 128) return (msbs << 7) | b;
-            msbs = (msbs << 7) | (b & 0x7f);
-        }
-    } else {
-        return msbs;
-    }
-}
-
-static ScmObj decode_item(debug_info_decoder *decoder)
-{
-    int b = next_byte(decoder);
-    int ind;
-    ScmDictEntry *e;
-
-    switch (b & 0x60) {
-    case 0x00:
-        ind = decode_index(decoder, b & 0x1f, b & 0x80);
-        e = Scm_HashCoreSearch(&decoder->table, ind, SCM_DICT_GET);
-        if (!e) Scm_Error("Stray pair reference");
-        return SCM_OBJ(SCM_DICT_VALUE(e));
-    case 0x20:
-        ind = decode_index(decoder, b & 0x1f, b & 0x80);
-        return decoder->consts[ind];
-    case 0x40:
-        ind = decode_index(decoder, b & 0x1f, b & 0x80);
-        return SCM_MAKE_INT(ind);
-    default:
-        switch (b) {
-        case 0x60: return SCM_NIL;
-        case 0x61: return decode_list(decoder);
-        case 0x62: Scm_Error("Stray end-of-list marker");
-        case 0x63: Scm_Error("Stray dot-list marker");
-        default: Scm_Error("Invalid octet: %02x", b);
-        }
-    }
-    return SCM_UNDEFINED;       /* dummy */
-}
-
-static ScmObj decode_list(debug_info_decoder *decoder)
-{
-    int b = next_byte(decoder);
-    switch (b) {
-    case 0x62: return SCM_NIL;
-    case 0x63: return decode_item(decoder);
-    default: {
-        ScmObj pair = Scm_Cons(SCM_FALSE, SCM_FALSE);
-        decoder->pos--;
-        save_pair(decoder, pair);
-        SCM_SET_CAR(pair, decode_item(decoder));
-        SCM_SET_CDR(pair, decode_list(decoder));
-        return pair;
-    }
-    }
-}
-
 static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
 {
     if (base == NULL
@@ -4374,16 +4268,10 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
         return SCM_FALSE;
     }
 
-    if (SCM_PACKED_DEBUG_INFO_P(base->debugInfo)) {
-        debug_info_decoder decoder;
-        ScmPackedDebugInfo *di = SCM_PACKED_DEBUG_INFO(base->debugInfo);
-        init_decoder(&decoder, di->codeVector, di->codeSize, di->constVector);
-        base->debugInfo = decode_item(&decoder);
-    }
-
+    ScmObj di = Scm_CodeDebugInfo(base);
     int off = (int)(pc - base->code);
     ScmObj ip;
-    SCM_FOR_EACH(ip, base->debugInfo) {
+    SCM_FOR_EACH(ip, di) {
         ScmObj p = SCM_CAR(ip);
         if (!SCM_PAIRP(p) || !SCM_INTP(SCM_CAR(p))) continue;
         /* PC points to the next instruction,
@@ -4394,7 +4282,6 @@ static ScmObj get_debug_info(ScmCompiledCode *base, SCM_PCTYPE pc)
     }
     return SCM_FALSE;
 }
-
 
 ScmObj Scm_VMGetSourceInfo(ScmCompiledCode *base, SCM_PCTYPE pc)
 {

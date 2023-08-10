@@ -89,6 +89,9 @@ SCM_CLASS_DECL(Scm_PackedDebugInfoClass);
 
 SCM_EXTERN ScmObj Scm_MakePackedDebugInfo(ScmUVector*, ScmVector*);
 SCM_EXTERN ScmObj Scm_CodeDebugInfo(ScmCompiledCode *);
+SCM_EXTERN ScmObj Scm_DecodePackedDebugInfo(const uint8_t *codeVector,
+                                            ScmSmallInt codeSize,
+                                            ScmVector *constVector);
 
 SCM_DECL_END
 

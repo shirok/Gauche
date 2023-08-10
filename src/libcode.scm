@@ -183,6 +183,12 @@
     ((with-module gauche.vm.code %original-source)
      (assq-ref def 'source-info))))
 
+(define-cproc %decode-packed-debug-info (code-vector::<u8vector>
+                                         const-vector::<vector>)
+  (return (Scm_DecodePackedDebugInfo (SCM_U8VECTOR_ELEMENTS code-vector)
+                                     (SCM_U8VECTOR_SIZE code-vector)
+                                     const-vector)))
+
 ;; Called from pass5 of the compiler.  SRC is $lambda-src of the iform
 ;; (could be #f)  Does two things:
 ;;  - Push the entire source into debug-info

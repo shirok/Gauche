@@ -190,6 +190,7 @@
 ;; Decoder
 ;;
 
+#|
 ;; internal type
 (define-class <decoder> ()
   ((buf :init-keyword :buf)        ;u8vector
@@ -258,3 +259,8 @@
 (define (decode-debug-info bytevector constvector)
   (let1 decoder (make <decoder> :buf bytevector :consts constvector)
     (decode-item decoder)))
+|#
+
+(define (decode-debug-info bytevector constvector)
+  ((with-module gauche.internal %decode-packed-debug-info)
+   bytevector constvector))
