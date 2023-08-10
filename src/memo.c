@@ -330,7 +330,7 @@ ScmObj Scm_MemoTablePutv(ScmMemoTable *tab, ScmObj *keys, int nkeys, ScmObj val)
     ScmMemoTableStorage *st = tab->storage;
     ScmVM *self = Scm_VM();
 
-    for (int retry = 0; retry < 2; retry++) {
+    for (int retry = 0; retry < 3; retry++) {
         if (search_and_insert(tab, st, hashv_hdr, keys, val, self)) {
             return SCM_TRUE;
         }
