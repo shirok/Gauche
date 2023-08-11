@@ -4913,48 +4913,126 @@ See @code{make-hash-table} above for the description of
 @defunx hash-table-hash-function ht
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 Returns equivalence function and hash function of the
 hashtable @var{ht}.
+@c JP
+ハッシュテーブル@var{ht}の等価判定述語とハッシュ関数をそれぞれ返します。
+@c COMMON
 
+@c EN
 Note that SRFI-69's hash function takes an optional
 @var{bound} argument.   Since our underlying hash tables
 don't use bound argument, we actually wrap the internal hash function
 to allow the optional bound argument.
+@c JP
+SRFI-69のハッシュ関数は省略可能な@var{bound}引数を取ることになっています。
+Gaucheのハッシュテーブルのハッシュ関数は@var{bound}引数を取らないので、
+@code{hash-table-hash-function}が返す関数はラッパーをかませて
+省略可能な@var{bound}引数を取るようにしています。
+@c COMMON
 @end defun
 
 @defun hash-table-ref ht key :optional thunk
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 Looks up the value corresponding to @var{key} in a hash table @var{ht}.
 If there's no entry for @var{key}, @var{thunk} is called
-without arguments.  The default of @var{thunk} is to signal an error.
+without arguments, and its result is returned.
+The default of @var{thunk} is to signal an error.
+@c JP
+ハッシュテーブル@var{ht}からキー@var{key}を探し、対応する値を返します。
+@var{key}がテーブル中に無かった場合、@var{thunk}が引数なしで呼ばれ、
+その結果が戻り値となります。
+@var{thunk}の省略時の値はエラーを投げる手続きです。
+@c COMMON
+
+@c EN
+This convention differs from Gauche's built-in @code{hash-table-get},
+which takes optonal @var{default} argument to be returned when the key
+doesn't exist (@pxref{Hashtables}).  The following equivalence holds:
+@c JP
+このインタフェースGauche組み込みの@code{hash-table-get}と異なることに
+注意してください。@code{hash-table-get}は省略可能な@var{default}引数を取り、
+キーが見つからなかった場合はそれを返します(@ref{Hashtables}参照)。
+次の関係が成り立ちます。
+@c COMMON
+
+@example
+(hash-table-get ht key default) @equiv{} (hash-table-ref ht key (^[] default))
+@end example
 @end defun
 
 @defun hash-table-ref/default ht key default
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 Looks up the value corresponding to @var{key} in a hash table @var{ht}.
+If the key doesn't exist, @var{default} is returned.
 This is like Gauche's @code{hash-table-get}, but @var{default} can't be
-omitted.
+omitted (@pxref{Hashtables}).
+@c JP
+ハッシュテーブル@var{ht}からキー@var{key}に対応する値を探して返します。
+キーが見つからなければ@var{default}が返されます。
+組み込みの@code{hash-table-get}と似ていますが、@var{default}
+は省略できません(@ref{Hashtables}参照)。
+@c COMMON
 @end defun
 
 @defun hash-table-set! ht key val
 [SRFI-69]
 @c MOD srfi.69
-This is the same as Gauche's @code{hash-table-put!}.
+@c EN
+This is the same as Gauche's @code{hash-table-put!} (@pxref{Hashtables}).
+@c JP
+Gaucheの@code{hash-table-put!}と同じです(@ref{Hashtables}参照)。
+@c COMMON
 @end defun
 
 @defun hash-table-update! ht key proc :optional thunk
 @defunx hash-table-update!/default ht key proc default
 [SRFI-69]
 @c MOD srfi.69
+@c EN
+Calls @var{proc} with the value associated to @var{key} in @var{ht},
+and replace the value in @var{ht} with the result of @var{proc}.
+The following functional equivalences hold, though these procedures
+may be more efficient.
+@c JP
+@var{ht}中の@var{key}に対応する値を引数として@var{proc}を呼び出し、
+@var{ht}中の値を@var{proc}の戻り値で置き換えます。
+以下の機能的な等価性が成り立ちますが、これらの手続きの方が効率的かもしれません。
+@c COMMON
+
+@example
+(hash-table-update! ht key proc thunk)
+ @equiv{} (hash-table-set! ht key (proc (hash-table-ref ht key thunk)))
+
+(hash-table-update!/default ht key proc default)
+ @equiv{} (hash-table-set! ht key (proc (hash-table-ref/default ht key default)))
+@end example
+
+@c EN
+Note that Gauche's built-in @code{hash-table-update!} is different, for
+it takes optional @var{default} argument instead of @var{thunk}
+(@pxref{Hashtables}).
+@c JP
+Gauche組み込みの@code{hash-table-update!}は@var{thunk}ではなく@var{default}
+を取る点で異なっていることに注意してください(@ref{Hashtables}参照)
+@c COMMON
 @end defun
 
 @defun hash-table-size ht
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 Returns the number of entries in a hash table @var{ht}.  The same as Gauche's
 @code{hash-table-num-entries}.
+@c JP
+ハッシュテーブル@var{ht}中のエントリの数を返します。
+Gaucheの@code{hash-table-num-entries}と同じです。
+@c COMMON
 @end defun
 
 @defun hash-table-walk ht proc
