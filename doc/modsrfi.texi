@@ -4789,6 +4789,18 @@ SRFI-69の@code{hash-table-ref/default}が、Gaucheの@code{hash-table-ref}に
 @c COMMON
 @item
 @c EN
+SRFI-69's @code{hash-table-update!} and @code{hash-table-update!/default}
+to Gauche's @code{hash-table-update!} is the same as
+@code{hash-table-ref}, @code{hash-table-ref/default} and
+@code{hash-table-get}.
+@c JP
+SRFI-69の@code{hash-table-update!}と@code{hash-table-update!/default}に対する
+Gaucheの@code{hash-table-update!}は、
+@code{hash-table-ref}と@code{hash-table-ref/default}に対する
+@code{hash-table-get}の関係と同じです。
+@c COMMON
+@item
+@c EN
 The basic iterator of SRFI-69 is called @code{hash-table-walk},
 which is Gauche's @code{hash-table-for-each}.  The srfi name is chosen
 to avoid conflict with existing Scheme implementations.
