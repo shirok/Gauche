@@ -58,9 +58,9 @@
 
 (define-class <info-node> ()
   ((name    :init-keyword :name)
-   (next    :init-keyword :next)
-   (prev    :init-keyword :prev)
-   (up      :init-keyowrd :up)
+   (next    :init-keyword :next :init-value #f)
+   (prev    :init-keyword :prev :init-value #f)
+   (up      :init-keyowrd :up :init-value #f)
    (file    :init-keyword :file)
    (content :init-keyword :content)
    ))
