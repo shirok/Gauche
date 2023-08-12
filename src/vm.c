@@ -1380,7 +1380,7 @@ ScmObj get_denv(ScmVM *vm)
                                                      (intptr_t)p,
                                                      SCM_DICT_GET);
                 if (e) {
-                    SCM_APPEND(hh, tt, SCM_DICT_VALUE(e));
+                    SCM_APPEND1(hh, tt, SCM_DICT_VALUE(e));
                     break;
                 }
                 SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(SCM_CAR(p)));
