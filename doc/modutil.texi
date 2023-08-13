@@ -29297,7 +29297,7 @@ which Gauche provides on REPL (@pxref{Input editing}).
 しばしば、複数の単語をデリミタでつないだ文字列を、各単語のプレフィクスだけを指定して
 サーチしたいことがあります。例えば@code{c-w-c-c}を指定して
 @code{call-with-current-continuation}を探す、というようなことです。
-これはシンボルの補完などによく使わ、
+これはシンボルの補完などによく使われ、
 GaucheのREPLでも採用しています (@ref{Input editing}参照)。
 @c COMMON
 
@@ -29318,7 +29318,7 @@ When @var{separator} is omitted, @code{#\-} is assumed.
 @c JP
 @var{pattern}と@var{word}はともに文字列、@var{separator}は
 文字、文字集合、正規表現、文字を取る述語、あるいは文字列のいずれかでなければなりません。
-@var{separator}が省略された場合は@var{#\-}が使われます。
+@var{separator}が省略された場合は@code{#\-}が使われます。
 @c COMMON
 
 @c EN
