@@ -28497,9 +28497,108 @@ It focuses mainly to handle Gauche documents, so it may not handle
 all features used in texinfo.
 @end deftp
 
+@deftp {Class} <info-file>
+@clindex info-file
+@c MOD text.info
+An object for opened info file(s), returned by @code{open-info-file}.
+All slots are private.
+@end deftp
 
+@deftp {Class} <info-node>
+@clindex info-node
+@c MOD text.info
+An object for each info node.  It keeps the node's content, as well
+as links to neighboring nodes.  Its instance should be considered
+immutable object.
 
+A node can be obtained from an @code{<info-file>} object by
+@code{info-get-node}.
 
+@defivar <info-node> name
+A string name of the info node.  Every info document has at least
+@code{"Top"} node.
+@end defivar
+
+@defivar <info-node> next
+The string name of the next node.  You can visit all nodes in
+the document following the next link.
+It may be @code{#f} if the node is the last one of the document.
+@end defivar
+
+@defivar <info-node> prev
+The string name of the previous node.  It's a reverse link
+of the next node.  The previous node of @code{"Top"} is
+@code{"(dir)"} by convention, which is a special node
+that lists all info documents installed on the system (it is not
+included in the info document itself.)
+@end defivar
+
+@defivar <info-node> up
+If the node is a subnode, this contains the name of the upper node
+(a chapter name for sections, a section name for subsections, etc.)
+It is @code{#f} for @code{"Top"} node.
+@end defivar
+
+@defivar <info-node> file
+An <info-file> object of the info document this node is contained.
+@end defivar
+
+@defivar <info-node> content
+A string content of the node.
+@end defivar
+@end deftp
+
+@defun open-info-file info-file-path
+@c MOD text.info
+Open the named info document and returns an @code{<info-file>} instance.
+The argument is a pathname to a master info file, usually with
+@code{.info} suffix.  Depending on the installation, info files
+may be compressed with gzip or bzip2, having extensions
+@code{.gz} or @code{.bz2} after @code{.info}; you don't need to
+specify those extensions.  The procedure searches possible compression
+options.
+
+A large info document may be splitted into multiple info files,
+each with a suffix @code{.info-1}, @code{.info-2} etc.  Those are
+automatically read, so you only need to give the path to the master file.
+
+If it can't find the named document, or can't recognize its format,
+an error is thrown.
+@end defun
+
+@defun info-get-node info-file node-name
+@c MOD text.info
+The @var{info-file} argument is an @code{<info-file>} instance.
+Returns an @code{<info-node>} instance with the string name @var{node-name},
+or @code{#f} if no node with the given name is found.
+@end defun
+
+@defun info-parse-menu info-node
+@c MOD text.info
+Search info menu in the given node, and returns a list of menu entries
+if found.  Each menu entry is the following form:
+@example
+(<entry-name> <node-name> [<line-number>])
+@end example
+Where @code{<entry-name>} is either a node name, function or macro name,
+or a module name.
+@end defun
+
+@defun info-extract-definition info-node start-line
+@c MOD text.info
+Extract one definition from the node's content.  Assumes the definition
+begins from the specified line; then we go forward to find the end of
+the definition.  The end of definition is when we see the end of content,
+or we see a line begins with less than or equal to 3 whitespaces.
+(Except the 'defunx'-type multi entry).
+
+Returns a string describing the definition.  If no definition is found,
+an empty string is returned.
+
+A typical idiom is to apply @code{info-parse-menu} on an index node,
+and search with the desired entry name to obtain node name and line number,
+then use this procedure to extract the definition.
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Multicolumn formatting, Display with pager, Accessing info document, Library modules - Utilities
