@@ -383,6 +383,11 @@ fuga
   )
 
 ;;-------------------------------------------------------------------
+(test-section "info")
+(use text.info)
+(test-module 'text.info)
+
+;;-------------------------------------------------------------------
 (test-section "multicolumn")
 (use text.multicolumn)
 (test-module 'text.multicolumn)

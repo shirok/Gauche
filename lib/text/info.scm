@@ -37,12 +37,14 @@
   (use text.parse)
   (use gauche.process)
   (use file.util)
+  (use util.match)
   (cond-expand
    [gauche.sys.zlib
     (use rfc.zlib)]
    [else])
   (export <info-file> <info-node>
           open-info-file info-get-node info-parse-menu
+          info-index-add! info-index-ref info-index-keys
           info-extract-definition
           )
   )
@@ -51,18 +53,23 @@
 ;; NB: node-table maps node name (string) => <info-node> or
 ;; subinfo-file (string).
 (define-class <info-file> ()
-  ((path           :init-keyword :path)
-   (directory      :init-keyword :directory)
-   (node-table     :init-form (make-hash-table 'string=?))
+  ((path           :init-keyword :path
+                   :immutable #t)
+   (directory      :init-keyword :directory
+                   :immutable #t)
+   (node-table     :init-form (make-hash-table 'string=?)
+                   :immutable #t)
+   (index-table    :init-form (make-hash-table 'string=?)
+                   :immutable #t)
    ))
 
 (define-class <info-node> ()
-  ((name    :init-keyword :name)
-   (next    :init-keyword :next :init-value #f)
-   (prev    :init-keyword :prev :init-value #f)
-   (up      :init-keyowrd :up :init-value #f)
-   (file    :init-keyword :file)
-   (content :init-keyword :content)
+  ((name    :init-keyword :name :immutable #t)
+   (next    :init-keyword :next :init-value #f :immutable #t)
+   (prev    :init-keyword :prev :init-value #f :immutable #t)
+   (up      :init-keyowrd :up :init-value #f :immutable #t)
+   (file    :init-keyword :file :immutable #t)
+   (content :init-keyword :content :immutable #t)
    ))
 
 ;; Find bzip2 location
@@ -209,6 +216,52 @@
                  (menu line2 `((,index ,node) ,@r)))))]
           [else (menu (read-line) r)]))
       (skip (read-line)))))
+
+;; API
+;; Read the named node and adds its menu into the index table.
+;; It is particularly useful to give the index page of the info doc,
+;; so that you'll be able to lookup particular term (e.g. function name)
+;; quickly.
+;; KEY-MODIFIER is a procedure applied to the entry-name to obtain a key
+;; in the index table.  Sometimes the index uses different entry name
+;; from the actual name; e.g. Gauche's class index lists class names without
+;; surrounding '<' and '>', since using the actual name makes all class names
+;; being listed below '<' subheading, which isn't very useful.
+;; You can pass (^e #"<~|e|>") as key-modifier to recover the actual
+;; class name to be used as the key.
+;; If there are more than one entries per key, both are saved in the
+;; index table.  See info-lookup-index below.
+(define (info-index-add! info-file index-node-name
+                         :optional (key-modifier identity))
+  ;; When there are more than one entry with the same name, texinfo appends
+  ;; " <n>" in the index entry.  We want to strip it.
+  (define (entry-name e)
+    (if-let1 m (#/ <\d+>$/ e) (rxmatch-before m) e))
+
+  (if-let1 n (info-get-node info-file index-node-name)
+    (dolist [p (info-parse-menu n)]
+      (hash-table-push! (~ info-file'index)
+                        (key-modifier (entry-name (car p)))
+                        (cdr p)) ;; (<node-name> <line-number>)
+      )
+    (error "No such info node:" index-node-name)))
+
+;; API
+;; Lookup index with the given key.  Returns a list of
+;; (<node-name> <line-number>).
+(define (info-index-ref info-file key)
+  (fold (^[e r]
+          (match e
+            [(node-name line-number) (cons e r)]
+            [(node-name) (cons `(,node-name 1) r)]
+            [_ r]))
+        '()
+        (hash-table-get (~ info-file'index) key '())))
+
+;; API
+;; Retuns a list of keys in the index.
+(define (info-index-keys info-file)
+  (hash-table-keys (~ info-file'index)))
 
 ;; API
 ;; Extract one definition from the node's content.  Assumes the definition
