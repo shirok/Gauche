@@ -49,7 +49,7 @@
 (define *info-file* "gauche-refe.info")
 
 (define-class <repl-info> () ;; a singleton
-  ((info  :init-keyword :info)   ;; <info> or #f
+  ((info  :init-keyword :info)   ;; <info-document> or #f
    (index :init-keyword :index)  ;; hashtable name -> [(node-name line-no)]
    ))
 
@@ -57,7 +57,7 @@
   (let1 repl-info
       (delay
         (let ([info  (and-let1 path (find-info-file)
-                       (open-info-file path))]
+                       (open-info-document path))]
               [index (make-hash-table 'string=?)])
           (if info
             (begin

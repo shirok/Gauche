@@ -42,8 +42,8 @@
    [gauche.sys.zlib
     (use rfc.zlib)]
    [else])
-  (export <info-file> <info-node>
-          open-info-file info-get-node info-parse-menu
+  (export <info-document> <info-node>
+          open-info-document info-get-node info-parse-menu
           info-index-add! info-index-ref info-index-keys
           info-extract-definition
           )
@@ -52,7 +52,7 @@
 
 ;; NB: node-table maps node name (string) => <info-node> or
 ;; subinfo-file (string).
-(define-class <info-file> ()
+(define-class <info-document> ()
   ((path           :init-keyword :path
                    :immutable #t)
    (directory      :init-keyword :directory
@@ -113,7 +113,7 @@
   (let1 parts (read-info-file-split file opts)
     (when (null? parts)
       (error "file is not an info file" file))
-    (rlet1 info (make <info-file> :path file :directory (sys-dirname file))
+    (rlet1 info (make <info-document> :path file :directory (sys-dirname file))
       (if (string=? (caar parts) "Indirect:")
         (let1 indirect-table (parse-indirect-table (cdar parts))
           (parse-tag-table info indirect-table (cdr (cadr parts))))
@@ -168,13 +168,13 @@
     [else #f]))
 
 ;; API
-;; Returns <info-file>
-(define (open-info-file file)
+;; Returns <info-document>
+(define (open-info-document file)
   (read-master-info-file file '()))
 
 ;; API
 ;; Returns <info-node>
-(define-method info-get-node ((info <info-file>) nodename)
+(define-method info-get-node ((info <info-document>) nodename)
   (if-let1 node (hash-table-get (~ info 'node-table) nodename #f)
     (cond [(is-a? node <info-node>) node]
           [else
