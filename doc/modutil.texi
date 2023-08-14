@@ -28497,10 +28497,10 @@ It focuses mainly to handle Gauche documents, so it may not handle
 all features used in texinfo.
 @end deftp
 
-@deftp {Class} <info-file>
+@deftp {Class} <info-document>
 @clindex info-file
 @c MOD text.info
-An object for opened info file(s), returned by @code{open-info-file}.
+An object for opened info file(s), returned by @code{open-info-document}.
 All slots are private.
 @end deftp
 
@@ -28511,7 +28511,7 @@ An object for each info node.  It keeps the node's content, as well
 as links to neighboring nodes.  Its instance should be considered
 immutable object.
 
-A node can be obtained from an @code{<info-file>} object by
+A node can be obtained from an @code{<info-document>} object by
 @code{info-get-node}.
 
 @defivar <info-node> name
@@ -28540,7 +28540,7 @@ It is @code{#f} for @code{"Top"} node.
 @end defivar
 
 @defivar <info-node> file
-An <info-file> object of the info document this node is contained.
+An @code{<info-document>} object of the info document this node is contained.
 @end defivar
 
 @defivar <info-node> content
@@ -28548,9 +28548,9 @@ A string content of the node.
 @end defivar
 @end deftp
 
-@defun open-info-file info-file-path
+@defun open-info-document info-file-path
 @c MOD text.info
-Open the named info document and returns an @code{<info-file>} instance.
+Open the named info document and returns an @code{<info-document>} instance.
 The argument is a pathname to a master info file, usually with
 @code{.info} suffix.  Depending on the installation, info files
 may be compressed with gzip or bzip2, having extensions
@@ -28568,7 +28568,7 @@ an error is thrown.
 
 @defun info-get-node info-file node-name
 @c MOD text.info
-The @var{info-file} argument is an @code{<info-file>} instance.
+The @var{info-file} argument is an @code{<info-document>} instance.
 Returns an @code{<info-node>} instance with the string name @var{node-name},
 or @code{#f} if no node with the given name is found.
 @end defun
