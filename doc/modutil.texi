@@ -28566,11 +28566,54 @@ If it can't find the named document, or can't recognize its format,
 an error is thrown.
 @end defun
 
-@defun info-get-node info-file node-name
+@defun info-get-node info-doc node-name
 @c MOD text.info
-The @var{info-file} argument is an @code{<info-document>} instance.
+The @var{info-doc} argument is an @code{<info-document>} instance.
 Returns an @code{<info-node>} instance with the string name @var{node-name},
 or @code{#f} if no node with the given name is found.
+@end defun
+
+@defun info-index-add! info-doc index-node-name :optional key-modifier
+@c MOD text.info
+Read the node named @var{index-node-name} in the info document
+@var{info-doc}, and ads its menu entries into the index table.
+
+It is particularly useful to give the index page of the info doc,
+so that you'll be able to lookup particular term (e.g. function name)
+quickly.  Typical info document has a node called @code{Index}.
+Large documents, such as programming language reference
+(Gauche Users' Reference is one of them) may have multiple
+index pages for different categories.  You can call this procedure
+multiple times to add more than one index pages.
+
+The optional @var{key-modifier} argument is a procedure applied to
+the entry-name to obtain a key in the index table.
+Sometimes the index uses different entry name
+from the actual name; e.g. Gauche's class index lists class names without
+surrounding @code{<} and @code{>}, since using the actual name makes all
+class names being listed below @code{<} subheading, which isn't very useful.
+You can pass @code{(^e #"<~|e|>")} as @var{key-modifier} to recover the actual
+class name to be used as the key.
+
+If there are more than one entries per key, both are saved in the
+index table.  See @code{info-lookup-index} below.
+@end defun
+
+@defun info-index-ref info-doc key
+@c MOD text.info
+Lookup index with the given key.  Returns a list of
+@code{(<node-name> <line-number>)}.
+@end defun
+
+@defun info-index-keys info-doc
+@c MOD text.info
+Returns a list of keys (strings) in the index.
+@end defun
+
+@defun info-index->alist info-doc
+@c MOD text.info
+Returns the content of the index
+as @code{((key (node line) ...) ...)}.
 @end defun
 
 @defun info-parse-menu info-node
