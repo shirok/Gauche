@@ -50,52 +50,25 @@
 
 (define-class <repl-info> () ;; a singleton
   ((info  :init-keyword :info)   ;; <info-document> or #f
-   (index :init-keyword :index)  ;; hashtable name -> [(node-name line-no)]
    ))
 
 (define get-info
   (let1 repl-info
       (delay
         (let ([info  (and-let1 path (find-info-file)
-                       (open-info-document path))]
-              [index (make-hash-table 'string=?)])
+                       (open-info-document path))])
           (if info
             (begin
-              (dolist [index-page '("Function and Syntax Index"
-                                    "Module Index"
-                                    "Variable Index")]
-                (dolist [p ($ info-parse-menu $ info-get-node info index-page)]
-                  (hash-table-push! index (entry-name (car p)) (cdr p))))
-              ;; class index doesn't have surrounding '<>', but we want to search
-              ;; with them.
-              (dolist [p ($ info-parse-menu $ info-get-node info "Class Index")]
-                (hash-table-push! index #"<~(car p)>" (cdr p)))
-              ($ hash-table-for-each index
-                 ;; reverse v here so that earlier entry listed first
-                 (^[k v]
-                   (hash-table-put! index k (squash-entries (reverse v))))))
+              (info-index-add! info "Function and Syntax Index")
+              (info-index-add! info "Module Index")
+              (info-index-add! info "Variable Index")
+              (info-index-add! info "Class Index" (^e #"<~|e|>")))
             (warn "Couldn't find info document in ~s. \
                    Maybe it has't been installed. \
                    Check your Gauche installation.\n"
                   (get-info-paths)))
-          (make <repl-info>
-            :info info :index index)))
+          (make <repl-info> :info info)))
     (^[] (force repl-info))))
-
-;; We sometimes list API variations using @defunx.  We want to pick only
-;; the first one of such entries.
-(define (squash-entries node&lines)
-  (if (length=? node&lines 1)
-    node&lines
-    (append-map (^[node&lines]
-                  ($ map (^l `(,(caar node&lines) ,(car l)))
-                     $ group-contiguous-sequence $ sort $ map cadr node&lines))
-         (group-collection node&lines :key car :test equal?))))
-
-;; When there are more than one entry with the same name, texinfo appends
-;; " <n>" in the index entry.  This strips that.
-(define (entry-name e)
-  (if-let1 m (#/ <\d+>$/ e) (rxmatch-before m) e))
 
 (define (get-info-paths)
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
@@ -116,7 +89,7 @@
                                     (file-is-readable? #"~|p|.bz2")))))
 
 (define (handle-ambiguous-name entry-name)
-  (let* ([keys (map x->string (hash-table-keys (~ (get-info)'index)))]
+  (let* ([keys (map x->string (info-index-keys (~ (get-info)'info)))]
          [c    (min 2 (- (string-length (x->string entry-name)) 1))]
          [candidates ($ filter-map (^[word dist] (and dist word))
                         keys
@@ -131,8 +104,10 @@
     '()))
 
 (define (get-node&line entry-name)
-  (or (hash-table-get (~ (get-info)'index) (x->string entry-name) #f)
-      (handle-ambiguous-name entry-name)))
+  (let1 es (info-index-ref (~ (get-info)'info) (x->string entry-name))
+    (if (null? es)
+      (handle-ambiguous-name entry-name)
+      es)))
 
 (define (lookup&show key show)
   (match (get-node&line key)
@@ -186,7 +161,7 @@
 ;;;
 
 (define (search-entries rx)
-  (sort (filter (^e (rx (car e))) (hash-table->alist (~ (get-info)'index)))
+  (sort (filter (^e (rx (car e))) (info-index->alist (~ (get-info)'info)))
         string<? car))
 
 (define *search-entry-indent* 25)

@@ -44,7 +44,7 @@
    [else])
   (export <info-document> <info-node>
           open-info-document info-get-node info-parse-menu
-          info-index-add! info-index-ref info-index-keys
+          info-index-add! info-index-ref info-index-keys info-index->alist
           info-extract-definition
           )
   )
@@ -59,7 +59,7 @@
                    :immutable #t)
    (node-table     :init-form (make-hash-table 'string=?)
                    :immutable #t)
-   (index-table    :init-form (make-hash-table 'string=?)
+   (index          :init-form (make-hash-table 'string=?)
                    :immutable #t)
    ))
 
@@ -231,14 +231,14 @@
 ;; class name to be used as the key.
 ;; If there are more than one entries per key, both are saved in the
 ;; index table.  See info-lookup-index below.
-(define (info-index-add! info-file index-node-name
+(define (info-index-add! info-doc index-node-name
                          :optional (key-modifier identity))
   ;; When there are more than one entry with the same name, texinfo appends
   ;; " <n>" in the index entry.  We want to strip it.
   (define (entry-name e)
     (if-let1 m (#/ <\d+>$/ e) (rxmatch-before m) e))
 
-  (if-let1 n (info-get-node info-file index-node-name)
+  (if-let1 n (info-get-node info-doc index-node-name)
     (dolist [p (info-parse-menu n)]
       (let ([key (key-modifier (entry-name (car p)))]
             [node&line (cdr p)])
@@ -246,7 +246,7 @@
         ;; @defunx.  Then we'll have multiple (node line) for the same key.
         ;; We only need the first one, so we check if we already have the
         ;; same node.
-        ($ hash-table-update! (~ info-file'index) key
+        ($ hash-table-update! (~ info-doc'index) key
            (^[lis] (if (find (^e (equal? (car node&line) (car e))) lis)
                      lis
                      (cons node&line lis)))
@@ -256,7 +256,7 @@
 ;; API
 ;; Lookup index with the given key.  Returns a list of
 ;; (<node-name> <line-number>).
-(define (info-index-ref info-file key)
+(define (info-index-ref info-doc key)
   ;; This reverses the order of node&line list, but they're pushed
   ;; in the reverse order so we'll get eariler entry first.
   (fold (^[e r]
@@ -265,12 +265,17 @@
             [(node-name) (cons `(,node-name 1) r)]
             [_ r]))
         '()
-        (hash-table-get (~ info-file'index) key '())))
+        (hash-table-get (~ info-doc'index) key '())))
 
 ;; API
 ;; Retuns a list of keys in the index.
-(define (info-index-keys info-file)
-  (hash-table-keys (~ info-file'index)))
+(define (info-index-keys info-doc)
+  (hash-table-keys (~ info-doc'index)))
+
+;; API
+;; Raturns ((key (node line) ...) ...)
+(define (info-index->alist info-doc)
+  (hash-table->alist (~ info-doc'index)))
 
 ;; API
 ;; Extract one definition from the node's content.  Assumes the definition
