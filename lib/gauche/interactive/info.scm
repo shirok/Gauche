@@ -48,27 +48,24 @@
 
 (define *info-file* "gauche-refe.info")
 
-(define-class <repl-info> () ;; a singleton
-  ((info  :init-keyword :info)   ;; <info-document> or #f
-   ))
-
 (define get-info
-  (let1 repl-info
+  (let1 info-doc
       (delay
-        (let ([info  (and-let1 path (find-info-file)
-                       (open-info-document path))])
-          (if info
-            (begin
-              (info-index-add! info "Function and Syntax Index")
-              (info-index-add! info "Module Index")
-              (info-index-add! info "Variable Index")
-              (info-index-add! info "Class Index" (^e #"<~|e|>")))
+        (if-let1 info-doc (and-let1 path (find-info-file)
+                            (open-info-document path))
+          (begin
+            (info-index-add! info-doc "Function and Syntax Index")
+            (info-index-add! info-doc "Module Index")
+            (info-index-add! info-doc "Variable Index")
+            (info-index-add! info-doc "Class Index" (^e #"<~|e|>"))
+            info-doc)
+          (begin
             (warn "Couldn't find info document in ~s. \
                    Maybe it has't been installed. \
                    Check your Gauche installation.\n"
-                  (get-info-paths)))
-          (make <repl-info> :info info)))
-    (^[] (force repl-info))))
+                  (get-info-paths))
+            #f)))
+    (^[] (force info-doc))))
 
 (define (get-info-paths)
   (let* ([syspath (cond [(sys-getenv "INFOPATH") => (cut string-split <> #\:)]
@@ -89,7 +86,7 @@
                                     (file-is-readable? #"~|p|.bz2")))))
 
 (define (handle-ambiguous-name entry-name)
-  (let* ([keys (map x->string (info-index-keys (~ (get-info)'info)))]
+  (let* ([keys (info-index-keys (get-info))]
          [c    (min 2 (- (string-length (x->string entry-name)) 1))]
          [candidates ($ filter-map (^[word dist] (and dist word))
                         keys
@@ -104,7 +101,7 @@
     '()))
 
 (define (get-node&line entry-name)
-  (let1 es (info-index-ref (~ (get-info)'info) (x->string entry-name))
+  (let1 es (info-index-ref (get-info) (x->string entry-name))
     (if (null? es)
       (handle-ambiguous-name entry-name)
       es)))
@@ -136,7 +133,7 @@
 (define (info key)
   ($ lookup&show key
      (^[node&line]
-       (let1 node (info-get-node (~ (get-info)'info) (car node&line))
+       (let1 node (info-get-node (get-info) (car node&line))
          (display/pager
           (if (null? (cdr node&line))
             (~ node'content)
@@ -149,8 +146,7 @@
   ($ lookup&show key
      (^[node&line]
        (display/pager
-        (~ (info-get-node (~ (get-info)'info) (car node&line))
-           'content)))))
+        (~ (info-get-node (get-info) (car node&line)) 'content)))))
 
 ;; API
 ;; Experimental; invoke
@@ -161,7 +157,7 @@
 ;;;
 
 (define (search-entries rx)
-  (sort (filter (^e (rx (car e))) (info-index->alist (~ (get-info)'info)))
+  (sort (filter (^e (rx (car e))) (info-index->alist (get-info)))
         string<? car))
 
 (define *search-entry-indent* 25)
