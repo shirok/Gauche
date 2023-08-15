@@ -240,16 +240,25 @@
 
   (if-let1 n (info-get-node info-file index-node-name)
     (dolist [p (info-parse-menu n)]
-      (hash-table-push! (~ info-file'index)
-                        (key-modifier (entry-name (car p)))
-                        (cdr p)) ;; (<node-name> <line-number>)
-      )
+      (let ([key (key-modifier (entry-name (car p)))]
+            [node&line (cdr p)])
+        ;; Sometimes variations of the API of a function is listed using
+        ;; @defunx.  Then we'll have multiple (node line) for the same key.
+        ;; We only need the first one, so we check if we already have the
+        ;; same node.
+        ($ hash-table-update! (~ info-file'index) key
+           (^[lis] (if (find (^e (equal? (car node&line) (car e))) lis)
+                     lis
+                     (cons node&line lis)))
+           '())))
     (error "No such info node:" index-node-name)))
 
 ;; API
 ;; Lookup index with the given key.  Returns a list of
 ;; (<node-name> <line-number>).
 (define (info-index-ref info-file key)
+  ;; This reverses the order of node&line list, but they're pushed
+  ;; in the reverse order so we'll get eariler entry first.
   (fold (^[e r]
           (match e
             [(node-name line-number) (cons e r)]
