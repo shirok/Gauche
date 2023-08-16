@@ -28618,13 +28618,17 @@ as @code{((key (node line) ...) ...)}.
 
 @defun info-parse-menu info-node
 @c MOD text.info
-Search info menu in the given node, and returns a list of menu entries
-if found.  Each menu entry is the following form:
+This is used in @code{info-index-add!}, but it is generally
+useful to parse a menu in an info node.   It searches
+the @code{* Menu:} line, then gathers menu entry names and
+associated node names.  Some menus such as index page also
+lists line numbers for each entry.
+
+Returns a list of menu entries.
+Each menu entry is the following form:
 @example
 (<entry-name> <node-name> [<line-number>])
 @end example
-Where @code{<entry-name>} is either a node name, function or macro name,
-or a module name.
 @end defun
 
 @defun info-extract-definition info-node start-line
@@ -28638,8 +28642,9 @@ or we see a line begins with less than or equal to 3 whitespaces.
 Returns a string describing the definition.  If no definition is found,
 an empty string is returned.
 
-A typical idiom is to apply @code{info-parse-menu} on an index node,
-and search with the desired entry name to obtain node name and line number,
+A typical idiom is to add index node using @code{info-index-add!},
+and get the node name and line number of the definition of a specific
+item with @code{info-index-ref}, then
 then use this procedure to extract the definition.
 @end defun
 
