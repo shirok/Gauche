@@ -167,7 +167,7 @@
     (format #f "~a{~a}" cmd (lookup node *node-table*))))
 
 (define (usage)
-  (display "Usage: gosh tools/preprocess-info [-en|-jp][-o outfile] infile\n")
+  (display "Usage: gosh tools/preprocess-info [-en|-ja][-o outfile] infile\n")
   (exit 1))
 
 (define (main args)
