@@ -183,7 +183,18 @@
   (let1 encoder (make <encoder>)
     (encode-item! encoder obj)
     (values
-     (string->u8vector (get-output-string (~ encoder'out)))
+     ;; TRANSIENT: string->u8vector is in gauche.uvector until 0.9.12.
+     ;; To compile 0.9.13 with 0.9.12, we can't depend on gauche.uvector,
+     ;; so we roll our own.
+     ;; Replace the following expression after 0.9.13 release.
+     ;;(string->u8vector (get-output-string (~ encoder'out)))
+     (let* ([s (get-output-string (~ encoder'out))]
+            [p (open-input-string s)]
+            [v (make-u8vector (string-size s))])
+       (do ([i 0 (+ i 1)]
+            [byte (read-byte p) (read-byte p)])
+           [(eof-object? byte) v]
+         (u8vector-set! v i byte)))
      (list->vector (reverse (~ encoder'consts))))))
 
 ;;

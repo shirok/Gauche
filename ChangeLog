@@ -1,3 +1,8 @@
+2023-08-17  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm: Use packed debug info in the precompiled
+	  C code.  This reduces compiled *.o files about 10-20%.
+
 2023-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* doc/modutil.texi: Start documenting text.info.  It is not particulary

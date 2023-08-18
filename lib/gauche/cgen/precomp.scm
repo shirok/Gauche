@@ -41,6 +41,7 @@
   (use gauche.cgen.stub)
   (use gauche.cgen.tmodule)
   (use gauche.vm.insn)
+  (use gauche.vm.debug-info)
   (use gauche.sequence)
   (use gauche.experimental.lamb)
   (use file.util)
@@ -937,6 +938,7 @@
    [code-vector-c-name :init-keyword :code-vector-c-name]
    [literals           :init-keyword :literals]
    [signature-info     :init-keyword :signature-info]
+   [debug-info-cname   :init-keyword :debug-info-cname]
    )
   (make (value)
     (let* ([code (if (run-extra-optimization-passes)
@@ -947,9 +949,6 @@
            [cvn (allocate-code-vector cv lv (~ code'full-name))]
            [code-name (cgen-literal (~ code'name))]
            [signature-info (cgen-literal (serializable-signature-info code))]
-           [debug-info (if (omit-debug-source-info)
-                         #f
-                         (cgen-literal (serializable-debug-info code)))]
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
@@ -963,9 +962,7 @@
                 (if (cgen-literal-static? code-name)
                   (cgen-cexpr code-name)
                   "SCM_FALSE")
-                (if (and debug-info (cgen-literal-static? debug-info))
-                  (cgen-cexpr debug-info)
-                  "SCM_NIL")
+                "SCM_NIL"
                 (if (cgen-literal-static? signature-info)
                   (cgen-cexpr signature-info)
                   "SCM_FALSE"))
@@ -983,6 +980,8 @@
             :code-vector-c-name cvn
             :code-name code-name
             :signature-info signature-info
+            :debug-info-cname (and (not (omit-debug-source-info))
+                                   (serializable-debug-info code))
             :literals lv)))
   (init (self)
     (unless (cgen-literal-static? (~ self'code-name))
@@ -992,6 +991,9 @@
     (unless (cgen-literal-static? (~ self'signature-info))
       (print "  SCM_COMPILED_CODE("(~ self'c-name)")->signatureInfo = "
              (cgen-cexpr (~ self'signature-info)) ";"))
+    (when (~ self'debug-info-cname)
+      (print "  SCM_COMPILED_CODE("(~ self'c-name)")->debugInfo = "
+             (~ self'debug-info-cname) ";"))
     (fill-code self))
   (static (self) #t)
   )
@@ -1016,10 +1018,17 @@
 ;; Construct serializable debug info.
 ;;   See code.c Scm_CompiledCodePushInfo for the format of debug-info.
 (define (serializable-debug-info code)
-  (map (^[entry]
-         (cons (car entry)            ; integer or 'definition
-               (unwrap-syntax (cdr entry))))
-       (or (~ code'debug-info) '())))
+  (and-let1 di (~ code'debug-info)
+    (receive [codevec constvec] (encode-debug-info (unwrap-syntax di))
+      (let ([codevec-lit (cgen-literal codevec)]
+            [constvec-list (cgen-literal constvec)]
+            [datum-cname (cgen-allocate-static-datum 'runtime)])
+        (cgen-init (format "  ~a = Scm_MakePackedDebugInfo(SCM_U8VECTOR(~a),\
+                                                         SCM_VECTOR(~a));"
+                           datum-cname
+                           (cgen-cexpr codevec-lit)
+                           (cgen-cexpr constvec-list)))
+        datum-cname))))
 
 ;; Returns a list of the same length of CODE, which includes the
 ;; <cgen-literal>s corresponding to the literal values in CODE.

@@ -87,7 +87,6 @@ SCM_CLASS_DECL(Scm_PackedDebugInfoClass);
 #define SCM_PACKED_DEBUG_INFO(obj)    ((ScmPackedDebugInfo*)(obj))
 #define SCM_PACKED_DEBUG_INFO_P(obj)  SCM_XTYPEP(obj, SCM_CLASS_PACKED_DEBUG_INFO)
 
-SCM_EXTERN ScmObj Scm_MakePackedDebugInfo(ScmUVector*, ScmVector*);
 SCM_EXTERN ScmObj Scm_CodeDebugInfo(ScmCompiledCode *);
 SCM_EXTERN ScmObj Scm_DecodePackedDebugInfo(const uint8_t *codeVector,
                                             ScmSmallInt codeSize,

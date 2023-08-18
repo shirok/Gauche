@@ -2572,7 +2572,10 @@ static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
     if (!SCM_CLOSUREP(body))
         Scm_Error("closure required for :body argument: %S", body);
     ScmObj code = SCM_CLOSURE_CODE(body);
-    if (SCM_COMPILED_CODE_P(code)) {
+    /* TODO: debugInfo may still be packed at this moment.  We don't want
+       to unpack it yet. */
+    if (SCM_COMPILED_CODE_P(code) &&
+        SCM_PAIRP(SCM_COMPILED_CODE(code)->debugInfo)) {
         ScmObj def = Scm_Assq(SCM_SYM_DEFINITION,
                               SCM_COMPILED_CODE(code)->debugInfo);
         if (SCM_PAIRP(def)) {

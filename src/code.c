@@ -143,7 +143,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
         for (int i=0; i < cc->codeSize; i++) {
             ScmWord insn = p[i];
             ScmPort *out = SCM_PORT(Scm_MakeOutputStringPort(TRUE));
-            ScmObj info = Scm_Assq(SCM_MAKE_INT(i), cc->debugInfo);
+            ScmObj info = Scm_Assq(SCM_MAKE_INT(i), Scm_CodeDebugInfo(cc));
             u_int code = SCM_VM_INSN_CODE(insn);
             const char *insn_name = Scm_VMInsnName(code);
 
