@@ -550,16 +550,25 @@ a macro transformer defined by @var{transformer-spec}.
 If this form appears in the @emph{declaration} part of
 body of @code{lambda} (internal define-syntax), @code{let} and
 other similar forms, it binds @var{name} locally within that body.
-Internal @code{define-syntax}es are converted to @code{letrec-syntax},
-just like internal @code{define}s are converted to @code{letrec*}.
+Conceptually, internal @code{define-syntax}es on the same level
+are treated like @code{letrec-syntax}.  However, mere appearance of
+@code{define-syntax} does not create another scope; for example,
+you can interleave internal @code{define} and internal @code{define-syntax}
+within the same scope.  It is important, though, that the local macros
+defined by internal @code{define-syntax} should not be required
+to expand macro uses before the definition.
 @c JP
 トップレベルで使われた場合、このフォームはトップレベルの@var{name}を
 @var{transformer-spec}で定義されるマクロ変換器に束縛します。
 
-@code{lambda}、@code{let}等の本体の宣言部分に使われた場合 (内部define-syntax)、
+@code{lambda}、@code{let}等の本体の宣言部分に使われた場合 (内部@code{define-syntax})、
 その本体内のスコープで@var{name}を束縛します。
-内部defineが@code{letrec*}に変換されるのと同じように、
-内部define-syntaxは@code{letrec-syntax}へと変換されます。
+概念的には、同一階層にある内部@code{define-syntax}はまとめられて
+@code{letrec-syntax}のように振る舞います。ただし、@code{define-syntax}が出てきたところで
+新たなスコープが作られるわけではありません。
+例えば内部@code{define}と内部@code{define-syntax}を一つのスコープ内で混ぜこせに
+並べることができます。重要なのは、内部@code{define-syntax}で定義されるローカルマクロは、
+その定義前にマクロ展開に必要とされてはならない、ということです。
 @c COMMON
 @end defspec
 
