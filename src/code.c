@@ -1101,6 +1101,12 @@ static ScmObj decode_item(debug_info_decoder *decoder)
         case 0x61: return decode_list(decoder);
         case 0x62: Scm_Error("Stray end-of-list marker");
         case 0x63: Scm_Error("Stray dot-list marker");
+            /* The following code must be in sync with encoder */
+        case 0x70: return SCM_SYM_SOURCE_INFO;
+        case 0x71: return SCM_SYM_DEFINITION;
+        case 0x72: return SCM_SYM_QUOTE;
+        case 0x73: return SCM_SYM_LAMBDA;
+        case 0x74: return SCM_SYM_DEFINE;
         default: Scm_Error("Invalid octet: %02x", b);
         }
     }

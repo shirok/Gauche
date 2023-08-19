@@ -750,9 +750,15 @@
     (let* ([value (~ self'value)]
            [class (class-of value)])
       (print "static "(uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
-      (fold (^[elt column] (uvector-class-emit-elt class elt column))
-            0 value)
-      (print  "};"))]
+      ;; Avoid using generic fold over uvector (value), for that would introduce
+      ;; dependency to gauche.uvector.
+      (do ([i 0 (+ i 1)]
+           [column 0 (uvector-class-emit-elt class
+                                             (uvector-ref value i)
+                                             column)])
+          [(= i (uvector-length value))]
+        )
+      (print "};"))]
   [static (self) #f]
   )
 

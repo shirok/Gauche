@@ -58,6 +58,14 @@
 ;;   01100010   - End of a list (eol)
 ;;   01100011   - Indicates that the following item is the last cdr of
 ;;                the list.  Note that we won't have an eol in this case.
+;;   01100100 .. 01101111  Reserved.
+;;
+;;   0111xxxx   - Symbols frequently appeare in debug-info:
+;;                  01110000   - source-info
+;;                  01110001   - definition
+;;                  01110010   - quote
+;;                  01110011   - lambda
+;;                  01110100   - define
 ;;
 ;; If the 'C' bit in the first octet is set, the following octet encodes
 ;; further bits.
@@ -125,6 +133,14 @@
 (define (encoder-pos encoder) (port-tell (~ encoder'out)))
 (define (encoder-num-consts encoder) (length (~ encoder'consts)))
 
+;; Predefined coded symbols.  This must be in sync with the one in code.c
+(define *predef-syms*
+  '((source-info . #x70)
+    (definition  . #x71)
+    (quote       . #x72)
+    (lambda      . #x73)
+    (define      . #x74)))
+
 (define (encode-index! encoder type index)
   (define (emit-bytes bytes)
     (if (null? (cdr bytes))
@@ -182,6 +198,7 @@
         [(pair? item) (encode-list! item)]
         [(and (exact-integer? item) (>= item 0))
          (encode-index! encoder 'int item)]
+        [(assq-ref *predef-syms* item) => (cut write-byte <> (~ encoder'out))]
         [else (encode-const! item)]))
 
 ;; Returns bytevector and constant vector
