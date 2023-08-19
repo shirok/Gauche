@@ -35,6 +35,7 @@
   (use scheme.list)
   (use srfi.13)
   (use srfi.42)
+  (use srfi.197)
   (use gauche.sequence)
   (use gauche.cgen.unit)
   (use util.match)
@@ -749,9 +750,8 @@
     (let* ([value (~ self'value)]
            [class (class-of value)])
       (print "static "(uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
-      (dotimes [i (uvector-length value)]
-        ($ uvector-class-emit-elt class
-           $ (with-module gauche.internal uvector-ref) value i))
+      (fold (^[elt column] (uvector-class-emit-elt class elt column))
+            0 value)
       (print  "};"))]
   [static (self) #f]
   )
@@ -786,54 +786,67 @@
     [(eq? class <c128vector>) "ScmDoubleComplex"]
     ))
 
-(define (uvector-class-emit-elt class v)
-  (define (pr-half-float v)
-    (format #t "0x~4,'0x" ((with-module gauche.internal flonum->f16bits) v)))
-  (define (pr-float v)
-    (cond [(nan? v) (display "SCM_FLT_NAN")]
-          [(infinite? v) (display (if (> v 0)
-                                    "SCM_FLT_POSITIVE_INFINITY"
-                                    "SCM_FLT_NEGATIVE_INFINITY"))]
-          [(negative-zero? v) (display "-0.0f")]
-          [else (format #t "~sf" v)]))
-  (define (pr-double v)
-    (cond [(nan? v) (display "SCM_DBL_NAN")]
-          [(infinite? v) (display (if (> v 0)
-                                    "SCM_DBL_POSITIVE_INFINITY"
-                                    "SCM_DBL_NEGATIVE_INFINITY"))]
-          [(negative-zero? v) (display "-0.0")]
-          [else (format #t "~s" v)]))
+;; Returns a new column number (0-based)
+(define (uvector-class-emit-elt class v column)
+  (define (fmt-half-float v)
+    (format "0x~4,'0x" ((with-module gauche.internal flonum->f16bits) v)))
+  (define (fmt-float v)
+    (cond [(nan? v) "SCM_FLT_NAN"]
+          [(infinite? v) (if (> v 0)
+                           "SCM_FLT_POSITIVE_INFINITY"
+                           "SCM_FLT_NEGATIVE_INFINITY")]
+          [(negative-zero? v) "-0.0f"]
+          [else (format "~sf" v)]))
+  (define (fmt-double v)
+    (cond [(nan? v) "SCM_DBL_NAN"]
+          [(infinite? v) (if (> v 0)
+                           "SCM_DBL_POSITIVE_INFINITY"
+                           "SCM_DBL_NEGATIVE_INFINITY")]
+          [(negative-zero? v) "-0.0"]
+          [else (format "~s" v)]))
+  (define (fmt column fmtstr . args)
+    (let* ([s (apply format fmtstr args)]
+           [len (string-length s)])
+      (cond [(>= (+ column len) 70) (newline) (display s) len]
+            [else (display " ") (display s) (+ column len 1)])))
+  (define (prn column s)
+    (unless (zero? column) (newline))
+    (display s) (newline)
+    0)
   (cond
    [(memq class `(,<s8vector> ,<s16vector> ,<s32vector>))
-    (format #t "~d,\n" v)]
+    (fmt column "~d," v)]
    [(memq class `(,<u8vector> ,<u16vector> ,<u32vector>))
-    (format #t "~du,\n" v)]
+    (fmt column "~du," v)]
    [(eq? class <s64vector>)
-    (print "#if SIZEOF_LONG == 8")
-    (format #t "~dl,\n" v)
-    (print "#else  /*SIZEOF_LONG == 4*/")
-    (format #t " (((int64_t)~dl << 32)|~dl),\n"
-            (ash v -32) (logand v (- (integer-expt 2 32) 1)))
-    (print "#endif /*SIZEOF_LONG == 4*/")]
+    (chain (prn column "#if SIZEOF_LONG == 8")
+           (fmt _ " ~dl," v)
+           (prn _ "#else  /*SIZEOF_LONG == 4*/")
+           (fmt _ " (((int64_t)~dl << 32)|~dl),"
+                (ash v -32) (logand v (- (integer-expt 2 32) 1)))
+           (prn _ "#endif /*SIZEOF_LONG == 4*/"))]
    [(eq? class <u64vector>)
-    (print "#if SIZEOF_LONG == 8")
-    (format #t "~dlu,\n" v)
-    (print "#else  /*SIZEOF_LONG == 4*/")
-    (format #t " (((int64_t)~dlu << 32)|~dlu),\n"
-            (ash v -32) (logand v (- (integer-expt 2 32) 1)))
-    (print "#endif /*SIZEOF_LONG == 4*/")]
-   [(eq? class <f16vector>) (pr-half-float v) (print ",")]
-   [(eq? class <f32vector>) (pr-float v) (print ",")]
-   [(eq? class <f64vector>) (pr-double v) (print ",")]
+    (chain (prn column "#if SIZEOF_LONG == 8")
+           (fmt _ " ~dlu," v)
+           (prn _ "#else  /*SIZEOF_LONG == 4*/")
+           (fmt _ " (((int64_t)~dlu << 32)|~dlu),"
+                (ash v -32) (logand v (- (integer-expt 2 32) 1)))
+           (prn _ "#endif /*SIZEOF_LONG == 4*/"))]
+   [(eq? class <f16vector>) (fmt column "~a," (fmt-half-float v))]
+   [(eq? class <f32vector>) (fmt column "~a," (fmt-float v))]
+   [(eq? class <f64vector>) (fmt column "~a," (fmt-double v))]
    [(eq? class <c32vector>)
-    (display "{ ") (pr-half-float (real-part v))
-    (display ", ") (pr-half-float (imag-part v)) (print "},")]
+    (fmt column "{ ~a, ~a },"
+         (fmt-half-float (real-part v))
+         (fmt-half-float (imag-part v)))]
    [(eq? class <c64vector>)
-    (pr-float (real-part v)) (display " + ")
-    (pr-float (imag-part v)) (print " * _Complex_I,")]
+    (fmt column "~a + ~a * _Complex_I,"
+         (fmt-float (real-part v))
+         (fmt-float (imag-part v)))]
    [(eq? class <c128vector>)
-    (pr-double (real-part v)) (display " + ")
-    (pr-double (imag-part v)) (print " * _Complex_I,")]
+    (fmt column "~a + ~a * _Complex_I,"
+         (fmt-double (real-part v))
+         (fmt-double (imag-part v)))]
    ))
 
 ;; char-set -----------------------------------------------------
