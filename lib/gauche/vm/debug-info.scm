@@ -168,9 +168,15 @@
             [else (encode-marker! 'dot)
                   (encode-item! encoder lis)])))
   (define (encode-const! item)
-    (let1 num-consts (encoder-num-consts encoder)
-      (push! (~ encoder'consts) item)
-      (encode-index! encoder 'const num-consts)))
+    (let* ([num-consts (encoder-num-consts encoder)]
+           [index (let loop ([p (~ encoder'consts)]
+                             [i (- num-consts 1)])
+                    (cond [(null? p) num-consts] ;fresh item
+                          [(equal? item (car p)) i] ;reuse item
+                          [else (loop (cdr p) (- i 1))]))])
+      (when (= index num-consts)
+        (push! (~ encoder'consts) item))
+      (encode-index! encoder 'const index)))
 
   (cond [(null? item) (encode-marker! 'null)]
         [(pair? item) (encode-list! item)]
