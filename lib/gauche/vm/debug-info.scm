@@ -66,6 +66,10 @@
 ;;                  01110010   - quote
 ;;                  01110011   - lambda
 ;;                  01110100   - define
+;;                NB: Changing this list is difficult, for this is referenced
+;;                across versions while building Gauche.  Be very careful
+;;                adding more symbols; there may not be another chance
+;;                to change them.
 ;;
 ;; If the 'C' bit in the first octet is set, the following octet encodes
 ;; further bits.
@@ -133,7 +137,8 @@
 (define (encoder-pos encoder) (port-tell (~ encoder'out)))
 (define (encoder-num-consts encoder) (length (~ encoder'consts)))
 
-;; Predefined coded symbols.  This must be in sync with the one in code.c
+;; Predefined coded symbols.  See the comment of packed info format above.
+;; This must be in sync with the one in code.c
 (define *predef-syms*
   '((source-info . #x70)
     (definition  . #x71)
