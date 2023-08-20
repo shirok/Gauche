@@ -30490,7 +30490,7 @@ Returns true iff the process is running with suid/sgid-ed (that is,
 the program's suid and/or sgid bit is set.)
 
 Note: If the platform has @code{issetugid()} call, we use it.
-Otherwise, we remember the if real (user|group) id and
+Otherwise, we remember whether the real (user|group) id and the
 effective (user|group) id differ or not at the initialization time.
 (In the latter case, we can't detect the case that the process
 changes [e]uid/[e]gid before initializing Gauche; keep it in mind if
@@ -30499,8 +30499,8 @@ libgauche is used as an embedded Scheme engine).
 プロセスがsuid/sgidされていたら@code{#t}を、そうでなければ@code{#f}を返します。
 
 註：プラットフォームが@code{issetugid()}を持っていればそれを呼びます。
-そうでない場合は、初期化時にリアルuid/gidと実効uid/gidが異なるかどうかを
-記憶しています。(後者の場合、Gaucheが組み込みSchemeエンジンとして使われていて、
+そうでない場合は、初期化時に実uid/gidと実効uid/gidが異なるかどうかを
+記録しています。(後者の場合、Gaucheが組み込みSchemeエンジンとして使われていて、
 プロセスがGauche初期化前に[e]uid/[e]gidを変更していたケースは検出できないことに
 留意してください)。
 @c COMMON
