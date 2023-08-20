@@ -40,11 +40,8 @@ uvector.c : uvector.c.tmpl uvgen.scm
 	rm -rf uvector.c
 	$(GOSH) $(srcdir)/uvgen.scm $(srcdir)/uvector.c.tmpl
 
-# TRANSIENT: gauche-uvector.c gets too big if we attach debug-source-info.
-# It may be better to split it up, but as a temporary workaround, we omit
-# debug-source-info.
 gauche--uvector.c : uvector.scm uvlib.scm exports.scm
-	$(PRECOMP) -I. --omit-debug-source-info -e -P -o gauche--uvector $(srcdir)/uvector.scm
+	$(PRECOMP) -I. -e -P -o gauche--uvector $(srcdir)/uvector.scm
 
 uvlib.scm : uvlib.scm.tmpl
 	rm -rf uvlib.scm
