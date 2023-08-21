@@ -260,6 +260,7 @@
                  (reverse (generator-fold compile-toplevel-form '() read))))
             (set! *load-path* load-path-save))))
       (finalize sub-initializers)
+      (show-debug-info-stat (cgen-current-unit))
       (cgen-emit-c (cgen-current-unit))))
   (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
         [out.sci (or out.sci

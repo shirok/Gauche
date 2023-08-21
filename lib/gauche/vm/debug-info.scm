@@ -114,7 +114,8 @@
           encode-debug-info
           decode-debug-info
           keep-debug-info-stat
-          record-debug-info-stat!)
+          record-debug-info-stat!
+          show-debug-info-stat)
   )
 (select-module gauche.vm.debug-info)
 
@@ -137,7 +138,7 @@
   ((num-instances :init-value 0)
    (total-code-size :init-value 0)
    (total-const-size :init-value 0)
-   (code-freq-table :init-form (make-vector 256 0))
+   (code-freq-table :init-form (make-hash-table 'eqv?))
    (const-freq-table :init-form (make-hash-table 'equal?))))
 
 (define keep-debug-info-stat
@@ -154,20 +155,46 @@
     (unless (~ unit'debug-info-stat)
       (set! (~ unit'debug-info-stat) (make <debug-info-stat>)))
     (let* ([stat (~ unit'debug-info-stat)]
-           [codesize (~ stat'total-code-size)]
-           [constsize (~ stat'total-const-size)])
+           [codesize (uvector-length codevec)]
+           [constsize (vector-length constvec)])
       (inc! (~ stat'num-instances))
       (inc! (~ stat'total-code-size) codesize)
       (inc! (~ stat'total-const-size) constsize)
       (do ([i 0 (+ i 1)])
           [(eqv? i codesize)]
-        (inc! (~ stat'code-freq-table i) (uvector-ref codevec i)))
+        (hash-table-update! (~ stat'code-freq-table)
+                            (uvector-ref codevec i)
+                            (cut + <> 1)
+                            0))
       (do ([i 0 (+ i 1)])
           [(eqv? i constsize)]
         (hash-table-update! (~ stat'const-freq-table)
-                            (^[prev] (+ constsize prev))
+                            (vector-ref constvec i)
+                            (cut + <> 1)
                             0)))
     #t))
+
+;; API to be called from precomp.
+(define (show-debug-info-stat unit)
+  (define (top-n tab n)
+    (take* (sort-by (hash-table->alist tab) cdr >) n))
+  (and-let* ([ unit ]
+             [stat (~ unit'debug-info-stat)])
+    (print "Debug info stats:")
+    (format #t "  # of code blocks w/ debug-info: ~5d\n" (~ stat'num-instances))
+    (format #t "   code vector size: ~6d total; ~8,2f avg\n"
+            (~ stat'total-code-size)
+            (/ (~ stat'total-code-size) (~ stat'num-instances)))
+    (format #t "  const vector size: ~6d total; ~8,2f avg\n"
+            (~ stat'total-const-size)
+            (/ (~ stat'total-const-size) (~ stat'num-instances)))
+    (format #t "  top 10 frequent codes:\n")
+    (dolist [p (top-n (~ stat'code-freq-table) 10)]
+      (format #t "       ~4d : #x~2,'0x\n" (cdr p) (car p)))
+    (format #t "  top 10 frequent constants:\n")
+    (dolist [p (top-n (~ stat'const-freq-table) 10)]
+      (format #t "       ~4d: ~,,,,50s\n" (cdr p) (car p)))
+    ))
 
 ;;
 ;; Encoder
