@@ -1020,6 +1020,7 @@
 (define (serializable-debug-info code)
   (and-let1 di (~ code'debug-info)
     (receive [codevec constvec] (encode-debug-info (unwrap-syntax di))
+      (record-debug-info-stat! (cgen-current-unit) codevec constvec)
       (let ([codevec-lit (cgen-literal codevec)]
             [constvec-list (cgen-literal constvec)]
             [datum-cname (cgen-allocate-static-datum 'runtime)])

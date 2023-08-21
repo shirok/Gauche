@@ -112,7 +112,9 @@
 (define-module gauche.vm.debug-info
   (export make-packed-debug-info
           encode-debug-info
-          decode-debug-info)
+          decode-debug-info
+          keep-debug-info-stat
+          record-debug-info-stat!)
   )
 (select-module gauche.vm.debug-info)
 
@@ -123,6 +125,49 @@
 (define (make-packed-debug-info debug-info-alist)
   (receive (codev constv) (encode-debug-info debug-info-alist)
     ((with-module gauche.internal %make-packed-debug-info codev constv))))
+
+;;
+;; Gather debug-info statistics
+;;   This is purely internal to gather information for optimizing
+;;   packed debug info.  Statistics is gathered per compilation unit,
+;;   so an instance is attached to <cgen-unit>.
+;;   Updted in encode-debug-info.
+
+(define-class <debug-info-stat> ()
+  ((num-instances :init-value 0)
+   (total-code-size :init-value 0)
+   (total-const-size :init-value 0)
+   (code-freq-table :init-form (make-vector 256 0))
+   (const-freq-table :init-form (make-hash-table 'equal?))))
+
+(define keep-debug-info-stat
+  (make-parameter (boolean (sys-getenv "GAUCHE_DEBUG_INFO_STAT"))))
+
+;; API to be called from precomp.
+;; Since we don't want to depend on gauche.cgen.unit, so we don't
+;; take the cgen-current-unit.  The caller must provide the unit.
+;; Typeckeck for unit arg is intentionally omitted.
+(define (record-debug-info-stat! unit codevec constvec)
+  ;; (assume-type unit (<?> <cgen-unit>))
+  (and-let* ([ (keep-debug-info-stat) ]
+             [ unit ])
+    (unless (~ unit'debug-info-stat)
+      (set! (~ unit'debug-info-stat) (make <debug-info-stat>)))
+    (let* ([stat (~ unit'debug-info-stat)]
+           [codesize (~ stat'total-code-size)]
+           [constsize (~ stat'total-const-size)])
+      (inc! (~ stat'num-instances))
+      (inc! (~ stat'total-code-size) codesize)
+      (inc! (~ stat'total-const-size) constsize)
+      (do ([i 0 (+ i 1)])
+          [(eqv? i codesize)]
+        (inc! (~ stat'code-freq-table i) (uvector-ref codevec i)))
+      (do ([i 0 (+ i 1)])
+          [(eqv? i constsize)]
+        (hash-table-update! (~ stat'const-freq-table)
+                            (^[prev] (+ constsize prev))
+                            0)))
+    #t))
 
 ;;
 ;; Encoder
