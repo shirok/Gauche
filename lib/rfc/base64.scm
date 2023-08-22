@@ -213,7 +213,8 @@
       (cut with-output-to-port out (cut apply base64-decode opts)))
     (get-output-uvector out)))
 
-(define (base64-encode :key (line-width 76) (url-safe #f) (digits #f))
+(define (base64-encode :key (line-width 76) (url-safe #f) (digits #f)
+                            (omit-padding #f))
   (define table (cond [url-safe *url-safe-encode-table*]
                       [digits (%digits->encode-table digits)]
                       [else *standard-encode-table*]))
@@ -236,14 +237,18 @@
 
     (define (e1 c hi col)
       (cond [(eof-object? c)
-             (emit* col (* hi 16) 64 64)]
+             (let1 col (emit* col (* hi 16))
+               (unless omit-padding
+                 (emit* col 64 64)))]
             [else
              (e2 (read-byte) (modulo c 16)
                  (emit* col (+ (* hi 16) (quotient c 16))))]))
 
     (define (e2 c hi col)
       (cond [(eof-object? c)
-             (emit* col (* hi 4) 64)]
+             (let1 col (emit* col (* hi 4))
+               (unless omit-padding
+                 (emit* col 64)))]
             [else
              (e0 (read-byte)
                  (emit* col (+ (* hi 4) (quotient c 64)) (modulo c 64)))]))

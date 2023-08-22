@@ -16410,7 +16410,7 @@ and RFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt}).
 @c COMMON
 @end deftp
 
-@defun base64-encode :key line-width digits url-safe
+@defun base64-encode :key line-width digits url-safe omit-padding
 @c MOD rfc.base64
 @c EN
 Reads byte stream from the current input port, encodes it in Base64
@@ -16457,6 +16457,17 @@ is added to support SRFI-207 (@pxref{String-notated bytevectors}).
 1文字目が62を、2文字目が63を現す文字として使われます。
 @var{digits}引数はSRFI-207をサポートするために追加されました
 (@ref{String-notated bytevectors}参照)。
+@c COMMON
+
+@c EN
+If a true value is given to @var{omit-padding}, the trailing
+padding characters (@code{#\=}) are omitted.
+(See RFC4648 Section 3.2 (@url{https://www.rfc-editor.org/rfc/rfc4648#section-3.2})).  The default is not omitting padding characters.
+@c JP
+@var{omit-padding}引数に真の値が与えられると、
+パディング文字(@code{#\=})が省略されます
+(RFC4648 Section 3.2参照 (@url{https://www.rfc-editor.org/rfc/rfc4648#section-3.2}))。
+デフォルトではパディング文字は省略されません。
 @c COMMON
 @end defun
 

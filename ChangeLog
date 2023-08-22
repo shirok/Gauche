@@ -1,5 +1,8 @@
 2023-08-22  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/base64.scm (base64-encode): Added omit-padding keyword arg.
+	  Some protocol asks to do so, e.g. JWS (rfc7515).
+
 	* src/Makefile.in (clean-to-regenerate): Add a new target just to clean
 	  Gauche-generated files.  Useful to regenerate them, but no need to
 	  start from reconfigure.

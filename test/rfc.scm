@@ -89,6 +89,9 @@
 (test* "weird encode (digits)" "YTA.YTA?" (base64-encode-string "a0>a0?" :digits ".?"))
 (test* "weird decode (digits)" "a0>a0?" (base64-decode-string "YTA.YTA?" :digits ".?"))
 
+(test* "omit-padding" "YQ" (base64-encode-string "a" :omit-padding #t))
+(test* "omit-padding" "YTA" (base64-encode-string "a0" :omit-padding #t))
+
 ;;--------------------------------------------------------------------
 (test-section "rfc.quoted-printable")
 (use rfc.quoted-printable)
