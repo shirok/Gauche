@@ -78,7 +78,7 @@
    (transients :init-value '())  ;; transient variables
    (literals  :init-form #f)     ;; literals. see gauche.cgen.literal
    (static-data-list :init-value '()) ;; static C data, see below
-   (debug-info-stat :init-value #f)   ;; see gauche.vm.debug-info
+   (debug-info-bin :init-value #f)   ;; see gauche.vm.debug-info
    ))
 
 ;; API

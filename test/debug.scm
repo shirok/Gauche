@@ -51,12 +51,14 @@
 (test-module 'gauche.vm.debug-info)
 
 (use util.isomorph)
+(use gauche.cgen.unit)
 
 (define (test-debug-info data :optional (msg #f))
   (test* (or msg (write-to-string data write-shared))
          data
-         (receive [bv const] (encode-debug-info data)
-           (decode-debug-info bv const))
+         (parameterize ([cgen-current-unit (make <cgen-unit>)])
+           (receive [bv const] (encode-debug-info (cgen-current-unit) data)
+             (decode-debug-info bv const)))
          isomorphic?))
 
 (test-debug-info 1)

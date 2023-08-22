@@ -110,8 +110,7 @@
 ;; dependency issue.
 
 (define-module gauche.vm.debug-info
-  (export make-packed-debug-info
-          encode-debug-info
+  (export encode-debug-info
           decode-debug-info
           keep-debug-info-stat
           record-debug-info-stat!
@@ -119,20 +118,40 @@
   )
 (select-module gauche.vm.debug-info)
 
-;;
-;; Constructor
-;; Only to be used by the precompiler.
+;; Per-unit data.  Not for public use.
+;;  - Allow to share constant vector among code blocks.
+;;  - Stats are gathered per unit, if requested.
 
-(define (make-packed-debug-info debug-info-alist)
-  (receive (codev constv) (encode-debug-info debug-info-alist)
-    ((with-module gauche.internal %make-packed-debug-info codev constv))))
+(define-class <unit-debug-info> ()
+  ((consts :init-form (make-hash-table 'equal?))
+   (stat)))
 
-;;
+(define-method initialize ((a <unit-debug-info>) initargs)
+  (next-method)
+  (set! (~ a'stat)
+        (and (keep-debug-info-stat)
+             (make <debug-info-stat>))))
+
+(define (ensure-unit-debug-info! unit)
+  (unless (~ unit'debug-info-bin)
+    (set! (~ unit'debug-info-bin) (make <unit-debug-info>))))
+
+;; Returns const index
+(define (register-const! unit obj)
+  (let1 tab (~ unit'debug-info-bin'consts)
+    (or (hash-table-get tab obj #f)
+        (rlet1 ind (hash-table-num-entries tab)
+          (hash-table-put! tab obj ind)))))
+
+;; Get the final constant vector
+(define (get-const-vector unit)
+  ($ list->vector
+     $ map car
+     $ sort-by (hash-table->alist (~ unit'debug-info-bin'consts)) cdr))
+
 ;; Gather debug-info statistics
 ;;   This is purely internal to gather information for optimizing
-;;   packed debug info.  Statistics is gathered per compilation unit,
-;;   so an instance is attached to <cgen-unit>.
-;;   Updted in encode-debug-info.
+;;   packed debug info.
 
 (define-class <debug-info-stat> ()
   ((num-instances :init-value 0)
@@ -144,19 +163,10 @@
 (define keep-debug-info-stat
   (make-parameter (boolean (sys-getenv "GAUCHE_DEBUG_INFO_STAT"))))
 
-;; API to be called from precomp.
-;; Since we don't want to depend on gauche.cgen.unit, so we don't
-;; take the cgen-current-unit.  The caller must provide the unit.
-;; Typeckeck for unit arg is intentionally omitted.
 (define (record-debug-info-stat! unit codevec constvec)
-  ;; (assume-type unit (<?> <cgen-unit>))
-  (and-let* ([ (keep-debug-info-stat) ]
-             [ unit ])
-    (unless (~ unit'debug-info-stat)
-      (set! (~ unit'debug-info-stat) (make <debug-info-stat>)))
-    (let* ([stat (~ unit'debug-info-stat)]
-           [codesize (uvector-length codevec)]
-           [constsize (vector-length constvec)])
+  (and-let1 stat (~ unit'debug-info-bin'stat)
+    (let ([codesize (uvector-length codevec)]
+          [constsize (vector-length constvec)])
       (inc! (~ stat'num-instances))
       (inc! (~ stat'total-code-size) codesize)
       (inc! (~ stat'total-const-size) constsize)
@@ -179,7 +189,8 @@
   (define (top-n tab n)
     (take* (sort-by (hash-table->alist tab) cdr >) n))
   (and-let* ([ unit ]
-             [stat (~ unit'debug-info-stat)])
+             [ (~ unit'debug-info-bin) ]
+             [stat (~ unit'debug-info-bin'stat)])
     (print "Debug info stats:")
     (format #t "  # of code blocks w/ debug-info: ~5d\n" (~ stat'num-instances))
     (format #t "   code vector size: ~6d total; ~8,2f avg\n"
@@ -200,6 +211,7 @@
 ;; Encoder
 ;;
 
+;; Transient structure
 (define-class <encoder> ()
   ((out :init-form (open-output-string))    ;output string port
    (consts :init-form '())                  ;reverse list of constants
@@ -279,7 +291,8 @@
         [else (encode-const! item)]))
 
 ;; Returns bytevector and constant vector
-(define (encode-debug-info obj)
+(define (encode-debug-info unit obj)
+  (ensure-unit-debug-info! unit)
   (let1 encoder (make <encoder>)
     (encode-item! encoder obj)
     (values

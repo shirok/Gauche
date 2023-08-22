@@ -1020,7 +1020,8 @@
 ;;   See code.c Scm_CompiledCodePushInfo for the format of debug-info.
 (define (serializable-debug-info code)
   (and-let1 di (~ code'debug-info)
-    (receive [codevec constvec] (encode-debug-info (unwrap-syntax di))
+    (receive [codevec constvec] (encode-debug-info (cgen-current-unit)
+                                                   (unwrap-syntax di))
       (record-debug-info-stat! (cgen-current-unit) codevec constvec)
       (let ([codevec-lit (cgen-literal codevec)]
             [constvec-list (cgen-literal constvec)]
