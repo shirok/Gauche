@@ -191,7 +191,7 @@
   (and-let* ([ unit ]
              [ (~ unit'debug-info-bin) ]
              [stat (~ unit'debug-info-bin'stat)])
-    (print "Debug info stats:")
+    (format #t "Debug info stats (~s):\n" (~ unit'name))
     (format #t "  # of code blocks w/ debug-info: ~5d\n" (~ stat'num-instances))
     (format #t "   code vector size: ~6d total; ~8,2f avg\n"
             (~ stat'total-code-size)
