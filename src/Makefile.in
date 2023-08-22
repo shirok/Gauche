@@ -569,6 +569,10 @@ distclean : clean
 maintainer-clean : clean
 	rm -f $(CONFIG_GENERATED) $(PREGENERATED)
 
+# Rerun precomp etc. but no need to reconfigure
+clean-to-regenerate : clean
+	rm -f $(PREGENERATED)
+
 # install ----------------------------------------------
 
 INSTALL_DIRS = "$(DESTDIR)$(HEADER_INSTALL_DIR)" \
