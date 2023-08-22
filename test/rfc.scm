@@ -86,6 +86,8 @@
 (test* "standard decode (digits)" "a0>a0?" (base64-decode-string "YTA+YTA/" :digits "+/"))
 (test* "url-safe encode (digits)" "YTA-YTA_" (base64-encode-string "a0>a0?" :digits "-_"))
 (test* "url-safe decode (digits)" "a0>a0?" (base64-decode-string "YTA-YTA_" :digits "-_"))
+(test* "weird encode (digits)" "YTA.YTA?" (base64-encode-string "a0>a0?" :digits ".?"))
+(test* "weird decode (digits)" "a0>a0?" (base64-decode-string "YTA.YTA?" :digits ".?"))
 
 ;;--------------------------------------------------------------------
 (test-section "rfc.quoted-printable")

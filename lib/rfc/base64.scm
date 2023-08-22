@@ -111,18 +111,32 @@
 (define (%url-safe-digits? digit0 digit1)
   (and (eqv? digit0 #\-) (eqv? digit1 #\_)))
 
+(define *nonstd-decode-tables*
+  (make-hash-table 'equal?))          ; cons -> vector
+
+(define (%valid-digit? digit)
+  (and (char-set:ascii digit)
+       (not (#[A-Za-z0-9=] digit))))
+
 (define (%digits->decode-table digits)
   (unless (and (or (string? digits) (vector? digits))
                (eqv? (size-of digits) 2))
     (error "Digits must be a string or vector of length 2, but got:" digits))
   (let ([digit0 (~ digits 0)]
         [digit1 (~ digits 1)])
+    (assume (%valid-digit? digit0) "Invalid extra digit for base64:" digit0)
+    (assume (%valid-digit? digit1) "Invalid extra digit for base64:" digit1)
     (cond [(%standard-digits? digit0 digit1) *standard-decode-table*]
           [(%url-safe-digits? digit0 digit1) *url-safe-decode-table*]
+          [(hash-table-get *nonstd-decode-tables* (cons digit0 digit1) #f)]
           [else
            (rlet1 v (vector-copy *standard-decode-table*)
              (vector-set! v (- (char->integer digit0) 32) 62)
-             (vector-set! v (- (char->integer digit1) 32) 63))])))
+             (vector-set! v (- (char->integer digit1) 32) 63)
+             (hash-table-put! *nonstd-decode-tables* (cons digit0 digit1) v))])))
+
+(define *nonstd-encode-tables*
+  (make-hash-table 'equal?))          ; digits -> vector
 
 (define (%digits->encode-table digits)
   (unless (and (or (string? digits) (vector? digits))
@@ -130,12 +144,16 @@
     (error "Digits must be a string or vector of length 2, but got:" digits))
   (let ([digit0 (~ digits 0)]
         [digit1 (~ digits 1)])
+    (assume (%valid-digit? digit0) "Invalid extra digit for base64:" digit0)
+    (assume (%valid-digit? digit1) "Invalid extra digit for base64:" digit1)
     (cond [(%standard-digits? digit0 digit1) *standard-encode-table*]
           [(%url-safe-digits? digit0 digit1) *url-safe-encode-table*]
+          [(hash-table-get *nonstd-encode-tables* (cons digit0 digit1) #f)]
           [else
            (rlet1 v (vector-copy *standard-encode-table*)
              (vector-set! v 62 digit0)
-             (vector-set! v 63 digit1))])))
+             (vector-set! v 63 digit1)
+             (hash-table-put! *nonstd-encode-tables* (cons digit0 digit1) v))])))
 
 (define (base64-decode :key (url-safe #f) (digits #f) (strict #f))
   (define table (cond [url-safe *url-safe-decode-table*]
