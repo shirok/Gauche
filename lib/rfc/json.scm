@@ -42,6 +42,8 @@
   (use srfi.13)
   (use srfi.113)
   (export <json-parse-error> <json-construct-error>
+          <json-mixin>
+
           parse-json parse-json-string
           parse-json*
           construct-json construct-json-string
@@ -73,6 +75,15 @@
 ;; This is to bail out the input nesting is too deep (see SRFI-180)
 (define json-nesting-depth-limit (make-parameter +inf.0))
 (define json-current-nesting-depth (make-parameter 0))
+
+;; JSON-serializable class.
+;;  In fact, we can just use object inspection to provide the default
+;;  serializer without a specialized mixin class.  However, such implicit
+;;  handling tends to be error-prone.  We'd rather be explicit.
+;;  In a class inheriting <json-mixin>, a slot can have :json-name
+;;  to be serializable.
+(define-class <json-mixin> () ())
+
 
 ;;;============================================================
 ;;; Parser
@@ -229,6 +240,7 @@
         [(number? obj)    (print-number obj)]
         [(is-a? obj <dictionary>) (print-object obj)]
         [(is-a? obj <sequence>)   (print-array obj)]
+        [(is-a? obj <json-mixin>) (print-instance obj)]
         [else (error <json-construct-error> :object obj
                      "can't convert Scheme object to json:" obj)]))
 
@@ -254,6 +266,21 @@
                          (print-value val))
                        obj)
   (display "]"))
+
+(define (print-instance obj)            ;<json-mixin>
+  (let1 class (class-of obj)
+    (display "{")
+    (fold (^[slot comma]
+            (if-let1 json-name (slot-definition-option slot :json-name #f)
+              (begin
+                (display comma)
+                (print-string (x->string json-name))
+                (display ":")
+                (print-value (slot-ref obj (slot-definition-name slot)))
+                ",")
+              comma))
+          "" (class-slots class))
+    (display "}")))
 
 (define (print-number num)
   (cond [(or (not (real? num)) (not (finite? num)))

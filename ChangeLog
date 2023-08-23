@@ -1,5 +1,8 @@
 2023-08-22  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/json.scm (<json-mixin>): A convenient mapping from Gauche
+	  instance to JSON.
+
 	* lib/rfc/base64.scm (base64-encode): Added omit-padding keyword arg.
 	  Some protocol asks to do so, e.g. JWS (rfc7515).
 
