@@ -28666,8 +28666,13 @@ then use this procedure to extract the definition.
 
 @deftp {Module} text.multicolumn
 @mdindex text.multicolumn
+@c EN
 This module provides the means to format a list of words into
 a multicolumn text.  Think of the output of @code{ls} command.
+@c JP
+このモジュールは、単語のリストを複数カラム形式に揃えてフォーマットする手段を提供します。
+@code{ls}コマンドの出力のようなものを想像してください。
+@c COMMON
 
 @example
 (display-multicolumn
@@ -28679,34 +28684,73 @@ quick   jumps   lazy
 brown   over    dog
 @end example
 
+@c EN
 Various options are provided to customize the output.
+@c JP
+出力をカスタマイズできる様々なオプションが提供されます。
+@c COMMON
 @end deftp
 
 @defun display-multicolumn strs :key width minimum-width max-columns order
 @c MOD text.multicolumn
-Display items in a list of strings @var{strs} in multicolumn format.
-The width of a column is chosen to contain the longest string in @var{str}
+@c EN
+Display items in a list of strings @var{strs} in multicolumn format,
+to the current output port.
+The items shouldn't contain newline or tab characters; the procedure
+doesn't treat them specially, so the output would be disturbed.
+
+The width of a column is chosen to contain the longest string in @var{strs}
 or @var{minimum-width}, whichever greater.
 The default of @var{minimum-width} is 8.
+@c JP
+文字列のリスト@var{strs}の要素を、現在の出力ポートに複数カラム形式に揃えて表示します。
+要素中にタブや改行文字があってはなりません。手続きはタブや改行文字を特別扱いしないので、
+もし含まれていた場合は出力が乱れます。
 
+カラムの幅は、@var{strs}中の文字列のうち最も長いものか、@var{minimum-width}の
+どちらか大きい方で決まります。@var{minimum-width}のデフォルトは8です。
+@c COMMON
+
+@c EN
 Then as many columns are displayed as fit in @var{width} characters,
 whose default is 80.  However, the number of columns won't exceed
 @var{max-columns} if it is given and not @code{#f}.
+@c JP
+カラムの幅が決まったら、@var{width}文字の幅にいくつのカラムが収まるかが計算されます。
+@var{width}のデフォルトは80です。但し@var{max-columns}が与えられて@code{#f}でなければ、
+カラム数は@var{max-column}を越えません。
+@c COMMON
 
+@c EN
 The @var{order} argument must be either a symbol @code{column} or
 @code{row}.  If it is @code{column} (default), the items are sorted
 column-first; that is, it is filled in the first column from top to
 down, then the second column from top to down, and so on.
 If it is @code{row}, the items are sorted row-first; it is filled
 in the first row from left to right, and then second row, and so on.
+@c JP
+@var{order}引数はシンボル@code{column}か@code{row}のどちらかです。
+@code{column}の場合(デフォルト)、要素はカラムファースト、つまり最初のカラムを
+上から下へ、それから第二カラムを上から下へ、という順に並べられます。
+@code{row}の場合はロウファースト、つまり最初の行の左から右、次の行の左から右、
+という順に並べられます。
+@c COMMON
 @end defun
 
 @defun layout-multicolumn strs :key width minimum-width max-columns order
 @c MOD text.multicolumn
+@c EN
 This is an underlying procedure of @code{display-multicolumn}.  It returns
 a list of text tree (@pxref{Lazy text construction}).  Each text
 tree stands for a line, not including the newline character.
 This can be handy if you want to modify the layout.
+@c JP
+この手続きは@code{display-multicolumn}の下請けにあるもので、
+テキストツリーのリストを返します (テキストツリーについては
+@ref{Lazy text construction}参照)。
+各テキストツリーが一行に相当します。改行文字は含まれません。
+レイアウトを後から加工したい場合に便利です。
+@c COMMON
 
 @example
 (layout-multicolumn
@@ -28718,9 +28762,14 @@ This can be handy if you want to modify the layout.
  ("brown   " "over    " "dog"))
 @end example
 
+@c EN
 NB: The actual structure of each text tree may be changed, but
 passing it to @code{tree->string} or @code{write-tree} produces
 the line.
+@c JP
+註: テキストツリーの中身はバージョンによって異なるかもしれませんが、
+@code{tree->string}や@code{write-tree}に渡した結果は同じになります。
+@c COMMON
 @end defun
 
 
