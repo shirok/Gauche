@@ -33,12 +33,13 @@
 
 ;; An abstract base- and meta-class of message digest algorithms.
 ;; The concrete implementation is given in modules such as
-;; rfc.md5 and rfc.sha1.
+;; rfc.md5 and rfc.sha.
 
 (define-module util.digest
   (use gauche.uvector)
   (export <message-digest-algorithm> <message-digest-algorithm-meta>
-          digest-update! digest-final! digest digest-string
+          digest-update! digest-final!
+          digest digest-to digest-string digest-string-to
           digest-hexify)
   )
 (select-module util.digest)
@@ -58,10 +59,34 @@
   #f)
 (define-method digest-final! ((self <message-digest-algorithm>))
   #f)
-(define-method digest ((class <message-digest-algorithm-meta>))
+(define-method digest ((digester <message-digest-algorithm-meta>))
   #f)
-(define-method digest-string ((class <message-digest-algorithm-meta>) string)
-  (with-input-from-string string (cut digest class)))
+
+(define-method digest-to ((target <string-meta>)
+                          (digester <message-digest-algorithm-meta>))
+  (digest digester))
+(define-method digest-to ((target <u8vector-meta>)
+                          (digester <message-digest-algorithm-meta>))
+  (string->u8vector (digest digester)))
+
+(define-method digest-string ((digester <message-digest-algorithm-meta>)
+                              message)
+  (assume-type message (</> <string> <u8vector>))
+  (cond
+   [(string? message)
+    (with-input-from-string message (cut digest digester))]
+   [(u8vector? message)
+    (with-input-from-port (open-input-uvector message)
+      (cut digest digester))]))
+
+(define-method digest-string-to ((target <string-meta>)
+                                 (digester <message-digest-algorithm-meta>)
+                                 message)
+  (digest-string digester message))
+(define-method digest-string-to ((target <u8vector-meta>)
+                                 (digester <message-digest-algorithm-meta>)
+                                 message)
+  (string->u8vector (digest-string digester message)))
 
 ;; utility
 (define (digest-hexify data)

@@ -1,5 +1,8 @@
 2023-08-24  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/hmac.scm, lib/util/digest.scm: Add API to return digest
+	  result as <u8vector>.
+
 	* src/libio.scm (%write-walk-rec): Avoid recursing into write-object
 	  when obj is a <uvector>.  This doesn't change the result, but
 	  saves time.
