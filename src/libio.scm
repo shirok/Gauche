@@ -835,6 +835,7 @@
         (cond
          [(symbol? obj)] ; uninterned symbols
          [(string? obj)]
+         [(uvector? obj)]
          [(pair? obj)
           (%write-walk-rec (car obj) port tab)
           (%write-walk-rec (cdr obj) port tab)]
