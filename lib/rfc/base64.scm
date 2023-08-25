@@ -488,6 +488,10 @@
 ;;; Base16
 ;;;
 
+;; The RFC only uses uppercase alphabets.  For the convenience,
+;; the decoder accept lowercase letters in non-strict mode.  The encoder
+;; generates lowercase letetrs when :lowercase is true.
+
 (define *base16-decode-table*
   ;;    !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
   #(#f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f
@@ -502,19 +506,38 @@
   ;;p   q   r   s   t   u   v   w   x   y   z   {   |   }   ~
     #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f
   ))
+(define *base16lax-decode-table*
+  ;;    !   "   #   $   %   &   '   (   )   *   +   ,   -   .   /
+  #(#f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f
+  ;;0   1   2   3   4   5   6   7   8   9   :   ;   <   =   >   ?
+    0   1   2   3   4   5   6   7   8   9  #f  #f  #f  #f  #f  #f
+  ;;@   A   B   C   D   E   F   G   H   I   J   K   L   M   N   O
+    #f  10  11  12  13  14  15  #f  #f  #f  #f  #f  #f  #f  #f  #f
+  ;;P   Q   R   S   T   U   V   W   X   Y   Z   [   \   ]   ^   _
+    #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f
+  ;;`   a   b   c   d   e   f   g   h   i   j   k   l   m   n   o
+    #f  10  11  12  13  14  15  #f  #f  #f  #f  #f  #f  #f  #f  #f
+  ;;p   q   r   s   t   u   v   w   x   y   z   {   |   }   ~
+    #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f  #f
+  ))
 
 (define *base16-encode-table*
   ;;0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
   #(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\A #\B #\C #\D #\E #\F))
+(define *base16lc-encode-table*
+  ;;0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
+  #(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\a #\b #\c #\d #\e #\f))
+
 
 (define (base16-decode :key (strict #f))
   (define (invalid c) (error "Invalid base16 input character" c))
   (define (premature) (when strict (error "Premature end of base16 input")))
+  (define table (if strict *base16-decode-table* *base16lax-decode-table*))
   (letrec-syntax ([lookup (syntax-rules ()
                             [(_ c)
                              (let1 i (char->integer c)
                                (and (< 32 i 128)
-                                    (vector-ref *base16-decode-table* (- i 32))))])]
+                                    (vector-ref table (- i 32))))])]
                   [state (syntax-rules ()
                            [(_ c end-expr handler skipper)
                             (cond [(eof-object? c) end-expr]
@@ -535,13 +558,14 @@
 (define (base16-decode-bytevector vec :key (strict #f))
   (make-string->bytevector vec (cut base16-decode :strict strict)))
 
-(define (base16-encode)
+(define (base16-encode :key (lowercase #f))
+  (define table (if lowercase *base16lc-encode-table* *base16-encode-table*))
   (generator-for-each
-   (^b (write-char (vector-ref *base16-encode-table* (ash b -4)))
-       (write-char (vector-ref *base16-encode-table* (logand b #x0f))))
+   (^b (write-char (vector-ref table (ash b -4)))
+       (write-char (vector-ref table (logand b #x0f))))
    read-byte))
 
-(define (base16-encode-string string)
-  (with-string-io string base16-encode))
-(define (base16-encode-bytevector vec)
-  (make-bytevector->string vec base16-encode))
+(define (base16-encode-string string :key (lowercase #f))
+  (with-string-io string (cut base16-encode :lowercase lowercase)))
+(define (base16-encode-bytevector vec :key (lowercase #f))
+  (make-bytevector->string vec (cut base16-encode :lowercase lowercase)))

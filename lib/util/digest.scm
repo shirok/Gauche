@@ -37,6 +37,7 @@
 
 (define-module util.digest
   (use gauche.uvector)
+  (use rfc.base64)
   (export <message-digest-algorithm> <message-digest-algorithm-meta>
           digest-update! digest-final!
           digest digest-to digest-string digest-string-to
@@ -88,17 +89,33 @@
                                  message)
   (string->u8vector (digest-string digester message)))
 
-;; utility
-(define (digest-hexify data)
-  (define (hexify)
-    (with-output-to-string
-      (cut generator-for-each (cut format #t "~2,'0x" <>) read-byte)))
+;; Special targets:
+;;   base64
+;;   base64url
+;;   base64url-nopad
+;;   base32
+;;   base32hex
+;;   base16
+;;   hex
+(define-method digest-string-to ((target <symbol>)
+                                 (digester <message-digest-algorithm-meta>)
+                                 message)
+  (define encoder
+    (case target
+      [(base64) base64-encode-string]
+      [(base64url) (cut base64-encode-string <> :url-safe #t)]
+      [(base64url-nopad) (cut base64-encode-string <>
+                              :url-safe #t :omit-padding #t)]
+      [(base32) base32-encode-string]
+      [(base32hex) base32hex-encode-string]
+      [(base16) base16-encode-string]
+      [(hex) digest-hexify]))
+  (encoder (digest-string digester message)))
 
+;; OBSOLETED
+;;   Use base16-encode-*, or digest-string-to with predefined encoder targets.
+(define (digest-hexify data)
   (cond
-   [(u8vector? data)
-    (let1 p (open-input-uvector data)
-      (with-input-from-port p hexify))]
-   [(string? data)
-    (with-input-from-string data hexify)]
-   [else
-    (error "data must be either u8vector or string, but got:" data)]))
+   [(u8vector? data) (base16-encode-bytevector data :lowercase #t)]
+   [(string? data) (base16-encode-string data :lowercase #t)]
+   [else -    (error "data must be either u8vector or string, but got:" data)]))

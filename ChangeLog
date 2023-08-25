@@ -1,5 +1,8 @@
 2023-08-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/digest.scm: Allow digest-string-to to take predefined
+	  encoding targets, e.g. base64 or hex.
+
 	* lib/rfc/base64.scm: Implement Base32, Base32hex and Base16 as
 	  specified in RFC4648.
 
