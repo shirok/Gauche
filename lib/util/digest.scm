@@ -39,14 +39,20 @@
   (use gauche.uvector)
   (use rfc.base64)
   (export <message-digest-algorithm> <message-digest-algorithm-meta>
-          digest-update! digest-final!
-          digest digest-to digest-string digest-string-to
-          digest-hexify)
+          digest-update! digest-final! digest
+          digest-to digest-message-to
+
+          ;; Obsoleted API
+          digest-string digest-hexify)
   )
 (select-module util.digest)
 
 (autoload gauche.vport open-input-uvector)
 
+;; API for digest algorithms
+;;   Actual digest algorithms such as SHA should subclass
+;;   <message-digest-algorithm>, and implement digest-update!
+;;   and digest-final!, or digest.
 (define-class <message-digest-algorithm-meta> (<class>)
   ;; Block size (in bytes) used in HMAC, determined by each algorithm.
   ;; Older algorithms uses 64, while SHA-384/512 uses 128.
@@ -63,32 +69,13 @@
 (define-method digest ((digester <message-digest-algorithm-meta>))
   #f)
 
+;; User API
 (define-method digest-to ((target <string-meta>)
                           (digester <message-digest-algorithm-meta>))
   (digest digester))
 (define-method digest-to ((target <u8vector-meta>)
                           (digester <message-digest-algorithm-meta>))
   (string->u8vector (digest digester)))
-
-(define-method digest-string ((digester <message-digest-algorithm-meta>)
-                              message)
-  (assume-type message (</> <string> <u8vector>))
-  (cond
-   [(string? message)
-    (with-input-from-string message (cut digest digester))]
-   [(u8vector? message)
-    (with-input-from-port (open-input-uvector message)
-      (cut digest digester))]))
-
-(define-method digest-string-to ((target <string-meta>)
-                                 (digester <message-digest-algorithm-meta>)
-                                 message)
-  (digest-string digester message))
-(define-method digest-string-to ((target <u8vector-meta>)
-                                 (digester <message-digest-algorithm-meta>)
-                                 message)
-  (string->u8vector (digest-string digester message)))
-
 ;; Special targets:
 ;;   base64
 ;;   base64url
@@ -97,11 +84,10 @@
 ;;   base32hex
 ;;   base16
 ;;   hex
-(define-method digest-string-to ((target <symbol>)
-                                 (digester <message-digest-algorithm-meta>)
-                                 message)
+(define-method digest-to ((target <symbol>)
+                          (digester <message-digest-algorithm-meta>))
   (define encoder
-    (case target
+    (ecase target
       [(base64) base64-encode-message]
       [(base64url) (cut base64-encode-message <> :url-safe #t)]
       [(base64url-nopad) (cut base64-encode-message <>
@@ -110,8 +96,22 @@
       [(base32hex) base32hex-encode-message]
       [(base16) base16-encode-message]
       [(hex) (cut base16-encode-message <> :lowercase #t)]))
-  (encoder (digest-string digester message)))
+  (encoder (digest digester)))
+
+;; User API
+(define-method digest-message-to (target
+                                  (digester <message-digest-algorithm-meta>)
+                                  (message <string>))
+  (with-input-from-string message (cut digest-to target digester)))
+
 
 ;; OBSOLETED
-;;   Use base16-encode-message, or digest-string-to with predefined encoder targets.
+;;  Use digest-message-to.
+(define-method digest-string ((digester <message-digest-algorithm-meta>)
+                              string)
+  (digest-message-to <string> digester string))
+
+;; OBSOLETED
+;;   Use base16-encode-message, or digest-message-to with
+;;   predefined encoder targets.
 (define (digest-hexify data) (base16-encode-message data :lowercase #t))

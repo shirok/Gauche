@@ -39,7 +39,7 @@
   (use gauche.mop.typed-slot)
   (export <hmac> hmac-update! hmac-final!
           hmac-digest hmac-digest-to
-          hmac-digest-string hmac-digest-string-to))
+          hmac-digest-string hmac-digest-message-to))
 (select-module rfc.hmac)
 
 (autoload gauche.vport open-input-uvector)
@@ -80,7 +80,7 @@
   (let* ([v (string->u8vector (~ self'key))]
          [opad (u8vector->string (u8vector-xor v #x5c))]
          [inner (digest-final! (~ self'hasher))]
-         [outer (digest-string-to target
+         [outer (digest-message-to target
                                   (class-of (~ self'hasher))
                                   (string-append opad inner))])
     outer))
@@ -95,7 +95,7 @@
 
 (define (hmac-digest . args) (apply hmac-digest-to <string> args))
 
-(define (hmac-digest-string-to target message . args)
+(define (hmac-digest-message-to target message . args)
   (assume-type message (</> <string> <u8vector>))
   (cond
    [(string? message)
@@ -107,4 +107,4 @@
    ))
 
 (define (hmac-digest-string message . args)
-  (apply hmac-digest-string-to <string> message args))
+  (apply hmac-digest-message-to <string> message args))
