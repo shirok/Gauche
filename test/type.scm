@@ -296,4 +296,30 @@
 
 (proctype-test a-gf (</> (<^> <string> -> *) (<^> <number> -> *)))
 
+(test-section "typecase")
+
+(define (t-typecase obj)
+  (typecase obj
+    [<integer> 'int]
+    [<string> 'str]
+    [(<?> <symbol>) 'maybe-symbol]
+    [(<List> (</> <string> <symbol>)) 'string-or-symbol-list]
+    [else 'other]))
+
+(test* "typecase" '(int str maybe-symbol maybe-symbol
+                        string-or-symbol-list other)
+       (map t-typecase
+            '(10 "abc" foo #f (a "b" c) (d 3 f))))
+
+(define (t-etypecase obj)
+  (etypecase obj
+    [<string> 'str]
+    [<symbol> 'sym]))
+
+(test* "etypecase" 'str (t-etypecase "abc"))
+(test* "etypecase" 'sym (t-etypecase 'abc))
+(test* "etypecase"
+       (test-error <error> #/expecting one of types in \(<string> <symbol>\)/)
+       (t-etypecase 1))
+
 (test-end)

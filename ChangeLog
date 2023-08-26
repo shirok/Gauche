@@ -1,5 +1,7 @@
 2023-08-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmacro.scm (typecase, etypecase): Added.
+
 	* lib/rfc/digest.scm: Allow digest-string-to to take predefined
 	  encoding targets, e.g. base64 or hex.
 

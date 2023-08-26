@@ -44,7 +44,8 @@
                              values-ref values->list
                              assume assume-type
                              dotimes dolist do-plist doplist
-                             ecase cond-list define-condition-type condition
+                             ecase typecase etypecase cond-list
+                             define-condition-type condition
                              with-continuation-marks
                              unwind-protect
                              let-keywords let-keywords* let-optionals*
@@ -1001,6 +1002,51 @@
                                     expecting one of ~s" v ',choices)))))))]
        [_ (error "Malformed ecase:" f)]))))
 
+;;; typecase, a la CL
+
+;; NB: Eventually typecase should be recognized by the compiler so that
+;;  - The compiler can inference and propagate type information of expr
+;;  - The compiler can do better job for dispatching on built-in types
+;;    rather than using generic type-of?.
+(define-syntax typecase
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr clause ...)
+        (let1 v (gensym)
+          (define (clauses cs)
+            (match cs
+              [() (undefined)]
+              [((type-expr expr ...) . rest)
+               (if (c (r'else) type-expr)
+                 (if (null? rest)
+                   (quasirename r `(begin ,@expr))
+                   (error "'else' clause isn't at the end:" f))
+                 (quasirename r
+                   `(if (of-type? ,v ,type-expr)
+                      (begin ,@expr)
+                      ,(clauses rest))))]
+              [_ (error "Malformed clause in " f)]))
+          (quasirename r
+            `(let ([,v ,expr]) ,(clauses clause))))]
+       [_ (error "Malformed typecase:" f)]))))
+
+(define-syntax etypecase
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ expr clause ...)
+        (if (find (^[cl] (and (pair? cl) (c (r'else) (car cl)))) clause)
+          (quasirename r
+            `(typecase ,expr ,@clause))
+          (quasirename r
+            `(let ((v ,expr))
+               (typecase v ,@clause
+                         (else
+                          (errorf "typecase fell through: expecting one of \
+                                 types in ~s, but got ~s"
+                                  (map car '(,@clause)) v))))))]
+       [_ (error "Malformed etypecase:" f)]))))
 
 ;;; cond-list - a syntax to construct a list
 

@@ -62,6 +62,7 @@
    rxmatch-if  2
    rxmatch-let 2
    syntax-rules 1
+   typecase 1
    unless 1
    until 1
    unwind-protect 1
