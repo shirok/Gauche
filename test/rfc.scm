@@ -19,103 +19,97 @@
 
 ;; NB: encode from/decode to uvector are tested in gauche.vport.
 
-(test* "base64 encode" "" (base64-encode-string ""))
-(test* "base64 encode" "YQ==" (base64-encode-string "a"))
-(test* "base64 encode" "MA==" (base64-encode-string "0"))
-(test* "base64 encode" "Cg==" (base64-encode-string "\n"))
-(test* "base64 encode" "YTA=" (base64-encode-string "a0"))
-(test* "base64 encode" "YTAK" (base64-encode-string "a0\n"))
-(test* "base64 encode" "PQk0" (base64-encode-string "=\t4"))
-(test* "base64 encode" "eTQ5YQ==" (base64-encode-string "y49a"))
-(test* "base64 encode" "RWdqYWk=" (base64-encode-string "Egjai"))
-(test* "base64 encode" "OTNiamFl" (base64-encode-string "93bjae"))
-(test* "base64 encode" "QkFSMGVyOQ==" (base64-encode-string "BAR0er9"))
+(test* "base64 encode" "" (base64-encode-message ""))
+(test* "base64 encode" "YQ==" (base64-encode-message "a"))
+(test* "base64 encode" "MA==" (base64-encode-message "0"))
+(test* "base64 encode" "Cg==" (base64-encode-message "\n"))
+(test* "base64 encode" "YTA=" (base64-encode-message "a0"))
+(test* "base64 encode" "YTAK" (base64-encode-message "a0\n"))
+(test* "base64 encode" "PQk0" (base64-encode-message "=\t4"))
+(test* "base64 encode" "eTQ5YQ==" (base64-encode-message "y49a"))
+(test* "base64 encode" "RWdqYWk=" (base64-encode-message "Egjai"))
+(test* "base64 encode" "OTNiamFl" (base64-encode-message "93bjae"))
+(test* "base64 encode" "QkFSMGVyOQ==" (base64-encode-message "BAR0er9"))
 
 (test* "base64 encode w/ line width (default)"
        "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2\n"
-       (base64-encode-string "012345678901234567890123456789012345678901234567890123456"))
+       (base64-encode-message "012345678901234567890123456789012345678901234567890123456"))
 (test* "base64 encode w/ line width 10, e1"
        "MDEyMzQ1Ng\n=="
-       (base64-encode-string "0123456" :line-width 10))
+       (base64-encode-message "0123456" :line-width 10))
 (test* "base64 encode w/ line width 11, e1"
        "MDEyMzQ1Ng=\n="
-       (base64-encode-string "0123456" :line-width 11))
+       (base64-encode-message "0123456" :line-width 11))
 (test* "base64 encode w/ line width 12, e1"
        "MDEyMzQ1Ng==\n"
-       (base64-encode-string "0123456" :line-width 12))
+       (base64-encode-message "0123456" :line-width 12))
 (test* "base64 encode w/ line width 11, e2"
        "MDEyMzQ1Njc\n="
-       (base64-encode-string "01234567" :line-width 11))
+       (base64-encode-message "01234567" :line-width 11))
 (test* "base64 encode w/ line width 12, e2"
        "MDEyMzQ1Njc=\n"
-       (base64-encode-string "01234567" :line-width 12))
+       (base64-encode-message "01234567" :line-width 12))
 (test* "base64 encode w/ line width 4"
        "MDEy\nMzQ=\n"
-       (base64-encode-string "01234" :line-width 4))
+       (base64-encode-message "01234" :line-width 4))
 (test* "base64 encode w/ line width 3"
        "MDE\nyMz\nQ="
-       (base64-encode-string "01234" :line-width 3))
+       (base64-encode-message "01234" :line-width 3))
 (test* "base64 encode w/ line width 2"
        "MD\nEy\nMz\nQ=\n"
-       (base64-encode-string "01234" :line-width 2))
+       (base64-encode-message "01234" :line-width 2))
 (test* "base64 encode w/ line width 1"
        "M\nD\nE\ny\nM\nz\nQ\n=\n"
-       (base64-encode-string "01234" :line-width 1))
+       (base64-encode-message "01234" :line-width 1))
 (test* "base64 encode w/ line width 0"
        "MDEyMzQ="
-       (base64-encode-string "01234" :line-width 0))
+       (base64-encode-message "01234" :line-width 0))
 
-(test* "base64 decode" "" (base64-decode-string ""))
-(test* "base64 decode" "a" (base64-decode-string "YQ=="))
-(test* "base64 decode" "a" (base64-decode-string "YQ="))
-(test* "base64 decode" "a" (base64-decode-string "YQ"))
-(test* "base64 decode" "a0" (base64-decode-string "YTA="))
-(test* "base64 decode" "a0" (base64-decode-string "YTA"))
-(test* "base64 decode" "a0\n" (base64-decode-string "YTAK"))
-(test* "base64 decode" "y49a" (base64-decode-string "eTQ5YQ=="))
-(test* "base64 decode" "Egjai" (base64-decode-string "RWdqYWk="))
-(test* "base64 decode" "93bjae" (base64-decode-string "OTNiamFl"))
-(test* "base64 decode" "BAR0er9" (base64-decode-string "QkFSMGVyOQ=="))
-(test* "base64 decode" "BAR0er9" (base64-decode-string "QkFS\r\nMGVyOQ\r\n=="))
+(test* "base64 decode" "" (base64-decode-string-to <string> ""))
+(test* "base64 decode" "a" (base64-decode-string-to <string> "YQ=="))
+(test* "base64 decode" "a" (base64-decode-string-to <string> "YQ="))
+(test* "base64 decode" "a" (base64-decode-string-to <string> "YQ"))
+(test* "base64 decode" "a0" (base64-decode-string-to <string> "YTA="))
+(test* "base64 decode" "a0" (base64-decode-string-to <string> "YTA"))
+(test* "base64 decode" "a0\n" (base64-decode-string-to <string> "YTAK"))
+(test* "base64 decode" "y49a" (base64-decode-string-to <string> "eTQ5YQ=="))
+(test* "base64 decode" "Egjai" (base64-decode-string-to <string> "RWdqYWk="))
+(test* "base64 decode" "93bjae" (base64-decode-string-to <string> "OTNiamFl"))
+(test* "base64 decode" "BAR0er9" (base64-decode-string-to <string> "QkFSMGVyOQ=="))
+(test* "base64 decode" "BAR0er9" (base64-decode-string-to <string> "QkFS\r\nMGVyOQ\r\n=="))
 
-(test* "base64 standard encode" "YTA+YTA/" (base64-encode-string "a0>a0?"))
-(test* "base64 standard decode" "a0>a0?" (base64-decode-string "YTA+YTA/"))
-(test* "base64 url-safe encode" "YTA-YTA_" (base64-encode-string "a0>a0?" :url-safe #t))
-(test* "base64 url-safe decode" "a0>a0?" (base64-decode-string "YTA-YTA_" :url-safe #t))
+(test* "base64 standard encode" "YTA+YTA/" (base64-encode-message "a0>a0?"))
+(test* "base64 standard decode" "a0>a0?" (base64-decode-string-to <string> "YTA+YTA/"))
+(test* "base64 url-safe encode" "YTA-YTA_" (base64-encode-message "a0>a0?" :url-safe #t))
+(test* "base64 url-safe decode" "a0>a0?" (base64-decode-string-to <string> "YTA-YTA_" :url-safe #t))
 
-(test* "base64 standard encode (digits)" "YTA+YTA/" (base64-encode-string "a0>a0?" :digits "+/"))
-(test* "base64 standard decode (digits)" "a0>a0?" (base64-decode-string "YTA+YTA/" :digits "+/"))
-(test* "base64 url-safe encode (digits)" "YTA-YTA_" (base64-encode-string "a0>a0?" :digits "-_"))
-(test* "base64 url-safe decode (digits)" "a0>a0?" (base64-decode-string "YTA-YTA_" :digits "-_"))
-(test* "base64 weird encode (digits)" "YTA.YTA?" (base64-encode-string "a0>a0?" :digits ".?"))
-(test* "base64 weird decode (digits)" "a0>a0?" (base64-decode-string "YTA.YTA?" :digits ".?"))
+(test* "base64 standard encode (digits)" "YTA+YTA/" (base64-encode-message "a0>a0?" :digits "+/"))
+(test* "base64 standard decode (digits)" "a0>a0?" (base64-decode-string-to <string> "YTA+YTA/" :digits "+/"))
+(test* "base64 url-safe encode (digits)" "YTA-YTA_" (base64-encode-message "a0>a0?" :digits "-_"))
+(test* "base64 url-safe decode (digits)" "a0>a0?" (base64-decode-string-to <string> "YTA-YTA_" :digits "-_"))
+(test* "base64 weird encode (digits)" "YTA.YTA?" (base64-encode-message "a0>a0?" :digits ".?"))
+(test* "base64 weird decode (digits)" "a0>a0?" (base64-decode-string-to <string> "YTA.YTA?" :digits ".?"))
 
-(test* "base64 omit-padding" "YQ" (base64-encode-string "a" :omit-padding #t))
-(test* "base64 omit-padding" "YTA" (base64-encode-string "a0" :omit-padding #t))
+(test* "base64 omit-padding" "YQ" (base64-encode-message "a" :omit-padding #t))
+(test* "base64 omit-padding" "YTA" (base64-encode-message "a0" :omit-padding #t))
 
 ;; Test data from RFC4648
 (define (test-base32 orig encoded encoded-hex)
-  (define (test-1 name encoded
-                  encode encode-string encode-bytevector
-                  decode decode-string decode-bytevector)
+  (define (test-1 name encoded encoder decoder)
     (define orig-bv (string->u8vector orig))
     (define enc-no-pads (string-trim-right encoded #\=))
-    (test* #"~name encode" encoded (encode-string orig))
-    (test* #"~name decode" orig (decode-string encoded))
-    (test* #"~name encode (bv)" encoded (encode-bytevector orig-bv))
-    (test* #"~name decode (bv)" orig-bv (decode-bytevector encoded))
-    (test* #"~name encode (no pads)" enc-no-pads (encode-string orig :omit-padding #t))
-    (test* #"~name decode (no pads)" orig (decode-string enc-no-pads))
+    (test* #"~name encode" encoded (encoder orig))
+    (test* #"~name decode" orig (decoder <string> encoded))
+    (test* #"~name encode (bv)" encoded (encoder orig-bv))
+    (test* #"~name decode (bv)" orig-bv (decoder <u8vector> encoded))
+    (test* #"~name encode (no pads)" enc-no-pads (encoder orig :omit-padding #t))
+    (test* #"~name decode (no pads)" orig (decoder <string> enc-no-pads))
     (when (string-index encoded #\=)
       (test* #"~name decode (no pads, error)" (test-error)
-             (decode-string enc-no-pads :strict #t))))
+             (decoder <string> enc-no-pads :strict #t))))
 
-  (test-1 "base32" encoded
-          base32-encode base32-encode-string base32-encode-bytevector
-          base32-decode base32-decode-string base32-decode-bytevector)
-  (test-1 "base32hex" encoded-hex
-          base32hex-encode base32hex-encode-string base32hex-encode-bytevector
-          base32hex-decode base32hex-decode-string base32hex-decode-bytevector)
+  (test-1 "base32" encoded base32-encode-message base32-decode-string-to)
+  (test-1 "base32hex" encoded-hex base32hex-encode-message base32hex-decode-string-to)
   )
 
 (let ((data '(;orig     base32              base32hex
@@ -130,10 +124,10 @@
 
 (define (test-base16 orig encoded)
   (define orig-bv (string->u8vector orig))
-  (test* "base16 encode" encoded (base16-encode-string orig))
-  (test* "base16 decode" orig (base16-decode-string encoded))
-  (test* "base16 encode (bv)" encoded (base16-encode-bytevector orig-bv))
-  (test* "base16 decode (bv)" orig-bv (base16-decode-bytevector encoded)))
+  (test* "base16 encode" encoded (base16-encode-message orig))
+  (test* "base16 decode" orig (base16-decode-string-to <string> encoded))
+  (test* "base16 encode (bv)" encoded (base16-encode-message orig-bv))
+  (test* "base16 decode (bv)" orig-bv (base16-decode-string-to <u8vector> encoded)))
 
 (let ((data '((""       "")
               ("f"      "66")
@@ -150,48 +144,48 @@
 (test-module 'rfc.quoted-printable)
 
 (test* "encode" "abcd=0Cefg"
-       (quoted-printable-encode-string "abcd\x0cefg"))
+       (quoted-printable-encode-message "abcd\x0cefg"))
 (test* "encode"
        "abcd\r\nefg"
-       (quoted-printable-encode-string "abcd\r\nefg"))
+       (quoted-printable-encode-message "abcd\r\nefg"))
 (test* "encode (tab/space at eol)"
        "abcd=09\r\nefg=20\r\n"
-       (quoted-printable-encode-string "abcd\t\r\nefg \r\n"))
+       (quoted-printable-encode-message "abcd\t\r\nefg \r\n"))
 (test* "encode (soft line break)"
        "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abc=\r\ndefghij0123456789abcdefghij"
-       (quoted-printable-encode-string "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"))
+       (quoted-printable-encode-message "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"))
 (test* "encode (soft line break w/line-width)"
        "0123456789abcdefg=\r\nhij0123456789abcd=\r\nefghij"
-       (quoted-printable-encode-string
+       (quoted-printable-encode-message
         "0123456789abcdefghij0123456789abcdefghij"
         :line-width 20))
 (test* "encode (soft line break w/line-width)"
        "0123456789abcdef=3D=\r\nghij0123456789a=3D=\r\n=3Dbcdefghij"
-       (quoted-printable-encode-string
+       (quoted-printable-encode-message
         "0123456789abcdef=ghij0123456789a==bcdefghij"
         :line-width 20))
 (test* "encode (soft line break w/line-width lower bound)"
        "a=\r\n=3F=\r\nb"
-       (quoted-printable-encode-string "a?b" :line-width 4))
+       (quoted-printable-encode-message "a?b" :line-width 4))
 (test* "encode (no line break)"
        "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"
-       (quoted-printable-encode-string "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"
+       (quoted-printable-encode-message "0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij0123456789abcdefghij"
                                        :line-width #f))
 (test* "encode (hard line break)"
        "a\r\nb\r\nc\r\n"
-       (quoted-printable-encode-string "a\rb\nc\r\n"))
+       (quoted-printable-encode-message "a\rb\nc\r\n"))
 (test* "encode (binary)"
        "a=0Db=0Ac=0D=0A"
-       (quoted-printable-encode-string "a\rb\nc\r\n" :binary #t))
+       (quoted-printable-encode-message "a\rb\nc\r\n" :binary #t))
 
 (test* "decode" "\x01\x08abcde=\r\n"
-       (quoted-printable-decode-string "=01=08abc=64=65=3D\r\n"))
+       (quoted-printable-decode-string-to <string> "=01=08abc=64=65=3D\r\n"))
 (test* "decode (soft line break)"
        "Now's the time for all folk to come to the aid of their country."
-       (quoted-printable-decode-string "Now's the time =\r\nfor all folk to come=   \r\n to the aid of their country."))
+       (quoted-printable-decode-string-to <string> "Now's the time =\r\nfor all folk to come=   \r\n to the aid of their country."))
 (test* "decode (robustness)"
        "foo=1qr =  j\r\n"
-       (quoted-printable-decode-string "foo=1qr =  j\r\n="))
+       (quoted-printable-decode-string-to <string> "foo=1qr =  j\r\n="))
 
 
 ;;--------------------------------------------------------------------

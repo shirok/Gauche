@@ -1,5 +1,12 @@
 2023-08-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/base64.scm, lib/rfc/quoted-printable.scm: Revise API.
+	  The encoder now can take both string and u8vector, and renamed
+	  to *-encode-message to reflect the generic nature.
+	  The decoder now takes target class, and renamed to *-decode-string-to.
+	  The latter is consistent with message digest framework.
+	  The existing APIs are kept for the backward compatibility.
+
 	* src/libmacro.scm (typecase, etypecase): Added.
 
 	* lib/rfc/digest.scm: Allow digest-string-to to take predefined

@@ -102,20 +102,16 @@
                                  message)
   (define encoder
     (case target
-      [(base64) base64-encode-string]
-      [(base64url) (cut base64-encode-string <> :url-safe #t)]
-      [(base64url-nopad) (cut base64-encode-string <>
+      [(base64) base64-encode-message]
+      [(base64url) (cut base64-encode-message <> :url-safe #t)]
+      [(base64url-nopad) (cut base64-encode-message <>
                               :url-safe #t :omit-padding #t)]
-      [(base32) base32-encode-string]
-      [(base32hex) base32hex-encode-string]
-      [(base16) base16-encode-string]
-      [(hex) digest-hexify]))
+      [(base32) base32-encode-message]
+      [(base32hex) base32hex-encode-message]
+      [(base16) base16-encode-message]
+      [(hex) (cut base16-encode-message <> :lowercase #t)]))
   (encoder (digest-string digester message)))
 
 ;; OBSOLETED
-;;   Use base16-encode-*, or digest-string-to with predefined encoder targets.
-(define (digest-hexify data)
-  (cond
-   [(u8vector? data) (base16-encode-bytevector data :lowercase #t)]
-   [(string? data) (base16-encode-string data :lowercase #t)]
-   [else -    (error "data must be either u8vector or string, but got:" data)]))
+;;   Use base16-encode-message, or digest-string-to with predefined encoder targets.
+(define (digest-hexify data) (base16-encode-message data :lowercase #t))

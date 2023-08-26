@@ -35,10 +35,16 @@
 ;; Ref: RFC2045 section 6.7  <http://www.rfc-editor.org/rfc/rfc2045.txt>
 
 (define-module rfc.quoted-printable
-  (export quoted-printable-encode quoted-printable-encode-string
-          quoted-printable-decode quoted-printable-decode-string)
+  (export quoted-printable-encode quoted-printable-encode-message
+          quoted-printable-decode quoted-printable-decode-string-to
+
+          ;; deprecated, kept for the backward compatibility
+          quoted-printable-encode-string
+          quoted-printable-decode-string)
   )
 (select-module rfc.quoted-printable)
+
+(autoload gauche.vport open-input-uvector open-output-uvector get-output-uvector)
 
 ;; The minimum line width is 4, since one encoded octed and one soft
 ;; line break requires 4 characters.
@@ -68,6 +74,14 @@
              (format #t "=~2,'0X" c) (loop (read-byte) (+ lcnt 3))]))
     ))
 
+(define (quoted-printable-encode-message msg . args)
+  (etypecase msg
+    [<string> (with-string-io msg (cut apply quoted-printable-encode args))]
+    [<u8vector> (with-output-to-string
+                  (^[] (with-input-from-port (open-input-uvector msg)
+                         (cut apply quoted-printable-encode args))))]))
+
+;; DEPRECATED
 (define (quoted-printable-encode-string string . args)
   (with-string-io string (cut apply quoted-printable-encode args)))
 
@@ -110,5 +124,15 @@
           [else (write-char c) (loop (read-char))])
     ))
 
+(define (quoted-printable-decode-string-to target string)
+  (cond
+   [(eqv? target <string>) (with-string-io string quoted-printable-decode)]
+   [(eqv? target <u8vector>) (let1 out (open-output-uvector)
+                               (with-input-from-string string
+                                 quoted-printable-decode)
+                               (get-output-uvector out))]
+   [else (error "invalid target:" target)]))
+
+;; DEPRECATED
 (define (quoted-printable-decode-string string)
   (with-string-io string quoted-printable-decode))

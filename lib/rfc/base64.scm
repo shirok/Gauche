@@ -39,16 +39,20 @@
   (use gauche.sequence)
   (use gauche.threads)
   (use srfi.42)
-  (export base64-encode base64-encode-string base64-encode-bytevector
-          base64-decode base64-decode-string base64-decode-bytevector
+  (export base64-encode base64-encode-message
+          base64-decode base64-decode-string-to
 
-          base32-encode base32-encode-string base32-encode-bytevector
-          base32-decode base32-decode-string base32-decode-bytevector
-          base32hex-encode base32hex-encode-string base32hex-encode-bytevector
-          base32hex-decode base32hex-decode-string base32hex-decode-bytevector
+          base32-encode base32-encode-message
+          base32-decode base32-decode-string-to
+          base32hex-encode base32hex-encode-message
+          base32hex-decode base32hex-decode-string-to
 
-          base16-encode base16-encode-string base16-encode-bytevector
-          base16-decode base16-decode-string base16-decode-bytevector
+          base16-encode base16-encode-message
+          base16-decode base16-decode-string-to
+
+          ;; deprecated, kept for the backward compatibility
+          base64-encode-string base64-encode-bytevector
+          base64-decode-string base64-decode-bytevector
           ))
 (select-module rfc.base64)
 
@@ -64,6 +68,12 @@
   (assume-type bv <u8vector>)
   (with-output-to-string
     (^[] (with-input-from-port (open-input-uvector bv) thunk))))
+(define (make-decode-string-to target string thunk)
+  (cond
+   [(eqv? target <string>) (with-string-io string thunk)]
+   [(eqv? target <u8vector>) (make-string->bytevector string thunk)]
+   [else (error "invalid target:" target)]))
+
 
 ;;;
 ;;; Base 64
@@ -222,6 +232,10 @@
 
     (d0 (read-char))))
 
+(define (base64-decode-string-to target string . opts)
+  (make-decode-string-to target string (cut apply base64-decode opts)))
+
+;; DEPRECATED
 (define (base64-decode-string string . opts)
   (with-string-io string (cut apply base64-decode opts)))
 (define (base64-decode-bytevector string . opts)
@@ -272,6 +286,12 @@
 
     (e0 (read-byte) 0)))
 
+(define (base64-encode-message msg . opts)
+  (etypecase msg
+    [<string> (with-string-io msg (cut apply base64-encode opts))]
+    [<u8vector> (make-bytevector->string msg (cut apply base64-encode opts))]))
+
+;; DEPRECATED
 (define (base64-encode-string string . opts)
   (with-string-io string (cut apply base64-encode opts)))
 (define (base64-encode-bytevector vec . opts)
@@ -395,15 +415,10 @@
 (define (base32hex-decode :key (strict #f))
   (%base32-decode *base32hex-decode-table* strict))
 
-(define (base32-decode-string string :key (strict #f))
-  (with-string-io string (cut base32-decode :strict strict)))
-(define (base32-decode-bytevector string :key (strict #f))
-  (make-string->bytevector string (cut base32-decode :strict strict)))
-(define (base32hex-decode-string string :key (strict #f))
-  (with-string-io string (cut base32hex-decode :strict strict)))
-(define (base32hex-decode-bytevector string :key (strict #f))
-  (make-string->bytevector string (cut base32hex-decode :strict strict)))
-
+(define (base32-decode-string-to target string :key (strict #f))
+  (make-decode-string-to target string (cut base32-decode :strict strict)))
+(define (base32hex-decode-string-to target  string :key (strict #f))
+  (make-decode-string-to target string (cut base32hex-decode :strict strict)))
 
 (define (%base32-encode table strict omit-padding line-width)
   (define maxcol (and line-width (> line-width 0) (- line-width 1)))
@@ -475,14 +490,14 @@
 (define (base32hex-encode :key (strict #f) (omit-padding #f) (line-width 76))
   (%base32-encode *base32hex-encode-table* strict omit-padding line-width))
 
-(define (base32-encode-string string . args)
-  (with-string-io string (cut apply base32-encode args)))
-(define (base32-encode-bytevector vec . args)
-  (make-bytevector->string vec (cut apply base32-encode args)))
-(define (base32hex-encode-string string . args)
-  (with-string-io string (cut apply base32hex-encode args)))
-(define (base32hex-encode-bytevector vec . args)
-  (make-bytevector->string vec (cut apply base32hex-encode args)))
+(define (base32-encode-message msg . args)
+  (etypecase msg
+    [<string> (with-string-io msg (cut apply base32-encode args))]
+    [<u8vector> (make-bytevector->string msg (cut apply base32-encode args))]))
+(define (base32hex-encode-message msg . args)
+  (etypecase msg
+    [<string> (with-string-io msg (cut apply base32hex-encode args))]
+    [<u8vector> (make-bytevector->string msg (cut apply base32hex-encode args))]))
 
 ;;;
 ;;; Base16
@@ -553,10 +568,8 @@
              (d1 (read-char) b0)))
     (d0 (read-char))))
 
-(define (base16-decode-string string :key (strict #f))
-  (with-string-io string (cut base16-decode :strict strict)))
-(define (base16-decode-bytevector vec :key (strict #f))
-  (make-string->bytevector vec (cut base16-decode :strict strict)))
+(define (base16-decode-string-to target string :key (strict #f))
+  (make-decode-string-to target string (cut base16-decode :strict strict)))
 
 (define (base16-encode :key (lowercase #f))
   (define table (if lowercase *base16lc-encode-table* *base16-encode-table*))
@@ -565,7 +578,7 @@
        (write-char (vector-ref table (logand b #x0f))))
    read-byte))
 
-(define (base16-encode-string string :key (lowercase #f))
-  (with-string-io string (cut base16-encode :lowercase lowercase)))
-(define (base16-encode-bytevector vec :key (lowercase #f))
-  (make-bytevector->string vec (cut base16-encode :lowercase lowercase)))
+(define (base16-encode-message msg :key (lowercase #f))
+  (etypecase msg
+    [<string> (with-string-io msg (cut base16-encode :lowercase lowercase))]
+    [<u8vector> (make-bytevector->string msg (cut base16-encode :lowercase lowercase))]))
