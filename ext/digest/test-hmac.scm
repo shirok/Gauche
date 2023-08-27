@@ -7,6 +7,7 @@
 (use gauche.uvector)
 (use rfc.md5)
 (use rfc.sha)
+(use rfc.base64)
 
 (use rfc.hmac)
 (test-module 'rfc.hmac)
@@ -86,6 +87,12 @@ The following test data can be obtained by the following snippet:
         [keys *hmac-test-keys*])
     (for-each
      (^[hash key]
+       (test* #"hmac-message ~(class-name class) keylen=~(string-length key)"
+              hash
+              (base16-encode-message
+               (hmac-message class key *hmac-test-message*)
+               :lowercase #t))
+       ;; deprecated API; just kept to check regression
        (test* #"hmac-digest-string ~(class-name class) keylen=~(string-length key)"
               hash
               (digest-hexify (hmac-digest-string *hmac-test-message*
