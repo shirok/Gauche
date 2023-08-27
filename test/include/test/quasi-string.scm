@@ -38,6 +38,14 @@
           (bitvector-pad-right 0 (bitvector 1) 4)
           (bitvector 1 0 0 0))
    => #t)
+  (check (bitvector=
+          (bitvector-pad 0 (bitvector 1 0 1 1) 2)
+          (bitvector 1 1))
+   => #t)
+  (check (bitvector=
+          (bitvector-pad-right 0 (bitvector 1 0 1 1) 2)
+          (bitvector 1 0))
+   => #t)
   (check (bitvector= (bitvector-trim 0 (bitvector 0 0 0 1))
                      (bitvector 1))
    => #t)

@@ -1639,18 +1639,26 @@ iff  @var{needle} is a prefix/suffix of @var{haystack}.
 @c EN
 If the length of a bitvector @var{bv} is smaller than @var{len},
 returns a bitvector of length @var{len} by adding @var{bit} before/after
-@var{bv}.  If the length of @var{bv} is equal to or greater than @var{len},
+@var{bv}.  If the length of @var{bv} is greater than @var{len},
+returns a bitvector of length @var{len} such that
+@var{bv} left/right bits of @var{bv} are trimmed.
+If the length of @var{bv} is equal to @var{len},
 a copy of @var{bv} is returned as is.
 @c JP
 ビットベクタ@var{bv}の長さが@var{len}未満であれば、
 長さが@var{len}になるまで@var{bv}の先頭もしくは末尾に@var{bit}を付加した
-ビットベクタを作って返します。@var{bv}の長さが@var{len}以上の場合は
-@var{bv}のコピーを返します。
+ビットベクタを作って返します。@var{bv}の長さが@var{len}より大きな場合は
+長さ@var{len}になるまで@var{bv}の先頭もしくは末尾のビットを削ったビットベクタを
+作って返します。@var{len}が@var{bv}の長さと同じなら、@var{bv}のコピーが
+返されます。
 @c COMMON
 
 @example
 (bitvector-pad 1 #*00010 10) @result{} #*1111100010
 (bitvector-pad-right 1 #*00010 10) @result{} #*0001011111
+
+(bitvector-pad 1 #*0100011 3) @result{} #*011
+(bitvector-pad-right 1 #*0100011 3) @result{} #*010
 @end example
 @end defun
 
