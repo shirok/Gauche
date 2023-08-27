@@ -37,7 +37,7 @@
   (use util.digest)
   (use gauche.uvector)
   (use gauche.mop.typed-slot)
-  (export hmac-to hmac-message-to hmac-message
+  (export hmac-to hmac-message-to hmac-message hmac-verify
 
           ;; Deprecated
           <hmac> hmac-update! hmac-final!
@@ -61,6 +61,21 @@
 (define (hmac-message algorithm key message)
   (hmac-message-to <u8vector> algorithm key message))
 
+;; User API
+(define (hmac-verify algorithm given-digest key message)
+  (assume-type given-digest <u8vector>)
+  ;; We compare two u8vectors in constant time
+  (let* ([computed-digest (hmac-message algorithm key message)]
+         [given-len (u8vector-length given-digest)]
+         [computed-len (u8vector-length computed-digest)]
+         [len (min given-len computed-len)])
+    (let loop ([i 0] [ok #t])
+      (if (= i len)
+        (and ok (= given-len computed-len))
+        (loop (+ i 1)
+              (and (= (u8vector-ref given-digest i)
+                      (u8vector-ref computed-digest i))
+                   ok))))))
 ;;
 ;; Internal API
 ;;   We export these for historical reasons, but the user doesn't

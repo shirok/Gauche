@@ -92,6 +92,20 @@ The following test data can be obtained by the following snippet:
               (base16-encode-message
                (hmac-message class key *hmac-test-message*)
                :lowercase #t))
+
+       (test* #"hmac-verify ~(class-name class) keylen=~(string-length key)"
+              #t
+              (hmac-verify class
+                           (base16-decode-string-to <u8vector> hash)
+                           key *hmac-test-message*))
+       (test* #"hmac-verify ~(class-name class) keylen=~(string-length key)"
+              #f
+              (hmac-verify class
+                           (u8vector-drop
+                            (base16-decode-string-to <u8vector> hash)
+                            1)
+                           key *hmac-test-message*))
+
        ;; deprecated API; just kept to check regression
        (test* #"hmac-digest-string ~(class-name class) keylen=~(string-length key)"
               hash
