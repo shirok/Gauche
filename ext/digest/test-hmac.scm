@@ -12,13 +12,11 @@
 (use rfc.hmac)
 (test-module 'rfc.hmac)
 
-(define hmac (make <hmac>
-                   :key (make-byte-string 16 #x0b)
-                   :hasher <md5>))
+(define hmac (make-hmac <md5> (make-byte-string 16 #x0b)))
 (hmac-update! hmac "Hi ")
 (hmac-update! hmac "There")
 (test* "hmac-final!" "9294727a3638bb1c13f48ef8158bfc9d"
-       (digest-hexify (hmac-final! hmac)))
+       (hmac-final! hmac 'hex))
 
 (define *hmac-test-keys*
   '("01234567890123456789"

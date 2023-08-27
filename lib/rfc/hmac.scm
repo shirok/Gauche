@@ -35,12 +35,15 @@
 
 (define-module rfc.hmac
   (use util.digest)
+  (use gauche.sequence)
   (use gauche.uvector)
   (use gauche.mop.typed-slot)
   (export hmac-to hmac-message-to hmac-message hmac-verify
 
+          ;; Low-level API
+          make-hmac <hmac> hmac-update! hmac-final!
+
           ;; Deprecated
-          <hmac> hmac-update! hmac-final!
           hmac-digest hmac-digest-string))
 (select-module rfc.hmac)
 
@@ -48,7 +51,11 @@
 
 ;; User API
 (define (hmac-to target algorithm key)
-  (%hmac-digest-to target :key key :hasher algorithm))
+  (let1 hmac (make-hmac algorithm key)
+    (generator-for-each
+     (cut hmac-update! hmac <>)
+     (cut read-block 4096))
+    (hmac-final! hmac target)))
 
 ;; User API
 (define (hmac-message-to target algorithm key message)
@@ -76,59 +83,45 @@
               (and (= (u8vector-ref given-digest i)
                       (u8vector-ref computed-digest i))
                    ok))))))
-;;
-;; Internal API
-;;   We export these for historical reasons, but the user doesn't
-;;   need to care them.
+
+;; Low-level API
 
 (define-class <hmac> ()
-  ;; NB: Slots are set in the specialized initialize method instead of
-  ;; init-keywords.
-  ((key    :immutable #t
-           :type <string>)
-   (hasher :immutable #t
-           :type <message-digest-algorithm>))
-  :metaclass <typed-slot-meta>)
+  ;; All slots are private
+  ((key    :immutable #t :init-keyword :key)
+   (hasher :immutable #t :init-keyword :hasher)))
 
-(define-method initialize ((self <hmac>) initargs)
-  (next-method)
-  (let-keywords initargs ([key #f]
-                          [hasher #f]
-                          [block-size #f])
-    (unless (and key hasher)
-      (error "key and hasher must be given"))
-    (let1 block-size (or block-size (~ hasher 'hmac-block-size))
-      (when (> (string-size key) block-size)
-        (set! key (digest-string hasher key)))
-      (set! (~ self'key)
-            (string-append key
-                           (make-byte-string (- block-size
-                                                (string-size key))
-                                             #x0)))
-      (set! (~ self'hasher) (make hasher))
-      (let* ([v (string->u8vector (~ self'key))]
+(define (make-hmac algorithm key :optional (block-size #f))
+  (assume-type key <string>)
+  (assume-type algorithm <message-digest-algorithm-meta>)
+  (let1 block-size (or block-size (~ algorithm'hmac-block-size))
+    (when (> (string-size key) block-size)
+      (set! key (digest-message-to <string> algorithm key)))
+    (rlet1 hmac (make <hmac>
+                  :key (string-append key
+                                      (make-byte-string (- block-size
+                                                           (string-size key))
+                                                        #x0))
+                  :hasher (make algorithm))
+      (let* ([v (string->u8vector (~ hmac'key))]
              [ipad (u8vector->string (u8vector-xor v #x36))])
-        (digest-update! (~ self'hasher) ipad)))))
+        (digest-update! (~ hmac'hasher) ipad)))))
 
-(define-method hmac-update! ((self <hmac>) data)
-  (digest-update! (~ self'hasher) data))
+(define-method hmac-update! ((hmac <hmac>) data)
+  (digest-update! (~ hmac'hasher) data))
 
-(define-method hmac-final! ((self <hmac>) :optional (target <string>))
-  (let* ([v (string->u8vector (~ self'key))]
+(define-method hmac-final! ((hmac <hmac>) :optional (target <string>))
+  (let* ([v (string->u8vector (~ hmac'key))]
          [opad (u8vector->string (u8vector-xor v #x5c))]
-         [inner (digest-final! (~ self'hasher))]
+         [inner (digest-final! (~ hmac'hasher))]
          [outer (digest-message-to target
-                                   (class-of (~ self'hasher))
+                                   (class-of (~ hmac'hasher))
                                    (string-append opad inner))])
     outer))
 
-(define (%hmac-digest-to target . args)
-  (let1 hmac (apply make <hmac> args)
-    (generator-for-each
-     (cut hmac-update! hmac <>)
-     (cut read-block 4096))
-    (hmac-final! hmac target)))
-
-(define (hmac-digest . args) (apply %hmac-digest-to <string> args))
+;; Deprecated
+(define (hmac-digest :key key hasher)
+  (hmac-to <string> hasher key))
+;; Deprecated
 (define (hmac-digest-string string . args)
   (with-input-from-string string (cut apply hmac-digest args)))
