@@ -101,8 +101,11 @@
 ;; User API
 (define-method digest-message-to (target
                                   (digester <message-digest-algorithm-meta>)
-                                  (message <string>))
-  (with-input-from-string message (cut digest-to target digester)))
+                                  message)
+  (etypecase message
+    [<string> (with-input-from-string message (cut digest-to target digester))]
+    [<u8vector> (with-input-from-port (open-input-uvector message)
+                  (cut digest-to target digester))]))
 
 
 ;; OBSOLETED

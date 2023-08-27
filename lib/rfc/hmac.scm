@@ -88,31 +88,30 @@
 
 (define-class <hmac> ()
   ;; All slots are private
-  ((key    :immutable #t :init-keyword :key)
+  ((padded-key :immutable #t :init-keyword :padded-key)
    (hasher :immutable #t :init-keyword :hasher)))
 
 (define (make-hmac algorithm key :optional (block-size #f))
-  (assume-type key <string>)
+  (assume-type key (</> <u8vector> <string>))
   (assume-type algorithm <message-digest-algorithm-meta>)
-  (let1 block-size (or block-size (~ algorithm'hmac-block-size))
-    (when (> (string-size key) block-size)
-      (set! key (digest-message-to <string> algorithm key)))
+  (let* ([block-size (or block-size (~ algorithm'hmac-block-size))]
+         [key-v (if (string? key) (string->u8vector key) key)]
+         [key-v (if (> (u8vector-length key-v) block-size)
+                  (digest-message-to <u8vector> algorithm key-v)
+                  key-v)]
+         [key-v ($ u8vector-append key-v
+                   $ make-u8vector (- block-size (u8vector-length key-v)) 0)])
     (rlet1 hmac (make <hmac>
-                  :key (string-append key
-                                      (make-byte-string (- block-size
-                                                           (string-size key))
-                                                        #x0))
+                  :padded-key key-v
                   :hasher (make algorithm))
-      (let* ([v (string->u8vector (~ hmac'key))]
-             [ipad (u8vector->string (u8vector-xor v #x36))])
+      (let1 ipad (u8vector->string (u8vector-xor key-v #x36))
         (digest-update! (~ hmac'hasher) ipad)))))
 
 (define-method hmac-update! ((hmac <hmac>) data)
   (digest-update! (~ hmac'hasher) data))
 
 (define-method hmac-final! ((hmac <hmac>) :optional (target <string>))
-  (let* ([v (string->u8vector (~ hmac'key))]
-         [opad (u8vector->string (u8vector-xor v #x5c))]
+  (let* ([opad (u8vector->string (u8vector-xor (~ hmac'padded-key) #x5c))]
          [inner (digest-final! (~ hmac'hasher))]
          [outer (digest-message-to target
                                    (class-of (~ hmac'hasher))
