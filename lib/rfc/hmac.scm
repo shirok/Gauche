@@ -91,6 +91,25 @@
   ((padded-key :immutable #t :init-keyword :padded-key)
    (hasher :immutable #t :init-keyword :hasher)))
 
+;; TRANSIENT:
+;; We don't need initialize method for the new API.  This is only
+;; to catch old code that calls (make <hmac> :key ...).
+;; We'd drop this after a few releases.
+(define-method initialize ((hmac <hmac>) initargs)
+  (next-method)
+  (let-keywords initargs ((padded-key #f)
+                          (hasher #f)
+                          (key #f))
+    (when key
+      (warn "Instantiating <hmac> directly is obsoleted.\
+             Use make-hmac instead.\n")
+      ;; A very awkward way to keep backward compatibility.
+      ;; NB: The 'hasher' slot of dummy is not the same as the
+      ;; hasher argument passed to make-hmac.
+      (let1 dummy (make-hmac hasher key)
+        (set! (~ hmac'padded-key) (~ dummy'padded-key))
+        (set! (~ hmac'hasher) (~ dummy'hasher))))))
+
 (define (make-hmac algorithm key :optional (block-size #f))
   (assume-type key (</> <u8vector> <string>))
   (assume-type algorithm <message-digest-algorithm-meta>)

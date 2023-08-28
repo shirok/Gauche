@@ -17268,36 +17268,172 @@ as the data coming in.
 あるいは、@code{<hmac>}オブジェクトを作成して、入力となるデータで
 その状態を更新することもできます。
 @c COMMON
+
+@c EN
+Following is a typical way to digest a given string.
+@c JP
+以下は典型的なHMACハッシュを計算する例です。
+@c COMMON
+
+@example
+(use rfc.sha)  ; import desired digest algorithm
+(use rfc.hmac)
+
+(hmac-message <sha256> "secret-key" "payload")
+ @result{} #u8(16 170 46 28 37 56 70 79 247 95 6 71 39 30 59 167 70 188 163
+    252 222 175 50 44 88 27 245 133 30 140 221 183)
+
+(hmac-message-to 'hex <sha256> "secret-key" "payload")
+ @result{} "10aa2e1c2538464ff75f0647271e3ba746bca3fcdeaf322c581bf5851e8cddb7"
+@end example
 @end deftp
+
+@c EN
+@subsection High-level API
+@c JP
+@subsection 高レベルAPI
+@c COMMON
+
+@defun hmac-to target algorithm key
+@c MOD rfc.hmac
+@c EN
+Read input data from the current input port, and compute HMAC digest
+with a hash algorithm @var{hash-class} and a key @var{key}.
+
+The result is returned as an instance of class @var{target}, which
+can be @code{<u8vector>} or @var{<string>}.  Some symbols is also
+allowed to specify encoding: @code{base64}, @code{base64url},
+@code{base64url-nopad}, @var{base32}, @var{base32hex}, @code{base16},
+and @code{hex}.  @xref{Message digester framework} for the details
+of those encodings.
+
+The @var{hash-class} argument must be a class implementing
+@code{<message-digest-algorithm>}, such as @code{<sha256>}
+of @code{rfc.sha} (@pxref{SHA message digest}).
+
+The key @var{key} may be a string or a u8vector.
+@c JP
+現在の入力ポートから読んだデータの鍵つきHMACダイジェストを計算します。
+@var{hash-class}はダイジェストアルゴリズムを指定するクラス、
+@var{key}はダイジェストに使う鍵です。
+
+@var{target}は結果の返し方を指定します。クラスオブジェクト@code{<u8vector>}
+もしくは@code{<string>}の場合はそのインスタンスが返ります。
+@var{target}にはまた、エンコーディングを表す以下のシンボルを渡すこともできます:
+@code{base64}, @code{base64url},
+@code{base64url-nopad}, @var{base32}, @var{base32hex}, @code{base16},
+@code{hex}。詳しくは@ref{Message digester framework}を参照してください。
+
+@var{hash-class}引数には@code{<message-digest-algorithm>}を実装している
+クラスを渡します。例えば@code{rfc.sha}モジュールの@code{<sha256>}です。
+(@ref{SHA message digest}参照)。
+
+@var{key}は文字列かu8vectorでなければなりません。
+@c COMMON
+@end defun
+
+@defun hmac-message-to target hash-class key message
+@c MOD rfc.hmac
+@c EN
+Returns an HMAC digest of @var{message},
+computed with a hash algorithm @var{hash-class},
+with a key @var{key}.
+@c JP
+@var{message}のHMACダイジェストを、
+@var{hash-class}をアルゴリズム、@var{key}を鍵として計算して返します。
+@c COMMON
+
+@c EN
+The @var{hash-class} argument must be a class inheriting
+@code{<message-digest-algorithm>}, e.g. @code{<sha256>} class
+from @code{rfc.sha} (@pxref{SHA message digest}).
+@c JP
+@var{hash-class}引数は@code{<message-digest-algorithm>}を実装している
+クラスでなければなりません。例えば@code{rfc.sha}モジュールの@code{<sha256>}です。
+(@ref{SHA message digest}参照)。
+@c COMMON
+
+@c EN
+You can pass both a stirng and a u8vector
+to @var{key}/@var{message}.
+@c JP
+@var{key}、@var{message}には文字列かu8vectorを渡せます。
+@c COMMON
+
+@c EN
+The @var{target} can be a class in which the result is returned,
+either @code{<u8vector>} or @var{<string>}, or a symbol specifying
+the encoding: @code{base64}, @code{base64url},
+@code{base64url-nopad}, @var{base32}, @var{base32hex}, @code{base16},
+and @code{hex}.  @xref{Message digester framework} for the details
+of those encodings.
+@c JP
+@var{target}は結果のを返すオブジェクトのクラスを指定します。
+@code{<u8vector>}と@code{<string>}がサポートされています。
+@var{target}にはまた、エンコーディングを表す以下のシンボルを渡すこともできます:
+@code{base64}, @code{base64url},
+@code{base64url-nopad}, @var{base32}, @var{base32hex}, @code{base16},
+@code{hex}。詳しくは@ref{Message digester framework}を参照してください。
+@c COMMON
+@end defun
+
+@defun hmac-message hash-class key message
+@c MOD rfc.hmac
+@c EN
+A shortcut of @code{(hmac-message-to <u8vector> hash-class key message)}.
+@c JP
+@code{(hmac-message-to <u8vector> hash-class key message)}
+の短縮形です。
+@c COMMON
+@end defun
+
+@c EN
+@subsection Low-level API
+@c JP
+@subsection 低レベルAPI
+@c COMMON
+
 
 @deftp {Class} <hmac>
 @clindex hmac
 @c MOD rfc.hmac
 @c EN
-Keeps state information of HMAC algorithm.
-Key and the hashing algorithm should be given at the construction
-time, using @code{:key} and @code{:hasher} keyword-arguments respectively.
-You can pass any class object that implements message digest
-interface (@pxref{Message digester framework}),
-such as @code{<md5>} (@pxref{MD5 message digest})
-or @code{<sha256>} (@pxref{SHA message digest}).
-
-Example:
+Keeps state information of HMAC algorithm.  This should not be
+directly instantiated; use @code{make-hmac} below.
 @c JP
-HMACアルゴリズムの状態情報を保持します。
-鍵とハッシングアルゴリズムは、キーワード引数@code{:key}と@code{:hasher}を
-それぞれ使って、生成時に与えます。
-@code{<md5>} (@ref{MD5 message digest}参照)や
-@code{<sha256>} (@ref{SHA message digest}参照)などのような
-ダイジェストインタフェース(@ref{Message digester framework}参照)を
-実装するいかなるクラスオブジェクトを渡すこともできます。
-
-例:
+HMACアルゴリズムの状態情報を保持します。インスタンスを作るには、
+このクラスを@code{make}するのではなく、下に示す@code{make-hmac}を使ってください。
 @c COMMON
-@example
-(make <hmac> :key (make-byte-string 16 #x0b) :hasher <md5>)
-@end example
 @end deftp
+
+@defun make-hmac algorithm key
+@c MOD rfc.hmac
+@c EN
+Creates and returns a new @code{<hmac>} object.  The @var{algorithm}
+argument is a class inheriting @code{<message-digest-algorithm>} to
+specify digest algorithm, for example, @code{<sha256>}
+(@pxref{SHA message digest}, for the details).
+The @var{key} argument is a key, either a string or a u8vector.
+@c JP
+新たな@code{<hmac>}オブジェクトを作って返します。
+@var{algorithm}引数は@code{<message-digest-algorithm>}を継承する
+クラスで、ダイジェストアルゴリズムを指定します。
+例えば@code{<sha256>}が使えます。詳しくは@ref{SHA message digest}参照。
+@var{key}引数は文字列かu8vectorで鍵を指定します。
+@c COMMON
+
+@c EN
+When you use high-level APIs such as @code{hmac-message}, you don't
+need to make an @code{<hmac>} object since it is implicitly created.
+You only need to create it explicitly to use the following
+streaming update procedures.
+@c JP
+@code{hmac-message}などの高レベルAPIを使う場合、
+@code{<hmac>}オブジェクトは内部で自動的に作られるので明示的にmakeする必要はありません。
+下のストリーム更新手続きを使う場合だけ、@code{<hmac>}オブジェクトを
+明示的に作る必要があります。
+@c COMMON
+@end defun
 
 @deffn {Method} hmac-update! (hmac <hmac>) data
 @c MOD rfc.hmac
@@ -17310,50 +17446,70 @@ which must be represented by a (possibly incomplete) string.
 @c COMMON
 @end deffn
 
-@deffn {Method} hmac-final! (hmac <hmac>)
+@deffn {Method} hmac-final! (hmac <hmac>) :optional target
 @c MOD rfc.hmac
 @c EN
 Finalizes the internal state of @var{hmac} and returns the
-hashed string in incomplete string.
-You can use @code{digest-hexify}
-(@pxref{Message digester framework}) to obtain "hexified"
-result.
+digest in an instance of @var{target}, which must be
+a @code{<string>} or @code{<u8vector>} class metaobject,
+or a symbol to specify encoding.  See @code{hmac-to} above for the
+details of @var{target}.  The default is @code{<string>}, for a
+historical reason.
+
 Once finalized, you can't call @code{hmac-update!} or @code{hmac-final!}
 on @var{hmac}.
 @c JP
-@var{hmac}の内部状態を終了させ、不完全文字列でハッシュされた文字列を
-返します。
-``hexified''(16進化)された結果を得るために、@code{digest-hexify}
-(@ref{Message digester framework}参照)を使うことが
-できます。
+@var{hmac}の内部状態を終了させ、ダイジェストを@var{target}で指定される
+インスタンスで返します。@var{target}はクラスオブジェクト@code{<string>}
+または@code{<u8vector>}、あるいはエンコーディングを示すシンボルでなければ
+なりません。@var{target}について詳しくは上の@code{hmac-to}の項を参照してください。
+@var{target}が省略された場合は、歴史的な理由から@code{<string>}が使われます。
+
 一旦終了されると、@var{hmac}に対しては@code{hmac-update!}や
 @code{hmac-final!}を呼ぶことはできません。
 @c COMMON
 @end deffn
 
-@deffn {Method} hmac-digest :key key hasher
+@c EN
+@subsection Deprecated API
+@c JP
+@subsection 非推奨API
+@c COMMON
+
+@c EN
+The following procedures are deprecated.  You can use @code{hmac-to}
+and @code{hmac-message} instead.
+@c JP
+以下の手続きは非推奨になりました。@code{hmac-to}や@code{hmac-message}が
+かわりに使えます。
+@c COMMON
+
+@defun hmac-digest :key key hasher
 @c MOD rfc.hmac
 @c EN
+Deprecated.
 Creates an @code{<hmac>} object and hash the data stream
 from the current input port, then returns the hashed result
 in an incomplete string.
 @c JP
-@code{<hmac>}オブジェクトを作り、現在の入力ポートからの
+非推奨。@code{<hmac>}オブジェクトを作り、現在の入力ポートからの
 データストリームをハッシュし、不完全文字列でそのハッシュされた
 結果を返します。
 @c COMMON
-@end deffn
+@end defun
 
-@deffn {Method} hmac-digest-string string :key key hasher
+@defun hmac-digest-string string :key key hasher
 @c MOD rfc.hmac
 @c EN
+Deprecated.
 Creates an @code{<hmac>} object and hash the data in @var{string},
 then returns the hashed result in an incomplete string.
 @c JP
+非推奨。
 @code{<hmac>}オブジェクトを作り、@var{string}にあるデータをハッシュし、
 不完全文字列でそのハッシュされた結果を返します。
 @c COMMON
-@end deffn
+@end defun
 
 @c ----------------------------------------------------------------------
 @node HTTP client, ICMP packets, HMAC keyed-hashing, Library modules - Utilities
@@ -30291,7 +30447,170 @@ SHA (@ref{SHA message digest}参照)などの、メッセージ
 ダイジェストアルゴリズムのためのベースクラスと一般的なインターフェースを
 提供します。
 @c COMMON
+
+@c EN
+A typical way to compute a message digest would be as follows:
+@c JP
+メッセージダイジェストを計算する典型的なコードは次のとおりです:
+@c COMMON
+
+@example
+(use rfc.sha)       ; import actual digest implementation
+(use util.digest)
+
+(digest-message-to 'base64url <sha256> "message")
+@end example
+
+@c EN
+You can use different algorithms, and choose different output
+format (e.g. u8vector, hexadecimal string, etc.)
+If you need to digest with a secret key, @pxref{HMAC keyed-hashing}.
+@c JP
+異なるアルゴリズムを選んだり、異なる出力形式を選ぶこともできます
+(例: u8vector, 16進数文字列など)
+秘密鍵を用いたダイジェストについては@ref{HMAC keyed-hashing}を参照してください。
+@c COMMON
 @end deftp
+
+@c EN
+@subheading User API
+@c JP
+@subheading ユーザ向けAPI
+@c COMMON
+
+@c EN
+To digest a message, you can use the following API.
+@c JP
+メッセージダイジェストを計算するには、以下のAPIが使えます。
+@c COMMON
+
+@deffn {Generic Function} digest-message-to target digester message
+@c MOD util.digest
+@c EN
+Compute a digest of @var{message} using algorithm implemented by @var{digester},
+and returns as an instance of class @var{target}.
+@c JP
+@var{message}のダイジェストを、@var{digester}で指定されるアルゴリズムを使って
+計算し、@var{target}クラスのインスタンスで結果を返します。
+@c COMMON
+
+@c EN
+The @var{message} argument may be a string or a u8vector.
+@c JP
+@var{message}引数は文字列かu8vectorです。
+@c COMMON
+
+@c EN
+The @var{digester} argument must be a class inheriting
+@code{<message-digest-algorithm>} and implementing the digester protocol
+described below.  Gauche provides SHA
+(@pxref{SHA message digest}) and MD5 (@pxref{MD5 message digest}) by
+default.
+@c JP
+@var{digester}引数は@code{<message-digest-algorithm>}を継承し、
+後で述べるダイジェストプロトコルを実装しているクラスです。
+Gaucheにデフォルトでついてくるものとしては、SHA
+(@ref{SHA message digest}参照)とMD5(@ref{MD5 message digest}参照)があります。
+@c COMMON
+
+@c EN
+The supported @var{target} class is @code{<u8vector>} and @code{<string>}.
+Digest result is a bytestring in general, so using @code{<u8vector>}
+is recommended; if you give @code{<string>}, the result
+is likely to be an incomplete string.
+@c JP
+@var{target}には@code{<u8vector>}か@code{<string>}を指定できます。
+ダイジェスト結果は一般にバイト列になるので、@code{<u8vector>}が推奨です。
+@code{<string>}を指定した場合は、不完全文字列が返ってくることが多いでしょう。
+@c COMMON
+
+@c EN
+For the convnience, the following symbols are also allowed as @var{target},
+in which case the output byte sequence is encoded to a readable string
+For the details of those encodings, @pxref{Base64 encoding/decoding}.
+@c JP
+簡便のために、@var{target}には以下のシンボルのいずれかを渡すこともできます。
+その場合、ダイジェスト結果が指定の形式で可読文字列にエンコードされて返されます。
+これらのエンコーディングの詳細については@ref{Base64 encoding/decoding}を参照してください。
+@c COMMON
+
+@table @code
+@item base64
+@c EN
+Base64 encoding (original).
+@c JP
+オリジナルのBase64エンコーディング
+@c COMMON
+@item base64url
+@c EN
+URL-safe Base64 encoding.
+@c JP
+URL安全なBase64エンコーディング
+@c COMMON
+@item base64url-nopad
+@c EN
+URL-safe Base64 encoding and omitting trailing padding character (@code{=})
+@c JP
+URL安全なBase64で、末尾のパディング文字(@code{=})を省略したもの
+@c COMMON
+@item base32
+@c EN
+Base32 encoding.
+@c JP
+Base32エンコーディング
+@c COMMON
+@item base32hex
+@c EN
+Base32hex encoding.
+@c JP
+Base32hexエンコーディング
+@c COMMON
+@item base16
+@c EN
+Base16 encoding, a.k.a. hexadecimal encoding (using @code{#[0-9A-F]}.
+@c JP
+Base16エンコーディング、あるいは16進数形式。@code{#[0-9A-F]}が使われます。
+@c COMMON
+@item hex
+@c EN
+Base16 encoding but use lowercase letters (using @code{#[0-9a-f]}.
+@c JP
+16進数形式、アルファベットに小文字が使われます。
+@c COMMON
+@end table
+@end deffn
+
+@deffn {Generic Function} digest-to target digester
+@c EN
+Read input from the current input port until EOF, compute
+its digest using the algorithm specified by @var{digester},
+and returns result in an instance of a class given to @var{target}.
+You can also give some symbols to specify encodings as @var{target}.
+See @code{digest-message-to} above for the details of
+@var{target} and @var{digester}.
+@c JP
+入力を現在の入力ポートから読んで、@var{digester}で指定されるアルゴリズムで
+ダイジェストを計算し、結果を@var{target}クラスのインスタンスで返します。
+@var{target}には可読文字列へのエンコーディングを指定するシンボルを与えることもできます。
+@var{target}と@var{digester}引数について詳しくは、上の
+@code{digest-message-to}の項目を参照してください。
+@c COMMON
+@c MOD util.digest
+
+@end deffn
+
+@c EN
+@subheading Implementer API
+@c JP
+@subheading 実装者向けAPI
+@c COMMON
+
+@c EN
+The following API is for the impelmenter of the actual
+digest aglrithms.
+@c JP
+以下のAPIはダイジェストアルゴリズムを実装する人向けです。
+@c COMMON
 
 @deftp {Class} <message-digest-algorithm-meta>
 @clindex message-digest-algorithm-meta
@@ -30374,29 +30693,43 @@ and returns the digest result in an incomplete string.
 @c COMMON
 @end deffn
 
+@c EN
+@subheading Deprecated API
+@c JP
+@subheading 非推奨API
+@c COMMON
+
+
 @deffn {Generic function} digest-string class string
 @c MOD util.digest
 @c EN
-A wrapper of digest routines.  Given message-digest algorithm @var{class},
-this function reads the input data from @var{string},
-and returns the digest result in an incomplete string.
+Same as @code{(digest-message-to <string> @var{class} @var{string})},
+where only a string is allowed to the @var{string} argument.
+
+This is deprecated, for it is less flexible.  Use @code{digest-message-to}
+for the new code.
 @c JP
-ダイジェストルーチンのラッパです。メッセージダイジェストアルゴリズム
-@var{class}を与え、入力データを@var{string}から読み込み、
-そのダイジェストの結果を不完全文字列で返します。
+@code{(digest-message-to <string> @var{class} @var{string})}と同じです。
+ただし@var{string}引数は文字列でなければなりません。
+
+この手続きは非推奨です。新たなコードではより柔軟な@code{digest-message-to}を
+使ってください。
 @c COMMON
 @end deffn
 
 @defun digest-hexify digest-result
 @c MOD util.digest
 @c EN
-An utility procedure.  Given the result of digest, @var{digest-result},
-which can be an u8vector or a (possibly incomplete) string,
-converts it to a hexified string.
+Same as @code{(base16-encode-message digest-result :lowercase #t)}
+(@pxref{Base64 encoding/decoding}).  In typical case, you can pass
+@code{hex} as the target to @code{digest-message-to} to get
+the hexified output directly.  This procedure is only kept for
+the backward compatibility.
 @c JP
-ユーティリティ手続きです。ダイジェストの結果、@var{digest-result}
-(u8vectorか(不完全かもしれない)文字列)
-与えると、それを16進文字列に変換します。
+@code{(base16-encode-message digest-result :lowercase #t)}と同じです
+(@ref{Base64 encoding/decoding}参照)。通常は@code{digest-message-to}の
+@var{target}引数に@code{hex}を渡すことで直接16進数表記の結果が得られます。
+この手続きは互換性のためだけに残されています。
 @c COMMON
 @end defun
 
