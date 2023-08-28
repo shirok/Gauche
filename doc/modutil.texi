@@ -16400,15 +16400,56 @@ SRFI-19の@code{<date>}オブジェクト(@ref{SRFI-19 Date}参照)
 @mdindex rfc.base64
 @c EN
 This module defines a few functions to encode/decode Base64 format,
-defined in RFC 2045 (@uref{https://www.ietf.org/rfc/rfc2045.txt}), section 6.3
-and RFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt}).
+defined in RFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt}).
+It also supports Base32 and Base16 formats defined in it as well.
 @c JP
-このモジュールでは、RFC 2045 (@uref{https://www.ietf.org/rfc/rfc2045.txt}) の6.3節
-およびRFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt}) で
-定義されている Base64 フォーマットへエンコード/デコードするいくつかの
-手続きを定義しています。
+このモジュールでは、RFC 4648 (@uref{https://www.ietf.org/rfc/rfc4648.txt})
+で定義されている Base64フォーマットへエンコード/デコードするいくつかの
+手続きを定義しています。同RFCで定義されている
+Base32フォーマット、Base16フォーマットもサポートしています。
 @c COMMON
+
+@c EN
+The common naming convention is as follows.
+@c JP
+共通の名前付け規則は次のとおりです。
+@c COMMON
+
+@table @code
+@item @var{encoding}-encode, @var{encoding}-decode
+@c EN
+Port-based encoder/decoder.  It reads
+input from the current input port, and emits encoded/decoded output
+to the current output port.
+@c JP
+ポートを使うストリームエンコーダー/デコーダー。
+入力を現在の入力ポートから取り、結果を現在の出力ポートに出力します。
+@c COMMON
+@item @var{encoding}-encode-message
+@c EN
+Takes the input as either a string or a u8vector, and returns
+the encoded result as a string.  Note that BaseN encoding always
+results readable strings.
+@c JP
+入力を文字列かu8vectorで受け取り、エンコード結果を文字列で返します。
+BaseNエンコーディングの結果は常に可読文字列になります。
+@c COMMON
+@item @var{encoding}-decode-string-to
+@c EN
+Takes the encoded string, and returns the result in either
+a u8vector or a string, as specified by the @var{target} argument.
+Note that the decoded result is a byte sequence in general,
+so a string may be incomplete.
+@c JP
+エンコードされた文字列を取り、結果をu8vectorもしくは文字列で返します。
+どちらを返すからは@var{target}引数で指定されます。
+デコード結果は一般にはバイトシーケンスになるので、文字列の場合は
+不完全な文字列が返ることに注意してください。
+@c COMMON
+@end table
 @end deftp
+
+@subheading Base64
 
 @defun base64-encode :key line-width digits url-safe omit-padding
 @c MOD rfc.base64
@@ -16471,26 +16512,21 @@ padding characters (@code{#\=}) are omitted.
 @c COMMON
 @end defun
 
-@defun base64-encode-string string :key line-width digits url-safe
-@defunx base64-encode-bytevector u8vector :key line-width digits url-safe
+@defun base64-encode-message message :key line-width digits url-safe omit-padding
 @c MOD rfc.base64
 @c EN
-Converts contents of @var{string}/@var{u8vector} to Base64 encoded format.
-For @code{base64-encode-string},
-input string can be either complete or incomplete string;
-it is always interpreted as a byte sequence.
+Encodes @var{message}, which must be either a string or a u8vector,
+with Base64 encoding and returns the result as a string.
+The meaning of keyword arguments are the same as @code{base64-encode} above.
 @c JP
-@var{string}/@var{u8vector} の内容を Base64 でエンコードされたフォーマットに変換します。
-@code{base64-encode-string}の入力となる文字列は、
-完全文字列でも不完全文字列でも良いです。常にバイト・シーケンスとして扱われます。
+文字列かu8vectorの@var{message}をBase64エンコードして、結果を文字列で返します。
+キーワード引数の意味は上の@code{base64-encode}と同じです。
 @c COMMON
 
-@c EN
-The @var{digits} and @var{url-safe} arguments are the same as
-@code{base64-encode}.
-@c JP
-@var{digits}と@var{url-safe}引数は@code{base64-encode}と同じです。
-@c COMMON
+@example
+(base64-encode-message "Hau'oli makahiki hou")
+ @result{} "SGF1J29saSBtYWthaGlraSBob3U="
+@end example
 
 @c EN
 For the portable code, you may want to use @code{bytestring->base64}
@@ -16500,6 +16536,7 @@ in @code{srfi.207} (@pxref{String-notated bytevectors}).
 (@ref{String-notated bytevectors}参照)。
 @c COMMON
 @end defun
+
 
 @defun base64-decode :key digits url-safe strict
 @c MOD rfc.base64
@@ -16526,6 +16563,16 @@ Base64 でエンコードされた文字として適当でない文字は、デ�
 @c COMMON
 
 @c EN
+The input can lack the trailing padding character by default.  However,
+if @var{strict} argument is true, an error is thrown unless
+the input has a proper number of padding characters.
+@c JP
+入力が必要なパディング文字を欠いていても、デフォルトでは許容されます。
+@var{strict}引数が真の場合は、入力に正しい数のパディング文字がないとエラーが投げられます。
+@c COMMON
+
+
+@c EN
 The @var{digits} and @var{url-safe} keyword arguments can be used
 to choose different mappings of digit 62 and 63.  See @code{base64-encode}
 above for the details.
@@ -16535,15 +16582,317 @@ above for the details.
 @c COMMON
 @end defun
 
+@defun base64-decode-string-to target string :key line-width digits url-safe omit-padding
+@c MOD rfc.base64
+@c EN
+The @var{target} argument must be a class object @code{<string>} or @code{<u8vector>}.
+This procedure takes Base64-encoded input @var{string}, and returns the
+decoded result as an instance of @var{target}.
+
+The meaning of keyword arguments are the same as @code{base64-decode} above.
+@c JP
+@var{target}引数はクラスオブジェクト@code{<string>}か@code{<u8vector>}でなければなりません。
+Base64エンコードされた入力@var{string}を取り、結果を@var{target}のインスタンスで
+返します。
+
+キーワード引数の意味は上の@code{base64-decode}と同じです。
+@c COMMON
+
+@example
+(base64-decode-string-to <string> "SGF1J29saSBtYWthaGlraSBob3U=")
+ @result{} "Hau'oli makahiki hou"
+(base64-decode-string-to <u8vector> "SGF1J29saSBtYWthaGlraSBob3U=")
+ @result{} #u8(72 97 117 39 111 108 105 32 109 97 107 97 104 105
+    107 105 32 104 111 117)
+@end example
+
+@c EN
+Note that if you ask a string to be returned, the result may be
+an incomplete string.
+@c JP
+結果を文字列で得る場合、不完全文字列が返される可能性があることに注意してください。
+@c COMMON
+
+@example
+(base64-decode-string-to <string> "8PHy8w==")
+ @result{} #**"\xf0;\xf1;\xf2;\xf3;"
+@end example
+
+@c EN
+For the portable code, you may want to use @code{base64->bytestring}
+in @code{srfi.207} (@pxref{String-notated bytevectors}).
+@c JP
+ポータブルなコードでは、@code{srfi.207}の@code{base64->bytestring}を使うことができます
+(@ref{String-notated bytevectors}参照)。
+@c COMMON
+@end defun
+
+
+@subheading Base32
+
+@c EN
+RFC4648 defines two completely different encodings as base-32;
+The standard Base32 uses @code{A-Z} for 0 to 25, and @code{2-7}
+for 26 to 31.  The ``base32hex'' variant uses
+@code{0-9} for 0 to 9, and @code{A-V} for 10 to 31.
+Since RFC states the latter should not be referred to as base32,
+we provide separate procedures for those encodings.
+@c JP
+RFC4648は基数32のエンコーディングとして2つの全く異なるアルファベットを規定しています。
+標準のBase32は@code{A-Z}を0から25に、@code{2-7}を26から31に使います。
+``base32hex'' は@code{0-9}を0から9に、@code{A-V}を10から31に使います。
+RFCでは後者をbase32と呼ばないように言っているので、
+二つのエンコーディングに対応する別々の手続きを用意しました。
+@c COMMON
+
+@defun base32-encode :key omit-padding line-width
+@defunx base32hex-encode :key omit-padding line-width
+@c MOD rfc.base64
+@c EN
+The procedures are port-based; they read input from the
+current standard port, and emits the base32 or base32hex
+encoded result to the current output port.
+@c JP
+これらの手続きは現在の入力ポートからデータを読み、
+Base32またはBase32hexでエンコードされた結果を現在の出力ポートに書き出します。
+@c COMMON
+
+@c EN
+The keyword arguments @var{omit-padding} and @var{line-width} are
+the same as @code{base64-encode}.
+@c JP
+キーワード引数@var{omit-padding}と@var{line-width}は
+@code{base64-encode}と同じです。
+@c COMMON
+@end defun
+
+@defun base32-encode-message message :key omit-padding line-width
+@defunx base32hex-encode-message message :key omit-padding line-width
+@c MOD rfc.base64
+@c EN
+Base32 or Base32hex encode @var{message}, which should be a string or a u8vector,
+and returns the result in a string.
+@c JP
+文字列もしくはu8vectorの@var{message}をBase32/Base32hexでエンコードして、
+結果を文字列として返します。
+@c COMMON
+
+@c EN
+The keyword arguments @var{omit-padding} and @var{line-width} are
+the same as @code{base64-encode}.
+@c JP
+キーワード引数@var{omit-padding}と@var{line-width}は
+@code{base64-encode}と同じです。
+@c COMMON
+
+@example
+(base32-encode-message "Hau'oli makahiki hou!")
+ @result{} "JBQXKJ3PNRUSA3LBNNQWQ2LLNEQGQ33VEE======"
+(base32hex-encode-message "Hau'oli makahiki hou!")
+ @result{} "91GNA9RFDHKI0RB1DDGMGQBBD4G6GRRL44======"
+@end example
+@end defun
+
+@defun base32-decode :key strict
+@defunx base32hex-decode :key strict
+@c MOD rfc.base64
+@c EN
+Read Base32/Base32hex encoded string from the current input port,
+and emits the decoded result to the current output port.
+@c JP
+Base32/Base32hexエンコードされた文字列を現在の入力ポートから読み、
+デコード結果を現在の出力ポートに書き出します。
+@c COMMON
+
+@c EN
+If a true value is given to the @var{strict} argument,
+an error is thrown if non-whitespace illegal characters exist
+in the input, or the proper padding characters are missing.
+The default of @var{strict} is @code{#f} and illegal characters
+are just ignored.
+@c JP
+@var{strict}引数に真の値が与えられると、
+入力に空白文字でもエンコードに使われる文字でもない文字が現れたり、
+必要なパディング文字が無かったりした場合にエラーが投げられます。
+@var{strict}のデフォルト値は@code{#f}で、不正な文字は単に無視されます。
+@c COMMON
+@end defun
+
+@defun base32-decode-string-to target string :key strict
+@defunx base32hex-decode-string-to target string :key strict
+@c MOD rfc.base64
+@c EN
+Decode a Base32/Base32hex encoded string @var{string}, and
+returns the result as an instance of class @var{target}, which
+must be either @code{<u8vector>} or @code{<string>}.
+@c JP
+Base32/Base32hexエンコードされた文字列@var{string}をデコードして、
+結果を@var{target}クラスのインスタンスとして返します。
+@var{target}はクラスオブジェクト@code{<u8vector>}か@code{<string>}
+でなければなりません。
+@c COMMON
+
+@c EN
+The meaning of @var{strict} argument is the same as
+in @code{base32-decode}.
+@c JP
+@var{strict}引数の意味は@code{base32-decode}と同じです。
+@c COMMON
+
+@example
+(base32-decode-string-to <string>
+   "JBQXKJ3PNRUSA3LBNNQWQ2LLNEQGQ33VEE======")
+ @result{} "Hau'oli makahiki hou!"
+@end example
+
+@end defun
+
+@subheading Base16
+
+@c EN
+Base16 is simply the hexadecimal encoding of input octets.
+RFC4648 defines to use uppercase letters @code{A-F} for digits
+10 to 15.  In practice, lowercase letters are also used
+for hexadecimal encoding, so we provide that option, too.
+@c JP
+Base16は入力オクテットの単純な16進数エンコーディングです。
+RFC4648では10から15の数字に大文字の@code{A-F}を当てていますが、
+16進数エンコーディングに小文字を使う場合も良くあるので、
+このライブラリではそのオプションも用意しています。
+@c COMMON
+
+@defun base16-encode :key lowercase
+@c MOD rfc.base64
+@c EN
+Read data from the current input port, and emits Base16 encoded
+result to the current output port.
+
+By default, @code{A-F} are used for digit 10 to 15, as specified
+in RFC4648.  If @var{lowercase} argument is given and true,
+@code{a-f} are used instead.
+
+Note that no padding character is ever generated in Base16 encoding.
+@c JP
+現在の入力ポートからデータを読み込み、Base16エンコードした結果を
+現在の出力ポートに書き出します。
+
+デフォルトでは、RFC4648の規定により、10から15に大文字の@code{A-F}を使います。
+@var{lowercase}引数が与えられて真ならば、小文字の@code{a-f}を使います。
+
+Base16エンコーディングではパディング文字は出力されません。
+@c COMMON
+@end defun
+
+@defun base16-encode-message message :key lowercase
+@c MOD rfc.base64
+@c EN
+Base16 encode @var{message}, which should be a string or a u8vector,
+and returns the result in a string.  The @var{lowercase} argument
+is the same as @code{base16-encode}.
+@c JP
+文字列もしくはu8vectorの@var{message}をBase16エンコードして、
+結果を文字列として返します。@var{lowercase}引数は@code{base16-encode}と同じです。
+@c COMMON
+
+@example
+(base16-encode-message "Aloha")
+ @result{} "416C6F6861"
+(base16-encode-message "Aloha" :lowercase #t)
+ @result{} "416c6f6861"
+@end example
+@end defun
+
+@defun base16-decode :key strict
+@c MOD rfc.base64
+@c EN
+Read Base16 encoded string from the current input port,
+and emits the decoded result to the current output port.
+@c JP
+Base16エンコードされた文字列を現在の入力ポートから読み、
+デコード結果を現在の出力ポートに書き出します。
+@c COMMON
+
+@c EN
+By default, characters other than Base16 digits are ignored,
+and both upperase and lowercase alphabets are recognized.
+If @var{strict} argument is given and true, however,
+characters other than @code{#[0-9A-F]} throws an error.
+@c JP
+デフォルトでは、Base16アルファベット以外の文字は無視され、
+また大文字も小文字も認識されます。
+@var{strict}引数が与えられて真ならば、
+@code{#[0-9A-F]}以外の文字が見つかるとエラーが投げられます。
+@c COMMON
+@end defun
+
+@defun base16-decode-string-to target string :key strict
+@c MOD rfc.base64
+@c EN
+Decode Base16-encoded string @var{string}, and returns
+the result as an instance of class @var{target}, which must
+be either @code{<u8vector>} or @code{<string>}.
+
+The @var{strict} argument is the same as @code{base16-decode}.
+@c JP
+Base16エンコードされた文字列@var{string}をデコードして、
+結果をクラス@var{target}のインスタンスで返します。
+@var{target}は@code{<u8vector>}か@code{<string>}でなければなりません。
+
+@var{strict}引数は@code{base16-decode}と同じです。
+@c COMMON
+
+@example
+(base16-decode-string-to <u8vector> "416c6f6861")
+ @result{} #u8(65 108 111 104 97)
+(base16-decode-string-to <string> "416c6f6861")
+ @result{} "Aloha"
+@end example
+@end defun
+
+@c EN
+@subheading Deprecated API
+@c JP
+@subheading 非推奨API
+@c COMMON
+
+@c EN
+The following API is deprecated.  Avoid using them in new code.
+@c JP
+以下のAPIは非推奨となりました。新規コードでは使わないでください。
+@c COMMON
+
+
+@defun base64-encode-string string :key line-width digits url-safe
+@defunx base64-encode-bytevector u8vector :key line-width digits url-safe
+@c MOD rfc.base64
+@c EN
+Deprecated.
+Converts contents of @var{string}/@var{u8vector} to Base64 encoded format.
+For @code{base64-encode-string},
+input string can be either complete or incomplete string;
+it is always interpreted as a byte sequence.
+The @var{digits} and @var{url-safe} arguments are the same as
+@code{base64-encode}.
+@c JP
+非推奨。
+@var{string}/@var{u8vector} の内容を Base64 でエンコードされたフォーマットに変換します。
+@code{base64-encode-string}の入力となる文字列は、
+完全文字列でも不完全文字列でも良いです。常にバイト・シーケンスとして扱われます。
+@var{digits}と@var{url-safe}引数は@code{base64-encode}と同じです。
+@c COMMON
+@end defun
+
 @defun base64-decode-string string :key url-safe strict
 @defunx base64-decode-bytevector u8vector :key url-safe strict
 @c MOD rfc.base64
 @c EN
+Deprecated.
 Decodes a Base64 encoded string @var{string} and returns
 the result as a string or a u8vector, respectively.
 The conversion terminates at the end of @var{string} or
 the termination character (@code{=}).
 @c JP
+非推奨。
 Base64 でエンコードされた文字列 @var{string} をデコードしてそれぞれ文字列
 あるいはu8vectorとして返します。
 変換は @var{string} の終わりか、終端文字 (@code{=}) で終了します。
@@ -16561,28 +16910,10 @@ Base64 でエンコードされた文字として適当でない文字は、デ�
 @c COMMON
 
 @c EN
-Note that @code{base64-decode-string} may return an incomplete string.
-If you know you're handling binary data, @code{base64-decode-bytevector}
-would be a better choice.
-@c JP
-@code{base64-decode-string}は不完全な文字列を返すかもしれません。
-バイナリデータを扱っていることがわかっている場合は、
-@code{base64-decode-bytevector}を使う方が良いでしょう。
-@c COMMON
-
-@c EN
 The @var{digits} and @var{url-safe} arguments are the same as
 @code{base64-encode}.
 @c JP
 @var{digits}と@var{url-safe}引数は@code{base64-encode}と同じです。
-@c COMMON
-
-@c EN
-For the portable code, you may want to use @code{base64->bytestring}
-in @code{srfi.207} (@pxref{String-notated bytevectors}).
-@c JP
-ポータブルなコードでは、@code{srfi.207}の@code{base64->bytestring}を使うことができます
-(@ref{String-notated bytevectors}参照)。
 @c COMMON
 @end defun
 
@@ -17289,9 +17620,9 @@ Following is a typical way to digest a given string.
 @end deftp
 
 @c EN
-@subsection High-level API
+@subheading High-level API
 @c JP
-@subsection 高レベルAPI
+@subheading 高レベルAPI
 @c COMMON
 
 @defun hmac-to target algorithm key
@@ -17388,9 +17719,9 @@ A shortcut of @code{(hmac-message-to <u8vector> hash-class key message)}.
 @end defun
 
 @c EN
-@subsection Low-level API
+@subheading Low-level API
 @c JP
-@subsection 低レベルAPI
+@subheading 低レベルAPI
 @c COMMON
 
 
@@ -17471,9 +17802,9 @@ on @var{hmac}.
 @end deffn
 
 @c EN
-@subsection Deprecated API
+@subheading Deprecated API
 @c JP
-@subsection 非推奨API
+@subheading 非推奨API
 @c COMMON
 
 @c EN

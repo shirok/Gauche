@@ -420,7 +420,7 @@
 (define (base32hex-decode-string-to target  string :key (strict #f))
   (make-decode-string-to target string (cut base32hex-decode :strict strict)))
 
-(define (%base32-encode table strict omit-padding line-width)
+(define (%base32-encode table omit-padding line-width)
   (define maxcol (and line-width (> line-width 0) (- line-width 1)))
 
   (letrec-syntax ([emit*
@@ -485,10 +485,10 @@
 
     (e0 (read-byte) 0)))
 
-(define (base32-encode :key (strict #f) (omit-padding #f) (line-width 76))
-  (%base32-encode *base32-encode-table* strict omit-padding line-width))
-(define (base32hex-encode :key (strict #f) (omit-padding #f) (line-width 76))
-  (%base32-encode *base32hex-encode-table* strict omit-padding line-width))
+(define (base32-encode :key (omit-padding #f) (line-width 76))
+  (%base32-encode *base32-encode-table* omit-padding line-width))
+(define (base32hex-encode :key (omit-padding #f) (line-width 76))
+  (%base32-encode *base32hex-encode-table* omit-padding line-width))
 
 (define (base32-encode-message msg . args)
   (etypecase msg
