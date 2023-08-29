@@ -148,7 +148,7 @@ void Scm_PutbUnsafe(ScmByte b, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
-    CLEAR_FLUSHED(p);
+    PORT_FLUSHED_CLEAR(p);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -196,7 +196,7 @@ void Scm_PutcUnsafe(ScmChar c, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
-    CLEAR_FLUSHED(p);
+    PORT_FLUSHED_CLEAR(p);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
@@ -252,7 +252,7 @@ void Scm_PutsUnsafe(ScmString *s, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
-    CLEAR_FLUSHED(p);
+    PORT_FLUSHED_CLEAR(p);
 
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE: {
@@ -310,7 +310,7 @@ void Scm_PutzUnsafe(const char *s, volatile ScmSize siz, ScmPort *p)
     WALKER_CHECK(p);
     LOCK(p);
     CLOSE_CHECK(p);
-    CLEAR_FLUSHED(p);
+    PORT_FLUSHED_CLEAR(p);
     if (siz < 0) siz = (ScmSize)strlen(s);
     switch (SCM_PORT_TYPE(p)) {
     case SCM_PORT_FILE:
@@ -366,7 +366,7 @@ void Scm_FlushUnsafe(ScmPort *p)
     SHORTCUT(p, Scm_FlushUnsafe(p); return);
     WALKER_CHECK(p);
     LOCK(p);
-    if (P_(p)->flushed) {
+    if (PORT_FLUSHED_P(p)) {
         UNLOCK(p);
         return;
     }
@@ -388,7 +388,7 @@ void Scm_FlushUnsafe(ScmPort *p)
         Scm_PortError(p, SCM_PORT_ERROR_OUTPUT,
                       "bad port type for output: %S", p);
     }
-    P_(p)->flushed = TRUE;
+    PORT_FLUSHED_SET(p);
 }
 
 /*=================================================================

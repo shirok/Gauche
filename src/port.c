@@ -243,6 +243,7 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
        for the format of attrs. */
     port->attrs = SCM_LIST1(Scm_Cons(SCM_SYM_NAME, Scm_Cons(name, SCM_FALSE)));
     port->link = SCM_FALSE;
+    port->internalFlags = 0;
 
     Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
 
@@ -335,8 +336,6 @@ static inline void flush_linked_port(ScmPort *iport)
     ScmObj p = PORT_LINK(iport);
     if (SCM_OPORTP(p)) Scm_Flush(SCM_PORT(p));
 }
-
-#define CLEAR_FLUSHED(p)   (P_(p)->flushed = FALSE)
 
 static inline void reset_linked_column(ScmPort *iport)
 {

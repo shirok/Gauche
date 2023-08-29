@@ -105,9 +105,9 @@ typedef struct ScmPortImplRec {
        flushed and its column count is reset to zero.
      */
     ScmObj link;
-    int flushed;                /* output only. TRUE when the port is flushed,
-                                   FALSE if anything is written after the
-                                   flush.*/
+
+    /* Flags for private use.  See below. */
+    u_long internalFlags;
 } ScmPortImpl;
 
 #define P_(p)   ((ScmPortImpl*)(p))
@@ -135,12 +135,23 @@ void Scm__SetupPortsForWindows(int has_console);
 #define PORT_LOCK_OWNER_P(port, vm) \
     (P_(port)->lockOwner == (vm))
 
-/* Internal intreface to retrieve src member.
+/* Internal interface to retrieve src member.
    For public use, we have Scm_PortBufferStruct() etc. */
 #define PORT_BUF(port)     (&P_(port)->src.buf)
 #define PORT_ISTR(port)    (&P_(port)->src.istr)
 #define PORT_OSTR(port)    (&P_(port)->src.ostr)
 #define PORT_VT(port)      (&P_(port)->src.vt)
+
+/* internalFlags */
+enum {
+    SCM_PORT_FLUSHED = (1L << 0), /* output only. TRUE when the port is flushed,
+                                     FALSE if anything is written after the
+                                     flush.*/
+};
+
+#define PORT_FLUSHED_P(port)  (P_(port)->internalFlags & SCM_PORT_FLUSHED)
+#define PORT_FLUSHED_SET(port) (P_(port)->internalFlags |= SCM_PORT_FLUSHED)
+#define PORT_FLUSHED_CLEAR(port) (P_(port)->internalFlags &= ~SCM_PORT_FLUSHED)
 
 /*================================================================
  * Locking the ports
