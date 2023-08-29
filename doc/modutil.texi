@@ -17716,6 +17716,46 @@ A shortcut of @code{(hmac-message-to <u8vector> hash-class key message)}.
 @code{(hmac-message-to <u8vector> hash-class key message)}
 の短縮形です。
 @c COMMON
+
+@example
+(hmac-message <sha256> "secret" "Aloha, honua")
+ @result{} #u8(78 232 135 13 246 139 36 242 133 33 99 185 4 249 244
+    22 243 46 120 130 192 235 60 187 172 180 223 169 179 247 186 185)
+@end example
+@end defun
+
+@defun hmac-verify hash-class digest key message
+@c MOD rfc.hmac
+@c EN
+Verify @var{message} by comparing its digest with the given @var{digest}.
+Functionally it is @code{(equal? digest (hmac-message hash-class key message))},
+but the digests are compared in a way that can avoid timing attack.
+
+@var{Hash-class} is a class inherits @code{<message-digest-algorithm>}
+such as @code{<sha256>}.
+@var{Digest} must be a u8vector.  Either a string or a u8vector
+is allowed for each of @var{key} and @var{message}.
+
+Returns @code{#t} if @var{digest} is valid digest for the message,
+@code{#f} if not.
+@c JP
+@var{message}の鍵つきダイジェストが@var{digest}と一致するかどうか調べます。
+機能的には@code{(equal? digest (hmac-message hash-class key message))}
+と同じですが、タイミングアタックを防ぐ比較が使われます。
+
+@var{hash-class}は@code{<message-digest-algorithm>}を継承したクラス、
+例えば@code{<sha256>}です。@var{digest}はu8vectorでなければなりません。
+@var{key}と@var{message}には文字列edもu8vectorでも渡せます。
+@c COMMON
+
+@example
+(hmac-verify <sha256>
+             '#u8(78 232 135 13 246 139 36 242 133 33 99 185 4 249 244 22 243 46
+                  120 130 192 235 60 187 172 180 223 169 179 247 186 185)
+             "secret"
+             "Aloha, honua")
+ @result{} #t
+@end example
 @end defun
 
 @c EN
