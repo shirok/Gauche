@@ -147,11 +147,46 @@ enum {
     SCM_PORT_FLUSHED = (1L << 0), /* output only. TRUE when the port is flushed,
                                      FALSE if anything is written after the
                                      flush.*/
+    SCM_PORT_FILE_EXTDATA = (1L << 1), /* src.buf.data points to heap-allocated
+                                          data. */
+    SCM_PORT_PROC_EXTDATA = (1L << 2), /* src.vt.data points to heap-allocated
+                                          data. */
 };
 
 #define PORT_FLUSHED_P(port)  (P_(port)->internalFlags & SCM_PORT_FLUSHED)
 #define PORT_FLUSHED_SET(port) (P_(port)->internalFlags |= SCM_PORT_FLUSHED)
 #define PORT_FLUSHED_CLEAR(port) (P_(port)->internalFlags &= ~SCM_PORT_FLUSHED)
+
+/* PORT_FILE_EXTDATA and PORT_PROC_EXTDATA concern port finalizers.
+   By the time a port's finalizer is called, the object pointed by src.buf.data
+   or src.vt.data may already have been corrected (since the port itself
+   is already garbage.)  When port_finalize detects that situation,
+   it avoids calling flush or close methods of the portImpl->src structure,
+   since those methods are likely to rely on the data field and will no
+   longer work.
+
+   If the implementaiton of buffered or virtual port requires proper
+   cleanup if it is GC-ed before properly closed, it must implement
+   its own finalization.
+ */
+
+#define PORT_FILE_EXTDATA_P(port) \
+    (P_(port)->internalFlags & SCM_PORT_FILE_EXTDATA)
+#define PORT_FILE_EXTDATA_SET(port) \
+    (P_(port)->internalFlags |= SCM_PORT_FILE_EXTDATA)
+#define PORT_FILE_EXTDATA_CLEAR(port) \
+    (P_(port)->internalFlags &= ~SCM_PORT_FILE_EXTDATA)
+#define PORT_FILE_EXTDATA_GONE_P(port) \
+    (PORT_FILE_EXTDATA_P(port) && PORT_BUF(port)->data == NULL)
+
+#define PORT_PROC_EXTDATA_P(port) \
+    (P_(port)->internalFlags & SCM_PORT_PROC_EXTDATA)
+#define PORT_PROC_EXTDATA_SET(port) \
+    (P_(port)->internalFlags |= SCM_PORT_PROC_EXTDATA)
+#define PORT_PROC_EXTDATA_CLEAR(port) \
+    (P_(port)->internalFlags &= ~SCM_PORT_PROC_EXTDATA)
+#define PORT_PROC_EXTDATA_GONE_P(port) \
+    (PORT_PROC_EXTDATA_P(port) && PORT_VT(port)->data == NULL)
 
 /*================================================================
  * Locking the ports

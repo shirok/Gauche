@@ -169,8 +169,16 @@ SCM_DEFINE_BASE_CLASS(Scm_CodingAwarePortClass,
  *   share the same file descriptor.  However, C code and Scheme port
  *   may share the same file descriptor for efficiency (e.g. stdios).
  *   In such cases, it is C code's responsibility to destroy the port.
+ *
+ *   Port_clenaup routine may be called when the port is closed or
+ *   finalized.  If port is finalized before it is properly closed,
+ *   we want to call close procedure of the underlying implementation.
+ *   However, the fact that the port is being finalized means the
+ *   extra structure used by the underlying implementation may have
+ *   already GC-ed.  The FINAL flag indicates that.
+
  */
-static void port_cleanup(ScmPort *port)
+static void port_cleanup(ScmPort *port, _Bool final)
 {
     if (SCM_PORT_CLOSED_P(port)) return;
 
@@ -182,7 +190,7 @@ static void port_cleanup(ScmPort *port)
     switch (SCM_PORT_TYPE(port)) {
     case SCM_PORT_FILE:
         if (SCM_PORT_DIR(port) == SCM_PORT_OUTPUT) {
-            if (!SCM_PORT_ERROR_OCCURRED_P(port)) {
+            if (!SCM_PORT_ERROR_OCCURRED_P(port) && !final) {
                 bufport_flush(port, 0, TRUE);
             }
             if (!(SCM_PORT_FLAGS(port) & SCM_PORT_TRANSIENT)) {
@@ -190,10 +198,10 @@ static void port_cleanup(ScmPort *port)
             }
         }
         ScmPortBuffer *buf = Scm_PortBufferStruct(port);
-        if (port->ownerp && buf->closer) buf->closer(port);
+        if (!final && port->ownerp && buf->closer) buf->closer(port);
         break;
     case SCM_PORT_PROC:
-        if (PORT_VT(port)->Close) PORT_VT(port)->Close(port);
+        if (!final && PORT_VT(port)->Close) PORT_VT(port)->Close(port);
         break;
     default:
         break;
@@ -208,7 +216,14 @@ static void port_cleanup(ScmPort *port)
 /* called by GC */
 static void port_finalize(ScmObj obj, void* data SCM_UNUSED)
 {
-    port_cleanup(SCM_PORT(obj));
+    if (PORT_FILE_EXTDATA_P(obj)) {
+        GC_unregister_disappearing_link((void**)&PORT_BUF(obj)->data);
+    }
+    if (PORT_PROC_EXTDATA_P(obj)) {
+        GC_unregister_disappearing_link((void**)&PORT_VT(obj)->data);
+    }
+    port_cleanup(SCM_PORT(obj),
+                 PORT_FILE_EXTDATA_GONE_P(obj)||PORT_PROC_EXTDATA_GONE_P(obj));
 }
 
 /*
@@ -265,7 +280,7 @@ void Scm_ClosePort(ScmPort *port)
     PORT_SAFE_CALL(port,
                    do {
                        if (!SCM_PORT_CLOSED_P(port)) {
-                           port_cleanup(port);
+                           port_cleanup(port, FALSE);
                        }
                    } while (0), /*no cleanup*/);
     PORT_UNLOCK(port);
@@ -1023,6 +1038,15 @@ ScmObj Scm_MakeBufferedPortFull(ScmClass *klass,
     PORT_BUF(p)->filenum = bufrec->filenum;
     PORT_BUF(p)->seeker = bufrec->seeker;
     PORT_BUF(p)->data = bufrec->data;
+
+    /* When the port is GC'ed without properly closed, a finalizer is
+       run to clean up.  However, at that moment, PORT_BUF(p)->data
+       may be already collected.  We should detect the case.
+     */
+    if (GC_is_heap_ptr(bufrec->data)) {
+        PORT_FILE_EXTDATA_SET(p);
+        GC_register_disappearing_link((void**)&PORT_BUF(p)->data);
+    }
 
     if (flags & SCM_PORT_WITH_POSITION) {
         PORT_BUF(p)->getpos = bufrec->getpos;
@@ -1813,6 +1837,15 @@ ScmObj Scm_MakeVirtualPortFull(ScmClass *klass, ScmObj name,
     if (vtable->Close) PORT_VT(p)->Close  = vtable->Close;
     if (vtable->Seek)  PORT_VT(p)->Seek   = vtable->Seek;
     PORT_VT(p)->data = vtable->data;
+
+    /* When the port is GC'ed without properly closed, a finalizer is
+       run to clean up.  However, at that moment, PORT_VT(p)->data
+       may be already collected.  We should detect the case.
+     */
+    if (GC_is_heap_ptr(vtable->data)) {
+        PORT_PROC_EXTDATA_SET(p);
+        GC_register_disappearing_link((void**)&PORT_VT(p)->data);
+    }
 
     if (flags & SCM_PORT_WITH_POSITION) {
         if (vtable->GetPos) PORT_VT(p)->GetPos = vtable->GetPos;
