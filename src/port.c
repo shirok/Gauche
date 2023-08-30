@@ -613,7 +613,7 @@ int Scm_PortPositionable(ScmPort *port, int setp)
         if (setp) return FALSE; /* we haven't supported setpos for ostr */
         else      return TRUE;
     }
-    return FALSE;		/* dummy */
+    return FALSE;               /* dummy */
 }
 
 /* Duplicates the file descriptor of the source port, and set it to
@@ -1038,6 +1038,7 @@ ScmObj Scm_MakeBufferedPortFull(ScmClass *klass,
     PORT_BUF(p)->filenum = bufrec->filenum;
     PORT_BUF(p)->seeker = bufrec->seeker;
     PORT_BUF(p)->data = bufrec->data;
+    PORT_BUF(p)->idata = bufrec->idata;
 
     /* When the port is GC'ed without properly closed, a finalizer is
        run to clean up.  However, at that moment, PORT_BUF(p)->data
@@ -1415,17 +1416,14 @@ ScmObj Scm_GetBufferingMode(ScmPort *port)
  * File Port
  */
 
-/* This small piece of data is kept in port->src.buf.data. */
-typedef struct file_port_data_rec {
-    int fd;
-} file_port_data;
-
-#define FILE_PORT_DATA(p) ((file_port_data*)(PORT_BUF(p)->data))
+/* We keep fd to PORT_BUF(p)->idata */
+#define FILE_PORT_FD(p) ((int)(PORT_BUF(p)->idata))
+#define FILE_PORT_FD_SET(p, fd) (PORT_BUF(p)->idata = (fd))
 
 static ScmSize file_filler(ScmPort *p, ScmSize cnt)
 {
     ScmSize nread = 0;
-    int fd = FILE_PORT_DATA(p)->fd;
+    int fd = FILE_PORT_FD(p);
     char *datptr = PORT_BUF(p)->end;
     SCM_ASSERT(fd >= 0);
     while (nread == 0) {
@@ -1450,7 +1448,7 @@ static ScmSize file_flusher(ScmPort *p, ScmSize cnt, int forcep)
 {
     ScmSize nwrote = 0;
     ScmSize datsiz = PORT_BUFFER_AVAIL(p);
-    int fd = FILE_PORT_DATA(p)->fd;
+    int fd = FILE_PORT_FD(p);
     char *datptr = PORT_BUF(p)->buffer;
 
     SCM_ASSERT(fd >= 0);
@@ -1481,12 +1479,12 @@ static ScmSize file_flusher(ScmPort *p, ScmSize cnt, int forcep)
 
 static void file_closer(ScmPort *p)
 {
-    int fd = FILE_PORT_DATA(p)->fd;
+    int fd = FILE_PORT_FD(p);
     if (fd >= 0) {
         /* If close() fails, the port's CLOSED flag isn't set and file_closer
            may be called again (probably via finalizer).  We don't want to call
            close() again and raise an error. */
-        FILE_PORT_DATA(p)->fd = -1;
+        FILE_PORT_FD_SET(p, -1);
         if (close(fd) < 0) {
             Scm_SysError("close() failed on %S", SCM_OBJ(p));
         }
@@ -1495,19 +1493,19 @@ static void file_closer(ScmPort *p)
 
 static int file_ready(ScmPort *p)
 {
-    int fd = FILE_PORT_DATA(p)->fd;
+    int fd = FILE_PORT_FD(p);
     SCM_ASSERT(fd >= 0);
     return Scm_FdReady(fd, SCM_PORT_DIR(p));
 }
 
 static int file_filenum(ScmPort *p)
 {
-    return FILE_PORT_DATA(p)->fd;
+    return FILE_PORT_FD(p);
 }
 
 static off_t file_seeker(ScmPort *p, off_t offset, int whence)
 {
-    return lseek(FILE_PORT_DATA(p)->fd, offset, whence);
+    return lseek(FILE_PORT_FD(p), offset, whence);
 }
 
 /* Kludge: We should have better way */
@@ -1521,7 +1519,7 @@ static void file_buffered_port_set_fd(ScmPort *p, int fd)
     if (!file_buffered_port_p(p)) {
         Scm_Error("port is not directly conntect to fd: %S", p);
     }
-    FILE_PORT_DATA(p)->fd = fd;
+    FILE_PORT_FD_SET(p, fd);
 }
 
 ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
@@ -1550,9 +1548,6 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     */
     if (flags & O_APPEND) (void)lseek(fd, 0, SEEK_END);
 
-    file_port_data *data = SCM_NEW(file_port_data);
-    data->fd = fd;
-
     ScmPortBuffer bufrec;
     bufrec.mode = buffering;
     bufrec.buffer = NULL;
@@ -1563,7 +1558,8 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
     bufrec.seeker = file_seeker;
-    bufrec.data = data;
+    bufrec.data = NULL;
+    bufrec.idata = fd;
     ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, SCM_MAKE_STR_COPYING(path),
                                     dir, TRUE, &bufrec);
     return p;
@@ -1579,9 +1575,6 @@ ScmObj Scm_OpenFilePort(const char *path, int flags, int buffering, int perm)
 ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
                           int fd, int bufmode, int ownerp)
 {
-    file_port_data *data = SCM_NEW(file_port_data);
-    data->fd = fd;
-
     ScmPortBuffer bufrec;
     bufrec.buffer = NULL;
     bufrec.size = 0;
@@ -1591,7 +1584,8 @@ ScmObj Scm_MakePortWithFd(ScmObj name, int direction,
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
-    bufrec.data = data;
+    bufrec.data = NULL;
+    bufrec.idata = fd;
 
     /* Check if the given fd is seekable, and set seeker if so. */
     if (lseek(fd, 0, SEEK_CUR) < 0) {
@@ -1836,7 +1830,8 @@ ScmObj Scm_MakeVirtualPortFull(ScmClass *klass, ScmObj name,
     if (vtable->Flush) PORT_VT(p)->Flush  = vtable->Flush;
     if (vtable->Close) PORT_VT(p)->Close  = vtable->Close;
     if (vtable->Seek)  PORT_VT(p)->Seek   = vtable->Seek;
-    PORT_VT(p)->data = vtable->data;
+    PORT_VT(p)->data  = vtable->data;
+    PORT_VT(p)->idata = vtable->idata;
 
     /* When the port is GC'ed without properly closed, a finalizer is
        run to clean up.  However, at that moment, PORT_VT(p)->data
@@ -2360,9 +2355,8 @@ static ScmObj make_trapper_port(ScmObj name, int direction,
     bufrec.closer = file_closer;
     bufrec.ready = file_ready;
     bufrec.filenum = file_filenum;
-    file_port_data *data = SCM_NEW(file_port_data);
-    data->fd = fd;
-    bufrec.data = data;
+    bufrec.data = NULL;
+    bufrec.idata = fd;
     bufrec.seeker = NULL;
     ScmObj p = Scm_MakeBufferedPort(SCM_CLASS_PORT, name, direction, TRUE,
                                     &bufrec);

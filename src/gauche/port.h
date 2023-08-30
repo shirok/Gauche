@@ -87,7 +87,8 @@ typedef struct ScmPortBufferRec {
     int  (*ready)(ScmPort *p);
     int  (*filenum)(ScmPort *p);
     off_t (*seeker)(ScmPort *p, off_t offset, int whence);
-    void *data;
+    void *data;         /* aux data to be used in handlers (heap allocated) */
+    long idata;         /* aux data to be used in handlers (single word) */
 
     /* The following fields are added in 0.9.10.  When you pass ScmPortBuffer
        to the constructor, those fields are looked at only when you specify
@@ -111,7 +112,8 @@ typedef struct ScmPortVTableRec {
     void    (*Flush)(ScmPort *p);
     void    (*Close)(ScmPort *p);
     off_t   (*Seek)(ScmPort *p, off_t off, int whence);
-    void    *data;
+    void    *data;      /* aux data to be used in handlers (heap allocated) */
+    long    idata;      /* aux data to be used in handlers (single word) */
 
     /* The following fields are added in 0.9.10.  When you pass ScmPortBuffer
        to the constructor, those fields are looked at only when you specify
@@ -205,7 +207,7 @@ struct ScmPortRec {
        We tested to use a pointer to the real struct, but I/O intensive
        benchmark showed 2-3% reduction of speed.  So we avoid indirection.
      */
-    char opaque[29*sizeof(ScmWord) + 2*sizeof(ScmInternalFastlock)];
+    char opaque[30*sizeof(ScmWord) + 2*sizeof(ScmInternalFastlock)];
 };
 
 /* Port direction.
