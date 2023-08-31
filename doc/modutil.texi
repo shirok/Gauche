@@ -19189,6 +19189,18 @@ The module extends util.digest
 このモジュールは、util.digest (@ref{Message digester framework}参照)
 を拡張しています。
 @c COMMON
+
+@c EN
+Typically, all you need to do is to pass the class object @code{<md5>}
+to the message
+digester; @pxref{Message digester framework}, and also
+@pxref{HMAC keyed-hashing}.
+@c JP
+通常、メッセージダイジェストを行う手続きにクラスオブジェクト@code{<md5>}
+を渡すだけで使うことができます。
+詳しくは@ref{Message digester framework}および
+@ref{HMAC keyed-hashing}を参照してください。
+@c COMMON
 @end deftp
 
 @deftp {Class} <md5>
@@ -19196,39 +19208,36 @@ The module extends util.digest
 @c MOD rfc.md5
 @c EN
 The instance of this class keeps internal state of MD5 digest algorithm.
-
 This class implements @code{util.digest} framework interface,
-@code{digest-update!}, @code{digest-final!},
-@code{digest}, and @code{digest-string}.
-@xref{Message digester framework}, for detailed explanation
-of these methods.
+so you can pass this class to message digest procedures such as
+@code{digest-message-to} (@pxref{Message digester framework}).
 @c JP
 このクラスのインスタンスは、MD5ダイジェストアルゴリズムの内部状態を
 保持しています。
-
-このクラスは、@code{util.digest}フレームワークのインターフェースである、
-@code{digest-update!}、@code{digest-final!}、@code{digest}、
-@code{digest-string}を実装しています。
-これらのメソッドの詳細な説明は、@ref{Message digester framework}
-を参照して下さい。
+このクラスは、@code{util.digest}フレームワークのインターフェース、
+を実装しており、
+メッセージダイジェストを行う@code{digest-message-to}などの手続きに
+このクラスオブジェクトを渡すことができます(@ref{Message digester framework}参照)。
 @c COMMON
 @end deftp
 
 @c EN
-Besides the digester framework, this module provides to
-short-cut procedures.
+The following procedures are deprecated.  Use generic
+message digester (@pxref{Message digester framework}) or
+HMAC keyed digester (@pxref{HMAC keyed-hashing}).
 @c JP
-ダイジェスタフレームワークに加えて、このモジュールはショートカット手続きを
-提供します。
+以下の手続きは非推奨です。
+ジェネリックなメッセージダイジェスター(@ref{Message digester framework}参照)や、
+HMAC鍵つきダイジェスター(@ref{HMAC keyed-hashing}参照)を使ってください。
 @c COMMON
 
 @defun md5-digest
 @c MOD rfc.md5
 @c EN
-Reads data from the current input port until EOF, and returns
+Deprecated. Reads data from the current input port until EOF, and returns
 its digest in an incomplete string.
 @c JP
-現在の入力ポートからEOFまで読み込み、そのダイジェストを不完全文字列で
+非推奨。現在の入力ポートからEOFまで読み込み、そのダイジェストを不完全文字列で
 返します。
 @c COMMON
 @end defun
@@ -19236,10 +19245,10 @@ its digest in an incomplete string.
 @defun md5-digest-string string
 @c MOD rfc.md5
 @c EN
-Digest the data in @var{string}, and returns the result
+Deprecated. Digest the data in @var{string}, and returns the result
 in an incomplete string.
 @c JP
-@var{string}にあるデータをダイジェストし、その結果を不完全文字列で
+非推奨。@var{string}にあるデータをダイジェストし、その結果を不完全文字列で
 返します。
 @c COMMON
 @end defun
@@ -20204,6 +20213,19 @@ SHA-512です (後の4つを総称してSHA-2と呼ぶこともあります)。
 このモジュールは、util.digest (@ref{Message digester framework}参照)
 を拡張しています。
 @c COMMON
+
+@c EN
+Typically, all you need to do is to pass the class object @code{<sha256>} etc.
+to the message
+digester; @pxref{Message digester framework}, and also
+@pxref{HMAC keyed-hashing}.
+@c JP
+通常、メッセージダイジェストを行う手続きにクラスオブジェクト@code{<sha256>
+}等を渡すだけで使うことができます。
+詳しくは@ref{Message digester framework}および
+@ref{HMAC keyed-hashing}を参照してください。
+@c COMMON
+
 @end deftp
 
 @deftp {Module} rfc.sha1
@@ -20233,30 +20255,27 @@ should use @code{rfc.sha}.
 @c MOD rfc.sha
 @c EN
 An instance of these class keeps internal state of SHA digest algorithm.
-
 This class implements @code{util.digest} framework interface,
-@code{digest-update!}, @code{digest-final!},
-@code{digest}, and @code{digest-string}.
-@xref{Message digester framework}, for detailed explanation
-of these methods.
+so you can pass this class to message digest procedures such as
+@code{digest-message-to} (@pxref{Message digester framework}).
 @c JP
 これらのクラスのインスタンスは、SHAダイジェストアルゴリズムの内部状態を
 保持しています。
-
 このクラスは、@code{util.digest}フレームワークのインターフェース、
-@code{digest-update!}、@code{digest-final!}、@code{digest}、
-@code{digest-string}を実装しています。
-これらのメソッドの詳細な説明は、@ref{Message digester framework}を
-参照して下さい。
+を実装しており、
+メッセージダイジェストを行う@code{digest-message-to}などの手続きに
+このクラスオブジェクトを渡すことができます(@ref{Message digester framework}参照)。
 @c COMMON
 @end deftp
 
 @c EN
-Besides the digester framework, this module provides to
-short-cut procedures.
+The following procedures are deprecated.  Use generic
+message digester (@pxref{Message digester framework}) or
+HMAC keyed digester (@pxref{HMAC keyed-hashing}).
 @c JP
-ダイジェスタフレームワークに加えて、このモジュールはショートカット
-手続きを提供します。
+以下の手続きは非推奨です。
+ジェネリックなメッセージダイジェスター(@ref{Message digester framework}参照)や、
+HMAC鍵つきダイジェスター(@ref{HMAC keyed-hashing}参照)を使ってください。
 @c COMMON
 
 @defun sha1-digest
@@ -20266,10 +20285,10 @@ short-cut procedures.
 @defunx sha512-digest
 @c MOD rfc.sha
 @c EN
-Reads data from the current input port until EOF, and returns
+Deprecated. Reads data from the current input port until EOF, and returns
 its digest in an incomplete string.
 @c JP
-現在の入力ポートからデータをEOFまで読み込み、そのダイジェストを
+非推奨。現在の入力ポートからデータをEOFまで読み込み、そのダイジェストを
 不完全文字列で返します。
 @c COMMON
 @end defun
@@ -20281,10 +20300,10 @@ its digest in an incomplete string.
 @defunx sha512-digest-string string
 @c MOD rfc.sha
 @c EN
-Digest the data in @var{string}, and returns the result
+Deprecated. Digest the data in @var{string}, and returns the result
 in an incomplete string.
 @c JP
-@var{string}のデータをダイジェストし、その結果を不完全文字列で
+非推奨。@var{string}のデータをダイジェストし、その結果を不完全文字列で
 返します。
 @c COMMON
 @end defun
@@ -30838,7 +30857,7 @@ format (e.g. u8vector, hexadecimal string, etc.)
 If you need to digest with a secret key, @pxref{HMAC keyed-hashing}.
 @c JP
 異なるアルゴリズムを選んだり、異なる出力形式を選ぶこともできます
-(例: u8vector, 16進数文字列など)
+(例: u8vector, 16進数文字列など)。
 秘密鍵を用いたダイジェストについては@ref{HMAC keyed-hashing}を参照してください。
 @c COMMON
 @end deftp
