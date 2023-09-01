@@ -38,7 +38,8 @@
                  :if-exists :supersede)
       (begin
         (print #"We're going to run 'sudo gauche-install ~file ~*destdir*'")
-        (do-process `(sudo gauche-install ,file ,*destdir*))))))
+        (do-process! `(sudo gauche-install ,file ,*destdir*))))
+    (print "cacert.pem is stored in " *destdir*)))
 
 ;; Local variables:
 ;; mode: scheme
