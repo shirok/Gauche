@@ -1,3 +1,8 @@
+2023-08-31  Shiro Kawai  <shiro@acm.org>
+
+	* tools/preprocess-info: Support '@c DEPRECATED' to mark deprecated
+	  APIs.
+
 2023-08-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/port.c, src/gauche/priv/portP.h: Fix the issue that port finalizer

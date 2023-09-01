@@ -16865,8 +16865,8 @@ The following API is deprecated.  Avoid using them in new code.
 @defun base64-encode-string string :key line-width digits url-safe
 @defunx base64-encode-bytevector u8vector :key line-width digits url-safe
 @c MOD rfc.base64
+@c DEPRECATED
 @c EN
-Deprecated.
 Converts contents of @var{string}/@var{u8vector} to Base64 encoded format.
 For @code{base64-encode-string},
 input string can be either complete or incomplete string;
@@ -16874,7 +16874,6 @@ it is always interpreted as a byte sequence.
 The @var{digits} and @var{url-safe} arguments are the same as
 @code{base64-encode}.
 @c JP
-非推奨。
 @var{string}/@var{u8vector} の内容を Base64 でエンコードされたフォーマットに変換します。
 @code{base64-encode-string}の入力となる文字列は、
 完全文字列でも不完全文字列でも良いです。常にバイト・シーケンスとして扱われます。
@@ -16885,14 +16884,13 @@ The @var{digits} and @var{url-safe} arguments are the same as
 @defun base64-decode-string string :key url-safe strict
 @defunx base64-decode-bytevector u8vector :key url-safe strict
 @c MOD rfc.base64
+@c DEPRECATED
 @c EN
-Deprecated.
 Decodes a Base64 encoded string @var{string} and returns
 the result as a string or a u8vector, respectively.
 The conversion terminates at the end of @var{string} or
 the termination character (@code{=}).
 @c JP
-非推奨。
 Base64 でエンコードされた文字列 @var{string} をデコードしてそれぞれ文字列
 あるいはu8vectorとして返します。
 変換は @var{string} の終わりか、終端文字 (@code{=}) で終了します。
@@ -17857,13 +17855,13 @@ and @code{hmac-message} instead.
 
 @defun hmac-digest :key key hasher
 @c MOD rfc.hmac
+@c DEPRECATED
 @c EN
-Deprecated.
 Creates an @code{<hmac>} object and hash the data stream
 from the current input port, then returns the hashed result
 in an incomplete string.
 @c JP
-非推奨。@code{<hmac>}オブジェクトを作り、現在の入力ポートからの
+@code{<hmac>}オブジェクトを作り、現在の入力ポートからの
 データストリームをハッシュし、不完全文字列でそのハッシュされた
 結果を返します。
 @c COMMON
@@ -17871,12 +17869,11 @@ in an incomplete string.
 
 @defun hmac-digest-string string :key key hasher
 @c MOD rfc.hmac
+@c DEPRECATED
 @c EN
-Deprecated.
 Creates an @code{<hmac>} object and hash the data in @var{string},
 then returns the hashed result in an incomplete string.
 @c JP
-非推奨。
 @code{<hmac>}オブジェクトを作り、@var{string}にあるデータをハッシュし、
 不完全文字列でそのハッシュされた結果を返します。
 @c COMMON
@@ -19233,22 +19230,24 @@ HMAC鍵つきダイジェスター(@ref{HMAC keyed-hashing}参照)を使って�
 
 @defun md5-digest
 @c MOD rfc.md5
+@c DEPRECATED
 @c EN
-Deprecated. Reads data from the current input port until EOF, and returns
+Reads data from the current input port until EOF, and returns
 its digest in an incomplete string.
 @c JP
-非推奨。現在の入力ポートからEOFまで読み込み、そのダイジェストを不完全文字列で
+現在の入力ポートからEOFまで読み込み、そのダイジェストを不完全文字列で
 返します。
 @c COMMON
 @end defun
 
 @defun md5-digest-string string
 @c MOD rfc.md5
+@c DEPRECATED
 @c EN
-Deprecated. Digest the data in @var{string}, and returns the result
+Digest the data in @var{string}, and returns the result
 in an incomplete string.
 @c JP
-非推奨。@var{string}にあるデータをダイジェストし、その結果を不完全文字列で
+@var{string}にあるデータをダイジェストし、その結果を不完全文字列で
 返します。
 @c COMMON
 @end defun
@@ -20284,11 +20283,12 @@ HMAC鍵つきダイジェスター(@ref{HMAC keyed-hashing}参照)を使って�
 @defunx sha384-digest
 @defunx sha512-digest
 @c MOD rfc.sha
+@c DEPRECATED
 @c EN
-Deprecated. Reads data from the current input port until EOF, and returns
+Reads data from the current input port until EOF, and returns
 its digest in an incomplete string.
 @c JP
-非推奨。現在の入力ポートからデータをEOFまで読み込み、そのダイジェストを
+現在の入力ポートからデータをEOFまで読み込み、そのダイジェストを
 不完全文字列で返します。
 @c COMMON
 @end defun
@@ -20299,11 +20299,12 @@ its digest in an incomplete string.
 @defunx sha384-digest-string string
 @defunx sha512-digest-string string
 @c MOD rfc.sha
+@c DEPRECATED
 @c EN
-Deprecated. Digest the data in @var{string}, and returns the result
+Digest the data in @var{string}, and returns the result
 in an incomplete string.
 @c JP
-非推奨。@var{string}のデータをダイジェストし、その結果を不完全文字列で
+@var{string}のデータをダイジェストし、その結果を不完全文字列で
 返します。
 @c COMMON
 @end defun
@@ -20586,7 +20587,8 @@ accessed after calling this procedure.
 
 @defun tls-accept tls socket
 @c MOD rfc.tls
-NB: This API is deprecated.  It is incompatible to
+@c DEPRECATED
+This is incompatible to
 the newer MbedTLS.  We plan to provide an alternative API, with
 which you can ``bind'' a tls object and then ``accept'' the client
 connection, without touching the underlying sockets.
@@ -21301,11 +21303,12 @@ UUIDを生成するのに乱数発生器を使います。
 
 @defun uuid-random-source-set! random-source
 @c MOD rfc.uuid
+@c DEPRECATED
 @c EN
-This procedure is deprecated.  Use @code{uuid-random-source} parameter
+Use @code{uuid-random-source} parameter
 to customize random source to be used in uuid generation.
 @c JP
-この手続きは非推奨になりました。UUID生成に使われる乱数源をカスタマイズするには
+UUID生成に使われる乱数源をカスタマイズするには
 @code{uuid-random-source}パラメータを使ってください。
 @c COMMON
 @end defun
@@ -31092,23 +31095,23 @@ and returns the digest result in an incomplete string.
 
 @deffn {Generic function} digest-string class string
 @c MOD util.digest
+@c DEPRECATED
 @c EN
+Use @code{digest-message-to} for the new code.
+
 Same as @code{(digest-message-to <string> @var{class} @var{string})},
 where only a string is allowed to the @var{string} argument.
-
-This is deprecated, for it is less flexible.  Use @code{digest-message-to}
-for the new code.
 @c JP
+新たなコードではより柔軟な@code{digest-message-to}を使ってください。
+
 @code{(digest-message-to <string> @var{class} @var{string})}と同じです。
 ただし@var{string}引数は文字列でなければなりません。
-
-この手続きは非推奨です。新たなコードではより柔軟な@code{digest-message-to}を
-使ってください。
 @c COMMON
 @end deffn
 
 @defun digest-hexify digest-result
 @c MOD util.digest
+@c DEPRECATED
 @c EN
 Same as @code{(base16-encode-message digest-result :lowercase #t)}
 (@pxref{Base64 encoding/decoding}).  In typical case, you can pass

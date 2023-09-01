@@ -79,6 +79,9 @@
       [#/^@c MOD\s+(\S+)$/ (#f module)
              (display #"@{@t{~|module|}@}\n")
              (in (read-line) 'mod)]
+      [#/^@c DEPRECATED$/ ()
+             (display "@b{Deprecated. }")
+             (in (read-line) modtag)]
       [#/^\[SRFI/ (#f)
             (when (eq? modtag 'mod)
               (warn #"SRFI tag follows MOD directive: ~|line|\n"))

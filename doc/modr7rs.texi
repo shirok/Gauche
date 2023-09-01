@@ -6145,12 +6145,13 @@ This procedure returns an unspecified value.
 @defun hash-table-merge! ht1 ht2
 [R7RS hash-table]
 @c MOD scheme.hash-table
+@c DEPRECATED
 @c EN
 This is the same as @code{hash-table-union!}, and provided just
-for the compatibility with SRFI-69.  Deprecated.
+for the compatibility with SRFI-69.
 @c JP
 これは@code{hash-table-union!}と同じで、
-SRFI-69との互換性のためだけに提供されています。非推奨です。
+SRFI-69との互換性のためだけに提供されています。
 @c COMMON
 @end defun
 

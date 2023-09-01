@@ -3988,7 +3988,8 @@ Treat each @var{form} as if they are toplevel stub forms.
 
 @deffn {Stub Form} if @var{test} @var{then-stmt} [@var{else-stmt}]
 @deffnx {Stub Form} when @var{test} @var{stmt}
-Deprecated. Please use @code{.if} and @code{.when} instead.
+@c DEPRECATED
+Please use @code{.if} and @code{.when} instead.
 @end deffn
 
 @deffn {Stub Form} include @var{file}
@@ -21829,13 +21830,14 @@ If it is @code{#f}, the message is not checked.
 
 @defvar *test-error*
 @c MOD gauche.test
+@c DEPRECATED
 @c EN
-(Deprecated) Bounded to an instance of @code{<test-error>} with
+Bounded to an instance of @code{<test-error>} with
 condition type @code{<error>}.  This is only provided for the
 backward compatibility; new code should use @code{test-error}
 procedure above.
 @c JP
-(非推奨) condition typeとして@code{<error>}を持つ@code{<test-error>}
+condition typeとして@code{<error>}を持つ@code{<test-error>}
 オブジェクトに束縛されています。この変数は互換性のためにのみ残されています。
 新しいコードは上に述べた@code{test-error}手続きを使ってください。
 @c COMMON

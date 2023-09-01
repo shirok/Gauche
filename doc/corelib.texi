@@ -28821,7 +28821,7 @@ slots:
 @defunx sys-stat->mtime stat
 @defunx sys-stat->ctime stat
 @defunx sys-stat->file-type stat
-@strong{Deprecated}.
+@c DEPRECATED
 @c EN
 Use @code{slot-ref} to access information of @code{<sys-stat>} object.
 @c JP
@@ -30989,7 +30989,7 @@ to the POSIX-time (number of seconds since Epoch).
 @end defun
 
 @defun sys-tm->alist tm
-(Deprecated function)
+@c DEPRECATED
 @end defun
 
 
