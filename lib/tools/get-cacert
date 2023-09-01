@@ -7,7 +7,7 @@
 (use file.util)
 
 (define (usage)
-  (print "Usage: gosh rfc/tls/get-cacert")
+  (print "Usage: gosh tools/get-cacert")
   (print "  Download cacert.pem from curl official site (curl.haxx.se) and")
   (print "  Saves it to installed Gauche's library directory.")
   (print "  (If you installed Gauche with root priviledge, you're asked to")

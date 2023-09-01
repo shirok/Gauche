@@ -1,5 +1,8 @@
 2023-08-31  Shiro Kawai  <shiro@acm.org>
 
+	* lib/tools/get-cacert: Moved from ext/tls/tls/get-cacert.scm,
+	  for it's a runnable tool.
+
 	* tools/preprocess-info: Support '@c DEPRECATED' to mark deprecated
 	  APIs.
 
