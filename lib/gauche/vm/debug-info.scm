@@ -111,6 +111,8 @@
 
 (define-module gauche.vm.debug-info
   (export encode-debug-info
+          get-debug-info-const-vector
+          has-unit-debug-info?
           decode-debug-info
           keep-debug-info-stat
           record-debug-info-stat!
@@ -136,6 +138,9 @@
   (unless (~ unit'debug-info-bin)
     (set! (~ unit'debug-info-bin) (make <unit-debug-info>))))
 
+(define (has-unit-debug-info? unit)
+  (boolean (~ unit'debug-info-bin)))
+
 ;; Returns const index
 (define (register-const! unit obj)
   (let1 tab (~ unit'debug-info-bin'consts)
@@ -143,8 +148,9 @@
         (rlet1 ind (hash-table-num-entries tab)
           (hash-table-put! tab obj ind)))))
 
-;; Get the final constant vector
-(define (get-const-vector unit)
+;; API
+;;  Get the final constant vector
+(define (get-debug-info-const-vector unit)
   ($ list->vector
      $ map car
      $ sort-by (hash-table->alist (~ unit'debug-info-bin'consts)) cdr))
@@ -166,7 +172,7 @@
 (define (record-debug-info-stat! unit codevec constvec)
   (and-let1 stat (~ unit'debug-info-bin'stat)
     (let ([codesize (uvector-length codevec)]
-          [constsize (vector-length constvec)])
+          [constsize (if (vector? constvec) (vector-length constvec) 0)])
       (inc! (~ stat'num-instances))
       (inc! (~ stat'total-code-size) codesize)
       (inc! (~ stat'total-const-size) constsize)
@@ -176,12 +182,13 @@
                             (uvector-ref codevec i)
                             (cut + <> 1)
                             0))
-      (do ([i 0 (+ i 1)])
-          [(eqv? i constsize)]
-        (hash-table-update! (~ stat'const-freq-table)
-                            (vector-ref constvec i)
-                            (cut + <> 1)
-                            0)))
+      (when (vector? constvec)
+        (do ([i 0 (+ i 1)])
+            [(eqv? i constsize)]
+          (hash-table-update! (~ stat'const-freq-table)
+                              (vector-ref constvec i)
+                              (cut + <> 1)
+                              0))))
     #t))
 
 ;; API to be called from precomp.
@@ -191,6 +198,8 @@
   (and-let* ([ unit ]
              [ (~ unit'debug-info-bin) ]
              [stat (~ unit'debug-info-bin'stat)])
+    (set! (~ stat'total-const-size)
+          (vector-length (get-debug-info-const-vector unit)))
     (format #t "Debug info stats (~s):\n" (~ unit'name))
     (format #t "  # of code blocks w/ debug-info: ~5d\n" (~ stat'num-instances))
     (format #t "   code vector size: ~6d total; ~8,2f avg\n"
@@ -214,12 +223,12 @@
 ;; Transient structure
 (define-class <encoder> ()
   ((out :init-form (open-output-string))    ;output string port
+   (unit :init-keyword :unit)               ;<cgen-unit>
    (consts :init-form '())                  ;reverse list of constants
    (tab :init-form (make-hash-table 'eqv?)) ;pair -> index
    ))
 
 (define (encoder-pos encoder) (port-tell (~ encoder'out)))
-(define (encoder-num-consts encoder) (length (~ encoder'consts)))
 
 ;; Predefined coded symbols.  See the comment of packed info format above.
 ;; This must be in sync with the one in code.c
@@ -273,14 +282,7 @@
             [else (encode-marker! 'dot)
                   (encode-item! encoder lis)])))
   (define (encode-const! item)
-    (let* ([num-consts (encoder-num-consts encoder)]
-           [index (let loop ([p (~ encoder'consts)]
-                             [i (- num-consts 1)])
-                    (cond [(null? p) num-consts] ;fresh item
-                          [(equal? item (car p)) i] ;reuse item
-                          [else (loop (cdr p) (- i 1))]))])
-      (when (= index num-consts)
-        (push! (~ encoder'consts) item))
+    (let1 index (register-const! (~ encoder'unit) item)
       (encode-index! encoder 'const index)))
 
   (cond [(null? item) (encode-marker! 'null)]
@@ -290,25 +292,25 @@
         [(assq-ref *predef-syms* item) => (cut write-byte <> (~ encoder'out))]
         [else (encode-const! item)]))
 
-;; Returns bytevector and constant vector
+;; Returns the encoded codevector.
+;; Constants are saved in the debug-info-bin attached to the unit, and can
+;; be obtained by get-debug-info-const-vector.
 (define (encode-debug-info unit obj)
   (ensure-unit-debug-info! unit)
-  (let1 encoder (make <encoder>)
+  (let1 encoder (make <encoder> :unit unit)
     (encode-item! encoder obj)
-    (values
-     ;; TRANSIENT: string->u8vector is in gauche.uvector until 0.9.12.
-     ;; To compile 0.9.13 with 0.9.12, we can't depend on gauche.uvector,
-     ;; so we roll our own.
-     ;; Replace the following expression after 0.9.13 release.
-     ;;(string->u8vector (get-output-string (~ encoder'out)))
-     (let* ([s (get-output-string (~ encoder'out))]
-            [p (open-input-string s)]
-            [v (make-u8vector (string-size s))])
-       (do ([i 0 (+ i 1)]
-            [byte (read-byte p) (read-byte p)])
-           [(eof-object? byte) v]
-         (u8vector-set! v i byte)))
-     (list->vector (reverse (~ encoder'consts))))))
+    ;; TRANSIENT: string->u8vector is in gauche.uvector until 0.9.12.
+    ;; To compile 0.9.13 with 0.9.12, we can't depend on gauche.uvector,
+    ;; so we roll our own.
+    ;; Replace the following expression after 0.9.13 release.
+    ;;(string->u8vector (get-output-string (~ encoder'out)))
+    (let* ([s (get-output-string (~ encoder'out))]
+           [p (open-input-string s)]
+           [v (make-u8vector (string-size s))])
+      (do ([i 0 (+ i 1)]
+           [byte (read-byte p) (read-byte p)])
+          [(eof-object? byte) v]
+        (u8vector-set! v i byte)))))
 
 ;;
 ;; Decoder

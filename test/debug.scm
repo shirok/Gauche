@@ -56,9 +56,9 @@
 (define (test-debug-info data :optional (msg #f))
   (test* (or msg (write-to-string data write-shared))
          data
-         (parameterize ([cgen-current-unit (make <cgen-unit>)])
-           (receive [bv const] (encode-debug-info (cgen-current-unit) data)
-             (decode-debug-info bv const)))
+         (let* ([unit (make <cgen-unit>)]
+                [bv (encode-debug-info unit data)])
+           (decode-debug-info bv (get-debug-info-const-vector unit)))
          isomorphic?))
 
 (test-debug-info 1)

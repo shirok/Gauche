@@ -260,6 +260,7 @@
                  (reverse (generator-fold compile-toplevel-form '() read))))
             (set! *load-path* load-path-save))))
       (finalize sub-initializers)
+      (setup-debug-info)
       (show-debug-info-stat (cgen-current-unit))
       (cgen-emit-c (cgen-current-unit))))
   (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
@@ -1020,17 +1021,15 @@
 ;;   See code.c Scm_CompiledCodePushInfo for the format of debug-info.
 (define (serializable-debug-info code)
   (and-let1 di (~ code'debug-info)
-    (receive [codevec constvec] (encode-debug-info (cgen-current-unit)
-                                                   (unwrap-syntax di))
-      (record-debug-info-stat! (cgen-current-unit) codevec constvec)
+    (let1 codevec (encode-debug-info (cgen-current-unit)
+                                     (unwrap-syntax di))
+      (record-debug-info-stat! (cgen-current-unit) codevec #f)
       (let ([codevec-lit (cgen-literal codevec)]
-            [constvec-list (cgen-literal constvec)]
             [datum-cname (cgen-allocate-static-datum 'runtime)])
         (cgen-init (format "  ~a = Scm_MakePackedDebugInfo(SCM_U8VECTOR(~a),\
-                                                         SCM_VECTOR(~a));"
+                                         SCM_debug_info_const_vector());"
                            datum-cname
-                           (cgen-cexpr codevec-lit)
-                           (cgen-cexpr constvec-list)))
+                           (cgen-cexpr codevec-lit)))
         datum-cname))))
 
 ;; Returns a list of the same length of CODE, which includes the
@@ -1136,6 +1135,18 @@
                 [packed ((with-module gauche.internal translate-packed-iform)
                          il insns)])
            (cgen-literal packed)))))
+
+;; Debug info generation.  This must be called once, after all compiled codes
+;; are processed.
+(define (setup-debug-info)
+  (when (has-unit-debug-info? (cgen-current-unit))
+    (let1 vec-literal
+        (cgen-literal (get-debug-info-const-vector (cgen-current-unit)))
+      (cgen-decl "static ScmVector *SCM_debug_info_const_vector();")
+      (cgen-body "ScmVector *SCM_debug_info_const_vector()"
+                 "{"
+                 #"  return SCM_VECTOR(~(cgen-cexpr vec-literal));"
+                 "}"))))
 
 ;;----------------------------------------------------------------
 ;; <macro>
