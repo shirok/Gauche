@@ -1017,6 +1017,8 @@ typedef struct debug_info_decoder {
     ScmHashCore table;          /* index -> pair */
 } debug_info_decoder;
 
+#define DEBUG_INFO_VERSION 0    /* must match the encoder */
+
 static ScmObj decode_list(debug_info_decoder *decoder);
 
 static void init_decoder(debug_info_decoder *decoder,
@@ -1029,6 +1031,11 @@ static void init_decoder(debug_info_decoder *decoder,
     decoder->consts = SCM_VECTOR_ELEMENTS(const_vector);
     decoder->pos = 0;
     Scm_HashCoreInitSimple(&decoder->table, SCM_HASH_WORD, 0, NULL);
+
+    if (packed[0] != DEBUG_INFO_VERSION) {
+        Scm_Panic("Invalid debug-info");
+    }
+    decoder->pos++;
 }
 
 static int next_byte(debug_info_decoder *decoder)

@@ -46,6 +46,9 @@
 ;; Each integer is encoded into a variable-length octets, somewhat like
 ;; BER-encoded integers.
 ;;
+;; The very first octet of the code vector is packed format version.
+;; It is 0 in the current version.
+;;
 ;; The first octet encodes the type of the object and most significant 5
 ;; bits of index.
 ;;
@@ -119,6 +122,8 @@
           show-debug-info-stat)
   )
 (select-module gauche.vm.debug-info)
+
+(define-constant *debug-info-version* 0) ;must match the decoder
 
 ;; Per-unit data.  Not for public use.
 ;;  - Allow to share constant vector among code blocks.
@@ -298,6 +303,7 @@
 (define (encode-debug-info unit obj)
   (ensure-unit-debug-info! unit)
   (let1 encoder (make <encoder> :unit unit)
+    (write-byte *debug-info-version* (~ encoder'out))
     (encode-item! encoder obj)
     ;; TRANSIENT: string->u8vector is in gauche.uvector until 0.9.12.
     ;; To compile 0.9.13 with 0.9.12, we can't depend on gauche.uvector,
@@ -316,76 +322,8 @@
 ;; Decoder
 ;;
 
-#|
-;; internal type
-(define-class <decoder> ()
-  ((buf :init-keyword :buf)        ;u8vector
-   (consts :init-keyword :consts)  ;constant vector
-   (pos :init-value 0)             ;next position to read
-   (len)                           ;(u8vector-length buffer)
-   (tab :init-form (make-hash-table 'eqv?)) ;index -> pair
-   ))
-
-(define-method initialize ((decoder <decoder>) initargs)
-  (next-method)
-  (set! (~ decoder'len) (uvector-length (~ decoder'buf))))
-
-(define (next-byte decoder)
-  (and (< (~ decoder'pos) (~ decoder'len))
-       (begin0 (u8vector-ref (~ decoder'buf) (~ decoder'pos))
-         (inc! (~ decoder'pos)))))
-
-(define (peek-byte decoder)
-  (and (< (~ decoder'pos) (~ decoder'len))
-       (u8vector-ref (~ decoder'buf) (~ decoder'pos))))
-
-(define (save-pair! decoder pair)
-  (hash-table-put! (~ decoder'tab)
-                   (~ decoder'pos)
-                   pair))
-
-(define (decode-index msbs cont? decoder)
-  (if cont?
-    (let loop ([r msbs] [b (next-byte decoder)])
-      (cond [(not b) (error "Premature end of packed debug info")]
-            [(< b 128) (logior (ash r 7) b)]
-            [else (loop (logior (ash r 7) (logand b #x7f))
-                        (next-byte decoder))]))
-    msbs))
-
-(define (decode-item decoder)
-  (let1 b (next-byte decoder)
-    (case (logand b #x60)
-      [(#x00) (or ($ hash-table-get (~ decoder'tab)
-                     (decode-index (logand b #x1f) (logbit? 7 b) decoder)
-                     #f)
-                  (error "Stray pair reference"))]
-      [(#x20) (or ($ vector-ref (~ decoder'consts)
-                     (decode-index (logand b #x1f) (logbit? 7 b) decoder))
-                  (error "Constant vector index out-of-range"))]
-      [(#x40) (decode-index (logand b #x1f) (logbit? 7 b) decoder)]
-      [else
-       (case b
-         [(#x60) '()]                   ;emptylist
-         [(#x61) (decode-list decoder)]
-         [(#x62) (error "Stray end-of-list marker")]
-         [(#x63) (error "Stray dot-list marker")]
-         [else (error "Invalid octent:" b)])])))
-
-(define (decode-list decoder)
-  (let1 b (peek-byte decoder)
-    (case b
-      [(#x62) (inc! (~ decoder'pos)) '()]
-      [(#x63) (inc! (~ decoder'pos)) (decode-item decoder)]
-      [else (rlet1 pair (cons #f #f)
-              (save-pair! decoder pair)
-              (set-car! pair (decode-item decoder))
-              (set-cdr! pair (decode-list decoder)))])))
-
-(define (decode-debug-info bytevector constvector)
-  (let1 decoder (make <decoder> :buf bytevector :consts constvector)
-    (decode-item decoder)))
-|#
+;; Decoder is implemeneted in C (code.c), for the decoder may be
+;; called during examining VM so it shouldn't change VM state.
 
 (define (decode-debug-info bytevector constvector)
   ((with-module gauche.internal %decode-packed-debug-info)
