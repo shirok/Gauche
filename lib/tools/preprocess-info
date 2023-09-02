@@ -80,7 +80,7 @@
              (display #"@{@t{~|module|}@}\n")
              (in (read-line) 'mod)]
       [#/^@c DEPRECATED$/ ()
-             (display "@b{Deprecated. }")
+             (display "@b{Deprecated. }\n")
              (in (read-line) modtag)]
       [#/^\[SRFI/ (#f)
             (when (eq? modtag 'mod)
