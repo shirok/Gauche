@@ -31110,11 +31110,12 @@ more convenient process handling on top of these primitives.
 @defun sys-system command
 @c EN
 [POSIX]
-Runs @var{command} in a subprocess.   @var{command} is usually passed
+Runs @var{command}, which must be a string, in a subprocess.
+@var{command} is usually passed
 to @code{sh}, so the shell metacharacters are interpreted.
 @c JP
 [POSIX]
-サブプロセスで@var{command}を実行します。@var{command}は通常、
+サブプロセスで文字列@var{command}を実行します。@var{command}は通常、
 @code{sh}へ渡されるので、シェルのメタキャラクタは解釈されます。
 @c COMMON
 
