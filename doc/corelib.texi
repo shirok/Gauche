@@ -31119,13 +31119,42 @@ to @code{sh}, so the shell metacharacters are interpreted.
 @c COMMON
 
 @c EN
-This function returns an integer value @code{system()} returned.
-Since POSIX doesn't define what @code{system()} returns, you can't
-interpret the returned value in a portable way.
+If the operating system fails to spawn a subshell, a @code{<system-error>}
+is thrown.  Otherwise, it waits until the subshell terminates, and
+the integer termination status of the subshell is
+returned.
 @c JP
-この関数は、@code{system()}が返した整数値を返します。
-POSIXは@code{system()}が何を返すかを定義していないので、
-戻り値をポータブルな方法で解釈することができません。
+OSがサブシェル実行に失敗した場合は、@code{<system-error>}エラーが投げられます。
+そうでなければ、この手続きはサブシェルが終了するまで待ち、サブシェルの
+終了ステータス(termination status)を整数で返します。
+@c COMMON
+
+@c EN
+The termination status must be interpreted as the same way as
+the return value of @code{sys-wait}, described below.  For example,
+if you want to get exit status, you have to test the result with
+@code{sys-wait-exited?}, then apply @code{sys-wait-exit-status}.
+@c JP
+終了ステータスは@code{sys-wait}の戻り値と同じように解釈できます。
+例えば、exit statusを取るにはまず戻り値を@code{sys-wait-exited?}で検査して、
+それから@code{sys-wait-exit-status}を適用します。
+@c COMMON
+
+@c EN
+In general, analyzing the result of @code{sys-system} properly is cumbersome,
+for nonzero code may indicate subshell's abnormal exit or signalled status
+or the command's abnormal exit or signalled status.
+We recommend to use @code{do-process} etc. of @code{gauche.process}
+module if you need to handle subprocess' exit status
+(@pxref{High-level process interface}).
+@c JP
+一般的に、@code{sys-system}の戻り値をきちんと解析するのは面倒です。
+というのも、ゼロでない場合、それはサブシェル本体の異常終了もしくはシグナルによる終了
+を表しているかもしれないし、@var{command}の異常終了もしくはシグナルによる終了
+を表しているかもしれないからです。
+サブプロセスの終了コードを精査する必要がある場合は、
+@code{gauche.process}モジュールの@code{do-process}等を使うことを推奨します
+(@ref{High-level process interface}参照)。
 @c COMMON
 
 @c EN
