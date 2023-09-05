@@ -49,36 +49,30 @@
 ;; The very first octet of the code vector is packed format version.
 ;; It is 0 in the current version.
 ;;
-;; The first octet encodes the type of the object and most significant 5
-;; bits of index.
+;; Following is a bitstream.  We use variable bit encoding to have compact
+;; representatino of codes.
 ;;
-;;   C00xxxxx   - A byte offset to the encoded pair
-;;   C01xxxxx   - A constant vector index
-;;   C10xxxxx   - An exact nonnegative integer
+;;   000       - Start of a list (sol)
+;;   001       - End of a list (eol)
 ;;
-;;   01100000   - Empty list.
-;;   01100001   - Start of a list (sol)
-;;   01100010   - End of a list (eol)
-;;   01100011   - Indicates that the following item is the last cdr of
+;;   0100      - Indicates that the following item is the last cdr of
 ;;                the list.  Note that we won't have an eol in this case.
-;;   01100100 .. 01101111  Reserved.
+;;   0101      - Empty list
+;;   0110      - Symbol source-info
+;;   0111      - Symbol quote
 ;;
-;;   0111xxxx   - Symbols frequently appeare in debug-info:
-;;                  01110000   - source-info
-;;                  01110001   - definition
-;;                  01110010   - quote
-;;                  01110011   - lambda
-;;                  01110100   - define
-;;                NB: Changing this list is difficult, for this is referenced
-;;                across versions while building Gauche.  Be very careful
-;;                adding more symbols; there may not be another chance
-;;                to change them.
+;;   10 + index  - Constant reference
 ;;
-;; If the 'C' bit in the first octet is set, the following octet encodes
-;; further bits.
+;;   110 + bitindex - A bit offset (excluding version octet) to the encoded pair
+;;   111 + index - An exact nonnegative integer
 ;;
-;;   1xxxxxxx     Intermediate 7-bits
-;;   0xxxxxxx     Last 7-bits
+;; Index encoding:
+;;   0 + 7bit   - up to 128
+;;   1 + 7bit + (1 + 5bit)* + (0 + 5bit)
+;;
+;; Bit index encoding:
+;;   0 + 10bit   - up to 1024
+;;   1 + 10bit + (1 + 5bit)* + (0 + 5bit)
 ;;
 ;; Example: Suppose we have the following structure:
 ;;
@@ -86,18 +80,20 @@
 ;;
 ;; It is encoded as follows:
 ;;
-;;   61      ; sol
-;;   41      ; integer 1
-;;   42      ; integer 2
-;;   61      ; sol
-;;   43      ; integer 3
-;;   62      ; eol
-;;   61      ; sol
-;;   01      ; backreference to the first pair
-;;   61      ; sol
-;;   02      ; backreference to the second pair
-;;   63      ; dot
-;;   04      ; backreference to the third element
+;;  Bitpos  Code
+;;     0    000               ; sol
+;;     3    111 0 0000001     ; integer 1
+;;    14    111 0 0000010     ; integer 2
+;;    25    000               ; sol
+;;    28    111 0 0000011     ; integer 3
+;;    39    001               ; eol
+;;    42    000               ; sol
+;;    45    110 0 0000000011  ; backreference to the first pair
+;;    59    000               ; sol
+;;    62    110 0 0000001101  ; backreference to the second pair
+;;    76    0100              ; dot
+;;    80    110 0 0000011100  ; backreference to the third element
+;;    94
 ;;
 ;; NB: Backreference to a pair points to the byte offset of the 'car' element
 ;; of the pair.  If the last element is #x03, it would encode this structure
@@ -228,37 +224,66 @@
 ;; Transient structure
 (define-class <encoder> ()
   ((out :init-form (open-output-string))    ;output string port
+   (bitbuf :init-form (make-vector 8 0))
+   (bitpos :init-form 0)
    (unit :init-keyword :unit)               ;<cgen-unit>
    (consts :init-form '())                  ;reverse list of constants
    (tab :init-form (make-hash-table 'eqv?)) ;pair -> index
    ))
 
-(define (encoder-pos encoder) (port-tell (~ encoder'out)))
+(define (make-encoder unit)
+  (rlet1 enc (make <encoder> :unit unit)
+    (write-byte *debug-info-version* (~ enc'out))))
 
-;; Predefined coded symbols.  See the comment of packed info format above.
-;; This must be in sync with the one in code.c
-(define *predef-syms*
-  '((source-info . #x70)
-    (definition  . #x71)
-    (quote       . #x72)
-    (lambda      . #x73)
-    (define      . #x74)))
+(define (encoder-pos encoder) (~ encoder'bitpos))
+
+(define (close-encoder encoder)
+  (let1 npads (- 8 (modulo (~ encoder'bitpos) 8))
+    (when (> npads 0)
+      (emit* encoder (make-list npads 0)))))
+
+;; bits :: (0 | 1)*
+(define (emit* encoder bits)
+  (define (emit-1 bit)
+    (let1 bitmod (modulo (~ encoder'bitpos) 8)
+      (set! (~ encoder'bitbuf bitmod) bit)
+      (inc! (~ encoder'bitpos))
+      (when (= bitmod 7)
+        (flush-bitbuf))))
+  (define (flush-bitbuf)
+    (write-byte (+ (ash (~ encoder'bitbuf 0) 7)
+                   (ash (~ encoder'bitbuf 1) 6)
+                   (ash (~ encoder'bitbuf 2) 5)
+                   (ash (~ encoder'bitbuf 3) 4)
+                   (ash (~ encoder'bitbuf 4) 3)
+                   (ash (~ encoder'bitbuf 5) 2)
+                   (ash (~ encoder'bitbuf 6) 1)
+                   (ash (~ encoder'bitbuf 7) 0))
+                (~ encoder'out)))
+  (for-each emit-1 bits))
+
+(define (emit-i encoder prefix width n)
+  (do ([c 0 (+ c 1)]
+       [bits '() (cons (logand (ash n (- c)) 1) bits)])
+      [(= c width) (emit* encoder (cons prefix bits))]))
 
 (define (encode-index! encoder type index)
-  (define (emit-bytes bytes)
-    (if (null? (cdr bytes))
-      (write-byte (car bytes) (~ encoder'out))
-      (begin (write-byte (logior #x80 (car bytes)) (~ encoder'out))
-             (emit-bytes (cdr bytes)))))
-  (let loop ([n index] [rs '()])
-    (if (< n #x20)
-      (emit-bytes (cons (logior (ecase type
-                                  [(pair) #x00]
-                                  [(const) #x20]
-                                  [(int) #x40])
-                                n)
-                        rs))
-      (loop (ash n -7) (cons (logand n #x7f) rs)))))
+  (define leading-bits (ecase type [(pair) 10] [(const int) 7]))
+  (define bit-chunks                    ;((int . width) ...)
+    (let loop ([n index] [cs '()])
+      (if (< n (ash 1 leading-bits))
+        (acons n leading-bits cs)
+        (loop (ash n -5) (acons (logand n #x1f) 5 cs)))))
+  (case type
+    [(const) (emit* encoder '(1 0))]
+    [(pair)  (emit* encoder '(1 1 0))]
+    [(int)   (emit* encoder '(1 1 1))])
+  (let loop ([bit-chunks bit-chunks])
+    (if (null? (cdr bit-chunks))
+      (emit-i encoder 0 (cdar bit-chunks) (caar bit-chunks))
+      (begin
+        (emit-i encoder 1 (cdar bit-chunks) (caar bit-chunks))
+        (loop (cdr bit-chunks))))))
 
 (define (encode-item! encoder item)
   (define (lookup-pair pair)
@@ -268,10 +293,10 @@
           #f)))
   (define (encode-marker! type)
     (ecase type
-      [(null)  (write-byte #x60 (~ encoder'out))]
-      [(start) (write-byte #x61 (~ encoder'out))]
-      [(end)   (write-byte #x62 (~ encoder'out))]
-      [(dot)   (write-byte #x63 (~ encoder'out))]))
+      [(start) (emit* encoder '(0 0 0))]
+      [(end)   (emit* encoder '(0 0 1))]
+      [(dot)   (emit* encoder '(0 1 0 0))]
+      [(null)  (emit* encoder '(0 1 0 1))]))
   (define (encode-list! item)
     (encode-marker! 'start)
     (let loop ([lis item])
@@ -294,7 +319,8 @@
         [(pair? item) (encode-list! item)]
         [(and (exact-integer? item) (>= item 0))
          (encode-index! encoder 'int item)]
-        [(assq-ref *predef-syms* item) => (cut write-byte <> (~ encoder'out))]
+        [(eq? item 'source-info) (emit* encoder '(0 1 1 0))]
+        [(eq? item 'quote)       (emit* encoder '(0 1 1 1))]
         [else (encode-const! item)]))
 
 ;; Returns the encoded codevector.
@@ -302,9 +328,9 @@
 ;; be obtained by get-debug-info-const-vector.
 (define (encode-debug-info unit obj)
   (ensure-unit-debug-info! unit)
-  (let1 encoder (make <encoder> :unit unit)
-    (write-byte *debug-info-version* (~ encoder'out))
+  (let1 encoder (make-encoder unit)
     (encode-item! encoder obj)
+    (close-encoder encoder)
     ;; TRANSIENT: string->u8vector is in gauche.uvector until 0.9.12.
     ;; To compile 0.9.13 with 0.9.12, we can't depend on gauche.uvector,
     ;; so we roll our own.

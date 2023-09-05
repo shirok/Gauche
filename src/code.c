@@ -1012,9 +1012,9 @@ ScmObj Scm_MakePackedDebugInfo(ScmUVector *packedVector,
 typedef struct debug_info_decoder {
     const uint8_t *packed;
     const ScmObj *consts;
-    int pos;
+    int pos;                    /* bit position (excluding version octet) */
     int len;
-    ScmHashCore table;          /* index -> pair */
+    ScmHashCore table;          /* bit position -> pair */
 } debug_info_decoder;
 
 #define DEBUG_INFO_VERSION 0    /* must match the encoder */
@@ -1032,19 +1032,50 @@ static void init_decoder(debug_info_decoder *decoder,
     decoder->pos = 0;
     Scm_HashCoreInitSimple(&decoder->table, SCM_HASH_WORD, 0, NULL);
 
+    SCM_ASSERT(decoder->len > 0);
     if (packed[0] != DEBUG_INFO_VERSION) {
         Scm_Panic("Invalid debug-info");
     }
-    decoder->pos++;
+    decoder->packed++;
+    decoder->len--;
 }
 
-static int next_byte(debug_info_decoder *decoder)
+static int next_bit(debug_info_decoder *decoder)
 {
-    if (decoder->pos < decoder->len) {
-        return decoder->packed[decoder->pos++];
-    } else {
-        return -1;
+    int bytepos = decoder->pos >> 3;
+    int bitpos = decoder->pos & 0x07;
+    if (bytepos >= decoder->len) return -1;
+    decoder->pos++;
+    return (decoder->packed[bytepos] & (1<<(7-bitpos)))? 1 : 0;
+}
+
+static u_long next_nbits(debug_info_decoder *decoder, int nbits)
+{
+    u_long r = 0;
+    for (; nbits > 0; nbits--) {
+        int b = next_bit(decoder);
+        SCM_ASSERT(b >= 0);
+        r = (r << 1) + b;
     }
+    return r;
+}
+
+static u_long peek_nbits(debug_info_decoder *decoder, int nbits)
+{
+    int oldpos = decoder->pos;
+    u_long r = 0;
+    for (; nbits > 0; nbits--) {
+        int b = next_bit(decoder);
+        if (b < 0) return (u_long)-1;
+        r = (r << 1) + b;
+    }
+    decoder->pos = oldpos;
+    return r;
+}
+
+static void skip_nbits(debug_info_decoder *decoder, int nbits)
+{
+    decoder->pos += nbits;
 }
 
 static void save_pair(debug_info_decoder *decoder, ScmObj pair)
@@ -1055,66 +1086,74 @@ static void save_pair(debug_info_decoder *decoder, ScmObj pair)
     (void)SCM_DICT_SET_VALUE(e, pair);
 }
 
-static int decode_index(debug_info_decoder *decoder, int msbs, _Bool cont)
+static int decode_index(debug_info_decoder *decoder, int leading_bits)
 {
-    if (cont) {
-        for (;;) {
-            int b = next_byte(decoder);
-            if (b < 0) Scm_Error("Premature end of packed debug info");
-            if (b < 128) return (msbs << 7) | b;
-            msbs = (msbs << 7) | (b & 0x7f);
-        }
-    } else {
-        return msbs;
-    }
+    _Bool cont;
+    u_long r = 0;
+    int nbits = leading_bits;
+    do {
+        cont = next_bit(decoder);
+        r = (r << nbits) + next_nbits(decoder, nbits);
+        nbits = 5;              /* following bits comes in 5 */
+    } while (cont);
+    return r;
 }
 
-static ScmObj decode_integer(debug_info_decoder *decoder, int msbs, _Bool cont)
+static ScmObj decode_integer(debug_info_decoder *decoder, int leading_bits)
 {
-    if (cont) {
-        ScmObj v = SCM_MAKE_INT(msbs);
-        for (;;) {
-            int b = next_byte(decoder);
-            if (b < 0) Scm_Error("Premature end of packed debug info");
-            if (b < 128) return Scm_LogIor(Scm_Ash(v, 7), SCM_MAKE_INT(b));
-            v = Scm_LogIor(Scm_Ash(v, 7), SCM_MAKE_INT(b&0x7f));
-        }
-    } else {
-        return SCM_MAKE_INT(msbs);
-    }
+    _Bool cont;
+    ScmObj v = SCM_MAKE_INT(0);
+    int nbits = leading_bits;
+    do {
+        cont = next_bit(decoder);
+        u_long r = next_nbits(decoder, nbits);
+        v = Scm_LogIor(Scm_Ash(v, nbits), SCM_MAKE_INT(r));
+        nbits = 5;              /* following bits comes in 5 */
+    } while (cont);
+    return v;
 }
-
 
 static ScmObj decode_item(debug_info_decoder *decoder)
 {
-    int b = next_byte(decoder);
-    int ind;
-    ScmDictEntry *e;
-
-    switch (b & 0x60) {
-    case 0x00:
-        ind = decode_index(decoder, b & 0x1f, b & 0x80);
-        e = Scm_HashCoreSearch(&decoder->table, ind, SCM_DICT_GET);
-        if (!e) Scm_Error("Stray pair reference");
-        return SCM_OBJ(SCM_DICT_VALUE(e));
-    case 0x20:
-        ind = decode_index(decoder, b & 0x1f, b & 0x80);
-        return decoder->consts[ind];
-    case 0x40:
-        return decode_integer(decoder, b & 0x1f, b & 0x80);
-    default:
-        switch (b) {
-        case 0x60: return SCM_NIL;
-        case 0x61: return decode_list(decoder);
-        case 0x62: Scm_Error("Stray end-of-list marker");
-        case 0x63: Scm_Error("Stray dot-list marker");
-            /* The following code must be in sync with encoder */
-        case 0x70: return SCM_SYM_SOURCE_INFO;
-        case 0x71: return SCM_SYM_DEFINITION;
-        case 0x72: return SCM_SYM_QUOTE;
-        case 0x73: return SCM_SYM_LAMBDA;
-        case 0x74: return SCM_SYM_DEFINE;
-        default: Scm_Error("Invalid octet: %02x", b);
+    if (!next_bit(decoder)) {
+        if (!next_bit(decoder)) {
+            if (!next_bit(decoder)) {
+                /* 000 */
+                return decode_list(decoder);
+            } else {
+                /* 001 */
+                Scm_Error("Stray end-of-list marker");
+            }
+        } else {
+            if (!next_bit(decoder)) {
+                if (!next_bit(decoder)) {
+                    /* 0100 */
+                    Scm_Error("Stray dot-list marker");
+                } else {
+                    /* 0101 */
+                    return SCM_NIL;
+                }
+            } else {
+                if (!next_bit(decoder)) return SCM_SYM_SOURCE_INFO; /* 0110 */
+                else return SCM_SYM_QUOTE; /* 0111 */
+            }
+        }
+    } else {
+        if (!next_bit(decoder)) {
+            /* 10 */
+            u_long index = decode_index(decoder, 7);
+            return decoder->consts[index];
+        } else {
+            if (!next_bit(decoder)) {
+                /* 110 */
+                u_long ind = decode_index(decoder, 10);
+                ScmDictEntry *e =
+                    Scm_HashCoreSearch(&decoder->table, ind, SCM_DICT_GET);
+                return SCM_OBJ(SCM_DICT_VALUE(e));
+            } else {
+                /* 111 */
+                return decode_integer(decoder, 7);
+            }
         }
     }
     return SCM_UNDEFINED;       /* dummy */
@@ -1122,18 +1161,20 @@ static ScmObj decode_item(debug_info_decoder *decoder)
 
 static ScmObj decode_list(debug_info_decoder *decoder)
 {
-    int b = next_byte(decoder);
-    switch (b) {
-    case 0x62: return SCM_NIL;
-    case 0x63: return decode_item(decoder);
-    default: {
+    if (peek_nbits(decoder, 3) == 1) { /* EOL */
+        skip_nbits(decoder, 3);
+        return SCM_NIL;
+    }
+    if (peek_nbits(decoder, 4) == 4) { /* dot */
+        skip_nbits(decoder, 4);
+        return decode_item(decoder);
+    }
+    else {
         ScmObj pair = Scm_Cons(SCM_FALSE, SCM_FALSE);
-        decoder->pos--;
         save_pair(decoder, pair);
         SCM_SET_CAR(pair, decode_item(decoder));
         SCM_SET_CDR(pair, decode_list(decoder));
         return pair;
-    }
     }
 }
 
