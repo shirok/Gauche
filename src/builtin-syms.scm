@@ -119,7 +119,7 @@
     (gauche.gf                 SCM_SYM_GAUCHE_GF)
     (gauche.internal           SCM_SYM_GAUCHE_INTERNAL)
     (user                      SCM_SYM_USER)
-    (|#|                       SCM_SYM_SHARP)
+    (|\x23|                    SCM_SYM_SHARP) ; |#| confuses emacs
 
     ;; load
     (*load-path*               SCM_SYM_LOAD_PATH)
@@ -234,4 +234,18 @@
     (debug-funcall-conditionally SCM_SYM_DEBUG_FUNCALL_CONDITIONALLY)
     ;; source info tracking
     (original                  SCM_SYM_ORIGINAL)
+    (error                     SCM_SYM_ERROR)
+    (car                       SCM_SYM_CAR)
+    (cdr                       SCM_SYM_CDR)
+    (cadr                      SCM_SYM_CADR)
+    (cddr                      SCM_SYM_CDDR)
+    (cons                      SCM_SYM_CONS)
+    (list                      SCM_SYM_LIST)
+    (null?                     SCM_SYM_NULLP)
+    (let1                      SCM_SYM_LET1)
+    (loop                      SCM_SYM_LOOP)
+    (^                         SCM_SYM_CARET)
+    (apply                     SCM_SYM_APPLY)
+    (not                       SCM_SYM_NOT)
+    (eq?                       SCM_SYM_EQP)
     ))

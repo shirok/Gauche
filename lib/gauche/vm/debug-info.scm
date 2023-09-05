@@ -58,8 +58,11 @@
 ;;   0100      - Indicates that the following item is the last cdr of
 ;;                the list.  Note that we won't have an eol in this case.
 ;;   0101      - Empty list
-;;   0110      - Symbol source-info
-;;   0111      - Symbol quote
+;;
+;;   011xxxxx  - Predefined values
+;;               The top 32 values that appear most frequently
+;;               in the debug info of Gauche source itself has a special
+;;               pre-assigned tag.
 ;;
 ;;   10 + index  - Constant reference
 ;;
@@ -120,6 +123,15 @@
 (select-module gauche.vm.debug-info)
 
 (define-constant *debug-info-version* 0) ;must match the decoder
+
+;; The 32 most frequently appearing constants.  The decoder in
+;; code.c has the same list and they must match.
+;; In Gauche source, first 7 appear in 93% of the compliation units;
+;;  even the last one in 63% of the units.   A constant
+(define-constant *predefined-values*
+  '(source-info quote definition lambda let if define error car else cdr null?
+    cond let1 #f unless and loop ^ cons + apply or cadr when not begin eq? cddr
+    list #t with-module))
 
 ;; Per-unit data.  Not for public use.
 ;;  - Allow to share constant vector among code blocks.
@@ -212,9 +224,8 @@
     (format #t "  top 10 frequent codes:\n")
     (dolist [p (top-n (~ stat'code-freq-table) 10)]
       (format #t "       ~4d : #x~2,'0x\n" (cdr p) (car p)))
-    (format #t "  top 10 frequent constants:\n")
-    (dolist [p (top-n (~ stat'const-freq-table) 10)]
-      (format #t "       ~4d: ~,,,,50s\n" (cdr p) (car p)))
+    (format #t "  const vector:\n")
+    (pprint (get-debug-info-const-vector unit))
     ))
 
 ;;
@@ -265,7 +276,9 @@
 (define (emit-i encoder prefix width n)
   (do ([c 0 (+ c 1)]
        [bits '() (cons (logand (ash n (- c)) 1) bits)])
-      [(= c width) (emit* encoder (cons prefix bits))]))
+      [(= c width) (emit* encoder (if prefix
+                                    (cons prefix bits)
+                                    bits))]))
 
 (define (encode-index! encoder type index)
   (define leading-bits (ecase type [(pair) 10] [(const int) 7]))
@@ -314,13 +327,18 @@
   (define (encode-const! item)
     (let1 index (register-const! (~ encoder'unit) item)
       (encode-index! encoder 'const index)))
-
+  (define (predefined-index item)
+    ;; avoid using find-with-index for dependency issue
+    (let loop ([vs *predefined-values*] [i 0])
+      (cond [(null? vs) #f]
+            [(eqv? (car vs) item) i]
+            [else (loop (cdr vs) (+ i 1))])))
   (cond [(null? item) (encode-marker! 'null)]
         [(pair? item) (encode-list! item)]
         [(and (exact-integer? item) (>= item 0))
          (encode-index! encoder 'int item)]
-        [(eq? item 'source-info) (emit* encoder '(0 1 1 0))]
-        [(eq? item 'quote)       (emit* encoder '(0 1 1 1))]
+        [(predefined-index item)
+         => (^i (emit* encoder '(0 1 1)) (emit-i encoder #f 5 i))]
         [else (encode-const! item)]))
 
 ;; Returns the encoded codevector.
@@ -354,3 +372,33 @@
 (define (decode-debug-info bytevector constvector)
   ((with-module gauche.internal %decode-packed-debug-info)
    bytevector constvector))
+
+;;
+;; Utility
+;;  Generate switch statement from *predefined-values* for the decoder in
+;;  code.c
+
+(define (generate-predefined-switch)
+  (define (gen val n)
+    (cond [(symbol? val)
+           (format #t "case ~2d: return SCM_SYM_~a;\n" n
+                   (regexp-replace-all*
+                    (symbol->string val)
+                    #/\?/ "P"
+                    #/-/ "_"
+                    #/\^/ "CARET"
+                    #/\+/ "PLUS"
+                    #/[a-z]/ (^m (string (char-upcase (string-ref (m 0) 0))))))]
+          [(not val) (format #t "case ~2d: return SCM_FALSE;\n" n)]
+          [(eqv? val #t) (format #t "case ~2d: return SCM_TRUE;\n" n)]
+          [else (error "Can't handle:" val)]))
+  (print "{")
+  (for-each gen *predefined-values* (iota (length *predefined-values*)))
+  (print "}")
+  (values))
+
+;; You can run it with
+;;   gosh -mgauche.vm.debug-info gauche/vm/debug-info
+(define (main args)
+  (generate-predefined-switch)
+  0)
