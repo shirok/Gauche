@@ -1,5 +1,5 @@
 ;;;
-;;; tools/preprocess-info - filter bilingual texinfo document
+;;; tools/docprep - prepare document
 ;;;
 ;;;  Copyright (c) 2001-2022  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -170,7 +170,7 @@
     (format #f "~a{~a}" cmd (lookup node *node-table*))))
 
 (define (usage)
-  (display "Usage: gosh tools/preprocess-info [-en|-ja][-o outfile] infile\n")
+  (display "Usage: gosh tools/docprep [-en|-ja][-o outfile] infile\n")
   (exit 1))
 
 (define (main args)

@@ -20,7 +20,7 @@ MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 MAKEINFO     = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
 VERSION_INFO = @PACKAGE_STRING@
-PREPROCESSOR = $(top_srcdir)/lib/tools/preprocess-info
+PREPROCESSOR = $(top_srcdir)/lib/tools/docprep
 
 MAKEDOC = $(GOSH) $(srcdir)/makedoc.scm
 
