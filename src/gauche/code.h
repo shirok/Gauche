@@ -132,7 +132,8 @@ SCM_EXTERN ScmObj Scm_CompiledCodeFullName(ScmCompiledCode *cc);
 SCM_EXTERN void   Scm_VMExecuteToplevels(ScmCompiledCode *cv[]);
 
 /* This is called in the precomp-generated C code */
-SCM_EXTERN ScmObj Scm_MakePackedDebugInfo(ScmUVector*, ScmVector*);
+SCM_EXTERN ScmObj Scm_MakePackedDebugInfo(ScmUVector*,
+                                          ScmObj(*)(void));
 
 /*
  * VM instructions

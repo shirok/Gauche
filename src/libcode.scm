@@ -252,9 +252,6 @@
                    :c-name "constVector"))
    )
 
- (define-cproc %make-packed-debug-info (bv::<u8vector> constv::<vector>)
-   Scm_MakePackedDebugInfo)
-
  (define-cproc decode-packed-debug-info (p::<packed-debug-info>)
    (when (SCM_FALSEP (-> p decoded))
      (let* ([decode-debug-info SCM_UNDEFINED])

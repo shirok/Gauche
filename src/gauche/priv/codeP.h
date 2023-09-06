@@ -78,6 +78,7 @@ typedef struct ScmPackedDebugInfoRec {
     size_t codeSize;            /* size of codeVector */
     uint8_t *codeVector;        /* byte-encoded structure */
     ScmObj constVector;         /* <vector> */
+    ScmObj (*getConstVector)(void); /* for delayed initialization */
     ScmObj decoded;             /* decoded structure */
 } ScmPackedDebugInfo;
 

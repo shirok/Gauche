@@ -1027,7 +1027,7 @@
       (let ([codevec-lit (cgen-literal codevec)]
             [datum-cname (cgen-allocate-static-datum 'runtime)])
         (cgen-init (format "  ~a = Scm_MakePackedDebugInfo(SCM_U8VECTOR(~a),\
-                                         SCM_debug_info_const_vector());"
+                                         SCM_debug_info_const_vector);"
                            datum-cname
                            (cgen-cexpr codevec-lit)))
         datum-cname))))
@@ -1140,12 +1140,23 @@
 ;; are processed.
 (define (setup-debug-info)
   (when (has-unit-debug-info? (cgen-current-unit))
-    (let1 vec-literal
-        (cgen-literal (get-debug-info-const-vector (cgen-current-unit)))
-      (cgen-decl "static ScmVector *SCM_debug_info_const_vector();")
-      (cgen-body "ScmVector *SCM_debug_info_const_vector()"
+    (let* ([cvec (get-debug-info-const-vector (cgen-current-unit))]
+           [vec-literal (cgen-literal (make-vector (vector-length cvec) #f))]
+           [vec-name (cgen-cexpr vec-literal)]
+           [elt-literals (map cgen-literal cvec)])
+      (cgen-decl "static ScmObj SCM_debug_info_const_vector();")
+      (cgen-body "ScmObj SCM_debug_info_const_vector()"
                  "{"
-                 #"  return SCM_VECTOR(~(cgen-cexpr vec-literal));"
+                 ;; This is idempotent.  No need to mutex.
+                 "  static _Bool initialized = FALSE;"
+                 "  if (!initialized) {"
+                 "    int i = 0;")
+      (dolist [e elt-literals]
+        (cgen-body #"    SCM_VECTOR_ELEMENT(~|vec-name|, i++) = \
+                           ~(cgen-cexpr e);"))
+      (cgen-body "    initialized = TRUE;"
+                 "  }"
+                 #"  return ~|vec-name|;"
                  "}"))))
 
 ;;----------------------------------------------------------------

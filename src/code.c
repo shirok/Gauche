@@ -993,13 +993,14 @@ ScmWord Scm_VMInsnBuild(ScmObj obj)
  */
 
 ScmObj Scm_MakePackedDebugInfo(ScmUVector *packedVector,
-                               ScmVector *constVector)
+                               ScmObj (*getConstVector)(void))
 {
     ScmPackedDebugInfo *z = SCM_NEW(ScmPackedDebugInfo);
     SCM_SET_CLASS(z, SCM_CLASS_PACKED_DEBUG_INFO);
     z->codeSize = SCM_UVECTOR_SIZE(packedVector);
     z->codeVector = SCM_U8VECTOR_ELEMENTS(packedVector);
-    z->constVector = SCM_OBJ(constVector);
+    z->constVector = SCM_FALSE;
+    z->getConstVector = getConstVector;
     z->decoded = SCM_FALSE;
     return SCM_OBJ(z);
 }
@@ -1229,6 +1230,10 @@ ScmObj Scm_CodeDebugInfo(ScmCompiledCode *cc)
 {
     if (SCM_PACKED_DEBUG_INFO_P(cc->debugInfo)) {
         ScmPackedDebugInfo *di = SCM_PACKED_DEBUG_INFO(cc->debugInfo);
+        if (SCM_FALSEP(di->constVector)) {
+            /* This is idempotent.  No need to mutex. */
+            di->constVector = di->getConstVector();
+        }
         cc->debugInfo = Scm_DecodePackedDebugInfo(di->codeVector,
                                                   di->codeSize,
                                                   SCM_VECTOR(di->constVector));
