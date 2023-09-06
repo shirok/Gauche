@@ -1,7 +1,7 @@
 /*
  * threadlocal.c - thread locals
  *
- *   Copyright (c) 2022  Shiro Kawai  <shiro@acm.org>
+ *   Copyright (c) 2022-2023  Shiro Kawai  <shiro@acm.org>
  *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
