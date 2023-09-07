@@ -96,7 +96,7 @@
                       name expected))
             (inc! (~ results'pass-count)))
           (begin
-            (when (and (eq? result *global-results*)
+            (when (and (eq? results *global-results*)
                        (memq (check-mode) '(report report-failed)))
               (format #t "Checking ~s, expecting ~s => ERROR: got ~s\n"
                       name expected result))
