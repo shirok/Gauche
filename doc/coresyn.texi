@@ -1858,10 +1858,10 @@ If the last clause is else clause and all tests are failed,
 @end defspec
 
 
-@defspec case key clause1 clause2 @dots{}
+@defspec case key-expr clause1 clause2 @dots{}
 [R7RS+ base][SRFI-87]
 @c EN
-@var{Key} may be any expression.
+@var{Key-expr} may be any expression that yields one value.
 Each @var{clause} should have the form
 @example
 ((@var{datum} ...) @var{expr} @var{expr2} @dots{})
@@ -1875,23 +1875,23 @@ may be an ``else clause,'' which has the form
 (else => @var{proc})
 @end example
 
-First, @var{key} is evaluated and its result is compared against each
-@var{datum}.  If the result of evaluating @var{key} is equivalent
+First, @var{key-expr} is evaluated and its result is compared against each
+@var{datum}.  If the result of evaluating @var{key-expr} is equivalent
 (using @code{eqv?}, @pxref{Equality}) to a @var{datum},
 then the expressions in the corresponding clause are evaluated
 sequentially, and the result(s) of the last expression in the
 @var{clause} is(are) returned from the case expression.
 The forms containing @code{=>} are specified in SRFI-87.  In these
-forms, the result of @var{key} is passed to @var{proc}, and its
+forms, the result of @var{key-expr} is passed to @var{proc}, and its
 result(s) is(are) returned from the case expression.
 
-If the result of evaluating @var{key} is different from every @var{datum},
+If the result of evaluating @var{key-expr} is different from every @var{datum},
 then if there is an else clause its expressions are evaluated and
 the result(s) of the last is(are) the result(s) of the case expression;
 otherwise the result of the case expression is undefined.
-@c skimu このファイルの他の場所では undefined なのでそれに合わせました。
 @c JP
-@var{key}は任意の式です。@var{clause}は以下の形式でなければなりません。
+@var{key-expr}は1つの値を生成する任意の式です。
+@var{clause}は以下の形式でなければなりません。
 @example
 ((@var{datum} ...) @var{expr} @var{expr2} @dots{})
 ((@var{datum} ...) => @var{proc})
@@ -1903,11 +1903,11 @@ otherwise the result of the case expression is undefined.
 (else => @var{proc})
 @end example
 
-まず@var{key}が評価され、その結果がそれぞれの@var{datum}と比較されます。
-@var{key}の値と@code{eqv?}(@ref{Equality}参照)を使って一致する@var{datum}
+まず@var{key-expr}が評価され、その結果がそれぞれの@var{datum}と比較されます。
+@var{key-expr}の値と@code{eqv?}(@ref{Equality}参照)を使って一致する@var{datum}
 が見つかれば、対応する@var{expr}が順に評価され、その最後の値が@code{case}の
 値となります。@code{=>}を含む節はSRFI-87で定義されています。これらの節では、
-@var{key}の結果が@var{proc}に渡され、その結果が@code{case}の値となります。
+@var{key-expr}の結果が@var{proc}に渡され、その結果が@code{case}の値となります。
 
 もし一致する@var{datum}が見つからない場合、else節が与えられていれば
 その@var{expr}が順に評価され、最後の値が返されます。else節がなければ@code{case}節
@@ -1939,10 +1939,10 @@ otherwise the result of the case expression is undefined.
 @end defspec
 
 
-@defmac ecase key clause1 clause2 @dots{}
+@defmac ecase key-expr clause1 clause2 @dots{}
 @c EN
 This works exactly like @code{case}, except when there's
-no @code{else} clause and the value of @var{key} expression
+no @code{else} clause and the value of @var{key-expr} expression
 doesn't match any of @var{datum}s provided in @var{clause}s.
 While @code{case} form returns undefined value for such case,
 @var{ecase} raises an error.
@@ -1951,7 +1951,7 @@ It is taken from Common Lisp.  It's a convenient form when
 you want to detect unexpected value getting passed just in case.
 @c JP
 このフォームはほぼ@code{case}と同等ですが、@code{else}節が与えられず、
-@var{key}の値が@var{clause}中のどの@var{datum}とも一致しなかった場合の
+@var{key-expr}の値が@var{clause}中のどの@var{datum}とも一致しなかった場合の
 動作だけが異なります。@code{case}ではそのような場合は未定義値が返されますが、
 @code{ecase}はエラーを報告します。
 
@@ -1964,6 +1964,83 @@ you want to detect unexpected value getting passed just in case.
  @result{} ERROR: ecase test fell through: got 5, expecting one of (1 2 3 4)
 @end smallexample
 @end defmac
+
+@defmac typecase key-expr clause1 clause2 @dots{}
+@c EN
+This is taken from Common Lisp.
+@var{Key-expr} is a Scheme expression yielding one value.  Each @var{clause}
+must have either one of the following forms.  The @code{else} clause
+can only appear as the last clause, if any.
+@c JP
+これはCommon Lispから採られました。
+@var{key-expr}はひとつの値を生成するScheme式です。
+各@var{clause}は次のいずれかの形式でなければなりません。
+@code{else}節は、現れるなら最後の@var{clause}でなければなりません。
+@c COMMON
+
+@example
+(@var{type-expr} @var{expr} @dots{})
+(else @var{expr1} @var{expr2} @dots{})
+@end example
+
+@c EN
+Each @var{type-expr} must be a type expression (@pxref{Types and classes}).
+@c JP
+各@var{type-expr}は型の式でなければなりません (@ref{Types and classes}参照)。
+@c COMMON
+
+@c EN
+This macro first evaluates @var{key-expr}, then tests if its value is
+of the type @var{type-expr}, in turn.  If the type constraint is satisfied,
+the @var{expr} @dots{} in the clause is evaluated and the last result(s)
+becomes the value of @code{typecase}.  Type constrant is checked with
+@code{of-type?} (@pxref{Generic type predicates}).
+If none of the type constrait is
+satisfied, @var{expr}s in the @code{else} clause is evaluated if any,
+or an undefined value results.
+@c JP
+このマクロはまず@var{key-expr}を評価し、次にその値が型@var{type-expr}であるかどうかを
+順番に検査してゆきます。もし型の制約が満たされたら、その節にある@var{expr} @dots{}
+が評価され、その最後の値が@code{typecase}の値となります。
+型の制約は@code{of-type?}で検査されます (@ref{Generic type predicates}参照)。
+どの節の型でもなかった場合、@code{else}節があればその中の式が順に評価されて最後の値が
+@code{typecase}の値となり、@code{else}節がなければ未定義値が返されます。
+@c COMMON
+
+@example
+(typecase key-expr
+  (<integer> 'a)
+  ((</> <string> <symbol>) 'b))
+ @equiv{}
+(let ((tmp key-expr))
+  (cond
+    ((of-type? tmp <integer>) 'a)
+    ((of-type? tmp (</> <string> <symbol>)) 'b)))
+@end example
+@end defmac
+
+@defmac etypecase key-expr clause1 clause2 @dots{}
+@c EN
+Like @code{typecase}, but if the value of @var{key-expr}
+satisfies no @var{type-expr} and there's no @code{else} clause,
+an error is signaled.  If there's an @code{else} clause,
+it is the same as @code{typecase}.
+@c JP
+@code{typecase}と似ていますが、@var{key-expr}の結果が
+どの@var{type-expr}の型でもなく、また@code{else}節がなかった場合、
+エラーが投げられます。@code{else}節がある場合は
+@code{typecase}と同じです。
+@c COMMON
+
+@example
+(etypecase (sqrt -2)
+  (<integer> 'int)
+  (<real> 'real))
+ @result{} *** ERROR: etypecase fell through: expecting one of types
+    in (<integer> <real>), but got 0.0+1.4142135623730951i
+@end example
+@end defmac
+
 
 @defspec and test @dots{}
 [R7RS base]
