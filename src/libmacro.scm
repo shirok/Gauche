@@ -1043,7 +1043,7 @@
             `(let ((v ,expr))
                (typecase v ,@clause
                          (else
-                          (errorf "typecase fell through: expecting one of \
+                          (errorf "etypecase fell through: expecting one of \
                                  types in ~s, but got ~s"
                                   (map car '(,@clause)) v))))))]
        [_ (error "Malformed etypecase:" f)]))))
