@@ -627,7 +627,7 @@ ScmObj Scm_GeneratorToLazyPair(ScmObj generator)
  */
 ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
 {
-    volatile ScmRealLazyPair *lp = REAL_LAZY_PAIR(obj);
+    volatile ScmRealLazyPair * volatile lp = REAL_LAZY_PAIR(obj);
     static const ScmTimeSpec req = {0, 1000000};
     ScmTimeSpec rem;
     ScmVM *vm = Scm_VM();
