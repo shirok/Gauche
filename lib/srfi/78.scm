@@ -87,8 +87,10 @@
     (guard ([e (else
                 (register-failure! results name expected e aux))])
       (inc! (~ results'total-count))
-      (let1 result (thunk)
-        (if (eqproc expected result)
+      (let1 this-result (thunk)
+        (if (eqproc expected this-result)
+          ;; NB: if results is not *global-results*, the error message is
+          ;; handled by the caller.  See check-ec.
           (begin
             (when (and (eq? results *global-results*)
                        (eq? (check-mode) 'report))
@@ -99,8 +101,8 @@
             (when (and (eq? results *global-results*)
                        (memq (check-mode) '(report report-failed)))
               (format #t "Checking ~s, expecting ~s => ERROR: got ~s\n"
-                      name expected result))
-            (register-failure! results name expected result aux)))))))
+                      name expected this-result))
+            (register-failure! results name expected this-result aux)))))))
 
 ;; API
 (define-syntax check
