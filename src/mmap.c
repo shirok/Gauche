@@ -121,16 +121,26 @@ static void *mmap_int(void *addrhint, size_t len, int prot,
         Scm_Error("PROT_NONE mmap protection isn't allowed on MinGW");
     }
 
+#if SIZEOF_SIZE_T > 4
     DWORD size_hi = len >> 32;
     DWORD size_lo = len & 0xffffffffULL;
+#else
+    DWORD size_hi = 0;
+    DWORD size_lo = len;
+#endif
     HANDLE mapping = CreateFileMappingA(fhandle, NULL, wprot,
                                         size_hi, size_lo, NULL);
     if (mapping == NULL) {
         Scm_SysError("CreateFileMapping failed");
     }
 
+#if SIZEOF_SIZE_T > 4
     DWORD off_hi = off >> 32;
     DWORD off_lo = off & 0xffffffffULL;
+#else
+    DWORD off_hi = 0;
+    DWORD off_lo = off;
+#endif
     DWORD accmode = 0;
     if (prot & PROT_WRITE) accmode = FILE_MAP_WRITE;
     else accmode = FILE_MAP_READ;
