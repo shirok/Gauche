@@ -43,8 +43,6 @@ EXTERN_C_BEGIN
 /* The set of all known threads.  We intercept thread creation and      */
 /* joins.                                                               */
 /* Protected by allocation/GC lock.                                     */
-/* Some of this should be declared volatile, but that's inconsistent    */
-/* with some library routine declarations.                              */
 typedef struct GC_Thread_Rep {
 #   ifdef THREAD_SANITIZER
       char dummy[sizeof(oh)];     /* A dummy field to avoid TSan false  */
@@ -149,7 +147,7 @@ typedef struct GC_Thread_Rep {
                        ^ NUMERIC_THREAD_ID(id)) % THREAD_TABLE_SZ)
 #endif
 
-GC_EXTERN volatile GC_thread GC_threads[THREAD_TABLE_SZ];
+GC_EXTERN GC_thread GC_threads[THREAD_TABLE_SZ];
 
 GC_EXTERN GC_bool GC_thr_initialized;
 
