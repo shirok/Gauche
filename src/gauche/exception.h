@@ -44,6 +44,7 @@
     |    +- <error>             ; srfi-35, also inherits <serious-condition>
     |         +- <system-error>
     |         +- <unhandled-signal-error>
+    |         +- <unbound-varaible-error>
     |         +- <read-error> ; srfi-36
     |         +- <io-error>   ; srfi-36
     |         |    +- <port-error> ; srfi-36
@@ -170,6 +171,19 @@ SCM_CLASS_DECL(Scm_UnhandledSignalErrorClass);
 #define SCM_CLASS_UNHANDLED_SIGNAL_ERROR  (&Scm_UnhandledSignalErrorClass)
 #define SCM_UNHANDLED_SIGNAL_ERROR(obj)   ((ScmUnhandledSignalError*)(obj))
 #define SCM_UNHANDLED_SIGNAL_ERROR_P(obj) SCM_ISA(obj, SCM_CLASS_UNHANDLED_SIGNAL_ERROR)
+
+/* <unbound-variable-error>: unbound variable */
+typedef struct ScmUnboundVariableErrorRec {
+    ScmError common;
+    ScmObj identifier;          /* (</> <symbol> <identifier>) */
+} ScmUnboundVariableError;
+
+SCM_CLASS_DECL(Scm_UnboundVariableErrorClass);
+#define SCM_CLASS_UNBOUND_VARIABLE_ERROR  (&Scm_UnboundVariableErrorClass)
+#define SCM_UNBOUND_VARIABLE_ERROR(obj)   ((ScmUnboundVariableError*)(obj))
+#define SCM_UNBOUND_VARIABLE_ERROR_P(obj) SCM_ISA(obj, SCM_CLASS_UNBOUND_VARIABLE_ERROR)
+
+SCM_EXTERN ScmObj Scm_MakeUnboundVariableError(ScmObj identifier);
 
 /* <read-error>: error from the reader */
 typedef struct ScmReadErrorRec {

@@ -45,6 +45,7 @@ static ScmObj condition_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj message_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj syserror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs);
+static ScmObj unberror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj readerror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj porterror_allocate(ScmClass *klass, ScmObj initargs);
 static ScmObj conterror_allocate(ScmClass *klass, ScmObj initargs);
@@ -213,6 +214,9 @@ SCM_DEFINE_BASE_CLASS(Scm_SystemErrorClass, ScmSystemError,
 SCM_DEFINE_BASE_CLASS(Scm_UnhandledSignalErrorClass, ScmUnhandledSignalError,
                       Scm_MessageConditionPrint, NULL, NULL,
                       sigerror_allocate, error_cpl);
+SCM_DEFINE_BASE_CLASS(Scm_UnboundVariableErrorClass, ScmUnboundVariableError,
+                      Scm_MessageConditionPrint, NULL, NULL,
+                      unberror_allocate, error_cpl);
 SCM_DEFINE_BASE_CLASS(Scm_ReadErrorClass, ScmReadError,
                       Scm_MessageConditionPrint, NULL, NULL,
                       readerror_allocate, error_cpl);
@@ -262,6 +266,15 @@ static ScmObj sigerror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
                                                   klass);
     e->common.message = SCM_FALSE; /* set by initialize */
     e->signal = 0;                 /* set by initialize */
+    return SCM_OBJ(e);
+}
+
+static ScmObj unberror_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
+{
+    ScmUnboundVariableError *e = SCM_NEW_INSTANCE(ScmUnboundVariableError,
+                                                  klass);
+    e->common.message = SCM_FALSE; /* set by initialize */
+    e->identifier = SCM_FALSE;     /* set by initialize */
     return SCM_OBJ(e);
 }
 
@@ -315,6 +328,19 @@ static void sigerror_signal_set(ScmUnhandledSignalError *obj, ScmObj val)
         Scm_Error("small integer required, but got %S", val);
     }
     obj->signal = SCM_INT_VALUE(val);
+}
+
+static ScmObj unberror_identifier_get(ScmUnboundVariableError *obj)
+{
+    return obj->identifier;
+}
+
+static void unberror_identifier_set(ScmUnboundVariableError *obj, ScmObj val)
+{
+    if (!(SCM_SYMBOLP(val) || !SCM_IDENTIFIERP(val))) {
+        Scm_Error("symbol or identifier required, but got %S", val);
+    }
+    obj->identifier = val;
 }
 
 static ScmObj readerror_port_get(ScmReadError *obj)
@@ -429,6 +455,11 @@ static ScmClassStaticSlotSpec syserror_slots[] = {
 
 static ScmClassStaticSlotSpec sigerror_slots[] = {
     SCM_CLASS_SLOT_SPEC("signal", sigerror_signal_get, sigerror_signal_set),
+    SCM_CLASS_SLOT_SPEC_END()
+};
+
+static ScmClassStaticSlotSpec unberror_slots[] = {
+    SCM_CLASS_SLOT_SPEC("identifier", unberror_identifier_get, unberror_identifier_set),
     SCM_CLASS_SLOT_SPEC_END()
 };
 
@@ -626,6 +657,21 @@ ScmObj Scm_MakeSystemError(ScmObj message, int en)
         SCM_SYSTEM_ERROR(syserror_allocate(SCM_CLASS_SYSTEM_ERROR, SCM_NIL));
     e->common.message = SCM_LIST2(message, message);
     e->error_number = en;
+    return SCM_OBJ(e);
+}
+
+ScmObj Scm_MakeUnboundVariableError(ScmObj identifier)
+{
+    static ScmString *prefix = NULL;
+    if (prefix == NULL) {
+        prefix = SCM_STRING(SCM_MAKE_STR_IMMUTABLE("unbound variable"));
+    }
+
+    ScmUnboundVariableError *e =
+        SCM_UNBOUND_VARIABLE_ERROR(unberror_allocate(SCM_CLASS_UNBOUND_VARIABLE_ERROR, SCM_NIL));
+    ScmObj msg = Scm_Sprintf("%S: %S", SCM_OBJ(prefix), identifier);
+    e->common.message = SCM_LIST3(msg, SCM_OBJ(prefix), identifier);
+    e->identifier = identifier;
     return SCM_OBJ(e);
 }
 
@@ -1186,6 +1232,10 @@ void Scm__InitExceptions(void)
                                 "<unhandled-signal-error>",
                                 mod, cond_meta, SCM_FALSE,
                                 sigerror_slots, 0);
+    Scm_InitStaticClassWithMeta(SCM_CLASS_UNBOUND_VARIABLE_ERROR,
+                                "<unbound-variable-error>",
+                                mod, cond_meta, SCM_FALSE,
+                                unberror_slots, 0);
     Scm_InitStaticClassWithMeta(SCM_CLASS_READ_ERROR,
                                 "<read-error>",
                                 mod, cond_meta, SCM_FALSE,
