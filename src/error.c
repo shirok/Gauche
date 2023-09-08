@@ -669,7 +669,7 @@ ScmObj Scm_MakeUnboundVariableError(ScmObj identifier)
 
     ScmUnboundVariableError *e =
         SCM_UNBOUND_VARIABLE_ERROR(unberror_allocate(SCM_CLASS_UNBOUND_VARIABLE_ERROR, SCM_NIL));
-    ScmObj msg = Scm_Sprintf("%S: %S", SCM_OBJ(prefix), identifier);
+    ScmObj msg = Scm_Sprintf("%A: %S", SCM_OBJ(prefix), identifier);
     e->common.message = SCM_LIST3(msg, SCM_OBJ(prefix), identifier);
     e->identifier = identifier;
     return SCM_OBJ(e);

@@ -78,7 +78,9 @@ ScmObj Scm_GlocGetValue(ScmGloc *gloc)
 {
     ScmObj v = SCM_GLOC_GET(gloc);
     if (SCM_UNBOUNDP(v)) {
-        Scm_Error("unbound variable: %S", SCM_OBJ(gloc->name));
+        Scm_VMThrowException(Scm_VM(),
+                             Scm_MakeUnboundVariableError(SCM_OBJ(gloc->name)),
+                             0);
     }
     if (SCM_UNINITIALIZEDP(v)) {
         Scm_Error("uninitialized variable: %S", SCM_OBJ(gloc->name));

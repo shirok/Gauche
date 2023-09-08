@@ -205,7 +205,9 @@ ScmObj Scm_IdentifierGlobalRef(ScmIdentifier *id,
 {
     ScmGloc *gloc = Scm_IdentifierGlobalBinding(id);
     if (gloc == NULL) {
-        Scm_Error("unbound variable: %S", SCM_OBJ(id->name));
+        Scm_VMThrowException(Scm_VM(),
+                             Scm_MakeUnboundVariableError(id->name),
+                             0);
     }
     if (pgloc != NULL) *pgloc = gloc;
 

@@ -1,3 +1,8 @@
+2023-09-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_MakeUnboundVariableError): Let evaluator throw
+	  <unbound-variable> error for unbound variable.
+
 2023-09-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/tools/docprep: Renamed from preprocess-info.  The plan is to
