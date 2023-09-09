@@ -84,7 +84,11 @@
           (if (condition-has-type? exc <message-condition>)
             (format out "*** ~a: ~,,,,200:a\n" name (~ exc'message))
             (format out "*** ~a\n" name)))
-        (for-each (cut report-mixin-condition <> out) mixins)))))
+        ;; Additional reporting.  We report mixins after main
+        ;; conditions, for mixing give additional context
+        ;; (e.g. "when compiling ...")
+        (for-each (cut report-additional-condition <> out) mains)
+        (for-each (cut report-additional-condition <> out) mixins)))))
 
 (select-module gauche.internal)
 (define-cproc %type-error (what::<const-cstring>

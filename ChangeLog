@@ -1,3 +1,9 @@
+2023-09-08  Shiro Kawai  <shiro@acm.org>
+
+	* libexc.scm, libomega.scm: Rename report-mixin-condition
+	  to report-additional-condition, so that non-mixin condition
+	  can also have customized error report.
+
 2023-09-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (Scm_MakeUnboundVariableError): Let evaluator throw

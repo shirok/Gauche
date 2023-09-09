@@ -57,16 +57,16 @@
 
 ;; Printing auxiliary error information.  This also is here instead
 ;; of libexc.scm because of the initialization order.
-(define-method report-mixin-condition ((c <mixin-condition>) port) #f)
+(define-method report-additional-condition (c port) #f)
 
-(define-method report-mixin-condition ((c <load-condition-mixin>) port)
+(define-method report-additional-condition ((c <load-condition-mixin>) port)
   (and-let* ([p (~ c'port)]
              [ (port? p) ]
              [name (port-name p)]
              [line (port-current-line p)])
     (format port "    While loading ~s at line ~d\n" name line)))
 
-(define-method report-mixin-condition ((c <compile-error-mixin>) port)
+(define-method report-additional-condition ((c <compile-error-mixin>) port)
   (let* ([expr (~ c'expr)]
          [src-info (find (^[si] (and (car si) (cadr si)))
                          ((with-module gauche.internal %source-info) expr))])
