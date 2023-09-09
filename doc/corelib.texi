@@ -20967,6 +20967,7 @@ installed, the following action is taken.
 @c COMMON
 
 @enumerate
+@item
 @c EN
 If an unhandled exception occurs within a thread other than the primordial
 one, it terminates the thread, and the thrown condition
