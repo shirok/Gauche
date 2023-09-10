@@ -71,6 +71,10 @@
     fallback))
 
 (define (print-default-error-heading exc out)
+  (define (additional-condition c)
+    (guard (e [else (warn "Error from (report-additiona-condition ~s)\n" c)
+                    #f])
+      (report-additional-condition c out)))
   (guard (e [else (display "*** ERROR:" out)
                   (display exc out)
                   (display "\n" out)])
@@ -87,8 +91,8 @@
         ;; Additional reporting.  We report mixins after main
         ;; conditions, for mixing give additional context
         ;; (e.g. "when compiling ...")
-        (for-each (cut report-additional-condition <> out) mains)
-        (for-each (cut report-additional-condition <> out) mixins)))))
+        (for-each additional-condition mains)
+        (for-each additional-condition mixins)))))
 
 (select-module gauche.internal)
 (define-cproc %type-error (what::<const-cstring>
