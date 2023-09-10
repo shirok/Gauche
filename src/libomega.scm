@@ -75,6 +75,21 @@
               (car src-info) (cadr src-info) expr)
       (format port "    While compiling: ~,,,,90:s\n" expr))))
 
+(define-method report-additional-condition ((c <unbound-variable-error>) port)
+  ;; Show potentially missed modules to be imported.
+  ;; NB: This is inefficient, for export lists are built for all modules.
+  ;; It'd be better to have a predicate that directly queries if a binding
+  ;; is exported from a module.
+  ;; NB: We may also search non-exported bindings, to detect a binding
+  ;; that are missed in the export list.
+  (let* ([name (~ c'identifier)]
+         [xs (filter (^m (memq name (module-exports m))) (all-modules))]
+         [num-xs (length xs)])
+    (unless (null? xs)
+      (format port
+              "    NOTE: `~s' is exported from the following module~p:\n"
+              name num-xs)
+      (dolist [m xs] (format port "     - ~s\n" (module-name m))))))
 
 ;;;
 ;;; Comparator finish-up

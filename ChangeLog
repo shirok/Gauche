@@ -1,3 +1,9 @@
+2023-09-09  Shiro Kawai  <shiro@acm.org>
+
+	* libomega.scm: Add additional report for unbound variable error -
+	  list modules that exports the name.  It may help the user
+	  to import necessary module.
+
 2023-09-08  Shiro Kawai  <shiro@acm.org>
 
 	* libexc.scm, libomega.scm: Rename report-mixin-condition
