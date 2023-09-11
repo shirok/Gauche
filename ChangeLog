@@ -1,3 +1,9 @@
+2023-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/process.scm (do-process): Add :exit-code option
+	  to :on-abnormal-exit keyword arg
+	  https://github.com/shirok/Gauche/issues/928
+
 2023-09-09  Shiro Kawai  <shiro@acm.org>
 
 	* libomega.scm: Add additional report for unbound variable error -

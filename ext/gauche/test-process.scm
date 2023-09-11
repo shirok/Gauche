@@ -214,6 +214,23 @@
               )
          (equal? s s1)))
 
+(test* "do-process :on-abnormal-exit #f" #f
+       (do-process (cmd cat "NoSuchFile") :output :null :error :null))
+(test* "do-process :on-abnormal-exit #f" #t
+       (do-process (cmd cat "test.o") :output :null :error :null))
+(test* "do-process :on-abnormal-exit :error"
+       (test-error <process-abnormal-exit>)
+       (do-process (cmd cat "NoSuchFile")
+                   :on-abnormal-exit :error :output :null :error :null))
+(test* "do-process :on-abnormal-exit :error"
+       #t
+       (do-process (cmd cat "test.o")
+                   :on-abnormal-exit :error :output :null :error :null))
+(test* "do-process :on-abnormal-exit :exit-code"
+       1
+       (do-process (cmd grep "ThereCantBeSuchLine" "test.o")
+                   :on-abnormal-exit :exit-code :output :null :error :null))
+
 ;; NB: how to test :wait and :fork?
 
 (test* "process-kill" SIGKILL

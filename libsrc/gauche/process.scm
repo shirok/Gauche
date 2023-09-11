@@ -144,16 +144,19 @@
 
 ;; A typical use case---run process synchronously, returns #t for
 ;; success, #f for failure.
-(define (do-process command . args)
-  (let* ([eflag (case (get-keyword :on-abnormal-exit args #f)
-                  [(#f) #f]
-                  [(:error) #t]
-                  [else => (cut error
-                                "Value for on-abnormal-exit argument \
-                                 must be either #f or :error, but got:" <>)])]
-         [p (apply run-process command (delete-keyword :on-abnormal-exit args))])
-    (process-wait p #f eflag)
-    (zero? (process-exit-status p))))
+(define (do-process command :key (on-abnormal-exit #f) :allow-other-keys args)
+  (let* ([raise-flag (ecase on-abnormal-exit
+                       [(#f :exit-code) #f]
+                       [(:error) #t])]
+         [p (apply run-process command args)])
+    (process-wait p #f raise-flag)
+    (let1 status (process-exit-status p)
+      (cond [(zero? status) #t]
+            [(eq? on-abnormal-exit :exit-code)
+             (if (sys-wait-exited? status)
+               (sys-wait-exit-status status)
+               (%check-normal-exit p))] ;this raises <process-abnormal-exit>
+            [else #f]))))
 
 ;; Similar to do-process, but raise an error on abnormal exit.
 ;; This use case is typical, so we add a separate API.
