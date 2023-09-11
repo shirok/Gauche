@@ -18432,10 +18432,21 @@ Gaucheも0.9.13からこの区別を採り入れています。
 詳しくは@ref{Difference of parameters and dynamic states}を参照してください。
 @c COMMON
 
+@c EN
+Because of this change, there are subtle differences between parameter
+behaviors before 0.9.13.  We have a prepared a transition path.
+@xref{Transition to 0.9.13 parameters}, for the details.
+@c JP
+この変更により、パラメータの振る舞いは0.9.13以前のものから微妙に変わります。
+移行パスを用意してあります。
+@ref{Transition to 0.9.13 parameters}を参照してください。
+@c COMMON
+
 @menu
 * Parameters::
 * Dynamic states::
 * Difference of parameters and dynamic states::
+* Transition to 0.9.13 parameters::
 @end menu
 
 @node Parameters, Dynamic states, Parameters and dynamic states, Parameters and dynamic states
@@ -18833,7 +18844,7 @@ the state of each @var{proc} is saved and restored.
 @end defmac
 
 
-@node Difference of parameters and dynamic states,  , Dynamic states, Parameters and dynamic states
+@node Difference of parameters and dynamic states, Transition to 0.9.13 parameters, Dynamic states, Parameters and dynamic states
 @subsection Difference of parameters and dynamic states
 @c NODE パラメータと動的状態の違い
 
@@ -18910,6 +18921,31 @@ additional protocol, which isn't standardized.
 動的状態の値を戻すためにはconverterをバイパスして値をセットしなければならないからです。
 そうするためには別のプロトコルが必要ですが、その点に関しては標準と呼べるものがありません。
 @c COMMON
+
+@node Transition to 0.9.13 parameters,  , Difference of parameters and dynamic states, Parameters and dynamic states
+@subsection Transition to 0.9.13 parameters
+@c NODE 0.9.13パラメータへの移行
+
+First, here's rule of thumb:
+
+@itemize @bullet
+@item
+If you bind parameters only with @code{parameterize}, you won't see
+any changes.
+@item
+If the code explicitly use @code{gauche.parameter}, it'll preserve
+the previous behavior.  This helps legacy code to keep working.
+@item
+For other code, you can gradually revise your code as follows:
+@itemize @minus
+@item
+If you used parameters as thread-local storage, replace it with
+@emph{thread locals} or @emph{thread parameters}.
+@item
+If you manage dynamic state with @code{parameterize}, replace
+it with @code{temporarily}.
+@end itemize
+@end itemize
 
 @c ------------------------------------------------------------
 @node Boxes, Lazy evaluation, Parameters and dynamic states, Core library
