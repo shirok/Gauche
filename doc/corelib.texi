@@ -18926,26 +18926,141 @@ additional protocol, which isn't standardized.
 @subsection Transition to 0.9.13 parameters
 @c NODE 0.9.13パラメータへの移行
 
-First, here's rule of thumb:
+@c EN
+@subsubheading First, here's rule of thumb:
+@c JP
+@subsubheading まず、大まかなルールを:
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 If you bind parameters only with @code{parameterize}, you won't see
 any changes.
+@c JP
+パラメータの値を@code{parameterize}で束縛しているだけなら、違いはありません。
+@c COMMON
 @item
+@c EN
 If the code explicitly use @code{gauche.parameter}, it'll preserve
 the previous behavior.  This helps legacy code to keep working.
+@c JP
+コード中で明示的に@code{gauche.parameter}をuseしている場合は、
+以前の振る舞いのままになります。レガシーコードが壊れてしまうことはありません。
+@c COMMON
 @item
+@c EN
 For other code, you can gradually revise your code as follows:
+@c JP
+そうでない場合、以下の方針でコードを徐々にアップデートしてください。
+@c COMMON
 @itemize @minus
 @item
+@c EN
 If you used parameters as thread-local storage, replace it with
-@emph{thread locals} or @emph{thread parameters}.
+@emph{thread locals} (@pxref{Thread local storage}).
+@c JP
+パラメータをスレッドローカル変数として使っている場合は、かわりに
+@emph{スレッドーローカル}を使うようにします(@ref{Thread local storage}参照)。
+@c COMMON
 @item
+@c EN
 If you manage dynamic state with @code{parameterize}, replace
-it with @code{temporarily}.
+it with @code{temporarily} (@pxref{Dynamic states}).
+@c JP
+動的状態と@code{parameterize}で変更している場合は、
+かわりに@code{temporarily}を使うようにします
+(@ref{Dynamic states}参照)。
+@c COMMON
+@item
+@c EN
+If you used parameters for both thread-local storage @emph{and} dynamic
+binding, use @code{make-thread-parameter} @emph{and}
+@code{parameterize/dynwind}, in place of
+@code{make-parameter} and @code{parameterize}.
+(@pxref{Parameters}).
+@c JP
+パラメータを、スレッドローカル変数かつ動的束縛として使っている場合は、
+@code{make-parameter}と@code{parameterize}のかわりに
+@code{make-thread-parameter}と@code{parameterize/dynwind}を使うようにします。
+@c COMMON
 @end itemize
 @end itemize
+
+@c EN
+@subsubheading Under the hood:
+@c JP
+@subsubheading ボンネットの下:
+@c COMMON
+
+We call the parameter implementation before 0.9.13 as ``legacy model'',
+while the one in 0.9.13 and later as ``new model''.
+
+In the legacy model, parameterization is realized by swapping
+each parameter's value in dynamic wind's before and after thunk.
+Roughly speaking, @code{parameterize} is expanded as follows
+(this assumes Gauche's parameter protocol that returns previous
+value when a new value is set.  Also, we omit consideration of
+converter, for simplicity):
+
+@example
+(parameterize ((param expr)) body @dots{})
+ @equiv{}
+(let ((p param) (v expr))
+  (dynamic-wind
+   (lambda () (set! v (p v)))
+   (lambda () body @dots{})
+   (lambda () (set! v (p v)))))
+@end example
+
+This model directly replaces the value of the parameter in the dynamic
+scope of @var{body} @dots{}.  So the parameter value needs to be
+thread-specific, otherwise the swapping of the value would be visible
+from other threads, which is not desirable.
+
+Note that even parameter value is thread-specifc, you can still
+invoke a continuation captured in a different thread and expect
+the parameter values are carried over, for the switching conitnuation
+triggers execution of before/after thunks, which restores the
+values of parameters in the thread that invokes the continuation.
+
+Also keep in mind that the body can't be in tail context even
+the parameterize form is, since you have to execute @emph{after} thunk
+after the body is evaluated.
+
+In the new model, we keep a chain of dynamic binding frames,
+and parameter value is looked up from it.  The dynamic chain is a part of
+continuation, so when a continuation is popped, the dynamic frame
+created in the current continuation frame is also popped implicitly.
+With this model, @code{parameterize} is expanded something like this:
+
+@example
+(parameterize ((param expr)) body @dots{})
+ @equiv{}
+((lambda (p v)
+   (push-dynamic-frame! p v)
+   body @dots{})
+ param expr)
+@end example
+
+Here, @code{push-dynamic-frame!} is a hypothetical procedure that pushes
+new dynamic frame in the current execution environment.
+When the control returns to the continuation of the parameterize
+form, the additional dynamic frame is popped automatically
+so we don't need a special operation.  If a continuation is captured
+in @var{body}, the dynamic frame chain is saved along the continuation.
+When the continuation is invoked in another thread, the dynamic frame chain
+is restored.
+
+If you mutate parameter value (as opposed to binding it with
+@code{parameterize}), the dynamic frame is mutated.  The mutated
+value must be seen even if the captured continuation is invoked
+in a different thread, so the dynamic frames themselves must freely be
+passed between threads; they're pretty much the same as lexical frames,
+except the scopes.  Because of this, the parameter storage needs
+to be shared among threads.  If the parameter value is thread-specific,
+the mutation in one thread won't be carried over to other thread.
+
 
 @c ------------------------------------------------------------
 @node Boxes, Lazy evaluation, Parameters and dynamic states, Core library
