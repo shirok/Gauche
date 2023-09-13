@@ -81,7 +81,7 @@ TESTRECORD = "$(top_builddir)/test.record"
 	$(COMPILE) -c $<
 
 .stub.c :
-	$(GOSH) "$(top_srcdir)/src/genstub" $<
+	$(GOSH) "$(top_srcdir)/lib/tools/genstub" $<
 
 default : all link
 
