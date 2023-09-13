@@ -16529,14 +16529,35 @@ by @code{x->string}, for the convenience.
 @c EN
 @code{Do-process} always waits the subprocess to terminate, and
 returns @code{#t} if it exits successfully (i.e. with zero exit status).
-If the subprocess terminates abnormally, it returns @code{#f} by default,
-or raise an error if @code{:error} is passed to the keyword argument
-@code{on-abnormal-exit}.
+If the subprocess terminates abnormally, the behavior is controled
+by @var{on-abnormal-exit} keyword argument:
+@itemize @bullet
+@item
+If it is @code{#f} (default), @code{#f} is returned.
+@item
+If it is @code{:error}, a @code{<process-abnormal-exit>} error is thrown.
+@item
+If it is @code{:exit-code}, and the subprocess terminates with
+non-zero exit status, the integer exit code (the integer value passed
+to subprocess's @code{exit()}) is returned.  Note that if the
+subprocess is terminated with a signal, a @code{<process-abnormal-exit>}
+is still thrown.
+@end itemize
 @c JP
 @code{do-process}は常にサブプロセスが終了するまで待ち、正常終了した場合(終了ステータスが
-0の場合)に@code{#t}を返します。サブプロセスが異常終了した場合、
-デフォルトでは@code{#f}を返しますが、キーワード引数@code{on-abnormal-exit}に
-@code{:error}が与えられた場合はエラーを投げます。
+0の場合)に@code{#t}を返します。サブプロセスが異常終了した場合の
+ふるまいはキーワード引数@var{on-abnormal-exit}によって次のように決定されます。
+@itemize @bullet
+@item
+引数が@code{#f}の場合(デフォルト)、単に@code{#f}が返されます。
+@item
+引数が@code{:error}の場合、@code{<process-abnormal-exit>}エラーが投げられます。
+@item
+引数が@code{:exit-code}の場合、サブプロセスがゼロ以外の終了ステータスで終了したなら、
+その終了コード (サブプロセスの@code{exit()}に渡された整数値) を整数で返します。
+サブプロセスがシグナルにより終了した場合は
+@code{<process-abnormal-exit>}エラーが投げられることに注意してください。
+@end itemize
 @c COMMON
 
 @c EN
