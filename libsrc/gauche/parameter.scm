@@ -58,7 +58,7 @@
   (export <parameter>                   ;built-in
           parameter?                    ;built-in
           procedure-parameter           ;built-in
-          make-parameter                ;core's make-thread-parameter
+          make-parameter                ;core's make-legacy-parameter
           parameterize                  ;core's parameterize/dynwind
           parameter-pre-observers
           parameter-post-observers
@@ -72,7 +72,7 @@
 (declare (keep-private-macro parameterize))
 
 (define-syntax parameterize parameterize/dynwind)
-(define make-parameter make-thread-parameter)
+(define make-parameter make-legacy-parameter)
 
 ;; When an observer is first set, replace setter and restorer
 ;; to take into account of observers.

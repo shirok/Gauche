@@ -1,3 +1,8 @@
+2023-09-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/parameter.c, src/libparam.scm (make-legacy-parameter):
+	  Added.  See https://github.com/shirok/Gauche/issues/935
+
 2023-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/process.scm (do-process): Add :exit-code option

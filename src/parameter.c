@@ -36,6 +36,7 @@
 #include "gauche/vm.h"
 #include "gauche/priv/vmP.h"
 #include "gauche/priv/atomicP.h"
+#include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/parameterP.h"
 
 /*
@@ -63,12 +64,12 @@
  * I take Guile's approach.
  */
 
-/* :name, :initial-value, and :shared.  These keywords are set on-demand,
+/* :name, :initial-value, and :type.  These keywords are set on-demand,
    since at the time of Scm_InitParameter we haven't initialized
    symbol subsystem yet.  */
 static ScmObj key_name = SCM_FALSE;
 static ScmObj key_initial_value = SCM_FALSE;
-static ScmObj key_shared = SCM_FALSE;
+static ScmObj key_type = SCM_FALSE;
 
 /* #:parameter, to mark parameter procedure.
    Initialized in Scm__InitParameter
@@ -111,8 +112,8 @@ static void ensure_parameter_init_keywords()
     if (SCM_FALSEP(key_initial_value)) {
         key_initial_value = SCM_MAKE_KEYWORD("initial-value");
     }
-    if (SCM_FALSEP(key_shared)) {
-        key_shared = SCM_MAKE_KEYWORD("shared");
+    if (SCM_FALSEP(key_type)) {
+        key_type = SCM_MAKE_KEYWORD("type");
     }
 }
 
@@ -121,10 +122,16 @@ static ScmObj pparam_allocate(ScmClass *klass, ScmObj initargs)
     ensure_parameter_init_keywords();
     ScmObj name = Scm_GetKeyword(key_name, initargs, SCM_FALSE);
     ScmObj initval = Scm_GetKeyword(key_initial_value, initargs, SCM_FALSE);
-    ScmObj shared = Scm_GetKeyword(key_shared, initargs, SCM_FALSE);
+    ScmObj type = Scm_GetKeyword(key_type, initargs, SCM_FALSE);
     u_long flags = 0;
-    if (!SCM_FALSEP(shared)) {
+
+    if (SCM_EQ(type, SCM_SYM_SHARED)) {
         flags |= SCM_PARAMETER_SHARED;
+    } else if (SCM_EQ(type, SCM_SYM_THREAD)) {
+        flags |= SCM_PARAMETER_THREAD;
+    } else if (!SCM_EQ(type, SCM_SYM_LEGACY)) {
+        Scm_Error("Invalid value for :type argument: Must be one of "
+                  "shared, thread, or legacy, but got: %S", type);
     }
     ScmPrimitiveParameter *p =
         Scm_MakePrimitiveParameter(klass, name, initval, flags);
@@ -265,7 +272,7 @@ void Scm_PushParameterization(ScmObj params, ScmObj vals)
     Scm_VMPushDynamicEnv(k, h);
 }
 
-/* Replace VM's current parameterization with PZ. 
+/* Replace VM's current parameterization with PZ.
    Note that the PZ is effective until the current continuation frame
    is popped. So typically you have to call Scm_VMApply etc.
  */

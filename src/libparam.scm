@@ -68,11 +68,12 @@
 
 ;; Must not be instantiated directly.  Always use make-parameter.
 (define-class <parameter> (<primitive-parameter>)
-  (;; all slots should be private.  'observers' slots are only initialized
-   ;; when observers are set.
+  (;; all slots should be private.
    (filter :init-keyword :filter :init-value #f)
    (setter)
    (restorer)                          ;used to restore previous value
+   ;; These are for the backward compatibility.  gauche.parameter module
+   ;; provides the feature that uses them.  New code shouldn't use these.
    (pre-observers)
    (post-observers)
    ))
@@ -81,29 +82,37 @@
   (format port "#<parameter ~a>"
           ((with-module gauche.internal %parameter-name) p)))
 
-;; We're switching to the SRFI-226  model that parameter bindings are shared
-;; among threads by default.  The legacy code that requires thread-local
-;; parameters need to move to make-thread-parameter.  To ease transition,
+;; We'll be switching to the SRFI-226  model that parameter bindings are shared
+;; among threads.  The legacy code that requires thread-local
+;; parameters need to move to make-legacy-parameter.  To ease transition,
 ;; we also provide make-shared-parameter.
-(define (make-parameter value :optional (filter #f) (shared? #f))
+;; In 0.9.13, make-parameter creates a legacy parameter; we'll flip the default
+;; in the next version.
+;; NB: To get full backward compatibility, you also need to use
+;; parameteize/dynwind in place of parameterize.  Using gauche.parameter
+;; realizes it.
+(define (make-parameter value :optional (filter #f) (type 'legacy))
   (call-with-current-expression-name
    (^[name]
      (let* ([v (if filter (filter value) value)]
             [p (make <parameter>
                  :filter filter
                  :initial-value v
-                 :shared shared?
+                 :type type
                  :name name)])
        (getter-with-setter
         ((with-module gauche.internal %make-parameter-subr) p)
         (^[val] ((slot-ref p 'setter) val)))))))
 
 (define (make-thread-parameter value :optional (filter #f))
-  (make-parameter value filter #f))
+  (make-parameter value filter 'thread))
 
 ;; this is SRFI-226 make-parameter
 (define (make-shared-parameter value :optional (filter #f))
-  (make-parameter value filter #t))
+  (make-parameter value filter 'shared))
+
+(define (make-legacy-parameter value :optional (filter #f))
+  (make-parameter value filter 'legacy))
 
 (define (parameter? obj)
   (boolean (procedure-parameter obj)))

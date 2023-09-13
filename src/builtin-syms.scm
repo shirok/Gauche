@@ -248,4 +248,7 @@
     (apply                     SCM_SYM_APPLY)
     (not                       SCM_SYM_NOT)
     (eq?                       SCM_SYM_EQP)
+    ;; parameter arg
+    (thread                    SCM_SYM_THREAD)
+    (shared                    SCM_SYM_SHARED)
     ))
