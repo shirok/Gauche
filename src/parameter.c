@@ -96,10 +96,14 @@ static void pparam_print(ScmObj obj,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmPrimitiveParameter *p = SCM_PRIMITIVE_PARAMETER(obj);
-    Scm_Printf(out, "#<%A %S %s@%p>",
+    Scm_Printf(out, "#<%A %S%s@%p>",
                Scm_ShortClassName(Scm_ClassOf(obj)),
                p->name,
-               (p->flags & SCM_PARAMETER_SHARED ? "(shared) " : ""),
+               (p->flags & SCM_PARAMETER_SHARED
+                ? ""
+                : (p->flags & SCM_PARAMETER_THREAD
+                   ? " (thread)"
+                   : " (legacy)")),
                obj);
 }
 
