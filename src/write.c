@@ -358,6 +358,20 @@ static ScmObj write_object_fallback(ScmObj *args, int nargs,
                   Scm_ArrayToList(args, nargs));
     }
     ScmClass *klass = Scm_ClassOf(args[0]);
+    /* If any base class has print() pointer, we use it. */
+    for (ScmClass **cpa = klass->cpa; *cpa; cpa++) {
+        if ((*cpa)->print) {
+            /* NB: For historical reasons, the context passed to
+               write_object isn't passed down to the generic
+               function.  We'll address it later, but for now
+               we use the default context. */
+            ScmWriteContext ctx;
+            write_context_init(&ctx, SCM_WRITE_WRITE, 0, 0);
+            (*cpa)->print(args[0], SCM_PORT(args[1]), &ctx);
+            return SCM_TRUE;
+        }
+    }
+    /* Fallback printer */
     Scm_Printf(SCM_PORT(args[1]), "#<%A%s%p>",
                klass->name,
                (SCM_FALSEP(klass->redefined)? " " : ":redefined "),

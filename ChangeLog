@@ -1,3 +1,10 @@
+2023-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/write.c (write_object_fallback): If base class has print()
+	  function pointer and derived class doesn't have write-object
+	  method, we use base class's print() func instead of the
+	  default printer.
+
 2023-09-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c, src/libparam.scm (make-legacy-parameter):

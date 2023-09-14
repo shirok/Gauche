@@ -78,10 +78,6 @@
    (post-observers)
    ))
 
-(define-method write-object ((p <parameter>) port)
-  (format port "#<parameter ~a>"
-          ((with-module gauche.internal %parameter-name) p)))
-
 ;; We'll be switching to the SRFI-226  model that parameter bindings are shared
 ;; among threads.  The legacy code that requires thread-local
 ;; parameters need to move to make-legacy-parameter.  To ease transition,
