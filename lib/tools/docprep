@@ -64,6 +64,7 @@
       [pattern-in () (in (read-line) modtag)]
       [pattern-out () (out (read-line) modtag)]
       [#/^@include\s+(\S+)/ (#f file)
+        (finish-srfi-line modtag)
         (with-input-from-file (find-included-file file)
           (cut filter pattern-in pattern-out) :encoding 'utf8)
         (in (read-line) #f)]
@@ -72,25 +73,30 @@
       ;; at the toplevel, so this can be used to include files without
       ;; the restriction.
       [#/^@c xinclude\s+(\S+)/ (#f file)
+        (finish-srfi-line modtag)
         (with-input-from-file (find-included-file file)
           (cut filter pattern-in pattern-out) :encoding 'utf8)
         (in (read-line) #f)]
-      [#/^@c COMMON$/ () (in (read-line) #f)]
+      [#/^@c COMMON$/ () (finish-srfi-line modtag) (in (read-line) #f)]
       [#/^@c MOD\s+(\S+)$/ (#f module)
-             (display #"@{@t{~|module|}@}\n")
-             (in (read-line) 'mod)]
+        (display #"@{@t{~|module|}@}\n")
+        (in (read-line) 'mod)]
       [#/^@c DEPRECATED$/ ()
-             (display "@b{Deprecated. }\n")
-             (in (read-line) modtag)]
+        (display "@b{Deprecated. }\n")
+        (in (read-line) modtag)]
       [#/^\[SRFI/ (#f)
-            (when (eq? modtag 'mod)
-              (warn #"SRFI tag follows MOD directive: ~|line|\n"))
-            (display line)
-            (in (read-line) 'srfi)]
-      [suspicious (#f word rest) (check-typo word rest line) (in (read-line) #f)]
+        (when (eq? modtag 'mod)
+           (warn #"SRFI tag follows MOD directive: ~|line|\n"))
+        (display line)
+        (in (read-line) 'srfi)]
+      [suspicious (#f word rest)
+        (check-typo word rest line)
+        (finish-srfi-line modtag)
+        (in (read-line) #f)]
       [test (^_ (eq? (lang) 'en))
-            (display (regexp-replace-all #/@VERSION@/ line *version*))
-            (newline) (in (read-line) #f)]
+        (finish-srfi-line modtag)
+        (display (regexp-replace-all #/@VERSION@/ line *version*))
+        (newline) (in (read-line) #f)]
       [#/^@node\s+(.*)$/ (#f nodedesc)
         (process-node nodedesc) (in (read-line) #f)]
       [#/^@(chapter|(sub)*section|appendix\w*)\s+(.*)/ (#f cmd #f header)
@@ -99,17 +105,20 @@
         (process-menu node #f desc) (in (read-line) #f)]
       [#/^\* ([^:]+):\s+([^\)]+\))\.(.*)?/ (#f tag node desc)
         (process-menu node tag desc) (in (read-line) #f)]
-      ;; Normal line.  If the immediate line is [SRFI...], we emit a newline
-      ;; so that there'll be a space.  We don't emit the newline immediately
-      ;; when processing [SRFI...], since if it is followed by module tag,
-      ;; we don't want a space between them.
-      [else (when (eq? modtag 'srfi) (newline))
+      [else (finish-srfi-line modtag)
             (display
              ($ regexp-replace-all* line
                 #/@VERSION@/ *version*
                 #/(@(?:px|x)?ref)\{([^\}]+)\}/ process-ref))
             (newline)
             (in (read-line) #f)]))
+
+  ;; When we see '[SRFI-nn]' line, we don't emit newline imediately,
+  ;; for we don't want space if it is immediately followed by '{module}'.
+  ;; This one emits the delayed newline when the next line isn't the module.
+  (define (finish-srfi-line modtag)
+    (when (eq? modtag 'srfi) (newline)))
+
 
   ;; Loop for 'inactive' lines.
   (define (out line modtag)
