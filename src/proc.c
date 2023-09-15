@@ -45,9 +45,19 @@ static void proc_print(ScmObj obj, ScmPort *port, ScmWriteContext *);
 
 SCM_DEFINE_BUILTIN_CLASS_SIMPLE(Scm_ProcedureClass, proc_print);
 
+static ScmObj print_tag_key = SCM_FALSE; /* set by Scm__InitProc() */
+
 static void proc_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
+    /* A procedure can have custom printer in the tag. */
+    ScmObj printer = Scm_Assq(print_tag_key, SCM_PROCEDURE(obj)->tagsAlist);
+    if (SCM_PAIRP(printer)) {
+        Scm_ApplyRec2(SCM_CDR(printer), obj, SCM_OBJ(port));
+        return;
+    }
+
+    /* Standard printer  */
     ScmObj info = SCM_PROCEDURE_INFO(obj);
     if (SCM_PROCEDURE_TYPE(obj) == SCM_PROC_SUBR) {
         SCM_PUTZ("#<subr", -1, port);
@@ -495,4 +505,6 @@ void Scm__InitProc(void)
     Scm_InitStaticClass(&Scm_ProcedureClass, "<procedure>",
                         Scm_GaucheModule(), proc_slots, 0);
     Scm_ProcedureClass.flags |= SCM_CLASS_APPLICABLE;
+
+    print_tag_key = Scm_MakeSymbol(SCM_STRING(SCM_MAKE_STR("print")), FALSE);
 }

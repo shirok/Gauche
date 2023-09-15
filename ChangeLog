@@ -1,3 +1,12 @@
+2023-09-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/proc.c (proc_print): Allow a procedure to have a custom
+	  printer.  Scheme abstracts some kind of special constructs
+	  as proceudres, e.g. parameters and continuations.  It is nice
+	  if we have a specialized printer to display info specific
+	  to such construct, rather than the generic procedure printer
+	  which can only show procedure-info.
+
 2023-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (write_object_fallback): If base class has print()
