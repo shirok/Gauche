@@ -16652,6 +16652,7 @@ Gaucheをセットアップすることができます。
 * Procedure arity::
 * Applicable objects::
 * Continuations::
+* Continuation marks::
 * Multiple values::
 * Folding generated values::
 @end menu
@@ -17792,7 +17793,7 @@ of @code{set!} form, this method is called, that is:
 
 
 
-@node Continuations, Multiple values, Applicable objects, Procedures and continuations
+@node Continuations, Continuation marks, Applicable objects, Procedures and continuations
 @subsection Continuations
 @c NODE 継続
 
@@ -18028,8 +18029,81 @@ reverted by @var{before}, such as manipulating error handler stack
 @c COMMON
 @end defun
 
+@node Continuation marks, Multiple values, Continuations, Procedures and continuations
+@subsection Continuation marks
+@c NODE コンティニュエーションマーク
 
-@node Multiple values, Folding generated values, Continuations, Procedures and continuations
+Continuation marks are a set of key-value associations
+attached to continuation frames.  Keys and values are arbitrary
+Scheme object.  It sounds obscure, but it allows to implement
+various useful language features; notably, the new @code{parameterize}
+is implemented on top of continuation marks, allowing its body
+to be evaluated in tail context (@pxref{Parameters}).
+
+@itemize @bullet
+@item
+You can have dynamic-scoped data without compromizing tail-calls.
+Using @code{dynamic-wind} requires to run the `after' thunk after
+evaluating the body, so if you wrap a tail expression with it,
+the original expression won't be in tail context anymore.
+Continuation marks, on the other hand, will be discarded when
+the continuation frame they are attached to is `popped', so you
+don't need to clean up after the body is executed.  So the body
+is exected in the tail context if the dynmaic-scope itself
+is in tail context.
+@item
+Since tail expression shares a continuation frame with its
+caller, you can detect whether an expression is evaluated
+at the tail position @emph{at run-time}.
+@end itemize
+
+In general, though, continuations marks are low-level tools
+to construct high-level features, rather than to be
+used as day-to-day tools.
+
+@defspec with-continuation-mark key val expr
+[SRFI-226]
+@end defspec
+
+
+@defun call-with-immediate-continuation-mark key proc :optional fallback
+[SRFI-226]
+@end defun
+
+@defun continuation-marks cont :optional prompt-tag
+[SRFI-226]
+@end defun
+
+@defun current-continuation-marks :optional prompt-tag
+[SRFI-226]
+@end defun
+
+@defun continuation-mark-set? obj
+[SRFI-226]
+@end defun
+
+@defun continuation-mark-set->list mark-set key :optional prompt-tag
+[SRFI-226]
+@end defun
+
+@defun continuation-mark-set-first mark-set key :optional fallback
+[SRFI-226]
+@end defun
+
+@defun make-continuation-mark-key :optional name
+[SRFI-226]
+@end defun
+
+@defun continuation-mark-key? obj
+[SRFI-226]
+@end defun
+
+
+
+
+
+
+@node Multiple values, Folding generated values, Continuation marks, Procedures and continuations
 @subsection Multiple values
 @c NODE 多値
 
