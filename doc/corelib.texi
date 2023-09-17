@@ -18033,15 +18033,25 @@ reverted by @var{before}, such as manipulating error handler stack
 @subsection Continuation marks
 @c NODE コンティニュエーションマーク
 
+@c EN
 Continuation marks are a set of key-value associations
 attached to continuation frames.  Keys and values are arbitrary
 Scheme object.  It sounds obscure, but it allows to implement
 various useful language features; notably, the new @code{parameterize}
 is implemented on top of continuation marks, allowing its body
 to be evaluated in tail context (@pxref{Parameters}).
+@c JP
+コンティニュエーションマークは、継続フレームに付加されるキーと値の関連です。
+キーと値には任意のSchemeuオブジェクトが使えます。
+これだけ聞いてもなんだかよく分からないかもしれませんが、
+コンティニュエーションマークを使って色々便利な言語機能を実装することができます。
+例えば、新しい@code{parameterize}は本体を末尾コンテクストで評価することが
+できますが、それはコンティニュエーションマークを使って実装されているからです。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 You can have dynamic-scoped data without compromizing tail-calls.
 Using @code{dynamic-wind} requires to run the `after' thunk after
 evaluating the body, so if you wrap a tail expression with it,
@@ -18051,23 +18061,71 @@ the continuation frame they are attached to is `popped', so you
 don't need to clean up after the body is executed.  So the body
 is exected in the tail context if the dynmaic-scope itself
 is in tail context.
+@c JP
+適切な末尾呼び出し条件を犠牲にすることなしに、動的スコープを持つデータを実装できます。
+@code{dynamic-wind}を使う方法だと、本体を実行したあとに `after' サンクを
+実行しなければならないので、元の式が末尾位置にあったとしても、
+@code{dynamic-wind}でくるむと末尾位置でなくなってしまいます。
+コンティニュエーションマークは、それが付加された継続フレームが「ポップ」されると
+一緒に捨てられるため、本体実行後に後始末コードを走らせる必要があります。
+なので元の式が末尾位置にあれば、本体を末尾位置で実行することができます。
+@c COMMON
 @item
+@c EN
 Since tail expression shares a continuation frame with its
 caller, you can detect whether an expression is evaluated
 at the tail position @emph{at run-time}.
+@c JP
+末尾式は継続フレームを呼び出し元と共有するので、
+ある式が末尾位置で実行されるかどうかを@emph{実行時に}判定することができます。
+@c COMMON
 @end itemize
 
+@c EN
 In general, though, continuations marks are low-level tools
 to construct high-level features, rather than to be
 used as day-to-day tools.
+@c JP
+ただ、一般的にはコンティニュエーションマークは他の高レベルな言語機能を
+実装するための低レベルなツールと考えるべきでしょう。
+日常的なコードで使うものではありません。
+@c COMMON
 
-@defspec with-continuation-mark key val expr
+@defspec with-continuation-mark key value expr
 [SRFI-226]
+Both @var{key} and @var{value} are evaluated, and
+addts the key-value association as a mark to the current continuation,
+then evaluate @var{expr} with the same continuation as this form.
+That is, if this form is in the tail context, @var{expr} is
+evaluated in the same tail context.
+
+If the current continuation is already marked with @var{key}, then its value
+is replaced with @var{value}.
 @end defspec
 
+@defmac with-continuation-mark ((key value) @dots{}) expr
+[SRFI-226]
+All @var{key}s and @var{value}s are evaluted, then
+add those key-value associations as marks to the current continuation,
+then evaluate @var{expr} with the same continuation as this form.
+@end defmac
 
 @defun call-with-immediate-continuation-mark key proc :optional fallback
 [SRFI-226]
+Tail-calls @var{proc} with the value for @var{key} associated
+in the current continuation.  If the current continuation doesn't have
+a value for @var{key}, @var{fallback} is passed to @var{proc} instead.
+If @var{fallback} is omitted, @code{#f} is assumed.
+
+@example
+(with-continuation-mark 'a 'b
+  (call-with-immediate-continuation-mark 'a list))
+ @result{} (b)
+
+(with-continuation-mark 'a 'b
+  (cons (call-with-immediate-continuation-mark 'a list) 1))
+ @result{} ((#f) . 1)
+@end example
 @end defun
 
 @defun continuation-marks cont :optional prompt-tag
@@ -18528,8 +18586,8 @@ behaviors before 0.9.13.  We have a prepared a transition path.
 @c NODE パラメータ
 
 @defun make-parameter value :optional converter
-@defunx make-thread-parameter value :optional converter
 @defunx make-shared-parameter value :optional converter
+@defunx make-thread-parameter value :optional converter
 [R7RS base][SRFI-226]
 @c EN
 Creates a parameter whose initial value is @var{value}.
@@ -18796,7 +18854,7 @@ is an alias of @code{parameterize/dynwind}, so that the compatibility
 is kept.  New code should not use @code{gauche.parameter} module.
 @xref{Parameters (legacy)}.
 @c JP
-註：@code{gauche.parameter}モジュールをuserすると、組み込みの@code{parameterize}
+註：@code{gauche.parameter}モジュールをuseすると、組み込みの@code{parameterize}
 の束縛はモジュール独自の@code{parameterize}でシャドウされ、それは
 @code{parameterize/dynwind}の別名となります。これはコードの互換性を保つためです。
 新しいコードでは@code{gauche.parmaeter}をuseすべきではありません。
