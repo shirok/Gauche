@@ -18143,7 +18143,7 @@ is in tail context.
 実行しなければならないので、元の式が末尾位置にあったとしても、
 @code{dynamic-wind}でくるむと末尾位置でなくなってしまいます。
 継続マークは、それが付加された継続フレームが「ポップ」されると
-一緒に捨てられるため、本体実行後に後始末コードを走らせる必要があります。
+一緒に捨てられるため、本体実行後に後始末コードを走らせる必要がありません。
 なので元の式が末尾位置にあれば、本体を末尾位置で実行することができます。
 @c COMMON
 @item
@@ -18286,12 +18286,35 @@ Returns @code{#t} if @var{obj} is a continuation mark set,
 @defun continuation-mark-set->list mark-set key :optional prompt-tag
 [SRFI-226]
 @c EN
+Pick up values associated to @var{key} from a continuation mark set
+@var{mark-set}, and returns a fresh list of them.  A value in more
+recent continuation frames come earlier in the list.
+
+You can pass @code{#f} to @var{mark-set} to make the procedure
+use @code{(current-continuation-marks prompt-tag)}.
+
+It searches the mark set up to the continuation frame delimited
+by a continuation prompt @var{prompt-tag}.
+If @var{prompt-tag} is omitted, the default prompt tag is used.
 @c JP
+継続マークセット@var{mark-set}から、@var{key}を持つマークに対応する値を
+全て取り出し、新しいリストにして返します。より新しい継続フレームに対応する値ほど
+リストの先頭の方に置かれます。
+
+@var{mark-set}に@code{#f}を渡すこともできます。その場合、
+@code{(current-continuation-marks prompt-tag)}が使われます。
+
+@var{key}は、継続マークセット中の、@var{prompt-tag}で指定される継続プロンプト
+に対応する継続マークまで探されます。@var{prompt-tag}が省略された場合は
+デフォルトプロンプトタグが使われます。
 @c COMMON
 @end defun
 
 @defun continuation-mark-set-first mark-set key :optional fallback
 [SRFI-226]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @c EN
@@ -18314,8 +18337,6 @@ be different (in terms of @code{equal?}) to other continuation mark keys.
 
 継続マークキーは、他の継続マークキーと(@code{equal?}で)等しくならないことが
 保証されているオブジェクトです。
-
-(ただし、SRFI-226
 @c COMMON
 
 @defun make-continuation-mark-key :optional name
