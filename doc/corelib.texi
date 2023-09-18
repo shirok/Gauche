@@ -18031,7 +18031,7 @@ reverted by @var{before}, such as manipulating error handler stack
 
 @node Continuation marks, Multiple values, Continuations, Procedures and continuations
 @subsection Continuation marks
-@c NODE コンティニュエーションマーク
+@c NODE 継続マーク
 
 @c EN
 Continuation marks are a set of key-value associations
@@ -18041,12 +18041,12 @@ various useful language features; notably, the new @code{parameterize}
 is implemented on top of continuation marks, allowing its body
 to be evaluated in tail context (@pxref{Parameters}).
 @c JP
-コンティニュエーションマークは、継続フレームに付加されるキーと値の関連です。
+継続マークは、継続フレームに付加されるキーと値の関連です。
 キーと値には任意のSchemeuオブジェクトが使えます。
 これだけ聞いてもなんだかよく分からないかもしれませんが、
-コンティニュエーションマークを使って色々便利な言語機能を実装することができます。
+継続マークを使って色々便利な言語機能を実装することができます。
 例えば、新しい@code{parameterize}は本体を末尾コンテクストで評価することが
-できますが、それはコンティニュエーションマークを使って実装されているからです。
+できますが、それは継続マークを使って実装されているからです。
 @c COMMON
 
 @itemize @bullet
@@ -18066,7 +18066,7 @@ is in tail context.
 @code{dynamic-wind}を使う方法だと、本体を実行したあとに `after' サンクを
 実行しなければならないので、元の式が末尾位置にあったとしても、
 @code{dynamic-wind}でくるむと末尾位置でなくなってしまいます。
-コンティニュエーションマークは、それが付加された継続フレームが「ポップ」されると
+継続マークは、それが付加された継続フレームが「ポップ」されると
 一緒に捨てられるため、本体実行後に後始末コードを走らせる必要があります。
 なので元の式が末尾位置にあれば、本体を末尾位置で実行することができます。
 @c COMMON
@@ -18086,36 +18086,71 @@ In general, though, continuations marks are low-level tools
 to construct high-level features, rather than to be
 used as day-to-day tools.
 @c JP
-ただ、一般的にはコンティニュエーションマークは他の高レベルな言語機能を
+ただ、一般的には継続マークは他の高レベルな言語機能を
 実装するための低レベルなツールと考えるべきでしょう。
 日常的なコードで使うものではありません。
 @c COMMON
 
+@c EN
+@subsubheading Marking a continuation frame
+@c JP
+@subsubheading 継続フレームをマークする
+@c COMMON
+
 @defspec with-continuation-mark key value expr
 [SRFI-226]
+@c EN
 Both @var{key} and @var{value} are evaluated, and
-addts the key-value association as a mark to the current continuation,
+adds the key-value association as a mark to the current continuation,
 then evaluate @var{expr} with the same continuation as this form.
 That is, if this form is in the tail context, @var{expr} is
 evaluated in the same tail context.
+@c JP
+まず@var{key}と@var{value}が評価され、そのキー-値の関連が
+現在の継続のマークに追加されます。
+そして、@var{expr}がこのフォームの継続と同じ継続で評価されます。
+つまり、このフォーム自体が末尾コンテクストにあれば、
+@var{expr}も末尾コンテクストで評価されます。
+@c COMMON
 
+@c EN
 If the current continuation is already marked with @var{key}, then its value
 is replaced with @var{value}.
+@c JP
+現在の継続フレームのマークに既に@var{key}があれば、その値が@var{value}で置き換えられます。
+@c COMMON
 @end defspec
 
 @defmac with-continuation-mark ((key value) @dots{}) expr
 [SRFI-226]
+@c EN
 All @var{key}s and @var{value}s are evaluted, then
 add those key-value associations as marks to the current continuation,
 then evaluate @var{expr} with the same continuation as this form.
+@c JP
+@var{key}と@var{value}がすべて評価された後、それらキー-値ペア全てが
+現在の継続のマークに追加され、同じ継続で@var{expr}が評価されます。
+@c COMMON
 @end defmac
+
+@c EN
+@subsubheading Extracting continuation marks
+@c JP
+@subsubheading 継続マークを取り出す
+@c COMMON
 
 @defun call-with-immediate-continuation-mark key proc :optional fallback
 [SRFI-226]
+@c EN
 Tail-calls @var{proc} with the value for @var{key} associated
 in the current continuation.  If the current continuation doesn't have
 a value for @var{key}, @var{fallback} is passed to @var{proc} instead.
 If @var{fallback} is omitted, @code{#f} is assumed.
+@c JP
+現在の継続のマーク中の@var{key}に対応する値を引数として、@var{proc}を末尾呼び出しします。
+現在の継続のマーク中に@var{key}がなければ@var{fallback}が使われます。
+@var{fallback}が省略された場合は@code{#f}が使われます。
+@c COMMON
 
 @example
 (with-continuation-mark 'a 'b
@@ -18130,36 +18165,132 @@ If @var{fallback} is omitted, @code{#f} is assumed.
 
 @defun continuation-marks cont :optional prompt-tag
 [SRFI-226]
+@c EN
+Returns a continuation mark set object, which contains continuation
+marks of the confinutaion frames between the continuation @var{cont}
+and the continuation delimited by @var{prompt-tag}.  If @var{prompt-tag}
+is omitted, default prompt tag is assumed.
+@c JP
+継続@var{cont}から@var{prompt-tag}で区切られる継続フレームまでの継続マークを
+集めた、継続マークセットオブジェクトを返します。
+@var{prompt-tag}が省略された場合はデフォルトプロンプトタグが使われます。
+@c COMMON
 @end defun
 
 @defun current-continuation-marks :optional prompt-tag
 [SRFI-226]
+@c EN
+Returns a continuation mark set object, which contains continuation
+marks of the confinutaion frames between the current continuation
+and the continuation delimited by @var{prompt-tag}.  If @var{prompt-tag}
+is omitted, default prompt tag is assumed.
+@c JP
+現在の継続から@var{prompt-tag}で区切られる継続フレームまでの継続マークを
+集めた、継続マークセットオブジェクトを返します。
+@var{prompt-tag}が省略された場合はデフォルトプロンプトタグが使われます。
+@c COMMON
 @end defun
+
+@c EN
+@subsubheading Continuation mark set
+@c JP
+@subsubheading 継続マークセット
+@c COMMON
 
 @defun continuation-mark-set? obj
 [SRFI-226]
+@c EN
+Returns @code{#t} if @var{obj} is a continuation mark set,
+@code{#f} otherwise.
+@c JP
+@var{obj}が継続マークセットなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun continuation-mark-set->list mark-set key :optional prompt-tag
 [SRFI-226]
+@c EN
+@c JP
+@c COMMON
 @end defun
 
 @defun continuation-mark-set-first mark-set key :optional fallback
 [SRFI-226]
 @end defun
 
+@c EN
+@subsubheading Continuation mark key
+@c JP
+@subsubheading 継続マークキー
+@c COMMON
+
+@c EN
+You can use arbitrary Scheme object as keys for continuation marks,
+but you if you're writing libraries, you want to make sure that
+your keys won't conflict with the keys used by other parts of the code.
+
+A continuation mark key is an opaque object that is guaranteed to
+be different (in terms of @code{equal?}) to other continuation mark keys.
+@c JP
+継続マークのキーには任意のSchemeオブジェクトを使えますが、
+例えばライブラリを書いている場合、使っているキーが偶然他で使われているキーと
+かぶってしまうのは望ましくありません。
+
+継続マークキーは、他の継続マークキーと(@code{equal?}で)等しくならないことが
+保証されているオブジェクトです。
+
+(ただし、SRFI-226
+@c COMMON
+
 @defun make-continuation-mark-key :optional name
 [SRFI-226]
+@c EN
+Returns a newly created continuation key, which is guaranteed never
+to be equal to any prior or future continuation mark keys.
+
+The optional @var{name} argument is for debugging purpose.
+@c JP
+これ以前の継続マークキーとも、以降のマークキーとも決して重ならない
+新たな継続マークキーを作って返します。
+
+@var{name}引数はデバッグ用です。
+@c COMMON
+
+@c EN
+Note that SRFI-226 does not require a continuation mark key has disjoint
+types from other Scheme types.  Currently, Gauche uses an uninterned
+symbol as a continuation mark key.  It may be changed in future,
+so do not count on it.
+@c JP
+SRFI-226は継続マークキーが他のSchemebオブジェクトと異なる型であることを
+要請していないことに注意してください。今のところ、Gaucheではインターンされていない
+シンボルを継続マークキーとして返しています。これは将来変わるかもしれないので、
+それに依存したコードは書かないようにしてください。
+@c COMMON
 @end defun
 
 @defun continuation-mark-key? obj
 [SRFI-226]
+@c EN
+Returns @code{#t} if @var{obj} can be an object returned by
+@code{make-continuation-mark-key}, @code{#f} otherwise.
+
+Note that SRFI-226 does not require a continuation mark key has a disjoint
+type, so this may return @code{#t} for an object that's not
+created by @code{make-continuation-mark-key}.
+In fact, Gauche currently uses an uninterned symbol for a continuation
+mark key, and this procedure returns @code{#t} for any symbols.
+@c JP
+@var{obj}が@code{make-continuation-mark-key}が返したオブジェクトである可能性が
+あれば@code{#t}を、そうでなければ@code{#f}を返します。
+
+SRFI-226は継続マークキーが独自の型を持つことを要請していないので、この手続きは
+@var{obj}が@code{make-continuation-mark-key}で作られたものでなくても@code{#t}を
+返し得ることに注意してください。
+実際、Gaucheは今のところインターンされていないシンボルを継続マークキーとして
+返しているので、この手続きはシンボルに対して@code{#t}を返します。
+@c COMMON
 @end defun
-
-
-
-
-
 
 @node Multiple values, Folding generated values, Continuation marks, Procedures and continuations
 @subsection Multiple values
