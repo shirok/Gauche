@@ -135,14 +135,16 @@
 (define-cproc continuation-mark-set? (obj) ::<boolean>
   (return (SCM_CONTINUATION_MARK_SET_P obj)))
 
-(define-cproc continuation-mark-set->list (cmset::<continuation-mark-set> key)
-  (return (Scm_ContinuationMarkSetToList cmset key)))
+(define-cproc continuation-mark-set->list (cmset::<continuation-mark-set>? key
+                                           :optional (prompt-tag #f))
+  (return (Scm_ContinuationMarkSetToList cmset key prompt-tag)))
 
 (define-cproc continuation-mark-set-first (cmset::<continuation-mark-set>?
-                                           key :optional (fallback #f))
+                                           key :optional (fallback #f)
+                                                         (prompt-tag #f))
   (let* ([cms::ScmContinuationMarkSet*
           (?: cmset cmset
-              (SCM_CONTINUATION_MARK_SET (Scm_CurrentContinuationMarks SCM_UNDEFINED)))]
+              (SCM_CONTINUATION_MARK_SET (Scm_CurrentContinuationMarks prompt-tag)))]
          [p (-> cms denv)])
     (for [() (SCM_PAIRP p) (set! p (SCM_CDR p))]
       (when (SCM_EQ (SCM_CAAR p) key)

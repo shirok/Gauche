@@ -3394,8 +3394,13 @@ ScmObj Scm_CurrentContinuationMarks(ScmObj promptTag)
 }
 
 ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
-                                     ScmObj key)
+                                     ScmObj key, ScmObj promptTag)
 {
+    if (!SCM_PROMPT_TAG_P(promptTag)) promptTag = SCM_OBJ(&defaultPromptTag);
+    if (cmset == NULL) {
+        cmset = SCM_CONTINUATION_MARK_SET(Scm_CurrentContinuationMarks(promptTag));
+    }
+
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmContFrame *c = cmset->cont;
     ScmObj p = cmset->denv;
@@ -3406,6 +3411,7 @@ ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *cmset,
     }
     while (SCM_PAIRP(p)) {
         if (p == cmset->bottomDenv) break;
+        /* TODO: Bail out if we hit promptTag */
         if (SCM_CAAR(p) == key) {
             SCM_APPEND1(h, t, SCM_CDAR(p));
             /* skip to the next continuation frame */
