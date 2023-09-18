@@ -16652,6 +16652,7 @@ Gaucheをセットアップすることができます。
 * Procedure arity::
 * Applicable objects::
 * Continuations::
+* Continuatino prompts::
 * Continuation marks::
 * Multiple values::
 * Folding generated values::
@@ -17793,7 +17794,7 @@ of @code{set!} form, this method is called, that is:
 
 
 
-@node Continuations, Continuation marks, Applicable objects, Procedures and continuations
+@node Continuations, Continuatino prompts, Applicable objects, Procedures and continuations
 @subsection Continuations
 @c NODE 継続
 
@@ -18029,7 +18030,82 @@ reverted by @var{before}, such as manipulating error handler stack
 @c COMMON
 @end defun
 
-@node Continuation marks, Multiple values, Continuations, Procedures and continuations
+@node Continuatino prompts, Continuation marks, Continuations, Procedures and continuations
+@subsection Continuation prompts
+@c NODE 継続プロンプト
+
+@c EN
+Continuations are often explained as ``the rest of computation''.
+It is enough for theorists to write papers, but in practice,
+we cannot reify the computations ``from now on for ever''.  There has
+to be an end--it may be until a single program terminates, or
+until a server returns a response to a request, or a REPL
+prints the result of evaluation.  Implementations
+have chosen the ``end'' of continuations suitable for there needs.
+Sometimes, though, the ambiguity caused confusion.
+@c JP
+継続はよく「計算の残りの部分」と説明されます。理論家が論文を書くにはそれで充分なんですが、
+現実には、「未来永劫の計算全て」を具体化することはできません。
+どこかに終わりがないと困ります。それはひとつのプログラムの終了かもしれませんし、
+サーバーがリクエストに対するレスポンスを送り終えるまでかもしれませんし、
+REPLが与えられた式の評価結果を出力し終わるまでかもしれませんが。
+従来は、実装が必要に応じて継続の「終わり」を選んできたのですが、
+これはしばしば混乱の元になっていました。
+@c COMMON
+
+@c EN
+Continuation prompts are to make the ``end'' of continuation explicit.
+It is called a prompt because, in the interactive environment,
+REPL prompt is usually delimits the continuation.  If you think
+of activation records as a stack, a continuation prompt is
+the ``bottom'' of the stack.
+@c JP
+継続プロンプトは、継続の「終わり」を明示するものです。
+「プロンプト」の名前の由来は、インタラクティブな環境ではREPLのプロンプトが
+継続の区切りになっていることです。アクティベーションレコードを良くあるスタックモデルで
+理解するなら、継続プロンプトはスタックの「底」にあたります。
+@c COMMON
+
+@c EN
+Furthermore, you can have multiple kinds of continuation prompts,
+so that multiple features that use continuation prompts independently
+won't step on each other.
+@c JP
+さらに、複数種類の継続プロンプトを使うことができます。これは、
+継続プロンプトを利用して実装された複数の独立した機能が、うっかり干渉し合わないように
+するためのものです。
+@c COMMON
+
+@c EN
+(Partial continuations can also be defined on top of continuation prompts,
+and SRFI-226 indeed defines so.  We'll integrate existing partial
+continuations with continuation prompts in future versions.)
+@c JP
+(部分継続は継続プロンプトを使って実装でき、実際、SRFI-226はそのように定義しています。
+Gaucheの従来の部分継続は将来のバージョンで継続プロンプトと統合される予定です。)
+@c COMMON
+
+@defun make-continuation-prompt-tag :optional name
+[SRFI-226]
+@end defun
+
+@defun default-continuation-prompt-tag
+[SRFI-226]
+@end defun
+
+@defun continuation-prompt-tag?
+[SRFI-226]
+@end defun
+
+@defun call-with-continuation-prompt thunk :optional prompt-tag abort-handler
+[SRFI-226]
+@end defun
+
+@defun abort-current-continuation prompt-tag obj @dots{}
+[SRFI-226]
+@end defun
+
+@node Continuation marks, Multiple values, Continuatino prompts, Procedures and continuations
 @subsection Continuation marks
 @c NODE 継続マーク
 
