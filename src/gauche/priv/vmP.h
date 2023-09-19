@@ -226,7 +226,7 @@ SCM_EXTERN int Scm_VMUndefinedBool(ScmVM*); /* in boolean.c */
 struct ScmThreadLocalRec {
     SCM_HEADER;
     ScmObj name;                /* for debugging. #f or symbol. */
-    ScmSize index;              /* negative for inheritable */
+    ScmSize index;              /* slot index */
     ScmObj initialValue;
     u_long flags;
 };

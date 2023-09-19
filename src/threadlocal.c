@@ -52,12 +52,15 @@
 #define THREAD_LOCAL_INIT_SIZE 64
 #define THREAD_LOCAL_GROW      16
 
-/* Every time a new thread local is created (in any thread), it is
- * given a unique index in the process.  Negative index is for
- * inheritable thread locals (-index-1 gives the index to the vector).
+/* Global table to track free slots of the thread local table.
+ * tl_freelists[].freelist array has a list of free slots, terminated by -1.
  */
-static ScmSize next_tl_noninheritable_index = 0;
-static ScmSize next_tl_inheritable_index = 0;
+struct tl_freelist {
+    ScmSize size;
+    ScmSize head;
+    ScmSize *freelist;
+} tl_freelists[2];
+
 static ScmInternalMutex tl_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
 
 static void tl_print(ScmObj obj, ScmPort *out, ScmWriteContext *ctx);
@@ -76,6 +79,56 @@ static void tl_print(ScmObj obj,
                obj);
 }
 
+static void init_tl_freelist(void)
+{
+    for (int i=0; i<2; i++) {
+        tl_freelists[i].freelist
+            = SCM_NEW_ATOMIC_ARRAY(ScmSize, THREAD_LOCAL_INIT_SIZE);
+        for (ScmSize j=0; j<THREAD_LOCAL_INIT_SIZE-1; j++) {
+            tl_freelists[i].freelist[j] = j+1;
+        }
+        tl_freelists[i].size = THREAD_LOCAL_INIT_SIZE;
+        tl_freelists[i].head = 0;
+        tl_freelists[i].freelist[THREAD_LOCAL_INIT_SIZE-1] = -1;
+    }
+}
+
+static ScmSize get_tl_slot(int kind)
+{
+    ScmSize r = -1;
+    SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
+    if (tl_freelists[kind].head >= 0) {
+        r = tl_freelists[kind].head;
+        tl_freelists[kind].head = tl_freelists[kind].freelist[r];
+        tl_freelists[kind].freelist[r] = -1;
+    } else {
+        ScmSize oldsize = tl_freelists[kind].size;
+        ScmSize newsize = oldsize + THREAD_LOCAL_GROW;
+        ScmSize *newlist = SCM_NEW_ATOMIC_ARRAY(ScmSize, newsize);
+        memcpy(tl_freelists[kind].freelist, newlist, oldsize);
+        for (ScmSize i=oldsize+1; i < newsize-1; i++) {
+            newlist[i] = i+1;
+        }
+        newlist[oldsize] = -1;
+        newlist[newsize-1] = -1;
+        tl_freelists[kind].freelist = newlist;
+        tl_freelists[kind].size = newsize;
+        tl_freelists[kind].head = oldsize+1;
+        r = oldsize;
+    }
+    SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
+    return r;
+}
+
+#if 0
+static void return_tl_slot(int kind, ScmSize slot)
+{
+    SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
+    tl_freelists[kind].freelist[slot] = tl_freelists[kind].head;
+    tl_freelists[kind].head = slot;
+    SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
+}
+#endif
 
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
  * thread, base is the current thread (this must be called from the
@@ -148,22 +201,28 @@ static void ensure_tl_slot(ScmVMThreadLocalTable *t, ScmSize index, int kind)
 /*
  * Create a thread local
  */
+static void tl_finalize(ScmObj obj, void *data SCM_UNUSED)
+{
+    ScmThreadLocal *tl = SCM_THREAD_LOCAL(obj);
+    if (tl->index >= 0) {
+#if 0
+        int kind = ((tl->flags & SCM_THREAD_LOCAL_INHERITABLE)
+                    ? SCM_THREAD_LOCAL_VECTOR_INHERITABLE
+                    : SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE);
+        return_tl_slot(kind, tl->index);
+#endif
+        tl->index = -1;
+    }
+}
+
 ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
                                     ScmObj initval,
                                     u_long flags)
 {
-    ScmSize index;
-    int kind;
-
-    SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
-    if (flags & SCM_THREAD_LOCAL_INHERITABLE) {
-        index = next_tl_inheritable_index++;
-        kind = SCM_THREAD_LOCAL_VECTOR_INHERITABLE;
-    } else {
-        index = next_tl_noninheritable_index++;
-        kind = SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE;
-    }
-    SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
+    int kind = ((flags & SCM_THREAD_LOCAL_INHERITABLE)
+                ? SCM_THREAD_LOCAL_VECTOR_INHERITABLE
+                : SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE);
+    ScmSize index = get_tl_slot(kind);
     ensure_tl_slot(Scm_VM()->threadLocals, index, kind);
 
     ScmThreadLocal *tl = SCM_NEW(ScmThreadLocal);
@@ -172,6 +231,7 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
     tl->index = index;
     tl->initialValue = initval;
     tl->flags = flags;
+    Scm_RegisterFinalizer(SCM_OBJ(tl), tl_finalize, NULL);
     return tl;
 }
 
@@ -217,6 +277,7 @@ ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
 
 void Scm__InitThreadLocal(void)
 {
+    init_tl_freelist();
     SCM_INTERNAL_MUTEX_INIT(tl_mutex);
     /* We don't initialize Scm_ThraedLocalClass yet, since class
        stuff is not initialized yet.  The class is initialized in
