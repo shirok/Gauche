@@ -18310,10 +18310,26 @@ If @var{prompt-tag} is omitted, the default prompt tag is used.
 @c COMMON
 @end defun
 
-@defun continuation-mark-set-first mark-set key :optional fallback
+@defun continuation-mark-set-first mark-set key :optional fallback prompt-tag
 [SRFI-226]
 @c EN
+Returns the most recent value associated with @var{key} in the
+continuation mark set @var{mark-set}.  If there's a mark with @var{key} exists,
+it matches @code{(car (continuation-mark-set->list key prompt-tag)}.
+
+If there's no mark with @var{key} in the mark set, @var{fallback}
+is returned.  If @var{fallback} is omitted, @code{#f} is assumed.
+
+If @var{prompt-tag} is omitted, the default prompt tag is used.
 @c JP
+継続マークセット@var{mark-set}のうち、@var{key}に結びつけられた最も新しい値を
+返します。もし@var{key}がマークセットの中にあるなら、
+値は@code{(car (continuation-mark-set->list key prompt-tag)}と同じになります。
+
+@var{key}がマークセット中に無い場合は@var{fallback}が返ります。
+@var{fallback}が省略された場合は@code{#f}になります。
+
+@var{prompt-tag}が省略された場合はデフォルトプロンプトタグが使われます。
 @c COMMON
 @end defun
 
