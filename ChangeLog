@@ -1,5 +1,11 @@
 2023-09-19  Shiro Kawai  <shiro@acm.org>
 
+	* src/parameter.c: Fix semantics of thread parameter.  To conform
+	  SRFI-226, mutation of dyncamically bound thread parameter shoudln't
+	  be visible from other threads.  Thus we need a fresh thread local
+	  for every dynamic scope.  On the other hand, legacy parameters
+	  only requires thread locals for the global scope.
+
 	* src/threadlocal.c: Allow thread locals to be GC-ed and reused.
 	  Each thread local storage keeps 'generation' along its value.
 	  The generation is incremented when a thread local is GC-ed.

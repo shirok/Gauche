@@ -268,7 +268,15 @@ void Scm_PushParameterization(ScmObj params, ScmObj vals)
     ScmObj h = SCM_NIL, t = SCM_NIL;
 
     while (SCM_PAIRP(params)) {
-        SCM_APPEND1(h, t, Scm_Cons(SCM_CAR(params), SCM_CAR(vals)));
+        ScmObj p = SCM_CAR(params);
+        SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(p));
+        if (SCM_PRIMITIVE_PARAMETER(p)->flags & SCM_PARAMETER_THREAD) {
+            ScmThreadLocal *tl = Scm_MakeThreadLocal(SCM_FALSE, SCM_CAR(vals),
+                                                     SCM_THREAD_LOCAL_INHERITABLE);
+            SCM_APPEND1(h, t, Scm_Cons(p, SCM_OBJ(tl)));
+        } else {
+            SCM_APPEND1(h, t, Scm_Cons(p, SCM_CAR(vals)));
+        }
         params = SCM_CDR(params);
         vals = SCM_CDR(vals);
     }
@@ -295,8 +303,18 @@ ScmObj Scm_PrimitiveParameterRef(ScmVM *vm, const ScmPrimitiveParameter *p)
     ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
     ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
 
-    if (SCM_PAIRP(r)) return SCM_CDR(r);
+    if (SCM_PAIRP(r)) {
+        /* dynamically bound */
+        if (p->flags & SCM_PARAMETER_THREAD) {
+            ScmObj tl = SCM_CDR(r);
+            SCM_ASSERT(SCM_THREAD_LOCAL_P(tl));
+            return Scm_ThreadLocalRef(vm, SCM_THREAD_LOCAL(tl));
+        } else {
+            return SCM_CDR(r);
+        }
+    }
 
+    /* global value */
     ScmObj v;
     if (p->flags & SCM_PARAMETER_SHARED) {
         v = SCM_BOX_VALUE(p->g.v);
@@ -313,14 +331,20 @@ ScmObj Scm_PrimitiveParameterSet(ScmVM *vm, const ScmPrimitiveParameter *p,
     ScmObj k = Scm__GetDenvKey(SCM_DENV_KEY_PARAMETERIZATION);
     ScmObj parameterization = Scm_VMFindDynamicEnv(k, SCM_NIL);
     ScmObj r = Scm_Assq(SCM_OBJ(p), parameterization);
+    ScmObj old;
 
     if (SCM_PAIRP(r)) {
-        ScmObj old = SCM_CDR(r);
-        SCM_SET_CDR(r, val);
+        if (p->flags & SCM_PARAMETER_THREAD) {
+            ScmObj tl = SCM_CDR(r);
+            SCM_ASSERT(SCM_THREAD_LOCAL_P(tl));
+            old = Scm_ThreadLocalSet(vm, SCM_THREAD_LOCAL(tl), val);
+        } else {
+            old = SCM_CDR(r);
+            SCM_SET_CDR(r, val);
+        }
         return old;
     }
 
-    ScmObj old;
     if (p->flags & SCM_PARAMETER_SHARED) {
         /* TODO: need atomic operation */
         old = SCM_BOX_VALUE(p->g.v);
