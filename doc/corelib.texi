@@ -18087,14 +18087,53 @@ Gaucheの従来の部分継続は将来のバージョンで継続プロンプ�
 
 @defun make-continuation-prompt-tag :optional name
 [SRFI-226]
+@c EN
+Creates and returns a new continuation prompt tag,
+which is an opaque object to specify the boundary
+of continuation frames.  A new boundary can be introduced
+with @code{call-with-continuation-prompt}.  You can nest bounded
+continuation frames with the smae continuation prompt tag.  Operations
+that takes a continuation prompt tag seraches the innermost boundary
+with the tag.
+
+The optional @var{name} argument is the name of the continuation
+prompt tag.  It is for display purpose only to help diagnostics.
+@c JP
+新たな継続プロンプトタグを作って返します。
+継続プロンプトタグは、継続フレームの境界を指定するのに使うオブジェクトです。
+新しい境界は@code{call-with-continuation-prompt}で導入されます。
+ひとつの継続プロンプトタグを使いまわして、継続フレームの境界をネストすることもできます。
+継続プロンプトタグを取る手続きは、そのタグを持つ最も内側の境界を使います。
+
+省略可能な@var{name}は継続プロンプトタグの名前です。
+これは単に、診断を容易にするために表示するためだけのものです。
+@c COMMON
 @end defun
 
 @defun default-continuation-prompt-tag
 [SRFI-226]
+@c EN
+Returns a default continuation prompt tag.
+When the program starts, the initial continuation boundary
+has the default continaution prompt tag.
+Most procedures that takes an optional continuation prompt tag
+assumes the default tag if the argument is omitted.
+@c JP
+デフォルト継続プロンプトタグを返します。
+プログラムが開始された時、最初の継続フレームの境界はデフォルト継続プロンプトタグを持ちます。
+継続プロンプトタグを省略可能引数として取る手続きはほとんど、
+省略時にデフォルト継続プロンプトタグを使います。
+@c COMMON
 @end defun
 
-@defun continuation-prompt-tag?
+@defun continuation-prompt-tag? obj
 [SRFI-226]
+@c EN
+Returns @code{#t} if @var{obj} is a continuation prompt tag,
+@code{#f} otherwise.
+@c JP
+@var{obj}が継続プロンプトタグなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun call-with-continuation-prompt thunk :optional prompt-tag abort-handler
