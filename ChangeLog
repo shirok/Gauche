@@ -1,3 +1,12 @@
+2023-09-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/threadlocal.c: Allow thread locals to be GC-ed and reused.
+	  Each thread local storage keeps 'generation' along its value.
+	  The generation is incremented when a thread local is GC-ed.
+	  The next thread local which happens to use the same slot has
+	  a different generation, so it can detect the slot is uninitialized,
+	  even its value is not SCM_UNBOUND.
+
 2023-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/proc.c (proc_print): Allow a procedure to have a custom

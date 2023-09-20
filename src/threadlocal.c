@@ -55,10 +55,15 @@
 /* Global table to track free slots of the thread local table.
  * tl_freelists[].freelist array has a list of free slots, terminated by -1.
  */
+typedef struct tl_freelist_entry {
+    ScmSize next;
+    u_long generation;
+} tl_freelist_entry;
+
 struct tl_freelist {
     ScmSize size;
     ScmSize head;
-    ScmSize *freelist;
+    tl_freelist_entry *freelist;
 } tl_freelists[2];
 
 static ScmInternalMutex tl_mutex = SCM_INTERNAL_MUTEX_INITIALIZER;
@@ -82,53 +87,59 @@ static void tl_print(ScmObj obj,
 static void init_tl_freelist(void)
 {
     for (int i=0; i<2; i++) {
-        tl_freelists[i].freelist
-            = SCM_NEW_ATOMIC_ARRAY(ScmSize, THREAD_LOCAL_INIT_SIZE);
-        for (ScmSize j=0; j<THREAD_LOCAL_INIT_SIZE-1; j++) {
-            tl_freelists[i].freelist[j] = j+1;
+        tl_freelists[i].freelist =
+            SCM_NEW_ATOMIC_ARRAY(tl_freelist_entry, THREAD_LOCAL_INIT_SIZE);
+        for (ScmSize j=0; j<THREAD_LOCAL_INIT_SIZE; j++) {
+            tl_freelists[i].freelist[j].next = j+1;
+            tl_freelists[i].freelist[j].generation = 0;
         }
         tl_freelists[i].size = THREAD_LOCAL_INIT_SIZE;
         tl_freelists[i].head = 0;
-        tl_freelists[i].freelist[THREAD_LOCAL_INIT_SIZE-1] = -1;
+        tl_freelists[i].freelist[THREAD_LOCAL_INIT_SIZE-1].next = -1;
     }
 }
 
-static ScmSize get_tl_slot(int kind)
+static ScmSize allocate_tl_slot(int kind, u_long *generation /*out*/)
 {
     ScmSize r = -1;
+    u_long gen;
     SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
     if (tl_freelists[kind].head >= 0) {
         r = tl_freelists[kind].head;
-        tl_freelists[kind].head = tl_freelists[kind].freelist[r];
-        tl_freelists[kind].freelist[r] = -1;
+        gen = tl_freelists[kind].freelist[r].generation;
+        tl_freelists[kind].head = tl_freelists[kind].freelist[r].next;
+        tl_freelists[kind].freelist[r].next = -1;
     } else {
         ScmSize oldsize = tl_freelists[kind].size;
         ScmSize newsize = oldsize + THREAD_LOCAL_GROW;
-        ScmSize *newlist = SCM_NEW_ATOMIC_ARRAY(ScmSize, newsize);
+        tl_freelist_entry *newlist =
+            SCM_NEW_ATOMIC_ARRAY(tl_freelist_entry, newsize);
         memcpy(tl_freelists[kind].freelist, newlist, oldsize);
-        for (ScmSize i=oldsize+1; i < newsize-1; i++) {
-            newlist[i] = i+1;
+        for (ScmSize i=oldsize; i < newsize; i++) {
+            newlist[i].next = i+1;
+            newlist[i].generation = 0;
         }
-        newlist[oldsize] = -1;
-        newlist[newsize-1] = -1;
+        newlist[oldsize].next = -1;
+        newlist[newsize-1].next = -1;
         tl_freelists[kind].freelist = newlist;
         tl_freelists[kind].size = newsize;
         tl_freelists[kind].head = oldsize+1;
         r = oldsize;
+        gen = 0;
     }
     SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
+    *generation = gen;
     return r;
 }
 
-#if 0
-static void return_tl_slot(int kind, ScmSize slot)
+static void free_tl_slot(int kind, ScmSize slot)
 {
     SCM_INTERNAL_MUTEX_LOCK(tl_mutex);
-    tl_freelists[kind].freelist[slot] = tl_freelists[kind].head;
+    tl_freelists[kind].freelist[slot].next = tl_freelists[kind].head;
+    tl_freelists[kind].freelist[slot].generation++;
     tl_freelists[kind].head = slot;
     SCM_INTERNAL_MUTEX_UNLOCK(tl_mutex);
 }
-#endif
 
 /* Init table.  For primordial thread, base == NULL.  For non-primordial
  * thread, base is the current thread (this must be called from the
@@ -141,16 +152,17 @@ static void fill_tl_vector(ScmVMThreadLocalVector *dst,
         /* NB: In this case, the caller is the owner thread of BASE,
            so we don't need to worry about base->parameters being
            modified during copying. */
-        dst->vector = SCM_NEW_ARRAY(ScmObj, base->size);
+        dst->vector = SCM_NEW_ARRAY(ScmVMThreadLocalSlot, base->size);
         dst->size = base->size;
         for (ScmSize i=0; i<dst->size; i++) {
             dst->vector[i] = base->vector[i];
         }
     } else {
-        dst->vector = SCM_NEW_ARRAY(ScmObj, THREAD_LOCAL_INIT_SIZE);
+        dst->vector = SCM_NEW_ARRAY(ScmVMThreadLocalSlot, THREAD_LOCAL_INIT_SIZE);
         dst->size = THREAD_LOCAL_INIT_SIZE;
         for (ScmSize i=0; i<dst->size; i++) {
-            dst->vector[i] = SCM_UNBOUND;
+            dst->vector[i].value = SCM_UNBOUND;
+            dst->vector[i].generation = 0; /* doesn't matter */
         }
     }
 }
@@ -183,15 +195,16 @@ static void ensure_tl_slot(ScmVMThreadLocalTable *t, ScmSize index, int kind)
     if (index >= p->size) {
         ScmSize newsiz =
             ((index+THREAD_LOCAL_GROW)/THREAD_LOCAL_GROW)*THREAD_LOCAL_GROW;
-        ScmObj *newvec = SCM_NEW_ARRAY(ScmObj, newsiz);
+        ScmVMThreadLocalSlot *newvec = SCM_NEW_ARRAY(ScmVMThreadLocalSlot, newsiz);
 
         ScmSize i;
         for (i=0; i < p->size; i++) {
             newvec[i] = p->vector[i];
-            p->vector[i] = SCM_FALSE; /*be friendly to GC*/
+            p->vector[i].value = SCM_FALSE; /*be friendly to GC*/
         }
         for (; i < newsiz; i++) {
-            newvec[i] = SCM_UNBOUND;
+            newvec[i].value = SCM_UNBOUND;
+            newvec[i].generation = 0; /* doesn't matter */
         }
         p->vector = newvec;
         p->size = newsiz;
@@ -205,12 +218,10 @@ static void tl_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmThreadLocal *tl = SCM_THREAD_LOCAL(obj);
     if (tl->index >= 0) {
-#if 0
         int kind = ((tl->flags & SCM_THREAD_LOCAL_INHERITABLE)
                     ? SCM_THREAD_LOCAL_VECTOR_INHERITABLE
                     : SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE);
-        return_tl_slot(kind, tl->index);
-#endif
+        free_tl_slot(kind, tl->index);
         tl->index = -1;
     }
 }
@@ -222,7 +233,8 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
     int kind = ((flags & SCM_THREAD_LOCAL_INHERITABLE)
                 ? SCM_THREAD_LOCAL_VECTOR_INHERITABLE
                 : SCM_THREAD_LOCAL_VECTOR_NONINHERITABLE);
-    ScmSize index = get_tl_slot(kind);
+    u_long generation;
+    ScmSize index = allocate_tl_slot(kind, &generation);
     ensure_tl_slot(Scm_VM()->threadLocals, index, kind);
 
     ScmThreadLocal *tl = SCM_NEW(ScmThreadLocal);
@@ -230,6 +242,7 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
     tl->name = name;
     tl->index = index;
     tl->initialValue = initval;
+    tl->generation = generation;
     tl->flags = flags;
     Scm_RegisterFinalizer(SCM_OBJ(tl), tl_finalize, NULL);
     return tl;
@@ -241,15 +254,18 @@ ScmThreadLocal *Scm_MakeThreadLocal(ScmObj name,
 
 ScmObj Scm_ThreadLocalRef(ScmVM *vm, const ScmThreadLocal *tl)
 {
-    ScmVMThreadLocalVector *t = &vm->threadLocals->vs[tl_kind(tl)];
+    int kind = tl_kind(tl);
+    ScmVMThreadLocalVector *t = &vm->threadLocals->vs[kind];
 
     ScmObj result;
     if (tl->index >= t->size) {
         result = tl->initialValue;
     } else {
-        result = t->vector[tl->index];
-        if (SCM_UNBOUNDP(result)) {
-            result = t->vector[tl->index] = tl->initialValue;
+        result = t->vector[tl->index].value;
+        if (SCM_UNBOUNDP(result)
+            || tl->generation != t->vector[tl->index].generation) {
+            result = t->vector[tl->index].value = tl->initialValue;
+            t->vector[tl->index].generation = tl->generation;
         }
     }
     return result;
@@ -259,18 +275,20 @@ ScmObj Scm_ThreadLocalSet(ScmVM *vm, const ScmThreadLocal *tl,
                           ScmObj val)
 {
     ScmObj oldval = SCM_UNBOUND;
-    ScmVMThreadLocalVector *t = &vm->threadLocals->vs[tl_kind(tl)];
+    int kind = tl_kind(tl);
+    ScmVMThreadLocalVector *t = &vm->threadLocals->vs[kind];
 
     if (tl->index >= t->size) {
         ensure_tl_slot(vm->threadLocals, tl->index, tl_kind(tl));
-    } else {
-        oldval = t->vector[tl->index];
+    } else if (tl->generation == t->vector[tl->index].generation) {
+        oldval = t->vector[tl->index].value;
     }
     if (SCM_UNBOUNDP(oldval)) {
         oldval = tl->initialValue;
     }
 
-    t->vector[tl->index] = val;
+    t->vector[tl->index].value = val;
+    t->vector[tl->index].generation = tl->generation;
 
     return oldval;
 }

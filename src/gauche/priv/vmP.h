@@ -227,6 +227,7 @@ struct ScmThreadLocalRec {
     SCM_HEADER;
     ScmObj name;                /* for debugging. #f or symbol. */
     ScmSize index;              /* slot index */
+    u_long generation;          /* to detect slot being reused */
     ScmObj initialValue;
     u_long flags;
 };
@@ -236,9 +237,14 @@ struct ScmThreadLocalRec {
    We might swap this to more sophisticated data structure than
    a simple flat vector in future.
  */
+typedef struct ScmVMThreadLocalSlotRec {
+    ScmObj value;
+    u_long generation;
+} ScmVMThreadLocalSlot;
+
 typedef struct ScmVMThreadLocalVectorRec {
     ScmSize size;
-    ScmObj *vector;
+    ScmVMThreadLocalSlot *vector;
 } ScmVMThreadLocalVector;
 
 struct ScmVMThreadLocalTableRec {
