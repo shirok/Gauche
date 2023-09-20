@@ -271,8 +271,10 @@ void Scm_PushParameterization(ScmObj params, ScmObj vals)
         ScmObj p = SCM_CAR(params);
         SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(p));
         if (SCM_PRIMITIVE_PARAMETER(p)->flags & SCM_PARAMETER_THREAD) {
-            ScmThreadLocal *tl = Scm_MakeThreadLocal(SCM_FALSE, SCM_CAR(vals),
-                                                     SCM_THREAD_LOCAL_INHERITABLE);
+            ScmThreadLocal *tl =
+                Scm_MakeThreadLocal(SCM_PRIMITIVE_PARAMETER(p)->name,
+                                    SCM_CAR(vals),
+                                    SCM_THREAD_LOCAL_INHERITABLE);
             SCM_APPEND1(h, t, Scm_Cons(p, SCM_OBJ(tl)));
         } else {
             SCM_APPEND1(h, t, Scm_Cons(p, SCM_CAR(vals)));
