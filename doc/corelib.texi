@@ -18138,11 +18138,143 @@ Returns @code{#t} if @var{obj} is a continuation prompt tag,
 
 @defun call-with-continuation-prompt thunk :optional prompt-tag abort-handler
 [SRFI-226]
+@c EN
+Calls @var{thunk} with a continuation delimited by a continuation prompt tag
+@var{prompt-tag}.  If @var{prompt-tag} is omitted, the default prompt
+tag is assumed.
+
+The @var{abort-handler} is a procedure to be called when, during executing
+@var{thunk}, its continuation is aborted by
+@code{abort-current-continuation}.  The objects passed to
+@code{abort-current-continuation} are passed to @var{abort-handler},
+which is called with the continuation of @var{call-with-continuation-prompt}
+itself.  If @var{thunk} doesn't abort the continuation,
+@var{abort-handler} won't be called.
+
+When @var{abort-handler} is omitted, it installs a default abort handler,
+which work in a very specific way.  First, it takes one argument, which must
+be a thunk (let's call it @var{continuation-thunk} for now).
+The default abort handler reinstates
+the continuation with the continuation prompt tag @var{prompt-tag} and
+calls the continuation thunk.  Say, it works like a trampoline to push
+back the control to the same context as @var{thunk} is called.
+@c JP
+継続プロンプトタグ@var{prompt-tag}で区切られた継続の上で@var{thunk}を呼び出します。
+@var{prompt-tag}が省略された場合はデフォルト継続プロンプトタグが使われます。
+
+@var{abort-handler}は手続きで、@var{thunk}実行中にその継続が
+@code{abort-current-continuation}によって破棄された場合に呼ばれます。
+@code{abort-current-continuation}に渡されるオブジェクトが@var{abort-handler}
+に引数として渡されます。
+@var{abort-handler}自身は、@code{call-with-continuation-prompt}の継続の上で
+実行されます。
+@var{thunk}が実行中に継続を破棄しなかった場合は@var{abort-handler}は呼ばれません。
+
+@var{abort-handler}が省略された場合はデフォルトのアボートハンドラが使われますが、
+それはちょっと特殊な動作をします。まず、デフォルトアボートハンドラは
+一つだけ引数を取り、それはサンクでなければなりません
+(ここでは@var{continuation-thunk}と呼ぶことにします)。
+デフォルトアボートハンドラは@var{prompt-tag}で区切られた継続を改めて導入し、
+@var{continuation-thunk}を呼び出します。いわば、トランポリンのように、
+@var{thunk}がもともと呼ばれた文脈に制御を戻すようなものです。
+@c COMMON
+
+@c EN
+See the entry of @code{abort-current-continuation} below
+for exmaples.
+@c JP
+例については下の@code{abort-current-continuation}の項を参照してください。
+@c COMMON
 @end defun
 
 @defun abort-current-continuation prompt-tag obj @dots{}
 [SRFI-226]
+@c EN
+Aborts all active procedure calls in the current continuation up to
+the continuation prompt tagged with @var{prompt-tag}.  The control
+goes to the abort handler installed by the most recent
+@code{call-with-continuation-prompt} with the @var{prompt-tag}.
+The rest of the arguments @var{obj} @dots{} are passed to the
+abort handler.
+
+When the current continuation does not have a continuation prompt
+tagged with @var{prompt-tag}, a @code{<continuation-violation>} error
+is thrown.
+@c JP
+現在の継続から、@var{prompt-tag}でタグ付けられた継続プロンプトまでの
+継続を破棄して、その@var{prompt-tag}を導入した
+@code{call-with-continuation-prompt}のアボートハンドラに制御を移します。
+残りの引数@var{obj} @dots{}はアボートハンドラに引数として渡されます。
+
+現在の継続の先に@var{prompt-tag}を持つ継続プロンプトが無かった場合は
+@code{<continuation-violation>}エラーが投げられます。
+@c COMMON
+
+@example
+(let ([tag (make-continuation-prompt-tag)])
+ (call-with-continuation-prompt
+   (^[] (+ 1 (abort-current-continuation tag 'foo 'bar) 2))
+   tag
+   list))
+ @result{} (foo bar)
+@end example
+
+@c EN
+If a dynamic handlers are inserted in the continuation frames
+to be aborted, their `after' handlers are executed before
+the abort handler is called.
+@c JP
+もし動的ハンドラが破棄される継続フレーム中に挿入されていたら、
+その　`after' ハンドラはアボートハンドラの前に実行されます。
+@c COMMON
+
+@example
+(let ((tag (make-continuation-prompt-tag)))
+ (call-with-continuation-prompt
+   (^[]
+     (dynamic-wind
+       (^[] #f)
+       (^[] (abort-current-continuation tag 'foo))
+       (^[] (print 'yo))))
+   tag
+   print))
+ @result{} @r{prints @code{yo}, then prints @code{foo}}.
+@end example
 @end defun
+
+
+@c EN
+You may wonder the difference between the traditional @code{call/cc}
+and the combination of @code{call-with-continuation-prompt} and
+@code{abort-current-continuation}.  Actually the latter is more
+lower-level construct, and @var{call/cc} is a high-level construct
+implemented on top of it.
+@c JP
+ここまで読んできて、従来の@code{call/cc}に対して、
+@code{call-with-continuation-prompt}と@code{abort-current-continuation}
+の組み合わせがどう違うのかと思ったかもしれません。
+実は後者はより低レベルの構造で、@code{call/cc}はその上に実装される高レベル構造なのです。
+@c COMMON
+
+@c EN
+The traditional @code{call/cc} can be understood roughly as follows
+(not exactly how it is implemented, but it gives you an idea).
+@c JP
+ざっと、従来の@code{call/cc}は次のように説明できます
+(この通りに実装されているわけではありませんが、仕組みはわかるでしょう)。
+@c COMMON
+
+@example
+(define (call/cc proc)
+  (let ([tag (make-continuation-prompt-tag)])
+    (call-with-continuation-prompt
+      (lambda ()
+        (proc (lambda vals
+                (apply abort-current-continuation tag vals))))
+      tag
+      values)))
+@end example
+
 
 @node Continuation marks, Multiple values, Continuatino prompts, Procedures and continuations
 @subsection Continuation marks
