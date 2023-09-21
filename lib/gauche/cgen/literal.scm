@@ -401,27 +401,37 @@
   (rec (car key)))
 
 (define (literal-value=? x-key y-key)
-  (define (rec x y)
-    (cond
-     [(pair? x) (and (pair? y) (rec (car x) (car y)) (rec (cdr x) (cdr y)))]
-     [(vector? x)
-      (and (vector? y)
-           (let1 len (vector-length x)
-             (and (= len (vector-length y))
-                  (every?-ec (: i len)
-                             (rec (vector-ref x i) (vector-ref y i))))))]
-     [(or (uvector? x) (string? x) (char-set? x) (regexp? x)
-          (%descriptive-type? x))
-      (equal? x y)]
-     [(wrapped-identifier? x)
-      (and (wrapped-identifier? y)
-           (eq? (~ x'name) (~ y'name))
-           (eq? (~ x'module) (~ y'module)))]
-     ;; We can't use equal? as fallback, for the equality predicate needs
-     ;; to recurse to literal-value=?.
-     [else (and (eq? (class-of x) (class-of y)) (eqv? x y))]))
   (and (equal? (cdr x-key) (cdr y-key)) ;cpp conditions
-       (rec (car x-key) (car y-key))))
+       (literal-value=?-rec (car x-key) (car y-key))))
+
+;; NB: This should be a local function in literal-value=?, but 0.9.13 compiler
+;; fails to lift it, adding overhead of closure allocation.  Since
+;; literal-value=? is called many millions of times during compilation,
+;; we hand-optmize it for now.  Put it back once we have a better compiler.
+(define (literal-value=?-rec x y)
+  (cond
+   [(eqv? x y)]
+   [(pair? x) (and (pair? y)
+                   (literal-value=?-rec (car x) (car y))
+                   (literal-value=?-rec (cdr x) (cdr y)))]
+   [(vector? x)
+    (and (vector? y)
+         (let1 len (vector-length x)
+           (and (= len (vector-length y))
+                (let loop ([i 0])
+                  (cond [(= i len) #t]
+                        [(literal-value=?-rec (vector-ref x i) (vector-ref y i))
+                         (loop (+ i 1))]
+                        [else #f])))))]
+   [(or (uvector? x) (string? x) (char-set? x) (regexp? x)
+        (%descriptive-type? x))
+    (equal? x y)]
+   [(wrapped-identifier? x)
+    (and (wrapped-identifier? y)
+         (eq? (~ x'name) (~ y'name))
+         (eq? (~ x'module) (~ y'module)))]
+   [else #f]))
+
 
 (define (ensure-literal-hash unit)
   (or (~ unit'literals)

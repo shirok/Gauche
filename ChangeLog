@@ -1,5 +1,7 @@
 2023-09-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/literal.scm (literal-value=?): Optimized.
+
 	* src/port.c: Reduce overhead of string port creation.  A significant
 	  one is to omit registering finalizers, for they're not needed for
 	  string ports.  Also a couple of micro-optimizations.
