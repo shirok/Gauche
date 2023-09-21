@@ -213,7 +213,12 @@ static void port_cleanup(ScmPort *port, _Bool final)
     Scm_UnregisterFinalizer(SCM_OBJ(port));
 }
 
-/* called by GC */
+/* called by GC.
+   NB: We only attach finalizers for SCM_PORT_FILE and SCM_PORT_PROC.
+   Attaching finalizer has overhead, which is not negligible when
+   string ports are frequently created.
+   Cf. https://github.com/shirok/Gauche/issues/937
+*/
 static void port_finalize(ScmObj obj, void* data SCM_UNUSED)
 {
     if (PORT_FILE_EXTDATA_P(obj)) {
@@ -254,18 +259,20 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     port->line = 1;
     port->bytes = 0;
     port->column = 0;
-    /* We set name attribute as read-only attribute.  See portapi.c
-       for the format of attrs. */
-    port->attrs = SCM_LIST1(Scm_Cons(SCM_SYM_NAME, Scm_Cons(name, SCM_FALSE)));
+    /* Initial port attributes.
+         ((name <name> . #f)   ; read-only
+          (reader-lexical-mode <lexical-mode>))
+       See "Port Attributes" section below for the format of attrs. */
+    port->attrs = SCM_LIST2(Scm_Cons(SCM_SYM_NAME,
+                                     Scm_Cons(name, SCM_FALSE)),
+                            SCM_LIST2(SCM_SYM_READER_LEXICAL_MODE,
+                                      Scm_ReaderLexicalMode()));
     port->link = SCM_FALSE;
     port->internalFlags = 0;
 
-    Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
-
-    /* Default reader lexical mode */
-    Scm_PortAttrSet(SCM_PORT(port),
-                    SCM_SYM_READER_LEXICAL_MODE,
-                    Scm_ReaderLexicalMode());
+    if (type == SCM_PORT_FILE || type == SCM_PORT_PROC) {
+        Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
+    }
 
     return SCM_PORT(port);
 }
@@ -1607,11 +1614,10 @@ ScmObj Scm_MakeInputStringPortFull(ScmString *str, ScmObj name,
                                    u_long flags)
 {
     ScmPort *p = make_port(SCM_CLASS_PORT, name, SCM_PORT_INPUT, SCM_PORT_ISTR);
-    ScmSmallInt size;
-    const char *s = Scm_GetStringContent(str, &size, NULL, NULL);
-    PORT_ISTR(p)->start = s;
-    PORT_ISTR(p)->current = s;
-    PORT_ISTR(p)->end = s + size;
+    const ScmStringBody *sb = SCM_STRING_BODY(str);
+    PORT_ISTR(p)->start = SCM_STRING_BODY_START(sb);
+    PORT_ISTR(p)->current = SCM_STRING_BODY_START(sb);
+    PORT_ISTR(p)->end = SCM_STRING_BODY_END(sb);
     if (flags&SCM_PORT_STRING_PRIVATE) PORT_PRELOCK(p, Scm_VM());
     return SCM_OBJ(p);
 }

@@ -1,3 +1,9 @@
+2023-09-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/port.c: Reduce overhead of string port creation.  A significant
+	  one is to omit registering finalizers, for they're not needed for
+	  string ports.  Also a couple of micro-optimizations.
+
 2023-09-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/parameter.c: Fix semantics of thread parameter.  To conform
