@@ -78,16 +78,7 @@
    (post-observers)
    ))
 
-;; We'll be switching to the SRFI-226  model that parameter bindings are shared
-;; among threads.  The legacy code that requires thread-local
-;; parameters need to move to make-legacy-parameter.  To ease transition,
-;; we also provide make-shared-parameter.
-;; In 0.9.13, make-parameter creates a legacy parameter; we'll flip the default
-;; in the next version.
-;; NB: To get full backward compatibility, you also need to use
-;; parameteize/dynwind in place of parameterize.  Using gauche.parameter
-;; realizes it.
-(define (make-parameter value :optional (filter #f) (type 'legacy))
+(define (%make-parameter value :optional (filter #f) (type 'legacy))
   (call-with-current-expression-name
    (^[name]
      (let* ([v (if filter (filter value) value)]
@@ -101,14 +92,21 @@
         (^[val] ((slot-ref p 'setter) val)))))))
 
 (define (make-thread-parameter value :optional (filter #f))
-  (make-parameter value filter 'thread))
+  (%make-parameter value filter 'thread))
 
 ;; this is SRFI-226 make-parameter
 (define (make-shared-parameter value :optional (filter #f))
-  (make-parameter value filter 'shared))
+  (%make-parameter value filter 'shared))
 
 (define (make-legacy-parameter value :optional (filter #f))
-  (make-parameter value filter 'legacy))
+  (%make-parameter value filter 'legacy))
+
+;; In 0.9.13, make-parameter returns a legacy parameter so that it
+;; won't break existing code.  We'll switch it to make-shared-parameter
+;; in futuer release.
+;; Note that you also need to use parameterize/dynwind to get full
+;; backward compatibility.  Using gauche.parameter guarantees it.
+(define make-parameter make-legacy-parameter)
 
 (define (parameter? obj)
   (boolean (procedure-parameter obj)))

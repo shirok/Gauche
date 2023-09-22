@@ -3,7 +3,7 @@
 ;;;
 
 (define-module srfi.226.parameter
-  (export make-parameter
+  (export (rename make-shared-parameter make-parameter)
           make-thread-parameter
           parameter?
           parameterize
