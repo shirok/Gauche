@@ -18890,11 +18890,11 @@ It is codified in SRFI-39 and incorporated into R7RS.
 @c EN
 @b{Note:} Starting from 0.9.13, we're adopting SRFI-226 semantics
 of parameters, which behaves slightly different from our legacy parameters.
-@xref{Transition to 0.9.13 parameters}, for the details.
+@xref{Transition to SRFI-226 parameters}, for the details.
 @c JP
 @b{註:} 0.9.13より、パラメータのセマンティクスを従来のものからSRFI-226で定義される
 ものに切り替えつつあります。両者は微妙に振る舞いが異なります。
-詳しくは@ref{Transition to 0.9.13 parameters}で説明しています。
+詳しくは@ref{Transition to SRFI-226 parameters}で説明しています。
 @c COMMON
 
 @c EN
@@ -18992,18 +18992,18 @@ Gaucheも0.9.13からこの区別を採り入れています。
 @c EN
 If you're a long time Gauche user (thanks!), remember to check
 out the changes on 0.9.13 and how to transition to it
-(@pxref{Transition to 0.9.13 parameters}).
+(@pxref{Transition to SRFI-226 parameters}).
 @c JP
 これまで長くGaucheを使っていた方は、一度0.9.13での変更点と
 移行方法をチェックしておいてください
-(@ref{Transition to 0.9.13 parameters}参照)。
+(@ref{Transition to SRFI-226 parameters}参照)。
 @c COMMON
 
 @menu
 * Parameters::
 * Dynamic states::
 * Difference of parameters and dynamic states::
-* Transition to 0.9.13 parameters::
+* Transition to SRFI-226 parameters::
 @end menu
 
 @node Parameters, Dynamic states, Parameters and dynamic states, Parameters and dynamic states
@@ -19506,7 +19506,7 @@ the state of each @var{proc} is saved and restored.
 @end defmac
 
 
-@node Difference of parameters and dynamic states, Transition to 0.9.13 parameters, Dynamic states, Parameters and dynamic states
+@node Difference of parameters and dynamic states, Transition to SRFI-226 parameters, Dynamic states, Parameters and dynamic states
 @subsection Difference of parameters and dynamic states
 @c NODE パラメータと動的状態の違い
 
@@ -19584,9 +19584,9 @@ additional protocol, which isn't standardized.
 そうするためには別のプロトコルが必要ですが、その点に関しては標準と呼べるものがありません。
 @c COMMON
 
-@node Transition to 0.9.13 parameters,  , Difference of parameters and dynamic states, Parameters and dynamic states
-@subsection Transition to 0.9.13 parameters
-@c NODE 0.9.13パラメータへの移行
+@node Transition to SRFI-226 parameters,  , Difference of parameters and dynamic states, Parameters and dynamic states
+@subsection Transition to SRFI-226 parameters
+@c NODE SRFI-226パラメータへの移行
 
 @c EN
 @subsubheading First, here's rule of thumb:
@@ -19655,15 +19655,28 @@ binding, use @code{make-thread-parameter} @emph{and}
 @subsubheading ボンネットの下:
 @c COMMON
 
-We call the parameter implementation before 0.9.13 as ``legacy model'',
+@c EN
+Here we call the parameter implementation before 0.9.13 as ``legacy model'',
 while the one in 0.9.13 and later as ``new model''.
+@c JP
+ここでは0.9.13より前のパラメータ実装を「旧モデル」、
+0.9.13とそれ以降を「新モデル」と呼ぶことにします。
+@c COMMON
 
+@c EN
 In the legacy model, parameterization is realized by swapping
 each parameter's value in dynamic wind's before and after thunk.
 Roughly speaking, @code{parameterize} is expanded as follows
 (this assumes Gauche's parameter protocol that returns previous
 value when a new value is set.  Also, we omit consideration of
 converter, for simplicity):
+@c JP
+旧モデルでは、パラメタライゼーションはdynamic-windのbefore/afterサンクで
+パラメータの値を入れ替えることで実現されていました。
+おおまかに言えば、@code{parameterize}は次のように展開されます
+(Gaucheのパラメータは変更した時に以前の値を返す、というのを使っています。
+また、説明の単純化のためにconverterの処理は省略しています):
+@c COMMON
 
 @example
 (parameterize ((param expr)) body @dots{})
@@ -19675,26 +19688,55 @@ converter, for simplicity):
    (lambda () (set! v (p v)))))
 @end example
 
+@c EN
 This model directly replaces the value of the parameter in the dynamic
 scope of @var{body} @dots{}.  So the parameter value needs to be
 thread-specific, otherwise the swapping of the value would be visible
 from other threads, which is not desirable.
+@c JP
+このモデルは@var{body} @dots{}を実行している間、
+パラメータの値を直接置き換えています。このモデルを取る場合、
+パラメータの値はスレッドごとにせざるを得ません。
+でないとあるスレッドが動的スコープに入る度に他のスレッドから見えるパラメータの値が
+変わっちゃいます。
+@c COMMON
 
+@c EN
 Note that even parameter value is thread-specifc, you can still
 invoke a continuation captured in a different thread and expect
 the parameter values are carried over, for the switching conitnuation
 triggers execution of before/after thunks, which restores the
 values of parameters in the thread that invokes the continuation.
+@c JP
+このモデルでは、パラメータの値がスレッドごとでも、ある動的環境で捕捉された継続を別のスレッドで
+起動したら、捕捉されたパラメータの値は新たなスレッドに引き継がれます。
+継続の呼び出し時にdynamic-windのbefore/afterサンクが実行されて、
+継続捕捉時のパラメータの値が復元されるからです。
+@c COMMON
 
+@c EN
 Also keep in mind that the body can't be in tail context even
 the parameterize form is, since you have to execute @emph{after} thunk
 after the body is evaluated.
+@c JP
+もうひとつ、このモデルでは、parameterizeフォームが末尾位置にあっても
+bodyは末尾呼び出しできないということに留意してください。
+bodyの後でafterサンクを実行しないとならないからです。
+@c COMMON
 
+@c EN
 In the new model, we keep a chain of dynamic binding frames,
 and parameter value is looked up from it.  The dynamic chain is a part of
 continuation, so when a continuation is popped, the dynamic frame
 created in the current continuation frame is also popped implicitly.
 With this model, @code{parameterize} is expanded something like this:
+@c JP
+新モデルでは、動的束縛のフレームのチェインを持っていて、
+パラメータの値はまずそこから探されます。動的束縛のチェインは継続の一部なので、
+継続がポップされると、その継続フレームで使われていた動的束縛のフレームも
+自動的にポップされます。このモデルでは@code{parameterize}は概念的に
+こんな感じで展開されます:
+@c COMMON
 
 @example
 (parameterize ((param expr)) body @dots{})
@@ -19705,6 +19747,7 @@ With this model, @code{parameterize} is expanded something like this:
  param expr)
 @end example
 
+@c EN
 Here, @code{push-dynamic-frame!} is a hypothetical procedure that pushes
 new dynamic frame in the current execution environment.
 When the control returns to the continuation of the parameterize
@@ -19713,15 +19756,83 @@ so we don't need a special operation.  If a continuation is captured
 in @var{body}, the dynamic frame chain is saved along the continuation.
 When the continuation is invoked in another thread, the dynamic frame chain
 is restored.
+This allows the body to be run in tail context if @code{parameterize}
+itself is in tail context.
+@c JP
+@code{push-dynamic-frame!}は新しい動的束縛フレームをプッシュする仮想的な手続きです。
+制御がparameterizeフォームの継続に渡った時には、プッシュされた動的束縛フレームは
+自動的にポップされているので、特別な後処理が必要ありません。
+@var{body}実行中に継続が捕捉された場合、動的束縛フレームのチェインも継続とともに
+保存されるので、その継続が別のスレッドで起動されたら、動的束縛フレームも復元されます。
+このことから、@code{parameterize}が末尾位置にあれば、
+@var{body}も末尾式として評価されます。
+@c COMMON
 
+@c EN
 If you mutate parameter value (as opposed to binding it with
-@code{parameterize}), the dynamic frame is mutated.  The mutated
-value must be seen even if the captured continuation is invoked
-in a different thread, so the dynamic frames themselves must freely be
-passed between threads; they're pretty much the same as lexical frames,
-except the scopes.  Because of this, the parameter storage needs
-to be shared among threads.  If the parameter value is thread-specific,
-the mutation in one thread won't be carried over to other thread.
+@code{parameterize}), the dynamic frame is mutated.  If the frame
+is shared between multiple threads, those mutations are visible immediately;
+they're pretty much the same as lexical frames, except the scopes.
+@c JP
+このモデルでは、@code{parameterize}を使わずに直接パラメータの値を変更した場合、
+その変更は動的束縛フレームに反映されます。したがって同じ動的束縛フレームが
+複数スレッドで共有されていれば、この変更は直ちに他のスレッドからも見えます。
+@c COMMON
+
+@c EN
+SRFI-226 thread parameters are required to contain mutations within
+a thread.  So we create a new thread-local whenever a thread parameter
+is dynamically bound by @code{parameterize} and keep the parameter's
+value in it.  The mutation on a thread
+parameter is never visible from other thread, even if the dynamic
+frames are shared, or a continuation having it is passed to another
+thread.  So, be careful using thread parameters.  For example,
+if you create a future (@pxref{Futures}), the expression in it
+is evaluated in another thread, so it may not see the same
+value in thread parameters as the caller.  Thread parameters
+also incur overhead for every @code{parameterize}, to allocate
+a new thread local.
+@c JP
+SRFI-226スレッドパラメータは、破壊的変更がスレッド内に止まることを要求します。
+なので、スレッドパラメータを@code{parameterize}する度に、スレッドローカルが
+作られてパラメータの動的な値はそこに格納されます。
+スレッドパラメータの破壊的変更は、同じ動的環境がスレッド間で共有されていたり、
+継続が他のスレッドに渡されて実行された場合などでも、他のスレッドには見えません。
+スレッドパラメータを使う時はこの点に留意してください。
+例えばfutureを作った場合、式は別スレッドで実行されるので、作成側で
+見えているスレッドパラメータの値と式内で見えるそれが異なる可能性があります
+(@ref{Futures}参照)。
+スレッドパラメータはまた、@code{parameterize}ごとにスレッドローカルを
+アロケートするので遅いです。
+@c COMMON
+
+@c EN
+The new model also restricts @code{parameterize} to bind
+only parameters. ``Parameter-like'' objects, a procedure that
+merely follows the parameter protocol, can't be handled
+in @code{parameterize}.  You should separate them and use
+@code{temporarily} for the latter (@pxref{Dynamic states}).
+
+To ease transition, 0.9.13's @code{parameterize} checks if the given
+``parameters'' are all actual parameters at run-time, and if not,
+it evalues as if the form is @code{parameterize/dynwind} instead.
+This kind of loose behavior tends to be the source of bugs,
+so we'll eventually make it stricter.  You can check if your code
+is conforming the new model by using @code{(use srfi.226.parameter)}.
+@c JP
+新モデルでは、@code{parameterize}で動的束縛できるのはパラメータに限られます。
+パラメータプロトコルに従っているだけの「パラメータのような」手続きは
+@code{parameterize}では処理できません。それらは別にして、
+@code{tempporarily}を使ってください (@ref{Dynamic states}参照)。
+
+経過措置として、0.9.13の@code{parameterize}は実行時にパラメータが
+本当のパラメータであるかどうか検査し、そうでなければ
+@code{parameterize/dynwind}に切り替えて実行します。
+ただ、こういった緩い仕様はバグのもとになるので、
+将来のリリースでは@code{parameterize}はパラメータ以外はエラーにするでしょう。
+現在のコードが新モデルで動くかどうかは@code{(use srfi.226.parameter)}としておけば
+確かめられます。
+@c COMMON
 
 
 @c ------------------------------------------------------------
