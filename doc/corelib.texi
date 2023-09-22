@@ -18888,6 +18888,16 @@ It is codified in SRFI-39 and incorporated into R7RS.
 @c COMMON
 
 @c EN
+@b{Note:} Starting from 0.9.13, we're adopting SRFI-226 semantics
+of parameters, which behaves slightly different from our legacy parameters.
+@xref{Transition to 0.9.13 parameters}, for the details.
+@c JP
+@b{註:} 0.9.13より、パラメータのセマンティクスを従来のものからSRFI-226で定義される
+ものに切り替えつつあります。両者は微妙に振る舞いが異なります。
+詳しくは@ref{Transition to 0.9.13 parameters}で説明しています。
+@c COMMON
+
+@c EN
 It is a special procedure created by @code{make-parameter}.  It accepts
 zero or one argument.  When called without an argument, it returns the
 value in the current dynamic environment.
@@ -18980,13 +18990,13 @@ Gaucheも0.9.13からこの区別を採り入れています。
 @c COMMON
 
 @c EN
-Because of this change, there are subtle differences between parameter
-behaviors before 0.9.13.  We have a prepared a transition path.
-@xref{Transition to 0.9.13 parameters}, for the details.
+If you're a long time Gauche user (thanks!), remember to check
+out the changes on 0.9.13 and how to transition to it
+(@pxref{Transition to 0.9.13 parameters}).
 @c JP
-この変更により、パラメータの振る舞いは0.9.13以前のものから微妙に変わります。
-移行パスを用意してあります。
-@ref{Transition to 0.9.13 parameters}を参照してください。
+これまで長くGaucheを使っていた方は、一度0.9.13での変更点と
+移行方法をチェックしておいてください
+(@ref{Transition to 0.9.13 parameters}参照)。
 @c COMMON
 
 @menu
@@ -19000,9 +19010,93 @@ behaviors before 0.9.13.  We have a prepared a transition path.
 @subsection Parameters
 @c NODE パラメータ
 
+@c EN
+Because of historical reasons,
+parameters come with three flavors; their differences are subtle,
+and only visible when you use @emph{mutation} in @emph{multi-thread code}.
+If you only use parameters for dynamic binding (i.e. within R7RS spec),
+all flavors of parameters behave the same.
+@c JP
+歴史的事情から、パラメータには、少しだけ振る舞いが違う3つの種類があります。
+但し、その違いはマルチスレッドコードで破壊的変更をしない限りは見えません。
+R7RSの範囲、すなわちパラメータを動的束縛にだけ使っている場合は、
+どのパラメータも同じように振る舞います。
+@c COMMON
+
+@c EN
+The three flavors are @emph{shared parameters}, @emph{thread parametres},
+and @emph{legacy parameters}.  The first two is defined in SRFI-226
+(though it doesn't use the term ``shared'', for the ordinary parameters
+are shared parameters).  The third one is compatible to the parameters
+in Gauche 0.9.12 and before.
+
+The following table shows whether a mutation in one thread is visible from
+another thread:
+
+@multitable {Toplevel mutation visible?===} {AAAAAA===} {AAAAAA===} {AAAAAA===}
+@headitem Flavor @tab Share @tab Thread @tab Legacy
+@item Toplevel mutation visible? @tab yes @tab no @tab no
+@item Dynamic mutation visible? @tab yes @tab no @tab yes
+@end multitable
+
+Here, ``toplevel mutation'' is a mutation done for a parameter
+outside of any @code{parameterize} form, and ``dynamic mutation''
+is a mutation done for a parameter in a dynamic scope of
+@code{parameterize} form:
+
+@example
+(define p (make-parameter 0))
+
+(p 1) ; toplevel mutation
+
+(parameteize ((p 2))
+  (p 3)  ; dynamic mutaiton
+  )
+
+(p 4) ; toplevel mutation
+@end example
+
+For the shared and legacy parameters, dynamic mutation is only visible
+for the thread that shares the same dynamic binding.
+@c JP
+その3つの種類は、@emph{共有パラメータ}、@emph{スレッドパラメータ}、
+そして@emph{レガシーパラメータ}です。
+最初のふたつはSRFI-226で定義されます。
+(SRFI-226では「共有パラメータ」とは呼んでいませんが、@code{make-parmaeter}で
+作られる通常のパラメータが共有パラメータになります)。
+最後のものはGauche 0.9.12以前と互換なパラメータです。
+
+次の表に、パラメータの破壊的変更が他のスレッドから見えるかどうかをまとめます。
+
+@multitable {トップレベルの変更が見えるか?===} {AAAAAA===} {AAAAAA===} {AAAAAA===}
+@headitem Flavor @tab 共有 @tab スレッド @tab レガシー
+@item トップレベルの変更が見えるか? @tab yes @tab no @tab no
+@item 動的範囲での変更が見えるか?  @tab yes @tab no @tab yes
+@end multitable
+
+ここで「トップレベルの変更」とは@code{parameterize}がされていない動的環境での
+変更、「動的範囲での変更」とは@code{parameterize}が有効な動的環境での変更です。
+
+@example
+(define p (make-parameter 0))
+
+(p 1) ; トップレベルの変更
+
+(parameteize ((p 2))
+  (p 3)  ; 動的範囲での変更
+  )
+
+(p 4) ; トップレベルの変更
+@end example
+
+共有パラメータとレガシーパラメータについては、
+動的範囲での変更が見えるのは、同じ動的環境を共有しているスレッド間のみです。
+@c COMMON
+
 @defun make-parameter value :optional converter
 @defunx make-shared-parameter value :optional converter
 @defunx make-thread-parameter value :optional converter
+@defunx make-legacy-parameter value :optional converter
 [R7RS base][SRFI-226]
 @c EN
 Creates a parameter whose initial value is @var{value}.
@@ -19023,47 +19117,68 @@ can raise an error or reject to change the parameter's value.
 @c COMMON
 
 @c EN
-A parameter can be a @emph{thread parameter} or a @emph{shared parameter}.
-When you mutate a thread parameter, the change is only visible in the
-same thread; the value in other threads isn't affected.  On the other hand,
-the storage of a shared parameter is shared by all threads, and mutation
-is visible from all threads.  However, once you parameterize it, mutation
-is only visible from the thread that shares the same parameterization.
-
-R7RS only defines @code{make-parameter} and does not specify the behavior
-with threads.  Up until 0.9.12, Gauche made the default parameter thread-local.
-However, SRFI-226 specifies the default parameter shared,
-and specify @code{make-thread-parameter} to be used to create
-a thread parameter.
-
-For the backward compatibility, @code{make-parameter} still returns
-a thread parameter for the time being, unless you explicitly use
-@code{srfi.226}.  Eventually we switch @code{make-parameter} to return
-a shared parameter, so you want to replace it with @code{make-thread-parameter}
-if that's what you want.
-During transition, you can use @code{make-shared-parameter}
-(Gauche specific procedure)
-to explicitly create a shared parameter.
+As described above (@pxref{Parameters}), parameters have three
+flavors; @code{make-shared-parameter}, @code{make-thread-parameter},
+and @code{make-legacy-parameter} creates shared, thread, and legacy
+parameters, respectively.
 @c JP
-パラメータには、@emph{スレッドパラメータ}と@emph{共有パラメータ}があります。
-スレッドパラメータの値を破壊的変更した場合、その変更は同じスレッドにしか見えません。
-一方、共有パラメータの値を破壊的変更すると、それは全てのスレッドで共有されます。
-但し、@code{parameterize}で動的環境を作っている場合は、破壊的変更の影響は
-その動的環境を共有しているスレッド間に制限されます。
+上で説明したように(@ref{Parameters}参照)、パラメータには3種類あります。
+@code{make-shared-parameter}、@code{make-thread-parameter}、
+@code{make-legacy-parameter}はそれぞれ
+共有パラメータ、スレッドパラメータ、レガシーパラメータを作ります。
+@c COMMON
 
-R7RSは@code{make-parameter}だけを定義し、マルチスレッド時の振る舞いについて規定
-していませんでした。
-Gaucheは0.9.12まで、@code{make-parameter}はスレッドパラメータを返していました。
-SRFI-226でパラメータとスレッドの関係が明確化され、@code{make-parameter}は
-共有パラメータを返すように定義されました。スレッドパラメータを作るには
-@code{make-thread-parameter}を使う必要があります。
+@c EN
+For the compatibility, @code{make-parameter} behaves differently
+depending on which module you uses.
 
-互換性のため、当分はGaucheの@code{make-parameter}は (@code{srfi.226}を@code{use}
-しない限り) スレッドパラメータを返します。
-その間に、スレッドパラメータが必要な場所では@code{make-thread-parameter}を使うように
-してください。
-また、移行期間中に明示的に共有パラメータが必要な場合は、
-@code{make-shared-parameter}を使ってください。これはGaucheの独自拡張です。
+@itemize @bullet
+@item
+The @code{make-parameter} in @code{gauche} module works as
+@code{make-legacy-parameter} in 0.9.13, but it will be switched
+to @code{make-shared-parameter} in future versions.  To keep
+the legacy code working, you should either use @code{gauche.parameter}
+module, or replace @code{make-parameter} for @code{make-legacy-parameter}.
+@item
+If you use @code{gauche.parameter}, @code{make-parameter}
+works as @code{make-legacy-parameter}.  This won't change, since
+@code{gauche.parameter} is kept for the backward compatibility.
+@item
+If you use @code{srfi.226}, @code{make-parameter} is as SRFI-226
+defines, that is, @code{make-shared-parameter}.
+@end itemize
+@c JP
+互換性のため、@code{make-parameter}はどのモジュールをuseするかで
+動作が変わります。
+
+@itemize @bullet
+@item
+@code{gauche}モジュールの@code{make-parameter}は、0.9.13では
+互換性のために@code{make-legacy-parameter}と同じ動作ですが、
+将来は@code{make-shared-parameter}に切り替わります。
+以前のコードを使いつづけるには、@code{gauche.parameter}モジュールをuseするか、
+@code{make-parameter}を@code{make-legacy-parameter}に置き換えてください。
+@item
+@code{gauche.parameter}モジュールをuseすると、
+@code{make-parameter}は@code{make-legacy-parameter}と同じ動作になります。
+これは今後も変わりません。@code{gauche.parameter}は互換性のためのモジュールとなります。
+@item
+@code{srfi.226}をuseした場合、@code{make-parameter}はSRFI-226で
+定義されているとおり、すなわち@code{make-shared-parameter}の動作となります。
+@end itemize
+@c COMMON
+
+@c EN
+NB: R7RS defines @code{make-parameter}.  SRFI-226 defines
+@code{make-parameter} and @code{make-thread-parameter}.
+The other two names, @code{make-shared-parameter} and
+@code{make-legacy-parameter}, are Gauche specific.
+@c JP
+註: R7RSは@code{make-parameter}を、
+SRFI-226は@code{make-parameter}と@code{make-thread-parameter}を
+定義しています。
+他のふたつ、@code{make-shared-parameter}と
+@code{make-legacy-parameter}はGauche独自の名前です。
 @c COMMON
 
 @c EN
@@ -19386,7 +19501,7 @@ Whenver control trasfers out of @var{body}, or reenters to @var{body},
 the state of each @var{proc} is saved and restored.
 @c JP
 制御が@var{body}から脱出したり、再入したりする度に、
-そえぞれの@var{proc}が保持する値が回復されます。
+それぞれの@var{proc}が保持する値が回復されます。
 @c COMMON
 @end defmac
 
