@@ -165,7 +165,7 @@
 ;; Actual processing of the parameterization.
 ;;  gauche.internal#%parameterize is embedded in the compiled code, so do not
 ;;  change the API across releases.
-(define (%parameterize params orig-vals thunk)
+(define (%parameterize params orig-vals thunk compatible?)
   ;; Returns list of filters if all params are parameter procedures.
   ;; If not, we fallback to the old parameterize.
   (define (gather-filters params)
@@ -189,11 +189,20 @@
       (cons ((car filters) (car vals))
             (apply-filters (cdr filters) (cdr vals)))))
 
-  (if-let1 filters (gather-filters params)
-    (%with-parameterization (map procedure-parameter params)
-                            (apply-filters filters orig-vals)
-                            thunk)
-    (%parameterize/dynwind params orig-vals thunk)))
+  (cond [(gather-filters params)
+         ;; SRFI-226 conformant parameters
+         => (^[filters]
+              (%with-parameterization (map procedure-parameter params)
+                                      (apply-filters filters orig-vals)
+                                      thunk))]
+        [compatible?
+         ;; Backward-compatibiltiy mode
+         (%parameterize/dynwind params orig-vals thunk)]
+        [else
+         (let1 p (find (complement compatible-parameter) params)
+           (if (procedure-parameter p)
+             (error "Incompatible parameter for SRFI-226 parameterize:" p)
+             (error "Non-parameter can't be used with SRFI-226 parameterize:" p)))]))
 
 (define (%parameterize/dynwind params orig-vals thunk)
   (let ([restarted #f]
@@ -225,7 +234,7 @@
        ;; TODO: shortcut for single-parameter case
        [(_ ((param val) ...) . body)
         (quasirename r
-          `(,%parameterize (list ,@param) (list ,@val) (^[] ,@body)))]
+          `(,%parameterize (list ,@param) (list ,@val) (^[] ,@body) #t))]
        [(_ . x) (error "Invalid parameterize form:" f)]))))
 
 (define-syntax parameterize/dynwind

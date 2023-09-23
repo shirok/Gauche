@@ -1,3 +1,9 @@
+2023-09-22  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/226/parameter.scm (parameterize-srfi-226): If you
+	  use srfi.226, 'parameterize' is strictly limited to the
+	  srfi-226 compatible parmeters.
+
 2023-09-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm (literal-value=?): Optimized.
