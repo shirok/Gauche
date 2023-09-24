@@ -16652,7 +16652,7 @@ Gaucheをセットアップすることができます。
 * Procedure arity::
 * Applicable objects::
 * Continuations::
-* Continuatino prompts::
+* Continuation prompts::
 * Continuation marks::
 * Multiple values::
 * Folding generated values::
@@ -17794,7 +17794,7 @@ of @code{set!} form, this method is called, that is:
 
 
 
-@node Continuations, Continuatino prompts, Applicable objects, Procedures and continuations
+@node Continuations, Continuation prompts, Applicable objects, Procedures and continuations
 @subsection Continuations
 @c NODE 継続
 
@@ -18030,7 +18030,7 @@ reverted by @var{before}, such as manipulating error handler stack
 @c COMMON
 @end defun
 
-@node Continuatino prompts, Continuation marks, Continuations, Procedures and continuations
+@node Continuation prompts, Continuation marks, Continuations, Procedures and continuations
 @subsection Continuation prompts
 @c NODE 継続プロンプト
 
@@ -18276,7 +18276,7 @@ The traditional @code{call/cc} can be understood roughly as follows
 @end example
 
 
-@node Continuation marks, Multiple values, Continuatino prompts, Procedures and continuations
+@node Continuation marks, Multiple values, Continuation prompts, Procedures and continuations
 @subsection Continuation marks
 @c NODE 継続マーク
 

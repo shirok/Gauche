@@ -94,6 +94,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Define higher-order lambda::  srfi.219
 * Generator/accumulator sub-library::  srfi.221
 * Compound objects::            srfi.222
+* Control features::            srfi.226
 * Optional arguments::          srfi.227
 * Composing comparators::       srfi.228
 * Tagged procedures::           srfi.229
@@ -13695,7 +13696,7 @@ Gaucheでは、遅延シーケンスは通常のリストと統合されてい�
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Compound objects, Optional arguments, Generator/accumulator sub-library, Library modules - SRFIs
+@node Compound objects, Control features, Generator/accumulator sub-library, Library modules - SRFIs
 @section @code{srfi.222} - Compound objects
 @c NODE 複合オブジェクト, @code{srfi.222} - 複合オブジェクト
 
@@ -13947,7 +13948,270 @@ is returned.  If none of the case is satisfied, @var{default} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Optional arguments, Composing comparators, Compound objects, Library modules - SRFIs
+@node Control features, Optional arguments, Compound objects, Library modules - SRFIs
+@section @code{srfi.226} - Control features
+@c NODE 制御機構, @code{srfi.226} - 制御機構
+
+@deftp {Module} srfi.226
+@mdindex srfi.226
+This srfi enhances the semantics of Scheme's fundamental concepts
+such as continuations and dynamic environments, to support multi-threaded
+programs and delimited continuations.  Some R7RS primitives such as
+@code{call/cc} and @code{dynamic-wind} are extended its semantics
+to be consistent with the enhanced execution model.
+
+The thread API is mostly compatible with SRFI-18, and so as with
+Gauche's thread API (@pxref{Threads}).
+
+Since the enhanced features are tightly coupled with runtime, most
+APIs in this srfi is implemented as built-ins in Gauche.
+This section gives you the overview of SRFI-226 APIs, for it is
+fairly large.
+
+In 0.9.13, Gauche only implements part of SRFI-226.  We'll cover its entirety
+in future releases.
+
+SRFI-226 is a compatible extension of R7RS.  However, Gauche has also
+extended R7RS control features in regards of multi-threaded
+programs, and there are subtle incompatibilites.  We'll move to
+full SRFI-226 compatibility, but we also provide backward-compatible
+interface.  If you use @code{srfi.226}, you'll get SRFI-226
+behavior.
+@end deftp
+
+Here's a list of SRFI-226 APIs and how Gauche supports them.
+
+@table @b
+@item Continuation prompts
+@table @code
+@item &continuation
+@itemx make-continuation-violation
+@itemx continuation-violation?
+@itemx continuation-violation-prompt-tag
+Not implemented yet.
+@item make-continuation-prompt-tag
+@itemx default-continuation-prompt-tag
+@itemx continuation-prompt-tag?
+@itemx call-with-continuation-prompt
+@itemx abort-current-continuation
+@xref{Continuation prompts}.
+@end table
+
+@item Continuations
+@table @code
+@item call-with-non-comosable-continuation
+@itemx call-with-composable-continuation
+Not implemented yet.
+@item call-with-current-continuation
+@itemx call/cc
+@xref{Continuations}.
+@item call-in-continuation
+@itemx call-in
+Not implemented yet.
+@item call-with-continuation-barrier
+Not implemented yet.
+@item continuation-prompt-available?
+Not implemented yet.
+@item dynamic-wind
+@xref{Continuations}.
+@item unwind-protect
+@xref{High-level exception handling mechanism}.
+@end table
+
+@item Shift and reset
+@table @code
+@item shift-at
+@itemx reset-at
+Not implemented yet.
+@item shift
+@itemx reset
+@xref{Partial continuations}.  However, current implementation
+of @code{shift}/@code{reset} hasn't integrated to SRFI-226 model
+yet.
+@end table
+
+@item Inspection
+@table @code
+@item continuation?
+@itemx non-composable-continuation?
+Not implemented yet.
+@end table
+
+@item Continuation marks
+@table @code
+@item with-continuation-mark
+@itemx with-continuation-marks
+@itemx call-with-immediate-continuation-mark
+@itemx continuation-marks
+@itemx current-continuation-marks
+@itemx continuation-mark-set?
+@itemx continuation-mark-set->list
+@itemx continuation-mark-set-first
+@xref{Continuation marks}.
+@item continuation-mark-set->list*
+@itemx continuation-mark-set->iterator
+Not implemented yet.
+@item make-continuation-mark-key
+@itemx continuation-mark-key?
+@xref{Continuation marks}.
+@end table
+
+@item Parameter objects
+@table @code
+@item make-parameter
+@itemx make-thread-parameter
+@xref{Parameters}.  Gauche's built-in @code{make-parameter} works
+in a compatibility mode for now.  See the manual entry for the details.
+@item parameter?
+@xref{Parameters}.
+@item parameterize
+@xref{Parameters}.  Gauche's built-in @code{parameterize} works
+in a compatibility mode for now.  See the manual entry for the details.
+@item current-parameterization
+@itemx parameterization?
+@itemx call-with-parameterization
+@xref{Parameters}.
+@item temporarily
+@xref{Dynamic states}.
+@end table
+
+@item Fluids
+@table @code
+@item define-fluid
+@itemx define-thread-fluid
+@itemx define-fluidified
+@itemx fluid-let
+@itemx fluid-let*
+@itemx fluid-parameter
+Not implemented yet.
+@end table
+
+@item Initial continuations
+@table @code
+@item call-with-initial-continuation
+Not implemented yet.
+@end table
+
+@item Promises
+@table @code
+@item delay
+@itemx promise?
+@itemx force
+@xref{Delay force and lazy}.
+Gauche's built-ins are SRFI-226 compatible.
+@item make-promise
+Not implemented yet.
+@end table
+
+@item Exceptions
+@table @code
+@item with-exception-handler
+@itemx current-exception-handler
+@xref{Low-level exception handling mechanism}.
+Gauche's built-ins are SRFI-226 compatible.
+@item raise
+@itemx raise-continuable
+@xref{Signaling exceptions}.
+@item guard
+@xref{High-level exception handling mechanism}.
+@item exception-hadnler-stack
+Not implemented yet.
+@end table
+
+@item Conditions
+@table @code
+@item &parameterization
+@itemx make-parameterization-condition
+@itemx parameterization-condition?
+@itemx condition-parameterization
+Not implemented yet.
+@item &continuation-marks
+@itemx make-continuation-marks-condition
+@itemx continuation-marks-condition?
+@itemx condition-continuation-marks
+Not implemented yet.
+@item &exception-handler-stack
+@itemx make-exception-handler-stack-condition
+@itemx exception-handler-stack-condition?
+@itemx condition-exception-handler-stack
+Not implemented yet.
+@end table
+
+@item Time objects
+@table @code
+@item time?
+@itemx current-time
+@itemx seconds+ time
+@xref{Time}.
+@end table
+
+@item Threads
+@table @code
+@item &thread
+@itemx make-thread-condition
+@itemx thread-condition?
+@itemx &uncaught-exception
+@itemx make-uncaught-exception
+@itemx uncaught-exception-condition?
+@itemx uncaught-exception-condition-reason
+@itemx &thread-already-terminated
+@itemx make-thread-already-terminated-condition
+@itemx thread-already-terminated-condition?
+@itemx &thread-timeout
+@itemx make-thread-timeout-condition
+@itemx thread-timeout-condition?
+@itemx &thread-abandoned-mutex
+@itemx make-thread-abandoned-mutex-condition
+@itemx thread-abandoned-mutex-condition?
+
+@item &concurrent-modification
+@itemx make-concurrent-modification-violation
+@itemx concurrent-modification-violation?
+Not implemented yet.
+@item make-thread
+@itemx thread?
+@itemx current-thread
+@itemx thread-start!
+@itemx thread-yield!
+@itemx thread-sleep!
+@itemx thread-terminate!
+@itemx thread-schedule-terminate!
+@itemx thread-join!
+@xref{Threads}.
+
+@item make-mutex
+@itemx mutex?
+@itemx mutex-state
+@itemx mutex-lock!
+@itemx mutex-unlock!
+@xref{Mutex}.
+
+@item make-condition-variable
+@itemx condition-variable?
+@itemx condition-variable-signal!
+@itemx condition-variable-broadcast!
+@xref{Condition variable}.
+
+@item make-thread-local
+@itemx thread-local?
+@itemx tlref
+@itemx tlset!
+@xref{Thread local storage}.
+
+@item current-interrupt-level
+@itemx disable-interrupts!
+@itemx enable-interrupts!
+@itemx with-interrupts-disabled
+@itemx with-interrupts-enabled
+@itemx thread-interrupt!
+Not implemented yet.
+@end table
+@end table
+
+
+
+@c ----------------------------------------------------------------------
+@node Optional arguments, Composing comparators, Control features, Library modules - SRFIs
 @section @code{srfi.227} - Optional arguments
 @c NODE 省略可能引数, @code{srfi.227} - 省略可能引数
 
