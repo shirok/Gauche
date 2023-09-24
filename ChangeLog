@@ -1,3 +1,11 @@
+2023-09-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblazy.scm (make-promise), lib/r7rs-setup.scm:
+	  Move R7RS make-promise into scheme.lazy, and make built-in
+	  make-promise compatible to SRFI-226.  This is technically
+	  an incompatible change, but we've only documented make-promise
+	  under scheme.lazy, so no code should be affected.
+
 2023-09-22  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/226/parameter.scm (parameterize-srfi-226): If you

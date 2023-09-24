@@ -443,6 +443,8 @@
   (import r7rs.aux)
   (export delay force delay-force promise? make-promise)
   (define-syntax delay-force (with-module gauche lazy))
+  (define (make-promise obj)
+    (if (promise? obj) obj (delay obj)))
   (provide "scheme/lazy"))
 
 (define-module scheme.load
