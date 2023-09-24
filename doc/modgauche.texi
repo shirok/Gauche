@@ -15246,27 +15246,50 @@ This module is only provided for the backward compatibility.
 @emph{We strongly discourage using this module}.
 
 Parameters are now built-in, so you no longer need to @code{use} this
-module for basic parameter functionalities.
-Furthermore, the 'hook' feature provided in this module is not compatible
-with the new built-in parameter semantics.  If you use this module,
-@code{parameterize} is altered to refer to @code{parameterize/dynwind};
-@pxref{Parameters and dynamic states} for the details.
+module for basic parameter functionalities.  However, they have
+slightly different semantics from the legacy parameters Gauche had.
+The parameters provided in this module is backward compatible, so that
+you can run legacy code without changes.
+
+When you use this module, those two identifiers are rebound
+to the backward-compatibility API.
+
+@table @code
+@item make-parameter
+This becomes an alias of @code{make-legacy-parameter}.
+@item parameterize
+This becomes an alias of @code{parameterize/dynwind}
+@end table
+
+@xref{Parameters and dynamic states}, for the details of
+the difference.
 @c JP
 このモジュールは後方互換性のためだけに提供されています。
 @emph{このモジュールを使うことはできるだけ避けてください。}
 
 パラメータは組み込みになったので、パラメータの基本機能を使うだけなら
 このモジュールを@code{use}する必要はありません。
-さらに、このモジュールで追加提供される「フック」機能は、
-現在の組み込みパラメータのセマンティクスと互換性がありません。
-そのため、このモジュールをuseすると、@code{parameterize}は
-@code{parameterize/dynwind}に束縛されます。
-詳しくは@pxref{Parameters and dynamic states}を参照してください。
+ただ、組み込みのパラメータは従来のGaucheのパラメータと若干異なる動作をします。
+このモジュールのパラメータは以前のものと互換なので、古いコードをそのまま
+動かすことができます。
+
+このモジュールをuseした場合、次の2つの識別子が互換性のあるものに再束縛されます。
+
+@table @code
+@item make-parameter
+これは@code{make-legacy-parameter}の別名となります。
+@item parameterize
+これは@code{parameterize/dynwind}の別名となります。
+@end table
+
+新旧パラメータの違いについて詳しくは
+@pxref{Parameters and dynamic states}を参照してください。
 @c COMMON
 @end deftp
 
 @defun parameter-observer-add! p proc :optional when where
 @c MOD gauche.parameter
+@c DEPRECATED
 @c EN
 Adds @var{proc} to "observer" procedures of a parameter @var{p}.
 Observer procedures are called either (1) just before
@@ -15321,6 +15344,7 @@ the observer list is shared by all threads.
 
 @defun parameter-observer-delete! p proc :optional when
 @c MOD gauche.parameter
+@c DEPRECATED
 @c EN
 Deletes @var{proc} from observer procedure list of a parameter @var{p}.
 If @var{proc} is not in the list, nothing happens.
@@ -15340,6 +15364,7 @@ from both lists.
 @defun parameter-pre-observers p
 @defunx parameter-post-observers p
 @c MOD gauche.parameter
+@c DEPRECATED
 @c EN
 Returns a hook object (@pxref{Hooks}) that keeps
 "before" or "after" observers, respectively.
