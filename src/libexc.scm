@@ -225,7 +225,7 @@
 
 ;; TODO - set metaclass of those exceptions to <condition-meta>
 
-(select-module gauche)
+(select-module gauche.threads)
 (inline-stub
  (define-cfn thread_exception_allocate (klass::ScmClass* _) :static
    (return (Scm_MakeThreadException klass NULL)))
@@ -301,7 +301,8 @@
 
 ;; SRFI-226
 (define &thread <thread-exception>)
-(define (make-thread-condition) (make <thread-exception>))
+(define (make-thread-condition)
+  (make <thread-exception> :thread (current-thread)))
 (define (thread-condition? obj) (is-a? obj <thread-exception>))
 
 (define &uncaught-exception <uncaught-exception>)
@@ -310,13 +311,13 @@
 (define (uncaught-exception-condition? obj) (is-a? obj <uncaught-exception>))
 (define (uncaught-exception-condition-reason obj)
   (assume-type obj <uncaught-exception>)
-  (slot-ref obj 'readon))
+  (slot-ref obj 'reason))
 
 (define &thread-already-terminated <terminated-thread-exception>)
 (define (make-thread-already-terminated-condition)
   (make <terminated-thread-exception>))
 (define (thread-already-terminated-condition? obj)
-  (is-a obj <terminated-thread-exception>))
+  (is-a? obj <terminated-thread-exception>))
 
 (define &thread-timeout <join-timeout-exception>)
 (define (make-thread-timeout-condition)
@@ -326,9 +327,9 @@
 
 (define &thread-abandoned-mutex <abandoned-mutex-exception>)
 (define (make-thread-abandoned-mutex-condition)
-  (make <abandoned-mutex-condition>))
+  (make <abandoned-mutex-exception>))
 (define (thread-abandoned-mutex-condition? obj)
-  (is-a? obj <abandoned-mutex-condition>))
+  (is-a? obj <abandoned-mutex-exception>))
 
 ;; &concurrent-modification
 

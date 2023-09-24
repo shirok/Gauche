@@ -36,6 +36,20 @@
   (export gauche-thread-type
           current-thread                ;re-exporting the builtin
 
+          ;; these are defeind in libexc.scm
+          <thread-exception> &thread make-thread-condition thread-condition?
+          <uncaught-exception> &uncaught-exception
+          make-uncaught-exception-condition
+          uncaught-exception-condition? uncaught-exception-condition-reason
+          <terminated-thread-exception> &thread-already-terminated
+          make-thread-already-terminated-condition
+          thread-already-terminated-condition?
+          <join-timeout-exception> &thread-timeout
+          make-thread-timeout-condition thread-timeout-condition?
+          <abandoned-mutex-exception> &thread-abandoned-mutex
+          make-thread-abandoned-mutex-condition
+          thread-abandoned-mutex-condition?
+
           thread? make-thread thread-name thread-specific-set! thread-specific
           thread-state thread-start! thread-try-start!
           thread-yield! thread-sleep!

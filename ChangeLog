@@ -1,5 +1,9 @@
 2023-09-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/libexc.scm, src/libthr.scm: Expose thread exception API
+	  from gauche.threads module to match the document.  It was
+	  defined in gauche module before, but that doesn't make sense.
+
 	* src/liblazy.scm (make-promise), lib/r7rs-setup.scm:
 	  Move R7RS make-promise into scheme.lazy, and make built-in
 	  make-promise compatible to SRFI-226.  This is technically
