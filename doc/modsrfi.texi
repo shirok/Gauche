@@ -13988,7 +13988,7 @@ Here's a list of SRFI-226 APIs and how Gauche supports them.
 @itemx make-continuation-violation
 @itemx continuation-violation?
 @itemx continuation-violation-prompt-tag
-Not implemented yet.
+@xref{Conditions}
 @item make-continuation-prompt-tag
 @itemx default-continuation-prompt-tag
 @itemx continuation-prompt-tag?

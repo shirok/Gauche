@@ -18256,26 +18256,6 @@ implemented on top of it.
 実は後者はより低レベルの構造で、@code{call/cc}はその上に実装される高レベル構造なのです。
 @c COMMON
 
-@c EN
-The traditional @code{call/cc} can be understood roughly as follows
-(not exactly how it is implemented, but it gives you an idea).
-@c JP
-ざっと、従来の@code{call/cc}は次のように説明できます
-(この通りに実装されているわけではありませんが、仕組みはわかるでしょう)。
-@c COMMON
-
-@example
-(define (call/cc proc)
-  (let ([tag (make-continuation-prompt-tag)])
-    (call-with-continuation-prompt
-      (lambda ()
-        (proc (lambda vals
-                (apply abort-current-continuation tag vals))))
-      tag
-      values)))
-@end example
-
-
 @node Continuation marks, Multiple values, Continuation prompts, Procedures and continuations
 @subsection Continuation marks
 @c NODE 継続マーク
@@ -22178,6 +22158,7 @@ SRFI condition type, the class has the SRFI name as well.
          +- <error>                      ; also inherits <serious-condition>
               +- <system-error>
               +- <unhandled-signal-error>
+              +- <continuation-violation>
               +- <read-error>
               +- <io-error>
                    +- <port-error>
@@ -22576,6 +22557,56 @@ on a character-only port).   Inherits @code{<port-error>}.
 @code{<port-error>} を継承しています。
 @c COMMON
 @end deftp
+
+@deftp {Class} <continuation-violation>
+@deftpx {Condition Type} &continuation
+@clindex continuation-violation
+@vindex &continuation
+[SRFI-226]
+@c EN
+An error thrown on violation of requirements related to continuations.
+A typical case is that a requested continuation prompt tag doesn't
+exist in the context.  @xref{Continuation prompts}, for the details.
+@c JP
+継続に関する制約が破られた場合に投げられるエラーです。
+典型的なのは、指定された継続プロンプトタグがコンテクスト中に見つからない場合です。
+詳しくは@ref{Continuation prompts}を参照してください。
+@c COMMON
+@end deftp
+
+@defun make-continuation-violation prompt-tag
+[SRFI-226]
+@c EN
+Creates a new continuation violation condition, with @var{prompt-tag}
+as the continuation prompt tag that caused the violation.
+@c JP
+@code{<continuation-violation>}コンディションを作ります。
+@var{prompt-tag}は原因となった継続プロンプトタグです。
+@c COMMON
+@end defun
+
+@defun continuation-violation? obj
+[SRFI-226]
+@c EN
+Returns @code{#t} if @var{obj} is a @code{<continuation-violation>}
+condition, @code{#f} otherwise.
+@c JP
+@var{obj}が@code{<continuation-violation>}コンディションなら
+@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun continuation-violation-prompt-tag condition
+[SRFI-226]
+@c EN
+Extract the value of @var{prompt-tag} slot
+from @var{condition}, which must be a @code{<continuation-violation>}
+condition.
+@c JP
+@code{<continuation-violation>}コンディションである@var{condition}の、
+@var{prompt-tag}スロットの値を取り出します。
+@c COMMON
+@end defun
 
 
 @c EN
