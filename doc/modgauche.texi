@@ -24767,8 +24767,21 @@ These exceptions can be handled by Gauche's exception mechanism
 扱われます。
 @c COMMON
 
+@c EN
+These are originally defined in SRFI-18.  SRFI-226 follows them,
+but uses slightly different names for the consistency with
+modern Scheme.  We support both.
+@c JP
+これらは元々SRFI-18で定義されました。SRFI-226もそれに倣いましたが、
+名前については現代的なSchemeの名前付けを意識したものに変えています。
+Gaucheではどちらの名前もサポートします。
+@c COMMON
+
 @deftp {Builtin Class} <thread-exception>
+@deftpx {Condition Type} &thread
 @clindex thread-exception
+@vrindex &thread
+[SRFI-226]
 @c MOD gauche.threads
 @c EN
 A base class of thread-related exceptions.  Inherits @code{<exception>} class.
@@ -24785,10 +24798,21 @@ A thread that threw this exception.
 この例外を投げたスレッド。
 @c COMMON
 @end defivar
+
+@c EN
+The name @code{&thread} is defined by SRFI-226.  Note that SRFI-226
+does not define @code{thread} slot; it's Gauche's extension.
+@c JP
+@code{&thread}というコンディション名はSRFI-226での定義です。
+ただし、SRFI-226のコンディションは@code{thread}スロットは規定していません。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <join-timeout-exception>
+@deftpx {Condition Type} &thread-timeout
 @clindex join-timeout-exception
+@vrindex &thread-timeout
+[SRFI-226]
 @c MOD gauche.threads
 @c EN
 An exception thrown by @code{thread-join!} when a timeout reaches
@@ -24797,10 +24821,19 @@ before the waited thread returns.  Inherits @code{<thread-exception>}.
 待機していたスレッドが戻る前にタイムアウトに達した時に@code{thread-join!}によって
 投げられる例外。@code{<thread-exception>}を継承しています。
 @c COMMON
+
+@c EN
+The name @code{&thread-timeout} is defined by SRFI-226.
+@c JP
+@code{&thread-timeout}という名前はSRFI-226で定義されています。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <abandoned-mutex-exception>
+@deftpx {Condition Type} &thread-abandoned-mutex
 @clindex abandoned-mutex-exception
+@vrindex &thread-abandoned-mutex
+[SRFI-226]
 @c MOD gauche.threads
 @c EN
 An exception thrown by @code{mutex-lock!} when a @var{mutex} to be
@@ -24819,10 +24852,19 @@ A mutex that caused this exception.
 この例外の原因となったmutex。
 @c COMMON
 @end defivar
+
+@c EN
+The name @code{&thread-abandoned-mutex} is defined by SRFI-226.
+@c JP
+@code{&thread-abandoned-mutex}という名前はSRFI-226で定義されています。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <terminated-thread-exception>
+@deftpx {Condition Type} &thread-already-terminated
 @clindex terminated-thread-exception
+@vrindex &thread-already-terminated
+[SRFI-226]
 @c MOD gauche.threads
 @c EN
 An exception thrown by @code{thread-join!} when the waited thread
@@ -24841,10 +24883,21 @@ A thread that terminated the thread that causes this exception.
 この例外の原因となったスレッドを終了したスレッド。
 @c COMMON
 @end defivar
+
+@c EN
+The name @code{&thread-already-terminated} is defined by SRFI-226.
+SRFI-226 doesn't define @code{terminator} slot, though.
+@c JP
+@code{&thread-abandoned-mutex}という名前はSRFI-226で定義されています。
+ただし、SRFI-226は@code{terminator}スロットは定義していません。
+@c COMMON
 @end deftp
 
 @deftp {Builtin Class} <uncaught-exception>
+@deftpx {Condition Type} &uncaught-exception
 @clindex uncaught-exception
+@vrindex &uncaught-exception
+[SRFI-226]
 @c MOD gauche.threads
 @c EN
 An exception thrown by @code{thread-join!} when the waited thread
@@ -24863,22 +24916,83 @@ An exception that caused the termination of the thread.
 そのスレッドの終了の原因となった例外。
 @c COMMON
 @end defivar
+
+@c EN
+The name @code{&uncaught-exception} is defined by SRFI-226.
+@c JP
+@code{&uncaught-exception}という名前はSRFI-226で定義されています。
+@c COMMON
 @end deftp
+
+@defun make-thread-condition
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Creates a new @code{<thread-exception>} condition.  This is for SRFI-226
+compatibility.  Usually you don't need to use this directly, for
+the actual condition is of a subclass of @code{<thread-exception>}.
+The @code{thread} slot is initialized with the calling thread.
+@c JP
+新しい@code{<thread-exception>}コンディションを作ります。
+これはSRFI-226との互換のために用意されていますが、直接使う必要はほとんどないでしょう。
+実際には@code{<thread-exception>}のサブクラスのコンディションが使われるからです。
+コンディションの@code{thread}スロットは呼び出したスレッドで初期化されます。
+@c COMMON
+@end defun
+
+@defun thread-condition? obj
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Returns @code{#t} if @var{obj} is a @code{<thread-exception>}
+(@code{&thread}) condition,
+@code{#f} otherwise.
+@c JP
+@var{obj}が@code{<thread-exception>}
+(@code{&thread})コンディションなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
+@defun make-thread-timeout-condition
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Creates a new @code{<join-timeout-exception>} (@code{&thread-timeout}) condition.
+@c JP
+新たな@code{<join-timeout-exception>} (@code{&thread-timeout})コンディション
+を作ります。
+@c COMMON
+@end defun
 
 @defun join-timeout-exception? obj
 @defunx thread-timeout-condition? obj
 [SRFI-18], [SRFI-21], [SRFI-226]
 @c MOD gauche.threads
 @c EN
-Returns @code{#t} if @var{obj} is an instance of
-@code{<join-timeout-exception>}, @code{#f} otherwise.
+Returns @code{#t} if @var{obj} is a
+@code{<join-timeout-exception>} (@code{&thread-timeout}) condition,
+@code{#f} otherwise.
 The name @code{join-timeout-exception?} is defined by SRFI-18/21,
-and @code{join-timeout-condition?} is by SRFI-226. They are the same.
+and @code{thread-timeout-condition?} is by SRFI-226. They are the same.
 @c JP
-@var{obj}が@code{<join-timeout-exception>}のインスタンスなら@code{#t}を、
+@var{obj}が@code{<join-timeout-exception>} (@code{&thread-timeout})
+コンディションなら@code{#t}を、
 そうでなければ@code{#f}を返します。
 @code{join-timeout-exception?}はSRFI-18/21で、
-@code{join-timeout-condition?}はSRFI-226で定義された名前です。どちらも同じです。
+@code{thread-timeout-condition?}はSRFI-226で定義された名前です。どちらも同じです。
+@c COMMON
+@end defun
+
+@defun make-thread-abandoned-mutex
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Creates a new @code{<abandoned-mutex-exception>}
+(@code{&thread-abandoned-mutex}) condition.
+@c JP
+新たな@code{<abandoned-mutex-exception>}
+(@code{&thread-abandoned-mutex})コンディションを作ります。
 @c COMMON
 @end defun
 
@@ -24887,8 +25001,8 @@ and @code{join-timeout-condition?} is by SRFI-226. They are the same.
 [SRFI-18], [SRFI-21], [SRFI-226]
 @c MOD gauche.threads
 @c EN
-Returns @code{#t} if @var{obj} is an instance of
-@code{<abandoned-mutex-exception>}, @code{#f} otherwise.
+Returns @code{#t} if @var{obj} is a
+@code{<abandoned-mutex-exception>} (), @code{#f} otherwise.
 The name @code{abandoned-mutex-exception?} is defined by SRFI-18/21,
 and @code{thread-abandoned-mutex-condition?} is by SRFI-226. They are the same.
 @c JP
@@ -24896,6 +25010,18 @@ and @code{thread-abandoned-mutex-condition?} is by SRFI-226. They are the same.
 そうでなければ@code{#f}を返します。
 @code{abandoned-mutex-exception?}はSRFI-18/21で、
 @code{thread-abandoned-mutex-condition?}はSRFI-226で定義された名前です。どちらも同じです。
+@end defun
+
+@defun make-thread-already-terminated-condition
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Creates a new @code{<terminated-thread-exception>}
+(@code{&thread-already-terminated}) condition.
+@c JP
+新たな@code{<termianted-thread-exception>}
+(@code{&thread-already-terminated})コンディションを作ります。
+@c COMMON
 @end defun
 
 @defun terminated-thread-exception? obj
@@ -24912,6 +25038,20 @@ and @code{thread-already-terminated-condition?} is by SRFI-226. They are the sam
 そうでなければ@code{#f}を返します。
 @code{terminated-thread-exception?}はSRFI-18/21で、
 @code{thread-already-termianted-condition?}はSRFI-226で定義された名前です。どちらも同じです。
+@end defun
+
+@defun make-uncaught-exception-condition reason
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Creates a new @code{<uncaught-exception>}
+(@code{&uncaught-exception}) condition.
+The argument is set to the @code{reason} slot of the condition.
+@c JP
+新たな@code{<uncaught-exception>}
+(@code{&uncaught-exception})コンディションを作ります。
+引数はコンディションの@code{reason}スロットに保持されます。
+@c COMMON
 @end defun
 
 @defun uncaught-exception? obj

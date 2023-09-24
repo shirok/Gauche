@@ -13954,32 +13954,66 @@ is returned.  If none of the case is satisfied, @var{default} is returned.
 
 @deftp {Module} srfi.226
 @mdindex srfi.226
+@c EN
 This srfi enhances the semantics of Scheme's fundamental concepts
 such as continuations and dynamic environments, to support multi-threaded
 programs and delimited continuations.  Some R7RS primitives such as
 @code{call/cc} and @code{dynamic-wind} are extended its semantics
 to be consistent with the enhanced execution model.
+@c JP
+このSRFIは、Schemeの根本的な概念である継続や動的環境のセマンティクスを、
+マルチスレッドプログラムや限定継続をサポートできるように拡大するものです。
+@code{call/cc}や@code{dynamic-wind}といったいくつかのR7RSプリミティブは、
+拡大されたセマンティクスに一致するように拡張されます。
+@c COMMON
 
+@c EN
 The thread API is mostly compatible with SRFI-18, and so as with
 Gauche's thread API (@pxref{Threads}).
+@c JP
+スレッドAPIはSRFI-18およびGaucheのスレッドAPIとほぼ互換です (@ref{Threads}参照)。
+@c COMMON
 
+@c EN
 Since the enhanced features are tightly coupled with runtime, most
 APIs in this srfi is implemented as built-ins in Gauche.
-This section gives you the overview of SRFI-226 APIs, for it is
-fairly large.
+This section gives you the overview of SRFI-226 APIs and pointers
+to the documents.
+@c JP
+拡大された機能はランタイムと固く結びついているので、
+このSRFIのAPIは主にGaucheの組み込みとして実装されています。
+この節では、SRFI-226のAPIの一覧とドキュメントへのポインタを示します。
+@c COMMON
 
+@c EN
 In 0.9.13, Gauche only implements part of SRFI-226.  We'll cover its entirety
 in future releases.
+@c JP
+0.9.13の時点では、GaucheはSRFI-226の一部のみを実装しています。
+将来のリリースで全てをカバーする予定です。
+@c COMMON
 
-SRFI-226 is a compatible extension of R7RS.  However, Gauche has also
+@c EN
+SRFI-226 is an upward compatible extension of R7RS.  However, Gauche has also
 extended R7RS control features in regards of multi-threaded
 programs, and there are subtle incompatibilites.  We'll move to
 full SRFI-226 compatibility, but we also provide backward-compatible
 interface.  If you use @code{srfi.226}, you'll get SRFI-226
 behavior.
+@c JP
+SRFI-226はR7RSの上位互換になっています。
+ただ、GaucheはGaucheでR7RSの制御機構をマルチスレッド向けに拡張していて、
+SRFI-226と非互換であった部分があります。
+徐々にSRFI-226互換に移行してゆきますが、後方互換なインタフェースも提供します。
+@code{srfi.226}をuseした場合はSRFI-226の振る舞いになります。
+@c COMMON
 @end deftp
 
+@c EN
 Here's a list of SRFI-226 APIs and how Gauche supports them.
+@c JP
+以下が、SRFI-226のAPIのリストとGaucheのサポート状況です。
+@c COMMON
 
 @table @b
 @item Continuation prompts
@@ -14061,12 +14095,14 @@ Not implemented yet.
 @item make-parameter
 @itemx make-thread-parameter
 @xref{Parameters}.  Gauche's built-in @code{make-parameter} works
-in a compatibility mode for now.  See the manual entry for the details.
+in a compatibility mode for now.  If you use @code{srfi.226},
+@code{make-parameter} works as specified in SRFI-226.
 @item parameter?
 @xref{Parameters}.
 @item parameterize
 @xref{Parameters}.  Gauche's built-in @code{parameterize} works
-in a compatibility mode for now.  See the manual entry for the details.
+in a compatibility mode for now.  If you use @code{srfi.226},
+@code{make-parameter} works as specified in SRFI-226.
 @item current-parameterization
 @itemx parameterization?
 @itemx call-with-parameterization
@@ -14162,7 +14198,7 @@ Not implemented yet.
 @itemx &thread-abandoned-mutex
 @itemx make-thread-abandoned-mutex-condition
 @itemx thread-abandoned-mutex-condition?
-
+@xref{Thread exceptions}.
 @item &concurrent-modification
 @itemx make-concurrent-modification-violation
 @itemx concurrent-modification-violation?
