@@ -20109,25 +20109,41 @@ having side-effects there is a bad ides.
 @end defspec
 
 @defun eager obj @dots{}
-[SRFI-45]
+@defunx make-promise obj @dots{}
+[SRFI-45][SRFI-226]
 @c EN
 Returns a promise that returns @var{obj} @dots{}.
-Since that @code{eager} is a procedure, arguments are evaluated
-before @var{eager} is called; so it works as a type converter
-(@code{a -> Promise a}) without delaying the evaluation.
-Used mainly to construct promise-returning functions.
+The name @code{eager} is introduced in SRFI-45.  It takes single argument,
+but Gauche enhanced it to take multiple values.
+SRFI-226 defines @code{make-promise}, which is the same
+as multi-value @code{eager}.
+(Note that R7RS-small also defines @code{make-promise} in
+@code{scheme.lazy} library (@pxref{R7RS lazy evaluation}).
+It is slightly different that it only takes one argument,
+and if the argument is a promise, it will be returned as is.
+This change is intentional; see SRFI-226 for the details.)
 @c JP
 @var{obj} @dots{}を返すプロミスを作って返します。
-@code{eager}は通常の手続きなので、引数の評価は遅延されせん。
-評価を遅延することなく型変換(@code{a -> Promise a})だけを行いたい
-場合に使います。プロミスを返すことが要求される手続きで使われます。
+@code{eager}という名前はSRFI-45で導入されました。SRFI-45では一つの引数のみを
+取るように定義されていますが、Gaucheでは複数の値を取って複数の値を返せるように
+拡張されています。SRFI-226は@code{make-promise}を定義しましたが、
+それは複数の値を取る@code{eager}と同じです。
+(R7RS-smallも@code{scheme.lazy}ライブラリで@code{make-promise}を
+定義しています(@ref{R7RS lazy evaluation}参照)が、
+この組み込み版とは少し異なります。
+R7RS版はひとつだけ引数を取るのと、引数が既にプロミスならそのまま返されます。
+この変更は意図的なものです。詳しくはSRFI-226を参照してください)。
 @c COMMON
 
 @c EN
-SRFI-45's @code{eager} only allows single value.  Allowing multiple
-values are Gauche's extension.
+Since that these are procedures, arguments are evaluated
+before they are called; so they work as a type converter
+(@code{a -> Promise a}) without delaying the evaluation.
+Used mainly to construct promise-returning functions.
 @c JP
-SRFI-45の@code{eager}はひとつの値だけを取ります。複数の値を許すのはGaucheの拡張です。
+これらは通常の手続きなので、引数の評価は遅延されせん。
+評価を遅延することなく型変換(@code{a -> Promise a})だけを行いたい
+場合に使います。プロミスを返すことが要求される手続きで使われます。
 @c COMMON
 @end defun
 

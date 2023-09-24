@@ -14097,10 +14097,9 @@ Not implemented yet.
 @item delay
 @itemx promise?
 @itemx force
+@itemx make-promise
 @xref{Delay force and lazy}.
 Gauche's built-ins are SRFI-226 compatible.
-@item make-promise
-Not implemented yet.
 @end table
 
 @item Exceptions

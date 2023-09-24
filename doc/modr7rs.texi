@@ -1568,6 +1568,16 @@ non-promise values, so you don't need this.
 Gaucheの@code{force}はプロミスでない値も取れるので、
 Gauche専用のコードを書いている時はこの手続きは不要です。
 @c COMMON
+
+@c EN
+Note: Gauche has built-in @code{make-promise}, which behaves as
+defined in SRFI-226 and slightly different from this one
+(@pxref{Delay force and lazy}).
+@c JP
+註: Gaucheの組み込みの@code{make-promise}はSRFI-226で定義された動作で、
+この@code{make-promise}とは若干違います。
+(@ref{Delay force and lazy}参照)。
+@c COMMON
 @end defun
 
 
