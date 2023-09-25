@@ -297,6 +297,14 @@
    (allocator (c "thread_exception_allocate"))
    (printer   (c "uncaught_exception_print"))
    (unboxer   "SCM_THREAD_EXCEPTION"))
+
+ (define-cclass <concurrent-modification-violation>
+   "ScmThreadException*" "Scm_ConcurrentModificationViolationClass"
+   (c "thread_exception_cpa")
+   ()
+   (allocator (c "thread_exception_allocate"))
+   (printer   (c "uncaught_exception_print"))
+   (unboxer   "SCM_THREAD_EXCEPTION"))
  )
 
 ;; SRFI-226
@@ -331,8 +339,11 @@
 (define (thread-abandoned-mutex-condition? obj)
   (is-a? obj <abandoned-mutex-exception>))
 
-;; &concurrent-modification
-
+(define &concurrent-modification <concurrent-modification-violation>)
+(define (make-concurrent-modification-violation)
+  (make <concurrent-modification-violation>))
+(define (concurrent-modification-violation? obj)
+  (is-a? obj <concurrent-modification-violation>))
 
 ;;;
 ;;; Mixin classes

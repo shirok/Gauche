@@ -24924,6 +24924,27 @@ The name @code{&uncaught-exception} is defined by SRFI-226.
 @c COMMON
 @end deftp
 
+@deftp {Builtin Class} <concurrent-modification-violation>
+@deftpx {Condition Type} &concurrent-modification
+@clindex concurrent-modification-violation
+@vrindex &concurrent-modification
+[SRFI-226]
+@c EN
+This is a condition thrown when the runtime detects non-thread-safe
+data is being modified by multiple threads concurrently.
+SRFI-226 defines this, but it allows implementations not to detect
+this situation if it's costly.  Currently, no Gauche APIs detect
+this condition, though it may do so in future.  For now, this is
+provided for the compatibility with SRFI-226.
+@c JP
+これはスレッドセーフでないデータを複数スレッドで同時に変更しようとした場合に
+投げられるコンディションです。SRFI-226で定義されていますが、
+SRFIはこの状況を検出するのにオーバヘッドがある場合は検出しなくても良いとしています。
+今のところ、GaucheのAPIでこのコンディションを検出するものはありません。
+将来はできるかもしれません。今はこれはSRFI-226との互換性のためのみで提供されています。
+@c COMMON
+@end deftp
+
 @defun make-thread-condition
 [SRFI-226]
 @c MOD gauche.threads
@@ -25093,6 +25114,31 @@ defined in SRFI-226.  Both works the same.
 @c COMMON
 @end defun
 
+@defun make-concurrent-modification-violation
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Creates a new @code{<concurrent-modification-violation>}
+(@code{&concurrent-modification}) condition.
+@c JP
+新たな@code{<concurrent-modification-violation>}
+(@code{&concurrent-modification})コンディションを作ります。
+@c COMMON
+@end defun
+
+@defun concurrent-modification-violation? obj
+[SRFI-226]
+@c MOD gauche.threads
+@c EN
+Returns @code{#t} if @var{obj} is a
+@code{<concurrent-modification-violation>}
+(@code{&concurrent-modification}) condition, @code{#f} otherwise.
+@c JP
+@var{obj}が@code{<concurrent-modification-violation}
+(@code{&concurrent-modification})コンディションなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
 
 @c ----------------------------------------------------------------------
 @node Measure timings, Unicode utilities, Threads, Library modules - Gauche extensions

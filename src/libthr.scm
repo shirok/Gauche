@@ -49,6 +49,9 @@
           <abandoned-mutex-exception> &thread-abandoned-mutex
           make-thread-abandoned-mutex-condition
           thread-abandoned-mutex-condition?
+          <concurrent-modification-violation> &concurrent-modification
+          make-concurrent-modification-violation
+          concurrent-modification-violation?
 
           thread? make-thread thread-name thread-specific-set! thread-specific
           thread-state thread-start! thread-try-start!
