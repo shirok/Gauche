@@ -22027,6 +22027,18 @@ Returns the current exception handler.
 @c COMMON
 @end defun
 
+@defun exception-handler-stack
+[SRFI-226]
+@c EN
+Returns a fresh list of handlers in the current exception handler stack.
+The most recent one coming first.
+@c JP
+現在の例外ハンドラスタックにある例外ハンドラのリストを返します。
+リストは新にアロケートされたもので、最後に設定されたハンドラが最初に来ます。
+@c COMMON
+@end defun
+
+
 @defun with-exception-handler handler thunk
 [R7RS base][SRFI-34]
 @c EN

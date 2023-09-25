@@ -14142,6 +14142,7 @@ Gauche's built-ins are SRFI-226 compatible.
 @table @code
 @item with-exception-handler
 @itemx current-exception-handler
+@itemx exception-handler-stack
 @xref{Low-level exception handling mechanism}.
 Gauche's built-ins are SRFI-226 compatible.
 @item raise
@@ -14149,8 +14150,6 @@ Gauche's built-ins are SRFI-226 compatible.
 @xref{Signaling exceptions}.
 @item guard
 @xref{High-level exception handling mechanism}.
-@item exception-hadnler-stack
-Not implemented yet.
 @end table
 
 @item Conditions
