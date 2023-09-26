@@ -72,7 +72,7 @@
 
 (define (print-default-error-heading exc out)
   (define (additional-condition c)
-    (guard (e [else (warn "Error from (report-additiona-condition ~s)\n" c)
+    (guard (e [else (warn "Error from (report-additional-condition ~s)\n" c)
                     #f])
       (report-additional-condition c out)))
   (guard (e [else (display "*** ERROR:" out)
