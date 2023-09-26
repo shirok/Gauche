@@ -1,3 +1,11 @@
+2023-09-26  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/console.scm, lib/text/console/windows.scm:
+	  Allow console to cache screen size.  query-screen-size
+	  may return cached results, unless the optional clear-cache
+	  argument is true. reset-terminal clears the cache so that
+	  next query-screen-size takes the actual screen size.
+
 2023-09-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm, src/libthr.scm: Expose thread exception API

@@ -338,7 +338,10 @@
   ;; return the difference of the cursor position y
   (if (and y (<= y 0)) 0 -1))
 
-(define-method query-screen-size ((con <windows-console>))
+(define-method query-screen-size ((con <windows-console>)
+                                  :optional (clear-cache #f))
+  ;; we assume querying screen size is light enough, so we don't cache
+  ;; the result.
   (let1 cinfo (sys-get-console-screen-buffer-info (get-ohandle))
     (values (+ 1 (- (slot-ref cinfo'window.bottom)
                     (slot-ref cinfo'window.top)))

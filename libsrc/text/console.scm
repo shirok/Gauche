@@ -320,7 +320,9 @@
 (define-method move-cursor-to ((con <vt100>) y x)
   (putstr con (format "\x1b;[~d;~dH" (+ y 1) (+ x 1))))
 
-(define-method reset-terminal ((con <vt100>)) (putstr con "\x1b;c"))
+(define-method reset-terminal ((con <vt100>))
+  (set! (~ con'screen-size) #f)
+  (putstr con "\x1b;c"))
 (define-method clear-screen ((con <vt100>)) (putstr con "\x1b;[2J"))
 (define-method clear-to-eol ((con <vt100>)) (putstr con "\x1b;[K"))
 (define-method clear-to-eos ((con <vt100>)) (putstr con "\x1b;[J"))
@@ -344,13 +346,16 @@
   (if (and y (<= y 0)) 0 -1))
 
 ;; No portable way to directly query it, so we take a kind of heuristic approach.
-(define-method query-screen-size ((con <vt100>))
-  (define *max-dim* 2000)
-  (putstr con "\x1b;7") ; save cursor pos
-  (move-cursor-to con *max-dim* *max-dim*)
-  (unwind-protect (receive (h w) (query-cursor-position con)
-                    (values (+ h 1) (+ w 1)))
-    (putstr con "\x1b;8"))) ;restore cursor pos
+(define-method query-screen-size ((con <vt100>) :optional (clear-cache #f))
+  (if-let1 p (and (not clear-cache) (~ con'screen-size))
+    (values (car p) (cdr p))
+    (let ((max-dim 2000))
+      (putstr con "\x1b;7") ; save cursor pos
+      (move-cursor-to con max-dim max-dim)
+      (unwind-protect (receive (h w) (query-cursor-position con)
+                        (set! (~ con'screen-size) (cons (+ h 1) (+ w 1)))
+                        (values (+ h 1) (+ w 1)))
+        (putstr con "\x1b;8"))))) ;restore cursor pos
 
 (define-method set-character-attribute ((con <vt100>) spec)
   (define (color->n color)
