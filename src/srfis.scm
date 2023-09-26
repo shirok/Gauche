@@ -1540,6 +1540,18 @@ Supported by the module @code{srfi.222}
 (@ref{Compound objects}参照)。
 
 
+srfi-226, srfi-226
+()
+
+Control features
+Partially suppored as built-in and @code{gauche.threads} module.
+@xref{Control features} for the details.
+
+制御機構
+一部分を、組み込みと@code{gauche.threads}モジュールでサポートしています。
+詳しくは@ref{Control features}を参照してください。
+
+
 srfi-227, srfi-227
 ()
 

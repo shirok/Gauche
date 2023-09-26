@@ -6140,7 +6140,7 @@ in Gauche extension packages.
 
 @c EN
 The advantage of using autoconf is that it generates
-a script that runs on most vanilla unix, for it only uses minimal
+a script that runs on most vanilla unix variants, for it only uses minimal
 shell features and basic unix commands.
 However, when you configure Gauche extension,
 you sure have Gauche already, so you don't need to limit
@@ -6155,7 +6155,7 @@ autoconfを使う利点は、生成されるスクリプトが最小限のシェ
 @c EN
 Writing a @file{configure} script directly in Gauche means developers
 don't need an extra step to generate @file{configure} before
-distribution.  They can directly check in @file{configure} in
+distribution.  They can directly check-in @file{configure} in
 the source repo, and anybody who pulls the source tree can
 run @file{configure} at once without having autoconf.
 @c JP

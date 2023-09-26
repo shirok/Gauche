@@ -14197,11 +14197,10 @@ Not implemented yet.
 @itemx &thread-abandoned-mutex
 @itemx make-thread-abandoned-mutex-condition
 @itemx thread-abandoned-mutex-condition?
-@xref{Thread exceptions}.
-@item &concurrent-modification
+@itemx &concurrent-modification
 @itemx make-concurrent-modification-violation
 @itemx concurrent-modification-violation?
-Not implemented yet.
+@xref{Thread exceptions}.
 @item make-thread
 @itemx thread?
 @itemx current-thread

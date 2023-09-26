@@ -7504,19 +7504,20 @@ dictionary, so such symbols with the same name can't be @code{eq?}.
 @end example
 
 @c EN
-When an S-expression including uninterned symbols are printed,
-the SRFI-38 syntax is used to indicate which uninterned symbol
-is the same (@code{eq?}) to which.
+To preserve @code{eq?}-ness of uninterened symbols,
+you need to use @code{write-shared} which
+shows shared structures.
 @c JP
-インターンされていないシンボルが含まれるS式を、シンボルの同一性を保って
-表記するには、SRFI-38記法が使えます。
+インターンされていないシンボルが含まれるS式を、
+シンボルの同一性を保って表示するには、
+@code{write-shared}を使います。
 @c COMMON
 
 @example
-(let1 s '#:foo (list s s))
+(write-shared (let1 s '#:foo (list s s)))
   @result{} @r{prints} (#0=#:foo #0#)
 
-(let ((s '#:foo) (t '#:foo)) (list s t s t))
+(write-shared (let ((s '#:foo) (t '#:foo)) (list s t s t)))
   @result{} @r{prints} (#0=#:foo #1=#:foo #0# #1#)
 @end example
 @end deftp
@@ -19014,7 +19015,7 @@ The following table shows whether a mutation in one thread is visible from
 another thread:
 
 @multitable {Toplevel mutation visible?===} {AAAAAA===} {AAAAAA===} {AAAAAA===}
-@headitem Flavor @tab Share @tab Thread @tab Legacy
+@headitem @tab Share @tab Thread @tab Legacy
 @item Toplevel mutation visible? @tab yes @tab no @tab no
 @item Dynamic mutation visible? @tab yes @tab no @tab yes
 @end multitable
@@ -19049,7 +19050,7 @@ for the thread that shares the same dynamic binding.
 次の表に、パラメータの破壊的変更が他のスレッドから見えるかどうかをまとめます。
 
 @multitable {トップレベルの変更が見えるか?===} {AAAAAA===} {AAAAAA===} {AAAAAA===}
-@headitem Flavor @tab 共有 @tab スレッド @tab レガシー
+@headitem  @tab 共有 @tab スレッド @tab レガシー
 @item トップレベルの変更が見えるか? @tab yes @tab no @tab no
 @item 動的範囲での変更が見えるか?  @tab yes @tab no @tab yes
 @end multitable
@@ -19167,7 +19168,6 @@ object, and we used @code{object-apply} method to make it behave
 like a procedure.  However, R7RS explicitly defines the return
 values to be a procedure; notably, portable code expects
 @code{(procedure? (make-parameter 'z))} returns @code{#t}.
-
 As of 0.9.10, we switched @code{make-parameter} to return
 a procedure.  It won't change the external behavior, except
 when you test the parameter @var{p} with
@@ -19178,7 +19178,6 @@ when you test the parameter @var{p} with
 振る舞います。しかし、R7RSは@code{make-parameter}が手続きを返すように
 規定しており、ポータブルなコードでは
 @code{(procedure? (make-parameter 'z))}は@code{#t}でなければなりません。
-
 0.9.10から、@code{make-parameter}は手続きを返すようになりました。
 通常のパラメータの使い方をしている限り、外部に見える振る舞いは変わりません。
 ただし、@code{make-parameter}で作られたオブジェクトかどうかを
@@ -19217,19 +19216,24 @@ Note that R7RS and SRFI-226 requires @var{param} to be evaluated
 to a parameter.  Gauche's @code{parameterize} has been acceping
 dynamic states as well, but such usage is
 deprecated; you should use @code{temporarily} instead (@pxref{Dynamic states}).
-In fact, Gauche checks if every @var{param} yields a parameter, at
-runtime, and if not, it switches to the legacy implementation
+To ease transition, Gauche 0.9.13 checks if every @var{param} yields a
+parameter, at runtime, and if not, it switches to the legacy implementation
 which does @emph{not} evaluate @var{body} at a tail position.
+In future we remove this compatibility feature.  If you want to
+check your code is compatible to the new spec, add @code{(use srfi.226)}
+to your code.
 @c JP
 R7RSとSRFI-226は@var{param}がパラメータへと評価されることを要求しています。
 Gaucheは伝統的に、@var{param}に動的状態も許してきましたが、
 そのような使い方は非推奨となりました。動的状態の切り替えには@code{temporarily}を
 使うようにしてください (@ref{Dynamic states}参照)。
-実のところ、Gaucheは実行時に全ての@var{param}がパラメータに評価されたかどうかを
-チェックし、パラメータ以外のものが混じっている場合は旧式の実装へと切り替えます。
-その場合、@var{body}は末尾位置では評価されません。
+経過措置として、
+Gauche 0.9.13では実行時に全ての@var{param}がパラメータに評価されたかどうかを
+チェックし、パラメータ以外のものが混じっている場合は旧式の実装へと切り替えます
+(その場合、@var{body}は末尾位置では評価されません)。
+将来のバージョンではこの措置は無くなります。現在のコードが将来に渡って使えるかどうか
+確かめるにはコードに@code{(use srfi.226)}を加えてみてください。
 @c COMMON
-@end defmac
 
 @c EN
 Some examples:
@@ -19245,6 +19249,7 @@ Some examples:
   (a)) @result{} 3
 (a) @result{} 2
 @end example
+@end defmac
 
 @defun parameter? obj
 [SRFI-226]
@@ -19456,6 +19461,7 @@ such as switching state of external resource.
 @c COMMON
 
 @defmac temporarily ((proc value) @dots{}) body @dots{}
+[SRFI-226]
 @c EN
 Evaluates @var{proc}s and @var{value}s.  Each @var{proc} must yield a
 dynamic state, i.e. a procedure that takes zero or one arguments.
@@ -19729,7 +19735,7 @@ With this model, @code{parameterize} is expanded something like this:
 
 @c EN
 Here, @code{push-dynamic-frame!} is a hypothetical procedure that pushes
-new dynamic frame in the current execution environment.
+new dynamic frame in the current continuation.
 When the control returns to the continuation of the parameterize
 form, the additional dynamic frame is popped automatically
 so we don't need a special operation.  If a continuation is captured
@@ -19739,7 +19745,8 @@ is restored.
 This allows the body to be run in tail context if @code{parameterize}
 itself is in tail context.
 @c JP
-@code{push-dynamic-frame!}は新しい動的束縛フレームをプッシュする仮想的な手続きです。
+@code{push-dynamic-frame!}は新しい動的束縛フレームを
+現在の継続にプッシュする仮想的な手続きです。
 制御がparameterizeフォームの継続に渡った時には、プッシュされた動的束縛フレームは
 自動的にポップされているので、特別な後処理が必要ありません。
 @var{body}実行中に継続が捕捉された場合、動的束縛フレームのチェインも継続とともに
@@ -20148,7 +20155,7 @@ Used mainly to construct promise-returning functions.
 @end defun
 
 @defun force promise
-[R7RS lazy]
+[R7RS lazy][SRFI-226]
 @c EN
 If @var{promise} is not a promise, it is just returned.
 
@@ -20210,6 +20217,20 @@ parameterization of @code{delay}:
     (force v)))
   @result{} 2
 @end example
+
+@c EN
+Note: R7RS defines @code{force} to evaluate the unevaluated promise's body
+in the dynamic environment of the caller of @code{force}, but it is
+regarded as a mistake.  In general, you shouldn't care which @code{force} call
+actually evaluates the promise's body, so the result shouldn't depend
+on the context of @code{force} call.  SRFI-226 addressed it.
+@c JP
+註: R7RSでは未評価のプロミス本体は@code{force}の呼び出された動的環境で
+評価されるとしていましたが、これは間違いであったとみなされています。
+一般的に、どの@code{force}の呼び出しが実際にプロミス本体を評価するのかは
+気にされるべきではなく、従ってどこで@code{force}を呼び出すかによって結果が変わるのは
+おかしいからです。SRFI-226でこれは正されました。
+@c COMMON
 @end defun
 
 @defun promise? obj
@@ -20874,7 +20895,7 @@ to have some pre-calculated prime numbers:
 @c EN
 Be careful not to evaluate @code{*primes*} directly on REPL,
 since it contains an infinite list and it'll blow up your REPL.
-You can look the first 20 prime numbers instead:
+You can look at the first 20 prime numbers instead:
 @c JP
 @code{*primes*}を直接REPLで評価しないように。無限リストなので、
 REPLの表示が終わらなくなります。
@@ -26441,7 +26462,7 @@ are indented properly.
 
 @example
 (format #t "Result: ~:w\n" (make-list 40 'aaaa))
-@r {prints:}
+ @result{} @r{prints:}
 Result: (aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa
          aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa
          aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa)
@@ -26582,6 +26603,7 @@ the @code{~D} directive.
 @end example
 
 @item @b{~R}
+@itemx @b{~r}
 @c EN
 Parameters: @var{radix},@var{mincol},@var{padchar},@var{commachar},@var{interval}
 
@@ -26593,6 +26615,10 @@ Other paramters are are the same as @code{~D} directive.
 
 If the argument is other than an exact number, it is formatted
 just as @code{~A}.
+
+If uppercase @code{R} is used, uppercase alphabets are used
+for base-11 and above.  If lowercase @code{r} is used,
+lowercase alphabats are used.
 
 Note: You can't omit @var{radix} parameter.
 In Common Lisp, omitting @var{radix} parameter makes the argument
@@ -26608,6 +26634,9 @@ support it, but for the time being it raises an error.
 他のパラメータの意味は@code{~D}と同じです。
 
 引数が正確数以外の場合は、@code{~A}のようにフォーマットします。
+
+大文字@code{R}が使われた場合、11進数以上では大文字アルファベットが使われます。
+小文字@code{r}の場合は小文字アルファベットが使われます。
 
 註: @var{radix}パラメータは省略できません。
 Common Lispでは@var{radix}パラメータを省略した場合、引数をローマ数字など
