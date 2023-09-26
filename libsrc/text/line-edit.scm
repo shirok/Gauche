@@ -412,11 +412,15 @@
     (set! (~ ctx'lastpos-y) y)
     (set! (~ ctx'initpos-x) x)
     (set! (~ ctx'lastpos-x) x))
-  (receive (h w) (query-screen-size (~ ctx'console))
+  (reset-screen-size! ctx))
+
+(define (reset-screen-size! ctx)
+  (receive (h w) (query-screen-size (~ ctx'console) #t)
     (set! (~ ctx'screen-height) h)
     (set! (~ ctx'screen-width) w)
-    (if (~ ctx'framebuffer)
-      (init-framebuffer (~ ctx'framebuffer) w h (~ ctx'wide-char-pos-setting)))))
+    (when (~ ctx'framebuffer)
+      (init-framebuffer (~ ctx'framebuffer) w h
+                        (~ ctx'wide-char-pos-setting)))))
 
 ;; If the cursor position has been moved from the supposed position,
 ;; redisplay the prompt and reset initial position.  This is called
@@ -1122,6 +1126,7 @@
 (define-edit-command (refresh-display ctx buf key)
   "Redraw contents of the buffer."
   (reset-terminal (~ ctx'console))
+  (reset-screen-size! ctx)
   (move-cursor-to (~ ctx'console) 0 0) ;redundant, but mintty has problem without this
   (show-prompt ctx)
   (init-screen-params ctx)
@@ -1295,7 +1300,8 @@
                ;; - We need to know # of rows to switch how to display it
                (let1 candidates (string-split
                                  (with-output-to-string
-                                   (cut display-multicolumn (cons w ws)))
+                                   (cut display-multicolumn (cons w ws)
+                                        :width (~ ctx'screen-width)))
                                  #\newline 'suffix)
                  (if (length<? candidates 20)
                    (show-message-below ctx buf candidates)

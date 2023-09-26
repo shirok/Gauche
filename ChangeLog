@@ -5,6 +5,9 @@
 	  may return cached results, unless the optional clear-cache
 	  argument is true. reset-terminal clears the cache so that
 	  next query-screen-size takes the actual screen size.
+	* libsrc/text/line-edit.scm: Consider screen size to show
+	  completion candidates.  The screen size may be cached, but
+	  updetad by refresh-display.
 
 2023-09-24  Shiro Kawai  <shiro@acm.org>
 
