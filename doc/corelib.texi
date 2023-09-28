@@ -26620,14 +26620,24 @@ If uppercase @code{R} is used, uppercase alphabets are used
 for base-11 and above.  If lowercase @code{r} is used,
 lowercase alphabats are used.
 
-Note: You can't omit @var{radix} parameter.
-In Common Lisp, omitting @var{radix} parameter makes the argument
-printed in special format such as Roman numerals.  We'll eventually
-support it, but for the time being it raises an error.
+If atmark-flag is given, it behaves differently; it prints out the
+numeric argument in Roman numerals, e.g. @code{MMXXIII} for 2023.
+Adding colon-flag with atmark-flag, it uses a variation of Roman
+numerals (@code{IIII} for 4 instead of @code{IV}, for example).
+The argument must be a positive exact integer in this case.
+Common Lisp only supports up to 4,999 since the Roman numeral 5,000
+can't be written in ASCII.  Unicode has Roman numeral up to 100,000,
+however, so we support up to 499,999.
+Again, the distinction of @code{R} and @code{r}
+is reflected to the ASCII alphabets used in the output.
+
+If neither @var{radix} nor atmark-flag is given, Common Lisp
+prints the number in English.  We haven't supported it yet,
+and an error is raised.
 @c JP
 パラメータ: @var{radix},@var{mincol},@var{padchar},@var{commachar},@var{interval}
 
-基数。引数が正確数であれば、
+基数(Radix)。引数が正確数であれば、
 @code{~@var{n}R}は引数を基数@var{n}の数値としてフォーマットします。
 例えば@code{~10R}は@code{~D}と同じです。
 @var{radix}パラメータは2以上36以下でなければなりません。
@@ -26638,11 +26648,29 @@ support it, but for the time being it raises an error.
 大文字@code{R}が使われた場合、11進数以上では大文字アルファベットが使われます。
 小文字@code{r}の場合は小文字アルファベットが使われます。
 
-註: @var{radix}パラメータは省略できません。
-Common Lispでは@var{radix}パラメータを省略した場合、引数をローマ数字など
-特殊な方法でフォーマットします。Gaucheでもいずれその動作をサポートする予定ですが、
-今のところはエラーになります。
+アトマークフラグが与えられた場合は違った動作になります。
+引数は正の正確な整数でなければならず、それがローマ数字で表示されます
+(例えば2023なら@code{MMXXIII}となります)。
+アトマークに加えてコロンフラグも与えられると、4を@code{IV}のかわりに@code{IIII}
+と表示する変化形を使います。
+ローマ数字の5,000はASCIIでは表せないので、Common Lispはこの機能は
+4,999までしかサポートしていません。が、Unicodeにはローマ数字が100,000まで
+あるので、Gaucheでは499,999までをサポートします。
+@code{R}と@code{r}の区別は出力の大文字小文字に反映されます。
+
+@var{radix}もアトマークフラグも与えられない場合、
+Common Lispでは引数の数字を英語表記で出力します。
+この機能はまだ実装されておらず、エラーが投げられます。
 @c COMMON
+@example
+(format #f "~36R" 123456789) @result{} "21I3V9"
+(format #f "~36r" 123456789) @result{} "21i3v9"
+(format #f "~@@R" 1999)  @result{} "MCMXCIX"
+(format #f "~@@:R" 1999) @result{} "MDCCCCLXXXXVIIII"
+(format #f "~@@r" 1999)  @result{} "mcmxcix"
+(format #f "~@@R" 123456) @result{} "ↈↂↂMMMCDLVI"
+@end example
+
 
 @item @b{~F}
 @c EN
