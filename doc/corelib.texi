@@ -4109,12 +4109,12 @@ R7RS-largeの一部である@code{scheme.flonum}を使う方が良いでしょ�
 @c COMMON
 
 @c EN
-Note: SRFI-95 defines @code{real-log}, which is a two-argument version
+Note: SRFI-94 defines @code{real-log}, which is a two-argument version
 of real-only @code{log}, but it takes base argument first, which is
 different from R7RS two-argument @code{log}.  To avoid confusion,
 we don't support @code{real-log} in the core.
 @c JP
-註：SRFI-95は実数限定の2引数の@code{log}である@code{real-log}も定義しているのですが、
+註：SRFI-94は実数限定の2引数の@code{log}である@code{real-log}も定義しているのですが、
 対数の底を最初の引数に取るようになっていて、R7RSの@code{log}とは逆です。
 混乱を避けるため、コアでは@code{real-log}は提供していません。
 @c COMMON
