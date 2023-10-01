@@ -1883,21 +1883,38 @@ bit) to be taken.  When omitted, @code{(integer-length n)} is used
 @defun bitvector->int-generator bv :optional start end
 @defunx bitvector->bool-generator bv :optional start end
 @c MOD gauche.bitvector
+@c EN
 Returns a generator of integers (0 or 1) and boolean values, respectively.
 The value is taken from a bitvector @var{bv} from left to right.
 The optional @var{start}/@var{end} arguments limits the range of
 the bitvector to be used.
+@c JP
+それぞれ、整数0か1を生成するジェネレータと真偽値を生成するジェネレータを返します。
+値はビットベクタ@var{bv}の左から右へと取られます。
+省略可能な@var{start}/@var{end}引数は@var{vec}から取り出すビットの範囲を指定します。
+@c COMMON
 
 @example
 (generator->list (bitvector->int-generator #*10111000))
  @result{} (1 0 1 1 1 0 0 0)
 @end example
 
+@c EN
 The names are consistent with Gauche convention.
 SRFI-178 defines these procedures with the name
 @code{make-bitvector/int-generator} and @code{make-bitvector/bool-generator}.
+@c JP
+これらの名前はGaucheの名前付けと一貫性があります。
+SRFI-178ではこれらを
+@code{make-bitvector/int-generator}および@code{make-bitvector/bool-generator}
+と呼んでいます。
+@c COMMON
 
+@c EN
 @xref{Generators}, for the details of generators.
+@c JP
+ジェネレータについて詳しくは@ref{Generators}を参照してください。
+@c COMMON
 @end defun
 
 
@@ -1905,22 +1922,40 @@ SRFI-178 defines these procedures with the name
 @defunx make-bitvector/bool-generator bv
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 These are same as @code{bitvector->int-generator} and
 @code{bitvector->bool-generator} except the optional arguments,
 and defined in SRFI-178.
+@c JP
+これらは省略可能引数を取らないことを除いて、
+それぞれ@code{bitvector->int-generator}および@code{bitvector->bool-generator}
+と同じです。SRFI-178で定義されました。
+@c COMMON
 @end defun
 
 @defun bitvector->index-generator bv val :optional start end
 @c MOD gauche.bitvector
+@c EN
 Returns a generator that generates indexes of @var{bv} such that
 the index-th value of @var{bv} matches @var{val}, which must
 be either 0, 1 or a boolean value.  The bitvector is scanned from
 left to right.
 The optional @var{start}/@var{end} arguments limits the range of
 the bitvector to be used.
+@c JP
+ビットベクタ@var{bv}のうち、値が@var{val}と一致するビットのインデックスを
+左から右への順番で生成するジェネレータを返します。
+@var{val}は0, 1, @code{#f}, @code{#t}のいずれかでなければなりません。
+省略可能な@var{start}/@var{end}引数は@var{vec}から取り出すビットの範囲を指定します。
+@c COMMON
 
+@c EN
 This is handy when you have a bitvector as a bitmap, and want to
 process something where bit is set (or reset).
+@c JP
+これは、ビットベクタをビットマップとして使い、
+ビットがセットされている/されていない要素について何かする、といった場合に便利です。
+@c COMMON
 
 @example
 (generator->list (bitvector->index-generator #*101110001 1))
@@ -1931,8 +1966,12 @@ process something where bit is set (or reset).
 @defun make-bitvector-accumulator
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns an accumulator that collects given bits, and returns
 a bitvector at the end of accumulation.
+@c JP
+与えられたビットを蓄積し、最後にビットベクタを作って返すアキュムレータを返します。
+@c COMMON
 
 @example
 (let ((a (make-bitvector-accumulator)))
@@ -1945,7 +1984,11 @@ a bitvector at the end of accumulation.
   @result{} #*10011
 @end example
 
+@c EN
 @xref{R7RS generators}, for the details of accumulators.
+@c JP
+アキュムレータについて詳しくは@ref{R7RS generators}を参照してください。
+@c COMMON
 @end defun
 
 @subheading Bitwise operations
