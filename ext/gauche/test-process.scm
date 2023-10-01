@@ -12,94 +12,80 @@
 (define *nulldev*
   (cond-expand [gauche.os.windows "NUL"] [else "/dev/null"]))
 
-;; We emulate cat, grep and ls with Gauche script on Windows.
-(cond-expand
- [gauche.os.windows
-  (sys-unlink "testc.o")
-  (with-output-to-file "testc.o"
-   (lambda ()
-     (write '(define (main args)
-               (cond [(equal? (cadr args) "cat")  (cat (cddr args))]
-                     [(equal? (cadr args) "ls")   (ls (cddr args))]
-                     [(equal? (cadr args) "grep") (grep (cddr args))])))
-     (write '(define (cat args)
-               (guard (e [else
-                          (format (current-error-port) "~a~%" (ref e'message))
-                          1])
-                 (set! (port-buffering (current-input-port)) :none)
-                 (if (null? args)
-                   (begin
-                     (set! (port-buffering (current-input-port)) :none)
-                     (set! (port-buffering (current-output-port)) :none)
-                     (copy-port (current-input-port) (current-output-port)
-                                :unit 'byte))
-                   (dolist [f args]
-                     (call-with-input-file f
-                       (cut copy-port <> (current-output-port)))))
-                 0)))
-     (write '(define (ls _)
-               ;; glob will be tested later, so we avoid using it.
-               (for-each print (sys-readdir "."))
-               0))
-     (write '(define (grep args)
-               (let* ([opt-v (equal? (car args) "-v")]
-                      [pat (string->regexp (if opt-v (cadr args) (car args)))]
-                      [hit 1])
-                 (generator-for-each
-                  (lambda (line)
-                    (when ((if opt-v not identity)
-                           (rxmatch pat line))
-                      (set! hit 0)
-                      (print line)))
-                  read-line)
-                 hit)))
-     ))]
- [else])
+;; Emulate cat, grep and ls with Gauche script, so that it works
+;; on any platform.
+(sys-unlink "testc.o")
+(with-output-to-file "testc.o"
+  (^[]
+    (write '(define (main args)
+              (cond [(equal? (cadr args) "cat")  (cat (cddr args))]
+                    [(equal? (cadr args) "ls")   (ls (cddr args))]
+                    [(equal? (cadr args) "grep") (grep (cddr args))])))
+    (write '(define (cat args)
+              (guard (e [else
+                         (format (current-error-port) "~a~%" (ref e'message))
+                         1])
+                (set! (port-buffering (current-input-port)) :none)
+                (if (null? args)
+                  (begin
+                    (set! (port-buffering (current-input-port)) :none)
+                    (set! (port-buffering (current-output-port)) :none)
+                    (copy-port (current-input-port) (current-output-port)
+                               :unit 'byte))
+                  (dolist [f args]
+                    (call-with-input-file f
+                      (cut copy-port <> (current-output-port)))))
+                0)))
+    (write '(define (ls _)
+              ;; glob will be tested later, so we avoid using it.
+              (for-each print (sys-readdir "."))
+              0))
+    (write '(define (grep args)
+              (let* ([opt-v (equal? (car args) "-v")]
+                     [pat (string->regexp (if opt-v (cadr args) (car args)))]
+                     [files (if opt-v (cddr args) (cdr args))]
+                     [hit 1])
+                (define (grep-1 generator)
+                  (generator-for-each
+                   (lambda (line)
+                     (when ((if opt-v not identity)
+                            (rxmatch pat line))
+                       (set! hit 0)
+                       (print line)))
+                   generator))
+                (if (null? files)
+                  (grep-1 read-line)
+                  (dolist [f files]
+                    (with-input-from-file f
+                      (cut grep-1 read-line))))
+                hit)))
+    ))
+
+;; shorthand of normalizing pathname.  this doesn't do anything on
+;; unix, but on Windows separators in PATHNAME are replaced.
+(define (N pathname) (sys-normalize-pathname pathname))
 
 (define (cmd . args)
-  (cond-expand [gauche.os.windows `("..\\..\\src\\gosh" "-ftest" ".\\testc.o" ,@args)]
-               [else args]))
+  `(,(N "../../src/gosh") "-ftest" ,(N "./testc.o") ,@args))
 
 (define (cmd-in-subdir . args)
-  (cond-expand [gauche.os.windows `("..\\..\\..\\src\\gosh" "-ftest" "..\\testc.o" ,@args)]
-               [else args]))
+  `(,(N "../../../src/gosh") "-ftest",(N "../testc.o") ,@args))
 
 (define (cmds . args)
   (let1 cmdlist (apply cmd args)
     (string-concatenate (apply append (map (^x `(,x " ")) cmdlist)))))
 
 (define (rmrf . files)
-  ;; shorthand of normalizing pathname.  this doesn't do anything on
-  ;; unix, but on Windows separators in PATHNAME are replaced.
-  (define (n pathname) (sys-normalize-pathname pathname))
-
   (dolist [f files]
     (cond-expand
      [gauche.os.windows
-      (sys-system #"rmdir /q /s ~(n f) > NUL 2>&1")
-      (sys-system #"del /q ~(n f) > NUL 2>&1")]
+      (sys-system #"rmdir /q /s ~(N f) > NUL 2>&1")
+      (sys-system #"del /q ~(N f) > NUL 2>&1")]
      [else
       (sys-system #"rm -rf ~f > /dev/null")])))
 
 (define (touch file)
   (with-output-to-file file (cut values)))
-
-;; We haven't tested file.util, so we need to roll our own
-(define (find-executable cmd)
-  (cond-expand
-   [gauche.os.windows cmd] ;we emulate cmd, so no need to search.
-   [else
-    (let loop ([paths (string-split (sys-getenv "PATH") #[:])])
-      (if (null? paths)
-        cmd
-        (let1 p (string-append (car paths) "/" cmd)
-          (if (sys-access p X_OK)
-            p
-            (loop (cdr paths))))))]))
-
-(define ls   (find-executable "ls"))
-(define cat  (find-executable "cat"))
-(define grep (find-executable "grep"))
 
 ;; Avoid locale specific behavior of client programs
 (cond-expand
@@ -114,38 +100,38 @@
 (touch "test.o")
 
 (test* "run-process (old)" 0
-       (let1 p (apply run-process `(,@(cmd ls) :output "test.o"))
+       (let1 p (apply run-process `(,@(cmd 'ls) :output "test.o"))
          (and (process-wait p) (process-exit-status p))))
 
 (test* "run-process" 0
-       (let1 p (run-process (cmd ls) :output "test.o")
+       (let1 p (run-process (cmd 'ls) :output "test.o")
          (and (process-wait p) (process-exit-status p))))
 
 (test* "run-process (old)" 0
-       (let1 p (apply run-process `(,@(cmd grep "test.o")
+       (let1 p (apply run-process `(,@(cmd "grep" "test.o")
                                     :input "test.o" :output ,*nulldev*))
          (and (process-wait p) (process-exit-status p))))
 (test* "run-process" 0
-       (let1 p (run-process (cmd grep "test.o")
+       (let1 p (run-process (cmd "grep" "test.o")
                             :input "test.o" :output *nulldev*)
          (and (process-wait p) (process-exit-status p))))
 
 (test* "run-process (old)" 1
-       (let1 p (apply run-process `(,@(cmd grep "NoSuchFile")
+       (let1 p (apply run-process `(,@(cmd "grep" "NoSuchFile")
                                     :input "test.o" :output ,*nulldev*))
          (and (process-wait p)
               (sys-wait-exited? (process-exit-status p))
               (sys-wait-exit-status (process-exit-status p)))))
 
 (test* "run-process" 1
-       (let1 p (run-process (cmd grep "NoSuchFile")
+       (let1 p (run-process (cmd "grep" "NoSuchFile")
                             :input "test.o" :output *nulldev*)
          (and (process-wait p)
               (sys-wait-exited? (process-exit-status p))
               (sys-wait-exit-status (process-exit-status p)))))
 
 (test* "run-process (output pipe)" '(0 #t)
-       (let* ((p  (run-process (cmd cat "test.o") :output :pipe))
+       (let* ((p  (run-process (cmd "cat" "test.o") :output :pipe))
               (in (process-output p))
               (s  (port->string in))
               (c  (call-with-input-file "test.o" port->string))
@@ -153,7 +139,7 @@
          (list x (equal? c s))))
 
 (test* "run-process (output pipe - new format)" '(0 #t)
-       (let* ((p  (run-process (cmd cat "test.o") :redirects '((> 1 out))))
+       (let* ((p  (run-process (cmd "cat" "test.o") :redirects '((> 1 out))))
               (in (process-output p 'out))
               (s  (port->string in))
               (c  (call-with-input-file "test.o" port->string))
@@ -161,7 +147,7 @@
          (list x (equal? c s))))
 
 (test* "run-process (input pipe)" '(0 #t)
-       (let* ((p  (run-process (cmd cat) :input :pipe :output :pipe))
+       (let* ((p  (run-process (cmd "cat") :input :pipe :output :pipe))
               (out (process-input p))
               (in  (process-output p))
               (s   "test\ntest"))
@@ -173,7 +159,7 @@
            (list x (equal? s ss)))))
 
 (test* "run-process (input pipe - new format)" '(0 #t)
-       (let* ((p  (run-process (cmd cat) :redirects '((< 0 in) (> 1 out))))
+       (let* ((p  (run-process (cmd "cat") :redirects '((< 0 in) (> 1 out))))
               (out (process-input p 'in))
               (in  (process-output p 'out))
               (s   "test\ntest"))
@@ -186,7 +172,7 @@
 
 (test* "run-process (input pipe - new format 2)" '(0 #t)
        (let* ((s   "test\ntest")
-              (p  (run-process (cmd cat) :redirects `((<< 0 ,s)
+              (p  (run-process (cmd "cat") :redirects `((<< 0 ,s)
                                                         (> 1 out))))
               (in  (process-output p 'out)))
          (let* ((ss (port->string in))
@@ -196,7 +182,7 @@
 (test* "run-process (input pipe - new format 3)" '(0 #t)
        (let* ((s0  '("test" #f test 3242))
               (s1 (write-to-string s0))
-              (p  (run-process (cmd cat) :redirects `((<<< 0 ,s0)
+              (p  (run-process (cmd "cat") :redirects `((<<< 0 ,s0)
                                                         (> 1 out))))
               (in  (process-output p 'out)))
          (let* ((ss (port->string in))
@@ -204,37 +190,37 @@
            (list x (equal? s1 ss)))))
 
 (test* "run-process (error pipe)" #t
-       (let* ((p  (run-process (cmd cat "NoSuchFile") :error :pipe))
+       (let* ((p  (run-process (cmd "cat" "NoSuchFile") :error :pipe))
               (in (process-error p))
               (s  (port->string in))
               (x  (process-wait p))
-              (p1 (run-process (cmd cat "NoSuchFile") :error "test.o"))
+              (p1 (run-process (cmd "cat" "NoSuchFile") :error "test.o"))
               (s1 (and (process-wait p1)
                        (call-with-input-file "test.o" port->string)))
               )
          (equal? s s1)))
 
 (test* "do-process :on-abnormal-exit #f" #f
-       (do-process (cmd cat "NoSuchFile") :output :null :error :null))
+       (do-process (cmd "cat" "NoSuchFile") :output :null :error :null))
 (test* "do-process :on-abnormal-exit #f" #t
-       (do-process (cmd cat "test.o") :output :null :error :null))
+       (do-process (cmd "cat" "test.o") :output :null :error :null))
 (test* "do-process :on-abnormal-exit :error"
        (test-error <process-abnormal-exit>)
-       (do-process (cmd cat "NoSuchFile")
+       (do-process (cmd "cat" "NoSuchFile")
                    :on-abnormal-exit :error :output :null :error :null))
 (test* "do-process :on-abnormal-exit :error"
        #t
-       (do-process (cmd cat "test.o")
+       (do-process (cmd "cat" "test.o")
                    :on-abnormal-exit :error :output :null :error :null))
 (test* "do-process :on-abnormal-exit :exit-code"
        1
-       (do-process (cmd grep "ThereCantBeSuchLine" "test.o")
+       (do-process (cmd "grep" "ThereCantBeSuchLine" "test.o")
                    :on-abnormal-exit :exit-code :output :null :error :null))
 
 ;; NB: how to test :wait and :fork?
 
 (test* "process-kill" SIGKILL
-       (let ((p (run-process (cmd cat)
+       (let ((p (run-process (cmd "cat")
                              :input :pipe :output :pipe
                              :error *nulldev*)))
          ;; handshake to make sure child process is up
@@ -248,7 +234,7 @@
                 (sys-wait-termsig x)))))
 
 (test* "non-blocking wait" '(#f #t #f)
-       (let* ((p  (run-process (cmd cat)
+       (let* ((p  (run-process (cmd "cat")
                                :input :pipe :output :pipe
                                :error *nulldev*))
               (r0 (process-wait p #t)))
@@ -265,7 +251,7 @@
                   (let ((s (process-exit-status (ref e 'process))))
                     (list (sys-wait-signaled? s)
                           (sys-wait-termsig s)))))
-         (let1 p (run-process (cmd cat)
+         (let1 p (run-process (cmd "cat")
                               :input :pipe :output :pipe
                               :error *nulldev*)
            ;; handshake to make sure child process is up
@@ -286,30 +272,30 @@
     (^[] (for-each print '("banana" "habana" "tabata" "cabara"))))
 
   (test* "pipelining 1" "banana\nhabana\n"
-         (let1 p (run-pipeline `(,(cmd cat "test.o")
-                                 ,(cmd grep "bana"))
+         (let1 p (run-pipeline `(,(cmd "cat" "test.o")
+                                 ,(cmd "grep" "bana"))
                                :output :pipe)
            (process-wait p)
            (port->string (process-output p))))
 
   (test* "pipelining 2" "tabata\ncabara\n"
-         (let1 p (run-pipeline `(,(cmd cat)
-                                 ,(cmd grep "-v" "bana"))
+         (let1 p (run-pipeline `(,(cmd "cat")
+                                 ,(cmd "grep" "-v" "bana"))
                                :input "test.o" :output :pipe)
            (process-wait p)
            (port->string (process-output p))))
 
   (test* "pipelining 3" "banana\ncabara\n"
-         (let1 p (run-pipeline `(,(cmd cat)
-                                 ,(cmd grep "-v" "ta")
-                                 ,(cmd grep "-v" "ha"))
+         (let1 p (run-pipeline `(,(cmd "cat")
+                                 ,(cmd "grep" "-v" "ta")
+                                 ,(cmd "grep" "-v" "ha"))
                                :input "test.o" :output :pipe)
            (process-wait p)
            (port->string (process-output p))))
 
   (test* "pipelining 4" "habana\ntabata\ncabara\n"
-         (let1 p (run-pipeline `(,(cmd cat)
-                                 ,(cmd grep "aba"))
+         (let1 p (run-pipeline `(,(cmd "cat")
+                                 ,(cmd "grep" "aba"))
                                :input :pipe :output :pipe)
            (display "banana\nhabana\ntabata\ncabara\n"
                     (process-input p))
@@ -323,10 +309,10 @@
 
 (rmrf "test.o" "test1.o" "test2.o")
 (touch "test.o")
-(sys-system (cmds ls "-a" ">" "test.o"))
+(sys-system (cmds "ls" "-a" ">" "test.o"))
 
 (test* "open-input-process-port" #t
-       (receive (p process) (open-input-process-port (cmd ls '-a))
+       (receive (p process) (open-input-process-port (cmd "ls" '-a))
          (let ((r (port->string p))
                (s (call-with-input-file "test.o" port->string)))
            (close-input-port p)
@@ -334,7 +320,7 @@
            (equal? r s))))
 
 (test* "open-input-process-port (redirect)" #t
-       (receive (p process) (open-input-process-port (cmd cat) :input "test.o")
+       (receive (p process) (open-input-process-port (cmd "cat") :input "test.o")
          (let ((r (port->string p))
                (s (call-with-input-file "test.o" port->string)))
            (close-input-port p)
@@ -342,10 +328,10 @@
            (equal? r s))))
 
 (test* "open-input-process-port (redirect/error)" #t
-       (receive (p process) (open-input-process-port (cmd cat "NoSuchFile")
+       (receive (p process) (open-input-process-port (cmd "cat" "NoSuchFile")
                                                      :error "test1.o")
          (process-wait process)
-         (sys-system (cmds cat "NoSuchFile" "2>" "test2.o"))
+         (sys-system (cmds "cat" "NoSuchFile" "2>" "test2.o"))
          (let ((r (call-with-input-file "test1.o" port->string))
                (s (call-with-input-file "test2.o" port->string)))
            (equal? r s))))
@@ -353,34 +339,34 @@
 (rmrf "test1.o" "test2.o")
 
 (test* "call-with-input-process" #t
-       (let ((r (call-with-input-process (cmd ls '-a) port->string))
+       (let ((r (call-with-input-process (cmd "ls" '-a) port->string))
              (s (call-with-input-file "test.o" port->string)))
          (equal? r s)))
 
 (test* "call-with-input-process (redirect)" #t
-       (let ((r (call-with-input-process (cmd cat) port->string
+       (let ((r (call-with-input-process (cmd "cat") port->string
                                          :input "test.o"))
              (s (call-with-input-file "test.o" port->string)))
          (equal? r s)))
 
 (test* "call-with-input-process (redirect/error - ignore)" #t
-       (begin (call-with-input-process (cmd cat "NoSuchFile")
+       (begin (call-with-input-process (cmd "cat" "NoSuchFile")
                 port->string
                 :error "test1.o" :on-abnormal-exit :ignore)
-              (sys-system (cmds cat "NoSuchFile" "2>" "test2.o"))
+              (sys-system (cmds "cat" "NoSuchFile" "2>" "test2.o"))
               (let ((r (call-with-input-file "test1.o" port->string))
                     (s (call-with-input-file "test2.o" port->string)))
                 (equal? r s))))
 
 (test* "call-with-input-process (redirect/error - error)"
        (test-error <process-abnormal-exit>)
-       (call-with-input-process (cmd cat "NoSuchFile")
+       (call-with-input-process (cmd "cat" "NoSuchFile")
          port->string :error "test1.o"))
 
 ;; NB: On Solaris, cat seems to return 2 in case the file doesn't exist.
 (test* "call-with-input-process (redirect/error - handle)" (test-one-of 1 2)
        (let/cc k
-         (call-with-input-process (cmd cat 'NoSuchFile)
+         (call-with-input-process (cmd "cat" 'NoSuchFile)
            port->string
            :error "test1.o"
            :on-abnormal-exit (lambda (p)
@@ -390,19 +376,19 @@
 (rmrf "test1.o" "test2.o")
 
 (test* "with-input-from-process" #t
-       (let ((r (with-input-from-process (cmd cat 'test.o)
+       (let ((r (with-input-from-process (cmd "cat" 'test.o)
                   (lambda () (port->string (current-input-port)))))
              (s (call-with-input-file "test.o" port->string)))
          (equal? r s)))
 
 (test* "with-input-from-process" #t
-       (let ((r (with-input-from-process (cmds cat "<" "test.o")
+       (let ((r (with-input-from-process (cmds "cat" "<" "test.o")
                   (lambda () (port->string (current-input-port)))))
              (s (call-with-input-file "test.o" port->string)))
          (equal? r s)))
 
 (test* "with-input-from-process (redirect)" #t
-       (let ((r (with-input-from-process (cmd cat 'test.o)
+       (let ((r (with-input-from-process (cmd "cat" 'test.o)
                   (lambda () (port->string (current-input-port)))
                   :input "test.o"))
              (s (call-with-input-file "test.o" port->string)))
@@ -412,7 +398,7 @@
        (let1 s (call-with-input-file "test.o" port->string)
          (rmrf "test.o")
          (receive (p process)
-             (open-output-process-port (cmds cat ">" "test.o"))
+             (open-output-process-port (cmds "cat" ">" "test.o"))
            (display s p)
            (close-output-port p)
            (process-wait process)
@@ -423,7 +409,7 @@
        (let1 s (call-with-input-file "test.o" port->string)
          (rmrf "test.o")
          (receive (p process)
-             (open-output-process-port (cmd cat) :output "test.o")
+             (open-output-process-port (cmd "cat") :output "test.o")
            (display s p)
            (close-output-port p)
            (process-wait process)
@@ -433,10 +419,10 @@
 (test* "open-output-process-port (redirect/error)" #t
        (let1 s (call-with-input-file "test.o" port->string)
          (receive (p process)
-             (open-output-process-port (cmds cat "NoSuchFile")
+             (open-output-process-port (cmds "cat" "NoSuchFile")
                                        :error "test1.o")
            (process-wait process)
-           (sys-system (cmds cat "NoSuchFile" "2>" "test2.o"))
+           (sys-system (cmds "cat" "NoSuchFile" "2>" "test2.o"))
            (let ((r (call-with-input-file "test1.o" port->string))
                  (s (call-with-input-file "test2.o" port->string)))
              (equal? r s)))))
@@ -447,7 +433,7 @@
        (let1 s (call-with-input-file "test.o" port->string)
          (rmrf "test.o")
          (receive (x y)
-             (call-with-output-process (cmds cat ">" "test.o")
+             (call-with-output-process (cmds "cat" ">" "test.o")
                (lambda (out) (display s out) (values 1 2)))
            (let1 r (call-with-input-file "test.o" port->string)
              (list (equal? r s) x y)))))
@@ -456,7 +442,7 @@
        (let1 s (call-with-input-file "test.o" port->string)
          (rmrf "test.o")
          (receive (x y)
-             (call-with-output-process (cmd cat)
+             (call-with-output-process (cmd "cat")
                (lambda (out) (display s out) (values 1 2))
                :output "test.o")
            (let1 r (call-with-input-file "test.o" port->string)
@@ -464,27 +450,27 @@
 
 (test* "call-with-output-process (redirect/error - ignore)" #t
        (begin
-         (call-with-output-process (cmds cat "NoSuchFile")
+         (call-with-output-process (cmds "cat" "NoSuchFile")
            (lambda (out) #f)
            :error "test1.o" :on-abnormal-exit :ignore)
-         (sys-system (cmds cat "NoSuchFile" "2>" "test2.o"))
+         (sys-system (cmds "cat" "NoSuchFile" "2>" "test2.o"))
          (let ((r (call-with-input-file "test1.o" port->string))
                (s (call-with-input-file "test2.o" port->string)))
            (equal? r s))))
 
 (test* "call-with-output-process (redirect/error - raise)" #t
        (guard (e ((<process-abnormal-exit> e)
-                  (sys-system (cmds cat "NoSuchFile" "2>" "test2.o"))
+                  (sys-system (cmds "cat" "NoSuchFile" "2>" "test2.o"))
                   (let ((r (call-with-input-file "test1.o" port->string))
                         (s (call-with-input-file "test2.o" port->string)))
                     (equal? r s))))
-         (call-with-output-process (cmds cat "NoSuchFile")
+         (call-with-output-process (cmds "cat" "NoSuchFile")
            (lambda (out) #f) :error "test1.o")))
 
 ;; NB: On Solaris, cat seems to return 2 when the file doesn't exist.
 (test* "call-with-output-process (redirect/error - handle)" (test-one-of 1 2)
        (let/cc k
-         (call-with-output-process (cmd cat 'NoSuchFile)
+         (call-with-output-process (cmd "cat" 'NoSuchFile)
            port->string
            :error "test1.o"
            :on-abnormal-exit (lambda (p)
@@ -497,7 +483,7 @@
        (let1 s (call-with-input-file "test.o" port->string)
          (rmrf "test.o")
          (receive (x y)
-             (with-output-to-process (cmds cat ">" "test.o")
+             (with-output-to-process (cmds "cat" ">" "test.o")
                (lambda () (display s) (values 1 2)))
            (let1 r (call-with-input-file "test.o" port->string)
              (list (equal? r s) x y)))))
@@ -506,7 +492,7 @@
        (let1 s (call-with-input-file "test.o" port->string)
          (rmrf "test.o")
          (receive (x y)
-             (with-output-to-process (cmd cat)
+             (with-output-to-process (cmd "cat")
                (lambda () (display s) (values 1 2))
                :output "test.o")
            (let1 r (call-with-input-file "test.o" port->string)
@@ -514,7 +500,7 @@
 
 (test* "call-with-process-io" "test.o\n"
        (let* ((s (call-with-input-file "test.o" port->string))
-              (r (call-with-process-io (cmd grep "test\\.o")
+              (r (call-with-process-io (cmd "grep" "test\\.o")
                    (lambda (i o)
                      (display s o) (close-output-port o)
                      (port->string i)))))
@@ -522,34 +508,34 @@
 
 (test* "call-with-process-io (redirect/error)" #t
        (begin
-         (call-with-process-io (cmds cat "NoSuchFile")
+         (call-with-process-io (cmds "cat" "NoSuchFile")
            (lambda (i o) #f)
            :error "test1.o" :on-abnormal-exit :ignore)
-         (sys-system (cmds cat "NoSuchFile" "2>" "test2.o"))
+         (sys-system (cmds "cat" "NoSuchFile" "2>" "test2.o"))
          (let ((r (call-with-input-file "test1.o" port->string))
                (s (call-with-input-file "test2.o" port->string)))
            (equal? r s))))
 
 (rmrf "test.o" "test1.o" "test2.o")
 (touch "test.o")
-(sys-system (cmds ls "-a" ">" "test.o"))
+(sys-system (cmds "ls" "-a" ">" "test.o"))
 
 (test* "process-output->string" #t
-       (let ((r (process-output->string (cmd ls '-a)))
+       (let ((r (process-output->string (cmd "ls" '-a)))
              (s (call-with-input-file "test.o" port->string)))
          (equal? r (string-join (string-tokenize s) " "))))
 
 (test* "process-output->string (error - ignore)" ""
-       (process-output->string (cmd cat "NoSuchFile")
+       (process-output->string (cmd "cat" "NoSuchFile")
                                :error *nulldev*
                                :on-abnormal-exit :ignore))
 
 (test* "process-output->string (error - raise)"
        (test-error <process-abnormal-exit>)
-       (process-output->string (cmd cat "NoSuchFile") :error *nulldev*))
+       (process-output->string (cmd "cat" "NoSuchFile") :error *nulldev*))
 
 (test* "process-output->string-list" #t
-       (let ((r (process-output->string-list (cmd ls '-a)))
+       (let ((r (process-output->string-list (cmd "ls" '-a)))
              (s (call-with-input-file "test.o" port->string-list)))
          (equal? r s)))
 
@@ -557,7 +543,7 @@
 ;; argument.  https://github.com/shirok/Gauche/issues/651
 (test* "process-output->string-list" #t
        (begin
-         (process-output->string-list (cmd ls '-a)
+         (process-output->string-list (cmd "ls" '-a)
                                       :encoding (gauche-character-encoding))
          #t))
 
@@ -566,7 +552,7 @@
 (with-output-to-file "test2.o/probe"
   (^[] (display "Aloha!")))
 (test* "process-output->string (different directory)" "Aloha!"
-       (process-output->string (cmd-in-subdir cat "probe")
+       (process-output->string (cmd-in-subdir "cat" "probe")
                                :directory "test2.o"))
 
 ;; process pipeline and port
@@ -576,8 +562,8 @@
     (^[] (for-each print '("banana" "habana" "tabata" "cabara"))))
   (test* "process-output->string with pipeline"
          '("banana" "habana")
-         (process-output->string-list `(,(cmd cat "test.o")
-                                        ,(cmd grep "bana"))))
+         (process-output->string-list `(,(cmd "cat" "test.o")
+                                        ,(cmd "grep" "bana"))))
   )
 
 (rmrf "test2.o")
