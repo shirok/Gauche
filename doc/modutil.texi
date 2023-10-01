@@ -12841,16 +12841,24 @@ This module defines several commonly-used mathematic constants.
 @end deftp
 
 @defvr {Constant} pi
+@defvrx {Constant} π
+@defvrx {Constant} 2pi
+@defvrx {Constant} 2π
 @defvrx {Constant} pi/2
+@defvrx {Constant} π/2
 @defvrx {Constant} pi/4
+@defvrx {Constant} π/4
 @defvrx {Constant} pi/180
+@defvrx {Constant} π/180
 @defvrx {Constant} 1/pi
+@defvrx {Constant} 1/π
 @defvrx {Constant} 180/pi
+@defvrx {Constant} 180/π
 @c MOD math.const
 @c EN
-Bound to pi, pi/2, pi/4, pi/180, 1/pi and 180/pi, respectively.
+Bound to constants computed with π.
 @c JP
-それぞれ、π、π/2、π/4、π/180、1/π、180/πです。
+πから計算される定数値に束縛されています。
 @c COMMON
 @end defvr
 
