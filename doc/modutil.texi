@@ -29056,6 +29056,7 @@ approach.
 
 @deftp {Module} text.info
 @mdindex text.info
+@c EN
 This module provides some basic functionalities to extract information
 from @code{info} files, a documentation format defined by
 @code{texinfo} system (@url{https://www.gnu.org/software/texinfo/}).
@@ -29063,61 +29064,115 @@ It is used in REPL toplevel commands @code{info}and @code{doc}
 (@pxref{Working in REPL}).
 It focuses mainly to handle Gauche documents, so it may not handle
 all features used in texinfo.
+@c JP
+このモジュールは、@code{texinfo}システムが生成する
+@code{info}ファイルから情報を抜き出す基本的な機能を提供します。
+(texinfoについては@url{https://www.gnu.org/software/texinfo/}参照)。
+REPLのトップレベルコマンド@code{info}や@code{doc}はこのモジュールを
+使っています(@ref{Working in REPL})。
+主にGaucheのドキュメントを扱うために作られたので、texinfoの全ての機能はカバーされていません。
+@c COMMON
 @end deftp
 
 @deftp {Class} <info-document>
 @clindex info-file
 @c MOD text.info
+@c EN
 An object for opened info file(s), returned by @code{open-info-document}.
 All slots are private.
+@c JP
+infoファイルの集合であるinfoドキュメントを表すオブジェクトです。
+@code{open-info-document}が返します。スロットは全てプライベートです。
+@c COMMON
 @end deftp
 
 @deftp {Class} <info-node>
 @clindex info-node
 @c MOD text.info
+@c EN
 An object for each info node.  It keeps the node's content, as well
 as links to neighboring nodes.  Its instance should be considered
 immutable object.
 
 A node can be obtained from an @code{<info-document>} object by
 @code{info-get-node}.
+@c JP
+infoノードを表すオブジェクトです。ノードの内容と他のノードへの参照を持っています。
+インスタンスは変更不可なオブジェクトとして扱われなければなりません。
+
+@code{<info-document>}オブジェクトに@code{info-get-node}を適用することで
+ノードを得ることができます。
+@c COMMON
 
 @defivar <info-node> name
+@c EN
 A string name of the info node.  Every info document has at least
 @code{"Top"} node.
+@c JP
+ノードの名前の文字列です。どのinfoドキュメントにも、最低限@code{"Top"}ノードは
+含まれています。
+@c COMMON
 @end defivar
 
 @defivar <info-node> next
+@c EN
 The string name of the next node.  You can visit all nodes in
 the document following the next link.
 It may be @code{#f} if the node is the last one of the document.
+@c JP
+「次」のノードの名前の文字列です。「次」をたどってゆくことで、ドキュメントの全ての
+ノードを見ることができます。
+ドキュメントの最後のノードでは@code{#f}になっています。
+@c COMMON
 @end defivar
 
 @defivar <info-node> prev
+@c EN
 The string name of the previous node.  It's a reverse link
 of the next node.  The previous node of @code{"Top"} is
 @code{"(dir)"} by convention, which is a special node
 that lists all info documents installed on the system (it is not
 included in the info document itself.)
+@c JP
+「前」のノードの名前の文字列です。「次」のノードとは逆のリンクになっています。
+@code{"Top"}のノードの前は慣習により@code{"(dir)"}となっていて、
+infoシステムではシステムにインストールされている全てのinfoドキュメントを表示する
+特別なノード名となっています。
+@c COMMON
 @end defivar
 
 @defivar <info-node> up
+@c EN
 If the node is a subnode, this contains the name of the upper node
 (a chapter name for sections, a section name for subsections, etc.)
 It is @code{#f} for @code{"Top"} node.
+@c JP
+このノードが他のノードのサブノードなら、親となるノードの名前の文字列。
+例えばこのノードが節(section)なら、親は章(chapter)です。
+@code{"Top"}ノードではここは@code{#f}です。
+@c COMMON
 @end defivar
 
 @defivar <info-node> file
+@c EN
 An @code{<info-document>} object of the info document this node is contained.
+@c JP
+このノードが含まれる@code{<info-document>}オブジェクトです。
+@c COMMON
 @end defivar
 
 @defivar <info-node> content
+@c EN
 A string content of the node.
+@c JP
+ノードの内容の文字列です。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun open-info-document info-file-path
 @c MOD text.info
+@c EN
 Open the named info document and returns an @code{<info-document>} instance.
 The argument is a pathname to a master info file, usually with
 @code{.info} suffix.  Depending on the installation, info files
@@ -29125,20 +29180,45 @@ may be compressed with gzip or bzip2, having extensions
 @code{.gz} or @code{.bz2} after @code{.info}; you don't need to
 specify those extensions.  The procedure searches possible compression
 options.
+@c JP
+指定されたパスのinfoドキュメントを読み込んで@code{<info-document>}インスタンスを
+返します。引数はマスターinfoファイルのパス名で、通常@code{.info}サフィックスが
+ついています。インストール状況によってはinfoファイルはgzipやbzip2で圧縮されていて、
+@code{.info}の後に@code{.gz}や@code{.bz2}がついていることもありますが、
+これらの圧縮サフィックスはつける必要がありません。この手続きは指定のパス名そのものが
+見つからなかったら圧縮サフィックスがついている名前も探します。
+@c COMMON
 
+@c EN
 A large info document may be splitted into multiple info files,
 each with a suffix @code{.info-1}, @code{.info-2} etc.  Those are
 automatically read, so you only need to give the path to the master file.
+@c JP
+大きなinfoドキュメントは分割されていて、それぞれに@code{.info-1}、@code{.info-2}
+などの名前がついていますが、それらは自動的に読まれるので、マスターとなるinfoファイルだけ
+指定すれば良いです。
+@c COMMON
 
+@c EN
 If it can't find the named document, or can't recognize its format,
 an error is thrown.
+@c JP
+infoドキュメントが見つからなかったり、ファイルフォーマットが認識できなかった場合は
+エラーが投げられます。
+@c COMMON
 @end defun
 
 @defun info-get-node info-doc node-name
 @c MOD text.info
+@c EN
 The @var{info-doc} argument is an @code{<info-document>} instance.
 Returns an @code{<info-node>} instance with the string name @var{node-name},
 or @code{#f} if no node with the given name is found.
+@c JP
+@code{<info-document>}のインスタンス@var{info-doc}から、
+@var{node-name}を持つノードを探して、その@code{<info-node>}インスタンスを返します。
+該当するノードが見つからなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun info-index-add! info-doc index-node-name :optional key-modifier
