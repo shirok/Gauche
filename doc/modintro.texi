@@ -811,6 +811,13 @@ Provides compatibility layers.
 互換性のためのレイヤを提供。
 @c COMMON
 
+@item control.*
+@c EN
+Control structures, such as multithreading utilities
+@c JP
+マルチスレッドユーティリティなどの制御機構
+@c COMMON
+
 @item data.*
 @c EN
 Implementations of various data structures.
@@ -881,11 +888,25 @@ Features for specific OSes.
 特定のOS向けの機能。
 @c COMMON
 
+@item parser.*
+@c EN
+Parsers
+@c JP
+パーザ (構文解析)
+@c COMMON
+
 @item rfc.*
 @c EN
 Implementations of net protocols defined in RFC's.
 @c JP
 RFCで定義されているデータフォーマットやネットワークプロトコルの実装。
+@c COMMON
+
+@item scheme.*
+@c EN
+R7RS libraries
+@c JP
+R7RSライブラリ
 @c COMMON
 
 @item srfi.*
