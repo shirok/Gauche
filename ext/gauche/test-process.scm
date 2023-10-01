@@ -216,7 +216,7 @@
 
 (test* "do-process :on-abnormal-exit #f" #f
        (do-process (cmd cat "NoSuchFile") :output :null :error :null))
-(test* "do-process :on-abnormal-exit #f" #t
+(test* "do-process :on-abnormal-exit #t" #t
        (do-process (cmd cat "test.o") :output :null :error :null))
 (test* "do-process :on-abnormal-exit :error"
        (test-error <process-abnormal-exit>)
@@ -228,7 +228,7 @@
                    :on-abnormal-exit :error :output :null :error :null))
 (test* "do-process :on-abnormal-exit :exit-code"
        1
-       (do-process (cmd grep "ThereCantBeSuchLine" "test.o")
+       (do-process (cmd grep "ThereCantBeSuchLine") :input "test.o"
                    :on-abnormal-exit :exit-code :output :null :error :null))
 
 ;; NB: how to test :wait and :fork?
