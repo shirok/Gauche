@@ -274,7 +274,9 @@
             (if-let1 json-name (slot-definition-option slot :json-name #f)
               (begin
                 (display comma)
-                (print-string (x->string json-name))
+                (print-string (if (eqv? json-name #t)
+                                (x->string (slot-definition-name slot))
+                                (x->string json-name)))
                 (display ":")
                 (print-value (slot-ref obj (slot-definition-name slot)))
                 ",")

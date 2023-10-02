@@ -18909,6 +18909,12 @@ S式をJSON形式に変換する手続きが提供されます。
 @c COMMON
 @end deftp
 
+@c EN
+@subheading Parsing JSON
+@c JP
+@subheading JSONのパーズ
+@c COMMON
+
 @deftp {Condition type} <json-parse-error>
 @c MOD rfc.json
 @c EN
@@ -19092,6 +19098,11 @@ JSONオブジェクトのキーと値をconsしたもののリスト、
 @end example
 @end deffn
 
+@c EN
+@subheading Constructing JSON
+@c JP
+@subheading JSONの構築
+@c COMMON
 
 @deftp {Condition type} <json-construct-error>
 @c MOD rfc.json
@@ -19114,6 +19125,58 @@ JSON表現に変換できなかったSchemeオブジェクト。
 @c COMMON
 @end defivar
 @end deftp
+
+@deftp {Class} <json-mixin>
+@c MOD rfc.json
+@c EN
+A Gauche object of a class inheriting this mixin class is automatically
+serialized to JSON object with the following rule:
+@c JP
+このmixinクラスを継承しているクラスのインスタンスは、以下の規則を使って
+自動的にJSONオブジェクトにシリアライズされます。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+Each slot of the object is examined. Only the slots
+with its slot definition has a true value in @code{:json-name}
+option are the subject to be serialized.
+@c JP
+オブジェクトのスロットのうち、@code{:json-name}がそのスロット定義オプション
+に含まれていて偽でないもののみがシリアライズの対象となります。
+@c COMMON
+@item
+@c EN
+If @code{:json-name} option is @code{#t}, the slot name is used
+as the key; otherwise, string representation (@code{x->string})
+of the option's value is used as the key.
+@c JP
+@code{:json-name}スロット定義オプションが@code{#t}ならばスロット名が
+キーとして使われ、そうでなければその値を@code{x->string}で文字列化したものがキー
+として使われます。
+@c COMMON
+@item
+@c EN
+Then the slot value is serialized recursively.
+@c JP
+スロットの値が再帰的にシリアライズされます。
+@c COMMON
+@end itemize
+
+@example
+(define-class <foo> (<json-mixin>)
+  ((slot-1 :init-keyword :slot-1 :json-name "Slot1")
+   (slot-2 :init-keyword :slot-2 :json-name #t)
+   (slot-3 :init-keyword :slot-3)))
+
+(construct-json
+  (make <foo> :slot-1 "xyz" :slot-2 123 :slot-3 'abc))
+ @result{} @r{prints}
+ @{"Slot1":"xyz","slot-2":123@}
+@end example
+@end deftp
+
 
 @defun construct-json obj :optional output-port
 @defunx construct-json-string obj

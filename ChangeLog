@@ -1,3 +1,8 @@
+2023-10-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/json.scm (print-instance): If :json-name slot definition
+	  option is #t, use slot's name as the key.
+
 2023-09-26  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/console.scm, lib/text/console/windows.scm:
