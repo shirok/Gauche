@@ -17638,9 +17638,9 @@ Read input data from the current input port, and compute HMAC digest
 with a hash algorithm @var{hash-class} and a key @var{key}.
 
 The result is returned as an instance of class @var{target}, which
-can be @code{<u8vector>} or @var{<string>}.  Some symbols is also
+can be @code{<u8vector>} or @code{<string>}.  Some symbols is also
 allowed to specify encoding: @code{base64}, @code{base64url},
-@code{base64url-nopad}, @var{base32}, @var{base32hex}, @code{base16},
+@code{base64url-nopad}, @code{base32}, @code{base32hex}, @code{base16},
 and @code{hex}.  @xref{Message digester framework} for the details
 of those encodings.
 
@@ -17658,7 +17658,7 @@ The key @var{key} may be a string or a u8vector.
 もしくは@code{<string>}の場合はそのインスタンスが返ります。
 @var{target}にはまた、エンコーディングを表す以下のシンボルを渡すこともできます:
 @code{base64}, @code{base64url},
-@code{base64url-nopad}, @var{base32}, @var{base32hex}, @code{base16},
+@code{base64url-nopad}, @code{base32}, @code{base32hex}, @code{base16},
 @code{hex}。詳しくは@ref{Message digester framework}を参照してください。
 
 @var{hash-class}引数には@code{<message-digest-algorithm>}を実装している
@@ -20212,20 +20212,18 @@ for the details.
 @c COMMON
 @end defun
 
-@defun quoted-printable-encode-string string :key line-width binary
+@defun quoted-printable-encode-message message :key line-width binary
 @c MOD rfc.quoted-printable
 @c EN
-Converts contents of @var{string} to Quoted-printable encoded format.
-Input string can be either complete or incomplete string;
-it is always interpreted as a byte sequence.
+Converts content of @var{message}, which can be either a string
+or a u8vector, to a string of Quoted-printable encoded format.
 
 The keyword arguments are the same as @code{quoted-printable-encode}.
 @c JP
-@var{string}の内容をQuoted-printableエンコードされたフォーマットに
-変換します。入力の文字列は、完全文字列でも不完全文字列でも構いません。
-常にバイトシーケンスとして処理されます。
+文字列かu8vectorの@var{message}の内容をQuoted-printableエンコードして、
+結果を文字列で返します。
 
-キーワード引数は@code{quoted-printable-encode}と同じです。
+キーワード引数の意味は@code{quoted-printable-encode}と同じです。
 @c COMMON
 @end defun
 
@@ -20248,16 +20246,44 @@ by non-hexadecimal characters), it copies them literally to the output.
 @c COMMON
 @end defun
 
-@defun quoted-printable-decode-string string
+@defun quoted-printable-decode-string-to target string
 @c MOD rfc.quoted-printable
 @c EN
-Decodes a Quoted-printable encoded string @var{string} and returns
-the result as a string.
+Decodes a Quoted-printable encoded string @var{string}, and returns
+the result as an instance of @var{target}, which must be
+either @code{<string>} or @code{<u8vector>}.
 @c JP
 Quoted-printableエンコードされた文字列@var{string}をデコードし、
-その結果を文字列で返します。
+その結果を@var{target}のインスタンスで返します。
+@var{target}は@code{<string>}か@code{<u8vector>}でなければなりません。
 @c COMMON
 @end defun
+
+
+@defun quoted-printable-encode-string string :key line-width binary
+@c MOD rfc.quoted-printable
+@c DEPRECATED
+@c EN
+This is for the backward compatibility.
+Use @code{quoted-printable-encode-message} instead.
+@c JP
+これは互換性のために残してある手続きです。
+@code{quoted-printable-encode-message}を使うようにしてください。
+@c COMMON
+@end defun
+
+@defun quoted-printable-decode-string string
+@c MOD rfc.quoted-printable
+@c DEPRECATED
+@c EN
+This is for the backward compatibility.  It is same as
+@code{(quoted-printable-decode-string-to <string> string)}.
+@c JP
+これは互換性のために残してある手続きです。
+@code{(quoted-printable-decode-string-to <string> string)}と同じです。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node SHA message digest, Transport layer security, Quoted-printable encoding/decoding, Library modules - Utilities
