@@ -7426,8 +7426,8 @@ with the name of
 the library as an argument (if @var{fn} is available without any
 library, the argument is @code{#f}).  If omitted, and a library
 is required, then the library is
-added to the substitution parameter @code{LIBS}, and @code{HAVE_LIB@var{lib}}
-is defined.  The default procedure returns @code{#t}.
+added to the substitution parameter @code{LIBS}.
+The default procedure returns @code{#t}.
 
 If @var{fn} isn't found in any of the libraries, @var{if-not-found}
 is called at the tail position
@@ -7435,9 +7435,9 @@ with @code{#f} as the argument.  The default procedure
 does nothing and just returns @code{#f}.
 
 The default behavior of @var{if-found} and @var{if-not-found} allows
-@code{cf-search-libs} to be used as predicate as well.
-
-This procedure is for side effects, and returns an undefiend vlaue.
+@code{cf-search-libs} to be used as predicate as well.  If you give
+alternative procedures, keep in mind that their return value
+will be returned to @code{cf-search-libs}.
 @end defun
 
 
