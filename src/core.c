@@ -549,7 +549,9 @@ init_cond_features()
         { "exact-closed", NULL },
         // { "exact-complex", NULL }, /* not yet */
         { "ieee-float", NULL },
+#if   defined(GAUCHE_CHAR_ENCODING_UTF_8)
         { "full-unicode", NULL },
+#endif
         { "ratios", NULL },
 #if   defined(GAUCHE_WINDOWS)
         { "windows", NULL },
