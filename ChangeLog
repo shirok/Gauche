@@ -1,3 +1,11 @@
+2023-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/writerP.h (SCM_WRITTEN_ELLIPSIS): Revert
+	  using Unicode ellipsis to three dots for truncated output.
+	  Windows terminals may not be able to handle Unicode ellipsis
+	  (U+2026) depending on the OS default codepage, and it
+	  triggers an error.
+
 2023-10-01  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/json.scm (print-instance): If :json-name slot definition

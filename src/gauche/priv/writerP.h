@@ -53,8 +53,16 @@ SCM_CLASS_DECL(Scm_WriteControlsClass);
 #define SCM_WRITE_CONTROLS(obj)   ((ScmWriteControls*)(obj))
 #define SCM_WRITE_CONTROLS_P(obj) SCM_XTYPEP(obj, SCM_CLASS_WRITE_CONTROLS)
 
-/* Ellipsis when output is truncated */
-#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
+/*
+ * NB: Flip the following condition to use ellipsis (U+2026) to indicate
+ * truncated output, instead of three periods.  This is turned off because,
+ * on Windows environment, ellipsis may not be displayable depending on
+ * terminal settings.  To our astonishment, they are not fullly
+ * unicode-capable by default.
+ * We may probe the terminal at runtime to switch, but I don't want to
+ * clutter the code.  So for now, no ellipsis.
+ */
+#if 0
 #define SCM_WRITTEN_ELLIPSIS "\xe2\x80\xa6"
 #else
 #define SCM_WRITTEN_ELLIPSIS "..."
