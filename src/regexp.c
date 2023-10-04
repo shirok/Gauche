@@ -2242,7 +2242,7 @@ static int is_word_boundary(struct match_ctx *ctx, const char *input, unsigned i
     if ((code == RE_EOW || code == RE_WB) && input == ctx->stop) return TRUE;
     unsigned char nextb = (unsigned char)*input;
     SCM_CHAR_BACKWARD(input, ctx->input, prevp);
-    SCM_ASSERT(prevp != NULL);
+    if (prevp == NULL) return FALSE;
     unsigned char prevb = (unsigned char)*prevp;
     if ((code == RE_BOW || code == RE_WB)
         && is_word_constituent(nextb) && !is_word_constituent(prevb)) {
