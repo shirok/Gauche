@@ -219,14 +219,10 @@
 (define *ascii-codec* (make-codec "ascii"))
 (define *latin-1-codec* (make-codec "latin1"))
 (define (latin-1-codec) *latin-1-codec*)
-
-(cond-expand
- [gauche.ces.none]
- [else
-  (define *utf-8-codec* (make-codec "utf-8"))
-  (define *utf-16-codec* (make-codec "utf-16"))
-  (define (utf-8-codec) *utf-8-codec*)
-  (define (utf-16-codec) *utf-16-codec*)])
+(define *utf-8-codec* (make-codec "utf-8"))
+(define *utf-16-codec* (make-codec "utf-16"))
+(define (utf-8-codec) *utf-8-codec*)
+(define (utf-16-codec) *utf-16-codec*)
 
 (define-record-type <transcoder>
   (%make-transcoder codec eol-style handling-mode)
