@@ -2503,10 +2503,15 @@
   (use srfi.147)
   (test-module 'srfi.147)
 
-  (use srfi.64)
-  (use compat.r7rs-srfi-tests)
-  (include "include/srfi-147-tests.scm")
-  (run-tests))
+  ;; srfi-147.tests.scm contains greek lambda and offends ces=none.
+  (cond-expand
+   [gauche.ces.none]
+   [else
+    (use srfi.64)
+    (use compat.r7rs-srfi-tests)
+    (include "include/srfi-147-tests.scm")
+    (run-tests)])
+  )
 
 ;;-----------------------------------------------------------------------
 ;; NB: SRFI-150 is tested in ext/gauche
@@ -2608,11 +2613,16 @@
   (use srfi.159)
   (test-module 'srfi.159)
 
-  (use compat.chibi-test)
-  (use scheme.list)
-  (use scheme.file)
-  (chibi-test
-   (include "include/srfi-159-tests.scm")))
+  ;; srfi-159-tests uses some unicode characters
+  (cond-expand
+   [gauche.ces.none]
+   [else
+    (use compat.chibi-test)
+    (use scheme.list)
+    (use scheme.file)
+    (chibi-test
+     (include "include/srfi-159-tests.scm"))])
+  )
 
 ;;-----------------------------------------------------------------------
 ;; Homogeneous numeric vector libraries

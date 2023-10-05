@@ -245,10 +245,14 @@
        (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0)))
 (test* "utf32->string BOM override" "012"
        (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'big))
-(test* "utf32->string ignore-bom big-endian" "\xfeff;012"
-       (utf32->string #u8(0 0 #xfe #xff 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t))
-(test* "utf32->string ignore-bom little-endian" "\xfeff;012"
-       (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'little #t))
+(cond-expand
+ [gauche.ces.none]
+ [else
+  (test* "utf32->string ignore-bom big-endian" "\xfeff;012"
+         (utf32->string #u8(0 0 #xfe #xff 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t))
+  (test* "utf32->string ignore-bom little-endian" "\xfeff;012"
+         (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'little #t))
+  ])
 (test* "utf32->string start/end" "012" ; map-to path
        (utf32->string #u8(0 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t 1))
 (test* "utf32->string start/end" "12" ; u32vector->string path

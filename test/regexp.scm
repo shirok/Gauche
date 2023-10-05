@@ -1283,7 +1283,7 @@
             (neg-look-behind #\a ("bc"))))
 
 ;;-------------------------------------------------------------------------
-(test-section "SRE")		    ; based on chibi's regexp-test.sld
+(test-section "SRE")                ; based on chibi's regexp-test.sld
 
 (define (test-sre expected sre input)
   (test* sre

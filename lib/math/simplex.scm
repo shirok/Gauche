@@ -221,13 +221,13 @@
 
 ;; Returns solved AA, p, B^, IxB, IxN.
 (define (%simplex-solve n m Na AA cc p B^ IxB IxN maximize?)
-  (define π   (make-f64vector n 0))     ;cc↑B . B^
+  (define pp   (make-f64vector n 0))     ;cc↑B . B^
 
   (define pivot-selection-rule 'bland)
 
   (define (compute-multiplier-vector!)
     (dotimes [i n]
-      (uvector-set! π i
+      (uvector-set! pp i
                     (sum-ec (: j n)
                             (* (uvector-ref cc (uvector-ref IxB j))
                                (array-ref B^ j i))))))
@@ -238,7 +238,7 @@
     (debug-dump
      (display "B^:")
      (pretty-print-array B^ #t :readable? #f :left #\[ :right #\])
-     (format #t "π = ~s\n" π))
+     (format #t "pp = ~s\n" pp))
     (let loop ([i 0]                    ;loop over IxN
                [picked-value #f]
                [picked-index #f])
@@ -247,7 +247,7 @@
         (let* ([in (u32vector-ref IxN i)]
                [c_in (- (uvector-ref cc in)
                         (sum-ec (: j n)
-                                (* (uvector-ref π j)
+                                (* (uvector-ref pp j)
                                    (array-ref AA j in))))])
           (debug-dump
            (print "c_in[" (u32vector-ref IxN i) "] = " c_in))

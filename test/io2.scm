@@ -773,9 +773,13 @@
 ;; utf-8 with BOM
 ;;
 
-(test* "utf-8 with BOM" "foo!"
-       (begin
-         (load "data/utf-8-bom.scm" :paths `(,(sys-dirname (current-load-path))))
-         (foo)))
+(cond-expand
+ [gauche.ces.none]
+ [else
+  (test* "utf-8 with BOM" "foo!"
+         (begin
+           (load "data/utf-8-bom.scm"
+                 :paths `(,(sys-dirname (current-load-path))))
+           (foo)))])
 
 (test-end)
