@@ -237,7 +237,7 @@
 
 ;; Inserts conversion port.  These are called from system's
 ;; open-{input|output}-file when :encoding argument is given.
-(define (%open-input-file/conv name :key (encoding #f)
+(define (%open-input-file/conv name :key (encoding (gauche-default-encoding))
                                          ((:conversion-buffer-size bufsiz) 0)
                                          ((:conversion-illegal-output illegal-output) 'raise)
                                     :allow-other-keys rest)
@@ -248,7 +248,7 @@
                                 :owner? #t
                                 :illegal-output illegal-output)))
 
-(define (%open-output-file/conv name :key (encoding #f)
+(define (%open-output-file/conv name :key (encoding (gauche-default-encoding))
                                           ((:conversion-buffer-size bufsiz) 0)
                                           ((:conversion-illegal-output illegal-output) 'raise)
                                      :allow-other-keys rest)

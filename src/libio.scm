@@ -997,7 +997,9 @@
 
 (define-in-module scheme (open-input-file filename . args)
   (let1 e (get-keyword :encoding args #f)
-    (cond [(eq? e #f) (apply %open-input-file filename args)]
+    (cond [(and (eq? e #f)
+                (eq? (gauche-default-encoding) (gauche-character-encoding)))
+           (apply %open-input-file filename args)]
           [(eq? e #t)                   ;using coding-aware port
            (and-let* ([p (apply %open-input-file filename
                                 (delete-keyword :encoding args))])
@@ -1005,9 +1007,11 @@
           [else (apply %open-input-file/conv filename args)])))
 
 (define-in-module scheme (open-output-file filename . args)
-  (if (get-keyword :encoding args #f)
-    (apply %open-output-file/conv filename args)
-    (apply %open-output-file filename args)))
+  (let1 e (get-keyword :encoding args #f)
+    (if (and (not e)
+             (eq? (gauche-default-encoding) (gauche-character-encoding)))
+      (apply %open-output-file filename args)
+      (apply %open-output-file/conv filename args))))
 
 ;; R6RS call-with-port
 ;; Make sure to close PORT when proc returns or throws an error

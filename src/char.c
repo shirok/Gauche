@@ -41,6 +41,10 @@
 static ScmObj predef_sets[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
 static ScmObj predef_sets_complement[SCM_CHAR_SET_NUM_PREDEFINED_SETS];
 
+/* Default encoding used for I/O when :encoding option is omitted.
+   Initialized with the native CES. */
+static ScmPrimitiveParameter *default_encoding;
+
 #include "char_attr.c"          /* generated tables */
 
 /*=======================================================================
@@ -51,6 +55,12 @@ ScmObj Scm_CharEncodingName(void)
 {
     return SCM_INTERN(SCM_CHAR_ENCODING_NAME);
 }
+
+ScmObj Scm_DefaultEncodingName(void)
+{
+    return Scm_PrimitiveParameterRef(Scm_VM(), default_encoding);
+}
+
 
 /* includes encoding-specific auxiliary functions */
 #define SCM_CHAR_ENCODING_BODY
@@ -1659,6 +1669,12 @@ void Scm__InitChar(void)
         = predef_sets_complement[SCM_CHAR_SET_FULL];
     predef_sets_complement[SCM_CHAR_SET_FULL]
         = predef_sets_complement[SCM_CHAR_SET_EMPTY];
+
+    default_encoding
+        = Scm_BindPrimitiveParameter(Scm_GaucheModule(),
+                                     "gauche-default-encoding",
+                                     Scm_CharEncodingName(),
+                                     0);
 
     /* Expose internal charset */
 #if defined(GAUCHE_CHAR_ENCODING_EUC_JP)

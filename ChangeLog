@@ -1,3 +1,13 @@
+2023-10-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/char.c (Scm_DefaultEncodingName, gauche-default-encoding),
+	  src/libio.scm (open-input-file, open-output-file),
+	  ext/charconv/convaux.scm (%open-input-file/conv),
+	  (%open-output-file/conv): Add support fo gauche-default-encoding,
+	  the encoding to be used when no :encoding option is given when
+	  performing I/O.
+	  https://github.com/shirok/Gauche/issues/944
+
 2023-10-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (init_cond_features): Define feature identifier

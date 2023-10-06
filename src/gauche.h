@@ -404,6 +404,7 @@ SCM_EXTERN ScmChar Scm_IntToDigit(int n, int radix, int basechar1, int basechar2
 SCM_EXTERN int Scm_CharToUcs(ScmChar ch);
 SCM_EXTERN ScmChar Scm_UcsToChar(int ucs);
 SCM_EXTERN ScmObj Scm_CharEncodingName(void);
+SCM_EXTERN ScmObj Scm_DefaultEncodingName(void);
 SCM_EXTERN const char **Scm_SupportedCharacterEncodings(void);
 SCM_EXTERN int Scm_SupportedCharacterEncodingP(const char *encoding);
 
