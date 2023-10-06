@@ -30,6 +30,12 @@
 (define lang   (make-parameter 'en))
 (define srcdir (make-parameter ""))
 
+;; TRANSIENT: We use :converion-illegal-output 'replace to read utf8 files,
+;; so that docprep won't barf if Gauche is compiled with non-utf8 encoding.
+;; (The resulting info file may contain replace chars, but that's unavoidable).
+;; After 0.9.13 release and we drop other encoding support, remove
+;; :converion-illegal-output option, for it is no longer needed.
+
 (define (scan-nodes)
   (let ([current-node #f]
         [current-header #f])
@@ -47,7 +53,9 @@
             (push! *header-table* (cons current-header jh)))]
          [#/^@include\s+(\S+)/ (#f file)
            (with-input-from-file (find-included-file file)
-             (cut scan-nodes) :encoding 'utf8)]
+             (cut scan-nodes)
+             :encoding 'utf8
+             :conversion-illegal-output 'replace)]
          ))
      read-line)))
 
@@ -66,7 +74,9 @@
       [#/^@include\s+(\S+)/ (#f file)
         (finish-srfi-line modtag)
         (with-input-from-file (find-included-file file)
-          (cut filter pattern-in pattern-out) :encoding 'utf8)
+          (cut filter pattern-in pattern-out)
+          :encoding 'utf8
+          :conversion-illegal-output 'replace)
         (in (read-line) #f)]
       ;; Extract-time include.  @include will be tracked by
       ;; texinfo-multiple-files-update and the includee must have @node
@@ -75,7 +85,9 @@
       [#/^@c xinclude\s+(\S+)/ (#f file)
         (finish-srfi-line modtag)
         (with-input-from-file (find-included-file file)
-          (cut filter pattern-in pattern-out) :encoding 'utf8)
+          (cut filter pattern-in pattern-out)
+          :encoding 'utf8
+          :conversion-illegal-output 'replace)
         (in (read-line) #f)]
       [#/^@c COMMON$/ () (finish-srfi-line modtag) (in (read-line) #f)]
       [#/^@c MOD\s+(\S+)$/ (#f module)
@@ -209,7 +221,9 @@
                                                      :absolute #t)]
                      [lang language])
         (when (eq? language 'jp)
-          (with-input-from-file (car a) scan-nodes :encoding 'utf8))
+          (with-input-from-file (car a) scan-nodes
+                                :encoding 'utf8
+                                :conversion-illegal-output 'replace))
         (with-input-from-file (car a)
           (^[]
             (if outfile
@@ -218,7 +232,8 @@
                          (current-output-port) 'utf8)
                 (with-output-to-port out do-it)
                 (close-output-port out))))
-          :encoding 'utf8))
+          :encoding 'utf8
+          :conversion-illegal-output 'replace))
       0)))
 
 ;; Local variables:
