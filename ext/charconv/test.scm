@@ -74,20 +74,16 @@
 
 (define (test-input file from to :key (guesser #f) illegal-output)
   (let* ((realfrom (or guesser from))
-         (infostr  (format #f "~a.~a (~a) => ~a" file from realfrom to))
+         (infostr  (format #f "~a.~a (~a) => ~a [~a]" file from realfrom to
+                           illegal-output))
          (fromfile (format #f "~a.~a" file from))
          (tofile   (format #f "~a.~a" file to)))
     (if (ces-conversion-supported? from to)
-      (if (supported-character-encoding? to)
-        (test infostr
-              (file->string tofile)
-              (lambda () (file->string-conv/in fromfile realfrom
-                                               :illegal-output illegal-output)))
-        (test infostr
-              (file->string tofile)
-              (lambda () (file->string-conv/in fromfile realfrom
-                                               :to-code to
-                                               :illegal-output illegal-output))))
+      (test infostr
+            (file->string tofile)
+            (lambda () (file->string-conv/in fromfile realfrom
+                                             :to-code to
+                                             :illegal-output illegal-output)))
       (test infostr "(not supported)"
             (lambda () "(not supported)")))
     ))
