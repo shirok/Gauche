@@ -237,16 +237,24 @@
 
 ;; Inserts conversion port.  These are called from system's
 ;; open-{input|output}-file when :encoding argument is given.
-(define (%open-input-file/conv name :key (encoding (gauche-default-encoding))
+(define (%open-input-file/conv name :key (encoding #f)
                                          ((:conversion-buffer-size bufsiz) 0)
                                          ((:conversion-illegal-output illegal-output) 'raise)
                                     :allow-other-keys rest)
-  (and-let* ([port (apply (with-module gauche.internal %open-input-file)
-                          name rest)])
-    (wrap-with-input-conversion port encoding
-                                :buffer-size bufsiz
-                                :owner? #t
-                                :illegal-output illegal-output)))
+  (if (and (not encoding)
+           (not (eq? (gauche-default-encoding) (gauche-character-encoding))))
+    (apply %open-input-file/conv name
+           :encoding (gauche-default-encoding)
+           :conversion-buffer-size bufsiz
+           :conversion-illegal-output illegal-output
+           rest)
+    (and-let* ([port (apply (with-module gauche.internal %open-input-file)
+                            name
+                            (delete-keyword :encoding rest))])
+      (wrap-with-input-conversion port encoding
+                                  :buffer-size bufsiz
+                                  :owner? #t
+                                  :illegal-output illegal-output))))
 
 (define (%open-output-file/conv name :key (encoding (gauche-default-encoding))
                                           ((:conversion-buffer-size bufsiz) 0)

@@ -79,7 +79,10 @@
     (let* ([path (car r)]
            [remaining-paths (cadr r)]
            [hooked? (pair? (cddr r))]
-           [opener (if hooked? (caddr r) open-input-file)]
+           [opener (if hooked?
+                     (caddr r)
+                     (cut open-input-file <>
+                          :encoding (gauche-character-encoding)))]
            [port (guard (e [else e]) (opener path))])
       (when main-script
         ;; record full path of the script
