@@ -512,19 +512,20 @@
 
 (cond-expand
  [gauche.ces.utf8
-  (test* "gauche-default-encoding (input)"
-         (call-with-input-file "data/lat1.UTF-8" port->string)
-         (parameterize ([gauche-default-encoding 'latin1])
-           (call-with-input-file "data/lat1.ISO8859-1" port->string)))
-  (sys-unlink "testdata.o")
-  (test* "gauche-default-encoding (output)"
-         (call-with-input-file "data/lat1.ISO8859-1" port->byte-string)
-         (let1 data (call-with-input-file "data/lat1.UTF-8" port->string)
+  (let1 srcdir (sys-dirname (current-load-path))
+    (test* "gauche-default-encoding (input)"
+           (call-with-input-file #"~|srcdir|/data/lat1.UTF-8" port->string)
            (parameterize ([gauche-default-encoding 'latin1])
-             (call-with-output-file "testdata.o"
-               (^p (display data p))))
-           (call-with-input-file "testdata.o" port->byte-string)))
-  (sys-unlink "testdata.o")
+             (call-with-input-file #"~|srcdir|/data/lat1.ISO8859-1" port->string)))
+    (sys-unlink "testdata.o")
+    (test* "gauche-default-encoding (output)"
+           (call-with-input-file #"~|srcdir|/data/lat1.ISO8859-1" port->byte-string)
+           (let1 data (call-with-input-file #"~|srcdir|/data/lat1.UTF-8" port->string)
+             (parameterize ([gauche-default-encoding 'latin1])
+               (call-with-output-file "testdata.o"
+                 (^p (display data p))))
+             (call-with-input-file "testdata.o" port->byte-string)))
+    (sys-unlink "testdata.o"))
   ]
  [else])
 
