@@ -996,7 +996,7 @@
 ;; %open-{input|output}-file/conv are autoloaded.
 
 (define-in-module scheme (open-input-file filename . args)
-  (let1 e (get-keyword :encoding args (gauche-default-encoding))
+  (let1 e (get-keyword :encoding args (default-file-encoding))
     (cond [(eq? e (gauche-character-encoding))
            (apply %open-input-file filename (delete-keyword :encoding args))]
           [(eq? e #t)                   ;using coding-aware port
@@ -1008,7 +1008,7 @@
 (define-in-module scheme (open-output-file filename . args)
   (let1 e (get-keyword :encoding args #f)
     (if (and (not e)
-             (eq? (gauche-default-encoding) (gauche-character-encoding)))
+             (eq? (default-file-encoding) (gauche-character-encoding)))
       (apply %open-output-file filename args)
       (apply %open-output-file/conv filename args))))
 

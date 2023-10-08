@@ -242,9 +242,9 @@
                                          ((:conversion-illegal-output illegal-output) 'raise)
                                     :allow-other-keys rest)
   (if (and (not encoding)
-           (not (eq? (gauche-default-encoding) (gauche-character-encoding))))
+           (not (eq? (default-file-encoding) (gauche-character-encoding))))
     (apply %open-input-file/conv name
-           :encoding (gauche-default-encoding)
+           :encoding (default-file-encoding)
            :conversion-buffer-size bufsiz
            :conversion-illegal-output illegal-output
            rest)
@@ -256,7 +256,7 @@
                                   :owner? #t
                                   :illegal-output illegal-output))))
 
-(define (%open-output-file/conv name :key (encoding (gauche-default-encoding))
+(define (%open-output-file/conv name :key (encoding (default-file-encoding))
                                           ((:conversion-buffer-size bufsiz) 0)
                                           ((:conversion-illegal-output illegal-output) 'raise)
                                      :allow-other-keys rest)
