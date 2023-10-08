@@ -58,6 +58,19 @@
 (define-cproc port-closed? (obj::<port>) ::<boolean> SCM_PORT_CLOSED_P)
 
 ;;
+;; Default coding
+;;
+
+(inline-stub
+ (define-cvar default-file-encoding::ScmPrimitiveParameter* :static)
+ (initcode
+  (set! default-file-encoding
+        (Scm_BindPrimitiveParameter (Scm_GaucheModule)
+                                    "default-file-encoding"
+                                    (Scm_CharEncodingName) 0)))
+ )
+
+;;
 ;; Preexisting ports
 ;;
 
