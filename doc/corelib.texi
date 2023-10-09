@@ -23899,6 +23899,16 @@ Returns number of characters copied when @var{unit} is a symbol
 @subsection File ports
 @c NODE ファイルポート
 
+@menu
+* Opening file ports::
+* Character encoding of file I/O::
+* File descriptor ports::
+@end menu
+
+@node Opening file ports, Character encoding of file I/O, File ports, File ports
+@subsubsection Opening file ports
+@c NODE ファイルポートのオープン
+
 @defun open-input-file filename :key if-does-not-exist buffering element-type encoding conversion-buffer-size conversion-illegal-output
 @defunx open-output-file filename :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size conversion-illegal-output
 [R7RS+]
@@ -24121,6 +24131,10 @@ If this argument is given, Gauche automatically loads
 as you read to or write from the port.
 See @ref{Supported character encoding schemes}, for the details of
 character encoding schemes.
+
+If this argument is omitted, the value of the parameter
+@code{default-file-encoding} is assumed for the file's character encoding
+(@pxref{Character encoding of file I/O}).
 @c JP
 この引数はファイルの文字エンコーディングを指定します。引数は文字列かシンボルで、
 文字エンコーディングスキーム(CES)の名前を渡します。
@@ -24135,6 +24149,9 @@ character encoding schemes.
 この引数が与えられた場合、Gaucheは自動的に@code{gauche.charconv}モジュールを
 ロードし、ポートの入出力時に文字コード変換を行います。
 CESについて詳しくは@ref{Supported character encoding schemes}を参照してください。
+
+この引数が省略された場合は、パラメータ@code{default-file-encoding}
+の値が指定されたものとみなされます (@ref{Character encoding of file I/O}参照)。
 @c COMMON
 
 @item :conversion-buffer-size
@@ -24350,6 +24367,87 @@ also doesn't ensure closing the port.
 参照)を利用した場合、エラー時にポートを閉じるのはプログラマの責任になります。
 @c COMMON
 
+@node Character encoding of file I/O, File descriptor ports, Opening file ports, File ports
+@subsubsection Character encoding of file I/O
+@c NODE ファイルI/Oにおける文字エンコーディング
+
+@deffn {Parameter} default-file-encoding
+@c EN
+A character encoding name assumed when you omit @var{encoding}
+keyword arguments in file port opening procedures, such as
+@code{open-input-port}, @code{call-with-output-file}, etc.
+@c JP
+ファイルポートをオープンする、@code{open-input-port}や@code{call-with-output-file}
+等の手続きに@var{encoding}キーワード引数を指定しなかった場合、
+このパラメータの値が文字エンコーディング名として使われます。
+@c COMMON
+
+@c EN
+The default value is Gauche's native encoding, returned by
+@code{gauche-character-encoding} (@pxref{Characters}).
+@c JP
+デフォルトの値はGaucheのネイティブエンコーディングで、
+@code{gauche-character-encoding}が返すものです
+(@ref{Characters}参照)。
+@c COMMON
+
+@c EN
+In most circumstances, you don't need to change the value of this parameter.
+These days, utf-8 became de facto in data exchange, so if you compile
+Gauche with utf-8 internal encoding (default), it is recommended that
+you specify @var{encoding} argument explicitly only when you know
+you're dealing with non-utf8 data.
+@c JP
+ほとんどの場合、このパラメータの値を変える必要はないでしょう。
+データ交換にはutf-8がデファクトとなった現代では、Gaucheをデフォルトの
+utf-8内部エンコーディングでコンパイルしておけば、utf8でないデータを
+扱う時のみ@var{encoding}を指定するだけで事足ります。
+@c COMMON
+
+@c EN
+However, suppose you have exising system that assumes, say, latin-1 encoding,
+and you've been using Gauche with @code{none} CES encoding (which means
+Gauche just treats an octet as a character).  If you want to switch
+Gauche with utf8 internal encoding, you need to check every file opening
+calls to make sure they have @code{:encoding latin-1}.  That would be a lot
+of work.
+@c JP
+ただ、例えばこれまでGaucheの内部エンコーディングを@code{none}でコンパイルしていて
+(これはGaucheが文字を8ビット固定長で扱うことを意味します)、システムがLatin-1エンコーディング
+でデータを扱っていたとしましょう。
+このシステムでGaucheをutf8内部エンコーディングに切り替えようとすると、
+全てのファイルオープン手続きを調べて@code{:encoding latin-1}をつけて回らないとなりません。
+それはかなり大きな変更となるでしょう。
+@c COMMON
+
+@c EN
+You can change this parameter to @code{latin-1} instead, and the exiting
+calls work as if @code{:encoding latin-1} is attached unless it already
+has explicit @code{:encoding}.
+@c JP
+そういう場合には、このパラメータを@code{latin1}にセットすることで、
+これまで@code{:encoding}がついていなかったファイルオープン手続きを
+あたかも@code{:encoding latin-1}が付加されているかのように振る舞わせることができます。
+@c COMMON
+
+@c EN
+Note that source code is loaded using coding aware ports
+(@pxref{Coding-aware ports}), with the default encoding being
+Gauche's native encoding.  The value of this parameter doesn't have
+effect.  Use encoding magic comment to specify the encoding of
+source code.
+@c JP
+ソースコードをloadする場合は、内部エンコーディングをデフォルトとする
+コーディング認識ポートが使われることに注意してください (@ref{Coding-aware ports}参照)。
+内部エンコーディングとソースエンコーディングが異なる場合は、
+文字エンコーディングを指定する呪文コメント@code{coding:coding-name}を使ってください。
+@c COMMON
+@end deffn
+
+
+@node File descriptor ports,  , Character encoding of file I/O, File ports
+@subsubsection File descriptor ports
+@c NODE ファイルディスクリプタポート
 
 @defun open-input-fd-port fd :key buffering name owner?
 @defunx open-output-fd-port fd :key buffering name owner?
