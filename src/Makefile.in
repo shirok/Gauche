@@ -365,7 +365,8 @@ libmod.c   : libmod.scm $(PRECOMP_DEPENDENCY)
 
 regexp.$(OBJEXT) : gauche/regexp_insn.h
 execenv.$(OBJEXT) : execenv.c paths.c paths_arch.c
-libextra.$(OBJEXT): libextra.c paths.c
+libextra.$(OBJEXT): libextra.c paths.c $(HEADERS)
+test-extra.$(OBJEXT): test-extra.c $(HEADERS)
 
 $(libgc_pic_LIBRARY): $(GCLIB) $(libgc_pic_OBJECTS)
 	rm -f $@
