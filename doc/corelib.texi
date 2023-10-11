@@ -26541,7 +26541,7 @@ slot of the write context is true.  If an atmark flag is given,
 it works like @code{length} and @code{level} slots of the write
 context is @code{#f}, i.e. temporarily turn off length and level limits.
 
-The indent of pretty print is set at the posiision where @code{~W} beings,
+The indent of pretty print is set at the position where @code{~W} begins,
 so that if the output spans multiple lines, the second and following lines
 are indented properly.
 @c JP
