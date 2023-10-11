@@ -12602,15 +12602,28 @@ the result(s) of those procedures.  These can be written using
 
 @deftp {Module} srfi.216
 @mdindex srfi.216
+@c EN
 This module provides several utility procedures to write code and
 implement exercises of ``Structure and Interpretation of Computer Programs''.
+@c JP
+このモジュールは、『計算機プログラムの構造と解釈』(SICP)の練習課題を実装するための
+いくつかのユーティリティを提供します。
+@c COMMON
 
+@c EN
 We provide this module for the portability, i.e. to run existing
 code that depends on this module.  If you're studying SICP and
 writing code by yourself using Gauche, we recommend you to
 install Gauche-compat-sicp extension
 (@url{https://github.com/shirok/Gauche-compat-sicp}), for it takes care
 of Gauche-specific matters.
+@c JP
+このモジュールを提供する主な目的は、このモジュールに依存している既存のコードの移植性のためです。
+SICPの課題をGaucheで解きながら学んでいる場合は、
+Gauche-compat-sicp拡張
+(@url{https://github.com/shirok/Gauche-compat-sicp})を使うことをおすすめします。
+Gauche特有の問題への対応が入っています。
+@c COMMON
 @end deftp
 
 @defvr {Constant} true
@@ -12618,69 +12631,126 @@ of Gauche-specific matters.
 @defvrx {Constant} nil
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 Constants bound to @code{#t}, @code{#f}, and @code{()}, respectively.
+@c JP
+それぞれ@code{#t}、@code{#f}、@code{()}に束縛された定数です。
+@c COMMON
 @end defvr
 
 @defun runtime
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 Returns an exact integer monotonically increasing from certain point
 of time in the past.  The absolute value doesn't matter, but you can
 use differences of calls to @code{runtime} to compare relative elapsed time.
+@c JP
+過去のある時点から、時間経過によって単調増加する正確な整数を返します。
+具体的な値に意味はありませんが、二つの@code{runtime}呼び出しの差を取ることで
+相対的な時間経過を比較することができます。
+@c COMMON
 @end defun
 
 @defun random n
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 The argument @var{n} must be a positive real number.  Returns a random
 nonnegative integer less than @var{n}.
+@c JP
+@var{n}は正の実数でなければなりません。@var{n}未満のランダムな非負整数を返します。
+@c COMMON
 
-If @var{n} is exact, an exact inteegr is returned.  Otherwise, an inexact
-integer is returned.
+@c EN
+If @var{n} is exact, an exact integer is returned.  Otherwise, an inexact
+integeer is returned.
+@c JP
+@var{n}が正確数なら、正確な整数が返ります。
+そうでなければ不正確な整数が返ります。
+@c COMMON
 @end defun
 
 @defun parallel-execute thunk thunk2 @dots{}
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 Run given thunks in parallel using threads.  Returns an undefined
 value after all thunks are completed.
+@c JP
+与えられた@var{thunk}を、スレッドを使って並列に実行します。
+全ての@var{thunk}の実行が終了したら、未定義の値を返します。
+@c COMMON
 @end defun
 
 @defun test-and-set! pair
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 The argument must be a mutable pair.
 If its @code{car} is @code{#f}, set it to @code{#t} and returns @code{#f}.
-Otherwise returns @code{#t}.  The operation is performed atomically.
+Otherwise returns @code{#t} without modifying the argument.
+The operation is performed atomically.
+@c JP
+引数は変更可能なペアでなければなりません。
+その@code{car}が@code{#f}なら、それを@code{#t}に変えて@code{#f}を返します。
+そうでなければ引数は変更せずに@code{#f}を返します。
+この操作はアトミックに行われます。
+@c COMMON
 @end defun
 
 @defmac cons-stream a b
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 Expands into @code{(cons a (delay b))}.  Note that the @code{car} side
 of stream (@var{a}) is eagerly evaluated.
+@c JP
+@code{(cons a (delay b))}へと展開されます。@code{car}部分にあたる
+@var{a}は積極的に評価されることに注意してください。
+@c COMMON
 
+@c EN
 This is not compatible with @code{util.stream}'s @code{stream-cons}
 (@pxref{Stream primitives}).  The reason SICP need this as primitive
 is that SICP does not use macros, so it can't define its own
 syntactic abstraction.
+@c JP
+これは@code{util.stream}の@code{stream-cons}と異なります
+(@ref{Stream primitives}参照)。SICPはマクロを陽に使わないので、
+このオペレータがプリミティブとして用意されている前提で書かれています。
+@c COMMON
 @end defmac
 
 @defvr {Constant} the-empty-stream
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 A singleton instance of the empty stream.  This should be used with
 the following @code{stream-null?}.  Note that this is not compatible with
 @code{stream-null} of @code{util.stream} (@pxref{Stream primitives}).
+@c JP
+空のストリームを表すシングルトンインスタンスです。
+これは、次の@code{stream-null?}と一緒に使われなければなりません。
+@code{util.stream}の@code{stream-null}と互換性はありません
+(@ref{Stream primitives}参照)。
+@c COMMON
 @end defvr
 
 @defun stream-null? obj
 [SRFI-216]
 @c MOD srfi.216
+@c EN
 Returns @code{#t} if @var{obj} is equivalent to @code{the-empty-stream},
 @code{#f} otherwise.
 Note that this is not the same as @code{stream-null?} of @code{util.stream}
 (@pxref{Stream primitives}).
+@c JP
+@var{obj}が@code{the-empty-stream}であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+これは@code{util.stream}の@code{stream-null?}とは異なります
+(@ref{Stream primitives}参照)。
+@c COMMON
 @end defun
 
 
