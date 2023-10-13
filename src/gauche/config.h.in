@@ -3,27 +3,22 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
-   systems. This function is required for `alloca.c' support on those systems.
-   */
-#undef CRAY_STACKSEG_END
-
-/* Define to 1 if using `alloca.c'. */
+/* Define to 1 if using 'alloca.c'. */
 #undef C_ALLOCA
 
 /* Define to use mixed endian ARM processor */
 #undef DOUBLE_ARMENDIAN
 
-/* Define to Gauche ABI version string */
+/* Gauche ABI version string */
 #undef GAUCHE_ABI_VERSION
 
-/* Define to override Gauche API version number */
+/* Overriding API VERSION */
 #undef GAUCHE_API_VERSION
 
 /* CA file path */
 #undef GAUCHE_CA_BUNDLE
 
-/* Define to check CA availability at runtime */
+/* Define to check system CA availability at runtime */
 #undef GAUCHE_CA_BUNDLE_CHECK
 
 /* Define to use file CA */
@@ -128,11 +123,10 @@
 /* Define number of args getservbyport_r takes */
 #undef GETSERVBYPORT_R_NUMARGS
 
-/* Define to 1 if you have `alloca', as a function or macro. */
+/* Define to 1 if you have 'alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
-/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
-   */
+/* Define to 1 if <alloca.h> works. */
 #undef HAVE_ALLOCA_H
 
 /* Define to 1 if you have the <bsd/libutil.h> header file. */
@@ -168,7 +162,7 @@
 /* Define if the system has dlopen() */
 #undef HAVE_DLOPEN
 
-/* Define if you have fcntl */
+/* Define to 1 if you have the `fcntl' function. */
 #undef HAVE_FCNTL
 
 /* Define if you have forkpty */
@@ -246,11 +240,14 @@
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
-/* Define to 1 if you have the `libproc' library (-lproc). */
+/* Define to 1 if you have the `proc' library (-lproc). */
 #undef HAVE_LIBPROC
 
 /* Define to 1 if you have the <libproc.h> header file. */
 #undef HAVE_LIBPROC_H
+
+/* Define to 1 if you have the `profiler' library (-lprofiler). */
+#undef HAVE_LIBPROFILER
 
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
@@ -273,9 +270,6 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* Define to 1 if you have the `mkdtemp' function. */
 #undef HAVE_MKDTEMP
 
@@ -294,7 +288,7 @@
 /* Define if you have openpty */
 #undef HAVE_OPENPTY
 
-/* Define if you have pthread_cancel */
+/* Define to 1 if you have the `pthread_cancel' function. */
 #undef HAVE_PTHREAD_CANCEL
 
 /* Define to 1 if the system has the type `pthread_spinlock_t'. */
@@ -360,6 +354,12 @@
 /* Define to 1 if you have the <stdatomic.h> header file. */
 #undef HAVE_STDATOMIC_H
 
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
+
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
@@ -369,7 +369,7 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have `strsignal' function. */
+/* Define to 1 if you have the `strsignal' function. */
 #undef HAVE_STRSIGNAL
 
 /* Define to 1 if `gr_passwd' is a member of `struct group'. */
@@ -447,11 +447,11 @@
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
 
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
-
 /* Define to 1 if you have the <sys/statvfs.h> header file. */
 #undef HAVE_SYS_STATVFS_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #undef HAVE_SYS_TIME_H
@@ -483,7 +483,7 @@
 /* Define to 1 if you have the `utimensat' function. */
 #undef HAVE_UTIMENSAT
 
-/* Define to 1 if you have the <wincrypt.h> header file. */
+/* Define if you have wincrypt.h */
 #undef HAVE_WINCRYPT_H
 
 /* Define if you have zlib.h and want to use it */
@@ -491,6 +491,27 @@
 
 /* Define if time_t is typedef'ed to an integral type */
 #undef INTEGRAL_TIME_T
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
 
 /* Define to use i386 optimizations */
 #undef SCM_TARGET_I386
@@ -510,11 +531,11 @@
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of `long', as computed by sizeof. */
-#undef SIZEOF_LONG
-
 /* The size of `intptr_t', as computed by sizeof. */
 #undef SIZEOF_INTPTR_T
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
 
 /* The size of `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
@@ -540,12 +561,14 @@
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
-        STACK_DIRECTION > 0 => grows toward higher addresses
-        STACK_DIRECTION < 0 => grows toward lower addresses
-        STACK_DIRECTION = 0 => direction of growth unknown */
+	STACK_DIRECTION > 0 => grows toward higher addresses
+	STACK_DIRECTION < 0 => grows toward lower addresses
+	STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
@@ -567,11 +590,6 @@
 # ifndef WORDS_BIGENDIAN
 #  undef WORDS_BIGENDIAN
 # endif
-#endif
-
-/* Enable large inode numbers on Mac OS X 10.5.  */
-#ifndef _DARWIN_USE_64_BIT_INODE
-# define _DARWIN_USE_64_BIT_INODE 1
 #endif
 
 /* Number of bits in a file offset, on hosts where this is settable. */
