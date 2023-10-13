@@ -145,7 +145,11 @@
   \n      won't show the source info.\
   \n  --target-config=FILE\
   \n      Give the target parameter configuration, if it is different\
-  \n      from the compiling gosh.")
+  \n      from the compiling gosh.  The file must contain a single keyword-value\
+  \n      list, suitable for TARGET-PARAMS argument for cgen-precompile and\
+  \n      compile.  Currently the following keyword is recognized:\
+  \n        :env-header-size  Size of environment frame header in words\
+  \n        :cont-frame-size  Size of continuation frame in words.")
   (exit 0))
 
 (define (split-to-symbols arg)
