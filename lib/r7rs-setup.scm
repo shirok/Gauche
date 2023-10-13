@@ -460,6 +460,7 @@
   (define (emergency-exit :optional (code 0))
     (sys-exit
       (cond
+        [(eqv? code #t) 0]
         [(and (integer? code) (not (negative? code))) code]
         [else 70]))) ; EX_SOFTWARE
   (define get-environment-variable  sys-getenv)
