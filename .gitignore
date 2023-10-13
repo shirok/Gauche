@@ -3,14 +3,12 @@
 *~
 
 # Automake and Autoconf
-config.guess
 config.log
 config.status
-config.sub
+libtool
 /compile
 /configure
 /depcomp
-/ltmain.sh
 /missing
 /test-driver
 autom4te.cache
@@ -20,6 +18,8 @@ Makefile
 /gc/configure
 /gc/configure.gnu
 /gc/configure.gnu-gauche
+/gc/config.guess
+/gc/config.sub
 /gc/test_atomic_ops
 /gc/include/config.h
 /gc/include/config.h.in
