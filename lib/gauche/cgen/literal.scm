@@ -55,12 +55,6 @@
 ;; <module> literal needs to access this
 (autoload gauche.cgen.tmodule all-tmodules)
 
-;; TRANSIENT: integer-expt is defined in 0.9.13.  This module needs to be
-;; read into 0.9.12 to compile 0.9.13.  Remove this after releasing 0.9.13.
-(cond-expand
- [gauche-0.9.12 (define integer-expt %expt)]
- [else])
-
 ;;=============================================================
 ;; Static objects
 ;;

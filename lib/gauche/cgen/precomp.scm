@@ -331,50 +331,10 @@
   (eval expr (~ (current-tmodule)'module)))
 
 ;; Expr -> CompiledCode
+;;  target-params parameter is passed to 'compile'.
 (define (compile-in-current-tmodule expr)
-  (define mod (~ (current-tmodule)'module))
-  (cond-expand
-   ;; TRANSIENT: 0.9.12 compiler doesn't accept target parameters, so
-   ;; we hack it.
-   [gauche-0.9.12
-    (let* ([eh (get-keyword :env-header-size (target-parameters) #f)]
-           [cf (get-keyword :cont-frame-size (target-parameters) #f)])
-      (with-module gauche.internal
-        (if (or eh cf)
-          (unwind-protect
-              (begin
-                (when eh (set! ENV_HEADER_SIZE eh))
-                (when cf (set! CONT_FRAME_SIZE cf))
-                (compile expr mod))
-            (set! ENV_HEADER_SIZE %eh-orig)
-            (set! CONT_FRAME_SIZE %cf-orig))
-          (compile expr mod))))]
-   [else
-    (compile expr mod :target-params (target-parameters))]))
-
-;; TRNASIENT: !!!KLUGE!!!
-;; This is only to compile 0.9.13 by 0.9.12.  Remove this after 0.9.13 release.
-;; In 0.9.12, ENV_HEADER_SIZE and CONT_FRAME_SIZE are defined as constants,
-;; though they're still GREF-ed due to the limitation of the compiler.
-;; We want to allow to alter its value during precompilation, so we
-;; redefine them as a mutable bindings.  The GAUCHE_SUPPRESS_WARNING stuff
-;; is to suppress 'redefining constant' message.
-(with-module gauche.internal
-  (define %eh-orig ENV_HEADER_SIZE)
-  (define %cf-orig CONT_FRAME_SIZE))
-(cond-expand
- [gauche-0.9.12
-  (define old-setting (sys-getenv "GAUCHE_SUPPRESS_WARNING"))
-  (sys-putenv "GAUCHE_SUPPRESS_WARNING" "1")
-  (with-module gauche.internal
-    (define ENV_HEADER_SIZE %eh-orig)
-    (define CONT_FRAME_SIZE %cf-orig))
-  (if old-setting
-    (sys-setenv "GAUCHE_SUPPRESS_WARNING" old-setting #t)
-    (cond-expand
-     [gauche.os.windows]                ;it doesn't have unsetenv
-     [else (sys-unsetenv "GAUCHE_SUPPRESS_WARNING")]))]
- [else])
+  (compile expr (~ (current-tmodule)'module)
+           :target-params (target-parameters)))
 
 ;;================================================================
 ;; Parameters
@@ -730,14 +690,9 @@
            filename
            (sys-dirname (port-name (current-input-port))))
       (^[]
-        (cond-expand
-         ;; TRANSIENT
-         [(or gauche-0.9.12 gauche-0.9.13_pre1 gauche-0.9.13_pre2 gauche-0.9.13_pre3)
-          (port-case-fold-set! (current-input-port) case-fold?)]
-         [else
-          (set! ((with-module gauche.internal port-case-fold)
-                 (current-input-port))
-                case-fold?)])
+        (set! ((with-module gauche.internal port-case-fold)
+               (current-input-port))
+              case-fold?)
         (unwind-protect
             (generator-fold compile-toplevel-form seed read)
           (close-port (current-input-port))))))

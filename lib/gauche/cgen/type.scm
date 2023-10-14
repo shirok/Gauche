@@ -208,9 +208,8 @@
   (%native <ssize_t> "Scm_IntegerFitsSsizeP" "Scm_IntegerToSsize" "Scm_SsizeToInteger")
   (%native <ptrdiff_t> "Scm_IntegerFitsPtrdiffP"  "Scm_IntegerToPtrdiff" "Scm_PtrdiffToInteger")
   (%native <off_t>   "Scm_IntegerFitsOffsetP" "Scm_IntegerToOffset" "Scm_OffsetToInteger")
-  ;; TRANSIENT: The following needs to be in after 0.9.13 release
-  ;;(%native <intptr_t>   "Scm_IntegerFitsIntptrP" "Scm_IntegerToIntptr" "Scm_IntptrToInteger")
-  ;;(%native <uintptr_t>   "Scm_IntegerFitsUintptrP" "Scm_IntegerToUintptr" "Scm_UintptrToInteger")
+  (%native <intptr_t>   "Scm_IntegerFitsIntptrP" "Scm_IntegerToIntptr" "Scm_IntptrToInteger")
+  (%native <uintptr_t>   "Scm_IntegerFitsUintptrP" "Scm_IntegerToUintptr" "Scm_UintptrToInteger")
 
   (%native <closure> "SCM_CLOSUREP" "SCM_CLOSURE" "SCM_OBJ")
   (%native <void>    "" "" "SCM_VOID_RETURN_VALUE")
@@ -297,8 +296,10 @@
    (%cclass <compiled-code> "ScmCompiledCode*")
    (%cclass <foreign-pointer> "ScmForeignPointer*")
    (%cclass <box>  "ScmBox*")
-   ;(%cclass <thread-local> "ScmThreadLocal*")
+   (%cclass <thread-local> "ScmThreadLocal*")
    (%cclass <primitive-parameter> "ScmPrimitiveParameter*")
+   (%cclass <parameterization> "ScmParameterization*")
+   (%cclass <continuation-mark-set> "ScmContinuationMarkSet*")
    (%cclass <dlobj> "ScmDLObj*")
    (%cclass <dlptr> "ScmObj" "Scm_DLPtrP" "SCM_OBJ")
    (%cclass <sys-group> "ScmSysGroup*")
@@ -306,7 +307,7 @@
    (%cclass <sys-sigset> "ScmSysSigset*")
    (%cclass <sys-stat> "ScmSysStat*")
    (%cclass <time> "ScmTime*")
-   ;(%cclass <sys-tm> "ScmSysTm*")
+   ;;(%cclass <sys-tm> "ScmSysTm*")
    (%cclass <sys-fdset> "ScmSysFdset*")
 
    ;; Exception - These classes are not available until we load gauche.threads,

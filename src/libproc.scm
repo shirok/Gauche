@@ -127,11 +127,6 @@
                 SCM_FALSE)])
     (return (Scm_VMApply1 proc name))))
 
-;; TRANSIENT: To compile 0.9.13 with 0.9.12
-(inline-stub
- (declare-stub-type <continuation-mark-set> "ScmContinuationMarkSet*")
- )
-
 (define-cproc continuation-mark-set? (obj) ::<boolean>
   (return (SCM_CONTINUATION_MARK_SET_P obj)))
 

@@ -263,11 +263,6 @@
 ;; Thread locals (SRFI-226)
 ;;
 
-;; TRANSIENT: To compile 0.9.13 with 0.9.12
-(inline-stub
- (declare-stub-type <thread-local> "ScmThreadLocal*")
- )
-
 (define-cproc make-thread-local (initval :optional (inheritable? #f) (name #f))
   (return
    (SCM_OBJ (Scm_MakeThreadLocal name initval

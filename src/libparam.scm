@@ -284,11 +284,6 @@
        [_ (error "Invalid temporarily form:" f)]))))
 
 
-;; TRANSIENT: To compile 0.9.13 with 0.9.12
-(inline-stub
- (declare-stub-type <parameterization> "ScmParameterization*")
- )
-
 (define-cproc call-with-parameterization (parameterization::<parameterization>
                                           thunk)
   (Scm_InstallParameterization parameterization)

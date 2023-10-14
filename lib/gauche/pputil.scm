@@ -81,11 +81,7 @@
 (define-inline (rp-length c) (~ c 'controls 'length))
 (define-inline (rp-level c)  (~ c 'controls 'level))
 (define-inline (rp-width c)  (~ c 'controls 'width))
-
-;; TRANSIENT: To compile 0.9.13 with 0.9.12
-(cond-expand
- [gauche-0.9.12 (define-inline (rp-indent c) 0)]
- [else (define-inline (rp-indent c) (~ c 'controls 'indent))])
+(define-inline (rp-indent c) (~ c 'controls 'indent))
 
 (define simple-obj?
   (any-pred number? boolean? char? port? symbol? null?
@@ -213,11 +209,7 @@
 
 ;; :: Layouter
 (define dots
-  ;; TRANSIENT: string-ellipsis isn't in 0.9.12.  Once we release 0.9.13,
-  ;; replace it with (with-module gauche.internal (string-ellipsis)).
-  (let* ([elli ((global-variable-ref (find-module 'gauche.internal)
-                                     'string-ellipsis
-                                     (^[] "...")))]
+  (let* ([elli (with-module gauche.internal (string-ellipsis))]
          [val (cons elli (string-length elli))])
     (^[w m] val)))
 (define dot  (^[w m] '("." . 1)))
@@ -347,20 +339,11 @@
                      (controls *default-controls*)
                      width length level indent
                      ((:newline nl) #t))
-  (let1 controls (cond-expand
-                  ;; TRANSIENT: Remove thos conditional after 0.9.13 release
-                  [gauche-0.9.12
-                   (write-controls-copy controls
-                                        :width width
-                                        :length length
-                                        :level level
-                                        :pretty #t)]
-                  [else
-                   (write-controls-copy controls
-                                        :width width
-                                        :length length
-                                        :level level
-                                        :pretty #t
-                                        :indent indent)])
+  (let1 controls (write-controls-copy controls
+                                      :width width
+                                      :length length
+                                      :level level
+                                      :pretty #t
+                                      :indent indent)
     (write obj port controls)
     (when nl (newline port))))
