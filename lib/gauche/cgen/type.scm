@@ -310,11 +310,13 @@
    ;;(%cclass <sys-tm> "ScmSysTm*")
    (%cclass <sys-fdset> "ScmSysFdset*")
 
-   ;; Exception - These classes are not available until we load gauche.threads,
-   ;; but we need those stub types before compiling gauche.threads.
-   ;; We hand-wire them, leaving scheme-type field #f.
-   (make-cgen-type '<mutex> #f "ScmMutex*" "<mutex>")
-   (make-cgen-type '<condition-variable> #f "ScmConditionVariable*"
+   ;; Exception - those classes are in the core but defined in gauche.threads.
+   (make-cgen-type '<mutex>
+                   (with-module gauche.threads <mutex>)
+                   "ScmMutex*" "<mutex>")
+   (make-cgen-type '<condition-variable>
+                   (with-module gauche.threads <condition-variable>)
+                   "ScmConditionVariable*"
                    "<condition-variable>")
    )
 
