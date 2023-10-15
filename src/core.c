@@ -616,37 +616,6 @@ init_cond_features()
     }
 }
 
-/* TRANSIENT: These used to be in paths.c but no longer needed.  We keep
-   the entries just for ABI compatibility.  These shouldn't be called.
-   Remove on 1.0 release.
-*/
-#if GAUCHE_API_VERSION < 98
-const char *Scm_GetLibraryDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
-{
-    Scm_Abort("Scm_GetLibraryDirectory is called (it shouldn't).");
-}
-
-const char *Scm_GetArchitectureDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
-{
-    Scm_Abort("Scm_GetArchitectureDirectory is called (it shouldn't).");
-}
-
-const char *Scm_GetSiteLibraryDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
-{
-    Scm_Abort("Scm_GetSiteLibraryDirectory is called (it shouldn't).");
-}
-
-const char *Scm_GetSiteArchitectureDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
-{
-    Scm_Abort("Scm_GetSiteArchitectureDirectory is called (it shouldn't).");
-}
-
-const char *Scm_GetRuntimeDirectory(void (*errfn)(const char *, ...) SCM_UNUSED)
-{
-    Scm_Abort("Scm_GetRuntimeDirectory is called (it shouldn't).");
-}
-#endif /*GAUCHE_API_VERSION < 98*/
-
 /*=============================================================
  * 'Main'
  */

@@ -167,14 +167,6 @@ ScmObj Scm_ExecutablePath()
     return path;
 }
 
-/* TRANSIENT: For ABI Compatibility.  Remove on 1.0 release. */
-#if GAUCHE_API_VERSION < 98
-ScmObj Scm__RuntimeDirectory()
-{
-    return Scm_RuntimeDirectory();
-}
-#endif
-
 /*
  * Initialization
  */

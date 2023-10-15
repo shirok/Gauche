@@ -1188,58 +1188,6 @@ ScmObj Scm_CurrentLoadNext()    { return PARAM_REF(Scm_VM(), load_next); }
 ScmObj Scm_CurrentLoadPort()    { return PARAM_REF(Scm_VM(), load_port); }
 
 /*------------------------------------------------------------------
- * Compatibility stuff
- */
-
-#if GAUCHE_API_VERSION < 98
-/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
-   Will be removed on 1.0 */
-void Scm__LoadFromPortCompat(ScmPort *port, int flags)
-{
-    Scm_LoadFromPort(port, flags|SCM_LOAD_PROPAGATE_ERROR, NULL);
-}
-
-/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
-   Will be removed on 1.0 */
-int  Scm__LoadCompat(const char *file, int flags)
-{
-    return (0 == Scm_Load(file, flags|SCM_LOAD_PROPAGATE_ERROR, NULL));
-}
-
-/* TRANSIENT: Pre-0.9 Compatibility routine.  Kept for the binary compatibility.
-   Will be removed on 1.0 */
-ScmObj Scm__RequireCompat(ScmObj feature)
-{
-    Scm_Require(feature, SCM_LOAD_PROPAGATE_ERROR, NULL);
-    return SCM_TRUE;
-}
-
-/* TRANSIENT: This is entirely moved to Scheme (libeval.scm).  The entry is
-   kept only for the binary compatibility. */
-ScmObj Scm_VMLoadFromPort(ScmPort *port SCM_UNUSED,
-                          ScmObj next_paths SCM_UNUSED,
-                          ScmObj env SCM_UNUSED,
-                          int flags SCM_UNUSED)
-{
-    Scm_Error("[internal] Scm_VMLoadFromPort() is obsoleted; call load-from-port Scheme procedure.");
-    return SCM_UNDEFINED;
-}
-
-/* TRANSIENT: Kept for the binary compatibility; the feature
-   is in libeval.scm now. */
-void Scm__RecordLoadStart(ScmObj load_file_path SCM_UNUSED)
-{
-}
-
-/* TRANSIENT: Kept for the binary compatibility; not used anymore. */
-ScmObj Scm_LoadMainScript()
-{
-    return SCM_UNDEFINED;
-}
-#endif /*GAUCHE_API_VERSION < 98*/
-
-
-/*------------------------------------------------------------------
  * Initialization
  */
 

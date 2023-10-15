@@ -843,26 +843,7 @@ void Scm_SetMasterSigmask(sigset_t *set)
 
 /*
  * Convenience routines hiding platform-dependent stuff
- *
- * TRANSIENT: These used to be used in vm.c, but no longer.  As of 0.9.3 these
- * aren't used anywhere.  Scm_SysSigmask covers those functionalities,
- * so we'll drop them by 1.0.
  */
-#if GAUCHE_API_VERSION < 98
-void Scm_GetSigmask(sigset_t *mask)
-{
-    if (SIGPROCMASK(SIG_SETMASK, NULL, mask) != 0) {
-        Scm_SysError("sigprocmask failed");
-    }
-}
-
-void Scm_SetSigmask(sigset_t *mask)
-{
-    if (SIGPROCMASK(SIG_SETMASK, mask, NULL) != 0) {
-        Scm_SysError("sigprocmask failed");
-    }
-}
-#endif /*GAUCHE_API_VERSION < 98*/
 
 /*
  * set signal mask

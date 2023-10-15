@@ -109,24 +109,4 @@ SCM_CLASS_DECL(Scm_ParameterizationClass);
 
 SCM_EXTERN ScmObj Scm_CurrentParameterization();
 
-/* TRANSIENT - exposed only for the backward compatibility - will be gone by 1.0 */
-#if GAUCHE_API_VERSION < 98
-typedef struct ScmParameterLocRec {
-    ScmPrimitiveParameter *p;
-} ScmParameterLoc;
-
-SCM_EXTERN void Scm_DefinePrimitiveParameter(ScmModule *mod,
-                                             const char *name,
-                                             ScmObj initval,
-                                             ScmParameterLoc *location /*out*/);
-SCM_EXTERN void   Scm_MakeParameterSlot(ScmVM *vm,
-                                        ScmParameterLoc *location /*out*/);
-SCM_EXTERN void   Scm_InitParameterLoc(ScmVM *vm,
-                                       ScmParameterLoc *location,
-                                       ScmObj initval);
-SCM_EXTERN ScmObj Scm_ParameterRef(ScmVM *vm, const ScmParameterLoc *location);
-SCM_EXTERN ScmObj Scm_ParameterSet(ScmVM *vm, const ScmParameterLoc *location,
-                                   ScmObj value);
-#endif /*GAUCHE_API_VERSION < 98*/
-
 #endif /*GAUCHE_PARAMETER_H*/

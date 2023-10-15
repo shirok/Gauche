@@ -69,7 +69,6 @@
 #include <errno.h>
 #include <stdint.h>
 #include <inttypes.h>
-#include <gauche/int64.h>
 
 #ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>

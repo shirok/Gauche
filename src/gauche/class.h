@@ -657,13 +657,6 @@ SCM_EXTERN ScmObj Scm_UpdateDirectMethod(ScmMethod *m,
 #define SCM_ALLOCATE(klassname, klass)  SCM_NEW_INSTANCE(klassname, klass)
 #endif /*GAUCHE_API_VERSION < 1000*/
 
-#if GAUCHE_API_VERSION < 98
-/* TRANSIENT: Obsoleted. */
-SCM_EXTERN ScmObj Scm_ObjectAllocate(ScmClass *klass, ScmObj initargs);
-/* TRANSIENT: Obsoleted.  Use Scm_NewInstance*/
-SCM_EXTERN ScmObj Scm_AllocateInstance(ScmClass *klass, int coresize);
-#endif /*GAUCHE_API_VERSION < 98*/
-
 SCM_DECL_END
 
 #endif /* GAUCHE_CLASS_H */
