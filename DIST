@@ -54,7 +54,7 @@ do_tgz () {
 
 do_pdf () {
     ./DIST gen
-    ./configure --enable-threads=pthreads --enable-multibyte=utf8
+    ./configure
     make
     (cd doc; make gauche-refe.pdf; mv gauche-refe.pdf ../../Gauche-$VERSION-refe.pdf)
 }
