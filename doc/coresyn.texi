@@ -4926,15 +4926,20 @@ feature identifier.)
 @c COMMON
 
 @item gauche.ces.utf8
-@itemx gauche.ces.eucjp
-@itemx gauche.ces.sjis
-@itemx gauche.ces.none
 @c EN
-Either one of these is defined based on Gauche's native character
-encoding scheme.  @xref{Multibyte strings}, for the details.
+This indicates Gauche's internal encoding is @code{utf-8}.
+Before 1.0, Gauche can be compiled with internal encodings other
+than @code{utf-8}, and the corresponding feature identifiers are
+defined so that the program can switch its behavior according to it.
+Now this is the only possible choice.  This is kept for the
+backward compatibility.
 @c JP
-これらのうちのいずれか一つが、Gaucheの内部エンコーディングに合わせて
-定義されます。詳しくは@ref{Multibyte strings}を参照してください。
+Gaucheの内部エンコーディングが@code{utf-8}であることを示します。
+1.0以前には、Gaucheはutf-8以外のいくつかの内部エンコーディングで
+コンパイルすることが可能で、それに合わせた機能識別子が定義され、
+プログラムが内部エンコーディングに応じて振る舞いを変えられるようになっていました。
+今はこれが唯一のエンコーディングです。過去のコードを変更なしで走らせられるように
+定義されています。
 @c COMMON
 
 @item gauche.net.tls

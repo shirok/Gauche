@@ -8251,13 +8251,12 @@ NUL character (ASCII #x00)
 @item x@var{N}
 A character whose Unicode codepoint is the integer @var{N},
 when @var{N} is a hexadecimal integer.
-This is R7RS lexical syntax. (See the compatibility note below).
+This is R7RS lexical syntax.
 @item u@var{N}
 A character whose Unicode codepoint is the integer @var{N},
 where @var{N} is 4-digit or 8-digit hexadecimal number.
-
 This is legacy Gauche lexical syntax.  Use @code{\xN} syntax for
-the new code. (See the compatibility note below).
+the new code.
 @end table
 @c JP
 リテラルの文字オブジェクトを表現します。
@@ -8293,11 +8292,10 @@ the new code. (See the compatibility note below).
 NUL文字 (ASCII #x00)
 @item x@var{N}
 @var{N} が16進表記の整数であるとき、Unicodeコードポイントが整数@var{N}
-であるような文字。これはR7RSの字句構文です。(下の互換性に関する注も見てください。)
+であるような文字。これはR7RSの字句構文です。
 @item u@var{N}
 @var{N}が4桁または8桁の16進数整数であるとき、UCSコード@var{N}であるような文字。
 これはGaucheの古い構文です。新規のコードでは@code{\xN}を使ってください。
-(下の互換性に関する注も見てください。)
 @end table
 @c COMMON
 
@@ -8317,40 +8315,6 @@ NUL文字 (ASCII #x00)
 @c COMMON
 @end example
 @end deftp
-
-@c EN
-@b{Compatibility note}:
-Before 0.9.4, @code{\xNN} syntax uses Gauche's internal
-character encoding as opposed to Unicode codepoint.  Both are
-the same if Gauche is compiled with internal encoding @code{utf-8}
-or @code{none} (if it's @code{none}, only characters up to U+00ff
-is supported and in this range the characters are the same as
-Unicode characters.)   If Gauche is compiled with encoding
-@code{euc-jp} or @code{sjis}, the meaning of @code{\xNN} beyond
-ASCII range differs from 0.9.3.3 or before.
-
-If you set the reader mode to @code{legacy} (@pxref{Reader lexical mode}),
-@code{#\xNN} is read as before, keeping the compatibility
-(but it isn't compatible to R7RS).  Alternatively,
-you can use @code{#\uNNNN}, or a character itself, to
-make the code work in both new and old versions of Gauche.
-@c JP
-@b{互換性に関する注}: 0.9.4まで、Gaucheは@code{\xNN}構文を、
-Unicodeコードポイントでなく内部文字エンコーディングで文字を表記するのに
-使っていました。Gaucheの内部エンコーディングを@code{utf-8}もしくは
-@code{none}でコンパイルされている場合は両者に違いはありません
-(@code{none}の場合、U+00ffまでの文字しか扱うことができませんが、
-扱える範囲内ではUnicodeと一致します)。
-内部エンコーディングが@code{euc-jp}か@code{sjis}の場合、
-@code{\xNN}で記されたASCIIの範囲外の文字の解釈は、
-0.9.3.3およびそれ以前のGaucheとは異なることになります。
-
-リーダのモードを@code{legacy}にセットすれば(@ref{Reader lexical mode}参照)、
-@code{#\xNN}は以前と同じ解釈となり、互換性は保たれます
-(ただし、R7RSとは非互換になります)。
-あるいは@code{#\uNNNN}表記や文字そのものを表記することで、
-以前のGaucheでも新しいGaucheでも動作するようにできます。
-@c COMMON
 
 @defun char? obj
 [R7RS base]
@@ -8494,128 +8458,58 @@ Returns one of the following symbols, representing the Unicode general category 
 @item @code{Zp} @tab Separator, Paragraph
 @item @code{Zs} @tab Separator, Space
 @end multitable
-
-@c EN
-If Gauche is compiled with euc-jp or shift_jis encoding,
-there are characters that don't have corresponding Unicode codepoint
-(each of them are represented by one unicode character plus one
-unicode modifier character).  A provisional category is assigned
-to those characters.  If future versions of Unicode incorporates
-these characters, the category may be reassigned.
-@c JP
-Gaucheがeuc-jpかshift_jisエンコーディングでコンパイルされている場合、
-Unicodeに対応するものがない文字がいくつかあります
-(各文字は、Unicode一文字＋Unicode結合文字で表現できます)。
-これらの文字については、以下のとおり暫定的にカテゴリを割り当てています。
-将来のUnicodeにこれらの文字が取り込まれた場合は、Unicodeで決められる
-カテゴリに変更されるでしょう。
-@c COMMON
-
-@multitable {aaaa} {aaaa} {aaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}
-@item SJIS @tab EUC @tab Cat  @tab Unicode
-@item @code{82F5} @tab @code{A4F7} @tab @code{Lo} @tab @code{U+304B U+309A} (Semi-voiced Hiragana KA)
-@item @code{82F6} @tab @code{A4F8} @tab @code{Lo} @tab @code{U+304D U+309A} (Semi-voiced Hiragana KI)
-@item @code{82F7} @tab @code{A4F9} @tab @code{Lo} @tab @code{U+304F U+309A} (Semi-voiced Hiragana KU)
-@item @code{82F8} @tab @code{A4FA} @tab @code{Lo} @tab @code{U+3051 U+309A} (Semi-voiced Hiragana KE)
-@item @code{82F9} @tab @code{A4FB} @tab @code{Lo} @tab @code{U+3053 U+309A} (Semi-voiced Hiragana KO)
-@item @code{8397} @tab @code{A5F7} @tab @code{Lo} @tab @code{U+30AB U+309A} (Semi-voiced Katakana KA)
-@item @code{8398} @tab @code{A5F8} @tab @code{Lo} @tab @code{U+30AD U+309A} (Semi-voiced Katakana KI)
-@item @code{8399} @tab @code{A5F9} @tab @code{Lo} @tab @code{U+30AF U+309A} (Semi-voiced Katakana KU)
-@item @code{839A} @tab @code{A5FA} @tab @code{Lo} @tab @code{U+30B1 U+309A} (Semi-voiced Katakana KE)
-@item @code{839B} @tab @code{A5FB} @tab @code{Lo} @tab @code{U+30B3 U+309A} (Semi-voiced Katakana KO)
-@item @code{839C} @tab @code{A5FC} @tab @code{Lo} @tab @code{U+30BB U+309A} (Semi-voiced Katakana SE)
-@item @code{839D} @tab @code{A5FD} @tab @code{Lo} @tab @code{U+30C4 U+309A} (Semi-voiced Katakana TSU)
-@item @code{839E} @tab @code{A5FE} @tab @code{Lo} @tab @code{U+30C8 U+309A} (Semi-voiced Katakana TO)
-@item @code{83F6} @tab @code{A6F8} @tab @code{Lo} @tab @code{U+31F7 U+309A} (Semi-voiced small Katakana FU)
-@item @code{8663} @tab @code{ABC4} @tab @code{Ll} @tab @code{U+00E6 U+0300} (Accented latin small ae)
-@item @code{8667} @tab @code{ABC8} @tab @code{Ll} @tab @code{U+0254 U+0300} (Accented latin small open o)
-@item @code{8668} @tab @code{ABC9} @tab @code{Ll} @tab @code{U+0254 U+0301} (Accented latin small open o)
-@item @code{8669} @tab @code{ABCA} @tab @code{Ll} @tab @code{U+028C U+0300} (Accented latin small turned v)
-@item @code{866A} @tab @code{ABCB} @tab @code{Ll} @tab @code{U+028C U+0301} (Accented latin small turned v)
-@item @code{866B} @tab @code{ABCC} @tab @code{Ll} @tab @code{U+0259 U+0300} (Accented latin small schwa)
-@item @code{866C} @tab @code{ABCD} @tab @code{Ll} @tab @code{U+0259 U+0301} (Accented latin small schwa)
-@item @code{866D} @tab @code{ABCE} @tab @code{Ll} @tab @code{U+025A U+0300} (Accented latin small schwa w/hook)
-@item @code{866E} @tab @code{ABCF} @tab @code{Ll} @tab @code{U+025A U+0301} (Accented latin small schwa w/hook)
-@item @code{8685} @tab @code{ABE5} @tab @code{Sk} @tab @code{U+02E9 U+02E5}
-@item @code{8686} @tab @code{ABE6} @tab @code{Sk} @tab @code{U+02E5 U+02E9}
-@end multitable
 @end defun
 
 @defun char->integer char
 @defunx integer->char n
 [R7RS base]
 @c EN
-@code{char->integer} returns an exact integer that represents
-internal encoding of the character @var{char}.
-@code{integer->char} returns a character whose internal encoding
+@code{char->integer} returns an exact integer of the unicode
+codepont of the character @var{char}.
+@code{integer->char} returns a character whose unicode codepoint
 is an exact integer @var{n}.  The following expression is always
 true for valid character @var{char}:
 @example
 (eq? char (integer->char (char->integer char)))
 @end example
 
-Note: R7RS defines these procedures to deal with Unicode
-codepoints.  Gauche complies it when compiled with @code{utf-8}
-or @code{none} internal encoding (for the latter, only characters
-up to U+00ff are supported).  If Gauche is compiled with
-@code{euc-jp} or @code{sjis} internal encoding, you need to use
-@code{char->ucs}/@code{ucs->char} below to convert between Unicode
-codepoints and characters.
-
 The result is undefined if you pass @var{n} to @code{integer->char}
 that doesn't have a corresponding character.
 @c JP
-@code{char->integer}は文字@var{char}の内部エンコーディングに対応する
-整数値を返します。@code{integer->char}は数値@var{n}と内部エンコーディングが
-同じ文字を返します。有効な文字@var{char}に対して以下の式は常に真となります。
+@code{char->integer}は文字@var{char}のUnicodeコードポイント
+整数値を返します。@code{integer->char}は数値@var{n}をUnicodeコードポイントとする
+文字を返します。有効な文字@var{char}に対して以下の式は常に真となります。
 @example
 (eq? char (integer->char (char->integer char)))
 @end example
 
-註: R7RSでは、これらの手続きはUnicodeコードポイントを扱うとされています。
-Gaucheの内部エンコーディングが@code{utf-8}か@code{none}であればそれに
-合致します (@code{none}の場合はU+00ffまでの文字がサポートされます)。
-内部エンコーディングが@code{euc-jp}か@code{sjis}の場合は、
-Unicodeコードポイントと文字の変換には下の@code{char->ucs}/@code{ucs->char}を
-使ってください。
-
-対応する内部エンコーディングを持つ文字が無い数値を@code{integer->char}に渡した
+対応する文字が無い数値を@code{integer->char}に渡した
 場合の結果は不定です。
 @c COMMON
 @end defun
 
 @defun char->ucs char
 @defunx ucs->char n
+@c DEPRECATED
 @c EN
-Converts a character @var{char} to integer UCS codepoint,
-and integer UCS codepoint @var{n} to a character, respectively.
+These are the same as @code{char->integer} and @code{integer->char},
+respectively.
 
-If Gauche is compiled with UTF-8 encoding, these procedures are the
-same as @code{char->integer} and @code{integer->char}.
+Gauche used to be built with an internal encoding other than
+utf-8, in which integer character codes differ from Unicode
+codepoints.  These procedures can be used to guarantee
+you can use Unicode codepoints.
 
-When Gauche's internal encoding differs from UTF-8, these procedures
-implicitly loads @code{gauche.charconv} module to convert internal
-character code to UCS or vice versa (@pxref{Character code conversion}).
-If @var{char} doesn't have corresponding UCS codepoint,
-@code{char->ucs} returns @code{#f}.  If UCS codepoint @var{n} can't
-be represented in the internal character encoding, @code{ucs->char}
-returns @code{#f}, unless the conversion routine provides a substitution
-character.
+Now that Gauche always uses utf-8, these procedures are no longer needed.
 @c JP
-それぞれ、文字@var{char}をUCSコードポイントを表す整数へ変換し、
-またUCSコードポイントを表す整数@var{n}を文字へと変換する手続きです。
+それぞれ@code{char->integer}および@code{integer->char}と同じです。
 
-Gaucheの内部文字エンコーディングがUTF-8でコンパイルされている場合は、
-これらの手続きはそれぞれ@code{char->integer}および@code{integer->char}
-と等価です。
+Gaucheはかつて、utf-8以外の内部エンコーディングでもビルドすることができ、
+その場合文字に対応する整数の文字コードはUnicodeコードポイントとは限りませんでした。
+これらの手続きは確実にUnicode-コードポイントを扱いたい場合に使われました。
 
-Gaucheの内部文字エンコーディングがUTF-8でない場合、
-これらの手続きは@code{gauche.charconv}モジュールを使って
-内部文字コードとUCSとの変換を行います (@ref{Character code conversion}参照)。
-@var{char}が対応するUCSコードを持っていない場合、@code{char->ucs}は@code{#f}を
-返します。UCSコード@code{n}に対応する文字が内部エンコーディングで定義されていない
-場合、変換ルーチンが代替文字を提供していればそれを、そうでなければ@code{#f}
-が返されます。
+現在ではGaucheは内部エンコーディングにutf-8のみを使うので、
+これらの手続きはもう必要なくなりました。
 @c COMMON
 @end defun
 
@@ -8627,15 +8521,8 @@ Gaucheの内部文字エンコーディングがUTF-8でない場合、
 @c EN
 Returns the upper case, lower case, title case and folded case of
 @var{char}, respectively.
-
 The mapping is done according to Unicode-defined character-by-character
-case mapping whenever possible.  If the native encoding doesn't support
-the mapped character defined in Unicode, the operation becomes no-op.
-If the native encoding is 'none', we treat the characters as if they
-are Latin-1 (ISO-8859-1) characters.  So, upcasing Latin-1 character
-small y with diaresis (U+00ff) maps to capital y with diaeresis
-(U+0178) if the internal encoding is utf-8, but it is no-op if
-the internal encoding is none.
+case mapping.
 
 R7RS defines @code{char-upcase}, @code{char-downcase}, and
 @code{char-foldcase} in the @code{(scheme char)} library,
@@ -8644,14 +8531,7 @@ R6RS defines all of them.
 @c JP
 @var{char}の大文字、小文字、titlecase、foldcaseを
 それぞれ返します。
-
-変換は原則としてUnicodeで定義された文字対文字のマッピングに従います。
-Unicodeに従って変換する先の文字が内部エンコーディングでサポートされていない
-場合は、変換は行いません。内部エンコーディングが'none'の場合は、
-文字をLatin-1 (ISO-8859-1) であるとみなします。Latin-1の
-small y with diaresis (U+00ff) をupcaseすると、
-内部エンコーディングがutf-8の場合はcapital y with diaeresis (U+0178)にマップされますが、
-内部エンコーディングがnoneであれば元の文字がそのまま返されます。
+変換はUnicodeで定義された文字対文字のマッピングに従います。
 
 R7RSは@code{(scheme char)}ライブラリで、@code{char-upcase}、
 @code{char-downcase}、@code{char-foldcase}を定義しています。
@@ -8765,37 +8645,16 @@ Common Lispの@code{digit-char}に当たります。
 @end defun
 
 @defun gauche-character-encoding
+@c DEPRECATED
 @c EN
-Returns a symbol designates the native character encoding, selected
-at the compile time.
-The possible return values are those:
+Returns a symbol @code{utf-8}.
+This is kept for the backward compatibility with the code
+written for pre-1.0 Gauche which may be compiled with internal
+encodings other than utf-8.
 @c JP
-コンパイル時に選択された内部文字エンコーディングを表すシンボルを返します。
-返される値は以下のいずれかです。
-@c COMMON
-@table @code
-@item euc-jp
-EUC-JP
-@item utf-8
-UTF-8
-@item sjis
-Shift JIS
-@item none
-@c EN
-No multibyte character support (8-bit fixed-length character).
-@c JP
-マルチバイトキャラクタをサポートしない(8ビット固定長文字)。
-@c COMMON
-@end table
-
-@c EN
-To switch code at compile time according to the internal encoding,
-you can use feature identifiers @code{gauche.ces.*}--see
-@ref{Platform-dependent features}.
-@c JP
-コンパイル時に内部エンコーディングによってコードを切り替えたい場合は、
-機能識別子@code{gauche.ces.*}が使えます。
-@ref{Platform-dependent features}を見てください。
+シンボル@code{utf-8}を返します。
+これは、1.0以前のGaucheのために書かれたコードの互換性のために残されています。
+かつてはutf-8以外の内部エンコーディングでGaucheをコンパイルすることが可能でした。
 @c COMMON
 @end defun
 
@@ -8868,7 +8727,7 @@ in the set.  You can include the following special sequences:
 @table @code
 @item @var{x}-@var{y}
 Characters between @var{x} and @var{y}, inclusive.
-@var{x} must be smaller than @var{y} in the internal encoding.
+@var{x} must be smaller than @var{y} in the Unicode codepoints.
 @item ^
 If @i{char-set-spec} begins with caret, the actual character set
 is a complement of what the rest of @i{char-set-spec} indicates.
@@ -11523,12 +11382,6 @@ incomplete string, in which case @code{#f} is returned.
 @c JP
 この手続きは、@var{handling}引数が@code{#f} (デフォルト) で入力が
 不完全文字列だった場合に@code{#f}を返す以外は、常に完全文字列を返します。
-@c COMMON
-
-@c EN
-When Gauche's internal encoding is utf-8, the procedure works as follows:
-@c JP
-Gaucheの内部エンコーディングがutf-8であれば、この手続きは次のとおり動作します。
 @c COMMON
 
 @example
@@ -14420,8 +14273,7 @@ to read a NUL-terminated string from a buffer.
 @end example
 
 Note that these procedure may result an incomplete string if
-@var{vec} contains a byte sequence invalid as the internal encoding
-of the string.
+@var{vec} contains a byte sequence invalid as utf-8 encoding.
 @c JP
 与えられたs8vectorもしくはu8vector @var{vec}のバイト列と同じ内部バイト列を
 持つ文字列を作成して返します。省略可能な範囲引数@var{start}、@var{end}は、
@@ -14437,7 +14289,7 @@ of the string.
 (u8vector->string '#u8(65 66 0 67 68) 0 5 0) @result{} "AB"
 @end example
 
-@var{vec}中のバイト列が文字列の内部表現として不正な値を持っていた場合は、
+@var{vec}中のバイト列がutf-8として不正な値を持っていた場合は、
 不完全な文字列が返されます。
 @c COMMON
 @end defun
@@ -24376,46 +24228,39 @@ also doesn't ensure closing the port.
 A character encoding name assumed when you omit @var{encoding}
 keyword arguments in file port opening procedures, such as
 @code{open-input-port}, @code{call-with-output-file}, etc.
+The default value is @code{utf-8}.
 @c JP
 ファイルポートをオープンする、@code{open-input-port}や@code{call-with-output-file}
 等の手続きに@var{encoding}キーワード引数を指定しなかった場合、
 このパラメータの値が文字エンコーディング名として使われます。
-@c COMMON
-
-@c EN
-The default value is Gauche's native encoding, returned by
-@code{gauche-character-encoding} (@pxref{Characters}).
-@c JP
-デフォルトの値はGaucheのネイティブエンコーディングで、
-@code{gauche-character-encoding}が返すものです
-(@ref{Characters}参照)。
+デフォルトの値は@code{utf-8}です。
 @c COMMON
 
 @c EN
 In most circumstances, you don't need to change the value of this parameter.
-These days, utf-8 became de facto in data exchange, so if you compile
-Gauche with utf-8 internal encoding (default), it is recommended that
-you specify @var{encoding} argument explicitly only when you know
+These days, utf-8 became de facto in data exchange, so
+you need to specify @var{encoding} argument explicitly only when you know
 you're dealing with non-utf8 data.
 @c JP
 ほとんどの場合、このパラメータの値を変える必要はないでしょう。
-データ交換にはutf-8がデファクトとなった現代では、Gaucheをデフォルトの
-utf-8内部エンコーディングでコンパイルしておけば、utf8でないデータを
+データ交換にはutf-8がデファクトとなった現代では、utf8でないデータを
 扱う時のみ@var{encoding}を指定するだけで事足ります。
 @c COMMON
 
 @c EN
 However, suppose you have exising system that assumes, say, latin-1 encoding,
 and you've been using Gauche with @code{none} CES encoding (which means
-Gauche just treats an octet as a character).  If you want to switch
-Gauche with utf8 internal encoding, you need to check every file opening
+Gauche just treats an octet as a character).
+Gauche uses utf-8 exclusively in its internal encoding since 1.0,
+and if you switch to it, you would need to check every file opening
 calls to make sure they have @code{:encoding latin-1}.  That would be a lot
 of work.
 @c JP
 ただ、例えばこれまでGaucheの内部エンコーディングを@code{none}でコンパイルしていて
 (これはGaucheが文字を8ビット固定長で扱うことを意味します)、システムがLatin-1エンコーディング
 でデータを扱っていたとしましょう。
-このシステムでGaucheをutf8内部エンコーディングに切り替えようとすると、
+Gaucheは1.0から内部エンコーディングをutf-8のみにしたので、
+バージョンを上げる際に、
 全てのファイルオープン手続きを調べて@code{:encoding latin-1}をつけて回らないとなりません。
 それはかなり大きな変更となるでしょう。
 @c COMMON

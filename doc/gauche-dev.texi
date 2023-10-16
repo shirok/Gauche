@@ -2263,9 +2263,8 @@ Scm_IntToDigit(35, 36) @result{} SCM_CHAR('z')
 
 @deftypefun ScmChar Scm_UcsToChar (int @var{n})
 Converts unicode codepoint @var{n} to an @code{ScmChar} value.
-It is just an identity function if Gauche's internal encoding
-is utf-8.  Otherwise, it uses @code{gauche.charconv} module
-to map the Unicode codepoint to a character code in the native encoding.
+Since Gauche uses only utf-8 as internal encoding now, this is an identify
+function.
 
 This function may return @code{SCM_CHAR_INVALID} if @var{n}
 can't be converted to a valid character in the native encoding.

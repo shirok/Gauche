@@ -4091,13 +4091,12 @@ CESの名前は文字列またはシンボルで指定します。大文字小�
 @c COMMON
 
 @c EN
-A CES name "none" is special.  When Gauche's native encoding is @code{none},
-Gauche just treats a string as a byte sequence, and it's up to the application
+A CES name "none" is special; it means the string is an octet sequence
+and it's up to the application
 to interpret the sequence in an appropriate encoding.  So, conversion
 to and from CES "none" does nothing.
 @c JP
-CES名 "none" は特殊です。Gaucheのネイティブエンコーディングが@code{none}の
-場合、Gaucheは文字列を単なるバイト列として扱い、そのエンコーディングの解釈は
+CES名 "none" は特殊で、文字列を単なるバイト列として扱い、そのエンコーディングの解釈は
 アプリケーションに任されます。したがって、CES "none" への変換、および "none"
 からの変換は「何もしない」変換として扱われます。
 @c COMMON
@@ -4177,11 +4176,6 @@ for conversion to/from CES "none" always succeeds (in fact, it does nothing).
 
 This procedure may be affected by the value of the parameter
 @code{external-conversion-library}.
-
-@example
-;; see if you can convert the internal encoding to EUC-JP
-(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
-@end example
 @c JP
 CES @var{from-ces}から@var{to-ces}への変換がサポートされていれば@code{#t}を、
 そうでなければ@code{#f}を返します。
@@ -4197,11 +4191,6 @@ UnicodeにはEUC-JPにない文字も含まれています)。
 返します。なぜならそのような変換は常に成功するからです(何も変換しないわけですが)。
 
 この手続きは、パラメータ@code{external-conversion-library}に影響を受けます。
-
-@example
-;; 内部エンコーディングからEUC-JPに変換できるか?
-(ces-conversion-supported? (gauche-character-encoding) "euc-jp")
-@end example
 @c COMMON
 @end defun
 
@@ -4750,8 +4739,7 @@ different encoding temporary from the original port's encoding.
 @code{call-with-input-conversion} takes an input port @var{iport}
 which uses the character encoding @var{encoding}, and
 calls @var{proc} with one argument, a conversion input port.
-From the port, @var{proc} can read characters in
-Gauche's internal encoding.
+From the port, @var{proc} can read characters in utf-8.
 Note that once @var{proc} is called, it has to read all the
 characters until EOF; see the note below.
 
@@ -4759,8 +4747,7 @@ characters until EOF; see the note below.
 which expects the character encoding @var{encoding}, and
 calls @var{proc} with one argument,
 a temporary conversion output port.
-To the port, @var{proc} can write characters in
-Gauche's internal encoding.
+To the port, @var{proc} can write characters in utf-8.
 When @var{proc} returns, or it exits with an error,
 the temporary conversion output port is flushed and closed.
 The caller of @code{call-with-output-conversion}
@@ -18174,8 +18161,8 @@ the caller process's stderr.
 
 @c EN
 You can also give the @var{encoding} keyword argument
-to specify character encoding of the process output.  If it differs
-from the Gauche's internal encoding format,
+to specify character encoding of the process output.  If it is
+other than @code{utf-8},
 @code{open-input-process-port} inserts a character encoding
 conversion port.
 If @var{encoding} is given, the @var{conversion-buffer-size} keyword
@@ -18185,7 +18172,7 @@ the details of character encoding conversions.
 @c JP
 また、プロセスの出力の文字エンコーディングを指定するために
 @var{encoding}キーワード引数を与えることもできます。
-それがGaucheの内部エンコーディングと異なっていた場合、
+それが@code{utf-8}でなければ、
 @code{open-input-process-port}は文字コード変換ポートを挿入します。
 @var{encoding}が与えられた場合、@var{conversion-buffer-size}キーワード引数で
 変換バッファの大きさを指定することも可能です。文字コード変換の詳細については
@@ -25748,53 +25735,18 @@ spend in process-A and process-B inside a loop.
 @c EN
 This module provides various operations on a sequence of Unicode codepoints.
 
-Gauche can be compiled with a native encoding other than Unicode,
+Gauche used to support a native encoding other than Unicode,
 and the full Unicode-compatible behavior on characters and strings may
-not be available on such systems.  So we provide most operations in two
+not have been available on such systems.  So we provide most operations in two
 flavors: Operations on characters and strings, or operations on
 codepoints represented as a sequence of integers.
 @c JP
 このモジュールは、Unicodeのコードポイントの列に対する様々な操作を提供します。
 
-Gaucheはコンパイル時に、内部文字エンコーディングとしてUnicode以外も選べます。
-その場合、文字列に対して完全にUnicode互換の動作を提供できない場合があります。
+Gaucheは以前、内部文字エンコーディングとしてUnicode以外も選べるようになっていました。
+その場合、文字列に対して完全にUnicode互換の動作を提供できない場合があったため、
 そこで、本モジュールの多くの操作は、文字列を対象にするものと、
 コードポイントの数値のシーケンスを対象にするものの両方で提供されます。
-@c COMMON
-
-@c EN
-If Gauche is compiled with its native encoding being @code{none},
-@code{euc-jp} or @code{sjis}, character-and-string operations
-are likely to be partial functions of the operations defined
-in Unicode standard.  That is, if the operation can yield a
-character that are not supported in the native encoding, it
-may be remapped to an alternative character.  Each manual entry
-explains the detailed behavior.
-@c JP
-Gaucheの内部エンコーディングが@code{none}、
-@code{euc-jp}、@code{sjis}の場合は、
-文字および文字列に対する操作はUnicode標準で定義されたものと完全には一致しないでしょう。
-操作の結果が、内部エンコーディングでは定義されていない文字になった場合、
-それは代替文字に置き換えられます。各関数のエントリで詳しく説明してあります。
-@c COMMON
-
-@c EN
-The codepoint operations are independent from Gauche's native
-encoding and supports full spec as defined in Unicode standard.
-If Gauche is compiled with the @code{utf-8} native encoding,
-the operations are essentially the same as character-and-string flavors
-when you convert codepoints and characters by @code{char->integer} and
-@code{integer->char}.  The codepoint operations are handy when
-you need to support the algorithms described in Unicode standard
-fully, no matter what the running Gauche's native encoding is.
-@c JP
-コードポイントの列に対する操作はGaucheの内部文字エンコーディングとは
-無関係であり、Unicode標準の定義が完全にサポートされます。
-Gaucheが@code{utf-8}でコンパイルされている場合、コードポイント列に
-対する操作は、文字列に対する操作と (各要素を@code{char->integer}および
-@code{integer->char}で変換すること以外は)一致します。
-コードポイント列に対する操作はGaucheの内部文字エンコーディングにかかわらず
-ポータブルなアルゴリズムを必要とする場合に便利です。
 @c COMMON
 @end deftp
 

@@ -153,84 +153,11 @@ endif::EN[]
 
 
 ifdef::JA[]
-== スレッドサポート
+== Character encoding conversion
 endif::JA[]
 ifdef::EN[]
-== Thread Support
+== 文字エンコーディング変換
 endif::EN[]
-
-ifdef::JA[]
-主要なプラットフォームの多くで、Gaucheはネイティブスレッドをサポートします。
-スレッドが使用可能かどうかはconfigure時に自動判定されます。
-スレッドサポートが有効かどうかはconfigureスクリプトの出力の最後に表示されます。
-endif::JA[]
-ifdef::EN[]
-On most popular platforms, Gauche supports native threads.
-The configure script tries to determine automatically whether thread
-support can be enabled or not.  It shows at the end of the output
-whether the support is enabled.
-endif::EN[]
-
-ifdef::JA[]
-何らかの理由で、スレッドサポートが可能なプラットフォームでそれを無効にしたい場合、
-あるいは本来可能であるはずなのにconfigureスクリプトが判定を間違えて有効になっていない
-場合には、次のconfigureオプションで強制的にスレッドサポートの有効/無効を
-切り替えることができます。
-endif::JA[]
-ifdef::EN[]
-If you want to turn off the thread support even when the platform
-allows it for some reason, or if the configure script misrecognizes the
-platform and does not enable the support when it should be, you can use
-the following configure options to turn off or turn on the support
-explicitly.
-endif::EN[]
-
-[horizontal]
-`--enable-threads=none`     :: turn off the thread support
-`--enable-threads=pthreads` :: turn on the thread support (pthread)
-`--enable-threads=win32`    :: turn on the thread support (windows)
-
-
-ifdef::JA[]
-== 文字エンコーディングの選択
-endif::JA[]
-ifdef::EN[]
-== Choosing Character Encoding
-endif::EN[]
-
-ifdef::JA[]
-Gaucheは内部文字エンコーディングとして UTF-8 を使います。
-
-`--enable-multibyte=ENCODING` というオプションをconfigureに渡すことで、
-内部文字エンコーディングを変えることができます。ENCODINGには `utf-8` (デフォルト)、
-`euc-jp`、`sjis`、そして `none` (8ビット固定長。ISO8859-xなど)を指定できます。
-ただし、utf-8以外の内部エンコーディングは非推奨で、既にGaucheをそのエンコーディングで
-使っているシステムの互換性のためだけに残されています。Gaucheをutf-8以外の
-内部エンコーディングで使っている場合は、移行を考えて下さい。
-
-内部エンコーディングがutf-8であって、コードやデータにそれ以外のエンコーディングを
-使うことに制限はありません。入出力の際にエンコーディングを指定しない場合のデフォルトが
-utf-8になるというのが主な違いです。詳細は以下のURLで。
-endif::JA[]
-ifdef::EN[]
-Gauche is compiled with UTF-8 as a native character encoding.
-
-You can select different character encoding with `--enable-multibyte=ENCODING`
-configure option, where ENCODING can be either `utf-8` (default),
-`euc-jp`, `sjis` or `none` (8-bit/character encoding such as ISO8859-x).
-However, it is deprecated and kept only for the
-backward compatibility to support existing systems.  If your system
-uses Gauche with different internal encodings other than utf-8, consider
-migration.
-
-Even if you configure Gauche with utf-8, you can still have your code
-and data in other encodings.  The main difference is that when you do
-I/O without specifying encoding, utf-8 is assumed by default.
-See the following URL for the details.
-endif::EN[]
-
-https://practical-scheme.net/gauche/gmemo/?Utf8Only
-
 
 ifdef::JA[]
 GaucheはUnicode(UTF-8, 16, 32)、Latin-N、および代表的な日本語文字エンコーディングを

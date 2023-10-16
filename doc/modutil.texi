@@ -19600,15 +19600,15 @@ on entire header field for the convenience).
 Encodes @var{word} in the RFC2047 format.  The keyword
 argument @var{charset} specifies the character encoding scheme
 in string or symbol.
-whose default is @code{utf-8}.  If @var{charset} differs from
-Gauche's internal encoding and @var{word} is a complete string,
+whose default is @code{utf-8}.  If @var{charset} is other
+than @code{utf-8} and @var{word} is a complete string,
 the procedure converts the character encoding to @var{charset},
 then performs transfer encoding.
 @c JP
 @var{word}をRFC2047フォーマットにエンコードします。キーワード引数
 @var{charset}は文字列かシンボルで文字エンコーディングスキームを指定します。
-デフォルトは@code{utf-8}です。@var{charset}の指定がGaucheの
-内部文字エンコーディングと異なっており、@var{word}が完全な文字列である場合は、
+デフォルトは@code{utf-8}です。@var{charset}の指定が@code{utf-8}以外で、
+@var{word}が完全な文字列である場合は、
 まず@var{word}が@var{charset}のエンコーディングへと変換され、
 その上でトランスファーエンコーディングがかけられます。
 @c COMMON

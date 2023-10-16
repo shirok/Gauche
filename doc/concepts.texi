@@ -121,7 +121,7 @@ Gaucheにおいては、そうではありません。
 @c EN
 Gauche supports @emph{multibyte string} natively,
 which means characters are represented by variable number of bytes
-in a string.   Gauche retains semantic compatibility of
+in a string.  Gauche retains semantic compatibility of
 Scheme string, so such details can be hidden, but it'll be helpful
 if you know a few points.
 @c JP
@@ -178,75 +178,6 @@ using index access at all.
 @c COMMON
 
 @c EN
-You can choose @emph{internal} encoding scheme at the time of compiling
-Gauche.
-At runtime, a procedure @code{gauche-character-encoding}
-can be used to query the internal encoding.  At compile time,
-you can use a feature identifier to check the internal encoding.
-(@pxref{Platform-dependent features}.)
-Currently, the following
-internal encodings are supported.
-@c JP
-Gaucheのコンパイル時に、文字の@emph{内部エンコーディング}を選択することができます。
-実行時に手続き@code{gauche-character-encoding}を使うか、
-コンパイル時に機能識別子(@ref{Platform-dependent features}参照)を使うことで、
-よってどの内部エンコーディングでコンパイルされたかを知ることが出来ます。
-今のところ、以下のエンコーディングがサポートされています。
-@c COMMON
-
-@table @code
-@item utf-8
-@c EN
-UTF-8 encoding of Unicode.  This is the default.
-The feature identifier @code{gauche.ces.utf8} indicates Gauche is compiled
-with this internal encoding.
-@c JP
-UnicodeのUTF-8エンコーディング。これがデフォルトです。
-Gaucheがこの内部エンコーディングでコンパイルされている場合は
-機能識別子@code{gauche.ces.utf8}が定義されます。
-@c COMMON
-@item euc-jp
-@c EN
-EUC-JP encoding of ASCII, JIS X 0201 kana, JIS X 0212 and JIS X 0213:2000
-Japanese character set.
-The feature identifier @code{gauche.ces.eucjp} indicates Gauche is compiled
-with this internal encoding.
-@c JP
-ASCII、JIS X 0201カナ、JIS X 0212及びJIS X 0213:2000文字集合のEUC-JP
-エンコーディング。
-Gaucheがこの内部エンコーディングでコンパイルされている場合は
-機能識別子@code{gauche.ces.eucjp}が定義されます。
-@c COMMON
-@item sjis
-@c EN
-Shift-JIS encoding of JIS X 0201 kana and JIS X 0213:2000
-Japanese character set.  For source-code compatibility, the character
-code between 0 and 0x7f is mapped to ASCII.
-The feature identifier @code{gauche.ces.sjis} indicates Gauche is compiled
-with this internal encoding.
-@c JP
-JIS X 0201カナ及びJIS X 0213:2000文字集合のShift-JISエンコーディング。
-ソースコードの互換性のため、文字コード0から0x7fの範囲はJIS X 0201 roman
-ではなくASCIIにマップされます。
-Gaucheがこの内部エンコーディングでコンパイルされている場合は
-機能識別子@code{gauche.ces.sjis}が定義されます。
-@c COMMON
-@item none
-@c EN
-8-bit fixed-length character encoding, with the code between 0 and 0x7f
-matches ASCII.  It's up to the application to interpret the string
-with certain character encodings.
-The feature identifier @code{gauche.ces.none} indicates Gauche is compiled
-with this internal encoding.
-@c JP
-8ビット固定長の文字エンコーディング。文字コード0から0x7fの範囲はASCIIと
-みなします。文字列をどのエンコーディングとして解釈するかはアプリケーション次第です。
-Gaucheがこの内部エンコーディングでコンパイルされている場合は
-機能識別子@code{gauche.ces.none}が定義されます。
-@c COMMON
-@end table
-
-@c EN
 Conversions from other encoding scheme is provided
 as a special port. @xref{Character code conversion}, for details.
 @c JP
@@ -277,25 +208,23 @@ literal regular expressions, and so on.
 @c COMMON
 
 @c EN
-By default, Gauche assumes a Scheme program is written in
-its internal character encoding.   It is fine as far as you're writing
-scripts to use your own environment, but it becomes a problem if
-somebody else tries to use your script and finds out you're using
-different character encoding than his/hers.
+By default, Gauche assumes a Scheme program is written in utf-8.
+If you need to write a source other than utf-8, however,
+you can add the following ``magic comment'' near the beginning of
+the source code:
 @c JP
-デフォルトでは、GaucheはSchemeプログラムをGaucheの内部文字エンコーディングで
-書かれているものとして扱います。これは、自分で書いたスクリプトを自分の
-環境で走らせるだけなら十分ですが、別の文字エンコーディングを使うように
-コンパイルされた環境でスクリプトを走らせたい場合に問題となります。
+デフォルトでは、GaucheはSchemeプログラムをutf-8で書かれているものとして扱います。
+もし何らかの事情でutf-8以外のエンコーディングでソースを書かなければならない場合、
+コードの先頭付近に次のような特殊なコメントを置いておくことができます。
 @c COMMON
 
 @c EN
-So, if Gauche finds a comment something like the following within
+When Gauche finds a comment something like the following within
 the first two lines of the program source, it assumes the rest of
 the source code is written in @code{<encoding-name>}, and does
 the appropriate character encoding conversion to read the source code:
 @c JP
-そこで、Gaucheは、次のようなコメントがプログラムソースコードの
+Gaucheは、次のようなコメントがプログラムソースコードの
 2行目までに現れた場合、ソースコードの残りの部分が@code{<encoding-name>}で
 指定されるエンコーディングで書かれているものとして、必要ならば
 適切なエンコーディング変換を行います。
