@@ -151,12 +151,140 @@ convenient way to update Gauche.
 endif::EN[]
 
 
-
 ifdef::JA[]
-== Character encoding conversion
+== TLS/SSL のサポート
 endif::JA[]
 ifdef::EN[]
+== TLS/SSL support
+endif::EN[]
+
+ifdef::JA[]
+Gaucheのセキュアソケット通信サポートにはいくつかオプションがあります。
+ひとつはlink:https://tls.mbed.org/[MbedTLS]
+ライブラリ、もうひとつはlink:http://axtls.sourceforge.net/[AxTLS]
+ライブラリです。
+
+デフォルトでは、システムにMbedTLSライブラリがあればそれを使い、
+無ければTLSのサポートを組み込みません。
+システムにMbedTLSをインストールできない事情があったり、
+コンパイル後のバイナリだけを別環境に持ってゆくので依存ライブラリを減らしたい場合は、
+ビルド中にMbedTLSのソースをダウンロードしてGaucheに組み込んでしまうこともできます。
+
+AxTLSは小さなライブラリで、ソースがGaucheにバンドルされているので、
+外部ライブラリなしでTLSサポートを組み込めます。ただ、
+AxTLSはサポートしている暗号スイートに限りがあり、
+相手が正当な証明書を持っていても接続できないことがあります。
+どうしてもMbedTLSが使えない場合の最終手段と考えてください。
+endif::JA[]
+ifdef::EN[]
+Gauche includes secure socket connection support.
+One usesd link:https://tls.mbed.org/[MbedTLS] library, and the other
+uses link:http://axtls.sourceforge.net/[AxTLS] library.
+
+By default, `configure` checks if the MbedTLS library is installed
+on the system, and use it if it's available.  Otherwise, no TLS support
+is compiled.  If you can't install MbedTLS for some reason,
+or you want to bring the compiled binary to the target system that
+may not have MbedTLS library, you can specify to download MbedTLS
+source during build and compile it into Gauche binary.
+
+AxTLS is a small library and its source is included in the Gauche source
+tree.  It can be included in Gauche without relying on external libraries
+at runtime.  However, it has limited cipher and hash algorithm support.
+We suggest to use it as a fallback if you can't use MbedTLS.
+endif::EN[]
+
+[horizontal]
+`--with-tls=none`          :: do not include TLS/SSL support
+`--with-tls=mbedtls`       :: include only mbedTLS support
+`--with-tls=axtls,mbedtls` :: include TLS/SSL support using
+                            axTLS library (source is included in Gauche),
+                            and mbedTLS library (installed on the system).
+`--with-tls=mbedtls-internal` :: During the build, MbedTLS source is downloaded
+                            and compiled with Gauche.  See below.
+
+
+ifdef::JA[]
+`mbedtls-internal` を指定すると、ビルド中にMbedTLSのソースを
+ダウンロードして、Gaucheの拡張ライブラリの一部として組み込みます。生成されるバイナリは
+システムのMbedTLSライブラリには依存しないので、MbedTLSが入っていないターゲットシステムに
+もバイナリをそのまま持って行けます。このオプションを使う場合はビルドにCMakeが必要です。
+またその場合、`rfc--tls--mbed.so`および`libgauche-static-*.a`に
+MbedTLSのコードが含まれるため、バイナリの配布にあたってはMbedTLSのライセンスにも従う
+必要があります (Apache License 2.0)。
+endif::JA[]
+ifdef::EN[]
+If you give `mbedtls-internal` in place of `mbedtls`, the build process downloads
+MbedTLS source and compile it into Gauche's extension library.  The resulting
+binary doesn't depend on system's MbedTLS dynamic library, so you can move it
+to the systems that don't have MbedTLS.   You need CMake to use this option.
+Note that if you use `mbedtls-internal`, MbedTLS code is included in
+`rfc--tls--mbed.so` and `libgauche-static-*.a`, so they are subject to the
+MbedTLS license as well (Apache License 2.0).
+endif::EN[]
+
+ifdef::JA[]
+TLSを使う場合、サーバー証明書を認証するためにはCA(認証局)証明書が必要になります。
+どこから証明書を探すかについて、いくつか選択肢を指定できます。
+endif::JA[]
+ifdef::EN[]
+If you use TLS, you need CA certificates bundle to validate
+server certificates.  You may specify several options where to look for one.
+endif::EN[]
+
+[horizontal]
+`--with-ca-bundle=check`   :: Use heuristics to find CA bundle (default)
+`--with-ca-bundle=none`    :: Do not set default CA bundle
+`--with-ca-bundle=system`  :: Use system CA bundle.
+                              On MinGW, it accesses system CA store via
+                              Windows API.  Otherwise, it checks several
+                              known paths used for popular systems.
+`--with-ca-bundle=<path>`  :: Use given path as the CA bundle file
+
+
+ifdef::JA[]
+詳しくはマニュアルの`rfc.tls`の項を参照してください。
+endif::JA[]
+ifdef::EN[]
+See the manual's `rfc.tls` entry for the details.
+endif::EN[]
+
+
+
+ifdef::JA[]
+== DBMデータベースのサポート
+endif::JA[]
+ifdef::EN[]
+== DBM database support
+endif::EN[]
+
+ifdef::JA[]
+デフォルトでは、Gaucheはシステム中にgdbm, ndbm, odbm (original dbm)のライブラリ
+があるかどうかを調べ、見つかったライブラリに対するインタフェースサポートをビルドします。
+
+もし特定のdbmライブラリのサポートを除外したい場合は、configureスクリプトの`--with-dbm`
+オプションに、*含めたいライブラリ*を列挙してください。例えば `--with-dbm=ndbm,odbm` と
+すれば、gdbmがシステムにあってもそれらは含まれず、
+ndbmとodbmのサポートだけビルドされます。いずれのライブラリサポートも含めたくなければ
+`--with-dbm=no` と指定してください。
+endif::JA[]
+ifdef::EN[]
+By default, Gauche looks for gdbm, ndbm and odbm (original dbm) libraries
+on your system, and build support for available libraries.
+
+If you want to exclude any of these support, list the libraries you
+want to *inlucde* in `--with-dbm` configure option.  For example,
+if you want to include ndbm and odbm but nothing else,
+specify `--with-dbm=ndbm,odbm`.
+If you want to include none of them, specify `--with-dbm=no`.
+endif::EN[]
+
+
+ifdef::JA[]
 == 文字エンコーディング変換
+endif::JA[]
+ifdef::EN[]
+== Character encoding conversion
 endif::EN[]
 
 ifdef::JA[]
@@ -249,124 +377,6 @@ you can say:
 ----
 endif::EN[]
 
-
-ifdef::JA[]
-== IPv6サポート
-endif::JA[]
-ifdef::EN[]
-== IPv6 support
-endif::EN[]
-
-ifdef::JA[]
-GaucheはプラットフォームでIPv6がサポートされていればそれを使えるように
-コンパイルされますが、何らかの事情でIPv6を全く使わないバージョンが必要で
-あれば、`--enable-ipv6=no` を指定してください。
-endif::JA[]
-ifdef::EN[]
-Gauche includes IPv6 support if the platform has it.  If you
-don't want to include IPv6 support, give `--enable-ipv6=no` option.
-endif::EN[]
-
-
-ifdef::JA[]
-== TLS/SSL のサポート
-endif::JA[]
-ifdef::EN[]
-== TLS/SSL support
-endif::EN[]
-
-ifdef::JA[]
-Gaucheのセキュアソケット通信サポートにはいくつかオプションがあります。
-ひとつはlink:https://tls.mbed.org/[MbedTLS]
-ライブラリ、もうひとつはlink:http://axtls.sourceforge.net/[AxTLS]
-ライブラリです。
-
-デフォルトでは、システムにMbedTLSライブラリがあればそれを使い、
-無ければTLSのサポートを組み込みません。
-システムにMbedTLSをインストールできない事情があったり、
-コンパイル後のバイナリだけを別環境に持ってゆくので依存ライブラリを減らしたい場合は、
-ビルド中にMbedTLSのソースをダウンロードしてGaucheに組み込んでしまうこともできます。
-
-AxTLSは小さなライブラリで、ソースがGaucheにバンドルされているので、
-外部ライブラリなしでTLSサポートを組み込めます。ただ、
-AxTLSはサポートしている暗号スイートに限りがあり、
-相手が正当な証明書を持っていても接続できないことがあります。
-どうしてもMbedTLSが使えない場合の最終手段と考えてください。
-endif::JA[]
-ifdef::EN[]
-Gauche includes secure socket connection support.
-One usesd link:https://tls.mbed.org/[MbedTLS] library, and the other
-uses link:http://axtls.sourceforge.net/[AxTLS] library.
-
-By default, `configure` checks if the MbedTLS library is installed
-on the system, and use it if it's available.  Otherwise, no TLS support
-is compiled.  If you can't install MbedTLS for some reason,
-or you want to bring the compiled binary to the target system that
-may not have MbedTLS library, you can specify to download MbedTLS
-source during build and compile it into Gauche binary.
-
-AxTLS is a small library and its source is included in the Gauche source
-tree.  It can be included in Gauche without relying on external libraries
-at runtime.  However, it has limited cipher and hash algorithm support.
-We suggest to use it as a fallback if you can't use MbedTLS.
-endif::EN[]
-
-[horizontal]
-`--with-tls=none`          :: do not include TLS/SSL support
-`--with-tls=mbedtls`       :: include only mbedTLS support
-`--with-tls=axtls,mbedtls` :: include TLS/SSL support using
-                            axTLS library (source is included in Gauche),
-                            and mbedTLS library (installed on the system).
-`--with-tls=mbedtls-internal` :: During the build, MbedTLS source is downloaded
-                            and compiled with Gauche.  See below.
-
-
-ifdef::JA[]
-`mbedtls-internal` を指定すると、ビルド中にMbedTLSのソースを
-ダウンロードして、Gaucheの拡張ライブラリの一部として組み込みます。生成されるバイナリは
-システムのMbedTLSライブラリには依存しないので、MbedTLSが入っていないターゲットシステムに
-もバイナリをそのまま持って行けます。このオプションを使う場合はビルドにCMakeが必要です。
-またその場合、`rfc--tls--mbed.so`および`libgauche-static-*.a`に
-MbedTLSのコードが含まれるため、バイナリの配布にあたってはMbedTLSのライセンスにも従う
-必要があります (Apache License 2.0)。
-endif::JA[]
-ifdef::EN[]
-If you give `mbedtls-internal` in place of `mbedtls`, the build process downloads
-MbedTLS source and compile it into Gauche's extension library.  The resulting
-binary doesn't depend on system's MbedTLS dynamic library, so you can move it
-to the systems that don't have MbedTLS.   You need CMake to use this option.
-Note that if you use `mbedtls-internal`, MbedTLS code is included in
-`rfc--tls--mbed.so` and `libgauche-static-*.a`, so they are subject to the
-MbedTLS license as well (Apache License 2.0).
-endif::EN[]
-
-
-ifdef::JA[]
-== DBMデータベースのサポート
-endif::JA[]
-ifdef::EN[]
-== DBM database support
-endif::EN[]
-
-ifdef::JA[]
-デフォルトでは、Gaucheはシステム中にgdbm, ndbm, odbm (original dbm)のライブラリ
-があるかどうかを調べ、見つかったライブラリに対するインタフェースサポートをビルドします。
-
-もし特定のdbmライブラリのサポートを除外したい場合は、configureスクリプトの`--with-dbm'
-オプションに、*含めたいライブラリ*を列挙してください。例えば `--with-dbm=ndbm' と
-すれば、gdbmやオリジナルのdbmのライブラリがシステムにあってもそれらは含まれず、
-ndbmのサポートだけビルドされます。いずれのライブラリサポートも含めたくなければ
-`--with-dbm=no' と指定してください。
-endif::JA[]
-ifdef::EN[]
-By default, Gauche looks for gdbm, ndbm and odbm (original dbm) libraries
-on your system, and build support for available libraries.
-
-If you want to exclude any of these support, list the libraries you
-want to *inlucde* in `--with-dbm' configure option.  For example,
-if you want to include ndbm but nothing else, specify `--with-dbm=ndbm'.
-If you want to include none of them, specify `--with-dbm=no'.
-endif::EN[]
 
 ifdef::JA[]
 == SLIBの場所
