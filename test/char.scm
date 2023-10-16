@@ -249,16 +249,10 @@
          (with-module gauche.internal %char-set-equal?)
          (char-set #\a #\e #\i #\o #\q)
          (char-set #\a #\e #\i #\o #\u))
-
-(cond-expand
- [gauche.ces.utf8
-  (test-cs "%char-set-equal?" #t
-           (with-module gauche.internal %char-set-equal?)
-           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3031 #\u3032)
-           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
-  ]
- [else])
-
+(test-cs "%char-set-equal?" #t
+         (with-module gauche.internal %char-set-equal?)
+         (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3031 #\u3032)
+         (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
 (test-cs "%char-set<=?" #t
          (with-module gauche.internal %char-set<=?)
          (char-set #\a #\e #\i #\o #\u)
@@ -275,23 +269,18 @@
          (with-module gauche.internal %char-set<=?)
          (char-set #\a #\i #\e #\u #\o)
          (char-set #\a #\i #\u))
-
-(cond-expand
- [gauche.ces.utf8
-  (test-cs "%char-set<=?" #t
-           (with-module gauche.internal %char-set<=?)
-           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3031 #\u3032)
-           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
-  (test-cs "%char-set<=?" #t
-           (with-module gauche.internal %char-set<=?)
-           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3032)
-           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
-  (test-cs "%char-set<=?" #f
-           (with-module gauche.internal %char-set<=?)
-           (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032)
-           (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3032))
-  ]
- [else])
+(test-cs "%char-set<=?" #t
+         (with-module gauche.internal %char-set<=?)
+         (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3031 #\u3032)
+         (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
+(test-cs "%char-set<=?" #t
+         (with-module gauche.internal %char-set<=?)
+         (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3032)
+         (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032))
+(test-cs "%char-set<=?" #f
+         (with-module gauche.internal %char-set<=?)
+         (char-set #\u3000 #\u3030 #\a #\u3002 #\u3031 #\b #\u3001 #\u3032)
+         (char-set #\a #\b #\u3000 #\u3001 #\u3002 #\u3030 #\u3032))
 
 ;; predefined charsets
 ;; here we just see if all of them are indeed charsets.

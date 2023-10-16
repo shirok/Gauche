@@ -93,8 +93,7 @@
 
 (define (limited-output?)
   (cond-expand
-   [(and gauche.os.windows
-         (not gauche.ces.none))
+   [gauche.os.windows
     (use os.windows)
     (guard (e [else #f])
       (and (sys-isatty 1)

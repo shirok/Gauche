@@ -34,10 +34,6 @@
 #ifndef GAUCHE_PRIV_CHARP_H
 #define GAUCHE_PRIV_CHARP_H
 
-/* In char.c; called by gauche.charconv */
-SCM_EXTERN void Scm__InstallCharconvHooks(ScmChar (*u2c)(int),
-                                          int (*c2u)(ScmChar));
-
 /* Predefined charsets
    The enum value may change across versions, so we keep them private.
 

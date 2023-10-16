@@ -54,15 +54,7 @@ ScmObj Scm_CharEncodingName(void)
 
 /* includes encoding-specific auxiliary functions */
 #define SCM_CHAR_ENCODING_BODY
-#if   defined(GAUCHE_CHAR_ENCODING_EUC_JP)
-#include "gauche/char_euc_jp.h"
-#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
 #include "gauche/char_utf_8.h"
-#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
-#include "gauche/char_sjis.h"
-#else
-#include "gauche/char_none.h"
-#endif
 
 const char **Scm_SupportedCharacterEncodings(void)
 {
@@ -128,70 +120,18 @@ ScmChar Scm_IntToDigit(int n, int radix, int basechar1, int basechar2)
 
 /*
  * Convert UCS4 code <-> character
- * If the native encoding is not utf-8, gauche.charconv module is loaded.
- * and these pointers are filled.
  */
-static ScmChar (*ucs2char_hook)(int ucs4) = NULL;
-static int     (*char2ucs_hook)(ScmChar ch) = NULL;
-
-/* called by gauche.charconv */
-void Scm__InstallCharconvHooks(ScmChar (*u2c)(int), int (*c2u)(ScmChar))
-{
-    ucs2char_hook = u2c;
-    char2ucs_hook = c2u;
-}
 
 ScmChar Scm_UcsToChar(int n)
 {
     if (n < 0) Scm_Error("bad character code: %d", n);
-#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
     return (ScmChar)n;
-#elif defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
-    if (n < 0x80) return (ScmChar)n; /*ASCII range*/
-    if (ucs2char_hook == NULL) {
-        /* NB: we don't need mutex here, for the loading of gauche.charconv
-           is serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/charconv"),
-                    SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (ucs2char_hook == NULL) {
-            Scm_Error("couldn't autoload gauche.charconv");
-        }
-    }
-    return ucs2char_hook(n);
-#else
-    /* Encoding == 'none'.  It would be safer to reject anything beyond
-       0xff, but it prevents 'none' gosh from reading any source files that
-       have escaped characters in that range, even the section is cond-expanded.
-       That's awfully incovenient, so we use a substitution character '?' here,
-       relying the programmer to properly conditionalize the code.
-       We plan to drop 'none' encoding support in 1.0, so this kludge is
-       just a temporary measure.
-    */
-    if (n < 0x100) return (ScmChar)n; /* ISO8859-1 */
-    else return (ScmChar)'?';
-#endif
 }
 
 int Scm_CharToUcs(ScmChar ch)
 {
     if (ch == SCM_CHAR_INVALID) Scm_Error("bad character");
-#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
     return (int)ch;
-#elif defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
-    if (ch < 0x80) return (int)ch; /*ASCII range*/
-    if (char2ucs_hook == NULL) {
-        /* NB: we don't need mutex here, for the loading of gauche.charconv
-           is serialized in Scm_Require. */
-        Scm_Require(SCM_MAKE_STR("gauche/charconv"),
-                    SCM_LOAD_PROPAGATE_ERROR, NULL);
-        if (char2ucs_hook == NULL) {
-            Scm_Error("couldn't autoload gauche.charconv");
-        }
-    }
-    return char2ucs_hook(ch);
-#else
-    return (int)ch;             /* ISO8859-1 */
-#endif /*!GAUCHE_CHAR_ENCODING_UTF_8*/
 }
 
 /*
@@ -1448,70 +1388,24 @@ const ScmCharCaseMap *Scm__CharCaseMap(ScmChar ch,
 ScmChar Scm_CharUpcase(ScmChar ch)
 {
     ScmCharCaseMap cm;
-#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
-    if (ch < 0x80) return SIMPLE_CASE(ch, &cm, upper);
-    else if (Scm__CharInUnicodeP(ch)) return SIMPLE_CASE_CV(ch, &cm, upper);
-    else           return ch;
-#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
     return SIMPLE_CASE(ch, &cm, upper);
-#else
-    /* Latin-1 mapping and Unicode mapping differ in U+00B5 (MICRO SIGN)
-       and U+00FF (LATIN SMALL LETTER Y WITH DIAERESIS).  In Unicode
-       they map to U+039C and U+0178, respectively.  In Latin-1 we don't
-       have those characters, so we leave them alone. */
-    if (ch == 0xb5 || ch == 0xff) return ch;
-    else return SIMPLE_CASE(ch, &cm, upper);
-#endif
 }
 
 ScmChar Scm_CharDowncase(ScmChar ch)
 {
     ScmCharCaseMap cm;
-#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
-    if (ch < 0x80) return SIMPLE_CASE(ch, &cm, lower);
-    else if (Scm__CharInUnicodeP(ch)) return SIMPLE_CASE_CV(ch, &cm, lower);
-    else           return ch;
-#else
     return SIMPLE_CASE(ch, &cm, lower);
-#endif
 }
 
 ScmChar Scm_CharTitlecase(ScmChar ch)
 {
     ScmCharCaseMap cm;
-#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
-    if (ch < 0x80) return SIMPLE_CASE(ch, &cm, title);
-    else if (Scm__CharInUnicodeP(ch)) return SIMPLE_CASE_CV(ch, &cm, title);
-    else           return ch;
-#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
     return SIMPLE_CASE(ch, &cm, title);
-#else
-    /* In Latin-1, titlecase is the same as upcase. */
-    return Scm_CharUpcase(ch);
-#endif
 }
 
 ScmChar Scm_CharFoldcase(ScmChar ch)
 {
     ScmCharCaseMap cm;
-#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
-    if (Scm__CharInUnicodeP(ch)) {
-        ScmChar ucs = (ScmChar)Scm_CharToUcs(ch);
-        const ScmCharCaseMap *pcm = Scm__CharCaseMap(ucs, &cm, FALSE);
-        if (pcm->to_lower_simple == 0 && pcm->to_upper_simple == 0) {
-            /* we don't have case folding */
-            return ch;
-        }
-        /* Otherwise, we do (char-downcase (char-upcase ch)) */
-        if (pcm->to_upper_simple != 0) {
-            ucs += pcm->to_upper_simple;
-            pcm = Scm__CharCaseMap(ucs, &cm, FALSE);
-        }
-        return Scm_UcsToChar((int)(ucs + pcm->to_lower_simple));
-    } else {
-        return ch;
-    }
-#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
     if (ch == 0x130 || ch == 0x131) {
         /* char-foldcase is identity for
            U+0130 Turkish I (LATIN CAPITAL LETTER I WITH DOT ABOVE) and
@@ -1529,10 +1423,6 @@ ScmChar Scm_CharFoldcase(ScmChar ch)
         pcm = Scm__CharCaseMap(ch, &cm, FALSE);
     }
     return ch + pcm->to_lower_simple;
-#else
-    /* In Latin-1 range, foldcase is the same as donwcase. */
-    return SIMPLE_CASE(ch, &cm, lower);
-#endif
 }
 
 /*-----------------------------------------------------------------
@@ -1654,13 +1544,5 @@ void Scm__InitChar(void)
         = predef_sets_complement[SCM_CHAR_SET_EMPTY];
 
     /* Expose internal charset */
-#if defined(GAUCHE_CHAR_ENCODING_EUC_JP)
-    Scm_AddFeature("gauche.ces.eucjp", NULL);
-#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
-    Scm_AddFeature("gauche.ces.sjis", NULL);
-#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
     Scm_AddFeature("gauche.ces.utf8", NULL);
-#else
-    Scm_AddFeature("gauche.ces.none", NULL);
-#endif
 }

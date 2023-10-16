@@ -464,15 +464,10 @@
 (test* "char-set-delete!" #f
        (char-set= (char-set-delete! (->char-set "123") #\2 #\a #\2)
                   (->char-set "13a")))
-(cond-expand
- ;; Only test in utf-8, for the literal notation is interpreted differently
- ;; in other encodings.
- [gauche.ces.utf8
-  (test* "char-set-delete!" #[\x81\x83\x84\x86]
-         (char-set-delete! (->char-set '(#\x81 #\x82 #\x83 #\x84 #\x85 #\x86 #\x87))
-                           #\x82 #\x87 #\x85)
-         char-set=)]
- [else])
+(test* "char-set-delete!" #[\x81\x83\x84\x86]
+       (char-set-delete! (->char-set '(#\x81 #\x82 #\x83 #\x84 #\x85 #\x86 #\x87))
+                         #\x82 #\x87 #\x85)
+       char-set=)
 (test* "char-set-intersection" #t
        (char-set= (char-set-intersection char-set:hex-digit (char-set-complement char-set:digit))
                   (->char-set "abcdefABCDEF")))
@@ -488,15 +483,10 @@
        (char-set= (char-set-union! (->char-set "abcdefghijkl")
                                    char-set:hex-digit)
                   (->char-set "abcdefABCDEFghijkl0123456789")))
-(cond-expand
- ;; Only test in utf-8, for the literal notation is interpreted differently
- ;; in other encodings.
- [gauche.ces.utf8
-  (test* "char-set-union!" #[\x81-\x89]
-         (char-set-union! (->char-set '(#\x81 #\x83 #\x84 #\x86 #\x87))
-                          (->char-set '(#\x82 #\x85 #\x86 #\x88 #\x89)))
-         char-set=)]
- [else])
+(test* "char-set-union!" #[\x81-\x89]
+       (char-set-union! (->char-set '(#\x81 #\x83 #\x84 #\x86 #\x87))
+                        (->char-set '(#\x82 #\x85 #\x86 #\x88 #\x89)))
+       char-set=)
 (test* "char-set-difference" #t
        (char-set= (char-set-difference (->char-set "abcdefghijklmn")
                                        char-set:hex-digit)

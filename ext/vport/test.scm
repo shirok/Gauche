@@ -693,38 +693,34 @@
     (import-test codec external-data internal-string handling)
     (export-test codec internal-string external-data handling))
 
-  (cond-expand
-   [gauche.ces.utf8
-    (roundtrip-test (make-codec 'latin1)
-                    '#u8(#x41 #xc2 #x42)
-                    "A\u00c2B" 'replace)
-    (roundtrip-test (make-codec 'utf-16be)
-                    '#u8(#x00 #x41 #x00 #xc2 #x00 #x42)
-                    "A\u00c2B" 'replace)
-    (roundtrip-test (make-codec 'utf-16le)
-                    '#u8(#x41 #x00 #xc2 #x00 #x42 #x00)
-                    "A\u00c2B" 'replace)
-    (import-test (make-codec 'utf-16)
-                 '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)
-                 "A\u00c2B" 'replace)
-    (import-test (make-codec 'utf-16)
-                 '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
-                 "A\u00c2B" 'replace)
-    (export-test (make-codec 'utf-16)
-                 "A\u00c2B"
-                 (test-one-of
-                  '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
-                  '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42))
-                 'replace)
+  (roundtrip-test (make-codec 'latin1)
+                  '#u8(#x41 #xc2 #x42)
+                  "A\u00c2B" 'replace)
+  (roundtrip-test (make-codec 'utf-16be)
+                  '#u8(#x00 #x41 #x00 #xc2 #x00 #x42)
+                  "A\u00c2B" 'replace)
+  (roundtrip-test (make-codec 'utf-16le)
+                  '#u8(#x41 #x00 #xc2 #x00 #x42 #x00)
+                  "A\u00c2B" 'replace)
+  (import-test (make-codec 'utf-16)
+               '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42)
+               "A\u00c2B" 'replace)
+  (import-test (make-codec 'utf-16)
+               '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
+               "A\u00c2B" 'replace)
+  (export-test (make-codec 'utf-16)
+               "A\u00c2B"
+               (test-one-of
+                '#u8(#xff #xfe #x41 #x00 #xc2 #x00 #x42 #x00)
+                '#u8(#xfe #xff #x00 #x41 #x00 #xc2 #x00 #x42))
+               'replace)
 
-    (import-test (make-codec 'utf-16be)
-                 '#u8(#xdc #x00)
-                 (test-error <io-decoding-error>) 'raise)
-    (export-test (make-codec 'ascii)
-                 "A\u3000"
-                 (test-error <io-encoding-error>) 'raise)
-    ]
-   [else])
+  (import-test (make-codec 'utf-16be)
+               '#u8(#xdc #x00)
+               (test-error <io-decoding-error>) 'raise)
+  (export-test (make-codec 'ascii)
+               "A\u3000"
+               (test-error <io-encoding-error>) 'raise)
   )
 
 ;;-----------------------------------------------------------

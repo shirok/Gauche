@@ -331,9 +331,6 @@
   (print #"~|op| Unicode version ~(ucd-version db).  Do not edit. ~|cl|")
   )
 
-;; NB: The caracter category tables are generated for each supported
-;; internal encodings.  The lookup function is defined in gauche/char_*.h,
-;; and must be in sync with the tables generated here.
 (define (generate-category-tables db)
   (define (emit-entry e)
     (if e
@@ -363,9 +360,7 @@
   (print "#define U(x) ((x)|SCM_CHAR_UPPERCASE_BITS)")
   (print "#define L(x) ((x)|SCM_CHAR_LOWERCASE_BITS)")
 
-  ;; utf-8 ('none' is also here, for we treat it as latin-1.)
-  (let ([code-sets (build-code-sets db 'utf8 (ucd-general-categories))])
-    (print "#if !defined(GAUCHE_CHAR_ENCODING_EUC_JP) && !defined(GAUCHE_CHAR_ENCODING_SJIS)")
+  (let ([code-sets (build-code-sets db (ucd-general-categories))])
     ;;   U+0000 - U+1ffff : direct table lookup
     (display "static unsigned char ucs_general_category_00000[] = {")
     (emit-columns 0 #x20000 (^i (emit-entry (ucs->entry i))))
@@ -388,61 +383,6 @@
     (for-each
      (^s (dump-code-set-in-C (cdr s)))
      (sort (hash-table->alist code-sets) string<? (^x (x->string (car x)))))
-    (print "#endif /*defined(GAUCHE_CHAR_ENCODING_UTF_8)*/")
-    (print))
-
-  ;; euc-jp
-  (let ([code-sets (build-code-sets db 'eucjp (ucd-general-categories))])
-    (print "#if defined(GAUCHE_CHAR_ENCODING_EUC_JP)")
-    (display "static unsigned char eucjp_general_category_G0[] = {")
-    (emit-columns 0 #x80 (^i (emit-entry (eucjp->ucd-entry db i))))
-    (print "};")
-    (display "static unsigned char eucjp_general_category_G1[] = {")
-    (dotimes [z (- #xff #xa1)]
-      (emit-columns (+ (ash (+ z #xa1) 8) #xa1)
-                    (+ (ash (+ z #xa1) 8) #xff)
-                    (^i (emit-entry (eucjp->ucd-entry db i)))))
-    (print "};")
-    (display "static unsigned char eucjp_general_category_G2[] = {")
-    (emit-columns #x8ea1 #x8ee0 (^i (emit-entry (eucjp->ucd-entry db i))))
-    (print "};")
-    (display "static unsigned char eucjp_general_category_G3[] = {")
-    (dotimes [z (- #xff #xa1)]
-      (emit-columns (+ (ash (+ z #xa1) 8) #x8f00a1)
-                    (+ (ash (+ z #xa1) 8) #x8f00ff)
-                    (^i (emit-entry (eucjp->ucd-entry db i)))))
-    (print "};")
-    (for-each
-     (^s (dump-code-set-in-C (cdr s)))
-     (sort (hash-table->alist code-sets) string<? (^x (x->string (car x)))))
-    (print "#endif /*defined(GAUCHE_CHAR_ENCODING_EUC_JP)*/")
-    (print))
-
-  ;; sjis
-  (let ([code-sets (build-code-sets db 'sjis (ucd-general-categories))])
-    (print "#if defined(GAUCHE_CHAR_ENCODING_SJIS)")
-    (display "static unsigned char sjis_general_category_00[] = {")
-    (emit-columns 0 #x80 (^i (emit-entry (sjis->ucd-entry db i))))
-    (print "};")
-    (display "static unsigned char sjis_general_category_a0[] = {")
-    (emit-columns #xa0 #xdf (^i (emit-entry (sjis->ucd-entry db i))))
-    (print "};")
-    (display "static unsigned char sjis_general_category_8000[] = {")
-    (do-ec (: z #x8000 #xa000 256)
-           (emit-columns (+ z #x40)
-                         (+ z #xfd)
-                         (^i (emit-entry (sjis->ucd-entry db i)))))
-    (print "};")
-    (display "static unsigned char sjis_general_category_e000[] = {")
-    (do-ec (: z #xe000 #x10000 256)
-           (emit-columns (+ z #x40)
-                         (+ z #xfd)
-                         (^i (emit-entry (sjis->ucd-entry db i)))))
-    (print "};")
-    (for-each
-     (^s (dump-code-set-in-C (cdr s)))
-     (sort (hash-table->alist code-sets) string<? (^x (x->string (car x)))))
-    (print "#endif /*defined(GAUCHE_CHAR_ENCODING_SJIS)*/")
     (print))
 
   ;; Bind predefined charset
@@ -620,10 +560,7 @@
 
 ;; Predefined character sets
 
-(define (for-each-char-code/none proc)
-  (dotimes [n 256] (proc n n)))
-
-(define (for-each-char-code/ucs proc)
+(define (for-each-char-code proc)
   (dotimes [n #x2ffff] (proc n n))
   (proc #xe0000 #xe007f) ; Language tags; Cf
   (proc #xe0100 #xe01ef) ; Variation selectors; Mn
@@ -631,44 +568,10 @@
   (proc #x100000 #x10fffd) ; Private use; Co
   )
 
-(define (for-each-char-code/euc-jp proc)
-  (dotimes [n 256] (proc n n))
-  (do-ec (: n #x8ea1 #x8eff) (proc n n))
-  (do-ec (: n #xa1a1 #xfeff) (proc n n))
-  (do-ec (: n #x8fa1a1 #x8ffef7) (proc n n)))
-
-(define (for-each-char-code/sjis proc)
-  (dotimes [n 128] (proc n n))
-  (do-ec (: n #xa0 #xe0) (proc n n))
-  (do-ec (: n #xfd #x100) (proc n n))
-  (do-ec (: n #x8140 #x9ffd) (proc n n))
-  (do-ec (: n #xe040 #xfcfd) (proc n n)))
-
-(define (build-code-sets db encoding categories)
+(define (build-code-sets db categories)
   (define sets (make-hash-table 'eq?))
-  (define walker (ecase encoding
-                   [(none) for-each-char-code/none]
-                   [(utf8) for-each-char-code/ucs]
-                   [(eucjp) for-each-char-code/euc-jp]
-                   [(sjis) for-each-char-code/sjis]))
-  (define get-entry
-    (let ([eucjp-entry-cache (make-hash-table 'eqv?)]
-          [sjis-entry-cache (make-hash-table 'eqv?)])
-      (ecase encoding
-        [(none utf8) ucd-get-entry]
-        [(eucjp) (^[db n]
-                   (if-let1 e (hash-table-get eucjp-entry-cache n #f)
-                     (if (eq? e 'nothing) #f e)
-                     (rlet1 e (eucjp->ucd-entry db n)
-                       (hash-table-put! eucjp-entry-cache n (or e 'nothing)))))]
-        [(sjis) (^[db n]
-                  (if-let1 e (hash-table-get sjis-entry-cache n #f)
-                    (if (eq? e 'nothing) #f e)
-                    (rlet1 e (sjis->ucd-entry db n)
-                      (hash-table-put! sjis-entry-cache n (or e 'nothing)))))]
-        )))
   (define (register set cat n m)
-    (and-let1 e (get-entry db n)
+    (and-let1 e (ucd-get-entry db n)
       (if (eq? cat (ucd-entry-category e))
         (if (= n m)
           (add-code! set n)
@@ -676,7 +579,7 @@
   ;; general category charsets (char-set:Lt etc.)
   (dolist [cat categories]
     (let1 cs (make <char-code-set> :name cat)
-      (walker (cut register cs cat <> <>))
+      (for-each-char-code (cut register cs cat <> <>))
       (hash-table-put! sets cat cs)))
   ;; general category class charsets (char-set:L etc.)
   (dolist [gcats (group-collection categories
@@ -684,7 +587,7 @@
     (let1 cs
         (make <char-code-set>
           :name (string->symbol (substring (symbol->string (car gcats)) 0 1)))
-      (for-each (^c (walker (cut register cs c <> <>))) gcats)
+      (for-each (^c (for-each-char-code (cut register cs c <> <>))) gcats)
       (hash-table-put! sets (~ cs'name) cs)))
   ;; SRFI-14 charsets (the ones that has equivalent set in general category set
   ;; is handled implicitly.

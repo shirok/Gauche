@@ -356,12 +356,7 @@
   (let ([encoding (or encoding (if data-is-string 'uri 'base64))]
         [content-type (or content-type
                           (if data-is-string
-                            (format "text/plain;charset=~a"
-                                    (cond-expand
-                                     [gauche.ces.utf8 'utf-8]
-                                     [gauche.ces.eucjp 'euc-jp]
-                                     [gauche.ces.sjis 'shift_jis]
-                                     [gauche.ces.none 'us-ascii]))
+                            "text/plain;charset=utf-8"
                             "application/octet-stream"))])
     (define (encode-by-uri)
       (unless data-is-string

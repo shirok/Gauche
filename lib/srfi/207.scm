@@ -87,9 +87,8 @@
            (error <bytestring-error>
                   "Only ASCII string is allowed for bytestring:" obj))
 
-         (cond-expand
-          [gauche.ces.utf8 (string->u8vector obj 0 -1 #t)] ;avoid copying
-          [else (string->utf8 obj)])]
+         (string->u8vector obj 0 -1 #t) ; we can avoid copying
+         ]
         [else
          (error <bytestring-error>
                 "Ivalid object to construct a bytestring:" obj)]))

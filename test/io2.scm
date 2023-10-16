@@ -340,18 +340,11 @@
        (read-from-string "(#0=\"aa\" #1=\"aa\" #0# #1#)")
        isomorphic?)
 
-;;===============================================================
-;; These test is here since SRFI-0 must have been tested before.
-;;
 (test-section "whitespaces")
 
 (test* "skipws" 'a
        (read-from-string
-        (cond-expand
-         [gauche.ces.utf8 "\u00a0\u1680\u2000\u200a\u2028\u2029\
-                           \u202f\u205f\u3000a"]
-         [(or gauche.ces.eucjp gauche.ces.sjis) "\u3000a"]
-         [else "a"])))
+        "\u00a0\u1680\u2000\u200a\u2028\u2029\u202f\u205f\u3000a"))
 
 ;;===============================================================
 ;; Interference between SRFI-10 and shared structure
@@ -630,36 +623,28 @@
 
 (use gauche.charconv)
 
-(cond-expand
- [gauche.ces.none]
- [else
-  (let ()
-    ;; This test checks peek-byte won't disturb subsequent read-char
-    ;; even the input contains illegal byte sequence.
-    ;; related: https://github.com/shirok/Gauche/pull/177
-    (define (read1 p) (read-char p))
-    (define (read2 p) (let1 c (read-char p) `(,c ,(read-char p))))
-    (define (peek1 p) (peek-char p) (read1 p))
-    (define (peek2 p) (peek-char p) (read2 p))
-    (define (fetch s reader ces)
-      (call-with-input-string (ces-convert s #f ces) reader))
+(let ()
+  ;; This test checks peek-byte won't disturb subsequent read-char
+  ;; even the input contains illegal byte sequence.
+  ;; related: https://github.com/shirok/Gauche/pull/177
+  (define (read1 p) (read-char p))
+  (define (read2 p) (let1 c (read-char p) `(,c ,(read-char p))))
+  (define (peek1 p) (peek-char p) (read1 p))
+  (define (peek2 p) (peek-char p) (read2 p))
+  (define (fetch s reader ces)
+    (call-with-input-string (ces-convert s #f ces) reader))
 
-    (define (t ces)
-      (test* #"peek-char - read-char (~ces)"
-             (fetch "\u3042" read1 ces) (fetch "\u3042" peek1 ces))
-      (test* #"peek-char - read-char^2 (~ces) case 1"
-             (fetch "\u3042" read2 ces) (fetch "\u3042" peek2 ces))
-      (test* #"peek-char - read-char^2 (~ces) case 2"
-             (fetch "\u3042\u3044" read2 ces)
-             (fetch "\u3042\u3044" peek2 ces)))
+  (define (t ces)
+    (test* #"peek-char - read-char (~ces)"
+           (fetch "\u3042" read1 ces) (fetch "\u3042" peek1 ces))
+    (test* #"peek-char - read-char^2 (~ces) case 1"
+           (fetch "\u3042" read2 ces) (fetch "\u3042" peek2 ces))
+    (test* #"peek-char - read-char^2 (~ces) case 2"
+           (fetch "\u3042\u3044" read2 ces)
+           (fetch "\u3042\u3044" peek2 ces)))
 
-    ;; NB: If internal encoding is sjis or eucjp, we skip utf8 tests
-    ;; for they raise "encountered EOF in the middle of multibyte character"
-    ;; error.
-    (cond-expand
-     [gauche.ces.utf8 (for-each t '(utf8 sjis eucjp))]
-     [(or gauche.ces.sjis gauche.ces.eucjp) (for-each t '(sjis eucjp))]
-     [else]))])
+  (for-each t '(utf8 sjis eucjp))
+  )
 
 ;;===============================================================
 ;; Pretty printer
@@ -773,13 +758,10 @@
 ;; utf-8 with BOM
 ;;
 
-(cond-expand
- [gauche.ces.none]
- [else
-  (test* "utf-8 with BOM" "foo!"
-         (begin
-           (load "data/utf-8-bom.scm"
-                 :paths `(,(sys-dirname (current-load-path))))
-           (foo)))])
+(test* "utf-8 with BOM" "foo!"
+       (begin
+         (load "data/utf-8-bom.scm"
+               :paths `(,(sys-dirname (current-load-path))))
+         (foo)))
 
 (test-end)

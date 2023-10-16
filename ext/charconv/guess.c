@@ -112,22 +112,14 @@ static const char *guess_jp(const char *buf, ScmSize buflen,
     if (DFA_ALIVE(eucj)) top = &eucj;
     if (DFA_ALIVE(utf8)) {
         if (top) {
-#if defined GAUCHE_CHAR_ENCODING_UTF_8
             if (top->score <= utf8.score)  top = &utf8;
-#else
-            if (top->score <  utf8.score) top = &utf8;
-#endif
         } else {
             top = &utf8;
         }
     }
     if (DFA_ALIVE(sjis)) {
         if (top) {
-#if defined GAUCHE_CHAR_ENCODING_SJIS
-            if (top->score <= sjis.score)  top = &sjis;
-#else
             if (top->score <  sjis.score) top = &sjis;
-#endif
         } else {
             top = &sjis;
         }

@@ -1261,18 +1261,8 @@
     (generator-for-each (^[ch] (%tr ch buf CHAR_UPCASE sink char?)) generator)))
 
 ;; Greek capital sigma U+03a3 and final sigma U+03c2.
-;; We can't use character literal #\u03a3 etc., for they're not valid
-;; when internal encoding is 'none'.  We intend to make utf-8 support
-;; mandatory in future, and this limitation will be lifted.
-;; For now, they'll be #f when the internal encoding is 'none'.
-(define-constant .capital-sigma.
-  (cond-expand
-   [gauche.ces.none #f]
-   [else (ucs->char #x03a3)]))
-(define-constant .final-sigma.
-  (cond-expand
-   [gauche.ces.none #f]
-   [else (ucs->char #x03c2)]))
+(define-constant .capital-sigma. #\u03a3)
+(define-constant .final-sigma. #\u03c2)
 
 ;; Greek capital sigma U+03a3 needs context-sensitive conversion.
 (define (%downcase generator sink char?)

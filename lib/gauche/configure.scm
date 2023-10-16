@@ -361,9 +361,9 @@
   (cf-subst 'OBJEXT (gauche-config "--object-suffix"))
   (cf-subst 'EXEEXT (gauche-config "--executable-suffix"))
 
-  ;; '-DUNICODE' if gauche is in utf8 and on windows.
+  ;; '-DUNICODE' on windows.
   (cf-subst 'WINDOWS_UNICODE_FLAG
-            (cond-expand [(and gauche.os.windows gauche.ces.utf8) "-DUNICODE"]
+            (cond-expand [gauche.os.windows "-DUNICODE"]
                          [else ""]))
   )
 

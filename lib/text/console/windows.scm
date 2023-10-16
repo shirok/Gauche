@@ -162,29 +162,25 @@
               ;; workaround for windows terminal (windows 10)
               ;; (this is required when we input surrogate pair characters)
               (and (= kdown 0) (= vk #x12) (not (= ch 0))))
-        (cond-expand
-         [gauche.ces.utf8
-          ;; process a surrogate pair
-          (case (logand ch #xfc00)
-            [(#xd800) ; high surrogate
-             (set! (~ con'high-surrogate) ch)]
-            [(#xdc00) ; low surrogate
-             (unless (= (~ con'high-surrogate) 0)
-               (set! ch (+ #x10000
-                           (* (- (~ con'high-surrogate) #xd800) #x400)
-                           (- ch #xdc00)))
-               (enqueue-keybuffer ch vk ctls)
-               (set! (~ con'high-surrogate) 0))]
-            [else
-             ;; drop some input for windows terminal (windows 10)
-             ;; (they appear when we input surrogate pair characters)
-             (unless (and (= ch 0)
-                          (or (= vk #x66) (= vk #x63))
-                          (logtest ctls LEFT_ALT_PRESSED))
-               (enqueue-keybuffer ch vk ctls)
-               (set! (~ con'high-surrogate) 0))])]
-         [else
-          (enqueue-keybuffer ch vk ctls)])
+        ;; process a surrogate pair
+        (case (logand ch #xfc00)
+          [(#xd800) ; high surrogate
+           (set! (~ con'high-surrogate) ch)]
+          [(#xdc00) ; low surrogate
+           (unless (= (~ con'high-surrogate) 0)
+             (set! ch (+ #x10000
+                         (* (- (~ con'high-surrogate) #xd800) #x400)
+                         (- ch #xdc00)))
+             (enqueue-keybuffer ch vk ctls)
+             (set! (~ con'high-surrogate) 0))]
+          [else
+           ;; drop some input for windows terminal (windows 10)
+           ;; (they appear when we input surrogate pair characters)
+           (unless (and (= ch 0)
+                        (or (= vk #x66) (= vk #x63))
+                        (logtest ctls LEFT_ALT_PRESSED))
+             (enqueue-keybuffer ch vk ctls)
+             (set! (~ con'high-surrogate) 0))])
         ))))
 
 ;; Default - gray foreground, black background

@@ -199,13 +199,7 @@
 (define-method write-object ((c codec) port)
   (format port "#<codec ~s>" (codec-name c)))
 
-;; CES 'none' is kind of special---you can treat octet stream as any
-;; single-byte encoding.  However, SRFI-181 transcoder needs to assume
-;; specific internal encoding, so we treat 'none' as Latin1.
-(define *native-codec-name*
-  (cond-expand
-   [gauche.ces.none 'latin1]
-   [else (gauche-character-encoding)]))
+(define *native-codec-name* (gauche-character-encoding))
 
 (define (make-codec name)
   (if (and (ces-conversion-supported? *native-codec-name* name)

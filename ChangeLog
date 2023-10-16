@@ -1,3 +1,8 @@
+2023-10-15  Shiro Kawai  <shiro@acm.org>
+
+	* Drop eucjp, sjis and none internal CES support.  We use utf8
+	  exclusively from now on.
+
 2023-10-14  Shiro Kawai  <shiro@acm.org>
 
 	* Various files: Remove code with GAUCHE_API_VERSION < 98

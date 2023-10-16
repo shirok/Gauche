@@ -139,36 +139,31 @@
 (define (make-conv-puts-sub1 hdl-type ces ces2 maxchars)
   ;; WriteConsole adjustment
   (define (sys-write-console-sub hdl str)
-    (cond-expand
-     [gauche.ces.utf8
-      ;; unicode version of WriteConsole needs a workaround for
-      ;; the line wrapping of surrogate pair characters.
-      (let1 buf (string->u32vector str)
-        (if (u32vector-range-check buf 0 #xffff)
-          (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
-                 [w     (+ 1 (- (slot-ref cinfo'window.right)
-                                (slot-ref cinfo'window.left)))]
-                 [cw    (if (or (sys-windows-terminal?)
-                                (= (sys-get-console-output-cp) 65001))
-                          2 4)]
-                 [len   (string-length str)])
-            (let loop ([i1 0] [i2 0])
-              (when (>= (u32vector-ref buf i2) #x10000)
-                (sys-write-console hdl (string-copy str i1 i2))
-                (set! i1 i2)
-                (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
-                       [x     (slot-ref cinfo'cursor-position.x)]
-                       [y     (slot-ref cinfo'cursor-position.y)])
-                  (when (> x (- w cw))
-                    (sys-set-console-cursor-position hdl (- w 1) y)
-                    (sys-write-console hdl " "))))
-              (if (< (+ i2 1) len)
-                (loop i1 (+ i2 1))
-                (sys-write-console hdl (string-copy str i1)))))
-          (sys-write-console hdl str)))]
-     [else
-      ;; ansi version of WriteConsole needs a ces conversion
-      (sys-write-console hdl (ces-convert str ces2 ces))]))
+    ;; unicode version of WriteConsole needs a workaround for
+    ;; the line wrapping of surrogate pair characters.
+    (let1 buf (string->u32vector str)
+      (if (u32vector-range-check buf 0 #xffff)
+        (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
+               [w     (+ 1 (- (slot-ref cinfo'window.right)
+                              (slot-ref cinfo'window.left)))]
+               [cw    (if (or (sys-windows-terminal?)
+                              (= (sys-get-console-output-cp) 65001))
+                        2 4)]
+               [len   (string-length str)])
+          (let loop ([i1 0] [i2 0])
+            (when (>= (u32vector-ref buf i2) #x10000)
+              (sys-write-console hdl (string-copy str i1 i2))
+              (set! i1 i2)
+              (let* ([cinfo (sys-get-console-screen-buffer-info hdl)]
+                     [x     (slot-ref cinfo'cursor-position.x)]
+                     [y     (slot-ref cinfo'cursor-position.y)])
+                (when (> x (- w cw))
+                  (sys-set-console-cursor-position hdl (- w 1) y)
+                  (sys-write-console hdl " "))))
+            (if (< (+ i2 1) len)
+              (loop i1 (+ i2 1))
+              (sys-write-console hdl (string-copy str i1)))))
+        (sys-write-console hdl str))))
   (^[str/char]
     (let* ([str (x->string str/char)]
            [hdl (sys-get-std-handle hdl-type)]
@@ -207,23 +202,11 @@
            (set! use-api #t)]
           [else
            (set! ces (string->symbol (format "CP~d" cp)))])))
-    ;; workaround for the yen mark conversion error
-    (cond-expand
-     [gauche.ces.sjis
-      (set! ces2 'CP932)
-      (if (#/^(SJIS|SHIFT[\-_]?JIS)$/i (x->string ces))
-        (set! ces 'CP932))]
-     [else])
     ;; check a ces conversion
     (unless (if stdin-flag
               (ces-conversion-supported? ces ces2)
               (ces-conversion-supported? ces2 ces))
       (set! conv #f))
-    ;; check gauche's encoding
-    (cond-expand
-     [gauche.ces.utf8]
-     [else
-      (set! use-api #f)])
     ;; check a ces equivalent
     (if (and (ces-equivalent? ces ces2) (not use-api))
       (set! conv #f))

@@ -57,6 +57,10 @@
 //#define GAUCHE_API_VERSION 1000
 #endif
 
+/* As of 1.0, We always use utf8 in internal encoding.  However,
+   existing code may check this. */
+#define GAUCHE_CHAR_ENCODING_UTF8 1
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -418,15 +422,7 @@ SCM_EXTERN ScmChar Scm_CharDowncase(ScmChar ch);
 SCM_EXTERN ScmChar Scm_CharTitlecase(ScmChar ch);
 SCM_EXTERN ScmChar Scm_CharFoldcase(ScmChar ch);
 
-#if   defined(GAUCHE_CHAR_ENCODING_EUC_JP)
-#include "gauche/char_euc_jp.h"
-#elif defined(GAUCHE_CHAR_ENCODING_UTF_8)
 #include "gauche/char_utf_8.h"
-#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
-#include "gauche/char_sjis.h"
-#else
-#include "gauche/char_none.h"
-#endif
 
 /* Character lexer category.  See 7.1.1 of R7RS */
 typedef enum {

@@ -55,13 +55,6 @@ static struct {
     ScmInternalMutex mutex;
 } guess;
 
-/* anchor of the conversion context used for UCS -> internal char routine */
-static struct {
-    ScmConvInfo *ucs2char;
-    ScmConvInfo *char2ucs;
-    ScmInternalMutex mutex;
-} ucsconv;
-
 #define CONV_INFO(port)  ((ScmConvInfo*)(PORT_BUF(port)->data))
 
 /* external library to delegate conversion */
@@ -518,106 +511,6 @@ const char *Scm_GuessCES(const char *code, const char *buf, ScmSize buflen)
     return guess->proc(buf, buflen, guess->data);
 }
 
-/*------------------------------------------------------------
- * UCS4 <-> internal character routine
- *
- * These routines are called when the literal character is given by
- * unicode notation (#\uXXXx, #\UXXXXXXXX or \uXXXX, \UXXXXXXXX inside
- * string), or unicode->char routine is called.
- * For this purpose, we keep two global conversion context.
- * Since internal encodings are stateless, we can reuse those
- * context, instead of calling jconv_open every time.
- */
-
-static ScmChar ucstochar(int ucs4)
-{
-#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
-    return (ScmChar)ucs4;
-#else  /*!GAUCHE_CHAR_ENCODING_UTF_8*/
-    char inbuf[6], outbuf[6];
-    const char *inb = inbuf;
-    char *outb = outbuf;
-
-    if (ucsconv.ucs2char == NULL) return SCM_CHAR_INVALID;
-    ScmSize inroom = UCS2UTF_NBYTES(ucs4);
-    ScmSize outroom = 6;
-    jconv_ucs4_to_utf8(ucs4, inbuf);
-    (void)SCM_INTERNAL_MUTEX_LOCK(ucsconv.mutex);
-    ScmSize r = jconv(ucsconv.ucs2char, &inb, &inroom, &outb, &outroom);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(ucsconv.mutex);
-    if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
-        Scm_Error("can't convert UCS4 code %d to a character: implementation problem?", ucs4);
-    }
-    if (r == ILLEGAL_SEQUENCE || r == NO_OUTPUT_CHAR) {
-        return SCM_CHAR_INVALID;
-    } else {
-        ScmChar out;
-        SCM_CHAR_GET(outbuf, out);
-        return out;
-    }
-#endif /*!GAUCHE_CHAR_ENCODING_UTF_8*/
-}
-
-static int chartoucs(ScmChar ch)
-{
-#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
-    if (ch == SCM_CHAR_INVALID) return -1;
-    return (int)ch;
-#else  /*!GAUCHE_CHAR_ENCODING_UTF_8*/
-    char inbuf[6], outbuf[6];
-    const char *inb = inbuf;
-    char *outb = outbuf;
-
-    if (ch == SCM_CHAR_INVALID) return -1;
-    if (ucsconv.char2ucs == NULL) return -1;
-    ScmSize inroom = SCM_CHAR_NBYTES(ch);
-    ScmSize outroom = 6;
-    SCM_CHAR_PUT(inbuf, ch);
-    (void)SCM_INTERNAL_MUTEX_LOCK(ucsconv.mutex);
-    ScmSize r = jconv(ucsconv.char2ucs, &inb, &inroom, &outb, &outroom);
-    (void)SCM_INTERNAL_MUTEX_UNLOCK(ucsconv.mutex);
-    if (r == INPUT_NOT_ENOUGH || r == OUTPUT_NOT_ENOUGH) {
-        Scm_Error("can't convert character %u to UCS4 code: implementation problem?", ch);
-    }
-    if (r == ILLEGAL_SEQUENCE || r == NO_OUTPUT_CHAR) {
-        return -1;
-    } else {
-        unsigned char *ucp = (unsigned char*)outbuf;
-        if (ucp[0] < 0x80) return (int)ucp[0];
-        if (ucp[0] < 0xe0) {
-            return ((ucp[0]&0x1f)<<6) + (ucp[1]&0x3f);
-        }
-        if (ucp[0] < 0xf0) {
-            return ((ucp[0]&0x0f)<<12)
-                   + ((ucp[1]&0x3f)<<6)
-                   + (ucp[2]&0x3f);
-        }
-        if (ucp[0] < 0xf8) {
-            return ((ucp[0]&0x07)<<18)
-                   + ((ucp[1]&0x3f)<<12)
-                   + ((ucp[2]&0x3f)<<6)
-                   + (ucp[3]&0x3f);
-        }
-        if (ucp[0] < 0xfc) {
-            return ((ucp[0]&0x03)<<24)
-                   + ((ucp[1]&0x3f)<<18)
-                   + ((ucp[2]&0x3f)<<12)
-                   + ((ucp[3]&0x3f)<<6)
-                   + (ucp[4]&0x3f);
-        }
-        if (ucp[0] < 0xfe) {
-            return ((ucp[0]&0x01)<<30)
-                   + ((ucp[1]&0x3f)<<24)
-                   + ((ucp[2]&0x3f)<<18)
-                   + ((ucp[3]&0x3f)<<12)
-                   + ((ucp[4]&0x3f)<<6)
-                   + (ucp[5]&0x3f);
-        }
-        return -1;
-    }
-#endif /*!GAUCHE_CHAR_ENCODING_UTF_8*/
-}
-
 /*====================================================================
  * Initialization
  */
@@ -629,20 +522,6 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__charconv(void)
     SCM_INIT_EXTENSION(gauche__charconv);
     guess.procs = NULL;
 
-    (void)SCM_INTERNAL_MUTEX_INIT(guess.mutex);
-#if   defined(GAUCHE_CHAR_ENCODING_UTF_8)
-    ucsconv.ucs2char = ucsconv.char2ucs = NULL;
-#elif defined(GAUCHE_CHAR_ENCODING_EUC_JP)
-    ucsconv.ucs2char = jconv_open("EUCJP", "UTF-8", TRUE);
-    ucsconv.char2ucs = jconv_open("UTF-8", "EUCJP", TRUE);
-#elif defined(GAUCHE_CHAR_ENCODING_SJIS)
-    ucsconv.ucs2char = jconv_open("SJIS", "UTF-8", TRUE);
-    ucsconv.char2ucs = jconv_open("UTF-8", "SJIS", TRUE);
-#else
-    ucsconv.ucs2char = ucsconv.char2ucs = NULL;
-#endif
-    (void)SCM_INTERNAL_MUTEX_INIT(ucsconv.mutex);
-
     Scm_Init_convguess();
     Scm_Init_convaux();
 
@@ -651,6 +530,5 @@ SCM_EXTENSION_ENTRY void Scm_Init_gauche__charconv(void)
     ext_conv = Scm_BindPrimitiveParameter(mod, "external-conversion-library",
                                           sym_iconv, 0);
 
-    Scm__InstallCharconvHooks(ucstochar, chartoucs);
     Scm__InstallCodingAwarePortHook(coding_aware_conv);
 }

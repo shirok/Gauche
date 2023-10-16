@@ -1081,23 +1081,11 @@ static ScmSmallInt boyer_moore_reverse(const char *ss1, ScmSmallInt siz1,
 #define FOUND_BOTH_INDEX 1  /* string found, and both indexes are calculated */
 #define FOUND_BYTE_INDEX 2  /* string found, and only byte index is calc'd */
 
-/* In utf-8 multibyte case, we only count byte index and let the caller
-   figure out the character index.  In other encodings we can always find
-   both index. */
-#if defined(GAUCHE_CHAR_ENCODING_UTF_8)
+/* TRANSIENT: Some cpp switches for other encoding support.  Will be removed.
+ */
 #define FOUND_MAYBE_BOTH FOUND_BYTE_INDEX
-#else
-#define FOUND_MAYBE_BOTH FOUND_BOTH_INDEX
-#endif
-
-/* In euc-jp and sjis case, we use faster method only when (size == len). */
-#if defined(GAUCHE_CHAR_ENCODING_EUC_JP) || defined(GAUCHE_CHAR_ENCODING_SJIS)
-#define BYTEWISE_SEARCHABLE(siz, len)  ((siz) == (len))
-#define MULTIBYTE_NAIVE_SEARCH_NEEDED 1
-#else
 #define BYTEWISE_SEARCHABLE(siz, len)  TRUE
 #define MULTIBYTE_NAIVE_SEARCH_NEEDED 0
-#endif
 
 /* glibc has memrchr, but we need to provide fallback anyway and
    we don't need it to be highly tuned, so we just roll our own. */

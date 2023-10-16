@@ -501,9 +501,7 @@
       [d1 "data:application/octed-stream;base64,IUAjJCVeJiooKV9hYmM="])
   (test* "data uri decode->encode (text)" d0
          (receive (ct data) (uri-decompose-data d0)
-           (cond-expand
-            [gauche.ces.utf8 (uri-compose-data data)]
-            [else (uri-compose-data data :content-type ct)])))
+           (uri-compose-data data)))
   (test* "data uri decode->encode (binary)" d1
          (receive (ct data) (uri-decompose-data d1)
            (uri-compose-data data :content-type ct)))

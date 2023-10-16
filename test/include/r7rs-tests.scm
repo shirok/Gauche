@@ -268,7 +268,7 @@
 
 (test 3 (force (delay (+ 1 2))))
 
-(test '(3 3)  
+(test '(3 3)
     (let ((p (delay (+ 1 2))))
       (list (force p) (force p))))
 
@@ -286,7 +286,7 @@
 
 (define (stream-filter p? s)
   (delay-force
-   (if (null? (force s)) 
+   (if (null? (force s))
        (delay '())
        (let ((h (car (force s)))
              (t (cdr (force s))))
@@ -345,7 +345,7 @@
 (test `(list ,(+ 1 2) 4) (quasiquote (list (unquote (+ 1 2)) 4)))
 
 (define plus
-  (case-lambda 
+  (case-lambda
    (() 0)
    ((x) x)
    ((x y) (+ x y))
@@ -359,7 +359,7 @@
 (test 10 (plus 1 2 3 4))
 
 (define mult
-  (case-lambda 
+  (case-lambda
    (() 1)
    ((x) x)
    ((x y) (* x y))
@@ -1046,7 +1046,7 @@
 (test #t (symbol=? 'a 'a 'a))
 (test #f (symbol=? 'a 'a 'A))
 
-(test "flying-fish"     
+(test "flying-fish"
 (symbol->string 'flying-fish))
 (test "Martin" (symbol->string 'Martin))
 (test "Malvina" (symbol->string (string->symbol "Malvina")))
@@ -1114,8 +1114,6 @@
 (test #f (char-lower-case? #\A))
 (test #f (char-lower-case? #\3))
 
-(cond-expand
- [gauche.ces.utf8
 (test #t (char-alphabetic? #\Λ))
 (test #f (char-alphabetic? #\x0E50))
 (test #t (char-upper-case? #\Λ))
@@ -1125,16 +1123,12 @@
 (test #f (char-numeric? #\Λ))
 (test #t (char-numeric? #\x0E50))
 (test #t (char-whitespace? #\x1680))
-][else])
 
 (test 0 (digit-value #\0))
 (test 3 (digit-value #\3))
 (test 9 (digit-value #\9))
-(cond-expand
- [gauche.ces.utf8
 (test 4 (digit-value #\x0664))
 (test 0 (digit-value #\x0AE6))
-][else])
 (test #f (digit-value #\.))
 (test #f (digit-value #\-))
 
@@ -1148,16 +1142,12 @@
 (test #\a (char-foldcase #\a))
 (test #\a (char-foldcase #\A))
 
-(cond-expand
- [gauche.ces.none]
- [else
 (test #\Λ (char-upcase #\λ))
 (test #\Λ (char-upcase #\Λ))
 (test #\λ (char-downcase #\λ))
 (test #\λ (char-downcase #\Λ))
 (test #\λ (char-foldcase #\λ))
 (test #\λ (char-foldcase #\Λ))
-])
 
 (test-end)
 
@@ -1241,15 +1231,11 @@
 (test #f (string-ci>=? "abc" "aBcD"))
 (test #t (string-ci>=? "ABCd" "aBc"))
 
-(cond-expand
- [gauche.ces.none]
- [else
 (test #t (string-ci=? "ΑΒΓ" "αβγ" "αβγ"))
 (test #f (string-ci<? "ΑΒΓ" "αβγ"))
 (test #f (string-ci>? "ΑΒΓ" "αβγ"))
 (test #t (string-ci<=? "ΑΒΓ" "αβγ"))
 (test #t (string-ci>=? "ΑΒΓ" "αβγ"))
-])
 
 ;; latin
 (test "ABC" (string-upcase "abc"))
@@ -1260,19 +1246,14 @@
 (test "abc" (string-foldcase "ABC"))
 
 ;; cyrillic
-(cond-expand
- [gauche.ces.utf8
 (test "ΑΒΓ" (string-upcase "αβγ"))
 (test "ΑΒΓ" (string-upcase "ΑΒΓ"))
 (test "αβγ" (string-downcase "αβγ"))
 (test "αβγ" (string-downcase "ΑΒΓ"))
 (test "αβγ" (string-foldcase "αβγ"))
 (test "αβγ" (string-foldcase "ΑΒΓ"))
-][else])
 
 ;; special cases
-(cond-expand
- [gauche.ces.utf8
 (test "SSA" (string-upcase "ßa"))
 (test "ßa" (string-downcase "ßa"))
 (test "ssa" (string-downcase "SSA"))
@@ -1280,11 +1261,8 @@
 (test "i\x0307;" (string-downcase "İ"))
 (test "i\x0307;" (string-foldcase "İ"))
 (test "J̌" (string-upcase "ǰ"))
-][else])
 
 ;; context-sensitive (final sigma)
-(cond-expand
- [gauche.ces.utf8
 (test "ΓΛΏΣΣΑ" (string-upcase "γλώσσα"))
 (test "γλώσσα" (string-downcase "ΓΛΏΣΣΑ"))
 (test "γλώσσα" (string-foldcase "ΓΛΏΣΣΑ"))
@@ -1294,7 +1272,6 @@
 (test #t (and (member (string-downcase "ΜΈΛΟΣ ΕΝΌΣ")
                       '("μέλος ενός" "μέλοσ ενόσ"))
               #t))
-][else])
 
 (test "" (substring "" 0 0))
 (test "" (substring "a" 0 0))
@@ -2098,11 +2075,8 @@
 (test 13 (char->integer (read (open-input-string "#\\return"))))
 (test #x7F (char->integer (read (open-input-string "#\\delete"))))
 (test #x1B (char->integer (read (open-input-string "#\\escape"))))
-(cond-expand
- [gauche.ces.utf8
 (test #x03BB (char->integer (read (open-input-string "#\\λ"))))
 (test #x03BB (char->integer (read (open-input-string "#\\x03BB"))))
-][else])
 
 (test "abc" (read (open-input-string "\"abc\"")))
 (test "abc" (read (open-input-string "\"abc\" \"def\"")))
@@ -2121,10 +2095,7 @@
 (test "line 1continued\n" (read (open-input-string "\"line 1\\\n continued\n\"")))
 (test "line 1continued\n" (read (open-input-string "\"line 1\\ \t \n \t continued\n\"")))
 (test "line 1\n\nline 3\n" (read (open-input-string "\"line 1\\ \t \n \t \n\nline 3\n\"")))
-(cond-expand
- [gauche.ces.utf8
 (test #x03BB (char->integer (string-ref (read (open-input-string "\"\\x03BB;\"")) 0)))
-][else])
 
 (define-syntax test-write-syntax
   (syntax-rules ()
@@ -2266,7 +2237,7 @@
 (test-numeric-syntax "0.5+3/4i" (make-rectangular 0.5 (/ 3 4))
   "0.5+0.75i" ".5+.75i" "0.5+3/4i" ".5+3/4i" "500.0e-3+750.0e-3i")
 ;; Complex NaN, Inf (rectangular notation)
-;;(test-numeric-syntax "+nan.0+nan.0i" (make-rectangular the-nan the-nan) "+NaN.0+NaN.0i") 
+;;(test-numeric-syntax "+nan.0+nan.0i" (make-rectangular the-nan the-nan) "+NaN.0+NaN.0i")
 (test-numeric-syntax "+inf.0+inf.0i" (make-rectangular +inf.0 +inf.0) "+Inf.0+Inf.0i")
 (test-numeric-syntax "-inf.0+inf.0i" (make-rectangular -inf.0 +inf.0) "-Inf.0+Inf.0i")
 (test-numeric-syntax "-inf.0-inf.0i" (make-rectangular -inf.0 -inf.0) "-Inf.0-Inf.0i")

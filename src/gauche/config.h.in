@@ -30,15 +30,6 @@
 /* Define to use system CA */
 #undef GAUCHE_CA_BUNDLE_SYSTEM
 
-/* Define if Gauche handles multi-byte character as EUC-JP */
-#undef GAUCHE_CHAR_ENCODING_EUC_JP
-
-/* Define if Gauche handles multi-byte character as Shift JIS */
-#undef GAUCHE_CHAR_ENCODING_SJIS
-
-/* Define if Gauche handles multi-byte character as UTF-8 */
-#undef GAUCHE_CHAR_ENCODING_UTF_8
-
 /* Define 1 if building framework on MacOSX */
 #undef GAUCHE_MACOSX_FRAMEWORK
 
@@ -561,9 +552,9 @@
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
+        STACK_DIRECTION > 0 => grows toward higher addresses
+        STACK_DIRECTION < 0 => grows toward lower addresses
+        STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
 /* Define to 1 if all of the C90 standard headers exist (not just the ones

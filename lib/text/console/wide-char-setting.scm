@@ -41,33 +41,25 @@
    [(<= 0 chcode #x7f)
     1]
    [else
-    (cond-expand
-     [gauche.ces.utf8
-      (case wide-char-mode
-        [(Unicode)
-         (if (and emoji-char-workaround
-                  ;(<= #x1f000 chcode #x1ffff))
-                  (unicode-emoji? chcode))
-           wide-char-width
-           (case (char-east-asian-width ch)
-             [(A)      ambiguous-char-width]
-             [(F W)    wide-char-width]
-             [(H N Na) 1]
-             [else     ambiguous-char-width]))]
-        [(Surrogate)
-         (if (>= chcode #x10000)
-           surrogate-char-width
-           wide-char-width)]
-        [(Wide)
-         wide-char-width]
-        [else
-         1])]
-     [else
-      (case wide-char-mode
-        [(Unicode Surrogate Wide)
-         wide-char-width]
-        [else
-         1])])]))
+    (case wide-char-mode
+      [(Unicode)
+       (if (and emoji-char-workaround
+                                        ;(<= #x1f000 chcode #x1ffff))
+                (unicode-emoji? chcode))
+         wide-char-width
+         (case (char-east-asian-width ch)
+           [(A)      ambiguous-char-width]
+           [(F W)    wide-char-width]
+           [(H N Na) 1]
+           [else     ambiguous-char-width]))]
+      [(Surrogate)
+       (if (>= chcode #x10000)
+         surrogate-char-width
+         wide-char-width)]
+      [(Wide)
+       wide-char-width]
+      [else
+       1])]))
 
 ;; unicode emoji table
 ;;  generated from
@@ -150,4 +142,3 @@
             #t]))]
        [else
         #f]))))
-

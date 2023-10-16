@@ -2503,14 +2503,10 @@
   (use srfi.147)
   (test-module 'srfi.147)
 
-  ;; srfi-147.tests.scm contains greek lambda and offends ces=none.
-  (cond-expand
-   [gauche.ces.none]
-   [else
-    (use srfi.64)
-    (use compat.r7rs-srfi-tests)
-    (include "include/srfi-147-tests.scm")
-    (run-tests)])
+  (use srfi.64)
+  (use compat.r7rs-srfi-tests)
+  (include "include/srfi-147-tests.scm")
+  (run-tests)
   )
 
 ;;-----------------------------------------------------------------------
@@ -2613,15 +2609,11 @@
   (use srfi.159)
   (test-module 'srfi.159)
 
-  ;; srfi-159-tests uses some unicode characters
-  (cond-expand
-   [gauche.ces.none]
-   [else
-    (use compat.chibi-test)
-    (use scheme.list)
-    (use scheme.file)
-    (chibi-test
-     (include "include/srfi-159-tests.scm"))])
+  (use compat.chibi-test)
+  (use scheme.list)
+  (use scheme.file)
+  (chibi-test
+   (include "include/srfi-159-tests.scm"))
   )
 
 ;;-----------------------------------------------------------------------

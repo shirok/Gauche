@@ -434,13 +434,10 @@
 (test-re #/[\s\d]+/   "a 1 2 3 b " '(" 1 2 3 "))
 (test-re #/[\s\D]+/   "a 1 2 3 b " '("a "))
 
-(cond-expand
- [gauche.ces.none #f]
- [else
-  (test-re #/\u3000*x/ "\u3000\u3000\u3000x" '("\u3000\u3000\u3000x"))
-  (test-re #/\u3000+/  "\u3001\u3000\u3000" '("\u3000\u3000"))
-  (test-re #/\u3000+x/ "\u3000\u3000\u3001x" '())
-  (test-re #/\u3000+[xy]/ "\u3000\u3000\u3001x\u3001\u3000y" '("\u3000y"))])
+(test-re #/\u3000*x/ "\u3000\u3000\u3000x" '("\u3000\u3000\u3000x"))
+(test-re #/\u3000+/  "\u3001\u3000\u3000" '("\u3000\u3000"))
+(test-re #/\u3000+x/ "\u3000\u3000\u3001x" '())
+(test-re #/\u3000+[xy]/ "\u3000\u3000\u3001x\u3001\u3000y" '("\u3000y"))
 
 ;; this tests optimizer
 (test-re #/^\[?([^\]]*)\]?:(\d+)$/ "127.0.0.1:80"
@@ -1434,8 +1431,6 @@
           '(: (* numeric) (w/nocase ($ (* (/ "af")))))
           "12345BeeF")
 
-(cond-expand
- [gauche.ces.utf8 (include "include/regexp-sre-utf8")]
- [else])
+(include "include/regexp-sre-utf8")
 
 (test-end)

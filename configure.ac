@@ -22,36 +22,6 @@ dnl Process args given to configure
 dnl
 
 dnl ----------------------------------------------------------
-dnl   enable-multibyte
-dnl
-AC_MSG_CHECKING([multibyte encoding])
-GAUCHE_CHAR_ENCODING=utf8
-AC_ARG_ENABLE(multibyte,
-  AS_HELP_STRING([--enable-multibyte=ENCODING],
-                 [Use ENCODING as the internal multibyte string encoding.
-Following encodings are currently recognized:
-'euc-jp' (EUC-JP code), 'utf-8' (UTF-8), 'sjis' (Shift-JIS),
-or 'none' (No multibyte support)]),
-  [
-   AS_CASE([$enable_multibyte],
-     [euc-jp|eucjp],   [GAUCHE_CHAR_ENCODING=eucjp],
-     [utf-8|utf8|yes], [GAUCHE_CHAR_ENCODING=utf8],
-     [sjis|shift-jis], [GAUCHE_CHAR_ENCODING=sjis],
-     [no|none],        [GAUCHE_CHAR_ENCODING=none],
-                       [AC_MSG_ERROR([unrecognized encoding option: '$enable_multibyte'; type ./configure --help for available options], 1)])
-  ],
-  [
-    GAUCHE_CHAR_ENCODING=utf8
-    ac_configure_args="$ac_configure_args '--enable-multibyte=utf-8'"
-  ])
-
-AS_CASE([$GAUCHE_CHAR_ENCODING],
-  [eucjp], [AC_DEFINE(GAUCHE_CHAR_ENCODING_EUC_JP, [], [Define if Gauche handles multi-byte character as EUC-JP])],
-  [utf8],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_UTF_8,  [], [Define if Gauche handles multi-byte character as UTF-8])],
-  [sjis],  [AC_DEFINE(GAUCHE_CHAR_ENCODING_SJIS,   [], [Define if Gauche handles multi-byte character as Shift JIS])])
-AC_MSG_RESULT([$GAUCHE_CHAR_ENCODING])
-
-dnl ----------------------------------------------------------
 dnl   Determine thread subsystem
 dnl
 AC_MSG_CHECKING([thread type])
@@ -329,7 +299,7 @@ fi
 AC_SUBST(GAUCHE_ABI_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_ABI_VERSION, "$GAUCHE_ABI_VERSION", [Gauche ABI version string])
 
-GAUCHE_SIGNATURE="$GAUCHE_ABI_VERSION,$GAUCHE_CHAR_ENCODING,$GAUCHE_THREAD_TYPE"
+GAUCHE_SIGNATURE="$GAUCHE_ABI_VERSION,utf8,$GAUCHE_THREAD_TYPE"
 AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE", [Gauche signature string])
 
 LIBGAUCHE=libgauche-$GAUCHE_ABI_VERSION
@@ -516,17 +486,13 @@ AC_CHECK_LIB(proc, proc_pidpath)
 
 dnl For Windows/MinGW, manually adds several libraries
 dnl Also adds -DUNICODE to CFLAGS enable Windows wchar API,
-dnl  if GAUCHE_CHAR_ENCODING is UTF_8.
 dnl Also adds -D__USE_MINGW_ANSI_STDIO to CFLAGS to support
 dnl  C99 printf format string.
 dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
   *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi -lws2_32"
            ALTERNATIVE_GOSH="gosh-noconsole.exe"
-           case "$GAUCHE_CHAR_ENCODING" in
-             utf8) CFLAGS="$CFLAGS -DUNICODE" ;;
-           esac
-           CFLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO" ;;
+           CFLAGS="$CFLAGS -DUNICODE -D__USE_MINGW_ANSI_STDIO" ;;
   *)       ALTERNATIVE_GOSH="" ;;
 esac
 AC_SUBST(ALTERNATIVE_GOSH)
@@ -986,7 +952,6 @@ AC_MSG_RESULT(
 [
 This Gauche has been configured with the following parameters:
            version: $GAUCHE_VERSION
-         multibyte: $GAUCHE_CHAR_ENCODING
      documentation: $build_doc
               slib: $SLIB_DIR
             thread: $GAUCHE_THREAD_TYPE
@@ -1002,19 +967,6 @@ AS_IF([test -z "$GAUCHE_TLS_TYPES" -a "$tls_explicitly_disabled" != yes], [
 !!! You won't be able to do TLS communication, such as connecting to      !!!
 !!! websites with https.  If this is not intended, check --with-tls       !!!
 !!! configure option (type ./configure --help for the details).           !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ])
-])
-
-AS_IF([test "$GAUCHE_CHAR_ENCODING" != utf8], [
-  AC_MSG_RESULT([
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! Support of internal encoding other than utf-8 is deprecated.  Please  !!!
-!!! migrate to utf-8 at your earliest convenience.  Note that you can     !!!
-!!! still have your source code and data in encodings other than utf-8.   !!!
-!!! Just make sure their encoding is explicit, e.g. use coding:... magic  !!!
-!!! comment in your sources.  See                                         !!!
-!!! https://practical-scheme.net/gauche/gmemo/?Utf8Only for the details.  !!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ])
 ])

@@ -5,11 +5,8 @@
 ;;;
 
 (define-module math.const
-  (export pi e 1/pi 180/pi pi/2 pi/4 pi/180 2pi)
-  (cond-expand
-   [gauche.ces.utf8
-    (export π 1/π 180/π π/2 π/4 π/180 2π)]
-   [else]))
+  (export pi e 1/pi 180/pi pi/2 pi/4 pi/180 2pi
+          π 1/π 180/π π/2 π/4 π/180 2π))
 (select-module math.const)
 
 (define-constant pi     3.141592653589793)
@@ -21,14 +18,10 @@
 (define-constant 180/pi 57.29577951308232)
 (define-constant e      2.718281828459045)
 
-(cond-expand
- [gauche.ces.utf8
-  (define-constant π pi)
-  (define-constant 2π 2pi)
-  (define-constant π/2 pi/2)
-  (define-constant π/4 pi/4)
-  (define-constant π/180 pi/180)
-  (define-constant 1/π 1/pi)
-  (define-constant 180/π 180/pi)
-  ]
- [else])
+(define-constant π pi)
+(define-constant 2π 2pi)
+(define-constant π/2 pi/2)
+(define-constant π/4 pi/4)
+(define-constant π/180 pi/180)
+(define-constant 1/π 1/pi)
+(define-constant 180/π 180/pi)

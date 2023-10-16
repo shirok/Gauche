@@ -245,14 +245,10 @@
        (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0)))
 (test* "utf32->string BOM override" "012"
        (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'big))
-(cond-expand
- [gauche.ces.none]
- [else
-  (test* "utf32->string ignore-bom big-endian" "\xfeff;012"
-         (utf32->string #u8(0 0 #xfe #xff 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t))
-  (test* "utf32->string ignore-bom little-endian" "\xfeff;012"
-         (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'little #t))
-  ])
+(test* "utf32->string ignore-bom big-endian" "\xfeff;012"
+       (utf32->string #u8(0 0 #xfe #xff 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t))
+(test* "utf32->string ignore-bom little-endian" "\xfeff;012"
+       (utf32->string #u8(#xff #xfe 0 0 48 0 0 0 49 0 0 0 50 0 0 0) 'little #t))
 (test* "utf32->string start/end" "012" ; map-to path
        (utf32->string #u8(0 0 0 0 48 0 0 0 49 0 0 0 50) 'big #t 1))
 (test* "utf32->string start/end" "12" ; u32vector->string path
@@ -383,11 +379,9 @@
 (let ([data1 '((#\a  Na)
                (#\x7e Na)
                (#\x7f N))]
-      [data2 (cond-expand
-              [gauche.ces.none '()]
-              [else '((#\u03b1 A)
-                      (#\u3000 F)
-                      (#\u30a2 W))])])
+      [data2 '((#\u03b1 A)
+               (#\u3000 F)
+               (#\u30a2 W))])
   (define (width-test ch expected)
     (test* #"east asian width (~ch)" `(,expected ,expected)
            (list (char-east-asian-width ch)
@@ -397,21 +391,17 @@
   (dolist [f data2] (apply width-test f))
   )
 
-(cond-expand
- [gauche.ces.none]
- [else
-  (test* "string-east-asian-width" 7
-         (string-east-asian-width "a\u3000b\u30a2c"))
-  (test* "string-east-asian-width" 5
-         (string-east-asian-width "a\u3000b\u30a2c" :F 1 :W 1))
-  (test* "string-take-width" "a\u3000"
-         (string-take-width "a\u3000\u30a2bc" 4))
-  (test* "string-take-width" "a\u3000\u30a2"
-         (string-take-width "a\u3000\u30a2bc" 5))
-  (test* "string-drop-width" "\u30a2bc"
-         (string-drop-width "a\u3000\u30a2bc" 4))
-  (test* "string-drop-width" "bc"
-         (string-drop-width "a\u3000\u30a2bc" 5))
-  ])
+(test* "string-east-asian-width" 7
+       (string-east-asian-width "a\u3000b\u30a2c"))
+(test* "string-east-asian-width" 5
+       (string-east-asian-width "a\u3000b\u30a2c" :F 1 :W 1))
+(test* "string-take-width" "a\u3000"
+       (string-take-width "a\u3000\u30a2bc" 4))
+(test* "string-take-width" "a\u3000\u30a2"
+       (string-take-width "a\u3000\u30a2bc" 5))
+(test* "string-drop-width" "\u30a2bc"
+       (string-drop-width "a\u3000\u30a2bc" 4))
+(test* "string-drop-width" "bc"
+       (string-drop-width "a\u3000\u30a2bc" 5))
 
 (test-end)
