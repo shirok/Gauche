@@ -15221,16 +15221,44 @@ returns a specialized procedure with the left argumen(s) are given
 as @var{arg} @dots{}.
 
 In Gauche, this is the same as @code{(pa$ arg @dots{})} (@pxref{Combinators}).
+
+@example
+((left-section list 'a 'b 'c) 'd 'e 'f)
+ @result{} (a b c d e f)
+@end example
 @end defun
 
 @defun right-section proc arg @dots{}
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure such that, when applied to more args, calls @var{proc}
+with the newly given args concatenated with @code{(reverse @var{arg} @dots{})}.
+
+@example
+((right-section list 'a 'b 'c) 'd 'e 'f)
+ @result{} (d e f c b a)
+@end example
+
+The reason that @var{arg} @dots{} is reversed is because of
+this invariance:
+
+@example
+(right-section proc arg arg1 @dots{})
+ @equiv{} (right-section (right-section proc arg) arg1 @dots{})
+@end example
 @end defun
 
 @defun apply-chain proc proc2 @dots{}
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure such that it applies the last procedure to the
+given arguments, then applies the previous procedure on the
+returned value(s), and so on.  Returns the result(s) of @var{proc}.
+
+@example
+((apply-chain car cdr) '(a b c d)) @result{} b
+((apply-chain list div-and-mod) 10 3) @result{} (3 1)
+@end example
 @end defun
 
 @defun arguments-drop proc n
@@ -15239,11 +15267,40 @@ In Gauche, this is the same as @code{(pa$ arg @dots{})} (@pxref{Combinators}).
 @defunx arguments-take-right proc n
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure such that @var{proc} is applied on the argument
+list after taking/dropping @var{n} arguments.  That is,
+@code{(arguments-drop proc n)} is
+@code{(^ args (apply proc (drop args n)))}, and so on.
+
+@example
+((arguments-drop list 2) 'a 'b 'c 'd 'e)       @result{} (c d e)
+((arguments-drop-right list 2) 'a 'b 'c 'd 'e) @result{} (a b c)
+((arguments-take list 2) 'a 'b 'c 'd 'e)       @result{} (a b)
+((arguments-take-right list 2) 'a 'b 'c 'd 'e) @result{} (d e)
+@end example
 @end defun
 
 @defun group-by key-proc :optional equal
 [SRFI-235]
 @c MOD srfi.235
+Returns a procedure that takes one list argument.  It applies
+@var{key-proc} to each element of the list to get keys, and then
+elements with the same key are grouped into a fresh list, and
+returns list of such groups.
+The keys are compared with @var{equal}, which defaults to @code{equal?}.
+Within each group, elements that appears left in the original list
+also appears on the left.
+
+@code{((group-by key-proc eq-proc) lis)} works like
+@code{(group-collection lis :key key-proc :test eq-proc)}, except
+that @code{group-collection} can take any collection
+(@pxref{Selection and searching in collection}).
+
+@example
+((group-by (cut string-ref <> 0) char-ci=?)
+ '("apricot" "Banana" "Apple" "blueberry"))
+ @result{} (("apricot" "Apple") ("Banana" "blueberry"))
+@end example
 @end defun
 
 @c EN
@@ -15286,16 +15343,30 @@ result(s).  Otherwise, calls @var{else-thunk} and returns its result(s).
 @defunx unless-procedure value thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+If @var{value} evaluates to true/false, calls each @var{thunk} in turn
+and returns, respectively.  Otherwise, returns imediately.
+The return value is unspecified.
 @end defun
 
 @defun value-procedure value then-proc else-thunk
 [SRFI-235]
 @c MOD srfi.235
+If @var{value} is true, apply @var{then-proc} on it and returns
+its result(s).  Otherwise, call @var{else-thunk} and returns
+its result(s).
 @end defun
 
-@defun case-procedure value then-alist :optional else-thunk
+@defun case-procedure value thunk-alist :optional else-thunk
 [SRFI-235]
 @c MOD srfi.235
+The @var{thunk-alist} argument is a list of pairs of a valueand
+a thunk.  First, @var{value} is evaluated, then the result
+is searched from the cars of @var{thunk-alist}, using @code{eqv?}.
+If there's a matching entry, its thunk is called and its result(s) is/are
+returned.  If there's no matching entry, @var{else-thunk} is invoked
+if present and its result(s) is/are returned.
+If there's neither @var{else-thunk}, an undefined value is returned.
+one
 @end defun
 
 @defun and-procedure thunk @dots{}
