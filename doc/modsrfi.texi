@@ -11842,36 +11842,110 @@ These are bytestring version of @code{string-index} and
 @defunx bytestring-span bv pred
 [SRFI-207]
 @c MOD srfi.207
+Returns two bytevectors, the first one is a maximum prefix of @var{bv}
+whose element does not / does satisfy @var{pred}, and the second one
+is the rest of @var{bv}.
+
+@example
+(bytestring-break #u8"abracadabra" (cut = <> 100))
+ @result{} #u8(97 98 114 97 99 97) @r{and} #u8(100 97 98 114 97)
+(bytestring-span #u8(1 2 3 4 5 4 3 2 1) (cut < <> 5))
+ @result{} #u8(1 2 3 4) @r{and} #u8(5 4 3 2 1)
+@end example
 @end defun
 
 @defun bytestring-join bv-list delim :optional grammar
 [SRFI-207]
 @c MOD srfi.207
+Given list of bytevectors @var{bv-list}, concatenates the bytevectors
+with a delimiter @var{delim}, which can be an exact integer
+between 0 and 255 inclusive, an ASCII character, a bytevector
+or a string of ASCII characters.
+
+The @var{grammar} argument must be one of the symbols @code{infix},
+@code{strict-infix}, @code{suffix}, and @code{prefix}, as in
+@code{string-join} (@pxref{String utilities}).  The difference
+between @code{infix} and @code{strict-infix} is that the former
+allows to join zero byvectors (returns @code{#u8()}), while the
+latter raises an error when @var{bv-list} is empty.  When omitted,
+@code{infix} is assumed.
+
+@example
+(bytestring-join '(#u8"a" #u8"b" #u8"c") 0) @result{} #u8(97 0 98 0 99)
+(bytestring-join '(#u8"a" #u8"b" #u8"c") 0 'prefix) @result{} #u8(0 97 0 98 0 99)
+(bytestring-join '(#u8"a" #u8"b" #u8"c") 0 'suffix) @result{} #u8(97 0 98 0 99 0)
+@end example
 @end defun
 
 @defun bytestring-split bv delim :optional grammar
 [SRFI-207]
 @c MOD srfi.207
+Split a bytevector @var{bv} with @var{delim}, which must be
+either an exact integer between 0 and 255 inclusive or an ASCII character,
+and returns a list of bytevectors.  Delimiters themselves are not included
+in the result.
+
+The @var{grammar} argument is, if given, either one of the symbols
+@code{infix}, @code{strict-infix}, @code{prefix}, or @code{suffix},
+similar to @code{bytestring-join}.  If it is @code{prefix}/@code{suffix},
+the preceding/succeeding @var{delim} is ignored, if any.  There are no
+difference between @code{infix} and @code{strict-infix}.  The default
+is @code{infix}.
+
+@example
+(bytestring-split #u8"abracadabra" #\a)
+ @result{} (#u8() #u8(98 114) #u8(99) #u8(100) #u8(98 114) #u8())
+(bytestring-split #u8"abracadabra" #\a 'prefix)
+ @result{} (#u8(98 114) #u8(99) #u8(100) #u8(98 114) #u8())
+(bytestring-split #u8"abracadabra" #\a 'suffix)
+ @result{} (#u8() #u8(98 114) #u8(99) #u8(100) #u8(98 114))
+@end example
 @end defun
 
 @defun read-textual-bytestring prefix :optional port
 [SRFI-207]
 @c MOD srfi.207
+This parses a textual representation of a bytestring read from
+@var{port} (defaults to the current input port) and returns a bytevector.
+If @var{prefix} is false, it assumes the preceding @code{"#u8"} has
+already been read.  If the input can't be parsed as a valid
+textual representation of a bytestring, an error satisfying
+@code{bytestring-error?} is raised.
+
+@example
+(with-input-from-string "#u8\"abc\\x80;\"" (cut read-textual-bytestring #t))
+  @result{} #u8(97 98 99 128)
+@end example
 @end defun
 
 @defun write-textual-bytestring bv :optional port
 [SRFI-207]
 @c MOD srfi.207
+Writes a bytevector @var{bv} in the textual representation to
+@var{port} (defaults to the current output port).
+
+@example
+(write-textual-bytestring #u8(65 66 128 255 0))
+ @result{} @r{prints} #u8"AB\x80;\xff;\x00;"
+@end example
 @end defun
 
-@defun write-bintary-bitestring port arg @dots{}
+@defun write-binary-bitestring port arg @dots{}
 [SRFI-207]
 @c MOD srfi.207
+@example
+Works like @code{(write-textual-bytestring (bytestring arg @dots{}) port)},
+but without creating the intermediate bytevector.
+If any arguments are invalid to construct a bytevector, an error
+satisfying @code{bytestring-error?} signaled.
+@end example
 @end defun
 
 @defun bytestring-error? obj
 [SRFI-207]
 @c MOD srfi.207
+Returns @code{#t} if @var{obj} is a condition thrown from
+bytestring operations.
 @end defun
 
 
