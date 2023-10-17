@@ -12338,73 +12338,138 @@ The results of @var{proc} are discarded.
 @defun enum-set-fold kons knil eset
 [SRFI-209]
 @c MOD srfi.209
+For each enum in @var{eset},
+apply @var{kons} on it and the current
+state value, whose initial value is @var{knil}.  The result
+of @var{kons} is used as the state value of the next iteration.
+The last result of @var{kons} is returned.
+The @var{eset} is traversed in increasing order.
 @end defun
 
 @defun enum-set-complement eset
 @defunx enum-set-complement! eset
 [SRFI-209]
 @c MOD srfi.209
+Returns an enum set of the same enum type as @var{eset}, but
+contains enums that are not contained in @var{eset}.
+The linear updating version @code{enum-set-complement!} may reuse
+the storage of @var{eset}.
 @end defun
 
 @defun enum-set-union eset1 eset2
 @defunx enum-set-union! eset1 eset2
 [SRFI-209]
 @c MOD srfi.209
+Two enum sets must be of the same enum type.
+Returns an enum set of the same type
+that contains enums each of which is in at least
+either of @var{eset1} or @var{eset2}.
+The linear updating version @code{enum-set-union!} may reuse
+the storage of @var{eset1}.
 @end defun
 
 @defun enum-set-intersection eset1 eset2
 @defunx enum-set-intersection! eset1 eset2
 [SRFI-209]
 @c MOD srfi.209
+Two enum sets must be of the same enum type.
+Returns an enum set of the same type
+that contains enums each of which is in both
+@var{eset1} and @var{eset2}.
+The linear updating version @code{enum-set-intersection!} may reuse
+the storage of @var{eset1}.
 @end defun
 
 @defun enum-set-difference eset1 eset2
 @defunx enum-set-difference! eset1 eset2
 [SRFI-209]
 @c MOD srfi.209
+Two enum sets must be of the same enum type.
+Returns an enum set of the same type
+that contains enums each of which is in @var{eset1}
+but not in @var{eset2}.
+The linear updating version @code{enum-set-difference!} may reuse
+the storage of @var{eset1}.
 @end defun
 
 @defun enum-set-xor eset1 eset2
 @defunx enum-set-xor! eset1 eset2
 [SRFI-209]
 @c MOD srfi.209
+Two enum sets must be of the same enum type.
+Returns an enum set of the same type
+that contains enums each of which is in either @var{eset1}
+or @var{eset2}, but not both.
+The linear updating version @code{enum-set-xor!} may reuse
+the storage of @var{eset1}.
 @end defun
 
 @subheading R6RS enumeration compatibility
 
+R6RS also has enumerations, but it does not have separate @emph{enum} object,
+nor explicitly deal with enum types.
+Symbols are used to represent each enum, and enum types are
+implicitly dealt with enum sets.
+
 @defmac define-enumeration type-name (name-value @dots{}) make-set
 [SRFI-209]
 @c MOD srfi.209
+Creates a new enum type and defines a macro named @var{type-name}
+and @var{make-set}.  VEry similar to @code{define-enum}, except that
+the macro invocation @code{(@var{type-name} @var{symbol})} returns
+the symbol itself instead of an enum object.
 @end defmac
 
 @defun make-enumeration symbol-list
 [SRFI-209]
 @c MOD srfi.209
+Creates a new enum type with the enums each of which has the name
+given in @var{symbol-list}.  Returns a fresh enum set containing
+all the enums.  The created enum type ca be obtained with
+@code{enum-set-type}.
 @end defun
 
 @defun enum-set-universe eset
 [SRFI-209]
 @c MOD srfi.209
+Returns a fresh enum set that contains all the enums of the enum type
+of the given enum set @var{eset}.
+It is basically @code{(enum-type->enum-set (enum-set-type eset))}.
 @end defun
 
 @defun enum-set-costructor eset
 [SRFI-209]
 @c MOD srfi.209
+Returns a procedure that accepts a list of symbols as an argument,
+and returns a fresh enum set that contains the enums whose names
+are given in the list.
 @end defun
 
 @defun enum-set-member? symbol eset
 [SRFI-209]
 @c MOD srfi.209
+Returns @code{#t} if @var{symbol} is the name of a member of @var{eset},
+or @code{#f} @var{symbol} is a valid name of the enum type of
+@var{eset} but not in @var{eset}.  An error is signaled
+if @var{symbol} is not a valid name of enums in the enum type.
 @end defun
 
 @defun enum-set-indexer eset
 [SRFI-209]
 @c MOD srfi.209
+Returns a procedure that takes one argument, a symbol, and
+returns the ordinal of the enum that has the given symbol as a name.
+If the given symbol is not a name of any enums in the enum type
+of @var{eset}, @code{#f} is returned.  Note that the enum with the
+given symbol does not need to be in @var{eset}; basically, @var{eset}
+is used only to obtain the enum type.
 @end defun
 
 @defun enum-set->list eset
 [SRFI-209]
 @c MOD srfi.209
+Returns a list of the names of the members of @var{eset}.
+Same as @code{(map enum-name (enum-set->enum-list eset))}.
 @end defun
 
 @c ----------------------------------------------------------------------
