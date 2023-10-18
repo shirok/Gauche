@@ -26,13 +26,13 @@
 (let ([data '(("abc" "abc" =)
               (""    "abc" <)
               ("abd" "abc" >)
-              (#*"abc" #*"abc" =)
-              (#*"a"   #*"abc" <)
-              (#*"abd" #*"abc" >)
-              ("abc" #*"abc" <)
-              ("abc" #*"abb" >)
-              (#*"abc" "abc" >)
-              (#*"ab"  "abc" <))])
+              (#**"abc" #**"abc" =)
+              (#**"a"   #**"abc" <)
+              (#**"abd" #**"abc" >)
+              ("abc" #**"abc" <)
+              ("abc" #**"abb" >)
+              (#**"abc" "abc" >)
+              (#**"ab"  "abc" <))])
   (define (t a b result)
     (test* (string-append "compare " a " and " b)
            (list (boolean (memq result '(=)))
@@ -185,15 +185,15 @@
                      "abakjrgaker" "" 'both)
 
   ;; incomplete strings
-  (test-string-scan 3 #*"abcdefghi" "def")
-  (test-string-scan 3 "abcdefghi" #*"def")
-  (test-string-scan #*"ghi" #*"abcdefghi" "def" 'after)
-  (test-string-scan #*"abc" #*"abcdefghi" "def" 'before)
-  (test-string-scan2 #*"abcdef" #*"ghi" #*"abcdefghi" "def" 'after*)
-  (test-string-scan2 #*"abc" #*"defghi" #*"abcdefghi" "def" 'before*)
-  (test-string-scan2 #*"abc" #*"ghi" #*"abcdefghi" "def" 'both)
-  (test-string-scan2 #*"abc" #*"ghi" "abcdefghi" #*"def" 'both)
-  (test-string-scan2 #*"abcd" #*"fghi" #*"abcdefghi" #\e 'both)
+  (test-string-scan 3 #**"abcdefghi" "def")
+  (test-string-scan 3 "abcdefghi" #**"def")
+  (test-string-scan #**"ghi" #**"abcdefghi" "def" 'after)
+  (test-string-scan #**"abc" #**"abcdefghi" "def" 'before)
+  (test-string-scan2 #**"abcdef" #**"ghi" #**"abcdefghi" "def" 'after*)
+  (test-string-scan2 #**"abc" #**"defghi" #**"abcdefghi" "def" 'before*)
+  (test-string-scan2 #**"abc" #**"ghi" #**"abcdefghi" "def" 'both)
+  (test-string-scan2 #**"abc" #**"ghi" "abcdefghi" #**"def" 'both)
+  (test-string-scan2 #**"abcd" #**"fghi" #**"abcdefghi" #\e 'both)
   )
 
 ;;-------------------------------------------------------------------
@@ -352,64 +352,61 @@
 ;; and incomplete strings.
 
 (test* "string-incomplete?" #f (string-incomplete? "abc"))
-(test* "string-incomplete?" #t (string-incomplete? #*"abc"))
+(test* "string-incomplete?" #t (string-incomplete? #**"abc"))
 (test* "string-incomplete?" #f (string-incomplete? ""))
-(test* "string-incomplete?" #t (string-incomplete? #*""))
+(test* "string-incomplete?" #t (string-incomplete? #**""))
 
-(test* "string-complete->incomplete" #*"xyz"
+(test* "string-complete->incomplete" #**"xyz"
        (string-complete->incomplete "xyz"))
-(test* "string-complete->incomplete" #*"xyz"
-       (string-complete->incomplete #*"xyz"))
+(test* "string-complete->incomplete" #**"xyz"
+       (string-complete->incomplete #**"xyz"))
 (test* "string-incomplete->complete" "xyz"
-       (string-incomplete->complete #*"xyz"))
+       (string-incomplete->complete #**"xyz"))
 (test* "string-incomplete->complete" "xyz"
        (string-incomplete->complete "xyz"))
 
-(test* "string=?" #t (string=? #*"abc" #*"abc"))
+(test* "string=?" #t (string=? #**"abc" #**"abc"))
 
 (test* "string-byte-ref" (char->integer #\b)
-       (string-byte-ref #*"abc" 1))
+       (string-byte-ref #**"abc" 1))
 (test* "string-byte-ref" 0
-       (string-byte-ref #*"\0\0\0" 1))
+       (string-byte-ref #**"\0\0\0" 1))
 
-(test* "string-append" #*"abcdef"
-       (string-append "abc" #*"def"))
-(test* "string-append" #*"abcdef"
-       (string-append #*"abc" "def"))
-(test* "string-append" #*"abcdef"
-       (string-append #*"abc" #*"def"))
-(test* "string-append" #*"abcdef"
-       (string-append "a" #*"b" "c" "d" "e" #*"f"))
+(test* "string-append" #**"abcdef"
+       (string-append "abc" #**"def"))
+(test* "string-append" #**"abcdef"
+       (string-append #**"abc" "def"))
+(test* "string-append" #**"abcdef"
+       (string-append #**"abc" #**"def"))
+(test* "string-append" #**"abcdef"
+       (string-append "a" #**"b" "c" "d" "e" #**"f"))
 
-(test* "string-join" #*"a:b:c"
-       (string-join '("a" #*"b" "c") ":"))
-(test* "string-join" #*"a:b:c"
-       (string-join '("a" "b" "c") #*":"))
+(test* "string-join" #**"a:b:c"
+       (string-join '("a" #**"b" "c") ":"))
+(test* "string-join" #**"a:b:c"
+       (string-join '("a" "b" "c") #**":"))
 
 ;; NB: should we allow this?
-(test* "string-set!" #*"abQde"
-       (let ((s (string-copy #*"abcde")))
+(test* "string-set!" #**"abQde"
+       (let ((s (string-copy #**"abcde")))
          (string-set! s 2 #\Q)
          s))
-(test* "string-byte-set!" #*"abQde"
+(test* "string-byte-set!" #**"abQde"
        (let ((s (string-copy "abcde")))
          (string-byte-set! s 2 (char->integer #\Q))
          s))
-(test* "string-byte-set!" #*"abQde"
-       (let ((s (string-copy #*"abcde")))
+(test* "string-byte-set!" #**"abQde"
+       (let ((s (string-copy #**"abcde")))
          (string-byte-set! s 2 (char->integer #\Q))
          s))
 
 ;; In 0.9.1 this gets an error
 (unless (eq? (gauche-character-encoding) 'none)
-  (test* "string-byte-set!" (case (gauche-character-encoding)
-                              [(utf-8)  #*"\x01\x81\x82"]
-                              [(euc-jp) #*"\x01\xa2"]
-                              [(sjis)   #*"\x01\xa0"])
+  (test* "string-byte-set!" #**"\x01\x81\x82"
          (string-byte-set! (string-copy "\u3042") 0 1)))
 
-(test* "substring" #*"ab"
-       (substring #*"abcde" 0 2))
+(test* "substring" #**"ab"
+       (substring #**"abcde" 0 2))
 
 ;;-------------------------------------------------------------------
 (test-section "string-cursor")
@@ -529,9 +526,9 @@
 (test* "read-byte" 98  (read-byte istr))
 (test* "read-byte from ungotten buffer" 99
        (begin (peek-char istr) (read-byte istr)))
-(test* "read-block using ungotten buffer" #*"d"
+(test* "read-block using ungotten buffer" #**"d"
        (begin (peek-char istr) (read-block 1 istr)))
-(test* "read-block using ungotten buffer" #*"efg"
+(test* "read-block using ungotten buffer" #**"efg"
        (begin (peek-char istr) (read-block 10 istr)))
 (test* "termination" #t
        (eof-object? (read-char istr)))
