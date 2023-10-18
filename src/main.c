@@ -253,17 +253,18 @@ void version(void)
     Scm_Exit(0);
 }
 
-void invoke_other_version(const char *version, int argc, char **argv)
+void maybe_invoke_other_version(const char *version, int argc, char **argv)
 {
-    static ScmObj invoke_other_version = SCM_UNDEFINED;
-    SCM_BIND_PROC(invoke_other_version, "%invoke-other-version",
-                  Scm_GaucheInternalModule());
-
     int allow_fallback = FALSE;
     if (*version == ':') {
         allow_fallback = TRUE;
         version++;
     }
+    if (strcmp(version, GAUCHE_VERSION) == 0) return;
+
+    static ScmObj invoke_other_version = SCM_UNDEFINED;
+    SCM_BIND_PROC(invoke_other_version, "%invoke-other-version",
+                  Scm_GaucheInternalModule());
 
     ScmEvalPacket epkt;
     int r = Scm_Apply(invoke_other_version,
@@ -443,10 +444,7 @@ int parse_options(int argc, char *argv[])
                                  SCM_MAKE_STR_COPYING(optarg), pre_cmds);
             break;
         case 'v':
-            if (strcmp(optarg, GAUCHE_VERSION) != 0) {
-                invoke_other_version(optarg, argc, argv);
-                /*NOTREACHED*/
-            }
+            maybe_invoke_other_version(optarg, argc, argv);
             break;
         case '-': break;
         case 'h': usage(FALSE); break;
