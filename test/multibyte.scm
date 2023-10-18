@@ -21,10 +21,4 @@
                  (op a B)
                  (op A B)))))
 
-(case (gauche-character-encoding)
-  [(euc-jp) (load "euc-jp")]
-  [(sjis)   (load "sjis")]
-  [(utf-8)  (load "utf-8")]
-  [(none)   #f]
-  [else (format #t "No test provided for the character encoding ~s"
-                (gauche-character-encoding))])
+(include "utf-8")

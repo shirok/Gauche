@@ -76,39 +76,16 @@
   ;; ch       up       down     title    fold
   (t #\i      #\I      #\i      #\I      #\i)
   (t #\u00df  #\u00df  #\u00df  #\u00df  #\u00df) ; eszett
-  (when (memv (gauche-character-encoding) '(utf-8 euc-jp sjis))
-    (t #\u03a3  #\u03a3  #\u03c3  #\u03a3  #\u03c3) ; sigma
-    (t #\u03c3  #\u03a3  #\u03c3  #\u03a3  #\u03c3) ; sigma
-    (t #\u03c2  #\u03a3  #\u03c2  #\u03a3  #\u03c3) ; final sigma
-    )
+  (t #\u03a3  #\u03a3  #\u03c3  #\u03a3  #\u03c3) ; sigma
+  (t #\u03c3  #\u03a3  #\u03c3  #\u03a3  #\u03c3) ; sigma
+  (t #\u03c2  #\u03a3  #\u03c2  #\u03a3  #\u03c3) ; final sigma
 
-  (case (gauche-character-encoding)
-    [(none)
-     (t #\u00b5  #\u00b5  #\u00b5  #\u00b5  #\u00b5) ; micro sign
-     (t #\u00ff  #\u00ff  #\u00ff  #\u00ff  #\u00ff) ; y with diaeresis
-     ]
-    [(utf-8)
-     (t #\u00b5  #\u039c  #\u00b5  #\u039c  #\u03bc) ; micro sign
-     (t #\u00ff  #\u0178  #\u00ff  #\u0178  #\u00ff) ; y with diaeresis
-     ])
+  (t #\u00b5  #\u039c  #\u00b5  #\u039c  #\u03bc) ; micro sign
+  (t #\u00ff  #\u0178  #\u00ff  #\u0178  #\u00ff) ; y with diaeresis
 
-  (when (eq? (gauche-character-encoding) 'utf-8)
-    (t #\u01f1  #\u01f1  #\u01f3  #\u01f2  #\u01f3) ; DZ -> DZ dz Dz dz
-    (t #\u01f2  #\u01f1  #\u01f3  #\u01f2  #\u01f3) ; Dz -> DZ dz Dz dz
-    (t #\u01f3  #\u01f1  #\u01f3  #\u01f2  #\u01f3) ; dz -> DZ dz Dz dz
-    )
-
-  ;; These characters are in JISX0213 but not in Unicode.
-  (when (eq? (gauche-character-encoding) 'eucjp)
-    (t #\xa4f7  #\xa4f7  #\xa4f7  #\xa4f7  #\xa4f7) ; Ka + semi voice mark
-    (t #\xabc4  #\xabc4  #\xabc4  #\xabc4  #\xabc4) ; ae + accent grave
-    (t #\xabe6  #\xabe6  #\xabe6  #\xabe6  #\xabe6) ; modifier
-    )
-  (when (eq? (gauche-character-encoding) 'sjis)
-    (t #\x82f5  #\x82f5  #\x82f5  #\x82f5  #\x82f5) ; Ka + semi voice mark
-    (t #\x8663  #\x8663  #\x8663  #\x8663  #\x8663) ; ae + accent grave
-    (t #\x8686  #\x8686  #\x8686  #\x8686  #\x8686) ; modifier
-    )
+  (t #\u01f1  #\u01f1  #\u01f3  #\u01f2  #\u01f3) ; DZ -> DZ dz Dz dz
+  (t #\u01f2  #\u01f1  #\u01f3  #\u01f2  #\u01f3) ; Dz -> DZ dz Dz dz
+  (t #\u01f3  #\u01f1  #\u01f3  #\u01f2  #\u01f3) ; dz -> DZ dz Dz dz
   )
 
 ;; In the following tests, we check if the character is supported in
@@ -189,16 +166,6 @@
       (t0 ch char-upper-case? upper?)
       (t0 ch char-lower-case? lower?)
       (t0 ch char-general-category cat))
-
-    ;; Test characters that are in JISX0213 but not in Unicode 6.0.
-    (when (eq? (gauche-character-encoding) 'euc-jp)
-      (t (integer->char #xa4f7) #t #f #f 'Lo)
-      (t (integer->char #xabc4) #t #f #t 'Ll)
-      (t (integer->char #xabe6) #f #f #f 'Sk))
-    (when (eq? (gauche-character-encoding) 'sjis)
-      (t (integer->char #x82f5) #t #f #f 'Lo)
-      (t (integer->char #x8663) #t #f #t 'Ll)
-      (t (integer->char #x8686) #f #f #f 'Sk))
     ))
 
 ;; Built-in char-set tests

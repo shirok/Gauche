@@ -189,12 +189,7 @@
 (define (test-output/chunk20 file from to)
   (test-output "chunk20" (^p (read-block 20 p)) display file from to))
 
-(define internal-enc
-  (case (gauche-character-encoding)
-    ((euc-jp) '("EUCJP"))
-    ((sjis)   '("SJIS"))
-    ((utf-8)  '("UTF-8"))
-    (else '())))
+(define internal-enc '("UTF-8"))
 
 (map-test test-output/byte "data/jp1"
           '("EUCJP" "UTF-8" "SJIS" "ISO2022JP" "UTF-16" "UTF-16BE" "UTF-16LE")
@@ -408,12 +403,7 @@
                 (call-with-input-conversion p port->string
                                             :encoding code))))))
   (if (ces-conversion-supported? (gauche-character-encoding) code)
-    (let ((s (call-with-input-file (format "~a.~a" file
-                                           (case (gauche-character-encoding)
-                                             ((euc-jp) "EUCJP")
-                                             ((sjis)   "SJIS")
-                                             ((utf-8)  "UTF-8")
-                                             ((none)   "UTF-8")))
+    (let ((s (call-with-input-file (format "~a.~a" file "UTF-8")
                port->string)))
       (test* #"call-with-output-conversion (~(gauche-character-encoding) -> ~code)"
              (string-complete->incomplete
@@ -440,13 +430,10 @@
 (test "ucs <-> char" #xa1
       (lambda () (char->ucs (ucs->char #xa1))))
 
-(case (gauche-character-encoding)
-  ((euc-jp sjis utf-8)
-   (test "ucs <-> char" #x0391
-         (lambda () (char->ucs (ucs->char #x0391))))
-   (test "ucs <-> char" #x3042
-         (lambda () (char->ucs (ucs->char #x3042))))
-   ))
+(test "ucs <-> char" #x0391
+      (lambda () (char->ucs (ucs->char #x0391))))
+(test "ucs <-> char" #x3042
+      (lambda () (char->ucs (ucs->char #x3042))))
 
 (test "ucs char syntax" #\a
       (lambda () (read-from-string "#\\u0061")))
@@ -454,37 +441,28 @@
       (lambda () (read-from-string "#\\u00000062")))
 (test "ucs char syntax" #xa1
       (lambda () (char->ucs (read-from-string "#\\u00a1"))))
-(case (gauche-character-encoding)
-  ((euc-jp sjis utf-8)
-   (test "usc char syntax" #x0391
-         (lambda () (char->ucs (read-from-string "#\\u0391"))))
-   (test "ucs char syntax" #x3042
-         (lambda () (char->ucs (read-from-string "#\\u3042"))))
-   ))
+
+(test "usc char syntax" #x0391
+      (lambda () (char->ucs (read-from-string "#\\u0391"))))
+(test "ucs char syntax" #x3042
+      (lambda () (char->ucs (read-from-string "#\\u3042"))))
 
 (test "ucs string syntax" "abcde"
       (lambda () (read-from-string "\"\\u0061bcde\"")))
 (test "ucs string syntax" "abcde"
       (lambda () (read-from-string "\"\\U00000061bcde\"")))
-(case (gauche-character-encoding)
-  ((euc-jp sjis utf-8)
-   (test "usc string syntax" #x0391
-         (lambda () (char->ucs (string-ref (read-from-string "\"\\u03911\"") 0))))
-   (test "ucs string syntax" #x3042
-         (lambda () (char->ucs (string-ref (read-from-string "\"\\u30421\"") 0))))
-   ))
+
+(test "usc string syntax" #x0391
+      (lambda () (char->ucs (string-ref (read-from-string "\"\\u03911\"") 0))))
+(test "ucs string syntax" #x3042
+      (lambda () (char->ucs (string-ref (read-from-string "\"\\u30421\"") 0))))
 
 ;;--------------------------------------------------------------------
 (test-section "coding-aware port")
 
 (define *target-string*
-  (case (gauche-character-encoding)
-    ((euc-jp sjis utf-8)
-     (read-from-string
-      "\"\\u3053\\u3093\\u306b\\u3061\\u306f\\u3001\\u4e16\\u754c\""))
-    ((none)
-     (read-from-string
-      "\"\\xe3\\x81\\x93\\xe3\\x82\\x93\\xe3\\x81\\xab\\xe3\\x81\\xa1\\xe3\\x81\\xaf\\xe3\\x80\\x81\\xe4\\xb8\\x96\\xe7\\x95\\x8c\""))))
+  (read-from-string
+   "\"\\u3053\\u3093\\u306b\\u3061\\u306f\\u3001\\u4e16\\u754c\""))
 
 (define (test-coding-aware-port num encoding)
   (when (ces-conversion-supported? (gauche-character-encoding) encoding)

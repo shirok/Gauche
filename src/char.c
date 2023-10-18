@@ -1373,9 +1373,7 @@ const ScmCharCaseMap *Scm__CharCaseMap(ScmChar ch,
 }
 
 /*
- * Case conversion API.  For the time being, CharCaseMap works on Unicode
- * codepoints, so we have to convert from/to ScmChar if the internal encoding
- * is either EUC-JP or SJIS.
+ * Case conversion API.
  */
 #define SIMPLE_CASE(code, buf, field) \
     (ScmChar)((code) + Scm__CharCaseMap((code), (buf), FALSE)->SCM_CPP_CAT3(to_, field, _simple))

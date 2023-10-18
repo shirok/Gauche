@@ -83,6 +83,12 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
 
 static ScmPromptTag defaultPromptTag; /* initialized in initVM */
 
+typedef struct ScmContinuationPromptRec {
+    ScmContFrame *bottom;
+    ScmContFrame *bottom_top;
+    struct ScmContinuationPromptRec *prev;
+} ScmContinuationPrompt;
+
 /* bitflags for ScmContFrame->marker */
 enum {
       SCM_CONT_SHIFT_MARKER = (1L<<0),

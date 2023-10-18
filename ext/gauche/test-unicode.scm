@@ -177,22 +177,21 @@
 (for-each test-utf-conv *te-samples*)
 
 ;; utf8->string and string->utf8
-(when (memq (gauche-character-encoding) '(utf-8 sjis euc-jp))
-  (let1 data '(("abc" #u8(97 98 99))
-               ("λΛ"  #u8(206 187 206 155))
-               (#f    #u8(128))
-               (#f    #u8(#xc0 01)))
-    (define (conversion-tester str bvec)
-      (test* "utf8->string" (or str
-                                (if (eq? (gauche-character-encoding) 'utf-8)
-                                  (string (ucs->char #xfffd))
-                                  (test-error)))
-             (utf8->string bvec))
-      (when str
-        (test* "string->utf8" bvec
-               (string->utf8 str))))
+(let1 data '(("abc" #u8(97 98 99))
+             ("λΛ"  #u8(206 187 206 155))
+             (#f    #u8(128))
+             (#f    #u8(#xc0 01)))
+  (define (conversion-tester str bvec)
+    (test* "utf8->string" (or str
+                              (if (eq? (gauche-character-encoding) 'utf-8)
+                                (string (ucs->char #xfffd))
+                                (test-error)))
+           (utf8->string bvec))
+    (when str
+      (test* "string->utf8" bvec
+             (string->utf8 str))))
 
-    (for-each (^d (apply conversion-tester d)) data)))
+  (for-each (^d (apply conversion-tester d)) data))
 
 ;; utf16->string
 (test* "utf16->string big-endian" "012"
@@ -289,11 +288,10 @@
  '("The" " " "quick" " " "(" "\"" "brown" "\"" ")" " "
    "fox" " " "can't" " " "jump" " " "32.3" " " "feet" "," " " "right" "?"))
 
-(when (memq (gauche-character-encoding) '(utf-8 euc-jp sjis))
-  (test-word-breaker
-   "Gauche(ゴーシュ)はR5RS準拠のScheme処理系"
-   '("Gauche" "(" "ゴーシュ" ")" "は" "R5RS" "準" "拠" "の"
-     "Scheme" "処" "理" "系")))
+(test-word-breaker
+ "Gauche(ゴーシュ)はR5RS準拠のScheme処理系"
+ '("Gauche" "(" "ゴーシュ" ")" "は" "R5RS" "準" "拠" "の"
+   "Scheme" "処" "理" "系"))
 
 (test-section "case conversion")
 
@@ -332,12 +330,10 @@
                    "You'd Sing `Hush-A-Bye'!"
                    "you'd sing `hush-a-bye'!")
 
-(when (memq (gauche-character-encoding) '(utf-8 euc-jp sjis))
-  (test-xcase-matrix "ΧΑΟΣΧΑΟΣ.ΧΑΟΣ. Σ."
-                     "χαοσχαοσ.χαος. σ."
-                     "Χαοσχαοσ.χαος. Σ."
-                     "χαοσχαοσ.χαοσ. σ.")
-  )
+(test-xcase-matrix "ΧΑΟΣΧΑΟΣ.ΧΑΟΣ. Σ."
+                   "χαοσχαοσ.χαος. σ."
+                   "Χαοσχαοσ.χαος. Σ."
+                   "χαοσχαοσ.χαοσ. σ.")
 
 ;; non round-trip mapping
 (test* "string-upcase"   "STRASSE" (string-upcase "stra\u00dfe"))

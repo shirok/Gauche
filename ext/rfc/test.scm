@@ -343,8 +343,7 @@ Content-Length: 4349
                            :line-width 30))
   )
 
-(when (and (memq (gauche-character-encoding) '(euc-jp sjis utf-8))
-           (ces-conversion-supported? "iso-2022-jp" #f))
+(when (ces-conversion-supported? "iso-2022-jp" #f)
   (test* "mime-decode-word" "\u5ddd\u5408 \u53f2\u6717"
          (mime-decode-word "=?ISO-2022-JP?B?GyRCQG45ZxsoQiAbJEI7S08vGyhC?="))
   (test* "mime-decode-text" "(\u5ddd\u5408 \u53f2\u6717)"
@@ -354,13 +353,11 @@ Content-Length: 4349
                            :charset 'iso-2022-jp))
   )
 
-;; this tests whether illegal input sequence is handled gracefully
-(when (memq (gauche-character-encoding) '(euc-jp sjis utf-8))
-  (test* "mime-decode-word" "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="
-         (mime-decode-word "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="))
-  (test* "mime-decode-text" "(=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=)"
-         (mime-decode-text "(=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=)"))
-  )
+;; these tests whether illegal input sequence is handled gracefully
+(test* "mime-decode-word" "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="
+       (mime-decode-word "=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?="))
+(test* "mime-decode-text" "(=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=)"
+       (mime-decode-text "(=?ISO-2022-JP?B?GyRCJDkbKBsoQg==?=)"))
 
 ;; NB: this assumes the test is run in-place
 (define (mime-message-tester num headers)
