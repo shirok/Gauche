@@ -1066,26 +1066,16 @@ static ScmSmallInt boyer_moore_reverse(const char *ss1, ScmSmallInt siz1,
    (*bi) and character index (*ci) is calculted, FOUND_BYTE_INDEX
    if only byte index is calculated.
 
-   When the encoding is utf-8 or none, we can scan a string as if it is just
-   a bytestring.   The only caveat is that, with utf-8, we need to calculate
-   character index after we find the match.  It is still a total win, for
-   finding out non-matches using Boyer-Moore is a lot faster than naive way.
-
-   If the encoding is EUC-JP or SJIS, we can only use Boyer-Moore when we
-   know the strings have single-byte only.  Multibyte strings of those
-   encodings can have spurious matches when compared bytewise.
+   With utf-8, we can scan a string as if it si just a bytestring.  However,
+   we need to calculate character index after we find the match.  It is still
+   a total win, for finding out non-matches using Boyer-Moore is a lot
+   faster than naive way.
  */
 
 /* return value of string_scan */
 #define NOT_FOUND 0         /* string not found */
 #define FOUND_BOTH_INDEX 1  /* string found, and both indexes are calculated */
 #define FOUND_BYTE_INDEX 2  /* string found, and only byte index is calc'd */
-
-/* TRANSIENT: Some cpp switches for other encoding support.  Will be removed.
- */
-#define FOUND_MAYBE_BOTH FOUND_BYTE_INDEX
-#define BYTEWISE_SEARCHABLE(siz, len)  TRUE
-#define MULTIBYTE_NAIVE_SEARCH_NEEDED 0
 
 /* glibc has memrchr, but we need to provide fallback anyway and
    we don't need it to be highly tuned, so we just roll our own. */
@@ -1111,49 +1101,28 @@ static int string_search(const char *s1, ScmSmallInt siz1,
         return FOUND_BOTH_INDEX;
     }
 
-    /* Single-byte case. */
-    if (BYTEWISE_SEARCHABLE(siz1, len1)) {
-        if (siz2 == 1) {
-            /* Single ASCII character search case.  This is a huge win. */
-            const char *z = memchr(s1, s2[0], siz1);
-            if (z) { *bi = *ci = z - s1; return FOUND_MAYBE_BOTH; }
-            else return NOT_FOUND;
-        }
-        if (BYTEWISE_SEARCHABLE(siz2, len2)) {
-            ScmSmallInt i;
-            /* Shortcut for single-byte strings */
-            if (siz1 < siz2) return NOT_FOUND;
-            if (siz1 < 256 || siz2 >= 256) {
-                /* brute-force search */
-                for (i=0; i<=siz1-siz2; i++) {
-                    if (memcmp(s2, s1+i, siz2) == 0) break;
-                }
-                if (i == siz1-siz2+1) return NOT_FOUND;
-            } else {
-                i = boyer_moore(s1, siz1, s2, siz2);
-                if (i < 0) return NOT_FOUND;
+    if (siz2 == 1) {
+        /* Single ASCII character search case.  This is a huge win. */
+        const char *z = memchr(s1, s2[0], siz1);
+        if (z) { *bi = *ci = z - s1; return FOUND_BYTE_INDEX; }
+        else return NOT_FOUND;
+    } else {
+        ScmSmallInt i;
+        /* Shortcut for single-byte strings */
+        if (siz1 < siz2) return NOT_FOUND;
+        if (siz1 < 256 || siz2 >= 256) {
+            /* brute-force search */
+            for (i=0; i<=siz1-siz2; i++) {
+                if (memcmp(s2, s1+i, siz2) == 0) break;
             }
-            *bi = *ci = i;
-            return FOUND_MAYBE_BOTH;
+            if (i == siz1-siz2+1) return NOT_FOUND;
+        } else {
+            i = boyer_moore(s1, siz1, s2, siz2);
+            if (i < 0) return NOT_FOUND;
         }
-        /* FALLTHROUGH */
+        *bi = *ci = i;
+        return FOUND_BYTE_INDEX;
     }
-
-#if MULTIBYTE_NAIVE_SEARCH_NEEDED
-    /* Multibyte case. */
-    if (len1 >= len2) {
-        const char *sp = s1;
-        for (ScmSmallInt i=0; i<=len1-len2; i++) {
-            if (memcmp(sp, s2, siz2) == 0) {
-                *bi = (ScmSmallInt)(sp - s1);
-                *ci = i;
-                return FOUND_BOTH_INDEX;
-            }
-            sp += SCM_CHAR_NFOLLOWS(*sp) + 1;
-        }
-    }
-#endif /*MULTIBYTE_NAIVE_SEARCH_NEEDED*/
-    return NOT_FOUND;
 }
 
 /* NB: len2 is only used in some internal CES */
@@ -1170,56 +1139,28 @@ static int string_search_reverse(const char *s1, ScmSmallInt siz1,
         return FOUND_BOTH_INDEX;
     }
 
-    /* Single-byte case. */
-    if (BYTEWISE_SEARCHABLE(siz1, len1)) {
-        if (siz2 == 1) {
-            /* Single ASCII character search case.  This is a huge win. */
-            const char *z = my_memrchr(s1, s2[0], siz1);
-            if (z) { *bi = *ci = z - s1; return FOUND_MAYBE_BOTH; }
-            else return NOT_FOUND;
-        }
-        if (BYTEWISE_SEARCHABLE(siz2, len2)) {
-            ScmSmallInt i;
-            /* short cut for single-byte strings */
-            if (siz1 < siz2) return NOT_FOUND;
-            if (siz1 < 256 || siz2 >= 256) {
-                /* brute-force search */
-                for (i=siz1-siz2; i>=0; i--) {
-                    if (memcmp(s2, s1+i, siz2) == 0) break;
-                }
-                if (i < 0) return NOT_FOUND;
-            } else {
-                i = boyer_moore_reverse(s1, siz1, s2, siz2);
-                if (i < 0) return NOT_FOUND;
+    if (siz2 == 1) {
+        /* Single ASCII character search case.  This is a huge win. */
+        const char *z = my_memrchr(s1, s2[0], siz1);
+        if (z) { *bi = *ci = z - s1; return FOUND_BYTE_INDEX; }
+        else return NOT_FOUND;
+    } else {
+        ScmSmallInt i;
+        /* short cut for single-byte strings */
+        if (siz1 < siz2) return NOT_FOUND;
+        if (siz1 < 256 || siz2 >= 256) {
+            /* brute-force search */
+            for (i=siz1-siz2; i>=0; i--) {
+                if (memcmp(s2, s1+i, siz2) == 0) break;
             }
-            *bi = *ci = i;
-            return FOUND_MAYBE_BOTH;
+            if (i < 0) return NOT_FOUND;
         } else {
-            return NOT_FOUND;   /* sbstring can't contain mbstring. */
+            i = boyer_moore_reverse(s1, siz1, s2, siz2);
+            if (i < 0) return NOT_FOUND;
         }
+        *bi = *ci = i;
+        return FOUND_BYTE_INDEX;
     }
-
-#if MULTIBYTE_NAIVE_SEARCH_NEEDED
-    /* Multibyte case. */
-    if (len1 >= len2) {
-        const char *sp = s1 + siz1, *p;
-        for (ScmSmallInt i=0; i<len2; i++) {
-            SCM_CHAR_BACKWARD(sp, s1, p);
-            SCM_ASSERT(*p);
-            sp = p;
-        }
-        for (ScmSmallInt i=len1-len2; i>=0; i--) {
-            if (memcmp(sp, s2, siz2) == 0) {
-                *bi = (ScmSmallInt)(sp - s1);
-                *ci = i;
-                return FOUND_BOTH_INDEX;
-            }
-            SCM_CHAR_BACKWARD(sp, s1, p);
-            sp = p;
-        }
-    }
-#endif /*MULTIBYTE_NAIVE_SEARCH_NEEDED*/
-    return NOT_FOUND;
 }
 
 /* Scan s2 in s1, and calculates appropriate return value(s) according to
@@ -1376,9 +1317,6 @@ ScmObj Scm_StringScanCharRight(ScmString *s1, ScmChar ch, int retmode)
 #undef NOT_FOUND
 #undef FOUND_BOTH_INDEX
 #undef FOUND_BYTE_INDEX
-#undef FOUND_MAYBE_BOTH
-#undef BYTEWISE_SEARCHABLE
-#undef MULTIBYTE_NAIVE_SEARCH_NEEDED
 
 /* Split string by char.  Char itself is not included in the result.
    If LIMIT >= 0, up to that number of matches are considered (i.e.
