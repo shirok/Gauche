@@ -5051,38 +5051,68 @@ Gaucheの@code{hash-table-num-entries}と同じです。
 @defun hash-table-walk ht proc
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 For each entry in a hash table @var{ht},
 calls @var{proc} with two arguments, a key and its value.
 It's the same as Gauche's @code{hash-table-for-each}.
+@c JP
+ハッシュテーブル@var{ht}の各エントリにつき、
+キーと値を引数として@var{proc}を呼びます。
+Gaucheの@code{hash-table-for-each}と同じです。
+@c COMMON
 @end defun
 
 @defun hash-table-merge! ht1 ht2
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 Add all entries in a hash table @var{ht2} into a hash table @var{ht1},
-and returns @var{ht1}.
+and returns @var{ht1}.  Note that @var{ht1} is destructively modified.
+If an entry with the same key exists in both @var{ht1} and @var{ht2},
+its value in @var{ht1} is replaced with @var{ht2}'s.
+@c JP
+@var{ht2}の全てのエントリを@var{ht1}に追加し、@var{ht1}を返します。
+@var{ht1}は破壊的に変更されることに注意してください。
+同じキーを持つエントリが@var{ht1}と@var{ht2}の両方にあった場合は、
+@var{ht2}の値で@var{ht1}のエントリが上書きされます。
+@c COMMON
 @end defun
 
 @defun hash obj :optional bound
 [SRFI-69]
 @c MOD srfi.69
-Like Gauche's @code{hash}, except this one can take bound argument;
+@c EN
+Like Gauche's @code{hash}, except this one can take @var{bound} argument;
 if provided, it must be a positive integer, and the return value
 is limited between 0 and @code{(- bound 1)}, inclusive.
+@c JP
+Gaucheの@code{hash}と似ていますが、省略可能な@var{bound}引数を取ります。
+@var{bound}引数は与えられるなら正の整数でなければならず、
+返される値が0から@code{(- bound 1)} (両端含む) までに制限されます。
+@c COMMON
 @end defun
 
 @defun string-hash obj :optional bound
 @defunx string-ci-hash obj :optional bound
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 These are like SRFI-13's (@pxref{String library}), except
 these don't take @var{start} and @var{end} argument.
+@c JP
+SRFI-13の同名の手続きと似ていますが、@var{start}/@var{end}引数は取りません
+(@ref{String library}参照)。
+@c COMMON
 @end defun
 
 @defun hash-by-identity obj :optional bound
 [SRFI-69]
 @c MOD srfi.69
+@c EN
 This is Gauche's @code{eq-hash}, except this one can take bound argument.
+@c JP
+@var{bound}引数を取ること以外はGaucheの@code{eq-hash}と同じです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
