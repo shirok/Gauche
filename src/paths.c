@@ -143,7 +143,7 @@ static const char *get_executable_path()
 
 static const char *get_install_dir()
 {
-    /* path is either $PREFIX\lib\gauche-$ABI\$VERSION\$ARCH or $PRFIX\lib */
+    /* path is either $PREFIX\lib\gauche-$ABI\$VERSION\$ARCH or $PREFIX\lib */
     const char *path = get_libgauche_path();
     if (path != NULL) {
         /* remove libgauche-$ABI.dll */
@@ -361,7 +361,7 @@ static const char *get_executable_path()
 
 static const char *get_install_dir()
 {
-    /* path is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH or $PRFIX/lib */
+    /* path is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH or $PREFIX/lib */
     const char *path = get_libgauche_path();
     if (path != NULL) {
         /* remove libgauche-$ABI.so */
