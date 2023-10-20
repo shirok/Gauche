@@ -508,14 +508,17 @@
       (cond-expand
        [gauche.os.windows
         ;; On windows, sys-exec (execvp) doesn't work like unix.
-        ;; So we use sys-fork-and-exec (CreateProcess) .
-        ;; It causes two gosh.exe processes though.
-        ;(let1 quoted-args (map (cut string-append "\"" <> "\"")
-        ;                       (cons (car goshes) args))
-        ;  (sys-exec (car goshes) quoted-args))           ;never return
+        ;; Notably, exit status of the exec'ed process is lost.
+        ;; So we use sys-fork-and-exec (CreateProcess) and wait for the
+        ;; child process to exit.
         (let1 pid (sys-fork-and-exec (car goshes) (cons (car goshes) args))
-          (receive (pid1 status) (sys-waitpid pid)
-            (exit (sys-wait-exit-status status)))) ; return exit code
+          (receive (_ status) (sys-waitpid pid)
+            (cond
+             [(sys-wait-exited? status)
+              (exit (sys-wait-exit-status status))] ; return exit code
+             [(sys-wait-signaled? status)
+              (sys-kill (sys-getpid) (sis-wait-termsig status))]
+             [else (exit 70)])))        ;EX_SOFTWARE
         ]
        [else
         (sys-exec (car goshes) (cons (car goshes) args)) ;never return
