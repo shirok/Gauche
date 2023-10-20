@@ -491,7 +491,11 @@
                   (string-append (gauche-architecture-directory) "/../../..")
                   :canonicalize #t)]
          [globpath (string-append prefix "/gauche-*/" version "/"
-                                  (gauche-architecture) "/gosh")]
+                                  (gauche-architecture) "/"
+                                  (cond-expand
+                                   ;; glob requires a file extension on Windows
+                                   [gauche.os.windows "gosh.exe"]
+                                   [else              "gosh"]))]
          [goshes (glob globpath)]
          ;; Remove -v option from args
          [args (let loop ([args (cdr args)]
@@ -501,7 +505,21 @@
                        [(#/^-v/ (car args)) (loop (cdr args) r)]
                        [else (loop (cdr args) (cons (car args) r))]))])
     (if (pair? goshes)
-      (sys-exec (car goshes) (cons (car goshes) args)) ;never return
+      (cond-expand
+       [gauche.os.windows
+        ;; On windows, sys-exec (execvp) doesn't work like unix.
+        ;; So we use sys-fork-and-exec (CreateProcess) .
+        ;; It causes two gosh.exe processes though.
+        ;(let1 quoted-args (map (cut string-append "\"" <> "\"")
+        ;                       (cons (car goshes) args))
+        ;  (sys-exec (car goshes) quoted-args))           ;never return
+        (let1 pid (sys-fork-and-exec (car goshes) (cons (car goshes) args))
+          (receive (pid1 status) (sys-waitpid pid)
+            (exit (sys-wait-exit-status status)))) ; return exit code
+        ]
+       [else
+        (sys-exec (car goshes) (cons (car goshes) args)) ;never return
+        ])
       prefix)))
 
 ;;;

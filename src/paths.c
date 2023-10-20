@@ -143,19 +143,46 @@ static const char *get_executable_path()
 
 static const char *get_install_dir()
 {
-    const char * path= get_libgauche_path();
-    if (path == NULL) path = get_executable_path();
-    if (path == NULL) return NULL;
+    /* path is either $PREFIX\lib\gauche-$ABI\$VERSION\$ARCH or $PRFIX\lib */
+    const char *path = get_libgauche_path();
+    if (path != NULL) {
+        /* remove libgauche-$ABI.dll */
+        char *dir = remove_components(path, 1);
+        if (dir == NULL) return NULL;
+        /* first, try $PREFIX\lib */
+        char *dir1 = remove_suffix(dir, "\\lib");
+        if (dir1 != NULL) return dir1;
+        /* now we try $PREFIX\lib\gauche-$ABI\$VERSION\$ARCH */
+        dir1 = remove_components(dir, 3);
+        if (dir1 != NULL) {
+            dir1 = remove_suffix(dir1, "\\lib");
+            if (dir1 != NULL) return dir1;
+        }
+        /* now we try $PREFIX\src for buliding */
+        dir1 = remove_suffix(dir, "\\src");
+        if (dir1 != NULL) return dir1;
+    }
 
-    /* On Windows, both libgauche.dll and gosh.exe are in $PREFIX\bin, and
-       libraries can be found under $PREFIX\lib.  So we have to skip
-       two directory separators. */
-    char *dir = remove_components(path, 1);
-    if (dir == NULL) return NULL;
-    char *dir1 = remove_suffix(dir, "\\bin");
-    if (dir1 != NULL) return dir1;
-    dir1 = remove_suffix(dir, "\\src"); /* while we're buliding */
-    if (dir1 != NULL) return dir1;
+    /* executable is in $PREFIX\lib\gauche-$ABI\$VERSION\$ARCH or $PREFIX\bin */
+    path = get_executable_path();
+    if (path != NULL) {
+        /* remove binary name */
+        char *dir = remove_components(path, 1);
+        if (dir == NULL) return NULL;
+        /* first, try $PREFIX\bin */
+        char *dir1 = remove_suffix(dir, "\\bin");
+        if (dir1 != NULL) return dir1;
+        /* now we try $PREFIX\lib\gauche-$ABI\$VERSION\$ARCH */
+        dir1 = remove_components(dir, 3);
+        if (dir1 != NULL) {
+            dir1 = remove_suffix(dir1, "\\lib");
+            if (dir1 != NULL) return dir1;
+        }
+        /* now we try $PREFIX\src for buliding */
+        dir1 = remove_suffix(dir, "\\src");
+        if (dir1 != NULL) return dir1;
+    }
+
     /* At this moment, we're probably in a statically linked binary.
        We don't need a particular path, but we need something to substitute
        '@' in the load path. */
@@ -334,19 +361,19 @@ static const char *get_executable_path()
 
 static const char *get_install_dir()
 {
-    /* path is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH or $PRFIX/lib.  */
+    /* path is either $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH or $PRFIX/lib */
     const char *path = get_libgauche_path();
     if (path != NULL) {
         /* remove libgauche-$ABI.so */
         char *dir = remove_components(path, 1);
         if (dir == NULL) return NULL;
-        /* first, try $PREFIX/lib. */
+        /* first, try $PREFIX/lib */
         char *dir1 = remove_suffix(dir, "/lib");
         if (dir1 != NULL) return dir1;
         /* now we try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
-        dir = remove_components(path, 3);
-        if (dir != NULL) {
-            dir1 = remove_suffix(dir, "/lib");
+        dir1 = remove_components(dir, 3);
+        if (dir1 != NULL) {
+            dir1 = remove_suffix(dir1, "/lib");
             if (dir1 != NULL) return dir1;
         }
     }
@@ -356,7 +383,7 @@ static const char *get_install_dir()
         /* remove binary name */
         char *dir = remove_components(path, 1);
         if (dir == NULL) return NULL;
-        /* first, try $PREFIX/bin. */
+        /* first, try $PREFIX/bin */
         char *dir1 = remove_suffix(dir, "/bin");
         if (dir1 != NULL) return dir1;
         /* now we try $PREFIX/lib/gauche-$ABI/$VERSION/$ARCH */
