@@ -8,6 +8,10 @@
 
 set -e
 
+# TRANSIENT: Disabled version specification of Gauche for build.
+# Consider to enable it after 0.9.14 release.
+MAKE_NOVERSION="make BUILD_GOSH_FLAGS="
+
 # Set MINGWDIR if MinGW is installed in different place.
 case "$MSYSTEM" in
   MINGW64)
@@ -134,7 +138,7 @@ if [ "$SKIP_CONFIG" != yes ]; then
               --with-tls=$tlslibs \
               --with-dbm=ndbm,odbm $buildopt
 fi
-make BUILD_GOSH_FLAGS=
+$MAKE_NOVERSION
 
 if [ $? -ne 0 ]; then
   echo "Build failed.  Aborting packaging."
@@ -142,9 +146,9 @@ if [ $? -ne 0 ]; then
 fi
 
 # prepare precompiled directory tree.
-make install
-(cd src; make install-mingw)
-make install-examples
+$MAKE_NOVERSION install
+(cd src; $MAKE_NOVERSION install-mingw)
+$MAKE_NOVERSION install-examples
 rm -rf $distdir/lib/libgauche.dll*
 case "$MSYSTEM" in
   MINGW64|MINGW32)
