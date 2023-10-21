@@ -5118,54 +5118,90 @@ This is Gauche's @code{eq-hash}, except this one can take bound argument.
 @c ----------------------------------------------------------------------
 @node Octet-addressed binary blocks, Lightweight testing, Basic hash tables, Library modules - SRFIs
 @section @code{srfi.74} - Octet-addressed binary blocks
+@c NODE オクテットを単位とするバイナリブロック, @code{srfi.74} - オクテットを単位とするバイナリブロック
 
 @deftp {Module} srfi.74
 @mdindex srfi.74
+@c EN
 This module provides procedures to deal with @emph{blob},
 or a sequence of octets.  In Gauche, a blob is simply an u8vector.
+@c JP
+このモジュールは、オクテットの列である@var{blob}を扱う手続きを提供します。
+Gaucheではblobは単なるu8vectorです。
+@c COMMON
 
+@c EN
 Most functionalities of this module is available
 in @code{binary.io} module (@pxref{Binary I/O}), and in fact
 this module is a thin wrapper to it.
 We provide this module for the compatibility.
 If you're writing Gauche-specific code, we recommend to use
 @code{binary.io} directly.
+@c JP
+このモジュールの機能はほとんど@code{binary.io}モジュールにあり、
+実際、@code{binary.io}の薄いラッパーとして実装されています
+(@ref{Binary I/O})。
+このモジュールは互換性のために提供されています。Gauche専用のコードを書くなら
+@code{binary.io}を直接使うのが良いでしょう。
+@c COMMON
 @end deftp
 
 @defmac endianness e
 [SRFI-74]
 @c MOD srfi.74
-The argument @var{e} must be either @code{big}, @code{little},
+@c EN
+The argument @var{e} must be one of the symbols @code{big}, @code{little},
 or @code{native}.  It expands to the implementation-specific
 endianness designator.  In Gauche, the result is one of the
 symbols; @pxref{Endianness}, for the details.
+@c JP
+@var{e}はシンボル@code{big}、@code{little}、@code{native}のいずれかでなければ
+なりません。これは、エンディアンネスを示す実装依存のオブジェクトへと展開されます。
+Gaucheではそれは単なるシンボルです。詳しくは@ref{Endianness}を参照してください。
+@c COMMON
 @end defmac
 
 @defun make-blob size
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Returns a freshly created blob that can hold @var{size} octets.
 In Gauche, this is the same as @code{(make-u8vector size)}.
+@c JP
+@var{size}オクテットの大きさを持つblobを新に作って返します。
+Gaucheではこれは@code{(make-u8vector size)}と同じです。
+@c COMMON
 @end defun
 
 @defun blob? obj
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Returns @code{#t} if @var{obj} is a blob, @code{#f} otherwise.
 In Gauche, this is the same as @code{(u8vector? obj)}.
+@c JP
+@var{obj}がblogなら@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheではこれは@code{(u8vector? obj)}と同じです。
+@c COMMON
 @end defun
 
 @defun blob-length blob
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Returns the size of the blob, in octets.  In Gauche,
 this is the same as @code{(u8vector-length blob)}.
+@c JP
+blogのオクテットで測ったサイズを返します。
+Gaucheeではこれは@code{(u8vector-length blob)}と同じです。
+@c COMMON
 @end defun
 
 @defun blob-uint-ref size endian blob pos
 @defunx blob-sint-ref size endian blob pos
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Read an unsigned or signed integer of @var{size} octets beginning
 at the position of @var{pos} from @var{blob}, respectively.
 
@@ -5174,12 +5210,24 @@ and @code{(get-sint size blob pos endian)} in @code{binary.io}
 module (@pxref{Binary I/O}), except that
 @code{blob-uint-ref}/@code{blob-sint-ref} only accept u8vector
 as @var{blob}.
+@c JP
+@var{size}オクテットからなる符号なし/符号つき整数を、@var{blob}の@var{pos}
+オクテット目から取り出します。
+
+これはそれぞれ、@code{binary.io}モジュールを使った
+@code{(get-uint size blob pos endian)}および
+@code{(get-sint size blob pos endian)}のラッパーです
+(@ref{Binary I/O})。
+ただし、@code{blob-uint-ref}/@code{blob-sint-ref}は
+@var{blob}としてu8vectorしか受け付けません。
+@c COMMON
 @end defun
 
 @defun blob-uint-set! size endian blob pos val
 @defunx blob-sint-set! size endian blob pos val
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Store an unsigned or signed integer @var{val} of @var{size} octets
 into @var{blob} starting at the position of @var{pos}, respectively.
 
@@ -5188,6 +5236,17 @@ and @code{(put-sint! size blob pos val endian)} in @code{binary.io}
 module (@pxref{Binary I/O}), except that
 @code{blob-uint-set!}/@code{blob-sint-set!} only accept u8vector
 as @var{blob}.
+@c JP
+@var{size}オクテットからなる符号なし/符号つき整数@var{val}を、
+@var{blob}の@var{pos}オクテット目から格納します。
+
+これはそれぞれ、@code{binary.io}モジュールを使った
+@code{(put-uint! size blob pos val endian)}および
+@code{(put-sint! size blob pos val endian)}のラッパーです
+(@ref{Binary I/O})。
+ただし、@code{blob-uint-set!}/@code{blob-sint-set!}は
+@var{blob}としてu8vectorしか受け付けません。
+@c COMMON
 @end defun
 
 @defun blob-u8-ref blob pos
@@ -5196,11 +5255,18 @@ as @var{blob}.
 @defunx blob-s8-set! blob pos val
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Get/set an unsigned or signed integer as a octet at @var{pos}
 from/to @var{blob}.
 
 These are wrappers of @code{get-u8}, @code{put-u8!},
 @code{get-s8} and @code{put-s8!} in @code{binary.io}, respectively.
+@c JP
+1オクテットの符号つき/符号なし整数を@var{blob}の@var{pos}位置から読み出し/に書き込みます。
+
+これらはそれぞれ、@code{binary.io}モジュールの
+@code{get-u8}、@code{put-u8!}、@code{get-s8}および@code{put-s8!}と同じです。
+@c COMMON
 @end defun
 
 @defun blob-u16-ref endian blob pos
@@ -5217,11 +5283,20 @@ These are wrappers of @code{get-u8}, @code{put-u8!},
 @defunx blob-s64-set! endian blob pos val
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Get/set an unsigned or signed integer of the indicated length
 at @var{pos} from/to @var{blob}, using the specified @var{endian}.
 
 These are wrappers of corresponding @code{get-XX} and @code{put-XX!}
 in @code{binary.io}; note that the argument orders differ, though.
+@c JP
+それぞれのサイズの符号つき/符号なし整数を
+@var{blob}の@var{pos}位置から@var{endian}のバイトオーダで読み出し/に書き込みます。
+
+これらはそれぞれ、@code{binary.io}モジュールの
+@code{get-XX}および@code{put-XX!}手続きのラッパーです。
+引数順序が異なることに注意してください。
+@c COMMON
 @end defun
 
 @defun blob-u16-native-ref blob pos
@@ -5238,22 +5313,45 @@ in @code{binary.io}; note that the argument orders differ, though.
 @defunx blob-s64-native-set! blob pos val
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Get/set an unsigned or signed integer of the indicated length
 at @var{pos} from/to @var{blob}, using the native endianness.
 
 These are wrappers of corresponding @code{get-XX} and @code{put-XX!}
 in @code{binary.io}; note that the argument orders differ, though.
+
+Note: SRFI-74 only requires these procedures to work with alined @var{pos},
+which is the multiple of the size of the integer in octets.
+Gauche doesn't have such restriction, but keep this in mind when
+you're writing a portable code.
+@c JP
+それぞれのサイズの符号つき/符号なし整数を
+@var{blob}の@var{pos}位置からネイティブバイトオーダで読み出し/に書き込みます。
+
+これらはそれぞれ、@code{binary.io}モジュールの
+@code{get-XX}および@code{put-XX!}手続きのラッパーです。
+引数順序が異なることに注意してください。
+
+註: SRFI-74は、これらの手続きは@var{pos}がアラインされている場合、
+すなわち扱う整数のオクテットでの大きさの整数倍のときだけ動作すれば良いとしています。
+Gaucheではそういう制約はありませんが、ポータブルなコードを書く場合は気をつけて下さい。
+@c COMMON
 @end defun
 
 @defun blob=? blob1 blob2
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 This is the same as @code{u8vector=?} in @code{gauche.uvector}.
+@c JP
+これは@code{gauche.uvector}の@code{u8vector=?}と同じです。
+@c COMMON
 @end defun
 
 @defun blob-copy! src sstart target tstart n
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Copy @var{n} octets from the source blob @var{src} starting from @var{sstart}
 into the target blob @var{target} starting from @var{tstart}.
 
@@ -5261,29 +5359,53 @@ Note that the order of arguments differs from other @code{*-copy!}
 procedures (e.g. R7RS's @code{string-copy!} and @code{vector-copy!},
 and @code{gauche.uvector}'s @code{u8vector-copy!})), which have the
 following signature: @code{(*-copy! target tstart src sstart send)}
+@c JP
+blobである@var{src}の@var{ssatrt}から@var{n}オクテットを、
+@var{target} blobの@var{tstart}からの位置にコピーします。
+
+引数の順序が他の@code{*-copy!}手続きと異なっているのに注意してください
+(R7RSの@code{string-copy!}、@code{vector-copy!}、および@code{gauche.uvector}の
+@code{u8vector-copy!}等は、@code{(*-copy! target tstart src sstart send)}
+という順序で引数を取ります。)
+@c COMMON
 @end defun
 
 @defun blob-copy blob
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Returns a fresh copy of @var{blob}.  The same as @code{u8vector-copy}
 in @code{gauche.uvector}.
+@c JP
+@var{blob}の新たなコピーを返します。
+@code{gauche.uvecto}の@code{u8vector-copy}と同じです。
+@c COMMON
 @end defun
 
 @defun blob->u8-list blob
 @defunx u8-list->blob list
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Wrappers of @code{u8vector->list} and @code{list->u8vector}, except
 those don't take optional start/end arguments.
+@c JP
+@code{u8vector->list}および@code{list->u8vector}のラッパーです。
+ただし、省略可能なstart/end引数は取りません。
+@c COMMON
 @end defun
 
 @defun blob->uint-list size endian blob
 @defunx blob->sint-list size endian blob
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Read a sequence of unsigned or signed integers of @var{size} octets from
 @var{blob} with @var{endian}, and returns them as a list.
+@c JP
+それぞれ@var{size}オクテットからなる、バイトオーダー@var{endian}の符号つき/符号なし
+整数を連続して@var{blob}から読み出し、リストにして返します。
+@c COMMON
 
 @example
 (blob->uint-list 3 (endianness big) '#u8(0 0 1 0 0 2 0 0 3))
@@ -5295,9 +5417,15 @@ Read a sequence of unsigned or signed integers of @var{size} octets from
 @defunx sint-list->blob size endian list
 [SRFI-74]
 @c MOD srfi.74
+@c EN
 Convert a @var{list} of unsigned or signed integers to a blob.
 The resulting blob has @code{(* size (length list))} octets.
 Each integer occupies @var{size} octets.
+@c JP
+符号なし/符号つき整数のリスト@var{list}をblobにして返します。
+作られるblobの大きさは@code{(* size (length list))}オクテットで、
+sそれぞれの整数が@var{size}オクテットを占めます。
+@c COMMON
 
 @example
 (uint-list->blob 3 (endianness little) '(1 2 3))
