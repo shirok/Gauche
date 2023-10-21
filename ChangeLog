@@ -1,5 +1,7 @@
 2023-10-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi/74.scm: Fix blob-*-set! procedures.
+
 	* lib/check-script, lib/tools/check-script: Move check-script
 	  to tools subdirectory.
 
