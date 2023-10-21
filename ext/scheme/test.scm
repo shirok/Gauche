@@ -14,7 +14,7 @@
 (use scheme.list)
 (test-module 'scheme.list)
 
-(define Apply apply)                    ;avoic inline expansion
+(define Apply apply)                    ;avoid inline expansion
 
 (test* "xcons" '(a . b) (xcons 'b 'a))
 (test* "cons*" (test-error) (Apply cons* '())) ; use apply to avoid compile error during inlining
