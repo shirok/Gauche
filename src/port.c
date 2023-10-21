@@ -270,7 +270,18 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     port->link = SCM_FALSE;
     port->internalFlags = 0;
 
-    if (type == SCM_PORT_FILE || type == SCM_PORT_PROC) {
+    /* TRANSIENT: On Windows, we use normal mutex for port's fastlock,
+       which consumes a handle and requires cleanup.  Registering a finalizer
+       for every string port puts significant overhead, so eventually
+       we'll introduce cleanup-free fastlock; then remove this #ifdef.
+     */
+    if (
+#if GAUCHE_WINDOWS
+        TRUE
+#else
+        type == SCM_PORT_FILE || type == SCM_PORT_PROC
+#endif
+        ) {
         Scm_RegisterFinalizer(SCM_OBJ(port), port_finalize, NULL);
     }
 
