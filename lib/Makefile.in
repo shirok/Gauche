@@ -154,7 +154,8 @@ SCMFILES = \
        text/console/windows.scm \
        text/segmented-match.scm text/template.scm \
        text/unicode.scm text/unicode/ucd.scm text/unicode/codeset.scm \
-       tools/build-standalone tools/genstub tools/get-cacert \
+       tools/build-standalone tools/check-script \
+       tools/genstub tools/get-cacert \
        tools/make-export-list tools/precomp tools/docprep \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
