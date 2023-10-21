@@ -8863,12 +8863,10 @@ ASCIIだけを対象とする小さなScheme実装や、ASCIIだけを対象と�
 @c COMMON
 
 @c EN
-Since Gauche supports full Unicode (if it is compiled with utf-8 internal
-encoding, which is the default), you may not need to use this module
+Since Gauche supports full Unicode, you may not need to use this module
 to write Gauche-specific code.  This is mainly for the compatibility.
 @c JP
-Gaucheは(内部エンコーディングをデフォルトのutf-8でコンパイルしていれば)
-Unicodeの全ての文字を扱えるので、Gauche用のコードを書いている時には
+GaucheはUnicodeの全ての文字を扱えるので、Gauche用のコードを書いている時には
 敢えてこのモジュールを使う必要は無いでしょう。互換性のために用意しています。
 @c COMMON
 
