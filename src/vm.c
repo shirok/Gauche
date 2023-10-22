@@ -83,11 +83,11 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_PromptTagClass,
 
 static ScmPromptTag defaultPromptTag; /* initialized in initVM */
 
-typedef struct ScmContinuationPromptRec {
+struct ScmContinuationPromptRec {
     ScmContFrame *bottom;
     ScmContFrame *bottom_top;
     struct ScmContinuationPromptRec *prev;
-} ScmContinuationPrompt;
+};
 
 /* bitflags for ScmContFrame->marker */
 enum {
@@ -346,6 +346,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
                     : NULL);
     v->codeCache = NULL;
 
+    v->currentPrompt = NULL;
     v->resetChain = SCM_NIL;
 
     Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
@@ -356,7 +357,8 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
  * Taking a snapshot of VM.
  *   Copying VM is mainly to preserve a snapshot of VM for analysis.
  *   Note that internal states of some system construct (e.g. mutex) aren't
- *   be copied, so it is not
+ *   be copied, so it is mainly for diagnostics; do not count on the
+ *   copied VM to run independently from the original.
  */
 
 ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
@@ -452,6 +454,7 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
     v->codeCache = NULL;        /* We might need to copy this as well
                                    if we want to debug JIT code cache */
 
+    v->currentPrompt = master->currentPrompt;
     v->resetChain = master->resetChain;
     /* NB: We don't register the finalizer vm_finalize to the snapshot,
        for we do not want the associated system resources to be cleaned

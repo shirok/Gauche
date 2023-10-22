@@ -261,6 +261,8 @@ SCM_CLASS_DECL(Scm_PromptTagClass);
 SCM_EXTERN ScmObj Scm_MakePromptTag(ScmObj name);
 SCM_EXTERN ScmObj Scm_DefaultPromptTag();
 
+typedef struct ScmContinuationPromptRec ScmContinuationPrompt;
+
 /*
  * Identifier
  *
@@ -570,6 +572,7 @@ struct ScmVMRec {
     ScmCodeCache *codeCache;
 
     /* for reset/shift */
+    ScmContinuationPrompt *currentPrompt;
     ScmObj resetChain;          /* list of reset information,
                                    where reset information is
                                    (delimited . <dynamic handlers chain>).
