@@ -14649,7 +14649,7 @@ macros, @code{define-optionals} and @code{define-optionals*}.
 @end deftp
 
 @defmac opt-labmda opt-formals body @dots{}
-@defmacx opt*-labmda opt-formals body @dots{}
+@defmacx opt*-lambda opt-formals body @dots{}
 [SRFI-227]
 @c MOD srfi.227
 @c EN
