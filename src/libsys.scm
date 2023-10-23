@@ -457,7 +457,8 @@
 ;;---------------------------------------------------------------------
 ;; stdlib.h
 
-(define-cproc sys-exit (code::<fixnum>) ::<void> _exit)
+(define-cproc sys-exit (code) ::<void>
+  (_exit (Scm_ObjToExitCode code)))
 
 (define-cproc sys-getenv (name::<const-cstring>) ::<const-cstring>? Scm_GetEnv)
 

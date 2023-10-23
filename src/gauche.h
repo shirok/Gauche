@@ -1704,6 +1704,7 @@ SCM_EXTERN void Scm_Init(const char *signature);
 SCM_EXTERN int  Scm_InitializedP(void);
 SCM_EXTERN void Scm_Cleanup(void);
 SCM_EXTERN void Scm_Exit(int code) SCM_NORETURN;
+SCM_EXTERN int  Scm_ObjToExitCode(ScmObj obj);
 SCM_EXTERN void Scm_Abort(const char *msg) SCM_NORETURN;
 SCM_EXTERN void Scm_Panic(const char *msg, ...) SCM_NORETURN;
 

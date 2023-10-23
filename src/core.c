@@ -446,6 +446,19 @@ void Scm_Cleanup(void)
     Scm_FlushAllPorts(TRUE);
 }
 
+int Scm_ObjToExitCode(ScmObj obj)
+{
+    if (SCM_EQ(obj, SCM_TRUE)) {
+        return 0;
+    } else if (SCM_INTP(obj)) {
+        return SCM_INT_VALUE(obj) & 0xff;
+    } else if (SCM_INTEGERP(obj)) {
+        return Scm_GetInteger(Scm_LogAnd(obj, SCM_MAKE_INT(0xff)));
+    } else {
+        return 70;              /* EX_SOFTWARE */
+    }
+}
+
 void Scm_Panic(const char *msg, ...)
 {
     va_list args;
