@@ -28294,9 +28294,10 @@ The unclosed output buffered ports are flushed.
 
 @item
 @c EN
-The process exits with @var{code} as an exit code, via @code{exit(3)}.
+The process exits with an integer derived from @var{code}
+as an exit code, via @code{exit(3)}.
 @c JP
-@code{exit(3)}を呼び、プロセスは@var{code}を終了コードとして終了します。
+@code{exit(3)}を呼び、プロセスは@var{code}から導出される整数値を終了コードとして終了します。
 @c COMMON
 @end enumerate
 
@@ -28395,31 +28396,38 @@ Gaucheではうまくいきませんでした。大きな理由のひとつは�
 @c COMMON
 @end defun
 
-@defun exit-handler :optional new-handler
+@deffn {Parameter} exit-handler
 @c EN
-When called without argument, returns the value of the current exit
-handler.  When called with an argument, sets @var{new-handler} as the
-value of the exit handler, and returns the previous value of the
-exit handler.    @var{new-handler} must be a procedure that takes
-three arguments, or @code{#f}.
+A parameter that holds an exit handler, a procedure to be called
+when @code{exit} is called.  It takes three arguments,
+the exit code, the format string and the list of arguments for the format
+string.  See @code{exit} above for the details.
 
-The value of exit handler is thread-specific, and the default value
-is inherited from the value of the current exit handler of the parent
-thread.  @code{exit-handler} can be used as if it's a parameter
-in the @code{parameterize} macro (@pxref{Parameters}).
+Its value can also be @code{#f}, in that case, no handler will
+be called.
+
+The default handler shows the formatted message to
+the standard error port.
+
+If the handler raises an error, it is captured and discarded.
+If the handler raises other conditions, it won't be captured
+and propagate to outer controls.
 @c JP
-引数なしで呼ばれた場合、現在のexit handlerの値を返します。
-引数つきで呼ばれた場合は、@var{new-handler}を現在のexit handlerの
-値とし、以前の値を返します。@var{new-handler}は3つの引数をとる
-手続きか、@code{#f}でなければなりません。
+@code{exit}が呼ばれた時に呼び出されるexit handlerを保持するパラメータです。
+exit handlerは、終了コード、フォーマット文字列、フォーマット文字列の引数のリスト、
+の3つの引数を取る手続きです。上の@code{exit}の項を参照してください。
 
-exit handlerの値はスレッドごとに固有で、デフォルト値はスレッドが作られた時点の
-親スレッドのexit handlerの値から引き継がれます。
-@code{exit-handler}はあたかもパラメータのように@code{parameterize}マクロで
-使うことができます (@ref{Parameters}参照)。
+exit handlerの値は@code{#f}にすることもできます。
+その場合はハンドラは呼ばれません。
+
+デフォルトのハンドラは、与えられた引数でフォーマットした文字列を
+標準エラー出力に出します。
+
+ハンドラがエラーを投げた場合、それは補足され無視されます。
+エラー以外のコンディションを投げた場合は補足されないので、
+外側の制御機構に処理が任されます。
 @c COMMON
-@end defun
-
+@end deffn
 
 @defun sys-exit code
 [POSIX]
