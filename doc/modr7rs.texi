@@ -1686,7 +1686,7 @@ R7RSでは具体的な終了コードの値は示されておらず、ただ@cod
 @code{#f}を終了コード1に対応させています。ポータブルなコードでは真偽値のみを渡してください。
 これ以外の@var{code}の意味については、@code{exit}のエントリを参照してください。
 (@ref{Program termination})。
-!@c COMMON
+@c COMMON
 @end defun
 
 @node R7RS read, R7RS repl, R7RS process context, R7RS small language
