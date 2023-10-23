@@ -457,7 +457,7 @@
   (import r7rs.aux)
   (export command-line emergency-exit exit
           get-environment-variable get-environment-variables)
-  (define (emergency-exit :optional (code 0)) (sys-exit code))
+  (define (emergency-exit :optional (code #t)) (sys-exit code))
   (define get-environment-variable  sys-getenv)
   (define get-environment-variables sys-environ->alist)
   (provide "scheme/process-context"))

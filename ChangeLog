@@ -3,6 +3,9 @@
 	* src/core.c (Scm_ObjToExitCode): Consolidate exit code translation
 	  to be shared between 'exit', 'sys-exit', and 'emergency-exit'.
 	  https://github.com/shirok/Gauche/issues/947
+	* src/libeval.scm (exit), lib/r7rs-setup.scm (emergency-exit),
+	  src/libsys.scm (sys-exit): Allow to take #f as code, which
+	  is mapped to exit code 1.
 
 2023-10-21  Shiro Kawai  <shiro@acm.org>
 

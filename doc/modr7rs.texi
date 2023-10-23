@@ -1351,17 +1351,15 @@ R7RSの@code{(scheme eval)}ライブラリの束縛をエクスポートしま�
 R7RSプログラムからは、エクスポートされた束縛は
 @code{(import (scheme eval))}とすることで使えます。
 @c COMMON
-@end deftp
 
-@defun eval expr environment
-[R7RS eval]
-@c MOD scheme.eval
 @c EN
-This is the same as Gauche's built-in @code{eval} (@pxref{Eval and repl}).
+This module exports @code{eval}, which is the same as Gauche's built-in
+(@pxref{Eval and repl}).
 @c JP
-Gauche組み込みの@code{eval}と同じです (@ref{Eval and repl}参照)。
+このモジュールは@code{eval}をエクスポートします。これはGauche組み込みのevalと
+同じです(@ref{Eval and repl}参照)。
 @c COMMON
-@end defun
+@end deftp
 
 @defun environment import-list @dots{}
 [R7RS eval]
@@ -1662,31 +1660,33 @@ The following bindings are the same as SRFI-98
 get-environment-variable get-environment-variables
 @end example
 
-@defun emergency-exit :optional (obj 0)
+@defun emergency-exit :optional (obj #t)
 [R7RS process-context]
 @c MOD scheme.process-context
 @c EN
 Terminate the program without running any clean-up procedures
 (@var{after} thunks of @code{dynamic-wind}).    I/O buffers won't
 be flushed.
-Internally,
-it calls the @code{_exit(2)} system call directly.
-The optional argument is used for the process exit code.
-When omitted, 0 is assumed.
+Internally, it calls the @code{_exit(2)} system call directly.
 
-This is almost the same
-as Gauche's @code{sys-exit}, except that @code{sys-exit} requires
-the exit code argument (@pxref{Program termination}).
+The optional argument is used for the process exit code.  R7RS
+does not specify the meaning of exit code except that @code{#t} indicates
+success and @code{#f} indicates failure.  Portable code should only
+use these values.  Gauche maps @code{#t} to exit code 0 and @code{#f}
+to exit code 1.  For other values, see the entry of @code{exit}
+(@pxref{Program termination}).
 @c JP
 クリーンアップ手続きを飛ばしてプログラムを直ちに終了させます
 (@code{dynamic-wind}によって設定された@var{after}サンクは実行されません)。
 内部的には、@code{_exit(2)}システムコールを直接呼んでいます。
-省略可能引数はプロセスの終了コードを指定します。省略された場合は0になります。
 
-この手続きはGaucheの@code{sys-exit}とほぼ同じですが、
-@code{sys-exit}の方は終了コード引数が必須です
-(@ref{Program termination}参照)。
-@c COMMON
+省略可能引数はプロセスの終了コードを指定します。
+R7RSでは具体的な終了コードの値は示されておらず、ただ@code{#t}が「成功」を、
+@code{#f}が「失敗」を意味するとされています。Gaucheでは@code{#t}を終了コード0に、
+@code{#f}を終了コード1に対応させています。ポータブルなコードでは真偽値のみを渡してください。
+これ以外の@var{code}の意味については、@code{exit}のエントリを参照してください。
+(@ref{Program termination})。
+!@c COMMON
 @end defun
 
 @node R7RS read, R7RS repl, R7RS process context, R7RS small language

@@ -28203,14 +28203,31 @@ Gaucheは(@code{main}から返る以外に)自分自身を終了させる方法�
 [R7RS+]
 @c EN
 Terminates the current process with the exit code @var{code}.
-@var{Code} must be zero or positive exact integer.
+The optional @var{code} argument specifies the exit status; @code{#t}
+indicates a success (exit code 0),
+@code{#f} indicates a failure (exit code 1),
+and an exact integer specifies other exit code (only the lower 8 bits are
+used).  Any other values of @var{code} makes the exit code to be
+70 (@code{EX_SOFTWARE}.
+Note that R7RS does not specify how @var{code} is translated to OS's
+exit status, except that @code{#t} indicates a success and @code{#f}
+indicates a failure.  Portable code should only pass @code{#t} or @code{#f}.
+
 When a string is given to @var{fmtstr}, it is passed to
 @code{format} (@pxref{Output}), with the rest arguments @var{args},
 to produce a message to the standard error port
 (@emph{not} the current error port; see @ref{Common port operations}).
 @c JP
 現在のプロセスを終了し、@var{code}を終了コードにします。
-@var{code}はゼロもしくは正の正確な整数でなければなりません。
+@var{code}が@code{#t}なら成功を意味し、終了コードは0に、
+@var{code}が@code{#f}なら失敗を意味し、終了コードは1に、
+そして正確な整数の場合はその下位8bitが終了コードとして使われます。
+@var{code}がそれ以外のオブジェクトの場合は、
+終了コードは70 (@code{EX_SOFTWARE})になります。
+(R7RSでは、@code{code}は@code{#t}の時正常終了、@code{#f}のとき異常終了を示す
+ということ以外に、具体的にOSレベルのどういった値になるかは規定していません。
+ポータブルなコードでは@code{#t}か@code{#f}のみを使うのが良いでしょう。)
+
 @var{fmtstr}文字列が与えられた場合、それは残りの引数@var{args}と
 ともに@code{format}に渡され、standard error portにメッセージとして
 印字されます (@code{current-error-port}ではありません。
@@ -28404,17 +28421,27 @@ exit handlerの値はスレッドごとに固有で、デフォルト値はス�
 @end defun
 
 
-
 @defun sys-exit code
 [POSIX]
 @c EN
 Terminates the current process with the exit code @var{code}.
-@var{Code} must be zero or positive exact integer.
+If @var{code} is @code{#t}, the exit code is 0;
+if it is @code{#f}, the exit code is 1;
+if it is an exact integer, its lower 8 bits is used for the
+exit code.  If @var{code} is any other value,
+exit code is 70 (@code{EX_SOFTWARE}).
+(This is the same as @code{exit}).
+
 This procedure calls @code{_exit(2)} directly.
 No cleanup is done.  Unflushed file output is discarded.
 @c JP
 現在のプロセスを終了し、@var{code}を終了コードにします。
-@var{code}はゼロもしくは正の正確な整数でなければなりません。
+@var{code}が@code{#t}なら終了コードは0、
+@code{#f}なら終了コードは1、
+そして正確な整数の場合は下位8bitが終了コードとして使われます。
+それ以外の値では終了コードは70 (@code{EX_SOFTWARE})になります。
+(@code{exit}と同じです)。
+
 この手続きは@code{_exit(2)}を直接コールします。
 クリーンアップは一切行われません。
 フラッシュされてないファイルバッファの内容は捨てられます。
