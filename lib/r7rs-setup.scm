@@ -429,8 +429,10 @@
           open-binary-input-file open-binary-output-file
           open-input-file open-output-file
           with-input-from-file with-output-to-file)
-  (define open-binary-input-file open-input-file)
-  (define open-binary-output-file open-output-file)
+  (define (open-binary-input-file filename)
+    (open-input-file filename :element-type :binary))
+  (define (open-binary-output-file filename)
+    (open-output-file filename :element-type :binary))
   (define+ delete-file file.util)
   (provide "scheme/file"))
 

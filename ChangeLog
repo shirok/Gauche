@@ -1,3 +1,9 @@
+2023-10-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/r7rs-setup.scm (open-binary-*-file): Even though Gauche
+	  doesn't distinguish textual and binary ports, opening file as
+	  binary may have an observable difference on Windows ('binary' mode).
+
 2023-10-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_ObjToExitCode): Consolidate exit code translation
