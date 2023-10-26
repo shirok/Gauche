@@ -10090,7 +10090,7 @@ This is an alias of @code{rxmatch-substrings}
 
 @node R7RS mappings, R7RS integer division, R7RS regular expressions, R7RS large
 @subsection @code{scheme.mapping} - R7RS mappings
-@c NODE R7RSマップ, @code{scheme.mapping} - R7RSマップ
+@c NODE R7RSマップ, @code{scheme.mapping} - R7RSマッピング
 
 @deftp {Module} scheme.mapping
 @deftpx {Module} scheme.mapping.hash
@@ -10268,59 +10268,104 @@ to their character codes:
 @defun mapping/ordered comparator key value @dots{}
 [R7RS mapping]
 @c MOD scheme.mapping
-Similar to @code{mapping}, but keys are given in the ascending order
+@c EN
+A mapping constructor similar to @code{mapping},
+but keys are given in the ascending order
 w.r.t. the comparator.  An implementation may use more efficient algorithm
 than @code{mapping}.  In Gauche, this is the same as @code{mapping}
 at this moment.
+@c JP
+@code{mapping}と同様のコンストラクタですが、
+キーが@var{comparator}の基準で昇順になっていることを呼び出し側が保証します。
+実装によってはその事実を利用して@code{mapping}よりも効率的なアルゴリズムを
+使うかもしれません。Gaucheeでゃこれは今のところ@code{mapping}と同じです。
+@c COMMON
 @end defun
 
 @defun mapping-unfold/ordered p f g seed comparator
 [R7RS mapping]
 @c MOD scheme.mapping
-Similar to @code{mapping-unfold}, but keys are generated in the
-ascending order
+@c EN
+A mapping constructor similar to @code{mapping-unfold},
+ but keys are generated in the ascending order
 w.r.t. the comparator.  An implementation may use more efficient algorithm
 than @code{mapping-unfold}.
 In Gauche, this is the same as @code{mapping-unfold} at this moment.
+@c JP
+@code{mapping-unfold}と同様のコンストラクタですが、
+キーが@var{comparator}の基準で昇順になっていることを呼び出し側が保証します。
+実装によってはその事実を利用して@code{mapping-unfold}よりも効率的なアルゴリズムを
+使うかもしれません。Gaucheeでゃこれは今のところ@code{mapping-unfold}と同じです。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Predicates
+@c JP
+@subsubheading 述語
+@c COMMON
 
 @defun mapping? obj
 [R7RS mapping]
 @c MOD scheme.mapping
-Returns @code{#t} iff @var{obj} is a mapping object.
+@c EN
+Returns @code{#t} if @var{obj} is a mapping object, @code{#f} otherwise.
+@c JP
+@var{obj}がマッピングなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun mapping-empty? m
 [R7RS mapping]
 @c MOD scheme.mapping
-@var{M} must be a mapping.
+@c EN
+The argument must be a mapping.
 Returns @code{#t} if @var{m} is empty, @code{#f} otherwise.
 In Gauche, this is same as @code{tree-map-empty?}
 (@pxref{Treemaps}).
+@c JP
+引数はマッピングでなければなりません。
+@var{m}が空なら@code{#t}を、そうでなければ@code{#f}を返します。
+Gaucheではこれは@code{tree-map-empty?}と同じです
+(@ref{Treemaps}参照)。
+@c COMMON
 @end defun
 
 @defun mapping-contains? m key
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 @var{M} must be a mapping.
 Returns @code{#t} if @var{m} has an entry with @var{key},
 @code{#f} otherwise.
 In Gauche, this is same as @code{tree-map-exists?}
 (@pxref{Treemaps}).
+@c JP
+@var{m}はマッピングでなければなりません。
+@var{m}中に@var{key}をキーとするエントリをがあれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+Gaucheではこれは@code{tree-map-exists?}と同じです
+(@ref{Treemaps}参照)。
+@c COMMON
 @end defun
 
 @defun mapping-disjoint? m1 m2
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Returns @code{#t} iff two mappings @var{m1} and @var{m2} have no keys
-in common.  In other words, there's no such key K that
-satisfy both @code{(mapping-contains? m1 K)} and
-@code{(mapping-contains? m2 K)}.
+in common, @code{#f} otherwise.
+@c JP
+二つのマッピング@var{m1}と@var{m2}の間に共通するキーがなければ@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Accessors
+@c JP
+@subsubheading アクセサ
+@c COMMON
 
 @defun mapping-ref m key :optional failure success
 [R7RS mapping]
@@ -10907,6 +10952,7 @@ how the state of the passed hashmap is.
 @defunx hashmap-adjoin! m arg @dots{}
 [R7RS mapping]
 @c MOD scheme.mapping.hash
+
 @end defun
 
 @defun hashmap-set m arg @dots{}
