@@ -10370,57 +10370,110 @@ in common, @code{#f} otherwise.
 @defun mapping-ref m key :optional failure success
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Get the value from a mapping @var{m} associated with @var{key},
 and calls @var{success} on the value, and returns its result.
 If @var{m} doesn't have @var{key}, @var{failure} is invoked with no
 arguments and its result is returned.
 Both @var{success} and @var{failure} is called in tail context.
+@c JP
+マッピング@var{m}からキー@var{key}を持つエントリを探し、その値が見つかれば
+それを引数として@var{success}を呼び、その結果を返します。
+@var{key}を持つエントリが見つからなかった場合は@var{failure}が引数無しで呼ばれ、
+その結果が返ります。
+@var{success}と@var{failure}はどちらも末尾位置で呼ばれます。
+@c COMMON
 
+@c EN
 When @var{failure} is omitted and @var{key} is not found, an error
 is signaled.  When @var{success} is omitted, @code{identity} is
 assumed.
+@c JP
+@var{failure}が省略された場合、キーが見つからなければエラーが投げられます。
+@var{success}が省略された場合は@code{identity}が使われます。
+@c COMMON
 @end defun
 
 @defun mapping-ref/default m key default
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Returns the value associated to @var{key} from a mapping @var{m}.
 If @var{m} doesn't have @var{key}, @var{default} is returned.
+@c JP
+マッピング@var{m}からキー@var{key}を持つエントリを探し、見つかればその値を、
+見つからなければ@var{default}を返します。
+@c COMMON
 @end defun
 
 @defun mapping-key-comparator m
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Returns a comparator used to compare keys in a mapping @var{m}.
 @xref{Basic comparators}, for the details of comparators.
+@c JP
+マッピング@var{m}がキーの比較に使う比較器を返します。
+比較器については@ref{Basic comparators}を参照してください。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Updaters
+@c JP
+@subsubheading 更新
+@c COMMON
 
+@c EN
 Note that the basic premise of mappings srfi is to treat mappings
 as immutable.  Each updating operation comes with a purely functional
 version (without bang) and a linear update version (with bang), but
-the linear update version may not require to destructively modiy
+the linear update version may not require to destructively modify
 the passed mapping; it's merely a hint that it may reuse the
 argument for the efficiency.  You always need to use the returned
 mapping as the result of update.  If you use linear update versions,
 you shouldn't use the passed mapping afterwards, for there's no guarantee
 how the state of the passed mapping is.
+@c JP
+マッピングSRFIの前提は変更不可なデータ構造です。
+更新操作には、純粋に関数的なもの(エクスクラメーションマークがついていないもの)と、
+線形更新版(エクスクラメーションマークがついているもの)がありますが、
+線形更新版も必ずしも引数のマッピングを破壊的変更するとは限りません。
+線形更新版を使うことは、呼び出し側で引数に渡したマッピングを二度と使わない(から再利用してよい)
+ということを伝えるヒントにすぎません。
+線形更新版を使うときでも、常に戻り値を使うようにしてください。
+線形更新版に渡したマッピングは、その後どういう状態になっているか一切の保証がないので、
+そのマッピングを使わないようにしてください。
+@c COMMON
 
 @defun mapping-adjoin m arg @dots{}
 @defunx mapping-adjoin! m arg @dots{}
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 The @var{arg} @dots{} are alternating between key and value.  Returns
 a mapping that contains all the entries in @var{m} plus given
 keys and values, with the same comparator as @var{m}.
 Linear update version @code{mapping-adjoin!} may destructively modify
 @var{m} to create the return value, while @code{mapping-adjoin}
 creates a new mapping.
+@c JP
+@var{arg} @dots{}はキーと値が交互に並んだリストです。マッピング@var{m}に、
+@var{arg} @dots{}で与えられるキー-値のエントリを追加したマッピングを返します。
+線形更新版の@code{mapping-adjoin!}は戻り値を作るのに@var{m}を再利用するかもしれません。
+@var{mapping-adjoin}は常に新たなマッピングを作って返します。
+@c COMMON
 
+@c EN
 Arguments are processed in order.
 If there's already an entry in @var{m} with the same key as given to
 @var{arg}, the original entry remains.
+See @code{mapping-set} below if you want to supersede the original entry.
+@c JP
+引数は現れる順番に処理されます。もし与えられたキーを持つエントリが@var{m}に既にあったなら、
+元のエントリが残されます。与えたキーの方を優先させたい場合は
+下の@code{mapping-set}を見てください。
+@c COMMON
 
 @example
 (mapping-adjoin (mapping default-comparator 'a 1 'b 2) 'c 3 'a 4 'c 5)
@@ -10432,16 +10485,30 @@ If there's already an entry in @var{m} with the same key as given to
 @defunx mapping-set! m arg @dots{}
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 The @var{arg} @dots{} are alternating between key and value.  Returns
 a mapping that contains all the entries in @var{m} plus given
 keys and values, with the same comparator as @var{m}.
 Linear update version @code{mapping-set!} may destructively modify
 @var{m} to create the return value, while @code{mapping-set}
 creates a new mapping.
+@c JP
+@var{arg} @dots{}はキーと値が交互に並んだリストです。マッピング@var{m}に、
+@var{arg} @dots{}で与えられるキー-値のエントリを追加したマッピングを返します。
+線形更新版の@code{mapping-set!}は戻り値を作るのに@var{m}を再利用するかもしれません。
+@var{mapping-set}は常に新たなマッピングを作って返します。
+@c COMMON
 
+@c EN
 Arguments are processed in order.
 If there's already an entry in @var{m} with the same key as given to
 @var{arg}, the new key-value pair supersedes the old one.
+See @code{mapping-adjoin} above if you want to preserve the old entry.
+@c JP
+引数は現れる順番に処理されます。もし与えられたキーを持つエントリが@var{m}に既にあったなら、
+新たに与えた値で置き換えられます。元の値の方を優先させたい場合は
+上の@code{mapping-adjoin}を見てください。
+@c COMMON
 
 @example
 (mapping-set (mapping default-comparator 'a 1 'b 2) 'c 3 'a 4 'c 5)
@@ -10453,6 +10520,7 @@ If there's already an entry in @var{m} with the same key as given to
 @defunx mapping-replace! m key value
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 If the mapping @var{m} has an entry of @var{key}, return a mapping
 with the value of the entry replaced for @var{value}.  If @var{m} doesn't
 have an entry with @var{key}, @var{m} is returned unchanged.
@@ -10460,6 +10528,14 @@ have an entry with @var{key}, @var{m} is returned unchanged.
 Linear update version @code{mapping-replace!} may destructively modify
 @var{m} to produce the return value, while @code{mapping-replace}
 creates a new mapping.
+@c JP
+マッピング@var{m}に@var{key}を持つエントリがある場合、その値を@var{value}に
+置き換えたマッピングを返します。@var{m}が@var{key}を持っていなかったら@var{m}を
+そのまま返します。
+
+線形更新版の@code{mapping-replace!}は戻り値を作るのに@var{m}を再利用するかもしれません。
+@var{mapping-replace}は常に新たなマッピングを作って返します。
+@c COMMON
 
 @example
 (mapping-replace (mapping default-comparator 'a 1 'b 2) 'a 3)
@@ -10475,6 +10551,7 @@ creates a new mapping.
 @defunx mapping-delete! m key @dots{}
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Returns a mapping that is the same as @var{m} except its entries with
 any of the given @var{key} @dots{} being removed.  Keys that are
 not in @var{m} are ignored.
@@ -10482,12 +10559,20 @@ not in @var{m} are ignored.
 Linear update version @code{mapping-delete!} may destructively modify
 @var{m} to produce the return value, while @code{mapping-delete}
 creates a new mapping.
+@c JP
+マッピング@var{m}から、@var{key} @dots{}のいずれかのキーを持つエントリをすべて
+取り除いたマッピングを返します。@var{m}の中に無いキーは無視されます。
+
+線形更新版の@code{mapping-delete!}は戻り値を作るのに@var{m}を再利用するかもしれません。
+@var{mapping-delete}は常に新たなマッピングを作って返します。
+@c COMMON
 @end defun
 
 @defun mapping-delete-all m key-list
 @defunx mapping-delete-all! m key-list
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Returns a mapping that is the same as @var{m} except its entries with
 any of the given keys in @var{key-list} being removed.  Keys that are
 not in @var{m} are ignored.
@@ -10495,6 +10580,13 @@ not in @var{m} are ignored.
 Linear update version @code{mapping-delete-all!} may destructively modify
 @var{m} to produce the return value, while @code{mapping-delete-all}
 creates a new mapping.
+@c JP
+マッピング@var{m}から、@var{key-list}に含まれるキーを持つエントリを
+取り除いたマッピングを返します。@var{m}の中に無いキーは無視されます。
+
+線形更新版の@code{mapping-delete-all!}は戻り値を作るのに@var{m}を再利用するかもしれません。
+@var{mapping-delete-all}は常に新たなマッピングを作って返します。
+@c COMMON
 @end defun
 
 
@@ -10502,16 +10594,29 @@ creates a new mapping.
 @defunx mapping-intern! m key make-value
 [R7RS mapping]
 @c MOD scheme.mapping
+@c EN
 Looks up @var{key} in the mapping @var{m}, and returns two values,
 @var{m} and the associated value.  If @var{m} does not contain an entry
 with @var{key}, a thunk @var{make-value} is invoked, and creates a new
 mapping that contains all entries in @var{m} plus a new entry with
 @var{key} and the return value of @var{make-value}, then returns the
 new mapping and the return value of @var{make-value}.
+@c JP
+マッピング@var{m}からキー@var{key}を持つエントリを探します。
+見つかった場合は、@var{m}自身とエントリの値を返します。
+見つからなかった場合、サンク@var{make-value}が引数無しで呼ばれ、
+@var{key}をキー、@var{make-value}の結果を値とするエントリを@var{m}に追加した
+マッピングと、@var{make-value}の結果が返されます。
+@c COMMON
 
+@c EN
 Linear update version @code{mapping-intern!} may destructively modify
 @var{m} to produce the return value, while @code{mapping-intern}
 creates a new mapping.
+@c JP
+線形更新版の@code{mapping-intern!}は戻り値を作るのに@var{m}を再利用するかもしれません。
+@var{mapping-intern}は常に新たなマッピングを作って返します。
+@c COMMON
 
 @example
 (mapping-intern (mapping default-comparator 'a 1) 'b (^[] 2))
