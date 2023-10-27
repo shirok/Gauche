@@ -814,13 +814,19 @@ static ScmBignum *bignum_mul_si(const ScmBignum *bx, long y)
         br->sign = -br->sign;
         return br;
     }
-    /* TODO: optimize for 2^n case !*/
     ScmBignum *br;
     br = make_bignum(bx->size + 1); /* TODO: more accurate estimation */
-    u_long yabs = (y<0)? -y:y;
-    br->sign = bx->sign;
-    bignum_mul_word(br, bx, yabs, 0);
-    if (y<0) br->sign = -br->sign;
+    if (y & (y-1)) {
+        /* general case */
+        u_long yabs = (y<0)? -y:y;
+        br->sign = bx->sign;
+        bignum_mul_word(br, bx, yabs, 0);
+        if (y<0) br->sign = -br->sign;
+    } else {
+        /* fast path when y is a power of two (note that y != 0). */
+        int n = Scm__LowestBitNumber((u_long)y);
+        bignum_lshift(br, bx, n);
+    }
     return br;
 }
 

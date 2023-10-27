@@ -1488,6 +1488,17 @@
   (test* "0.0 * bignum"  0.0 (Apply * `(0.0 ,big)) eqv?)
   (test* "bignum * 1.0"  1.0e20 (Apply * `(,big 1.0)) eqv?)
   (test* "1.0 * bignum"  1.0e20 (Apply * `(1.0 ,big)) eqv?)
+
+  ;; 2^n shortcut
+  (dotimes [n 64]
+    (test* (format "bignum * 2^~a" n)
+           (ash big n)
+           (Apply * `(,big ,(expt 2 n)))
+           eqv?)
+    (test* (format "2^~a & bignum" n)
+           (ash big n)
+           (Apply * `(,(expt 2 n) ,big))
+           eqv?))
   )
 
 (test* "ratnum * 0"  0 (Apply * '(1/2 0)) eqv?)
