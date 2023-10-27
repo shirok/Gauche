@@ -2961,6 +2961,38 @@ int Scm__WinMutexLock(HANDLE mutex)
     else return 1;              /* TODO: proper error handling */
 }
 
+/* Windows fast lock */
+#if defined(HAVE_STDATOMIC_H)
+int Scm__WinFastLockInit(ScmInternalFastlock *spin)
+{
+    (spin->lock_state) = ATOMIC_VAR_INIT(0);
+    return 0;
+}
+
+int Scm__WinFastLockLock(ScmInternalFastlock *spin)
+{
+    while (atomic_exchange_explicit(&(spin->lock_state), 1, memory_order_acquire)) {
+        while (atomic_load_explicit(&(spin->lock_state), memory_order_relaxed)) {
+            /* it might be slow */
+            Sleep(0);
+        }
+    }
+    return 0;
+}
+
+int Scm__WinFastLockUnlock(ScmInternalFastlock *spin)
+{
+    atomic_store_explicit(&(spin->lock_state), 0, memory_order_release);
+    return 0;
+}
+
+int Scm__WinFastLockDestroy(ScmInternalFastlock *spin)
+{
+    (void)spin; /* suppress unused var warning */
+    return 0;
+}
+#endif /* HAVE_STDATOMIC_H */
+
 /* Win32 conditional variable emulation.
    Native condition variable support is only available on Windows Vista
    and later.  We don't want to drop XP support (yet), so we avoid using

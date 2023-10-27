@@ -145,12 +145,31 @@ SCM_EXTERN void Scm__InternalCondDestroy(ScmInternalCond *cond);
 #undef ScmTimeSpecRec
 #endif /*defined(__MINGW64_VERSION_MAJOR)*/
 
+/* Windows fast lock */
+#if defined(HAVE_STDATOMIC_H)
+#include <stdatomic.h>
+typedef volatile struct {
+    atomic_int lock_state;
+    int dummy;             /* padding */
+} win_spinlock_t;
+typedef win_spinlock_t ScmInternalFastlock;
+#define SCM_INTERNAL_FASTLOCK_INIT(spin)    Scm__WinFastLockInit(&(spin))
+#define SCM_INTERNAL_FASTLOCK_LOCK(spin)    Scm__WinFastLockLock(&(spin))
+#define SCM_INTERNAL_FASTLOCK_UNLOCK(spin)  Scm__WinFastLockUnlock(&(spin))
+#define SCM_INTERNAL_FASTLOCK_DESTROY(spin) Scm__WinFastLockDestroy(&(spin))
+#define SCM_INTERNAL_FASTLOCK_FINALIZATION_NOT_REQUIRED
+SCM_EXTERN int Scm__WinFastLockInit(ScmInternalFastlock *spin);
+SCM_EXTERN int Scm__WinFastLockLock(ScmInternalFastlock *spin);
+SCM_EXTERN int Scm__WinFastLockUnlock(ScmInternalFastlock *spin);
+SCM_EXTERN int Scm__WinFastLockDestroy(ScmInternalFastlock *spin);
+#else  /* !HAVE_STDATOMIC_H */
 /* We don't provide fast lock */
 typedef HANDLE ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_INIT(fl)   SCM_INTERNAL_MUTEX_INIT(fl)
 #define SCM_INTERNAL_FASTLOCK_LOCK(fl)   SCM_INTERNAL_MUTEX_LOCK(fl)
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl) SCM_INTERNAL_MUTEX_UNLOCK(fl)
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
+#endif /* !HAVE_STDATOMIC_H */
 
 /* Issues a full memory barrier */
 #if 0        /* MinGW doesn't seem to have MemoryBarrier() */

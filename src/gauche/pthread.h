@@ -117,7 +117,9 @@ typedef pthread_spinlock_t ScmInternalFastlock;
     pthread_spin_unlock(&(spin))
 #define SCM_INTERNAL_FASTLOCK_DESTROY(spin) \
     pthread_spin_destroy(&(spin))
+#define SCM_INTERNAL_FASTLOCK_FINALIZATION_NOT_REQUIRED
 #else  /*!HAVE_PTHREAD_SPINLOCK_T*/
+/* We don't provide fast lock */
 typedef pthread_mutex_t ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_INIT(fl)   SCM_INTERNAL_MUTEX_INIT(fl)
 #define SCM_INTERNAL_FASTLOCK_LOCK(fl)   SCM_INTERNAL_MUTEX_LOCK(fl)
