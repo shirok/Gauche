@@ -10678,12 +10678,38 @@ creates a new mapping.
 @defunx mapping-update!/default m key updater default
 [R7RS mapping]
 @c MOD scheme.mapping
+Search mapping @var{m} for a key @var{key}.  If the entry is found,
+call @var{updater} with its value, and returns a mapping
+in which the entry with @var{key} having the result of @var{updater}
+as a value.  If the entry with @var{key} is not found in @var{m},
+call @var{updater} with @var{default}, and returns a mapping
+in which the entry with @var{key} and the result of @var{updater}
+is added. Semantically, it is the same as the following:
+
+@example
+(mapping-set m key (updater (mapping-ref/default m key default)))
+@end example
+
+Linear update version @code{mapping-update/default!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-update/default}
+creates a new mapping.
 @end defun
 
 @defun mapping-pop m :optional failure
 @defunx mapping-pop! m :optional failure
 [R7RS mapping]
 @c MOD scheme.mapping
+Choose the least key from a mapping @var{m} and returns
+three values, (1) a mapping that has the same content as @var{m}
+except the entry with the chosen key, (2) the chosen key,
+and (3) the value associated with the chosen key.
+If @var{m} is empty, @var{failure} is called with no arguments
+in the tail context and its result(s) are returned.
+If @var{failure} is omitted, an error is signalled when @var{m} is empty.
+
+Linear update version @code{mapping-update/pop!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-update/pop}
+creates a new mapping.
 @end defun
 
 @defun mapping-search m k failure success
