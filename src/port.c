@@ -255,6 +255,7 @@ static ScmPort *make_port(ScmClass *klass, ScmObj name, int dir, int type)
     (void)SCM_INTERNAL_FASTLOCK_INIT(port->lock);
     port->lockOwner = NULL;
     port->lockCount = 0;
+    (void)SCM_INTERNAL_FASTLOCK_INIT(port->attrlock);
     port->writeState = NULL;
     port->line = 1;
     port->bytes = 0;

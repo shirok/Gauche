@@ -2973,19 +2973,23 @@ int Scm__WinFastLockInit(ScmInternalFastlock *spin)
 
 int Scm__WinFastLockLock(ScmInternalFastlock spin)
 {
-    SCM_ASSERT(spin != NULL);
-    ScmAtomicVar idle = 0;
-    while (!AO_compare_and_swap_full(&spin->lock_state, idle, 1)) {
-        /* it might be slow */
-        Sleep(0);
+    /* spin may be NULL when FASTLOCK_LOCK is called on already-closed port. */
+    if (spin != NULL) {
+        ScmAtomicVar idle = 0;
+        while (!AO_compare_and_swap_full(&spin->lock_state, idle, 1)) {
+            /* it might be slow */
+            Sleep(0);
+        }
     }
     return 0;
 }
 
 int Scm__WinFastLockUnlock(ScmInternalFastlock spin)
 {
-    SCM_ASSERT(spin != NULL);
-    AO_store_full(&spin->lock_state, 0);
+    /* spin may be NULL when FASTLOCK_LOCK is called on already-closed port. */
+    if (spin != NULL) {
+        AO_store_full(&spin->lock_state, 0);
+    }
     return 0;
 }
 
