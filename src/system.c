@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/priv/bignumP.h"
 #include "gauche/priv/builtin-syms.h"
+#include "gauche/priv/fastlockP.h"
 
 #include <locale.h>
 #include <errno.h>
@@ -2962,36 +2963,37 @@ int Scm__WinMutexLock(HANDLE mutex)
 }
 
 /* Windows fast lock */
-#if defined(HAVE_STDATOMIC_H)
+
 int Scm__WinFastLockInit(ScmInternalFastlock *spin)
 {
-    (spin->lock_state) = ATOMIC_VAR_INIT(0);
+    *spin = SCM_NEW(struct win_spinlock_rec);
+    AO_store(&(*spin)->lock_state, 0);
     return 0;
 }
 
-int Scm__WinFastLockLock(ScmInternalFastlock *spin)
+int Scm__WinFastLockLock(ScmInternalFastlock spin)
 {
-    while (atomic_exchange_explicit(&(spin->lock_state), 1, memory_order_acquire)) {
-        while (atomic_load_explicit(&(spin->lock_state), memory_order_relaxed)) {
-            /* it might be slow */
-            Sleep(0);
-        }
+    SCM_ASSERT(spin != NULL);
+    ScmAtomicVar idle = 0;
+    while (!AO_compare_and_swap_full(&spin->lock_state, idle, 1)) {
+        /* it might be slow */
+        Sleep(0);
     }
     return 0;
 }
 
-int Scm__WinFastLockUnlock(ScmInternalFastlock *spin)
+int Scm__WinFastLockUnlock(ScmInternalFastlock spin)
 {
-    atomic_store_explicit(&(spin->lock_state), 0, memory_order_release);
+    SCM_ASSERT(spin != NULL);
+    AO_store_full(&spin->lock_state, 0);
     return 0;
 }
 
 int Scm__WinFastLockDestroy(ScmInternalFastlock *spin)
 {
-    (void)spin; /* suppress unused var warning */
+    *spin = NULL;
     return 0;
 }
-#endif /* HAVE_STDATOMIC_H */
 
 /* Win32 conditional variable emulation.
    Native condition variable support is only available on Windows Vista
