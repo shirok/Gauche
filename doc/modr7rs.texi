@@ -10716,53 +10716,141 @@ creates a new mapping.
 @defunx mapping-search! m k failure success
 [R7RS mapping]
 @c MOD scheme.mapping
+Search the key @var{k} from the mapping @var{m}.  If the entry is
+found, the @var{success} procedure is tail-called as
+@code{(success @var{key} @var{value} @var{update} @var{remove})},
+where @var{key} and @var{value} are from the found entry, and
+@var{update} and @var{remove} are procedures as explained below.
+If no entry is found, the @var{failure} procedure is tail-called
+as @code{(failure @var{insert} @var{ignore})}, where
+the arguments are procedures as explained below.
+
+The @var{success} procedure is expected to tail-call either @var{update}
+or @var{remove} procedures:
+
+The @var{update} procedure passed to @var{success} takes
+takes three arguments, @var{new-key}, @var{new-value}, and @var{retval}.
+It creates a mapping which is the same as @var{m} except the original
+key's entry is removed, but a new entry with @var{new-key} and
+@var{new-value} is adjoined.
+Then it returns the new mapping and @var{retval}.
+
+The @var{remove} procedure assed to @var{success} takes
+one argument, @var{retval}, and it creates a mapping which is
+the same as @var{m} except the searched entry is removed,
+and returns the new mapping and @var{retval}.
+
+The @var{failure} procedure is expected to tail-call either
+@var{insert} or @var{ignore} procedures:
+
+The @var{insert} procedure passed to @var{failure} takes
+two arguments, @var{value} and @var{retval}.  It creates
+a new mapping that has all the entires of @var{m} and
+a new entry with @var{k} and @var{value}, and returns
+the new mapping and @var{retval}.
+
+The @var{ignore} procedure takes one argument, @var{retval},
+and returns the original mapping @var{m} and @var{retval}.
+
+Linear update version @code{mapping-search!} may destructively modify
+@var{m} to produce the return value, while @code{mapping-search}
+creates a new mapping.
 @end defun
 
+@c EN
 @subsubheading The whole mapping
+@c JP
+@subsubheading マッピング全体
+@c COMMON
 
 @defun mapping-size m
 [R7RS mapping]
 @c MOD scheme.mapping
+Returns the number of entries in the mapping @var{m}.
 @end defun
 
 @defun mapping-find pred m failure
 [R7RS mapping]
 @c MOD scheme.mapping
+For each key in the mapping @var{m} in increasing order,
+calls @var{pred} with the key and the associated value.
+If @var{pred} returns a true value, immediately returns that key and the value
+as two values.  If no entry satisfy @var{pred}, a thunk
+@var{failure} is tail-called.
 @end defun
 
 @defun mapping-count pred m
 [R7RS mapping]
 @c MOD scheme.mapping
+For each key in the mapping @var{m} in increasing order,
+calls @var{pred} with the key and the associated value.
+Returns the number of times when @var{pred} returned a true value.
 @end defun
 
 @defun mapping-any? pred m
-@defunx mapping-every? pred m
 [R7RS mapping]
 @c MOD scheme.mapping
+Returns @code{#t} if any entry of the mapping @var{m}
+of which @var{pred} returns a true value with its key and its value.
+If no entries satisfy @var{pred}, @code{#f} is returned.
+@end defun
+
+@defun mapping-every? pred m
+[R7RS mapping]
+@c MOD scheme.mapping
+Returns @code{#t} if every entry of the mapping @var{m}
+of which @var{pred} returns a true value with its key and its value.
+If any entry does not satisfy @var{pred}, @code{#f} is returned.
 @end defun
 
 @defun mapping-keys m
 @defunx mapping-values m
 [R7RS mapping]
 @c MOD scheme.mapping
+Returns a fresh list of keys and values of the mapping @var{m},
+in the increasing order of keys.
 @end defun
 
 @defun mapping-entries m
 [R7RS mapping]
 @c MOD scheme.mapping
+Returns two values, a fresh list of keys and a fresh list of values in the
+mapping @var{m}, in the increasing order of keys.
 @end defun
 
+@c EN
 @subsubheading Mapping and folding
+@c JP
+@subsubheading マップと畳み込み
+@c COMMON
 
 @defun mapping-map proc comparator m
 [R7RS mapping]
 @c MOD scheme.mapping
+The @var{proc} argument is a procedure that takes two arguments,
+a key and a value, and returns two values, a new key and a new value.
+This procedure applies @var{proc} on each key-value in a mapping @var{m},
+and returns a new mapping that uses @var{comparator} for its key
+comparator and contains all the new keys and values returned by @var{proc}.
+
+If @var{proc} returns duplicate keys with regard to @var{comparator},
+one of the key-value associations enters the result mapping.
+There's no rule for which one is chosen.
 @end defun
 
 @defun mapping-map/monotone proc comparator m
 @defunx mapping-map/monotone! proc comparator m
 [R7RS mapping]
 @c MOD scheme.mapping
+Similar to @var{mapping-map}, except that the caller guarantees
+the order of keys returned from @var{proc} w.r.t. @var{comparator}
+preserves the order of keys in @var{m}.  The resulting new mapping
+is the same, but the impementation may take advantage of the knowledge
+for efficiency.  In the current Gauche,
+@code{mapping-map/monotone} is the same as @code{mapping-map}.
+
+The linear update version @code{mapping-map/monotone!} may reuse
+@var{m} to produce the output.
 @end defun
 
 @defun mapping-for-each proc m
