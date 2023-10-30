@@ -2977,6 +2977,8 @@ int Scm__WinFastLockLock(ScmInternalFastlock spin)
     if (spin != NULL) {
         ScmAtomicVar idle = 0;
         while (!AO_compare_and_swap_full(&spin->lock_state, idle, 1)) {
+            /* idle might be changed */
+            idle = 0;
             /* it might be slow */
             Sleep(0);
         }
