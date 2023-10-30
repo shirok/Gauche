@@ -5,7 +5,7 @@ BUILD_GOSH_VERSION=0.9.13  # Host Gauche version required to build from scratch
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AC_CONFIG_HEADERS([src/gauche/config.h])
+AC_CONFIG_HEADERS([src/gauche/config.h src/gauche/priv/configP.h])
 AC_CONFIG_MACRO_DIRS([m4])
 
 # ABI_VERSION is set to major.minor of Gauche version by default.

@@ -191,9 +191,9 @@ GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
 PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 		  gauche/priv/arith_x86_64.h gauche/priv/bignumP.h \
 		  gauche/priv/builtin-syms.h gauche/priv/codeP.h \
-		  gauche/priv/classP.h gauche/priv/dispatchP.h \
-		  gauche/priv/dws_adapter.h gauche/priv/fastlockP.h \
-		  gauche/priv/glocP.h \
+		  gauche/priv/classP.h gauche/priv/configP.h \
+		  gauche/priv/dispatchP.h gauche/priv/dws_adapter.h \
+		  gauche/priv/fastlockP.h gauche/priv/glocP.h \
 		  gauche/priv/identifierP.h \
 		  gauche/priv/macroP.h gauche/priv/memoP.h \
 		  gauche/priv/moduleP.h gauche/priv/mmapP.h \
@@ -545,7 +545,7 @@ PREGENERATED = compile.c autoloads.c builtin-syms.c \
 	       librx.c libstr.c libsrfis.c libsym.c libsys.c libthr.c \
 	       libtype.c libvec.c libomega.c libextra.c
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
-		   features.c features.flags
+		   gauche/priv/configP.h features.c features.flags
 
 clean :
 	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
