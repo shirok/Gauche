@@ -35,7 +35,9 @@
           append! concatenate! reverse!
           append-reverse append-reverse!
           zip unzip1 unzip2 unzip3 unzip4 unzip5 count
-          map for-each fold unfold pair-fold reduce fold-right unfold-right
+          ;; See https://github.com/shirok/Gauche/issues/957
+          ;;   map for-each
+          fold unfold pair-fold reduce fold-right unfold-right
           pair-fold-right reduce-right append-map append-map!
           map! pair-for-each filter-map map-in-order
           filter partition remove filter! partition! remove!
