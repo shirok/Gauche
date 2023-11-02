@@ -8141,6 +8141,10 @@ Gauche's @code{sys-rename}.
 [SRFI-170]
 @c MOD srfi.170
 Gauche's @code{sys-rmdir}.  The directory must be empty.
+
+To remove directory that may not be empty,
+you can use @code{delete-directory*}
+in @code{file.util} (@pxref{Directory utilities}).
 @end defun
 
 @defun set-file-owner fname uid gid
