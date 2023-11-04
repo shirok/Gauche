@@ -11307,8 +11307,8 @@ directory.
 @end defun
 
 
-@defun remove-directory* name
-@defunx delete-directory* name
+@defun remove-directory* name :key if-does-not-exist
+@defunx delete-directory* name :key if-does-not-exist
 @c MOD file.util
 @c EN
 Deletes directory @var{name} and its content recursively
@@ -11317,6 +11317,18 @@ followed.
 @c JP
 ディレクトリ@var{name}とその内容を再帰的に消去します
 (Unixの@code{rm -r}コマンドと同様です)。シンボリックリンクは辿られません。
+@c COMMON
+
+@c EN
+The keyword argument @var{if-does-not-exist} must be either
+@code{:error} (default) or @code{#f}.  If it is @code{:error},
+an error is signaled if @var{name} does not exist.
+If it is @code{#f}, the procedure just returns in such a case.
+@c JP
+キーワード引数@var{if-does-not-exist}は、@code{:error} (デフォルト) か
+@code{#f} でなければなりません。
+@code{:error}の場合、@var{name}が存在しなければエラーが投げられます。
+@code{#f}の場合、@var{name}が存在しなければ手続きは何もせずに返ります。
 @c COMMON
 @end defun
 
