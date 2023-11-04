@@ -1,3 +1,8 @@
+2023-11-03  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (remove-directory*): Add :if-does-not-exit
+	  argument
+
 2023-10-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm__WinFastLockLock): Fast lock implementation for

@@ -229,15 +229,24 @@
 (define create-directory* make-directory*)
 
 ;; rm -rf
-(define (remove-directory* dir)
+(define (remove-directory* dir :key (if-does-not-exist :error))
   (define (rec d)
     (receive (dirs files)
         (directory-list2 d :add-path? #t :children? #t :follow-link? #f)
       (for-each rec dirs)
       (for-each sys-rmdir dirs)
       (for-each sys-unlink files)))
-  (rec dir)
-  (sys-rmdir dir))
+  (case if-does-not-exist
+    [(:error #f)]
+    [else (error ":if-does-not-exist must be either :error or #f, bot got:"
+                 if-does-not-exist)])
+  (if (file-exists? dir)
+    (if (file-is-directory? dir)
+      (begin (rec dir) (sys-rmdir dir) #t)
+      (error "Not a directory:" dir))
+    (if if-does-not-exist
+      (error "No such directory:" dir)
+      #f)))
 
 (define delete-directory* remove-directory*)
 
