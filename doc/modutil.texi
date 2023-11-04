@@ -11330,6 +11330,14 @@ If it is @code{#f}, the procedure just returns in such a case.
 @code{:error}の場合、@var{name}が存在しなければエラーが投げられます。
 @code{#f}の場合、@var{name}が存在しなければ手続きは何もせずに返ります。
 @c COMMON
+
+@c EN
+An error is thrown when @var{name} exists but is not a directory.
+You can use @code{remove-files} to remove both files and directories.
+@c JP
+@var{name}が存在し、ディレクトリでない場合はエラーが投げられます。
+ディレクトリでもファイルでも削除したい場合は@code{remove-files}が使えます。
+@c COMMON
 @end defun
 
 @defun copy-directory* src dst :key if-exists backup-suffix safe keep-timestamp keep-mode follow-link?
