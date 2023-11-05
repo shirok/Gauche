@@ -21545,7 +21545,7 @@ loop over a list of expected result and test thunks.
 @c COMMON
 
 
-@defmac test* name expected expr :optional check hook
+@defmac test* name expected expr :optional check report hook
 @c MOD gauche.test
 @c EN
 A convenience macro that wraps @var{expr} by lambda.
@@ -21554,8 +21554,8 @@ A convenience macro that wraps @var{expr} by lambda.
 @c COMMON
 
 @example
-(test* name expected expr)
-  @equiv{} (test name expected (lambda () expr))
+(test* name expected expr opt ...)
+  @equiv{} (test name expected (lambda () expr) opt ...)
 @end example
 @end defmac
 
