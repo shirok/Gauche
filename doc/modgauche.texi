@@ -22727,7 +22727,7 @@ might be able to use cooperative thread technique built
 on top of @code{call/cc}.   Creating call/cc-based threads
 is much faster than creating native threads.
 @c JP
-単に同時実行が必要なだけなら、@code{call/cc}による協調スレッド
+単に並行実行が必要なだけなら、@code{call/cc}による協調スレッド
 テクニックが使えるでしょう。call/ccベースのスレッドの生成は、
 ネイティブスレッドを生成するよりも高速です。
 @c COMMON
