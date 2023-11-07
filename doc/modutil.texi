@@ -3528,9 +3528,9 @@ The actual logic is in @code{cache-through!}, which first consults the
 cache if it has an entry for the @code{path}.  If the cache has
 the entry, its value (the file content) is returned.  If not,
 it calls @code{file->string} with the @var{path} to fetch the file content,
-register it to the cache, and return it.  The capacity of cache is
+register it to the cache, and return it.  The capacity of the cache is
 set to 10 (the first argument of @code{make-lru-cache}), so when the
-11th file is read, the least recently used file will be purged from the
+11th file is read, the least recently used file will be evicted from the
 cache.
 @c JP
 この手続きは@code{file-cache}変数をクロージャの中に綴じ込んでいます。
@@ -3547,7 +3547,7 @@ cache.
 @c COMMON
 
 @c EN
-The effect of cache isn't very visible in the above example.  You
+The effect of the cache isn't very visible in the above example.  You
 can insert some print stubs to see the cache is actually in action,
 as the following example.
 Try read various files using @code{file->string/cached}.
