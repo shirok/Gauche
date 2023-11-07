@@ -21,6 +21,7 @@
         [("htmls" input makeinfo version) (do-htmls input makeinfo version)]
         [("pdf" input makeinfo)           (do-pdf input makeinfo)]
         [("dvi" input makeinfo)           (do-dvi input makeinfo)]
+        [("epub" input makeinfo)          (do-epub input makeinfo)]
         [_ (usage)])
     0 1))
 
@@ -32,6 +33,7 @@
   (print "  htmls input MAKEINFO VERSION-STRING - generate html files in subdir")
   (print "  pdf input MAKEINFO                  - generate pdf")
   (print "  dvi input MAKEINFO                  - generate dvi")
+  (print "  epub input MAKEINFO                 - generate ePub")
   #f)
 
 (define (make-cmd cmd-list)
@@ -163,3 +165,6 @@
       (sys-putenv "TEX=dviluatex"))]
    [else])
   (do-process (make-cmd `(,makeinfo "--dvi" "--Xopt" "--tidy" ,input))))
+
+(define (do-epub input makeinfo)
+  (do-process (make-cmd `(,makeinfo "--epub3" ,input))))
