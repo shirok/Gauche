@@ -89,7 +89,7 @@
  *   - We don't need to allocate to construct the list of applicable
  *     methods.
  *
- *  Note that if the entry has at least one non-leaf methods, we have to
+ *  Note that if the entry has at least one non-leaf method, we have to
  *  fall back to the normal path, since there may be other applicable
  *  methods that might be called via next-method.  To cut the overhead
  *  of checking, we keep the list of leaf methods and the one of non-leaf
@@ -117,7 +117,7 @@
 struct ScmMethodDispatcherRec {
     int axis;                    /* Which argument we look at?
                                     This is immutable. */
-    ScmAtomicVar methodHash;	 /* mhash.  In case mhash is extended,
+    ScmAtomicVar methodHash;     /* mhash.  In case mhash is extended,
                                     we atomically swap reference. */
 };
 
@@ -131,7 +131,7 @@ typedef struct mhash_entry_rec {
 typedef struct mhash_rec {
     int size;                   /* # of bins.  power of 2. */
     int num_entries;            /* # of active entries.  */
-    ScmAtomicVar bins[1];	/* Table.  Each entry may have one of:
+    ScmAtomicVar bins[1];       /* Table.  Each entry may have one of:
                                      0 - free
                                      1 - deleted
                                      mhash_entry
