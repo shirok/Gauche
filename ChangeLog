@@ -1,5 +1,10 @@
 2023-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* src/module.c (Scm__InitModule): Remove obsoleted code to create
+	  built-in srfi modules.  Now it is done in auto-generated libsrfi.scm
+	  so they're no longer needed, but had been harmless until we switch
+	  srfi-N to srfi.N naming convention.
+
 	* lib/slib.scm (slib:features): Exclude srfi-0 from slib:features
 	  to prevent slib initializer to load all available srfis, especially
 	  srfi.29.  It is mentioned in the comment immediately above, but

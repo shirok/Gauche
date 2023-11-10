@@ -993,20 +993,6 @@ extern void Scm__InitCurrentRecursiveHash();
 
 void Scm__InitModule(void)
 {
-    /* List of builtin modules.  We create these so that 'use' or r7rs 'import'
-       won't try to search the file.
-       The modules listed here are marked "provided" at the startup, so it can
-       no longer be loaded by 'use' or 'require'.  Don't list modules that
-       needs to be loaded.
-    */
-    static const char *builtin_modules[] = {
-        "srfi-2", "srfi-6", "srfi-8", "srfi-10", "srfi-16", "srfi-17",
-        "srfi-22", "srfi-23", "srfi-28", "srfi-34",
-        "srfi-35", "srfi-36", "srfi-38", "srfi-45", "srfi-61",
-        "srfi-62", "srfi-87", "srfi-95", "srfi-111",
-        NULL };
-    const char **modname;
-
     (void)SCM_INTERNAL_MUTEX_INIT(modules.mutex);
     modules.table = SCM_HASH_TABLE(Scm_MakeHashTableSimple(SCM_HASH_EQ, 64));
 
@@ -1036,11 +1022,6 @@ void Scm__InitModule(void)
 
     bootstrapModule = Scm_MakeModule(SCM_SYMBOL(SCM_INTERN("gauche.bootstrap")),
                                      FALSE);
-
-    /* create predefined moudles */
-    for (modname = builtin_modules; *modname; modname++) {
-        (void)SCM_FIND_MODULE(*modname, SCM_FIND_MODULE_CREATE);
-    }
 
     /* Bind %current-recursive-hash.  It can't be done in Scm__InitHash, for
        it needs symbol and module to be initialized. */
