@@ -2986,6 +2986,17 @@
   )
 
 ;;-----------------------------------------------------------------------
+;; Control Features
+
+(test-section "SRFI-226")
+
+(define-module srfi-226-tests
+  (use gauche.test)
+  (use srfi.226)
+  (test-module 'srfi.226)
+  )
+
+;;-----------------------------------------------------------------------
 ;; Optional arguments
 (test-section "SRFI-227")
 
@@ -3076,17 +3087,6 @@
   (test* "define-optionals* 2" '(10 20 2 6)   (g 10 20))
   (test* "define-optionals* 3" '(10 20 30 6)  (g 10 20 30))
   (test* "define-optionals* 4" '(10 20 30 40) (g 10 20 30 40))
-  )
-
-;;-----------------------------------------------------------------------
-;; Control Features
-
-(test-section "SRFI-226")
-
-(define-module srfi-228-tests
-  (use gauche.test)
-  (use srfi.226)
-  (test-module 'srfi.226)
   )
 
 ;;-----------------------------------------------------------------------
