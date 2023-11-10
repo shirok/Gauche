@@ -2986,6 +2986,17 @@
   )
 
 ;;-----------------------------------------------------------------------
+;; Dictionaries
+
+(test-section "SRFI-225")
+
+(define-module srfi-225-tests
+  (use gauche.test)
+  (use srfi.225)
+  (test-module 'srfi.225)
+  )
+
+;;-----------------------------------------------------------------------
 ;; Control Features
 
 (test-section "SRFI-226")

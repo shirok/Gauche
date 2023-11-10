@@ -45,13 +45,13 @@
           dict->alist dict-for-each dict->generator
           dict-set!-accumulator dict-adjoin!-accumulator
 
-          dto? make-dto dto-ref make-alist-dto
+          dto? make-dto dto-ref ; make-alist-dto
 
           dictionary-error dictionary-error?
           dictionary-message dictionary-irritants
 
           dictionary?-id dict-find-update!-id dict-comaprator-id
-          dict-map-id dict-pure?id dict-remove-id dict-size-id dict->alist-id
+          dict-map-id dict-pure?-id dict-remove-id dict-size-id dict->alist-id
           dict-adjoin!-accumulator-id dict-adjoin!-id dict-any-id
           dict-contains?-id dict-count-id dict-delete-all!-id dict-delete!-id
           dict-empty?-id dict-entries-id dict-every-id dict-filter-id
@@ -61,19 +61,21 @@
           dict-set!-accumulator-id dict-set!-id dict-update!-id
           dict-update/default!-id dict-values-id dict=?-id dict->generator-id
 
-          srrfi-69-dto hash-table-dto srfi-126-dto
-          mapping-dto hash-mapping-dto
-          eqv-alist-dto equal-alist-dto))
+          ;; srrfi-69-dto hash-table-dto srfi-126-dto
+          ;; mapping-dto hash-mapping-dto
+          ;; eqv-alist-dto equal-alist-dto
+          ))
 (select-module srfi.225)
 
 (define-syntax define-proc-ids
   (syntax-rules ()
-    [(_ id ...)
+    [(_ *proc-ids* id ...)
      (begin
        (define-constant id 'id) ...
        (define-constant *proc-ids* '(id ...)))]))
 
 (define-proc-ids
+  *proc-ids*
   dictionary?-id dict-find-update!-id dict-comaprator-id
   dict-map-id dict-pure?-id dict-remove-id dict-size-id dict->alist-id
   dict-adjoin!-accumulator-id dict-adjoin!-id dict-any-id
@@ -146,6 +148,25 @@
          (loop rest (cons* proc (make-keyword proc-id) r))]))))
 
 ;; API
+(define (dto? obj) (is-a? obj <dto>))
+
+;; API
+(define (dto-ref dto proc-id)
+  (assume-type dto <dto>)
+  ;; TODO: If proc-id is invalid, we may issue better error message
+  (slot-ref dto proc-id))
+
+;; make-alist-dto
+
+(define-condition-type <dictionary-error> <error>
+  dictionary-error?
+  (message dictionary-message)
+  (irritants dictionary-irritants))
+
+(define (dictionary-error message . irritants)
+  (make <dictionary-error> :message message :irritants irritants))
+
+;; API
 (define (dictionary? dto obj)
   (assume-type dto <dto>)
   ((~ dto'dictionary?-id) obj))
@@ -157,26 +178,68 @@
       (errorf "Argument is not a supposed dictionary (~a): ~s" name dict)
       (errorf "Argument is not a supposed dictionary: ~s" dict))))
 
-;; API
-(define (dict-empty? dto dict)
-  (assume-type dto <dto>)
-  (assume-dict dto dict)
-  ((~ dto 'dict-empty?-id) dict))
+(define-syntax define-dict-op
+  (er-macro-transformer
+   (^[f r c]
+     (define (collect-assumptions argspecs)
+       (filter-map (match-lambda
+                     [(arg ':dict) (quasirename r `(assume-dict dto ,arg))]
+                     [(arg type) (quasirename r `(assume-type ,arg ,type))]
+                     [_ #f])
+                   argspecs))
+     (define (collect-args argspecs)
+       (map (match-lambda
+              [(arg _) arg]
+              [arg arg])
+            argspecs))
+     (match f
+       [(_ name argspec ...)
+        (let ([assumptions (collect-assumptions argspec)]
+              [args (collect-args argspec)]
+              [id (symbol-append name '-id)])
+          (quasirename r
+            `(define (,name dto ,@args)
+               (assume-type dto <dto>)
+               ,@assumptions
+               ((~ dto ',id) ,@args))))]
+       [_ (error "Malformed define-dict-op:" f)]))))
 
-;; API
-(define (dict-contains? dto dict key)
-  (assume-type dto <dto>)
-  (assume-dict dto dict)
-  ((~ dto 'dict-contains?-id) dict key))
+;; Generic APIs
+(define-dict-op dict-empty? (dict :dict))
+(define-dict-op dict-contains? (dict :dict) key)
+(define-dict-op dict=? eq (dict1 :dict) (dict2 :dict))
+(define-dict-op dict-pure? (dict :dict))
 
-;; API
-(define (dict=? dto dict1 dict2)
-  (assume-type dto <dto>)
-  (assume-dict dto dict1)
-  (assume-dict dto dict2)
-  ((~ dto 'dict=?-id) dict1 dict2))
+(define-dict-op dict-ref (dict :dict) key :optional failure success)
+(define-dict-op dict-ref/default (dict :dict) key default)
+(define-dict-op dict-comparator (dict :dict))
 
-;; API
-(define (dict-pure? dti dict)
-  (assume-type dto <dto>)
-  ((~ dti 'dict-pure?-id) dict))
+(define-dict-op dict-set! (dict :dict) :rest objs)
+(define-dict-op dict-adjoin! (dict :dict) :rest objs)
+(define-dict-op dict-delete! (dict :dict) :rest keys)
+(define-dict-op dict-delete-all! (dict :dict) keylist)
+(define-dict-op dict-replace! (dict :dict) key value)
+(define-dict-op dict-intern! (dict :dict) key failure)
+(define-dict-op dict-update! (dict :dict) key updater :optional failure success)
+(define-dict-op dict-update/default! (dict :dict) key updater default)
+(define-dict-op dict-pop! (dict :dict))
+(define-dict-op dict-find-update! (dict :dict) key failure success)
+
+(define-dict-op dict-map proc (dict :dict))
+(define-dict-op dict-filter pred (dict :dict))
+(define-dict-op dict-remove pred (dict :dict))
+
+(define-dict-op dict-size (dict :dict))
+(define-dict-op dict-count pred (dict :dict))
+(define-dict-op dict-any pred (dict :dict))
+(define-dict-op dict-every pred (dict :dict))
+(define-dict-op dict-keys (dict :dict))
+(define-dict-op dict-values (dict :dict))
+(define-dict-op dict-entries (dict :dict))
+(define-dict-op dict-map->list proc (dict :dict))
+(define-dict-op dict->alist (dict :dict))
+
+(define-dict-op dict-for-each proc (dict :dict) :optional start end)
+(define-dict-op dict->generator (dict :dict) :optional start end)
+(define-dict-op dict-set!-accumulator (dict :dict))
+(define-dict-op dict-adjoin!-accumulator (dict :dict))
