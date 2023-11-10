@@ -1,3 +1,11 @@
+2023-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/slib.scm (slib:features): Exclude srfi-0 from slib:features
+	  to prevent slib initializer to load all available srfis, especially
+	  srfi.29.  It is mentioned in the comment immediately above, but
+	  I seem to have reverted the change when I updated slib.scm based
+	  on a newer template. https://github.com/shirok/Gauche/issues/960
+
 2023-11-03  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (remove-directory*): Add :if-does-not-exit

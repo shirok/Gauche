@@ -201,10 +201,10 @@
 
     ;; Other common features
 
-    ;; NB: we turned off srfi here, since if this is on, slib tries
+    ;; NB: we turned off srfi-0 here, since if this is on, slib tries
     ;; to import all available srfis, including srfi-29, which defines
     ;; incompatible 'format'.
-    srfi-0                           ;srfi-0, COND-EXPAND finds all srfi-*
+;;;    srfi-0                          ;srfi-0, COND-EXPAND finds all srfi-*
 ;;;    sicp                            ;runs code from Structure and
                                         ;Interpretation of Computer
                                         ;Programs by Abelson and Sussman.
