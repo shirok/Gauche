@@ -1,5 +1,7 @@
 2023-11-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/tls: Remove AxTLS support.
+
 	* src/module.c (Scm__InitModule): Remove obsoleted code to create
 	  built-in srfi modules.  Now it is done in auto-generated libsrfi.scm
 	  so they're no longer needed, but had been harmless until we switch

@@ -14,60 +14,21 @@ SCMFILES = tls.sci tls/mbed.scm
 OBJECTS = $(TLS_OBJECTS) $(MBED_OBJECTS)
 
 TLS_OBJECTS = rfc--tls.$(OBJEXT) \
-	      tls.$(OBJEXT)      \
-	      $(EXTRA_OBJECTS)
+	      tls.$(OBJEXT)
 
 MBED_OBJECTS = tls-mbed.$(OBJEXT)
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
 MBEDTLS_LIBS = @MBEDTLS_LIBS@
 SYSTEM_CERT_LIBS = @SYSTEM_CERT_LIBS@
 
-AXTLS_INCLUDES = -I$(srcdir)/axTLS/crypto -I$(srcdir)/axTLS/ssl -I$(srcdir)/axTLS/config
-
-AXTLS_OBJECTS = axTLS/ssl/asn1.$(OBJEXT)		\
-		axTLS/ssl/gen_cert.$(OBJEXT)		\
-		axTLS/ssl/loader.$(OBJEXT)		\
-		axTLS/ssl/openssl.$(OBJEXT)		\
-		axTLS/ssl/os_port.$(OBJEXT)		\
-		axTLS/ssl/p12.$(OBJEXT)			\
-		axTLS/ssl/tls1.$(OBJEXT)		\
-		axTLS/ssl/tls1_clnt.$(OBJEXT)		\
-		axTLS/ssl/tls1_svr.$(OBJEXT)		\
-		axTLS/ssl/x509.$(OBJEXT)		\
-		axTLS/crypto/aes.$(OBJEXT)		\
-		axTLS/crypto/bigint.$(OBJEXT)		\
-		axTLS/crypto/crypto_misc.$(OBJEXT)	\
-		axTLS/crypto/hmac.$(OBJEXT)		\
-		axTLS/crypto/md5.$(OBJEXT)		\
-		axTLS/crypto/rc4.$(OBJEXT)		\
-		axTLS/crypto/rsa.$(OBJEXT)		\
-		axTLS/crypto/sha1.$(OBJEXT)             \
-		axTLS/crypto/sha256.$(OBJEXT)           \
-		axTLS/crypto/sha384.$(OBJEXT)           \
-		axTLS/crypto/sha512.$(OBJEXT)
-
-@GAUCHE_TLS_SWITCH_AXTLS@EXTRA_OBJECTS = $(AXTLS_OBJECTS)
-@GAUCHE_TLS_SWITCH_NONE@EXTRA_OBJECTS =
-
-@GAUCHE_TLS_SWITCH_AXTLS@EXTRA_INCLUDES = $(AXTLS_INCLUDES)
-@GAUCHE_TLS_SWITCH_NONE@EXTRA_INCLUDES =
-
-SSLTEST = axTLS/ssl/ssltest$(EXEEXT)
-SSLTEST_GENERATED = axTLS/ssl/test/ssltest.mod.c
-SSLTEST_OBJECTS = axTLS/ssl/test/ssltest.mod.$(OBJEXT)
-
-@GAUCHE_TLS_SWITCH_AXTLS_TEST@EXTRA_TEST_BIN = $(SSLTEST)
-@GAUCHE_TLS_SWITCH_AXTLS@EXTRA_DIRS_TARGET = axtls_dirs
-
 MBEDTLS_INTERNAL = $(top_builddir)/tools/tls/include/mbedtls/ssl.h
 
 @GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes@MBED_DEP = $(MBEDTLS_INTERNAL)
 @GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no@MBED_DEP =
 
-
-CONFIG_GENERATED = Makefile kick_openssl.sh
+CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = rfc--tls.c *.sci $(AXTLS_OBJECTS) $(SSLTEST_OBJECTS) $(SSLTEST_GENERATED) $(SSLTEST) ssltest.log axTLS/ssl/openssl.pid axtls_dirs
+XCLEANFILES = rfc--tls.c *.sci
 
 @CROSS_COMPILING_no@all : $(LIBFILES) $(EXTRA_TEST_BIN)
 @CROSS_COMPILING_yes@all : $(LIBFILES)
@@ -89,20 +50,5 @@ tls-mbed.o : tls-mbed.c load_system_cert.c $(MBED_DEP)
 
 $(MBEDTLS_INTERNAL) :
 	cd $(top_builddir)/tools/tls; $(MAKE)
-
-# For out-of-source-tree build
-axtls_dirs :
-	mkdir -p axTLS/ssl axTLS/ssl/test axTLS/crypto
-	touch axtls_dirs
-
-$(AXTLS_OBJECTS): $(EXTRA_DIRS_TARGET)
-
-# We build the test executable (ssltest) at the build time
-$(SSLTEST): $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS)
-	$(CCLD) @LDFLAGS@ $(LOCAL_LFLAGS) $(XLDFLAGS) -o $(SSLTEST) $(SSLTEST_OBJECTS) $(AXTLS_OBJECTS) $(LIBS)
-
-# The 'system' macro hack is to suppress "ignoring result" warning
-$(SSLTEST_GENERATED) : axTLS/ssl/test/ssltest.c ssltest-mod.scm axtls_dirs
-	$(GOSH) $(srcdir)/ssltest-mod.scm "$(abs_srcdir)" "$(abs_builddir)" < $(srcdir)/axTLS/ssl/test/ssltest.c > $@
 
 install : install-std

@@ -13,12 +13,12 @@ TLSLIBS=mbedtls
 tls_explicitly_disabled=no
 AC_ARG_WITH(tls,
   AS_HELP_STRING([--with-tls=TLSLIB,...],
-  [Select which TLS libraries to be compiled.  Currently we support 'axtls'
-   (to use bundled source of Cameron Rich's axTLS), 'mbedtls' (to use mbed
-   TLS in the system library), and 'mbedtls-internal' (to use mbed TLS
+  [Select which TLS libraries to be compiled.  Currently we support 'mbedtls'
+   (to use MbedLS in the system library), or 'mbedtls-internal' (to use mbed TLS
    compiled with Gauche).
-   By default, we use mbedtls if it's available on the system.
-   Specify --with-tls=no to disable tls support.]),
+   By default, we use the system's mbedtls library if it's avaialble.  If not,
+   no TLS support is compiled.  You can specify --with-tls=no to exclude
+   TLS support explicitly.]),
   [
     AS_CASE([$with_tls],
       [no|none], [TLSLIBS=""
@@ -27,29 +27,33 @@ AC_ARG_WITH(tls,
                  [TLSLIBS="$with_tls"])
   ])
 
-dnl Validate TLSLIB and handle mbedtls-internal
-mbed_specified=no
+dnl Scan TLSLIB
+
+use_mbed=no
+use_mbed_internal=no
 
 GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes="@%:@"
 GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_no=
 
+AC_CHECK_LIB(mbedtls, mbedtls_ssl_init)
+
 for tls in `echo $TLSLIBS | tr ',' ' '`
 do
 AS_CASE([$tls],
-  [axtls], [],
   [mbedtls],
-           [AS_IF([test $mbed_specified = yes], [
+           [AS_IF([test $use_mbed_internal = yes], [
               AC_MSG_ERROR([You can only specify either one of 'mbedtls' or
                            'mbedtls-internal' in --with-tls option])
             ], [
-              mbed_specified=yes
+              use_mbed=yes
             ])],
   [mbedtls-internal],
-           [AS_IF([test $mbed_specified = yes], [
+           [AS_IF([test $use_mbed = yes], [
               AC_MSG_ERROR([You can only specify either one of 'mbedtls' or
                             'mbedtls-internal' in --with-tls option])
             ], [
-              mbed_specified=yes
+              use_mbed=yes
+              use_mbed_internal=yes
               MBEDTLS_CFLAGS="-I ../../tools/tls/include"
               MBEDTLS_LDFLAGS="-L ../../tools/tls"
               GAUCHE_TLS_SWITCH_MBEDTLS_INTERNAL_yes=
@@ -61,6 +65,7 @@ AS_CASE([$tls],
                   ])
                 ])
             ])],
+   dnl otherwise:
            [
             AC_MSG_ERROR([Invalid ---with-tls choice; it must be comma-separated
                           words of axtls, mbedtls or mbedtls-internal.])
@@ -84,30 +89,12 @@ AC_ARG_ENABLE(tls,
 
 dnl Check for tls library availability.
 
-GAUCHE_TLS_SWITCH_AXTLS="@%:@"
-GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
 GAUCHE_TLS_SWITCH_MBEDTLS="@%:@"
 GAUCHE_TLS_SWITCH_NONE=
 
-dnl We bundle axTLS so it's always available.
-AS_IF([echo $TLSLIBS | grep -F -w -q axtls], [
-  AC_DEFINE(GAUCHE_USE_AXTLS, 1, [Define if you use axTLS])
-  GAUCHE_TLS_SWITCH_AXTLS=
-  GAUCHE_TLS_SWITCH_NONE="@%:@"
-  GAUCHE_TLS_TYPES="axtls $GAUCHE_TLS_TYPES"
-  dnl axtls test program requires thread support.  For the time being,
-  dnl we turn off test program if the thread support is turned off
-  dnl (which is not ideal).
-  AS_IF([test "$GAUCHE_THREAD_TYPE" = 'none'], [
-    GAUCHE_TLS_SWITCH_AXTLS_TEST="@%:@"
-  ], [
-    GAUCHE_TLS_SWITCH_AXTLS_TEST=
-  ])
-])
-
 dnl mbedtls
-AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
-  AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls-internal], [
+AS_IF([test $use_mbed = yes], [
+  AS_IF([test $use_mbed_internal = yes], [
     dnl We'll extract MbedTLS source tree under tools/tls by 'make'.
     dnl We don't have the source tree during ./configure, so we can't
     dnl run tests for it.   Since we know the version of MbedTLS we use
@@ -153,8 +140,6 @@ AS_IF([echo $TLSLIBS | grep -F -w -q mbedtls], [
    ])
   ])
 
-AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS)
-AC_SUBST(GAUCHE_TLS_SWITCH_AXTLS_TEST)
 AC_SUBST(GAUCHE_TLS_SWITCH_MBEDTLS)
 AC_SUBST(GAUCHE_TLS_SWITCH_NONE)
 
