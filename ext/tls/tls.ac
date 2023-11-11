@@ -67,8 +67,8 @@ AS_CASE([$tls],
             ])],
    dnl otherwise:
            [
-            AC_MSG_ERROR([Invalid ---with-tls choice; it must be comma-separated
-                          words of axtls, mbedtls or mbedtls-internal.])
+            AC_MSG_ERROR([Invalid ---with-tls choice; it must be either
+                          mbedtls or mbedtls-internal.])
            ])
 done
 
