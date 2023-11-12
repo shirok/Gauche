@@ -123,7 +123,7 @@
  (define-cproc %tls-accept-with-socket (tls::<tls> sock fd::<long>)
    Scm_TLSAcceptWithSocket)
  (define-cproc tls-bind (tls::<tls>
-                         ip::<const-cstring>
+                         ip::<const-cstring>?
                          port::<const-cstring>
                          proto)
    Scm_TLSBind)

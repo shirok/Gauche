@@ -24,13 +24,13 @@
   (unwind-protect
       (begin
         (test* "simple communication" #t
-               (is-a? (tls-bind serv "localhost" "8087" 'tcp) <mbed-tls>))
+               (is-a? (tls-bind serv #f "8087" 'tcp) <mbed-tls>))
         ;; Not ready yet
         ;; (set! serv-thread (make-thread (make-server-thread-1 serv)))
         ;; (thread-start! serv-thread)
         ;; (test* "connect" #t
         ;;        (let1 clnt (make <mbed-tls> :server-name "localhost")
-        ;;          (tls-connect clnt "localhost" "8087" 'tcp)))
+        ;;           (tls-connect clnt "localhost" "8087" 'tcp)))
         )
     (tls-close serv)))
 
