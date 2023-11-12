@@ -38,7 +38,8 @@
   (use gauche.connection)
   (use gauche.net)
   (use util.match)
-  (export <tls> make-tls tls-destroy tls-connect tls-accept tls-close
+  (export <tls> make-tls tls-destroy tls-connect
+          tls-bind tls-accept tls-close
           tls-load-object tls-read tls-write
           tls-input-port tls-output-port
           tls-ca-bundle-path
@@ -121,6 +122,11 @@
    Scm_TLSConnectWithSocket)
  (define-cproc %tls-accept-with-socket (tls::<tls> sock fd::<long>)
    Scm_TLSAcceptWithSocket)
+ (define-cproc tls-bind (tls::<tls>
+                         ip::<const-cstring>
+                         port::<const-cstring>
+                         proto)
+   Scm_TLSBind)
  (define-cproc %tls-accept (tls::<tls>) Scm_TLSAccept)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
  (define-cproc tls-read (tls::<tls>) Scm_TLSRead)

@@ -75,6 +75,7 @@ static ScmObj k_server_name;
 enum MbedState {
     UNCONNECTED,
     CONNECTED,
+    BOUND,
     CLOSED
 };
 
@@ -244,6 +245,30 @@ static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
 #endif /*MBEDTLS_VERSION_MAJOR = 2*/
 }
 
+static ScmObj mbed_bind(ScmTLS *tls,
+                        const char *ip,
+                        const char *port, /* numeric or service name */
+                        int proto)
+{
+    SCM_ASSERT(SCM_XTYPEP(tls, &Scm_MbedTLSClass));
+    ScmMbedTLS *servt = (ScmMbedTLS*)tls;
+    if (servt->state != UNCONNECTED) {
+        Scm_Error("TLS already bound or connected: %S", SCM_OBJ(tls));
+    }
+
+    int mbedtls_proto = MBEDTLS_NET_PROTO_TCP;
+    if (proto == SCM_TLS_PROTO_UDP) {
+        mbedtls_proto = MBEDTLS_NET_PROTO_UDP;
+    }
+
+    int r = mbedtls_net_bind(&servt->conn, ip, port, mbedtls_proto);
+    if (r != 0) {
+        mbed_error("mbedtls_net_bind() failed: %s (%d)", r);
+    }
+    servt->state = BOUND;
+    return SCM_OBJ(servt);
+}
+
 static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
 {
     SCM_ASSERT(SCM_XTYPEP(tls, &Scm_MbedTLSClass));
@@ -251,7 +276,10 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
     ScmMbedTLS *t = (ScmMbedTLS*)mbed_allocate(Scm_ClassOf(SCM_OBJ(tls)),
                                                SCM_NIL);
 
-    /* TODO: check servt is bound */
+    if (servt->state != BOUND) {
+        Scm_Error("TLS is not bound: %S", SCM_OBJ(tls));
+    }
+
     const char* pers = "Gauche";
     int r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
                                   &t->entropy,
@@ -424,6 +452,7 @@ static void mbedtls_print(ScmObj obj, ScmPort* port,
     switch (t->state) {
     case UNCONNECTED: Scm_Printf(port, " (unconnected)"); break;
     case CONNECTED:   Scm_Printf(port, " (connected)"); break;
+    case BOUND:       Scm_Printf(port, " (bound)"); break;
     case CLOSED:      Scm_Printf(port, " (closed)"); break;
     }
     Scm_Printf(port, ">");
@@ -433,7 +462,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmMbedTLS* t = SCM_NEW_INSTANCE(ScmMbedTLS, klass);
 
-    ScmObj server_name = Scm_GetKeyword(k_server_name, initargs, SCM_UNBOUND);
+    ScmObj server_name = Scm_GetKeyword(k_server_name, initargs, SCM_FALSE);
     if (!SCM_STRINGP(server_name) && !SCM_FALSEP(server_name)) {
         Scm_TypeError("mbed-tls server-name", "string or #f", server_name);
     }
@@ -453,6 +482,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 
     t->common.connect = mbed_connect;
     t->common.connectSock = mbed_connect_with_socket;
+    t->common.bind = mbed_bind;
     t->common.accept = mbed_accept;
     t->common.acceptSock = mbed_accept_with_socket;
     t->common.read = mbed_read;

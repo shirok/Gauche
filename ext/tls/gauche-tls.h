@@ -143,7 +143,7 @@ extern ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSBind(ScmTLS *t,
                           const char *ip,
                           const char *port, /* numeric or service name */
-                          int proto);
+                          ScmObj proto);
 extern ScmObj Scm_TLSAccept(ScmTLS *t); /* returns connected <tls> */
 extern ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);

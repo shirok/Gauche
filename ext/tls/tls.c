@@ -133,6 +133,12 @@ ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd)
     return t->connectSock(t, fd);
 }
 
+ScmObj Scm_TLSBind(ScmTLS *t, const char *ip, const char *port,
+                   ScmObj proto) /* symbol */
+{
+    return t->bind(t, ip, port, parse_proto(proto));
+}
+
 ScmObj Scm_TLSAccept(ScmTLS *t)
 {
     return t->accept(t);
