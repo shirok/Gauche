@@ -22,7 +22,7 @@ jobs:
         gosh -V
     - name: Install tools
       run: |
-        sudo apt-get install libgdbm-dev
+        sudo apt-get install libgdbm-dev libmbedtls-dev
     - name: Self-host-test
       run: |
         gcc -v
@@ -65,7 +65,7 @@ jobs:
         gosh -V
     - name: Install tools
       run: |
-        brew install automake
+        brew install automake mbedtls
     - name: Self-host-test
       run: |
         gcc -v
