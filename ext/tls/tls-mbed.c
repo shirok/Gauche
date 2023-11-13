@@ -489,6 +489,8 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->common.write = mbed_write;
     t->common.close = mbed_close;
     t->common.getSocketFd = mbed_getsockfd;
+    t->common.loadCertificate = NULL;
+    t->common.loadPrivateKey = NULL;
     t->common.loadObject = mbed_loadObject;
     t->common.finalize = mbed_finalize;
     Scm_RegisterFinalizer(SCM_OBJ(t), mbed_finalize, NULL);

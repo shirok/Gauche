@@ -40,6 +40,7 @@
   (use util.match)
   (export <tls> make-tls tls-destroy tls-connect
           tls-bind tls-accept tls-close
+          tls-load-certificate tls-load-private-key
           tls-load-object tls-read tls-write
           tls-input-port tls-output-port
           tls-ca-bundle-path
@@ -112,6 +113,10 @@
  (define-cproc make-tls (:rest initargs) Scm_MakeTLS)
  (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
+ (define-cproc tls-load-certificate (tls::<tls> filename::<const-cstring>)
+   Scm_TLSLoadCertificate)
+ (define-cproc tls-load-private-key (tls::<tls> filename::<const-cstring>)
+   Scm_TLSLoadPrivateKey)
  (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls>
                              host::<const-cstring>
