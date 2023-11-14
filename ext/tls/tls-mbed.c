@@ -365,12 +365,27 @@ static ScmObj mbed_load_certificate(ScmTLS *tls,
     return SCM_OBJ(tls);
 }
 
+#if MBEDTLS_VERSION_MAJOR >= 3
+static int rng_get(void *prng, unsigned char *output, size_t output_len)
+{
+    mbedtls_ctr_drbg_context *rng = prng;
+    return mbedtls_ctr_drbg_random(rng, output, output_len);
+}
+#endif /*MBEDTLS_VERSION_MAJOR >= 3*/
+
 static ScmObj mbed_load_private_key(ScmTLS *tls,
                                     const char *filename,
                                     const char *password)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
+#if MBEDTLS_VERSION_MAJOR < 3
     int r = mbedtls_pk_parse_keyfile(&t->pk, filename, password);
+#else  /*MBEDTLS_VERSION_MAJOR >= 3*/
+    mbedtls_ctr_drbg_context rng;
+    mbedtls_ctr_drbg_init(&rng);
+    int r = mbedtls_pk_parse_keyfile(&t->pk, filename, password,
+                                     rng_get, &rng);
+#endif /*MBEDTLS_VERSION_MAJOR >= 3*/
     if (r != 0) {
         const int bufsiz = 4096;
         char buf[bufsiz];
