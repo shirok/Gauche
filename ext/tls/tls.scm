@@ -115,7 +115,9 @@
                                            :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
  (define-cproc tls-load-certificate (tls::<tls> filename::<const-cstring>)
    Scm_TLSLoadCertificate)
- (define-cproc tls-load-private-key (tls::<tls> filename::<const-cstring>)
+ (define-cproc tls-load-private-key (tls::<tls>
+                                     filename::<const-cstring>
+                                     password::<const-cstring>?)
    Scm_TLSLoadPrivateKey)
  (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls>

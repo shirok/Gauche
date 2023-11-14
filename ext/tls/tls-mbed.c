@@ -51,6 +51,8 @@
 #define MBEDTLS_FD(x) x
 #endif
 
+#define MBEDTLS_DEBUG 1
+
 SCM_CLASS_DECL(Scm_MbedTLSClass);
 
 #ifdef HAVE_WINCRYPT_H
@@ -63,6 +65,7 @@ SCM_CLASS_DECL(Scm_MbedTLSClass);
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs);
 static void mbedtls_print(ScmObj, ScmPort*, ScmWriteContext*);
+static void mbed_debug(void*, int, const char*, int, const char *);
 
 /* NB: We avoid referring Scm_TLSClass statically, since it is in another
    DSO module and some OS doesn't resolve inter-DSO static data.  We
@@ -91,6 +94,7 @@ typedef struct ScmMbedTLSRec {
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_ssl_config conf;
     mbedtls_x509_crt ca;
+    mbedtls_pk_context pk;
     ScmString *server_name;
 } ScmMbedTLS;
 
@@ -251,8 +255,8 @@ static ScmObj mbed_bind(ScmTLS *tls,
                         int proto)
 {
     SCM_ASSERT(SCM_XTYPEP(tls, &Scm_MbedTLSClass));
-    ScmMbedTLS *servt = (ScmMbedTLS*)tls;
-    if (servt->state != UNCONNECTED) {
+    ScmMbedTLS *t = (ScmMbedTLS*)tls;
+    if (t->state != UNCONNECTED) {
         Scm_Error("TLS already bound or connected: %S", SCM_OBJ(tls));
     }
 
@@ -261,30 +265,16 @@ static ScmObj mbed_bind(ScmTLS *tls,
         mbedtls_proto = MBEDTLS_NET_PROTO_UDP;
     }
 
-    int r = mbedtls_net_bind(&servt->conn, ip, port, mbedtls_proto);
+    int r = mbedtls_net_bind(&t->conn, ip, port, mbedtls_proto);
     if (r != 0) {
         mbed_error("mbedtls_net_bind() failed: %s (%d)", r);
     }
-    servt->state = BOUND;
-    return SCM_OBJ(servt);
-}
-
-static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
-{
-    SCM_ASSERT(SCM_XTYPEP(tls, &Scm_MbedTLSClass));
-    ScmMbedTLS *servt = (ScmMbedTLS*)tls;
-    ScmMbedTLS *t = (ScmMbedTLS*)mbed_allocate(Scm_ClassOf(SCM_OBJ(tls)),
-                                               SCM_NIL);
-
-    if (servt->state != BOUND) {
-        Scm_Error("TLS is not bound: %S", SCM_OBJ(tls));
-    }
 
     const char* pers = "Gauche";
-    int r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
-                                  &t->entropy,
-                                  (const unsigned char *)pers, strlen(pers));
-    if(r != 0) {
+    r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
+                              &t->entropy,
+                              (const unsigned char *)pers, strlen(pers));
+    if (r != 0) {
         mbed_error("mbedtls_ctr_drbg_seed() failed: %s (%d)", r);
     }
 
@@ -295,9 +285,29 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
     if (r != 0) {
         mbed_error("mbedtls_ssl_config_defaults() failed: %s (%d)", r);
     }
+
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
-    r = mbedtls_ssl_setup(&t->ctx, &t->conf);
+    r = mbedtls_ssl_conf_own_cert(&t->conf, &t->ca, &t->pk);
+    if (r != 0) {
+        mbed_error("mbedtls_ssl_confown_cert() failed: %s (%d)", r);
+    }
+
+    t->state = BOUND;
+    return SCM_OBJ(t);
+}
+
+static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
+{
+    SCM_ASSERT(SCM_XTYPEP(tls, &Scm_MbedTLSClass));
+    ScmMbedTLS *servt = (ScmMbedTLS*)tls;
+    ScmMbedTLS *t = (ScmMbedTLS*)mbed_allocate(Scm_ClassOf(SCM_OBJ(tls)),
+                                               SCM_NIL);
+    if (servt->state != BOUND) {
+        Scm_Error("TLS is not bound: %S", SCM_OBJ(tls));
+    }
+
+    int r = mbedtls_ssl_setup(&t->ctx, &servt->conf);
     if (r != 0) {
         mbed_error("mbedtls_ssl_setup() failed: %s (%d)", r);
     }
@@ -347,7 +357,9 @@ static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
         Scm_SysError("mbedtls_ssl_config_defaults() failed");
     }
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
-
+#if MBEDTLS_DEBUG
+    mbedtls_ssl_conf_dbg(&t->conf, mbed_debug, stderr);
+#endif
 
     if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
         Scm_SysError("mbedtls_ssl_setup() failed");
@@ -412,6 +424,7 @@ static ScmObj mbed_close(ScmTLS *tls)
     if (t->state == CONNECTED) {
         mbedtls_ssl_close_notify(&t->ctx);
         mbedtls_net_free(&t->conn);
+        mbedtls_pk_free(&t->pk);
         t->server_name = NULL;
         t->common.in_port = t->common.out_port = SCM_UNDEFINED;
     }
@@ -423,6 +436,37 @@ static int mbed_getsockfd(ScmTLS* tls)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
     return t->conn.MBEDTLS_FD(fd);
+}
+
+static ScmObj mbed_load_certificate(ScmTLS *tls,
+                                    const char *filename)
+{
+    ScmMbedTLS *t = (ScmMbedTLS*)tls;
+    int r = mbedtls_x509_crt_parse_file(&t->ca, filename);
+    if (r != 0) {
+        const int bufsiz = 4096;
+        char buf[bufsiz];
+        mbedtls_strerror(r, buf, bufsiz);
+        Scm_Error("Couldn't load certificate %s: %s (%d)",
+                  filename, buf, r);
+    }
+    return SCM_OBJ(tls);
+}
+
+static ScmObj mbed_load_private_key(ScmTLS *tls,
+                                    const char *filename,
+                                    const char *password)
+{
+    ScmMbedTLS *t = (ScmMbedTLS*)tls;
+    int r = mbedtls_pk_parse_keyfile(&t->pk, filename, password);
+    if (r != 0) {
+        const int bufsiz = 4096;
+        char buf[bufsiz];
+        mbedtls_strerror(r, buf, bufsiz);
+        Scm_Error("Couldn't load certificate %s: %s (%d)",
+                  filename, buf, r);
+    }
+    return SCM_OBJ(tls);
 }
 
 static ScmObj mbed_loadObject(ScmTLS* tls SCM_UNUSED,
@@ -458,6 +502,15 @@ static void mbedtls_print(ScmObj obj, ScmPort* port,
     Scm_Printf(port, ">");
 }
 
+#if MBEDTLS_DEBUG
+void mbed_debug(void *ctx, int level SCM_UNUSED,
+                const char *file, int line, const char *str)
+{
+    fprintf((FILE*)ctx, "%s:%d: %s", file, line, str);
+    fflush((FILE*)ctx);
+}
+#endif /*MBEDTLS_DEBUG*/
+
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 {
     ScmMbedTLS* t = SCM_NEW_INSTANCE(ScmMbedTLS, klass);
@@ -473,8 +526,12 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     mbedtls_ssl_init(&t->ctx);
     mbedtls_ssl_config_init(&t->conf);
     mbedtls_x509_crt_init(&t->ca);
-
+    mbedtls_pk_init(&t->pk);
     mbedtls_entropy_init(&t->entropy);
+
+#if MBEDTLS_DEBUG
+    mbedtls_ssl_conf_dbg(&t->conf, mbed_debug, stderr);
+#endif
 
     t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
@@ -489,8 +546,8 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->common.write = mbed_write;
     t->common.close = mbed_close;
     t->common.getSocketFd = mbed_getsockfd;
-    t->common.loadCertificate = NULL;
-    t->common.loadPrivateKey = NULL;
+    t->common.loadCertificate = mbed_load_certificate;
+    t->common.loadPrivateKey = mbed_load_private_key;
     t->common.loadObject = mbed_loadObject;
     t->common.finalize = mbed_finalize;
     Scm_RegisterFinalizer(SCM_OBJ(t), mbed_finalize, NULL);

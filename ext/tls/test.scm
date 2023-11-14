@@ -28,12 +28,19 @@
         (begin
           (test* "simple communication" #t
                  (is-a? (tls-bind serv #f "8087" 'tcp) <mbed-tls>))
-          ;; Not ready yet
+          (test* "loading private key" #t
+                 (boolean
+                  (tls-load-private-key serv "data/test-key.pem" "cafebabe")))
+          (test* "loading server cert" #t
+                 (boolean
+                  (tls-load-certificate serv "data/test-cert.pem")))
+          ;; Not working yet
           ;; (set! serv-thread (make-thread (make-server-thread-1 serv)))
           ;; (thread-start! serv-thread)
           ;; (test* "connect" #t
-          ;;        (let1 clnt (make <mbed-tls> :server-name "localhost")
-          ;;           (tls-connect clnt "localhost" "8087" 'tcp)))
+          ;;        (parameterize ((tls-ca-bundle-path "data/test-cert.pem"))
+          ;;          (let1 clnt (make <mbed-tls> :server-name "localhost")
+          ;;            (tls-connect clnt "localhost" "8087" 'tcp))))
           )
       (tls-close serv)))
   ]

@@ -120,12 +120,14 @@ ScmObj Scm_TLSLoadCertificate(ScmTLS* t, const char *filename)
     return t->loadCertificate(t, filename);
 }
 
-ScmObj Scm_TLSLoadPrivateKey(ScmTLS* t, const char *filename)
+ScmObj Scm_TLSLoadPrivateKey(ScmTLS* t,
+                             const char *filename,
+                             const char *password) /* can be NULL */
 {
     if (!t->loadPrivateKey) {
         Scm_Error("tls-load-private-key is not supported on %S", t);
     }
-    return t->loadPrivateKey(t, filename);
+    return t->loadPrivateKey(t, filename, password);
 }
 
 static int parse_proto(ScmObj proto)
