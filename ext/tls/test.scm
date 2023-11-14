@@ -24,6 +24,9 @@
           (display #"OK:~|line|\r\n" (tls-output-port clnt))
           (tls-close clnt)))))
 
+  (define (datafile filename)
+    (build-path (sys-dirname (current-load-path)) "data" filename))
+
   (let ((serv (make <mbed-tls> :server-name "localhost"))
         (serv-thread #f))
     (unwind-protect
@@ -32,14 +35,15 @@
                  (is-a? (tls-bind serv #f "8087" 'tcp) <mbed-tls>))
           (test* "loading private key" #t
                  (boolean
-                  (tls-load-private-key serv "data/test-key.pem" "cafebabe")))
+                  (tls-load-private-key serv (datafile "test-key.pem")
+                                        "cafebabe")))
           (test* "loading server cert" #t
                  (boolean
-                  (tls-load-certificate serv "data/test-cert.pem")))
+                  (tls-load-certificate serv (datafile "test-cert.pem"))))
           (set! serv-thread (make-thread (make-server-thread-1 serv)))
           (thread-start! serv-thread)
           (test* "connect" "OK:Aloha!"
-                 (parameterize ((tls-ca-bundle-path "data/test-cert.pem"))
+                 (parameterize ((tls-ca-bundle-path (datafile "test-cert.pem")))
                    (let1 clnt (make <mbed-tls> :server-name "localhost")
                      (unwind-protect
                          (begin
