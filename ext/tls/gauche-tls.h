@@ -119,7 +119,6 @@ struct ScmTLSRec {
     int    (*getSocketFd)(ScmTLS*);
     ScmObj (*loadCertificate)(ScmTLS*, const char*);
     ScmObj (*loadPrivateKey)(ScmTLS*, const char*, const char*);
-    ScmObj (*loadObject)(ScmTLS*, ScmObj, const char*, const char*);
     void   (*finalize)(ScmObj, void*);
 };
 
@@ -134,9 +133,6 @@ SCM_CLASS_DECL(Scm_AxTLSClass);
 
 extern ScmObj Scm_MakeTLS(ScmObj);
 extern ScmObj Scm_TLSDestroy(ScmTLS* t);
-extern ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
-                                const char *filename,
-                                const char *password);
 extern ScmObj Scm_TLSLoadCertificate(ScmTLS *t, const char *path);
 extern ScmObj Scm_TLSLoadPrivateKey(ScmTLS *t, const char *path,
                                     const char *password);

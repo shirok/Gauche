@@ -41,21 +41,24 @@
   (export <tls> make-tls tls-destroy tls-connect
           tls-bind tls-accept tls-close
           tls-load-certificate tls-load-private-key
-          tls-load-object tls-read tls-write
+          tls-read tls-write
           tls-input-port tls-output-port
           tls-ca-bundle-path
           default-tls-class
 
+          ;; connection interface
+          connection-self-address connection-peer-address
+          connection-input-port connection-output-port
+          connection-shutdown connection-close
+
+          ;; deprecated interface
           SSL_SERVER_VERIFY_LATER SSL_CLIENT_AUTHENTICATION
           SSL_DISPLAY_BYTES SSL_DISPLAY_STATES SSL_DISPLAY_CERTS
           SSL_DISPLAY_RSA SSL_CONNECT_IN_PARTS SSL_NO_DEFAULT_KEY
           SSL_OBJ_X509_CERT SSL_OBJ_X509_CACERT SSL_OBJ_RSA_KEY
           SSL_OBJ_PKCS8 SSL_OBJ_PKCS12
-
-          ;; connection interface
-          connection-self-address connection-peer-address
-          connection-input-port connection-output-port
-          connection-shutdown connection-close)
+          tls-load-object
+)
   )
 (select-module rfc.tls)
 
@@ -96,23 +99,7 @@
 
  (declare-stub-type <tls> "ScmTLS*")
 
- (define-enum SSL_SERVER_VERIFY_LATER)
- (define-enum SSL_CLIENT_AUTHENTICATION)
- (define-enum SSL_NO_DEFAULT_KEY)
- (define-enum SSL_DISPLAY_BYTES)
- (define-enum SSL_DISPLAY_STATES)
- (define-enum SSL_DISPLAY_CERTS)
- (define-enum SSL_DISPLAY_RSA)
- (define-enum SSL_CONNECT_IN_PARTS)
- (define-enum SSL_OBJ_X509_CERT)
- (define-enum SSL_OBJ_X509_CACERT)
- (define-enum SSL_OBJ_RSA_KEY)
- (define-enum SSL_OBJ_PKCS8)
- (define-enum SSL_OBJ_PKCS12)
-
  (define-cproc make-tls (:rest initargs) Scm_MakeTLS)
- (define-cproc tls-load-object (tls::<tls> obj-type filename::<const-cstring>
-                                           :optional (password::<const-cstring>? #f)) Scm_TLSLoadObject)
  (define-cproc tls-load-certificate (tls::<tls> filename::<const-cstring>)
    Scm_TLSLoadCertificate)
  (define-cproc tls-load-private-key (tls::<tls>
@@ -154,7 +141,34 @@
        (return (Scm_GetPeerName fd))
        (return SCM_FALSE))))
 
- (define-cproc tls-socket (tls::<tls>) Scm_TLSSocket) ; DEPRECATED
+ ;; DEPRECATED APIs
+ (define-enum SSL_SERVER_VERIFY_LATER)
+ (define-enum SSL_CLIENT_AUTHENTICATION)
+ (define-enum SSL_NO_DEFAULT_KEY)
+ (define-enum SSL_DISPLAY_BYTES)
+ (define-enum SSL_DISPLAY_STATES)
+ (define-enum SSL_DISPLAY_CERTS)
+ (define-enum SSL_DISPLAY_RSA)
+ (define-enum SSL_CONNECT_IN_PARTS)
+ (define-enum SSL_OBJ_X509_CERT)
+ (define-enum SSL_OBJ_X509_CACERT)
+ (define-enum SSL_OBJ_RSA_KEY)
+ (define-enum SSL_OBJ_PKCS8)
+ (define-enum SSL_OBJ_PKCS12)
+ (define-cproc tls-socket (tls::<tls>) Scm_TLSSocket)
+ (define-cproc tls-load-object (tls::<tls>
+                                obj-type::<fixnum>
+                                filename::<const-cstring>
+                                :optional (password::<const-cstring>? #f))
+   ::<void>
+   (Scm_Warn "tls-load-object is deprecated.  Use tls-load-certificate or \
+              tls-load-private-key.\n")
+   (case obj-type
+     [(SSL_OBJ_X509_CERT SSL_OBJ_X509_CACERT)
+      (Scm_TLSLoadCertificate tls filename)]
+     [(SSL_OBJ_RSA_KEY SSL_OBJ_PKCS8 SSL_OBJ_PKCS12)
+      (Scm_TLSLoadPrivateKey tls filename password)]
+     [else (Scm_Error "Invalid obj-type: %d" obj-type)]))
 
  (declcode "void Scm_Init_tls(ScmModule *);")
  (initcode "Scm_Init_tls(Scm_CurrentModule());")

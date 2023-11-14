@@ -469,15 +469,6 @@ static ScmObj mbed_load_private_key(ScmTLS *tls,
     return SCM_OBJ(tls);
 }
 
-static ScmObj mbed_loadObject(ScmTLS* tls SCM_UNUSED,
-                              ScmObj obj_type SCM_UNUSED,
-                              const char *filename SCM_UNUSED,
-                              const char *password SCM_UNUSED)
-{
-    /* irrelevant */
-    return SCM_FALSE;
-}
-
 static void mbed_finalize(ScmObj obj, void *data SCM_UNUSED)
 {
     ScmTLS *t = (ScmTLS*)obj;
@@ -548,7 +539,6 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->common.getSocketFd = mbed_getsockfd;
     t->common.loadCertificate = mbed_load_certificate;
     t->common.loadPrivateKey = mbed_load_private_key;
-    t->common.loadObject = mbed_loadObject;
     t->common.finalize = mbed_finalize;
     Scm_RegisterFinalizer(SCM_OBJ(t), mbed_finalize, NULL);
     return SCM_OBJ(t);
