@@ -112,10 +112,6 @@
                              port::<const-cstring>
                              proto)
    Scm_TLSConnect)
- (define-cproc %tls-connect-with-socket (tls::<tls> sock fd::<long>)
-   Scm_TLSConnectWithSocket)
- (define-cproc %tls-accept-with-socket (tls::<tls> sock fd::<long>)
-   Scm_TLSAcceptWithSocket)
  (define-cproc tls-bind (tls::<tls>
                          ip::<const-cstring>?
                          port::<const-cstring>
@@ -130,16 +126,6 @@
  ;; internal
  (define-cproc %tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
  (define-cproc %tls-output-port-set! (tls::<tls> port) Scm_TLSOutputPortSet)
- (define-cproc %tls-getsockname (tls::<tls>)
-   (let* ([fd::int (funcall (-> tls getSocketFd) tls)])
-     (if (>= fd 0)
-       (return (Scm_GetSockName fd))
-       (return SCM_FALSE))))
- (define-cproc %tls-getpeername (tls::<tls>)
-   (let* ([fd::int (funcall (-> tls getSocketFd) tls)])
-     (if (>= fd 0)
-       (return (Scm_GetPeerName fd))
-       (return SCM_FALSE))))
 
  ;; DEPRECATED APIs
  (define-enum SSL_SERVER_VERIFY_LATER)
@@ -155,7 +141,6 @@
  (define-enum SSL_OBJ_RSA_KEY)
  (define-enum SSL_OBJ_PKCS8)
  (define-enum SSL_OBJ_PKCS12)
- (define-cproc tls-socket (tls::<tls>) Scm_TLSSocket)
  (define-cproc tls-load-object (tls::<tls>
                                 obj-type::<fixnum>
                                 filename::<const-cstring>
@@ -175,23 +160,15 @@
  )
 
 ;; API
-(define (tls-connect tls . args)
-  (match args
-    [((? (cut is-a? <> <socket>) sock))
-     (%tls-connect-with-socket tls sock (socket-fd sock))]
-    [(host port proto)
-     (%tls-connect tls host port proto)]
-    [_ (error "Invalid arguments:" (cons tls args))])
+(define (tls-connect tls host port proto)
+  (%tls-connect tls host port proto)
   (%tls-input-port-set! tls (make-tls-input-port tls))
   (%tls-output-port-set! tls (make-tls-output-port tls))
   tls)
 
 ;; API
-(define (tls-accept tls :optional (sock #f))
-  (rlet1 new-tls
-      (if sock
-        (%tls-accept-with-socket tls sock (socket-fd sock))
-        (%tls-accept tls))
+(define (tls-accept tls)
+  (rlet1 new-tls (%tls-accept tls)
     (%tls-input-port-set! new-tls (make-tls-input-port new-tls))
     (%tls-output-port-set! new-tls (make-tls-output-port new-tls))))
 
@@ -226,12 +203,11 @@
     (set! (~ op'putb) (^[b] (tls-write tls (make-byte-string 1 b))))))
 
 ;; Connection interface
-;; NB: self-address and peer-address may return #f, for the info
-;; may not be accessible with MbedTLS.
-(define-method connection-self-address ((s <tls>))
-  (%tls-getsockname s))
-(define-method connection-peer-address ((s <tls>))
-  (%tls-getpeername s))
+;; TODO: we used to take self-address and peer-address from the underlying
+;; socket fd.  It is no longer publicly available in MbedTLS, so we need
+;; to find some other way.
+(define-method connection-self-address ((s <tls>)) #f)
+(define-method connection-peer-address ((s <tls>)) #f)
 (define-method connection-input-port ((s <tls>))
   (tls-input-port s))
 (define-method connection-output-port ((s <tls>))

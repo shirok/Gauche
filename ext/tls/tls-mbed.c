@@ -43,15 +43,9 @@
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
 
-/* NB: In only MbedTLS 3.0, the member 'fd' in mbedtls_net_context structure
-       is private and this macro is required to access it. */
-#if (MBEDTLS_VERSION_MAJOR == 3) && (MBEDTLS_VERSION_MINOR == 0)
-#define MBEDTLS_FD(x) MBEDTLS_PRIVATE(x)
-#else
-#define MBEDTLS_FD(x) x
-#endif
-
-#define MBEDTLS_DEBUG 1
+/* Define this to enable mbedtls debugging */
+//#define MBEDTLS_DEBUG 1
+#undef MBEDTLS_DEBUG
 
 SCM_CLASS_DECL(Scm_MbedTLSClass);
 
@@ -65,7 +59,9 @@ SCM_CLASS_DECL(Scm_MbedTLSClass);
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs);
 static void mbedtls_print(ScmObj, ScmPort*, ScmWriteContext*);
+#if MBEDTLS_DEBUG
 static void mbed_debug(void*, int, const char*, int, const char *);
+#endif
 
 /* NB: We avoid referring Scm_TLSClass statically, since it is in another
    DSO module and some OS doesn't resolve inter-DSO static data.  We
@@ -226,29 +222,6 @@ static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
     return mbed_connect_common(t);
 }
 
-static ScmObj mbed_connect_with_socket(ScmTLS* tls, int fd)
-{
-#if MBEDTLS_VERSION_MAJOR >= 3
-    Scm_Error("Making TLS connection over existing socket (%d) is "
-              "no longer supported (%S)", fd, tls);
-    return SCM_UNDEFINED;       /* dummy */
-#else /*MBEDTLS_VERSION_MAJOR = 2*/
-    ScmMbedTLS* t = (ScmMbedTLS*)tls;
-    mbed_context_check(t, "connect");
-    const char* pers = "Gauche";
-    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-                             (const unsigned char *)pers, strlen(pers)) != 0) {
-        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
-    }
-
-    if (t->conn.MBEDTLS_FD(fd) >= 0) {
-        Scm_Error("attempt to connect already-connected TLS %S", t);
-    }
-    t->conn.MBEDTLS_FD(fd) = fd;
-    return mbed_connect_common(t);
-#endif /*MBEDTLS_VERSION_MAJOR = 2*/
-}
-
 static ScmObj mbed_bind(ScmTLS *tls,
                         const char *ip,
                         const char *port, /* numeric or service name */
@@ -329,61 +302,6 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
     return SCM_OBJ(t);
 }
 
-static ScmObj mbed_accept_with_socket(ScmTLS* tls, int fd)
-{
-#if MBEDTLS_VERSION_MAJOR >= 3
-    Scm_Error("Accepting TLS connection over existing socket (%d) "
-              "is no longer supported  (%S)", fd, tls);
-    return SCM_UNDEFINED;       /* dummy */
-#else /*MBEDTLS_VERSION_MAJOR = 2*/
-    ScmMbedTLS *t = (ScmMbedTLS*)tls;
-    mbed_context_check(t, "accept");
-
-    const char* pers = "Gauche";
-    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-                             (const unsigned char *)pers, strlen(pers)) != 0) {
-        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
-    }
-
-    if (t->conn.MBEDTLS_FD(fd) >= 0) {
-        Scm_Error("attempt to connect already-connected TLS %S", t);
-    }
-    t->conn.MBEDTLS_FD(fd) = fd;
-
-    if (mbedtls_ssl_config_defaults(&t->conf,
-                                    MBEDTLS_SSL_IS_SERVER,
-                                    MBEDTLS_SSL_TRANSPORT_STREAM,
-                                    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
-        Scm_SysError("mbedtls_ssl_config_defaults() failed");
-    }
-    mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
-#if MBEDTLS_DEBUG
-    mbedtls_ssl_conf_dbg(&t->conf, mbed_debug, stderr);
-#endif
-
-    if(mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
-        Scm_SysError("mbedtls_ssl_setup() failed");
-    }
-
-    mbedtls_net_context client_fd;
-    mbedtls_net_free(&client_fd);
-
-    mbedtls_ssl_session_reset(&t->ctx);
-
-    if(mbedtls_net_accept(&t->conn, &client_fd, NULL, 0, NULL) != 0) {
-        Scm_SysError("mbedtls_net_accept() failed");
-    }
-    mbedtls_ssl_set_bio(&t->ctx, &client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
-
-    int r = mbedtls_ssl_handshake(&t->ctx);
-    if (r != 0) {
-        mbed_error("TLS handshake failed: %s (%d)", r);
-    }
-    t->state = CONNECTED;
-    return SCM_OBJ(t);
-#endif /*MBEDTLS_VERSION_MAJOR = 2*/
-}
-
 static ScmObj mbed_read(ScmTLS* tls)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
@@ -430,12 +348,6 @@ static ScmObj mbed_close(ScmTLS *tls)
     }
     t->state = CLOSED;
     return SCM_TRUE;
-}
-
-static int mbed_getsockfd(ScmTLS* tls)
-{
-    ScmMbedTLS *t = (ScmMbedTLS*)tls;
-    return t->conn.MBEDTLS_FD(fd);
 }
 
 static ScmObj mbed_load_certificate(ScmTLS *tls,
@@ -526,17 +438,13 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 
     t->server_name = SCM_STRING(server_name);
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
-    t->common.sock = SCM_FALSE;
 
     t->common.connect = mbed_connect;
-    t->common.connectSock = mbed_connect_with_socket;
     t->common.bind = mbed_bind;
     t->common.accept = mbed_accept;
-    t->common.acceptSock = mbed_accept_with_socket;
     t->common.read = mbed_read;
     t->common.write = mbed_write;
     t->common.close = mbed_close;
-    t->common.getSocketFd = mbed_getsockfd;
     t->common.loadCertificate = mbed_load_certificate;
     t->common.loadPrivateKey = mbed_load_private_key;
     t->common.finalize = mbed_finalize;

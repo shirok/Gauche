@@ -106,12 +106,6 @@ ScmObj Scm_TLSClose(ScmTLS* t)
     return (t->close)(t);
 }
 
-ScmObj Scm_TLSLoadObject(ScmTLS* t, ScmObj obj_type,
-                         const char *filename, const char *password)
-{
-    return t->loadObject(t, obj_type, filename, password);
-}
-
 ScmObj Scm_TLSLoadCertificate(ScmTLS* t, const char *filename)
 {
     if (!t->loadCertificate) {
@@ -144,13 +138,6 @@ ScmObj Scm_TLSConnect(ScmTLS *t, const char *host, const char *port,
     return t->connect(t, host, port, parse_proto(proto));
 }
 
-/* DEPRECATED */
-ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd)
-{
-    t->sock = sock;
-    return t->connectSock(t, fd);
-}
-
 ScmObj Scm_TLSBind(ScmTLS *t, const char *ip, const char *port,
                    ScmObj proto) /* symbol */
 {
@@ -160,13 +147,6 @@ ScmObj Scm_TLSBind(ScmTLS *t, const char *ip, const char *port,
 ScmObj Scm_TLSAccept(ScmTLS *t)
 {
     return t->accept(t);
-}
-
-/* DEPRECATED */
-ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd)
-{
-    t->sock = sock;
-    return t->acceptSock(t, fd);
 }
 
 ScmObj Scm_TLSRead(ScmTLS* t)
@@ -203,11 +183,6 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
     t->out_port = port;
     return SCM_UNDEFINED;
-}
-
-ScmObj Scm_TLSSocket(ScmTLS* t)
-{
-    return t->sock;
 }
 
 int Scm_TLSSystemCABundleAvailable(void)

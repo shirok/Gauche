@@ -53,13 +53,6 @@
     "/etc/pki/tls/certs/ca-budle.crt",    /* fedora (compat) */         \
     "/usr/local/etc/openssl/cert.pem"     /* osx homebrew openssl */
 
-#if defined(GAUCHE_USE_AXTLS)
-#  if defined(GAUCHE_WINDOWS)
-#    include <ws2tcpip.h>
-#  endif /*GAUCHE_WINDOWS*/
-#include "axTLS/ssl/ssl.h"
-#endif  /* GAUCHE_USE_AXTLS */
-
 /* This is a 'success' code of AxTLS.  mbedtls x509 routine returns 0
    on success, which happens to be the same as SSL_OK.
    We just need this in case we're configured with mbedtls and without axtls.
@@ -102,21 +95,12 @@ struct ScmTLSRec {
     ScmObj in_port;
     ScmObj out_port;
 
-    /* <socket> - underlying socket.  This is only for reflection,
-       and it is managed by the TLS implementation layer.
-       Not always available -- MbedTLS 3.0 hides underlying socket,
-       so this is #f.  We'll eventually drop this.  */
-    ScmObj sock;
-
     ScmObj (*connect)(ScmTLS*, const char*, const char*, int);
-    ScmObj (*connectSock)(ScmTLS*, int);
     ScmObj (*bind)(ScmTLS*, const char*, const char*, int);
     ScmObj (*accept)(ScmTLS*);
-    ScmObj (*acceptSock)(ScmTLS*, int);
     ScmObj (*read)(ScmTLS*);
     ScmObj (*write)(ScmTLS*, ScmObj);
     ScmObj (*close)(ScmTLS*);
-    int    (*getSocketFd)(ScmTLS*);
     ScmObj (*loadCertificate)(ScmTLS*, const char*);
     ScmObj (*loadPrivateKey)(ScmTLS*, const char*, const char*);
     void   (*finalize)(ScmObj, void*);
@@ -140,16 +124,13 @@ extern ScmObj Scm_TLSConnect(ScmTLS *t,
                              const char *host,
                              const char *port, /* number or service name */
                              ScmObj proto);
-extern ScmObj Scm_TLSConnectWithSocket(ScmTLS* t, ScmObj sock, int fd);
 
 extern ScmObj Scm_TLSBind(ScmTLS *t,
                           const char *ip,
                           const char *port, /* numeric or service name */
                           ScmObj proto);
 extern ScmObj Scm_TLSAccept(ScmTLS *t); /* returns connected <tls> */
-extern ScmObj Scm_TLSAcceptWithSocket(ScmTLS* t, ScmObj sock, int fd);
 extern ScmObj Scm_TLSClose(ScmTLS* t);
-extern ScmObj Scm_TLSSocket(ScmTLS *t); /* DEPRECATED */
 
 extern int    Scm_TLSSystemCABundleAvailable(void);
 
