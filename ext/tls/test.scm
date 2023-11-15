@@ -32,7 +32,7 @@
     (unwind-protect
         (begin
           (test* "simple communication" #t
-                 (is-a? (tls-bind serv #f "8087" 'tcp) <mbed-tls>))
+                 (is-a? (tls-bind serv #f 8087 'tcp) <mbed-tls>))
           (test* "loading private key" #t
                  (boolean
                   (tls-load-private-key serv (datafile "test-key.pem")
@@ -47,7 +47,7 @@
                    (let1 clnt (make <mbed-tls> :server-name "localhost")
                      (unwind-protect
                          (begin
-                           (tls-connect clnt "localhost" "8087" 'tcp)
+                           (tls-connect clnt "localhost" 8087 'tcp)
                            (display "Aloha!\r\n" (tls-output-port clnt))
                            (flush (tls-output-port clnt))
                            (read-line (tls-input-port clnt)))

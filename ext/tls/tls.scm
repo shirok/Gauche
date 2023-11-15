@@ -112,10 +112,10 @@
                              port::<const-cstring>
                              proto)
    Scm_TLSConnect)
- (define-cproc tls-bind (tls::<tls>
-                         ip::<const-cstring>?
-                         port::<const-cstring>
-                         proto)
+ (define-cproc %tls-bind (tls::<tls>
+                          ip::<const-cstring>?
+                          port::<const-cstring>
+                          proto)
    Scm_TLSBind)
  (define-cproc %tls-accept (tls::<tls>) Scm_TLSAccept)
  (define-cproc %tls-close (tls::<tls>) Scm_TLSClose)
@@ -161,10 +161,28 @@
 
 ;; API
 (define (tls-connect tls host port proto)
-  (%tls-connect tls host port proto)
-  (%tls-input-port-set! tls (make-tls-input-port tls))
-  (%tls-output-port-set! tls (make-tls-output-port tls))
+  (assume-type port (</> <string> <integer>))
+  (let1 p (if (integer? port)
+            (if (or (inexact? port) (negative? port))
+              (error "Nonnegative exact integer or string expected, but got:"
+                     port)
+              (x->string port))
+            port)
+    (%tls-connect tls host p proto)
+    (%tls-input-port-set! tls (make-tls-input-port tls))
+    (%tls-output-port-set! tls (make-tls-output-port tls)))
   tls)
+
+;; API
+(define (tls-bind tls host port proto)
+  (assume-type port (</> <string> <integer>))
+  (let1 p (if (integer? port)
+            (if (or (inexact? port) (negative? port))
+              (error "Nonnegative exact integer or string expected, but got:"
+                     port)
+              (x->string port))
+            port)
+    (%tls-bind tls host p proto)))
 
 ;; API
 (define (tls-accept tls)
