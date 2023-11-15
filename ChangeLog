@@ -1,3 +1,8 @@
+2023-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* doc/: Support epub generation from @qykth-git
+	 https://github.com/shirok/Gauche/pull/959
+
 2023-11-14  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Support TLS server connection.
