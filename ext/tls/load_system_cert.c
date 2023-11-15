@@ -48,13 +48,9 @@ static ScmObj system_cert_loader(ScmTLS *t,
     return SCM_TRUE;
 }
 #else
-/* where ext/tls/get-cacert installs cacert.pem */
-static const char *in_gauche_cacert_path()
-{
-    ScmObj path = Scm_StringAppendC(SCM_STRING(Scm_LibraryDirectory()),
-                                    "/../cacert.pem", -1, -1);
-    return Scm_GetStringConst(SCM_STRING(path));
-}
+
+/* Get in_gauche_cacert_path()  */
+#include "in_gauche_cacert_path.c"
 
 static ScmObj system_cert_loader(ScmTLS *t,
                                  int (*file_loader)(ScmTLS*, const char *))

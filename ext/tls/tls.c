@@ -36,8 +36,6 @@
 #include "gauche-tls.h"
 #include <gauche/extend.h>
 
-#include "load_system_cert.c"
-
 /*
  * Class
  */
@@ -184,6 +182,10 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
     t->out_port = port;
     return SCM_UNDEFINED;
 }
+
+#if !HAVE_WINCRYPT_H
+#include "in_gauche_cacert_path.c"
+#endif
 
 int Scm_TLSSystemCABundleAvailable(void)
 {
