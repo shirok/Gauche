@@ -1,3 +1,7 @@
+2023-11-14  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Support TLS server connection.
+
 2023-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Remove AxTLS support.
