@@ -116,7 +116,6 @@ SCM_CLASS_DECL(Scm_AxTLSClass);
 #define SCM_TLSP(obj)   SCM_ISA(obj, SCM_CLASS_TLS)
 
 extern ScmObj Scm_MakeTLS(ScmObj);
-extern ScmObj Scm_TLSDestroy(ScmTLS* t);
 extern ScmObj Scm_TLSLoadCertificate(ScmTLS *t, const char *path);
 extern ScmObj Scm_TLSLoadPrivateKey(ScmTLS *t, const char *path,
                                     const char *password);

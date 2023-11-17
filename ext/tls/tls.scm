@@ -38,7 +38,7 @@
   (use gauche.connection)
   (use gauche.net)
   (use util.match)
-  (export <tls> make-tls tls-destroy tls-connect
+  (export <tls> make-tls tls-connect
           tls-bind tls-accept tls-close
           tls-load-certificate tls-load-private-key
           tls-read tls-write
@@ -57,7 +57,7 @@
           SSL_DISPLAY_RSA SSL_CONNECT_IN_PARTS SSL_NO_DEFAULT_KEY
           SSL_OBJ_X509_CERT SSL_OBJ_X509_CACERT SSL_OBJ_RSA_KEY
           SSL_OBJ_PKCS8 SSL_OBJ_PKCS12
-          tls-load-object
+          tls-load-object tls-destroy
 )
   )
 (select-module rfc.tls)
@@ -106,7 +106,6 @@
                                      filename::<const-cstring>
                                      password::<const-cstring>?)
    Scm_TLSLoadPrivateKey)
- (define-cproc tls-destroy (tls::<tls>) Scm_TLSDestroy)
  (define-cproc %tls-connect (tls::<tls>
                              host::<const-cstring>
                              port::<const-cstring>
@@ -219,6 +218,9 @@
   (rlet1 op (make <virtual-output-port>)
     (set! (~ op'puts) (^[msg] (tls-write tls msg)))
     (set! (~ op'putb) (^[b] (tls-write tls (make-byte-string 1 b))))))
+
+;; Deprecated
+(define (tls-destroy tls) (tls-close tls))
 
 ;; Connection interface
 ;; TODO: we used to take self-address and peer-address from the underlying

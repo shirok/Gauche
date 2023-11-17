@@ -336,10 +336,12 @@ static ScmObj mbed_write(ScmTLS* tls, ScmObj msg)
     return SCM_MAKE_INT(r);
 }
 
-static ScmObj mbed_close(ScmTLS *tls)
+/* Cleanup is called to release resources other than Scheme managed ones.
+   This can be called from the finalizer, so any Scheme-allocated object
+   might have been collected. */
+static void mbed_cleanup(ScmMbedTLS *t)
 {
-    ScmMbedTLS *t = (ScmMbedTLS*)tls;
-    if (t->state == CONNECTED) {
+    if (t->state == BOUND || t->state == CONNECTED) {
         mbedtls_ssl_close_notify(&t->ctx);
         mbedtls_net_free(&t->conn);
         mbedtls_pk_free(&t->pk);
@@ -347,7 +349,17 @@ static ScmObj mbed_close(ScmTLS *tls)
         t->common.in_port = t->common.out_port = SCM_UNDEFINED;
     }
     t->state = CLOSED;
+}
+
+static ScmObj mbed_close(ScmTLS *tls)
+{
+    mbed_cleanup((ScmMbedTLS*)tls);
     return SCM_TRUE;
+}
+
+static void mbed_finalize(ScmObj obj, void *data SCM_UNUSED)
+{
+    mbed_cleanup((ScmMbedTLS*)obj);
 }
 
 static ScmObj mbed_load_certificate(ScmTLS *tls,
@@ -394,12 +406,6 @@ static ScmObj mbed_load_private_key(ScmTLS *tls,
                   filename, buf, r);
     }
     return SCM_OBJ(tls);
-}
-
-static void mbed_finalize(ScmObj obj, void *data SCM_UNUSED)
-{
-    ScmTLS *t = (ScmTLS*)obj;
-    mbed_close(t);
 }
 
 static void mbedtls_print(ScmObj obj, ScmPort* port,

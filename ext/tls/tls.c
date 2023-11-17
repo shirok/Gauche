@@ -89,16 +89,10 @@ ScmObj Scm_MakeTLS(ScmObj initargs)
 }
 
 
-/* Explicitly destroys the context.  Some resources may better be released
-   earlier. */
-ScmObj Scm_TLSDestroy(ScmTLS* t)
-{
-    if (t->finalize) t->finalize(SCM_OBJ(t), NULL);
-    return SCM_TRUE;
-}
-
 ScmObj Scm_TLSClose(ScmTLS* t)
 {
+    /* NB: pots are already closed */
+
     /* Extra parenthesis to keep close() from being macro-expanded by
        windows compatibility macro. */
     return (t->close)(t);
