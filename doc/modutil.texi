@@ -8554,7 +8554,7 @@ Convert between @var{ulid} and an exact nonnegative integer up to 128bit.
 @end defun
 
 @defun ulid->string ulid
-@defunx string->ulid str
+@defunx string->ulid str
 @mdindex data.ulid
 Convert @var{ulid} to a string of Base32 representation; the
 digits are @code{0123456789ABCDEFGHJKMNPQRSTVWXYZ} (@code{I}, @code{L},
