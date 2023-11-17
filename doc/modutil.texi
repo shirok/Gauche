@@ -20444,10 +20444,148 @@ This module is used by @code{rfc.http} to realize https connection
 @c COMMON
 @end deftp
 
-@subheading CA certificates
+@subheading TLS subsystems
 
 @c EN
-You need CA certificates to verify server certificates properly.
+Whether the running Gauche has TLS support depends on the build
+options, and can be checked with
+a feature identifier @code{gauche.net.tls}.
+@xref{Feature conditional}, for more about feature identifiers.
+@c JP
+実行中のGaucheがTLSをサポートしているかどうかは機能識別子
+@code{gauche.net.tls}で判別できます。
+機能識別子については@ref{Feature conditional}を参照してください。
+@c COMMON
+
+@c EN
+Gauche uses MbedTLS (@url{https://tls.mbed.org/}) as TLS implementation.
+We used to support alternative subsystems, so the library is designed
+to handle multiple subsystems.  In future we may support additional subsystems.
+@c JP
+GaucheはTLS実装としてMbedTLS(@url{https://tls.mbed.org/})を使っています。
+以前は複数のTLSサブシステムをサポートしていたので、ライブラリは複数のサブシステムを
+切り替えて使えるようになっています。将来また別のTLSサブシステムをサポートするかもしれません。
+@c COMMON
+
+@deftp {Class} <tls>
+@clindex tls
+@c MOD rfc.tls
+@c EN
+An abstract base class of a TLS implementation.
+You can use its instance to communicate with peer over secure connection.
+You usually don't need to care the concrete subclass; just treat
+their instances as @code{<tls>} instance.
+@c JP
+TLS実装のベースクラスです。このクラスのインスタンスを使って、
+セキュアなコネクションを張って通信ができます。
+通常、具体的なサブクラスを気にする必要はありません。
+@c COMMON
+@end deftp
+
+@deftp {Class} <mbed-tls>
+@clindex mbed-tls
+@c MOD rfc.tls
+@c EN
+A class that implements MbedTLS subsystem interface.
+@c JP
+MbedTLSサブシステムを実装しているクラスです。
+@c COMMON
+@end deftp
+
+@deffn {Parameter} default-tls-class
+@c MOD rfc.tls
+@c EN
+The default TLS subsystem to be used.  In the current version,
+it may just be @code{<mbed-tls>}, or @code{#f} if the system is not
+compiled with TLS support.
+@c JP
+デフォルトのTLSサブシステムです。現在のバージョンでは、
+これは@code{<mbed-tls>}クラスか@code{#f}です。
+@code{#f}は、GaucheがTLSをサポートしていないことを示します。
+@c COMMON
+@end deffn
+
+@c EN
+@subheading TLS common operations
+@c JP
+@subheading TLS共通の操作
+@c COMMON
+
+@defun make-tls initargs @dots{}
+@c MOD rfc.tls
+@c EN
+Creates and returns a new TLS instance of the class @code{default-tls-class}.
+The returned TLS instance can be used either as a client, by passing it
+to @code{tls-connect}, or as a server, by passing it to @code{tls-bind}
+and @code{tls-accept}.  See the following subsections for each usage.
+@c JP
+新たなTLSインスタンスを作って返します。インスタンスの具体的なクラスは
+@code{default-tls-class}の値が使われます。
+TLSインスタンスは@code{tls-connect}に渡すことでクライアントとして使ったり、
+@code{tls-bind}と@code{tls-accept}に渡すことでサーバーとして使うことができます。
+以下のそれぞれのサブセクションを参照してください。
+@c COMMON
+
+@c EN
+The arguments must be a keyword-value list, and passed to the constructor
+of the TLS class.  Currently only the following keyword is supported.
+@c JP
+引数はTLSクラスに渡されるキーワード-値リストでなければなりません。
+現在サポートされているのは以下のキーワードのみです。
+@c COMMON
+
+@table @code
+@item :server-name
+@c EN
+Server name to be used for TLS Server Name Indication extension.
+In general, if you use the created TLS object as a client,
+you want to specify the server name.  If you use the create TLS object
+as a server, you can omit this option.
+@c JP
+TLS Server Name Indication拡張に使うサーバー名を指定します。
+一般的には、TLSオブジェクトをクライアントとして使う場合に接続先サーバ名を渡します。
+サーバとして使う場合は必要ありません。
+@c COMMON
+@end table
+@end defun
+
+@defun tls-close tls
+@c MOD rfc.tls
+@c EN
+Shuts down the underling connection.  The peer will notified
+the connection is closed.
+Once @var{tls} is closed, it can no longer be used.
+@c JP
+TLSコネクションを閉じます。通信相手は接続が閉じられたことを知ります。
+@var{tls}がひとたびクローズされるとそれはもう使うことができません。
+@c COMMON
+@end defun
+
+@defun tls-input-port tls
+@defunx tls-output-port tls
+@c MOD rfc.tls
+@c EN
+If @var{tls} is connected, they return input and output port to communicate
+with the peer, respectively.
+
+If @var{tls} is not connected, @code{#f} is returned.
+@c JP
+@var{tls}が接続状態にある時、これらは相手と通信するための入力ポートと出力ポートを
+それぞれ返します。
+
+@var{tls}が接続状態に無い時にこれらを呼ぶと@code{#f}が返されます。
+@c COMMON
+@end defun
+
+@c EN
+@subheading TLS client
+@c JP
+@subheading TLSクライアント
+@c COMMON
+
+@c EN
+When your code is a client to connect to a server over TLS,
+you need CA certificates to verify server certificates properly.
 Gauche doesn't have its own CA certificates, and relies on the
 system's certificate store by default.  On Unix-based systems,
 we search several known locations: On popular Linux distributions
@@ -20455,7 +20593,8 @@ we recommend you to install @code{ca-certificates} package (or similar one).
 On OSX, we recommend to install openssl via Homebrew.  On Windows,
 we use system's certificate store via Wincrypt API.
 @c JP
-サーバの認証を適切に行うためには、CA証明書が必要です。
+クライアントとしてサーバにTLS接続する場合、
+サーバの認証を適切に行うために、CA証明書が必要です。
 Gaucheは自前でCA証明書を持っておらず、デフォルトでシステムのCA証明書バンドルを利用します。
 Unixベースのシステムでは、いくつかのよくあるパスを探索します。
 例えばLinuxディストリビューションなら@code{ca-certificates}やそれに類する
@@ -20490,7 +20629,7 @@ Gaucheをインストールした後、次のコマンドを実行してくだ�
 @c COMMON
 
 @example
-gosh tools/get-cacert.scm
+gosh tools/get-cacert
 @end example
 
 @c EN
@@ -20571,201 +20710,145 @@ special @code{--with-ca-bundle} option is given.
 @c COMMON
 @end deffn
 
-
-@subheading Supported TLS subsystems
-
-@c EN
-Gauche supports two TLS subsystems - one based on
-MbedTLS (@url{https://tls.mbed.org/}),
-and the other based on AxTLS
-(@url{http://axtls.sourceforge.net/}).  Whether they're included
-depends on the configuration options.  By default, MbedTLS support
-is included if if the build platform has MbedTLS library installed.
-You can also include MbedTLS embedded in Gauche so that
-the runtime won't need MbedTLS library installed on the system.
-See @code{INSTALL.adoc} in the source tree for the details.
-@c JP
-Gaucheは二つのTLSサブシステムをサポートしています。
-ひとつはMbedTLS(@url{https://tls.mbed.org/})、です。
-もうひとつはAxTLS(@url{http://axtls.sourceforge.net/})です。
-configureのオプションによって組み込まれるものが変わります。
-デフォルトでは、ビルド時にシステムにMbedTLSがあればそれが含まれます。
-また、MbedTLSをGaucheに埋め込むことによって、
-実行時にシステムにMbedTLSライブラリを必要としないバイナリを作ることもできます。
-詳しくはソースツリーの@code{INSTALL.adoc}を参照してください。
-@c COMMON
-
-@c EN
-Gauche chooses available TLS subsystem at runtime, so the user usually
-does not need to worry about the difference.  If you're building Gauche
-by yourself, we recommend to use the default configuration, on a system
-that has MbedTLS installed.   That will give you the most flexible choice.
-@c JP
-Gaucheは実行時に使える範囲で適切なTLSサブシステムを選択するので、
-ユーザが違いを意識する必要はほとんどありません。自分でGaucheをビルドする場合は、
-MbedTLSがインストールされた環境で、デフォルトのコンフィグレーションでビルドすることを
-推奨します。それが最も柔軟な選択となるでしょう。
-@c COMMON
-
-@c EN
-Whether the running Gauche has any of TLS support can be checked with
-a feature identifier @code{gauche.net.tls}.  Availability of each
-individual subsystems can be checked with feature identifiers
-@code{gauche.net.tls.axtls} and @code{gauche.net.tls.mbedtls}, respectively.
-@xref{Feature conditional}, for more about feature identifiers.
-@c JP
-Gaucheに何らかのTLSサポートが組み込まれているかどうかは機能識別子
-@code{gauche.net.tls}で、それぞれのサブシステムが使えるかどうかは
-機能識別子@code{gauche.net.tls.axtls}と@code{gauche.net.tls.mbedtls}で
-検査できます。機能識別子については@ref{Feature conditional}を参照してください。
-@c COMMON
-
-@deftp {Class} <tls>
-@clindex tls
-@c MOD rfc.tls
-An abstract base class of TLS implementations.
-@end deftp
-
-@deftp {Class} <mbed-tls>
-@clindex mbed-tls
-@c MOD rfc.tls
-A class that implements mbedTLS subsystem interface.
-@end deftp
-
-@deftp {Class} <ax-tls>
-@clindex ax-tls
-@c MOD rfc.tls
-A class that implements axTLS subsystem interface.
-@end deftp
-
-@deffn {Parameter} default-tls-class :optional class
-@c MOD rfc.tls
-Set/get the default TLS subsystem to be used.  Without arguments, it
-return a class (either @code{<ax-tls>} or @code{<mbed-tls>} to be used.
-With one argument, which must be either @code{<ax-tls>} or @code{<mbed-tls>},
-changes the default and returns the previous value.
-@end deffn
-
-@subheading TLS interface
-
-@defun make-tls initargs @dots{}
-@c MOD rfc.tls
-Creates and returns a new TLS instance of the class @code{default-tls-class}.
-The returned TLS instance can be used for the tls procedures below.
-
-The arguments must be a keyword-value list, and passed to the constructor
-of the TLS class.
-
-@table @code
-@item :server-name
-Server name to be used for TLS Server Name Indication extension.
-@item :num-sessions
-[AxTLS only]
-The number of sessions to be used for session caching.
-0 indicates no sessino caching.
-@item :options
-[AxTLS only]
-Bitflags of options.  Logical OR of the following numeric constants.
-@end table
-
-@table @code
-@item SSL_SERVER_VERIFY_LATER
-(client only) Let handshake success even the server authentication fails.
-@item SSL_CLIENT_AUTHENTICATION
-(server only) Request client certificate to be authenticated.
-@end table
-@end defun
-
 @defun tls-connect tls host port proto
-@defunx tls-connect tls socket
 @c MOD rfc.tls
-Establishes TLS connection as a client.  The first form is the
-recommended API.  The second form is only kept for the backward compatibility,
-may not work on the newer MbedTLS, and will be removed in future.
+@c EN
+Establishes TLS connection as a client.
 
 The @var{tls} argument must be an unconnected TLS object.  The
 @var{host} and @var{port} arguments are strings to specify
 server's hostname and port.  Besides the common hostname, IP notation
 (e.g. @code{"127.0.0.1"} or @code{"[::1]"}) are allowed in @var{host}.
-Numeric notation (e.g. @code{"443"}) or service name (e.g. @code{"https"})
+Integre port number or a service name (e.g. @code{"https"})
 are allowed in @var{port}.
 The @var{proto} argument must be either one of the symbols
 @code{tcp} or @code{udp}.
+@c JP
+クライアントとして、指定されたサーバにTLSで接続します。
 
-On success, it returns @var{tls},
-which is in connected state.  It can be used to read/write data
-from/to the connected peer.
+@var{tls}引数はまだ接続されていないTLSオブジェクトでなければなりません。
+@var{host}と@var{port}は文字列で、それぞれサーバのホスト名とポートを指定します。
+ホスト名についてはドメイン名のほか、IP表記が使えます
+(例: @code{"127.0.0.1"}、@code{"[::1]"})。
+ポートについては整数のポート番号も名前による指定(例: @code{"https"})も使えます。
+@var{proto}引数はシンボル@code{tcp}か@code{udp}のどちらかでなければなりません。
+@c COMMON
 
-In the second, deprecated form,
-the @var{socket} argument must be a @emph{connected} socket.
-The @var{socket} is owned by @var{tls} object and should not be directly
-accessed after calling this procedure.
+@c EN
+Once the procedure contacted to the server,
+it obtains its server certificate and tries to validate it
+against the known CA certificates.  If the server can't be validated,
+an error is signaled.  To establish a proper connection,
+a CA certificate storage must be specified
+by the parameter @code{tls-ca-bundle-path}.
+@c JP
+サーバにコンタクトできたら、この手続きはサーバ証明書を入手して
+CA証明書を使ってバリデーションを試みます。
+バリデーションが失敗したらエラーが投げられます。正しく接続を確立するには、
+有効なCA証明書ストアがパラメータ@code{tls-ca-bundle-path}で指定されていなければ
+なりません。
+@c COMMON
+
+@c EN
+Once the connection is established and TLS handshake is succeeded,
+the passed @var{tls} becomes 'connected' state and
+can be used to read/write data from/to the connected peer.
+@c JP
+接続が確立してTLSハンドシェイクが成功したら、
+引数に渡した@var{tls}オブジェクトはconnected状態になり、
+相手とデータをやりとりすることができます。
+@c COMMON
 @end defun
 
-@defun tls-accept tls socket
-@c MOD rfc.tls
-@c DEPRECATED
-This is incompatible to
-the newer MbedTLS.  We plan to provide an alternative API, with
-which you can ``bind'' a tls object and then ``accept'' the client
-connection, without touching the underlying sockets.
+@c EN
+@subheading TLS server
+@c JP
+@subheading TLSサーバー
+@c COMMON
 
-Establishes TLS connection as a server.  The @var{tls} argument must
-be an unconnected TLS object, and the @var{socket} argument must
-be a @emph{listening} socket.  On success, it returns @var{tls},
-which is in connected state.  It can be used to read/write data
-from/to the connected peer.
+@c EN
+To open a TLS connection as a server, you have to prepare
+a private key, a server certificate, and
+intermediate certificates.  Those must be loaded before accepting
+TLS connections from clients.
+@c JP
+TLSコネクションをサーバとして使うには、秘密鍵、サーバ証明書、および中間証明書を
+用意する必要があります。これらはクライアントからのTLS接続を受け付ける前に
+読み込まれている必要があります。
+@c COMMON
+
+@defun tls-load-certificate tls path
+@c MOD rfc.tls
+@c EN
+Read and register server certifcate(s) stored in a file named by @var{path}.
+The given file may contain multiple certificates.  You can call this
+multiple times to add intermediate certifictes.
+@c JP
+@var{path}で示されるファイルに格納されたサーバ証明書を読み込みます。
+ファイル中に複数の証明書を含めることができます。また、この関数は複数回呼び出せて、
+@var{tls}に中間証明書を追加してゆくことができます。
+@c COMMON
 @end defun
 
-@defun tls-close tls
+@defun tls-load-private-key tls path password
 @c MOD rfc.tls
-Shuts down the underling connection.  The peer will notified
-the connection is closed.
-Once @var{tls} is closed, it can no longer be used, but the reosurces
-won't be collected until @var{tls} is GC-ed or @code{tls-destroy} is
-called.  We recommend the user call @code{tls-destroy} explicitly.
+@c EN
+Read and register server private key storead in a file named by @var{path},
+with the @var{password}.  If the private key file is not encrypted,
+you can pass @code{#f} to @var{password}.
+@c JP
+@var{path}ed示されるファイルに格納されたサーバの秘密鍵を読み出して登録します。
+秘密鍵が暗号化されている場合は@var{password}にパスワードを指定します。
+秘密鍵が暗号されていない場合は@var{password}に@code{#f}を渡します。
+@c COMMON
 @end defun
 
-@defun tls-destroy tls
+@defun tls-bind tls host port proto
 @c MOD rfc.tls
-Releases resources associated to @var{tls}.
+@c EN
+Creates a server endpoint of tls connection.
+
+The @var{tls} argument must be an unconnected, unbound TLS object.
+The @var{host} argument may be a string hostname or @code{#f}.
+The @var{port} argument is an integer or a string to specify the port.
+The @var{proto} argument must be either one of the symbols
+@code{tcp} or @code{udp}.
+
+(NB: @var{udp} server (datagram TLS) isn't supported yet.)
+@c JP
+TLS接続のサーバー側エンドポイントを作ります。
+
+@var{tls}引数はまだ接続もbindもされていないTLSオブジェクトでなければなりません。
+@var{host}引数は文字列のホスト名か@code{#f}です。
+@var{port}引数は整数のポート番号か文字列によるポート名です。
+@var{proto}にはシンボル@code{tcp}か@code{udp}を渡します。
+
+(NB: @var{udp}サーバーポートはまだサポートされていません)
+@c COMMON
 @end defun
 
-@defun tls-input-port tls
-@defunx tls-output-port tls
+@defun tls-accept tls
 @c MOD rfc.tls
-If @var{tls} is connected, it returns input and output port to communicate
-with the peer, respectively.
+@c EN
+The passed tls object must already be bound by @code{tls-bind}.
+Server certificates and private key must be already loaded to @var{tls}
+by @code{tls-load-certificate} and @code{tls-load-private-key}.
 
-If @var{tls} is not connected, @code{#f} is returned.
+This waits for a client to connect to the bound endpoint.  Once
+a client tries to connect, it present the server certificate
+and performs TLS handshake.  If everything succeeds,
+returns a fresh @var{tls} object that can be used
+to read/write dat from/to the connected peer.
+@c JP
+引数の@var{tls}は、@code{tls-bind}でバインドされたTLSオブジェクトでなければなりません。
+サーバ証明書と秘密鍵は@code{tls-load-certificate}および@code{tls-load-private-key}
+によって@var{tls}にロードされていなければなりません。
+
+この手続きはクライアントの接続要求を待ちます。接続要求が来たら、
+サーバ証明書をクライアントに提示し、TLSハンドシェークを行います。
+全てが成功すれば、クライアントに接続された新たな@var{tls}オブジェクトを作って返します。
+@c COMMON
 @end defun
-
-@defun tls-load-object tls type filename :optional password
-@c MOD rfc.tls
-This procedure is only meaningful for @code{<axl-tls>}.  For @code{<mbed-tls>},
-this procedure does nothing.
-
-Load private keys or certificates stored in a file specified by
-@var{filenames}.  The type of object is specified by @var{type}
-argument with one of the following numberic constants.  If the file
-requires a password, it should be given to @var{password}.
-
-@table @code
-@item SSL_OBJ_X509_CERT
-@item SSL_OBJ_X509_CACERT
-@item SSL_OBJ_RSA_KEY
-@item SSL_OBJ_PKCS8
-@item SSL_OBJ_PKC12
-@end table
-@end defun
-
-@defvr {Constant} SSL_OBJ_X509_CERT
-@defvrx {Constant} SSL_OBJ_X509_CACERT
-@defvrx {Constant} SSL_OBJ_RSA_KEY
-@defvrx {Constant} SSL_OBJ_PKCS8
-@defvrx {Constant} SSL_OBJ_PKCS12
-@c MOD rfc.tls
-@end defvr
 
 @c ----------------------------------------------------------------------
 @node URI parsing and construction, UUID, Transport layer security, Library modules - Utilities
