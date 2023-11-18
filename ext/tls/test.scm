@@ -1,6 +1,7 @@
 (use gauche.test)
 (use gauche.threads)
 (use gauche.net)
+(use gauche.connection)
 
 (use file.util)
 
@@ -28,11 +29,15 @@
     (build-path (sys-dirname (current-load-path)) "data" filename))
 
   (let ((serv (make <mbed-tls> :server-name "localhost"))
+        (serv-port #f)
         (serv-thread #f))
     (unwind-protect
         (begin
-          (test* "simple communication" #t
-                 (is-a? (tls-bind serv #f 8087 'tcp) <mbed-tls>))
+          (test* "bind" #t
+                 (begin
+                   (tls-bind serv #f 0 'tcp)
+                   (set! serv-port (sockaddr-port (connection-self-address serv)))
+                   (and (integer? serv-port) (positive? serv-port))))
           (test* "loading private key" #t
                  (boolean
                   (tls-load-private-key serv (datafile "test-key.pem")
@@ -47,11 +52,12 @@
                    (let1 clnt (make <mbed-tls> :server-name "localhost")
                      (unwind-protect
                          (begin
-                           (tls-connect clnt "localhost" 8087 'tcp)
+                           (tls-connect clnt "localhost" serv-port 'tcp)
                            (display "Aloha!\r\n" (tls-output-port clnt))
                            (flush (tls-output-port clnt))
                            (read-line (tls-input-port clnt)))
                        (tls-close clnt)))))
+          (thread-join! serv-thread)
           )
       (tls-close serv)))
   ]
