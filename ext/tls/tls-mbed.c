@@ -70,6 +70,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_MbedTLSClass, mbedtls_print, NULL,
                          NULL, mbed_allocate, NULL);
 
 static ScmObj k_server_name;
+static ScmObj k_skip_verification;
 
 enum MbedState {
     UNCONNECTED,
@@ -92,6 +93,7 @@ typedef struct ScmMbedTLSRec {
     mbedtls_x509_crt ca;
     mbedtls_pk_context pk;
     ScmObj server_name;
+    _Bool skip_verification;
 } ScmMbedTLS;
 
 /*
@@ -199,7 +201,11 @@ static ScmObj mbed_connect(ScmTLS *tls,
     }
 
     mbedtls_ssl_conf_ca_chain(&t->conf, &t->ca, NULL);
-    mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+    if (t->skip_verification) {
+        mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_NONE);
+    } else {
+        mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+    }
 
     if (mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
         Scm_SysError("mbedtls_ssl_setup() failed");
@@ -484,6 +490,8 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 #endif
 
     t->server_name = server_name;
+    t->skip_verification =
+        SCM_BOOL_VALUE(Scm_GetKeyword(k_skip_verification, initargs, SCM_FALSE));
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
     t->common.connect = mbed_connect;
@@ -520,6 +528,7 @@ void Scm_Init_rfc__tls__mbed()
     Scm_MbedTLSClass.cpa = cpa;
     Scm_InitStaticClass(&Scm_MbedTLSClass, "<mbed-tls>", mod, NULL, 0);
     k_server_name = SCM_MAKE_KEYWORD("server-name");
+    k_skip_verification = SCM_MAKE_KEYWORD("skip-verification");
 #else
     /* insert dummy binding */
     SCM_DEFINE(mod, "<mbed-tls>", SCM_FALSE);

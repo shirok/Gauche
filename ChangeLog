@@ -1,6 +1,7 @@
 2023-11-17  Shiro Kawai  <shiro@acm.org>
 
-	* ext/tls: Support get self/peer address
+	* ext/tls: Support get self/peer address, option to not verify
+	  certificate.
 
 2023-11-15  Shiro Kawai  <shiro@acm.org>
 
