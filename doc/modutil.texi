@@ -20528,10 +20528,11 @@ TLSインスタンスは@code{tls-connect}に渡すことでクライアント�
 
 @c EN
 The arguments must be a keyword-value list, and passed to the constructor
-of the TLS class.  Currently only the following keyword is supported.
+of the TLS class.
+The following keyword arguments are recognized.
 @c JP
 引数はTLSクラスに渡されるキーワード-値リストでなければなりません。
-現在サポートされているのは以下のキーワードのみです。
+以下のキーワード引数が認識されます。
 @c COMMON
 
 @table @code
@@ -20545,6 +20546,15 @@ as a server, you can omit this option.
 TLS Server Name Indication拡張に使うサーバー名を指定します。
 一般的には、TLSオブジェクトをクライアントとして使う場合に接続先サーバ名を渡します。
 サーバとして使う場合は必要ありません。
+@c COMMON
+@item :skip-verification
+@c EN
+Client only.  If the argument is true, skip server certificate
+verification upon connection.
+This is unsafe and should not be used except experimental purposes.
+@c JP
+クライアントのみ。この引数が真の値の場合、接続時の証明書の認証を省略します。
+これは危険な動作なので、実験目的以外では使わないでください。
 @c COMMON
 @end table
 @end defun
