@@ -125,6 +125,10 @@
  ;; internal
  (define-cproc %tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
  (define-cproc %tls-output-port-set! (tls::<tls> port) Scm_TLSOutputPortSet)
+ (define-cproc %tls-get-self-address (tls::<tls>)
+   (return (Scm_TLSGetConnectionAddress tls TLS_SELF_ADDRESS)))
+ (define-cproc %tls-get-peer-address (tls::<tls>)
+   (return (Scm_TLSGetConnectionAddress tls TLS_PEER_ADDRESS)))
 
  ;; DEPRECATED APIs
  (define-enum SSL_SERVER_VERIFY_LATER)
@@ -222,12 +226,8 @@
 ;; Deprecated
 (define (tls-destroy tls) (tls-close tls))
 
-;; Connection interface
-;; TODO: we used to take self-address and peer-address from the underlying
-;; socket fd.  It is no longer publicly available in MbedTLS, so we need
-;; to find some other way.
-(define-method connection-self-address ((s <tls>)) #f)
-(define-method connection-peer-address ((s <tls>)) #f)
+(define-method connection-self-address ((s <tls>)) (%tls-get-self-address s))
+(define-method connection-peer-address ((s <tls>)) (%tls-get-peer-address s))
 (define-method connection-input-port ((s <tls>))
   (tls-input-port s))
 (define-method connection-output-port ((s <tls>))

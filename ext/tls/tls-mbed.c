@@ -408,6 +408,32 @@ static ScmObj mbed_load_private_key(ScmTLS *tls,
     return SCM_OBJ(tls);
 }
 
+/*
+ * Get connection info.  MbedTLS once tried to make 'fd' hidden,
+ * but it was subsequently reverted.  We abstract it just in case
+ * MbedTLS changes it again.
+ */
+
+static int get_connection_fd(ScmMbedTLS *t)
+{
+    return t->conn.fd;
+}
+
+static ScmObj mbed_connection_address(ScmTLS *tls, int who)
+{
+    ScmMbedTLS *t = (ScmMbedTLS*)tls;
+    switch (who) {
+    case TLS_SELF_ADDRESS:
+        if (t->state != CONNECTED && t->state != BOUND) return SCM_FALSE;
+        return Scm_GetSockName(get_connection_fd(t));
+    case TLS_PEER_ADDRESS:
+        if (t->state != CONNECTED) return SCM_FALSE;
+        return Scm_GetPeerName(get_connection_fd(t));
+    default:
+        return SCM_FALSE;
+    }
+}
+
 static void mbedtls_print(ScmObj obj, ScmPort* port,
                           ScmWriteContext* ctx SCM_UNUSED)
 {
@@ -468,6 +494,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->common.close = mbed_close;
     t->common.loadCertificate = mbed_load_certificate;
     t->common.loadPrivateKey = mbed_load_private_key;
+    t->common.getConnectionAddress = mbed_connection_address;
     t->common.finalize = mbed_finalize;
     Scm_RegisterFinalizer(SCM_OBJ(t), mbed_finalize, NULL);
     return SCM_OBJ(t);

@@ -88,7 +88,6 @@ ScmObj Scm_MakeTLS(ScmObj initargs)
     return Scm_Allocate(SCM_CLASS(klass), initargs);
 }
 
-
 ScmObj Scm_TLSClose(ScmTLS* t)
 {
     /* NB: pots are already closed */
@@ -175,6 +174,15 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
 {
     t->out_port = port;
     return SCM_UNDEFINED;
+}
+
+ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who)
+{
+    if (t->getConnectionAddress) {
+        return t->getConnectionAddress(t, who);
+    } else {
+        return SCM_FALSE;
+    }
 }
 
 #if !HAVE_WINCRYPT_H

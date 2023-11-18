@@ -103,6 +103,7 @@ struct ScmTLSRec {
     ScmObj (*close)(ScmTLS*);
     ScmObj (*loadCertificate)(ScmTLS*, const char*);
     ScmObj (*loadPrivateKey)(ScmTLS*, const char*, const char*);
+    ScmObj (*getConnectionAddress)(ScmTLS*, int);
     void   (*finalize)(ScmObj, void*);
 };
 
@@ -133,7 +134,11 @@ extern ScmObj Scm_TLSClose(ScmTLS* t);
 
 extern int    Scm_TLSSystemCABundleAvailable(void);
 
-
+extern ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who);
+enum {
+    TLS_SELF_ADDRESS = 0,
+    TLS_PEER_ADDRESS = 1
+};
 
 /*
    KZ: presumably due to block sizes imposed by the crypto algorithms
@@ -150,6 +155,7 @@ extern ScmObj Scm_TLSOutputPort(ScmTLS* t);
 /* internal, for tls.scm implementation convenience */
 extern ScmObj Scm_TLSInputPortSet(ScmTLS* t, ScmObj port);
 extern ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port);
+
 
 SCM_DECL_END
 
