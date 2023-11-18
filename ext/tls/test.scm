@@ -35,7 +35,7 @@
         (begin
           (test* "bind" #t
                  (begin
-                   (tls-bind serv #f 0 'tcp)
+                   (tls-bind serv #f 0)
                    (set! serv-port (sockaddr-port (connection-self-address serv)))
                    (and (integer? serv-port) (positive? serv-port))))
           (test* "loading private key" #t
@@ -52,7 +52,7 @@
                    (let1 clnt (make <mbed-tls> :server-name "localhost")
                      (unwind-protect
                          (begin
-                           (tls-connect clnt "localhost" serv-port 'tcp)
+                           (tls-connect clnt "localhost" serv-port)
                            (display "Aloha!\r\n" (tls-output-port clnt))
                            (flush (tls-output-port clnt))
                            (read-line (tls-input-port clnt)))

@@ -163,7 +163,7 @@
  )
 
 ;; API
-(define (tls-connect tls host port proto)
+(define (tls-connect tls host port :optional (proto 'tcp))
   (assume-type port (</> <string> <integer>))
   (let1 p (if (integer? port)
             (if (or (inexact? port) (negative? port))
@@ -177,7 +177,7 @@
   tls)
 
 ;; API
-(define (tls-bind tls host port proto)
+(define (tls-bind tls host port :optional (proto 'tcp))
   (assume-type port (</> <string> <integer>))
   (let1 p (if (integer? port)
             (if (or (inexact? port) (negative? port))

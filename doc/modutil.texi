@@ -20720,7 +20720,7 @@ special @code{--with-ca-bundle} option is given.
 @c COMMON
 @end deffn
 
-@defun tls-connect tls host port proto
+@defun tls-connect tls host port :optional proto
 @c MOD rfc.tls
 @c EN
 Establishes TLS connection as a client.
@@ -20732,7 +20732,9 @@ server's hostname and port.  Besides the common hostname, IP notation
 Integre port number or a service name (e.g. @code{"https"})
 are allowed in @var{port}.
 The @var{proto} argument must be either one of the symbols
-@code{tcp} or @code{udp}.
+@code{tcp} or @code{udp}.  If omitted, @code{tcp} is assumed.
+(If it is @code{udp}, DTLS is used instead of TLS.  However, we still
+lack some additional API support to make DTLS usable.)
 @c JP
 クライアントとして、指定されたサーバにTLSで接続します。
 
@@ -20741,7 +20743,10 @@ The @var{proto} argument must be either one of the symbols
 ホスト名についてはドメイン名のほか、IP表記が使えます
 (例: @code{"127.0.0.1"}、@code{"[::1]"})。
 ポートについては整数のポート番号も名前による指定(例: @code{"https"})も使えます。
-@var{proto}引数はシンボル@code{tcp}か@code{udp}のどちらかでなければなりません。
+@var{proto}引数はシンボル@code{tcp}か@code{udp}のどちらかでなければならず、
+省略時は@code{tcp}とみなされます
+(@var{udp}を指定した場合はTLSのかわりにDTLSが使われることになりますが、
+今はDTLSを実用的に使うために必要なAPIがいくつか未実装です。)
 @c COMMON
 
 @c EN
@@ -20813,7 +20818,7 @@ you can pass @code{#f} to @var{password}.
 @c COMMON
 @end defun
 
-@defun tls-bind tls host port proto
+@defun tls-bind tls host port :optional proto
 @c MOD rfc.tls
 @c EN
 Creates a server endpoint of tls connection.
@@ -20822,9 +20827,9 @@ The @var{tls} argument must be an unconnected, unbound TLS object.
 The @var{host} argument may be a string hostname or @code{#f}.
 The @var{port} argument is an integer or a string to specify the port.
 The @var{proto} argument must be either one of the symbols
-@code{tcp} or @code{udp}.
-
-(NB: @var{udp} server (datagram TLS) isn't supported yet.)
+@code{tcp} or @code{udp}, and assumed @code{tcp} if omitted.
+(NB: @var{udp} server (DTLS) needs some more API support, so
+it is not very usable now.)
 @c JP
 TLS接続のサーバー側エンドポイントを作ります。
 
@@ -20832,8 +20837,9 @@ TLS接続のサーバー側エンドポイントを作ります。
 @var{host}引数は文字列のホスト名か@code{#f}です。
 @var{port}引数は整数のポート番号か文字列によるポート名です。
 @var{proto}にはシンボル@code{tcp}か@code{udp}を渡します。
-
-(NB: @var{udp}サーバーポートはまだサポートされていません)
+省略時は@code{tcp}が仮定されます。
+(NB: @var{udp}サーバー (DTLS) を使うにはいくつか追加のAPIサポートが
+必要なので、今のところDTLSは使えません)。
 @c COMMON
 @end defun
 
