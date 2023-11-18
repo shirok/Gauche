@@ -91,7 +91,7 @@ typedef struct ScmMbedTLSRec {
     mbedtls_ssl_config conf;
     mbedtls_x509_crt ca;
     mbedtls_pk_context pk;
-    ScmString *server_name;
+    ScmObj server_name;
 } ScmMbedTLS;
 
 /*
@@ -145,8 +145,30 @@ static void mbed_close_check(ScmMbedTLS* t, const char *op)
 }
 
 
-static ScmObj mbed_connect_common(ScmMbedTLS *t)
+static ScmObj mbed_connect(ScmTLS *tls,
+                           const char *host,
+                           const char *port,
+                           int proto)
 {
+    ScmMbedTLS* t = (ScmMbedTLS*)tls;
+
+    mbed_context_check(t, "connect");
+    const char* pers = "Gauche";
+    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
+                             (const unsigned char *)pers, strlen(pers)) != 0) {
+        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
+    }
+
+    int mbedtls_proto = MBEDTLS_NET_PROTO_TCP;
+    if (proto == SCM_TLS_PROTO_UDP) {
+        mbedtls_proto = MBEDTLS_NET_PROTO_UDP;
+    }
+
+    int r = mbedtls_net_connect(&t->conn, host, port, mbedtls_proto);
+    if (r != 0) {
+        mbed_error("mbedtls_net_connect() failed: %s (%d)", r);
+    }
+
     if (mbedtls_ssl_config_defaults(&t->conf,
                                     MBEDTLS_SSL_IS_CLIENT,
                                     MBEDTLS_SSL_TRANSPORT_STREAM,
@@ -183,43 +205,21 @@ static ScmObj mbed_connect_common(ScmMbedTLS *t)
         Scm_SysError("mbedtls_ssl_setup() failed");
     }
 
-    const char* hostname = t->server_name ? Scm_GetStringConst(t->server_name) : NULL;
+    const char* hostname = (SCM_STRINGP(t->server_name)
+                            ? Scm_GetStringConst(SCM_STRING(t->server_name))
+                            : NULL);
     if(mbedtls_ssl_set_hostname(&t->ctx, hostname) != 0) {
         Scm_SysError("mbedtls_ssl_set_hostname() failed");
     }
 
     mbedtls_ssl_set_bio(&t->ctx, &t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
 
-    int r = mbedtls_ssl_handshake(&t->ctx);
+    r = mbedtls_ssl_handshake(&t->ctx);
     if (r != 0) {
         mbed_error("TLS handshake failed: %s (%d)", r);
     }
     t->state = CONNECTED;
     return SCM_OBJ(t);
-}
-
-static ScmObj mbed_connect(ScmTLS *tls, const char *host, const char *port,
-                           int proto)
-{
-    ScmMbedTLS* t = (ScmMbedTLS*)tls;
-
-    mbed_context_check(t, "connect");
-    const char* pers = "Gauche";
-    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-                             (const unsigned char *)pers, strlen(pers)) != 0) {
-        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
-    }
-
-    int mbedtls_proto = MBEDTLS_NET_PROTO_TCP;
-    if (proto == SCM_TLS_PROTO_UDP) {
-        mbedtls_proto = MBEDTLS_NET_PROTO_UDP;
-    }
-
-    int r = mbedtls_net_connect(&t->conn, host, port, mbedtls_proto);
-    if (r != 0) {
-        mbed_error("mbedtls_net_connect() failed: %s (%d)", r);
-    }
-    return mbed_connect_common(t);
 }
 
 static ScmObj mbed_bind(ScmTLS *tls,
@@ -483,7 +483,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     mbedtls_ssl_conf_dbg(&t->conf, mbed_debug, stderr);
 #endif
 
-    t->server_name = SCM_STRING(server_name);
+    t->server_name = server_name;
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
     t->common.connect = mbed_connect;
