@@ -39,7 +39,7 @@
   (use gauche.net)
   (use util.match)
   (export <tls> make-tls tls-connect
-          tls-bind tls-accept tls-close
+          tls-bind tls-accept tls-poll tls-close
           tls-load-certificate tls-load-private-key
           tls-read tls-write
           tls-input-port tls-output-port
@@ -122,6 +122,26 @@
  (define-cproc tls-write (tls::<tls> msg) Scm_TLSWrite)
  (define-cproc tls-input-port (tls::<tls>) Scm_TLSInputPort)
  (define-cproc tls-output-port (tls::<tls>) Scm_TLSOutputPort)
+ (define-cproc tls-poll (tls::<tls> rwflags::<list> :optional (timeout #f))
+   (let* ([ts::ScmTimeSpec]
+          [pts::ScmTimeSpec* (Scm_GetTimeSpec timeout (& ts))]
+          [iflags::u_long 0])
+     (for-each (lambda (f)
+                 (cond
+                  [(SCM_EQ f 'read) (logior= iflags TLS_POLL_READ)]
+                  [(SCM_EQ f 'write) (logior= iflags TLS_POLL_WRITE)]
+                  [else
+                   (Scm_Error "List of 'read and 'write expected, but got: %S"
+                              rwflags)]))
+               rwflags)
+     (let* ([r::u_long (Scm_TLSPoll tls iflags pts)]
+            [result SCM_NIL])
+       (when (logand r TLS_POLL_READ)
+         (set! result (Scm_Cons 'read result)))
+       (when (logand r TLS_POLL_WRITE)
+         (set! result (Scm_Cons 'write result)))
+       (return result))))
+
  ;; internal
  (define-cproc %tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
  (define-cproc %tls-output-port-set! (tls::<tls> port) Scm_TLSOutputPortSet)

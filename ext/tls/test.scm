@@ -28,7 +28,7 @@
   (define (datafile filename)
     (build-path (sys-dirname (current-load-path)) "data" filename))
 
-  (let ((serv (make <mbed-tls> :server-name "localhost"))
+  (let ((serv (make <mbed-tls>))
         (serv-port #f)
         (serv-thread #f))
     (unwind-protect
@@ -60,6 +60,22 @@
           (thread-join! serv-thread)
           )
       (tls-close serv)))
+
+  (let ((serv (make <mbed-tls>))
+        (serv-port #f)
+        (clnt-thread #f))
+    (tls-bind serv #f 0)
+    (test* "poll (0)" '()
+           (tls-poll serv '(read write) 0.01))
+    (set! serv-port (sockaddr-port (connection-self-address serv)))
+    (set! clnt-thread
+          ($ thread-start! $ make-thread
+             (^[] (tls-connect serv "localhost" serv-port))))
+    (test* "poll (10)" #t
+           (pair? (tls-poll serv '(read write) 0.5)))
+
+    (when clnt-thread (thread-terminate! clnt-thread))
+    (tls-close serv))
   ]
  [else])
 

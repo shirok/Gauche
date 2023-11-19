@@ -101,6 +101,7 @@ struct ScmTLSRec {
     ScmObj (*read)(ScmTLS*);
     ScmObj (*write)(ScmTLS*, ScmObj);
     ScmObj (*close)(ScmTLS*);
+    u_long (*poll)(ScmTLS*, u_long, ScmTimeSpec*);
     ScmObj (*loadCertificate)(ScmTLS*, const char*);
     ScmObj (*loadPrivateKey)(ScmTLS*, const char*, const char*);
     ScmObj (*getConnectionAddress)(ScmTLS*, int);
@@ -138,6 +139,12 @@ extern ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who);
 enum {
     TLS_SELF_ADDRESS = 0,
     TLS_PEER_ADDRESS = 1
+};
+
+extern u_long Scm_TLSPoll(ScmTLS *t, u_long rwflags, ScmTimeSpec *timeout);
+enum {
+    TLS_POLL_READ  = 1,
+    TLS_POLL_WRITE = 2
 };
 
 /*

@@ -176,6 +176,11 @@ ScmObj Scm_TLSOutputPortSet(ScmTLS* t, ScmObj port)
     return SCM_UNDEFINED;
 }
 
+u_long Scm_TLSPoll(ScmTLS *t, u_long rwflags, ScmTimeSpec *timeout)
+{
+    return t->poll(t, rwflags, timeout);
+}
+
 ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who)
 {
     if (t->getConnectionAddress) {

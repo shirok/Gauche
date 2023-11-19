@@ -133,13 +133,13 @@ static void mbed_error(const char *fmt, int errcode)
     Scm_Error(fmt, buf, errcode);
 }
 
-static void mbed_context_check(ScmMbedTLS* t SCM_UNUSED,
+static void mbed_context_check(ScmMbedTLS *t SCM_UNUSED,
                                const char* op SCM_UNUSED)
 {
     /* nothing to do (for now) */
 }
 
-static void mbed_close_check(ScmMbedTLS* t, const char *op)
+static void mbed_close_check(ScmMbedTLS *t, const char *op)
 {
     if (t->state != CONNECTED) {
         Scm_Error("attempt to %s unconnected or closed TLS: %S", op, t);
@@ -276,7 +276,7 @@ static ScmObj mbed_bind(ScmTLS *tls,
     return SCM_OBJ(t);
 }
 
-static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
+static ScmObj mbed_accept(ScmTLS *tls) /* tls must already be bound */
 {
     SCM_ASSERT(SCM_XTYPEP(tls, &Scm_MbedTLSClass));
     ScmMbedTLS *servt = (ScmMbedTLS*)tls;
@@ -308,7 +308,7 @@ static ScmObj mbed_accept(ScmTLS* tls) /* tls must already be bound */
     return SCM_OBJ(t);
 }
 
-static ScmObj mbed_read(ScmTLS* tls)
+static ScmObj mbed_read(ScmTLS *tls)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "read");
@@ -323,7 +323,7 @@ static ScmObj mbed_read(ScmTLS* tls)
                           SCM_STRING_INCOMPLETE | SCM_STRING_COPYING);
 }
 
-static ScmObj mbed_write(ScmTLS* tls, ScmObj msg)
+static ScmObj mbed_write(ScmTLS *tls, ScmObj msg)
 {
     ScmMbedTLS *t = (ScmMbedTLS*)tls;
     mbed_context_check(t, "write");
@@ -340,6 +340,36 @@ static ScmObj mbed_write(ScmTLS* tls, ScmObj msg)
         Scm_SysError("mbedtls_ssl_write() failed");
     }
     return SCM_MAKE_INT(r);
+}
+
+static u_long mbed_poll(ScmTLS *tls, u_long rwflags, ScmTimeSpec *timeout)
+{
+    ScmMbedTLS *t = (ScmMbedTLS*)tls;
+    if (t->state != CONNECTED && t->state != BOUND) return 0;
+    uint32_t rw = 0;
+    if (rwflags & TLS_POLL_READ) rw |= MBEDTLS_NET_POLL_READ;
+    if (rwflags & TLS_POLL_WRITE) rw |= MBEDTLS_NET_POLL_WRITE;
+
+    uint32_t timeout_delay;     /* mbed takes ms from now  */
+    if (timeout == NULL) {
+        timeout_delay = (uint32_t)-1; /* wait indefinitely */
+    } else {
+        ScmTime *now = SCM_TIME(Scm_CurrentTime());
+        long ds = timeout->tv_sec - now->sec;
+        long dns = timeout->tv_nsec - now->nsec;
+        long dms = ds * 1000 + dns / 1000000;
+        if (dms <= 0) timeout_delay = 0;
+        else timeout_delay = (uint32_t)dms;
+    }
+
+    int r = mbedtls_net_poll(&t->conn, rw, timeout_delay);
+    if (r < 0) {
+        mbed_error("mbedtls_net_poll failed: %s (%d)", r);
+    }
+    u_long result = 0;
+    if (r & MBEDTLS_NET_POLL_READ) result |= TLS_POLL_READ;
+    if (r & MBEDTLS_NET_POLL_WRITE) result |= TLS_POLL_WRITE;
+    return result;
 }
 
 /* Cleanup is called to release resources other than Scheme managed ones.
@@ -499,6 +529,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     t->common.accept = mbed_accept;
     t->common.read = mbed_read;
     t->common.write = mbed_write;
+    t->common.poll = mbed_poll;
     t->common.close = mbed_close;
     t->common.loadCertificate = mbed_load_certificate;
     t->common.loadPrivateKey = mbed_load_private_key;

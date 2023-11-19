@@ -3,6 +3,7 @@
 	* ext/tls/tls.scm (tls-connect, tls-bind): Make proto argument
 	  optional.  DTLS is not very usable now, so there's little point
 	  to allow users to specify udp here.
+	* ext/tls: Add tls-poll
 
 2023-11-17  Shiro Kawai  <shiro@acm.org>
 
