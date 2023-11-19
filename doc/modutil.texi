@@ -20587,6 +20587,41 @@ If @var{tls} is not connected, @code{#f} is returned.
 @c COMMON
 @end defun
 
+@defun tls-poll tls rw :optional timeout
+@c MOD rfc.tls
+@c EN
+Wait for @var{tls} to be ready for reading or writing.  The tls object must
+be already bound or connected; otherwise, it immediately returns @code{()}.
+
+The @var{rw} argument is a list of symbols @code{read} and/or @code{write},
+to specify what condition(s) to be checked.  The @var{timeout} argument
+is either a @code{<time>} object to specify an absolute time point,
+a real number to specify the number of seconds from the current time,
+or @code{#f} to wait indefinitely.  If omitted, @code{#f} is assumed.
+
+The return value is a list of symbols that are satisfied.  That is,
+if you pass @code{(read)} or @code{(read write)} in @var{rw} and the
+tls communication is ready to read, @code{(read)} is returned.
+If timeout reaches before any condition is met, @code{()} is returned.
+@c JP
+@var{tls}が読み込みもしくは書き込み可能になるまで待ちます。@var{tls}は既に
+bindされているか接続されていなければなりません。そうでない場合は直ちに@code{()}が
+返されます。
+
+@var{rw}はシンボル@code{read}、@code{write}の組み合わせのリストで、
+待つべき条件を指定します。@var{timeout}引数は、
+時刻を指定する@code{<time>}オブジェクトか、
+現在からの経過時間を秒で指定する実数値か、
+タイムアウトしないことを指示する@code{#f}です。省略時は@code{#f}が使われます。
+
+戻り値は満たされた条件のリストです。例えば@var{rw}引数に
+@code{(read)}もしくは@code{(read write)}を指定して、tlsが読み込み可能になったら
+@code{(read)}が返されます。条件が満たされる前にタイムアウトした場合は@code{()}が
+返されます。
+@c COMMON
+@end defun
+
+
 @c EN
 @subheading TLS client
 @c JP
