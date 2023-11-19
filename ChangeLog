@@ -1,5 +1,8 @@
 2023-11-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/libmod.scm (global-variable-visible?): Added.
+	  https://github.com/shirok/Gauche/issues/936
+
 	* ext/tls/tls.scm (tls-connect, tls-bind): Make proto argument
 	  optional.  DTLS is not very usable now, so there's little point
 	  to allow users to specify udp here.

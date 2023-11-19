@@ -127,6 +127,11 @@
    (not (SCM_UNBOUNDP
          (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
                                 name 0)))))
+(define-cproc global-variable-visible? (mod-or-name name::<symbol>) ::<boolean>
+  (return
+   (not (SCM_UNBOUNDP
+         (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
+                                name SCM_BINDING_EXTERNAL)))))
 (define-cproc global-variable-ref (mod_or_name name::<symbol>
                                                :optional
                                                fallback
