@@ -6238,7 +6238,7 @@ You can still use the old name but it is deprecated.
 @c JP
 これは以前は@code{global-variable-ref}と呼ばれていましたが、
 モジュールの操作であること、また束縛は変数とは限らず構文キーワードでも良いことを
-明確にするために名前を買えました。古い名前も使えますが非推奨です。
+明確にするために名前を変えました。古い名前も使えますが非推奨です。
 @c COMMON
 @end defun
 
