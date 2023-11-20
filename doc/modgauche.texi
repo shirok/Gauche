@@ -23391,7 +23391,7 @@ it will raise @code{<abandoned-mutex-exception>}.
 @c COMMON
 
 @c EN
-This storategy may, however, leave the system's thread unterminated,
+This strategy may, however, leave the system's thread unterminated,
 if the thread is blocking in certain system calls, even in Scheme level
 the thread is marked terminated.  The system thread will terminate itself
 as soon as it resumes and return the control to Gauche runtime.
@@ -23405,7 +23405,7 @@ Schemeレベルのスレッドが「terminated」とマークされた後でも�
 @c EN
 If, for some reason, you need to guarantee to terminate the system thread,
 you can pass a true value to @code{force} keyword argument.  If you do so,
-@code{thread-termiante!} will forcibly terminate the system thread
+@code{thread-terminate!} will forcibly terminate the system thread
 after the usual graceful termination fails.  It calls
 @code{pthread_cancel} or @code{TerminateThread} as the last resort,
 which can leave the process state inconsistent, so this mode should be

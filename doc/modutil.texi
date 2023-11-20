@@ -2523,7 +2523,7 @@ and @var{collection} must be a collection (@pxref{Collection framework}).
 @c COMMON
 
 @c EN
-Applis @var{proc} on each element of @var{collection}, possibly concurrently
+Applies @var{proc} on each element of @var{collection}, possibly concurrently
 using multiple threads.  The result is gathered into a list and
 returned.
 @c JP
@@ -2582,7 +2582,7 @@ depends on various factors, so you shouln't count on a deterministic behavior.
 A mapper is an object that encapsulates a storategy to run
 tasks in parallel.  We provide the following mappers.
 @c JP
-mamperはタスクを並列に走らせる戦略をカプセル化したものです。
+mapperはタスクを並列に走らせる戦略をカプセル化したものです。
 次のmapperが提供されます。
 @c COMMON
 
