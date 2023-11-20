@@ -122,28 +122,32 @@
  )
 
 ;; Global bindind access, public API
-(define-cproc global-variable-bound? (mod-or-name name::<symbol>) ::<boolean>
+(define-cproc module-binds? (mod-or-name name::<symbol>) ::<boolean>
   (return
    (not (SCM_UNBOUNDP
          (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
                                 name 0)))))
-(define-cproc global-variable-visible? (mod-or-name name::<symbol>) ::<boolean>
+(define-cproc module-exports? (mod-or-name name::<symbol>) ::<boolean>
   (return
    (not (SCM_UNBOUNDP
          (Scm_GlobalVariableRef (get-module-from-mod-or-name mod-or-name)
                                 name SCM_BINDING_EXTERNAL)))))
-(define-cproc global-variable-ref (mod_or_name name::<symbol>
-                                               :optional
-                                               fallback
-                                               (stay-in-module::<boolean> #f))
+(define-cproc module-binding-ref (mod_or_name name::<symbol>
+                                              :optional
+                                              fallback
+                                              (stay-in-module::<boolean> #f))
   (let* ([module::ScmModule* (get_module_from_mod_or_name mod_or_name)]
          [flags::int (?: stay_in_module SCM_BINDING_STAY_IN_MODULE 0)]
          [r  (Scm_GlobalVariableRef module name flags)]
          [r2 (?: (SCM_UNBOUNDP r) fallback r)])
     (when (SCM_UNBOUNDP r2)
-      (Scm_Error "global variable %S is not bound in module %S"
+      (Scm_Error "global identifier %S is not bound in module %S"
                  name module))
     (return r2)))
+
+;; Backward compatibility.  Deprecated
+(define global-variable-bound? module-binds?)
+(define global-variable-ref module-binding-ref)
 
 (define-in-module gauche (symbol-bound? name :optional (module #f)) ; Deprecated
   (global-variable-bound? module name))

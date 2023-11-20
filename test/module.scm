@@ -272,6 +272,7 @@
 (define-module Oc
   (export ichi (rename shi yon) go)
   (define ichi 1)
+  (define ni 2) ; not exported
   (define shi 4)
   (define go (+ ichi shi))
   (define kyu (+ shi go))
@@ -288,6 +289,25 @@
                 (global-variable-ref m 'ku #f)
                 (global-variable-ref m 'shi #f)
                 (global-variable-ref m 'kyu #f)))))
+
+(test "export-time renaming and defines?/exports? (0c)"
+      '((ichi #t #t) (ni #t #f) (shi #t #f) (yon #f #t) (go #t #t) (kyu #t #f) (ku #f #t))
+      (lambda ()
+        (let [(m (find-module 'Oc))]
+          (map (lambda (n)
+                 (list n
+                       (module-binds? m n)
+                       (module-exports? m n)))
+               '(ichi ni shi yon go kyu ku)))))
+(test "export-time renaming and defines?/exports? (0c-1)"
+      '((ichi #t #t) (ni #f #f) (shi #f #f) (yon #t #t) (go #t #t) (kyu #f #f) (ku #t #t))
+      (lambda ()
+        (let [(m (find-module 'Oc-1))]
+          (map (lambda (n)
+                 (list n
+                       (module-binds? m n)
+                       (module-exports? m n)))
+               '(ichi ni shi yon go kyu ku)))))
 
 (define-module Od
   (import (Oc :rename ((ku kokono)) :prefix mm:)))
