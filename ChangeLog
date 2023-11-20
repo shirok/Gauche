@@ -1,3 +1,10 @@
+2023-11-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/unit.scm (<cgen-dummy-unit>): Initialize
+	  cgen-current-unit with a dummy instance which issues error message
+	  saying <cgen-unit> isn't set up properly.  It is better than
+	  'object of class #<class <boolean>> doesn't have such slot'.
+
 2023-11-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmod.scm (module-exports?, module-binds?, module-binding-ref):

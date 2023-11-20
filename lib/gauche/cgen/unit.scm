@@ -81,8 +81,16 @@
    (debug-info-bin :init-value #f)   ;; see gauche.vm.debug-info
    ))
 
+;; A dummy instance to show a better error message  when cgen routine is
+;; used without setting a proper unit
+(define-class <cgen-dummy-unit> () ())
+
+(define-method slot-missing ((c <class>) (obj <cgen-dummy-unit>) slot . _)
+  (error "You need to bind an instance of <cgen-unit> to use \
+          cgen code generation procedures."))
+
 ;; API
-(define cgen-current-unit (make-parameter #f))
+(define cgen-current-unit (make-parameter (make <cgen-dummy-unit>)))
 
 ;; API
 (define-method cgen-unit-c-file ((unit <cgen-unit>))
