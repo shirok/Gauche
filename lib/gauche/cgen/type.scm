@@ -119,7 +119,7 @@
    ))
 
 (define-method write-object ((ct <cgen-type>) port)
-  (format port "#<cten-type ~a>" (~ ct'name)))
+  (format port "#<cgen-type ~a>" (~ ct'name)))
 
 ;; Lookup/create a cgen type from Gauche type name
 (define (cgen-type-from-name name)
