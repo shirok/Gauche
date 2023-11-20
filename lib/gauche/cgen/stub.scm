@@ -298,6 +298,11 @@
    (temporary-module :init-form (make-module #f)) ; module used by eval*
    ))
 
+(define-method initialize ((obj <cgen-stub-unit>) initargs)
+  (next-method)
+  (unless (slot-bound? obj 'c-name-prefix)
+    (slot-set! obj 'c-name-prefix #"~(~ obj'name)_")))
+
 (define-condition-type <cgen-stub-error> <error> #f)
 
 ;;===================================================================
