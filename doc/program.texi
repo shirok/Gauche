@@ -2311,13 +2311,13 @@ Or even conditionally "use" the modules:
 
 @c EN
 The traditional technique of testing a toplevel binding
-(using @code{global-variable-bound?}, @pxref{Module introspection})
+(using @code{module-binds?}, @pxref{Module introspection})
 doesn't work well in this case, since
 the @code{use} form takes effect at compile time.
 It is strongly recommended to use @code{cond-expand} whenever possible.
 @c JP
 トップレベルの束縛をチェックするような旧いテクニック
-(@code{global-variable-bound?}を使う, @ref{Module introspection}参照)
+(@code{module-binds?}を使う, @ref{Module introspection}参照)
 は実行時に効果を持つので、コンパイル時に解釈される@code{use}
 を切り替えるのはうまくいきません。
 可能なかぎり、@code{cond-expand}を使うことを推奨します。

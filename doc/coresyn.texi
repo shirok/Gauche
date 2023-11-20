@@ -4130,11 +4130,11 @@ The second form is merely a syntactic sugar of:
 
 @c EN
 Note: to find out if a symbol has definition (global binding) in
-the current module, you can use @code{global-variable-bound?}
+the current module, you can use @code{module-binds?}
 (@pxref{Module introspection}).
 @c JP
 註: シンボルが現在のモジュール中で定義されているか(グローバルな束縛を持つか)
-を調べるには、@code{global-variable-bound?}が使えます
+を調べるには、@code{module-binds?}が使えます
 (@ref{Module introspection}参照)。
 @c COMMON
 
@@ -6061,6 +6061,18 @@ It is an error to pass a non-module object.
 @c JP
 モジュールオブジェクト以外が渡された場合はエラーになります。
 @c COMMON
+
+@c EN
+If you want to check if a specific symbol is exported from a module,
+use @code{module-exports?} below instead of taking all exported
+symbols with @code{module-exports} and search from it.  It is much
+faster to use @code{module-exports?}.
+@c JP
+特定のシンボルがモジュールからエキスポートされているかどうかを調べるには、
+下に説明する@code{module-exports?}を使ってください。
+@code{module-exports}で全エキスポートシンボルのリストを取ってそこから探すより
+ずっと速いです。
+@c COMMON
 @end defun
 
 @defun module-parents module
@@ -6078,57 +6090,171 @@ list (@ref{Module inheritance}参照) を返します。
 @c COMMON
 @end defun
 
-@defun global-variable-bound? module symbol
+@defun module-binds? module symbol
 @c EN
-Returns true if @var{symbol}'s global binding is visible
-from @var{module}.  @var{Module} must be a module object or
+Returns @code{#t} if @var{symbol}'s global binding is visible
+from inside @var{module}, @code{#f} otherwise.  That is,
+if @code{(module-binds? 'M 'v)} returns @code{#t},
+@code{v} can be used as a globally bound identifier
+(either a variable or a syntactic keyword)
+in the module @code{M}.
+@var{Module} must be a module object or
 a symbol name of an existing module.
 
-Note: there used to be the @code{symbol-bound?} procedure to
-check whether a global variable is bound.  It is deprecated and
-the new code should use @code{global-variable-bound?} instead.
-The reason of change is that because of the name @code{symbol-bound?} and
-the fact that it assumes current-module by default, it gives
-an illusion as if a global bound value is somewhat 'stored'
-in a symbol itself (like CommonLisp's model).  It caused a lot
-of confusion when the current module differs between
-compile-time and runtime.  The new name and API made it clear
-that you are querying module's property.
+This deals with the view from inside @var{module}, so it isn't affected
+whether the named variable is exported from @var{module}, or if so,
+whether it is renamed on export.  If you need to test a variable
+from the viewpoint external to @var{module},
+see @code{module-exports?} below.
+
+Note: Lisp traditionally has @code{symbol-bound?} procedure to
+check whether a global variable is bound, but we feel the name
+focuses too much on symbols, whereas global bindings are managed
+by modules in Gauche.  Previous versions of Gauche uses
+the name @code{global-variable-bound?} and it is still kept for
+the backward compatibility, but we decided on the current name
+to be clear that it is about modules, and it is not only about
+variables.
 @c JP
-@var{symbol}のグローバルなバインディングが@var{module}から
-可視であれば、真を返します。@var{module}はモジュールオブジェクトか
+@var{symbol}のグローバルな束縛が@var{module}内部から
+可視であれば@code{#t}を、そうでなければ@code{#f}を返します。
+つまり、@code{(module-binds? 'M 'v)}が@code{#t}を返したら、
+@code{v}はグローバルに束縛された識別子として
+(変数もしくは構文キーワードとして)
+モジュール@code{M}の中で使えるということです。
+@var{module}はモジュールオブジェクトか
 既存のモジュール名を示すシンボルでなければなりません。
 
-註: 以前、この手続きの機能は@code{symbol-bound?}という手続きで
-実現されていました。@code{symbol-bound?}は非推奨となり、新しいコードは
-@code{global-variable-bound?}を使わねばなりません。
-この変更の理由は、@code{symbol-bound?}がカレントモジュールをデフォルトと
-しており、またその名前からも、グローバルな束縛値があたかも
-(CommonLispのように)シンボルそのものの属性であるかのような誤解を招いて
-いたからです。そのせいで、特にコンパイル時と実行時でカレントモジュールが
-異なるような場合に多くの混乱が生じていました。
-新しい名前とAPIは、グローバルな束縛値についてモジュールに問い合わせている
-ということを明確にしています。
+この手続きは@var{module}内部からの見え方を扱うので、
+名前@var{symbol}が@var{module}からエクスポートされているか、
+あるいはエクスポート時にリネームされているかには影響されません。
+@var{module}外部からの視点で束縛の可視性を調べたい場合は、
+下の@code{module-exports?}を使ってください。
+
+註: Lispは伝統的に、グローバル変数の束縛を調べる手続きを@code{symbol-bound?}
+と呼んできました。しかし、Gaucheでは束縛はモジュールにより管理されるのに対し、
+その名前はシンボルに焦点を当ててしまっています。
+以前のGaucheでは@code{global-variable-bound?}という名前を使っていて、
+それは互換性のために今でも残されていますが、この操作はモジュールに関するものであること、
+また、変数だけでなく構文キーワードを含めた束縛に関するものであることを明確にするために、
+現在の名前になりました。
 @c COMMON
 @end defun
 
-@defun global-variable-ref module symbol :optional default
+@defun module-exports? module symbol
 @c EN
-Returns a value globally bound to the @var{symbol} visible
-from @var{module}.  @var{Module} must be a module object or
+Returns @code{#t} if the binding of @var{symbol} is visible from outside
+@var{module}, @code{#f} otherwise.
+That is, if @code{(module-exports? 'M 'v)} returns @code{#t},
+@code{v} can be used as a globally bound identifier
+(either as a variable or a syntactic keyword)
+in the module that imports module @code{M}.
+@var{Module} must be a module object or
+a symbol name of an existing module.
+
+Unlike @code{module-binds?}, this checks the outside appearance
+of the binding.  Suppose you have those modules:
+@c JP
+@var{symbol}の束縛が@var{module}の外部から可視であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+すなわち、@code{(module-exports? 'M 'v)}が@code{#t}を返したなら、
+@code{M}をインポートすれば@code{v}がグローバル変数もしくは構文キーワードとして
+使えるということです。
+@var{module}はモジュールオブジェクトか
+既存のモジュール名を示すシンボルでなければなりません。
+
+@code{module-binds?}と違い、この手続きは束縛が外からどう見えるかを検査します。
+次のようなモジュールがあるとしましょう。
+@c COMMON
+
+@example
+(define-module M
+  (export a (rename b bee))
+  (define a 1)
+  (define b 2)
+  (define c 3))
+@end example
+
+@c EN
+@code{module-binds?} concerns how the binding are visible in @code{M}.
+So it returns @code{#t} for @code{a}, @code{b}, and @code{c},
+but not for @code{bee}, as in the following example:
+@c JP
+@code{module-binds?}は@code{M}の中で束縛がどう見えるかを調べるので、
+@code{a}、@code{b}、@code{c}については@code{#t}を返しますが、
+@code{bee}については@code{#f}を返します。
+@c COMMON
+
+@example
+(module-binds? 'M 'a) @result{} #t
+(module-binds? 'M 'b) @result{} #t
+(module-binds? 'M 'c) @result{} #t
+
+(module-binds? 'M 'bee) @result{} #f ; renamed export doesn't affect in M
+@end example
+
+@c EN
+@code{module-exports?} concerts how the bindings are visible outside of
+@code{M}.  So it returns @code{#t} for @code{a} and @code{bee}, but
+not for @code{b} and @code{c}, as in the following example.
+@c JP
+@code{module-exports?}はモジュールを外から見た場合の束縛を調べるので、
+@code{a}と@code{bee}について@code{#t}を返しますが、@code{b}と@code{c}には
+@code{#f}を返します。
+@c COMMON
+
+@example
+(module-exports? 'M 'a) @result{} #t
+(module-exports? 'M 'b) @result{} #f  ; because of renamed export
+(module-exports? 'M 'c) @result{} #f  ; not exported
+
+(module-exports? 'M 'bee) @result{} #t  ; external name
+@end example
+@end defun
+
+
+@defun module-binding-ref module symbol :optional default
+@c EN
+Returns a value globally bound to the @var{symbol} inside @var{module}.
+@var{Module} must be a module object or
 a symbol name of an existing module.  If there's no visible
-global binding from @var{module} for @var{symbol},
+global binding inside @var{module} for @var{symbol},
 an error is signaled, unless the @var{default} argument is
 provided, in which case it is returned instead.
 @c JP
 モジュール@var{module}から可視の、シンボル@var{symbol}のグローバルな
 束縛値を返します。@var{module}はモジュールオブジェクトか
 既存のモジュール名を示すシンボルでなければなりません。
-@var{symbol}に対する可視のグローバル束縛が無い場合は、
+@var{symbol}に対するグローバルな束縛が@var{module}から見えない場合は、
 @var{default}引数があたえられていればその値を返し、
 無ければエラーを通知します。
 @c COMMON
+
+@c EN
+This used to be called as @code{global-variable-ref}, but we changed
+the name to be clear that it is module's operation, and the binding
+can be not only variables but also syntactic keywords.
+You can still use the old name but it is deprecated.
+@c JP
+これは以前は@code{global-variable-ref}と呼ばれていましたが、
+モジュールの操作であること、また束縛は変数とは限らず構文キーワードでも良いことを
+明確にするために名前を買えました。古い名前も使えますが非推奨です。
+@c COMMON
 @end defun
+
+@defun global-variable-bound? module symbol
+@defunx global-variable-ref module symbol :optional default
+@c DEPRECATED
+@c EN
+Old name for @code{module-binds?} and @code{module-binding-ref},
+respectively.  Use new names for the new code.
+@c JP
+それぞれ、@code{module-binds?}と@code{module-binding-ref}の古い名前です。
+新規コードでは新しい名前を使ってください。
+@c COMMON
+@end defun
+
+
 
 @defun module-name->path symbol
 @c EN
