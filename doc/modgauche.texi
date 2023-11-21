@@ -23199,6 +23199,59 @@ termianted before started.
 @c COMMON
 @end defun
 
+@defun thread-join! thread :optional timeout timeout-val
+[SRFI-18], [SRFI-21]
+@c MOD gauche.threads
+@c EN
+Waits termination of @var{thread}, or until the timeout is reached
+if @var{timeout} is given.
+@c JP
+@var{thread}の終了、あるいは@var{timeout}が与えられていればtimeoutが
+それに達するのを待ちます。
+@c COMMON
+
+@c EN
+@var{Timeout} must be either a @code{<time>} object (@pxref{Time})
+that specifies absolute point of time, or a real number that specifies
+relative point of time from the time this procedure is called
+in number of seconds, or @code{#f} that indicates no timeout (default).
+@c JP
+@var{Timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{Time}参照)か、
+この手続きが呼ばれた時刻からの相対的な時間を秒数で表した実数でなければなりません。
+タイムアウトが指定されていない(デフォルト)は@code{#f}です。
+@c COMMON
+
+@c EN
+If @var{thread} terminates normally, @code{thread-join!} returns
+a value which is stored in the result field of @var{thread}.
+If @var{thread} terminates abnormally, @code{thread-join!} raises
+an exception which is stored in the result exception field of @var{thread}.
+It can be either a @code{<terminated-thread-exception>} or
+@code{<uncaught-exception>}.
+@c JP
+@var{thread}が正常に終了したら、@code{thread-join!}は@var{thread}の
+結果フィールドに格納されている値を返します。
+@var{thread}が異常終了したら、@code{thread-join!}は@var{thread}の結果例外
+フィールドに格納されている例外を投げます。それは
+@code{<terminated-thread-exception>}か
+@code{<uncaught-exception>}のどちらかです。
+@c COMMON
+
+@c EN
+If the timeout is reached, @var{thread-join!} returns @var{timeout-val}
+if given, or raises @code{<join-timeout-exception>}.
+@c JP
+タイムアウトに達すると、@var{timeout-val}が与えられていれば@var{timeout-val}を返し、
+与えられていなければ@code{<join-timeout-exception>}を投げます。
+@c COMMON
+
+@c EN
+@xref{Thread exceptions}, for the details of these exceptions.
+@c JP
+これらの例外の詳細については@ref{Thread exceptions}を参照してください。
+@c COMMON
+@end defun
+
 @defun thread-yield!
 [SRFI-18], [SRFI-21]
 @c MOD gauche.threads
@@ -23421,57 +23474,29 @@ used in an absolute emergency.
 @c COMMON
 @end defun
 
-
-@defun thread-join! thread :optional timeout timeout-val
-[SRFI-18], [SRFI-21]
+@defun thread-schedule-terminate! thread
+[SRFI-226]
 @c MOD gauche.threads
 @c EN
-Waits termination of @var{thread}, or until the timeout is reached
-if @var{timeout} is given.
-@c JP
-@var{thread}の終了、あるいは@var{timeout}が与えられていればtimeoutが
-それに達するのを待ちます。
-@c COMMON
+Triggers termination of a thread @var{thread}, but returns immediately
+without confirming the termination.
 
-@c EN
-@var{Timeout} must be either a @code{<time>} object (@pxref{Time})
-that specifies absolute point of time, or a real number that specifies
-relative point of time from the time this procedure is called
-in number of seconds, or @code{#f} that indicates no timeout (default).
-@c JP
-@var{Timeout}は絶対的な時間を表す@code{<time>}オブジェクト(@ref{Time}参照)か、
-この手続きが呼ばれた時刻からの相対的な時間を秒数で表した実数でなければなりません。
-タイムアウトが指定されていない(デフォルト)は@code{#f}です。
-@c COMMON
+This procedure does not attempt ``forcible'' termination as the @var{force}
+argument of @code{thread-terminate!} does.  It just initiate the first
+stage of termination, which just send an internal request to @var{thread}.
+The thread will eventually terminate but there's no guarantee when it happens.
 
-@c EN
-If @var{thread} terminates normally, @code{thread-join!} returns
-a value which is stored in the result field of @var{thread}.
-If @var{thread} terminates abnormally, @code{thread-join!} raises
-an exception which is stored in the result exception field of @var{thread}.
-It can be either a @code{<terminated-thread-exception>} or
-@code{<uncaught-exception>}.
+You can wait for @var{thread} to terminate later, using @code{thread-join!}.
 @c JP
-@var{thread}が正常に終了したら、@code{thread-join!}は@var{thread}の
-結果フィールドに格納されている値を返します。
-@var{thread}が異常終了したら、@code{thread-join!}は@var{thread}の結果例外
-フィールドに格納されている例外を投げます。それは
-@code{<terminated-thread-exception>}か
-@code{<uncaught-exception>}のどちらかです。
-@c COMMON
+@var{thread}を終了させる仕組みを起動します。手続き自体はスレッドの終了を見届けることなく
+直ちに返ります。
 
-@c EN
-If the timeout is reached, @var{thread-join!} returns @var{timeout-val}
-if given, or raises @code{<join-timeout-exception>}.
-@c JP
-タイムアウトに達すると、@var{timeout-val}が与えられていれば@var{timeout-val}を返し、
-与えられていなければ@code{<join-timeout-exception>}を投げます。
-@c COMMON
+この手続きは@code{thread-terminate!}の@var{force}引数が行うような「強制的」な
+終了も試みません。スレッド終了の最初のステージである、@var{thread}に内部的な
+リクエストを送るところまでをやります。
+@var{thread}はいずれ終了しますが、それがいつ起きるかについては何も保証はありません。
 
-@c EN
-@xref{Thread exceptions}, for the details of these exceptions.
-@c JP
-これらの例外の詳細については@ref{Thread exceptions}を参照してください。
+後で@code{thread-join!}を使って@var{thread}が終了するのを待つことはできます。
 @c COMMON
 @end defun
 
