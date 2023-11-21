@@ -206,7 +206,7 @@ Returns true iff @var{obj} satisfies the constraints described by @var{type},
 which can be either a class (in that case, this is the same as @code{is-a?}),
 or a descriptive type (@pxref{Type expressions and type constructors} below).
 @c JP
-これは記述的な型に関する述語です。
+これは記述的な型を調べる述語です。
 @var{obj}が@var{type}で記述される制約を満たすなら@code{#t}を、そうでなければ@code{#f}を
 返します。@var{type}はクラスか(その場合は@code{is-a?}と同じです)、
 記述型 (@pxref{Type expressions and type constructors}参照) です。
@@ -288,7 +288,6 @@ itself.
 @c NODE 定義済みクラス
 
 @c EN
-Predefined classes are bound to a global variable; Gauche's
 We'll introduce classes for each built-in type as we go through
 this chapter.  Here are a few basic classes to start with:
 @c JP
@@ -624,8 +623,8 @@ In vanilla Scheme, all procedures belong to just one type, that responds
 true to @code{procedure?}.  It is simple and flexible, but sometimes the
 resolution is too coarse to do reasoning on the program.
 @c JP
-素のSchemedでは、全ての手続き@code{procedure?}が真を返すという意味で
-はひとつの型に属しています。これは簡単で柔軟ですが、
+素のSchemeでは、全ての手続きは(@code{procedure?}が真を返すという意味で)
+ひとつの型に属しています。これは簡単で柔軟ですが、
 プログラムの解析をしたい場合には粗すぎる分類です。
 @c COMMON
 
