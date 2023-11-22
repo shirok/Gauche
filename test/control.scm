@@ -271,7 +271,7 @@
 (let ([flag #t])
   (test* "pmap (fully concurrent, timeout)"
          (and flag '(timeout timeout timeout timeout timeout))
-         (pmap (^n (begin (sys-sleep 60) (set! flag #t) n))
+         (pmap (^n (begin (sys-sleep 60) (set! flag #f) n))
                (iota 5)
                :mapper (make-fully-concurrent-mapper 0.2 'timeout))))
 
