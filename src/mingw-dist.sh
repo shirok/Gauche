@@ -56,6 +56,7 @@ while [ "$#" -gt 0 ]; do
     --with-mbedtls) MBEDTLS=yes; shift;;
     --with-mbedtls=dll) MBEDTLS=dll; shift;;
     --with-zip) ZIP_ARCHIVE=yes; shift;;
+    --without-axtls) shift;;    # Ignore this not to reject legacy scripts
     --skip-config) SKIP_CONFIG=yes; shift;;
     -*)
      echo "Options:"

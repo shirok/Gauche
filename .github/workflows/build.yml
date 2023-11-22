@@ -157,7 +157,7 @@ jobs:
       run: |
         gcc -v
         ./DIST gen
-        src/mingw-dist.sh --without-axtls
+        src/mingw-dist.sh
     - name: Test
       shell: msys2 {0}
       run: |
