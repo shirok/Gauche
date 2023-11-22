@@ -103,9 +103,7 @@ AS_CASE(["$host"],
     GAUCHE_THREAD_TYPE=pthreads
     ],
   [*-*-mingw*], [
-    AS_IF([test $GAUCHE_THREAD_TYPE = "pthreads"],
-          [ AC_MSG_ERROR([pthread can't be used on Windows.  Use --enable-threads=win32 to enable threads]) ],
-          [ GAUCHE_THREAD_TYPE=win32 ])
+    GAUCHE_THREAD_TYPE=win32
     ],
   [
     AC_MSG_ERROR([Can't determine thread subsystem type on $host])

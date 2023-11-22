@@ -13,13 +13,6 @@
 (use gauche.threads)
 (test-module 'gauche.threads)
 
-(cond-expand
- [(not gauche.sys.threads)
-  (format #t "thread not supported\n")
-  (test-end)
-  (exit 0)]
- [else])
-
 ;;---------------------------------------------------------------------
 (test-section "basic thread API")
 

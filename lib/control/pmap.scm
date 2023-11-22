@@ -296,13 +296,9 @@
 
 (define default-mapper
   (make-parameter
-   (cond-expand
-    [gauche.sys.threads
-     (if (= 1 (sys-available-processors))
-       (sequential-mapper)
-       (make-static-mapper))]
-    [else
-     (sequential-mapper)])))
+   (if (= 1 (sys-available-processors))
+     (sequential-mapper)
+     (make-static-mapper))))
 
 ;;;
 ;;; High-level API

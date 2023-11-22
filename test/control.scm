@@ -73,187 +73,175 @@
 ;; control.thread-pool
 ;;
 
-(cond-expand
- [gauche.sys.threads
-  (test-section "control.thread-pool")
-  (use control.thread-pool)
-  (test-module 'control.thread-pool)
+(test-section "control.thread-pool")
+(use control.thread-pool)
+(test-module 'control.thread-pool)
 
-  (let ([pool (make-thread-pool 5)]
-        [rvec (make-vector 10 #f)])
-    (test* "pool" '(5 #t 5 #f)
-           (list (length (~ pool'pool))
-                 (every thread? (~ pool'pool))
-                 (~ pool'size)
-                 (~ pool'max-backlog)))
+(let ([pool (make-thread-pool 5)]
+      [rvec (make-vector 10 #f)])
+  (test* "pool" '(5 #t 5 #f)
+         (list (length (~ pool'pool))
+               (every thread? (~ pool'pool))
+               (~ pool'size)
+               (~ pool'max-backlog)))
 
-    (test* "doit" '#(0 1 2 3 4 5 6 7 8 9)
-           (begin (dotimes [k 10]
-                    (add-job! pool (^[]
-                                     (sys-nanosleep 1e7)
-                                     (vector-set! rvec k k))))
-                  (and (wait-all pool #f 1e7) rvec)))
+  (test* "doit" '#(0 1 2 3 4 5 6 7 8 9)
+         (begin (dotimes [k 10]
+                  (add-job! pool (^[]
+                                   (sys-nanosleep 1e7)
+                                   (vector-set! rvec k k))))
+                (and (wait-all pool #f 1e7) rvec)))
 
-    (test* "error results" '(ng ng ng ng ng)
-           (begin (dotimes [k 5]
-                    (add-job! pool (^[]
-                                     (sys-nanosleep 1e7)
-                                     (raise 'ng)
-                                     (vector-set! rvec k k))
-                              #t))
-                  (and (wait-all pool #f 1e7)
-                       (map (cut job-result <>)
-                            (queue->list (~ pool'result-queue))))))
-    )
+  (test* "error results" '(ng ng ng ng ng)
+         (begin (dotimes [k 5]
+                  (add-job! pool (^[]
+                                   (sys-nanosleep 1e7)
+                                   (raise 'ng)
+                                   (vector-set! rvec k k))
+                            #t))
+                (and (wait-all pool #f 1e7)
+                     (map (cut job-result <>)
+                          (queue->list (~ pool'result-queue))))))
+  )
 
-  ;; Testing max backlog and timeout
-  (let ([pool (make-thread-pool 1 :max-backlog 1)]
-        [gate #f])
-    (define (work) (do [] [gate] (sys-nanosleep #e1e8)))
+;; Testing max backlog and timeout
+(let ([pool (make-thread-pool 1 :max-backlog 1)]
+      [gate #f])
+  (define (work) (do [] [gate] (sys-nanosleep #e1e8)))
 
-    (add-job! pool work)
+  (add-job! pool work)
 
-    (test* "add-job! backlog" #t
-           (job? (add-job! pool work)))
+  (test* "add-job! backlog" #t
+         (job? (add-job! pool work)))
 
-    (test* "add-job! timeout" #f
-           (add-job! pool work #f 0.1))
+  (test* "add-job! timeout" #f
+         (add-job! pool work #f 0.1))
 
-    (set! gate #t)
-    (test* "add-job! backlog" #t
-           (job? (add-job! pool work #t)))
+  (set! gate #t)
+  (test* "add-job! backlog" #t
+         (job? (add-job! pool work #t)))
 
-    ;; synchronize
-    (dequeue/wait! (thread-pool-results pool))
+  ;; synchronize
+  (dequeue/wait! (thread-pool-results pool))
 
-    (set! gate #f)
-    (test* "wait-all timeout" #f
-           (begin (add-job! pool work)
-                  (wait-all pool 0.1 #e1e7)))
+  (set! gate #f)
+  (test* "wait-all timeout" #f
+         (begin (add-job! pool work)
+                (wait-all pool 0.1 #e1e7)))
 
-    ;; fill the queue.
-    (add-job! pool work #t)
+  ;; fill the queue.
+  (add-job! pool work #t)
 
-    (test* "shutdown - raising <thread-pool-shutting-down>"
-           (test-error <thread-pool-shut-down>)
-           ;; subtle arrangement: The timing of thread execution isn't
-           ;; guaranteed, but we hope to run the following events in
-           ;; sequence:
-           ;;  - main: add-job!  - this will block because queue is full
-           ;;  - t1: enqueue/wait! triggers q1.
-           ;;  - t1: terminate-all! - this causes the pending add-job! to
-           ;;                raise an exception.  this call blocks.
-           ;;  - main: add-job! raises an exception, and triggers q2.
-           ;;  - t2: triggered by q1, this sets gate to #t, causing the
-           ;;                suspended jobs to resume.
-           ;;  - t1: terminate-all! returns once all the suspended jobs
-           ;;                are finished.  making sure q2 is already triggered,
-           ;;                we set gate to 'finished for the later check.
-           (let* ([q1 (make-mtqueue :max-length 0)]
-                  [q2 (make-mtqueue :max-length 0)]
-                  [t1 (make-thread (^[]
-                                     (enqueue/wait! q1 #t)
-                                     (terminate-all! pool
-                                                     :cancel-queued-jobs #t)
-                                     (dequeue/wait! q2)
-                                     (set! gate 'finished)))]
-                  [t2 (make-thread (^[]
-                                     (dequeue/wait! q1)
-                                     (sys-nanosleep #e2e8)
-                                     (set! gate #t)))])
-             (thread-start! t1)
-             (thread-start! t2)
-             (unwind-protect (add-job! pool work)
-               (enqueue/wait! q2 #t))))
+  (test* "shutdown - raising <thread-pool-shutting-down>"
+         (test-error <thread-pool-shut-down>)
+         ;; subtle arrangement: The timing of thread execution isn't
+         ;; guaranteed, but we hope to run the following events in
+         ;; sequence:
+         ;;  - main: add-job!  - this will block because queue is full
+         ;;  - t1: enqueue/wait! triggers q1.
+         ;;  - t1: terminate-all! - this causes the pending add-job! to
+         ;;                raise an exception.  this call blocks.
+         ;;  - main: add-job! raises an exception, and triggers q2.
+         ;;  - t2: triggered by q1, this sets gate to #t, causing the
+         ;;                suspended jobs to resume.
+         ;;  - t1: terminate-all! returns once all the suspended jobs
+         ;;                are finished.  making sure q2 is already triggered,
+         ;;                we set gate to 'finished for the later check.
+         (let* ([q1 (make-mtqueue :max-length 0)]
+                [q2 (make-mtqueue :max-length 0)]
+                [t1 (make-thread (^[]
+                                   (enqueue/wait! q1 #t)
+                                   (terminate-all! pool
+                                                   :cancel-queued-jobs #t)
+                                   (dequeue/wait! q2)
+                                   (set! gate 'finished)))]
+                [t2 (make-thread (^[]
+                                   (dequeue/wait! q1)
+                                   (sys-nanosleep #e2e8)
+                                   (set! gate #t)))])
+           (thread-start! t1)
+           (thread-start! t2)
+           (unwind-protect (add-job! pool work)
+             (enqueue/wait! q2 #t))))
 
-    (test* "shutdown - killing a job in the queue"
-           'killed
-           (job-status (dequeue/wait! (thread-pool-results pool))))
-    (test* "shutdown check" 'finished
-           (let retry ([n 0])
-             (cond [(= n 10) #f]
-                   [(symbol? gate) gate]
-                   [else (sys-nanosleep #e1e8) (retry (+ n 1))])))
-    )
+  (test* "shutdown - killing a job in the queue"
+         'killed
+         (job-status (dequeue/wait! (thread-pool-results pool))))
+  (test* "shutdown check" 'finished
+         (let retry ([n 0])
+           (cond [(= n 10) #f]
+                 [(symbol? gate) gate]
+                 [else (sys-nanosleep #e1e8) (retry (+ n 1))])))
+  )
 
-  ;; now, test forcible termination
-  (let ([pool (make-thread-pool 1)]
-        [gate #f])
-    (define (work) (do [] [gate] (sys-nanosleep #e1e8)))
-    (test* "forced shutdown" 'killed
-           (let1 xjob (add-job! pool work)
-             (terminate-all! pool :force-timeout 0.05)
-             (job-status xjob))))
+;; now, test forcible termination
+(let ([pool (make-thread-pool 1)]
+      [gate #f])
+  (define (work) (do [] [gate] (sys-nanosleep #e1e8)))
+  (test* "forced shutdown" 'killed
+         (let1 xjob (add-job! pool work)
+           (terminate-all! pool :force-timeout 0.05)
+           (job-status xjob))))
 
-  ;; This SEGVs on 0.9.3.3 (test code by @cryks)
-  (test* "thread pool termination" 'terminated
-         (let ([t (thread-start! (make-thread (cut undefined)))]
-               [pool (make-thread-pool 10)])
-           (terminate-all! pool)
-           (thread-terminate! t)
-           (thread-state t)))
-  ] ; gauche.sys.pthreads
- [else])
+;; This SEGVs on 0.9.3.3 (test code by @cryks)
+(test* "thread pool termination" 'terminated
+       (let ([t (thread-start! (make-thread (cut undefined)))]
+             [pool (make-thread-pool 10)])
+         (terminate-all! pool)
+         (thread-terminate! t)
+         (thread-state t)))
 
 ;;--------------------------------------------------------------------
 ;; control.cseq
 ;;
 
-(cond-expand
- [gauche.sys.threads
-  (test-section "control.cseq")
-  (use control.cseq)
-  (test-module 'control.cseq)
+(test-section "control.cseq")
+(use control.cseq)
+(test-module 'control.cseq)
 
-  ;; This doesn't always work because of the timing.
-  '(let ((k 0))
-    (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
-    (define seq (generator->cseq gen))
-    (test* "cseq (gen)" '(0 10)
-           (list (car seq) k)))
+;; This doesn't always work because of the timing.
+'(let ((k 0))
+   (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
+   (define seq (generator->cseq gen))
+   (test* "cseq (gen)" '(0 10)
+          (list (car seq) k)))
 
-  (let ((k 0))
-    (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
-    (define seq (generator->cseq gen))
-    (test* "cseq (gen)" '(0 1 2 3 4 5 6 7 8 9) seq))
+(let ((k 0))
+  (define (gen) (if (>= k 10) (eof-object) (begin0 k (inc! k))))
+  (define seq (generator->cseq gen))
+  (test* "cseq (gen)" '(0 1 2 3 4 5 6 7 8 9) seq))
 
-  (let ((k 0))
-    (define (gen) (if (= k 5) (error "oops") (begin0 k (inc! k))))
-    (define seq (generator->cseq gen))
-    (test* "cseq (gen)" '(0 1 2 3) (take seq 4))
-    (test* "cseq (gen)" (test-error <error> "oops") (take seq 5)))
+(let ((k 0))
+  (define (gen) (if (= k 5) (error "oops") (begin0 k (inc! k))))
+  (define seq (generator->cseq gen))
+  (test* "cseq (gen)" '(0 1 2 3) (take seq 4))
+  (test* "cseq (gen)" (test-error <error> "oops") (take seq 5)))
 
-  (let ()
-    (define (coro yield)
-      (let loop ((k 0)) (when (< k 10) (yield k) (loop (+ k 1)))))
-    (define seq (coroutine->cseq coro))
-    (test* "cseq (coroutine)" '(0 1 2 3 4 5 6 7 8 9) seq))
-  ]
- [else])
+(let ()
+  (define (coro yield)
+    (let loop ((k 0)) (when (< k 10) (yield k) (loop (+ k 1)))))
+  (define seq (coroutine->cseq coro))
+  (test* "cseq (coroutine)" '(0 1 2 3 4 5 6 7 8 9) seq))
 
 ;;--------------------------------------------------------------------
 ;; control.future
 ;;
 
-(cond-expand
- [gauche.sys.threads
-  (test-section "control.future")
-  (use control.future)
-  (test-module 'control.future)
+(test-section "control.future")
+(use control.future)
+(test-module 'control.future)
 
-  (test* "simple future" '(#t 3)
-         (let1 f (future 3)
-           (list (future? f)
-                 (future-get f))))
-  (test* "multiple values" '(1 2 3)
-         (values->list (future-get (future (values 1 2 3)))))
-  (let1 f (future (error "oops"))
-    (test* "future error handling (delayed)" #t
-           (future? f))
-    (test* "future error handling (propagated)" (test-error <error> "oops")
-           (future-get f)))
-  ]
- [else])
+(test* "simple future" '(#t 3)
+       (let1 f (future 3)
+         (list (future? f)
+               (future-get f))))
+(test* "multiple values" '(1 2 3)
+       (values->list (future-get (future (values 1 2 3)))))
+(let1 f (future (error "oops"))
+  (test* "future error handling (delayed)" #t
+         (future? f))
+  (test* "future error handling (propagated)" (test-error <error> "oops")
+         (future-get f)))
 
 ;;--------------------------------------------------------------------
 ;; control.pmap
@@ -265,33 +253,27 @@
 (test* "pmap (default)"
        (map (cut * <> 2) (iota 100))
        (pmap (cut * <> 2) (iota 100)))
-
-(cond-expand
- [gauche.sys.threads
-  (test* "pmap (thread-pool)"
-         (map (cut * <> 2) (iota 100))
-         (pmap (cut * <> 2) (iota 100) :mapper (make-pool-mapper)))
-  (test* "pmap (thread-pool reuse)"
-         (append (map (cut * <> 2) (iota 100))
-                 (map (cut * <> 3) (iota 100)))
-         (let* ([pool (make-thread-pool (sys-available-processors))]
-                [mapper (make-pool-mapper pool)])
-           (unwind-protect
-               (append (pmap (cut * <> 2) (iota 100) :mapper mapper)
-                       (pmap (cut * <> 3) (iota 100) :mapper mapper))
-             (terminate-all! pool))))
-  (test* "pmap (fully concurrent)"
-         (map (cut * <> 2) (iota 25))
-         (pmap (cut * <> 2) (iota 25) :mapper (make-fully-concurrent-mapper)))
-  (let ([flag #t])
-    (test* "pmap (fully concurrent, timeout)"
-           (and flag '(timeout timeout timeout timeout timeout))
-           (pmap (^n (begin (sys-sleep 60) (set! flag #t) n))
-                 (iota 5)
-                 :mapper (make-fully-concurrent-mapper 0.2 'timeout))))
-  ]
- [else])
-
+(test* "pmap (thread-pool)"
+       (map (cut * <> 2) (iota 100))
+       (pmap (cut * <> 2) (iota 100) :mapper (make-pool-mapper)))
+(test* "pmap (thread-pool reuse)"
+       (append (map (cut * <> 2) (iota 100))
+               (map (cut * <> 3) (iota 100)))
+       (let* ([pool (make-thread-pool (sys-available-processors))]
+              [mapper (make-pool-mapper pool)])
+         (unwind-protect
+             (append (pmap (cut * <> 2) (iota 100) :mapper mapper)
+                     (pmap (cut * <> 3) (iota 100) :mapper mapper))
+           (terminate-all! pool))))
+(test* "pmap (fully concurrent)"
+       (map (cut * <> 2) (iota 25))
+       (pmap (cut * <> 2) (iota 25) :mapper (make-fully-concurrent-mapper)))
+(let ([flag #t])
+  (test* "pmap (fully concurrent, timeout)"
+         (and flag '(timeout timeout timeout timeout timeout))
+         (pmap (^n (begin (sys-sleep 60) (set! flag #t) n))
+               (iota 5)
+               :mapper (make-fully-concurrent-mapper 0.2 'timeout))))
 
 (test* "pfind (single)"
        (find (cut = <> 7) (iota 10))
@@ -301,49 +283,45 @@
        (any (^x (and (= x 7) 42)) (iota 10))
        (pany (^x (and (= x 7) 42)) (iota 10) :mapper (sequential-mapper)))
 
-(cond-expand
- [gauche.sys.threads
-  (test* "pfind (static)"
-         (find (cut = <> 1) (iota 20))
-         (pfind (^x (and (sys-sleep (quotient x 2))
-                         (= x 1)))
-                (iota 20)
-                :mapper (make-static-mapper)))
-  (test* "pany (static)"
-         (any (^x (and (= x 1) 42)) (iota 10))
-         (pany (^x (and (sys-sleep (quotient x 2))
-                        (= x 1)
-                        42))
-               (iota 20)
-               :mapper (make-static-mapper)))
-  (test* "pfind (pool)"
-         (find (cut = <> 1) (iota 20))
-         (pfind (^x (and (sys-sleep (quotient x 2))
-                         (= x 1)))
-                (iota 20)
-                :mapper (make-pool-mapper)))
-  (test* "pany (pool)"
-         (any (^x (and (= x 1) 42)) (iota 10))
-         (pany (^x (and (sys-sleep (quotient x 2))
-                        (= x 1)
-                        42))
-               (iota 20)
-               :mapper (make-pool-mapper)))
-  (test* "pfind (fully-concurrent)"
-         (find (cut = <> 1) (iota 20))
-         (pfind (^x (and (sys-sleep (quotient x 2))
-                         (= x 1)))
-                (iota 20)
-                :mapper (make-fully-concurrent-mapper)))
-  (test* "pany (fully-concurrent)"
-         (any (^x (and (= x 1) 42)) (iota 10))
-         (pany (^x (and (sys-sleep (quotient x 2))
-                        (= x 1)
-                        42))
-               (iota 20)
-               :mapper (make-fully-concurrent-mapper)))
-  ]
- [else])
+(test* "pfind (static)"
+       (find (cut = <> 1) (iota 20))
+       (pfind (^x (and (sys-sleep (quotient x 2))
+                       (= x 1)))
+              (iota 20)
+              :mapper (make-static-mapper)))
+(test* "pany (static)"
+       (any (^x (and (= x 1) 42)) (iota 10))
+       (pany (^x (and (sys-sleep (quotient x 2))
+                      (= x 1)
+                      42))
+             (iota 20)
+             :mapper (make-static-mapper)))
+(test* "pfind (pool)"
+       (find (cut = <> 1) (iota 20))
+       (pfind (^x (and (sys-sleep (quotient x 2))
+                       (= x 1)))
+              (iota 20)
+              :mapper (make-pool-mapper)))
+(test* "pany (pool)"
+       (any (^x (and (= x 1) 42)) (iota 10))
+       (pany (^x (and (sys-sleep (quotient x 2))
+                      (= x 1)
+                      42))
+             (iota 20)
+             :mapper (make-pool-mapper)))
+(test* "pfind (fully-concurrent)"
+       (find (cut = <> 1) (iota 20))
+       (pfind (^x (and (sys-sleep (quotient x 2))
+                       (= x 1)))
+              (iota 20)
+              :mapper (make-fully-concurrent-mapper)))
+(test* "pany (fully-concurrent)"
+       (any (^x (and (= x 1) 42)) (iota 10))
+       (pany (^x (and (sys-sleep (quotient x 2))
+                      (= x 1)
+                      42))
+             (iota 20)
+             :mapper (make-fully-concurrent-mapper)))
 
 ;;--------------------------------------------------------------------
 ;; control.scheduler
