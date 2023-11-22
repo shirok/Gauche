@@ -1,5 +1,9 @@
 2023-11-21  Shiro Kawai  <shiro@acm.org>
 
+	* lib/control/pmap.scm (run-map): Terminate threads when
+	  timeout reaches with fully-concurrent-mapper.
+	  https://github.com/shirok/Gauche/issues/964
+
 	* src/libsys.scm (absolute-time): Added.  Handy to canonicalize
 	  'timeout' argument.
 

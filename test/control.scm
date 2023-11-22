@@ -282,7 +282,14 @@
              (terminate-all! pool))))
   (test* "pmap (fully concurrent)"
          (map (cut * <> 2) (iota 25))
-         (pmap (cut * <> 2) (iota 25) :mapper (make-fully-concurrent-mapper)))]
+         (pmap (cut * <> 2) (iota 25) :mapper (make-fully-concurrent-mapper)))
+  (let ([flag #t])
+    (test* "pmap (fully concurrent, timeout)"
+           (and flag '(timeout timeout timeout timeout timeout))
+           (pmap (^n (begin (sys-pause) (set! flag #t) n))
+                 (iota 5)
+                 :mapper (make-fully-concurrent-mapper 0.2 'timeout))))
+  ]
  [else])
 
 

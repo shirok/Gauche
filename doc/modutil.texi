@@ -2773,16 +2773,39 @@ CPUを有効活用できます。
 @c COMMON
 
 @c EN
-The optional @var{timeout} and @var{timeout-val} arguments are
-passed to @code{thread-join!} (@pxref{Thread procedures}).
-It is useful when I/O operations may take too long and you
-want to guarantee the entire operation finishes within certain
-time limit.
+The optional @var{timeout} argument can specify
+the timeout value for threads to run.  As in @code{thread-join!},
+it can be either a @code{<time>} object to specify an absolute
+point of time, a real number for the number of seconds from
+the current time, or @code{#f} to run it indefinitely.
+The default is @code{#f}.
+
+If timeout reaches, @var{timeout-val} is used in place of
+the result of @var{proc}, which is defaulted to @code{#f}.
 @c JP
-省略可能な@var{timeout}と@var{timeout-val}は@code{thread-join!}に渡されます
-(@ref{Thread procedures}参照)。
-I/O操作が非常に長くかかる可能性があり、@code{pmap}呼び出しにかかる時間を
-制限したい場合に便利です。
+省略可能な@var{timeout}引数で、スレッドにタイムアウトを指定できます。
+@code{thread-join!}のtimeout引数と同様に、@code{<time>}オブジェクトによる
+絶対時刻、実数による現在時刻からの相対秒、そしてタイムアウトを設けない@code{#f}が
+指定できます。省略時はタイムアウトしません。
+
+タイムアウトした場合、@var{timeout-val}が@var{proc}の結果の代わりに使われます。
+@var{timeout-val}の省略時値は@code{#f}です。
+@c COMMON
+
+@c EN
+NB: If @var{timeout} reaches, the running threads are terminated by
+@code{thread-terminate!}.  If the thread is locking a mutex
+when it occurs, the mutex becomes `abandoned' state.  The resources
+being used then may not be properly cleaned up.  If you need
+to ensure proper cleanup in bounded time, you need to code it in @var{proc}
+explicitly.
+@c JP
+註: スレッドがタイムアウトした場合、
+走行中のスレッドは@code{thread-terminate!}で終了させられます。
+この時スレッドがmutexをロックしていればそれはabandoned状態になりますし、
+リソースを掴んでいたら適切なクリーンアップがなされないかもしれません。
+スレッドの実行を制限時間内に納め、かつクリーンアップを確実にしたい場合は、
+そういうロジックを明示的に@var{proc}に組み込んでください。
 @c COMMON
 @end defun
 

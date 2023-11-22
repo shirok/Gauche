@@ -38,6 +38,7 @@
   (use gauche.mop.singleton)
   (use data.queue)
   (use scheme.list)
+  (use srfi.19)
   (use control.thread-pool)
   (use control.job)
   (export pmap pfind pany
@@ -255,11 +256,17 @@
   (make <fully-concurrent-mapper> :timeout timeout :timeout-val timeout-val))
 
 (define-method run-map ((mapper <fully-concurrent-mapper>) proc coll)
-  (let ([ts (map (^e (make-thread (^[] (proc e)))) coll)]
-        [timeout (~ mapper'timeout)]
+  (let ([unique (list #f)]
+        [ts (map (^e (make-thread (^[] (proc e)))) coll)]
+        [timeout (absolute-time (~ mapper'timeout))]
         [timeout-val (~ mapper'timeout-val)])
     (%start-threads ts)
-    (map (cut thread-join! <> timeout timeout-val) ts)))
+    (if timeout
+      ($ map (^r (if (and (pair? r) (eq? (car r) unique))
+                   (begin (thread-terminate! (cdr r)) timeout-val)
+                   r))
+         $ map (^t (thread-join! t timeout (cons unique t))) ts)
+      (map thread-join! ts))))
 
 (define-method run-select ((mapper <fully-concurrent-mapper>) proc coll)
   (define signaled (atom #f))
