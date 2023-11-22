@@ -286,7 +286,7 @@
   (let ([flag #t])
     (test* "pmap (fully concurrent, timeout)"
            (and flag '(timeout timeout timeout timeout timeout))
-           (pmap (^n (begin (sys-pause) (set! flag #t) n))
+           (pmap (^n (begin (sys-sleep 60) (set! flag #t) n))
                  (iota 5)
                  :mapper (make-fully-concurrent-mapper 0.2 'timeout))))
   ]
@@ -626,7 +626,7 @@
          (get-output-string out))
   (test* "pump" "a"
          (begin (enqueue/wait! mtq #\a)
-                (sys-nanosleep #e5e6)
+                (sys-nanosleep #e5e7)
                 (get-output-string out)))
   (test* "pump" "ab"
          (begin (enqueue/wait! mtq #\b)
