@@ -1171,7 +1171,7 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
         spec->tv_sec = SCM_TIME(t)->sec;
         spec->tv_nsec = SCM_TIME(t)->nsec;
     } else if (!SCM_REALP(t)) {
-        Scm_Error("bad timeout spec: <time> object or real number is required, but got %S", t);
+        Scm_Error("bad time spec: <time> object, real number, or #f is required, but got %S", t);
     } else {
         ScmTime *ct = SCM_TIME(Scm_CurrentTime());
         spec->tv_sec = ct->sec;

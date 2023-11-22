@@ -899,6 +899,17 @@
          (Scm_Error "Real number required, but got: %S" x)
          (return SCM_UNDEFINED)]))      ;dummy
 
+;; Obj can be <time>, real num or #f, as used in timeout argument for many
+;; procedures.  Returns (<?> <time>)
+(define-cproc absolute-time (obj) ::<time>?
+  (let* ([ts::ScmTimeSpec]
+         [pts::ScmTimeSpec* (Scm_GetTimeSpec obj (& ts))])
+    (if (== pts NULL)
+      (return NULL)
+      (return (SCM_TIME (Scm_MakeTime64 'time-utc
+                                        (-> pts tv_sec)
+                                        (-> pts tv_nsec)))))))
+
 (define-cproc time->seconds (t::<time>) ;SRFI-18
   Scm_TimeToSeconds)
 
