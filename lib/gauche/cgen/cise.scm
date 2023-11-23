@@ -519,7 +519,7 @@
           ;; no function implementation
           '()])]))
   (define (arg-decls args)
-    (cgen-canonical-type-arg-list args 'ScmObj))
+    (cgen-canonical-typed-var-list args 'ScmObj))
 
   (ensure-toplevel-ctx form env)
   (match form
@@ -647,7 +647,7 @@
     [(_ rvar expr vars . body)
      (let* ([tmp-cc (gensym "tmp_cc_")]
             [data (gensym "data")]
-            [closed (cgen-canonical-type-arg-list vars 'ScmObj)]
+            [closed (cgen-canonical-typed-var-list vars 'ScmObj)]
             [cc-env (make-env 'toplevel '())])
        ;; NB: We want to check the # of closed variables is smaller
        ;; than SCM_CCONT_DATA_SIZE, but it's not available at runtime
@@ -1420,14 +1420,14 @@
 ;; (foo bar::int baz::(const char*) (boom::int 0))
 ;;  => ((foo :: ScmObj) (bar :: int) (baz :: (const char*)) (boom :: int 0))
 (define (canonicalize-vardecl vardecls)
-  (cgen-canonical-type-arg-list vardecls 'ScmObj))
+  (cgen-canonical-typed-var-list vardecls 'ScmObj))
 
 ;; For field declaration, you may need to include a C macro that doesn't
 ;; have type decl (e.g. SCM_HEADER).  If you just write SCM_HEADER,
 ;; it generates 'ScmObj SCM_HEADER;' which you don't want.
 ;  You can write SCM_HEADER::|| to suppress type decl.
 (define (canonicalize-field-decls fields)
-  (rlet1 fs (cgen-canonical-type-arg-list fields 'ScmObj)
+  (rlet1 fs (cgen-canonical-typed-var-list fields 'ScmObj)
     (dolist [f fs]
       (match f
         [((? symbol?) ':: _ . _) #f]

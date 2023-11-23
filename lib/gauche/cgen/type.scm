@@ -37,7 +37,7 @@
   (use util.match)
   (use gauche.mop.instance-pool)
   (export <cgen-type> cgen-type-from-name make-cgen-type
-          cgen-canonical-type-arg-list
+          cgen-canonical-typed-var-list
           cgen-boxer-name cgen-unboxer-name cgen-pred-name
           cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
           cgen-type-maybe? cgen-return-stmt)
@@ -410,8 +410,8 @@
 ;;   returns its canonical form and the rest of the input list.
 ;;   Canonical form may be #f if the tip of the typed-var-list is
 ;;   not a typed var.
-(define (cgen-canonical-type-arg-list typed-var-list
-                                      default-type)
+(define (cgen-canonical-typed-var-list typed-var-list
+                                       default-type)
   ;; Split shorthand notations
   (define (expand-type elt seed)
     (cond
