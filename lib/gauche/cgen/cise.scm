@@ -460,9 +460,9 @@
         (match args
           [() '()]
           [(('... . _)) '("...")]       ;varargs
-          [((var . type))
+          [((var ':: type))
            `(,@(gen-arg-1 var type))]
-          [((var . type) . rest)
+          [((var ':: type) . rest)
            `(,@(gen-arg-1 var type) "," ,@(loop rest))]))))
 
   (define (gen-qualifiers quals) ; we might support more qualifiers in future
@@ -518,15 +518,17 @@
             (record-static name quals args ret-type))
           ;; no function implementation
           '()])]))
+  (define (arg-decls args)
+    (cgen-canonical-type-arg-list args 'ScmObj))
 
   (ensure-toplevel-ctx form env)
   (match form
     [(_ name (args ...) ':: ret-type . body)
-     (check-quals name '() (canonicalize-argdecl args) ret-type body)]
+     (check-quals name '() (arg-decls args) ret-type body)]
     [(_ name (args ...) [? type-symbol? ts] . body)
-     (check-quals name '() (canonicalize-argdecl args) (type-symbol-type ts) body)]
+     (check-quals name '() (arg-decls args) (type-symbol-type ts) body)]
     [(_ name (args ...) . body)
-     (check-quals name '() (canonicalize-argdecl args) 'ScmObj body)]))
+     (check-quals name '() (arg-decls args) 'ScmObj body)]))
 
 ;;------------------------------------------------------------
 ;; Global variable definition and typedef
@@ -645,7 +647,7 @@
     [(_ rvar expr vars . body)
      (let* ([tmp-cc (gensym "tmp_cc_")]
             [data (gensym "data")]
-            [closed (canonicalize-argdecl vars)]
+            [closed (cgen-canonical-type-arg-list vars 'ScmObj)]
             [cc-env (make-env 'toplevel '())])
        ;; NB: We want to check the # of closed variables is smaller
        ;; than SCM_CCONT_DATA_SIZE, but it's not available at runtime
@@ -670,8 +672,9 @@
                            ,@body)
                    `(let* ,(map-with-index
                             (^[i p]
-                              `(,(car p) :: ,(cdr p)
-                                (cast (,(cdr p)) (aref ,data ,i))))
+                              (match-let1 [var ':: type] p
+                                `(,var :: ,type
+                                       (cast (,type) (aref ,data ,i)))))
                             closed)
                       ,@body)))
              'toplevel)))
@@ -1403,7 +1406,7 @@
                     ,@(map (^.[(member ':: type)
                                `(,(cise-render-typed-var type member env)
                                  "; ")])
-                           (canonicalize-vardecl fields))
+                           (canonicalize-field-decls fields))
                     "} ")]
                  [(not fields) '(" ")])
     ,(if (null? rest)
@@ -1414,35 +1417,21 @@
   (cgen-safe-name-friendly (x->string sym)))
 
 ;; canonicalize-vardecl
-;;
-;; Given list of C variable declarations, possibly typed, returns a list
-;; ((var :: type [init]) ...)
-;;
-;; Allows var::type as (var :: type)
-;; and (var::type init) as (var :: type init)
-;;
-;; It is also used to expand the field list of struct and union.
-;;
-;; Example: (foo bar::int baz::(const char*) (boom::int 0))
+;; (foo bar::int baz::(const char*) (boom::int 0))
 ;;  => ((foo :: ScmObj) (bar :: int) (baz :: (const char*)) (boom :: int 0))
-;;
-;; Note: To avoid any type decl to be generated, give || as a type, e.g.
-;; "foo::||".  It is unusual, but needed if the variable name is actually
-;; a macro to be expanded into typed variable name.  SCM_HEADER is an example.
-;; We need a placeholder || to avoid the default type ScmObj is given.
 (define (canonicalize-vardecl vardecls)
   (cgen-canonical-type-arg-list vardecls 'ScmObj))
 
-;; Like canonicalize-vardecl, but for argument declarations.
-;; (foo::type bar baz:: type bee :: type)
-;; => ((foo . type) (bar . ScmObj) (baz . type) (bee . type))
-(define (canonicalize-argdecl argdecls)
-  (define (rec args)
-    (match args
-      [() '()]
-      [((var ':: type) . rest) `((,var . ,type) ,@(rec rest))]
-      [(var . rest) `((,var . ScmObj) ,@(rec rest))]))
-  (rec (cgen-canonical-type-arg-list argdecls 'ScmObj)))
+;; For field declaration, you may need to include a C macro that doesn't
+;; have type decl (e.g. SCM_HEADER).  If you just write SCM_HEADER,
+;; it generates 'ScmObj SCM_HEADER;' which you don't want.
+;  You can write SCM_HEADER::|| to suppress type decl.
+(define (canonicalize-field-decls fields)
+  (rlet1 fs (cgen-canonical-type-arg-list fields 'ScmObj)
+    (dolist [f fs]
+      (match f
+        [((? symbol?) ':: _ . _) #f]
+        [bad (error "Invalid field declaration: " bad)]))))
 
 ;;=============================================================
 ;; Sealing the default environment
