@@ -34,8 +34,10 @@
 (define-module gauche.cgen.type
   (use srfi.13)
   (use text.tr)
+  (use util.match)
   (use gauche.mop.instance-pool)
   (export <cgen-type> cgen-type-from-name make-cgen-type
+          cgen-canonical-type-arg-list
           cgen-boxer-name cgen-unboxer-name cgen-pred-name
           cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
           cgen-type-maybe? cgen-return-stmt)
@@ -357,3 +359,89 @@
 
 (define (cgen-return-stmt expr)
   #"SCM_RETURN(~expr);")
+
+;;;
+;;; Parsing typed variables.
+;;;
+
+;
+;; For conciseness and readability, we allow varaible name and type
+;; can be concatenated, so the following forms are allowed:
+;;
+;;    var :: type        ; proper form
+;;    var::type          ; concatenated to a single symbol
+;;    var:: type         ; type can be S-expr
+;;    var ::type         ; non standard, but allowed
+;;
+;; Typed variables usually comes with list, something like this:
+;;
+;;   (a b::<int> c::(<List> <integer>) :optional (d::<int> 3)
+;;
+;; Canonicalization regognizes variations and produces this:
+;;
+;;   ((a :: default-type)
+;;    (b :: <int>)
+;;    (c :: (<List> <integer>))
+;;    :optional (d :: <int> 3))
+;;
+;; Each typed variable becomes this form:
+;;
+;;   (varname :: type [init-val]])
+;;
+;; If type is omitted, <top> is assumed for stubs, while ScmObj is
+;; assumed for CiSEs, so the default-type is provided by the caller.
+;;
+;; This is used in muliple places with slightly different requirements.
+;;
+;;  1. Stubs
+;;    1a. Parsing argument list of cproc
+;;    1b. Parsing argument list of cmethod
+;;    1c. Parsing return value types of them
+;;
+;;  2. CiSE
+;;    1a. Parsing argument list of cfn
+;;    1b. Parsing return value types of cfn
+;;    1c. Parsing varaible declaration of let*
+;;    1d. Parsing struct/union declaration
+;;
+
+;; API
+;;   Take a list of typed var list, canonicalize the first one,
+;;   returns its canonical form and the rest of the input list.
+;;   Canonical form may be #f if the tip of the typed-var-list is
+;;   not a typed var.
+(define (cgen-canonical-type-arg-list typed-var-list
+                                      default-type)
+  ;; Split shorthand notations
+  (define (expand-type elt seed)
+    (cond
+     [(keyword? elt)
+      (rxmatch-case (keyword->string elt)
+        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
+        [else (cons elt seed)])]
+     [(symbol? elt)
+      (rxmatch-case (symbol->string elt)
+        [#/^([^:]+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
+        [#/^([^:]+)::([^:]+)$/ (_ v t)
+            `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
+        [#/^([^:]+):(.*)$/ (#f #f #f) (err elt)]
+        [else (cons elt seed)])]
+     [else (cons elt seed)]))
+
+  (define (err decl) (error "invalid variable declaration:" decl))
+
+  (define (scan in r)
+    (match in
+      [() (reverse r)]
+      [([? keyword? xx] . rest) (reverse r (cons xx rest))]
+      [([? symbol? var] ':: type . rest)
+       (scan rest `((,var :: ,type) ,@r))]
+      [([? symbol? var] . rest)
+       (scan rest `((,var :: ,default-type) ,@r))]
+      [(([? symbol? v] [? symbol? t] . args) . rest)
+       (scan rest `(,(expand-type v (expand-type t args)) ,@r))]
+      [(([? symbol? vt] . args) . rest)
+       (scan rest `(,(expand-type vt args) ,@r))]
+      [(xx . rest) (reverse r (cons xx rest))]))
+
+  (scan (fold-right expand-type '() typed-var-list) '()))

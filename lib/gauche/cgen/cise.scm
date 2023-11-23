@@ -36,6 +36,7 @@
   (use gauche.sequence)
   (use gauche.cgen.unit)
   (use gauche.cgen.literal)
+  (use gauche.cgen.type)
   (use gauche.experimental.lamb)
   (use util.match)
   (export cise-render cise-render-to-string cise-render-rec
@@ -1430,49 +1431,18 @@
 ;; a macro to be expanded into typed variable name.  SCM_HEADER is an example.
 ;; We need a placeholder || to avoid the default type ScmObj is given.
 (define (canonicalize-vardecl vardecls)
-  (define (expand-type elt seed)
-    (cond
-     [(keyword? elt)  ;; The case of (var ::type)
-      (rxmatch-case (keyword->string elt)
-        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
-        [else (cons elt seed)])]
-     [(symbol? elt)
-      (rxmatch-case (symbol->string elt)
-        [#/^([^:]+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
-        [#/^([^:]+)::([^:]+)$/ (_ v t)
-            `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
-        [#/^([^:]+):(.*)$/ (#f #f #f) (err elt)]
-        [else (cons elt seed)])]
-     [else (cons elt seed)]))
-
-  (define (err decl) (error "invalid variable declaration:" decl))
-
-  (define (scan in r)
-    (match in
-      [() (reverse r)]
-      [([? keyword? xx] . rest) (err xx)]
-      [([? symbol? var] ':: type . rest)
-       (scan rest `((,var :: ,type) ,@r))]
-      [([? symbol? var] . rest)
-       (scan rest `((,var :: ScmObj) ,@r))]
-      [(([? symbol? v] [? symbol? t] . args) . rest)
-       (scan rest `(,(expand-type v (expand-type t args)) ,@r))]
-      [(([? symbol? vt] . args) . rest)
-       (scan rest `(,(expand-type vt args) ,@r))]
-      [(xx . rest) (err xx)]))
-
-  (scan (fold-right expand-type '() vardecls) '()))
+  (cgen-canonical-type-arg-list vardecls 'ScmObj))
 
 ;; Like canonicalize-vardecl, but for argument declarations.
 ;; (foo::type bar baz:: type bee :: type)
 ;; => ((foo . type) (bar . ScmObj) (baz . type) (bee . type))
 (define (canonicalize-argdecl argdecls)
   (define (rec args)
-    (match (canonicalize-vardecl args)
+    (match args
       [() '()]
       [((var ':: type) . rest) `((,var . ,type) ,@(rec rest))]
       [(var . rest) `((,var . ScmObj) ,@(rec rest))]))
-  (rec argdecls))
+  (rec (cgen-canonical-type-arg-list argdecls 'ScmObj)))
 
 ;;=============================================================
 ;; Sealing the default environment
