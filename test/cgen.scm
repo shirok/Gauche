@@ -56,18 +56,13 @@ some_trick();
 (use gauche.cgen.type)
 (test-module 'gauche.cgen.type)
 
-;;====================================================================
-(test-section "gauche.cgen.cise")
-(use gauche.cgen.cise)
-(test-module 'gauche.cgen.cise)
-
 (let ()
   (define (t in out)
-    (test* (format "canonicalize-vardecl ~s" in) out
-           ((with-module gauche.cgen.cise canonicalize-vardecl) in)))
+    (test* (format "cgen-canonical-typed-var-list ~s" in) out
+           (cgen-canonical-typed-var-list in 'default)))
 
-  (t '(a b c) '((a :: ScmObj) (b :: ScmObj) (c :: ScmObj)))
-  (t '((a) (b) (c)) '((a) (b) (c)))
+  (t '(a b c) '((a :: default) (b :: default) (c :: default)))
+  (t '((a) (b) (c)) '((a :: default) (b :: default) (c :: default)))
   (t '(a::x b::y (c::z)) '((a :: x) (b :: y) (c :: z)))
   (t '(a :: x b :: y (c :: z)) '((a :: x) (b :: y) (c :: z)))
   (t '(a:: x b ::y (c:: z)) '((a :: x) (b :: y) (c :: z)))
@@ -76,8 +71,14 @@ some_trick();
   (t '((a::x init) (b::(x) init) (c :: x init))
      '((a :: x init) (b :: (x) init) (c :: x init)))
   (t '((a init) (b init) (c init))
-     '((a init) (b init) (c init)))
+     '((a :: default init) (b :: default init) (c :: default init)))
   )
+
+
+;;====================================================================
+(test-section "gauche.cgen.cise")
+(use gauche.cgen.cise)
+(test-module 'gauche.cgen.cise)
 
 ;; define-cfn
 (parameterize ([cise-emit-source-line #f])

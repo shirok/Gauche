@@ -386,7 +386,7 @@
 ;;
 ;; Each typed variable becomes this form:
 ;;
-;;   (varname :: type [init-val]])
+;;   (varname :: type [init-val] [qual ...])
 ;;
 ;; If type is omitted, <top> is assumed for stubs, while ScmObj is
 ;; assumed for CiSEs, so the default-type is provided by the caller.
@@ -439,9 +439,15 @@
       [([? symbol? var] . rest)
        (scan rest `((,var :: ,default-type) ,@r))]
       [(([? symbol? v] [? symbol? t] . args) . rest)
-       (scan rest `(,(expand-type v (expand-type t args)) ,@r))]
+       (let1 sub (expand-type v (expand-type t args))
+         (match sub
+           [(_ ':: . _) (scan rest `(,sub ,@r))]
+           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
       [(([? symbol? vt] . args) . rest)
-       (scan rest `(,(expand-type vt args) ,@r))]
+       (let1 sub (expand-type vt args)
+         (match sub
+           [(_ ':: . _) (scan rest `(,sub ,@r))]
+           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
       [(xx . rest) (reverse r (cons xx rest))]))
 
   (scan (fold-right expand-type '() typed-var-list) '()))

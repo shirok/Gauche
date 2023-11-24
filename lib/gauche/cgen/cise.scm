@@ -592,18 +592,8 @@
     (ensure-toplevel-ctx form env)
     (ensure-stmt-or-toplevel-ctx form env))
 
-  (let* ([canon (car (canonicalize-vardecl (list (cdr form))))]
-         [var (car canon)]
-         [spec (cdr canon)])
-    (receive (type init-and-quals)
-        (match spec
-          [()         (values 'ScmObj '())]
-          [('::)      (errorf "invalid variable decl in ~s: (~s ~s)"
-                              (car form) var spec)]
-          [(':: type) (values type '())]
-          [(':: type . init-and-quals) (values type init-and-quals)]
-          [else (values 'ScmObj spec)])
-      (check-quals var type '() init-and-quals))))
+  (receive [var type init-and-quals] (canonicalize-typed-var-1 form)
+    (check-quals var type '() init-and-quals)))
 
 ;;------------------------------------------------------------
 ;; CPS transformation
@@ -714,22 +704,17 @@
   (ensure-stmt-ctx form env)
   (match form
     [(_ vars . body)
-     (match (canonicalize-vardecl vars)
-       [((var . spec) ...)
+     (match (cgen-canonical-typed-var-list vars 'ScmObj)
+       [((var ':: type . maybe-init) ...)
         (let1 eenv (expr-env env)
           `(begin
-             ,@(map (^[var spec]
-                      (receive (type has-init? init)
-                          (match spec
-                            [()         (values 'ScmObj #f #f)]
-                            [('::)      (errorf "invalid variable decl in let* form: (~s ~s)" var spec)]
-                            [(init)     (values 'ScmObj #t init)]
-                            [(':: type) (values type #f #f)]
-                            [(':: type init) (values type #t init)])
-                        `(,(cise-render-typed-var type var env)
-                          ,@(cond-list [has-init? `("=",(render-rec init eenv))])
-                          ";")))
-                    var spec)
+             ,@(map (^[var type maybe-init]
+                      `(,(cise-render-typed-var type var env)
+                        ,@(cond-list
+                           [(pair? maybe-init)
+                            `("=",(render-rec (car maybe-init) eenv))])
+                        ";"))
+                    var type maybe-init)
              ,@(map (cut render-rec <> env) body)))]
        [_ (error "invalid variable decls in let* form:" form)])]
     ))
@@ -1376,10 +1361,7 @@
     [('.union tag . rest)
      (render-struct-or-union "union" tag #f rest var env)]
     [('.function (args ...) rettype . rest)
-     (let1 rt (let1 vv (canonicalize-vardecl `(_ ,rettype))
-                 (unless (null? (cdr vv))
-                  (errorf "Invalid return type in ~s" typespec))
-                (caddar vv))
+     (let1 rt (canonicalize-return-type rettype typespec)
        `(,(cise-render-typed-var rt "" env)
          "("
          ,(if (null? rest)
@@ -1389,7 +1371,7 @@
          "("
          ,@($ intersperse ", "
               $ map (^.[(arg ':: type) (cise-render-typed-var type arg env)])
-              $ canonicalize-vardecl args)
+              $ cgen-canonical-typed-var-list args 'ScmObj)
          ")"))]
     [(x)
      `(,(x->string x) " " ,(cise-render-identifier var))]
@@ -1416,12 +1398,6 @@
 (define (cise-render-identifier sym)
   (cgen-safe-name-friendly (x->string sym)))
 
-;; canonicalize-vardecl
-;; (foo bar::int baz::(const char*) (boom::int 0))
-;;  => ((foo :: ScmObj) (bar :: int) (baz :: (const char*)) (boom :: int 0))
-(define (canonicalize-vardecl vardecls)
-  (cgen-canonical-typed-var-list vardecls 'ScmObj))
-
 ;; For field declaration, you may need to include a C macro that doesn't
 ;; have type decl (e.g. SCM_HEADER).  If you just write SCM_HEADER,
 ;; it generates 'ScmObj SCM_HEADER;' which you don't want.
@@ -1432,6 +1408,20 @@
       (match f
         [((? symbol?) ':: _ . _) #f]
         [bad (error "Invalid field declaration: " bad)]))))
+
+;; Parse and get canonical form of return type.  Basically it's a
+;; typed var with missing variable, so we add a dummy var and parse it.
+(define (canonicalize-return-type rettype typespec)
+  (match (cgen-canonical-typed-var-list `(_ ,rettype) 'ScmObj)
+    [((_ ':: rt)) rt]
+    [_ (errorf "Invalid return type in ~s" typespec)]))
+
+;; Deal with define-cvar/declare-cvar/define-ctype form.
+;; Returns three values: variable, type, and a list of init value / qualifies
+(define (canonicalize-typed-var-1 form)
+  (match (cgen-canonical-typed-var-list (list (cdr form)) 'ScmObj)
+    [((var ':: type . init-and-quals)) (values var type init-and-quals)]
+    [z (error "Invalid variable decl in " z form)]))
 
 ;;=============================================================
 ;; Sealing the default environment
