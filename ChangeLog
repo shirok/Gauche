@@ -1,3 +1,9 @@
+2023-11-24  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_GetTimeSpec): Allow negative real number
+	  for relative time specification.  For the timeout argument,
+	  we don't need that, but for general time operation it is useful.
+
 2023-11-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/pmap.scm (run-map): Terminate threads when

@@ -1163,6 +1163,8 @@ ScmObj Scm_TimeToSeconds(ScmTime *t)
     }
 }
 
+#define NSECS_IN_A_SEC 1000000000 /* 1e9 */
+
 /* Scheme time -> timespec conversion */
 ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
 {
@@ -1177,16 +1179,20 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
         spec->tv_sec = ct->sec;
         spec->tv_nsec = ct->nsec;
         if (SCM_INTP(t)) {
-            spec->tv_sec += Scm_GetUInteger(t);
+            spec->tv_sec += Scm_GetInteger(t);
         } else if (!SCM_REALP(t)) {
             Scm_Panic("implementation error: Scm_GetTimeSpec: something wrong");
         } else {
             double s;
-            spec->tv_nsec += (unsigned long)(modf(Scm_GetDouble(t), &s)*1.0e9);
-            spec->tv_sec += (unsigned long)s;
-            while (spec->tv_nsec >= 1000000000) {
-                spec->tv_nsec -= 1000000000;
+            spec->tv_nsec += (long)(modf(Scm_GetDouble(t), &s)*1.0e9);
+            spec->tv_sec += (long)s;
+            while (spec->tv_nsec >= NSECS_IN_A_SEC) {
+                spec->tv_nsec -= NSECS_IN_A_SEC;
                 spec->tv_sec += 1;
+            }
+            while (spec->tv_nsec < 0) {
+                spec->tv_nsec += NSECS_IN_A_SEC;
+                spec->tv_sec -= 1;
             }
         }
     }
