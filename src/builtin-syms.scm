@@ -97,9 +97,11 @@
     (%syntax-rules             SCM_SYM_SYNTAX_RULES_INT)
     (syntax-rules              SCM_SYM_SYNTAX_RULES)
     (...                       SCM_SYM_ELLIPSIS)
+    (_                         SCM_SYM_UNDERBAR)
     (%macroexpand              SCM_SYM_MACRO_EXPAND)
     (%macroexpand-1            SCM_SYM_MACRO_EXPAND_1)
     (%asm                      SCM_SYM_ASM)
+    (name                      SCM_SYM_NAME)
 
     ;; class category
     (builtin                   SCM_SYM_BUILTIN)
@@ -118,6 +120,7 @@
     (gauche                    SCM_SYM_GAUCHE)
     (gauche.gf                 SCM_SYM_GAUCHE_GF)
     (gauche.internal           SCM_SYM_GAUCHE_INTERNAL)
+    (keyword                   SCM_SYM_KEYWORD)
     (user                      SCM_SYM_USER)
     (|\x23|                    SCM_SYM_SHARP) ; |#| confuses emacs
 
@@ -135,10 +138,16 @@
     (bind-info                 SCM_SYM_BIND_INFO)
     (arg-info                  SCM_SYM_ARG_INFO)
     (debug-print               SCM_SYM_DEBUG_PRINT)
+    (debug-funcall             SCM_SYM_DEBUG_FUNCALL)
+    (debug-thread-log          SCM_SYM_DEBUG_THREAD_LOG)
+    (debug-print-conditionally SCM_SYM_DEBUG_PRINT_CONDITIONALLY)
+    (debug-funcall-conditionally SCM_SYM_DEBUG_FUNCALL_CONDITIONALLY)
     (define-reader-ctor        SCM_SYM_DEFINE_READER_CTOR)
     (string-interpolate        SCM_SYM_STRING_INTERPOLATE)
     (big-endian                SCM_SYM_BIG_ENDIAN)    ;; for binary.io, uvector
     (little-endian             SCM_SYM_LITTLE_ENDIAN) ;; ditto
+    (big                       SCM_SYM_BIG)
+    (little                    SCM_SYM_LITTLE)
     (arm-little-endian         SCM_SYM_ARM_LITTLE_ENDIAN) ;; ditto
     (%internal-eval            SCM_SYM_INTERNAL_EVAL)
     (%internal-apply           SCM_SYM_INTERNAL_APPLY)
@@ -148,6 +157,15 @@
     (syntax                    SCM_SYM_SYNTAX)
     (macro                     SCM_SYM_MACRO)
     (inline                    SCM_SYM_INLINE)
+    (legacy                    SCM_SYM_LEGACY)
+    (permissive                SCM_SYM_PERMISSIVE)
+    (warn-legacy               SCM_SYM_WARN_LEGACY)
+    (strict-r7                 SCM_SYM_STRICT_R7)
+    (reader-lexical-mode       SCM_SYM_READER_LEXICAL_MODE)
+    (unused-args               SCM_SYM_UNUSED_ARGS)
+    (next-method               SCM_SYM_NEXT_METHOD)
+    (source                    SCM_SYM_SOURCE)
+    (definition                SCM_SYM_DEFINITION)
 
     ;; regexp
     (seq                       SCM_SYM_SEQ)
@@ -198,40 +216,8 @@
     (symlink                   SCM_SYM_SYMLINK)
     (socket                    SCM_SYM_SOCKET)
     (time-utc                  SCM_SYM_TIME_UTC)
-
-    ;; TRANSIENT: To keep binary compatibility, new symbols are added below.
-    ;; We're going to reorder symbols at the next ABI change.
-
-    ;; modules addition (move this up on 1.0 release)
-    (keyword                   SCM_SYM_KEYWORD)
-    ;; reader addition (move this up on 1.0 release)
-    (legacy                    SCM_SYM_LEGACY)
-    (permissive                SCM_SYM_PERMISSIVE)
-    (warn-legacy               SCM_SYM_WARN_LEGACY)
-    (strict-r7                 SCM_SYM_STRICT_R7)
-    (debug-funcall             SCM_SYM_DEBUG_FUNCALL)
-    (reader-lexical-mode       SCM_SYM_READER_LEXICAL_MODE)
-    ;; compiler addition (move this up on 1.0 release)
-    (unused-args               SCM_SYM_UNUSED_ARGS)
-    (next-method               SCM_SYM_NEXT_METHOD)
-    ;; macro addition (move this up on 1.0 release)
-    (_                         SCM_SYM_UNDERBAR)
-    ;; to support scheme.bytevector (move this up on 1.0 release)
-    (big                       SCM_SYM_BIG)
-    (little                    SCM_SYM_LITTLE)
-    ;; port attibute, dlentry
-    (name                      SCM_SYM_NAME)
-    ;; macro source info
-    (source                    SCM_SYM_SOURCE)
-    ;; dlentry
     (called                    SCM_SYM_CALLED)
-    ;; debug-thread-log (move this up on 1.0 release)
-    (debug-thread-log          SCM_SYM_DEBUG_THREAD_LOG)
-    ;; definition, to look up meta info attached to the <compiled-code>
-    (definition                SCM_SYM_DEFINITION)
-    ;; additional debug helper
-    (debug-print-conditionally SCM_SYM_DEBUG_PRINT_CONDITIONALLY)
-    (debug-funcall-conditionally SCM_SYM_DEBUG_FUNCALL_CONDITIONALLY)
+
     ;; source info tracking
     (original                  SCM_SYM_ORIGINAL)
     (error                     SCM_SYM_ERROR)
@@ -248,6 +234,7 @@
     (apply                     SCM_SYM_APPLY)
     (not                       SCM_SYM_NOT)
     (eq?                       SCM_SYM_EQP)
+
     ;; parameter arg
     (thread                    SCM_SYM_THREAD)
     (shared                    SCM_SYM_SHARED)

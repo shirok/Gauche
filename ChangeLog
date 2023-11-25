@@ -1,5 +1,9 @@
 2023-11-24  Shiro Kawai  <shiro@acm.org>
 
+	* src/builtin-sym.scm: Rearranged predefined symbols.
+	  It's been for long time since we made builtin-syms.h private,
+	  so no external code should depend on the order of them anymore.
+
 	* src/system.c (Scm_GetTimeSpec): Allow negative real number
 	  for relative time specification.  For the timeout argument,
 	  we don't need that, but for general time operation it is useful.
