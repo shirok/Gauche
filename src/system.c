@@ -1170,8 +1170,18 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
 {
     if (SCM_FALSEP(t)) return NULL;
     if (SCM_TIMEP(t)) {
-        spec->tv_sec = SCM_TIME(t)->sec;
-        spec->tv_nsec = SCM_TIME(t)->nsec;
+        if (SCM_EQ(SCM_TIME(t)->type, SCM_SYM_TIME_UTC)) {
+            spec->tv_sec = SCM_TIME(t)->sec;
+            spec->tv_nsec = SCM_TIME(t)->nsec;
+        } else if (SCM_EQ(SCM_TIME(t)->type, SCM_SYM_TIME_DURATION)) {
+            ScmTime *ct = SCM_TIME(Scm_CurrentTime());
+            spec->tv_sec = ct->sec + SCM_TIME(t)->sec;
+            spec->tv_nsec = ct->nsec + SCM_TIME(t)->nsec; /* always positive */
+            while (spec->tv_nsec >= NSECS_IN_A_SEC) {
+                spec->tv_nsec -= NSECS_IN_A_SEC;
+                spec->tv_sec += 1;
+            }
+        }
     } else if (!SCM_REALP(t)) {
         Scm_Error("bad time spec: <time> object, real number, or #f is required, but got %S", t);
     } else {

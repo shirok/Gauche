@@ -216,6 +216,7 @@
     (symlink                   SCM_SYM_SYMLINK)
     (socket                    SCM_SYM_SOCKET)
     (time-utc                  SCM_SYM_TIME_UTC)
+    (time-duration             SCM_SYM_TIME_DURATION)
     (called                    SCM_SYM_CALLED)
 
     ;; source info tracking

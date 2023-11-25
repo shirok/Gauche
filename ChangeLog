@@ -7,6 +7,7 @@
 	* src/system.c (Scm_GetTimeSpec): Allow negative real number
 	  for relative time specification.  For the timeout argument,
 	  we don't need that, but for general time operation it is useful.
+	  Also support relative time specification with time-duration time.
 
 2023-11-21  Shiro Kawai  <shiro@acm.org>
 
