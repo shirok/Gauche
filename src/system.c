@@ -1166,7 +1166,7 @@ ScmObj Scm_TimeToSeconds(ScmTime *t)
 #define NSECS_IN_A_SEC 1000000000 /* 1e9 */
 
 /* Scheme time -> timespec conversion */
-ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
+ScmTimeSpec *Scm_ToTimeSpec(ScmObj t, ScmTime *t0, ScmTimeSpec *spec)
 {
     if (SCM_FALSEP(t)) return NULL;
     if (SCM_TIMEP(t)) {
@@ -1174,7 +1174,7 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
             spec->tv_sec = SCM_TIME(t)->sec;
             spec->tv_nsec = SCM_TIME(t)->nsec;
         } else if (SCM_EQ(SCM_TIME(t)->type, SCM_SYM_TIME_DURATION)) {
-            ScmTime *ct = SCM_TIME(Scm_CurrentTime());
+            ScmTime *ct = t0 ? t0 : SCM_TIME(Scm_CurrentTime());
             spec->tv_sec = ct->sec + SCM_TIME(t)->sec;
             spec->tv_nsec = ct->nsec + SCM_TIME(t)->nsec; /* always positive */
             while (spec->tv_nsec >= NSECS_IN_A_SEC) {
@@ -1185,7 +1185,7 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
     } else if (!SCM_REALP(t)) {
         Scm_Error("bad time spec: <time> object, real number, or #f is required, but got %S", t);
     } else {
-        ScmTime *ct = SCM_TIME(Scm_CurrentTime());
+        ScmTime *ct = t0? t0 : SCM_TIME(Scm_CurrentTime());
         spec->tv_sec = ct->sec;
         spec->tv_nsec = ct->nsec;
         if (SCM_INTP(t)) {
@@ -1207,6 +1207,12 @@ ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
         }
     }
     return spec;
+}
+
+/* Backward compatibility */
+ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec)
+{
+    return Scm_ToTimeSpec(t, NULL, spec);
 }
 
 /*

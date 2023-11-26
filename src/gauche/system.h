@@ -161,6 +161,7 @@ typedef struct ScmTimeSpecRec {
 } ScmTimeSpec;
 #endif /*!(defined(HAVE_STRUCT_TIMESPEC) && (!defined(GAUCHE_WINDOWS) || defined(__MINGW64_VERSION_MAJOR)))*/
 
+SCM_EXTERN ScmTimeSpec *Scm_ToTimeSpec(ScmObj t, ScmTime *t0, ScmTimeSpec *spec);
 SCM_EXTERN ScmTimeSpec *Scm_GetTimeSpec(ScmObj t, ScmTimeSpec *spec);
 
 /* strftime() compatibility layer */

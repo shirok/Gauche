@@ -1,3 +1,12 @@
+2023-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_ToTimeSpec): More general interface that takes
+	  the base time (t0) when relative time is given.  Passing NULL
+	  to t0 uses the current time.
+	  Scm_GetTimeSpec() is defined on top of it.  We thought to drop it,
+	  but this API may have been used from other extensions, so we may
+	  keep it.
+
 2023-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* src/builtin-sym.scm: Rearranged predefined symbols.
