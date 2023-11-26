@@ -901,12 +901,12 @@
 
 ;; Obj can be <time>, real num or #f, as used in timeout argument for many
 ;; procedures.  Returns (<?> <time>)
-(define-cproc absolute-time (obj) ::<time>?
+(define-cproc absolute-time (obj :optional (t0::<time>? #f)) ::<time>?
   (let* ([ts::ScmTimeSpec]
-         [pts::ScmTimeSpec* (Scm_GetTimeSpec obj (& ts))])
+         [pts::ScmTimeSpec* (Scm_ToTimeSpec obj t0 (& ts))])
     (if (== pts NULL)
       (return NULL)
-      (return (SCM_TIME (Scm_MakeTime64 'time-utc
+      (return (SCM_TIME (Scm_MakeTime64 (?: t0 (-> t0 type) 'time-utc)
                                         (-> pts tv_sec)
                                         (-> pts tv_nsec)))))))
 
