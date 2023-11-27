@@ -882,23 +882,6 @@
 (define-cproc time? (obj)               ;SRFI-18, SRFI-19, SRFI-21, SRFI-226
   ::<boolean> SCM_TIMEP)
 
-(define-cproc seconds+ (t::<time> x::<number>) ;SRFI-226
-  (cond [(SCM_INTP x)
-         (return (Scm_MakeTime64 (-> t type)
-                                 (+ (-> t sec) (SCM_INT_VALUE x))
-                                 (-> t nsec)))]
-        [(or (SCM_RATNUMP x) (SCM_FLONUMP x))
-         (let* ([secs::double]
-                [subsecs::double (modf (Scm_GetDouble x) (& secs))])
-           (return
-            (Scm_MakeTime64 (-> t type)
-                            (+ (-> t sec) (cast int64_t secs))
-                            (+ (-> t nsec)
-                               (cast int64_t (* subsecs 1000000000))))))]
-        [else
-         (Scm_Error "Real number required, but got: %S" x)
-         (return SCM_UNDEFINED)]))      ;dummy
-
 ;; Obj can be <time>, real num or #f, as used in timeout argument for many
 ;; procedures.  Returns (<?> <time>)
 (define-cproc absolute-time (obj :optional (t0::<time>? #f)) ::<time>?
@@ -909,6 +892,8 @@
       (return (SCM_TIME (Scm_MakeTime64 (?: t0 (-> t0 type) 'time-utc)
                                         (-> pts tv_sec)
                                         (-> pts tv_nsec)))))))
+
+(define (seconds+ t dt) (absolute-time dt t)) ;SRFI-226 comatibility
 
 (define-cproc time->seconds (t::<time>) ;SRFI-18
   Scm_TimeToSeconds)
