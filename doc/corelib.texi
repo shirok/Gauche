@@ -32073,6 +32073,46 @@ Returns @code{#t} if @var{obj} is a time object.
 @c COMMON
 @end defun
 
+@defun absolute-time obj :optional current-time
+@c EN
+The argument must be either a @code{<time>} object, a real number,
+or @code{#f}.  If it is an absolute @code{<time>} object, it specifies
+an absolute point of time.  If it is a @code{<time>} object of
+@code{time-duration} type, it is taken as a relative tiem from the current time.
+If it is a real number, it specifies
+the number of seconds from the current time.
+
+This procedure returns @code{#f} if the argument is @code{#f},
+and a UTC @code{<time>} object for an absolute point of time otherwise.
+
+Most procedures that takes `timeout' argument accepts @code{<time} object,
+real number or @code{#f}.  This procedure is useful to process
+such argument in the same way.
+@c JP
+引数は@code{<time>}オブジェクト、実数、もしくは@code{#f}でなければなりません。
+絶対時刻を表す@code{<time>}オブジェクトの場合は絶対時刻を、
+@code{time-duration}型の@code{<time>}オブジェクトの場合は現在時刻からの相対時間を、
+実数の場合は現在時刻からの相対秒数を示します。
+
+この手続きは、引数が@code{#f}なら@code{#f}を、そうでなければ
+絶対時刻に変換したUTC @code{<time>}オブジェクトを返します。
+
+timeout引数を取る多くの手続きが、同じ形式の引数を取ります。
+この手続きはそれらと同様に時刻を扱うのに便利です。
+@c COMMON
+
+@c EN
+The optional @var{current-time} is, if provided, must be an
+absolute @code{<time>} object or @code{#f}.  If it is a @code{<time>}
+object, it is used as the current time instead of the actual current time.
+@c JP
+省略可能な@var{current-time}オブジェクトは、もし与えられたなら
+絶対時刻の@code{<time>}オブジェクトか@code{#f}でなければなりません。
+@code{<time>}オブジェクトの場合は、実際の現在時刻のかわりに
+それが現在時刻として使われます。
+@c COMMON
+@end defun
+
 @defun seconds+ time x
 [SRFI-226]
 @c EN
@@ -32094,31 +32134,6 @@ difference by @code{add-duration}/@code{subtract-duration}.
 @c COMMON
 @end defun
 
-@defun absolute-time obj
-@c EN
-The argument must be either a @code{<time>} object, a real number,
-or @code{#f}.  If it is a @code{<time>} object, it specifies
-an absolute point of time.  If it is a real number, it specifies
-the number of seconds from the current time.
-
-This procedure returns @code{#f} if the argument is @code{#f},
-and a UTC @code{<time>} object for an absolute point of time otherwise.
-
-Most procedures that takes `timeout' argument accepts @code{<time} object,
-real number or @code{#f}.  This procedure is useful to process
-such argument in the same way.
-@c JP
-引数は@code{<time>}オブジェクト、実数、もしくは@code{#f}でなければなりません。
-@code{<time>}オブジェクトの場合は絶対時刻を、
-実数の場合は現在時刻からの相対秒数を示します。
-
-この手続きは、引数が@code{#f}なら@code{#f}を、そうでなければ
-絶対時刻に変換したUTC @code{<time>}オブジェクトを返します。
-
-timeout引数を取る多くの手続きが、同じ形式の引数を取ります。
-この手続きはそれらと同様に時刻を扱うのに便利です。
-@c COMMON
-@end defun
 
 @defun time->seconds time
 @defunx seconds->time seconds
