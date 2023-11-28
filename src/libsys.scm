@@ -893,7 +893,10 @@
                                         (-> pts tv_sec)
                                         (-> pts tv_nsec)))))))
 
-(define (seconds+ t dt) (absolute-time dt t)) ;SRFI-226 comatibility
+(define (seconds+ t dt)
+  (assume-type t <time>)
+  (assume-type dt <real>)
+  (absolute-time dt t)) ;SRFI-226 comatibility
 
 (define-cproc time->seconds (t::<time>) ;SRFI-18
   Scm_TimeToSeconds)
