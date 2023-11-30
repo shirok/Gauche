@@ -1,3 +1,8 @@
+2023-11-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/gemcomp: Removed.  This is an ancient script, superseded by
+	  precomp long ago.
+
 2023-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_ToTimeSpec): More general interface that takes
