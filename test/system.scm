@@ -410,11 +410,56 @@
 (test* "srfi time seconds->time" '(98765432109876 500000000)
        (let1 t (seconds->time 98765432109876.5)
          (list (ref t'second) (ref t'nanosecond))))
-(test* "srfi time setter" (make <time> :second -98765432109876 :nanosecond 4)
+
+;; <time> should be immutable.
+'(test* "srfi time setter" (make <time> :second -98765432109876 :nanosecond 4)
        (let1 t (make <time>)
          (set! (ref t'second) -98765432109876)
          (set! (ref t'nanosecond) 4)
          t))
+
+(let* ([t0 (current-time)]
+       [t1 (make <time> :second (~ t0'second) :nanosecond #e999_999_999)]
+       [t2 (make <time> :second (~ t0'second) :nanosecond 0)])
+  (define (t->list t :optional (delta-s 0) (delta-ns 0))
+    (list (+ (~ t'second) delta-s) (+ (~ t'nanosecond) delta-ns)))
+  (test* "absolute-time (integer second)"
+         (t->list t0 1)
+         (t->list (absolute-time 1 t0)))
+  (test* "absolute-time (negative integer second)"
+         (t->list t0 -1)
+         (t->list (absolute-time -1 t0)))
+  (test* "absolute-time (real second, t0)"
+         (test-one-of
+          (t->list t0 1 #e5e8)
+          (t->list t0 2 #e-5e8))
+         (t->list (absolute-time 1.5 t0)))
+  (test* "absolute-time (real second, t1)"
+         (t->list t1 2 #e-5e8)
+         (t->list (absolute-time 1.5 t1)))
+  (test* "absolute-time (negative real second, t0)"
+         (test-one-of
+          (t->list t0 0 #e-25e7)
+          (t->list t0 -1 #e75e7))
+         (t->list (absolute-time -0.25 t0)))
+  (test* "absolute-time (negative real second, t2)"
+         (t->list t2 -1 #e75e7)
+         (t->list (absolute-time -0.25 t2)))
+  (test* "absolute-time (duration)"
+         (t->list t1 11 -999_999_999)
+         (t->list (absolute-time (make <time>
+                                   :type 'time-duration
+                                   :second 10
+                                   :nanosecond 1)
+                                 t1)))
+  (test* "absolute-time (negative duration)"
+         (t->list t2 -10 1)
+         (t->list (absolute-time (make <time>
+                                   :type 'time-duration
+                                   :second -10
+                                   :nanosecond 1)
+                                 t2)))
+  )
 
 ;;-------------------------------------------------------------------
 (test-section "stat")
