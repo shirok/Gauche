@@ -7710,11 +7710,58 @@ respectively (@pxref{SRFI-13 String mapping}).
 @defun textual-map proc textual1 textual2 @dots{}
 [R7RS text]
 @c MOD scheme.text
+@c EN
+For every corresponding characters from input textuals,
+@var{proc} is applied.  It must return either a character or
+a string.  The result of @var{proc} is concatenated into a new text
+and returned.  Similar to @code{string-map}, but the difference is
+it allows 1-to-n mappinb by letting @var{proc} return a string.
+@c JP
+入力textualの、対応する文字それぞれに対して@var{proc}が適用されます。
+@var{proc}は文字か文字列を返さねばなりません。
+@var{proc}の結果がtextとして集められて返されます。
+@code{string-map}と似ていますが、@var{proc}が文字列を返すことで1-to-nの
+マッピングが可能です。
+@c COMMON
+
+@c EN
+The dynamic order in which @var{proc} is called is unspecified.
+
+If more than one textual are given, it scans up to the shortest
+textual.
+@c JP
+@var{proc}が呼ばれる動的順序は規定されていません。
+
+二つ以上のtextualが渡された場合、一番短いtextualの要素数だけ@var{proc}は呼ばれます。
+@c COMMON
+
+@example
+(textual-map (^c (string c c)) "abc")
+ @result{} "aabbcc"
+(textual-map (^[a b] (if (char<? a b) a b))
+             "continuation" "parameterization")
+ @result{} "canaietarioa"
+@end example
 @end defun
 
 @defun textual-for-each proc textual1 textual2 @dots{}
 [R7RS text]
 @c MOD scheme.text
+@c EN
+For every corresponding characters from input textuals,
+@var{proc} is applied, from left to right order.
+The result of @var{proc} is discarded.  The procedure returns
+an undefined value.
+
+If more than one textual are given, it scans up to the shortest
+textual.
+@c JP
+入力textualの、対応する文字それぞれに対して左から右の順に@var{proc}が適用されます。
+@var{proc}の結果は捨てられます。
+@var{proc}の結果がtextとして集められて返されます。
+
+二つ以上のtextualが渡された場合、一番短いtextualの要素数だけ@var{proc}は呼ばれます。
+@c COMMON
 @end defun
 
 @defun textual-map-index proc textual :optional start end
