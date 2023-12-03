@@ -15577,65 +15577,112 @@ result(s).  Otherwise, calls @var{else-thunk} and returns its result(s).
 @defunx unless-procedure value thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 If @var{value} evaluates to true/false, calls each @var{thunk} in turn
-and returns, respectively.  Otherwise, returns imediately.
-The return value is unspecified.
+and returns an undefined value, respectively.
+Otherwise, returns imediately.
+@c JP
+@var{value}が真または偽の値に評価されたら、
+各@var{thunk}を順に呼び出して、未定義値を返します。
+そうでなければ直ちに返ります。
+@c COMMON
 @end defun
 
 @defun value-procedure value then-proc else-thunk
 [SRFI-235]
 @c MOD srfi.235
-If @var{value} is true, apply @var{then-proc} on it and returns
+@c EN
+If @var{value} evaluates to true, apply @var{then-proc} on it and returns
 its result(s).  Otherwise, call @var{else-thunk} and returns
 its result(s).
+@c JP
+@var{value}が真の値に評価されたら、
+その値を引数に@var{then-proc}を呼び出しその戻り値を返します。
+そうでなければ、@var{else-thunk}を引数なしで呼び出しその戻り値を返します。
+@c COMMON
 @end defun
 
 @defun case-procedure value thunk-alist :optional else-thunk
 [SRFI-235]
 @c MOD srfi.235
-The @var{thunk-alist} argument is a list of pairs of a valueand
+@c EN
+The @var{thunk-alist} argument is a list of pairs of a value and
 a thunk.  First, @var{value} is evaluated, then the result
 is searched from the cars of @var{thunk-alist}, using @code{eqv?}.
 If there's a matching entry, its thunk is called and its result(s) is/are
 returned.  If there's no matching entry, @var{else-thunk} is invoked
 if present and its result(s) is/are returned.
 If there's neither @var{else-thunk}, an undefined value is returned.
-one
+@c @JP
+@var{thunk-alist}引数は、値とサンクのペアのリストです。
+まず@var{value}が評価され、その値が@var{thunk-alist}中のペアのcarの値と順に@var{eqv?}
+で比較されます。一致するエントリが見つかったら、そのペアのcdrにあるサンクが呼ばれ、
+その結果が戻り値となります。一致するエントリが無い場合、
+@var{else-thunk}が与えられていればそれが呼ばれてその結果が戻り値となり、
+与えられていなければ未定義値が返されます。
+@c COMMON
 @end defun
 
 @defun and-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Calls @var{thunk} @dots{} left to right, until it yields
 @code{#f}, and returns @code{#f}.  If all @var{thunk}s yields
 true value, returns the result of the last @code{thunk}.
 If no @var{thunk}s are given, returns @code{#t}.
+@c JP
+@var{thunk} @dots{}を左から順に呼んでいきます。@code{#f}を返すサンクがあれば
+そこで評価を打ち切り@code{#f}を返します。最後のサンクまでどれも@code{#f}を返さなければ、
+最後のサンクの結果を戻り値とします。@var{thunk}がひとつも与えられなかった場合は
+@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun eager-and-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Calls all @var{thunk}s, then checks their results.  If any
 of the result is @code{#f}, returns @code{#f}.
 Otherwise, returns the last result of @var{thunk}.
 If no @var{thunk}s are given, returns @code{#t}.
+@c JP
+@var{thunk} @dots{}をまず全て呼び出し、それから結果を調べます。
+どれかひとつでも@code{#f}があったら@code{#f}を返します。
+そうでなければ、最後の@var{thunk}の結果を返します。
+@var{thunk}がひとつも与えられなかった場合は@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun or-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Calls @var{thunk} @dots{} left to right, until it yields
 a true value, and returns that value.  If all @var{thunk}s yields
 @code{#f}, returns @code{#f}.  If no @var{thunk}s are given,
-returns @code{#f}.
+returns @code{#t}.
+@c JP
+@var{thunk} @dots{}を左から順に呼んでいきます。真の値を返すサンクがあれば
+そこで評価を打ち切りその値を返します。最後のサンクまでどれも真の値を返さなければ
+@code{#f}を返します。@var{thunk}がひとつも与えられなかった場合は
+@code{#t}を返します。
+@c COMMON
 @end defun
 
 @defun eager-or-procedure thunk @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Calls all @var{thunk}s, then checks their results from left to right,
 and returns the first true value.  If all the results are @code{#f},
 or no @var{thunk}s are given, returns @code{#f}.
+@c JP
+@var{thunk} @dots{}をまず全て呼び出し、それから結果を左から右へ調べ、
+最初に出会った真の値を返します。全てが@code{#f}であったり、
+@var{thunk}がひとつも与えられなかった場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun funcall-procedure thunk

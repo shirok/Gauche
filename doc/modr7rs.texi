@@ -7713,12 +7713,12 @@ respectively (@pxref{SRFI-13 String mapping}).
 @c EN
 For every corresponding characters from input textuals,
 @var{proc} is applied.  It must return either a character or
-a string.  The result of @var{proc} is concatenated into a new text
+a text.  The result of @var{proc} is concatenated into a new text
 and returned.  Similar to @code{string-map}, but the difference is
 it allows 1-to-n mappinb by letting @var{proc} return a string.
 @c JP
 入力textualの、対応する文字それぞれに対して@var{proc}が適用されます。
-@var{proc}は文字か文字列を返さねばなりません。
+@var{proc}は文字かtextを返さねばなりません。
 @var{proc}の結果がtextとして集められて返されます。
 @code{string-map}と似ていますが、@var{proc}が文字列を返すことで1-to-nの
 マッピングが可能です。
@@ -7767,6 +7767,10 @@ textual.
 @defun textual-map-index proc textual :optional start end
 [R7RS text]
 @c MOD scheme.text
+@c EN
+
+@c JP
+@c COMMON
 @end defun
 
 @defun textual-for-each-index proc textual :optional start end
