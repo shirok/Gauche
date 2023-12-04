@@ -6,6 +6,7 @@
 (use file.util)
 (use file.filter)
 (use gauche.config)
+(use gauche.threads)
 
 (test-start "utility scripts")
 
@@ -779,9 +780,23 @@
             ((global-variable-ref 'types-test 'foo) "ng"))))
   )
 
+(define (precomp-test-4)
+  (test* "running precomp 4" #t (do-precomp! '("literal-mutex.scm") '("-e")))
+  (test* "compile 4" #t (do-compile! "literal-mutex" '("literal-mutex.c")))
+
+  (test* "run-once" '(1 1 1 1 1)
+         (dynload-and-eval
+          "literal-mutex"
+          (let* ([foo (module-binding-ref 'literal-mutex 'foo)]
+                 [thrs (map (^_ (make-thread foo)) (iota 5))])
+            (for-each thread-start! thrs)
+            (map thread-join! thrs))))
+  )
+
 (wrap-with-test-directory precomp-test-1 '("test.o"))
 (wrap-with-test-directory precomp-test-2 '("test.o"))
 (wrap-with-test-directory precomp-test-3 '("test.o"))
+(wrap-with-test-directory precomp-test-4 '("test.o"))
 
 ;;=======================================================================
 (test-section "build-standalone")
