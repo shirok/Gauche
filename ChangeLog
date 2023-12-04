@@ -1,6 +1,10 @@
 2023-12-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libthr.scm (run-once): Added.
+	  (<mutex>, <condition-variable>, <thread-local>): Export these.
+	  Class names are not in SRFI-19, but now that threads are in the
+	  core, other parts of core may refer to them. (Notably, precomp
+	  now needs them).
 
 2023-11-29  Shiro Kawai  <shiro@acm.org>
 

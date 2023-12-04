@@ -60,17 +60,19 @@
           thread-stop! thread-cont!
           run-once
 
-          mutex? make-mutex mutex-name mutex-state
+          <mutex> mutex?
+          make-mutex mutex-name mutex-state
           mutex-specific-set! mutex-specific
           with-locking-mutex mutex-lock! mutex-unlock!
           mutex-locker mutex-unlocker
 
-          condition-variable? make-condition-variable condition-variable-name
+          <condition-variable> condition-variable?
+          make-condition-variable condition-variable-name
           condition-variable-specific condition-variable-specific-set!
           condition-variable-signal! condition-variable-broadcast!
 
-          make-thread-local
-          thread-local? tlref tlset!
+          <thread-local> thread-local?
+          make-thread-local tlref tlset!
 
           current-time time? time->seconds seconds->time
 
