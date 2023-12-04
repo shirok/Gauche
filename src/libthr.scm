@@ -58,6 +58,7 @@
           thread-yield! thread-sleep!
           thread-join! thread-terminate! thread-schedule-terminate!
           thread-stop! thread-cont!
+          run-once
 
           mutex? make-mutex mutex-name mutex-state
           mutex-specific-set! mutex-specific
@@ -226,6 +227,26 @@
  (define-cproc mutex-locker (mutex::<mutex>) Scm_MutexLocker)
  (define-cproc mutex-unlocker (mutex::<mutex>) Scm_MutexUnlocker)
  )
+
+;; (run-once expr ...)
+;;   The first thread that evaluates this form evaluate expr and memoize
+;;   its result(s).  The rest of the threads returns the memoized result(s).
+;;   NB: This inserts literal mutex and box in the code.
+
+(define-syntax run-once
+  (er-macro-transformer
+   (^[f r c]
+     (if (null? (cdr f))
+       (error "Malformed run-once:" f)
+       (let ([exprs (cdr f)]
+             [mutex (make-mutex)]
+             [results (box #f)])          ;list if evaluated
+         (quasirename r
+           `(with-locking-mutex ,mutex
+              (^[] (unless (unbox ,results)
+                     (receive xs (begin ,@exprs)
+                       (set-box! ,results xs)))
+                (apply values (unbox ,results))))))))))
 
 ;;===============================================================
 ;; Condition variable

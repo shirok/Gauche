@@ -593,6 +593,22 @@
            (list val1 val2 val3))))
 
 ;;---------------------------------------------------------------------
+(test-section "run-once")
+
+(let ((v 0))
+  (define (refv)
+    (sys-nanosleep 1000)
+    (begin0 v (set! v (+ v 1))))
+  (test* "run-once"
+         (make-list 10 0)
+         (let1 thrs (map (^_ (make-thread
+                              (^[] (run-once (refv)))))
+                         (iota 10))
+           (for-each thread-start! thrs)
+           (map thread-join! thrs)))
+  )
+
+;;---------------------------------------------------------------------
 (test-section "atoms")
 
 (test* "atom" #t (atom? (atom 0 1 2)))

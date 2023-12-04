@@ -1,3 +1,7 @@
+2023-12-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/libthr.scm (run-once): Added.
+
 2023-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/gemcomp: Removed.  This is an ancient script, superseded by
