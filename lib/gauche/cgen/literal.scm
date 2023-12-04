@@ -37,6 +37,7 @@
   (use srfi.42)
   (use srfi.197)
   (use gauche.sequence)
+  (use gauche.threads)
   (use gauche.cgen.unit)
   (use util.match)
   (export <cgen-literal> cgen-c-name cgen-cexpr cgen-make-literal
@@ -1034,6 +1035,40 @@
   (static (self) #f)
   )
 
+;; box ----------------------------------------------------------
+
+(define-cgen-literal <cgen-box> <box>
+  ((vals           :init-keyword :vals))
+  (make (value)
+    (make <cgen-box> :value value
+          :c-name (cgen-allocate-static-datum)
+          :vals (map cgen-literal (values->list (unbox value)))))
+  (init (self)
+    (let ([c-vals (map cgen-cexpr (~ self'vals))]
+          [cname (~ self'c-name)])
+      (if (length=? c-vals 1)
+        (format #t "  ~a = SCM_OBJ(Scm_MakeBox(~a));\n" cname (car c-vals))
+        (format #T "  ~a = SCM_OBJ(Scm_ListToMVBox(~a));\n"
+                cname (string-join c-vals ", ")))))
+  (static (self) #f)
+  )
+
+;; mutex --------------------------------------------------------
+
+;; Literal mutex is useful when a macro wants to insert a global lock.
+(define-cgen-literal <cgen-mutex> (global-variable-ref 'gauche.threads '<mutex>)
+  ((name           :init-keyword :name))
+  (make (value)
+    (make <cgen-mutex> :value value
+          :c-name (cgen-allocate-static-datum)
+          :name (cgen-literal (mutex-name value))))
+  (init (self)
+    (let ([name (cgen-cexpr (~ self'name))]
+          [cname (~ self'c-name)])
+      (format #t "  ~a = Scm_MakeMutex(~a);\n"
+              cname name)))
+  (static (self) #f)
+  )
 
 ;;---------------------------------------------------------------
 ;; Inferring literal handlers.
