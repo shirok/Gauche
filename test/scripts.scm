@@ -612,6 +612,7 @@
        (with-output-to-file "test.o/t.scm"
          (^[]
            (write '(add-load-path "."))
+           (write '(use gauche.threads)) ; some tests need this
            (write '(load libname))
            (write '(write expr))
            (write '(exit 0))))
