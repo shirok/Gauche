@@ -82,9 +82,12 @@
 
           atom atom? atom-ref atomic atomic-update!
 
-          make-semaphore semaphore? semaphore-acquire! semaphore-release!
-          make-latch latch? latch-dec! latch-clear! latch-await
-          make-barrier barrier? barrier-reset! barrier-await barrier-broken?
+          <semaphore> make-semaphore semaphore?
+          semaphore-acquire! semaphore-release!
+          <latch> make-latch latch?
+          latch-dec! latch-clear! latch-await
+          <barrier> make-barrier barrier?
+          barrier-reset! barrier-await barrier-broken?
           ))
 (select-module gauche.threads)
 
