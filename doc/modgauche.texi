@@ -24022,6 +24022,57 @@ follows.
 @end example
 @end defun
 
+@defmac run-once expr @dots{}
+@c MOD gauche.threads
+@c EN
+When this form is first evaluated, it evaluates @var{expr} @dots{}
+returns the result(s) of the lat expression.
+The results are memoized, so the subsequent
+evaluation of the form returns the same results without
+evaluating @var{expr}s.
+@c JP
+最初にこのフォームが評価された時、@var{expr} @dots{}が順に評価され、
+最後の式の結果(複数であることもあります)が変えされます。
+結果は記憶され、以降のこのフォームの評価は@var{expr} @dots{}を評価することなく
+以前の結果が直ちに返されます。
+@c COMMON
+
+@c EN
+It may sound somewhat similar to @code{force} a promise,
+but @code{run-once} guarantees
+that only one thread ever evaluates @var{expr}s.  If more than one thread
+tries to evaluate the same @code{run-once} form, the one that aquire the
+lock first evaluates it, making other threads wait.  Note that @code{force}
+does not prevent more than one thread to start evaluating the promise's
+body simultaneously; it
+only guarantees that the first delivered result becomes the value
+of the promise.
+@c JP
+プロミスを@code{force}するのに似ていると思うかもしれません。
+ただ、@code{run-once}は一つのスレッドだけが@var{exprs}を評価することを保証します。
+複数のスレッドが同じ@code{ron-once}フォームを同時に評価しようとした場合、
+ロックを獲得したスレッドのみが@var{expr} @dots{}の評価を行い、
+他のスレッドはその結果が出るまで待たされます。
+これは@code{force}と異なることに注意してください。
+@code{force}は複数のスレッドが同時にプロミスの本体を評価し始めることは禁じておらず、
+ただ、最初に確定した結果がプロミスの結果となることのみ保証してまいす。
+@c COMMON
+
+@c EN
+If the control goes out from this form before completing evaluation,
+e.g. by an error, it is unlocked and another thread may start
+evaluating @var{expr}s.  If you have operations that should never
+be evaluated more than once no matter what, you should use @code{guard}
+or @code{unwind-protect} to make sure
+@c JP
+制御が式の評価を全て完了する前に、エラーなどでフォームから制御が外にに移った場合、
+ロックは外され、他のスレッドが@var{expr}を評価できるようになります。
+何があっても二度評価してはいけない操作がある場合は、@code{guard}や
+@code{unwind-protect}で適切に保護してください。
+@c COMMON
+@end defmac
+
+
 @node Condition variable, Atom, Mutex, Synchronization primitives
 @subsubsection Condition variable
 @c NODE 条件変数
