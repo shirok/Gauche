@@ -1,3 +1,9 @@
+2023-12-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (string_putc): Make 'write' escape control characters
+	  in strings so that it's easier if hard-to-see characters are there,
+	  e.g. Zero-width no-break space.
+
 2023-12-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/libthr.scm (run-once): Added.

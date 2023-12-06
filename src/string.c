@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/priv/stringP.h"
 #include "gauche/priv/writerP.h"
+#include "gauche/char_attr.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -1469,9 +1470,12 @@ char **Scm_ListToCStringArray(ScmObj lis, int errp, void *(*alloc)(size_t))
 /*----------------------------------------------------------------
  * printer
  */
+
+/* ch is single byte if bytemode is true */
 static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 {
-    char buf[6];
+    const int ESCAPE_BUF_MAX = 10;
+    char buf[ESCAPE_BUF_MAX];
     switch (ch) {
     case '\\': SCM_PUTZ("\\\\", -1, port); break;
     case '"':  SCM_PUTZ("\\\"", -1, port); break;
@@ -1481,13 +1485,32 @@ static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
     case '\f': SCM_PUTZ("\\f", -1, port); break;
     case '\0': SCM_PUTZ("\\0", -1, port); break;
     default:
-        if (ch < ' ' || ch == 0x7f || (bytemode && ch >= 0x80)) {
-            /* TODO: Should we provide 'legacy-compatible writer mode,
-               which does not use ';' terminator? */
-            snprintf(buf, 6, "\\x%02x;", (unsigned char)ch);
-            SCM_PUTZ(buf, -1, port);
+        if (ch < 0x80 || bytemode) {
+            if (ch < ' ' || ch == 0x7f || bytemode) {
+                /* TODO: Should we provide 'legacy-compatible writer mode,
+                   which does not use ';' terminator? */
+                snprintf(buf, ESCAPE_BUF_MAX, "\\x%02x;", (unsigned char)ch);
+                SCM_PUTZ(buf, -1, port);
+            } else {
+                SCM_PUTC(ch, port);
+            }
         } else {
-            SCM_PUTC(ch, port);
+            switch (Scm_CharGeneralCategory(ch)) {
+            case SCM_CHAR_CATEGORY_Cc:
+            case SCM_CHAR_CATEGORY_Cf:
+            case SCM_CHAR_CATEGORY_Cs:
+            case SCM_CHAR_CATEGORY_Co:
+            case SCM_CHAR_CATEGORY_Cn:
+                if (ch < 0x10000) {
+                    snprintf(buf, ESCAPE_BUF_MAX, "\\x%04x;", (u_int)ch);
+                } else {
+                    snprintf(buf, ESCAPE_BUF_MAX, "\\x%x;", (u_int)ch);
+                }
+                SCM_PUTZ(buf, -1, port);
+                break;
+            default:
+                SCM_PUTC(ch, port);
+            }
         }
     }
 }
