@@ -23449,9 +23449,9 @@ if the thread is blocking in certain system calls, even in Scheme level
 the thread is marked terminated.  The system thread will terminate itself
 as soon as it resumes and return the control to Gauche runtime.
 @c JP
-只し、この戦略では、スレッドがある種のシステムコールでブロックしていた場合、
+この戦略では、スレッドがある種のシステムコールでブロックしていた場合、
 Schemeレベルのスレッドが「terminated」とマークされた後でもシステムスレッドが
-生きたまま残る可能性があります。このシステムスレッドが再会されてGaucheのランタイムに
+生きたまま残る可能性があります。このシステムスレッドが再開されてGaucheのランタイムに
 制御が戻れば、その時点でシステムスレッドは自己終了します。
 @c COMMON
 
@@ -23515,21 +23515,21 @@ SRFI-226で規定されています。
 @c EN
 Note: Parameters used to be the way to keep per-thread value, but
 we've decided to split thread local storage from dyncamic binding
-to eventually conform SRFI-226.
+to conform SRFI-226.
 Parameters should be used for dynamic binding, and thread locals should
 be used for per-thread value.
 If your existing code uses parameters for the per-thread value,
-update it to use thread locals.  Parameters will eventually share
-the storage across threads.
+update it to use thread locals.
+@xref{Transition to SRFI-226 parameters}, for the necessary changes.
 @c JP
 註: これまで、パラメータがスレッド毎の値を格納するためにも使われてきましたが、
-将来的にSRFI-226に準拠するために、
+SRFI-226に準拠するために、
 動的束縛とスレッドローカル領域を切り離すことにしました。
 パラメータは動的束縛のためだけに使われるべきで、スレッド毎の値を保持するには
 スレッドローカルを使うようにしてください。
 既存のコードで、スレッド毎の値を保持するためにパラメータを使っている場合は、
 スレッドローカルを使うようにアップデートしてください。
-いずれ、パラメータでは領域をスレッド間で共有するようになります。
+必要な変更については@ref{Transition to SRFI-226 parameters}を参照してください。
 @c COMMON
 
 
