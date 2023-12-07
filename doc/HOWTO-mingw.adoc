@@ -141,10 +141,9 @@ MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
 
 == Build with MbedTLS
 
-Gauche has AxTLS as the embedded TLS support.  Unfortunately
-AxTLS doesn't support all ciphers, and sometimes fail to connect to the
-peer which doesn't employ ciphers AxTLS supports.  Using MbedTLS enables
-much wider connectivity.
+In order to create TLS connection, you need to include MbedTLS support.
+You can choose either to embed MbedTLS in the binary, or to depend
+on external MbedTLS DLL.
 
 To embed MbedTLS support, give `--with-mbedtls` option to `mingw-dist.sh`.
 The MbedTLS source is downloaded and compiled during build.
@@ -160,6 +159,18 @@ which is required to build MbedTLS.
 Note: If you build a Gauche binary in this way, it includes MbedTLS library
 which is covered by Apache License 2.0.  Distributing the binary will
 be covered by that license, as well as BSDL.
+
+To build Gauche to use extenral MbedTLS DLL, give `--with-mbedtls=dll` option
+instead:
+
+[source,sh]
+----
+MSYSTEM=MINGW64 src/mingw-dist.sh --with-mbedtls=dll
+----
+
+If you choose this, Gauche binary does not include MbedTLS and hence
+not bound to its license.  However, you need MbedTLS DLL on the
+target machine to use TLS features.
 
 
 == Build installer

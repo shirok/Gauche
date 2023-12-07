@@ -145,7 +145,7 @@ ScmObj func_cc(ScmObj result, void **data)
 }
 ----
 
-You see the C function `func` is splitted to two parts, one
+You see the C function `func` is split to two parts, one
 before calling `callback` and another after calling `callback`.
 The call `Scm_VMPushCC` arranges that the latter half `func_cc` to
 be called after `callback` returns.  `Scm_VMApply` arranges
@@ -156,7 +156,7 @@ It is important that the value will be returned to the Gauche VM.
 What `Scm_VMApply` and `Scm_VMPushCC` do is to set up the VM state
 so that `callback` and `func_cc` will be called.  If you do something
 to change the VM state between returning `Scm_VMApply` and the VM takes back
-control, unexpected things cna happen.
+control, unexpected things Can happen.
 
 If you call `callback` in this way, and a continuation is captured
 within `callback`, it does not involve C calling stack, so that the
@@ -216,13 +216,13 @@ ScmObj func_cc(ScmObj result, void **data)
 Here, the content of data array passed to `Scm_VMPushCC` is carried
 over to the `data` argument of `func_cc`.  The array itself is copied
 into the area managed by Gauche VM, so the `data` variable in `func` can
-be local.  The `data` varaiable in `func_cc` is valid only until Gauche
+be local.  The `data` variable in `func_cc` is valid only until Gauche
 VM state changes, so it is better to extract its content before calling
 any Gauche API.
 
 The maximum size of the data array is `SCM_CCONT_DATA_SIZE`, which is
-at least 6.  If yuo need to retain more local state, you should allocate
+at least 6.  If you need to retain more local state, you should allocate
 a struct by `SCM_NEW` and pass its pointer via `data`.
 Be aware that `func_cc` can be called more than once   You shouldn't
-dealloate resources explicitly in `func_cc`, but leave that work
+deallocate resources explicitly in `func_cc`, but leave that work
 to the garbage collector.
