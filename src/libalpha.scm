@@ -170,9 +170,9 @@
  ;;
  ;;  (case-lambda [(x y) a] [(x . y) b]
  ;;  =>
- ;;  #( (lambda (x . y) c)         min-reqargs == 1
+ ;;  #( (lambda (x . y) b)         min-reqargs == 1
  ;;     (lambda (x y) a)
- ;;     (lambda (x . y) c))
+ ;;     (lambda (x . y) b))
  ;;
  ;; In the last example, 2 argument case matches the first procedure,
  ;; for it has precedence.
