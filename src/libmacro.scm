@@ -1602,12 +1602,3 @@
                               `(,(gensym) (begin ,expr #f))))
                    (cdr f))
           (undefined))))))
-
-;;;
-;;; OBSOLETED - Tentative compiler macro
-;;;
-
-(select-module gauche)
-;; TRANSIENT: Remove by 1.0
-(define-macro (define-compiler-macro name xformer-spec)
-  (error "define-compiler-macro is obsoleted.  Use define-hybrid-syntax."))
