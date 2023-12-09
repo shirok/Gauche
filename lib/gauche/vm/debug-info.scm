@@ -93,14 +93,14 @@
 ;;    42    000               ; sol
 ;;    45    110 0 0000000011  ; backreference to the first pair
 ;;    59    000               ; sol
-;;    62    110 0 0000001101  ; backreference to the second pair
+;;    62    110 0 0000001110  ; backreference to the second pair
 ;;    76    0100              ; dot
 ;;    80    110 0 0000011100  ; backreference to the third element
 ;;    94
 ;;
-;; NB: Backreference to a pair points to the byte offset of the 'car' element
-;; of the pair.  If the last element is #x03, it would encode this structure
-;; instead.
+;; NB: Backreference to a pair points to the bit offset of the 'car' element
+;; of the pair.  If the last element bitindex is 25, it would encode this
+;; structure instead.
 ;;
 ;;  #0=(1 . #1=(2 . #2=((3) #0# #1# . #2#)))
 ;;
@@ -127,7 +127,7 @@
 ;; The 32 most frequently appearing constants.  The decoder in
 ;; code.c has the same list and they must match.
 ;; In Gauche source, first 7 appear in 93% of the compliation units;
-;;  even the last one in 63% of the units.   A constant
+;; even the last one in 63% of the units.
 (define-constant *predefined-values*
   '(source-info quote definition lambda let if define error car else cdr null?
     cond let1 #f unless and loop ^ cons + apply or cadr when not begin eq? cddr
