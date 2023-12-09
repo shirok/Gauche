@@ -16,7 +16,7 @@ some C files.   If you don't have one, grab the release tarball
 and install it.
 
 You also need a C compiler supporting C11, e.g. `gcc` (>= 4.9) or `clang` (>= 3.3),
-`autoconf` (>= 2.69), `automake` (>= 1.14.1),
+`autoconf` (>= 2.71), `automake` (>= 1.14.1),
 `libtool` (>= 2.4.2), and `pkg-config` (>= 0.26).
 (Note on macOS users: Xcode now only includes subset
 of `autotools`.  You have to install full set either manually
@@ -78,7 +78,7 @@ For the details of build procedure, see link:doc/HOWTO-mingw.adoc[].
 You can build Gauche with Cygwin, but it is no longer actively supported.
 
 Some effort was made to build Gauche with MSVC.  You can find
-project files under winnt.  Unfortunatley though, it is so
+project files under winnt.  Unfortunately though, it is so
 much pain to make it work and keep it updated with newer Gauche
 source tree, and now they are quite obsolete.
 
@@ -90,6 +90,63 @@ using the new gosh just built in `src/`.  However, we can't
 run `src/gosh` when we're cross compiling.  So you need to
 install *this version of Gauche* compiled on your platform beforehand.
 Then, configure with the ordinary cross-compiling options.
+
+== BUILD STEPS
+
+After `confiugre`, just `make` build everything.  But you want to know
+how build process proceeds if you got into trouble hacking it.  Here's
+the internal steps after you type `make`.
+
+1. The Boehm-Demers-Weiser garbage collector (bdwgc) is built under `gc/`.
+We included the bdwgc source instead of relying on the shared library,
+since we need a custom configure options to be optimal for Gauche memory
+usage pattern.
+
+2. The 'core' engine is built under `src/`.  This includes `libgauche-X.so`
+and `libgauche-static-X.a`, and the `gosh` command.  Some sources are
+written in Gauche, so they need to be processed with working Gauche;
+thus you require the latest release of Gauche installed on your system.
+Note that, at this point, no precompiled extensions under `ext/` are
+available.  If you simply 'use' one of those modules during the building,
+it can't load the module.  To avoid this, the host `gosh` loads
+a file link:src/preload.scm[], which lists the modules the host gosh
+need to load from the host environment, not from the source tree.
+
+3. The extensions are built under `ext/`.   If it's not cross compiling,
+this process uses the freshly built `gosh` in `src/`.  Some modules under
+this directory have C code, while others are pure Scheme.  The pure Scheme
+source may be placed under `libsrc/`, so that those modules are available
+during the build process; that is, during the build process the modules
+are loaded in the source form from `libsrc/`, and once the build is
+completed, they are dynamically loaded as precompiled modules.
+
+4. Documents under `doc/` is built.  Info documents are built only when
+the system has newer makeinfo.
+
+
+Knowing which module is used during build, the one in the host environment
+or the one in the source tree, is important.  Modules listed in `preload.scm`
+are from the host environment, which means you can't use the feature
+added after the latest release of Gauche to build the current source.
+
+You can make sure that the source tree is buildable both by the latest
+relase _and_ the current built, by running `./DIST self-host-test`.
+It also checks if out-of-tree built works.  It performs the following
+opertaions:
+
+- It cleans the source tree (by `make maintainer-clean` and regenerate
+configure scripts.
+- It creates a temporary directory and run `configure` in it.  This
+sets up out-of-tree build.
+- It builds Gauche using the host environment (latest release) and
+runs the tests.
+- It installs the built Gauche inside the temporary directory.
+- It builds Gauche again, using the freshly built Gauche, and
+runs the tests again.
+
+It leaves a temporary directory `../Gauche-tmp-self-host-test` afterwards,
+so that it's easier to investigate if something goes wrong.  You can
+remove that directory if build succeeds.
 
 
 == DEPENDENCIES
