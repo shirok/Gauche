@@ -1,3 +1,10 @@
+2023-12-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/librx.scm (%regexp-replace): Avoid rebinding current-output-port
+	  during replacing, for the substitution procedure may output
+	  and it's confusing that it is mixed into the result.
+	  https://github.com/shirok/Gauche/issues/967
+
 2023-12-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (string_putc): Make 'write' escape control characters

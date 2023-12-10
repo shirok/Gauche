@@ -837,6 +837,16 @@
                             #/aba/ "abc"
                             #/bc/  "zz"))
 
+;; Substitution procedure's current-output-port.
+;; https://github.com/shirok/Gauche/issues/967
+(test* "regexp-replace and current-output-port"
+       '("ac" "yo")
+       (let* ((r #f)
+              (out (with-output-to-string
+                     (^[]
+                      (set! r (regexp-replace #/b/ "ab" (^_ (display "yo") "c")))))))
+         (list r out)))
+
 ;;-------------------------------------------------------------------------
 (test-section "regexp cimatch")
 

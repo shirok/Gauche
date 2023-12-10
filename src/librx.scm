@@ -140,44 +140,45 @@
 
 ;; Skip the first subskip matches, then start replacing only up to
 ;; subcount times (or infinite if subcount is #f).
-(define (%regexp-replace-rec rx string subpat subskip subcount)
+(define (%regexp-replace-rec rx string subpat subskip subcount out)
   (define (next-string match)
     (let1 rest (rxmatch-after match)
       (and (not (equal? rest ""))
            (if (= (rxmatch-start match) (rxmatch-end match))
-             (begin (display (string-ref rest 0))
+             (begin (display (string-ref rest 0) out)
                     (string-copy rest 1))
              rest))))
   (if (and subcount (zero? subcount))
-    (display string)
+    (display string out)
     (let1 match (rxmatch rx string)
       (cond
        [(not match)
-        (display string)]
+        (display string out)]
        [(> subskip 0)
-        (display (rxmatch-before match))
-        (display (rxmatch-substring match))
+        (display (rxmatch-before match) out)
+        (display (rxmatch-substring match) out)
         (and-let1 next (next-string match)
-          (%regexp-replace-rec rx next subpat (- subskip 1) subcount))]
+          (%regexp-replace-rec rx next subpat (- subskip 1) subcount out))]
        [else
-        (display (rxmatch-before match))
+        (display (rxmatch-before match) out)
         (if (procedure? subpat)
-          (display (subpat match))
+          (display (subpat match) out)
           (dolist [pat subpat]
             (display (cond
                       [(eq? pat 'pre) (rxmatch-before match)]
                       [(eq? pat 'post) (rxmatch-after match)]
                       [(or (number? pat) (symbol? pat))
                        (rxmatch-substring match pat)]
-                      [else pat]))))
+                      [else pat])
+                     out)))
         (and-let1 next (next-string match)
           (%regexp-replace-rec rx next subpat subskip
-                               (and subcount (- subcount 1))))]))))
+                               (and subcount (- subcount 1))
+                               out))]))))
 
 (define (%regexp-replace rx string subpat subskip subcount)
-  (with-output-to-string
-      (^[]
-        (%regexp-replace-rec rx string subpat subskip subcount))))
+  (call-with-output-string
+   (cut %regexp-replace-rec rx string subpat subskip subcount <>)))
 
 (define-in-module gauche (regexp-replace rx string sub)
   (%regexp-replace rx string
