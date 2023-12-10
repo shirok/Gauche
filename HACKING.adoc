@@ -83,14 +83,6 @@ much pain to make it work and keep it updated with newer Gauche
 source tree, and now they are quite obsolete.
 
 
-== CROSS COMPILATION
-
-In a normal compilation, extension modules (`+ext/*+`) are build
-using the new gosh just built in `src/`.  However, we can't
-run `src/gosh` when we're cross compiling.  So you need to
-install *this version of Gauche* compiled on your platform beforehand.
-Then, configure with the ordinary cross-compiling options.
-
 == BUILD STEPS
 
 After `confiugre`, just `make` build everything.  But you want to know
@@ -148,6 +140,30 @@ It leaves a temporary directory `../Gauche-tmp-self-host-test` afterwards,
 so that it's easier to investigate if something goes wrong.  You can
 remove that directory if build succeeds.
 
+=== `*.sci` files
+
+After building the source, you'll see files with `sci` suffix.  It stands
+for 'SCheme Interface'.  It is generated from `*.scm` file with
+`precomp`, and contains `define-module` form with using modules and
+exporting symbols, and a form to dynamically load precompiled file.
+
+If you have `foo.scm` and `foo.sci` in the same directory and you
+try to load `foo`, `sci` take precedence.  Usually, if you change
+the source `*.scm` file and run `make`, the `*.sci` file is
+regenerated.  But if you forget to run `make`, you may wonder
+why the changes you did in `*.scm` file won't be reflected.
+
+If you're not sure which file is actually loaded, run `gosh` with
+`-fload-verbose` option; it reports the exact pathname of each
+loaded file.
+
+The `*.sci` files are renamed to `*.scm` when installed, so you won't
+see them in the installation directory.
+
+The reason that we use `*.sci` files is for the precompiler not to
+overwrite the source file.  See link:doc/HOWTO-precompile.adoc[] for
+the details.
+
 
 == DEPENDENCIES
 
@@ -172,6 +188,15 @@ not to introduce undesirable dependencies.
 - `ext/xlink` shouldn't depend on anything that requires loading
   extension modules, since it is called before all the extension
   modules are generated.
+
+
+== CROSS COMPILATION
+
+In a normal compilation, extension modules (`+ext/*+`) are build
+using the new gosh just built in `src/`.  However, we can't
+run `src/gosh` when we're cross compiling.  So you need to
+install *this version of Gauche* compiled on your platform beforehand.
+Then, configure with the ordinary cross-compiling options.
 
 
 == CHANGELOGS
