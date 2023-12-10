@@ -23040,8 +23040,7 @@ Ports can be combined to provide communication channel.
 @c NODE ポートとスレッド
 
 @c EN
-When Gauche is compiled with thread support,
-the builtin port operations locks the port, so that port access
+The builtin port operations locks the port internally, so that port access
 from multiple threads will be serialized.
 (It is required by SRFI-18, BTW).
 Here, "builtin port operations" are the port access functions
@@ -23053,8 +23052,7 @@ lock the port during calling the given procedures, since the
 procedure may pass the reference of the port to the other thread,
 and Gauche wouldn't know if that's the case.
 @c JP
-GaucheがスレッドサポートをONにしてコンパイルされている場合、
-組み込みのポート操作関数はポートをロックして、
+組み込みのポート操作関数は内部的にポートをロックして、
 複数のスレッドからの同一のポートへのアクセスがポートの内部状態を壊さないように
 しています。
 (SRFI-18によって要求されている動作です)。

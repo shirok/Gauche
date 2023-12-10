@@ -22483,75 +22483,45 @@ of toplevel forms).
 @c NODE スレッド, @code{gauche.threads} - スレッド
 
 @c EN
-If enabled at compilation time, Gauche can use threads
-built on top of either POSIX threads (pthreads) or Windows threads.
+Gauche can use threads
+built on top of either POSIX threads (pthreads) or Windows threads,
+depending on the platform.
 @c JP
-Gaucheでは、コンパイル時に有効にしていれば、POSIXスレッド(pthreads)か
-Windowsスレッド上に構築されるスレッドを使うことができます。
+Gaucheでは、POSIXスレッド(pthreads)か
+Windowsスレッド上に構築されるスレッドを使うことができます
+(どちらを使うかはプラットフォームによります)。
 @c COMMON
 
 @deftp {Module} gauche.threads
 @mdindex gauche.threads
 @c EN
-Provides thread API.   You can 'use' this module regardless
-whether the thread support is compiled in or not; if threads are not
-supported, many thread-related procedures simply signals a
-"not supported" error.
+Provides thread API.  The thread support is built-in, and this
+module merely provides a separate namespace.
 @c JP
-スレッドを扱うAPIを提供します。コンパイル時にスレッドのサポートを
-指定したか否かに関わらず、このモジュールを'use'することができます。
-スレッドがサポートされていない場合は、多くのスレッド関連の手続きは
-単に``not supported''エラーを通知するだけです。
+スレッドを扱うAPIを提供します。スレッドサポートは組み込みで、
+このモジュールは名前空間を提供しているだけです。
 @c COMMON
 @end deftp
 
 @c EN
-If you want to switch code depending on whether pthreads are
-available or not, you can use a feature identifier @code{gauche.sys.threads}
-with @code{cond-expand} form (@pxref{Feature conditional}).
-
-@example
-(cond-expand
- [gauche.sys.threads
-   ;; Code that uses thread API (@code{gauche.threads} is automatically
-   ;; loaded at this moment).
-  ]
- [else
-   ;; Code that doesn't use thread API
-  ])
-@end example
+Although you hardly need to distinguish
+the underlying thread subsystem (either pthreads or Windows threads)
+in Scheme level, you may want to detect the difference if your code
+depends on a particular subsystem-specific semantics.
+There are feature identifiers @code{gauche.sys.pthreads}
+or @code{gauche.sys.wthreads}, for pthreads platform and Windows thread
+platform, respectively.  You can use @code{cond-expand}
+to switch the platform-dependent code
+(@pxref{Feature conditional}).
 @c JP
-pthreadが使えるかどうかによって実行するコードを切り替えたい場合は、
-@code{cond-expand}フォームで@code{gauche.sys.threads}という
-feature identifierを使うことができます (@ref{Feature conditional}参照)。
-
-@example
-(cond-expand
- [gauche.sys.threads
-   ;; Thread APIを使うコード (@code{gauche.threads}はこの時点で
-   ;; 自動的にロードされます).
-  ]
- [else
-   ;; Thread APIを使わないコード
-  ])
-@end example
-@c COMMON
-
-@c EN
-There are also feature identifiers @code{gauche.sys.pthreads} and
-@code{gauche.sys.wthreads} defined for pthreads and Windows threads
-platforms, respectively.
-In Scheme level, however, you hardly need to distinguish
-the underlying implementations.  It is recommended to use
-@code{gauche.sys.threads} to switch the code according to
-thread availability.
-@c JP
-また、pthreadプラットフォームとWindowsスレッドプラットフォームで
+Schemeレベルでは、スレッドサブシステムの違い(pthreadsかWindowsスレッドか)を
+意識する必要はほどんど無いでしょう。ただ、特定のサブシステムのセマンティクスに
+依存したコードを書きたい場合は、
+pthreadプラットフォームとWindowsスレッドプラットフォームで
 それぞれ、@code{gauche.sys.pthreads}と@code{gauche.sys.wthreads}
-というfeature identifierも定義されています。
-ただ、Schemeレベルではこれら下位の実装の違いを意識する必要は
-ほとんど無いでしょう。スレッドサポートの有無によりコードを切り替える時は、
-@code{gauche.sys.threads}を使うのが良いでしょう。
+という機能識別子が用意されています。
+@code{cond-expand}でプラットフォーム依存のコードを切り替えられます
+(@ref{Feature conditional}参照)。
 @c COMMON
 
 @c EN
@@ -22566,32 +22536,13 @@ instead of compile time, use the following procedure.
 @c MOD gauche.threads
 @c EN
 Returns a symbol that indicates the supported thread type.
-It can be one of the following symbols.
+It returns @code{pthread} for POSIX pthreads,
+and @code{wthread} for Windows threads.
 @c JP
 サポートされているスレッドのタイプを表すシンボルを返します。
-以下のいずれかのシンボルが返されます。
+POSIX pthreadsなら@code{pthread}、
+Windowsスレッドなら@code{wthread}が返されます。
 @c COMMON
-
-@table @code
-@item none
-@c EN
-Threads are not supported.
-@c JP
-スレッドはサポートされていません。
-@c COMMON
-@item pthread
-@c EN
-Threads are built on top of POSIX pthreads.
-@c JP
-スレッドはPOSIXのpthreadsを使って実装されています。
-@c COMMON
-@item win32
-@c EN
-Threads are built on top of Win32 threads.
-@c JP
-スレッドはWin32スレッドを使って実装されています。
-@c COMMON
-@end table
 
 @c EN
 (Note: On pthreads platforms, it should return @code{pthreads} instead
