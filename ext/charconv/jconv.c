@@ -995,9 +995,9 @@ static inline ScmSize utf2euc_4(ScmConvInfo *cinfo SCM_UNUSED, unsigned char u0,
 
 /* Body of UTF8 -> EUC_JP conversion */
 static ScmSize utf8_eucj(ScmConvInfo *cinfo,
-                        const char *inptr, ScmSize inroom,
-                        char *outptr, ScmSize outroom,
-                        ScmSize *outchars)
+                         const char *inptr, ScmSize inroom,
+                         char *outptr, ScmSize outroom,
+                         ScmSize *outchars)
 {
     unsigned char u0 = (unsigned char)inptr[0];
 
@@ -1192,6 +1192,29 @@ static ScmSize utf8_ascii(ScmConvInfo *cinfo,
         DO_SUBST;
     }
     return r;
+}
+
+/* UTF8BOM -> UTF8 */
+static ScmSize utf8bom_utf8(ScmConvInfo *cinfo,
+                            const char *inptr, ScmSize inroom,
+                            char *outptr, ScmSize outroom SCM_UNUSED,
+                            ScmSize *outchars)
+{
+    if (cinfo->istate == UTF_OPTIONAL_BOM) {
+        if ((u_char)inptr[0] == 0xef) {
+            INCHK(3);
+            if ((u_char)inptr[1] == 0xbb
+                && (u_char)inptr[2] == 0xbf) {
+                cinfo->istate = UTF_DEFAULT;
+                *outchars = 0;
+                return 3;
+            }
+        }
+    }
+    /* FALLTHROUGH */
+    outptr[0] = inptr[0];
+    *outchars = 1;
+    return 1;
 }
 
 /*=================================================================

@@ -234,36 +234,43 @@
   ("sjis" "shiftjis"))
 
 (define-encoding-scheme utf8 JCODE_UTF8
-  ("utf8"))
+  ("utf8")
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
+  :initial-state 'UTF_DEFAULT)
+
+(define-encoding-scheme utf8bom JCODE_UTF8BOM
+  ("utf8bom")
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
+  :initial-state 'UTF_OPTIONAL_BOM)
 
 (define-encoding-scheme utf16 JCODE_UTF16
   ("utf16")
-  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
   :initial-state 'UTF_DEFAULT)
 
 (define-encoding-scheme utf16be JCODE_UTF16BE
   ("utf16be")
-  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
   :initial-state 'UTF_BE)
 
 (define-encoding-scheme utf16le JCODE_UTF16LE
   ("utf16le")
-  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
   :initial-state 'UTF_LE)
 
 (define-encoding-scheme utf32 JCODE_UTF32
   ("utf32")
-  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
   :initial-state 'UTF_DEFAULT)
 
 (define-encoding-scheme utf32be JCODE_UTF32BE
   ("utf32be")
-  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
   :initial-state 'UTF_BE)
 
 (define-encoding-scheme utf32le JCODE_UTF32LE
   ("utf32le")
-  :states '(UTF_DEFAULT UTF_BE UTF_LE)
+  :states '(UTF_DEFAULT UTF_BE UTF_LE UTF_OPTIONAL_BOM)
   :initial-state 'UTF_LE)
 
 (define-encoding-scheme iso2022jp JCODE_ISO2022JP
@@ -323,6 +330,8 @@
 (define-conversion utf8_lat14 (utf8) (iso8859-14))
 (define-conversion utf8_lat15 (utf8) (iso8859-15))
 (define-conversion utf8_lat16 (utf8) (iso8859-16))
+
+(define-conversion utf8bom_utf8 (utf8bom) (utf8))
 
 (define-conversion utf16_utf8 (utf16 utf16be utf16le) (utf8))
 (define-conversion utf16_utf16 (utf16 utf16be utf16le) (utf16 utf16be utf16le))

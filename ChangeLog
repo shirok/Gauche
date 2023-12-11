@@ -1,5 +1,12 @@
 2023-12-10  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv: Support utf8bom encoding, which drops the optional BOM
+	  at the beginning of utf8 stream.  We simply implement utf8bom->utf8
+	  internal routine, and use autosynthesis of other conversions.
+	  We don't support utf8bom as an output encoding, at least for now
+	  (see the discussion in the issue).
+	  https://github.com/shirok/Gauche/issues/966
+
 	* src/librx.scm (%regexp-replace): Avoid rebinding current-output-port
 	  during replacing, for the substitution procedure may output
 	  and it's confusing that it is mixed into the result.

@@ -270,6 +270,24 @@
                             :if-does-not-exist #f :encoding "UTF-8"))
 
 ;;--------------------------------------------------------------------
+(test-section "utf8 optional BOM handling")
+
+(let ()
+  (define (file->lines path encoding)
+    (call-with-input-file #"~(sys-dirname (current-load-path))/~path"
+      port->string-list
+      :encoding encoding))
+
+  (test* "utf8 optional BOM handling (utf8bom)"
+         '("abc" "\xfeff;def")
+         (file->lines "data/utf8bom.txt" 'utf-8-bom))
+
+  (test* "utf8 optional BOM handling (utf8)"
+         '("\xfeff;abc" "\xfeff;def")
+         (file->lines "data/utf8bom.txt" 'utf8))
+  )
+
+;;--------------------------------------------------------------------
 (test-section "code guessing")
 
 (define (test-guess file code scheme)
