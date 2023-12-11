@@ -4305,7 +4305,55 @@ is illegal in the input CES, an @code{<io-decoding-error>} is signaled.
 @c COMMON
 
 @c EN
-@strong{Details of Gauche's native conversion algorithm:}
+@subsubheading UTF encoding and BOM
+@c JP
+@subsubheading UTFエンコーディングとBOM
+@c COMMON
+
+Unicode character U+FEFF (Zero-Width No-Break Space) can have a
+special meaning if it appears at the very beginning of UTF stream.
+It serves as a BOM (Byte-order mark) to signify the byte order
+of the following UTF data.  For UTF-16 and UTF-32, it is critical
+to know the byte order.  UTF-8 does not need one, for the byte order
+doesn't matter.  Nevertheless, some software adds BOM to a UTF-8 data
+just to indicate it is in UTF-8.
+
+Technically, BOM is not a part of the text content, but rather a
+piece of meta-information about the format.  That poses an issue;
+sometimes you just want to deal with the content, while the other times
+you want to deal with the entire data, including the meta-information.
+There's no clear-cut solution, so we
+
+@table @code
+@item UTF-16, UTF-32
+The input recognizes BOM and decides the byte order; BOM itself won't
+appear in the input data.  If BOM is missing, big-endian (UTF-16BE) is assumed.
+The output emits BOM at the beginning of the data.
+@item UTF-16LE, UTF-32LE, UTF-16BE, UTF-32BE
+We assume the byte-order meta-information is given via separate channel,
+so that the caller already know the byte-order of the input.
+These do not treat BOM specially; if the first codepoint is U+FEFF,
+it appears in the input stream.  For output, no BOM will be produced.
+@item UTF-8
+We don't treat BOM specially; if the first codepoint is U+FEFF,
+it appears in the input stream.  For output, no BOM will be produced.
+This is the default behaivor of I/O.
+@item UTF-8-BOM
+This is a 'pseudo' encoding---it is UTF-8, but if the input data begins
+with BOM, it is simply ignored.  This is for the convenience
+of the programs that just don't want to be bothered by optional BOM
+at the beginning of UTF-8 stream.  This encoding can't be used
+for output.  If you absolutely need to produce UTF-8 with BOM,
+just write @code{#\ufeff} at the beginning of the UTF-8 stream.
+@end table
+
+@c EN
+@subsubheading Details of Gauche's native conversion algorithm
+@c JP
+@subsubheading Gaucheの内部変換アルゴリズムの詳細
+@c COMMON
+
+@c EN
 Between EUC_JP, Shift JIS and ISO2022JP, Gauche uses arithmetic
 conversion whenever possible.  This even maps the undefined codepoint
 properly.  Between Unicode (UTF-8) and EUC_JP, Gauche uses lookup tables.
@@ -4317,7 +4365,6 @@ If the same CES is specified for input and output, Gauche's conversion
 routine just copies input characters to output characters, without
 checking the validity of the encodings.
 @c JP
-@strong{Gaucheの内部変換アルゴリズムの詳細:}
 EUC_JP、Shift JIS、及びISO2022JP間の変換は可能な限り計算で行います。
 文字が未定義のコードポイントも計算式に従って変換されます。
 Unicode(UTF-8)とEUC_JP間の変換はテーブルルックアップによって行われます。
