@@ -4310,6 +4310,7 @@ is illegal in the input CES, an @code{<io-decoding-error>} is signaled.
 @subsubheading UTFエンコーディングとBOM
 @c COMMON
 
+@c EN
 Unicode character U+FEFF (Zero-Width No-Break Space) can have a
 special meaning if it appears at the very beginning of UTF stream.
 It serves as a BOM (Byte-order mark) to signify the byte order
@@ -4317,34 +4318,84 @@ of the following UTF data.  For UTF-16 and UTF-32, it is critical
 to know the byte order.  UTF-8 does not need one, for the byte order
 doesn't matter.  Nevertheless, some software adds BOM to a UTF-8 data
 just to indicate it is in UTF-8.
+@c JP
+Unicode文字U+FEFF (Zero-Width No-Break Space) はUTFストリームの最初に
+現れると特別な意味を持ちます。後続のUTFデータのバイトオーダーを記述する
+BOM (Byte-order mark)になるのです。
+UTF-16とUTF-32ではバイトオーダーを知ることは決定的に重要です。
+一方、UTF-8ではバイトオーダーは関係ないのでBOMは必要ではありませんが、
+いくつかのソフトウェアはデータがUTF-8であることを判別するためだけに
+BOMを付加することがあります。
+@c COMMON
 
+@c EN
 Technically, BOM is not a part of the text content, but rather a
 piece of meta-information about the format.  That poses an issue;
+when you deal with a data stream,
 sometimes you just want to deal with the content, while the other times
 you want to deal with the entire data, including the meta-information.
-There's no clear-cut solution, so we
+Traditionally those two are not strictly distinguished and
+dealt in ad-hoc way.
+We take the following approach, depending on the specified encoding.
+@c JP
+技術的な観点からは、BOMはテキストの内容の一部ではなく、フォーマットに関するメタ情報です。
+これはちょっと困った事態を引き起こします。データストリームを扱う時に、
+テキストの内容を読みたい場合と、メタ情報を含めた全体を扱いたい場合があるからです。
+伝統的に、この二つは厳密には区別されず、アドホックな方法で処理されてきました。
+Gaucheでは指定されたエンコーディングに応じて以下のとおりにしています。
+@c COMMON
 
 @table @code
-@item UTF-16, UTF-32
-The input recognizes BOM and decides the byte order; BOM itself won't
-appear in the input data.  If BOM is missing, big-endian (UTF-16BE) is assumed.
-The output emits BOM at the beginning of the data.
-@item UTF-16LE, UTF-32LE, UTF-16BE, UTF-32BE
-We assume the byte-order meta-information is given via separate channel,
-so that the caller already know the byte-order of the input.
-These do not treat BOM specially; if the first codepoint is U+FEFF,
-it appears in the input stream.  For output, no BOM will be produced.
 @item UTF-8
+@c EN
 We don't treat BOM specially; if the first codepoint is U+FEFF,
-it appears in the input stream.  For output, no BOM will be produced.
+it is read as the character @code{#\ufeff}.
+For output, no BOM will be produced.
 This is the default behaivor of I/O.
+@c JP
+BOMは特別扱いされません。入力の最初にU+FEFFがあれば、それは文字@code{#\ufeff}
+として読まれます。出力の場合、BOMは付加されません。
+これがI/Oでのデフォルトの挙動です。
+@c COMMON
 @item UTF-8-BOM
+@c EN
 This is a 'pseudo' encoding---it is UTF-8, but if the input data begins
 with BOM, it is simply ignored.  This is for the convenience
 of the programs that just don't want to be bothered by optional BOM
 at the beginning of UTF-8 stream.  This encoding can't be used
 for output.  If you absolutely need to produce UTF-8 with BOM,
 just write @code{#\ufeff} at the beginning of the UTF-8 stream.
+@c JP
+これは、UTF-8だけれども入力データにBOMがあればそれをただ無視するという
+「擬似」エンコーディングです。UTF-8ストリームの先頭のBOMの有無を気にしたくない
+プログラムのために用意されています。
+このエンコーディングは出力には使えません。UTF-8の出力にどうしてもBOMをつける必要があるなら、
+最初に@code{#\ufeff}を書き出してください。
+@c COMMON
+@item UTF-16, UTF-32
+@c EN
+The input recognizes BOM and decides the byte order; BOM itself won't
+appear in the read data.  If BOM is missing, big-endian
+(UTF-16BE, UTF-32BE) is assumed.
+The output emits BOM at the beginning of the data.
+@c JP
+入力はBOMを認識してバイトオーダーを決定します。BOM自身は読まれるデータには含まれません。
+BOMが無かった場合はビッグエンディアン(UTF-16BE, UTF-32BE)が使われます。
+出力の場合はBOMが先頭に付加されます。
+@c COMMON
+@item UTF-16LE, UTF-32LE, UTF-16BE, UTF-32BE
+@c EN
+We assume the byte-order meta-information is given via separate channel,
+so that the caller already know the byte-order of the input.
+These do not treat BOM specially; if the first codepoint is U+FEFF,
+it is read as the character @code{#\ufeff}.
+For output, no BOM will be produced.
+@c JP
+これらのエンコーディングでは、メタ情報は既に別の方法で与えられていて
+呼び出し元は入力データのバイトオーダーを既に知っているものとみなします。
+従ってBOMは特別扱いされません。入力の最初にU+FEFFがあれば、それは文字@code{#\ufeff}
+として読まれます。出力の場合、BOMは付加されません。
+@c COMMON
 @end table
 
 @c EN
