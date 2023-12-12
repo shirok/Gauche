@@ -4531,9 +4531,14 @@ algorithm implemented:
 @c EN
 To guess the character encoding from japanese text, among either
 ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS or UTF-8.
+
+(Even when the input is UTF-8 with BOM, it is still recognized as UTF-8,
+not UTF-8-BOM).
 @c JP
 日本語のテキストのCESを、ISO2022-JP(-1,2,3), EUCJP, SHIFT_JIS または UTF-8の
 いずれかであるとして推測する。
+
+(入力がBOMつきUTF-8であった場合も、UTF-8-BOMではなくUTF-8が認識結果となります)。
 @c COMMON
 @end table
 
