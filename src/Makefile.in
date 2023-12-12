@@ -172,7 +172,7 @@ INSTALL_SUBHEADERS = \
 	gauche/port.h gauche/precomp.h gauche/prof.h gauche/pthread.h \
 	gauche/reader.h gauche/regexp.h gauche/scmconst.h \
 	gauche/static.h gauche/string.h gauche/symbol.h gauche/system.h \
-	gauche/treemap.h gauche/thread.h gauche/uthread.h \
+	gauche/treemap.h gauche/thread.h \
 	gauche/vector.h gauche/vm.h gauche/vminsn.h \
 	gauche/weak.h gauche/win-compat.h gauche/writer.h \
 	gauche/wthread.h

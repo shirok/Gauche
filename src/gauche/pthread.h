@@ -34,15 +34,30 @@
 #ifndef GAUCHE_PTHREAD_H
 #define GAUCHE_PTHREAD_H
 
-/* Abstract thread implementation based on pthreads.
- * See gauche/uthread.h for the detailed semantics of those macros.
- */
+/* Abstract thread implementation based on pthreads. */
 
 #include <pthread.h>
 
 #define GAUCHE_HAS_THREADS 1
 
-/* Thread */
+/* ScmInternalThread - a handle to the system's thread.
+
+   The variable of type ScmInternalThread must be initialized by
+   SCM_INTERNAL_THREAD_INIT.  You can check if the variable is
+   initialized or not by SCM_INTERNAL_THREAD_INITIALIZED_P.
+
+   SCM_INTERNAL_THREAD_GETCURRENT() should return the current thread.
+   SCM_INTERNAL_THREAD_SETSPECIFIC(key, val) sets the value to the
+   thread-local storage identified by key.  It should evaluate
+   to TRUE on success, FALSE on error.
+
+   SCM_INTERNAL_THREAD_CLEANUP_{PUSH|POP} is an abstraction similar
+   to pthread_cleanup_{push|pop}.  We assume no Scheme error is
+   signalled between these macros.
+
+   SCM_INTERNAL_THREAD_PROC_RET{TYPE|VAL} specify return type and value
+   of the thread entry procedure.  See ext/threads/threads.c.
+ */
 typedef pthread_t ScmInternalThread;
 #define SCM_INTERNAL_THREAD_INIT(thr)   ((thr) = (pthread_t)NULL)
 #define SCM_INTERNAL_THREAD_INITIALIZED_P(thr)  ((thr) != (pthread_t)NULL)
@@ -73,7 +88,29 @@ typedef pthread_t ScmInternalThread;
 #  endif
 #endif /*defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)*/
 
-/* Mutex */
+/* ScmInternalMutex - a mutex structure.
+
+   The variable of type ScmInternaMutex must be initialized by
+   SCM_INTERNAL_MUTEX_INIT at runtime.  If a static initializer is
+   needed, SCM_INTERNAL_MUTEX_INITIALIZER---but it's merely for making
+   the compiler happy, and does not guarantee the mutex is initialized.
+   You still need to use SCM_INTERNAL_MUTEX_INIT.   The resources
+   associated to the mutex would be released by SCM_INTERNAL_MUTEX_DESTROY.
+
+   To lock/unlock the mutex, SCM_INTERNAL_MUTEX_LOCK and
+   SCM_INTERNAL_MUTEX_UNLOCK can be used.   They should be used
+   with care, especially the thread should not be canceled between
+   them.
+
+   If you need to have a cancellable code in the critical
+   section, you should use SCM_INTERNAL_MUTEX_SAFE_LOCK_BEGIN and
+   SCM_INTERNAL_MUTEX_SAFE_LOCK_END.  They use cleanup mechanism
+   provided by the underlying system, such as pthread_cleanup_push/pop,
+   to make sure the mutex is unlocked when the thread terminates.
+   These macros must be used in the pair at the same syntactic scope,
+   for they can be expanded to opening block and closing block tokens,
+   respectively.
+ */
 typedef pthread_mutex_t ScmInternalMutex;
 #define SCM_INTERNAL_MUTEX_INIT(mutex)    pthread_mutex_init(&(mutex), NULL)
 #define SCM_INTERNAL_MUTEX_LOCK(mutex)    pthread_mutex_lock(&(mutex))
@@ -93,20 +130,13 @@ SCM_EXTERN void Scm__MutexCleanup(void *); /* in core.c */
     pthread_cleanup_push(Scm__MutexCleanup, &(mutex))
 #define SCM_INTERNAL_MUTEX_SAFE_LOCK_END() /*dummy*/; pthread_cleanup_pop(1)
 
-/* Condition variable */
-typedef pthread_cond_t ScmInternalCond;
-#define SCM_INTERNAL_COND_INIT(cond)        pthread_cond_init(&(cond), NULL)
-#define SCM_INTERNAL_COND_SIGNAL(cond)      pthread_cond_signal(&(cond))
-#define SCM_INTERNAL_COND_BROADCAST(cond)   pthread_cond_broadcast(&(cond))
-#define SCM_INTERNAL_COND_WAIT(cond, mutex) pthread_cond_wait(&(cond), &(mutex))
-#define SCM_INTERNAL_COND_TIMEDWAIT(cond, mutex, ptimespec) \
-    pthread_cond_timedwait(&(cond), &(mutex), (ptimespec))
-#define SCM_INTERNAL_COND_DESTROY(cond)     pthread_cond_destroy(&(cond))
-#define SCM_INTERNAL_COND_INITIALIZER       PTHREAD_COND_INITIALIZER
-#define SCM_INTERNAL_COND_TIMEDOUT          ETIMEDOUT
-#define SCM_INTERNAL_COND_INTR              EINTR
-
-/* Fast lock */
+/* ScmInternalFastlock - fast lock
+ *
+ *  We use this type of lock when we know lock contention is rare.
+ *  If the system provides some sort of spinlock, it would be a
+ *  nice fit.  Otherwise the implementation can make these an alias
+ *  to SCM_INTERNAL_MUTEX_*.
+ */
 #ifdef HAVE_PTHREAD_SPINLOCK_T
 typedef pthread_spinlock_t ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_INIT(spin) \
@@ -126,6 +156,27 @@ typedef pthread_mutex_t ScmInternalFastlock;
 #define SCM_INTERNAL_FASTLOCK_UNLOCK(fl) SCM_INTERNAL_MUTEX_UNLOCK(fl)
 #define SCM_INTERNAL_FASTLOCK_DESTROY(fl) SCM_INTERNAL_MUTEX_DESTROY(fl)
 #endif /*!HAVE_PTHREAD_SPINLOCK_T*/
+
+/* ScmInternalCond - condition variable
+ *
+ *  Pthreads-style condition variables.  SCM_INTERNAL_COND_INITIALIZER
+ *  may be used for the placeholder of static variables (but the
+ *  variable still needs to be initialized by SCM_INTERNAL_COND_INIT.
+ *
+ *  SCM_INTERNAL_COND_TIMEDWAIT should return either 0 (signalled),
+ *  SCM_INTERNAL_COND_TIMEDOUT, or SCM_INTERNAL_COND_INTR.
+ */
+typedef pthread_cond_t ScmInternalCond;
+#define SCM_INTERNAL_COND_INIT(cond)        pthread_cond_init(&(cond), NULL)
+#define SCM_INTERNAL_COND_SIGNAL(cond)      pthread_cond_signal(&(cond))
+#define SCM_INTERNAL_COND_BROADCAST(cond)   pthread_cond_broadcast(&(cond))
+#define SCM_INTERNAL_COND_WAIT(cond, mutex) pthread_cond_wait(&(cond), &(mutex))
+#define SCM_INTERNAL_COND_TIMEDWAIT(cond, mutex, ptimespec) \
+    pthread_cond_timedwait(&(cond), &(mutex), (ptimespec))
+#define SCM_INTERNAL_COND_DESTROY(cond)     pthread_cond_destroy(&(cond))
+#define SCM_INTERNAL_COND_INITIALIZER       PTHREAD_COND_INITIALIZER
+#define SCM_INTERNAL_COND_TIMEDOUT          ETIMEDOUT
+#define SCM_INTERNAL_COND_INTR              EINTR
 
 /* Issues a full memory barrier */
 #define SCM_INTERNAL_SYNC()                 __sync_synchronize()
