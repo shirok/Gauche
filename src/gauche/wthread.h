@@ -34,8 +34,6 @@
 #ifndef GAUCHE_WTHREAD_H
 #define GAUCHE_WTHREAD_H
 
-#define GAUCHE_HAS_THREADS 1
-
 /* Win32 thread primitive adaptations */
 
 /* Thread */

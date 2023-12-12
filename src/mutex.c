@@ -166,7 +166,6 @@ ScmObj Scm_MakeMutex(ScmObj name)
 
 ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
 {
-#ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
     ScmObj r = SCM_TRUE;
     ScmVM * volatile abandoned = NULL;
@@ -202,15 +201,11 @@ ScmObj Scm_MutexLock(ScmMutex *mutex, ScmObj timeout, ScmVM *owner)
         r = Scm_Raise(exc, 0);
     }
     return r;
-#else  /* !GAUCHE_HAS_THREADS */
-    return SCM_TRUE;            /* dummy */
-#endif /* !GAUCHE_HAS_THREADS */
 }
 
 ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout)
 {
     volatile ScmObj r = SCM_TRUE;
-#ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
     volatile int intr = FALSE;
 
@@ -230,7 +225,6 @@ ScmObj Scm_MutexUnlock(ScmMutex *mutex, ScmConditionVariable *cv, ScmObj timeout
     }
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     if (intr) Scm_SigCheck(Scm_VM());
-#endif /* GAUCHE_HAS_THREADS */
     return r;
 }
 

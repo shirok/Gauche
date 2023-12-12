@@ -163,6 +163,9 @@ SCM_DECL_BEGIN
 # error "No thread support"
 #endif
 
+/* For the backward compatibility.  Now we always have threads. */
+#define GAUCHE_HAS_THREADS 1
+
 #define SCM_WORD_BITS   (SIZEOF_LONG*8)
 
 /* Newer gcc/glibc adds lots of __attribute__((warn_unused_result)) that

@@ -38,8 +38,6 @@
 
 #include <pthread.h>
 
-#define GAUCHE_HAS_THREADS 1
-
 /* ScmInternalThread - a handle to the system's thread.
 
    The variable of type ScmInternalThread must be initialized by

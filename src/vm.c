@@ -467,7 +467,6 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
    Returns TRUE on success, FALSE on failure. */
 int Scm_AttachVM(ScmVM *vm)
 {
-#ifdef GAUCHE_HAS_THREADS
     if (theVM != NULL) {
         /* The current thread already has another VM attached. */
         return FALSE;
@@ -500,9 +499,6 @@ int Scm_AttachVM(ScmVM *vm)
     vm->state = SCM_VM_RUNNABLE;
     vm_register(vm);
     return TRUE;
-#else  /* no threads */
-    return FALSE;
-#endif /* no threads */
 }
 
 /* If the current VM is attached by Scm_AttachVM() rather than Scheme
@@ -511,12 +507,10 @@ int Scm_AttachVM(ScmVM *vm)
  */
 void Scm_DetachVM(ScmVM *vm)
 {
-#ifdef GAUCHE_HAS_THREADS
     if (vm != NULL) {
         (void)SCM_INTERNAL_THREAD_SETSPECIFIC(Scm_VMKey(), NULL);
         vm_unregister(vm);
     }
-#endif /* GAUCHE_HAS_THREADS */
 }
 
 int Scm_VMGetNumResults(ScmVM *vm)

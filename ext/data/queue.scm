@@ -455,19 +455,17 @@
                                                      (timeout-val #f)
                                                      (close::<boolean> #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if (defined GAUCHE_HAS_THREADS)
-          (do-with-timeout q retval timeout timeout-val writerWait
-                           (when (MTQ_CLOSED q)
-                             (set! err "queue is closed"))
-                           (?: (!= (MTQ_MAXLEN q) 0)
-                               (mtq-overflows q 1)
-                               (== (MTQ_READER_SEM q) 0))
-                           (begin (enqueue_int (Q q) 1 cell cell)
-                                  (set! retval '#t)
-                                  (when close
-                                    (set! (MTQ_CLOSED q) TRUE))
-                                  (notify-readers (Q q))))
-          (enqueue_int (Q q) 1 cell cell))
+     (do-with-timeout q retval timeout timeout-val writerWait
+                      (when (MTQ_CLOSED q)
+                        (set! err "queue is closed"))
+                      (?: (!= (MTQ_MAXLEN q) 0)
+                          (mtq-overflows q 1)
+                          (== (MTQ_READER_SEM q) 0))
+                      (begin (enqueue_int (Q q) 1 cell cell)
+                             (set! retval '#t)
+                             (when close
+                               (set! (MTQ_CLOSED q) TRUE))
+                             (notify-readers (Q q))))
      (return retval)))
  )
 
@@ -512,18 +510,16 @@
                                                         (timeout-val #f)
                                                         (close::<boolean> #f))
    (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
-     (.if (defined GAUCHE_HAS_THREADS)
-          (do-with-timeout q retval timeout timeout-val writerWait
-                           (when (MTQ_CLOSED q)
-                             (set! err "queue is closed"))
-                           (?: (!= (MTQ_MAXLEN q) 0)
-                               (mtq-overflows q 1)
-                               (== (MTQ_READER_SEM q) 0))
-                           (begin (queue_push_int (Q q) 1 cell cell)
-                                  (when close
-                                    (set! (MTQ_CLOSED q) TRUE))
-                                  (notify-readers (Q q))))
-          (queue_push_int (Q q) 1 cell cell))
+     (do-with-timeout q retval timeout timeout-val writerWait
+                      (when (MTQ_CLOSED q)
+                        (set! err "queue is closed"))
+                      (?: (!= (MTQ_MAXLEN q) 0)
+                          (mtq-overflows q 1)
+                          (== (MTQ_READER_SEM q) 0))
+                      (begin (queue_push_int (Q q) 1 cell cell)
+                             (when close
+                               (set! (MTQ_CLOSED q) TRUE))
+                             (notify-readers (Q q))))
      (return retval)))
  )
 
@@ -571,17 +567,14 @@
                                                      (timeout-val #f)
                                                      (close::<boolean> #f))
    (let* ([retval SCM_UNDEFINED])
-     (.if (defined GAUCHE_HAS_THREADS)
-          (do-with-timeout q retval timeout timeout-val readerWait
-                           (begin (post++ (MTQ_READER_SEM q))
-                                  (when close (set! (MTQ_CLOSED q) TRUE))
-                                  (notify-writers (Q q)))
-                           (Q_EMPTY_P q)
-                           (begin (pre-- (MTQ_READER_SEM q))
-                                  (dequeue_int (Q q) (& retval))
-                                  (notify-writers (Q q))))
-          ;; no threads
-          (dequeue_int (Q q) (& retval)))
+     (do-with-timeout q retval timeout timeout-val readerWait
+                      (begin (post++ (MTQ_READER_SEM q))
+                             (when close (set! (MTQ_CLOSED q) TRUE))
+                             (notify-writers (Q q)))
+                      (Q_EMPTY_P q)
+                      (begin (pre-- (MTQ_READER_SEM q))
+                             (dequeue_int (Q q) (& retval))
+                             (notify-writers (Q q))))
      (return retval)))
 
  (define-cfn dequeue-all-int (q::Queue*)

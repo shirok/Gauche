@@ -406,13 +406,11 @@ void Scm_DeleteCleanupHandler(void *handle)
     }
 }
 
-#if defined(GAUCHE_HAS_THREADS)
 void Scm__MutexCleanup(void *mutex_)
 {
     ScmInternalMutex *mutex = mutex_;
     (void)SCM_INTERNAL_MUTEX_UNLOCK(*mutex);
 }
-#endif /* GAUCHE_HAS_THREADS */
 
 
 /* Scm_Cleanup and Scm_Exit

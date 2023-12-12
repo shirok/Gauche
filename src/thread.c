@@ -93,7 +93,6 @@ static void thread_cleanup(void *data)
     Scm_DetachVM(vm);
 }
 
-#if defined(GAUCHE_HAS_THREADS)
 static SCM_INTERNAL_THREAD_PROC_RETTYPE thread_entry(void *data)
 {
     ScmVM *vm = SCM_VM(data);
@@ -137,7 +136,6 @@ static struct threadRec {
     sigset_t defaultSigmask;
 } threadrec;
 #endif /* GAUCHE_USE_PTHREADS */
-#endif /* defined(GAUCHE_HAS_THREADS) */
 
 /* Start a thread.  If the VM is in "NEW" state, create a new thread and
    make it run.
@@ -208,7 +206,6 @@ ScmObj Scm_ThreadStart(ScmVM *vm, u_long flags)
 /* Thread join */
 ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, volatile ScmObj timeoutval)
 {
-#ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
     volatile ScmObj result = SCM_FALSE, resultx = SCM_FALSE;
     volatile int intr = FALSE, tout = FALSE;
@@ -241,10 +238,6 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, volatile ScmObj timeoutval)
         result = Scm_Raise(resultx, 0);
     }
     return result;
-#else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!");
-    return SCM_UNDEFINED;
-#endif /*!GAUCHE_HAS_THREADS*/
 }
 
 /* Attempt to stop other thread.   See process_queued_requests() in vm.c
@@ -273,7 +266,6 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, volatile ScmObj timeoutval)
 
 ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
 {
-#ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
     ScmVM *vm = Scm_VM();
     ScmVM *taker = NULL;
@@ -325,17 +317,12 @@ ScmObj Scm_ThreadStop(ScmVM *target, ScmObj timeout, ScmObj timeoutval)
     if (timedout == SCM_INTERNAL_COND_INTR) { Scm_SigCheck(vm); goto retry; }
     if (timedout == SCM_INTERNAL_COND_TIMEDOUT) return timeoutval;
     return SCM_OBJ(target);
-#else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!");
-    return SCM_UNDEFINED;
-#endif /*!GAUCHE_HAS_THREADS*/
 }
 
 
 /* Release inspected thread */
 ScmObj Scm_ThreadCont(ScmVM *target)
 {
-#ifdef GAUCHE_HAS_THREADS
     int not_stopped = FALSE;
     ScmVM *stopped_by_other = NULL;
 
@@ -356,16 +343,11 @@ ScmObj Scm_ThreadCont(ScmVM *target)
     if (stopped_by_other) Scm_Error("target %S is stopped by other thread %S",
                                     target, stopped_by_other);
     return SCM_OBJ(target);
-#else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!");
-    return SCM_UNDEFINED;
-#endif /*!GAUCHE_HAS_THREADS*/
 }
 
 /* Thread sleep */
 ScmObj Scm_ThreadSleep(ScmObj timeout)
 {
-#ifdef GAUCHE_HAS_THREADS
     ScmTimeSpec ts;
     ScmInternalCond dummyc;
     ScmInternalMutex dummym;
@@ -383,9 +365,6 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
     SCM_INTERNAL_MUTEX_DESTROY(dummym);
     SCM_INTERNAL_COND_DESTROY(dummyc);
     if (intr) Scm_SigCheck(Scm_VM());
-#else  /*!GAUCHE_HAS_THREADS*/
-    Scm_Error("not implemented!");
-#endif /*!GAUCHE_HAS_THREADS*/
     return SCM_UNDEFINED;
 }
 
