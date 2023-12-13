@@ -106,7 +106,7 @@
  (define-cproc gauche-thread-type ()
    (.cond [(defined GAUCHE_USE_PTHREADS) (return 'pthread)]
           [(defined GAUCHE_USE_WTHREADS) (return 'win32)]
-          [else (return 'none)])))
+          [else (Scm_Panic "Can't determine thread type. Configuration error?")])))
 
 ;;===============================================================
 ;; Thread
