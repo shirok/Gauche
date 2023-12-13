@@ -33,11 +33,6 @@
 
 (declare) ;; a dummy form to suppress generation of "sci" file
 (define-module gauche.net
-  (use scheme.list)
-  (use gauche.uvector)
-  (use gauche.sequence)
-  (use gauche.lazy)
-  (use gauche.connection)
   (export <socket> make-socket
 
           ;; NB: Many enum symbols are conditionally exported.  They're
