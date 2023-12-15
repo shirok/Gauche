@@ -16692,6 +16692,12 @@ by @var{on-abnormal-exit} keyword argument:
 @itemize @bullet
 @item
 If it is @code{#f} (default), @code{#f} is returned.
+Note that this default is different from @code{call-with-input-process} etc.,
+which rause an error by default.  It is because @code{do-process} is
+intended to be used with conditionals
+like shell-script's @code{if} command; i.e.
+@code{(if (do-process command) then-expr else-expr)} works just
+like shell's @code{if command; then then-command; else else-command; fi}.
 @item
 If it is @code{:error}, a @code{<process-abnormal-exit>} error is thrown.
 @item
@@ -16708,6 +16714,12 @@ is still thrown.
 @itemize @bullet
 @item
 引数が@code{#f}の場合(デフォルト)、単に@code{#f}が返されます。
+これは@code{call-with-input-process}などのデフォルト(エラーを投げる)とは
+異なっていることに注意してください。@code{do-process}は、条件分岐と組み合わせて
+シェルスクリプトの@code{if}コマンドのように使うことを想定しています。
+@code{(if (do-process command) then-expr else-expr)}は
+シェルの@code{if command; then then-command; else else-command; fi}
+のように動作します。
 @item
 引数が@code{:error}の場合、@code{<process-abnormal-exit>}エラーが投げられます。
 @item
@@ -16723,8 +16735,8 @@ is still thrown.
 it raises @code{<process-abnormal-exit>} error when the process
 exists with non-zero status.  It's the same behavior as
 giving @code{:error} to the @code{on-abnormal-exit} keyword argument
-of @code{do-process}.  It is often more convenient to let the commands
-fail in shell-script type tasks.
+of @code{do-process}.  This is convenient if you want to let the script
+just fail when the command fails.
 @c JP
 @code{do-process!}は@code{do-process}とほぼ同じですが、
 プロセスが0以外の終了ステータスを返した場合に@code{<process-abnormal-exit>}エラーを
