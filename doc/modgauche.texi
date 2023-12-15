@@ -18343,6 +18343,10 @@ for non-zero exit status.  If it is a procedure, it is called with
 a process object; when the procedure returns, @code{call-with-input-process}
 returns normally.
 
+Note that @var{on-abnormal-exit} differs from @code{do-process}
+(@pxref{Running subprocess}).  We want finer control over the situation
+than merely check if the subprocess is succeeded or failed.
+
 The semantics of @var{command} and other keyword arguments are the same
 as @code{open-input-process-port} above.
 @c JP
@@ -18362,6 +18366,10 @@ as @code{open-input-process-port} above.
 特別なアクションは取られません。値が手続きの場合、0以外の終了ステータスに対して
 子プロセスオブジェクトを引数にしてその手続きが呼ばれます。その手続きが
 戻れば、@code{call-with-input-process}は正常動作と同じように戻ります。
+
+@var{on-abnormal-exit}の意味が@code{do-process}とは異なることに注意してください
+(@ref{Running subprocess}参照)。この手続きを使う場合は、
+単にサブプロセスの成功/失敗を知るだけでなく、より細かな制御を必要とする場合が多いからです。
 
 @var{command}および他のキーワード引数の意味は@code{open-input-process-port}と
 同じです。
