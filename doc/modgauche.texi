@@ -18733,33 +18733,68 @@ forkしたプロセスがまだ通信するかもしれないからです。
 
 @deftp {Module} gauche.record
 @mdindex gauche.record
+@c EN
 This module provides a facility to define @emph{record types},
 user-defined aggregate types.
 The API is upper compatible to SRFI-9 (Defining Record Types) and
 SRFI-99 (ERR5RS Records).
+@c JP
+このモジュールは、@emph{レコード型}、すなわち、ユーザ定義の集合型を定義する
+機能を提供します。
+そのAPIは、SRFI-9 (Defining Record Types) および SRFI-99 (ERR5RS Records) の
+上位互換です。
+@c COMMON
 @end deftp
 
+@c EN
 Record types are implemented as Gauche's classes,
 but have different characteristics from the general classes.
 @xref{Record types introduction}, for when you want to
 use record types.
+@c JP
+レコード型は、Gaucheのクラスとして実装されていますが、
+一般的なクラスとは異なる特徴を持っています。
+レコード型を使用したいときは@ref{Record types introduction}を参照してください。
+@c COMMON
 
+@c EN
 The record API consists of three layers, following
 SRFI-99 and R6RS design.
+@c JP
+レコードAPIは、SRFI-99およびR6RSの設計に従い、3つの層から構成されています。
+@c COMMON
 
+@c EN
 The syntactic layer is the @code{define-record-type} macro
 that conveniently defines a record type and related procedures
 (a constructor, a predicate, accessors and modifiers) all at once
 declaratively.   Knowing this macro alone is sufficient for
 most common usage of records.
+@c JP
+構文層は、@code{define-record-type}マクロで、レコード型と関連する手続き
+(コンストラクタ、述語、アクセサ、および、モディファイア)を、
+一括して宣言的に定義します。このマクロを知っているだけで、
+ほとんどの一般的なレコードの使用方法においては十分です。
+@c COMMON
 
+@c EN
 The inspection layer defines common procedures
 to query information to the records and record types.
+@c JP
+調査層は、レコードおよびレコード型の情報を問い合わせるための
+共通手続きを定義します。
+@c COMMON
 
+@c EN
 The procedural layer is a low-level machinery to implement
 the syntactic layer; you don't usually need to use them
 in day-to-day programming, but they might be handy to
 create record types on-the-fly at runtime.
+@c JP
+手続き層は、構文層を実装するための低レベルの機構です。
+日常的なプログラミングにおいて使う必用はありませんが、
+実行時にその場でレコード型を作成するような場合には便利かもしれません。
+@c COMMON
 
 @menu
 * Record types introduction::
@@ -18771,18 +18806,33 @@ create record types on-the-fly at runtime.
 
 @node Record types introduction, Record types syntactic layer, Record types, Record types
 @subsection Introduction
+@c NODE イントロダクション
 
+@c EN
 Gauche provides a general way for users to define new types as new
 classes, using object system (@pxref{Object system}), and indeed
 record types are implemented as Gauche's classes.
 However, using record types instead of classes has several advantages.
+@c JP
+Gaucheは、オブジェクトシステム(@ref{Object system}を参照)により、
+新しい型を新しいクラスとして定義する一般的な方法を提供しています。
+そして、実際に、レコード型はGaucheのクラスとして実装されています。
+しかし、クラスではなくレコード型を使うことには、いくつかの利点があります。
+@c COMMON
 
 @itemize
 @item
+@c EN
 It is portable.  The API conforms two major record SRFIs,
 SRFI-9 and SRFI-99, so the code using record types can run on
 various Scheme systems.
+@c JP
+ポータブルであること。 APIは2つの有名なレコードSRFIである
+SRFI-9とSRFI-99に適合しています。このため、レコード型を使用したコードは、
+様々なSchemeシステム上で動作します。
+@c COMMON
 @item
+@c EN
 It is efficient.  Record types are less flexibile than classes,
 but that allows Gauche to optimize more.  Hence creating records and
 accessing/modifying them are much faster than creating instances
@@ -18790,7 +18840,17 @@ of general classes and accessing/modifying them.  It makes record
 types preferable choice when you only need a mechanism to bundle
 several related values to carry around, and don't need fancier
 mechanisms such as class redefinitions.
+@c JP
+効率的であること。 レコード型はクラスほど柔軟ではありませんが、
+このためGaucheはより最適化を行えます。したがって、レコードを作成し、
+それらにアクセス/変更することは、一般的なクラスのインスタンスを作成して、
+それらにアクセス/変更することよりも高速に行えます。
+いくつかの関連する値をまとめて運用するメカニズムがほしいだけであり、
+クラスの再定義のような手の込んだメカニズムが不要な場合には、
+レコード型は良い選択肢になります。
+@c COMMON
 @item
+@c EN
 As Gauche's extension, you can define pseudo record types,
 which interprets ordinary aggregate types such as vectors and lists
 as records.  (For Common Lisp users; it is like the @code{:type}
@@ -18801,8 +18861,21 @@ instead of asking users to pack their point data into your
 custom point record type.  Yet inside your library you can
 treat the passed data as if it is your point record type.
 See @ref{Pseudo record types}, for more details.
+@c JP
+Gaucheの拡張として、疑似レコード型を定義することができます。
+これは、ベクタやリストのような通常の集合型を、レコードとして扱うものです
+(Common Lisp ユーザにとっては、@code{defstruct}の@code{:type}が近いものです)。
+これは、インタフェースの柔軟性向上に役立ちます。
+例えば、あなたのライブラリのユーザに、
+独自の座標レコード型に座標データを格納するように依頼するのではなく、
+3個の数値を持つベクタを渡すように依頼することができます。
+しかもなお、ライブラリ内では、渡されたデータを座標レコード型として
+扱うことができるのです。
+詳しくは、@ref{Pseudo record types}を参照してください。
+@c COMMON
 @end itemize
 
+@c EN
 The disadvantage of record types is that
 they don't obey Gauche's class redefinition
 protocol (@pxref{Class redefinition}).
@@ -18810,7 +18883,16 @@ That is, if you redefine a record with the same name,
 it creates a new record type unrelated to the old one.
 The record instances created from the old definition
 won't be updated according to the new definition.
+@c JP
+レコード型の欠点は、Gaucheのクラス再定義プロトコル(@ref{Class redefinition}を参照)
+を利用できないことです。
+すなわち、同じ名前でレコードを再定義すると、
+古いものとは無関係の新しいレコード型が作成されます。
+古い定義で作成されたレコードのインスタンスは、
+新しい定義によって更新されることはありません。
+@c COMMON
 
+@c EN
 More importantly, record constructors, accessors and modifiers
 are tend to be inlined where they are used, to achieve
 better performance.   Since they are inlined, the code
@@ -18819,20 +18901,41 @@ the record type is redefined.
 This means if you redefine a record type, you have to
 reload (recompile) the sources that uses any of
 record constructors, accessors or modifiers.
+@c JP
+さらに重要なこととして、
+レコードのコンストラクタ、アクセサ、および、モディファイアは、
+パフォーマンス向上のため、使用箇所でインライン展開される傾向があります。
+インライン展開により、これらの手続きを使用するコードは、
+レコード型が再定義されても影響を受けません。
+これは、レコード型を再定義した場合、レコードのコンストラクタ、アクセサ、
+または、モディファイアを使用するソースは、
+再ロード(再コンパイル)する必用があることを意味します。
+@c COMMON
 
 
 @node Record types syntactic layer, Record types inspection layer, Record types introduction, Record types
 @subsection Syntactic Layer
+@c NODE レコード型の構文層
 
 
 @defmac define-record-type type-spec ctor-spec pred-spec field-spec @dots{}
 [R7RS base][SRFI-9][SRFI-99+]
 @c MOD gauche.record
+@c EN
 Defines a record type, and optionally defines
 a constructor, a predicate, and field accessors and modifiers.
+@c JP
+レコード型を定義し、オプションとしてコンストラクタ、述語、
+フィールドのアクセサ、および、モディファイアを定義します。
+@c COMMON
 
+@c EN
 The @var{type-spec} argument names the record type,
 and optionally specifies the supertype (@var{parent}).
+@c JP
+@var{type-spec}引数は、レコード型に名前を付けます。
+また、オプションとしてスーパータイプ(@var{parent})を指定します。
+@c COMMON
 
 @example
 @var{type-spec} : @var{type-name}
@@ -18843,6 +18946,7 @@ and optionally specifies the supertype (@var{parent}).
 @var{option} @dots{} : @r{keyword-value list}
 @end example
 
+@c EN
 The @var{type-name} identifier will be bound to a
 @emph{record type descriptor}, or rtd,
 which can be used for introspection and reflection.
@@ -18850,38 +18954,94 @@ See @ref{Record types inspection layer} and @ref{Record types procedural layer}
 for possible operations for record types.
 In Gauche, a record type descriptor is a @code{<class>} with a metaclass
 @code{<record-meta>}.
+@c JP
+@var{type-name}識別子は、
+レコード型記述子(@emph{record type descriptor})すなわちrtdに束縛され、
+イントロスペクションやリフレクションのために使用されます。
+レコード型に対して可能な操作については、@ref{Record types inspection layer}と
+@ref{Record types procedural layer}を参照してください。
+Gaucheでは、レコード型記述子は、メタクラス@code{<record-meta>}を持つ
+@code{<class>}です。
+@c COMMON
 
+@c EN
 The @var{parent} expression should evaluate to a record type descriptor.
 If given, the defined record type inherits it; that is, all the
 slots defined in the parent type are available to the @var{type-name}
 as well, and the instance of @var{type-name} answers @code{#t} to the
 predicate of the parent type.
+@c JP
+@var{parent}式は、レコード型記述子に評価されなければなりません。
+これが与えられると、定義されるレコード型はそれを継承します。
+すなわち、親の型で定義されたすべてのスロットは、
+@var{type-name}でも利用可能です。そして、@var{type-name}のインスタンスは、
+親の型の述語に対しても@code{#t}を返します。
+@c COMMON
 
+@c EN
 Since a record type is also a class, parent type is also a superclass
 of the defined record type.  However, record types are limited to
 have single implementation inheritance.  The parent type must be
 a subclass of @code{<record>}.  (You can have abstract classes along
 the main inheritance, though.  See @var{mixins} below.)
+@c JP
+レコード型もまたクラスであるため、親の型は定義されるレコード型の
+スーパークラスでもあります。
+しかし、レコード型には単一継承のみという制限があります。
+親の型は@code{<record>}のサブクラスである必要があります。
+(ただし、メインの継承に加えて抽象クラスを持つことができます。
+下記の@var{mixins}を参照してください。)
+@c COMMON
 
+@c EN
 You can give a pseudo record base type as @var{parent} to define a
 pseudo record type, which allows you to access ordinary aggregates
 like vectors as records.  See @ref{Pseudo record types} for more details.
+@c JP
+疑似レコード型を定義するために、疑似レコード型のベースタイプを
+@var{parent}に指定することができます。これによって、
+ベクタのような通常の集合型を、レコードとしてアクセスできるようになります。
+詳しくは、@ref{Pseudo record types}を参照してください。
+@c COMMON
 
+@c EN
 the @var{option} @dots{} part is Gauche's extension.  It must be a
 keyword-value list.  The following keywords are recognized:
+@c JP
+@var{option} @dots{} の部分は、Gaucheの拡張になります。それは、
+キーワードと値のリストである必要があります。次のキーワードが認識されます。
+@c COMMON
 
 @table @asis
 @item @code{:mixins} (@var{class} @dots{})
+@c EN
 Specifies auxiliary superclasses.  The classes must be abstract, that is,
 must not have slots.  It is to implement protocols in the record type,
 e.g. @code{<sequence>} (@pxref{Sequence framework}).
+@c JP
+補助的なスーパークラスを指定します。そのクラスは抽象クラス、すなわち、
+スロットを持たないクラスである必要があります。
+これは、レコード型でプロトコルを実装するためのものです
+(例えば、@code{<sequence>} (@ref{Sequence framework}を参照) 等)。
+@c COMMON
 @item @code{:metaclass} @var{metaclass}
+@c EN
 Specifies alternative metaclass.  By default, metaclass of record types
 is @code{<record-meta>}.  If you specify an alternative metaclass,
 it must be a subclass of @code{<record-meta>}.
+@c JP
+メタクラスを変更する場合に指定します。
+デフォルトでは、レコード型のメタクラスは@code{<record-meta>}です。
+他のメタクラスを指定する場合、それは@code{<record-meta>}のサブクラスである
+必用があります。
+@c COMMON
 @end table
 
+@c EN
 The @var{ctor-spec} defines the constructor of the record instance.
+@c JP
+@var{ctor-spec}は、レコードのインスタンスを作るコンストラクタを定義します。
+@c COMMON
 
 @example
 @var{ctor-spec} : #f | #t | @var{ctor-name}
@@ -18891,6 +19051,7 @@ The @var{ctor-spec} defines the constructor of the record instance.
 @var{field-name} : @r{identifier}
 @end example
 
+@c EN
 If it is @code{#f}, no constructor is created.
 If it is @code{#t}, a default constructor is created with a name
 @code{make-@var{type-name}}.  If it is a single identifier
@@ -18900,7 +19061,20 @@ the number of fields of the record, including inherited ones if any.
 When called, it allocates an instance of the record, and initialize its
 fields with the given arguments in the order (inherited fields comes
 first), and returns the record.
+@c JP
+@code{#f}を指定すると、コンストラクタは生成されません。
+@code{#t}を指定すると、デフォルトのコンストラクタが@code{make-@var{type-name}}
+という名前で生成されます。
+単一の識別子@var{ctor-name}を指定すると、デフォルトのコンストラクタが、
+その名前で生成されます。
+デフォルトのコンストラクタは、レコードのフィールドの数と同じ数の引数を取ります。
+これには(もしあれば)継承されたものも含まれます。
+これが呼ばれると、レコードのインスタンスを割り当て、そのフィールドを
+与えられた引数で順番に(継承されたフィールドが先になります)初期化し、
+作成したレコードを返します。
+@c COMMON
 
+@c EN
 The last variation of @var{ctor-spec} creates a custom
 constructor with the name @var{ctor-name}.  The custom constructor
 takes as many arguments as the given @var{field-name}s, and initializes
@@ -18908,10 +19082,26 @@ the named fields.  If the inherited record type has a field of the same name
 as the ancestor record type, only the inherited ones are initialized.
 In Gauche, uninitialized fields remains unbound until some value is
 set to it.
+@c JP
+@var{ctor-spec}の最後のバリエーションは、
+@var{ctor-name}という名前のカスタムコンストラクタを生成します。
+カスタムコンストラクタは、指定した@var{field-name}の数と同じ数の引数を取り、
+その名前のフィールドを初期化します。
+継承されたレコード型が祖先のレコード型と同名のフィールドを持っていた場合には、
+継承されたレコード型のものだけが初期化されます。
+Gaucheでは、初期化されていないフィールドは、何らかの値がセットされるまでは、
+未束縛のままです。
+@c COMMON
 
+@c EN
 The @var{pred-spec} defines the predicate of the record instance,
 which takes one argument and returns @code{#t} iff it is an instance
 of the defined record type or its descendants.
+@c JP
+@var{pred-spec}は、レコードのインスタンスの述語を定義します。
+それはひとつの引数を取り、定義されるレコード型、もしくは、その子孫の
+インスタンスであるときに@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 
 @example
 @var{pred-spec} : #f | #t | @var{pred-name}
@@ -18919,12 +19109,22 @@ of the defined record type or its descendants.
 @var{pred-name} : @r{identifier}
 @end example
 
+@c EN
 If it is @code{#f}, no predicate is created.
 If it is @code{#t}, a predicate is created with a name
 @code{@var{type-name}?}.  If it is a single identifier,
 a predicate is created with the given name.
+@c JP
+@code{#f}を指定すると、述語は生成されません。
+@code{#t}を指定すると、述語が@code{@var{type-name}?}という名前で生成されます。
+単一の識別子を指定すると、述語がその名前で生成されます。
+@c COMMON
 
+@c EN
 The rest of the arguments specify fields (slots) of the record.
+@c JP
+残りの引数は、レコードのフィールド(スロット)を定めます。
+@c COMMON
 
 @example
 @var{field-spec}
@@ -18938,39 +19138,73 @@ The rest of the arguments specify fields (slots) of the record.
 @var{modifier-name} : @r{identifier}
 @end example
 
+@c EN
 The first and the third forms define immutable fields, which can only
 be initialized by the constructor but cannot be modified afterwards
 (thus such fields don't have modifiers).
 The second and the fourth forms define mutable fields.
+@c JP
+1番目と3番目の形式は、変更不可のフィールドを定義します。
+それは、コンストラクタによる初期化のみが可能であり、
+後から変更することはできません
+(したがって、そのフィールドは、モディファイアを持ちません)。
+2番目と4番目の形式は、変更可能なフィールドを定義します。
+@c COMMON
 
+@c EN
 The third and fourth forms explicitly name the accessor and modifier.
 With the first and second forms, on the other hand,
 the accessor is named as
 @code{@var{type-name}-@var{field-name}}, and the modifier is named
 as @code{@var{type-name}-@var{field-name}-set!}.
+@c JP
+3番目と4番目の形式は、アクセサとモディファイアの名前を明示的に指定します。
+一方、1番目と2番目の形式では、
+アクセサは@code{@var{type-name}-@var{field-name}}という名前になり、
+モディファイアは@code{@var{type-name}-@var{field-name}-set!}という
+名前になります。
+@c COMMON
 @end defmac
 
+@c EN
 Let's see some examples.  Here's a definition of a record
 type @code{point}.
+@c JP
+いくつかの例を見てみましょう。これは、レコード型@code{point}の定義です。
+@c COMMON
 
 @example
 (define-record-type point #t #t
   x y z)
 @end example
 
+@c EN
 The variable @code{point} is bound to a record type descriptor,
 which is just a class.  But you can take its class and see it is
 indeed an instance of @code{<record-meta>} metaclass.
+@c JP
+変数@code{point}は、レコード型記述子に束縛されています。
+それは、単なるクラスです。しかし、さらにそのクラスを取得してみると、
+実はメタクラス@code{<record-meta>}のインスタンスでもあることが分かります。
+@c COMMON
 
 @example
 point            @result{} #<class point>
 (class-of point) @result{} #<class <record-meta>>
 @end example
 
+@c EN
 You can create an instance of @code{point} by the default
 constructor @code{make-point}.  The predicate is given the
 default name @code{point?}, and you can access the fields
 of the created record by @code{point-x} etc.
+@c JP
+デフォルトコンストラクタ@code{make-point}を使用して、
+@code{point}のインスタンスを生成できます。
+述語はデフォルトの名前である@code{point?}になります。
+そして、生成されたレコードのフィールドには、@code{point-x}等で
+アクセスできます。
+@c COMMON
 
 @example
 (define p (make-point 1 2 3))
@@ -18981,12 +19215,23 @@ of the created record by @code{point-x} etc.
 (point-z p) @result{} 3
 @end example
 
+@c EN
 Since we defined all fields immutable, we cannot modify
 the instance @code{p}.
+@c JP
+すべてのフィールドを変更不可として定義したため、
+インスタンス@code{p}を変更することはできません。
+@c COMMON
 
+@c EN
 Here's a mutable version of point, @code{mpoint}.
 You can modify its fields by modifier procedures and
 generalized @code{set!}.
+@c JP
+以下は、pointの変更可能バージョンである@code{mpoint}です。
+そのフィールドは、モディファイア手続き、および、
+一般化された@code{set!}によって変更することができます。
+@c COMMON
 
 @example
 (define-record-type mpoint #t #t
@@ -19003,9 +19248,15 @@ generalized @code{set!}.
 (mpoint-x p2)  @result{} 6
 @end example
 
+@c EN
 Next one is an example of inheritance.
 Note that the default constructor takes arguments for
 fields of the parent record as well.
+@c JP
+次は、継承の例です。
+デフォルトコンストラクタは、親のレコードのフィールドの分も
+引数に取ることに注意してください。
+@c COMMON
 
 @example
 (define-record-type (qpoint mpoint) #t #t
@@ -19022,12 +19273,24 @@ fields of the parent record as well.
 (qpoint-w p3) @result{} 4
 @end example
 
+@c EN
 A small caveat: Accessors and modifiers for inherited fields
 (e.g. @code{qpoint-x} etc.) are not created.
+@c JP
+ちょっとした注意：継承されたフィールドのアクセサとモディファイア
+(例えば @code{qpoint-x} 等)は生成されません。
+@c COMMON
 
+@c EN
 Gauche's convention is to enclose class name by @code{<>}.
 You can follow the convention and still explicitly gives
 simpler names (instead of @code{make-<point>} or @code{<point>-x}):
+@c JP
+Gaucheの慣例では、クラス名は@code{<>}で囲うようにしています。
+この慣例にしたがい、さらに各手続きについては
+(@code{make-<point>} や @code{<point>-x}) ではなく)
+シンプルな名前を使うようにするには、次のようにします。
+@c COMMON
 
 @example
 (define-record-type <point> make-point point?
@@ -19039,81 +19302,144 @@ simpler names (instead of @code{make-<point>} or @code{<point>-x}):
 
 @node Record types inspection layer, Record types procedural layer, Record types syntactic layer, Record types
 @subsection Inspection layer
+@c NODE レコード型の調査層
 
+@c EN
 This layer provides common procedures that operates on record type
 descriptors and record instances.
+@c JP
+この層は、レコード型記述子、および、レコードのインスタンスを操作する
+共通手続きを提供します。
+@c COMMON
 
+@c EN
 Note that a record type descriptor is a class in Gauche, so
 you can also use operators on classes (e.g. @code{class-name},
 @code{class-slots} etc.) on record type descriptors as well.
 However, these procedures are more portable.
+@c JP
+Gaucheでは、レコード型記述子はクラスであるため、クラスに対する操作
+(例えば @code{class-name}や@code{class-slots} 等)を、
+レコード型記述子に対して使用することもできます。
+しかし、これらの手続きは、よりポータブルです。
+@c COMMON
 
 @defun record? obj
 [SRFI-99][R6RS]
 @c MOD gauche.record
+@c EN
 Returns @code{#t} iff @var{obj} is an instance of record type,
 @code{#f} otherwise.
+@c JP
+@var{obj}がレコード型のインスタンスであれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun record-rtd record
 [SRFI-99][R6RS]
 @c MOD gauche.record
+@c EN
 Returns the record type descriptor of the record instance.
+@c JP
+レコードのインスタンスのレコード型記述子を返します。
+@c COMMON
 @end defun
 
 @defun rtd-name rtd
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns the name of the record type descriptor @var{rtd}.
+@c JP
+レコード型記述子@var{rtd}の名前を返します。
+@c COMMON
 @end defun
 
 @defun rtd-parent rtd
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns the parent type of the record type descriptor @var{rtd}.
 If @var{rtd} doesn't have a parent, @code{#f} is returned.
+@c JP
+レコード型記述子@var{rtd}の親の型を返します。
+@var{rtd}が親を持たなければ@code{#f}が返ります。
+@c COMMON
 @end defun
 
 @defun rtd-field-names rtd
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns a vector of symbols, each of which is the names of the direct
 fields of the record represented by @var{rtd}.   The result doesn't
 include inherited fields.
+@c JP
+シンボルのベクタを返します。各シンボルは
+@var{rtd}で示されるレコードの直属のフィールドの名前です。
+この結果には、継承されたフィールドは含まれません。
+@c COMMON
 @end defun
 
 @defun rtd-all-field-names rtd
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns a vector of symbols, each of which is the names of the
 fields of the record represented by @var{rtd}.   The result includes
 all inherited fields.
+@c JP
+シンボルのベクタを返します。各シンボルは
+@var{rtd}で示されるレコードのフィールドの名前です。
+この結果には、すべての継承されたフィールドが含まれます。
+@c COMMON
 @end defun
 
 @defun rtd-field-mutable? rtd field-name
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns @code{#t} iff the field with the name @var{field-name}
 of a record represented by @var{rtd} is mutable.
+@c JP
+@var{rtd}で示されるレコードの@var{field-name}という名前を持つフィールドが、
+変更可能であれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 
 @node Record types procedural layer, Pseudo record types, Record types inspection layer, Record types
 @subsection Procedural layer
+@c NODE レコード型の手続き層
 
+@c EN
 These procedures are low-level machinery on top of which
 @code{define-record-type} is implemented.  They can be used
 to create a new record type at runtime.
+@c JP
+これらの手続きは@code{define-record-type}を実装するための低レベルの機構です。
+それらは実行時に新しいレコード型を作成するために使用できます。
+@c COMMON
 
 @defun make-rtd name field-specs :optional parent
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Creates and returns a new record type descriptor with name @var{name} and
 having fields specified by @var{field-specs}.  If @var{parent}
 is given, it must be a record type descriptor or @code{#f}.
 If it is a record type descriptor, the created record type
 inherits from it.
+@c JP
+@var{name}という名前を持ち@var{field-specs}で示されるフィールドを持つ
+新しいレコード型記述子を作成して返します。
+@var{parent}を指定した場合、それはレコード型記述子もしくは@code{#f}でなければ
+なりません。
+レコード型記述子であった場合、作成されるレコード型はそれを継承します。
+@c COMMON
 
+@c EN
 The @var{field-specs} argument must be a vector, each
 element of which is a @emph{field specifier}.  A field
 specifier can be a symbol, a list @code{(mutable @var{symbol})},
@@ -19121,84 +19447,171 @@ or a list @code{(immutable @var{symbol})}.  The @var{symbol} names
 the field.  A single symbol or @code{(mutable @var{symbol})} format
 makes the field mutable, and @code{(immutable @var{symbol})} format
 makes the field immutable.
+@c JP
+@var{field-specs}引数は、@emph{field specifier}を各要素に持つベクタ
+でなければりません。@emph{field specifier}は、@var{symbol}、
+@code{(mutable @var{symbol})}というリスト、もしくは、
+@code{(immutable @var{symbol})}というリストのいずれかです。
+@var{symbol}はフィールド名になります。@var{symbol}ひとつ、もしくは、
+@code{(mutable @var{symbol})}形式の場合は、変更可能なフィールドを作ります。
+そして、@code{(immutable @var{symbol})}形式の場合は、
+変更不可のフィールドを作ります。
+@c COMMON
 
+@c EN
 Note: Gauche does not implement the extension suggested in
 SRFI-99 yet, which is @code{sealed}, @code{opaque} and @code{uid}
 arguments.
+@c JP
+注意: Gaucheは、SRFI-99で提案されている拡張機能である
+@code{sealed}、@code{opaque}、および、@code{uid}引数を、
+まだ実装していません。
+@c COMMON
 @end defun
 
 @defun rtd? obj
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns @code{#t} if @var{obj} is a record type descriptor,
 @code{#f} otherwise.
+@c JP
+@var{obj}がレコード型記述子であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun rtd-constructor rtd :optional field-specs
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns a procedure that creates an instance record of
 the record type represented by @var{rtd}.
 Without @var{field-specs}, it returns the default constructor,
 which takes as many arguments as the number of fields of
 the record to initialize them.
+@c JP
+@var{rtd}で示されるレコード型のインスタンスを作成する 手続きを返します。
+@var{field-specs}がなければ、デフォルトコンストラクタを返します。
+それは、初期化のためにレコードのフィールドの数と同じ数の引数を取ります。
+@c COMMON
 
+@c EN
 You can give a vector of symbols as @var{field-specs}.  The @var{n}-th
 symbol specifies which field of the instance should be initialized
 by the @var{n}-th argument.   The @var{field-specs} vector cannot
 contain duplicate names.  If the record type defines a field with
 the same name as the one in the parent record type, the custom constructor
 can only initialize the field of the derived type's instance.
+@c JP
+@var{field-specs}には、シンボルのベクタを指定できます。
+@var{n}番目のシンボルは、そのインスタンスのフィールドが、
+@var{n}番目の引数で初期化されることを示します。
+@var{field-specs}ベクタは重複する名前を持つことはできません。
+レコード型が親のレコード型と同じ名前のフィールドを定義した場合、
+カスタムコンストラクタは継承先のフィールドのみを初期化します。
+@c COMMON
 @end defun
 
 @defun rtd-predicate rtd
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns a predicate to test an object is an instance of @var{rtd}.
+@c JP
+オブジェクトが@var{rtd}のインスタンスであるかをテストする 述語を返します。
+@c COMMON
 
+@c EN
 If @var{rtd} is a pseudo record type, the predicate merely tests
 the given object is in an appropriate type and has enough size
 to hold the contents.   See @ref{Pseudo record types} for the details.
+@c JP
+@var{rtd}が疑似レコード型であった場合、述語は、与えられたオブジェクトが、
+内容を保持するのに十分なサイズを持つ適合した型かどうかをテストします。
+詳しくは、@ref{Pseudo record types}を参照してください。
+@c COMMON
 @end defun
 
 @defun rtd-accessor rtd field-name
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns a procedure that takes one argument, an instance of @var{rtd},
 and returns the value of the @var{field-name} of the instance.
+@c JP
+1個の引数として@var{rtd}のインスタンスを取り、
+そのインスタンスの@var{field-name}の値を返す 手続きを返します。
+@c COMMON
 
+@c EN
 An error is signaled if the record type doesn't have the field
 of name @var{field-name}.
+@c JP
+レコード型が@var{field-name}の名前のフィールドを持たない場合には、
+エラーになります。
+@c COMMON
 
+@c EN
 If @var{rtd} is inherits other record types, and it defines a field
 of the same name as inherited ones, then the accessor returned by
 this procedure retrieves the value of the field of the derived record.
+@c JP
+@var{rtd}が他のレコードを継承しており、
+継承元と同名のフィールドを定義していた場合、この手続きが返すアクセサは、
+継承先のレコードのフィールドの値を取得します。
+@c COMMON
 @end defun
 
 @defun rtd-mutator rtd field-name
 [SRFI-99]
 @c MOD gauche.record
+@c EN
 Returns a procedure that takes two arguments, an instance of @var{rtd}
 and a value, and sets the latter as the value of the @var{field-name}
 of the instance.
+@c JP
+2個の引数として@var{rtd}のインスタンスと値を取り、
+そのインスタンスの@var{field-name}に値をセットする 手続きを返します。
+@c COMMON
 
+@c EN
 An error is signaled if the record type doesn't have the field
 of name @var{field-name}, or the named field is immutable.
+@c JP
+レコード型が@var{field-name}の名前のフィールドを持たないか変更不可の場合には、
+エラーになります。
+@c COMMON
 
+@c EN
 Like @code{rtd-accessor}, if the record has a field with the same
 name as inherited one, the modifier returned by this procedure
 only modifies the field of the derived record.
+@c JP
+@code{rtd-accessor}と同様に、
+レコードが継承元と同名のフィールドを定義していた場合、
+この手続きが返すモディファイアは、
+継承先のレコードのフィールドのみを変更します。
+@c COMMON
 @end defun
 
 
 @node Pseudo record types,  , Record types procedural layer, Record types
 @subsection Pseudo record types
+@c NODE 疑似レコード型
 
+@c EN
 A pseudo record type is a record type that does not create
 an instance of its own type.
 Instead it treats an object of other collection
 types, such as a vector, as if it had named fields.  It's easier
 to understand by an example:
+@c JP
+疑似レコード型は、それ自身の型のインスタンスを作成しないレコード型です。
+その代わり、ベクタのような他の集合型のオブジェクトを、
+あたかもフィールド名を持っているかのように扱います。
+例で理解するのが良いでしょう:
+@c COMMON
 
 @example
 (define-record-type (vpoint (pseudo-rtd <vector>)) #t #t
@@ -19212,25 +19625,50 @@ to understand by an example:
  @result{} #(1 -1 3)
 @end example
 
+@c EN
 To create a pseudo record type, specify another pseudo
 record type as a parent.   The procedure @code{pseudo-rtd}
 can be used to obtain a base pseudo record type of
 the suitable instance class.
+@c JP
+疑似レコード型を作るには、他の疑似レコード型を親に指定します。
+@code{pseudo-rtd}手続きは、適合するインスタンスクラスの
+ベース疑似レコード型を取得するために使用できます。
+@c COMMON
 
 @defun pseudo-rtd instance-class
 @c MOD gauche.record
+@c EN
 Returns a pseudo rtd suitable to use @var{instance-class} as
 a pseudo record.
+@c JP
+@var{instance-class}を疑似レコードとして使うために
+適合する疑似rtdを返します。
+@c COMMON
 
+@c EN
 Currently, @code{<list>}, @code{<vector>}, and uniform vector
 classes (@code{<u8vector>} etc.) are supported as @var{instance-class}.
+@c JP
+現在、@code{<list>}、@code{<vector>}、および、ユニフォームベクタ
+(例えば @code{<u8vector>} 等)が、
+@var{instance-class}としてサポートされています。
+@c COMMON
 @end defun
 
+@c EN
 The predicates of a pseudo record return @code{#t} if the given
 object can be interpreted as the pseudo record.  In the above
 example of @code{vpoint} record, the predicate @code{vpoint?}
 returns @code{#t} iff the given object is a vector with 3 or more
 elements:
+@c JP
+疑似レコード型の述語は、与えられたオブジェクトが
+疑似レコード型として解釈できるときに@code{#t}を返します。
+前述の@code{vpoint}レコードの例の場合、述語@code{vpoint?}は、
+3かそれ以上の要素を持つベクタのオブジェクトが与えられた場合に
+@code{#t}を返し、そうでなければ@code{#f}を返します。
+@c COMMON
 
 @example
 (vpoint? '#(0 0 0))   @result{} #t
@@ -19239,8 +19677,13 @@ elements:
 (vpoint? '#(0 0 0 0)) @result{} #t
 @end example
 
+@c EN
 We allow more elements so that the pseudo record can be used
 to interpret the header part of the longer data.
+@c JP
+これは、より長いデータのヘッダ部分を解釈するため使えるように、
+より多くの要素を許すようにしています。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Reloading modules, Simple dispatcher, Record types, Library modules - Gauche extensions
