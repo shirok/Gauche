@@ -1,0 +1,10 @@
+This directory contains self-signed certificate and private key for
+testing.
+
+To regenerate them, you can use openssl command:
+
+$ openssl req -x509 -newkey rsa:4096 -keyout test-key.pem -out test-cert.pem -days 36500
+
+Set the private key password to 'cafebabe', and
+"Common Name (e.g. server FQDN or YOUR name)" to 'localhost', in order
+to run the test script successfully.
