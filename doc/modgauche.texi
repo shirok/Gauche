@@ -18739,10 +18739,9 @@ user-defined aggregate types.
 The API is upper compatible to SRFI-9 (Defining Record Types) and
 SRFI-99 (ERR5RS Records).
 @c JP
-このモジュールは、@emph{レコード型}、すなわち、ユーザ定義の集合型を定義する
-機能を提供します。
-そのAPIは、SRFI-9 (Defining Record Types) および SRFI-99 (ERR5RS Records) の
-上位互換です。
+このモジュールは、@emph{レコード型}、すなわち、ユーザ定義の集合型を定義する機能を提供します。
+APIは、SRFI-9 (Defining Record Types) および SRFI-99 (ERR5RS Records)
+の上位互換です。
 @c COMMON
 @end deftp
 
@@ -18754,7 +18753,8 @@ use record types.
 @c JP
 レコード型は、Gaucheのクラスとして実装されていますが、
 一般的なクラスとは異なる特徴を持っています。
-レコード型を使用したいときは@ref{Record types introduction}を参照してください。
+どういった時にレコード型を使うと良いかについては
+@ref{Record types introduction}を参照してください。
 @c COMMON
 
 @c EN
@@ -18772,7 +18772,7 @@ declaratively.   Knowing this macro alone is sufficient for
 most common usage of records.
 @c JP
 構文層は、@code{define-record-type}マクロで、レコード型と関連する手続き
-(コンストラクタ、述語、アクセサ、および、モディファイア)を、
+(コンストラクタ、述語、アクセサ、モディファイア)を、
 一括して宣言的に定義します。このマクロを知っているだけで、
 ほとんどの一般的なレコードの使用方法においては十分です。
 @c COMMON
@@ -18781,8 +18781,8 @@ most common usage of records.
 The inspection layer defines common procedures
 to query information to the records and record types.
 @c JP
-調査層は、レコードおよびレコード型の情報を問い合わせるための
-共通手続きを定義します。
+インスペクション層は、レコードおよびレコード型の情報を問い合わせるための
+共通の手続きを定義します。
 @c COMMON
 
 @c EN
@@ -18806,7 +18806,7 @@ create record types on-the-fly at runtime.
 
 @node Record types introduction, Record types syntactic layer, Record types, Record types
 @subsection Introduction
-@c NODE イントロダクション
+@c NODE レコード型のイントロダクション, イントロダクション
 
 @c EN
 Gauche provides a general way for users to define new types as new
@@ -18814,9 +18814,9 @@ classes, using object system (@pxref{Object system}), and indeed
 record types are implemented as Gauche's classes.
 However, using record types instead of classes has several advantages.
 @c JP
-Gaucheは、オブジェクトシステム(@ref{Object system}を参照)により、
+Gaucheは、オブジェクトシステム(@ref{Object system}参照)により、
 新しい型を新しいクラスとして定義する一般的な方法を提供しています。
-そして、実際に、レコード型はGaucheのクラスとして実装されています。
+そして、実際にレコード型はGaucheのクラスとして実装されています。
 しかし、クラスではなくレコード型を使うことには、いくつかの利点があります。
 @c COMMON
 
@@ -18827,9 +18827,8 @@ It is portable.  The API conforms two major record SRFIs,
 SRFI-9 and SRFI-99, so the code using record types can run on
 various Scheme systems.
 @c JP
-ポータブルであること。 APIは2つの有名なレコードSRFIである
-SRFI-9とSRFI-99に適合しています。このため、レコード型を使用したコードは、
-様々なSchemeシステム上で動作します。
+ポータブルであること。 APIは2つの有名なレコードSRFIであるSRFI-9とSRFI-99に適合しています。
+このため、レコード型を使用したコードは、様々なSchemeシステム上で動作します。
 @c COMMON
 @item
 @c EN
@@ -18869,8 +18868,7 @@ Gaucheの拡張として、疑似レコード型を定義することができ�
 例えば、あなたのライブラリのユーザに、
 独自の座標レコード型に座標データを格納するように依頼するのではなく、
 3個の数値を持つベクタを渡すように依頼することができます。
-しかもなお、ライブラリ内では、渡されたデータを座標レコード型として
-扱うことができるのです。
+そしてライブラリ内では、渡されたデータを座標レコード型として扱うことができるのです。
 詳しくは、@ref{Pseudo record types}を参照してください。
 @c COMMON
 @end itemize
@@ -18915,7 +18913,7 @@ record constructors, accessors or modifiers.
 
 @node Record types syntactic layer, Record types inspection layer, Record types introduction, Record types
 @subsection Syntactic Layer
-@c NODE レコード型の構文層
+@c NODE レコード型の構文層, 構文層
 
 
 @defmac define-record-type type-spec ctor-spec pred-spec field-spec @dots{}
@@ -19302,7 +19300,7 @@ Gaucheの慣例では、クラス名は@code{<>}で囲うようにしていま�
 
 @node Record types inspection layer, Record types procedural layer, Record types syntactic layer, Record types
 @subsection Inspection layer
-@c NODE レコード型の調査層
+@c NODE レコード型のインスペクション層, インスペクション層
 
 @c EN
 This layer provides common procedures that operates on record type
@@ -19342,7 +19340,7 @@ Returns @code{#t} iff @var{obj} is an instance of record type,
 @c EN
 Returns the record type descriptor of the record instance.
 @c JP
-レコードのインスタンスのレコード型記述子を返します。
+レコードインスタンスのレコード型記述子を返します。
 @c COMMON
 @end defun
 
@@ -19411,7 +19409,7 @@ of a record represented by @var{rtd} is mutable.
 
 @node Record types procedural layer, Pseudo record types, Record types inspection layer, Record types
 @subsection Procedural layer
-@c NODE レコード型の手続き層
+@c NODE レコード型の手続き層, 手続き層
 
 @c EN
 These procedures are low-level machinery on top of which
@@ -19434,8 +19432,7 @@ inherits from it.
 @c JP
 @var{name}という名前を持ち@var{field-specs}で示されるフィールドを持つ
 新しいレコード型記述子を作成して返します。
-@var{parent}を指定した場合、それはレコード型記述子もしくは@code{#f}でなければ
-なりません。
+@var{parent}を指定した場合、それはレコード型記述子もしくは@code{#f}でなければなりません。
 レコード型記述子であった場合、作成されるレコード型はそれを継承します。
 @c COMMON
 
@@ -19464,8 +19461,7 @@ SRFI-99 yet, which is @code{sealed}, @code{opaque} and @code{uid}
 arguments.
 @c JP
 注意: Gaucheは、SRFI-99で提案されている拡張機能である
-@code{sealed}、@code{opaque}、および、@code{uid}引数を、
-まだ実装していません。
+@code{sealed}、@code{opaque}、および、@code{uid}引数を、まだ実装していません。
 @c COMMON
 @end defun
 
