@@ -5,6 +5,7 @@
 
 (use gauche.test)
 (use scheme.list)
+(use file.util)
 (use util.isomorph)
 
 (test-start "advanced read/write features")
@@ -760,8 +761,7 @@
 
 (test* "utf-8 with BOM" "foo!"
        (begin
-         (load "data/utf-8-bom.scm"
-               :paths `(,(sys-dirname (current-load-path))))
+         (load "data/utf-8-bom.scm" :paths `(,(build-path 'cld)))
          (foo)))
 
 (test-end)

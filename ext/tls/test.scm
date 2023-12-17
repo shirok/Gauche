@@ -26,7 +26,7 @@
           (tls-close clnt)))))
 
   (define (datafile filename)
-    (build-path (sys-dirname (current-load-path)) "data" filename))
+    (build-path 'cld "data" filename))
 
   (let ((serv (make <mbed-tls>))
         (serv-port #f)

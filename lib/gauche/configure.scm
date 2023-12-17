@@ -207,8 +207,7 @@
                            (bug-report #f) (url #f))
   (when (current-package)
     (exit 1 "Incorrect configure script: cf-init is called more than once."))
-  (let* ([gpd (and-let* ([srcdir (current-load-path)]
-                         [pfile (build-path (sys-dirname srcdir) "package.scm")]
+  (let* ([gpd (and-let* ([pfile (build-path 'cld "package.scm")]
                          [ (file-exists? pfile) ])
                 (path->gauche-package-description pfile))]
          ;; We need to support old way (package info given to cf-init) and

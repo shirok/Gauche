@@ -408,6 +408,16 @@
 
 (define (build-path base-path . components)
   (define path-separator-string (string (path-separator)))
+  (define real-base-path
+    (case base-path
+      [(cwd) (current-directory)]
+      [(cld) (if-let1 clp (current-load-path)
+               (sys-dirname clp)
+               (current-directory))]
+      [else (unless (string? base-path)
+              (error "base-path must be a string, or a symbol 'cwd or 'cld, \
+                      but got:" base-path))
+            base-path]))
   (define (rec base components)
     (if (null? components)
       base
@@ -424,7 +434,7 @@
                    [else
                     (string-append base path-separator-string component)])
           (cdr components)))))
-  (rec (sys-normalize-pathname base-path) components))
+  (rec (sys-normalize-pathname real-base-path) components))
 
 (define (expand-path path)
   (sys-normalize-pathname path :expand #t))

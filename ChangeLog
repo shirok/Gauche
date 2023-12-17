@@ -1,3 +1,10 @@
+2023-12-17  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (build-path): Allow 'cwd and 'cld as base-path
+	  argument, for current workding directory and current loading
+	  directory, respectively.  We've seen enough of this pattern,
+	  especially the latter, so it's worth having it.
+
 2023-12-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/charconv: Support utf8bom encoding, which drops the optional BOM

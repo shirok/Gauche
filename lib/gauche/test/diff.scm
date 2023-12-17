@@ -65,7 +65,7 @@
   (match src
     [('content-of filename)
      (let1 file (if (relative-path? filename)
-                  (build-path (sys-dirname (current-load-path)) filename)
+                  (build-path 'cld filename)
                   filename)
        (if (file-exists? file)
          (file->string file)

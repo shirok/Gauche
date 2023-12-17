@@ -269,7 +269,7 @@
 
 (let ()
   (define (test-biport file size)
-    (let* ((ifile #"~(sys-dirname (current-load-path))/~file")
+    (let* ((ifile (build-path 'cld file))
            (src (open-input-file ifile))
            (p (apply make <buffered-input-port>
                      :fill  (lambda (buf) (read-block! buf src))
@@ -338,7 +338,7 @@
 
 (let ()
   (define (test-boport file size)
-    (let* ((ifile #"~(sys-dirname (current-load-path))/~file")
+    (let* ((ifile (build-path 'cld file))
            (src  (file->string ifile))
            (sink (open-output-string))
            (closed? #f)
