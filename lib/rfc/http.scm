@@ -737,7 +737,7 @@
             [(eq? (~ conn'secure) 'tls)
              (cond-expand
               [gauche.net.tls
-               (tls-connect (make-tls :server-name (~ conn'server)
+               (tls-connect (make-tls :server-name host
                                       :options (if (tls-ca-bundle-path)
                                                  0
                                                  SSL_SERVER_VERIFY_LATER))
