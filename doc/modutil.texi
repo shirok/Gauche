@@ -11533,7 +11533,28 @@ files/directories are also checked if they match the given options.
 @defun build-path base-path component @dots{}
 @c MOD file.util
 @c EN
-Appends pathname components @var{component} to the @var{base-path}.
+Appends pathname components @var{component} @dots{} to the @var{base-path}.
+This takes care of platform-specific pathname separators.
+@c JP
+パス名のコンポーネント@var{component} @dots{}を@var{base-path}に追加します。
+パスの区切り文字は、プラットフォームに合ったものが選択されます。
+@c COMMON
+
+@c EN
+@var{Base-path} can be a directory name, or a symbol @code{cwd} or
+@code{cld}.  If it is @code{cwd}, the current working directory
+is used.  If it is @code{cld}, the directory of the current loading
+file is used.  If there's no current loading file (e.g. calling
+from REPL), the current working directory is used instead.
+@c JP
+@var{base-path}には、ディレクトリ名か、シンボル@code{cwd}もしくは@code{cld}を
+渡すことができます。@code{cwd}の場合は現在のディレクトリ(current working directory)
+が使われます。@code{cld}の場合は現在のファイルをロードしているディレクトリ
+(current loading directory)が使われます。但し、コードがファイルからロードされてたので
+ない場合(REPLから呼び出した場合など)は、現在のディレクトリが代わりに使われます。
+@c COMMON
+
+@c EN
 @var{Component} can be a symbol @code{up} or @code{same};
 in Unix, they are synonym to @code{".."} and @code{"."}.
 This API is taken from MzScheme.
