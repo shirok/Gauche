@@ -85,8 +85,8 @@ source tree, and now they are quite obsolete.
 
 == BUILD STEPS
 
-After `confiugre`, just `make` build everything.  But you want to know
-how build process proceeds if you got into trouble hacking it.  Here's
+After `confiugre`, just running `make` build everything.  But you want to
+know how build process proceeds if you got into trouble hacking it.  Here's
 the internal steps after you type `make`.
 
 1. The Boehm-Demers-Weiser garbage collector (bdwgc) is built under `gc/`.
@@ -123,7 +123,7 @@ added after the latest release of Gauche to build the current source.
 
 You can make sure that the source tree is buildable both by the latest
 relase _and_ the current built, by running `./DIST self-host-test`.
-It also checks if out-of-tree built works.  It performs the following
+It also checks if out-of-tree build works.  It performs the following
 opertaions:
 
 - It cleans the source tree (by `make maintainer-clean` and regenerate
@@ -150,8 +150,8 @@ exporting symbols, and a form to dynamically load precompiled file.
 If you have `foo.scm` and `foo.sci` in the same directory and you
 try to load `foo`, `sci` take precedence.  Usually, if you change
 the source `\*.scm` file and run `make`, the `*.sci` file is
-regenerated.  But if you forget to run `make`, you may wonder
-why the changes you did in `*.scm` file won't be reflected.
+regenerated.  But if you forgot to run `make`, you may wonder
+why the changes you did in `*.scm` file aren't reflected.
 
 If you're not sure which file is actually loaded, run `gosh` with
 `-fload-verbose` option; it reports the exact pathname of each
@@ -234,7 +234,7 @@ the settings.
 
 == TROUBLESHOOTING
 
-If your modification broke something fundamental and you couldn't even
+If your modification break something fundamental and you can't even
 get to REPL, there are a couple of tricks to isolate the problem.
 
 - Run gosh with `-q` option, e.g. `./gosh -ftest -q`.  It suppresses

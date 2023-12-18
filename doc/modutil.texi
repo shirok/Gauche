@@ -11544,14 +11544,29 @@ This takes care of platform-specific pathname separators.
 @var{Base-path} can be a directory name, or a symbol @code{cwd} or
 @code{cld}.  If it is @code{cwd}, the current working directory
 is used.  If it is @code{cld}, the directory of the current loading
-file is used.  If there's no current loading file (e.g. calling
+file is used
+(@code{current-load-path}, @pxref{Loading Scheme file}).
+If there's no current loading file (e.g. calling
 from REPL), the current working directory is used instead.
 @c JP
 @var{base-path}には、ディレクトリ名か、シンボル@code{cwd}もしくは@code{cld}を
 渡すことができます。@code{cwd}の場合は現在のディレクトリ(current working directory)
 が使われます。@code{cld}の場合は現在のファイルをロードしているディレクトリ
-(current loading directory)が使われます。但し、コードがファイルからロードされてたので
+(current loading directory)が使われます。
+(@code{current-load-path}, @ref{Loading Scheme file}参照)。
+但し、コードがファイルからロードされてたので
 ない場合(REPLから呼び出した場合など)は、現在のディレクトリが代わりに使われます。
+@c COMMON
+
+@c EN
+Note that the current loading directory is looked up at the time
+@code{build-path} is called.  It may not the directory where the
+actual source file is in, if @code{build-path} is called after loading
+is completed.
+@c JP
+現在のロードディレクトリは@code{build-path}が呼ばれた時に調べられることに注意して下さい。
+@code{build-path}がロード終了後に呼ばれる場合は、それはそのソースが置かれた
+ディレクトリではないかもしれません。
 @c COMMON
 
 @c EN
