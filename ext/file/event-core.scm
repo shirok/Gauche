@@ -76,13 +76,13 @@
    (define-enum IN_ALL_EVENTS)
    (define-enum IN_MOVE)
    (define-enum IN_CLOSE)
-   ;; firther event bits
+   ;; further event bits
    (define-enum IN_DONT_FOLLOW)
    (define-enum IN_EXCL_UNLINK)
    (define-enum IN_MASK_ADD)
    (define-enum IN_ONESHOT)
    (define-enum IN_ONLYDIR)
-   (define-enum IN_MASK_CREATE)
+   ;(define-enum IN_MASK_CREATE)
    ;; returned bits
    (define-enum IN_IGNORED)
    (define-enum IN_ISDIR)
