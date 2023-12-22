@@ -7781,6 +7781,7 @@ should provide its own procedure to create and return a new connection.
 
 @deffn {Method} connection-self-address connection
 @deffnx {Method} connection-peer-address connection
+@c MOD gauche.connection
 Returns the address of this @var{connection}'s endpoint and
 its peer's.  For sockets and @code{<tls>}, it is an instance
 of @code{<sockaddr>}.  For processes, it is a string
@@ -7798,6 +7799,7 @@ is encouraged to use objects that can be used to create connections.
 @end deffn
 
 @deffn {Method} connection-address-name address
+@c MOD gauche.connection
 This method returns a string representation of @var{address}, which is
 a returned value from @code{connection-self-address} and
 @code{connection-peer-address}.  The default method just uses
@@ -7808,6 +7810,7 @@ provide this method as well.
 
 @deffn {Method} connection-input-port connection
 @deffnx {Method} connection-output-port connection
+@c MOD gauche.connection
 Returns an input port and an output port to read from and write to
 the connection, respectively.
 
@@ -7816,6 +7819,7 @@ the return value of these methods are unspecified.
 @end deffn
 
 @deffn {Method} connection-shutdown connection :optional how
+@c MOD gauche.connection
 Shutdown the connection.  You can either shutdown the connection
 entirely at once, or shutdown only read or write channel of it.
 
@@ -7853,6 +7857,7 @@ concrete class only need to define two argument method.
 @end deffn
 
 @deffn {Method} connection-close connection
+@c MOD gauche.connection
 Close the connection.  This destroys the connection and frees
 local resources.  Note that this does not shutdown the connection
 itself.  If this connection is the only endpoint of this side,
