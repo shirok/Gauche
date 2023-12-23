@@ -159,27 +159,18 @@ ifdef::EN[]
 endif::EN[]
 
 ifdef::JA[]
-Gaucheのセキュアソケット通信サポートにはいくつかオプションがあります。
-ひとつはlink:https://tls.mbed.org/[MbedTLS]
-ライブラリ、もうひとつはlink:http://axtls.sourceforge.net/[AxTLS]
-ライブラリです。
+Gaucheはセキュアソケット通信にlink:https://tls.mbed.org/[MbedTLS]を
+使っています。
 
 デフォルトでは、システムにMbedTLSライブラリがあればそれを使い、
 無ければTLSのサポートを組み込みません。
 システムにMbedTLSをインストールできない事情があったり、
 コンパイル後のバイナリだけを別環境に持ってゆくので依存ライブラリを減らしたい場合は、
 ビルド中にMbedTLSのソースをダウンロードしてGaucheに組み込んでしまうこともできます。
-
-AxTLSは小さなライブラリで、ソースがGaucheにバンドルされているので、
-外部ライブラリなしでTLSサポートを組み込めます。ただ、
-AxTLSはサポートしている暗号スイートに限りがあり、
-相手が正当な証明書を持っていても接続できないことがあります。
-どうしてもMbedTLSが使えない場合の最終手段と考えてください。
 endif::JA[]
 ifdef::EN[]
-Gauche includes secure socket connection support.
-One usesd link:https://tls.mbed.org/[MbedTLS] library, and the other
-uses link:http://axtls.sourceforge.net/[AxTLS] library.
+Gauche relies on link:https://tls.mbed.org/[MbedTLS] for secure
+connection support.
 
 By default, `configure` checks if the MbedTLS library is installed
 on the system, and use it if it's available.  Otherwise, no TLS support
@@ -187,19 +178,11 @@ is compiled.  If you can't install MbedTLS for some reason,
 or you want to bring the compiled binary to the target system that
 may not have MbedTLS library, you can specify to download MbedTLS
 source during build and compile it into Gauche binary.
-
-AxTLS is a small library and its source is included in the Gauche source
-tree.  It can be included in Gauche without relying on external libraries
-at runtime.  However, it has limited cipher and hash algorithm support.
-We suggest to use it as a fallback if you can't use MbedTLS.
 endif::EN[]
 
 [horizontal]
 `--with-tls=none`          :: do not include TLS/SSL support
 `--with-tls=mbedtls`       :: include only mbedTLS support
-`--with-tls=axtls,mbedtls` :: include TLS/SSL support using
-                            axTLS library (source is included in Gauche),
-                            and mbedTLS library (installed on the system).
 `--with-tls=mbedtls-internal` :: During the build, MbedTLS source is downloaded
                             and compiled with Gauche.  See below.
 
