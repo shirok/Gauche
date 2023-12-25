@@ -317,7 +317,8 @@ static ScmObj mbed_read(ScmTLS *tls)
     int r;
     r = mbedtls_ssl_read(&t->ctx, buf, sizeof(buf));
 
-    if (r < 0) { Scm_SysError("mbedtls_ssl_read() failed"); }
+    if (r == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) return SCM_EOF;
+    if (r < 0) mbed_error("mbedtls_ssl_read() failed: %s (%d)", r);
 
     return Scm_MakeString((char *)buf, r, r,
                           SCM_STRING_INCOMPLETE | SCM_STRING_COPYING);

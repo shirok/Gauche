@@ -229,14 +229,19 @@
   (rlet1 ip (make <virtual-input-port>)
     (set! (~ ip'getb)
           (let ((buf #f) (pos 0) (size 0))
-            (^[]
-              (unless buf
-                (set! buf (tls-read tls))
-                (set! size (string-size buf))
-                (set! pos 0))
-              (rlet1 r (string-byte-ref buf pos)
-                (set! pos (+ pos 1))
-                (when (= pos size) (set! buf #f))))))))
+            (rec (reader)
+              (if buf
+                (rlet1 r (string-byte-ref buf pos)
+                  (set! pos (+ pos 1))
+                  (when (= pos size) (set! buf #f)))
+                (let1 data (tls-read tls)
+                  (if (eof-object? data)
+                    data
+                    (begin
+                      (set! buf data)
+                      (set! size (string-size buf))
+                      (set! pos 0)
+                      (reader))))))))))
 
 (define (make-tls-output-port tls)
   (rlet1 op (make <virtual-output-port>)
