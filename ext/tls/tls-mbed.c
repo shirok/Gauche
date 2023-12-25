@@ -156,27 +156,24 @@ static ScmObj mbed_connect(ScmTLS *tls,
 
     mbed_context_check(t, "connect");
     const char* pers = "Gauche";
-    if(mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func, &t->entropy,
-                             (const unsigned char *)pers, strlen(pers)) != 0) {
-        Scm_SysError("mbedtls_ctr_drbg_seed() failed");
-    }
+    int r = mbedtls_ctr_drbg_seed(&t->ctr_drbg, mbedtls_entropy_func,
+                                  &t->entropy,
+                                  (const unsigned char *)pers, strlen(pers));
+    if (r != 0) mbed_error("mbedtls_ctr_drbg_seed() failed: %s (%d)", r);
 
     int mbedtls_proto = MBEDTLS_NET_PROTO_TCP;
     if (proto == SCM_TLS_PROTO_UDP) {
         mbedtls_proto = MBEDTLS_NET_PROTO_UDP;
     }
 
-    int r = mbedtls_net_connect(&t->conn, host, port, mbedtls_proto);
-    if (r != 0) {
-        mbed_error("mbedtls_net_connect() failed: %s (%d)", r);
-    }
+    r = mbedtls_net_connect(&t->conn, host, port, mbedtls_proto);
+    if (r != 0) mbed_error("mbedtls_net_connect() failed: %s (%d)", r);
 
-    if (mbedtls_ssl_config_defaults(&t->conf,
+    r = mbedtls_ssl_config_defaults(&t->conf,
                                     MBEDTLS_SSL_IS_CLIENT,
                                     MBEDTLS_SSL_TRANSPORT_STREAM,
-                                    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
-        Scm_SysError("mbedtls_ssl_config_defaults() failed");
-    }
+                                    MBEDTLS_SSL_PRESET_DEFAULT);
+    if (r != 0) mbed_error("mbedtls_ssl_config_defaults() failed: %s (%d)", r);
     mbedtls_ssl_conf_rng(&t->conf, mbedtls_ctr_drbg_random, &t->ctr_drbg);
 
     ScmObj ca_bundle_path = SCM_UNDEFINED;
@@ -192,8 +189,13 @@ static ScmObj mbed_connect(ScmTLS *tls,
         }
     } else if(SCM_STRINGP(s_ca_file)) {
         const char *ca_file = Scm_GetStringConst(SCM_STRING(s_ca_file));
-        if (mbedtls_x509_crt_parse_file(&t->ca, ca_file) != 0) {
-            Scm_SysError("mbedtls_x509_crt_parse_file() failed: file=%S", s_ca_file);
+        int r = mbedtls_x509_crt_parse_file(&t->ca, ca_file);
+        if (r != 0) {
+            const int bufsiz = 4096;
+            char buf[bufsiz];
+            mbedtls_strerror(r, buf, bufsiz);
+            Scm_Error("mbedtls_x509_crt_parse_file() failed on %S: %s (%d)",
+                      s_ca_file, buf, r);
         }
     } else {
         Scm_Error("Parameter tls-ca-bundle-path must have a string value "
@@ -207,23 +209,20 @@ static ScmObj mbed_connect(ScmTLS *tls,
         mbedtls_ssl_conf_authmode(&t->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
     }
 
-    if (mbedtls_ssl_setup(&t->ctx, &t->conf) != 0) {
-        Scm_SysError("mbedtls_ssl_setup() failed");
-    }
+    r = mbedtls_ssl_setup(&t->ctx, &t->conf);
+    if (r != 0) mbed_error("mbedtls_ssl_setup() failed: %s (%d)", r);
 
     const char* hostname = (SCM_STRINGP(t->server_name)
                             ? Scm_GetStringConst(SCM_STRING(t->server_name))
                             : NULL);
-    if(mbedtls_ssl_set_hostname(&t->ctx, hostname) != 0) {
-        Scm_SysError("mbedtls_ssl_set_hostname() failed");
-    }
+    r = mbedtls_ssl_set_hostname(&t->ctx, hostname);
+    if (r != 0) mbed_error("mbedtls_ssl_set_hostname() failed: %s (%d)", r);
 
     mbedtls_ssl_set_bio(&t->ctx, &t->conn, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     r = mbedtls_ssl_handshake(&t->ctx);
-    if (r != 0) {
-        mbed_error("TLS handshake failed: %s (%d)", r);
-    }
+    if (r != 0) mbed_error("TLS handshake failed: %s (%d)", r);
+
     t->state = CONNECTED;
     return SCM_OBJ(t);
 }
@@ -337,9 +336,7 @@ static ScmObj mbed_write(ScmTLS *tls, ScmObj msg)
         Scm_TypeError("TLS message", "uniform vector or string", msg);
     }
     int r = mbedtls_ssl_write(&t->ctx, cmsg, size);
-    if (r < 0) {
-        Scm_SysError("mbedtls_ssl_write() failed");
-    }
+    if (r < 0) mbed_error("mbedtls_ssl_write() failed: %s (%d)", r);
     return SCM_MAKE_INT(r);
 }
 
