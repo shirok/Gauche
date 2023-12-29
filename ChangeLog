@@ -1,3 +1,8 @@
+2023-12-28  Shiro Kawai  <shiro@acm.org>
+
+	* 0.9.14_pre1.  Preparing another release to make TLS addition
+	  available.
+
 2023-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/file/util.scm (build-path): Allow 'cwd and 'cld as base-path
@@ -35,7 +40,7 @@
 
 2023-11-29  Shiro Kawai  <shiro@acm.org>
 
-	* src/gemcomp: Removed.  This is an ancient script, superseded by
+	* src/gencomp: Removed.  This is an ancient script, superseded by
 	  precomp long ago.
 
 2023-11-25  Shiro Kawai  <shiro@acm.org>
