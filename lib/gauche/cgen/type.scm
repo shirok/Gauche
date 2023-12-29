@@ -81,7 +81,7 @@
 ;;
 ;; In general, types defined in extensions can't be directly accesible from
 ;; other extensions at C level.  So we don't need to carry around stub types
-;; across boundary of extensions.  Each extension is only accessible to
+;; across boundary of extensions.  Each extension can only use
 ;; the stub types provided from Gauche core, or the stub types explicitly
 ;; defined within it.
 ;; The stub types provided from Gauche core are defined in this module.
@@ -309,7 +309,7 @@
    (%cclass <sys-sigset> "ScmSysSigset*")
    (%cclass <sys-stat> "ScmSysStat*")
    (%cclass <time> "ScmTime*")
-   ;;(%cclass <sys-tm> "ScmSysTm*")
+   (%cclass <sys-tm> "ScmSysTm*")
    (%cclass <sys-fdset> "ScmSysFdset*")
 
    ;; Exception - those classes are in the core but defined in gauche.threads.
