@@ -309,7 +309,7 @@
    (%cclass <sys-sigset> "ScmSysSigset*")
    (%cclass <sys-stat> "ScmSysStat*")
    (%cclass <time> "ScmTime*")
-   (%cclass <sys-tm> "ScmSysTm*")
+   ;(%cclass <sys-tm> "ScmSysTm*")
    (%cclass <sys-fdset> "ScmSysFdset*")
 
    ;; Exception - those classes are in the core but defined in gauche.threads.
