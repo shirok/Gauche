@@ -20,10 +20,14 @@
   (define (make-server-thread-1 bound-tls)
     (^[]
       (guard (e [else (report-error e) #f])
-        (let* ([clnt (tls-accept bound-tls)]
-               [line (read-line (tls-input-port clnt))])
-          (display #"OK:~|line|\r\n" (tls-output-port clnt))
-          (tls-close clnt)))))
+        (let loop ()
+          (let* ([clnt (tls-accept bound-tls)]
+                 [line (read-line (tls-input-port clnt))])
+            (unless (equal? line "")
+              (display #"OK:~|line|\r\n" (tls-output-port clnt))
+              (tls-close clnt)
+              (loop)))))
+      'bye))
 
   (define (datafile filename)
     (build-path 'cld "data" filename))
@@ -57,7 +61,26 @@
                            (flush (tls-output-port clnt))
                            (read-line (tls-input-port clnt)))
                        (tls-close clnt)))))
-          (thread-join! serv-thread)
+          (test* "connect (big packet)" (+ 3 65536)
+                 (parameterize ((tls-ca-bundle-path (datafile "test-cert.pem")))
+                   (let1 clnt (make <mbed-tls> :server-name "localhost")
+                     (unwind-protect
+                         (begin
+                           (tls-connect clnt "localhost" serv-port)
+                           (display (string-append (make-string 65536 #\.)
+                                                   "\r\n")
+                                    (tls-output-port clnt))
+                           (flush (tls-output-port clnt))
+                           (string-length (read-line (tls-input-port clnt))))
+                       (tls-close clnt)))))
+          (test* "server shutdown" 'bye
+                 (parameterize ((tls-ca-bundle-path (datafile "test-cert.pem")))
+                   (let1 clnt (make <mbed-tls> :server-name "localhost")
+                     (tls-connect clnt "localhost" serv-port)
+                     (display "\r\n" (tls-output-port clnt))
+                     (flush (tls-output-port clnt))
+                     (tls-close clnt)
+                     (thread-join! serv-thread))))
           )
       (tls-close serv)))
 

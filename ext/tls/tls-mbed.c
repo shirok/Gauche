@@ -313,9 +313,8 @@ static ScmObj mbed_read(ScmTLS *tls)
     mbed_context_check(t, "read");
     mbed_close_check(t, "read");
     uint8_t buf[1024] = {};
-    int r;
-    r = mbedtls_ssl_read(&t->ctx, buf, sizeof(buf));
 
+    int r = mbedtls_ssl_read(&t->ctx, buf, sizeof(buf));
     if (r == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) return SCM_EOF;
     if (r < 0) mbed_error("mbedtls_ssl_read() failed: %s (%d)", r);
 
@@ -335,9 +334,13 @@ static ScmObj mbed_write(ScmTLS *tls, ScmObj msg)
     if (cmsg == NULL) {
         Scm_TypeError("TLS message", "uniform vector or string", msg);
     }
-    int r = mbedtls_ssl_write(&t->ctx, cmsg, size);
-    if (r < 0) mbed_error("mbedtls_ssl_write() failed: %s (%d)", r);
-    return SCM_MAKE_INT(r);
+    int nsent = 0;
+    do {
+        int r = mbedtls_ssl_write(&t->ctx, cmsg+nsent, size-nsent);
+        if (r < 0) mbed_error("mbedtls_ssl_write() failed: %s (%d)", r);
+        nsent += r;
+    } while (nsent < size);
+    return SCM_MAKE_INT(nsent);
 }
 
 static u_long mbed_poll(ScmTLS *tls, u_long rwflags, ScmTimeSpec *timeout)

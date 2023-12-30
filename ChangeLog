@@ -1,3 +1,9 @@
+2023-12-29  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls-mbed.c (mbed_write): If the data is big, single
+	  mbedtls_ssl_write may return with partial write, so we need
+	  to retry to send the rest of the data.
+
 2023-12-28  Shiro Kawai  <shiro@acm.org>
 
 	* 0.9.14_pre1.  Preparing another release to make TLS addition
