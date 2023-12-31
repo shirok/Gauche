@@ -1,3 +1,8 @@
+2023-12-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/error.c (Scm_MessageConditionPrint): Extend the error message
+	  truncation limit so that unexpected exception can give more info.
+
 2023-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls-mbed.c (mbed_write): If the data is big, single

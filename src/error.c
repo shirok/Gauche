@@ -98,7 +98,7 @@ void Scm_MessageConditionPrint(ScmObj obj, ScmPort *port,
                                ScmWriteContext *ctx SCM_UNUSED)
 {
     ScmClass *k = Scm_ClassOf(obj);
-    Scm_Printf(port, "#<%A \"%30.1A\">",
+    Scm_Printf(port, "#<%A \"%150.1A\">",
                Scm_ShortClassName(k),
                SCM_ERROR_MESSAGE(obj));
 }
