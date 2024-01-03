@@ -580,6 +580,10 @@ struct ScmVMRec {
                                    appears in 'reset' and the end marker of
                                    partial continuation is set. */
 
+    /* for additional stack trace */
+    ScmContFrame *errorCont;    /* continuation saved on error.
+                                   this is used to display stack trace
+                                   that is dropped during import. */
 };
 
 SCM_EXTERN ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name);
