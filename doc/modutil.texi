@@ -20534,10 +20534,14 @@ An abstract base class of a TLS implementation.
 You can use its instance to communicate with peer over secure connection.
 You usually don't need to care the concrete subclass; just treat
 their instances as @code{<tls>} instance.
+
+This inherits @code{<connection>} (@pxref{Connection framework}).
 @c JP
 TLS実装のベースクラスです。このクラスのインスタンスを使って、
 セキュアなコネクションを張って通信ができます。
 通常、具体的なサブクラスを気にする必要はありません。
+
+このクラスは@code{<connection>}を継承します (@ref{Connection framework}参照)。
 @c COMMON
 @end deftp
 
@@ -20624,9 +20628,15 @@ This is unsafe and should not be used except experimental purposes.
 Shuts down the underling connection.  The peer will notified
 the connection is closed.
 Once @var{tls} is closed, it can no longer be used.
+
+You can also call @code{connection-close} on @var{tls} to get the same effect
+(@pxref{Connection framework}).
 @c JP
 TLSコネクションを閉じます。通信相手は接続が閉じられたことを知ります。
 @var{tls}がひとたびクローズされるとそれはもう使うことができません。
+
+@var{tls}に対し@code{connection-close}を呼び出すことでも同じ動作になります
+(@ref{Connection framework}参照)。
 @c COMMON
 @end defun
 
@@ -20638,11 +20648,19 @@ If @var{tls} is connected, they return input and output port to communicate
 with the peer, respectively.
 
 If @var{tls} is not connected, @code{#f} is returned.
+
+You can also call @code{connection-input-port} and @code{connection-output-port}
+on @var{tls} got get the same efffect
+(@pxref{Connection framework}).
 @c JP
 @var{tls}が接続状態にある時、これらは相手と通信するための入力ポートと出力ポートを
 それぞれ返します。
 
 @var{tls}が接続状態に無い時にこれらを呼ぶと@code{#f}が返されます。
+
+@var{tls}に対し@code{connection-input-port}および
+@code{connection-output-port}を呼び出すことでも同じ動作になります
+(@ref{Connection framework}参照)。
 @c COMMON
 @end defun
 
@@ -20959,6 +20977,31 @@ to read/write dat from/to the connected peer.
 全てが成功すれば、クライアントに接続された新たな@var{tls}オブジェクトを作って返します。
 @c COMMON
 @end defun
+
+@c EN
+@subheading Connection methods
+@c JP
+@subheading コネクションメソッド
+@c COMMON
+
+@c EN
+Since @code{<tls>} class implements connection framework
+(@pxref{Connection framework}), the following methods
+can be called on a tls object.  Notably, the first two
+can be used to obtain IP address of the underlying connection.
+@c JP
+@code{<tls>}クラスはコネクションフレームワークを実装しているので、
+以下のメソッドがtlsオブジェクトに対して使えます。特に最初の2つは
+下位にあるコネクションのIPアドレスを得るのに使えます。
+@c COMMON
+
+@example
+connection-self-address (c <tls)
+connection-peer-address (c <tls>)
+connection-input-port (c <tls>)
+connection-output-port (c <tls>)
+connection-close (c <tls>)
+@end example
 
 @c ----------------------------------------------------------------------
 @node URI parsing and construction, UUID, Transport layer security, Library modules - Utilities
