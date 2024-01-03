@@ -18991,7 +18991,7 @@ the main inheritance, though.  See @var{mixins} below.)
 レコード型もまたクラスであるため、親の型は定義されるレコード型の
 スーパークラスでもあります。
 しかし、レコード型には単一継承のみという制限があります。
-親の型は@code{<record>}のサブクラスである必要があります。
+そして、親の型は@code{<record>}のサブクラスである必要があります。
 (ただし、メインの継承に加えて抽象クラスを持つことができます。
 下記の@var{mixins}を参照してください。)
 @c COMMON
@@ -19682,7 +19682,7 @@ elements:
 We allow more elements so that the pseudo record can be used
 to interpret the header part of the longer data.
 @c JP
-これは、より長いデータのヘッダ部分を解釈するため使えるように、
+これは、より長いデータのヘッダ部分を解釈するために使えるように、
 より多くの要素を許すようにしています。
 @c COMMON
 
