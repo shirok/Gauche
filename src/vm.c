@@ -3431,6 +3431,8 @@ void Scm_VMFlushDynamicHandlers()
 
 static ScmObj throw_cont_cc(ScmObj, void **);
 
+static ScmObj reset_proc2(ScmObj result, void **data SCM_UNUSED);
+
 static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*/
                               ScmEscapePoint *ep, /* target continuation */
                               ScmObj args)        /* args to pass to the
@@ -3490,8 +3492,15 @@ static ScmObj throw_cont_body(ScmObj hdlist,      /*((flag . handler-chain)...)*
     /* restore reset-chain for reset/shift */
     if (ep->cstack) vm->resetChain = ep->resetChain;
 
+    /* Fix memory leak of the empty partial continuation. */
+    if (ep->cstack == NULL &&
+        (ep->cont && (ep->cont->cpc == (SCM_PCTYPE)reset_proc2))) {
+        ep->cont = NULL;
+    }
+
     nargs = Scm_Length(args);
     if (nargs == 1) {
+        vm->numVals = 1;
         return SCM_CAR(args);
     } else if (nargs < 1) {
         vm->numVals = 0;
@@ -3683,15 +3692,57 @@ ScmObj Scm_VMCallPC(ScmObj proc)
     return Scm_VMApply1(proc, contproc);
 }
 
+static ScmObj reset_proc2(ScmObj result, void **data SCM_UNUSED)
+{
+    return result;
+}
+
+static ScmObj reset_proc1(ScmObj *args SCM_UNUSED, int nargs SCM_UNUSED, void *data)
+{
+    ScmObj proc = SCM_OBJ(data);
+
+    /* Add a continuation frame so that the end marker of partial
+       continuation can be set. */
+    Scm_VMPushCC(reset_proc2, NULL, 0);
+
+    return Scm_VMApply0(proc);
+}
+
 ScmObj Scm_VMReset(ScmObj proc)
 {
     ScmVM *vm = theVM;
-    /* push/pop reset-chain for reset/shift */
+
+    /* push reset-chain for reset/shift */
     vm->resetChain = Scm_Cons(Scm_Cons(SCM_FALSE, get_dynamic_handlers(vm)),
                               vm->resetChain);
+
+    /* call a procedure */
     ScmObj ret = Scm_ApplyRec(proc, SCM_NIL);
+
+    /* pop reset-chain for reset/shift */
     SCM_ASSERT(SCM_PAIRP(vm->resetChain));
     vm->resetChain = SCM_CDR(vm->resetChain);
+
+    return ret;
+}
+
+ScmObj Scm_VMResetWithContFrameWrapper(ScmObj proc)
+{
+    ScmVM *vm = theVM;
+
+    /* push reset-chain for reset/shift */
+    vm->resetChain = Scm_Cons(Scm_Cons(SCM_FALSE, get_dynamic_handlers(vm)),
+                              vm->resetChain);
+
+    /* We call a wrapper procedure which adds a continuation frame so that
+       the end marker of partial continuation can be set. */
+    ScmObj proc1 = Scm_MakeSubr(reset_proc1, proc, 0, 0, SCM_FALSE);
+    ScmObj ret = Scm_ApplyRec(proc1, SCM_NIL);
+
+    /* pop reset-chain for reset/shift */
+    SCM_ASSERT(SCM_PAIRP(vm->resetChain));
+    vm->resetChain = SCM_CDR(vm->resetChain);
+
     return ret;
 }
 
