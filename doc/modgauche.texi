@@ -15228,6 +15228,9 @@ It is followed by a keyword-value list.  The following keywords are
 recognized.
 
 @table @code
+@item repository
+A repository URL of the package.  This is used as a unique identifier of
+the package.
 @item version
 The version of the package, in a string, e.g. @code{"1.0"}.
 @item description
@@ -15250,8 +15253,11 @@ if they differ from the @code{authors}.
 A list of licenses.
 @item homepage
 A homepage URL of the package, if any.
-@item repository
-A repository URL of the package, if any.
+@item superseded-by
+If the developers stop maintaining this package, but another developer
+wants to continue development with a forked repository, the original
+developer can officially appoint the successor by specifying
+the new repository URL here.
 @end table
 @end deffn
 
@@ -15275,6 +15281,10 @@ An object to handle package descriptions programatically.
 
 @defivar {<gauche-package-description>} name
 The name of the package, a string
+@end defivar
+
+@defivar {<gauche-package-description>} repository
+An URL to the repository of this package.
 @end defivar
 
 @defivar {<gauche-package-description>} version
@@ -15308,12 +15318,13 @@ A list of maintainer's name and contact info, if it differs from
 A list of licenses.
 @end defivar
 
-@defivar {<gauche-package-description>} repository
-An URL to the repository of this package.
-@end defivar
-
 @defivar {<gauche-package-description>} homepage
 An URL to the homepage of this package.
+@end defivar
+
+@defivar {<gauche-package-description>} superseded-by
+If not @code{#f}, the value is a repository URL of the successor
+of this package.
 @end defivar
 
 @defivar {<gauche-package-description>} gauche-version
