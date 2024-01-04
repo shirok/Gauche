@@ -284,6 +284,7 @@
     (parse-command-line-arguments)
     (check-directory-names)
     (process-args)
+    (check-package-superseded-by)
     (check-requirements)))
 
 (define (initialize-default-definitions)
@@ -479,6 +480,14 @@
   (unless (cf-have-subst? 'builddir)
     (cf-subst 'builddir "."))
   (cf-subst 'top_builddir (cf$ 'builddir))
+  )
+
+(define (check-package-superseded-by)
+  ;; If package.scm has superseded-by clause, tell so.
+  (and-let1 sup (~ (current-package)'gpd'superseded-by)
+    (cf-msg-error "This package is superseded by ~a and no longer maintained. \
+                   Use the successor module."
+                  sup))
   )
 
 ;; Process the arg-if-given and arg-if-not-given callbacks of cf-arg-*.

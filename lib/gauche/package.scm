@@ -63,15 +63,16 @@
 ;; the package's installed gpd file.)
 ;;
 ;;   (define-gauche-package NAME
+;;     :repository URI-STRING               ; uniquely identifies this module
 ;;     :version VERSION                     ; version of this module
 ;;     :require ((PACKAGE VERSION-SPEC)...) ; dependency
 ;;     :maintainers (STRING ...)            ;
 ;;     :authors (STRING ...)
 ;;     :licenses (STRING ...)
 ;;     :homepage URI-STRING
-;;     :repository URI-STRING
 ;;     :description STRING
 ;;     :providing-modules (SYMBOL ..)     ; list of providing modules
+;;     :superseded-by URI-STRING          ; this package is no longer active
 ;;
 ;;     ;; The following attributes are added when *.gpd file is generated.
 ;;     :gauche-version VERSION            ; Gauche version used to build
@@ -79,7 +80,6 @@
 ;;
 ;;     ;; In the *.gpd file, the attributes marked with '*' above
 ;;     ;; are consolidated to the following plural attributes.
-;;
 ;;     )
 ;;
 ;;   NAME _must_ match the filename sans suffix.
@@ -114,6 +114,7 @@
 ;; 0.9.4.
 (define-class <gauche-package-description> ()
   ((name           :init-keyword :name        :init-value #f)
+   (repository     :init-keyword :repository  :init-value #f)
    (version        :init-keyword :version     :init-value #f)
    (description    :init-keyword :description :init-value #f)
    (require        :init-keyword :require     :init-value '())
@@ -121,8 +122,8 @@
    (authors        :init-keyword :authors     :init-value '())
    (licenses       :init-keyword :licenses    :init-value '())
    (homepage       :init-keyword :homepage    :init-value #f)
-   (repository     :init-keyword :repository  :init-value #f)
    (providing-modules :init-keyword :providing-modules :init-value '())
+   (superseded-by  :init-keyword :superseded-by :init-value #f)
    ;; The slots filled by cf-make-gpd
    (gauche-version :init-keyword :gauche-version :init-form (gauche-version))
    (configure      :init-keyword :configure   :init-value #f)
@@ -141,6 +142,7 @@
                                               (gauche-version (gauche-version))
                                               (configure #f)
                                               (providing-modules '())
+                                              (superseded-by #f)
                                          :allow-other-keys unknown-keys)
   (when (not (null? unknown-keys))
     (warn "Package description has unrecognized key-value pairs: ~s\n"
@@ -153,12 +155,13 @@
   (check-maybe-string 'repository repository)
   (check-maybe-string 'description description)
   (check-symbol-list 'providing-modules providing-modules)
+  (check-maybe-string 'superseded-by superseded-by)
   (make <gauche-package-description>
     :name name :version version :require require :maintainers maintainers
     :authors authors :licenses licenses :homepage homepage
     :repository repository :description description
     :gauche-version gauche-version :configure configure
-    :providing-modules providing-modules))
+    :providing-modules providing-modules :superseded-by superseded-by))
 
 (define (check-maybe-string key val)
   (unless (or (string? val) (not val))

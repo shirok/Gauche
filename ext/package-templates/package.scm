@@ -3,6 +3,10 @@
 ;;
 
 (define-gauche-package "@@package@@"
+  ;; Repository URL, e.g. github
+  ;;  This URL uniquely identifies the package.
+  :repository "http://example.com/@@package@@.git"
+
   ;;
   :version "1.0"
 
@@ -40,6 +44,6 @@
   ;; Homepage URL, if any.
   ; :homepage "http://example.com/@@package@@/"
 
-  ;; Repository URL, e.g. github
-  ; :repository "http://example.com/@@package@@.git"
+  ;; Superseded-by <repositofy-url>
+  ;; If this
   )
