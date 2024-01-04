@@ -346,8 +346,12 @@
   (is-a? obj <concurrent-modification-violation>))
 
 ;;;
-;;; Mixin classes
+;;; Mixin conditions
 ;;;
+
+;; Mixin condition is compounded to a condition to augment context around
+;; the condition.  See src/gauche/exception.h for the deails of these
+;; mixin conditions.
 
 ;; TODO - set metaclass of those mixins to <condition-meta>
 
@@ -359,6 +363,17 @@
    SCM_CLASS_STATIC_PTR(Scm_TopClass),
    NULL
   };"
+
+ (define-cfn condition-continuation-mixin-allocate (klass::ScmClass* _) :static
+   (let* ([c::ScmConditionContinuationMixin* (SCM_NEW_INSTANCE ScmConditionContinuationMixin klass)])
+     (set! (-> c continuation) SCM_FALSE)
+     (return (SCM_OBJ c))))
+
+ (define-cclass <condition-continuation-mixin>
+   "ScmConditionContinuationMixin*" "Scm_CoditionContinuationMixinClass"
+   (c "mixin_condition_cpa")
+   ((continuation))
+   (allocator (c "condition_continuation_mixin_allocate")))
 
  (define-cfn load-condition-mixin-allocate (klass::ScmClass* _) :static
    (let* ([c::ScmLoadConditionMixin* (SCM_NEW_INSTANCE ScmLoadConditionMixin klass)])
@@ -383,6 +398,7 @@
    (c "mixin_condition_cpa")
    ((expr))
    (allocator (c "compile_error_mixin_allocate")))
+
 
  ;; Filename errors are defined in SRFI-36.  Internally most of those filename
  ;; errors occur as <system-error> first; we compound the following conditions

@@ -331,11 +331,38 @@ SCM_CLASS_DECL(Scm_UncaughtExceptionClass);
    since it won't be used for multiple inheritance; instead, an instance
    of the mixin class is compounded at runtime.  See, for example,
    the 'compile' function in compile.scm mixing <compile-error-mixin>
-   into the error raised during compilation.  */
+   into the error raised during compilation.
+
+   The default error reporter calls a method report-additional-condition
+   on each mixin condition in the error heading.
+   See print-default-error-heading in libexc.scm.  The method definitions
+   are in libomega.scm.
+ */
 
 SCM_CLASS_DECL(Scm_MixinConditionClass);
 #define SCM_CLASS_MIXIN_CONDITION   (&Scm_MixinConditionClass)
 #define SCM_MIXIN_CONDITION_P(obj)  SCM_ISA(obj, SCM_CLASS_MIXIN_CONDITION)
+
+/* <condition-continuation-mixin>
+   This attaches the continuation of the expression that raised it.
+   You can extract stack trace from it.
+   Some implementations attach stack trace to a condition unconditionally;
+   in Gauche it is not a lightweight operation to extract a continuation,
+   so we chose to let the code decide whether to attach this info.
+ */
+typedef struct ScmConditionContinuationMixinRec {
+    ScmCondition common;
+    ScmObj continuation;
+} ScmConditionContinuationMixin;
+
+SCM_CLASS_DECL(Scm_ConditionContinuationMixinClass);
+#define SCM_CLASS_CONDITION_CONTINUATION_MIXIN (&Scm_ConditionContinuationMixinClass)
+#define SCM_CONDITION_CONTINUATION_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_CONDITION_CONTINUATION_MIXIN)
+#define SCM_CONDITION_CONTINUATION_MIXIN(obj) ((ScmConditionContinuationMixin*)(obj))
+
+/* <load-condition-mixin>
+   Attached to the error during loading.
+ */
 
 typedef struct ScmLoadConditionMixinRec {
     ScmCondition common;
@@ -347,6 +374,12 @@ SCM_CLASS_DECL(Scm_LoadConditionMixinClass);
 #define SCM_CLASS_LOAD_CONDITION_MIXIN (&Scm_LoadConditionMixinClass)
 #define SCM_LOAD_CONDITION_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_LOAD_CONDITION_MIXIN)
 #define SCM_LOAD_CONDITION_MIXIN(obj)  ((ScmLoadConditionMixin*)(obj))
+
+/* <compile-error-mixin>
+   Attached to the error during compiling.
+   The EXPR slot contains the offending expression.  If it is a pair,
+   you may extract source info from it.
+ */
 
 typedef struct ScmCompileErrorMixinRec {
     ScmCondition condition;
