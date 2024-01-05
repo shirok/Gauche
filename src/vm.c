@@ -2691,35 +2691,31 @@ ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
  * raise within an exception handler passes the control to the outer
  * exception handler.
  *
- * At this point I haven't decided which model Gauche should support natively.
- * The current implementation predates srfi-34 and roughly follows srfi-18.
- * It appears that srfi-18's mechanism is more "primitive" or "lightweight"
- * than srfi-34's, so it's likely that Gauche will continue to support
- * srfi-18 model natively, and maybe provides srfi-34's interface by an
- * additional module.
+ * We used to follow srfi-18 model, for it is more "primitive".  However,
+ * R7RS adopted srfi-34 model, and there were enough confusions on entering
+ * infinite loop, so we swithec to the srfi-34 model.
+ * See Scm_VMThrowException.
  *
  * The following is a model of the current implementation, sans the messy
- * part of handling C stacks.
- * Suppose a system variable %xh keeps the list of exception handlers.
+ * part of handling C stacks.  The exception handler chain is stored in
+ * the dynamic environment.  Suppose %get-current-xhs retrieves the current
+ * exception handler chain, and (%with-xhs new-xhs expr) calls expr with
+ * new-xhs as the exception handler chain.
  *
- *  (define (current-exception-handler) (car %xh))
+ *  (define (current-exception-handler)
+ *    (car (%get-current-xhs)))
  *
  *  (define (raise exn)
- *    (receive r ((car %xh) exn)
- *      (when (uncontinuable-exception? exn)
- *        (set! %xh (cdr %xh))
- *        (error "returned from uncontinuable exception"))
- *      (apply values r)))
+ *    (let1 xhs (%get-current-xhs)
+ *      (receive r ((car xhs) exn)
+ *        (when (uncontinuable-exception? exn)
+ *          (%with-xhs (cdr xhs)
+ *            (error "returned from uncontinuable exception")))
+ *        (apply values r))))
  *
  *  (define (with-exception-handler handler thunk)
- *    (let ((prev %xh))
- *      (dynamic-wind
- *        (lambda () (set! %xh (cons handler)))
- *        thunk
- *        (lambda () (set! %xh prev)))))
- *
- * In C level, the chain of the handlers are represented in the chain
- * of ScmEscapePoints.
+ *    (%with-xhs (cons handler (%get-current-xhs))
+ *      (thunk)))
  *
  * Note that this model assumes an exception handler returns unless it
  * explicitly invokes continuation captured elsewhere.   In reality,
