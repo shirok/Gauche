@@ -702,14 +702,6 @@ SCM_EXTERN ScmObj Scm_VMGetDynamicHandlers(void);
 SCM_EXTERN void   Scm_VMSetDynamicHandlers(ScmObj handlers);
 SCM_EXTERN void   Scm_VMFlushDynamicHandlers(void);
 
-#if GAUCHE_API_VERSION < 98
-/* Deprecated - not that useful */
-SCM_EXTERN ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
-                                     ScmSubrProc *body,
-                                     ScmSubrProc *after,
-                                     void *data);
-#endif
-
 /*
  * Runtime flags
  */

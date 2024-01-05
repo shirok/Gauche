@@ -2456,7 +2456,7 @@ bad_list:
  *   <handler-entry> is ScmDynamicHandler object.  It should be
  *   treated as an opaque object except in vm.c
  *
- *   It has the following memberS:
+ *   It has the following members:
  *
  *     <before-proc>
  *     <after-proc>
@@ -2641,25 +2641,6 @@ static ScmObj dynwind_after_cc(ScmVM *vm, ScmObj result SCM_UNUSED,
     }
     return val0;
 }
-
-#if GAUCHE_API_VERSION < 98
-/* DEPRECATED.  C-friendly wrapper */
-ScmObj Scm_VMDynamicWindC(ScmSubrProc *before,
-                          ScmSubrProc *body,
-                          ScmSubrProc *after,
-                          void *data)
-{
-    Scm_Warn("Dreprecated Scm_VMDynamicWindC is called");
-    ScmObj beforeproc =
-        before ? Scm_MakeSubr(before, data, 0, 0, SCM_FALSE) : Scm_NullProc();
-    ScmObj afterproc =
-        after ? Scm_MakeSubr(after, data, 0, 0, SCM_FALSE) : Scm_NullProc();
-    ScmObj bodyproc =
-        body ? Scm_MakeSubr(body, data, 0, 0, SCM_FALSE) : Scm_NullProc();
-
-    return Scm_VMDynamicWind(beforeproc, bodyproc, afterproc);
-}
-#endif /* GAUCHE_API_VERSION < 98 */
 
 /*=================================================================
  * Exception handling
