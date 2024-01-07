@@ -573,7 +573,7 @@
     (if (null? *discrepancy-list*)
       (fmt "passed.\n")
       (begin
-        (fmt "failed.\ndiscrepancies found.  Errors are:\n")
+        (fmt "failed.\n~a discrepanc~:*~@p found:\n" (length *discrepancy-list*))
         (for-each (lambda (r)
                     (apply (lambda (report msg expect actual)
                              (fmt "test ~a: expects ~s => got ~a\n" msg expect
