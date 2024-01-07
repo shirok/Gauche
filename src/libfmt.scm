@@ -259,15 +259,19 @@
     ;; count "variable" parameters
     (define (num-variable-params params)
       (count (^p (eq? p 'variable)) params))
-    ;; master dispatcher
+    ;; master dispatcher.  returns [Tree] and # of parameters
+    ;; the second value is #f if we can't definitely tell the number
+    ;; of parametres (e.g. there's a jump directive).
     (define (parse ds r cnt)
       (cond [(null? ds) (values ds cnt)]
             [(string? (car ds)) (string-node (car ds) (cdr ds) r cnt)]
             [(eq? (caar ds) '*) (jump-node (car ds) (cdr ds) r cnt)]
             [else (simple-node (car ds) (cdr ds) r cnt)]))
 
+    ;; Main body of formatter-parse.
+    ;; (We don't utilize # of parameters yet).
     (^[directives]
-      (let1 branches (parse directives '() 0)
+      (receive (branches _) (parse directives '() 0)
         (if (and (pair? branches) (null? (cdr branches)))
           (car branches)
           (cons 'Seq branches))))))
