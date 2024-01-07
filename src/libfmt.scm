@@ -232,29 +232,29 @@
 (define formatter-parse
   (let ()
     ;; Plain string.  Concatenate consecutive strings.
-    (define (string-node node ds r cnt)
+    (define (string-node node ds cnt)
       (if (null? ds)
-        (values (cons node r) cnt)
+        (values (list node) cnt)
         (if (string? (car ds))
           (let loop ([ds (cdr ds)] [strs (list (car ds) node)])
             (cond
              [(null? ds)
-              (values (cons (apply string-append (reverse strs)) r) cnt)]
+              (values (list (apply string-append (reverse strs))) cnt)]
              [(string? (car ds))
               (loop (cdr ds) (cons (car ds) strs))]
              [else
-              (receive (r cnt) (parse ds r cnt)
+              (receive (r cnt) (parse ds cnt)
                 (values (cons (apply string-append (reverse strs)) r) cnt))]))
-          (receive (r cnt) (parse ds r cnt)
+          (receive (r cnt) (parse ds cnt)
             (values (cons node r) cnt)))))
     ;; Non-structured, argument consuming nodes
-    (define (simple-node node ds r cnt)
-      (receive (r cnt) (parse ds r cnt)
+    (define (simple-node node ds cnt)
+      (receive (r cnt) (parse ds cnt)
         (values (cons node r)
                 (and cnt (+ 1 (num-variable-params (cdr node)) cnt)))))
     ;; Jump nodes
-    (define (jump-node node ds r cnt)
-      (receive (r _) (parse ds r #f)
+    (define (jump-node node ds cnt)
+      (receive (r _) (parse ds #f)
         (values (cons node r) #f)))
     ;; count "variable" parameters
     (define (num-variable-params params)
@@ -262,16 +262,19 @@
     ;; master dispatcher.  returns [Tree] and # of parameters
     ;; the second value is #f if we can't definitely tell the number
     ;; of parametres (e.g. there's a jump directive).
-    (define (parse ds r cnt)
-      (cond [(null? ds) (values ds cnt)]
-            [(string? (car ds)) (string-node (car ds) (cdr ds) r cnt)]
-            [(eq? (caar ds) '*) (jump-node (car ds) (cdr ds) r cnt)]
-            [else (simple-node (car ds) (cdr ds) r cnt)]))
+    (define (parse ds cnt)
+      (match ds
+        [() (values ds cnt)]
+        [((? string? s) . rest) (string-node s rest cnt)]
+        [(n . rest)
+         (match n
+           [('* . _) (jump-node n rest cnt)]
+           [_        (simple-node n rest cnt)])]))
 
     ;; Main body of formatter-parse.
     ;; (We don't utilize # of parameters yet).
     (^[directives]
-      (receive (branches _) (parse directives '() 0)
+      (receive (branches _) (parse directives 0)
         (if (and (pair? branches) (null? (cdr branches)))
           (car branches)
           (cons 'Seq branches))))))
