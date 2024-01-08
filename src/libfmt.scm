@@ -735,8 +735,8 @@
       (^[argptr port ctl] argptr)))
   (^[argptr port ctl]
     (let1 arg (fr-next-arg! fmtstr argptr)
-      (unless (integer? arg)
-        (error "Argument for ~[ must be an integer, but got" arg))
+      (unless (exact-integer? arg)
+        (error "Argument for ~[ must be an exact integer, but got" arg))
       (let1 branch-formatter (list-ref branches arg fallback)
         (branch-formatter argptr port ctl)))))
 

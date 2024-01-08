@@ -26939,7 +26939,68 @@ but the following whitespace characters are ignored.
 (format "abc~:\n   \ndef") @result{} "abc   \ndef"
 @end example
 
+@item @b{~[}
+@c EN
+Parameters: none
 
+Conditional formatting.  It can take one of three forms:
+@c JP
+パラメータ: なし
+
+条件分岐。以下の3つの形をとります。
+@c COMMON
+
+@table @asis
+@item @b{~[}@i{fmt0}@b{~;}@i{fmt1}@b{~;}...@b{~]}
+@c EN
+Consume one argument.  If it is not an exact integer, an error
+is signaled.  If it is 0, the format string @i{fmt0} is selected.
+If it is 1, @i{fmt1} is selected; and so on.  If there's no
+corresponding format string, it acts like an empty format string by default.
+However, if the last separator is @b{~:;} instead of @b{~;},
+the following format string acts as the 'default' format string.
+@c JP
+引数をひとつ消費します。それが正確な整数でなければエラーが投げられます。
+それが0なら@i{fmt0}が、1なら@i{fmt0}が、…という具合に選択されます。
+該当するフォーマット文字列が無ければ空のフォーマット文字列として振る舞います。
+ただし、最後の区切りを@b{~;}ではなく@b{~:;}にすることで、
+それに続くフォーマット文字列を「デフォルト」のフォーマット文字列とすることができます。
+@c COMMON
+
+@item @b{~:[}@i{fmt-alternative}@b{~;}@i{fmt-consequence}@b{~]}
+@c EN
+Consume one argument.  If it is @code{#f}, @i{fmt-alternative} is
+selected.  If it is true, @i{fmt-consequence} is selected.
+(Note that it is the reverse of @code{if}.  Think false as 0 and true as 1).
+@c JP
+引数をひとつ消費します。それが偽なら@i{fmt-alternative}が、
+真なら@i{fmt-consequence}が選択されます
+(@code{if}と順序が逆であることに注意してください。偽を0、真を1と考えると良いでしょう)。
+@c COMMON
+
+@item @b{~@@[}@i{fmt-consequence}@b{~]}
+@c EN
+Peek one argument.  If it is @code{#f}, consume it and ignore
+@i{fmt-consequence}.  If it is true, process @i{fmt-consequence}.
+Hence, @i{fmt-consequence} usually contains a directive
+to consume one argument.
+@c JP
+引数を消費せずに調べます。それが偽なら、その引数を消費した上で空のフォーマット文字列として
+振る舞います。それが真なら、@i{fmt-consequence}を選択します。
+従って、@i{fmt-consequence}は通常、引数をひとつ消費するフォーマット指示子を含みます。
+@c COMMON
+@end table
+
+@example
+(map (cut format "~[zero~;one~;two~]" <>) '(0 1 2 3))
+  @result{} ("zero" "one" "two" "")
+(map (cut format "~[zero~;one~;two~:;other~]" <>) '(0 1 2 3 -1))
+  @result{} ("zero" "one" "two" "other" "other")
+(map (cut format "~:[no~;yes~]" <>) '(#f #t))
+  @result{} ("no" "yes")
+(map (cut format "~@@[I got ~a~]" <>) '(#f rhythm))
+  @result{} ("" "I got rhythm")
+@end example
 
 @end table
 @end defun
