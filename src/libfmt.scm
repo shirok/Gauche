@@ -202,7 +202,7 @@
             (loop (cdr directives)
                   (cons (check-param (car directives) p) r))))))))
 
-;; formatter-parse :: [Directive] -> (Tree, argcnt::Maybe Int)
+;; formatter-parse :: [Directive] -> Tree
 ;;
 ;; Tree = String
 ;;      | (Seq Tree ...)
@@ -223,9 +223,6 @@
 ;;      | (P flags)
 ;;      | (char flags <char> count)
 ;;
-;; argcnt : An integer if the formatter takes fixed number of arguments,
-;;          #f otherwise.
-;;
 ;; At this moment we don't have much to do here, but when we introduce
 ;; structured formatting directives such as ~{ ~}, this procedure will
 ;; recognize it.
@@ -233,20 +230,12 @@
   (let ()
     ;; Plain string.  Concatenate consecutive strings.
     (define (string-node node ds cnt)
-      (if (null? ds)
-        (values (list node) cnt)
-        (if (string? (car ds))
-          (let loop ([ds (cdr ds)] [strs (list (car ds) node)])
-            (cond
-             [(null? ds)
-              (values (list (apply string-append (reverse strs))) cnt)]
-             [(string? (car ds))
-              (loop (cdr ds) (cons (car ds) strs))]
-             [else
-              (receive (r cnt) (parse ds cnt)
-                (values (cons (apply string-append (reverse strs)) r) cnt))]))
-          (receive (r cnt) (parse ds cnt)
-            (values (cons node r) cnt)))))
+      (let loop ([ds ds] [strs (list node)])
+        (match ds
+          [() (values (list (apply string-append (reverse strs))) cnt)]
+          [((? string? node) . rest) (loop rest (cons node strs))]
+          [_ (receive (r cnt) (parse ds cnt)
+               (values (cons node r) cnt))])))
     ;; Non-structured, argument consuming nodes
     (define (simple-node node ds cnt)
       (receive (r cnt) (parse ds cnt)
