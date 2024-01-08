@@ -229,44 +229,32 @@
 (define formatter-parse
   (let ()
     ;; Plain string.  Concatenate consecutive strings.
-    (define (string-node node ds cnt)
+    (define (string-node node ds)
       (let loop ([ds ds] [strs (list node)])
         (match ds
-          [() (values (list (apply string-append (reverse strs))) cnt)]
+          [() (values (list (apply string-append (reverse strs))) '())]
           [((? string? node) . rest) (loop rest (cons node strs))]
-          [_ (receive (r cnt) (parse ds cnt)
-               (values (cons node r) cnt))])))
+          [_ (receive (trees rest) (parse ds)
+               (values (cons node trees) rest))])))
     ;; Non-structured, argument consuming nodes
-    (define (simple-node node ds cnt)
-      (receive (r cnt) (parse ds cnt)
-        (values (cons node r)
-                (and cnt (+ 1 (num-variable-params (cdr node)) cnt)))))
-    ;; Jump nodes
-    (define (jump-node node ds cnt)
-      (receive (r _) (parse ds #f)
-        (values (cons node r) #f)))
-    ;; count "variable" parameters
-    (define (num-variable-params params)
-      (count (^p (eq? p 'variable)) params))
-    ;; master dispatcher.  returns [Tree] and # of parameters
-    ;; the second value is #f if we can't definitely tell the number
-    ;; of parametres (e.g. there's a jump directive).
-    (define (parse ds cnt)
+    (define (simple-node node ds)
+      (receive (trees rest) (parse ds)
+        (values (cons node trees) rest)))
+    ;; master dispatcher.  returns [Tree] and the rest of ds.
+    (define (parse ds)
       (match ds
-        [() (values ds cnt)]
-        [((? string? s) . rest) (string-node s rest cnt)]
-        [(n . rest)
-         (match n
-           [('* . _) (jump-node n rest cnt)]
-           [_        (simple-node n rest cnt)])]))
-
+        [() (values ds '())]
+        [((? string? s) . rest) (string-node s rest)]
+        [(n . rest) (simple-node n rest)]))
     ;; Main body of formatter-parse.
     ;; (We don't utilize # of parameters yet).
     (^[directives]
-      (receive (branches _) (parse directives 0)
-        (if (and (pair? branches) (null? (cdr branches)))
-          (car branches)
-          (cons 'Seq branches))))))
+      (receive (trees rest) (parse directives)
+        (unless (null? rest)
+          (errorf "Unbalanced formatter directive: ~~~a" (caar rest)))
+        (match trees
+          [(tree) tree]
+          [(tree ...) `(Seq ,@tree)])))))
 
 ;; Runtime
 ;; Formatters have canonical signature:
