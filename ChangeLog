@@ -1,3 +1,8 @@
+2024-01-08  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm (formatter-parse): Support conditional directive
+	  (tilde left-bracket).
+
 2023-12-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/error.c (Scm_MessageConditionPrint): Extend the error message

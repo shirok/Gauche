@@ -61,6 +61,9 @@
 ;;         | (& flags count)
 ;;         | (P flags)
 ;;         | (char flags <char> count) ; single-character insertion
+;;         | (bra flags)   ; ~[, beginning of conditional
+;;         | (sep flags)   ; ~;, separator of conditional
+;;         | (ket flags)   ; ~], end of conditional
 ;; flags : '() | (Cons #\@ flags) | (Cons #\: flags)
 
 ;; NB: This procedure is written in a way that all closures can be
@@ -78,7 +81,7 @@
         ;; single-character instertion
         (~ 1 #\~) (% 1 #\newline) (T 1 #\tab) (|\|| 1 #\page)
         ;; tokens for structures
-        (|(| 0 paren) (|)| 0 thesis) (|[| 1 bra) (|]| 0 cket)
+        (|(| 0 paren) (|)| 0 thesis) (|[| 1 bra) (|]| 0 ket)
         (|{| 0 curly) (|}| 0 brace) (|\;| 0 sep)))
     (define (flag? c) (memv c '(#\@ #\:)))
     (define (next p)
@@ -222,6 +225,7 @@
 ;;      | (& flags count)
 ;;      | (P flags)
 ;;      | (char flags <char> count)
+;;      | (case (Tree ...) Tree)
 ;;
 ;; At this moment we don't have much to do here, but when we introduce
 ;; structured formatting directives such as ~{ ~}, this procedure will
@@ -240,21 +244,46 @@
     (define (simple-node node ds)
       (receive (trees rest) (parse ds)
         (values (cons node trees) rest)))
+    ;; Parsing ~{...~;...~}
+    (define (case-node node ds)
+      (let loop ([ds ds] [clauses '()] [next-default? #f])
+        (receive (trees rest) (parse ds)
+          (match rest
+            [(('ket . _) . rest)
+             (let1 case-tree
+                 (if next-default?
+                   `(case ,(reverse clauses) ,(treefy trees))
+                   `(case ,(reverse (cons (treefy trees) clauses)) #f))
+               (receive (trees rest) (parse rest)
+                 (values (cons case-tree trees) rest)))]
+            [(('sep fs) . rest)
+             (when next-default?
+               (error "Extra ~; directive after ~:;"))
+             (loop rest (cons (treefy trees) clauses) (has-:? fs))]
+            [_ (error "Unterminated '~{' directive")]))))
+    ;; [Tree] -> Tree
+    (define (treefy trees)
+      (match trees
+        [(tree) tree]
+        [(tree ...) `(Seq ,@tree)]))
     ;; master dispatcher.  returns [Tree] and the rest of ds.
     (define (parse ds)
       (match ds
         [() (values ds '())]
         [((? string? s) . rest) (string-node s rest)]
-        [(n . rest) (simple-node n rest)]))
+        [(n . rest)
+         (match n
+           [('bra . _) (case-node n rest)]
+           [('ket . _) (values '() ds)]
+           [('sep . _) (values '() ds)]
+           [_ (simple-node n rest)])]))
     ;; Main body of formatter-parse.
     ;; (We don't utilize # of parameters yet).
     (^[directives]
       (receive (trees rest) (parse directives)
         (unless (null? rest)
           (errorf "Unbalanced formatter directive: ~~~a" (caar rest)))
-        (match trees
-          [(tree) tree]
-          [(tree ...) `(Seq ,@tree)])))))
+        (treefy trees)))))
 
 ;; Runtime
 ;; Formatters have canonical signature:
@@ -673,6 +702,21 @@
   ($ with-format-params ([count 1])
      (display (make-string count ch) port)))
 
+;; ~[...~;...~]
+(define (make-format-case fmtstr clauses default-clause)
+  (define branches
+    (map (cut formatter-compile-rec fmtstr <>) clauses))
+  (define fallback
+    (if default-clause
+      (formatter-compile-rec fmtstr default-clause)
+      (^[argptr port ctl] argptr)))
+  (^[argptr port ctl]
+    (let1 arg (fr-next-arg! fmtstr argptr)
+      (unless (integer? arg)
+        (error "Argument for ~[ must be an integer, but got" arg))
+      (let1 branch-formatter (list-ref branches arg fallback)
+        (branch-formatter argptr port ctl)))))
+
 ;; Tree -> Formatter
 ;; src : source format string for error message
 (define (formatter-compile-rec src tree)
@@ -698,6 +742,7 @@
     [('& fs . ps) (make-format-fresh-line src ps fs)]
     [('P fs)      (make-format-plural src fs)]
     [('char fs c . ps) (make-format-single src c ps fs)]
+    [('case cls default) (make-format-case src cls default)]
     [_ (error "Unsupported formatter directive:" tree)]))
 
 ;; Toplevel compiler
