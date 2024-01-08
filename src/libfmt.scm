@@ -226,10 +226,9 @@
 ;;      | (P flags)
 ;;      | (char flags <char> count)
 ;;      | (case (Tree ...) Tree)
+;;      | (if Tree Tree)    ; NB: if arg is #f, the first clause is chosen
+;;      | (maybe Tree)
 ;;
-;; At this moment we don't have much to do here, but when we introduce
-;; structured formatting directives such as ~{ ~}, this procedure will
-;; recognize it.
 (define formatter-parse
   (let ()
     ;; Plain string.  Concatenate consecutive strings.
@@ -244,28 +243,52 @@
     (define (simple-node node ds)
       (receive (trees rest) (parse ds)
         (values (cons node trees) rest)))
-    ;; Parsing ~{...~;...~}
-    (define (case-node node ds)
+    ;; Parsing ~[...~;...~]
+    (define (conditional-node node ds)
+      (receive (tree rest)
+          (match node
+            [(_ ())     (case-tree ds)]
+            [(_ (#\:))  (if-tree ds)]
+            [(_ (#\@))  (maybe-tree ds)]
+            [_ (error "Format directive ~[ may have either : or @ flag, \
+                       but not both")])
+        (receive (trees rest) (parse rest)
+          (values (cons tree trees) rest))))
+    (define (case-tree ds)
       (let loop ([ds ds] [clauses '()] [next-default? #f])
         (receive (trees rest) (parse ds)
           (match rest
             [(('ket . _) . rest)
-             (let1 case-tree
-                 (if next-default?
-                   `(case ,(reverse clauses) ,(treefy trees))
-                   `(case ,(reverse (cons (treefy trees) clauses)) #f))
-               (receive (trees rest) (parse rest)
-                 (values (cons case-tree trees) rest)))]
+             (values (if next-default?
+                       `(case ,(reverse clauses) ,(treefy trees))
+                       `(case ,(reverse (cons (treefy trees) clauses)) #f))
+                     rest)]
             [(('sep fs) . rest)
              (when next-default?
                (error "Extra ~; directive after ~:;"))
              (loop rest (cons (treefy trees) clauses) (has-:? fs))]
-            [_ (error "Unterminated '~{' directive")]))))
+            [_ (unterminated "~[")]))))
+    (define (if-tree ds)
+      (receive (trees1 rest) (parse ds)
+        (match rest
+          [(('sep . _) . rest)
+           (receive (trees2 rest) (parse rest)
+             (match rest
+               [(('ket . _) . rest)
+                (values `(if ,(treefy trees1) ,(treefy trees2)) rest)]
+               [_ (unterminated "~:[")]))]
+          [_ (unterminated "~:[")])))
+    (define (maybe-tree ds)
+      (receive (trees rest) (parse ds)
+        (match rest
+          [(('ket . _) . rest) (values `(maybe ,(treefy trees)) rest)]
+          [_ (unterminated "~@[")])))
     ;; [Tree] -> Tree
     (define (treefy trees)
       (match trees
         [(tree) tree]
         [(tree ...) `(Seq ,@tree)]))
+    (define (unterminated what) (errorf "Unterminated ~a directive" what))
     ;; master dispatcher.  returns [Tree] and the rest of ds.
     (define (parse ds)
       (match ds
@@ -273,9 +296,9 @@
         [((? string? s) . rest) (string-node s rest)]
         [(n . rest)
          (match n
-           [('bra . _) (case-node n rest)]
-           [('ket . _) (values '() ds)]
-           [('sep . _) (values '() ds)]
+           [('bra flags) (conditional-node n rest)]
+           [('ket . _)   (values '() ds)]
+           [('sep . _)   (values '() ds)]
            [_ (simple-node n rest)])]))
     ;; Main body of formatter-parse.
     ;; (We don't utilize # of parameters yet).
@@ -717,6 +740,23 @@
       (let1 branch-formatter (list-ref branches arg fallback)
         (branch-formatter argptr port ctl)))))
 
+(define (make-format-if fmtstr alternative consequent)
+  (define alt-formatter (formatter-compile-rec fmtstr alternative))
+  (define csq-formatter (formatter-compile-rec fmtstr consequent))
+  (^[argptr port ctl]
+    (let1 arg (fr-next-arg! fmtstr argptr)
+      (if arg
+        (csq-formatter argptr port ctl)
+        (alt-formatter argptr port ctl)))))
+
+(define (make-format-maybe fmtstr consequent)
+  (define csq-formatter (formatter-compile-rec fmtstr consequent))
+  (^[argptr port ctl]
+    (if-let1 arg (fr-peek-arg fmtstr argptr)
+      (csq-formatter argptr port ctl)
+      (begin (fr-jump-arg! argptr 1)
+             (^[argptr port ctl] argptr)))))
+
 ;; Tree -> Formatter
 ;; src : source format string for error message
 (define (formatter-compile-rec src tree)
@@ -743,6 +783,8 @@
     [('P fs)      (make-format-plural src fs)]
     [('char fs c . ps) (make-format-single src c ps fs)]
     [('case cls default) (make-format-case src cls default)]
+    [('if alt csq) (make-format-if src alt csq)]
+    [('maybe csq) (make-format-maybe src csq)]
     [_ (error "Unsupported formatter directive:" tree)]))
 
 ;; Toplevel compiler

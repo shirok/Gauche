@@ -291,7 +291,7 @@
   (dolist [d data] (test* "format roman numeral" (cadr d)
                           (format "~@R" (car d)))))
 
-(test* "format conditionals"
+(test* "format conditionals (case)"
        '("It is a cat."
          "It is a Siamese cat."
          "It is a Manx cat."
@@ -299,7 +299,7 @@
          "It is a cat.")
        (map (cut format "It is a ~[Siamese ~;Manx ~;Persian ~]cat." <>)
             '(-1 0 1 2 3)))
-(test* "format conditionals (default)"
+(test* "format conditionals (case, default)"
        '("It is a Calico cat."
          "It is a Siamese cat."
          "It is a Manx cat."
@@ -307,9 +307,17 @@
          "It is a Calico cat.")
        (map (cut format "It is a ~[Siamese ~;Manx ~;Persian ~:;Calico ~]cat." <>)
             '(-1 0 1 2 3)))
-(test* "format conditionals (error)"
+(test* "format conditionals (case, error)"
        (test-error <error> #/Argument for ~\[ must/)
        (format "It is a ~[Siamese ~;Manx ~;Persian ~]cat." 'a))
+
+(test* "format conditionals (alterative)"
+       '("Green Lamp" "Blue \"Lamp\"")
+       (map (cut format "~:[Green ~a~;Blue ~s~]" <> "Lamp") '(#f #t)))
+
+(test* "format conditionals (maybe)"
+       '("Don't worry." "It's OK. Don't worry.")
+       (map (cut format "~@[It's ~a. ~]~a." <> "Don't worry") '(#f "OK")))
 
 ;;---------------------------------------------------------------
 (test-section "read/ss basic")
