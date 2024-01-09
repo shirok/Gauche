@@ -378,13 +378,16 @@ static u_long mbed_poll(ScmTLS *tls, u_long rwflags, ScmTimeSpec *timeout)
    might have been collected. */
 static void mbed_cleanup(ScmMbedTLS *t)
 {
-    if (t->state == BOUND || t->state == CONNECTED) {
-        mbedtls_ssl_close_notify(&t->ctx);
-        mbedtls_net_free(&t->conn);
-        mbedtls_pk_free(&t->pk);
-        t->server_name = NULL;
-        t->common.in_port = t->common.out_port = SCM_UNDEFINED;
-    }
+    mbedtls_ssl_close_notify(&t->ctx);
+    mbedtls_entropy_free(&t->entropy);
+    mbedtls_pk_free(&t->pk);
+    mbedtls_x509_crt_free(&t->ca);
+    mbedtls_ssl_config_free(&t->conf);
+    mbedtls_ssl_free(&t->ctx);
+    mbedtls_net_free(&t->conn);
+    mbedtls_ctr_drbg_free(&t->ctr_drbg);
+    t->server_name = NULL;
+    t->common.in_port = t->common.out_port = SCM_UNDEFINED;
     t->state = CLOSED;
 }
 
