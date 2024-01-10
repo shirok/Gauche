@@ -846,8 +846,9 @@
      (let* ([cenv (cenv-add-name cenv (variable-name name))]
             [xformer (pass1/eval-macro-rhs 'define-hybrid-syntax
                                            macro-expr cenv)]
-            [body (pass1/call expr ($gref %with-inline-transformer.)
-                              (list expr xformer) cenv)])
+            [body ($call expr ($gref %with-inline-transformer.)
+                         (list (pass1 expr cenv)
+                               ($const xformer)))])
        (pass1/make-inlinable-binding form name body cenv))]
     [_ (error "syntax-error: define-hybrid-syntax")]))
 
