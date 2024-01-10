@@ -319,6 +319,11 @@
        '("Don't worry." "It's OK. Don't worry.")
        (map (cut format "~@[It's ~a. ~]~a." <> "Don't worry") '(#f "OK")))
 
+;; Ensure `format` does _not_ cache in this case.
+(test* "formatter cache"
+       '("a" "~s")
+       (map (cut format <> "~s" 'a) '(#f "~0@*~a")))
+
 ;;---------------------------------------------------------------
 (test-section "read/ss basic")
 

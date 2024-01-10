@@ -238,7 +238,9 @@
           [() (values (list (apply string-append (reverse strs))) '())]
           [((? string? node) . rest) (loop rest (cons node strs))]
           [_ (receive (trees rest) (parse ds)
-               (values (cons node trees) rest))])))
+               (values
+                (cons (apply string-append (reverse strs)) trees)
+                rest))])))
     ;; Non-structured, argument consuming nodes
     (define (simple-node node ds)
       (receive (trees rest) (parse ds)

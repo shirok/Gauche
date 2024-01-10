@@ -842,6 +842,9 @@
                       (format (string #\~ #\v c) 5)))
             '(#\~ #\t #\% #\|)))
 
+(test* "format string node concatenation"
+       "~az" (format "~~a~a" 'z))
+
 (test* "format ~?" "ding[\"dang\" dong]ping"
        (format "~s~?~a" 'ding "[~s ~a]" '("dang" "dong") "ping"))
 (test* "format ~?" "ding[\"dang\" gong]ping" ; extra args for ~? are ignored
