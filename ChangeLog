@@ -1,3 +1,12 @@
+2024-01-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/libfmt.scm (format-internal), src/libmacro.scm: Experimentally
+	  introduce formatter cache.  The compiler determines "potentially
+	  cacheable" call of `format`, and the runtime takes advantage of it
+	  if possible.  The drawback is that the compiler macro now inserts
+	  reference to `format-internal`.  It's embedded in the precompiled
+	  code and We can't change its API across versions.
+
 2024-01-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (formatter-parse): Support conditional directive

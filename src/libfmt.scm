@@ -811,8 +811,12 @@
         [locking? (with-port-locking port formatter args port ctrl)]
         [else (formatter args port ctrl)]))
 
-(define (format-2 shared? out control fmtstr args)
-  (let1 formatter (formatter-compile fmtstr)
+(define (format-2 formatter-cache shared? out control fmtstr args)
+  (let1 formatter (if formatter-cache
+                    (or (unbox formatter-cache)
+                        (rlet1 f (formatter-compile fmtstr)
+                          (set-box! formatter-cache f)))
+                    (formatter-compile fmtstr))
     (case out
       [(#t)
        (call-formatter shared? #t formatter (current-output-port) control args)]
@@ -821,28 +825,51 @@
               (get-output-string out))]
       [else (call-formatter shared? #t formatter out control args)])))
 
-;; handle optional destination arg
-(define (format-1 shared? args)
-  (let loop ([port 'unseen]
-             [control 'unseen]
-             [as args])
-    (cond [(null? as) (error "format: too few arguments" args)]
-          [(string? (car as))
-           (format-2 shared?
-                     (if (eq? port 'unseen) #f port)
-                     (if (eq? control 'unseen) #f control)
-                     (car as)
-                     (cdr as))]
-          [(or (port? (car as)) (boolean? (car as)))
-           (if (eq? port 'unseen)
-             (loop (car as) control (cdr as))
-             (error "format: multiple ports given" args))]
-          [(is-a? (car as) <write-controls>)
-           (if (eq? control 'unseen)
-             (loop port (car as) (cdr as))
-             (error "format: multiple controls given" args))]
-          [else (error "format: invalid argument" (car as))])))
+;; This is a bridge to the internal API.  Although this isn't exported,
+;; inliner or compiler macro may insert a call to this.  You shouldn't
+;; change the signature across versions.
+;;
+;; CONTEXT is a list parameters statically constructed during compilation
+;; phase.  ARGS is the actual parameter list passed.
+;;
+;; CONTEXT is currently three-argument list:
+;;    shared?  - a flag to distinguish format (#f) and format/ss (#t).
+;;    literal-str-pos - the position of the first string literal in
+;;               the actual parameters, up to 2.  If the format directive
+;;               string is a literal, we can cache the formatter.
+;;               We may not be able to statically determine the format
+;;               string, because of the optional port/write-controls arguments.
+;;    formatter-cache - if there's a string literal in the 0, 1 or 2nd argument,
+;;               the compiler macro allocates a box and passes it.
+;;               This will be used to cache the formatter.
+;;
+;; We make CONTEXT a list so that we can extend it in future without changing
+;; the signature.  Those CONTEXT can be computed at compile-time and becomes
+;; a static literal list.
+(define (format-internal context args)
+  (match-let1 (shared? literal-str-pos format-cache . _) context
+    (let loop ([port 'unseen]
+               [control 'unseen]
+               [as args]
+               [pos 0])
+      (cond [(null? as) (error "format: too few arguments" args)]
+            [(string? (car as))
+             (format-2 (and (eqv? pos literal-str-pos) format-cache)
+                       shared?
+                       (if (eq? port 'unseen) #f port)
+                       (if (eq? control 'unseen) #f control)
+                       (car as)
+                       (cdr as))]
+            [(or (port? (car as)) (boolean? (car as)))
+             (if (eq? port 'unseen)
+               (loop (car as) control (cdr as) (+ pos 1))
+               (error "format: multiple ports given" args))]
+            [(is-a? (car as) <write-controls>)
+             (if (eq? control 'unseen)
+               (loop port (car as) (cdr as) (+ pos 1))
+               (error "format: multiple controls given" args))]
+            [else (error "format: invalid argument" (car as))]))))
 
-;; API
-(define-in-module gauche (format . args) (format-1 #f args))
-(define-in-module gauche (format/ss . args) (format-1 #t args))
+;; The external API, format and format/ss, are defined in libmacro.scm.
+;; We want to make them hybrid macro, and the definition needs to come
+;; after macro system initialization.

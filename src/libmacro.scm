@@ -1476,8 +1476,54 @@
 
 (define-syntax llist* lcons*)
 
+
+;;; format
+
+
+(select-module gauche.format)
+(use util.match)
+
+(define-hybrid-syntax format
+  (^ args (format-internal '(#f #f #f) args))
+  (er-macro-transformer
+   (^[f r c]
+     (define (context-literal pos) `(#f ,pos ,(box #f)))
+     (match f
+       [(_ (? string?) . _)
+        (quasirename r
+          `(format-internal ',(context-literal 0) (list ,@(cdr f))))]
+       [(_ _ (? string?) . _)
+        (quasirename r
+          `(format-internal ',(context-literal 1) (list ,@(cdr f))))]
+       [(_ _ _ (? string?) . _)
+        (quasirename r
+          `(format-internal ',(context-literal 2) (list ,@(cdr f))))]
+       [_ f]))))
+
+(define-hybrid-syntax format/ss
+  (^ args (format-internal '(#t #f #f) args))
+  (er-macro-transformer
+   (^[f r c]
+     (define (context-literal pos) `(#t ,pos ,(box #f)))
+     (match f
+       [(_ (? string?) . _)
+        (quasirename r
+          `(format-internal ',(context-literal 0) (list ,@(cdr f))))]
+       [(_ _ (? string?) . _)
+        (quasirename r
+          `(format-internal ',(context-literal 1) (list ,@(cdr f))))]
+       [(_ _ _ (? string?) . _)
+        (quasirename r
+          `(format-internal ',(context-literal 2) (list ,@(cdr f))))]
+       [_ f]))))
+
+(select-module gauche)
+(define-inline format (with-module gauche.format format))
+(define-inline format/ss (with-module gauche.format format/ss))
+
 ;;; rxmatch-* macros
 
+(select-module gauche)
 ;; rxmatch-let expr (var ...) form ...
 (define-syntax rxmatch-let
   (er-macro-transformer
