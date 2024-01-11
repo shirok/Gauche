@@ -68,4 +68,21 @@ a default console, a repl reader is created with
 Thus, it recognizes the top level REPL commands, but does not use
 line editing.
 
-...(to be continued)...
+The `gauche.interactive#read-eval-print-loop` needs a _reader_, an
+_evaluator_, a _printer_, and a _prompter_.  _Reader_ and _prompter_
+are constructed as follows.
+
+. If line editing is enabled:
+  - _Prompter_ actually does nothing, since the line editor needs to know
+    the columns used by the prompt.
+  - _Reader_ invokes `text.line-edit#read-line/edit`, which set the console
+    to 'rare' mode, query the screen size and the current cursor location,
+    show the prompt, and goes into editor mode.
+. If line editing is disabled:
+  - _Prompter_ displays the prompt.
+  - _Reader_ reads from the current input port, and handles the top-level
+    REPL command and trailing whitespaces if needed.
+
+### The editor - `read-line/edit`
+
+... to be written ...
