@@ -183,8 +183,9 @@
   (let1 ub (+ size start)
     (^[] (clamp (+ start (* size (%rand-real0))) start ub))))
 (define (reals-between$ lb ub)
-  (let1 range (+ lb ub)
-    (^[] (clamp (- (* range (%rand-real0)) lb) lb ub))))
+  (assume (<= lb ub))
+  (let1 range (- ub lb)
+    (^[] (clamp (+ (* range (%rand-real0)) lb) lb ub))))
 
 ;; rational
 ;; complex

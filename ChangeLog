@@ -1,3 +1,8 @@
+2024-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/random.scm (reals-between$): The range calculation was
+	  broken.
+
 2024-01-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/libfmt.scm (format-internal), src/libmacro.scm: Experimentally
