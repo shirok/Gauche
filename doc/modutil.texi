@@ -20953,6 +20953,19 @@ TLS接続のサーバー側エンドポイントを作ります。
 (NB: @var{udp}サーバー (DTLS) を使うにはいくつか追加のAPIサポートが
 必要なので、今のところDTLSは使えません)。
 @c COMMON
+
+@c EN
+Like @code{socket-bind}, you can give 0 to @var{port} to let the
+system choose an available port number.  The actual port number
+can be obtained by
+@code{(sockaddr-port (connection-self-address @var{tls}))}.
+@c JP
+@code{socket-bind}と同じように、@var{port}に0を指定することで、
+空いているポート番号をシステムに選んでもらうことができます。
+実際にどのポートにバインドされたかは
+@code{(sockaddr-port (connection-self-address @var{tls}))}
+でわかります。
+@c COMMON
 @end defun
 
 @defun tls-accept tls
