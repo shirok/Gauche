@@ -1527,8 +1527,10 @@
      [($LIST->VECTOR) `(list->vector ,(rec ($*-arg0 iform)))]
      [($IT) ; ($IT) node must have been handled by $IF
       (error "[internal] Stray $IT node.")]
-     [($DYNENV) `(with-continuation-mark ,(map rec ($dynenv-kvs iform))
-                     ,(rec ($dynenv-body iform)))]
+     [($DYNENV) `(with-continuation-mark
+                  ,(rec (car ($dynenv-kvs iform)))
+                  ,(rec (cadr ($dynenv-kvs iform)))
+                  ,(rec ($dynenv-body iform)))]
      [else (error "Cannot convert IForm:" (iform-tag-name (iform-tag iform)))]))
   (rec iform))
 
