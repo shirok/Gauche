@@ -1,5 +1,9 @@
 2024-01-12  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-5.scm (pass5/$DYNENV): Fixed a bug that when KEY or
+	  VALUE of with-continuation-mark is a procedure call, its result
+	  becomes the result of with-continuation-mark.
+
 	* lib/data/random.scm (reals-between$): The range calculation was
 	  broken.
 

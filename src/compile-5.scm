@@ -922,9 +922,9 @@
 ;; $DYNENV
 (define (pass5/$DYNENV iform target renv ctx)
   (let ([ccb (ctarget-ccb target)]
-        [dkey (pass5/rec (car ($dynenv-kvs iform)) target renv ctx)])
+        [dkey (pass5/rec (car ($dynenv-kvs iform)) target renv 'normal/bottom)])
     (compiled-code-emit-PUSH! ccb)
-    (let* ([dval (pass5/rec (cadr ($dynenv-kvs iform)) target renv ctx)]
+    (let* ([dval (pass5/rec (cadr ($dynenv-kvs iform)) target renv 'normal/top)]
            [dkv  (imax dkey (+ dval 1))])
       (if (tail-context? ctx)
         (begin
