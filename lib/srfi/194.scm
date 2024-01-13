@@ -32,9 +32,12 @@
 ;;;
 
 (define-module srfi.194
+  (use gauche.sequence)
   (use data.random)
   (use math.const)
+  (use util.match)
   (use srfi.27)
+  (use srfi.42)
   (export current-random-source with-random-source
           make-random-source-generator
           make-random-integer-generator
@@ -56,6 +59,17 @@
           make-random-string-generator
 
           make-bernoulli-generator
+          make-binomial-generator
+          make-categorical-generator
+          make-normal-generator
+          make-exponential-generator
+          make-geometric-generator
+          make-poisson-generator
+          ;;make-zipf-generator
+          ;;make-sphere-generator
+          ;;make-ellipsoid-generator
+          ;;make-ball-genrator
+          gsampling
           ))
 (select-module srfi.194)
 
@@ -132,3 +146,61 @@
   (assume (<= 0.0 p 1.0))
   (^[] (let1 r ((random-source-make-reals (current-random-source)))
          (if (< r p) 1 0))))
+
+;; NB: This may be generially useful, so we might move it to some
+;; other library later.
+(define (binomial-coefficient n k)
+  (define (C n k numer denom)
+    (if (= k 0) (/ numer denom) (C (- n 1) (- k 1) (* n numer) (* k denom))))
+  (assume-type n <integer>)
+  (assume-type k <integer>)
+  (assume (<= 0 k n))
+  (cond [(= k 0) 1]
+        [(= k n) 1]
+        [(< n (* 2 k)) (C n (- n k) 1 1)]
+        [else          (C n k 1 1)]))
+
+(define (make-binomial-generator n p)
+  (assume-type n <integer>)
+  (assume-type p <real>)
+  (assume (< 0 n))
+  (assume (<= 0 p 1))
+  (let1 weights (make-vector (+ n 1))
+    (do-ec (: k (+ (ash n -1) 1))
+           (let1 nCk (binomial-coefficient n k)
+             (vector-set! weights k
+                          (* nCk (expt p k) (expt (- 1 p) (- n k))))
+             (vector-set! weights (- n k)
+                          (* nCk (expt p (- n k)) (expt (- 1 p) k)))))
+    (make-categorical-generator weights)))
+
+(define (make-categorical-generator weight-vec)
+  (assume-type weight-vec (<Vector> <real>))
+  (let1 weighted (map-with-index (^[i v] (cons v (constantly i))) weight-vec)
+    (weighted-samples-from weighted)))
+
+(define (make-normal-generator :optional (mean 0.0) (deviation 1.0))
+  (reals-normal$ mean deviation))
+
+(define (make-exponential-generator mean)
+  (reals-exponential$ mean))
+
+(define (make-geometric-generator p)
+  (integers-geometric$ p))
+
+(define (make-poisson-generator L)
+  (integers-poisson$ L))
+
+;; make-zipf-generator
+
+;; make-sphere-generator
+
+;; make-ellipsoid-generator
+
+;; make-ball-generator
+
+(define (gsampling . generators)
+  (match generators
+    [() (^[] (eof-object))]
+    [(g) g]
+    [gs (samples-from (list->vector gs))]))
