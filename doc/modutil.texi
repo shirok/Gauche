@@ -16392,27 +16392,54 @@ SRFI-19の日付からRFC822形式の日付文字列を作成するには、
 
 @defun rfc822-write-headers headers :key output continue check
 @c MOD rfc.822
+@c EN
 This is a sort of inverse function of @code{rfc822-read-headers}.
 It receives a list of header data, in which each header data
 consists of @code{(<name> <body>)}, and writes them out in RFC822 header
 field format to the output port specified by the @var{output} keyword
 argument.  The default output is the current output port.
+@c JP
+これは@code{rfc822-read-headers}の一種の逆関数と言えます。
+各ヘッダデータが@code{(<name> <body>)}の形になっているリストを受け取り、
+@var{output}キーワード引数で指定されるポートにRFC822形式で書き出します。
+@var{output}が省略された場合は現在の出力ポートが使われます。
+@c COMMON
 
+@c EN
 By default, the procedure assumes @var{headers} contains all the
 header fields, and adds an empty line in the end of output
 to indicate the end of the header.  You can pass a true value to
 the @var{continue} keyword argument to prevent this, enabling
 more headers can be added later.
+@c JP
+デフォルトでは、この手続きは@var{header}で全てのヘッダが完結するものと
+みなし、最後にヘッダ部分の終了を示す空行を出力します。
+ただし@var{continue}キーワード引数に真の値を渡すとこの動作は抑制され、
+後からヘッダを追加で出力することができます。
+@c COMMON
 
+@c EN
 I said ``a sort of'' above.  That's because this function doesn't
 (and can't) do the exact inverse.
 Specifically, the caller is responsible for line folding and
 make sure each header line doesn't exceed the ``hard limit'' defined
-by RFC2822 (998 octets).  This procedure cannot do the line
+by RFC2822 (998 octets).  If the line length of header data exceeds
+that, the caller should insert newline (@code{\r\n}) and one or
+more whitespaces as needed.
+This procedure cannot do the line
 folding on behalf of the caller, because the places where
 line folding is possible depend on the semantics of each
 header field.
+@c JP
+上で「一種の」と書きましたが、それはこの手続きが完全な逆関数ではないからです
+特に、ヘッダ行が長い場合の「行の折り返し」は呼び出し側でやっておかねばなりません。
+RFC2822ではヘッダ行の絶対的な長さを998オクテットに制限しています。
+データがそれを越える場合は適宜改行(@code{\r\n})+空白文字を挿入してください。
+これは自動ではできません。ヘッダデータのどこに改行を挿入できるかは
+各ヘッダのセマンティクスに依存するからです。
+@c COMMON
 
+@c EN
 It is also the caller's responsibility to make sure header
 field bodies don't have any characters except non-NUL US-ASCII
 characters.  If you want to include characters outside of that
@@ -16423,19 +16450,44 @@ protocol, e.g. MIME.  The @code{rfc.mime} module
 Again, this procedure cannot do the encoding automatically,
 since the way the field
 should be encoded depends on header fields.
+@c JP
+また、ヘッダフィールドボディはNUL文字以外のASCII文字のみで構成されている
+必要があります。それ以外の文字を含めたい場合は、MIME等適切なプロトコルを
+使ってあらかじめエンコードしておいてください。
+@code{rfc.mime}モジュールの@code{mime-encode-text}が便利でしょう
+(@ref{MIME message handling})。
+これもまた、ヘッダフィールド毎のセマンティクスに依存するため、
+自動で行うことができません。
+@c COMMON
 
+@c EN
 What this procedure can do is to check and report such violations.
 By default, it runs several checks and signals an error if it finds any
 violations of RFC2822.  You can control this checking behavior
 by the @var{check} keyword argument.  It can take one of the
 following values:
+@c JP
+しかしこの手続きは、渡されたデータがRFC2822に沿っているかどうかをチェック
+できます。デフォルトではRFC2822に違反していればエラーが投げられます。
+@var{check}キーワード引数でこの振る舞いを変えられます。
+可能な値は次のとおりです。
+@c COMMON
 
 @table @code
 @item :error
+@c EN
 Default.  Signals an error if a violation is found.
+@c JP
+デフォルト。違反があればエラーを投げます。
+@c COMMON
 @item #f, :ignore
+@c EN
 Doesn't perform any check.  Trust the caller.
+@c JP
+呼び出し側を信頼し、チェックを行いません。
+@c COMMON
 @item @var{procedure}
+@c EN
 When @code{rfc822-write-headers} finds a violation, the procedure
 is called with three arguments; the header field name,
 the header field body, and the type of violation explained below.
@@ -16444,22 +16496,53 @@ the corrected header field name and body.  The returned values
 are checked again.  If the procedure returns the
 header field name and body unchanged, an error is signaled
 in the same way as @code{:error} is specified.
+@c JP
+@code{rfc822-write-headers}が違反を検出したら、
+この手続きを3つの引数で呼び出します。
+ヘッダフィールド名、ヘッダフィールドボディ、
+そして違反の種類を示す以下のシンボルです。
+この手続きは、修正されたヘッダフィールド名とヘッダフィールドボディの
+ふたつの値を返さなければなりません。
+もしこの手続きがヘッダフィールド名とヘッダフィールドボディを修正せずに
+返したら、@code{:error}を指定したときのようにエラーが投げられます。
+@c COMMON
 @end table
 
+@c EN
 The third argument passed to the procedure given to the @var{check}
 argument is one of the following symbols.  New symbols may be
 added in future versions for more checks.
+@c JP
+@var{check}引数に手続きを渡した際に、第3引数に渡されるシンボルは以下のとおりです。
+将来のバージョンでは新たなシンボルが追加されるかもしれません。
+@c COMMON
 
 @table @code
 @item incomplete-string
+@c EN
 Incomplete string is passed.
+@c JP
+不完全な文字列が渡された
+@c COMMON
 @item bad-character
+@c EN
 Header field contains characters outside of US-ASCII or NUL.
+@c JP
+NUL文字または非ASCII文字が含まれている
+@c COMMON
 @item line-too-long
+@c EN
 Line length exceeds 998 octet limit.
+@c JP
+1行が998オクテットの制限を越えている
+@c COMMON
 @item stray-crlf
+@c EN
 The string contains CR and/or LF character that doesn't consist of
 proper line folding.
+@c JP
+CRLFの組み合わせでない、CRのみまたはLFのみが含まれている。
+@c COMMON
 @end table
 
 @end defun
