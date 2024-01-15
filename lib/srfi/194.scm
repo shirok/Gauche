@@ -142,10 +142,10 @@
   (strings-of k (samples$ str)))
 
 (define (make-bernoulli-generator p)
+  (define gen-real (random-source-make-reals (current-random-source)))
   (assume-type p <real>)
   (assume (<= 0.0 p 1.0))
-  (^[] (let1 r ((random-source-make-reals (current-random-source)))
-         (if (< r p) 1 0))))
+  (^[] (if (< (gen-real) p) 1 0)))
 
 ;; NB: This may be generially useful, so we might move it to some
 ;; other library later.
