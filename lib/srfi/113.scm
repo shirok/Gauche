@@ -1,2 +1,2 @@
-;; SRFI-113 becamse scheme.set
+;; SRFI-113 became scheme.set
 (define-module srfi.113 (extend scheme.set))
