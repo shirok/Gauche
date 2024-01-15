@@ -2856,7 +2856,9 @@
 (define-module srfi-194-tests
   (use gauche.test)
   (use srfi.194)
-  (test-module 'srfi.194))
+  (test-module 'srfi.194)
+  (test-module 'srfi.194.zipf-zri)
+  (test-module 'srfi.194.sphere))
 
 ;;-----------------------------------------------------------------------
 ;; NB: SRFI-196 is tested with data.range

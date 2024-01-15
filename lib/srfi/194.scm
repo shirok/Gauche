@@ -65,10 +65,10 @@
           make-exponential-generator
           make-geometric-generator
           make-poisson-generator
-          ;;make-zipf-generator
-          ;;make-sphere-generator
-          ;;make-ellipsoid-generator
-          ;;make-ball-genrator
+          make-zipf-generator
+          make-sphere-generator
+          make-ellipsoid-generator
+          make-ball-generator
           gsampling
           ))
 (select-module srfi.194)
@@ -191,13 +191,10 @@
 (define (make-poisson-generator L)
   (integers-poisson$ L))
 
-;; make-zipf-generator
+(autoload srfi.194.zipf-zri make-zipf-generator)
 
-;; make-sphere-generator
-
-;; make-ellipsoid-generator
-
-;; make-ball-generator
+(autoload srfi.194.sphere
+          make-sphere-generator make-ellipsoid-generator make-ball-generator)
 
 (define (gsampling . generators)
   (match generators

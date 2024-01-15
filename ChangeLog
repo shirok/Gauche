@@ -1,3 +1,7 @@
+2024-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/194.scm, lib/srfi/194/*.scm: Completing srfi-194 support.
+
 2024-01-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-5.scm (pass5/$DYNENV): Fixed a bug that when KEY or
