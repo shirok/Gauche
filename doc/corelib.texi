@@ -18473,6 +18473,18 @@ is flipped to match other Scheme's @code{*-ref} procedures.
 Common Lisp の @code{nth-value} に似ていますが、引数の順が逆になっています。
 Scheme の他の@code{*-ref} 手続きと合わせるためです。
 @c COMMON
+
+@c EN
+SRFI-210's @code{value/mv} is an enhancement of @code{values-ref}
+(@pxref{Procedures and syntax for multiple values}).
+@c JP
+SRFI-210の@code{value/mv}は@code{values-ref}の拡張になっています
+(@ref{Procedures and syntax for multiple values}参照)。
+@c COMMON
+
+@example
+@code{(values-ref mv-expr k)} @equiv{} @code{(value/mv k mv-expr)}.
+@end example
 @end defmac
 
 @defmac values->list mv-expr

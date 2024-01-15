@@ -12907,7 +12907,7 @@ Returns the same value as
 @code{(list-ref (list/mv element @dots{} producer) index)}.
 
 With no @var{element} @dots{}, it is the same as Gauche's @code{values-ref}
-(@pxref{Multiple values}).
+(@pxref{Multiple values}) except the argument order.
 @end defmac
 
 @defmac coarity producer
