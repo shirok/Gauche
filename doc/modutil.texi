@@ -13775,12 +13775,16 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @defun sys-generate-console-ctrl-event event pgid
 [Windows]
 @c MOD os.windows
+Calls @code{GenerateConsoleCtrlEvent}.  For @var{event} argument,
+the constants @code{CTRL_C_EVENT} and @code{CTRL_BREAK_EVENT} are available.
 @end defun
 
 @defvr {Constant} CTRL_C_EVENT
 @defvrx {Constant} CTRL_BREAK_EVENT
 [Windows]
 @c MOD os.windows
+Constants to be used for @var{event} argument of
+@code{sys-generate-console} above.
 @end defvr
 
 @subsubheading Console codepage
@@ -13791,17 +13795,38 @@ Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
 @defunx sys-set-console-output-cp codepage
 [Windows]
 @c MOD os.windows
+Call @code{GetConsoleCP}, @code{GetConsoleOutputCP},
+@code{SetConsoleCP}, and @code{SetConsoleOutputCP}, respectively.
+Setter procedures returns an undefined value.
 @end defun
+
+@subsubheading Console cursor
 
 @defun sys-get-console-cursor-info handle
 @defunx sys-set-console-cursor-info handle size visible
 [Windows]
 @c MOD os.windows
+Call @code{GetConsoleCursorInfo} and @code{SetConsoleCursorInfo},
+respectively.  @var{Handle} is a handle to the console screen buffer.
+The getter returns two values, size (the integer
+percentage of the character cell that is filled by the cursor,
+between 1 and 100), and a boolean visible flag.
+The setter takes a handle to the console screen buffer,
+integer size percentage, and boolean visible flag.  It returns
+an undefined value.
 @end defun
 
 @defun sys-set-console-cursor-position handle x y
 [Windows]
 @c MOD os.windows
+Calls @code{SetConsoleCursorPosition}.
+@var{Handle} is a handle to the console screen buffer.
+@var{X} and @var{y} are cursor coordinates in character position,
+where (0, 0) is the upper-left corner of the console screen buffer.
+It returns an undefined value.
+
+To get the current cursor position, you can use
+@code{sys-get-console-screen-buffer-info}.
 @end defun
 
 @subsubheading Console mode
