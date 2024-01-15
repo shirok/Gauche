@@ -18483,7 +18483,7 @@ SRFI-210の@code{value/mv}は@code{values-ref}の拡張になっています
 @c COMMON
 
 @example
-@code{(values-ref mv-expr k)} @equiv{} @code{(value/mv k mv-expr)}.
+(values-ref mv-expr k) @equiv{} (value/mv k mv-expr)
 @end example
 @end defmac
 
@@ -18501,6 +18501,18 @@ Common Lisp.
 (values->list (div-and-mod 10 3)) @result{} (3 1)
 
 (values->list 1) @result{} (1)
+@end example
+
+@c EN
+SRFI-210's @code{list/mv} is an enhancement of @code{values->list}
+(@pxref{Procedures and syntax for multiple values}).
+@c JP
+SRFI-210の@code{list/mv}は@code{values->list}の拡張になっています
+(@ref{Procedures and syntax for multiple values}参照)。
+@c COMMON
+
+@example
+(values->list mv-expr) @equiv{} (list/mv mv-expr)
 @end example
 @end defmac
 

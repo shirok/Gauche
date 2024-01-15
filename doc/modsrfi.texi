@@ -12843,38 +12843,62 @@ Same as @code{(map enum-name (enum-set->enum-list eset))}.
 
 @deftp {Module} srfi.210
 @mdindex srfi.210
+@c EN
 This module provides macros and procedures to blend multiple-value
 expressions naturally into the orinary single-value expressions.
+@c JP
+このモジュールは、複数の値を返す式を通常の単一の値を扱う式にうまく混ぜて使えるようにする
+マクロや手続きを提供します。
+@c COMMON
 @end deftp
 
 @defmac with-values producer consumer
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 A shorthand notation of @code{(call-with-values (^[] producer) consumer)}.
+@c JP
+@code{(call-with-values (^[] producer) consumer)}の略記です。
+@c COMMON
 @end defmac
 
 @defmac case-receive producer clause @dots{}
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 A shorthand notation of
 @code{(with-values producer (case-lambda clause @dots{}))}.
+@c JP
+@code{(with-values producer (case-lambda clause @dots{}))}の略記です。
+@c COMMON
 @end defmac
 
 @defmac apply/mv operator operand @dots{} producer
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Similar to @code{apply}, but the multiple values yielded
 from the last argument (@var{producer}) is turned into the tail of
 the argument list; that is,
 @code{(apply operator operand @dots{} (values->list producer))}.
+@c JP
+@code{apply}と似ていますが、最後の引数@var{producer}は複数の値を返すことができ、
+それが@var{operator}への引数リストの末尾に付け加えられます。
+つまり@code{(apply operator operand @dots{} (values->list producer))}と同じです。
+@c COMMON
 @end defmac
 
 @defmac call/mv proc producer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Calls @var{proc} with the argument produced by the expression
 @var{producer} @dots{} and 'splicing' their result(s) into a single
 argument list.
+@c JP
+@var{producer} @dots{}の各式が返す多値をリストにしてつなぎあわせたものを
+引数リストにして@var{proc}を呼び出します。
+@c COMMON
 
 @example
 (call/mv list (values 1 2 3) (values 4 5 6))
@@ -12887,11 +12911,21 @@ argument list.
 @defmacx box/mv element @dots{} producer
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Returns a list, a vector, or a box, consisting of @var{element} @dots{}
 and the value(s) produced by @var{producer}.
+@c JP
+@var{element} @dots{}および、@var{producer}が返す多値のそれぞれを要素とする
+リスト、ベクタ、ボックスを作って返します。
+@c COMMON
 
+@c EN
 Single-argument @code{list/mv} is the same as Gauche's @code{values->list}
 (@pxref{Multiple values}).
+@c JP
+@code{list/mv}に引数をひとつだけ渡した場合は、Gauche組み込みの@code{values->list}
+と同じです(@ref{Multiple values}参照)。
+@c COMMON
 
 @example
 (list/mv 1 2 (values 3 4 5))   @result{} (1 2 3 4 5)
@@ -12903,30 +12937,55 @@ Single-argument @code{list/mv} is the same as Gauche's @code{values->list}
 @defmac value/mv index element @dots{} producer
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Returns the same value as
 @code{(list-ref (list/mv element @dots{} producer) index)}.
+@c JP
+@code{(list-ref (list/mv element @dots{} producer) index)}と同じ値を返します。
+@c COMMON
 
+@c EN
 With no @var{element} @dots{}, it is the same as Gauche's @code{values-ref}
 (@pxref{Multiple values}) except the argument order.
+@c JP
+@var{element} @dots{}が無い場合は、Gauche組み込みの@code{values-ref}の
+引数順をひっくり返したものになります(@ref{Multiple values}参照)。
+@c COMMON
 @end defmac
 
 @defmac coarity producer
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Evaluate @var{producer}, and returns the number of values it yielded.
+@c JP
+@var{producer}を評価し、結果の値の数を返します。
+@c COMMON
 @end defmac
 
 @defmac bind/mv producer transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Evaluate @var{producer}, and passes its results to the first @var{transducer}
 as arguments.  The values returned by the first @var{transducer}
 are passed to the next @var{transducer} as arguments, and so on.
 Returns the results of the last @var{transducer}.
 The call to the last @var{transducer} is tail-call.
+@c JP
+@var{producer}を評価し、その結果の値(複数かもしれない)を引数として
+最初の@var{transducer}を呼びます。それが値(複数かもしれない)を返したらそれらを
+引数として二番目の@var{transducer}を呼び、以下同様にして最後の@var{transducer}が
+返す値(複数かもしれない)を返します。最後の@var{transducer}は末尾呼び出しされます。
+@c COMMON
 
+@c EN
 If no @var{transducer}s are given, it returns the results of
 @var{producer}.
+@c JP
+@var{transducer}が与えられなければ、@var{producer}の結果の値(複数かもしれない)が
+そのまま返されます。
+@c COMMON
 @end defmac
 
 @defun list-values lis
@@ -12934,38 +12993,69 @@ If no @var{transducer}s are given, it returns the results of
 @defunx box-values box
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Turn the content of @var{lis}, @var{vec} or @var{box} into multiple values.
+@c JP
+リスト@var{lis}、ベクタ@var{vec}、ボックス@var{box}の中身を複数の値として返します。
+@c COMMON
 
+@c EN
 Note that @code{box-values} is the same as @code{unbox}, but provided here
 for the naming consistency (@pxref{Boxes}).
+@c JP
+@code{box-values}は@code{unbox}と同じですが、
+名前付けの一貫性のために用意されています (@ref{Boxes}参照)。
+@c COMMON
 @end defun
 
 @defun value index obj @dots{}
 [SRFI-210]
 @c MOD srfi.210
-Evaluates @var{obj} @dots{}, and returns the @var{index}-th value.
+@c EN
+Returns the @var{index}-th value of @var{obj} @dots{}.
+@c JP
+@var{obj} @dots{}の@var{index}番目の値を返します。
+@c COMMON
 @end defun
 
 @defun identity obj @dots{}
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Synonym of @code{values}.  Note that this is different from
 Gauche's built-in @code{identity}, which takes exactly one argument
 (@pxref{Combinators}).
+@c JP
+@code{values}と同じです。
+Gaucheの組み込みの@code{identity}はこれと違い正確に一つの値だけを取ることに
+注意してください (@ref{Combinators}参照)。
+@c COMMON
 @end defun
 
 @defun compose-left transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Each @var{transducer} must be a procedure.
 Returns a procedure that applies the first @var{transducer} to its
 arguments, then applies the next @var{transducer} to the result(s)
 of the first one, and so on.  Returns the result(s) returned from
 the last @var{transducer}.  If no @var{tranducer}s are given,
 returned procedure is the same as @code{values}.
+@c JP
+各@var{transducer}は手続きでなければなりません。
+合成された手続きを返します。その手続きは、渡された引数をまず最初の@var{transducer}
+に渡し、その結果(複数かもしれない)を次の@var{transducer}に渡し、ということを続けて
+最後の@var{transducer}の結果(複数かもしれない)を返します。
+@var{tranducer}がひとつも渡されない場合は@code{values}と同じです。
+@c COMMON
 
+@c EN
 This can be written using Gauche's built-in @code{compose} as follows
 (@pxref{Combinators}):
+@c JP
+これはGauche組み込みの@code{compose}を使って次のように書けます(@ref{Combinators}参照)。
+@c COMMON
 
 @example
 (define (compose-left . procs) (apply compose (reverse procs)))
@@ -12975,23 +13065,41 @@ This can be written using Gauche's built-in @code{compose} as follows
 @defun compose-right transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Each @var{transducer} must be a procedure.
 Returns a procedure that applies the last @var{transducer} to its
 arguments, then applies the previous @var{transducer} to the result(s)
 of the last one, and so on.  Returns the result(s) returned from
 the first @var{transducer}.  If no @var{tranducer}s are given,
 returned procedure is the same as @code{values}.
+@c JP
+各@var{transducer}は手続きでなければなりません。
+合成された手続きを返します。その手続きは、渡された引数をまず最後の@var{transducer}
+に渡し、その結果(複数かもしれない)をひとつ前の@var{transducer}に渡し、ということを続けて
+最初の@var{transducer}の結果(複数かもしれない)を返します。
+@var{tranducer}がひとつも渡されない場合は@code{values}と同じです。
+@c COMMON
 
+@c EN
 This is the same as Gauche's built-in @code{compose}
 (@pxref{Combinators}).
+@c JP
+これはGauche組み込みの@code{compose}と同じです(@ref{Combinators}参照)。
+@c COMMON
 @end defun
 
 @defun map-values proc
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 Returns a procedure that takes any number of arguments, applys @var{proc}
 on each argument, and returns the results as multiple values.
 The behavior is undefined if @var{proc} doesn't return a single value.
+@c JP
+手続きを作って返します。その手続きは、任意個の引数を取り、それぞれに@var{proc}を適用して、
+その結果を多値として返すものです。
+@var{proc}が一つ以外の値を返した場合の動作は未定義です。
+@c COMMON
 
 @example
 ((map-values (cut + <> 1)) 1 2 3)
@@ -13004,6 +13112,7 @@ The behavior is undefined if @var{proc} doesn't return a single value.
 @defunx bind obj transducer @dots{}
 [SRFI-210]
 @c MOD srfi.210
+@c EN
 These are @emph{bind} operation in Monads.  The first argument
 is the source of data; they're first expanded into values (for
 @code{bind/list}, each element of @var{lis} is taken; for @code{bind/box},
@@ -13013,6 +13122,16 @@ and its result(s) are passed as argumenst to the second @var{transducer}
 and so on.  The value(s) returned by the last @var{transducer} becomes
 the result(s) of those procedures.  These can be written using
 @code{compose-left} and procedure application:
+@c JP
+これらはモナドのbindです。最初の引数はデータのソースで、それぞれが多値へと展開されます
+(@code{bind/list}ではリスト@var{lis}の各要素が多値に、
+@code{bind/box}ではボックス@var{box}の各要素が多値に、
+@code{bind}では@var{obj}が唯一の値になります)。
+それが引数として最初の@var{transducer}に渡されます。
+その結果(複数かもしれない)が次の@var{transducer}に渡されます。
+そうしていって最後の@var{transducer}の返す値(複数かもしれない)が全体の結果となります。
+これらは@code{compose-left}を使って次のとおり書けます。
+@c COMMON
 
 @example
 (bind/list lis proc @dots{})
