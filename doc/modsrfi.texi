@@ -84,6 +84,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Maybe and Either optional container types::  srfi.189
 * Port positioning::            srfi.192
 * Command line::                srfi.193
+* Random data generators (SRFI)::  srfi.194
 * Range objects::               srfi.196
 * Pipeline operators::          srfi.197
 * String-notated bytevectors::  srfi.207
@@ -11361,7 +11362,7 @@ Gaucheでは、これは
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Command line, Range objects, Port positioning, Library modules - SRFIs
+@node Command line, Random data generators (SRFI), Port positioning, Library modules - SRFIs
 @section @code{srfi.193} - Command line
 @c NODE コマンドライン,  @code{srfi.193} - コマンドライン
 
@@ -11458,7 +11459,136 @@ script location.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Range objects, Pipeline operators, Command line, Library modules - SRFIs
+@node Random data generators (SRFI), Range objects, Command line, Library modules - SRFIs
+@section @code{srfi.194} - Random data generators (SRFI)
+@c NODE SRFIランダムデータジェネレータ, @code{srfi.194} - ランダムデータジェネレータ (SRFI)
+
+@deftp {Module} srfi.194
+@mdindex srfi.194
+This module provides a set of generators (@pxref{Generators}) that yield
+random data of specific distributions.
+
+Gauche has its own random data generator module @code{data.random}
+(@pxref{Random data generators}), which was a basis of this SRFI,
+although procedure names are adjusted to match other SRFIs.
+This SRFI also adds several advanced random data generators.
+@end deftp
+
+@subheading Random sources
+
+@deftp {Parameter} current-random-source
+@c MOD srfi.194
+@end deftp
+
+@defun with-random-source
+@c MOD srfi.194
+@end defun
+
+@defun make-random-source-generator i
+@c MOD srfi.194
+@end defun
+
+@subheading Uniform distributions
+
+@defun make-random-integer-generator lower-bound upper-bound
+@c MOD srfi.194
+@end defun
+
+@defun make-random-u1-generator
+@defunx make-random-u8-generator
+@defunx make-random-s8-generator
+@defunx make-random-u16-generator
+@defunx make-random-s16-generator
+@defunx make-random-u32-generator
+@defunx make-random-s32-generator
+@defunx make-random-u64-generator
+@defunx make-random-s64-generator
+@c MOD srfi.194
+@end defun
+
+@defun clamp-real-number lower-bound upper-bound value
+@c MOD srfi.194
+@end defun
+
+@defun make-random-real-generator lower-bound upper-bound
+@c MOD srfi.194
+@end defun
+
+@defun make-random-rectangular-generator re-lower-boudn re-upper-bound im-lower-bound im-upper-bound
+@c MOD srfi.194
+@end defun
+
+@defun make-random-polar-generator [origin] mag-lower-bound mag-upper-bound :optional angle-lower-bound angle-upper-bound
+@c MOD srfi.194
+@end defun
+
+@defun make-random-boolean-generator
+@c MOD srfi.194
+@end defun
+
+@defun make-random-char-generator string
+@c MOD srfi.194
+@end defun
+
+@defun make-random-string-generator k string
+@c MOD srfi.194
+@end defun
+
+@subheading Nonuniform distributions
+
+@defun make-bernoulli-genreator p
+@c MOD srfi.194
+@end defun
+
+@defun make-binomial-generator n p
+@c MOD srfi.194
+@end defun
+
+@defun make-categorical-generator weight-vec
+@c MOD srfi.194
+@end defun
+
+@defun make-normal-generator :optional mean deviation
+@c MOD srfi.194
+@end defun
+
+@defun make-exponential-generator mean
+@c MOD srfi.194
+@end defun
+
+@defun make-geometric-generator p
+@c MOD srfi.194
+@end defun
+
+@defun make-poisson-geneartor L
+@c MOD srfi.194
+@end defun
+
+@defun make-zipf-generator N :optional s q
+@c MOD srfi.194
+@end defun
+
+@defun make-sphere-generator n
+@c MOD srfi.194
+@end defun
+
+@defun make-ellipsoid-generator axes
+@c MOD srfi.194
+@end defun
+
+@defun make-ball-generator dimensions
+@c MOD srfi.194
+@end defun
+
+@subheading Generator operations
+
+@defun gsampling generator @dots{}
+@c MOD srfi.194
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Range objects, Pipeline operators, Random data generators (SRFI), Library modules - SRFIs
 @section @code{srfi.196} - Range objects
 @c NODE レンジオブジェクト, @code{srfi.196} - レンジオブジェクト
 
