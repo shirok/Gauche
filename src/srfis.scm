@@ -1409,6 +1409,18 @@ built-in.  Other APIs are provided by the module @code{srfi.193}
 他のAPIはモジュール@code{srfi.193}で提供されます (@ref{Command line}参照)。
 
 
+srfi-194, srfi-194
+()
+
+Random data generators
+Supported by the module @code{srfi.194} (@pxref{Random data generators (SRFI)}),
+which is based on @code{data.random} (@pxref{Random data generators}).
+
+ランダムデータの生成
+モジュール@code{srfi.194}でサポートされます(@ref{Random data generators (SRFI)}参照)。
+それ自体はGaucheの@code{data.random}を元にしています(@pxref{Random data generators}参照).
+
+
 srfi-195
 (box box? unbox set-box! box-arity unbox-value set-box-value!)
 
