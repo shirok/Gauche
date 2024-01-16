@@ -118,16 +118,16 @@
 (define make-random-polar-generator
   (case-lambda
     [(mag-lb mag-ub)
-     (make-random-polarg-generator 0 mag-lb mag.ub 0 (* 2 pi))]
+     (make-random-polar-generator 0 mag-lb mag-ub 0 (* 2 pi))]
     [(origin mag-lb mag-ub)
-     (make-random-polarg-generator origin mag-lb mag.ub 0 (* 2 pi))]
+     (make-random-polar-generator origin mag-lb mag-ub 0 (* 2 pi))]
     [(mag-lb mag-ub ang-lb ang-ub)
-     (make-random-polarg-generator 0 mag-lb mag.ub ang-lb ang-ub)]
+     (make-random-polar-generator 0 mag-lb mag-ub ang-lb ang-ub)]
     [(origin mag-lb mag-ub ang-lb ang-ub)
-     (let ([b (square mag-lb)]
-           [m (- (square mag-ub) b)]
-           [tgen (reals$)]
-           [phigen (reals-between$ ang-lb ang-ub)])
+     (let* ([b (square mag-lb)]
+            [m (- (square mag-ub) b)]
+            [tgen (reals$)]
+            [phigen (reals-between$ ang-lb ang-ub)])
        (^[] (+ origin (make-polar (sqrt (+ (* m (tgen)) b)) (phigen)))))]))
 
 (define (make-random-boolean-generator) booleans)
@@ -139,7 +139,7 @@
 (define (make-random-string-generator k str)
   (assume (exact-integer? k))
   (assume-type str <string>)
-  (strings-of k (samples$ str)))
+  (strings-of (integers$ k) (samples$ str)))
 
 (define (make-bernoulli-generator p)
   (define gen-real (random-source-make-reals (current-random-source)))
@@ -200,4 +200,4 @@
   (match generators
     [() (^[] (eof-object))]
     [(g) g]
-    [gs (samples-from (list->vector gs))]))
+    [gs (samples-from gs)]))
