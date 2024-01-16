@@ -5779,6 +5779,12 @@ calls it to get a value.
 入力となるジェネレータのどれかを等確率で選んで、その入力ジェネレータから値を取ります。
 @c COMMON
 
+@c EN
+The resulting generator is exhausted when all the input generators are exhausted.
+@c JP
+返されるジェネレータは、全ての入力ジェネレータが終端に達した時に終わりとなります。
+@c COMMON
+
 @example
 (define g (samples-from (list uint8s (chars$ #[a-z]))))
 

@@ -350,8 +350,23 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 
 ;; API
 (define (samples-from seq-of-gen)
-  (let1 s (size-of seq-of-gen)
-    (^[] ((~ seq-of-gen (%rand-int s))))))
+  (let* ([sources   (coerce-to <vector> seq-of-gen)]
+         [num-sources (vector-length sources)]
+         [num-active num-sources]
+         [exhausted (make-vector num-active #f)])
+    (^[]
+      (let loop ()
+        (if (zero? num-active)
+          (eof-object)
+          (let* ([choice (%rand-int num-sources)]
+                 [r ((vector-ref sources choice))])
+            (if (eof-object? r)
+              (begin
+                (unless (vector-ref exhausted choice)
+                  (vector-set! exhausted choice #t)
+                  (dec! num-active))
+                (loop))
+              r)))))))
 
 ;; API
 ;; weight&gens :: ((<real> . <generator>) ...)
