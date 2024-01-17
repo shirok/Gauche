@@ -11477,21 +11477,44 @@ This SRFI also adds several advanced random data generators.
 @subheading Random sources
 
 @deftp {Parameter} current-random-source
+[SRFI-194]
 @c MOD srfi.194
+The value of this parameter must be a SRFI-27 random source.
+Generators created in this module use the value of this parameter
+at the time of creation as a random source.  Changing this after
+a generator is created won't affect its behavior.
+
+In Gauche, this is just an alias of @code{random-data-random-source}
+of @code{data.random}.  Rebinding either one affects both @code{srfi.194}
+and @code{data.random} procedures (@pxref{Random data generators}).
 @end deftp
 
-@defun with-random-source
+@defun with-random-source random-source thunk
+[SRFI-194]
 @c MOD srfi.194
+Calls @var{thunk} while binding the parameter @code{current-random-source}
+to @var{random-source}, which must be a random source
+object of srfi-27.
 @end defun
 
 @defun make-random-source-generator i
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @subheading Uniform distributions
 
 @defun make-random-integer-generator lower-bound upper-bound
+[SRFI-194]
 @c MOD srfi.194
+Creates and returns a generator that generates exact integers
+between @var{lower-bound} (inclusive) and @var{upper-bound}
+(exclusive).
+Same as calling @code{(integers$ (- upper-bound lower-boud) lower-bound)}
+of @code{data.random} (@pxref{Random data generators}).
+
+Note that this is different from @code{integers-between$}, which
+includes the upper bound.
 @end defun
 
 @defun make-random-u1-generator
@@ -11503,86 +11526,111 @@ This SRFI also adds several advanced random data generators.
 @defunx make-random-s32-generator
 @defunx make-random-u64-generator
 @defunx make-random-s64-generator
+[SRFI-194]
 @c MOD srfi.194
+Creates and returns a generator of fixed-range exact integers.
+Calling @code{make-random-u1-generator} is the same as
+@code{(integers$ 2)}, and other generators are
+the same as @code{uint8s$}, @code{sint8s$}, etc., of
+@code{data.random} (@pxref{Random data generators}).
 @end defun
 
 @defun clamp-real-number lower-bound upper-bound value
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-random-real-generator lower-bound upper-bound
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-random-rectangular-generator re-lower-boudn re-upper-bound im-lower-bound im-upper-bound
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-random-polar-generator [origin] mag-lower-bound mag-upper-bound :optional angle-lower-bound angle-upper-bound
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-random-boolean-generator
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-random-char-generator string
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-random-string-generator k string
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @subheading Nonuniform distributions
 
 @defun make-bernoulli-genreator p
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-binomial-generator n p
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-categorical-generator weight-vec
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-normal-generator :optional mean deviation
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-exponential-generator mean
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-geometric-generator p
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-poisson-geneartor L
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-zipf-generator N :optional s q
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-sphere-generator n
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-ellipsoid-generator axes
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @defun make-ball-generator dimensions
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 
 @subheading Generator operations
 
 @defun gsampling generator @dots{}
+[SRFI-194]
 @c MOD srfi.194
 @end defun
 

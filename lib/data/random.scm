@@ -69,7 +69,8 @@
 ;;  unless the user explicitly randomize it, it uses a fixed predetermined
 ;;  seed.  It guarantees reproducibility.
 (define random-data-random-source
-  (make-parameter default-random-source))
+  (make-parameter default-random-source
+                  (^x (assume (random-source? x)) x)))
 
 ;; Deprecated API
 ;;  This is no longer useful, for the construted generators capture the

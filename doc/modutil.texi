@@ -5417,7 +5417,6 @@ with a preposition (e.g. @code{list-of}).
 @c COMMON
 
 @deftp {Parameter} random-data-random-source
-[SRFI-194]
 @c MOD data.random
 @c EN
 Its value must be a SRFI-27 random source (@pxref{Sources of random bits}).
@@ -6028,12 +6027,13 @@ The sizer used by @code{lists-of}, @code{vectors-of} and @code{strings-of}
 when @var{sizer} argument is omitted.
 
 The value must be either an nonnegative integer, or a generator
-of nonnegative integers.
+of nonnegative integers.  The default value is @code{(integers-poisson$ 4)}.
 @c JP
 @code{lists-of}、@code{vectors-of}、@code{strings-of}で
 @var{sizer}引数が省略された場合に使われるsizerです。
 
 値は、非負整数か、非負整数を生成するジェネレータでなければなりません。
+デフォルトの値は@code{(integers-poisson$ 4)}です。
 @c COMMON
 @end deffn
 
@@ -6086,34 +6086,62 @@ procedures that are not in SRFI-196.
 @c COMMON
 @end deftp
 
+@c EN
 @subheading Classes
+@c JP
+@subheading クラス
+@c COMMON
 
 @deftp {Class} <range>
 @clindex range
+@c EN
 Range object class.  Internally we use several subclasses
 according to the nature of the range, but externally all
 ranges can be treated as an instance of @code{<range>}.
+@c JP
+レンジオブジェクトのクラスです。内部的には、異なるレンジの性質に合わせて
+いくつかのサブクラスを使っていますが、外部的には全てのレンジを
+@code{<range>}クラスのインスタンスとして扱って構いません。
+@c COMMON
 @end deftp
 
 @deftp {Class} <range-meta>
 @clindex range-meta
+@c EN
 The metaclass of @code{<range>} class.
+@c JP
+@code{<range>}クラスのメタクラスです。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Constructors
+@c JP
+@subheading コンストラクタ
+@c COMMON
 
 @defun range length indexer
 [SRFI-196]
 @c MOD data.range
+@c EN
 Creates and returns a range of length @var{length},
 whose @var{i}-th element (0 <= @code{i} < @var{length}))
 is determined by a procedure @var{indexer}, which takes @var{i}
 as the sole argument and returns the corresponding element.
+@c JP
+長さが@var{length}で、@var{i}番目の要素(0 <= @code{i} < @var{length}))
+が@code{(@var{indexer} @var{i})}で計算されるようなレンジを作って返します。
+@c COMMON
 
+@c EN
 Note that @var{indexer} must run in O(1) time, and must be
 referentially transparent.  The impelemntation may ``expand''
 the range, that is, computes the element values into a flat
 vector internally.
+@c JP
+手続き@var{indexer}はO(1)の時間オーダーで動作し、参照透過でなければなりません。
+実装によっては、内部で要素の値をフラットベクタにキャッシュすることもありえます。
+@c COMMON
 
 @example
 (range->list (range 5 (^i (+ i 10))))
