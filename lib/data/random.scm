@@ -43,18 +43,22 @@
   (use gauche.generator)
   (use gauche.sequence)
 
-  (export random-data-random-source random-data-seed with-random-data-seed
+  (export random-data-random-source
 
-          integers$ integers-between$ fixnums chars$ samples$ booleans
-          int8s uint8s int16s uint16s int32s uint32s int64s uint64s
+          integers$ integers-between$ fixnums chars$ samples$ booleans$
+          int8s$ uint8s$ int16s$ uint16s$ int32s$ uint32s$ int64s$ uint64s$
           reals$ reals-between$ reals-normal$ reals-exponential$
           integers-geometric$ integers-poisson$
           regular-strings$
+          booleans int8s uint8s int16s uint16s int32s uint32s int64s uint64s
 
           default-sizer
           samples-from pairs-of tuples-of lists-of vectors-of strings-of
           sequences-of
           permutations-of combinations-of weighted-samples-from
+
+          ;; Deprecated API
+          random-data-seed with-random-data-seed
           ))
 (select-module data.random)
 
@@ -67,18 +71,10 @@
 (define random-data-random-source
   (make-parameter default-random-source))
 
-;; random-data-seed and with-random-data-seed are intended to reproduce
-;; sequences that has been generated.  If you simply using SRFI-27
-;; random-source as a parameter, you can't retrieve its seed value,
-;; so you can't reproduce the sequence unless you remember what seed value
-;; you used to initialize the random-source.
-;; However, the interface is kind of awkward (e.g. you can't swap
-;; two independent random sources) and non-intuitive.   We keep them
-;; only for the backward compatibility.
-
 ;; Deprecated API
-;; NB: Currently the only SRFI-27 random-source is <mersenne-twister>,
-;; but we may add other kind of random-source in future.
+;;  This is no longer useful, for the construted generators capture the
+;;  random source at the time of construction and won't be affected
+;;  by the changes of random-data-random-source afterwards.
 (define random-data-seed
   (getter-with-setter
    (^[] (let1 rs (random-data-random-source)
@@ -95,9 +91,9 @@
     (parameterize ([random-data-random-source st])
       (thunk))))
 
-(define (%rand-int n) (mt-random-integer (random-data-random-source) n))
-(define (%rand-real0) (mt-random-real0 (random-data-random-source)))
-(define (%rand-real)  (mt-random-real (random-data-random-source)))
+(define (%rand-int n s) (mt-random-integer s n))
+(define (%rand-real0 s) (mt-random-real0 s))
+(define (%rand-real s)  (mt-random-real s))
 
 ;;;
 ;;; Primitive generators
@@ -109,27 +105,40 @@
 
 ;; API.  Generate integers uniformly in [start, start+size)
 (define (integers$ size :optional (start 0))
-  (^[] (+ (%rand-int size) start)))
+  (let1 s (random-data-random-source)
+    (^[] (+ (%rand-int size s) start))))
 
 ;; API.  Generate integers uniformly in [lb ub]
 ;; (We avoid 'integer-range', for 'range' API takes exclusive upper bound.)
 (define (integers-between$ lb ub)
-  (let1 range (- ub lb -1)
-    (^[] (+ (%rand-int range) lb))))
+  (let ([s (random-data-random-source)]
+        [range (- ub lb -1)])
+    (^[] (+ (%rand-int range s) lb))))
 
 ;; API.
-(define fixnums (integers-between$ (least-fixnum) (greatest-fixnum)))
-(define int8s   (integers$ 256 -128))
-(define uint8s  (integers$ 256))
-(define int16s  (integers$ 65536 -32768))
-(define uint16s (integers$ 65536))
-(define int32s  (integers$ (expt 2 32) (- (expt 2 31))))
-(define uint32s (integers$ (expt 2 32)))
-(define int64s  (integers$ (expt 2 64) (- (expt 2 63))))
-(define uint64s (integers$ (expt 2 64)))
+(define (fixnums$) (integers-between$ (least-fixnum) (greatest-fixnum)))
+(define (int8s$)   (integers$ 256 -128))
+(define (uint8s$)  (integers$ 256))
+(define (int16s$)  (integers$ 65536 -32768))
+(define (uint16s$) (integers$ 65536))
+(define (int32s$)  (integers$ (expt 2 32) (- (expt 2 31))))
+(define (uint32s$) (integers$ (expt 2 32)))
+(define (int64s$)  (integers$ (expt 2 64) (- (expt 2 63))))
+(define (uint64s$) (integers$ (expt 2 64)))
+(define (booleans$) (let1 g (integers$ 2) (cut zero? (g))))
 
-;; API.
-(define booleans (^[] (zero? (%rand-int 2))))
+;; API
+;; Preconstructed generators.  They use default random source.
+(define fixnums  (fixnums$))
+(define int8s    (int8s$))
+(define uint8s   (uint8s$))
+(define int16s   (int16s$))
+(define uint16s  (uint16s$))
+(define int32s   (int32s$))
+(define uint32s  (uint32s$))
+(define int64s   (int64s$))
+(define uint64s  (uint64s$))
+(define booleans (booleans$))
 
 ;; API.
 ;; The default value of cset is debatable.  We play "safe" here, limiting
@@ -150,20 +159,21 @@
   ;;
   ;; If CSET has only one range, however, we use simpler sampling
   ;; for optimization.
-  (let1 ranges ((with-module gauche.internal %char-set-ranges) cset)
+  (let ([ranges ((with-module gauche.internal %char-set-ranges) cset)]
+        [s (random-data-random-source)])
     (if (null? (cdr ranges))
       ;; simple case
       (let* ([lb (caar ranges)]
              [ub (cdar ranges)]
              [size (- (+ ub 1) lb)])
-        (^[] (integer->char (+ (%rand-int size) lb))))
+        (^[] (integer->char (+ (%rand-int size s) lb))))
       ;; general case
       (let* ([tab (make-tree-map)]
              [total (do ([ranges ranges (cdr ranges)]
                          [cumu 0 (+ cumu (- (+ (cdar ranges) 1) (caar ranges)))])
                         [(null? ranges) cumu]
                       (tree-map-put! tab cumu (- (caar ranges) cumu)))])
-        (^[] (let1 p (%rand-int total)
+        (^[] (let1 p (%rand-int total s)
                (receive (_ off) (tree-map-floor tab p)
                  (integer->char (+ p off)))))))))
 
@@ -180,12 +190,14 @@
 ;; regard it inappropriate rounding (for our purpose).  If we reject them,
 ;; it will skew the distribution.
 (define (reals$ :optional (size 1.0) (start 0.0))
-  (let1 ub (+ size start)
-    (^[] (clamp (+ start (* size (%rand-real0))) start ub))))
+  (let ([ub (+ size start)]
+        [s (random-data-random-source)])
+    (^[] (clamp (+ start (* size (%rand-real0 s))) start ub))))
 (define (reals-between$ lb ub)
   (assume (<= lb ub))
-  (let1 range (- ub lb)
-    (^[] (clamp (+ (* range (%rand-real0)) lb) lb ub))))
+  (let ([range (- ub lb)]
+        [s (random-data-random-source)])
+    (^[] (clamp (+ (* range (%rand-real0 s)) lb) lb ub))))
 
 ;; rational
 ;; complex
@@ -202,9 +214,10 @@
 ;; so the difference of cost of log or sin from the primitive
 ;; addition/multiplication are negligible.
 (define (reals-normal$ :optional (mean 0) (deviation 1))
-  (^[] (let ([r (real-sqrt (* -2 (real-ln (%rand-real))))]
-             [theta (* 2pi (%rand-real))])
-         (+ mean (* deviation r (real-sin theta))))))
+  (let1 s (random-data-random-source)
+    (^[] (let ([r (real-sqrt (* -2 (real-ln (%rand-real s))))]
+               [theta (* 2pi (%rand-real s))])
+           (+ mean (* deviation r (real-sin theta)))))))
 
 #|
 Simple test of gaussian sampling: Generate some data with this:
@@ -221,13 +234,15 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 
 ;; Exponential distribution - continuous
 (define (reals-exponential$ m)
-  (^[] (- (* m (log (%rand-real))))))
+  (let1 s (random-data-random-source)
+    (^[] (- (* m (log (%rand-real s)))))))
 
 ;; Draw from geometric distribution, with success probability p.
 ;; Mean is 1/p, variance is (1-p)/p^2
 (define (integers-geometric$ p)
-  (let1 c (/ (log (- 1.0 p)))
-    (^[] (ceiling->exact (* c (log (%rand-real)))))))
+  (let ([c (/ (log (- 1.0 p)))]
+        [s (random-data-random-source)])
+    (^[] (ceiling->exact (* c (log (%rand-real s)))))))
 
 ;; Draw from poisson distribution with mean L, variance L.
 ;; For small L, we use Knuth's method.  For larger L, we use rejection
@@ -236,22 +251,23 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 ;; pp29-35, 1979.  The code here is a port by John D Cook's C++ implementation
 ;; (http://www.johndcook.com/stand_alone_code.html )
 (define (integers-poisson$ L)
+  (define s (random-data-random-source))
   (if (< L 36)
     (^[] (do ([exp-L (exp (- L))]
               [k 0 (+ k 1)]
-              [p 1.0 (* p (%rand-real))])
+              [p 1.0 (* p (%rand-real s))])
              [(<= p exp-L) (- k 1)]))
     (let* ([c (- 0.767 (/ 3.36 L))]
            [beta (/ pi (sqrt (* 3 L)))]
            [alpha (* beta L)]
            [k (- (log c) L (log beta))])
       (rec (loop)
-        (let* ([u (%rand-real)]
+        (let* ([u (%rand-real s)]
                [x (/ (- alpha (log (/ (- 1.0 u) u))) beta)]
                [n (floor->exact (+ x 0.5))])
           (if (< n 0)
             (loop)
-            (let* ([v (%rand-real)]
+            (let* ([v (%rand-real s)]
                    [y (- alpha (* beta x))]
                    [t (+ 1.0 (exp y))]
                    [lhs (+ y (log (/ v (* t t))))]
@@ -292,8 +308,9 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
     (^[] (with-output-to-string (cut nfa #f)))))
 
 (define (%regex->nfa ast)
+  (define s (random-data-random-source))
   (define (%emit c case-fold)
-    (let1 cc (if (and case-fold (zero? (%rand-int 2)))
+    (let1 cc (if (and case-fold (zero? (%rand-int 2 s)))
                (cond [(char-lower-case? c) (char-upcase c)]
                        [(char-upper-case? c) (char-downcase c)]
                        [else c])
@@ -322,7 +339,7 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
              (and (every (cut <> case-fold) nodes)
                   (cond [(< k m) (loop (+ k 1))]
                         [(or (not n) (< k n))
-                         (if (zero? (%rand-int 2))
+                         (if (zero? (%rand-int 2 s))
                            (loop (+ k 1))
                            #t)]
                         [else #t])))))]
@@ -353,12 +370,13 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
   (let* ([sources   (coerce-to <vector> seq-of-gen)]
          [num-sources (vector-length sources)]
          [num-active num-sources]
-         [exhausted (make-vector num-active #f)])
+         [exhausted (make-vector num-active #f)]
+         [s (random-data-random-source)])
     (^[]
       (let loop ()
         (if (zero? num-active)
           (eof-object)
-          (let* ([choice (%rand-int num-sources)]
+          (let* ([choice (%rand-int num-sources s)]
                  [r ((vector-ref sources choice))])
             (if (eof-object? r)
               (begin
@@ -375,8 +393,9 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
          [total (do [(w&g weight&gens (cdr w&g))
                      (cumu 0 (+ cumu (caar w&g)))]
                     [(null? w&g) cumu]
-                  (tree-map-put! tab cumu (cdar w&g)))])
-    (^[] (receive (_ gen) (tree-map-floor tab (* (%rand-real0) total))
+                  (tree-map-put! tab cumu (cdar w&g)))]
+         [s (random-data-random-source)])
+    (^[] (receive (_ gen) (tree-map-floor tab (* (%rand-real0 s) total))
            (gen)))))
 
 ;; API
@@ -435,7 +454,8 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 
 ;; API
 (define (permutations-of seq)
-  (^[] (shuffle seq (random-data-random-source))))
+  (let1 s (random-data-random-source)
+    (cut shuffle seq s)))
 
 ;; API
 (define (combinations-of len seq)

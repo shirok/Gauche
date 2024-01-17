@@ -5383,6 +5383,16 @@ that yield random data of specific type and distribution.
 生成するジェネレータ、およびそういったジェネレータを作り出すジェネレータ構築器を
 提供します。
 @c COMMON
+
+@c EN
+A part of the functionality of this module is turned into
+SRFI-194, but it gives different names/API for the consistency of other SRFIs
+(@pxref{Random data generators (SRFI)}).
+@c JP
+このモジュールの一部の機能はSRFI-194になりましたが、
+同SRFIでは他のSRFIとの一貫性から異なる名前/APIを採用しています
+(@ref{Random data generators (SRFI)}参照)。
+@c COMMON
 @end deftp
 
 @c EN
@@ -5401,102 +5411,59 @@ with a preposition (e.g. @code{list-of}).
 @c COMMON
 
 @c EN
-@subheading Global state
+@subheading Random source
 @c JP
-@subheading グローバルな状態
+@subheading 乱数源
 @c COMMON
 
-@c EN
-All the generators in this module shares a global random state.
-The random seed is initialized by a fixed value when the module
-is loaded.
-You can get and set the random seed by
-the following procedure.
-@c JP
-このモジュールのジェネレータはすべて一つのグローバルな乱数状態を共有します。
-モジュールがロードされた時点で、固定のシードによりこの状態は初期化されます。
-次の手続きでグローバルな乱数状態のシードを読み出したり、新たな値に
-設定することができます。
-@c COMMON
-
-@defun random-data-seed
-@defunx {(setter random-data-seed)} seed-value
+@deftp {Parameter} random-data-random-source
+[SRFI-194]
 @c MOD data.random
 @c EN
-Calling @code{random-data-seed} (without arguments)
-returns the random seed value used to initialize the current random state.
+Its value must be a SRFI-27 random source (@pxref{Sources of random bits}).
+The initial value is SRFI-27's @code{default-random-source}.
 
-It can be used with generic setter, to reinitialize the random state
-with @var{seed-value}.
-
-Random seed value must be an exact integer.  Its lower 32bits are used.
+When generators are created with the utilities of this module, it captures
+the dynamic value of this parameter, from which the random values are
+generated.  Changing the parameter value after generators are created
+won't affect their behavior.
 @c JP
-引数無しで@code{random-data-seed}を呼ぶと、現在の乱数状態を初期化した
-シード値が返されます。
+このパラメータの値はSRFI-27の乱数発生源でなければなりません
+(@ref{Sources of random bits}参照)。初期値はSRFI-27の
+@code{default-random-source}です。
 
-ジェネリックなセッターと一緒に使えば、乱数状態を@var{seed-value}をシードとして
-再初期化することができます。
+このモジュールのユーティリティでジェネレータを作った場合、その作成時の
+パラメータの動的な値が捕獲され、ジェネレータはそれを使って乱数を生成します。
+ジェネレータの作成後にこのパラメータの値を変えてもジェネレータの動作には影響しません。
+@c COMMON
+@end deftp
 
-ランダムシード値は正確な整数でなければなりません。その下位32ビットが使われます。
+@c EN
+Note: Up to 0.9.13, generators created with this module refers to the
+dynamic value of the current random source every time it generates
+a random value, so that prebuilt network of random values can be affected
+by modifying the current random source.  However it incurs overhead for
+each random number generation, and generally it is cheaper to reconstruct
+a new generators with the different random source.
+The current behavior is consistent with SRFI-194.
+
+The following two procedures are to swap current random source.  They
+are still supported but no longer effective.
+@c JP
+註: 0.9.13まで、このモジュールで作られるジェネレータは乱数生成の度に現在の乱数源を
+参照していました。これにより、一度構築した乱数生成のネットワークのふるまいを、
+現在の乱数源をいじることで変えられますが、乱数発生の度に若干のオーバヘッドも生じます。
+一般に、異なる乱数源を使いたければそれを現在の乱数源として新にジェネレータを
+作成した方が安価でしょう。それに、現在のふるまいはSRFI-194と一貫性があります。
+
+以下のふたつの手続きは現在の乱数源を置き換えるために提供されていましたが、
+今では効果がありません。
 @c COMMON
 
 @example
-; @r{reinitialize the random state with a new random seed.}
-(set! (random-data-seed) 1)
-
-(random-data-seed) @result{} 1
+random-data-seed          with-random-data-seed
 @end example
 
-@c EN
-Note: This procedure doesn't have parameter interface (alter the global
-value by giving the new value as an argument), since it doesn't work
-like a parameter (@pxref{Parameters}).
-You can get the random seed value, but you can't
-get the current random state itself---if you restore the
-random seed value again, the internal state is reset, instead
-of restoring the state at the time you called @code{random-data-seed}.
-@c JP
-註: この手続きはパラメータインタフェース (引数として値を与えるとそれを新たな
-値に設定し、以前の値を返す) にはなっていません。本質的に、パラメータとは
-相容れないからです (@ref{Parameters}参照)。
-得られるのは現在の乱数状態の出発点となるシード値であって、
-現在の乱数状態そのものではありません。一旦別のシード値に切り替えて、
-その後元のシード値に戻した場合、乱数状態は切り替えた時点に戻るのではなく、
-あらためて初期化されます。
-@c COMMON
-
-@c EN
-If you want to use different random state temporarily, and ensure to
-restore original state afterwards, use @code{with-random-data-seed} below.
-@c JP
-乱数状態を一時的に切り替えて、その後で切り替えた時点の状態を確実に回復したい場合は、
-次に示す@code{with-random-data-seed}を使ってください。
-@c COMMON
-@end defun
-
-@defun with-random-data-seed seed thunk
-@c MOD data.random
-@c EN
-Saves the current global random state, initializes the random state with
-@var{seed}, then executes @var{thunk}.  If @var{thunk} returns or
-the control exits out of @var{thunk}, the state at the time
-@code{with-random-data-seed} was called is restored.
-@c JP
-現在のグローバルな乱数状態を保存し、乱数状態を@var{seed}で初期化して
-@var{thunk}を実行します。@var{thunk}から帰ってくるか、
-制御が@var{thunk}を抜け出した場合、乱数状態は@code{with-random-data-seed}が
-呼び出された時点の状態に戻されます。
-@c COMMON
-@end defun
-
-@c EN
-Since the default random seed value is fixed, you can get deterministic
-output when you call the random data generators below without altering
-the random seed explicitly.
-@c JP
-デフォルトのランダムシードが固定なのは、何もしなければ再現可能な振る舞いが得られる
-からです。
-@c COMMON
 
 @c EN
 @subheading Generators of primitive data types
@@ -5557,6 +5524,47 @@ creates a generator that generates integers between
 @end example
 @end defun
 
+@defun fixnums$
+@defunx int8s$
+@defunx uint8s$
+@defunx int16s$
+@defunx uint16s$
+@defunx int32s$
+@defunx uint32s$
+@defunx int64s$
+@defunx uint64s$
+@c MOD data.random
+@c EN
+Creates and returns uniform integer generators.
+Each generates integers in fixnum range, and
+8/16/32/64bit signed and unsigned integers, respectively.
+@c JP
+固定範囲の一様整数ジェネレータを作って返します。
+作られたジェネレータはそれぞれ、
+fixnumおよび8/16/32/64ビットの符号つき/符号無し整数を生成します。
+@c COMMON
+
+@example
+(generator->list (int8s$) 10)
+ @result{} (20 -101 50 -99 -111 -28 -19 -61 39 110)
+@end example
+@end defun
+
+@defun booleans$
+@c MOD data.random
+@c EN
+Creates and returns a generator of
+boolean values (@code{#f} and @code{#t}) in equal probability.
+@c JP
+真偽値(@code{#f}と@code{#t})を等確率で生成するジェネレータを作って返します。
+@c COMMON
+
+@example
+(generator->list (booleans$) 10)
+ @result{} (#f #f #t #f #f #t #f #f #f #f)
+@end example
+@end defun
+
 @defun fixnums
 @defunx int8s
 @defunx uint8s
@@ -5566,33 +5574,17 @@ creates a generator that generates integers between
 @defunx uint32s
 @defunx int64s
 @defunx uint64s
+@defunx booleans
 @c MOD data.random
 @c EN
-Uniform integer generators.  Generate integers in fixnum range, and
-8/16/32/64bit signed and unsigned integers, respectively.
+These are preconstructed generators by @code{fixnum$} etc.  Provided
+for the convenience, but note that the random source they use is
+fixed to @code{default-random-source}.
 @c JP
-固定範囲の一様整数ジェネレータです。
-それぞれ、fixnumおよび8/16/32/64ビットの符号つき/符号無し整数を生成します。
+これらは@code{fixnum$}などを使ってあらかじめ作られたジェネレータです。
+簡便のために提供されています。ただ、乱数発生源は@code{default-random-source}
+に固定であることに注意してください。
 @c COMMON
-
-@example
-(generator->list int8s 10)
- @result{} (20 -101 50 -99 -111 -28 -19 -61 39 110)
-@end example
-@end defun
-
-@defun booleans
-@c MOD data.random
-@c EN
-Generates boolean values (@code{#f} and @code{#t}) in equal probability.
-@c JP
-真偽値(@code{#f}と@code{#t})を等確率で生成します。
-@c COMMON
-
-@example
-(generator->list booleans 10)
- @result{} (#f #f #t #f #f #t #f #f #f #f)
-@end example
 @end defun
 
 @defun chars$ :optional char-set

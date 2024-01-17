@@ -1,3 +1,11 @@
+2024-01-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/random.scm: Switch the handling of current random source.
+	  Now the procedures consistently captures the value of the
+	  current random source at the time of creation of generators.
+	  This is technically an incompatible change.
+	  https://github.com/shirok/Gauche/issues/977
+
 2024-01-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/194.scm, lib/srfi/194/*.scm: Completing srfi-194 support.
