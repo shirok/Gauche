@@ -2858,7 +2858,9 @@
   (use srfi.194)
   (test-module 'srfi.194)
   (test-module 'srfi.194.zipf-zri)
-  (test-module 'srfi.194.sphere))
+  (test-module 'srfi.194.sphere)
+
+  (test-include-r7 "include/srfi-194-test"))
 
 ;;-----------------------------------------------------------------------
 ;; NB: SRFI-196 is tested with data.range
