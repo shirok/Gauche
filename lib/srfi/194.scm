@@ -92,15 +92,15 @@
   (assume (< lb ub))
   (integers$ (- ub lb) lb))
 
-(define (make-random-u1-generator) (integers$ 2))
-(define (make-random-u8-generator)  uint8s)
-(define (make-random-u16-generator) uint16s)
-(define (make-random-u32-generator) uint32s)
-(define (make-random-u64-generator) uint64s)
-(define (make-random-s8-generator)  int8s)
-(define (make-random-s16-generator) int16s)
-(define (make-random-s32-generator) int32s)
-(define (make-random-s64-generator) int64s)
+(define (make-random-u1-generator)  (integers$ 2))
+(define (make-random-u8-generator)  (uint8s$))
+(define (make-random-u16-generator) (uint16s$))
+(define (make-random-u32-generator) (uint32s$))
+(define (make-random-u64-generator) (uint64s$))
+(define (make-random-s8-generator)  (int8s$))
+(define (make-random-s16-generator) (int16s$))
+(define (make-random-s32-generator) (int32s$))
+(define (make-random-s64-generator) (int64s$))
 
 (define (clamp-real-number lb ub value)
   (assume-type lb <real>)
@@ -130,7 +130,7 @@
             [phigen (reals-between$ ang-lb ang-ub)])
        (^[] (+ origin (make-polar (sqrt (+ (* m (tgen)) b)) (phigen)))))]))
 
-(define (make-random-boolean-generator) booleans)
+(define (make-random-boolean-generator) (booleans$))
 
 (define (make-random-char-generator str)
   (assume-type str <string>)
