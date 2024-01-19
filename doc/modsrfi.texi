@@ -11500,6 +11500,14 @@ object of srfi-27.
 @defun make-random-source-generator i
 [SRFI-194]
 @c MOD srfi.194
+Returns a fresh generator that creates
+a new random source by @code{make-random-source}, and
+process it with @code{random-source-pseudo-randomize!} with @var{i},
+and internal counter @var{j}, starting from 0 and incremented
+every time the generator is called.
+@xref{Sources of random bits}, for the details of
+@code{make-random-source} and
+@code{random-source-pseudo-randomize!}.
 @end defun
 
 @subheading Uniform distributions
@@ -11538,21 +11546,36 @@ the same as @code{uint8s$}, @code{sint8s$}, etc., of
 @defun clamp-real-number lower-bound upper-bound value
 [SRFI-194]
 @c MOD srfi.194
+All arguments must be real numbers, and @var{lower-bound} must be
+less than or equal to @var{upper-bound}.  If @var{value} is between
+two bounds, it is returned as is.  If it is smaller than @var{lower-bound},
+@var{lower-bound} is returned.
+If it is greater than @var{upper-bound}, @var{upper-bound} is returned.
+
+Similar to Gauche's build-in @code{clamp}, with different argument
+order (@pxref{Arithmetics}).
 @end defun
 
 @defun make-random-real-generator lower-bound upper-bound
 [SRFI-194]
 @c MOD srfi.194
+Returns a fresh generator that produces a real number between
+@var{lower-bound} and @var{upper-bound}, both inclusive.
+
+It is the same as @code{reals-between$} of @code{data.random}
+(@pxref{Random data generators}).
 @end defun
 
-@defun make-random-rectangular-generator re-lower-boudn re-upper-bound im-lower-bound im-upper-bound
+@defun make-random-rectangular-generator re-lower-bound re-upper-bound im-lower-bound im-upper-bound
+@defunx make-random-polar-generator [origin] mag-lower-bound mag-upper-bound :optional angle-lower-bound angle-upper-bound
 [SRFI-194]
 @c MOD srfi.194
-@end defun
-
-@defun make-random-polar-generator [origin] mag-lower-bound mag-upper-bound :optional angle-lower-bound angle-upper-bound
-[SRFI-194]
-@c MOD srfi.194
+Returns a fresh generator that produces a complex number
+uniformly within the area specified by the arguments.
+They are the same as @code{complexes-rectangular$} and
+@code{complexes-polar$} of @code{data.random}
+(@pxref{Random data generators}), respectively.
+See their entries for the details.
 @end defun
 
 @defun make-random-boolean-generator

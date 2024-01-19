@@ -5646,6 +5646,45 @@ handy.
 @end example
 @end defun
 
+@defun complexes-rectangular$ re-lb re-ub im-lb im-ub
+@defunx complexes-polar$ [origin] mag-lb mag-ub :optional ang-lb ang-ub
+@c EN
+Returns a fresh generator of complex numbers uniformly.
+All the @var{*-lb} and @var{*-ub} arguments must be real numbers, and each
+@var{*-ub} argument must be greater than or equal to the corresponding
+@var{*-lb} argument.  The @var{origin} argument is a complex number.
+
+Generators returned by
+@code{complexes-rectangular$} sample a rectangular area
+where its real value is between @var{re-lb} and @var{re-ub} inclusive,
+and its imaginary value is between @var{im-lb} and @var{im-ub} inclusive.
+
+Generators returned by
+@code{complexes-rectangular$} samples an annulus whose origin is
+@var{origin}, whose magnitude is between @var{mag-lb} and @var{mag-ub}
+inclusive, and whose angle is between @var{ang-lb} and @var{ang-ub}
+radians inclusive.  If @var{origin}, @var{ang-lb}, and/or @var{ang-ub}
+are omitted, they're defaulted to 0+0i, 0, and 2π.
+@c JP
+複素数を一様に生成する新たなジェネレータを作って返します。
+全ての@var{*-lb}および@var{*-ub}引数は実数でなければならず、@var{*-ub}は
+@var{*-lb}以上でなければなりません。@var{origin}は複素数です。
+
+@code{complexes-rectangular$}が返すジェネレータは、
+実部が@var{re-lb}と@var{re-ub}の間にあり、
+虚部が@var{im-lb}と@var{im-ub}の間にある矩形領域中の複素数を生成します。
+境界は含まれます。
+
+@code{complexes-rectangular$}が返すジェネレータは、
+@var{origin}を中心とし、半径が@var{mag-lb}と@var{mag-ub}、
+切り取り角が@var{ang-lb}と@var{ang-ub}の間にある部分環状領域の中にある
+複素数を生成します。境界は含まれます。
+@var{origin}、@var{ang-lb}、@var{ang-ub}が
+省略された場合は、それぞれ0+0i, 0, 2πが使われます。
+@c COMMON
+@end defun
+
+
 @defun samples$ collection
 @c MOD data.random
 @c EN
