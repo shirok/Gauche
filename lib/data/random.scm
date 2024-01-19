@@ -47,7 +47,8 @@
 
           integers$ integers-between$ fixnums chars$ samples$ booleans$
           int8s$ uint8s$ int16s$ uint16s$ int32s$ uint32s$ int64s$ uint64s$
-          reals$ reals-between$ reals-normal$ reals-exponential$
+          reals$ reals-between$ complexes-rectangular$ complexes-polar$
+          reals-normal$ reals-exponential$
           integers-geometric$ integers-poisson$
           regular-strings$
           booleans int8s uint8s int16s uint16s int32s uint32s int64s uint64s
@@ -201,7 +202,30 @@
     (^[] (clamp (+ (* range (%rand-real0 s)) lb) lb ub))))
 
 ;; rational
-;; complex
+
+(define (complexes-rectangular$ re-lb re-ub im-lb im-ub)
+  (assume (<= re-lb re-ub))
+  (assume (<= im-lb im-ub))
+  (let ([rgen (reals-between$ re-lb re-ub)]
+        [igen (reals-between$ im-lb im-ub)])
+    (^[] (make-rectangular (rgen) (igen)))))
+
+(define complexes-polar$
+  (case-lambda
+    [(mag-lb mag-ub)
+     (complexes-polar$ 0 mag-lb mag-ub 0 (* 2 pi))]
+    [(origin mag-lb mag-ub)
+     (complexes-polar$ origin mag-lb mag-ub 0 (* 2 pi))]
+    [(mag-lb mag-ub ang-lb ang-ub)
+     (complexes-polar$ 0 mag-lb mag-ub ang-lb ang-ub)]
+    [(origin mag-lb mag-ub ang-lb ang-ub)
+     (assume (<= mag-lb mag-ub))
+     (assume (<= ang-lb ang-ub))
+     (let* ([b (square mag-lb)]
+            [m (- (square mag-ub) b)]
+            [maggen (reals$ m b)]
+            [anggen (reals-between$ ang-lb ang-ub)])
+       (^[] (+ origin (make-polar (sqrt (maggen)) (anggen)))))]))
 
 ;;
 ;; Nonuniform distributions

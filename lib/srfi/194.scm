@@ -110,25 +110,9 @@
 
 (define (make-random-real-generator lb ub) (reals-between$ lb ub))
 
-(define (make-random-rectangular-generator real-lb real-ub imag-lb imag-ub)
-  (let ([rgen (reals-between$ real-lb real-ub)]
-        [igen (reals-between$ imag-lb imag-ub)])
-    (^[] (make-rectangular (rgen) (igen)))))
+(define make-random-rectangular-generator complexes-rectangular$)
 
-(define make-random-polar-generator
-  (case-lambda
-    [(mag-lb mag-ub)
-     (make-random-polar-generator 0 mag-lb mag-ub 0 (* 2 pi))]
-    [(origin mag-lb mag-ub)
-     (make-random-polar-generator origin mag-lb mag-ub 0 (* 2 pi))]
-    [(mag-lb mag-ub ang-lb ang-ub)
-     (make-random-polar-generator 0 mag-lb mag-ub ang-lb ang-ub)]
-    [(origin mag-lb mag-ub ang-lb ang-ub)
-     (let* ([b (square mag-lb)]
-            [m (- (square mag-ub) b)]
-            [tgen (reals$)]
-            [phigen (reals-between$ ang-lb ang-ub)])
-       (^[] (+ origin (make-polar (sqrt (+ (* m (tgen)) b)) (phigen)))))]))
+(define make-random-polar-generator complexes-polar$)
 
 (define (make-random-boolean-generator) (booleans$))
 
