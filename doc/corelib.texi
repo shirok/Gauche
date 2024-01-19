@@ -26140,14 +26140,10 @@ column position, it emits a newline character.
 
 
 
-@defun format string arg @dots{}
-@defunx format dest string arg @dots{}
-@defunx format controls string arg @dots{}
-@defunx format dest controls string arg @dots{}
-@defunx format controls dest string arg @dots{}
+@defun format [d/c1 [d/c2]] format-string arg @dots{}
 [SRFI-28+]
 @c EN
-Format @var{arg} @dots{} according to @var{string}.
+Format @var{arg} @dots{} according to @var{format-string}.
 This function is a subset of CommonLisp's @code{format} function,
 with a bit of extension.  It is also a superset of SRFI-28,
 Basic format strings.
@@ -26159,39 +26155,46 @@ Basic format strings.
 @c COMMON
 
 @c EN
-The @var{dest} argument specifies the destination; if it is an output port, the
+The procedure has unusual signature.  The two optional arguments,
+@var{d/c1} and @var{d/c2}, can be an object to specify the destination,
+or a @code{<write-controls>} object to tailor
+@code{~s} and @code{~a} output
+(@pxref{Output controls}).
+You can give none, either one of them,
+or both, in any order.
+@c JP
+この手続きは奇妙なシグネチャを持っています。
+最初の二つの省略可能引数、@var{d/c1}と@var{d/c2}は、
+出力先を指定するオブジェクトか、@code{~s}と@code{~a}の出力形式をカスタマイズする
+@code{<write-controls>}オブジェクトです(@ref{Output controls}参照)。
+それらをどちらも渡さないことも、どちらかだけを渡すことも、両方渡すこともできます。
+両方渡す場合の順番は自由です。
+@c COMMON
+
+@c EN
+Note: SRFI-28's @code{format} does not take optional arguments before
+@var{format-string}
+@c JP
+註: SRFI-28の@code{format}は@var{format-string}の前に省略可能引数を取りません。
+@c COMMON
+
+@c EN
+If you give an object to specify destination, it must be either an output
+port or a boolean value.
+If it is an output port, the
 formatted result is written to it; if it is @code{#t},
 the result is written to the current output port;
 if it is @code{#f}, the formatted result is returned as a string.
 @var{Dest} can be omitted, as SRFI-28 @code{format};
 it has the same effects as giving @code{#f} to the @var{dest}.
 @c JP
-@var{dest}引数は出力先を指定します。それが出力ポートであれば、フォーマットされた
+出力先を指定するオブジェクトを渡す場合、それは出力ポートか真偽値でなければなりません。
+それが出力ポートであれば、フォーマットされた
 結果はそのポートに書き出されます。@var{port}が@code{#t}であれば、結果は
 現在の出力ポートに書き出されます。@var{port}が@code{#f}であれば、結果は
 文字列として@code{format}から返されます。
 @var{dest}は省略することもできます。その場合は、@code{dest}に@code{#f}
 を指定したのと同じ動作をします(SRFI-28の@code{format})。
-@c COMMON
-
-@c EN
-The @var{controls} argument is @code{<write-controls>} object
-(@pxref{Output controls}), which affects the output of @code{~s} and
-@code{~a}.  This is Gauche's extension.
-@c JP
-@var{controls}引数は@code{<write-controls>}オブジェクトで、
-@code{~s}と@code{~a}の出力に影響を与えます
-(@ref{Output controls}参照)。これはGauche独自の拡張です。
-@c COMMON
-
-@c EN
-(The unusual function signature of @code{format}
-is for the convenience; both @var{dest}
-and @var{controls} are optional and they can appear in either order.)
-@c JP
-(@code{format}の関数シグネチャはちょっと変わっていますが、
-これは便利さを優先したためです。@var{port}と@var{controls}はどちらも省略可能で、
-またどの順序でも指定できます。)
 @c COMMON
 
 @c EN
