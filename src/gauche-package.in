@@ -52,6 +52,10 @@
           gauche-package-compile
           gauche-package-link
           gauche-package-clean)
+(autoload util.levenshtein
+          re-distances)
+(autoload text.multicolumn
+          display-multicolumn)
 
 (define *commands* '())
 (define *helps* '())
@@ -92,6 +96,20 @@
         (else (print "Unknown command: " (cadr args))
               (usage)))
   0)
+
+(define (search-similar package-name)
+  (let* ([names (map ($ (cut ~ <> 'name) $ path->gauche-package-description $)
+                     (gauche-package-description-paths :all-versions #t))]
+         [distances (re-distances package-name names :cutoff 5)])
+    (filter-map (^[name distance] (and distance name)) names distances)))
+
+(define (no-such-package package-name)
+  (let1 candidates (search-similar package-name)
+    (if (null? candidates)
+      (print ";; I don't know about package " package-name)
+      (begin
+        (print ";; I don't know about package " package-name ".  You meant the following?")
+        (display-multicolumn candidates)))))
 
 ;;======================================================
 ;; Command definitions
@@ -174,7 +192,7 @@ Options:
   (unless (= (length args) 1) (usage-self))
   (if-let1 gpd (find-gauche-package-description (car args) :all-versions #t)
     (print (ref gpd 'configure))
-    (print ";; I don't know about package " (car args))))
+    (no-such-package (car args))))
 
 ;;------------------------------------------------------
 ;; info
@@ -196,7 +214,7 @@ Options:
       (format #t "     licenses: ~:w\n" (~ gpd'licenses))
       (format #t "     provides: ~:w\n" (~ gpd'providing-modules))
       (format #t "     homepage: ~a\n" (~ gpd'homepage)))
-    (print ";; I don't know about package " (car args))))
+    (no-such-package (car args))))
 
 ;;------------------------------------------------------
 ;; list
