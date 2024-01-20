@@ -109,7 +109,7 @@
       (print ";; I don't know about package " package-name)
       (begin
         (print ";; I don't know about package " package-name ".  You meant the following?")
-        (display-multicolumn candidates)))))
+        (display-multicolumn candidates :indent 4)))))
 
 ;;======================================================
 ;; Command definitions
