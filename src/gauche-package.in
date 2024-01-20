@@ -166,7 +166,7 @@ Options:
 ;; reconfigure
 ;;
 (define-cmd "reconfigure"
-  ("configure-options <package>"
+  ("reconfigure <package>"
    "Show configure options of <package>"
    "Argument: a package name.
   If the package has installed .gpd (Gauche package description) file, show
