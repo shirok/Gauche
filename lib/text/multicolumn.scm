@@ -45,10 +45,14 @@
                              :key (width 80) ; total width
                                   (minimum-width 8) ; minimum column width
                                   (max-columns 4)
-                                  (order 'column))
+                                  (order 'column)
+                                  (indent 0))
+  (define indent-string (make-string indent #\space))
   (dolist [line (layout-multicolumn strs
-                                    :width width :minimum-width minimum-width
+                                    :width (- width indent)
+                                    :minimum-width minimum-width
                                     :max-columns max-columns :order order)]
+    (display indent-string)
     (for-each write-tree line)
     (newline)))
 

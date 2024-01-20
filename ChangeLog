@@ -1,3 +1,8 @@
+2024-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/multicolumn.scm (display-multicolumn): Add indent keyword
+	  arg.
+
 2024-01-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in ("info"): Add 'gauche-package info' command.

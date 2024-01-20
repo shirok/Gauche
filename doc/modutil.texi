@@ -29928,7 +29928,7 @@ Various options are provided to customize the output.
 @c COMMON
 @end deftp
 
-@defun display-multicolumn strs :key width minimum-width max-columns order
+@defun display-multicolumn strs :key width minimum-width max-columns order indent
 @c MOD text.multicolumn
 @c EN
 Display items in a list of strings @var{strs} in multicolumn format,
@@ -29971,6 +29971,18 @@ in the first row from left to right, and then second row, and so on.
 上から下へ、それから第二カラムを上から下へ、という順に並べられます。
 @code{row}の場合はロウファースト、つまり最初の行の左から右、次の行の左から右、
 という順に並べられます。
+@c COMMON
+
+@c EN
+The @var{indent} argument must be a nonnegative exact integer.  If it is
+greater than zero, that number of whitespaces are prepended before
+each line.  The @var{width} includes this indentation; so the actual
+area of text becomes narrower by @var{indent} characters.
+@c JP
+@var{indent}引数は、与えられたなら非負の正確な整数でなければなりません。
+これが1以上の場合、その数の空白文字が各行の先頭に追加されます。
+@var{width}で指定される幅はこのインデントを含んだものとなります。つまり
+テキストの表示領域の幅はこの引数の分だけ狭くなります。
 @c COMMON
 @end defun
 
