@@ -43,7 +43,4 @@
 
   ;; Homepage URL, if any.
   ; :homepage "http://example.com/@@package@@/"
-
-  ;; Superseded-by <repositofy-url>
-  ;; If this
   )
