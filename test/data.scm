@@ -627,8 +627,8 @@
   (let ([tm (alist->tree-map data)])
     (test* "alist->priority-map" data
            (sort (dict->alist (alist->priority-map data))))
-    (test* "dictionary->priority-map" data
-           (sort (dict->alist (dictionary->priority-map tm)))))
+    (test* "dict->priority-map" data
+           (sort (dict->alist (dict->priority-map tm)))))
   )
 
 ;;;========================================================================

@@ -1,3 +1,9 @@
+2024-01-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/priority-map.scm: Allow any comparator as key-comparator;
+	  we switch hashtable and treemap internally.  Then dict->priority-map
+	  can take the given dictionary's key-comparator.
+
 2024-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/priority-map.scm (dictionary->priority-map),

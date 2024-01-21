@@ -4708,17 +4708,56 @@ When iterated, it iterates increasing order of values.
 @c MOD data.priority-map
 @c EN
 Creates and returns an empty priority map.
-It can take @var{key-comparator}, which must have a hash procedure
-and is used to hash keys, and
-@var{value-comparator}, which must have ordering predicate
+It can take @var{key-comparator}, which is used to compare keys,
+and @var{value-comparator}, which must have ordering predicate
 and is used to order values.
 When omitted, @code{default-comparator} is assumed.
 @c JP
 空のプライオリティマップを作って返します。
-@var{key-comparator}はキーのハッシュに使われるハッシュ手続きを持った比較器でなければ
-ならず、@var{value-comparator}は値の順序づけに使われる
+@var{key-comparator}はキーの比較に使われる比較器であり、
+また@var{value-comparator}は値の順序づけに使われる
 順序手続きを持った比較器でなければなりません。
 省略された場合はどちらも@code{default-comparator}が使われます。
+@c COMMON
+
+@c EN
+If you apply @code{dict-comparator} on a priority map,
+its @var{key-comparator} is returned.
+@c JP
+プライオリティマップに@code{dict-comparator}を適用すると、
+@var{key-comparator}が返されます。
+@c COMMON
+@end defun
+
+@defun dict->priority-map dict :optional value-comparator
+@c MOD data.priority-map
+@c EN
+Creates and returns a priority map that contains the same key-value entries
+as given dictionary @var{dict}.
+The priority map's key comparator is the same as the key comparator
+of @var{dict}, and its value comparator is @var{value-comparator},
+defaulted to @code{default-comparator}.
+@c JP
+ディクショナリ@var{dict}と同じキー-値のエントリを持つプライオリティマップを作って
+返します。作られるマップのキー比較器は@var{dict}のキー比較器と同一で、
+値比較器は@var{value-comparator}です。後者が省略された場合は
+@code{default-comparator}が使われます。
+@c COMMON
+@end defun
+
+@defun alist->priority-map alist :optional key-comparator value-comparator
+@c MOD data.priority-map
+@c EN
+Creates and returns a priority map that contains the key-value pairs
+in an assoc list @var{alist}.
+The optional @var{key-comparator} and @var{value-comparator}
+are used to build a priority map.  When omitted, @code{default-comparator}
+is used.
+@c JP
+連想リスト@var{alist}に含まれるキー-値ペアを内容とするプライオリティマップを作って
+返します。省略可能引数@var{key-comparator}と@var{value-comparator}が
+プライオリティマップの構築に使われます。省略された場合は@code{default-comparator}
+となります。
 @c COMMON
 @end defun
 

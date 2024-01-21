@@ -41,7 +41,7 @@
   (use gauche.generator)
   (use util.match)
   (export <priority-map>
-          make-priority-map dictionary->priority-map alist->priority-map
+          make-priority-map dict->priority-map alist->priority-map
           priority-map-min
           priority-map-max
           priority-map-min-all
@@ -52,8 +52,8 @@
 
 (define-class <priority-map> (<ordered-dictionary>)
   (;; private
-   (key-map    :init-keyword :key-map)      ; key -> value  hashtable
-   (key-cmpr   :init-keyword :key-cmpr)     ; key comparator, needs hash
+   (key-map    :init-keyword :key-map)      ; key -> value  hashtable/treemap
+   (key-cmpr   :init-keyword :key-cmpr)     ; key comparator
    (value-map  :init-keyword :value-map)    ; value -> [key]  treemap
    (value-cmpr :init-keyword :value-cmpr)   ; value comparator, needs order
    ))
@@ -62,7 +62,9 @@
                            (key-comparator default-comparator)
                            (value-comparator default-comparator))
   (make <priority-map>
-    :key-map    (make-hash-table key-comparator)
+    :key-map    (if (comparator-hashable? key-comparator)
+                  (make-hash-table key-comparator)
+                  (make-tree-map key-comparator))
     :key-cmpr   key-comparator
     :value-map  (make-tree-map value-comparator)
     :value-cmpr value-comparator))
@@ -70,7 +72,7 @@
 ;; Sequence protocol
 ;; Iterator iterates increasing order of values
 (define-method size-of ((pm <priority-map>))
-  (hash-table-size (~ pm'key-map)))
+  (size-of (~ pm'key-map)))
 
 (define-method call-with-iterator ((coll <priority-map>) proc :allow-other-keys)
   (define gen (x->generator (~ coll'value-map)))
@@ -90,19 +92,19 @@
 ;; Dictionary protocol
 (define-method dict-get ((pmap <priority-map>) key :optional default)
   (if (undefined? default)
-    (hash-table-get (~ pmap 'key-map) key)
-    (hash-table-get (~ pmap 'key-map) key default)))
+    (dict-get (~ pmap 'key-map) key)
+    (dict-get (~ pmap 'key-map) key default)))
 
 (define-method dict-exists? ((pmap <priority-map>) key)
-  (hash-table-exists? (~ pmap 'key-map) key))
+  (dict-exists? (~ pmap 'key-map) key))
 
 (define (%pmap-put! kmap kcmp vmap vcmp key value)
-  (and-let* ([v (hash-table-get kmap key #f)]
+  (and-let* ([v (dict-get kmap key #f)]
              [ (not (=? vcmp v value)) ])
     ($ tree-map-update! vmap v
        (cute remove key <> (comparator-equality-predicate kcmp)) '()))
   (tree-map-push! vmap value key)
-  (hash-table-put! kmap key value))
+  (dict-put! kmap key value))
 
 (define-method dict-put! ((pmap <priority-map>) key value)
   (%pmap-put! (~ pmap 'key-map)
@@ -115,19 +117,19 @@
   (let ([kmap (~ pmap 'key-map)]
         [kcmp (~ pmap'key-cmpr)]
         [vmap (~ pmap 'value-map)])
-    (and-let1 val (hash-table-get kmap key #f)
+    (and-let1 val (dict-get kmap key #f)
       (let1 ks (tree-map-get vmap val)
         (if (null? (cdr ks))
           (tree-map-delete! vmap val)
           (tree-map-put! vmap val (remove (cut =? kcmp key <>) ks)))))
-      (hash-table-delete! kmap key)))
+      (dict-delete! kmap key)))
 
 (define-method dict-clear! ((pmap <priority-map>))
   (dict-clear! (~ pmap'key-map))
   (dict-clear! (~ pmap'value-map)))
 
 (define-method dict-comparator ((pmap <priority-map>))
-  (hash-table-comparator (~ pmap'key-map)))
+  (dict-comparator (~ pmap'key-map)))
 
 (define-method dict-fold ((pmap <priority-map>) proc seed)
   ($ tree-map-fold (~ pmap 'value-map)
@@ -138,11 +140,9 @@
      (^[v ks s] (fold-right (^[k s] (proc k v s)) s ks)) seed))
 
 ;; specific stuff
-(define (dictionary->priority-map dict
-                                  :optional
-                                  (key-comparator default-comparator)
-                                  (value-comparator default-comparator))
-  (rlet1 pmap (make-priority-map :key-comparator key-comparator
+(define (dict->priority-map dict
+                            :optional (value-comparator default-comparator))
+  (rlet1 pmap (make-priority-map :key-comparator (dict-comparator dict)
                                  :value-comparator value-comparator)
     (let ([kmap (~ pmap 'key-map)]
           [kcmp (~ pmap 'key-cmpr)]
@@ -193,7 +193,7 @@
        (if (null? keys)
          (tree-map-delete! vmap val)
          (tree-map-put! vmap val keys))
-       (hash-table-delete! kmap key)
+       (dict-delete! kmap key)
        (cons key val)]
       [#f #f])))
 
@@ -205,6 +205,6 @@
        (if (null? keys)
          (tree-map-delete! vmap val)
          (tree-map-put! vmap val keys))
-       (hash-table-delete! kmap key)
+       (dict-delete! kmap key)
        (cons key val)]
       [#f #f])))
