@@ -1,5 +1,8 @@
 2024-01-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/data/priority-map.scm (dictionary->priority-map),
+	  (alist->priority-map): Added.
+
 	* lib/text/multicolumn.scm (display-multicolumn): Add indent keyword
 	  arg.
 

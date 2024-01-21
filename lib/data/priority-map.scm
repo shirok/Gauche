@@ -41,7 +41,7 @@
   (use gauche.generator)
   (use util.match)
   (export <priority-map>
-          make-priority-map
+          make-priority-map dictionary->priority-map alist->priority-map
           priority-map-min
           priority-map-max
           priority-map-min-all
@@ -96,17 +96,20 @@
 (define-method dict-exists? ((pmap <priority-map>) key)
   (hash-table-exists? (~ pmap 'key-map) key))
 
+(define (%pmap-put! kmap kcmp vmap vcmp key value)
+  (and-let* ([v (hash-table-get kmap key #f)]
+             [ (not (=? vcmp v value)) ])
+    ($ tree-map-update! vmap v
+       (cute remove key <> (comparator-equality-predicate kcmp)) '()))
+  (tree-map-push! vmap value key)
+  (hash-table-put! kmap key value))
+
 (define-method dict-put! ((pmap <priority-map>) key value)
-  (let ([kmap (~ pmap 'key-map)]
-        [kcmp (~ pmap 'key-cmpr)]
-        [vmap (~ pmap 'value-map)]
-        [vcmp (~ pmap 'value-cmpr)])
-    (and-let* ([v (hash-table-get kmap key #f)]
-               [ (not (=? vcmp v value)) ])
-      ($ tree-map-update! vmap v
-         (cute remove key <> (comparator-equality-predicate kcmp)) '()))
-    (tree-map-push! vmap value key)
-    (hash-table-put! kmap key value)))
+  (%pmap-put! (~ pmap 'key-map)
+              (~ pmap 'key-cmpr)
+              (~ pmap 'value-map)
+              (~ pmap 'value-cmpr)
+              key value))
 
 (define-method dict-delete! ((pmap <priority-map>) key)
   (let ([kmap (~ pmap 'key-map)]
@@ -135,6 +138,30 @@
      (^[v ks s] (fold-right (^[k s] (proc k v s)) s ks)) seed))
 
 ;; specific stuff
+(define (dictionary->priority-map dict
+                                  :optional
+                                  (key-comparator default-comparator)
+                                  (value-comparator default-comparator))
+  (rlet1 pmap (make-priority-map :key-comparator key-comparator
+                                 :value-comparator value-comparator)
+    (let ([kmap (~ pmap 'key-map)]
+          [kcmp (~ pmap 'key-cmpr)]
+          [vmap (~ pmap 'value-map)]
+          [vcmp (~ pmap 'value-cmpr)])
+      (dict-for-each dict (^[k v] (%pmap-put! kmap kcmp vmap vcmp k v))))))
+
+(define (alist->priority-map alist
+                             :optional
+                             (key-comparator default-comparator)
+                             (value-comparator default-comparator))
+  (rlet1 pmap (make-priority-map :key-comparator key-comparator
+                                 :value-comparator value-comparator)
+    (let ([kmap (~ pmap 'key-map)]
+          [kcmp (~ pmap 'key-cmpr)]
+          [vmap (~ pmap 'value-map)]
+          [vcmp (~ pmap 'value-cmpr)])
+      (dolist [p alist]
+        (%pmap-put! kmap kcmp vmap vcmp (car p) (cdr p))))))
 
 ;; Returns (k . v) where v is min or max; #f if pmap is empty
 (define (priority-map-min pmap)

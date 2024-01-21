@@ -623,6 +623,12 @@
                            (let1 z (priority-map-pop-max! m)
                              (cons z (pop m)))))
                        m))))
+
+  (let ([tm (alist->tree-map data)])
+    (test* "alist->priority-map" data
+           (sort (dict->alist (alist->priority-map data))))
+    (test* "dictionary->priority-map" data
+           (sort (dict->alist (dictionary->priority-map tm)))))
   )
 
 ;;;========================================================================
