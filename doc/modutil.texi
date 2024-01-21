@@ -4645,46 +4645,87 @@ key in @var{immap}, respectively.  If @var{immap} is empty,
 
 @deftp {Module} data.priority-map
 @mdindex data.priority-map
+@c EN
 Priority map is a dictionary that can map keys to values, while
 the entires are sorted by their @emph{values}.
 (If the entires are sorted by keys, it's a treemap--@pxref{Treemaps}).
+@c JP
+プライオリティマップは、キーを値にマッピングする辞書で、
+エントリが値によってソートされているものです
+(エントリがキーでソートされているのはツリーマップです。@ref{Treemaps}参照)。
+@c COMMON
 
+@c EN
 It is useful when you wanted a sorted sequence, with quick access by
 keys that are associated to each value.
+@c JP
+ソートされたシーケンスだけれど、
+キーによって特定の値に素早くアクセスする必要もある、という場合に便利です。
+@c COMMON
 
+@c EN
 Note: If what you need is just a priority queue, you can use
 @code{data.heap} (@pxref{Heap}).
+@c JP
+註: 必要なものがプライオリティキューなら、
+@code{data.heap}が使えます (@ref{Heap}参照)。
+@c COMMON
 @end deftp
 
 @deftp {Class} <priority-map>
 @cindex priority-map
 @c MOD data.priority-map
+@c EN
 Priority map class.  It has no public slots.
 Instances of priority maps must be created by
 @code{make-priority-map} procedure instead of @code{make} method on
 the class.
+@c JP
+プライオリティマップのクラスです。公開スロットはありません。
+プライオリティマップのインスタンスは、@code{make}メソッドではなく
+@code{make-priority-map}で作る必要があります。
+@c COMMON
 
+@c EN
 Inherits @code{<ordered-dictionary>}, and implements dictionary protocol.
 Operations concerning
 associations of keys and values are done through dictionary generic
 functions (@pxref{Generic functions for dictionaries}).
+@c JP
+@code{<ordered-dictioary>}を継承し、ディクショナリプロトコルを実装しています。
+キーから値へのマッピングに関わる操作は、ディクショナリのジェネリック関数を
+使ってください(@ref{Generic functions for dictionaries}参照)。
+@c COMMON
 
+@c EN
 When iterated, it iterates increasing order of values.
+@c JP
+イテレートする場合は、値の増加順になります。
+@c COMMON
 @end deftp
 
 @defun make-priority-map :key key-comparator value-comparator
 @c MOD data.priority-map
+@c EN
 Creates and returns an empty priority map.
 It can take @var{key-comparator}, which must have a hash procedure
 and is used to hash keys, and
 @var{value-comparator}, which must have ordering predicate
 and is used to order values.
 When omitted, @code{default-comparator} is assumed.
+@c JP
+空のプライオリティマップを作って返します。
+@var{key-comparator}はキーのハッシュに使われるハッシュ手続きを持った比較器でなければ
+ならず、@var{value-comparator}は値の順序づけに使われる
+順序手続きを持った比較器でなければなりません。
+省略された場合はどちらも@code{default-comparator}が使われます。
+@c COMMON
 @end defun
 
 @defun priority-map-min pmap
 @defunx priority-map-max pmap
 @c MOD data.priority-map
+@c EN
 Return a pair of a key and a value, where the value is smallest or
 largest in the priority map @var{pmap}, respectively.
 
@@ -4693,22 +4734,43 @@ If @var{pmap} is empty, @code{#f} is returned.
 If @var{pmap} has more than one value that are equal to each other
 (w.r.t. @var{value-comparator} given to the constructor),
 either one of them is picked.
+@c JP
+プライオリティマップ@var{pmap}中の、それぞれ最小の値および最大の値を持つエントリの
+キーと値をペアにして返します。
+
+@var{pmap}が空の場合は@code{#f}を返します。
+
+@var{pmap}中に、@var{value-comparator}で比較して同じになる値を持つエントリが
+複数ある場合は、そのうちのどれか一つが返されます。
+@c COMMON
 @end defun
 
 @defun priority-map-min-all pmap
 @defunx priority-map-max-all pmap
 @c MOD data.priority-map
+@c EN
 Return a pair of a list of keys and a value, where the value is smallest or
 largest in the priority map @var{pmap}, respectively.  The keys includes
 all the entries that has the same value.  The caller shouldn't modify
 the returned key list.
+@c JP
+プライオリティマップ@var{pmap}中の、それぞれ最小の値および最大の値を持つエントリを
+全て選び、そのキーのリスト、および値そのものをペアにして返します。
+そのリストにあるキーは全て同じ値を持つということです。
+返されるキーのリストは変更してはなりません。
+@c COMMON
 
+@c EN
 If @var{pmap} is empty, @code{#f} is returned.
+@c JP
+@var{pmap}が空の場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun priority-map-pop-min! pmap
 @defunx priority-map-pop-max! pmap
 @c MOD data.priority-map
+@c EN
 Remove one entry with the smallest or largest value, respectively,
 and returns a pair of the key and the value of removed entry.
 
@@ -4717,6 +4779,15 @@ If @var{pmap} is empty, @var{#f} is returned.
 If @var{pmap} has more than one value that are equal to each other
 (w.r.t. @var{value-comparator} given to the constructor),
 either one of them is picked.
+@c JP
+それぞれ、最小および最大の値を持つエントリをひとつ@var{pmap}から取り除き、
+そのエントリのキーと値をペアにして返します。
+
+@var{pmap}が空の場合は@code{#f}を返します。
+
+@var{pmap}中に、@var{value-comparator}で比較して同じになる値を持つエントリが
+複数ある場合は、そのうちのどれか一つが選ばれます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
