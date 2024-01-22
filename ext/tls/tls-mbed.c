@@ -384,6 +384,9 @@ static void mbed_cleanup(ScmMbedTLS *t)
     t->server_name = NULL;
     t->common.in_port = t->common.out_port = SCM_UNDEFINED;
 
+    /* MbedTLS is sensitive about the order of cleanup.  we haven't
+       quite figured it out, but delaying net_free is apparently a bad
+       idea.  Also, ssl_context should be cleaned up before ssl_config. */
     mbedtls_ssl_close_notify(&t->ctx);
     mbedtls_net_free(&t->conn);
     mbedtls_entropy_free(&t->entropy);
@@ -549,7 +552,12 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 #endif /* defined(GAUCHE_USE_MBEDTLS) */
 
 #ifdef MBEDTLS_THREADING_ALT
-
+/* Alternative mutex configuration for Windows/MinGW.
+   See mbedtls/threading.h in the mbedtls source tree for the details.
+   On POSIX platform, we use MBEDTLS_THREADING_PTHREADS so these are
+   not used.
+   These must be in sync with tools/tls/threading_alt.h.  tools/tls/Makefile
+   takes care of putting that file in the source tree. */
 static void win_mutex_init(mbedtls_threading_mutex_t *m)
 {
     m->mutex = (void*)Scm__WinCreateMutex();
@@ -582,7 +590,6 @@ static int win_mutex_unlock(mbedtls_threading_mutex_t *m)
         return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
     }
 }
-
 #endif //MBEDTLS_THREADING_ALT
 
 /*
