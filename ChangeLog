@@ -1,3 +1,8 @@
+2024-01-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (real-ln): Fix precision loss of taking log on
+	  a large bignum. https://github.com/shirok/Gauche/issues/980
+
 2024-01-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/data/priority-map.scm: Allow any comparator as key-comparator;

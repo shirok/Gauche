@@ -426,7 +426,7 @@
     (when (== d SCM_DBL_POSITIVE_INFINITY)
       (if (SCM_BIGNUMP x)
         (let* ([z::ScmBits* (cast ScmBits* (-> (SCM_BIGNUM x) values))]
-               [scale::long (Scm_BitsHighest1 z 0 (* (SCM_BIGNUM_SIZE x) SCM_WORD_BITS))])
+               [scale::long (- (Scm_BitsHighest1 z 0 (* (SCM_BIGNUM_SIZE x) SCM_WORD_BITS)) 53)])
           (return (+ (log (Scm_GetDouble
                            (Scm_DivInexact x (Scm_Ash (SCM_MAKE_INT 1) scale))))
                      (* scale (log 2.0)))))
