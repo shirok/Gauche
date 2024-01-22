@@ -207,6 +207,19 @@ MbedTLS license as well (Apache License 2.0).
 endif::EN[]
 
 ifdef::JA[]
+MbedTLSライブラリはコンパイル時にでマルチスレッド対応にするかどうかを
+選べるようになっていますが、Gaucheではマルチスレッド対応でないと使えません。
+システムのMbedTLSライブラリがマルチスレッド対応でコンパイルされていない場合は、
+Gaucheに組み込むオプションを使ってください。
+endif::JA[]
+ifdef::EN[]
+MbedTLS library can be compiled with or without multi-threading support.
+Gauche requires MbedTLS library to be compiled with multi-threading support.
+If the system's library doesn't have that support, use the option to
+build it into Gauche library.
+endif::EN[]
+
+ifdef::JA[]
 TLSを使う場合、サーバー証明書を認証するためにはCA(認証局)証明書が必要になります。
 どこから証明書を探すかについて、いくつか選択肢を指定できます。
 endif::JA[]
