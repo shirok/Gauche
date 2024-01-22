@@ -17,6 +17,7 @@ CONFIG_GENERATED = Makefile
 
 MBEDTLS_LIBS_XTRA = libmbedx509.a libmbedcrypto.a
 MBEDTLS_LIBS = libmbedtls.a $(MBEDTLS_LIBS_XTRA)
+GAUCHE_THREAD_TYPE = @GAUCHE_THREAD_TYPE@
 
 all: mbedtls
 
@@ -31,6 +32,7 @@ $(MBEDTLS_LIBS_XTRA) : libmbedtls.a
 
 libmbedtls.a: mbedtls-$(MBEDTLS_VERSION)
 	cd mbedtls-$(MBEDTLS_VERSION)                \
+	 && ../process-config.sh $(GAUCHE_THREAD_TYPE) include/mbedtls/mbedtls_config.h \
 	 && cmake @MBEDTLS_CMAKE_OPTIONS@ .          \
 	 && make -f CMakeFiles/Makefile2 library/all \
 	 && cd library                               \
