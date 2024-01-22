@@ -22,13 +22,13 @@ case $thread_model in
           && mv ${config_path}.tmp $config_path
         ;;
     win32)
-        # We need to prepare threading_alt.h before doing this
-        # sed -e 's@^//#define MBEDTLS_PLATFORM_MEMORY@#define MBEDTLS_PLATFORM_MEMORY@' \
-        #     -e 's@^//#define MBEDTLS_THREADING_C@#define MBEDTLS_THREADING_C@' \
-        #     -e 's@^#define MBEDTLS_THREADING_PTHREAD@//#define MBEDTLS_THREADING_PTHREAD@' \
-        #     -e 's@^//#define MBEDTLS_THREADING_ALT@#define MBEDTLS_THREADING_ALT@' \
-        #     $config_path > ${config_path}.tmp \
-        #   && mv ${config_path}.tmp $config_path
+        cp ../threading_alt.h `dirname ${config_path}`/
+        sed -e 's@^//#define MBEDTLS_PLATFORM_MEMORY@#define MBEDTLS_PLATFORM_MEMORY@' \
+            -e 's@^//#define MBEDTLS_THREADING_C@#define MBEDTLS_THREADING_C@' \
+            -e 's@^#define MBEDTLS_THREADING_PTHREAD@//#define MBEDTLS_THREADING_PTHREAD@' \
+            -e 's@^//#define MBEDTLS_THREADING_ALT@#define MBEDTLS_THREADING_ALT@' \
+            $config_path > ${config_path}.tmp \
+          && mv ${config_path}.tmp $config_path
         ;;
     *)
         echo "process-config.sh: Uknown thread model: $thread_model"

@@ -378,17 +378,20 @@ static u_long mbed_poll(ScmTLS *tls, u_long rwflags, ScmTimeSpec *timeout)
    might have been collected. */
 static void mbed_cleanup(ScmMbedTLS *t)
 {
+    if (t->state == CLOSED) return;
+
+    t->state = CLOSED;
+    t->server_name = NULL;
+    t->common.in_port = t->common.out_port = SCM_UNDEFINED;
+
     mbedtls_ssl_close_notify(&t->ctx);
+    mbedtls_net_free(&t->conn);
     mbedtls_entropy_free(&t->entropy);
     mbedtls_pk_free(&t->pk);
     mbedtls_x509_crt_free(&t->ca);
-    mbedtls_ssl_config_free(&t->conf);
     mbedtls_ssl_free(&t->ctx);
-    mbedtls_net_free(&t->conn);
     mbedtls_ctr_drbg_free(&t->ctr_drbg);
-    t->server_name = NULL;
-    t->common.in_port = t->common.out_port = SCM_UNDEFINED;
-    t->state = CLOSED;
+    mbedtls_ssl_config_free(&t->conf);
 }
 
 static ScmObj mbed_close(ScmTLS *tls)
@@ -511,10 +514,10 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     }
 
     t->state = UNCONNECTED;
+    mbedtls_ssl_config_init(&t->conf);
     mbedtls_ctr_drbg_init(&t->ctr_drbg);
     mbedtls_net_init(&t->conn);
     mbedtls_ssl_init(&t->ctx);
-    mbedtls_ssl_config_init(&t->conf);
     mbedtls_x509_crt_init(&t->ca);
     mbedtls_pk_init(&t->pk);
     mbedtls_entropy_init(&t->entropy);
@@ -545,6 +548,43 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 
 #endif /* defined(GAUCHE_USE_MBEDTLS) */
 
+#ifdef MBEDTLS_THREADING_ALT
+
+static void win_mutex_init(mbedtls_threading_mutex_t *m)
+{
+    m->mutex = (void*)Scm__WinCreateMutex();
+}
+
+static void win_mutex_free(mbedtls_threading_mutex_t *m)
+{
+    if ((HANDLE)m->mutex != INVALID_HANDLE_VALUE) {
+        CloseHandle((HANDLE)m->mutex);
+        m->mutex = (void*)INVALID_HANDLE_VALUE;
+    }
+}
+
+static int win_mutex_lock(mbedtls_threading_mutex_t *m)
+{
+    if ((HANDLE)m->mutex != INVALID_HANDLE_VALUE) {
+        Scm__WinMutexLock((HANDLE)m->mutex);
+        return 0;
+    } else {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+}
+
+static int win_mutex_unlock(mbedtls_threading_mutex_t *m)
+{
+    if ((HANDLE)m->mutex != INVALID_HANDLE_VALUE) {
+        ReleaseMutex((HANDLE)m->mutex);
+        return 0;
+    } else {
+        return MBEDTLS_ERR_THREADING_BAD_INPUT_DATA;
+    }
+}
+
+#endif //MBEDTLS_THREADING_ALT
+
 /*
  * Initialization
  */
@@ -564,6 +604,14 @@ void Scm_Init_rfc__tls__mbed()
     Scm_InitStaticClass(&Scm_MbedTLSClass, "<mbed-tls>", mod, NULL, 0);
     k_server_name = SCM_MAKE_KEYWORD("server-name");
     k_skip_verification = SCM_MAKE_KEYWORD("skip-verification");
+
+#  ifdef MBEDTLS_THREADING_ALT
+    mbedtls_threading_set_alt(win_mutex_init,
+                              win_mutex_free,
+                              win_mutex_lock,
+                              win_mutex_unlock);
+#  endif //MBEDTLS_THREADING_ALT
+
 #else
     /* insert dummy binding */
     SCM_DEFINE(mod, "<mbed-tls>", SCM_FALSE);
