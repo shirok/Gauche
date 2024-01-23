@@ -1,3 +1,9 @@
+2024-01-23  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (double_precision): Fix ratnum->flonum failure when
+	  when either denominator or numerator is 2^(64n-1).
+	  https://github.com/shirok/Gauche/issues/981
+
 2024-01-22  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (real-ln): Fix precision loss of taking log on

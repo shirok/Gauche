@@ -215,7 +215,7 @@ int Scm_BitsEvery(const ScmBits *bits, int start, int end)
 #define count_bits Scm__CountBitsInWord /* defined in bits_inline.h */
 
 /* count number of '1's from the start-th bit (inclusive) and end-th
-   bit (exclusiv) */
+   bit (exclusive) */
 int Scm_BitsCount1(const ScmBits *bits, int start, int end)
 {
     int sw = start  / SCM_WORD_BITS;
@@ -253,8 +253,8 @@ int Scm_BitsCount0(const ScmBits *bits, int start, int end)
 #define lowest  Scm__LowestBitNumber
 #define highest Scm__HighestBitNumber
 
-/* Returns the lowest bit number between start and end, or -1 if all
-   the bits there is zero. */
+/* Returns the lowest bit number between start (inclusive) and end (exclusive),
+   or -1 if all the bits there is zero. */
 int Scm_BitsLowest1(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;
@@ -303,8 +303,8 @@ int Scm_BitsLowest0(const ScmBits *bits, int start, int end)
     }
 }
 
-/* Returns the highest bit number between start and end, or -1 if all
-   the bits there is zero. */
+/* Returns the highest bit number between start (inclusive) and end (exclusive),
+   or -1 if all the bits there is zero. */
 int Scm_BitsHighest1(const ScmBits *bits, int start, int end)
 {
     int sw = start/SCM_WORD_BITS;

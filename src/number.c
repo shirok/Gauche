@@ -1330,16 +1330,16 @@ static int double_precision(ScmObj si, int *phi, int *plo)
         ScmSmallInt i = SCM_INT_VALUE(si);
         if (i < 0) i = -i;      /* won't overflow */
         ScmBits bi = (ScmBits)i;
-        int hi = Scm_BitsHighest1(&bi, 0, SCM_WORD_BITS-1);
-        int lo = Scm_BitsLowest1(&bi, 0, SCM_WORD_BITS-1);
+        int hi = Scm_BitsHighest1(&bi, 0, SCM_WORD_BITS);
+        int lo = Scm_BitsLowest1(&bi, 0, SCM_WORD_BITS);
         if (phi) *phi = hi;
         if (plo) *plo = lo;
         return (hi - lo) < 53;
     } else {
         SCM_ASSERT(SCM_BIGNUMP(si));
         const ScmBits *bits = (ScmBits*)SCM_BIGNUM(si)->values;
-        int hi = Scm_BitsHighest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
-        int lo = Scm_BitsLowest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS-1);
+        int hi = Scm_BitsHighest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS);
+        int lo = Scm_BitsLowest1(bits, 0, SCM_BIGNUM_SIZE(si)*SCM_WORD_BITS);
         if (phi) *phi = hi;
         if (plo) *plo = lo;
         return (hi - lo) < 53;
