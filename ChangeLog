@@ -1,5 +1,11 @@
 2024-01-23  Shiro Kawai  <shiro@acm.org>
 
+	* ext/charconv/jconv.c (jconv_open): If input and output encoding are
+	  the same but not supported natively, use pass-through transcoder
+	  instead of delegating it to iconv.  Some verion of iconv doesn't
+	  seem to like it.
+	  https://github.com/shirok/Gauche/issues/979
+
 	* src/number.c (double_precision): Fix ratnum->flonum failure when
 	  when either denominator or numerator is 2^(64n-1).
 	  https://github.com/shirok/Gauche/issues/981

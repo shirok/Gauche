@@ -1983,7 +1983,9 @@ ScmConvInfo *jconv_open(const char *toCode, const char *fromCode,
     }
 
     if (convert == NULL) {
-        if (useIconv) {
+        if (conv_name_match(fromCode, toCode)) {
+            handler = jconv_ident;
+        } else if (useIconv) {
 #ifdef HAVE_ICONV_H
             /* try iconv */
             handle = iconv_open(toCode, fromCode);
