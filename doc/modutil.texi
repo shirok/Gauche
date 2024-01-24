@@ -29933,9 +29933,15 @@ or @code{#f} if no node with the given name is found.
 
 @defun info-index-add! info-doc index-node-name :optional key-modifier
 @c MOD text.info
+@c EN
 Read the node named @var{index-node-name} in the info document
-@var{info-doc}, and ads its menu entries into the index table.
+@var{info-doc}, and adds its menu entries into the index table.
+@c JP
+infoドキュメント@var{info-doc}にある、名前@var{index-node-name}持つノードを
+読み取り、そのメニューの内容をインデックステーブルに加えます。
+@c COMMON
 
+@c EN
 It is particularly useful to give the index page of the info doc,
 so that you'll be able to lookup particular term (e.g. function name)
 quickly.  Typical info document has a node called @code{Index}.
@@ -29943,47 +29949,106 @@ Large documents, such as programming language reference
 (Gauche Users' Reference is one of them) may have multiple
 index pages for different categories.  You can call this procedure
 multiple times to add more than one index pages.
+@c JP
+この手続きは、infoドキュメントの索引ノードを読み込んで索引を作るのに便利です。
+例えば関数索引のページを読み込めば、関数名から定義があるノードを探し当てることができます。
+典型的なinfoドキュメントでは、索引ページには@code{Index}という名前がついています。
+但し、長いドキュメントでは索引がカテゴリごとに分けられていて、
+それぞれ違う名前がついているかもしれません (Gaucheのユーザリファレンスもそのひとつです)。
+この手続きをそれぞれの索引ノードについて呼び出すことで、複数の索引ノードの内容を
+取り込むことができます。
+@c COMMON
 
+@c EN
 The optional @var{key-modifier} argument is a procedure applied to
-the entry-name to obtain a key in the index table.
+the entry-name (string) to obtain a key (string) in the index table.
 Sometimes the index uses different entry name
 from the actual name; e.g. Gauche's class index lists class names without
 surrounding @code{<} and @code{>}, since using the actual name makes all
 class names being listed below @code{<} subheading, which isn't very useful.
 You can pass @code{(^e #"<~|e|>")} as @var{key-modifier} to recover the actual
 class name to be used as the key.
+@c JP
+省略可能な@var{key-modifier}引数は、索引ノードのテーブルのキー(文字列)を取って
+実際の見出しを文字列で返す手続きです。
+しばしば索引に示されるキーは、実際の見出しとは異なることがあります。
+例えばGaucheのクラス索引は、クラス名を囲む@code{<}と@code{>}を取り除いたものを
+キーとしています。実際の名前を使うと、全てのキーが@code{<}の下に集められてしまい
+あまり有用ではないからです。この場合は、@var{key-modifier}に
+@code{(^e #"<~|e|>")}を渡すことで、実際の名前で索引を引けるようになります。
+@c COMMON
 
+@c EN
 If there are more than one entries per key, both are saved in the
-index table.  See @code{info-lookup-index} below.
+index table.  See @code{info-index-ref} below.
+@c JP
+同じキーに対応するエントリが複数ある場合、それらは全てテーブルに格納されます。
+下の@code{info-index-ref}を参照してください。
+@c COMMON
 @end defun
 
 @defun info-index-ref info-doc key
 @c MOD text.info
+@c EN
 Lookup index with the given key.  Returns a list of
-@code{(<node-name> <line-number>)}.
+@code{(@var{node-name} @var{line-number})}.
+
+You can use pass @var{node-name} to @code{info-node-get} to obtain the
+info node contaning the definition, then pass the node and
+@var{line-number} to @code{info-extract-definition}
+to obtain the definition as a text.
+@c JP
+キーに対応するエントリを索引テーブルから探し、
+@code{(@var{node-name} @var{line-number})}のリストを返します。
+
+@var{node-name}を@code{info-node-get}に渡せば定義を含んでいるinfoノードを
+得られます。また、そのinfoノードと@var{line-number}を
+@code{info-extract-definition}に渡せば定義をテキストで得ることができます。
+@c COMMON
 @end defun
 
 @defun info-index-keys info-doc
 @c MOD text.info
+@c EN
 Returns a list of keys (strings) in the index.
+@c JP
+infoドキュメントの索引テーブルに登録されているキー(文字列)のリストを返します。
+@c COMMON
 @end defun
 
 @defun info-index->alist info-doc
 @c MOD text.info
+@c EN
 Returns the content of the index
 as @code{((key (node line) ...) ...)}.
+@c JP
+infoドキュメントの索引テーブルの内容を
+@code{((key (node line) ...) ...)}の形で返します。
+@c COMMON
 @end defun
 
 @defun info-parse-menu info-node
 @c MOD text.info
+@c EN
 This is used in @code{info-index-add!}, but it is generally
 useful to parse a menu in an info node.   It searches
 the @code{* Menu:} line, then gathers menu entry names and
 associated node names.  Some menus such as index page also
 lists line numbers for each entry.
+@c JP
+これは@code{info-index-add!}の中で使われている手続きですが、
+単独でinfoノード中のメニューをパーズするのにも使えます。
+@code{* Menu:}という行を探し、見つかったらそれに続く
+エントリ名とノード名を集めます。索引ページの場合はノード名だけでなく
+定義のある行番号も記されています。
+@c COMMON
 
+@c EN
 Returns a list of menu entries.
 Each menu entry is the following form:
+@c JP
+見つかったメニューエントリのリストを返します。各エントリは次の形です。
+@c COMMON
 @example
 (<entry-name> <node-name> [<line-number>])
 @end example
@@ -29991,19 +30056,37 @@ Each menu entry is the following form:
 
 @defun info-extract-definition info-node start-line
 @c MOD text.info
+@c EN
 Extract one definition from the node's content.  Assumes the definition
 begins from the specified line; then we go forward to find the end of
 the definition.  The end of definition is when we see the end of content,
 or we see a line begins with less than or equal to 3 whitespaces.
 (Except the 'defunx'-type multi entry).
+@c JP
+ノードの内容から、ひとつの定義を抜き出して文字列で返します。
+定義は@var{start-line}で示される行から始まっていると解釈されます。
+その行から順に見てゆき、定義の終わりを探します。定義の終わりは、
+infoノードの終わりか、3つ未満の空白文字で始まっている行の手前までです
+(但し、'defunx'形式の複数エントリは定義の終わりとはみなされません)。
+@c COMMON
 
+@c EN
 Returns a string describing the definition.  If no definition is found,
 an empty string is returned.
+@c JP
+定義を記述している文字列を返します。定義が見つからなければ空文字列が返ります。
+@c COMMON
 
+@c EN
 A typical idiom is to add index node using @code{info-index-add!},
 and get the node name and line number of the definition of a specific
 item with @code{info-index-ref}, then
 then use this procedure to extract the definition.
+@c JP
+典型的な使いかたは、まず索引ノードを@code{info-index-add!}で登録しておき、
+@code{info-index-ref}で知りたい見出しの定義を含むノードと行を入手して、
+この手続きで実際の定義を得るというものです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
