@@ -1056,9 +1056,7 @@
 ;; mutex --------------------------------------------------------
 
 ;; Literal mutex is useful when a macro wants to insert a global lock.
-;; TRANSIENT: To compile 1.0 with 0.9.13, which doesn't export <mutex>,
-;; we need a global-variable-ref hack.  Remove it after 1.0 release.
-(define-cgen-literal <cgen-mutex> (global-variable-ref 'gauche.threads '<mutex>)
+(define-cgen-literal <cgen-mutex> <mutex>
   ((name           :init-keyword :name))
   (make (value)
     (make <cgen-mutex> :value value
