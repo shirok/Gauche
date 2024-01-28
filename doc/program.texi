@@ -2250,22 +2250,13 @@ Defined on Cygwin.
 @c JP
 Cygwin上で定義されます。
 @c COMMON
-@item gauche.sys.threads
-@c EN
-Defined if Gauche is compiled with thread support.
-@xref{Threads}.
-@c JP
-Gaucheがスレッドをサポートするようにコンパイルされている場合に定義されます。
-詳細は@ref{Threads}を参照してください。
-@c COMMON
 @item gauche.sys.pthreads
 @itemx gauche.sys.wthreads
 @c EN
-Defined to indicate the underlying thread implementation
-when Gauche has thread support.
+Defined to indicate the underlying thread implementation.
 @xref{Threads}.
 @c JP
-スレッドがサポートされている時に、下位の実装を示すために定義されます。
+スレッドの具体的な実装を示すために定義されます。
 詳細は@ref{Threads}を参照してください。
 @c COMMON
 @item gauche.net.ipv6
