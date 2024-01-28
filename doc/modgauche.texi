@@ -8169,22 +8169,38 @@ may be more efficient by looking up @var{key} only once.
 
 @defmac define-dict-interface dict-class method proc method2 proc2 @dots{}
 @c MOD gauche.dictionary
+@c EN
 Many dictionary-like datatypes already has their own procedures
 that directly corresponds to the generic dictionary API, and adding
 dictionary interface tends to become a simple repetition of
 @code{define-method}s, like this:
+@c JP
+ディクショナリ的な性質を持つデータ型はそれぞれ独自の操作手続きを持っていて、
+しかもその多くはジェネリックなディクショナリAPIに直接対応しています。
+そうなると、ディクショナリインタフェースを実装するコードは
+ひたすら@code{define-method}で以下のような似たようなコードを並べてゆくことになりがちです。
+@c COMMON
 
 @example
 (define-method dict-put! ((dict <my-dict>) key value)
   (my-dict-put! key value))
 @end example
 
+@c EN
 The @code{define-dict-interface} macro is a convenient way to
 define those methods in a batch.  Each @var{method} argument is
 a keyword that corresponds to @code{dict-@var{method}}, and @var{proc}
 is the name of the datatype-specific procedure.  Here's the definition
 of dict interface for @code{<tree-map>} and you'll get the idea.
 You don't need to provide every dictionary interface.
+@c JP
+@code{define-dict-interface}はこれらのメソッドを一気に定義する簡単な方法です。
+各@var{method}引数は対応する@code{dict-@var{method}}メソッドに対応し、
+@var{proc}がそのメソッドの操作を提供するデータ型特有の手続きです。
+例えば@code{<tree-map>}のディクショナリインタフェース定義は以下の通りです。
+これを見れば要領はわかるでしょう。全てのディクショナリインタフェースをこのマクロで
+定義する必要はありません。
+@c COMMON
 
 @example
 (define-dict-interface <tree-map>
@@ -8214,75 +8230,137 @@ You don't need to provide every dictionary interface.
 
 @subsubheading Bimap
 
-
 @deftp {Class} <bimap>
 @clindex bimap
 @c MOD gauche.dictionary
+@c EN
 Provides a bidirectional map (@emph{bimap}), a relation between two
 set of values, of which you can lookup both ways.
+@c JP
+2つの値のセットを持ち、一方の値をもう一方の値にマップする
+双方向マップ(@emph{bimap})を提供します。
+@c COMMON
 
+@c EN
 Internally, a bimap consists of two dictionaries, @emph{left} map
 and @emph{right} map.  Think a bimap as a relation between @var{x}s
 and @var{y}s.  The left map takes an @var{x} as a key and returns
 corresponding @var{y} as its value.  The right map takes an @var{y}
 as a key and returns corresponding @var{x} as its value.
+@c JP
+内部的には、bimapは二つのディクショナリ、@emph{left}マップと@emph{right}マップを
+持っています。bimapが@var{x}と@var{y}の関係を保持しているとすれば、
+leftマップは@var{x}をキーとして対応する@var{y}を返し、
+rightマップは@var{y}をキーとして対応する@var{x}を返します。
+@c COMMON
 
+@c EN
 Currently, @code{<bimap>} only supports strict one-to-one mapping.
-Mutating interface (@code{bimap-*-put!}, @code{bimap-*-delete!} etc)
+Mutating interface (@code{bimap-*-put!}, @code{bimap-*-delete!} etc.)
 modifies both left and right maps to maintain this one-to-one mapping.
 (In future, we may provide an option to make many-to-one and
 many-to-many mappings).
+@c JP
+@code{<bimap>}は今のところ、厳密な1対1対応のみを扱います。
+マップを変更する手続き(@code{bimap-*-put!}, @code{bimap-*-delete!}等)
+は両方のマップを変更し、1対1対応が保たれるようにします。
+(将来的に、1対nやn対mの対応もサポートするかもしれません)。
+@c COMMON
 
+@c EN
 A bimap can be used as a dictionary, with the generic dictionary
 functions such as @code{dict-get}.  In such cases, the left map takes
 precedence; that is, the key given to @code{dict-get} etc. is
 regarded as the key to the left map.
+@c JP
+bimapは単なるディクショナリとして、
+@code{dict-get}等のディクショナリインタフェースを使って操作することもできます。
+その場合はleftマップが見えます。すなわち@code{dict-map}に渡されるキーは
+leftマップへのキーとなります。
+@c COMMON
 @end deftp
 
 @defun make-bimap left-map right-map :key on-conflict
 @c MOD gauche.dictionary
+@c EN
 Creates a new bimap consists of two dictionaries, @var{left-map}
 and @var{right-map}.   It is the caller's responsibility to
 choose appropriate type of dictionaries; for example, if you want
 to create a relation between a string and a number, you man want
 to create it like this:
+@c JP
+二つのディクショナリ、@var{left-map}と@var{right-map}から新たなbimapを作って
+返します。用途に応じた適切なディクショナリを選ぶのは呼出側の責任です。
+例えば文字列と数値の関係を保持したいなら、一つの方法は以下のとおりです。
+@c COMMON
 
 @example
 (make-bimap (make-hash-table 'string=?)  ; string -> number
             (make-hash-table 'eqv?))     ; number -> string
 @end example
 
+@c EN
 The keyword argument @var{on-conflict} specifies what will happen
 when the added entry would conflict the existing entries.
 The following values are allowed:
+@c JP
+キーワード引数@var{on-conflict}は、追加されたエントリが既存のエントリと
+衝突する場合の振る舞いを指定します。以下の値が有効です。
+@c COMMON
 
 @table @code
 @item :supersede
+@c EN
 This is the default behavior.  Duplicate relations are silently
 removed in order to maintain one-to-one mapping.  For example,
 suppose a bimap between strings and numbers has had
 @code{("foo", 1)} and @code{("bar", 2)}.  When you try to
 put @code{("bar", 2)} with this option, the first two entries
 are removed.  Returns @code{#t}.
+@c JP
+デフォルトの振る舞いです。重複するエントリは、1対1対応を維持するために取り除かれます。
+例えば文字列と数値のbimapが、@code{("foo", 1)}および@code{("bar", 2)}という
+組み合わせを保持していたとします。ここで@code{("bar", 2)}を追加しようとすると、
+最初の2つのエントリは黙って削除され、@code{("bar", 2)}だけがbimapに残ります。
+このオプションを与えた場合、変更手続きは常に@code{#t}を返します。
+@c COMMON
 
 @item :error
-Raises an error when duplicate relations are found.
+@c EN
+Raises an error when duplicate relations can occur.
+@c JP
+重複エントリが発生する場合はエラーが投げられます。
+@c COMMON
 
 @item #f
-When duplicate relations are found, does nothing and returns @code{#f}.
+@c EN
+When duplicate relations can occur, does nothing and returns @code{#f}.
+@c JP
+重複エントリが発生し得る場合は、何も変更を行わず、変更手続きは@code{#f}を返します。
+@c COMMON
 @end table
 
+@c EN
 Note: At this moment, an attempt to add a relation exactly same as the
 existing one is regarded as a conflict.  This limitation may be
 lifted in future.
+@c JP
+註: 今のところ、既に存在する関係とまったく同じ関係を追加しようとした場合は
+衝突とみなされます。これは将来変更されるかもしれません。
+@c COMMON
 @end defun
 
 @defun bimap-left bimap
 @defunx bimap-right bimap
 @c MOD gauche.dictionary
+@c EN
 Returns the left or right map of @var{bimap}, respectively.
 Do not mutate the returned map, or you'll break
 the consistency of the bimap.
+@c JP
+bimapのleftマップとrightマップをそれぞれ返します。
+返されたディクショナリを呼出側で変更してはなりません。
+@c COMMON
 @end defun
 
 @defun bimap-left-get bimap key :optional default
