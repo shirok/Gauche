@@ -590,11 +590,8 @@ init_cond_features()
 
         /* TLS/SSL.  This nees to be in the core in order to switch
            code _before_ loading rfc.tls */
-#if defined(GAUCHE_USE_AXTLS) || defined(GAUCHE_USE_MBEDTLS)
+#if defined(GAUCHE_USE_MBEDTLS)
         { "gauche.net.tls", "rfc.tls" },
-#endif
-#if defined(GAUCHE_USE_AXTLS)
-        { "gauche.net.tls.axtls", "rfc.tls" },
 #endif
 #if defined(GAUCHE_USE_MBEDTLS)
         /* NB: Kludge - mbedTLS is implemented in a separate module rfc.tls.mbed,
