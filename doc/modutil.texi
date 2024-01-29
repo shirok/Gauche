@@ -4593,16 +4593,28 @@ Returns @code{#t} if @var{key} exists in an immutable map @var{immap}.
 
 @defun imap-get immap key :optional default
 @c MOD data.imap
+@c EN
 Returns the value associated with @var{key} in an immutable map @var{immap}.
 If @var{immap} doesn't have @var{key}, @var{default} is returned
 when provided, otherwise an error is signalled.
+@c JP
+変更不可なマップ@var{immap}中のキー@var{key}に対応する値を返します。
+@var{immap}が@var{key}を持っていない場合、@var{default}引数が与えられていれば
+その値を返し、なければエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun imap-put immap key val
 @c MOD data.imap
+@c EN
 Returns a new immutable map where association of @var{key} to @var{val}
 is added to (or replaced in) an immutable map @var{immap}.
 This operation is O(log n).
+@c JP
+変更不可なマップ@var{immap}に、キー@var{key}と値@var{val}の対応を付け加えた
+(あるいは、既に対応があった場合は置き換えた)新たな変更不可なマップを作って返します。
+この操作はO(log n)です。
+@c COMMON
 
 @example
 (define m1 (alist->imap '((a . 1) (b . 2))))
@@ -4616,9 +4628,16 @@ This operation is O(log n).
 
 @defun imap-delete immap key
 @c MOD data.imap
+@c EN
 Returns a new immutable map where @var{key} is removed from
 @var{immap}.   If @var{immap} doesn't have @var{key}, returned
 map has the same content as @var{immap}.
+@c JP
+変更不可なマップ@var{immap}から、キー@var{key}に対応するエントリを
+取り除いた新たな変更不可なマップを作って返します。
+@var{immap}に@var{key}が含まれていなかった場合、返されるマップは
+元のマップと同じ内容を持ちます。
+@c COMMON
 
 @example
 (define m1 (alist->imap '((a . 1) (b . 2))))
@@ -4633,9 +4652,14 @@ map has the same content as @var{immap}.
 @defun imap-min immap
 @defunx imap-max immap
 @c MOD data.imap
+@c EN
 Returns a pair of key and value with the minimum or maximum
 key in @var{immap}, respectively.  If @var{immap} is empty,
 @code{#f} is returned.
+@c JP
+変更不可なマップ@var{immap}中で、最小または最大のキーと、それに対応する値を
+ペアにして返します。@var{immap}が空の場合は@code{#f}を返します。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
