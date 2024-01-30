@@ -461,6 +461,48 @@ Options:
                         :verbose verbose)))))
 
 ;;------------------------------------------------------
+;; populate
+;;
+(define-cmd "populate"
+  ("populate [options]"
+   "Add missing files of the package"
+   "
+  Run this command in the toplevel directory of an extention package.
+  It checks the content of 'package.scm' and the existing files, and
+  prompts missing files and package entries.  It is useful to turn
+  existing source tree to an extension package, or update the package
+  for the newer versions of Gauche.")
+  (let-args args ([verbose  "v|verbose"]
+                  [tmpl-dir "template-dir=s"]
+                  [license "license=s"])
+    (define package
+      (guard (e [(#/read the package descr/ (~ e'message))
+                 (exit 1 "Can't read package.scm.  Run this command \
+                          in the top directory of an extension package.")])
+        (path->gauche-package-description "./package.scm")))
+    (let* ([srcdir (or tmpl-dir
+                       (build-path (sys-dirname (gauche-library-directory))
+                                   "package-templates"))]
+           [lic (cond [license (string->symbol (string-downcase license))]
+                      [(~ package'licenses) pair? => car]
+                      [else #f])]
+           [mod (if (pair? (~ package'providing-modules))
+                  (car (~ package'providing-modules))
+                  (exit 1 "Missing providing-modules in package.scm."))])
+      (receive [installed preserved]
+          (copy-templates srcdir "." (~ package'name)
+                          :module-name mod
+                          :scheme-only #t ;for now
+                          :license lic
+                          :licensor (string-join (~ package'authors) ", ")
+                          :preserve #t
+                          :verbose verbose)
+        (print "Files installed:")
+        (display-multicolumn installed :indent 4)
+        (print "Files preserved:")
+        (display-multicolumn preserved :indent 4)))))
+
+;;------------------------------------------------------
 ;; make-tarball
 ;;
 

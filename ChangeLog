@@ -1,5 +1,7 @@
 2024-01-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in: Add 'populate' subcommand.
+
 	* lib/text/multicolumn.scm (layout-multicolumn): Fix the edge case
 	  when the string list is empty.
 
