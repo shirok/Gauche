@@ -37,6 +37,7 @@
   (use gauche.process)
   (use gauche.termios)
   (use gauche.package)
+  (use gauche.sequence)
   (use scheme.charset)
   (use util.match)
   (use file.util)
@@ -149,13 +150,17 @@
 ;; PACKAGE-NAME should be a package name.  Extension-name is derived from it.
 ;; MODULE-NAME should be a symbol (e.g. foo.bar).  If not given, derived
 ;; from extension-name.
+;; If there's already a file in the destination, it is overwritten, unless
+;; PRESERVE is true.
+;; Returns two lists: List of files copied, and list of files preserved.
 (define (copy-templates srcdir dstdir package-name
                         :key (module-name #f)
                              (use-autoconf #f)
                              (scheme-only #f)
                              (verbose #f)
                              (license #f)
-                             (licensor #f))
+                             (licensor #f)
+                             (preserve #f))
   (assume-type package-name <string>)
   (let* ([extension-name (string-tr package-name "A-Za-z_-" "a-za-z__")]
          [module-name (or module-name
@@ -171,70 +176,81 @@
 
     (define (filter-copy src dst executables configure-name)
       (let1 EXTENSION-NAME (string-upcase extension-name)
-        (when verbose
-          (format #t "Installing ~a as ~a\n" src dst))
-        (file-filter
-         (^[in out]
-           (port-for-each
-            (^[line]
-              (display
-               (regexp-replace-all*
-                line
-                #/@@package@@/ package-name
-                #/@@modname@@/ (x->string module-name)
-                #/@@modpath@@/ (module-name->path module-name)
-                #/@@extname@@/ extension-name
-                #/@@EXTNAME@@/ EXTENSION-NAME
-                #/@@configure@@/ configure-name
-                #/@@gauche-version@@/ gversion
-                #/@@author@@/ (if author-name
-                                (write-to-string author-name)
-                                "")
-                #/@@year@@/ ($ sys-strftime "%Y" $ sys-localtime
-                               $ sys-time)
-                #/@@licensor@@/ (or licensor
-                                    author-name
-                                    "COPYRIGHT HOLDER")
-                #/@@license@@/ (if license-name
-                                 (write-to-string license-name)
-                                 ""))
-               out)
-              (newline out))
-            (cut read-line in)))
-                     :input src
-                     :output dst)
-        (when (member (sys-basename dst) executables)
-          (sys-chmod dst #o755))))
+        (if (and preserve (file-exists? dst))
+          (begin
+            (when verbose
+              (format #t "Skipping ~a: Destination exists.\n" dst))
+            #f)
+          (begin
+            (when verbose
+              (format #t "Installing ~a as ~a\n" src dst))
+            (file-filter
+             (^[in out]
+               (port-for-each
+                (^[line]
+                  (display
+                   (regexp-replace-all*
+                    line
+                    #/@@package@@/ package-name
+                    #/@@modname@@/ (x->string module-name)
+                    #/@@modpath@@/ (module-name->path module-name)
+                    #/@@extname@@/ extension-name
+                    #/@@EXTNAME@@/ EXTENSION-NAME
+                    #/@@configure@@/ configure-name
+                    #/@@gauche-version@@/ gversion
+                    #/@@author@@/ (if author-name
+                                    (write-to-string author-name)
+                                    "")
+                    #/@@year@@/ ($ sys-strftime "%Y" $ sys-localtime
+                                   $ sys-time)
+                    #/@@licensor@@/ (or licensor
+                                        author-name
+                                        "COPYRIGHT HOLDER")
+                    #/@@license@@/ (if license-name
+                                     (write-to-string license-name)
+                                     ""))
+                   out)
+                  (newline out))
+                (cut read-line in)))
+             :input src
+             :output dst)
+            (when (member (sys-basename dst) executables)
+              (sys-chmod dst #o755))
+            #t))))
 
     (make-directory* (build-path dstdir dst-subdir))
-    (dolist [file (append (if use-autoconf
-                            '("configure.ac")
-                            '("configure"))
-                          (if scheme-only
-                            '("Makefile-pure-scheme.in"
-                              "module-pure-scheme.scm")
-                            '("Makefile.in" "extension.c"
-                              "extension.h" "extensionlib.stub"
-                              "module.scm" ))
-                          (case license
-                            [(bsd bsd3) '("COPYING--bsd3")]
-                            [(mit) '("COPYING--mit")]
-                            [(#f) '()])
-                          '("package.scm" "test.scm"))]
-      (let* ([src-path (build-path srcdir file)]
-             [dst-name (regexp-replace*
-                        file
-                        #/extension/ extension-name
-                        #/module/ (sys-basename module-path)
-                        #/-pure-scheme/ ""
-                        #/--bsd3/ ""
-                        #/--mit/ "")]
-             [dst-path (if (#/^module/ file)
-                         (build-path dstdir dst-subdir dst-name)
-                         (build-path dstdir dst-name))])
-        (filter-copy src-path dst-path
-                     '("configure")
-                     (if use-autoconf "configure" ""))))))
+    (let1 files (append (if use-autoconf
+                          '("configure.ac")
+                          '("configure"))
+                        (if scheme-only
+                          '("Makefile-pure-scheme.in"
+                            "module-pure-scheme.scm")
+                          '("Makefile.in" "extension.c"
+                            "extension.h" "extensionlib.stub"
+                            "module.scm" ))
+                        (case license
+                          [(bsd bsd3) '("COPYING--bsd3")]
+                          [(mit) '("COPYING--mit")]
+                          [(#f) '()])
+                        '("package.scm" "test.scm"))
+      (fold2 (^[file copied preserved]
+               (let* ([src-path (build-path srcdir file)]
+                      [dst-name (regexp-replace*
+                                 file
+                                 #/extension/ extension-name
+                                 #/module/ (sys-basename module-path)
+                                 #/-pure-scheme/ ""
+                                 #/--bsd3/ ""
+                                 #/--mit/ "")]
+                      [dst-path (if (#/^module/ file)
+                                  (build-path dstdir dst-subdir dst-name)
+                                  (build-path dstdir dst-name))])
+                 (if (filter-copy src-path dst-path
+                                  '("configure")
+                                  (if use-autoconf "configure" ""))
+                   (values (cons dst-path copied) preserved)
+                   (values copied (cons dst-path preserved)))))
+             '() '() files))))
 
 ;; Retrieve author name and email from git config, if possible
 (define (%author-name)
