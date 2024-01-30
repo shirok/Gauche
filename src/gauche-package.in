@@ -471,7 +471,19 @@ Options:
   It checks the content of 'package.scm' and the existing files, and
   prompts missing files and package entries.  It is useful to turn
   existing source tree to an extension package, or update the package
-  for the newer versions of Gauche.")
+  for the newer versions of Gauche.
+
+Options:
+  --template-dir=DIR : directory where template files are stored.  By default,
+                       they are stored along installed Gauche libraries.
+  --package-dir=DIR  : the directory where the files are generated.  By default,
+                       the current directory is assumed.  The directory must
+                       contain 'package.scm'.
+  --license=TYPE     : Include license info in package.scm and COPYING file.
+                       Currently, 'BSD' and 'MIT' are supported as
+                       TYPE.  (Both 'BSD' and 'BSD3' are for 3-clause BSD).
+  -v|verbose         : operate verbosely.
+")
   (let-args args ([verbose  "v|verbose"]
                   [tmpl-dir "template-dir=s"]
                   [pkg-dir  "package-dir=s"]
