@@ -486,7 +486,8 @@ Options:
                        (build-path (sys-dirname (gauche-library-directory))
                                    "package-templates"))]
            [lic (cond [license (string->symbol (string-downcase license))]
-                      [(~ package'licenses) pair? => car]
+                      [(~ package'licenses) pair?
+                       => ($ string->symbol $ string-downcase $ car $)]
                       [else #f])]
            [mod (if (pair? (~ package'providing-modules))
                   (car (~ package'providing-modules))
