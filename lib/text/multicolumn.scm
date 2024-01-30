@@ -63,16 +63,18 @@
                                  (minimum-width 8) ; minimum column width
                                  (max-columns 4)
                                  (order 'column))
-  (let* ([col-width (max (+ 2 (apply max (map string-length strs)))
-                         minimum-width)]
-         [cols (min max-columns (quotient width col-width))]
-         [rows (quotient (+ (length strs) cols -1) cols)])
-    (define (layout-1 words)
-      (let rec ([words words])
-        (match words
-          [(w) (list w)]
-          [(w #f . _) (list w)]         ; #f is padding
-          [(w . ws) (cons (format "~va" col-width w) (rec ws))])))
-    (ecase order
-      [(column) ($ map (^ ss (layout-1 ss)) $* slices strs rows #t #f)]
-      [(row) ($ map layout-1 $ slices strs cols)])))
+  (if (null? strs)
+    '()
+    (let* ([col-width (max (+ 2 (apply max (map string-length strs)))
+                           minimum-width)]
+           [cols (min max-columns (quotient width col-width))]
+           [rows (quotient (+ (length strs) cols -1) cols)])
+      (define (layout-1 words)
+        (let rec ([words words])
+          (match words
+            [(w) (list w)]
+            [(w #f . _) (list w)]         ; #f is padding
+            [(w . ws) (cons (format "~va" col-width w) (rec ws))])))
+      (ecase order
+        [(column) ($ map (^ ss (layout-1 ss)) $* slices strs rows #t #f)]
+        [(row) ($ map layout-1 $ slices strs cols)]))))
