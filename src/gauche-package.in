@@ -474,12 +474,14 @@ Options:
   for the newer versions of Gauche.")
   (let-args args ([verbose  "v|verbose"]
                   [tmpl-dir "template-dir=s"]
+                  [pkg-dir  "package-dir=s"]
                   [license "license=s"])
+    (define dstdir (or pkg-dir "."))
     (define package
       (guard (e [(#/read the package descr/ (~ e'message))
                  (exit 1 "Can't read package.scm.  Run this command \
                           in the top directory of an extension package.")])
-        (path->gauche-package-description "./package.scm")))
+        (path->gauche-package-description (build-path dstdir "package.scm"))))
     (let* ([srcdir (or tmpl-dir
                        (build-path (sys-dirname (gauche-library-directory))
                                    "package-templates"))]
@@ -490,7 +492,7 @@ Options:
                   (car (~ package'providing-modules))
                   (exit 1 "Missing providing-modules in package.scm."))])
       (receive [installed preserved]
-          (copy-templates srcdir "." (~ package'name)
+          (copy-templates srcdir dstdir (~ package'name)
                           :module-name mod
                           :scheme-only #t ;for now
                           :license lic
