@@ -500,9 +500,9 @@ Options:
                           :licensor (string-join (~ package'authors) ", ")
                           :preserve #t
                           :verbose verbose)
-        (print "Files installed:")
+        (format #t "File~p installed:\n" (length installed))
         (display-multicolumn installed :indent 4)
-        (print "Files preserved:")
+        (format #t "File~p preserved:\n" (length preserved))
         (display-multicolumn preserved :indent 4)))))
 
 ;;------------------------------------------------------
