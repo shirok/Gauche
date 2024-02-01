@@ -16309,6 +16309,10 @@ If the field with given name is in @var{header-list}, the procedure
 returns its value in a string.  Otherwise, if @var{default} is given,
 it is returned, and if not, @code{#f} is returned.
 
+If there are more than one header with the same field name, value of
+the first one is returned.  To get all values of multiple header fields,
+use @code{rfc822-header-ref*} below.
+
 This procedure can actually be used not only for the result of
 @code{rfc822-read-headers}, but for retrieving a value keyed
 by strings in a list-of-list structure: @code{((name value option ...) ...)}.
@@ -16323,6 +16327,10 @@ can be passed to @code{rfc-822-header-ref}
 与えられた名前をもつフィールドが @var{header-list} 中にあれば、
 その値を文字列で返します。そうでない場合、もし @var{default} が
 与えられていればそれが返り、与えられていなければ @code{#f} が返されます。
+
+もし同じフィールド名を持つヘッダエントリが複数あった場合は、
+最初のエントリの値が返されます。複数ヘッダエントリの全ての値を取りたい場合は
+下の@code{rfc822-header-ref*}を使ってください。
 
 この手続きは@code{rfc822-read-headers}の結果だけでなく、
 文字列をキーにしたリストのリスト @code{((name value option ...) ...)}
@@ -16356,6 +16364,36 @@ can be passed to @code{rfc-822-header-ref}
   "reply-to" 'none)
  @result{} #f
 @end example
+@end defun
+
+@defun rfc822-header-ref* header-list field-name
+@c EN
+Like @code{rfc822-header-ref}, looks up header entries in
+@var{header-list} with the name @var{field-name}, however,
+this procedure returns all values of matching headers
+in a list.  If there's no matching headers, an empty list
+is returned.
+@c JP
+@code{rfc822-header-ref}のように@var{header-list}から
+@var{field-name}を持つヘッダを探しますが、最初に見つかったものだけでなく
+@var{field-name}を持つ全てのヘッダの値をリストにして返します。
+指定の名前を持つヘッダが無ければ空リストが返されます。
+@c COMMON
+@end defun
+
+@defun rfc822-header-put header-list field-name field-value
+@c EN
+Returns an rfc822 header list which is the same as @var{header-list}
+except that a header with @var{field-name} and @var{field-value}
+is added.  If @var{header-list} already contains headers with
+@var{field-name}, such headers are excluded from the output.
+The @var{header-list} won't be modified.
+@c JP
+RFC822ヘッダリスト@var{header-list}に、名前@var{field-name}と値
+@var{field-value}を持つヘッダを追加したヘッダリストを返します。
+@var{header-list}が既に同名のヘッダを持っていた場合、それらは全て出力から除かれます。
+引数に渡した@var{header-list}自体は変更されません。
+@c COMMON
 @end defun
 
 @c EN
