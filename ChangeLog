@@ -1,3 +1,7 @@
+2024-01-31  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/rfc/822.scm (rfc822-header-ref*, rfc822-header-put): Added.
+
 2024-01-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in: Add 'populate' subcommand.

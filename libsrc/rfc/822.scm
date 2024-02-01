@@ -43,7 +43,8 @@
   (use gauche.regexp)
   (use util.match)
   (export <rfc822-parse-error> rfc822-parse-errorf
-          rfc822-read-headers rfc822-header->list rfc822-header-ref
+          rfc822-read-headers rfc822-header->list
+          rfc822-header-ref rfc822-header-ref* rfc822-header-put
           rfc822-skip-cfws
           *rfc822-atext-chars* *rfc822-standard-tokenizers*
           rfc822-atom rfc822-dot-atom rfc822-quoted-string
@@ -132,9 +133,21 @@
            [else (loop r (reader iport))])))])
     ))
 
-(define (rfc822-header-ref header field-name :optional (default #f))
-  (cond [(assoc field-name header) => cadr]
+(define (rfc822-header-ref headers field-name :optional (default #f))
+  (assume-type field-name <string>)
+  (cond [(assoc field-name headers) => cadr]
         [else default]))
+
+(define (rfc822-header-ref* headers field-name)
+  (assume-type field-name <string>)
+  (filter-map (^e (and (equal? (car e) field-name) (cadr e))) headers))
+
+(define (rfc822-header-put headers field-name value)
+  (assume-type field-name <string>)
+  (assume-type value <string>)
+  (let1 canon-name (string-downcase field-name)
+    (cons `(,canon-name ,value)
+          (alist-delete canon-name headers equal?))))
 
 ;; backward compatibility
 (define rfc822-header->list rfc822-read-headers)

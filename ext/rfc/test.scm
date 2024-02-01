@@ -56,6 +56,23 @@ Content-Length: 4349
        (equal? rfc822-header1-list
                (rfc822-read-headers (open-input-string rfc822-header1))))
 
+(test* "rfc822-header-ref" "Bogus Tester"
+       (rfc822-header-ref rfc822-header1-list "subject"))
+(test* "rfc822-header-ref" "Missing"
+       (rfc822-header-ref rfc822-header1-list "cc" "Missing"))
+(test* "rfc822-header-ref"
+       "by foo.bar.com id ZZZ55555; Thu, 31 May 2001 16:38:04 -1000 (HST)"
+       (rfc822-header-ref rfc822-header1-list "received"))
+(test* "rfc822-header-ref*"
+       '("by foo.bar.com id ZZZ55555; Thu, 31 May 2001 16:38:04 -1000 (HST)"
+         "from ooo.ooo.com (ooo.ooo.com [1.2.3.4])\tby foo.bar.com (9.9.9+3.2W/3.7W-) with ESMTP id ZZZ55555\tfor <yoo@bar.com>; Thu, 31 May 2001 16:38:02 -1000 (HST)"
+         "from zzz ([1.2.3.5]) by ooo.ooo.com  with Maccrosoft SMTPSVC(5.5.1877.197.19);\t Thu, 31 May 2001 22:33:16 -0400")
+       (rfc822-header-ref* rfc822-header1-list "received"))
+(test* "rfc822-header-put" '("Redacted")
+       (rfc822-header-ref*
+        (rfc822-header-put rfc822-header1-list "received" "Redacted")
+        "received"))
+
 ;; token parsers
 (test* "rfc822-field->tokens (basic)"
        '(("aa") ("bb") ("cc") ("dd") ("ee") (" a\"aa\\aa (a)"))
