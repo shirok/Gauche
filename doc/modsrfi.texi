@@ -2303,7 +2303,7 @@ Locale's abbreviate month name (Jan...Dec).
 @item ~B
 Locale's full month name (January...December).
 @item ~c
-Locale's date and time (e.g., "Fri Jul 14 20:28:42-0400 2000").
+Locale's date and time (e.g., @code{"Fri Jul 14 20:28:42-0400 2000"}).
 @item ~d
 Day of month, zero padded (01...31).
 @item ~D
@@ -2313,7 +2313,7 @@ Day of month, blank padded ( 1...31).
 @item ~f
 Seconds+fractional seconds, using locale's decimal separator (e.g. 5.2).
 @item ~h
-Same as ~b.
+Same as @code{~b}.
 @item ~H
 Hour, zero padded, 24-hour clock (00...23).
 @item ~I
@@ -2335,7 +2335,7 @@ Nanosecond, zero padded.
 @item ~p
 Locale's AM or PM.
 @item ~r
-Time, 12 hour clock, same as "~I:~M:~S ~p".
+Time, 12 hour clock, same as @code{"~I:~M:~S ~p"}.
 @item ~s
 Number of full seconds since "the epoch" (in UTC).
 @item ~S
@@ -2343,7 +2343,7 @@ Second, zero padded (00...60).
 @item ~t
 Horizontal tab.
 @item ~T
-Time, 24 hour clock, same as "~H:~M:~S".
+Time, 24 hour clock, same as @code{"~H:~M:~S"}.
 @item ~U
 Week number of year with Sunday as first day of week (00...53).
 @item ~V
@@ -2356,9 +2356,9 @@ Day of week (0...6).
 @item ~W
 Week number of year with Monday as first day of week (00...52).
 @item ~x
-Locale's date representation, for example: "07/31/00".
+Locale's date representation, for example: @code{"07/31/00"}.
 @item ~X
-Locale's time representation, for example: "06:51:44".
+Locale's time representation, for example: @code{"06:51:44"}.
 @item ~y
 Last two digits of year (00...99).
 @item ~Y
@@ -2368,15 +2368,17 @@ Time zone in RFC-822 style.
 @c @item ~Z
 @c Symbol time zone (not-implemented).
 @item ~1
-ISO-8601 year-month-day format.
+ISO-8601 year-month-day format, e.g. @code{"2001-02-03"}.
 @item ~2
-ISO-8601 hour-minute-second-timezone format.
+ISO-8601 hour-minute-second-timezone format, e.g. @code{"04:56:12-1000"}.
 @item ~3
-ISO-8601 hour-minute-second format.
+ISO-8601 hour-minute-second format, e.g. @code{"04:56:12"}.
 @item ~4
-ISO-8601 year-month-day-hour-minute-second-timezone format.
+ISO-8601 year-month-day-hour-minute-second-timezone format,
+e.g. @code{"2001-02-03T04:56:12-1000"}.
 @item ~5
-ISO-8601 year-month-day-hour-minute-second format.
+ISO-8601 year-month-day-hour-minute-second format,
+e.g. @code{"2001-02-03T04:56:12"}.
 @end table
 @c JP
 @table @code
@@ -2391,7 +2393,7 @@ ISO-8601 year-month-day-hour-minute-second format.
 @item ~B
 ロケールによる月完全形(January...December)
 @item ~c
-ロケールによる日付時刻(たとえば、"Fri Jul 14 20:28:42-0400 2000")
+ロケールによる日付時刻(例えば @code{"Fri Jul 14 20:28:42-0400 2000"})
 @item ~d
 月日にち、0を補填(01...31)
 @item ~D
@@ -2401,7 +2403,7 @@ ISO-8601 year-month-day-hour-minute-second format.
 @item ~f
 秒 + 小数秒、小数点はロケールによるセパレータ(たとえば、5.2)
 @item ~h
-~b に同じ
+@code{~b} に同じ
 @item ~H
 時、0を補填、24時制(00...23)
 @item ~I
@@ -2423,7 +2425,7 @@ ISO-8601 year-month-day-hour-minute-second format.
 @item ~p
 ロケールによるAM、PM
 @item ~r
-時刻、12時制、"~I:~M:~S ~p"と同じ
+時刻、12時制、@code{"~I:~M:~S ~p"}と同じ
 @item ~s
 エポックからの経過秒(UTC)
 @item ~S
@@ -2431,7 +2433,7 @@ ISO-8601 year-month-day-hour-minute-second format.
 @item ~t
 水平タブ
 @item ~T
-時刻、24時制、"~H:~M:~S"と同じ
+時刻、24時制、@code{"~H:~M:~S"}と同じ
 @item ~U
 年経過週、週は日曜はじまり(00...53)
 @item ~V
@@ -2442,9 +2444,9 @@ ISO8601形式の年経過週、週は月曜はじまり。年の最初の木曜�
 @item ~W
 年経過週、週は月曜日はじまり(00...52)
 @item ~x
-ロケールによる日付、例えば、"07/31/00"
+ロケールによる日付、例えば @code{"07/31/00"}
 @item ~X
-ロケールによる時刻、24時制、例えば、"06:51:44"
+ロケールによる時刻、24時制、例えば @code{"06:51:44"}
 @item ~y
 西暦の下2桁(00...99)
 @item ~Y
@@ -2454,15 +2456,17 @@ RFC-2822スタイルのタイムゾーン
 @c @item ~Z
 @c Symbol time zone (not-implemented).
 @item ~1
-ISO-8601 の「年-月-日」形式
+ISO-8601 の「年-月-日」形式。例えば @code{"2001-02-03"}
 @item ~2
-ISO-8601 の「時-分-秒タイムゾーン」形式
+ISO-8601 の「時-分-秒タイムゾーン」形式。例えば @code{"04:56:12-1000"}
 @item ~3
-ISO-8601 の「時:分:秒」形式
+ISO-8601 の「時:分:秒」形式。例えば @code{"04:56:12"}
 @item ~4
-ISO-8601 の「西暦-月-日T時:分:秒タイムゾーン」形式
+ISO-8601 の「西暦-月-日T時:分:秒タイムゾーン」形式。
+例えば @code{"2001-02-03T04:56:12-1000"}
 @item ~5
-ISO-8601 の「西暦-月-日T時:分:秒」形式
+ISO-8601 の「西暦-月-日T時:分:秒」形式。
+例えば @code{"2001-02-03T04:56:12"}
 @end table
 @c COMMON
 
