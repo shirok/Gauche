@@ -8366,74 +8366,142 @@ bimapのleftマップとrightマップをそれぞれ返します。
 @defun bimap-left-get bimap key :optional default
 @defunx bimap-right-get bimap key :optional default
 @c MOD gauche.dictionary
+@c EN
 Lookup the value corresponding to the @var{key} in the left or right
 map of @var{bimap}.   If no entry is found for @var{key},
 @var{default} is returned if provided, otherwise an error is
 raised.
+@c JP
+それじれ、@var{bimap}のleftマップまたはrightマップから@var{key}をルックアップして
+対応する値を返します。@var{key}を持つエントリが無い場合、
+@var{default}が与えられていればその値を返し、そうでなければエラーを投げます。
+@c COMMON
 @end defun
 
 @defun bimap-left-exists? bimap key
 @defunx bimap-right-exists? bimap key
 @c MOD gauche.dictionary
+@c EN
 Returns @code{#f} if the left or right map of @var{bimap} has an entry of
 the key, @code{#t} otherwise.
+@c JP
+それぞれ、@var{key}が@var{bimap}のleftマップまたはrightマップに存在すれば
+@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun bimap-put! bimap x y :key on-conflict
 @c MOD gauche.dictionary
+@c EN
 Put a relation (@var{x}, @var{y}) into the bimap.
 After this, @code{(bimap-left-get @var{x})} will return @var{y},
 and @code{(bimap-right-get @var{y})} will return @var{x}.
+@c JP
+関係(@var{x}, @var{y})をbimapに格納します。
+この呼び出しの後では、@code{(bimap-left-get @var{x})}が@var{y}を、
+@code{(bimap-right-get @var{y})}が@var{x}を返すようになります。
+@c COMMON
 
+@c EN
 If the bimap already have relations with @var{x} and/or @var{y},
 the conflict is handled according to the value of @var{on-conflict};
 see @code{make-bimap} for the possible values and their meanings.
 The @var{on-conflict} keyword argument can override the
 bimap's default setting specified at its creation time.
+@c JP
+bimapの中に既に関係 (@var{x}, _) もしくは関係 (_, @var{y}) が
+含まれていた場合、その衝突の解決は@var{on-conflict}引数によって指定できます。
+可能な値は@code{make-bimap}の項を参照してください。@var{on-conflict}引数が
+与えられなければbimap作成時の@var{on-conflict}の値が使われます。
+@c COMMON
 @end defun
 
 @defun bimap-left-delete! bimap key
 @defunx bimap-right-delete! bimap key
 @c MOD gauche.dictionary
+@c EN
 Deletes an relation with the given left key or right key from @var{bimap}.
 Both left and right maps are modified so that the consistency is maintained.
 If there's no relations with given key, these are noop.
+@c JP
+それぞれ、leftマップもしくはrightマップで@var{key}を持つエントリを@var{bimap}から
+削除します。エントリが削除されたら、もう逆方向のマップでも対応するエントリが削除され、
+一貫性が保たれます。与えられたキーに対応するエントリが無ければ何もしません。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Stacked map
+@c JP
+@subsubheading スタックマップ
+@c COMMON
 
 @deftp {Class} <stacked-map>
 @c MOD gauche.dictionary
+@c EN
 Stacked map allows you to stack (layer) multiple maps (dictionaries)
 and treat as if they are a single map.
 The upper map "shadows" the lower maps.  Think of nested scopes, for
 example.
+@c JP
+スタックマップは、複数のマップ(ディクショナリ)を積み重ねてひとつのマップのように見せます。
+上にあるマップがより下のマップを「シャドウ」します。
+例えばネストしたスコープを思い浮かべてください。
+@c COMMON
 
+@c EN
 As a dictionary, it behaves as follows:
+@c JP
+ディクショナリとしては、次のように振る舞います。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 The @code{dict-get} operation searches the given key from the top
 dictionary to the bottom dictionary, returns the first found entry.
+@c JP
+@code{dict-get}は与えれたキーを一番上のマップから順に探し、
+エントリが見つかれば直ちにその値を返します。
+@c COMMON
 @item
+@c EN
 The @code{dict-put!} operation always put the entry to the topmost
 dictionary.  If there's an entry with the same key exists in a
 lower dictionary, it will be shadowed.
 If you want to alter the existing entry of non-top dictionary,
 use @code{stacked-map-entry-update!}.
+@c JP
+@code{dict-put!}は常に最上位のマップにエントリを追加します。
+より下のマップに同じキーを持つエントリがあった場合、それはシャドウされることになります。
+最上位以外のマップのエントリを変更したい場合は、
+下の@code{stacked-map-entry-update!}を使ってください。
+@c COMMON
 @item
+@c EN
 The @code{dict-delete!} operations deletes all the entries with the
 given key from all the dictionaries.  This is for consistency as
 a dictionary---you don't want an entry pop up after deleting it.
 If you want to delete only from the first entry in the stack,
 use @code{stacked-map-entry-delete!}.
+@c JP
+@code{dict-delete!}は、全てのマップから指定のキーを持つエントリを削除します。
+これはディクショナリとしての一貫性のためです。最初に見つかったエントリだけを
+削除した場合、より下層のマップに同じキーがあれば、消したはずのキーが消えてないという
+ことになってしまいます。最初に見つかったエントリだけを消したい場合は
+@code{stacked-map-entry-delete!}を使ってください。
+@c COMMON
 @item
+@c EN
 The @code{dict-fold} operation traverse all the dictionaries
 from top to bottom.  When there are duplicate keys, the second and after
 will be skipped.
+@c JP
+@code{dict-fold}は、全てのディクショナリを最上位から順に辿ります。
+ただし、複数のマップに同じキーがあった場合、最初のエントリ以外は無視します。
+@c COMMON
 @end itemize
 @end deftp
-
 
 @defun make-stacked-map dic dic2 @dots{}
 @defunx make-stacked-map key-comparator dic dic2 @dots{}
