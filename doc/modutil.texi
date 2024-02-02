@@ -16286,6 +16286,7 @@ should be enough for most cases.
 
 @defun rfc822-header->list iport :key strict? reader
 @c MOD rfc.822
+@c DEPRECATED
 @c EN
 This is an old name of @code{rfc822-read-headers}.  This is kept
 for the backward compatibility.  The new code should use
@@ -16385,12 +16386,14 @@ is returned.
 @c EN
 Returns an rfc822 header list which is the same as @var{header-list}
 except that a header with @var{field-name} and @var{field-value}
-is added.  If @var{header-list} already contains headers with
+is added.  @var{Field-name} is converted to lowercase letters.
+If @var{header-list} already contains headers with
 @var{field-name}, such headers are excluded from the output.
 The @var{header-list} won't be modified.
 @c JP
 RFC822ヘッダリスト@var{header-list}に、名前@var{field-name}と値
 @var{field-value}を持つヘッダを追加したヘッダリストを返します。
+@var{field-name}は全て小文字に変換されます。
 @var{header-list}が既に同名のヘッダを持っていた場合、それらは全て出力から除かれます。
 引数に渡した@var{header-list}自体は変更されません。
 @c COMMON
