@@ -5745,6 +5745,53 @@ which only groups adjacent elements.
 @c COMMON
 @end deffn
 
+@deffn {Generic function} group-collection->alist coll :key key value test
+@c MOD gauche.collection
+@c EN
+Similar to @code{group-collection}, but returns the result as an assoc
+list keyed by extracted keys of comparison.  It's eaiser to see the example:
+@c JP
+@code{group-collection}に似ていますが、結果を比較に使ったキーでまとめた
+連想リストにして返します。例を見るのがわかりやすいでしょう。
+@c COMMON
+
+@example
+(group-collection->alist '((3 "a") (2 "b") (1 "c") (3 "d") (1 "e"))
+                         :key car :value cadr)
+  @result{} ((3 "a" "d") (2 "b") (1 "c" "e"))
+
+;; Compare with this
+(group-collection '((3 "a") (2 "b") (1 "c") (3 "d") (1 "e"))
+                  :key car)
+  @result{} (((3 "a") (3 "d")) ((2 "b")) ((1 "c") (1 "e")))
+@end example
+
+@c EN
+First, elements in the collection is grouped with the common keys.
+Then, a pair @code{(cons @var{key} (map value-proc @var{elements}))}
+is computed, where @code{value-proc} is the value extraction procedure
+passed by the @var{value} keyword argument.  List of those pairs is returned.
+
+If omitted, @var{key} and @var{value} arguments are assumed to be
+@code{identity}, and @var{test} argument (used to compare keys)
+is assumed to be @code{eqv?}.
+
+If the collection is ordered, the order of the alist is the same
+as the order the first element with each key appears in the collection,
+and within each alist entry, the values are the same order of appearance
+in the collection.
+@c JP
+まず、コレクション中で共通のキーを持つ要素がグループにまとめられます。
+次に各グループについて@code{(cons @var{key} (map value-proc @var{elements}))}
+が計算され、そのリストが結果となります。ここで@code{value-proc}はキーワード引数
+@var{value}で渡した値抽出手続きです。
+
+キーワード引数@var{key}および@var{value}の省略時の値は@code{identity}、
+キーの比較に使われる@var{test}の省略時の値は@code{eqv?}です。
+@c COMMON
+@end deffn
+
+
 @node Miscellaneous operations on collection, Fundamental iterator creators, Selection and searching in collection, Collection framework
 @subsection Miscellaneous operations on collection
 @c NODE コレクションに対する様々な操作

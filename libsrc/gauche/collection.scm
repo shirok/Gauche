@@ -42,7 +42,7 @@
           find find-min find-max find-min&max
           filter filter-to remove remove-to partition partition-to
           size-of lazy-size-of coerce-to
-          group-collection)
+          group-collection group-collection->alist)
   )
 (select-module gauche.collection)
 
@@ -648,15 +648,26 @@
 ;;  gather elements with the same key value.
 ;;  cf. group-sequence in gauche.sequence
 
+;; common utility.  returns ((key elt ...) (key elt ...))
+(define (%group-by col key-proc test-proc)
+  (let1 alist (fold (^[elt buckets]
+                      (let1 key (key-proc elt)
+                        (cond [(assoc key buckets test-proc)
+                               => (^p (push! (cdr p) elt) buckets)]
+                              [else (cons (list key elt) buckets)])))
+                    '()
+                    col)
+    (dolist [p alist] (set-cdr! p (reverse! (cdr p))))
+    (reverse alist)))
+
 (define-method group-collection ((col <collection>)
                                  :key ((:key key-proc) identity)
                                       ((:test test-proc) eqv?))
-  (fold (^[b r] (cons (reverse! (cdr b)) r))
-        '()
-        (fold (^[elt buckets]
-                (let1 key (key-proc elt)
-                  (cond [(assoc key buckets test-proc)
-                         => (^p (push! (cdr p) elt) buckets)]
-                        [else (cons (list key elt) buckets)])))
-              '()
-              col)))
+  (map cdr (%group-by col key-proc test-proc)))
+
+(define-method group-collection->alist ((col <collection>)
+                                        :key ((:key key-proc) identity)
+                                             ((:value value-proc) identity)
+                                             ((:test test-proc) eqv?))
+  (map (^p (cons (car p) (map value-proc (cdr p))))
+       (%group-by col key-proc test-proc)))

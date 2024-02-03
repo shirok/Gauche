@@ -400,6 +400,10 @@
                                      (#\r #\r) (#\c) (#\d))
        (group-collection "abracadabra"))
 
+(test* "group-collection->alist" '((3 "a" "d") (2 "b") (1 "c" "e"))
+       (group-collection->alist '((3 "a") (2 "b") (1 "c") (3 "d") (1 "e"))
+                                :key car :value cadr))
+
 (test-section "sequence operations")
 
 (test* "ref (list)" 3     (ref '(1 2 3 4 5) 2))
