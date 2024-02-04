@@ -764,36 +764,17 @@
 (define rassq (cut rassoc <> <> eq?))
 (define rassv (cut rassoc <> <> eqv?))
 
-;; 'assoc-ref', a shortcut of value retrieval w/ default value
-;; Default parameter comes first, following the convention of
-;; other *-ref functions.
-(define (assoc-ref alist key :optional (default #f) (eq equal?))
+(define (alist-ref alist key :optional (default #f) (eq equal?))
   (cond [(assoc key alist eq) => cdr]
         [else default]))
-
-(define (assq-ref alist key :optional (default #f))
-  (assoc-ref alist key default eq?))
-(define (assv-ref alist key :optional (default #f))
-  (assoc-ref alist key default eqv?))
-
-(define (rassoc-ref alist key :optional (default #f) (eq equal?))
-  (cond [(rassoc key alist eq) => car]
+(define (alist-key alist val :optional (default #f) (eq equal?))
+  (cond [(rassoc val alist eq) => car]
         [else default]))
-
-(define (rassq-ref alist key :optional (default #f))
-  (rassoc-ref alist key default eq?))
-(define (rassv-ref alist key :optional (default #f))
-  (rassoc-ref alist key default eqv?))
-
-;; 'assoc-set!'
-(define (assoc-set! alist key val :optional (eq equal?))
+(define (alist-set! alist key val :optional (eq equal?))
   (cond [(assoc key alist eq) => (^p (set-cdr! p val) alist)]
         [else (acons key val alist)]))
 
-(define assq-set!  (cut assoc-set! <> <> <> eq?))
-(define assv-set!  (cut assoc-set! <> <> <> eqv?))
-
-(define (assoc-adjoin alist key val :optional (eq equal?))
+(define (alist-adjoin alist key val :optional (eq equal?))
   (define (rec alis)
     (cond [(null? alis) '()]
           [(eq key (caar alis)) (acons key val (cdr alis))]
@@ -830,7 +811,7 @@
     (merge* equal? maybe-eq (cons reducer args))
     (merge* maybe-eq reducer args)))
 
-(define (assoc-update-in alist keys proc :optional (default #f) (eq equal?))
+(define (alist-update-in alist keys proc :optional (default #f) (eq equal?))
   (define (rec alist key keys)
     (if (null? keys)
       (let1 val (assoc-ref alist key default eq)
@@ -841,6 +822,22 @@
     (error "needs at least one key in assoc-update")
     (rec alist (car keys) (cdr keys))))
 
+;; for backward compatibity
+(define assoc-ref alist-ref)
+(define (assq-ref alist key :optional (default #f))
+  (alist-ref alist key default eq?))
+(define (assv-ref alist key :optional (default #f))
+  (alist-ref alist key default eqv?))
+(define rassoc-ref alist-key)
+(define (rassq-ref alist key :optional (default #f))
+  (alist-key alist key default eq?))
+(define (rassv-ref alist key :optional (default #f))
+  (alist-key alist key default eqv?))
+(define assoc-set! alist-set!)
+(define assq-set!  (cut alist-set! <> <> <> eq?))
+(define assv-set!  (cut alist-set! <> <> <> eqv?))
+(define assoc-adjoin alist-adjoin)
+(define assoc-update-in alist-update-in)
 
 ;;;
 ;;; Extended pairs

@@ -1,6 +1,10 @@
 2024-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (alist-merge): Added.
+	  (alist-ref, alist-key, alist-adjoin, alist-update-in): Renamed
+	  assoc-ref, rassoc-ref, assoc-adjoin, and assoc-update-in.
+	  Old names are kept for the backward compatibility.
+	  https://github.com/shirok/Gauche/issues/985
 
 2024-02-02  Shiro Kawai  <shiro@acm.org>
 
