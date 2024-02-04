@@ -806,6 +806,30 @@
       (acons key val alist)
       r)))
 
+(define (alist-merge maybe-eq reducer . args)
+  (define (merge* eq reducer alists)
+    (cond [(null? alists) '()]
+          [(null? (cdr alists)) (car alists)]
+          [(null? (cddr alists))
+           (merge2 eq reducer '() (car alists) (cadr alists))]
+          [else
+           (merge2 eq reducer '() (car alists)
+                   (merge* eq reducer (cdr alists)))]))
+  (define (merge2 eq reducer visited-keys alist1 alist2)
+    (if (null? alist1)
+      (remove (^p (member (car p) visited-keys)) alist2)
+      (let* ([key (caar alist1)]
+             [found (assoc key alist2 eq)])
+        (if found
+          (acons key (reducer (cdar alist1) (cdr found))
+                 (merge2 eq reducer (cons key visited-keys)
+                         (cdr alist1) alist2))
+          (cons (car alist1)
+                (merge2 eq reducer visited-keys (cdr alist1) alist2))))))
+  (if (list? reducer)                   ;eq proc is omitted
+    (merge* equal? maybe-eq (cons reducer args))
+    (merge* maybe-eq reducer args)))
+
 (define (assoc-update-in alist keys proc :optional (default #f) (eq equal?))
   (define (rec alist key keys)
     (if (null? keys)

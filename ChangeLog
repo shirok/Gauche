@@ -1,3 +1,7 @@
+2024-02-03  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (alist-merge): Added.
+
 2024-02-02  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/collection.scm (group-collection->alist): Added.

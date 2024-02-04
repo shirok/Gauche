@@ -548,6 +548,23 @@
 (test* "assoc-adjoin" '((a . 1))
        (assoc-adjoin '() 'a 1))
 
+(test* "alist-merge" '()
+       (alist-merge + '()))
+(test* "alist-merge" '((a . 1) (b . 2))
+       (alist-merge + '((a . 1) (b . 2))))
+(test* "alist-merge" '((a . 1) (b . 2) (c . 3) (d . 4))
+       (alist-merge + '((a . 1) (b . 2)) '((c . 3) (d . 4))))
+(test* "alist-merge" '((a . 5) (b . 2) (d . 3))
+       (alist-merge + '((a . 1) (b . 2)) '((d . 3) (a . 4))))
+(test* "alist-merge" '((a . 1) (b . 6) (c . 3))
+       (alist-merge + '((a . 1) (b . 2)) '((c . 3) (b . 4))))
+
+(test* "alist-merge" '((a 1 5) (b 2 4) (c 3))
+       (alist-merge append '((a 1) (b 2)) '((c 3) (b 4)) '() '((a 5))))
+(test* "alist-merge" '(("a" 1 4) ("b" 2 3))
+       (alist-merge string=? append '(("a" 1) ("b" 2)) '(("b" 3) ("a" 4))))
+
+
 (test* "assoc-update-in" '((a (aa . 1) (ab . 2))
                            (b (ba . 3) (bb (bba . 104) (bbb . 5))))
        (assoc-update-in '((a (aa . 1) (ab . 2))
