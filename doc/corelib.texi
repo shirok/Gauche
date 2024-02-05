@@ -7284,6 +7284,18 @@ except the duplicate key entries are merged into the first one.
 結果のエントリの順序は、重複キーのエントリが最初のエントリにマージされていること以外は
 入力の連想リストの順序を保存します。
 @c COMMON
+
+@c EN
+Note: This assumes each alist doesn't have duplicate keys in itself.
+To gether entries of the same keys in an alist, you can use
+@code{group-collection->alist} in @code{gauche.collection}
+(@pxref{Collection framework}).
+@c JP
+註: この手続きは、それぞれのalist内には重複するキーのエントリが無いことを仮定しています。
+ひとつのalist内で同じキーを持つエントリを集めるには、
+@code{gauche.collection}の@code{group-collection->alist}が使えます
+(@ref{Collection framework}参照)。
+@c COMMON
 @end defun
 
 @defun alist-update-in alist keys proc :optional key= default
