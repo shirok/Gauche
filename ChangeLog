@@ -1,3 +1,9 @@
+2024-02-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm: Change optional argument order of new alist-*
+	  procs.  It is easier to have key= argument first, to handle
+	  variations.
+
 2024-02-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (alist-merge): Added.
