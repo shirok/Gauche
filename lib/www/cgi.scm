@@ -217,17 +217,8 @@
                                 (or content-length (get-meta "CONTENT_LENGTH"))
                                 (or mime-input (current-input-port))))]
         [(string-null? input) '()]
-        [else (group (split-query-string input))])
+        [else (group (uri-decompose-query input))])
        (map (^[cookie] (list (car cookie) (cadr cookie))) cookies))))
-
-(define (split-query-string input)
-  (map (^[elt] (let1 ss (string-split elt #\=)
-                 (list (uri-decode-string (car ss) :cgi-decode #t)
-                       (if (null? (cdr ss))
-                         #t
-                         (uri-decode-string (string-join (cdr ss) "=")
-                                            :cgi-decode #t)))))
-       (string-split input #[&\;])))
 
 ;; part-handlers: ((<name-list> <action> <options> ...) ...)
 ;;  <name-list> : list of field names (string, symbol, or regexp)

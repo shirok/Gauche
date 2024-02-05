@@ -54,6 +54,7 @@
   (export uri-scheme&specific uri-decompose-hierarchical
           uri-decompose-authority uri-parse uri-ref
           uri-merge uri-compose
+          uri-decompose-query uri-compose-query
           uri-decode uri-decode-string
           uri-encode uri-encode-string
           *rfc2396-unreserved-char-set*
@@ -190,6 +191,34 @@
               (when fragment (display "#") (display fragment))))
           ))
       )))
+
+;;==============================================================
+;; Query string handling
+;;   This is the basis of cgi-parse-parameters etc.
+;;
+;; NB: Query string syntax (aka application/x-www-form-urlencoded) is
+;; not cleary defined in RFC.  The most definitive source might be
+;; the HTML4 specification, section 17.13.4 "Form content types",
+;; <http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1>.
+
+(define (uri-decompose-query query-string)
+  (map (^[elt] (let1 ss (string-split elt #\= 'infix 1)
+                 (list (uri-decode-string (car ss) :cgi-decode #t)
+                       (if (null? (cdr ss))
+                         #t
+                         (uri-decode-string (cadr ss) :cgi-decode #t)))))
+       (string-split query-string #[&\;])))
+
+(define (uri-compose-query params
+                           :optional (encoding (gauche-character-encoding)))
+  (define (esc s) (uri-encode-string (x->string s) :encoding encoding))
+  (define (query-1 n&v)
+    (match n&v
+      [(name value) #"~(esc name)=~(esc value)"]
+      [_ (error "Invalid request-uri form:" params)]))
+  (if (null? params)
+    ""
+    (string-concatenate (intersperse "&" (map query-1 params)))))
 
 ;;==============================================================
 ;; Relative -> Absolute

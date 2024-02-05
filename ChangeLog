@@ -1,5 +1,10 @@
 2024-02-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/uri.scm (uri-decompose-query, uri-compose-query),
+	  lib/rfc/http.scm (http-compose-query),
+	  lib/www/cgi.scm (cgi-parse-parameters): Provide basic url query
+	  utilities in rfc.uri, and define existing utils on top of them.
+
 	* src/liblist.scm: Change optional argument order of new alist-*
 	  procs.  It is easier to have key= argument first, to handle
 	  variations.

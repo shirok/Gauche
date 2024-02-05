@@ -573,15 +573,9 @@
 ;; In reality it is used very frequently with http, so we put it here.
 (define (http-compose-query path params
                             :optional (encoding (gauche-character-encoding)))
-  (define (esc s) (uri-encode-string (x->string s) :encoding encoding))
-  (define (query-1 n&v)
-    (match n&v
-      [(name value) #"~(esc name)=~(esc value)"]
-      [_ (error "Invalid request-uri form:" params)]))
-  (define (query) (string-concatenate (intersperse "&" (map query-1 params))))
-  (cond [(not path) (query)]
+  (cond [(not path) (uri-compose-query params)]
         [(null? params) path]
-        [else #"~|path|?~(query)"]))
+        [else #"~|path|?~(uri-compose-query params)"]))
 
 ;; multipart/form-data composition [RFC2388]
 ;; <params> : (<param> ...)
