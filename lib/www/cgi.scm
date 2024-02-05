@@ -44,6 +44,7 @@
   (use rfc.mime)
   (use rfc.822)
   (use gauche.charconv)
+  (use gauche.collection)
   (use gauche.uvector)
   (use text.tree)
   (use text.html-lite)
@@ -206,27 +207,22 @@
          [cookies (if-let1 s (and merge-cookies (get-meta "HTTP_COOKIE"))
                     (parse-cookie-string s)
                     '())])
-    (fold-params-by-name
-     (cond
-      [(eq? input 'mime)
-       (get-mime-parts part-handlers
-                       (or content-type (get-meta "CONTENT_TYPE"))
-                       (or content-length (get-meta "CONTENT_LENGTH"))
-                       (or mime-input (current-input-port)))]
-      [(string-null? input) '()]
-      [else (split-query-string input)])
-     (map (^[cookie] (list (car cookie) (cadr cookie))) cookies))))
-
-(define (fold-params-by-name alist tail)
-  (fold-right (^[kv params]
-                (if-let1 p (assoc (car kv) params)
-                  (begin (push! (cdr p) (cdr kv)) params)
-                  (cons (list (car kv) (cdr kv)) params)))
-              tail alist))
+    (define (group alist)
+      (group-collection->alist alist :key car :value cadr :test equal?))
+    ($ alist-merge equal? append
+       (cond
+        [(eq? input 'mime)
+         (group (get-mime-parts part-handlers
+                                (or content-type (get-meta "CONTENT_TYPE"))
+                                (or content-length (get-meta "CONTENT_LENGTH"))
+                                (or mime-input (current-input-port))))]
+        [(string-null? input) '()]
+        [else (group (split-query-string input))])
+       (map (^[cookie] (list (car cookie) (cadr cookie))) cookies))))
 
 (define (split-query-string input)
   (map (^[elt] (let1 ss (string-split elt #\=)
-                 (cons (uri-decode-string (car ss) :cgi-decode #t)
+                 (list (uri-decode-string (car ss) :cgi-decode #t)
                        (if (null? (cdr ss))
                          #t
                          (uri-decode-string (string-join (cdr ss) "=")
@@ -254,6 +250,9 @@
 ;;                                   part.  if it is exceeded,
 ;;                                   <cgi-request-size-error> is
 ;;                                   thrown.  (NOT SUPPORTED)
+;;
+;; Returns ((<part-name> <value>) ...)
+;;
 (define (get-mime-parts part-handlers ctype clength inp)
   (define (part-ref info name)
     (rfc822-header-ref (ref info 'headers) name))
@@ -356,14 +355,14 @@
         (ignore-handler name filename part-info inp)
         #f]
        [(not filename)  ;; this is not a file uploading field.
-        (cons name (string-handler name filename part-info inp))]
+        (list name (string-handler name filename part-info inp))]
        [(string-null? filename) ;; file field is empty
-        (cons name (ignore-handler name filename part-info inp))]
+        (list name (ignore-handler name filename part-info inp))]
        [else
         (let* ([action&opts (get-action&opts name)]
                [handler (apply get-handler action&opts)]
                [result (handler name filename part-info inp)])
-          (cons name result))])))
+          (list name result))])))
 
   (let* ([inp (if (and clength (<= 0 (x->integer clength)))
                 (open-input-limited-length-port inp (x->integer clength))

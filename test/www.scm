@@ -16,7 +16,7 @@
 
 (define params #f)
 (define qs1 "a=foo+bar&boo=baz=doo&z%3Dz=%21%26&a=+%20&#=#&z=z=8&r&r=2")
-(define qr1 '(("boo" "baz=doo") ("z=z" "!&") ("a" "foo bar" "  ") ("#" "#") ("z" "z=8") ("r" #t "2")))
+(define qr1 '(("a" "foo bar" "  ") ("boo" "baz=doo") ("z=z" "!&") ("#" "#") ("z" "z=8") ("r" #t "2")))
 (define qs1b "a=foo+bar;boo=baz=doo;z%3Dz=%21%26;a=+%20;#=#;z=z=8;r;r=2")
 
 (define qs2 "zz=aa&aa=zz")
