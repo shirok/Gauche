@@ -6949,6 +6949,31 @@ instead of @code{equal?}.
 @subsection Association lists
 @c NODE 連想リスト
 
+@c EN
+An association list is a list of pairs.  Each @code{car} of a pair
+is a key, and each @code{cdr} of a pair is an associated value.
+It is the earliest data structure to represent mappings.
+
+It takes O(N) to lookup so it's not suitable for large amount of data,
+but it is still widely used since it's easy to realize immutable mapping
+(the new entries can ``shadow''
+the existing entries with the same key, allowing to ``change'' the content
+without mutating existing maps).
+@c JP
+連想リストはペアのリストです。各ペアの@code{car}がキー、@code{cdr}がそのキーに
+結びつけられた値です。これはマッピングを表現する最も初期のデータ構造でした。
+
+値のルックアップにO(N)を要するのであまり大きなデータを扱うには向いていませんが、
+不変データ構造を容易に実現できる (同じキーを持つエントリを追加すると既存のキーが「シャドウ」
+されるため、既存のデータ構造を破壊することなく内容の変更が可能) ので、今でも広く使われています。
+@c COMMON
+
+@c EN
+@subsubheading Basic constructor and accessors
+@c JP
+@subsubheading 基本コンストラクタとアクセサ
+@c COMMON
+
 @defun acons obj1 obj2 obj3
 @c EN
 Returns @code{(cons (cons @var{obj1} @var{obj2}) @var{obj3})}.
@@ -6966,29 +6991,6 @@ Useful to put an entry at the head of an associative list.
 @lisp
 (acons 'a 'b '((c . d))) @result{} ((a . b) (c . d))
 @end lisp
-@end defun
-
-@defun alist-copy alist
-[R7RS list]
-@c EN
-Returns a fresh copy of @var{alist}.
-The spine of @var{alist} and each cell that points a key and a value
-is copied.
-@c JP
-@var{alist} の新しい複製を返します。@var{alist} の背骨の部分、
-およびキーと値を指す各セルは複製されます。
-@c COMMON
-@example
-(define a (list (cons 'a 'b) (cons 'c 'd)))
-a @result{} ((a . b) (c . d))
-
-(define b (alist-copy a))
-b @result{} ((a . b) (c . d))
-
-(set-cdr! (car a) 'z)
-a @result{} ((a . z) (c . d))
-b @result{} ((a . b) (c . d))
-@end example
 @end defun
 
 @defun assq obj list
@@ -7028,35 +7030,17 @@ to check the equivalence of @var{obj} and each key.
 @c COMMON
 @end defun
 
-@defun alist-delete key alist :optional key=
-@defunx alist-delete! key alist :optional key=
-[R7RS list]
+@defun rassoc val alist :optional val=
+@defunx rassq val alist
+@defunx rassv val alist
 @c EN
-Deletes all cells in @var{alist} whose key is the same as @var{key}.
-Comparison is done by a procedure @var{key=}.  The default is @code{eqv?}.
-
-The linear-update version @code{alist-delete!} may or may not modify
-@var{alist}.
-@c JP
-@var{alist} から @var{key}と同じキーをもつすべてのセルを削除します。
-比較は @var{key=} で行います。これのデフォルト値は @code{eqv?} です。
-
-その場で更新を行うバージョン @code{alist-delete!} は元の
-@var{alist} を変更してしまうことがあります。
-@c COMMON
-@end defun
-
-@defun rassoc key alist :optional eq-fn
-@defunx rassq key alist
-@defunx rassv key alist
-@c EN
-Reverse associations---given @var{key} is matched to the @emph{cdr}
+Reverse associations---given @var{val} is matched to the @emph{cdr}
 of each element in @var{alist}, instead of the @emph{car}.
 Handy to realize bidirectional associative list.
 @code{Rassoc} takes an optional comparison function, whose default is
 @code{equal?}.  @code{Rassq} and @code{rassv} uses @code{eq?} and @code{eqv?}.
 @c JP
-与えられる@var{key}が@var{alist}のそれぞれの要素で、@emph{car}の代わりに
+与えられる@var{val}が@var{alist}のそれぞれの要素で、@emph{car}の代わりに
 @emph{cdr}にマッチするような逆になった連想リストです。
 両方向の連想リストと理解すると簡単です。
 @code{rassoc}は、そのデフォルトが@code{equal?}である、オプションの
@@ -7065,71 +7049,121 @@ Handy to realize bidirectional associative list.
 @c COMMON
 @end defun
 
-@defun assoc-ref alist key :optional default eq-fn
-@defunx assq-ref alist key :optional default
-@defunx assv-ref alist key :optional default
 @c EN
-These procedures provide the access to the assoc list
-symmetric with other @code{*-ref} procedures.
-(Note that the argument order is different from @code{assoc}, @code{assq}
-and @code{assv} -- @code{*-ref} procedures take a container first,
-and an item second.)
+@subsubheading Advanced operations
+@c JP
+@subsubheading 進んだ操作
+@c COMMON
+
+
+@defun alist-copy alist
+[R7RS list]
+@c EN
+Returns a fresh copy of @var{alist}.
+The spine of @var{alist} and each cell that points a key and a value
+is copied.
+@c JP
+@var{alist} の新しい複製を返します。@var{alist} の背骨の部分、
+およびキーと値を指す各セルは複製されます。
+@c COMMON
+@example
+(define a (list (cons 'a 'b) (cons 'c 'd)))
+a @result{} ((a . b) (c . d))
+
+(define b (alist-copy a))
+b @result{} ((a . b) (c . d))
+
+(set-cdr! (car a) 'z)
+a @result{} ((a . z) (c . d))
+b @result{} ((a . b) (c . d))
+@end example
+@end defun
+
+@defun alist-ref alist key :optional key= default
+@c EN
+Lookup @var{key} from an assoc list @var{alist},
+in the symmetric way with other @code{*-ref} procedures.
+Keys are compared with @var{key=}, which defaults to @code{equal?}.
 
 This captures the common pattern of alist access:
 @c JP
-これらの手続きは、他の*-ref手続きと対称的な連想リストへの
-アクセスを提供します。(@code{assoc}, @code{assq}, @code{assv}と
-引数の順序が逆であることに注意しえください。@code{*-ref}手続きは、
-コンテナを最初に、要素を次に取ります)。
+他の*-ref手続きと対称的な方法で、連想リスト@var{alist}から@var{key}を
+探します。キーは@var{key=}で比較され、省略時は@code{equal?}が使われます。
 
 これは、一般的な連想リストアクセスのパターンを提供します。
 @c COMMON
 @example
-(assoc-ref alist key default eq-fn)
- @equiv{}
+(alist-ref alist key default eq-fn)
+  @equiv{}
   (cond [(assoc key alist eq-fn) => cdr]
         [else default])))
 @end example
 
 @c EN
 If @var{default} is omitted, @code{#f} is used.
-
-@code{Assoc-ref} takes an optional comparison function @var{eq-fn},
-whose default is @code{equal?}.  @code{Assq-ref} and @code{assv-ref}
-uses @code{eq?} and @code{eqv?}, respectively.
 @c JP
 @var{default}が省略されると、@code{#f}が使われます。
+@c COMMON
 
-@code{assoc-ref}は、そのデフォルトが@code{equal?}である、オプションの
-比較関数@var{eq-fn}を取ります。@code{assq-ref}は@code{eq?}を、
-@code{assv-ref}は@code{eqv?}をそれぞれ使います。
+@c EN
+NB: This procedure supersedes a legacy @code{assoc-ref}, @code{assq-ref}
+and @code{assv-ref}, by the following reasons:
+Its name is very similar to @code{assoc} etc. but the
+argument order is different, and most other modern alist operators
+has the name prefix @code{alist-}.
+Be aware that the optional arguments of @code{alist-ref} differs
+from @code{assoc-ref}, when you update your code.  It is to make it
+easier to cover the valiations of key equality procedures, e.g.
+@code{(assq-ref alist key)} @equiv{} @code{(alist-ref alist key eq?)}.
+@c JP
+註: この手続きは、旧式の@code{assoc-ref}、@code{assq-ref}、@code{assv-ref}を
+置き換えるものです。これらの手続きは、@code{assoc}等と似た名を持つのに
+引数順が異なり、また新しい連想リスト操作は@code{alist-}をプレフィクスに持つという
+原則からも外れていることから、非推奨となりました。
+@code{assoc-ref}を使っているコードを@code{alist-ref}に書き換える際には、
+省略可能引数の順序が異なっていることに注意してください。これは、@code{alist-ref}
+で複数のバリエーションをカバーしやすくするためです。
+例えば@code{(assq-ref alist key)}は@code{(alist-ref alist key eq?)}で
+置き換えられます。
 @c COMMON
 @end defun
 
-@defun rassoc-ref alist key :optional default eq-fn
-@defunx rassq-ref alist key :optional default
-@defunx rassv-ref alist key :optional default
+@defun alist-key alist val :optional val= default
 @c EN
-Reverse association version of @code{assoc-ref}.
+Returns a key that has the associated value equal to @var{val}.
+This is to @code{alist-ref} as @code{rassoc} is to @code{assoc}.
+The value is compared by @var{val=}, whose default is @code{equal?}.
+If no entry's value matches @var{val}, @var{default} is returned,
+whose default is @code{#f}.
 @c JP
-@code{assoc-ref}の逆連想リストバージョンです。
+値が@var{val}に一致するようなキーを連想リスト@var{alist}から探して返します。
+@code{alist-key}と@code{alist-ref}の関係は、
+@code{assoc}に対する@code{rassoc}の関係に相当します。
+値の等価性は@var{val=}で比較されます。デフォルトは@code{equal?}です。
+@var{val}に一致する値を持つエントリが無かった場合は@var{default}が
+返されます。そのデフォルトは@code{#f}です。
 @c COMMON
+
 @example
-(rassoc-ref alist key default eq-fn)
- @equiv{}
-  (cond ((rassoc key alist eq-fn) => car)
-        (else default))))
+(alist-key alist val val= default)
+  @equiv{}
+  (cond ((rassoc val alist val=) => car)
+        (else default))
 @end example
+
 @c EN
-The meanings of optional arguments are the same as @code{assoc-ref}.
+NB: This procedure supersedes legacy @code{rassoc-ref},
+@code{rassq-ref}, and @code{rassv-ref}.  See @code{alist-ref}
+entry above for the rationale.  Be aware of the order of
+optional arguments, which differs from @code{rassoc-ref}.
 @c JP
-オプショナル引数の意味は、@code{assoc-ref}と同じです。
+註: この手続きは旧式の@code{rassoc-ref}、@code{rassq-ref}、@code{rassv-ref}を
+置き換えるものです。省略可能引数の順序が@code{rassoc-ref}と異なっていることに
+注意してください。
 @c COMMON
 @end defun
 
-@defun assoc-set! alist key val :optional eq-fn
-@defunx assq-set! alist key val
-@defunx assv-set! alist key val
+@defun alist-set! alist key val :optional key=
 @c EN
 Returns an alist who has @code{(key . val)} pair added to the @code{alist}.
 If @code{alist} already has an element with @var{key}, the element's
@@ -7138,9 +7172,9 @@ If @var{alist} doesn't have an element with @var{key}, a new pair
 is created and appended in front of @var{alist}; so you should use
 the return value to guarantee @var{key}-@var{val} pair is added.
 
-@code{Assoc-set!} takes optional comparison function @var{eq-fn},
-whose default is @code{equal?}.  @code{Assq-set!} and @code{assv-set!}
-uses @code{eq?} and @code{eqv?}, respectively.
+The keys are compared with @var{key=}, whose default is @code{equal?}.
+
+If you don't want to mutate the original alist, use @code{alist-adjoin} below.
 @c JP
 @code{alist}に@code{(key . val)}のペアが追加された連想リストを返します。
 @code{alist}がすでに@var{key}をキーとする要素を持っている場合、
@@ -7150,14 +7184,16 @@ uses @code{eq?} and @code{eqv?}, respectively.
 したがって、@var{key}-@var{val}ペアが追加されたことを保証するために
 その戻り値を使うべきです。
 
-@code{assoc-set!}は、そのデフォルトが@code{equal?}である、オプションの
-比較関数@var{eq-fn}を取ります。@code{assq-set!}は@code{eq?}を、
-@code{assv-set!}は@code{eqv?}を、それぞれ使います。
+キーは@var{key=}によって比較されます。デフォルトは@code{equal?}です。
+
+元のalistを破壊したくない場合は、下の@code{alist-adjoin}を使ってください。
 @c COMMON
 @end defun
 
-@defun assoc-adjoin alist key val :optional eq-fn
+@defun alist-adjoin alist key val :optional key=
 @c EN
+A functional variation of @code{alist-set!}.
+
 If @var{alist} contains an entry with @var{key}, returns a new associative list
 where the value of the @var{key} is replaced for @var{val}. The order
 of entries in @var{alist} is preserved.  If @var{alist} doesn't contain
@@ -7166,14 +7202,11 @@ the entry, it returns @code{(acons @var{key} @var{val} @var{alist})}.
 The original @var{alist} is left unmodified.  The returned associative list may
 share a part of its tail with the original @var{alist}, however.
 
-The optional @var{eq-fn} argument is a procedure with two arguments
+The optional @var{key=} argument is a procedure with two arguments
 to be used to compare the keys; the default is @code{equal?}.
-
-Note the order of arguments; we have @var{alist} first, just as @code{assoc-ref}
-and @code{assoc-set!}, and other @code{-adjoin} procedures.
-It is not the same as @code{alist-delete} and @code{assoc}, which takes
-the key first.
 @c JP
+@code{alist-set!}の非破壊的バージョンです。
+
 @var{alist}が@var{key}をキーとするエントリを持っていた場合、その値を@var{val}に
 変えた新たな連想リストを作って返します。@var{alist}中のエントリの順序は保存されます。
 もし@var{alist}中に@var{key}をキーとするエントリが無い場合は、
@@ -7182,16 +7215,78 @@ the key first.
 元の@var{alist}は変更されません。但し、返された連想リストは@var{alist}と末尾部分を
 共有するかもしれません。
 
-@var{eq-fn}引数は2引数を取る手続きで、キーの比較に使われます。
+@var{key=}引数は2引数を取る手続きで、キーの比較に使われます。
 省略された場合は@code{equal?}が使われます。
-
-引数の順序に注意: @code{assoc-ref}や@code{assoc-set!}、また他の@code{-adjoin}系
-関数と同じように、この手続きは連想リストを第一引数に取ります。
-一方、@code{alist-delete}や@code{assoc}はキーを第一引数に取ります。
 @c COMMON
 @end defun
 
-@defun assoc-update-in alist keys proc :optional default eq-fn
+@defun alist-delete key alist :optional key=
+@defunx alist-delete! key alist :optional key=
+[R7RS list]
+@c EN
+Deletes all cells in @var{alist} whose key is the same as @var{key}.
+Comparison is done by a procedure @var{key=}.  The default is @code{equal?}.
+
+The linear-update version @code{alist-delete!} may or may not modify
+@var{alist}.
+@c JP
+@var{alist} から @var{key}と同じキーをもつすべてのセルを削除します。
+比較は @var{key=} で行います。これのデフォルト値は @code{equal?} です。
+
+その場で更新を行うバージョン @code{alist-delete!} は元の
+@var{alist} を変更してしまうことがあります。
+@c COMMON
+
+@c EN
+Note the order of arguments: Unfortunately, this procedure
+doesn't follow the rule to take @var{alist} as the first argument
+This is defined in srfi-1 and followed @code{assoc}.
+@c JP
+引数順についての注意: 残念なことに、この手続きは@var{alist}を最初の引数に取るという
+原則から外れています。この手続きはSRFI-1で定義され、それは@code{assoc}
+の引数順に合わせました。
+@c COMMON
+@end defun
+
+@defun alist-merge [key=] reducer alist1 alist2 @dots{}
+@c EN
+Returns a new assoc list that contains all keys in
+@var{alist1} @var{alist2} @dots{}.  If more than one input alist
+have the same key, they are merged to a single entry using @var{reducer}
+as follows:
+Suppose values of those entries are @var{x}, @var{y}, and @var{z},
+in the order of appearance in the input alists.  Then the
+value of the resulting entry is
+@code{(@var{reducer} @var{x} (@var{reducer} @var{y} @var{z})}.
+@c JP
+@var{alist1} @var{alist2} @dots{} に含まれている全てのキーを含むような
+新たな連想リストを返します。同じキーを持つエントリが複数の入力連想リストに
+含まれていた場合は、その値は@var{reducer}を用いて次のとおり計算されます:
+入力に含まれる同じキーを持つエントリの値が順に@var{x}、@var{y}、@var{z}であったとすると、
+結果の連想リストの値は
+@code{(@var{reducer} @var{x} (@var{reducer} @var{y} @var{z})}。
+@c COMMON
+
+@example
+(alist-merge + '((a . 1) (b . 2)) '((c . 3) (a . 4)) '((b . 5)))
+ @result{} ((a . 5) (b . 7) (c . 3))
+(alist-merge string=? append
+  '(("a" 1) ("b" 2) ("c" 3))
+  '(("b" 4) ("d" 5))
+  '(("c" 6)))
+ @result{} (("a" 1) ("b" 2 4) ("c" 3 6) ("d" 5))
+@end example
+
+@c EN
+The order of entries of the result preserves the order of the input,
+except the duplicate key entries are merged into the first one.
+@c JP
+結果のエントリの順序は、重複キーのエントリが最初のエントリにマージされていること以外は
+入力の連想リストの順序を保存します。
+@c COMMON
+@end defun
+
+@defun alist-update-in alist keys proc :optional key= default
 @c EN
 This procedure allows to update a nested associative list.
 The @var{alist} argument is a (possibly nested) associative list,
@@ -7247,20 +7342,11 @@ no entry with specified keys.  If omitted, @code{#f} is assumed.
 @c COMMON
 
 @c EN
-The optional @var{eq-fn} argument is a procedure with two arguments
+The optional @var{key=} argument is a procedure with two arguments
 to be used to compare the keys; the default is @code{equal?}.
-
-Note the order of arguments; we have @var{alist} first, just as @code{assoc-ref}
-and @code{assoc-set!}, and other @code{-adjoin} procedures.
-It is not the same as @code{alist-delete} and @code{assoc}, which takes
-the key first.
 @c JP
-@var{eq-fn}引数は2引数を取る手続きで、キーの比較に使われます。
+@var{key=}引数は2引数を取る手続きで、キーの比較に使われます。
 省略された場合は@code{equal?}が使われます。
-
-引数の順序に注意: @code{assoc-ref}や@code{assoc-set!}、また他の@code{-adjoin}系
-関数と同じように、この手続きは連想リストを第一引数に取ります。
-一方、@code{alist-delete}や@code{assoc}はキーを第一引数に取ります。
 @c COMMON
 
 @c EN
@@ -7277,6 +7363,110 @@ So we added a special update procedure.
 更新することが出来ます。しかし連想リストはちょっと特殊で、リストと型的に区別
 できないため、@code{~}が使えません。連想リストはまた、関数的に使われることも
 多いため、専用の更新手続きを用意しました。
+@c COMMON
+@end defun
+
+@c EN
+@subsubheading Deprecated procedures
+@c JP
+@subsubheading 非推奨の手続き
+@c COMMON
+
+@c EN
+The following procedures are deprecated for the naming consistency.
+Except a handful historical procedures (@code{assoc} etc.), associative
+list operations are now named @code{alist-*} and takes alist as the
+first argument as long as it is relevant.
+@c JP
+以下の手続きは、名前の一貫性のために非推奨となったものです。
+@var{assoc}のような歴史的ないくつかの手続き以外は、現在の連想リスト操作は
+@code{alist-*}と命名され、原則として連想リストを第一引数に取ります。
+@c COMMON
+
+@defun assoc-ref alist key :optional default key=
+@defunx assq-ref alist key :optional default
+@defunx assv-ref alist key :optional default
+@c DEPRECATED
+@c EN
+@code{(assoc-ref alist key default key=)} @equiv{}
+@code{(alist-ref alist key key= default)}.  Note the order of
+the optional arguments.
+
+@code{(assq-ref alist key default)} @equiv{}
+@code{(alist-ref alist key eq? default)}.
+
+@code{(assv-ref alist key default)} @equiv{}
+@code{(alist-ref alist key eqv? default)}.
+@c JP
+@code{(assoc-ref alist key default key=)} @equiv{}
+@code{(alist-ref alist key key= default)}.
+省略可能引数の順序に注意。
+
+@code{(assq-ref alist key default)} @equiv{}
+@code{(alist-ref alist key eq? default)}.
+
+@code{(assv-ref alist key default)} @equiv{}
+@code{(alist-ref alist key eqv? default)}.
+@c COMMON
+@end defun
+
+@defun rassoc-ref alist val :optioanl default val=
+@defunx rassq-ref alist val :optional default
+@defunx rassv-ref alist val :optional default
+@c DEPRECATED
+@c EN
+@code{(rassoc-ref alist val default val=)} @equiv{}
+@code{(alist-key alist val val= default)}.  Note the order of
+the optional arguments.
+
+@code{(rassq-ref alist val default)} @equiv{}
+@code{(alist-key alist val eq? default)}.
+
+@code{(rassv-ref alist key default)} @equiv{}
+@code{(alist-key alist val eqv? default)}.
+@c JP
+@code{(rassoc-ref alist val default val=)} @equiv{}
+@code{(alist-key alist val val= default)}.
+省略可能引数の順序に注意。
+
+@code{(rassq-ref alist val default)} @equiv{}
+@code{(alist-key alist val eq? default)}.
+
+@code{(rassv-ref alist key default)} @equiv{}
+@code{(alist-key alist val eqv? default)}.
+@c COMMON
+@end defun
+
+@defun assoc-set! alist key val :optional key=
+@defunx assq-set! alist key val
+@defunx assv-set! alist key val
+@c DEPRECATED
+@code{(assoc-set! alist key key=)} @equiv{} @code{(alist-set! alist key key=)}.
+
+@code{(assq-set! alist key)} @equiv{} @code{(alist-set! alist key eq?)}.
+
+@code{(assv-set! alist key)} @equiv{} @code{(alist-set! alist key eqv?)}.
+@end defun
+
+@defun assoc-adjoin alist key val :optional key=
+@c DEPRECATED
+@c EN
+Same as @code{alist-adjoin}.
+@c JP
+@code{alist-adjoin}と同じです。
+@c COMMON
+@end defun
+
+@defun assoc-update-in alist keys proc :optional default key=
+@c DEPRECATED
+@code{assoc-update-in alist keys proc default key=}
+@equiv{}
+@code{alist-update-in alist keys proc key= default}
+
+@c EN
+Note the order of optional arguments.
+@c JP
+省略可能引数の順序に注意。
 @c COMMON
 @end defun
 
