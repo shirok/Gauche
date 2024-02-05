@@ -18973,6 +18973,14 @@ example):
 (http-compose-query #f '((x "a b") (x 2)))
  @result{} "x=a%20b&x=2"
 @end example
+
+@c EN
+This is built on top of @code{uri-compose-query} in @code{rfc.uri}
+(@pxref{URI parsing and construction}).
+@c JP
+これは@code{rfc.uri}モジュールの@code{uri-compose-query}手続きの上に
+作られています (@ref{URI parsing and construction}参照)。
+@c COMMON
 @end defun
 
 @defun http-compose-form-data params port :optional encoding
@@ -21702,11 +21710,77 @@ It returns @var{userinfo}, @var{host} and @var{port}.
 @end example
 @end defun
 
+@defun uri-decompose-query query-string
+@c MOD rfc.uri
+@c EN
+Decompose query string such as @code{"foo=abc&bar"} into
+a list of parameters @code{(("foo" ""abc") ("bar" #t)},
+where each parameter is represented by a list of its name (string) and
+value (string or @code{#t}).
+
+If you're writing a CGI script, @code{cgi-parse-parameters}
+in @code{www.cgi} is handier, for it
+integrates handling of query string, form parameters,
+and cookies, on top of this procedure (@pxref{CGI utility}).
+@c JP
+クエリ文字列(例: @code{"foo=abc&bar"}) を、
+パラメータのリスト(例: @code{(("foo" ""abc") ("bar" #t)})へと分解します。
+各パラメータは名前(文字列)と値(文字列または@code{#t})のリストで表されます。
+
+CGIスクリプトを書いているなら、@code{www.cgi}モジュールの
+@code{cgi-parse-parameters}の方が便利でしょう。この手続きの上に、
+フォームパラメータやクッキーの取扱いなどを統合的に扱えるからです
+(@ref{CGI utility}参照)。
+@c COMMON
+
+@itemize @bullet
+@item
+Each parameter name and value is urldecoded.
+@item
+If there are multiple parameters with the same name, they are
+@emph{not} merged.
+@example
+(uri-decompose-query "a=b&a=c") @result{} (("a" "b") ("a" "c"))
+@end example
+@item
+If the parameter isn't given a value, its value in the output is @code{#t}.
+@example
+(uri-decompose-query "a&b") @result{} (("a" #t) ("b" #t))
+@end example
+@item
+The order of input parameters is preserved.
+@end itemize
+@c JP
+@itemize @bullet
+@item
+各パラメータ名と値はそれぞれurldecodeされます。
+@item
+同名のパラメータが複数ある場合、それらは統合されず、別々の要素として出力に現れます。
+@example
+(uri-decompose-query "a=b&a=c") @result{} (("a" "b") ("a" "c"))
+@end example
+@item
+値を持たないパラメータについては、出力の値は@code{#t}となります。
+@example
+(uri-decompose-query "a&b") @result{} (("a" #t) ("b" #t))
+@end example
+@item
+パラメータの順序は保存されます。
+@end itemize
+@c COMMON
+
+@c EN
+See also @code{url-compose-query} below, for the inverse of this procedure.
+@c JP
+この手続きの逆関数については下の@code{url-compose-query}を見てください。
+@c COMMON
+@end defun
+
 
 @defun uri-decompose-data uri
 @c MOD rfc.uri
 @c EN
-Parse a Data URI string @var{uri}.  You can either pass the entire
+Parse a Data schemed @var{uri}.  You can either pass the entire
 uri including @code{data:} scheme part, or just the specific part.
 If the passed uri is invalid as a data uri, an error is signalled.
 
@@ -21717,7 +21791,7 @@ a u8vector otherwise.
 The content-type is parsed by @code{mime-parse-content-type}
 (@pxref{MIME message handling}).  The result format is a list as follows:
 @c JP
-Data URI文字列@var{uri}をパーズします。@code{data:}スキームは有っても無くても
+Data scheme形式の@var{uri}をパーズします。@code{data:}スキーム部分は有っても無くても
 構いません。渡されたuriがdata uriとして無効な文字列であればエラーが投げられます。
 
 二つの値、パーズされたContent-Typeおよびデコードされたデータを返します。
@@ -21744,7 +21818,7 @@ Here are a couple of examples:
   @result{} ("text" "plain" ("charset" . "utf-8")) @r{and} "(hello world)"
 
 (uri-decompose-data
- "data:application/octet-stream;base64,AAECAw==")
+ "application/octet-stream;base64,AAECAw==")
   @result{} ("application" "octet-stream") @r{and} #u8(0 1 2 3)
 @end example
 
@@ -21855,6 +21929,52 @@ to the resulting uri, and so on.
 (uri-merge "http://example.com/foo/" "q" "?xyz")
  @result{} "http://example.com/foo/q?xyz"
 @end example
+@end defun
+
+@defun uri-compose-query params :optional encoding
+@c MOD rfc.uri
+@c EN
+The argument @var{params} is a list of parameter specs.  Each parameter
+spec must be in the form of @code{(@var{name} @var{value})}, where @var{name}
+is a string and @var{value} is either a string or @code{#t}
+(see @code{url-decompose-query} above).
+
+Each parameter's name and value is urlencoded and concatenated
+as a url query string.  If a parameter's value is @code{#t},
+the output only includes parameter's name but not value.
+@c JP
+@var{params}はパラーメータ指定のリストです。各パラメータ指定は
+@code{(@var{name} @var{value})}の形式で、@var{name}は文字列、
+@var{value}は文字列もしくは@code{#t}です
+(上の@code{url-decompose-query}も参照)。
+
+各パラメータの名前と値はurlencodeされてから、URLのクエリパラメータとして結合されます。
+パラメータの値が@code{#t}の場合は、名前だけのパラメータとなります。
+@c COMMON
+
+@example
+(uri-compose-query '(("foo" "abc") ("bar" #t)))
+  @result{} "foo=abc&bar"
+@end example
+
+@c EN
+The optional @var{encoding} argument specifies character encoding
+of the output.  The default is @code{utf-8}.  If it is other than that,
+the strings are converted to the specified encoding before urlencoding.
+@c JP
+省略可能な@var{encoding}引数はパラメータの文字エンコーディングを指定します。
+デフォルトは@code{utf-8}です。それ以外の場合は、各文字列はその文字エンコーディングに
+変換された後でurlencodeされます。
+@c COMMON
+
+@c EN
+A higher-level utility, @code{http-compose-query} in @code{rfc.http},
+is build on top of this
+(@pxref{Http client utilities}).
+@c JP
+@code{rfc.http}の@code{http-compose-query}はこの手続きの上に作られた
+ユーティリティです(@ref{Http client utilities}参照)。
+@c COMMON
 @end defun
 
 @defun uri-compose-data data :key content-type encoding
@@ -36385,6 +36505,17 @@ query stringとなります。その引数が渡されなければこの手続�
 そのようなメタ変数が定義されておらず、かつ現在の入力ポートが端末である場合、
 インタラクティブにデバッグをしているものと考えて、
 この手続きはプロンプトを出してユーザにパラメータの入力を促します。
+@c COMMON
+
+@c EN
+(If you need just to decompose URL query string, you can use
+@code{uri-decompose-query} in @code{rfc.uri} (@pxref{URI parsing and construction}).
+This procedure has more features useful for CGI scripting.)
+@c JP
+(単にURLクエリ文字列を分解したいだけなら、@code{rfc.uri}モジュールの
+@code{uri-decompose-query}を使うと良いでしょう
+(@ref{URI parsing and construction}参照)。
+この手続きはCGIスクリプトに便利な機能をたくさん追加しています。)
 @c COMMON
 
 @c EN

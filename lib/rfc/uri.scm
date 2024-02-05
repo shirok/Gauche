@@ -214,8 +214,9 @@
   (define (esc s) (uri-encode-string (x->string s) :encoding encoding))
   (define (query-1 n&v)
     (match n&v
+      [(name #t) #"~(esc name)"]
       [(name value) #"~(esc name)=~(esc value)"]
-      [_ (error "Invalid request-uri form:" params)]))
+      [_ (error "Invalid request-uri form:" n&v)]))
   (if (null? params)
     ""
     (string-concatenate (intersperse "&" (map query-1 params)))))
