@@ -21460,8 +21460,13 @@ Uniform Resource Identifiers、
 @c COMMON
 @end deftp
 
+@c EN
 First, lets review the structure of URI briefly.
 The following graph shows how the URI is constructed:
+@c JP
+はじめに、URIの構造をざっとみておきましょう。次のグラフはURIがどのように構築されるかを
+示しています。
+@c COMMON
 
 @example
 URI-+-scheme
@@ -21474,10 +21479,17 @@ URI-+-scheme
                 +--fragment
 @end example
 
+@c EN
 Not all URIs have this full hierarchy.  For example,
 @code{mailto:admin@@example.com} has only @emph{scheme} (@code{mailto})
 and @emph{specific} (@code{admin@@example.com}) parts.
+@c JP
+全てのURIがここに示される完全な木構造を備えているわけではありません。
+例えば@code{mailto:admin@@example.com}は@emph{scheme} (@code{mailto})
+と @emph{specific} (@code{admin@@example.com}) だけから構成されます。
+@c COMMON
 
+@c EN
 Most popular URI schemes, however, organize resources
 in a tree, so they adopt @emph{authority} (which usually identifies
 the server) and the hierarchical @emph{path}.  In the URI
@@ -21486,9 +21498,23 @@ part is @code{example.com:8080}, the path is @code{/search},
 the query is @code{key} and the fragment is @code{results}.
 The userinfo can be provided before hostname, such as @code{anonymous}
 in @code{ftp://anonymous@@example.com/pub/}.
+@c JP
+しかし、良く使われるURIのほとんどはリソースを木構造で管理するので、
+@emph{authority} (通常はサーバ)と階層的な@var{path}を持ちます。
+@code{http://example.com:8080/search?q=key#results}では、
+authorityは@code{example.com:8080}、pathは@code{/search}、
+queryは@code{key}で、fragmentが@code{results}です。
+userinfoはあればホスト名の前に付加されます。例えば
+@code{ftp://anonymous@@example.com/pub/}における@code{anonymous}です。
+@c COMMON
 
+@c EN
 We have procedures that decompose a URI into those parts,
 and that compose a URI from those parts.
+@c JP
+URIをこれらの部分に分解する手続きと、
+部分からURIを組み立てる手続きが提供されます。
+@c COMMON
 
 @c EN
 @subheading Parsing URI
