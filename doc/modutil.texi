@@ -21710,7 +21710,7 @@ It returns @var{userinfo}, @var{host} and @var{port}.
 @end example
 @end defun
 
-@defun uri-decompose-query query-string
+@defun uri-decompose-query query-string :key separators
 @c MOD rfc.uri
 @c EN
 Decompose query string such as @code{"foo=abc&bar"} into
@@ -21767,6 +21767,17 @@ The order of input parameters is preserved.
 @item
 パラメータの順序は保存されます。
 @end itemize
+@c COMMON
+
+@c EN
+The optional @var{separators} argument takes a char-set object
+to be used to separate each parameters.  The default is
+@code{#[&;]}, for historically both @code{&} and @code{;} can be used.
+However, some application only allows @code{&}.
+@c JP
+省略可能引数@var{separators}には、パラメータの区切りに使われる文字集合を指定します。
+デフォルトは@code{#[&;]}です。歴史的に@code{&}と@code{;}の両方が区切りに使われてきたので。
+ただ、アプリケーションによっては@code{&}しか受け付けない場合があります。
 @c COMMON
 
 @c EN

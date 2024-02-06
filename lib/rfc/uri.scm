@@ -201,13 +201,13 @@
 ;; the HTML4 specification, section 17.13.4 "Form content types",
 ;; <http://www.w3.org/TR/html4/interact/forms.html#h-17.13.4.1>.
 
-(define (uri-decompose-query query-string)
+(define (uri-decompose-query query-string :key (separators #[&\;]))
   (map (^[elt] (let1 ss (string-split elt #\= 'infix 1)
                  (list (uri-decode-string (car ss) :cgi-decode #t)
                        (if (null? (cdr ss))
                          #t
                          (uri-decode-string (cadr ss) :cgi-decode #t)))))
-       (string-split query-string #[&\;])))
+       (string-split query-string separators)))
 
 (define (uri-compose-query params
                            :optional (encoding (gauche-character-encoding)))
