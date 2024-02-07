@@ -1,3 +1,10 @@
+2024-02-07  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/collection.scm (size-of): Missing size-of method
+	  defintion specialized for hashtables and treemaps, causing
+	  size-of on these objects O(n).
+	  Cf. https://github.com/shirok/Gauche/issues/987
+
 2024-02-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uri.scm (uri-decompose-query, uri-compose-query),

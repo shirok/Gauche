@@ -473,6 +473,8 @@
 (define-method size-of ((coll <char-set>))    (char-set-size coll))
 (define-method size-of ((coll <uvector>))     (uvector-length coll))
 (define-method size-of ((coll <bitvector>))   (bitvector-length coll))
+(define-method size-of ((coll <hash-table>))  (hash-table-num-entries coll))
+(define-method size-of ((coll <tree-map>))    (tree-map-num-entries coll))
 
 (define-method lazy-size-of ((coll <list>))        (delay (length coll)))
 (define-method lazy-size-of ((coll <vector>))      (vector-length coll))
@@ -481,6 +483,8 @@
 (define-method lazy-size-of ((coll <char-set>))    (char-set-size coll))
 (define-method lazy-size-of ((coll <uvector>))     (uvector-length coll))
 (define-method lazy-size-of ((coll <bitvector>))   (bitvector-length coll))
+(define-method lazy-size-of ((coll <hash-table>))  (hash-table-num-entries coll))
+(define-method lazy-size-of ((coll <tree-map>))    (tree-map-num-entries coll))
 
 ;; find -------------------------------------------------
 
