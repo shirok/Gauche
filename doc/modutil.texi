@@ -21524,43 +21524,114 @@ URIをこれらの部分に分解する手続きと、
 
 @defun uri-ref uri parts
 @c MOD rfc.uri
-Extract specific part(s) from the given URI.  You can fully
-decompose URI by the procedures described below, but in actual
+@c EN
+Extract specific part(s) from the given URI.  This module offers
+a set of procedures to fully decompose URI, but in actual
 applications, you often need only some of the parts.  This procedure
 comes handy for it.
+@c JP
+与えられたURIから、指定部分を抜き出します。
+このモジュールはURIを完全に分解する手続きも提供していますが、
+現実のアプリケーションでは特定部分のみを取り出したい場合も多く、
+この手続きはそういう場合に便利に使えます。
+@c COMMON
 
+@c EN
 The @var{parts} argument may be a symbol, or a list of symbols,
 to name the desired parts.  The recognized symbos are as follows.
+@c JP
+@var{parts}引数はシンボルもしくはシンボルのリストで、
+抜き出したい部分を指定します。指定可能なシンボルは以下の通りです。
+@c COMMON
 
 @table @code
 @item scheme
+@c EN
 The scheme part, as string.
+@c JP
+schemeパートを文字列で抜き出します。
+@c COMMON
 @item authority
+@c EN
 The authority part, as string.
 If URI doesn't have the part, @code{#f}.
+@c JP
+authorityパートを文字列で抜き出します。
+URIにauthorityパートが無ければ@code{#f}が返されます。
+@c COMMON
 @item userinfo
+@c EN
 The userinfo part, as string.  If URI doesn't have the part, @code{#f}.
+@c JP
+userinfoパートを文字列で抜き出します。
+URIにuserinfoパートが無ければ@code{#f}が返されます。
+@c COMMON
 @item host
+@c EN
 The host part, as string.  If URI doesn't have the part, @code{#f}.
+@c JP
+hostパートを文字列で抜き出します。
+URIにhostパートが無ければ@code{#f}が返されます。
+@c COMMON
 @item port
+@c EN
 The port part, as integer.  If URI doesn't have the part, @code{#f}.
+@c JP
+portパートを文字列で抜き出します。
+URIにportパートが無ければ@code{#f}が返されます。
+@c COMMON
 @item path
+@c EN
 The path part, as string.  If URI isn't hierarchical, this returns
 the specific part.
+@c JP
+pathパートを文字列で抜き出します。
+URIが階層的でない場合は、specificパートが返されます。
+@c COMMON
 @item query
+@c EN
 The query part, as string. If URI doesn't have the part, @code{#f}.
+@c JP
+queryパートを文字列で抜き出します。
+URIにqueryパートが無ければ@code{#f}が返されます。
+@c COMMON
 @item fragment
+@c EN
 The fragment part, as string.  If URI doesn't have the part, @code{#f}.
+@c JP
+fragmentパートを文字列で抜き出します。
+URIにfragmentパートが無ければ@code{#f}が返されます。
+@c COMMON
 @item scheme+authority
-The scheme and authority part.
+@c EN
+The scheme and authority part, as string
+@c JP
+schemeパートとauthorityパートの部分を文字列で。
+@c COMMON
 @item host+port
-The host and port part.
+@c EN
+The host and port part, as string.
+@c JP
+hostパートとportパートの部分を文字列で。
+@c COMMON
 @item userinfo+host+port
-The userinfo, host and port part.
+@c EN
+The userinfo, host and port part, as string.
+@c JP
+usertinfoパート、hostパート、portパートの部分を文字列で。
+@c COMMON
 @item path+query
+@c EN
 The path and query part.
+@c JP
+pathパートとqueryパートの部分を文字列で。
+@c COMMON
 @item path+query+fragment
+@c EN
 The path, query and fragment part.
+@c JP
+pathパートとqueryパートとfragmentパートの部分を文字列で。
+@c COMMON
 @end table
 
 @example
@@ -21581,8 +21652,13 @@ The path, query and fragment part.
 (uri-ref uri 'path+query+fragment)@result{} "/search?q=word#results"
 @end example
 
+@c EN
 You can extract multiple parts at once by specifying a list of parts.
 A list of parts is returned.
+@c JP
+@var{parts}に抜き出したい部分を指定するリストを渡すと、
+それぞの部分のリストが返されます。
+@c COMMON
 
 @example
 (uri-ref uri '(host+port path+query))
