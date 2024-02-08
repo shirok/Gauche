@@ -1991,15 +1991,25 @@ a bitvector at the end of accumulation.
 @c COMMON
 @end defun
 
+@c EN
 @subheading Bitwise operations
+@c JP
+@subheading ビット演算
+@c COMMON
 
 @defun bitvector-not bv
 @defunx bitvector-not! bv
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector whose bits are logical negation of @var{bv}.
 The linear updating version @code{bitvector-not!} may reuse @var{bv} to
 produce the result.
+@c JP
+ビットベクタ@var{bv}の各ビットを反転したビットベクタを返します。
+線形更新版の@code{bitvector-not!}は、結果を作るために
+@var{bv}を破壊的に変更するかもしれません。
+@c COMMON
 
 @example
 (bitvector-not #*10100) @result{} #*01011
@@ -2016,13 +2026,25 @@ produce the result.
 @defunx bitvector-eqv! bv1 bv2 bv @dots{}
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector whose bits are the result of logical operaion of
-corresponding bits of the given bitvectors.
+corresponding bits of the given bitvectors.  All bitvectors must be
+the same length.
 The linear updating version (procedures with @code{!}) may reuse @var{bv1} to
 produce the result.
+@c JP
+与えられたビットベクタの各ビット間に指定の演算を施した結果を要素とするビットベクタを
+返します。引数のビットベクタは全て同じ長さでなければなりません。
+線形更新版(名前に@code{!}がついているもの)は、
+結果を作るために@var{bv1}を破壊的に変更するかもしれません。
+@c COMMON
 
-When more than two bitvectors are given to xor and eqv, operation,
-if works associatively, that is,
+@c EN
+When more than two bitvectors are given to xor and eqv operation,
+it works left-associatively, that is,
+@c JP
+3つ以上のビットベクタが与えられた場合、xorとeqv操作は左結合的に行われます。すなわち:
+@c COMMON
 
 @example
 (bitvector-xor a b c)
@@ -2046,8 +2068,14 @@ if works associatively, that is,
 @defunx bitvector-orc2! bv1 bv2
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector, where each bit is the result of
 logical operation of corresponding bits of @var{bv1} and @var{bv2}.
+Two bitvectors must be the same length.
+@c JP
+@var{bv1}と@var{bv2}の対応する各ビットに演算を施した結果をビットベクタにして返します。
+@var{bv1}と@var{bv2}は同じ長さでなければなりません。
+@c COMMON
 
 @example
 nand  : (not (and bv1 bv2))
@@ -2058,19 +2086,35 @@ orc1  : (or (not bv1) bv2)
 orc2  : (or bv1 (not bv2))
 @end example
 
+@c EN
 The linear updating version (procedures with @code{!}) may reuse @var{bv1} to
 produce the result.
+@c JP
+線形更新版(名前に@code{!}がついているもの)は、
+結果を作るために@var{bv1}を破壊的に変更するかもしれません。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Quasi-integer operations
+@c JP
+@subheading 整数に準ずる演算
+@c COMMON
 
 @defun bitvector-logical-shift bv count bit
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector with the same length of @var{bv}, but the
 content is shifted @var{count} bits to the left (when @var{count} >= 0)
 or @var{-count} bits to the right (when @var{count} < 0).
+The spilled bits are discarded.
 The vacated bits are filled with @var{bit}.
+@c JP
+@var{bv}を左に@var{count}ビットシフトした、@var{bv}と同じ長さのビットベクタを
+返します。@var{count}が負の場合は@var{-count}ビット右にシフトします。
+あふれたビットは捨てられます。空き部分のビットは@var{bit}で埋められます。
+@c COMMON
 
 @example
 (bitvector-logical-shift #*101100111000 4 1)
@@ -2083,26 +2127,59 @@ The vacated bits are filled with @var{bit}.
 @defun bitvector-count bit bv
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns the number of @var{bit} values in @var{bv}.
+@c JP
+@var{bv}中のビットで、@var{bit}と一致するものの数を返します。
+@c COMMON
 @end defun
 
 @defun bitvector-count-run bit bv start
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns the number of consecutive @var{bit} values in @var{bv}, starting
 from index @var{i}.
+@c JP
+@var{bv}中の、@var{i}ビット目から@var{bit}がいくつ連続しているか、その数を返します。
+@c COMMON
+
+@example
+(bitvector-count-run 1 #*11111111100 0)
+ @result{} 9
+@end example
 @end defun
 
 @defun bitvector-if bv-if bv-then bv-else
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
+All bitvectors must be the same length.
+Returns a new bitvector with the same length, composed as follows.
+
+The @var{k}-th bit of resulting vector is the same as @var{k}-th bit
+of @var{bv-then} if @var{k}-th bit of @var{bv-if} is @code{#t} (1),
+otherwise the same as @var{k}-th bit of @var{bv-else}
+@c JP
+各ビットベクタは同じ長さでなければなりません。
+同じ長さのビットベクタを次のように構成して返します。
+
+結果の@var{k}ビット目は、@var{bv-if}の@var{k}ビット目が@code{#t}(1)であれば
+@var{bv-then}の@var{k}ビット目、そうでなければ@var{bv-else}の@var{k}ビット目と
+同じになります。
+@c COMMON
 @end defun
 
 @defun bitvector-first-bit bit bv
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns the index of the leftmost @var{bit} in @var{bv}.
 If @var{bv} doesn't have @var{bit}, returns @code{-1}.
+@c JP
+@var{bv}中で一番左にある@var{bit}のインデックスを返します。
+@var{bv}中に@var{bit}が無ければ@code{-1}を返します。
+@c COMMON
 
 @example
 (bitvector-first-bit 1 #*0010011) @result{} 2
