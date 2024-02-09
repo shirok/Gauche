@@ -663,3 +663,6 @@
   :pop!      sparse-vector-pop!
   :push!     sparse-vector-push!
   :update!   sparse-vector-update!)
+
+(define-method size-of ((s <sparse-table>)) (sparse-table-num-entries s))
+(define-method size-of ((s <sparse-vector-base>)) (sparse-vector-num-entries s))
