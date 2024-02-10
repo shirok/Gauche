@@ -213,14 +213,14 @@
   (test* "Makefile substitution" '()
          (and (file-exists? "test.o/Makefile")
               (filter #/@\w+@/ (file->string-list "test.o/Makefile"))))
-  (test* "VERSION generation" "1.0\n"
+  (test* "VERSION generation" "0.1\n"
          (and (file-exists? "test.o/VERSION")
               (file->string "test.o/VERSION")))
   (test* "srcdir etc."
          '("srcdir = ." "top_srcdir = ../" "builddir = ." "top_builddir = ../")
          (file->string-list "test.o/src/Makefile"))
 
-  (test* "configure --version" "package configure 1.0"
+  (test* "configure --version" "package configure 0.1"
          (read-line
           (process-output
            (run-with-parent-directory-in-paths
