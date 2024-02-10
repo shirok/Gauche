@@ -603,6 +603,8 @@
       (proc (^v (push! vs v))
             (^[] (vector-range (reverse-list->vector vs)))))))
 
+(define-method size-of ((r <range>)) (range-length r))
+
 ;; some shortcuts
 (define-method subseq ((r <range>) s e) (subrange r s e))
 (define-method subseq ((r <range>) s) (subrange r s (range-length r)))
