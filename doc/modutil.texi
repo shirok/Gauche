@@ -6523,33 +6523,69 @@ to @var{end}-th (exclusive) elements of @var{range}.
 @defun range-segment range len
 [SRFI-196]
 @c MOD data.range
+Split @var{range} into subranges of length @var{len}.  The last range
+may be shorter than @var{len}.
+
+@example
+(map range->list (range-segment (numeric-range 0 11) 4))
+ @result{} ((0 1 2 3) (4 5 6 7) (8 9 10))
+@end example
 @end defun
 
 @defun range-take range count
 @defunx range-take-right range count
 [SRFI-196]
 @c MOD data.range
+Returns a new range containing initial @var{count} elements or last @var{count}
+elements from @var{range}, respectively
 @end defun
 
 @defun range-drop range count
 @defunx range-drop-range range count
 [SRFI-196]
 @c MOD data.range
+Returns a new range containing elements of @var{range}
+except initial @var{count} elements or last @var{count} elements, respectively.
 @end defun
 
 @defun range-count pred range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+A procedure @var{pred} must take as many arguments as the given ranges.
+It is called on each corresponding element of
+@var{range}, @var{range2} @dots{}, and the procedure returns
+the number of times @var{pred} returned true.
+
+If more than one ranges are given and not all ranges are of the same length,
+iteration terminates at the end of the shortest range.
 @end defun
 
 @defun range-any pred range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+A procedure @var{pred} must take as many arguments as the given ranges.
+It is called on each first element of
+@var{range}, @var{range2} @dots{}, then each second element, and so on.
+As soon as @var{pred} returns a true value, the iteration stops
+and the value @var{pred} returns becomes the result of @code{range-any}.
+If @var{pred} never returns a true value, @code{#f} is returned.
+
+If more than one ranges are given and not all ranges are of the same length,
+iteration terminates at the end of the shortest range.
 @end defun
 
 @defun range-every pred range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+A procedure @var{pred} must take as many arguments as the given ranges.
+It is called on each first element of
+@var{range}, @var{range2} @dots{}, then each second element, and so on.
+As soon as @var{pred} returns a false value, the iteration stops
+and @code{range-any} returns @code{#f}.
+If all @var{pred} returns a true value, the last value is returned.
+
+If more than one ranges are given and not all ranges are of the same length,
+iteration terminates at the end of the shortest range.
 @end defun
 
 
@@ -6558,6 +6594,17 @@ to @var{end}-th (exclusive) elements of @var{range}.
 @defunx range-map->vector proc range range2 @dots{}
 [SRFI-196]
 @c MOD data.range
+Mapping over ranges.
+A procedure @var{pred} must take as many arguments as the given ranges,
+and is called on each corresponding element of
+@var{range}, @var{range2} @dots{}.  The results are collected and returned
+as a range (@code{range-map}), a list (@code{range-map->list},
+or a vector (@code{range-map->vector}.  The dynamic order of
+in which @var{proc} is invoked is not specified.  Note that
+@code{range-map} computes all elements before returning the result range.
+
+If more than one ranges are given and not all ranges are of the same length,
+iteration terminates at the end of the shortest range.
 @end defun
 
 @defun range-for-each pred range range2 @dots{}
