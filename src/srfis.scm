@@ -1655,3 +1655,13 @@ Built-in. @xref{Definitions}.
 
 多値定義
 組み込みです。@ref{Definitions}参照。
+
+
+srfi-247, srfi-247
+()
+
+Syntactic monads
+Supported by the module @code{srfi.247}
+
+構文的モナド
+@code{srfi.247}でサポートされます。
