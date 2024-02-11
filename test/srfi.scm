@@ -3198,4 +3198,22 @@
                (type-of '(1 2 3))))
   )
 
+;;-----------------------------------------------------------------------
+;; Syntactic monads
+
+(test-section "SRFI-247")
+
+(define-module srfi-247-tests
+  (use gauche.test)
+  (use scheme.list :rename ((partition r7rs:partition)))
+  (use srfi.247)
+  (test-module 'srfi.247)
+
+  (define-syntax import (syntax-rules () ((_ . _) #f)))
+  (define-syntax assert (syntax-rules (equal?)
+                          [(_ (equal? expected expr))
+                           (test* 'expr expected expr)]))
+  (include "include/srfi-247-tests")
+  )
+
 (test-end)
