@@ -1662,6 +1662,8 @@ srfi-247, srfi-247
 
 Syntactic monads
 Supported by the module @code{srfi.247}
+(@pxref{Syntactic monads}).
 
 構文的モナド
-@code{srfi.247}でサポートされます。
+@code{srfi.247}でサポートされます
+(@ref{Syntactic monads}参照)。

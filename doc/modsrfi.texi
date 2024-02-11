@@ -102,6 +102,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Flexible curried procedures::  srfi.232
 * Combinators (SRFI)::          srfi.235
 * Destructuring lists::         srfi.239
+* Syntactic monads::
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -16085,7 +16086,7 @@ Note: @code{boolean} is provided in the core (@pxref{Booleans}).
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Destructuring lists,  , Combinators (SRFI), Library modules - SRFIs
+@node Destructuring lists, Syntactic monads, Combinators (SRFI), Library modules - SRFIs
 @section @code{srfi.239} - Destructuring lists
 @c NODE リストの分解, @code{srfi.239} - リストの分解
 
@@ -16174,6 +16175,22 @@ match the third type of clause
 @code{match}と違い、最初の形式の節が指定されていない場合に、
 ペアは3番めの形式の節とはマッチしません。
 @c COMMON
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Syntactic monads,  , Destructuring lists, Library modules - SRFIs
+@section @code{srfi.247} - Syntactic monads
+@c NODE 構文的モナド, @code{srfi.247} - 構文的モナド
+
+@deftp {Module} srfi.247
+@mdindex srfi.247
+This module provide a macro-defining macro, @code{define-syntactic-monad},
+that captures a typical pattern of adding implicit or hidden
+arguments.
+@end deftp
+
+@defmac define-syntactic-monad name formal @dots{}
+@c MOD srfi.247
 @end defmac
 
 
