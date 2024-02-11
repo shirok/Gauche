@@ -47,8 +47,9 @@
               (^[ff rr cc]
                 (define lambda. (rr'lambda))
                 (define define. (rr'define))
-                (define case-lambda (rr'case-lambda))
-                (define let*-values (rr'let*-values))
+                (define case-lambda. (rr'case-lambda))
+                (define let. (rr'let))
+                (define let*-values. (rr'let*-values))
                 (define svars ',svar)
                 (match ff
                   [(_ (? (cut cc lambda. <>)) formals . body)
@@ -58,12 +59,36 @@
                   [(_ (? (cut cc case-lambda. <>)) (formals . body) ...)
                    `(,case-lambda.
                      ,@(map (^[ff bb] `([,@svars . ,ff] ,@bb)) formals body))]
-                  [(_ (? (cut let*-values <>)) ([formals init] ...) . body)
-                   `(,let*-values
-                        ,@(map (^[ff ii] `[(,@svars . ,ff) ,ii]) formals init)
-                      ,@body)]
-                  ;; WRITEME: procedure expression
-                  ;; WRITEME: let
+                  [(_ (? (cut cc let*-values. <>)) ([formals init] ...) . body)
+                   `(,let*-values.
+                     ,(map (^[ff ii] `[(,@svars . ,ff) ,ii]) formals init)
+                     ,@body)]
+                  [(_ (? (cut cc let. <>)) loop ([var init] ...) . body)
+                   (let* ([vars+init (map list var init)]
+                          [svars+init
+                           (map (^[svar]
+                                  (if-let1 init (alist-ref vars+init svar)
+                                    `(,svar ,(car init))
+                                    `(,svar ,svar)))
+                                svars)]
+                          [others+init
+                           (remove (^[var+init] (memv (car var+init) svars))
+                                   vars+init)])
+                     `(,let. ,loop
+                             (,@svars+init
+                              ,@others+init)
+                             ,@body))]
+                  [(_ proc ((var init) ...) arg ...)
+                   (let* ([vars+init (map list var init)]
+                          [svar-args
+                           (map (^[svar]
+                                  (if-let1 init (alist-ref vars+init svar)
+                                    (car init)
+                                    svar))
+                                svars)])
+                     `(,proc ,@svar-args ,@arg))]
+                  [(_ proc)
+                   `(,proc ,@svars)]
                   [else
                    (errorf "Malformed ~a: ~s" ',name ff)])))))]
        [_ (error "Malformed define-syntactic-monad:" f)]))))
