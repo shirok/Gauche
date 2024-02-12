@@ -389,7 +389,7 @@
 
 ;; opcmap :: ((NAME . CODE) ...)
 (define (assign-opcode! insns opcmap)
-  (define code (find-max opcmap :key cdr :default -1))
+  (define code (find-max (map cdr opcmap) :default -1))
   (dolist [insn insns]
     (if-let1 c (assq-ref opcmap (~ insn'name))
       (set! (~ insn'code) c)
