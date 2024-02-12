@@ -908,14 +908,19 @@
 
 ;; [cise stmt] label NAME
 ;; [cise stmt] goto NAME
+;; [cise stmt] goto EXPR
 ;;   Label and goto.
 ;;   We always add null statement after the label, so that we can place
 ;;   (label NAME) at the end of compound statement.
+;;   The second form of goto is for gcc's computed goto.
 (define-cise-stmt label
   [(_ name) `(,(cise-render-identifier name) " :; ")])
 
-(define-cise-stmt goto
-  [(_ name) `("goto " ,(cise-render-identifier name) ";")])
+(define-cise-macro (goto form env)
+  (ensure-stmt-ctx form env)
+  (match form
+    [(_ (expr ...)) `("goto " ,(render-rec expr (expr-env env)) ";")]
+    [(_ name)       `("goto " ,(cise-render-identifier name) ";")]))
 
 ;;
 ;; Preprocessor directives
