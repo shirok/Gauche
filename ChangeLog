@@ -1,3 +1,8 @@
+2024-02-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (asm): Add asm cise macro to generate
+	  gcc inline assembly.
+
 2024-02-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/247.scm: Add SRFI-247

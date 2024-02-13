@@ -1279,6 +1279,54 @@
      `(,(cise-render-typed-var typenames "" env))]))
 
 ;;------------------------------------------------------------
+;; gcc inline asm
+;;
+
+;;  (asm [qualifiers+] asm-string (output ..) [(input ...) [(clobber ...)]])
+;;
+;;     qualifier : :volatile | :inline | :goto
+;;     output, input    : (constraint cise-expr)
+;;                      | (asm-symbol constraint cise-expr)
+;;     clobber   : register-name
+;;
+;;     asm-symbol : symbol
+;;     constraint, register-name  : string
+
+(define-cise-macro (asm form env)
+  (define (gather-quals form)
+    (let loop ([f form] [quals '()])
+      (cond [(null? f) (error "Invalid asm form:" form)]
+            [(memq (car f) '(:volatile :inline :goto))
+             (loop (cdr f) (cons (car f) quals))]
+            [(string? (car f)) (values quals f)]
+            (_ (error "Invalid asm form:" form)))))
+  (define (render-io specs)
+    ($ intersperse ","
+       (map (^[spec]
+              (match spec
+                [(asm-symbol constraint cise-expr)
+                 `("[" ,asm-symbol "]"
+                   ,(cgen-safe-string constraint)
+                   "(" ,(cise-render-to-string cise-expr 'expr) ")")]
+                [(constraint cise-expr)
+                 `(,(cgen-safe-string constraint)
+                   "(" ,(cise-render-to-string cise-expr 'expr) ")")]))
+            specs)))
+  (define (render-asm quals asm-string outs ins clobs)
+    `("asm " ,@(map keyword->string quals) "("
+      ,(cgen-safe-string asm-string)
+      ":" ,@(render-io outs)
+      ":" ,@(render-io ins)
+      ":" ,(intersperse "," clobs)
+      ");"))
+  (receive (quals body) (gather-quals (cdr form))
+    (match body
+      [(asm-string outs ins clobs) (render-asm quals asm-string outs ins clobs)]
+      [(asm-string outs ins) (render-asm quals asm-string outs ins '())]
+      [(asm-string outs) (render-asm quals asm-string outs '() '())]
+      [_ (error "Invalid asm form:" form)])))
+
+;;------------------------------------------------------------
 ;; Convenience expression macros
 ;;
 
