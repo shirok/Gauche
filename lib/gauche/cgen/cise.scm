@@ -1317,7 +1317,7 @@
       ,(cgen-safe-string asm-string)
       ":" ,@(render-io outs)
       ":" ,@(render-io ins)
-      ":" ,(intersperse "," clobs)
+      ":" ,(intersperse "," (map cgen-safe-string clobs))
       ");"))
   (receive (quals body) (gather-quals (cdr form))
     (match body
