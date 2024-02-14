@@ -1,3 +1,9 @@
+2024-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/code.c, src/vminsn.scm: Change operand type 'addr' to 'label',
+	  to avoid confusion with the oncoming enhancement.
+	  (This is an API change, though it hasn't been documented).
+
 2024-02-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (asm): Add asm cise macro to generate

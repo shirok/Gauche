@@ -95,8 +95,8 @@
 (define-method vm-insn-size ((info <vm-insn-info>))
   (ecase (~ info'operand-type)
     [(none) 1]
-    [(obj addr code codes) 2]
-    [(obj+addr) 3]))
+    [(obj label code codes) 2]
+    [(obj+label) 3]))
 
 (define-method vm-insn-size ((mnemonic <symbol>))
   (vm-insn-size (vm-find-insn-info mnemonic)))

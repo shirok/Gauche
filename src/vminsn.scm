@@ -53,10 +53,10 @@
 ;;;
 ;;;   <operand-type> - none : the insn doesn't take an operand.
 ;;;                    obj  : an ScmObj operand.
-;;;                    addr : an address the next pc points.
+;;;                    label : a label address the next pc points.
 ;;;                    code : an ScmCompiledCode operand.
 ;;;                    codes: a list of ScmCompiledCodes.
-;;;                    obj+addr : an ScmObj, followed by an address
+;;;                    obj+label : an ScmObj, followed by a label address
 ;;;
 ;;;   <combination>  - If this is a comibined insn, list the ingredients
 ;;;                    here.  It is used in multiple purposes:
@@ -420,7 +420,7 @@
 ;;  Prepare for a normal call.   Push a continuation that resumes
 ;;  execution from <cont>.
 ;;
-(define-insn PRE-CALL 1 addr #f
+(define-insn PRE-CALL 1 label #f
   (let* ([next::ScmWord*])
     (CHECK-STACK-PARANOIA CONT_FRAME_SIZE)
     (FETCH-LOCATION next)
@@ -430,7 +430,7 @@
     NEXT))
 
 ;; combined insn
-(define-insn PUSH-PRE-CALL 1 addr (PUSH PRE-CALL))
+(define-insn PUSH-PRE-CALL 1 label (PUSH PRE-CALL))
 
 ;; CHECK-STACK(size)
 ;;  Check for stack overflow
@@ -473,7 +473,7 @@
 ;; JUMP <addr>
 ;;  Jump to <addr>.
 ;;
-(define-insn JUMP      0 addr #f
+(define-insn JUMP      0 label #f
   (begin (FETCH-LOCATION PC) CHECK-INTR NEXT))
 
 ;; RET
@@ -571,7 +571,7 @@
 ;; LOCAL-ENV-JUMP(depth) <addr>
 ;;  Combination of LOCAL-ENV-SHIFT + JUMP.
 ;;  We can use this when none of the new environment needs boxing.
-(define-insn LOCAL-ENV-JUMP 1 addr #f
+(define-insn LOCAL-ENV-JUMP 1 label #f
   (begin
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     (FETCH-LOCATION PC)
@@ -634,28 +634,28 @@
 ;;   Conditional branches.
 ;;   The combined operations leave the boolean value of the test result
 ;;   in VAL0.
-(define-insn BF      0 addr #f ($branch (SCM_CHECKED_FALSEP VAL0)))
-(define-insn BT      0 addr #f ($branch (not (SCM_CHECKED_FALSEP VAL0))))
-(define-insn BNEQ    0 addr #f ($w/argp z ($branch* (not (SCM_EQ VAL0 z)))))
-(define-insn BNEQV   0 addr #f ($w/argp z ($branch* (not (Scm_EqvP VAL0 z)))))
-(define-insn BNNULL  0 addr #f ($branch* (not (SCM_NULLP VAL0))))
+(define-insn BF      0 label #f ($branch (SCM_CHECKED_FALSEP VAL0)))
+(define-insn BT      0 label #f ($branch (not (SCM_CHECKED_FALSEP VAL0))))
+(define-insn BNEQ    0 label #f ($w/argp z ($branch* (not (SCM_EQ VAL0 z)))))
+(define-insn BNEQV   0 label #f ($w/argp z ($branch* (not (Scm_EqvP VAL0 z)))))
+(define-insn BNNULL  0 label #f ($branch* (not (SCM_NULLP VAL0))))
 
-(define-insn BNUMNE  0 addr #f (let* ((y VAL0))
+(define-insn BNUMNE  0 label #f (let* ((y VAL0))
                                  ($w/argp x ($branch* (not (Scm_NumEq x y))))))
-(define-insn BNLT    0 addr #f ($w/numcmp r <  ($branch* (not r))))
-(define-insn BNLE    0 addr #f ($w/numcmp r <= ($branch* (not r))))
-(define-insn BNGT    0 addr #f ($w/numcmp r >  ($branch* (not r))))
-(define-insn BNGE    0 addr #f ($w/numcmp r >= ($branch* (not r))))
+(define-insn BNLT    0 label #f ($w/numcmp r <  ($branch* (not r))))
+(define-insn BNLE    0 label #f ($w/numcmp r <= ($branch* (not r))))
+(define-insn BNGT    0 label #f ($w/numcmp r >  ($branch* (not r))))
+(define-insn BNGE    0 label #f ($w/numcmp r >= ($branch* (not r))))
 
 ;; Compare LREF(n,m) and VAL0 and branch.  This is not a simple combination
 ;; of LREF + BNLT etc. (which would compare stack top and LREF).  These insns
 ;; save one stack operation.  The compiler recognizes the pattern and
 ;; emits these.  See pass5/if-numcmp and pass5/if-numeq.
-(define-insn LREF-VAL0-BNUMNE 2 addr #f ($arg-source lref ($insn-body BNUMNE)))
-(define-insn LREF-VAL0-BNLT 2 addr #f ($arg-source lref ($insn-body BNLT)))
-(define-insn LREF-VAL0-BNLE 2 addr #f ($arg-source lref ($insn-body BNLE)))
-(define-insn LREF-VAL0-BNGT 2 addr #f ($arg-source lref ($insn-body BNGT)))
-(define-insn LREF-VAL0-BNGE 2 addr #f ($arg-source lref ($insn-body BNGE)))
+(define-insn LREF-VAL0-BNUMNE 2 label #f ($arg-source lref ($insn-body BNUMNE)))
+(define-insn LREF-VAL0-BNLT 2 label #f ($arg-source lref ($insn-body BNLT)))
+(define-insn LREF-VAL0-BNLE 2 label #f ($arg-source lref ($insn-body BNLE)))
+(define-insn LREF-VAL0-BNGT 2 label #f ($arg-source lref ($insn-body BNGT)))
+(define-insn LREF-VAL0-BNGE 2 label #f ($arg-source lref ($insn-body BNGE)))
 
 ;; BNUMNEI(i) <else-offset> ; combined CONSTI(i) + BNUMNE
 ;; BNEQC <else-offset>     ; branch if immediate constant is not eq? to VAL0
@@ -663,16 +663,16 @@
 ;;   NB: we tried other variations of constant op + branch combination,
 ;;       notably BNEQVI, BNUMNEF, BNLTF etc, but they did't show any
 ;;       improvement.
-(define-insn BNUMNEI     1 addr #f
+(define-insn BNUMNEI     1 label #f
   (let* ([imm::long (SCM_VM_INSN_ARG code)])
     ($w/argr v0
       ($type-check v0 SCM_NUMBERP "number")
       ($branch*
        (not (or (and (SCM_INTP v0)    (== (SCM_INT_VALUE v0) imm))
                 (and (SCM_FLONUMP v0) (== (SCM_FLONUM_VALUE v0) imm))))))))
-(define-insn BNEQC       0 obj+addr #f
+(define-insn BNEQC       0 obj+label #f
   (let* ([z]) (FETCH-OPERAND z) INCR-PC ($branch* (not (SCM_EQ VAL0 z)))))
-(define-insn BNEQVC      0 obj+addr #f
+(define-insn BNEQVC      0 obj+label #f
   (let* ([z]) (FETCH-OPERAND z) INCR-PC ($branch* (not (Scm_EqvP VAL0 z)))))
 
 ;; RF
@@ -727,7 +727,7 @@
 ;;  Like LET, this pushes the continuation frame to resume the
 ;;  operation from CONT-OFFSET.
 ;;
-(define-insn RECEIVE     2 addr #f
+(define-insn RECEIVE     2 label #f
   ($receive (set! size (+ CONT_FRAME_SIZE (ENV_SIZE (+ reqargs restarg))))
             (CHECK-STACK-PARANOIA size)
             (FETCH-LOCATION nextpc)
@@ -750,7 +750,7 @@
 ;;  dynamic-wind, the results of its body needs to be saved).
 ;;  This must be twined with VALUES-N, which reverses the effects, i.e.
 ;;  turn the values in the env frame into values.
-(define-insn RECEIVE-ALL 0 addr #f
+(define-insn RECEIVE-ALL 0 label #f
   (let* ([nextpc::ScmWord*])
     (CHECK-STACK-PARANOIA CONT_FRAME_SIZE)
     (FETCH-LOCATION nextpc)
@@ -1511,7 +1511,7 @@
 ;;   VAL0 holds the key, and stack top holds the value.
 ;;   EXTEND-DENV is for non-tail calls, and a continuation is pushed
 ;;   before adding key-value pair.
-(define-insn EXTEND-DENV 0 addr #f
+(define-insn EXTEND-DENV 0 label #f
   (let* ([arg] [next::ScmWord*])
     (SCM_FLONUM_ENSURE_MEM VAL0)
     (POP-ARG arg)

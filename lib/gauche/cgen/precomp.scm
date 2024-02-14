@@ -999,12 +999,12 @@
              [info (vm-find-insn-info (car insn))])
         (case (~ info'operand-type)
           [(none) (loop (cdr code)  (cons #f lits))]
-          [(addr) (loop (cddr code) (list* #f #f lits))]
+          [(label) (loop (cddr code) (list* #f #f lits))]
           [(code codes) (loop (cddr code)
                               (list* (cgen-literal (cadr code)) #f lits))]
           [(obj) (loop (cddr code)
                         (list* (cgen-literal (cadr code)) #f lits))]
-          [(obj+addr)
+          [(obj+label)
            (loop (cdddr code)
                  (list* #f (cgen-literal (cadr code)) #f lits))]
           )))))
@@ -1038,7 +1038,7 @@
         (case (~ info'operand-type)
           [(none)
            (loop (cdr cv) (cdr lv) (+ count 1) first-cexpr)]
-          [(addr)
+          [(label)
            (alloc-word
             (format "SCM_WORD((ScmWord*)~a + ~d)"
                     first-cexpr (cadr cv)))
@@ -1052,7 +1052,7 @@
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
                       (cgen-safe-comment (write-to-string (cadr cv))))))
            (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr)]
-          [(obj+addr)
+          [(obj+label)
            (alloc-word
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"

@@ -161,7 +161,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 break;
             }
             switch (Scm_VMInsnOperandType(code)) {
-            case SCM_VM_OPERAND_ADDR:
+            case SCM_VM_OPERAND_LABEL:
                 Scm_Printf(out, "%d", (ScmWord*)p[i+1] - cc->code);
                 i++;
                 break;
@@ -171,7 +171,7 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 Scm_Printf(out, "%S", p[i+1]);
                 i++;
                 break;
-            case SCM_VM_OPERAND_OBJ_ADDR:
+            case SCM_VM_OPERAND_OBJ_LABEL:
                 Scm_Printf(out, "%S, %d", p[i+1], (ScmWord*)p[i+2] - cc->code);
                 i += 2;
                 break;
@@ -432,12 +432,12 @@ static void cc_builder_flush(cc_builder *b)
 
     u_int code = SCM_VM_INSN_CODE(b->currentInsn);
     switch (Scm_VMInsnOperandType(code)) {
-    case SCM_VM_OPERAND_ADDR:
-        /* Addr should be a label.  We just push the label reference
-           into labelRefs, and emit a dummy address for the time being.
-           (we can't emit the actual number even if we're referring to
-           the label that has already appeared, since the number should
-           be calculated after the code vector is allocated.) */
+    case SCM_VM_OPERAND_LABEL:
+        /* We just push the label reference into labelRefs, and emit a
+           dummy address for the time being. (we can't emit the actual
+           number even if we're referring to the label that has already
+           appeared, since the number should be calculated after the
+           code vector is allocated.) */
         b->labelRefs = Scm_Acons(b->currentOperand,
                                  SCM_MAKE_INT(b->currentIndex),
                                  b->labelRefs);
@@ -448,7 +448,7 @@ static void cc_builder_flush(cc_builder *b)
         cc_builder_add_word(b, SCM_WORD(b->currentOperand));
         cc_builder_add_constant(b, b->currentOperand);
         break;
-    case SCM_VM_OPERAND_OBJ_ADDR:
+    case SCM_VM_OPERAND_OBJ_LABEL:
         /* operand would be given as a list of (OBJ LABEL). */
         SCM_ASSERT(SCM_PAIRP(b->currentOperand)
                    && SCM_PAIRP(SCM_CDR(b->currentOperand)));
@@ -496,10 +496,10 @@ static void cc_builder_jumpopt(ScmCompiledCode *cc)
         case SCM_VM_OPERAND_CODES:;
             i++; cp++;
             break;
-        case SCM_VM_OPERAND_OBJ_ADDR:
+        case SCM_VM_OPERAND_OBJ_LABEL:
             i++; cp++;
             /*FALLTHROUGH*/
-        case SCM_VM_OPERAND_ADDR: {
+        case SCM_VM_OPERAND_LABEL: {
             ScmWord *target = (ScmWord*)*cp;
             while (SCM_VM_INSN_CODE(*target) == SCM_VM_JUMP
                    || (code == SCM_VM_BF
@@ -866,12 +866,12 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
         case SCM_VM_OPERAND_CODES:;
             SCM_APPEND1(h, t, SCM_OBJ(cc->code[++i]));
             break;
-        case SCM_VM_OPERAND_ADDR: {
+        case SCM_VM_OPERAND_LABEL: {
             u_int off = (u_int)((ScmWord*)cc->code[++i] - cc->code);
             SCM_APPEND1(h, t, SCM_MAKE_INT(off));
             break;
         }
-        case SCM_VM_OPERAND_OBJ_ADDR: {
+        case SCM_VM_OPERAND_OBJ_LABEL: {
             u_int off = (u_int)((ScmWord*)cc->code[i+2] - cc->code);
             SCM_APPEND(h, t, SCM_LIST2(SCM_OBJ(cc->code[i+1]),
                                        SCM_MAKE_INT(off)));

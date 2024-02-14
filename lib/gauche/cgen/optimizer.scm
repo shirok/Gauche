@@ -79,9 +79,9 @@
     (define (get-addr opcode i)
       (let1 insn-info (vm-find-insn-info opcode)
         (case (~ insn-info'operand-type)
-          [(addr) (~ cvec (+ i 1) 0)]
-          [(obj+addr) (~ cvec (+ i 2) 0)]
-          [else (errorf "Opcode ~a doesn't take addr operand" opcode)])))
+          [(label) (~ cvec (+ i 1) 0)]
+          [(obj+label) (~ cvec (+ i 2) 0)]
+          [else (errorf "Opcode ~a doesn't take label operand" opcode)])))
     ;; a kind of priority queue; we pop the least number first.
     (define (make-q) (make-tree-map = <))
     (define (empty? q) (tree-map-empty? q))
@@ -148,9 +148,9 @@
                                           (eliminate-dead-code c)
                                           c))
                                     (~ cvec (+ i 1) 0)))]
-        [(addr)  (emit/operand (label-at (~ cvec (+ i 1) 0)))]
-        [(obj+addr) (emit/operand (list (~ cvec (+ i 1) 0)
-                                        (label-at (~ cvec (+ i 2) 0))))]))
+        [(label) (emit/operand (label-at (~ cvec (+ i 1) 0)))]
+        [(obj+label) (emit/operand (list (~ cvec (+ i 1) 0)
+                                         (label-at (~ cvec (+ i 2) 0))))]))
     (mark 0 (make-q))
     (compiled-code-copy! orig-code (sweep))
     orig-code))

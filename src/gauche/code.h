@@ -168,8 +168,8 @@ enum {
     SCM_VM_OPERAND_OBJ,         /* take ScmObj */
     SCM_VM_OPERAND_CODE,        /* take ScmCompiledCode */
     SCM_VM_OPERAND_CODES,       /* take a list of ScmCompiledCodes */
-    SCM_VM_OPERAND_ADDR,        /* take address of next code */
-    SCM_VM_OPERAND_OBJ_ADDR     /* take an object and address of next code */
+    SCM_VM_OPERAND_LABEL,       /* take label address of next code */
+    SCM_VM_OPERAND_OBJ_LABEL    /* take an object and label address of next code */
 };
 
 SCM_EXTERN const char *Scm_VMInsnName(u_int code);

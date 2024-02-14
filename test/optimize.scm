@@ -16,9 +16,9 @@
        (let1 info (vm-find-insn-info opcode)
          (case (~ info'operand-type)
            [(none) (loop rest `((,insn) ,@acc))]
-           [(obj code codes addr)
+           [(obj code codes label)
             (loop (cdr rest) `((,insn ,(car rest)) ,@acc))]
-           [(obj+addr)
+           [(obj+label)
             (loop (cddr rest) `((,insn ,(car rest) ,(cadr rest)) ,@acc))]))])))
 
 (define (filter-insn proc opcode)
