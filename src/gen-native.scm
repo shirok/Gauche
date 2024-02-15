@@ -146,8 +146,7 @@
    :port port)
   (pprint
    `(define call-amd64-regs
-      (let ((%%call-native (global-variable-ref (find-module 'gauche.bootstrap)
-                                                '%%call-native))
+      (let ((%%call-native (module-binding-ref 'gauche.bootstrap '%%call-native))
             (entry-offsets ',(entry-offsets reg-labels))
             (farg-offsets ',(farg-offsets reg-labels)))
         (^[ptr args num-iargs num-fargs rettype]
@@ -181,8 +180,7 @@
    :port port)
   (pprint
    `(define call-amd64-spill
-      (let ((%%call-native (global-variable-ref (find-module 'gauche.bootstrap)
-                                                '%%call-native))
+      (let ((%%call-native (module-binding-ref 'gauche.bootstrap '%%call-native))
             (entry-offsets ',(entry-offsets spill-labels))
             (farg-offsets ',(farg-offsets spill-labels))
             (spill-offset (^n (+ ,(assq-ref spill-labels 'spill:)
@@ -294,8 +292,7 @@
    :port port)
   (pprint
    `(define call-winx64-regs
-      (let ((%%call-native (global-variable-ref (find-module 'gauche.bootstrap)
-                                                '%%call-native))
+      (let ((%%call-native (module-binding-ref 'gauche.bootstrap '%%call-native))
             (entry-offsets ',(entry-offsets reg-labels))
             (farg-offsets ',(farg-offsets reg-labels)))
         (^[ptr args num-iargs num-fargs rettype]
