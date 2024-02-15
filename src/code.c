@@ -36,6 +36,7 @@
 #include "gauche/code.h"
 #include "gauche/vminsn.h"
 #include "gauche/priv/codeP.h"
+#include "gauche/priv/mmapP.h"
 #include "gauche/priv/identifierP.h"
 #include "gauche/priv/builtin-syms.h"
 
@@ -173,6 +174,10 @@ void Scm_CompiledCodeDump(ScmCompiledCode *cc)
                 break;
             case SCM_VM_OPERAND_OBJ_LABEL:
                 Scm_Printf(out, "%S, %d", p[i+1], (ScmWord*)p[i+2] - cc->code);
+                i += 2;
+                break;
+            case SCM_VM_OPERAND_OBJ_NATIVE:
+                Scm_Printf(out, "%S, %p", p[i+1], (void*)p[i+2]);
                 i += 2;
                 break;
             case SCM_VM_OPERAND_CODE:
@@ -459,6 +464,16 @@ static void cc_builder_flush(cc_builder *b)
                                  b->labelRefs);
         cc_builder_add_word(b, SCM_WORD(0)); /* dummy */
         break;
+    case SCM_VM_OPERAND_OBJ_NATIVE:
+        /* operand would be given as a list of (OBJ MEM-REGION). */
+        SCM_ASSERT(SCM_PAIRP(b->currentOperand)
+                   && SCM_PAIRP(SCM_CDR(b->currentOperand))
+                   && SCM_MEMORY_REGION_P(SCM_CADR(b->currentOperand)));
+        cc_builder_add_word(b, SCM_WORD(SCM_CAR(b->currentOperand)));
+        cc_builder_add_constant(b, SCM_CAR(b->currentOperand));
+        ScmMemoryRegion *mem = SCM_MEMORY_REGION(SCM_CADR(b->currentOperand));
+        cc_builder_add_word(b, SCM_WORD(mem->ptr));
+        break;
     case SCM_VM_OPERAND_CODE:
         if (!SCM_COMPILED_CODE_P(b->currentOperand)) goto badoperand;
         cc_builder_add_word(b, SCM_WORD(b->currentOperand));
@@ -496,7 +511,8 @@ static void cc_builder_jumpopt(ScmCompiledCode *cc)
         case SCM_VM_OPERAND_CODES:;
             i++; cp++;
             break;
-        case SCM_VM_OPERAND_OBJ_LABEL:
+        case SCM_VM_OPERAND_OBJ_LABEL:;
+        case SCM_VM_OPERAND_OBJ_NATIVE:
             i++; cp++;
             /*FALLTHROUGH*/
         case SCM_VM_OPERAND_LABEL: {
@@ -875,6 +891,12 @@ ScmObj Scm_CompiledCodeToList(ScmCompiledCode *cc)
             u_int off = (u_int)((ScmWord*)cc->code[i+2] - cc->code);
             SCM_APPEND(h, t, SCM_LIST2(SCM_OBJ(cc->code[i+1]),
                                        SCM_MAKE_INT(off)));
+            i += 2;
+            break;
+        }
+        case SCM_VM_OPERAND_OBJ_NATIVE: {
+            ScmObj addr = Scm_IntptrToInteger((intptr_t)cc->code[i+2]);
+            SCM_APPEND(h, t, SCM_LIST2(SCM_OBJ(cc->code[i+1]), addr));
             i += 2;
             break;
         }

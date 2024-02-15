@@ -150,7 +150,8 @@
                                     (~ cvec (+ i 1) 0)))]
         [(label) (emit/operand (label-at (~ cvec (+ i 1) 0)))]
         [(obj+label) (emit/operand (list (~ cvec (+ i 1) 0)
-                                         (label-at (~ cvec (+ i 2) 0))))]))
+                                         (label-at (~ cvec (+ i 2) 0))))]
+        [(obj+native) (error "Invalid instruction in optimizer path")]))
     (mark 0 (make-q))
     (compiled-code-copy! orig-code (sweep))
     orig-code))

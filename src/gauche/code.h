@@ -165,11 +165,12 @@ enum ScmVMInsnFlag {
 /* Operand type */
 enum {
     SCM_VM_OPERAND_NONE,        /* take no operand */
-    SCM_VM_OPERAND_OBJ,         /* take ScmObj */
-    SCM_VM_OPERAND_CODE,        /* take ScmCompiledCode */
-    SCM_VM_OPERAND_CODES,       /* take a list of ScmCompiledCodes */
-    SCM_VM_OPERAND_LABEL,       /* take label address of next code */
-    SCM_VM_OPERAND_OBJ_LABEL    /* take an object and label address of next code */
+    SCM_VM_OPERAND_OBJ,         /* an ScmObj */
+    SCM_VM_OPERAND_CODE,        /* an ScmCompiledCode */
+    SCM_VM_OPERAND_CODES,       /* a list of ScmCompiledCodes */
+    SCM_VM_OPERAND_LABEL,       /* a label address of next code */
+    SCM_VM_OPERAND_OBJ_LABEL,   /* an object and label address of next code */
+    SCM_VM_OPERAND_OBJ_NATIVE   /* an object and native code address */
 };
 
 SCM_EXTERN const char *Scm_VMInsnName(u_int code);

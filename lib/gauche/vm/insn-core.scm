@@ -96,7 +96,7 @@
   (ecase (~ info'operand-type)
     [(none) 1]
     [(obj label code codes) 2]
-    [(obj+label) 3]))
+    [(obj+label obj+native) 3]))
 
 (define-method vm-insn-size ((mnemonic <symbol>))
   (vm-insn-size (vm-find-insn-info mnemonic)))

@@ -1004,7 +1004,7 @@
                               (list* (cgen-literal (cadr code)) #f lits))]
           [(obj) (loop (cddr code)
                         (list* (cgen-literal (cadr code)) #f lits))]
-          [(obj+label)
+          [(obj+label obj+native)
            (loop (cdddr code)
                  (list* #f (cgen-literal (cadr code)) #f lits))]
           )))))
@@ -1035,7 +1035,7 @@
                          name-info insnval count
                          (cgen-safe-comment insn))))]
              [first-cexpr (or first-cexpr insn-cexpr)])
-        (case (~ info'operand-type)
+        (ecase (~ info'operand-type)
           [(none)
            (loop (cdr cv) (cdr lv) (+ count 1) first-cexpr)]
           [(label)
@@ -1064,6 +1064,9 @@
             (format "SCM_WORD((ScmWord*)~a + ~d)  /*    ~3d */"
                     first-cexpr (caddr cv) (caddr cv)))
            (loop (cdddr cv) (cdddr lv) (+ count 3) first-cexpr)]
+          [(obj+native)
+           (errorf "~a instruction shouldn't appear in precompiled code"
+                   (~ info'name))]
           ))))
 
   (loop cv lv 0 #f))
