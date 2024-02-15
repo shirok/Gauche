@@ -51,4 +51,6 @@ SCM_EXTERN ScmObj Scm__VMCallNative(ScmVM *vm,
                                     ScmObj patcher,
                                     ScmObj rettype);
 
+SCM_EXTERN ScmObj Scm__AllocateCodePage(ScmU8Vector *code);
+
 #endif /*GAUCHE_PRIV_NATIVEP_H*/

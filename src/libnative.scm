@@ -52,8 +52,27 @@
                               patcher rettype)
    (return (Scm__VMCallNative (Scm_VM) tstart tend code start end entry
                               patcher rettype)))
+
+ (define-cproc %%allocate-code-page (code::<u8vector>)
+   (return (Scm__AllocateCodePage code)))
  )
 
 (select-module gauche.internal)
 
 (include "native-supp.scm")
+
+;; Returns alist of vm fields and offsets
+;; To be used for JIT.
+
+(define-cproc vm-field-offset-alist ()
+  (let* ([h '()] [t '()])
+    (SCM_APPEND1 h t (Scm_Cons 'env  (Scm_MakeInteger (offsetof ScmVM env))))
+    (SCM_APPEND1 h t (Scm_Cons 'denv (Scm_MakeInteger (offsetof ScmVM denv))))
+    (SCM_APPEND1 h t (Scm_Cons 'cont (Scm_MakeInteger (offsetof ScmVM cont))))
+    (SCM_APPEND1 h t (Scm_Cons 'argp (Scm_MakeInteger (offsetof ScmVM argp))))
+    (SCM_APPEND1 h t (Scm_Cons 'val0 (Scm_MakeInteger (offsetof ScmVM val0))))
+    (SCM_APPEND1 h t (Scm_Cons 'vals (Scm_MakeInteger (offsetof ScmVM vals))))
+    (SCM_APPEND1 h t (Scm_Cons 'numVals (Scm_MakeInteger (offsetof ScmVM numVals))))
+    (SCM_APPEND1 h t (Scm_Cons 'sp   (Scm_MakeInteger (offsetof ScmVM sp))))
+    (SCM_APPEND1 h t (Scm_Cons 'stackEnd (Scm_MakeInteger (offsetof ScmVM stackEnd))))
+    (return h)))

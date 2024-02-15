@@ -33,6 +33,17 @@
 
 /* EXPERIMENTAL */
 
+/* CAUTION
+ *   Be careful not to create a code path to call these APIs directly
+ *   from Scheme.  It would open up for casual Scheme code to execute
+ *   arbitrary machine code, bypassing our runtime check completely.
+ *
+ *   Instead, the Scheme API for these APIs should be placed in
+ *   gauche.bootstrap module.  The module is only live during initialization
+ *   process, so the built-in Scheme procedures can call them, but they'll
+ *   be unaccessible from the user code.  See libnative.scm.
+ */
+
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/vmP.h"
@@ -42,6 +53,10 @@
 #if defined(HAVE_SYS_MMAN_H)
 #include <sys/mman.h>
 #endif
+
+/*======================================================================
+ * FFI support
+ */
 
 /*
  * For the time being, we use a fixed area (mmapped executable page)
@@ -306,6 +321,35 @@ ScmObj Scm__VMCallNative(ScmVM *vm,
     free_code_cache(vm, codepad);
     return result;
 }
+
+/*======================================================================
+ * JIT support
+ */
+
+/* Allocate executable page and copy the machine code in CODE,
+   returns an executable <memory-region>.
+ */
+
+ScmObj Scm__AllocateCodePage(ScmU8Vector *code)
+{
+    ScmMemoryRegion *wpad, *xpad;
+    long codesize = SCM_U8VECTOR_SIZE(code);
+    long pagesize = sysconf(_SC_PAGESIZE);
+    long padsize = ((codesize+pagesize-1)/pagesize)*pagesize;
+    Scm_SysMmapWX(padsize, &wpad, &xpad);
+    memcpy(wpad->ptr, SCM_U8VECTOR_ELEMENTS(code), codesize);
+    /* TODO: If writable page and executable page are mapped into
+       two regions, we can unmap writable page here.  Currently we don't
+       have an interface to do so explicitly, leaving GC finalizer to
+       do the job.
+     */
+    return SCM_OBJ(xpad);
+}
+
+
+/*======================================================================
+ * Initialization
+ */
 
 void Scm__InitNative(void)
 {
