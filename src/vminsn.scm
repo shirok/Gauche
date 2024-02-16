@@ -1527,3 +1527,21 @@
     (POP-ARG arg)
     (Scm_VMPushDynamicEnv arg VAL0)
     NEXT))
+
+;; EXPERIMENTAL
+;; XINSN info code-addr
+;;   'Extended instruction' - JIT compiled instruction handler.
+;;   The operand is an address of native code vector.
+(define-insn XINSN 0 obj+native #f
+  (.if (and SCM_TARGET_X86_64 (not GAUCHE_WINDOWS))
+    (let* ([jitcode::void*])
+      INCR_PC
+      (FETCH_LOCATION jitcode)
+      (asm "mov %[vm], %%r15; \
+            call *%[jitcode]"
+           ()
+           ((vm "r" vm)
+            (jitcode "r" jitcode))
+           ("r12" "r15"))
+      NEXT)
+    (Scm_Panic "XINSN instruction should never be seen on this platform.")))

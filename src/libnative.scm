@@ -42,7 +42,11 @@
 (select-module gauche.bootstrap)
 
 (inline-stub
- (.include "gauche/priv/nativeP.h")
+ (.include "gauche/priv/nativeP.h"
+           "gauche/priv/codeP.h"
+           "gauche/vminsn.h")
+
+ ;; For FFI
  (define-cproc %%call-native (tstart::<fixnum>
                               tend::<fixnum>
                               code::<uvector>
@@ -53,8 +57,16 @@
    (return (Scm__VMCallNative (Scm_VM) tstart tend code start end entry
                               patcher rettype)))
 
+ ;; For JIT
  (define-cproc %%allocate-code-page (code::<u8vector>)
    (return (Scm__AllocateCodePage code)))
+
+ (define-cproc %%emit-xinsn (cc::<compiled-code>
+                             code::<u8vector>)
+   (let* ([codepage (Scm__AllocateCodePage code)])
+     (Scm_CompiledCodeEmit cc SCM_VM_XINSN 0 0
+                           (SCM_LIST2 SCM_FALSE codepage)
+                           SCM_FALSE)))
  )
 
 (select-module gauche.internal)
