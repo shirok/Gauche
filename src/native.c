@@ -54,6 +54,17 @@
 #include <sys/mman.h>
 #endif
 
+static long getpagesize()
+{
+#if defined(GAUCHE_WINDOWS)
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return (long)sysinfo.dwPageSize;
+#else  /* !GAUCHE_WINDOWS */
+    return sysconf(_SC_PAGESIZE);
+#endif /* !GAUCHE_WINDOWS */
+}
+
 /*======================================================================
  * FFI support
  */
@@ -334,7 +345,7 @@ ScmObj Scm__AllocateCodePage(ScmU8Vector *code)
 {
     ScmMemoryRegion *wpad, *xpad;
     long codesize = SCM_U8VECTOR_SIZE(code);
-    long pagesize = sysconf(_SC_PAGESIZE);
+    long pagesize = getpagesize();
     long padsize = ((codesize+pagesize-1)/pagesize)*pagesize;
     Scm_SysMmapWX(padsize, &wpad, &xpad);
     memcpy(wpad->ptr, SCM_U8VECTOR_ELEMENTS(code), codesize);
