@@ -26,6 +26,9 @@
 /* Define to use system CA */
 #undef GAUCHE_CA_BUNDLE_SYSTEM
 
+/* Define 1 if unsafe JIT API is enabled (TEMPORARY OPTION) */
+#undef GAUCHE_ENABLE_UNSAFE_JIT_API
+
 /* Define 1 if building framework on MacOSX */
 #undef GAUCHE_MACOSX_FRAMEWORK
 

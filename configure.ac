@@ -271,6 +271,19 @@ AC_ARG_WITH(gperftools,
                    ])
   ], [])
 
+dnl ----------------------------------------------------------
+dnl   enable-unsafe-jit-api
+dnl
+
+dnl This is a temporary option to experiment JIT implemtnation strategies.
+dnl Once we get a stable JIT mechanism, we'll remove this option.
+ac_gauche_enable_unsafe_jit_api=no
+AC_ARG_ENABLE(unsafe-jit-api,
+  [],
+  [
+    AC_DEFINE(GAUCHE_ENABLE_UNSAFE_JIT_API, 1, [Define 1 if unsafe JIT API is enabled])
+  ], [])
+
 dnl ===========================================================
 dnl Set up version-related macros
 GAUCHE_VERSION=$PACKAGE_VERSION
