@@ -54,7 +54,7 @@
 #include <sys/mman.h>
 #endif
 
-static long getpagesize()
+static long sys_getpagesize()
 {
 #if defined(GAUCHE_WINDOWS)
     SYSTEM_INFO sysinfo;
@@ -345,7 +345,7 @@ ScmObj Scm__AllocateCodePage(ScmU8Vector *code)
 {
     ScmMemoryRegion *wpad, *xpad;
     long codesize = SCM_U8VECTOR_SIZE(code);
-    long pagesize = getpagesize();
+    long pagesize = sys_getpagesize();
     long padsize = ((codesize+pagesize-1)/pagesize)*pagesize;
     Scm_SysMmapWX(padsize, &wpad, &xpad);
     memcpy(wpad->ptr, SCM_U8VECTOR_ELEMENTS(code), codesize);
