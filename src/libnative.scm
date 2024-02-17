@@ -58,20 +58,45 @@
                               patcher rettype)))
 
  ;; For JIT
- (define-cproc %%allocate-code-page (code::<u8vector>)
-   (return (Scm__AllocateCodePage code)))
-
- (define-cproc %%emit-xinsn (cc::<compiled-code>
-                             code::<u8vector>)
-   (let* ([codepage (Scm__AllocateCodePage code)])
-     (Scm_CompiledCodeEmit cc SCM_VM_XINSN 0 0
-                           (SCM_LIST2 SCM_FALSE codepage)
-                           SCM_FALSE)))
+ (define-cproc %%jit-compile-procedure (proc compiler)
+   (unless (SCM_CLOSUREP proc)
+     (Scm_Error "Closure required, but got: %S" proc))
+   (let* ([orig-code (SCM_CLOSURE_CODE proc)]
+          [orig-env::ScmEnvFrame*  (SCM_CLOSURE_ENV proc)]
+          [builder (Scm_MakeCompiledCodeBuilder (SCM_PROCEDURE_REQUIRED proc)
+                                                (SCM_PROCEDURE_OPTIONAL proc)
+                                                (SCM_PROCEDURE_INFO proc)
+                                                proc
+                                                SCM_FALSE)]
+          [codevecs (Scm_ApplyRec1 compiler orig-code)])
+     (for-each (lambda (code)
+                 (SCM_ASSERT (SCM_U8VECTORP code))
+                 (let* ([codepage (Scm__AllocateCodePage (SCM_U8VECTOR code))])
+                   (Scm_CompiledCodeEmit (SCM_COMPILED_CODE builder)
+                                         SCM_VM_XINSN 0 0
+                                         (SCM_LIST2 SCM_FALSE codepage)
+                                         SCM_FALSE)))
+               codevecs)
+     (Scm_CompiledCodeFinishBuilder (SCM_COMPILED_CODE builder) 0)
+     (return (Scm_MakeClosure builder orig-env))))
  )
 
 (select-module gauche.internal)
 
+;; Stub for FFI
 (include "native-supp.scm")
+
+;; Stub for JIT
+(define-cproc %unsafe-jit-enabled? () ::<boolean>
+  (.if GAUCHE_ENABLE_UNSAFE_JIT_API
+       (return TRUE)
+       (return FALSE)))
+
+(define %jit-compile
+  (if (%unsafe-jit-enabled?)
+    (let ([jcp (module-binding-ref 'gauche.bootstrap '%%jit-compile-procedure)])
+      (^[proc compiler] (jcp proc compiler)))
+    (^ _ (error "Operation not allowed"))))
 
 ;; Returns alist of vm fields and offsets
 ;; To be used for JIT.
