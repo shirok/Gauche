@@ -484,7 +484,7 @@
 
 (define (mplbug-test mod var)
   (test* #"mpl search (~mod,~var)" #t
-         (global-variable-bound? (find-module mod) var)))
+         (module-binds? (find-module mod) var)))
 
 (mplbug-test 'mplbug-user1 'a)
 (mplbug-test 'mplbug-user1 'b)
@@ -664,8 +664,7 @@
                             set! syntax-rules else =>))
                    (missing '()))
           (cond [(null? names) missing]
-                [(global-variable-bound? 'null (car names))
-                 (loop (cdr names) missing)]
+                [(module-binds? 'null (car names)) (loop (cdr names) missing)]
                 [else (loop (cdr names) (cons (car names) missing))]))))
 
 (test "scheme module bindings" '()
@@ -714,8 +713,7 @@
                             write write-char zero?))
                    (missing '()))
           (cond [(null? names) missing]
-                [(global-variable-bound? 'scheme (car names))
-                 (loop (cdr names) missing)]
+                [(module-binds? 'scheme (car names)) (loop (cdr names) missing)]
                 [else (loop (cdr names) (cons (car names) missing))]))))
 
 ;;-------------------------------------------------------------------

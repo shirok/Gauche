@@ -150,7 +150,7 @@
 (define global-variable-ref module-binding-ref)
 
 (define-in-module gauche (symbol-bound? name :optional (module #f)) ; Deprecated
-  (global-variable-bound? module name))
+  (module-binds? module name))
 
 ;; Module import/export internal APIs.  Not public.
 (select-module gauche.internal)

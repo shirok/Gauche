@@ -48,7 +48,7 @@
         (cond [(null? syms) (reverse! r)]
               [(not (symbol? (car syms)))
                (error "non-symbol in export-if-defined form:" (car syms))]
-              [(global-variable-bound? #f (car syms))
+              [(module-binds? #f (car syms))
                (loop (cdr syms) (cons (car syms) r))]
               [else (loop (cdr syms) r)]))))
 
@@ -78,7 +78,7 @@
               (guard [e (else "#<unprintable>")]
                 (format "~,,,,50:a" val)))))
   (let1 bindings (filter-map (^m (and-let* ([g (find-b m sym #t)]
-                                            [ (global-variable-bound? m sym) ])
+                                            [ (module-binds? m sym) ])
                                    (list m g (global-variable-ref m sym))))
                              (all-modules))
     (if (null? bindings)

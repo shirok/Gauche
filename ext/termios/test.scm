@@ -25,7 +25,7 @@
              syms
              (let1 p (open-input-string (string-append "(list " str ")"))
                (eval (read p) (current-module))))
-        (if (global-variable-bound? (current-module) (car cans))
+        (if (module-binds? (current-module) (car cans))
           (loop (cdr cans)
                 (cons (car cans) syms)
                 (string-append str " " (symbol->string (car cans))))

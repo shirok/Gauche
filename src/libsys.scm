@@ -1742,8 +1742,7 @@
 ;; http://github.com/k-takata/ptycheck.
 (with-module gauche.internal
   (define (%sys-mintty? port-or-fd)
-    (and-let* ([ (global-variable-bound? (find-module 'gauche)
-                                         'sys-win-pipe-name) ]
+    (and-let* ([ (module-binds? 'gauche 'sys-win-pipe-name) ]
                [n (sys-win-pipe-name port-or-fd)])
       (boolean (#/^\\msys-[\da-f]+-pty\d+-(to|from)-master.*$/ n))))
   )

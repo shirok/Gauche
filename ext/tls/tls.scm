@@ -81,7 +81,7 @@
        (tls-ca-bundle-path 'system)
        (tls-ca-bundle-path #f)))
    (if (and (not (tls-ca-bundle-path))
-            (global-variable-bound? (find-module 'rfc.tls) '<ax-tls>))
+            (module-binds? 'rfc.tls '<ax-tls>))
      ;; if system ca-bundle isn't available, we give up mbed-tls.
      (default-tls-class (delay <ax-tls>))
      (default-tls-class (delay <mbed-tls>)))

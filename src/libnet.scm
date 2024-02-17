@@ -646,7 +646,7 @@
 ;; cond-expand is expanded when netaux.scm is compiled, but at that time
 ;; the feature 'gauche.net.ipv6' is not available since the gauche.net module
 ;; is not yet built.  So we use a bit of kludge here.
-(define ipv6-capable (global-variable-bound? 'gauche.net 'sys-getaddrinfo))
+(define ipv6-capable (module-binds? 'gauche.net 'sys-getaddrinfo))
 
 ;; NB: ipv4 preference setting for the compatibility to old windows installer.
 ;; if #t, make-sockaddrs returns ipv4 socket addresses before ipv6 ones.

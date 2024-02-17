@@ -864,7 +864,7 @@
               (sys-alarm 1)
               (read in)))))
 
-  (when (global-variable-bound? 'gauche 'sys-select)
+  (when (module-binds? 'gauche 'sys-select)
     (test* "sigalrm6 (interrupting syscall - restart)" '(#t 0)
            (let1 r #f
              (with-signal-handlers

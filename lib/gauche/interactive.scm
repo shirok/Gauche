@@ -88,7 +88,7 @@
              (found mod symbol))))))
 
     (define (visible? sym)
-      (global-variable-bound? module sym))
+      (module-binds? module sym))
 
     (define (found module symbol)
       (push! result
