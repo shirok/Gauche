@@ -62,13 +62,8 @@
   )
 (select-module rfc.tls)
 
-(export-if-defined <ax-tls>)
-
 ;; The initialization of default-tls-class depends on the availability
 ;; of classes and tls-ca-bundle-path.
-;;
-;; If tls-ca-bundle-path is #f, we favor <ax-tls>, for <mbed-tls> doensn't work
-;; without ca-bundle.  Othwerise, we favor <mbed-tls>.
 
 (without-precompiling
  (cond-expand
@@ -80,18 +75,12 @@
      (if (%tls-system-ca-bundle-available?)
        (tls-ca-bundle-path 'system)
        (tls-ca-bundle-path #f)))
-   (if (and (not (tls-ca-bundle-path))
-            (module-binds? 'rfc.tls '<ax-tls>))
-     ;; if system ca-bundle isn't available, we give up mbed-tls.
-     (default-tls-class (delay <ax-tls>))
-     (default-tls-class (delay <mbed-tls>)))
+   (default-tls-class (delay <mbed-tls>))
    ]
   [else
-   ;; For the backward compatibility, the default configuration with only
-   ;; axtls assumes tls-ca-bundle-path is #f.
    (when (eq? (tls-ca-bundle-path) 'check)
      (tls-ca-bundle-path #f))
-   (default-tls-class (delay <ax-tls>))]))
+   (default-tls-class #f)]))
 
 (inline-stub
  (declcode
