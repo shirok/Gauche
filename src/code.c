@@ -465,14 +465,15 @@ static void cc_builder_flush(cc_builder *b)
         cc_builder_add_word(b, SCM_WORD(0)); /* dummy */
         break;
     case SCM_VM_OPERAND_OBJ_NATIVE:
-        /* operand would be given as a list of (OBJ MEM-REGION). */
+        /* operand would be given as a list of (OBJ MEM-REGION OFFSET). */
         SCM_ASSERT(SCM_PAIRP(b->currentOperand)
                    && SCM_PAIRP(SCM_CDR(b->currentOperand))
                    && SCM_MEMORY_REGION_P(SCM_CADR(b->currentOperand)));
         cc_builder_add_word(b, SCM_WORD(SCM_CAR(b->currentOperand)));
         cc_builder_add_constant(b, SCM_CAR(b->currentOperand));
         ScmMemoryRegion *mem = SCM_MEMORY_REGION(SCM_CADR(b->currentOperand));
-        cc_builder_add_word(b, SCM_WORD(mem->ptr));
+        long offset = Scm_GetIntegerU(SCM_CAR(SCM_CDDR(b->currentOperand)));
+        cc_builder_add_word(b, SCM_WORD(mem->ptr + offset));
         break;
     case SCM_VM_OPERAND_CODE:
         if (!SCM_COMPILED_CODE_P(b->currentOperand)) goto badoperand;

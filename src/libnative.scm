@@ -68,15 +68,18 @@
                                                 (SCM_PROCEDURE_INFO proc)
                                                 proc
                                                 SCM_FALSE)]
-          [codevecs (Scm_ApplyRec1 compiler orig-code)])
-     (for-each (lambda (code)
-                 (SCM_ASSERT (SCM_U8VECTORP code))
-                 (let* ([codepage (Scm__AllocateCodePage (SCM_U8VECTOR code))])
-                   (Scm_CompiledCodeEmit (SCM_COMPILED_CODE builder)
-                                         SCM_VM_XINSN 0 0
-                                         (SCM_LIST2 SCM_FALSE codepage)
-                                         SCM_FALSE)))
-               codevecs)
+          [codevec&offsets (Scm_ApplyRec1 compiler orig-code)])
+     (SCM_ASSERT (SCM_PAIRP codevec&offsets))
+     (let* ([codevec (SCM_CAR codevec&offsets)]
+            [offsets (SCM_CDR codevec&offsets)])
+       (SCM_ASSERT (SCM_U8VECTORP codevec))
+       (let* ([codepage (Scm__AllocateCodePage (SCM_U8VECTOR codevec))])
+         (for-each (lambda (offset)
+                     (Scm_CompiledCodeEmit (SCM_COMPILED_CODE builder)
+                                           SCM_VM_XINSN 0 0
+                                           (SCM_LIST3 SCM_FALSE codepage offset)
+                                           SCM_FALSE))
+                   offsets)))
      (Scm_CompiledCodeFinishBuilder (SCM_COMPILED_CODE builder) 0)
      (return (Scm_MakeClosure builder orig-env))))
  )
