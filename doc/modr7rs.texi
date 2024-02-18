@@ -3066,7 +3066,7 @@ of the first or the last elements that don't satisfy @var{pred}.
 @end defun
 
 @defun vector-binary-search vec value cmp :optional start end
-[R7RS+]
+[R7RS+ vector]
 @c MOD scheme.vector
 @c EN
 Look for @var{value} in a sorted vector @var{vec}, and returns its

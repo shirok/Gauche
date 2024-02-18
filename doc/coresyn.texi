@@ -705,7 +705,7 @@ data, it is not guaranteed that the program runs correctly.
 
 @defspec lambda formals body @dots{}
 @defspecx ^ formals body @dots{}
-[R7RS+]
+[R7RS+ base]
 @c EN
 Evaluates to a procedure.  The environment in effect when this expression
 is evaluated is stored in the procedure.   When the procedure
@@ -3619,7 +3619,7 @@ mutating such structures.
 @defspec define variable expression
 @defspecx define (variable . formals) body @dots{}
 @defspecx define variable
-[R7RS+]
+[R7RS+ base]
 @c EN
 This form has different meanings in the toplevel (without no
 local bindings) or inside a local scope.

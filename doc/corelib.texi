@@ -956,7 +956,7 @@ NaNの比較には少々奇妙なところがあります。数値比較は、�
 @end defun
 
 @defun equal? obj1 obj2
-[R7RS+]
+[R7RS+ base]
 @c EN
 If @var{obj1} and @var{obj2} are both aggregate types,
 @code{equal?} compares its elements recursively.
@@ -1387,7 +1387,7 @@ are not guaranteed to be @code{eq?} even if they are numerically equal.
 @end defun
 
 @defun default-hash obj
-[R7RS+]
+[R7RS+ comparator]
 @c EN
 This is a hash function suitable to be used with @code{equal?}.
 In R7RS, this is defined in @code{scheme.comparator} (originally
@@ -3431,7 +3431,7 @@ rational numbers.
 @end defun
 
 @defun abs z
-[R7RS+]
+[R7RS+ base]
 @c EN
 For real number @var{z}, returns an absolute value of it.
 For complex number @var{z}, returns the magnitude of the number.
@@ -4581,7 +4581,7 @@ we assume closed range.)
 
 @defun number->string z :optional radix use-upper?
 @defunx string->number string :optional radix default-exactness
-[R7RS+]
+[R7RS+ base]
 @c EN
 These procedures convert a number and its string representation
 in radix @var{radix} system.
@@ -6146,7 +6146,7 @@ Otherwise, an error is signaled.
 @end defun
 
 @defun list-ref list k :optional fallback
-[R7RS+]
+[R7RS+ base]
 @c EN
 Returns @var{k}-th element of @var{list}.
 @var{list} can be a proper, dotted or circular list.
@@ -6297,7 +6297,7 @@ Inserts @var{item} between elements in the @var{list}.
 @c NODE リストをたどる手続き
 
 @defun map proc list1 list2 @dots{}
-[R7RS+]
+[R7RS+ base]
 @c EN
 Applies @var{proc} for each element(s) of given list(s),
 and returns a list of the results.  R7RS doesn't specify
@@ -6847,7 +6847,7 @@ can be a bit efficient by skipping overhead of @code{apply}.
 
 @defun reverse list :optional (tail '())
 @defunx reverse! list :optional (tail '())
-[R7RS+]
+[R7RS+ base]
 @c EN
 Returns a list consisting of the elements of @var{list}
 in the reverse order.
@@ -10625,7 +10625,7 @@ For incomplete string, its length and its size always match.
 @end defun
 
 @defun string-ref cstring k :optional fallback
-[R7RS+]
+[R7RS+ base]
 @c EN
 Returns @var{k}-th character of a complete string @var{cstring}.
 It is an error to pass an incomplete string.
@@ -13398,7 +13398,7 @@ you can also use a method @code{size-of}.
 @end defun
 
 @defun vector-ref vector k :optional fallback
-[R7RS+]
+[R7RS+ base]
 @c EN
 Returns @var{k}-th element of vector @var{vector}.
 
@@ -13441,7 +13441,7 @@ a setter method of @code{ref}.
 
 @defun vector->list vector :optional start end
 @defunx list->vector list :optional start end
-[R7RS+]
+[R7RS+ base]
 @c EN
 Converts a vector to a list, or vice versa.
 
@@ -21520,7 +21520,7 @@ To signal a compound condition, you can use @code{raise} as explained below.
 
 @defun error string arg @dots{}
 @defunx error condition-type keyword-arg @dots{} string arg @dots{}
-[R7RS+][SRFI-23+]
+[R7RS+ base][SRFI-23+]
 @c EN
 Signals an error.  The first form creates an @code{<error>}
 condition, with a message consists of @var{string} and @var{arg} @dots{},
@@ -23986,7 +23986,7 @@ Returns number of characters copied when @var{unit} is a symbol
 
 @defun open-input-file filename :key if-does-not-exist buffering element-type encoding conversion-buffer-size conversion-illegal-output
 @defunx open-output-file filename :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size conversion-illegal-output
-[R7RS+]
+[R7RS+ file]
 @c EN
 Opens a file @var{filename} for input or output, and
 returns an input or output port associated with it, respectively.
@@ -24327,7 +24327,7 @@ Gaucheでは、@code{open-input-file}と@code{open-output-file}は
 
 @defun call-with-input-file string proc :key if-does-not-exist buffering element-type encoding conversion-buffer-size
 @defunx call-with-output-file string proc :key if-does-not-exist if-exists buffering element-type encoding conversion-buffer-size
-[R7RS+]
+[R7RS+ file]
 @c EN
 Opens a file specified by @var{string} for input/output,
 and call @var{proc} with one argument, the file port.  When @var{proc}
@@ -27326,7 +27326,7 @@ Gaucheでは@code{scheme.base}モジュールで@code{flush}の別名として
 @c NODE Schemeファイルのロード
 
 @defun load file :key paths (error-if-not-found #t) environment ignore-coding
-[R7RS+]
+[R7RS+ load]
 @c EN
 Loads @var{file}, that is, read Scheme expressions in @var{file} and
 evaluates them.
@@ -28487,7 +28487,7 @@ Gaucheは(@code{main}から返る以外に)自分自身を終了させる方法�
 
 
 @defun exit :optional (code 0) (fmtstr #f) args @dots{}
-[R7RS+]
+[R7RS+ process-context]
 @c EN
 Terminates the current process with the exit code @var{code}.
 The optional @var{code} argument specifies the exit status; @code{#t}
@@ -28795,7 +28795,7 @@ That said, here are how to access the command-line arguments:
 @c COMMON
 
 @deffn {Parameter} command-line
-[R7RS+][SRFI-193]
+[R7RS+ process-context][SRFI-193]
 @c EN
 When called without arguments, it returns a list of command-line arguments,
 including the program name in the first element, as a list of strings.
