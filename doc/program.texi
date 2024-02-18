@@ -1208,11 +1208,12 @@ info document is properly installed.)
 @example
 gosh> ,info append
  -- Function: append list ...
-     [R7RS] Returns a list consisting of the elements of the first LIST
-     followed by the elements of the other lists.  The resulting list is
-     always newly allocated, except that it shares structure with the
-     last list argument.  The last argument may actually be any object;
-     an improper list results if the last argument is not a proper list.
+     [R7RS base] Returns a list consisting of the elements of the first
+     LIST followed by the elements of the other lists.  The resulting
+     list is always newly allocated, except that it shares structure
+     with the last list argument.  The last argument may actually be any
+     object; an improper list results if the last argument is not a
+     proper list.
 
 gosh> ,info srfi.19
  -- Module: srfi.19
