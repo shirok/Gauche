@@ -22053,6 +22053,12 @@ port, and gathered string is returned.  For all the other cases,
 an undefined value is returned.  If @var{sink} is omitted or
 any other object listed above, the current error port is used.
 
+Internally, this procedure calls @code{print-default-error-heading}
+and @code{print-additional-error-heading}
+to print the info about @var{exn}, then prints the stack trace.
+You can call those procedures separately if you don't want
+the stack trace.
+
 Note: As of 0.9.5, this procedure prints stack trace of
 the context where @code{report-error} is called, rather than
 the context where @var{exn} is thrown.  It doesn't matter much
@@ -22078,6 +22084,12 @@ attach stack trace info to @code{<condition>} object in future.
 @var{sink}が省略されるか、上記以外の値であった場合は
 現在のエラーポートが使われます。
 
+内部的に、この手続きは@var{exn}の情報を表示するために
+@code{print-default-error-heading}および
+@code{print-additional-error-heading}を呼び、その後スタックトレースを表示します。
+スタックトレースが不要な場合、これらの手続きを直接呼ぶこともできます。
+
+
 註: 0.9.5の時点で、この手続きは@var{exn}が投げられたコンテキストでの
 スタックトレースではなく、@code{report-error}自身が呼ばれたコンテキストでの
 スタックトレースを表示します。@code{report-error}をエラーハンドラから
@@ -22086,6 +22098,176 @@ attach stack trace info to @code{<condition>} object in future.
 つける予定があります。
 @c COMMON
 @end defun
+
+@defun print-default-error-heading exn out
+@c EN
+Prints the first line of the default error report regarding
+the thrown condition @var{exn} to an output port @var{out}.
+@c JP
+投げられたコンディション@var{exn}について、デフォルトのエラーレポートの
+1行目を出力ポート@var{out}に書き出します。
+@c COMMON
+
+@c EN
+If @var{exn} is a @code{<condition>}, the message
+consists of the condition class name (without brackets, and capitalized),
+followed by the message of the condition:
+@c JP
+@var{exn}が@code{<condition>}なら、
+コンディションクラス名(からブラケットを取り除き、大文字化したもの)と、
+コンディションメッセージが出力されます:
+@c COMMON
+
+@example
+*** READ-ERROR: Read error at "foo":line 1: EOF inside a list (starting from line 1)
+@end example
+
+@c EN
+If @var{exn} is not a @code{<condition>}, it assumes that the exception is
+intended to be caught but somehow escaped, so it prints something
+like this:
+@c JP
+@var{exn}が@code{<condition>}でない場合は、
+本来補足されるべきであったコンディションがすり抜けたとみなし、
+例えば次のようなメッセージが出力されます:
+@c COMMON
+
+@example
+*** ERROR: unhandled exception: foo
+@end example
+
+@c EN
+This is called by @code{report-error}, but you can use this procedure
+separately.
+@c JP
+この手続きは@code{report-error}が使っていますが、
+この手続きだけを直接呼び出すことも可能です。
+@c COMMON
+@end defun
+
+@defun print-additional-error-heading exn out
+@c EN
+Prints the additional information of the thrown condition
+@var{exn} to an output port @var{out}.
+@c JP
+投げられたコンディション@var{exn}について、追加の情報を出力ポート@var{out}に書き出します。
+@c COMMON
+
+@c EN
+If @var{exn} is not a @code{<condition>}, no information is printed.
+@c JP
+@var{exn}が@code{<condition>}でなければ、何も出力されません。
+@c COMMON
+
+@c EN
+If @var{exn} is a compound condition, it is decomposed into
+individual conditions.
+@c JP
+@var{exn}が複合コンディションの場合は、まず個々のコンディションに分解されます。
+@c COMMON
+
+@c EN
+Then, for each condition that does not inherit @code{<mixin-condition>},
+@code{report-additional-condition} method is invoked on it.
+Afterwards,
+for each of the remaining conditions (those inherit @code{<mixin-condition>}),
+@code{report-additional-condition} method is invoked on it.
+@c JP
+次に、各コンディションのうち@code{<mixin-condition>}を継承していない
+コンディションについて@code{report-additional-condition}メソッドが呼ばれ、
+最後に@code{<mixin-condition>}を継承しているコンディションについて
+@code{report-additional-condition}メソッドが呼ばれます。
+@c COMMON
+
+@c EN
+For example, when you see the following error report:
+@c JP
+例えば、次のようなエラーレポートがあった場合:
+@c COMMON
+
+@example
+*** UNBOUND-VARIABLE-ERROR: unbound variable: load
+    NOTE: `load' is exported from the following modules:
+     - scheme.r5rs
+     - scheme.load
+    While loading "/home/shiro/src/Gauche/src/../src/ttt.scm" at line 3
+    While compiling "./tttt.scm" at line 1: (use ttt)
+    While loading "./tttt.scm" at line 1
+@end example
+
+@itemize @bullet
+@item
+@c EN
+The first line (beginning with @code{***}) is printed by
+@code{print-default-error-heading}.  The rest is printed
+by @code{print-additional-error-heading}.
+@c JP
+最初の行(@code{***}で始まる行)は
+@code{print-default-error-heading}が出しています。
+残りは@code{print-additional-error-heading}が出しています。
+@c COMMON
+@item
+@c EN
+The thrown condition is a compound condition of
+@code{<unbound-variable-error>}, @code{<load-condition-mixin>},
+@code{<compile-error-mixin>},
+and another @code{<load-condition-mixin>}.
+@c JP
+投げられたコンディションは、
+@code{<unbound-variable-error>}、@code{<load-condition-mixin>}、
+@code{<compile-error-mixin>}、そしてもうひとつの
+@code{<load-condition-mixin>}の複合コンディションです。
+@c COMMON
+@item
+@c EN
+The three lines beginning with @code{NOTE} is printed by
+@code{report-additional-condition} method of
+@code{<unbound-variable-error>}.
+@c JP
+@code{NOTE}から始まる3行は、@code{<unbound-variable-error>}の
+@code{report-additional-condition}メソッドが出力しています。
+@c COMMON
+@item
+@c EN
+The @code{While loading ...} lines are printed by
+@code{report-additional-condition} method of
+@code{<load-condition-mixin>}.
+@c JP
+@code{While loading ...}の行は@code{<load-condition-mixin>}の
+@code{report-additional-condition}メソッドが出力しています。
+@c COMMON
+@item
+@c EN
+The @code{While compiling ...} line is printed by
+@code{<compile-error-mixin>}.
+@c JP
+@code{While compiling ...}の行は@code{<compile-error-mixin>}の
+@code{report-additional-condition}メソッドが出力しています。
+@c COMMON
+@end itemize
+
+@c EN
+This is called by @code{report-error}, but you can use this procedure
+separately.
+@c JP
+この手続きは@code{report-error}が使っていますが、
+この手続きだけを直接呼び出すことも可能です。
+@c COMMON
+@end defun
+
+@deffn {Generic Function} report-additional-condition condition out
+@c EN
+Used to print additional information about a condition object
+@var{condition}, to an output port @var{out}.
+Some built-in conditions specializes this generic function.
+See @code{print-additional-error-heading} above for an example.
+@c JP
+コンディションオブジェクト@var{condition}についての追加の情報を
+出力ポート@var{out}に出力します。
+いくつかの組み込みのコンディションはこのジェネリックファンクションを特定化しています。
+具体例は上の@code{print-additional-error-heading}の項を見てください。
+@c COMMON
+@end deffn
 
 
 @node Low-level exception handling mechanism,  , Behavior of unhandled exception, Handling exceptions
