@@ -586,6 +586,13 @@ void error_exit(ScmObj c)
     } else {
         Scm_Printf(SCM_CURERR, "gosh: %S: %A\n", Scm_ConditionTypeName(c), m);
     }
+
+    ScmObj print_additional_error_heading_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(print_additional_error_heading_proc,
+                  "print-additional-error-heading", Scm_GaucheModule());
+    Scm_Apply(print_additional_error_heading_proc,
+              SCM_LIST2(c, SCM_OBJ(SCM_CURERR)),
+              NULL);
     Scm_Exit(1);
 }
 

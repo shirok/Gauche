@@ -71,28 +71,32 @@
     fallback))
 
 (define (print-default-error-heading exc out)
+  (guard (e [else (display "*** ERROR:" out)
+                  (display exc out)
+                  (display "\n" out)])
+    (cond [(not (condition? exc))
+           (format out "*** ERROR: unhandled exception: ~s\n" exc)]
+          [(condition-has-type? exc <message-condition>)
+           (format out "*** ~a: ~,,,,200:a\n"
+                   (condition-type-name exc) (~ exc'message))]
+          [else
+           (format out "*** ~a\n" (condition-type-name exc))])
+    (print-additional-error-heading exc out)))
+
+;; Additional reporting.  We report mixins after main conditions,
+;; for mixing give additional context (e.g. "when compiling ...")
+(define (print-additional-error-heading exc out)
   (define (additional-condition c)
     (guard (e [else (warn "Error from (report-additional-condition ~s)\n" c)
                     #f])
       (report-additional-condition c out)))
-  (guard (e [else (display "*** ERROR:" out)
-                  (display exc out)
-                  (display "\n" out)])
-    (if (not (condition? exc))
-      (format out "*** ERROR: unhandled exception: ~s\n" exc)
-      (receive (mixins mains)
-          (if (is-a? exc <compound-condition>)
-            (partition (cut is-a? <> <mixin-condition>) (~ exc'%conditions))
-            (values '() (list exc)))
-        (let1 name (condition-type-name exc)
-          (if (condition-has-type? exc <message-condition>)
-            (format out "*** ~a: ~,,,,200:a\n" name (~ exc'message))
-            (format out "*** ~a\n" name)))
-        ;; Additional reporting.  We report mixins after main
-        ;; conditions, for mixing give additional context
-        ;; (e.g. "when compiling ...")
-        (for-each additional-condition mains)
-        (for-each additional-condition mixins)))))
+  (when (condition? exc)
+    (receive (mixins mains)
+        (if (is-a? exc <compound-condition>)
+          (partition (cut is-a? <> <mixin-condition>) (~ exc'%conditions))
+          (values '() (list exc)))
+      (for-each additional-condition mains)
+      (for-each additional-condition mixins))))
 
 (select-module gauche.internal)
 (define-cproc %type-error (what::<const-cstring>
