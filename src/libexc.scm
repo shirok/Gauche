@@ -71,17 +71,14 @@
     fallback))
 
 (define (print-default-error-heading exc out)
-  (guard (e [else (display "*** ERROR:" out)
-                  (display exc out)
-                  (display "\n" out)])
-    (cond [(not (condition? exc))
-           (format out "*** ERROR: unhandled exception: ~s\n" exc)]
-          [(condition-has-type? exc <message-condition>)
-           (format out "*** ~a: ~,,,,200:a\n"
-                   (condition-type-name exc) (~ exc'message))]
-          [else
-           (format out "*** ~a\n" (condition-type-name exc))])
-    (print-additional-error-heading exc out)))
+  (assume-type out <output-port>)
+  (cond [(not (condition? exc))
+         (format out "*** ERROR: unhandled exception: ~s\n" exc)]
+        [(condition-has-type? exc <message-condition>)
+         (format out "*** ~a: ~,,,,200:a\n"
+                 (condition-type-name exc) (~ exc'message))]
+        [else
+         (format out "*** ~a\n" (condition-type-name exc))]))
 
 ;; Additional reporting.  We report mixins after main conditions,
 ;; for mixing give additional context (e.g. "when compiling ...")
@@ -90,6 +87,7 @@
     (guard (e [else (warn "Error from (report-additional-condition ~s)\n" c)
                     #f])
       (report-additional-condition c out)))
+  (assume-type out <output-port>)
   (when (condition? exc)
     (receive (mixins mains)
         (if (is-a? exc <compound-condition>)

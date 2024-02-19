@@ -1155,6 +1155,11 @@ static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
                       "print-default-error-heading",
                       Scm_GaucheModule());
         Scm_ApplyRec2(print_default_error_heading, e, SCM_OBJ(out));
+        static ScmObj print_additional_error_heading = SCM_UNDEFINED;
+        SCM_BIND_PROC(print_additional_error_heading,
+                      "print-additional-error-heading",
+                      Scm_GaucheModule());
+        Scm_ApplyRec2(print_additional_error_heading, e, SCM_OBJ(out));
     } else {
         /* Error during initialization. */
         if (SCM_CONDITIONP(e)) {
