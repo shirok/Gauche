@@ -1537,6 +1537,7 @@
     (let* ([jitcode::void*])
       INCR_PC
       (FETCH_LOCATION jitcode)
+      INCR_PC
       (asm "mov %[vm], %%r15; \
             call *%[jitcode]"
            ()
