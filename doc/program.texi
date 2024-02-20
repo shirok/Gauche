@@ -509,7 +509,7 @@ we plan to make this default.
 戻り値に意味がないなら、その値に依存したコードを書くべきではありません。
 もし、手続きが将来、もともと意味が無いのだからと戻り値を変えた場合に、
 @code{#<undef>}に依存してたコードは壊れる可能性があります。
-詳しくは@xref{Undefined values}を参照してください。
+詳しくは@ref{Undefined values}を参照してください。
 
 この機能はなるべくONtにしておくようにお勧めします。
 将来はデフォルトで警告を出すようにする予定です。
@@ -619,7 +619,7 @@ literals.  Set this environment variables to run such old programs.
 そういったコードは正しいSchemeプログラムではなく、今のGaucheはエラーを投げますが、
 0.9.9とそれ以前のバージョンではリテラルリストとリテラルベクタの変更はチェックされて
 いませんでした。うっかりリテラルを変更してしまっている古いコードを走らせたい場合のみ
-この環境変数をセットしてください。詳しくは@xref{Literals}参照。
+この環境変数をセットしてください。詳しくは@ref{Literals}参照。
 @c COMMON
 @end deftp
 
@@ -3344,7 +3344,7 @@ they are bundled together into the executable.
 違いの重要な点は、実行可能ファイルでは@var{script-file}がファイルシステムからロード
 されないため、@var{script-file}のパスからの相対パスで何かを参照しているコードは
 動かなくなるということです。例えば@code{(add-load-path dir :relative)}
-(@pxref{Loading Scheme file})で補助ライブラリを参照しているような場合です。
+で補助ライブラリを参照しているような場合です(@ref{Loading Scheme file}参照)。
 @var{script-file}に必要な補助ライブラリはコマンドラインの@var{library-file} @dots{}に
 明示的に与えられなければなりません。それらは実行可能ファイルに同梱されます。
 @c COMMON
