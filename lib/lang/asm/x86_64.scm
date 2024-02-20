@@ -212,6 +212,9 @@
     [((or 'jnle 'jg)   ('label t)) (op-jump t #t #x7f)]
     [((or 'jnlel 'jgl) ('label t)) (op-jump t #f '(#x0f #x8f))]
 
+    ;; trap
+    [('int3)                       (! (opc #xcc))]
+
     ;; moving data around
     [`(movb (reg8 ,src)(reg8 ,dst))(! (opc #x88) (reg src) (r/m-reg dst))]
     [`(movb (reg8 ,src)(mem . ,x)) (! (opc #x88) (reg src) (mem x))]
