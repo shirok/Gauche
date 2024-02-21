@@ -214,6 +214,7 @@
 
     ;; trap
     [('int3)                       (! (opc #xcc))]
+    [['endbr64]                    (! (opc '(#xf3 #x0f #x1e #xfa)))]
 
     ;; moving data around
     [`(movb (reg8 ,src)(reg8 ,dst))(! (opc #x88) (reg src) (r/m-reg dst))]
