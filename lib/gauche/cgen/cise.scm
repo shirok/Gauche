@@ -700,6 +700,8 @@
 ;;    Local variables.   Because of C semantics, we only support
 ;;    let*-style scoping.
 ;;    :: TYPE can be omitted if the type of VAR is ScmObj.
+;;    VAR may be '_' if you want to insert side-effecting expr
+;;    between definitions.  No variable decl is emitted.
 (define-cise-macro (let* form env)
   (ensure-stmt-ctx form env)
   (match form
@@ -709,11 +711,15 @@
         (let1 eenv (expr-env env)
           `(begin
              ,@(map (^[var type maybe-init]
-                      `(,(cise-render-typed-var type var env)
-                        ,@(cond-list
-                           [(pair? maybe-init)
-                            `("=",(render-rec (car maybe-init) eenv))])
-                        ";"))
+                      (if (eq? var '_)
+                        (if (pair? maybe-init)
+                          `(,(render-rec (car maybe-init) eenv) ";")
+                          '())
+                        `(,(cise-render-typed-var type var env)
+                          ,@(cond-list
+                             [(pair? maybe-init)
+                              `("=",(render-rec (car maybe-init) eenv))])
+                          ";")))
                     var type maybe-init)
              ,@(map (cut render-rec <> env) body)))]
        [_ (error "invalid variable decls in let* form:" form)])]
