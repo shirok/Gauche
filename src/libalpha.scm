@@ -185,31 +185,31 @@
 
  (define-cfn case-lambda-dispatch (args::ScmObj* nargs::int data::void*):static
    (let* ([d::case_lambda_packet* (cast case_lambda_packet* data)]
-          [rarg (aref args (- nargs 1))])
-     (SCM_ASSERT (> nargs (-> d min_reqargs)))
-     (SCM_ASSERT (<= nargs (+ (-> d min_reqargs) (-> d max_optargs) 1)))
-     ;; NB: Since this is variable-arg subr, rarg is always a list.
-     ;; If nargs <= d->max_optargs + d->min_reqargs, rargs should always
-     ;; be '().  See vmcall.c for how the arguments are folded.
-     (let* ([p (SCM_VECTOR_ELEMENT (-> d dispatch_vector)
-                                   (- nargs (-> d min_reqargs) 1))])
-       (when (SCM_FALSEP p)
-         (Scm_Error "wrong number of arguments to case lambda: %S"
-                    (Scm_ArrayToListWithTail args (- nargs 1)
-                                             (aref args (- nargs 1)))))
-       (if (SCM_NULLP rarg)
-         (case (- nargs 1)
-           [(0) (return (Scm_VMApply0 p))]
-           [(1) (return (Scm_VMApply1 p (aref args 0)))]
-           [(2) (return (Scm_VMApply2 p (aref args 0) (aref args 1)))]
-           [(3) (return (Scm_VMApply3 p (aref args 0) (aref args 1)
-                                      (aref args 2)))]
-           [(4) (return (Scm_VMApply4 p (aref args 0) (aref args 1)
-                                      (aref args 2) (aref args 3)))]
-           [else (return (Scm_VMApply p (Scm_ArrayToList args (- nargs 1))))])
-         (return
-          (Scm_VMApply p (Scm_ArrayToListWithTail args (- nargs 1) rarg))))
-       )))
+          [rarg (aref args (- nargs 1))]
+          [_ (SCM_ASSERT (> nargs (-> d min_reqargs)))]
+          [_ (SCM_ASSERT (<= nargs (+ (-> d min_reqargs) (-> d max_optargs) 1)))]
+          ;; NB: Since this is variable-arg subr, rarg is always a list.
+          ;; If nargs <= d->max_optargs + d->min_reqargs, rargs should always
+          ;; be '().  See vmcall.c for how the arguments are folded.
+          [p (SCM_VECTOR_ELEMENT (-> d dispatch_vector)
+                                 (- nargs (-> d min_reqargs) 1))])
+     (when (SCM_FALSEP p)
+       (Scm_Error "wrong number of arguments to case lambda: %S"
+                  (Scm_ArrayToListWithTail args (- nargs 1)
+                                           (aref args (- nargs 1)))))
+     (if (SCM_NULLP rarg)
+       (case (- nargs 1)
+         [(0) (return (Scm_VMApply0 p))]
+         [(1) (return (Scm_VMApply1 p (aref args 0)))]
+         [(2) (return (Scm_VMApply2 p (aref args 0) (aref args 1)))]
+         [(3) (return (Scm_VMApply3 p (aref args 0) (aref args 1)
+                                    (aref args 2)))]
+         [(4) (return (Scm_VMApply4 p (aref args 0) (aref args 1)
+                                    (aref args 2) (aref args 3)))]
+         [else (return (Scm_VMApply p (Scm_ArrayToList args (- nargs 1))))])
+       (return
+        (Scm_VMApply p (Scm_ArrayToListWithTail args (- nargs 1) rarg))))
+     ))
 
  ;; A case-lambda procedure has special inliner procedure in its 'inliner' slot,
  ;; which is made by pass1/make-case-labmda-inliner.   There's a catch,

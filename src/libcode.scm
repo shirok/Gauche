@@ -254,12 +254,12 @@
 
  (define-cproc decode-packed-debug-info (p::<packed-debug-info>)
    (when (SCM_FALSEP (-> p decoded))
-     (let* ([decode-debug-info SCM_UNDEFINED])
-       (SCM_BIND_PROC decode-debug-info "decode-debug-info"
-                      (Scm_GaucheInternalModule))
-       (let* ([decoded (Scm_ApplyRec2 decode-debug-info
-                                      (get_packed_vector p)
-                                      (-> p constVector))])
-         (set! (-> p decoded) decoded))))
+     (let* ([decode-debug-info SCM_UNDEFINED]
+            [_ (SCM_BIND_PROC decode-debug-info "decode-debug-info"
+                              (Scm_GaucheInternalModule))]
+            [decoded (Scm_ApplyRec2 decode-debug-info
+                                    (get_packed_vector p)
+                                    (-> p constVector))])
+       (set! (-> p decoded) decoded)))
    (return (-> p decoded)))
  )

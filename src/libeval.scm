@@ -180,17 +180,17 @@
 
 ;; A few helper procedures
 (define-cproc %record-load-stat (path) ::<void>
-  (.if "defined(HAVE_GETTIMEOFDAY)"
-       (let* ([vm::ScmVM* (Scm_VM)])
-         (when (SCM_VM_RUNTIME_FLAG_IS_SET vm SCM_COLLECT_LOAD_STATS)
-           (let* ([t0::(struct timeval)])
-             (gettimeofday (& t0) NULL)
-             (let* ([t (Scm_MakeIntegerU (+ (* (ref t0 tv_sec) 1000000)
-                                            (ref t0 tv_usec)))])
-               (set! (ref (-> vm stat) loadStat)
-                     (Scm_Cons
-                      (?: (SCM_FALSEP path) t (Scm_Cons path t))
-                      (ref (-> vm stat) loadStat)))))))))
+  (.when "defined(HAVE_GETTIMEOFDAY)"
+    (let* ([vm::ScmVM* (Scm_VM)])
+      (when (SCM_VM_RUNTIME_FLAG_IS_SET vm SCM_COLLECT_LOAD_STATS)
+        (let* ([t0::(struct timeval)]
+               [_ (gettimeofday (& t0) NULL)]
+               [t (Scm_MakeIntegerU (+ (* (ref t0 tv_sec) 1000000)
+                                       (ref t0 tv_usec)))])
+          (set! (ref (-> vm stat) loadStat)
+                (Scm_Cons
+                 (?: (SCM_FALSEP path) t (Scm_Cons path t))
+                 (ref (-> vm stat) loadStat))))))))
 
 (define-cproc %new-read-context-for-load ()
   (let* ([ctx::ScmReadContext* (Scm_MakeReadContext NULL)])

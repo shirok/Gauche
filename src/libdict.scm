@@ -250,12 +250,11 @@
 (select-module gauche.internal)
 (define-cproc %hash-table-comparator-int (hash::<hash-table>)
   (if (== (Scm_HashTableType hash) SCM_HASH_GENERAL)
-    (begin
-      (let* ([r (SCM_OBJ (-> (SCM_HASH_TABLE_CORE hash) data))])
-        (unless (SCM_COMPARATORP r)
-          (Scm_Error "Got some weird hashtable - possibly internal bug: %S"
-                     hash))
-        (return r)))
+    (let* ([r (SCM_OBJ (-> (SCM_HASH_TABLE_CORE hash) data))])
+      (unless (SCM_COMPARATORP r)
+        (Scm_Error "Got some weird hashtable - possibly internal bug: %S"
+                   hash))
+      (return r))
     (return '#f)))
 (select-module gauche)
 (define (hash-table-comparator hash)
@@ -633,15 +632,15 @@
  ;; If tree-map-cmp is called, core->data should contain a comparator.
  (define-cfn tree-map-cmp (core::ScmTreeCore* x::intptr_t y::intptr_t)
    ::int :static
-   (let* ([cmpr (SCM_OBJ (-> core data))])
-     (SCM_ASSERT (and cmpr (SCM_COMPARATORP cmpr)))
-     (let* ([r (Scm_ApplyRec2 (Scm_ComparatorComparisonProcedure
-                               (SCM_COMPARATOR cmpr))
-                              (SCM_OBJ x) (SCM_OBJ y))])
-       (unless (SCM_INTP r)
-         (Scm_Error "compare procedure of tree-map's comparator %S returned \
-                     non-integral value: %S" cmpr r))
-       (return (SCM_INT_VALUE r)))))
+   (let* ([cmpr (SCM_OBJ (-> core data))]
+          [_ (SCM_ASSERT (and cmpr (SCM_COMPARATORP cmpr)))]
+          [r (Scm_ApplyRec2 (Scm_ComparatorComparisonProcedure
+                             (SCM_COMPARATOR cmpr))
+                            (SCM_OBJ x) (SCM_OBJ y))])
+     (unless (SCM_INTP r)
+       (Scm_Error "compare procedure of tree-map's comparator %S returned \
+                   non-integral value: %S" cmpr r))
+     (return (SCM_INT_VALUE r))))
  )
 
 (define-cproc %make-tree-map (comparator)
