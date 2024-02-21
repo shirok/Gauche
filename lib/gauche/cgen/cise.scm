@@ -696,12 +696,18 @@
    [else
     (intersperse "," (map (cut render-rec <> env) (cdr form)))]))
 
-;; [cise stmt]  let* ((VAR [:: TYPE] [INIT-EXPR]) ...) STMT ...
-;;    Local variables.   Because of C semantics, we only support
-;;    let*-style scoping.
-;;    :: TYPE can be omitted if the type of VAR is ScmObj.
-;;    VAR may be '_' if you want to insert side-effecting expr
-;;    between definitions.  No variable decl is emitted.
+;; [cise stmt]  let* (BINDING ...) STMT ...
+;;   where BINDING may be either:
+;;      (VAR [:: TYPE] [INIT-EXPR])
+;;      (_ STMT-OR-EXPR)
+;;
+;;   Introduce local variables.   Because of the C semantics, we only support
+;;   let*-style scoping.
+;;
+;;   ':: TYPE' can be omitted if the type of VAR is ScmObj.
+;;
+;;   In the second form, STMT-OR-EXPR can also be a statement.  It is handy
+;;   to have side-effecting code between definitions.
 (define-cise-macro (let* form env)
   (ensure-stmt-ctx form env)
   (match form
@@ -713,7 +719,7 @@
              ,@(map (^[var type maybe-init]
                       (if (eq? var '_)
                         (if (pair? maybe-init)
-                          `(,(render-rec (car maybe-init) eenv) ";")
+                          `(,(render-rec (car maybe-init) env) ";")
                           '())
                         `(,(cise-render-typed-var type var env)
                           ,@(cond-list

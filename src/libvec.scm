@@ -125,19 +125,19 @@
              (set! (SCM_VECTOR_ELEMENT t j) (SCM_VECTOR_ELEMENT s i)))))))
 
 (define-cproc vector-append (:rest vecs)
-  (let* ([len::long 0])
+  (let* ([len::long 0]
+         [_ (dolist [v vecs]
+              (unless (SCM_VECTORP v)
+                (Scm_Error "vector required, but got: %S" v))
+              (set! len (+ len (SCM_VECTOR_SIZE v))))]
+         [dst (Scm_MakeVector len SCM_UNDEFINED)]
+         [j::long 0])
     (dolist [v vecs]
-      (unless (SCM_VECTORP v)
-        (Scm_Error "vector required, but got: %S" v))
-      (set! len (+ len (SCM_VECTOR_SIZE v))))
-    (let* ([dst (Scm_MakeVector len SCM_UNDEFINED)]
-           [j::long 0])
-      (dolist [v vecs]
-        (let* ([k::long (SCM_VECTOR_SIZE v)])
-          (memcpy (+ (SCM_VECTOR_ELEMENTS dst) j) (SCM_VECTOR_ELEMENTS v)
-                  (* k (sizeof ScmWord)))
-          (set! j (+ j k))))
-      (return dst))))
+      (let* ([k::long (SCM_VECTOR_SIZE v)])
+        (memcpy (+ (SCM_VECTOR_ELEMENTS dst) j) (SCM_VECTOR_ELEMENTS v)
+                (* k (sizeof ScmWord)))
+        (set! j (+ j k))))
+    (return dst)))
 
 (select-module gauche)
 (define-cproc vector-immutable? (v::<vector>) ::<boolean>
@@ -422,17 +422,17 @@
       `(let* ([,sb :: (const ScmStringBody*) (SCM_STRING_BODY ,s)]
               [,size :: ScmSize (SCM_STRING_BODY_SIZE ,sb)]
               [,len :: ScmSize (SCM_STRING_BODY_LENGTH ,sb)]
-              [,ss :: (const char*) (SCM_STRING_BODY_START ,sb)])
-         (SCM_CHECK_START_END ,start ,end (cast int ,len))
-         (let* ([,sp :: (const char*)
-                     (?: (== ,start 0)
-                         ,ss
-                         (Scm_StringBodyPosition ,sb ,start))]
-                [,ep :: (const char*)
-                     (?: (== ,end ,len)
-                         (+ ,ss ,size)
-                         (Scm_StringBodyPosition ,sb ,end))])
-           ,@body)))])
+              [,ss :: (const char*) (SCM_STRING_BODY_START ,sb)]
+              [_ (SCM_CHECK_START_END ,start ,end (cast int ,len))]
+              [,sp :: (const char*)
+                   (?: (== ,start 0)
+                       ,ss
+                       (Scm_StringBodyPosition ,sb ,start))]
+              [,ep :: (const char*)
+                   (?: (== ,end ,len)
+                       (+ ,ss ,size)
+                       (Scm_StringBodyPosition ,sb ,end))])
+         ,@body))])
 
  (define-cfn string->bytevector (klass::ScmClass*
                                  s::ScmString*
