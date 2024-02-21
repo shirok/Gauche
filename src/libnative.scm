@@ -64,25 +64,31 @@
      (Scm_Error "Closure required, but got: %S" proc))
    (let* ([orig-code (SCM_CLOSURE_CODE proc)]
           [orig-env::ScmEnvFrame*  (SCM_CLOSURE_ENV proc)]
-          [builder (Scm_MakeCompiledCodeBuilder (SCM_PROCEDURE_REQUIRED proc)
-                                                (SCM_PROCEDURE_OPTIONAL proc)
-                                                (SCM_PROCEDURE_INFO proc)
-                                                proc
-                                                SCM_FALSE)]
-          [codevec&offsets (Scm_ApplyRec1 compiler orig-code)])
-     (SCM_ASSERT (SCM_PAIRP codevec&offsets))
-     (let* ([codevec (SCM_CAR codevec&offsets)]
-            [offsets (SCM_CDR codevec&offsets)])
-       (SCM_ASSERT (SCM_U8VECTORP codevec))
-       (let* ([codepage (Scm__AllocateCodePage (SCM_U8VECTOR codevec))])
-         (for-each (lambda (offset)
-                     (Scm_CompiledCodeEmit (SCM_COMPILED_CODE builder)
-                                           SCM_VM_XINSN 0 0
-                                           (SCM_LIST2 codepage offset)
-                                           SCM_FALSE))
-                   offsets)))
-     (Scm_CompiledCodeFinishBuilder (SCM_COMPILED_CODE builder) 0)
-     (return (Scm_MakeClosure builder orig-env))))
+          [builder::ScmCompiledCode*
+           (SCM_COMPILED_CODE
+            (Scm_MakeCompiledCodeBuilder (SCM_PROCEDURE_REQUIRED proc)
+                                         (SCM_PROCEDURE_OPTIONAL proc)
+                                         (SCM_PROCEDURE_INFO proc)
+                                         proc
+                                         SCM_FALSE))]
+          [r (Scm_ApplyRec1 compiler orig-code)]
+          [_ (SCM_ASSERT (SCM_PAIRP r))]
+          [maxdepth (SCM_CAR r)]
+          [_ (SCM_ASSERT (SCM_PAIRP (SCM_CDR r)))]
+          [codevec (SCM_CADR r)]
+          [offsets (SCM_CDDR r)])
+     (SCM_ASSERT (SCM_INTP maxdepth))
+     (SCM_ASSERT (SCM_U8VECTORP codevec))
+     (let* ([codepage (Scm__AllocateCodePage (SCM_U8VECTOR codevec))])
+       (for-each (lambda (offset)
+                   (Scm_CompiledCodeEmit builder
+                                         SCM_VM_XINSN 0 0
+                                         (SCM_LIST2 codepage offset)
+                                         SCM_FALSE))
+                 offsets))
+     (Scm_CompiledCodeEmit builder SCM_VM_RET 0 0 SCM_FALSE SCM_FALSE)
+     (Scm_CompiledCodeFinishBuilder builder (SCM_INT_VALUE maxdepth))
+     (return (Scm_MakeClosure (SCM_OBJ builder) orig-env))))
  )
 
 (select-module gauche.internal)
