@@ -4280,15 +4280,16 @@ struct GC_ms_entry *vm_stack_mark(GC_word *addr,
 }
 #endif /*USE_CUSTOM_STACK_MARKER*/
 
-ScmObj Scm__VMInsnOffsets()
-{
-    ScmObj v = Scm_MakeVector(SCM_VM_NUM_INSNS, SCM_FALSE);
-    for (int i = 0; i < SCM_VM_NUM_INSNS; i++) {
-        SCM_VECTOR_ELEMENT(v, i) = Scm_MakeIntegerU(vminsn_offsets[i]);
-    }
-    return v;
-}
 
+ScmObj Scm__VMInsnAddress(int insncode, _Bool offsetp)
+{
+    if (insncode < 0 || insncode >= SCM_VM_NUM_INSNS) {
+        Scm_Error("Insn code out of range: %d", insncode);
+    }
+    intptr_t r = vminsn_offsets[insncode];
+    if (!offsetp) r += (intptr_t)(void*)run_loop;
+    return Scm_IntptrToInteger(r);
+}
 
 /*===============================================================
  * Initialization

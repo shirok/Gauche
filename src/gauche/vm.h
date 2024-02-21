@@ -788,6 +788,4 @@ SCM_EXTERN ScmObj Scm_CallProcedureInliner(ScmObj obj, ScmObj form, ScmObj env);
 /* This is in module.c, but it's not for public, so declaration is here. */
 SCM_EXTERN ScmModule* Scm_GaucheInternalModule(void);
 
-SCM_EXTERN ScmObj Scm__VMInsnOffsets(void);
-
 #endif /* GAUCHE_VM_H */

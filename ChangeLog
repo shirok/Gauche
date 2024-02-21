@@ -1,3 +1,9 @@
+2024-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c, src/libeval.scm: Remove Scm_VMInsnOffsets and
+	  %vm-get-insn-offsets.  Add Scm_VMInsnAddress and %vm-get-insn-address.
+	  This is an undocumented API change.
+
 2024-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/libexc.scm (print-additional-error-heading): Split auxiliary

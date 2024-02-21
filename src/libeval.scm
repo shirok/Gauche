@@ -35,8 +35,9 @@
 (use util.match)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>
-                     <gauche/priv/readerP.h>)))
+ (declcode (.include "gauche/vminsn.h"
+                     "gauche/priv/readerP.h"
+                     "gauche/priv/vmP.h")))
 
 (declare (keep-private-macro autoload add-load-path))
 
@@ -651,7 +652,10 @@
    trace port maxdepth skip offset))
 
 (select-module gauche.internal)
-(define-cproc %vm-get-insn-offsets () Scm__VMInsnOffsets)
+(define-cproc %vm-get-insn-address (code::<int>
+                                    :optional (offset?::<boolean> #f))
+  ::<integer>
+  (return (Scm__VMInsnAddress code offset?)))
 
 ;; This is also called from C's Scm_ShowStackTrace
 ;; TRACE is what vm-get-stack-trace-lite returns.

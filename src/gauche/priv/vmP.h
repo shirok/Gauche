@@ -217,6 +217,8 @@ ScmCallTrace *Scm__CopyCallTraceQueue(ScmCallTrace *master);
     (SCM_FALSEP(obj) || (SCM_UNDEFINEDP(obj)&&Scm_VMUndefinedBool(vm)))
 SCM_EXTERN int Scm_VMUndefinedBool(ScmVM*); /* in boolean.c */
 
+/* For machine-level introspection */
+SCM_EXTERN ScmObj Scm__VMInsnAddress(int, _Bool);
 
 /*
  * Thread Locals
