@@ -1538,7 +1538,8 @@
       INCR_PC
       (FETCH_LOCATION jitcode)
       INCR_PC
-      (asm "mov %[vm], %%r15; \
+      (asm :volatile
+           "mov %[vm], %%r15; \
             call *%[jitcode]"
            ()
            ((vm "r" vm)

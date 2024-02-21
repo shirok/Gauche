@@ -1313,7 +1313,7 @@
                    "(" ,(cise-render-to-string cise-expr 'expr) ")")]))
             specs)))
   (define (render-asm quals asm-string outs ins clobs)
-    `("asm " ,@(map keyword->string quals) "("
+    `("asm " ,@(intersperse " " (map keyword->string quals)) "("
       ,(cgen-safe-string asm-string)
       ":" ,@(render-io outs)
       ":" ,@(render-io ins)
