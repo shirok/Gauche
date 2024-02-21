@@ -42,7 +42,8 @@
 (select-module gauche.bootstrap)
 
 (inline-stub
- (.include "gauche/priv/nativeP.h"
+ (.include "gauche/priv/mmapP.h"
+           "gauche/priv/nativeP.h"
            "gauche/priv/codeP.h"
            "gauche/vminsn.h")
 
@@ -77,7 +78,7 @@
          (for-each (lambda (offset)
                      (Scm_CompiledCodeEmit (SCM_COMPILED_CODE builder)
                                            SCM_VM_XINSN 0 0
-                                           (SCM_LIST3 SCM_FALSE codepage offset)
+                                           (SCM_LIST2 codepage offset)
                                            SCM_FALSE))
                    offsets)))
      (Scm_CompiledCodeFinishBuilder (SCM_COMPILED_CODE builder) 0)
