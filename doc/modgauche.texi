@@ -3519,12 +3519,33 @@ Here's an example of global C variable definition of array type:
 Code grouping with @code{@{} and @code{@}}
 @end deffn
 
-@deffn {CiSE Statement} let* ((name [@code{::} type] [init-expr]) @dots{}) stmt @dots{}
-Declare and optionally assign initial values to local variables.
+@deffn {CiSE Statement} let* (binding @dots{}) stmt @dots{}
+Define and optionally assign initial values to local variables.
+The @var{binding} is a form of either one of the following type:
 
+@table @code
+@item (@var{name} [:: @var{type}] [@var{init-expr}])
+Define a C variable @var{name} of type @var{type}.
 @var{type} should be a CiSE type.
-If @var{type} is omitted, the default type is @code{ScmObj}. Note that
-array initialization is not supported yet.
+If @var{type} is omitted, the default type is @code{ScmObj}.
+Optional @var{init-expr} is a CiSE expression to compute the initial
+value of @var{name}.
+Note that array initialization is not supported yet.
+@item (_ @var{cise-form})
+This is to allow arbitrary CiSE statement or expression @var{cise-form}
+between local variable definitions.  See the example below.
+@end table
+
+The @code{(_ cise-form)} binding is useful when you want to
+do some check between other bindings, without having nested
+@code{let*}:
+
+@example
+(let* ([len::ScmSmallInt (Scm_Length lis)]
+       [_ (when (< len 1) (Scm_Error "Lis is too short: %S" lis))]
+       [first (SCM_CAR lis)])
+  ...)
+@end example
 @end deffn
 
 @deffn {CiSE Statement} if test-expr then-stmt [else-stmt]
