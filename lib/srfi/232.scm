@@ -36,7 +36,7 @@
   (export curried define-curried))
 (select-module srfi.232)
 
-;; We carry around the name to be bound to the curreid procedure
+;; We carry around the name to be bound to the curried procedure
 ;; if available, so that it can be displayed.
 
 (define-syntax curried/name
