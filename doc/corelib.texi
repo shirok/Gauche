@@ -6895,6 +6895,14 @@ The rationale is the following correspondence:
 (reverse xs)      @equiv{} (fold cons xs '())
 (reverse xs tail) @equiv{} (fold cons xs tail)
 @end example
+
+@c EN
+For portable code, @code{append-reverse}/@code{append-reverse!}
+below can be used in place of two-argument @code{reverse}/@code{reverse!}.
+@c JP
+ポータブルなコードでは2引数の@code{reverse}/@code{reverse!}のかわりに
+以下の@code{append-reverse}/@code{append-reverse!}が使えます。
+@c COMMON
 @end defun
 
 @defun append-reverse rev-head tail
