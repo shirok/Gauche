@@ -68,7 +68,7 @@ SCMFILES = \
        gauche/regexp.scm gauche/regexp/sre.scm \
        gauche/sigutil.scm gauche/numutil.scm gauche/let-opt.scm \
        gauche/logutil.scm \
-       gauche/vm/debugger.scm gauche/vm/debug-info.scm \
+       gauche/vm/bbb.scm gauche/vm/debugger.scm gauche/vm/debug-info.scm \
        gauche/vm/insn-core.scm gauche/vm/insn.scm \
        gauche/vm/profiler.scm gauche/vm/register-machine.scm \
        gauche/pputil.scm gauche/procutil.scm \
@@ -93,7 +93,7 @@ SCMFILES = \
        gauche/cgen/cise.scm gauche/cgen/type.scm gauche/cgen/stub.scm \
        gauche/cgen/precomp.scm gauche/cgen/optimizer.scm \
        gauche/cgen/standalone.scm gauche/cgen/tmodule.scm \
-       gauche/cgen/bbb.scm gauche/cgen/cbe.scm \
+       gauche/cgen/cbe.scm \
        gauche/package.scm gauche/package/build.scm gauche/package/fetch.scm \
        gauche/package/util.scm gauche/package/compile.scm \
        gauche/experimental/ref.scm gauche/experimental/lamb.scm \

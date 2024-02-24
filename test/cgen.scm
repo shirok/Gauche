@@ -2,8 +2,6 @@
 ;; gauche.cgen.* tests
 ;;
 
-;; NB: gauche.cgen.bbb is tested in compiler-aux.scm
-
 (use gauche.test)
 (use file.util)
 (use gauche.cgen)

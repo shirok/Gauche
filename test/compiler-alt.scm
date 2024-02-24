@@ -7,8 +7,8 @@
 (test-start "alternative compiler backend")
 
 (test-section "modules")
-(use gauche.cgen.bbb)
-(test-module 'gauche.cgen.bbb)
+(use gauche.vm.bbb)
+(test-module 'gauche.vm.bbb)
 
 (use gauche.vm.register-machine)
 (test-module 'gauche.vm.register-machine)

@@ -33,7 +33,7 @@
 
 (define-module gauche.cgen.cbe
   (use gauche.cgen)
-  (use gauche.cgen.bbb)
+  (use gauche.vm.bbb)
   (use gauche.vm.insn)
   (use gauche.sequence)
   (use gauche.package.compile)

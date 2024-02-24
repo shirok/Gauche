@@ -1,5 +1,5 @@
 ;;;
-;;; gauche.cgen.bbb - Basic-blocks backend
+;;; gauche.vm.bbb - Basic-blocks backend
 ;;;
 ;;;   Copyright (c) 2021-2024  Shiro Kawai  <shiro@acm.org>
 ;;;
@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(define-module gauche.cgen.bbb
+(define-module gauche.vm.bbb
   ;; We need to access compiler internals.  This is ugly---eventually
   ;; we want to have a separate module that exposes some compiler internals.
   (extend gauche.internal)
@@ -52,7 +52,7 @@
           <reg>
           <const> const-value)
   )
-(select-module gauche.cgen.bbb)
+(select-module gauche.vm.bbb)
 
 ;; This is an alternative compiler backend targetting at block-based
 ;; languages.  pass5b is called in place of pass5.

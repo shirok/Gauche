@@ -31,13 +31,13 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; This module interprets the output of basic-block backend (gauche.cgen.bbb)
+;; This module interprets the output of basic-block backend (gauche.vm.bbb)
 ;; for testing.  Not for practical use---especially, performance
 ;; is not considered.
 
 (define-module gauche.vm.register-machine
   (extend gauche.internal)  ; for modifying global binding
-  (extend gauche.cgen.bbb)
+  (extend gauche.vm.bbb)
   (use util.match)
   (use gauche.vm.insn)
   (use scheme.set)
@@ -126,7 +126,7 @@
                  )
     ;; Ensure we weren't missing ops
     (unless (set=? (list->set eq-comparator (map car alist))
-                   (list->set eq-comparator (with-module gauche.cgen.bbb
+                   (list->set eq-comparator (with-module gauche.vm.bbb
                                               *builtin-ops*)))
       (error "Inconsistencies between builtin ops definitions:"))))
 
