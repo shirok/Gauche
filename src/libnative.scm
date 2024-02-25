@@ -108,26 +108,39 @@
       (^[proc compiler] (jcp proc compiler)))
     (^ _ (error "Operation not allowed"))))
 
+(inline-stub
+ (define-cise-stmt with-static-table
+   [(_ (var ((key intval) ...)) body ...)
+    (let ([tmp (gensym)]
+          [initsize (length key)])
+      `(let* ([,var :: (static ScmHashTable*) NULL])
+         (when (== ,var NULL)
+           (let* ([,tmp :: ScmHashTable*
+                   (SCM_HASH_TABLE (Scm_MakeHashTableSimple SCM_HASH_EQ ,initsize))])
+             ,@(map (^[k v]
+                      `(Scm_HashTableSet ,tmp ',k
+                                         (Scm_IntptrToInteger (cast intptr_t ,v))
+                                         0))
+                    key intval)
+             (set! ,var ,tmp)))
+         ,@body))]))
+
 ;; Returns offset of VM field
 (define-cproc vm-field-offset (field-name::<symbol>)
-  (let* ([tab::(static ScmHashTable*) NULL])
-    (when (== tab NULL)
-      (let* ([t::ScmHashTable*
-              (SCM_HASH_TABLE (Scm_MakeHashTableSimple SCM_HASH_EQ 16))])
-        (Scm_HashTableSet t 'env  (Scm_MakeInteger (offsetof ScmVM env)) 0)
-        (Scm_HashTableSet t 'denv (Scm_MakeInteger (offsetof ScmVM denv)) 0)
-        (Scm_HashTableSet t 'cont (Scm_MakeInteger (offsetof ScmVM cont)) 0)
-        (Scm_HashTableSet t 'argp (Scm_MakeInteger (offsetof ScmVM argp)) 0)
-        (Scm_HashTableSet t 'val0 (Scm_MakeInteger (offsetof ScmVM val0)) 0)
-        (Scm_HashTableSet t 'vals (Scm_MakeInteger (offsetof ScmVM vals)) 0)
-        (Scm_HashTableSet t 'numVals (Scm_MakeInteger (offsetof ScmVM numVals)) 0)
-        (Scm_HashTableSet t 'sp   (Scm_MakeInteger (offsetof ScmVM sp)) 0)
-        (Scm_HashTableSet t 'stackEnd (Scm_MakeInteger (offsetof ScmVM stackEnd)) 0)
-        (set! tab t)))
-    (let* ([off (Scm_HashTableRef tab (SCM_OBJ field-name) SCM_FALSE)])
-      (unless (SCM_INTP off)
-        (Scm_Error "Unknown VM field: %S" field-name))
-      (return off))))
+  (with-static-table
+   (tab ((env      (offsetof ScmVM env))
+         (denv     (offsetof ScmVM denv))
+         (cont     (offsetof ScmVM cont))
+         (argp     (offsetof ScmVM argp))
+         (val0     (offsetof ScmVM val0))
+         (vals     (offsetof ScmVM vals))
+         (numVals  (offsetof ScmVM numVals))
+         (sp       (offsetof ScmVM sp))
+         (stackEnd (offsetof ScmVM stackEnd))))
+   (let* ([off (Scm_HashTableRef tab (SCM_OBJ field-name) SCM_FALSE)])
+     (unless (SCM_INTP off)
+       (Scm_Error "Unknown VM field: %S" field-name))
+     (return off))))
 
 ;; TEMPORARY - Returns raw representation of ScmObj.
 (define-cproc raw-value (obj) ::<integer>
