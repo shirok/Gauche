@@ -142,6 +142,24 @@
        (Scm_Error "Unknown VM field: %S" field-name))
      (return off))))
 
+;; Returns address of the named function to be called from JIT code.
+;; We want to allow only selected function to be callable, so we create
+;; table manually.
+(define-cproc vm-function-address (name::<symbol>)
+  (with-static-table
+   (tab ((Cons   Scm_Cons)
+         (NumEq  Scm_NumEq)
+         (NumLT  Scm_NumLT)
+         (NumGT  Scm_NumGT)
+         (Add    Scm_Add)
+         (Sub    Scm_Sub)
+         (Mul    Scm_Mul)
+         (Div    Scm_Div)))
+   (let* ([addr (Scm_HashTableRef tab (SCM_OBJ name) SCM_FALSE)])
+     (unless (SCM_INTEGERP addr)
+       (Scm_Error "Unknown function address: %S" name))
+     (return addr))))
+
 ;; TEMPORARY - Returns raw representation of ScmObj.
 (define-cproc raw-value (obj) ::<integer>
   (.unless GAUCHE_ENABLE_UNSAFE_JIT_API
