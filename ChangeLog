@@ -1,3 +1,7 @@
+2024-02-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/lang/asm/regset.scm: Added.
+
 2024-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c, src/libeval.scm: Remove Scm_VMInsnOffsets and

@@ -11,6 +11,9 @@
 
 ;;----------------------------------------------------------------------
 (test-section "lang.asm")
+(use lang.asm.regset)
+(test-module 'lang.asm.regset)
+
 (use lang.asm.x86_64)
 (test-module 'lang.asm.x86_64)
 
