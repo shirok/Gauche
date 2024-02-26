@@ -43,15 +43,16 @@
   (use scheme.list)
   (use srfi.13)
   (use srfi.42)
+  (use lang.asm.regset)
   (use util.match)
   (export asm asm-dump)
   )
 (select-module lang.asm.x86_64)
 
 ;; Instruction notation
-;;   (opcode)
-;;   (opcode operand1)
-;;   (opcode operand1 operand2)
+;;   (<opcode>)
+;;   (<opcode> <operand1>)
+;;   (<opcode> <operand1> <operand2>)
 ;;
 ;; Operand
 ;;   %reg
@@ -62,6 +63,11 @@
 ;;   (%base %index)
 ;;   (%base %index scale)
 ;;   (off %base %index scale)
+;;
+;;  %reg, %base, %index : Symbol beginning with '%' to name a register.
+;;  imm, off : An integer.  Some instructions have variations depending
+;;     on the operand width, which is automatically handled.
+;;  scale: 1, 2, 4, or 8
 ;;
 ;; For most operands, we require having data width suffix (e.g. movb for
 ;; byte, movq for quad).  Not all widths are supported.
@@ -366,6 +372,9 @@
     [(? imm8?)                      `(imm8 ,opr)]
     [(? imm32?)                     `(imm32 ,opr)]
     [(? imm64?)                     `(imm64 ,opr)]
+    [('imm8 val)                    `(imm8 ,val)]
+    [('imm32 val)                   `(imm32 ,val)]
+    [('imm64 val)                   `(imm64 ,val)]
     [((? integer? a))               `(mem addr ,a)]
     [((? reg64? b))                 `(mem base ,(regnum b))]
     [((? symbol? l))                `(mem label ,l)]
@@ -555,6 +564,9 @@
 
 (define *regsse*
   '(%xmm0 %xmm1 %xmm2 %xmm3 %xmm4 %xmm5 %xmm6 %xmm7))
+
+;; to pass to regset
+(define-constant *x64-regvec* (list->vector (append *regs64* *regsse*)))
 
 (define (regsse? opr) (memq opr *regsse*))
 (define (ssenum reg) (find-index (cut eq? reg <>) *regsse*))
