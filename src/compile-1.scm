@@ -1389,7 +1389,7 @@
 
 (define (pass1/vanilla-lambda form formals nreqs nopts body cenv) ; R7RS lambda
   (let* ([lvars (imap make-lvar+ formals)]
-         [intform ($lambda form (cenv-exp-name cenv) nreqs nopts lvars #f #f)]
+         [intform ($lambda form (cenv-exp-name cenv) nreqs nopts lvars #f '())]
          [newenv (cenv-extend/proc cenv (%map-cons formals lvars)
                                    LEXICAL intform)])
     (vector-set! intform 6 (pass1/body body newenv))
@@ -1601,7 +1601,7 @@
        (let* ([env1 (cenv-extend cenv `((,name . ,lvar)) LEXICAL)]
               [env2 (cenv-extend/name env1 (%map-cons var args) LEXICAL name)]
               [lmda ($lambda form name (length args) 0 args
-                             (pass1/body body env2))])
+                             (pass1/body body env2) '())])
          (lvar-initval-set! lvar lmda)
          ($let form 'rec
                (list lvar)
