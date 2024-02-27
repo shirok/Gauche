@@ -554,7 +554,8 @@
    optarg           ; 0 or 1, # of optional arg
    lvars            ; list of lvars
    body             ; IForm for the body
-   flag             ; Marks some special state of this node.
+   flag             ; List of marks for the nature of this lambda node. (*1)
+                    ; Members can be:
                     ;   'dissolved: indicates that this lambda has been
                     ;               inline expanded.
                     ;   'used: indicates that this lambda has been already dealt
@@ -562,6 +563,9 @@
                     ;          specifically used for communication between
                     ;          pass2/$CALL and pass2/$LET.
                     ;   <packed-iform>  : inlinable lambda
+                    ;   'constant: This lambda form is constant, meaning
+                    ;          it yields the same result if all the arguments
+                    ;          are constant.
    ;; The following slots are used temporarily during pass2-5, and
    ;; need not be saved when packed.
    (calls '())      ; list of call sites
@@ -570,6 +574,34 @@
                     ; contains an lvar to which the toplevel closure
                     ; is to be bound.  See pass 4.
    ))
+
+;; (*1) Up to 0.9.14, this slot contains a symbol or a packed-iform, not a
+;; list.  This slot is embedded in the precompiled files, so we need to
+;; deal with such a case.  Because of this, $lambda-flag slot must
+;; be accessed with the following utillities.
+
+(define-inline ($lambda-flags iform)
+  (let1 f ($lambda-flag iform)
+    (if (or (null? f) (pair? f))
+      f
+      (list f))))
+
+(define-inline ($lambda-dissolved? iform)
+  (let1 f ($lambda-flag iform)
+    (or (eq? f 'dissolved) (memq 'dissolved f))))
+(define-inline ($lambda-used? iform)
+  (let1 f ($lambda-flag iform)
+    (or (eq? f 'used) (memq 'used f))))
+(define-inline ($lambda-constant? iform)
+  (let1 f ($lambda-flag iform)
+    (or (eq? f 'used) (memq 'used f))))
+(define-inline ($lambda-inlinable? iform)
+  (let1 f ($lambda-flag iform)
+    (or (vector? f) (and (pair? f) (any vector? f)))))
+
+(define-inline ($lambda-inliner iform)
+  (let1 f ($lambda-flag iform)
+    (if (vector? f) f (and (pair? f) (find vector? f)))))
 
 ;; $clambda <src> <name> <lambda-node> ...
 ;;   Case-lambda.
@@ -781,7 +813,7 @@
        [($LAMBDA) (format #t "($lambda[~a.~a~a~a] ~a" ($lambda-name iform)
                           (length ($lambda-calls iform))
                           (if (null? ($lambda-free-lvars iform)) "" "c")
-                          (if (vector? ($lambda-flag iform)) " inlinable" "")
+                          (if ($lambda-inlinable? iform) " inlinable" "")
                           (map lvar->string ($lambda-lvars iform)))
         (nl (+ ind 2))
         (rec (+ ind 2) ($lambda-body iform)) (display ")")]
@@ -914,7 +946,7 @@
                       ($lambda-optarg iform)
                       (map get-ref ($lambda-lvars iform))
                       (get-ref ($lambda-body iform))
-                      ($lambda-flag iform))]
+                      ($lambda-flags iform))]
      [($CLAMBDA) (put! iform '$CLAMBDA ($*-src iform)
                        ($clambda-name iform)
                        (map get-ref ($clambda-closures iform)))]

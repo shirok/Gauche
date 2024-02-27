@@ -200,7 +200,7 @@
                (and (= (lvar-ref-count lv) 0)
                     (lvar-immutable? lv)
                     (has-tag? (car inits) $LAMBDA)
-                    (eq? ($lambda-flag (car inits)) 'used)))
+                    ($lambda-used? (car inits))))
              ;; This lambda node has already been inlinded, so we can skip.
              (loop (cdr lvars) (cdr inits) new-lvars new-inits)]
             [(has-tag? (car inits) $CLAMBDA)
@@ -446,7 +446,7 @@
     (let loop ([env env])
       (cond [(null? env) #t]
             [(eq? (car env) lambda-node) #t]
-            [(eq? ($lambda-flag (car env)) 'dissolved)
+            [($lambda-dissolved? (car env))
              (loop (cdr env))] ;; skip dissolved (inlined) lambdas
             [else #f])))
   (let loop ([call&envs call&envs]

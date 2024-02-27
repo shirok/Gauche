@@ -166,7 +166,7 @@
                ;; we don't need to lift it, nor need to set free-lvars.
                ;; We just mark it by setting lifted-var to #t so that
                ;; pass4/lift phase can treat it specially.
-               (unless (eq? ($lambda-flag iform) 'dissolved)
+               (unless ($lambda-dissolved? iform)
                  (label-dic-info-push! labels iform) ;save the lambda node
                  (when t?                            ;mark this is toplevel
                    ($lambda-lifted-var-set! iform #t)))

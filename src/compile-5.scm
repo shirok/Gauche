@@ -606,13 +606,11 @@
   0)
 
 (define (pass5/lambda iform target renv)
-  (let* ([inliner (let1 v ($lambda-flag iform)
-                   (and (vector? v) v))]
-         [ccb (make-compiled-code-builder ($lambda-reqargs iform)
+  (let* ([ccb (make-compiled-code-builder ($lambda-reqargs iform)
                                           ($lambda-optarg iform)
                                           ($lambda-name iform)
                                           (ctarget-ccb target) ; parent
-                                          inliner)]
+                                          ($lambda-inliner iform))]
          [ntarget (make-child-compile-target ccb target)])
     (compiled-code-attach-source-info! ccb ($lambda-src iform))
 
