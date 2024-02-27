@@ -106,7 +106,7 @@ SCMFILES = \
        data/cache.scm data/heap.scm \
        data/ideque.scm data/imap.scm data/priority-map.scm data/random.scm \
        data/range.scm data/skew-list.scm data/ulid.scm \
-       lang/asm/x86_64.scm \
+       lang/asm/regset.scm lang/asm/x86_64.scm \
        lang/c/parameter.scm lang/c/lexer.scm lang/c/parser.scm \
        lang/c/type.scm \
        math/const.scm math/prime.scm math/simplex.scm \
