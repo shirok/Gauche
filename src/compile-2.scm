@@ -491,7 +491,7 @@
     (lvar-ref--! lvar)
     ($call-flag-set! call 'embed)
     ($call-proc-set! call lambda-node)
-    ($lambda-flag-set! lambda-node 'dissolved)
+    ($lambda-dissolved-set! lambda-node)
     ($lambda-body-set! lambda-node ($label ($lambda-src lambda-node) #f
                                            ($lambda-body lambda-node)))
     (unless (null? rec-calls)
@@ -519,7 +519,7 @@
         ($seq-body-set! call-node (list inlined)))))
 
   (lvar-ref-count-set! lvar 0)
-  ($lambda-flag-set! lambda-node 'dissolved)
+  ($lambda-dissolved-set! lambda-node)
   (let loop ([calls calls])
     (cond [(null? (cdr calls))
            (inline-it (car calls) lambda-node)
@@ -631,7 +631,7 @@
                    (pass2-args iform args penv))
                  (begin
                    (lvar-ref--! ($lref-lvar proc))
-                   ($lambda-flag-set! initval 'used) ; let pass2/$LET skip this
+                   ($lambda-used-set! initval) ; let pass2/$LET skip this
                    ($call-proc-set! iform initval)
                    (try-inline iform penv tail?)))]
               [else (pass2-args iform args penv)]))]

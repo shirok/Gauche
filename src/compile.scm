@@ -580,7 +580,7 @@
 ;; deal with such a case.  Because of this, $lambda-flag slot must
 ;; be accessed with the following utillities.
 
-(define-inline ($lambda-flags iform)
+(define-inline ($lambda-flags iform)    ;always return a list
   (let1 f ($lambda-flag iform)
     (if (or (null? f) (pair? f))
       f
@@ -602,6 +602,26 @@
 (define-inline ($lambda-inliner iform)
   (let1 f ($lambda-flag iform)
     (if (vector? f) f (and (pair? f) (find vector? f)))))
+(define ($lambda-inliner-set! iform packed-inliner)
+  (let* ([fs ($lambda-flags iform)]
+         [fs. (if (any vector? fs)
+                (cons packed-inliner (remove vector? fs))
+                (cons packed-inliner fs))])
+    ($lambda-flag-set! iform fs.)))
+
+;; used and dissolved are mutually exclusive
+(define ($lambda-dissolved-set! iform)
+  (let* ([fs ($lambda-flags iform)]
+         [fs. (cond [(memq 'dissolved fs) fs]
+                    [(memq 'used fs) (cons 'dissolved (delete 'used fs))]
+                    [else (cons 'dissolved fs)])])
+    ($lambda-flag-set! iform fs.)))
+(define ($lambda-used-set! iform)
+  (let* ([fs ($lambda-flags iform)]
+         [fs. (cond [(memq 'used fs) fs]
+                    [(memq 'dissolved fs) (cons 'used (delete 'dissolved fs))]
+                    [else (cons 'used fs)])])
+    ($lambda-flag-set! iform fs.)))
 
 ;; $clambda <src> <name> <lambda-node> ...
 ;;   Case-lambda.

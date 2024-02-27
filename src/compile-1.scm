@@ -762,7 +762,7 @@
          ;; Gauche's compiler optimizes it to refer to the singleton instance.
          [dummy-proc (^ _ name)]
          [packed (pack-iform closure)])
-    ($lambda-flag-set! closure packed)
+    ($lambda-inliner-set! closure packed)
     (when name
       ;; record inliner function for compiler.  this is used only when
       ;; the procedure needs to be inlined in the same compiler unit.
