@@ -1259,8 +1259,8 @@
                          ($lambda-lvars iform)
                          (rec ($lambda-body iform))
                          ($lambda-flag iform))]
-     [($CLAMBDA) ($lambda ($*-src iform) ($clambda-name iform)
-                          (imap rec ($clambda-closures iform)))]
+     [($CLAMBDA) ($clambda ($*-src iform) ($clambda-name iform)
+                           (imap rec ($clambda-closures iform)))]
      [($LABEL)  (error "[compiler internal] $LABEL node shouldn't appear \
                         in the packed IForm")]
      [($SEQ)    ($seq (imap rec ($seq-body iform)))]
