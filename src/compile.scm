@@ -554,7 +554,8 @@
    optarg           ; 0 or 1, # of optional arg
    lvars            ; list of lvars
    body             ; IForm for the body
-   flag             ; List of marks for the nature of this lambda node. (*1)
+   meta             ; List of meta information of the nature of this lambda
+                    ; node (*1)
                     ; Members can be:
                     ;   'dissolved: indicates that this lambda has been
                     ;               inline expanded.
@@ -577,51 +578,51 @@
 
 ;; (*1) Up to 0.9.14, this slot contains a symbol or a packed-iform, not a
 ;; list.  This slot is embedded in the precompiled files, so we need to
-;; deal with such a case.  Because of this, $lambda-flag slot must
+;; deal with such a case.  Because of this, $lambda-meta slot must
 ;; be accessed with the following utillities.
 
-(define-inline ($lambda-flags iform)    ;always return a list
-  (let1 f ($lambda-flag iform)
+(define-inline ($lambda-metas iform)    ;always return a list
+  (let1 f ($lambda-meta iform)
     (if (or (null? f) (pair? f))
       f
       (list f))))
 
 (define-inline ($lambda-dissolved? iform)
-  (let1 f ($lambda-flag iform)
+  (let1 f ($lambda-meta iform)
     (or (eq? f 'dissolved) (memq 'dissolved f))))
 (define-inline ($lambda-used? iform)
-  (let1 f ($lambda-flag iform)
+  (let1 f ($lambda-meta iform)
     (or (eq? f 'used) (memq 'used f))))
 (define-inline ($lambda-constant? iform)
-  (let1 f ($lambda-flag iform)
+  (let1 f ($lambda-meta iform)
     (or (eq? f 'used) (memq 'used f))))
 (define-inline ($lambda-inlinable? iform)
-  (let1 f ($lambda-flag iform)
+  (let1 f ($lambda-meta iform)
     (or (vector? f) (and (pair? f) (any vector? f)))))
 
 (define-inline ($lambda-inliner iform)
-  (let1 f ($lambda-flag iform)
+  (let1 f ($lambda-meta iform)
     (if (vector? f) f (and (pair? f) (find vector? f)))))
 (define ($lambda-inliner-set! iform packed-inliner)
-  (let* ([fs ($lambda-flags iform)]
+  (let* ([fs ($lambda-metas iform)]
          [fs. (if (any vector? fs)
                 (cons packed-inliner (remove vector? fs))
                 (cons packed-inliner fs))])
-    ($lambda-flag-set! iform fs.)))
+    ($lambda-meta-set! iform fs.)))
 
 ;; used and dissolved are mutually exclusive
 (define ($lambda-dissolved-set! iform)
-  (let* ([fs ($lambda-flags iform)]
+  (let* ([fs ($lambda-metas iform)]
          [fs. (cond [(memq 'dissolved fs) fs]
                     [(memq 'used fs) (cons 'dissolved (delete 'used fs))]
                     [else (cons 'dissolved fs)])])
-    ($lambda-flag-set! iform fs.)))
+    ($lambda-meta-set! iform fs.)))
 (define ($lambda-used-set! iform)
-  (let* ([fs ($lambda-flags iform)]
+  (let* ([fs ($lambda-metas iform)]
          [fs. (cond [(memq 'used fs) fs]
                     [(memq 'dissolved fs) (cons 'used (delete 'dissolved fs))]
                     [else (cons 'used fs)])])
-    ($lambda-flag-set! iform fs.)))
+    ($lambda-meta-set! iform fs.)))
 
 ;; $clambda <src> <name> <lambda-node> ...
 ;;   Case-lambda.
@@ -966,7 +967,7 @@
                       ($lambda-optarg iform)
                       (map get-ref ($lambda-lvars iform))
                       (get-ref ($lambda-body iform))
-                      ($lambda-flags iform))]
+                      ($lambda-metas iform))]
      [($CLAMBDA) (put! iform '$CLAMBDA ($*-src iform)
                        ($clambda-name iform)
                        (map get-ref ($clambda-closures iform)))]
@@ -1157,7 +1158,7 @@
                          ($lambda-reqargs iform) ($lambda-optarg iform)
                          newlvs
                          (iform-copy ($lambda-body iform) newalist)
-                         ($lambda-flag iform)))]
+                         ($lambda-meta iform)))]
    [($CLAMBDA) ($clambda ($*-src iform) ($clambda-name iform)
                          (imap (cut iform-copy <> lv-alist)
                                ($clambda-closures iform)))]
@@ -1258,7 +1259,7 @@
                          ($lambda-reqargs iform) ($lambda-optarg iform)
                          ($lambda-lvars iform)
                          (rec ($lambda-body iform))
-                         ($lambda-flag iform))]
+                         ($lambda-meta iform))]
      [($CLAMBDA) ($clambda ($*-src iform) ($clambda-name iform)
                            (imap rec ($clambda-closures iform)))]
      [($LABEL)  (error "[compiler internal] $LABEL node shouldn't appear \
@@ -1481,7 +1482,7 @@
                     iform
                     ($lambda ($*-src iform) ($lambda-name iform)
                              ($lambda-reqargs iform) ($lambda-optarg iform)
-                             ($lambda-lvars iform) b ($lambda-flag iform))))]
+                             ($lambda-lvars iform) b ($lambda-meta iform))))]
      [($CLAMBDA) ($clambda ($*-src iform) ($clambda-name iform)
                            (imap (cut subst <> mapping dict)
                                  ($clambda-closures iform)))]
