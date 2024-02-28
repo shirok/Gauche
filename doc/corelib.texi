@@ -270,6 +270,24 @@ separately, not on relying solely on @code{subtype?}.
 @c COMMON
 @end defun
 
+@defun type? obj
+@c EN
+Returns @code{#t} if @var{obj} is a type (either a class or a descriptive
+type), @code{#f} otherwise.
+
+You can pass objects that returns @code{#t} for this predicate
+to the second argument of @code{of-type?}, and the first or second argument
+of @code{subtype?}.
+@c JP
+@var{obj}が型(クラスまたは記述型)であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+
+この述語が真を返すオブジェクトは、@code{of-type?}の第二引数、
+もしくは@code{subtype?}の引数に渡せます。
+@c COMMON
+@end defun
+
+
 @defun subclass? sub super
 @c EN
 Both arguments must be classes.  Returns @code{#t} iff @var{sub} is
