@@ -626,6 +626,15 @@
                     [else (cons 'used fs)])])
     ($lambda-meta-set! iform fs.)))
 
+(define ($lambda-type iform)
+  ;; We avoid (find type? ($lambda-metas iform)), for it may allocate
+  ;; unnecessarily.  With the old compiler, $lambda-meta never directly
+  ;; contains type object.
+  (let1 f ($lambda-meta iform)
+    (and (pair? f) (find type? f))))
+(define ($lambda-type-set! iform type)
+  ;; we assume this is done at most once
+  ($lambda-meta-set! iform (cons type ($lambda-metas iform))))
 
 ;; $clambda <src> <name> <lambda-node> ...
 ;;   Case-lambda.
