@@ -1,3 +1,7 @@
+2024-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libtype.scm (type?): Added.
+
 2024-02-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/lang/asm/regset.scm: Added.

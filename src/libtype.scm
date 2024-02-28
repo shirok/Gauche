@@ -227,6 +227,16 @@
     (slot-set! c 'supertype? (^[type sub] #f))))
 
 ;;;
+;;; type? obj
+;;;
+
+;; Returns obj if it's either a class metaobject, a descriptive type,
+;; a native type, or a proxy type.  It's the same as (is-a? obj <type>)
+;; but this is more concise and clear.
+(define-cproc type? (obj) ::<boolean> :constant
+  (return (SCM_ISA obj SCM_CLASS_TYPE)))
+
+;;;
 ;;; of-type? obj type
 ;;;
 
@@ -972,7 +982,7 @@
           <descriptive-type>
           <native-type>
           <^> </> <?> <Tuple> <List> <Vector> <Singleton> <Singleton-set>
-          subtype? of-type?))
+          type? subtype? of-type?))
   (xfer (current-module)
         (find-module 'gauche.internal)
         '(construct-type

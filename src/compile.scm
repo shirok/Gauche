@@ -581,7 +581,9 @@
 ;; deal with such a case.  Because of this, $lambda-meta slot must
 ;; be accessed with the following utillities.
 
-(define-inline ($lambda-metas iform)    ;always return a list
+;; TRANSIENT: Cover the case for code precompiled with older versions.
+;; Ensure that we always return a list.
+(define-inline ($lambda-metas iform)
   (let1 f ($lambda-meta iform)
     (if (or (null? f) (pair? f))
       f
@@ -623,6 +625,7 @@
                     [(memq 'dissolved fs) (cons 'used (delete 'dissolved fs))]
                     [else (cons 'used fs)])])
     ($lambda-meta-set! iform fs.)))
+
 
 ;; $clambda <src> <name> <lambda-node> ...
 ;;   Case-lambda.
