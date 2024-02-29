@@ -200,11 +200,9 @@
           [sig (extended-cons (slot-ref code'full-name)
                               (pair-attribute-get src 'arg-info '_))]
           [type (and-let1 argtypes (pair-attribute-get src 'arg-types #f)
-                  ($ (with-module gauche.internal construct-type)
-                     <^>
-                     (if (zero? (slot-ref code'optional-args))
-                       `(,@argtypes -> *)
-                       `(,@argtypes * -> *))))])
+                  ($ construct-procedure-type argtypes
+                     (not (zero? (slot-ref code'optional-args)))
+                     '*))])
       (if-let1 si (pair-attribute-get orig 'source-info #f)
         (pair-attribute-set! sig 'source-info si))
       (compiled-code-push-info! code `(definition (source-info . ,src)))

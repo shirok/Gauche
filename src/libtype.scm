@@ -559,6 +559,15 @@
     (Scm_Error "Class %S doesn't have a known global binding and can't be used \
                 in a type expression." klass)))
 
+;; Utility.  Called from compiler, too.
+(define (construct-procedure-type argtypes ; (<List> <type>)
+                                  has-optional? ; <boolean>
+                                  rettypes) ; (<List> <type>) or '*
+  ($ construct-type <^>
+     (if has-optional?
+       `(,@argtypes * -> ,@rettypes)
+       `(,@argtypes -> ,@rettypes))))
+
 (define-class <^> (<descriptive-type>)
   ((arguments :init-keyword :arguments)    ; <Tuple>
    (results   :init-keyword :results))     ; <Tuple>
@@ -992,4 +1001,5 @@
           proxy-type-id
           ;; followings are called from procedure-type (libproc)
           reconstruct-procedure-type
-          compute-procedure-type)))
+          compute-procedure-type
+          construct-procedure-type)))
