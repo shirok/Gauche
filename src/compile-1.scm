@@ -1349,10 +1349,9 @@
                     (error "Invalid formal parameter:" (car xs)))
                   (loop (cdr xs) (cons (car xs) ys))]
                  [else (error "Invalid formal parameter:" formals)]))
-       (pass1/vanilla-lambda (add-arg-info form formals #f)
+       (pass1/vanilla-lambda (add-arg-info form formals)
                              (if rest (append reqs (list rest)) reqs)
-                             (length reqs)
-                             (if rest 1 0)
+                             (length reqs) (if rest 1 0) #f
                              body cenv))]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
@@ -1361,39 +1360,40 @@
     [(_ formals . body)
      (receive (args formals types nreqs nopts kargs)
          (parse-extended-lambda-args formals)
-       (let1 typeinfo (and types
-                           (pass1-for-type-annotations types args cenv))
+       (let1 type (and types
+                       (construct-procedure-type
+                        (pass1-for-type-annotations types args cenv)
+                        (positive? nopts)
+                        '*))
          (if (null? kargs)
-           (pass1/vanilla-lambda (add-arg-info form formals typeinfo)
-                                 args nreqs nopts body cenv)
+           (pass1/vanilla-lambda (add-arg-info form formals)
+                                 args nreqs nopts type body cenv)
            ;; Convert extended lambda into vanilla lambda
            (let1 restarg (gensym "rest")
-             (pass1/vanilla-lambda (add-arg-info form formals typeinfo)
+             (pass1/vanilla-lambda (add-arg-info form formals)
                                    (append args (list restarg))
-                                   nreqs 1
+                                   nreqs 1 type
                                    (pass1/extended-lambda-body form cenv restarg
                                                                kargs body)
                                    cenv)))))]
     [_ (error "syntax-error: malformed lambda:" form)]))
 
-;; Add formals list as 'arg-info, and argument type list to 'arg-types,
-;; in the source form.  They're retrieved by compiled-code-attach-source-info.
-;; NB: For arg-types, We need to retrieve <type> from names.  To be done.
-(define (add-arg-info form formals arg-types)
+;; Add formals list as 'arg-info to the source form.
+;; They're retrieved by compiled-code-attach-source-info.
+(define (add-arg-info form formals)
   (rlet1 xform (if (extended-pair? form)
                  form
                  (extended-cons (car form) (cdr form)))
-    (pair-attribute-set! xform 'arg-info formals)
-    (when arg-types
-      (pair-attribute-set! xform 'arg-types arg-types))))
+    (pair-attribute-set! xform 'arg-info formals)))
 
-(define (pass1/vanilla-lambda form formals nreqs nopts body cenv) ; R7RS lambda
+(define (pass1/vanilla-lambda form formals nreqs nopts type body cenv) ; R7RS lambda
   (let* ([lvars (imap make-lvar+ formals)]
-         [intform ($lambda form (cenv-exp-name cenv) nreqs nopts lvars #f '())]
+         [lnode ($lambda form (cenv-exp-name cenv) nreqs nopts lvars #f '())]
          [newenv (cenv-extend/proc cenv (%map-cons formals lvars)
-                                   LEXICAL intform)])
-    (vector-set! intform 6 (pass1/body body newenv))
-    intform))
+                                   LEXICAL lnode)])
+    ($lambda-type-set! lnode type)
+    ($lambda-body-set! lnode (pass1/body body newenv))
+    lnode))
 
 (define-pass1-syntax (receive form cenv) :gauche
   (match form

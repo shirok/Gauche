@@ -521,11 +521,14 @@
   (define (%procedure-type proc)
     (if-let1 clinfo (case-lambda-decompose proc)
       (construct-type </> (map (^v (%procedure-type (caddr v))) clinfo))
-      (let1 top (%class->proxy <top>)
-        (construct-type <^>
-                        `(,@(make-list (~ proc'required) top)
-                          ,@(if (~ proc'optional) '(*) '())
-                          -> *)))))
+      (or (and-let* ([ (closure? proc) ]
+                     [code (closure-code proc)])
+            ((with-module gauche.internal compiled-code-type) code))
+          (let1 top (%class->proxy <top>)
+            (construct-type <^>
+                            `(,@(make-list (~ proc'required) top)
+                              ,@(if (~ proc'optional) '(*) '())
+                              -> *))))))
   (define (%method-type meth)
     (construct-type <^>
                     `(,@(map %class->proxy (~ meth'specializers))
@@ -563,10 +566,11 @@
 (define (construct-procedure-type argtypes ; (<List> <type>)
                                   has-optional? ; <boolean>
                                   rettypes) ; (<List> <type>) or '*
-  ($ construct-type <^>
-     (if has-optional?
-       `(,@argtypes * -> ,@rettypes)
-       `(,@argtypes -> ,@rettypes))))
+  (let1 rts (if (eq? rettypes '*) '(*) rettypes)
+    ($ construct-type <^>
+       (if has-optional?
+         `(,@argtypes * -> ,@rts)
+         `(,@argtypes -> ,@rts)))))
 
 (define-class <^> (<descriptive-type>)
   ((arguments :init-keyword :arguments)    ; <Tuple>

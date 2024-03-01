@@ -183,6 +183,11 @@
     ((with-module gauche.vm.code %original-source)
      (assq-ref def 'source-info))))
 
+(define (compiled-code-type code)
+  (and-let* ([sig (~ code'signature-info)]
+             [ (pair? sig) ])
+    (alist-ref (cdr sig) 'type)))
+
 (define-cproc %decode-packed-debug-info (code-vector::<u8vector>
                                          const-vector::<vector>)
   (return (Scm_DecodePackedDebugInfo (SCM_U8VECTOR_ELEMENTS code-vector)
@@ -194,15 +199,11 @@
 ;;  - Push the entire source into debug-info
 ;;  - Create extended pair of signature, with source location info attached
 ;;    as 'source-info pair attribute, and store it into signature-info.
-(define (compiled-code-attach-source-info! code src)
+(define (compiled-code-attach-source-info! code src type)
   (if src
     (let ([orig ((with-module gauche.vm.code %original-source) src)]
           [sig (extended-cons (slot-ref code'full-name)
-                              (pair-attribute-get src 'arg-info '_))]
-          [type (and-let1 argtypes (pair-attribute-get src 'arg-types #f)
-                  ($ construct-procedure-type argtypes
-                     (not (zero? (slot-ref code'optional-args)))
-                     '*))])
+                              (pair-attribute-get src 'arg-info '_))])
       (if-let1 si (pair-attribute-get orig 'source-info #f)
         (pair-attribute-set! sig 'source-info si))
       (compiled-code-push-info! code `(definition (source-info . ,src)))

@@ -612,7 +612,7 @@
                                           (ctarget-ccb target) ; parent
                                           ($lambda-inliner iform))]
          [ntarget (make-child-compile-target ccb target)])
-    (compiled-code-attach-source-info! ccb ($lambda-src iform))
+    (compiled-code-attach-source-info! ccb ($lambda-src iform) ($lambda-type iform))
 
     ;; If any of procedure parameters are set!, we should box it
     ;; upon entering the procedure.

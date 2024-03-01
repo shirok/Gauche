@@ -1,3 +1,15 @@
+2024-02-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm, src/compile-5.scm, src/libcode.scm, src/libtype.scm:
+	  Carry procedure type of closures in $lambda-meta, isntead of
+	  pair attribute of the source form---using pair attr was a kludge.
+	  The type is carried as <descriptive-type>.
+	  It is eventually sotred in <compiled-code>#signature-info,
+	  and retrieved by compute-procedure-type (which is called from
+	  procedure-type).
+	  This allows argument type information of closures to be reflected
+	  to its procedure-type.
+
 2024-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libtype.scm (type?): Added.
