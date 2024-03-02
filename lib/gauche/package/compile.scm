@@ -152,6 +152,8 @@
   (when output
     (sys-unlink output))
   (dolist (f files)
+    (when (equal? (path-extension f) "scm")
+      (sys-unlink (path-swap-extension f "sci")))
     (unless (equal? (path-extension f) OBJEXT)
       (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
 
