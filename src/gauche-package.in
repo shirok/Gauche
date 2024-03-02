@@ -290,8 +290,8 @@ Options:
   ("compile [options] [<extension-name>] <file> ..."
    "Compile and link an extension module from sources"
    "
-  <file> can be any types the system's C compiler accepts, plus a stub
-  file (with extension '.stub') which is a genstub source.
+  <file> can be a Gauche source (*.scm), a stub file (*.stub), or
+  any types the system's C compiler accepts.
 
   By default, this command compiles given files with the options appropriate
   to compile Gauche extensions, then links a dynamically loadable object
@@ -323,7 +323,7 @@ Options:
                         extensions should be compiled for /uninstalled/ Gauche.
   --local=PATH:PATH... : adds PATH/include to inlcude paths and PATH/lib to
                         library search paths for compiling.
-  --cc=CC             : alternative C compiler.  Note that the compile should
+  --cc=CC             : alternative C compiler.  Note that the compiler should
                         have compatible ABI with the one that compiled Gauche.
   --cppflags=CPPFLAGS : extra cpp flags for compile, such as -I/usr/local
   --cflags=CFLAGS     : extra cc flags for compile
