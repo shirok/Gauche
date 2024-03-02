@@ -1,5 +1,8 @@
 2024-03-01  Shiro Kawai  <shiro@acm.org>
 
+	* examples/spigot: Update for modern way---no *.stub file, and *.scm
+	  file to be precompiled.
+
 	* lib/gauche/package/compile.scm (gauche-package-compile): Make sure
 	  to pass DSO filename when '*.scm' is compiled with
 	  'gauche-package compile'.  Without this fix, generated '*.sci'

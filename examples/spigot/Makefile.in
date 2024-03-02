@@ -22,7 +22,7 @@ EXEEXT = @EXEEXT@
 PACKAGE   = spigot
 
 ARCHFILES = spigot.$(SOEXT)
-SCMFILES  = spigot.scm
+SCMFILES  = spigot.sci
 HEADERS   =
 
 TARGET    = $(ARCHFILES)
@@ -33,7 +33,7 @@ HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
 SCM_INSTALL_DIR     = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`"
 ARCH_INSTALL_DIR    = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitearchdir`"
 
-spigot_SRCS = spigot.c spigotlib.stub
+spigot_SRCS = spigot.scm spigot-lib.c
 
 all : $(TARGET)
 

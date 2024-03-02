@@ -1,5 +1,5 @@
 /*
- * spigot.c - calculate pi and e by spigot algorithm
+ * spigot-lib.c - calculate pi and e by spigot algorithm
  *
  *  Written by Shiro Kawai (shiro@acm.org)
  *  I put this program in public domain.  Use it as you like.
@@ -144,22 +144,4 @@ ScmObj Spigot_calculate_e(int digits)
         }
     }
     return rvec;
-}
-
-/*
- * Module initialization function.
- * This is called when spigot.so is dynamically loaded into gosh.
- */
-ScmObj Scm_Init_spigot(void)
-{
-    ScmModule *mod;
-
-    /* Register this DSO to Gauche */
-    SCM_INIT_EXTENSION(spigot);
-
-    /* Create "spigot" module if it doesn't exist yet. */
-    mod = SCM_MODULE(SCM_FIND_MODULE("spigot", TRUE));
-
-    /* Register stub-generated procedures inside "spigot" module */
-    Scm_Init_spigotlib(mod);
 }

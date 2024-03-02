@@ -11,9 +11,8 @@ The sources include:
 `configure`::		configure script
 `Makefile.in`::		template makefile
 `spigot.h`::		common declaration within the spigot module
-`spigot.c`::		main logic
-`spigotlib.stub`::	a "stub" file to generate Scheme-C glue
-`spigot.scm`::		Scheme part of the module
+`spigot-lib.c`::	main logic
+`spigot.scm`::		Scheme binding of the module
 `test.scm`::		unit test
 
 This is a typical construction of a simple extension.  Note that
