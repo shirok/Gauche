@@ -70,6 +70,7 @@
                                           (gauche-builddir #f)
                                           (keep-c #f)
                                           (no-line #f)
+                                          (sofile #f)
                                           (ld #f)      ; dummy
                                           (ldflags #f) ; dummy
                                           (libs #f)    ; dummy
@@ -84,9 +85,12 @@
                    (file-mtime>? ofile file))
         (cond
          [(equal? (path-extension file) "scm")
-          (let1 cfile (path-swap-extension file "c")
+          (let ([cfile (path-swap-extension file "c")]
+                [sofile (or sofile
+                            (rlet1 f (path-swap-extension file SOEXT)
+                              (warn "DSO file name is not specified.  Assuming `~a'\n" f)))])
             (unwind-protect
-                (begin (cgen-precompile file)
+                (begin (cgen-precompile file :dso-name sofile)
                        (do-compile (or cc CC) cfile ofile
                                    (or cppflags "") (or cflags "")))
               (unless keep-c (sys-unlink cfile))))]
@@ -135,6 +139,7 @@
                           (cond
                            [(equal? (path-extension src) OBJEXT) src]
                            [else (apply gauche-package-compile src
+                                        :sofile sofile
                                         (delete-keyword :output args))
                                  (sys-basename (path-swap-extension src OBJEXT))]))
                         files)

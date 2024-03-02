@@ -1,3 +1,10 @@
+2024-03-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package/compile.scm (gauche-package-compile): Make sure
+	  to pass DSO filename when '*.scm' is compiled with
+	  'gauche-package compile'.  Without this fix, generated '*.sci'
+	  file can't have a proper dynamic-load call.
+
 2024-02-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm, src/compile-5.scm, src/libcode.scm, src/libtype.scm:
