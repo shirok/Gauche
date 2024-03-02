@@ -299,7 +299,7 @@
              (SCM_BIND_PROC reconstruct-proc "reconstruct-procedure-type"
                             (Scm_GaucheInternalModule))
              (let1/cps type (Scm_VMApply2 reconstruct-proc (SCM_OBJ proc) typehint)
-               (proc)
+               [proc]
                (set! (-> (cast ScmProcedure* proc) typeHint) type)
                (return type)))]
           [(SCM_FALSEP typehint)
@@ -307,7 +307,7 @@
              (SCM_BIND_PROC compute-proc "compute-procedure-type"
                             (Scm_GaucheInternalModule))
              (let1/cps type (Scm_VMApply1 compute-proc (SCM_OBJ proc))
-               (proc)
+               [proc]
                (set! (-> (cast ScmProcedure* proc) typeHint) type)
                (return type)))]
           [else (return typehint)])))

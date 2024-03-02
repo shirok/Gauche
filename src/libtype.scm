@@ -517,6 +517,7 @@
 
 ;; Internal API - called from procedure-type (libproc)
 ;; Compute #<^ ...> type from the information available in the procedure.
+;; Once this info is computed, it is cached in PROC.
 (define (compute-procedure-type proc)
   (define (%procedure-type proc)
     (if-let1 clinfo (case-lambda-decompose proc)
@@ -524,16 +525,16 @@
       (or (and-let* ([ (closure? proc) ]
                      [code (closure-code proc)])
             ((with-module gauche.internal compiled-code-type) code))
+          ;; Fallback - if we don't have detailed type info, just use
+          ;; # of arguments.
           (let1 top (%class->proxy <top>)
-            (construct-type <^>
-                            `(,@(make-list (~ proc'required) top)
-                              ,@(if (~ proc'optional) '(*) '())
-                              -> *))))))
+            (construct-procedure-type (make-list (~ proc'required) top)
+                                      (~ proc'optional)
+                                      '*)))))
   (define (%method-type meth)
-    (construct-type <^>
-                    `(,@(map %class->proxy (~ meth'specializers))
-                      ,@(if (~ meth'optional) '(*) '())
-                      -> *)))
+    (construct-procedure-type (map %class->proxy (~ meth'specializers))
+                              (~ meth'optional)
+                              '*))
   (define (%generic-type gf)
     (construct-type </> (map %method-type (~ gf'methods))))
 
