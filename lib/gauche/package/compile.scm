@@ -97,7 +97,7 @@
                             (rlet1 f (path-swap-extension file SOEXT)
                               (warn "DSO file name is not specified.  Assuming `~a'\n" f)))])
             (unwind-protect
-                (begin (cgen-precompile file :dso-name sofile)
+                (begin (cgen-precompile file :out.c cfile :dso-name sofile)
                        (do-compile (or cc CC) cfile ofile
                                    (or cppflags "") (or cflags "")))
               (unless keep-c (sys-unlink cfile))))]
