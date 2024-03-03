@@ -263,7 +263,7 @@
       (setup-debug-info)
       (show-debug-info-stat (cgen-current-unit))
       (cgen-emit-c (cgen-current-unit))))
-  (let ([out.c   (or out.c (path-swap-extension (sys-basename src) "c"))]
+  (let ([out.c   (or out.c (cgen-scm-path->c-file (sys-basename src)))]
         [out.sci (or out.sci
                      (and (check-first-form-is-define-module src)
                           (strip-prefix (path-swap-extension src "sci")
@@ -308,7 +308,8 @@
      "--"))
 
 (define (cgen-c-file->initfn c-name)
-  (let1 initfn (string-tr (path-sans-extension c-name) "-+." "___")
+  (let1 initfn (regexp-replace-all* (path-sans-extension c-name)
+                                    #/[-+.]/ "_")
     #"Scm_Init_~initfn"))
 
 ;;================================================================

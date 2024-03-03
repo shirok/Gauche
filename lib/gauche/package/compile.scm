@@ -63,6 +63,7 @@
 (define SOEXT    (gauche-config "--so-suffix"))
 (define LDFLAGS  (gauche-config "--so-ldflags"))
 
+;; Returns object file name
 (define (gauche-package-compile file :key (output #f)
                                           (cppflags #f)
                                           (cflags   #f)
@@ -80,12 +81,18 @@
                  [verbose-run verb?]
                  [in-place-dir gauche-builddir]
                  [cise-emit-source-line (not no-line)])
-    (let1 ofile (or output (sys-basename (path-swap-extension file OBJEXT)))
+    (rlet1 ofile (or output
+                     (sys-basename
+                      (if (equal? (path-extension file) "scm")
+                        (path-swap-extension file #"scm.~OBJEXT")
+                        (path-swap-extension file OBJEXT))))
       (unless (and (file-exists? ofile)
                    (file-mtime>? ofile file))
         (cond
          [(equal? (path-extension file) "scm")
-          (let ([cfile (path-swap-extension file "c")]
+          ;; NB: When precompiling foo.scm, use use foo.scm.c as the
+          ;; intermediate C file name, for there may be a source file foo.c.
+          (let ([cfile (path-swap-extension file "scm.c")]
                 [sofile (or sofile
                             (rlet1 f (path-swap-extension file SOEXT)
                               (warn "DSO file name is not specified.  Assuming `~a'\n" f)))])
@@ -140,8 +147,7 @@
                            [(equal? (path-extension src) OBJEXT) src]
                            [else (apply gauche-package-compile src
                                         :sofile sofile
-                                        (delete-keyword :output args))
-                                 (sys-basename (path-swap-extension src OBJEXT))]))
+                                        (delete-keyword :output args))]))
                         files)
           (apply gauche-package-link sofile objs args)
           sofile)))))
@@ -152,10 +158,13 @@
   (when output
     (sys-unlink output))
   (dolist (f files)
-    (when (equal? (path-extension f) "scm")
-      (sys-unlink (path-swap-extension f "sci")))
-    (unless (equal? (path-extension f) OBJEXT)
-      (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
+    (cond [(equal? (path-extension f) "scm")
+           (sys-unlink (path-swap-extension f "sci"))
+           (sys-unlink ($ path-swap-extension
+                          (cgen-scm-path->c-file (sys-basename f))
+                          OBJEXT))]
+          [(not (equal? (path-extension f) OBJEXT))
+           (sys-unlink (sys-basename (path-swap-extension f OBJEXT)))])))
 
 ;; Adjust pathnames in INCDIR and LIBDIR
 ;;   If we're running compiler in-place during testing, we replace

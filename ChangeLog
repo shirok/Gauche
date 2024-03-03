@@ -1,3 +1,10 @@
+2024-03-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/package/compile.scm:
+	  When 'gauche-package compile' receives *.scm file, we create
+	  intermediate C file as *.scm.c, instead of *.c, for a module
+	  may already have *.c with the same name.
+
 2024-03-01  Shiro Kawai  <shiro@acm.org>
 
 	* examples/spigot: Update for modern way---no *.stub file, and *.scm
