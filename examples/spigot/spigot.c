@@ -1,5 +1,5 @@
 /*
- * spigot-lib.c - calculate pi and e by spigot algorithm
+ * spigot.c - calculate pi and e by spigot algorithm
  *
  *  Written by Shiro Kawai (shiro@acm.org)
  *  I put this program in public domain.  Use it as you like.
