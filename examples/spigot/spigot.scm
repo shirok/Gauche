@@ -11,6 +11,10 @@
           spigot-calculate-e))
 (select-module spigot)
 
+;;
+;; The 'define-cproc' forms exposes C functions to Scheme world.
+;;
+
 (inline-stub
  (.include "spigot.h")
  (define-cproc spigot-calculate-pi (digits::<int>) Spigot_calculate_pi)

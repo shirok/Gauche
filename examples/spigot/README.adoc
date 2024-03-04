@@ -7,13 +7,13 @@ _after installing Gauche_.  See below.
 The sources include:
 
 [horizontal]
-`package.scm`::		package metainformation
-`configure`::		configure script
-`Makefile.in`::		template makefile
-`spigot.h`::		common declaration within the spigot module
-`spigot-lib.c`::	main logic
-`spigot.scm`::		Scheme binding of the module
-`test.scm`::		unit test
+`package.scm`::         package metainformation
+`configure`::           configure script
+`Makefile.in`::         template makefile
+`spigot.h`::            common declaration within the spigot module
+`spigot.c`::            main logic
+`spigot.scm`::          Scheme binding of the module
+`test.scm`::            unit test
 
 This is a typical construction of a simple extension.  Note that
 you can generate the skeletons of these files automatically,
@@ -47,3 +47,84 @@ in the Gauche's standard location.
 % make check
 % make install
 ----
+
+
+= What's going on?
+
+Let's see each step in details.
+
+== Configure
+
+The `configure` script is like GNU autotool's `configure`,
+but written in Gauche.  It generates `Makefile` from
+`Makefile.in`, tailored for the compiling platform.
+
+The default `configure` file is very simple, for most
+information can be taken from `package.scm` and
+installed Gauche.  You can add your own customization
+much like aototool's `configure.ac`.   Check the
+Gauche reference manual for the details.
+
+Running `configure` also creates `spigot.gpd`, where `gpd` stands
+for Gauche Package Description.  It includes metainformation from
+`package.scm` and the build information.  The file will be
+installed into the Gauche library directory
+(`.packages` subdirectory under `(gauche-site-library-directory)`)
+and `gauche-package` command refers to it.
+
+== Build
+
+By default, `make` invokes just a single command, `gauche-package compile`.
+It takes source files and builds a dynamically-loadable file
+(`*.so` on Unix platforms, `*.dll` on Windows), taking care of
+necessary include files and libraries related to Gauche.
+
+The basic usage is as follows:
+
+```
+gauche-package compile [-v] module-name source ...
+```
+
+The _-v_ option is to display actual compiler/linker command line.
+It's optional, but helps to see what's going on under the hood.
+
+Each _source_ file may be a C source, a Scheme source, or an object
+file.  If it is a C file, it is compiled with the C compile
+that has built Gauche itself, with the necessary options.
+If it is a Scheme file, it is precompiled
+(see link:../../doc/HOWTO-precompile.adoc[Precompile Scheme code]).
+Then, all the object files will be linked into
+a single DSO file, e.g.  `module-name.so`.
+
+When your extension module has multiple Scheme files, you don't
+need to list all Scheme filles here.  Only the ones that contain
+_C stub definitions_, which bridge Scheme and C world, need
+to be precompiled.  Pure-Scheme files can just be installed as is.
+
+(The command can also take `*.stub` files, which is an old way
+to define C-Scheme bridge.  Its use is deprecated.)
+
+When you pass a Scheme source to `gauche-package compile`,
+it also creates a `*.sci` file, which stands for
+Scheme Interface.  For example, if you build Spigot example,
+you see `spigot.sci`.   It is just another Scheme source file
+contanins module defintiion and `dynamic-load` expression
+to load the extension DSO file.
+
+When you install the extension, the `*.sci` file is copied
+into the destination directory, with its extension changed
+to `*.scm`.  The `sci` extension is used only not to clobber
+the source file.
+
+If there's both `scm` and `sci` files with the same name,
+the `sci` file takes precedence.  Thus when you run tests,
+`sci` file is loaded from the build tree, which loads
+the compied DSO code.
+
+== Test
+
+
+== Install
+
+
+== Cleanup
