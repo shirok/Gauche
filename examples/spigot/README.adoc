@@ -96,6 +96,11 @@ If it is a Scheme file, it is precompiled
 Then, all the object files will be linked into
 a single DSO file, e.g.  `module-name.so`.
 
+The Scheme source is first converted to an intermediate C source
+(in the example, `spigot.scm.c` is generated from `spigot.scm`),
+then compiled to an object file.  The suffix `scm.c` is used so that
+it won't clobber `spigot.c`.
+
 When your extension module has multiple Scheme files, you don't
 need to list all Scheme filles here.  Only the ones that contain
 _C stub definitions_, which bridge Scheme and C world, need
@@ -123,8 +128,36 @@ the compied DSO code.
 
 == Test
 
+`Make check` simply rungs `gosh` on the test script `test.scm`.
+The test script loads the extension with `(use spigot)`, and
+perform typical tests.
+
+When you run `(use spigot)`, it loads `spigot.sci`, which
+then loads `spigot.so` (or `spigot.dll`).   You shouldn't directly
+loads `spigot.so`, for the sci file may contain
+necessary setups.
+
+Note that if you change `spigot.scm` but not run the build process,
+`gosh` still loads the old `spigot.sci`.  `Make check` runs
+build process if `spigot.scm` is updated, but if you're running
+`gosh` directly, it may be a pitfall.
+If you're unsure which files are loaded, run `gosh` with
+`-fload-verbose` option.
 
 == Install
 
+The template makefile uses `gauche-install` command, which has
+some advantages over typical `install` script.
+One feature specific for Gauche is that it can install `*.sci` files
+as `*.scm` files in the destination.
 
 == Cleanup
+
+Makefile uses `gauche-package compile` command again, but with
+`--clean` option this time.  Since `gauche-package compile`
+knows which files it generates, it's easy for it to remove
+those generated files.
+
+If you add other build steps that procedures extra files,
+you need to edit `Makefile.in` to add cleanup command
+for those files.
