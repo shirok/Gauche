@@ -31,7 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; *EXPERIMENTAL*
 ;; gauche.package.build module is intended to automate standard building
 ;; process (untar+configure+make+make install).
 

@@ -31,7 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; *EXPERIMENTAL*
 ;; gauche.package.fetch module is intended to automate fetching package
 ;; distribution from the Net.
 ;;

@@ -31,7 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; *EXPERIMENTAL*
 ;; gauche.package.compile kicks C compiler/linker to compile an
 ;; extension file.
 

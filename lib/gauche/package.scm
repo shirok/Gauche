@@ -31,7 +31,6 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; *EXPERIMENTAL*
 ;; The spec might be changed in future.  Do not count on the current version.
 ;;
 ;; This module handles package meta-information.
