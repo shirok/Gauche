@@ -1,4 +1,4 @@
-(define-gauche-package "spigot"
+(define-gauche-package "example-spigot"
   :version "1.0"
   :description "Calculate pi and e in arbitrary precision\n\
            This is a sample package to show how to write Gauche extension.\n\

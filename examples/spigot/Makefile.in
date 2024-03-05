@@ -38,10 +38,11 @@ SCM_INSTALL_DIR     = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`"
 ARCH_INSTALL_DIR    = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitearchdir`"
 
 spigot_SRCS = spigot.scm spigot.c
+spigot_HDRS = spigot.h
 
 all : $(TARGET)
 
-spigot.$(SOEXT): $(spigot_SRCS)
+math--spigot.$(SOEXT): $(spigot_SRCS) $(spigot_HDRS)
 	$(GAUCHE_PACKAGE) compile --verbose math--spigot $(spigot_SRCS)
 
 check : all
