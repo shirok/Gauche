@@ -12,7 +12,8 @@ The sources include:
 `Makefile.in`::         template makefile
 `spigot.h`::            common declaration within the spigot module
 `spigot.c`::            main logic
-`spigot.scm`::          Scheme binding of the module
+`spigotlib.scm`::       Scheme binding of the module
+`math/spigot.scm`::     Scheme module definition
 `test.scm`::            unit test
 
 This is a typical construction of a simple extension.  Note that
@@ -97,9 +98,8 @@ Then, all the object files will be linked into
 a single DSO file, e.g.  `module-name.so`.
 
 The Scheme source is first converted to an intermediate C source
-(in the example, `spigot.scm.c` is generated from `spigot.scm`),
-then compiled to an object file.  The suffix `scm.c` is used so that
-it won't clobber `spigot.c`.
+(in the example, `spigotlib.c` is generated from `spigotlib.scm`),
+then compiled to an object file.
 
 When your extension module has multiple Scheme files, you don't
 need to list all Scheme filles here.  Only the ones that contain
@@ -109,47 +109,17 @@ to be precompiled.  Pure-Scheme files can just be installed as is.
 (The command can also take `*.stub` files, which is an old way
 to define C-Scheme bridge.  Its use is deprecated.)
 
-When you pass a Scheme source to `gauche-package compile`,
-it also creates a `*.sci` file, which stands for
-Scheme Interface.  For example, if you build Spigot example,
-you see `spigot.sci`.   It is just another Scheme source file
-contanins module defintiion and `dynamic-load` expression
-to load the extension DSO file.
-
-When you install the extension, the `*.sci` file is copied
-into the destination directory, with its extension changed
-to `*.scm`.  The `sci` extension is used only not to clobber
-the source file.
-
-If there's both `scm` and `sci` files with the same name,
-the `sci` file takes precedence.  Thus when you run tests,
-`sci` file is loaded from the build tree, which loads
-the compied DSO code.
-
 == Test
 
 `Make check` simply rungs `gosh` on the test script `test.scm`.
-The test script loads the extension with `(use spigot)`, and
+The test script loads the extension with `(use math.spigot)`, and
 perform typical tests.
 
-When you run `(use spigot)`, it loads `spigot.sci`, which
-then loads `spigot.so` (or `spigot.dll`).   You shouldn't directly
-loads `spigot.so`, for the sci file may contain
-necessary setups.
-
-Note that if you change `spigot.scm` but not run the build process,
-`gosh` still loads the old `spigot.sci`.  `Make check` runs
-build process if `spigot.scm` is updated, but if you're running
-`gosh` directly, it may be a pitfall.
-If you're unsure which files are loaded, run `gosh` with
-`-fload-verbose` option.
 
 == Install
 
 The template makefile uses `gauche-install` command, which has
 some advantages over typical `install` script.
-One feature specific for Gauche is that it can install `*.sci` files
-as `*.scm` files in the destination.
 
 == Cleanup
 
