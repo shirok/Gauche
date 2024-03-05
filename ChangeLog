@@ -1,3 +1,14 @@
+2024-03-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm: Add support of in-module form.
+	  For now, this form is valid only for precompilation; normal
+	  compiler ignores it with warning.  It allows to switch modules
+	  during precompilation like select-module, but the module
+	  doesn't need to exist at the moment (it is created implicitly then).
+	  It suppors precompiling sources with stubs separately from
+	  the module definintion file.
+	  Cf. https://github.com/shirok/Gauche/issues/993
+
 2024-03-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/compile.scm:

@@ -2221,6 +2221,7 @@
 ;; translated to C.  They can't be evaluated at runtime, so
 ;; we have dummy macros to warn.
 (%precomp-only inline-stub
+               in-module
                define-cproc
                define-cfn
                define-enum
