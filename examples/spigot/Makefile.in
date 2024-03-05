@@ -23,10 +23,10 @@ EXEEXT = @EXEEXT@
 LOCAL_PATHS = "@LOCAL_PATHS@"
 
 # Module-specific stuff
-PACKAGE   = spigot
+PACKAGE   = example-spigot
 
-ARCHFILES = spigot.$(SOEXT)
-SCMFILES  = spigot.sci
+ARCHFILES = math--spigot.$(SOEXT)
+SCMFILES  = math/spigot.scm
 HEADERS   =
 
 TARGET    = $(ARCHFILES)
@@ -42,7 +42,7 @@ spigot_SRCS = spigot.scm spigot.c
 all : $(TARGET)
 
 spigot.$(SOEXT): $(spigot_SRCS)
-	$(GAUCHE_PACKAGE) compile --verbose spigot $(spigot_SRCS)
+	$(GAUCHE_PACKAGE) compile --verbose math--spigot $(spigot_SRCS)
 
 check : all
 	@rm -f test.log
@@ -55,7 +55,7 @@ install : all
 	$(INSTALL) -m 444 -T $(SCM_INSTALL_DIR)/.packages $(PACKAGE).gpd
 
 clean :
-	$(GAUCHE_PACKAGE) compile --clean spigot $(spigot_SRCS)
+	$(GAUCHE_PACKAGE) compile --clean math--spigot $(spigot_SRCS)
 	rm -rf core $(TARGET) $(CLEANFILES) *~ test.log so_locations
 
 distclean : clean

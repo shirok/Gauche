@@ -150,9 +150,9 @@ extern void Scm_Init_spigot_scm(ScmModule*);
 
 /*
  * Module initialization function.
- * This is called when spigot.so is dynamically loaded into gosh.
+ * This is called when math--spigot.so is dynamically loaded into gosh.
  */
-ScmObj Scm_Init_spigot(void)
+ScmObj Scm_Init_math__spigot(void)
 {
     ScmModule *mod;
 

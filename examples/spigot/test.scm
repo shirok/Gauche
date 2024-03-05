@@ -5,8 +5,8 @@
 (use gauche.test)
 
 (test-start "spigot")
-(use spigot)
-(test-module 'spigot)  ;; This checks the exported symbols are indeed bound.
+(use math.spigot)
+(test-module 'math.spigot) ;; This checks the exported symbols are indeed bound.
 
 ;; Normal operation test
 (test* "spigot-calculate-pi (10)"

@@ -5,11 +5,7 @@
 ;;;  I put this program in public domain.  Use it as you like.
 ;;;
 
-;; Defines module
-(define-module spigot
-  (export spigot-calculate-pi
-          spigot-calculate-e))
-(select-module spigot)
+(in-module math.spigot)
 
 ;;
 ;; The 'define-cproc' forms exposes C functions to Scheme world.
