@@ -37,7 +37,7 @@ HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
 SCM_INSTALL_DIR     = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`"
 ARCH_INSTALL_DIR    = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitearchdir`"
 
-spigot_SRCS = spigot.scm spigot.c
+spigot_SRCS = spigotlib.scm spigot.c
 spigot_HDRS = spigot.h
 
 all : $(TARGET)

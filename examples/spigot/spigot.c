@@ -162,6 +162,6 @@ ScmObj Scm_Init_math__spigot(void)
     /* Create "spigot" module if it doesn't exist yet. */
     mod = SCM_MODULE(SCM_FIND_MODULE("spigot", TRUE));
 
-    /* Initialize spigot.scm */
-    Scm_Init_spigot_scm(mod);
+    /* Initialize spigotlib.scm */
+    Scm_Init_spigotlib();
 }

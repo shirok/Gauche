@@ -7,4 +7,4 @@
 
 extern ScmObj Spigot_calculate_pi(int digits);
 extern ScmObj Spigot_calculate_e(int digits);
-extern void Scm_Init_spigotlib(ScmModule *module);
+extern void Scm_Init_spigotlib(void);

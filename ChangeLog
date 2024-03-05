@@ -1,5 +1,13 @@
 2024-03-04  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/package/compile.scm: Revert the idea of *.scm.c for
+	  generated C files.  It messes up Makefile inference rules
+	  (make thinks foo.scm should be regenerated if foo.scm.o is newer).
+	  For the name conflicts, we can name the stub definition file as
+	  foolib.scm, much like we've done with foolib.stub.  Now we can
+	  do so because we split module definition file from stub definition
+	  file.
+
 	* lib/gauche/cgen/precomp.scm: Add support of in-module form.
 	  For now, this form is valid only for precompilation; normal
 	  compiler ignores it with warning.  It allows to switch modules

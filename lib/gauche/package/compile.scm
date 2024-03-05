@@ -82,16 +82,12 @@
                  [cise-emit-source-line (not no-line)])
     (rlet1 ofile (or output
                      (sys-basename
-                      (if (equal? (path-extension file) "scm")
-                        (path-swap-extension file #"scm.~OBJEXT")
-                        (path-swap-extension file OBJEXT))))
+                      (path-swap-extension file OBJEXT)))
       (unless (and (file-exists? ofile)
                    (file-mtime>? ofile file))
         (cond
          [(equal? (path-extension file) "scm")
-          ;; NB: When precompiling foo.scm, use use foo.scm.c as the
-          ;; intermediate C file name, for there may be a source file foo.c.
-          (let ([cfile (path-swap-extension file "scm.c")]
+          (let ([cfile (path-swap-extension file "c")]
                 [sofile (or sofile
                             (rlet1 f (path-swap-extension file SOEXT)
                               (warn "DSO file name is not specified.  Assuming `~a'\n" f)))])
@@ -157,11 +153,8 @@
   (when output
     (sys-unlink output))
   (dolist (f files)
-    (cond [(equal? (path-extension f) "scm")
-           (sys-unlink (path-swap-extension f "sci"))
-           (sys-unlink (path-swap-extension f #"scm.~OBJEXT"))]
-          [(not (equal? (path-extension f) OBJEXT))
-           (sys-unlink (sys-basename (path-swap-extension f OBJEXT)))])))
+    (when (not (equal? (path-extension f) OBJEXT))
+      (sys-unlink (sys-basename (path-swap-extension f OBJEXT))))))
 
 ;; Adjust pathnames in INCDIR and LIBDIR
 ;;   If we're running compiler in-place during testing, we replace
