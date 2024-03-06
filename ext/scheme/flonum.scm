@@ -119,8 +119,8 @@
 (define-constant fl-gamma-1/3 2.67893853470774763); (gamma 1/3) yields 1ulp error
 (define-constant fl-gamma-2/3 (gamma 2/3))
 
-(define-constant fl-greatest  (encode-float `#(,(- (expt 2 53) 1) 971 1)))
-(define-constant fl-least     (encode-float '#(1 -1074 1)))
+(define-constant fl-greatest  (greatest-positive-flonum))
+(define-constant fl-least     (least-positive-flonum))
 (define-constant fl-epsilon   (flonum-epsilon))
 (define-constant fl-fast-fl+* #t)
 

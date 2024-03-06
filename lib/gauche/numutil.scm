@@ -359,7 +359,7 @@
 ;;  (Unofficial yet; see how it works)
 
 (define (approx=? x y :optional (relative-tolerance (flonum-epsilon))
-                                (absolute-tolerance (flonum-min-denormalized)))
+                                (absolute-tolerance (least-positive-flonum)))
   (cond [(eqv? x y) #t]
         [(or (not (finite? x)) (not (finite? y))) #f]
         [else
