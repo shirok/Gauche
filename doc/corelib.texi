@@ -3371,6 +3371,41 @@ provides constants @code{fl-epsilon}, @code{fl-greatest}, and
 @c COMMON
 @end defun
 
+@defun flonum-min-normalized
+@defunx flonum-min-denormalized
+@c DEPRECATED
+@c EN
+These are old names for @code{least-positive-normalized-flonum} and
+@code{least-positive-flonum}.  We renamed to make the semantics clear.
+
+@itemize @bullet
+@item
+The new name alignes with @code{least-fixnum} and @code{greatest-fixnum}.
+@item
+@emph{Min} or @emph{least} could mean negative value farthest from zero.
+Having @emph{positive} removes the ambiguity.
+@item
+Denormalized flonums may not be supported on the platform, so
+having @emph{denormalized} in the name is misleading.
+@end itemize
+@c JP
+これらは@code{least-positive-normalized-flonum}および
+@code{least-positive-flonum}の旧い名前です。
+意味を明確にするために名前を変えました。
+
+@itemize @bullet
+@item
+新しい名前は@code{least-fixnum}/@code{greatest-fixnum}と統一性があります。
+@item
+@emph{min}や@emph{least}だけだと、ゼロから負の方向に一番離れている数の意味にも
+取れるので、@emph{positive}をつけて曖昧性を排除しました。
+@item
+非正規化浮動小数点数はサポートされていないプラットフォームがあり得るので、
+名前に@emph{denormalized}を入れるのを避けました。
+@end itemize
+@c COMMON
+@end defun
+
 @node Arithmetics, Numerical conversions, Numerical comparison, Numbers
 @subsection Arithmetics
 @c NODE 数値の演算
