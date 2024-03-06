@@ -120,7 +120,11 @@
 (define-constant fl-gamma-2/3 (gamma 2/3))
 
 (define-constant fl-greatest  (greatest-positive-flonum))
-(define-constant fl-least     (least-positive-flonum))
+;; NB: Denormalized flonum support may differ between the target platform
+;; and the precompiling platform.  Without-precompiling ensures the call
+;; to least-positive-flonum is done at the load time.
+(without-precompiling
+ (define-constant fl-least     (least-positive-flonum)))
 (define-constant fl-epsilon   (flonum-epsilon))
 (define-constant fl-fast-fl+* #t)
 
