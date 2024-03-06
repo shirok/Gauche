@@ -12762,14 +12762,15 @@ Euler's constant.
 @c MOD scheme.flonum
 @c EN
 Bound to the largest/smallest positive finite flonum.
-
-The latter is the same value as retured from
-@code{(flonum-min-denormalized)} in Gauche
+Those are the same values returned from Gauche's built-in
+@code{greatest-positive-flonum} and
+@code{least-positive-flonum}, respectively
 (@pxref{Numerical comparison}).
 @c JP
 最大/最小の正の有限な浮動小数点数に束縛されています。
-
-後者はGaucheの@code{(flonum-min-denormalized)}が返す値と同じです
+これらは、Gaucheの組み込み手続き
+@code{greatest-positive-flonum}および
+@code{least-positive-flonum}が返す値とそれぞれ同じです
 (@ref{Numerical comparison}参照)。
 @c COMMON
 @end defvr

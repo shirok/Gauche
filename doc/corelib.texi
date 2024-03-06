@@ -3359,8 +3359,17 @@ number.  It is @code{DBL_MIN} in C.
 最小の正の正規化浮動小数点数。
 @end table
 @c COMMON
-@end defun
 
+@c EN
+NB: For portable programs, R7RS @code{scheme.flonum} module
+provides constants @code{fl-epsilon}, @code{fl-greatest}, and
+@code{fl-least} (@pxref{R7RS flonum}).
+@c JP
+註: ポータブルなプログラムは、R7RSの@code{scheme.flonum}が提供する
+定数@code{fl-epsilon}、@code{fl-greatest}、@code{fl-least}を
+使うことができます (@ref{R7RS flonum}参照)。
+@c COMMON
+@end defun
 
 @node Arithmetics, Numerical conversions, Numerical comparison, Numbers
 @subsection Arithmetics
