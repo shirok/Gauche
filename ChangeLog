@@ -1,3 +1,13 @@
+2024-03-05  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (greatest-positive-flonum): Add.  Also renamed
+	  flonum-min-normalized and flonum-min-denormalized to
+	  least-positive-normalized-flonum and least-positive-flonum.
+	  They are consistent with {greatest|least}-fixnum.  We added
+	  'positive' for clarity.  We dropped 'denormalized', since
+	  the platform may not support denormalized flonums, and the
+	  procedure returns normalized flonum in that case.
+
 2024-03-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/package/compile.scm: Revert the idea of *.scm.c for

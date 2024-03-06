@@ -116,12 +116,12 @@
     (when (== x SCM_UNBOUND)
       (set! x (Scm_MakeFlonum DBL_EPSILON)))
     (return x)))
-(define-cproc flonum-min-normalized ()
+(define-cproc least-positive-normalized-flonum ()
   (let* ([x::(static ScmObj) SCM_UNBOUND])
     (when (== x SCM_UNBOUND)
       (set! x (Scm_MakeFlonum DBL_MIN)))
     (return x)))
-(define-cproc flonum-min-denormalized ()
+(define-cproc least-positive-flonum ()
   (let* ([x::(static ScmObj) SCM_UNBOUND])
     (when (== x SCM_UNBOUND)
       (let* ([m::double (Scm_EncodeFlonum (SCM_MAKE_INT 1) -1074 1)])
@@ -129,6 +129,12 @@
           (set! x (Scm_MakeFlonum DBL_MIN))
           (set! x (Scm_MakeFlonum m)))))
     (return x)))
+(define-cproc greatest-positive-flonum ()
+  (return (Scm_MakeFlonum DBL_MAX)))
+
+;; For backward compatibility
+(define flonum-min-normalized least-positive-normalized-flonum)
+(define flonum-min-denormalized least-positive-flonum)
 
 (select-module gauche.internal)
 (define-cproc %bignum-dump (obj) ::<void>
