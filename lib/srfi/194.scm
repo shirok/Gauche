@@ -118,11 +118,14 @@
 
 (define (make-random-char-generator str)
   (assume-type str <string>)
+  (assume (not (equal? str "")) "Empty string not allowed")
   (samples$ str))
 
 (define (make-random-string-generator k str)
-  (assume (exact-integer? k))
+  (assume (and (exact-integer? k) (> k 0))
+          "Length bound must be positive exact integer:" k)
   (assume-type str <string>)
+  (assume (not (equal? str "")) "Empty string not allowed")
   (strings-of (integers$ k) (samples$ str)))
 
 (define (make-bernoulli-generator p)
