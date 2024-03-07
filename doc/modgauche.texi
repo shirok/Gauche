@@ -3766,9 +3766,9 @@ Useful to  place a type name, e.g. an argument of sizeof operator.
 @subsubsection CiSE procedures
 
 
-@deftp {Parameter} cise-ambient
+@deffn {Parameter} cise-ambient
 @c MOD gauche.cgen
-@end deftp
+@end deffn
 
 @defun cise-default-ambient
 @c MOD gauche.cgen
@@ -3782,9 +3782,9 @@ Useful to  place a type name, e.g. an argument of sizeof operator.
 @c MOD gauche.cgen
 @end defun
 
-@deftp {Parameter} cise-emit-source-line
+@deffn {Parameter} cise-emit-source-line
 @c MOD gauche.cgen
-@end deftp
+@end deffn
 
 @defun cise-render cise-fragment :optional port context
 @c MOD gauche.cgen

@@ -5550,7 +5550,7 @@ with a preposition (e.g. @code{list-of}).
 @subheading 乱数源
 @c COMMON
 
-@deftp {Parameter} random-data-random-source
+@deffn {Parameter} random-data-random-source
 @c MOD data.random
 @c EN
 Its value must be a SRFI-27 random source (@pxref{Sources of random bits}).
@@ -5569,7 +5569,7 @@ won't affect their behavior.
 パラメータの動的な値が捕獲され、ジェネレータはそれを使って乱数を生成します。
 ジェネレータの作成後にこのパラメータの値を変えてもジェネレータの動作には影響しません。
 @c COMMON
-@end deftp
+@end deffn
 
 @c EN
 Note: Up to 0.9.13, generators created with this module refers to the
