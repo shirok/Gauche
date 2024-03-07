@@ -11481,7 +11481,7 @@ This SRFI also adds several advanced random data generators.
 
 @subheading Random sources
 
-@deftp {Parameter} current-random-source
+@deffn {Parameter} current-random-source
 [SRFI-194]
 @c MOD srfi.194
 The value of this parameter must be a SRFI-27 random source.
@@ -11492,7 +11492,7 @@ a generator is created won't affect its behavior.
 In Gauche, this is just an alias of @code{random-data-random-source}
 of @code{data.random}.  Rebinding either one affects both @code{srfi.194}
 and @code{data.random} procedures (@pxref{Random data generators}).
-@end deftp
+@end deffn
 
 @defun with-random-source random-source thunk
 [SRFI-194]
@@ -11586,21 +11586,44 @@ See their entries for the details.
 @defun make-random-boolean-generator
 [SRFI-194]
 @c MOD srfi.194
+Returns a fresh generator that produces random boolean values.
+It is the same as @code{booleans$} of @code{data.random}
+(@pxref{Random data generators}).
 @end defun
 
 @defun make-random-char-generator string
 [SRFI-194]
 @c MOD srfi.194
+Returns a fresh generator that produces characters uniformly
+sampled from @var{string}.   The order of characters within @var{string}
+is irrelevant.  You can repeat characters in @var{stirng} to increase
+the chance of that characters to be produced.
+
+It is an error if @var{string} is empty.
+
+This is not the same as @code{chars$}, but rather a type-restricted
+case of @code{samples$} of @code{data.random}
+(@pxref{Random data generators}).
 @end defun
 
 @defun make-random-string-generator k string
 [SRFI-194]
 @c MOD srfi.194
+Returns a fresh generator that produces a random string
+of length @var{k} and consisting characters uniformly
+sampled from @var{string}.
+
+It is an error if @var{string} is empty.
+
+This is not the same as @code{strings-of} of @code{data.random}.
+Rather, this can be written as
+@code{(strings-of (integers$ k) (samples$ str))}
+(@pxref{Random data generators}).
 @end defun
 
 @subheading Nonuniform distributions
 
-@defun make-bernoulli-genreator p
+@defun make-bernoulli-generator p
 [SRFI-194]
 @c MOD srfi.194
 @end defun
