@@ -15893,7 +15893,7 @@ R7RS版は、効率を除けば次のとおり動作します。
 @defun hash-table-update!/default ht key updater default
 [R7RS hash-table]
 @c EN
-This is the same as Gauche's @code{hash-table-default!}, except that
+This is the same as Gauche's @code{hash-table-update!}, except that
 the default value can't be omitted.
 @c JP
 これは@var{default}が省略できないことを除けば、
