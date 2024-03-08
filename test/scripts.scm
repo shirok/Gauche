@@ -507,8 +507,8 @@
     (if in-place?
       `(../../gosh -q -I../../../src -I../../../lib
                    ../run compile
-                   --verbose test test.c testlib.stub)
-      `(,gauche-package compile --verbose test test.c testlib.stub)))
+                   --verbose test test.c testlib.scm)
+      `(,gauche-package compile --verbose test test.c testlib.scm)))
   (define test-command
     (if in-place?
       `(../../gosh -ftest -I. ./test.scm)
@@ -544,7 +544,7 @@
               '("configure" "Makefile.in" "package.scm"
                 "test.scm" "test/tester.scm")
               '("configure" "Makefile.in" "package.scm"
-                "test.c" "test.h" "test.scm" "testlib.stub"
+                "test.c" "test.h" "test.scm" "testlib.scm"
                 "test/tester.scm")))
 
   (test-log "Running ~a" compile-command)

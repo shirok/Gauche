@@ -226,7 +226,7 @@
                           '("Makefile-pure-scheme.in"
                             "module-pure-scheme.scm")
                           '("Makefile.in" "extension.c"
-                            "extension.h" "extensionlib.stub"
+                            "extension.h" "extensionlib.scm"
                             "module.scm" ))
                         (case license
                           [(bsd bsd3) '("COPYING--bsd3")]

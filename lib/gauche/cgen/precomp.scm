@@ -308,8 +308,10 @@
      "--"))
 
 (define (cgen-c-file->initfn c-name)
-  (let1 initfn (regexp-replace-all* (path-sans-extension c-name)
-                                    #/[-+.]/ "_")
+  (let1 initfn (regexp-replace-all*
+                (path-sans-extension
+                 (sys-normalize-pathname c-name :canonicalize #t))
+                #/[-+.]/ "_")
     #"Scm_Init_~initfn"))
 
 ;;================================================================
