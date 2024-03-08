@@ -156,7 +156,7 @@ It is important that the value will be returned to the Gauche VM.
 What `Scm_VMApply` and `Scm_VMPushCC` do is to set up the VM state
 so that `callback` and `func_cc` will be called.  If you do something
 to change the VM state between returning `Scm_VMApply` and the VM takes back
-control, unexpected things Can happen.
+control, unexpected things can occur.
 
 If you call `callback` in this way, and a continuation is captured
 within `callback`, it does not involve C calling stack, so that the
