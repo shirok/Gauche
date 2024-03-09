@@ -1,3 +1,7 @@
+2024-03-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm: Handle C++ new and delete as operators.
+
 2024-03-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (greatest-positive-flonum): Add.  Also renamed

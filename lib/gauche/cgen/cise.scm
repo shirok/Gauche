@@ -906,7 +906,7 @@
 (define-cise-macro (return form env)
   (ensure-stmt-ctx form env)
   (match form
-    [(_ expr) `("return (" ,(render-rec expr (expr-env env)) ");")]
+    [(_ expr) `("return (" ,#?,(render-rec expr (expr-env env)) ");")]
     [(_)      `("return;")]))
 
 ;; [cise stmt] break
@@ -1131,6 +1131,19 @@
 ;; [cise expr] ?: TEST-EXPR THEN-EXPR ELSE-EXPR
 ;;
 ;;   conditional.
+;;
+;; [cise expr] set! VAR EXPR
+;;
+;;   assignment.
+;;
+;; [cise expr] new EXPR
+;; [cise expr] delete EXPR
+;; [cise expr] new EXPR (dim ...)
+;; [cise expr] delete () EXPR
+;;
+;;   C++ new and delete.   The second forms of new and delete are for
+;;   array allocation/deallocation.  The position of EXPR is inconsistent,
+;;   but that's how C++ is.
 
 (define-macro (define-nary op sop)
   `(define-cise-macro (,op form env)
@@ -1259,6 +1272,35 @@
         [_   (error "uneven args for set!:" form)]))))
 
 (define-cise-macro = set!)              ;EXPERIMENTAL
+
+(define-cise-macro (new form env)
+  (let1 eenv (expr-env env)
+    (define (render-new class-name args)
+      `("new " ,(x->string class-name)
+        "(" ,@(intersperse "," (map (cut render-rec <> eenv) args)) ")"))
+    (define (render-dims dims)
+      (map (^d `("[" ,(render-rec d eenv) "]")) dims))
+    (wrap-expr
+     (match form
+       [(_ (class-name arg ...) (dim ...))
+        `(,@(render-new class-name arg) ,@(render-dims dim))]
+       [(_ class-name (dim ...))
+        `("new " ,(x->string class-name) ,@(render-dims dim))]
+       [(_ (class-name arg ...))
+        (render-new class-name arg)]
+       [(_ class-name arg)
+        `("new " ,(x->string class-name))]
+       )
+     env)))
+
+(define-cise-macro (delete form env)
+  (let1 eenv (expr-env env)
+    (wrap-expr
+     (match form
+       [(_ () expr) `("delete[] " ,(render-rec expr eenv))]
+       [(_ expr)    `("delete " ,(render-rec expr eenv))]
+       )
+     env)))
 
 ;; [cise expr] funcall fn-expr arg-expr ...
 ;;   Generate fn-expr(arg-expr, ...)
