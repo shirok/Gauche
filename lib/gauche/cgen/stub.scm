@@ -1331,7 +1331,8 @@
     (p "}")
     (dolist [h (~ cproc'c++-handlers)]
       (f "catch (~a) {" (car h))
-      (for-each p (cdr h))
+      (dolist [s (cdr h)]
+        (p (if (string? s) s (cise-render-to-string s))))
       (p "}")))
   ;; closing the function
   (p "}")
