@@ -41,7 +41,7 @@ HEADER_INSTALL_DIR  = "$(DESTDIR)`$(GAUCHE_CONFIG) --siteincdir`"
 SCM_INSTALL_DIR     = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitelibdir`"
 ARCH_INSTALL_DIR    = "$(DESTDIR)`$(GAUCHE_CONFIG) --sitearchdir`"
 
-mqueue_SRCS = mqueue_lib.stub mqueue.cpp mqueue_glue.cpp
+mqueue_SRCS = mqueue_lib.scm mqueue.cpp mqueue_glue.cpp
 mqueue_HDRS = mqueue.h mqueue_glue.h
 
 all : $(TARGET)

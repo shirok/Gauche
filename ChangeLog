@@ -1,3 +1,7 @@
+2024-03-09  Shiro Kawai  <shiro@acm.org>
+
+	* examples/mqueue-cpp: Update to use modern way (no stub file).
+
 2024-03-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm: Handle C++ new and delete as operators.

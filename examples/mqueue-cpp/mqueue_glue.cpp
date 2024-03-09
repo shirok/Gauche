@@ -27,8 +27,6 @@ static void mqueue_cleanup(ScmObj obj)
     delete q;
 }
 
-extern void Scm_Init_mqueue_lib(ScmModule*);
-
 void Scm_Init_mqueue_cpp()
 {
     ScmModule *mod;
@@ -52,5 +50,5 @@ void Scm_Init_mqueue_cpp()
                                     SCM_FOREIGN_POINTER_KEEP_IDENTITY|SCM_FOREIGN_POINTER_MAP_NULL);
 
     /* Initialize stub functions */
-    Scm_Init_mqueue_lib(mod);
+    Scm_Init_mqueue_lib();
 }

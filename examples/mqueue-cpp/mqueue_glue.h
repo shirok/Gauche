@@ -23,5 +23,6 @@ extern ScmClass *MQueueClass;
 #define MQUEUE_BOX(ptr)    Scm_MakeForeignPointer(MQueueClass, ptr)
 
 extern void Scm_Init_mqueue_cpp();
+extern void Scm_Init_mqueue_lib();
 
 SCM_DECL_END
