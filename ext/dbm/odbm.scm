@@ -166,7 +166,11 @@
   (.cond
    ["HAVE_DBM_H" (.include <dbm.h>)]
    ["HAVE_GDBM_SLASH_DBM_H" (.include <gdbm/dbm.h>)]
-   ["HAVE_GDBM_MINUS_DBM_H" (.include <gdbm-dbm.h>)]))
+   ["HAVE_GDBM_MINUS_DBM_H" (.include <gdbm-dbm.h>)])
+
+  ;; Avoid conflicting with C++ keyword
+  (.define delete_ delete)
+  )
 
  ;; data conversion macros
  (define-cise-stmt TO_DATUM
@@ -219,7 +223,7 @@
 
  (define-cproc odbm-delete (key::<string>) ::<int>
    (let* ([dkey::datum])
-     (CHECK_ODBM) (TO_DATUM dkey key) (return (delete dkey))))
+     (CHECK_ODBM) (TO_DATUM dkey key) (return (delete_ dkey))))
 
  (define-cproc odbm-firstkey ()
    (let* ([dkey::datum])
