@@ -1503,7 +1503,10 @@
        (cise-render-typed-var rest var env))))
 
 (define (cise-render-identifier sym)
-  (cgen-safe-name-friendly (x->string sym)))
+  (let* ([s (x->string sym)]
+         [ss (string-split s "::")])
+    (string-concatenate
+     (intersperse "::" (map cgen-safe-name-friendly ss)))))
 
 ;; For field declaration, you may need to include a C macro that doesn't
 ;; have type decl (e.g. SCM_HEADER).  If you just write SCM_HEADER,

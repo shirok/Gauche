@@ -1,6 +1,7 @@
 2024-03-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm: Handle C++ new and delete as operators.
+	  (cise-render-identifier): Allow C++ namespace qualified identifiers.
 
 2024-03-05  Shiro Kawai  <shiro@acm.org>
 
