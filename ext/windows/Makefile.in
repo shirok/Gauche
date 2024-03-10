@@ -21,9 +21,9 @@ os--windows.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) os--windows.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
 winapi.c : winapi.scm
-	$(PRECOMP) -e -o winapi winapi.scm
+	$(PRECOMP) -e -o winapi $(srcdir)/winapi.scm
 
 console.c : console.scm
-	$(PRECOMP) -e -o console console.scm
+	$(PRECOMP) -e -o console $(srcdir)/console.scm
 
 install : install-std
