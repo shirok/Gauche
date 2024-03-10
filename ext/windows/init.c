@@ -40,17 +40,14 @@
  * Initialization
  */
 
-extern void Scm_Init_windows(ScmModule *mod);
-extern void Scm_Init_console(ScmModule *mod);
+extern void Scm_Init_winapi();
+extern void Scm_Init_console();
 
 SCM_EXTENSION_ENTRY void Scm_Init_os__windows(void)
 {
-    ScmModule *mod;
-
     SCM_INIT_EXTENSION(os__windows);
-    mod = SCM_FIND_MODULE("os.windows", SCM_FIND_MODULE_CREATE);
-    Scm_Init_windows(mod);
-    Scm_Init_console(mod);
+    Scm_Init_winapi();
+    Scm_Init_console();
 }
 
 #else  /*!defined(GAUCHE_WINDOWS)*/

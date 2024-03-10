@@ -2,6 +2,8 @@
 
 	* examples/mqueue-cpp: Update to use modern way (no stub file).
 
+	* ext/windows: Replace *.stub for *.scm.
+
 2024-03-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm: Handle C++ new and delete as operators.

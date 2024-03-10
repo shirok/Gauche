@@ -31,6 +31,10 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
+(in-module os.windows)
+
+(inline-stub
+(.include "gauche/extend.h")
 (.when (defined GAUCHE_WINDOWS)
 
 ;; The following bindings are provided in the core:
@@ -128,6 +132,8 @@
 
 
 ); defined(GAUCHE_WINDOWS)
+
+); inline-stub
 
 ;; Local variables:
 ;; mode: scheme

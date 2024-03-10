@@ -11,16 +11,19 @@ SCMFILES = windows.scm windows/console/codepage.scm
 
 CONFIG_GENERATED = Makefile
 PREGENERATED =
-XCLEANFILES = windows.c console.c
+XCLEANFILES = winapi.c console.c
 
-OBJECTS = init.$(OBJEXT) windows.$(OBJEXT) console.$(OBJEXT)
+OBJECTS = init.$(OBJEXT) winapi.$(OBJEXT) console.$(OBJEXT)
 
 all : $(LIBFILES)
 
 os--windows.$(SOEXT) : $(OBJECTS)
 	$(MODLINK) os--windows.$(SOEXT) $(OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
 
-windows.c : windows.stub
-console.c : console.stub
+winapi.c : winapi.scm
+	$(PRECOMP) -e -o winapi winapi.scm
+
+console.c : console.scm
+	$(PRECOMP) -e -o console console.scm
 
 install : install-std

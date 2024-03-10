@@ -38,6 +38,10 @@
 ;; little usable.  Nevertheless, I put it here hoping someday the
 ;; issue is addressed.
 
+(in-module os.windows)
+
+(inline-stub
+(.include "gauche/extend.h")
 (.when (defined GAUCHE_WINDOWS)
 
 ;; ConsoleBufferHandle
@@ -482,6 +486,7 @@
 ;;  WriteConsoleOutputAttribute
 
 ) ;; defined(GAUCHE_WINDOWS)
+) ;; inline-stub
 
 ;; Local variables:
 ;; mode: scheme
