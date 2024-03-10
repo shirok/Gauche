@@ -131,7 +131,7 @@
   \n  -P,--strip-prefix-all\
   \n      Remove all directory names from the input file names, just use their\
   \n      basenames, to produce output file names.\
-  \n  --ext-main\
+  \n  -e, --ext-main\
   \n      Generate source for an extension module rather than a standalone\
   \n      executable.  The initialization function follows the protocol of\
   \n      Gauche extension initializer.\
