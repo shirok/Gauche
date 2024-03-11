@@ -1,3 +1,8 @@
+2024-03-10  Shiro Kawai  <shiro@acm.org>
+
+	* doc/Makefile.in: Use install-info if it's available, and DESTDIR
+	  is not used. https://github.com/shirok/Gauche/issues/988
+
 2024-03-09  Shiro Kawai  <shiro@acm.org>
 
 	* examples/mqueue-cpp: Update to use modern way (no stub file).

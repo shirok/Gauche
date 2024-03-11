@@ -16,6 +16,7 @@ CONFIG_GENERATED = Makefile $(MANPAGES)
 @CROSS_COMPILING_yes@GOSH = $(BUILD_GOSH) -q
 INSTALL      = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
+INSTALL_INFO = @INSTALL_INFO@
 MKINSTDIR    = $(top_srcdir)/mkinstalldirs
 MAKEINFO     = @MAKEINFO@
 GZIP_PROGRAM = @GZIP_PROGRAM@
@@ -68,21 +69,35 @@ install: all
 	if test ! -d "$(DESTDIR)$(mandir)/man1"; then $(MKINSTDIR) "$(DESTDIR)$(mandir)/man1"; fi
 	$(INSTALL_DATA) $(MANPAGES) "$(DESTDIR)$(mandir)/man1"
 	if test ! -d "$(DESTDIR)$(infodir)"; then $(MKINSTDIR) "$(DESTDIR)$(infodir)"; fi
+	if test -z "$(DESTDIR)" -a -n "$(INSTALL_INFO)"; then \
+	  if test -f gauche-refe.info.gz; then \
+	    $(INSTALL_INFO) gauche-refe.info.gz $(infodir)/dir ; \
+	  fi; \
+	  if test -f gauche-refj.info.gz; then \
+	    $(INSTALL_INFO) gauche-refj.info.gz $(infodir)/dir ; \
+	  fi; \
+	fi; \
 	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
-	  for info in *.info*; do \
-	    $(INSTALL_DATA) $$info "$(DESTDIR)$(infodir)/"; \
-	  done; \
+	  $(INSTALL_DATA) *.info* "$(DESTDIR)$(infodir)/"; \
 	fi
 
 uninstall:
-	(cd "$(mandir)/man1"; rm -f $(MANPAGES))
-	(cd "$(infodir)"; \
-	 if test -f gauche-refe.info -o -f gauche-refe.info.gz; \
-	   then rm -f gauche-refe.*; \
+	(cd "$(DESTDIR)$(mandir)/man1"; rm -f $(MANPAGES))
+	(cd "$(DESTDIR)$(infodir)"; \
+	 if test -f gauche-refe.info.gz; then \
+	    if test -z "$(DESTDIR)" -a -n "$(INSTALL_INFO)"; then \
+	      $(INSTALL_INFO) --delete gauche-refe.info.gz dir ; \
+	    fi; \
+	    rm -f gauche-refe.*; \
 	 fi; \
-	 if test -f gauche-refj.info -o -f gauche-refj.info.gz; \
-	   then rm -f gauche-refj.*; \
-	 fi)
+	 if test -f gauche-refj.info.gz; then \
+	    if test -z "$(DESTDIR)" -a -n "$(INSTALL_INFO)"; then \
+	      $(INSTALL_INFO) --delete gauche-refj.info.gz dir ; \
+	    fi; \
+	    rm -f gauche-refj.*; \
+	 fi; \
+	)
+
 
 pre-package : texi
 
