@@ -3856,6 +3856,30 @@ Conditional expression.
 Useful to  place a type name, e.g. an argument of sizeof operator.
 @end deffn
 
+@deffn {CiSE Expression} new type
+@deffnx {CiSE Expression} new (type expr ...)
+@deffnx {CiSE Expression} new type (dim ...)
+@deffnx {CiSE Expression} new (type expr ...) (dim ...)
+C++ new operator.  The second argument can be just a type name,
+or a constructor call.  The optional second argument specifies
+array dimensions.
+
+@example
+(new MyClass)              @result{} new MyClass;
+(new (MyClass a b) (1 2))  @result{} new MyClass(a, b)[1,2];
+@end example
+@end deffn
+
+@deffn {CiSE Expression} delete expr
+@deffnx {CiSE Expression} delete () expr
+C++ delete operator.  The second form is to delete an array.
+
+@example
+(delete (* foo))  @result{} delete *foo;
+(delete () foo)   @result{} delete[] foo;
+@end example
+@end deffn
+
 
 @node CiSE procedures,  , CiSE syntax, C in S expression
 @subsubsection CiSE procedures

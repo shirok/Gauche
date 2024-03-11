@@ -1136,9 +1136,11 @@
 ;;
 ;;   assignment.
 ;;
-;; [cise expr] new EXPR
+;; [cise expr] new TYPE
+;; [cise expr] new (TYPE EXPR ...)
+;; [cise expr] new TYPE (dim ...)
+;; [cise expr] new (TYPE EXPR ...) (dim ...)
 ;; [cise expr] delete EXPR
-;; [cise expr] new EXPR (dim ...)
 ;; [cise expr] delete () EXPR
 ;;
 ;;   C++ new and delete.   The second forms of new and delete are for
