@@ -2187,29 +2187,61 @@ If @var{bv} doesn't have @var{bit}, returns @code{-1}.
 @end example
 @end defun
 
+@c EN
 @subheading Bit field operations
+@c JP
+@subheading ビットフィールド操作
+@c COMMON
 
+@c EN
 Those procedures operates on a partial field of a bitvector,
 between @var{start}-th bit (inclusive) and @var{end}-th bit (exclusive).
+@c JP
+以下の手続きは、ビットベクタの
+@var{start}ビット目(含む)から@var{end}ビット目(含まない)までの部分について
+操作するものです。
+@c COMMON
 
 @defun bitvector-field-any? bv start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns @code{#t} iff at least one bit between @var{start} and @var{end}
 in @var{bv} is 1.
+@c JP
+ビットベクタ@var{bv}の@var{start}ビット目から@var{end}ビット目までのいずれかに
+1のビットがあれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 
+@c EN
 This is equivalent to @code{(bitvector-any-value? bv 1 start end)},
 using Gauche's built-in procedure (@pxref{Bitvectors}).
+@c JP
+Gaucheの組み込み手続きを使って
+@code{(bitvector-any-value? bv 1 start end)}とした場合と同じです
+(@ref{Bitvectors}参照)。
+@c COMMON
 @end defun
 
 @defun bitvector-field-every? bv start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns @code{#t} iff every bit between @var{start} and @var{end}
 in @var{bv} is 1.
+@c JP
+ビットベクタ@var{bv}の@var{start}ビット目から@var{end}ビット目までのすべてが
+1であれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 
+@c EN
 This is equivalent to @code{(bitvector-every-value? bv 1 start end)},
 using Gauche's built-in procedure (@pxref{Bitvectors}).
+@c JP
+Gaucheの組み込み手続きを使って
+@code{(bitvector-every-value? bv 1 start end)}とした場合と同じです
+(@ref{Bitvectors}参照)。
+@c COMMON
 @end defun
 
 @defun bitvector-field-clear bv start end
@@ -2218,11 +2250,21 @@ using Gauche's built-in procedure (@pxref{Bitvectors}).
 @defunx bitvector-field-set! bv start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector with the same content as @var{bv}, except
 the bits between @var{start} (inclusive) and @var{end} (exclusive)
 are cleared or set, respectively.
+@c JP
+ビットベクタ@var{bv}の内容のうち、
+@var{start}ビット目から@var{end}ビット目までのすべてがクリアされた、
+あるいはセットされたビットベクタをそれぞれ返します。
+@c COMMON
 
+@c EN
 The liner-updating version may mutate @var{bv} to produce the result.
+@c JP
+線形更新版は結果を作るために@var{bv}を破壊的に変更するかもしれません。
+@c COMMON
 
 @example
 (bitvector-field-clear #*10010010101001 2 7)
@@ -2236,52 +2278,94 @@ The liner-updating version may mutate @var{bv} to produce the result.
 @defunx bitvector-field-replace! to from start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector with the same content as @var{to-bv}, except
 its bits between @var{start} (inclusive) and @var{end} (exclusive)
 are replaced with the content of @var{from-bv}.
+@c JP
+ビットベクタ@var{bv}の内容のうち、
+@var{start}ビット目から@var{end}ビット目までを、
+@var{from-bv}の内容で置き換えたビットベクタを返します。
+@c COMMON
 
+@c EN
+The length of @var{from-bv} must be at least @var{end}-@var{start}.
+If it is longer, the exceeding bits are ignored.
+@c JP
+@var{from-bv}の長さは少なくとも@var{end}-@var{start}だけなければなりません。
+@var{from-bv}がそれより長い場合、余分なビットは無視されます。
+@c COMMON
+
+@c EN
 The liner-updating version may mutate @var{to-bv} to produce the result.
+@c JP
+線形更新版は結果を作るために@var{bv}を破壊的に変更するかもしれません。
+@c COMMON
 
 @example
 (bitvector-field-replace #*10010010101001 #*110011 2 8)
  @result{} #*10110011101001
 @end example
 
-The length of @var{from-bv} must be at least @var{end}-@var{start}.
-If it is longer, the exceeding bits are ignored.
-
+@c EN
 See also @code{bitvector-field-replace-same} below.
+@c JP
+下の@code{bitvector-field-replace-same}も参照のこと。
+@c COMMON
 @end defun
 
 @defun bitvector-field-replace-same to-bv from-bv start end
 @defunx bitvector-field-replace-same! to-bv from-bv start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector with the same content as @var{to-bv}, except
 its bits between @var{start} (inclusive) and @var{end} (exclusive)
 are replaced with the content of @var{from-bv} between @var{start} and
 @var{end}.
+@c JP
+ビットベクタ@var{bv}の内容のうち、@var{start}ビット目から@var{end}ビット目までを、
+@var{from-bv}の@var{start}ビット目から@var{end}ビット目までで置き換えたものを返します。
+@c COMMON
 
+@c EN
+The length of @var{from-bv} must be greater than or equal to @var{end}.
+@c JP
+@var{from-bv}の長さは@var{end}より大きくなければなりません。
+@c COMMON
+
+@c EN
 The liner-updating version may mutate @var{to-bv} to produce the result.
+@c JP
+線形更新版は結果を作るために@var{bv}を破壊的に変更するかもしれません。
+@c COMMON
 
 @example
 (bitvector-field-replace-same #*10010010101001 #*11001100 2 8)
  @result{} #*10001100101001
 @end example
 
-The length of @var{from-bv} must be greater than or equal to @var{end}.
-
+@c EN
 See also @code{bitvector-field-replace} above.
+@c JP
+上の@code{bitvector-field-replace}も参照のこと。
+@c COMMON
 @end defun
 
 
 @defun bitvector-field-rotate bv count start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector whose content is the same as @var{bv} except
 the range between @var{start}-th bit (inclusive) and
 @var{end}-th bit (exclusive) being rotated by @var{count} bits toward
 right.  You can give a negative @var{count} to rotate towards left.
+@c JP
+ビットベクタ@var{bv}の内容のうち、@var{start}ビット目から@var{end}ビット目までが
+@var{count}ビットだけ右にローテートされた内容に置き換えられているものを返します。
+@var{count}が負なら、その絶対値分だけ左にローテートします。
+@c COMMON
 
 @example
 (bitvector-field-rotate #*001100110011 1 4 8)
@@ -2295,10 +2379,21 @@ right.  You can give a negative @var{count} to rotate towards left.
 @defunx bitvector-field-flip! bv start end
 [SRFI-178]
 @c MOD gauche.bitvector
+@c EN
 Returns a bitvector whose content is the same as @var{bv}
 except the bits in the range
 between @var{start}-th bit (inclusive) and
 @var{end}-th bit (exclusive) are inverted.
+@c JP
+ビットベクタ@var{bv}の内容のうち、@var{start}ビット目から@var{end}ビット目までの
+ビットが論理否定されているものを返します。
+@c COMMON
+
+@c EN
+The liner-updating version may mutate @var{to-bv} to produce the result.
+@c JP
+線形更新版は結果を作るために@var{bv}を破壊的に変更するかもしれません。
+@c COMMON
 
 @example
 (bitvector-field-flip #*001100110011 4 8)
