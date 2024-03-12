@@ -45,13 +45,17 @@
 
   (export random-data-random-source
 
-          integers$ integers-between$ fixnums chars$ samples$ booleans$
+          integers$ integers-between$ fixnums$ chars$
+          samples$ booleans$
           int8s$ uint8s$ int16s$ uint16s$ int32s$ uint32s$ int64s$ uint64s$
           reals$ reals-between$ complexes-rectangular$ complexes-polar$
           reals-normal$ reals-exponential$
           integers-geometric$ integers-poisson$
           regular-strings$
-          booleans int8s uint8s int16s uint16s int32s uint32s int64s uint64s
+
+          ;; preconstructed
+          fixnums booleans
+          int8s uint8s int16s uint16s int32s uint32s int64s uint64s
 
           default-sizer
           samples-from pairs-of tuples-of lists-of vectors-of strings-of
