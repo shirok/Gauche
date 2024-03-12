@@ -5896,6 +5896,18 @@ with @var{mean}.
 @c JP
 期待値@var{mean}の指数分布に従って実数値を生成するジェネレータを作ります。
 @c COMMON
+
+@c EN
+NB: The probability density function p(x) is
+@code{(* (/ mean) (exp (- (/ x mean))))}.  Some definition of exponential
+distribution uses a decay parameter λ such that p(x) is
+@code{(* λ (exp (- (* x λ))))}.   That is, @i{λ} = 1/@i{mean}.
+@c JP
+註: 確率密度関数 p(x) は@code{(* (/ mean) (exp (- (/ x mean))))} です。
+指数分布の定義では、期待値のかわりに、減衰パラメータ λ を使って確率密度関数を
+@code{(* λ (exp (- (* x λ))))}とする流儀もあります。
+この場合、@i{λ} = 1/@i{mean}です。
+@c COMMON
 @end defun
 
 @defun integers-geometric$ p
