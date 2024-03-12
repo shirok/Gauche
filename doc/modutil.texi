@@ -5778,6 +5778,38 @@ handy.
 (define generate-from-0-below-1
   (gfilter (^r (not (= r 1.0))) (reals$ 1.0 0.0)))
 @end example
+
+@c EN
+Note also that floating point numbers are not uniformly distributed
+within the given real number range.  When you uniformly sample
+from a certain real number range, the returned flonums would very likely
+have the same or closer exponent of the bounds of the range.
+If that's what you want, it's ok.  If you want a sample uniformly from
+a valid flonum values, see @code{finite-flonums$} below.
+@c JP
+また、浮動小数点数は与えられた実数範囲の中で一様に分布していないことに注意してください。
+ある実数範囲から一様にサンプリングした場合、得られるほとんどの実数の指数部は、
+範囲の上下限の指数と同じかそれに近いものになります。それが必要なものでしたら良いのですが、
+有効な浮動小数点数から一様にサンプリングしたい場合は、下の@code{finite-flonums$}
+を見てください。
+@c COMMON
+@end defun
+
+@defun finite-flonums$
+@c EN
+Returns a flonum generator that samples uniformly from all possible
+finite flonums.  It is not the same as uniformly sampling real numbers,
+since floating-point numbers are not distributed evenly.
+This is more useful if you want feed random flonums for testing,
+than uniformly distributed real numbers, for the latter has
+rather skewed distribution of exponents.
+@c JP
+可能な全ての有限の浮動小数点数から一様にサンプリングする浮動小数点数ジェネレータ
+を返します。これは実数を一様にサンプリングするのとは異なります。
+浮動小数点数は実数空間で一様に分布していないからです。
+これは、テスト用途でランダムな浮動小数点数を使いたい場合に便利です。
+実数範囲で一様サンプリングすると、得られる数値の指数部は非常に偏ったものになるからです。
+@c COMMON
 @end defun
 
 @defun complexes-rectangular$ re-lb re-ub im-lb im-ub

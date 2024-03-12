@@ -48,7 +48,8 @@
           integers$ integers-between$ fixnums$ chars$
           samples$ booleans$
           int8s$ uint8s$ int16s$ uint16s$ int32s$ uint32s$ int64s$ uint64s$
-          reals$ reals-between$ complexes-rectangular$ complexes-polar$
+          reals$ reals-between$ finite-flonums$
+          complexes-rectangular$ complexes-polar$
           reals-normal$ reals-exponential$
           integers-geometric$ integers-poisson$
           regular-strings$
@@ -204,6 +205,26 @@
   (let ([range (- ub lb)]
         [s (random-data-random-source)])
     (^[] (clamp (+ (* range (%rand-real0 s)) lb) lb ub))))
+
+;; API.  Uniformly sample from all possible finite flonums.
+;; The distribution is not uniform in mathematical sense, since flonums
+;; are denser when it's closer to zero.
+;; The imlementation assumes IEEE double.
+;; NB: We generate zeros with non-zero exponents, but they are coerced
+;; to the canonical zeros internally.  That makes zeros appear x2000 likely
+;; than other numbers.  Whether it is an issue or not depends on the
+;; application; we leave it as it is for now.
+(define (finite-flonums$)
+  (let ([expgen (integers-between$ -1074 971)]
+        [sgngen (samples$ '#(1 -1))]
+        [mntgen (integers$ (real-expt 2 52))])
+    (^[]
+      (let ([exp (expgen)]
+            [mantissa (mntgen)]
+            [sign (sgngen)])
+        (if (or (= -1074 exp) (zero? mantissa))
+          (encode-float (vector mantissa exp sign)) ;denormalized or zero
+          (encode-float (vector (+ (real-expt 2 52) mantissa) exp sign)))))))
 
 ;; rational
 
