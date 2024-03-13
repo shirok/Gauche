@@ -47,6 +47,9 @@
           inexact-complex-generator inexact-integer-generator
           inexact-number-generator inexact-rational-generator
           inexact-real-generator
+
+          list-generator-of pair-generator-of
+          procedure-generator-of vector-generator-of
           )
   )
 (select-module srfi.252)
@@ -149,3 +152,21 @@
 (define (inexact-real-generator)
   (gcons* 0.0 -0.0 0.5 -0.5 1.0 -1.0 +inf.0 -inf.0 +nan.0
           (finite-flonums$)))
+
+;; Generator combiners
+
+(define (list-generator-of gen :optional (max-length #f))
+  (if max-length
+    (lists-of (integers$ max-length) gen)
+    (lists-of gen)))
+
+(define (pair-generator-of car-gen :optional (cdr-gen #f))
+  (pairs-of car-gen (or cdr-gen car-gen)))
+
+(define (procedure-generator-of gen)
+  (^[] (^ _ (gen))))
+
+(define (vector-generator-of gen :optional (max-length #f))
+  (if max-length
+    (vectors-of (integers$ max-length) gen)
+    (vectors-of gen)))
