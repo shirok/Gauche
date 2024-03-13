@@ -50,7 +50,7 @@
           int8s$ uint8s$ int16s$ uint16s$ int32s$ uint32s$ int64s$ uint64s$
           reals$ reals-between$ finite-flonums$
           complexes-rectangular$ complexes-polar$
-          reals-normal$ reals-exponential$
+          reals-normal$ reals-exponential$ reals-power-law$
           integers-geometric$ integers-poisson$
           regular-strings$
 
@@ -286,6 +286,20 @@ plot 'tmp' using (bin($1,binwidth)):(1.0) smooth freq with boxes
 (define (reals-exponential$ m)
   (let1 s (random-data-random-source)
     (^[] (- (* m (log (%rand-real s)))))))
+
+;; Power-law distribution
+;;    p(x) = (α-1)/xmin (x/xmin)^{-α}    x >= xmin, α > 1
+;; We use method described in Appendix D of
+;;   Aaron Clauset, Cosma Rohilla Shalizi, M.E.J.Newman, Power-Law Distributions
+;;   in Empirical Data, SIAM Review, 51(4) pp.661--703, Dec. 2009.
+;; Preprint https://arxiv.org/abs/0706.1062
+(define (reals-power-law$ xmin power)
+  (assume (positive? xmin))
+  (assume (> power 1))
+  (let ([s (random-data-random-source)]
+        [exponent (- (/ (- power 1)))])
+    (^[] (* xmin (expt (- 1 (%rand-real s)) exponent)))))
+
 
 ;; Draw from geometric distribution, with success probability p.
 ;; Mean is 1/p, variance is (1-p)/p^2
