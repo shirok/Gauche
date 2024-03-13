@@ -162,4 +162,11 @@
   (unit-random s0 1/3)
   )
 
+;;-------------------------------------------------------------------
+;; SRFI-252 also depends on math.mt-random
+(test-section "SRFI-252")
+
+(use srfi.252)
+(test-module 'srfi.252)
+
 (test-end)

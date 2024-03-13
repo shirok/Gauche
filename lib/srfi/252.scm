@@ -34,12 +34,20 @@
 (define-module srfi.252
   (use gauche.generator)
   (use data.random)
-  (export
-   boolean-generator
-   bytevector-generator
-   char-generator
-   string-generator
-   symbol-generator)
+  (export boolean-generator bytevector-generator
+          char-generator string-generator symbol-generator
+
+          complex-generator integer-generator number-generator
+          rational-generator real-generator
+
+          exact-complex-generator exact-integer-generator
+          exact-integer-complex-generator exact-number-generator
+          exact-rational-generator exact-real-generator
+
+          inexact-complex-generator inexact-integer-generator
+          inexact-number-generator inexact-rational-generator
+          inexact-real-generator
+          )
   )
 (select-module srfi.252)
 
@@ -47,7 +55,7 @@
 
 (define-constant sequence-max-size 33)
 
-(define (boolean-generator) (gcons* #t #f (boolleans$)))
+(define (boolean-generator) (gcons* #t #f (booleans$)))
 
 (define (bytevector-generator)
   (gcons* '#u8()
@@ -58,9 +66,86 @@
 (define (char-generator) (gcons* #\null (chars$ char-set:full)))
 
 (define (string-generator)
-  (gcons* "" "\x00;"
-          (strings-of (integers$ sequence-max-size) (chars$ char-set:full))))
+  ($ gcons* ""
+     $ strings-of (integers$ sequence-max-size) (chars$ char-set:full)))
 
 (define (symbol-generator)
-  (gmap string->symbol (strings-of (integers$ sequence-max-size)
-                                   (chars$ char-set:full))))
+  ($ gcons* '||
+     $ gmap string->symbol
+     $ strings-of (integers$ sequence-max-size) (chars$ char-set:full)))
+
+(define (complex-generator) (inexact-complex-generator))
+
+(define (integer-generator)
+  (samples-from (list (exact-integer-generator) (inexact-integer-generator))))
+
+(define (number-generator)
+  (samples-from (list (exact-number-generator) (inexact-number-generator))))
+
+(define (rational-generator) (exact-rational-generator))
+
+(define (real-generator)
+  (samples-from (list (exact-real-generator) (inexact-real-generator))))
+
+(define (exact-complex-generator) (error "Exact complex isn't supported."))
+
+;; Since our integers are unbounded, we can't uniformly sample from the
+;; entire space.  Besides, real programs tend to meet a lots of short
+;; integers but relatively few bigger ones.
+;;
+;; So, heuristically, we prepare three generators - samples from 16bit integers,
+;; samples from entire fixnum range, and a long-tail distribution of bignums.
+(define (%heuristic-uints)
+  (let ([smalls (uint16s$)]
+        [mids (fixnums$)]
+        [bigs (reals-power-law$ (+ (greatest-fixnum) 1) 1.1)])
+    (samples-from (list smalls mids (^[] (round->exact (bigs)))))))
+
+(define (%heuristic-sints)
+  (let ([sign (samples$ '(-1 1))]
+        [uints (%heuristic-uints)])
+    (^[] (* (sign) (uints)))))
+
+(define (exact-integer-generator)
+  (gcons* 0 1 -1 (%heuristic-sints)))
+
+(define (exact-integer-complex-generator)
+  (error "Exact complex isn't supported."))
+
+(define (exact-number-generator)
+  ;; we don't have exact complex, so this is the same as...
+  (exact-rational-generator))
+
+(define (%nonzero-uints) (gdelete 0 (%heuristic-uints)))
+
+(define (%ratios)
+  (gmap / (%heuristic-sints) (%nonzero-uints)))
+
+(define (exact-rational-generator)
+  (gcons* 0 1 -1 1/2 -1/2 (%ratios)))
+
+(define (exact-real-generator) (exact-rational-generator))
+
+(define (inexact-complex-generator)
+  (let ([re (inexact-real-generator)]
+        [im (inexact-real-generator)])
+    (gcons* 0.0 -0.0 0.5 -0.5 1.0 -1.0
+            0.0+1.0i 0.0-1.0i -0.0+1.0i -0.0-1.0i
+            0.5+0.5i 0.5-0.5i -0.5+0.5i -0.5-0.5i
+            1.0+1.0i 1.0-1.0i -1.0+1.0i -1.0-1.0i
+            +inf.0+inf.0i +inf.0-inf.0i -inf.0+inf.0i -inf.0-inf.0i
+            +nan.0+nan.0i
+            +inf.0 -inf.0 +nan.0
+            (^[] (make-rectangular (re) (im))))))
+
+(define (inexact-integer-generator)
+  (gcons* 0.0 -0.0 1.0 -1.0
+          (gfilter finite? (gmap inexact (%heuristic-sints)))))
+
+(define (inexact-number-generator) (inexact-complex-generator))
+
+(define (inexact-rational-generator) (inexact-real-generator))
+
+(define (inexact-real-generator)
+  (gcons* 0.0 -0.0 0.5 -0.5 1.0 -1.0 +inf.0 -inf.0 +nan.0
+          (finite-flonums$)))

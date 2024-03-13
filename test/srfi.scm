@@ -3216,4 +3216,8 @@
   (include "include/srfi-247-tests")
   )
 
+;;-----------------------------------------------------------------------
+;; SRFI-252 depends on mt-random, and will be tested in ext/mt-random/test.scm
+
+
 (test-end)
