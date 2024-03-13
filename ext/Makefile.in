@@ -1,6 +1,6 @@
 @SET_MAKE@
-SUBDIRS= gauche util data scheme srfi uvector charconv binary termios \
-	 fcntl file sxml syslog dbm mt-random bcrypt digest vport \
+SUBDIRS= gauche mt-random util data scheme srfi uvector charconv binary \
+	 termios fcntl file sxml syslog dbm bcrypt digest vport \
 	 text rfc zlib sparse peg windows tls native
 
 .PHONY: $(SUBDIRS)

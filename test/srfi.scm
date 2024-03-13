@@ -364,7 +364,7 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; SRFI-27 depends on mt-random, and will be tested in ext/mt-random/test.scm
+;; SRFI-27 depends on mt-random, and will be tested in ext/srfi.
 
 ;;-----------------------------------------------------------------------
 ;; Localization
@@ -3217,7 +3217,7 @@
   )
 
 ;;-----------------------------------------------------------------------
-;; SRFI-252 depends on mt-random, and will be tested in ext/mt-random/test.scm
+;; SRFI-252 depends on mt-random, and will be tested in ext/srfi.
 
 
 (test-end)

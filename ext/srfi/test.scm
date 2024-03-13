@@ -8,6 +8,8 @@
 
 (include "test-srfi-13")
 (include "test-srfi-19")
+(include "test-srfi-27")
 (include "test-srfi-43")
+(include "test-srfi-252")
 
 (test-end)
