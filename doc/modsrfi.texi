@@ -90,6 +90,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * String-notated bytevectors::  srfi.207
 * Enums and enum sets::         srfi.209
 * Procedures and syntax for multiple values::  srfi.210
+* Central Log Exchange::        srfi.215
 * SICP prerequisites::          srfi.216
 * Integer sets::                srfi.217
 * Define higher-order lambda::  srfi.219
@@ -13241,6 +13242,129 @@ the result(s) of those procedures.  These can be written using
   @equiv{} ((compose-left proc @dots{}) obj)
 @end example
 @end defun
+
+@c ----------------------------------------------------------------------
+@node Central Log Exchange
+@section @code{srfi.215} - Central Log Exchange
+@c NODE 中央ログ交換,  @code{srfi.215} - 中央ログ交換
+
+@deftp {Module} srfi.215
+@mdindex srfi.215
+@c EN
+This module provides a central log exchange that connects log
+producers with log consumers, allowing code to produce log messages
+without knowledge of which log system is actually used.
+@c COMMON
+
+@c EN
+This module is built on, and compatible with, the
+@pxref{User-level logging} interface.
+@c COMMON
+@end deftp
+
+@deffn {Parameter} current-log-callback
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+This parameter is bound to the current log callback, which is a
+procedure that takes a log message as its single argument. Log
+messages are passed as association lists.
+@c COMMON
+@end deffn
+
+@deffn {Parameter} current-log-fields
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+This parameter contains a list of additional keys and values that are
+automatically appended to the fields passed to @code{send-log}. The
+effect is as if that procedure was always invoked as
+@code{(apply send-log severity message [key value] ... (current-log-fields))}.
+@c COMMON
+@end deffn
+
+@defun send-log SEVERITY MESSAGE @dots{}
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Constructs a log message that contains the arguments and the current
+log fields. The resulting log message is passed as an argument to the
+current log callback. The optional arguments are grouped into pairs of
+keys and values and are added to the log message, as in an association
+list. An error is signaled if an odd number of arguments is passed, or
+if one of the keys is not a symbol.
+@c COMMON
+
+@example
+(send-log INFO (string-append "User " username " logged in")
+          'USERNAME username 'REMOTE_IP remote-ip)
+@end example
+@end defun
+
+@defvr {Constant} EMERGENCY
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for when the system is unusable.
+@c COMMON
+@end defvr
+
+@defvr {Constant} ALERT
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for when action must be taken
+immediately.
+@c COMMON
+@end defvr
+
+@defvr {Constant} CRITICAL
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for critical conditions.
+@c COMMON
+@end defvr
+
+@defvr {Constant} ERROR
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for error conditions.
+@c COMMON
+@end defvr
+
+@defvr {Constant} WARNING
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for warning conditions.
+@c COMMON
+@end defvr
+
+@defvr {Constant} NOTICE
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for normal but significant conditions.
+@c COMMON
+@end defvr
+
+@defvr {Constant} INFO
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for information messages.
+@c COMMON
+@end defvr
+
+@defvr {Constant} DEBUG
+[SRFI-215]
+@c MOD srfi.215
+@c EN
+Log message severity constant for debug-level messages.
+@c COMMON
+@end defvr
 
 @c ----------------------------------------------------------------------
 @node SICP prerequisites, Integer sets, Procedures and syntax for multiple values, Library modules - SRFIs
