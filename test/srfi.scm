@@ -2900,6 +2900,17 @@
   (with-module srfi.210.test (run-tests)))
 
 ;;-----------------------------------------------------------------------
+;; Central log exchange
+
+(test-section "SRFI-215")
+
+(define-module srfi-215-tests
+  (use gauche.test)
+  (use srfi.215)
+  (test-module 'srfi.215)
+  )
+
+;;-----------------------------------------------------------------------
 ;; SCIP prerequisites
 
 (test-section "SRFI-216")
