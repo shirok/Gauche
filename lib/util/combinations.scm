@@ -58,8 +58,8 @@
     [else
      (reverse!
       (fold-with-index
-       (lambda (ind elt acc)
-         (fold (lambda (subperm acc) (acons elt subperm acc))
+       (^[ind elt acc]
+         (fold (^[subperm acc] (acons elt subperm acc))
                acc
                (permutations (but-kth set ind))))
        '()
@@ -83,7 +83,7 @@
                 (loop (+ i 1)
                       (cons (car p) seen)
                       (cdr p)
-                      (fold (lambda (subperm r) (acons (car p) subperm r))
+                      (fold (^[subperm r] (acons (car p) subperm r))
                             r
                             (rec (but-kth set i))))]))]))
   (rec set))
@@ -95,17 +95,17 @@
   (proc `(,x2 ,x1 ,x3)) (proc `(,x2 ,x3 ,x1))
   (proc `(,x3 ,x1 ,x2)) (proc `(,x3 ,x2 ,x1)))
 (define (p/each4 proc x1 x2 x3 x4)
-  (p/each3 (lambda (xs) (proc (cons x1 xs))) x2 x3 x4)
-  (p/each3 (lambda (xs) (proc (cons x2 xs))) x1 x3 x4)
-  (p/each3 (lambda (xs) (proc (cons x3 xs))) x1 x2 x4)
-  (p/each3 (lambda (xs) (proc (cons x4 xs))) x1 x2 x3))
+  (p/each3 (^[xs] (proc (cons x1 xs))) x2 x3 x4)
+  (p/each3 (^[xs] (proc (cons x2 xs))) x1 x3 x4)
+  (p/each3 (^[xs] (proc (cons x3 xs))) x1 x2 x4)
+  (p/each3 (^[xs] (proc (cons x4 xs))) x1 x2 x3))
 (define (p/each* proc len xs)
   (if (= len 4)
     (apply p/each4 proc xs)
     (let1 len1 (- len 1)
       (for-each-with-index
-       (lambda (ind elt)
-         (p/each* (lambda (subperm) (proc (cons elt subperm)))
+       (^[ind elt]
+         (p/each* (^[subperm] (proc (cons elt subperm)))
                   len1
                   (but-kth xs ind)))
        xs))))
@@ -131,7 +131,7 @@
                   (p set))
          (cond [(null? p)]
                [(member (car p) seen eq) (loop (+ i 1) seen (cdr p))]
-               [else (rec (lambda (subperm) (proc (cons (car p) subperm)))
+               [else (rec (^[subperm] (proc (cons (car p) subperm)))
                        (but-kth set i))
                      (loop (+ i 1) (cons (car p) seen) (cdr p))]))]))
   (rec proc set))
@@ -173,9 +173,9 @@
   (if (not (positive? n))
     (proc '())
     (pair-for-each
-     (lambda (pr)
+     (^[pr]
        (combinations-for-each
-        (lambda (sub-comb) (proc (cons (car pr) sub-comb)))
+        (^[sub-comb] (proc (cons (car pr) sub-comb)))
         (cdr pr)
         (- n 1)))
      set)))
@@ -189,7 +189,7 @@
         (cond [(null? p)]
               [(member (car p) seen eq) (loop (cdr p) seen)]
               [else
-               (rec (lambda (sub-comb) (proc (cons (car p) sub-comb)))
+               (rec (^[sub-comb] (proc (cons (car p) sub-comb)))
                  (lset-difference eq (cdr p) seen)
                  (- n 1))
                (loop (cdr p) (cons (car p) seen))]))))
@@ -202,10 +202,10 @@
 ;; the easy binary way
 (define (power-set-binary set)
   (if (null? set)
-      (list '())
-      (let ((x (car set))
-            (rest (power-set-binary (cdr set))))
-        (append rest (map (^s (cons x s)) rest)))))
+    (list '())
+    (let ([x (car set)]
+          [rest (power-set-binary (cdr set))])
+      (append rest (map (^s (cons x s)) rest)))))
 
 ;; use combinations for nice ordering
 (define (power-set set)
@@ -218,17 +218,14 @@
 
 ;; also ordered
 (define (power-set-for-each proc set)
-  (let ((size (length set)))
-    (let loop ((i 0))
-      (if (> i size)
-          '()
-          (begin
-            (combinations-for-each proc set i)
-            (loop (+ i 1)))))))
+  (let1 size (length set)
+    (do ([i 0 (+ i 1)])
+        [(> i size) '()]
+      (combinations-for-each proc set i))))
 
 ;; w/o duplicate entry
 (define (power-set* set . maybe-eq)
-  (let ((size (length set)))
+  (let1 size (length set)
     (let loop ((i 0))
       (if (> i size)
           '()
@@ -236,13 +233,10 @@
                    (loop (+ i 1)))))))
 
 (define (power-set*-for-each proc set . maybe-eq)
-  (let ((size (length set)))
-    (let loop ((i 0))
-      (if (> i size)
-          '()
-          (begin
-            (apply combinations*-for-each proc set i maybe-eq)
-            (loop (+ i 1)))))))
+  (let1 size (length set)
+    (do ([i 0 (+ i 1)])
+        [(> i size) '()]
+      (apply combinations*-for-each proc set i maybe-eq))))
 
 ;;----------------------------------------------------------------
 ;; cartesian product (all combinations of one element from each set)
@@ -251,23 +245,17 @@
 (define (cartesian-product lol)
   (if (null? lol)
       (list '())
-      (let ((l (car lol))
-            (rest (cartesian-product (cdr lol))))
-        (append-map!
-         (lambda (x)
-           (map (lambda (sub-prod) (cons x sub-prod)) rest))
-         l))))
+      (let ([l (car lol)]
+            [rest (cartesian-product (cdr lol))])
+        (append-map! (^x (map (^[sub-prod] (cons x sub-prod)) rest))
+                     l))))
 
 (define (cartesian-product-for-each proc lol)
   (if (null? lol)
-      (proc '())
-      (for-each
-       (lambda (x)
-         (cartesian-product-for-each
-          (lambda (sub-prod)
-            (proc (cons x sub-prod)))
-          (cdr lol)))
-       (car lol))))
+    (proc '())
+    (dolist [x (car lol)]
+      (cartesian-product-for-each (^[sub-prod] (proc (cons x sub-prod)))
+                                  (cdr lol)))))
 
 ;; The above is left fixed (it varies elements to the right first).
 ;; Below is a right fixed product which could be defined with two
@@ -279,18 +267,15 @@
 
 (define (cartesian-product-right lol)
   (if (null? lol)
-      (list '())
-      (let ((l (car lol))
-            (rest (cartesian-product-right (cdr lol))))
-        (append-map!
-         (lambda (sub-prod)
-           (map (^x (cons x sub-prod)) l))
-         rest))))
+    (list '())
+    (let ([l (car lol)]
+          [rest (cartesian-product-right (cdr lol))])
+      (append-map! (^[sub-prod] (map (^x (cons x sub-prod)) l))
+                   rest))))
 
 (define (cartesian-product-right-for-each proc lol)
   (if (null? lol)
-      (proc '())
-      (cartesian-product-right-for-each
-       (lambda (sub-prod)
-         (for-each (^x (proc (cons x sub-prod))) (car lol)))
-       (cdr lol))))
+    (proc '())
+    (cartesian-product-right-for-each
+     (^[sub-prod] (for-each (^x (proc (cons x sub-prod))) (car lol)))
+     (cdr lol))))
