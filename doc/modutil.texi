@@ -5942,6 +5942,26 @@ distribution uses a decay parameter λ such that p(x) is
 @c COMMON
 @end defun
 
+@defun reals-power-law$ xmin power
+@c MOD data.random
+@c EN
+Creates a generator that yields finite positive real numbers greater
+than or equal
+to @var{xmin}, and follows the power-law probability density function
+p(x) = (α-1)/xmin (x/xmin)^@{-α@}, where x >= xmin and α > 1.
+The @var{power} argument specifies α.
+
+The @var{xmin} argument must be a positive real numebr, and @var{power}
+must be a real number greater than 1.
+@c JP
+冪乗則に従った確率で有限の正実数を生成するジェネレータを作って返します。
+確率密度関数p(x)は(α-1)/xmin (x/xmin)^@{-α@}と表せます。ここでx ≧ xmin、α > 1 です。
+@var{power}引数がαを指定します。
+
+@var{xmin}は正の実数、@var{power}は1より大きい実数でなければなりません。
+@c COMMON
+@end defun
+
 @defun integers-geometric$ p
 @c MOD data.random
 @c EN
