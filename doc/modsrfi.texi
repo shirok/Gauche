@@ -90,7 +90,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * String-notated bytevectors::  srfi.207
 * Enums and enum sets::         srfi.209
 * Procedures and syntax for multiple values::  srfi.210
-* Central Log Exchange::        srfi.215
+* Central log exchange::        srfi.215
 * SICP prerequisites::          srfi.216
 * Integer sets::                srfi.217
 * Define higher-order lambda::  srfi.219
@@ -13244,21 +13244,29 @@ the result(s) of those procedures.  These can be written using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Central Log Exchange
-@section @code{srfi.215} - Central Log Exchange
-@c NODE 中央ログ交換,  @code{srfi.215} - 中央ログ交換
+@node Central log exchange
+@section @code{srfi.215} - Central log exchange
+@c NODE 中央ログ交換局,  @code{srfi.215} - 中央ログ交換局
 
 @deftp {Module} srfi.215
 @mdindex srfi.215
 @c EN
-This module provides a central log exchange that connects log
-producers with log consumers, allowing code to produce log messages
-without knowledge of which log system is actually used.
-@c COMMON
+This module abstracts a logging mechanism so that the code
+can produce log messages in the same way regardless of
+the underlying log system.
 
-@c EN
-This module is built on, and compatible with, the
-@pxref{User-level logging} interface.
+In Gauche, the default logging system is set to use @code{gauche.logger}
+(@pxref{User-level logging}).  For Gauche-specific code,
+you can directly use @code{gauche.logger}.  This module is convenient
+when you're writing portable code.
+@c JP
+このモジュールはログ機構を抽象化して、具体的にどういうログシステムが使われているかに
+かかわらず統一的な方法でログメッセージを送り出す方法を提供します。
+
+Gaucheでは、デフォルトのログシステムは@code{gauche.logger}を使うように設定してあります
+(@pxref{User-level logging})。
+Gauche特定のコードを書いているなら@code{gauche.logger}を直接使っても良いでしょう。
+このモジュールはポータブルなコードを書く場合に便利です。
 @c COMMON
 @end deftp
 
@@ -13266,33 +13274,116 @@ This module is built on, and compatible with, the
 [SRFI-215]
 @c MOD srfi.215
 @c EN
-This parameter is bound to the current log callback, which is a
-procedure that takes a log message as its single argument. Log
-messages are passed as association lists.
+The value of this parameter must be a procedure that takes single
+argument, a log message.
+
+A log message is an alist, with symbols as keys.  Their values can
+be a string, an exact integer, a bytevector (u8vector),
+or an instance of @code{<error>}.  If values of other types are
+passed to @code{send-log}, they are converted to strings before
+this callback is called.
+
+Two keys, @code{SEVERITY} and @code{MESSAGE}, are always present,
+with an exact integer value and a string as theri values, respectively.
+The severity value is between 0 and 7, inclusive, and corresponding
+constans are defined; see below.
+Users can use other keys freely, though SRFI-215 suggests some
+common key names so check them up.
+
+SRFI-215 also suggests that the default value of log callback buffers
+log messages, and pass them to a user-provided callback when this
+parameter is set/rebound.  In our implementation, the default
+callback directly sends logs to @code{log-format}
+(@pxref{User-level logging}), for your convenience.
+@c JP
+このパラメータの値は引数を一つ取る手続きでなければなりません。
+引数はログメッセージオブジェクトです。
+
+ログメッセージオブジェクトは連想リストで、キーは常にシンボルです。
+値は、文字列、正確な整数、バイトベクタ(u8vector)、@code{<error>}のインスタンス、
+のいずれかです。それ以外の値が@code{send-log}に渡された場合、
+その値はこのコールバックが呼ばれる前に文字列へと変換されます。
+
+キー@code{SEVERITY}と@code{MESSAGE}は常に存在し、
+それぞれ正確な整数と文字列を値に持ちます。
+@code{SEVERITY}の値は0から7まで(両端含む)です。
+その意味を示す定数が定義されているので下のエントリを参照してください。
+ユーザはその他のキーを自由に使えます。
+ただ、SRFI-215はいくつかの共通するキーを提示しているので見ておくと良いでしょう。
+
+SRFI-25はまた、デフォルトのコールバックはログメッセージをバッファし、
+このコールバックの値が変えられた時に貯められたメッセージを新たなコールバックに渡すことを
+提案mしています。
+しかし我々の実装では、デフォルトのコールバックは直接@code{log-format}に
+ログを流します (@ref{User-level logging}参照)。
 @c COMMON
+
 @end deffn
 
 @deffn {Parameter} current-log-fields
 [SRFI-215]
 @c MOD srfi.215
 @c EN
-This parameter contains a list of additional keys and values that are
-automatically appended to the fields passed to @code{send-log}. The
-effect is as if that procedure was always invoked as
+This parameter holds a key-value list, @code{(key1 value1 key2 value2 @dots{})},
+that are automatically appended to the fields passed to @code{send-log}.
+The effect is as if that procedure was always invoked as
 @code{(apply send-log severity message [key value] ... (current-log-fields))}.
+
+When you set/rebind this parameter, the passed value is validated
+to be a valid key-value arguments for @code{send-log}.
+@c JP
+このパラメータは@code{(key1 value1 key2 value2 @dots{})}の形のキー-値リストで、
+その内容が@code{send-log}が呼ばれた時にそのフィールドリストに自動的に付け加えられます。
+つまり、@code{send-log}は
+@code{(apply send-log severity message [key value] ... (current-log-fields))}
+と呼ばれたかのように振る舞うということです。
+
+このパラメータをセット/再束縛した時点で、渡された値が@code{send-log}の引数として
+ふさわしいかどうかが検査されます。
 @c COMMON
 @end deffn
 
-@defun send-log SEVERITY MESSAGE @dots{}
+@defun send-log severity message @dots{}
 [SRFI-215]
 @c MOD srfi.215
 @c EN
-Constructs a log message that contains the arguments and the current
-log fields. The resulting log message is passed as an argument to the
-current log callback. The optional arguments are grouped into pairs of
-keys and values and are added to the log message, as in an association
-list. An error is signaled if an odd number of arguments is passed, or
-if one of the keys is not a symbol.
+A single-stop API to construct a log message packet and dispatch to
+the current log callback.
+
+The @var{severity} argument must be an exact integer between 0 and
+7, inclusive.  It will be the value of @code{SEVERITY} key in the
+log message packet.  There are constants defined for each severity
+value: @code{EMERGENCY}, @code{ALERT}, @code{CRITICAL}, @code{ERROR},
+@code{WARNING}, @code{NOTICE}, @code{INFO}, and @code{DEBUG}.
+The @var{messgea} argument is a string and
+will be the value of @code{MESSAGE} key in the log message packet.
+
+The rest of the argument must be a key-value list.
+The @code{SEVERITY} and @var{MESSAGE} keys are prepended,
+and value of @code{current-log-fields} are appended,
+and the entire key-value list is converted to an alist
+to construct a log message packet.
+See @code{current-log-callback} above for the
+valid keys and values.
+
+This procedure does not return a meaningful value.
+@c JP
+ログメッセージパケットを作って現在のログコールバックに送信します。
+
+@var{severity}引数は0から7までの正確な整数でなければなりません。
+これはログメッセージパケットの@code{SEVERITY}キーに対する値となります。
+各値を意味する次の定数が定義されています:
+@code{EMERGENCY}、@code{ALERT}、@code{CRITICAL}、@code{ERROR}、
+@code{WARNING}、@code{NOTICE}、@code{INFO}、@code{DEBUG}。
+@var{message}引数は文字列で、ログメッセージパケットの
+@code{MESSAGE}キーに対する値となります。
+
+残りの引数はキー-値リストです。これに@code{SEVERITY}と@code{MESSAGE}が
+前置され、@code{current-log-fields}の値が後置され、全体がalistに変換されて
+ログメッセージパケットとなります。有効なキーと値については
+上の@code{current-log-callback}を参照してください。
+
+この手続きは意味のある値は返しません。
 @c COMMON
 
 @example
@@ -13302,69 +13393,23 @@ if one of the keys is not a symbol.
 @end defun
 
 @defvr {Constant} EMERGENCY
+@defvrx {Constant} ALERT
+@defvrx {Constant} CRITICAL
+@defvrx {Constant} ERROR
+@defvrx {Constant} WARNING
+@defvrx {Constant} NOTICE
+@defvrx {Constant} INFO
+@defvrx {Constant} DEBUG
 [SRFI-215]
 @c MOD srfi.215
 @c EN
-Log message severity constant for when the system is unusable.
+Bound to exact integers from 0 to 7, respectively, to indicate the severity
+of the incident to be logged.
+@c JP
+それぞれ正確な整数0から7に束縛され、ログされる事象の深刻度を示します。
 @c COMMON
 @end defvr
 
-@defvr {Constant} ALERT
-[SRFI-215]
-@c MOD srfi.215
-@c EN
-Log message severity constant for when action must be taken
-immediately.
-@c COMMON
-@end defvr
-
-@defvr {Constant} CRITICAL
-[SRFI-215]
-@c MOD srfi.215
-@c EN
-Log message severity constant for critical conditions.
-@c COMMON
-@end defvr
-
-@defvr {Constant} ERROR
-[SRFI-215]
-@c MOD srfi.215
-@c EN
-Log message severity constant for error conditions.
-@c COMMON
-@end defvr
-
-@defvr {Constant} WARNING
-[SRFI-215]
-@c MOD srfi.215
-@c EN
-Log message severity constant for warning conditions.
-@c COMMON
-@end defvr
-
-@defvr {Constant} NOTICE
-[SRFI-215]
-@c MOD srfi.215
-@c EN
-Log message severity constant for normal but significant conditions.
-@c COMMON
-@end defvr
-
-@defvr {Constant} INFO
-[SRFI-215]
-@c MOD srfi.215
-@c EN
-Log message severity constant for information messages.
-@c COMMON
-@end defvr
-
-@defvr {Constant} DEBUG
-[SRFI-215]
-@c MOD srfi.215
-@c EN
-Log message severity constant for debug-level messages.
-@c COMMON
-@end defvr
 
 @c ----------------------------------------------------------------------
 @node SICP prerequisites, Integer sets, Procedures and syntax for multiple values, Library modules - SRFIs

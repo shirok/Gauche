@@ -1488,6 +1488,18 @@ Supported by the module @code{srfi.210}
 (@ref{Procedures and syntax for multiple values}参照)。
 
 
+srfi-215, srfi-215
+()
+
+Central log exchange
+Supported by the module @code{srfi.215}
+(@pxref{Central log exchange}).
+
+中央ログ交換局
+モジュール@code{srfi.215}でサポートされます
+(@ref{Central log exchange}参照)。
+
+
 srfi-216, srfi-216
 ()
 
