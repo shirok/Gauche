@@ -2919,9 +2919,10 @@
     (t "params" ">>>DEBUG: params ((METHOD . \"get\") (PATH . \"/login\") (SEQ . 255))\n"
        DEBUG "params" 'METHOD 'get 'PATH "/login" 'SEQ 255)
 
-    (parameterize ((current-log-fields '(USER "guest" TOKEN #u8(1 2 3))))
+    (parameterize ((current-log-fields
+                    '(USER "guest" TOKEN #u8(1 2 3) OP :delete)))
       (t "additional log fields"
-         ">>>WARNING: oops ((CODE . 500) (USER . \"guest\") (TOKEN . #u8(1 2 3)))\n"
+         ">>>WARNING: oops ((CODE . 500) (USER . \"guest\") (TOKEN . #u8(1 2 3)) (OP . \":delete\"))\n"
          WARNING "oops" 'CODE 500))
     (let ((z '()))
       (parameterize ((current-log-callback (^[alist] (push! z alist))))
@@ -2932,7 +2933,16 @@
                (begin
                  (send-log NOTICE "something's wrong")
                  (send-log CRITICAL "everything's wrong!")
-                 (send-log EMERGENCY "good bye." 'TYPE "catastrophy")))))
+                 (send-log EMERGENCY "good bye." 'TYPE "catastrophy")
+                 z))))
+
+    (test* "error check (severity)" (test-error <error> #/a severity from/)
+           (send-log 'INFO "foo"))
+    (test* "error check (message)" (test-error <error> #/message to be a string/)
+           (send-log INFO 'baz))
+    (test* "error check (plist)"
+           (test-error <error> #/Incomplete field plist: \(foo bar baz\)/)
+           (send-log INFO "yay" 'foo 'bar 'baz))
     ))
 
 ;;-----------------------------------------------------------------------

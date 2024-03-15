@@ -3,7 +3,7 @@
 ;;;
 ;;;   Copyright (c) 2020  Goran Weinholt
 ;;;   Copyright (c) 2024  Antero Mejr  <mail@antr.me>
-;;;   Copyright (c) 2024  Shiro Kawai
+;;;   Copyright (c) 2024  Shiro Kawai <shiro@acm.org>
 ;;;
 ;;;   This module is a Gauche port of the SRFI 215 sample implementation,
 ;;;   and is therefore MIT-licensed.
@@ -29,9 +29,12 @@
 ;;;   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;;;   SOFTWARE.
 
+;; Originally from SRFI-215 reference implementation by Goran Weinholt
+;; Antero Mejr adapted it to Gauche's gauche.logger layer.
+;; Shiro Kawai modified it to utilize Gauche's style as much.
+
 (define-module srfi.215
   (use gauche.logger)
-  (use gauche.uvector)
   (use util.match)
   (export send-log
           current-log-fields
@@ -58,33 +61,27 @@
   (DEBUG 7)                    ; debug-level messages
   )
 
-(define (field-list->alist plist)
+;; (key1 val1 key2 val2 ...) -> ((key1 . val1) (key2 . val2) ...)
+;; SRFI only allows certain types in VALs.  We convert evreything else
+;; to a string.
+;; TAIL should be a already converted alist.
+(define (field-list->alist plist :optional (tail '()))
   (let rec ([fields plist])
     (match fields
-      [() '()]
+      [() tail]
       [(k #f . rest) (rec rest)]
       [(k v . rest)
        (let ([kk (if (symbol? k) k (error "invalid key:" k))]
              [vv (if (or (string? v)
                          (exact-integer? v)
-                         (bytevector? v)
+                         (u8vector? v)
                          (<error> v))
                    v
                    (write-to-string v))])
          `((,kk . ,vv) ,@(rec rest)))]
-      [_ (error "short field list" plist)])))
+      [_ (error "Incomplete field plist:" plist)])))
 
-(define (validate-plist plist)
-  (let rec ([fields plist])
-    (match fields
-      [() #t]
-      [(k v . rest)
-       (unless (symbol? k) (error "invalid key:" k))
-       (rec rest)]
-      [_ (error "short field list" plist)]))
-  plist)
-
-(define current-log-fields (make-parameter '() validate-plist))
+(define current-log-fields (make-parameter '() field-list->alist))
 
 (define current-log-callback
   (make-parameter (^[log-entry]
@@ -103,8 +100,7 @@
           "Expected a severity from 0 to 7, but got:" severity)
   (assume (string? message)
           "Expected message to be a string, but got:" message)
-  (let* ([fields (append plist (current-log-fields))]
-         [alist (field-list->alist fields)])
-    ((current-log-callback) `((SEVERITY . ,severity)
-                              (MESSAGE . ,message)
-                              ,@alist))))
+  ((current-log-callback) `((SEVERITY . ,severity)
+                            (MESSAGE . ,message)
+                            ,@(field-list->alist plist (current-log-fields))))
+  (undefined)) ; make the caller not rely on the result of callback
