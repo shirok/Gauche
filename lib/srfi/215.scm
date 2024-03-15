@@ -61,27 +61,40 @@
   (DEBUG 7)                    ; debug-level messages
   )
 
-;; (key1 val1 key2 val2 ...) -> ((key1 . val1) (key2 . val2) ...)
+;; Check validity of key-value list PLIST.
 ;; SRFI only allows certain types in VALs.  We convert evreything else
 ;; to a string.
-;; TAIL should be a already converted alist.
-(define (field-list->alist plist :optional (tail '()))
-  (let rec ([fields plist])
-    (match fields
-      [() tail]
+(define (validate-field-list plist)
+  (define (rec kvs)
+    (match kvs
+      [() '()]
       [(k #f . rest) (rec rest)]
       [(k v . rest)
-       (let ([kk (if (symbol? k) k (error "invalid key:" k))]
-             [vv (if (or (string? v)
-                         (exact-integer? v)
-                         (u8vector? v)
-                         (<error> v))
-                   v
-                   (write-to-string v))])
-         `((,kk . ,vv) ,@(rec rest)))]
-      [_ (error "Incomplete field plist:" plist)])))
+       (unless (symbol? k) (error "invalid key in field list:" k))
+       `(,k ,(if (or (string? v)
+                     (exact-integer? v)
+                     (u8vector? v)
+                     (<error> v))
+               v
+               (write-to-string v))
+            ,@(rec rest))]
+      [_ (error "Incomplete field plist:" plist)]))
+  (rec plist))
 
-(define current-log-fields (make-parameter '() field-list->alist))
+;; Concatenate given plists and convert it to an alist.
+;; Assumes all plists are well-formed.
+(define (plists->alist . plists)
+  (define (rec1 plist plists)
+    (match plist
+      [() (rec2 plists)]
+      [(k v . rest) `((,k . ,v) ,@(rec1 rest plists))]))
+  (define (rec2 plists)
+    (match plists
+      [() '()]
+      [(plist . rest) (rec1 plist rest)]))
+  (rec2 plists))
+
+(define current-log-fields (make-parameter '() validate-field-list))
 
 (define current-log-callback
   (make-parameter (^[log-entry]
@@ -102,5 +115,6 @@
           "Expected message to be a string, but got:" message)
   ((current-log-callback) `((SEVERITY . ,severity)
                             (MESSAGE . ,message)
-                            ,@(field-list->alist plist (current-log-fields))))
+                            ,@(plists->alist (validate-field-list plist)
+                                             (current-log-fields))))
   (undefined)) ; make the caller not rely on the result of callback
