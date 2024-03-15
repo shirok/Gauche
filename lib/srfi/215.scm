@@ -3,6 +3,7 @@
 ;;;
 ;;;   Copyright (c) 2020  Goran Weinholt
 ;;;   Copyright (c) 2024  Antero Mejr  <mail@antr.me>
+;;;   Copyright (c) 2024  Shiro Kawai
 ;;;
 ;;;   This module is a Gauche port of the SRFI 215 sample implementation,
 ;;;   and is therefore MIT-licensed.
@@ -31,6 +32,7 @@
 (define-module srfi.215
   (use gauche.logger)
   (use gauche.uvector)
+  (use util.match)
   (export send-log
           current-log-fields
           current-log-callback
@@ -38,79 +40,71 @@
           ))
 (select-module srfi.215)
 
-;; These severities are from RFC 5424 ("The Syslog Protocol").
-(define EMERGENCY 0)                ; system is unusable
-(define ALERT 1)                    ; action must be taken immediately
-(define CRITICAL 2)                 ; critical conditions
-(define ERROR 3)                    ; error conditions
-(define WARNING 4)                  ; warning conditions
-(define NOTICE 5)                   ; normal but significant condition
-(define INFO 6)                     ; informational messages
-(define DEBUG 7)                    ; debug-level messages
+(define-syntax define-severities
+  (syntax-rules ()
+    [(_ lookup (name val) ...)
+     (begin (define-constant name val) ...
+            (define (lookup v) (alist-ref '((val . name) ...) v)))]))
 
-(define severity-strings
-  '((0 . "EMERGENCY")
-    (1 . "ALERT")
-    (2 . "CRITICAL")
-    (3 . "ERROR")
-    (4 . "WARNING")
-    (5 . "NOTICE")
-    (6 . "INFO")
-    (7 . "DEBUG")))
+;; These severities are from RFC 5424 ("The Syslog Protocol").
+(define-severities severity
+  (EMERGENCY 0)                ; system is unusable
+  (ALERT 1)                    ; action must be taken immediately
+  (CRITICAL 2)                 ; critical conditions
+  (ERROR 3)                    ; error conditions
+  (WARNING 4)                  ; warning conditions
+  (NOTICE 5)                   ; normal but significant condition
+  (INFO 6)                     ; informational messages
+  (DEBUG 7)                    ; debug-level messages
+  )
 
 (define (field-list->alist plist)
-  (let f ((fields plist))
-    (cond ((null? fields)
-           '())
-          ((or (not (pair? fields)) (not (pair? (cdr fields))))
-           (error "short field list" plist))
-          (else
-           (let ((k (car fields)) (v (cadr fields)))
-             (if (not v)
-                 (f (cddr fields))
-                 (let ((k^ (cond ((symbol? k) k)
-                                 (else
-                                  (error "invalid key" k plist))))
-                       (v^ (cond ((string? v) v)
-                                 ((and (integer? v) (exact? v)) v)
-                                 ((bytevector? v) v)
-                                 ((<error> v) v)
-                                 (else
-                                  (let ((p (open-output-string)))
-                                    (write v p)
-                                    (get-output-string p))))))
-                   (cons (cons k^ v^)
-                         (f (cddr fields))))))))))
+  (let rec ([fields plist])
+    (match fields
+      [() '()]
+      [(k #f . rest) (rec rest)]
+      [(k v . rest)
+       (let ([kk (if (symbol? k) k (error "invalid key:" k))]
+             [vv (if (or (string? v)
+                         (exact-integer? v)
+                         (bytevector? v)
+                         (<error> v))
+                   v
+                   (write-to-string v))])
+         `((,kk . ,vv) ,@(rec rest)))]
+      [_ (error "short field list" plist)])))
 
-(define current-log-fields
-  (make-parameter '()
-                  (lambda (plist)
-                    (field-list->alist plist)
-                    plist)))
+(define (validate-plist plist)
+  (let rec ([fields plist])
+    (match fields
+      [() #t]
+      [(k v . rest)
+       (unless (symbol? k) (error "invalid key:" k))
+       (rec rest)]
+      [_ (error "short field list" plist)]))
+  plist)
+
+(define current-log-fields (make-parameter '() validate-plist))
 
 (define current-log-callback
-  (make-parameter (lambda (log-entry)
-                    (log-format "~a: ~a ~a"
-                                (assoc-ref severity-strings
-                                           (assoc-ref log-entry 'SEVERITY))
-                                (assoc-ref log-entry 'MESSAGE)
-                                (alist-delete
-                                 'SEVERITY
-                                 (alist-delete 'MESSAGE log-entry eq?) eq?)))
-                  (lambda (hook)
-                    (unless (procedure? hook)
-                      (error "current-log-callback: expected a procedure" hook))
+  (make-parameter (^[log-entry]
+                    (log-format "~a: ~a ~s"
+                                (severity (alist-ref log-entry 'SEVERITY))
+                                (alist-ref log-entry 'MESSAGE)
+                                (remove
+                                 (^p (memq (car p) '(SEVERITY MESSAGE)))
+                                 log-entry)))
+                  (^[hook]
+                    (assume (procedure? hook))
                     hook)))
 
 (define (send-log severity message . plist)
-  (unless (and (exact? severity) (integer? severity) (<= 0 severity 7))
-    (error "send-log: expected a severity from 0 to 7"
-           severity message plist))
-  (unless (string? message)
-    (error "send-log: expected message to be a string"
-           severity message plist))
-  (let* ((fields (append plist (current-log-fields)))
-         (alist (field-list->alist fields)))
+  (assume (and (exact-integer? severity) (<= 0 severity 7))
+          "Expected a severity from 0 to 7, but got:" severity)
+  (assume (string? message)
+          "Expected message to be a string, but got:" message)
+  (let* ([fields (append plist (current-log-fields))]
+         [alist (field-list->alist fields)])
     ((current-log-callback) `((SEVERITY . ,severity)
                               (MESSAGE . ,message)
                               ,@alist))))

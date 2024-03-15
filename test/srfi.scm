@@ -2908,7 +2908,32 @@
   (use gauche.test)
   (use srfi.215)
   (test-module 'srfi.215)
-  )
+
+  (use gauche.logger)
+  (parameterize ((log-default-drain log-default-drain))
+    (define (t what expected . args)
+      (test* #"send-log (~what)" expected
+             (with-output-to-string (cut apply send-log args))))
+    (log-open 'current-output :prefix ">>>")
+    (t "basic" ">>>INFO: test ()\n" INFO "test")
+    (t "params" ">>>DEBUG: params ((METHOD . \"get\") (PATH . \"/login\") (SEQ . 255))\n"
+       DEBUG "params" 'METHOD 'get 'PATH "/login" 'SEQ 255)
+
+    (parameterize ((current-log-fields '(USER "guest" TOKEN #u8(1 2 3))))
+      (t "additional log fields"
+         ">>>WARNING: oops ((CODE . 500) (USER . \"guest\") (TOKEN . #u8(1 2 3)))\n"
+         WARNING "oops" 'CODE 500))
+    (let ((z '()))
+      (parameterize ((current-log-callback (^[alist] (push! z alist))))
+        (test* "changing current-log-callback"
+               '(((SEVERITY . 0) (MESSAGE . "good bye.") (TYPE . "catastrophy"))
+                 ((SEVERITY . 2) (MESSAGE . "everything's wrong!"))
+                 ((SEVERITY . 5) (MESSAGE . "something's wrong")))
+               (begin
+                 (send-log NOTICE "something's wrong")
+                 (send-log CRITICAL "everything's wrong!")
+                 (send-log EMERGENCY "good bye." 'TYPE "catastrophy")))))
+    ))
 
 ;;-----------------------------------------------------------------------
 ;; SCIP prerequisites
