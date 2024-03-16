@@ -1,3 +1,12 @@
+2024-03-16  Shiro Kawai  <shiro@acm.org>
+
+	* src/string.c (Scm_StringRefCursor): Fix a bug that leaked
+	  #<unbound> to the Scheme world when an incomplete string is given.
+	  It could be exhibited by this:
+	    (let1 z #**"\xe1;"
+	      (string-ref z (string-index->cursor z 0)))
+	  Now it properly raises an error.
+
 2024-03-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/215.scm: Supported.  Contribution from Antero Mejr.

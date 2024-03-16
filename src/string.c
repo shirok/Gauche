@@ -1854,6 +1854,13 @@ ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
     }
 
     const ScmStringBody *srcb = SCM_STRING_BODY(s);
+
+    /* we can't allow string-ref on incomplete strings, since it may yield
+       invalid character object. */
+    if (SCM_STRING_BODY_INCOMPLETE_P(srcb)) {
+        Scm_Error("incomplete string not allowed : %S", s);
+    }
+
     const char *ptr = string_cursor_ptr(srcb, sc);
     if (ptr == NULL) {
         Scm_Error("must be either an index or a cursor: %S", sc);
@@ -1861,9 +1868,8 @@ ScmChar Scm_StringRefCursor(ScmString* s, ScmObj sc, int range_error)
     if (ptr == SCM_STRING_BODY_END(srcb)) {
         if (range_error) {
             Scm_Error("cursor is at the end: %S", sc);
-        } else {
-            return SCM_CHAR_INVALID;
         }
+        return SCM_CHAR_INVALID;
     }
     ScmChar ch;
     SCM_CHAR_GET(ptr, ch);
