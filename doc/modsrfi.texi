@@ -13274,23 +13274,24 @@ Gauche特定のコードを書いているなら@code{gauche.logger}を直接使
 [SRFI-215]
 @c MOD srfi.215
 @c EN
-The value of this parameter must be a procedure that takes single
-argument, a log message.
+The value of this parameter must be a procedure that takes a single
+argument, a log message packet.
 
-A log message is an alist, with symbols as keys.  Their values can
+A log message packet is an alist, with symbols as keys.  Their values can
 be a string, an exact integer, a bytevector (u8vector),
-or an instance of @code{<error>}.  If values of other types are
-passed to @code{send-log}, they are converted to strings before
-this callback is called.
+or an instance of @code{<error>}.  SRFI doesn't specify what
+will happen if other types of values are given.  Gauche converts
+them to strings before this callback is called, but a portable program
+should avoid passing values other than listed above.
 
 Two keys, @code{SEVERITY} and @code{MESSAGE}, are always present,
-with an exact integer value and a string as theri values, respectively.
+with an exact integer value and a string as their values, respectively.
 The severity value is between 0 and 7, inclusive, and corresponding
 constans are defined; see below.
 Users can use other keys freely, though SRFI-215 suggests some
 common key names so check them up.
 
-SRFI-215 also suggests that the default value of log callback buffers
+SRFI-215 also suggests that the default log callback procedure buffers
 log messages, and pass them to a user-provided callback when this
 parameter is set/rebound.  In our implementation, the default
 callback directly sends logs to @code{log-format}
@@ -13301,8 +13302,9 @@ callback directly sends logs to @code{log-format}
 
 ログメッセージオブジェクトは連想リストで、キーは常にシンボルです。
 値は、文字列、正確な整数、バイトベクタ(u8vector)、@code{<error>}のインスタンス、
-のいずれかです。それ以外の値が@code{send-log}に渡された場合、
-その値はこのコールバックが呼ばれる前に文字列へと変換されます。
+のいずれかです。SRFIではそれ以外の値が渡された場合の動作は規定されていません。
+Gaucheではそれ以外の値はコールバックに渡す前に文字列に変換しますが、
+ポータブルなプログラムでは上に列挙された値に留めておくべきです。
 
 キー@code{SEVERITY}と@code{MESSAGE}は常に存在し、
 それぞれ正確な整数と文字列を値に持ちます。
@@ -13327,7 +13329,7 @@ SRFI-25はまた、デフォルトのコールバックはログメッセージ�
 This parameter holds a key-value list, @code{(key1 value1 key2 value2 @dots{})},
 that are automatically appended to the fields passed to @code{send-log}.
 The effect is as if that procedure was always invoked as
-@code{(apply send-log severity message [key value] ... (current-log-fields))}.
+@code{(apply send-log severity message key value ... (current-log-fields))}.
 
 When you set/rebind this parameter, the passed value is validated
 to be a valid key-value arguments for @code{send-log}.
@@ -13355,11 +13357,11 @@ The @var{severity} argument must be an exact integer between 0 and
 log message packet.  There are constants defined for each severity
 value: @code{EMERGENCY}, @code{ALERT}, @code{CRITICAL}, @code{ERROR},
 @code{WARNING}, @code{NOTICE}, @code{INFO}, and @code{DEBUG}.
-The @var{messgea} argument is a string and
+The @var{message} argument is a string and
 will be the value of @code{MESSAGE} key in the log message packet.
 
 The rest of the argument must be a key-value list.
-The @code{SEVERITY} and @var{MESSAGE} keys are prepended,
+The @code{SEVERITY} and @code{MESSAGE} keys are prepended,
 and value of @code{current-log-fields} are appended,
 and the entire key-value list is converted to an alist
 to construct a log message packet.
@@ -14844,7 +14846,7 @@ is returned.  If none of the case is satisfied, @var{default} is returned.
 This srfi enhances the semantics of Scheme's fundamental concepts
 such as continuations and dynamic environments, to support multi-threaded
 programs and delimited continuations.  Some R7RS primitives such as
-@code{call/cc} and @code{dynamic-wind} are extended its semantics
+@code{call/cc} and @code{dynamic-wind} are extended
 to be consistent with the enhanced execution model.
 @c JP
 このSRFIは、Schemeの根本的な概念である継続や動的環境のセマンティクスを、

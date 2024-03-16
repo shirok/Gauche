@@ -1212,7 +1212,7 @@ gosh> #i1/3
 @c EN
 Gauche 0.9.12 and earlier had undocumented real-only elementary functions,
 such as @code{%sin} and @code{%exp}.  They were intended to be a building
-block of the complex elementation functions, hence prefixed with @code{%}.
+block of the complex elementary functions, hence prefixed with @code{%}.
 However, they were visible in @code{gauche} module, and sometimes used
 directly because they were fast.
 @c JP
@@ -1225,10 +1225,10 @@ Gauche 0.9.12とそれ以前のバージョンでは、正式にドキュメン�
 @c COMMON
 
 @c EN
-SRFI-94 introduced names for real-only elementation functions
+SRFI-94 introduced names for real-only elementary functions
 such as @code{real-sin}, so we changed built-in @code{%sin} etc.
 to follow that names.  @xref{Arithmetics}, for those real-only
-elementatry functions.
+elementary functions.
 @c JP
 SRFI-94で、実数のみ対象の初等関数に@code{real-sin}などの名前が規定されたので、
 0.9.13から@code{%sin}などを@code{real-sin}にリネームした上で正式にドキュメントしました。
@@ -1482,7 +1482,7 @@ Gaucheでは@code{future-get}と呼ぶことにしました。
 @defmac future expr
 @c MOD control.future
 @c EN
-Returns a future object, which run the compuatation of @var{expr} in
+Returns a future object, which runs the computation of @var{expr} in
 a separate thread.  The result(s) of @var{expr} can be retrieved by
 @code{future-get}.   Note that @var{expr} can yield multiple values.
 @c JP
@@ -3635,7 +3635,7 @@ The storage is a dictionary that maps keys to internal
 structures of the cache.  By default, a hashtable is
 created automatically using the given comparator (or,
 if a comparator is omitted, using @code{default-comparator}).
-The comparator must have hash function.
+The comparator must have the hash function.
 @c JP
 ストレージは、キーとキャッシュ内部の構造とをマッピングする辞書です。
 デフォルトでは与えられた比較器を使うハッシュテーブルが使われるので、
@@ -3788,15 +3788,16 @@ Look for an entry with @var{key} in @var{cache}, and returns its
 value if it exists.  If there's no entry, the procedure returns @var{default}
 if it is provided, or throws an error otherwise.
 
-Some types of cache algorithms update @var{cache} by this operation, hence
+Some types of cache algorithms update @var{cache} by this operation
+(e.g. access timestamp), hence
 the bang is in the name.
 @c JP
 @var{cache}から@var{key}に結びつけられたエントリを探し、見つかれば返します。
 エントリが無い場合は、@var{default}が与えられていればそれを返し、
 与えられていなければエラーを投げます。
 
-キャッシュアルゴリズムによってはこの操作で@var{cache}がアップデートされる場合があるため、
-名前にエクスクラメーションマークがついています。
+キャッシュアルゴリズムによってはこの操作で@var{cache}がアップデートされる場合があるため
+(アクセスタイムスタンプ等)、名前にエクスクラメーションマークがついています。
 @c COMMON
 @end defun
 
@@ -3807,11 +3808,13 @@ Look for an entry with @var{key} in @var{cache}, and returns its
 value if it exists.  If there's no entry, a procedure @var{value-fn}
 is called with @var{key} as the argument, and its return value
 is inserted into @var{cache} and also returned.
+The insertion may cause eviction of exising entries.
 @c JP
 @var{cache}から@var{key}に結びつけられたエントリを探し、見つかれば返します。
 見つからなかった場合、@var{value-fn}が@var{key}を引数として呼び出され、
 その結果が@var{cache}に新たなエントリとして追加され、また@code{cache-through!}の
 戻り値として返されます。
+エントリの追加によって、既存のエントリがキャッシュから削除されるかもしれません。
 @c COMMON
 @end defun
 
@@ -3927,7 +3930,7 @@ if your auxiliary structure needs to be taken care of.
 @item
 @c EN
 The default method of @code{cache-write!} is just @code{cache-evict!}
-followed by @code{cache-register!}.  You may provide alternative method
+followed by @code{cache-register!}.  You may provide an alternative method
 if you can do it more efficiently, which is often the case.
 @c JP
 @code{cache-write!}のデフォルトメソッドは、@code{cache-evict!}を呼んでから
@@ -3975,7 +3978,7 @@ You can call this in the @code{initialize} method to set up the
 queue.  This procedure walks @var{storage} (a dictionary that maps
 keys to @code{(<n> . <value>)}) to construct @code{(<key> . <n>)}
 pairs, sorts it in increasing order of @code{<n>}, and pushes them
-into the @code{queue}.
+into the @var{queue}.
 @c JP
 @code{initialize}メソッドの中でこの手続きを呼ぶことにより、
 キューを初期化できます。この手続きは、キーを@code{(<n> . <value>)}にマップする辞書である
@@ -4019,7 +4022,7 @@ as in @code{cache-compact-queue!}.
 @c EN
 When you're using monotonically increasing counter for @code{<n>} and
 you don't want @code{<n>} to get too big (i.e. bignums), you can
-call this procedure occasionally to keep @code{<n>}'s in reasonable range.
+call this procedure occasionally to keep @code{<n>}'s in a reasonable range.
 @c JP
 @code{<n>}に単調増加する数を使っていて、長い時間の後では@code{<n>}がbignum
 になって効率が落ちる心配があれば、この手続きを適宜呼ぶことで@code{<n>}を適切な
