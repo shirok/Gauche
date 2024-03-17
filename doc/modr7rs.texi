@@ -850,7 +850,7 @@ builtins:
 @table @asis
 @item Primitive expression types
 @example
-quote if include include-ci lambda
+quote if include include-ci
 @end example
 @item Derived expression types
 @example
@@ -864,7 +864,7 @@ let-syntax letrec-syntax syntax-rules syntax-error define-syntax
 @end example
 @item Variable definitions
 @example
-define define-values
+define-values
 @end example
 @item Record type definitions
 @example
@@ -938,6 +938,21 @@ read-line eof-object? eof-object char-ready? u8-ready?
 newline write-char write-u8
 @end example
 @end table
+
+@c EN
+The following two identifiers are the ones bound in the @code{scheme}
+module, which differ from the ones bound in the @code{gauche} module.
+Notably, these don't recognize Gauche's extended lambda arguments
+(@code{:key}, @code{:optional}, etc.).
+@c JP
+次の2つの識別子は、@code{scheme}モジュールにあるものがエクスポートされます。
+これらは@code{gauche}モジュールの束縛とは異なることに注意してください。
+Gaucheの拡張引数(@code{:key}、@code{:optional}等)は認識されません。
+@c COMMON
+
+@example
+define lambda
+@end example
 
 @c EN
 @subheading Bytevector utilities

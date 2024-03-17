@@ -103,7 +103,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Flexible curried procedures::  srfi.232
 * Combinators (SRFI)::          srfi.235
 * Destructuring lists::         srfi.239
-* Syntactic monads::
+* Syntactic monads::            srfi.247
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
