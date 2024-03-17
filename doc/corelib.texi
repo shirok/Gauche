@@ -11665,19 +11665,19 @@ incomplete string, in which case @code{#f} is returned.
 @c COMMON
 
 @example
-(string-incomplete->complete #*"_abc")
+(string-incomplete->complete #**"_abc")
   @result{} "_abc"     ; can be represented as a complete string
 
-(string-incomplete->complete #*"_ab\x80;c")
+(string-incomplete->complete #**"_ab\x80;c")
   @result{} #f        ; can't be represented as a complete string
 
-(string-incomplete->complete #*"_ab\x80;c" :omit)
+(string-incomplete->complete #**"_ab\x80;c" :omit)
   @result{} "_abc"     ; omit the illegal bytes
 
-(string-incomplete->complete #*"_ab\x80;c" :replace #\_)
+(string-incomplete->complete #**"_ab\x80;c" :replace #\_)
   @result{} "_ab_c"    ; replace the illegal bytes
 
-(string-incomplete->complete #*"_ab\x80;c" :escape #\_)
+(string-incomplete->complete #**"_ab\x80;c" :escape #\_)
   @result{} "__ab_80c" ; escape the illegal bytes and escape char itself
 @end example
 @end defun

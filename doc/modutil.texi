@@ -37367,7 +37367,7 @@ you'll get something like the following as the result.
 @c COMMON
 
 @example
-(("imagefile" #*".....(image file content as a string)....")
+(("imagefile" #**".....(image file content as a string)....")
  ("description" "my image")
  ("mode" "normal"))
 @end example
