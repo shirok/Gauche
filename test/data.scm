@@ -477,6 +477,10 @@
 (test* "range-last fallback" 'boo
        (range-last (iota-range 0) 'boo))
 
+;; https://github.com/shirok/Gauche/pull/1004
+(test* "range-append" '(0 1 2 3 4 10 11 12 13 14)
+       (range->list (range-append (numeric-range 0 5) (numeric-range 10 15))))
+
 (test* "range-reverse start/end" '(5 4 3)
        (range->list (range-reverse (iota-range 7) 3 6)))
 (test* "range-reverse start/end nested" '(5 4 3)

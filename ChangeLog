@@ -1,3 +1,8 @@
+2024-03-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/data/range.scm (%appended-range-index): Bug in binary search.
+	  Patch from @gengar https://github.com/shirok/Gauche/pull/1004
+
 2024-03-18  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/precomp.scm: Take the default value of
