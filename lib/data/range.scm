@@ -123,7 +123,6 @@
     (let loop ([lo 0] [hi len] [k (ash len -1)])
       (let1 p (vector-ref vec k)
         (cond [(= k lo) (call-indexer p i)]
-              [(= k (- hi 1)) (call-indexer p i)]
               [(> (car p) i) (loop lo k (+ lo (ash (- k lo) -1)))]
               [else (loop k hi (+ k (ash (- hi k) -1)))])))))
 
