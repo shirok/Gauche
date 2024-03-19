@@ -170,7 +170,7 @@
                                :key (ext-initializer #f)
                                     ((:strip-prefix prefix) #f)
                                     ((:dso-name dso) #f)
-                                    (omit-line-directives #f)
+                                    (omit-line-directives (not (cise-emit-source-line)))
                                     ((:omit-debug-source-info no-source) #f)
                                     (predef-syms '())
                                     (macros-to-keep '())
@@ -231,7 +231,7 @@
 (define (%cgen-precompile src
                           :key (out.c #f)
                                (out.sci #f)
-                               (omit-line-directives #f)
+                               (omit-line-directives (not (cise-emit-source-line)))
                                ((:omit-debug-source-info no-source) #f)
                                ((:strip-prefix prefix) #f)
                                (ext-initializer #f)

@@ -1,3 +1,10 @@
+2024-03-18  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/precomp.scm: Take the default value of
+	  omit-line-directives keyword arg from the parameter
+	  cise-emit-source-info, so that the parameter settings by the
+	  the higher layer (e.g. 'gauche-package compile') is reflected.
+
 2024-03-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/listener.scm (listener-read-handler): Fixed a bug revealed
