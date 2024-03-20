@@ -79,7 +79,7 @@ some_trick();
 (test-module 'gauche.cgen.cise)
 
 ;; define-cfn
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'toplevel)))
@@ -104,7 +104,7 @@ some_trick();
 
 
 ;; define-cvar
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'toplevel)))
@@ -166,7 +166,7 @@ some_trick();
   )
 
 ;; .define
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'toplevel)))
@@ -177,7 +177,7 @@ some_trick();
   (c '(.define foo (a b) (+ a b)) "#define foo(a,b) ((a)+(b))\n"))
 
 ;; .if .cond .when .unless
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test*/diff (format "cise transform: ~a" form)
                 exp
@@ -231,7 +231,7 @@ some_trick();
        "#endif")))
 
 ;; statement-level tests
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -270,7 +270,7 @@ some_trick();
      "#include a\n#include b\n#include c\n"))
 
 ;; let*
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -288,7 +288,7 @@ some_trick();
   (c '(let* ([a::b c]) d) "{b a=c;d;}"))
 
 ;; cond
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -307,7 +307,7 @@ some_trick();
   (c '(cond (else c)) " else {c;}"))
 
 ;; case
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -332,7 +332,7 @@ some_trick();
      "switch (x) {default: {c;break;}}"))
 
 ;; case/fallthrough
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -357,7 +357,7 @@ some_trick();
      "switch (x) {default: {c;}/*FALLTHROUGH*/}"))
 
 ;; for/loop
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -373,7 +373,7 @@ some_trick();
   (c '(loop a) "for (;;){a;}"))
 
 ;; while
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -384,7 +384,7 @@ some_trick();
   (c '(while a b c) "while(a){b;c;}"))
 
 ;; dotimes
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (next-gensym-counter)
     (let1 sym (symbol->string (gensym ""))
       (+ (string->number sym) 1)))
@@ -400,7 +400,7 @@ some_trick();
        (format "{int a=0;int ~a=b;for (; (a)<(~a); (a)++){}}" sym sym))))
 
 ;; expression-level tests
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'expr)))
@@ -489,7 +489,7 @@ some_trick();
        (cise-render-to-string '(< a b) 'toplevel))
 
 ;; result
-(parameterize ([cise-emit-source-line #f])
+(parameterize ([cise-omit-source-line #t])
   (define (c form exp)
     (test* (format "cise transform: ~a" form) exp
            (cise-render-to-string form 'stmt)))
@@ -512,7 +512,7 @@ some_trick();
 (let ([c (lambda (form exp)
            (test* (format "cise transform: ~a" form) exp
                   (cise-render-to-string form 'stmt)))])
-  (parameterize ([cise-emit-source-line #f]
+  (parameterize ([cise-omit-source-line #t]
                  [cise-ambient (cgen-stub-cise-ambient (cise-ambient))])
     (c '(return) "goto SCM_STUB_RETURN;")
     (c '(return e) "{SCM_RESULT=(e);goto SCM_STUB_RETURN;}")

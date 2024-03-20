@@ -79,7 +79,7 @@
   (parameterize ([dry-run dry?]
                  [verbose-run verb?]
                  [in-place-dir gauche-builddir]
-                 [cise-emit-source-line (not no-line)])
+                 [cise-omit-source-line no-line])
     (rlet1 ofile (or output
                      (sys-basename
                       (path-swap-extension file OBJEXT)))

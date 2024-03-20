@@ -170,7 +170,7 @@
                                :key (ext-initializer #f)
                                     ((:strip-prefix prefix) #f)
                                     ((:dso-name dso) #f)
-                                    (omit-line-directives (not (cise-emit-source-line)))
+                                    (omit-line-directives (cise-omit-source-line))
                                     ((:omit-debug-source-info no-source) #f)
                                     (predef-syms '())
                                     (macros-to-keep '())
@@ -231,7 +231,7 @@
 (define (%cgen-precompile src
                           :key (out.c #f)
                                (out.sci #f)
-                               (omit-line-directives (not (cise-emit-source-line)))
+                               (omit-line-directives (cise-omit-source-line))
                                ((:omit-debug-source-info no-source) #f)
                                ((:strip-prefix prefix) #f)
                                (ext-initializer #f)
@@ -277,7 +277,7 @@
                                        (basename-sans-extension out.c)))
                               initializer-name)]
                    [vm-eval-situation SCM_VM_COMPILING]
-                   [cise-emit-source-line (not omit-line-directives)]
+                   [cise-omit-source-line omit-line-directives]
                    [private-macros-to-keep macros-to-keep]
                    [run-extra-optimization-passes extra-optimization])
       (select-tmodule 'gauche)

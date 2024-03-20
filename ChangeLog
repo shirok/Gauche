@@ -1,5 +1,10 @@
 2024-03-19  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/cise.scm (cise-omit-source-line): Change
+	  the parameter cise-emit-source-line to cise-omit-source-line,
+	  flipping the logic.  This aligns better with the options
+	  (e.g. --no-line of `gauche-package compile`).
+
 	* lib/data/range.scm (%appended-range-index): Bug in binary search.
 	  Patch from @gengar https://github.com/shirok/Gauche/pull/1004
 
