@@ -373,13 +373,12 @@
 (export-toplevel-cise-form define-ctype)
 (export-toplevel-cise-form define-cvar)
 
-;; CiSE forms .if, .cond, .when and .unless are not exported because
+;; CiSE forms .if, .cond, .when, .unless, and .include are not exported because
 ;; when used at toplevel these macros need to handle stub toplevel forms.
 ;; These macros inside another CiSE forms are handled as CiSE macros.
 ;; NB: .cond for stub toplevel isn't defined yet.
 (export-toplevel-cise-form .define)
 (export-toplevel-cise-form .error)
-(export-toplevel-cise-form .include)
 (export-toplevel-cise-form .undef)
 
 ;; extra check of valid clauses
@@ -2460,12 +2459,24 @@
   (cgen-with-cpp-condition `(not ,test)
     (for-each cgen-stub-parse-form forms)))
 
+;; DEPRECATED: This includes external stub file.  Once we retire .stub
+;; file, we can use Scheme's include so this won't be necessary.
 (define-form-parser include (file)
+  (warn "include directive from a stub file is deprecated.\n")
   (unless (file-exists? file)
     ;; TODO: search path
     (error <cgen-stub-error> "couldn't find include file: " file))
   (with-input-from-file file
     (cut generator-for-each cgen-stub-parse-form read))
+  )
+
+;; Not to be confused with 'include' above.  This is C's #include.
+(define-form-parser .include files
+  (dolist [file files]
+    (let1 fn (cond [(symbol? file) (x->string file)]
+                   [(string? file) (write-to-string file)]
+                   [else (error "Invalid argument for .include:" file)])
+      (cgen-decl (format "#include ~a" fn))))
   )
 
 (define-form-parser initcode codes

@@ -1,3 +1,12 @@
+2024-03-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/stub.scm (.include): Split .include in stub toplevel
+	  and CiSE .include.  Stub .include is emitted to decl section,
+	  while CiSE .include is emitted in place (body section).
+	  This may be potentially confusing, and good documentation is desired.
+	  See https://github.com/shirok/Gauche/issues/1003 for the background
+	  of this change.
+
 2024-03-19  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/cise.scm (cise-omit-source-line): Change
