@@ -27068,6 +27068,14 @@ is unspecified.
 ます。戻り値は不定です。そのようなファイルが既に存在する場合、
 結果は不定です。
 @c COMMON
+
+@c EN
+Note: Unlike @code{sxml:sxml->xml} in @code{sxml.ssax}, this
+procedure requires XML attribute values to be strings.
+@c JP
+註: @code{sxml.ssax}の@code{sxml:sxml->xml}と異なり、
+この手続きはXML属性の値が文字列であることを要求します。
+@c COMMON
 @end defun
 
 @defun srl:sxml->xml-noindent sxml-obj :optional port-or-filename
@@ -27096,6 +27104,14 @@ Argument @var{port-or-filename} works like described in @code{srl:sxml->xml}.
 インデントされます。
 
 引数@var{port-or-filename}は@code{srl:sxml->xml}と同様に動作します。
+@c COMMON
+
+@c EN
+Note: Unlike @code{sxml:sxml->html} in @code{sxml.ssax}, this
+procedure requires XML attribute values to be strings.
+@c JP
+註: @code{sxml.ssax}の@code{sxml:sxml->html}と異なり、
+この手続きはXML属性の値が文字列であることを要求します。
 @c COMMON
 @end defun
 
