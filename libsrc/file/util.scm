@@ -414,8 +414,10 @@
       [(cld) (if-let1 clp (current-load-path)
                (sys-dirname clp)
                (current-directory))]
+      [(#f) "."]
       [else (unless (string? base-path)
-              (error "base-path must be a string, or a symbol 'cwd or 'cld, \
+              (error "base-path must be a string, #f, \
+                      or a symbol 'cwd or 'cld, \
                       but got:" base-path))
             base-path]))
   (define (rec base components)
@@ -425,6 +427,7 @@
           (match (car components)
             ['up   ".."]
             ['same "."]
+            ['#f "."]
             [(? absolute-path? p)
              (error "can't append absolute path after other path" p)]
             [p (sys-normalize-pathname p)])

@@ -1,3 +1,8 @@
+2024-03-21  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/file/util.scm (build-path): Allow #f in the path components
+	  (interpreted as ".") for the convenience.
+
 2024-03-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/stub.scm (.include): Split .include in stub toplevel

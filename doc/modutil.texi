@@ -11896,16 +11896,19 @@ This takes care of platform-specific pathname separators.
 @c COMMON
 
 @c EN
-@var{Base-path} can be a directory name, or a symbol @code{cwd} or
-@code{cld}.  If it is @code{cwd}, the current working directory
+@var{Base-path} can be a directory name, @code{#f}, or a symbol @code{cwd} or
+@code{cld}.  If it is @code{#f}, @code{"."} is used.
+If it is @code{cwd}, the current working directory
 is used.  If it is @code{cld}, the directory of the current loading
 file is used
 (@code{current-load-path}, @pxref{Loading Scheme file}).
 If there's no current loading file (e.g. calling
 from REPL), the current working directory is used instead.
 @c JP
-@var{base-path}には、ディレクトリ名か、シンボル@code{cwd}もしくは@code{cld}を
-渡すことができます。@code{cwd}の場合は現在のディレクトリ(current working directory)
+@var{base-path}には、ディレクトリ名か、@code{#f}、
+あるいはシンボル@code{cwd}もしくは@code{cld}を渡すことができます。
+@code{#f}は@code{"."}と同じです。
+@code{cwd}の場合は現在のディレクトリ(current working directory)
 が使われます。@code{cld}の場合は現在のファイルをロードしているディレクトリ
 (current loading directory)が使われます。
 (@code{current-load-path}, @ref{Loading Scheme file}参照)。
@@ -11925,14 +11928,17 @@ is completed.
 @c COMMON
 
 @c EN
-@var{Component} can be a symbol @code{up} or @code{same};
-in Unix, they are synonym to @code{".."} and @code{"."}.
-This API is taken from MzScheme.
+@var{Component} can be a string, @code{#f}, or
+a symbol @code{same} or @code{up}.  The latter three
+are interpreted as @code{"."}, @code{"."}, and @code{".."}, respectively.
+They are appended to @var{base-path}.
+(The symbol @code{same} and @code{up} are taken from MzScheme).
 @c JP
-パス名のコンポーネント@var{component}を@var{base-path}に追加します。
-@var{Component}はシンボル@code{up}または@code{same}であっても
-構いません; Unixではそれらは@code{".."}または@code{"."}と等価です。
-このAPIはMzSchemeから採られました。
+パス名のコンポーネント@var{component}は、文字列、
+@code{#f}、あるいはシンボル@code{same}または@code{up}です。
+後3者はそれぞれ@code{"."}、@code{"."}、@code{".."}と解釈されます。
+@var{components}は@var{base-path}の後に追加されます。
+(@code{same}と@code{up}はMzSchemeから採られました)。
 @c COMMON
 @end defun
 

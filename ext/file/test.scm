@@ -51,6 +51,7 @@
 (test* "build-path" (n "foo") (build-path "" "foo"))
 (test* "build-path" (n "foo/bar") (build-path "" "foo" "" "bar"))
 (test* "build-path" (n "foo") (build-path "" "foo" ""))
+(test* "build-path" (n "./a/./b") (build-path #f "a" #f "b"))
 
 (test* "decompose-path" '("/a/b/c" "d" "e")
        (values->list (decompose-path "/a/b/c/d.e")))
