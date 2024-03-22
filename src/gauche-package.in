@@ -319,6 +319,7 @@ Options:
                         useful for 'make clean'.
   -k, --keep-c-files  : do not remove intermediate generated C files.
       --no-line       : do not emit #line directives in generated C files.
+  --srcdir=DIR        : specify the source directory when building out-of-tree.
   --gauche-buiddir=DIR : specify the top builddir of the Gauche when the
                         extensions should be compiled for /uninstalled/ Gauche.
   --local=PATH:PATH... : adds PATH/include to inlcude paths and PATH/lib to
@@ -336,6 +337,7 @@ Options:
                   [clean        "clean"]
                   [keep-c       "k|keep-c-files"]
                   [no-line      "no-line"]
+                  [srcdir       "srcdir=s"]
                   [gauche-builddir "gauche-builddir=s"]
                   [local        "l|local=s"]
                   [cc           "cc=s"]
@@ -352,7 +354,7 @@ Options:
       (and local
            (not (string-null? local))
            (not (string-null? prefix))
-           (string-join (map (lambda (path)
+           (string-join (map (^[path]
                                (shell-escape-string (build-path path subdir)))
                              (string-split local #\:))
                         #" ~prefix" 'prefix))]
@@ -380,6 +382,7 @@ Options:
         (unless (= (length args) 1) (usage-self))
         (gauche-package-compile (car args)
                                 :dry-run dry-run :verbose verbose
+                                :srcdir srcdir
                                 :gauche-builddir gauche-builddir
                                 :keep-c keep-c :no-line no-line
                                 :output output :cc cc
@@ -388,6 +391,7 @@ Options:
         (when (<= (length args) 1) (usage-self))
         (gauche-package-compile-and-link (car args) (cdr args)
                                          :dry-run dry-run :verbose verbose
+                                         :srcdir srcdir
                                          :gauche-builddir gauche-builddir
                                          :keep-c keep-c :no-line no-line
                                          :output output :cc cc :ld cc

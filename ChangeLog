@@ -1,5 +1,9 @@
 2024-03-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in (compile),
+	  lib/gauche/package/compile.scm (gauche-package-compile):
+	  Add --srcdir option for out-of-tree compilation.
+
 	* libsrc/file/util.scm (build-path): Allow #f in the path components
 	  (interpreted as ".") for the convenience.
 

@@ -67,6 +67,7 @@
                                           (cppflags #f)
                                           (cflags   #f)
                                           (cc #f)
+                                          (srcdir #f)
                                           (gauche-builddir #f)
                                           (keep-c #f)
                                           (no-line #f)
@@ -80,32 +81,36 @@
                  [verbose-run verb?]
                  [in-place-dir gauche-builddir]
                  [cise-omit-source-line no-line])
+    (define srcfile (build-path srcdir file))
+    (define cppflags+ (string-join (cond-list
+                                    [cppflags]
+                                    [srcdir #"-I '~|srcdir|'"])
+                                   " "))
     (rlet1 ofile (or output
-                     (sys-basename
-                      (path-swap-extension file OBJEXT)))
+                     (sys-basename (path-swap-extension file OBJEXT)))
       (unless (and (file-exists? ofile)
-                   (file-mtime>? ofile file))
+                   (file-mtime>? ofile srcfile))
         (cond
          [(equal? (path-extension file) "scm")
           (let ([cfile (path-swap-extension file "c")]
                 [sofile (or sofile
-                            (rlet1 f (path-swap-extension file SOEXT)
+                            (rlet1 f (sys-basename (path-swap-extension file SOEXT))
                               (warn "DSO file name is not specified.  Assuming `~a'\n" f)))])
             (unwind-protect
-                (begin (cgen-precompile file :out.c cfile :dso-name sofile)
+                (begin (cgen-precompile srcfile :out.c cfile :dso-name sofile)
                        (do-compile (or cc CC) cfile ofile
-                                   (or cppflags "") (or cflags "")))
+                                   cppflags+ (or cflags "")))
               (unless keep-c (sys-unlink cfile))))]
-         [(equal? (path-extension file) "stub")
+         [(equal? (path-extension file) "stub") ;deprecated
           (let1 cfile (path-swap-extension file "c")
             (unwind-protect
-                (begin (cgen-genstub file)
+                (begin (cgen-genstub srcfile)
                        (do-compile (or cc CC) cfile ofile
-                                   (or cppflags "") (or cflags "")))
+                                   cppflags+ (or cflags "")))
               (unless keep-c (sys-unlink cfile))))]
          [else
-          (do-compile (or cc CC) file ofile
-                      (or cppflags "") (or cflags ""))])))))
+          (do-compile (or cc CC) srcfile ofile
+                      cppflags+ (or cflags ""))])))))
 
 (define (do-compile cc cfile ofile cppflags cflags)
   (run #"~cc -c ~cppflags ~(INCDIR) ~cflags ~CFLAGS -o '~ofile' '~cfile'"))
@@ -113,6 +118,7 @@
 (define (gauche-package-link sofile ofiles :key (ldflags #f)
                                                 (libs #f)
                                                 (ld #f)
+                                                (srcdir #f)   ; dummy
                                                 (gauche-builddir #f)
                                                 (keep-c #f)   ; dummy
                                                 (no-line #f)  ; dummy
