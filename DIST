@@ -105,15 +105,33 @@ do_self_host_test () {
     XPATH=$destdir/bin:$PATH
     mkdir -p $destdir/stage1
     echo "************************** STAGE1 BUILD ****************************"
-    (cd $destdir/stage1; $srcdir/configure --prefix=$destdir; make $makeopt || exit 1)
+    (cd $destdir/stage1; \
+     $srcdir/configure --prefix=$destdir; \
+     make $makeopt || exit 1)
     echo "************************* STAGE1 INSTALL ***************************"
-    (cd $destdir/stage1; make install && make -s install-check || exit 1)
+    (cd $destdir/stage1; \
+     make install && make -s install-check || exit 1)
     mkdir -p $destdir/stage2
     makeopt_1="$makeopt BUILD_GOSH_FLAGS="
     echo "************************** STAGE2 BUILD ****************************"
-    (cd $destdir/stage2; PATH=$XPATH $srcdir/configure --prefix=$destdir; PATH=$XPATH make $makeopt_1; PATH=$XPATH make -s check || exit 1)
+    (cd $destdir/stage2; \
+     PATH=$XPATH $srcdir/configure --prefix=$destdir; \
+     PATH=$XPATH make $makeopt_1; \
+     PATH=$XPATH make -s check || exit 1)
     echo "************************* STAGE2 INSTALL ***************************"
-    (cd $destdir/stage2; PATH=$XPATH make install && PATH=$XPATH make -s install-check)
+    (cd $destdir/stage2; \
+     PATH=$XPATH make install && PATH=$XPATH make -s install-check)
+    echo "************************ EXTENTION EXAMPLES ************************"
+    mkdir -p $destdir/spigot
+    (cd $destdir/spigot; \
+     PATH=$XPATH $srcdir/examples/spigot/configure --prefix=$destdir && \
+     PATH=$XPATH make $makeopt_1 && \
+     PATH=$XPATH make -s check && PATH=$XPATH make install || exit 1)
+    mkdir -p $destdir/mqueue-cpp
+    (cd $destdir/mqueue-cpp; \
+     PATH=$XPATH $srcdir/examples/mqueue-cpp/configure --prefix=$destdir && \
+     PATH=$XPATH make $makeopt_1 && \
+     PATH=$XPATH make -s check && PATH=$XPATH make install || exit 1)
 }
 
 case $1 in

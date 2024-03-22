@@ -14,7 +14,7 @@ DESTDIR        =
 GOSH           = "@GOSH@"
 GAUCHE_CONFIG  = "@GAUCHE_CONFIG@"
 GAUCHE_PACKAGE = "@GAUCHE_PACKAGE@"
-INSTALL        = "@GAUCHE_INSTALL@" -C
+INSTALL        = "@GAUCHE_INSTALL@" -S $(srcdir) -C
 
 # Other parameters
 SOEXT  = @SOEXT@
@@ -43,11 +43,12 @@ spigot_HDRS = spigot.h
 all : $(TARGET)
 
 math--spigot.$(SOEXT): $(spigot_SRCS) $(spigot_HDRS)
-	$(GAUCHE_PACKAGE) compile --verbose math--spigot $(spigot_SRCS)
+	$(GAUCHE_PACKAGE) compile --verbose --srcdir=$(srcdir) \
+	    math--spigot $(spigot_SRCS)
 
 check : all
 	@rm -f test.log
-	$(GOSH) -I. test.scm > test.log
+	$(GOSH) -I. -I$(srcdir) $(srcdir)/test.scm > test.log
 
 install : all
 	$(INSTALL) -m 444 -T $(HEADER_INSTALL_DIR) $(HEADERS)

@@ -17,7 +17,7 @@ DESTDIR        =
 GOSH           = "@GOSH@"
 GAUCHE_CONFIG  = "@GAUCHE_CONFIG@"
 GAUCHE_PACKAGE = "@GAUCHE_PACKAGE@"
-INSTALL        = "@GAUCHE_INSTALL@"
+INSTALL        = "@GAUCHE_INSTALL@" -S $(srcdir) -C
 
 # Other parameters
 SOEXT  = @SOEXT@
@@ -30,7 +30,7 @@ CXX      = @CXX@
 PACKAGE   = mqueue-cpp
 
 ARCHFILES = mqueue_cpp.$(SOEXT)
-SCMFILES  = $(srcdir)/example/mqueue-cpp.scm
+SCMFILES  = example/mqueue-cpp.scm
 HEADERS   =
 
 TARGET    = $(ARCHFILES)
@@ -47,11 +47,12 @@ mqueue_HDRS = mqueue.h mqueue_glue.h
 all : $(TARGET)
 
 mqueue_cpp.$(SOEXT): $(mqueue_SRCS) $(mqueue_HDRS)
-	$(GAUCHE_PACKAGE) compile --cc=$(CXX) --verbose mqueue_cpp $(mqueue_SRCS)
+	$(GAUCHE_PACKAGE) compile --cc=$(CXX) --verbose --srcdir=$(srcdir) \
+	   mqueue_cpp $(mqueue_SRCS)
 
 check : all
 	@rm -f test.log
-	$(GOSH) -I. test.scm > test.log
+	$(GOSH) -I. -I$(srcdir) $(srcdir)/test.scm > test.log
 
 install : all
 	$(INSTALL) -m 444 -T $(HEADER_INSTALL_DIR) $(HEADERS)
