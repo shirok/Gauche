@@ -319,7 +319,7 @@ Options:
                         useful for 'make clean'.
   -k, --keep-c-files  : do not remove intermediate generated C files.
       --no-line       : do not emit #line directives in generated C files.
-  --srcdir=DIR        : specify the source directory when building out-of-tree.
+  --S, -srcdir=DIR    : specify the source directory when building out-of-tree.
   --gauche-buiddir=DIR : specify the top builddir of the Gauche when the
                         extensions should be compiled for /uninstalled/ Gauche.
   --local=PATH:PATH... : adds PATH/include to inlcude paths and PATH/lib to
@@ -337,7 +337,7 @@ Options:
                   [clean        "clean"]
                   [keep-c       "k|keep-c-files"]
                   [no-line      "no-line"]
-                  [srcdir       "srcdir=s"]
+                  [srcdir       "S|srcdir=s"]
                   [gauche-builddir "gauche-builddir=s"]
                   [local        "l|local=s"]
                   [cc           "cc=s"]
