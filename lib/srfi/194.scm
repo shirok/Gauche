@@ -183,8 +183,4 @@
 (autoload srfi.194.sphere
           make-sphere-generator make-ellipsoid-generator make-ball-generator)
 
-(define (gsampling . generators)
-  (match generators
-    [() (^[] (eof-object))]
-    [(g) g]
-    [gs (samples-from gs)]))
+(define (gsampling . generators) (samples-from generators))
