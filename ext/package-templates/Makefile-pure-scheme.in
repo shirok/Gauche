@@ -14,13 +14,13 @@ DESTDIR        =
 GOSH           = "@GOSH@"
 GAUCHE_CONFIG  = "@GAUCHE_CONFIG@"
 GAUCHE_PACKAGE = "@GAUCHE_PACKAGE@"
-INSTALL        = "@GAUCHE_INSTALL@" -C
+INSTALL        = "@GAUCHE_INSTALL@" -S '$(srcdir)' -C
 
 # Module-specific stuff
 PACKAGE   = @@package@@
 
 TARGET    =
-SCMFILES  = $(srcdir)/@@modpath@@.scm
+SCMFILES  = @@modpath@@.scm
 
 GENERATED =
 CONFIG_GENERATED = Makefile config.cache config.log config.status \
