@@ -345,6 +345,8 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->currentPrompt = NULL;
     v->resetChain = SCM_NIL;
 
+    v->errorCont = NULL;
+
     Scm_RegisterFinalizer(SCM_OBJ(v), vm_finalize, NULL);
     return v;
 }
@@ -452,6 +454,9 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
 
     v->currentPrompt = master->currentPrompt;
     v->resetChain = master->resetChain;
+
+    v->errorCont = master->errorCont;
+
     /* NB: We don't register the finalizer vm_finalize to the snapshot,
        for we do not want the associated system resources to be cleaned
        up when the snapshot is GCed. */
@@ -2288,8 +2293,17 @@ struct eval_packet_rec {
 static ScmObj safe_eval_handler(ScmObj *args,
                                 int nargs, void *data)
 {
+    ScmVM *vm = theVM;
+
     SCM_ASSERT(nargs == 1);
     ((struct eval_packet_rec *)data)->exception = args[0];
+
+    /* save information for additional stack trace */
+    if (vm->errorCont == NULL) {
+        save_cont(vm);
+        vm->errorCont = vm->cont;
+    }
+
     return SCM_UNDEFINED;
 }
 
@@ -2341,6 +2355,9 @@ static int safe_eval_wrap(int kind, ScmObj arg0, ScmObj args,
     epak.args = args;
     epak.cstr = cstr;
     epak.exception = SCM_UNBOUND;
+
+    /* reset information for additional stack trace */
+    vm->errorCont = NULL;
 
     ScmObj proc = Scm_MakeSubr(safe_eval_int, &epak, 0, 0, SCM_FALSE);
     ScmObj r = Scm_ApplyRec(proc, SCM_NIL);
