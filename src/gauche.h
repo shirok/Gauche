@@ -76,6 +76,8 @@
 #include <errno.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <math.h>
+#include <complex.h>            /* needs to be outside of extern "C" */
 
 #ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>

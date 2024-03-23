@@ -39,8 +39,6 @@
 #ifndef GAUCHE_FLOAT_H
 #define GAUCHE_FLOAT_H
 
-#include <math.h>
-#include <complex.h>
 #undef I                        /* avoid unintentional conflict */
 
 #if defined(HAVE_FPU_CONTROL_H)

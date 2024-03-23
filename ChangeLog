@@ -1,3 +1,10 @@
+2024-03-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h, src/gauche/float.h: Ensure include complex.h outside
+	  of extern "C" linkage.  OSX clang doesn't like otherwise if
+	  we include gauche.h to C++ source.
+	  https://github.com/shirok/Gauche/1006
+
 2024-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in (compile),
