@@ -1728,7 +1728,7 @@ smaller than or equal to @code{*nelts}, the result is stored in @code{*store},
 and @code{store} is returned.  The value of @code{*nelts} is adjusted
 to contain the actual number of elements.
 
-If the lenght of @var{list} is greater than @var{*nelts},
+If the length of @var{list} is greater than @var{*nelts},
 the behavior depends on the @code{alloc} flag.  If it is @code{FALSE},
 an error is thrown.  Otherwise, a new storage is allocated, filled, and
 returned.  The value of @code{*nelts} is ajusted to contain the actual

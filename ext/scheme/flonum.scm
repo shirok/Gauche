@@ -84,13 +84,13 @@
 (define-constant fl-e-2 7.38905609893065) ; e*e yields 1ulp error
 (define-constant fl-e-pi/4 (real-exp (/ const:pi 4)))
 (define-constant fl-log2-e (/ (real-ln 2)))
-(define-constant fl-log10-e 0.4342944819032518); (/ (real-ln 10)) yiels 1ulp error
+(define-constant fl-log10-e 0.4342944819032518); (/ (real-ln 10)) yields 1ulp error
 (define-constant fl-log-2 (real-ln 2))
 (define-constant fl-1/log-2 (/ (real-ln 2)))
 (define-constant fl-log-3 (real-ln 3))
 (define-constant fl-log-pi (real-ln const:pi))
 (define-constant fl-log-10 (real-ln 10))
-(define-constant fl-1/log-10 0.4342944819032518); (/ (%log 10)) yiels 1ulp error
+(define-constant fl-1/log-10 0.4342944819032518); (/ (%log 10)) yields 1ulp error
 (define-constant fl-pi const:pi)
 (define-constant fl-1/pi (/ const:pi))
 (define-constant fl-2pi (* const:pi 2))

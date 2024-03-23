@@ -1413,7 +1413,7 @@
 ;;   <args> is the list of requried args, plus a restarg if any.
 ;;   <formals> is a copy of input sans type annotation.
 ;;   <types> is a list of types for required args.  If there's a restarg,
-;;      the lenght of <types> is one shorter than the length of <args>.
+;;      the length of <types> is one shorter than the length of <args>.
 ;;      Can be #f if there's no type annotation.
 ;;   <nreqs> is the number of required arguments.
 ;;   <nopts> is 0 if no optional arg, 1 if not.

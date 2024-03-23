@@ -62,7 +62,7 @@
  * ScmString is alive, even if its content is mutated and the initial
  * content isn't used.   Another reason to avoid string mutations.
  */
-/* NB: We used to have lengh and size as 'u_int'.  It effectively limited
+/* NB: We used to have length and size as 'u_int'.  It effectively limited
    the length and size of strings up to max(INT_MAX, SCM_SMALL_INT_MAX),
    for we accept fixnum range in Scheme level.  For 32bit architecture
    it was OK, but for 64bit architecture it became an issue.

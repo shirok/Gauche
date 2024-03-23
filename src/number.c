@@ -1411,7 +1411,7 @@ double Scm_GetDouble(ScmObj obj)
     fullpath:;
         /* Need more precise but expensive calculation.
            We find K such that 2^K * numer >= 2^54 * denom, so that
-           the integer division yiels more than 53bit integral part.
+           the integer division yields more than 53bit integral part.
          */
         int shift = 0;
         if (n_hi - d_hi < 54) {

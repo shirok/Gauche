@@ -103,7 +103,7 @@ typedef union ScmStringIndexRec {
        index type, regardless of endianness.
 
        The index array has the signature in the first element, and the total
-       lenght of the index array in the second.  The actual index array
+       length of the index array in the second.  The actual index array
        begins from the third element.  Given the character index N,
        indexX[(N>>shift)+2] contains the byte position of the character.
      */
