@@ -11,16 +11,17 @@
 ;; This tests the constructed types from the same arguments gets eq?,
 ;; because of the memoization.
 
-(define-syntax t-equality
+(define-syntax t-identity
   (syntax-rules ()
     [(_ expect a b)
      (test* (list 'a 'b) expect (eq? a b))]))
 
-(t-equality #t (<?> <integer>) (<?> <integer>))
-(t-equality #t (</> <integer> <string>) (</> <integer> <string>))
-(t-equality #f (<?> <integer>) (<?> <int>))
-(t-equality #t (</> <uint8> <uint16>) (</> <uint8> <uint16>))
-(t-equality #f (</> <uint8> <uint16>) (</> <uint16> <uint8>))
+(t-identity #t (<?> <integer>) (<?> <integer>))
+(t-identity #t (</> <integer> <string>) (</> <integer> <string>))
+(t-identity #f (<?> <integer>) (<?> <int>))
+(t-identity #t (</> <uint8> <uint16>) (</> <uint8> <uint16>))
+(t-identity #f (</> <uint8> <uint16>) (</> <uint16> <uint8>))
+(t-identity #t (<Assortment> 'a 'b) (<Assortment> 'a 'b))
 
 (test-section "subtype?")
 

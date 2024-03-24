@@ -765,39 +765,24 @@
   :subtype? (make-subtype-Seq <vector>))
 
 ;;;
-;;; Class: <Singleton>
-;;;   A type whose sole member is an object, compared by eqv?.
+;;; Class: <Assortment>
+;;;   A type consists of a set of concrete objects.
+;;;   If it has only one member, you can think of it as a singleton type.
+;;;   If it has multiple members, it's a union of singleton types.
+;;;   The members (instances) are sorted by default-comparator so that
+;;;   equality is easily tested.
 ;;;
 
-(define-class <Singleton> (<descriptive-type>)
-  ((instance :init-keyword :instance))
-  :metaclass <type-constructor-meta>
-  :initializer (^[type args]
-                 (match args
-                   [(obj)
-                    (let1 ins (unwrap-syntax obj)
-                      (slot-set! type 'name
-                                 (string->symbol
-                                  (string-append
-                                   "<Singleton " (x->string ins) ">")))
-                      (slot-set! type 'instance ins))]
-                   [_ (error "Bad argument for <Singleton> type constructor:"
-                             args)]))
-  :deconstructor (^[type] (list (~ type'instance)))
-  :validator (^[type obj] (eqv? (~ type'instance) obj))
-  :subtype? (^[type super] (of-type? (~ type'instance) super))
-  :supertype? (^[type sub] #f))
-
-(define-class <Singleton-set> (<descriptive-type>)
-  ((instances :init-keyword :instances))
+(define-class <Assortment> (<descriptive-type>)
+  ((instances :init-keyword :instance))
   :metaclass <type-constructor-meta>
   :initializer (^[type args]
                  (define objs (map unwrap-syntax args))
                  (slot-set! type 'name
                             (string->symbol
                              (string-append
-                              "<Singleton-set " (x->string objs) ">")))
-                 (slot-set! type 'instances objs))
+                              "<Assortment " (x->string objs) ">")))
+                 (slot-set! type 'instances (sort objs)))
   :deconstructor (^[type] (list (~ type'instances)))
   :validator (^[type obj] (boolean (memv obj (~ type'instances))))
   :subtype? (^[type super] (every (^[obj] (of-type? obj super))
@@ -995,7 +980,7 @@
         '(<type-constructor-meta>
           <descriptive-type>
           <native-type>
-          <^> </> <?> <Tuple> <List> <Vector> <Singleton> <Singleton-set>
+          <^> </> <?> <Tuple> <List> <Vector> <Assortment>
           type? subtype? of-type?))
   (xfer (current-module)
         (find-module 'gauche.internal)
