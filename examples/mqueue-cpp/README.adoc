@@ -53,14 +53,14 @@ compiler name `configure.in` finds.
 CXX      = @CXX@
 ----
 
-3. Also in link:Makefile.in[], when builing `mqueue_cpp.so`, give `--{cpp}=$(CXX)`
+3. Also in link:Makefile.in[], when builing `mqueue_cpp.so`, give `--c++=$(CXX)`
 option to the `gauche-package` script to have it use the {cpp} compiler
 instead of the default C compiler.
 +
 [source,Makefile]
 ----
 mqueue_cpp.$(SOEXT): $(mqueue_SRCS) $(mqueue_HDRS)
-        $(GAUCHE_PACKAGE) compile --{cpp}=$(CXX) --verbose mqueue_cpp $(mqueue_SRCS)
+        $(GAUCHE_PACKAGE) compile --c++=$(CXX) --verbose mqueue_cpp $(mqueue_SRCS)
 ----
 
 
