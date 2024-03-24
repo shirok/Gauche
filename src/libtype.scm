@@ -770,7 +770,7 @@
 ;;;   If it has only one member, you can think of it as a singleton type.
 ;;;   If it has multiple members, it's a union of singleton types.
 ;;;   The members (instances) are sorted by default-comparator so that
-;;;   equality is easily tested.
+;;;   equivalence is easily tested.
 ;;;
 
 (define-class <Assortment> (<descriptive-type>)

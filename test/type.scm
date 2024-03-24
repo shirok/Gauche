@@ -124,6 +124,14 @@
 (t-subtype (<Vector> <integer>) (<?> (<Vector> <number>)) #t)
 (t-subtype (<Vector> <integer>) (</> (<Vector> <string>) (<Vector> <number>)) #t)
 
+(t-subtype (<Assortment> 'a) (<Assortment> 'a 'b 'c) #t)
+(t-subtype (<Assortment> 1 2 3) (<Assortment> 1 2 3) #t)
+(t-subtype (<Assortment> 1 2 3) (<Assortment> 1 2) #f)
+(t-subtype (<Assortment> 1 3) (<Assortment> 1 2) #f)
+(t-subtype (<Assortment> 1 3) <integer> #t)
+(t-subtype (<Assortment> 1 'a) (</> <integer> <symbol>) #t)
+(t-subtype (<Assortment> 1 'a) (</> <integer> <string>) #f)
+
 (test-section "built-in type constructors")
 
 (define (validation-test type alist)
