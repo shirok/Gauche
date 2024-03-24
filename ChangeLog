@@ -1,5 +1,8 @@
 2024-03-23  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/cgen/unit.scm (<cgen-unit>): Add 'language slot;
+	  now it generate *.cpp if the language is 'c++.
+
 	* src/libtype.scm (<Assortment>): Replace <Singleton> and
 	  <Singleton-set> with <Assortment>.  With this word, we can
 	  use the same type for the union of singletons, eliminating
