@@ -47,7 +47,7 @@ mqueue_HDRS = mqueue.h mqueue_glue.h
 all : $(TARGET)
 
 mqueue_cpp.$(SOEXT): $(mqueue_SRCS) $(mqueue_HDRS)
-	$(GAUCHE_PACKAGE) compile --cc=$(CXX) --verbose --srcdir=$(srcdir) \
+	$(GAUCHE_PACKAGE) compile --c++=$(CXX) -k --verbose --srcdir=$(srcdir) \
 	   mqueue_cpp $(mqueue_SRCS)
 
 check : all

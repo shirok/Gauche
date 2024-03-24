@@ -326,6 +326,10 @@ Options:
                         library search paths for compiling.
   --cc=CC             : alternative C compiler.  Note that the compiler should
                         have compatible ABI with the one that compiled Gauche.
+                        To compile C++ code, use --c++ below.
+  --c++=CXX           : compile the source with c++, with the C++ compiler.
+                        The precompiler generate *.cpp instead of *.c.
+                        This and --cc option are mutually exclusive.
   --cppflags=CPPFLAGS : extra cpp flags for compile, such as -I/usr/local
   --cflags=CFLAGS     : extra cc flags for compile
   --ldflags=LDFLAGS   : extra ld flags
@@ -341,6 +345,7 @@ Options:
                   [gauche-builddir "gauche-builddir=s"]
                   [local        "l|local=s"]
                   [cc           "cc=s"]
+                  [c++          "c++=s"]
                   [cppflags     "cppflags=s"]
                   [cflags       "cflags=s"]
                   [ldflags      "ldflags=s"]
@@ -365,7 +370,10 @@ Options:
           (filter values (cons (or given (sys-getenv envname)) additionals))
         (and (not (null? v)) (string-join v))))
 
-    (let ([cc       (param cc "CC")]
+    (when (and cc c++)
+      (exit 1 "Options --cc and --c++ are mutually exclusive."))
+    (let ([use-c++  (boolean c++)]
+          [compiler (or c++ (param cc "CC"))]
           [cppflags (param cppflags "CPPFLAGS" (local-paths "-I" "include"))]
           [cflags   (param cflags   "CFLAGS")]
           [ldflags  (param ldflags  "LDFLAGS"
@@ -385,7 +393,8 @@ Options:
                                 :srcdir srcdir
                                 :gauche-builddir gauche-builddir
                                 :keep-c keep-c :no-line no-line
-                                :output output :cc cc
+                                :output output :c++-mode use-c++
+                                :cc compiler
                                 :cppflags cppflags :cflags cflags)]
        [else
         (when (<= (length args) 1) (usage-self))
@@ -394,7 +403,8 @@ Options:
                                          :srcdir srcdir
                                          :gauche-builddir gauche-builddir
                                          :keep-c keep-c :no-line no-line
-                                         :output output :cc cc :ld cc
+                                         :output output :c++-mode use-c++
+                                         :cc compiler :ld compiler
                                          :cppflags cppflags :cflags cflags
                                          :ldflags ldflags :libs libs)]))
     ))

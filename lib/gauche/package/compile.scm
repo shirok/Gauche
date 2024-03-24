@@ -66,6 +66,7 @@
 (define (gauche-package-compile file :key (output #f)
                                           (cppflags #f)
                                           (cflags   #f)
+                                          (c++-mode #f)
                                           (cc #f)
                                           (srcdir #f)
                                           (gauche-builddir #f)
@@ -92,7 +93,7 @@
                    (file-mtime>? ofile srcfile))
         (cond
          [(equal? (path-extension file) "scm")
-          (let ([cfile (path-swap-extension file "c")]
+          (let ([cfile (path-swap-extension file (if c++-mode "cpp" "c"))]
                 [sofile (or sofile
                             (rlet1 f (sys-basename (path-swap-extension file SOEXT))
                               (warn "DSO file name is not specified.  Assuming `~a'\n" f)))])
@@ -102,7 +103,7 @@
                                    cppflags+ (or cflags "")))
               (unless keep-c (sys-unlink cfile))))]
          [(equal? (path-extension file) "stub") ;deprecated
-          (let1 cfile (path-swap-extension file "c")
+          (let1 cfile (path-swap-extension file (if c++-mode "cpp" "c"))
             (unwind-protect
                 (begin (cgen-genstub srcfile)
                        (do-compile (or cc CC) cfile ofile
@@ -125,6 +126,7 @@
                                                 (output #f)   ; dummy
                                                 (cppflags #f) ; dummy
                                                 (cflags #f)   ; dummy
+                                                (c++-mode #f) ; dummy
                                                 (cc #f)       ; dummy
                                                 ((:dry-run dry?) #f)
                                                 ((:verbose verb?) #f))

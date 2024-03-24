@@ -404,6 +404,7 @@
         [initfn (cgen-c-file->initfn out.c)])
     (rlet1 u (make <cgen-stub-unit>
                :name base :c-name-prefix (cgen-safe-name base)
+               :language (if (equal? (path-extension out.c) "cpp") 'c++ 'c)
                :preamble `(,#"/* Generated automatically from ~|src|.  DO NOT EDIT */")
                :init-prologue (format "~avoid ~a() {"
                                       (if ext-init? "SCM_EXTENSION_ENTRY " "")
