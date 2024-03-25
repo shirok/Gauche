@@ -102,11 +102,11 @@
 
 ;; Override these two to emit attribute value properly escaped.
 (define (sxml:attr->xml attr)
-  `(" " ,(sxml:ncname attr) "=\"" ,(sxml:string->xml (cadr attr)) "\""))
+  `(" " ,(sxml:ncname attr) "=\"" ,(sxml:string->xml (x->string (cadr attr))) "\""))
 (define (sxml:attr->html attr)
   (if (equal? "" (cadr attr))
     `(" " ,(sxml:ncname attr))
-    `(" " ,(sxml:ncname attr) "=\"" ,(sxml:string->html (cadr attr)) "\"")))
+    `(" " ,(sxml:ncname attr) "=\"" ,(sxml:string->html (x->string (cadr attr))) "\"")))
 
 
 ;; Local variables:
