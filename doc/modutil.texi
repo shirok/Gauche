@@ -26917,63 +26917,146 @@ fragmentsは、文字列、文字、数値、手続き、@code{#f}、他のフ�
 @end defun
 
 @defun sxml:attr->xml attr
+@defunx sxml:attr->html attr
 @c MOD sxml.tools
 @c EN
-Creates the XML markup for attributes.
+Creates the XML/HTML markup for attributes.
+Return a tree of strings, which can be passed to
+@code{tree->string} or @code{write-tree} (@pxref{Lazy text construction}).
+
+The argument @var{attr} is a two-element list,
+@code{(@var{attr-name} @var{attr-value})}, where
+@var{attr-name} is a symbol.  @var{Attr-value} can be any value,
+and converted to a string with @code{x->string}.
 @c JP
-属性のXMLマークアップを作ります。
+属性のXML/HTMLマークアップを作ります。
+戻り値は、@code{tree->string}や@code{write-tree}に渡せる
+文字列のツリーです(@ref{Lazy text construction}参照)。
+
+@var{attr}は2要素のリスト
+@code{(@var{attr-name} @var{attr-value})}で、
+@var{attr-name}はシンボルでなければなりません。
+@var{attr-value}はどんな値でも良いですが、文字列以外は
+@code{x->string}で文字列に変換されます。
+@c COMMON
+
+@c EN
+There's a subtle difference between the two.  If the value
+is an empty string, @code{sxml:attr->html} omits the attribute
+value, while @code{sxml:attr->xml} doesn't.
+@c JP
+二つの手続きには微妙な差があります。値が空文字列だった場合、
+@code{sxml:attr->html}は値を省略しますが、@code{sxml:attr->xml}はしません。
+@c COMMON
+
+@example
+(use text.tree)
+
+(tree->string (sxml:attr->xml '(name foo)))
+ @result{} " name=\"foo\""
+
+(tree->string (sxml:attr->html '(value "He said, \"Oops.\"")))
+ @result{} " value=\"He said, &quot;Oops.&quot;\""
+
+(tree->string (sxml:attr->xml '(download "")))
+ @result{} " download=\"\""
+
+(tree->string (sxml:attr->html '(download "")))
+ @result{} " download"
+@end example
+
+@c EN
+Note: This procedure is slighly modified from the original sxml-tools
+to escape special characters in the attribue value.
+@c JP
+註: この手続きは元のsxml-toolsから、
+属性値中の特殊文字をエスケープするように変更してあります。
 @c COMMON
 @end defun
 
 @defun sxml:string->xml string
+@defunx sxml:string->html string
 @c MOD sxml.tools
 @c EN
-Return a string or a list of strings where all the occurrences of
-characters @code{<}, @code{>},
-@code{&}, @code{"}, or @code{'} in a given string are
-replaced by corresponding
-character entity references. See also @code{sxml:string->html}.
-@c JP
-与えられた文字列中の全ての@code{<}、@code{>}、@code{&}、@code{``}、
-@code{'}を対応する文字実体参照に置き換えた、文字列あるいは
-文字列のリストを返します。
-@code{sxml:string->html}も参照して下さい。
-@c COMMON
-@end defun
+Return a tree of strings where characters @code{<}, @code{>},
+@code{&}, and @code{"} in @var{string}
+are replaced by character entity references.
+With @code{sxml:string->xml}, @code{'} is also replaced.
 
-@defun sxml:sxml->xml tree
-@c MOD sxml.tools
-@c EN
-A version of dispatch-node specialized and optimized for SXML->XML
-transformation.
+The returned string tree can be passed to @code{tree->string}
+or @code{write-tree} (@pxref{Lazy text construction}).
 @c JP
-SXML->XML変換に特化され最適化されたバージョンのノードディスパッチです。
-@c COMMON
-@end defun
+@var{string}中の文字@code{<}、@code{>}、@code{&}、@code{"}を
+対応する文字実体参照に置き換えた文字列のツリーを返します。
+@code{sxml:string->xml}では@code{'}も置き換えられます。
 
-@defun sxml:attr->html attr
-@c MOD sxml.tools
-@c EN
-Creates the HTML markup for attributes.
-@c JP
-属性のHTMLマークアップを作ります。
+戻り値は、@code{tree->string}や@code{write-tree}に渡せます
+(@ref{Lazy text construction}参照)。
 @c COMMON
-@end defun
 
-@defun sxml:string->html string
-@c MOD sxml.tools
 @c EN
-Given a string, check to make sure it does not contain characters
-@var{<}, @var{>}, @var{&},
-@var{"} that require encoding.
 See also @code{html-escape-string}
 in @ref{Simple HTML document construction}.
 @c JP
-与えられた文字列で、それがエンコーディングを必要とする文字、
-@var{<}、@var{>}、@var{&}、@var{``}を含まないことをチェックします。
 @ref{Simple HTML document construction}の
 @code{html-escape-string}も参照して下さい。
 @c COMMON
+@end defun
+
+@defun sxml:sxml->xml sxml
+@defunx sxml:sxml->html sxml
+@c MOD sxml.tools
+@c EN
+Convers SXML to XML and HTML, respectively.  The return value
+is a tree of strings to be pased to @code{tree->string} or @code{write-tree}
+(@pxref{Lazy text construction}).
+@c JP
+SXMLをXMLあるいはHTMLにそれぞれ変換します。戻り値は文字列のツリーで、
+@code{tree->string}や@code{write-tree}に渡せます
+(@ref{Lazy text construction}参照)。
+@c COMMON
+
+@c EN
+The differences between XML and HTML version are:
+
+@itemize @bullet
+@item
+Handling of empty-valueed attribute
+(see @code{sxml:attr->xml}/@code{sxml:attr->html} above.)
+@item
+Characters replaced with character entity references
+(see @code{sxml:string->xml}/@code{sxml:string->html} above.)
+@item
+Non-terminated tags.  In HTML, some tags does not have end tags.
+In XML, elements with empty content are emitted as self-terminating tags.
+@end itemize
+@c JP
+XML版とHTML版の違いは次のとおりです。
+
+@itemize @bullet
+@item
+空の値を持つ属性の出力
+(上の@code{sxml:attr->xml}/@code{sxml:attr->html}参照)
+@item
+文字実体参照に置き換えられる文字の違い
+(上の@code{sxml:string->xml}/@code{sxml:string->html}参照)
+@item
+終了タグのない要素。HTMLではいくつかの決められたタグは終了タグを持ちません。
+XMLでは内容が空の要素は自己終了タグとして出力されます。
+@end itemize
+@c COMMON
+
+@example
+(tree->string (sxml:sxml->xml '(div (@@ (foo "") (bar "'")))))
+  @result{} "<div foo=\"\" bar=\"&apos;\"/>"
+(tree->string (sxml:sxml->html '(div (@@ (foo "") (bar "'")))))
+  @result{} "<div foo bar=\"'\"/>"
+
+(tree->string (sxml:sxml->xml '(img (@@ (src "foo.png")))))
+  @result{} "<img src=\"foo.png\"/>"
+(tree->string (sxml:sxml->html '(img (@@ (src "foo.png")))))
+  @result{} "<img src=\"foo.png\">"
+@end example
 @end defun
 
 @defun sxml:non-terminated-html-tag? tag
@@ -26983,17 +27066,6 @@ This predicate yields @code{#t} for "non-terminated" HTML 4.0 tags.
 @c JP
 この述語は、``終了タグのない''HTML 4.0のタグに対して@code{#t}を
 返します。
-@c COMMON
-@end defun
-
-@defun sxml:sxml->html tree
-@c MOD sxml.tools
-@c EN
-A version of dispatch-node specialized and optimized for SXML->HTML
-transformation.
-@c JP
-SXML->HTML変換に対して特化され最適化されたバージョンのノードディスパッチ
-です。
 @c COMMON
 @end defun
 
