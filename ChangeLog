@@ -1,5 +1,10 @@
 2024-03-25  Shiro Kawai  <shiro@acm.org>
 
+	* Bumped version number to 0.9.14-p1
+	  We're not quite ready for prerelease of next version (presumably
+	  1.0_pre1), but we have enough changes since the last release
+	  so we want to distinguish HEAD from the offical release.
+
 	* lib/data/random.scm (reals-between$): Fix overflow and precision loss
 	  https://github.com/shirok/Gauche/issues/1000
 
