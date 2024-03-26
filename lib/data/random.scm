@@ -202,9 +202,12 @@
     (^[] (clamp (+ start (* size (%rand-real0 s))) start ub))))
 (define (reals-between$ lb ub)
   (assume (<= lb ub))
-  (let ([range (- ub lb)]
-        [s (random-data-random-source)])
-    (^[] (clamp (+ (* range (%rand-real0 s)) lb) lb ub))))
+  (let1 s (random-data-random-source)
+    ;; lb + t*(ub-lb) = (1-t)*lb + t*ub
+    ;; The first way may overflow when lb << ub, and suffer precision
+    ;; loss if |lb| << |ub|.
+    (^[] (let1 t (%rand-real0 s)
+           (+ (* (- 1.0 t) lb) (* t ub))))))
 
 ;; API.  Uniformly sample from all possible finite flonums.
 ;; The distribution is not uniform in mathematical sense, since flonums
