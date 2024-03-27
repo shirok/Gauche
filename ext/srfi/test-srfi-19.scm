@@ -2,6 +2,7 @@
 ;;; testing SRFI-19
 ;;;
 
+(test-start "SRFI-19")
 (test-section "SRFI-19")
 
 (define-module srfi-19-tests
@@ -238,3 +239,5 @@
              (compare (car dd) (cadr dd))))
     )
   )
+
+(test-end)

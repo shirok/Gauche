@@ -1,4 +1,6 @@
 ;;-------------------------------------------------------------------
+(use gauche.test)
+(test-start "line-edit")
 (test-section "line-edit")
 (use text.line-edit)
 (test-module 'text.line-edit)
@@ -43,3 +45,5 @@
   (t "(a\\#(b)c)" 6 4)
   (t "(a#\\(b)c)" 6 0)
   )
+
+(test-end)

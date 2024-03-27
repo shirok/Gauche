@@ -2,6 +2,8 @@
 ;; test for sha1 module
 ;;
 
+(use gauche.test)
+(test-start "sha1")
 (test-section "sha1")
 (use srfi.13)
 (use srfi.42)
@@ -98,3 +100,5 @@
     ))
 
 (for-each test-from-file (glob "data/*.info"))
+
+(test-end)

@@ -1,4 +1,6 @@
 ;;-------------------------------------------------------------------
+(use gauche.test)
+(test-start "gap-buffer")
 (test-section "gap-buffer")
 (use text.gap-buffer)
 (use gauche.uvector)
@@ -143,3 +145,5 @@
                 )
            (list s0 s1 s2 s3 s4 s5 s6 s7)))
   )
+
+(test-end)

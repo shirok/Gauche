@@ -2,6 +2,7 @@
 ;;; testing SRFI-43
 ;;;
 
+(test-start "SRFI-43")
 (test-section "SRFI-43")
 
 (define-module srfi-43-tests
@@ -584,3 +585,5 @@
   (assert-error "reverse-list->vector e2"
                 (reverse-list->vector '(0 1 2 3) 2 1))
   )
+
+(test-end)

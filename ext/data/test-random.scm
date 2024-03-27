@@ -2,6 +2,8 @@
 ;; Testing data.random here, for it depends on math.mt-random.
 ;;
 
+(use gauche.test)
+(test-start "data.random")
 (test-section "data.random")
 (use data.random)
 (test-module 'data.random)
@@ -26,3 +28,5 @@
 (test-regular-strings #/(abc){,3}/)
 (test-regular-strings #/(?i:abc)/)
 (test-regular-strings #/abc/i)
+
+(test-end)

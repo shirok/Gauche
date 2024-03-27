@@ -2,6 +2,8 @@
 ;; test for md5 module
 ;;
 
+(use gauche.test)
+(test-start "md5")
 (test-section "md5")
 
 (use rfc.md5)
@@ -20,3 +22,5 @@
    ("c3fcd3d76192e4007dfb496cca67e13b" "abcdefghijklmnopqrstuvwxyz")
    ("d174ab98d277d9f5a5611c2c9f419d9f" "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
    ("57edf4a22be3c955ac49da2e2107b67a" "12345678901234567890123456789012345678901234567890123456789012345678901234567890")))
+
+(test-end)

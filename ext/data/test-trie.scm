@@ -1,4 +1,6 @@
 ;; trie
+(use gauche.test)
+(test-start "data.trie")
 (test-section "data.trie")
 (use data.trie)
 (test-module 'data.trie)
@@ -200,3 +202,5 @@
              (every (cut hash-table-get h <>) strs)))
     )
   )
+
+(test-end)

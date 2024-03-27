@@ -1,3 +1,6 @@
+(use gauche.test)
+(test-start "SRFI-180")
+
 (test-section "SRFI-180")
 
 (define-module test-srfi-180
@@ -149,3 +152,5 @@
                              (e . #()))
                 <>)))
   )
+
+(test-end)

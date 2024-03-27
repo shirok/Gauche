@@ -2,6 +2,7 @@
 ;;; test SRFI-13
 ;;;
 
+(test-start "SRFI-13")
 (test-section "SRFI-13")
 
 (define-module srfi-13-tests
@@ -451,3 +452,5 @@
   (test* "string-delete" ""
          (string-delete (^c (char-lower-case? c)) ""))
   )
+
+(test-end)

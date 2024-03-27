@@ -4,6 +4,8 @@
 ;; doesn't depend on it, though).
 ;;
 
+(use gauche.test)
+(test-start "data.heap")
 (test-section "data.heap")
 (use data.heap)
 (test-module 'data.heap)
@@ -166,3 +168,5 @@
                (max 1 2 1 1)
                (max 1 1 1 1)))
   )
+
+(test-end)

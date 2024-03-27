@@ -1,4 +1,6 @@
 ;;-----------------------------------------------
+(use gauche.test)
+(test-start "data.queue")
 (test-section "data.queue")
 (use data.queue)
 (test-module 'data.queue)
@@ -200,3 +202,5 @@
 
 ;; Note: */wait! APIs are tested in ext/threads/test.scm instead of here,
 ;; since we need threads working.
+
+(test-end)

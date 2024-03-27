@@ -1,4 +1,7 @@
 ;; ring-buffer
+
+(use gauche.test)
+(test-start "data.ring-buffer")
 (test-section "data.ring-buffer")
 (use data.ring-buffer)
 (test-module 'data.ring-buffer)
@@ -236,3 +239,5 @@
   (ring-buffer-add-front! buf 'x)
   (test* "ring-buffer sequence protocol" '(x y z a b c)
          (coerce-to <list> buf)))
+
+(test-end)

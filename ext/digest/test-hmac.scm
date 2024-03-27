@@ -2,6 +2,8 @@
 ;; test for hmac module
 ;;
 
+(use gauche.test)
+(test-start "hmac")
 (test-section "hmac")
 
 (use gauche.uvector)
@@ -112,3 +114,5 @@ The following test data can be obtained by the following snippet:
                                                  :hasher class))))
      hashes
      keys)))
+
+(test-end)

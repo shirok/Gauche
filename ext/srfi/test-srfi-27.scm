@@ -2,6 +2,7 @@
 ;;; SRFI-27 depends on mt-random, so we test it here.
 ;;;
 
+(test-start "SRFI-27")
 (test-section "SRFI-27")
 
 (use srfi.27)
@@ -40,3 +41,5 @@
   (unit-random s0 0.1)
   (unit-random s0 1/3)
   )
+
+(test-end)

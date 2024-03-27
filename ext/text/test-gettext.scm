@@ -1,4 +1,7 @@
+(use gauche.test)
 (use gauche.charconv)
+
+(test-start "text.gettext")
 
 (add-load-path "../../test")
 (define *test-locale-dirs* '("../../test/data/locale"))
@@ -62,3 +65,5 @@
                          (dcgettext domain (car t) locale)))
               (assoc-ref *tests* locale)))
   )
+
+(test-end)
