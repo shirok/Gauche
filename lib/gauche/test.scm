@@ -61,11 +61,11 @@
 ;;  (test-end)
 ;;
 ;; To run a test interactively, just load the file.
-;; It is also recommended to have a "test" target in your Makefile, so that
+;; It is also recommended to have a "check" target in your Makefile, so that
 ;; the user of your program can run a test easily.  The rule may look like
 ;; this:
 ;;
-;;   test :
+;;   check :
 ;;        gosh my-feature-test.scm > test.log
 ;;
 ;; If stdout is redirected to other than tty, all the verbose logs will go
@@ -191,6 +191,7 @@
 (define (test-record-file file) (set! *test-record-file* file))
 
 ;; List of discrepancies
+;; (We intentially avoid using parameters)
 (define *discrepancy-list* '())
 
 (define *test-counts* (vector 0 0 0 0)) ; total/pass/fail/abort
@@ -509,11 +510,11 @@
 (define (test-report-failure-plain msg expected actual)
   (display actual))
 
-;; private global flag, true during we're running tests.
-;; (we avoid using parameters intentionally.)
-(define *test-running* #f)
+;; private global flag, count test nesting level.
+;; (We avoid using parameters intentionally.)
+(define *test-nesting* 0)
 
-(define (test-running?) *test-running*)
+(define (test-running?) (positive? *test-nesting*))
 
 (define (test-section msg)
   (let ([msglen (string-length msg)])
@@ -531,23 +532,30 @@
     (sys-isatty port)]))
 
 (define (test-start msg)
-  (set! *test-running* #t)
-  (let* ([s (format #f "Testing ~a ... " msg)]
-         [pad (make-string (max 3 (- 65 (string-length s))) #\space)])
-    (display s (current-error-port))
-    (display pad (current-error-port))
-    (flush (current-error-port))
-    (read-summary)
-    (prepare-summary)
-    (when (and (not-redirected? (current-error-port))
-               (not-redirected? (current-output-port)))
-      (newline (current-error-port))))
-  (set! *discrepancy-list* '())
-  (unless (and (not-redirected? (current-error-port))
-               (not-redirected? (current-output-port)))
-    (let ([msglen (string-length msg)])
-      (format #t "Testing ~a ~a\n" msg (make-string (max 5 (- 70 msglen)) #\=)))
-    (flush))
+  (cond
+   [(zero? *test-nesting*)
+    (inc! *test-nesting*)
+    (let* ([s (format #f "Testing ~a ... " msg)]
+           [pad (make-string (max 3 (- 65 (string-length s))) #\space)])
+      (display s (current-error-port))
+      (display pad (current-error-port))
+      (flush (current-error-port))
+      (read-summary)
+      (prepare-summary)
+      (when (and (not-redirected? (current-error-port))
+                 (not-redirected? (current-output-port)))
+        (newline (current-error-port))))
+    (set! *discrepancy-list* '())
+    (unless (and (not-redirected? (current-error-port))
+                 (not-redirected? (current-output-port)))
+      (let ([msglen (string-length msg)])
+        (format #t "Testing ~a ~a\n" msg
+                (make-string (max 5 (- 70 msglen)) #\=)))
+      (flush))]
+   [else
+    (inc! *test-nesting*)
+    (format #t "Nested testing[~a] ~a\n" *test-nesting* msg)
+    (flush)])
   )
 
 ;; test-log fmt arg ...
@@ -561,6 +569,14 @@
 ;; test-end :key :exit-on-failure
 ;; avoid using extended formal list since we need to test it.
 (define (test-end . args)
+  (cond
+   [(> *test-nesting* 1)
+    (format #t "End nested testing[~a]\n" *test-nesting*)
+    (dec! *test-nesting*)]
+   [(= *test-nesting* 1) (dec! *test-nesting*) (%test-true-end args)]
+   [else (error "Test nesting count disrepancy; missing test-start?")]))
+
+(define (%test-true-end args)
   (let ([e (current-error-port)]
         [o (current-output-port)]
         [exit-on-failure (get-keyword :exit-on-failure args #f)])
@@ -585,8 +601,6 @@
 
     (when *test-record-file*
       (write-summary))
-
-    (set! *test-running* #f)
 
     ;; the number of failed tests.
     (let ([num-failures (length *discrepancy-list*)])
