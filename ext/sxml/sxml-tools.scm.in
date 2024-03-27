@@ -101,13 +101,37 @@
 ;#include-body "src/sxml-tools.scm"
 
 ;; Override these two to emit attribute value properly escaped.
+;; NB: For HTML, we don't need to recognize XML namespace prefix, so
+;; we simply do symbol->string on the attribute name.
+;; (Cf. https://github.com/shirok/Gauche-makiki/issues/11)
 (define (sxml:attr->xml attr)
   `(" " ,(sxml:ncname attr) "=\"" ,(sxml:string->xml (x->string (cadr attr))) "\""))
 (define (sxml:attr->html attr)
   (if (equal? "" (cadr attr))
-    `(" " ,(sxml:ncname attr))
-    `(" " ,(sxml:ncname attr) "=\"" ,(sxml:string->html (x->string (cadr attr))) "\"")))
+    `(" " ,(symbol->string (car attr)))
+    `(" " ,(symbol->string (car attr)) "=\""
+      ,(sxml:string->html (x->string (cadr attr))) "\"")))
 
+;; We also need to override sxml:sxml->html.  The attempt to merge XML
+;; and HTML is dead.  HTML is not XML.
+(define (sxml:sxml->html tree)
+  (cond
+    ((nodeset? tree)
+     (map (lambda (a-tree)
+            (sxml:sxml->html a-tree))
+          tree))
+    ((pair? tree)
+     (let* ((name (sxml:name tree))
+            (nm (symbol->string name))
+            (content (sxml:content-raw tree))
+            (rendered-attrs (map sxml:attr->html (sxml:attr-list tree))))
+       (if (and (null? content)
+                (sxml:non-terminated-html-tag? name))
+         `("<" ,nm ,@rendered-attrs ">")
+         `("<" ,nm ,@rendered-attrs ">"
+           ,@(sxml:sxml->html content) "</" ,nm ">"))))
+    ((string? tree) (sxml:string->html tree)) ; *text*
+    (else (sxml:error "sxml->html - unexpected type of node: " tree))))
 
 ;; Local variables:
 ;; mode: scheme

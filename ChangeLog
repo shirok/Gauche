@@ -1,3 +1,12 @@
+2024-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/sxml-tools.scm.in: Fix sxml:attr->html and sxml:sxml->html
+	  to handle HTML's diversion from XML properly.  Specifically,
+	  - Do not treat colons in attribute names as namespace prefix
+	  - Do not emit self-closing tag for non-void elements with empty
+	  content.
+	  https://github.com/shirok/Gauche-makiki/issues/11
+
 2024-03-25  Shiro Kawai  <shiro@acm.org>
 
 	* Bumped version number to 0.9.14-p1

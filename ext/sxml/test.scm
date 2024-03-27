@@ -13,12 +13,39 @@
 ;(load "./tree-trans-test.scm")
 ;(load "./to-html-test.scm")
 
-;; we don't have new sxpath test suite yet.  for now, just check
 ;; module consistency.
 
 (use gauche.test)
 
-(test-start "sxpath")
+(test-start "SXML auxiliary utilities")
+
+(test-section "sxml.tools")
+(use sxml.tools)
+(test-module 'sxml.tools)
+(use text.tree)
+
+(define (test-xml-html msg sxml xml-expect html-expect)
+  (test* #"sxml:sxml->xml ~msg" xml-expect
+         (tree->string (sxml:sxml->xml sxml)))
+  (test* #"sxml:sxml->html ~msg" html-expect
+         (tree->string (sxml:sxml->html sxml))))
+
+;; Check rendering quirks
+;; https://github.com/shirok/Gauche-makiki/issues/11
+(test-xml-html
+ "attrs"
+ '(body (div (@ (foo "") (bar "abc\"def") (baz:quux xyzzy))))
+ "<body><div foo=\"\" bar=\"abc&quot;def\" quux=\"xyzzy\"/></body>"
+ "<body><div foo bar=\"abc&quot;def\" baz:quux=\"xyzzy\"></div></body>")
+
+;; HTML void elements
+(test-xml-html
+ "html void elements"
+ '(div (img (@ (src "abc"))) (br) (hr))
+ "<div><img src=\"abc\"/><br/><hr/></div>"
+ "<div><img src=\"abc\"><br><hr></div>")
+
+(test-section "sxml.sxpath")
 (use sxml.sxpath)
 (test-module 'sxml.sxpath)
 
@@ -28,11 +55,10 @@
   (test* "ns-trans" '((rss:title "foo"))
          ((sxpath "//my:title" ns-alist) sxml)))
 
-(test-end)
 
 ;; sxml.serializer test
 
-(test-start "serializer")
+(test-section "sxml.serializer")
 (use sxml.serializer)
 (test-module 'sxml.serializer)
 
