@@ -15846,6 +15846,21 @@ the difference.
 @c COMMON
 @end deftp
 
+@c EN
+Legacy parameters also had a feature called @emph{observers}, a callback
+procedure to be called when the parameter's value is modified.
+You can add/delete observers by the following API.
+
+Note that observers are only attachable to legacy parameters.
+We plan to remove it eventually, so new code shouldn't use it.
+@c JP
+旧パラメータはまた、@emph{オブザーバ}という、パラメータの値が変わる時に
+呼ばれるコールバックを登録することができました。下のAPIはそのためのものです。
+
+オブザーバは旧パラメータのみに付加できます。
+この機能はいずれ取り除く予定なので、新規コードでは使わないようにしてください。
+@c COMMON
+
 @defun parameter-observer-add! p proc :optional when where
 @c MOD gauche.parameter
 @c DEPRECATED
@@ -22816,7 +22831,7 @@ you can use @code{approx=?} (@pxref{Numerical comparison}).
 @defun test-truthy
 @c MOD gauche.test
 @c EN
-Returns a special object that expects a true value, e.g. anything
+Returns a special object that expects a true value, i.e. anything
 but @code{#f}.　Use it to assert the test expression returns a true value
 but not necessarily @code{#t}.
 @c JP
@@ -22874,7 +22889,7 @@ as the following example:
 @c EN
 Another optional argument @var{message} can be used to check if
 the raised error has a message of expected pattern.  The argument
-may be a string, a regexp or @code{#f} (default).
+may be a string, a regexp, or @code{#f} (default).
 If it is a string, @code{test-check}
 checks if the message of the raised error exactly match the
 string.  If it is a regexp, @code{test-check} checks
