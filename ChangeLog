@@ -5,7 +5,6 @@
 	  first thread, by default.  See the discussion at
 	  https://sourceforge.net/p/gauche/mailman/gauche-devel/thread/87r0fvd5bl.fsf%40karme.de/
 
-
 	* ext/sxml/sxml-tools.scm.in: Fix sxml:attr->html and sxml:sxml->html
 	  to handle HTML's diversion from XML properly.  Specifically,
 	  - Do not treat colons in attribute names as namespace prefix

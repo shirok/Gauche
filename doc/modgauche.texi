@@ -22252,7 +22252,74 @@ This should be called before any tests.
 テストの状態を初期化して、ヘッダをログに書き出します。テストを呼ぶ前に呼んで下さい。
 @var{module-name}はログのために使われる文字列です。
 @c COMMON
+
+@c EN
+If a test is already running, this procedure just emits a log message
+and update internal test nesting level.  It allows a test script
+to include another test script with @code{test-start}/@code{test-end}
+pair.
+
+With this feature, you can split a lengthy test script into several
+sub test scripts, each of which is a stand-alone test script, and include
+them into the main test script.   By doing so, you can run a single
+sub test script while developing, and run the main test script for
+full tests.
+@c JP
+テストが既に走っている場合は、
+この手続きはログメッセージを出して内部のテストネストレベルを更新するだけです。
+これにより、@code{test-start}/@code{test-end}のペアを持つスクリプトを
+別のテストスクリプトからincludeすることができます。
+
+この機能は、例えば長大なテストスクリプトをいくつかのサブテストスクリプトに
+分割するのに役立ちます。各サブテストスクリプトはそれぞれ独立に走れるように
+しておいて、元のテストスクリプトはそれらをincludeします。
+これによって、開発中は必要なサブテストスクリプトだけを走らせ、フルテストでは
+全てのテストを走らせる、といった運用ができます。
+@c COMMON
 @end defun
+
+@defun test-end :key exit-on-failure
+@c MOD gauche.test
+@c EN
+Prints out list of failed tests.  If @var{exit-on-failure} is @code{#f} or
+omitted, this procedure returns the number of failed tests.
+
+Otherwise, this function terminates the @code{gosh}
+process by @code{exit}.  If a fixnum is given to @code{exit-on-failure}
+it becomes the process's exit status; if other true value is given,
+the exit status will be 1.
+@c JP
+失敗したテストのリストを報告します。@var{exit-on-failure}が@code{#f}か
+省略された場合は、この手続きは失敗したテストの数を返します。
+
+そうでなければ、この手続きは@code{exit}を呼んで@code{gosh}を
+終了させます。@code{exit-on-failure}にfixnumが渡された場合は、
+それがプロセスの終了ステータスとして使われます。@code{exit-on-failure}が
+他の真となる値であった場合は、終了ステータスは1となります。
+@c COMMON
+
+@c EN
+If test is nested, that is, this @code{test-end} corresponds
+to inner @code{test-start} while outer test is ongoing, this procedure
+only emits a log message and adjust internal test nesting level.
+@c JP
+テストがネストしている場合、つまりこの@code{test-end}と対応する@code{test-start}
+が、既にテストが走っている状況で実行されていた場合は、この手続きは単にログメッセージを
+出力して内部のテストネストレベルを調整します。
+@c COMMON
+@end defun
+
+@defun test-running?
+@c MOD gauche.test
+@c EN
+Returns @code{#t} if test is running, that is, you're between outermost
+@code{test-start} and @code{test-end}.  Returns @code{#f} otherwise.
+@c JP
+テストが実行中、つまり、一番外側の@code{test-start}と@code{test-end}の間に
+いるならば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
+@end defun
+
 
 @defun test-section section-name
 @c MOD gauche.test
@@ -22298,27 +22365,6 @@ and ask the reporter to run the test again and analyze the log.
 その場合、@code{test-log}でそういった情報をダンプするコードをテストスクリプトに
 仕込んでおいて、もう一度報告者のマシンでテストを走らせてもらい、そのログを解析する
 ことができるでしょう。
-@c COMMON
-@end defun
-
-@defun test-end :key exit-on-failure
-@c MOD gauche.test
-@c EN
-Prints out list of failed tests.  If @var{exit-on-failure} is @code{#f} or
-omitted, this procedure returns the number of failed tests.
-
-Otherwise, this function terminates the @code{gosh}
-process by @code{exit}.  If a fixnum is given to @code{exit-on-failure}
-it becomes the process's exit status; if other true value is given,
-the exit status will be 1.
-@c JP
-失敗したテストのリストを報告します。@var{exit-on-failure}が@code{#f}か
-省略された場合は、この手続きは失敗したテストの数を返します。
-
-そうでなければ、この手続きは@code{exit}を呼んで@code{gosh}を
-終了させます。@code{exit-on-failure}にfixnumが渡された場合は、
-それがプロセスの終了ステータスとして使われます。@code{exit-on-failure}が
-他の真となる値であった場合は、終了ステータスは1となります。
 @c COMMON
 @end defun
 
