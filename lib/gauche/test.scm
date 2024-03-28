@@ -191,6 +191,7 @@
 (define (test-record-file file) (set! *test-record-file* file))
 
 ;; List of discrepancies
+;; ((<report> <msg> <expected> <result>) ...)
 ;; (We intentially avoid using parameters)
 (define *discrepancy-list* '())
 
@@ -510,11 +511,12 @@
 (define (test-report-failure-plain msg expected actual)
   (display actual))
 
-;; private global flag, count test nesting level.
+;; Private global stack, count test nesting level.
+;; ((<name> <file>) ...)
 ;; (We avoid using parameters intentionally.)
-(define *test-nesting* 0)
+(define *test-nesting* '())
 
-(define (test-running?) (positive? *test-nesting*))
+(define (test-running?) (pair? *test-nesting*))
 
 (define (test-section msg)
   (let ([msglen (string-length msg)])
@@ -532,9 +534,9 @@
     (sys-isatty port)]))
 
 (define (test-start msg)
+  (push! *test-nesting* (list msg (current-load-path)))
   (cond
-   [(zero? *test-nesting*)
-    (inc! *test-nesting*)
+   [(null? (cdr *test-nesting*))
     (let* ([s (format #f "Testing ~a ... " msg)]
            [pad (make-string (max 3 (- 65 (string-length s))) #\space)])
       (display s (current-error-port))
@@ -553,10 +555,8 @@
                 (make-string (max 5 (- 70 msglen)) #\=)))
       (flush))]
    [else
-    (inc! *test-nesting*)
-    (format #t "Nested testing[~a] ~a\n" *test-nesting* msg)
-    (flush)])
-  )
+    (format #t "Nested testing[~a] ~a\n" (length *test-nesting*) msg)
+    (flush)]))
 
 ;; test-log fmt arg ...
 ;; The formatted output, prefixed by ";;",  goes to stdout for the logging.
@@ -569,12 +569,16 @@
 ;; test-end :key :exit-on-failure
 ;; avoid using extended formal list since we need to test it.
 (define (test-end . args)
-  (cond
-   [(> *test-nesting* 1)
-    (format #t "End nested testing[~a]\n" *test-nesting*)
-    (dec! *test-nesting*)]
-   [(= *test-nesting* 1) (dec! *test-nesting*) (%test-true-end args)]
-   [else (error "Test nesting count disrepancy; missing test-start?")]))
+  (if (pair? *test-nesting*)
+    (if (pair? (cdr *test-nesting*))
+      (begin
+        (format #t "End nested testing[~a] ~a\n"
+                (length *test-nesting*) (caar *test-nesting*))
+        (pop! *test-nesting*))
+      (begin
+        (pop! *test-nesting*)
+        (%test-true-end args)))
+    (error "Test nesting count disrepancy; missing test-start?")))
 
 (define (%test-true-end args)
   (let ([e (current-error-port)]
