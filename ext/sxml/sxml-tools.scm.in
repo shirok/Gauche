@@ -98,7 +98,7 @@
           sxml:attr-list nodeset? ntype-names?? ntype??
           sxml:filter select-kids sxml:element? sxml:element?)
 
-;#include-body "src/sxml-tools.scm"
+;#include-body "src/sxml-tools.scm" (sxml:attr->xml sxml:attr->html sxml:sxml->html)
 
 ;; Override these two to emit attribute value properly escaped.
 ;; NB: For HTML, we don't need to recognize XML namespace prefix, so

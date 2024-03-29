@@ -3,6 +3,7 @@
 ;;;
 
 
+(use util.match)
 (use srfi.13)
 
 ;; The conversion procedure:
@@ -70,11 +71,12 @@
       (prelude file)
       (generator-for-each process read))))
 
-(define (process-body file)
+(define (process-body file excludes)
   (include-translating file
                        (^[sexp]
-                         (for-each write (replace *trans-table* sexp))
-                         (newline))))
+                         (unless (skip? sexp excludes)
+                           (for-each write (replace *trans-table* sexp))
+                           (newline)))))
 
 (define (process-test file)
   (include-translating file
@@ -90,6 +92,11 @@
 
 (define (adjpath templ file) #"~(sys-dirname templ)/~file")
 
+(define (skip? sexp excludes)
+  (match sexp
+    [('define (name . _) . _) (boolean (memq name excludes))]
+    [_ #f]))
+
 ;; entry point
 (define (main args)
   (unless (= (length args) 2)
@@ -102,8 +109,12 @@
       (^[] (with-output-to-file dest
              (^[] (generator-for-each
                    (^[line] (rxmatch-case line
-                              [#/^;#include-body "(.*)"/ (#f file)
-                               (process-body (adjpath templ file))]
+                              [#/^;#include-body "(.*)"\s*(\(.*\))?/
+                               (#f file excludes)
+                               (process-body (adjpath templ file)
+                                             (if excludes
+                                               (read-from-string excludes)
+                                               '()))]
                               [#/^;#include-test "(.*)"/ (#f file)
                                (process-test (adjpath templ file))]
                               [else (display line) (newline)]))
