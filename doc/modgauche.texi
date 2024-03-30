@@ -20791,7 +20791,11 @@ collections don't care the order of elements.
 @subsection Other operations over sequences
 @c NODE その他のシーケンス上の操作
 
+@c EN
 @subsubheading Selection and searching
+@c JP
+@subsubheading 選択と検索
+@c COMMON
 
 @deffn {Generic function} sequence-contains haystack needle :key test
 @c MOD gauche.sequence
@@ -20967,7 +20971,11 @@ See @ref{Selection and searching in collection}.
 @ref{Selection and searching in collection}を参照して下さい。
 @c COMMON
 
+@c EN
 @subsubheading Grouping
+@c JP
+@subsubheading グループ化
+@c COMMON
 
 @deffn {Generic function} group-sequence seq :key key test
 @c MOD gauche.sequence
@@ -21270,8 +21278,11 @@ The semantics of keyword arguments @var{key}, @var{test},
 @c COMMON
 @end deffn
 
-
+@c EN
 @subsubheading Prefix
+@c JP
+@subsubheading プレフィクス
+@c COMMON
 
 @deffn {Generic function} common-prefix (a <sequence>) (b <sequence>) :key key test
 @c MOD gauche.sequence
@@ -21338,8 +21349,11 @@ The meanings of keyword arguments are the same as @code{common-prefix}.
 @end example
 @end deffn
 
-
+@c EN
 @subsubheading Permutation and shuffling
+@c JP
+@subsubheading 置換とシャッフル
+@c COMMON
 
 @deffn {Generic function} permute (src <sequence>) (permuter <sequence>) :optional fallback
 @c MOD gauche.sequence
@@ -21477,7 +21491,36 @@ Like @code{shuffle}, but the result is stored back to @var{src}.
 @subsection Implementing sequence
 @c NODE シーケンスを実装する
 
+When you define your own aggregate class that holds a sequence of
+objects, you can follow the sequence protocol below to make it sequence.
 
+@strong{Inherit @code{<sequence>}}: You need to derive your class
+from @code{<sequence>}, so that sequence-related methods can be uniformly
+used.
+
+@strong{Implement collection protocol}: A sequence is also a collection,
+and you need to implement a collection protocol.
+For the very least, you need to have @code{call-with-iterator} method.
+If you want your sequence to be buildable,
+you also need to have @code{call-with-builder} method.
+All other collection generic functions have
+default method on top of these two, so they'll work; though
+you can specialize other collection generic functions if it's
+more efficient.  We strongly recommend to specialize @code{size-of},
+for its default method walks over the entire sequence to find its size,
+which can be very ineffient (O(N) time).
+
+@strong{Implement sequence protocol}: You need to define @code{referencer},
+@code{modifier}, at least.
+If your sequence is immutable, you can leave @code{modifier} undefined
+(the default method raises an error).  Again, you may want to
+specialize other generic functions if it's more efficient.
+It is recommended to define @code{call-with-reverse-iterator} as well,
+which is used for operations that walks the sequence in the reverse order
+(e.g. @code{fold-right)}.  If @code{call-with-reverse-iterator} is not
+specialized, the default method uses @code{call-with-iterator}
+and keeps all the elements temporarily during execution, which
+takes O(N) space.
 
 @c ----------------------------------------------------------------------
 @c @node Serializer, Terminal control, Simple dispatcher, Library modules
