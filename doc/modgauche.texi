@@ -20517,7 +20517,7 @@ Gauche組み込みクラスのうち、リスト、ベクター、そして文�
 * Slicing sequence::
 * Mapping over sequences::
 * Other operations over sequences::
-* Implementing sequence::
+* Implementing sequences::
 @end menu
 
 @node Fundamental sequence accessors, Slicing sequence, Sequence framework, Sequence framework
@@ -20795,7 +20795,7 @@ collections don't care the order of elements.
 @end deffn
 
 
-@node Other operations over sequences, Implementing sequence, Mapping over sequences, Sequence framework
+@node Other operations over sequences, Implementing sequences, Mapping over sequences, Sequence framework
 @subsection Other operations over sequences
 @c NODE その他のシーケンス上の操作
 
@@ -21495,19 +21495,34 @@ Like @code{shuffle}, but the result is stored back to @var{src}.
 @end deffn
 
 
-@node Implementing sequence,  , Other operations over sequences, Sequence framework
-@subsection Implementing sequence
+@node Implementing sequences,  , Other operations over sequences, Sequence framework
+@subsection Implementing sequences
 @c NODE シーケンスを実装する
 
-When you define your own aggregate class that holds a sequence of
-objects, you can follow the sequence protocol below to make it sequence.
+@c EN
+When you define your own aggregate class that holds ordered objects,
+you can follow the sequence protocol below to make it sequence.
+@c JP
+複数のオブジェクトを順序づけて保持するクラスを定義した場合、
+次のシーケンスプロトコルを実装することで、それをシーケンスにすることができます。
+@c COMMON
 
+@c EN
 @strong{Inherit @code{<sequence>}}: You need to derive your class
 from @code{<sequence>}, so that sequence-related methods can be uniformly
-used.
+used.  Note that @code{<sequence>} inherits @code{<collection>}, so your
+class will also be a collection.
+@c JP
+@strong{@code{<sequence>}を継承する}:
+ユーザ定義クラスが@code{<sequence>}を継承することにより、
+シーケンス関連のメソッドが一様に使えるようになります。なお、@code{<sequence>}は
+@code{<collection>}を継承しているので、そのクラスはコレクションにもなります。
+@c COMMON
 
+@c EN
 @strong{Implement collection protocol}: A sequence is also a collection,
-and you need to implement a collection protocol.
+and you need to implement a collection protocol
+(@pxref{Implementing collections}).
 For the very least, you need to have @code{call-with-iterator} method.
 If you want your sequence to be buildable,
 you also need to have @code{call-with-builder} method.
@@ -21517,7 +21532,23 @@ you can specialize other collection generic functions if it's
 more efficient.  We strongly recommend to specialize @code{size-of},
 for its default method walks over the entire sequence to find its size,
 which can be very ineffient (O(N) time).
+@c JP
+@strong{コレクションプロトコルを実装する}: シーケンスはコレクションでもあるので、
+コレクションプロトコルを実装しなければなりません
+(@ref{Implementing collections})。
+少なくとも@code{call-with-iterator}メソッドが必要で、ビルダブルにしたいなら
+@code{call-with-builder}も必要です。
+それ以外のコレクションジェネリックファンクションは、
+デフォルトメソッドがこれら二つのプリミティブの上に作られているので、
+他のメソッドを定義しなくてもコレクションAPIが使えます。
+ただ、他のジェネリックファンクションも特定化することで、
+ショートカットして性能が見込めるならそうするのが良いでしょう。
+特に@code{size-of}は、デフォルトメソッドは
+@code{call-with-iterator}で全要素を数え上げるO(N)時間を要するので、
+可能なら専用メソッドを定義することを強くおすすめします。
+@c COMMON
 
+@c EN
 @strong{Implement sequence protocol}: You need to define @code{referencer},
 @code{modifier}, at least.
 If your sequence is immutable, you can leave @code{modifier} undefined
@@ -21529,6 +21560,17 @@ which is used for operations that walks the sequence in the reverse order
 specialized, the default method uses @code{call-with-iterator}
 and keeps all the elements temporarily during execution, which
 takes O(N) space.
+@c JP
+@strong{シーケンスプロトコルを実装する}: 少なくとも@code{referencer}と
+@code{modifier}を実装する必要があります。
+シーケンスが変更不可なら@code{modifier}は未定義のままにすることもできます。
+デフォルトメソッドはエラーを投げます。
+ここでも、性能向上が見込めるなら他のシーケンスAPIを特定化するのが良いでしょう。
+可能なら、@code{call-with-reverse-iterator}も定義することをおすすめします。
+シーケンスを逆順にたどるAPI (例: @code{fold-right}) は、このメソッドが定義されていれば
+それを使います。定義されていなければ、@code{call-with-iterator}で一旦全要素を
+取り出す必要があるのでO(N)空間を消費します。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @c @node Serializer, Terminal control, Simple dispatcher, Library modules
