@@ -1,3 +1,7 @@
+2024-03-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/test/generative.scm: Removed in favor of upcoming srfi-252.
+
 2024-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/core.c (Scm_Init): Explicitly start marker threads.  Recent
