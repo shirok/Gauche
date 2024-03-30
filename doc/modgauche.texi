@@ -18304,7 +18304,26 @@ This allows you to treat the whole pipeline as one entity.
   (port->string (process-output p)))
   @result{} "habana\ntabata\ncabara\n"
 @end example
+
+@c EN
+If you want to connect one process's output to another process's input
+without using @code{do-pipeline}/@code{run-pipeline}, you need to have
+coroutine or thread that actively reads from one process's output
+and feed it to another process's input.  You can use a plumbing
+in @code{control.plumbing}
+(@pxref{Plumbing ports}) to do so easily.  Plumbing also allows
+you to ``tap'' the pipe, i.e. to monitor the data that flows
+between processes.
+@c JP
+もし@code{do-pipeline}/@code{run-pipeline}を使わずに
+一つのプロセスの出力を別のプロセスの入力につなげたい場合、
+何らかのコルーチンかスレッドで一つのプロセスの出力をアクティブに読んで
+もう一つのプロセスの入力へと送ることが必要になります。
+@code{control.plumbing}を使えばそれは簡単にできます
+(@ref{Plumbing ports}参照)。また、流れるデータをモニタするといったことも可能です。
+@c COMMON
 @end deffn
+
 
 @deffn {Method} process-error (process <process>)
 @c MOD gauche.process
