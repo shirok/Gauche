@@ -6429,6 +6429,21 @@ This makes iterator methods such as @code{map}, @code{for-each},
 @c COMMON
 
 @c EN
+Optionally, you can specialize other generic functions to optimize
+performance.  Particularly, we strongly recommend to specialize
+@code{size-of}, since its default method iterates entire collection
+to find the size, which is O(N).  Usually a collection has bette way
+to find out its size.
+@c JP
+パフォーマンスの最適化のために、他のジェネリック関数をオーバロードすることも
+できます。特に、@code{size-of}のメソッドは定義しておくことを強くおすすめします。
+デフォルトのメソッドはコレクション全体をなめて大きさを計算するのでO(N)かかりますが、
+通常、コレクションは大きさをもっと簡単に得られる手段を持っています。
+@c COMMON
+
+
+
+@c EN
 In order to make the constructive methods (e.g. @code{map-to} to
 create your collection), you have to implement @code{call-with-builder}
 method as well.  Note that @code{call-with-builder} method must work
@@ -6462,13 +6477,6 @@ Gaucheでは、これはメタクラスを使うことによって実装でき�
   )
 @end example
 
-@c EN
-Optionally, you can overload other generic functions to optimize
-performance.
-@c JP
-パフォーマンスの最適化のために、他のジェネリック関数をオーバロードすることも
-できます。
-@c COMMON
 
 @c ----------------------------------------------------------------------
 @node Configuration parameters, Generating build files, Collection framework, Library modules - Gauche extensions
