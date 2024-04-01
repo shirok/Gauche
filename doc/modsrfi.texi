@@ -4628,15 +4628,205 @@ SRFI-64のデフォルトのテスト報告形式で結果が報告されます�
 @end deftp
 
 @menu
-* SRFI-64 test API::
 * SRFI-64 test runner::
+* SRFI-64 test API::
 @end menu
 
-@node SRFI-64 test API, SRFI-64 test runner, A Scheme API for test suites, A Scheme API for test suites
-@subsection Test API
-
-@node SRFI-64 test runner,  , SRFI-64 test API, A Scheme API for test suites
+@node SRFI-64 test runner, SRFI-64 test API, A Scheme API for test suites, A Scheme API for test suites
 @subsection Test runner
+
+In SRFI-64, tests are run with an active @emph{test runner} which collects
+test results and emits reports.  It allows users to provide custom runners
+to handle tailored reports suitable to the specific tests.
+
+@subsubheading Test runner object
+
+@deftp {Record} test-runner
+[SRFI-64]
+@c MOD srfi.64
+
+@end deftp
+
+@defun test-runner? obj
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@deftp {Parameter} test-runner-current
+[SRFI-64]
+@c MOD srfi.64
+@end deftp
+
+@defun test-runner-get
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-simple
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-null
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-factory :optional factory
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+
+@subsubheading Running tests with a specified runner
+
+@defun test-apply [runner] specifier @dots{} procedure
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defmac test-with-runner runner decl-or-expr @dots{}
+[SRFI-64]
+@c MOD srfi.64
+@end defmac
+
+
+@subsubheading Latest result properties
+
+A runner holds a single alist to keep the latest result properties.
+Except the @code{result-kind} property, which is set by every basic
+test procedures, the usage of properties are up to the test runner
+and/or test writer.
+
+@defun test-result-clear runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-result-ref runner pname :optional default
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-result-set! runnre pname value
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-result-remove runner pname
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-result-alist runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-result-kind :optional runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-passed? :optional runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@subsubheading Keeping track of test status
+
+@defun test-runner-pass-count runner
+@defunx test-runner-fail-count runner
+@defunx test-runner-xpass-count runner
+@defunx test-runner-xfail-count runner
+@defunx test-runner-skip-count runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-test-name runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-group-path runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-group-stack runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-aux-value runner
+@defunx test-runner-aux-value! runner value
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-reset runner
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@subsubheading Callbacks
+
+@defun test-runner-on-test-begin runner
+@defunx test-runner-on-test-begin! runner proc
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-on-test-end runner
+@defunx test-runner-on-test-end! runner proc
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-on-group-begin runner
+@defunx test-runner-on-group-begin! runner proc
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-on-group-end runner
+@defunx test-runner-on-group-end! runner proc
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-on-bad-count runner
+@defunx test-runner-on-bad-count! runner proc
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-on-bad-end-name runner
+@defunx test-runner-on-bad-end-name! runner proc
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-runner-on-final runner
+@defunx test-runner-on-final! runner proc
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+
+@defun test-on-test-begin-simple runner
+@defunx test-on-test-end-simple runner
+@defunx test-on-group-begin-simple runner
+@defunx test-on-group-end-simple runner
+@defunx test-on-bad-count-simple runner actual-count expected-count
+@defunx test-on-bad-end-name-simple runner begin-name end-name
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@node SRFI-64 test API,  , SRFI-64 test runner, A Scheme API for test suites
+@subsection Test API
 
 
 @c ----------------------------------------------------------------------
@@ -12937,7 +13127,7 @@ Same as @code{(map enum-name (enum-set->enum-list eset))}.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Procedures and syntax for multiple values, SICP prerequisites, Enums and enum sets, Library modules - SRFIs
+@node Procedures and syntax for multiple values, Central log exchange, Enums and enum sets, Library modules - SRFIs
 @section @code{srfi.210} - Procedures and syntax for multiple values
 @c NODE 多値のための手続きと構文,  @code{srfi.210} - 多値のための手続きと構文
 
@@ -13244,7 +13434,7 @@ the result(s) of those procedures.  These can be written using
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Central log exchange
+@node Central log exchange, SICP prerequisites, Procedures and syntax for multiple values, Library modules - SRFIs
 @section @code{srfi.215} - Central log exchange
 @c NODE 中央ログ交換局,  @code{srfi.215} - 中央ログ交換局
 
@@ -13414,7 +13604,7 @@ of the incident to be logged.
 
 
 @c ----------------------------------------------------------------------
-@node SICP prerequisites, Integer sets, Procedures and syntax for multiple values, Library modules - SRFIs
+@node SICP prerequisites, Integer sets, Central log exchange, Library modules - SRFIs
 @section @code{srfi.216} - SICP prerequisites
 @c NODE SICP用ライブラリ,  @code{srfi.216} - SICP用ライブラリ
 
