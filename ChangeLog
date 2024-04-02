@@ -1,5 +1,16 @@
 2024-04-01  Shiro Kawai  <shiro@acm.org>
 
+	* lib/srfi/64.scm: Changed integration to gauche.test.  Instead of
+	  having a specific runner to bridge to gauche.test, we now bridge
+	  regardless of the test runner.  This actually reveled some bugs
+	  that have been overlooked (because it was reported only by the
+	  srfi-64 test runner and not by gauche.test).
+	  https://github.com/shirok/Gauche/issues/1010
+
+	* test/include/srfi-194-zipf-test.scm: Loosened tolerance of
+	  chi^2 test a bit.  It is statistical tests and we need some
+	  more room of statistical deviation.
+
 	* lib/scheme/mapping.scm (%mapping-cmp),
 	  lib/scheme/mapping/hash.scm (%hashmap-cmp): When given mappings
 	  have different comparators, we should return #f, instead of

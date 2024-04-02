@@ -138,6 +138,54 @@
 (define (test-runner-group-path runner)
   (reverse (test-runner-group-stack runner)))
 
+
+;;;
+;;;  Gauche specific hooks
+;;;
+
+;; Called when enetering a new group.
+(define (gauche-test-group-hook runner suite-name)
+  ;; [Gauche] SRFI-64's test-begin/test-end is effectively our grouping.
+  ;; We indent the message according to te group nesting level
+  (when (test:test-running?)
+    (let1 nesting (length (test-runner-group-stack runner))
+      (test:test-section
+       (format "~a~a" (make-string nesting #\_) suite-name)))))
+
+;; If a test runner is run during other test runner is running,
+;; the 'inner' runner is likely a 'dummy' one, e.g. when you want to
+;; the test runner itself.  Success/failure of such inner runners
+;; shouldn't be included in gauche.test's results, so we keep track
+;; of runner nesting level.
+(define test-runner-nesting (make-parameter 0))
+
+;; pre hook and post hook are called between each test
+;; that handles Gauche-style result logging.
+(define (gauche-test-pre-hook runner expr expect)
+  (when (and (test:test-running?)
+             (zero? (test-runner-nesting)))
+    (let ([msg (or (test-result-ref runner 'test-name)
+                   expr)])
+      (test-result-set! runner 'test-msg msg)
+      (format #t "test ~a, expects ~s ==> " msg expect)
+      (flush)
+      (test:test-count++))))
+
+(define (gauche-test-post-hook runner ok? expect actual)
+  (when (and (test:test-running?)
+             (zero? (test-runner-nesting)))
+    (cond [ok? (format #t "ok\n") (test:test-pass++)]
+          [(eq? (test-result-ref runner 'result-kind) 'xfail)
+           (format #t "ok (expected failure)\n") (test:test-pass++)]
+          [else
+           (let ([msg (test-result-ref runner 'test-msg)])
+             (begin (format #t "ERROR: GOT ~s\n" actual)
+                    (test:test-fail++ msg expect actual)))])))
+
+
+
+
+
 ;;;
 ;;; Null runner
 ;;;
@@ -221,10 +269,9 @@
 
 (define (%test-begin suite-name count)
   (if (not (test-runner-current))
-      (test-runner-current (if (test:test-running?)
-                             (test-runner-default)
-                             (test-runner-create))))
+      (test-runner-current (test-runner-create)))
   (let ((runner (test-runner-current)))
+    (gauche-test-group-hook runner suite-name)
     ((test-runner-on-group-begin runner) runner suite-name count)
     (%test-runner-skip-save! runner
                                (cons (%test-runner-skip-list runner)
@@ -328,56 +375,6 @@
   (let ((log (test-runner-aux-value runner)))
     (if (output-port? log)
         (%test-final-report-simple runner log))))
-
-;;;
-;;; Default runner
-;;;
-
-;; KLUDGE: we distinguish test-runner-default by having special marker
-;; in aux-value
-(define (test-runner-default)
-  (let ((runner (%test-runner-alloc)))
-    (test-runner-reset runner)
-    (test-runner-on-group-begin! runner test-on-group-begin-default)
-    (test-runner-on-group-end! runner %test-null-callback)
-    (test-runner-on-final! runner %test-null-callback)
-    (test-runner-on-test-begin! runner %test-null-callback)
-    (test-runner-on-test-end! runner %test-null-callback)
-    (test-runner-on-bad-count! runner (lambda (runner count expected) #f))
-    (test-runner-on-bad-end-name! runner (lambda (runner begin end) #f))
-    (test-runner-aux-value! runner *test-runner-default-marker*)
-    runner))
-
-(define *test-runner-default-marker* (list 'default))
-
-(define (test-on-group-begin-default runner suite-name count)
-  (test:test-section suite-name)
-  #f)
-
-(define (test-runner-default? runner)
-  (eq? (test-runner-aux-value runner) *test-runner-default-marker*))
-
-(define (test-runner-default-pre runner expr)
-  (when (test-runner-default? runner)
-    (let ([expect (test-result-ref runner 'expected-value)]
-          [msg (or (test-result-ref runner 'test-name)
-                   expr)])
-      (test-result-set! runner 'test-msg msg)
-      (format #t "test ~a, expects ~s ==> " msg expect)
-      (flush)
-      (test:test-count++))))
-
-(define (test-runner-default-post runner ok?)
-  (when (test-runner-default? runner)
-    (cond [ok? (format #t "ok\n") (test:test-pass++)]
-          [(eq? (test-result-ref runner 'result-kind) 'xfail)
-           (format #t "ok (expected failure)\n") (test:test-pass++)]
-          [else
-           (let ([expect (test-result-ref runner 'expected-value)]
-                 [result (test-result-ref runner 'actual-value)]
-                 [msg (test-result-ref runner 'test-msg)])
-             (begin (format #t "ERROR: GOT ~s\n" result)
-                    (test:test-fail++ msg expect result)))])))
 
 ;;;
 ;;; Test API
@@ -583,11 +580,11 @@
        (if (%test-on-test-begin r)
          (let ((exp expected))
            (test-result-set! r 'expected-value exp)
-           (test-runner-default-pre r 'expr)
+           (gauche-test-pre-hook r 'expr exp)
            (let* ((res (%test-evaluate-with-catch expr))
                   (compared (comp exp res)))
              (test-result-set! r 'actual-value res)
-             (test-runner-default-post r compared)
+             (gauche-test-post-hook r compared exp res)
              (%test-on-test-end r compared))))
        (%test-report-result)))))
 
@@ -609,10 +606,10 @@
        (if (%test-on-test-begin r)
            (let ()
              (test-result-set! r 'expected-value #t)
-             (test-runner-default-pre r 'expr)
+             (gauche-test-pre-hook r 'expr #t)
              (let ((res (%test-evaluate-with-catch expr)))
                (test-result-set! r 'actual-value res)
-               (test-runner-default-post r (boolean r))
+               (gauche-test-post-hook r (boolean res) #t (boolean res))
                (%test-on-test-end r res))))
        (%test-report-result)))))
 
@@ -693,11 +690,9 @@
 (define-syntax test-with-runner
   (syntax-rules ()
     ((test-with-runner runner form ...)
-     (let ((saved-runner (test-runner-current)))
-       (dynamic-wind
-           (lambda () (test-runner-current runner))
-           (lambda () form ...)
-           (lambda () (test-runner-current saved-runner)))))))
+     (parameterize ([test-runner-current runner]
+                    [test-runner-nesting (+ (test-runner-nesting) 1)])
+       form ...))))
 
 (define (test-apply first . rest)
   (if (test-runner? first)
