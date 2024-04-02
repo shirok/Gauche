@@ -76,7 +76,7 @@
   (if (null? preds)
     (constantly #f)
     (let1 pred* (apply any-pred preds)
-      (^ args (any pred* args)))))
+      (^ args (if (null? args) #t (any pred* args))))))
 
 (define (each-of . procs)
   (^ args

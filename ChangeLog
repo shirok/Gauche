@@ -1,3 +1,9 @@
+2024-04-01  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/235.scm (disjoin): Fix when a predicate created with
+	  disjoin is given no arguments.  It is actually not specified
+	  in SRFI text.  The test in srfi repo returns #t for it.
+
 2024-03-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/test/generative.scm: Removed in favor of upcoming srfi-252.
