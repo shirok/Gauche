@@ -383,6 +383,9 @@
 (define (%hashmap-cmp v=? pred ms)
   (let loop ([ms ms])
     (cond [(null? (cdr ms)) #t]
+          [(not (eqv? (hash-table-comparator (car ms))
+                      (hash-table-comparator (cadr ms))))
+           #f]
           [(hash-table-compare-as-sets (car ms) (cadr ms) v=? #f)
            => (^r (and (pred r) (loop (cdr ms))))]
           [else #f])))

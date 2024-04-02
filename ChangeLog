@@ -1,5 +1,10 @@
 2024-04-01  Shiro Kawai  <shiro@acm.org>
 
+	* lib/scheme/mapping.scm (%mapping-cmp),
+	  lib/scheme/mapping/hash.scm (%hashmap-cmp): When given mappings
+	  have different comparators, we should return #f, instead of
+	  "cannot compare" error.
+
 	* lib/srfi/235.scm (disjoin): Fix when a predicate created with
 	  disjoin is given no arguments.  It is actually not specified
 	  in SRFI text.  The test in srfi repo returns #t for it.

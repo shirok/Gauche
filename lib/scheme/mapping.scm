@@ -398,6 +398,9 @@
 (define (%mapping-cmp v=? pred ms)
   (let loop ([ms ms])
     (cond [(null? (cdr ms)) #t]
+          [(not (eqv? (tree-map-comparator (car ms))
+                      (tree-map-comparator (cadr ms))))
+           #f]
           [(tree-map-compare-as-sets (car ms) (cadr ms) v=? #f)
            => (^r (and (pred r) (loop (cdr ms))))]
           [else #f])))
