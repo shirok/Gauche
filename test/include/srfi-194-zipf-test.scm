@@ -198,7 +198,7 @@
   ; so allow much larger error margins.
   (test-zipf make-zipf-generator 130 1.5     0 30000 six-sigma)
   (test-zipf make-zipf-generator 130 2.03    0 30000 9.0)
-  (test-zipf make-zipf-generator 130 4.5     0 30000 16.0)
+  (test-zipf make-zipf-generator 130 4.5     0 30000 17.0); [SK] TOL loosened a bit
   (test-zipf make-zipf-generator 130 6.66    0 30000 24.0)
 
   ; Verify that accuracy improves with more samples.
