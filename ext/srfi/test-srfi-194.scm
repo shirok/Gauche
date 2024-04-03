@@ -1,5 +1,6 @@
 ;; srfi.194 depends on data.random, so test it iere.
 
+(use gauche.test)
 (test-start "SRFI-194")
 (test-section "SRFI-194")
 

@@ -2,6 +2,7 @@
 ;;; testing SRFI-43
 ;;;
 
+(use gauche.test)
 (test-start "SRFI-43")
 (test-section "SRFI-43")
 

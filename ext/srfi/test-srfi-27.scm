@@ -2,6 +2,7 @@
 ;;; SRFI-27 depends on mt-random, so we test it here.
 ;;;
 
+(use gauche.test)
 (test-start "SRFI-27")
 (test-section "SRFI-27")
 
