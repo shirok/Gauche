@@ -147,7 +147,8 @@
 (define (gauche-test-group-hook runner suite-name)
   ;; [Gauche] SRFI-64's test-begin/test-end is effectively our grouping.
   ;; We indent the message according to te group nesting level
-  (when (test:test-running?)
+  (when (and (test:test-running?)
+             (zero? (test-runner-nesting)))
     (let1 nesting (length (test-runner-group-stack runner))
       (test:test-section
        (format "~a~a" (make-string nesting #\_) suite-name)))))
