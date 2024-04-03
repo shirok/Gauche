@@ -4587,10 +4587,10 @@ Gaucheでは、このsrfiは@code{gauche.test}と協調して動くようにな�
 @c COMMON
 
 @c EN
-If SRFI-64 tests are run with the default runner during @code{gauche.test}
-is active, the tests becomes a part of the whole @code{gauche.test} suite.
+If SRFI-64 tests are run during @code{gauche.test}
+the tests becomes a part of the whole @code{gauche.test} suite.
 @c JP
-@code{gauche.test}が有効な状態で、SRFI-64テストをデフォルトのrunnerを使って走らせた場合、
+@code{gauche.test}が有効な状態で、SRFI-64テストを走らせた場合、
 それらのテストは@code{gauche.test}の一部として実行されます。
 @c COMMON
 
@@ -4827,6 +4827,60 @@ and/or test writer.
 
 @node SRFI-64 test API,  , SRFI-64 test runner, A Scheme API for test suites
 @subsection Test API
+
+@subsubheading Test grouping
+
+SRFI-64 tests can be grouped, and groups can be nested.
+
+@defun test-begin suite-name :optional count
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-end :optional suite-name
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-group suite-name body @dots{}
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-group-with-cleanup suite-name body @dots{} cleanup
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@subsubheading Individual tests
+
+@defmac test-assert [test-name] expr
+[SRFI-64]
+@c MOD srfi.64
+@end defmac
+
+@defmac test-eqv [test-name] expected test-expr
+@defmacx test-eq [test-name] expected test-expr
+@defmacx test-equal [test-name] expected test-expr
+[SRFI-64]
+@c MOD srfi.64
+@end defmac
+
+@defmac test-approximate [test-name] extected test-expr margin
+[SRFI-64]
+@c MOD srfi.64
+@end defmac
+
+@defmac test-error [[test-name] error-type] test-expr
+[SRFI-64]
+@c MOD srfi.64
+@end defmac
+
+@defun test-read-eval-string string
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
 
 
 @c ----------------------------------------------------------------------
