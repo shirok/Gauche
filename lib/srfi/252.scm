@@ -32,6 +32,8 @@
 ;;;
 
 (define-module srfi.252
+  (use gauche.test)
+  (use srfi.64 :prefix srfi-64:)
   (use gauche.generator)
   (use data.random)
   (export boolean-generator bytevector-generator
@@ -50,9 +52,92 @@
 
           list-generator-of pair-generator-of
           procedure-generator-of vector-generator-of
+
+          test-property test-property-expect-fail test-property-skip
+          test-property-error test-property-error-type
+          property-test-runner
           )
   )
 (select-module srfi.252)
+
+;;
+;; Some constants
+;;
+
+(define-constant default-runs 30)
+
+
+;;
+;; Test runner a la srfi-64
+;;
+
+(define (property-test-runner)
+  (srfi-64:test-runner-simple))
+
+;;
+;; Test procedures
+;;
+
+(define (%prop-test pred generators expr runs expected)
+  (dotimes [n runs]
+    (let1 args (map (^g (g)) generators)
+      (test* (format "Property test ~s [~d] with args ~s" expr n args)
+             expected
+             (boolean (apply pred (map (^g (g)) generators)))
+             test-check
+             (^[name expected result]
+               (format #t "Failed (~s) with arguments: ~s" result args))))))
+
+(define (%test-property pred generators expr runs)
+  (%prop-test pred generators expr runs #t))
+
+(define-syntax test-property
+  (syntax-rules ()
+    [(_ pred generators)
+     (%test-property pred generators 'pred default-runs)]
+    [(_ pred generators runs)
+     (%test-property pred generators 'pred runs)]))
+
+(define (%test-property-expect-fail pred generators expr runs)
+  (%prop-test pred generators expr runs #f))
+
+(define-syntax test-property-expect-fail
+  (syntax-rules ()
+    [(_ pred generators)
+     (%test-property-expect-fail pred generators 'pred default-runs)]
+    [(_ pred generators runs)
+     (%test-property-expect-fail pred generators 'pred runs)]))
+
+(define (%test-property-skip pred generators expr runs)
+  ;; Should record skipped test to the runner
+  #f)
+
+(define-syntax test-property-skip
+  (syntax-rules ()
+    [(_ pred generators)
+     (%test-property-skip pred generators 'pred default-runs)]
+    [(_ pred generators runs)
+     (%test-property-skip pred generators 'pred runs)]))
+
+(define (%test-property-error pred generators expr runs)
+  (%prop-test pred generators expr runs (test-error)))
+
+(define-syntax test-property-error
+  (syntax-rules ()
+    [(_ pred generators)
+     (%test-property-error pred generators 'pred default-runs)]
+    [(_ pred generators runs)
+     (%test-property-error pred generators 'pred runs)]))
+
+(define (%test-property-error-type pred generators expr etype runs)
+  (%prop-test pred generators expr runs (test-error etype)))
+
+(define-syntax test-property-error-type
+  (syntax-rules ()
+    [(_ etype pred generators)
+     (%test-property-error-type pred generators 'pred etype default-runs)]
+    [(_ etype pred generators runs)
+     (%test-property-error-type pred generators 'pred etype runs)]))
 
 ;; Generators
 
@@ -147,7 +232,8 @@
 
 (define (inexact-number-generator) (inexact-complex-generator))
 
-(define (inexact-rational-generator) (inexact-real-generator))
+(define (inexact-rational-generator)
+  (gfilter finite? (inexact-real-generator)))
 
 (define (inexact-real-generator)
   (gcons* 0.0 -0.0 0.5 -0.5 1.0 -1.0 +inf.0 -inf.0 +nan.0
