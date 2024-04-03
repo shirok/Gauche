@@ -52,7 +52,6 @@
           test-runner-group-path test-group test-group-with-cleanup
           test-result-ref test-result-set! test-result-clear test-result-remove
           test-result-kind test-passed?
-          test-log-to-file
 
           ;; Misc test-runner functions
           test-runner? test-runner-reset test-runner-null
@@ -114,7 +113,6 @@
   (count-list %test-runner-count-list %test-runner-count-list!)
   (result-alist test-result-alist test-result-alist!)
   ;; Field can be used by test-runner for any purpose.
-  ;; test-runner-simple uses it for a log file.
   (aux-value test-runner-aux-value test-runner-aux-value!)
   )
 
@@ -184,9 +182,6 @@
                     (test:test-fail++ msg expect actual)))])))
 
 
-
-
-
 ;;;
 ;;; Null runner
 ;;;
@@ -208,10 +203,6 @@
 ;;;
 ;;; Simple runner
 ;;;
-
-;; Not part of the specification.  FIXME
-;; Controls whether a log file is generated.
-(define test-log-to-file #t)
 
 (define (test-runner-simple)
   (let ((runner (%test-runner-alloc)))
@@ -294,41 +285,14 @@
      (%test-begin suite-name count))))
 
 (define (test-on-group-begin-simple runner suite-name count)
-  (if (null? (test-runner-group-stack runner))
-      (begin
-        (display "%%%% Starting test ")
-        (display suite-name)
-        (if test-log-to-file
-            (let* ((log-file-name
-                    (if (string? test-log-to-file) test-log-to-file
-                        (string-append suite-name ".log")))
-                   (log-file
-                    (cond-expand (mzscheme
-                                  (open-output-file log-file-name 'truncate/replace))
-                                 (else (open-output-file log-file-name)))))
-              (display "%%%% Starting test " log-file)
-              (display suite-name log-file)
-              (newline log-file)
-              (test-runner-aux-value! runner log-file)
-              (display "  (Writing full log to \"")
-              (display log-file-name)
-              (display "\")")))
-        (newline)))
-  (let ((log (test-runner-aux-value runner)))
-    (if (output-port? log)
-        (begin
-          (display "Group begin: " log)
-          (display suite-name log)
-          (newline log))))
+  ;; The reference implementation had code to emit logs, but
+  ;; that's not in the SRFI spec.  We can log the test results
+  ;; if gauche.test is active, so we omit that feature.
   #f)
 
 (define (test-on-group-end-simple runner)
-  (let ((log (test-runner-aux-value runner)))
-    (if (output-port? log)
-        (begin
-          (display "Group end: " log)
-          (display (car (test-runner-group-stack runner)) log)
-          (newline log))))
+  ;; The reference implementation had code to close log file.
+  ;; Log file is handled by gauche.test, so we omit it.
   #f)
 
 (define (%test-on-bad-count-write runner count expected-count port)
