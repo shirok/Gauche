@@ -1,3 +1,8 @@
+2024-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/arith.h (SADDOV): Avoid undefined behavior of
+	  signed integer overflow.  Fix from NIIBE Yutaka.
+
 2024-04-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/list.c: Ensure statically allocated ExtendedPairDescriptor
