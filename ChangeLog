@@ -1,5 +1,8 @@
 2024-04-04  Shiro Kawai  <shiro@acm.org>
 
+	* src/string.c (string_putc): Buffer size too short.
+	  Fix from NIIBE Yutaka.
+
 	* src/gauche/priv/arith.h (SADDOV): Avoid undefined behavior of
 	  signed integer overflow.  Fix from NIIBE Yutaka.
 

@@ -1474,7 +1474,7 @@ char **Scm_ListToCStringArray(ScmObj lis, int errp, void *(*alloc)(size_t))
 /* ch is single byte if bytemode is true */
 static inline void string_putc(ScmChar ch, ScmPort *port, int bytemode)
 {
-    const int ESCAPE_BUF_MAX = 10;
+    const int ESCAPE_BUF_MAX = 12;
     char buf[ESCAPE_BUF_MAX];
     switch (ch) {
     case '\\': SCM_PUTZ("\\\\", -1, port); break;
