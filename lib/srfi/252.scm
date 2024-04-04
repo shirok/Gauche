@@ -78,18 +78,26 @@
 ;; Test procedures
 ;;
 
-(define (%prop-test pred generators expr runs expected)
+(define (%prop-test pred generators expr runs expected hook)
   (dotimes [n runs]
     (let1 args (map (^g (g)) generators)
       (test* (format "Property test ~s [~d] with args ~s" expr n args)
              expected
              (boolean (apply pred (map (^g (g)) generators)))
              test-check
-             (^[name expected result]
-               (format #t "Failed (~s) with arguments: ~s" result args))))))
+             (^[name expected actual]
+               (format #t "Failed (~s) with arguments: ~s" actual args))
+             (^[pass/fail name expected actual]
+               (and-let* ([ hook ]
+                          [runner (srfi-64:test-runner-current)])
+                 (hook runner pass/fail)))))))
 
 (define (%test-property pred generators expr runs)
-  (%prop-test pred generators expr runs #t))
+  (%prop-test pred generators expr runs #t
+              (^[runner pass/fail]
+                (ecase pass/fail
+                  [(pass) (inc! (srfi-64:test-runner-pass-count runner))]
+                  [(fail) (inc! (srfi-64:test-runner-fail-count runner))]))))
 
 (define-syntax test-property
   (syntax-rules ()
@@ -99,7 +107,11 @@
      (%test-property pred generators 'pred runs)]))
 
 (define (%test-property-expect-fail pred generators expr runs)
-  (%prop-test pred generators expr runs #f))
+  (%prop-test pred generators expr runs #f
+              (^[runner pass/fail]
+                (ecase pass/fail
+                  [(pass) (inc! (srfi-64:test-runner-xfail-count runner))]
+                  [(fail) (inc! (srfi-64:test-runner-xpass-count runner))]))))
 
 (define-syntax test-property-expect-fail
   (syntax-rules ()
@@ -109,7 +121,8 @@
      (%test-property-expect-fail pred generators 'pred runs)]))
 
 (define (%test-property-skip pred generators expr runs)
-  ;; Should record skipped test to the runner
+  (and-let1 runner (srfi-64:test-runner-current)
+    (inc! (srfi-64:test-runner-skip-count runner)))
   #f)
 
 (define-syntax test-property-skip
@@ -120,7 +133,11 @@
      (%test-property-skip pred generators 'pred runs)]))
 
 (define (%test-property-error pred generators expr runs)
-  (%prop-test pred generators expr runs (test-error)))
+  (%prop-test pred generators expr runs (test-error)
+              (^[runner pass/fail]
+                (ecase pass/fail
+                  [(pass) (inc! (srfi-64:test-runner-pass-count runner))]
+                  [(fail) (inc! (srfi-64:test-runner-fail-count runner))]))))
 
 (define-syntax test-property-error
   (syntax-rules ()
@@ -130,7 +147,11 @@
      (%test-property-error pred generators 'pred runs)]))
 
 (define (%test-property-error-type pred generators expr etype runs)
-  (%prop-test pred generators expr runs (test-error etype)))
+  (%prop-test pred generators expr runs (test-error etype)
+              (^[runner pass/fail]
+                (ecase pass/fail
+                  [(pass) (inc! (srfi-64:test-runner-pass-count runner))]
+                  [(fail) (inc! (srfi-64:test-runner-fail-count runner))]))))
 
 (define-syntax test-property-error-type
   (syntax-rules ()
