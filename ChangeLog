@@ -1,5 +1,10 @@
 2024-04-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/list.c: Ensure statically allocated ExtendedPairDescriptor
+	  is aligned in 8 byte boundary. It should be treated the same
+	  as ScmClass because of tagged pointer.
+	  Original fix from NIIBE Yutaka.
+
 	* lib/srfi/238.scm: Added.
 
 2024-04-01  Shiro Kawai  <shiro@acm.org>

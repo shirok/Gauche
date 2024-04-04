@@ -807,7 +807,7 @@ static ScmObj make_extended_pair(ScmExtendedPairDescriptor *desc,
    Windows.  To avoid complication, we initialize the klass field in
    _Init() routine.
 */
-static ScmExtendedPairDescriptor mpair_desc = {
+static ScmExtendedPairDescriptor mpair_desc SCM_ALIGN8 = {
     NULL,                       /* will be SCM_CLASS_PAIR */
     0,
     NULL,
@@ -912,7 +912,7 @@ int Scm_ImmutablePairP(ScmObj obj)
     return d->flags & SCM_PAIR_IMMUTABLE;
 }
 
-static ScmExtendedPairDescriptor ipair_desc = {
+static ScmExtendedPairDescriptor ipair_desc SCM_ALIGN8 = {
     NULL,                       /* will be SCM_CLASS_PAIR.  see above. */
     SCM_PAIR_IMMUTABLE,
     NULL,
