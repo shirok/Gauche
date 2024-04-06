@@ -30662,6 +30662,7 @@ s8vectorとu8vector以外のユニフォームベクタを与えた場合は
 
 @defun read-block! vec :optional iport start end endian
 @c MOD gauche.uvector
+@c DEPRECATED
 @c EN
 An old name of @code{read-uvector!}.  Supported for the backward
 compatibility, but new code should use @code{read-uvector!}.
@@ -30779,6 +30780,7 @@ R7RS baseの手続きです。
 
 @defun write-block vec :optional oport start end endian
 @c MOD gauche.uvector
+@c DEPRECATED
 @c EN
 An old name of @code{write-uvector}.  Supported for the backward
 compatibility, but new code should use @code{write-uvector}.

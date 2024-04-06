@@ -20992,6 +20992,7 @@ digester; @pxref{Message digester framework}, and also
 
 @deftp {Module} rfc.sha1
 @mdindex rfc.sha1
+@c DEPRECATED
 @c EN
 This is the old module that provided only SHA-1.  It is kept as
 an alias of @code{rfc.sha} for the backward compatibility.  New code
