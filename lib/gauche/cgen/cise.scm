@@ -54,6 +54,51 @@
   )
 (select-module gauche.cgen.cise)
 
+;; CiSE can appear in various context, so it has a layered API.
+;;
+;; cise-render is the most basic API that processes CiSE form
+;; and returns an STree (string tree) of C code.  It can be used
+;; to generate an entire toplevel definition/declaration, or just a
+;; statement/expresison.
+;;
+;; cise-translate is used to deal with multiple toplevel CiSE forms.
+;; It also manages user-defined CiSE macros.
+;;
+;; Note that both does not directly emit code into cgen-unit, since
+;; CiSE forms may be embedded in other forms and the handler of the outer
+;; forms wants to decide where to embed the CiSE-generated form.  The
+;; relation of cgen-unit, cise-translate, and cise-render are as follows:
+;;
+;;
+;;  + cgen-unit
+;;  |
+;;  | ... declarations from cgen-decl ...
+;;  |
+;;  |
+;;  | + cise-translate
+;;  | |   <cise-ambient>
+;;  | |   - Render multiple toplevel CiSE forms to a port or
+;;  | |     a string.
+;;  | |   - Keep track of user-defined CiSE macros.
+;;  | |
+;;  | | ... static-decls at toplevel ...
+;;  | |
+;;  | |
+;;  | | + cise-render
+;;  | | |   <cise-env>
+;;  | | |   - Can render a toplevel CiSE form, or just a statement/expression.
+;;  | | |   - Returns STree.
+;;  | | |
+;;  | | |  ... extra decls (not necessarily at toplevel) ...
+;;  | | |  ... rendered cise body ...
+;;  | | +
+;;  | +
+;;  |
+;;  |   + cise-render
+;;  |   |   - Can be called from stub generation code (e.g. define-cproc)
+;;  |   +
+;;  +
+
 ;;=============================================================
 ;; Parameters
 ;;
@@ -143,6 +188,10 @@
 (define (ensure-stmt-or-toplevel-ctx form env)
   (unless (or (toplevel-ctx? env) (stmt-ctx? env))
     (error "cise: form can only appear in toplevel or statement context:" form)))
+
+;; TRANSIENT: This can be written as
+;;  (push! (unbox (~ env'decls)) decl)
+;; after 1.0 release.
 (define (env-decl-add! env decl)
   (set-box! (~ env'decls) (cons decl (unbox (~ env'decls)))))
 
