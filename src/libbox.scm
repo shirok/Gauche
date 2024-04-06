@@ -97,16 +97,6 @@
 (define-cproc box? (v) ::<boolean>
   (return (or (SCM_BOXP v) (SCM_MVBOXP v) (SCM_SHARED_BOX_P v))))
 
-(define-cproc unbox (b)
-  (cond
-   [(SCM_BOXP b) (return (SCM_BOX_VALUE b))]
-   [(SCM_MVBOXP b) (return (Scm_ValuesFromArray (SCM_MVBOX_VALUES b)
-                                                (SCM_MVBOX_SIZE b)))]
-   [(SCM_SHARED_BOX_P b) (return (Scm_ValuesFromArray
-                                  (SCM_SHARED_BOX_VALUES b)
-                                  (SCM_SHARED_BOX_SIZE b)))]
-   [else (SCM_TYPE_ERROR b "<box> or <mv-box>") (return SCM_UNDEFINED)]))
-
 (define-cproc set-box! (b :rest vs) ::<void>
   (cond
    [(SCM_BOXP b)
@@ -132,29 +122,23 @@
         (set! (aref (SCM_SHARED_BOX_VALUES b) i) (SCM_CAR vs))))]
    [else (SCM_TYPE_ERROR b "<box>, <mv-box>, or <shared-box>")]))
 
+(define-cproc unbox (b)
+  (setter set-box!)
+  (cond
+   [(SCM_BOXP b) (return (SCM_BOX_VALUE b))]
+   [(SCM_MVBOXP b) (return (Scm_ValuesFromArray (SCM_MVBOX_VALUES b)
+                                                (SCM_MVBOX_SIZE b)))]
+   [(SCM_SHARED_BOX_P b) (return (Scm_ValuesFromArray
+                                  (SCM_SHARED_BOX_VALUES b)
+                                  (SCM_SHARED_BOX_SIZE b)))]
+   [else (SCM_TYPE_ERROR b "<box> or <mv-box>") (return SCM_UNDEFINED)]))
+
 (define-cproc box-arity (b) ::<int>
   (cond
    [(SCM_BOXP b) (return 1)]
    [(SCM_MVBOXP b) (return (SCM_MVBOX_SIZE b))]
    [(SCM_SHARED_BOX_P b) (return (SCM_SHARED_BOX_SIZE b))]
    [else (SCM_TYPE_ERROR b "<box>, <mv-box>, or <shared-box>")]))
-
-(define-cproc unbox-value (b i::<fixnum>)
-  (cond
-   [(SCM_BOXP b)
-    (unless (== i 0) (Scm_Error "index out of range for %S: %d" b i))
-    (return (SCM_BOX_VALUE b))]
-   [(SCM_MVBOXP b)
-    (unless (and (<= 0 i)
-                 (< i (SCM_MVBOX_SIZE b)))
-      (Scm_Error "index out of range for %S: %d" b i))
-    (return (aref (SCM_MVBOX_VALUES b) i))]
-   [(SCM_SHARED_BOX_P b)
-    (unless (and (<= 0 i)
-                 (< i (SCM_SHARED_BOX_SIZE b)))
-      (Scm_Error "index out of range for %S: %d" b i))
-    (return (aref (SCM_SHARED_BOX_VALUES b) i))]
-   [else (SCM_TYPE_ERROR b "<box>, <mv-box>, or <shard-box>")]))
 
 (define-cproc set-box-value! (b i::<fixnum> val) ::<void>
   (cond
@@ -172,6 +156,24 @@
       (Scm_Error "index out of range for %S: %d" b i))
     (set! (aref (SCM_SHARED_BOX_VALUES b) i) val)]
    [else (SCM_TYPE_ERROR b "<box>, <mv-box>, or <shared-box>")]))
+
+(define-cproc unbox-value (b i::<fixnum>)
+  (setter set-box-value!)
+  (cond
+   [(SCM_BOXP b)
+    (unless (== i 0) (Scm_Error "index out of range for %S: %d" b i))
+    (return (SCM_BOX_VALUE b))]
+   [(SCM_MVBOXP b)
+    (unless (and (<= 0 i)
+                 (< i (SCM_MVBOX_SIZE b)))
+      (Scm_Error "index out of range for %S: %d" b i))
+    (return (aref (SCM_MVBOX_VALUES b) i))]
+   [(SCM_SHARED_BOX_P b)
+    (unless (and (<= 0 i)
+                 (< i (SCM_SHARED_BOX_SIZE b)))
+      (Scm_Error "index out of range for %S: %d" b i))
+    (return (aref (SCM_SHARED_BOX_VALUES b) i))]
+   [else (SCM_TYPE_ERROR b "<box>, <mv-box>, or <shard-box>")]))
 
 ;;;
 ;;; <shared-box> specific API
