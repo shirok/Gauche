@@ -1,3 +1,9 @@
+2024-04-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/cise.scm (<cise-env>): Use box for decls. Since
+	  a new inner env may be created during recursion, we need an
+	  indirection so that decls pushed into the inner env won't be lost.
+
 2024-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/string.c (string_putc): Buffer size too short.
