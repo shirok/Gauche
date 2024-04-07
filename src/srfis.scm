@@ -1647,6 +1647,16 @@ Built-in. @xref{Grouping}.
 組み込みです。@ref{Grouping}参照。
 
 
+srfi-238, srfi-238
+()
+
+Codesets
+Supported by the mdoule @code{srfi.238}
+
+コードセット
+@code{srfi.238}でサポートされます。
+
+
 srfi-239, srfi-239
 ()
 
