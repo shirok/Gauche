@@ -1652,9 +1652,11 @@ srfi-238, srfi-238
 
 Codesets
 Supported by the mdoule @code{srfi.238}
+(@pxref{Codesets}).
 
 コードセット
-@code{srfi.238}でサポートされます。
+@code{srfi.238}でサポートされます
+(@ref{Codesets}参照)。
 
 
 srfi-239, srfi-239

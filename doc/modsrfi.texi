@@ -102,6 +102,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Tagged procedures::           srfi.229
 * Flexible curried procedures::  srfi.232
 * Combinators (SRFI)::          srfi.235
+* Codesets::                    srfi.238
 * Destructuring lists::         srfi.239
 * Syntactic monads::            srfi.247
 @end menu
@@ -16029,7 +16030,7 @@ A shorthand of @code{(define name (curried formals body @dots{}))}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Combinators (SRFI), Destructuring lists, Flexible curried procedures, Library modules - SRFIs
+@node Combinators (SRFI), Codesets, Flexible curried procedures, Library modules - SRFIs
 @section @code{srfi.235} - Combinators (SRFI)
 @c NODE コンビネータ (SRFI), @code{srfi.235} - コンビネータ (SRFI)
 
@@ -16524,7 +16525,35 @@ Note: @code{boolean} is provided in the core (@pxref{Booleans}).
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Destructuring lists, Syntactic monads, Combinators (SRFI), Library modules - SRFIs
+@node Codesets, Destructuring lists, Combinators (SRFI), Library modules - SRFIs
+@section @code{srfi.238} - Codesets
+@c NODE コードセット, @code{srfi.238} - コードセット
+
+@deftp {Module} srfi.238
+@mdindex srfi.238
+This module provides a unified interface for system-defined set of
+code values, such as errno or signal numbers.
+@end deftp
+
+@defun codeset? obj
+[SRFI-238]
+@c MOD srfi.238
+@end defun
+
+@defun codeset-symbols codeset
+[SRFI-238]
+@c MOD srfi.238
+@end defun
+
+@defun codeset-symbol codeset code
+@defunx codeset-number codeset code
+@defunx codeset-message codeset code
+[SRFI-238]
+@c MOD srfi.238
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Destructuring lists, Syntactic monads, Codesets, Library modules - SRFIs
 @section @code{srfi.239} - Destructuring lists
 @c NODE リストの分解, @code{srfi.239} - リストの分解
 
