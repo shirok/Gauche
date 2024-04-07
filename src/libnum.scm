@@ -322,15 +322,32 @@
 
 ;; NB: Compile-time constant folding for these four procedures are
 ;; handled in the compiler, so we don't need :constant flag here.
+
+;; For - and /, one-argument case is handled by separate C procedures.
+;; (Scm_Negate(), Scm_Reciprocal()).  For + and *, we return the argument
+;; as is if it is a number, or delegate it to unary object-+ / object-*
+;; method.
 (select-module scheme)
 (define-cproc * (:rest args) ::<number> :fast-flonum
   (cond [(not (SCM_PAIRP args)) (return (SCM_MAKE_INT 1))]
+        [(and (not (SCM_PAIRP (SCM_CDR args)))
+              (not (SCM_NUMBERP (SCM_CAR args))))
+         (let* ([unary-proc SCM_UNDEFINED])
+           (SCM_BIND_PROC unary-proc "%apply-unary-*"
+                          (Scm_GaucheInternalModule))
+           (return (Scm_ApplyRec1 unary-proc (SCM_CAR args))))]
         [else (let* ([r::ScmObj (SCM_CAR args)])
                 (dolist [v (SCM_CDR args)] (set! r (Scm_Mul r v)))
                 (return r))]))
 
 (define-cproc + (:rest args) ::<number> :fast-flonum
   (cond [(not (SCM_PAIRP args)) (return (SCM_MAKE_INT 0))]
+        [(and (not (SCM_PAIRP (SCM_CDR args)))
+              (not (SCM_NUMBERP (SCM_CAR args))))
+         (let* ([unary-proc SCM_UNDEFINED])
+           (SCM_BIND_PROC unary-proc "%apply-unary-+"
+                          (Scm_GaucheInternalModule))
+           (return (Scm_ApplyRec1 unary-proc (SCM_CAR args))))]
         [else (let* ([r::ScmObj (SCM_CAR args)])
                 (dolist [v (SCM_CDR args)] (set! r (Scm_Add r v)))
                 (return r))]))
@@ -346,6 +363,24 @@
     (return (Scm_VMReciprocal arg1))
     (begin (dolist [v args] (set! arg1 (Scm_Div arg1 v)))
            (return arg1))))
+
+(select-module gauche.internal)
+(define (%apply-unary-generic gf who obj)
+  ;; TRANSIENT: Up to 0.9.14, we return the argument as is from unary + and *
+  ;; unconditionally.  For the backward compatibility if there's no unary
+  ;; object-+ / object-*, we warn so and returns the argument instead of
+  ;; raising an error.  Should remove that part after a few releases.
+  ;; https://github.com/shirok/Gauche/issues/1012
+  (if (applicable? gf (class-of obj))
+    (gf obj)
+    (begin
+      (warn "operation ~a is not defined on ~s.  \
+             This will be an error in future releases.\n" who obj)
+      obj)))
+(define (%apply-unary-+ obj) (%apply-unary-generic object-+ '+ obj))
+(define (%apply-unary-* obj) (%apply-unary-generic object-* '* obj))
+
+(select-module scheme)
 
 (define-cproc abs (obj) :fast-flonum :constant Scm_VMAbs)
 

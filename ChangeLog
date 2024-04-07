@@ -1,3 +1,15 @@
+2024-04-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (*, +): When used as unary operators on non-number
+	  object, delegate it to object-* or object-+.  For the practical
+	  purposes, they should return the argument as is; their existence
+	  is the assertion that such opeartion is valid.    We used to return
+	  the argument as is, but that may miss errors.  Just in case if
+	  existing code depends on the old behavior, we issue a warning
+	  and return the argument if there's no unary method defined on
+	  the argument's class.
+	  https://github.com/shirok/Gauche/issues/1012
+
 2024-04-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/libbox.scm (unbox, unbox-value): Associate setters.  Now

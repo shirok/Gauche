@@ -2582,7 +2582,9 @@
 (define-method object-/ ((a <string>) b) #"~|a|/~|b|")
 (define-method object-/ (a (b <string>)) #"~|a|/~|b|")
 
+(define-method object-+ ((a <string>)) #"+~|a|")
 (define-method object-- ((a <string>)) #"-~|a|")
+(define-method object-* ((a <string>)) #"*~|a|")
 (define-method object-/ ((a <string>)) #"/~|a|")
 
 (test* "object-+" "a+b" (+ "a" "b"))
@@ -2593,6 +2595,7 @@
 ;; DO NOT COUNT ON THIS BEHAVIOR IN THE REAL CODE.   Might be changed in
 ;; the future release.
 (test* "object-+" "3+a" (+ "a" 3))
+(test* "object-+" "+a" (+ "a"))
 
 (test* "object--" "a-b" (- "a" "b"))
 (test* "object--" "a-b" (- "a" 'b))
@@ -2610,13 +2613,13 @@
 (test* "object-*" "a*b" (* 'a "b"))
 (test* "object-*" "3*a" (* 3 "a"))
 (test* "object-*" "a*3" (* "a" 3))
+(test* "object-*" "*a" (* "a"))
 
 (test* "object-/" "a/b" (/ "a" "b"))
 (test* "object-/" "a/b" (/ "a" 'b))
 (test* "object-/" "a/b" (/ 'a "b"))
 (test* "object-/" "3/a" (/ 3 "a"))
 (test* "object-/" "a/3" (/ "a" 3))
-
 (test* "object-/" "/a"  (/ "a"))
 
 (test-end)
