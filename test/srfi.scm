@@ -3201,6 +3201,25 @@
   (test-module 'srfi.236)
   (test-include-r7 "include/srfi-236-tests"))
 
+
+;;-----------------------------------------------------------------------
+;; Codesets
+
+(test-section "SRFI-238")
+
+(define-module srfi-238-tests
+  (use gauche.test)
+  (use srfi.238)
+  (test-module 'srfi.238)
+
+  (test* "codeset?" '(#t #t #f)
+         (map codeset? '(errno signal foobar)))
+  (test* "codeset-symbols (errno)" #t
+         (boolean (memq 'ENOENT (codeset-symbols 'errno))))
+  (test* "codeset-symbols (signal)" #t
+         (boolean (memq 'SIGINT (codeset-symbols 'signal))))
+  )
+
 ;;-----------------------------------------------------------------------
 ;; Destructuring lists
 
