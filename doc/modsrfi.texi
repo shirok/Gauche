@@ -16533,16 +16533,34 @@ Note: @code{boolean} is provided in the core (@pxref{Booleans}).
 @mdindex srfi.238
 This module provides a unified interface for system-defined set of
 code values, such as errno or signal numbers.
+
+In Gauche, we have predefined integer constants for errnos (e.g. @code{EINTR})
+and signals (e.g. @code{SIGINT}) in @code{gauche} module, and
+we have built-in procedures to convert integer code to
+symbols (@code{sys-errno->symbol}, @code{sys-signal-name})
+and to string messages (@code{sys-strerror}, @code{sys-strsignal}).
+You may want to use this srfi for portable code, though.
 @end deftp
 
 @defun codeset? obj
 [SRFI-238]
 @c MOD srfi.238
+Returns if @var{obj} is an object that can be used as a @var{codeset}
+argument for this srfi's API.  In Gauche, @var{obj} must be either
+a symbol @code{errno} or @code{signal}.
 @end defun
 
 @defun codeset-symbols codeset
 [SRFI-238]
 @c MOD srfi.238
+Returns a list of symbols defined in a codeset designated by @code{codeset}.
+In Gauche, @var{codeset} must be a symbol.  If it does not name a supported
+codeset, an empty list is returned.
+
+@example
+(codeset-symbols 'errno)
+ @result{} (EPERM ENOENT ESRCH EINTR EIO ...)
+@end example
 @end defun
 
 @defun codeset-symbol codeset code
@@ -16550,6 +16568,27 @@ code values, such as errno or signal numbers.
 @defunx codeset-message codeset code
 [SRFI-238]
 @c MOD srfi.238
+Returns a symbol, an exact integer, or a message string associated to
+the @var{code} in the codeset designated by @var{codeset}.
+
+The @var{code} argument can be either a symbol or an exact integer.
+The @var{codeset} argument must be a symbol.
+
+If @var{codeset} is not a name of supported codesets (in Gauche,
+we have @code{errno} and @code{signale}), or @var{code} is not in
+the specified codeset, @code{#f} is returned.
+
+@example
+(codeset-symbol 'errno 'EINTR) @result{} EINTR
+(codeset-symbol 'errno EINTR)  @result{} EINTR  ; Gauche has predefined constant
+
+(codeset-number 'errno 'EINTR) @result{} 4      ; Actual number is platform dependent
+(codeset-number 'errno 4)      @result{} 4
+
+(codeset-message 'errno EINTR) @result{} "Interrupted system call"
+
+(codeset-message 'errno 'NoSuchErrno) @result{} #f
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
