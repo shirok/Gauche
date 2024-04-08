@@ -8,7 +8,9 @@
 ;; Foreign pointer features
 
 (inline-stub
- "ScmClass *fptr_simple, *fptr_unique, *fptr_maybe;"
+ (define-cvar fptr_simple::ScmClass* :static)
+ (define-cvar fptr_unique::ScmClass* :static)
+ (define-cvar fptr_maybe::ScmClass* :static)
 
  (define-cfn print-fptr (obj sink::ScmPort* _::ScmWriteContext*) ::void
    (let* ([k::ScmClass* (Scm_ClassOf obj)])
