@@ -27041,7 +27041,7 @@ fragmentsは、文字列、文字、数値、手続き、@code{#f}、他のフ�
 @c COMMON
 @end defun
 
-@defun sxml:attr->xml attr
+@defun sxml:attr->xml attr :optional namespace-prefix-assig
 @defunx sxml:attr->html attr
 @c MOD sxml.tools
 @c EN
@@ -27063,6 +27063,16 @@ and converted to a string with @code{x->string}.
 @var{attr-name}はシンボルでなければなりません。
 @var{attr-value}はどんな値でも良いですが、文字列以外は
 @code{x->string}で文字列に変換されます。
+@c COMMON
+
+@c EN
+The optional @var{namespace-prefix-assig} argument is used to replace
+namespace prefix in the attibute name to its alias.  See
+@code{sxml:sxml->xml} below for the details.
+@c JP
+省略可能な@var{namespace-prefix-assig}は、属性名の名前空間プレフィクスを
+エイリアスに置き換えるのに使われます。
+詳しくは下の@code{sxml:sxml->xml}を参照してください。
 @c COMMON
 
 @c EN
@@ -27092,10 +27102,11 @@ value, while @code{sxml:attr->xml} doesn't.
 
 @c EN
 Note: This procedure is slighly modified from the original sxml-tools
-to escape special characters in the attribue value.
+to escape special characters in the attribue value,
+and recognize namespace prefix.
 @c JP
 註: この手続きは元のsxml-toolsから、
-属性値中の特殊文字をエスケープするように変更してあります。
+属性値中の特殊文字をエスケープするのと、名前空間プレフィクスを認識するように変更してあります。
 @c COMMON
 @end defun
 
@@ -27128,11 +27139,11 @@ in @ref{Simple HTML document construction}.
 @c COMMON
 @end defun
 
-@defun sxml:sxml->xml sxml
+@defun sxml:sxml->xml sxml :optional namespace-prefix-assig
 @defunx sxml:sxml->html sxml
 @c MOD sxml.tools
 @c EN
-Convers SXML to XML and HTML, respectively.  The return value
+Converts SXML to XML and HTML, respectively.  The return value
 is a tree of strings to be pased to @code{tree->string} or @code{write-tree}
 (@pxref{Lazy text construction}).
 @c JP
@@ -27142,7 +27153,49 @@ SXMLをXMLあるいはHTMLにそれぞれ変換します。戻り値は文字列
 @c COMMON
 
 @c EN
-The differences between XML and HTML version are:
+@code{sxml:sxml->xml} can take an optional @var{namespace-prefix-assig},
+which is the form @code{((@var{alias-symbol} . @var{namespace-string}) @dots{})}.
+It is the same format as the @var{namespace-prefix-assig} argument
+of @code{ssax:xml->sxml} (@pxref{SSAX Highest-level parsers - XML to SXML}).
+It has two effects:
+@c JP
+@code{sxml:sxml->xml}は省略可能引数@var{namespace-prefix-assig}を取ります。
+これは@code{ssax:xml->sxml}の同名の引数と同じく、
+@code{((@var{alias-symbol} . @var{namespace-string}) @dots{})}という形の
+リストでなければなりません(@ref{SSAX Highest-level parsers - XML to SXML}参照)。
+これは次の二つの効果を持ちます。
+@c COMMON
+
+@itemize @bullet
+@item
+@c EN
+It adds @code{xmlns} attributes to the top node of @var{sxml}.
+@c JP
+@var{sxml}のトップレベルのノードに@code{xmlns}属性を付加
+@c COMMON
+@item
+@c EN
+If a node name or an attribute name has a prefix string that matches
+@var{namespace-string}, it is replaced with @var{alias-symbol}.
+(If its prefix string does not match any of @var{namespace-prefix-assig},
+the prefix is left as is.)
+@c JP
+ノード名や属性名のプリフィクスが@var{namespace-string}のいずれかと一致した場合、
+対応する@var{alias-symbol}に置き換えられます
+(一致するものがなければプリフィクスはそのまま出力されます)。
+@c COMMON
+@end itemize
+
+@c EN
+Note that @code{sxml:sxml->html} does not take
+@var{namespace-prefix-assig}, for HTML doesn't have namespace prefix.
+@c JP
+@code{sxml:sxml->html}は@var{namespace-prefix-assig}引数を取りません。
+HTMLには名前空間プレフィクスは無いからです。
+@c COMMON
+
+@c EN
+Other differences between XML and HTML version are:
 
 @itemize @bullet
 @item
@@ -27156,7 +27209,7 @@ Non-terminated tags.  In HTML, some tags does not have end tags.
 In XML, elements with empty content are emitted as self-terminating tags.
 @end itemize
 @c JP
-XML版とHTML版の違いは次のとおりです。
+XML版とHTML版の他の違いは次のとおりです。
 
 @itemize @bullet
 @item
