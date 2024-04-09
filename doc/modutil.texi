@@ -24916,6 +24916,130 @@ XMLドキュメントのSXML表現を返します。
 この手続きは、SXMLツリーを返します。
 ポートでの位置は、ルート要素の後の最初の文字を指します。
 @c COMMON
+
+@c EN
+Here's a simple example:
+@c JP
+簡単な例を示します:
+@c COMMON
+
+@example
+(call-with-input-string
+  "<book>
+     <title>Land of Lisp</title>
+     <author>Conrad Barski</author>
+      <publisher>No Starch Press</publisher>
+   </book>
+   <book>
+     <title>Programming Gauche</title>
+     <author>Kahua Project</author>
+     <author>Shiro Kawai</author>
+     <publisher>O'Reilly Japan</publisher>
+   </book>"
+  (^p (ssax:xml->sxml p '())))
+@result{}
+  (*TOP*
+    (book (title "Land of Lisp")
+          (author "Conrad Barski")
+          (publisher "No Starch Press"))
+    (book (title "Programming Gauche")
+          (author "Kahua Project")
+          (author "Shiro Kawai")
+          (publisher "O'Reilly Japan")))
+@end example
+
+@c EN
+The entire document is put in a pseudo node @code{*TOP*}, since
+the document may contain more than one toplevel nodes.
+The @code{*TOP*} node can also keep the meta information.
+In the following example, the XML declaration is kept under
+a pseudo node @code{*PI*} (processing instructions).
+@c JP
+ドキュメントは複数のトップレベルノードを持っている場合があるので、
+ドキュメント全体は擬似ノード@code{*TOP*}の下にまとめられます。
+@code{*TOP*}ノードはまたメタ情報を保持するのにも使われます。
+次の例ではXML宣言が@code{*PI*} (processing infomation) ノードとして
+パーズされています。
+@c COMMON
+
+@example
+(call-with-input-string
+  "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+   <book>
+     <title>Programming Gauche</title>
+     <author>Kahua Project</author>
+     <author>Shiro Kawai</author>
+     <publisher>O'Reilly Japan</publisher>
+   </book>"
+  (^p (ssax:xml->sxml p '())))
+@result{}
+  (*TOP*
+    (*PI* xml "version=\"1.0\" encoding=\"utf-8\"")
+    (book (title "Programming Gauche") (author "Kahua Project")
+          (author "Shiro Kawai") (publisher "O'Reilly Japan")))
+@end example
+
+@c EN
+Namespaces are recognized, and their aliases are
+fully expanded to the URI by default:
+@c JP
+名前空間も認識されます。デフォルトでは名前空間のエイリアスは全て
+完全なURIへと展開されます:
+@c COMMON
+
+@example
+(call-with-input-string
+  "<b:book xmlns:b=\"https://example.com/book/\">
+     <b:title>Programming Gauche</b:title>
+     <b:author>Kahua Project</b:author>
+     <b:author>Shiro Kawai</b:author>
+     <b:publisher>O'Reilly Japan</b:publisher>
+   </b:book>"
+  (^p (ssax:xml->sxml p '())))
+@result{}
+  (*TOP*
+   (https://example.com/book/:book
+    (https://example.com/book/:title "Programming Gauche")
+    (https://example.com/book/:author "Kahua Project")
+    (https://example.com/book/:author "Shiro Kawai")
+    (https://example.com/book/:publisher "O'Reilly Japan")))
+@end example
+
+@c EN
+(This is because namespace aliases can have nested scopes,
+so just keeping aliases loses information)
+@c JP
+(名前空間エイリアスは入れ子になったスコープを持つため、
+ただエイリアスをそのまま保持するだけでは情報が失われるためです。)
+@c COMMON
+
+
+@c EN
+However, tags with fully expanded namespace prefix is cumbersome.
+You can provide your own namespace aliases for more compact
+output with @var{namespace-prefix-assig} argument.
+@c JP
+ただ、完全なURIに展開された名前空間プレフィクスは扱い辛いので、
+独自の名前空間エイリアスを@var{namespace-prefix-assig}引数で指定できます。
+@c COMMON
+
+@example
+(call-with-input-string
+  "<b:book xmlns:b=\"https://example.com/book/\">
+     <b:title>Programming Gauche</b:title>
+     <b:author>Kahua Project</b:author>
+     <b:author>Shiro Kawai</b:author>
+     <b:publisher>O'Reilly Japan</b:publisher>
+   </b:book>"
+  (^p (ssax:xml->sxml p '((Book . "https://example.com/book/")))))
+@result{}
+  (*TOP*
+   (@@ (*NAMESPACES* (Book "https://example.com/book/")))
+   (Book:book (Book:title "Programming Gauche")
+              (Book:author "Kahua Project")
+              (Book:author "Shiro Kawai")
+              (Book:publisher "O'Reilly Japan")))
+@end example
 @end defun
 
 @c ----------------------------------------------------------------------
