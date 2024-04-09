@@ -1,3 +1,8 @@
+2024-04-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sxml/sxml-tools.scm.in (sxml:sxml->xml): Replace original proc
+	  to handle namespaces.
+
 2024-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (*, +): When used as unary operators on non-number

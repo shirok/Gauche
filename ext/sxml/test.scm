@@ -35,7 +35,7 @@
 (test-xml-html
  "attrs"
  '(body (div (@ (foo "") (bar "abc\"def") (baz:quux xyzzy))))
- "<body><div foo=\"\" bar=\"abc&quot;def\" quux=\"xyzzy\"/></body>"
+ "<body><div foo=\"\" bar=\"abc&quot;def\" baz:quux=\"xyzzy\"/></body>"
  "<body><div foo bar=\"abc&quot;def\" baz:quux=\"xyzzy\"></div></body>")
 
 ;; HTML void elements
@@ -44,6 +44,18 @@
  '(div (img (@ (src "abc"))) (br) (hr))
  "<div><img src=\"abc\"/><br/><hr/></div>"
  "<div><img src=\"abc\"><br><hr></div>")
+
+;; Check namespace prefix reassignment
+(test* "sxml:sxml->xml namespace"
+       "<z:Item xmlns:z=\"https://example.com/defs\">\
+           <z:Serial>1234</z:Serial>\
+           <z:Serial>5678</z:Serial>\
+        </z:Item>"
+       ($ tree->string $ sxml:sxml->xml
+          '(https://example.com/defs:Item
+            (https://example.com/defs:Serial "1234")
+            (https://example.com/defs:Serial "5678"))
+          '((z . "https://example.com/defs"))))
 
 (test-section "sxml.sxpath")
 (use sxml.sxpath)

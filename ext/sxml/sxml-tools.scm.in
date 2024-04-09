@@ -98,40 +98,77 @@
           sxml:attr-list nodeset? ntype-names?? ntype??
           sxml:filter select-kids sxml:element? sxml:element?)
 
-;#include-body "src/sxml-tools.scm" (sxml:attr->xml sxml:attr->html sxml:sxml->html)
+;#include-body "src/sxml-tools.scm" (sxml:attr->xml sxml:attr->html sxml:sxml->xml sxml:sxml->html)
 
 ;; Override these two to emit attribute value properly escaped.
 ;; NB: For HTML, we don't need to recognize XML namespace prefix, so
 ;; we simply do symbol->string on the attribute name.
 ;; (Cf. https://github.com/shirok/Gauche-makiki/issues/11)
-(define (sxml:attr->xml attr)
-  `(" " ,(sxml:ncname attr) "=\"" ,(sxml:string->xml (x->string (cadr attr))) "\""))
+(define (sxml:attr->xml attr :optional (namespace-prefix-alist '()))
+  (let1 name (name-assign-prefix (car attr) namespace-prefix-alist)
+    `(" " ,name "=\"" ,(sxml:string->xml (x->string (cadr attr))) "\"")))
 (define (sxml:attr->html attr)
   (if (equal? "" (cadr attr))
     `(" " ,(symbol->string (car attr)))
     `(" " ,(symbol->string (car attr)) "=\""
       ,(sxml:string->html (x->string (cadr attr))) "\"")))
 
+;; The original sxml:sxml->xml doesn't consider namespaces much.
+;; It keeps namespace prefix in the node name, but drops it from the
+;; attribute name.
+;; We override it to keep prefix in namespace attributes as well.
+;; Furthermore, the optional namespace-prefix-assig to reassign
+;; the prefix.  namespace-prefix-assig is the same as ssax:xml->sxml,
+;; e.g. ((PREFIX . URI-STRING) ...)
+(define (sxml:sxml->xml sxml :optional (namespace-prefix-alist '()))
+  (define (rec tree)
+    (cond
+     [(nodeset? tree) (map rec tree)]
+     [(pair? tree)
+      (let* ([name (sxml:name tree)]
+             [sname (name-assign-prefix name namespace-prefix-alist)]
+             [content (sxml:content-raw tree)]
+             [attrs (if (eq? sxml tree)
+                      `(,@(map ns->attr namespace-prefix-alist)
+                        ,@(sxml:attr-list tree))
+                      (sxml:attr-list tree))])
+        `("<" ,sname ,@(map (cut sxml:attr->xml <> namespace-prefix-alist) attrs)
+          ,@(if (null? content)
+              '("/>")
+              `(">" ,@(rec content) "</" ,sname ">"))))]
+     [(string? tree) (sxml:string->xml tree)] ; *text*
+     [else (sxml:error "sxml->html - unexpected type of node: " tree)]))
+  (define (ns->attr prefix&uri)
+    `(,(symbol-append 'xmlns: (car prefix&uri)) ,(cdr prefix&uri)))
+  (rec sxml))
+
+;; returns string
+(define (name-assign-prefix name prefix-alist)
+  (let* ([sname (symbol->string name)]
+         [sep-index (string-index-right sname #\:)])
+    (or (and-let* ([ sep-index ]
+                   [prefix-uri (string-copy sname 0 sep-index)]
+                   [alias (alist-key prefix-alist prefix-uri)])
+          #"~|alias|~(string-copy sname sep-index)")
+        sname)))
+
 ;; We also need to override sxml:sxml->html.  The attempt to merge XML
 ;; and HTML is dead.  HTML is not XML.
 (define (sxml:sxml->html tree)
   (cond
-    ((nodeset? tree)
-     (map (lambda (a-tree)
-            (sxml:sxml->html a-tree))
-          tree))
-    ((pair? tree)
-     (let* ((name (sxml:name tree))
-            (nm (symbol->string name))
-            (content (sxml:content-raw tree))
-            (rendered-attrs (map sxml:attr->html (sxml:attr-list tree))))
-       (if (and (null? content)
-                (sxml:non-terminated-html-tag? name))
-         `("<" ,nm ,@rendered-attrs ">")
-         `("<" ,nm ,@rendered-attrs ">"
-           ,@(sxml:sxml->html content) "</" ,nm ">"))))
-    ((string? tree) (sxml:string->html tree)) ; *text*
-    (else (sxml:error "sxml->html - unexpected type of node: " tree))))
+   [(nodeset? tree) (map sxml:sxml->html tree)]
+   [(pair? tree)
+    (let* ([name (sxml:name tree)]
+           [nm (symbol->string name)]
+           [content (sxml:content-raw tree)]
+           [rendered-attrs (map sxml:attr->html (sxml:attr-list tree))])
+      (if (and (null? content)
+               (sxml:non-terminated-html-tag? name))
+        `("<" ,nm ,@rendered-attrs ">")
+        `("<" ,nm ,@rendered-attrs ">"
+          ,@(sxml:sxml->html content) "</" ,nm ">")))]
+   [(string? tree) (sxml:string->html tree)] ; *text*
+   [else (sxml:error "sxml->html - unexpected type of node: " tree)]))
 
 ;; Local variables:
 ;; mode: scheme
