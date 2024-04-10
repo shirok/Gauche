@@ -33,11 +33,11 @@
 
 (select-module gauche.internal)
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/prof.h"
-                     "gauche/priv/vmP.h"
-                     "gauche/priv/procP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/prof.h"
+           "gauche/priv/vmP.h"
+           "gauche/priv/procP.h"))
 
 ;;;
 ;;; R5RS

@@ -35,8 +35,8 @@
 (use util.match)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/priv/regexpP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/regexpP.h"))
 
 (define-cproc regexp? (obj)   ::<boolean> :constant SCM_REGEXPP)
 (define-cproc regmatch? (obj) ::<boolean> SCM_REGMATCHP)

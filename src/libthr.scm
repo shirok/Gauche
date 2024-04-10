@@ -92,9 +92,8 @@
 (select-module gauche.threads)
 
 (inline-stub
- (declcode
-  (.include "gauche/priv/configP.h"
-            "gauche/parameter.h"))
+ (.include "gauche/priv/configP.h"
+           "gauche/parameter.h")
 )
 
 ;;===============================================================

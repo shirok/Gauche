@@ -38,9 +38,9 @@
 (use util.match)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/priv/parameterP.h"
-                     "gauche/priv/vmP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/parameterP.h"
+           "gauche/priv/vmP.h"))
 
 (declare (keep-private-macro parameterize parameterize/dynwind temporarily))
 

@@ -34,11 +34,11 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/char_attr.h"
-                     "gauche/priv/charP.h"
-                     <ctype.h>))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/char_attr.h"
+           "gauche/priv/charP.h"
+           <ctype.h>)
  )
 
 ;;;

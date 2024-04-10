@@ -34,10 +34,10 @@
 (select-module gauche)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/priv/glocP.h"
-                     "gauche/priv/moduleP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/priv/glocP.h"
+           "gauche/priv/moduleP.h"))
 
 ;;;
 ;;; Modules API

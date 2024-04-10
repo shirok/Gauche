@@ -34,14 +34,14 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/priv/bignumP.h"
-                     <stdlib.h>
-                     <float.h>
-                     <math.h>)
-           (.when (not (defined M_PI))
-             (.define M_PI 3.1415926535897932384))))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/priv/bignumP.h"
+           <stdlib.h>
+           <float.h>
+           <math.h>)
+ (.when (not (defined M_PI))
+   (.define M_PI 3.1415926535897932384)))
 
 ;;
 ;; Predicates

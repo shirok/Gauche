@@ -33,8 +33,8 @@
 
 (select-module gauche)
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/exception.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/exception.h"))
 
 (use util.match)
 (declare (keep-private-macro define-condition-type condition))

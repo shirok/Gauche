@@ -34,11 +34,11 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/priv/bignumP.h"
-                     "gauche/priv/stringP.h"
-                     "gauche/priv/writerP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/priv/bignumP.h"
+           "gauche/priv/stringP.h"
+           "gauche/priv/writerP.h"))
 
 ;; Ellipsis, used when output is truncated.
 (select-module gauche.internal)

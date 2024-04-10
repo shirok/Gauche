@@ -34,11 +34,11 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/priv/vectorP.h"
-                     "gauche/priv/bytesP.h"
-                     "gauche/priv/mmapP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/priv/vectorP.h"
+           "gauche/priv/bytesP.h"
+           "gauche/priv/mmapP.h"))
 
 ;;;
 ;;; Standard Vector

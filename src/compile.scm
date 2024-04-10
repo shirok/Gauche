@@ -39,15 +39,14 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode
-  (.include <gauche/priv/configP.h>
-            <gauche/code.h>
-            <gauche/vminsn.h>
-            <gauche/priv/builtin-syms.h>
-            <gauche/priv/glocP.h>
-            <gauche/priv/identifierP.h>
-            <gauche/priv/macroP.h>
-            <gauche/priv/moduleP.h>)))
+ (.include "gauche/priv/configP.h"
+           "gauche/code.h"
+           "gauche/vminsn.h"
+           "gauche/priv/builtin-syms.h"
+           "gauche/priv/glocP.h"
+           "gauche/priv/identifierP.h"
+           "gauche/priv/macroP.h"
+           "gauche/priv/moduleP.h"))
 
 ;;; THE COMPILER
 ;;;

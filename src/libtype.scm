@@ -96,12 +96,11 @@
 
 
 (inline-stub
- (declcode
-  (.include "gauche/priv/configP.h"
-            "gauche/priv/classP.h"
-            "gauche/priv/nativeP.h"
-            "gauche/priv/memoP.h"
-            "gauche/priv/typeP.h"))
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/classP.h"
+           "gauche/priv/nativeP.h"
+           "gauche/priv/memoP.h"
+           "gauche/priv/typeP.h")
 
  ;; Metaclass: <type-constructor-meta>
  ;;   Its instance is ScmTypeConstructor.  Provides the following slots.

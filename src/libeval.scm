@@ -35,10 +35,10 @@
 (use util.match)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/priv/readerP.h"
-                     "gauche/priv/vmP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/priv/readerP.h"
+           "gauche/priv/vmP.h"))
 
 (declare (keep-private-macro autoload add-load-path))
 

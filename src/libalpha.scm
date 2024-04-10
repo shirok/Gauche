@@ -37,13 +37,13 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/vm.h"
-                     "gauche/priv/glocP.h"
-                     "gauche/priv/macroP.h"
-                     "gauche/priv/procP.h"
-                     "gauche/priv/vmP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/vm.h"
+           "gauche/priv/glocP.h"
+           "gauche/priv/macroP.h"
+           "gauche/priv/procP.h"
+           "gauche/priv/vmP.h"))
 
 ;; This is referred from the compiled code of toplevel definitions, so
 ;; we need it before anything else.

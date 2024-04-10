@@ -59,11 +59,10 @@
 ;;
 
 (inline-stub
- (declcode
-  (.include "gauche/priv/configP.h"
-            "gauche/code.h"
-            "gauche/priv/codeP.h"
-            "gauche/vminsn.h"))
+ (.include "gauche/priv/configP.h"
+           "gauche/code.h"
+           "gauche/priv/codeP.h"
+           "gauche/vminsn.h")
 
  (define-cproc vm-dump-code (code::<compiled-code>) ::<void>
    Scm_CompiledCodeDump)

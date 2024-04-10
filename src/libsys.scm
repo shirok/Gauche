@@ -36,7 +36,6 @@
 
 (select-module gauche)
 (inline-stub
- (declcode
   (.include "gauche/priv/configP.h"
             "gauche/priv/mmapP.h")
   (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
@@ -51,7 +50,7 @@
 
   (.when (defined "GAUCHE_WINDOWS")
     (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
-  ))
+  )
 
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory

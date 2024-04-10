@@ -33,9 +33,9 @@
 
 (select-module gauche.internal)
 (inline-stub
- (declcode (.include "gauche/priv/configP.h"
-                     "gauche/vminsn.h"
-                     "gauche/priv/identifierP.h")))
+ (.include "gauche/priv/configP.h"
+           "gauche/vminsn.h"
+           "gauche/priv/identifierP.h"))
 
 ;;;
 ;;; Symbols

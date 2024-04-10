@@ -50,9 +50,10 @@
 
 ;; Pathname replacement
 (inline-stub
- (declcode (.define PATH_ALLOC (n) (SCM_MALLOC_ATOMIC n))
-           (.define PATH_ERROR (...) (Scm_Error __VA_ARGS__))
-           (.include "paths.c"))
+ (declcode   ;we need declcode to ensure those .defines comes before .include
+  (.define PATH_ALLOC (n) (SCM_MALLOC_ATOMIC n))
+  (.define PATH_ERROR (...) (Scm_Error __VA_ARGS__))
+  (.include "paths.c"))
 
  (define-cproc substitute-all (input::<const-cstring>
                                mark::<const-cstring>
