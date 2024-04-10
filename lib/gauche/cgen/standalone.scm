@@ -108,16 +108,27 @@
                  libs)])
     libs))
 
+;; (gauche-config "-I") etc. returns a single string with all -I flags in it.
+;; We need to split it into each flags to check the existence of the
+;; directory and properly quote it.  It is a bit tricky since the path
+;; may contain whitespaces.
+(define (get-config-dir-flags flag)
+  (string-split (gauche-config flag) #/\s(?=(\")?-[IL])/))
+
 ;; Darwin's ld doesn't like that nonexistent directory is given to
 ;; -L flag.  The warning message is annoying, so we filter out such flags.
+;; For Windows, we have complications of two different path representations,
+;; and they don't complain having nonexistent dirs, so we leave them as is
+;; (but we do escape).
 (define (exclude-nonexistent-dirs dir-flags)
   (define (existing-dir? flag)
     (if-let1 m (#/^-[IL]/ flag)
-      (and (file-exists? (rxmatch-after m)) flag)
+      (cond-expand
+       [gauche.os.windows (shell-escape-string flag 'windows)]
+       [else (and (file-exists? (rxmatch-after m))
+                  (shell-escape-string flag 'posix))])
       flag))
-  ($ string-join
-     (filter-map existing-dir? (shell-tokenize-string dir-flags))
-     " "))
+  (string-join (filter-map existing-dir? dir-flags) " "))
 
 (define (compile-c-file c-file outfile xdefs xincdirs xlibdirs)
   ;; TODO: We wish we could use gauche.package.compile, but currently it is
@@ -127,9 +138,9 @@
         [cflags (gauche-config "--so-cflags")]
         [defs    (string-join xdefs " ")]
         [incdirs (exclude-nonexistent-dirs
-                  (string-join `(,@xincdirs ,(gauche-config "-I")) " "))]
+                  `(,@xincdirs ,@(get-config-dir-flags "-I")))]
         [libdirs (exclude-nonexistent-dirs
-                  (string-join `(,@xlibdirs ,(gauche-config "-L")) " "))]
+                  `(,@xlibdirs ,@(get-config-dir-flags "-L")))]
         [libs    (get-libs xdefs)])
     (let1 cmd #"~cc ~cflags ~defs ~incdirs -o ~outfile ~c-file ~libdirs ~libs"
       (print cmd)
