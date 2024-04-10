@@ -207,7 +207,7 @@
 ;; samples from entire fixnum range, and a long-tail distribution of bignums.
 (define (%heuristic-uints)
   (let ([smalls (uint16s$)]
-        [mids (fixnums$)]
+        [mids (gmap abs (fixnums$))]
         [bigs (reals-power-law$ (+ (greatest-fixnum) 1) 1.1)])
     (samples-from (list smalls mids (^[] (round->exact (bigs)))))))
 
