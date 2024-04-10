@@ -1,3 +1,11 @@
+2024-04-10  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche.h: Do not include gauche/priv/configP.h, even if it is
+	  #ifdef'ed.  It is simply wrong to include a private header from a
+	  public header.  Instead, it should be included from each
+	  individual source files.
+	  Cf. https://github.com/shirok/Gauche/issues/1013
+
 2024-04-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sxml/sxml-tools.scm.in (sxml:sxml->xml): Replace original proc
