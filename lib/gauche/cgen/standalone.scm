@@ -125,8 +125,11 @@
     (if-let1 m (#/^-[IL]/ flag)
       (cond-expand
        [gauche.os.windows (shell-escape-string flag 'windows)]
-       [else (and (file-exists? (rxmatch-after m))
-                  (shell-escape-string flag 'posix))])
+       [else (let1 path (string-trim-both (rxmatch-after m) #\")
+               (and (file-exists? path)
+                    (if (string-index flag #\")
+                      flag
+                      (shell-escape-string flag 'posix))))])
       flag))
   (string-join (filter-map existing-dir? dir-flags) " "))
 
