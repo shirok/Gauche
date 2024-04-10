@@ -46,6 +46,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/priv/vmP.h"
 #include "gauche/priv/mmapP.h"
 #include "gauche/priv/nativeP.h"

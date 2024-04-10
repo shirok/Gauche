@@ -49,6 +49,7 @@
 */
 
 #include <gauche.h>
+#include <gauche/priv/configP.h>
 #include <gauche/extend.h>
 
 #if defined(EXTMTRANDOM_EXPORTS)

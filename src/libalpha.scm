@@ -37,7 +37,8 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include "gauche/vminsn.h"
+ (declcode (.include "gauche/priv/configP.h"
+                     "gauche/vminsn.h"
                      "gauche/vm.h"
                      "gauche/priv/glocP.h"
                      "gauche/priv/macroP.h"

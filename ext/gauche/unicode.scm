@@ -556,7 +556,8 @@
 
 (inline-stub
  (declcode
-  (.include "gauche/priv/unicode_attr.h"))
+  (.include <gauche/priv/configP.h>
+            "gauche/priv/unicode_attr.h"))
 
  (initcode "init_WIDTH_symbols(Scm_CurrentModule());")
 

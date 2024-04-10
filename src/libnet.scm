@@ -82,7 +82,8 @@
 (inline-stub
 
  (declcode
-  (.include "gauche/net.h"))
+  (.include "gauche/priv/configP.h"
+            "gauche/net.h"))
 
  (declare-stub-type <socket-address> "ScmSockAddr*" "socket address"
    "Scm_SockAddrP" "SCM_SOCKADDR")

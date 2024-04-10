@@ -169,6 +169,7 @@
 (inline-stub
  (declcode
   (.include <fcntl.h>)
+  (.include <gauche/priv/configP.h>)
   (.include "dbmconf.h")
   (.cond
    ["HAVE_NDBM_H" (.include <ndbm.h>)]

@@ -13,6 +13,8 @@
 (select-module crypt.bcrypt)
 
 (inline-stub
+ (.include "gauche/priv/configP.h")
+
  (declare-cfn gauche_crypt_ra (key::(const char *)
                                     setting::(const char *)
                                     data::void**

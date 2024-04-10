@@ -32,10 +32,11 @@
  */
 
 #define LIBGAUCHE_BODY
-#include <gauche.h>
-#include <gauche/vm.h>
-#include <gauche/exception.h>
-#include <gauche/priv/vmP.h>
+#include "gauche.h"
+#include "gauche/priv/configP.h"
+#include "gauche/vm.h"
+#include "gauche/exception.h"
+#include "gauche/priv/vmP.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

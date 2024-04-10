@@ -35,8 +35,9 @@
 #include <errno.h>
 #include <gauche.h>
 #include <gauche/extend.h>
-#include "gauche/priv/charP.h"
-#include "gauche/priv/portP.h"
+#include <gauche/priv/configP.h>
+#include <gauche/priv/charP.h>
+#include <gauche/priv/portP.h>
 #include "charconv.h"
 
 #define DEFAULT_CONVERSION_BUFFER_SIZE 1024

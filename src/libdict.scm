@@ -38,6 +38,8 @@
 ;;;
 
 (inline-stub
+ (.include "gauche/priv/configP.h")
+
  (define-cise-stmt dict-check-entry
    [(_ dict key expr)
     `(when ,expr (Scm_Error "%S doesn't have an entry for key %S" ,dict ,key))])

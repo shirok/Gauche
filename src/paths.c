@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 
 #if !defined(PATH_ALLOC)
 #define PATH_ALLOC(n)  malloc(n)

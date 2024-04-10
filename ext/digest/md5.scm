@@ -88,7 +88,8 @@
 
 (inline-stub
  (declcode
-  (.include "md5.h")
+  (.include <gauche/priv/configP.h>
+            "md5.h")
 
   (.define LIBGAUCHE_EXT_BODY)
   (.include <gauche/extern.h>)      ; fix SCM_EXTERN in SCM_CLASS_DECL

@@ -37,6 +37,7 @@
 #include <ctype.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/charP.h"
 #include "gauche/priv/regexpP.h"

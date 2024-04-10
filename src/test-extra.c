@@ -6,7 +6,8 @@
   down to main() to see how.)
 */
 
-#include <gauche.h>
+#include "gauche.h"
+#include "gauche/priv/configP.h"
 
 void Scm_Init_libextra(ScmModule *);
 

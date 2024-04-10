@@ -34,10 +34,11 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>
-                     <gauche/exception.h>
-                     <gauche/priv/portP.h>
-                     <gauche/priv/writerP.h>
+ (declcode (.include "gauche/priv/configP.h"
+                     "gauche/vminsn.h"
+                     "gauche/exception.h"
+                     "gauche/priv/portP.h"
+                     "gauche/priv/writerP.h"
                      <stdlib.h>
                      <fcntl.h>)))
 

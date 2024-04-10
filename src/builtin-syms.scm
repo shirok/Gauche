@@ -24,7 +24,8 @@
 (define (main args)
   (parameterize ([cgen-current-unit *unit*])
     (cgen-decl "#define LIBGAUCHE_BODY"
-               "#include <gauche.h>")
+               "#include <gauche.h>"
+               "#include <gauche/priv/configP.h>")
 
     (cgen-extern "SCM_EXTERN ScmSymbol Scm_BuiltinSymbols[];")
     (cgen-body "ScmSymbol Scm_BuiltinSymbols[] = {")

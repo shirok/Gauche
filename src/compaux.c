@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/vm.h"
 #include "gauche/vminsn.h"
 #include "gauche/code.h"

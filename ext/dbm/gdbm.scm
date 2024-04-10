@@ -174,7 +174,8 @@
 (inline-stub
  (declcode
   (.include <gdbm.h>)
-  (.include <stdlib.h>))
+  (.include <stdlib.h>)
+  (.include <gauche/priv/configP.h>))
 
  (define-ctype ScmGdbmFile::(.struct
                              (SCM_HEADER :: ""

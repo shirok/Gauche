@@ -162,6 +162,7 @@
 
 (inline-stub
  (declcode
+  (.include <gauche/priv/configP.h>)
   (.include "dbmconf.h")
   (.cond
    ["HAVE_DBM_H" (.include <dbm.h>)]

@@ -49,7 +49,8 @@
 
 (inline-stub
  (declcode
-  (.include "gauche/fcntl.h"))
+  (.include <gauche/priv/configP.h>
+            "gauche/fcntl.h"))
 
  (define-enum F_DUPFD)
  (define-enum F_GETFD)

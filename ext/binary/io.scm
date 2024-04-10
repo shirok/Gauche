@@ -230,7 +230,8 @@
 
 (inline-stub
  (declcode
-  (.include "binary.h"))
+  (.include <gauche/priv/configP.h>
+            "binary.h"))
 
  (define-cproc read-u8
    (:optional (port::<input-port>? #f) (endian::<symbol>? #f))

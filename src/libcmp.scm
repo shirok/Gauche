@@ -32,6 +32,8 @@
 ;;;
 
 (select-module gauche.internal)
+(inline-stub
+ (.include "gauche/priv/configP.h"))
 
 ;;;
 ;;; Comparator (a la SRFI-114/128)

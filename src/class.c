@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/code.h"
+#include "gauche/priv/configP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/classP.h"
 #include "gauche/priv/identifierP.h"

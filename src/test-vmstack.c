@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/vm.h"
 #include "gauche/priv/vmP.h"
 

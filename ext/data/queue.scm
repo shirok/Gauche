@@ -67,6 +67,7 @@
 ;;;  Data structures
 ;;;
 (inline-stub
+ (.include <gauche/priv/configP.h>)
 
  ;;
  ;; <queue>

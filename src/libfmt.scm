@@ -36,6 +36,8 @@
 (define-module gauche.format
   (use util.match))
 (select-module gauche.format)
+(inline-stub
+ (.include "gauche/priv/configP.h"))
 
 ;; Parsing format string
 ;; The whole parsing business can be written much cleaner using parser.peg,

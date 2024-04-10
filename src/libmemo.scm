@@ -33,7 +33,8 @@
 
 (select-module gauche.internal)
 (inline-stub
- (declcode (.include "gauche/priv/memoP.h"))
+ (declcode (.include "gauche/priv/configP.h"
+                     "gauche/priv/memoP.h"))
 
  (declare-stub-type <memo-table> "ScmMemoTable*")
  )

@@ -42,7 +42,8 @@
 (select-module gauche.bootstrap)
 
 (inline-stub
- (.include "gauche/priv/mmapP.h"
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/mmapP.h"
            "gauche/priv/nativeP.h"
            "gauche/priv/codeP.h"
            "gauche/vminsn.h")

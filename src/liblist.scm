@@ -34,7 +34,8 @@
 (select-module gauche.internal)
 
 (inline-stub
- (declcode (.include <gauche/vminsn.h>)))
+ (declcode (.include "gauche/priv/configP.h"
+                     "gauche/vminsn.h")))
 
 ;;
 ;; R5RS Standard procs

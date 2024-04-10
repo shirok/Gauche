@@ -36,7 +36,8 @@
 (declare (keep-private-macro lcons lcons* llist*))
 
 (inline-stub
- (.include <gauche/priv/promiseP.h>))
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/promiseP.h"))
 
 ;;;
 ;;; delay/force/lazy/eager

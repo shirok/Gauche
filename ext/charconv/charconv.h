@@ -35,6 +35,7 @@
 #define GAUCHE_CHARCONV_H
 
 #include <gauche.h>
+#include <gauche/priv/configP.h>
 #include "iconv-adapter.h"
 
 SCM_DECL_BEGIN

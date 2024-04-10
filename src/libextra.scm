@@ -8,6 +8,8 @@
 ;; Foreign pointer features
 
 (inline-stub
+ (.include "gauche/priv/configP.h")
+
  (define-cvar fptr_simple::ScmClass* :static)
  (define-cvar fptr_unique::ScmClass* :static)
  (define-cvar fptr_maybe::ScmClass* :static)

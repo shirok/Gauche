@@ -27,7 +27,8 @@
 ;; Emit code
 (define (main args)
   (cgen-decl "#define LIBGAUCHE_BODY"
-             "#include <gauche.h>")
+             "#include <gauche.h>"
+             "#include <gauche/priv/configP.h>")
   ;; init
   (cgen-init "  ScmModule *gauche = Scm_GaucheModule();"
              "  ScmSymbol *sym, *import_from;"

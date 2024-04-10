@@ -272,7 +272,8 @@
 
 (inline-stub
  (declcode
-  (.include "charconv.h"))
+  (.include <gauche/priv/configP.h>
+            "charconv.h"))
 
  (define-cproc ces-conversion-supported? (from to)
    ::<boolean>

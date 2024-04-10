@@ -33,7 +33,8 @@
 
 #define LIBGAUCHE_BODY
 #include <math.h>
-#include <gauche.h>
+#include "gauche.h"
+#include "gauche/priv/configP.h"
 
 /*=====================================================
  * Mutex

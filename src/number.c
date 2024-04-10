@@ -32,6 +32,7 @@
  */
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
 #include "gauche/bits_inline.h"

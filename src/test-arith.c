@@ -3,6 +3,7 @@
  */
 
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/priv/arith.h"
 #include "gauche/scmconst.h"
 

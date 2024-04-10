@@ -38,6 +38,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 
 static const ScmPrimitiveParameter *command_line = NULL;
 static const ScmPrimitiveParameter *os_command_line = NULL;

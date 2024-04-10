@@ -35,7 +35,8 @@
 (use util.match)
 
 (inline-stub
- (declcode (.include "gauche/vminsn.h"
+ (declcode (.include "gauche/priv/configP.h"
+                     "gauche/vminsn.h"
                      "gauche/priv/readerP.h"
                      "gauche/priv/vmP.h")))
 

@@ -57,7 +57,8 @@
 ;; for the discussion triggered this implementation.
 
 (inline-stub
- (.include "gauche/priv/atomicP.h")
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/atomicP.h")
 
  (define-ctype ScmSharedBox
    ::(.struct ScmSharedBoxRec

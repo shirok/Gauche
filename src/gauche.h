@@ -41,9 +41,6 @@
    instances. */
 #include <gauche/config.h>
 #include <gauche/config_threads.h>
-#if defined(LIBGAUCHE_BODY)
-#include "gauche/priv/configP.h" /* Only used while compiling Gauche itself */
-#endif
 
 /* GAUCHE_API_VERSION is GAUCHE_MAJOR_VERSION*1000 + revision.
    The revision is only incremented when we change API, which we expect

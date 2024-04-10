@@ -93,7 +93,8 @@
 
 (inline-stub
  (declcode
-  (.include "gauche/parameter.h"))
+  (.include "gauche/priv/configP.h"
+            "gauche/parameter.h"))
 )
 
 ;;===============================================================

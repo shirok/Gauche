@@ -33,6 +33,7 @@
 
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/priv/stringP.h"
 #include "gauche/priv/writerP.h"
 #include "gauche/char_attr.h"

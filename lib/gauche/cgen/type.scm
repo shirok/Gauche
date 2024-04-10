@@ -375,7 +375,7 @@
 ;;
 ;; Typed variables usually comes with list, something like this:
 ;;
-;;   (a b::<int> c::(<List> <integer>) :optional (d::<int> 3)
+;;   (a b::<int> c::(<List> <integer>) :optional (d::<int> 3))
 ;;
 ;; Canonicalization regognizes variations and produces this:
 ;;
@@ -410,6 +410,47 @@
 ;;   returns its canonical form and the rest of the input list.
 ;;   Canonical form may be #f if the tip of the typed-var-list is
 ;;   not a typed var.
+(define (cgen-canonical-typed-var-1 typed-var-list default-type)
+  ;; Split shorthand notations, returns type and rest
+  (define (expand-type elt seed)
+    (cond
+     [(keyword? elt)
+      (rxmatch-case (keyword->string elt)
+        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
+        [else (cons elt seed)])]
+     [(symbol? elt)
+      (rxmatch-case (symbol->string elt)
+        [#/^([^:]+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
+        [#/^([^:]+)::([^:]+)$/ (_ v t)
+            `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
+        [#/^([^:]+):(.*)$/ (#f #f #f) (err elt)]
+        [else (cons elt seed)])]
+     [else (cons elt seed)]))
+
+  (define (err decl) (error "invalid variable declaration:" decl))
+
+  (define (scan in r)
+    (match in
+      [() (reverse r)]
+      [([? keyword? xx] . rest) (reverse r (cons xx rest))]
+      [([? symbol? var] ':: type . rest)
+       (scan rest `((,var :: ,type) ,@r))]
+      [([? symbol? var] . rest)
+       (scan rest `((,var :: ,default-type) ,@r))]
+      [(([? symbol? v] [? symbol? t] . args) . rest)
+       (let1 sub (expand-type v (expand-type t args))
+         (match sub
+           [(_ ':: . _) (scan rest `(,sub ,@r))]
+           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
+      [(([? symbol? vt] . args) . rest)
+       (let1 sub (expand-type vt args)
+         (match sub
+           [(_ ':: . _) (scan rest `(,sub ,@r))]
+           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
+      [(xx . rest) (reverse r (cons xx rest))]))
+
+  (scan (fold-right expand-type '() typed-var-list) '()))
+
 (define (cgen-canonical-typed-var-list typed-var-list
                                        default-type)
   ;; Split shorthand notations

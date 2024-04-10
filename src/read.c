@@ -36,6 +36,7 @@
 #include <math.h>
 #define LIBGAUCHE_BODY
 #include "gauche.h"
+#include "gauche/priv/configP.h"
 #include "gauche/char_attr.h"
 #include "gauche/priv/portP.h"
 #include "gauche/priv/builtin-syms.h"

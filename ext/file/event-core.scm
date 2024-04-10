@@ -34,6 +34,7 @@
 (select-module file.event)
 
 (inline-stub
+ (.include <gauche/priv/configP.h>)
  ;;
  ;; Linux (inotify)
  ;;

@@ -37,7 +37,8 @@
 (select-module gauche)
 (inline-stub
  (declcode
-  (.include <gauche/priv/mmapP.h>)
+  (.include "gauche/priv/configP.h"
+            "gauche/priv/mmapP.h")
   (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
   (.unless (defined "GAUCHE_WINDOWS")
     (.include <grp.h> <pwd.h> <sys/wait.h> <utime.h>
