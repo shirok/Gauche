@@ -191,7 +191,8 @@
 (define (number-generator)
   (samples-from (list (exact-number-generator) (inexact-number-generator))))
 
-(define (rational-generator) (exact-rational-generator))
+(define (rational-generator)
+  (samples-from (list (exact-rational-generator) (inexact-rational-generator))))
 
 (define (real-generator)
   (samples-from (list (exact-real-generator) (inexact-real-generator))))
