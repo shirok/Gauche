@@ -71,10 +71,10 @@ install: all
 	if test ! -d "$(DESTDIR)$(infodir)"; then $(MKINSTDIR) "$(DESTDIR)$(infodir)"; fi
 	if test -z "$(DESTDIR)" -a -n "$(INSTALL_INFO)"; then \
 	  if test -f gauche-refe.info.gz; then \
-	    $(INSTALL_INFO) gauche-refe.info.gz $(infodir)/dir ; \
+	    $(INSTALL_INFO) gauche-refe.info.gz "$(infodir)/dir" ; \
 	  fi; \
 	  if test -f gauche-refj.info.gz; then \
-	    $(INSTALL_INFO) gauche-refj.info.gz $(infodir)/dir ; \
+	    $(INSTALL_INFO) gauche-refj.info.gz "$(infodir)/dir" ; \
 	  fi; \
 	fi; \
 	if test -f gauche-refe.info.gz -o -f gauche-refj.info.gz; then \
