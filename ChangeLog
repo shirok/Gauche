@@ -1,5 +1,10 @@
 2024-04-10  Shiro Kawai  <shiro@acm.org>
 
+	* DIST, test/standalone.scm: Run build-standalone with the installed
+	  Gauche during DIST self-host-test.
+	  This can catch the issue like
+	  https://github.com/shirok/Gauche/issues/1013
+
 	* src/gauche.h: Do not include gauche/priv/configP.h, even if it is
 	  #ifdef'ed.  It is simply wrong to include a private header from a
 	  public header.  Instead, it should be included from each

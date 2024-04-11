@@ -132,6 +132,9 @@ do_self_host_test () {
      PATH=$XPATH $srcdir/examples/mqueue-cpp/configure --prefix=$destdir && \
      PATH=$XPATH make $makeopt_1 && \
      PATH=$XPATH make -s check && PATH=$XPATH make install || exit 1)
+    mkdir -p $destdir/standalone
+    (cd $destdir/standalone; \
+     PATH=$XPATH gosh $srcdir/test/standalone.scm || exit 1)
 }
 
 case $1 in
