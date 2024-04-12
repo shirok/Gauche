@@ -16531,31 +16531,59 @@ Note: @code{boolean} is provided in the core (@pxref{Booleans}).
 
 @deftp {Module} srfi.238
 @mdindex srfi.238
+@c EN
 This module provides a unified interface for system-defined set of
 code values, such as errno or signal numbers.
+@c JP
+このモジュールは、エラー番号やシグナル番号のような、システムが提供するコード値の集合を
+扱うための統一的なインタフェースを提供します。
+@c COMMON
 
+@c EN
 In Gauche, we have predefined integer constants for errnos (e.g. @code{EINTR})
 and signals (e.g. @code{SIGINT}) in @code{gauche} module, and
 we have built-in procedures to convert integer code to
 symbols (@code{sys-errno->symbol}, @code{sys-signal-name})
 and to string messages (@code{sys-strerror}, @code{sys-strsignal}).
 You may want to use this srfi for portable code, though.
+@c JP
+Gaucheはエラー番号(errno)を表す整数定数(例:@code{EINTR})とシグナル番号を
+表す整数定数(例@code{SIGINT})を@code{gauche}モジュールで提供していて、
+また整数を対応するシンボルに変換する手続き
+(@code{sys-errno->symbol}, @code{sys-signal-name})
+および整数から記述的なメッセージを得る手続き
+(@code{sys-strerror}, @code{sys-strsignal})
+を組み込みにしてます。
+ただ、ポータブルなコードを書きたい場合はこのSRFIは有用でしょう。
+@c COMMON
 @end deftp
 
 @defun codeset? obj
 [SRFI-238]
 @c MOD srfi.238
-Returns if @var{obj} is an object that can be used as a @var{codeset}
-argument for this srfi's API.  In Gauche, @var{obj} must be either
-a symbol @code{errno} or @code{signal}.
+@c EN
+Returns @code{#t} if @var{obj} is an object that can be used as a @var{codeset}
+argument for this srfi's API, @code{#f} otherwise.
+In Gauche, @var{obj} must be either a symbol @code{errno} or @code{signal}.
+@c JP
+@var{obj}がこのsrfiのAPIの@var{codeset}引数に渡せるものなら@code{#t}を、
+そうでなければ@code{#f}を返します。
+Gaucheでは@var{obj}はシンボル@code{errno}か@code{signal}でなければなりません。
+@c COMMON
 @end defun
 
 @defun codeset-symbols codeset
 [SRFI-238]
 @c MOD srfi.238
-Returns a list of symbols defined in a codeset designated by @code{codeset}.
+@c EN
+Returns a list of symbols defined in a codeset designated by @var{codeset}.
 In Gauche, @var{codeset} must be a symbol.  If it does not name a supported
 codeset, an empty list is returned.
+@c JP
+@var{codeset}引数で表されるコードセットが定義しているシンボルのリストを返します。
+Gaucheでは@var{codeset}はシンボルでなければなりません。
+それが定義済みコードセットに対応しないシンボルだった場合は空リストが返されます。
+@c COMMON
 
 @example
 (codeset-symbols 'errno)
@@ -16568,15 +16596,30 @@ codeset, an empty list is returned.
 @defunx codeset-message codeset code
 [SRFI-238]
 @c MOD srfi.238
+@c EN
 Returns a symbol, an exact integer, or a message string associated to
-the @var{code} in the codeset designated by @var{codeset}.
+the @var{code} in the codeset designated by @var{codeset}, respectively
+@c JP
+それぞれ、@var{codeset}で指定されるコードセット中の@var{code}に対応する
+シンボル、正確な整数、あるいはメッセージ文字列を返します。
+@c COMMON
 
+@c EN
 The @var{code} argument can be either a symbol or an exact integer.
 The @var{codeset} argument must be a symbol.
+@c JP
+@var{code}引数はシンボルまたは正確な整数です。
+@var{codeset}引数はシンボルでなければなりません。
+@c COMMON
 
+@c EN
 If @var{codeset} is not a name of supported codesets (in Gauche,
 we have @code{errno} and @code{signale}), or @var{code} is not in
 the specified codeset, @code{#f} is returned.
+@c JP
+@var{codeset}がGaucheでサポートするコードセットを指定しないシンボルだったり、
+@var{code}が指定されたコードセット中のコードを指定しない場合は@code{#f}が返ります。
+@c COMMON
 
 @example
 (codeset-symbol 'errno 'EINTR) @result{} EINTR
