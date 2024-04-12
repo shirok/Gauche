@@ -531,8 +531,8 @@
 ;; (define-symbol scheme-name c-name)
 
 (define-form-parser define-symbol (name c-name . maybe-init)
-  (check-arg symbol? name)
-  (check-arg string? c-name)
+  (assume-type name <symbol>)
+  (assume-type c-name <string>)
   (let1 literal (make-literal name :c-name c-name)
     (cgen-decl #"#define ~c-name (~(cgen-c-name literal))")
     (cgen-add! literal)))
@@ -557,19 +557,19 @@
     (cgen-add! initval)))
 
 (define-form-parser define-variable (name init . opts)
-  (check-arg symbol? name)
+  (assume-type name <symbol>)
   (variable-parser-common #f name init opts))
 
 (define-form-parser define-constant (name init . opts)
-  (check-arg symbol? name)
+  (assume-type name <symbol>)
   (variable-parser-common #t name init opts))
 
 (define-form-parser define-enum (name)
-  (check-arg symbol? name)
+  (assume-type name <symbol>)
   (variable-parser-common #t name (list 'c #"Scm_MakeInteger(~name)") '()))
 
 (define-form-parser define-enum-conditionally (name)
-  (check-arg symbol? name)
+  (assume-type name <symbol>)
   (cgen-with-cpp-condition `(defined ,name)
     (variable-parser-common #t name (list 'c #"Scm_MakeInteger(~name)") '())))
 
@@ -588,8 +588,8 @@
 ;; (define-keyword scheme-name c-name)
 
 (define-form-parser define-keyword (name c-name)
-  (check-arg symbol? name)
-  (check-arg string? c-name)
+  (assume-type name <symbol>)
+  (assume-type c-name <string>)
   (let1 literal (make-literal (make-keyword name) :c-name c-name)
     (cgen-decl #"#define ~c-name (~(cgen-c-name literal))")
     (cgen-add! literal)))
@@ -771,8 +771,8 @@
         (error "Invalid cproc flag in " flags))
       (values flags body)))
 
-  (check-arg symbol? scheme-name)
-  (check-arg list? argspec)
+  (assume-type scheme-name <symbol>)
+  (assume-type argspec <list>)
   (receive (args keyargs nreqs nopts rest? other-keys?)
       (process-cproc-args scheme-name argspec)
     (receive (body rettype) (extract-rettype body)
@@ -1470,8 +1470,8 @@
   (next-method))
 
 (define-form-parser define-cgeneric (scheme-name c-name . body)
-  (check-arg symbol? scheme-name)
-  (check-arg string? c-name)
+  (assume-type scheme-name <symbol>)
+  (assume-type c-name <string>)
   (let1 gf (make <cgeneric> :scheme-name scheme-name :c-name c-name)
     (for-each (match-lambda
                 [('extern) (set! [~ gf'extern?] #t)]
@@ -1506,8 +1506,8 @@
    ))
 
 (define-form-parser define-cmethod (scheme-name argspec . body)
-  (check-arg symbol? scheme-name)
-  (check-arg list? argspec)
+  (assume-type scheme-name <symbol>)
+  (assume-type argspec <list>)
   (receive (args specializers numargs have-optarg?)
       (parse-specialized-args argspec)
     (receive (body rettype) (extract-rettype body)
@@ -1726,7 +1726,7 @@
    ))
 
 (define-form-parser define-cclass (scm-name . args)
-  (check-arg symbol? scm-name)
+  (assume-type scm-name <symbol>)
   (receive (quals rest) (span keyword? args)
     (cond
      [(lset-difference eqv? quals '(:built-in :base :private :no-meta)) pair?
@@ -1744,9 +1744,9 @@
            (call-with-output-string (cut cise-render x <> #f))
            x))
 
-       (check-arg string? c-name)
-       (check-arg list? cpa)
-       (check-arg list? slot-spec)
+       (assume-type c-name <string>)
+       (assume-type cpa <list>)
+       (assume-type slot-spec <list>)
        (let* ([allocator (c-code (get-opt 'allocator #f))]
               [printer   (c-code (get-opt 'printer #f))]
               [comparer  (c-code (get-opt 'comparer #f))]
@@ -2347,7 +2347,7 @@
    (cleanup-proc :init-keyword :cleanup-proc)))
 
 (define-form-parser define-cptr (scm-name . args)
-  (check-arg symbol? scm-name)
+  (assume-type scm-name <symbol>)
   (receive (quals args) (span keyword? args)
     (let1 z (lset-difference eqv? quals '(:private))
       (unless (null? z)
