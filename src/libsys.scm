@@ -547,10 +547,12 @@
 ;; POSIX also doesn't say anything when signum isn't a supported signal
 ;; number.  We can't do much about it, though, so it's better just to expose
 ;; the underlying function.
-(define-cproc sys-strsignal (signum::<int>) ::<const-cstring>?
+(inline-stub
   (.if HAVE_STRSIGNAL
-    (return (strsignal signum))
-    (return NULL)))
+    (define-cproc sys-strsignal (signum::<int>) ::<const-cstring>?
+      (return (strsignal signum)))
+    (define-cproc sys-strsignal (_::<int>) ::<const-cstring>?
+      (return NULL))))
 
 ;;---------------------------------------------------------------------
 ;; sys/loadavg.h
