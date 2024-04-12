@@ -607,8 +607,13 @@
    ))
 
 (define-class <procstub> (<setter-mixin> <stub>)
-  ((args              :initform '() :init-keyword :args)
-   (keyword-args      :initform '() :init-keyword :keyword-args)
+  ((args              :initform '() :init-keyword :args
+                      :type (<List> <arg>))
+      ;; List of required, optional, and rest arguments.
+      ;; (but not keyword arguments)
+   (keyword-args      :initform '() :init-keyword :keyword-args
+                      :type (<List> <keyword-arg>))
+      ;; List of keyword arguments
    (num-reqargs       :initform 0   :init-keyword :num-reqargs)
       ;; # of required arguments.
    (num-optargs       :initform 0   :init-keyword :num-optargs)
@@ -719,16 +724,18 @@
 ;; want to spend initialization time to reconstruct it for something that
 ;; might not be used.
 ;; The current format is a vector, with the first element 1 indicates the
-;; version.  Followed by the module name, and arguments for <^> but the
-;; stub type is represented.
+;; version.  Followed by the module name, and arguments for <^>.
 ;; NB: The module name may be #f, when we're precompiling stub file (as opposed
 ;; to the scm file).  For, in case of the stub file, the module is passed
 ;; to the initialization routine.  In that case, we'll patch up the typehint
-;; vector at the init code.  (See cgen-emit-init <cpproc> below).
+;; vector at the init code.  (See cgen-emit-init <cproc> below).
 (define (compute-type-info procstub)
-  (define (arg-types args)
+  (define (arg-types args kwargs)
     (let loop ([args args] [types '()])
-      (cond [(null? args) (reverse types)]
+      (cond [(null? args)
+             (if (null? kwargs)
+               (reverse types)
+               (reverse types '(*)))]
             [(is-a? (car args) <required-arg>)
              (loop (cdr args)
                    (cons (~ (car args)'type'name) types))]
@@ -741,7 +748,7 @@
      [else (ret-types (list types))]))
   (list->vector
    `(1 ,(and-let1 tm (current-tmodule) (~ tm'name))
-       ,@(arg-types (~ procstub'args))
+       ,@(arg-types (~ procstub'args) (~ procstub'keyword-args))
        ->
        ,@(ret-types (~ procstub'return-type)))))
 
@@ -1230,7 +1237,7 @@
   (define (arginfo arg) (~ arg'name))
   (let* ([qargs (filter (cut is-a? <> <required-arg>) (~ proc'args))]
          [oargs (filter (cut is-a? <> <optional-arg>) (~ proc'args))]
-         [kargs (filter (cut is-a? <> <keyword-arg>) (~ proc'args))]
+         [kargs (filter (cut is-a? <> <keyword-arg>) (~ proc'keyword-args))]
          [rarg  (filter (cut is-a? <> <rest-arg>) (~ proc'args))]
          [aarg  (filter (cut is-a? <> <optarray-arg>) (~ proc'args))]
          [all-args `(,@(map arginfo qargs)
