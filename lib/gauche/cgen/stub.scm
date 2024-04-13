@@ -1301,7 +1301,8 @@
   (let1 arg-array-size (+ (~ cproc'num-reqargs)
                           (~ cproc'num-optargs)
                           (if (null? (~ cproc'keyword-args)) 0 -1))
-    (unless (zero? arg-array-size)
+    (unless (or (zero? arg-array-size)
+                (null? (used-args (~ cproc'args))))
       (p "  ScmObj SCM_SUBRARGS["arg-array-size"];"))
     (unless (null? (used-args (~ cproc'keyword-args)))
       (p "  ScmObj SCM_KEYARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
@@ -1316,11 +1317,15 @@
          (+ (~ cproc'num-reqargs) (~ cproc'num-optargs))
          " is expected, %d given.\", "
          "SCM_ARGCNT + Scm_Length(SCM_ARGREF(SCM_ARGCNT-1)) - 1);"))
-    ;; argument assertions & unbox op.
-    (unless (zero? arg-array-size)
+    ;; copy arguments from VM stack to local array.  Any callback into
+    ;; Scheme may overwrite VM stack where arguments are placed, so we should
+    ;; do it here.
+    (unless (or (zero? arg-array-size)
+                (null? (used-args (~ cproc'args))))
       (p "  for (int SCM_i=0; SCM_i<"arg-array-size"; SCM_i++) {")
       (p "    SCM_SUBRARGS[SCM_i] = SCM_ARGREF(SCM_i);")
       (p "  }"))
+    ;; argument assertions & unbox op.
     (for-each emit-arg-unbox (used-args (~ cproc'args)))
     (unless (null? (~ cproc'keyword-args))
       (emit-keyword-args-unbox cproc))
