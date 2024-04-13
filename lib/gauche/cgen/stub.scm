@@ -1304,7 +1304,7 @@
     (unless (zero? arg-array-size)
       (p "  ScmObj SCM_SUBRARGS["arg-array-size"];"))
     (unless (null? (used-args (~ cproc'keyword-args)))
-      (p "  ScmObj SCM_OPTARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
+      (p "  ScmObj SCM_KEYARGS = SCM_ARGREF(SCM_ARGCNT-1);"))
     (p "  SCM_ENTER_SUBR(\""(~ cproc'scheme-name)"\");")
     ;; argument count check (for optargs)
     (when (and (> (~ cproc'num-optargs) 0)
@@ -1426,22 +1426,22 @@
 (define (emit-keyword-args-unbox cproc)
   (let ([args (used-args (~ cproc'keyword-args))]
         [other-keys? (~ cproc'allow-other-keys?)])
-    (p "  if (Scm_Length(SCM_OPTARGS) % 2)")
-    (p "    Scm_Error(\"keyword list not even: %S\", SCM_OPTARGS);")
-    (p "  while (!SCM_NULLP(SCM_OPTARGS)) {")
+    (p "  if (Scm_Length(SCM_KEYARGS) % 2)")
+    (p "    Scm_Error(\"keyword list not even: %S\", SCM_KEYARGS);")
+    (p "  while (!SCM_NULLP(SCM_KEYARGS)) {")
     (pair-for-each
      (^[args] (let ([arg (car args)]
                     [tail? (null? (cdr args))])
-                (f "    if (SCM_EQ(SCM_CAR(SCM_OPTARGS), ~a)) {"
+                (f "    if (SCM_EQ(SCM_CAR(SCM_KEYARGS), ~a)) {"
                    (cgen-c-name (~ arg'keyword)))
-                (f "      ~a = SCM_CADR(SCM_OPTARGS);" (~ arg'scm-name))
+                (f "      ~a = SCM_CADR(SCM_KEYARGS);" (~ arg'scm-name))
                 (if tail?
                   (p "    }")
                   (p "    } else "))))
      args)
     (unless other-keys?
-      (p "    else Scm_Warn(\"unknown keyword %S\", SCM_CAR(SCM_OPTARGS));"))
-    (p "    SCM_OPTARGS = SCM_CDDR(SCM_OPTARGS);")
+      (p "    else Scm_Warn(\"unknown keyword %S\", SCM_CAR(SCM_KEYARGS));"))
+    (p "    SCM_KEYARGS = SCM_CDDR(SCM_KEYARGS);")
     (p "  }")
     (for-each emit-arg-unbox-rec args)))
 
