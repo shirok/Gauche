@@ -1593,7 +1593,7 @@
 (define (canonicalize-typed-var-1 form)
   (match (cgen-canonical-typed-var-list (list (cdr form)) 'ScmObj)
     [((var ':: type . init-and-quals)) (values var type init-and-quals)]
-    [z (error "Invalid variable decl in " z form)]))
+    [z (errorf "Invalid variable decl ~s in ~s" z form)]))
 
 ;;=============================================================
 ;; Sealing the default environment

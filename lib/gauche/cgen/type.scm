@@ -37,6 +37,7 @@
   (use util.match)
   (use gauche.mop.instance-pool)
   (export <cgen-type> cgen-type-from-name make-cgen-type
+          cgen-canonical-typed-var-1
           cgen-canonical-typed-var-list
           cgen-boxer-name cgen-unboxer-name cgen-pred-name
           cgen-box-expr cgen-box-tail-expr cgen-unbox-expr cgen-pred-expr
@@ -377,7 +378,7 @@
 ;;
 ;;   (a b::<int> c::(<List> <integer>) :optional (d::<int> 3))
 ;;
-;; Canonicalization regognizes variations and produces this:
+;; Canonicalization recognizes variations and produces this:
 ;;
 ;;   ((a :: default-type)
 ;;    (b :: <int>)
@@ -406,89 +407,89 @@
 ;;
 
 ;; API
-;;   Take a list of typed var list, canonicalize the first one,
-;;   returns its canonical form and the rest of the input list.
-;;   Canonical form may be #f if the tip of the typed-var-list is
+;;   Take a list, an interpret its head element(s) as typed var.
+;;
+;;    typed-var :  (var :: type . rest)
+;;              |  (var:: type . rest)
+;;              |  (var ::type . rest)
+;;              |  (var::type . rest)
+;;              |  (var . rest)
+;;              |  ...  (other than above)
+;;
+;;   Returns its canonical form and the rest of the input list.
+;;   Canonical form may be #f if the tip of the typed-var is
 ;;   not a typed var.
-(define (cgen-canonical-typed-var-1 typed-var-list default-type)
-  ;; Split shorthand notations, returns type and rest
-  (define (expand-type elt seed)
-    (cond
-     [(keyword? elt)
-      (rxmatch-case (keyword->string elt)
-        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
-        [else (cons elt seed)])]
-     [(symbol? elt)
-      (rxmatch-case (symbol->string elt)
-        [#/^([^:]+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
-        [#/^([^:]+)::([^:]+)$/ (_ v t)
-            `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
-        [#/^([^:]+):(.*)$/ (#f #f #f) (err elt)]
-        [else (cons elt seed)])]
-     [else (cons elt seed)]))
+;;   This does not deal with ((var::type init) (var2::type2 init)) type list;
+;;   which is handled by cgen-canonical-typed-var.
+(define (cgen-canonical-typed-var-1 typed-var default-type)
+  (define (var::type? sym)
+    (and (symbol? sym)
+         (rxmatch-if (#/^([^:]+)::([^:]+)$/ (symbol->string sym))
+             [#f V T]
+           (list (string->symbol V) (string->symbol T))
+           #f)))
+  (define (var::? sym)
+    (and (symbol? sym)
+         (rxmatch-if (#/^([^:]+)::$/ (symbol->string sym))
+             [#f V]
+           (string->symbol V)
+           #f)))
+  (define (::type? sym)
+    (and (keyword? sym)
+         (rxmatch-if (#/^:([^:]+)$/ (keyword->string sym))
+             [#f T]
+           (string->symbol T)
+           #f)))
+  (define (var? sym)
+    (and (symbol? sym)
+         (not (string-index (symbol->string sym) #\:))))
 
+  (match typed-var
+    [() (values #f '())]
+    [(head . tail)
+     (cond [(var::type? head)
+            => (^[vt] (values `(,(car vt) :: ,(cadr vt)) tail))]
+           [(var::? head)
+            => (^v (match tail
+                     [(type . tail) (values `(,v :: ,type) tail)]
+                     [_ (error "missing type for " head)]))]
+           [(keyword? head) (values #f typed-var)]
+           [(var? head)
+            (match tail
+              [() (values `(,head :: ,default-type) tail)]
+              [(':: type . tail) (values `(,head :: ,type) tail)]
+              [(maybe-type . tail2)
+               (cond [(::type? maybe-type)
+                      => (^t (values `(,head :: ,t) tail2))]
+                     [else (values `(,head :: ,default-type) tail)])])]
+           [else (values #f typed-var)])])
+  )
+
+;; API
+;;   Process entire typed-var-list.  This can handle more complex one
+;;   than cgen-canonical-typed-var-1.
+;;
+;;    typed-var-list : (,@typed-var . typed-var-list)
+;;                   | ((,@typed-var) . typed-var-list)
+;;                   | (:keyword . typed-var-list)
+;;
+(define (cgen-canonical-typed-var-list typed-var-list default-type)
   (define (err decl) (error "invalid variable declaration:" decl))
-
-  (define (scan in r)
-    (match in
-      [() (reverse r)]
-      [([? keyword? xx] . rest) (reverse r (cons xx rest))]
-      [([? symbol? var] ':: type . rest)
-       (scan rest `((,var :: ,type) ,@r))]
-      [([? symbol? var] . rest)
-       (scan rest `((,var :: ,default-type) ,@r))]
-      [(([? symbol? v] [? symbol? t] . args) . rest)
-       (let1 sub (expand-type v (expand-type t args))
-         (match sub
-           [(_ ':: . _) (scan rest `(,sub ,@r))]
-           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
-      [(([? symbol? vt] . args) . rest)
-       (let1 sub (expand-type vt args)
-         (match sub
-           [(_ ':: . _) (scan rest `(,sub ,@r))]
-           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
-      [(xx . rest) (reverse r (cons xx rest))]))
-
-  (scan (fold-right expand-type '() typed-var-list) '()))
-
-(define (cgen-canonical-typed-var-list typed-var-list
-                                       default-type)
-  ;; Split shorthand notations
-  (define (expand-type elt seed)
-    (cond
-     [(keyword? elt)
-      (rxmatch-case (keyword->string elt)
-        [#/^:(.+)$/ (_ t) `(:: ,(string->symbol t) ,@seed)]
-        [else (cons elt seed)])]
-     [(symbol? elt)
-      (rxmatch-case (symbol->string elt)
-        [#/^([^:]+)::$/ (_ v) `(,(string->symbol v) :: ,@seed)]
-        [#/^([^:]+)::([^:]+)$/ (_ v t)
-            `(,(string->symbol v) :: ,(string->symbol t) ,@seed)]
-        [#/^([^:]+):(.*)$/ (#f #f #f) (err elt)]
-        [else (cons elt seed)])]
-     [else (cons elt seed)]))
-
-  (define (err decl) (error "invalid variable declaration:" decl))
-
-  (define (scan in r)
-    (match in
-      [() (reverse r)]
-      [([? keyword? xx] . rest) (reverse r (cons xx rest))]
-      [([? symbol? var] ':: type . rest)
-       (scan rest `((,var :: ,type) ,@r))]
-      [([? symbol? var] . rest)
-       (scan rest `((,var :: ,default-type) ,@r))]
-      [(([? symbol? v] [? symbol? t] . args) . rest)
-       (let1 sub (expand-type v (expand-type t args))
-         (match sub
-           [(_ ':: . _) (scan rest `(,sub ,@r))]
-           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
-      [(([? symbol? vt] . args) . rest)
-       (let1 sub (expand-type vt args)
-         (match sub
-           [(_ ':: . _) (scan rest `(,sub ,@r))]
-           [(var . opt) (scan rest `((,var :: ,default-type ,@opt) ,@r))]))]
-      [(xx . rest) (reverse r (cons xx rest))]))
-
-  (scan (fold-right expand-type '() typed-var-list) '()))
+  (define (scan typed-var-list)
+    (match typed-var-list
+      [() '()]
+      [((typed-var ...) . tail)
+       (receive (var&type opts)
+           (cgen-canonical-typed-var-1 typed-var default-type)
+         (if var&type
+           (cons (append var&type opts) (scan tail))
+           (err (car opts))))]
+      [((? keyword? k) . tail) (cons k (scan tail))]
+      [((? symbol? s) . _)
+       (receive (var&type tail)
+           (cgen-canonical-typed-var-1 typed-var-list default-type)
+         (if var&type
+           (cons var&type (scan tail))
+           (err s)))]
+      [_ (err typed-var-list)]))
+  (scan typed-var-list))
