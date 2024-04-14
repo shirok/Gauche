@@ -2834,7 +2834,7 @@ if the source strings differ, the result string always differ.
 現れたら、@code{_XX}に変換します。ここで@code{XX}はその文字の文字コードの
 16進数表現です(@code{_}自身も変換されます)。
 返される文字列はそのままCの識別子として使えます。
-この変換は全射であり、元の文字列が異なれば結果の文字列も異なったものになります。
+この変換は単射であり、元の文字列が異なれば結果の文字列も異なったものになります。
 @c COMMON
 
 @c EN
@@ -2859,7 +2859,7 @@ C code (which is not recommended, by the way.)
 @code{!}は@code{X} (例: @code{set!}は@code{setX}に),
 @code{<}と@code{>}はそれぞれ@code{_LT}と@code{_GT}になります。
 以上の文字を除く特殊な文字は@code{cgen-safe-name}と同様に@code{_XX}になります。
-この変換は全射ではありません。@code{read-line}と@code{read_line}は
+この変換は単射ではありません。@code{read-line}と@code{read_line}は
 ともに@code{read_line}になってしまいます。
 生成されたCコードを人間に読みやすくしたい場合に限り使ってください
 (ただ、生成したCコードを人間が読むことは推奨されません)。
@@ -2894,7 +2894,7 @@ comments).   The conversion isn't injective as well.
 (厳密には、エスケープするのは@code{*/}だけで良いはずですが、
 簡易的なCパーザには余分な@code{/*}で混乱してしまうものがあるかもしれないので
 @code{/*}もエスケープしています)。
-この変換も全射ではありません。
+この変換も単射ではありません。
 @c COMMON
 
 @example
