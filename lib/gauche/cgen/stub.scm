@@ -908,15 +908,6 @@
   (define (badarg arg)
     (errorf <cgen-stub-error> "bad argument in argspec: ~a in ~a" arg name))
 
-  ;; support old &-notation.  will fade away.
-  (define (xlate-old-lambda-keywords specs)
-    (map (^s (cond [(assq s '((&optional . :optional) (&keyword . :key)
-                              (&rest . :rest)
-                              (&allow-other-keys . :allow-other-keys)))
-                    => cdr]
-                   [else s]))
-         specs))
-
   (define (required specs args nreqs)
     (match specs
       [()                  (values (reverse args) '() nreqs 0 #f #f)]
@@ -1012,7 +1003,7 @@
                nreqs nopts #t other-keys?)]
       [_ (badarg (car specs))]))
 
-  (required (xlate-old-lambda-keywords argspecs) '() 0)
+  (required argspecs '() 0)
   )
 
 ;; returns two values, body stmts and return-type.  return-type can be #f
