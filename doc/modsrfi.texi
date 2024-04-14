@@ -8178,11 +8178,18 @@ This module only exports the procedures defined in @code{srfi.160}.
 
 @deftp {Module} srfi.162
 @mdindex srfi.162
+@c EN
 This is a supplement of SRFI-128, comparators.  It provides
 a few comparator procedures, as well as several useful
 pre-defined comparators, listed below.
 Theese pre-defined comparators are already built in Gauche,
 so see @ref{Predefined comparators} for the details.
+@c JP
+これはSRFI-128(比較器)への追加です。いくつかの比較器手続きと、
+以下に示す便利な定義済み比較器を提供します。
+Gaucheではこれらの定義済み比較器は組み込みになっているので、
+詳細は@ref{Predefined comparators}を参照してください。
+@c COMMON
 
 @example
 default-comparator    boolean-comparator    real-comparator
@@ -8197,9 +8204,15 @@ equal-comparator
 @defunx comparator-max comparator obj obj2 @dots{}
 [SRFI-162]
 @c MOD srfi.162
+@c EN
 Find the object in @var{obj1} @var{obj2} @dots{} that is
 minimum or maximum compared by @var{comparator}.
 Note: SRFI-114 provides the same procedures.
+@c JP
+@var{obj1} @var{obj2} @dots{}のうちから、
+@var{comparator}に基づいた最小あるいは最大の値を返します。
+SRFI-114にも同じ手続きがあります。
+@c COMMON
 
 @example
 (comparator-min list-comparator '(a c b) '(a d) '(a c))
@@ -8211,8 +8224,14 @@ Note: SRFI-114 provides the same procedures.
 @defunx comparator-min-in-list comparator list
 [SRFI-162]
 @c MOD srfi.162
+@c EN
 Find the object in @var{list} that is minimum or maximum compared
 by @var{comparator}.  It is an error if @var{list} is empty.
+@c JP
+@var{list}中のオブジェクトのうちから、
+@var{comparator}に基づいた最小あるいは最大の値を返します。
+@var{list}が空の場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
