@@ -1018,16 +1018,10 @@
 ;; returns two values, body stmts and return-type.  return-type can be #f
 ;; if unspecified.
 (define (extract-rettype forms)
-
-  (define (type-symbol? s)
-    (and (keyword? s) (#/^:[^:]/ (keyword->string s))))
-  (define (type-symbol-type s)
-    (string->symbol (string-drop (keyword->string s) 1)))
-
-  (match forms
-    [(':: type . body) (values body type)]
-    [([? type-symbol? ts] . body) (values body (type-symbol-type ts))]
-    [_ (values forms #f)]))
+  (receive (v&t body) (cgen-canonical-typed-var-1 (cons '_ forms) '<top>)
+    (match v&t
+      [(_ ':: rtype) (values body rtype)]
+      [#f (values forms #f)])))
 
 (define-method process-body ((cproc <cproc>) body)
   (let loop ((body body))
