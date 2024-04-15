@@ -315,14 +315,24 @@
    (args    :init-keyword :args)
    (handler :init-keyword :handler)))
 
+;; Register a parser for stub form (NAME ...).
+;; There's an implicit argument, &whole, which receives the original
+;; stub form.  It can be used to extract source info by form-source-info
 (define-macro (define-form-parser name args . body)
   `(make <form-parser> :name ',name :args ',args
          :handler (^ (&whole ,@args) ,@body)))
 
-(define-macro (define-form-parser-alias name orig)
-  `(if-let1 p (instance-pool-find <form-parser> (^o (eq? (~ o'name) ',orig)))
-     (make <form-parser> :name ',name :args (~ p'args) :handler (~ p'handler))
-     (error "unknown form parser:" ',orig)))
+;; Heuristics - Ideally &whole has source info, but
+;; precomp may have reconstructed the form and the
+;; original source info may be lost.  We try to find
+;; relevant info from a few subforms.
+;; Once we fix precomp, we can just say
+;; (debug-source-info &whole).
+(define (form-source-info &whole)
+  (or (debug-source-info &whole)
+      (debug-source-info (cdr &whole))
+      (debug-source-info (caddr &whole))))
+
 
 (define-syntax export-toplevel-cise-form
   (syntax-rules ()
@@ -796,15 +806,7 @@
                       :proc-name (make-literal (x->string scheme-name))
                       :return-type rettype :flags flags
                       :args args
-                      ;; Heuristics - Ideally &whole has source info, but
-                      ;; precomp may have reconstructed the form and the
-                      ;; original source info may be lost.  We try to find
-                      ;; relevant info from a few subforms.
-                      ;; Once we fix precomp, we can just say
-                      ;; (debug-source-info &whole).
-                      :source-info (or (debug-source-info &whole)
-                                       (debug-source-info (cdr &whole))
-                                       (debug-source-info (caddr &whole)))
+                      :source-info (form-source-info &whole)
                       :bind-info (and-let* ([m (current-tmodule)]
                                             [mod-name (~ m'name)]
                                             [ (symbol? mod-name) ])
@@ -1530,10 +1532,7 @@
                      :specializers specializers
                      :num-reqargs numargs
                      :args args
-                     ;; NB: See define-cproc about this.
-                     :source-info (or (debug-source-info &whole)
-                                      (debug-source-info (cdr &whole))
-                                      (debug-source-info (caddr &whole)))
+                     :source-info (form-source-info &whole)
                      :have-rest-arg? have-optarg?
                      )
         (let loop ([body body])
