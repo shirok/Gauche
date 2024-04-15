@@ -890,16 +890,8 @@
 
 ;; create arg object.  used in cproc and cmethod
 ;; NB: count arg is ignored if class is <keyword-arg> or <rest-arg>
-(define (make-arg class argname count . rest)
-  (define (grok-argname argname)
-    (let1 namestr (symbol->string argname)
-      (receive (realname typename) (string-scan namestr "::" 'both)
-        (if realname
-          (values (string->symbol realname)
-                  (name->type (string->symbol typename)))
-          (values argname *scm-type*)))))
-  (receive (arg type) (grok-argname argname)
-    (apply make class :name arg :type type :count count rest)))
+(define (make-arg class argname argtype count . rest)
+  (apply make class :name argname :type (name->type argtype) :count count rest))
 
 ;; returns a list of args, a list of keyword args, # of reqargs, # of
 ;; optargs, have-rest-arg?, and allow-other-keys?
@@ -907,6 +899,14 @@
 (define (process-cproc-args name argspecs)
   (define (badarg arg)
     (errorf <cgen-stub-error> "bad argument in argspec: ~a in ~a" arg name))
+
+  (define-syntax with-typed-var
+    (syntax-rules ()
+      [(_ specs (var-sym var-type var-rest) body ...)
+       (receive (var&type var-rest) (cgen-canonical-typed-var-1 specs '<top>)
+         (match var&type
+           [(var-sym ':: var-type) body ...]
+           [else (badarg specs)]))]))
 
   (define (required specs args nreqs)
     (match specs
@@ -918,17 +918,18 @@
        (errorf <cgen-stub-error>
                "misplaced :allow-other-key parameter: ~s in ~a" argspecs name)]
       [(':optarray (var cnt maxcnt) . specs)
-       (let1 args (cons (make-arg <optarray-arg> var nreqs
+       (let1 args (cons (make-arg <optarray-arg> var '<top> nreqs
                                   :count-var cnt :max-count maxcnt)
                         args)
          (match specs
            [() (values (reverse args) '() nreqs maxcnt #f #f)]
            [(':rest . specs) (rest specs args '() nreqs (+ maxcnt 1) #f)]
            [_ (badarg specs)]))]
-      [([? symbol? sym] . specs)
-       (required specs
-                 (cons (make-arg <required-arg> sym nreqs) args)
-                 (+ nreqs 1))]
+      [([? symbol? sym] . _)
+       ($ with-typed-var specs [var type rest]
+          (required rest
+                    (cons (make-arg <required-arg> var type nreqs) args)
+                    (+ nreqs 1)))]
       [_ (badarg (car specs))]))
 
   (define (optional specs args nreqs nopts)
@@ -946,21 +947,26 @@
       [(':allow-other-keys . specs)
        (error <cgen-stub-error>
               "misplaced :allow-other-keys parameter in "name)]
-      [([? symbol? sym] . specs)
-       (optional specs
-                 (cons (make-arg <optional-arg> sym (+ nreqs nopts)
-                                 :opt-count nopts)
-                       args)
-                 nreqs
-                 (+ nopts 1))]
-      [(([? symbol? sym] default) . specs)
-       (optional specs
-                 (cons (make-arg <optional-arg> sym (+ nreqs nopts)
-                                 :opt-count nopts
-                                 :default (make-literal default))
-                       args)
-                 nreqs
-                 (+ nopts 1))]
+      [([? symbol? sym] . _)
+       ($ with-typed-var specs [var type rest]
+          (optional rest
+                    (cons (make-arg <optional-arg> var type (+ nreqs nopts)
+                                    :opt-count nopts)
+                          args)
+                    nreqs
+                    (+ nopts 1)))]
+      [(([? symbol? sym] . _) . rest)
+       ($ with-typed-var (car specs) [var type opts]
+          (match opts
+            [(default)
+             (optional rest
+                       (cons (make-arg <optional-arg> var type (+ nreqs nopts)
+                                       :opt-count nopts
+                                       :default (make-literal default))
+                             args)
+                       nreqs
+                       (+ nopts 1))]
+            [_ (badarg (car specs))]))]
       [_ (badarg (car specs))]))
 
   (define (keyword specs args keyargs nreqs nopts)
@@ -981,24 +987,29 @@
        (error <cgen-stub-error>
               ":optarray and :optional can't be used together in "name)]
       [(':rest . specs)     (rest specs args keyargs nreqs nopts #f)]
-      [([? symbol? sym] . specs)
-       (keyword specs args
-                (cons (make-arg <keyword-arg> sym 0)
-                      keyargs)
-                nreqs nopts)]
-      [(([? symbol? sym] default) . specs)
-       (keyword specs args
-                (cons (make-arg <keyword-arg> sym 0
-                                :default (make-literal default))
-                      keyargs)
-                nreqs nopts)]
+      [([? symbol? sym] . _)
+       ($ with-typed-var specs [var type rest]
+          (keyword rest args
+                   (cons (make-arg <keyword-arg> var type 0)
+                         keyargs)
+                   nreqs nopts))]
+      [(([? symbol? sym] . _) . rest)
+       ($ with-typed-var (car specs) [var type opts]
+          (match opts
+            [(default)
+             (keyword rest args
+                      (cons (make-arg <keyword-arg> var type 0
+                                      :default (make-literal default))
+                            keyargs)
+                      nreqs nopts)]
+            [_ (badarg (car specs))]))]
       [_ (badarg (car specs))]))
 
   (define (rest specs args keyargs nreqs nopts other-keys?)
     (match specs
       [() (values (reverse args) (reverse keyargs) nreqs nopts #t other-keys?)]
-      [((? symbol? sym))
-       (values (reverse (cons (make-arg <rest-arg> sym 0) args))
+      [((? symbol? var))
+       (values (reverse (cons (make-arg <rest-arg> var '<list> 0) args))
                (reverse keyargs)
                nreqs nopts #t other-keys?)]
       [_ (badarg (car specs))]))
@@ -1601,14 +1612,14 @@
     (cond [(null? arglist)
            (values (reverse args) specs (length args) #f)]
           [(symbol? arglist)
-           (values (cons (make-arg <rest-arg> arglist (length args))
+           (values (cons (make-arg <rest-arg> arglist '<top> (length args))
                          args)
                    (cons "Scm_ListClass" specs)
                    (length args) #t)]
           [(not (pair? arglist)) (badlist)]
           [(symbol? (car arglist))
            (loop (cdr arglist)
-                 (cons (make-arg <required-arg> (car arglist) (length args))
+                 (cons (make-arg <required-arg> (car arglist) '<top> (length args))
                        args)
                  (cons "Scm_TopClass" specs))]
           [(not (and (pair? (car arglist))
@@ -1618,7 +1629,7 @@
            (badlist)]
           [else
            (loop (cdr arglist)
-                 (cons (make-arg <required-arg> (caar arglist) (length args))
+                 (cons (make-arg <required-arg> (caar arglist) '<top> (length args))
                        args)
                  (cons (cadar arglist) specs))]
           )))
