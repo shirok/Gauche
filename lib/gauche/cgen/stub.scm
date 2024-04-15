@@ -1021,6 +1021,16 @@
                nreqs nopts #t other-keys?)]
       [_ (badarg (car specs))]))
 
+  ;; TRANSIENT: We dropped CL-style &optional etc. (See commit #ec3e5b69a395)
+  ;; Some old code may still have them, though.  We catch it and raise an
+  ;; error, rather than leaving it to the later stages which will cause
+  ;; incomprehensible errors.
+  (dolist [s argspecs]
+    (when (memq s '(&optional &keyword &rest &allow-other-keys))
+      (errorf <cgen-stub-error>
+              "Encountered obsoleted lambda-keyword ~s.  Use ~s instead."
+              s (make-keyword (string-copy (symbol->string s) 1)))))
+  ;; Main body
   (required argspecs '() 0)
   )
 
