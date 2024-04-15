@@ -413,7 +413,12 @@
            (make-cgen-type name #f c-type desc c-pred unbox box))
          args))
 
-(define-form-parser-alias define-type declare-stub-type)
+(define-form-parser define-type args
+  (warn "define-type is deprecated.  Use declare-stub-type instead: ~s\n"
+        `(define-type ,@args))
+  (apply (^[name c-type :optional (desc #f) (c-pred #f) (unbox #f) (box #f)]
+           (make-cgen-type name #f c-type desc c-pred unbox box))
+         args))
 
 ;; default
 (define *scm-type* (name->type '<top>))
