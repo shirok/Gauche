@@ -42,7 +42,7 @@
    (return (-> mq (empty))))
 
  (define-cproc mqueue-push! (mq::<mqueue> message::<const-cstring>
-                                          &optional (urgency::<int> 0))
+                                          :optional (urgency::<int> 0))
    ::<int>
    (return (-> mq (pushMessage message urgency))))
 
