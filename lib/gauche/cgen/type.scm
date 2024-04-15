@@ -77,7 +77,7 @@
 ;;  - Maybe types.  (<?> TYPE).  In stub context, we only concern maybe type
 ;;    that can be unboxed into a C pointer type.  In addition to the objects
 ;;    of TYPE, it maps Scheme's #f to C's NULL and vice versa.
-;;    For the convenicne, maybe type can be notated as TYPE? in the stub,
+;;    For the convenience, maybe type can be notated as TYPE? in the stub,
 ;;    e.g. <port>?
 ;;
 ;; In general, types defined in extensions can't be directly accesible from
