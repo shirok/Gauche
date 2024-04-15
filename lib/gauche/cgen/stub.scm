@@ -1609,30 +1609,26 @@
   (let loop ([arglist arglist]
              [args    '()]
              [specs   '()])
-    (cond [(null? arglist)
-           (values (reverse args) specs (length args) #f)]
-          [(symbol? arglist)
-           (values (cons (make-arg <rest-arg> arglist '<top> (length args))
-                         args)
-                   (cons "Scm_ListClass" specs)
-                   (length args) #t)]
-          [(not (pair? arglist)) (badlist)]
-          [(symbol? (car arglist))
-           (loop (cdr arglist)
-                 (cons (make-arg <required-arg> (car arglist) '<top> (length args))
-                       args)
-                 (cons "Scm_TopClass" specs))]
-          [(not (and (pair? (car arglist))
-                     (= (length (car arglist)) 2)
-                     (symbol? (caar arglist))
-                     (string? (cadar arglist))))
-           (badlist)]
-          [else
-           (loop (cdr arglist)
-                 (cons (make-arg <required-arg> (caar arglist) '<top> (length args))
-                       args)
-                 (cons (cadar arglist) specs))]
-          )))
+    (match arglist
+      [() (values (reverse args) (reverse specs) (length args) #f)]
+      [(? symbol?)  ;; ([arg ...] . rest)
+       (values (reverse (cons (make-arg <rest-arg> arglist '<list> (length args))
+                              args))
+               (reverse (cons "Scm_ListClass" specs))
+               (length args) #t)]
+      [((? symbol? var) . arglist)
+       (loop arglist
+             (cons (make-arg <required-arg> var '<top> (length args))
+                   args)
+             (cons "Scm_TopClass" specs))]
+      [(((? symbol? var) (? string? c-class-name)) . arglist)
+       ;; NB: The variable is typed, but we only know its C class-name.
+       ;; For the time being, we create <required-arg> with <top>.
+       (loop arglist
+             (cons (make-arg <required-arg> var '<top> (length args))
+                   args)
+             (cons c-class-name specs))]
+      [_ (badlist)])))
 
 ;;===================================================================
 ;; Class
