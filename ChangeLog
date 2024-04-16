@@ -1,3 +1,13 @@
+2024-04-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_SysExec),
+	  src/libsys.scm (%sys-escape-windows-command-line): When a BAT file
+	  is run via CreateProcess, Windoes uses different rules to parse
+	  the command line, causing a security risk.  We reject 'unsafe'
+	  characters in the command line arguments if BAT file is the program
+	  to run.  See CVE-2024-3566
+	  https://nvd.nist.gov/vuln/detail/CVE-2024-3566
+
 2024-04-10  Shiro Kawai  <shiro@acm.org>
 
 	* DIST, test/standalone.scm: Run build-standalone with the installed

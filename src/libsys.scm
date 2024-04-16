@@ -1795,10 +1795,21 @@
 ;; The correct way is to get {N consecutive backslashes + double-quote},
 ;; then replace it to {2N+1 consecutive backslashes + double-quote}.
 ;;
-(define (%sys-escape-windows-command-line s)
+;; The flag BATFILEP is true when the command to be executed is a batch
+;; file.  In that case, the command line is parsed differently and the rule
+;; is so twisted that it is virtually impossible to make it right.
+;; For now, we reject arguments that contain 'unsafe' characters.
+;; Cf. https://nvd.nist.gov/vuln/detail/CVE-2024-3566
+(define (%sys-escape-windows-command-line s batfilep)
   (cond [(not (string? s))
          (%sys-escape-windows-command-line (write-to-string s))]
         [(equal? s "") "\"\""]
+        [batfilep
+         (when (#/[()%!^<>&|\"]/ s)
+           (errorf "It is unsafe to pass argument ~s to BAT file." s))
+         (if (string-scan s #\space)
+           (string-append "\"" s "\"")
+           s)]
         [(#/[&<>\[\]{}^=\;!\'+,`~\s]/ s)
          ($ string-append "\""
             ($ regexp-replace-all #/(\\*)\"/ s
