@@ -702,9 +702,11 @@
                                              [gauche.os.windows 'windows]
                                              [else 'posix])))
   (ecase flavor
+   ;; Windows flavors is supported in src/libsys.scm.  See the comment in it.
    [(windows)
-    ;; This is supported in src/libsys.scm.  See the comment in it.
-    (%sys-escape-windows-command-line str)]
+    (%sys-escape-windows-command-line str #f)]
+   [(windows-batchfile)
+    (%sys-escape-windows-command-line str #t)]
    [(posix)
     ;; We follow standard unix shell convention: if STR contains special
     ;; chars, we quote the entire STR by single-quotes.  If STR contains
