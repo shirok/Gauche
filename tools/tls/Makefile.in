@@ -5,14 +5,14 @@
 .PHONY: mbedtls
 
 # update these for new MbedTLS version / repo
-MBEDTLS_VERSION = 3.2.1
-MBEDTLS_SOURCE  = https://github.com/ARMmbed/mbedtls/archive/v$(MBEDTLS_VERSION).tar.gz
+MBEDTLS_VERSION = 3.6.0
+MBEDTLS_SOURCE  = https://github.com/Mbed-TLS/mbedtls/releases/download/v$(MBEDTLS_VERSION)/mbedtls-$(MBEDTLS_VERSION).tar.bz2
 
 
 LN_S = @LN_S@
 OBJEXT = @OBJEXT@
 
-FETCHED = v$(MBEDTLS_VERSION).tgz
+FETCHED = mbedtls-$(MBEDTLS_VERSION).tar.bz2
 CONFIG_GENERATED = Makefile
 
 MBEDTLS_LIBS_XTRA = libmbedx509.a libmbedcrypto.a
@@ -27,6 +27,7 @@ include/mbedtls: libmbedtls.a
 	rm -rf include
 	mkdir include
 	cd include && $(LN_S) ../mbedtls-$(MBEDTLS_VERSION)/include/mbedtls .
+	cd include && $(LN_S) ../mbedtls-$(MBEDTLS_VERSION)/include/psa .
 
 $(MBEDTLS_LIBS_XTRA) : libmbedtls.a
 
@@ -38,12 +39,12 @@ libmbedtls.a: mbedtls-$(MBEDTLS_VERSION)
 	 && cd library                               \
 	 && cp $(MBEDTLS_LIBS) ../..
 
-mbedtls-$(MBEDTLS_VERSION): v$(MBEDTLS_VERSION).tgz
-	tar xzvf v$(MBEDTLS_VERSION).tgz
+mbedtls-$(MBEDTLS_VERSION): $(FETCHED)
+	tar xjvf $(FETCHED)
 	echo 'set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")' >> mbedtls-$(MBEDTLS_VERSION)/library/CMakeLists.txt
 
-v$(MBEDTLS_VERSION).tgz:
-	curl -f -L -o v$(MBEDTLS_VERSION).tgz $(MBEDTLS_SOURCE)
+$(FETCHED):
+	curl -f -L -o $(FETCHED) $(MBEDTLS_SOURCE)
 
 # list-objects target is called by src/list-ext-objects.sh to gather
 # object files to archive into static gauche library.

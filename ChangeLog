@@ -1,3 +1,8 @@
+2024-04-16  Shiro Kawai  <shiro@acm.org>
+
+	* tools/tls/Makefile.in (include/mbedtls): Bumped MbedTLS version
+	  to 3.6.0 to fetch with --with-tls=mbedtls-internal.
+
 2024-04-15  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec),
