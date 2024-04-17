@@ -1806,7 +1806,7 @@
         [(equal? s "") "\"\""]
         [batfilep
          (when (#/[()%!^<>&|\"]/ s)
-           (errorf "It is unsafe to pass argument ~s to BAT file." s))
+           (errorf "It is unsafe to pass argument ~s to BAT or CMD file." s))
          (if (string-scan s #\space)
            (string-append "\"" s "\"")
            s)]

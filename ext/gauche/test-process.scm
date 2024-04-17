@@ -644,6 +644,49 @@
   (t "a\"b\"\"\"\" c"      '("ab\"" "c")               'windows)
   )
 
+(cond-expand
+ [gauche.os.windows
+  ;; Testing fix for vulnerability https://kb.cert.org/vuls/id/123335
+  ;; NB: We avoid using call-with-temporary-directory, for file.util
+  ;; isn't tested yet when we run this test.
+  (define-syntax with-temp-files
+    (syntax-rules ()
+      [(_ body ...)
+       (unwind-protect
+           (begin
+             (with-output-to-file "test.bat"
+               (^[]
+                 (print "@ECHO OFF")
+                 (print "ECHO %1-%2-%3")))
+             (with-output-to-file "test.cmd"
+               (^[]
+                 (print "@ECHO OFF")
+                 (print "ECHO %1-%2-%3")))
+             body ...)
+         (sys-unlink "test.bat")
+         (sys-unlink "test.cmd"))]))
+
+  (with-temp-files
+   ;; Taking executable path doesn't work on all platforms, but we know
+   ;; it works on Windows.
+   (let1 gosh (with-module gauche.internal (%gauche-executable-path))
+     (test* "Windows escaping quirks (exe)" "(a b)"
+            (process-output->string `(,gosh "-Eprint *argv*" "-Eexit" _ a b)))
+     (test* "Windows escaping quirks (exe)" "(\"&whoami)"
+            (process-output->string `(,gosh "-Eprint *argv*" "-Eexit" _ "\"&whoami"))))
+   (test* "Windows escaping quirks (bat)" "a-b-c"
+            (process-output->string `("test.bat" a b c)))
+   (test* "Windows escaping quirks (bat)" (test-error <error> #/unsafe/)
+            (process-output->string `("test.bat" "\"&whoami")))
+   (test* "Windows escaping quirks (cmd)" "a-b-c"
+            (process-output->string `("test.cmd" a b c)))
+   (test* "Windows escaping quirks (cmd)" (test-error <error> #/unsafe/)
+            (process-output->string `("test.cmd" "\"&whoami")))
+   )]
+ [else])
+
+
+
 ;;-------------------------------
 (test-section "unwind-protect upon exit")
 
