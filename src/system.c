@@ -1578,16 +1578,42 @@ void win_process_cleanup(void *data SCM_UNUSED)
  *   of the command line is up to each application, THERE IS NO WAY TO
  *   GUARANTEE TO QUOTE THE ARGUMENTS PROPERLY.   This is intolerably
  *   broken specification.
+ *
+ *   If the program to run is .BAT or .CMD file, it is possible to
+ *   manufacture an argument that injects undesired command execution.
+ *   It is practically impossible to avoid the situation, so we rejects
+ *   such an argument in the case.  See:
+ *   https://flatt.tech/research/posts/batbadbut-you-cant-securely-execute-commands-on-windows/
  */
 #if defined(GAUCHE_WINDOWS)
-char *win_create_command_line(ScmObj args, int batfilep)
+static _Bool unsafe_program(TCHAR *program_path, int program_path_len)
 {
-    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
+    if (program_path_len < 4) return FALSE;
+    TCHAR *extp = program_path + program_path_len - 4;
+    if (*extp != '.') return FALSE;
+    if ((extp[1] == 'b' || extp[1] == 'B')
+        && (extp[2] == 'a' || extp[2] == 'A')
+        && (extp[3] == 't' || extp[3] == 'T'))
+        return TRUE;
+    if ((extp[1] == 'c' || extp[1] == 'C')
+        && (extp[2] == 'm' || extp[2] == 'M')
+        && (extp[3] == 'd' || extp[3] == 'D'))
+        return TRUE;
+    return FALSE;
+}
+
+static char *win_create_command_line(TCHAR *program_path,
+                                     int program_path_len,
+                                     ScmObj args)
+{
     static ScmObj proc = SCM_UNDEFINED;
     SCM_BIND_PROC(proc, "%sys-escape-windows-command-line", Scm_GaucheModule());
+
+    _Bool unsafep = unsafe_program(program_path, program_path_len);
+    ScmObj ostr = Scm_MakeOutputStringPort(TRUE);
     ScmObj ap;
     SCM_FOR_EACH(ap, args) {
-        ScmObj escaped = Scm_ApplyRec2(proc, SCM_CAR(ap), SCM_MAKE_BOOL(batfilep));
+        ScmObj escaped = Scm_ApplyRec2(proc, SCM_CAR(ap), SCM_MAKE_BOOL(unsafep));
         Scm_Printf(SCM_PORT(ostr), "%A ", escaped);
     }
     ScmObj out = Scm_GetOutputStringUnsafe(SCM_PORT(ostr), 0);
@@ -1710,34 +1736,16 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     }
 
     if (forkp) {
-        TCHAR  program_path[MAX_PATH+1], *filepart;
+        TCHAR program_path[MAX_PATH+1], *filepart;
         win_redirects *hs = win_prepare_handles(fds);
         PROCESS_INFORMATION pi;
         DWORD creation_flags = 0;
 
-        BOOL pathlen = SearchPath(NULL, SCM_MBS2WCS(program),
-                                  _T(".exe"), MAX_PATH, program_path,
-                                  &filepart);
+        DWORD pathlen = SearchPath(NULL, SCM_MBS2WCS(program),
+                                   _T(".exe"), MAX_PATH, program_path,
+                                   &filepart);
         if (pathlen == 0) Scm_SysError("cannot find program '%s'", program);
         program_path[pathlen] = 0;
-
-        /* When the program is a BAT file, CreateProcess invokes cmd.exe,
-           which parses the command line differently than C runtime.
-           Particularly, we can't safely escape 'dangerous' characters
-           in arguments.  We change escape handling if the program is
-           a BAT file.  Note that we already expanded the program path,
-           so if it is a BAT file, program_path must have ".bat" suffix
-           (case insensitive).
-           Cf. https://nvd.nist.gov/vuln/detail/CVE-2024-3566
-         */
-        int batfile = FALSE;
-        if (pathlen >= 4 &&
-            program_path[pathlen-4] == '.' &&
-            (program_path[pathlen-3]=='b' || program_path[pathlen-3]=='B') &&
-            (program_path[pathlen-2]=='a' || program_path[pathlen-2]=='A') &&
-            (program_path[pathlen-1]=='t' || program_path[pathlen-1]=='T')) {
-            batfile = TRUE;
-        }
 
         STARTUPINFO si;
         GetStartupInfo(&si);
@@ -1755,8 +1763,9 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
             creation_flags |= CREATE_NEW_PROCESS_GROUP;
         }
 
+        char *cmdline = win_create_command_line(program_path, pathlen, args);
         BOOL r = CreateProcess(program_path,
-                               SCM_MBS2WCS(win_create_command_line(args, batfile)),
+                               SCM_MBS2WCS(cmdline),
                                NULL, /* process attr */
                                NULL, /* thread addr */
                                TRUE, /* inherit handles */
