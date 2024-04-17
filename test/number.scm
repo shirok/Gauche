@@ -2468,6 +2468,21 @@
   (test* "cos vs cospi" #f (check real-cos real-cospi))
   (test* "tan vs tanpi" #f (check real-tan real-tanpi)))
 
+;; atan branch cuts (R7RS 6.2.6)
+(let ((pi 3.141592653589793))
+  (test* "atan +0.0 +x" +0.0        (atan 0.0 1) eqv?)
+  (test* "atan -0.0 +x" -0.0        (atan -0.0 1) eqv?)
+  (test* "atan +0.0 -x" pi          (atan +0.0 -1) eqv?)
+  (test* "atan -0.0 -x" (- pi)      (atan -0.0 -1) eqv?)
+  (test* "atan +0.0 +0.0" +0.0      (atan +0.0 +0.0) eqv?)
+  (test* "atan -0.0 +0.0" -0.0      (atan -0.0 +0.0) eqv?)
+  (test* "atan +0.0 -0.0" pi        (atan +0.0 -0.0) eqv?)
+  (test* "atan -0.0 -0.0" (- pi)    (atan -0.0 -0.0) eqv?)
+  (test* "atan +0.0 0" (/ pi 2)     (atan +0.0 0) eqv?)
+  (test* "atan -0.0 0" (- (/ pi 2)) (atan -0.0 0) eqv?)
+  (test* "atan 0 0" #t (nan? (atan 0 0)))
+  )
+
 (let ()
   (test* "cos + degrees->radians" -1
          (cos (degrees->radians 180))

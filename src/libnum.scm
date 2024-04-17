@@ -787,7 +787,14 @@
                    (log (- 1 iz)))
                 +2i))]
           [else (error "number required, but got" z)])
-    (real-atan z (car x))))
+    (cond [(and (eq? (car x) 0) (zero? z))
+           ;; Special case.  See R7RS.
+           (cond [(eq? z 0) +nan.0]
+                 [(negative-zero? z) -1.5707963267948966]
+                 [else +1.5707963267948966])]
+          [(and (real? z) (real? (car x))) (real-atan z (car x))]
+          [else (error "two-argument atan requires real numbers, but got"
+                       (list z (car x)))])))
 
 (define (atanh z)
   (cond [(real? z) (real-atanh z)]

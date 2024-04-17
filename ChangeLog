@@ -3,6 +3,7 @@
 	* src/libnum.scm (sin etc.): Let them always return inexact numbers.
 	  Previously we had (sin #e0) => #e0 etc., but it's not necessary,
 	  and diverging from real-sin etc. isn't desirable.
+	  (atan): Fix the special case when both args are zero.
 
 2024-04-16  Shiro Kawai  <shiro@acm.org>
 
