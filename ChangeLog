@@ -1,5 +1,9 @@
 2024-04-16  Shiro Kawai  <shiro@acm.org>
 
+	* ext/tls/tls-mbed.c (Scm_Init_rfc__tls__mbed): Add missing
+	  psa_crypto_init() to fix TLS handshake error.
+	  https://github.com/shirok/Gauche/issues/1018
+
 	* tools/tls/Makefile.in (include/mbedtls): Bumped MbedTLS version
 	  to 3.6.0 to fetch with --with-tls=mbedtls-internal.
 

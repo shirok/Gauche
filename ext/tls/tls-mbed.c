@@ -619,6 +619,10 @@ void Scm_Init_rfc__tls__mbed()
                               win_mutex_unlock);
 #  endif //MBEDTLS_THREADING_ALT
 
+    /* We need this before the first TLS handshake.
+       Cf. https://github.com/Mbed-TLS/mbedtls/issues/8401 */
+    psa_crypto_init();
+
 #else
     /* insert dummy binding */
     SCM_DEFINE(mod, "<mbed-tls>", SCM_FALSE);
