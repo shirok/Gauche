@@ -1,3 +1,9 @@
+2024-04-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (sin etc.): Let them always return inexact numbers.
+	  Previously we had (sin #e0) => #e0 etc., but it's not necessary,
+	  and diverging from real-sin etc. isn't desirable.
+
 2024-04-16  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls-mbed.c (Scm_Init_rfc__tls__mbed): Add missing

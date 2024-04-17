@@ -2451,20 +2451,6 @@
 ;;------------------------------------------------------------------
 (test-section "trigonometric functions")
 
-;; Exactness
-(let ()
-  (define (check msg fn %fn val)
-    (test* msg (exact (%fn val)) (fn val) eqv?))
-  (check "exact (sin 0)" sin real-sin 0)
-  (check "exact (cos 0)" cos real-cos 0)
-  (check "exact (tan 0)" tan real-tan 0)
-  (check "exact (sinh 0)" sinh real-sinh 0)
-  (check "exact (cosh 0)" cosh real-cosh 0)
-  (check "exact (tanh 0)" tanh real-tanh 0)
-  (check "exact (asin 0)" asin real-asin 0)
-  (check "exact (acos 1)" acos real-acos 1)
-  (check "exact (atan 0)" atan real-atan 0))
-
 (let ()
   (define (check trig trig-pi)
     (let loop ([x -4])

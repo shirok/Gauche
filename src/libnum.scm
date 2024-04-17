@@ -684,7 +684,7 @@
 
 (select-module gauche)
 (define-in-module scheme (cos z)
-  (cond [(real? z) (if (eqv? 0 z) 1 (real-cos z))]
+  (cond [(real? z) (real-cos z)]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -693,7 +693,7 @@
         [else (error "number required, but got" z)]))
 
 (define (cosh z)
-  (cond [(real? z) (if (eqv? z 0) 1 (real-cosh z))]
+  (cond [(real? z) (real-cosh z)]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -702,7 +702,7 @@
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (sin z)
-  (cond [(real? z) (if (eqv? 0 z) 0 (real-sin z))]
+  (cond [(real? z) (real-sin z)]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -711,7 +711,7 @@
         [else (error "number required, but got" z)]))
 
 (define (sinh z)
-  (cond [(real? z) (if (eqv? 0 z) 0 (real-sinh z))]
+  (cond [(real? z) (real-sinh z)]
         [(number? z)
          (let ([x (real-part z)]
                [y (imag-part z)])
@@ -720,7 +720,7 @@
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (tan z)
-  (cond [(real? z) (if (eqv? 0 z) 0 (real-tan z))]
+  (cond [(real? z) (real-tan z)]
         [(number? z)
          (let1 iz (* +i z)
            (* -i
@@ -729,14 +729,13 @@
         [else (error "number required, but got" z)]))
 
 (define (tanh z)
-  (cond [(real? z) (if (eqv? 0 z) 0 (real-tanh z))]
-        [(number? z)
-         (/ (- (exp z) (exp (- z)))
-            (+ (exp z) (exp (- z))))]
+  (cond [(real? z) (real-tanh z)]
+        [(number? z) (/ (- (exp z) (exp (- z)))
+                        (+ (exp z) (exp (- z))))]
         [else (error "number required, but got" z)]))
 
 (define-in-module scheme (asin z)
-  (cond [(real? z) (if (eqv? z 0) 0 (real-asin z))]
+  (cond [(real? z) (real-asin z)]
         [(number? z)
          ;; The definition of asin is
          ;;   (* -i (log (+ (* +i z) (sqrt (- 1 (* z z))))))
@@ -753,15 +752,16 @@
         [else (error "number required, but got" z)]))
 
 (define (asinh z)
-  (if (real? z)
-    (real-asinh z)
-    (let1 zz (+ z (sqrt (+ (* z z) 1)))
-      (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
-        (make-rectangular +nan.0 +nan.0)
-        (log zz)))))
+  (cond [(real? z) (real-asinh z)]
+        [(number? z)
+         (let1 zz (+ z (sqrt (+ (* z z) 1)))
+           (if (< (/. (magnitude zz) (magnitude z)) 1.0e-8)
+             (make-rectangular +nan.0 +nan.0)
+             (log zz)))]
+        [else (error "number required, but got" z)]))
 
 (define-in-module scheme (acos z)
-  (cond [(real? z) (if (eqv? z 1) 0 (real-acos z))]
+  (cond [(real? z) (real-acos z)]
         [(number? z)
          ;; The definition of acos is
          ;;  (* -i (log (+ z (* +i (sqrt (- 1 (* z z)))))))))
@@ -772,29 +772,27 @@
         [else (error "number required, but got" z)]))
 
 (define (acosh z)
-  (if (real? z)
-    (real-acosh z)
-    ;; See the discussion of CLtL2, pp. 313-314
-    (* 2 (log (+ (sqrt (/ (+ z 1) 2))
-                 (sqrt (/ (- z 1) 2)))))))
+  (cond [(real? z) (real-acosh z)]
+        [(number? z);; See the discussion of CLtL2, pp. 313-314
+         (* 2 (log (+ (sqrt (/ (+ z 1) 2))
+                      (sqrt (/ (- z 1) 2)))))]
+        [else (error "number required, but got" z)]))
 
 (define-in-module scheme (atan z . x)
-  (if (eq? z 0)
-    0
-    (if (null? x)
-      (cond [(real? z) (real-atan z)]
-            [(number? z)
-             (let1 iz (* z +i)
-               (/ (- (log (+ 1 iz))
-                     (log (- 1 iz)))
-                  +2i))]
-            [else (error "number required, but got" z)])
-      (real-atan z (car x)))))
+  (if (null? x)
+    (cond [(real? z) (real-atan z)]
+          [(number? z)
+           (let1 iz (* z +i)
+             (/ (- (log (+ 1 iz))
+                   (log (- 1 iz)))
+                +2i))]
+          [else (error "number required, but got" z)])
+    (real-atan z (car x))))
 
 (define (atanh z)
-  (if (real? z)
-    (real-atanh z)
-    (/ (- (log (+ 1 z)) (log (- 1 z))) 2)))
+  (cond [(real? z) (real-atanh z)]
+        [(number? z) (/ (- (log (+ 1 z)) (log (- 1 z))) 2)]
+        [else (error "number required, but got" z)]))
 
 (select-module gauche)
 (define-cproc radians->degrees (r::<double>) ::<double> :constant :fast-flonum
