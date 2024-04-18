@@ -32804,8 +32804,14 @@ module if you need to handle subprocess' exit status
 
 @c EN
 On Windows native platforms this will pass the argument to @code{cmd.exe}.
+We strongly discourage invoking @code{cmd.exe} with externally
+supplied arguments, since it is impossible to safely escape
+arbitrary string for @code{cmd.exe} arguments on Windows.
 @c JP
 Windowsネイティブな環境では、引数は@code{cmd.exe}に渡されます。
+外部から供給された文字列を引数にして@code{cmd.exe}を呼び出すことは
+避けてください。Windowsの@code{cmd.exe}に渡す任意の文字列を安全にエスケープすることは
+事実上不可能です。
 @c COMMON
 @end defun
 
@@ -32898,6 +32904,20 @@ All elements of @var{args} must be strings.  The first element of
 @var{args}の全ての要素は文字列でなければなりません。
 @var{args}の最初の要素は、@code{argv[0]}、すなわちプログラム名として
 使われます。
+@c COMMON
+
+@c EN
+(NB: On Windows, you can invoke batch files (@file{*.bat}, @file{*.cmd})
+using @code{sys-exec} and @code{sys-fork-and-exec}, but you can't
+use characters @code{()%!^<>&|"} within the command-line arguments,
+since there's no comprehensive way to escape them safely.
+You can pass them if you directly invoke an executable file.)
+@c JP
+(註: Windowsでは、@code{sys-exec}と@code{sys-fork-and-exec}で
+バッチファイル(@file{*.bat}, @file{*.cmd})を起動することもできます。
+ただその場合、コマンドライン引数に文字@code{()%!^<>&|"}のいずれかを含めることは
+できません。これらの文字を安全にエスケープする包括的な方法が無いからです。
+実行可能ファイルを直接指定する場合はこの制限はありません。)
 @c COMMON
 
 @c EN
