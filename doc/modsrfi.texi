@@ -9687,77 +9687,148 @@ bitvector-field-flip     bitvector-field-flip!
 
 @deftp {Module} srfi.180
 @mdindex srfi.180
+@c EN
 This srfi defines the means of parsing and constructin JSON.
 
 In Gauche, this module is implemented on top of @code{rfc.json} module
 (@pxref{JSON parsing and construction}).
 Notably, the parameter @code{json-nesting-depth-limit} is the same
 as the one in @code{rfc.json}.
+@c JP
+このsrfiはJSONフォーマットをパーズ、および構築する手段を定義します。
 
+Gaucheでは、このモジュールは@code{rfc.json}の上に実装されています
+(@ref{JSON parsing and construction}参照)。
+特に、@code{json-nesting-depth-limit}パラメータは@code{rfc.json}のものと同じです。
+@c COMMON
+
+@c EN
 Gauche's @code{rfc.json} is more flexible in terms of mapping
 JSON objects to Scheme objects.  On the other hand, @code{srfi.180}
 provides a streaming parser/generator, which allows the caller
 to process input as it is read, instead of waiting the entire
 input to be parsed.
+@c JP
+Gaucheの@code{rfc.json}は、JSONオブジェクトとSchemeオブジェクト間のマッピングを
+カスタマイズできるという点でより柔軟です。一方、
+@code{srfi.180}はストリーミングパーザとジェネレータを提供しており、
+入力を全て読んでからパーズ結果を得るのではなく、入力を読みながら処理することができます。
+@c COMMON
 @end deftp
 
+@c EN
 @subheading Predicates and parameters
+@c JP
+@subheading 述語とパラメータ
+@c COMMON
 
 @defun json-error? obj
 [SRFI-180]
 @c MOD srfi.180
+@c EN
 JSON reader and writer raise a condition that satisfies
 this predicate when it encounters invalid JSON syntax and/or object,
 or the input exceeds the limits specified by
 @code{json-nesting-depth-limit} or
 @code{json-number-of-character-limit} parameters.
+@c JP
+JSONのリーダとライターは、不正なJSON構文や、JSONで表現できないオブジェクトに
+行き当たった場合、あるいは入力がパラメータ@code{json-nesting-depth-limit}や
+や@code{json-number-of-character-limit}で示される限度を越えた場合に、
+この述語を満たすコンディションオブジェクトを投げます。
+@c COMMON
 
+@c EN
 Since @code{srfi.180} is implemented on top of @code{rfc.json},
 which raises a condition @code{<json-parse-error>} for input and
 @code{<json-construct-error>} for the output, this predicate simply
 returns @code{#t} iff @var{obj} is an instance of either class.
 @xref{JSON parsing and construction}, for the detail of these conditions.
+@c JP
+Gaucheでは@code{srfi.180}は@code{rfc.json}上に実装されていて、
+@code{rfc.json}はパーズ時のエラーには@code{<json-parse-error>}を、
+構築時のエラーには@code{<json-construct-error>}を投げるので、
+この述語は@var{obj}がそれらのクラスのどちらかのインスタンスであれば
+@code{#t}を返します。
+これらのコンディションについては@ref{JSON parsing and construction}を参照してください。
+@c COMMON
 @end defun
 
 @defun json-error-reason err
 [SRFI-180]
 @c MOD srfi.180
-Returns a string explaining the reasonfor the error @var{err},
+@c EN
+Returns a string explaining the reason for the error @var{err},
 if @var{err} is a JSON error object (an object that satisfies
 @code{json-error?}).
+@c JP
+@var{err}がJSONエラーオブジェクト (@code{json-error?}を満たすオブジェクト)
+であった場合、エラーの理由を説明する文字列を返します。
+@c COMMON
 
+@c EN
 In Gauche, a JSON error object is an instance of either
 @code{<json-parse-error>} or @code{<json-construct-error>})
 conditions, and @code{json-error-reason} simply returns the content of
 its @code{message} slot.
+@c JP
+GaucheではJSONエラーオブジェクトは@code{<json-parse-error>}か
+@code{<json-construct-error>}コンディションタイプのインスタンスであり、
+@code{json-error-reason}は単にコンディションオブジェクトの@code{message}スロットの
+値を返します。
+@c COMMON
 @end defun
 
 @defun json-null? obj
 [SRFI-180]
 @c MOD srfi.180
+@c EN
 Returns @code{#t} iff @var{obj} is the symbol @code{null}.
+@c JP
+@var{obj}がシンボル@code{null}であれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @deffn {Parameter} json-number-of-character-limit
 [SRFI-180]
 @c MOD srfi.180
+@c EN
 A parameter that holds a real value.  If the number of characters
 of input JSON text exceeds the value while @code{json-generator},
 @code{json-fold} or @code{json-read} is processing the input,
 a JSON error is thrown.
+@c JP
+実数を値に持つパラメータです。@code{json-generator}、@code{json-fold}、
+および@code{json-read}で入力のJSONテキストの文字数がこの値を越えた場合、
+JSONエラーが投げられます。
+@c COMMON
 @end deffn
 
+@c EN
 @subheading JSON reader
+@c JP
+@subheading JSONリーダ
+@c COMMON
 
 @defun json-generator :optional port-or-generator
 [SRFI-180]
 @c MOD srfi.180
+@c EN
 Streaming parser.  The input @var{port-or-generator} must be
 an input port, or a char generator.
+@c JP
+ストリーミングパーザ。
+@var{port-or-generator}は入力ポートか、文字のジェネレータでなければなりません。
+@c COMMON
 
+@c EN
 Each time it is called, it returns one of the following values, parsed
 from the input.
+@c JP
+この手続きは、呼ばれる度に、必要なだけ入力を読んで次のいずれかの値を返します。
+@c COMMON
 
+@c EN
 @table @asis
 @item string
 JSON string.
@@ -9780,6 +9851,31 @@ The ending of an object.
 @item EOF
 After one top-level JSON value is read, the generator returns EOF.
 @end table
+@c JP
+@table @asis
+@item 文字列
+JSON文字列
+@item 実数
+JSON数値
+@item @code{#t}, @code{#f}
+JSONの@code{true}と@code{false}
+@item @code{null}
+JSONの@code{null}
+@item @code{array-start}
+配列の開始。次に対応する@code{array-end}が出てくるまで、
+配列の要素をストリーミングで返す。
+@item @code{array-end}
+配列の終了。
+@item @code{object-start}
+オブジェクトの開始。この後、文字列のキーとJSONの値が交互に返される。
+終了は@code{object-end}で示される。
+@item @code{object-end}
+オブジェクトの終了。
+@item EOF
+ひとつのトップレベルのJSON値が全て読まれたら、ジェネレータはEOFを返す。
+@end table
+@c COMMON
+
 
 The generator internally tracks the state, and raises
 @code{<json-parse-error>} when the input contains invalid JSON text.
