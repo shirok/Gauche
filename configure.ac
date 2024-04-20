@@ -502,7 +502,7 @@ dnl Also adds -D__USE_MINGW_ANSI_STDIO to CFLAGS to support
 dnl  C99 printf format string.
 dnl ALTERNATIVE_GOSH is no-console version of gosh; only built on Windows.
 case "$host" in
-  *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi -lws2_32"
+  *mingw*) LIBS="$LIBS -lnetapi32 -lshlwapi -lws2_32 -lbcrypt"
            ALTERNATIVE_GOSH="gosh-noconsole.exe"
            CFLAGS="$CFLAGS -DUNICODE -D__USE_MINGW_ANSI_STDIO" ;;
   *)       ALTERNATIVE_GOSH="" ;;
