@@ -42,6 +42,7 @@
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
+#include <psa/crypto.h>         /* for psa_crypto_init */
 
 /* Define this to enable mbedtls debugging */
 //#define MBEDTLS_DEBUG 1
