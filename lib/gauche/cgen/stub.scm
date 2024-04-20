@@ -1021,17 +1021,19 @@
                nreqs nopts #t other-keys?)]
       [_ (badarg (car specs))]))
 
-  ;; TRANSIENT: We dropped CL-style &optional etc. (See commit #ec3e5b69a395)
-  ;; Some old code may still have them, though.  We catch it and raise an
-  ;; error, rather than leaving it to the later stages which will cause
-  ;; incomprehensible errors.
-  (dolist [s argspecs]
-    (when (memq s '(&optional &keyword &rest &allow-other-keys))
-      (errorf <cgen-stub-error>
-              "Encountered obsoleted lambda-keyword ~s.  Use ~s instead."
-              s (make-keyword (string-copy (symbol->string s) 1)))))
+  ;; TRANSIENT: We tried to drop CL-style &optional etc., but there are
+  ;; arcane code that still uses them.  We warn it in this release, and
+  ;; drop it in the next release.
+  (define (filter-argspecs ss)
+    (map (^s (if (memq s '(&optional &keyword &rest &allow-other-keys))
+               (rlet1 proper (make-keyword (string-copy (symbol->string s) 1))
+                 (warn "define-cproc argument keyword ~s is deprecated.  \
+                        Use ~s instead.\n" s proper))
+               s))
+         ss))
+
   ;; Main body
-  (required argspecs '() 0)
+  (required (filter-argspecs argspecs) '() 0)
   )
 
 ;; returns two values, body stmts and return-type.  return-type can be #f
