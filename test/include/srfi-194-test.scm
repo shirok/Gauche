@@ -385,7 +385,8 @@
                                     10000))
                   (define ratio (/ actual expect))
                   (test-assert (> ratio 8/10))
-                  (test-assert (< ratio 12/10)))
+                  (test-assert (< ratio 12/10))
+                  #t)
                 (list->generator test-points)))
 
             (test-poisson 2 (make-poisson-generator 2) '(1 2 3))
