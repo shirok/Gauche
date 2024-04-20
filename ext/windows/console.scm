@@ -195,7 +195,7 @@
     (SCM_SET_CLASS z (& Scm_WinConsoleScreenBufferInfoClass))
     (return (SCM_OBJ z))))
 
-(define-type <win:console-screen-buffer-info>
+(declare-stub-type <win:console-screen-buffer-info>
   "ScmWinConsoleScreenBufferInfo*" "CONSOLE_SCREEN_BUFFER_INFO"
   "SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO_P"
   "SCM_WIN_CONSOLE_SCREEN_BUFFER_INFO")
@@ -259,7 +259,7 @@
     (SCM_SET_CLASS z (& Scm_WinInputRecordClass))
     (return (SCM_OBJ z))))
 
-(define-type <win:input-record>
+(declare-stub-type <win:input-record>
   "ScmWinInputRecord*" "INPUT_RECORD"
   "SCM_WIN_INPUT_RECORD_P"
   "SCM_WIN_INPUT_RECORD")
