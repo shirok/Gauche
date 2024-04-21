@@ -187,7 +187,7 @@
 
 ;; API
 (define (path->gauche-package-description path)
-  (guard (e [(or (<io-error> e) (<read-error> e))
+  (guard (e [(or (<io-error> e) (<read-error> e) (<system-error> e))
              (errorf "couldn't read the package description ~s: ~a"
                      path (ref e 'message))])
     (match (file->sexp-list path)
