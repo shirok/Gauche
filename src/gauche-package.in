@@ -43,6 +43,7 @@
 (use scheme.list)
 (use srfi.13)
 (use text.tr)
+(use util.match)
 
 (autoload gauche.package.build
           gauche-package-build
@@ -503,33 +504,62 @@ Options:
                   [pkg-dir  "package-dir=s"]
                   [license "license=s"])
     (define dstdir (or pkg-dir "."))
-    (define package
-      (guard (e [(#/read the package descr/ (~ e'message))
-                 (exit 1 "Can't read package.scm.  Run this command \
-                          in the top directory of an extension package.")])
-        (path->gauche-package-description (build-path dstdir "package.scm"))))
-    (let* ([srcdir (or tmpl-dir
-                       (build-path (sys-dirname (gauche-library-directory))
-                                   "package-templates"))]
-           [lic (cond [license (string->symbol (string-downcase license))]
-                      [(~ package'licenses) pair?
-                       => ($ string->symbol $ string-downcase $ car $)]
-                      [else #f])]
-           [mod (if (pair? (~ package'providing-modules))
-                  (car (~ package'providing-modules))
-                  (exit 1 "Missing providing-modules in package.scm."))])
-      (receive [installed preserved]
-          (copy-templates srcdir dstdir (~ package'name)
-                          :module-name mod
-                          :scheme-only #t ;for now
-                          :license lic
-                          :licensor (string-join (~ package'authors) ", ")
-                          :preserve #t
-                          :verbose verbose)
-        (format #t "File~p installed:\n" (length installed))
-        (display-multicolumn installed :indent 4)
-        (format #t "File~p preserved:\n" (length preserved))
-        (display-multicolumn preserved :indent 4)))))
+    (define (P file) (build-path dstdir file))
+    (define (populate-with-package) ;when we have package.scm
+      (let* ([package
+              (guard (e [(#/read the package descr/ (~ e'message))
+                         (exit 1 "Can't read package.scm: ~a" (~ e'message))])
+                (path->gauche-package-description (P "package.scm")))]
+             [lic (cond [license (string->symbol (string-downcase license))]
+                        [(~ package'licenses) pair?
+                         => ($ string->symbol $ string-downcase $ car $)]
+                        [else #f])]
+             [mod (if (pair? (~ package'providing-modules))
+                    (car (~ package'providing-modules))
+                    (exit 1 "Missing providing-modules in package.scm."))])
+        (do-copy! (~ package'name) mod (~ package'authors) lic)))
+    (define (do-copy! package-name module-name authors license)
+      (let ([srcdir (or tmpl-dir
+                         (build-path (sys-dirname (gauche-library-directory))
+                                     "package-templates"))])
+        (receive [installed preserved]
+            (copy-templates srcdir dstdir package-name
+                            :module-name module-name
+                            :scheme-only #t ;for now
+                            :license license
+                            :licensor (string-join authors ", ")
+                            :preserve #t
+                            :verbose verbose)
+          (format #t "File~p installed:\n" (length installed))
+          (display-multicolumn installed :indent 4)
+          (format #t "File~p preserved:\n" (length preserved))
+          (display-multicolumn preserved :indent 4))))
+    (define (guess-package-name)        ;when we don't have package.scm
+      (cond [(file-exists? (P "configure.ac"))
+             (cond [(any #/AC_INIT\(\s*([\w-]+)/
+                         (file->string-list (P "configure.ac")))
+                    => (^m (m 1))]
+                   [else (exit 1 "Failed to obtain package name from 'configure.ac'")])]
+            [(file-exists? (P "configure"))
+             (let1 bad
+                 (^[] (exit 1 "Failed to obtain package name from 'configure'"))
+               (guard (e [(<read-error> e) (bad)])
+                 (or (any (^x (match x
+                                [('cf-init pkg-name . _) pkg-name]
+                                [_ #f]))
+                          (file->sexp-list (P "configure")))
+                     (bad))))]
+            [else #f]))
+    (define (populate-without-package package-name)
+      (do-copy! package-name #f '() #f)
+      (print "We created a template 'package.scm'.  Make sure to edit it for \
+              your package.  You might also want to change 'configure'."))
+
+    (cond [(file-exists? (P "package.scm")) (populate-with-package)]
+          [(guess-package-name) => populate-without-package]
+          [else  (exit 1 "Cannot find any of 'package.scm', 'configure.ac', \
+                          or 'configure'")]))
+  )
 
 ;;------------------------------------------------------
 ;; make-tarball
