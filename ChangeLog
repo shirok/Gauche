@@ -1,6 +1,10 @@
-2024-04-22  Shiro Kawai  <shiro@acm.org>
+2024-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* Release 0.9.15
+
+	* tools/tls/Makefile.in: Downgraded MbedTLS-internal version to
+	  3.5.2, since 3.6.0 has an issue on MinGW.  See
+	  https://github.com/shirok/Gauche/issues/1021
 
 	* lib/gauche/configure.scm (cf-call-with-cpp): Added.
 

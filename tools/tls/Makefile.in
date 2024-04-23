@@ -5,14 +5,15 @@
 .PHONY: mbedtls
 
 # update these for new MbedTLS version / repo
-MBEDTLS_VERSION = 3.6.0
-MBEDTLS_SOURCE  = https://github.com/Mbed-TLS/mbedtls/releases/download/v$(MBEDTLS_VERSION)/mbedtls-$(MBEDTLS_VERSION).tar.bz2
+MBEDTLS_VERSION = 3.5.2
+#MBEDTLS_SOURCE  = https://github.com/Mbed-TLS/mbedtls/releases/download/v$(MBEDTLS_VERSION)/mbedtls-$(MBEDTLS_VERSION).tar.bz2
+MBEDTLS_SOURCE  = https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v$(MBEDTLS_VERSION).tar.gz
 
 
 LN_S = @LN_S@
 OBJEXT = @OBJEXT@
 
-FETCHED = mbedtls-$(MBEDTLS_VERSION).tar.bz2
+FETCHED = mbedtls-$(MBEDTLS_VERSION).tar.gz
 CONFIG_GENERATED = Makefile
 
 MBEDTLS_LIBS_XTRA = libmbedx509.a libmbedcrypto.a
@@ -40,7 +41,7 @@ libmbedtls.a: mbedtls-$(MBEDTLS_VERSION)
 	 && cp $(MBEDTLS_LIBS) ../..
 
 mbedtls-$(MBEDTLS_VERSION): $(FETCHED)
-	tar xjvf $(FETCHED)
+	tar xzvf $(FETCHED)
 	echo 'set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")' >> mbedtls-$(MBEDTLS_VERSION)/library/CMakeLists.txt
 
 $(FETCHED):
