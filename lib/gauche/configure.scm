@@ -102,6 +102,7 @@
 
           cf-lang <c-language>
           cf-lang-program cf-lang-io-program cf-lang-call
+          cf-call-with-cpp
           cf-try-compile cf-try-compile-and-link
 
           cf-check-header cf-header-available? cf-check-headers
@@ -349,6 +350,8 @@
   ;; for them).
   (cf-subst 'CC (gauche-config "--cc"))
   (cf-subst 'CFLAGS (gauche-config "--default-cflags"))
+  (cf-subst 'CPP (gauche-config "--cpp"))
+  (cf-subst 'CPPFLAGS (gauche-config "--cppflags"))
   (cf-arg-var 'CPP)
   (cf-arg-var 'CPPFLAGS)
   (cf-arg-var 'CC)
@@ -965,6 +968,7 @@
                     output-files)])
     (apply cf-output outfiles)))
 
+
 ;;;
 ;;; Target languages
 ;;;
@@ -1088,6 +1092,25 @@
             ($ generator-for-each (cut log-format "| ~a" <>)
                $ file->line-generator #"conftest.~(cf-lang-ext)"))
           (zero? st)))
+    (clean)))
+
+;; API (no autoconf equivalent)
+;; Run preprocessor and calls proc with an input port receiving the output
+;; of the preprocessor.
+(define (cf-call-with-cpp prologue body proc)
+  (define file #"conftest.~(cf-lang-ext)")
+  (define cmd `(,@(shell-tokenize-string (cf-lang-cpp-m (cf-lang))) ,file))
+  (define (clean)
+    (remove-files (glob "conftest.err*") file))
+  (define process #f)
+  (unwind-protect
+      (begin
+        (log-format "configure: ~s" cmd)
+        (with-output-to-file file
+          (cut write-tree #?=(cf-lang-program prologue body)))
+        (set! process #?,(run-process cmd :output :pipe))
+        (proc (process-output process)))
+    (when process (process-kill process))
     (clean)))
 
 ;; API
