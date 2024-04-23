@@ -330,7 +330,7 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
       str
       (if-let1 d ((with-module gauche.internal %gauche-runtime-directory))
         (string-join ss d)
-        (error "Couldn't obtain installation directory.")))))
+        (error "Couldn't obtain installation directory to complete " str)))))
 
 (define *configurations*
   (quote
