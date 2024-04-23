@@ -1,5 +1,5 @@
 #!/bin/sh
-# Tailor mbedtls_config.h for proper threading support
+# Tailor mbedtls_config.h for proper threading & AES support
 
 # First argument must be either 'pthreads' or 'win32'
 thread_model=$1
@@ -35,3 +35,17 @@ case $thread_model in
         exit 1
         ;;
 esac
+
+# TRANSIENT: As of MbedTLS 3.5.2, AESHI isn't supported on
+# windows/gcc/i686 combination.  Check this back when we adopt
+# newer releases of MbedTLS.
+case `gcc -dumpmachine` in
+    i686-*-mingw32)    use_aeshi=no;;
+    *)                 use_aeshi=yes;;
+esac
+
+if [ $use_aeshi = 'no' ]; then
+    sed -e 's@^#define MBEDTLS_AESNI_C@//#define MBEDTLS_AESNI_C@' \
+            $config_path > ${config_path}.tmp \
+          && mv ${config_path}.tmp $config_path
+fi
