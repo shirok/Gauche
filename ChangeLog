@@ -1,5 +1,7 @@
 2024-04-22  Shiro Kawai  <shiro@acm.org>
 
+	* Release 0.9.15
+
 	* lib/gauche/configure.scm (cf-call-with-cpp): Added.
 
 	* src/genconfig.in: Add --cpp and --cppflags for C preprocessor
