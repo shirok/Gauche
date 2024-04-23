@@ -35,6 +35,9 @@ which are required to compile applications that links Gauche library.
 .B --cc
 Name of the compiler used to compile the current installation.
 .TP
+.B --cpp
+Command to run the C preprocessor used to compile the current installation.
+.TP
 .B --ac
 Directory name that contains Gauche specific autoconf macro.
 .TP
@@ -100,7 +103,11 @@ Some unix variants require special flags.  On other platforms
 this is the same as '--so-ldflags'.
 .TP
 .B --rpath-flag
-Compler flag(s) to embed RPATH in the binary.
+Compiler flag(s) to embed RPATH in the binary.
+.TP
+.B --cppflags
+Compiler flag(s) to run the C preprocessor of the current installaion.
+(e.g. 'so' or 'dll').
 .TP
 .B --libgauche-so
 The name of shared library of libgauche.

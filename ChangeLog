@@ -1,3 +1,8 @@
+2024-04-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in: Add --cpp and --cppflags for C preprocessor
+	  configration.  Useful for 'configure' script.
+
 2024-04-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/libnum.scm (sin etc.): Let them always return inexact numbers.

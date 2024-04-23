@@ -81,7 +81,9 @@ if [ ! -z "@LOCAL_LIBDIRS@" ]; then
 fi
 
 cc="@CC@"
+cpp="@CPP@"
 default_cflags="@DEFAULT_CFLAGS@"
+cppflags="@CPPFLAGS@"
 
 object_suffix="@OBJEXT@"
 executable_suffix="@EXEEXT@"
@@ -139,6 +141,8 @@ static void usage (void) {
         "       path contains whitespaces.  See --archdirs below.)\\n"
         "  -l   libraries required to link programs using gauche\\n"
         "  --cc name of the compiler\\n"
+        "  --cpp\\n"
+        "       command to run the C preprocessor\\n"
         "  --ac directory that contains Gauche specific autoconf macro\\n"
         "  --reconfigure\\n"
         "       prints the command line used to configure the current\\n"
@@ -179,6 +183,8 @@ static void usage (void) {
         "       LDFLAGS to create dynamically linked libraries\\n"
         "  --rpath-flag\\n"
         "       Compiler flag(s) to embed RPATH\\n"
+        "  --cppflags\\n"
+        "       Compiler flag(s) passed to C preprocessor\\n"
         "  --static-libs\\n"
         "       Returns a list of libraries required to link Gauche statically.\\n"
         "       Similar to '-l', but this includes the libraries that are used\\n"
@@ -198,6 +204,7 @@ static struct cmd_rec {
     { "--ac", "$gauche_aclocaldir" },
     { "-l", "-l$garchabi $gauche_libs" },
     { "--cc", "$cc" },
+    { "--cpp", "$cpp" },
     { "--reconfigure", "./configure $gauche_configure_args" },
 
     { "--prefix",      "$prefix" },
@@ -220,6 +227,7 @@ static struct cmd_rec {
     { "--local-libdir", "$local_lib" },
 
     { "--default-cflags", "$default_cflags" },
+    { "--cppflags",       "$cppflags" },
 
     { "--object-suffix",  "$object_suffix" },
     { "--executable-suffix", "$executable_suffix" },
@@ -332,6 +340,7 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
     ("--ac"  "$gauche_aclocaldir")
     ("-l"  "-l$garchabi $gauche_libs")
     ("--cc"  "$cc")
+    ("--cpp" "$cpp")
     ("--reconfigure"  "./configure $gauche_configure_args")
 
     ("--prefix"       "$prefix")
@@ -354,6 +363,7 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
     ("--local-libdir"  "$local_lib")
 
     ("--default-cflags"  "$default_cflags")
+    ("--cppflags"        "$cppflags")
 
     ("--object-suffix"   "$object_suffix")
     ("--executable-suffix"  "$executable_suffix")
