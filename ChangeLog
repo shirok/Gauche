@@ -5,6 +5,7 @@
 	* tools/tls/Makefile.in: Downgraded MbedTLS-internal version to
 	  3.5.2, since 3.6.0 has an issue on MinGW.  See
 	  https://github.com/shirok/Gauche/issues/1021
+	* tools/tls/process-config.sh: Need to tweak MinGW i686 build.
 
 	* lib/gauche/configure.scm (cf-call-with-cpp): Added.
 
