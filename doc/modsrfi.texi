@@ -16267,9 +16267,14 @@ returns @code{#f}.
 @defun each-of proc @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Returns a procedure that works, when applied to arguments, applies
 each @var{proc} on the arguments in turn.  The result of
 @var{proc}s are discarded.
+@c JP
+手続きを返します。返された手続きは、適用された際に、
+各@var{proc}を順に呼び出します。@var{proc}の結果は捨てられます。
+@c COMMON
 
 @example
 (define (f x y) (print (+ x y)))
@@ -16283,6 +16288,7 @@ each @var{proc} on the arguments in turn.  The result of
 @defun all-of pred
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Returns a procedure that takes one argument, a list.
 The returned procedure tries to apply @var{pred} to each element
 of @var{list} in turn.
@@ -16291,6 +16297,15 @@ returns the last result of @var{pred}. If the returned procedure
 is applied to an empty list, @code{#t} is returned.
 
 The following equivalence holds:
+@c JP
+リストをひとつ取る手続きを返します。
+返された手続きは、リストの要素に順に@var{pred}を適用してゆきます。
+それが@code{#f}を返したらそこで適用を打ち切り@code{#f}を返します。
+そうでなければ最後の@var{pred}の適用結果を返します。
+空リストに適用された場合は@code{#t}を返します。
+
+次の等価性が成り立ちます:
+@c COMMON
 @example
 ((all-of pred) list) @equiv{} (every pred list)
 @end example
@@ -16299,6 +16314,7 @@ The following equivalence holds:
 @defun any-of pred
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Returns a procedure that takes one argument, a list.
 The returned procedure applies @var{pred} to each element
 of @var{list} in turn.
@@ -16307,6 +16323,15 @@ returns @code{#f}.   If the returned procedure
 is applied to an empty list, @code{#f} is returned.
 
 The following equivalence holds:
+@c JP
+リストをひとつ取る手続きを返します。
+返された手続きは、リストの要素に順に@var{pred}を適用してゆきます。
+それが真の値を返したらそこで適用を打ち切りその値を返します。
+そうでなければ@code{#f}を返します
+空リストに適用された場合は@code{#f}を返します。
+
+次の等価性が成り立ちます:
+@c COMMON
 @example
 ((any-of pred) list) @equiv{} (any pred list)
 @end example
@@ -16315,8 +16340,13 @@ The following equivalence holds:
 @defun on reducer mapper
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Returns a procedure such that @code{(apply (on reducer mapper) args)}
 works as if @code{(apply reducer (map mapper args))}.
+@c JP
+@code{(apply (on reducer mapper) args)}が
+@code{(apply reducer (map mapper args))}と同じ動作になるような手続きを返します。
+@c COMMON
 
 @example
 (define square-sum (on + square))
