@@ -137,7 +137,7 @@
                    '() opts)))
 
 (define (library-for-each mod/path proc . opts)
-  (apply library-fold mod/path (^[mod path seed] (proc mod path)) '() opts))
+  (apply library-fold mod/path (^[mod path seed] (proc mod path) #t) '() opts))
 
 ;; Try to determine the file is a module source file
 ;;  NB: this will be more involved when we allow more than one modules

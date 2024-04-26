@@ -1,5 +1,8 @@
 2024-04-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/libutil.scm (library-for-each): Make it agnostic
+	  to the return value of given proc.
+
 	* lib/gauche/interactive/completion.scm (%complete-module-name):
 	  Avoid the closure returining #<undef>.
 	  https://github.com/shirok/Gauche/issues/1022
