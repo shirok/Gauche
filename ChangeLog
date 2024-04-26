@@ -1,3 +1,7 @@
+2024-04-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: SRFI-252 went final, so we officially support it.
+
 2024-04-23  Shiro Kawai  <shiro@acm.org>
 
 	* Release 0.9.15

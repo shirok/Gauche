@@ -1691,3 +1691,13 @@ Supported by the module @code{srfi.247}
 構文的モナド
 @code{srfi.247}でサポートされます
 (@ref{Syntactic monads}参照)。
+
+
+srfi-252, srfi-252
+()
+
+Property testing
+Supported by the module @code{srfi.252}
+
+プロパティテスト
+@code{srfi.252}でサポートされます。
