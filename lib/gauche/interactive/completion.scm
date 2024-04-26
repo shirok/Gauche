@@ -137,7 +137,7 @@
       [ws (let1 xw (string-join (map (^w #"~|w|*") ws) ".")
             #"{~|xw|,~|xw|.**.*}")]))
   (library-fold (string->symbol glob-pattern)
-                (^[mod _ _] (hash-table-put! found mod #t))
+                (^[mod _ _] (hash-table-put! found mod #t) #t)
                 #f)
   (match (map x->string (hash-table-keys found))
     [(w) w]                             ;single final completion result

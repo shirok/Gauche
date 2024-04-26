@@ -1,5 +1,9 @@
 2024-04-25  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive/completion.scm (%complete-module-name):
+	  Avoid the closure returining #<undef>.
+	  https://github.com/shirok/Gauche/issues/1022
+
 	* src/srfis.scm: SRFI-252 went final, so we officially support it.
 
 2024-04-23  Shiro Kawai  <shiro@acm.org>
