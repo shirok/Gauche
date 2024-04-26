@@ -105,6 +105,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Codesets::                    srfi.238
 * Destructuring lists::         srfi.239
 * Syntactic monads::            srfi.247
+* Property testing::            srfi.252
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -16872,7 +16873,7 @@ match the third type of clause
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Syntactic monads,  , Destructuring lists, Library modules - SRFIs
+@node Syntactic monads, Property testing, Destructuring lists, Library modules - SRFIs
 @section @code{srfi.247} - Syntactic monads
 @c NODE 構文的モナド, @code{srfi.247} - 構文的モナド
 
@@ -16886,6 +16887,150 @@ arguments.
 @defmac define-syntactic-monad name formal @dots{}
 @c MOD srfi.247
 @end defmac
+
+
+@c ----------------------------------------------------------------------
+@node Property testing,  , Syntactic monads, Library modules - SRFIs
+@section @code{srfi.252} - Property testing
+@c NODE プロパティテスト, @code{srfi.252} - プロパティテスト
+
+@deftp {Module} srfi.252
+@mdindex srfi.252
+Property testing is to feed random input to a component to be tested
+and see if it satisfies certain properties hold.  The method was made
+popular with Haskell's QuickCheck.
+
+This module provides to groups of APIs; one for running property tests,
+and another for generating random input.
+
+The test procedures are integrated with @code{gauche.test}
+(@pxref{Unit testing}).  The SRFI is designed to be used with
+SRFI-64 (@pxref{A Scheme API for test suites}); in Gauche, you can
+run them with either of modules.
+
+The generators are built on top of @code{data.random}
+(@pxref{Random data generators}).  They are provided for
+the convenience; you can use any generator to create input feed.
+@end deftp
+
+@subheading Testing forms
+
+@defun test-property property-check generator-list :optional runs
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun test-property-expect-fail property-check generator-list :optional runs
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun test-property-skip property-check generator-list :optional runs
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun test-property-error property-check generator-list :optional runs
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun test-property-error-type property-check generator-list :optional runs
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun property-test-runner
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@subheading Generators
+
+@defun boolean-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun bytevector-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun char-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun string-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun symbol-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun complex-generator
+@defunx inexact-complex-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun exact-complex-generator
+@defunx exact-integer-complex-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun integer-generator
+@defunx exact-integer-generator
+@defunx inexact-integer-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun number-generator
+@defunx exact-number-generator
+@defunx inexact-number-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun rational-generator
+@defunx exact-rational-generator
+@defunx inexact-rational-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun real-generator
+@defunx exact-real-generator
+@defunx inexact-real-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun list-generator-of elt-generator :optional max-length
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun vector-generator-of elt-generator :optional mex-length
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun pair-generator-of car-generator :optional cdr-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
+
+@defun procedure-generator-of value-generator
+[SRFI-252]
+@c MOD srfi.252
+@end defun
 
 
 @c Local variables:

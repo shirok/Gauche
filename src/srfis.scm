@@ -1698,6 +1698,8 @@ srfi-252, srfi-252
 
 Property testing
 Supported by the module @code{srfi.252}
+(@pxref{Property testing}.
 
 プロパティテスト
-@code{srfi.252}でサポートされます。
+@code{srfi.252}でサポートされます
+(@ref{プロパティテスト}参照)。
