@@ -19044,6 +19044,13 @@ Use this procedure when you need to build a command-line string by yourself.
 (If you pass a command-line argument list, instead of a single
 command-line string, you don't need to escape them since we
 bypass the shell.)
+
+(NB: Use this with caution on Windows; if you run a batch file
+(@file{*.bat} or @file{*.cmd}), its command-line arguments are
+parsed differently, and it is known that there's no safe escaping
+way that works for all the cases.  It's up to you to ensure
+all arugments are safe when you run those files.  See also
+@code{sys-exec} (@pxref{Process management})).
 @c JP
 @var{str}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
 それらがシェルによって解釈されないようにエスケープされた文字列を返します。
@@ -19062,6 +19069,13 @@ bypass the shell.)
 (単一のコマンドライン文字列でなく、コマンドライン引数のリストを渡す場合は
 エスケープの必要はありません。引数はシェルを通さずに子プロセスに渡される
 からです。)
+
+(註: Windowsでバッチファイル(@file{*.bat}、@file{*.cmd})を起動する場合は、
+コマンドラインが異なる方法でパーズされることに注意してください。
+特に、あらゆる場合に対して安全に引数をエスケープする方法が無いことが
+知られています。バッチファイルに渡す引数を用意する場合は独自にそれが
+安全であることを確かめて下さい。@code{sys-exec}のエントリも参照のこと
+(@ref{Process management}))。
 @c COMMON
 @end defun
 
