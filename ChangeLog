@@ -1,3 +1,9 @@
+2024-04-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm__InitVM): Flip the default value of
+	  CHECK_UNDEFIFNED_TEST flag.  Now it is on by default,
+	  and is suppressed with env var GAUCHE_ALLOW_UNDEFINED_TEST.
+
 2024-04-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/libutil.scm (library-for-each): Make it agnostic

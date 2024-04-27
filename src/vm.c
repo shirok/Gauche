@@ -4358,8 +4358,10 @@ void Scm__InitVM(void)
     Scm_AddCleanupHandler(print_flush_fpstack_count, NULL);
 #endif
 
-    if (Scm_GetEnv("GAUCHE_CHECK_UNDEFINED_TEST") != NULL) {
-        SCM_VM_RUNTIME_FLAG_SET(rootVM, SCM_CHECK_UNDEFINED_TEST);
+    if (Scm_GetEnv("GAUCHE_ALLOW_UNDEFINED_TEST") != NULL) {
+        SCM_VM_RUNTIME_FLAG_CLEAR(rootVM, SCM_CHECK_UNDEFINED_TEST);
+    } else {
+        SCM_VM_RUNTIME_FLAG_SET(rootVM, SCM_CHECK_UNDEFINED_TEST); /* default */
     }
     if (Scm_GetEnv("GAUCHE_LEGACY_DEFINE") != NULL) {
         SCM_VM_COMPILER_FLAG_SET(rootVM, SCM_COMPILE_LEGACY_DEFINE);
