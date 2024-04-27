@@ -16915,30 +16915,40 @@ the convenience; you can use any generator to create input feed.
 
 @subheading Testing forms
 
-@defun test-property property-check generator-list :optional runs
+@defmac test-property property-check generator-list :optional runs
 [SRFI-252]
 @c MOD srfi.252
-@end defun
+@var{property-check} is a procedure accepts input, and returns
+@code{#t} if the property is satisfied, @code{#f} if not.
+The input is fed from generators listed in @var{generator-list};
+it must have as many generators as the number of arguments
+@var{property-check} accepts.
 
-@defun test-property-expect-fail property-check generator-list :optional runs
-[SRFI-252]
-@c MOD srfi.252
-@end defun
+The optional argument @var{runs} must be a nonnegative exact integer
+to specify how many times @var{property-check} should be run.
+If omitted, the system default is used, which is 30 in Gauche.
+The default runs may be changed in future.
+@end defmac
 
-@defun test-property-skip property-check generator-list :optional runs
+@defmac test-property-expect-fail property-check generator-list :optional runs
 [SRFI-252]
 @c MOD srfi.252
-@end defun
+@end defmac
 
-@defun test-property-error property-check generator-list :optional runs
+@defmac test-property-skip property-check generator-list :optional runs
 [SRFI-252]
 @c MOD srfi.252
-@end defun
+@end defmac
 
-@defun test-property-error-type property-check generator-list :optional runs
+@defmac test-property-error property-check generator-list :optional runs
 [SRFI-252]
 @c MOD srfi.252
-@end defun
+@end defmac
+
+@defmac test-property-error-type property-check generator-list :optional runs
+[SRFI-252]
+@c MOD srfi.252
+@end defmac
 
 @defun property-test-runner
 [SRFI-252]
@@ -16947,9 +16957,28 @@ the convenience; you can use any generator to create input feed.
 
 @subheading Generators
 
+These are procedures that create generators of specific types.
+You can find similar generator procedurs in @code{data.random}
+(@pxref{Random data generators})
+and @code{srfi.194} (@pxref{Random data generators (SRFI)}),
+but the procedures here creates generators with one specific
+property suitable for testing: They start generating certain
+pre-defined values--typical, or boundary values--before generating
+random values.
+
+All created generators captures the value of parameter
+@code{random-data-random-source} (@pxref{Random data generators}) when created.
+If you want to have reproducible results, you can provide your own
+random source.
+
 @defun boolean-generator
 [SRFI-252]
 @c MOD srfi.252
+Returns a generator that yields @code{#t} and @code{#f}, then
+a random boolean values in equal probability.
+
+See also @code{boolean$} in @code{data.random}
+(@pxref{Random data generators}).
 @end defun
 
 @defun bytevector-generator
