@@ -15772,27 +15772,56 @@ If you just need a lookahead parser, you can use @code{$assert}.
 
 @defun $. obj
 @c MOD parser.peg
+@c EN
 Creates a parser that matches a Scheme object @var{obj},
 which may be a character, a string, a char-set, or a symbol.
 If @var{obj} is a char-set, the parser matches any character in the set.
+Specifying a symbol can be used when you're pasing token stream
+instead of character stream.
+
+On success, the value of the parse is the matched input.
 
 The resulting parser is atomic, that is, it doesn't consume
 input when it fails.
+@c JP
+Schemebオブジェクト@var{obj}にマッチするパーザを作ります。
+@var{obj}には、文字、文字列、文字集合、およびシンボルを指定できます。
+@var{obj}が文字集合の場合は、パーザはその中のいずれか文字にマッチします。
+シンボルは、文字ストリームでなくトークンストリームをパーズしている時に使えます。
+
+成功した場合はマッチした入力がパーザの値となります。
+
+返されるパーザはアトミック、つまり失敗した場合には入力を消費しません。
+@c COMMON
 @end defun
 
 @defun $char c
 @defunx $char-ci c
 @c MOD parser.peg
+@c EN
 Returns a parser that accepts a single character, @var{c}.
 @code{$char-ci} ignores case.
 On success, the parser yields the input character.
 The resulting parser is atomic, that is, it doesn't consume
 input when it fails.
+
+When @var{c} is a character, @code{($char @var{c}}
+is the same as @code{($. @var{c})};
+you can use @code{$char} to emphasize you're matching a character.
+@c JP
+文字@var{c}とマッチするパーザを返します。@code{$char-ci}では大文字小文字を区別しません。
+成功した場合は入力文字が値となります。
+返されるパーザはアトミック、つまり失敗した場合には入力を消費しません。
+
+@var{c}が文字の時、@code{($char @var{c}}は@code{($. @var{c})}と同じです。
+文字とのマッチを強調したい場合に@code{$char}を使うと良いでしょう。
+@c COMMON
 @end defun
 
 @defun $string str
 @defunx $string-ci str
 @c MOD parser.peg
+@c EN
 Returns a parser that accepts an input that matches
 a string @var{str}.  @code{$string-ci} ignores case.
 On success, the parser yields the matched string.
@@ -15801,6 +15830,16 @@ The parsing of string is atomic: When the parser fails,
 it doesn't consume the input.  That is,
 @code{($string "ab")} is not the same as
 @code{($let ([a ($char #\a)] [b ($char #\b)]) ($return (string a b)))}.
+@c JP
+文字列@var{str}とマッチするパーザを返します。
+@code{$string-ci}では大文字小文字を区別しません。
+成功した場合はマッチした入力文字列が値となります。
+
+返されるパーザはアトミック、つまり失敗した場合には入力を消費しません。
+つまり、@code{($string "ab")}は
+@code{($let ([a ($char #\a)] [b ($char #\b)]) ($return (string a b)))}
+と同じ@emph{ではありません}。
+@c COMMON
 @end defun
 
 @defun $one-of cset
