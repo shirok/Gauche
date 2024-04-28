@@ -14688,8 +14688,8 @@ evaluated.  The last @var{expr} must yield a parser.
 The @code{$return} procedure creates a parser
 that doesn't consume input, always succeeds
 and returns the given value.  The name is taken from
-Haskell's monads.  Note that is is just an ordinary procedure
-and not like a control-transfer syntax like traditional language's
+Haskell's monads.  Note that it is just an ordinary procedure
+and not like a control-transfer syntax as traditional language's
 @code{return}.  You may think it just as type conversion
 procedure from a Scheme object to a parser.
 @c JP
