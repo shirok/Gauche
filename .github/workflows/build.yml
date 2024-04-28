@@ -65,7 +65,7 @@ jobs:
         gosh -V
     - name: Install tools
       run: |
-        brew install automake mbedtls
+        brew install automake mbedtls libtool
     - name: Self-host-test
       run: |
         gcc -v
