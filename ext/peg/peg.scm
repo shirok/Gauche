@@ -403,7 +403,7 @@
   (^s (receive (r v ss) (parse s)
         (if (parse-success? r)
           (return-result v ss)
-          (return-failure/expect msg s)))))
+          (return-failure/expect msg ss)))))
 
 ;; A convenience utility to check the upper bound, allowing unlimited
 ;; upper bound by #f.
