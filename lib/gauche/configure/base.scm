@@ -32,6 +32,7 @@
 ;;;
 
 (define-module gauche.configure.base
+  (use gauche.dictionary)
   (use gauche.logger)
   (use scheme.set)
   (use util.match)
@@ -41,8 +42,12 @@
 
    ;; External API commonly used from other gauche.configure.*
    cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error cf-msg-notice
-   cf-echo)
-  )
+   cf-echo
+
+   cf-define cf-defined?
+   cf-subst cf-subst-prepend cf-subst-append cf-have-subst?
+   cf-arg-var cf-ref cf$ with-cf-subst
+   ))
 (select-module gauche.configure.base)
 
 ;;;
@@ -124,3 +129,89 @@
         (cut print ,@(intersperse " " (drop-right* args 2)))
         :if-exists :append)]
     [_ `(,tee-msg "~a\n" "Message: ~a" (list (string-join (list ,@args))))]))
+
+;;;
+;;; Variables and substitutions
+;;;
+
+;; API
+(define (cf-define symbol :optional (value 1))
+  (assume-type symbol <symbol>)
+  (dict-put! (~ (ensure-package)'defs) symbol value))
+
+;; API
+(define (cf-defined? symbol)
+  (assume-type symbol <symbol>)
+  (dict-exists? (~ (ensure-package)'defs) symbol))
+
+;; API
+;; Like AC_SUBST, but we require value (instead of implicitly referencing
+;; a global variable.
+(define (cf-subst symbol :optional (value #f))
+  (assume-type symbol <symbol>)
+  (if value
+    (dict-put! (~ (ensure-package)'substs) symbol value)
+    (unless (cf-have-subst? symbol)
+      (dict-put! (~ (ensure-package)'substs) symbol ""))))
+
+;; API
+(define (cf-subst-prepend symbol value :optional (delim " ") (default ""))
+  (let1 v (cf-ref symbol default)
+    (if (equal? v "")
+      (cf-subst symbol value)
+      (cf-subst symbol #"~|value|~|delim|~|v|"))))
+
+;; API
+(define (cf-subst-append symbol value :optional (delim " ") (default ""))
+  (let1 v (cf-ref symbol default)
+    (if (equal? v "")
+      (cf-subst symbol value)
+      (cf-subst symbol #"~|v|~|delim|~|value|"))))
+
+;; API
+(define (cf-have-subst? symbol)
+  (assume-type symbol <symbol>)
+  (dict-exists? (~ (ensure-package)'substs) symbol))
+
+;; API
+;; Make the named variable overridable by the environment variable.
+;; The term "precious" comes from autoconf implementation.
+;; At this moment, we don't save the help string.  cf-arg-var is
+;; called after cf-init and we can't include help message (the limitation
+;; of one-pass processing.)
+(define (cf-arg-var symbol)
+  (assume-type symbol <symbol>)
+  (update! (~ (ensure-package)'precious) (cut set-adjoin! <> symbol))
+  (if-let1 v (sys-getenv (x->string symbol))
+    (cf-subst symbol v)
+    (cf-subst symbol)))
+
+(define (var-precious? symbol)
+  (assume-type symbol <symbol>)
+  (set-contains? (~ (ensure-package)'precious) symbol))
+
+;; API
+;; Lookup the current value of the given variable.
+(define (cf-ref symbol :optional (default (undefined)))
+  (assume-type symbol <symbol>)
+  (rlet1 v (dict-get (~ (ensure-package)'substs) symbol default)
+    (when (undefined? v)
+      (errorf "Configure variable ~s is not defined." symbol))))
+
+;; API
+;; Like cf-ref, but returns empty string if undefined.
+(define (cf$ symbol) (cf-ref symbol ""))
+
+;; API
+;; Temporarily replace cf subst value
+(define-syntax with-cf-subst
+  (syntax-rules ()
+    [(_ ((var val) ...) body ...)
+     (let ([saves (map (cut cf$ <>) '(var ...))])
+       (for-each (cut cf-subst <> <>)
+                 '(var ...)
+                 (list val ...))
+       (unwind-protect (begin body ...)
+         (for-each (cut cf-subst <> <>)
+                   '(var ...)
+                   saves)))]))
