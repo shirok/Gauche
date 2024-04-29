@@ -87,6 +87,8 @@ SCMFILES = \
        gauche/interpolate.scm gauche/listener.scm \
        gauche/config.scm gauche/reload.scm \
        gauche/configure.scm gauche/configure/base.scm \
+       gauche/configure/lang.scm gauche/configure/prog.scm \
+       gauche/configure/init.scm \
        gauche/mop/bound-slot.scm \
        gauche/mop/instance-pool.scm gauche/mop/validator.scm \
        gauche/mop/propagate.scm gauche/mop/singleton.scm \

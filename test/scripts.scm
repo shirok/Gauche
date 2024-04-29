@@ -145,6 +145,10 @@
 
 (use gauche.configure)
 (test-module 'gauche.configure)
+(test-module 'gauche.configure.base)
+(test-module 'gauche.configure.lang)
+(test-module 'gauche.configure.prog)
+(test-module 'gauche.configure.init)
 
 ;; When we run configure, we need to include directories of gosh and
 ;; other scripts in PATH.  Before installing Gauche, where we find them

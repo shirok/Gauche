@@ -39,6 +39,7 @@
   (export
    ;; Internal to gauche.configure.*
    <package> current-package ensure-package run-quietly arg-processors
+   listify
 
    ;; External API commonly used from other gauche.configure.*
    cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error cf-msg-notice
@@ -88,6 +89,8 @@
 ;; Each element is
 ;; (<name> <kind> <help-string> <proc-if-given> <proc-if-not-given>)
 (define arg-processors (make-parameter '()))
+
+(define (listify x) (if (list? x) x (list x)))
 
 ;;;
 ;;; Basic APIs
