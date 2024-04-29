@@ -76,30 +76,39 @@
   (use gauche.configure.output)
   (use gauche.configure.compile)
   (use gauche.configure.init)
-  (export cf-init cf-init-gauche-extension
-          cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
-          cf-help-string
-          cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error cf-msg-notice
-          cf-echo
-          cf-make-gpd
-          cf-define cf-defined? cf-subst cf-subst-append cf-subst-prepend
-          cf-arg-var cf-have-subst? cf-ref cf$
-          with-cf-subst
-          cf-config-headers cf-output cf-output-default cf-show-substs
-          cf-check-prog cf-path-prog cf-check-tool
-          cf-prog-cxx
+  (export
+   ;; gauche.configure.base
+   cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error cf-msg-notice
+   cf-echo
+   cf-define cf-defined? cf-subst cf-subst-append cf-subst-prepend
+   cf-arg-var cf-have-subst? cf-ref cf$
+   with-cf-subst
 
-          cf-lang <c-language>
-          cf-lang-program cf-lang-io-program cf-lang-call
-          cf-call-with-cpp
-          cf-try-compile cf-try-compile-and-link
+   ;; gauche.configure.init
+   cf-init cf-init-gauche-extension
+   cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
+   cf-help-string
 
-          cf-check-header cf-header-available? cf-check-headers
-          cf-includes-default
-          cf-check-type cf-type-available? cf-check-types
-          cf-check-decl cf-decl-available? cf-check-decls
-          cf-check-member cf-member-available? cf-check-members
+   ;; gauche.configure.output
+   cf-config-headers cf-output cf-output-default cf-show-substs
+   cf-make-gpd
 
-          cf-check-func cf-func-available? cf-check-funcs
-          cf-check-lib cf-lib-available? cf-search-libs
-          ))
+   ;; gauche.configure.prog
+   cf-check-prog cf-path-prog cf-check-tool
+
+   ;; gauche.configure.lang
+   cf-lang <c-language> <c++-language>
+   cf-lang-program cf-lang-io-program cf-lang-call
+
+   ;; gauche.configure.compile
+   cf-call-with-cpp cf-try-compile cf-try-compile-and-link
+   cf-prog-cxx
+
+   cf-includes-default
+   cf-check-header cf-header-available? cf-check-headers
+   cf-check-type cf-type-available? cf-check-types
+   cf-check-decl cf-decl-available? cf-check-decls
+   cf-check-member cf-member-available? cf-check-members
+   cf-check-func cf-func-available? cf-check-funcs
+   cf-check-lib cf-lib-available? cf-search-libs
+   ))
