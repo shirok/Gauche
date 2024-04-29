@@ -15680,11 +15680,13 @@ Returns a parser that always fails, without consuming input,
 and uses @var{msg-string} as the failure message.
 
 Frequently used to produce user-friendly error messages.
+See also @code{$expect} below.
 @c JP
 入力を消費せず、常に失敗して、@var{msg-string}を失敗メッセージとするパーザを
 作って返します。
 
 ユーザフレンドリなエラーメッセージを出すためによく使われます。
+下の@code{$expect}も参照してください。
 @c COMMON
 @end defun
 
@@ -15845,6 +15847,7 @@ it doesn't consume the input.  That is,
 @defun $one-of cset
 @defunx $one-of obj-list
 @c MOD parser.peg
+@c EN
 The first form returns a parser that accepts any character in
 the character set @var{cset}.
 In the second form, @var{obj-list} must be a list of either
@@ -15852,27 +15855,52 @@ a character, a string, a character set or a symbol, and each one
 is matched with the same way as @code{$.}.
 
 On success, the parser yields the accepted object.
+On failure, the parser doesn't consume input.
+@c JP
+最初のフォームは、文字集合@var{cset}中のいずれかの文字にマッチするパーザーを返します。
+二番目のフォームでは、@var{obj-list}は文字、文字列、文字集合、シンボルからなる
+リストでなければならず、それぞれの要素が@code{$.}で順に試されます。
+
+成功した場合はマッチしたオブジェクトをパーザの値とします。
+失敗した場合に入力を消費しません。
+@c COMMON
 @end defun
 
 @defun $none-of cset
 @c MOD parser.peg
+@c EN
 Returns a parser that accepts any character not in the character set @var{cset}.
 On success, the parser yields the accepted character.
+@c JP
+文字集合@var{cset}に含まれない文字とマッチするパーザを返します。
+成功した場合にはマッチした文字をパーザの値とします。
+@c COMMON
 @end defun
 
 @defun $any
 @c MOD parser.peg
+@c EN
 Returns a parser that matches any one item, and yields the matched
 input item on success.
 It fails only when the input already reached at the end.
+@c JP
+任意の1要素とマッチし、それをパーザの値とします。
+このパーザが失敗するのは、入力が末尾に達していた場合だけです。
+@c COMMON
 @end defun
 
 @defun $eos
 @c MOD parser.peg
+@c EN
 Stands for ``end of stream''.  Returns a parser that matches
-the end of input.  It never consumes input.
+the end of input.  The value of parser is @code{#<eof>} in that case.
+It never consumes input.
+@c JP
+EOSとはストリーム末尾(end of stream)です。入力が既に末尾に達していた場合に
+マッチが成功し、@code{#<eof>}を値とします。
+このパーザは入力を消費しません。
+@c COMMON
 @end defun
-
 
 @defmac $match1 pattern result
 @defmacx $match1 pattern
@@ -16032,6 +16060,16 @@ Returns a parser that calls a parser @var{p}, and if it succeeds
 yields its result.  If @var{p} fails, fails with an error message
 that says expecting @var{msg-string}.
 Useful to produce user-friendly error messages.
+
+@example
+(define digits4
+  ($expect ($->string ($repeat ($. #[\d]) 4))
+           "4 consecutive digits"))
+
+(peg-parse-string digits4 "123a")
+  @result{} @r{error with}
+  *** PARSE-ERROR: expecting 4 consecutive digits at 3, but got #\a
+@end example
 @end defun
 
 @defun $cut p
