@@ -30,7 +30,8 @@ SLIB_DIR        = @SLIB_DIR@
 PREGENERATED    = gauche/vm/insn.scm gauche/config.scm srfi-*
 CONFIG_GENERATED = Makefile
 
-SUBDIRS  = gauche gauche/vm gauche/serializer gauche/interactive gauche/mop \
+SUBDIRS  = gauche gauche/vm gauche/configure gauche/serializer \
+	   gauche/interactive gauche/mop \
 	   gauche/package gauche/cgen gauche/experimental gauche/test \
 	   gauche/regexp \
 	   lang lang/asm lang/c \
@@ -84,7 +85,8 @@ SCMFILES = \
        gauche/partcont.scm gauche/partcont-meta.scm \
        gauche/lazy.scm gauche/base.scm \
        gauche/interpolate.scm gauche/listener.scm \
-       gauche/config.scm gauche/configure.scm gauche/reload.scm \
+       gauche/config.scm gauche/reload.scm \
+       gauche/configure.scm gauche/configure/base.scm \
        gauche/mop/bound-slot.scm \
        gauche/mop/instance-pool.scm gauche/mop/validator.scm \
        gauche/mop/propagate.scm gauche/mop/singleton.scm \

@@ -86,6 +86,8 @@
   (use text.tree)
   (use srfi.13)
   (use scheme.set)
+
+  (use gauche.configure.base)
   (extend gauche.config)
   (export cf-init cf-init-gauche-extension
           cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
@@ -116,45 +118,9 @@
           ))
 (select-module gauche.configure)
 
-;; A package
-(define-class <package> ()
-  ((name       :init-keyword :name)
-   (version    :init-keyword :version)
-   (bug-report :init-keyword :bug-report :init-value #f) ; email addr
-   (url        :init-keyword :url :init-value #f)
-   (gpd        :init-keyword :gpd)       ; <gauche-package-description>
-   (string     :init-keyword :string)    ; package_string
-   (tarname    :init-keyword :tarname)
-   (tool-prefix :init-form #f)           ; cross compilation tool prefix
-   (config.h   :init-form '())           ; list of (config-header . source)
-   (defs       :init-form (make-hash-table 'eq?)) ;cf-define'd thingy
-   (substs     :init-form (make-hash-table 'eq?)) ;cf-subst'ed thingy
-   (precious   :init-form (set eq-comparator))    ;vars overridable by env
-   (features   :init-form (make-hash-table 'eq?)) ;enabled features by cmdarg
-   (packages   :init-form (make-hash-table 'eq?)) ;optional packages
-   ))
-
-(define current-package (make-parameter #f))
-
-(define run-quietly (make-parameter #f)) ;-silent or -quiet option turn this on
-
-;; Alist of arg processors and help strings given to cf-arg-with and
-;; cf-arg-enable.
-;; Each element is
-;; (<name> <kind> <help-string> <proc-if-given> <proc-if-not-given>)
-(define arg-processors (make-parameter '()))
-
 ;; some internal utilities
 
 (define (listify x) (if (list? x) x (list x)))
-
-(define (ensure-package)
-  (or (current-package)
-      (error "No current package - cf-init hasn't been called")))
-
-(define (tee-msg console-fmt log-fmt args)
-  (apply format #t console-fmt args)
-  (apply log-format log-fmt args))
 
 (define (safe-variable-name s)
   (string-tr (string-upcase s) "A-Z0-9" "_*" :complement #t))
@@ -167,39 +133,6 @@
 ;;;
 ;;; Basic APIs
 ;;;
-
-;; API
-;; Like AC_MSG_*
-(define (cf-msg-checking fmt . args)
-  (tee-msg #"checking ~|fmt|... " #"checking: ~fmt" args))
-(define (cf-msg-result fmt . args)
-  (tee-msg #"~|fmt|\n" #"result: ~fmt" args))
-(define (cf-msg-warn fmt . args)
-  (tee-msg #"Warning: ~|fmt|\n" #"Warning: ~fmt" args))
-(define (cf-msg-error fmt . args)
-  (tee-msg #"Error: ~|fmt|\n" #"Error: ~fmt" args)
-  (exit 1))
-(define (cf-msg-notice fmt . args)
-  (tee-msg #"~|fmt|\n" #"~|fmt|\n" args))
-
-;; API
-;; Convenience routine for substitute of shell's echo
-;; e.g.  (cf-echo "something" > "FILE")
-;; or    (cf-echo "something" >> "FILE")
-;; The destination, '>' or '>>' followed by a filename, must be at the end
-;; of arglist if any.  If no destination is given, output goes to the current
-;; output port.
-(define-macro (cf-echo . args)
-  (match (take-right* args 2)
-    [('> name)
-     `(with-output-to-file ,name
-        (cut print ,@(intersperse " " (drop-right* args 2)))
-        :if-exists :supersede)]
-    [('>> name)
-     `(with-output-to-file ,name
-        (cut print ,@(intersperse " " (drop-right* args 2)))
-        :if-exists :append)]
-    [_ `(,tee-msg "~a\n" "Message: ~a" (list (string-join (list ,@args))))]))
 
 ;; API
 ;; Like AC_INIT; package-name and version can be omitted if the package
