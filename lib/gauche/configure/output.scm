@@ -40,6 +40,7 @@
   (use file.util)
   (use file.filter)
   (use srfi.13)
+  (use text.tr)
   (use util.match)
   (export cf-config-headers cf-output cf-show-substs cf-make-gpd
           cf-output-default)
