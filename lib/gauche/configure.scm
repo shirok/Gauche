@@ -97,7 +97,7 @@
    cf-check-prog cf-path-prog cf-check-tool
 
    ;; gauche.configure.lang
-   cf-lang <c-language> <c++-language>
+   cf-lang cf-lang-C cf-lang-C++
    cf-lang-program cf-lang-io-program cf-lang-call
 
    ;; gauche.configure.compile

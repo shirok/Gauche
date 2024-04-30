@@ -46,7 +46,7 @@
           cf-lang-link-m
           cf-lang-null-program-m
 
-          <c-language> <c++-language>
+          cf-lang-C cf-lang-C++
           ))
 (select-module gauche.configure.lang)
 
@@ -99,6 +99,7 @@
 ;; C
 ;;
 (define-class <c-language> (<cf-language>) ((name :init-value "C")))
+(define (cf-lang-C) (instance-of <c-language>))
 
 (define-method cf-lang-ext-m ((lang <c-language>)) "c")
 (define-method cf-lang-cpp-m ((lang <c-language>))
@@ -131,6 +132,8 @@
 
 ;; C++
 (define-class <c++-language> (<c-language>) ((name :init-value "C++")))
+(define (cf-lang-C++) (instance-of <c++-language>))
+
 (define-method cf-lang-ext-m ((lang <c++-language>)) "c")
 (define-method cf-lang-cpp-m ((lang <c++-language>))
   #"~(cf$'CXXCPP) ~(cf$'CPPFLAGS)")

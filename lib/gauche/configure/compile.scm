@@ -36,7 +36,6 @@
   (use gauche.configure.lang)
   (use gauche.configure.prog)
   (use gauche.generator)
-  (use gauche.mop.singleton)
   (use gauche.logger)
   (use gauche.process)
   (use file.util)
@@ -107,8 +106,8 @@
       (begin
         (log-format "configure: ~s" cmd)
         (with-output-to-file file
-          (cut write-tree #?=(cf-lang-program prologue body)))
-        (set! process #?,(run-process cmd :output :pipe))
+          (cut write-tree (cf-lang-program prologue body)))
+        (set! process (run-process cmd :output :pipe))
         (proc (process-output process)))
     (when process (process-kill process))
     (clean)))
@@ -155,7 +154,7 @@
         (cf-subst 'CXX ccc)
         #t)
       (cf-check-tool 'CXX compilers :default "g++"))
-  (parameterize ([cf-lang (instance-of <c++-language>)])
+  (parameterize ([cf-lang (cf-lang-C++)])
     (compiler-can-produce-executable?)))
 
 ;;;
