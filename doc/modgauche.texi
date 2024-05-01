@@ -7816,7 +7816,26 @@ for other languages as needed.
 
 @deffn {Parameter} cf-lang
 @c MOD gauche.configure
+Returns a @emph{current language}, which is an opaque object.
+Currently C and C++ are supported; see @code{cf-lang-C} and
+@code{cf-lang-C++} below.
+
+The current language is used by compiler tests.
 @end deffn
+
+@defun cf-lang-C
+@defunx cf-lang-C++
+@c MOD gauche.configure
+Returns an opaque object representing C or C++, respectively.
+You can use them to parameterize @code{cf-lang} to run
+compiler tests.
+
+@example
+(parameterize ([cf-lang (cf-lang-C++)])
+  ... run compiler tests ...)
+@end example
+@end defun
+
 
 @defun cf-lang-program prologue body
 @c MOD gauche.configure
@@ -7859,16 +7878,31 @@ success, or nonzero status on failure.
 
 @defun cf-lang-call prologue func-name
 @c MOD gauche.configure
+Returns a string tree of a program in the current language,
+that calls @var{func-name} as a function with no arguments.
 @end defun
 
 @defun cf-try-compile prologue body
 @c MOD gauche.configure
+The arguments must be a string or a list of strings.  If it is
+a list, it is taken as a list of lines, concatenated with newlines.
+
+This test generates a program with the given content,
+using @code{cf-lang-program}, then try to compile it.
+On success, @code{#t} is returned.  On failure, @code{#f} is returned.
+The generated program, command line, and the result is logged.
 @end defun
 
 @defun cf-try-compile-and-link prologue body
 @c MOD gauche.configure
-@end defun
+The arguments must be a string or a list of strings.  If it is
+a list, it is taken as a list of lines, concatenated with newlines.
 
+This test generates a program with the given content,
+using @code{cf-lang-program}, then try to compile and link it.
+On success, @code{#t} is returned.  On failure, @code{#f} is returned.
+The generated program, command line, and the result is logged.
+@end defun
 
 
 @c EN
