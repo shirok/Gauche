@@ -54,7 +54,7 @@
 ;; we accept a single line, or a list of lines, for testing program.
 (define (join-lines line-or-lines)
   (cond [(string? line-or-lines) line-or-lines]
-        [(list? line-or-lines) (string-join line-or-lines "\n")]
+        [(list? line-or-lines) (string-join line-or-lines "\n" 'suffix)]
         [else (error "String or list of strings required, but got" line-or-lines)]))
 
 
