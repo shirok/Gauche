@@ -7822,19 +7822,24 @@ for other languages as needed.
 @c MOD gauche.configure
 Returns a string tree that consists a stand-alone program for
 the current language.  @var{Prologue} and @var{body} must be a
-string tree.  @var{Prologue} comes at the beginning of
+string or a list of strings.  If it is a list, strings are
+concatenated with newlines.
+@var{Prologue} comes at the beginning of
 the source, and @var{body} is included in the part of the program
 that's executed.  If the current language is C, the code fragment:
 
 @example
 (use text.tree)
-(write-tree (cf-lang-program "#include <stdio.h>\n" "printf(\"()\");\n"))
+(write-tree (cf-lang-program '("#include <stdio.h>"
+                               "#include <stdlib.h>")
+                             '("printf(\"()\");")))
 @end example
 
 would produce something like this:
 
 @example
 #include <stdio.h>
+#include <stdlib.h>
 
 int main()@{
 printf("()");
