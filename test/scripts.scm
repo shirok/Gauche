@@ -303,17 +303,17 @@
              (cf-check-headers '("stdio.h" "stdlib.h"
                                  "no-such-header-should-exist.h"))
              (cf-check-types '("a_t" "b_t" "struct c_t" "d_t")
-                             :includes '("typedef int a_t;\n"
-                                         "int b_t;\n"
-                                         "struct c_t { int i; };\n"))
+                             :includes '("typedef int a_t;"
+                                         "int b_t;"
+                                         "struct c_t { int i; };"))
              (cf-check-decls '("a" "b" "c" "d" "e" "f")
-                             :includes '("#define a 1\n"
-                                         "int b;\n"
-                                         "const int c = 1;\n"
-                                         "extern int d();\n"
-                                         "struct foo { int i; } e;\n"))
+                             :includes '("#define a 1"
+                                         "int b;"
+                                         "const int c = 1;"
+                                         "extern int d();"
+                                         "struct foo { int i; } e;"))
              (cf-check-members '("struct foo.a" "struct foo.b")
-                               :includes '("struct foo { int b; };\n"))
+                               :includes '("struct foo { int b; };"))
              (cf-check-funcs '("printf" "nonexistent_weird_function"))
              (unless (#/darwin/ (gauche-architecture))
                ;; this test fails on OSX since 'sin' is recognized as built-in

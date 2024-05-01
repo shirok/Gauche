@@ -1,3 +1,11 @@
+2024-04-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure/lang.scm: Changed cf-lang-program to take
+	  either a string or a list of strings as prologue and body arguments,
+	  instead of a string tree.  This technically breaks compatibility,
+	  though most of the time it should work.
+	  https://github.com/shirok/Gauche/issues/1023
+
 2024-04-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm__InitVM): Flip the default value of

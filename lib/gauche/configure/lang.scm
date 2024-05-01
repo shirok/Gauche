@@ -50,6 +50,13 @@
           ))
 (select-module gauche.configure.lang)
 
+;; utility
+;; we accept a single line, or a list of lines, for testing program.
+(define (join-lines line-or-lines)
+  (cond [(string? line-or-lines) line-or-lines]
+        [(list? line-or-lines) (string-join line-or-lines "\n")]
+        [else (error "String or list of strings required, but got" line-or-lines)]))
+
 
 ;;;
 ;;; Target languages
@@ -75,7 +82,7 @@
 ;; Returns a string tree that consists a stand-alone program for the
 ;; current language.  <prologue> and <body> both are string tree.
 (define (cf-lang-program prologue body)
-  (cf-lang-program-m (cf-lang) prologue body))
+  (cf-lang-program-m (cf-lang) (join-lines prologue) (join-lines body)))
 (define-method cf-lang-program-m ((lang <cf-language>) prologue body)
   (error "No language is selected."))
 
@@ -91,7 +98,7 @@
 ;; API
 ;; cf-lang-call
 (define (cf-lang-call prologue func-name)
-  (cf-lang-call-m (cf-lang) prologue func-name))
+  (cf-lang-call-m (cf-lang) (join-lines prologue) func-name))
 (define-method cf-lang-call-m ((lang <cf-language>) prologue func-name)
   (error "No language is selected."))
 
@@ -118,8 +125,8 @@
     "\n; return 0;\n}\n"))
 
 (define-method cf-lang-io-program-m ((lang <c-language>))
-  (cf-lang-program-m lang "#include <stdio.h>\n"
-                     '("FILE *f = fopen(\"conftest.out\", \"w\");\n"
+  (cf-lang-program-m lang "#include <stdio.h>"
+                     '("FILE *f = fopen(\"conftest.out\", \"w\");"
                        "return ferror(f) || fclose(f) != 0;")))
 
 (define-method cf-lang-call-m ((lang <c-language>) prologue func-name)

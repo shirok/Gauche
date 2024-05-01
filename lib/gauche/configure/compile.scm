@@ -168,38 +168,38 @@
 ;; but makes little sense for Scheme.
 (define cf-includes-default
   (let* ([defaults '("#include <stdio.h>\n"
-                     "#ifdef HAVE_SYS_TYPES_H\n"
-                     "# include <sys/types.h>\n"
-                     "#endif\n"
-                     "#ifdef HAVE_SYS_STAT_H\n"
-                     "# include <sys/stat.h>\n"
-                     "#endif\n"
-                     "#ifdef STDC_HEADERS\n"
-                     "# include <stdlib.h>\n"
-                     "# include <stddef.h>\n"
-                     "#else\n"
-                     "# ifdef HAVE_STDLIB_H\n"
-                     "#  include <stdlib.h>\n"
-                     "# endif\n"
-                     "#endif\n"
-                     "#ifdef HAVE_STRING_H\n"
-                     "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H\n"
-                     "#  include <memory.h>\n"
-                     "# endif\n"
-                     "# include <string.h>\n"
-                     "#endif\n"
-                     "#ifdef HAVE_STRINGS_H\n"
-                     "# include <strings.h>\n"
-                     "#endif\n"
-                     "#ifdef HAVE_INTTYPES_H\n"
-                     "# include <inttypes.h>\n"
-                     "#endif\n"
-                     "#ifdef HAVE_STDINT_H\n"
-                     "# include <stdint.h>\n"
-                     "#endif\n"
-                     "#ifdef HAVE_UNISTD_H\n"
-                     "# include <unistd.h>\n"
-                     "#endif\n")]
+                     "#ifdef HAVE_SYS_TYPES_H"
+                     "# include <sys/types.h>"
+                     "#endif"
+                     "#ifdef HAVE_SYS_STAT_H"
+                     "# include <sys/stat.h>"
+                     "#endif"
+                     "#ifdef STDC_HEADERS"
+                     "# include <stdlib.h>"
+                     "# include <stddef.h>"
+                     "#else"
+                     "# ifdef HAVE_STDLIB_H"
+                     "#  include <stdlib.h>"
+                     "# endif"
+                     "#endif"
+                     "#ifdef HAVE_STRING_H"
+                     "# if !defined STDC_HEADERS && defined HAVE_MEMORY_H"
+                     "#  include <memory.h>"
+                     "# endif"
+                     "# include <string.h>"
+                     "#endif"
+                     "#ifdef HAVE_STRINGS_H"
+                     "# include <strings.h>"
+                     "#endif"
+                     "#ifdef HAVE_INTTYPES_H"
+                     "# include <inttypes.h>"
+                     "#endif"
+                     "#ifdef HAVE_STDINT_H"
+                     "# include <stdint.h>"
+                     "#endif"
+                     "#ifdef HAVE_UNISTD_H"
+                     "# include <unistd.h>"
+                     "#endif")]
          [requires (delay
                      (begin (cf-check-headers '("sys/types.h" "sys/stat.h"
                                                 "stdlib.h" "string.h" "memory.h"
@@ -209,15 +209,25 @@
                             defaults))])
     (^[] (force requires))))
 
+;; internal API
+;; Common processing of :includes keyword argument.  If it is #f,
+;; we use cf-includes-default.  It is supposed to be a list of lines,
+;; but we allow a single string.
+(define (default-includes includes)
+  (cond [(not includes) (cf-includes-default)]
+        [(list? includes) includes]
+        [(string? includes) (list includes)]
+        [else (error "String list required for :includes, but got" includes)]))
+
 ;; Feature Test API
 ;; Like AC_CHECK_HEADER.
 ;; Returns #t on success, #f on failure.
 (define (cf-header-available? header-file :key (includes #f))
-  (let1 includes (or includes (cf-includes-default))
+  (let1 includes (default-includes includes)
     (cf-msg-checking "~a usability" header-file)
-    (rlet1 result (cf-try-compile (list includes
-                                        "/* Testing compilability */"
-                                        #"#include <~|header-file|>\n")
+    (rlet1 result (cf-try-compile `(,@includes
+                                    "/* Testing compilability */"
+                                    ,#"#include <~|header-file|>")
                                   "")
       (cf-msg-result (if result "yes" "no")))))
 (define cf-check-header cf-header-available?) ;; autoconf compatible name
@@ -239,12 +249,12 @@
 ;; If TYPE is a valid type, sizeof(TYPE) compiles and sizeof((TYPE)) fails.
 ;; The second test is needed in case TYPE happens to be a variable.
 (define (cf-type-available? type :key (includes #f))
-  (let1 includes (or includes (cf-includes-default))
+  (let1 includes (default-includes includes)
     (cf-msg-checking "for ~a" type)
     (rlet1 result
-        (and (cf-try-compile (list includes)
+        (and (cf-try-compile includes
                              #"if (sizeof (~|type|)) return 0;")
-             (not (cf-try-compile (list includes)
+             (not (cf-try-compile includes
                                   #"if (sizeof ((~|type|))) return 0;")))
       (cf-msg-result (if result "yes" "no")))))
 (define cf-check-type cf-type-available?)  ; autoconf-compatible name
@@ -266,13 +276,13 @@
 ;; Returns #t on success, #f on failure.
 ;; Check SYMBOL is declared as a macro, a constant, a variable or a function.
 (define (cf-decl-available? symbol :key (includes #f))
-  (let1 includes (or includes (cf-includes-default))
+  (let1 includes (default-includes includes)
     (cf-msg-checking "whether ~a is declared" symbol)
     (rlet1 result
-        (cf-try-compile (list includes)
-                        (list #"#ifndef ~|symbol|\n"
-                              #" (void)~|symbol|;\n"
-                              #"#endif\n"
+        (cf-try-compile includes
+                        (list #"#ifndef ~|symbol|"
+                              #" (void)~|symbol|;"
+                              #"#endif"
                               "return 0;"))
       (cf-msg-result (if result "yes" "no")))))
 (define cf-check-decl cf-decl-available?)  ;autoconf-compatible name
@@ -301,13 +311,13 @@
       (error "cf-check-member: argument doesn't contain a dot:"
              aggregate.member))
     (cf-msg-checking "`~a' is a member of `~a'" memb aggr)
-    (let1 includes (or includes (cf-includes-default))
+    (let1 includes (default-includes includes)
       (rlet1 result
-          (or (cf-try-compile (list includes)
-                              (list #"static ~aggr ac_aggr;\n"
+          (or (cf-try-compile includes
+                              (list #"static ~aggr ac_aggr;"
                                     #"if (ac_aggr.~|memb|) return 0;"))
-              (cf-try-compile (list includes)
-                              (list #"static ~aggr ac_aggr;\n"
+              (cf-try-compile includes
+                              (list #"static ~aggr ac_aggr;"
                                     #"if (sizeof ac_aggr.~|memb|) return 0;")))
         (cf-msg-result (if result "yes" "no"))))))
 (define cf-check-member cf-member-available?) ;autoconf-compatible name
@@ -331,17 +341,17 @@
   (let1 includes (cf-includes-default)
     (cf-msg-checking #"for ~func")
     (rlet1 result ($ cf-try-compile-and-link
-                     `(,#"#define ~func innocuous_~func\n"
-                       "#ifdef __STDC__\n"
-                       "# include <limits.h>\n"
-                       "#else\n"
-                       "# include <assert.h>\n"
-                       "#endif\n"
-                       ,#"#undef ~func\n"
-                       "#ifdef __cplusplus\n"
-                       "extern \"C\"\n"
-                       "#endif\n"
-                       ,#"char ~func ();\n")
+                     `(,#"#define ~func innocuous_~func"
+                       "#ifdef __STDC__"
+                       "# include <limits.h>"
+                       "#else"
+                       "# include <assert.h>"
+                       "#endif"
+                       ,#"#undef ~func"
+                       "#ifdef __cplusplus"
+                       "extern \"C\""
+                       "#endif"
+                       ,#"char ~func ();")
                      `(,#"return ~func ();"))
       (cf-msg-result (if result "yes" "no")))))
 (define cf-check-func cf-func-available?)  ;autoconf-compatible name
