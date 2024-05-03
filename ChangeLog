@@ -1,3 +1,10 @@
+2024-05-02  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/process.scm: (call-with-*-process): Allow #f
+	  for :on-abnormal-exit, which discards the result of proc
+	  and returns #f when the process exits abnormally.
+	  https://github.com/shirok/Gauche/issues/1024
+
 2024-04-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure/lang.scm: Changed cf-lang-program to take

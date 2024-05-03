@@ -628,16 +628,39 @@
   (let1 p (%apply-run-process command input :pipe err host rest)
     (values (wrap-input-process-port p rest) p)))
 
+(define-syntax %with-handling-abnormal-exit
+  (syntax-rules ()
+    [(_ process closer on-abnormal-exit body ...)
+     (let ([p process]
+           [on-abnormal-exit on-abnormal-exit])
+       (guard (e [else
+                  (closer)
+                  (process-wait p)
+                  (case on-abnormal-exit
+                    [(:error) (%check-normal-exit p) (raise e)]
+                    [(:ignore) (raise e)]
+                    [(#f) #f]
+                    [else (unless (zero? (process-exit-status p))
+                            (on-abnormal-exit p))])])
+         (receive r (begin body ...)
+           (closer)
+           (process-wait p)
+           (case on-abnormal-exit
+             [(:error) (%check-normal-exit p) (apply values r)]
+             [(:ignore) (apply values r)]
+             [(#f) #f]
+             [else (unless (zero? (process-exit-status p))
+                     (on-abnormal-exit p))]))))]))
+
 (define (call-with-input-process command proc :key (input *nulldev*)
-                                 ((:error err) #f) (host #f) (on-abnormal-exit :error)
+                                 ((:error err) #f) (host #f)
+                                 (on-abnormal-exit :error)
                                  :allow-other-keys rest)
-  (let* ((p (%apply-run-process command input :pipe err host rest))
-         (i (wrap-input-process-port p rest)))
-    (unwind-protect (proc i)
-      (begin
-        (close-input-port i)
-        (process-wait p)
-        (handle-abnormal-exit on-abnormal-exit p)))))
+  (let* ([p (%apply-run-process command input :pipe err host rest)]
+         [i (wrap-input-process-port p rest)])
+    (%with-handling-abnormal-exit
+     p (^[] (close-input-port i)) on-abnormal-exit
+     (proc i))))
 
 (define (with-input-from-process command thunk . opts)
   (apply call-with-input-process command
@@ -654,13 +677,11 @@
                                   ((:error err) #f) (host #f)
                                   (on-abnormal-exit :error)
                                   :allow-other-keys rest)
-  (let* ((p (%apply-run-process command :pipe output err host rest))
-         (o (wrap-output-process-port p rest)))
-    (unwind-protect (proc o)
-      (begin
-        (close-output-port o)
-        (process-wait p)
-        (handle-abnormal-exit on-abnormal-exit p)))))
+  (let* ([p (%apply-run-process command :pipe output err host rest)]
+         [o (wrap-output-process-port p rest)])
+    (%with-handling-abnormal-exit
+     p (^[] (close-output-port o)) on-abnormal-exit
+     (proc o))))
 
 (define (with-output-to-process command thunk . opts)
   (apply call-with-output-process command
@@ -670,15 +691,12 @@
 (define (call-with-process-io command proc :key ((:error err) #f)
                               (host #f) (on-abnormal-exit :error)
                               :allow-other-keys rest)
-  (let* ((p (%apply-run-process command :pipe :pipe err host rest))
-         (i (wrap-input-process-port p rest))
-         (o (wrap-output-process-port p rest)))
-    (unwind-protect (proc i o)
-      (begin
-        (close-output-port o)
-        (close-input-port i)
-        (process-wait p)
-        (handle-abnormal-exit on-abnormal-exit p)))))
+  (let* ([p (%apply-run-process command :pipe :pipe err host rest)]
+         [i (wrap-input-process-port p rest)]
+         [o (wrap-output-process-port p rest)])
+    (%with-handling-abnormal-exit
+     p (^[] (close-output-port o) (close-input-port i)) on-abnormal-exit
+     (proc i o))))
 
 ;;---------------------------------------------------------------------
 ;; Convenient thingies that can be used like `command` in shell scripts
@@ -893,13 +911,6 @@
       (wrap-with-output-conversion (process-input process) encoding
                                   :buffer-size conversion-buffer-size)
       (process-input process))))
-
-(define (handle-abnormal-exit on-abnormal-exit process)
-  (case on-abnormal-exit
-    [(:error) (%check-normal-exit process)]
-    [(:ignore)]
-    [else (unless (zero? (process-exit-status process))
-            (on-abnormal-exit process))]))
 
 ;;----------------------------------------------------------------------
 ;; Process connection

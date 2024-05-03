@@ -19025,13 +19025,6 @@ in shell scripts.
 @code{process-output->string-list} collects the output from
 @var{command} line-by-line and returns the list of them.  Newline
 characters are stripped.
-
-Internally, @var{command} is run by @code{call-with-input-process},
-to which keyword arguments are passed.
-
-(Tip: To receive stderr output of the child process in the result as well,
-pass @code{:merge} to @code{:error}.  See @code{run-process} above
-for the details.)
 @c JP
 @var{command} を実行し、その(標準出力への)出力を回収して返します。
 @code{process-output->string} は @var{command} からの全ての出力を連結し
@@ -19040,11 +19033,22 @@ for the details.)
 に似たものです。
 @code{process-output->string-list} は @var{command} からの出力を行ごとに
 回収し、それらをリストにしたものを返します。改行文字は削除されます。
+@c COMMON
 
+@c EN
+Internally, @var{command} is run by @code{call-with-input-process},
+to which keyword arguments are passed.
+@c JP
 内部的には、@var{command} は @code{call-with-input-process} により
 実行されます。キーワード引数は@code{call-with-input-process}に
 そのまま渡されます。
+@c COMMON
 
+@c EN
+(Tip: To receive stderr output of the child process in the result as well,
+pass @code{:merge} to @code{:error}.  See @code{run-process} above
+for the details.)
+@c JP
 (ヒント: 子プロセスのstderr出力も一緒に結果として得たい場合は、
 @code{:error}引数に@code{:merge}を渡します。
 詳しくは上の@code{run-process}の項を見てください。)
