@@ -648,7 +648,8 @@
            (case on-abnormal-exit
              [(:error) (%check-normal-exit p) (apply values r)]
              [(:ignore) (apply values r)]
-             [(#f) #f]
+             [(#f) (and (zero? (process-exit-status p))
+                        (apply values r))]
              [else (unless (zero? (process-exit-status p))
                      (on-abnormal-exit p))]))))]))
 
