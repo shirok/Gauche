@@ -17181,7 +17181,7 @@ by @var{on-abnormal-exit} keyword argument:
 @item
 If it is @code{#f} (default), @code{#f} is returned.
 Note that this default is different from @code{call-with-input-process} etc.,
-which rause an error by default.  It is because @code{do-process} is
+which raise an error by default.  It is because @code{do-process} is
 intended to be used with conditionals
 like shell-script's @code{if} command; i.e.
 @code{(if (do-process command) then-expr else-expr)} works just
@@ -18841,12 +18841,14 @@ The cleanup is done even if @var{proc} raises an error.
 
 The keyword argument @var{on-abnormal-exit} specifies what happens
 when the child process exits with non-zero status code.
-It can be either @code{:error} (default), @code{:ignore}, or
-a procedure that takes one argument.  If it is @code{:error},
+It can be either @code{:error} (default), @code{:ignore},
+@code{#f}, or a procedure that takes one argument.  If it is @code{:error},
 a @code{<process-abnormal-exit>} error condition is thrown by
 non-zero exit status; the @code{process} slot of the condition
 holds the process object.  If it is @code{:ignore}, nothing is done
-for non-zero exit status.  If it is a procedure, it is called with
+for non-zero exit status.  If it is @code{#f}, the result of
+@var{proc} is discarded and @code{#f} is returned.
+If it is a procedure, it is called with
 a process object; when the procedure returns, @code{call-with-input-process}
 returns normally.
 
@@ -18865,12 +18867,14 @@ as @code{open-input-process-port} above.
 
 キーワード引数@var{on-abnormal-exit}は子プロセスが0以外の終了ステータス
 を返した場合の振舞いを指定します。その値は@code{:error}(デフォルト)、
-@code{:ignore}、もしくは一引数の手続きでなければなりません。
+@code{:ignore}、@code{#f}、もしくは一引数の手続きでなければなりません。
 値が@code{:error}の場合、0以外の終了ステータスは
 @code{<process-abnormal-exit>}エラーコンディションを発生させます。
 コンディションオブジェクトの@code{process}スロットには子プロセスオブジェクトが
 保持されます。値が@code{:ignore}の場合、0以外の終了ステータスに対して
-特別なアクションは取られません。値が手続きの場合、0以外の終了ステータスに対して
+特別なアクションは取られません。値が@code{#f}の場合、プロセスの終了ステータスが
+0以外であれば、@var{proc}の結果は捨てられ、@code{#f}が返されます。
+値が手続きの場合、0以外の終了ステータスに対して
 子プロセスオブジェクトを引数にしてその手続きが呼ばれます。その手続きが
 戻れば、@code{call-with-input-process}は正常動作と同じように戻ります。
 
@@ -19045,6 +19049,20 @@ to which keyword arguments are passed.
 @c COMMON
 
 @c EN
+If you want to use this just like shell's command substituion,
+specifying @code{:on-abnormal-exit :ignore} is usually what you want.
+However, if you try another command when one fails,
+@code{:on-abnormal-exit #f} may be suitable, for @code{:ignore}
+returns empty string when the command fails without producing output.
+@c JP
+シェルのコマンド置換と同じように使いたい場合、
+通常は @code{:on-abnormal-exit :ignore} を指定するのが良いでしょう。
+ただし、ひとつコマンドを試してそれが失敗したら別のを試す、という場合は
+@code{:on-abnormal-exit #f} の方が有用です。@code{:ignore}だと
+コマンドが何も出力せず失敗した場合でも空文字列が返るからです。
+@c COMMON
+
+@c EN
 (Tip: To receive stderr output of the child process in the result as well,
 pass @code{:merge} to @code{:error}.  See @code{run-process} above
 for the details.)
@@ -19062,6 +19080,14 @@ for the details.)
 
 (process-output->string-list '(ls))
   @result{} ("a.out" "foo.c" "foo.c~" "foo.o")
+
+;; Suppress error message when the-file doesn't exist:
+(process-output->string-list '(cat "the-file") :error :null)
+
+;; If the-file doesn't exit, want to try another-file:
+(any (^[flie] (process-output->string-list `(cat ,file)
+                 :error :null :on-abnormal-exit #f))
+     '("the-file" "another-file"))
 @end example
 
 @end defun
