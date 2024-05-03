@@ -363,6 +363,11 @@
        (call-with-input-process (cmd "cat" "NoSuchFile")
          port->string :error "test1.o"))
 
+(test* "call-with-input-process (redirect/error - #f)" #f
+       (call-with-input-process (cmd "cat" "NoSuchFile")
+         port->string
+         :error :null :on-abnormal-exit #f))
+
 ;; NB: On Solaris, cat seems to return 2 in case the file doesn't exist.
 (test* "call-with-input-process (redirect/error - handle)" (test-one-of 1 2)
        (let/cc k
