@@ -1,3 +1,7 @@
+2024-05-03  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: 0.9.15-p1, just to distinguish from released version.
+
 2024-05-02  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/process.scm: (call-with-*-process): Allow #f
