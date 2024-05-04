@@ -1,5 +1,8 @@
 2024-05-03  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche-package.in: It gets too bloated, so moved the 'meat'
+	  into gauche.package.commands.
+
 	* configure.ac: 0.9.15-p1, just to distinguish from released version.
 
 2024-05-02  Shiro Kawai  <shiro@acm.org>

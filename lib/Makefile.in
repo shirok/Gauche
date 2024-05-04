@@ -101,6 +101,7 @@ SCMFILES = \
        gauche/cgen/cbe.scm \
        gauche/package.scm gauche/package/build.scm gauche/package/fetch.scm \
        gauche/package/util.scm gauche/package/compile.scm \
+       gauche/package/commands.scm \
        gauche/experimental/ref.scm gauche/experimental/lamb.scm \
        gauche/experimental/app.scm gauche/experimental/shared-struct.scm \
        r7rs-setup.scm \
