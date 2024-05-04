@@ -94,6 +94,7 @@
   (use file.util)
   (use util.match)
   (export <gauche-package-description>
+          <package-description-error>
           make-gauche-package-description
           path->gauche-package-description
           gauche-package-description-paths
@@ -127,6 +128,9 @@
    (gauche-version :init-keyword :gauche-version :init-form (gauche-version))
    (configure      :init-keyword :configure   :init-value #f)
    ))
+
+;; API
+(define-condition-type <package-description-error> <error> #f)
 
 ;; API
 (define (make-gauche-package-description name
@@ -164,36 +168,43 @@
 
 (define (check-maybe-string key val)
   (unless (or (string? val) (not val))
-    (errorf "String or #f is required for ~a, but got: ~s" key val)))
+    (errorf <package-description-error>
+            "String or #f is required for ~a, but got: ~s" key val)))
 
 (define (check-string-list key val)
   (unless (every string? val)
-    (errorf "String list is required for ~a, but got: ~s" key val)))
+    (errorf <package-description-error>
+            "String list is required for ~a, but got: ~s" key val)))
 
 (define (check-symbol-list key val)
   (unless (every symbol? val)
-    (errorf "Symbol list is required for ~a, but got: ~s" key val)))
+    (errorf <package-description-error>
+            "Symbol list is required for ~a, but got: ~s" key val)))
 
 (define (check-require-syntax req)
   (define (check-require-1 clause)
     (match clause
       [((? string?) v)
        (unless (valid-version-spec? v)
-         (error "Invalid version spec in require clause:" clause))]
-      [else (error "Invalid require clause:" clause)]))
+         (error <package-description-error>
+                "Invalid version spec in require clause:" clause))]
+      [else (error <package-description-error>
+                   "Invalid require clause:" clause)]))
   (match req
     [(x ...) (for-each check-require-1 x)]
-    [else (error "Invalid require form:" req)]))
+    [else (error <package-description-error> "Invalid require form:" req)]))
 
 ;; API
 (define (path->gauche-package-description path)
   (guard (e [(or (<io-error> e) (<read-error> e) (<system-error> e))
-             (errorf "couldn't read the package description ~s: ~a"
+             (errorf <package-description-error>
+                     "couldn't read the package description ~s: ~a"
                      path (ref e 'message))])
     (match (file->sexp-list path)
       [(('define-gauche-package (? string? name) . attrs))
        (apply make-gauche-package-description name attrs)]
-      [_ (errorf "malformed gauche package description file. \
+      [_ (errorf <package-description-error>
+                 "malformed gauche package description file. \
                   It must contain a define-gauche-package form and \
                   nothing else: ~a" path)])))
 

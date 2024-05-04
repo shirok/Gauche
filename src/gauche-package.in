@@ -507,7 +507,7 @@ Options:
     (define (P file) (build-path dstdir file))
     (define (populate-with-package) ;when we have package.scm
       (let* ([package
-              (guard (e [(#/read the package descr/ (~ e'message))
+              (guard (e [(<package-description-error> e)
                          (exit 1 "Can't read package.scm: ~a" (~ e'message))])
                 (path->gauche-package-description (P "package.scm")))]
              [lic (cond [license (string->symbol (string-downcase license))]
