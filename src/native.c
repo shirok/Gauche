@@ -38,8 +38,8 @@
  *   from Scheme.  It would open up for casual Scheme code to execute
  *   arbitrary machine code, bypassing our runtime check completely.
  *
- *   Instead, the Scheme API for these APIs should be placed in
- *   gauche.bootstrap module.  The module is only live during initialization
+ *   Instead, the Scheme API for these functionalities should be placed in
+ *   gauche.bootstrap module.  The module is only alive during initialization
  *   process, so the built-in Scheme procedures can call them, but they'll
  *   be unaccessible from the user code.  See libnative.scm.
  */

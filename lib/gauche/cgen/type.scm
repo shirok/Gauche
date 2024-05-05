@@ -310,8 +310,10 @@
    (%cclass <sys-sigset> "ScmSysSigset*")
    (%cclass <sys-stat> "ScmSysStat*")
    (%cclass <time> "ScmTime*")
-   ;(%cclass <sys-tm> "ScmSysTm*")
    (%cclass <sys-fdset> "ScmSysFdset*")
+   ;; NB: <sys-tm> is defined using define-cstruct in libsys.scm, and its
+   ;; C type isn't visible from outside.
+   ;;(%cclass <sys-tm> "ScmSysTm*")
 
    ;; Exception - those classes are in the core but defined in gauche.threads.
    (make-cgen-type '<mutex>
