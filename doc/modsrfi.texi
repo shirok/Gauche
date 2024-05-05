@@ -4883,6 +4883,26 @@ SRFI-64 tests can be grouped, and groups can be nested.
 @c MOD srfi.64
 @end defun
 
+@defmac test-expect-fail specifier
+[SRFI-64]
+@c MOD srfi.64
+@end defmac
+
+
+@subsubheading Conditional tests
+
+@defun test-match-name name
+@defunx test-match-nth n :optional count
+@defunx test-match-any specifier @dots{}
+@defunx test-match-all specifier @dots{}
+[SRFI-64]
+@c MOD srfi.64
+@end defun
+
+@defun test-skip specifier
+[SRFI-64]
+@c MOD srfi.64
+@end defun
 
 
 @c ----------------------------------------------------------------------
@@ -16885,6 +16905,7 @@ arguments.
 @end deftp
 
 @defmac define-syntactic-monad name formal @dots{}
+[SRFI-247]
 @c MOD srfi.247
 @end defmac
 
@@ -16941,17 +16962,25 @@ The default runs may be changed in future.
 @code{Test-property-expect-fail}, on the other hand, passes
 when every @var{property-check} returns false (thus, expected failure).
 @code{Test-property-skip} does not run @var{property-check}, just
-counts @var{runs} attemt as skipped tests.
+counts @var{runs} attempts as skipped tests.
 @code{Test-property-error} expects all invocations of @var{property-check}
 raises an error.
 Finally, @code{test-property-error} expects @var{property-check}
 raises an error of type @var{error-type}, which should be a condition
 type.
+
+This SRFI is designed to be used with SRFI-64, but you can use these
+directly with @code{gauche.test} without loading @code{srfi.64}.
 @end defmac
 
 @defun property-test-runner
 [SRFI-252]
 @c MOD srfi.252
+Returns a SRFI-64 test runner object specialized for property testing.
+In Gauche, this simply returns SRFI-64 simple runner, but other
+implementations may have some additional features.  It is recommended
+that portable code sets the runner created with this procedure
+before calling property test procedures.
 @end defun
 
 @subheading Generators
