@@ -127,6 +127,11 @@ do_self_host_test () {
      PATH=$XPATH $srcdir/examples/spigot/configure --prefix=$destdir && \
      PATH=$XPATH make $makeopt_1 && \
      PATH=$XPATH make -s check && PATH=$XPATH make install || exit 1)
+    mkdir -p $destdir/spigot-subdir
+    (cd $destdir/spigot-subdir; \
+     PATH=$XPATH $srcdir/examples/spigot-subdir/configure --prefix=$destdir && \
+     PATH=$XPATH make $makeopt_1 && \
+     PATH=$XPATH make -s check && PATH=$XPATH make install || exit 1)
     mkdir -p $destdir/mqueue-cpp
     (cd $destdir/mqueue-cpp; \
      PATH=$XPATH $srcdir/examples/mqueue-cpp/configure --prefix=$destdir && \
