@@ -6,7 +6,9 @@ bindir      = @bindir@
 libdir      = @libdir@
 datadir     = @datadir@
 datarootdir = @datarootdir@
+top_srcdir  = @top_srcdir@
 srcdir      = @srcdir@
+builddir    = @builddir@
 VPATH       = $(srcdir)
 
 # These may be overridden by make invocators
@@ -57,7 +59,7 @@ all : $(TARGET)
 
 check : all
 	@rm -f test.log
-	$(GOSH) -I. -I$(srcdir) $(srcdir)/test.scm > test.log
+	$(GOSH) -I$(builddir) -I$(srcdir) -I$(top_srcdir) $(srcdir)/test.scm > test.log
 
 install : all
 	$(INSTALL) -m 444 -T $(GAUCHE_PKGINCDIR) $(HEADERS)

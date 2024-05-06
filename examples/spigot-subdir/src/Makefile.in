@@ -6,7 +6,9 @@ bindir      = @bindir@
 libdir      = @libdir@
 datadir     = @datadir@
 datarootdir = @datarootdir@
+top_srcdir  = @top_srcdir@
 srcdir      = @srcdir@
+builddir    = @builddir@
 VPATH       = $(srcdir)
 
 # These may be overridden by make invocators
@@ -55,7 +57,7 @@ math--spigot.$(SOEXT): $(spigot_SRCS) $(spigot_HDRS)
 
 check : all
 	@rm -f test.log
-	$(GOSH) -I.. -I$(srcdir) $(srcdir)/../test.scm > test.log
+	$(GOSH) -I$(top_srcdir) -I$(srcdir) -I$(builddir) $(top_srcdir)/test.scm > test.log
 
 install : all
 	$(INSTALL) -m 444 -T $(GAUCHE_PKGINCDIR) $(HEADERS)
