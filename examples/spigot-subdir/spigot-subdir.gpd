@@ -1,0 +1,17 @@
+;; -*-Scheme-*-
+;; Gauche Package Description
+
+(define-gauche-package "spigot-subdir"
+  :repository "http://example.com/spigot-subdir.git"
+  :version "0.1"
+  :description "Sample package.scm\nWrite your package description here."
+  :require (("Gauche" (>= "0.9.15")))
+  :maintainers ()
+  :authors ("Shiro Kawai <shiro@acm.org>")
+  :licenses ()
+  :homepage #f
+  :providing-modules (math.spigot)
+  :superseded-by #f
+  :gauche-version "0.9.15"
+  :configure "./configure"
+)

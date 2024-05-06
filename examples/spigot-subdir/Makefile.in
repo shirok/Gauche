@@ -15,7 +15,7 @@ GOSH           = "@GOSH@"
 INSTALL        = "@GAUCHE_INSTALL@" -S '$(srcdir)' -C
 
 # Module-specific stuff
-PACKAGE   = spigot-subdir
+PACKAGE   = example-spigot
 
 SCMFILES  = math/spigot.scm
 
@@ -30,8 +30,7 @@ all :
 	cd src; $(MAKE) all
 
 check : all
-	@rm -f test.log
-	$(GOSH) -I. -Isrc -I$(srcdir) $(srcdir)/test.scm > test.log
+	cd src; $(MAKE) check
 
 install : all
 	$(INSTALL) -m 444 -T $(GAUCHE_PKGLIBDIR) $(SCMFILES)

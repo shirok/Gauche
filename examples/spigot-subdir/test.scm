@@ -1,18 +1,45 @@
-;;;
-;;; Test math.spigot
-;;;
+;;
+;; Test spigot module
+;;
 
 (use gauche.test)
 
-(test-start "math.spigot")
+(test-start "spigot")
 (use math.spigot)
-(test-module 'math.spigot)
+(test-module 'math.spigot) ;; This checks the exported symbols are indeed bound.
 
-;; The following is a dummy test code.
-;; Replace it for your tests.
-(test* "test-spigot_subdir" "spigot_subdir is working"
-       (test-spigot_subdir))
+;; Normal operation test
+(test* "spigot-calculate-pi (10)"
+       '#(3 1 4 1 5 9 2 6 5 3)
+       (spigot-calculate-pi 10))
 
-;; If you don't want `gosh' to exit with nonzero status even if
-;; the test fails, pass #f to :exit-on-failure.
-(test-end :exit-on-failure #t)
+(test* "spigot-calculate-e (15)"
+       '#(2 7 1 8 2 8 1 8 2 8 4 5 9 0 4)
+       (spigot-calculate-e 15))
+
+(test* "spigot-calculate-pi (1)"
+       '#(3)
+       (spigot-calculate-pi 1))
+
+(test* "spigot-calculate-e (1)"
+       '#(2)
+       (spigot-calculate-e 1))
+
+;; See if they reports error for invalid arguments.
+(test* "spigot-calculate-pi (0)"
+       *test-error*
+       (spigot-calculate-pi 0))
+
+(test* "spigot-calculate-e (0)"
+       *test-error*
+       (spigot-calculate-e 0))
+
+(test* "spigot-calculate-pi (-1)"
+       *test-error*
+       (spigot-calculate-pi -1))
+
+(test* "spigot-calculate-e (-1)"
+       *test-error*
+       (spigot-calculate-e -1))
+
+(test-end)
