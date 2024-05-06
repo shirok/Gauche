@@ -146,13 +146,11 @@ ScmObj Spigot_calculate_e(int digits)
     return rvec;
 }
 
-extern void Scm_Init_spigot_scm(ScmModule*);
-
 /*
  * Module initialization function.
  * This is called when math--spigot.so is dynamically loaded into gosh.
  */
-ScmObj Scm_Init_math__spigot(void)
+void Scm_Init_math__spigot(void)
 {
     ScmModule *mod;
 
