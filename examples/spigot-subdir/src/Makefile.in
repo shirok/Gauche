@@ -1,0 +1,76 @@
+# General info
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+datadir     = @datadir@
+datarootdir = @datarootdir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+
+# These may be overridden by make invocators
+DESTDIR        =
+GOSH           = "@GOSH@"
+GAUCHE_CONFIG  = "@GAUCHE_CONFIG@"
+GAUCHE_PACKAGE = "@GAUCHE_PACKAGE@"
+INSTALL        = "@GAUCHE_INSTALL@" -S '$(srcdir)' -C
+
+CFLAGS     = @CFLAGS@
+CPPFLAGS   = @CPPFLAGS@ @WINDOWS_UNICODE_FLAG@
+LDFLAGS    = @LDFLAGS@
+LIBS       = @LIBS@
+
+# Other parameters
+SOEXT  = @SOEXT@
+OBJEXT = @OBJEXT@
+EXEEXT = @EXEEXT@
+LOCAL_PATHS = "@LOCAL_PATHS@"
+
+# Module-specific stuff
+PACKAGE   = spigot-subdir
+
+ARCHFILES = spigot_subdir.$(SOEXT)
+HEADERS   =
+
+TARGET    = $(ARCHFILES)
+CLEANFILES =
+CONFIG_GENERATED = Makefile
+
+GAUCHE_PKGINCDIR  = "$(DESTDIR)@GAUCHE_PKGINCDIR@"
+GAUCHE_PKGLIBDIR  = "$(DESTDIR)@GAUCHE_PKGLIBDIR@"
+GAUCHE_PKGARCHDIR = "$(DESTDIR)@GAUCHE_PKGARCHDIR@"
+
+spigot_subdir_SRCS = spigot_subdir.c spigot_subdirlib.scm
+spigot_subdir_HDRS = spigot_subdir.h
+
+all : $(TARGET)
+
+spigot_subdir.$(SOEXT): $(spigot_subdir_SRCS) $(spigot_subdir_HDRS)
+	$(GAUCHE_PACKAGE) compile \
+	  --srcdir="$(srcdir)" \
+	  --cppflags="$(CPPFLAGS)" --cflags="$(CFLAGS)" \
+	  --ldflags="$(LDFLAGS)" --libs="$(LIBS)" \
+	  --local=$(LOCAL_PATHS) --verbose spigot_subdir $(spigot_subdir_SRCS)
+
+check : all
+	@rm -f test.log
+	$(GOSH) -I. -I$(srcdir) $(srcdir)/test.scm > test.log
+
+install : all
+	$(INSTALL) -m 444 -T $(GAUCHE_PKGINCDIR) $(HEADERS)
+	$(INSTALL) -m 555 -T $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+
+uninstall :
+	$(INSTALL) -U $(GAUCHE_PKGINCDIR) $(HEADERS)
+	$(INSTALL) -U $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+
+clean :
+	$(GAUCHE_PACKAGE) compile --clean spigot_subdir $(spigot_subdir_SRCS)
+	rm -rf core $(TARGET) $(CLEANFILES) *~ test.log so_locations
+
+distclean : clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : clean
+	rm -rf $(CONFIG_GENERATED)

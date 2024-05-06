@@ -1,0 +1,8 @@
+This directory contains the same extension of `spigot` example, except
+that the source files are in `src/` subdirectory.  This is a typical
+arrangement when you have larger C sources.
+
+This is to show how to write a sub `Makefile.in` under `src/`.
+
+See `../spigot/README.adoc` for the detailed explanation of building
+extensions.

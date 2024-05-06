@@ -1,3 +1,8 @@
+2024-05-05  Shiro Kawai  <shiro@acm.org>
+
+	* examples/spigot-subdir: Added an example when C files are
+	  put under src/ subdirectory.
+
 2024-05-03  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche-package.in: It gets too bloated, so moved the 'meat'

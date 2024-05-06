@@ -1,0 +1,23 @@
+#!/usr/bin/env gosh
+;; Configuring spigot-subdir
+;; Run ./configure (or gosh ./configure) to generate Makefiles.
+
+(use gauche.configure)
+
+;; Here you can define handlers of configure arguments by cf-arg-enable
+;; and cf-arg-with.  Note that --with-local is handled implicitly if you use
+;; cf-init-gauche-extension.
+
+
+;; Initialize configure.  This creates the global context, parses
+;; command-line args and sets up default values.
+(cf-init-gauche-extension)
+
+;; Here you can add feature tests and other cf-define's.
+
+;; Output
+(cf-output-default)
+
+;; Local variables:
+;; mode: scheme
+;; end:
