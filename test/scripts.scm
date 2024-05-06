@@ -244,7 +244,7 @@
                (file-exists? "test2.o/src/Makefile")))
 
   (test* "srcdir etc."
-         '("srcdir = ../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ../")
+         '("srcdir = ../../test.o/src" "top_srcdir = ../../test.o" "builddir = ." "top_builddir = ../")
          (file->string-list "test2.o/src/Makefile"))
 
   (dolist [d '("test.o" "test2.o")]

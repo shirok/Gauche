@@ -107,14 +107,21 @@
         (values srcdir tsrcdir builddir tbuilddir)
         (let1 revpath ($ apply build-path
                          $ map (^_ "..") (string-split path-prefix #[\\/]))
-          (values (if (equal? srcdir ".")
-                    srcdir
-                    (simplify-path+ (build-path srcdir path-prefix)))
-                  (simplify-path+ (build-path revpath tsrcdir))
-                  (if (equal? builddir ".")
-                    builddir
-                    (simplify-path+ (build-path builddir path-prefix)))
-                  (simplify-path+ (build-path revpath tbuilddir)))))))
+          (values
+           (cond [(equal? srcdir ".") srcdir]
+                 [(absolute-path? srcdir)
+                  (simplify-path+ (build-path srcdir path-prefix))]
+                 [else
+                  (simplify-path+ (build-path revpath srcdir path-prefix))])
+           (cond [(absolute-path? tsrcdir) tsrcdir]
+                 [else (simplify-path+ (build-path revpath tsrcdir))])
+           (cond [(equal? builddir ".") builddir]
+                 [(absolute-path? builddir)
+                  (simplify-path+ (build-path builddir path-prefix))]
+                 [else
+                  (simplify-path+ (build-path revpath builddir path-prefix))])
+           (cond [(absolute-path? tbuilddir) tbuilddir]
+                 [(simplify-path+ (build-path revpath tbuilddir))]))))))
 
   (define (make-replace-1 output-file)
     (let1 subst (make-subst (sys-dirname (simplify-path+ output-file)))

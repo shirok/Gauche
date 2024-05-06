@@ -1,3 +1,9 @@
+2024-05-06  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure/output.scm (cf-output): Fix srcdir substitution
+	  for subdirectories
+	  https://github.com/shirok/Gauche/issues/1025
+
 2024-05-05  Shiro Kawai  <shiro@acm.org>
 
 	* examples/spigot-subdir: Added an example when C files are
