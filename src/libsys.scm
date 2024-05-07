@@ -1558,7 +1558,13 @@
 
 ;; Translate glob pattern to regexp.  This is applied for each component,
 ;; so it assumes "**" is already expanded.
-(define (glob-component->regexp pattern)
+;;
+;; This can also be used for shell's pattern matching (e.g. 'case'),
+;; but it uses slightly different criteria.  Notably, the glob mode (default)
+;; treats the initial dot differently (e.g. '*' and '?' at the beginning
+;; of the pattern doesn't match the beginning dot).  The shell mode
+;; doesn't have such criterion.
+(define (glob-component->regexp pattern :optional (mode :glob))
   (define n read-char)
   (define nd '(comp . #[.]))
   (define ra '(rep 0 #f any))
@@ -1570,7 +1576,10 @@
           (case ch
             [(#\*) (element0* (n) ct)]
             [(#\?) `(,nd ,@(element1 (n) ct))]
-            [(#\\) (element1 (n) ct)]
+            [(#\\) (let1 next (n)
+                     (if (eof-object? next)
+                       '(eol)
+                       `(,next (element1 (n) ct))))]
             [else (element1 ch ct)]))
         (define (element0* ch ct)       ;next to initial '*'
           (case ch
@@ -1603,10 +1612,11 @@
         (define (element1* ch ct)
           (case ch
             [(#\*) (element1* (n) ct)]
-            [(#\\) (let1 next (n)
-                     (if (eof-object? next) '(eol) (element1 next ct)))]
             [else  (element1 ch ct)]))
-        `(0 #f bol ,@(element0 (n) '())))))))
+        (case mode
+          [(:glob)  `(0 #f bol ,@(element0 (n) '()))]
+          [(:shell) `(0 #f bol ,@(element1 (n) '()))]
+          [else (error "mode argument must be :glob or :shell, but got" mode)]))))))
 
 ;; if rx is just test perfect match, e.g. #/^string$/, returns
 ;; string portion.

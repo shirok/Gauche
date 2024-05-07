@@ -1,7 +1,7 @@
 2024-05-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm (glob-component->regexp): Allow special characters
-	  to be scaped with '\'.
+	  to be scaped with '\'.  Also added :shell mode.
 
 2024-05-06  Shiro Kawai  <shiro@acm.org>
 

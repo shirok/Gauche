@@ -239,18 +239,29 @@
 ;; NB: Actual globbing on filesystems is tested in file.scm.
 ;; Here we test the internal component, glob-component->regexp.
 
-(let ((data '("a.c" ".a.c" "...c" "a?.c" "a*.c")))
-  (define (t pattern expected)
-    (test* (string-append "glob pattern " pattern)
+(let ((data '("a.c" ".a.c" "...c" ".c" "a?.c" "a*.c")))
+  (define (t mode pattern expected)
+    (test* (string-append "glob pattern " (x->string mode) " " pattern)
            expected
-           (filter (glob-component->regexp pattern) data)))
+           (filter (glob-component->regexp pattern mode) data)))
+  (define (t-glob  pattern expected) (t :glob pattern expected))
+  (define (t-shell pattern expected) (t :shell pattern expected))
 
-  (t "*.c" '("a.c" "a?.c" "a*.c"))
-  (t "??.c" '("a?.c" "a*.c"))
-  (t ".*.c" '(".a.c" "...c"))
-  (t "*?.c" '("a.c" "a?.c" "a*.c"))
-  (t "*\\?.c" '("a?.c"))
-  (t "*\\*.c" '("a*.c"))
+  (t-glob "*.c" '("a.c" "a?.c" "a*.c"))
+  (t-glob "??.c" '("a?.c" "a*.c"))
+  (t-glob ".*.c" '(".a.c" "...c"))
+  (t-glob ".*c"  '(".a.c" "...c" ".c"))
+  (t-glob "*?.c" '("a.c" "a?.c" "a*.c"))
+  (t-glob "*\\?.c" '("a?.c"))
+  (t-glob "*\\*.c" '("a*.c"))
+
+  (t-shell "*.c" '("a.c" ".a.c" "...c" ".c" "a?.c" "a*.c"))
+  (t-shell "??.c" '(".a.c" "...c" "a?.c" "a*.c"))
+  (t-shell ".*.c" '(".a.c" "...c" ))
+  (t-shell ".*c"  '(".a.c" "...c" ".c"))
+  (t-shell "*?.c" '("a.c" ".a.c" "...c" "a?.c" "a*.c"))
+  (t-shell "*\\?.c" '("a?.c"))
+  (t-shell "*\\*.c" '("a*.c"))
   )
 
 ;;-------------------------------------------------------------------
