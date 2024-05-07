@@ -29761,6 +29761,15 @@ the character set, e.g. @code{[!abc]} is the same as @code{[^abc]}.
 文字をつかって、補集合で文字集合を表わすこともできるようになっています。
 すなわち、@code{[!abc]}は@code{[^abc]}と同じです。
 @c COMMON
+
+@item \
+@c EN
+Include the next character literally in the pattern.  This can be used
+to include above special characters in the pattern.
+@c JP
+次の文字をそのままパターンに含めます。上の特殊文字をそのままパターンに入れたい
+時に使えます。
+@c COMMON
 @end table
 @end defun
 

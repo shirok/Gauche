@@ -1,3 +1,8 @@
+2024-05-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm (glob-component->regexp): Allow special characters
+	  to be scaped with '\'.
+
 2024-05-06  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure/output.scm (cf-output): Fix srcdir substitution

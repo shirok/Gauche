@@ -234,6 +234,26 @@
                                :canonicalize #t))
 
 ;;-------------------------------------------------------------------
+(test-section "glob")
+
+;; NB: Actual globbing on filesystems is tested in file.scm.
+;; Here we test the internal component, glob-component->regexp.
+
+(let ((data '("a.c" ".a.c" "...c" "a?.c" "a*.c")))
+  (define (t pattern expected)
+    (test* (string-append "glob pattern " pattern)
+           expected
+           (filter (glob-component->regexp pattern) data)))
+
+  (t "*.c" '("a.c" "a?.c" "a*.c"))
+  (t "??.c" '("a?.c" "a*.c"))
+  (t ".*.c" '(".a.c" "...c"))
+  (t "*?.c" '("a.c" "a?.c" "a*.c"))
+  (t "*\\?.c" '("a?.c"))
+  (t "*\\*.c" '("a*.c"))
+  )
+
+;;-------------------------------------------------------------------
 (test-section "filesystem")
 
 (cmd-rmrf "test.dir")

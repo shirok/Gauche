@@ -1556,7 +1556,9 @@
     (append (values-ref (parse pattern '("") 0) 0) seed)
     (cons pattern seed)))
 
-(define (glob-component->regexp pattern) ; "**" is already excluded
+;; Translate glob pattern to regexp.  This is applied for each component,
+;; so it assumes "**" is already expanded.
+(define (glob-component->regexp pattern)
   (define n read-char)
   (define nd '(comp . #[.]))
   (define ra '(rep 0 #f any))
@@ -1564,22 +1566,30 @@
    (regexp-optimize
     (with-input-from-string pattern
       (^[]
-        (define (element0 ch ct)
+        (define (element0 ch ct)        ;initial character
           (case ch
             [(#\*) (element0* (n) ct)]
             [(#\?) `(,nd ,@(element1 (n) ct))]
+            [(#\\) (element1 (n) ct)]
             [else (element1 ch ct)]))
-        (define (element0* ch ct)
+        (define (element0* ch ct)       ;next to initial '*'
           (case ch
             [(#\*) (element0* (n) ct)]
             [(#\?) `(,nd ,ra ,@(element1 (n) ct))]
             [(#\.) `(,nd ,ra #\. ,@(element1 (n) ct))]
+            [(#\\) (let1 next (n)
+                     `(,nd ,ra ,(if (eof-object? next) '(eol) next)
+                           ,@(element1 (n) ct)))]
             [else `((rep 0 1 (seq ,nd ,ra))
                     ,@(element1 ch ct))]))
         (define (element1 ch ct)
           (cond [(eof-object? ch) '(eol)]
                 [(eqv? ch #\*) `(,ra ,@(element1* (n) ct))]
                 [(eqv? ch #\?) `(any ,@(element1 (n) ct))]
+                [(eqv? ch #\\) (let1 next (n)
+                                 (if (eof-object? next)
+                                   '(eol)
+                                   `(,next ,@(element1 (n) ct))))]
                 [(eqv? ch #\[)
                  (case (peek-char)
                    ;; we have to treat [!...] as [^...]
@@ -1593,6 +1603,8 @@
         (define (element1* ch ct)
           (case ch
             [(#\*) (element1* (n) ct)]
+            [(#\\) (let1 next (n)
+                     (if (eof-object? next) '(eol) (element1 next ct)))]
             [else  (element1 ch ct)]))
         `(0 #f bol ,@(element0 (n) '())))))))
 
