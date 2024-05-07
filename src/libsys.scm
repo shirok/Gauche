@@ -1564,7 +1564,7 @@
 ;; treats the initial dot differently (e.g. '*' and '?' at the beginning
 ;; of the pattern doesn't match the beginning dot).  The shell mode
 ;; doesn't have such criterion.
-(define (glob-component->regexp pattern :optional (mode :glob))
+(define (glob-component->regexp pattern :key (mode :glob))
   (define n read-char)
   (define nd '(comp . #[.]))
   (define ra '(rep 0 #f any))

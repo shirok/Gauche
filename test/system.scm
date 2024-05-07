@@ -243,7 +243,7 @@
   (define (t mode pattern expected)
     (test* (string-append "glob pattern " (x->string mode) " " pattern)
            expected
-           (filter (glob-component->regexp pattern mode) data)))
+           (filter (glob-component->regexp pattern :mode mode) data)))
   (define (t-glob  pattern expected) (t :glob pattern expected))
   (define (t-shell pattern expected) (t :shell pattern expected))
 
