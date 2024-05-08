@@ -776,6 +776,100 @@ fuga
 (use text.sh)
 (test-module 'text.sh)
 
+(let ()
+  (define (t input expected flavor)
+    (test* #"shell-escape-string(~flavor) - ~input" expected
+           (shell-escape-string input flavor)))
+
+  (t ""          "\"\""              'windows)
+  (t "abc"       "abc"               'windows)
+  (t "a b c"     "\"a b c\""         'windows)
+  (t "a \"b\" c" "\"a \\\"b\\\" c\"" 'windows)
+  (t "a\\ \\\""  "\"a\\ \\\\\\\"\""  'windows)
+  (t ""          "''"                'posix)
+  (t "abc"       "abc"               'posix)
+  (t "a b c"     "'a b c'"           'posix)
+  (t "$abc"      "'$abc'"            'posix)
+  (t "[abc]"     "'[abc]'"           'posix)
+  (t "\\abc"     "'\\abc'"           'posix)
+  (t ">abc"      "'>abc'"            'posix)
+  (t "<abc"      "'<abc'"            'posix)
+  (t "a\"b\"c"   "'a\"b\"c'"         'posix)
+  (t "a(b)c"     "'a(b)c'"           'posix)
+  (t "a{b}c"     "'a{b}c'"           'posix)
+  (t "a'c"       "'a'\"'\"'c'"       'posix)
+  )
+
+(let ()
+  (define (t input expected flavor)
+    (test* #"shell-tokenize-string(~flavor) - ~input" expected
+           (shell-tokenize-string input flavor)))
+
+  (t ""                    '()                         'posix)
+  (t "   "                 '()                         'posix)
+  (t "abc"                 '("abc")                    'posix)
+  (t "  abc "              '("abc")                    'posix)
+  (t "ab   c d"            '("ab" "c" "d")             'posix)
+  (t "ab\\ c\\ d"          '("ab c d")                 'posix)
+  (t "ab\\'c\\\"d"         '("ab'c\"d")                'posix)
+  (t "'ab c d' ef \"g h\"" '("ab c d" "ef" "g h")      'posix)
+  (t "'ab\\\\cd' \"ab\\\\cd\"" '("ab\\\\cd" "ab\\cd")  'posix)
+  (t "'ab\\xcd' \"ab\\xcd\"" '("ab\\xcd" "ab\\xcd")    'posix)
+  (t "a\"\"b"              '("ab")                     'posix)
+  (t "a''b"                '("ab")                     'posix)
+  (t "a'\"'b"              '("a\"b")                   'posix)
+  (t "a\"'\"b"             '("a'b")                    'posix)
+
+  (t "$abc"                (test-error)                'posix)
+  (t "\"$abc\""            (test-error)                'posix)
+  (t "'$abc'"              '("$abc")                   'posix)
+  (t "abc >z"              (test-error)                'posix)
+  (t "abc \">z\""          '("abc" ">z")               'posix)
+  (t "abc \"`z`\""         (test-error)                'posix)
+  (t "abc '`z`'"           '("abc" "`z`")              'posix)
+
+  (t ""                    '()                         'windows)
+  (t "   "                 '()                         'windows)
+  (t "abc"                 '("abc")                    'windows)
+  (t "  abc "              '("abc")                    'windows)
+  (t "ab   c d"            '("ab" "c" "d")             'windows)
+  (t "\"a b c\" d e"       '("a b c" "d" "e")          'windows)
+  (t "\"ab\\\"c\" \"\\\\\" d" '("ab\"c" "\\" "d")      'windows)
+  (t "a\\\\\\b d\"e f\"g h" '("a\\\\\\b" "de fg" "h")  'windows)
+  (t "a\\\\\\\"b c d"      '("a\\\"b" "c" "d")         'windows)
+  (t "a\\\\\\\\\"b c\" d e" '("a\\\\b c" "d" "e")      'windows)
+  (t "\""                  '("")                       'windows)
+  (t "\"\""                '("")                       'windows)
+  (t "\"\"\""              '("\"")                     'windows)
+  (t "\"\"\"\""            '("\"")                     'windows)
+  (t "\"\"\"\"\""          '("\"")                     'windows)
+  (t "\"\"\"\"\"\""        '("\"\"")                   'windows)
+  (t "\"\"\"\"\"\"\""      '("\"\"")                   'windows)
+  (t "a\"b\"\" c"          '("ab\"" "c")               'windows)
+  (t "a\"b\"\"\" c"        '("ab\" c")                 'windows)
+  (t "a\"b\"\"\"\" c"      '("ab\"" "c")               'windows)
+  )
+
+(let ()
+  (define (t-case input expect)
+    (test* #"shell-case: ~input"
+           expect
+           ($ shell-case input
+              ["foo"  'foo]
+              ["foo?" 'foo?]
+              ["foo*" 'foo*]
+              ["*foo" '*foo]
+              [("bar*" "baz*") 'barz]
+              [else   'else])))
+  (t-case "foo" 'foo)
+  (t-case "foof" 'foo?)
+  (t-case "foogh" 'foo*)
+  (t-case "fufoo" '*foo)
+  (t-case "bazooka" 'barz)
+  (t-case "zbar" 'else)
+  (t-case "zfooz" 'else)
+  )
+
 ;;-------------------------------------------------------------------
 (test-section "sql")
 (use text.sql)
