@@ -772,6 +772,11 @@ fuga
 ;; WRITEME
 
 ;;-------------------------------------------------------------------
+(test-section "sh")
+(use text.sh)
+(test-module 'text.sh)
+
+;;-------------------------------------------------------------------
 (test-section "sql")
 (use text.sql)
 (test-module 'text.sql)

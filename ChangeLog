@@ -1,5 +1,13 @@
 2024-05-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/text/sh.scm: New module for shell-related text processing,
+	  including shell-style pattern match.
+	  (cf. https://github.com/shirok/Gauche/issues/1026)
+	  shell-escape-string and shell-tokenize-string are also moved
+	  here from gauche.process, since they are pure text processing and
+	  nothing to do with subprocess.  (Though we keep them available
+	  through gauche.process as well).
+
 	* src/libsys.scm (glob-component->regexp): Allow special characters
 	  to be scaped with '\'.  Also added :shell mode.
 
