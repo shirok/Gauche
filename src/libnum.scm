@@ -953,7 +953,6 @@
 ;; (Mostly used in uvector-related apis)
 
 (inline-stub
- ;; NB: This is dupe from ext/uvector/uvector.scm
  (define-cfn Scm_ClampMode (clamp) ::int
    (cond [(SCM_EQ clamp 'both) (return SCM_CLAMP_BOTH)]
          [(SCM_EQ clamp 'low)  (return SCM_CLAMP_LO)]
