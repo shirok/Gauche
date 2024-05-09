@@ -237,8 +237,8 @@
 (define (exact-real-generator) (exact-rational-generator))
 
 (define (inexact-complex-generator)
-  (let ([re (inexact-real-generator)]
-        [im (inexact-real-generator)])
+  (let ([re (finite-flonums$)]
+        [im (finite-flonums$)])
     (gcons* 0.0 -0.0 0.5 -0.5 1.0 -1.0
             0.0+1.0i 0.0-1.0i -0.0+1.0i -0.0-1.0i
             0.5+0.5i 0.5-0.5i -0.5+0.5i -0.5-0.5i

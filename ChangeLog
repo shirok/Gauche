@@ -1,3 +1,9 @@
+2024-05-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/252.scm (inexact-complex-generator): The previous one
+	  duplicates initial seqeunces by using inexact-real-generator
+	  for real and imag parts.  Fixed.
+
 2024-05-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/sh.scm: New module for shell-related text processing,
