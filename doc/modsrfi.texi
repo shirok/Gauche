@@ -17005,40 +17005,109 @@ random source.
 Returns a generator that yields @code{#t} and @code{#f}, then
 a random boolean values in equal probability.
 
-See also @code{boolean$} in @code{data.random}
+See also @code{booleans$} in @code{data.random}
 (@pxref{Random data generators}).
 @end defun
 
 @defun bytevector-generator
 [SRFI-252]
 @c MOD srfi.252
+Returns a generator that yields an empty bytevector @code{#u8()} first,
+then bytevectors of random length and random content subsequently.
+
+In Gauche, it is realized as follows (@pxref{Random data generators},
+for @code{sequences-of} and @code{integers$}).
+The constant @code{sequence-max-size} is currently 33 but may be
+changed.
+@example
+(gcons* '#u8()
+        (sequences-of <u8vector>
+                      (integers$ sequence-max-size)
+                      (integers$ 256))))
+@end example
 @end defun
 
 @defun char-generator
 [SRFI-252]
 @c MOD srfi.252
+Returns a character generator that yields @code{#\null}, then
+random characters subsequently.  Currently we sample
+charactres uniformly from the entire Unicode range, but that
+causes most of the characters to be very infrequently used ones.
+We might change it in future.
+
+See also @code{chars$} in @code{data.random}
+(@pxref{Random data generators}).
 @end defun
 
 @defun string-generator
 [SRFI-252]
 @c MOD srfi.252
+Returns a string generator that yields an empty string @code{""},
+then strings of random length and random content subsequently.
+
+In Gauche, it is realized as follows (@pxref{Random data generators},
+for @code{strings-of} and @code{integers$}).
+The constant @code{sequence-max-size} is currently 33 but may be
+changed.
+@example
+(gcons* ""
+  (strings-of (integers$ sequence-max-size) (chars$ char-set:full)))
+@end example
+
+Note that the chracters are sampled uniformly from the entire Unicode
+range, which causes almost all strings to consist of very infrequently
+used characters.  We might address this in future.
 @end defun
 
 @defun symbol-generator
 [SRFI-252]
 @c MOD srfi.252
+Returns a symbol generator that yields a symbol whose name
+is empty (@code{||}), then symbols of random length and
+random content subsequently.   It is basically
+@code{(gmap string->symbol (string-generator))}.
+
+Note that the chracters are sampled uniformly from the entire Unicode
+range, which causes almost all symbols to consist of very infrequently
+used characters.  We might address this in future.
 @end defun
 
 @defun complex-generator
 @defunx inexact-complex-generator
 [SRFI-252]
 @c MOD srfi.252
+Returns a generator that yields the following inexact complex
+numbers, followed by random complex numbers.
+
+@example
+0.0 -0.0 0.5 -0.5 1.0 -1.0
+0.0+1.0i 0.0-1.0i -0.0+1.0i -0.0-1.0i
+0.5+0.5i 0.5-0.5i -0.5+0.5i -0.5-0.5i
+1.0+1.0i 1.0-1.0i -1.0+1.0i -1.0-1.0i
++inf.0+inf.0i +inf.0-inf.0i -inf.0+inf.0i -inf.0-inf.0i
++nan.0+nan.0i
++inf.0 -inf.0 +nan.0
+@end example
+
+Note: SRFI specifies @code{complex-generator} to return
+both exact and inexact complex numbers if the implementation supports
+them.  Gauche doesn't have exact complex numbers, so it is the
+same as @code{inexact-complex-generator}.
+
+In Gauche, a random complex number is created by
+uniformly sampled finite flonums for real and imaginary parts.
+Note that ``uniformly sampled finite flonums'' are not the same
+as ``uniformly sampled real numbers''; See @code{finite-flonums$}
+for the details (@pxref{Random data generators}).
 @end defun
 
 @defun exact-complex-generator
 @defunx exact-integer-complex-generator
 [SRFI-252]
 @c MOD srfi.252
+Gauche does not support exact complex numbers, and these procedures
+raise an error when called.
 @end defun
 
 @defun integer-generator
