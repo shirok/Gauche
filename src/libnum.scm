@@ -957,7 +957,8 @@
    (cond [(SCM_EQ clamp 'both) (return SCM_CLAMP_BOTH)]
          [(SCM_EQ clamp 'low)  (return SCM_CLAMP_LO)]
          [(SCM_EQ clamp 'high) (return SCM_CLAMP_HI)]
+         [(SCM_EQ clamp 'wraparound) (return SCM_CLAMP_WRAPAROUND)]
          [(not (or (SCM_FALSEP clamp) (SCM_UNBOUNDP clamp)))
-          (Scm_Error "clamp argument must be either 'both, 'high, 'low or #f, \
-                    but got %S" clamp)])
+          (Scm_Error "clamp argument must be either 'both, 'high, 'low, \
+                      'wraparound or #f, but got %S" clamp)])
    (return SCM_CLAMP_ERROR)))

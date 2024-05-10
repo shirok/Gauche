@@ -171,6 +171,7 @@ struct ScmCompnumRec {
  *  - Error.  Throws an error.
  *  - Clamping.  If the Scheme value falls out of the supported range
  *    of C variable, use the closest representable value.
+ *  - Wraparound.  Take out only lower bits.
  *  - Convert only when possible.  If conversion is not possible, use
  *    the Scheme value as-is.  It is useful to provide a shortcut path
  *    to improve performance.
@@ -187,7 +188,8 @@ enum ScmClampMode {
     SCM_CLAMP_HI = 1,
     SCM_CLAMP_LO = 2,
     SCM_CLAMP_BOTH = 3,
-    SCM_CLAMP_NONE = 4         /* do not convert when out-of-range */
+    SCM_CLAMP_NONE = 4,        /* do not convert when out-of-range */
+    SCM_CLAMP_WRAPAROUND = 5
 };
 
 SCM_EXTERN int    Scm_ClampMode(ScmObj clamp);
