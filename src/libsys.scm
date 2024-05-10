@@ -1486,6 +1486,8 @@
                                            (sorter sort)
                                            (prefix #f))
   (let* ([sep (or separator
+                  ;; Avoid using cond-expand, for this may be precompiled
+                  ;; on different architecture.
                   (if (assq 'gauche.os.windows
                             (with-module gauche.internal (cond-features)))
                     #[/\\]
