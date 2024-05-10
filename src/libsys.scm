@@ -1461,7 +1461,7 @@
 ;;---------------------------------------------------------------------
 ;; globbing
 
-(with-module gauche)
+(select-module gauche)
 
 ;; glob-fold provides the fundamental logic of glob.  It does not
 ;; depend on filesystems---any tree structure that has "pathname"
@@ -1481,13 +1481,18 @@
 
 (define sys-glob glob) ;; backward compatibility
 
-(define (glob-fold patterns proc seed :key (separator #[/])
+(define (glob-fold patterns proc seed :key (separator #f)
                                            (folder glob-fs-folder)
                                            (sorter sort)
                                            (prefix #f))
-  (let1 r (fold (cut glob-fold-1 <> proc <> separator folder prefix) seed
-                (fold glob-expand-braces '()
-                      (if (list? patterns) patterns (list patterns))))
+  (let* ([sep (or separator
+                  (if (assq 'gauche.os.windows
+                            (with-module gauche.internal (cond-features)))
+                    #[/\\]
+                    #[/]))]
+         [r (fold (cut glob-fold-1 <> proc <> sep folder prefix) seed
+                  (fold glob-expand-braces '()
+                        (if (list? patterns) patterns (list patterns))))])
     (if sorter (sorter r) r)))
 
 ;; NB: we avoid util.match due to the hairy dependency problem.
@@ -1579,7 +1584,7 @@
             [(#\\) (let1 next (n)
                      (if (eof-object? next)
                        '(eol)
-                       `(,next (element1 (n) ct))))]
+                       `(,next ,@(element1 (n) ct))))]
             [else (element1 ch ct)]))
         (define (element0* ch ct)       ;next to initial '*'
           (case ch
