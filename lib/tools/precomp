@@ -110,7 +110,7 @@
 (define (usage msg)
   (when msg (print msg))
   (print
-   "Usage: gosh precomp [options] <file.scm> ...\
+   "Usage: gosh tools/precomp [options] <file.scm> ...\
   \nOptions:\
   \n  -i,--interface=FILE.SCI\
   \n      Specify output interface file.  Valid only for single input file.\
