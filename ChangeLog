@@ -1,3 +1,9 @@
+2024-05-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/configure/output.scm (cf-output): Adjust escaping of
+	  cf-define-ed value when it appears in -Dvar=val.
+	  https://github.com/shirok/Gauche/issues/1028
+
 2024-05-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/252.scm (inexact-complex-generator): The previous one

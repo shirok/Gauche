@@ -69,10 +69,13 @@
       (string-join
        (dict-map (~ pa'defs)
                  (^[k v]
-                   (let1 vv ($ regexp-replace-all* (x->string v)
-                               #/\\/ "\\\\\\\\"
-                               #/\"/ "\\\\\"")
-                     #"-D~|k|=~|vv|")))
+                   (if v
+                     (let1 vv ($ regexp-replace-all* (x->string v)
+                                 #/\\/ "\\\\\\\\"
+                                 #/\"/ "\\\\\""
+                                 #/ / "\\\\ ")
+                       #"-D~|k|=~|vv|")
+                     "")))
        " ")
       "-DHAVE_CONFIG_H"))
   (define (make-subst path-prefix)
