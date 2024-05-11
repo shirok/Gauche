@@ -272,7 +272,7 @@
   (pairs-of car-gen (or cdr-gen car-gen)))
 
 (define (procedure-generator-of gen)
-  (^[] (^ _ (gen))))
+  (gmap (^v (^ _ v)) gen))
 
 (define (vector-generator-of gen :optional (max-length #f))
   (if max-length
