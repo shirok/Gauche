@@ -17115,6 +17115,29 @@ raise an error when called.
 @defunx inexact-integer-generator
 [SRFI-252]
 @c MOD srfi.252
+Returns generators that yields integers, exact integers,
+and inexact integers, respectively.
+
+The exact integer generator always yield @code{0}, @code{1}, and @code{-1}
+at the beginning, then random integers follow.
+
+The inexact integer generator always yield @code{0.0}, @code{-0.0},
+@code{1.0}, and @code{-1.0}
+at the beginning, then random integers follow.
+
+The general integer generator created by @code{integer-generator}
+samples evenly from an exact integer genratgor and an inexact
+integer generator.
+
+Since the range of exact integers is only bounded by the memory,
+uniform sampling from the entire possible range is infeasible;
+almost all samples would become a huge integer.  Instead, we split
+integer range into 3: relatively small integers,
+fixnums, and bignums, and sample evenly from these three generators.
+Small integers and fixnums are sampled uniformly within its range,
+and bignums are sampled according to the power law; so, we see
+a lot more bignums closer to fixnum range, with occasional really big
+numbers sprinkled in.
 @end defun
 
 @defun number-generator
