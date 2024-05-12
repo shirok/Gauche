@@ -164,6 +164,7 @@ SCMFILES = \
        tools/build-standalone tools/check-script \
        tools/genstub tools/get-cacert \
        tools/make-export-list tools/precomp tools/docprep \
+       tools/compile-r7rs \
        www/cgi.scm www/cgi-test.scm www/cgi/test.scm www/css.scm
 
 all:
@@ -180,6 +181,7 @@ install:
 	if test -f slibcat; then \
 	  $(INSTALL_DATA) slibcat "$(DESTDIR)$(SCM_INSTALL_DIR)/slibcat"; \
 	fi
+	$(INSTALL) -m 555 tools/compile-r7rs "$(bindir)"
 
 uninstall:
 
