@@ -3168,6 +3168,16 @@ Gaucheのアプリケーションの配布を簡単にするために、
 @c COMMON
 
 @c EN
+Gauche also provides a @code{compile-r7rs} program that is compliant
+with the command-line interface presented in SRFI 138
+(@url{https://srfi.schemers.org/srfi-138/srfi-138.html}).
+@c JP
+Gauche は、準拠する @code{compile-r7rs} プログラムも提供します
+SRFI 138 で提供されるコマンドライン インターフェイスを使用
+(@url{https://srfi.schemers.org/srfi-138/srfi-138.html})
+@c COMMON
+
+@c EN
 @subheading Quick recipe
 @c JP
 @subheading 簡単な使い方

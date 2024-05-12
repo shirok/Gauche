@@ -584,6 +584,7 @@ init_cond_features()
 
         /* SRFIs that are not libraries */
         { "srfi-22", NULL },    /* Scheme scripts */
+        { "srfi-138", NULL },    /* compile-r7rs script */
 
         /* Threads */
 #if   defined(GAUCHE_USE_PTHREADS)

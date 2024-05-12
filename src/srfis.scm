@@ -1072,6 +1072,14 @@ textは単に「変更不可でインデクスされた文字列」にすぎま�
 文字列のインデクシングについては@ref{String indexing}を参照してください。
 APIは@ref{R7RS immutable texts}で説明しています。
 
+srfi-138
+()
+
+Compiling Scheme programs to executables
+Supported.  @xref{Building standalone executables}.
+
+Scheme プログラムを実行可能ファイルにコンパイルする
+サポートされています。 @xref{Building standalone executables}。
 
 srfi-141, srfi-141
 ()

@@ -1,0 +1,123 @@
+#! /usr/bin/env gosh
+
+;;; compile-r7rs - compile R7RS programs
+;;;
+;;;   Copyright (c) 2024  Antero Mejr  <mail@antr.me>
+;;;
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
+
+;; Similar to build-standalone, but with an SRFI 138-compliant interface.
+
+(use gauche.cgen.standalone)
+(use gauche.parseopt)
+(use gauche.process)
+(use file.util)
+
+;; Needs to return a list of .sld files relative to the supplied dir.
+(define (find-slds dir)
+  (let-values (((subdirs files) (directory-list2 dir :children? #t
+                                                 :add-path? #f)))
+    (let* ((slds (filter (lambda (path)
+                           (let ((ext (path-extension path)))
+                             (and ext (string=? "sld" ext))))
+                         files))
+           (sd-sld (apply append (map (lambda (sd)
+                                        (map (lambda (sld)
+                                               (build-path sd sld))
+                                             (find-slds (build-path dir sd))))
+                                      subdirs))))
+      (append slds sd-sld))))
+
+;; Needs to return a list of full paths to directories with sld files.
+(define (subdirs-with-slds dir)
+  (let-values (((subdirs files) (directory-list2 dir :children? #t
+                                                 :add-path? #t)))
+    (let* ((slds (filter (lambda (path)
+                           (let ((ext (path-extension path)))
+                             (and ext (string=? "sld" ext))))
+                         files))
+           (sd-sld (apply append (map subdirs-with-slds subdirs))))
+      (if (null? slds)
+          sd-sld
+          (cons dir sd-sld)))))
+
+(define (usage)
+  (display "Usage: compile-r7rs [options...] [pathname]
+
+Options:
+-o outfile  Specify output file name.  When omitted, the basename of
+            the main source file is used.
+-I dir      Specify a search path of extra files (lib/library.scm ...)
+            to prepend if they're not relative to the current directory.
+            This option can be given multiple times.
+-A dir      Specify a search path of extra files (lib/library.scm ...)
+            to append if they're not relative to the current directory.
+            This option can be given multiple times.
+-D name
+            Add name to the list of feature identifiers maintained by the
+            Scheme implementation for the purpose of executing the program
+            in the text file pathname. This option can be given multiple
+            times.\n")
+  (exit 1))
+
+(define (main args)
+  (define incdirs '())
+  (define feature-ids '())
+  (define appenddirs '())
+  (define compile-env (sys-getenv "COMPILE_R7RS"))
+  (let-args (cdr args) ([outfile "o=s" #f]
+                        [#f "I=s" #f => (^x (push! incdirs x) #f)]
+                        [#f "D=s" #f => (^x (push! feature-ids x) #f)]
+                        [#f "A=s" #f => (^x (push! appenddirs x) #f)]
+                        [else _ (usage)]
+                        . files)
+    (let* ((dirs (append (reverse incdirs) (reverse appenddirs)))
+           (extras (fold-right (lambda (dir acc)
+                                 (append acc (find-slds dir)))
+                               '() dirs))
+           (incdirs (fold-right (lambda (dir acc)
+                                  (append acc (subdirs-with-slds dir)))
+                                '() dirs))
+           (argstr (string-join (cdr args) " ")))
+      (cond (compile-env
+             (sys-unsetenv "COMPILE_R7RS")
+             (sys-system #"~compile-env ~argstr"))
+            (else
+             (when (not (= 1 (length files))) (usage))
+             (build-standalone
+              (car files)
+              :outfile outfile
+              :extra-files extras
+              :include-dirs incdirs
+              :feature-ids feature-ids)))))
+  0)
+
+;; Local variables:
+;; mode: scheme
+;; end:

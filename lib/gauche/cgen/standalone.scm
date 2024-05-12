@@ -48,9 +48,11 @@
                                        (cpp-definitions '())
                                        (keep-c-file #f)
                                        (header-dirs '())
-                                       (library-dirs '()))
+                                       (library-dirs '())
+                                       (feature-ids '()))
   (receive (placeholder out.c)
-      (generate-c-file srcfile (append include-dirs '(".")) extra-files)
+      (generate-c-file srcfile (append include-dirs '(".")) extra-files
+                       feature-ids)
     (unwind-protect
         (compile-c-file out.c
                         (or outfile (path-sans-extension (sys-basename srcfile)))
@@ -62,7 +64,7 @@
 
 ;; This creates an empty file that reserve the temporary name, and the actual
 ;; C file.  Returns two names.
-(define (generate-c-file file incdirs extras)
+(define (generate-c-file file incdirs extras feature-ids)
   (define outname
     (receive (oport name) (sys-mkstemp (path-sans-extension (sys-basename file)))
       (close-port oport)
@@ -80,6 +82,11 @@
     (cgen-init "SCM_INIT_STATIC();")
     (unless (null? extras)
       (setup-library-table incdirs extras))
+    (for-each (lambda (feat)
+                (cgen-init (string-append "Scm_AddFeature(\""
+                                          feat
+                                          "\", NULL);")))
+              feature-ids)
     (cgen-init "Scm_SimpleMain(argc, argv, main_script, 0);")
     (cgen-emit-c (cgen-current-unit)))
   (values outname (path-swap-extension outname "c")))
