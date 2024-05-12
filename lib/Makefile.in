@@ -181,7 +181,6 @@ install:
 	if test -f slibcat; then \
 	  $(INSTALL_DATA) slibcat "$(DESTDIR)$(SCM_INSTALL_DIR)/slibcat"; \
 	fi
-	$(INSTALL) -m 555 tools/compile-r7rs "$(bindir)"
 
 uninstall:
 
