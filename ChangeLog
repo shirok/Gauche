@@ -1,3 +1,9 @@
+2024-05-12  Shiro Kawai  <shiro@acm.org>
+
+	* lib/tools/compile-r7rs: Added SRFI-138 compliant script.
+	  Contributed by Antero Mejr
+	  https://github.com/shirok/Gauche/pull/1030
+
 2024-05-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/configure/output.scm (cf-output): Adjust escaping of
