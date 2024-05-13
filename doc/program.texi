@@ -3519,23 +3519,19 @@ Gaucheが既にシステムにインストール済みであれば、@code{tools
 
 SRFI-138 defines a portable command for compiling Scheme programs.
 The SRFI specifies the name of the command to be @code{compile-r7rs},
-but Gauche does not install a command with that name, for it may interfere
-with other Scheme implementations.  You can save a small shell script
-with the name @code{compile-r7rs} if you like:
+but Gauche installs the command with @code{gauche-compile-r7rs}
+so that it won't interfere with other Scheme implementations.
+The user may create a symlink @code{compile-r7rs} to @code{gauche-compile-r7rs}.
 
-@example
-#!/bin/sh
-gosh tools/compile-r7rs "$@"
-@end example
-
-@deftp {Program} {gosh tools/compile-r7rs} [options] script.scm
+@deftp {Program} gauche-compile-r7rs [options] script.scm
+@deftpx {Program} {gosh tools/compile-r7rs} [options] script.scm
 Compile a Scheme source file @code{script.scm} and produce an
 executable binary.
 
 If the enviornment variable @code{COMPILE_R7RS} is defined
 to a non-empty string, it is assumed to a pathname of another
 program, which is invoked with the same arguments to
-@code{compile-r7rs} instead.  This allows the user to choose
+@code{gauche-compile-r7rs} instead.  This allows the user to choose
 alternative implementation's compiler.
 @end deftp
 
