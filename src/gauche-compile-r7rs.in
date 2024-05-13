@@ -1,0 +1,9 @@
+;;;
+;;; gauche-compile-r7rs - SRFI-138 compatible compile script
+;;;
+
+(load "tools/compile-r7rs")
+
+;; Local variables:
+;; mode: scheme
+;; end:

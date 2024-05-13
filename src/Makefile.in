@@ -183,10 +183,14 @@ INSTALL_BINS = gosh$(EXEEXT)           \
 	       gauche-config$(EXEEXT)  \
 	       gauche-install$(EXEEXT) \
 	       gauche-package$(EXEEXT) \
-	       gauche-cesconv$(EXEEXT)
+	       gauche-cesconv$(EXEEXT) \
+	       gauche-compile-r7rs$(EXEEXT)
 INSTALL_SCMS = genstub precomp cesconv build-standalone
 
-GENERATED_SCRIPTS = gauche-install gauche-package gauche-cesconv
+GENERATED_SCRIPTS = gauche-install \
+		    gauche-package \
+		    gauche-cesconv \
+		    gauche-compile-r7rs
 
 PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 		  gauche/priv/arith_x86_64.h gauche/priv/bignumP.h \
@@ -439,6 +443,12 @@ gauche-cesconv : gauche-cesconv.in
 	cat $(srcdir)/gauche-cesconv.in >> gauche-cesconv
 	@chmod -w+x gauche-cesconv
 
+gauche-compile-r7rs : gauche-compile-r7rs.in
+	@rm -f gauche-compile-r7rs
+	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-compile-r7rs && \
+	cat $(srcdir)/gauche-compile-r7rs.in >> gauche-compile-r7rs
+	@chmod -w+x gauche-compile-r7rs
+
 # static link -----------------------------------------
 # can be called after everything was built
 
@@ -624,6 +634,7 @@ pre-package : $(PREGENERATED)
 gauche-install.exe : $(LIBGAUCHE).$(SOEXT) gauche-install-rsrc.o
 gauche-package.exe : $(LIBGAUCHE).$(SOEXT)
 gauche-cesconv.exe : $(LIBGAUCHE).$(SOEXT)
+gauche-compile-r7rs.exe : $(LIBGAUCHE).$(SOEXT)
 
 install-mingw:
 	$(INSTALL_DATA) $(INSTALL_MINGWHEADERS) "$(DESTDIR)$(HEADER_INSTALL_DIR)/gauche"

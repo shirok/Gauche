@@ -3172,8 +3172,8 @@ Gauche also provides a @code{compile-r7rs} program that is compliant
 with the command-line interface presented in SRFI 138
 (@url{https://srfi.schemers.org/srfi-138/srfi-138.html}).
 @c JP
-Gauche は、準拠する @code{compile-r7rs} プログラムも提供します
-SRFI 138 で提供されるコマンドライン インターフェイスを使用
+Gaucheはまた、SRFI 138が定義するコマンドラインインターフェイスに
+準拠する@code{compile-r7rs}スクリプトも提供します。
 (@url{https://srfi.schemers.org/srfi-138/srfi-138.html})
 @c COMMON
 
@@ -3325,11 +3325,14 @@ DSO files are available on target machines, you can exclude
 
 @end itemize
 
-@c EN
-@subheading Using build-standalone
-@c JP
-@subheading build-standaloneスクリプトを使う
-@c COMMON
+@menu
+* Using build-standalone::
+* Using compile-r7rs::
+@end menu
+
+@node Using build-standalone, Using compile-r7rs, Building standalone executables, Building standalone executables
+@subsection Using build-standalone
+@c NODE build-standaloneスクリプトを使う
 
 @deftp {Program} {gosh tools/build-standalone} [options] script-file [library-file @dots{}]
 @c EN
@@ -3508,6 +3511,57 @@ Gaucheが既にシステムにインストール済みであれば、@code{tools
 このオプションを気にする必要はありません。インストールしていないGaucheのランタイムを
 利用したい場合のみこれらのオプションを指定してください。
 @c COMMON
+@end deftp
+
+@node Using compile-r7rs,  , Using build-standalone, Building standalone executables
+@subsection Using compile-r7rs
+@c NODE compile-r7rsスクリプトを使う
+
+SRFI-138 defines a portable command for compiling Scheme programs.
+The SRFI specifies the name of the command to be @code{compile-r7rs},
+but Gauche does not install a command with that name, for it may interfere
+with other Scheme implementations.  You can save a small shell script
+with the name @code{compile-r7rs} if you like:
+
+@example
+#!/bin/sh
+gosh tools/compile-r7rs "$@"
+@end example
+
+@deftp {Program} {gosh tools/compile-r7rs} [options] script.scm
+Compile a Scheme source file @code{script.scm} and produce an
+executable binary.
+
+If the enviornment variable @code{COMPILE_R7RS} is defined
+to a non-empty string, it is assumed to a pathname of another
+program, which is invoked with the same arguments to
+@code{compile-r7rs} instead.  This allows the user to choose
+alternative implementation's compiler.
+@end deftp
+
+The following command-line arguments are recognized.
+
+@deftp {Command Option} -I path
+@deftpx {Command Option} -A path
+Prepend or append @var{path} to the path list the referenced
+libraries are searched.  These options can be specified multiple times.
+@end deftp
+
+@deftp {Command Option} -o outfile
+Specifies output executable filename.  When omitted, @code{a.out}
+(on POSIX systems) or @code{a.exe} (on Windows) are used.
+@end deftp
+
+@deftp {Command Option} -D feature-id
+Adds @code{feature-id} to the list of feature identifiers.
+This is to switch code conditionally in the source with
+@code{cond-expand}.
+This option can be specified multiple times.
+
+Note that this does @emph{not} enable certain features.  So you
+shouldn't specify system-reserved feature identifiers
+(@pxref{Platform-dependent features}).  This is also different
+from @code{-D} option of @code{build-standalone}.
 @end deftp
 
 @c Local variables:

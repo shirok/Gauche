@@ -10,6 +10,8 @@
 
 (test-start "build-standalone (installed)")
 
+(test-section "build-standalone")
+
 (call-with-temporary-directory
  (^[dir]
    (define source (build-path dir "hello.scm"))
@@ -26,6 +28,27 @@
    (test* "Run" "Hello, Gauche"
           (process-output->string `(,executable "Gauche")))
 
+   ))
+
+(test-section "compile-r7rs")
+
+(call-with-temporary-directory
+ (^[dir]
+   (define source (build-path dir "hello.scm"))
+   (define executable
+     (string-append (path-sans-extension source)
+                    (gauche-config "--executable-suffix")))
+   (with-output-to-file source
+     (^[]
+       (write '(import (scheme base) (scheme write) (scheme process-context)))
+       (write '(display "Hello, "))
+       (write '(display (cadr (command-line))))
+       (write '(newline))))
+   (test* "Build" #t
+          (and (do-process `(gauche-compile-r7rs -o ,executable ,source))
+               (file-is-executable? executable)))
+   (test* "Run" "Hello, Droit"
+          (process-output->string `(,executable "Droit")))
    ))
 
 (test-end)
