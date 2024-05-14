@@ -135,7 +135,7 @@ texi : gauche-refe.texi gauche-refj.texi
 html : gauche-refe.html gauche-refj.html
 htmls : gauche-refe/index.html gauche-refj/index.html
 htmls-draft : gauche-refe-draft/index.html gauche-refj-draft/index.html
-dvi : gauche-refe.dvi gauche-refj.dvi
+dvi : gauche-refe.dvi
 pdf : gauche-refe.pdf gauche-refj.pdf
 info : gauche-refe.info.gz gauche-refj.info.gz
 epub : gauche-refe.epub gauche-refj.epub
