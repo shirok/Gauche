@@ -56,6 +56,11 @@
   (print "  --keep-c-file")
   (print "              Do not delete intermediate C file after compilation.  This is")
   (print "              for troubleshooting.")
+  (print "  --dynamic")
+  (print "              Instead of statically linking libgauche, use the system's")
+  (print "              library at runtime.  The resulting binary requires libgauche")
+  (print "              to run, so it's not really 'standalone', but the binary size")
+  (print "              is much smaller.")
   (print)
   (print "The file <main.scm> is the main script file; usually it contains 'main'")
   (print "procedure.  Other files <lib/library.scm> ... are extra library files needed")
@@ -73,6 +78,7 @@
                         [#f "header-dir=s" => (^x (push! hdrdirs x) #f)]
                         [#f "library-dir=s" => (^x (push! libdirs x) #f)]
                         [keepc "keep-c-file"]
+                        [dynamic "dynamic"]
                         [else _ (usage)]
                         . files)
     (when (null? files) (usage))
@@ -83,6 +89,7 @@
                       :cpp-definitions (reverse defs)
                       :header-dirs (reverse hdrdirs)
                       :library-dirs (reverse libdirs)
+                      :dynamic dynamic
                       :keep-c-file keepc))
   0)
 
