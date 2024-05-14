@@ -155,11 +155,6 @@
   (do-process (make-cmd `(,makeinfo "--pdf" "--Xopt" "--tidy" ,input))))
 
 (define (do-dvi input makeinfo)
-  (cond-expand
-   [gauche.sys.setenv
-    (when (#/j\.texi$/ input)
-      (sys-putenv "TEX=dviluatex"))]
-   [else])
   (do-process (make-cmd `(,makeinfo "--dvi" "--Xopt" "--tidy" ,input))))
 
 (define (do-epub input makeinfo)
