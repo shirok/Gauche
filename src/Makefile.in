@@ -187,11 +187,6 @@ INSTALL_BINS = gosh$(EXEEXT)           \
 	       gauche-compile-r7rs$(EXEEXT)
 INSTALL_SCMS = genstub precomp cesconv build-standalone
 
-GENERATED_SCRIPTS = gauche-install \
-		    gauche-package \
-		    gauche-cesconv \
-		    gauche-compile-r7rs
-
 PRIVATE_HEADERS = gauche/priv/arith.h gauche/priv/arith_i386.h \
 		  gauche/priv/arith_x86_64.h gauche/priv/bignumP.h \
 		  gauche/priv/builtin-syms.h gauche/priv/codeP.h \
@@ -270,8 +265,8 @@ HEADERS = gauche.h $(INSTALL_SUBHEADERS) $(PRIVATE_HEADERS)
 
 OBJECTS = $(libgauche_OBJECTS) $(gosh_OBJECTS)
 
-@CROSS_COMPILING_no@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS) test-extra$(EXEEXT)
-@CROSS_COMPILING_yes@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) $(GENERATED_SCRIPTS)
+@CROSS_COMPILING_no@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS) test-extra$(EXEEXT)
+@CROSS_COMPILING_yes@all : $(LIBGAUCHE).$(SOEXT) $(INSTALL_BINS)
 
 gosh$(EXEEXT) : $(LIBGAUCHE).$(SOEXT) $(gosh_OBJECTS)
 	@rm -f gosh$(EXEEXT)
@@ -558,10 +553,9 @@ CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
 		   gauche/priv/configP.h features.c features.flags
 
 clean :
-	rm -rf core core.[0-9]* gosh$(EXEEXT) gauche-config$(EXEEXT) \
+	rm -rf core core.[0-9]* $(INSTALL_BINS) $(INSTALL_LIBS) \
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
-	       $(GENERATED_SCRIPTS) gauche-config.c \
-	       $(LIBGAUCHE).$(SOEXT)* $(LIBGAUCHE_STATIC).a \
+	       gauche-config.c \
 	       *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
 	       test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c \
