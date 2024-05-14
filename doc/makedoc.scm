@@ -13,7 +13,7 @@
 (define (main args)
   (cond-expand
    ;; do not let LANG setting affect makeinfo
-   [gauche.sys.setenv (sys-putenv "LANG=C")]
+   [gauche.sys.setenv (sys-putenv "LANG=C.UTF-8")]
    [else])
   (if (match (cdr args)
         [("info" input makeinfo gzip)     (do-info input makeinfo gzip)]
