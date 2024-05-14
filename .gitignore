@@ -204,6 +204,8 @@ test.record
 /src/gauche-cesconv.in.c
 /src/gauche-config
 /src/gauche-config.c
+/src/gauche-compile-r7rs
+/src/gauche-compile-r7rs.in.c
 /src/gauche-install
 /src/gauche-install.in.c
 /src/gauche-package
