@@ -551,14 +551,6 @@ init_cond_features()
         { "gauche", NULL },
         { "gauche-" GAUCHE_VERSION , NULL },
 
-        /* Platform */
-#if   defined(GAUCHE_WINDOWS)
-        { "gauche.os.windows", NULL },
-        { "gauche-windows", NULL }, /* for backward compatibility */
-#elif defined(__CYGWIN__)  /* cygwin is different enough to deserve this */
-        { "gauche.os.cygwin", NULL },
-#endif
-
         /* R7RS */
         /* NB: We should probably make checking 'r7rs' trigger loading
            r7rs module and setting up the environment. */
@@ -570,12 +562,43 @@ init_cond_features()
         { "ieee-float", NULL },
         { "full-unicode", NULL },
         { "ratios", NULL },
+
+        /* Platform */
 #if   defined(GAUCHE_WINDOWS)
+        { "gauche.os.windows", NULL },
+        { "gauche-windows", NULL }, /* for backward compatibility */
         { "windows", NULL },
+#elif defined(__CYGWIN__)  /* cygwin is different enough to deserve this */
+        { "gauche.os.cygwin", NULL },
 #else
-        { "posix", NULL },
+        { "unix", NULL},
+        {"posix", NULL},
 #endif
-        /* TODO: OS Flags, CPU arch flags and C memory model flags */
+        /* Unix OS Flags */
+#if   defined(FREEBSD)
+        { "bsd", NULL},
+        { "freebsd", NULL},
+#elif defined(DARWIN)
+        { "bsd", NULL},
+        { "darwin", NULL},
+#elif defined(OPENBSD)
+        { "bsd", NULL},
+        { "openbsd", NULL},
+#elif defined(LINUX) & defined(_GNU_SOURCE)
+        { "linux-gnu", NULL},
+        { "linux", NULL},
+#elif defined(LINUX)
+        { "linux", NULL}
+#endif
+        /* Architecture flags */
+#if   defined(AARCH64)
+        { "aarch64", NULL},
+#elif defined(__i386__) || defined(i386)
+        { "i386", NULL},
+#elif defined(__x86_64__) || defined(__x86_64) || defined(AMD64)
+        { "x86-64", NULL},
+#endif
+        /* TODO: C memory model flags */
 #if   defined(WORDS_BIGENDIAN)
         { "big-endian", NULL },
 #else
