@@ -15302,21 +15302,6 @@ Returns a comparator used in the hashtable @var{ht}.
 @c COMMON
 @end defun
 
-@defun hash-table-type ht
-@c EN
-This is an old API, superseded by @code{hash-table-comparator}.
-
-Returns one of symbols @code{eq?}, @code{eqv?}, @code{equal?},
-@code{string=?}, @code{general}, indicating the type of the hash table @var{ht}.
-@c JP
-これは古いAPIで、@code{hash-table-comparator}によって置き換えられました。
-
-ハッシュテーブル@var{ht}のタイプに応じて、シンボル
-@code{eq?}、@code{eqv?}、@code{equal?}、@code{string=?}、
-@code{general}のいずれかを返します。
-@c COMMON
-@end defun
-
 @defun hash-table-num-entries ht
 @defunx hash-table-size ht
 [R7RS hash-table]
@@ -15326,6 +15311,22 @@ R7RS name is @code{hash-table-size}.
 @c JP
 ハッシュテーブル@var{ht}中の要素の個数を返します。
 R7RSの名前は@code{hash-table-size}.
+@c COMMON
+@end defun
+
+@defun hash-table-type ht
+@c DEPRECATED
+@c EN
+This is a deprecated API, superseded by @code{hash-table-comparator}.
+
+Returns one of symbols @code{eq?}, @code{eqv?}, @code{equal?},
+@code{string=?}, @code{general}, indicating the type of the hash table @var{ht}.
+@c JP
+これは古いAPIで、@code{hash-table-comparator}によって置き換えられました。
+
+ハッシュテーブル@var{ht}のタイプに応じて、シンボル
+@code{eq?}、@code{eqv?}、@code{equal?}、@code{string=?}、
+@code{general}のいずれかを返します。
 @c COMMON
 @end defun
 
@@ -25958,6 +25959,7 @@ If you want to deal with binary data, consider using
 @defunx port-fold-right fn knil reader
 @defunx port-for-each fn reader
 @defunx port-map fn reader
+@c DEPRECATED
 @c EN
 Convenient iterators over the input read by @var{reader}.
 
@@ -29144,6 +29146,7 @@ Schemeプログラムが@emph{スクリプト}として実行されている期�
 
 @defvar *program-name*
 @defvarx *argv*
+@c DEPRECATED
 @c EN
 These variables are bound to the program name and the list of command-line
 arguments, respectively.  In Gauche scripts that are invoked by @code{gosh}
@@ -31091,6 +31094,13 @@ signals.  Not all of them may be defined on some systems.
 これらの変数はシステム依存のシグナル番号に束縛されています。
 全てのシステムで全てのシグナルがサポートされているわけではありません。
 @c COMMON
+
+@c EN
+For portable code, you can use SRFI-238's codeset (@pxref{Codesets}).
+@c JP
+ポータブルなコードには、SRFI-238のコードセットを使うこともできます
+(@ref{Codesets}参照)。
+@c COMMON
 @end defvar
 
 @c EN
@@ -31121,6 +31131,13 @@ by the system.
 シグナル番号@var{signum}のシグナルに結びつけられたメッセージを文字列で返します。
 もしメッセージが無かったり、@var{signum}が有効なシグナル番号でなかったら、
 この関数は@code{#f}を返すか、システムが提供する一般的なメッセージを返します。
+@c COMMON
+
+@c EN
+For portable code, you can use SRFI-238's codeset (@pxref{Codesets}).
+@c JP
+ポータブルなコードには、SRFI-238のコードセットを使うこともできます
+(@ref{Codesets}参照)。
 @c COMMON
 @end defun
 
@@ -31194,6 +31211,13 @@ Returns the human-readable name of the given signal number.
 (Note that signal numbers are system-dependent.)
 @c JP
 シグナル番号の名前を返します。(シグナル番号はシステムに依存します)。
+@c COMMON
+
+@c EN
+For portable code, you can use SRFI-238's codeset (@pxref{Codesets}).
+@c JP
+ポータブルなコードには、SRFI-238のコードセットを使うこともできます
+(@ref{Codesets}参照)。
 @c COMMON
 
 @example
@@ -32301,6 +32325,13 @@ the error.
 @c COMMON
 
 @c EN
+For portable code, you can use SRFI-238's codeset (@pxref{Codesets}).
+@c JP
+ポータブルなコードには、SRFI-238のコードセットを使うこともできます
+(@ref{Codesets}参照)。
+@c COMMON
+
+@c EN
 To represent @var{errno}, the following constants are defined.
 Each constant is bound to an exact integer representing the system's
 error number.  Note that the actual value may differ among systems,
@@ -32374,6 +32405,13 @@ with system errors.
 
 有効なエラー名およびその整数値はプラットフォーム毎に異なります。
 これらの手続きは、システムエラーを扱うメタなコードをポータブルに書く時に役立つでしょう。
+@c COMMON
+
+@c EN
+For portable code, you can use SRFI-238's codeset (@pxref{Codesets}).
+@c JP
+ポータブルなコードには、SRFI-238のコードセットを使うこともできます
+(@ref{Codesets}参照)。
 @c COMMON
 @end defun
 
