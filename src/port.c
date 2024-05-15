@@ -1473,7 +1473,7 @@ static ScmSize file_flusher(ScmPort *p, ScmSize cnt, int forcep)
         errno = 0;
         SCM_SYSCALL(r, write(fd, datptr, datsiz-nwrote));
         if (r < 0) {
-            if (PORT_BUFFER_SIGPIPE_SENSITIVE_P(p)) {
+            if (errno == EPIPE && PORT_BUFFER_SIGPIPE_SENSITIVE_P(p)) {
                 /* (sort of) emulate termination by SIGPIPE.
                    NB: The difference is visible from the outside world
                    as the process exit status differ (WIFEXITED
