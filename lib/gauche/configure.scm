@@ -76,6 +76,10 @@
   (use gauche.configure.output)
   (use gauche.configure.compile)
   (use gauche.configure.init)
+
+  ;; Allow configure scripts to use gauche-config
+  (extend gauche.config)
+
   (export
    ;; gauche.configure.base
    cf-msg-checking cf-msg-result cf-msg-warn cf-msg-error cf-msg-notice
