@@ -588,7 +588,7 @@ init_cond_features()
         { "linux-gnu", NULL},
         { "linux", NULL},
 #elif defined(LINUX)
-        { "linux", NULL}
+        { "linux", NULL},
 #endif
         /* Architecture flags */
 #if   defined(AARCH64)
