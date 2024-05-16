@@ -5,9 +5,10 @@
 
 top_srcdir=$1
 top_builddir=$2
+host=$3
 
-if [ -z "$1" -o -z "$2" ]; then
-    echo "Usage: gen-features.sh TOP_SRCDIR TOP_BUILDDIR"
+if [ -z "$1" -o -z "$2" -o -z "$3" ]; then
+    echo "Usage: gen-features.sh TOP_SRCDIR TOP_BUILDDIR HOST"
     exit 1
 fi
 
@@ -17,15 +18,69 @@ features_c=${top_builddir}/src/features.c
 features_c_tmp=${features_c}.$$
 features_flags=${top_builddir}/src/features.flags
 features_flags_tmp=${features_flags}.$$
+host_tmp=gen-features.tmp.$$
 
 clean () {
     rm -f ${features_c_tmp}
     rm -f ${features_flags_tmp}
+    rm -f ${host_tmp}
 }
 
 trap clean EXIT
 
+# add_feature feature_name [module_name]
+add_feature() {
+    feature_name=$1
+    module_name=$2
+    if [ -z "$module_name" -o "$module_name" = NULL ]; then
+        echo "  { \"$feature_name\", NULL }," >> $features_c_tmp
+    else
+        echo "  { \"$feature_name\", \"$module_name\" }," >> $features_c_tmp
+    fi
+    echo " -F$feature_name" >> $features_flags_tmp
+}
+
+# remove_feature feature_name
+remove_feature() {
+    feature_name=$1
+    echo " -F-$feature_name" >> $features_flags_tmp
+}
+
+set_cpu_os_features() {
+    # set up cpu and os from autoconf triplet
+    echo $host | tr -- '-' ' ' > $host_tmp
+    read cputype manufacturer kernel os < $host_tmp
+
+    if [ -n "$cputype" ]; then
+        add_feature "$cputype"
+    fi
+
+    if [ -n "$kernel" ]; then
+        # kernel part may contain release number.  We set both the full name
+        # and the name without release number.
+        kernel_sans_rel=`echo $kernel | sed -e 's/[0-9.]*$//'`
+
+        add_feature "$kernel"
+        if [ "$kernel" != "$kernel_sans_rel" ]; then
+            add_feature "$kernel_sans_rel"
+        fi
+        case $kernel_sans_rel in
+            freebsd|openbsd|netbsd|netbsdelf|darwin)
+                add_feature "bsd";;
+        esac
+
+        if [ -n "$os" ]; then
+            # e.g. 'linux-gnu'
+            add_feature "$kernel-$os"
+            if [ "$kernel" != "$kernel_sans_rel" ]; then
+                add_feature "$kernel_sans_rel-$os"
+            fi
+        fi
+    fi
+}
+
 # check feature_name definition ...
+#   Search definition ... in config.h, and if found, add feature_name.
 check () {
     feature_name=$1
     module_name=$2
@@ -41,18 +96,15 @@ check () {
     done
 
     if [ $have_feature = yes ]; then
-        if [ $module_name = NULL ]; then
-            echo "  { \"$feature_name\", NULL }," >> $features_c_tmp
-        else
-            echo "  { \"$feature_name\", \"$module_name\" }," >> $features_c_tmp
-        fi
-        echo " -F$feature_name" >> $features_flags_tmp
+        add_feature "$feature_name" "$module_name"
     else
-        echo " -F-$feature_name" >> $features_flags_tmp
+        remove_feature "$feature_name"
     fi
 }
 
+
 clean
+set_cpu_os_features
 check gauche.sys.sigwait NULL HAVE_SIGWAIT
 check gauche.sys.setenv NULL HAVE_PUTENV HAVE_SETENV
 check gauche.sys.unsetenv NULL HAVE_UNSETENV

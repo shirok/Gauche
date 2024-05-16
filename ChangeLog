@@ -1,3 +1,9 @@
+2024-05-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/gen-features.sh: Define feature ids for operating system and CPU,
+	  using configure's $host.  Inspired by
+	  https://github.com/shirok/Gauche/pull/1033
+
 2024-05-12  Shiro Kawai  <shiro@acm.org>
 
 	* lib/tools/compile-r7rs: Added SRFI-138 compliant script.

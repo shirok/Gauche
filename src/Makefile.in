@@ -300,7 +300,7 @@ vminsn.c gauche/vminsn.h ../lib/gauche/vm/insn.scm : vminsn.scm geninsn
 			      --opcode-map $(srcdir)/vm-opcode-map.scm
 
 features.c features.flags : gen-features.sh gauche/config.h
-	$(srcdir)/gen-features.sh $(top_srcdir) $(top_builddir)
+	$(srcdir)/gen-features.sh $(top_srcdir) $(top_builddir) $(host)
 
 generate-opcode-map :
 	$(BUILD_GOSH) geninsn --vminsn $(srcdir)/vminsn.scm \
