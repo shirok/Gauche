@@ -421,28 +421,16 @@ gauche-config.c paths_arch.c ../lib/gauche/config.scm : genconfig
 	$(SHELL) ./genconfig
 
 gauche-install : gauche-install.in
-	@rm -f gauche-install
-	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-install && \
-	cat $(srcdir)/gauche-install.in >> gauche-install
-	@chmod -w+x gauche-install
+	$(top_srcdir)/tools/make-tool.sh $(BIN_INSTALL_DIR) $@ $<
 
 gauche-package : gauche-package.in
-	@rm -f gauche-package
-	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-package && \
-	cat $(srcdir)/gauche-package.in >> gauche-package
-	@chmod -w+x gauche-package
+	$(top_srcdir)/tools/make-tool.sh $(BIN_INSTALL_DIR) $@ $<
 
 gauche-cesconv : gauche-cesconv.in
-	@rm -f gauche-cesconv
-	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-cesconv && \
-	cat $(srcdir)/gauche-cesconv.in >> gauche-cesconv
-	@chmod -w+x gauche-cesconv
+	$(top_srcdir)/tools/make-tool.sh $(BIN_INSTALL_DIR) $@ $<
 
 gauche-compile-r7rs : gauche-compile-r7rs.in
-	@rm -f gauche-compile-r7rs
-	echo "#!$(BIN_INSTALL_DIR)/gosh" > gauche-compile-r7rs && \
-	cat $(srcdir)/gauche-compile-r7rs.in >> gauche-compile-r7rs
-	@chmod -w+x gauche-compile-r7rs
+	$(top_srcdir)/tools/make-tool.sh $(BIN_INSTALL_DIR) $@ $<
 
 # static link -----------------------------------------
 # can be called after everything was built
