@@ -106,7 +106,7 @@ CORD_OBJS= cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
 SRCS= $(CSRCS) \
   include/gc.h include/gc_typed.h include/gc_tiny_fl.h \
   include/gc_version.h include/private/gc_hdrs.h include/private/gc_priv.h \
-  include/private/gcconfig.h include/private/gc_pmark.h \
+  include/gcconfig.h include/private/gc_pmark.h \
   include/gc_inline.h include/gc_mark.h include/gc_disclaim.h \
   tools/threadlibs.c tools/if_mach.c tools/if_not_there.c gc_badalc.cc \
   gc_cpp.cc include/gc_cpp.h include/private/gc_alloc_ptrs.h \
@@ -177,7 +177,7 @@ BSD-pkg-install: BSD-pkg-all
 	${INSTALL_MAN} doc/gc.man ${PREFIX}/man/man3/gc.3
 
 pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
-  include/private/gc_locks.h include/gc.h include/private/gcconfig.h \
+  include/private/gc_locks.h include/gc.h include/gcconfig.h \
   mach_dep.o $(SRCS)
 	$(MAKE) -f PCR-Makefile depend
 	$(MAKE) -f PCR-Makefile
@@ -186,7 +186,7 @@ $(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
   $(srcdir)/include/private/gc_priv.h \
   $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
   $(srcdir)/include/gc.h $(srcdir)/include/gc_pthread_redirects.h \
-  $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h \
+  $(srcdir)/include/gcconfig.h $(srcdir)/include/gc_typed.h \
   $(srcdir)/include/gc_config_macros.h
 
 mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h \
@@ -366,11 +366,11 @@ de$(EXEEXT): $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c \
 	./if_not_there de$(EXEEXT) || $(CC) $(CFLAGS) -o de$(EXEEXT) $(srcdir)/cord/tests/de.c $(srcdir)/cord/tests/de_win.c gc.a cord.a $(CURSES) `./threadlibs`
 
 if_mach$(EXEEXT): $(srcdir)/tools/if_mach.c \
-  $(srcdir)/include/private/gcconfig.h
+  $(srcdir)/include/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o if_mach$(EXEEXT) $(srcdir)/tools/if_mach.c
 
 threadlibs$(EXEEXT): $(srcdir)/tools/threadlibs.c \
-  $(srcdir)/include/private/gcconfig.h
+  $(srcdir)/include/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o threadlibs$(EXEEXT) $(srcdir)/tools/threadlibs.c
 
 if_not_there$(EXEEXT): $(srcdir)/tools/if_not_there.c

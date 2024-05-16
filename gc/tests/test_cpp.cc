@@ -38,7 +38,7 @@ few minutes to complete.
 
 #include "gc_allocator.h"
 
-# include "private/gcconfig.h"
+# include "gcconfig.h"
 
 # ifndef GC_API_PRIV
 #   define GC_API_PRIV GC_API

@@ -12,7 +12,7 @@ or 8-bit, or 16-bit machines.
 
 The difficulty of porting the collector varies greatly depending on the needed
 functionality. In the simplest case, only some small additions are needed for
-the `include/private/gcconfig.h` file. This is described in the following
+the `include/gcconfig.h` file. This is described in the following
 section. Later sections discuss some of the optional features, which typically
 involve more porting effort.
 

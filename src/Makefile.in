@@ -159,7 +159,8 @@ INSTALL_HEADERS = gauche.h \
 	../gc/include/gc_config_macros.h ../gc/include/gc_cpp.h \
 	../gc/include/gc_inline.h ../gc/include/gc_mark.h \
 	../gc/include/gc_pthread_redirects.h ../gc/include/gc_tiny_fl.h \
-	../gc/include/gc_typed.h ../gc/include/gc_version.h
+	../gc/include/gc_typed.h ../gc/include/gc_version.h \
+	../gc/include/gcconfig.h
 INSTALL_SUBHEADERS = \
 	gauche/bits.h gauche/bits_inline.h \
 	gauche/char_utf_8.h gauche/charset.h \

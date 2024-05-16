@@ -102,7 +102,7 @@ typedef ssize_t ScmSize;
 #endif
 #endif /* LIBGAUCHE_BODY */
 #include <gc.h>
-#include "private/gcconfig.h" /* Needed to set cond-expand features */
+#include <gcconfig.h> /* Needed to set cond-expand features */
 
 #ifndef SCM_DECL_BEGIN
 #ifdef __cplusplus

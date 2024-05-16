@@ -1,7 +1,7 @@
 // Symbian-specific file.
 
 // INCLUDE FILES
-#include "private/gcconfig.h"
+#include "gcconfig.h"
 
 extern "C" {
 

@@ -37,7 +37,7 @@ GC on EWS4800
      &end
 
    Here, DATASTART and DATASTART2 are macros of GC, and are defined as
-   the following equations. (See include/private/gcconfig.h.)
+   the following equations. (See include/gcconfig.h.)
    The algorithm for DATASTART is similar with the function
    GC_SysVGetDataStart() in os_dep.c.
 

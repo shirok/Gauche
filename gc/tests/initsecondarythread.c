@@ -57,7 +57,7 @@
 # endif
 }
 
-#include "private/gcconfig.h"
+#include "gcconfig.h"
 
 int main(void)
 {

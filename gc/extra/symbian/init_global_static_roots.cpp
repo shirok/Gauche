@@ -3,7 +3,7 @@
 // INCLUDE FILES
 #include <e32def.h>
 
-#include "private/gcconfig.h"
+#include "gcconfig.h"
 #include "gc.h"
 
 extern "C" {
