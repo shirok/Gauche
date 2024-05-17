@@ -258,8 +258,7 @@ Schemeの仕様を議論するSRFI (Scheme Requrests for Implementation) では�
 準拠する実装について、特定のコマンド名を推奨していることがあります。それらのコマンド名は
 他の処理系も使ってる可能性があるため、デフォルトではインストールされません。
 
-オプション `--enable-common-commands` を指定すると、以下の共通名コマンドが
-インストールされます。
+オプション `--enable-shared-commands` を指定すると、以下のコマンドがインストールされます。
 endif::JA[]
 ifdef::EN[]
 SRFI (Scheme Requrests for Implementation), where various aspects of
@@ -268,8 +267,8 @@ commands if the implementation comforms certain specs.  Those command
 names may be used by other implementation, so we don't install them
 by default.
 
-If you give `--enable-common-commands` option, the following common-named
-commands are installed:
+If you give `--enable-shared-commands` option, the following commands are
+installed:
 
 endif::EN[]
 

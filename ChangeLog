@@ -1,3 +1,9 @@
+2024-05-17  Shiro Kawai  <shiro@acm.org>
+
+	* configure.ac: Change --enable-common-commands to
+	  --enable-shared-commands.
+	  See the discussion in https://github.com/shirok/Gauche/pull/1030
+
 2024-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Add --enable-common-commands to install SRFI-defined

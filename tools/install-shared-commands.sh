@@ -1,10 +1,10 @@
 #!/bin/sh
 
 # Create a symlink (if possible) or copy of the commadns with common-name.
-# Used to create common name commands when --enable-common-commands is given.
+# Used to create common name commands when --enable-shared-commands is given.
 
 usage() {
-    echo "install-common-commands.h <BINDIR> <DESTDIR>"
+    echo "install-shaerd-commands.h <BINDIR> <DESTDIR>"
     exit 1
 }
 

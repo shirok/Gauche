@@ -242,10 +242,10 @@ dnl   how we handle it.
 AC_CHECK_HEADERS(stdatomic.h)
 
 dnl ----------------------------------------------------------
-dnl   enable-common-commands
+dnl   enable-shared-commands
 dnl
-AC_ARG_ENABLE(common-commands,
-  AS_HELP_STRING([--enable-common-commands],
+AC_ARG_ENABLE(shared-commands,
+  AS_HELP_STRING([--enable-shared-commands],
                  [Install commands with SRFI-defined common names such as compile-r7rs.  Note that other Scheme implementations may also install commands with the same name.  This option overwrites them if there's any.]),
   [
     AS_CASE([$enableval],
@@ -798,7 +798,7 @@ AS_IF([test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok],
       [MAKEVERSLINK='$(SHELL) ./makeverslink'],
       [MAKEVERSLINK=:])
 AS_IF([test "$install_common_commands" = yes],
-      [INSTALL_COMMON_COMMANDS='$(SHELL) $(top_srcdir)/tools/install-common-commands.sh'],
+      [INSTALL_COMMON_COMMANDS='$(SHELL) $(top_srcdir)/tools/install-shared-commands.sh'],
       [INSTALL_COMMON_COMMANDS=:])
 
 AC_SUBST(xhost)
