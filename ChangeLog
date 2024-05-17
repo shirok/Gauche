@@ -1,7 +1,7 @@
 2024-05-16  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: Add --enable-common-commands to install SRFI-defined
-	  common commands such as compile-r7rs.
+	  common commands such as compile-r7rs, scheme-r7rs, etc.
 	  See the discussion in https://github.com/shirok/Gauche/pull/1030
 
 2024-05-15  Shiro Kawai  <shiro@acm.org>
