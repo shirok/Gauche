@@ -242,6 +242,18 @@ dnl   how we handle it.
 AC_CHECK_HEADERS(stdatomic.h)
 
 dnl ----------------------------------------------------------
+dnl   enable-common-commands
+dnl
+AC_ARG_ENABLE(common-commands,
+  AS_HELP_STRING([--enable-common-commands],
+                 [Install commands with SRFI-defined common names such as compile-r7rs.  Note that other Scheme implementations may also install commands with the same name.  This option overwrites them if there's any.]),
+  [
+    AS_CASE([$enableval],
+            [no], [],
+                  [install_common_commands=yes])
+  ], [])
+
+dnl ----------------------------------------------------------
 dnl   enable-framework
 dnl
 ac_gauche_framework=no
@@ -785,6 +797,9 @@ AS_IF([test "$ext_use_uvector" = yes],
 AS_IF([test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok],
       [MAKEVERSLINK='$(SHELL) ./makeverslink'],
       [MAKEVERSLINK=:])
+AS_IF([test "$install_common_commands" = yes],
+      [INSTALL_COMMON_COMMANDS='$(SHELL) $(top_srcdir)/tools/install-common-commands.sh'],
+      [INSTALL_COMMON_COMMANDS=:])
 
 AC_SUBST(xhost)
 AC_SUBST(SHLIB_SO_CFLAGS)
@@ -801,6 +816,7 @@ AC_SUBST(GOSH_USE_SHLIB)
 AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX", [Shared library file suffix])
 AC_SUBST(LINK_HELPER)
 AC_SUBST(MAKEVERSLINK)
+AC_SUBST(INSTALL_COMMON_COMMANDS)
 AC_SUBST(CYGWIN_FIXDLL)
 AC_MSG_RESULT($SHLIB_OK)
 
