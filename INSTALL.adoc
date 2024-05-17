@@ -273,9 +273,7 @@ commands are installed:
 
 endif::EN[]
 
-  `scheme-r7rs`::
-  `scheme-srfi-0`::
-  `scheme-srfi-7`::
+  `scheme-r7rs`, `scheme-srfi-0`, `scheme-srfi-7`::
 ifdef::JA[]
      `gosh`の別名。
 endif::JA[]
