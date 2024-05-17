@@ -246,6 +246,52 @@ See the manual's `rfc.tls` entry for the details.
 endif::EN[]
 
 
+ifdef::JA[]
+== 共通コマンド名
+endif::JA[]
+ifdef::EN[]
+== Common command names
+endif::EN[]
+
+ifdef::JA[]
+Schemeの仕様を議論するSRFI (Scheme Requrests for Implementation) では、
+準拠する実装について、特定のコマンド名を推奨していることがあります。それらのコマンド名は
+他の処理系も使ってる可能性があるため、デフォルトではインストールされません。
+
+オプション `--enable-common-commands` を指定すると、以下の共通名コマンドが
+インストールされます。
+endif::JA[]
+ifdef::EN[]
+SRFI (Scheme Requrests for Implementation), where various aspects of
+Scheme spec are discussed, suggests some common names for Scheme-related
+commands if the implementation comforms certain specs.  Those command
+names may be used by other implementation, so we don't install them
+by default.
+
+If you give `--enable-common-commands` option, the following common-named
+commands are installed:
+
+endif::EN[]
+
+  `scheme-r7rs`::
+  `scheme-srfi-0`::
+  `scheme-srfi-7`::
+ifdef::JA[]
+     `gosh`の別名。
+endif::JA[]
+ifdef::EN[]
+     Aliases of `gosh`.
+endif::EN[]
+
+  `compile-r7rs`::
+ifdef::JA[]
+     `gauche-compile-r7rs`の別名。
+endif::JA[]
+ifdef::EN[]
+     Aliases of `gauche-compile-r7rs`.
+endif::EN[]
+
+
 
 ifdef::JA[]
 == DBMデータベースのサポート
