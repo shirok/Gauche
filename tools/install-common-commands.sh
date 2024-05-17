@@ -13,13 +13,7 @@ destdir=$2                      # aux prefix when install for packaging
 
 if [ -z "$bindir" ]; then usage; fi
 
-target="$destdir/$bindir"
-
-if uname -a | grep -i 'mingw'; then
-    LN_S=cp
-else
-    LN_S='ln -s'
-fi
+target="$destdir$bindir"
 
 makelink() {
     gauche_name=$1
@@ -27,7 +21,7 @@ makelink() {
 
     rm -f $target/$common_name
     if uname -a | grep -i 'mingw'; then
-        cp "$target/$gauche_name" "$target/$common_name"
+        cp "$target/$gauche_name.exe" "$target/$common_name.exe"
     else
         ln -s "$gauche_name" "$target/$common_name"
     fi
