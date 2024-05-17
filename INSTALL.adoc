@@ -286,7 +286,7 @@ ifdef::JA[]
      `gauche-compile-r7rs`の別名。
 endif::JA[]
 ifdef::EN[]
-     Aliases of `gauche-compile-r7rs`.
+     Alias of `gauche-compile-r7rs`.
 endif::EN[]
 
 
