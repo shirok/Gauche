@@ -1,5 +1,7 @@
 2024-05-17  Shiro Kawai  <shiro@acm.org>
 
+	* lib/rfc/uuid.scm: Added uuid6 and uuid7, according to RFC9562.
+
 	* configure.ac: Change --enable-common-commands to
 	  --enable-shared-commands.
 	  See the discussion in https://github.com/shirok/Gauche/pull/1030

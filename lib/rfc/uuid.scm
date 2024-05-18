@@ -31,7 +31,7 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; RFC4122 https://tools.ietf.org/html/rfc4122
+;; RFC9562 https://www.rfc-editor.org/rfc/rfc9562.html
 
 (define-module rfc.uuid
   (use binary.io)
@@ -40,7 +40,7 @@
   (use gauche.uvector)
   (use srfi.27)
   (export <uuid> uuid-value uuid-version
-          uuid1 uuid4 nil-uuid
+          uuid1 uuid4 uuid6 uuid7 nil-uuid
           uuid-random-source
           uuid-random-source-set!
           uuid-comparator
@@ -137,8 +137,9 @@
 ;; Deprecated.  Use parameter.
 (define (uuid-random-source-set! s) (uuid-random-source s))
 
-(define timestate (atom 0 -1)) ; last-time and clock-seq
-(define pseudo-node (atom #f)) ; fake node id
+(define timestate (atom 0 -1))  ; last-time and clock-seq
+(define utimestate (atom 0 -1)) ; like timestate, but for uuidv7
+(define pseudo-node (atom #f))  ; fake node id
 
 (define-constant jd-origin 2299160)     ; julian day of 15 Oct 1582
 (define-constant jd-unix   2440587)     ; julian day of 1 Jan 1970
@@ -162,6 +163,32 @@
                         (values ts (logand (+ cl 1) #x3fff))
                         (values ts cl))))))
 
+;; Similar to %ts, but the timestamp is 48bit millisecond resolution since
+;; unix epoch, plus 74bits monotonically increasing sequence number.
+;; This is for uuidv7.  We use the latter for rand_a and rand_b fields.
+;; The increment step of sequence number is a random
+;;
+;; for the next millisecond before wrap around, to ensure monotonicity.
+(define (%uts)
+  (define (wait-a-bit) (sys-nanosleep 500000))
+  (define (update ts0 cl0)
+    (let* ([cl (if (negative? cl0)
+                 (%uuid-random-int (ash 1 74)) ;initial
+                 cl0)]
+           [now (current-time)]
+           [ts (+ (* (~ now'second) 1000)
+                  (quotient (~ now'nanosecond) #e1e6))]
+           [cl1 (logand (+ cl (%uuid-random-int (ash 1 64)))
+                        (- (ash 1 74) 1))])
+      (cond [(> ts ts0)    ;timestamp differ, so we just use cl1
+             (values ts cl1)]
+            [(< cl1 cl)    ;counter wraparound.  wait for next millisec
+             (wait-a-bit)
+             (update ts0 cl0)]
+            [else
+             (values ts cl1)])))
+  (atomic-update! utimestate update))
+
 (define nil-uuid
   (let1 u (%make-uuid (make-u8vector 16 0))
     (^[] u)))
@@ -170,6 +197,8 @@
   (logior (%uuid-random-int (ash 1 47))
           (ash 1 40)))                  ; multicast bit
 
+;; UUID v1 and v6
+;;  They use the same info, just the order of timestamp bits differs.
 (define (uuid1 :optional (node-id #f))
   (let ([nid (or node-id
                  (atomic-update! pseudo-node
@@ -185,6 +214,23 @@
       (put-u32be! v 12 (logand nid #xffffffff)))
     (%make-uuid v)))
 
+(define (uuid6 :optional (node-id #f))
+  (let ([nid (or node-id
+                 (atomic-update! pseudo-node
+                                 (^[n] (or n (%pseudo-node)))))]
+        [v (make-u8vector 16)])
+    (receive (ts cs) (%ts)
+      (put-u32be! v 0 (logand (ash ts -28) #xffffffff))
+      (put-u16be! v 4 (logand (ash ts -12) #xffff))
+      (put-u16be! v 6 (logior (logand ts #x0fff)
+                              #x6000))    ; Version 6
+      (put-u16be! v 8 (logior cs #x8000)) ; Variant 10
+      (put-u16be! v 10 (ash nid -32))
+      (put-u32be! v 12 (logand nid #xffffffff)))
+    (%make-uuid v)))
+
+;; UUID v4
+;;   Mostly random bits.
 (define (uuid4)
   (let1 v (make-u8vector 16)
     (put-u32be! v 0  (%uuid-random-int (ash 1 32)))
@@ -195,6 +241,28 @@
                                      2 30 32)) ;Variant 10
     (put-u32be! v 12 (%uuid-random-int (ash 1 32)))
     (%make-uuid v)))
+
+;; UUID v7
+;;   Monotonically increasing over time.  Similar to ULID.
+;;   To guarantee monotonicity, we combine rand_a and rand_b fields
+;;   to store monotonically increasing sequence with random increments.
+;;   If it wraparounds, we wait till next milliseconds boundary.
+(define (uuid7)
+  (let1 v (make-u8vector 16)
+    (receive (ts cs) (%uts)
+      (put-u32be! v 0 (ash ts -16))
+      (put-u16be! v 4 (logand ts #xffff))
+      (put-u16be! v 6 (logior (logand (ash cs -62) #x0fff)
+                              #x7000))   ;Version 7
+      (put-u32be! v 8 (logior #x8000     ;Variant 10
+                              (logand (ash cs -32) #x3fffffff)))
+      (put-u32be! v 12 (logand cs #xffffffff)))
+    (%make-uuid v)))
+
+;; TODO: We may add an API to batch-create v7 uuids.
+;;   - We can use smaller increments to reduce chance of wraparound.
+;;   - We don't need to lock for each uuid generation.
+
 
 ;;;
 ;;;Meta info
