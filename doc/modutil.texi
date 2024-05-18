@@ -22486,14 +22486,14 @@ operations on character sets).
 @deftp {Module} rfc.uuid
 @mdindex rfc.uuid
 @c EN
-This module implements UUID defined in RFC4122.
+This module implements UUID defined in RFC9562.
 
-It provides generators of UUID version 1 and 4, and writer/parser
+It provides generators of UUID version 1, 4, 6 and 7, and writer/parser
 of the string represenation of UUIDs.
 @c JP
 RFC4122で定義されたUUIDを実装しています。
 
-UUIDバージョン1と4を生成する機能、及びUUIDの文字列表記をパーズしたり
+UUIDバージョン1、4、6、7を生成する機能、及びUUIDの文字列表記をパーズしたり
 バイナリから文字列表記を生成する機能が提供されます。
 @c COMMON
 @end deftp
@@ -22570,16 +22570,32 @@ UUID生成に使われる乱数源をカスタマイズするには
 @end defun
 
 @defun uuid1 :optional node-id
+@defunx uuid6 :optional node-id
 @c MOD rfc.uuid
 @c EN
-Generates a uuid with version 1 algorithm (timestamp and node id based).
+Generates a uuid with version 1 and version 6 algorithm
+(timestamp and node id based), respectively.  The difference
+between version 1 and version 6 is the order of timestamp field;
+version 1 stores lower bits of timestamp first, while version 6
+stores higher bits first.  That makes v6 uuids created around
+the same time cluster together when sorted, making it favorable
+choice over v1 for database index.  (However, if you need
+chronologically orderable uuids, you should use v7 uuids.)
+
 The optional @var{node-id} argument must be 48bit exact integer
 specifing the node ID (IEEE802 MAC address of the machine).
 If it is omitted, we generate a process-global
 random node ID (with the multicast bit set to 1, so that it won't
 conflict with existing MAC address).
 @c JP
-バージョン1アルゴリズム(タイムスタンプとノードID)によるUUIDを生成して返します。
+それぞれ、バージョン1およびバージョン6アルゴリズム(タイムスタンプとノードID)による
+UUIDを生成して返します。二つのバージョンの違いは、
+バージョン1ではタイムスタンプをいくつかに分けたうちの下位ビットから順に格納する
+のに対し、バージョン6では上位ビットから格納することです。
+これにより、近い時間に作られたv6 uuidはソートした時に固まることになり、
+データベースのインデックスとして使う場合にv1より有利になります。
+(但し、完全に時間的に整列可能なuuidが必要な場合はv7 uuidを使ってください)。
+
 省略可能な@var{node-id}引数はノードIDを指定する48ビットの正確な整数でなければ
 なりません (IEEE802 MACアドレスが通常使われます)。
 省略された場合は、プロセス内でひとつのランダムノードIDを生成して使います
@@ -22594,6 +22610,75 @@ conflict with existing MAC address).
 Generates a uuid with version 4 algorithm (random numbers).
 @c JP
 バージョン4アルゴリズム(乱数)によるUUIDを生成して返します。
+@c COMMON
+@end defun
+
+@defun uuid7
+@c MOD rfc.uuid
+@c EN
+Generates a uuid with version 7 algorithm (time-ordered).
+The uuid consists of timestamp part, and monotonically increasing
+random bits.  Overall, it is ordered chronologically.
+@c JP
+バージョン7アルゴリズム(時間順列可能)でuuidを作って返します。
+uuidは、タイムスタンプ部分と、時間的に単調増加するランダムビット部分からなります。
+全体として、uuidをソートすると生成順になります。
+@c COMMON
+
+@c EN
+The random bit part is splitted to 12bit @code{rand_a} field
+and 62bit @code{rand_b} field in UUID RFC.  The RFC doesn't
+precisely specify how to fill them.  In our implementation,
+we treat it as 74bit unsigned integer, and use the following
+strategy:
+@c JP
+ランダムビット部分はUUID RFCの仕様では12ビットの@code{rand_a}フィールドと
+62bitの@code{rand_b}フィールドに分かれています。
+RFCではどのようにそれらを埋めるかは具体的に指定されていません。
+Gaucheの実装では、それを74ビットの非負整数とみなし。
+次の戦略を取ります。
+@c COMMON
+
+@c EN
+@itemize @bullet
+@item
+It is initialized with random integer per process.
+@item
+When a v7 uuid is asked, we increment the field with a 64bit
+random unsigned integer.  If it does not overflow, we use it
+as is.
+@item
+If it does overflow, if the timestamp is already incremented
+from the previous generation, we use the wraparound value.
+@item
+Otherwise, we wait until the timestamp field is incremented,
+and then use the wraparound value.
+@end itemize
+@c JP
+@itemize @bullet
+@item
+プロセスごとに、ランダムの整数を初期値とします。
+@item
+v7 uuidを生成する度に、ランダムな64bit非負整数をフィールドに加算します。
+フィールドがオーバーフローしなければそれをそのまま使います。
+@item
+フィールドがオーバーフローした場合、前回の生成からタイムスタンプが進んでいれば、
+ラップアラウンドした値を使います。
+@item
+そうでなければ、タイムスタンプが進むまで待って、
+ラップアラウンドした値を使います。
+@end itemize
+@c COMMON
+
+@c EN
+The 'wait' part may limit the performance if you need to
+create large number of uuids (e.g. >2k) within a millisecond.
+If it turns out to be an issue, we'll provide another procedure
+to create large number of v7 uuids efficiently in batch.
+@c JP
+「タイムスタンプが進むまで待つ」のは、1msあたり大量のuuid (およそ2000個以上)
+を作りたい場合に足を引っ張るかもしれません。もしそれが問題になるなら、
+v7 uuidを効率よくバッチ生成するAPIを用意します。
 @c COMMON
 @end defun
 
