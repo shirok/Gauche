@@ -29271,7 +29271,7 @@ EDNに使えるハッシュテーブルとセットを構築する便利手続�
 EDN tagged object becomes an instance of this class by default.
 The instance has the following slots, both are immutable:
 @c JP
-EDNのタグつきオブジェクトは、デフォルトではこの暮らすのインスタンスになります。
+EDNのタグつきオブジェクトは、デフォルトではこのクラスのインスタンスになります。
 以下のスロットがあります。どちらも変更不可です。
 @c COMMON
 
