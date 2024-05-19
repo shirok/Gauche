@@ -22491,7 +22491,7 @@ This module implements UUID defined in RFC9562.
 It provides generators of UUID version 1, 4, 6 and 7, and writer/parser
 of the string represenation of UUIDs.
 @c JP
-RFC4122で定義されたUUIDを実装しています。
+RFC9562で定義されたUUIDを実装しています。
 
 UUIDバージョン1、4、6、7を生成する機能、及びUUIDの文字列表記をパーズしたり
 バイナリから文字列表記を生成する機能が提供されます。

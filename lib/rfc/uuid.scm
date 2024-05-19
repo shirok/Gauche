@@ -155,7 +155,8 @@
                                  (%uuid-random-int (ash 1 14)) ;initial
                                  cl0)]
                            [now (current-time)]
-                           [ts (+ (* (~ now'second) #x1e9)
+                           ;; count by 100ns tick
+                           [ts (+ (* (~ now'second) #e1e7)
                                   (quotient (~ now'nanosecond) 100)
                                   ts-offset)])
                       (if (<= ts ts0)
