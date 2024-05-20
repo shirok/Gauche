@@ -38,7 +38,7 @@
           debug-funcall debug-funcall-conditionally
           debug-print-width
           debug-print-pre debug-print-post
-          debug-source-info
+          debug-source-info ; re-exporting from gauche
           debug-thread-log debug-thread-pre debug-thread-post))
 (select-module gauche.vm.debugger)
 
@@ -212,3 +212,9 @@
        (debug-thread-pre '?form)
        (receive vals ?form
          (debug-thread-post vals)))]))
+
+;; As an introspection utility -----------------------------------
+
+(define (debug-info-dump closure)
+  (assert (closure? closure) "Closure required, but got: " closure)
+  )
