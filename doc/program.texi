@@ -9,6 +9,7 @@
 * Debugging::
 * Platform-dependent features::
 * Profiling and tuning::
+* Auxiliary programs::
 * Writing Gauche modules::
 * Using extension packages::
 * Building standalone executables::
@@ -2360,7 +2361,7 @@ SRFI-0の定義により、機能要求が満されず、かつ@code{else}節が
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Profiling and tuning, Writing Gauche modules, Platform-dependent features, Programming in Gauche
+@node Profiling and tuning, Auxiliary programs, Platform-dependent features, Programming in Gauche
 @section Profiling and tuning
 @c NODE プロファイリングとチューニング
 
@@ -2745,7 +2746,72 @@ We'll adjust it occasionally.
 @c COMMON
 
 @c ----------------------------------------------------------------------
-@node Writing Gauche modules, Using extension packages, Profiling and tuning, Programming in Gauche
+@node Auxiliary programs, Writing Gauche modules, Profiling and tuning, Programming in Gauche
+@section Auxiliary programs
+@c NODE 補助プログラム
+
+When you install Gauche, you'll get several auxiliary programs
+that help developing Gauche applications.
+
+@table @b
+@item gauche-config
+This program can be used to query various configuation parameters of
+installed Gauche.
+@item gauche-package
+Extension package manager.  It can be used to install extension
+packages and query their parameters.  You can also use this to
+start writing your own extensions.
+@item gauche-install
+An alternative @code{install} program.  Gauche extensions can use
+this instead of system's @code{install} command, so that they don't
+need to worry about differences among platforms.
+@item gauche-compile-r7rs
+This program can be used to create an executable binary from
+Gauche scripts.
+@item gauche-cesconv
+@end table
+
+Additionally, if you configure Gauche with @code{--enable-shared-commands},
+the following programs are also installed.
+
+@table @b
+@item scheme-r7rs
+@itemx scheme-srfi-0
+@itemx scheme-srfi-7
+Those are the names of Scheme interpreter suggeted by SRFI-22.
+They are symlinked to @code{gosh}.
+@item compile-r7rs
+This is the name of Scheme compiler recommended by SRFI-138.
+It is symlinked to @code{gauche-compile-r7rs}.
+@end table
+
+@c ----------------------------------------------------------------------
+@menu
+* Command to query configuration::
+* Command to manage extension packages::
+* Command to install files::
+* Comamnd to compile scripts::
+@end menu
+
+@node Command to query configuration, Command to manage extension packages, Auxiliary programs, Auxiliary programs
+@subsection @code{gauche-config} - Query configuration
+@c NODE 設定を問い合わせる - @code{gauche-config} - 設定を問い合わせる
+
+@node Command to manage extension packages, Command to install files, Command to query configuration, Auxiliary programs
+@subsection @code{gauche-package} - Manage extension packages
+@c NODE 拡張パッケージの管理 - @code{gauche-package} - 拡張パッケージの管理
+
+@node Command to install files, Comamnd to compile scripts, Command to manage extension packages, Auxiliary programs
+@subsection @code{gauche-install} - Install files
+@c NODE ファイルのインストール - @code{gauche-install} - ファイルのインストール
+
+@node Comamnd to compile scripts,  , Command to install files, Auxiliary programs
+@subsection @code{gauche-compile-r7rs} - Compile scripts
+@c NODE スクリプトのコンパイル - @code{gauche-compie-r7rs} - スクリプトのコンパイル
+
+
+@c ----------------------------------------------------------------------
+@node Writing Gauche modules, Using extension packages, Auxiliary programs, Programming in Gauche
 @section Writing Gauche modules
 @c NODE Gaucheのモジュールを書く
 
