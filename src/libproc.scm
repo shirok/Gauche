@@ -78,8 +78,10 @@
 
 (select-module gauche.internal)
 ;; for partial continuation.  See lib/gauche/partcont.scm
-(define-cproc %call/pc (proc) (return (Scm_VMCallPC proc)))
-(define-cproc %reset (proc) (return (Scm_VMReset proc)))
+(define-cproc %call/pc (proc) Scm_VMCallPC)
+(define-cproc %reset (proc) Scm_VMReset)
+(define-cproc %reset-with-cont-frame-wrapper (proc)
+  Scm_VMResetWithContFrameWrapper)
 
 ;; Continuaton prompts
 (select-module gauche)
