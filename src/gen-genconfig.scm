@@ -167,5 +167,8 @@
 
 (define (main args)
   (match (cdr args)
-    [(file) (generate file) 0]
+    [(file)
+     (with-output-to-file "genconfig.in"
+       (cut generate file))
+     0]
     [_ (exit 1 "Usage: gosh gen-genconfig.scm <genconfig-template>")]))

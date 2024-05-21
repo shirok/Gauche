@@ -10,10 +10,9 @@ set -e
 #
 # Generates gauche-config.c, paths_arch.c and lib/gauche/config.scm
 #
-
-# TODO: we have almost exactly the same table in gauche-config.c part
-# (cmds[]) and config.scm part (*configurations*).  They should be
-# generated from a single source.
+# This file is generated from genconfig.in.in by gen-genconfig.scm.
+# DO NOT EDIT.
+#
 
 host=@host@
 xhost=@xhost@
