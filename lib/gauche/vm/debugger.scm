@@ -39,7 +39,8 @@
           debug-print-width
           debug-print-pre debug-print-post
           debug-source-info ; re-exporting from gauche
-          debug-thread-log debug-thread-pre debug-thread-post))
+          debug-thread-log debug-thread-pre debug-thread-post
+          debug-info-dump))
 (select-module gauche.vm.debugger)
 
 (define debug-print-width (make-parameter 65))
@@ -216,5 +217,11 @@
 ;; As an introspection utility -----------------------------------
 
 (define (debug-info-dump closure)
-  (assert (closure? closure) "Closure required, but got: " closure)
-  )
+  (assume (closure? closure) "Closure required, but got: " closure)
+  (dolist [info (reverse (~ (closure-code closure)'debug-info))]
+    (format #t "~a\n" (car info))       ;offset
+    (dolist [item (cdr info)]
+      (format #t "  ~a\n" (car item))   ;key, we have at least source-info
+      (format #t "    ~:w\n" (unwrap-syntax (cdr item)))
+      (when (extended-pair? (cdr item))
+        (format #T "    !~:w\n" (pair-attributes (cdr item)))))))
