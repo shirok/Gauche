@@ -44,6 +44,7 @@ do_gen () {
     rm -f configure gc/configure gc/configure.gnu
     cp tools/gc-configure.gnu gc/configure.gnu
     autoconf
+    (cd src; gosh ./gen-genconfig.scm genconfig.in.in > genconfig.in)
     (cd gc; ./autogen.sh)
 }
 

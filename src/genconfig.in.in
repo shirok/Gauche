@@ -1,3 +1,8 @@
+@@@
+@@@ Template of genconfig.in
+@@@ gen-genconfig.scm processes this file to produce genconfig.in,
+@@@ which will be processed by configure to produce genconfig.
+@@@
 #! /bin/sh
 
 set -e
@@ -126,70 +131,9 @@ cat > gauche-config.c.tmp.$$ <<EOF
 #include <ctype.h>
 
 static void usage (void) {
-  fputs("Usage: gauche-config [option ...]\\n"
-        "Multiple options can be given, except --fixup-extension.\\n"
-        "\\n"
-        "General parameter\\n"
-        "  -V   the current gauche version\\n"
-        "\\n"
-        "Parameters to compile an application using Gauche\\n"
-        "  -I   include paths required to compile programs using Gauche\\n"
-        "       (Note: This doesn't work if Gauche installation directory\\n"
-        "       path contains whitespaces.  See --incdirs below.)\\n"
-        "  -L   library paths required to link programs using Gauche\\n"
-        "       (Note: This doesn't work if Gauche installation directory\\n"
-        "       path contains whitespaces.  See --archdirs below.)\\n"
-        "  -l   libraries required to link programs using gauche\\n"
-        "  --cc name of the compiler used to compile this Gacuhe.\\n"
-        "  --cpp\\n"
-        "       the command to run the C preprocessor\\n"
-        "  --ac the directory that contains Gauche-specific autoconf macros\\n"
-        "  --reconfigure\\n"
-        "       the command line used to configure the current installation.\\n"
-        "  --arch\\n"
-        "       prints the architecture signature\\n"
-        "  --incdirs, --archdirs\\n"
-        "       prints the list of directory names to be looked for include files\\n"
-        "       and libraries, respectively.  Each directory name is quoted, as it\\n"
-        "       may contain spaces, and separated by ':' on Unix platforms, or\\n"
-        "       by ';' on Windows platforms.\\n"
-        "\\n"
-        "Parameters to install files\\n"
-        "  --{sys|site|pkg}libdir\\n"
-        "       directories where system|site|package scheme files go\\n"
-        "  --{sys|site|pkg}archdir\\n"
-        "       directories where system|site|package DSO files go\\n"
-        "  --{sys|site|pkg}incdir\\n"
-        "       directories where system|site|package header files of extensions go\\n"
-        "  --mandir/--infodir\\n"
-        "       directories where gauche manpage and info docs are installed\\n"
-        "\\n"
-        "Parameters to help building extensions\\n"
-        "  --object-suffix\\n"
-        "       Returns extension of the compiled objects (e.g. 'o')\\n"
-        "  --executable-suffix\\n"
-        "       Returns extension of the executable (mostly empty, sometimes '.exe')\\n"
-        "  --so-suffix\\n"
-        "       Suffix for dynamically loadable (dlopen-able) modules\\n"
-        "  --so-cflags\\n"
-        "       CFLAGS to create dynamically loadable modules\\n"
-        "  --so-ldflags\\n"
-        "       LDFLAGS to create dynamically loadable modules\\n"
-        "  --so-libs\\n"
-        "       Required libraries to create dynamically loadable modules\\n"
-        "  --dylib-suffix\\n"
-        "       Suffix for dynamically linked libraries\\n"
-        "  --dylib-ldflags\\n"
-        "       LDFLAGS to create dynamically linked libraries\\n"
-        "  --rpath-flag\\n"
-        "       Compiler flag(s) to embed RPATH\\n"
-        "  --cppflags\\n"
-        "       Compiler flag(s) passed to C preprocessor\\n"
-        "  --static-libs\\n"
-        "       Returns a list of libraries required to link Gauche statically.\\n"
-        "       Similar to '-l', but this includes the libraries that are used\\n"
-        "       for extension modules, and also the static library itself,\\n"
-        "       that is -lgauche-static-X.X.\\n"
+  fputs("Usage: gauche-config [option ...]\n"
+  "Multiple options can be given.\n"
+@@@USAGE@@@
         ,stderr);
   exit(1);
 }
@@ -198,49 +142,7 @@ static struct cmd_rec {
     const char *cmd;
     const char *value;
 } cmds[] = {
-    { "-V", "$gauche_version" },
-    { "-I", "-I$gauche_incdir" },
-    { "-L", "-L$gauche_archdir $local_lib" },
-    { "--ac", "$gauche_aclocaldir" },
-    { "-l", "-l$garchabi $gauche_libs" },
-    { "--cc", "$cc" },
-    { "--cpp", "$cpp" },
-    { "--reconfigure", "./configure $gauche_configure_args" },
-
-    { "--prefix",      "$prefix" },
-    { "--sysincdir",   "$gauche_incdir" },
-    { "--siteincdir",  "$gauche_siteincdir" },
-    { "--pkgincdir",   "$gauche_pkgincdir" },
-    { "--syslibdir",   "$gauche_libdir" },
-    { "--sitelibdir",  "$gauche_sitelibdir" },
-    { "--pkglibdir",   "$gauche_pkglibdir" },
-    { "--sysarchdir",  "$gauche_archdir" },
-    { "--sitearchdir", "$gauche_sitearchdir" },
-    { "--pkgarchdir",  "$gauche_pkgarchdir" },
-    { "--mandir",      "$mandir" },
-    { "--infodir",     "$infodir" },
-    { "--arch",        "$arch" },
-    { "--incdirs",     "$incdirs" },
-    { "--archdirs",    "$archdirs" },
-
-    { "--local-incdir", "$local_inc" },
-    { "--local-libdir", "$local_lib" },
-
-    { "--default-cflags", "$default_cflags" },
-    { "--cppflags",       "$cppflags" },
-
-    { "--object-suffix",  "$object_suffix" },
-    { "--executable-suffix", "$executable_suffix" },
-    { "--rpath-flag",     "$rpath_flag" },
-    { "--so-suffix",      "$shlib_so_suffix" },
-    { "--so-cflags",      "$shlib_so_cflags" },
-    { "--so-ldflags",     "$shlib_so_ldflags" },
-    { "--so-libs",        "$shlib_so_libs" },
-    { "--dylib-suffix",   "$shlib_dylib_suffix" },
-    { "--dylib-ldflags",  "$shlib_dylib_ldflags" },
-    { "--libgauche-so",   "$libgauche_so" },
-    { "--static-libs",    "$static_libs" },
-
+@@@COMMAND_TABLE@@@
     { NULL, NULL }
 };
 
@@ -333,50 +235,9 @@ cat > ../lib/gauche/config.scm.tmp.$$ <<EOF
         (error "Couldn't obtain installation directory to complete " str)))))
 
 (define *configurations*
-  (quote
-   (("-V"  "$gauche_version")
-    ("-I"  "-I$gauche_incdir")
-    ("-L"  "-L$gauche_archdir $local_lib")
-    ("--ac"  "$gauche_aclocaldir")
-    ("-l"  "-l$garchabi $gauche_libs")
-    ("--cc"  "$cc")
-    ("--cpp" "$cpp")
-    ("--reconfigure"  "./configure $gauche_configure_args")
-
-    ("--prefix"       "$prefix")
-    ("--sysincdir"    "$gauche_incdir")
-    ("--siteincdir"   "$gauche_siteincdir")
-    ("--pkgincdir"    "$gauche_pkgincdir")
-    ("--syslibdir"    "$gauche_libdir")
-    ("--sitelibdir"   "$gauche_sitelibdir")
-    ("--pkglibdir"    "$gauche_pkglibdir")
-    ("--sysarchdir"   "$gauche_archdir")
-    ("--sitearchdir"  "$gauche_sitearchdir")
-    ("--pkgarchdir"   "$gauche_pkgarchdir")
-    ("--mandir"       "$mandir")
-    ("--infodir"      "$infodir")
-    ("--arch"         "$arch")
-
-    ("--incdirs"      "$incdirs")
-    ("--archdirs"      "$archdirs")
-    ("--local-incdir"  "$local_inc")
-    ("--local-libdir"  "$local_lib")
-
-    ("--default-cflags"  "$default_cflags")
-    ("--cppflags"        "$cppflags")
-
-    ("--object-suffix"   "$object_suffix")
-    ("--executable-suffix"  "$executable_suffix")
-    ("--rpath-flag"      "$rpath_flag")
-    ("--so-suffix"       "$shlib_so_suffix")
-    ("--so-cflags"       "$shlib_so_cflags")
-    ("--so-ldflags"      "$shlib_so_ldflags")
-    ("--so-libs"         "$shlib_so_libs")
-    ("--dylib-suffix"    "$shlib_dylib_suffix")
-    ("--dylib-ldflags"   "$shlib_dylib_ldflags")
-    ("--libgauche-so"    "$libgauche_so")
-    ("--static-libs"     "$static_libs")
-    )))
+  (quote (
+@@@COMMAND_LIST@@@
+   )))
 
 EOF
 

@@ -1,3 +1,11 @@
+2024-05-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in, src/gen-genconfig.scm: Generate genconfig.in
+	  form the single source of config parameter description.
+	  Note: genconfig.in needs to be generated _before_ 'configure',
+	  hence the generation rule isn't in Makefile.  'DIST tgz' takes
+	  care of it.
+
 2024-05-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uuid.scm: Added uuid6 and uuid7, according to RFC9562.

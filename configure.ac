@@ -17,6 +17,12 @@ AC_CHECK_TOOL(RC, windres, false)
 
 LT_INIT
 
+dnl Some files needs to be pre-generated before running configure
+if test ! -f $srcdir/src/genconfig.in; then
+   echo "ERROR: src/genconfig.in should be pre-generated.  Run ./DIST gen."
+   exit 1
+fi
+
 dnl ==========================================================
 dnl Process args given to configure
 dnl
