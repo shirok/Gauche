@@ -2795,19 +2795,60 @@ It is symlinked to @code{gauche-compile-r7rs}.
 
 @node Command to query configuration, Command to manage extension packages, Auxiliary programs, Auxiliary programs
 @subsection @code{gauche-config} - Query configuration
-@c NODE 設定を問い合わせる - @code{gauche-config} - 設定を問い合わせる
+@c NODE 設定を問い合わせる, @code{gauche-config} - 設定を問い合わせる
+
+@deftp {Program} gauche-config [option]
+Without options, prints the command usage.  With an option, prints
+the string associated to the option, which is determined at configuration
+time.
+
+Here are some examples.  Note that output may vary on your platform.
+
+@itemize @bullet
+@item
+Print the running architecture:
+@example
+$ gauche-config --arch
+x86_64-pc-linux-gnu
+@end example
+
+@item
+Print the library flags required to link programs using Gauche:
+
+@example
+$ gauche-config -l
+-lgauche-0.98 -lmbedtls -lcrypt -lrt -lm  -lpthread
+@end example
+
+@item
+Print the include path flags required to comple Gauche extension.
+
+@example
+$ gauche-config -I
+-I/usr/lib/gauche-0.98/0.9.15/include
+@end example
+@end itemize
+
+The command accepts the following arguments.  You can only give at most
+one.
+
+@c xinclude man-gauche-config.texi
+
+@end deftp
+
+
 
 @node Command to manage extension packages, Command to install files, Command to query configuration, Auxiliary programs
 @subsection @code{gauche-package} - Manage extension packages
-@c NODE 拡張パッケージの管理 - @code{gauche-package} - 拡張パッケージの管理
+@c NODE 拡張パッケージの管理, @code{gauche-package} - 拡張パッケージの管理
 
 @node Command to install files, Comamnd to compile scripts, Command to manage extension packages, Auxiliary programs
 @subsection @code{gauche-install} - Install files
-@c NODE ファイルのインストール - @code{gauche-install} - ファイルのインストール
+@c NODE ファイルのインストール, @code{gauche-install} - ファイルのインストール
 
 @node Comamnd to compile scripts,  , Command to install files, Auxiliary programs
 @subsection @code{gauche-compile-r7rs} - Compile scripts
-@c NODE スクリプトのコンパイル - @code{gauche-compie-r7rs} - スクリプトのコンパイル
+@c NODE スクリプトのコンパイル, @code{gauche-compie-r7rs} - スクリプトのコンパイル
 
 
 @c ----------------------------------------------------------------------

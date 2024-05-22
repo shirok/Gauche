@@ -539,7 +539,7 @@ PREGENERATED = compile.c autoloads.c builtin-syms.c \
 	       libnative.c libnet.c libnum.c libobj.c libparam.c libproc.c \
 	       librx.c libstr.c libsrfis.c libsym.c libsys.c libthr.c \
 	       libtype.c libvec.c libomega.c libextra.c \
-	       genconfig.in
+	       genconfig.in ../doc/man-gauche-config.texi
 CONFIG_GENERATED = Makefile genconfig makeverslink gauche/config.h \
 		   gauche/priv/configP.h features.c features.flags
 
