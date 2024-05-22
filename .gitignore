@@ -13,6 +13,7 @@ libtool
 /test-driver
 autom4te.cache
 Makefile
+/doc/man-gauche-config.texi
 /gc/Makefile.in
 /gc/aclocal.m4
 /gc/configure
@@ -31,6 +32,7 @@ Makefile
 /m4/ltsugar.m4
 /m4/ltversion.m4
 /m4/lt~obsolete.m4
+/src/genconfig.in
 /src/gauche/config.h
 /src/gauche/priv/configP.h
 
