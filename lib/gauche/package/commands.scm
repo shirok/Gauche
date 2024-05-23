@@ -119,8 +119,9 @@
   `(begin
      (push! *helps* (cons ,name ',doc)) ; doc : (<synopsys> <summary> <detail>)
      (push! *commands* (cons ,name
-                             (lambda (args)
-                               (let ((usage-self (lambda () (usage ,name))))
+                             (^[args]
+                               (let ((usage-self
+                                      (^[] (gauche-package-usage ,name))))
                                  ,@body))))))
 
 ;;------------------------------------------------------
@@ -592,4 +593,4 @@ Options:
 (define-cmd "help"
   ("help <command>"
    "Show detailed help of <command>")
-  (apply usage args))
+  (apply gauche-package-usage args))
