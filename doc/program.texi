@@ -2837,14 +2837,31 @@ one.
 @end deftp
 
 
-
 @node Command to manage extension packages, Command to install files, Command to query configuration, Auxiliary programs
 @subsection @code{gauche-package} - Manage extension packages
 @c NODE 拡張パッケージの管理, @code{gauche-package} - 拡張パッケージの管理
 
+@deftp {Program} gauche-package command [arg @dots{}]
+This command can be used to build and install Gauche extensions,
+query installed ones, and help start building new ones.
+It has several subcommands, which can be listed with
+@code{gauche-package help}.
+@end deftp
+
+
 @node Command to install files, Comamnd to compile scripts, Command to manage extension packages, Auxiliary programs
 @subsection @code{gauche-install} - Install files
 @c NODE ファイルのインストール, @code{gauche-install} - ファイルのインストール
+
+@deftp {Program} gauche-install [options] file @dots{} dest
+@deftpx {Program} gauche-install -d [options] dir @dots{}
+@deftpx {Program} gauche-install -T dir [options] file @dots{}
+@deftpx {Program} gauche-install -U dir [options] file @dots{}
+This command can be used to install files.  It is upper-compatible
+to BSD @code{install} command and can be used as drop-in replacement.
+It has several more features that keeps @code{Makefile} concise.
+@end deftp
+
 
 @node Comamnd to compile scripts,  , Command to install files, Auxiliary programs
 @subsection @code{gauche-compile-r7rs} - Compile scripts
