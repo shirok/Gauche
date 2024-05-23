@@ -641,7 +641,10 @@
         (^[] ((sprintf (^[] (fmt s))) "world")))
   )
 
-(include "partcont.scm")
+(let-syntax ([gauche-only
+              (syntax-rules ()
+                [(_ expr ...) (begin expr ...)])])
+  (include "partcont.scm"))
 
 ;;
 ;; Continuation marks
