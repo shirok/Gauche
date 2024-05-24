@@ -38,6 +38,23 @@
     ((values->list expr)
      (call-with-values (lambda () expr) list))))
 
+(define-syntax while
+  (syntax-rules (=>)
+    ((_ expr guard => var . body)
+     (do ((var expr expr))
+         ((not (guard var)))
+       . body))
+    ((_ expr => var . body)
+     (do ((var expr expr))
+         ((not var))
+       . body))
+    ((_ expr . body)
+     (do ()
+         ((not expr))
+       . body))
+    ((_ . other)
+     (syntax-error "malformed while" (while . other)))))
+
 (define-syntax gauche-only
   (syntax-rules ()
     ((gauche-only x ...) (values))))
