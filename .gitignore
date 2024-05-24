@@ -14,6 +14,7 @@ libtool
 autom4te.cache
 Makefile
 /doc/man-gauche-config.texi
+/doc/gauche-config.1.in
 /gc/Makefile.in
 /gc/aclocal.m4
 /gc/configure

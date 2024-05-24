@@ -11,11 +11,11 @@
 ;;         |
 ;;         |     release tarball creation
 ;;         v
-;;    genconfig.in
-;;         |
-;;         |     configure
-;;         v
-;;     genconfig
+;;    genconfig.in    doc/gauche-config.1.in  doc/man-gauche-config.texi
+;;         |                 |
+;;         |     configure   |
+;;         v                 v
+;;     genconfig       doc/gauche/config.1
 ;;         |
 ;;         |     make
 ;;         v
@@ -185,6 +185,47 @@
         'beginning *config-parameters*)
   (print "@end table"))
 
+;; Generate manpage
+(define (gen-man)
+  (print ".\\\" -*-nroff-*-")
+  (print ".TH GAUCHE\\-CONFIG \"1\" \"\" \"Gauche @GAUCHE_VERSION@\" \"Gauche Commands\"")
+  (print ".SH NAME")
+  (print "gauche-config \\- retrieve configuration parameters of Gauche")
+  (print ".SH SYNOPSIS")
+  (print ".B gauche-config")
+  (print ".I option")
+  (print ".br")
+  (print ".sp 0.3")
+  (print ".SH DESCRIPTION")
+  (print ".I Gauche-config")
+  (print "displays various parameters specified at the configuration time")
+  (print "of the Gauche Scheme implementation.  It can be used in Makefile")
+  (print "and other configuration scripts that uses Gauche.")
+  (print)
+  (print ".SH OPTIONS")
+
+  (dolist [e *config-parameters*]
+    (match e
+      [(? string?)
+       (print)
+       (print ".SS " e)]
+      [(((opt src) ...) help)
+       (print ".TP")
+       (print ".B " (string-join opt ", "))
+       (print help)]))
+
+  (print)
+  (print ".SH AUTHORS")
+  (print "Shiro Kawai (shiro @ acm . org)")
+  (print)
+  (print ".SH SEE ALSO")
+  (print "gosh(1), gauche-package(1)")
+  (print ".PP")
+  (print "Gauche Scheme script engine:")
+  (print ".br")
+  (print "https://practical-scheme.net/gauche/"))
+
+
 (define (main args)
   (match (cdr args)
     [(file)
@@ -192,5 +233,7 @@
        (cut generate file))
      (with-output-to-file "../doc/man-gauche-config.texi"
        (cut gen-info))
+     (with-output-to-file "../doc/gauche-config.1.in"
+       (cut gen-man))
      0]
     [_ (exit 1 "Usage: gosh gen-genconfig.scm <genconfig-template>")]))
