@@ -18480,7 +18480,7 @@ is replaced with @var{value}.
 @c COMMON
 @end defspec
 
-@defmac with-continuation-mark ((key value) @dots{}) expr
+@defmac with-continuation-marks ((key value) @dots{}) expr
 [SRFI-226]
 @c EN
 All @var{key}s and @var{value}s are evaluted, then
