@@ -40,8 +40,8 @@
   (use gauche.uvector)
   (use srfi.27)
   (export <uuid> uuid-value uuid-version
-          uuid1s$ uuid1 uuid4s$ uuid4
-          uuid6s$ uuid6 uuid7s$ uuid7
+          make-uuid1-generator uuid1 make-uuid4-generator uuid4
+          make-uuid6-generator uuid6 make-uuid7-generator uuid7
           nil-uuid
           uuid-random-source
           uuid-random-source-set!
@@ -202,7 +202,7 @@
 
 ;; UUID v1 and v6
 ;;  They use the same info, just the order of timestamp bits differs.
-(define (uuid1s$ :optional (default-node-id #f))
+(define (make-uuid1-generator :optional (default-node-id #f))
   (define nid (or default-node-id (make-pseudo-node)))
   (define tstate (make-timestate))
   (define random-int (%make-uuid-random-int))
@@ -219,9 +219,9 @@
         (put-u32be! v 12 (logand nid #xffffffff)))
       (%make-uuid v))))
 
-(define uuid1 (uuid1s$))
+(define uuid1 (make-uuid1-generator))
 
-(define (uuid6s$ :optional (default-node-id #f))
+(define (make-uuid6-generator :optional (default-node-id #f))
   (define nid (or default-node-id (make-pseudo-node)))
   (define tstate (make-timestate))
   (define random-int (%make-uuid-random-int))
@@ -238,11 +238,11 @@
         (put-u32be! v 12 (logand nid #xffffffff)))
       (%make-uuid v))))
 
-(define uuid6 (uuid6s$))
+(define uuid6 (make-uuid6-generator))
 
 ;; UUID v4
 ;;   Mostly random bits.
-(define (uuid4s$)
+(define (make-uuid4-generator)
   (define random-int (%make-uuid-random-int))
   (^[]
     (let1 v (make-u8vector 16)
@@ -255,14 +255,14 @@
       (put-u32be! v 12 (random-int (ash 1 32)))
       (%make-uuid v))))
 
-(define uuid4 (uuid4s$))
+(define uuid4 (make-uuid4-generator))
 
 ;; UUID v7
 ;;   Monotonically increasing over time.  Similar to ULID.
 ;;   To guarantee monotonicity, we combine rand_a and rand_b fields
 ;;   to store monotonically increasing sequence with random increments.
 ;;   If it wraparounds, we wait till next milliseconds boundary.
-(define (uuid7s$)
+(define (make-uuid7-generator)
   (define utstate (make-utimestate))
   (define random-int (%make-uuid-random-int))
   (^[]
@@ -277,7 +277,7 @@
         (put-u32be! v 12 (logand cs #xffffffff)))
       (%make-uuid v))))
 
-(define uuid7 (uuid7s$))
+(define uuid7 (make-uuid7-generator))
 
 ;;;
 ;;;Meta info

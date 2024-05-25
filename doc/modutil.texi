@@ -22507,6 +22507,12 @@ UUIDクラスです。UUIDインスタンスは変更不可なオブジェクト
 @c COMMON
 @end deftp
 
+@c EN
+@subheading Common uuid operations
+@c JP
+@subheading uuid共通の操作
+@c COMMON
+
 @defun uuid-value uuid
 @c MOD rfc.uuid
 @c EN
@@ -22541,155 +22547,11 @@ UUID同士を比較したりハッシュ値を取れる比較器です。
 @c COMMON
 @end defvar
 
-@deffn {Parameter} uuid-random-source
-@c MOD rfc.uuid
 @c EN
-We use PRNG to generate UUIDs.  By default, we internally creates
-a random source and randomize it.  You can alter the random source
-using @code{parameterize}.  The value must be a SRFI-27 random source
-(@pxref{Sources of random bits}).
+@subheading Read/write UUIDs
 @c JP
-UUIDを生成するのに乱数発生器を使います。
-デフォルトでは、内部的に乱数源を作って乱数化したものを使いますが、
-このパラメータを@code{parameterize}することで独自の乱数源を使うことができます。
-パラメータの値はSRFI-27の規定する乱数源でなければなりません
-(@ref{Sources of random bits}参照)。
+@subheading UUIDの読み書き
 @c COMMON
-@end deffn
-
-@defun uuid-random-source-set! random-source
-@c MOD rfc.uuid
-@c DEPRECATED
-@c EN
-Use @code{uuid-random-source} parameter
-to customize random source to be used in uuid generation.
-@c JP
-UUID生成に使われる乱数源をカスタマイズするには
-@code{uuid-random-source}パラメータを使ってください。
-@c COMMON
-@end defun
-
-@defun uuid1 :optional node-id
-@defunx uuid6 :optional node-id
-@c MOD rfc.uuid
-@c EN
-Generates a uuid with version 1 and version 6 algorithm
-(timestamp and node id based), respectively.  The difference
-between version 1 and version 6 is the order of timestamp field;
-version 1 stores lower bits of timestamp first, while version 6
-stores higher bits first.  That makes v6 uuids created around
-the same time cluster together when sorted, making it favorable
-choice over v1 for database index.  (However, if you need
-chronologically orderable uuids, you should use v7 uuids.)
-
-The optional @var{node-id} argument must be 48bit exact integer
-specifing the node ID (IEEE802 MAC address of the machine).
-If it is omitted, we generate a process-global
-random node ID (with the multicast bit set to 1, so that it won't
-conflict with existing MAC address).
-@c JP
-それぞれ、バージョン1およびバージョン6アルゴリズム(タイムスタンプとノードID)による
-UUIDを生成して返します。二つのバージョンの違いは、
-バージョン1ではタイムスタンプをいくつかに分けたうちの下位ビットから順に格納する
-のに対し、バージョン6では上位ビットから格納することです。
-これにより、近い時間に作られたv6 uuidはソートした時に固まることになり、
-データベースのインデックスとして使う場合にv1より有利になります。
-(但し、完全に時間的に整列可能なuuidが必要な場合はv7 uuidを使ってください)。
-
-省略可能な@var{node-id}引数はノードIDを指定する48ビットの正確な整数でなければ
-なりません (IEEE802 MACアドレスが通常使われます)。
-省略された場合は、プロセス内でひとつのランダムノードIDを生成して使います
-(この場合、生成されるノードIDはマルチキャストビットが立てられるので、
-現実に存在するMACアドレスとかぶることはありません)。
-@c COMMON
-@end defun
-
-@defun uuid4
-@c MOD rfc.uuid
-@c EN
-Generates a uuid with version 4 algorithm (random numbers).
-@c JP
-バージョン4アルゴリズム(乱数)によるUUIDを生成して返します。
-@c COMMON
-@end defun
-
-@defun uuid7
-@c MOD rfc.uuid
-@c EN
-Generates a uuid with version 7 algorithm (time-ordered).
-The uuid consists of timestamp part, and monotonically increasing
-random bits.  Overall, it is ordered chronologically.
-@c JP
-バージョン7アルゴリズム(時間順列可能)でuuidを作って返します。
-uuidは、タイムスタンプ部分と、時間的に単調増加するランダムビット部分からなります。
-全体として、uuidをソートすると生成順になります。
-@c COMMON
-
-@c EN
-The random bit part is splitted to 12bit @code{rand_a} field
-and 62bit @code{rand_b} field in UUID RFC.  The RFC doesn't
-precisely specify how to fill them.  In our implementation,
-we treat it as 74bit unsigned integer, and use the following
-strategy:
-@c JP
-ランダムビット部分はUUID RFCの仕様では12ビットの@code{rand_a}フィールドと
-62bitの@code{rand_b}フィールドに分かれています。
-RFCではどのようにそれらを埋めるかは具体的に指定されていません。
-Gaucheの実装では、それを74ビットの非負整数とみなし。
-次の戦略を取ります。
-@c COMMON
-
-@c EN
-@itemize @bullet
-@item
-It is initialized with random integer per process.
-@item
-When a v7 uuid is asked, we increment the field with a 64bit
-random unsigned integer.  If it does not overflow, we use it
-as is.
-@item
-If it does overflow, if the timestamp is already incremented
-from the previous generation, we use the wraparound value.
-@item
-Otherwise, we wait until the timestamp field is incremented,
-and then use the wraparound value.
-@end itemize
-@c JP
-@itemize @bullet
-@item
-プロセスごとに、ランダムの整数を初期値とします。
-@item
-v7 uuidを生成する度に、ランダムな64bit非負整数をフィールドに加算します。
-フィールドがオーバーフローしなければそれをそのまま使います。
-@item
-フィールドがオーバーフローした場合、前回の生成からタイムスタンプが進んでいれば、
-ラップアラウンドした値を使います。
-@item
-そうでなければ、タイムスタンプが進むまで待って、
-ラップアラウンドした値を使います。
-@end itemize
-@c COMMON
-
-@c EN
-The 'wait' part may limit the performance if you need to
-create large number of uuids (e.g. >2k) within a millisecond.
-If it turns out to be an issue, we'll provide another procedure
-to create large number of v7 uuids efficiently in batch.
-@c JP
-「タイムスタンプが進むまで待つ」のは、1msあたり大量のuuid (およそ2000個以上)
-を作りたい場合に足を引っ張るかもしれません。もしそれが問題になるなら、
-v7 uuidを効率よくバッチ生成するAPIを用意します。
-@c COMMON
-@end defun
-
-@defun nil-uuid
-@c MOD rfc.uuid
-@c EN
-Returns a nil-UUID (all bits zero).
-@c JP
-全てのビットが0であるnil UUIDを返します。
-@c COMMON
-@end defun
 
 @defun parse-uuid string :key if-invalid
 @c MOD rfc.uuid
@@ -22736,6 +22598,190 @@ in @code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX} format.
 @c JP
 @var{uuid}の文字列表現を@code{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}形式で
 返します。
+@c COMMON
+@end defun
+
+
+@c EN
+@subheading UUID generator makers
+@c JP
+@subheading UUIDジェネレータ作成
+@c COMMON
+
+@deffn {Parameter} uuid-random-source
+@c MOD rfc.uuid
+@c EN
+We use PRNG to generate UUIDs.  By default, we internally creates
+a random source and randomize it.  You can alter the random source
+using @code{parameterize}.  The value must be a SRFI-27 random source
+(@pxref{Sources of random bits}).
+@c JP
+UUIDを生成するのに乱数発生器を使います。
+デフォルトでは、内部的に乱数源を作って乱数化したものを使いますが、
+このパラメータを@code{parameterize}することで独自の乱数源を使うことができます。
+パラメータの値はSRFI-27の規定する乱数源でなければなりません
+(@ref{Sources of random bits}参照)。
+@c COMMON
+
+@c EN
+The value of this parameter is taken when a uuid generator
+is created by one of @code{make-uuid*-generator}.  Once a
+generator is created, the random source is kept in the generator
+and won't be affected by changing the value of this parameter.
+@c JP
+このパラメータの値は、@code{make-uuid*-generator}でUUIDのジェネレータが
+作られる時に参照され、その乱数源がジェネレータの中に保持されます。
+このパラメータの値の変更は、既に作られたジェネレータには影響を与えません。
+@c COMMON
+@end deffn
+
+@defun make-uuid1-generator :optional node-id
+@defunx make-uuid6-generator :optional node-id
+@c MOD rfc.uuid
+@c EN
+Returns new generators of uuid v1 and uuis v6
+(timestamp and node id based), respectively.
+
+The difference between version 1 and version 6 is the order of timestamp field;
+version 1 stores lower bits of timestamp first, while version 6
+stores higher bits first.  That makes v6 uuids created around
+the same time cluster together when sorted, making it favorable
+choice over v1 for database index.  (However, if you need
+chronologically orderable uuids, you should use v7 uuids.)
+
+The optional @var{node-id} argument must be 48bit exact integer
+specifing the node ID (IEEE802 MAC address of the machine).
+If it is omitted, we generate a process-global
+random node ID (with the multicast bit set to 1, so that it won't
+conflict with existing MAC address).
+@c JP
+それぞれ、バージョン1およびバージョン6アルゴリズム(タイムスタンプとノードID)による
+UUIDのジェネレータを生成して返します。二つのバージョンの違いは、
+バージョン1ではタイムスタンプをいくつかに分けたうちの下位ビットから順に格納する
+のに対し、バージョン6では上位ビットから格納することです。
+これにより、近い時間に作られたv6 uuidはソートした時に固まることになり、
+データベースのインデックスとして使う場合にv1より有利になります。
+(但し、完全に時間的に整列可能なuuidが必要な場合はv7 uuidを使ってください)。
+
+省略可能な@var{node-id}引数はノードIDを指定する48ビットの正確な整数でなければ
+なりません (IEEE802 MACアドレスが通常使われます)。
+省略された場合は、プロセス内でひとつのランダムノードIDを生成して使います
+(この場合、生成されるノードIDはマルチキャストビットが立てられるので、
+現実に存在するMACアドレスとかぶることはありません)。
+@c COMMON
+@end defun
+
+@defun make-uuid4-generator
+@c MOD rfc.uuid
+@c EN
+Returns a new generator that yields uuids with
+version 4 algorithm (random numbers).
+@c JP
+バージョン4アルゴリズム(乱数)によるUUIDを生成するジェネレータを作って返します。
+@c COMMON
+@end defun
+
+@defun make-uuid7-generator
+@c MOD rfc.uuid
+@c EN
+Returns a new generator that yields uuids with version 7 algorithm
+(time-ordered).
+The uuid consists of timestamp part, and monotonically increasing
+random bits.  Overall, it is ordered chronologically.
+@c JP
+バージョン7アルゴリズム(時間順列可能)でuuidを作るジェネレータを作って返します。
+uuidは、タイムスタンプ部分と、時間的に単調増加するランダムビット部分からなります。
+全体として、uuidをソートすると生成順になります。
+@c COMMON
+
+@c EN
+The random bit part is splitted to 12bit @code{rand_a} field
+and 62bit @code{rand_b} field in UUID RFC.  The RFC doesn't
+precisely specify how to fill them.  In our implementation,
+we treat it as 74bit unsigned integer, and use the following
+strategy:
+@c JP
+ランダムビット部分はUUID RFCの仕様では12ビットの@code{rand_a}フィールドと
+62bitの@code{rand_b}フィールドに分かれています。
+RFCではどのようにそれらを埋めるかは具体的に指定されていません。
+Gaucheの実装では、それを74ビットの非負整数とみなし、
+次の戦略を取ります。
+@c COMMON
+
+@c EN
+@itemize @bullet
+@item
+It is initialized with random integer per process.
+@item
+When a v7 uuid is asked, we increment the field with a 64bit
+random unsigned integer.  If it does not overflow, we use it
+as is.
+@item
+If it does overflow, if the timestamp is already incremented
+from the previous generation, we use the wraparound value.
+@item
+Otherwise, we wait until the timestamp field is incremented,
+and then use the wraparound value.
+@end itemize
+@c JP
+@itemize @bullet
+@item
+プロセスごとに、ランダムの整数を初期値とします。
+@item
+v7 uuidを生成する度に、ランダムな64bit非負整数をフィールドに加算します。
+フィールドがオーバーフローしなければそれをそのまま使います。
+@item
+フィールドがオーバーフローした場合、前回の生成からタイムスタンプが進んでいれば、
+ラップアラウンドした値を使います。
+@item
+そうでなければ、タイムスタンプが進むまで待って、
+ラップアラウンドした値を使います。
+@end itemize
+@c COMMON
+@end defun
+
+@defun uuid-random-source-set! random-source
+@c MOD rfc.uuid
+@c DEPRECATED
+@c EN
+Use @code{uuid-random-source} parameter
+to customize random source to be used in uuid generation.
+@c JP
+UUID生成に使われる乱数源をカスタマイズするには
+@code{uuid-random-source}パラメータを使ってください。
+@c COMMON
+@end defun
+
+@c EN
+@subheading Pre-created UUID generators
+@c JP
+@subheading あらかじめ作られているUUIDジェネレータ
+@c COMMON
+
+@defun uuid1 :optional node-id
+@defunx uuid4
+@defunx uuid6 :optional node-id
+@defunx uuid7
+@c MOD rfc.uuid
+@c EN
+Pre-created uuid generators for convenience.
+Those generators are created with the corresponding
+@code{make-uuid*-generator} when the library is loaded,
+so they use the default random source.
+@c JP
+簡便のために、あらかじめ作られているUUIDのジェネレータです。
+これらのジェネレータはライブラリのロード時に
+対応する@code{make-uuid*-generator}で作られるので、
+デフォルトの乱数源を使います。
+@c COMMON
+@end defun
+
+@defun nil-uuid
+@c MOD rfc.uuid
+@c EN
+Returns a nil-UUID (all bits zero).
+@c JP
+全てのビットが0であるnil UUIDを返します。
 @c COMMON
 @end defun
 
