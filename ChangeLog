@@ -1,3 +1,10 @@
+2024-05-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uuid.scm: Change to generator-make style a la data.random
+	  and srfi.194.  This clarifies interaction with uuid-random-source,
+	  and makes less lock contention.
+	  https://github.com/shirok/Gauche/issues/1034
+
 2024-05-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in, src/gen-genconfig.scm: Generate genconfig.in
