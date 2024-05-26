@@ -2867,6 +2867,58 @@ It has several more features that keeps @code{Makefile} concise.
 @subsection @code{gauche-compile-r7rs} - Compile scripts
 @c NODE スクリプトのコンパイル, @code{gauche-compie-r7rs} - スクリプトのコンパイル
 
+For Gauche-specific programs, we have @code{tools/build-standalone} Scheme
+script (@pxref{Building standalone executables}).  We recommend
+that script, for it is more featureful.
+
+The @code{gauche-compile-r7rs} and @code{compile-r7rs} script is provided
+so that you can invoke a 'Scheme compiler' with a stanardized manner.
+It may be handy if other tools (e.g. IDE) need to invoke a Scheme
+compiler as a subprocess.
+
+This interface is defined in SRFI-138, which also suggests the name
+@code{compile-r7rs}.  We only install @code{gauche-compile-r7rs} by
+default so that we won't accidentally clobber other implementation's
+program, but if you give @code{--enable-shared-commands} option to
+@code{configure} script, a symbolic link @code{compile-r7rs} is created.
+
+@deftp {Program} gauche-compile-r7rs [options] script.scm
+@deftpx {Program} compile-r7rs [options] script.scm
+Compile a Scheme source file @code{script.scm} and produce an
+executable binary.  The @code{compile-r7rs} is only installed
+if Gauche is configured with @code{--enable-shared-commands}.
+
+If the enviornment variable @code{COMPILE_R7RS} is defined
+to a non-empty string, it is assumed to a pathname of another
+program, which is invoked with the same arguments to
+@code{gauche-compile-r7rs} instead.  This allows the user to choose
+alternative implementation's compiler.
+
+The following command-line arguments are recognized.
+
+@table @option
+@item -I path
+@itemx -A path
+Prepend or append @var{path} to the path list the referenced
+libraries are searched.  These options can be specified multiple times.
+
+@item -o outfile
+Specifies output executable filename.  When omitted, @code{a.out}
+(on POSIX systems) or @code{a.exe} (on Windows) are used.
+
+@item -D feature-id
+Adds @code{feature-id} to the list of feature identifiers.
+This is to switch code conditionally in the source with
+@code{cond-expand}.
+This option can be specified multiple times.
+
+Note that this does @emph{not} enable certain features.  So you
+shouldn't specify system-reserved feature identifiers
+(@pxref{Platform-dependent features}).  This is also different
+from @code{-D} option of @code{tools/build-standalone}.
+@end table
+@end deftp
+
 
 @c ----------------------------------------------------------------------
 @node Writing Gauche modules, Using extension packages, Auxiliary programs, Programming in Gauche
@@ -3295,10 +3347,12 @@ Gaucheのアプリケーションの配布を簡単にするために、
 Gauche also provides a @code{compile-r7rs} program that is compliant
 with the command-line interface presented in SRFI 138
 (@url{https://srfi.schemers.org/srfi-138/srfi-138.html}).
+@xref{Comamnd to compile scripts}, for the details.
 @c JP
 Gaucheはまた、SRFI 138が定義するコマンドラインインターフェイスに
 準拠する@code{compile-r7rs}スクリプトも提供します。
 (@url{https://srfi.schemers.org/srfi-138/srfi-138.html})
+詳しくは@ref{Comamnd to compile scripts}を参照してください。
 @c COMMON
 
 @c EN
@@ -3451,10 +3505,9 @@ DSO files are available on target machines, you can exclude
 
 @menu
 * Using build-standalone::
-* Using compile-r7rs::
 @end menu
 
-@node Using build-standalone, Using compile-r7rs, Building standalone executables, Building standalone executables
+@node Using build-standalone,  , Building standalone executables, Building standalone executables
 @subsection Using build-standalone
 @c NODE build-standaloneスクリプトを使う
 
@@ -3637,52 +3690,6 @@ Gaucheが既にシステムにインストール済みであれば、@code{tools
 @c COMMON
 @end deftp
 
-@node Using compile-r7rs,  , Using build-standalone, Building standalone executables
-@subsection Using compile-r7rs
-@c NODE compile-r7rsスクリプトを使う
-
-SRFI-138 defines a portable command for compiling Scheme programs.
-The SRFI specifies the name of the command to be @code{compile-r7rs},
-but Gauche installs the command with @code{gauche-compile-r7rs}
-so that it won't interfere with other Scheme implementations.
-The user may create a symlink @code{compile-r7rs} to @code{gauche-compile-r7rs}.
-
-@deftp {Program} gauche-compile-r7rs [options] script.scm
-@deftpx {Program} {gosh tools/compile-r7rs} [options] script.scm
-Compile a Scheme source file @code{script.scm} and produce an
-executable binary.
-
-If the enviornment variable @code{COMPILE_R7RS} is defined
-to a non-empty string, it is assumed to a pathname of another
-program, which is invoked with the same arguments to
-@code{gauche-compile-r7rs} instead.  This allows the user to choose
-alternative implementation's compiler.
-@end deftp
-
-The following command-line arguments are recognized.
-
-@deftp {Command Option} -I path
-@deftpx {Command Option} -A path
-Prepend or append @var{path} to the path list the referenced
-libraries are searched.  These options can be specified multiple times.
-@end deftp
-
-@deftp {Command Option} -o outfile
-Specifies output executable filename.  When omitted, @code{a.out}
-(on POSIX systems) or @code{a.exe} (on Windows) are used.
-@end deftp
-
-@deftp {Command Option} -D feature-id
-Adds @code{feature-id} to the list of feature identifiers.
-This is to switch code conditionally in the source with
-@code{cond-expand}.
-This option can be specified multiple times.
-
-Note that this does @emph{not} enable certain features.  So you
-shouldn't specify system-reserved feature identifiers
-(@pxref{Platform-dependent features}).  This is also different
-from @code{-D} option of @code{build-standalone}.
-@end deftp
 
 @c Local variables:
 @c mode: texinfo
