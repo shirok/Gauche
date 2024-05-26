@@ -5,6 +5,16 @@
 ;; implementation to compare behavior.  Be careful not to use Gauche's
 ;; extended syntax.
 
+;; The comment before each test records results with different implementations.
+;;
+;; native : Gauche native partial continuation
+;; meta   : gauche.partcont-meta, implementation using full continuation
+;; srfi226: Srfi-226 reference implementation run on ChezScheme
+
+
+;; native : 1000
+;; meta   : 1000
+;; srfi226: 1000
 (test* "reset/shift combination 1"
        1000
        (begin
@@ -21,10 +31,16 @@
          ;(k3)
          ))
 
+;; native : (1 2 3)
+;; meta   : (1 2 3)
+;; srfi226: (1 2 3)
 (test* "reset/shift + values 1"
        '(1 2 3)
        (values->list (reset (values 1 2 3))))
 
+;; native : (1 2 3)
+;; meta   : (1 2 3)
+;; srfi226: (1 2 3)
 (test* "reset/shift + values 2"
        '(1 2 3)
        (begin
@@ -34,6 +50,9 @@
           (values 1 2 3))
          (values->list (k1))))
 
+;; native : 010
+;; meta   : 010
+;; srfi226: 010
 (test* "reset/shift + parameterize 1"
        "010"
        (with-output-to-string
@@ -46,6 +65,9 @@
               ;; expr of 'shift' is executed on the outside of 'reset'
               (shift k (display (p))))))))
 
+;; native : [r01][r02][r02][r03]
+;; meta   : [r01][r02][r02][r03]
+;; srfi226: [r01][r02][r02][r03]
 (test* "reset/shift + call/cc 1"
        "[r01][r02][r02][r03]"
        (with-output-to-string
@@ -68,6 +90,10 @@
 ;; between Gauche and SRFI-226 ref.impl.  The latter goes infinite
 ;; loop.  Until I understand what's going on, we exclude them
 ;; for ref.impl. test.
+
+;; native : [r01][s01][s02][s02]
+;; meta   : [r01][s01][s02][s02]
+;; srfi226:
 (gauche-only
  (test* "reset/shift + call/cc 2"
         "[r01][s01][s02][s02]"
@@ -84,6 +110,9 @@
             (k1)
             (reset (reset (k2)))))))
 
+;; native : [r01][s01]
+;; meta   : [r01][s01]
+;; srfi226:
 (gauche-only
  (test* "reset/shift + call/cc 2-B"
         "[r01][s01]"
@@ -102,6 +131,9 @@
             (k1)
             (reset (reset (k2)))))))
 
+;; native : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
+;; meta   : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
+;; srfi226:
 (gauche-only
  (test* "reset/shift + call/cc 2-C"
         "[d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]"
@@ -122,6 +154,9 @@
             (k1)
             (reset (reset (k2)))))))
 
+;; native : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
+;; meta   : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
+;; srfi226:
 (gauche-only
  (test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
         "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
@@ -143,6 +178,9 @@
                       (display (reset (reset (k2)))))
               (lambda () (display "[d03]")))))))
 
+;; native : [r01][s01][s01]
+;; meta   : [r01][s01][s01]
+;; srfi226:
 (gauche-only
  (test* "reset/shift + call/cc 3"
         "[r01][s01][s01]"
@@ -159,6 +197,9 @@
             (k2)
             (reset (k1))))))
 
+;; native : error
+;; meta   : ""
+;; srfi226:
 (gauche-only
  (test* "reset/shift + call/cc error 1"
         (test-error)
@@ -173,6 +214,9 @@
             (reset (f1) (f2))
             (reset (k1))))))
 
+;; native : error
+;; meta   : ""
+;; srfi226:
 (gauche-only
  (test* "reset/shift + call/cc error 2"
         (test-error)
@@ -189,35 +233,48 @@
             (reset (shift k (set! k3 k)) (k1))
             (k3)))))
 
+;; native : error
+;; meta   : -
+;; srfi226: -
 (gauche-only
- (test* "reset/shift + call/cc error 3"
-        (test-error)
-        (with-output-to-string
-          (lambda ()
-            (define k1 #f)
-            (define k2 #f)
-            (reset
-             (call/cc (lambda (k) (set! k1 k)))
-             (shift k (set! k2 k)))
-            (k2)
-            (k1)))))
+ ;; Avoid running with partcont-meta, for it hangs.
+ (unless (provided? "gauche/partcont-meta")
+   (test* "reset/shift + call/cc error 3"
+          (test-error)
+          (with-output-to-string
+            (lambda ()
+              (define k1 #f)
+              (define k2 #f)
+              (reset
+               (call/cc (lambda (k) (set! k1 k)))
+               (shift k (set! k2 k)))
+              (k2)
+              (k1))))))
 
 (gauche-only
- (let ((p (make-parameter 0))
-       (c #f))
-   (define (foo)
-     (reset
-      (display (p))
-      (parameterize ((p 1))
-        (let/cc cont
-          (display (p))
-          (shift k (display (p)) (cont k))
-          (display (p))))))
-   (test* "reset/shift + call/cc + parameterize" "010"
-          (with-output-to-string
-            (lambda () (set! c (foo)))))
-   (test* "reset/shift + call/cc + parameterize" "1"
-          (with-output-to-string c))))
+ ;; Avoid running with partcont-meta, for something weird happnes.
+ (unless (provided? "gauche/partcont-meta")
+   (let ((p (make-parameter 0))
+         (cz #f))
+     (define (foo)
+       (reset
+        (display (p))
+        (parameterize ((p 1))
+          (let/cc cont
+            (display (p))
+            (shift k (display (p)) (cont k))
+            (display (p))))))
+     ;; native : 010
+     ;; meta   :
+     ;; srfi226:
+     (test* "reset/shift + call/cc + parameterize" "010"
+            (with-output-to-string
+              (lambda () (set! c (foo)))))
+     ;; native : 1
+     ;; meta   :
+     ;; srfi226:
+     (test* "reset/shift + call/cc + parameterize" "1"
+            (with-output-to-string (lambda () (c)))))))
 
 
 (let ((p (make-parameter 1))
@@ -231,11 +288,20 @@
          (shift k (display (p)) (set! c k))
          (display (p)))
        (display (p)))))
+  ;; native : 232
+  ;; meta   : 232
+  ;; srfi226: 232
   (test* "reset/shift + temporarily + parameterize" "232"
          (with-output-to-string foo))
+  ;; native : 32
+  ;; meta   : ""
+  ;; srfi226: ""
   (test* "reset/shift + temporarily + parameterize (cont)" "32"
          (with-output-to-string c)))
 
+;; native : [E01][E02]
+;; meta   : [E01][E02]
+;; srfi226:
 (gauche-only
  (test* "reset/shift + with-error-handler 1"
         "[E01][E02]"
@@ -248,28 +314,34 @@
                 (reset (error "[E02]"))
                 (display "[E03]")))))))
 
-(test* "reset/shift + guard 1"
-       "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
-       (with-output-to-string
-         (lambda ()
-           (define queue '())
-           (define (yield) (shift k (push! queue k)))
-           (push! queue (lambda ()
-                          (guard (e (else (display (~ e 'message))))
-                            (yield)
-                            (error "[E01]"))))
-           (while (and (pair? queue) (pop! queue))
-             => next
-             (display "[W01]")
-             (reset
-              (dynamic-wind
-                (lambda () (display "[D01]"))
-                next
-                (lambda () (display "[D02]"))))))))
+;; native : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
+;; meta   : [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
+;; srfi226: hangs
+(gauche-only
+ (test* "reset/shift + guard 1"
+        "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
+        (with-output-to-string
+          (lambda ()
+            (define queue '())
+            (define (yield) (shift k (push! queue k)))
+            (push! queue (lambda ()
+                           (guard (e (else (display (~ e 'message))))
+                             (yield)
+                             (error "[E01]"))))
+            (while (and (pair? queue) (pop! queue))
+              => next
+              (display "[W01]")
+              (reset
+               (dynamic-wind
+                 (lambda () (display "[D01]"))
+                 next
+                 (lambda () (display "[D02]")))))))))
 
+;; native : [d01][d02][d03][d04]
+;; meta   : [d01][d02][d04][d01][d03][d04]
+;; srfi226: [d01][d02][d03][d04]
 (test* "dynamic-wind + reset/shift 1"
        "[d01][d02][d03][d04]"
-       ;"[d01][d02][d04][d01][d03][d04]"
        (with-output-to-string
          (lambda ()
            (reset
@@ -282,6 +354,9 @@
                    (display "[d03]"))
               (lambda () (display "[d04]"))))))))
 
+;; native : [d01][d02][d04][d01][d03][d04]
+;; meta   : [d01][d02][d04][d01][d03][d04]
+;; srfi226: [d01][d02][d04][d01][d03][d04]
 (test* "dynamic-wind + reset/shift 2"
        "[d01][d02][d04][d01][d03][d04]"
        (with-output-to-string
@@ -297,6 +372,9 @@
              (lambda () (display "[d04]"))))
            (k1))))
 
+;; native : [d01][d02][d01][d02][d01][d02][d01][d02]
+;; meta   : [d01][d02][d01][d02][d01][d02][d01][d02]
+;; srfi226: -
 (test* "dynamic-wind + reset/shift 3"
        "[d01][d02][d01][d02][d01][d02][d01][d02]"
        (with-output-to-string
@@ -314,6 +392,9 @@
            (k2)
            (k2))))
 
+;; native : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
+;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
+;; srfi226: -
 (test* "dynamic-wind + reset/shift 3-B"
        "[d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]"
        (with-output-to-string
@@ -334,9 +415,11 @@
            (k2)
            (k2))))
 
+;; native : [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
+;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
+;; srfi226: -
 (test* "dynamic-wind + reset/shift 3-C"
        "[d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]"
-       ;"[d01][d02][d21][d22][d01][d11][d12][d02][d21][d22][d01][d11][d12][d02][d21][d22][d01][d11][d12][d02][d21][d22]"
        (with-output-to-string
          (lambda ()
            (define k1 #f)
@@ -356,9 +439,11 @@
             (lambda () (k1) (k2) (k2))
             (lambda () (display "[d22]"))))))
 
+;; native : [d01][d11][d12][d02][d11][d12]
+;; meta   : [d01][d11][d12][d02][d01][d11][d12][d02]
+;; srfi226: [d01][d11][d12][d02][d11][d12]
 (test* "dynamic-wind + reset/shift 4"
        "[d01][d11][d12][d02][d11][d12]"
-       ;"[d01][d11][d12][d02][d01][d11][d12][d02]"
        (with-output-to-string
          (lambda ()
            (define k1 #f)
@@ -374,9 +459,11 @@
              (lambda () (display "[d02]"))))
            (k1))))
 
+;; native : [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
+;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
+;; srfi226: -
 (test* "dynamic-wind + reset/shift 5"
        "[d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]"
-       ;"[d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]"
        (with-output-to-string
          (lambda ()
            (define k1 #f)
@@ -399,9 +486,11 @@
            (k2)
            (k3))))
 
+;; native : [d01][d02][d11][d12][d13][d14][d03][d04]
+;; meta   : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
+;; srfi226: [d01][d02][d11][d12][d13][d14][d03][d04]
 (test* "dynamic-wind + reset/shift 6"
        "[d01][d02][d11][d12][d13][d14][d03][d04]"
-       ;"[d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]"
        (with-output-to-string
          (lambda ()
            (reset
@@ -421,6 +510,9 @@
                 (display "[d03]"))
               (lambda () (display "[d04]"))))))))
 
+;; native : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
+;; meta   : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
+;; srfi226: [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 (test* "dynamic-wind + reset/shift 7"
        "[d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]"
        (with-output-to-string
@@ -442,6 +534,9 @@
              (lambda () (display "[d04]"))))
            (k1))))
 
+;; native : [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
+;; meta   : [d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]
+;; srfi226: [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
 (test* "dynamic-wind + reset/shift 8"
        "[d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]"
        ;"[d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]"
