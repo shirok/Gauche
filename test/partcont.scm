@@ -10,11 +10,13 @@
 ;; native : Gauche native partial continuation
 ;; meta   : gauche.partcont-meta, implementation using full continuation
 ;; srfi226: Srfi-226 reference implementation run on ChezScheme
+;; racket : Racket r7rs + racket/control
 
 
 ;; native : 1000
 ;; meta   : 1000
 ;; srfi226: 1000
+;; racket : 1000
 (test* "reset/shift combination 1"
        1000
        (begin
@@ -34,6 +36,7 @@
 ;; native : (1 2 3)
 ;; meta   : (1 2 3)
 ;; srfi226: (1 2 3)
+;; racket : (1 2 3)
 (test* "reset/shift + values 1"
        '(1 2 3)
        (values->list (reset (values 1 2 3))))
@@ -41,6 +44,7 @@
 ;; native : (1 2 3)
 ;; meta   : (1 2 3)
 ;; srfi226: (1 2 3)
+;; racket : (1 2 3)
 (test* "reset/shift + values 2"
        '(1 2 3)
        (begin
@@ -53,6 +57,7 @@
 ;; native : 010
 ;; meta   : 010
 ;; srfi226: 010
+;; racket : 010
 (test* "reset/shift + parameterize 1"
        "010"
        (with-output-to-string
@@ -68,23 +73,25 @@
 ;; native : [r01][r02][r02][r03]
 ;; meta   : [r01][r02][r02][r03]
 ;; srfi226: [r01][r02][r02][r03]
-(test* "reset/shift + call/cc 1"
-       "[r01][r02][r02][r03]"
-       (with-output-to-string
-         (lambda ()
-           (define k1 #f)
-           (define done #f)
-           (call/cc
-            (lambda (k0)
-              (reset
-               (display "[r01]")
-               (shift k (set! k1 k))
-               (display "[r02]")
-               (unless done
-                 (set! done #t)
-                 (k0))
-               (display "[r03]"))))
-           (k1))))
+;; racket : -
+(gauche-only
+ (test* "reset/shift + call/cc 1"
+        "[r01][r02][r02][r03]"
+        (with-output-to-string
+          (lambda ()
+            (define k1 #f)
+            (define done #f)
+            (call/cc
+             (lambda (k0)
+               (reset
+                (display "[r01]")
+                (shift k (set! k1 k))
+                (display "[r02]")
+                (unless done
+                  (set! done #t)
+                  (k0))
+                (display "[r03]"))))
+            (k1)))))
 
 ;; reset/shift and call/cc combination seems to work differently
 ;; between Gauche and SRFI-226 ref.impl.  The latter goes infinite
@@ -93,7 +100,8 @@
 
 ;; native : [r01][s01][s02][s02]
 ;; meta   : [r01][s01][s02][s02]
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc 2"
         "[r01][s01][s02][s02]"
@@ -112,7 +120,8 @@
 
 ;; native : [r01][s01]
 ;; meta   : [r01][s01]
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc 2-B"
         "[r01][s01]"
@@ -133,7 +142,8 @@
 
 ;; native : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
 ;; meta   : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc 2-C"
         "[d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]"
@@ -156,7 +166,8 @@
 
 ;; native : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
 ;; meta   : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
         "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
@@ -180,7 +191,8 @@
 
 ;; native : [r01][s01][s01]
 ;; meta   : [r01][s01][s01]
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc 3"
         "[r01][s01][s01]"
@@ -199,7 +211,8 @@
 
 ;; native : error
 ;; meta   : ""
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc error 1"
         (test-error)
@@ -216,7 +229,8 @@
 
 ;; native : error
 ;; meta   : ""
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + call/cc error 2"
         (test-error)
@@ -236,6 +250,7 @@
 ;; native : error
 ;; meta   : -
 ;; srfi226: -
+;; racket : -
 (gauche-only
  ;; Avoid running with partcont-meta, for it hangs.
  (unless (provided? "gauche/partcont-meta")
@@ -267,14 +282,16 @@
      ;; native : 010
      ;; meta   :
      ;; srfi226:
+     ;; racket : -
      (test* "reset/shift + call/cc + parameterize" "010"
             (with-output-to-string
               (lambda () (set! c (foo)))))
      ;; native : 1
      ;; meta   :
      ;; srfi226:
+     ;; racket : -
      (test* "reset/shift + call/cc + parameterize" "1"
-            (with-output-to-string (lambda () (c)))))))
+            (with-output-to-string c)))))
 
 
 (let ((p (make-parameter 1))
@@ -290,18 +307,20 @@
        (display (p)))))
   ;; native : 232
   ;; meta   : 232
-  ;; srfi226: 232
+  ;; srfi226: 23#<void>
   (test* "reset/shift + temporarily + parameterize" "232"
          (with-output-to-string foo))
   ;; native : 32
   ;; meta   : ""
   ;; srfi226: ""
+  ;; racket : #<void>#<void>
   (test* "reset/shift + temporarily + parameterize (cont)" "32"
          (with-output-to-string c)))
 
 ;; native : [E01][E02]
 ;; meta   : [E01][E02]
-;; srfi226:
+;; srfi226: -
+;; racket : -
 (gauche-only
  (test* "reset/shift + with-error-handler 1"
         "[E01][E02]"
@@ -317,6 +336,7 @@
 ;; native : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 ;; meta   : [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
 ;; srfi226: hangs
+;; racket : -
 (gauche-only
  (test* "reset/shift + guard 1"
         "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
@@ -340,6 +360,7 @@
 ;; native : [d01][d02][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]
 ;; srfi226: [d01][d02][d03][d04]
+;; racket : [d01][d02][d03][d04]
 (test* "dynamic-wind + reset/shift 1"
        "[d01][d02][d03][d04]"
        (with-output-to-string
@@ -357,6 +378,7 @@
 ;; native : [d01][d02][d04][d01][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]
 ;; srfi226: [d01][d02][d04][d01][d03][d04]
+;; racket : [d01][d02][d04][d01][d03][d04]
 (test* "dynamic-wind + reset/shift 2"
        "[d01][d02][d04][d01][d03][d04]"
        (with-output-to-string
@@ -375,6 +397,7 @@
 ;; native : [d01][d02][d01][d02][d01][d02][d01][d02]
 ;; meta   : [d01][d02][d01][d02][d01][d02][d01][d02]
 ;; srfi226: -
+;; racket : [d01][d02][d01][d02][d01][d02][d01][d02]
 (test* "dynamic-wind + reset/shift 3"
        "[d01][d02][d01][d02][d01][d02][d01][d02]"
        (with-output-to-string
@@ -395,6 +418,7 @@
 ;; native : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: -
+;; racket : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 (test* "dynamic-wind + reset/shift 3-B"
        "[d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]"
        (with-output-to-string
@@ -418,6 +442,7 @@
 ;; native : [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: -
+;; racket : [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
 (test* "dynamic-wind + reset/shift 3-C"
        "[d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]"
        (with-output-to-string
@@ -442,6 +467,7 @@
 ;; native : [d01][d11][d12][d02][d11][d12]
 ;; meta   : [d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: [d01][d11][d12][d02][d11][d12]
+;; racket:  [d01][d11][d12][d02][d11][d12]
 (test* "dynamic-wind + reset/shift 4"
        "[d01][d11][d12][d02][d11][d12]"
        (with-output-to-string
@@ -462,6 +488,7 @@
 ;; native : [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; srfi226: -
+;; racket : [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
 (test* "dynamic-wind + reset/shift 5"
        "[d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]"
        (with-output-to-string
@@ -489,6 +516,7 @@
 ;; native : [d01][d02][d11][d12][d13][d14][d03][d04]
 ;; meta   : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; srfi226: [d01][d02][d11][d12][d13][d14][d03][d04]
+;; racket : [d01][d02][d11][d12][d13][d14][d03][d04]
 (test* "dynamic-wind + reset/shift 6"
        "[d01][d02][d11][d12][d13][d14][d03][d04]"
        (with-output-to-string
@@ -513,6 +541,7 @@
 ;; native : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; meta   : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; srfi226: [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
+;; racket : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 (test* "dynamic-wind + reset/shift 7"
        "[d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]"
        (with-output-to-string
@@ -537,6 +566,7 @@
 ;; native : [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
 ;; meta   : [d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]
 ;; srfi226: [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
+;; racket : [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
 (test* "dynamic-wind + reset/shift 8"
        "[d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]"
        ;"[d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]"
