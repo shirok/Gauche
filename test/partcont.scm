@@ -307,7 +307,8 @@
        (display (p)))))
   ;; native : 232
   ;; meta   : 232
-  ;; srfi226: 23#<void>
+  ;; srfi226: 232
+  ;; racket : 23#<void>
   (test* "reset/shift + temporarily + parameterize" "232"
          (with-output-to-string foo))
   ;; native : 32
@@ -335,27 +336,26 @@
 
 ;; native : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
 ;; meta   : [W01][D01][D02][W01][D01][D02][D01][E01][D02][D01][D02]
-;; srfi226: hangs
-;; racket : -
-(gauche-only
- (test* "reset/shift + guard 1"
-        "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
-        (with-output-to-string
-          (lambda ()
-            (define queue '())
-            (define (yield) (shift k (push! queue k)))
-            (push! queue (lambda ()
-                           (guard (e (else (display (~ e 'message))))
-                             (yield)
-                             (error "[E01]"))))
-            (while (and (pair? queue) (pop! queue))
-              => next
-              (display "[W01]")
-              (reset
-               (dynamic-wind
-                 (lambda () (display "[D01]"))
-                 next
-                 (lambda () (display "[D02]")))))))))
+;; srfi226: [W01][D01][D02][W01][D01][D02][D01][E01][D02]
+;; racket : [W01][D01][D02][W01][D01][D01][E01][D02][D02]
+(test* "reset/shift + guard 1"
+       "[W01][D01][D02][W01][D01][D01][E01][D02][D02]"
+       (with-output-to-string
+         (lambda ()
+           (define queue '())
+           (define (yield) (shift k (push! queue k)))
+           (push! queue (lambda ()
+                          (guard (e (else (display (condition-message e))))
+                            (yield)
+                            (error "[E01]"))))
+           (while (and (pair? queue) (pop! queue))
+             => next
+             (display "[W01]")
+             (reset
+              (dynamic-wind
+                (lambda () (display "[D01]"))
+                next
+                (lambda () (display "[D02]"))))))))
 
 ;; native : [d01][d02][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]

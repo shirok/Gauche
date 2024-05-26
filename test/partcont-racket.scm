@@ -3,11 +3,12 @@
 ;;
 ;; plt-r6rs ./partcont-racket
 
-(import (rnrs base (6))
+(import (rename (rnrs base (6)) (error r6rs:error))
         (rnrs io ports (6))
         (rnrs io simple (6))
         (rnrs files (6))
         (rnrs exceptions (6))
+        (rnrs conditions (6))
         (rnrs control (6))
         (srfi :39)
         (racket include)
@@ -21,7 +22,7 @@
 
 (define-syntax pop!
   (syntax-rules ()
-    ((pop! loc) (let ((v loc)) (set! loc (cdr loc)) v))))
+    ((pop! loc) (let ((v (car loc))) (set! loc (cdr loc)) v))))
 
 (define-syntax values->list
   (syntax-rules ()
@@ -90,6 +91,8 @@
                       (loop (read-char))))))))))
     (delete-file "tmp.log")
     s))
+
+(define (error msg . args) (apply r6rs:error 'partcont msg args))
 
 (include "partcont.scm")
 

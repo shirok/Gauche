@@ -5,7 +5,8 @@
 ;;
 ;; chezscheme --libdirs $SRFI_226_DIR/lib ./partcont-srfi-226.scm
 
-(import (control-features))
+(import (rename (rnrs base (6)) (error r6rs:error))
+        (control-features))
 
 ;; Compatibility layer
 
@@ -31,7 +32,7 @@
 
 (define-syntax pop!
   (syntax-rules ()
-    ((pop! loc) (let ((v loc)) (set! loc (cdr loc)) v))))
+    ((pop! loc) (let ((v (car loc))) (set! loc (cdr loc)) v))))
 
 (define-syntax values->list
   (syntax-rules ()
@@ -85,6 +86,8 @@
     (parameterize ((current-output-port p))
       (thunk))
     (get-output-string p)))
+
+(define (error msg . args) (apply r6rs:error 'partcont msg args))
 
 (include "partcont.scm")
 
