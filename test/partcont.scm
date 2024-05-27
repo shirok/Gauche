@@ -259,15 +259,16 @@
  ;; Avoid running with partcont-meta, for something weird happnes.
  (unless (provided? "gauche/partcont-meta")
    (let ((p (make-parameter 0))
-         (cz #f))
+         (c #f))
      (define (foo)
        (reset
         (display (p))
         (parameterize ((p 1))
-          (let/cc cont
-            (display (p))
-            (shift k (display (p)) (cont k))
-            (display (p))))))
+          (call/cc
+           (lambda (cont)
+             (display (p))
+             (shift k (display (p)) (cont k))
+             (display (p)))))))
      ;; native : 010
      ;; meta   :
      ;; srfi226:
@@ -348,7 +349,7 @@
 
 ;; native : [d01][d02][d03][d04]
 ;; meta   : [d01][d02][d04][d01][d03][d04]
-;; srfi226: [d01][d02][d03][d04]
+;; srfi226: [d01][d02][d04][d01][d03][d04]
 ;; racket : [d01][d02][d03][d04]
 (test* "dynamic-wind + reset/shift 1"
        "[d01][d02][d03][d04]"
@@ -385,28 +386,29 @@
 
 ;; native : [d01][d02][d01][d02][d01][d02][d01][d02]
 ;; meta   : [d01][d02][d01][d02][d01][d02][d01][d02]
-;; srfi226: -
+;; srfi226: [d01][d02][d01][d02]
 ;; racket : [d01][d02][d01][d02][d01][d02][d01][d02]
 (test* "dynamic-wind + reset/shift 3"
        "[d01][d02][d01][d02][d01][d02][d01][d02]"
        (with-output-to-string
          (lambda ()
-           (define k1 #f)
-           (define k2 #f)
            (reset
-            (dynamic-wind
-             (lambda () (display "[d01]"))
-             (lambda ()
-               (shift k (set! k1 k))
-               (shift k (set! k2 k)))
-             (lambda () (display "[d02]"))))
-           (k1)
-           (k2)
-           (k2))))
+            (define k1 #f)
+            (define k2 #f)
+            (reset
+             (dynamic-wind
+               (lambda () (display "[d01]"))
+               (lambda ()
+                 (shift k (set! k1 k))
+                 (shift k (set! k2 k)))
+               (lambda () (display "[d02]"))))
+            (k1)
+            (k2)
+            (k2)))))
 
 ;; native : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
-;; srfi226: -
+;; srfi226: [d01][d02][d01][d11][d12][d02]
 ;; racket : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
 (test* "dynamic-wind + reset/shift 3-B"
        "[d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]"
@@ -415,22 +417,23 @@
            (define k1 #f)
            (define k2 #f)
            (reset
-            (dynamic-wind
-             (lambda () (display "[d01]"))
-             (lambda ()
-               (shift k (set! k1 k))
-               (dynamic-wind
-                 (lambda () (display "[d11]"))
-                 (lambda () (shift k (set! k2 k)))
-                 (lambda () (display "[d12]"))))
-             (lambda () (display "[d02]"))))
-           (k1)
-           (k2)
-           (k2))))
+            (reset
+             (dynamic-wind
+               (lambda () (display "[d01]"))
+               (lambda ()
+                 (shift k (set! k1 k))
+                 (dynamic-wind
+                   (lambda () (display "[d11]"))
+                   (lambda () (shift k (set! k2 k)))
+                   (lambda () (display "[d12]"))))
+               (lambda () (display "[d02]"))))
+            (k1)
+            (k2)
+            (k2)))))
 
 ;; native : [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
-;; srfi226: -
+;; srfi226: [d01][d02][d21][d22][d01][d11][d12][d02]
 ;; racket : [d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]
 (test* "dynamic-wind + reset/shift 3-C"
        "[d01][d02][d21][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02][d22]"
@@ -439,23 +442,24 @@
            (define k1 #f)
            (define k2 #f)
            (reset
+            (reset
+             (dynamic-wind
+               (lambda () (display "[d01]"))
+               (lambda ()
+                 (shift k (set! k1 k))
+                 (dynamic-wind
+                   (lambda () (display "[d11]"))
+                   (lambda () (shift k (set! k2 k)))
+                   (lambda () (display "[d12]"))))
+               (lambda () (display "[d02]"))))
             (dynamic-wind
-             (lambda () (display "[d01]"))
-             (lambda ()
-               (shift k (set! k1 k))
-               (dynamic-wind
-                 (lambda () (display "[d11]"))
-                 (lambda () (shift k (set! k2 k)))
-                 (lambda () (display "[d12]"))))
-             (lambda () (display "[d02]"))))
-           (dynamic-wind
-            (lambda () (display "[d21]"))
-            (lambda () (k1) (k2) (k2))
-            (lambda () (display "[d22]"))))))
+              (lambda () (display "[d21]"))
+              (lambda () (k1) (k2) (k2))
+              (lambda () (display "[d22]")))))))
 
 ;; native : [d01][d11][d12][d02][d11][d12]
 ;; meta   : [d01][d11][d12][d02][d01][d11][d12][d02]
-;; srfi226: [d01][d11][d12][d02][d11][d12]
+;; srfi226: [d01][d02][d11][d12][d01][d02][d01][d02][d11][d12]
 ;; racket:  [d01][d11][d12][d02][d11][d12]
 (test* "dynamic-wind + reset/shift 4"
        "[d01][d11][d12][d02][d11][d12]"
@@ -464,19 +468,19 @@
            (define k1 #f)
            (reset
             (dynamic-wind
-             (lambda () (display "[d01]"))
-             (lambda ()
-               (reset
-                (dynamic-wind
-                  (lambda () (display "[d11]"))
-                  (lambda () (shift k (set! k1 k)))
-                  (lambda () (display "[d12]")))))
-             (lambda () (display "[d02]"))))
+              (lambda () (display "[d01]"))
+              (lambda ()
+                (reset
+                 (dynamic-wind
+                   (lambda () (display "[d11]"))
+                   (lambda () (shift k (set! k1 k)))
+                   (lambda () (display "[d12]")))))
+              (lambda () (display "[d02]"))))
            (k1))))
 
 ;; native : [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
 ;; meta   : [d01][d02][d01][d11][d12][d02][d01][d11][d12][d02][d01][d11][d12][d02]
-;; srfi226: -
+;; srfi226: [d01][d02][d01][d02][d11][d12][d01][d02][d01][d02][d11][d12]
 ;; racket : [d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]
 (test* "dynamic-wind + reset/shift 5"
        "[d01][d02][d01][d11][d12][d02][d11][d12][d11][d12]"
@@ -486,25 +490,26 @@
            (define k2 #f)
            (define k3 #f)
            (reset
-            (dynamic-wind
-             (lambda () (display "[d01]"))
-             (lambda ()
-               (shift k (set! k1 k))
-               (reset
-                (dynamic-wind
-                  (lambda () (display "[d11]"))
-                  (lambda ()
-                    (shift k (set! k2 k))
-                    (shift k (set! k3 k)))
-                  (lambda () (display "[d12]")))))
-             (lambda () (display "[d02]"))))
-           (k1)
-           (k2)
-           (k3))))
+            (reset
+             (dynamic-wind
+               (lambda () (display "[d01]"))
+               (lambda ()
+                 (shift k (set! k1 k))
+                 (reset
+                  (dynamic-wind
+                    (lambda () (display "[d11]"))
+                    (lambda ()
+                      (shift k (set! k2 k))
+                      (shift k (set! k3 k)))
+                    (lambda () (display "[d12]")))))
+               (lambda () (display "[d02]"))))
+            (k1)
+            (k2)
+            (k3)))))
 
 ;; native : [d01][d02][d11][d12][d13][d14][d03][d04]
 ;; meta   : [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
-;; srfi226: [d01][d02][d11][d12][d13][d14][d03][d04]
+;; srfi226: [d01][d02][d11][d12][d14][d04][d01][d11][d13][d14][d03][d04]
 ;; racket : [d01][d02][d11][d12][d13][d14][d03][d04]
 (test* "dynamic-wind + reset/shift 6"
        "[d01][d02][d11][d12][d13][d14][d03][d04]"
@@ -554,7 +559,7 @@
 
 ;; native : [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
 ;; meta   : [d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]
-;; srfi226: [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
+;; srfi226: [d01][d02][d04][d11][d12][d14][d01][d03][d04][d11][d13][d14]
 ;; racket : [d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]
 (test* "dynamic-wind + reset/shift 8"
        "[d01][d02][d04][d11][d12][d01][d03][d04][d13][d14]"
