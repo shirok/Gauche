@@ -73,141 +73,130 @@
 ;; native : [r01][r02][r02][r03]
 ;; meta   : [r01][r02][r02][r03]
 ;; srfi226: [r01][r02][r02][r03]
-;; racket : -
-(gauche-only
- (test* "reset/shift + call/cc 1"
-        "[r01][r02][r02][r03]"
-        (with-output-to-string
-          (lambda ()
-            (define k1 #f)
-            (define done #f)
-            (call/cc
-             (lambda (k0)
-               (reset
-                (display "[r01]")
-                (shift k (set! k1 k))
-                (display "[r02]")
-                (unless done
-                  (set! done #t)
-                  (k0))
-                (display "[r03]"))))
-            (k1)))))
-
-;; reset/shift and call/cc combination seems to work differently
-;; between Gauche and SRFI-226 ref.impl.  The latter goes infinite
-;; loop.  Until I understand what's going on, we exclude them
-;; for ref.impl. test.
+;; racket : [r01][r02][r02][r03]
+(test* "reset/shift + call/cc 1"
+       "[r01][r02][r02][r03]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (define done #f)
+           (call/cc
+            (lambda (k0)
+              (reset
+               (display "[r01]")
+               (shift k (set! k1 k))
+               (display "[r02]")
+               (unless done
+                 (set! done #t)
+                 (k0))
+               (display "[r03]"))))
+           (k1))))
 
 ;; native : [r01][s01][s02][s02]
 ;; meta   : [r01][s01][s02][s02]
-;; srfi226: -
-;; racket : -
-(gauche-only
- (test* "reset/shift + call/cc 2"
-        "[r01][s01][s02][s02]"
-        (with-output-to-string
-          (lambda ()
-            (define k1 #f)
-            (define k2 #f)
-            (reset
-             (display "[r01]")
-             (shift k (set! k1 k))
-             (display "[s01]")
-             (call/cc (lambda (k) (set! k2 k)))
-             (display "[s02]"))
-            (k1)
-            (reset (reset (k2)))))))
+;; srfi226: [r01][s01][s02][s02]
+;; racket : [r01][s01][s02][s02]
+(test* "reset/shift + call/cc 2"
+       "[r01][s01][s02][s02]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            (display "[s02]"))
+           (k1)
+           (reset (reset (k2))))))
 
 ;; native : [r01][s01]
 ;; meta   : [r01][s01]
-;; srfi226: -
-;; racket : -
-(gauche-only
- (test* "reset/shift + call/cc 2-B"
-        "[r01][s01]"
-        (with-output-to-string
-          (lambda ()
-            (define k1 #f)
-            (define k2 #f)
-            (reset
-             (display "[r01]")
-             (shift k (set! k1 k))
-             (display "[s01]")
-             (call/cc (lambda (k) (set! k2 k)))
-             ;; empty after call/cc
+;; srfi226: [r01][s01]
+;; racket : [r01][s01]
+(test* "reset/shift + call/cc 2-B"
+       "[r01][s01]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            ;; empty after call/cc
                                         ;(display "[s02]")
-             )
-            (k1)
-            (reset (reset (k2)))))))
+            )
+           (k1)
+           (reset (reset (k2))))))
 
 ;; native : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
 ;; meta   : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
-;; srfi226: -
-;; racket : -
-(gauche-only
- (test* "reset/shift + call/cc 2-C"
-        "[d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]"
-        (with-output-to-string
-          (lambda ()
-            (define k1 #f)
-            (define k2 #f)
-            (reset
-             (dynamic-wind
-               (lambda () (display "[d01]"))
-               (lambda ()
-                 (display "[d02]")
-                 (shift k (set! k1 k))
-                 (display "[s01]")
-                 (call/cc (lambda (k) (set! k2 k)))
-                 (display "[s02]"))
-               (lambda () (display "[d03]"))))
-            (k1)
-            (reset (reset (k2)))))))
+;; srfi226: [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
+;; racket : [d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]
+(test* "reset/shift + call/cc 2-C"
+       "[d01][d02][d03][d01][s01][s02][d03][d01][s02][d03]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (dynamic-wind
+              (lambda () (display "[d01]"))
+              (lambda ()
+                (display "[d02]")
+                (shift k (set! k1 k))
+                (display "[s01]")
+                (call/cc (lambda (k) (set! k2 k)))
+                (display "[s02]"))
+              (lambda () (display "[d03]"))))
+           (k1)
+           (reset (reset (k2))))))
 
 ;; native : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
 ;; meta   : [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
-;; srfi226: -
-;; racket : -
-(gauche-only
- (test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
-        "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
-        (with-output-to-string
-          (lambda ()
-            (define k1 #f)
-            (define k2 #f)
-            (reset
-             (display "[r01]")
-             (shift k (set! k1 k))
-             (display "[s01]")
-             (call/cc (lambda (k) (set! k2 k)))
-             (display "[s02]")
-             12345)
-            (k1)
-            (dynamic-wind
-              (lambda () (display "[d01]"))
-              (lambda () (display "[d02]")
-                      (display (reset (reset (k2)))))
-              (lambda () (display "[d03]")))))))
+;; srfi226: [r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]
+;; racket : [r01][s01][s02][d01][d02][s02]12345[d03]
+(test* "reset/shift + call/cc 2-D (from Kahua nqueen broken)"
+       "[r01][s01][s02][d01][d02][d03][s02][d01]12345[d03]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (shift k (set! k1 k))
+            (display "[s01]")
+            (call/cc (lambda (k) (set! k2 k)))
+            (display "[s02]")
+            12345)
+           (k1)
+           (dynamic-wind
+             (lambda () (display "[d01]"))
+             (lambda () (display "[d02]")
+                     (display (reset (reset (k2)))))
+             (lambda () (display "[d03]"))))))
 
 ;; native : [r01][s01][s01]
 ;; meta   : [r01][s01][s01]
-;; srfi226: -
-;; racket : -
-(gauche-only
- (test* "reset/shift + call/cc 3"
-        "[r01][s01][s01]"
-        (with-output-to-string
-          (lambda ()
-            (define k1 #f)
-            (define k2 #f)
-            (reset
-             (display "[r01]")
-             (call/cc (lambda (k)
-                        (set! k1 k)
-                        (shift k (set! k2 k))))
-             (display "[s01]"))
-            (k2)
-            (reset (k1))))))
+;; srfi226: [r01][s01][s01]
+;; racket : [r01][s01][s01]
+(test* "reset/shift + call/cc 3"
+       "[r01][s01][s01]"
+       (with-output-to-string
+         (lambda ()
+           (define k1 #f)
+           (define k2 #f)
+           (reset
+            (display "[r01]")
+            (call/cc (lambda (k)
+                       (set! k1 k)
+                       (shift k (set! k2 k))))
+            (display "[s01]"))
+           (k2)
+           (reset (k1)))))
 
 ;; native : error
 ;; meta   : ""

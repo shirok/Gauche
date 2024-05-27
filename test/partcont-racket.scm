@@ -80,7 +80,7 @@
        (newline)))))
 
 (define (with-output-to-string thunk)
-  (with-output-to-file "tmp.log" thunk)
+  (with-output-to-file "tmp.log" (lambda () (reset (thunk))))
   (let ((s (with-input-from-file "tmp.log"
              (lambda ()
                (call-with-string-output-port
