@@ -41,6 +41,7 @@ SCM_EXTERN ScmObj Scm_NativeEndian(void);
 SCM_EXTERN ScmObj Scm_DefaultEndian(void);
 SCM_EXTERN void   Scm_SetDefaultEndian(ScmObj endian);
 
+/* Set default value of endian argument */
 #define SCM_CHECK_ENDIAN(endian)                                       \
     do { if (endian == NULL) endian = SCM_SYMBOL(Scm_DefaultEndian()); \
     } while (0)

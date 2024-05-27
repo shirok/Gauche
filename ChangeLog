@@ -1,3 +1,9 @@
+2024-05-26  Shiro Kawai  <shiro@acm.org>
+
+	* ext/uvector/uvector.c.tmpl: Make sure recognizing big/little endian
+	  designator as well as big-endian/little-endian.
+	  https://github.com/shirok/Gauche/issues/1036
+
 2024-05-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uuid.scm: Change to generator-make style a la data.random

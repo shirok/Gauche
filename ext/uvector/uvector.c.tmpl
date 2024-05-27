@@ -1338,28 +1338,28 @@ ScmObj Scm_ReadBlockX(ScmUVector *v, ScmPort *port,
                          (end-start)*eltsize, port);
     if (r == EOF) SCM_RETURN(SCM_EOF);
 #ifdef DOUBLE_ARMENDIAN
-    if (SCM_EQ(Scm_NativeEndian(), SCM_SYM_ARM_LITTLE_ENDIAN)) {
-        if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)) {
+    if (Scm_IsArmLE(Scm_NativeEndian())) {
+        if (Scm_IsLE(SCM_OBJ(endian))) {
             /* arm-le and le is equivalent when eltsize <= 4 */
             if (eltsize == 8) {
                 Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE);
             }
-        } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+        } else if (Scm_IsBE(SCM_OBJ(endian))) {
             Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE);
         }
     } else
 #endif /*!DOUBLE_ARMENDIAN*/
         {
 #ifdef WORDS_BIGENDIAN
-            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)) {
+            if (Scm_IsLE(SCM_OBJ(endian))) {
                 Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD);
-            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+            } else if (Scm_IsArmLE(SCM_OBJ(endian))) {
                 Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_BE);
             }
 #else  /*!WORDS_BIGENDIAN*/
-            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+            if (Scm_IsBE(SCM_OBJ(endian))) {
                 Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_STD);
-            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+            } else if (Scm_IsArmLE(SCM_OBJ(endian))) {
                 if (eltsize == 8) {
                     Scm_UVectorSwapBytesX(SCM_UVECTOR(v), SWAPB_ARM_LE);
                 }
@@ -1380,12 +1380,11 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
     int eltsize = Scm_UVectorElementSize(Scm_ClassOf(SCM_OBJ(v)));
     SCM_ASSERT(eltsize >= 1);
 #ifdef DOUBLE_ARMENDIAN
-    if (SCM_EQ(Scm_NativeEndian(), SCM_SYM_ARM_LITTLE_ENDIAN)) {
-        if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+    if (Scm_IsArmLE(Scm_NativeEndian())) {
+        if (Scm_IsBE(SCM_OBJ(endian))) {
             swap_needed = TRUE;
             swap_type = SWAPB_ARM_BE;
-        } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)
-                   && eltsize == 8) {
+        } else if (Scm_IsLE(SCM_OBJ(endian)) && eltsize == 8) {
             swap_needed = TRUE;
             swap_type = SWAPB_ARM_LE;
         }
@@ -1393,19 +1392,18 @@ ScmObj Scm_WriteBlock(ScmUVector *v, ScmPort *port,
 #endif /*DOUBLE_ARMENDIAN*/
         {
 #ifdef WORDS_BIGENDIAN
-            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_LITTLE_ENDIAN)) {
+            if (Scm_IsLE(SCM_OBJ(endian))) {
                 swap_needed = TRUE;
                 swap_type = SWAPB_STD;
-            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)) {
+            } else if (Scm_IsArmLE(SCM_OBJ(endian))) {
                 swap_needed = TRUE;
                 swap_type = SWAPB_ARM_BE;
             }
 #else /*!WORDS_BIGENDIAN*/
-            if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_BIG_ENDIAN)) {
+            if (Scm_IsBE(SCM_OBJ(endian))) {
                 swap_needed = TRUE;
                 swap_type = SWAPB_STD;
-            } else if (SCM_EQ(SCM_OBJ(endian), SCM_SYM_ARM_LITTLE_ENDIAN)
-                       && eltsize == 8) {
+            } else if (Scm_IsArmLE(SCM_OBJ(endian)) && eltsize == 8) {
                 swap_needed = TRUE;
                 swap_type = SWAPB_ARM_LE;
             }

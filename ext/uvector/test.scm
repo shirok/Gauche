@@ -1237,39 +1237,40 @@
                (call-with-input-file "test.o" (cut read-block! buf <>))))))
 
   (define (test-reverse-endian T maker size)
-    (let* ([rev-endian (case (native-endian)
-                         [(big-endian) 'little-endian]
-                         [(little-endian arm-little-endian) 'big-endian])]
+    (let* ([rev-endians (case (native-endian)
+                          [(big-endian) '(little-endian little)]
+                          [(little-endian arm-little-endian) '(big-endian big)])]
            [rev-vec (cond
                      [(memq T (list <u8vector> <s8vector>)) data1]
                      [(memq T (list <u16vector> <s16vector>)) data2]
                      [(memq T (list <u32vector> <s32vector>)) data3]
                      [(memq T (list <u64vector> <s64vector>)) data4])])
-      (test* (format "reading ~a ~a" rev-endian (class-name T))
-             (uvector-alias T rev-vec)
-             (rlet1 buf (maker size)
-               (call-with-output-file "test.o" (cut write-block data1 <>))
-               (call-with-input-file "test.o"
-                 (cut read-block! buf <> 0 -1 rev-endian))))
-      (test* (format "reading ~a ~a, parameter" rev-endian (class-name T))
-             (uvector-alias T rev-vec)
-             (rlet1 buf (maker size)
-               (call-with-output-file "test.o" (cut write-block data1 <>))
-               (parameterize ([default-endian rev-endian])
-                 (call-with-input-file "test.o" (cut read-block! buf <>)))))
-      (test* (format "writing ~a ~a" rev-endian (class-name T))
-             (uvector-alias T data1)
-             (rlet1 buf (maker size)
-               (call-with-output-file "test.o"
-                 (cut write-block (uvector-alias T rev-vec) <> 0 -1 rev-endian))
-               (call-with-input-file "test.o" (cut read-block! buf <>))))
-      (test* (format "writing ~a ~a, parameter" rev-endian (class-name T))
-             (uvector-alias T data1)
-             (rlet1 buf (maker size)
-               (parameterize ([default-endian rev-endian])
+      (dolist [rev-endian rev-endians]
+        (test* (format "reading ~a ~a" rev-endian (class-name T))
+               (uvector-alias T rev-vec)
+               (rlet1 buf (maker size)
+                 (call-with-output-file "test.o" (cut write-block data1 <>))
+                 (call-with-input-file "test.o"
+                   (cut read-block! buf <> 0 -1 rev-endian))))
+        (test* (format "reading ~a ~a, parameter" rev-endian (class-name T))
+               (uvector-alias T rev-vec)
+               (rlet1 buf (maker size)
+                 (call-with-output-file "test.o" (cut write-block data1 <>))
+                 (parameterize ([default-endian rev-endian])
+                   (call-with-input-file "test.o" (cut read-block! buf <>)))))
+        (test* (format "writing ~a ~a" rev-endian (class-name T))
+               (uvector-alias T data1)
+               (rlet1 buf (maker size)
                  (call-with-output-file "test.o"
-                   (cut write-block (uvector-alias T rev-vec) <>)))
-               (call-with-input-file "test.o" (cut read-block! buf <>))))))
+                   (cut write-block (uvector-alias T rev-vec) <> 0 -1 rev-endian))
+                 (call-with-input-file "test.o" (cut read-block! buf <>))))
+        (test* (format "writing ~a ~a, parameter" rev-endian (class-name T))
+               (uvector-alias T data1)
+               (rlet1 buf (maker size)
+                 (parameterize ([default-endian rev-endian])
+                   (call-with-output-file "test.o"
+                     (cut write-block (uvector-alias T rev-vec) <>)))
+                 (call-with-input-file "test.o" (cut read-block! buf <>)))))))
 
   (define (run-across fn)
     (let1 s (u8vector-length data1)
