@@ -8836,9 +8836,16 @@ traverse entire @var{trie} instead.
 
 @deftp {Module} data.ulid
 @mdindex data.ulid
+@c EN
 This module implements ULID (@url{https://github.com/ulid/spec}), a UUID-like
 unique identifier that can be sortable in chronological order and
 has slightly more compact string representation.
+@c JP
+このモジュールは、@url{https://github.com/ulid/spec}
+で定義されているULIDを実装します。
+これはUUIDに似た一位な識別子ですが、生成順序と辞書順序が一致します。
+また、UUIDよりもコンパクトな文字列表現を持ちます。
+@c COMMON
 
 @example
 (define gen-ulid (make-ulid-generator))
@@ -8847,100 +8854,191 @@ has slightly more compact string representation.
 
 (ulid->string (gen-ulid)) @result{} "01G70P3Y72TQ1HYY90G8TJSY07"
 @end example
+
+@c EN
+NB: The new version of UUID RFC (RFC9562) contains a UUID version 7 which
+has similar monotonic property of ULID, except the compact notation.
+@xref{UUID}, for the details.
+@c JP
+註: 新しいUUID RFC (RFC9562)には、ULIDと同様の単調増加属性を持つUUID version 7
+が含まれています。詳しくは@ref{UUID}を参照のこと。
+@c COMMON
 @end deftp
 
 @defun make-ulid-generator :optional random-source
 @mdindex data.ulid
+@c EN
 Creates and returns a generator that yields a fresh ULID object
 every time it is called.  The optional @var{random-source} argument
 is a SRFI-27 random source (@pxref{Sources of random bits})
 to be used for the random part of ULID.  When omitted,
 an internal random source is used.
+@c JP
+呼ばれるたびに新たなULIDオブジェクトを返すジェネレータを作って返します。
+省略可能な@var{random-source}引数はSRFI-27の乱数源で、ULIDの乱数部を生成するのに
+使われます (@ref{Sources of random bits}参照)。
+省略された場合は内部の乱数源が使われます。
+@c COMMON
 
+@c EN
 To guarantee uniqueness and monotonicity, a ULID generator needs to
 keep internal state.  If you want to share the generator among multiple threads,
 you need to manage your own lock.  Keeping the generator private in one
 thread eliminates the need of mutex (however, monotonicity is only guaranteed
 within each generator).
+@c JP
+一意性と単調増加特性を保証するために、ULIDジェネレータは内部に状態を保持しています。
+作られたジェネレータを複数のスレッドで共有する場合は、呼び出し側で排他制御してください。
+ジェネレータをひとつのスレッド内で使う限りにおいては排他制御のオーバヘッドを避けることができます
+(ただ、単調増加特性はジェネレータごとにしか保証されません)。
+@c COMMON
 
+@c EN
 A ULID consists of 48bit timestamp field (milliseconds since Unix epoch)
 and 80bit randomness field.  The randomness field are generated randomly if
 it is the first ULID within the timestamp.  If more than one ULID needs
 to be generated in a millisecond window, the subsequent ULID gets randomness
 field incremented from the previous ULID, so that the chronological order
 is maintained.
+@c JP
+ULIDは48ビットのタイムスタンプ(Unixエポックからのミリ秒)と、80ビットのランダムネスフィールド
+から成ります。ランダムネスフィールドはそのミリ秒の時刻で初めてULIDが生成される場合は
+ランダムに埋められ、同じミリ秒内で2個め以降のULIDが生成される場合は前回の
+ランダムネスフィールドをインクリメントしたものが使われます。
+これによって生成順序と辞書順序が一致します。
+@c COMMON
 
+@c EN
 The ULID spec says if the randomness field overflows because so many
 ULIDs are generated within a millisecond, it is an error.  Such scenario
 is very unlikely but can occur.  In our implementation, however, we wait for the
 next millisecond boundary in case we ran out randomness field, so the generator
 never yields an error.
+@c JP
+ULID仕様では、同じミリ秒内で多数のULIDが生成されたためにランダムネスフィールドがオーバーフロー
+した場合はエラーとしています。それが起きる可能性は極めて小さいですが、起き得ることです。
+Gaucheの実装では、ランダムネスフィールドがオーバーフローした場合は次のミリ秒まで待つことで、
+エラーにならないようにしています。
+@c COMMON
 @end defun
 
 @defun ulid? obj
 @mdindex data.ulid
+@c EN
 Returns @code{#t} iff @var{obj} is an ULID object.
+@c JP
+@var{obj}がULIDオブジェクトなら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ulid-timestamp ulid
 @mdindex data.ulid
+@c EN
 Returns the timestamp part of @var{ulid} (48bits) as an exact integer.
+@c JP
+@var{ulid}のタイムスタンプ部(48bit)を正確な整数で返します。
+@c COMMON
 @end defun
 
 @defun ulid-randomness ulid
 @mdindex data.ulid
+@c EN
 Returns the randomess part of @var{ulid} (80bits) as an exact integer.
+@c JP
+@var{ulid}のランダムネス部(80bit)を正確な整数で返します。
+@c COMMON
 @end defun
 
 @defun ulid=? ulid1 ulid2
 @mdindex data.ulid
+@c EN
 Returns true if two ULIDs are equivalent.
+@c JP
+二つのULIDが等価であれば@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun ulid<? ulid1 ulid2
 @mdindex data.ulid
+@c EN
 Returns true if @var{ulid1} precedes @var{ulid2}.  If both ULIDs are
 created from the same generator, this means @var{ulid1} is created
 chronologically before @var{ulid2}.  If they are created from different
 generators, the chronological order is not guaranteed, but the discrepancy
 only occurs when two ULIDs are created at the same timestamp in
 millisecond resolution.
+@c JP
+辞書順比較で@var{ulid1}が@var{ulid2}よりも小さければ@code{#t}を、
+そうでなければ@code{#f}を返します。二つのULIDが同じジェネレータで
+生成されていたなら、これは@var{ulid1}が@var{ulid2}より前に生成されたことを意味します。
+二つが異なるジェネレータで生成されていた場合は、ミリ秒より小さな間隔において
+生成順が辞書順とは異なっている可能性があります。
+@c COMMON
 @end defun
 
 @defun ulid-hash ulid
 @mdindex data.ulid
+@c EN
 Returns a hash value of @var{ulid} in a nonnegative exact integer.
+@c JP
+@var{ulid}のハッシュ値を非負の正確な整数で返します。
+@c COMMON
 @end defun
 
 @defvar ulid-comparator
 @mdindex data.ulid
+@c EN
 Bound to a comparator suitable to compare and hash ULIDs.
+@c JP
+ULIDの比較およびハッシュに使える比較器です。
+@c COMMON
 @end defvar
 
 @defun ulid->bytevector ulid
 @defunx bytevector->ulid uv
 @mdindex data.ulid
+@c EN
 Covvert between @var{ulid} and a u8vector of length 16.  Bits are packed
 in big-endian order (first 8 bits of timestamp to first byte, and
 so on).
+@c JP
+@var{ulid}と長さ16のu8vector間の変換手続きです。
+ビットはビッグエンディアンで格納されます(タイムスタンプの先頭8ビットが最初のバイト、等)。
+@c COMMON
 @end defun
 
 @defun ulid->integer ulid
 @defunx integer->ulid n
 @mdindex data.ulid
+@c EN
 Convert between @var{ulid} and an exact nonnegative integer up to 128bit.
+@c JP
+@var{ulid}と非負の正確な128ビット整数との間の変換手続きです。
+@c COMMON
 @end defun
 
 @defun ulid->string ulid
 @defunx string->ulid str
 @mdindex data.ulid
+@c EN
 Convert @var{ulid} to a string of Base32 representation; the
 digits are @code{0123456789ABCDEFGHJKMNPQRSTVWXYZ} (@code{I}, @code{L},
 @code{O}, and @code{U} are excluded to avoid confusion).  Length of
 the string is always 26.
+@c JP
+@var{ulid}とそのBase32文字列表現との間の変換手続きです。
+エンコードディジットには@code{0123456789ABCDEFGHJKMNPQRSTVWXYZ}が使われます
+(@code{I}、@code{L}、@code{O}、@code{U}は混乱を避けるために使われません)。
+文字列の長さは常に26です。
+@c COMMON
 
+@c EN
 @code{ulid->string} always use uppercase characters; on the other hand,
 @code{string->ulid} allows both lowercase and uppercase characters.
+@c JP
+@code{ulid->string}は常に大文字を使います。
+一方、@code{string->ulid}は小文字も大文字も受け付けます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
