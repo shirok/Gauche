@@ -1,3 +1,9 @@
+2024-05-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/rfc/uuid.scm (make-uuid7-generator): Add optional argument to
+	  specify the amount of increment.  Also fixed a bug to avoid
+	  increment gets 0.
+
 2024-05-26  Shiro Kawai  <shiro@acm.org>
 
 	* ext/uvector/uvector.c.tmpl: Make sure recognizing big/little endian

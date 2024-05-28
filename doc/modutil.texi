@@ -22767,6 +22767,12 @@ UUIDのジェネレータを生成して返します。二つのバージョン�
 (この場合、生成されるノードIDはマルチキャストビットが立てられるので、
 現実に存在するMACアドレスとかぶることはありません)。
 @c COMMON
+
+@c EN
+The generators created by these procedures are thread-safe.
+@c JP
+これらの手続きで作られるジェネレータはスレッドセーフです。
+@c COMMON
 @end defun
 
 @defun make-uuid4-generator
@@ -22777,9 +22783,15 @@ version 4 algorithm (random numbers).
 @c JP
 バージョン4アルゴリズム(乱数)によるUUIDを生成するジェネレータを作って返します。
 @c COMMON
+
+@c EN
+The generators created by this procedures are thread-safe.
+@c JP
+この手続きで作られるジェネレータはスレッドセーフです。
+@c COMMON
 @end defun
 
-@defun make-uuid7-generator
+@defun make-uuid7-generator :optional increment-bits
 @c MOD rfc.uuid
 @c EN
 Returns a new generator that yields uuids with version 7 algorithm
@@ -22811,9 +22823,9 @@ Gaucheの実装では、それを74ビットの非負整数とみなし、
 @item
 It is initialized with random integer per process.
 @item
-When a v7 uuid is asked, we increment the field with a 64bit
-random unsigned integer.  If it does not overflow, we use it
-as is.
+When a v7 uuid is asked, we increment the field with a
+random unsigned integer up to 2^@var{increment-bits}.
+If it does not overflow, we use it as is.
 @item
 If it does overflow, if the timestamp is already incremented
 from the previous generation, we use the wraparound value.
@@ -22826,7 +22838,8 @@ and then use the wraparound value.
 @item
 プロセスごとに、ランダムの整数を初期値とします。
 @item
-v7 uuidを生成する度に、ランダムな64bit非負整数をフィールドに加算します。
+v7 uuidを生成する度に、ランダムな2^@var{increment-bits}未満の
+非負整数をフィールドに加算します。
 フィールドがオーバーフローしなければそれをそのまま使います。
 @item
 フィールドがオーバーフローした場合、前回の生成からタイムスタンプが進んでいれば、
@@ -22835,6 +22848,22 @@ v7 uuidを生成する度に、ランダムな64bit非負整数をフィール�
 そうでなければ、タイムスタンプが進むまで待って、
 ラップアラウンドした値を使います。
 @end itemize
+@c COMMON
+
+@c EN
+The optional @var{increment-bits} argument must be an positive exact integer.
+The default value is 64.  You may want to pass a smaller number if you
+need to create a lots of UUIDs in very short span of time.
+@c JP
+省略可能な@var{increment-bits}引数は正確な正の整数でなければなりません。
+デフォルトの値は64です。極めて短い時間内に大量のUUIDを作りたい場合は、
+小さな数を指定するのが良いでしょう。
+@c COMMON
+
+@c EN
+The generators created by this procedures are thread-safe.
+@c JP
+この手続きで作られるジェネレータはスレッドセーフです。
 @c COMMON
 @end defun
 
@@ -22871,6 +22900,12 @@ so they use the default random source.
 これらのジェネレータはライブラリのロード時に
 対応する@code{make-uuid*-generator}で作られるので、
 デフォルトの乱数源を使います。
+@c COMMON
+
+@c EN
+These generators are thread-safe.
+@c JP
+これらのジェネレータはスレッドセーフです。
 @c COMMON
 @end defun
 

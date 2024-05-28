@@ -176,7 +176,7 @@
 ;; The increment step of sequence number is a random
 ;;
 ;; for the next millisecond before wrap around, to ensure monotonicity.
-(define (%uts utimestate random-int)
+(define (%uts utimestate random-int incr-bits)
   (define (wait-a-bit) (sys-nanosleep 500000))
   (define (update ts0 cl0)
     (let* ([cl (if (negative? cl0)
@@ -185,7 +185,7 @@
            [now (current-time)]
            [ts (+ (* (~ now'second) 1000)
                   (quotient (~ now'nanosecond) #e1e6))]
-           [cl1 (logand (+ cl (random-int (ash 1 64)))
+           [cl1 (logand (+ cl 1 (random-int (- (ash 1 incr-bits) 1)))
                         (- (ash 1 74) 1))])
       (cond [(> ts ts0)    ;timestamp differ, so we just use cl1
              (values ts cl1)]
@@ -262,12 +262,13 @@
 ;;   To guarantee monotonicity, we combine rand_a and rand_b fields
 ;;   to store monotonically increasing sequence with random increments.
 ;;   If it wraparounds, we wait till next milliseconds boundary.
-(define (make-uuid7-generator)
+(define (make-uuid7-generator :optional (increment-bits 64))
   (define utstate (make-utimestate))
   (define random-int (%make-uuid-random-int))
+  (assume (>= increment-bits 1))
   (^[]
     (let1 v (make-u8vector 16)
-      (receive (ts cs) (%uts utstate random-int)
+      (receive (ts cs) (%uts utstate random-int increment-bits)
         (put-u32be! v 0 (ash ts -16))
         (put-u16be! v 4 (logand ts #xffff))
         (put-u16be! v 6 (logior (logand (ash cs -62) #x0fff)
