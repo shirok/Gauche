@@ -21,7 +21,8 @@
   (syntax-rules ()
     ((shift k e1 e2 ...)
      (call-with-composable-continuation
-      (lambda (k)
+      (lambda (c)
+        (define k (lambda args (reset (apply c args))))
         (abort-current-continuation (default-continuation-prompt-tag)
           (lambda ()
             e1 e2 ...)))))))
