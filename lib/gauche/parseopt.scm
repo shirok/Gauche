@@ -58,18 +58,18 @@
 ;;  (<option-spec> ...)
 ;; <a-spec> is (<optspec> <handler>) or
 ;; ((<optspec> <help-string>) <handler>)
-;; TRANSIENT: Better to have explanatory message for assume-type, but
-;; 0.9.12's assume-type doesn't take extra message arg.  Update after 0.9.13
-;; release.
 (define (compose-entry a-spec)
   (define (parse-spec a-spec)
     (match a-spec
       [((spec help-string) handler)
-       (values (assume-type spec <string>)
-               (assume-type help-string <string>)
+       (values ($ assume-type spec <string>
+                  "String required for a command spec, but got:" spec)
+               ($ assume-type help-string <string>
+                  "String required for a command help, but got:" help-string)
                handler)]
       [(spec handler)
-       (values (assume-type spec <string>)
+       (values ($ assume-type spec <string>
+                  "String required for a command spec, but got:" spec)
                #f handler)]
       [_ (error "Invalid command-line argument specification:" a-spec)]))
   (receive (optspec helpstr handler) (parse-spec a-spec)
