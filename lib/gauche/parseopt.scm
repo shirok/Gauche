@@ -43,7 +43,8 @@
 
 ;; Represents each option info
 (define-class <option-spec> ()
-  ((name :init-keyword :name)        ; option name
+  ((short-names :init-keyword :short-names) ; one-letter option names
+   (long-names :init-keyword :long-names) ; multi-letter option names
    (args :init-keyword :args)        ; option agrspecs (list of chars)
    (arg-optional? :init-keyword :arg-optional?) ; option's arg optional?
    (handler :init-keyword :handler)  ; handler closure
@@ -52,10 +53,13 @@
    (help    :init-keyword :help)     ; help string
    ))
 
+(define-method write-object ((obj <option-spec>) port)
+  (format port "#<option-spec ~s ~s>"
+          (~ obj'short-names) (~ obj'long-names)))
+
 ;; Helper functions
 
-;; Parse optspec clause, and returns
-;;  (<option-spec> ...)
+;; Parse optspec clause, and returns an <option-spec>.
 ;; <a-spec> is (<optspec> <handler>) or
 ;; ((<optspec> <help-string>) <handler>)
 (define (compose-entry a-spec)
@@ -75,36 +79,40 @@
   (receive (optspec helpstr handler) (parse-spec a-spec)
     (rxmatch-if (rxmatch #/^-*([-+\w|]+)(\*)?(?:([=:])(.+))?$/ optspec)
         (#f optnames plural? optional?  argspec)
-      (map (cute make <option-spec>
-                 :name <>
-                 :args (if argspec (string->list argspec) '())
-                 :arg-optional? (equal? optional? ":")
-                 :handler handler
-                 :plural? plural?
-                 :optspec optspec
-                 :help helpstr)
-           (string-split optnames #\|))
+      (receive (shorts longs)
+          (partition (^s (= (string-length s) 1)) (string-split optnames #\|))
+        (make <option-spec>
+          :short-names (map (cut string-ref <> 0) shorts)
+          :long-names longs
+          :args (if argspec (string->list argspec) '())
+          :arg-optional? (equal? optional? ":")
+          :handler handler
+          :plural? plural?
+          :optspec optspec
+          :help helpstr))
       (error "unrecognized option spec:" optspec))))
 
-(define (optspec-short? optspec) (= (string-length (~ optspec'name)) 1))
 (define (optspec-take-args? optspec) (not (null? (~ optspec'args))))
 
-;; Find an optspec that matches the given option.
+;; Find an optspec that matches the given option.  Returns a pair of
+;; <option-spec> and matching option string (without leading '-').
 ;; A special handling is needed for a single-letter option taking arguments;
 ;; fof such an option, we allow its argument to be concatenated with the
 ;; option itself; e.g. "I=s" spec can accept '-I arg', '-I=arg', and '-Iarg'.
 (define (find-matching-optspec option optspecs)
   (define (optspec-long-match? optspec option)
-    (equal? (rxmatch->string #/^[^=]+/ option) (~ optspec'name)))
+    (let* ([optname (rxmatch->string #/^[^=]+/ option)]
+           [spec (member optname (~ optspec'long-names))])
+      (and spec (cons optspec optname))))
   (define (optspec-short-match? optspec option)
-    (and (optspec-take-args? optspec)
-         (optspec-short? optspec)
-         (eqv? (string-ref option 0) (string-ref (~ optspec'name) 0))))
+    (let* ([optchar (string-ref option 0)]
+           [spec (memv optchar (~ optspec'short-names))])
+      (and spec (cons optspec (string optchar)))))
   ;; It is imperative to search long option first, then search short options.
   ;; If we have "long" and "l=s", "--long" matches the first one, while
   ;; "-lfoo" matches the second one.
-  (or (find (cut optspec-long-match? <> option) optspecs)
-      (find (cut optspec-short-match? <> option) optspecs)))
+  (or (any (cut optspec-long-match? <> option) optspecs)
+      (any (cut optspec-short-match? <> option) optspecs)))
 
 ;; From the args given at the command line, get a next option.
 ;; Returns option string (potentially followed by arg) and rest args.
@@ -117,40 +125,40 @@
 
 ;; From the list of optarg spec and given command line arguments,
 ;; get a list of optargs.  Returns optargs and unconsumed args.
-(define (get-optargs optspec option args)
+(define (get-optargs optspec optname option args)
   (define (get-number arg)
     (or (string->number arg)
-        (errorf <parseopt-error> :option-name (~ optspec 'name)
+        (errorf <parseopt-error> :option-name optname
                 "a number is required for option ~a, but got ~a"
-                (~ optspec 'name) arg)))
+                optname arg)))
   (define (get-real arg)
     (or (and-let* ([num (string->number arg)]
                    [ (real? num) ])
           (exact->inexact num))
-        (errorf <parseopt-error> :option-name (~ optspec'name)
+        (errorf <parseopt-error> :option-name optname
                 "a real number is required for option ~a, but got ~a"
-                (~ optspec 'name) arg)))
+                optname arg)))
   (define (get-integer arg)
     (or (and-let* ([num (string->number arg)]
                    [ (exact? num) ])
           num)
-        (errorf <parseopt-error> :option-name (~ optspec'name)
+        (errorf <parseopt-error> :option-name optname
                 "an integer is required for option ~a, but got ~a"
-                (~ optspec 'name) arg)))
+                optname arg)))
   (define (get-sexp arg)
     (guard (e [(<read-error> e)
-               (errorf <parseopt-error> :option-name (~ optspec'name)
+               (errorf <parseopt-error> :option-name optname
                        "the argument for option ~a is not valid sexp: ~s"
-                       (~ optspec 'name) arg)])
+                       optname arg)])
       (read-from-string arg)))
   (define (process-args args)
     (let loop ([spec (~ optspec 'args)]
                [args args]
                [optargs '()])
       (cond [(null? spec) (values (reverse! optargs) args)]
-            [(null? args) (error <parseopt-error> :option-name (~ optspec'name)
+            [(null? args) (error <parseopt-error> :option-name optname
                                  "running out the arguments for option"
-                                 (~ optspec 'name))]
+                                 optname)]
             [else
              (case (car spec)
                [(#\s) (loop (cdr spec) (cdr args) (cons (car args) optargs))]
@@ -170,7 +178,7 @@
   (cond [(and (#/^[^=]+=/ option))
          => (^m (let1 arg (rxmatch-after m)
                   (process-args (cons arg args))))]
-        [(and (optspec-short? optspec)
+        [(and (= (string-length optname) 1)
               (optspec-take-args? optspec)
               (> (string-length option) 1))
          ;; single-letter with concatenated argument
@@ -189,10 +197,12 @@
     (receive (option nextargs) (next-option args)
       (if option
         (cond [(find-matching-optspec option speclist)
-               => (^[entry] (receive (optargs nextargs)
-                                (get-optargs entry option nextargs)
-                              (apply (~ entry'handler) optargs)
-                              (loop nextargs)))]
+               => (^[spec&name]
+                    (receive (optargs nextargs)
+                        (get-optargs (car spec&name) (cdr spec&name)
+                                     option nextargs)
+                      (apply (~ (car spec&name)'handler) optargs)
+                      (loop nextargs)))]
               ;; For unknown options including '=', we split at the first '='
               ;; and take the first part as an unknown option.  This is not
               ;; exactly the right thing; if we get "--unknown=--known" in
@@ -207,7 +217,7 @@
 
 ;; Build
 (define (build-option-parser spec fallback)
-  (let1 speclist (append-map compose-entry spec)
+  (let1 speclist (map compose-entry spec)
     (^[args :optional (fb fallback)] (parse-cmdargs args speclist fb))))
 
 ;;;
