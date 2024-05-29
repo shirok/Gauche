@@ -85,4 +85,57 @@ are constructed as follows.
 
 ### The editor - `read-line/edit`
 
-... to be written ...
+An instance of `<line-edit-context>` maintains the state of line editing.
+It is coupled with an instance of `<console>`; while line editing is on,
+all console I/O should be done through `<line-edit-context>`, or the
+state it keeps and the actual content displayed on terminal become
+out of sync.
+
+Line editing is on when you call `read-line/edit` with an a line-edit
+context.  It changes the console mode to monitor keystrokes, then
+interacts with the user until they "commit" the input, then changes
+the console mode back to the original mode and returns the text
+the user committed.
+
+The context has a table to map keystrokes to edit commands.  A new
+context gets a copy of the default map.  You can modify the map of
+a context without affecting other contexts.
+
+### Defining edit commands
+
+An edit command is a procedure that takes three arguments,
+a context, a gap-buffer, and a keystroke object.  It may change
+the content of the buffer, and must return one of the following
+objects.  In general, edit commands shouldn't directly change the
+state of the context.
+
+- 'visible : the command changed something visible so we need to
+       redisplay, but we don't need to save the change in
+       the actual buffer. The selection is cleared.
+- 'unchanged : no change visually and internally; we break
+       undo sequence and reset last yank, but not clear
+       selection.
+       This occurs, for example, backward-char at the
+       beginning of the input.
+- 'nop : totally ignore the key input.
+- 'redraw : we won't change the state of the editor, but
+       we reobtain the cursor position before redrawing
+       the buffer content.  This is necessary when the command
+       wrote something on the screen and we don't want to clobber
+       it.
+- 'moved : the command only moved cursor pos.  requires redisplay,
+        but we keep selection.
+- #<eof> : end of input - either input port is closed, or
+        the user typed EOT char when the buffer is empty.
+- 'commit : record the current buffer to the history, and
+        returns it.
+- 'undone : the command undid the change.  we record the fact,
+        for the consecutive undo behaves differently than
+        other commands.
+- <edit-directive> : the command changed the buffer contents,
+        and the return value is an edit directive to undo the
+        change.
+- (yanked <edit-directive>) : this is only returned by yank and yank-pop
+        command.
+
+...(more to come)...
