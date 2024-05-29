@@ -2853,13 +2853,85 @@ It has several subcommands, which can be listed with
 @subsection @code{gauche-install} - Install files
 @c NODE ファイルのインストール, @code{gauche-install} - ファイルのインストール
 
-@deftp {Program} gauche-install [options] file @dots{} dest
+@deftp {Program} gauche-install [options] file dest
+@deftpx {Program} gauche-install [options] file @dots{} dir
 @deftpx {Program} gauche-install -d [options] dir @dots{}
 @deftpx {Program} gauche-install -T dir [options] file @dots{}
 @deftpx {Program} gauche-install -U dir [options] file @dots{}
 This command can be used to install files.  It is upper-compatible
 to BSD @code{install} command and can be used as drop-in replacement.
+Notably, the first three command invocation format are compatible
+with BSD install.
 It has several more features that keeps @code{Makefile} concise.
+
+The first and second invocation format copies @var{file}(s) to @var{dest}
+(a file pathname) or @var{dir} (an existing directory).  You can
+specify permissons, owners, etc.  Basically it's a fancier @code{cp}.
+
+The third format creates @var{dir}(s) if they don't exist.  Basically
+it's a fancier @code{mkdir -p}.
+
+The fourth format copies @var{file} @dots{} to @var{dir}.  It differs
+from the second format in the sense that relative pathname of @var{file}
+is preserved.  That is, if you run the following command:
+
+@example
+gauche-install -T /usr/local/mytool foo.scm bar/baz.scm
+@end example
+
+It creates @file{/usr/local/mytool/foo.scm} and
+@file{/usr/local/mytool/bar/baz.scm}.  With the second format, the
+subdirectory @code{bar} won't be created.  This format is handy
+when you want to install a bunch of subtrees.
+
+The fifth format uninstall files which would be installed with @code{-T}
+option.  Simply change @code{-T} option to @code{-U} option and you'll
+clean the files.
+
+The following command-line arguments are recognized.
+
+@table @option
+@item -C
+@itemx --canonical-suffix
+If installed file has a suffix @file{.sci}, replace
+it for @file{.scm}.   This is Gauche specific convention.
+@item -T dir
+@itemx --target dir
+Installs files to the @var{dir}, creating paths if needed.
+Partial path of files are preserved. (4th format only)
+@item -U dir
+@itemx --uninstall dir
+Reverse the effect of @code{-T}, e.g. removes files from its
+destination @var{dir}.
+@item -S dir
+@itemx --srcdir dir
+Look for @var{file} @dots{}  within @var{dir}; useful if @code{VPATH} is used.
+@item --shebang path
+Adds @code{#!@var{path}} before the file contents.
+Useful to install scripts.
+@item -d
+@itemx --directory
+Creates directories.  (3rd format only).
+@item -m mode
+@itemx --mode mode
+Change mode of the installed file.
+@item -p prefix
+@itemx --strip-prefix prefix
+Strip prefix dirs from @var{file} @dots{} before
+installation. (4th/5th format only).
+@item -o owner
+@itemx --owner owner
+Change owner of the installed file(s).
+@item -g group
+@itemx --group group
+Change group of the installed file(s).
+@item -v
+@itemx --verbose
+Work verbosely
+@item -d
+@itemx --dry-run
+Just prints what actions are to be done, but won't execute them.
+@end table
 @end deftp
 
 
