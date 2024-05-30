@@ -42,7 +42,9 @@
   (use gauche.logger)
   (use file.util)
   (use srfi.13)
+  (use text.fill)
   (use text.tr)
+  (use text.tree)
   (use util.match)
   (export cf-init cf-init-gauche-extension
           cf-arg-enable cf-arg-with cf-feature-ref cf-package-ref
@@ -548,25 +550,16 @@
 
 ;; API
 (define (cf-help-string item description)
-  (define descr-indent (make-string *usage-description-indent* #\space))
-  (define (fill paragraph)
-    (let loop ([words (string-split description #[\s])]
-               [column *usage-description-indent*]
-               [r '()])
-      (if (null? words)
-        (string-concatenate (reverse r))
-        (let* ([word (car words)]
-               [word-len (string-length word)]
-               [nextcol (+ column 1 word-len)])
-          (if (< nextcol *usage-fill-column*)
-            (loop (cdr words) nextcol (cons* word " " r))
-            (loop (cdr words) (+ *usage-description-indent* word-len)
-                  (cons* word descr-indent "\n" r)))))))
-  ;; NB: 'fill' adds one space before the paragraph, hence -1
   (let1 item-len (string-length item)
     (if (< (+ item-len *usage-item-indent*) (- *usage-description-indent* 1))
       (format "~va~va~a\n" *usage-item-indent* " "
-              (- *usage-description-indent* *usage-item-indent* 1) item
-              (fill description))
-      (format "~va~a\n~va~a\n" *usage-item-indent* " " item
-              (- *usage-description-indent* 1) " " (fill description)))))
+              (- *usage-description-indent* *usage-item-indent*) item
+              ($ tree->string $ text->filled-stree description
+                 :start-column *usage-description-indent*
+                 :indent *usage-description-indent*
+                 :width *usage-fill-column*))
+      (format "~va~a\n~a\n" *usage-item-indent* " " item
+              ($ tree->string $ text->filled-stree description
+                 :hanging *usage-description-indent*
+                 :indent *usage-description-indent*
+                 :width *usage-fill-column*)))))
