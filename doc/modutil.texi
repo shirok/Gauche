@@ -72,6 +72,7 @@
 * Calculate difference of text streams::  text.diff
 * EDN parsing and construction::  text.edn
 * Running external editor::     text.external-editor
+* Text filling::                text.fill
 * Gap buffer::                  text.gap-buffer
 * Localized messages::          text.gettext
 * Simple HTML document construction::  text.html-lite
@@ -29641,7 +29642,7 @@ GaucheオブジェクトをEDNタグつきオブジェクトとして書き出�
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Running external editor, Gap buffer, EDN parsing and construction, Library modules - Utilities
+@node Running external editor, Text filling, EDN parsing and construction, Library modules - Utilities
 @section @code{text.external-editor} - Running external editor
 @c NODE 外部エディタの起動, @code{text.external-editor} - 外部エディタの起動
 
@@ -29854,7 +29855,100 @@ Otherwise, @code{#f} is returned.
 @end deffn
 
 @c ----------------------------------------------------------------------
-@node Gap buffer, Localized messages, Running external editor, Library modules - Utilities
+@node Text filling, Gap buffer, Running external editor, Library modules - Utilities
+@section @code{text.fill} - Text filling
+@c NODE テキストの再詰め込み, @code{text.fill} - テキストの再詰め込み
+
+@deftp {Module} text.fill
+@mdindex text.fill
+This module provides procedures to fill given text within the
+specified width, inserting line breaks
+adequately.  It is similar to @code{fill-paragraph} of Emacs.
+@end deftp
+
+@defun display-filled-text text :key start-column indent hanging width port
+@c MOD text.fill
+Output @var{text} to @var{port}, while keeping the line width up to
+@var{width} by inserting line breaks.   The original newline characters
+in @var{text} are ignored.  If @var{port} is omitted, the current
+output port is used.
+
+It has a few keyword arguments to control the formatting.
+The @var{width} argument specifies the entire width of the filled text.
+It tries to keep lines from overflowing the width, but if there's
+an unbreakable chunk of text that's wider than the given width,
+it lets the line oveflow.  (We may implement hyphenation in future).
+The @var{hanging} specifies the hanging indent width of the first line,
+and @var{indent} specifies the indent width of the rest of lines.
+They are included in @var{width}.  Here's the relations of these
+values:
+
+@example
+  width
+<------------------------------------------------------------------->
+  hanging
+<------>
+         Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+   sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+   Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
+   nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+   in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+   nulla pariatur. Excepteur sint occaecat cupidatat non proident,
+   sunt in culpa qui officia deserunt mollit anim id est laborum.
+<->
+  indent
+@end example
+
+The arguments @var{width}, @var{indent}, and @var{hanging} must be
+nonnegative exact integers, if given.  When omitted, @var{width} is assumed
+to be 65, and @var{indent} and @var{hanging} to be 0.
+
+If you call this procedure in the middle of the line (that is,
+some text is already written to @var{port}), the procedure takes
+the current column into account, as shown below:
+
+@example
+             start column
+                |   hanging
+                v<---->
+                        Lorem ipsum dolor sit amet, consectetur
+          adipiscing elit, sed do eiusmod tempor incididunt ut labore
+          et dolore magna aliqua.  Ut enim ad minim veniam, quis
+          nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+          commodo consequat. Duis aute irure dolor in reprehenderit in
+          voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+<-------->
+   indent
+<--------------------------------------------------------------------->
+                           width
+@end example
+
+The @var{start-column} keyword argument can override the port's
+current column with the given nonnegative exact integer.
+
+The length of the line is computed by each character's East Asian
+Width (@pxref{East asian width property}).  The actual display
+width depends on the fonts, but it gives a reasonable approximation.
+@end defun
+
+@defun text->filled-stree text :key start-column indent hanging width
+@c MOD text.fill
+This is a low-level routine to construct a filled text used by
+@code{display-filled-text}.  It returns a string tree
+(@pxref{Lazy text construction}).  If you want to add more
+text around the filled paragraph, using this procedure can save
+constructing intermediate strings.
+
+The meaning of the keywrd arguments are the same as
+@code{display-filled-text}, except that @var{start-column} is
+assumed to be 0 if omitted.
+@end defun
+
+
+@c ----------------------------------------------------------------------
+@node Gap buffer, Localized messages, Text filling, Library modules - Utilities
 @section @code{text.gap-buffer} - Gap buffer
 @c NODE ギャップバッファ, @code{text.gap-buffer} - ギャップバッファ
 
