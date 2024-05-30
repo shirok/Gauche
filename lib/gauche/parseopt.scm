@@ -43,7 +43,7 @@
 
 ;; Represents each option info
 (define-class <option-spec> ()
-  ((short-names :init-keyword :short-names) ; one-letter option names
+  ((short-names :init-keyword :short-names) ; one-character option names
    (long-names :init-keyword :long-names) ; multi-letter option names
    (args :init-keyword :args)        ; option agrspecs (list of chars)
    (arg-optional? :init-keyword :arg-optional?) ; option's arg optional?
@@ -56,6 +56,12 @@
 (define-method write-object ((obj <option-spec>) port)
   (format port "#<option-spec ~s ~s>"
           (~ obj'short-names) (~ obj'long-names)))
+
+;; Manage all options, created by build-option-parser.  This is an
+;; applicable object, in order to keep the backward compatibility.
+(define-class <option-parser> ()
+  ((option-specs :init-keyword :option-specs)
+   (fallback :init-keyword :fallback)))
 
 ;; Helper functions
 
@@ -217,8 +223,14 @@
 
 ;; Build
 (define (build-option-parser spec fallback)
-  (let1 speclist (map compose-entry spec)
-    (^[args :optional (fb fallback)] (parse-cmdargs args speclist fb))))
+  (make <option-parser>
+    :option-specs (map compose-entry spec)
+    :fallback fallback))
+
+(define-method object-apply ((parser <option-parser>) args)
+  (parse-cmdargs args (~ parser'option-specs) (~ parser'fallback)))
+(define-method object-apply ((parser <option-parser>) args fallback)
+  (parse-cmdargs args (~ parser'option-specs) fallback))
 
 ;;;
 ;;; The main body of the macros
