@@ -400,4 +400,124 @@
 (test* "string-drop-width" "bc"
        (string-drop-width "a\u3000\u30a2bc" 5))
 
+;;-------------------------------------------------------------------
+;; text.fill depends on gauche.unicode, so we test it here.
+;;
+
+(test-section "text.fill")
+(use text.fill)
+(test-module 'text.fill)
+
+(define fill-data-1
+  (string-append
+   "Lorem ipsum dolor sit amet, consectetur"
+   " adipiscing elit, sed do eiusmod tempor incididunt ut labore"
+   " et dolore magna aliqua.  Ut enim ad minim veniam, quis"
+   " nostrud exercitation ullamco laboris nisi ut aliquip ex ea"
+   " commodo consequat. Duis aute irure dolor in reprehenderit in\n"
+   " voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+   " Excepteur sint occaecat cupidatat non proident, sunt in culpa"
+   " qui officia deserunt mollit anim id est laborum."))
+
+(define (test-fill name input params expect)
+  (test* #"text.fill ~|name| ~|params|"
+         (apply string-append (intersperse "\n" expect))
+         (with-output-to-string
+           (^[] (apply display-filled-text input params)))))
+
+(test-fill "en" fill-data-1 '()
+           '("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
+             "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut"
+             "enim ad minim veniam, quis nostrud exercitation ullamco laboris"
+             "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in"
+             "reprehenderit in voluptate velit esse cillum dolore eu fugiat"
+             "nulla pariatur. Excepteur sint occaecat cupidatat non proident,"
+             "sunt in culpa qui officia deserunt mollit anim id est laborum."))
+
+(test-fill "en" fill-data-1 '(:width 30)
+           '("Lorem ipsum dolor sit amet,"
+             "consectetur adipiscing elit,"
+             "sed do eiusmod tempor"
+             "incididunt ut labore et dolore"
+             "magna aliqua. Ut enim ad minim"
+             "veniam, quis nostrud"
+             "exercitation ullamco laboris"
+             "nisi ut aliquip ex ea commodo"
+             "consequat. Duis aute irure"
+             "dolor in reprehenderit in"
+             "voluptate velit esse cillum"
+             "dolore eu fugiat nulla"
+             "pariatur. Excepteur sint"
+             "occaecat cupidatat non"
+             "proident, sunt in culpa qui"
+             "officia deserunt mollit anim"
+             "id est laborum."))
+
+(test-fill "en" fill-data-1 '(:indent 2 :width 50)
+           '("Lorem ipsum dolor sit amet, consectetur adipiscing"
+             "  elit, sed do eiusmod tempor incididunt ut labore"
+             "  et dolore magna aliqua. Ut enim ad minim veniam,"
+             "  quis nostrud exercitation ullamco laboris nisi"
+             "  ut aliquip ex ea commodo consequat. Duis aute"
+             "  irure dolor in reprehenderit in voluptate velit"
+             "  esse cillum dolore eu fugiat nulla pariatur."
+             "  Excepteur sint occaecat cupidatat non proident,"
+             "  sunt in culpa qui officia deserunt mollit anim"
+             "  id est laborum."))
+
+;; If single word in a line overflows width, we let it overflow.
+(test-fill "en" fill-data-1 '(:indent 2 :hanging 10 :width 12)
+           '("          Lorem"
+             "  ipsum"
+             "  dolor sit"
+             "  amet,"
+             "  consectetur"
+             "  adipiscing"
+             "  elit, sed"
+             "  do eiusmod"
+             "  tempor"
+             "  incididunt"
+             "  ut labore"
+             "  et dolore"
+             "  magna"
+             "  aliqua. Ut"
+             "  enim ad"
+             "  minim"
+             "  veniam,"
+             "  quis"
+             "  nostrud"
+             "  exercitation"
+             "  ullamco"
+             "  laboris"
+             "  nisi ut"
+             "  aliquip ex"
+             "  ea commodo"
+             "  consequat."
+             "  Duis aute"
+             "  irure"
+             "  dolor in"
+             "  reprehenderit"
+             "  in"
+             "  voluptate"
+             "  velit esse"
+             "  cillum"
+             "  dolore eu"
+             "  fugiat"
+             "  nulla"
+             "  pariatur."
+             "  Excepteur"
+             "  sint"
+             "  occaecat"
+             "  cupidatat"
+             "  non"
+             "  proident,"
+             "  sunt in"
+             "  culpa qui"
+             "  officia"
+             "  deserunt"
+             "  mollit"
+             "  anim id"
+             "  est"
+             "  laborum."))
+
 (test-end)

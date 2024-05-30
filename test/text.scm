@@ -319,6 +319,9 @@ fuga
 (test-module 'text.external-editor)
 
 ;;-------------------------------------------------------------------
+;; text.fill depends on gauche.unicode, and tested in ext/gauche.
+
+;;-------------------------------------------------------------------
 (test-section "html-lite")
 (use text.html-lite)
 (use srfi.13)

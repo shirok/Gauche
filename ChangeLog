@@ -1,3 +1,7 @@
+2024-05-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/text/fill.scm: Added.
+
 2024-05-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/rfc/uuid.scm (make-uuid7-generator): Add optional argument to

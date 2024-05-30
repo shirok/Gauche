@@ -1,0 +1,148 @@
+;;;
+;;; text.fill - Fill paragraph
+;;;
+;;;   Copyright (c) 2024  Shiro Kawai  <shiro@acm.org>
+;;;
+;;;   Redistribution and use in source and binary forms, with or without
+;;;   modification, are permitted provided that the following conditions
+;;;   are met:
+;;;
+;;;   1. Redistributions of source code must retain the above copyright
+;;;      notice, this list of conditions and the following disclaimer.
+;;;
+;;;   2. Redistributions in binary form must reproduce the above copyright
+;;;      notice, this list of conditions and the following disclaimer in the
+;;;      documentation and/or other materials provided with the distribution.
+;;;
+;;;   3. Neither the name of the authors nor the names of its contributors
+;;;      may be used to endorse or promote products derived from this
+;;;      software without specific prior written permission.
+;;;
+;;;   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+;;;   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+;;;   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+;;;   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+;;;   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+;;;   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+;;;   TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+;;;   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+;;;   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+;;;   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+;;;
+
+(define-module text.fill
+  (use gauche.unicode)
+  (use text.tree)
+  (use util.match)
+  (export display-filled-text
+          text->filled-stree)
+  )
+(select-module text.fill)
+
+#|
+  width
+<------------------------------------------------------------------->
+
+  hanging
+<------>
+         Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+   sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+   Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
+   nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+   in reprehenderit in voluptate velit esse cillum dolore eu fugiat
+   nulla pariatur. Excepteur sint occaecat cupidatat non proident,
+   sunt in culpa qui officia deserunt mollit anim id est laborum.
+<->
+  indent
+
+NB: The first line does not consider 'indent' argument, but
+it does consider the starting column if it's available.  So even
+if you start printing a paragraph in the middle of the line, the text
+still fits within the width.
+
+
+             start column
+                |   hanging
+                v<---->
+                        Lorem ipsum dolor sit amet, consectetur
+          adipiscing elit, sed do eiusmod tempor incididunt ut labore
+          et dolore magna aliqua.  Ut enim ad minim veniam, quis
+          nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+          commodo consequat. Duis aute irure dolor in reprehenderit in
+          voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+<-------->
+   indent
+<--------------------------------------------------------------------->
+                           width
+
+|#
+
+
+(define (display-filled-text text :key (start-column #f)
+                             (indent 0) (hanging 0) (width 65))
+  ($ write-tree $ text->filled-stree text
+     :start-column (or start-column
+                       (~ (current-output-port)'current-column))
+     :indent indent
+     :hanging hanging
+     :width width)
+  (undefined))
+
+(define (text->filled-stree text :key (start-column 0)
+                            (indent 0) (hanging 0) (width 65))
+  (assume (and (exact-integer? start-column) (>= start-column 0)))
+  (assume (and (exact-integer? indent) (>= indent 0)))
+  (assume (and (exact-integer? hanging) (>= hanging 0)))
+  (assume (and (exact-integer? width) (> width indent)))
+
+  ;; NB: This algorithm is similar to pretty printer, and we may integrate
+  ;; the two in future.
+  ;; TODO: Consider East-asian width.
+  (let ([indenter (string-append "\n" (make-string indent #\space))]
+        [hanging-indenter (make-string hanging #\space)])
+    (let loop ([words (segment-text text)]
+               [column (+ hanging start-column)]
+               [r (list hanging-indenter)])
+      (match words
+        [() (reverse r)]
+        [('s word . rest)
+         (let1 w (string-length word)
+           (if (<= (+ column w 1) width)
+             (loop rest (+ column w 1) (list* word " " r))
+             (loop rest (+ indent w) (list* word indenter r))))]
+        [(word . rest)
+         (let1 w (string-length word)
+           (if (or (<= (+ column w) width)
+                   (length=? r 1))      ;at the very beginning
+             (loop rest (+ column w) (cons word r))
+             (loop rest (+ indent w) (list* word indenter r))))]
+        ))))
+
+;; Split text into unbreakable chunks.  We should also consider
+;; hyphenations, but that's for future versions.
+;;
+;; Symbol 's' is inserted where we need to emit #\space if it's in
+;; mid-line, but not before/after break.
+(define (segment-text text)
+  (define (spaces? x) (#/^\s+$/ x))
+  (define (cat s) (and (= (string-length s) 1)
+                       (char-general-category (string-ref s 0))))
+  (define (Po? s) (eq? (cat s) 'Po))
+  (define (Pe? s) (eq? (cat s) 'Pe))
+  (let loop ([words (string->words text)]
+             [r '()])
+    (match words
+      [() (reverse r)]
+      [((? spaces? x)) (reverse r)]
+      [(x) (loop '() (cons x r))]
+      [((? spaces? x) . rest)
+       (match r
+         [('s . _) (loop rest r)]       ;merge consecutive 's's
+         [_        (loop rest (cons 's r))])]
+      [(x y . rest) (if (or (Po? y) (Pe? y))
+                      (loop (cons (string-append x y) rest) r)
+                      (loop (cons y rest) (cons x r)))]
+      )))
