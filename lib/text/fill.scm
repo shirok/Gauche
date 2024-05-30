@@ -85,13 +85,15 @@ still fits within the width.
 ;;  - Customize east-asian-width
 
 (define (display-filled-text text :key (start-column #f)
-                             (indent 0) (hanging 0) (width 65))
-  ($ write-tree $ text->filled-stree text
-     :start-column (or start-column
-                       (~ (current-output-port)'current-column))
-     :indent indent
-     :hanging hanging
-     :width width)
+                             (indent 0) (hanging 0) (width 65)
+                             (port (current-output-port)))
+  ($ write-tree
+     ($ text->filled-stree text
+        :start-column (or start-column (~ port'current-column))
+        :indent indent
+        :hanging hanging
+        :width width)
+     port)
   (undefined))
 
 (define (text->filled-stree text :key (start-column 0)
