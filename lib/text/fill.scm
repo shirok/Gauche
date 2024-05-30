@@ -80,6 +80,9 @@ still fits within the width.
 
 |#
 
+;; TODO:
+;;  - The way to specify 'hard' newline
+;;  - Customize east-asian-width
 
 (define (display-filled-text text :key (start-column #f)
                              (indent 0) (hanging 0) (width 65))
@@ -100,7 +103,6 @@ still fits within the width.
 
   ;; NB: This algorithm is similar to pretty printer, and we may integrate
   ;; the two in future.
-  ;; TODO: Consider East-asian width.
   (let ([indenter (string-append "\n" (make-string indent #\space))]
         [hanging-indenter (make-string hanging #\space)])
     (let loop ([words (segment-text text)]
@@ -109,12 +111,12 @@ still fits within the width.
       (match words
         [() (reverse r)]
         [('s word . rest)
-         (let1 w (string-length word)
+         (let1 w (string-east-asian-width word)
            (if (<= (+ column w 1) width)
              (loop rest (+ column w 1) (list* word " " r))
              (loop rest (+ indent w) (list* word indenter r))))]
         [(word . rest)
-         (let1 w (string-length word)
+         (let1 w (string-east-asian-width word)
            (if (or (<= (+ column w) width)
                    (length=? r 1))      ;at the very beginning
              (loop rest (+ column w) (cons word r))

@@ -419,6 +419,17 @@
    " Excepteur sint occaecat cupidatat non proident, sunt in culpa"
    " qui officia deserunt mollit anim id est laborum."))
 
+(define fill-data-2
+  (string-append
+   "これらの各メソッドは、<num-vector>クラスや<num-matrix>"
+   "クラスに所属するわけではありません。"
+   "メソッドがクラスに所有されているわけではないので、既に存在するクラスに対していつでも"
+   "独自のメソッドを定義することができます(但し、いくつかの組込みクラスの既定のメソッドには"
+   "変更できないものがあります)。上の例で既にこれは示されています。プログラマは"
+   "メソッドproductを組込みクラス<number>に対して定義することが"
+   "できます。これが、全てはオブジェクトであるかどうかはCLOSスタイルのオブジェクトシステム"
+   "では問題にならないと言った理由です。"))
+
 (define (test-fill name input params expect)
   (test* #"text.fill ~|name| ~|params|"
          (apply string-append (intersperse "\n" expect))
@@ -433,6 +444,17 @@
              "reprehenderit in voluptate velit esse cillum dolore eu fugiat"
              "nulla pariatur. Excepteur sint occaecat cupidatat non proident,"
              "sunt in culpa qui officia deserunt mollit anim id est laborum."))
+
+(test-fill "ja" fill-data-2 '()
+           '("これらの各メソッドは、<num-vector>クラスや<num-matrix>クラスに所"
+             "属するわけではありません。メソッドがクラスに所有されているわけで"
+             "はないので、既に存在するクラスに対していつでも独自のメソッドを定"
+             "義することができます(但し、いくつかの組込みクラスの既定のメソッド"
+             "には変更できないものがあります)。上の例で既にこれは示されていま"
+             "す。プログラマはメソッドproductを組込みクラス<number>に対して定義"
+             "することができます。これが、全てはオブジェクトであるかどうかは"
+             "CLOSスタイルのオブジェクトシステムでは問題にならないと言った理由"
+             "です。"))
 
 (test-fill "en" fill-data-1 '(:width 30)
            '("Lorem ipsum dolor sit amet,"
@@ -453,6 +475,26 @@
              "officia deserunt mollit anim"
              "id est laborum."))
 
+(test-fill "ja" fill-data-2 '(:width 30)
+           '("これらの各メソッドは、<num-"
+             "vector>クラスや<num-matrix>"
+             "クラスに所属するわけではありま"
+             "せん。メソッドがクラスに所有さ"
+             "れているわけではないので、既に"
+             "存在するクラスに対していつでも"
+             "独自のメソッドを定義することが"
+             "できます(但し、いくつかの組込"
+             "みクラスの既定のメソッドには変"
+             "更できないものがあります)。上"
+             "の例で既にこれは示されていま"
+             "す。プログラマはメソッド"
+             "productを組込みクラス<number>"
+             "に対して定義することができま"
+             "す。これが、全てはオブジェクト"
+             "であるかどうかはCLOSスタイルの"
+             "オブジェクトシステムでは問題に"
+             "ならないと言った理由です。"))
+
 (test-fill "en" fill-data-1 '(:indent 2 :width 50)
            '("Lorem ipsum dolor sit amet, consectetur adipiscing"
              "  elit, sed do eiusmod tempor incididunt ut labore"
@@ -464,6 +506,20 @@
              "  Excepteur sint occaecat cupidatat non proident,"
              "  sunt in culpa qui officia deserunt mollit anim"
              "  id est laborum."))
+
+(test-fill "ja" fill-data-2 '(:indent 2 :width 50)
+           '("これらの各メソッドは、<num-vector>クラスや<num-"
+             "  matrix>クラスに所属するわけではありません。"
+             "  メソッドがクラスに所有されているわけではないの"
+             "  で、既に存在するクラスに対していつでも独自の"
+             "  メソッドを定義することができます(但し、いくつか"
+             "  の組込みクラスの既定のメソッドには変更できないも"
+             "  のがあります)。上の例で既にこれは示されていま"
+             "  す。プログラマはメソッドproductを組込みクラス<"
+             "  number>に対して定義することができます。これが、"
+             "  全てはオブジェクトであるかどうかはCLOSスタイルの"
+             "  オブジェクトシステムでは問題にならないと言った理"
+             "  由です。"))
 
 ;; If single word in a line overflows width, we let it overflow.
 (test-fill "en" fill-data-1 '(:indent 2 :hanging 10 :width 12)
