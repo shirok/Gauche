@@ -270,6 +270,10 @@
 ;;;   Based on Alex Shinn's implementation.
 ;;;
 
+;; This parameter is bound to <option-parser> during evaluation of
+;; callbacks and body.
+(define current-option-parser (make-parameter #f))
+
 ;; (let-args args (varspec ...) body ...)
 ;;  where varspec can be
 ;;   (var spec [default])
@@ -281,7 +285,6 @@
 ;; (let-args args (varspec ... . rest) body ...)
 ;;
 ;;  then, rest is bound to the rest of the args.
-
 
 ;; Auxiliary macro.
 ;; Collects parse-options optspec (opts) and variable bindings (binds).
@@ -380,9 +383,15 @@
     ;; Extra let() allows body contains internal defines.
     ;;
     [(_ args binds opts () body)
-     (let binds (parse-options args opts) (let () . body))]
+     (let binds
+         (parameterize ((current-option-parser (make-option-parser opts)))
+           ((current-option-parser) args)
+           (let () . body)))]
     [(_ args binds opts rest body)
-     (let binds (let ((rest (parse-options args opts))) (let () . body)))]
+     (let binds
+         (parameterize ((current-option-parser (make-option-parser opts)))
+           (let ((rest ((current-option-parser) args)))
+             . body)))]
     ))
 
 (define-syntax let-args
