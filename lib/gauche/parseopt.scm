@@ -33,8 +33,13 @@
 
 (define-module gauche.parseopt
   (use util.match)
-  (export make-option-parser parse-options let-args <parseopt-error>))
+  (use text.tree)
+  (export make-option-parser parse-options let-args
+          <parseopt-error>
+          option-parser-help-string))
 (select-module gauche.parseopt)
+
+(autoload text.fill text->filled-stree)
 
 ;; This error is thrown when the given argument doesn't follow the spec.
 ;; (An error in the spec itself is thrown as an ordinary error.)
@@ -264,6 +269,42 @@
   (syntax-rules ()
     [(_ args clauses)
      ((make-option-parser clauses) args)]))
+
+;;;
+;;; help string builder
+;;;
+
+
+(define *help-option-indent* 2)
+(define *help-description-indent* 29)
+(define *help-width* 79)
+
+(define (option-parser-help-info option-parser)
+  (map (^[spec] `(,(~ spec'optspec) ,(~ spec'help)))
+       (~ option-parser'option-specs)))
+
+(define (option-parser-help-string :optional (option-parser
+                                              (current-option-parser)))
+  (tree->string
+   (map (match-lambda
+          [(optspec help)
+           (let1 len (string-length optspec)
+             (if (< len (- *help-description-indent* 1))
+               `(,(format "~va~va" *help-option-indent* " "
+                          (- *help-description-indent* *help-option-indent*)
+                          optspec)
+                 ,(text->filled-stree (or help "")
+                                      :start-column *help-description-indent*
+                                      :indent *help-description-indent*
+                                      :width *help-width*)
+                 "\n")
+               `(,(format "~va~a\n" *help-option-indent* " " optspec)
+                 ,(text->filled-stree (or help "")
+                                      :hanging *help-description-indent*
+                                      :indent *help-description-indent*
+                                      :width *help-width*)
+                 "\n")))])
+        (option-parser-help-info option-parser))))
 
 ;;;
 ;;; The alternative way : let-args
