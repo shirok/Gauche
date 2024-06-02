@@ -29866,7 +29866,7 @@ specified width, inserting line breaks
 adequately.  It is similar to @code{fill-paragraph} of Emacs.
 @end deftp
 
-@defun display-filled-text text :key start-column indent hanging width port
+@defun display-filled-text text :key port indent hanging width start-column lead-in
 @c MOD text.fill
 Output @var{text} to @var{port}, while keeping the line width up to
 @var{width} by inserting line breaks.   The original newline characters
@@ -29908,6 +29908,8 @@ some text is already written to @var{port}), the procedure takes
 the current column into account, as shown below:
 
 @example
+  width
+<--------------------------------------------------------------------->
              start column
                 |   hanging
                 v<---->
@@ -29921,19 +29923,53 @@ the current column into account, as shown below:
           qui officia deserunt mollit anim id est laborum.
 <-------->
    indent
-<--------------------------------------------------------------------->
-                           width
 @end example
 
 The @var{start-column} keyword argument can override the port's
 current column with the given nonnegative exact integer.
 
+The last line is not terminated by a newline, allowing the caller
+to continue output in the same line.
+
 The length of the line is computed by each character's East Asian
 Width (@pxref{East asian width property}).  The actual display
 width depends on the fonts, but it gives a reasonable approximation.
+
+Finally, if the @var{lead-in} argument is not @code{#f}, it must be
+a string that is output before any @var{text} and indentation is
+output.  Then, if the column after @var{lead-in} is less than
+@var{hanging} minus one, @var{text} will be emitted on the smae
+line, starting from @var{hanging} column:
+
+@example
+     hanging
+<------------------>
+THIS IS LEAD-IN.    Lorem ipsum dolor sit amet, consectetur
+             adipiscing elit, sed do eiusmod tempor incididunt ut labore
+             et dolore magna aliqua.
+<----------->
+    indent
+@end example
+
+If @var{lead-in} text is longer than the @var{hanging}, @var{text}
+is emitted from the next line.
+
+@example
+     hanging
+<------------------>
+THIS IS LEAD-IN LONGER THAN HANGING.
+                    Lorem ipsum dolor sit amet, consectetur
+             adipiscing elit, sed do eiusmod tempor incididunt ut labore
+             et dolore magna aliqua.
+<----------->
+    indent
+@end example
+
+This is handy when you display definition-list like document, e.g.
+command-line option description.
 @end defun
 
-@defun text->filled-stree text :key start-column indent hanging width
+@defun text->filled-stree text :key indent hanging width start-column lead-in
 @c MOD text.fill
 This is a low-level routine to construct a filled text used by
 @code{display-filled-text}.  It returns a string tree
