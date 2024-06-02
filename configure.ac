@@ -973,7 +973,7 @@ AC_CONFIG_COMMANDS([VERSION],
                    [echo "${GAUCHE_VERSION}" > VERSION],
                    [GAUCHE_VERSION="${GAUCHE_VERSION}"])
 AC_CONFIG_COMMANDS([src/features],
-                   [${srcdir}/src/gen-features.sh ${ac_srcdir} ${ac_builddir}])
+                   [${srcdir}/src/gen-features.sh ${ac_srcdir} ${ac_builddir} ${host}])
 AC_OUTPUT
 
 dnl ===========================================================
