@@ -62,6 +62,8 @@ if you start printing a paragraph in the middle of the line, the text
 still fits within the width.
 
 
+  width
+<--------------------------------------------------------------------->
              start column
                 |   hanging
                 v<---->
@@ -75,8 +77,30 @@ still fits within the width.
           qui officia deserunt mollit anim id est laborum.
 <-------->
    indent
-<--------------------------------------------------------------------->
-                           width
+
+The 'lead-in' is a leading text before paragraph.  If it is shorter than
+(- hanging 1), it becomes run-in heading.  Otherwise, the paragraph begins
+from the next line.  Compare the following two examples:
+
+
+     hanging
+<---------------->
+THIS IS LEAD-IN.  Lorem ipsum dolor sit amet, consectetur
+             adipiscing elit, sed do eiusmod tempor incididunt ut labore
+             et dolore magna aliqua.
+<----------->
+    indent
+
+
+     hanging
+<---------------->
+THIS IS LEAD-IN LONGER THAN HANGING.
+                  Lorem ipsum dolor sit amet, consectetur
+             adipiscing elit, sed do eiusmod tempor incididunt ut labore
+             et dolore magna aliqua.
+<----------->
+    indent
+
 
 |#
 
@@ -84,29 +108,35 @@ still fits within the width.
 ;;  - The way to specify 'hard' newline
 ;;  - Customize east-asian-width
 
-(define (display-filled-text text :key (start-column #f)
+(define (display-filled-text text :key (port (current-output-port))
                              (indent 0) (hanging 0) (width 65)
-                             (port (current-output-port)))
+                             (lead-in #f) (start-column #f))
   ($ write-tree
      ($ text->filled-stree text
         :start-column (or start-column (~ port'current-column))
         :indent indent
         :hanging hanging
+        :lead-in lead-in
         :width width)
      port)
   (undefined))
 
-(define (text->filled-stree text :key (start-column 0)
-                            (indent 0) (hanging 0) (width 65))
+(define (text->filled-stree text :key (indent 0) (hanging 0) (width 65)
+                            (start-column 0) (lead-in #f))
   (assume (and (exact-integer? start-column) (>= start-column 0)))
   (assume (and (exact-integer? indent) (>= indent 0)))
   (assume (and (exact-integer? hanging) (>= hanging 0)))
   (assume (and (exact-integer? width) (> width indent)))
+  (assume-type lead-in (<?> <string>))
 
   ;; NB: This algorithm is similar to pretty printer, and we may integrate
   ;; the two in future.
   (let ([indenter (string-append "\n" (make-string indent #\space))]
-        [hanging-indenter (make-string hanging #\space)])
+        [hanging-indenter (if lead-in
+                            (if (< (string-east-asian-width lead-in) hanging)
+                              (format "~va" hanging lead-in)
+                              (format "~a\n~va" lead-in hanging ""))
+                            (make-string hanging #\space))])
     (let loop ([words (segment-text text)]
                [column (+ hanging start-column)]
                [r (list hanging-indenter)])
