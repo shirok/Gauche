@@ -124,8 +124,9 @@
 (test-section "gauche-config")
 
 (define (run-gauche-config . opts)
-  (let1 p (run-process `("./gauche-config" ,@opts) :output :pipe)
-    (begin0 (read-line (process-output p))
+  (let1 p (run-process `("./gauche-config" ,@opts)
+                       :redirects '((>& 2 1) (> 1 out)))
+    (begin0 (port->string (process-output p 'out))
       (process-wait p))))
 
 (define *config-options*
@@ -138,7 +139,104 @@
     "--so-libs" "--dylib-suffix" "--dylib-ldflags" "--rpath-flag"))
 
 (dolist [opt *config-options*]
-  (test* #"gauche-config ~opt" (gauche-config opt) (run-gauche-config opt)))
+  (test* #"gauche-config ~opt" (gauche-config opt)
+         (car (string-split (run-gauche-config opt) "\n"))))
+
+(test* "gauche-config --help"
+       '("Usage: gauche-config [option ...]"
+         "Multiple options can be given."
+         ""
+         "General parameter"
+         "  -V"
+         "        The current Gauche version."
+         ""
+         "Parameters to compile applications using Gauche"
+         "  -I"
+         "        Include path options required to compile programs using Gauche"
+         "        (Note: This doesn't work if Gauche installation directory"
+         "        path contains whitespaces.  See --incdirs below.)"
+         "  -L"
+         "        Library path options required to link programs using Gauche"
+         "        (Note: This doesn't work if Gauche installation directory"
+         "        path contains whitespaces.  See --archdirs below.)"
+         "  -l"
+         "        Link library options required to link programs using Gauche."
+         "  --cc"
+         "        The name of the compiler used to compile this Gacuhe."
+         "  --cpp"
+         "        The command to run the C preprocessor."
+         "  --ac"
+         "        The directory that contains Gauche-specific autoconf macros."
+         "  --reconfigure"
+         "        The command line used to configure the current installation."
+         "  --arch"
+         "        The autoconf-style architecture signature (cpu-vendor-kernel-os)."
+         "  --incdirs"
+         "  --archdirs"
+         "        The list of directory names to be looked for include files and"
+         "        libraries, respectively.  Each directory name may be quoted if"
+         "        it contains whitespaces, and separated by ':' on Unix platforms, or"
+         "        by ';' on Windows platforms."
+         "  --local-incdir"
+         "  --local-libdir"
+         "        These are '-I' and '-L' flags for additional local headers/libraries"
+         "        to search, given by '--with-local' configure flags.  Note that those"
+         "        are also included in '-I', '-L', '--incdirs', and '--archdirs'."
+         ""
+         "Parameters to install files"
+         "  --prefix"
+         "        The directory prefix set by configure."
+         "  --sysincdir"
+         "  --siteincdir"
+         "  --pkgincdir"
+         "        Directories where system|site|package header files of extensions go."
+         "  --syslibdir"
+         "  --sitelibdir"
+         "  --pkglibdir"
+         "        Directories where system|site|package scheme files go."
+         "  --sysarchdir"
+         "  --sitearchdir"
+         "  --pkgarchdir"
+         "        Directories where system|site|package DSO files go."
+         "  --mandir"
+         "  --infodir"
+         "        Directories where gauche manpage and info docs are installed."
+         ""
+         "Parameters to help building extensions"
+         "  --object-suffix"
+         "        The extension of the compiled objects (e.g. 'o' or 'obj)."
+         "  --executable-suffix"
+         "        The extension of the executable including a period (empty on Unix systems,"
+         "        '.exe' on Windows."
+         "  --so-suffix"
+         "        The extension for dynamically loadable (dlopen-able) modules (e.g. 'so')."
+         "  --so-cflags"
+         "        Additional CFLAGS to create dynamically loadable modules."
+         "  --so-ldflags"
+         "        Additional LDFLAGS to create dynamically loadable modules."
+         "  --so-libs"
+         "        Additional libraries required to create dynamically loadable modules."
+         "  --dylib-suffix"
+         "        The extension for dynamically linked libraries (as opposed to dlopen()ed)"
+         "        Usually the same as --so-suffix, but OSX wants 'dylib'."
+         "  --dylib-ldflags"
+         "        LDFLAGS to create dynamically linked libraries."
+         "  --rpath-flag"
+         "        Compiler flag(s) to embed RPATH"
+         "  --default-cflags"
+         "        This is the CFLAGS used to compile Gauche, and to be used to compile"
+         "        extensions as well."
+         "  --cppflags"
+         "        Compiler flag(s) passed to C preprocessor"
+         "  --static-libs"
+         "        List of library link flags ('-llib') required to link Gauche statically."
+         "        Similar to '-l', but this includes the libraries that are used"
+         "        for extension modules, and also the static library itself,"
+         "        that is -lgauche-static-X.X."
+         "  --libgauche-so"
+         "        The base name of dynamically linked libgauche."
+         "")
+       (string-split (run-gauche-config "--help") "\n"))
 
 ;;=======================================================================
 (test-section "configure")
