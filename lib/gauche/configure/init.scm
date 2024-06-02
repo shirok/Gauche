@@ -550,16 +550,10 @@
 
 ;; API
 (define (cf-help-string item description)
-  (let1 item-len (string-length item)
-    (if (< (+ item-len *usage-item-indent*) (- *usage-description-indent* 1))
-      (format "~va~va~a\n" *usage-item-indent* " "
-              (- *usage-description-indent* *usage-item-indent*) item
-              ($ tree->string $ text->filled-stree description
-                 :start-column *usage-description-indent*
-                 :indent *usage-description-indent*
-                 :width *usage-fill-column*))
-      (format "~va~a\n~a\n" *usage-item-indent* " " item
-              ($ tree->string $ text->filled-stree description
-                 :hanging *usage-description-indent*
-                 :indent *usage-description-indent*
-                 :width *usage-fill-column*)))))
+  (tree->string
+   (list ($ text->filled-stree description
+            :lead-in (format "~va~a" *usage-item-indent* "" item)
+            :hanging *usage-description-indent*
+            :indent *usage-description-indent*
+            :width *usage-fill-column*)
+         "\n")))
