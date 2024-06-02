@@ -254,6 +254,19 @@
 (test-module 'gauche.configure.compile)
 (test-module 'gauche.configure.init)
 
+;; cf-help-string test
+(test* "cf-help-string (run-in)"
+       "  -C                      ignored for the compatibility to autoconf-generated\
+      \n                          configure\n"
+       ($ cf-help-string "-C"
+          "ignored for the compatibility to autoconf-generated configure"))
+(test* "cf-help-string (description next line)"
+       "  -C, --config-cache,--cache-file=FILE\
+      \n                          ignored for the compatibility to autoconf-generated\
+      \n                          configure\n"
+       ($ cf-help-string "-C, --config-cache,--cache-file=FILE"
+          "ignored for the compatibility to autoconf-generated configure"))
+
 ;; When we run configure, we need to include directories of gosh and
 ;; other scripts in PATH.  Before installing Gauche, where we find them
 ;; is "..".
