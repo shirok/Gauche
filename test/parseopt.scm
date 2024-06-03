@@ -244,8 +244,8 @@
     (let/cc ret
       (let-args args
           ((a "a" ? "An option with no arg")
-           (b "b=s" ? "Taking string argument")
-           (c "c=s" "wow" ? "Taking string argument and default. \
+           (b "b=s{PARAM_B}" ? "Taking string argument")
+           (c "c=s{PARAM_C}" "wow" ? "Taking string argument and default. \
                              And this is a long help string that will span \
                              more than one line.")
            (d "d" => (^[] 'yo) ? "Callback, no default")
@@ -275,12 +275,12 @@
      '("Unknown option: zzz"
        "Options:"
        "  -a           An option with no arg"
-       "  -b=s         Taking string argument"
-       "  -c=s         Taking string argument and default. And this is a long help"
+       "  -b PARAM_B   Taking string argument"
+       "  -c PARAM_C   Taking string argument and default. And this is a long help"
        "               string that will span more than one line."
        "  -d           Callback, no default"
        "  -e           Callback, default"
-       "  -f|floccinaucinihilipilification=s"
+       "  -f, --floccinaucinihilipilification s"
        "               Long option name"
        "  -g           (No help available)")
      (run '("--zzz")))

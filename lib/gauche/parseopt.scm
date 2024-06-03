@@ -91,13 +91,15 @@
       [_ (error "Invalid command-line argument specification:" a-spec)]))
   (receive (optspec helpstr handler) (parse-spec a-spec)
     (rxmatch-if (rxmatch #/^-*([-+\w|]+)(\*)?(?:([=:])(.+))?$/ optspec)
-        (#f optnames plural? optional?  argspec)
+        (#f optnames plural? optional? argspec)
       (receive (shorts longs)
           (partition (^s (= (string-length s) 1)) (string-split optnames #\|))
         (make <option-spec>
           :short-names (map (cut string-ref <> 0) shorts)
           :long-names longs
-          :args (if argspec (string->list argspec) '())
+          :args (if argspec
+                  (string->list (regexp-replace-all #/\{\w+\}/ argspec ""))
+                  '())
           :arg-optional? (equal? optional? ":")
           :handler handler
           :plural? plural?
@@ -287,11 +289,37 @@
 
 (define (option-parser-help-string :optional (option-parser
                                               (current-option-parser)))
+  ;; Convert optspec "a|abc=s{filename}"
+  ;; into descriptive "-a, --abc filename"
+  ;; If argument name {...} is not provided, use the type desc
+  ;;  "a|abc=ss" => "-a, --abc s s"
+  (define (optheader optspec)
+    (let* ([opts (string-split optspec "|")]
+           [lastopt&arg (string-split (last opts) "=" 'infix 1)]
+           [opts (append (drop-right opts 1) (list (car lastopt&arg)))]
+           [argdesc (if (pair? (cdr lastopt&arg))
+                      (optarg-desc (cadr lastopt&arg))
+                      '())])
+      (tree->string
+       (list ($ intersperse ", "
+                (map (^[opt] (if (= (string-length opt) 1)
+                               (format "-~a" opt)
+                               (format "--~a" opt)))
+                     opts))
+             (map (^[arg] `(" " ,arg)) argdesc)))))
+
+  (define (optarg-desc argspec)
+    (cond [(equal? argspec "") '()]
+          [(#/^([[:alpha:]])(?:\{([\w-]+)\})?/ argspec)
+           => (^m (cons (or (m 2) (m 1)) (optarg-desc (m 'after))))]
+          [else (error "invalid argspec:" argspec)]))
+
   (tree->string
    (map (match-lambda
           [(optspec help)
            `(,($ text->filled-stree (or help "(No help available)")
-                 :lead-in (format "~va-~a" *help-option-indent* "" optspec)
+                 :lead-in (format "~va~a" *help-option-indent* ""
+                                  (optheader optspec))
                  :hanging *help-description-indent*
                  :indent *help-description-indent*
                  :width *help-width*)
