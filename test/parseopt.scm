@@ -239,4 +239,51 @@
                  (else _ (ret x)))
               11)))))
 
+(let ()
+  (define (run args)
+    (let/cc ret
+      (let-args args
+          ((a "a" ? "An option with no arg")
+           (b "b=s" ? "Taking string argument")
+           (c "c=s" "wow" ? "Taking string argument and default. \
+                             And this is a long help string that will span \
+                             more than one line.")
+           (d "d" => (^[] 'yo) ? "Callback, no default")
+           (e "e" 'boo => (^[] 'yay) ? "Callback, default")
+           (f "f|floccinaucinihilipilification=s" ? "Long option name")
+           (g "g")                      ;no help string
+           (else => (^[badopt rest loop]
+                      (ret (string-append "Unknown option: " badopt "\n"
+                                          "Options:\n"
+                                          (option-parser-help-string))))))
+        (list a b c d e f))))
+
+  (define (t args expect)
+    (test* #"help string ~|args|" expect (run args)))
+
+  ;; Just to make sure help string doesn't affect normal operations.
+  (t '()                     '(#f #f "wow" #f boo #f))
+  (t '("-a")                 '(#t #f "wow" #f boo #f))
+  (t '("-b" "bee")           '(#f "bee" "wow" #f boo #f))
+  (t '("-c" "sea")           '(#f #f "sea" #f boo #f))
+  (t '("-d")                 '(#f #f "wow" yo boo #f))
+  (t '("-e")                 '(#f #f "wow" #f yay #f))
+  (t '("-f" "foo")           '(#f #f "wow" #f boo "foo"))
+
+  ;; And now, help string generation
+  ($ test*/diff "help string generation"
+     '("Unknown option: zzz"
+       "Options:"
+       "  -a           An option with no arg"
+       "  -b=s         Taking string argument"
+       "  -c=s         Taking string argument and default. And this is a long help"
+       "               string that will span more than one line."
+       "  -d           Callback, no default"
+       "  -e           Callback, default"
+       "  -f|floccinaucinihilipilification=s"
+       "               Long option name"
+       "  -g           (No help available)")
+     (run '("--zzz")))
+  )
+
 (test-end)

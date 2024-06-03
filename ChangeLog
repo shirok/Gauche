@@ -1,3 +1,9 @@
+2024-06-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (let-args, option-parser-help-string):
+	  Add option help string generation.
+	  Cf. https://github.com/shirok/Gauche/issues/661
+
 2024-05-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/text/fill.scm: Added.

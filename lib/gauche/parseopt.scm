@@ -39,6 +39,8 @@
           option-parser-help-string))
 (select-module gauche.parseopt)
 
+;; text.fill depends on gauche.unicode, so delay loading it.  It's only used
+;; to format help strings.
 (autoload text.fill text->filled-stree)
 
 ;; This error is thrown when the given argument doesn't follow the spec.
@@ -258,9 +260,9 @@
     [(_ ((else => proc)) specs)
      (build-option-parser (list . specs) proc)]
     [(_ ((optspec => proc) . clause) (spec ...))
-     (make-option-parser-int clause (spec ... (list optspec proc)))]
+     (make-option-parser-int clause (spec ... (list 'optspec proc)))]
     [(_ ((optspec vars . body) . clause) (spec ...))
-     (make-option-parser-int clause (spec ... (list optspec (^ vars . body))))]
+     (make-option-parser-int clause (spec ... (list 'optspec (^ vars . body))))]
     [(_ (other . clause) specs)
      (syntax-error "make-option-parser: malformed clause:" other)]
     ))
@@ -276,8 +278,8 @@
 
 
 (define *help-option-indent* 2)
-(define *help-description-indent* 29)
-(define *help-width* 79)
+(define *help-description-indent* 15)
+(define *help-width* 75)
 
 (define (option-parser-help-info option-parser)
   (map (^[spec] `(,(~ spec'optspec) ,(~ spec'help)))
@@ -288,22 +290,12 @@
   (tree->string
    (map (match-lambda
           [(optspec help)
-           (let1 len (string-length optspec)
-             (if (< len (- *help-description-indent* 1))
-               `(,(format "~va~va" *help-option-indent* " "
-                          (- *help-description-indent* *help-option-indent*)
-                          optspec)
-                 ,(text->filled-stree (or help "")
-                                      :start-column *help-description-indent*
-                                      :indent *help-description-indent*
-                                      :width *help-width*)
-                 "\n")
-               `(,(format "~va~a\n" *help-option-indent* " " optspec)
-                 ,(text->filled-stree (or help "")
-                                      :hanging *help-description-indent*
-                                      :indent *help-description-indent*
-                                      :width *help-width*)
-                 "\n")))])
+           `(,($ text->filled-stree (or help "(No help available)")
+                 :lead-in (format "~va-~a" *help-option-indent* "" optspec)
+                 :hanging *help-description-indent*
+                 :indent *help-description-indent*
+                 :width *help-width*)
+             "\n")])
         (option-parser-help-info option-parser))))
 
 ;;;
@@ -317,9 +309,9 @@
 
 ;; (let-args args (varspec ...) body ...)
 ;;  where varspec can be
-;;   (var spec [default])
+;;   (var spec [default] [? helpstring])
 ;;  or
-;;   (var spec [default] => callback)
+;;   (var spec [default] => callback [? helpstring])
 ;;
 ;;  varspec can be an improper list, as
 ;;
@@ -330,29 +322,45 @@
 ;; Auxiliary macro.
 ;; Collects parse-options optspec (opts) and variable bindings (binds).
 (define-syntax let-args-internal
-  (syntax-rules (else =>)
+  (syntax-rules (else => ?)
     ;;
     ;; Handle var == #f case first.  This is only useful for side-effects
     ;; or recognizing option (and then discard).
     ;;
+    [(_ args binds opts ((#f spec1 def => callback ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((#f (spec1 help) def => callback) . varspecs)
+                        body)]
     [(_ args binds (opts ...) ((#f spec1 def => callback) . varspecs) body)
      (let-args-internal args
         binds
         (opts ... (spec1 => callback))
         varspecs
         body)]
+    [(_ args binds opts ((#f spec1 => callback ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((#f (spec1 help) => callback) . varspecs)
+                        body)]
     [(_ args binds (opts ...) ((#f spec1 => callback) . varspecs) body)
      (let-args-internal args
         binds
         (opts ... (spec1 => callback))
         varspecs
         body)]
+    [(_ args binds opts ((#f spec1 ignore ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((#f (spec1 help) ignore) . varspecs)
+                        body)]
     [(_ args binds opts ((#f spec1 ignore) . varspecs) body)
      (let-args-internal args
         binds
         opts
         ((#f spec1 => (^ _ #f)) . varspecs)
         body)]
+    [(_ args binds opts ((#f spec1 ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((#f (spec1 help)) . varspecs)
+                        body)]
     [(_ args binds opts ((#f spec1) . varspecs) body)
      (let-args-internal args
         binds
@@ -378,12 +386,20 @@
     ;;
     ;; Handle explicit callbacks.
     ;;
+    [(_ args binds opts ((var1 spec1 default1 => callback ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((var1 (spec1 help) default1 => callback) . varspecs)
+                        body)]
     [(_ args binds (opts ...) ((var1 spec1 default1 => callback) . varspecs) body)
      (let-args-internal args
          ((var1 default1) (cb1 callback) . binds)
          (opts ... (spec1 => (^ x (set! var1 (apply cb1 x)))))
          varspecs
          body)]
+    [(_ args binds opts ((var1 spec1 => callback ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((var1 (spec1 help) => callback) . varspecs)
+                        body)]
     [(_ args binds (opts ...) ((var1 spec1 => callback) . varspecs) body)
      (let-args-internal args
          binds
@@ -395,6 +411,10 @@
     ;; we don't know # of values to receive unless we parse the optspec,
     ;; so the callback needs extra trick.  (Ugly... needs rework).
     ;;
+    [(_ args binds opts ((var1 spec1 default1 ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((var1 (spec1 help) default1) . varspecs)
+                        body)]
     [(_ args binds (opts ...) ((var1 spec1 default1) . varspecs) body)
      (let-args-internal args
          ((var1 default1) . binds)
@@ -408,6 +428,10 @@
     ;;
     ;; No default means #f
     ;;
+    [(_ args binds opts ((var1 spec1 ? help) . varspecs) body)
+     (let-args-internal args binds opts
+                        ((var1 (spec1 help)) . varspecs)
+                        body)]
     [(_ args binds (opts ...) ((var1 spec1) . varspecs) body)
      (let-args-internal args
          binds
