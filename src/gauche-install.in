@@ -181,14 +181,14 @@
                 ? "If installed file has a suffix *.sci, replace it for \
                    *.scm.   This is Gauche specific convention."]
        [srcdir  "S|srcdir=s{DIR}"
-                ? "Look for files within DIR; useful if VPATH is used."]
+                ? "Look for files within {DIR}; useful if VPATH is used."]
        [target  "T|target=s{DIR}"
-                ? "Installs files to the DIR, creating paths if needed. \
+                ? "Installs files to the {DIR}, creating paths if needed. \
                    Partial path of files are preserved. (4th format only)."]
        [utarget "U|uninstall=s{DIR}"
                 ? "Reverse of -T, e.g. removes files from its destination."]
        [shebang "shebang=s{PATH}"
-                ? "Adds #!PATH before the file contents. \
+                ? "Adds #!{PATH} before the file contents. \
                    Useful to install scripts."]
        [verb    "v|verbose" ? "Work verbosely"]
        [dry     "n|dry-run" ? "Just prints what actions to be done."]

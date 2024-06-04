@@ -317,7 +317,10 @@
   (tree->string
    (map (match-lambda
           [(optspec help)
-           `(,($ text->filled-stree (or help "(No help available)")
+           `(,($ text->filled-stree
+                 (if help
+                   (regexp-replace-all #/\{(\w+)\}/ help (cut <> 1))
+                   "(No help available)")
                  :lead-in (format "~va~a" *help-option-indent* ""
                                   (optheader optspec))
                  :hanging *help-description-indent*

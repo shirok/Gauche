@@ -244,45 +244,49 @@
     (let/cc ret
       (let-args args
           ((a "a" ? "An option with no arg")
-           (b "b=s{PARAM_B}" ? "Taking string argument")
+           (b "b=s{PARAM_B}" ? "Taking string argument {PARAM_B}.")
            (c "c=s{PARAM_C}" "wow" ? "Taking string argument and default. \
                              And this is a long help string that will span \
                              more than one line.")
            (d "d" => (^[] 'yo) ? "Callback, no default")
            (e "e" 'boo => (^[] 'yay) ? "Callback, default")
            (f "f|floccinaucinihilipilification=s" ? "Long option name")
-           (g "g")                      ;no help string
+           (g "g=i{PARAM_G1}i{PARAM_G2}" => (^[g1 g2] (list g1 g2))
+              ? "Taking two integer arguments, {PARAM_G1} and {PARAM_G2}.")
+           (h "h")                      ;no help string
            (else => (^[badopt rest loop]
                       (ret (string-append "Unknown option: " badopt "\n"
                                           "Options:\n"
                                           (option-parser-help-string))))))
-        (list a b c d e f))))
+        (list a b c d e f g))))
 
   (define (t args expect)
     (test* #"help string ~|args|" expect (run args)))
 
   ;; Just to make sure help string doesn't affect normal operations.
-  (t '()                     '(#f #f "wow" #f boo #f))
-  (t '("-a")                 '(#t #f "wow" #f boo #f))
-  (t '("-b" "bee")           '(#f "bee" "wow" #f boo #f))
-  (t '("-c" "sea")           '(#f #f "sea" #f boo #f))
-  (t '("-d")                 '(#f #f "wow" yo boo #f))
-  (t '("-e")                 '(#f #f "wow" #f yay #f))
-  (t '("-f" "foo")           '(#f #f "wow" #f boo "foo"))
+  (t '()                     '(#f #f "wow" #f boo #f #f))
+  (t '("-a")                 '(#t #f "wow" #f boo #f #f))
+  (t '("-b" "bee")           '(#f "bee" "wow" #f boo #f #f))
+  (t '("-c" "sea")           '(#f #f "sea" #f boo #f #f))
+  (t '("-d")                 '(#f #f "wow" yo boo #f #f))
+  (t '("-e")                 '(#f #f "wow" #f yay #f #f))
+  (t '("-f" "foo")           '(#f #f "wow" #f boo "foo" #f))
 
   ;; And now, help string generation
   ($ test*/diff "help string generation"
      '("Unknown option: zzz"
        "Options:"
        "  -a           An option with no arg"
-       "  -b PARAM_B   Taking string argument"
+       "  -b PARAM_B   Taking string argument PARAM_B."
        "  -c PARAM_C   Taking string argument and default. And this is a long help"
        "               string that will span more than one line."
        "  -d           Callback, no default"
        "  -e           Callback, default"
        "  -f, --floccinaucinihilipilification s"
        "               Long option name"
-       "  -g           (No help available)")
+       "  -g PARAM_G1 PARAM_G2"
+       "               Taking two integer arguments, PARAM_G1 and PARAM_G2."
+       "  -h           (No help available)")
      (run '("--zzz")))
   )
 
