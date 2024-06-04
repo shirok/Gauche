@@ -18,6 +18,7 @@ do_posix() {
     bindir=$1
     target=$2
     source=$3
+    rm -f $target
     echo "#!${bindir}/gosh" > $target && cat $source >> $target
     chmod -w+x $target
 }
@@ -26,6 +27,7 @@ scm2c() {
     source=$1
     target=$2
 
+    rm -f $target
     cat > $target <<EOF
 #include "gauche.h"
 
@@ -34,7 +36,7 @@ EOF
 
     sed -e 's@\\@\\\\@g' -e 's@"@\\"@g' -e 's@^.*$@"&\\n"@g' $source > $target
 
-    cat > $target <<EOF
+    cat >> $target <<EOF
 ;
 
 int main(int argc, const char **argv)
@@ -47,6 +49,8 @@ EOF
 }
 
 do_mingw() {
+    # NB: Currently we still use ming-exify.  Implement this using scm2c above
+    # and replace mingw-exify with this script.
     echo "WRITEME!"
 }
 
