@@ -98,7 +98,7 @@
           :short-names (map (cut string-ref <> 0) shorts)
           :long-names longs
           :args (if argspec
-                  (string->list (regexp-replace-all #/\{\w+\}/ argspec ""))
+                  (string->list (regexp-replace-all #/\{[\w-]+\}/ argspec ""))
                   '())
           :arg-optional? (equal? optional? ":")
           :handler handler
@@ -319,7 +319,7 @@
           [(optspec help)
            `(,($ text->filled-stree
                  (if help
-                   (regexp-replace-all #/\{(\w+)\}/ help (cut <> 1))
+                   (regexp-replace-all #/\{([\w-]+)\}/ help (cut <> 1))
                    "(No help available)")
                  :lead-in (format "~va~a" *help-option-indent* ""
                                   (optheader optspec))
