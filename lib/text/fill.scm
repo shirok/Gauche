@@ -108,8 +108,12 @@ THIS IS LEAD-IN LONGER THAN HANGING.
 ;;  - The way to specify 'hard' newline
 ;;  - Customize east-asian-width
 
+(define *default-width* 65)
+(define *default-indent* 0)
+(define *default-hanging* 0)
+
 (define (display-filled-text text :key (port (current-output-port))
-                             (indent 0) (hanging 0) (width 65)
+                             (indent #f) (hanging #f) (width #f)
                              (lead-in #f) (start-column #f))
   ($ write-tree
      ($ text->filled-stree text
@@ -121,39 +125,42 @@ THIS IS LEAD-IN LONGER THAN HANGING.
      port)
   (undefined))
 
-(define (text->filled-stree text :key (indent 0) (hanging 0) (width 65)
+(define (text->filled-stree text :key (indent #f) (hanging #f) (width #f)
                             (start-column 0) (lead-in #f))
-  (assume (and (exact-integer? start-column) (>= start-column 0)))
-  (assume (and (exact-integer? indent) (>= indent 0)))
-  (assume (and (exact-integer? hanging) (>= hanging 0)))
-  (assume (and (exact-integer? width) (> width indent)))
-  (assume-type lead-in (<?> <string>))
+  (let ([indent (or indent *default-indent*)]
+        [hanging (or hanging indent *default-hanging*)]
+        [width (or width *default-width*)])
+    (assume (and (exact-integer? start-column) (>= start-column 0)))
+    (assume (and (exact-integer? indent) (>= indent 0)))
+    (assume (and (exact-integer? hanging) (>= hanging 0)))
+    (assume (and (exact-integer? width) (> width indent)))
+    (assume-type lead-in (<?> <string>))
 
-  ;; NB: This algorithm is similar to pretty printer, and we may integrate
-  ;; the two in future.
-  (let ([indenter (string-append "\n" (make-string indent #\space))]
-        [hanging-indenter (if lead-in
-                            (if (< (string-east-asian-width lead-in) hanging)
-                              (format "~va" hanging lead-in)
-                              (format "~a\n~va" lead-in hanging ""))
-                            (make-string hanging #\space))])
-    (let loop ([words (segment-text text)]
-               [column (+ hanging start-column)]
-               [r (list hanging-indenter)])
-      (match words
-        [() (reverse r)]
-        [('s word . rest)
-         (let1 w (string-east-asian-width word)
-           (if (<= (+ column w 1) width)
-             (loop rest (+ column w 1) (list* word " " r))
-             (loop rest (+ indent w) (list* word indenter r))))]
-        [(word . rest)
-         (let1 w (string-east-asian-width word)
-           (if (or (<= (+ column w) width)
-                   (length=? r 1))      ;at the very beginning
-             (loop rest (+ column w) (cons word r))
-             (loop rest (+ indent w) (list* word indenter r))))]
-        ))))
+    ;; NB: This algorithm is similar to pretty printer, and we may integrate
+    ;; the two in future.
+    (let ([indenter (string-append "\n" (make-string indent #\space))]
+          [hanging-indenter (if lead-in
+                              (if (< (string-east-asian-width lead-in) hanging)
+                                (format "~va" hanging lead-in)
+                                (format "~a\n~va" lead-in hanging ""))
+                              (make-string hanging #\space))])
+      (let loop ([words (segment-text text)]
+                 [column (+ hanging start-column)]
+                 [r (list hanging-indenter)])
+        (match words
+          [() (reverse r)]
+          [('s word . rest)
+           (let1 w (string-east-asian-width word)
+             (if (<= (+ column w 1) width)
+               (loop rest (+ column w 1) (list* word " " r))
+               (loop rest (+ indent w) (list* word indenter r))))]
+          [(word . rest)
+           (let1 w (string-east-asian-width word)
+             (if (or (<= (+ column w) width)
+                     (length=? r 1))      ;at the very beginning
+               (loop rest (+ column w) (cons word r))
+               (loop rest (+ indent w) (list* word indenter r))))]
+          )))))
 
 ;; Split text into unbreakable chunks.  We should also consider
 ;; hyphenations, but that's for future versions.

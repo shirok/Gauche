@@ -149,7 +149,7 @@
        ;; TRANSIENT: After 1.0 release, we can switch to use text.fill
        ;; (let1 s `(,(map (cut format "  ~a\n" <>) (drop-right opt 1))
        ;;           ,($ tree->string $ text->filled-stree help
-       ;;               :hanging 8 :indent 8
+       ;;               :indent 8
        ;;               :lead-in (format "  ~a" (last opt))
        ;;               :width 78))
        ;;   (dolist [h (string-split s #\newline)]

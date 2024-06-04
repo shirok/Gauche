@@ -553,7 +553,6 @@
   (tree->string
    (list ($ text->filled-stree description
             :lead-in (format "~va~a" *usage-item-indent* "" item)
-            :hanging *usage-description-indent*
             :indent *usage-description-indent*
             :width *usage-fill-column*)
          "\n")))

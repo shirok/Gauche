@@ -29923,12 +29923,14 @@ values:
 
 @c EN
 The arguments @var{width}, @var{indent}, and @var{hanging} must be
-nonnegative exact integers, if given.  When omitted, @var{width} is assumed
-to be 65, and @var{indent} and @var{hanging} to be 0.
+nonnegative exact integers or @code{#f}, if given.
+When omitted or @code{#f},
+@var{width} is assumed to be 65, @var{indent} to be 0,
+and @var{hanging} to be the same as @var{indent}.
 @c JP
 @var{width}、@var{indent}、@var{hanging}は与えられたなら
-正確な非負整数でなければなりません。省略された場合、
-@var{width}は65、@var{indent}と@var{hanging}は0が使われます。
+正確な非負整数でなければなりません。省略されるか@code{#f}の場合、
+@var{width}は65、@var{indent}は0、@var{hanging}は@var{indent}と同じになります。
 @c COMMON
 
 @c EN

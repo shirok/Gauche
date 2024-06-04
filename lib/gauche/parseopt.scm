@@ -323,7 +323,6 @@
                    "(No help available)")
                  :lead-in (format "~va~a" *help-option-indent* ""
                                   (optheader optspec))
-                 :hanging *help-description-indent*
                  :indent *help-description-indent*
                  :width *help-width*)
              "\n")])

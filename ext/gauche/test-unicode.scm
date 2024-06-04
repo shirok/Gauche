@@ -431,10 +431,10 @@
    "では問題にならないと言った理由です。"))
 
 (define (test-fill name input params expect)
-  (test* #"text.fill ~|name| ~|params|"
-         (apply string-append (intersperse "\n" expect))
-         (with-output-to-string
-           (^[] (apply display-filled-text input params)))))
+  (test*/diff #"text.fill ~|name| ~|params|"
+              expect
+              (with-output-to-string
+                (^[] (apply display-filled-text input params) (newline)))))
 
 (test-fill "en" fill-data-1 '()
            '("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
@@ -496,19 +496,19 @@
              "ならないと言った理由です。"))
 
 (test-fill "en" fill-data-1 '(:indent 2 :width 50)
-           '("Lorem ipsum dolor sit amet, consectetur adipiscing"
-             "  elit, sed do eiusmod tempor incididunt ut labore"
-             "  et dolore magna aliqua. Ut enim ad minim veniam,"
-             "  quis nostrud exercitation ullamco laboris nisi"
-             "  ut aliquip ex ea commodo consequat. Duis aute"
-             "  irure dolor in reprehenderit in voluptate velit"
-             "  esse cillum dolore eu fugiat nulla pariatur."
-             "  Excepteur sint occaecat cupidatat non proident,"
-             "  sunt in culpa qui officia deserunt mollit anim"
-             "  id est laborum."))
+           '("  Lorem ipsum dolor sit amet, consectetur"
+             "  adipiscing elit, sed do eiusmod tempor"
+             "  incididunt ut labore et dolore magna aliqua. Ut"
+             "  enim ad minim veniam, quis nostrud exercitation"
+             "  ullamco laboris nisi ut aliquip ex ea commodo"
+             "  consequat. Duis aute irure dolor in"
+             "  reprehenderit in voluptate velit esse cillum"
+             "  dolore eu fugiat nulla pariatur. Excepteur sint"
+             "  occaecat cupidatat non proident, sunt in culpa"
+             "  qui officia deserunt mollit anim id est laborum."))
 
 (test-fill "ja" fill-data-2 '(:indent 2 :width 50)
-           '("これらの各メソッドは、<num-vector>クラスや<num-"
+           '("  これらの各メソッドは、<num-vector>クラスや<num-"
              "  matrix>クラスに所属するわけではありません。"
              "  メソッドがクラスに所有されているわけではないの"
              "  で、既に存在するクラスに対していつでも独自の"
