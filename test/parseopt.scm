@@ -240,7 +240,7 @@
               11)))))
 
 (let ()
-  (define (run args)
+  (define (run args help-string-args)
     (let/cc ret
       (let-args args
           ((a "a" ? "An option with no arg")
@@ -257,11 +257,12 @@
            (else => (^[badopt rest loop]
                       (ret (string-append "Unknown option: " badopt "\n"
                                           "Options:\n"
-                                          (option-parser-help-string))))))
+                                          (apply option-parser-help-string
+                                                 help-string-args))))))
         (list a b c d e f g))))
 
   (define (t args expect)
-    (test* #"help string ~|args|" expect (run args)))
+    (test* #"help string ~|args|" expect (run args '())))
 
   ;; Just to make sure help string doesn't affect normal operations.
   (t '()                     '(#f #f "wow" #f boo #f #f))
@@ -273,7 +274,7 @@
   (t '("-f" "foo")           '(#f #f "wow" #f boo "foo" #f))
 
   ;; And now, help string generation
-  ($ test*/diff "help string generation"
+  ($ test*/diff "help string generation 1"
      '("Unknown option: zzz"
        "Options:"
        "  -a           An option with no arg"
@@ -287,7 +288,26 @@
        "  -g PARAM_G1 PARAM_G2"
        "               Taking two integer arguments, PARAM_G1 and PARAM_G2."
        "  -h           (No help available)")
-     (run '("--zzz")))
+     (run '("--zzz") '()))
+
+  ($ test*/diff "help string generation 2"
+     '("Unknown option: zzz"
+       "Options:"
+       "    -a                   An option with no arg"
+       "    -b PARAM_B           Taking string argument PARAM_B."
+       "    -c PARAM_C           Taking string argument and default."
+       "                         And this is a long help string that"
+       "                         will span more than one line."
+       "    -d                   Callback, no default"
+       "    -e                   Callback, default"
+       "    -f, --floccinaucinihilipilification s"
+       "                         Long option name"
+       "    -g PARAM_G1 PARAM_G2 Taking two integer arguments,"
+       "                         PARAM_G1 and PARAM_G2.")
+     (run '("--zzz") '(:omit-options-without-help #t
+                       :option-indent 4
+                       :description-indent 25
+                       :width 60)))
   )
 
 (test-end)

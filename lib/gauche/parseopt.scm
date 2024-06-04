@@ -287,8 +287,12 @@
   (map (^[spec] `(,(~ spec'optspec) ,(~ spec'help)))
        (~ option-parser'option-specs)))
 
-(define (option-parser-help-string :optional (option-parser
-                                              (current-option-parser)))
+(define (option-parser-help-string :key
+                                   (option-parser (current-option-parser))
+                                   (omit-options-without-help #f)
+                                   (option-indent *help-option-indent*)
+                                   (description-indent *help-description-indent*)
+                                   (width *help-width*))
   ;; Convert optspec "a|abc=s{filename}"
   ;; into descriptive "-a, --abc filename"
   ;; If argument name {...} is not provided, use the type desc
@@ -315,18 +319,20 @@
           [else (error "invalid argspec:" argspec)]))
 
   (tree->string
-   (map (match-lambda
-          [(optspec help)
-           `(,($ text->filled-stree
-                 (if help
-                   (regexp-replace-all #/\{([\w-]+)\}/ help (cut <> 1))
-                   "(No help available)")
-                 :lead-in (format "~va~a" *help-option-indent* ""
-                                  (optheader optspec))
-                 :indent *help-description-indent*
-                 :width *help-width*)
-             "\n")])
-        (option-parser-help-info option-parser))))
+   (filter-map (match-lambda
+                 [(optspec help)
+                  (if (and (not help) omit-options-without-help)
+                    #f
+                    `(,($ text->filled-stree
+                          (if help
+                            (regexp-replace-all #/\{([\w-]+)\}/ help (cut <> 1))
+                            "(No help available)")
+                          :lead-in (format "~va~a" option-indent ""
+                                           (optheader optspec))
+                          :indent description-indent
+                          :width width)
+                      "\n"))])
+               (option-parser-help-info option-parser))))
 
 ;;;
 ;;; The alternative way : let-args
