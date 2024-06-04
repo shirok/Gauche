@@ -57,23 +57,7 @@
      "       gauche-install -U directory [options] file ... (5th format)"
      "(*: 1st,2nd and 3rd format are compatible with BSD install)"
      "Options:"
-     "  -C, --canonical-suffix : If installed file has a suffix *.sci, replace"
-     "                      it for *.scm.   This is Gauche specific convention."
-     "  -T, --target=DIR  : Installs files to the DIR, creating paths if needed."
-     "                      Partial path of files are preserved. (4th format only)"
-     "  -U, --uninstall=DIR : Reverse of -T, e.g. removes files from its"
-     "                      destination."
-     "  -S, --srcdir=DIR  : Look for files within DIR; useful if VPATH is used"
-     "      --shebang=PATH : Adds #!PATH before the file contents."
-     "                       Useful to install scripts."
-     "  -d, --directory   : Creates directories.  (3rd format only)."
-     "  -m, --mode=MODE   : Change mode of the installed file."
-     "  -p, --strip-prefix=PREFIX : Strip prefix dirs from FILEs before "
-     "                      installation. (4th/5th format only)."
-     "  -o, --owner=OWNER : Change owner of the installed file(s)."
-     "  -g, --group=GROUP : Change group of the installed file(s)."
-     "  -v, --verbose     : Work verbosely"
-     "  -n, --dry-run     : Just prints what actions to be done."
+     (option-parser-help-string)
      )
   (exit 0))
 
@@ -184,20 +168,36 @@
 ;; Entry point
 (define (main args)
   (let-args (cdr args)
-      ([#f      "c"]        ;; ignore for historical reason
-       [mkdir   "d|directory"]
-       [mode    "m|mode=s" #o755 => (cut string->number <> 8)]
-       [owner   "o|owner=s"]
-       [group   "g|group=s"]
-       [csfx    "C|canonical-suffix"]
-       [srcdir  "S|srcdir=s"]
-       [target  "T|target=s"]
-       [utarget "U|uninstall=s"]
-       [shebang "shebang=s"]
-       [verb    "v"]
-       [dry     "n|dry-run"]
-       [sprefix "p|strip-prefix=s"]
-       [#f      "h|help" => usage]
+      ([mkdir   "d|directory"
+                ? "Creates directories listed in the arguments. \
+                   (3rd format only)."]
+       [mode    "m|mode=s{MODE}" #o755 => (cut string->number <> 8)
+                ? "Change mode of the installed file."]
+       [owner   "o|owner=s{OWNER}"
+                ? "Change owner of the installed file(s)."]
+       [group   "g|group=s{GROUP}"
+                ? "Change group of the installed file(s)."]
+       [csfx    "C|canonical-suffix"
+                ? "If installed file has a suffix *.sci, replace it for \
+                   *.scm.   This is Gauche specific convention."]
+       [srcdir  "S|srcdir=s{DIR}"
+                ? "Look for files within DIR; useful if VPATH is used."]
+       [target  "T|target=s{DIR}"
+                ? "Installs files to the DIR, creating paths if needed. \
+                   Partial path of files are preserved. (4th format only)."]
+       [utarget "U|uninstall=s{DIR}"
+                ? "Reverse of -T, e.g. removes files from its destination."]
+       [shebang "shebang=s{PATH}"
+                ? "Adds #!PATH before the file contents. \
+                   Useful to install scripts."]
+       [verb    "v|verbose" ? "Work verbosely"]
+       [dry     "n|dry-run" ? "Just prints what actions to be done."]
+       [sprefix "p|strip-prefix=s{PREFIX}"
+                ? "Strip prefix dirs from FILEs before \
+                  installation. (4th/5th format only)."]
+       [#f      "h|help" => usage ? "Show this help message."]
+       [#f      "c" ? "This option is ignored.  Recognized for the \
+                       compatibility."]
        [else (opt . _) (print "Unknown option : " opt) (usage)]
        . args)
 
