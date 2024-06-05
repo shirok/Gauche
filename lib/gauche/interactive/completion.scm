@@ -97,7 +97,8 @@
         ($ hash-table-for-each (module-table m)
            (^[sym _]
              (let1 s (symbol->string sym)
-               (when (matcher s)
+               (when (and (not (#/\(/ s)) ;heuristics to exclude verbose method names
+                          (matcher s))
                  (hash-table-put! hits s #t)))))))
     (search mod)
     (dolist [m (module-imports mod)]

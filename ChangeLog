@@ -1,3 +1,9 @@
+2024-06-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive/completion.scm (%complete-symbol): Exclude
+	  verbose method names from completion candidates.
+	  Cf. https://github.com/shirok/Gauche/issues/1039
+
 2024-06-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm (let-args, option-parser-help-string):
