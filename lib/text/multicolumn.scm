@@ -67,7 +67,7 @@
     '()
     (let* ([col-width (max (+ 2 (apply max (map string-length strs)))
                            minimum-width)]
-           [cols (min max-columns (quotient width col-width))]
+           [cols (clamp (quotient width col-width) 1 max-columns)]
            [rows (quotient (+ (length strs) cols -1) cols)])
       (define (layout-1 words)
         (let rec ([words words])
