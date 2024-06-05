@@ -1,5 +1,8 @@
 2024-06-05  Shiro Kawai  <shiro@acm.org>
 
+	* src/libobj.scm (ref): Make generic referencer work on <mv-box>.
+	  https://github.com/shirok/Gauche/issues/1038.
+
 	* lib/gauche/interactive/completion.scm (%complete-symbol): Exclude
 	  verbose method names from completion candidates.
 	  Cf. https://github.com/shirok/Gauche/issues/1039

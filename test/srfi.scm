@@ -1720,6 +1720,27 @@
          (let1 b (box 1 2)
            (set-box! b 0 b)
            (write-to-string b)))
+
+  ;; Gauche specific - generic referencer
+  (let ([b0 (box 1)]
+        [b1 (box 1 2 3)])
+    (test* "box generic referencer" '(1 1 2 3)
+           (let ([a (~ b0 '*)]          ;srfi-122
+                 [b (~ b0 0)])
+             (set! (~ b0 0) 2)
+             (let ([c (~ b0 '*)])
+               (set! (~ b0 '*) 3)
+               (let ([d (~ b0 0)])
+                 (list a b c d)))))
+    (test* "mvbox generic referencer" '(1 2 3 10 20 30)
+           (let ([a (~ b1 0)]
+                 [b (~ b1 1)]
+                 [c (~ b1 2)])
+             (set! (~ b1 0) 10)
+             (set! (~ b1 1) 20)
+             (set! (~ b1 2) 30)
+             (list* a b c (values->list (unbox b1)))))
+    )
   )
 
 ;;-----------------------------------------------------------------------

@@ -791,16 +791,25 @@
 (define-method (setter ref) :locked ((obj <tree-map>) key value)
   (tree-map-put! obj key value))
 
-(define-method ref  ((obj <box>) field) ; SRFI-123
-  (unless (eq? field '*)
-    (error "Box content can be accessed with a field name '*, but got:"
-           field))
-  (unbox obj))
+(define-method ref :locked ((obj <box>) field)
+  (case field
+    [(* 0) (unbox obj)]                 ;'* for srfi-123
+    [else
+     (error "Bad field name for box reference. Exact integer or '*, but got:"
+            field)]))
 (define-method (setter ref) :locked ((obj <box>) field value)
-  (unless (eq? field '*)
-    (error "Box content can be accessed with a field name '*, but got:"
-           field))
-  (set-box! obj value))
+  (case field
+    [(* 0) (set-box! obj value)]        ;'* for srfi-123
+    [else
+     (error "Bad field name for box reference. Exact integer or '*, but got:"
+            field)]))
+
+(define-method ref :locked ((obj <mv-box>) field)
+  (assume (exact-integer? field))
+  (unbox-value obj field))
+(define-method (setter ref) :locked ((obj <mv-box>) field value)
+  (assume (exact-integer? field))
+  (set-box-value! obj field value))
 
 ;; gauche.sequence has the generic version for <sequence>, but these
 ;; shortcuts would be faster.
