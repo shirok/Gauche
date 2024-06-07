@@ -56,25 +56,20 @@
 (select-module gauche.package.commands)
 
 (define *commands* '())
-(define *helps* '())
 
 ;; API
 ;;  Show usage of gauche-package, or one of the subcommands.
 (define (gauche-package-usage :optional (cmd #f))
   (if cmd
-    (cond [(assoc-ref *helps* cmd)
-           => (lambda (doc)
-                (print "Usage: gauche-package " (car doc)) ;; synopsys
-                (print "  " (cadr doc)) ;; summary
-                (unless (null? (cddr doc)) (print (caddr doc))))]
+    (cond [(assoc-ref *commands* cmd) => (cut <> 'help)]
           [else
            (print "Unknown command name: " cmd)
-           (print "Valid commands are: " (map car (reverse *helps*)))])
+           (print "Valid commands are: " (map car (reverse *commands*)))])
     (begin
       (print "Usage: gauche-package <command> [options] <args> ...")
       (print "Commands:")
-      (dolist (help (reverse *helps*))
-        (format #t "  ~15a - ~a\n" (car help) (caddr help)))
+      (dolist [cmd (reverse *commands*)]
+        (format #t "  ~15a - ~a\n" (car cmd) ((cdr cmd) 'summary)))
       (print "Type 'gauche-package help <command>' for detailed help of each command.")))
   (exit 0))
 
@@ -95,7 +90,9 @@
 ;;  Returns a closure to execute a subcommand COMMAND.
 ;;  Returned closure takes a list of arguments (excluding the subcommand name)
 (define (gauche-package-command command)
-  (assoc-ref *commands* command))
+  (if-let1 handler (assoc-ref *commands* command)
+    (^[args] (apply handler 'run args))
+    (error "Unknown gauche-package command:" command)))
 
 (define (search-similar package-name)
   (let* ([names (map ($ (cut ~ <> 'name) $ path->gauche-package-description $)
@@ -115,6 +112,17 @@
 ;; Command definitions
 ;;
 
+;; Define-cmd associates command name strings to handler procedures.
+;; The handler procedure does a few different things, based on the
+;; first arguments.
+;;
+;;   (handler 'run arg ...)    Run the command functionarity.
+;;   (handler 'help)           Print detailed help message and exit.
+;;   (handler 'summary)        Returns one-line summary string.
+;;
+;; This awkward interface is because gauche.parseopt#option-parser-help-string
+;; needs to be called in the dynamic scope of let-args.
+
 (define-syntax define-cmd
   (er-macro-transformer
    (^[f r c]
@@ -126,15 +134,28 @@
        ;; Within body, the identifier 'args' is bound to the cmdline
        ;; arguments except options, and 'usage-self' is bound to a
        ;; thunk to display help string.
-       `(begin
-          (push! *helps* (cons ,name '(,synopsis ,summary ,detail)))
-          (push! *commands*
-                 (cons ,name
-                       (^[args]
-                         (let-args args ,(append cmdargspec 'args)
-                           (let ((usage-self
-                                  (^[] (gauche-package-usage ,name))))
-                             ,@body))))))))))
+       `(push! *commands*
+               (cons ,name
+                     (^[msg . args]
+                       (let-args args ,(append cmdargspec 'args)
+                         (let ((usage-self
+                                (^[] (print-cmd-usage ,name ,synopsis
+                                                      ,summary ,detail))))
+                           (case msg
+                             [(run) (let () ,@body)]
+                             [(help) (usage-self)]
+                             [(summary) ,summary]))))))))))
+
+(define (print-cmd-usage name synposis summary detail)
+  (print "Usage: " synposis)
+  (print "  " summary)
+  (print detail)
+  (let1 opts (option-parser-help-string)
+    (unless (#/^\s*$/ opts)
+      (print)
+      (print "Options:")
+      (print opts)))
+  (exit 0))
 
 ;;------------------------------------------------------
 ;; install
@@ -144,20 +165,13 @@
    "Fetch, extract, configure, make & install"
    "Argument:
   a path to a tarball (uncompressed, gzipped or bzipped), or URL (http or ftp)
-  of a tarball.
-Options:
-  -n, --dry-run   : shows commands to be executed, without running them.
-  -C, --configure-options=<options>
-                  : pass <options> to ./configure.  overrides -r.
-  -r, --reconfigure
-                  : uses the same configure options as before
-      --clean     : clean up the build directory after installation
-  -S, --install-as=<user> : sudo to <user> when installing")
-  ([dry-run "n|dry-run"]
-   [copts   "C|configure-options=s" #f]
-   [reconf  "r|reconfigure"]
-   [clean   "clean"]
-   [sudo    "S|install-as=s" #f])
+  of a tarball.")
+  ([dry-run "n|dry-run" ? "shows commands to be executed, without running them."]
+   [copts   "C|configure-options=s{OPTIONS}" #f
+            ? "passes {OPTIONS} to ./configure.  overrides -r."]
+   [reconf  "r|reconfigure" ? "uses the same configure options as before"]
+   [clean   "clean" ? "clean up the build directory after installation"]
+   [sudo    "S|install-as=s{USER}" #f ? "sudo to {USER} when installing"])
   (unless (= (length args) 1) (usage-self))
   (gauche-package-build (car args)
                         :config *config*
@@ -174,16 +188,11 @@ Options:
    "Fetch, extract, configure & make"
    "Argument:
   a path to a tarball (uncompressed, gzipped or bzipped), or URL (http or ftp)
-  of a tarball.
-Options:
-  -n, --dry-run   : shows commands to be executed, without running them.
-  -C, --configure-options=<options>
-                  : pass <options> to ./configure.  overrides -r.
-  -r, --reconfigure
-                  : uses the same configure options as before")
-  ([dry-run "n|dry-run"]
-   [copts   "C|configure-options=s" #f]
-   [reconf  "r|reconfigure"])
+  of a tarball.")
+  ([dry-run "n|dry-run" ? "shows commands to be executed, without running them."]
+   [copts   "C|configure-options=s{OPTIONS}" #f
+            ? "passes {OPTIONS} to ./configure.  overrides -r."]
+   [reconf  "r|reconfigure" ? "uses the same configure options as before."])
   (unless (= (length args) 1) (usage-self))
   (gauche-package-build (car args)
                         :config *config*
@@ -201,10 +210,12 @@ Options:
   If the package has installed .gpd (Gauche package description) file, show
   the options to the configure script when the package is built.")
   ()
-  (unless (= (length args) 1) (usage-self))
-  (if-let1 gpd (find-gauche-package-description (car args) :all-versions #t)
-    (print (ref gpd 'configure))
-    (no-such-package (car args))))
+  (match args
+    [(package)
+     (if-let1 gpd (find-gauche-package-description package :all-versions #t)
+       (print (ref gpd 'configure))
+       (no-such-package package))]
+    [_ (usage-self)]))
 
 ;;------------------------------------------------------
 ;; info
@@ -214,20 +225,23 @@ Options:
    "Show information of installed package <package>"
    "Argument: a package name.")
   ()
-  (unless (= (length args) 1) (usage-self))
-  (if-let1 gpd (find-gauche-package-description (car args) :all-versions #t)
-    (begin
-      (format #t "Package ~a\n" (~ gpd'name))
-      (format #t "  ~a\n" (or (~ gpd'description) "(No description available)"))
-      (format #t "   repository: ~a\n" (~ gpd'repository))
-      (format #t "      version: ~a\n" (~ gpd'version))
-      (format #t "      require: ~:w\n" (~ gpd'require))
-      (format #t "      authors: ~:w\n" (~ gpd'authors))
-      (format #t "  maintainers: ~:w\n" (~ gpd'maintainers))
-      (format #t "     licenses: ~:w\n" (~ gpd'licenses))
-      (format #t "     provides: ~:w\n" (~ gpd'providing-modules))
-      (format #t "     homepage: ~a\n" (~ gpd'homepage)))
-    (no-such-package (car args))))
+  (match args
+    [(package)
+     (if-let1 gpd (find-gauche-package-description package :all-versions #t)
+       (begin
+         (format #t "Package ~a\n" (~ gpd'name))
+         (format #t "  ~a\n" (or (~ gpd'description)
+                                 "(No description available)"))
+         (format #t "   repository: ~a\n" (~ gpd'repository))
+         (format #t "      version: ~a\n" (~ gpd'version))
+         (format #t "      require: ~:w\n" (~ gpd'require))
+         (format #t "      authors: ~:w\n" (~ gpd'authors))
+         (format #t "  maintainers: ~:w\n" (~ gpd'maintainers))
+         (format #t "     licenses: ~:w\n" (~ gpd'licenses))
+         (format #t "     provides: ~:w\n" (~ gpd'providing-modules))
+         (format #t "     homepage: ~a\n" (~ gpd'homepage)))
+       (no-such-package (car args)))]
+    [_ (usage-self)]))
 
 ;;------------------------------------------------------
 ;; list
@@ -235,11 +249,9 @@ Options:
 (define-cmd "list"
   ("list"
    "List known installed packages"
-   "  Only packages that have .gpd file are listed.
-Options:
-  -a, --all    : shows all packages, even the ones that are installed for
-                 other versions of Gauche.")
-  ([all?  "a|all"])
+   "  Only packages that have .gpd file are listed.")
+  ([all?  "a|all" ? "shows all packages, even the ones that are installed for
+                     other versions of Gauche."])
   (let1 gpds (map path->gauche-package-description
                   (gauche-package-description-paths :all-versions all?))
     (dolist (gpd (sort gpds
@@ -280,22 +292,24 @@ Options:
   If you generate template configure.ac by 'gauche-package generate',
   the make-gpd stuff is included in it.")
   ()
-  (when (null? args) (usage-self))
-  (let loop ((p (cdr args))
-             (r '()))
-    (cond [(null? p)
-           (let ((gpd (apply make <gauche-package-description>
-                             :name (car args)
-                             (reverse! r))))
-             (with-output-to-file #"~(car args).gpd"
-               (cut write-gauche-package-description gpd)))]
-          [(null? (cdr p))
-           (exit 1 "gauche-package: make-gpd: parameter list not even")]
-          [else
-           (loop (cddr p)
-                 (list* (cadr p)
-                        (make-keyword (string-trim (car p) #[-:]))
-                        r))])))
+  (match args
+    [(package . params)
+     (let loop ([p params]
+                [r '()])
+       (cond [(null? p)
+              (let1 gpd (apply make <gauche-package-description>
+                               :name package
+                               (reverse! r))
+                (with-output-to-file #"~|package|.gpd"
+                  (cut write-gauche-package-description gpd)))]
+             [(null? (cdr p))
+              (exit 1 "gauche-package: make-gpd: parameter list not even")]
+             [else
+              (loop (cddr p)
+                    (list* (cadr p)
+                           (make-keyword (string-trim (car p) #[-:]))
+                           r))]))]
+    [_ (usage-self)]))
 
 ;;------------------------------------------------------
 ;; compile
@@ -320,50 +334,41 @@ Options:
 
   Note: This command looks at the environment variables CC, CPPFLAGS, CFLAGS,
   LDFLAGS and LIBS as the default value of the --cc, --cppflags, --cflags,
-  --ldflags and --libs, respectively.
-
-Options:
-  -c, --compile       : compile only.  with this option, <module> shouldn't
-                        be given and only one <file> is allowed.
-  -n, --dry-run       : just display commands to be executed.
-  -v, --verbose       : reports commands being executed.
-  -o, --output=name   : alternative output file name
-      --clean         : instead of compile and link, removes the intermediate
-                        and output file(s) that would be generated otherwise.
-                        useful for 'make clean'.
-  -k, --keep-c-files  : do not remove intermediate generated C files.
-      --no-line       : do not emit #line directives in generated C files.
-  --S, -srcdir=DIR    : specify the source directory when building out-of-tree.
-  --gauche-buiddir=DIR : specify the top builddir of the Gauche when the
-                        extensions should be compiled for /uninstalled/ Gauche.
-  --local=PATH:PATH... : adds PATH/include to inlcude paths and PATH/lib to
-                        library search paths for compiling.
-  --cc=CC             : alternative C compiler.  Note that the compiler should
-                        have compatible ABI with the one that compiled Gauche.
-                        To compile C++ code, use --c++ below.
-  --c++=CXX           : compile the source with c++, with the C++ compiler.
-                        The precompiler generate *.cpp instead of *.c.
-                        This and --cc option are mutually exclusive.
-  --cppflags=CPPFLAGS : extra cpp flags for compile, such as -I/usr/local
-  --cflags=CFLAGS     : extra cc flags for compile
-  --ldflags=LDFLAGS   : extra ld flags
-  --libs=LIBS         : extra libraries")
-  ([dry-run      "n|dry-run"]
-   [verbose      "v|verbose"]
-   [compile-only "c|compile"]
-   [output       "o|output=s"]
-   [clean        "clean"]
-   [keep-c       "k|keep-c-files"]
-   [no-line      "no-line"]
-   [srcdir       "S|srcdir=s"]
-   [gauche-builddir "gauche-builddir=s"]
-   [local        "l|local=s"]
-   [cc           "cc=s"]
-   [c++          "c++=s"]
-   [cppflags     "cppflags=s"]
-   [cflags       "cflags=s"]
-   [ldflags      "ldflags=s"]
-   [libs         "libs=s"])
+  --ldflags and --libs, respectively.")
+  ([dry-run      "n|dry-run" ? "just display commands to be executed."]
+   [verbose      "v|verbose" ? "reports commands being executed."]
+   [compile-only "c|compile" ? "compile only.  with this option, <module>
+                                shouldn't be given and only one <file> is
+                                allowed."]
+   [output       "o|output=s{NAME}" ? "alternative output file name"]
+   [clean        "clean" ? "instead of compile and link, removes the
+                            intermediate and output file(s) that would be
+                            generated otherwise.  useful for 'make clean'."]
+   [keep-c       "k|keep-c-files" ? "do not remove intermediate generated C
+                                     files."]
+   [no-line      "no-line" ? "do not emit #line directives in generated C
+                              files."]
+   [srcdir       "S|srcdir=s{DIR}" ? "specify the source directory when
+                                      building out-of-tree."]
+   [gauche-builddir "gauche-builddir=s{DIR}"
+                    ? "specify the top builddir of the Gauche when the
+                      extensions should be compiled for /uninstalled/ Gauche."]
+   [local        "l|local=s{PATH:PATH:...}"
+                 ? "adds {PATH}/include to inlcude paths and {PATH}/lib to
+                    library search paths for compiling."]
+   [cc           "cc=s{CC}" ? "alternative C compiler.  Note that the compiler
+                               should have compatible ABI with the one that
+                               compiled Gauche.
+                               To compile C++ code, use --c++ below."]
+   [c++          "c++=s{CXX}" ? "compile the source with c++, with the C++
+                                 compiler. The precompiler generate *.cpp
+                                 instead of *.c. This and --cc option are
+                                 mutually exclusive."]
+   [cppflags     "cppflags=s{CPPFLAGS}"
+                 ? "extra cpp flags for compile, such as -I/usr/local"]
+   [cflags       "cflags=s{CFLAGS}" ? "extra cc flags for compile"]
+   [ldflags      "ldflags=s{LDFLAGS}" ? "extra ld flags"]
+   [libs         "libs=s{LIBS}" ? "extra libraries"])
   ;; process 'local' option
   ;; e.g. "/usr/local:/pkg:/Program Files"
   ;;   => "-I /usr/local/include -I /pkg/include -I '/Program Files/include'"
@@ -439,27 +444,22 @@ Options:
 
   <module-name>, if given, is used as the name of the module
   instead of <package-name>.  It may affect the generated directory
-  structure.
-
-Options:
-  --autoconf         : generate configure.ac to be processed with GNU autoconf,
-                       instead of a Scheme configure script.
-  -S|scheme-only     : generate a package that is implemented in pure Scheme.
-  --template-dir=DIR : directory where template files are stored.  By default,
-                       they are stored along installed Gauche libraries.
-  --package-dir=DIR  : the directory where the files are generated.  By default,
-                       the package name is used as the directory name.
-  --license=TYPE     : Include license info in package.scm and COPYING file.
-                       Currently, 'BSD' and 'MIT' are supported as
-                       TYPE.  (Both 'BSD' and 'BSD3' are for 3-clause BSD).
-  -v|verbose         : operate verbosely.
-")
-  ([autoconf "autoconf"]
-   [verbose  "v|verbose"]
-   [scheme-only "S|scheme-only"]
-   [tmpl-dir "template-dir=s"]
-   [pkg-dir  "package-dir=s"]
-   [license "license=s"])
+  structure.")
+  ([autoconf "autoconf" ? "generates configure.ac to be processed with GNU
+                           autoconf, instead of a Scheme configure script."]
+   [verbose  "v|verbose" ? "operates verbosely."]
+   [scheme-only "S|scheme-only" ? "generates a package that is implemented in
+                                   pure Scheme (i.e. no C files)."]
+   [tmpl-dir "template-dir=s{DIR}" ? "specifies the directory where template
+                                      files are stored.  By default, they are
+                                      stored along installed Gauche libraries."]
+   [pkg-dir  "package-dir=s{DIR}" ? "specifies the directory where the files
+                                     are generated.  By default, the package
+                                     name is used as the directory name."]
+   [license "license=s{TYPE}" ? "causes to include license info in package.scm
+                                 and COPYING file.  Currently, 'BSD' and 'MIT'
+                                 are supported as {TYPE}.  (Both 'BSD' and
+                                 'BSD3' are for 3-clause BSD)."])
   (let-optionals* args ([package-name #f]
                         [module-name #f]
                         . more)
@@ -497,23 +497,19 @@ Options:
   It checks the content of 'package.scm' and the existing files, and
   prompts missing files and package entries.  It is useful to turn
   existing source tree to an extension package, or update the package
-  for the newer versions of Gauche.
-
-Options:
-  --template-dir=DIR : directory where template files are stored.  By default,
-                       they are stored along installed Gauche libraries.
-  --package-dir=DIR  : the directory where the files are generated.  By default,
-                       the current directory is assumed.  The directory must
-                       contain 'package.scm'.
-  --license=TYPE     : Include license info in package.scm and COPYING file.
-                       Currently, 'BSD' and 'MIT' are supported as
-                       TYPE.  (Both 'BSD' and 'BSD3' are for 3-clause BSD).
-  -v|verbose         : operate verbosely.
-")
-  ([verbose  "v|verbose"]
-   [tmpl-dir "template-dir=s"]
-   [pkg-dir  "package-dir=s"]
-   [license "license=s"])
+  for the newer versions of Gauche.")
+  ([verbose  "v|verbose" ? "operates verbosely."]
+   [tmpl-dir "template-dir=s{DIR}" ? "specifies the directory where template
+                                      files are stored.  By default, they are
+                                      stored along installed Gauche libraries."]
+   [pkg-dir  "package-dir=s{DIR}" ? "specifies the directory where the files
+                                     are generated.  By default, the current
+                                     directory is assumed.  The directory must
+                                     contain 'package.scm'."]
+   [license "license=s{TYPE}" ? "Include license info in package.scm and
+                                 COPYING file.  Currently, 'BSD' and 'MIT' are
+                                 supported as {TYPE}.  (Both 'BSD' and 'BSD3'
+                                 are for 3-clause BSD)."])
   (define dstdir (or pkg-dir "."))
   (define (P file) (build-path dstdir file))
   (define (populate-with-package) ;when we have package.scm
@@ -583,14 +579,9 @@ Options:
   first cleans the directory for distribution (by make maintainer-clean,
   run configure, then make disclean), then call tar to create
   ../$PACKAGE_NAME-$VERSION.tgz.  Certain predefined files (such as .git)
-  are excluded; if you want to exclude other files, list them in DIST_EXCLUDE.
-
-Options:
-  -n, --dry-run       : just display commands to be executed.
-  -v, --verbose       : reports package contents
-  ")
-  ([dry-run "n|dry-run"]
-   [verbose "v|verbose"])
+  are excluded; if you want to exclude other files, list them in DIST_EXCLUDE.")
+  ([dry-run "n|dry-run" ? "just display commands to be executed."]
+   [verbose "v|verbose" ? "reports package contents."])
   (unless (or (file-exists? "configure")
               (file-exists? "configure.ac"))
     (exit 1 "`gauche-package make-tarball' should be run in the top source directory."))
