@@ -15655,66 +15655,167 @@ netdbインタフェースのScheme APIは必要な箇所ではこれらの関�
 
 @deftp {Module} gauche.package
 @mdindex gauche.package
+@c EN
 Gauche manages extra libraries and extension modules as @emph{packages}.
+@c JP
+Gaucheは外部のライブラリや拡張モジュールを@emph{パッケージ}として管理します。
+@c COMMON
 
+@c EN
 Each package source tree has @file{package.scm} on top directory, which
 contains @code{define-gauche-package} form that provides metainformation
 about the package---the package name, version, author, dependencies, etc.
+@c JP
+各パッケージのソースツリーのトップディレクトリには@file{package.scm}が置かれていて、
+その中では@code{define-gauche-package}フォームによってパッケージの
+メタ情報が記されています。パッケージ名、バージョン、作者、依存関係等です。
+@c COMMON
 
+@c EN
 When the package is installed, the standard installation process copies
 that information, with additional information such as the version of
 Gauche used to build the package, into @file{.packages} subdirectory
 of the library installation path, with the name @file{PACKAGENAME.gpd},
 where @code{PACKAGENAME} is the name of the package.
+@c JP
+パッケージのインストールに標準のインストール手順を使えば、
+このメタ情報にパッケージをビルドしたGaucheのバージョン情報などが付け加えられ、
+ライブラリインストールパスの@file{.packages}サブディレクトリの下に
+@file{PACKAGENAME.gpd}という名前で保存されます。ここで
+@code{PACKAGENAME}はパッケージの名前です。
+@c COMMON
 
+@c EN
 We collectively call @file{package.scm} and @file{*.gpd} as
 @emph{package description file}.
+@c JP
+@file{package.scm}と@file{*.gpd}ファイルを@emph{パッケージ記述ファイル}と
+総称することにします。
+@c COMMON
 
+@c EN
 This module provides utility procedures to read and write package
 description files, and search installed @file{*.gpd} files.
+@c JP
+このモジュールはパッケージ記述ファイルの読み書きと、
+インストールされたパッケージのパッケージ記述ファイルを探すユーティリティ手続きを
+提供します。
+@c COMMON
 @end deftp
 
 @subheading @file{package.scm}
 
+@c EN
 A package file, @file{package.scm}, must contain one package definition
 in the following form.  It is not evaluated; it is read as a literal data.
+@c JP
+パッケージファイル@file{package.scm}は、
+下に示すひとつのパッケージ定義を含みます。このフォームは評価されません。
+単にリテラルデータとして読まれます。
+@c COMMON
+
+@c EN
+Note that @file{package.scm} may be referenced directly from its
+source repository.  Gauche packages are uniquely identified by
+the repository URL, and its @file{package.scm} file is the
+definite source of metainformation of the package.
+@c JP
+@file{package.scm}はソースリポジトリにあるものが直接参照されることもあります。
+GaucheのパッケージはリポジトリURLによって一意に識別され、そのリポジトリにある
+@file{package.scm}がメタ情報の一次ソースとして扱われます。
+@c COMMON
 
 @deffn {Package definition} define-gauche-package name key-value-list @dots{}
-Defines a package @var{name}.
+@c EN
+Defines a package @var{name}. @var{Name} must be a symbol.
 It is followed by a keyword-value list.  The following keywords are
 recognized.
+@c JP
+パッケージ@var{name}を定義します。@var{name}はシンボルでなければなりません。
+続くのはキーワード-値リストです。以下のキーワードが認識されます。
+@c COMMON
 
 @table @code
 @item repository
-A repository URL of the package.  This is used as a unique identifier of
-the package.
+@c EN
+(string) A repository URL of the package.  This is used as a unique identifier of
+the package when the package is published.
+@c JP
+(文字列) パッケージのソースリポジトリのURL。パッケージを公開する際には、
+これがパッケージを一意に識別します。
+@c COMMON
 @item version
-The version of the package, in a string, e.g. @code{"1.0"}.
+@c EN
+(String) The version of the package, e.g. @code{"1.0"}.
+@c JP
+(文字列) パッケージのバージョン。例: @code{"1.0"}。
+@c COMMON
 @item description
-The description of the pacakge, in a string.  The first line (up to the
+@c EN
+(String) The description of the pacakge.  The first line (up to the
 first newline character) should be the one-line summary of the package.
+@c JP
+(文字列) パッケージの説明。最初の行 (最初の改行文字まで) はパッケージの1行のサマリに
+なっていなければなりません。
+@c COMMON
 @item require
-A list of requirements.  Each requirement is
+@c EN
+(List) A list of requirements.  Each requirement is
 @code{(<package-name> <version-spec>)}, where @code{<package-name>}
 is a string package name, and @code{<version-spec>} determines
 the accepable versions of the package.  @xref{Comparing version numbers},
 for the details of @code{<version-spec>}.
+@c JP
+(リスト) 依存パッケージのリスト。各依存パッケージは、
+@code{(<package-name> <version-spec>)}と記述されます。
+ここで@code{<package-name>}は文字列のパッケージ名、
+@code{<version-spec>}はパッケージの必要なバージョン範囲を示します。
+@code{<version-spec>}については@ref{Comparing version numbers}を参照してください。
+@c COMMON
 @item providing-modules
-A list of module names in symbols, that this package provides.
+@c EN
+(List) A list of module names in symbols, that this package provides.
+@c JP
+(リスト) このパッケージが提供するモジュール名(シンボル)のリストです。
+@c COMMON
 @item authors
-A list of name and contact info of the authors of this package.
+@c EN
+(List) A list of name and contact info of the authors of this package.
+@c JP
+(リスト) このパッケージの作者名とコンタクト情報のリストです。
+@c COMMON
 @item maintainers
-A list of name and contact info of the maintainers of this package,
+@c EN
+(List) A list of name and contact info of the maintainers of this package,
 if they differ from the @code{authors}.
+@c JP
+(リスト) このパッケージのメンテナの名前とコンタクト情報のリストです
+作者とメンテナが別の場合のみ必要です。
+@c COMMON
 @item licenses
-A list of licenses.
+@c EN
+(List) A list of licenses in strings.
+@c JP
+(リスト) ライセンス(文字列)のリストです。
+@c COMMON
 @item homepage
-A homepage URL of the package, if any.
+@c EN
+(String) A homepage URL of the package, if any.
+@c JP
+(文字列) パッケージのホームページURL (もしあれば)。
+@c COMMON
 @item superseded-by
-If the developers stop maintaining this package, but another developer
+@c EN
+(String) If the developers stop maintaining this package, but another developer
 wants to continue development with a forked repository, the original
 developer can officially appoint the successor by specifying
 the new repository URL here.
+@c JP
+(文字列) もし開発者がこのパッケージの開発・メンテナンスをやめることにして、
+他の開発者がフォークしたリポジトリで開発の継続を希望した場合、
+元の開発者はここに新たなリポジトリのURLを指定することで、
+正式にリポジトリの継承を示すことができます。
+@c COMMON
 @end table
 @end deffn
 
