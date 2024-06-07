@@ -115,14 +115,26 @@
 ;; Command definitions
 ;;
 
-(define-macro (define-cmd name doc . body)
-  `(begin
-     (push! *helps* (cons ,name ',doc)) ; doc : (<synopsys> <summary> <detail>)
-     (push! *commands* (cons ,name
-                             (^[args]
-                               (let ((usage-self
-                                      (^[] (gauche-package-usage ,name))))
-                                 ,@body))))))
+(define-syntax define-cmd
+  (er-macro-transformer
+   (^[f r c]
+     (match-let1 (name                      ;string command name
+                  (synopsis summary detail) ;help info
+                  (cmdargspec ...)          ;argspec, as in let-args
+                  . body)                   ;body expressions
+         (cdr f)
+       ;; Within body, the identifier 'args' is bound to the cmdline
+       ;; arguments except options, and 'usage-self' is bound to a
+       ;; thunk to display help string.
+       `(begin
+          (push! *helps* (cons ,name '(,synopsis ,summary ,detail)))
+          (push! *commands*
+                 (cons ,name
+                       (^[args]
+                         (let-args args ,(append cmdargspec 'args)
+                           (let ((usage-self
+                                  (^[] (gauche-package-usage ,name))))
+                             ,@body))))))))))
 
 ;;------------------------------------------------------
 ;; install
@@ -141,19 +153,18 @@ Options:
                   : uses the same configure options as before
       --clean     : clean up the build directory after installation
   -S, --install-as=<user> : sudo to <user> when installing")
-  (let-args args ([dry-run "n|dry-run"]
-                  [copts   "C|configure-options=s" #f]
-                  [reconf  "r|reconfigure"]
-                  [clean   "clean"]
-                  [sudo    "S|install-as=s" #f]
-                  . args)
-    (unless (= (length args) 1) (usage-self))
-    (gauche-package-build (car args)
-                          :config *config*
-                          :dry-run dry-run :install #t :clean clean
-                          :sudo-install sudo
-                          :reconfigure reconf
-                          :configure-options copts)))
+  ([dry-run "n|dry-run"]
+   [copts   "C|configure-options=s" #f]
+   [reconf  "r|reconfigure"]
+   [clean   "clean"]
+   [sudo    "S|install-as=s" #f])
+  (unless (= (length args) 1) (usage-self))
+  (gauche-package-build (car args)
+                        :config *config*
+                        :dry-run dry-run :install #t :clean clean
+                        :sudo-install sudo
+                        :reconfigure reconf
+                        :configure-options copts))
 
 ;;------------------------------------------------------
 ;; build
@@ -170,16 +181,15 @@ Options:
                   : pass <options> to ./configure.  overrides -r.
   -r, --reconfigure
                   : uses the same configure options as before")
-  (let-args args ([dry-run "n|dry-run"]
-                  [copts   "C|configure-options=s" #f]
-                  [reconf  "r|reconfigure"]
-                  . args)
-    (unless (= (length args) 1) (usage-self))
-    (gauche-package-build (car args)
-                          :config *config*
-                          :dry-run dry-run
-                          :reconfigure reconf
-                          :configure-options copts)))
+  ([dry-run "n|dry-run"]
+   [copts   "C|configure-options=s" #f]
+   [reconf  "r|reconfigure"])
+  (unless (= (length args) 1) (usage-self))
+  (gauche-package-build (car args)
+                        :config *config*
+                        :dry-run dry-run
+                        :reconfigure reconf
+                        :configure-options copts))
 
 ;;------------------------------------------------------
 ;; reconfigure
@@ -190,6 +200,7 @@ Options:
    "Argument: a package name.
   If the package has installed .gpd (Gauche package description) file, show
   the options to the configure script when the package is built.")
+  ()
   (unless (= (length args) 1) (usage-self))
   (if-let1 gpd (find-gauche-package-description (car args) :all-versions #t)
     (print (ref gpd 'configure))
@@ -202,6 +213,7 @@ Options:
   ("info <package>"
    "Show information of installed package <package>"
    "Argument: a package name.")
+  ()
   (unless (= (length args) 1) (usage-self))
   (if-let1 gpd (find-gauche-package-description (car args) :all-versions #t)
     (begin
@@ -227,20 +239,20 @@ Options:
 Options:
   -a, --all    : shows all packages, even the ones that are installed for
                  other versions of Gauche.")
-  (let-args args ([all?  "a|all"])
-    (let1 gpds (map path->gauche-package-description
-                    (gauche-package-description-paths :all-versions all?))
-      (dolist (gpd (sort gpds
-                         (lambda (a b)
-                           (string<= (ref a 'name) (ref b 'name)))))
-        (if (version=? (gauche-version) (ref gpd 'gauche-version))
-          (format #t " ~19a ~8a~%" (ref gpd 'name) (ref gpd 'version))
-          (when (or all?
-                    (abi-version=? (gauche-version) (ref gpd 'gauche-version)))
-            (format #t " ~19a ~8a (@ Gauche ~a)~%"
-                    (ref gpd 'name) (ref gpd 'version)
-                    (ref gpd 'gauche-version))))
-        ))))
+  ([all?  "a|all"])
+  (let1 gpds (map path->gauche-package-description
+                  (gauche-package-description-paths :all-versions all?))
+    (dolist (gpd (sort gpds
+                       (lambda (a b)
+                         (string<= (ref a 'name) (ref b 'name)))))
+      (if (version=? (gauche-version) (ref gpd 'gauche-version))
+        (format #t " ~19a ~8a~%" (ref gpd 'name) (ref gpd 'version))
+        (when (or all?
+                  (abi-version=? (gauche-version) (ref gpd 'gauche-version)))
+          (format #t " ~19a ~8a (@ Gauche ~a)~%"
+                  (ref gpd 'name) (ref gpd 'version)
+                  (ref gpd 'gauche-version))))
+      )))
 
 ;; Since 0.9, we keep ABI compatibility across all micro versions in
 ;; principle, so we only need to compare major and minor versions.
@@ -267,6 +279,7 @@ Options:
 
   If you generate template configure.ac by 'gauche-package generate',
   the make-gpd stuff is included in it.")
+  ()
   (when (null? args) (usage-self))
   (let loop ((p (cdr args))
              (r '()))
@@ -335,80 +348,79 @@ Options:
   --cflags=CFLAGS     : extra cc flags for compile
   --ldflags=LDFLAGS   : extra ld flags
   --libs=LIBS         : extra libraries")
-  (let-args args ([dry-run      "n|dry-run"]
-                  [verbose      "v|verbose"]
-                  [compile-only "c|compile"]
-                  [output       "o|output=s"]
-                  [clean        "clean"]
-                  [keep-c       "k|keep-c-files"]
-                  [no-line      "no-line"]
-                  [srcdir       "S|srcdir=s"]
-                  [gauche-builddir "gauche-builddir=s"]
-                  [local        "l|local=s"]
-                  [cc           "cc=s"]
-                  [c++          "c++=s"]
-                  [cppflags     "cppflags=s"]
-                  [cflags       "cflags=s"]
-                  [ldflags      "ldflags=s"]
-                  [libs         "libs=s"]
-                  . args)
-    ;; process 'local' option
-    ;; e.g. "/usr/local:/pkg:/Program Files"
-    ;;   => "-I /usr/local/include -I /pkg/include -I '/Program Files/include'"
-    ;; etc.
-    [define (local-paths prefix subdir)
-      (and local
-           (not (string-null? local))
-           (not (string-null? prefix))
-           (string-join (map (^[path]
-                               (shell-escape-string (build-path path subdir)))
-                             (string-split local #\:))
-                        #" ~prefix" 'prefix))]
-    ;; preprocess parameters.
-    ;; if parameter is not given, look at the named environment variable.
-    (define (param given envname . additionals)
-      (let1 v
-          (filter values (cons (or given (sys-getenv envname)) additionals))
-        (and (not (null? v)) (string-join v))))
+  ([dry-run      "n|dry-run"]
+   [verbose      "v|verbose"]
+   [compile-only "c|compile"]
+   [output       "o|output=s"]
+   [clean        "clean"]
+   [keep-c       "k|keep-c-files"]
+   [no-line      "no-line"]
+   [srcdir       "S|srcdir=s"]
+   [gauche-builddir "gauche-builddir=s"]
+   [local        "l|local=s"]
+   [cc           "cc=s"]
+   [c++          "c++=s"]
+   [cppflags     "cppflags=s"]
+   [cflags       "cflags=s"]
+   [ldflags      "ldflags=s"]
+   [libs         "libs=s"])
+  ;; process 'local' option
+  ;; e.g. "/usr/local:/pkg:/Program Files"
+  ;;   => "-I /usr/local/include -I /pkg/include -I '/Program Files/include'"
+  ;; etc.
+  (define (local-paths prefix subdir)
+    (and local
+         (not (string-null? local))
+         (not (string-null? prefix))
+         (string-join (map (^[path]
+                             (shell-escape-string (build-path path subdir)))
+                           (string-split local #\:))
+                      #" ~prefix" 'prefix)))
+  ;; preprocess parameters.
+  ;; if parameter is not given, look at the named environment variable.
+  (define (param given envname . additionals)
+    (let1 v
+        (filter values (cons (or given (sys-getenv envname)) additionals))
+      (and (not (null? v)) (string-join v))))
 
-    (when (and cc c++)
-      (exit 1 "Options --cc and --c++ are mutually exclusive."))
-    (let ([use-c++  (boolean c++)]
-          [compiler (or c++ (param cc "CC"))]
-          [cppflags (param cppflags "CPPFLAGS" (local-paths "-I" "include"))]
-          [cflags   (param cflags   "CFLAGS")]
-          [ldflags  (param ldflags  "LDFLAGS"
-                           (local-paths "-L" "lib")
-                           (local-paths (gauche-config "--rpath-flag") "lib"))]
-          [libs     (param libs     "LIBS")])
-      (cond
-       [clean
-        (unless (null? args)
-          (gauche-package-clean (if compile-only #f (car args))
-                                (if compile-only args (cdr args))
-                                :output output))]
-       [compile-only
-        (unless (= (length args) 1) (usage-self))
-        (gauche-package-compile (car args)
-                                :dry-run dry-run :verbose verbose
-                                :srcdir srcdir
-                                :gauche-builddir gauche-builddir
-                                :keep-c keep-c :no-line no-line
-                                :output output :c++-mode use-c++
-                                :cc compiler
-                                :cppflags cppflags :cflags cflags)]
-       [else
-        (when (<= (length args) 1) (usage-self))
-        (gauche-package-compile-and-link (car args) (cdr args)
-                                         :dry-run dry-run :verbose verbose
-                                         :srcdir srcdir
-                                         :gauche-builddir gauche-builddir
-                                         :keep-c keep-c :no-line no-line
-                                         :output output :c++-mode use-c++
-                                         :cc compiler :ld compiler
-                                         :cppflags cppflags :cflags cflags
-                                         :ldflags ldflags :libs libs)]))
-    ))
+  (when (and cc c++)
+    (exit 1 "Options --cc and --c++ are mutually exclusive."))
+  (let ([use-c++  (boolean c++)]
+        [compiler (or c++ (param cc "CC"))]
+        [cppflags (param cppflags "CPPFLAGS" (local-paths "-I" "include"))]
+        [cflags   (param cflags   "CFLAGS")]
+        [ldflags  (param ldflags  "LDFLAGS"
+                         (local-paths "-L" "lib")
+                         (local-paths (gauche-config "--rpath-flag") "lib"))]
+        [libs     (param libs     "LIBS")])
+    (cond
+     [clean
+      (unless (null? args)
+        (gauche-package-clean (if compile-only #f (car args))
+                              (if compile-only args (cdr args))
+                              :output output))]
+     [compile-only
+      (unless (= (length args) 1) (usage-self))
+      (gauche-package-compile (car args)
+                              :dry-run dry-run :verbose verbose
+                              :srcdir srcdir
+                              :gauche-builddir gauche-builddir
+                              :keep-c keep-c :no-line no-line
+                              :output output :c++-mode use-c++
+                              :cc compiler
+                              :cppflags cppflags :cflags cflags)]
+     [else
+      (when (<= (length args) 1) (usage-self))
+      (gauche-package-compile-and-link (car args) (cdr args)
+                                       :dry-run dry-run :verbose verbose
+                                       :srcdir srcdir
+                                       :gauche-builddir gauche-builddir
+                                       :keep-c keep-c :no-line no-line
+                                       :output output :c++-mode use-c++
+                                       :cc compiler :ld compiler
+                                       :cppflags cppflags :cflags cflags
+                                       :ldflags ldflags :libs libs)]))
+    )
 
 ;;------------------------------------------------------
 ;; generate
@@ -442,38 +454,37 @@ Options:
                        TYPE.  (Both 'BSD' and 'BSD3' are for 3-clause BSD).
   -v|verbose         : operate verbosely.
 ")
-  (let-args args ([autoconf "autoconf"]
-                  [verbose  "v|verbose"]
-                  [scheme-only "S|scheme-only"]
-                  [tmpl-dir "template-dir=s"]
-                  [pkg-dir  "package-dir=s"]
-                  [license "license=s"]
-                  . args)
-    (let-optionals* args ([package-name #f]
-                          [module-name #f]
-                          . more)
-      (unless (and package-name (null? more)) (usage-self))
-      (unless (#/^[\w-]+$/ package-name)
-        (exit 1 "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
-      (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
-        (exit 1 "Invalid character in module-name ~s" module-name))
-      (unless (member license '(#f "BSD" "BSD3" "MIT"))
-        (exit 1 "License ~s is unsupported.  You need to add license description manually after the project is generated."))
-      (let* ([package-name*  (rxmatch-case package-name
-                               (#/^Gauche-(.*)/ (#f rest) rest)
-                               (else package-name))]
-             [srcdir (or tmpl-dir
-                         (build-path (sys-dirname (gauche-library-directory))
-                                     "package-templates"))]
-             [dstdir (or pkg-dir package-name)]
-             [lic (and license (string->symbol (string-downcase license)))])
-        (copy-templates srcdir dstdir package-name
-                        :module-name (and module-name
-                                          (string->symbol module-name))
-                        :scheme-only scheme-only
-                        :use-autoconf autoconf
-                        :license lic
-                        :verbose verbose)))))
+  ([autoconf "autoconf"]
+   [verbose  "v|verbose"]
+   [scheme-only "S|scheme-only"]
+   [tmpl-dir "template-dir=s"]
+   [pkg-dir  "package-dir=s"]
+   [license "license=s"])
+  (let-optionals* args ([package-name #f]
+                        [module-name #f]
+                        . more)
+    (unless (and package-name (null? more)) (usage-self))
+    (unless (#/^[\w-]+$/ package-name)
+      (exit 1 "Invalid character in package-name ~s: You can only use alphanumeric chars, underscore, and minus sign." package-name))
+    (unless (or (not module-name) (#/^[\w.-]+$/ module-name))
+      (exit 1 "Invalid character in module-name ~s" module-name))
+    (unless (member license '(#f "BSD" "BSD3" "MIT"))
+      (exit 1 "License ~s is unsupported.  You need to add license description manually after the project is generated."))
+    (let* ([package-name*  (rxmatch-case package-name
+                             (#/^Gauche-(.*)/ (#f rest) rest)
+                             (else package-name))]
+           [srcdir (or tmpl-dir
+                       (build-path (sys-dirname (gauche-library-directory))
+                                   "package-templates"))]
+           [dstdir (or pkg-dir package-name)]
+           [lic (and license (string->symbol (string-downcase license)))])
+      (copy-templates srcdir dstdir package-name
+                      :module-name (and module-name
+                                        (string->symbol module-name))
+                      :scheme-only scheme-only
+                      :use-autoconf autoconf
+                      :license lic
+                      :verbose verbose))))
 
 ;;------------------------------------------------------
 ;; populate
@@ -499,67 +510,66 @@ Options:
                        TYPE.  (Both 'BSD' and 'BSD3' are for 3-clause BSD).
   -v|verbose         : operate verbosely.
 ")
-  (let-args args ([verbose  "v|verbose"]
-                  [tmpl-dir "template-dir=s"]
-                  [pkg-dir  "package-dir=s"]
-                  [license "license=s"])
-    (define dstdir (or pkg-dir "."))
-    (define (P file) (build-path dstdir file))
-    (define (populate-with-package) ;when we have package.scm
-      (let* ([package
-              (guard (e [(<package-description-error> e)
-                         (exit 1 "Can't read package.scm: ~a" (~ e'message))])
-                (path->gauche-package-description (P "package.scm")))]
-             [lic (cond [license (string->symbol (string-downcase license))]
-                        [(~ package'licenses) pair?
-                         => ($ string->symbol $ string-downcase $ car $)]
-                        [else #f])]
-             [mod (if (pair? (~ package'providing-modules))
-                    (car (~ package'providing-modules))
-                    (exit 1 "Missing providing-modules in package.scm."))])
-        (do-copy! (~ package'name) mod (~ package'authors) lic)))
-    (define (do-copy! package-name module-name authors license)
-      (let ([srcdir (or tmpl-dir
-                         (build-path (sys-dirname (gauche-library-directory))
-                                     "package-templates"))])
-        (receive [installed preserved]
-            (copy-templates srcdir dstdir package-name
-                            :module-name module-name
-                            :scheme-only #t ;for now
-                            :license license
-                            :licensor (string-join authors ", ")
-                            :preserve #t
-                            :verbose verbose)
-          (format #t "File~p installed:\n" (length installed))
-          (display-multicolumn installed :indent 4)
-          (format #t "File~p preserved:\n" (length preserved))
-          (display-multicolumn preserved :indent 4))))
-    (define (guess-package-name)        ;when we don't have package.scm
-      (cond [(file-exists? (P "configure.ac"))
-             (cond [(any #/AC_INIT\(\s*([\w-]+)/
-                         (file->string-list (P "configure.ac")))
-                    => (^m (m 1))]
-                   [else (exit 1 "Failed to obtain package name from 'configure.ac'")])]
-            [(file-exists? (P "configure"))
-             (let1 bad
-                 (^[] (exit 1 "Failed to obtain package name from 'configure'"))
-               (guard (e [(<read-error> e) (bad)])
-                 (or (any (^x (match x
-                                [('cf-init pkg-name . _) pkg-name]
-                                [_ #f]))
-                          (file->sexp-list (P "configure")))
-                     (bad))))]
-            [else #f]))
-    (define (populate-without-package package-name)
-      (do-copy! package-name #f '() #f)
-      (print "We created a template 'package.scm'.  Make sure to edit it for \
+  ([verbose  "v|verbose"]
+   [tmpl-dir "template-dir=s"]
+   [pkg-dir  "package-dir=s"]
+   [license "license=s"])
+  (define dstdir (or pkg-dir "."))
+  (define (P file) (build-path dstdir file))
+  (define (populate-with-package) ;when we have package.scm
+    (let* ([package
+            (guard (e [(<package-description-error> e)
+                       (exit 1 "Can't read package.scm: ~a" (~ e'message))])
+              (path->gauche-package-description (P "package.scm")))]
+           [lic (cond [license (string->symbol (string-downcase license))]
+                      [(~ package'licenses) pair?
+                       => ($ string->symbol $ string-downcase $ car $)]
+                      [else #f])]
+           [mod (if (pair? (~ package'providing-modules))
+                  (car (~ package'providing-modules))
+                  (exit 1 "Missing providing-modules in package.scm."))])
+      (do-copy! (~ package'name) mod (~ package'authors) lic)))
+  (define (do-copy! package-name module-name authors license)
+    (let ([srcdir (or tmpl-dir
+                      (build-path (sys-dirname (gauche-library-directory))
+                                  "package-templates"))])
+      (receive [installed preserved]
+          (copy-templates srcdir dstdir package-name
+                          :module-name module-name
+                          :scheme-only #t ;for now
+                          :license license
+                          :licensor (string-join authors ", ")
+                          :preserve #t
+                          :verbose verbose)
+        (format #t "File~p installed:\n" (length installed))
+        (display-multicolumn installed :indent 4)
+        (format #t "File~p preserved:\n" (length preserved))
+        (display-multicolumn preserved :indent 4))))
+  (define (guess-package-name)        ;when we don't have package.scm
+    (cond [(file-exists? (P "configure.ac"))
+           (cond [(any #/AC_INIT\(\s*([\w-]+)/
+                       (file->string-list (P "configure.ac")))
+                  => (^m (m 1))]
+                 [else (exit 1 "Failed to obtain package name from 'configure.ac'")])]
+          [(file-exists? (P "configure"))
+           (let1 bad
+               (^[] (exit 1 "Failed to obtain package name from 'configure'"))
+             (guard (e [(<read-error> e) (bad)])
+               (or (any (^x (match x
+                              [('cf-init pkg-name . _) pkg-name]
+                              [_ #f]))
+                        (file->sexp-list (P "configure")))
+                   (bad))))]
+          [else #f]))
+  (define (populate-without-package package-name)
+    (do-copy! package-name #f '() #f)
+    (print "We created a template 'package.scm'.  Make sure to edit it for \
               your package.  You might also want to change 'configure'."))
 
-    (cond [(file-exists? (P "package.scm")) (populate-with-package)]
-          [(guess-package-name) => populate-without-package]
-          [else  (exit 1 "Cannot find any of 'package.scm', 'configure.ac', \
-                          or 'configure'")]))
-  )
+  (cond [(file-exists? (P "package.scm")) (populate-with-package)]
+        [(guess-package-name) => populate-without-package]
+        [else  (exit 1 "Cannot find any of 'package.scm', 'configure.ac', \
+                        or 'configure'")]))
 
 ;;------------------------------------------------------
 ;; make-tarball
@@ -579,12 +589,12 @@ Options:
   -n, --dry-run       : just display commands to be executed.
   -v, --verbose       : reports package contents
   ")
-  (let-args args ([dry-run "n|dry-run"]
-                  [verbose "v|verbose"])
-    (unless (or (file-exists? "configure")
-                (file-exists? "configure.ac"))
-      (exit 1 "`gauche-package make-tarball' should be run in the top source directory."))
-    (gauche-package-tarball :config *config* :dry-run dry-run :verbose verbose)))
+  ([dry-run "n|dry-run"]
+   [verbose "v|verbose"])
+  (unless (or (file-exists? "configure")
+              (file-exists? "configure.ac"))
+    (exit 1 "`gauche-package make-tarball' should be run in the top source directory."))
+  (gauche-package-tarball :config *config* :dry-run dry-run :verbose verbose))
 
 ;;------------------------------------------------------
 ;; help
@@ -592,5 +602,7 @@ Options:
 
 (define-cmd "help"
   ("help <command>"
-   "Show detailed help of <command>")
+   "Show detailed help of <command>"
+   "")
+  ()
   (apply gauche-package-usage args))
