@@ -15833,7 +15833,8 @@ retrieved by the following utility APIs.
 
 @subheading Utility procedures
 
-@defun <gauche-package-description>
+@deftp {Class} <gauche-package-description>
+@clindex gauche-package-description
 @c MOD gauche.package
 An object to handle package descriptions programatically.
 
@@ -15893,7 +15894,7 @@ Gauche version with which this module is installed.
 A command-line string keeping how @code{configure} script was run
 to build and install this package.
 @end defivar
-@end defun
+@end deftp
 
 @defun path->gauche-package-description filename
 @c MOD gauche.package
