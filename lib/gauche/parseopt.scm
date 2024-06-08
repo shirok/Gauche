@@ -70,42 +70,30 @@
   ((option-specs :init-keyword :option-specs)
    (fallback :init-keyword :fallback)))
 
-;; Helper functions
+;; Parse optsepc and reurun <option-spec>.  Handler slot needs to be
+;; filled later.
+(define (make-option-spec optspec help-string)
+  ($ assume-type optspec <string>
+     "String required for a command spec, but got:" optspec)
+  ($ assume-type help-string (<?> <string>)
+     "String required for a command help, but got:" help-string)
+  (rxmatch-if (rxmatch #/^-*([-+\w|]+)(\*)?(?:([=:])(.+))?$/ optspec)
+      (#f optnames plural? optional? argspec)
+    (receive (shorts longs)
+        (partition (^s (= (string-length s) 1)) (string-split optnames #\|))
+      (make <option-spec>
+        :short-names (map (cut string-ref <> 0) shorts)
+        :long-names longs
+        :args (if argspec
+                (string->list (regexp-replace-all #/\{[^\}]+\}/ argspec ""))
+                '())
+        :arg-optional? (equal? optional? ":")
+        :plural? plural?
+        :optspec optspec
+        :help help-string))
+    (error "unrecognized option spec:" optspec)))
 
-;; Parse optspec clause, and returns an <option-spec>.
-;; <a-spec> is (<optspec> <handler>) or
-;; ((<optspec> <help-string>) <handler>)
-(define (compose-entry a-spec)
-  (define (parse-spec a-spec)
-    (match a-spec
-      [((spec help-string) handler)
-       (values ($ assume-type spec <string>
-                  "String required for a command spec, but got:" spec)
-               ($ assume-type help-string <string>
-                  "String required for a command help, but got:" help-string)
-               handler)]
-      [(spec handler)
-       (values ($ assume-type spec <string>
-                  "String required for a command spec, but got:" spec)
-               #f handler)]
-      [_ (error "Invalid command-line argument specification:" a-spec)]))
-  (receive (optspec helpstr handler) (parse-spec a-spec)
-    (rxmatch-if (rxmatch #/^-*([-+\w|]+)(\*)?(?:([=:])(.+))?$/ optspec)
-        (#f optnames plural? optional? argspec)
-      (receive (shorts longs)
-          (partition (^s (= (string-length s) 1)) (string-split optnames #\|))
-        (make <option-spec>
-          :short-names (map (cut string-ref <> 0) shorts)
-          :long-names longs
-          :args (if argspec
-                  (string->list (regexp-replace-all #/\{[^\}]+\}/ argspec ""))
-                  '())
-          :arg-optional? (equal? optional? ":")
-          :handler handler
-          :plural? plural?
-          :optspec optspec
-          :help helpstr))
-      (error "unrecognized option spec:" optspec))))
+;; Helper functions
 
 (define (optspec-take-args? optspec) (not (null? (~ optspec'args))))
 
@@ -231,15 +219,20 @@
         nextargs))))
 
 ;; Build
-(define (build-option-parser spec fallback)
+(define (build-option-parser specs fallback)
   (make <option-parser>
-    :option-specs (map compose-entry spec)
-    :fallback fallback))
+    :option-specs specs
+    :fallback (or fallback default-fallback)))
 
 (define-method object-apply ((parser <option-parser>) args)
   (parse-cmdargs args (~ parser'option-specs) (~ parser'fallback)))
 (define-method object-apply ((parser <option-parser>) args fallback)
   (parse-cmdargs args (~ parser'option-specs) fallback))
+
+(define (default-fallback option arg looper)
+  (error <parseopt-error> :option-name #f
+         "unrecognized option:" option))
+
 
 ;;;
 ;;; The main body of the macros
@@ -253,14 +246,11 @@
 (define-syntax make-option-parser-int
   (syntax-rules (else =>)
     [(_ () specs)
-     (build-option-parser (list . specs)
-                          (^[option args looper]
-                            (error <parseopt-error> :option-name #f
-                                   "unrecognized option:" option)))]
+     (build-option-parser (map %compose-entry (list . specs)) #f)]
     [(_ ((else args . body)) specs)
-     (build-option-parser (list . specs) (^ args . body))]
+     (build-option-parser (map %compose-entry (list . specs)) (^ args . body))]
     [(_ ((else => proc)) specs)
-     (build-option-parser (list . specs) proc)]
+     (build-option-parser (map %compose-entry (list . specs)) proc)]
     [(_ ((optspec => proc) . clause) (spec ...))
      (make-option-parser-int clause (spec ... (list 'optspec proc)))]
     [(_ ((optspec vars . body) . clause) (spec ...))
@@ -268,6 +258,19 @@
     [(_ (other . clause) specs)
      (syntax-error "make-option-parser: malformed clause:" other)]
     ))
+
+;; Parse optspec clause, and returns an <option-spec>.
+;; <a-spec> is (<optspec> <handler>) or
+;; ((<optspec> <help-string>) <handler>)
+(define (%compose-entry a-spec)
+  (define (parse-spec a-spec)
+    (match a-spec
+      [((spec help-string) handler) (values spec help-string handler)]
+      [(spec handler) (values spec #f handler)]
+      [_ (error "Invalid command-line argument specification:" a-spec)]))
+  (receive (optspec helpstr handler) (parse-spec a-spec)
+    (rlet1 spec (make-option-spec optspec helpstr)
+      (set! (~ spec'handler) handler))))
 
 (define-syntax parse-options
   (syntax-rules ()
