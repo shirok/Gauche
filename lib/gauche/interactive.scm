@@ -186,6 +186,14 @@
       (format #t "  exact: ~s\n" (exact d))))
   (values))
 
+(define-method describe ((c <complex>))
+  (describe-common c)
+  (when (and (finite? (real-part c)) (finite? (imag-part c)))
+    (let1 ang (angle c)
+      (format #t "  polar: ~s@~s  (@~spi)\n" (magnitude c) ang
+              (/ ang (* 4 (atan 1))))))
+  (values))
+
 (define-method describe ((g <generic>))
   (describe-common g)
   (describe-slots g)

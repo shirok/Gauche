@@ -1,3 +1,8 @@
+2024-06-08  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (describe): Show polar representaion
+	  when describing a complex number.
+
 2024-06-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (ref): Make generic referencer work on <mv-box>.
