@@ -46,6 +46,7 @@
   (use file.util)
   (use scheme.list)
   (use srfi.13)
+  (use text.fill)
   (use text.tr)
   (use text.multicolumn :only (display-multicolumn))
   (use util.levenshtein :only (re-distances))
@@ -228,10 +229,15 @@
   (match args
     [(package)
      (if-let1 gpd (find-gauche-package-description package :all-versions #t)
-       (begin
+       (let1 desc (string-split (or (~ gpd'description)
+                                   "(No description available)")
+                               "\n")
          (format #t "Package ~a\n" (~ gpd'name))
-         (format #t "  ~a\n" (or (~ gpd'description)
-                                 "(No description available)"))
+         (format #t "  ~a\n" (car desc))
+         (unless (null? (cdr desc))
+           (display-filled-text (string-join (cdr desc) " ")
+                                :indent 2 :width 75)
+           (newline))
          (format #t "   repository: ~a\n" (~ gpd'repository))
          (format #t "      version: ~a\n" (~ gpd'version))
          (format #t "      require: ~:w\n" (~ gpd'require))
@@ -239,7 +245,9 @@
          (format #t "  maintainers: ~:w\n" (~ gpd'maintainers))
          (format #t "     licenses: ~:w\n" (~ gpd'licenses))
          (format #t "     provides: ~:w\n" (~ gpd'providing-modules))
-         (format #t "     homepage: ~a\n" (~ gpd'homepage)))
+         (format #t "     homepage: ~a\n" (~ gpd'homepage))
+         (format #t "superseded-by: ~a\n" (~ gpd'superseded-by))
+         (format #t "    configure: ~a\n" (~ gpd'configure)))
        (no-such-package (car args)))]
     [_ (usage-self)]))
 
