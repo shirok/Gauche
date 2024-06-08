@@ -6499,13 +6499,14 @@ the same as you can get from the @code{gauche-config} program.
 @c EN
 Returns the configured value of the @var{option}.
 
-See the manpage of @code{gauche-config}, or run @code{gauche-config}
+See the manual page of @code{gauche-config}
+(@pxref{Command to query configuration}), or run @code{gauche-config}
 without any argument from the shell, to find out the valid options.
 @c JP
 @var{option}に対応するコンフィグレーション値を返します。
 
-有効なオプションについては、@code{gauche-config} のマニュアルページを
-見るか、シェルで @code{gauche-config} を引数なしで実行して下さい。
+有効なオプションについては、@code{gauche-config} のマニュアルページ(@ref{Command to query configuration})を見るか、
+シェルで @code{gauche-config} を引数なしで実行して下さい。
 @c COMMON
 @example
 (gauche-config "--cc")
