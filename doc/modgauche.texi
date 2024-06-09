@@ -21796,8 +21796,9 @@ takes O(N) space.
 This module provides syslog(3) system logger interface.
 
 For the common applications, you might find @code{gauche.logger} module
-easier to use (@pxref{User-level logging}).  This module is for those
-who need direct access to the syslog API.
+easier to use (@pxref{User-level logging}).   For the portable code,
+you might want to look at SRFI-215 (@pxref{Central log exchange}).
+This module is for those who need direct access to the syslog API.
 
 The procedures are only defined if the underlying system supports them.
 @c JP
@@ -21805,6 +21806,8 @@ The procedures are only defined if the underlying system supports them.
 
 一般的なアプリケーションについては、@code{gauche.logger} モジュールの
 ほうが使いやすいでしょう(@ref{User-level logging}参照)。
+また、ポータブルなコードを書く場合は、SRFI-215が使えます
+(@ref{Central log exchange}参照)。
 このモジュールは syslog の API に直接アクセスする必要のある人向きです。
 
 手続き群は基盤になっているシステムで syslog がサポートされている場合に
