@@ -69,22 +69,10 @@
           (cons dir sd-sld)))))
 
 (define (usage)
-  (display "Usage: compile-r7rs [options...] [pathname]
-
-Options:
--o outfile  Specify output file name.  When omitted, the basename of
-            the main source file is used.
--I dir      Specify a search path of extra files (lib/library.scm ...)
-            to prepend if they're not relative to the current directory.
-            This option can be given multiple times.
--A dir      Specify a search path of extra files (lib/library.scm ...)
-            to append if they're not relative to the current directory.
-            This option can be given multiple times.
--D name
-            Add name to the list of feature identifiers maintained by the
-            Scheme implementation for the purpose of executing the program
-            in the text file pathname. This option can be given multiple
-            times.\n")
+  (print "Usage: compile-r7rs [options...] [pathname]")
+  (print)
+  (print "Options:")
+  (print (option-parser-help-string))
   (exit 1))
 
 (define (main args)
@@ -99,17 +87,27 @@ Options:
       (do-compile (cdr args)))))
 
 (define (do-compile args)
-  (define incdirs '())
-  (define feature-ids '())
-  (define appenddirs '())
-  (let-args args ([outfile "o=s" (cond-expand
-                                  [gauche.os.windows "a.exe"]
-                                  [else "a.out"])]
-                  [#f "I=s" #f => (^x (push! incdirs x) #f)]
-                  [#f "D=s" #f => (^x (push! feature-ids x) #f)]
-                  [#f "A=s" #f => (^x (push! appenddirs x) #f)]
-                  [else _ (usage)]
-                  . files)
+  (let-args args
+      ([outfile "o=s{OUTFILE}" (cond-expand
+                                [gauche.os.windows "a.exe"]
+                                [else "a.out"])
+                ? "Specify output file name.  When omitted, 'a.out' or 'a.exe'
+                   is used, depending on the platform."]
+       [incdirs "I*=s{DIR}"
+                ? "Specify a search path of extra files (lib/library.scm ...)
+                   to prepend if they're not relative to the current directory.
+                   This option can be given multiple times."]
+       [appenddirs "A*=s{DIR}"
+                ? "Specify a search path of extra files (lib/library.scm ...)
+                   to append if they're not relative to the current directory.
+                   This option can be given multiple times."]
+       [feature-ids "D*=y{NAME}"
+                ? "Add {NAME} to the list of feature identifiers maintained
+                   by the Scheme implementation for the purpose of executing
+                   the program in the text file pathname.
+                   This option can be given multiple times."]
+       [else _ (usage)]
+       . files)
     (match files
       [(script.scm)
        (let* ([dirs (append (reverse incdirs) (reverse appenddirs))]

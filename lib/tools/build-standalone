@@ -37,30 +37,8 @@
 (define (usage)
   (print "Usage: build-standalone [-o outfile][-I dir][--header-dir dir][--library-dir dir] main.scm lib/library.scm ...")
   (print)
-  (print "  -o outfile  Specify output file name.  When omitted, the basename of ")
-  (print "              the main source file is used.")
-  (print "  -I dir      Specify the search path of extra files (lib/library.scm ...)")
-  (print "              if they're not relative to the current directory.  This option")
-  (print "              can be given multiple times.")
-  (print "  -D var[=val]")
-  (print "              Add C preprocessor definitions while compiling the generated")
-  (print "              C code.  This option can be given multiple times.")
-  (print "  --header-dir dir")
-  (print "              Alternative include directory to find gauche.h etc.  Specify")
-  (print "              this if you don't want to use installed Gauche header files.")
-  (print "              This option can be given multiple times.")
-  (print "  --library-dir dir")
-  (print "              Alternative library directory to find libgauche-static.  Specify")
-  (print "              this if you don't want to use installed Gauche library.")
-  (print "              This option can be given multiple times.")
-  (print "  --keep-c-file")
-  (print "              Do not delete intermediate C file after compilation.  This is")
-  (print "              for troubleshooting.")
-  (print "  --dynamic")
-  (print "              Instead of statically linking libgauche, use the system's")
-  (print "              library at runtime.  The resulting binary requires libgauche")
-  (print "              to run, so it's not really 'standalone', but the binary size")
-  (print "              is much smaller.")
+  (print "Options:")
+  (display (option-parser-help-string))
   (print)
   (print "The file <main.scm> is the main script file; usually it contains 'main'")
   (print "procedure.  Other files <lib/library.scm> ... are extra library files needed")
@@ -68,19 +46,35 @@
   (exit 1))
 
 (define (main args)
-  (define incdirs '())
-  (define defs '())
-  (define hdrdirs '())
-  (define libdirs '())
-  (let-args (cdr args) ([outfile "o=s" #f]
-                        [#f "I=s" #f => (^x (push! incdirs x) #f)]
-                        [#f "D=s" #f => (^x (push! defs x) #f)]
-                        [#f "header-dir=s" => (^x (push! hdrdirs x) #f)]
-                        [#f "library-dir=s" => (^x (push! libdirs x) #f)]
-                        [keepc "keep-c-file"]
-                        [dynamic "dynamic"]
-                        [else _ (usage)]
-                        . files)
+  (let-args (cdr args)
+      ([outfile "o=s{OUTFILE}"
+                ? "Specify output file name.  When omitted, the basename of
+                   the main source file is used."]
+       [incdirs "I*=s{DIR}"
+                ? "Specify the search path of extra files (lib/library.scm ...)
+                   if they're not relative to the current directory.
+                   This option can be given multiple times."]
+       [defs "D=s{VAR[=VAL]}"
+              ? "Add C preprocessor definitions while compiling the generated
+                 C code.  This option can be given multiple times."]
+       [hdrdirs "header-dir*=s{DIR}"
+                ? "Alternative include directory to find gauche.h etc.
+                   Specify this if you don't want to use installed Gauche's
+                   header files. This option can be given multiple times."]
+       [libdirs "library-dir*=s{DIR}"
+                ? "Alternative library directory to find libgauche-static.
+                   Specify this if you don't want to use installed Gauche's
+                   library. This option can be given multiple times."]
+       [keepc "keep-c-file"
+              ? "Do not delete intermediate C file after compilation.
+                This is for troubleshooting."]
+       [dynamic "dynamic"
+                ? "Instead of statically linking libgauche, use the system's
+                   library at runtime.  The resulting binary requires libgauche
+                   to run, so it's not really 'standalone', but the binary size
+                   is much smaller."]
+       [else _ (usage)]
+       . files)
     (when (null? files) (usage))
     (build-standalone (car files)
                       :outfile outfile
