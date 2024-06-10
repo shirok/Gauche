@@ -240,6 +240,21 @@
               11)))))
 
 (let ()
+  (define (run args)
+    (let-args args
+        ((a "a*")
+         (b "b*=s"))
+      (list a b)))
+
+  (test* "plural args" '(() ())
+         (run '()))
+  (test* "plural args" '((#t) ("foo"))
+         (run '("-a" "-b" "foo")))
+  (test* "plural args" '((#t #t) ("bar" "foo"))
+         (run '("-a" "-b" "foo" "-a" "-b" "bar")))
+  )
+
+(let ()
   (define (run args help-string-args)
     (let/cc ret
       (let-args args
