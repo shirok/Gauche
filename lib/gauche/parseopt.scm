@@ -70,9 +70,8 @@
   ((option-specs :init-keyword :option-specs)
    (fallback :init-keyword :fallback)))
 
-;; Parse optsepc and reurun <option-spec>.  Handler slot needs to be
-;; filled later.
-(define (make-option-spec optspec help-string)
+;; Parse optsepc and reurun <option-spec>.
+(define (make-option-spec optspec help-string :optional (handler #f))
   ($ assume-type optspec <string>
      "String required for a command spec, but got:" optspec)
   ($ assume-type help-string (<?> <string>)
@@ -90,10 +89,16 @@
         :arg-optional? (equal? optional? ":")
         :plural? plural?
         :optspec optspec
+        :handler handler
         :help help-string))
     (error "unrecognized option spec:" optspec)))
 
 ;; Helper functions
+
+(define (plural-option? spec)
+  (assume-type spec <string>)           ;takes string spec
+  (and-let1 m (rxmatch #/^-*[-+\w|]+(\*)?/ spec)
+    (boolean (m 1))))
 
 (define (optspec-take-args? optspec) (not (null? (~ optspec'args))))
 
@@ -269,8 +274,7 @@
       [(spec handler) (values spec #f handler)]
       [_ (error "Invalid command-line argument specification:" a-spec)]))
   (receive (optspec helpstr handler) (parse-spec a-spec)
-    (rlet1 spec (make-option-spec optspec helpstr)
-      (set! (~ spec'handler) handler))))
+    (make-option-spec optspec helpstr handler)))
 
 (define-syntax parse-options
   (syntax-rules ()
@@ -358,152 +362,120 @@
 ;;
 ;;  then, rest is bound to the rest of the args.
 
-;; Auxiliary macro.
-;; Collects parse-options optspec (opts) and variable bindings (binds).
-(define-syntax let-args-internal
-  (syntax-rules (else => ?)
-    ;;
-    ;; Handle var == #f case first.  This is only useful for side-effects
-    ;; or recognizing option (and then discard).
-    ;;
-    [(_ args binds opts ((#f spec1 def => callback ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((#f (spec1 help) def => callback) . varspecs)
-                        body)]
-    [(_ args binds (opts ...) ((#f spec1 def => callback) . varspecs) body)
-     (let-args-internal args
-        binds
-        (opts ... (spec1 => callback))
-        varspecs
-        body)]
-    [(_ args binds opts ((#f spec1 => callback ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((#f (spec1 help) => callback) . varspecs)
-                        body)]
-    [(_ args binds (opts ...) ((#f spec1 => callback) . varspecs) body)
-     (let-args-internal args
-        binds
-        (opts ... (spec1 => callback))
-        varspecs
-        body)]
-    [(_ args binds opts ((#f spec1 ignore ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((#f (spec1 help) ignore) . varspecs)
-                        body)]
-    [(_ args binds opts ((#f spec1 ignore) . varspecs) body)
-     (let-args-internal args
-        binds
-        opts
-        ((#f spec1 => (^ _ #f)) . varspecs)
-        body)]
-    [(_ args binds opts ((#f spec1 ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((#f (spec1 help)) . varspecs)
-                        body)]
-    [(_ args binds opts ((#f spec1) . varspecs) body)
-     (let-args-internal args
-        binds
-        opts
-        ((#f spec1 => (^ _ #f)) . varspecs)
-        body)]
-    ;;
-    ;; Handle else clause
-    ;; The contents of clause must evaluated outside of binding scope.
-    ;;
-    [(_ args binds (opts ...) ((else => else-cb) . varspecs) body)
-     (let-args-internal args
-         ((e else-cb) . binds)
-         (opts ... (else f (apply e f)))
-         varspecs
-         body)]
-    [(_ args binds (opts ...) ((else formals . forms) . varspecs) body)
-     (let-args-internal args
-         ((e (^ formals . forms)) . binds)
-         (opts ... (else f (apply e f)))
-         varspecs
-         body)]
-    ;;
-    ;; Handle explicit callbacks.
-    ;;
-    [(_ args binds opts ((var1 spec1 default1 => callback ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((var1 (spec1 help) default1 => callback) . varspecs)
-                        body)]
-    [(_ args binds (opts ...) ((var1 spec1 default1 => callback) . varspecs) body)
-     (let-args-internal args
-         ((var1 default1) (cb1 callback) . binds)
-         (opts ... (spec1 => (^ x (set! var1 (apply cb1 x)))))
-         varspecs
-         body)]
-    [(_ args binds opts ((var1 spec1 => callback ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((var1 (spec1 help) => callback) . varspecs)
-                        body)]
-    [(_ args binds (opts ...) ((var1 spec1 => callback) . varspecs) body)
-     (let-args-internal args
-         binds
-         (opts ...)
-         ((var1 spec1 #f => callback) . varspecs)
-         body)]
-    ;; Normal case.
-    ;; Transform base form into a let w/ a callback to set its value
-    ;; we don't know # of values to receive unless we parse the optspec,
-    ;; so the callback needs extra trick.  (Ugly... needs rework).
-    ;;
-    [(_ args binds opts ((var1 spec1 default1 ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((var1 (spec1 help) default1) . varspecs)
-                        body)]
-    [(_ args binds (opts ...) ((var1 spec1 default1) . varspecs) body)
-     (let-args-internal args
-         ((var1 default1) . binds)
-         (opts ... (spec1 => (^ x
-                               (set! var1
-                                     (cond [(null? x) #t] ;; no arg
-                                           [(null? (cdr x)) (car x)]
-                                           [else x])))))
-         varspecs
-         body)]
-    ;;
-    ;; No default means #f
-    ;;
-    [(_ args binds opts ((var1 spec1 ? help) . varspecs) body)
-     (let-args-internal args binds opts
-                        ((var1 (spec1 help)) . varspecs)
-                        body)]
-    [(_ args binds (opts ...) ((var1 spec1) . varspecs) body)
-     (let-args-internal args
-         binds
-         (opts ...)
-         ((var1 spec1 #f) . varspecs)
-         body)]
-    ;;
-    ;; Capture invalid clause
-    ;;
-    [(_ args binds (opts ...) (other . varspecs) body)
-     (syntax-error "let-args: invalid clause:" other)]
-    ;;
-    ;; Finish
-    ;; Extra let() allows body contains internal defines.
-    ;;
-    [(_ args binds opts () body)
-     (let binds
-         (parameterize ((current-option-parser (make-option-parser opts)))
-           ((current-option-parser) args)
-           (let () . body)))]
-    [(_ args binds opts rest body)
-     (let binds
-         (parameterize ((current-option-parser (make-option-parser opts)))
-           (let ((rest ((current-option-parser) args)))
-             . body)))]
-    ))
-
 (define-syntax let-args
-  (syntax-rules ()
-    ;; transfer to let-args-internal which collects the parse-options
-    ;; form
-    [(_ args varspecs . body)
-     (let-args-internal args () () varspecs body)]
-    [(_ . otherwise)
-     (syntax-error "malformed let-args:" (let-args . otherwise))]
-    ))
+  (er-macro-transformer
+   (^[f r c]
+     (define (else? x) (c (r'else) x))
+     (define (=>? x)   (c (r'=>) x))
+     (define (?? x)    (c (r'?) x))
+
+     (define (xdef spec) (if (plural-option? spec) '() #f))
+     (define (bad) (error "malformed let-args:" f))
+
+     ;; Canonicalize variationof clauses.
+     ;;   bindings: ((<var> <spec> <default> <helpstr> <handler-var> <handler>)
+     ;;   else-handler: handler expression
+     ;;   rest-var: #f or identifier
+     (define (canon varspecs bindings)
+
+       (define (next varspecs var spec default help callback)
+         (canon varspecs
+                `((,var ,spec ,default ,help
+                        ,(and callback (gensym "handler")) ,callback)
+                  ,@bindings)))
+
+       (match varspecs
+         ;; Terminal conditions
+         [(? identifier? restvar) (values (reverse bindings) #f restvar)]
+         [() (values (reverse bindings) #f (gensym "rest"))]
+         [(((? else?) (? =>?) callback) . rest)
+          (cond [(null? rest)
+                 (values (reverse bindings) callback (gensym "rest"))]
+                [(identifier? rest)
+                 (values (reverse bindings) callback rest)]
+                [else (bad)])]
+         [(((? else?) formals expr ...) . rest)
+          (cond [(null? rest)
+                 (values (reverse bindings)
+                         (quasirename r (^ ,formals ,@expr))
+                         (gensym "rest"))]
+                [(identifier? rest)
+                 (values (reverse bindings)
+                         (quasirename r (^ ,formals ,@expr))
+                         rest)]
+                [else (bad)])]
+         ;; Loop with processing clauses
+         [((var spec (? =>?) callback (? ??) help) . varspecs)
+          (next varspecs var spec (xdef spec) help callback)]
+         [((var spec default (? =>?) callback (? ??) help) . varspecs)
+          (next varspecs var spec default help callback)]
+         [((var spec (? =>?) callback) . varspecs)
+          (next varspecs var spec (xdef spec) #f callback)]
+         [((var spec default (? =>?) callback) . varspecs)
+          (next varspecs var spec default #f callback)]
+         [((var spec (? ??) help) . varspecs)
+          (next varspecs var spec (xdef spec) help #f)]
+         [((var spec default (? ??) help) . varspecs)
+          (next varspecs var spec default help #f)]
+         [((var spec default) . varspecs)
+          (next varspecs var spec default #f #f)]
+         [((var spec) . varspecs)
+          (next varspecs var spec (xdef spec) #f #f)]
+         [_ (bad)]))
+
+     (define (var-bindings bindings else-var else-handler)
+       `(,@(filter-map (match-lambda
+                         [(var _ default . _) (and var `(,var ,default))])
+                       bindings)
+         ,@(filter-map (match-lambda
+                         [(_ _ _ _ handler-var handler)
+                          (and handler-var `(,handler-var ,handler))])
+                       bindings)
+         ,@(if else-var
+             `((,else-var ,else-handler))
+             '())))
+
+     (define (gen-optspecs bindings)
+       (map (match-lambda
+              [(#f spec _ help #f _)
+               (quasirename r
+                 `(make-option-spec ',spec ',help (constantly #t)))]
+              [(#f spec _ help handler-var _)
+               (quasirename r
+                 `(make-option-spec ',spec ',help ,handler-var))]
+              [(var spec _ help #f _)
+               (if (plural-option? spec)
+                 (quasirename r
+                   `(make-option-spec ',spec ',help
+                                      (case-lambda
+                                        [()    (push! ,var #t)]
+                                        [(val) (push! ,var val)]
+                                        [vals  (push! ,var vals)])))
+                 (quasirename r
+                   `(make-option-spec ',spec ',help
+                                      (case-lambda
+                                        [()    (set! ,var #t)]
+                                        [(val) (set! ,var val)]
+                                        [vals  (set! ,var vals)]))))]
+              [(var spec _ help handler-var _)
+               (quasirename r
+                 `(make-option-spec ',spec ',help
+                                    (^ args
+                                      (set! ,var (apply ,handler-var args)))))]
+              )
+            bindings))
+
+     ;; Main body
+     (match (cdr f)
+       [(args varspecs . body)
+        (receive (bindings else-handler restvar) (canon varspecs '())
+          (let1 else-var (and else-handler (gensym "else"))
+            (quasirename r
+              `(let ,(var-bindings bindings else-var else-handler)
+                 (parameterize ((current-option-parser
+                                 (build-option-parser
+                                  (list ,@(gen-optspecs bindings))
+                                  ,else-var)))
+                   (let ((,restvar ((current-option-parser) ,args)))
+                     ,@body))))))]
+       [_ (bad)]))))

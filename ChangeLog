@@ -1,3 +1,9 @@
+2024-06-09  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (let-args): Rewrote using er-macro,
+	  supporting plural options (cmdoption that can be specified
+	  more than once).
+
 2024-06-08  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (describe): Show polar representaion
