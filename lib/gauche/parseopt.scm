@@ -306,8 +306,8 @@
   ;;  "a|abc=ss" => "-a, --abc s s"
   (define (optheader optspec)
     (let* ([opts (string-split optspec "|")]
-           [lastopt&arg (string-split (last opts) "=" 'infix 1)]
-           [opts (append (drop-right opts 1) (list (car lastopt&arg)))]
+           [lastopt&arg (string-split (last opts) #/\*?=/ 'infix 1)]
+           [opts (append (drop-right opts 1) (take lastopt&arg 1))]
            [argdesc (if (pair? (cdr lastopt&arg))
                       (optarg-desc (cadr lastopt&arg))
                       '())])
