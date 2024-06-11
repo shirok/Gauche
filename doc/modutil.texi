@@ -29866,7 +29866,7 @@ This module provides procedures to fill given text within the
 specified width, inserting line breaks
 adequately.  It is similar to @code{fill-paragraph} of Emacs.
 @c JP
-このモジュールは、指定の幅にテキストを詰め込むように改行を適宜挿入して表示します。
+このモジュールは、指定の幅にテキストを詰め込む(フィル)ように改行を適宜挿入して表示します。
 Emacsの@code{fill-paragraph}のような機能です。
 @c COMMON
 @end deftp
@@ -29876,13 +29876,22 @@ Emacsの@code{fill-paragraph}のような機能です。
 @c EN
 Output @var{text} to @var{port}, while keeping the line width up to
 @var{width} as much as possible by inserting line breaks.
-The original newline characters
-in @var{text} are ignored.  If @var{port} is omitted, the current
-output port is used.
+If @var{port} is omitted, the current output port is used.
 @c JP
 @var{text}を、行の幅がなるべく@var{width}に収まるように改行を挿入しながら
-@var{port}に出力します。元の@var{text}にある改行は無視されます。
+@var{port}に出力します。
 @var{port}が省略された場合は現在の出力ポートが使われます。
+@c COMMON
+
+@c EN
+Two consecutive newlines mark (or, an empty line) a paragraph break.
+First, @var{text} is splitted into paragraphs,
+then each paragraph is filled.
+All other newlines are treated as whitespaces.
+@c JP
+2つの連続する改行文字(あるいは、ひとつの空行)はパラグラフ境界を示します。
+まず@var{text}がパラグラフに分割され、それから各パラグラフがフィルされます。
+他の改行文字は空白と同じ扱いになります。
 @c COMMON
 
 @c EN
@@ -29891,7 +29900,8 @@ The @var{width} argument specifies the entire width of the filled text.
 It tries to keep lines from overflowing the width, but if there's
 an unbreakable chunk of text that's wider than the given width,
 it lets the line oveflow.
-The @var{hanging} specifies the hanging indent width of the first line,
+The @var{hanging} specifies the hanging indent width of the paragraph's
+first line,
 and @var{indent} specifies the indent width of the rest of lines.
 They are included in @var{width}.  Here's the relations of these
 values:
@@ -29900,7 +29910,7 @@ values:
 @var{width}引数はフィルされたテキスト全体の幅を指定します。テキストはこの幅を
 越えないように出力されます。
 但し、分割できない長い塊があった場合はこの幅を越えることがあります。
-@var{hanging}は最初の行のハンギングインデントを、@var{indent}は2行目以降の
+@var{hanging}はパラグラフの最初の行のハンギングインデントを、@var{indent}は2行目以降の
 インデントを指定します。これらのインデントは@var{width}の一部にカウントされます。
 次にこれらの値の関係を示します:
 @c COMMON
@@ -29938,7 +29948,7 @@ If you call this procedure in the middle of the line (that is,
 some text is already written to @var{port}), the procedure takes
 the current column into account, as shown below:
 @c JP
-この手続きを、行の途中 (既に@var{port}にいくらか出力されたて改行されていない状態)
+この手続きを、行の途中 (既に@var{port}にいくらか出力されてから改行されていない状態)
 で呼び出した場合、この手続きは@var{port}の現在のカラム位置を考慮に入れるので
 次のようになります。
 @c COMMON
@@ -29964,16 +29974,20 @@ the current column into account, as shown below:
 @c EN
 The @var{start-column} keyword argument can override the port's
 current column with the given nonnegative exact integer.
+It is only considered for the first paragraph; subsequent paragraphs
+are formatted as if @var{start-column} is zero.
 @c JP
 @var{start-column}引数は開始カラム位置を強制的に指定するものです。
 与える場合は正確な非負整数でなければなりません。
+この機能は最初のパラグラフのみに適用されます。
+二番目以降のパラグラフは@var{start-column}が0であるかのようにフォーマットされます。
 @c COMMON
 
 @c EN
-The last line is not terminated by a newline, allowing the caller
-to continue output in the same line.
+The last line of the last paragraph is not terminated by a newline,
+allowing the caller to continue output in the same line.
 @c JP
-最後の行の後に改行文字は出力されません。
+最後のパラグラフの最後の行の後に改行文字は出力されません。
 呼び出し側がこの行の後にさらに続けて出力することもできるようにするためです。
 @c COMMON
 
@@ -30030,6 +30044,13 @@ THIS IS LEAD-IN LONGER THAN HANGING.
 @end example
 
 @c EN
+Even if @var{text} contains more than one paragraph, @var{lead-in} is
+displayed only once, at the beginning.
+@c JP
+@var{text}が複数パラグラフからなる場合でも、@var{lead-in}は最初に一度だけ
+出力されます。
+@c COMMON
+
 This is handy when you display definition-list like document, e.g.
 command-line option description.
 @c JP
