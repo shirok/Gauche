@@ -44,112 +44,122 @@
 (use util.match)
 
 (define (main args)
-  (let ([predef-syms '()]
-        [includes '()])
-    (let-args (cdr args)
-        ([help               "h|help" => (^[] (usage #f))]
-         [inc                "I=s" => (^v (push! includes v))]
-         [keep-private-macro "M|keep-private-macro=s"]
-         [ext-main           "e|ext-main"]
-         [xprefix            "p|strip-prefix=s"]
-         [xprefix-all        "P|strip-prefix-all"]
-         [out.sci            "i|interface=s"]
-         [out.c              "o|output=s"]
-         [single-sci         "single-interface"]
-         [subinits           "s|sub-initializers=s"]
-         [dso-name           "d|dso-name=s"]
-         [target-config      "target-config=s"]
-         [omit-debug-source-info "omit-debug-source-info"]
-         [ext-module         "ext-module=s" #f] ;for backward compatibility
-         [#f "D=s" => (^[sym] (push! predef-syms sym))]
-         [else (opt . _) (usage #"Unrecognized option: ~opt")]
-         . args)
-      (let ([mtk      (split-to-symbols keep-private-macro)]
-            [subinits (split-to-symbols subinits)]
-            [extini   (or ext-module ext-main)]
-            [prefix   (or xprefix-all xprefix)]
-            [omit-line-directives
-             (sys-getenv "GAUCHE_PRECOMP_OMIT_LINE_DIRECTIVES")]
-            [tparams  (if target-config
-                        (load-target-config target-config)
-                        '())])
-        (match args
-          [() (usage #f)]
-          [(src)
-           (when single-sci
-             (usage "The `--single-interface' option is only valid with multiple input files"))
-           (cgen-precompile src
-                            :out.c out.c
-                            :out.sci (or out.sci ext-module)
-                            :load-paths (reverse includes)
-                            :strip-prefix prefix
-                            :ext-initializer extini
-                            :sub-initializers subinits
-                            :dso-name dso-name
-                            :omit-line-directives omit-line-directives
-                            :omit-debug-source-info omit-debug-source-info
-                            :predef-syms predef-syms
-                            :target-parameters tparams
-                            :macros-to-keep mtk)]
-          [(srcs ...)
-           (when out.sci
-             (usage "The `-i' or `--interface' option is only valid with single input file"))
-           (cgen-precompile-multi srcs
-                                  :ext-initializer extini
-                                  :strip-prefix prefix
-                                  :single-sci-file single-sci
-                                  :dso-name dso-name
-                                  :load-paths (reverse includes)
-                                  :omit-line-directives omit-line-directives
-                                  :omit-debug-source-info omit-debug-source-info
-                                  :predef-syms predef-syms
-                                  :target-parameters tparams
-                                  :macros-to-keep mtk)]))))
+  (let-args (cdr args)
+      ([predef-syms        "D*=s{NAME}"
+                           ? "Insert '#define NAME' at the beginning of
+                              output file.  This option can be specified
+                              multiple times."]
+       [dso-name           "d|dso-name=s{FILE.SO}"]
+       [ext-main           "e|ext-main"
+                           ? "Generate source for an extension module rather
+                              than a standalone executable.  The initialization
+                              function follows the protocol of Gauche extension
+                              initializer."]
+       [ext-module         "ext-module=s{NAME}" #f
+                           ? "This is recognized for the backward compatibility.
+                              It works just as '--ext-main' is given, regardless
+                              of the value of {NAME}."]
+       [#f                 "h|help" => (^[] (usage #f))
+                           ? "Show this message and exit"]
+       [includes           "I*=s{DIR}"
+                           ? "Specify additional load path, a directory from
+                              which Scheme files are searched.  This option
+                              can be specified multiple times."]
+       [out.sci            "i|interface=s{FILE.SCI}"
+                           ? "Specify output interface file.  Valid only for
+                              single input file.  If omitted, input filename
+                              with '.sci' extension is used."]
+       [keep-private-macro "M|keep-private-macro=s{NAME,NAME,...}"
+                           ? "If a macro is not exported, it won't be emitted
+                              to the precompiled file by default.  With this
+                              option, the named macros are kept in the output
+                              even if they're private to the module."]
+       [out.c              "o|output=s{FILE.C}"
+                           ? "Specifies output file name.  If omitted, the
+                              input file name with '.c' extension is used.
+                              Valid only for single input file."]
+       [omit-debug-source-info "omit-debug-source-info"
+                           ? "Do not include debug source info to the
+                              precompiled code.  This does not affect the
+                              behavior of the code, but disassembling
+                              won't show the source info."]
+       [xprefix-all        "P|strip-prefix-all"
+                           ? "Remove all directory names from the input file
+                              names, just use their basenames, to produce
+                              output file names."]
+       [xprefix            "p|strip-prefix=s{PREFIX}"
+                           ? "Remove {PREFIX} from the input file names to
+                              produce output file names.  Useful if the
+                              source files are in a separate directory."]
+       [single-sci         "single-interface"
+                           ? "Generate single interface file, instead of one
+                              for each input file.  Valid only for multiple
+                              input files.  The first source file name is used,
+                              except the extension is swapped for '.sci'."]
+       [subinits           "s|sub-initializers=s{NAME,NAME,...}"]
+       [target-config      "target-config=s{FILE}"
+                           ? "Give the target parameter configuration, if it
+                              is different from the compiling gosh.  The file
+                              must contain a single keyword-value list,
+                              suitable for TARGET-PARAMS argument for
+                              cgen-precompile and compile.  Currently the
+                              following keyword is recognized:
+
+                              :env-header-size  Size of environment frame
+                              header in words.
+
+                              :cont-frame-size  Size of continuation
+                              frame in words."]
+       [else (opt . _) (usage #"Unrecognized option: ~opt")]
+       . args)
+    (let ([mtk      (split-to-symbols keep-private-macro)]
+          [subinits (split-to-symbols subinits)]
+          [extini   (or ext-module ext-main)]
+          [prefix   (or xprefix-all xprefix)]
+          [omit-line-directives
+           (sys-getenv "GAUCHE_PRECOMP_OMIT_LINE_DIRECTIVES")]
+          [tparams  (if target-config
+                      (load-target-config target-config)
+                      '())])
+      (match args
+        [() (usage #f)]
+        [(src)
+         (when single-sci
+           (usage "The `--single-interface' option is only valid with multiple input files"))
+         (cgen-precompile src
+                          :out.c out.c
+                          :out.sci (or out.sci ext-module)
+                          :load-paths (reverse includes)
+                          :strip-prefix prefix
+                          :ext-initializer extini
+                          :sub-initializers subinits
+                          :dso-name dso-name
+                          :omit-line-directives omit-line-directives
+                          :omit-debug-source-info omit-debug-source-info
+                          :predef-syms predef-syms
+                          :target-parameters tparams
+                          :macros-to-keep mtk)]
+        [(srcs ...)
+         (when out.sci
+           (usage "The `-i' or `--interface' option is only valid with single input file"))
+         (cgen-precompile-multi srcs
+                                :ext-initializer extini
+                                :strip-prefix prefix
+                                :single-sci-file single-sci
+                                :dso-name dso-name
+                                :load-paths (reverse includes)
+                                :omit-line-directives omit-line-directives
+                                :omit-debug-source-info omit-debug-source-info
+                                :predef-syms predef-syms
+                                :target-parameters tparams
+                                :macros-to-keep mtk)])))
   0)
 
 (define (usage msg)
   (when msg (print msg))
-  (print
-   "Usage: gosh tools/precomp [options] <file.scm> ...\
-  \nOptions:\
-  \n  -i,--interface=FILE.SCI\
-  \n      Specify output interface file.  Valid only for single input file.\
-  \n      If omitted, input filename with '.sci' extension is used.\
-  \n  --single-interface\
-  \n      Generate single interface file, instead of one for each input file.\
-  \n      Valid only for multiple input files.  The first source file name\
-  \n      is used, except the extension is swapped for '.sci'.\
-  \n  -o,--output=FILE.C\
-  \n      Specifies output file name.  If omitted, the input file name with\
-  \n      '.c' extension is used.  Valid only for single input file.\
-  \n  -D=NAME\
-  \n      Insert '#define NAME' at the beginning of output file.  This option\
-  \n      can be specified multiple times.\
-  \n  -p,--strip-prefix=PREFIX\
-  \n      Remove PREFIX from the input file names to produce output file names.\
-  \n      Useful if the source files are in a separate directory.\
-  \n  -P,--strip-prefix-all\
-  \n      Remove all directory names from the input file names, just use their\
-  \n      basenames, to produce output file names.\
-  \n  -e, --ext-main\
-  \n      Generate source for an extension module rather than a standalone\
-  \n      executable.  The initialization function follows the protocol of\
-  \n      Gauche extension initializer.\
-  \n  --keep-private-macro=NAME,NAME,...\
-  \n      If a macro is not exported, it won't be emitted to the precompiled\
-  \n      file by default.  With this option, the named macros are kept in\
-  \n      the output even if they're private to the module.\
-  \n  --omit-debug-source-info\
-  \n      Do not include debug source info to the precompiled code.  This\
-  \n      does not affect the behavior of the code, but disassembling\
-  \n      won't show the source info.\
-  \n  --target-config=FILE\
-  \n      Give the target parameter configuration, if it is different\
-  \n      from the compiling gosh.  The file must contain a single keyword-value\
-  \n      list, suitable for TARGET-PARAMS argument for cgen-precompile and\
-  \n      compile.  Currently the following keyword is recognized:\
-  \n        :env-header-size  Size of environment frame header in words\
-  \n        :cont-frame-size  Size of continuation frame in words.")
+  (print "Usage: gosh tools/precomp [options] <file.scm> ...")
+  (print "Options:")
+  (print (option-parser-help-string))
   (exit 0))
 
 (define (split-to-symbols arg)
