@@ -430,6 +430,19 @@
    "できます。これが、全てはオブジェクトであるかどうかはCLOSスタイルのオブジェクトシステム"
    "では問題にならないと言った理由です。"))
 
+(define fill-data-3 ; paragraph break
+  (string-append
+   "Lorem ipsum dolor sit amet, consectetur"
+   " adipiscing elit, sed do eiusmod tempor incididunt ut labore"
+   " et dolore magna aliqua.\n\n"
+   " Ut enim ad minim veniam, quis"
+   " nostrud exercitation ullamco laboris nisi ut aliquip ex ea"
+   " commodo consequat.\n\n"
+   "Duis aute irure dolor in reprehenderit in\n"
+   " voluptate velit esse cillum dolore eu fugiat nulla pariatur."
+   " Excepteur sint occaecat cupidatat non proident, sunt in culpa"
+   " qui officia deserunt mollit anim id est laborum."))
+
 (define (test-fill name input params expect)
   (test*/diff #"text.fill ~|name| ~|params|"
               expect
@@ -623,5 +636,16 @@
              "  sint occaecat cupidatat non proident, sunt in culpa qui officia"
              "  deserunt mollit anim id est laborum."))
 
+(test-fill "en paragraph break" fill-data-3
+           '(:hanging 8 :lead-in "START" :indent 3)
+           '("START   Lorem ipsum dolor sit amet, consectetur adipiscing elit,"
+             "   sed do eiusmod tempor incididunt ut labore et dolore magna"
+             "   aliqua."
+             "        Ut enim ad minim veniam, quis nostrud exercitation"
+             "   ullamco laboris nisi ut aliquip ex ea commodo consequat."
+             "        Duis aute irure dolor in reprehenderit in voluptate velit"
+             "   esse cillum dolore eu fugiat nulla pariatur. Excepteur sint"
+             "   occaecat cupidatat non proident, sunt in culpa qui officia"
+             "   deserunt mollit anim id est laborum."))
 
 (test-end)
