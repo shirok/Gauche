@@ -142,7 +142,10 @@ THIS IS LEAD-IN LONGER THAN HANGING.
                [lead-in lead-in]
                [r '()])
       (match par
-        [() (intersperse "\n" (reverse r))]
+        [()
+         (if (and (null? r) lead-in)
+           (list lead-in)               ;edge case - empty text
+           (intersperse "\n" (reverse r)))]
         [(x . xs)
          (loop xs 0 #f
                (cons (fill-paragraph x indent hanging width start-column lead-in)
