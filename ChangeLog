@@ -4,6 +4,10 @@
 	  lib/gauche/numutil.scm (print-exact-decimal-point-number):
 	  Add hook to print exact decimal notation if ratonal number's
 	  denominator is divisible by 2 and 5.
+	* src/gauche/priv/writerP.h, src/libio.scm, src/write.c:
+	  Add exact-decimal slot to <write-controls>
+	* lib/gauche/interactive/toplevel.scm (print-mode):
+	  Allow changing exact-decimal setting.
 
 2024-06-09  Shiro Kawai  <shiro@acm.org>
 

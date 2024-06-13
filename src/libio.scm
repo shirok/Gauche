@@ -932,6 +932,8 @@
                    :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
                               obj->stringLength = SCM_INT_VALUE(value); \
                             else obj->stringLength = -1;")
+    (exact-decimal :type <boolean> :c-name "exactDecimal"
+                   :setter "obj->exactDecimal = !SCM_FALSEP(value);")
     )
    (allocator (c "write_controls_allocate")))
  ;; NB: Printer is defined in libobj.scm via write-object method
@@ -939,7 +941,7 @@
 
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (make-write-controls :key length level width base radix pretty indent
-                                  string-length
+                                  string-length exact-decimal
                                   print-length print-level print-width
                                   print-base print-radix print-pretty)
   (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
@@ -951,7 +953,8 @@
     :radix  (arg radix  print-radix)
     :pretty (arg pretty print-pretty)
     :string-length string-length
-    :indent indent))
+    :indent indent
+    :exact-decimal exact-decimal))
 
 ;; Returns fresh write-controls where the specified slot value is replaced
 ;; from the original WC.
@@ -960,7 +963,7 @@
 ;; (Maybe we should write this in C to avoid overhead.)
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (write-controls-copy wc :key length level width base radix pretty indent
-                                     string-length
+                                     string-length exact-decimal
                                      print-length print-level print-width
                                      print-base print-radix print-pretty)
   (let-syntax [(select
@@ -970,6 +973,10 @@
                      (if (undefined? k-alt)
                        (slot-ref wc 'k)
                        k-alt)
+                     k)]
+                  [(_ k)
+                   (if (undefined? k)
+                     (slot-ref wc 'k)
                      k)]))]
     (let ([length (select length print-length)]
           [level  (select level  print-level)]
@@ -977,10 +984,9 @@
           [base   (select base   print-base)]
           [radix  (select radix  print-radix)]
           [pretty (select pretty print-pretty)]
-          [indent (if (undefined? indent) (slot-ref wc 'indent) indent)]
-          [string-length (if (undefined? string-length)
-                           (slot-ref wc 'string-length)
-                           string-length)])
+          [indent (select indent)]
+          [string-length (select string-length)]
+          [exact-decimal (select exact-decimal)])
       (if (and (eqv? length (slot-ref wc 'length))
                (eqv? level  (slot-ref wc 'level))
                (eqv? width  (slot-ref wc 'width))
@@ -988,7 +994,8 @@
                (eqv? radix  (slot-ref wc 'radix))
                (eqv? pretty (slot-ref wc 'pretty))
                (eqv? indent (slot-ref wc 'indent))
-               (eqv? string-length (slot-ref wc 'string-length)))
+               (eqv? string-length (slot-ref wc 'string-length))
+               (eqv? exact-decimal (slot-ref wc 'exact-decimal)))
         wc
         (make <write-controls>
           :length length
@@ -998,7 +1005,8 @@
           :radix  radix
           :pretty pretty
           :indent indent
-          :string-length string-length)))))
+          :string-length string-length
+          :exact-decimal exact-decimal)))))
 
 ;;;
 ;;; With-something

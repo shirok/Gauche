@@ -914,7 +914,8 @@
             :pretty ,(~ obj'pretty)
             :width  ,(~ obj'width)
             :indent ,(~ obj'indent)
-            :string-length ,(~ obj'string-length))))
+            :string-length ,(~ obj'string-length)
+            :exact-decimal ,(~ obj'exact-decimal))))
 
 ;;----------------------------------------------------------------
 ;; Describe

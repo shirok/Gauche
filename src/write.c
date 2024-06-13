@@ -134,6 +134,7 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->printPretty = FALSE;
         p->printIndent = 0;
         p->stringLength = -1;
+        p->exactDecimal = FALSE;
     }
     return p;
 }
@@ -486,6 +487,7 @@ ScmObj Scm__WritePrimitive(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
         Scm_NumberFormatInit(&fmt);
         fmt.radix = wp->printBase;
         if (wp->printRadix) fmt.flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
+        if (wp->exactDecimal) fmt.flags |= SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT;
         return SCM_MAKE_INT(Scm_PrintNumber(port, obj, &fmt));
     }
     /* PVREF only appears in pattern temlate in the current macro expander.

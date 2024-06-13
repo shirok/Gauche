@@ -46,6 +46,8 @@ struct ScmWriteControlsRec {
     int printIndent;            /* >=0 extra indent to be added after each
                                    newline when pretty printing. */
     int stringLength;           /* -1 for no limit.  Length of literal string */
+    int exactDecimal;           /* #t to use decimal point for exact numbers
+                                   whenever possible. */
 };
 
 SCM_CLASS_DECL(Scm_WriteControlsClass);

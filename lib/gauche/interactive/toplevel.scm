@@ -418,7 +418,7 @@
               (append-map
                (^[kv]
                  `(,(if (memq (car kv) '(pretty length level width base radix
-                                                string-length))
+                                         string-length exact-decimal))
                       (make-keyword (car kv))
                       (error "print-mode: unrecognized key:" (car kv)))
                    ,(cadr kv)))
@@ -431,7 +431,8 @@
       (format #t "         width : ~3d\n"  (~ c'width))
       (format #t "          base : ~3d\n"  (~ c'base))
       (format #t "         radix : ~3d\n"  (~ c'radix))
-      (format #t " string-length : ~3d\n"  (~ c'string-length)))
+      (format #t " string-length : ~3d\n"  (~ c'string-length))
+      (format #t " exact-decimal : ~3d\n"  (~ c'exact-decimal)))
     *no-value*))
 
 (define-toplevel-command (print-all pa) :read
