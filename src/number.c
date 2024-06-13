@@ -4182,6 +4182,18 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         Scm_Putz(Scm_DStringGetz(&ds), -1, port);
         return Scm_DStringSize(&ds);
     } else if (SCM_RATNUMP(obj)) {
+        if (flags & SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT) {
+            ScmObj print_exact_decimal_point_number_proc = SCM_UNDEFINED;
+            SCM_BIND_PROC(print_exact_decimal_point_number_proc,
+                          "print-exact-decimal-point-number",
+                          Scm_GaucheInternalModule());
+            ScmObj r =
+                Scm_ApplyRec2(print_exact_decimal_point_number_proc,
+                              obj, SCM_OBJ(port));
+            if (SCM_INTP(r)) return SCM_INT_VALUE(r);
+            /* FALLTHROUGH */
+        }
+
         u_long flags2 = flags & ~SCM_NUMBER_FORMAT_ALT_RADIX;
         nchars = print_number(port, SCM_RATNUM_NUMER(obj), flags2, fmt);
         Scm_Putc('/', port);

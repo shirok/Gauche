@@ -1,3 +1,10 @@
+2024-06-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (print_number),
+	  lib/gauche/numutil.scm (print-exact-decimal-point-number):
+	  Add hook to print exact decimal notation if ratonal number's
+	  denominator is divisible by 2 and 5.
+
 2024-06-09  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm (let-args): Rewrote using er-macro,

@@ -72,6 +72,7 @@
 (autoload "gauche/numutil"
           exact-integer-sqrt
           continued-fraction real->rational
+          print-exact-decimal-point-number
           expt-mod gamma lgamma
           real-valued? rational-valued? integer-valued?
           div-and-mod div mod div0-and-mod0 div0 mod0

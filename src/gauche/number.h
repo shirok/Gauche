@@ -362,33 +362,45 @@ SCM_EXTERN double Scm_ImagPart(ScmObj z);
    also take those flags.  The [N] and [S] mark the meaning of the flag
    in Scm_NumberToString and Scm_StringToNumber, respectively. */
 enum ScmNumberFormatFlags {
-    SCM_NUMBER_FORMAT_USE_UPPER = (1L<<0), /* use ABCDEF.. for base > 10
-                                              [N] same.
-                                              [S] ignored. */
-    SCM_NUMBER_FORMAT_SHOW_PLUS = (1L<<1), /* show '+' in positive number
-                                              [N] same.
-                                              [S] ignored. */
-    SCM_NUMBER_FORMAT_ALT_RADIX = (1L<<2), /* alternative radix prefix handling
-                                              specifying non-default behavior
-                                              (the actual behavior differs
-                                              between N and S:
-                                              [N] always add radix prefix
-                                              [S] never allow radix prefix */
+    /* use ABCDEF.. for base > 10
+       [N] same.
+       [S] ignored. */
+    SCM_NUMBER_FORMAT_USE_UPPER = (1L<<0),
+
+    /* show '+' in positive number
+       [N] same.
+       [S] ignored. */
+    SCM_NUMBER_FORMAT_SHOW_PLUS = (1L<<1),
+
+    /* alternative radix prefix handling specifying non-default behavior
+       (the actual behavior differs between N and S:
+       [N] always add radix prefix
+       [S] never allow radix prefix */
+    SCM_NUMBER_FORMAT_ALT_RADIX = (1L<<2),
+
+    /* Using notational decimal rounding.
+       [N] When rounding fractional part, we first generate the
+       closest decimal notation, then round.
+       [S] ignored. */
     SCM_NUMBER_FORMAT_ROUND_NOTATIONAL = (1L<<3),
-                                           /* Using notational decimal rounding.
-                                              [N] When rounding fractional part,
-                                              we first generate the closest
-                                              decimal notation, then round.
-                                              [S] ignored.
-                                            */
-    SCM_NUMBER_FORMAT_STRICT_R7RS = (1L<<4),/*[N] ignored.
-                                              [S] reject syntax outside of R7RS*/
-    SCM_NUMBER_FORMAT_EXACT = (1L<<5),    /* [N] ignored.
-                                             [S] treat as if #e is present if
-                                             no exactness prefix is given */
-    SCM_NUMBER_FORMAT_INEXACT = (1L<<6)   /* [N] ignored.
-                                             [S] treat as if #i is present if
-                                             no exactness prefix is given */
+
+    /* [N] ignored.
+       [S] reject syntax outside of R7RS*/
+    SCM_NUMBER_FORMAT_STRICT_R7RS = (1L<<4),
+
+    /* [N] ignored.
+       [S] treat as if #e is present if no exactness prefix is given */
+    SCM_NUMBER_FORMAT_EXACT = (1L<<5),
+
+    /* [N] ignored.
+       [S] treat as if #i is present if no exactness prefix is given */
+    SCM_NUMBER_FORMAT_INEXACT = (1L<<6),
+
+    /* If ratnum's denominator is a divisor of radix, we use decimal-point
+       notation prefixed with #e.
+       [N] same.
+       [S] ignored. */
+    SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT = (1L<<7)
 };
 
 typedef struct ScmNumberFormatRec {

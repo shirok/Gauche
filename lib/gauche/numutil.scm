@@ -157,6 +157,41 @@
     (- (find-rational (- x) dx- dx+))
     (find-rational x dx+ dx-)))
 
+;; If a rational can be exactly represented with decimal-point notation,
+;; return the string notation.  Otherwise, return #f.
+;; This is called during number to string conversion.
+;; We can extend this other than base 10, but for now, only decimal is
+;; supported.
+(define (print-exact-decimal-point-number n port)
+  (assume-type n <rational>)
+  (assume-type port <port>)
+  (and-let* ([denom (denominator n)]
+             [k2 (twos-exponent-factor denom)]
+             [d2 (quotient denom (ash 1 k2))]
+             [k5 (let factorize-5 ([d d2] [k 0])
+                   (if (= d 1)
+                     k
+                     (receive (q r) (quotient&remainder d 5)
+                       (and (zero? r) (factorize-5 q (+ k 1))))))]
+             ;; now that denominator is 2^{k2} * 5^{k5}.  adjust it
+             ;; to 10^{k}.
+             [k (max k2 k5)]
+             [f (if (< k2 k5) (expt 2 (- k5 k2)) (expt 5 (- k2 k5)))]
+             [number (* f (numerator n))]
+             [s (number->string number 10)]
+             [slen (string-length s)])
+    (receive (digits diglen)
+        (if (> slen k)
+          (values s slen)
+          (values (string-append (make-string (- (+ k 1) slen) #\0) s)
+                  (+ k 1)))
+      (display "#e" port)
+      ;; NB: Avoid string-take-right etc., for it will depend on srfi.13
+      (display (substring digits 0 (- diglen k)))
+      (display ".")
+      (display (substring digits (- diglen k) diglen))
+      (+ diglen 3))))
+
 ;; modulus exponent
 (define (expt-mod n e m)  ; (modulo (expt n e) m)
   (if (and (exact-integer? n) (exact-integer? e) (exact-integer? m) (>= e 0))
