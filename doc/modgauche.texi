@@ -16167,16 +16167,20 @@ examples).
 @example
 (define (main args)
   (let-args (cdr args)
-      ((verbose     "v|verbose")
-       (outfile     "o|outfile=s")
-       (debug-level "d|debug-level=i" 0)
-       (help        "h|help" => (cut show-help (car args)))
+      ((verbose     "v|verbose" ? "Run verbosely.")
+       (outfile     "o|outfile=s@{FILE@}" ? "Write output to @{FILE@}.")
+       (debug-level "d|debug-level=i@{LEVEL@}" 0 ? "Set debug level.")
+       (help        "h|help" => (cut show-help (car args))
+                    ? "Show help message and exit.")
        . restargs
       )
     ....))
 
 (define (show-help progname)
-  ...)
+  (print "Usage: ....")
+  (pritn "Options:")
+  (print (option-parser-help-string))
+  (exit 0))
 @end example
 
 @c EN
@@ -16212,6 +16216,16 @@ may add an option to make it compatible with @code{getopt_long(3)}.)
 @c COMMON
 
 @c EN
+The string after @code{?} is used as a help string for the option.
+You can get a formatted help string with
+@code{option-parser-help-string}.
+@c JP
+@code{?}の後の文字列はオプションのヘルプ文字列です。
+@code{option-parser-help-string}でフォーマットされたオプションのヘルプを
+得ることができます。
+@c COMMON
+
+@c EN
 The final @var{restargs} variable after the dot receives a list of
 non-optional command-line arguments.
 @c JP
@@ -16228,13 +16242,11 @@ It must be one of the following forms.
 @c COMMON
 
 @example
-1. (@var{var} @var{option-spec})
-2. (@var{var} @var{option-spec} @var{default})
-3. (@var{var} @var{option-spec} => @var{callback})
-4. (@var{var} @var{option-spec} @var{default} => @var{callback})
+1. (@var{var} @var{option-spec} [@var{default}] [? @var{helpstr}])
+2. (@var{var} @var{option-spec} [@var{default}] => @var{callback} [? @var{helpstr}])
 
-5. (else => @var{handler})
-6. (else @var{formals} @var{body} ...)
+3. (else => @var{handler})
+4. (else @var{formals} @var{body} ...)
 @end example
 
 @c EN
@@ -16243,13 +16255,13 @@ according to @var{option-spec}s.  If the corresponding option
 is given, a variable @var{var} is bound to a value as follows:
 
 @example
-(a) If the @var{bind-spec} is 1. or 2., then
+(a) If the @var{bind-spec} is 1., then
   (a1) If @var{option-spec} doesn't require an argument, then @code{#t}:
   (a2) If @var{option-spec} requires one argument, then the value of
        the argument:
   (a3) If @var{option-spec} requires more than one argument,
        the list of the values of the arguments.
-(b) If the @var{bind-spec} is 3. or 4., then @var{callback} is called with
+(b) If the @var{bind-spec} is 2., then @var{callback} is called with
   the value(s) of arguments, and its return value.
 @end example
 @c JP
@@ -16258,11 +16270,11 @@ is given, a variable @var{var} is bound to a value as follows:
 変数@var{var}が次に述べる値に束縛されます：
 
 @example
-(a) @var{bind-spec}の形式が上の1. または2. の場合：
+(a) @var{bind-spec}の形式が上の1. の場合：
   (a1) @var{option-spec}が引数を要求しない場合は、@code{#t}。
   (a2) @var{option-spec}がひとつの引数を要求する場合は、その引数の値。
   (a3) @var{option-spec}がそれ以上の引数を要求する場合は、引数の値のリスト。
-(b) @var{bind-spec}の形式が上の3. または4. の場合、@var{callback}を
+(b) @var{bind-spec}の形式が上の2.の場合、@var{callback}を
   引数の値を伴って呼び出し、その戻り値。
 @end example
 @c COMMON
@@ -16285,7 +16297,7 @@ the value is ignored.  It is only useful for side effects in
 
 @c EN
 If the corresponding option is not given in @var{args},
-@var{var} is bound to @var{default} if it is given, or
+@var{var} is bound to @var{default} if it is given,
 @code{#f} otherwise.
 @c JP
 対応するオプションが@var{args}に与えられなかった場合、
@@ -16294,29 +16306,30 @@ If the corresponding option is not given in @var{args},
 @c COMMON
 
 @c EN
-The last @var{bind-spec} may be the form 5 or 6. in which case
+The last @var{bind-spec} may be the form 3 or 4. in which case
 the clause is selected when no other @var{option-spec} matches
 a given command-line option.
-In the form 5, @var{handler} will be called with three arguments;
+In the form 3, @var{handler} will be called with three arguments;
 the given option, a list of remaining command-line arguments,
 and a continuation procedure.  The @var{handler}
 is supposed to handle the given option, and it may call the
 continuation procedure with the remaining arguments to continue
 processing, or it may return a list of arguments which will
 be treated as non-optional command-line arguments.
-The form 6 is a shorthand notion of
+The form 4 is a shorthand notion of
 @code{(else => (lambda @var{formals} @var{body} ...))}.
 @c JP
-最後の@var{bind-spec}には5か6の形式も許されます。
+最後の@var{bind-spec}には3か4の形式も許されます。
 この節は、どの@var{option-spec}にもマッチしないコマンドラインオプションが
 与えられた場合に選択されます。
-5番目の形式では、@var{handler}が3つの引数を伴って呼び出されます。
+3番目の形式では、@var{handler}が3つの引数を伴って呼び出されます。
 引数は、マッチしなかったコマンドラインオプション、
 残りのコマンドライン引数、そして引数処理に戻るための継続手続きです。
 @var{handler}は与えられたコマンドラインオプションを処理した後、
 オプション処理を続けたければ継続手続きに残りのコマンドライン引数を渡し、
 オプション処理を打ちきりたければ残りのコマンドライン引数を戻り値として
 返します。返された値は通常の(オプションでない)コマンドライン引数として扱われます。
+4番目の形式は@code{(else => (lambda @var{formals} @var{body} ...))}の簡略表記です。
 @c COMMON
 
 @c EN
