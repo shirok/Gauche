@@ -8817,6 +8817,8 @@ will be skipped.
 
 @defun make-stacked-map dic dic2 @dots{}
 @defunx make-stacked-map key-comparator dic dic2 @dots{}
+@c MOD gauche.dictionary
+@c EN
 Creates a new stacked map with the given dictionaries
 @var{dic} @var{dic2} @dots{}, where @var{dic} is the topmost dictionary.
 You can give a comparator
@@ -8825,45 +8827,100 @@ traversal with @code{dict-fold}.  If @var{key-comparator} is
 omitted, the comparator from @var{dic} is used.
 The key comparator is returned from @code{dict-comparator}
 on the stacked map.
+@c JP
+与えられたディクショナリ@var{dic} @var{dic2} @dots{}からなる新たなスタックマップを
+作って返します。最初に指定されたディクショナリが一番上のディクショナリとなります。
+@code{dict-fold}で使われるキーの比較には@var{key-comparator}が使われます。
+@var{key-comparator}が省略された場合には、@var{dic}の比較器が使われます。
+@code{dict-comparator}をスタックマップに適用するとこのキー比較器が返されます。
+@c COMMON
 @end defun
 
 @deffn {Method} stacked-map-stack (smap <stacked-map>) (dic <dictionary>)
+@c MOD gauche.dictionary
+@c EN
 Creates a new stacked map, adding @var{dic} on top of the existing
 stacked map @var{smap}.  The key comparator is inherited from
 @var{smap}.
+@c JP
+スタックマップ@var{smap}の上に@var{dic}を追加した新たなスタックマップを作って返します。
+キー比較器は@var{smap}から引き継がれます。
+@c COMMON
 @end deffn
 
 @deffn {Method} stacked-map-push! (smap <stacked-map>) (dic <dictionary>)
+@c MOD gauche.dictionary
+@c EN
 Adds @var{dic} on top of the dictionaries @var{smap} holds.
+@c JP
+スタックマップ@var{smap}の保持するディクショナリスタックの一番上に@var{dic}を追加します。
+@c COMMON
 @end deffn
 
 @deffn {Method} stacked-map-pop! (smap <stacked-map>)
+@c MOD gauche.dictionary
+@c EN
 Remove the topmost dictionary @var{smap} holds.  An error is signaled
 if you attempt to pop from an @var{smap} that has no dictionaries.
+@c JP
+スタックマップ@var{smap}の一番上のディクショナリを取り除きます。
+@var{smap}のディクショナリリストが空の場合はエラーが投げられます。
+@c COMMON
 @end deffn
 
 @deffn {Method} stacked-map-depth (smap <stacked-map>)
+@c MOD gauche.dictionary
+@c EN
 Returns a number of dictionaries @var{smap} has.
+@c JP
+@var{smap}の持つディクショナリの数を返します。
+@c COMMON
 @end deffn
 
 @deffn {Method} stacked-map-entry-update! (smap <stacked-map>) key proc :optional fallback
+@c MOD gauche.dictionary
+@c EN
 Run @code{(dict-update! d @var{key} @var{proc} @var{fallback})} on the
 first dictionary @code{d} that has the given key.
+@c JP
+与えられたキー@var{key}を持つ最初のディクショナリ@code{d}に対して
+@code{(dict-update! d @var{key} @var{proc} @var{fallback})}を呼び出します。
+@c COMMON
 
+@c EN
 This differs from running @code{dict-update!} on @var{smap}; if the topmost
 dictionary doesn't have an entry with @var{key} but some lower dictionary has,
 @code{dict-update!} takes the existing value and applies @var{proc} to it,
 then insert the result to the topmost dictionary, while the original entry
 remains intact.
+@c JP
+これは@var{smap}に@code{dict-update!}を適用するのとは異なります。
+@var{key}が一番上のディクショナリにはなく、しかし他のディクショナリにあった場合、
+@code{dict-update!}は@var{proc}を呼び出した後、その結果を
+一番上のディクショナリに挿入し、他のエントリはそのままにします。
+@c COMMON
 @end deffn
 
 @deffn {Method} stacked-map-entry-delete! (smap <stacked-map>) key
+@c MOD gauche.dictionary
+@c EN
 Deletes the first entry with @var{key}.  If there's another entry
 with @var{key} in a lower dictionary, it will become visible.
+@c JP
+@var{key}を持つ最初のエントリを削除します。もし他のディクショナリに@var{key}を持つ
+エントリがあった場合、以降はそれが見えることになります。
+@c COMMON
 
+@c EN
 This differs from running @code{dict-delete!} on @var{smap}; it
 deletes all entries with @var{key}, so that @code{dict-exists?}
 after @code{dict-delete!} is guaranteed to return @code{#f}.
+@c JP
+これは@var{smap}に@code{dict-delete!}を適用するのとは異なります。
+@code{dict-delete!}は@var{key}を持つ全てのエントリを削除します。
+従って@code{dict-delete!}の後に@code{dict-exists?}でキーを問い合わせると
+必ず@code{#f}が返ります。
+@c COMMON
 @end deffn
 
 
