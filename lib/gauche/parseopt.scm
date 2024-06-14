@@ -58,6 +58,8 @@
    (plural? :init-keyword :plural?)  ; accept multiple options?
    (optspec :init-keyword :optspec)  ; original <optspec> string
    (help    :init-keyword :help)     ; help string
+   (default :init-keyword :default)  ; default value.  Can be #<undef>
+   (value   :init-value #f)
    ))
 
 (define-method write-object ((obj <option-spec>) port)
@@ -71,7 +73,7 @@
    (fallback :init-keyword :fallback)))
 
 ;; Parse optsepc and reurun <option-spec>.
-(define (make-option-spec optspec help-string :optional (handler #f))
+(define (make-option-spec optspec help-string default handler)
   ($ assume-type optspec <string>
      "String required for a command spec, but got:" optspec)
   ($ assume-type help-string (<?> <string>)
@@ -90,7 +92,8 @@
         :plural? plural?
         :optspec optspec
         :handler handler
-        :help help-string))
+        :help help-string
+        :default default))
     (error "unrecognized option spec:" optspec)))
 
 ;; Helper functions
@@ -274,7 +277,7 @@
       [(spec handler) (values spec #f handler)]
       [_ (error "Invalid command-line argument specification:" a-spec)]))
   (receive (optspec helpstr handler) (parse-spec a-spec)
-    (make-option-spec optspec helpstr handler)))
+    (make-option-spec optspec helpstr (undefined) handler)))
 
 (define-syntax parse-options
   (syntax-rules ()
@@ -437,29 +440,29 @@
 
      (define (gen-optspecs bindings)
        (map (match-lambda
-              [(#f spec _ help #f _)
+              [(#f spec def help #f _)
                (quasirename r
-                 `(make-option-spec ',spec ',help (constantly #t)))]
-              [(#f spec _ help handler-var _)
+                 `(make-option-spec ',spec ',help ,def (constantly #t)))]
+              [(#f spec def help handler-var _)
                (quasirename r
-                 `(make-option-spec ',spec ',help ,handler-var))]
-              [(var spec _ help #f _)
+                 `(make-option-spec ',spec ',help ,def ,handler-var))]
+              [(var spec def help #f _)
                (if (plural-option? spec)
                  (quasirename r
-                   `(make-option-spec ',spec ',help
+                   `(make-option-spec ',spec ',help ,def
                                       (case-lambda
                                         [()    (push! ,var #t)]
                                         [(val) (push! ,var val)]
                                         [vals  (push! ,var vals)])))
                  (quasirename r
-                   `(make-option-spec ',spec ',help
+                   `(make-option-spec ',spec ',help ,def
                                       (case-lambda
                                         [()    (set! ,var #t)]
                                         [(val) (set! ,var val)]
                                         [vals  (set! ,var vals)]))))]
-              [(var spec _ help handler-var _)
+              [(var spec def help handler-var _)
                (quasirename r
-                 `(make-option-spec ',spec ',help
+                 `(make-option-spec ',spec ',help ,def
                                     (^ args
                                       (set! ,var (apply ,handler-var args)))))]
               )
