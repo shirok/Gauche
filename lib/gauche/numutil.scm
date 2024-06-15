@@ -178,7 +178,8 @@
              [k (max k2 k5)]
              [f (if (< k2 k5) (expt 2 (- k5 k2)) (expt 5 (- k2 k5)))]
              [number (* f (numerator n))]
-             [s (number->string number 10)]
+             [abs-number (abs number)]
+             [s (number->string abs-number 10)]
              [slen (string-length s)])
     (receive (digits diglen)
         (if (> slen k)
@@ -186,11 +187,12 @@
           (values (string-append (make-string (- (+ k 1) slen) #\0) s)
                   (+ k 1)))
       (display "#e" port)
+      (when (negative? number) (display "-" port))
       ;; NB: Avoid string-take-right etc., for it will depend on srfi.13
       (display (substring digits 0 (- diglen k)))
       (display ".")
       (display (substring digits (- diglen k) diglen))
-      (+ diglen 3))))
+      (+ diglen 3 (if (negative? number) 1 0)))))
 
 ;; modulus exponent
 (define (expt-mod n e m)  ; (modulo (expt n e) m)
