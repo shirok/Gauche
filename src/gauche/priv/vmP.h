@@ -128,30 +128,11 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
 /*
  * Escape point
  *
- *  EscapePoint (EP) structure keeps certain point of continuation chain
- *  where control can be transferred.   This structure is used for
- *  saved continuations, as well as error handlers.
- *
- *  Normally EPs forms a single list, linked by the prev pointer.
- *  vm->escapePoint points a 'current' EP, whose ehandler is the current
- *  error handler.
- *
- *  However, this simple structure does not work in all cases.
- *  When an error is signalled, we pop EP before executing the error
- *  handler so that an error raised within the error handler will be
- *  handled by the handler of outer EP.
- *
- *    Suppose the current EP is EP0.
- *
- *    (with-error-handler    ;; <- (1)this installs EP1. EP1->cont captures
- *                           ;;        one-shot continuation of this expr.
- *       (lambda (e) ...)    ;; <- (3)this is executed while EP0 is current
- *      (lambda () ...)      ;; <- (2)this is executed while EP1 is current
- *
- *  If the error handler returns, we pass its result to the continuation of
- *  with-error-handler, which is kept in EP1->cont.
+ *  EscapePoint (EP) structure is a saved continuation.  It grabs
+ *  a head of continuation chain with some auxiliary data.
  */
 typedef struct ScmEscapePointRec {
+    SCM_HEADER;
     struct ScmEscapePointRec *prev;
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
@@ -184,6 +165,11 @@ typedef struct ScmEscapePointRec {
     ScmObj abortHandler;
     struct ScmEscapePointRec *bottom;
 } ScmEscapePoint;
+
+SCM_CLASS_DECL(Scm_EscapePointClass);
+#define SCM_CLASS_ESCAPE_POINT  (&Scm_EscapePointClass)
+#define SCM_ESCAPE_POINT(obj)   ((ScmEscapePoint*)obj)
+#define SCM_ESCAPE_POINT_P(obj) SCM_ISA(obj, SCM_CLASS_ESCAPE_POINT)
 
 /* Escape types */
 #define SCM_VM_ESCAPE_NONE   0

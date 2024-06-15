@@ -1947,8 +1947,13 @@ static ScmObj *push_dynamic_handler_cc(ScmVM *vm, ScmPContinuationProc *after,
 }
 
 /*
- * EscapePoint allocation
+ * EscapePoints
  */
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_EscapePointClass,
+                         NULL, NULL, NULL, NULL,
+                         SCM_CLASS_OBJECT_CPL);
+
 static ScmEscapePoint *new_ep(ScmVM *vm,
                               ScmObj errorHandler,
                               int rewindBefore,
@@ -1956,6 +1961,7 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
                               ScmObj abortHandler)
 {
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
+    SCM_SET_CLASS(ep, SCM_CLASS_ESCAPE_POINT);
     ep->prev = vm->escapePoint;
     ep->ehandler = errorHandler;
     ep->cont = vm->cont;
