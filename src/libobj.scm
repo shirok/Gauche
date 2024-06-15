@@ -928,7 +928,8 @@
 ;; still defined in gauche.interactive.
 
 (define (describe-common obj)
-  (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj))))
+  (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj)))
+  (values))
 
 (define-method describe-slots (obj)
   (let* ([class (class-of obj)]
@@ -940,7 +941,8 @@
                 (if (slot-bound? obj s)
                   (with-output-to-string
                     (^[] (write-limited (slot-ref obj s) 60)))
-                  "#<unbound>"))))))
+                  "#<unbound>")))))
+  (values))
 
 (define-method describe (object) ; default
   (describe-common object)
