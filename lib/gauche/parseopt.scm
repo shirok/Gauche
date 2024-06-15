@@ -58,8 +58,8 @@
    (plural? :init-keyword :plural?)  ; accept multiple options?
    (optspec :init-keyword :optspec)  ; original <optspec> string
    (help    :init-keyword :help)     ; help string
-   (default :init-keyword :default)  ; default value.  Can be #<undef>
-   (value   :init-value #f)
+   (default :init-keyword :default)  ; default value.
+   (value)                           ; can be unbound
    ))
 
 (define-method write-object ((obj <option-spec>) port)
@@ -93,8 +93,15 @@
         :optspec optspec
         :handler handler
         :help help-string
-        :default default))
+        :default (if (undefined? default)
+                   (if plural? '() #f)
+                   default)))
     (error "unrecognized option spec:" optspec)))
+
+(define (option-spec-value optspec)
+  (if (slot-bound? optspec 'value)
+    (~ optspec'value)
+    (~ optspec'default)))
 
 ;; Helper functions
 
@@ -203,17 +210,25 @@
          (process-args args)]))
 
 ;; Now, this is the argument parser body.
-(define (parse-cmdargs args speclist fallback)
+(define (parse-cmdargs args option-specs fallback)
   (let loop ([args args])
     (receive (option nextargs) (next-option args)
       (if option
-        (cond [(find-matching-optspec option speclist)
-               => (^[spec&name]
-                    (receive (optargs nextargs)
-                        (get-optargs (car spec&name) (cdr spec&name)
-                                     option nextargs)
-                      (apply (~ (car spec&name)'handler) optargs)
-                      (loop nextargs)))]
+        (cond [(find-matching-optspec option option-specs)
+               => (match-lambda
+                    ([spec . optname]
+                     (receive (optargs nextargs)
+                         (get-optargs spec optname option nextargs)
+                       (let1 vals
+                           (cond [(~ spec'handler) => (cut apply <> optargs)]
+                                 [(length=? optargs 1) (car optargs)]
+                                 [else optargs])
+                         (if (~ spec'plural?)
+                           (if (slot-bound? spec 'value)
+                             (push! (~ spec'value) vals)
+                             (set! (~ spec'value) (list vals)))
+                           (set! (~ spec'value) vals)))
+                       (loop nextargs))))]
               ;; For unknown options including '=', we split at the first '='
               ;; and take the first part as an unknown option.  This is not
               ;; exactly the right thing; if we get "--unknown=--known" in
