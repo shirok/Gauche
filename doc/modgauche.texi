@@ -11464,57 +11464,233 @@ Some examples:
 @end example
 @end defmac
 
-@deffn {Generic Function} describe :optional obj
-@deffnx {Generic Function} d :optional obj
+@defun d :optional obj
 @c MOD gauche.interactive
 @c EN
-Prints the detail information about a Scheme object @var{obj}.
-The default method shows @var{obj}'s class, and if it has
-any slots, the list of slot names and their values.
-You can specialize this method for customized display.
-Some built-in types has specialized methods
-(see how an integer is described in the example below).
+This is defined as an alias of @code{describe}
+(@pxref{Describing instance}, for the details).
+The short name is for the convenience, but in REPL you may find
+use @code{,d} toplevel command more convenient now.
 @c JP
-Schemeオブジェクト@var{obj}の詳細情報を表示します。
-既定メソッドは@var{obj}のクラスを表示し、さらに@var{obj}がスロットを
-持っていればその名前と内容をリストします。
-このメソッドをスペシャライズすることによりクラス毎に表示をカスタマイズできます。
-いくつかの組み込み型は既にメソッドを持っています
-(下の例で整数がどのように表示されるか見てください)。
+これは@code{describe}の別名として定義されています
+(詳しくは@ref{Describing instance}参照)。
+短い名前の方がREPLで打ちやすいからですが、
+今ではREPLトップレベルコマンド@code{,d}の方が使いやすいでしょう。
 @c COMMON
+@end defun
 
 @c EN
-If @var{obj} is omitted, the last evaluation result bound to @code{*1} in REPL
-is used.  (@pxref{Working in REPL})
+This module also adds some methods to the generic function @code{describe}
+for built-in objects.
 @c JP
-@var{obj}が省略された場合は、@code{*1}に束縛されている、直前のREPLの結果が
-使われます。(@ref{Working in REPL}参照)
+このモジュールはまた、ジェネリックファンクション@code{describe}にいくつか
+組み込みオブジェクト向けのメソッドを追加します。
 @c COMMON
 
+@deffn {Method} describe
+@c EN
+When called without arguments, it describes the object bound to @code{*1},
+the last result of REPL.
+@c JP
+引数なしで呼ばれた場合、REPLでの直近の評価値が束縛されている@code{*1}の値を
+describeします。
+@c COMMON
+@end deffn
+
+@deffn {Method} describe (s <symbol>)
+@c EN
+Customized describe method for symbols.  It shows known bindings
+for the symbol as well (it is looked for in the loaded modules).
+@c JP
+シンボル用にカスタマイズされたdescribeです。
+ロードされているモジュール中からそのシンボルへの束縛を探して表示します。
+@c COMMON
 @example
-gosh> (sys-stat "Makefile")
-#<<sys-stat> 0x1e7de60>
-gosh> (d)
-#<<sys-stat> 0x1e7de60> is an instance of class <sys-stat>
-slots:
-  type      : regular
-  perm      : 436
-  mode      : 33204
-  ino       : 3242280
-  dev       : 2097
-  rdev      : 0
-  nlink     : 1
-  uid       : 500
-  gid       : 500
-  size      : 19894
-  atime     : 1435379061
-  mtime     : 1432954340
-  ctime     : 1432954340
-gosh> (d 1432954340)
-1432954340 is an instance of class <integer>
-  (#x556925e4, ~ 1.4Gi, 2015-05-30T02:52:20Z as unix-time)
+gosh$ ,d 'filter
+filter is an instance of class <symbol>
+Known bindings for variable filter:
+  In module `gauche.collection':
+    #<generic filter (2)>
+  In module `gauche':
+    #<closure (filter pred lis)>
 @end example
 @end deffn
+
+@deffn {Method} describe (c <char>)
+@c EN
+Customized describe method for characters.
+It shows its Unicode codepoint and general category.
+@c JP
+文字用にカスタマイズされたdescribeです。
+Unicodeコードポイントとジェネラルカテゴリを表示します。
+@c COMMON
+@example
+gosh$ ,d #\π
+#\π is an instance of class <char>
+  (U+03c0, Ll)
+@end example
+@end deffn
+
+@deffn {Method} describe (n <integer>)
+@c EN
+Customized describe method for exact integers.
+Depending on the value range, it shows several informations: A hexadecimal
+notation, 1024-base approximated value (useful for memory and storage
+size), character as Unicode codepoint, and
+time as Unix time.
+@c JP
+正確な整数用にカスタマイズされたdescribeです。
+値の範囲に応じて、いくつかの情報を示します。
+16進数表示、1024単位の概数(メモリやストレージのサイズに便利です)、
+Unicodeコードポイントとして見た場合の文字、
+そしてUnix timeとして見た場合の時刻です。
+@c COMMON
+@example
+gosh$ ,d 1234
+1234 is an instance of class <integer>
+  (#x4d2, ~ 1.2Ki, #\Ӓ as char, 1970-01-01T00:20:34Z as unix-time)
+gosh$ ,d 12345678
+12345678 is an instance of class <integer>
+  (#xbc614e, ~ 11Mi, 1970-05-23T21:21:18Z as unix-time)
+gosh$ ,d 12345678901234567890
+12345678901234567890 is an instance of class <integer>
+  (#xab54a98c_eb1f0ad2, ~ 10Ei)
+@end example
+@end deffn
+
+@deffn {Method} describe (r <rational>)
+@c EN
+Customized describe method for exact rationals.
+It shows the floating point number as coerced into inexact.
+@c JP
+正確な有理数用にカスタマイズされたdescribeです。
+非正確数に変換された場合の小数表示も示します。
+@c COMMON
+@example
+gosh$ ,d 1234/5678
+617/2839 is an instance of class <rational>
+  inexact: 0.2173300457907714
+@end example
+@end deffn
+
+@deffn {Method} describe (d <real>)
+@c EN
+Customized describe method for inexact reals.
+It shows binary representation of the flonum, and
+rational representation as coerced into exact.
+@c JP
+不正確な実数用にカスタマイズされたdescribeです。
+浮動小数点数としてのバイナリ表現と、
+正確数に変換された場合の有理数表示も示します。
+@c COMMON
+@example
+gosh$ ,d 3.14159265358979
+3.14159265358979 is an instance of class <real>
+  mantissa: #x+19_21fb_5444_2d11   exponent: -51    hex: #x4009_21fb_5444_2d11
+  exact: 144029661/45846065
+@end example
+@end deffn
+
+@deffn {Method} describe (c <complex>)
+@c EN
+Customized describe method for complex numbers.
+It shows polar representation as well.
+@c JP
+複素数用にカスタマイズされたdescribeです。
+極座標形式も表示します。
+@c COMMON
+@example
+gosh$ ,d (expt -2 1/4)
+0.8408964152537146+0.8408964152537146i is an instance of class <complex>
+  polar: 1.1892071150027212@@0.7853981633974483  (@@0.25pi)
+@end example
+@end deffn
+
+@deffn {Method} describe (p <procedure>)
+@c EN
+Customized describe method for procedures.
+It shows the source location (if avaiable) and procedure type signature
+as well.
+@c JP
+手続き用にカスタマイズされたdescribeです。
+ソースコード位置(分かれば)と、手続きの型も表示します。
+@c COMMON
+@example
+gosh> ,d display-filled-text
+#<closure (display-filled-text text :key (port (current-output-port))
+(indent 0) (hanging 0) (width 65) (lead-in #f) (start-column #f))> is
+an instance of class <procedure>
+Defined at "/usr/share/gauche-0.98/0.9.15-p1/lib/text/fill.scm":111
+type: #<^ <top> * -> *>
+slots:
+  required  : 1
+  optional  : #t
+  optcount  : 1
+  locked    : #f
+  currying  : #f
+  constant  : #f
+  info      : (display-filled-text text :key (port (current-output-port))
+  setter    : #f
+@end example
+@end deffn
+
+
+@deffn {Method} describe (g <generic>)
+@c EN
+Customized describe method for generic functions.
+It shows the list of known methods, with the specializer list
+and the source location of definition if known.
+@c JP
+ジェネリックファンクション用にカスタマイズされたdescribeです。
+メソッドのリストも表示します。
+メソッドは、スペシャライザーのリストと、わかれば定義のソース情報が示されます。
+@c COMMON
+@example
+gosh$ ,d describe
+#<generic describe (11)> is an instance of class <generic>
+slots:
+  name      : describe
+  sealed    : #f
+  info      : describe
+  methods   : (#<method (describe <macro>)> #<method (describe <procedure>
+methods:
+  (<macro>)            ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":223
+  (<procedure>)        ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":215
+  (<method>)           ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":208
+  (<generic>)          ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":189
+  (<real>)             ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":172
+  (<rational>)         ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":160
+  (<integer>)          ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":128
+  (<char>)             ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":123
+  (<symbol>)           ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":118
+  ()                   ; "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":116
+  (<top>)
+@end example
+@end deffn
+
+@deffn {Method} describe (m <method>)
+@c EN
+Customized describe method for methods.
+It shows the source code location if available.
+@c JP
+メソッド用にカスタマイズされたdescribeです。
+ソースコード位置が分かればそれも表示します。
+@c COMMON
+gosh$ ,d (car (~ describe'methods))
+#<method (describe <macro>)> is an instance of class <method>
+Defined at "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":223
+slots:
+  required  : 1
+  optional  : #f
+  method-locked: #f
+  leaf?     : #t
+  generic   : #<generic describe (11)>
+  specializers: (#<class <macro>>)
+  info      : (describe <macro>)
+@example
+@end example
+@end deffn
+
 
 @defun info symbol
 @c MOD gauche.interactive

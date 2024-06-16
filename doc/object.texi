@@ -2211,6 +2211,7 @@ In this section, we explain how to create and use an instance.
 @menu
 * Creating instance::
 * Accessing instance::
+* Describing instance::
 * Changing classes::
 @end menu
 
@@ -2381,7 +2382,7 @@ some circumstances (e.g. using pre-allocated instances).
 アロケーションを回避できます。
 @c COMMON
 
-@node Accessing instance, Changing classes, Creating instance, Instance
+@node Accessing instance, Describing instance, Creating instance, Instance
 @subsection Accessing instance
 @c NODE インスタンスへのアクセス
 
@@ -2634,7 +2635,135 @@ trigger class redefinition again (see @ref{Changing classes} for details).
 @c COMMON
 @end deffn
 
-@node Changing classes,  , Accessing instance, Instance
+@node Describing instance, Changing classes, Accessing instance, Instance
+@subsection Describing instance
+@c NODE インスタンスの記述
+
+@c EN
+In REPL, you can invoke @code{,d} or @code{,describe} toplevel
+command to view the detailed description of an object
+(@pxref{Working in REPL}).  It is realized as a generic function
+@code{describe}:
+@c JP
+REPLで@code{,d}もしくは@code{,describe}トップレベルコマンドを使うと
+オブジェクトの詳しい情報が表示されます(@ref{Working in REPL}参照)。
+これは、ジェネリックファンクション@code{describe}により実現されています。
+@c COMMON
+
+@deffn {Generic Function} describe obj
+@c EN
+Prints the detail information about a Scheme object @var{obj}.
+The default method shows @var{obj}'s class, and if it has
+any slots, the list of slot names and their values.
+@c JP
+Schemeオブジェクト@var{obj}の詳細情報を表示します。
+既定メソッドは@var{obj}のクラスを表示し、さらに@var{obj}がスロットを
+持っていればその名前と内容をリストします。
+@c COMMON
+
+@example
+gosh> (describe (sys-stat "Makefile"))
+#<<sys-stat> 0x1e7de60> is an instance of class <sys-stat>
+slots:
+  type      : regular
+  perm      : 436
+  mode      : 33204
+  ino       : 3242280
+  dev       : 2097
+  rdev      : 0
+  nlink     : 1
+  uid       : 500
+  gid       : 500
+  size      : 19894
+  atime     : 1435379061
+  mtime     : 1432954340
+  ctime     : 1432954340
+@end example
+
+@c EN
+When you load @code{gauche.interactive} module (which is already done
+when you're in REPL), a bunch of methods for built-in objects
+are defined to @code{describe}, showing information specific
+to their classes.  @xref{Interactive session}, for more details.
+@c JP
+@code{gauche.interactive}モジュールをロードした場合
+(REPLを使っていれば自動的にロードされています)、多くの組み込みオブジェクトに対して
+@code{describe}メソッドが追加されるので、それぞれのクラスに応じた
+詳細情報が表示されます。詳しくは@ref{Interactive session}を見てください。
+@c COMMON
+
+@c EN
+You can also define a specialized @code{describe} method on your own class
+for customized description.  The common pattern of a customized
+describe method is (1) call @code{describe-common} first, which
+prints the common opening line, and (2) at the end, make sure to
+return zero values---which will play nicely with REPL.
+You can print whatever you like inbetween.
+@c JP
+自分で定義したクラスに特殊化した@code{describe}メソッドを定義することで、
+記述をカスタマイズすることができます。
+@code{describe}メソッドに共通するパターンは:
+(1) まず@code{describe-common}を呼びます。これは共通した最初の一行を表示します。
+(2) 最後に@code{(values)}を呼んで値を返さないようにします。
+これはREPLで便利です。
+その間では好きな情報を表示できます。
+@c COMMON
+
+@example
+(define-method describe ((obj <my-class>))
+  ;; common opening line, "#<...> is an instance of class <my-class>"
+  (describe-common obj)
+  ;; print relevant information
+  ... custom description ...
+  ;; if you have slots to show:
+  (describe-slots obj)
+  ;; return 0 values.  This works nicely in REPL.
+  (values))
+@end example
+@end deffn
+
+@defun describe-common obj
+@c EN
+This procedure prints the common opening line of @code{describe}.
+Custom @code{describe} method should call this at the beginning.
+@c JP
+この手続きは@code{describe}で共通して表示される最初の行を出力します。
+カスタム@code{describe}メソッドはこれを最初に呼んでください。
+@c COMMON
+
+@example
+(describe-common 1)
+ @result{} @r{prints} (a b c) is an instance of class <pair>
+@end example
+@end defun
+
+@defun describe-slots obj
+@c EN
+This shows the list of slots and their values of @var{obj}, as
+in the default @code{describe} method.  Useful for the custom
+describe method, when you want to print some extra information
+@emph{and} list of slot values.
+@c JP
+この手続きはデフォルトの@code{describe}メソッドがやるように、
+@var{obj}のスロットとその値のリストを表示します。
+カスタムのdescribeメソッドの中で、他の情報と一緒にスロットの情報を
+表示したい場合に使えます。
+@c COMMON
+
+@example
+(describe-slots (current-input-port))
+ @result{} @r{prints}
+slots:
+  name      : "(standard input)"
+  buffering : :full
+  sigpipe-sensitive?: #f
+  current-line: 7
+  current-column: 0
+  link      : #<oport (standard output) 0x7ff0cc6cddd0>
+@end example
+@end defun
+
+@node Changing classes,  , Describing instance, Instance
 @subsection Changing classes
 @c NODE クラスの変更
 
