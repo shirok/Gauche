@@ -198,43 +198,46 @@
     (format #f "~a{~a}" cmd (lookup node *node-table*))))
 
 (define (usage)
-  (display "Usage: gosh tools/docprep [-en|-ja][-o outfile] infile\n")
+  (print "Usage: gosh tools/docprep [options] infile")
+  (print "Options:")
+  (print (option-parser-help-string))
   (exit 1))
 
+;; TODO: Switch to use 'ja' (language code) instead of 'jp' (country code)
 (define (main args)
-  (let ([outfile #f]
-        [language 'en])
-    (let1 a (parse-options (cdr args)
-              (["o=s" (file) (set! outfile file)]
-               ["en"  () (set! language 'en)]
-               ["jp"  () (set! language 'jp)]
-               [else _ (usage)]))
+  (define language 'en)
+  (let-args (cdr args)
+      ([outfile "o=s{FILE}" ? "Writes output to {FILE} instead of stdout."]
+       [#f "en" => (^[] (set! language 'en)) ? "Set output language to English"]
+       [#f "jp" => (^[] (set! language 'jp)) ? "Set output language to Japanese"]
+       [else _ (usage)]
+       . a)
 
-      (define (do-it)
-        (case language
-          [(en) (filter #/^@c EN$/ #/^@c JP$/)]
-          [(jp) (filter #/^@c JP$/ #/^@c EN$/)]))
+    (define (do-it)
+      (case language
+        [(en) (filter #/^@c EN$/ #/^@c JP$/)]
+        [(jp) (filter #/^@c JP$/ #/^@c EN$/)]))
 
-      (unless (= (length a) 1) (usage))
+    (unless (= (length a) 1) (usage))
 
-      (parameterize ([srcdir (sys-normalize-pathname (sys-dirname (car a))
-                                                     :absolute #t)]
-                     [lang language])
-        (when (eq? language 'jp)
-          (with-input-from-file (car a) scan-nodes
-                                :encoding 'utf8
-                                :conversion-illegal-output 'replace))
-        (with-input-from-file (car a)
-          (^[]
-            (if outfile
-              (with-output-to-file outfile do-it :encoding 'utf8)
-              (let1 out (wrap-with-output-conversion
-                         (current-output-port) 'utf8)
-                (with-output-to-port out do-it)
-                (close-output-port out))))
-          :encoding 'utf8
-          :conversion-illegal-output 'replace))
-      0)))
+    (parameterize ([srcdir (sys-normalize-pathname (sys-dirname (car a))
+                                                   :absolute #t)]
+                   [lang language])
+      (when (eq? language 'jp)
+        (with-input-from-file (car a) scan-nodes
+                              :encoding 'utf8
+                              :conversion-illegal-output 'replace))
+      (with-input-from-file (car a)
+        (^[]
+          (if outfile
+            (with-output-to-file outfile do-it :encoding 'utf8)
+            (let1 out (wrap-with-output-conversion
+                       (current-output-port) 'utf8)
+              (with-output-to-port out do-it)
+              (close-output-port out))))
+        :encoding 'utf8
+        :conversion-illegal-output 'replace))
+    0))
 
 ;; Local variables:
 ;; mode: Scheme
