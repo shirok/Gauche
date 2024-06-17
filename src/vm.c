@@ -2732,6 +2732,126 @@ static ScmObj dynwind_after_cc(ScmVM *vm, ScmObj result SCM_UNUSED,
  *  - There are messy lonjmp/setjmp stuff involved to keep C stack sane.
  */
 
+static ScmObj handle_escape(ScmObj e,
+                            ScmEscapePoint *ep,
+                            ScmEscapePoint *prev_ep)
+{
+    ScmVM *vm = theVM;
+
+    ScmObj vmhandlers = get_dynamic_handlers(vm);
+    ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
+    int numVals = 0;
+
+    /* Save continuation chains into heap.  This has non-negligible
+       overhead, but we need to keep all active EPs' cont field valid.
+       Without this, a complication occurs when save_cont occurs during
+       executing the error handler and it returns subsequently.
+       See https://github.com/shirok/Gauche/issues/852 for the details.
+    */
+    save_cont(vm);
+
+#if GAUCHE_SPLIT_STACK
+    vm->lastErrorCont = vm->cont;
+    vm->stackBase = vm->sp;
+#endif
+
+    /* To conform SRFI-34, the error handler (clauses in 'guard' form)
+       should be executed with the same continuation and dynamic
+       environment of the guard form itself.  That means the dynamic
+       handlers should be rewound before we invoke the guard clause.
+
+       If an error is raised within the dynamic handlers, it will be
+       captured by the same error handler. */
+    if (ep->rewindBefore) {
+        call_dynamic_handlers(vm, ep->dynamicHandlers,
+                              get_dynamic_handlers(vm));
+    }
+
+    /* Pop the EP and run the error handler. */
+    Scm_VMPopExceptionHandler();
+    vm->escapePoint = prev_ep;
+
+    vm->errorHandlerContinuable = FALSE;
+
+    result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
+
+    /* save return values */
+    /* NB: for loop is slightly faster than memcpy */
+    numVals = vm->numVals;
+    if (numVals > 1) {
+        for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
+    }
+
+    /* call dynamic handlers to rewind */
+    if (!ep->rewindBefore) {
+        call_dynamic_handlers(vm, ep->dynamicHandlers,
+                              get_dynamic_handlers(vm));
+    }
+
+    /* If exception is reraised, the exception handler can return
+       to the caller. */
+    if (vm->errorHandlerContinuable) {
+        vm->errorHandlerContinuable = FALSE;
+
+        /* recover escape point */
+        vm->escapePoint = ep;
+
+        /* call dynamic handlers to reenter dynamic-winds */
+        call_dynamic_handlers(vm, vmhandlers,
+                              get_dynamic_handlers(vm));
+
+        /* reraise and return */
+        Scm_VMPushExceptionHandler(ep->xhandler);
+        vm->escapePoint = prev_ep;
+        result = Scm_VMThrowException(vm, e, 0);
+        Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
+        vm->escapePoint = ep;
+        return result;
+    }
+
+    /* restore return values */
+    vm->val0 = result;
+    vm->numVals = numVals;
+    if (numVals > 1) {
+        for (int i=0; i<numVals-1; i++) vm->vals[i] = rvals[i];
+    }
+
+    /* Install the continuation */
+    vm->cont = ep->cont;
+    vm->denv = ep->denv;
+    if (ep->errorReporting) {
+        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
+    }
+    /* restore reset-chain for reset/shift */
+    if (ep->cstack) vm->resetChain = ep->resetChain;
+
+    SCM_ASSERT(vm->cstack);
+    vm->escapeReason = SCM_VM_ESCAPE_ERROR;
+    vm->escapeData[0] = ep;
+    vm->escapeData[1] = e;
+    siglongjmp(vm->cstack->jbuf, 1);
+}
+
+static ScmObj handle_escape_subr(ScmObj *argv,
+                                 int argc,
+                                 void *data)
+{
+    SCM_ASSERT(argc == 1);
+    ScmEscapePoint **packet = (ScmEscapePoint**)data;
+    return handle_escape(argv[0],    /* exc */
+                         packet[0],  /* current ep */
+                         packet[1]); /* prev ep */
+}
+
+ScmObj make_escape_handler(ScmEscapePoint *ep,
+                           ScmEscapePoint *prev_ep)
+{
+    ScmEscapePoint **packet = SCM_NEW_ARRAY(ScmEscapePoint*, 2);
+    packet[0] = ep;
+    packet[1] = prev_ep;
+    return Scm_MakeSubr(handle_escape_subr, packet, 1, 0, SCM_FALSE);
+}
+
 /*
  * Default exception handler
  *  This is what we have as the system default, and also
@@ -2743,110 +2863,22 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = vm->escapePoint;
 
-    if (ep) {
-        /* There's an escape point defined by with-error-handler. */
-        ScmObj vmhandlers = get_dynamic_handlers(vm);
-        ScmObj result = SCM_FALSE, rvals[SCM_VM_MAX_VALUES];
-        int numVals = 0;
+    if (ep) { return handle_escape(e, ep, ep->prev); }
 
-        /* Save continuation chains into heap.  This has non-negligible
-           overhead, but we need to keep all active EPs' cont field valid.
-           Without this, a complication occurs when save_cont occurs during
-           executing the error handler and it returns subsequently.
-           See https://github.com/shirok/Gauche/issues/852 for the details.
-         */
-        save_cont(vm);
-
-#if GAUCHE_SPLIT_STACK
-        vm->lastErrorCont = vm->cont;
-        vm->stackBase = vm->sp;
-#endif
-
-        /* To conform SRFI-34, the error handler (clauses in 'guard' form)
-           should be executed with the same continuation and dynamic
-           environment of the guard form itself.  That means the dynamic
-           handlers should be rewound before we invoke the guard clause.
-
-           If an error is raised within the dynamic handlers, it will be
-           captured by the same error handler. */
-        if (ep->rewindBefore) {
-            call_dynamic_handlers(vm, ep->dynamicHandlers,
-                                  get_dynamic_handlers(vm));
-        }
-
-        /* Pop the EP and run the error handler. */
-        vm->escapePoint = ep->prev;
-
-        vm->errorHandlerContinuable = FALSE;
-
-        result = Scm_ApplyRec(ep->ehandler, SCM_LIST1(e));
-
-        /* save return values */
-        /* NB: for loop is slightly faster than memcpy */
-        numVals = vm->numVals;
-        if (numVals > 1) {
-            for (int i=0; i<numVals-1; i++) rvals[i] = vm->vals[i];
-        }
-
-        /* call dynamic handlers to rewind */
-        if (!ep->rewindBefore) {
-            call_dynamic_handlers(vm, ep->dynamicHandlers,
-                                  get_dynamic_handlers(vm));
-        }
-
-        /* If exception is reraised, the exception handler can return
-           to the caller. */
-        if (vm->errorHandlerContinuable) {
-            vm->errorHandlerContinuable = FALSE;
-
-            /* recover escape point */
-            vm->escapePoint = ep;
-
-            /* call dynamic handlers to reenter dynamic-winds */
-            call_dynamic_handlers(vm, vmhandlers,
-                                  get_dynamic_handlers(vm));
-
-            /* reraise and return */
-            Scm_VMPushExceptionHandler(ep->xhandler);
-            vm->escapePoint = ep->prev;
-            result = Scm_VMThrowException(vm, e, 0);
-            Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
-            vm->escapePoint = ep;
-            return result;
-        }
-
-        /* restore return values */
-        vm->val0 = result;
-        vm->numVals = numVals;
-        if (numVals > 1) {
-            for (int i=0; i<numVals-1; i++) vm->vals[i] = rvals[i];
-        }
-
-        /* Install the continuation */
-        vm->cont = ep->cont;
-        vm->denv = ep->denv;
-        if (ep->errorReporting) {
-            SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
-        }
-        /* restore reset-chain for reset/shift */
-        if (ep->cstack) vm->resetChain = ep->resetChain;
-    } else {
-        /* We don't have an active error handler, so this is the fallback
-           behavior.  Reports the error and rewind dynamic handlers and
-           C stacks. */
-        call_error_reporter(e);
-        /* unwind the dynamic handlers */
-        ScmObj hp;
-        SCM_FOR_EACH(hp, get_dynamic_handlers(vm)) {
-            ScmObj handler_entry = SCM_CAR(hp);
-            set_dynamic_handlers(vm, SCM_CDR(hp));
-            call_after_thunk(vm, handler_entry);
-        }
+    /* We don't have an active error handler, so this is the fallback
+       behavior.  Reports the error and rewind dynamic handlers and
+       C stacks. */
+    call_error_reporter(e);
+    /* unwind the dynamic handlers */
+    ScmObj hp;
+    SCM_FOR_EACH(hp, get_dynamic_handlers(vm)) {
+        ScmObj handler_entry = SCM_CAR(hp);
+        set_dynamic_handlers(vm, SCM_CDR(hp));
+        call_after_thunk(vm, handler_entry);
     }
-
     SCM_ASSERT(vm->cstack);
     vm->escapeReason = SCM_VM_ESCAPE_ERROR;
-    vm->escapeData[0] = ep;
+    vm->escapeData[0] = NULL;
     vm->escapeData[1] = e;
     siglongjmp(vm->cstack->jbuf, 1);
 }
@@ -2973,13 +3005,11 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
 {
     ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
                                 SCM_FALSE, SCM_FALSE);
+
     vm->escapePoint = ep; /* This will be done in install_ehandler, but
                              make sure ep is visible from save_cont
-                             to redirect ep->cont */
+                            to redirect ep->cont */
 
-    /* We use default exception handler that does the main work.
-       We no longer need to rely on before/after handlers to swap exception
-       handlers, for it is handled automatically with vm->denv. */
     Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
 
     ScmObj before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
