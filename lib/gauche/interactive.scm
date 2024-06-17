@@ -235,6 +235,16 @@
   (describe-slots m)
   (values))
 
+(define-method describe ((c <compound-condition>))
+  ;; TODO: We might want to customize simple condition as well to
+  ;; get better display
+  (describe-common c)
+  (let loop ([i 0] (cs (~ c'%conditions)))
+    (unless (null? cs)
+      (format #t "Condition[~d]: " i)
+      (describe (car cs))
+      (loop (+ i 1) (cdr cs)))))
+
 (define d describe)
 
 ;;;
