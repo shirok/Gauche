@@ -49,7 +49,7 @@ odbm.sci dbm--odbm.c : odbm.scm
 # auxiliary stuff to find out the extension of ndbm file(s).
 ndbm-makedb : ndbm-makedb.c
 	$(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) -o ndbm-makedb \
-	  $(srcdir)/ndbm-makedb.c $(LOCAL_LFLAGS) $(XLDFLAGS) @NDBMLIB@ $(LIBS)
+	  $(srcdir)/ndbm-makedb.c $(LOCAL_LFLAGS) $(XLDFLAGS) @NDBMLIB@
 
 ndbm-suffixes.h : ndbm-makedb ndbm-suffixes.scm
 	$(GOSH) $(srcdir)/ndbm-suffixes.scm ndbm-suffixes.h
