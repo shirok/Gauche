@@ -221,6 +221,7 @@
                          (get-optargs spec optname option nextargs)
                        (let1 vals
                            (cond [(~ spec'handler) => (cut apply <> optargs)]
+                                 [(null? optargs) #t] ; no argument option
                                  [(length=? optargs 1) (car optargs)]
                                  [else optargs])
                          (if (~ spec'plural?)
@@ -391,15 +392,14 @@
      (define (bad) (error "malformed let-args:" f))
 
      ;; Canonicalize variationof clauses.
-     ;;   bindings: ((<var> <spec> <default> <helpstr> <handler-var> <handler>)
+     ;;   bindings: ((<var> <spec> <default> <helpstr> <handler>)
      ;;   else-handler: handler expression
      ;;   rest-var: #f or identifier
      (define (canon varspecs bindings)
 
        (define (next varspecs var spec default help callback)
          (canon varspecs
-                `((,var ,spec ,default ,help
-                        ,(and callback (gensym "handler")) ,callback)
+                `((,var ,spec ,default ,help ,callback)
                   ,@bindings)))
 
        (match varspecs
@@ -441,59 +441,48 @@
           (next varspecs var spec (xdef spec) #f #f)]
          [_ (bad)]))
 
-     (define (var-bindings bindings else-var else-handler)
-       `(,@(filter-map (match-lambda
-                         [(var _ default . _) (and var `(,var ,default))])
-                       bindings)
-         ,@(filter-map (match-lambda
-                         [(_ _ _ _ handler-var handler)
-                          (and handler-var `(,handler-var ,handler))])
-                       bindings)
+     ;; Returns
+     ;;  (var optspec-var optspec-expr) ...
+     ;; where VAR is the given variable to receive option value.  Can be #f.
+     ;; OPTSPEC-VAR is a temp var bound to a created option spec.
+     ;; OPTSPEC-EXPR is an expression to create option-spec.
+     (define (gen-optspec-bindings bindings)
+       (map (match-lambda
+              [(var spec def help handler)
+               `(,var                   ;may be #f
+                 ,(gensym)
+                 ,(quasirename r
+                    `(make-option-spec ',spec ',help ,def ,handler)))])
+            bindings))
+
+     (define (var-bindings optspec-bindings else-var else-handler)
+       `(,@(map (match-lambda
+                  [(_ optspec-var optspec-expr)
+                   `(,optspec-var ,optspec-expr)])
+                optspec-bindings)
          ,@(if else-var
              `((,else-var ,else-handler))
              '())))
-
-     (define (gen-optspecs bindings)
-       (map (match-lambda
-              [(#f spec def help #f _)
-               (quasirename r
-                 `(make-option-spec ',spec ',help ,def (constantly #t)))]
-              [(#f spec def help handler-var _)
-               (quasirename r
-                 `(make-option-spec ',spec ',help ,def ,handler-var))]
-              [(var spec def help #f _)
-               (if (plural-option? spec)
-                 (quasirename r
-                   `(make-option-spec ',spec ',help ,def
-                                      (case-lambda
-                                        [()    (push! ,var #t)]
-                                        [(val) (push! ,var val)]
-                                        [vals  (push! ,var vals)])))
-                 (quasirename r
-                   `(make-option-spec ',spec ',help ,def
-                                      (case-lambda
-                                        [()    (set! ,var #t)]
-                                        [(val) (set! ,var val)]
-                                        [vals  (set! ,var vals)]))))]
-              [(var spec def help handler-var _)
-               (quasirename r
-                 `(make-option-spec ',spec ',help ,def
-                                    (^ args
-                                      (set! ,var (apply ,handler-var args)))))]
-              )
-            bindings))
 
      ;; Main body
      (match (cdr f)
        [(args varspecs . body)
         (receive (bindings else-handler restvar) (canon varspecs '())
-          (let1 else-var (and else-handler (gensym "else"))
+          (let ([else-var (and else-handler (gensym "else"))]
+                [optspec-bindings (gen-optspec-bindings bindings)])
             (quasirename r
-              `(let ,(var-bindings bindings else-var else-handler)
+              `(let ,(var-bindings optspec-bindings else-var else-handler)
                  (parameterize ((current-option-parser
                                  (build-option-parser
-                                  (list ,@(gen-optspecs bindings))
+                                  (list ,@(map cadr optspec-bindings))
                                   ,else-var)))
                    (let ((,restvar ((current-option-parser) ,args)))
-                     ,@body))))))]
+                     (let ,(filter-map (match-lambda
+                                         [(#f _ _) #f]
+                                         [(var optspec-var _)
+                                          `(,var
+                                            ,(quasirename r
+                                               `(option-spec-value ,optspec-var)))])
+                                       optspec-bindings)
+                       ,@body)))))))]
        [_ (bad)]))))
