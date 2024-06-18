@@ -455,27 +455,20 @@
                     `(make-option-spec ',spec ',help ,def ,handler)))])
             bindings))
 
-     (define (var-bindings optspec-bindings else-var else-handler)
-       `(,@(map (match-lambda
-                  [(_ optspec-var optspec-expr)
-                   `(,optspec-var ,optspec-expr)])
-                optspec-bindings)
-         ,@(if else-var
-             `((,else-var ,else-handler))
-             '())))
-
      ;; Main body
      (match (cdr f)
        [(args varspecs . body)
         (receive (bindings else-handler restvar) (canon varspecs '())
-          (let ([else-var (and else-handler (gensym "else"))]
-                [optspec-bindings (gen-optspec-bindings bindings)])
+          (let1 optspec-bindings (gen-optspec-bindings bindings)
             (quasirename r
-              `(let ,(var-bindings optspec-bindings else-var else-handler)
+              `(let ,(map (match-lambda
+                            [(_ optspec-var optspec-expr)
+                             `(,optspec-var ,optspec-expr)])
+                          optspec-bindings)
                  (parameterize ((current-option-parser
                                  (build-option-parser
                                   (list ,@(map cadr optspec-bindings))
-                                  ,else-var)))
+                                  ,else-handler)))
                    (let ((,restvar ((current-option-parser) ,args)))
                      (let ,(filter-map (match-lambda
                                          [(#f _ _) #f]
