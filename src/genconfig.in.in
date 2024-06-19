@@ -80,10 +80,10 @@ arch="$host"
 # pathname including spaces.  For now, only a limited people builds
 # Windows installer so we make it so.
 if [ "$prefix" = "@" ]; then
-    gauche_configure_args=`echo $gauche_configure_args | sed -e 's/--prefix=[^ ]*//g'`
+    gauche_configure_args=`echo $gauche_configure_args | sed -e "s/--prefix=[^ ']*//g"`
 fi
 if [ "$exec_prefix" = "@" ]; then
-    gauche_configure_args=`echo $gauche_configure_args | sed -e 's/--exec-prefix=[^ ]*//g'`
+    gauche_configure_args=`echo $gauche_configure_args | sed -e "s/--exec-prefix=[^ ']*//g"`
 fi
 
 local_inc="@LOCAL_INC@"

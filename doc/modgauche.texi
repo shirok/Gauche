@@ -16507,8 +16507,7 @@ is given, a variable @var{var} is bound to a value as follows:
   (a1) @var{option-spec}が引数を要求しない場合は、@code{#t}。
   (a2) @var{option-spec}がひとつの引数を要求する場合は、その引数の値。
   (a3) @var{option-spec}がそれ以上の引数を要求する場合は、引数の値のリスト。
-(b) @var{bind-spec}の形式が上の2.の場合、@var{callback}を
-  引数の値を伴って呼び出し、その戻り値。
+(b) @var{bind-spec}の形式が上の2.の場合、@var{callback}を引数の値を伴って呼び出し、その戻り値。
 @end example
 @c COMMON
 
@@ -16602,7 +16601,6 @@ it stops argument parsing and returns a list of arguments after `@code{--}'.
 パーサは、ハイフン2つのみの引数 `@code{--}' に遭遇すると、引数パーシングを
 中止して`@code{--}' の後の引数のリストを返します。
 @c COMMON
-
 
 @c EN
 After all the bindings is done, @var{body} @dots{} are evaluated.
