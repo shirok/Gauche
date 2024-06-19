@@ -1,3 +1,12 @@
+2024-06-19  Shiro Kawai  <shiro@acm.org>
+
+	* src/genconfig.in.in: Remove '--prefix' and '--exec-prefix' configure
+	  arguments from CONFIGURE_ARGS if we compile Gauche to obtain
+	  runtime directory relative to the library location (MinGW,
+	  OSX framework).  In such cases, '--prefix' etc. is irrelevant
+	  to recompile, and it becomes actually a nuisance if it appears
+	  in 'gauche-config --reconfigure'.
+
 2024-06-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (print_number),
