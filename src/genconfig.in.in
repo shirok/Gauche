@@ -70,6 +70,22 @@ gauche_libs="@LIBS@"
 gauche_configure_args="@GAUCHE_CONFIGURE_ARGS@"
 arch="$host"
 
+# If we search Gauche install path relative to the runtime, the --prefix
+# argument given to 'configure' is irrelevant.  Particulary, if we build
+# Windows installer, the path given to --prefix is only meaningful for
+# the host that makes the installer, and it doesn't make sense to show
+# it to the user (via 'gauche-config --reconfigure', for example).
+# So we remove the '--prefix' argument from gauche_configure_args.
+# NB: The following sed script fails if argument of --prefix contains
+# pathname including spaces.  For now, only a limited people builds
+# Windows installer so we make it so.
+if [ "$prefix" = "@" ]; then
+    gauche_configure_args=`echo $gauche_configure_args | sed -e 's/--prefix=[^ ]*//g'`
+fi
+if [ "$exec_prefix" = "@" ]; then
+    gauche_configure_args=`echo $gauche_configure_args | sed -e 's/--exec-prefix=[^ ]*//g'`
+fi
+
 local_inc="@LOCAL_INC@"
 local_lib="@LOCAL_LIB@"
 
