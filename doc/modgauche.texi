@@ -11607,13 +11607,17 @@ gosh$ ,d (expt -2 1/4)
 @end deffn
 
 @deffn {Method} describe (p <procedure>)
+@deffnx {Method} describe (p <macro>)
 @c EN
-Customized describe method for procedures.
-It shows the source location (if avaiable) and procedure type signature
-as well.
+Customized describe method for procedures and macros,
+showing the source location if avaiable.
+For the procedure, its type signature is shown as well
+(@code{procedure-type}, @pxref{Procedure class and applicability}).
 @c JP
-手続き用にカスタマイズされたdescribeです。
-ソースコード位置(分かれば)と、手続きの型も表示します。
+手続きとマクロ用にカスタマイズされたdescribeで、
+ソースコード位置を(分かれば)表示します。
+また、手続きについてはその型も表示します
+(@code{procedure-type}、@ref{Procedure class and applicability}参照)。
 @c COMMON
 @example
 gosh> ,d display-filled-text
@@ -11676,6 +11680,7 @@ It shows the source code location if available.
 メソッド用にカスタマイズされたdescribeです。
 ソースコード位置が分かればそれも表示します。
 @c COMMON
+@example
 gosh$ ,d (car (~ describe'methods))
 #<method (describe <macro>)> is an instance of class <method>
 Defined at "/usr/share/gauche-0.98/0.9.15-p1/lib/gauche/interactive.scm":223
@@ -11687,7 +11692,6 @@ slots:
   generic   : #<generic describe (11)>
   specializers: (#<class <macro>>)
   info      : (describe <macro>)
-@example
 @end example
 @end deffn
 
