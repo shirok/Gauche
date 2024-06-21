@@ -16375,7 +16375,11 @@ SLIB は、@code{getopt} 互換のユーティリティを持っています。
 @c COMMON
 @end deftp
 
+@c EN
 @subheading High-level API
+@c JP
+@subheading 高レベルAPI
+@c COMMON
 
 @defmac let-args args (bind-spec @dots{} [. rest]) body @dots{}
 @c MOD gauche.parseopt
@@ -16682,6 +16686,28 @@ calling this procedure produces the following string:
 @end example
 
 @c EN
+If the name of an option argument is given as surrounded by
+curly braces in the option spec,
+e.g. @code{"o|outfile=s@{FILE@}"}, the name is used
+in the help message (see ``Option spec'' below).
+Otherwise, the argument type character is
+used.  In the help message, it is recommended to enclose the
+reference to the option argument with curly braces.  Those braces
+are simply removed in the help string.  However, in future, it
+may be rendered differently if the output device has richer
+presentation.
+@c JP
+オプション指定の中でオプション引数の名前がカーリーブレースで囲んで指定されて
+いた場合は、その名前がヘルプ文字列に使われます
+(例: @code{"o|outfile=s@{FILE@}"})。詳しくは下の「オプション指定」を
+見てください。ヘルプメッセージ中でオプション引数の名前を参照する時にも、
+その名前をカーリーブレースで囲んでおくことを推奨します。
+今は単にそのカーリーブレースは除かれるだけですが、
+将来、よりリッチな表現を許すデバイス向けにヘルプ文字列を生成する機会があれば、
+別の表示が可能になるかもしれません。
+@c COMMON
+
+@c EN
 If the @var{omit-options-without-help} keyword argument is true,
 options without help string isn't included in the help string.
 It is useful if you have an experimental options you don't want
@@ -16713,7 +16739,11 @@ with @code{text.fill} (@pxref{Text filling}).
 @c COMMON
 @end defun
 
+@c EN
 @subheading Option spec
+@c JP
+@subheading オプション指定
+@c COMMON
 
 @c EN
 @var{option-spec} is a string that specifies the name of the option and
@@ -16911,7 +16941,11 @@ not @code{-l} option with arguments @code{ong}.
 解釈されます。
 @c COMMON
 
+@c EN
 @subheading Error handling
+@c JP
+@subheading エラー処理
+@c COMMON
 
 @deftp {Condition Type} <parseopt-error>
 @c MOD gauche.parseopt
@@ -16944,7 +16978,11 @@ an ordinary error is thrown.
 @c COMMON
 @end deftp
 
+@c EN
 @subheading Examples
+@c JP
+@subheading 例
+@c COMMON
 
 @c EN
 This example is taken from @code{gauche-install} script.
@@ -16959,22 +16997,42 @@ See also the @code{else} clause how to handle unrecognized option.
 @c COMMON
 
 @example
+(define (main args)
   (let-args (cdr args)
-      ((#f      "c")        ;; ignore for historical reason
-       (mkdir   "d|directory")
-       (mode    "m|mode=s" #o755 => (cut string->number <> 8))
-       (owner   "o|owner=s")
-       (group   "g|group=s")
-       (srcdir  "S|srcdir=s")
-       (target  "T|target=s")
-       (utarget "U|uninstall=s")
-       (shebang "shebang=s")
-       (verb    "v")
-       (dry     "n|dry-run")
-       (#f      "h|help" => usage)
-       (else (opt . _) (print "Unknown option : " opt) (usage))
+      ([mkdir   "d|directory"
+                ? "Creates directories listed in the arguments. \
+                   (3rd format only)."]
+       [mode    "m|mode=s@{MODE@}" #o755 => (cut string->number <> 8)
+                ? "Change mode of the installed file."]
+       [owner   "o|owner=s@{OWNER@}"
+                ? "Change owner of the installed file(s)."]
+       [group   "g|group=s@{GROUP@}"
+                ? "Change group of the installed file(s)."]
+       [csfx    "C|canonical-suffix"
+                ? "If installed file has a suffix *.sci, replace it for \
+                   *.scm.   This is Gauche specific convention."]
+       [srcdir  "S|srcdir=s@{DIR@}"
+                ? "Look for files within @{DIR@}; useful if VPATH is used."]
+       [target  "T|target=s@{DIR@}"
+                ? "Installs files to the @{DIR@}, creating paths if needed. \
+                   Partial path of files are preserved. (4th format only)."]
+       [utarget "U|uninstall=s@{DIR@}"
+                ? "Reverse of -T, e.g. removes files from its destination."]
+       [shebang "shebang=s@{PATH@}"
+                ? "Adds #!@{PATH@} before the file contents. \
+                   Useful to install scripts."]
+       [verb    "v|verbose" ? "Work verbosely"]
+       [dry     "n|dry-run" ? "Just prints what actions to be done."]
+       [sprefix "p|strip-prefix=s@{PREFIX@}"
+                ? "Strip prefix dirs from FILEs before \
+                  installation. (4th/5th format only)."]
+       [#f      "h|help" => usage ? "Show this help message."]
+       [#f      "c" ? "This option is ignored.  Recognized for the \
+                       compatibility."]
+       [else (opt . _) (print "Unknown option : " opt) (usage)]
        . args)
     ...)
+  )
 @end example
 
 @c EN
@@ -17020,8 +17078,11 @@ options: (a b d e)
 restargs: (foo)
 @end example
 
-
+@c EN
 @subheading Low-level API
+@c JP
+@subheading 低レベルAPI
+@c COMMON
 
 The followings are lower-level API used to build @code{let-args}
 macro.
