@@ -1,3 +1,8 @@
+2024-06-21  Shiro Kawai  <shiro@acm.org>
+
+	* lib/tools/compile-r7rs: Issue warning if execution is redirected
+	  by COMPILE_R7RS. https://github.com/shirok/Gauche/issues/1043
+
 2024-06-19  Shiro Kawai  <shiro@acm.org>
 
 	* src/genconfig.in.in: Remove '--prefix' and '--exec-prefix' configure
