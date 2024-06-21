@@ -16613,7 +16613,105 @@ After all the bindings is done, @var{body} @dots{} are evaluated.
 全ての束縛が終了した後、@var{body} @dots{} が評価されます。
 @var{body}は内部defineで始まっていても構いません。
 @c COMMON
+
+@c EN
+Internally, @code{let-args} creates an ``option-parser'' object,
+which is available within the dynamic extent of @code{let-args}
+from the parameter @code{current-option-parser}.  See below.
+@c JP
+内部的に、@code{let-args}は「オプションパーザ」オブジェクトを作り、
+それは@code{let-args}の動的エクステント中、@code{current-option-parser}パラメータで
+取り出すことができます。下記参照。
+@c COMMON
+
 @end defmac
+
+@deffn {Parameter} current-option-parser
+@c MOD gauche.parseopt
+@c EN
+In the dynamic extent of @code{let-args}, this parameter
+holds an option parser object that parses the command line
+and stores the options' apparance and argument values.
+It should be treated as an opaque object.   Its only public use
+is to pass to @code{option-parser-help-string} to get a formatted
+option help strings, which is done by default.
+@c JP
+@code{let-args}の動的エクステント中、
+このパラメータは「オプションパーザ」オブジェクトに束縛されます。
+オプションパーザはコマンドライン引数をパーズして、各オプションの出現および
+引数の値を保持します。
+このオブジェクトは不透明なオブジェクトとして扱われなければならず、
+唯一の用途は@code{option-parser-help-string}に渡して
+フォーマットされたオプションのヘルプ文字列を得ることです。
+@c COMMON
+@end deffn
+
+@defun option-parser-help-string :key option-parser omit-options-without-help @
+          option-indent description-indent width
+@c MOD gauche.parseopt
+@c EN
+Returns a formatted help string of command-line option of an option parser
+object @var{option-parser}.  Its default value is the value
+of parameter @code{current-option-parser}, so if you invoke this
+procedure in the dynamic extent of @code{let-args} to get
+its help string, you don't need to pass the @var{option-parser}
+argument explicitly.
+
+With the example shown in the @code{let-args} above,
+calling this procedure produces the following string:
+@c JP
+@var{option-parser}で指定されるオプションパーザの、コマンドラインオプション
+ヘルプ文字列を返します。@var{option-parser}のデフォルト値は
+パラメータ@code{current-option-parser}の値なので、
+@code{let-args}で作られるオプションパーザのヘルプを
+@code{let-args}の動的エクステント内で表示する場合は
+@var{option-parser}引数を明示的に与える必要はありません。
+
+上の@code{let-args}にあるコマンドラインオプション仕様の例では、
+以下のようなヘルプ文字列が生成されます。
+@c COMMON
+
+@example
+  -v, --verbose
+               Run verbosely.
+  -o, --outfile FILE
+               Write output to FILE.
+  -d, --debug-level LEVEL
+               Set debug level.
+  -h, --help   Show help message and exit.
+@end example
+
+@c EN
+If the @var{omit-options-without-help} keyword argument is true,
+options without help string isn't included in the help string.
+It is useful if you have an experimental options you don't want
+to advertise for users.  The default is @code{#f}, which shows
+@code{(No help available)} for such options.
+@c JP
+もし@var{omit-options-without-help}引数に真の値が与えられたら、
+ヘルプ文字列が指定されていないオプションは返り値から除外されます。
+実験的にオプションを追加して、でもユーザには広報したくない場合に便利です。
+デフォルトは@code{#f}で、その場合、ヘルプ文字列が指定されていないオプションには
+@code{(No help available)}と表示されます。
+@c COMMON
+
+@c EN
+The arguments @var{option-indent}, @var{description-indent}, and
+@var{width} controls the formatting.  Option names are
+indented with @var{option-indent} characters, and their descriptions
+are indented with @var{description-indent}.  The overall width
+of text is governed by @var{width}.  The help string is formatted
+with @code{text.fill} (@pxref{Text filling}).
+@c JP
+引数@var{option-indent}、@var{description-indent}、@var{width}は
+ヘルプ文字列のフォーマットを制御します。各オプション名は
+@var{option-indent}文字だけ、その記述は
+@var{description-indent}文字だけインデントされ、
+@var{width}が全体の幅を指定します。
+ヘルプ文字列は@code{text.fill}の機能によってフォーマットされます
+(@ref{Text filling}参照)。
+@c COMMON
+@end defun
 
 @subheading Option spec
 
@@ -16734,6 +16832,23 @@ second is a number.
 二つ目は数値です。
 @c COMMON
 @end table
+
+@c EN
+Each option argument letter can be follwed by an option argument
+name, enclosed with curly braces.  Those names don't affect command-line
+argument parsing, but are used to generate help string
+(see @code{option-parser-help-string} above).
+@c JP
+各オプション引数文字の後に、カーリーブレースで囲んだオプション引数名を書いておくことが
+できます。オプション引数名はコマンドライン引数のパーズには影響を与えませんが、
+ヘルプ文字列を生成する時に使われます
+(上の@code{option-parser-help-string}を参照)。
+@c COMMON
+
+@example
+--file=s@{FILENAME@}
+--origin=f@{XCOORD@}f@{YCOORD@}f@{ZCOORD@}
+@end example
 
 @c EN
 If the option has alternative names, they can be concatenated by "|".
