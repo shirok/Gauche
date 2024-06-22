@@ -1,0 +1,37 @@
+;;;
+;;; compile-r7rs - SRFI-138 compatible compile script
+;;;
+
+(load "tools/compile-r7rs")
+
+(define (usage)
+  (print "Usage: compile-r7rs [options...] [pathname]")
+  (print)
+  (print "Options:")
+  (print (option-parser-help-string))
+  (print "NOTE: If the environment variable COMPILE_R7RS is defined to")
+  (print "a non-empty string, it is assumed to a pathname of another program,")
+  (print "which is invoked with the same arguments to compile-r7rs instead.")
+  (print "This allows the user to choose alternative implementation's compiler.")
+  (exit 1))
+
+(define (main args)
+  (when (<= (length args) 1)
+    (do-compile '())) ; for display usage
+  (let1 alt-compiler (sys-getenv "COMPILE_R7RS")
+    (if (and alt-compiler (> (string-length alt-compiler) 0))
+      (if (file-is-executable? alt-compiler)
+        (begin
+          (cond-expand
+           [gauche.sys.unsetenv (sys-unsetenv "COMPILE_R7RS")]
+           [else                (sys-setenv   "COMPILE_R7RS" "" #t)])
+          (warn "compile-r7rs: Invoking alternative compiler specified \
+                 by COMPILE_R7RS: ~s\n" alt-compiler)
+          (do-process `(,alt-compiler ,@(cdr args)) :fork #f))
+        (exit 1 "Value of COMPILE_R7RS isn't an executable program: ~a"
+              alt-compiler))
+      (do-compile (cdr args)))))
+
+;; Local variables:
+;; mode: scheme
+;; end:

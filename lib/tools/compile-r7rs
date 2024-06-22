@@ -69,24 +69,14 @@
           (cons dir sd-sld)))))
 
 (define (usage)
-  (print "Usage: compile-r7rs [options...] [pathname]")
+  (print "Usage: gauche-compile-r7rs [options...] [pathname]")
   (print)
   (print "Options:")
   (print (option-parser-help-string))
   (exit 1))
 
 (define (main args)
-  (let1 alt-compiler (sys-getenv "COMPILE_R7RS")
-    (if (and alt-compiler (> (string-length alt-compiler) 0))
-      (if (file-is-executable? alt-compiler)
-        (begin
-          (sys-unsetenv "COMPILE_R7RS")
-          (warn "compile-r7rs: Invoking alternative compiler specified \
-                 by COMPILE_R7RS: ~s\n" alt-compiler)
-          (do-process `(,alt-compiler ,@(cdr args)) :fork #f))
-        (exit 1 "Value of COMPILE_R7RS isn't an executable program: ~a"
-              alt-compiler))
-      (do-compile (cdr args)))))
+  (do-compile (cdr args)))
 
 (define (do-compile args)
   (let-args args

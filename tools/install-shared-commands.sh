@@ -31,6 +31,3 @@ makelink() {
 makelink gosh scheme-r7rs
 makelink gosh scheme-srfi-0
 makelink gosh scheme-srfi-7
-
-# SRFI-138
-makelink gauche-compile-r7rs compile-r7rs

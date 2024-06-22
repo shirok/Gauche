@@ -2780,9 +2780,14 @@ the following programs are also installed.
 @itemx scheme-srfi-7
 Those are the names of Scheme interpreter suggeted by SRFI-22.
 They are symlinked to @code{gosh}.
+@end table
+
+Additionally, if you configure Gauche with @code{--enable-compile-r7rs},
+the following program is also installed.
+
+@table @b
 @item compile-r7rs
 This is the name of Scheme compiler recommended by SRFI-138.
-It is symlinked to @code{gauche-compile-r7rs}.
 @end table
 
 @c ----------------------------------------------------------------------
@@ -2944,27 +2949,28 @@ script (@pxref{Building standalone executables}).  We recommend
 that script, for it is more featureful.
 
 The @code{gauche-compile-r7rs} and @code{compile-r7rs} script is provided
-so that you can invoke a 'Scheme compiler' with a stanardized manner.
+so that you can invoke a 'Scheme compiler' with a standardized manner.
 It may be handy if other tools (e.g. IDE) need to invoke a Scheme
 compiler as a subprocess.
 
 This interface is defined in SRFI-138, which also suggests the name
 @code{compile-r7rs}.  We only install @code{gauche-compile-r7rs} by
 default so that we won't accidentally clobber other implementation's
-program, but if you give @code{--enable-shared-commands} option to
-@code{configure} script, a symbolic link @code{compile-r7rs} is created.
+program, but if you give @code{--enable-compile-r7rs} option to
+@code{configure} script, @code{compile-r7rs} is created.
 
 @deftp {Program} gauche-compile-r7rs [options] script.scm
 @deftpx {Program} compile-r7rs [options] script.scm
 Compile a Scheme source file @code{script.scm} and produce an
 executable binary.  The @code{compile-r7rs} is only installed
-if Gauche is configured with @code{--enable-shared-commands}.
+if Gauche is configured with @code{--enable-compile-r7rs}.
 
-If the enviornment variable @code{COMPILE_R7RS} is defined
+If the environment variable @code{COMPILE_R7RS} is defined
 to a non-empty string, it is assumed to a pathname of another
 program, which is invoked with the same arguments to
-@code{gauche-compile-r7rs} instead.  This allows the user to choose
+@code{compile-r7rs} instead.  This allows the user to choose
 alternative implementation's compiler.
+This function is only enabled for compile-r7rs, not gauche-compile-r7rs.
 
 The following command-line arguments are recognized.
 

@@ -252,11 +252,23 @@ dnl   enable-shared-commands
 dnl
 AC_ARG_ENABLE(shared-commands,
   AS_HELP_STRING([--enable-shared-commands],
-                 [Install commands with SRFI-defined common names such as compile-r7rs.  Note that other Scheme implementations may also install commands with the same name.  This option overwrites them if there's any.]),
+                 [Install commands with SRFI-defined common names such as scheme-r7rs.  Note that other Scheme implementations may also install commands with the same name.  This option overwrites them if there's any.]),
   [
     AS_CASE([$enableval],
             [no], [],
                   [install_common_commands=yes])
+  ], [])
+
+dnl ----------------------------------------------------------
+dnl   enable-compile-r7rs
+dnl
+AC_ARG_ENABLE(compile-r7rs,
+  AS_HELP_STRING([--enable-compile-r7rs],
+                 [Install compile-r7rs command defined in SRFI-138.  Note that other Scheme implementations may also install the command with the same name.  This option overwrites them if there's any.]),
+  [
+    AS_CASE([$enableval],
+            [no], [],
+                  [install_compile_r7rs=yes])
   ], [])
 
 dnl ----------------------------------------------------------
@@ -806,6 +818,13 @@ AS_IF([test "$libgauche_version_link" = yes -a "$SHLIB_OK" = ok],
 AS_IF([test "$install_common_commands" = yes],
       [INSTALL_COMMON_COMMANDS='$(SHELL) $(top_srcdir)/tools/install-shared-commands.sh'],
       [INSTALL_COMMON_COMMANDS=:])
+AS_IF([test "$install_compile_r7rs" = yes], [
+        INSTALL_COMPILE_R7RS_ON=""
+        INSTALL_COMPILE_R7RS_OFF="#"
+      ],[
+        INSTALL_COMPILE_R7RS_ON="#"
+        INSTALL_COMPILE_R7RS_OFF=""
+      ])
 
 AC_SUBST(xhost)
 AC_SUBST(SHLIB_SO_CFLAGS)
@@ -823,6 +842,8 @@ AC_DEFINE_UNQUOTED(SHLIB_SO_SUFFIX, "$SHLIB_SO_SUFFIX", [Shared library file suf
 AC_SUBST(LINK_HELPER)
 AC_SUBST(MAKEVERSLINK)
 AC_SUBST(INSTALL_COMMON_COMMANDS)
+AC_SUBST(INSTALL_COMPILE_R7RS_ON)
+AC_SUBST(INSTALL_COMPILE_R7RS_OFF)
 AC_SUBST(CYGWIN_FIXDLL)
 AC_MSG_RESULT($SHLIB_OK)
 
