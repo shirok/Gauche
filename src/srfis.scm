@@ -1076,10 +1076,13 @@ srfi-138
 ()
 
 Compiling Scheme programs to executables
-Supported.  @xref{Building standalone executables}.
+Supported, except honoring @code{COMPILE_R7RS} environment variable.
+@xref{Comamnd to compile scripts}, for the details.
 
 Scheme プログラムを実行可能ファイルにコンパイルする
-サポートされています。 @xref{Building standalone executables}。
+@code{COMPILE_R7RS}環境変数の扱いに差異があることを除き、
+サポートされています。
+@ref{Comamnd to compile scripts}参照。
 
 srfi-141, srfi-141
 ()
