@@ -76,17 +76,12 @@
   (exit 1))
 
 (define (main args)
-  (let1 alt-compiler (sys-getenv "COMPILE_R7RS")
-    (if (and alt-compiler (> (string-length alt-compiler) 0))
-      (if (file-is-executable? alt-compiler)
-        (begin
-          (sys-unsetenv "COMPILE_R7RS")
-          (warn "compile-r7rs: Invoking alternative compiler specified \
-                 by COMPILE_R7RS: ~s\n" alt-compiler)
-          (do-process `(,alt-compiler ,@(cdr args)) :fork #f))
-        (exit 1 "Value of COMPILE_R7RS isn't an executable program: ~a"
-              alt-compiler))
-      (do-compile (cdr args)))))
+  (and-let1 alt-compiler (sys-getenv "COMPILE_R7RS")
+    (print #"compile-r7rs: Environment variable COMPILE_R7RS is set (~|alt-compiler|).")
+    (print #"  We don't run it as specified in SRFI-138, for it may be confusing")
+    (print #"  if the variable is inadvertently set.  If you want to run ~|alt-compiler|,")
+    (print #"  invoke it directly."))
+  (do-compile (cdr args)))
 
 (define (do-compile args)
   (let-args args

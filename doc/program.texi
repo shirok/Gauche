@@ -2960,11 +2960,13 @@ Compile a Scheme source file @code{script.scm} and produce an
 executable binary.  The @code{compile-r7rs} is only installed
 if Gauche is configured with @code{--enable-shared-commands}.
 
-If the enviornment variable @code{COMPILE_R7RS} is defined
-to a non-empty string, it is assumed to a pathname of another
-program, which is invoked with the same arguments to
-@code{gauche-compile-r7rs} instead.  This allows the user to choose
-alternative implementation's compiler.
+Note: SRFI-138 states that if the enviornment variable
+@code{COMPILE_R7RS} is defined, it is assumed to a pathname of another
+program and is executed instead of Gauche's @code{compile-r7rs}.
+We think the feature is rather confusing than convenient, so we
+don't support it.  If you want to run alternative implementation's
+compiler, there are more explicit means such as running it directly
+or change @code{PATH}.
 
 The following command-line arguments are recognized.
 

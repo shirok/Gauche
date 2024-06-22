@@ -1,7 +1,8 @@
 2024-06-21  Shiro Kawai  <shiro@acm.org>
 
-	* lib/tools/compile-r7rs: Issue warning if execution is redirected
-	  by COMPILE_R7RS. https://github.com/shirok/Gauche/issues/1043
+	* lib/tools/compile-r7rs: Drop support of COMPILE_R7RS.  If the
+	  variable is set, we warn that we don't support it.  See the
+	  discussion at https://github.com/shirok/Gauche/pull/1045.
 
 2024-06-19  Shiro Kawai  <shiro@acm.org>
 
