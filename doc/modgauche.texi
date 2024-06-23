@@ -17084,12 +17084,55 @@ restargs: (foo)
 @subheading 低レベルAPI
 @c COMMON
 
-The followings are lower-level API used to build @code{let-args}
-macro.
+@c EN
+Internally, @code{let-args} creates an option parser object
+and option spec objects which does the actual parsing work.
+Those classes are internal, but a few procedures are exported
+so that you can build your own parser.
+@c JP
+内部的に、@code{let-args}はoption parserオブジェクトと
+option specオブジェクトを作ってコマンドライン引数をパーズします。
+これらのクラスの詳細は公開していませんが、それらを扱うためのいくつかの手続きが
+提供されています。独自のパーザを作りたい時に便利です。
+@c COMMON
 
+@defun make-option-spec spec-string :key help-string default handler
+@c MOD gauche.parseopt
+@end defun
+
+@defun build-option-parser specs :key fallback
+@c MOD gauche.parseopt
+@end defun
+
+@defun get-option-spec option-parser option-name
+@c MOD gauche.parseopt
+@end defun
+
+@defun option-spec-appeared? optspec
+@c MOD gauche.parseopt
+@end defun
+
+@defun option-spec-value optspec
+@c MOD gauche.parseopt
+@end defun
+
+@c EN
+@subheading Deprecated API
+@c JP
+@subheading 非推奨API
+@c COMMON
+
+@c EN
+The following macros are supersede by @code{let-args}.
+New code should not use them.
+@c JP
+以下のマクロは@code{let-args}に置き換えられました。
+新規コードでは使わないでください。
+@c COMMON
 
 @defmac parse-options args (option-clause @dots{})
 @c MOD gauche.parseopt
+@c DEPRECATED
 @c EN
 @var{args} is an expression that contains a list of command-line arguments.
 This macro scans the command-line options (an argument that begins with
@@ -17155,6 +17198,7 @@ a procedure that represents the option parser.
 
 @defmac make-option-parser (option-clause @dots{})
 @c MOD gauche.parseopt
+@c DEPRECATED
 @c EN
 This is a lower-level interface.  @var{option-clause}s are the
 same as @code{parse-options}.  This macro returns a procedure
