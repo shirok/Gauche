@@ -40,7 +40,7 @@
 
    ;; low-level API
    make-option-spec option-spec-value option-spec-appeared?
-   build-option-parser
+   build-option-parser get-option-spec
 
    ;; deprecated API
    make-option-parser parse-options))
@@ -257,7 +257,7 @@
               [else (fallback option nextargs loop)])
         nextargs))))
 
-;; Build
+;; Low-level API
 (define (build-option-parser specs :key (fallback #f))
   (make <option-parser>
     :option-specs specs
@@ -271,6 +271,16 @@
 (define (default-fallback option arg looper)
   (error <parseopt-error> :option-name #f
          "unrecognized option:" option))
+
+;; Low-level API
+(define (get-option-spec option-parser option-name)
+  (assume-type <option-parser> option-name)
+  (assume-type <string> option-name)
+  (find (if (= (string-length option-name) 1)
+          (^[spec] (memv (string-ref option-name 0) (~ spec'short-names)))
+          (^[spec] (member option-name (~ spec'long-names))))
+        (~ option-parser'option-specs)))
+
 
 ;;;
 ;;; help string builder
