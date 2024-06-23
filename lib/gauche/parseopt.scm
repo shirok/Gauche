@@ -34,9 +34,16 @@
 (define-module gauche.parseopt
   (use util.match)
   (use text.tree)
-  (export make-option-parser parse-options let-args
-          <parseopt-error>
-          option-parser-help-string))
+  (export
+   ;; high-level API
+   let-args <parseopt-error> option-parser-help-string
+
+   ;; low-level API
+   make-option-spec option-spec-value option-spec-appeared?
+   build-option-parser
+
+   ;; deprecated API
+   make-option-parser parse-options))
 (select-module gauche.parseopt)
 
 ;; text.fill depends on gauche.unicode, so delay loading it.  It's only used
@@ -72,8 +79,11 @@
   ((option-specs :init-keyword :option-specs)
    (fallback :init-keyword :fallback)))
 
+;; Low-level API
 ;; Parse optsepc and reurun <option-spec>.
-(define (make-option-spec optspec help-string default handler)
+(define (make-option-spec optspec :key (help-string #f)
+                                       (default #f)
+                                       (handler #f))
   ($ assume-type optspec <string>
      "String required for a command spec, but got:" optspec)
   ($ assume-type help-string (<?> <string>)
@@ -98,8 +108,13 @@
                    default)))
     (error "unrecognized option spec:" optspec)))
 
+;; Low-level API
+(define (option-spec-appeared? optspec)
+  (slot-bound? optspec 'value))
+
+;; Low-level API
 (define (option-spec-value optspec)
-  (if (slot-bound? optspec 'value)
+  (if (option-spec-appeared? optspec)
     (~ optspec'value)
     (~ optspec'default)))
 
@@ -243,7 +258,7 @@
         nextargs))))
 
 ;; Build
-(define (build-option-parser specs fallback)
+(define (build-option-parser specs :key (fallback #f))
   (make <option-parser>
     :option-specs specs
     :fallback (or fallback default-fallback)))
@@ -256,49 +271,6 @@
 (define (default-fallback option arg looper)
   (error <parseopt-error> :option-name #f
          "unrecognized option:" option))
-
-
-;;;
-;;; The main body of the macros
-;;;
-
-(define-syntax make-option-parser
-  (syntax-rules ()
-    [(_ clauses)
-     (make-option-parser-int clauses ())]))
-
-(define-syntax make-option-parser-int
-  (syntax-rules (else =>)
-    [(_ () specs)
-     (build-option-parser (map %compose-entry (list . specs)) #f)]
-    [(_ ((else args . body)) specs)
-     (build-option-parser (map %compose-entry (list . specs)) (^ args . body))]
-    [(_ ((else => proc)) specs)
-     (build-option-parser (map %compose-entry (list . specs)) proc)]
-    [(_ ((optspec => proc) . clause) (spec ...))
-     (make-option-parser-int clause (spec ... (list 'optspec proc)))]
-    [(_ ((optspec vars . body) . clause) (spec ...))
-     (make-option-parser-int clause (spec ... (list 'optspec (^ vars . body))))]
-    [(_ (other . clause) specs)
-     (syntax-error "make-option-parser: malformed clause:" other)]
-    ))
-
-;; Parse optspec clause, and returns an <option-spec>.
-;; <a-spec> is (<optspec> <handler>) or
-;; ((<optspec> <help-string>) <handler>)
-(define (%compose-entry a-spec)
-  (define (parse-spec a-spec)
-    (match a-spec
-      [((spec help-string) handler) (values spec help-string handler)]
-      [(spec handler) (values spec #f handler)]
-      [_ (error "Invalid command-line argument specification:" a-spec)]))
-  (receive (optspec helpstr handler) (parse-spec a-spec)
-    (make-option-spec optspec helpstr (undefined) handler)))
-
-(define-syntax parse-options
-  (syntax-rules ()
-    [(_ args clauses)
-     ((make-option-parser clauses) args)]))
 
 ;;;
 ;;; help string builder
@@ -397,23 +369,26 @@
      ;;   rest-var: #f or identifier
      (define (canon varspecs bindings)
 
-       (define (next varspecs var spec default help callback)
+       (define (next varspecs var spec default help handler)
          (canon varspecs
                 `((,var                 ;may be #f
                    ,(gensym)            ;var to bind <option-spec>
                    ,(quasirename r
-                      `(make-option-spec ',spec ',help ,default ,callback)))
+                      `(make-option-spec ',spec
+                                         :help-string ',help
+                                         :default ,default
+                                         :handler ,handler)))
                   ,@bindings)))
 
        (match varspecs
          ;; Terminal conditions
          [(? identifier? restvar) (values (reverse bindings) #f restvar)]
          [() (values (reverse bindings) #f (gensym "rest"))]
-         [(((? else?) (? =>?) callback) . rest)
+         [(((? else?) (? =>?) handler) . rest)
           (cond [(null? rest)
-                 (values (reverse bindings) callback (gensym "rest"))]
+                 (values (reverse bindings) handler (gensym "rest"))]
                 [(identifier? rest)
-                 (values (reverse bindings) callback rest)]
+                 (values (reverse bindings) handler rest)]
                 [else (bad)])]
          [(((? else?) formals expr ...) . rest)
           (cond [(null? rest)
@@ -426,14 +401,14 @@
                          rest)]
                 [else (bad)])]
          ;; Loop with processing clauses
-         [((var spec (? =>?) callback (? ??) help) . varspecs)
-          (next varspecs var spec (xdef spec) help callback)]
-         [((var spec default (? =>?) callback (? ??) help) . varspecs)
-          (next varspecs var spec default help callback)]
-         [((var spec (? =>?) callback) . varspecs)
-          (next varspecs var spec (xdef spec) #f callback)]
-         [((var spec default (? =>?) callback) . varspecs)
-          (next varspecs var spec default #f callback)]
+         [((var spec (? =>?) handler (? ??) help) . varspecs)
+          (next varspecs var spec (xdef spec) help handler)]
+         [((var spec default (? =>?) handler (? ??) help) . varspecs)
+          (next varspecs var spec default help handler)]
+         [((var spec (? =>?) handler) . varspecs)
+          (next varspecs var spec (xdef spec) #f handler)]
+         [((var spec default (? =>?) handler) . varspecs)
+          (next varspecs var spec default #f handler)]
          [((var spec (? ??) help) . varspecs)
           (next varspecs var spec (xdef spec) help #f)]
          [((var spec default (? ??) help) . varspecs)
@@ -456,7 +431,7 @@
                (parameterize ((current-option-parser
                                (build-option-parser
                                 (list ,@(map cadr bindings))
-                                ,else-handler)))
+                                :fallback ,else-handler)))
                  (let ((,restvar ((current-option-parser) ,args)))
                    (let ,(filter-map
                           (match-lambda
@@ -468,3 +443,49 @@
                           bindings)
                      ,@body))))))]
        [_ (bad)]))))
+
+
+;;;
+;;; Deprecated API
+;;;
+
+(define-syntax make-option-parser
+  (syntax-rules ()
+    [(_ clauses)
+     (make-option-parser-int clauses ())]))
+
+(define-syntax make-option-parser-int
+  (syntax-rules (else =>)
+    [(_ () specs)
+     (build-option-parser (map %compose-entry (list . specs)))]
+    [(_ ((else args . body)) specs)
+     (build-option-parser (map %compose-entry (list . specs))
+                          :fallback (^ args . body))]
+    [(_ ((else => proc)) specs)
+     (build-option-parser (map %compose-entry (list . specs))
+                          :fallback proc)]
+    [(_ ((optspec => proc) . clause) (spec ...))
+     (make-option-parser-int clause (spec ... (list 'optspec proc)))]
+    [(_ ((optspec vars . body) . clause) (spec ...))
+     (make-option-parser-int clause (spec ... (list 'optspec (^ vars . body))))]
+    [(_ (other . clause) specs)
+     (syntax-error "make-option-parser: malformed clause:" other)]
+    ))
+
+;; Parse optspec clause, and returns an <option-spec>.
+;; <a-spec> is (<optspec> <handler>) or
+;; ((<optspec> <help-string>) <handler>)
+(define (%compose-entry a-spec)
+  (define (parse-spec a-spec)
+    (match a-spec
+      [((spec help-string) handler) (values spec help-string handler)]
+      [(spec handler) (values spec #f handler)]
+      [_ (error "Invalid command-line argument specification:" a-spec)]))
+  (receive (optspec helpstr handler) (parse-spec a-spec)
+    (make-option-spec optspec :help-string helpstr
+                      :default (undefined) :handler handler)))
+
+(define-syntax parse-options
+  (syntax-rules ()
+    [(_ args clauses)
+     ((make-option-parser clauses) args)]))
