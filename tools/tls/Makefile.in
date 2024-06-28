@@ -72,4 +72,4 @@ distclean: clean
 	rm -rf mbedtls-$(MBEDTLS_VERSION)
 
 maintainer-clean: clean
-	rm -rf mbedtls-$(MBEDTLS_VERSION) $(FETCHED) $(CONFIG_GENERATED)
+	rm -rf mbedtls-$(MBEDTLS_VERSION) $(FETCHED_BZ) $(FETCHED_GZ) $(CONFIG_GENERATED)
