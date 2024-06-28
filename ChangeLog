@@ -1,3 +1,10 @@
+2024-06-28  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls-mbed.c (mbed_read, mbed_write): Handle non-fatal
+	  errors.  Without this, TLS1.3 session stops when server sends
+	  a session ticket.
+	  https://github.com/shirok/Gauche/issues/1047
+
 2024-06-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls.scm (tls-debug-level-set!): API to set debug level of
