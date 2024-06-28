@@ -42,11 +42,8 @@
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
 #include <mbedtls/net_sockets.h>
+#include <mbedtls/debug.h>
 #include <psa/crypto.h>         /* for psa_crypto_init */
-
-/* Define this to enable mbedtls debugging */
-//#define MBEDTLS_DEBUG 1
-#undef MBEDTLS_DEBUG
 
 SCM_CLASS_DECL(Scm_MbedTLSClass);
 
@@ -60,7 +57,7 @@ SCM_CLASS_DECL(Scm_MbedTLSClass);
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs);
 static void mbedtls_print(ScmObj, ScmPort*, ScmWriteContext*);
-#if MBEDTLS_DEBUG
+#ifdef MBEDTLS_DEBUG_C
 static void mbed_debug(void*, int, const char*, int, const char *);
 #endif
 
@@ -456,6 +453,15 @@ static ScmObj mbed_load_private_key(ScmTLS *tls,
 }
 
 /*
+ * Set debug level.  0 <= level < 10
+ *  mbedtls uses 0 (No debug) to 4 (Verbose)
+ */
+static void mbed_set_debug_level(int level)
+{
+    mbedtls_debug_set_threshold(level / 2);
+}
+
+/*
  * Get connection info.  MbedTLS once tried to make 'fd' hidden,
  * but it was subsequently reverted.  We abstract it just in case
  * MbedTLS changes it again.
@@ -499,14 +505,14 @@ static void mbedtls_print(ScmObj obj, ScmPort* port,
     Scm_Printf(port, ">");
 }
 
-#if MBEDTLS_DEBUG
+#ifdef MBEDTLS_DEBUG_C
 void mbed_debug(void *ctx, int level SCM_UNUSED,
                 const char *file, int line, const char *str)
 {
     fprintf((FILE*)ctx, "%s:%d: %s", file, line, str);
     fflush((FILE*)ctx);
 }
-#endif /*MBEDTLS_DEBUG*/
+#endif /*MBEDTLS_DEBUG_C*/
 
 static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
 {
@@ -526,7 +532,7 @@ static ScmObj mbed_allocate(ScmClass *klass, ScmObj initargs)
     mbedtls_pk_init(&t->pk);
     mbedtls_entropy_init(&t->entropy);
 
-#if MBEDTLS_DEBUG
+#ifdef MBEDTLS_DEBUG_C
     mbedtls_ssl_conf_dbg(&t->conf, mbed_debug, stderr);
 #endif
 
@@ -612,6 +618,8 @@ void Scm_Init_rfc__tls__mbed()
     Scm_InitStaticClass(&Scm_MbedTLSClass, "<mbed-tls>", mod, NULL, 0);
     k_server_name = SCM_MAKE_KEYWORD("server-name");
     k_skip_verification = SCM_MAKE_KEYWORD("skip-verification");
+
+    Scm_TLSRegisterDebugLevelCallback(mbed_set_debug_level);
 
 #  ifdef MBEDTLS_THREADING_ALT
     mbedtls_threading_set_alt(win_mutex_init,

@@ -190,6 +190,40 @@ ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who)
     }
 }
 
+/*
+ * Debug level management
+ */
+#define MAX_DEBUG_LEVEL_SETTERS 4
+static void (*debug_level_setters[MAX_DEBUG_LEVEL_SETTERS])(int);
+static int debug_level_setter_count = 0;
+static ScmInternalMutex debug_level_setter_mutex;
+
+void Scm_TLSSetDebugLevel(int level)
+{
+    if (level < 0) level = 0;
+    if (level > 9) level = 9;
+    for (int i=0; i < debug_level_setter_count; i++) {
+        debug_level_setters[i](level);
+    }
+}
+
+void Scm_TLSRegisterDebugLevelCallback(void (*setter)(int))
+{
+    int overflow = FALSE;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(debug_level_setter_mutex);
+    if (debug_level_setter_count >= MAX_DEBUG_LEVEL_SETTERS) {
+        overflow = TRUE;
+    } else {
+        debug_level_setters[debug_level_setter_count++] = setter;
+    }
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(debug_level_setter_mutex);
+    if (overflow) {
+        Scm_Error("[internal] Too many TLS debug level callbacks");
+    }
+}
+
+
 #if !HAVE_WINCRYPT_H
 #include "in_gauche_cacert_path.c"
 #endif
@@ -260,4 +294,6 @@ void Scm_Init_tls(ScmModule *mod)
                                    default_ca_bundle(), 0);
     k_options = SCM_MAKE_KEYWORD("options");
     k_num_sessions = SCM_MAKE_KEYWORD("num-sessions");
+
+    SCM_INTERNAL_MUTEX_INIT(debug_level_setter_mutex);
 }

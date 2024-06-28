@@ -133,6 +133,13 @@ extern ScmObj Scm_TLSBind(ScmTLS *t,
 extern ScmObj Scm_TLSAccept(ScmTLS *t); /* returns connected <tls> */
 extern ScmObj Scm_TLSClose(ScmTLS* t);
 
+/* Set global debug trace level.  0 = no trace, 9 = maximum trace.
+   This affect all submodules. */
+extern void   Scm_TLSSetDebugLevel(int level);
+
+/* Each submodule registers debug level setter through this. */
+extern void   Scm_TLSRegisterDebugLevelCallback(void (*setter)(int));
+
 extern int    Scm_TLSSystemCABundleAvailable(void);
 
 extern ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who);

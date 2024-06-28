@@ -1,3 +1,8 @@
+2024-06-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls/tls.scm (tls-debug-level-set!): API to set debug level of
+	  TLS submodules.
+
 2024-06-21  Shiro Kawai  <shiro@acm.org>
 
 	* lib/tools/compile-r7rs: Drop support of COMPILE_R7RS.  If the

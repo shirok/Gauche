@@ -43,7 +43,7 @@
           tls-load-certificate tls-load-private-key
           tls-read tls-write
           tls-input-port tls-output-port
-          tls-ca-bundle-path
+          tls-ca-bundle-path tls-debug-level-set!
           default-tls-class
 
           ;; connection interface
@@ -130,6 +130,8 @@
        (when (logand r TLS_POLL_WRITE)
          (set! result (Scm_Cons 'write result)))
        (return result))))
+ (define-cproc tls-debug-level-set! (level::<int>) ::<void>
+   (Scm_TLSSetDebugLevel level))
 
  ;; internal
  (define-cproc %tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
