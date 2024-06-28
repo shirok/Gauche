@@ -316,8 +316,10 @@ static ScmObj mbed_read(ScmTLS *tls)
     do {
         int r = mbedtls_ssl_read(&t->ctx, buf+nread, sizeof(buf));
         if (r == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) return SCM_EOF;
-        if (r == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) continue;
         if (r == MBEDTLS_ERR_SSL_WANT_READ) continue;
+#if defined(MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)
+        if (r == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) continue;
+#endif
         if (r < 0) mbed_error("mbedtls_ssl_read() failed: %s (%d)", r);
         nread += r;
     } while (nread == 0);
@@ -341,8 +343,10 @@ static ScmObj mbed_write(ScmTLS *tls, ScmObj msg)
     int nsent = 0;
     do {
         int r = mbedtls_ssl_write(&t->ctx, cmsg+nsent, size-nsent);
-        if (r == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) continue;
         if (r == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
+#if defined(MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET)
+        if (r == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) continue;
+#endif
         if (r < 0) mbed_error("mbedtls_ssl_write() failed: %s (%d)", r);
         nsent += r;
     } while (nsent < size);
