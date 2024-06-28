@@ -5,8 +5,8 @@
 .PHONY: mbedtls
 
 # update these for new MbedTLS version / repo
-#MBEDTLS_VERSION = 3.6.0
-MBEDTLS_VERSION = 3.5.2
+MBEDTLS_VERSION = 3.6.0
+#MBEDTLS_VERSION = 3.5.2
 MBEDTLS_SOURCE_BZ  = https://github.com/Mbed-TLS/mbedtls/releases/download/v$(MBEDTLS_VERSION)/mbedtls-$(MBEDTLS_VERSION).tar.bz2
 MBEDTLS_SOURCE_GZ  = https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v$(MBEDTLS_VERSION).tar.gz
 FETCHED_BZ = mbedtls-$(MBEDTLS_VERSION).tar.bz2
