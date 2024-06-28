@@ -5,15 +5,16 @@
 .PHONY: mbedtls
 
 # update these for new MbedTLS version / repo
+#MBEDTLS_VERSION = 3.6.0
 MBEDTLS_VERSION = 3.5.2
-#MBEDTLS_SOURCE  = https://github.com/Mbed-TLS/mbedtls/releases/download/v$(MBEDTLS_VERSION)/mbedtls-$(MBEDTLS_VERSION).tar.bz2
-MBEDTLS_SOURCE  = https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v$(MBEDTLS_VERSION).tar.gz
-
+MBEDTLS_SOURCE_BZ  = https://github.com/Mbed-TLS/mbedtls/releases/download/v$(MBEDTLS_VERSION)/mbedtls-$(MBEDTLS_VERSION).tar.bz2
+MBEDTLS_SOURCE_GZ  = https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v$(MBEDTLS_VERSION).tar.gz
+FETCHED_BZ = mbedtls-$(MBEDTLS_VERSION).tar.bz2
+FETCHED_GZ = mbedtls-$(MBEDTLS_VERSION).tar.gz
 
 LN_S = @LN_S@
 OBJEXT = @OBJEXT@
 
-FETCHED = mbedtls-$(MBEDTLS_VERSION).tar.gz
 CONFIG_GENERATED = Makefile
 
 MBEDTLS_LIBS_XTRA = libmbedx509.a libmbedcrypto.a
@@ -40,12 +41,16 @@ libmbedtls.a: mbedtls-$(MBEDTLS_VERSION)
 	 && cd library                               \
 	 && cp $(MBEDTLS_LIBS) ../..
 
-mbedtls-$(MBEDTLS_VERSION): $(FETCHED)
-	tar xzvf $(FETCHED)
+mbedtls-$(MBEDTLS_VERSION):
+	if curl -f -L -o $(FETCHED_BZ) $(MBEDTLS_SOURCE_BZ); then \
+	  tar xjvf $(FETCHED_BZ); \
+	elif curl -f -L -o $(FETCHED_GZ) $(MBEDTLS_SOURCE_GZ); then \
+	  tar xzvf $(FETCHED_GZ); \
+	else \
+	  echo "Couldn't fetch MbedTLS $(MBEDTLS_VERSION)"; \
+	  exit 1; \
+	fi
 	echo 'set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")' >> mbedtls-$(MBEDTLS_VERSION)/library/CMakeLists.txt
-
-$(FETCHED):
-	curl -f -L -o $(FETCHED) $(MBEDTLS_SOURCE)
 
 # list-objects target is called by src/list-ext-objects.sh to gather
 # object files to archive into static gauche library.
