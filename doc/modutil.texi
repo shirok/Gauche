@@ -21462,6 +21462,25 @@ bindされているか接続されていなければなりません。そうで�
 @c COMMON
 @end defun
 
+@defun tls-debug-level-set! level
+@c MOD rfc.tls
+@c EN
+This is for troubleshooting.  Set the global debug log level of
+the TLS subsystem to @var{level}, which is an exact integer between
+0 (no debug logging, default) to 9 (maximum debug logging).
+
+The actual granularity of log levels depends on the TLS subsystem,
+and 0-9 scale is mapped to each subsystem's logging mechanism.
+You want some experiment to find appropriate value.
+@c JP
+これはトラブルシューティング用のAPIです。
+TLSサブシステムのグローバルなデバッグログレベルを@var{level}に設定します。@var{level}
+は0(ログなし、デフォルト)から9(ログ最大)までの正確な整数です。
+
+実際のログ段階の細かさは各TLSサブシステムにより、0-9のレベルがサブシステムのサポートする
+段階へとマップされます。いくらか試行して適切な値を見つけてください。
+@c COMMON
+@end defun
 
 @c EN
 @subheading TLS client
