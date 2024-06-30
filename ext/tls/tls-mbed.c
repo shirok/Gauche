@@ -470,7 +470,9 @@ static ScmObj mbed_load_private_key(ScmTLS *tls,
  */
 static void mbed_set_debug_level(int level)
 {
-    mbedtls_debug_set_threshold(level / 2);
+    int mlevel = (level+1)/2;
+    if (mlevel > 4) mlevel = 4;
+    mbedtls_debug_set_threshold(mlevel);
 }
 
 /*
