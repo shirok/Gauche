@@ -1,3 +1,12 @@
+2024-06-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/Makefile.in: generate slibcat in builddir then install,
+	  instead of generating it in the installation directory.  Generating
+	  after installation doesn't work if we use DESTDIR.  We had
+	  slibcat-in-place makefile target specifically for that, but we can
+	  generate slibcat in builddir anyway, we can always use it.
+	  https://github.com/shirok/Gauche/issues/1046
+
 2024-06-28  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls/tls-mbed.c (mbed_read, mbed_write): Handle non-fatal

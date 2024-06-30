@@ -172,7 +172,7 @@ all:
 
 check:
 
-install:
+install: slibcat
 	for d in $(SUBDIRS); do \
 	  "$(MKINSTDIR)" "$(DESTDIR)$(SCM_INSTALL_DIR)/$$d"; \
 	done
@@ -186,21 +186,14 @@ install:
 uninstall:
 
 # If we have slib, creates catalog file for Gauche.   This should be called
-# after everything is installed.
-# For RPM, this has to be called in the postinstall script instead of
-# installation script.
+# after everything is built.
 slibcat :
-	if test -f "$(SLIB_DIR)/require.scm" && test $(build) = $(host) ; then \
-	  "$(exec_prefix)/bin/gosh" -ftest -fno-warn-srfi-feature-id -uslib -E"require 'new-catalog" -Eexit;\
+	if test -f "$(SLIB_DIR)/require.scm" && test $(build) = $(host); then \
+	  $(SHELL) $(srcdir)/mklibcat $(top_builddir)/src/gosh ; \
 	fi
 
-# Some package systems don't allow to run postinstall commands.  For such
-# systems, this target tries to create "slibcat" within this directory
-# before installing gosh.
-slibcat-in-place :
-	if test -f "$(SLIB_DIR)/require.scm"; then \
-	  $(SHELL) ./mklibcat $(top_builddir)/src/gosh ; \
-	fi
+# obsoletd: for the backward compatibility
+slibcat-in-place : slibcat
 
 clean:
 	rm -rf core slibcat *.sci *~

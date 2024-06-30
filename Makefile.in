@@ -83,7 +83,6 @@ INSTALL.ja.adoc: INSTALL.adoc
 	sed -e '/^ifdef::EN/,/^endif::EN/d ; /^ifdef::JA/d ; /^endif::JA/d ; /^\/\/@start header/,/^\/\/@end header/d' $< > $@
 
 install: install-pkg install-doc
-	cd lib; $(MAKE) slibcat
 
 install-doc:
 	cd doc; $(MAKE) install
@@ -98,6 +97,8 @@ install-pkg:
 	$(MKINSTDIR) "$(DESTDIR)$(datadir)/aclocal"
 	$(INSTALL_DATA) "$(srcdir)/m4/gauche.m4" "$(DESTDIR)$(datadir)/aclocal/gauche.m4"
 
+# for the backward compatibility;
+# now slibcat is created in the build tree by default.
 slibcat-in-place:
 	cd lib; $(MAKE) slibcat-in-place
 
