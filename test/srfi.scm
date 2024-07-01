@@ -3201,6 +3201,17 @@
   (include "include/srfi-232-tests"))
 
 ;;-----------------------------------------------------------------------
+;; Topological sort
+
+(test-section "SRFI-234")
+
+(define-module srfi-234-tests
+  (use gauche.test)
+  (use srfi.234)
+  (test-module 'srfi.234)
+  (test-include-r7 "include/srfi-234-test"))
+
+;;-----------------------------------------------------------------------
 ;; Combinators
 
 (test-section "SRFI-235")

@@ -1,3 +1,7 @@
+2024-06-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/234.scm: Added.
+
 2024-06-29  Shiro Kawai  <shiro@acm.org>
 
 	* lib/Makefile.in: generate slibcat in builddir then install,
