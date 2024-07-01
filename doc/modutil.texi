@@ -21707,7 +21707,7 @@ Read and register server private key storead in a file named by @var{path},
 with the @var{password}.  If the private key file is not encrypted,
 you can pass @code{#f} to @var{password}.
 @c JP
-@var{path}ed示されるファイルに格納されたサーバの秘密鍵を読み出して登録します。
+@var{path}で示されるファイルに格納されたサーバの秘密鍵を読み出して登録します。
 秘密鍵が暗号化されている場合は@var{password}にパスワードを指定します。
 秘密鍵が暗号されていない場合は@var{password}に@code{#f}を渡します。
 @c COMMON
