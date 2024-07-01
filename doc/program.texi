@@ -2753,7 +2753,7 @@ We'll adjust it occasionally.
 When you install Gauche, you'll get several auxiliary programs
 that help developing Gauche applications.
 
-@table @b
+@table @code
 @item gauche-config
 This program can be used to query various configuation parameters of
 installed Gauche.
@@ -2774,7 +2774,7 @@ Gauche scripts.
 Additionally, if you configure Gauche with @code{--enable-shared-commands},
 the following programs are also installed.
 
-@table @b
+@table @code
 @item scheme-r7rs
 @itemx scheme-srfi-0
 @itemx scheme-srfi-7

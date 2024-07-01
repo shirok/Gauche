@@ -1945,7 +1945,7 @@ This works exactly like @code{case}, except when there's
 no @code{else} clause and the value of @var{key-expr} expression
 doesn't match any of @var{datum}s provided in @var{clause}s.
 While @code{case} form returns undefined value for such case,
-@var{ecase} raises an error.
+@code{ecase} raises an error.
 
 It is taken from Common Lisp.  It's a convenient form when
 you want to detect unexpected value getting passed just in case.
