@@ -575,7 +575,8 @@ init_cond_features()
 #else
         { "posix", NULL },
 #endif
-        /* TODO: OS Flags, CPU arch flags and C memory model flags */
+        /* OS/CPU arch flags are generated to features.c by gen-features.sh */
+        /* TODO: C memory model flags */
 #if   defined(WORDS_BIGENDIAN)
         { "big-endian", NULL },
 #else
