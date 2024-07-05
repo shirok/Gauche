@@ -82,6 +82,7 @@
 * Parsing input stream::        text.parse
 * Showing progress on text terminals::  text.progress
 * Segmented string matching::   text.segmented-match
+* Shell text utilities::        text.sh
 * SQL parsing and construction::  text.sql
 * Simple template expander::    text.template
 * Transliterate characters::    text.tr
@@ -32149,7 +32150,7 @@ Here's a simple example, using customized numeric part:
 @end example
 
 @c ----------------------------------------------------------------------
-@node Segmented string matching, SQL parsing and construction, Showing progress on text terminals, Library modules - Utilities
+@node Segmented string matching, Shell text utilities, Showing progress on text terminals, Library modules - Utilities
 @section @code{text.segmented-match} - Segmented string matching
 @c NODE 区切られた文字列のマッチ, @code{text.segmented-match} - 区切られた文字列のマッチ
 
@@ -32259,9 +32260,205 @@ repeatedly.
 @c COMMON
 @end defun
 
+@c ----------------------------------------------------------------------
+@node Shell text utilities, SQL parsing and construction, Segmented string matching, Library modules - Utilities
+@section @code{text.sh} - Shell text utilities
+@c NODE シェルのテキストユーティリティ, @code{text.sh} - シェルのテキストユーティリティ
+
+@deftp {Module} text.sh
+@mdindex text.sh
+@c EN
+This module provides several utilities useful when you're writing
+shell-like scripts.
+@c JP
+このモジュールは、シェルスクリプト風のスクリプトを書いている時に便利な
+いくつかのユーティリティを提供します。
+@c COMMON
+@end deftp
+
+@defun shell-escape-string str :optional flavor
+@c MOD text.sh
+@c EN
+If @var{str} contains characters that affects shell's command-line
+argument parsing, escape @var{str} to avoid shell's interpretation.
+Otherwise, returns @var{str} itself.
+
+The optional @var{flavor} argument takes a symbol to
+specify the platform; currently @code{windows} and
+@code{posix} can be specified.  The way shell handles
+the escape and quotation differ a lot between these platforms;
+the @code{windows} flavor uses MSVC runtime argument parsing behavior,
+while the @code{posix} flavor assumes IEEE Std 1003.1.
+When omitted, the default
+value is chosen according to the running platform.
+(Note: Cygwin is regarded as @code{posix}.)
+
+Use this procedure when you need to build a command-line string by yourself.
+(If you pass a command-line argument list, instead of a single
+command-line string, you don't need to escape them since we
+bypass the shell.)
+
+(NB: Use this with caution on Windows; if you run a batch file
+(@file{*.bat} or @file{*.cmd}), its command-line arguments are
+parsed differently, and it is known that there's no safe escaping
+way that works for all the cases.  It's up to you to ensure
+all arugments are safe when you run those files.  See also
+@code{sys-exec} (@pxref{Process management})).
+@c JP
+@var{str}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
+それらがシェルによって解釈されないようにエスケープされた文字列を返します。
+そうでなければ@var{str}自体を返します。
+
+省略可能な@var{flavor}引数はシンボルを取り、プラットフォームを指定します。
+現在は@code{windows}か@code{posix}が指定可能です。シェルが
+エスケープやクオートを処理する方法がこの二つのプラットフォームで大きく
+異なるからです。@code{windows}フレーバーの場合はMVCSランタイムの
+引数パージングに合わせ、@code{posix}フレーバーの場合はIEEE Std 1003.1に
+合わせます。
+省略された場合は、プロセスが走っているプラットフォームが
+デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
+
+自分でコマンドライン文字列を組み立てる必要がある場合に使ってください。
+(単一のコマンドライン文字列でなく、コマンドライン引数のリストを渡す場合は
+エスケープの必要はありません。引数はシェルを通さずに子プロセスに渡される
+からです。)
+
+(註: Windowsでバッチファイル(@file{*.bat}、@file{*.cmd})を起動する場合は、
+コマンドラインが異なる方法でパーズされることに注意してください。
+特に、あらゆる場合に対して安全に引数をエスケープする方法が無いことが
+知られています。バッチファイルに渡す引数を用意する場合は独自にそれが
+安全であることを確かめて下さい。@code{sys-exec}のエントリも参照のこと
+(@ref{Process management}))。
+@c COMMON
+@end defun
+
+@defun shell-tokenize-string str :optional flavor
+@c MOD text.sh
+@c EN
+Split a string @var{str} into arguments as the shell does.
+@c JP
+シェルがやるように、文字列@var{str}を引数リストに分割します。
+@c COMMON
+
+@example
+(shell-tokenize-string "grep -n -e \"foo bar\" log")
+ @result{} ("grep" "-n" "-e" "foo bar" "log")
+@end example
+
+@c EN
+The optional @var{flavor} arguments can be a symbol either
+@code{windows} or @code{posix} to specify the syntax.
+If it's @code{windows}, we follow MSVC runtime command-line
+argument parser behavior.  If it's @code{posix}, we follow
+IEEE Std 1003.1 Shell Command Language.  When omitted,
+the default value is chosen according to the running platform.
+(Note: Cygwin is regarded as @code{posix}.)
+@c JP
+省略可能な@var{flavor}引数はシンボル@code{windows}か@code{posix}を取り、
+構文を指定します。@code{windows}の場合はMVCSランタイムの
+引数パージングに合わせ、@code{posix}フレーバーの場合はIEEE Std 1003.1
+Shell Command Languageに合わせます。
+省略された場合は、プロセスが走っているプラットフォームが
+デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
+@c COMMON
+
+@c EN
+This procedure does not handle fancier shell features such
+as variable substitution.  If it encounters a metacharacter
+that requires such interpretation, an error is signaled.
+In other words, metacharacters must be properly quoted
+in @var{str}.
+@c JP
+この手続きはシェルの変数置換のような高度な機能は持っていません。
+もしそういった解釈が必要なメタ文字に出会った場合はエラーが投げられます。
+言い換えれば、メタ文字は@var{str}の中で全て適切にクオートされている
+必要があります。
+@c COMMON
+
+@example
+(shell-tokenize-string "echo $foo" 'posix)
+  @result{} @r{signals error}
+
+(shell-tokenize-string "echo \"$foo\"" 'posix)
+  @result{} @r{still signals error}
+
+(shell-tokenize-string "echo '$foo'" 'posix)
+  @result{} ("echo" "$foo")
+
+(shell-tokenize-string "echo \\$foo" 'posix)
+  @result{} ("echo" "$foo")
+@end example
+@end defun
+
+@defmac shell-case expr clause @dots{}
+@c MOD text.sh
+This macro implements shell's @code{case} built-in command.
+Each @var{clause} must be one fo the following forms:
+
+@itemize @bullet
+@item
+@code{(@var{pattern} @var{body} @dots{})}
+@item
+@code{((@var{pattern} @dots{}) @var{body} @dots{})}
+@item
+@code{(else @var{body} @dots{})}
+@end itemize
+
+The @code{else} form must appear as the last @var{clause}, if there's any.
+
+First, @var{expr} is evaluated.  It must produce a string.
+Then, each @var{clause} is examined, and the value of @var{expr}
+matches one of the @var{pattern}s, then @var{body} @dots{} of the
+clause is evaluated, and the last result is returned.
+
+When none of @var{clause} has matching @var{pattern}, if @var{else}
+clause is provided its @var{body} @dots{} is evaluated, otherwise
+an undefined value is returned.
+
+The matching is done as @code{glob} (@pxref{Directories}) does.
+That is, if a @var{pattern} is @code{"abc*"}, then the value
+@code{"abc"},  @code{"abcd"}, @code{"abccc"}, etc. match,
+and if a @var{pattern} is @code{"a[bcd]"}, then the value
+@code{"ab"}, @code{"ac"} and @code{"ad"} match.
+
+For example, the following shell @code{case} command:
+
+@example
+case $arg in
+  foo*)        process_foo $arg;;
+  ba[rz]|quux) process_bar $arg;;
+   *)          process_other $arg;;
+esac
+@end example
+
+can be translated as follows:
+
+@example
+(shell-case arg
+  ["foo*" (process-foo arg)]
+  [("ba[rz]" "quux")  (process-bar arg)]
+  [else (process-other arg)])
+@end example
+
+The same thing can be achieved with @code{rxmatch-case}, for example,
+but manually translating shell glob pattern to regexp can be tedious
+and error-prone.  This is particulary useful when you're rewriting
+existing shell scripts in Gauche.
+@end defmac
+
+@defmac shell-match pattern str
+@defmacx shell-match (pattern @dots{}) str
+@c MOD text.sh
+This extract the matching function of @code{shell-case} to be used
+independently.   The @var{pattern} must be a literal string
+of glob pattern, and @var{str} must be an expression that yields a string.
+
+If the value of @var{str} matches @var{pattern} (or one of @var{pattern}s
+in the second form), it returns @code{#t}. Otherwise, it returns @code{#f}.
+@end defmac
 
 @c ----------------------------------------------------------------------
-@node SQL parsing and construction, Simple template expander, Segmented string matching, Library modules - Utilities
+@node SQL parsing and construction, Simple template expander, Shell text utilities, Library modules - Utilities
 @section @code{text.sql} - SQL parsing and construction
 @c NODE SQLのパーズと構築, @code{text.sql} - SQLのパーズと構築
 

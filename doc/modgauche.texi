@@ -17699,6 +17699,21 @@ a convenient way to send/receive information to/from subprocesses.
 また、このモジュールは、サブプロセスに情報を送ったり、サブプロセスから
 情報を受け取ったりするのに便利な「プロセスポート」を提供します。
 @c COMMON
+
+@c EN
+Note: This module used to provide
+@code{shell-escape-string} and @code{shell-tokenize-string}, but they're
+purely text manipulation and not really related to subprocesses, so
+we moved them to @code{text.sh}.  @xref{Shell text utilities}, for the
+details.  For the backward compatibility, we keep exporting those
+two procedures from @code{gauche.process}.
+@c JP
+註: このモジュールでは@code{shell-escape-string}と@code{shell-tokenize-string}
+というユーティリティ手続きを提供していましたが、これらはテキスト操作でありサブプロセスと
+直接の関係がないので、@code{text.sh}に移されました。
+詳しくは@ref{Shell text utilities}を参照してください。
+互換性のため、@code{gauche.process}からもこれらの手続きはエクスポートされます。
+@c COMMON
 @end deftp
 
 @menu
@@ -17923,9 +17938,9 @@ It would be handy for quick throwaway scripts.
 On the other hand, with @code{sys-system},
 if you want to change command parameters
 at runtime, you need to worry about properly escape them
-(actually we have one to do the job in @code{gauche.process};
-see @code{shell-escape-string}
-below); you need to be aware that @code{/bin/sh}, used by
+(actually we have one to do the job:
+@code{shell-escape-string}, @pxref{Shell text utilities});
+you need to be aware that @code{/bin/sh}, used by
 @code{sys-system} via @code{system(3)} call, may differ among
 platforms and be careful not to rely on specific features on
 certain systems.  As a rule of thumb, keep @code{sys-system} for
@@ -17940,9 +17955,9 @@ for all other stuff.
 書き捨てのスクリプトを素早く書くときはそちらの方が便利でしょう。
 
 一方、@code{sys-system}を使う場合には、コマンドの引数を実行時に可変にしたい場合に
-きちんとエスケープされているかどうかを確認したり (実は@code{gauche.process}
-モジュール中にそれをする関数があります。下の@code{shell-escape-string}を
-参照してください)、また@code{sys-system}が@code{system(3)}経由で
+きちんとエスケープされているかどうかを確認したり (実はそれをやってくれる
+@code{shell-escape-string}という手続きがあります。@ref{Shell text utilities}参照)、
+また@code{sys-system}が@code{system(3)}経由で
 呼び出す@code{/bin/sh}のプラットフォーム間の違いを気にしたりする必要があります。
 原則として、@code{sys-system}の使用は固定コマンドを呼び出す簡単な場合に
 止めておき、他の仕事には@code{run-process}や
@@ -19286,8 +19301,8 @@ environment variable interpolation, globbing, and redirections.
 If you create the command line by concatenating strings,
 it's your responsibility to ensure escaping special characters
 if you don't want the shell to interpret them.
-The @code{shell-escape-string} function described below might
-be a help.
+The @code{shell-escape-string} function in @code{text.sh} might
+be a help (@pxref{Shell text utilities}).
 @c JP
 @var{command}は文字列か、コマンド名と引数のリストか、「コマンド名と引数のリスト」のリストです。
 
@@ -19296,8 +19311,8 @@ be a help.
 文字列中で使えます。
 文字列をつなぎ合わせてコマンドラインを作成する場合、
 特殊文字をシェルに解釈してほしくなければ、それを正しくエスケープするのは
-呼び出し元の責任です。下で説明する@code{shell-escape-string}は
-助けになるかもしれません。
+呼び出し元の責任です。@code{text.sh}の@code{shell-escape-string}は
+助けになるかもしれません(@ref{Shell text utilities}参照)。
 @c COMMON
 
 @c EN
@@ -19659,121 +19674,6 @@ for the details.)
 (any (^[flie] (process-output->string-list `(cat ,file)
                  :error :null :on-abnormal-exit #f))
      '("the-file" "another-file"))
-@end example
-
-@end defun
-
-@defun shell-escape-string str :optional flavor
-@c MOD gauche.process
-@c EN
-If @var{str} contains characters that affects shell's command-line
-argument parsing, escape @var{str} to avoid shell's interpretation.
-Otherwise, returns @var{str} itself.
-
-The optional @var{flavor} argument takes a symbol to
-specify the platform; currently @code{windows} and
-@code{posix} can be specified.  The way shell handles
-the escape and quotation differ a lot between these platforms;
-the @code{windows} flavor uses MSVC runtime argument parsing behavior,
-while the @code{posix} flavor assumes IEEE Std 1003.1.
-When omitted, the default
-value is chosen according to the running platform.
-(Note: Cygwin is regarded as @code{posix}.)
-
-Use this procedure when you need to build a command-line string by yourself.
-(If you pass a command-line argument list, instead of a single
-command-line string, you don't need to escape them since we
-bypass the shell.)
-
-(NB: Use this with caution on Windows; if you run a batch file
-(@file{*.bat} or @file{*.cmd}), its command-line arguments are
-parsed differently, and it is known that there's no safe escaping
-way that works for all the cases.  It's up to you to ensure
-all arugments are safe when you run those files.  See also
-@code{sys-exec} (@pxref{Process management})).
-@c JP
-@var{str}がシェルのコマンドライン引数解析に影響を与える文字を含んでいる場合、
-それらがシェルによって解釈されないようにエスケープされた文字列を返します。
-そうでなければ@var{str}自体を返します。
-
-省略可能な@var{flavor}引数はシンボルを取り、プラットフォームを指定します。
-現在は@code{windows}か@code{posix}が指定可能です。シェルが
-エスケープやクオートを処理する方法がこの二つのプラットフォームで大きく
-異なるからです。@code{windows}フレーバーの場合はMVCSランタイムの
-引数パージングに合わせ、@code{posix}フレーバーの場合はIEEE Std 1003.1に
-合わせます。
-省略された場合は、プロセスが走っているプラットフォームが
-デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
-
-自分でコマンドライン文字列を組み立てる必要がある場合に使ってください。
-(単一のコマンドライン文字列でなく、コマンドライン引数のリストを渡す場合は
-エスケープの必要はありません。引数はシェルを通さずに子プロセスに渡される
-からです。)
-
-(註: Windowsでバッチファイル(@file{*.bat}、@file{*.cmd})を起動する場合は、
-コマンドラインが異なる方法でパーズされることに注意してください。
-特に、あらゆる場合に対して安全に引数をエスケープする方法が無いことが
-知られています。バッチファイルに渡す引数を用意する場合は独自にそれが
-安全であることを確かめて下さい。@code{sys-exec}のエントリも参照のこと
-(@ref{Process management}))。
-@c COMMON
-@end defun
-
-@defun shell-tokenize-string str :optional flavor
-@c MOD gauche.process
-@c EN
-Split a string @var{str} into arguments as the shell does.
-@c JP
-シェルがやるように、文字列@var{str}を引数リストに分割します。
-@c COMMON
-
-@example
-(shell-tokenize-string "grep -n -e \"foo bar\" log")
- @result{} ("grep" "-n" "-e" "foo bar" "log")
-@end example
-
-@c EN
-The optional @var{flavor} arguments can be a symbol either
-@code{windows} or @code{posix} to specify the syntax.
-If it's @code{windows}, we follow MSVC runtime command-line
-argument parser behavior.  If it's @code{posix}, we follow
-IEEE Std 1003.1 Shell Command Language.  When omitted,
-the default value is chosen according to the running platform.
-(Note: Cygwin is regarded as @code{posix}.)
-@c JP
-省略可能な@var{flavor}引数はシンボル@code{windows}か@code{posix}を取り、
-構文を指定します。@code{windows}の場合はMVCSランタイムの
-引数パージングに合わせ、@code{posix}フレーバーの場合はIEEE Std 1003.1
-Shell Command Languageに合わせます。
-省略された場合は、プロセスが走っているプラットフォームが
-デフォルトの値となります。(Cygwinは@code{posix}とみなされます。)
-@c COMMON
-
-@c EN
-This procedure does not handle fancier shell features such
-as variable substitution.  If it encounters a metacharacter
-that requires such interpretation, an error is signaled.
-In other words, metacharacters must be properly quoted
-in @var{str}.
-@c JP
-この手続きはシェルの変数置換のような高度な機能は持っていません。
-もしそういった解釈が必要なメタ文字に出会った場合はエラーが投げられます。
-言い換えれば、メタ文字は@var{str}の中で全て適切にクオートされている
-必要があります。
-@c COMMON
-
-@example
-(shell-tokenize-string "echo $foo" 'posix)
-  @result{} @r{signals error}
-
-(shell-tokenize-string "echo \"$foo\"" 'posix)
-  @result{} @r{still signals error}
-
-(shell-tokenize-string "echo '$foo'" 'posix)
-  @result{} ("echo" "$foo")
-
-(shell-tokenize-string "echo \\$foo" 'posix)
-  @result{} ("echo" "$foo")
 @end example
 @end defun
 
