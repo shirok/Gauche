@@ -32392,8 +32392,13 @@ in @var{str}.
 
 @defmac shell-case expr clause @dots{}
 @c MOD text.sh
+@c EN
 This macro implements shell's @code{case} built-in command.
 Each @var{clause} must be one fo the following forms:
+@c JP
+このマクロは、シェルの@code{case}組み込みコマンドを実装します。
+各@var{clause}は次の形式のいずれかでなければなりません。
+@c COMMON
 
 @itemize @bullet
 @item
@@ -32404,24 +32409,53 @@ Each @var{clause} must be one fo the following forms:
 @code{(else @var{body} @dots{})}
 @end itemize
 
+@c EN
 The @code{else} form must appear as the last @var{clause}, if there's any.
+@c JP
+また、@code{else}フォームはあるなら最後の@var{clause}でなければなりません。
+@c COMMON
 
+@c EN
 First, @var{expr} is evaluated.  It must produce a string.
 Then, each @var{clause} is examined, and the value of @var{expr}
 matches one of the @var{pattern}s, then @var{body} @dots{} of the
 clause is evaluated, and the last result is returned.
+@c JP
+まず@var{expr}が評価されます。値は文字列でなければなりません。
+次に各@var{clause}が順番に吟味され、@var{expr}の値が@var{pattern}にマッチした
+場合にその@var{clause}が選ばれて@var{body} @dots{}が評価され、
+最後の式の値が全体の値となります。
+@c COMMON
 
-When none of @var{clause} has matching @var{pattern}, if @var{else}
+@c EN
+When none of @var{clause} has matching @var{pattern}, if @code{else}
 clause is provided its @var{body} @dots{} is evaluated, otherwise
 an undefined value is returned.
+@c JP
+いずれの@var{pattern}もマッチしなかった場合、@code{else}節が与えられていれば
+その@var{body} @dots{}が評価されて最後の式の値が全体の値となり、
+@code{else}節がなければ未定義値が返されます。
+@c COMMON
 
+@c EN
 The matching is done as @code{glob} (@pxref{Directories}) does.
 That is, if a @var{pattern} is @code{"abc*"}, then the value
 @code{"abc"},  @code{"abcd"}, @code{"abccc"}, etc. match,
 and if a @var{pattern} is @code{"a[bcd]"}, then the value
 @code{"ab"}, @code{"ac"} and @code{"ad"} match.
+@c JP
+マッチは@code{glob}と同じ方法で行われます (@ref{Directories}参照)。
+例えば、@var{pattern}が@code{"abc*"}であれば、
+@var{expr}の値が@code{"abc"}、@code{"abcd"}、@code{"abccc"}等である
+場合にマッチし、@var{pattern}が@code{"a[bcd]"}であれば、
+@code{"ab"}、@code{"ac"}、@code{"ad"}がマッチします。
+@c COMMON
 
+@c EN
 For example, the following shell @code{case} command:
+@c JP
+次のシェルの@code{case}コマンドは:
+@c COMMON
 
 @example
 case $arg in
@@ -32431,7 +32465,11 @@ case $arg in
 esac
 @end example
 
+@c EN
 can be translated as follows:
+@c JP
+次のように書き直せるでしょう。
+@c COMMON
 
 @example
 (shell-case arg
@@ -32440,21 +32478,40 @@ can be translated as follows:
   [else (process-other arg)])
 @end example
 
+@c EN
 The same thing can be achieved with @code{rxmatch-case}, for example,
 but manually translating shell glob pattern to regexp can be tedious
 and error-prone.  This is particulary useful when you're rewriting
 existing shell scripts in Gauche.
+@c JP
+同等の処理は例えば@code{rxmatch-case}を使って書くこともできますが、
+シェルのglobパターンを正規表現に置き換えてゆくのは面倒ですし
+ミスが入り込む余地もあります。
+既存のシェルスクリプトをGaucheで最実装する場合には@code{shell-case}は非常に便利な
+ツールになるでしょう。
+@c COMMON
 @end defmac
 
 @defmac shell-match pattern str
 @defmacx shell-match (pattern @dots{}) str
 @c MOD text.sh
+@c EN
 This extract the matching function of @code{shell-case} to be used
 independently.   The @var{pattern} must be a literal string
 of glob pattern, and @var{str} must be an expression that yields a string.
+@c JP
+これは@code{shell-case}のマッチ部分の機能だけを独立して取り出したものです。
+@var{pattern}はglobパターンを表すリテラル文字列でなければならず、
+@var{str}は文字列に評価される式でなければなりません。
+@c COMMON
 
+@c EN
 If the value of @var{str} matches @var{pattern} (or one of @var{pattern}s
 in the second form), it returns @code{#t}. Otherwise, it returns @code{#f}.
+@c JP
+@var{str}の値が@var{pattern} (もしくは、2番めの形式の場合は@var{pattern}のいずれかに)
+マッチしたら@code{#t}を、そうでなければ@code{#f}を返します。
+@c COMMON
 @end defmac
 
 @c ----------------------------------------------------------------------
