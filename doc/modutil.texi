@@ -32492,17 +32492,18 @@ existing shell scripts in Gauche.
 @c COMMON
 @end defmac
 
-@defmac shell-match pattern str
-@defmacx shell-match (pattern @dots{}) str
+@defun shell-match pattern str
 @c MOD text.sh
 @c EN
 This extract the matching function of @code{shell-case} to be used
-independently.   The @var{pattern} must be a literal string
-of glob pattern, and @var{str} must be an expression that yields a string.
+independently.   The @var{pattern} argument must be a glob pattern
+string, or a list of glob pattern strings.
+The @var{str} argument must be a string.
 @c JP
 これは@code{shell-case}のマッチ部分の機能だけを独立して取り出したものです。
-@var{pattern}はglobパターンを表すリテラル文字列でなければならず、
-@var{str}は文字列に評価される式でなければなりません。
+@var{pattern}はglobパターンを表す文字列、もしくは
+globパターンを表す文字列のリストで、
+@var{str}は文字列でなければなりません。
 @c COMMON
 
 @c EN
@@ -32512,7 +32513,7 @@ in the second form), it returns @code{#t}. Otherwise, it returns @code{#f}.
 @var{str}の値が@var{pattern} (もしくは、2番めの形式の場合は@var{pattern}のいずれかに)
 マッチしたら@code{#t}を、そうでなければ@code{#f}を返します。
 @c COMMON
-@end defmac
+@end defun
 
 @c ----------------------------------------------------------------------
 @node SQL parsing and construction, Simple template expander, Shell text utilities, Library modules - Utilities

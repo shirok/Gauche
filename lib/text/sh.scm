@@ -211,37 +211,15 @@
 
 
 ;; API
-;;   (shell-match pattern+ string) => boolean
-;; If literal string (or literal string list) is given as pettern, we
-;; precompute regexp.
-(define-syntax shell-match
-  (syntax-rules ()
-    [(_ (pat ...) str)
-     (let ([s str])
-       (or (%shell-match1 pat s) ...))]
-    [(_ pat str)
-     (%shell-match1 pat str)]
-    [(_ . _) (syntax-error "malformed shell-match: " f)]))
-
-(define-syntax %shell-match1
-  (er-macro-transformer
-   (^[f r c]
-     (match f
-       [(_ pat str)
-        (if (string? pat)
-          (quasirename  r
-            `(%shell-match1-fn ,(glob-component->regexp pat :mode :shell) ,str))
-          (quasirename r
-            `(%shell-match1-fn ,pat ,str)))]
-       [_ (error "malformed %shell-match1:"  f)]))))
-
-(define (%shell-match1-fn pat str)
-  (assume-type str <string>)
+;;   (shell-match pattern-expr string) => boolean
+;; pattern-expr must evaluate to a string or a list of strings,
+(define (shell-match pattern+ str)
   (cond
-   [(regexp? pat) (boolean (pat str))]
-   [(string? pat) (boolean ((glob-component->regexp pat) str))]
-   [(of-type? pat (<List> <string>)) (any (cut %shell-match1-fn <> str) pat)]
-   [else (error "Invalid pattern for shell-match:" pat)]))
+   [(string? pattern+)
+    (boolean ((glob-component->regexp pattern+ :mode :shell) str))]
+   [(of-type? pattern+ (<List> <string>))
+    (boolean (any (^p ((glob-component->regexp p :mode :shell) str)) pattern+))]
+   [else (error "Invalid pattern for shell-match:" pattern+)]))
 
 ;; API
 ;;  Like shell's 'case'
@@ -256,6 +234,6 @@
     [(_ str) (undefined)]
     [(_ str (else expr ...)) (begin expr ...)]
     [(_ str (pattern+ expr ...) . rest)
-     (if (shell-match pattern+ str)
+     (if (shell-match 'pattern+ str)
        (begin expr ...)
        (%shell-case str . rest))]))
