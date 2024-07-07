@@ -48,6 +48,16 @@
 (test* "spec edge case (\\)" (test-error)
        (string-tr "a\\b" "\\" "/"))
 
+;; https://github.com/shirok/Gauche/issues/1051
+(test* "spec edge case (3-\\)" (test-error)
+       (string-tr "\\" "\\\\\\" "abc"))
+(test* "spec edge case (4-\\)" "a"
+       (string-tr "\\" "\\\\\\\\" "abc"))
+(test* "spec edge case (mid-\\)" "b"
+       (string-tr "\\" "x\\\\y" "abc"))
+(test* "spec edge case (mid-\\)" (test-error)
+       (string-tr "\\" "x\\\\\\" "abc"))
+
 
 ;; whole test over smaller table size
 (test* "basic, table-size" "hELLO, wORLD!"

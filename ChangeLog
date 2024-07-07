@@ -1,3 +1,10 @@
+2024-07-06  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/tr.scm (build-char-array): Fix backslash handling.
+	  https://github.com/shirok/Gauche/issues/1051
+	  We also clarified the case when there are dups in from-list:
+	  the first entrly wins.
+
 2024-06-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/234.scm: Added.

@@ -94,18 +94,23 @@
 (define (build-char-array spec table-size)
   (with-input-from-string spec
     (^[]
+      (define (check-stray c)
+        (when (eof-object? c)
+          (error "stray backslash in tr spec" spec)))
       (define (start c r)
         (cond [(eof-object? c) (reverse r)]
               [(char=? c #\\) (let1 c (read-char)
-                                (when (eof-object? c)
-                                  (error "stray backslash in tr spec" spec))
+                                (check-stray c)
                                 (maybe-range c (read-char) r))]
               [else (maybe-range c (read-char) r)]))
       (define (maybe-range c c1 r)
         (cond [(eof-object? c1) (reverse (cons (list 1 c) r))]
               [(char=? c1 #\-) (range c (read-char) r)]
               [(char=? c1 #\*) (repeat c (read-char) 0 r)]
-              [(char=? c1 #\\) (start (read-char) (cons (list 1 c) r))]
+              [(char=? c1 #\\)
+               (let1 c1 (read-char)
+                 (check-stray c1)
+                 (maybe-range c1 (read-char) (cons (list 1 c) r)))]
               [else (maybe-range c1 (read-char) (cons (list 1 c) r))]))
       (define (range from to r)
         (cond [(eof-object? to) (reverse (list* (list 1 #\-) (list 1 from) r))]
@@ -303,7 +308,10 @@
        [from-ch (char->integer (cadr from-seg)) (+ from-ch 1)]
        [cnt     0   (+ cnt 1)])
       [(= cnt size)]
-    (vector-set! v from-ch (char-array-ref to-ca cnt))))
+    ;; This check avois overwriting entry when from-list contains duplicate
+    ;; character.  We consider only the first character for mapping.
+    (when (eqv? #t (vector-ref v from-ch))
+      (vector-set! v from-ch (char-array-ref to-ca cnt)))))
 
 (define (fill-tr-sparse tab from-seg to-ca)
   (let loop ([from-ch (char->integer (cadr from-seg))]
