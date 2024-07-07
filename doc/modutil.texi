@@ -32880,6 +32880,19 @@ Here's some basic examples.
 @c COMMON
 
 @c EN
+If @var{from-list} contains duplicated characters, the first correspondence
+is used, and the subsequent correspondences are ignored.
+@c JP
+@var{from-list}に文字の重複があった場合、最初の出現位置との対応が使われ、
+以降の同じ文字の対応は無視されます。
+@c COMMON
+
+@example
+(string-tr "abc" "aabbcc" "123456")
+ @result{} "135"
+@end example
+
+@c EN
 If @var{to-list} is shorter than @var{from-list}, the behavior
 depends on the keyword argument @var{delete}.  If a true value is
 given,  characters that appear in @var{from-list} but not
@@ -32891,6 +32904,12 @@ the extra characters in @var{from-list} are just passed through.
 @var{to-list}に対応するものがない文字は入力から取り除かれます。そうでなければ
 そのような文字はそのまま出力されます。
 @c COMMON
+
+@example
+(string-tr "abracadabra" "abc" "" :delete #t)
+ @result{} "rdr"
+@end example
+
 
 @c EN
 When a true value is specified to @var{complement},
