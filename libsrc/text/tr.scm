@@ -252,23 +252,23 @@
 
 (define-class <tr-table> ()
   ((vector-size :init-keyword :vector-size :initform 256)
-   (vector :accessor vector-of)
-   (sparse :initform '() :accessor sparse-of)
+   (vector)
+   (sparse :initform '())
    ))
 
 (define-method initialize ((self <tr-table>) initargs)
   (next-method)
-  (let1 size (slot-ref self 'vector-size)
-    (set! (vector-of self) (make-vector size #t))))
+  (let1 size (~ self 'vector-size)
+    (set! (~ self'vector) (make-vector size #t))))
 
 ;; Returns
 ;;   char - mapped char
 ;;   #f   - appears in from-set but not to-set
 ;;   #t   - doesn't appear in from-set
 (define (tr-table-ref tab index)
-  (if (< index (slot-ref tab 'vector-size))
-    (vector-ref (vector-of tab) index)
-    (let loop ([e (sparse-of tab)])
+  (if (< index (~ tab 'vector-size))
+    (vector-ref (~ tab'vector) index)
+    (let loop ([e (~ tab'sparse)])
       (cond [(null? e) #t]
             [(<= (caar e) index (cadar e))
              (let1 v (caddar e)
@@ -293,7 +293,7 @@
              [to-ca   to-ca])
     (if (null? from-ca)
       tab
-      (let* ([vsiz     (slot-ref tab 'vector-size)]
+      (let* ([vsiz     (~ tab 'vector-size)]
              [from-seg (car from-ca)]
              [size     (car from-seg)])
         (receive (to-segs to-rest) (split-char-array to-ca size)
@@ -303,7 +303,7 @@
           (loop (cdr from-ca) to-rest))))))
 
 (define (fill-tr-vector tab from-seg to-ca)
-  (do ([v       (vector-of tab)]
+  (do ([v       (~ tab'vector)]
        [size    (car from-seg)]
        [from-ch (char->integer (cadr from-seg)) (+ from-ch 1)]
        [cnt     0   (+ cnt 1)])
@@ -322,7 +322,7 @@
              [rr (if (< from-ch from-end)
                    (reverse (cons (list from-ch (- from-end 1) #f) r))
                    (reverse r))])
-        (set! (sparse-of tab) (append! (sparse-of tab) rr)))
+        (set! (~ tab'sparse) (append! (~ tab'sparse) rr)))
       (let* ([to-seg  (car to-segs)]
              [to-size (car to-seg)]
              [entry   (list from-ch (+ from-ch to-size -1)
