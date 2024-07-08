@@ -173,7 +173,7 @@
    [reconf  "r|reconfigure" ? "uses the same configure options as before"]
    [clean   "clean" ? "clean up the build directory after installation"]
    [sudo    "S|install-as=s{USER}" #f ? "sudo to {USER} when installing"])
-  (unless (= (length args) 1) (usage-self))
+  (unless (length=? args 1) (usage-self))
   (gauche-package-build (car args)
                         :config *config*
                         :dry-run dry-run :install #t :clean clean
@@ -194,7 +194,7 @@
    [copts   "C|configure-options=s{OPTIONS}" #f
             ? "passes {OPTIONS} to ./configure.  overrides -r."]
    [reconf  "r|reconfigure" ? "uses the same configure options as before."])
-  (unless (= (length args) 1) (usage-self))
+  (unless (length=? args 1) (usage-self))
   (gauche-package-build (car args)
                         :config *config*
                         :dry-run dry-run
@@ -413,7 +413,7 @@
                               (if compile-only args (cdr args))
                               :output output))]
      [compile-only
-      (unless (= (length args) 1) (usage-self))
+      (unless (length=? args 1) (usage-self))
       (gauche-package-compile (car args)
                               :dry-run dry-run :verbose verbose
                               :srcdir srcdir
@@ -423,7 +423,7 @@
                               :cc compiler
                               :cppflags cppflags :cflags cflags)]
      [else
-      (when (<= (length args) 1) (usage-self))
+      (when (length<=? args 1) (usage-self))
       (gauche-package-compile-and-link (car args) (cdr args)
                                        :dry-run dry-run :verbose verbose
                                        :srcdir srcdir
