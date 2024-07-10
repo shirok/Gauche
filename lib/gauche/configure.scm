@@ -75,6 +75,7 @@
   (use gauche.configure.prog)
   (use gauche.configure.output)
   (use gauche.configure.compile)
+  (use gauche.configure.lib)
   (use gauche.configure.init)
 
   ;; Allow configure scripts to use gauche-config
@@ -115,4 +116,7 @@
    cf-check-member cf-member-available? cf-check-members
    cf-check-func cf-func-available? cf-check-funcs
    cf-check-lib cf-lib-available? cf-search-libs
+
+   ;; gauche.configure.lib
+   cf-path-x cf-path-xtra
    ))
