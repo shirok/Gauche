@@ -7803,6 +7803,52 @@ alternative procedures, keep in mind that their return value
 will be returned to @code{cf-search-libs}.
 @end defun
 
+@defun cf-path-x
+@c MOD gauche.configure
+This corresponds to autoconf's @code{AC_PATH_X}.  It checks if
+X11 is available, and returns three values.
+
+The first value is a boolean value indicates if X11 is available.
+The second and third values are strings for the directory name
+to find X11 headers and libraries, respectively.  The second
+and third value can be empty strings if the compiler doesn't
+need additional flags to find X11 stuff.
+
+This does not set other substituion parameters.
+You typically want to use @code{cf-path-xtra} below instead.
+
+(In autoconf, @code{AC_PATH_X} sets shell variables to tell
+the results.  In Scheme, it is more natural to use return
+values.)
+@end defun
+
+@defun cf-path-xtra
+@c MOD gauche.configure
+Check X11 availability with @code{cf-path-x} above, and
+sets up the following substitution parameters:
+
+@table @code
+@item X_CFLAGS
+Additional CFLAGS needed to build with X11.
+@item X_PRE_LIBS
+Additional library link flags (@code{-l@var{lib} @dots{}})
+that need to come @emph{before} @code{-lX11} flag.
+@item X_LIBS
+Additional library search flags (@code{-L@var{dir} @dots{}})
+to link with X11.  (Note: The name is for the compatibility
+with autoconf.  It should really be named as @code{X_LDFLAGS}.)
+@item X_EXTRA_LIBS
+Additional library search flags (@code{-L@var{dir} @dots{}})
+to link with X11.  Those libraries should come after @code{-lX11}
+flag.
+@end table
+
+Note that @code{-lX11} is not included in those parameters;
+they must be specified explicitly.
+
+If X11 is not available, those parameters get empty strings.
+@end defun
+
 
 @c EN
 @subsubheading Running compiler

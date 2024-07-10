@@ -45,9 +45,12 @@
 ;;; Search for X11 libraries
 ;;;
 
-;; cf-path-x - Check X11 availability and set configure variables
-;;    have-x and no-x accordingly.  This may also set up x-includes
-;;    and x-libraries.
+;; cf-path-x - Check X11 availability, and returns 3 values.
+;;    The first boolean value indicates if X is available,
+;;    The second and third string values are the directory to find X
+;;    include files and X library files, respectively.  The second and
+;;    third value can be empty strings if the compiler can find X stuff
+;;    without additional options.
 ;;
 ;; NB: AC_PATH_X adds a few command-line arguments.  We can't do it
 ;; in the function, for the argument configuration must come before
@@ -60,10 +63,7 @@
        (cf-try-compile-and-link "#include <X11/Xlib.h>"
                                 '("XrmInitialize()")))
     (cf-msg-result "yes")
-    (cf-subst 'have-x "yes")
-    (cf-subst 'no-x "no")
-    (cf-subst 'x-includes "")
-    (cf-subst 'x-libraries "")]
+    (values #t "" "")]
    ;; If the default location fails, autoconf creates a skeleton Imakefile
    ;; and run xmkmf to find out X11 locations, then check the list of some
    ;; well-known paths.  These days we assume it's rare that X11 is installed
@@ -71,13 +71,10 @@
    [(and (equal? (cf$ 'cross_compiling) "no")
          (try-usual-x-paths))
     => (match-lambda
-         [(inc lib)
-          (cf-subst 'x-includes inc)
-          (cf-subst 'x-libraries lib)])]
+         [(inc lib) (cf-msg-result "yes") (values #t inc lib)])]
    [else
     (cf-msg-result "no")
-    (cf-subst 'have-x "no")
-    (cf-subst 'no-x "yes")]))
+    (values #f "" "")]))
 
 (define (try-usual-x-paths)
   (define usual-suspects
@@ -129,20 +126,20 @@
 ;;    In fact, we don't have much to do here on modern systems.  We provide
 ;;    this function so that one can port configure.ac to configure easily.
 (define (cf-path-xtra)
+  ;; Find if X11 is available, and set x-includes/x-libraries if necessary.
+  (define-values (have-x? incdir libdir) (cf-path-x))
   ;; Initialize
   (cf-subst 'X_CFLAGS "")
   (cf-subst 'X_PRE_LIBS "")
   (cf-subst 'X_LIBS "")
   (cf-subst 'X_EXTRA_LIBS "")
-  ;; Find if X11 is available, and set x-includes/x-libraries if necessary.
-  (cf-path-x)
-  (cond [(equal? (cf$ 'no-x) "yes")
+  (cond [(not have-x?)
          (cf-define 'X_DISPLAY_MISSING)]
         [else
-         (unless (string-null? (cf$ 'x-includes))
-           (cf-subst-append 'X_CFLAGS #"-I~(cf$ 'x-includes)"))
-         (unless (string-null? (cf$ 'x-libraries))
-           (cf-subst-append 'X_LIBS #"-L~(cf$ 'x-libraries)")
+         (unless (string-null? incdir)
+           (cf-subst-append 'X_CFLAGS #"-I~|incdir|"))
+         (unless (string-null? libdir)
+           (cf-subst-append 'X_LIBS #"-L~|libdir|")
            ;; NB: autoconf also tries to add -R $x-libraries to X_LIBS,
            ;; seemingly required by Solaris CC.  Not sure if it is still
            ;; relevant.
@@ -151,12 +148,11 @@
          ;; -lbsd, -lsocket, etc., but we're not sure any modern systems
          ;; require them.  Here we only check -lICE.
          ($ with-cf-subst ((LDFLAGS
-                            (if (string-null? (cf$ 'x-libraries))
+                            (if (string-null? libdir)
                               (cf$ 'LDFLAGS)
-                              #"~(cf$ 'LDFLAGS) -L~(cf$ 'x-libraries)")))
+                              #"~(cf$ 'LDFLAGS) -L~|libdir|")))
             (cf-check-lib "ICE" "IceConnectionNumber"
                           :if-found (^_ (cf-subst-append 'X_PRE_LIBS
                                                          "-lSM -lICE"))
                           :other-libs (cf$ 'X_EXTRA_LIBS)))
-
          ]))
