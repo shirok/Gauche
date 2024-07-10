@@ -32,9 +32,11 @@
 ;;;
 
 (define-module gauche.configure.lib
+  (use gauche.config)
   (use gauche.configure.base)
   (use gauche.configure.compile)
   (use srfi.13)
+  (use util.match)
   (export cf-path-x cf-path-xtra)
   )
 (select-module gauche.configure.lib)
@@ -44,8 +46,8 @@
 ;;;
 
 ;; cf-path-x - Check X11 availability and set configure variables
-;;    have-x and no-x accordingly.  This does not modify other configure
-;;    variables; see cf-path-xtra below.
+;;    have-x and no-x accordingly.  This may also set up x-includes
+;;    and x-libraries.
 ;;
 ;; NB: AC_PATH_X adds a few command-line arguments.  We can't do it
 ;; in the function, for the argument configuration must come before
@@ -62,25 +64,78 @@
     (cf-subst 'no-x "no")
     (cf-subst 'x-includes "")
     (cf-subst 'x-libraries "")]
-   ;; NB: if the default location fails, autoconf creates a skeleton Imakefile
-   ;; and run xmkmf to find out X11 locations. These days we assume it is rare
-   ;; that X11 is installed in unsual location; if it's not in the usual place,
-   ;; probably the system doesn't have one.
+   ;; If the default location fails, autoconf creates a skeleton Imakefile
+   ;; and run xmkmf to find out X11 locations, then check the list of some
+   ;; well-known paths.  These days we assume it's rare that X11 is installed
+   ;; in unusual location, so we check some usual suspects.
+   [(and (equal? (cf$ 'cross_compiling) "no")
+         (try-usual-x-paths))
+    => (match-lambda
+         [(inc lib)
+          (cf-subst 'x-includes inc)
+          (cf-subst 'x-libraries lib)])]
    [else
     (cf-msg-result "no")
     (cf-subst 'have-x "no")
     (cf-subst 'no-x "yes")]))
+
+(define (try-usual-x-paths)
+  (define usual-suspects
+    '("/usr/X11/include"
+      "/usr/X11R7/include"
+      "/usr/X11R6/include"
+      "/usr/X11R5/include"
+      "/usr/X11R4/include"
+      "/usr/include/X11"
+      "/usr/include/X11R7"
+      "/usr/include/X11R6"
+      "/usr/include/X11R5"
+      "/usr/include/X11R4"
+      "/usr/local/X11/include"
+      "/usr/local/X11R7/include"
+      "/usr/local/X11R6/include"
+      "/usr/local/X11R5/include"
+      "/usr/local/X11R4/include"
+      "/usr/local/include/X11"
+      "/usr/local/include/X11R7"
+      "/usr/local/include/X11R6"
+      "/usr/local/include/X11R5"
+      "/usr/local/include/X11R4"
+      "/opt/X11/include"
+      "/usr/X386/include"
+      "/usr/x386/include"
+      "/usr/XFree86/include/X11"
+      "/usr/include"
+      "/usr/local/include"
+      "/usr/unsupported/include"
+      "/usr/athena/include"
+      "/usr/local/x11r5/include"
+      "/usr/lpp/Xamples/include"
+      "/usr/openwin/include"
+      "/usr/openwin/share/include"))
+  (define (find-header)
+    (find (^p (file-exists? (build-path p "X11" "Xlib.h"))) usual-suspects))
+  (define (find-lib)
+    (find (^p (let ([libdir (regexp-replace #/include/ p "lib")]
+                    [ext (gauche-config "--dylib-suffix")])
+                (file-exists? (build-path libdir #"libX11.~ext"))))
+          usual-suspects))
+  (and-let* ([h (find-header)]
+             [l (find-lib)])
+    (list h l)))
 
 ;; cf-path-xtra - Set up a bunch of configure variables according to
 ;;    X11 availability.
 ;;    In fact, we don't have much to do here on modern systems.  We provide
 ;;    this function so that one can port configure.ac to configure easily.
 (define (cf-path-xtra)
-  (cf-path-x)
+  ;; Initialize
   (cf-subst 'X_CFLAGS "")
   (cf-subst 'X_PRE_LIBS "")
   (cf-subst 'X_LIBS "")
   (cf-subst 'X_EXTRA_LIBS "")
+  ;; Find if X11 is available, and set x-includes/x-libraries if necessary.
+  (cf-path-x)
   (cond [(equal? (cf$ 'no-x) "yes")
          (cf-define 'X_DISPLAY_MISSING)]
         [else
