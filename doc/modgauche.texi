@@ -7322,34 +7322,113 @@ Returns @code{#t} iff @var{symbol} is @code{cf-define}d.
 
 @defun cf-subst symbol value
 @c MOD gauche.configure
+@c EN
 Registers a substitution parameter @var{symbol} with @var{value}.
-@var{Value} can be any Scheme objects; its @code{display} representation
-is used to substitute @var{@@SYMBOL@@} in the template.
+While processing output files, @var{@@symbol@@} in the template
+is substituted with @var{value}.
 
+@var{Value} is usually a string, but can be any Scheme objects;
+its @code{display} representation.
+@c JP
+置換パラメータ@var{symbol}を値@var{value}で定義します。
+出力ファイルを生成する時に、テンプレートの@var{@@symbol@@}が
+@var{value}に置換されます。
+
+@var{value}は通常文字列ですが、任意のSchemeオブジェクトで構いません。
+@code{display}での印字表現が使われます。
+@c COMMON
+
+@c EN
 This corresponds to autoconf's @code{AC_SUBST}, but we require
 the value (while autoconf can refer to the shell variable value as default).
+@c JP
+これはautoconfの@code{AC_SUBST}に相当します。ただ、autoconfeでは値を明示しなくても
+同名のシェル変数の値が使われますが、Gaucheでは値を陽に与えなければなりません。
+@c COMMON
 @end defun
 
 @defun cf-subst-prepend symbol value :optional delim default
 @defunx cf-subst-append symbol value :optional delim default
 @c MOD gauche.configure
+@c EN
 Prepend or append @var{value} to the substitution parameter @var{symbol},
 using delimiter @var{delim}.  If the substitution parameter isn't
 defined, @var{value} becomes the sole value of the parameter,
 except when @var{default} is given and not an empty string.
 If @var{delim} is omitted, single whitespace is used.
+@c JP
+置換パラメータ@var{symbol}の値の前もしくは後に、
+@var{delim}を挟んで@var{value}を付け足します。
+@var{symbol}がまだ定義されていなかった場合な、
+@var{default}が与えられ空文字列でなければあたかもそれが既に設定されていた値であるかのように
+動作し、そうでなければ@var{value}が最初の値となります(この場合、@var{delim}は使われません)。
+@var{delim}が省略された場合は空白1文字の文字列が使われます。
+@c COMMON
+
+@c EN
+A substitution parameter is often used to accrue command line arguments
+(e.g. @code{-I include-dir} for a compiler), and these procedures
+comes handy.
+@c JP
+置換パラメータにはよくコマンドライン引数をつけ足してゆくので
+(例:コンパイラの@code{-I include-dir})、これらの手続きが便利に使えるでしょう。
+フラグ
+@c COMMON
 @end defun
 
-@defspec with-cf-subst ((@var{symbol} @var{value}) @dots{}) @dots{}
+@defspec with-cf-subst (binding @dots{}) body @dots{}
 @c MOD gauche.configure
+@c EN
 Temporarily replace substitution parameters with new values. This
-could be useful for example to run some compilation tests with
-different parameters
+could be useful for example to run some compilation checks with
+different parameters.
+@c JP
+一時的に置換パラメータを新たな値に置き換えて@var{body} @dots{}を実行します。
+コンパイルチェックを違うパラメータで実行してみたい時に便利です。
+@c COMMON
+
+@c EN
+@var{Binding} may be one of the following forms:
+
+@table @code
+@item (@var{var} @var{value})
+Temporarily substitue parameter @var{var}'s value to @var{value}.
+@item (@var{var} + @var{value})
+Temporarily append @var{value} to the parameter @var{var}, using
+a space as a delimiter.  See @code{cf-subst-append} above.
+@item (@var{var} @var{value} +)
+Temporarily prepend @var{value} to the parameter @var{var}, using
+a space as a delimiter.  See @code{cf-subst-prepend} above.
+@end table
+@c JP
+@var{binding}は以下のいずれかの形式です。
+
+@table @code
+@item (@var{var} @var{value})
+一時的に置換パラメータ@var{var}の値を@var{value}で置き換えます。
+@item (@var{var} + @var{value})
+一時的に置換パラメータ@var{var}の値の後に空白を挟んで@var{value}を追加します。
+追加には上記の@code{cf-subst-append}が使われます。
+@item (@var{var} @var{value} +)
+一時的に置換パラメータ@var{var}の値の前に空白を挟んで@var{value}を前置します。
+追加には上記の@code{cf-subst-prepend}が使われます。
+@end table
+@c COMMON
 
 @example
 (with-cf-subst ((LIBS "-L<path> -l<lib>"))
   (cf-try-compile-and-link @dots{}))
 @end example
+
+@c EN
+In autoconf, this pattern is realized by saving the current value
+of the substituion parameter, modify it, run checks, and restore the old value.
+It is tedious.
+@c JP
+autoconfではこのパターンは、現在の置換パラメータを保存し、
+新たなパラメータに変更してチェックを走らせた後で置換パラメータを元に戻しますが、
+とても面倒です。
+@c COMMON
 @end defspec
 
 @defun cf-have-subst? symbol
@@ -7842,6 +7921,8 @@ Additional library search flags (@code{-L@var{dir} @dots{}})
 to link with X11.  Those libraries should come after @code{-lX11}
 flag.
 @end table
+
+This procedure corresponds to autoconf's @code{AC_PATH_XTRA}.
 
 Note that @code{-lX11} is not included in those parameters;
 they must be specified explicitly.
