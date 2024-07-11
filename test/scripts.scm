@@ -282,6 +282,44 @@
      [else
       (apply run-process `("env" ,#"PATH=~|paths-new|" ,@cmd) args)])))
 
+(define (with-cf-subst-test)
+  (make-directory* "test.o")
+  (with-output-to-file "test.o/configure"
+    (^[]
+      (write '(use gauche.configure))
+      (write '(cf-init "foo" "1.0"))
+      (write '(cf-subst 'A "1"))
+      (write '(cf-subst 'B "2"))
+      (write '(cf-subst 'C "3"))
+      (write '(define (dump)
+                (for-each (^v (cf-msg-notice "~a=~a" v (cf$ v)))
+                          '(A B C D E F))))
+      (write '(with-cf-subst
+               ((A "11") (B + "zz") (C "nn" +) (D "44") (E + "55") (F "66" +))
+               (dump)))
+      (write '(dump))))
+
+  (test* "running `configure' script for with-cf-subst" 0
+         (process-exit-status
+          (run-with-parent-directory-in-paths
+           `("../gosh" "-ftest" "./configure")
+           :output :null :wait #t :directory "test.o")))
+  (test*/diff "check result of with-cf-subst"
+              '("Configuring foo 1.0"
+                "A=11"
+                "B=2 zz"
+                "C=nn 3"
+                "D=44"
+                "E=55"
+                "F=66"
+                "A=1"
+                "B=2"
+                "C=3"
+                "D="
+                "E="
+                "F=")
+              (file->string "test.o/config.log")))
+
 (define (configure-test-1)
   (make-directory* "test.o/src")
   (make-directory* "test2.o")
@@ -503,6 +541,7 @@
                  $ file->string-list "test.o/config.h"))
   )
 
+(wrap-with-test-directory with-cf-subst-test '("test.o") #f)
 (wrap-with-test-directory configure-test-1 '("test.o" "test2.o") #f)
 (wrap-with-test-directory configure-test-2 '("test.o" "test2.o") #f)
 

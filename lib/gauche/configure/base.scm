@@ -209,12 +209,31 @@
 ;; Temporarily replace cf subst value
 (define-syntax with-cf-subst
   (syntax-rules ()
-    [(_ ((var val) ...) body ...)
-     (let ([saves (map (cut cf$ <>) '(var ...))])
-       (for-each (cut cf-subst <> <>)
-                 '(var ...)
-                 (list val ...))
-       (unwind-protect (begin body ...)
-         (for-each (cut cf-subst <> <>)
-                   '(var ...)
-                   saves)))]))
+    [(_ binds body ...)
+     (%with-cf-subst binds () () (body ...))]))
+
+(define-syntax %with-cf-subst
+  (syntax-rules (+)
+    [(_ () vars setters bodies)
+     (let ([saves (map (cut cf$ <>) 'vars)])
+       (unwind-protect
+           (begin (begin . setters) . bodies)
+         (for-each (cut cf-subst <> <>) 'vars saves)))]
+    [(_ ((var val) . binds) (vars ...) (setters ...) bodies)
+     (%with-cf-subst binds
+                     (vars ... var)
+                     (setters ... (cf-subst 'var val))
+                     bodies)]
+    [(_ ((var + val) . binds) (vars ...) (setters ...) bodies)
+     (%with-cf-subst binds
+                     (vars ... var)
+                     (setters ... (cf-subst-append 'var val))
+                     bodies)]
+    [(_ ((var val +) . binds) (vars ...) (setters ...) bodies)
+     (%with-cf-subst binds
+                     (vars ... var)
+                     (setters ... (cf-subst-prepend 'var val))
+                     bodies)]
+    [(_ binds _ _ bodies)
+     (error "Malformed with-cf-subst:"
+            '(with-cf-subst binds . bodies))]))
