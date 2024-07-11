@@ -384,7 +384,7 @@
   (let1 includes (cf-includes-default)
     (cf-msg-checking "for ~a in -l~a" fn lib)
     (if (with-cf-subst
-         ([LIBS #"-l~|lib| ~(string-join other-libs \" \") ~(cf$'LIBS)"])
+         ([LIBS #"-l~|lib| ~(string-join other-libs \" \")" +])
          (cf-try-compile-and-link includes
                                   (format "extern void ~a(); ~a();" fn fn)))
       (begin

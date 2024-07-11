@@ -59,7 +59,7 @@
 (define (cf-path-x)
   (cf-msg-checking "for X")
   (cond
-   [($ with-cf-subst ((LIBS #"=lX11 ~(cf$ 'LIBS)"))
+   [($ with-cf-subst ([LIBS "-lX11" +])
        (cf-try-compile-and-link "#include <X11/Xlib.h>"
                                 '("XrmInitialize()")))
     (cf-msg-result "yes")
@@ -147,10 +147,9 @@
          ;; Autoconf checks some additional libraries, e.g. -lnsl,
          ;; -lbsd, -lsocket, etc., but we're not sure any modern systems
          ;; require them.  Here we only check -lICE.
-         ($ with-cf-subst ((LDFLAGS
-                            (if (string-null? libdir)
-                              (cf$ 'LDFLAGS)
-                              #"~(cf$ 'LDFLAGS) -L~|libdir|")))
+         ($ with-cf-subst ([LDFLAGS + (if (string-null? libdir)
+                                        #"-L~|libdir|"
+                                        "")])
             (cf-check-lib "ICE" "IceConnectionNumber"
                           :if-found (^_ (cf-subst-append 'X_PRE_LIBS
                                                          "-lSM -lICE"))
