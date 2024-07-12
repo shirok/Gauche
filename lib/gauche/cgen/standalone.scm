@@ -137,7 +137,8 @@
   (define (existing-dir? flag)
     (if-let1 m (#/^-[IL]/ flag)
       (cond-expand
-       [gauche.os.windows (shell-escape-string flag 'windows)]
+       [gauche.os.windows (shell-escape-string (string-trim-right flag)
+                                               'windows)]
        [else (let1 path (string-trim-both (rxmatch-after m) #\")
                (and (file-exists? path)
                     (if (string-index flag #\")
