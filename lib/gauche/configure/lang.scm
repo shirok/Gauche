@@ -1,5 +1,5 @@
 ;;;
-;;; gauche.configure.lang - language enviornment setup
+;;; gauche.configure.lang - language environment setup
 ;;;
 ;;;   Copyright (c) 2013-2024  Shiro Kawai  <shiro@acm.org>
 ;;;

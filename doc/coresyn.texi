@@ -4389,7 +4389,7 @@ REPLセマンティクスで動くことを期待していたコードはある�
 @c COMMON
 
 @c EN
-In order to support the transition, if you set an enviornment
+In order to support the transition, if you set an environment
 variable @code{GAUCHE_LEGACY_DEFINE}, Gauche treats definitions
 in the same way as 0.9.8 and before.
 Note that if you that, you may see Gauche can't include some valid R7RS
