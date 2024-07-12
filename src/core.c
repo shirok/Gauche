@@ -182,10 +182,12 @@ void Scm_Init(const char *signature)
     GC_set_finalize_on_demand(TRUE);
     GC_set_finalizer_notifier(finalizable);
 
+    /* NB: Following setting causes r7rs-benchmarks timeout (cpstak and
+           parsing), so it is commented out. */
     /* Newer bdwgc delays spawning marker threads until the client creates
        first thread.  We can take advantage of parallel markers even with
        single-threaded program, so we ask them to go parallel now.  */
-    GC_start_mark_threads();
+    /* GC_start_mark_threads(); */
 
     (void)SCM_INTERNAL_MUTEX_INIT(cond_features.mutex);
 
