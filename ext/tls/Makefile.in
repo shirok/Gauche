@@ -41,8 +41,8 @@ tls.sci rfc--tls.c : tls.scm
 
 tls.o : tls.c in_gauche_cacert_path.c
 
-rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS)
-	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(EXT_LIBGAUCHE) \
+rfc--tls--mbed.$(SOEXT) : $(MBED_OBJECTS) $(TLS_OBJECTS)
+	$(MODLINK) rfc--tls--mbed.$(SOEXT) $(MBED_OBJECTS) $(TLS_OBJECTS) $(EXT_LIBGAUCHE) \
 	   $(MBEDTLS_LIBS) $(LIBS) $(SYSTEM_CERT_LIBS)
 
 tls-mbed.o : tls-mbed.c load_system_cert.c in_gauche_cacert_path.c $(MBED_DEP)
