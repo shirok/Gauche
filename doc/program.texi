@@ -551,8 +551,8 @@ This is used by @code{ed} procedure in @code{gauche.interactive} module.
 @deftp {Environment variable} GAUCHE_HISTORY_FILE
 @c EN
 Specifies the filename where the REPL history is saved.
-If this enviornment varible is not set, history is saved
-in @file{~/.gosh_history}.  If this enviornment variable
+If this environment varible is not set, history is saved
+in @file{~/.gosh_history}.  If this environment variable
 is set but an empty string, history isn't saved.
 If the process is suid/sgid-ed, history won't be saved.
 @c JP
@@ -1423,7 +1423,7 @@ Windows consoleのみをサポートします。端末タイプがそれらで�
 
 @c EN
 The input editing feature is still under development.  If you stumbled
-with a serious bug, you can turn it off by setting an enviornment
+with a serious bug, you can turn it off by setting an environment
 variable @code{GAUCHE_NO_READ_EDIT}, or giving @code{-fno-read-edit} option
 to @code{gosh}, or type @code{,edit off} on REPL.
 @c JP
@@ -2944,7 +2944,7 @@ script (@pxref{Building standalone executables}).  We recommend
 that script, for it is more featureful.
 
 The @code{gauche-compile-r7rs} and @code{compile-r7rs} script is provided
-so that you can invoke a 'Scheme compiler' with a stanardized manner.
+so that you can invoke a 'Scheme compiler' with a standardized manner.
 It may be handy if other tools (e.g. IDE) need to invoke a Scheme
 compiler as a subprocess.
 
@@ -2960,7 +2960,7 @@ Compile a Scheme source file @code{script.scm} and produce an
 executable binary.  The @code{compile-r7rs} is only installed
 if Gauche is configured with @code{--enable-shared-commands}.
 
-Note: SRFI-138 states that if the enviornment variable
+Note: SRFI-138 states that if the environment variable
 @code{COMPILE_R7RS} is defined, it is assumed to a pathname of another
 program and is executed instead of Gauche's @code{compile-r7rs}.
 We think the feature is rather confusing than convenient, so we
