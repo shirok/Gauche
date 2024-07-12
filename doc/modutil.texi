@@ -3634,12 +3634,16 @@ we use @code{string-comparator} to compare string pathnames
 
 @c EN
 The storage is a dictionary that maps keys to internal
-structures of the cache.  By default, a hashtable is
+structures of the cache.  It needs to implement the dictionary
+protocol (@pxref{Dictionary framework}).
+By default, a hashtable is
 created automatically using the given comparator (or,
 if a comparator is omitted, using @code{default-comparator}).
 The comparator must have the hash function.
 @c JP
 ストレージは、キーとキャッシュ内部の構造とをマッピングする辞書です。
+ディクショナリプロトコルを実装しているクラスのオブジェクトでなければなりません
+(@ref{Dictionary framework}参照)。
 デフォルトでは与えられた比較器を使うハッシュテーブルが使われるので、
 比較器はハッシュ関数を持っていなければなりません。
 比較器が省略された場合は@code{default-comparator}が使われます。
