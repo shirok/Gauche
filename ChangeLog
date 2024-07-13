@@ -1,3 +1,10 @@
+2024-07-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c (Scm_NewVM): When a new VM (thread) is created, we only
+	  need to inherit parameterizations for the new dynamic environment.
+	  Other dynamic stuff are reset to the default values at the entrance
+	  of the thread and upstream values are never accessed.
+
 2024-07-12  Shiro Kawai  <shiro@acm.org>
 
 	* ext/tls: Avoid depending tls-mbed shared object on tls shared object,

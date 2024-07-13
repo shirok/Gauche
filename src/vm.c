@@ -215,7 +215,7 @@ static void   vm_finalize(ScmObj vm, void *data);
 static int    check_arglist_tail_for_apply(ScmVM *vm, ScmObj restargs, int max_count);
 
 static ScmEnvFrame *get_env(ScmVM *vm);
-static ScmObj get_denv(ScmVM *vm);
+static ScmObj get_inheriting_denv(ScmVM *vm);
 
 static void   call_error_reporter(ScmObj e);
 static ScmObj call_abort_handler(ScmObj, ScmObj);
@@ -304,11 +304,11 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     v->trampoline = -1;
 
     /* Thread inherits dynamic environment.
-       TRANSIENT: For the full srfi-226 compatibility, we can just share
-       the denv.  However, for the backward compatible mode where parameters
-       aren't shared between threads, we copy denv.  We'll eventually
-       drop copying.  */
-    v->denv = get_denv(proto);
+       Note: We only need to inherit parameterization.  Other dynamic envs
+       (exception handlers, dynamic handlers, etc.) are "reset" when the
+       thread starts, so anything "below" the dynamic handler chain is
+       irrelevant. */
+    v->denv = get_inheriting_denv(proto);
 
     v->dynamicHandlers = SCM_NIL;
 
@@ -1348,36 +1348,24 @@ static ScmEnvFrame *get_env(ScmVM *vm)
     return e;
 }
 
-/* Obtain calling thread's dynamic environment.
+/* Returns an denv to be inherited from the calling thread.
+ * Note that we only need parameterizations.  Other dynamic envs are "reset"
+ * at the entrance of thread and the previous values will never be accessed.
  * To support thread parameters, we have to copy the parameter alist.
  */
-ScmObj get_denv(ScmVM *vm)
+ScmObj get_inheriting_denv(ScmVM *vm)
 {
     if (vm == NULL) return SCM_NIL;
 
-    ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmObj orig = vm->denv, cp;
-
-    /* Inner parameterization list usually shares its tail with outer
-       parameterization, and we need to preserve that relationship.
-       This table maps old parameter pair -> new parameter pair.
-     */
-    ScmHashCore ptable;
-    Scm_HashCoreInitSimple(&ptable, SCM_HASH_EQ, 0, NULL);
+    ScmObj new_denv = SCM_NIL;
 
     SCM_FOR_EACH(cp, orig) {
         if (!SCM_PAIRP(SCM_CAR(cp))) continue; /* can't happen, just in case */
         if (SCM_EQ(SCM_CAAR(cp), denv_key_parameterization)) {
             ScmObj hh = SCM_NIL, tt = SCM_NIL, ccp;
             SCM_FOR_EACH(ccp, SCM_CDAR(cp)) {
-                ScmObj p = SCM_CAR(ccp);  /* (<parameter> <value>) */
-                ScmDictEntry *e = Scm_HashCoreSearch(&ptable,
-                                                     (intptr_t)p,
-                                                     SCM_DICT_GET);
-                if (e) {
-                    SCM_APPEND1(hh, tt, SCM_DICT_VALUE(e));
-                    break;
-                }
+                ScmObj p = SCM_CAR(ccp); /* (<param> . <value>) */
                 SCM_ASSERT(SCM_PRIMITIVE_PARAMETER_P(SCM_CAR(p)));
                 ScmPrimitiveParameter *param =
                     SCM_PRIMITIVE_PARAMETER(SCM_CAR(p));
@@ -1385,16 +1373,12 @@ ScmObj get_denv(ScmVM *vm)
                 if (!Scm_PrimitiveParameterSharedP(param)) {
                     newp = Scm_Cons(SCM_CAR(newp), SCM_CDR(newp));
                 }
-                e = Scm_HashCoreSearch(&ptable, (intptr_t)p, SCM_DICT_CREATE);
-                (void)SCM_DICT_SET_VALUE(e, newp);
                 SCM_APPEND1(hh, tt, newp);
             }
-            SCM_APPEND1(h, t, Scm_Cons(SCM_CAAR(cp), hh));
-        } else {
-            SCM_APPEND1(h, t, SCM_CAR(cp));
+            new_denv = SCM_LIST1(Scm_Cons(SCM_CAAR(cp), hh));
         }
     }
-    return h;
+    return new_denv;
 }
 
 /* When VM stack has incomplete stack frame (that is, SP != ARGP or
