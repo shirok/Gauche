@@ -138,7 +138,7 @@ extern ScmObj Scm_TLSClose(ScmTLS* t);
 extern void   Scm_TLSSetDebugLevel(int level);
 
 /* Each submodule registers debug level setter through this. */
-extern void   Scm_TLSRegisterDebugLevelCallback(void (*setter)(int));
+extern void   Scm_TLSRegisterDebugLevelCallback(ScmObj setter);
 
 extern int    Scm_TLSSystemCABundleAvailable(void);
 

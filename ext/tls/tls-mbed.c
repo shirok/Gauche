@@ -468,11 +468,16 @@ static ScmObj mbed_load_private_key(ScmTLS *tls,
  * Set debug level.  0 <= level < 10
  *  mbedtls uses 0 (No debug) to 4 (Verbose)
  */
-static void mbed_set_debug_level(int level)
+static ScmObj mbed_set_debug_level(ScmObj *args, int nargs,
+                                   void *data SCM_UNUSED)
 {
+    SCM_ASSERT(nargs == 1);
+    if (!SCM_INTP(args[0])) Scm_Error("fixnum required, but got: %S", args[0]);
+    int level = (int)SCM_INT_VALUE(args[0]);
     int mlevel = (level+1)/2;
     if (mlevel > 4) mlevel = 4;
     mbedtls_debug_set_threshold(mlevel);
+    return SCM_UNDEFINED;
 }
 
 /*
@@ -633,7 +638,10 @@ void Scm_Init_rfc__tls__mbed()
     k_server_name = SCM_MAKE_KEYWORD("server-name");
     k_skip_verification = SCM_MAKE_KEYWORD("skip-verification");
 
-    Scm_TLSRegisterDebugLevelCallback(mbed_set_debug_level);
+    ScmObj set_debug_level = Scm_MakeSubr(mbed_set_debug_level, NULL, 1, 0,
+                                          SCM_FALSE);
+    Scm_Define(mod, SCM_SYMBOL(SCM_INTERN("mbed-set-debug-level!")),
+               set_debug_level);
 
 #  ifdef MBEDTLS_THREADING_ALT
     mbedtls_threading_set_alt(win_mutex_init,

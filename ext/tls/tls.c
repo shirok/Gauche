@@ -194,7 +194,7 @@ ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who)
  * Debug level management
  */
 #define MAX_DEBUG_LEVEL_SETTERS 4
-static void (*debug_level_setters[MAX_DEBUG_LEVEL_SETTERS])(int);
+static ScmObj debug_level_setters[MAX_DEBUG_LEVEL_SETTERS];
 static int debug_level_setter_count = 0;
 static ScmInternalMutex debug_level_setter_mutex;
 
@@ -203,11 +203,11 @@ void Scm_TLSSetDebugLevel(int level)
     if (level < 0) level = 0;
     if (level > 9) level = 9;
     for (int i=0; i < debug_level_setter_count; i++) {
-        debug_level_setters[i](level);
+        Scm_ApplyRec1(debug_level_setters[i], SCM_MAKE_INT(level));
     }
 }
 
-void Scm_TLSRegisterDebugLevelCallback(void (*setter)(int))
+void Scm_TLSRegisterDebugLevelCallback(ScmObj setter)
 {
     int overflow = FALSE;
 

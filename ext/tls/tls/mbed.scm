@@ -38,3 +38,5 @@
 (select-module rfc.tls.mbed)
 (dynamic-load "rfc--tls--mbed")
 
+((with-module rfc.tls %tls-register-debug-level-callback)
+ mbed-set-debug-level!)

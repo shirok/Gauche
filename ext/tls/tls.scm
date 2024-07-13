@@ -132,6 +132,9 @@
        (return result))))
  (define-cproc tls-debug-level-set! (level::<int>) ::<void>
    (Scm_TLSSetDebugLevel level))
+ ;; internal routine to regiseter debug level setter
+ (define-cproc %tls-register-debug-level-callback (setter) ::<void>
+   (Scm_TLSRegisterDebugLevelCallback setter))
 
  ;; internal
  (define-cproc %tls-input-port-set! (tls::<tls> port) Scm_TLSInputPortSet)
