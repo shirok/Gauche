@@ -38,5 +38,12 @@
 (select-module rfc.tls.mbed)
 (dynamic-load "rfc--tls--mbed")
 
-((with-module rfc.tls %tls-register-debug-level-callback)
- mbed-set-debug-level!)
+;; This module may be loaded even Gauche doesn't support mbedtls, because
+;; of autoload (We need to set <mbed-tls> as autoloaded symbol).
+;; If Gauche isnt' compiled with mbed support, mbed-set-debug-level! isn't
+;; defined.
+(cond-expand
+ [gauche.net.tls.mbedtls
+  ((with-module rfc.tls %tls-register-debug-level-callback)
+   mbed-set-debug-level!)]
+ [else])
