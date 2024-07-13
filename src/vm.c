@@ -47,6 +47,12 @@
 #include "gauche/prof.h"
 #include "gauche/precomp.h"
 
+/* TRANSIENT: Define this to make with-error-handler use exception handler
+   in the dynamic env, instead of relying on escapePoint chain.  It is not
+   quite working perfectly, so #undef by default.
+ */
+#undef UNIFY_ERROR_HANDLING
+
 /* Experimental code to use custom mark procedure for stack gc.
    Currently it doens't show any improvement, so we disable it
    by default. */
@@ -2767,8 +2773,6 @@ static ScmObj handle_escape(ScmObj e,
                               get_dynamic_handlers(vm));
     }
 
-    /* Pop the EP and run the error handler. */
-    Scm_VMPopExceptionHandler();
     vm->escapePoint = prev_ep;
 
     vm->errorHandlerContinuable = FALSE;
@@ -2955,6 +2959,7 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
        chain is popped. */
     ScmObj eh = Scm_VMPopExceptionHandler();
 
+
     if (eh != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_ApplyRec(eh, SCM_LIST1(exception));
         if (SCM_SERIOUS_CONDITION_P(exception)
@@ -3010,7 +3015,12 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                              make sure ep is visible from save_cont
                             to redirect ep->cont */
 
+#ifdef UNIFY_ERROR_HANDLING
+    ScmObj ehandler = make_escape_handler(ep, ep->prev);
+    Scm_VMPushExceptionHandler(ehandler);
+#else
     Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
+#endif
 
     ScmObj before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
