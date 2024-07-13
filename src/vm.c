@@ -1376,6 +1376,7 @@ ScmObj get_inheriting_denv(ScmVM *vm)
                 SCM_APPEND1(hh, tt, newp);
             }
             new_denv = SCM_LIST1(Scm_Cons(SCM_CAAR(cp), hh));
+            break;
         }
     }
     return new_denv;
