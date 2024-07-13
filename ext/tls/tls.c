@@ -196,12 +196,16 @@ ScmObj Scm_TLSGetConnectionAddress(ScmTLS *t, int who)
 #define MAX_DEBUG_LEVEL_SETTERS 4
 static ScmObj debug_level_setters[MAX_DEBUG_LEVEL_SETTERS];
 static int debug_level_setter_count = 0;
+static int debug_level = 0;
 static ScmInternalMutex debug_level_setter_mutex;
 
 void Scm_TLSSetDebugLevel(int level)
 {
     if (level < 0) level = 0;
     if (level > 9) level = 9;
+    (void)SCM_INTERNAL_MUTEX_LOCK(debug_level_setter_mutex);
+    debug_level = level;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(debug_level_setter_mutex);
     for (int i=0; i < debug_level_setter_count; i++) {
         Scm_ApplyRec1(debug_level_setters[i], SCM_MAKE_INT(level));
     }
@@ -221,8 +225,8 @@ void Scm_TLSRegisterDebugLevelCallback(ScmObj setter)
     if (overflow) {
         Scm_Error("[internal] Too many TLS debug level callbacks");
     }
+    Scm_ApplyRec1(setter, SCM_MAKE_INT(debug_level));
 }
-
 
 #if !HAVE_WINCRYPT_H
 #include "in_gauche_cacert_path.c"

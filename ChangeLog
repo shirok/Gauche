@@ -1,3 +1,11 @@
+2024-07-12  Shiro Kawai  <shiro@acm.org>
+
+	* ext/tls: Avoid depending tls-mbed shared object on tls shared object,
+	  for it complicates things on Windows.
+	  (tls-debug-level-set!): Saves the debug level globally, and
+	  tell it to newly registered subsystem.  By this, the debug level
+	  setting isn't affected by the timing of loading of the subsystem.
+
 2024-07-06  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/text/tr.scm (build-char-array): Fix backslash handling.
