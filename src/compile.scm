@@ -1644,10 +1644,17 @@
     (receive (env-header-size cont-frame-size)
         (parse-target-params target-params)
       (guard (e [else
+                 ;; Attach the source with <compile-error-mixin>, if it is
+                 ;; not alrady attached.
                  ;; TODO: check if e is an expected error (such as syntax error)
                  ;; or an unexpected error (compiler bug).
-                 ($ raise $ make-compound-condition e
-                    $ make <compile-error-mixin> :expr program)])
+                 (if (and (is-a? e <compound-condition>)
+                          (find (^c (and (is-a? c <compile-error-mixin>)
+                                         (eq? (~ c'expr) program)))
+                                (~ e '%conditions)))
+                   (raise e)
+                   ($ raise $ make-compound-condition e
+                      $ make <compile-error-mixin> :expr program))])
         (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
                (make-compile-target env-header-size cont-frame-size)
                '() 'tail)))))
