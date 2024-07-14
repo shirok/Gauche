@@ -2852,7 +2852,14 @@ ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
     ScmVM *vm = theVM;
     ScmEscapePoint *ep = vm->escapePoint;
 
+#ifdef UNIFY_ERROR_HANDLING
+    /* Once UNIFY_ERROR_HANDLING is done, default-exception-handler is only
+       called when no exception handler is set.  If vm->escapePoint is not
+       NULL, something's off. */
+    SCM_ASSERT(ep == NULL);
+#else
     if (ep) { return handle_escape(e, ep, ep->prev); }
+#endif
 
     /* We don't have an active error handler, so this is the fallback
        behavior.  Reports the error and rewind dynamic handlers and
@@ -2944,16 +2951,10 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
        chain is popped. */
     ScmObj eh = Scm_VMPopExceptionHandler();
 
-
     if (eh != DEFAULT_EXCEPTION_HANDLER) {
         vm->val0 = Scm_ApplyRec(eh, SCM_LIST1(exception));
         if (SCM_SERIOUS_CONDITION_P(exception)
             || raise_flags&SCM_RAISE_NON_CONTINUABLE) {
-            /* the user-installed exception handler returned while it
-               shouldn't.  In order to prevent infinite loop, we should
-               pop the erroneous handler.  For now, we just reset
-               the current exception handler. */
-            Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
             Scm_Error("user-defined exception handler returned on non-continuable exception %S", exception);
         }
         /* Continuable exception. Recover exception handler settings. */
