@@ -482,6 +482,29 @@
                  (thread-join! t2)))))
 
 ;;---------------------------------------------------------------------
+(test-section "error handler and threads")
+
+(let ()
+  (test* "reraising in thread" 'foo
+         (let ([th (make-thread (^[]
+                                  (with-error-handler (^e (raise 'foo))
+                                    (^[] (error 'bar)))))])
+           (thread-start! th)
+           (guard (e [(uncaught-exception? e)
+                      (uncaught-exception-reason e)])
+             (thread-join! th))))
+
+  (test* "reraising in thread w/guard" 'bar
+         (let ([th (make-thread (^[]
+                                  (guard (e ((error? e) 'huh?))
+                                    (raise 'bar))))])
+           (thread-start! th)
+           (guard (e [(uncaught-exception? e)
+                      (uncaught-exception-reason e)])
+             (thread-join! th))))
+  )
+
+;;---------------------------------------------------------------------
 (test-section "parameters and threads")
 
 (let ()
