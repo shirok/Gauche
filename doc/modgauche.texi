@@ -7195,12 +7195,21 @@ in the third argument:
 
 @defun cf-help-string item description
 @c MOD gauche.configure
+@c EN
 Return a string formatted suitable to show as an option's help message.
 The result can be passed to @var{help-string} argument of
-@code{cf-arg-enable} and @code{cf-arg-with}.
+@code{cf-arg-enable} and @code{cf-arg-with}, to ensure that
+@code{configure --help} will produce a consistently formatted output.
 This corresponds to autoconf's @code{AS_HELP_STRING}.
 
 Call it as follows, and it'll indent and fill the description nicely.
+@c JP
+コマンドライン引数のヘルプメッセージにふさわしい形式にフォーマットした文字列を
+返します。戻り値を@code{cf-arg-enable}や@code{cf-arg-with}の
+@var{help-string}引数に渡すことで、
+@code{configure --help}が統一的な出力を生成できます。
+autoconfの@code{AS_HELP_STRING}に相当します。
+@c COMMON
 
 @example
 (cf-help-string "--option=ARG" "Give ARG as the value of option")
@@ -7210,19 +7219,37 @@ Call it as follows, and it'll indent and fill the description nicely.
 @defun cf-feature-ref name
 @defunx cf-package-ref name
 @c MOD gauche.configure
+@c EN
 Lookup a symbol @var{name} from the global feature table and the
 global package table, respectively.
 These can be called after @code{cf-init}.
+@c JP
+グローバルな機能テーブルおよびパッケージテーブルに@var{name}で登録された値を
+返します。これらは@code{cf-init}の後で呼べます。
+@c COMMON
 
+@c EN
 For example, if you've called @code{cf-arg-enable} with @code{foofeature},
 and the user has invoked the @code{configure} script with
 @code{--with-foofeature=full}, then @code{(cf-feature-ref 'foofeature)}
 returns @code{"full"}.   If the user hasn't given the command-line
 argument, @code{#f} is returned.
+@c JP
+例えば、@code{cf-arg-enable}で@code{foofeature}という機能に関するコマンドライン
+引数を登録したとしましょう。ユーザが@code{configure}スクリプトに
+@code{--with-foofeature=full}オプションを与えて起動した場合、
+@code{(cf-feature-ref 'foofeature)}は@code{"full"}を返します。
+コマンドライン引数が与えられなかった場合は@code{#f}が返ります。
+@c COMMON
 
+@c EN
 If you add or change the value of features or packages,
 you can use generalized @code{set!} as
 @code{(set! (cf-feature-ref 'NAME) VALUE)} etc.
+@c JP
+機能テーブルやパッケージテーブルに値を足したり変更したい場合は一般化@code{set!}を使って
+@code{(set! (cf-feature-ref 'NAME) VALUE)}と書くことができます。
+@c COMMON
 @end defun
 
 
@@ -7232,14 +7259,26 @@ you can use generalized @code{set!} as
 @subsubheading メッセージ
 @c COMMON
 
+@c EN
 The @code{cf-init} procedure opens the default log drain
 that goes to @code{config.log}, and you can use @code{log-format}
 to write to it (@xref{User-level logging}, for the details of logging).
+@c JP
+@code{cf-init}手続きは@code{config.log}にロギングするデフォルトログドレインを
+オープンするので、@code{log-format}を使って@code{config.log}にログを
+残すことができます (ロギングの詳細については@ref{User-level logging}参照)。
+@c COMMON
 
+@c EN
 However, to have consistent message format conveniently, the following
 procedures are provided.  They emits the message both to log files and
 the current output port (in slightly different formats so that the
 console messages align nicely visually.)
+@c JP
+しかし、一貫した形式でメッセージを扱うために、以下の手続きが提供されています。
+これらの手続きはログファイルと現在の出力ポートに(見やすいようにそれぞれ若干異なる
+形式で)メッセージを出力します。
+@c COMMON
 
 @defun cf-msg-checking fmt arg @dots{}
 @c MOD gauche.configure
@@ -7282,7 +7321,7 @@ the formatted message and newline is written out
 (@pxref{Formatting output}).
 For the log file, it records ``result: XXX'' where XXX is the
 formatted message.  Supposed to be used with @code{cf-msg-checking}.
-
+4
 This corresponds to autoconf's @code{AC_MSG_RESULT}.
 @end defun
 
