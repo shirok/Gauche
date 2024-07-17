@@ -1303,6 +1303,9 @@ static void save_cont(ScmVM *vm)
         }
     }
     vm->stackBase = vm->stack;
+#ifdef UNIFY_ERROR_HANDLING
+    vm->escapePoint = NULL;
+#endif
 }
 
 static void save_stack(ScmVM *vm)
@@ -2740,6 +2743,9 @@ static ScmObj handle_escape(ScmObj e,
        See https://github.com/shirok/Gauche/issues/852 for the details.
     */
     save_cont(vm);
+#ifdef UNIFY_ERROR_HANDLING
+    vm->escapePoint = NULL;
+#endif
 
 #if GAUCHE_SPLIT_STACK
     vm->lastErrorCont = vm->cont;
@@ -2758,7 +2764,9 @@ static ScmObj handle_escape(ScmObj e,
                               get_dynamic_handlers(vm));
     }
 
+#ifndef UNIFY_ERROR_HANDLING
     vm->escapePoint = prev_ep;
+#endif
 
     vm->errorHandlerContinuable = FALSE;
 
@@ -2782,19 +2790,26 @@ static ScmObj handle_escape(ScmObj e,
     if (vm->errorHandlerContinuable) {
         vm->errorHandlerContinuable = FALSE;
 
+#ifndef UNIFY_ERROR_HANDLING
         /* recover escape point */
         vm->escapePoint = ep;
-
+#endif
         /* call dynamic handlers to reenter dynamic-winds */
         call_dynamic_handlers(vm, vmhandlers,
                               get_dynamic_handlers(vm));
 
         /* reraise and return */
         Scm_VMPushExceptionHandler(ep->xhandler);
+#ifndef UNIFY_ERROR_HANDLING
         vm->escapePoint = prev_ep;
+#endif
         result = Scm_VMThrowException(vm, e, 0);
         Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
+#ifndef UNIFY_ERROR_HANDLING
         vm->escapePoint = ep;
+#else
+        vm->escapePoint = NULL;
+#endif
         return result;
     }
 
