@@ -312,6 +312,9 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     v->dynamicHandlers = SCM_NIL;
 
+#ifdef UNIFY_ERROR_HANDLING
+    v->floatingEscapePoints = SCM_NIL;
+#endif
     v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
@@ -422,6 +425,9 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
     v->denv = master->denv;
     v->dynamicHandlers = master->dynamicHandlers;
 
+#ifdef UNIFY_ERROR_HANDLING
+    v->floatingEscapePoints = master->floatingEscapePoints;
+#endif
     v->escapePoint = master->escapePoint;
     v->escapeReason = master->escapeReason;
     v->escapeData[0] = master->escapeData[0];
@@ -1297,14 +1303,27 @@ static void save_cont(ScmVM *vm)
             cstk->cont = FORWARDED_CONT(cstk->cont);
         }
     }
+#ifdef UNIFY_ERROR_HANDLING
+    {
+        ScmObj eps;
+        SCM_FOR_EACH(eps, vm->floatingEscapePoints) {
+            ScmObj ep = SCM_CAR(eps);
+            SCM_ASSERT(SCM_ESCAPE_POINT_P(ep));
+            ScmEscapePoint *e = SCM_ESCAPE_POINT(ep);
+            if (FORWARDED_CONT_P(e->cont)) {
+                e->cont = FORWARDED_CONT(e->cont);
+            }
+        }
+    }
+    vm->floatingEscapePoints = SCM_NIL;
+    vm->escapePoint = NULL;
+#else
     for (ScmEscapePoint *ep = vm->escapePoint; ep; ep = ep->prev) {
         if (FORWARDED_CONT_P(ep->cont)) {
             ep->cont = FORWARDED_CONT(ep->cont);
         }
     }
     vm->stackBase = vm->stack;
-#ifdef UNIFY_ERROR_HANDLING
-    vm->escapePoint = NULL;
 #endif
 }
 
@@ -2728,7 +2747,7 @@ static ScmObj dynwind_after_cc(ScmVM *vm, ScmObj result SCM_UNUSED,
 
 static ScmObj handle_escape(ScmObj e,
                             ScmEscapePoint *ep,
-                            ScmEscapePoint *prev_ep)
+                            ScmEscapePoint *prev_ep SCM_UNUSED)
 {
     ScmVM *vm = theVM;
 
@@ -2744,6 +2763,7 @@ static ScmObj handle_escape(ScmObj e,
     */
     save_cont(vm);
 #ifdef UNIFY_ERROR_HANDLING
+    vm->floatingEscapePoints = SCM_NIL;
     vm->escapePoint = NULL;
 #endif
 
@@ -2984,11 +3004,11 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
  */
 static ScmObj install_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
-                               void *data)
+                               void *data SCM_UNUSED)
 {
-    ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
 #ifndef UNIFY_ERROR_HANDLING
+    ScmEscapePoint *ep = (ScmEscapePoint*)data;
     vm->escapePoint = ep;
 #endif
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
@@ -2999,12 +3019,16 @@ static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data)
 {
+#ifdef UNIFY_ERROR_HANDLING
+    theVM->floatingEscapePoints = SCM_OBJ(data);
+#else
     ScmEscapePoint *ep = (ScmEscapePoint *)data;
     ScmVM *vm = theVM;
     vm->escapePoint = ep->prev;
     if (ep->errorReporting) {
         SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
     }
+#endif
     return SCM_UNDEFINED;
 }
 
@@ -3014,19 +3038,21 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
                                 SCM_FALSE, SCM_FALSE);
 
-    vm->escapePoint = ep; /* This will be done in install_ehandler, but
-                             make sure ep is visible from save_cont
-                            to redirect ep->cont */
-
 #ifdef UNIFY_ERROR_HANDLING
     ScmObj ehandler = make_escape_handler(ep, ep->prev);
     Scm_VMPushExceptionHandler(ehandler);
+    ScmObj prev_fep = vm->floatingEscapePoints;
+    vm->floatingEscapePoints = Scm_Cons(SCM_OBJ(ep), prev_fep);
+    ScmObj before = Scm_MakeSubr(install_ehandler, NULL, 0, 0, SCM_FALSE);
+    ScmObj after  = Scm_MakeSubr(discard_ehandler, prev_fep, 0, 0, SCM_FALSE);
 #else
+    vm->escapePoint = ep; /* This will be done in install_ehandler, but
+                             make sure ep is visible from save_cont
+                            to redirect ep->cont */
     Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
-#endif
-
     ScmObj before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
+#endif
     return Scm_VMDynamicWind(before, thunk, after);
 }
 
