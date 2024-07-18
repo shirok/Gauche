@@ -2988,7 +2988,9 @@ static ScmObj install_ehandler(ScmObj *args SCM_UNUSED,
 {
     ScmEscapePoint *ep = (ScmEscapePoint*)data;
     ScmVM *vm = theVM;
+#ifndef UNIFY_ERROR_HANDLING
     vm->escapePoint = ep;
+#endif
     SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
     return SCM_UNDEFINED;
 }
