@@ -1975,7 +1975,9 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
 {
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     SCM_SET_CLASS(ep, SCM_CLASS_ESCAPE_POINT);
+#ifndef UNIFY_ERROR_HANDLING
     ep->prev = vm->escapePoint;
+#endif
     ep->ehandler = errorHandler;
     ep->cont = vm->cont;
     ep->denv = vm->denv;
@@ -2856,6 +2858,22 @@ static ScmObj handle_escape(ScmObj e,
     siglongjmp(vm->cstack->jbuf, 1);
 }
 
+#ifdef UNIFY_ERROR_HANDLING
+static ScmObj handle_escape_subr(ScmObj *argv,
+                                 int argc,
+                                 void *data)
+{
+    SCM_ASSERT(argc == 1);
+    return handle_escape(argv[0],    /* exc */
+                         (ScmEscapePoint*)data,
+                         NULL); /* prev ep */
+}
+
+ScmObj make_escape_handler(ScmEscapePoint *ep)
+{
+    return Scm_MakeSubr(handle_escape_subr, (void*)ep, 1, 0, SCM_FALSE);
+}
+#else
 static ScmObj handle_escape_subr(ScmObj *argv,
                                  int argc,
                                  void *data)
@@ -2875,6 +2893,7 @@ ScmObj make_escape_handler(ScmEscapePoint *ep,
     packet[1] = prev_ep;
     return Scm_MakeSubr(handle_escape_subr, packet, 1, 0, SCM_FALSE);
 }
+#endif
 
 /*
  * Default exception handler
@@ -3039,7 +3058,7 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
                                 SCM_FALSE, SCM_FALSE);
 
 #ifdef UNIFY_ERROR_HANDLING
-    ScmObj ehandler = make_escape_handler(ep, ep->prev);
+    ScmObj ehandler = make_escape_handler(ep);
     Scm_VMPushExceptionHandler(ehandler);
     ScmObj prev_fep = vm->floatingEscapePoints;
     vm->floatingEscapePoints = Scm_Cons(SCM_OBJ(ep), prev_fep);
