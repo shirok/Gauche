@@ -51,7 +51,7 @@
    in the dynamic env, instead of relying on escapePoint chain.  It is not
    quite working perfectly, so #undef by default.
  */
-#undef UNIFY_ERROR_HANDLING
+#define UNIFY_ERROR_HANDLING 1
 
 /* Experimental code to use custom mark procedure for stack gc.
    Currently it doens't show any improvement, so we disable it
