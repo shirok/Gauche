@@ -1,3 +1,11 @@
+2024-07-18  Shiro Kawai  <shiro@acm.org>
+
+	* src/vm.c: Ditched vm->escapePoint chain.  It had two roles:
+	  error handler stack and a list of EPs that points to in-stack cont
+	  frames.  Now we unified error handlers into exception handlers,
+	  and keeps in-stack cont EPs in vm->floatingEscapePoints list.
+	  See https://github.com/shirok/Gauche/issues/1037
+
 2024-07-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_NewVM): When a new VM (thread) is created, we only
