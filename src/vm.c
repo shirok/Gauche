@@ -47,12 +47,6 @@
 #include "gauche/prof.h"
 #include "gauche/precomp.h"
 
-/* TRANSIENT: Define this to make with-error-handler use exception handler
-   in the dynamic env, instead of relying on escapePoint chain.  It is not
-   quite working perfectly, so #undef by default.
- */
-#define UNIFY_ERROR_HANDLING 1
-
 /* Experimental code to use custom mark procedure for stack gc.
    Currently it doens't show any improvement, so we disable it
    by default. */
@@ -312,10 +306,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
 
     v->dynamicHandlers = SCM_NIL;
 
-#ifdef UNIFY_ERROR_HANDLING
     v->floatingEscapePoints = SCM_NIL;
-#endif
-    v->escapePoint = NULL;
     v->escapeReason = SCM_VM_ESCAPE_NONE;
     v->escapeData[0] = NULL;
     v->escapeData[1] = NULL;
@@ -425,10 +416,7 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
     v->denv = master->denv;
     v->dynamicHandlers = master->dynamicHandlers;
 
-#ifdef UNIFY_ERROR_HANDLING
     v->floatingEscapePoints = master->floatingEscapePoints;
-#endif
-    v->escapePoint = master->escapePoint;
     v->escapeReason = master->escapeReason;
     v->escapeData[0] = master->escapeData[0];
     v->escapeData[1] = master->escapeData[1];
@@ -1303,7 +1291,6 @@ static void save_cont(ScmVM *vm)
             cstk->cont = FORWARDED_CONT(cstk->cont);
         }
     }
-#ifdef UNIFY_ERROR_HANDLING
     {
         ScmObj eps;
         SCM_FOR_EACH(eps, vm->floatingEscapePoints) {
@@ -1316,15 +1303,6 @@ static void save_cont(ScmVM *vm)
         }
     }
     vm->floatingEscapePoints = SCM_NIL;
-    vm->escapePoint = NULL;
-#else
-    for (ScmEscapePoint *ep = vm->escapePoint; ep; ep = ep->prev) {
-        if (FORWARDED_CONT_P(ep->cont)) {
-            ep->cont = FORWARDED_CONT(ep->cont);
-        }
-    }
-    vm->stackBase = vm->stack;
-#endif
 }
 
 static void save_stack(ScmVM *vm)
@@ -1975,9 +1953,6 @@ static ScmEscapePoint *new_ep(ScmVM *vm,
 {
     ScmEscapePoint *ep = SCM_NEW(ScmEscapePoint);
     SCM_SET_CLASS(ep, SCM_CLASS_ESCAPE_POINT);
-#ifndef UNIFY_ERROR_HANDLING
-    ep->prev = vm->escapePoint;
-#endif
     ep->ehandler = errorHandler;
     ep->cont = vm->cont;
     ep->denv = vm->denv;
@@ -2747,9 +2722,7 @@ static ScmObj dynwind_after_cc(ScmVM *vm, ScmObj result SCM_UNUSED,
  *  - There are messy lonjmp/setjmp stuff involved to keep C stack sane.
  */
 
-static ScmObj handle_escape(ScmObj e,
-                            ScmEscapePoint *ep,
-                            ScmEscapePoint *prev_ep SCM_UNUSED)
+static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
 {
     ScmVM *vm = theVM;
 
@@ -2764,10 +2737,7 @@ static ScmObj handle_escape(ScmObj e,
        See https://github.com/shirok/Gauche/issues/852 for the details.
     */
     save_cont(vm);
-#ifdef UNIFY_ERROR_HANDLING
     vm->floatingEscapePoints = SCM_NIL;
-    vm->escapePoint = NULL;
-#endif
 
 #if GAUCHE_SPLIT_STACK
     vm->lastErrorCont = vm->cont;
@@ -2785,10 +2755,6 @@ static ScmObj handle_escape(ScmObj e,
         call_dynamic_handlers(vm, ep->dynamicHandlers,
                               get_dynamic_handlers(vm));
     }
-
-#ifndef UNIFY_ERROR_HANDLING
-    vm->escapePoint = prev_ep;
-#endif
 
     vm->errorHandlerContinuable = FALSE;
 
@@ -2812,26 +2778,14 @@ static ScmObj handle_escape(ScmObj e,
     if (vm->errorHandlerContinuable) {
         vm->errorHandlerContinuable = FALSE;
 
-#ifndef UNIFY_ERROR_HANDLING
-        /* recover escape point */
-        vm->escapePoint = ep;
-#endif
         /* call dynamic handlers to reenter dynamic-winds */
         call_dynamic_handlers(vm, vmhandlers,
                               get_dynamic_handlers(vm));
 
         /* reraise and return */
         Scm_VMPushExceptionHandler(ep->xhandler);
-#ifndef UNIFY_ERROR_HANDLING
-        vm->escapePoint = prev_ep;
-#endif
         result = Scm_VMThrowException(vm, e, 0);
         Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
-#ifndef UNIFY_ERROR_HANDLING
-        vm->escapePoint = ep;
-#else
-        vm->escapePoint = NULL;
-#endif
         return result;
     }
 
@@ -2858,62 +2812,27 @@ static ScmObj handle_escape(ScmObj e,
     siglongjmp(vm->cstack->jbuf, 1);
 }
 
-#ifdef UNIFY_ERROR_HANDLING
 static ScmObj handle_escape_subr(ScmObj *argv,
                                  int argc,
                                  void *data)
 {
     SCM_ASSERT(argc == 1);
-    return handle_escape(argv[0],    /* exc */
-                         (ScmEscapePoint*)data,
-                         NULL); /* prev ep */
+    return handle_escape(argv[0] /*exc*/, (ScmEscapePoint*)data);
 }
 
 ScmObj make_escape_handler(ScmEscapePoint *ep)
 {
     return Scm_MakeSubr(handle_escape_subr, (void*)ep, 1, 0, SCM_FALSE);
 }
-#else
-static ScmObj handle_escape_subr(ScmObj *argv,
-                                 int argc,
-                                 void *data)
-{
-    SCM_ASSERT(argc == 1);
-    ScmEscapePoint **packet = (ScmEscapePoint**)data;
-    return handle_escape(argv[0],    /* exc */
-                         packet[0],  /* current ep */
-                         packet[1]); /* prev ep */
-}
-
-ScmObj make_escape_handler(ScmEscapePoint *ep,
-                           ScmEscapePoint *prev_ep)
-{
-    ScmEscapePoint **packet = SCM_NEW_ARRAY(ScmEscapePoint*, 2);
-    packet[0] = ep;
-    packet[1] = prev_ep;
-    return Scm_MakeSubr(handle_escape_subr, packet, 1, 0, SCM_FALSE);
-}
-#endif
 
 /*
  * Default exception handler
- *  This is what we have as the system default, and also
- *  what with-error-handler installs as an exception handler.
+ *  This is what we have as the system default.
  */
 
 ScmObj Scm_VMDefaultExceptionHandler(ScmObj e)
 {
     ScmVM *vm = theVM;
-    ScmEscapePoint *ep = vm->escapePoint;
-
-#ifdef UNIFY_ERROR_HANDLING
-    /* Once UNIFY_ERROR_HANDLING is done, default-exception-handler is only
-       called when no exception handler is set.  If vm->escapePoint is not
-       NULL, something's off. */
-    SCM_ASSERT(ep == NULL);
-#else
-    if (ep) { return handle_escape(e, ep, ep->prev); }
-#endif
 
     /* We don't have an active error handler, so this is the fallback
        behavior.  Reports the error and rewind dynamic handlers and
@@ -3025,12 +2944,7 @@ static ScmObj install_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data SCM_UNUSED)
 {
-    ScmVM *vm = theVM;
-#ifndef UNIFY_ERROR_HANDLING
-    ScmEscapePoint *ep = (ScmEscapePoint*)data;
-    vm->escapePoint = ep;
-#endif
-    SCM_VM_RUNTIME_FLAG_CLEAR(vm, SCM_ERROR_BEING_REPORTED);
+    SCM_VM_RUNTIME_FLAG_CLEAR(theVM, SCM_ERROR_BEING_REPORTED);
     return SCM_UNDEFINED;
 }
 
@@ -3038,16 +2952,8 @@ static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data)
 {
-#ifdef UNIFY_ERROR_HANDLING
+    /* restore floatingEscapePoints */
     theVM->floatingEscapePoints = SCM_OBJ(data);
-#else
-    ScmEscapePoint *ep = (ScmEscapePoint *)data;
-    ScmVM *vm = theVM;
-    vm->escapePoint = ep->prev;
-    if (ep->errorReporting) {
-        SCM_VM_RUNTIME_FLAG_SET(vm, SCM_ERROR_BEING_REPORTED);
-    }
-#endif
     return SCM_UNDEFINED;
 }
 
@@ -3057,21 +2963,12 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
     ScmEscapePoint *ep = new_ep(vm, handler, rewindBefore,
                                 SCM_FALSE, SCM_FALSE);
 
-#ifdef UNIFY_ERROR_HANDLING
     ScmObj ehandler = make_escape_handler(ep);
     Scm_VMPushExceptionHandler(ehandler);
     ScmObj prev_fep = vm->floatingEscapePoints;
     vm->floatingEscapePoints = Scm_Cons(SCM_OBJ(ep), prev_fep);
     ScmObj before = Scm_MakeSubr(install_ehandler, NULL, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(discard_ehandler, prev_fep, 0, 0, SCM_FALSE);
-#else
-    vm->escapePoint = ep; /* This will be done in install_ehandler, but
-                             make sure ep is visible from save_cont
-                            to redirect ep->cont */
-    Scm_VMPushExceptionHandler(DEFAULT_EXCEPTION_HANDLER);
-    ScmObj before = Scm_MakeSubr(install_ehandler, ep, 0, 0, SCM_FALSE);
-    ScmObj after  = Scm_MakeSubr(discard_ehandler, ep, 0, 0, SCM_FALSE);
-#endif
     return Scm_VMDynamicWind(before, thunk, after);
 }
 
@@ -3666,7 +3563,6 @@ ScmObj Scm_VMCallCC(ScmObj proc)
     save_cont(vm);
 
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
-    ep->prev = NULL;
     ScmObj contproc = Scm_MakeSubr(throw_continuation, ep, 0, 1,
                                    continuation_symbol);
     return Scm_VMApply1(proc, contproc);
@@ -3711,7 +3607,6 @@ ScmObj Scm_VMCallPC(ScmObj proc)
        Hoping these tricks won't be necessary once we ovehauled partcont
        handling. */
     ScmEscapePoint *ep = new_ep(vm, SCM_FALSE, FALSE, SCM_FALSE, SCM_FALSE);
-    ep->prev = NULL;
     ep->cont = (cp? vm->cont : NULL);
     ep->denv = c? c->denv : (cp? cp->denv : SCM_NIL);
     ep->dynamicHandlers = SCM_NIL; /* don't use for partial continuation */
@@ -4275,7 +4170,6 @@ void Scm_VMDump(ScmVM *vm_to_dump)
     ScmEnvFrame *env = vm->env;
     ScmContFrame *cont = vm->cont;
     ScmCStack *cstk = vm->cstack;
-    ScmEscapePoint *ep = vm->escapePoint;
 
     Scm_Printf(out, "VM %p -----------------------------------------------------------\n", vm);
     Scm_Printf(out, "   pc: %p  ", vm->pc);
@@ -4328,17 +4222,6 @@ void Scm_VMDump(ScmVM *vm_to_dump)
         Scm_Printf(out, "  %p: prev=%p, cont=%p\n",
                    cstk, cstk->prev, cstk->cont);
         cstk = cstk->prev;
-    }
-    Scm_Printf(out, "Escape points:\n");
-    while (ep) {
-        if (ep->ehandler) {
-            Scm_Printf(out, "  %p: cont=%p, handler=%#20.1S\n",
-                       ep, ep->cont, ep->ehandler);
-        } else {
-            Scm_Printf(out, "  %p: cont=%p, handler=#NULL\n",
-                       ep, ep->cont);
-        }
-        ep = ep->prev;
     }
     Scm_Printf(out, "dyn_handlers: %S\n", get_dynamic_handlers(vm));
 

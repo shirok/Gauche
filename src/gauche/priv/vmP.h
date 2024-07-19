@@ -133,7 +133,6 @@ SCM_CLASS_DECL(Scm_DynamicHandlerClass);
  */
 typedef struct ScmEscapePointRec {
     SCM_HEADER;
-    struct ScmEscapePointRec *prev;
     ScmObj ehandler;            /* handler closure */
     ScmContFrame *cont;         /* saved continuation */
     ScmObj denv;                /* saved denv */
