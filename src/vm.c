@@ -1301,8 +1301,8 @@ static void save_cont(ScmVM *vm)
                 e->cont = FORWARDED_CONT(e->cont);
             }
         }
+        vm->floatingEscapePoints = SCM_NIL;
     }
-    vm->floatingEscapePoints = SCM_NIL;
 }
 
 static void save_stack(ScmVM *vm)
@@ -2737,7 +2737,6 @@ static ScmObj handle_escape(ScmObj e, ScmEscapePoint *ep)
        See https://github.com/shirok/Gauche/issues/852 for the details.
     */
     save_cont(vm);
-    vm->floatingEscapePoints = SCM_NIL;
 
 #if GAUCHE_SPLIT_STACK
     vm->lastErrorCont = vm->cont;
@@ -2952,8 +2951,17 @@ static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data)
 {
-    /* restore floatingEscapePoints */
-    theVM->floatingEscapePoints = SCM_OBJ(data);
+    /* restore floatingEscapePoints when necessary */
+    ScmObj eps = SCM_OBJ(data);
+    if (SCM_PAIRP(eps)) {
+        ScmVM *vm = theVM;
+        ScmContFrame *c = SCM_ESCAPE_POINT(SCM_CAR(eps))->cont;
+        if (IN_STACK_P((ScmObj*)c)) {
+            /* Those cont frames are not saved yet, so keep them
+               in the chain. */
+            theVM->floatingEscapePoints = eps;
+        }
+    }
     return SCM_UNDEFINED;
 }
 
