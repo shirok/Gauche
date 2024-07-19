@@ -2520,33 +2520,39 @@ static ScmObj pop_dynamic_handlers(ScmVM *vm)
 static void call_before_thunk(ScmVM *vm, ScmObj handler_entry)
 {
     SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
-    Scm_ApplyRec(SCM_DYNAMIC_HANDLER(handler_entry)->before,
-                 SCM_DYNAMIC_HANDLER(handler_entry)->args);
+    ScmDynamicHandler *dh = SCM_DYNAMIC_HANDLER(handler_entry);
+    vm->denv = dh->denv;
+    if (!SCM_FALSEP(dh->before)) {
+        Scm_ApplyRec(dh->before, dh->args);
+    }
 }
 
 static void call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 {
     SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
-    Scm_ApplyRec(SCM_DYNAMIC_HANDLER(handler_entry)->after,
-                 SCM_DYNAMIC_HANDLER(handler_entry)->args);
+    ScmDynamicHandler *dh = SCM_DYNAMIC_HANDLER(handler_entry);
+    vm->denv = dh->denv;
+    Scm_ApplyRec(dh->after, dh->args);
 }
 
 static ScmObj vm_call_before_thunk(ScmVM *vm, ScmObj handler_entry)
 {
     SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
-    return Scm_VMApply(SCM_DYNAMIC_HANDLER(handler_entry)->before,
-                       SCM_DYNAMIC_HANDLER(handler_entry)->args);
+    ScmDynamicHandler *dh = SCM_DYNAMIC_HANDLER(handler_entry);
+    vm->denv = dh->denv;
+    if (!SCM_FALSEP(dh->before)) {
+        return Scm_VMApply(dh->before, dh->args);
+    } else {
+        return SCM_UNDEFINED;
+    }
 }
 
 static ScmObj vm_call_after_thunk(ScmVM *vm, ScmObj handler_entry)
 {
     SCM_ASSERT(SCM_DYNAMIC_HANDLER_P(handler_entry));
-    vm->denv = SCM_DYNAMIC_HANDLER(handler_entry)->denv;
-    return Scm_VMApply(SCM_DYNAMIC_HANDLER(handler_entry)->after,
-                       SCM_DYNAMIC_HANDLER(handler_entry)->args);
+    ScmDynamicHandler *dh = SCM_DYNAMIC_HANDLER(handler_entry);
+    vm->denv = dh->denv;
+    return Scm_VMApply(dh->after, dh->args);
 }
 /* End of handler-chain internal API */
 
@@ -2566,6 +2572,17 @@ void Scm_VMSetDynamicHandlers(ScmObj handlers)
     set_dynamic_handlers(theVM, handlers);
 }
 
+/*
+ * dynamic-wind
+ *
+ *   For Scheme code, dynamic-wind is inline-expanded into VM insns.
+ *   The C implemnetation, Scm_VMDynamicWind may be invoked when
+ *   dynamic-wind is called via apply, or directly from C code.
+ *
+ *   'Before' handlerscan be SCM_FALSE if it doesn't
+ *   need to do anything.  We can do a bit of optimization then.
+ */
+
 static ScmPContinuationProc dynwind_before_cc;
 static ScmPContinuationProc dynwind_body_cc;
 static ScmPContinuationProc dynwind_after_cc;
@@ -2575,11 +2592,21 @@ ScmObj Scm_VMDynamicWind(ScmObj before, ScmObj body, ScmObj after)
     ScmVM *vm = Scm_VM();
     /* NB: we don't check types of arguments, since they can be non-procedure
        objects with object-apply hooks. */
-    ScmObj *data = Scm_pc_PushCC(vm, dynwind_before_cc, 3);
-    data[0] = before;
-    data[1] = body;
-    data[2] = after;
-    return Scm_VMApply0(before);
+
+    if (SCM_FALSEP(before)) {
+        /* we can skip application of 'before' */
+        ScmObj data[3];
+        data[0] = before;
+        data[1] = body;
+        data[2] = after;
+        return dynwind_before_cc(vm, SCM_UNDEFINED, data);
+    } else {
+        ScmObj *data = Scm_pc_PushCC(vm, dynwind_before_cc, 3);
+        data[0] = before;
+        data[1] = body;
+        data[2] = after;
+        return Scm_VMApply0(before);
+    }
 }
 
 static ScmObj dynwind_before_cc(ScmVM *vm,
@@ -2939,14 +2966,6 @@ ScmObj Scm_VMThrowException(ScmVM *vm, ScmObj exception, u_long raise_flags)
 /*
  * with-error-handler
  */
-static ScmObj install_ehandler(ScmObj *args SCM_UNUSED,
-                               int nargs SCM_UNUSED,
-                               void *data SCM_UNUSED)
-{
-    SCM_VM_RUNTIME_FLAG_CLEAR(theVM, SCM_ERROR_BEING_REPORTED);
-    return SCM_UNDEFINED;
-}
-
 static ScmObj discard_ehandler(ScmObj *args SCM_UNUSED,
                                int nargs SCM_UNUSED,
                                void *data)
@@ -2973,11 +2992,11 @@ static ScmObj with_error_handler(ScmVM *vm, ScmObj handler,
 
     ScmObj ehandler = make_escape_handler(ep);
     Scm_VMPushExceptionHandler(ehandler);
+    SCM_VM_RUNTIME_FLAG_CLEAR(theVM, SCM_ERROR_BEING_REPORTED);
     ScmObj prev_fep = vm->floatingEscapePoints;
     vm->floatingEscapePoints = Scm_Cons(SCM_OBJ(ep), prev_fep);
-    ScmObj before = Scm_MakeSubr(install_ehandler, NULL, 0, 0, SCM_FALSE);
     ScmObj after  = Scm_MakeSubr(discard_ehandler, prev_fep, 0, 0, SCM_FALSE);
-    return Scm_VMDynamicWind(before, thunk, after);
+    return Scm_VMDynamicWind(SCM_FALSE, thunk, after);
 }
 
 ScmObj Scm_VMWithErrorHandler(ScmObj handler, ScmObj thunk)

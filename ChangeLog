@@ -1,5 +1,8 @@
 2024-07-18  Shiro Kawai  <shiro@acm.org>
 
+	* src/vm.c (Scm_VMDynamicWind): Allow 'before' handler to be SCM_FALSE,
+	  in which case we can skip calling it.  A bit of saving.
+
 	* src/vm.c: Ditched vm->escapePoint chain.  It had two roles:
 	  error handler stack and a list of EPs that points to in-stack cont
 	  frames.  Now we unified error handlers into exception handlers,
