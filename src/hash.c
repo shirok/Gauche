@@ -1093,20 +1093,18 @@ static void hash_print(ScmObj obj, ScmPort *port,
     default: Scm_Panic("something wrong with a hash table");
     }
 
-#if 0
-    /* Use read-time constructor so that table can be read back
-       --- is it necessary?  I'm not sure yet. */
-    Scm_Printf(port, "#,(<hash-table> %s", str);
-    if (ht->numEntries > 0) {
-        Scm_HashIterInit(&iter, ht);
-        while ((e = Scm_HashIterNext(&iter)) != NULL) {
-            Scm_Printf(port, " %S %S", e->key, e->value);
-        }
+    /* Display hash table content.  We use pprint, so usually only some
+       elements are shown.  We could've avoid converting entire content to
+       alist by checking ctx.  */
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmHashIter iter;
+    Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(ht));
+    ScmDictEntry *e;
+    while ((e = Scm_HashIterNext(&iter)) != NULL) {
+        SCM_APPEND1(h, t, Scm_Cons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
     }
-    SCM_PUTZ(")", -1, port);
-#else
-    Scm_Printf(port, "#<hash-table %s %p>", str, ht);
-#endif
+    Scm_Printf(port, "#<hash-table %s[%d] %W>",
+               str, ht->core.numEntries, h);
 }
 
 static unsigned int round2up(unsigned int val)

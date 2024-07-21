@@ -1,3 +1,8 @@
+2024-07-20  Shiro Kawai  <shiro@acm.org>
+
+	* src/hash.c (hash_print): Default printer to print hash table content.
+	  https://github.com/shirok/Gauche/issues/1032
+
 2024-07-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/vm.c (Scm_VMDynamicWind): Allow 'before' handler to be SCM_FALSE,
