@@ -1,5 +1,8 @@
 2024-07-21  Shiro Kawai  <shiro@acm.org>
 
+	* src/write.c (Scm_Vprintf): Use current column for the indentation
+	  of %W.
+
 	* src/core.c (Scm_RuntimeState): Generalize Scm_InitializedP() to
 	  Scm_RuntimeState(), to track several initialization phases.
 

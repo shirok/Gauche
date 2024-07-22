@@ -1191,11 +1191,10 @@ static int double_quote_closed_p(ScmString *s)
 
 static void call_pprint(ScmObj obj, ScmPort *out)
 {
-    /* Provisional.  We need to set proper indent if %W does not begin
-       at the beginning of line. */
     ScmWriteControls *wc = Scm_MakeWriteControls(NULL);
     wc->printPretty = TRUE;
     wc->printWidth = 79;
+    wc->printIndent = Scm_PortColumn(out);
     Scm_WriteWithControls(obj, SCM_OBJ(out), SCM_WRITE_WRITE, wc);
 }
 
