@@ -1104,17 +1104,18 @@ static void hash_print(ScmObj obj, ScmPort *port,
         /* Display hash table content.  We use pprint, so usually only some
            elements are shown.  We could've avoid converting entire content to
            alist by checking ctx.  */
-        ScmObj h = SCM_NIL, t = SCM_NIL;
-        ScmHashIter iter;
-        Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(ht));
-        ScmDictEntry *e;
-        while ((e = Scm_HashIterNext(&iter)) != NULL) {
-            SCM_APPEND1(h, t, Scm_Cons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
+        {
+            ScmObj h = SCM_NIL, t = SCM_NIL;
+            ScmHashIter iter;
+            Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(ht));
+            ScmDictEntry *e;
+            while ((e = Scm_HashIterNext(&iter)) != NULL) {
+                SCM_APPEND1(h, t, Scm_Cons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
+            }
+            Scm_Printf(port, "#<hash-table %s[%d] %W>",
+                       str, SCM_HASH_TABLE_CORE(ht)->numEntries, h);
         }
-        Scm_Printf(port, "#<hash-table %s[%d] %W>",
-                   str, SCM_HASH_TABLE_CORE(ht)->numEntries, h);
     }
-
 }
 
 static unsigned int round2up(unsigned int val)
