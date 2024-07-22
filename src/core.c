@@ -289,6 +289,12 @@ ScmRuntimeState Scm_RuntimeState()
     return runtime_state;
 }
 
+/* This should only be called from main.c or equivalent.  */
+void Scm_SetRuntimeReplState(_Bool full)
+{
+    runtime_state = full? SCM_RUNTIME_FULL_REPL : SCM_RUNTIME_MINI_REPL;
+}
+
 /*=============================================================
  * GC utilities
  */

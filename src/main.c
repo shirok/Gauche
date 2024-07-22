@@ -771,6 +771,8 @@ static int has_terminal()
 /* When no script is given, enter REPL. */
 void enter_repl()
 {
+    _Bool full_mode = FALSE;
+
     /* Load gauche.interactive, for we're not executing a script. */
     if (load_initfile) {
         ScmLoadPacket lpak;
@@ -780,6 +782,7 @@ void enter_repl()
         } else {
             Scm_ImportModule(SCM_CURRENT_MODULE(),
                              SCM_INTERN("gauche.interactive"), SCM_FALSE, 0);
+            full_mode = TRUE;
         }
     }
 
@@ -792,6 +795,7 @@ void enter_repl()
     if (batch_mode || (!has_terminal() && !interactive_mode)) {
         Scm_LoadFromPort(SCM_PORT(Scm_Stdin()), SCM_LOAD_PROPAGATE_ERROR, NULL);
     } else {
+        Scm_SetRuntimeReplState(full_mode);
         /* Call read-eval-print-loop.  If gauche.interactive is loaded,
            this will invoke 'user-friendly' version of repl; otherwise,
            this calls the 'bare' version in libeval.scm. */
