@@ -1736,7 +1736,7 @@ typedef enum {
 } ScmRuntimeState;
 
 SCM_EXTERN ScmRuntimeState Scm_RuntimeState(void);
-SCM_EXTERN void Scm_SetRuntimeReplState(_Bool);
+SCM_EXTERN void Scm_SetRuntimeReplState(int);
 
 /* 'kind' argument of Scm_InitCommandLine */
 enum {

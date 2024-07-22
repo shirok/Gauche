@@ -290,7 +290,7 @@ ScmRuntimeState Scm_RuntimeState()
 }
 
 /* This should only be called from main.c or equivalent.  */
-void Scm_SetRuntimeReplState(_Bool full)
+void Scm_SetRuntimeReplState(int full)
 {
     runtime_state = full? SCM_RUNTIME_FULL_REPL : SCM_RUNTIME_MINI_REPL;
 }
