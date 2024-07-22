@@ -1,3 +1,8 @@
+2024-07-21  Shiro Kawai  <shiro@acm.org>
+
+	* src/core.c (Scm_RuntimeState): Generalize Scm_InitializedP() to
+	  Scm_RuntimeState(), to track several initialization phases.
+
 2024-07-20  Shiro Kawai  <shiro@acm.org>
 
 	* src/hash.c (hash_print): Default printer to print hash table content.

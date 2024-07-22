@@ -1150,7 +1150,7 @@ void Scm_DumpStackTrace(ScmVM *vm, ScmPort *port)
 */
 static void Scm_PrintDefaultErrorHeading(ScmObj e, ScmPort *out)
 {
-    if (Scm_InitializedP()) {
+    if (Scm_RuntimeState() >= SCM_RUNTIME_INITIALIZED) {
         static ScmObj print_default_error_heading = SCM_UNDEFINED;
         SCM_BIND_PROC(print_default_error_heading,
                       "print-default-error-heading",

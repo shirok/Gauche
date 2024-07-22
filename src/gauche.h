@@ -1706,12 +1706,36 @@ SCM_EXTERN void   Scm_ProfilerReset(void);
 /* Program start and termination */
 
 SCM_EXTERN void Scm_Init(const char *signature);
-SCM_EXTERN int  Scm_InitializedP(void);
 SCM_EXTERN void Scm_Cleanup(void);
 SCM_EXTERN void Scm_Exit(int code) SCM_NORETURN;
 SCM_EXTERN int  Scm_ObjToExitCode(ScmObj obj);
 SCM_EXTERN void Scm_Abort(const char *msg) SCM_NORETURN;
 SCM_EXTERN void Scm_Panic(const char *msg, ...) SCM_NORETURN;
+
+/* Runtime state, obtainable by Scm_RuntimeState().
+   This is used internally for diagnostic purposes.  E.g. an elaborated error
+   repoter may not function if a module required for that reporter hasn't
+   been initialized.
+ */
+typedef enum {
+    /* We're executing Scm_Init().  Not all fundamental components are
+       functional.  */
+    SCM_RUNTIME_INITIALIZING,
+
+    /* All pre-compiled components are initialized, ready to load Scheme
+       program.  Scheme script is run in this state. */
+    SCM_RUNTIME_INITIALIZED,
+
+    /* Minimum REPL is working. This is the REPL you get with 'gosh -q'.
+       You can get to this state without loading any Scheme files. */
+    SCM_RUNTIME_MINI_REPL,
+
+    /* REPL is working.  This is the normal REPL you get with gosh.
+       You can assume full Gauche functionalities are available. */
+    SCM_RUNTIME_FULL_REPL,
+} ScmRuntimeState;
+
+SCM_EXTERN ScmRuntimeState Scm_RuntimeState(void);
 
 /* 'kind' argument of Scm_InitCommandLine */
 enum {

@@ -145,15 +145,17 @@ static int (*ptr_pthread_create)(pthread_t *,
                                  void *(*)(void *), void * /* arg */) = NULL;
 #endif
 
-/* flag to see if Scheme infrastructure is fully initialized or not */
-static int scheme_initialized = FALSE;
+/* To track how far we've gone through booting stages.  See gauche.h
+   This variable is changed before any other threads are created, so no mutex
+   is needed. */
+static ScmRuntimeState runtime_state = SCM_RUNTIME_INITIALIZING;
 
 /*
  * Entry point of initlalizing Gauche runtime
  */
 void Scm_Init(const char *signature)
 {
-    if (scheme_initialized) return;
+    if (runtime_state > SCM_RUNTIME_INITIALIZING) return;
 
     int debug_init = FALSE;
     if (Scm_GetEnv("GAUCHE_DEBUG_INITIALIZATION") != NULL) {
@@ -275,12 +277,16 @@ void Scm_Init(const char *signature)
 #endif
 
     Scm__FinishModuleInitialization();
-    scheme_initialized = TRUE;
+    runtime_state = SCM_RUNTIME_INITIALIZED;
 }
 
-int Scm_InitializedP()
+/*
+ * Runtime state
+ */
+
+ScmRuntimeState Scm_RuntimeState()
 {
-    return scheme_initialized;
+    return runtime_state;
 }
 
 /*=============================================================
