@@ -3320,9 +3320,9 @@ slots:
   alignment : 4
 
 gosh> (cgen-type-from-name '<int>)
-#<cten-type <int>>
+#<cgen-type <int>>
 gosh> ,d
-#<cten-type <int>> is an instance of class <cgen-type>
+#<cgen-type <int>> is an instance of class <cgen-type>
 slots:
   name      : <int>
   scheme-type: #<native-type <int>>
@@ -3355,9 +3355,9 @@ slots:
   core-size : 0
 
 gosh> (cgen-type-from-name '<integer>)
-#<cten-type <integer>>
+#<cgen-type <integer>>
 gosh> ,d
-#<cten-type <integer>> is an instance of class <cgen-type>
+#<cgen-type <integer>> is an instance of class <cgen-type>
 slots:
   name      : <integer>
   scheme-type: #<class <integer>>
