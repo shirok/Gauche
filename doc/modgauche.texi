@@ -16474,44 +16474,85 @@ have a proper @code{define-gauche-package} form.
 @var{filename}が読めなかったり、ファイルが正しい@code{define-gauche-package}フォームを
 含んでいなかった場合はエラーが投げられます。
 @c COMMON
+
+@c EN
+To find out installed @code{gpd} file(s), you can use
+@code{find-gauche-package-description} below.
+@c JP
+インストール済みの@code{gpd}ファイルを見つけるには、
+下の@code{find-gauche-package-description}が使えます。
+@c COMMON
 @end defun
 
 @defun write-gauche-package-description description :optional oport
 @c MOD gauche.package
+@c EN
 Write out the content of @code{<gauche-package-description>} instance,
 @var{description} as a @code{define-gauche-package} form,
 to an output port @var{oport}.  If @var{oport} is omitted,
 current output port is used.
+@c JP
+@code{<gauche-package-description>}のインスタンスである
+@var{description}の内容を、@code{define-gauche-package}形式として
+出力ポート@var{oport}に書き出します。@var{oport}が省略された場合は
+現在の出力ポートが使われます。
+@c COMMON
 @end defun
 
 @defun make-gauche-package-description name :key version description require maintainers authors licenses homepage repository gauche-version configure providing-modules
 @c MOD gauche.package
+@c EN
 Creates and returns a new instance of @code{<gauche-package-description>},
 the slots of which is initialized with the given keyword arguments.
+@c JP
+@code{<gauche-package-description>}の新たなインスタンスを作って返します。
+スロットは対応するキーワード引数によって初期化されます。
+@c COMMON
 @end defun
 
 @defun gauche-package-description-paths :key all-versions
 @c MOD gauche.package
+@c EN
 Gather all the @code{gpd} file paths installed in the standard location
 on the system.  By default, it collects packages installed in
 @code{*load-path*}.  If you give a true value to @var{all-version},
 it attempts to collect packages installed for other versions of
 Gauche as well.
+@c JP
+システムの標準の場所にインストールされている全ての@var{gpd}ファイルのパスを
+探し、そのリストを返します。
+デフォルトでは@code{*load-path*}にあるパスにインストールされたパッケージを探します。
+@var{all-version}キーワード引数に真の値が指定された場合は、
+それ以外のGaucheバージョン向けにインストールされたパッケージも探します。
+@c COMMON
 @end defun
 
 @defun find-gauche-package-description name :key all-versions
 @c MOD gauche.package
-Try to find a package description of @var{name}
+@c EN
+Try to find a package description of @var{name} (string)
 installed in the standard location,
 and returns an instance of @code{<gauche-package-description>} if found.
 Returns @code{#f} if the named package isn't found.
+@c JP
+名前@var{name} (文字列) を持つパッケージ記述を、標準的な場所にインストールされている
+パッケージから探します。見つかればそのパッケージの
+@code{<gauche-package-description>}インスタンスを、
+見つからなければ@code{#f}を返します。
+@c COMMON
 
+@c EN
 By default, it collects packages installed in
 @code{*load-path*}.  If you give a true value to @var{all-version},
 it attempts to collect packages installed for other versions of
 Gauche as well.
+@c JP
+デフォルトでは@code{*load-path*}に含まれるディレクトリにインストールされた
+パッケージから探します。@var{all-version}キーワード引数に真の値が与えられた
+場合は、それに加えて他のGaucheバージョンのためにインストールされたパッケージも
+探します。
+@c COMMON
 @end defun
-
 
 @c ----------------------------------------------------------------------
 @node Parameters (legacy), Parsing command-line options, Package metainformation, Library modules - Gauche extensions
