@@ -97,15 +97,15 @@
   (and a b (if (null? args) (- a b) (apply -* (- a b) args))))
 (define-inline (min* a b) (if a (if b (min a b) a) b))
 
-;; Recurse to the system's writer to handle objects other than
-;; lists and vectors.  We want to pass down the controls (for
+;; Render OBJ into a string.  The resulting string is then used with
+;; layout-simple.   We want to pass down the controls (for
 ;; print-base etc.), but the system's writer directly recurse into
 ;; %pretty-print if print-pretty is true, causing infinite loop.
 ;; So we drop pretty-print.
-(define (rec-writer c)
-  (let ([w  (~ c'writer)]
+(define (stringify obj c)
+  (let ([w (~ c'writer)]
         [c2 (write-controls-copy (~ c'controls) :pretty #f)])
-    (^x (w x c2))))
+    (write-to-string obj (^x (w x c2)))))
 
 (define (need-label? obj c) (> (hash-table-get (rp-shared c) obj 0) 1))
 (define (has-label? obj c) (<= (hash-table-get (rp-shared c) obj 1) 0))
@@ -155,7 +155,7 @@
 ;; layout :: (Obj, Integer, Context) -> Layouter
 (define (layout obj level c)
   (cond [(has-label? obj c) (layout-ref obj c)]
-        [(simple-obj? obj) (layout-simple (write-to-string obj (rec-writer c)))]
+        [(simple-obj? obj) (layout-simple (stringify obj c))]
         [(>=* level (rp-level c)) (layout-simple "#")]
         [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
 
@@ -205,7 +205,7 @@
                      (#/[csuf]\d+/ (x->string (class-name (class-of obj)))))
            (layout-list (sprefix obj (format "#~a(" tag) c) (mapu rec obj) c))]
         [else
-         (layout-simple (sprefix obj (write-to-string obj (rec-writer c)) c))]))
+         (layout-simple (sprefix obj (stringify obj c) c))]))
 
 ;; :: Layouter
 (define dots
