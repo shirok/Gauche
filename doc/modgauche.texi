@@ -16290,90 +16290,190 @@ the new repository URL here.
 @end table
 @end deffn
 
+@c EN
 @subheading @code{configure} script and @code{*.gpd} file generation
+@c JP
+@subheading @code{configure}スクリプトと@code{*.gpd}ファイルの生成
+@c COMMON
 
+@c EN
 If you use @code{configure} script based on @code{gauche.configure}
 (@pxref{Generating build files}), a Gauche package description file
 (@file{*.gpd}) is created with it.  The @code{gpd} file contains
 information from @file{package.scm}, plus the information on the
 installaion platform gathered by @code{configure}.
+@c JP
+@code{gauche.configure}を用いた@code{configure}スクリプトを使っている場合
+Gaucheパッケージ記述ファイル(@file{*.gpd})はそれによって作成されます
+(@pxref{Generating build files})。@code{gpd}ファイルは@file{package.scm}
+の情報に加え、@code{configure}スクリプトが集めたインストール先プラットフォームについての
+情報を保持しています。
+@c COMMON
 
+@c EN
 The generated @code{gpd} file is installed with the package itself,
 and will be used by @code{gauche-package} command, as well as
 retrieved by the following utility APIs.
+@c JP
+生成された@code{gpd}ファイルはパッケージと一緒にインストールされ、
+@code{gauche-package}コマンドで参照できます。
+また、プログラム的に扱うためのユーティリティAPIが次のとおり用意されています。
+@c COMMON
 
+@c EN
 @subheading Utility procedures
+@c JP
+@subheading ユーティリティ手続き
+@c COMMON
 
 @deftp {Class} <gauche-package-description>
 @clindex gauche-package-description
 @c MOD gauche.package
+@c EN
 An object to handle package descriptions programatically.
+It has the following slots.
+@c JP
+プログラム的にパッケージ記述を扱うためのオブジェクトです。
+以下のスロットを持ちます。
+@c COMMON
 
 @defivar {<gauche-package-description>} name
-The name of the package, a string
+@c EN
+The name of the package, a string.
+@c JP
+パッケージの名前 (文字列)。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} repository
-An URL to the repository of this package.
+@c EN
+An URL to the repository of this package, a string.
+A package is primarily identified by the repository URL.
+@c JP
+このパッケージのリポジトリURL(文字列)。
+パッケージはリポジトリURLによってユニークに同定されます。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} version
+@c EN
 The version of the package, a string, e.g. @code{"1.0"}.
+@c JP
+パッケージのバージョン(文字列)。例:@code{"1.0"}。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} description
-The description of the package.  Up to the first newline character
-may be used as a short summary.
+@c EN
+The description of the package, a string.
+Up to the first newline character may be used as a short summary.
+@c JP
+パッケージの説明 (文字列)。最初の改行文字までの1行がサマリとして扱われます。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} require
+@c EN
 A list of @code{(package-name version-spec)}, to specify
 the other packages this package requires.
+@c JP
+@code{(package-name version-spec)}のリストで、
+このパッケージが必要とする他のパッケージおよびそのバージョンを指定します。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} providing-modules
+@c EN
 A list of module names (symbols) that this package provides.
+@c JP
+このパッケージが提供するモジュール名(シンボル)のリスト。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} authors
+@c EN
 A list of author's name and contact info.
+@c JP
+作者の名前と連絡先のリスト。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} maintainers
+@c EN
 A list of maintainer's name and contact info, if it differs from
 @code{authors}.
+@c JP
+パッケージメンテナが作者と異なる場合、メンテナの名前と連絡先のリスト。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} licenses
-A list of licenses.
+@c EN
+A list of licenses.  E.g. @code{"BSD"},
+@code{"MIT"}, @code{"GPL2"}, @code{"GPL3"}, @code{"Apache2"} etc.
+@c JP
+ライセンスのリスト。例: @code{"BSD"}、
+@code{"MIT"}、@code{"GPL2"}、@code{"GPL3"}、@code{"Apache2"}等。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} homepage
-An URL to the homepage of this package.
+@c EN
+An URL to the homepage of this package, if any.
+@c JP
+このパッケージのホームページがあれば、そのURL。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} superseded-by
+@c EN
 If not @code{#f}, the value is a repository URL of the successor
 of this package.
+When development of a package is stopped and someone else
+succeeded the further development, the original package specifies
+the successor here to show the succession ``official''.
+@c JP
+@code{#f}でなければ、このパッケージを引き継いだパッケージのリポジトリURL。
+パッケージの開発が停止し、他の誰かが将来の開発を引き継いだ場合、
+元のパッケージはこのスロットで後継者を指定することで「正式に」継承を示すことができます。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} gauche-version
+@c EN
 Gauche version with which this module is installed.
+@c JP
+このモジュールがインストールされた時に使われたGaucheのバージョン。
+@c COMMON
 @end defivar
 
 @defivar {<gauche-package-description>} configure
+@c EN
 A command-line string keeping how @code{configure} script was run
 to build and install this package.
+@c JP
+このモジュールがビルド/インストールされた時に与えられた@code{configure}の
+コマンドライン。
+@c COMMON
 @end defivar
 @end deftp
 
 @defun path->gauche-package-description filename
 @c MOD gauche.package
+@c EN
 The named file must be a @code{gpd} file.  This reads the file
 and returns an instance of @code{<gauche-package-description>}.
 
 An error is thrown if @var{filename} can't be read, or doesn't
 have a proper @code{define-gauche-package} form.
+@c JP
+@var{filename}は@code{gpd}ファイルでなければなりません。
+この手続きはファイルをパーズし、@code{<gauche-package-description>}のインスタンスを
+返します。
+
+@var{filename}が読めなかったり、ファイルが正しい@code{define-gauche-package}フォームを
+含んでいなかった場合はエラーが投げられます。
+@c COMMON
 @end defun
 
 @defun write-gauche-package-description description :optional oport
