@@ -1087,10 +1087,10 @@ static void hash_print(ScmObj obj, ScmPort *port,
     char *str = "";
 
     switch (ht->type) {
-    case SCM_HASH_EQ:      str = "eq?"; break;
-    case SCM_HASH_EQV:     str = "eqv?"; break;
-    case SCM_HASH_EQUAL:   str = "equal?"; break;
-    case SCM_HASH_STRING:  str = "string=?"; break;
+    case SCM_HASH_EQ:      str = "eq"; break;
+    case SCM_HASH_EQV:     str = "eqv"; break;
+    case SCM_HASH_EQUAL:   str = "equal"; break;
+    case SCM_HASH_STRING:  str = "string"; break;
     case SCM_HASH_GENERAL: str = "general"; break;
     default: Scm_Panic("something wrong with a hash table");
     }
