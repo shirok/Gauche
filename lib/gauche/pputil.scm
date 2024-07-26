@@ -263,14 +263,7 @@
   (let* ([cname (regexp-replace #/^<(.*)>$/
                                 (symbol->string (class-name (class-of dict)))
                                 (^m (m 1)))]
-         [cmpname (assq-ref
-                   `((,eq-comparator . eq?)
-                     (,eqv-comparator . eqv?)
-                     (,equal-comparator . equal?)
-                     (,default-comparator . default)
-                     (,string-comparator . string=?))
-                   (dict-comparator dict)
-                   (or (~ (dict-comparator dict) 'name) 'custom))]
+         [cmpname (or (~ (dict-comparator dict) 'name) 'custom)]
          [tag (format "~a ~a[~d](" cname cmpname (size-of dict))]
          [tag-layouter (layout-simple tag)]
          [prefix "#<"]
