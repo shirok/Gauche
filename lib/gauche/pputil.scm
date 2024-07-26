@@ -83,10 +83,6 @@
 (define-inline (rp-width c)  (~ c 'controls 'width))
 (define-inline (rp-indent c) (~ c 'controls 'indent))
 
-(define simple-obj?
-  (any-pred number? boolean? char? port? symbol? null?
-            (cut member <> '("" #()))))
-
 ;; Maybe-ish monadic comparison
 (define-inline (=* a b) (and a b (= a b)))
 (define-inline (<* a b) (and a b (< a b)))
@@ -98,13 +94,11 @@
 (define-inline (min* a b) (if a (if b (min a b) a) b))
 
 ;; Render OBJ into a string.  The resulting string is then used with
-;; layout-simple.   We want to pass down the controls (for
-;; print-base etc.), but the system's writer directly recurse into
-;; %pretty-print if print-pretty is true, causing infinite loop.
-;; So we drop pretty-print.
+;; layout-simple.  OBJ must be a 'simple' object (system's writer won't
+;; immediately call to %pretty-print on it).
 (define (stringify obj c)
   (let ([w (~ c'writer)]
-        [c2 (write-controls-copy (~ c'controls) :pretty #f)])
+        [c2 (~ c'controls)])
     (write-to-string obj (^x (w x c2)))))
 
 (define (need-label? obj c) (> (hash-table-get (rp-shared c) obj 0) 1))
@@ -155,8 +149,11 @@
 ;; layout :: (Obj, Integer, Context) -> Layouter
 (define (layout obj level c)
   (cond [(has-label? obj c) (layout-ref obj c)]
-        [(simple-obj? obj) (layout-simple (stringify obj c))]
-        [(>=* level (rp-level c)) (layout-simple "#")]
+        [(and (>=* level (rp-level c))
+              (or (pair? obj)
+                  (vector? obj)
+                  (uvector? obj)))
+         (layout-simple "#")]
         [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
 
 ;; layout-misc :: (Obj, (Obj -> Layouter), Context) -> Layouter
@@ -314,7 +311,9 @@
            [(s . es)  (render s ind port) (loop es)])))]
     [else (display stree port)]))
 
-;; Stitch together.  This is called from Scm_Write() family.
+;; Stitch together.  This is called from Scm_Write() family, replacing
+;; internal write_rec().   Note that we already done pass 1 (write_walk)
+;; to set up shared-table for shared/circular structure reference.
 (define-in-module gauche (%pretty-print obj port shared-table controls)
   (assume shared-table)
   (let1 context (make <pp-context>

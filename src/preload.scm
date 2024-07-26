@@ -19,6 +19,7 @@
 (use gauche.record)
 (use gauche.generator)
 (use gauche.interpolate)
+(use gauche.pputil)
 (use gauche.process)
 (use gauche.threads)
 (use scheme.list)

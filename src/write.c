@@ -801,6 +801,17 @@ static void write_rec(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
 #undef CHECK_DEPTH
 }
 
+/* Returns TRUE if OBJ is 'pretty-printable', that is, pass2 need to be
+   handled with %pretty-print. */
+static int pprintable_p(ScmObj obj)
+{
+    if (!SCM_PTRP(obj)) return FALSE;
+    if (SCM_PAIRP(obj)) return TRUE;
+    if (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) > 0) return TRUE;
+    if (SCM_UVECTORP(obj) && SCM_UVECTOR_SIZE(obj) > 0) return TRUE;
+    return FALSE;
+}
+
 /* Write/ss main driver
    This should never be called recursively.
    We modify port->flags and port->writeState; they are cleaned up
@@ -821,7 +832,7 @@ static void write_ss(ScmObj obj, ScmPort *port, ScmWriteContext *ctx)
     port->flags &= ~(SCM_PORT_WALKING|SCM_PORT_WRITESS);
 
     /* pass 2 */
-    if (ctx->controls && ctx->controls->printPretty) {
+    if (ctx->controls && ctx->controls->printPretty && pprintable_p(obj)) {
         static ScmObj proc = SCM_UNDEFINED;
         SCM_BIND_PROC(proc, "%pretty-print", Scm_GaucheInternalModule());
         Scm_ApplyRec4(proc, obj, SCM_OBJ(port),
