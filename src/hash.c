@@ -1078,6 +1078,8 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
  * Printer
  */
 
+/* Note: When pprint is used, hash table priting is directly handled by pprint
+   and this is never called. */
 static void hash_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {
@@ -1093,29 +1095,8 @@ static void hash_print(ScmObj obj, ScmPort *port,
     default: Scm_Panic("something wrong with a hash table");
     }
 
-    switch (Scm_RuntimeState()) {
-    case SCM_RUNTIME_INITIALIZING:
-    case SCM_RUNTIME_MINI_REPL:
-        /* Systems is not fully booted, so avoid  calling pprint. */
-        Scm_Printf(port, "#<hash-table %s[%d] @%p>", str,
-                   SCM_HASH_TABLE_CORE(ht)->numEntries, ht);
-        break;
-    default:
-        /* Display hash table content.  We use pprint, so usually only some
-           elements are shown.  We could've avoid converting entire content to
-           alist by checking ctx.  */
-        {
-            ScmObj h = SCM_NIL, t = SCM_NIL;
-            ScmHashIter iter;
-            Scm_HashIterInit(&iter, SCM_HASH_TABLE_CORE(ht));
-            ScmDictEntry *e;
-            while ((e = Scm_HashIterNext(&iter)) != NULL) {
-                SCM_APPEND1(h, t, Scm_Cons(SCM_DICT_KEY(e), SCM_DICT_VALUE(e)));
-            }
-            Scm_Printf(port, "#<hash-table %s[%d] %W>",
-                       str, SCM_HASH_TABLE_CORE(ht)->numEntries, h);
-        }
-    }
+    Scm_Printf(port, "#<hash-table %s[%d] @%p>", str,
+               SCM_HASH_TABLE_CORE(ht)->numEntries, ht);
 }
 
 static unsigned int round2up(unsigned int val)

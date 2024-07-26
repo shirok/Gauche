@@ -36,6 +36,8 @@
   (export pprint))
 (select-module gauche.pputil)
 
+(autoload gauche.dictionary dict->alist)
+
 ;; List printing modes:
 ;;
 ;; oneline:
@@ -152,7 +154,8 @@
         [(and (>=* level (rp-level c))
               (or (pair? obj)
                   (vector? obj)
-                  (uvector? obj)))
+                  (uvector? obj)
+                  (is-a? obj <dictionary>)))
          (layout-simple "#")]
         [else (layout-misc obj (cute layout <> (+ level 1) c) c)]))
 
@@ -201,6 +204,8 @@
          (let1 tag (rxmatch-substring
                      (#/[csuf]\d+/ (x->string (class-name (class-of obj)))))
            (layout-list (sprefix obj (format "#~a(" tag) c) (mapu rec obj) c))]
+        [(is-a? obj <dictionary>)
+         (layout-dict obj (map+ rec (dict->alist obj)) c)]
         [else
          (layout-simple (sprefix obj (stringify obj c) c))]))
 
@@ -252,6 +257,16 @@
     (memo^ [room memo]
            (match-let1 (s . w) (do-layout-elements (-* room plen) memo elts)
              (cons (cons prefix (reverse s)) (and w (+ w plen)))))))
+
+;; layout-dict :: (Dict, [Layouter], Context) -> Layouter
+(define (layout-dict dict content-layouters c)
+  (let* ([cname (class-name (class-of dict))]
+         [prefix (format "#<~a " cname)]
+         [plen (string-length prefix)])
+    (memo^ [room memo]
+           (match-let1 (s . w)
+               (do-layout-elements (-* room plen 1) memo content-layouters)
+             (cons `(,prefix ,@(reverse s) ">") (and w (+ w plen 1)))))))
 
 ;; sprefix :: (Object, String, Context) -> String
 (define (sprefix obj s c)

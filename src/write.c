@@ -809,6 +809,7 @@ static int pprintable_p(ScmObj obj)
     if (SCM_PAIRP(obj)) return TRUE;
     if (SCM_VECTORP(obj) && SCM_VECTOR_SIZE(obj) > 0) return TRUE;
     if (SCM_UVECTORP(obj) && SCM_UVECTOR_SIZE(obj) > 0) return TRUE;
+    if (SCM_ISA(obj, SCM_CLASS_DICTIONARY)) return TRUE;
     return FALSE;
 }
 

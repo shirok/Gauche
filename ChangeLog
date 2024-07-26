@@ -1,3 +1,12 @@
+2024-07-25  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm (layout-dict): Instead of letting built-in
+	  print handler to display hash-table content, we can directly handle
+	  it in pprint.
+	  https://github.com/shirok/Gauche/issues/1032#issuecomment-2252319794
+	  This can avoid the complications of recursing pprint and
+	  Scm_Vprintf https://github.com/shirok/Gauche/issues/1058
+
 2024-07-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/write.c (Scm_Vprintf): Use current column for the indentation
