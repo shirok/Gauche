@@ -36,7 +36,7 @@
   (export pprint))
 (select-module gauche.pputil)
 
-(autoload gauche.dictionary dict->alist)
+(autoload gauche.dictionary dict->alist size-of)
 
 ;; List printing modes:
 ;;
@@ -260,13 +260,19 @@
 
 ;; layout-dict :: (Dict, [Layouter], Context) -> Layouter
 (define (layout-dict dict content-layouters c)
-  (let* ([cname (class-name (class-of dict))]
-         [prefix (format "#<~a " cname)]
+  (let* ([cname (regexp-replace #/^<(.*)>$/
+                                (symbol->string (class-name (class-of dict)))
+                                (^m (m 1)))]
+         [tag (format "~a[~d]" cname (size-of dict))]
+         [tag-layouter (layout-simple tag)]
+         [prefix "#<"]
          [plen (string-length prefix)])
     (memo^ [room memo]
            (match-let1 (s . w)
-               (do-layout-elements (-* room plen 1) memo content-layouters)
-             (cons `(,prefix ,@(reverse s) ">") (and w (+ w plen 1)))))))
+               (do-layout-elements (-* room plen 1) memo
+                                   (cons tag-layouter content-layouters))
+             (cons `(,prefix ,@(reverse s) ">")
+                   (and w (+ w plen 1)))))))
 
 ;; sprefix :: (Object, String, Context) -> String
 (define (sprefix obj s c)

@@ -32,7 +32,7 @@
 ;;;
 
 (define-module gauche.dictionary
-  (use gauche.collection)
+  (extend gauche.collection)
   (export dict-get dict-put! |setter of dict-get|
           dict-immutable? dict-exists?
           dict-delete!
