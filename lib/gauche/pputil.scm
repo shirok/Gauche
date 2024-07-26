@@ -36,7 +36,7 @@
   (export pprint))
 (select-module gauche.pputil)
 
-(autoload gauche.dictionary dict->alist size-of)
+(autoload gauche.dictionary dict->alist dict-comparator size-of)
 
 ;; List printing modes:
 ;;
@@ -263,7 +263,15 @@
   (let* ([cname (regexp-replace #/^<(.*)>$/
                                 (symbol->string (class-name (class-of dict)))
                                 (^m (m 1)))]
-         [tag (format "~a[~d]" cname (size-of dict))]
+         [cmpname (assq-ref
+                   `((,eq-comparator . eq?)
+                     (,eqv-comparator . eqv?)
+                     (,equal-comparator . equal?)
+                     (,default-comparator . default)
+                     (,string-comparator . string=?))
+                   (dict-comparator dict)
+                   'custom)]
+         [tag (format "~a ~a[~d]" cname cmpname (size-of dict))]
          [tag-layouter (layout-simple tag)]
          [prefix "#<"]
          [plen (string-length prefix)])
