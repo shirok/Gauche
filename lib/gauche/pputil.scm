@@ -270,8 +270,8 @@
                      (,default-comparator . default)
                      (,string-comparator . string=?))
                    (dict-comparator dict)
-                   'custom)]
-         [tag (format "~a ~a[~d]" cname cmpname (size-of dict))]
+                   (or (~ (dict-comparator dict) 'name) 'custom))]
+         [tag (format "~a ~a[~d](" cname cmpname (size-of dict))]
          [tag-layouter (layout-simple tag)]
          [prefix "#<"]
          [plen (string-length prefix)])
