@@ -101,17 +101,17 @@
 ;; so that when they are used as the argument of make-hash-table,
 ;; we can recognize so and use more efficient built-in hash types.
 (define eq-comparator
-  (make-comparator/compare #t eq? eq-compare eq-hash 'eq-comparator))
+  (make-comparator/compare #t eq? eq-compare eq-hash 'eq))
 (define eqv-comparator
-  (make-comparator/compare #t eqv? #f eqv-hash 'eqv-comparator))
+  (make-comparator/compare #t eqv? #f eqv-hash 'eqv))
 (define equal-comparator
-  (make-comparator/compare #t equal? #f default-hash 'equal-comparator))
+  (make-comparator/compare #t equal? #f default-hash 'equal))
 (define string-comparator
   (make-comparator/compare string? string=? compare
-                           default-hash 'string-comparator))
+                           default-hash 'string))
 (define default-comparator
   (make-comparator/compare #t (with-module gauche.internal default-comparator-equal?)
-                           compare default-hash 'default-comparator))
+                           compare default-hash 'default))
 
 ;; NB: SRFI-128's make-eq-comparator and make-eqv-comparator will NOT
 ;; return eq-comparator and eqv-comparator.  They're defined in computil.scm.

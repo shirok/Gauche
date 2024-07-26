@@ -78,21 +78,21 @@
 ;; They are useful to build more complex comparators using aggegate
 ;; comparator constructors.
 (define boolean-comparator
-  (make-comparator/compare boolean? eqv? compare eq-hash 'boolean-comparator))
+  (make-comparator/compare boolean? eqv? compare eq-hash 'boolean))
 (define char-comparator
-  (make-comparator/compare char? eqv? compare eqv-hash 'char-comparator))
+  (make-comparator/compare char? eqv? compare eqv-hash 'char))
 (define char-ci-comparator
   ($ make-comparator/compare char? char-ci=?
      (^[a b] (compare (char-foldcase a) (char-foldcase b)))
-     eqv-hash 'char-ci-comparator))
+     eqv-hash 'char-ci))
 ;; string-comparator - in libomega.scm
 (define string-ci-comparator
   ($ make-comparator/compare string? string-ci=?
      (^[a b] (compare (string-foldcase a) (string-foldcase b)))
      (^s ((with-module gauche.internal %hash-string) (string-foldcase s)))
-     'string-ci-comparator))
+     'string-ci))
 (define symbol-comparator
-  (make-comparator/compare symbol? eq? compare eq-hash 'symbol-comparator))
+  (make-comparator/compare symbol? eq? compare eq-hash 'symbol))
 
 ;; Number comparators
 ;; For integer-comparator hash, we need 1 and 1.0 to yield the same
@@ -100,31 +100,29 @@
 ;; so we convert the former to the latter to hash.
 (define exact-integer-comparator
   (make-comparator/compare exact-integer? eqv? compare eqv-hash
-                           'exact-integer-comparator))
+                           'exact-integer))
 (define integer-comparator
   (make-comparator/compare integer? = compare (^n (eqv-hash (exact n)))
-                           'integer-comparator))
+                           'integer))
 (define rational-comparator
-  (make-comparator/compare rational? = compare eqv-hash 'rational-comparator))
+  (make-comparator/compare rational? = compare eqv-hash 'rational))
 (define real-comparator
-  (make-comparator/compare a-real-number? = compare eqv-hash 'real-comparator))
+  (make-comparator/compare a-real-number? = compare eqv-hash 'real))
 (define complex-comparator
-  (make-comparator/compare a-number? = compare eqv-hash 'complex-comparator))
+  (make-comparator/compare a-number? = compare eqv-hash 'complex))
 (define number-comparator complex-comparator)
 
 (define pair-comparator
-  (make-comparator/compare pair? #t compare default-hash 'pair-comparator))
+  (make-comparator/compare pair? #t compare default-hash 'pair))
 (define list-comparator
-  (make-comparator/compare list? #t compare default-hash 'list-comparator))
+  (make-comparator/compare list? #t compare default-hash 'list))
 (define vector-comparator
-  (make-comparator/compare vector? #t compare default-hash 'vector-comparator))
+  (make-comparator/compare vector? #t compare default-hash 'vector))
 (define uvector-comparator
-  (make-comparator/compare uvector? equal? compare default-hash
-                           'uvector-comparator))
+  (make-comparator/compare uvector? equal? compare default-hash 'uvector))
 (define bytevector-comparator
   ;; u8vector hash support
-  (make-comparator/compare u8vector? equal? compare default-hash
-                           'bytevector-comparator))
+  (make-comparator/compare u8vector? equal? compare default-hash 'bytevector))
 
 (define (make-pair-comparator car-comparator cdr-comparator)
   (make-comparator/compare
