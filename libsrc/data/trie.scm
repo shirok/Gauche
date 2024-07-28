@@ -425,7 +425,5 @@
   :keys     trie-keys
   :values   trie-values
   :update!  trie-update!
-  :->alist  trie->list)
-
-(define-method dict-comparator ((trie <trie>))
-  (error "Comparator is not defined for trie:" trie))
+  :->alist  trie->list
+  :transparent? (^_ #t))

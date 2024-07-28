@@ -265,6 +265,7 @@
   (dict-fold (bimap-left dict) proc seed))
 (define-method dict-comparator ((dict <bimap>))
   (dict-comparator (bimap-left dict)))
+(define-method dict-transparent? ((dict <bimap>)) #t)
 
 ;; Collection protocol.   We just redirect methods to left map.
 (define-method call-with-iterator ((coll <bimap>) proc . args)
@@ -333,6 +334,8 @@
 
 (define-method dict-exists? ((smap <stacked-map>) key)
   (any (cut dict-exists? <> key) (slot-ref smap 'stack)))
+
+(define-method dict-transparent? ((dict <stacked-map>)) #t)
 
 (define-method dict-get ((smap <stacked-map>) key . maybe-default)
   (let1 maybe-r (any (^m (let1 r (dict-get m key %unique)
