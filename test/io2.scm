@@ -158,6 +158,18 @@
 (test* "circular list involving abbrev syntax" "#0=((quote . #0#))"
        (write-to-string (cdr #0='#0#) write/ss))
 
+
+(let* ([ht1 (make-hash-table 'eq?)]
+       [ht2 (make-hash-table 'eq?)]
+       [circ (list ht1 ht2)])
+  (hash-table-put! ht1 'circ circ)
+  (hash-table-put! ht1 'ht1 ht1)
+  (hash-table-put! ht2 'circ (cdr circ))
+  (hash-table-put! ht2 'ht1 ht1)
+  (test* "circular structure involving hashtable"
+         "#0=(#1=#<hash-table eq[2] @> . #2=(#<hash-table eq[2] @>))"
+         (regexp-replace-all #/@0x[0-9a-f]+/ (write-to-string circ write/ss) "@")))
+
 (define-class <foo> ()
   ((a :init-keyword :a)
    (b :init-keyword :b)))

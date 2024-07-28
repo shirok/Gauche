@@ -859,6 +859,11 @@
          [(box? obj)
           (dotimes [i (box-arity obj)]
             (%write-walk-rec (unbox-value obj i) port tab))]
+         [(is-a? obj <dictionary>)
+          (%dict-walk! obj
+                       (^[k v]
+                         (%write-walk-rec k port tab)
+                         (%write-walk-rec v port tab)))]
          [else ; generic objects.  we go walk pass via write-object
           (write-object obj port)])
         ;; If circular-only, we don't count non-circular objects.
@@ -866,6 +871,16 @@
           (when (eqv? (hash-table-get tab obj #f) 1)
             (hash-table-delete! tab obj)))
         ))))
+
+;; Kludge - gauche.libdict is initialized after libio, so we can't use
+;; with-module.  We hope we can fix this later.
+(define %dict-walk!
+  (let1 walker #f
+    (^[dict proc]
+      (unless walker
+        (set! walker (global-variable-ref (find-module 'gauche.libdict)
+                                          'dict-for-each)))
+      (walker dict proc))))
 
 (select-module gauche.internal)
 
