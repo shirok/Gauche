@@ -163,21 +163,21 @@
 ;; layout-misc :: (Obj, (Obj -> Layouter), Context) -> Layouter
 (define (layout-misc obj rec c)
 
-  ;; mapi :: (Obj -> Layouter), Vector -> Layouter
+  ;; mapi :: (Obj -> Layouter), Vector -> [Layouter]
   (define (mapi fn vec)
     (let* ([s (vector-length vec)]
            [rs (map (^i (fn (vector-ref vec i)))
                     (iota (min* s (rp-length c))))])
       (if (>=* s (rp-length c)) `(,@rs ,dots) rs)))
 
-  ;; mapu :: (Obj -> Layouter), UVector -> Layouter
+  ;; mapu :: (Obj -> Layouter), UVector -> [Layouter]
   (define (mapu fn vec)
     (let* ([s (uvector-length vec)]
            [rs (map (^i (fn (uvector-ref vec i)))
                     (iota (min* s (rp-length c))))])
       (if (>=* s (rp-length c)) `(,@rs ,dots) rs)))
 
-  ;; map+ :: (Obj -> Layouter), List -> Layouter
+  ;; map+ :: (Obj -> Layouter), List -> [Layouter]
   ;; map considering dotted list, print-length, and shared structure
   (define (map+ fn lis)
     (let loop ([lis lis] [len 0] [rs '()])
