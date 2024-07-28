@@ -108,6 +108,7 @@ extern void Scm_Init_libdict(void);
 extern void Scm_Init_libeval(void);
 extern void Scm_Init_libexc(void);
 extern void Scm_Init_libfmt(void);
+extern void Scm_Init_libhash(void);
 extern void Scm_Init_libio(void);
 extern void Scm_Init_liblazy(void);
 extern void Scm_Init_liblist(void);
@@ -230,10 +231,10 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm_Init_libchar);
     CALL_INIT(Scm_Init_libcode);
     CALL_INIT(Scm_Init_libcmp);
-    CALL_INIT(Scm_Init_libdict);
     CALL_INIT(Scm_Init_libeval);
     CALL_INIT(Scm_Init_libexc);
     CALL_INIT(Scm_Init_libfmt);
+    CALL_INIT(Scm_Init_libhash);
     CALL_INIT(Scm_Init_libio);
     CALL_INIT(Scm_Init_liblazy);
     CALL_INIT(Scm_Init_liblist);
@@ -259,6 +260,7 @@ void Scm_Init(const char *signature)
     CALL_INIT(Scm_Init_libparam);
     CALL_INIT(Scm_Init_libtype);
     CALL_INIT(Scm_Init_libthr);
+    CALL_INIT(Scm_Init_libdict);
     CALL_INIT(Scm_Init_libomega);
 
     CALL_INIT(Scm__InitCompaux);

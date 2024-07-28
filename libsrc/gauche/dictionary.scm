@@ -32,6 +32,12 @@
 ;;;
 
 (define-module gauche.dictionary
+  ;; TRANSIENT - somehow we need both 'use' and 'extend' to make this work.
+  ;; Should only 'extend' be enough.  This is just a workaround until we
+  ;; resolve the issue.
+  (use gauche.collection)
+  (use gauche.libdict)
+  (extend gauche.libdict)
   (extend gauche.collection)
   (export dict-get dict-put! |setter of dict-get|
           dict-immutable? dict-exists?
@@ -52,6 +58,10 @@
           stacked-map-entry-update! stacked-map-entry-delete!
           ))
 (select-module gauche.dictionary)
+
+;;;
+;;; Generic dictionary API
+;;;
 
 ;; Generic dictionary interface.
 ;; Required methods:
@@ -80,123 +90,8 @@
 ;;    dict-push! dict key value
 ;;    dict-update! dict key proc [default]
 ;;    dict->alist
-
-;; A convenient macro to define dictionary methods.
-
-(define-macro (define-dict-interface class . clauses)
-  (define (gen-def kind specific)
-    (let ([dict (gensym)]
-          [key (gensym)]
-          [val (gensym)]
-          [default (gensym)]
-          [proc (gensym)]
-          [seed (gensym)]
-          [succ (gensym)]
-          [fail (gensym)])
-      (case kind
-        [(:get)
-         `(define-method dict-get ((,dict ,class) ,key . ,default)
-            (if (null? ,default)
-              (,specific ,dict ,key)
-              (,specific ,dict ,key (car ,default))))]
-        [(:put!)
-         `(define-method dict-put! ((,dict ,class) ,key ,val)
-            (,specific ,dict ,key ,val))]
-        [(:exists?)
-         `(define-method dict-exists? ((,dict ,class) ,key)
-            (,specific ,dict ,key))]
-        [(:immutable?)
-         `(define-method dict-immutable ((,dict ,class)) (,specific ,dict))]
-        [(:delete!)
-         `(define-method dict-delete! ((,dict ,class) ,key)
-            (,specific ,dict ,key))]
-        [(:clear!)
-         `(define-method dict-clear! ((,dict ,class))
-            (,specific ,dict))]
-        [(:fold)
-         `(define-method dict-fold ((,dict ,class) ,proc ,seed)
-            (,specific ,dict ,proc ,seed))]
-        [(:fold-right)
-         `(define-method dict-fold-right ((,dict ,class) ,proc ,seed)
-            (,specific ,dict ,proc ,seed))]
-        [(:map)
-         `(define-method dict-map ((,dict ,class) ,proc)
-            (,specific ,dict ,proc))]
-        [(:for-each)
-         `(define-method dict-for-each ((,dict ,class) ,proc)
-            (,specific ,dict ,proc))]
-        [(:keys)
-         `(define-method dict-keys ((,dict ,class))
-            (,specific ,dict))]
-        [(:values)
-         `(define-method dict-values ((,dict ,class))
-            (,specific ,dict))]
-        [(:push!)
-         `(define-method dict-push! ((,dict ,class) ,key ,val)
-            (,specific ,dict ,key ,val))]
-        [(:pop!)
-         `(define-method dict-pop! ((,dict ,class) ,key . ,default)
-            (apply ,specific ,dict ,key ,default))]
-        [(:update!)
-         `(define-method dict-update! ((,dict ,class) ,key . ,default)
-            (apply ,specific ,dict ,key ,default))]
-        [(:->alist)
-         `(define-method dict->alist ((,dict ,class))
-            (,specific ,dict))]
-        [(:comparator)
-         `(define-method dict-comparator ((,dict ,class))
-            (,specific ,dict))]
-        [(:seek)
-         `(define-method dict-seek ((,dict ,class) ,proc ,fail ,succ)
-            (,specific ,dict ,proc ,fail ,succ))]
-        [else (error "invalid kind in define-dict-interface:" kind)])))
-  `(begin
-     ,@(map (^p (gen-def (car p) (cadr p))) (slices clauses 2))))
-
-;;-----------------------------------------------
-;; Methods for hash-table, tree-map
 ;;
-
-(define-dict-interface <hash-table>
-  :get        hash-table-get
-  :put!       hash-table-put!
-  :delete!    hash-table-delete!
-  :clear!     hash-table-clear!
-  :exists?    hash-table-exists?
-  :seek       hash-table-seek
-  :fold       hash-table-fold
-  :for-each   hash-table-for-each
-  :map        hash-table-map
-  :keys       hash-table-keys
-  :values     hash-table-values
-  :pop!       hash-table-pop!
-  :push!      hash-table-push!
-  :update!    hash-table-update!
-  :->alist    hash-table->alist
-  :comparator hash-table-comparator)
-
-(define-dict-interface <tree-map>
-  :get        tree-map-get
-  :put!       tree-map-put!
-  :delete!    tree-map-delete!
-  :clear!     tree-map-clear!
-  :exists?    tree-map-exists?
-  :seek       tree-map-seek
-  :fold       tree-map-fold
-  :fold-right tree-map-fold-right
-  :for-each   tree-map-for-each
-  :map        tree-map-map
-  :keys       tree-map-keys
-  :values     tree-map-values
-  :pop!       tree-map-pop!
-  :push!      tree-map-push!
-  :update!    tree-map-update!
-  :->alist    tree-map->alist
-  :comparator tree-map-comparator)
-
-;;-----------------------------------------------
-;; Fallback methods
-;;
+;; The macro 'define-dict-interface' is defined in libdict.scm.
 
 (define %unique (list #f))
 
@@ -284,6 +179,7 @@
   (dict-put! dict key val))
 
 (define-method dict-comparator ((dict <dictionary>)) #f)
+
 
 ;;;
 ;;; Bidirectional map

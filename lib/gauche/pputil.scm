@@ -36,7 +36,8 @@
   (export pprint))
 (select-module gauche.pputil)
 
-(autoload gauche.dictionary dict->alist dict-comparator size-of)
+(autoload gauche.collection size-of)
+(autoload gauche.dictionary dict->alist dict-comparator)
 
 ;; List printing modes:
 ;;

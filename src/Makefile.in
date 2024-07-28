@@ -247,7 +247,7 @@ libgauche_OBJECTS = \
 	compile.$(OBJEXT) \
 	libalpha.$(OBJEXT) libbool.$(OBJEXT) libbox.$(OBJEXT) libchar.$(OBJEXT) \
 	libcode.$(OBJEXT) libcmp.$(OBJEXT) libdict.$(OBJEXT) libeval.$(OBJEXT) \
-	libexc.$(OBJEXT) libfmt.$(OBJEXT) libio.$(OBJEXT) \
+	libexc.$(OBJEXT) libfmt.$(OBJEXT) libhash.$(OBJEXT) libio.$(OBJEXT) \
 	liblazy.$(OBJEXT) liblist.$(OBJEXT) \
 	libmacbase.$(OBJEXT) libmacro.$(OBJEXT) libmemo.$(OBJEXT) \
 	libmisc.$(OBJEXT) libmod.$(OBJEXT) \
@@ -336,6 +336,7 @@ libdict.c    : libdict.scm $(PRECOMP_DEPENDENCY)
 libeval.c    : libeval.scm $(PRECOMP_DEPENDENCY)
 libexc.c     : libexc.scm $(PRECOMP_DEPENDENCY)
 libfmt.c     : libfmt.scm $(PRECOMP_DEPENDENCY)
+libhash.c    : libhash.scm $(PRECOMP_DEPENDENCY)
 libio.c      : libio.scm $(PRECOMP_DEPENDENCY)
 liblazy.c    : liblazy.scm $(PRECOMP_DEPENDENCY)
 liblist.c    : liblist.scm $(PRECOMP_DEPENDENCY)
@@ -534,8 +535,9 @@ PREGENERATED = compile.c autoloads.c builtin-syms.c \
 	       char_attr.c gauche/priv/unicode_attr.h \
 	       libsrfis.scm ../doc/srfis.texi \
 	       libalpha.c libbool.c libbox.c libchar.c libcode.c libcmp.c \
-	       libdict.c libeval.c libexc.c libfmt.c libio.c liblazy.c \
-	       liblist.c libmacbase.c libmacro.c libmemo.c libmisc.c libmod.c \
+	       libdict.c libeval.c libexc.c libfmt.c libhash.c libio.c \
+	       liblazy.c liblist.c libmacbase.c libmacro.c \
+	       libmemo.c libmisc.c libmod.c \
 	       libnative.c libnet.c libnum.c libobj.c libparam.c libproc.c \
 	       librx.c libstr.c libsrfis.c libsym.c libsys.c libthr.c \
 	       libtype.c libvec.c libomega.c libextra.c \

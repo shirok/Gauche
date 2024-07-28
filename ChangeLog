@@ -1,3 +1,16 @@
+2024-07-27  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm: Make dictionary protocol implementation of
+	  hashtables and treemaps built-in.  We need dict methods
+	  to walk into dictionaries during write-walk.
+	  (See https://github.com/shirok/Gauche/issues/1060).
+	  We don't want entire gauche.dictionary built-in, since it
+	  drags gauche.collection into core as well.  So externally
+	  gauche.dictionary remains as a library module and nothing changes.
+	* src/libhash.scm: Moved original content of libdict.scm here.
+	  I've always been confused where to find hashtable cproc definitions.
+	  Now it's easier.
+
 2024-07-25  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/pputil.scm (layout-dict): Instead of letting built-in
