@@ -229,6 +229,7 @@ test.record
 /src/libexc.c
 /src/libextra.c
 /src/libfmt.c
+/src/libhash.c
 /src/libio.c
 /src/liblazy.c
 /src/liblist.c
