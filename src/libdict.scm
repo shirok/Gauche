@@ -48,7 +48,7 @@
 (define-module gauche.libdict
   (export define-dict-interface
           dict-get dict-put! |setter of dict-get|
-          dict-immutable? dict-exists?
+          dict-immutable? dict-transparent? dict-exists?
           dict-delete!
           dict-seek dict-find dict-any
           dict-fold dict-fold-right
@@ -83,7 +83,9 @@
          `(define-method dict-exists? ((,dict ,class) ,key)
             (,specific ,dict ,key))]
         [(:immutable?)
-         `(define-method dict-immutable ((,dict ,class)) (,specific ,dict))]
+         `(define-method dict-immutable? ((,dict ,class)) (,specific ,dict))]
+        [(:transparent?)
+         `(define-method dict-transparent? ((,dict ,class)) (,specific ,dict))]
         [(:delete!)
          `(define-method dict-delete! ((,dict ,class) ,key)
             (,specific ,dict ,key))]
@@ -150,7 +152,8 @@
   :push!      hash-table-push!
   :update!    hash-table-update!
   :->alist    hash-table->alist
-  :comparator hash-table-comparator)
+  :comparator hash-table-comparator
+  :transparent? (^_ #t))
 
 (define-dict-interface <tree-map>
   :get        tree-map-get
@@ -169,4 +172,5 @@
   :push!      tree-map-push!
   :update!    tree-map-update!
   :->alist    tree-map->alist
-  :comparator tree-map-comparator)
+  :comparator tree-map-comparator
+  :transparent? (^_ #t))

@@ -40,7 +40,7 @@
   (extend gauche.libdict)
   (extend gauche.collection)
   (export dict-get dict-put! |setter of dict-get|
-          dict-immutable? dict-exists?
+          dict-immutable? dict-transparent? dict-exists?
           dict-delete!
           dict-seek dict-find dict-any
           dict-fold dict-fold-right
@@ -97,6 +97,9 @@
 
 ;; Default is mutable.  Immutable dict should override.
 (define-method dict-immutable? ((dict <dictionary>)) #f)
+
+;; Default is opaque (the content isn't shown by the printer)
+(define-method dict-transparent? ((dict <dictionary>)) #f)
 
 (define-method dict-exists? ((dict <dictionary>) key)
   (not (eq? (dict-get dict key %unique) %unique)))

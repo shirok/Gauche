@@ -875,12 +875,19 @@
 ;; Kludge - gauche.libdict is initialized after libio, so we can't use
 ;; with-module.  We hope we can fix this later.
 (define %dict-walk!
-  (let1 walker #f
+  (let ([walker #f]
+        [transparent? #f])
     (^[dict proc]
       (unless walker
-        (set! walker (global-variable-ref (find-module 'gauche.libdict)
-                                          'dict-for-each)))
-      (walker dict proc))))
+        (set! walker
+              (global-variable-ref (find-module 'gauche.libdict)
+                                   'dict-for-each)))
+      (unless transparent?
+        (set! transparent?
+              (global-variable-ref (find-module 'gauche.libdict)
+                                   'dict-transparent?)))
+      (when (transparent? dict)
+        (walker dict proc)))))
 
 (select-module gauche.internal)
 

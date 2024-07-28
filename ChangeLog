@@ -1,3 +1,13 @@
+2024-07-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/libdict.scm (dict-transparent?): Priting dictionary content
+	  unconditionally is a bad idea.  A <dictionary> instance may access
+	  external resources, or may have unbounded size (e.g. computed content).
+	  Trying to print such a dictionary and write-walk recurse into it
+	  would be a disaster.
+	  With dict-transparent? method, a dictionary class may elect that
+	  pprint prints its content.  Default is not transparent.
+
 2024-07-27  Shiro Kawai  <shiro@acm.org>
 
 	* src/libdict.scm: Make dictionary protocol implementation of
