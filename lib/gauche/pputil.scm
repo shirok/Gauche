@@ -264,7 +264,9 @@
   (let* ([cname (regexp-replace #/^<(.*)>$/
                                 (symbol->string (class-name (class-of dict)))
                                 (^m (m 1)))]
-         [cmpname (or (~ (dict-comparator dict) 'name) 'custom)]
+         [cmpname (if-let1 cmp (dict-comparator dict)
+                    (or (~ cmp 'name) 'custom)
+                    '||)]
          [tag (format "~a ~a[~d](" cname cmpname (size-of dict))]
          [tag-layouter (layout-simple tag)]
          [prefix "#<"]
