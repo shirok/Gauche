@@ -168,7 +168,9 @@
   (hash-table-put! ht2 'ht1 ht1)
   (test* "circular structure involving hashtable"
          "#0=(#1=#<hash-table eq[2] @> . #2=(#<hash-table eq[2] @>))"
-         (regexp-replace-all #/@0x[0-9a-f]+/ (write-to-string circ write/ss) "@")))
+         (regexp-replace-all #/@(0x)?[0-9a-f]+/
+                             (write-to-string circ write/ss)
+                             "@")))
 
 (define-class <foo> ()
   ((a :init-keyword :a)
