@@ -8554,12 +8554,62 @@ over keys to delete them one by one.
 @c COMMON
 @end deffn
 
+@deffn {Generic fucntion} dict-immutable? (dict @code{<dictionary>})
+@c MOD gauche.dictionary
+@c EN
+Returns @code{#t} if @var{dict} is immutable, @code{#f} otherwise.
+Methods that tries to mutate an immutable dictionary throws an error.
+@c JP
+@var{dict}が変更不可なら@code{#t}を、変更可能なら@code{#f}を返します。
+変更不可なディクショナリに対して変更を加えるメソッドを呼ぶとエラーが投げられます。
+@c COMMON
+@end deffn
+
+@deffn {Generic Function} dict-transparent? (dict @code{<dictionary>})
+@c MOD gauche.dictionary
+@c EN
+If this method returns a true value, the pretty printer displays
+the dictionary with their contents.
+Built-in hashtables, for example, are transparent:
+@c JP
+このメソッドが真の値を返した場合、プリティプリンタがディクショナリを表示する時に
+その内容も一緒に表示されます。例えば組み込みのハッシュテーブルはtransparentです。
+@c COMMON
+
+@smallexample
+gosh$ (alist->hash-table (map-with-index cons "abcdefghijkl") eqv-comparator)
+#<hash-table eqv[12]( (1 . #\b) (8 . #\i) (9 . #\j) (2 . #\c) (3 . #\d)
+  (10 . #\k) (11 . #\l) (4 . #\e) (5 . #\f) (0 . #\a) (6 . #\g) (7 . #\h))>
+@end smallexample
+
+@c EN
+Not all dictionaries are like this.  For example, a database-backed
+dictionary may not want to run the query every time the instance is
+printed.
+@c JP
+全てのディクショナリがこうではありません。例えばデータベースに基づいたディクショナリ
+では、インスタンスを表示する度にクエリを走らせたくはないかもしれません。
+@c COMMON
+@end deffn
+
 @deffn {Generic function} dict-comparator (dict @code{<dictionary>})
 @c MOD gauche.dictionary
 @c EN
 Should return a comparator used to compare keys.
 @c JP
 キーを比較するのに使われるcomparatorを返します。
+@c COMMON
+
+@c EN
+Note: This method may return @code{#f} if a dictionary implementation
+doesn't need to compare keys as a whole (e.g. @code{<trie>} compares
+keys element-wise, so no direct key comparator is used.
+@xref{Trie}).  The caller need to handle such cases.
+@c JP
+註: このメソッドは@code{#t}を返すことがあります。ディクショナリが、
+キー同士を直接比較しない場合があるからです
+(例: @code{<trie>}はキーの各要素ごとに比較するので、キーまるごとの比較器というのは
+使いません。@ref{Trie}参照)。呼び出し側は@code{#f}が返る可能性を常に念頭に置いてください。
 @c COMMON
 @end deffn
 
@@ -8747,7 +8797,7 @@ You don't need to provide every dictionary interface.
 定義する必要はありません。
 @c COMMON
 
-@example
+@smallexample
 (define-dict-interface <tree-map>
   :get        tree-map-get
   :put!       tree-map-put!
@@ -8765,7 +8815,7 @@ You don't need to provide every dictionary interface.
   :push!      tree-map-push!
   :update!    tree-map-update!
   :->alist    tree-map->alist)
-@end example
+@end smallexample
 @end defmac
 
 
