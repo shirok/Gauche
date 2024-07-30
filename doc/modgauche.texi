@@ -8442,6 +8442,57 @@ built on top of other dictionary classes.
 @c NODE ディクショナリのためのジェネリック関数
 
 @c EN
+The @code{gauche.dictionary} module provides the following
+generic functions as the dictionary protocol.
+(Note that @code{call-with-iterator} and
+@code{size-of} are from @code{gauche.collection}).
+
+The functions marked with * should be
+specialized by each dictionary's implementation.
+The functions marked with + return default value if not specialized.
+Other functions have fallback implementation that uses the *-marked
+generic functions, but the implementation may provide specialized
+method for efficiency.
+@c JP
+@code{gauche.dictionary}モジュールは、ディクショナリプロトコルとして
+以下のジェネリックファンクションを提供します
+(@code{call-with-iterator}と@code{size-of}は@code{gauche.collection}
+のものです)。
+
+これらのジェネリックファンクションのうち、*がついているものは
+各ディクショナリの実装が特定化したメソッドを提供しなければなりません。
++がついているものは、ディクショナリの実装が特定化したメソッドを定義しなければ
+適切なデフォルト値が返されます。
+それ以外のジェネリックファンクションは、*がついているメソッドを使って
+実装されていますが、ディクショナリ実装は効率化のために
+特定化されたメソッドを定義しているかもしれません。
+@c COMMON
+
+@table @b
+@item Predicates
+@code{dict-immutable?}(+),
+@code{dict-transparent?}(+)
+
+@item Accessors
+@code{dict-get}(*), @code{dict-exists?}, @code{size-of}(*),
+@code{dict-comparator}(*)
+
+@item Mutators
+@code{dict-put!}(*), @code{dict-delete!}(*),
+@code{dict-push!}, @code{dict-pop!}, @code{dict-update!},
+@code{dict-clear!}
+(If the dictionary is immutable, these methods are not specialized
+and the default methods throw an error.)
+
+@item Walkers
+@code{call-with-iterator}(*),
+@code{dict-find}, @code{dict-any},
+@code{dict-fold}, @code{dict-fold-right}, @code{dict-for-each},
+@code{dict-map}, @code{dict-keys}, @code{dict-values},
+@code{dict->alist}
+@end table
+
+@c EN
 These generic functions are useful to implement algorithms
 common to any dictionary-like objects, a data structure
 that maps discrete, finite set of keys to values.
@@ -8451,19 +8502,6 @@ keys, but implementation-wise it is cleaner to limit the dictionary
 Among built-in classes, @code{<hash-table>} and @code{<tree-map>}
 implement the dictionary interface.  All the @code{<dbm>} classes
 provided by @code{dbm} module also implement it.
-
-To make your own class implement the dictionary interface, you have
-to provide at least @code{dict-get}, @code{dict-put!},
-@code{dict-delete!}, @code{dict-fold} and @code{dict-comparator}.
-(You can omit @code{dict-delete!} if the datatype doesn't allow
-deleting entries.)
-Other generic functions
-have default behavior built on top of these.  You can
-implement other methods as well, potentially to gain better performance.
-
-(Note: Dictionaries are also collections, so you can use collection
-methods as well; for example, to get the number of entries, just use
-@code{size-of}).
 @c JP
 これらのジェネリック関数は、ディクショナリ(離散的で有限なキーの集合から値の集合への
 写像を表現するデータ構造)に対して共通するアルゴリズムを書くのに便利です。
@@ -8473,86 +8511,9 @@ methods as well; for example, to get the number of entries, just use
 組み込みクラスでは、@code{<hash-table>}と@code{<tree-map>}が
 ディクショナリのインタフェースを実装しています。@code{dbm}モジュール群の
 提供する@code{<dbm>}クラスもそうです。
-
-自分の定義したクラスにディクショナリのインタフェースを実装するには、
-最低限、@code{dict-get}、@code{dict-put!}、
-@code{dict-delete!}、@code{dict-fold}、@code{dict-comparator}の
-メソッドを実装してください
-(データ型がエントリの削除を許さない場合は、@code{dict-delete!}の実装を
-省略することができます。)
-他のジェネリック関数には、これらの基本的なメソッドを使ったデフォルト実装が
-提供されます。ただ、他のジェネリック関数についても
-自分のクラスに最適化した実装を書くと性能上有利になるでしょう。
-
-註：ディクショナリはコレクションを継承しているので、コレクションを
-扱うジェネリック関数はディクショナリに対しても使えます。
-例えばエントリの数を得るには@code{size-of}ジェネリック関数が使えます。
 @c COMMON
 
-@deffn {Generic function} dict-get (dict @code{<dictionary>}) key :optional default
-@c MOD gauche.dictionary
-@c EN
-Returns the value corresponding to the @var{key}.
-If the dictionary doesn't have an entry with @var{key},
-returns @var{default} when it is provided, or raises an error
-if not.
-@c JP
-@var{key}に関連付けられた値を返します。もし@var{key}を持つエントリが
-ディクショナリに無い場合、@var{default}が与えられていればそれを返し、
-そうでなければエラーが通知されます。
-@c COMMON
-@end deffn
-
-@deffn {Generic function} dict-put! (dict @code{<dictionary>}) key value
-@c MOD gauche.dictionary
-@c EN
-Puts the mapping from @var{key} to @var{value} into the dictionary.
-@c JP
-@var{key}から@var{value}への関連づけをディクショナリに追加します。
-@c COMMON
-@end deffn
-
-@deffn {Generic function} {(setter dict-get)} (dict @code{<dictionary>}) key value
-@c MOD gauche.dictionary
-@c EN
-This works the same as @code{dict-put!}.
-@c JP
-@code{dict-put!}と同じ動作です。
-@c COMMON
-@end deffn
-
-@deffn {Generic function} dict-exists? (dict @code{<dictionary>}) key
-@c MOD gauche.dictionary
-@c EN
-Returns @code{#t} if the dictionary has an entry with @var{key},
-@code{#f} if not.
-@c JP
-ディクショナリが@var{key}をキーに持つエントリを保持していれば@code{#t}を、
-そうでなければ@code{#f}を返します。
-@c COMMON
-@end deffn
-
-@deffn {Generic function} dict-delete! (dict @code{<dictionary>}) key
-@c MOD gauche.dictionary
-@c EN
-Removes an entry with @var{key} form the dictionary.
-If the dictionary doesn't have such an entry, this function is noop.
-@c JP
-ディクショナリから@var{key}をキーに持つエントリを除去します。
-@var{key}を持つエントリが無ければ何もしません。
-@c COMMON
-@end deffn
-
-@deffn {Generic function} dict-clear! (dict @code{<dictionary>})
-@c MOD gauche.dictionary
-@c EN
-Empties the dictionary.  Usually this is much faster than looping
-over keys to delete them one by one.
-@c JP
-ディクショナリを空にします。通常、全キーをループしてひとつづつ消していくよりも
-ずっと高速です。
-@c COMMON
-@end deffn
+@subsubheading Predicates
 
 @deffn {Generic fucntion} dict-immutable? (dict @code{<dictionary>})
 @c MOD gauche.dictionary
@@ -8562,6 +8523,14 @@ Methods that tries to mutate an immutable dictionary throws an error.
 @c JP
 @var{dict}が変更不可なら@code{#t}を、変更可能なら@code{#f}を返します。
 変更不可なディクショナリに対して変更を加えるメソッドを呼ぶとエラーが投げられます。
+@c COMMON
+
+@c EN
+If the dictionary implementation does not specialize this method,
+the default method returns @code{#t}.
+@c JP
+ディクショナリの実装がこのメソッドを特殊化しなければ、
+デフォルトメソッドは@code{#t}を返します。
 @c COMMON
 @end deffn
 
@@ -8590,6 +8559,41 @@ printed.
 全てのディクショナリがこうではありません。例えばデータベースに基づいたディクショナリ
 では、インスタンスを表示する度にクエリを走らせたくはないかもしれません。
 @c COMMON
+
+@c EN
+If the dictionary implementation does not specialize this method,
+the default method returns @code{#f}.
+@c JP
+ディクショナリの実装がこのメソッドを特殊化しなければ、
+デフォルトメソッドは@code{#f}を返します。
+@c COMMON
+@end deffn
+
+@subsubheading Accessors
+
+@deffn {Generic function} dict-get (dict @code{<dictionary>}) key :optional default
+@c MOD gauche.dictionary
+@c EN
+Returns the value corresponding to the @var{key}.
+If the dictionary doesn't have an entry with @var{key},
+returns @var{default} when it is provided, or raises an error
+if not.
+@c JP
+@var{key}に関連付けられた値を返します。もし@var{key}を持つエントリが
+ディクショナリに無い場合、@var{default}が与えられていればそれを返し、
+そうでなければエラーが通知されます。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-exists? (dict @code{<dictionary>}) key
+@c MOD gauche.dictionary
+@c EN
+Returns @code{#t} if the dictionary has an entry with @var{key},
+@code{#f} if not.
+@c JP
+ディクショナリが@var{key}をキーに持つエントリを保持していれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} dict-comparator (dict @code{<dictionary>})
@@ -8612,6 +8616,93 @@ keys element-wise, so no direct key comparator is used.
 使いません。@ref{Trie}参照)。呼び出し側は@code{#f}が返る可能性を常に念頭に置いてください。
 @c COMMON
 @end deffn
+
+@subsubheading Mutators
+
+@deffn {Generic function} dict-put! (dict @code{<dictionary>}) key value
+@c MOD gauche.dictionary
+@c EN
+Puts the mapping from @var{key} to @var{value} into the dictionary.
+@c JP
+@var{key}から@var{value}への関連づけをディクショナリに追加します。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} {(setter dict-get)} (dict @code{<dictionary>}) key value
+@c MOD gauche.dictionary
+@c EN
+This works the same as @code{dict-put!}.
+@c JP
+@code{dict-put!}と同じ動作です。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-delete! (dict @code{<dictionary>}) key
+@c MOD gauche.dictionary
+@c EN
+Removes an entry with @var{key} form the dictionary.
+If the dictionary doesn't have such an entry, this function is noop.
+@c JP
+ディクショナリから@var{key}をキーに持つエントリを除去します。
+@var{key}を持つエントリが無ければ何もしません。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-clear! (dict @code{<dictionary>})
+@c MOD gauche.dictionary
+@c EN
+Empties the dictionary.  Usually this is much faster than looping
+over keys to delete them one by one.
+@c JP
+ディクショナリを空にします。通常、全キーをループしてひとつづつ消していくよりも
+ずっと高速です。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-push! (dict @code{<dictionary>}) key value
+@c MOD gauche.dictionary
+@c EN
+A shorthand way to say @code{(dict-put! dict key (cons value (dict-get dict key '())))}.  A concrete implementation may be more efficient
+(e.g. it may not search @var{key} twice.)
+@c JP
+@code{(dict-put! dict key (cons value (dict-get dict key '())))} と同じ動作をするメソッドです。具体的な実装によってはもっと効率が良いかもしれません
+(@var{key}を2度検索しなくても良い、など)。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-pop! (dict @code{<dictionary>}) key :optional fallback
+@c MOD gauche.dictionary
+@c EN
+If @code{(dict-get dict key)} is a pair @var{p},
+the entry value is replaced with @code{(cdr p)} and the procedure
+returns @code{(car p)}.  If no entry for @var{key} is in the table,
+or the entry isn't a a pair, the table isn't modified, and
+@var{fallback} is returned if given, or an error is raised.
+@c JP
+@code{(dict-get dict key)}がペア@var{p}であれば、
+そのエントリの値が@code{(cdr p)}で置き換えられ、@code{(car p)}の値が
+戻り値となります。@var{key}に該当するエントリが無かったり、ペアで無かった場合は
+ディクショナリは変更されず、@var{fallback}があればそれが戻り値となり、
+無ければエラーが報告されます。
+@c COMMON
+@end deffn
+
+@deffn {Generic function} dict-update! (dict @code{<dictionary>}) key proc :optional fallback
+@c MOD gauche.dictionary
+@c EN
+Works like the following code, except that the concrete implementation
+may be more efficient by looking up @var{key} only once.
+@c JP
+次のコードのような動作をしますが、具体的な実装は@var{key}を一度しかルックアップ
+しないなどより効率良くなっている場合があります。
+@c COMMON
+@example
+(rlet1 x (proc (dict-get dict key fallback))
+  (dict-put! dict key x))
+@end example
+@end deffn
+
+@subsubheading Walkers
 
 @deffn {Generic function} dict-fold (dict @code{<dictionary>}) proc seed
 @c MOD gauche.dictionary
@@ -8719,48 +8810,7 @@ The order of pairs is undefined.
 @c COMMON
 @end deffn
 
-@deffn {Generic function} dict-push! (dict @code{<dictionary>}) key value
-@c MOD gauche.dictionary
-@c EN
-A shorthand way to say @code{(dict-put! dict key (cons value (dict-get dict key '())))}.  A concrete implementation may be more efficient
-(e.g. it may not search @var{key} twice.)
-@c JP
-@code{(dict-put! dict key (cons value (dict-get dict key '())))} と同じ動作をするメソッドです。具体的な実装によってはもっと効率が良いかもしれません
-(@var{key}を2度検索しなくても良い、など)。
-@c COMMON
-@end deffn
-
-@deffn {Generic function} dict-pop! (dict @code{<dictionary>}) key :optional fallback
-@c MOD gauche.dictionary
-@c EN
-If @code{(dict-get dict key)} is a pair @var{p},
-the entry value is replaced with @code{(cdr p)} and the procedure
-returns @code{(car p)}.  If no entry for @var{key} is in the table,
-or the entry isn't a a pair, the table isn't modified, and
-@var{fallback} is returned if given, or an error is raised.
-@c JP
-@code{(dict-get dict key)}がペア@var{p}であれば、
-そのエントリの値が@code{(cdr p)}で置き換えられ、@code{(car p)}の値が
-戻り値となります。@var{key}に該当するエントリが無かったり、ペアで無かった場合は
-ディクショナリは変更されず、@var{fallback}があればそれが戻り値となり、
-無ければエラーが報告されます。
-@c COMMON
-@end deffn
-
-@deffn {Generic function} dict-update! (dict @code{<dictionary>}) key proc :optional fallback
-@c MOD gauche.dictionary
-@c EN
-Works like the following code, except that the concrete implementation
-may be more efficient by looking up @var{key} only once.
-@c JP
-次のコードのような動作をしますが、具体的な実装は@var{key}を一度しかルックアップ
-しないなどより効率良くなっている場合があります。
-@c COMMON
-@example
-(rlet1 x (proc (dict-get dict key fallback))
-  (dict-put! dict key x))
-@end example
-@end deffn
+@subsubsection Defining dictionary protocol
 
 @defmac define-dict-interface dict-class method proc method2 proc2 @dots{}
 @c MOD gauche.dictionary
@@ -8814,7 +8864,8 @@ You don't need to provide every dictionary interface.
   :pop!       tree-map-pop!
   :push!      tree-map-push!
   :update!    tree-map-update!
-  :->alist    tree-map->alist)
+  :->alist    tree-map->alist
+  :transparent? (^_ #t))
 @end smallexample
 @end defmac
 
