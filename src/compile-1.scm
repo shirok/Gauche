@@ -127,9 +127,15 @@
     (let1 r (cenv-lookup cenv program)
       (cond [(lvar? r) ($lref r)]
             [(wrapped-identifier? r)
-             (or (and-let* ([const (find-const-binding r)]) ($const const))
-                 ($gref r))]
+             (let* ([gbind (global-ref-type r)])
+               (if (and (macro? gbind)  ;global macro
+                        (identifier-macro? gbind))
+                 (pass1 (call-id-macro-expander gbind cenv) cenv)
+                 (or (and-let* ([const (find-const-binding r)]) ($const const))
+                     ($gref r))))]
             [(macro? r) ;; local macro appearing in non-head pos
+             (unless (identifier-macro? r)
+               (error "Non-identifier-macro can't appear in this context:" r))
              (pass1 (call-id-macro-expander r cenv) cenv)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))

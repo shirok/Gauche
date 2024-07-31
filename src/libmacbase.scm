@@ -184,9 +184,9 @@
     out))
 
 (define (call-id-macro-expander mac cenv)
-  (unless (identifier-macro? mac)
-    (error "Non-identifier-macro can't appear in this context:" mac))
-  (call-macro-expander mac mac cenv))
+  (if (identifier-macro? mac)
+    (call-macro-expander mac mac cenv)
+    mac))
 
 (define-cproc make-syntax (name::<symbol> module::<module> proc)
   Scm_MakeSyntax)

@@ -2008,6 +2008,29 @@
      ))
  )
 
+;; GLOBAL-REF-TYPE
+;;
+;;   Similar to global-call-type, but this is called when ID is used
+;;   other than the head of list.  Should be called after we know ID is
+;;   global reference.
+;;
+;;   If ID is globally bound to a macro, returns #<macro>.
+;;   Otherwise, returns ID itself.
+;;
+;;   We separate this from global-call-type, since we don't need to
+;;   handle inlinable function case.
+;;
+(inline-stub
+ (define-cproc global-ref-type (id) ::<top>
+   (let* ([gloc::ScmGloc* (Scm_IdentifierGlobalBinding (SCM_IDENTIFIER id))])
+     (if gloc
+       (let* ([gval (SCM_GLOC_GET gloc)])
+         (if (SCM_MACROP gval)
+           (return gval)
+           (return id)))
+       (return id))))
+ )
+
 ;; Returns #t iff z is a keyword, or an identifier made from a keyword.
 ;; TODO: We should also check iff k isn't bound to something else!
 (define (keyword-like? k)
