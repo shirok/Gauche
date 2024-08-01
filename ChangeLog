@@ -1,3 +1,8 @@
+2024-07-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (set!): Add support of identifier macro call
+	  when id-macro is used in (set! id expr) form.
+
 2024-07-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (define-cproc), src/compile-1.scm (pass1),

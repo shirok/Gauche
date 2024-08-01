@@ -183,9 +183,9 @@
         (flush (current-trace-port))))
     out))
 
-(define (call-id-macro-expander mac cenv)
+(define (call-id-macro-expander mac form cenv)
   (if (identifier-macro? mac)
-    (call-macro-expander mac mac cenv)
+    (call-macro-expander mac form cenv)
     mac))
 
 (define-cproc make-syntax (name::<symbol> module::<module> proc)

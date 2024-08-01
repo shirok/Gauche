@@ -130,13 +130,13 @@
              (let* ([gbind (global-ref-type r)])
                (if (and (macro? gbind)  ;global macro
                         (identifier-macro? gbind))
-                 (pass1 (call-id-macro-expander gbind cenv) cenv)
+                 (pass1 (call-id-macro-expander gbind program cenv) cenv)
                  (or (and-let* ([const (find-const-binding r)]) ($const const))
                      ($gref r))))]
             [(macro? r) ;; local macro appearing in non-head pos
              (unless (identifier-macro? r)
                (error "Non-identifier-macro can't appear in this context:" r))
-             (pass1 (call-id-macro-expander r cenv) cenv)]
+             (pass1 (call-id-macro-expander r program cenv) cenv)]
             [else (error "[internal] cenv-lookup returned weird obj:" r)]))]
    [else ($const program)]))
 
@@ -1697,11 +1697,16 @@
     [(_ name expr)
      (unless (identifier? name)
        (error "syntax-error: malformed set!:" form))
-     (let ([var (cenv-lookup cenv name)]
-           [val (pass1 expr cenv)])
-       (if (lvar? var)
-         ($lset var val)
-         ($gset (ensure-identifier var cenv) val)))]
+     (let1 var (cenv-lookup cenv name)
+       (or (and-let* ([ (wrapped-identifier? var) ]
+                      [gbind (global-ref-type var)]
+                      [ (macro? gbind) ]
+                      [(identifier-macro? gbind) ])
+             (pass1 (call-id-macro-expander gbind form cenv) cenv))
+           (let1 val (pass1 expr cenv)
+             (if (lvar? var)
+               ($lset var val)
+               ($gset (ensure-identifier var cenv) val)))))]
     [_ (error "syntax-error: malformed set!:" form)]))
 
 ;; Begin .....................................................
