@@ -125,13 +125,21 @@
 
 (select-module gauche)
 (inline-stub
+ (define-cfn get-macro-flags (macro) :static
+   (SCM_ASSERT (SCM_MACROP macro))
+   (let* ([flags::ulong (-> (SCM_MACRO macro) flags)]
+          [h SCM_NIL] [t SCM_NIL])
+     (when (logand flags SCM_MACRO_IDENTIFIER)
+       (SCM_APPEND1 h t 'identifier-macro))
+     (return h)))
+
  (define-cclass <macro>
    "ScmMacro*" "Scm_MacroClass"
    (c "SCM_CLASS_DEFAULT_CPL")
    ((name         :setter #f)
     (transformer  :setter #f)
     (info-alist   :c-name "info_alist" :setter #f)
-    (flags        :type <ulong> :setter #f))
+    (flags        :getter (c "get_macro_flags") :setter #f))
    (printer (Scm_Printf port "#<macro %A>" (-> (SCM_MACRO obj) name)))))
 
 ;;;
