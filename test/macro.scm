@@ -294,6 +294,52 @@
                                 (quasirename r `(+ x y))))))))
             (list (x) x)))))
 
+;; global
+(define-module id-macro-test
+  (use gauche.test)
+  (define p (cons 4 5))
+  (define-syntax p.car
+    (make-id-transformer
+     (er-macro-transformer
+      (lambda (f r c)
+        (cond [(identifier? f) (quasirename r `(car p))]
+              [(c (car f) (r'set!))
+               (quasirename r `(set-car! p ,(caddr f)))]
+              [else (error "bad id-macro call:" f)])))))
+  (test "er global identifier macro" 4 (lambda () p.car))
+  (set! p.car 15)
+  (test "er global identifier macro" 15 (lambda () p.car))
+  (test "er global identifier macro" '(15 . 5) (lambda () p))
+
+  (let ((p (cons 6 7)))
+    (test "er global identifier macro hygiene" 15 (lambda () p.car))
+    (set! p.car 99)
+    (test "er global identifier macro hygiene" 99 (lambda () p.car))
+    (test "er global identifier macro hygiene" '(6 . 7) (lambda () p)))
+  )
+
+;; local
+(let ((p (cons 4 5)))
+  (let-syntax ((p.car
+                (make-id-transformer
+                 (er-macro-transformer
+                  (lambda (f r c)
+                    (cond [(identifier? f) (quasirename r `(car p))]
+                          [(c (car f) (r'set!))
+                           (quasirename r `(set-car! p ,(caddr f)))]
+                          [else (error "bad id-macro call:" f)]))))))
+  (test "er local identifier macro" 4 (lambda () p.car))
+  (set! p.car 15)
+  (test "er local identifier macro" 15 (lambda () p.car))
+  (test "er local identifier macro" '(15 . 5) (lambda () p))
+
+  (let ((p (cons 6 7)))
+    (test "er local identifier macro hygiene" 15 (lambda () p.car))
+    (set! p.car 99)
+    (test "er local identifier macro hygiene" 99 (lambda () p.car))
+    (test "er local identifier macro hygiene" '(6 . 7) (lambda () p)))
+  ))
+
 ;;----------------------------------------------------------------------
 ;; basic tests
 
