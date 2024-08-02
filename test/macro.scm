@@ -286,12 +286,12 @@
 (test "er identifier macro" '((1 2) 3)
       (lambda ()
         (let ((x 1) (y 2))
-          (let-syntax ((x (er-macro-transformer
-                           (lambda (f r c)
-                             (if (pair? f)
-                               (quasirename r `(list x y))
-                               (quasirename r `(+ x y))))
-                           :identifier-macro? #t)))
+          (let-syntax ((x (make-id-transformer
+                           (er-macro-transformer
+                            (lambda (f r c)
+                              (if (pair? f)
+                                (quasirename r `(list x y))
+                                (quasirename r `(+ x y))))))))
             (list (x) x)))))
 
 ;;----------------------------------------------------------------------

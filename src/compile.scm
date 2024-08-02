@@ -1797,7 +1797,7 @@
 (define (%make-er-transformer xformer def-env
                               :key (has-inject? #f)
                                    (info-alist '())
-                                   (identifier-macro? #f))
+                                   (identifier-macro? #f));deprecated
   (define def-module (cenv-module def-env))
   (define def-frames (cenv-frames def-env))
   (define (expand form use-env)
@@ -1835,12 +1835,24 @@
 (define (%make-er-transformer/toplevel xformer def-module def-name
                                        :key (has-inject? #f)
                                             (info-alist '())
-                                            (identifier-macro? #f))
+                                            (identifier-macro? #f));deprecated
   (%make-er-transformer xformer
                         (%make-cenv def-module '() def-name)
                         :has-inject? has-inject?
                         :info-alist info-alist
                         :identifier-macro? identifier-macro?))
+
+;; Turn a macro to an id macro.
+(define (%make-id-transformer macro)
+  (assume-type macro <macro>)
+  (%make-macro-transformer (~ macro'name)
+                           (~ macro'transformer)
+                           (~ macro'info-alist)
+                           ;; TRANSIENT: So far, we only use identifier-macro
+                           ;; in flags, so this is enough.  If we add more
+                           ;; flags, this should be consing identifier-macro
+                           ;; onto original macro tansformer's flags.
+                           '(identifier-macro)))
 
 ;; Returns an S-expr all macros in which are expanded.
 ;; The resulting form may not be equivalent to the input form, though,

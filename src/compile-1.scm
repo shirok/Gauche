@@ -504,6 +504,7 @@
 (define %expression-name-mark-key.     (global-id% '%expression-name-mark-key))
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
+(define %make-id-transformer.          (global-id% '%make-id-transformer))
 (define %with-inline-transformer.      (global-id% '%with-inline-transformer))
 
 (define =>.               (global-id '=>))
@@ -877,18 +878,17 @@
 (define-pass1-syntax (er-macro-transformer form cenv) :gauche
   (match form
     [(_ xformer) (%pass1/er-macro-maker form xformer cenv #f #f)]
-    [(_ xformer ':identifier-macro? v)
-     (assume (boolean? v))
-     (%pass1/er-macro-maker form xformer cenv #f v)]
     [_ (error "syntax-error: malformed er-macro-transformer:" form)]))
 
 (define-pass1-syntax (eri-macro-transformer form cenv) :gauche
   (match form
     [(_ xformer) (%pass1/er-macro-maker form xformer cenv #t #f)]
-    [(_ xformer ':identifier-macro? v)
-     (assume (boolean? v))
-     (%pass1/er-macro-maker form xformer cenv #t v)]
     [_ (error "syntax-error: malformed eri-macro-transformer:" form)]))
+
+(define-pass1-syntax (make-id-transformer form cenv) :gauche
+  (match form
+    [(_ macro-expr) (pass1 `(,%make-id-transformer. ,macro-expr) cenv)]
+    [_ (error "syntax-error: malformed eri-id-macro-transformer:" form)]))
 
 ;; Build an expression to construct er macro at runtime, and run pass 1
 ;; on it.

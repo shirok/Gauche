@@ -1,3 +1,10 @@
+2024-08-01  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (make-id-transformer): Experimentally added.
+	  It wraps ordinary macro to make an id macro.  Similar to R6RS
+	  make-variable-transformer, but you need it even the id macro is
+	  used without set!.
+
 2024-07-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (set!): Add support of identifier macro call
