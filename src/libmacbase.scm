@@ -127,7 +127,7 @@
 (inline-stub
  (define-cfn get-macro-flags (macro) :static
    (SCM_ASSERT (SCM_MACROP macro))
-   (let* ([flags::ulong (-> (SCM_MACRO macro) flags)]
+   (let* ([flags::u_long (-> (SCM_MACRO macro) flags)]
           [h SCM_NIL] [t SCM_NIL])
      (when (logand flags SCM_MACRO_IDENTIFIER)
        (SCM_APPEND1 h t 'identifier-macro))
