@@ -1703,6 +1703,10 @@
                       [ (macro? gbind) ]
                       [(identifier-macro? gbind) ])
              (pass1 (call-id-macro-expander gbind form cenv) cenv))
+           (and (macro? var)            ;local id macro
+                (if (identifier-macro? var)
+                  (pass1 (call-id-macro-expander var form cenv) cenv)
+                  (error "Local macro can't be used here:" form)))
            (let1 val (pass1 expr cenv)
              (if (lvar? var)
                ($lset var val)
