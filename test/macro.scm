@@ -295,7 +295,7 @@
             (list (x) x)))))
 
 ;; global
-(define-module id-macro-test
+(define-module id-macro-test-er
   (use gauche.test)
   (define p (cons 4 5))
   (define-syntax p.car
@@ -316,6 +316,27 @@
     (set! p.car 99)
     (test "er global identifier macro hygiene" 99 (lambda () p.car))
     (test "er global identifier macro hygiene" '(6 . 7) (lambda () p)))
+  )
+
+(define-module id-macro-test-sr
+  (use gauche.test)
+  (define p (cons 4 5))
+  (define-syntax p.car
+    (make-id-transformer
+     (syntax-rules (set!)
+       [(set! _ expr) (set-car! p expr)]
+       [_ (car p)])))
+
+  (test "synrule global identifier macro" 4 (lambda () p.car))
+  (set! p.car 15)
+  (test "synrule global identifier macro" 15 (lambda () p.car))
+  (test "synrule global identifier macro" '(15 . 5) (lambda () p))
+
+  (let ((p (cons 6 7)))
+    (test "synrule global identifier macro hygiene" 15 (lambda () p.car))
+    (set! p.car 99)
+    (test "synrule global identifier macro hygiene" 99 (lambda () p.car))
+    (test "synrule global identifier macro hygiene" '(6 . 7) (lambda () p)))
   )
 
 ;; local
