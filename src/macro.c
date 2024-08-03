@@ -635,8 +635,15 @@ static ScmSyntaxRules *compile_rules(ScmObj name,
         ctx.maxlev = 0;
 
         ctx.form = SCM_CAR(rule);
-        if (!SCM_PAIRP(ctx.form)) goto badform;
-        pat->pattern = compile_rule1(SCM_CDR(ctx.form), pat, &ctx, TRUE);
+        if (SCM_PAIRP(ctx.form)) {
+            pat->pattern = compile_rule1(SCM_CDR(ctx.form), pat, &ctx, TRUE);
+        } else {
+            if (!SCM_SYMBOLP(ctx.form) && !SCM_IDENTIFIERP(ctx.form)) goto badform;
+            /* This happens for identifier macro. we allow the entire input.
+               The entire input always match.  The identifier in the pattern
+               doesn't matter; we use underscore for placeholder.*/
+            pat->pattern = SCM_SYM_UNDERBAR;
+        }
 
         ctx.form = SCM_CADR(rule);
         tmpl->pattern = compile_rule1(ctx.form, tmpl, &ctx, FALSE);
@@ -1025,7 +1032,14 @@ static ScmObj synrule_expand(ScmObj form, ScmObj mod, ScmObj env, ScmSyntaxRules
         Scm_Printf(SCM_CUROUT, "pattern #%d: %S\n", i, sr->rules[i].pattern);
 #endif
         init_matchvec(mvec, sr->rules[i].numPvars);
-        if (match_synrule(SCM_CDR(form), sr->rules[i].pattern, mod, env, mvec)) {
+
+        int matched = FALSE;
+        if (sr->rules[i].pattern == SCM_SYM_UNDERBAR) {
+            matched = TRUE;     /* unconditionally match */
+        } else {
+            matched = match_synrule(SCM_CDR(form), sr->rules[i].pattern, mod, env, mvec);
+        }
+        if (matched) {
 #ifdef DEBUG_SYNRULE
             Scm_Printf(SCM_CUROUT, "success #%d:\n", i);
             print_matchvec(mvec, sr->rules[i].numPvars, SCM_CUROUT);

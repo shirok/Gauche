@@ -1,3 +1,11 @@
+2024-08-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/macro.c (compile_rules, synrule-expand): Allow a single
+	  identifier as pattern, e.g. (syntax-rules () (_ template)).
+	  This pattern matches anything.  Especially useful when compiled
+	  with make-id-transformer, for this pattern can be used to
+	  match the identifier macro.
+
 2024-08-01  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (make-id-transformer): Experimentally added.
