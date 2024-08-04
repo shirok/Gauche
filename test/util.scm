@@ -350,6 +350,49 @@
             eq-comparator)))
 
 ;;-----------------------------------------------
+(test-section "util.identifier-syntax")
+
+(define-module test-identifier-syntax
+  (use gauche.test)
+  (use util.identifier-syntax)
+  (test-module 'util.identifier-syntax)
+
+  (define p (cons 4 5))
+  (define-syntax p.car (identifier-syntax (car p)))
+  (test* "identifier-syntax form 1" 4 p.car)
+
+  (test* "identifier-syntax form 1 no set!"
+         (test-error <error> #/id macro can't be used with set!/i)
+         (eval '(set! p.car 99) (current-module)))
+
+  (let ((p (cons 6 7)))
+    (test* "identifier-syntax hygiene" 4 p.car))
+
+  (define-syntax p.cdr (identifier-syntax
+                        [_ (cdr p)]
+                        [(set! _ expr) (set-cdr! p expr)]))
+  (test* "identifier-sytnax form 2" 5 p.cdr)
+  (test* "identidier-syntax set!" '(4 . 99)
+         (begin
+           (set! p.cdr 99)
+           p))
+  (let ((p (cons 6 7)))
+    (set! p.cdr 101)
+    (test* "identifier-syntax hygiene" 101 p.cdr))
+
+  (let ((p (cons 8 9)))
+    (let-syntax ([p.cdr (identifier-syntax
+                         [_ (cdr p)]
+                         [(set! _ expr) (set-cdr! p (+ 1 expr))])])
+      (let ((p (cons 0 1)))
+        (set! p.cdr 9999)
+        (test* "local identifier syntax hygine" '(0 . 1) p)
+        (test* "local identifier syntax hygine" 10000 p.cdr))
+      (test* "local identifier syntax hygine" '(8 . 10000) p)))
+  (test* "local identifier syntax hygine" '(4 . 101) p)
+  )
+
+;;-----------------------------------------------
 (test-section "util.isomorph")
 (use util.isomorph)
 (test-module 'util.isomorph)
