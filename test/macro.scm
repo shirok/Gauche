@@ -283,17 +283,6 @@
 
 (test-section "er identifier macros")
 
-(test "er identifier macro" '((1 2) 3)
-      (lambda ()
-        (let ((x 1) (y 2))
-          (let-syntax ((x (make-id-transformer
-                           (er-macro-transformer
-                            (lambda (f r c)
-                              (if (pair? f)
-                                (quasirename r `(list x y))
-                                (quasirename r `(+ x y))))))))
-            (list (x) x)))))
-
 ;; global
 (define-module id-macro-test-er
   (use gauche.test)
@@ -316,6 +305,9 @@
     (set! p.car 99)
     (test "er global identifier macro hygiene" 99 (lambda () p.car))
     (test "er global identifier macro hygiene" '(6 . 7) (lambda () p)))
+
+  (set! p.car list)
+  (test "er global identifier macro in head" '(1 2 3) (lambda () (p.car 1 2 3)))
   )
 
 (define-module id-macro-test-sr
@@ -359,6 +351,9 @@
     (set! p.car 99)
     (test "er local identifier macro hygiene" 99 (lambda () p.car))
     (test "er local identifier macro hygiene" '(6 . 7) (lambda () p)))
+
+  (set! p.car list)
+  (test "er local identifier macro in head" '(1 2 3) (lambda () (p.car 1 2 3)))
   ))
 
 ;;----------------------------------------------------------------------

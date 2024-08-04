@@ -81,7 +81,12 @@
     (receive (gval type) (global-call-type id cenv)
       (if gval
         (case type
-          [(macro)  (pass1 (call-macro-expander gval program cenv) cenv)]
+          [(macro)
+           (if (identifier-macro? gval)
+             (pass1 (cons (call-id-macro-expander gval id cenv)
+                          (cdr program))
+                    cenv)
+             (pass1 (call-macro-expander gval program cenv) cenv))]
           [(syntax) (call-syntax-handler gval program cenv)]
           [(inline) (or (pass1/expand-inliner program id gval cenv)
                         (pass1/call program ($gref id) (cdr program) cenv))]
@@ -104,7 +109,11 @@
               [(wrapped-identifier? h) (pass1/global-call h)]
               [(lvar? h) (pass1/call program ($lref h) (cdr program) cenv)]
               [(macro? h) ;; local macro
-               (pass1 (call-macro-expander h program cenv) cenv)]
+               (if (identifier-macro? h)
+                 (pass1 (cons (call-id-macro-expander h (car program) cenv)
+                              (cdr program))
+                        cenv)
+                 (pass1 (call-macro-expander h program cenv) cenv))]
               [(syntax? h);; locally rebound syntax
                (call-syntax-handler h program cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]
@@ -307,7 +316,9 @@
            (cond
             [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
             [(macro? head)  ; locally defined macro
-             (pass1/body-macro-expand-rec head exprs mframe vframe cenv)]
+             (if (identifier-macro? head)
+               (pass1/body-id-macro-expand-rec head exprs mframe vframe cenv)
+               (pass1/body-macro-expand-rec head exprs mframe vframe cenv))]
             [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
              (pass1/body-finish exprs mframe vframe cenv)]
             [(and (pair? head) (eq? (car head) :rec))
@@ -372,7 +383,9 @@
              (or (and-let* ([gloc (id->bound-gloc head)]
                             [gval (gloc-ref gloc)]
                             [ (macro? gval) ])
-                   (pass1/body-macro-expand-rec gval exprs mframe vframe cenv))
+                   (if (identifier-macro? gval)
+                     (pass1/body-id-macro-expand-rec gval exprs mframe vframe cenv)
+                     (pass1/body-macro-expand-rec gval exprs mframe vframe cenv)))
                  (pass1/body-finish exprs mframe vframe cenv))]
             [else (error "[internal] pass1/body" head)]))
          (pass1/body-finish exprs mframe vframe cenv))]
@@ -381,6 +394,14 @@
 (define (pass1/body-macro-expand-rec mac exprs mframe vframe cenv)
   (pass1/body-rec
    (acons (call-macro-expander mac (caar exprs) cenv)
+          (cdar exprs) ;src
+          (cdr exprs)) ;rest
+   mframe vframe cenv))
+
+(define (pass1/body-id-macro-expand-rec mac exprs mframe vframe cenv)
+  (pass1/body-rec
+   (acons (cons (call-id-macro-expander mac (caaar exprs) cenv)
+                (cdaar exprs))
           (cdar exprs) ;src
           (cdr exprs)) ;rest
    mframe vframe cenv))
