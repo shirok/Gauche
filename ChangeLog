@@ -1,3 +1,8 @@
+2024-08-03  Shiro Kawai  <shiro@acm.org>
+
+	* lib/util/identifier-syntax.scm (identifier-syntax): Add support
+	  of R6RS identifier-syntax.
+
 2024-08-02  Shiro Kawai  <shiro@acm.org>
 
 	* src/macro.c (compile_rules, synrule-expand): Allow a single
