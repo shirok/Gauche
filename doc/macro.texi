@@ -648,6 +648,20 @@ ERマクロでは、必要な衛生を保ちながら、任意のSchemeコード
 
 @item
 @c EN
+A @code{make-id-transformer} form.  This creates an @emph{identifier macro},
+Unlike an ordinary macro, an identifier macro expands without
+being at the head of a list; it looks like a variable in the source.
+@xref{Identifier transformer}, for the details.
+@c JP
+@code{make-id-transformer}フォーム。
+これは@emph{識別子マクロ}を定義します。
+通常のマクロと異なり、識別子マクロはリストの最初の位置に置かれないでも展開されます。
+ソース上では通常の変数のように見えます。
+詳しくは@ref{Identifier transformer}を参照してください。
+@c COMMON
+
+@item
+@c EN
 Macro or syntax keyword.  This is Gauche's extension, and can be
 used to define alias of existing macro or syntax keyword.
 @c JP
@@ -667,6 +681,7 @@ used to define alias of existing macro or syntax keyword.
 @menu
 * Syntax-rules macro transformer::
 * Explicit-renaming macro transformer::
+* Identifier transformer::
 @end menu
 
 @node Syntax-rules macro transformer, Explicit-renaming macro transformer, Hygienic macros, Hygienic macros
@@ -1083,7 +1098,7 @@ hence they don't match.
 @end example
 @end defspec
 
-@node Explicit-renaming macro transformer,  , Syntax-rules macro transformer, Hygienic macros
+@node Explicit-renaming macro transformer, Identifier transformer, Syntax-rules macro transformer, Hygienic macros
 @subsection Explicit-renaming macro transformer
 @c NODE Explicit-renamingマクロ変換器
 
@@ -1511,6 +1526,91 @@ This will be the default behavior in future.
 @end table
 @c COMMON
 @end defmac
+
+@node Identifier transformer,  , Explicit-renaming macro transformer, Hygienic macros
+@subsection Identifier transformer
+@c NODE 識別子マクロ変換器
+
+@defspec make-id-transformer transformer-spec
+@c EN
+Creates an identifier macro transformer from @var{transformer-spec}.
+The @var{transformer-spec} is the same as what can appear in
+@code{define-syntax} etc.
+@c JP
+@var{transformer-spec}から識別子マクロ変換器を作ります。
+@var{transformer-spec}は@code{define-syntax}等で使えるものと同じです。
+@c COMMON
+
+@c EN
+A normal macro expands from a form @code{(M arg @dots{})} where @code{M}
+is an identifier bound to the macro.  An identifier macro, on the other
+hand, expands from solely from the macro-bound identifier, or a form
+@code{(set! M expr)}.  In other words, an identifier macro is used
+in the context of a variable, rather than a function call.
+@c JP
+通常のマクロは、@code{M}をマクロが束縛された識別子とすると、@code{(M arg @dots{})}という
+形式でマクロ変換器を呼び出します。一方識別子マクロは、マクロに束縛された識別子単独、
+もしくは@code{(set! M expr)}という形式でマクロ変換器を呼び出すものです。
+言い換えれば、識別子マクロは、関数呼び出し形式ではなく変数参照形式で使われるものです。
+@c COMMON
+
+@c EN
+Suppose the following code, where @code{state-manager} is a
+stateful closure.  The identifier macro @code{the-state} hides
+the closure and makes it look like a variable:
+@c JP
+次のコードを考えます。@code{state-manager}は状態を持つクロージャで、
+識別子マクロ@code{the-state}はクロージャを隠して
+あたかも変数にアクセスしているかのように見せます。
+@c COMMON
+
+@example
+(define state-manager
+  (let ([state #f])
+    (case-lambda
+      [() state]
+      [(val) (set! state val)])))
+
+(define-syntax the-state
+  (make-id-transformer
+    (syntax-rules (set!)
+      [(set! _ expr) (state-manager expr)]
+      [_ (state-manager)])))
+
+(state-manager 'off)
+
+the-state @result{} off
+
+(set! the-state 'on)
+
+the-state @result{} on
+
+(state-manager) @result{} on
+@end example
+
+@c EN
+(Note that the single @code{_} pattern in the second clause of
+@code{syntax-rules} above matches anything, so it should come
+after @code{set!} match.  It is Gauche's extension.)
+@c JP
+(上の@code{syntax-rules}の二番目の節のパターンは@code{_}のみから
+なりますが、これはGaucheの拡張で、任意のフォームにマッチします。
+したがって@code{set!}のマッチより後に置く必要があります)。
+@c COMMON
+
+@c EN
+Identifier macros may enable some cool tricks, but it can easily
+confuse readers.  We generally discourage use of identifier macros
+except rare cases where it is absolutely necessary.
+In most cases, you can use ordinary macros by just adding parentheses.
+@c JP
+識別子マクロを使うとアクロバティックなことができますが、
+すぐに読者を混乱させるコードになってしまいます。
+一般的に、どうしても識別子マクロでなければ実現できないこと以外には使用を避けることをおすすめします。
+ほとんどの場合、カッコを足して通常のマクロとして使うのが良いでしょう。
+@c COMMON
+@end defspec
+
 
 @node Traditional macros, Hybrid macros, Hygienic macros, Macros
 @section Traditional macros

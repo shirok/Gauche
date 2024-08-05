@@ -33795,6 +33795,20 @@ The result itself can be viewed as a tree.  It is called a dominator tree.
 @end example
 @end defun
 
+@c @c ----------------------------------------------------------------------
+@c @node R6RS identifier syntax
+@c @section @code{util.identifier-syntax} - R6RS identifier syntax
+
+@c @deftp {Module} util.identifier-syntax
+@c @mdindex util.identifier-syntax
+@c Provide R6RS's @code{identifier-syntax} form.
+@c @end deftp
+
+@c @defmac identifier-syntax template
+@c @defmacx identifier-syntax (id1 template1) ((@code{set!} id2 pattern) template2)
+@c Creates an idendifier macro transformer in the way R6RS specifies.
+
+@c @end defmac
 
 @c ----------------------------------------------------------------------
 @node Determine isomorphism, The longest common subsequence, Calculate dominator tree, Library modules - Utilities
