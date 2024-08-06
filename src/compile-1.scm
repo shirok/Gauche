@@ -908,7 +908,8 @@
 
 (define-pass1-syntax (make-id-transformer form cenv) :gauche
   (match form
-    [(_ macro-expr) (pass1 `(,%make-id-transformer. ,macro-expr) cenv)]
+    [(_ macro-expr)
+     (pass1 `(,%make-id-transformer. ,macro-expr ',(cenv-exp-name cenv)) cenv)]
     [_ (error "syntax-error: malformed eri-id-macro-transformer:" form)]))
 
 ;; Build an expression to construct er macro at runtime, and run pass 1

@@ -1843,9 +1843,9 @@
                         :identifier-macro? identifier-macro?))
 
 ;; Turn a macro to an id macro.
-(define (%make-id-transformer macro)
+(define (%make-id-transformer macro name)
   (assume-type macro <macro>)
-  (%make-macro-transformer (~ macro'name)
+  (%make-macro-transformer name
                            (~ macro'transformer)
                            (~ macro'info-alist)
                            ;; TRANSIENT: So far, we only use identifier-macro
