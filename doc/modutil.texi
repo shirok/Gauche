@@ -90,6 +90,7 @@
 * Combination library::         util.combinations
 * Message digester framework::  util.digest
 * Calculate dominator tree::    util.dominator
+* R6RS identifier syntax::      util.identifier-syntax
 * Determine isomorphism::       util.isomorph
 * The longest common subsequence::  util.lcs
 * Levenshtein edit distance::   util.levenshtein
@@ -33616,7 +33617,7 @@ the backward compatibility.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Calculate dominator tree, Determine isomorphism, Message digester framework, Library modules - Utilities
+@node Calculate dominator tree, R6RS identifier syntax, Message digester framework, Library modules - Utilities
 @section @code{util.dominator} - Calculate dominator tree
 @c NODE 支配木, @code{util.dominator} - 支配木
 
@@ -33795,23 +33796,54 @@ The result itself can be viewed as a tree.  It is called a dominator tree.
 @end example
 @end defun
 
-@c @c ----------------------------------------------------------------------
-@c @node R6RS identifier syntax
-@c @section @code{util.identifier-syntax} - R6RS identifier syntax
+@c ----------------------------------------------------------------------
+@node R6RS identifier syntax, Determine isomorphism, Calculate dominator tree, Library modules - Utilities
+@section @code{util.identifier-syntax} - R6RS identifier syntax
 
-@c @deftp {Module} util.identifier-syntax
-@c @mdindex util.identifier-syntax
-@c Provide R6RS's @code{identifier-syntax} form.
-@c @end deftp
+@deftp {Module} util.identifier-syntax
+@mdindex util.identifier-syntax
+Provide R6RS's @code{identifier-syntax} form.
+@end deftp
 
-@c @defmac identifier-syntax template
-@c @defmacx identifier-syntax (id1 template1) ((@code{set!} id2 pattern) template2)
-@c Creates an idendifier macro transformer in the way R6RS specifies.
+@defmac identifier-syntax template
+@defmacx identifier-syntax (id1 template1) ((@code{set!} id2 pattern) template2)
+[R6RS]
+@c MOD util.identifier-syntax
+Creates an idendifier macro transformer in the way R6RS specifies.
+For identifier transformers, @pxref{Identifier transformer}.  This macro
+is built on top of @code{make-id-transformer}.
+We provide this to ease porting R6RS code to Gauche.
 
-@c @end defmac
+The first form creates an identifier macro that expands to @var{template}.
+Suppose you define a macro with this:
+
+@example
+(define-syntax now (identifier-syntax (sys-time)))
+@end example
+
+Then, any use of @code{now} is expanded to @code{(sys-time)}; however,
+@code{(set! now expr)} will raise an error.
+
+The second form allows @code{set!} as well.  The following is a contrived
+example:
+
+@example
+(define-syntax foo
+  (identifier-syntax
+   [_ (get-foo)]
+   [(set! _ expr) (set-foo! expr)]))
+@end example
+
+Any use of @code{foo} is expanded to @code{(get-foo)}, except
+@code{(set! foo something)}, which is expanded to @code{(set-foo! something)}.
+
+The expansion is hygienic.  The identifiers used in @var{template} captures
+meaning in the scope where @code{identifier-syntax} appears, and won't
+be affected by the scope where the macro is used.
+@end defmac
 
 @c ----------------------------------------------------------------------
-@node Determine isomorphism, The longest common subsequence, Calculate dominator tree, Library modules - Utilities
+@node Determine isomorphism, The longest common subsequence, R6RS identifier syntax, Library modules - Utilities
 @section @code{util.isomorph} - Determine isomorphism
 @c NODE 同型判定, @code{util.isomorph} - 同型判定
 

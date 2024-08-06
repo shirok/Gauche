@@ -1609,6 +1609,20 @@ In most cases, you can use ordinary macros by just adding parentheses.
 一般的に、どうしても識別子マクロでなければ実現できないこと以外には使用を避けることをおすすめします。
 ほとんどの場合、カッコを足して通常のマクロとして使うのが良いでしょう。
 @c COMMON
+
+@c EN
+If you want some portability, you may try @code{identifier-syntax}
+in @code{util.identifier-syntax}
+(@pxref{R6RS identifier syntax}.  It is in R6RS and may be supported
+other implementations.  It is built on top of @code{make-id-transformer}.
+@c JP
+移植性が気になる場合は、@code{util.identifier-syntax}モジュールの
+@code{identifier-syntax}が使えるかもしれません
+(@ref{R6RS identifier syntax}参照)。
+これはR6RSで規定されているので、サポートしている処理系も多いでしょう。
+Gaucheでは@code{make-id-transformer}を使って
+@code{util.identifier-syntax}を実装しています。
+@c COMMON
 @end defspec
 
 
