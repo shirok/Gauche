@@ -33880,6 +33880,14 @@ Any use of @code{foo} is expanded to @code{(get-foo)}, except
 @c COMMON
 
 @c EN
+(Unlike using @code{make-id-transformer} and @code{syntax-rules} combination,
+the @code{set!} matching clause can come later.)
+@c JP
+(@code{make-id-transformer}と@code{syntax-rules}の組み合わせとは違って、
+@code{set!}とマッチする節を後に置きます。)
+@c COMMON
+
+@c EN
 The expansion is hygienic.  The identifiers used in @var{template} captures
 meaning in the scope where @code{identifier-syntax} appears, and won't
 be affected by the scope where the macro is used.
