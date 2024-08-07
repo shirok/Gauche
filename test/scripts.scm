@@ -954,10 +954,24 @@
             (map thread-join! thrs))))
   )
 
+(define (precomp-test-5)
+  (test* "running precomp 5" #t (do-precomp! '("macros.scm") '("-e")))
+  (test* "compile 5" #t (do-compile! "macros" '("macros.c")))
+
+  (dynload-and-eval
+   "macros"
+   (begin
+     (load (build-path *top-srcdir* "test" "test-precomp" "macros-user"))
+     (test* "compiled macro (er)" '((apple) (banana) bonk)
+            (map er-aif-test '(apple banana dragonfruit)))
+     (test* "compiled macro (id-macro)" '(#f 1 2)
+            (im-state-test)))))
+
 (wrap-with-test-directory precomp-test-1 '("test.o"))
 (wrap-with-test-directory precomp-test-2 '("test.o"))
 (wrap-with-test-directory precomp-test-3 '("test.o"))
 (wrap-with-test-directory precomp-test-4 '("test.o"))
+(wrap-with-test-directory precomp-test-5 '("test.o"))
 
 ;;=======================================================================
 (test-section "build-standalone")
