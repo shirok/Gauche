@@ -823,7 +823,7 @@
      ;; Otherwise, we emit the form to *.sci file.
      (when (or (symbol-exported? name)
                (memq name (private-macros-to-keep)))
-       (let1 val (global-variable-ref (~ (current-tmodule)'module) name #f)
+       (let1 val (module-binding-ref (~ (current-tmodule)'module) name #f)
          (or (and-let* ([ ((with-module gauche.internal macro?) val) ]
                         [tx ((with-module gauche.internal macro-transformer) val)]
                         [ (closure? tx) ])
@@ -843,7 +843,7 @@
       `((with-module gauche define-syntax) ,name ,xformer-spec))
      ;; Now generate code.  NB: Once we make macro serializable, we won't
      ;; need all these manual wiring.
-     (let1 val (global-variable-ref (~ (current-tmodule)'module) name #f)
+     (let1 val (module-binding-ref (~ (current-tmodule)'module) name #f)
        (or (and-let* ([ ((with-module gauche.internal macro?) val) ]
                       [tx ((with-module gauche.internal macro-transformer) val)]
                       [ (closure? tx) ])

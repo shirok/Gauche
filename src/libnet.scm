@@ -785,11 +785,11 @@
   ;; Kludge: These may not be bound on certain platforms,
   ;; so we look them up at runtime.
   (define EADDRINUSE
-    (global-variable-ref (find-module 'gauche) 'EADDRINUSE #f))
+    (module-binding-ref 'gauche 'EADDRINUSE #f))
   (define EADDRNOTAVAIL
-    (global-variable-ref (find-module 'gauche) 'EADDRNOTAVAIL #f))
+    (module-binding-ref 'gauche 'EADDRNOTAVAIL #f))
   (define <sockaddr-in6>
-    (global-variable-ref (find-module 'gauche.net) '<sockaddr-in6> #f))
+    (module-binding-ref 'gauche.net '<sockaddr-in6> #f))
 
   (define (bind-failed? e)
     (and (<system-error> e)

@@ -49,7 +49,7 @@
 ;; If gosh is invoked with R7RS mode, import r7rs-small libraries
 ;; into user module for the convenience.  The variable *r7rs-mode*
 ;; is set by main.c if -r7 option is given.
-(when (global-variable-ref (find-module 'user) '*r7rs-mode* #f)
+(when (module-binding-ref 'user '*r7rs-mode* #f)
   (eval '(import (scheme base) (scheme case-lambda) (scheme char)
                  (scheme complex) (scheme cxr) (scheme eval)
                  (scheme file) (scheme inexact) (scheme lazy)

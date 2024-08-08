@@ -1330,8 +1330,8 @@
 
 (test "macro injecting toplevel definition" '(#f #f 42)
       (lambda ()
-        (list (global-variable-ref (current-module) 'foo-toplevel #f)
-              (global-variable-ref (find-module 'defFoo-test) 'foo-toplevel #f)
+        (list (module-binding-ref (current-module) 'foo-toplevel #f)
+              (module-binding-ref 'defFoo-test 'foo-toplevel #f)
               (get-foo))))
 
 ;; recursive reference in macro-defined-macro

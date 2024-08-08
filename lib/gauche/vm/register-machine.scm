@@ -159,7 +159,7 @@
        (loop insns #f)]
       [(('MOV* . _) . _)(error "MOV* unspported yet")]
       [(('LD reg id) . insns)
-       (reg-set! reg (global-variable-ref (~ id'module) (~ id'name)))
+       (reg-set! reg (module-binding-ref (~ id'module) (~ id'name)))
        (loop insns #f)]
       [(('ST reg id) . insns)
        (if-let1 gloc (find-binding (~ id'module) (~ id'name) #f)

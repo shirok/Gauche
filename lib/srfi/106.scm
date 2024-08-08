@@ -48,11 +48,11 @@
 ;; NB: AI_V4MAPPED, AI_ALL and AI_ADDRCONFIG may not be defined
 ;;     even if ipv6 is available (e.g. NetBSD, MinGW32).
 (define-constant *ai-v4mapped*
-  (global-variable-ref 'gauche.net 'AI_V4MAPPED 0))
+  (module-binding-ref 'gauche.net 'AI_V4MAPPED 0))
 (define-constant *ai-all*
-  (global-variable-ref 'gauche.net 'AI_ALL 0))
+  (module-binding-ref 'gauche.net 'AI_ALL 0))
 (define-constant *ai-addrconfig*
-  (global-variable-ref 'gauche.net 'AI_ADDRCONFIG 0))
+  (module-binding-ref 'gauche.net 'AI_ADDRCONFIG 0))
 
 (define-macro (address-info . names)
   (define (lookup name)
@@ -79,7 +79,7 @@
 (define-constant *msg-oob*        net:MSG_OOB)
 ;; NB: MSG_WAITALL may not be defined (e.g. MinGW32).
 (define-constant *msg-waitall*
-  (global-variable-ref 'gauche.net 'MSG_WAITALL 0))
+  (module-binding-ref 'gauche.net 'MSG_WAITALL 0))
 
 (define-macro (message-type . names)
   (define (lookup name)

@@ -79,7 +79,7 @@
                 (format "~,,,,50:a" val)))))
   (let1 bindings (filter-map (^m (and-let* ([g (find-b m sym #t)]
                                             [ (module-binds? m sym) ])
-                                   (list m g (global-variable-ref m sym))))
+                                   (list m g (module-binding-ref m sym))))
                              (all-modules))
     (if (null? bindings)
       (format #t "No known bindings for variable ~a.\n" sym)

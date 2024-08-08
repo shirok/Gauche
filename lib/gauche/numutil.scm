@@ -281,11 +281,11 @@
   )
 
 (define gamma
-  (global-variable-ref (find-module 'gauche.internal) '%gamma
-                       (with-module gauche.internal %alt-gamma)))
+  (module-binding-ref 'gauche.internal '%gamma
+                      (with-module gauche.internal %alt-gamma)))
 (define lgamma
-  (global-variable-ref (find-module 'gauche.internal) '%lgamma
-                       (with-module gauche.internal %alt-lgamma)))
+  (module-binding-ref 'gauche.internal '%lgamma
+                      (with-module gauche.internal %alt-lgamma)))
 
 ;;
 ;; Some R6RS stuff

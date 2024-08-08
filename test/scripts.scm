@@ -867,17 +867,17 @@
                'include2)
          (dynload-and-eval
           "foo"
-          (list ((global-variable-ref 'foo 'foo-literals))
-                ((global-variable-ref 'foo 'foo-begin1))
-                ((global-variable-ref 'foo 'foo-begin2))
-                ((global-variable-ref 'foo 'foo-include1))
-                ((global-variable-ref 'foo 'foo-include2))))
+          (list ((module-binding-ref 'foo 'foo-literals))
+                ((module-binding-ref 'foo 'foo-begin1))
+                ((module-binding-ref 'foo 'foo-begin2))
+                ((module-binding-ref 'foo 'foo-include1))
+                ((module-binding-ref 'foo 'foo-include2))))
          literal=?)
 
   (test* "literal sharing" '(#t #t #t #t #t #t)
          (dynload-and-eval
           "foo"
-          (let1 vs ((global-variable-ref 'foo 'foo-shared-literals))
+          (let1 vs ((module-binding-ref 'foo 'foo-shared-literals))
             (list
              ;; See if partial lists are shared
              (eq? (cdr (assq-ref vs 'list1))
@@ -906,18 +906,18 @@
          (dynload-and-eval
           "types-test"
           (list
-           (eq? (global-variable-ref 'types-test '<A>)
+           (eq? (module-binding-ref 'types-test '<A>)
                 (</> (<Tuple> (<?> <int8>) <string> <integer>)
                      (<List> <integer> 3 10)))
-           (eq? (global-variable-ref 'types-test '<A>)
-                (global-variable-ref 'types-test '<B>))
-           (eq? (global-variable-ref 'types-test '<A>)
-                (global-variable-ref 'types-test '<C>))
+           (eq? (module-binding-ref 'types-test '<A>)
+                (module-binding-ref 'types-test '<B>))
+           (eq? (module-binding-ref 'types-test '<A>)
+                (module-binding-ref 'types-test '<C>))
            ;; NB: The following may not be eq?, since (<List> <integer>) is
            ;; serialized as (<List> <integer> #f #f).  The memoization is
            ;; based on the argument list of the type constructor, so it
            ;; doesn't match with (<List> <integer>) at runtime.
-           (equal? (global-variable-ref 'types-test '<C>)
+           (equal? (module-binding-ref 'types-test '<C>)
                    (</> (<Tuple> (<?> <int8>) <string> <integer>)
                         (<List> <integer>)))
            )))
@@ -928,9 +928,9 @@
          (dynload-and-eval
           "types-test"
           (list
-           ((global-variable-ref 'types-test 'foo) '(3 "ok" 8483958394))
-           ((global-variable-ref 'types-test 'foo) '(#f "ok" -8483958394))
-           ((global-variable-ref 'types-test 'foo) '(1 2 3 4 5)))))
+           ((module-binding-ref 'types-test 'foo) '(3 "ok" 8483958394))
+           ((module-binding-ref 'types-test 'foo) '(#f "ok" -8483958394))
+           ((module-binding-ref 'types-test 'foo) '(1 2 3 4 5)))))
 
   (test* "assertion with reconstructed type"
          #t
@@ -938,7 +938,7 @@
           "types-test"
           (guard (e ((<error> e)
                      (boolean (#/supposed to be of type/ (~ e'message)))))
-            ((global-variable-ref 'types-test 'foo) "ng"))))
+            ((module-binding-ref 'types-test 'foo) "ng"))))
   )
 
 (define (precomp-test-4)

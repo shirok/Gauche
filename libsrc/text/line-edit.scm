@@ -234,7 +234,7 @@
 
 ;; Windows doesn't define SIGCONT, and we precompile this module so we can't
 ;; use cond-expand.
-(define *sigcont* (global-variable-ref (find-module 'gauche) 'SIGCONT 0))
+(define *sigcont* (module-binding-ref 'gauche 'SIGCONT 0))
 
 (define (%sigcont-handler sig)
   (when (eqv? sig *sigcont*)

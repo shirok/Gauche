@@ -131,7 +131,7 @@
 ;; run-process to throw an error rather than doing some clever things.
 (define (pick-editor editor)
   (or (and (string? editor) editor)
-      (global-variable-ref (find-module 'user) '*editor* #f)
+      (module-binding-ref 'user '*editor* #f)
       (sys-getenv "GAUCHE_EDITOR")
       (sys-getenv "EDITOR")
       (case editor

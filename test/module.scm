@@ -283,12 +283,12 @@
 (test "export-time renaming" '(1 4 5 9 #f #f)
       (lambda ()
         (let [(m (find-module 'Oc-1))]
-          (list (global-variable-ref m 'ichi #f)
-                (global-variable-ref m 'yon #f)
-                (global-variable-ref m 'go #f)
-                (global-variable-ref m 'ku #f)
-                (global-variable-ref m 'shi #f)
-                (global-variable-ref m 'kyu #f)))))
+          (list (module-binding-ref m 'ichi #f)
+                (module-binding-ref m 'yon #f)
+                (module-binding-ref m 'go #f)
+                (module-binding-ref m 'ku #f)
+                (module-binding-ref m 'shi #f)
+                (module-binding-ref m 'kyu #f)))))
 
 (test "export-time renaming and defines?/exports? (0c)"
       '((ichi #t #t) (ni #t #f) (shi #t #f) (yon #f #t) (go #t #t) (kyu #t #f) (ku #f #t))
@@ -315,8 +315,8 @@
 (test "export-time renaming plus import renaming" '(#f 9)
       (lambda ()
         (let [(m (find-module 'Od))]
-          (list (global-variable-ref m 'mm:ku #f)
-                (global-variable-ref m 'mm:kokono #f)))))
+          (list (module-binding-ref m 'mm:ku #f)
+                (module-binding-ref m 'mm:kokono #f)))))
 
 (define-module Oe
   (export (rename a x) (rename x a))
@@ -328,8 +328,8 @@
 (test "export-time renaming with swapping" '(X A)
       (lambda ()
         (let [(m (find-module 'Oe-1))]
-          (list (global-variable-ref m 'a #f)
-                (global-variable-ref m 'x #f)))))
+          (list (module-binding-ref m 'a #f)
+                (module-binding-ref m 'x #f)))))
 
 (define-module Of
   (export foo)
@@ -340,7 +340,7 @@
   (export foo))
 
 (test "transitive export" 1
-      (lambda () (global-variable-ref (find-module 'Of-1) 'foo #f)))
+      (lambda () (module-binding-ref (find-module 'Of-1) 'foo #f)))
 
 (define-module Of-2
   (import Of)
@@ -351,8 +351,8 @@
 (test "export-time renaming and transitive export" '(1 #f)
       (lambda ()
         (list
-         (global-variable-ref (find-module 'Of-3) 'foo-alias #f)
-         (global-variable-ref (find-module 'Of-3) 'foo #f))))
+         (module-binding-ref 'Of-3 'foo-alias #f)
+         (module-binding-ref 'Of-3 'foo #f))))
 
 (define-module Of-4
   (import (Of-2 :rename ((foo-alias foo-newname)))))
@@ -361,9 +361,9 @@
       '(1 #f #f)
       (lambda ()
         (list
-         (global-variable-ref (find-module 'Of-4) 'foo-newname #f)
-         (global-variable-ref (find-module 'Of-4) 'foo-alias #f)
-         (global-variable-ref (find-module 'Of-4) 'foo #f))))
+         (module-binding-ref 'Of-4 'foo-newname #f)
+         (module-binding-ref 'Of-4 'foo-alias #f)
+         (module-binding-ref 'Of-4 'foo #f))))
 
 (define-module Of-5
   (extend Of)
@@ -378,8 +378,8 @@
       '((#f 1) (#f #f) (1 #f) (2 #f) (#f 2) (#f #f))
       (lambda ()
         (map (lambda (s)
-               (list (global-variable-ref (find-module 'Of-6) s #f)
-                     (global-variable-ref (find-module 'Of-7) s #f)))
+               (list (module-binding-ref 'Of-6 s #f)
+                     (module-binding-ref 'Of-7 s #f)))
              '(who foo-alias foo bah bar-alias bar))))
 
 ;;------------------------------------------------------------------
@@ -453,21 +453,21 @@
       (lambda ()
         (eval '(with-module V (extend Q MM)) (interaction-environment))))
 
-(test "global-variable-ref" 'gamma
+(test "module-binding-ref" 'gamma
       (lambda ()
-        (global-variable-ref 'U 'c)))
+        (module-binding-ref 'U 'c)))
 
-(test "global-variable-ref" (test-error)
+(test "module-binding-ref" (test-error)
       (lambda ()
-        (global-variable-ref 'U 'e)))
+        (module-binding-ref 'U 'e)))
 
-(test "global-variable-ref" 'huh?
+(test "module-binding-ref" 'huh?
       (lambda ()
-        (global-variable-ref 'U 'e 'huh?)))
+        (module-binding-ref 'U 'e 'huh?)))
 
-(test "global-variable-ref" 'huh?
+(test "module-binding-ref" 'huh?
       (lambda ()
-        (global-variable-ref 'U 'c 'huh? #t)))
+        (module-binding-ref 'U 'c 'huh? #t)))
 
 ;;------------------------------------------------------------------
 ;; mpl search bug in 0.9.1 reported by Ryo Akagi
@@ -528,7 +528,7 @@
 (let ()
   (define (check mod . syms)
     (map (lambda (sym)
-           (list sym (global-variable-ref (find-module mod) sym 'undef)))
+           (list sym (module-binding-ref mod sym 'undef)))
          syms))
   (test* "mpl prefix simple" '((a undef) (b undef) (X:a 0) (X:b 1))
          (check 'mpl-prefix-1 'a 'b 'X:a 'X:b))

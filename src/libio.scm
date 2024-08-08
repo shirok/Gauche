@@ -880,12 +880,10 @@
     (^[dict proc]
       (unless walker
         (set! walker
-              (global-variable-ref (find-module 'gauche.libdict)
-                                   'dict-for-each)))
+              (module-binding-ref 'gauche.libdict 'dict-for-each)))
       (unless transparent?
         (set! transparent?
-              (global-variable-ref (find-module 'gauche.libdict)
-                                   'dict-transparent?)))
+              (module-binding-ref 'gauche.libdict 'dict-transparent?)))
       (when (transparent? dict)
         (walker dict proc)))))
 

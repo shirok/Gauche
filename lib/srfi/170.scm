@@ -153,10 +153,7 @@
 (define-constant open/append O_APPEND)
 (define-constant open/create O_CREAT)
 (define-constant open/exclusive O_EXCL)
-(define-constant open/nofollow   (global-variable-ref
-                                  (find-module 'gauche.fcntl)
-                                  'O_NOFOLLOW
-                                  0))
+(define-constant open/nofollow (module-binding-ref 'gauche.fcntl 'O_NOFOLLOW 0))
 (define-constant open/truncate   O_TRUNC)
 
 (define (open-file fname port-type flags

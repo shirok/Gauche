@@ -384,7 +384,7 @@
             (match insn
               [(_ (? reference-to-foo? x)) #t]
               [_ #f]))
-          (proc->insn/split (global-variable-ref m 'bar)))))
+          (proc->insn/split (module-binding-ref m 'bar)))))
 
 ;; generic function pre-dispatch
 ;; NB: We're still not sure how to expose this feature in general.

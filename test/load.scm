@@ -420,7 +420,7 @@
              (with-output-to-file "test.o"
                (^[] (print)))
              (load "non/existent/file" :paths `(,#"~(sys-getcwd)/test.o"))
-             (global-variable-ref (current-module) '*path*))
+             (module-binding-ref (current-module) '*path*))
          ((with-module gauche.internal %delete-load-path-hook!)
           dummy-load-path-hook)))
 

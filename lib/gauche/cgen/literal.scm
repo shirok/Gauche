@@ -774,8 +774,8 @@
   #"Scm_~(string-upcase (uvector-class->tag-name class))VectorClass")
 
 (define (uvector-class->type-enum class)
-  (global-variable-ref
-   (find-module 'gauche)
+  (module-binding-ref
+   'gauche
    (string->symbol
     #"SCM_UVECTOR_~(string-upcase (uvector-class->tag-name class))")))
 

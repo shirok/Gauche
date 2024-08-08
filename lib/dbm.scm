@@ -241,4 +241,4 @@
          (guard (e [else #f])
            ((with-module gauche.internal %require)
             (module-name->path module-name))
-           (global-variable-ref (find-module module-name) class-name)))))
+           (module-binding-ref module-name class-name)))))

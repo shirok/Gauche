@@ -343,7 +343,7 @@
     (hash-table-for-each (module-table mod)
                          (lambda (sym val)
                            (guard (_ (else (push! bad-autoload sym)))
-                             (global-variable-ref mod sym))))
+                             (module-binding-ref mod sym))))
     ;; 2. Check if all exported symbols are properly defined.
     ;; We create an anonymous moudle and import the tested module.  By this
     ;; way, we can test renaming export (in which case, the exported name
@@ -355,7 +355,7 @@
         (eval `(extend) m)
         (for-each (lambda (sym)
                     (guard (_ [else (push! bad-export sym)])
-                      (global-variable-ref m sym)))
+                      (module-binding-ref m sym)))
                   (module-exports mod))))
     ;; 3. Check if all global references are resolvable, and if it is
     ;; called, gets valid number of arguments.
@@ -426,7 +426,7 @@
 (define (toplevel-closures module)
   (filter closure?
           (map (lambda (sym)
-                 (global-variable-ref module sym #f))
+                 (module-binding-ref module sym #f))
                (hash-table-keys (module-table module)))))
 
 ;; Combs closure's instruction list to extract references for the global
@@ -483,7 +483,7 @@
 (define (arity-invalid? gref numargs src-code)
   (and-let* ([ numargs ]
              ;; TODO: What if GREF is nested identifier?
-             [proc (global-variable-ref
+             [proc (module-binding-ref
                     (slot-ref gref'module)
                     (unwrap-syntax gref)
                     #f)]

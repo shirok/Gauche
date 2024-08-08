@@ -212,7 +212,7 @@
                    [driver-class
                     (begin (eval `(require ,(path-sans-extension path))
                                  (current-module))
-                           (global-variable-ref module class-name #f))])
+                           (module-binding-ref module class-name #f))])
           (make driver-class :driver-name driver-name))
         (errorf <dbi-nonexistent-driver-error>
                 :driver-name driver-name
