@@ -158,6 +158,9 @@
 (define-cproc identifier-macro? (mac::<macro>) ::<boolean>
   (return (logand (-> mac flags) SCM_MACRO_IDENTIFIER)))
 
+(define-cproc swap-macro-transformer! (mac::<macro> new-transformer)
+  Scm_SwapMacroTransformer)
+
 ;; Macro expand tracer
 ;; *trace-macro* can be #f (default - no trace), #t (trace all macros),
 ;; or a list of symbols/regexp (trace macros whose name that matches)

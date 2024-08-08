@@ -103,6 +103,17 @@ ScmObj Scm_MacroName(ScmMacro *mac)
     return (mac->name? SCM_OBJ(mac->name) : SCM_FALSE);
 }
 
+/* called from syntax-parameterize */
+ScmObj Scm_SwapMacroTransformer(ScmMacro *mac, ScmObj new_transformer)
+{
+    if (!(mac->flags & SCM_MACRO_PARAMETER)) {
+        Scm_Error("Macro %S is not parameterizable.", SCM_OBJ(mac));
+    }
+    ScmObj prev = mac->transformer;
+    mac->transformer = new_transformer;
+    return prev;
+}
+
 /*===================================================================
  * SyntaxPattern object
  * Repesents a repeatable subpattern

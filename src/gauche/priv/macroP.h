@@ -64,9 +64,21 @@ struct ScmMacroRec {
 };
 
 enum {
-    SCM_MACRO_IDENTIFIER = 1L<<0   /* Macro xformer is called even when
+    SCM_MACRO_IDENTIFIER = 1L<<0,  /* Macro xformer is called even when
                                       the macro appears in non-head position */
+    SCM_MACRO_PARAMETER = 1L<<1    /* Parameterizable macro, created by
+                                      define-syntax-parameter (srfi-139). */
 };
+
+/* Note on parameterizable macro: Parameterizable macro allows its transformer
+   to be swapped by syntax-parameterize.
+   Theoretically, parameterizability of syntax should be a property of
+   the binding, rather than a macro object.  We may change the implementation
+   later, so don't count on this interface.
+*/
+
+SCM_EXTERN ScmObj Scm_SwapMacroTransformer(ScmMacro *m, ScmObj new_xformer);
+
 
 /*
  * SyntaxRules keeps a compiled rules of macro transformation.
