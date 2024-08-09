@@ -1850,6 +1850,14 @@
                            (~ macro'info-alist)
                            (cons 'identifier-macro (~ macro'flags))))
 
+;; Turn a macro to a parameterizable macro.
+(define (%make-parameterizable-transformer macro name)
+  (assume-type macro <macro>)
+  (%make-macro-transformer name
+                           (~ macro'transformer)
+                           (~ macro'info-alist)
+                           (cons 'parameterizable (~ macro'flags))))
+
 ;; Returns an S-expr all macros in which are expanded.
 ;; The resulting form may not be equivalent to the input form, though,
 ;; since we strip off identifier information so toplevel hygiene isn't

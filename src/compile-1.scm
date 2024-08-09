@@ -846,26 +846,37 @@
 (define-pass1-syntax (define-syntax form cenv) :null
   (check-toplevel form cenv)
   (match form
-    [(_ name expr)
-     (let* ([cenv (cenv-add-name cenv (variable-name name))]
-            [trans (pass1/eval-macro-rhs 'define-syntax expr cenv)]
-            ;; See the "Hygiene alert" in pass1/define.
-            [id (if (wrapped-identifier? name)
-                  (%rename-toplevel-identifier! name)
-                  (make-identifier name (cenv-module cenv) '()))])
-       (%insert-syntax-binding (identifier-module id)
-                               (unwrap-syntax name)
-                               trans)
-       ($const-undef))]
+    [(_ name expr) (pass1/define-syntax name expr cenv #f)]
     [_ (error "syntax-error: malformed define-syntax:" form)]))
+
+(define-pass1-syntax (define-syntax-parameter form cenv) :gauche ;srfi-139
+  (check-toplevel form cenv)
+  (match form
+    [(_ name expr) (pass1/define-syntax name expr cenv #t)]
+    [_ (error "syntax-error: malformed define-syntax:" form)]))
+
+(define (pass1/define-syntax name expr cenv parameterizable?)
+  (let* ([cenv (cenv-add-name cenv (variable-name name))]
+         [trans (pass1/eval-macro-rhs 'define-syntax expr cenv)]
+         [trans (if parameterizable?
+                  (%make-parameterizable-transformer trans name)
+                  trans)]
+         ;; See the "Hygiene alert" in pass1/define.
+         [id (if (wrapped-identifier? name)
+               (%rename-toplevel-identifier! name)
+               (make-identifier name (cenv-module cenv) '()))])
+    (%insert-syntax-binding (identifier-module id)
+                            (unwrap-syntax name)
+                            trans)
+    ($const-undef)))
 
 ;; Experimental
 (define-pass1-syntax (define-hybrid-syntax form cenv) :gauche
-  (pass1-define-hybrid-syntax form cenv))
+  (pass1/define-hybrid-syntax form cenv))
 (define-pass1-syntax (define-inline/syntax form cenv) :gauche ;deprecated
-  (pass1-define-hybrid-syntax form cenv))
+  (pass1/define-hybrid-syntax form cenv))
 
-(define (pass1-define-hybrid-syntax form cenv)
+(define (pass1/define-hybrid-syntax form cenv)
   (check-toplevel form cenv)
   (match form
     [(_ name expr macro-expr)
