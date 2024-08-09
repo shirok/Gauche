@@ -131,6 +131,8 @@
           [h SCM_NIL] [t SCM_NIL])
      (when (logand flags SCM_MACRO_IDENTIFIER)
        (SCM_APPEND1 h t 'identifier-macro))
+     (when (logand flags SCM_MACRO_PARAMETERIZABLE)
+       (SCM_APPEND1 h t 'parameterizable))
      (return h)))
 
  (define-cclass <macro>

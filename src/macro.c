@@ -106,7 +106,7 @@ ScmObj Scm_MacroName(ScmMacro *mac)
 /* called from syntax-parameterize */
 ScmObj Scm_SwapMacroTransformer(ScmMacro *mac, ScmObj new_transformer)
 {
-    if (!(mac->flags & SCM_MACRO_PARAMETER)) {
+    if (!(mac->flags & SCM_MACRO_PARAMETERIZABLE)) {
         Scm_Error("Macro %S is not parameterizable.", SCM_OBJ(mac));
     }
     ScmObj prev = mac->transformer;

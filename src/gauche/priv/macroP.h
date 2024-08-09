@@ -64,10 +64,11 @@ struct ScmMacroRec {
 };
 
 enum {
-    SCM_MACRO_IDENTIFIER = 1L<<0,  /* Macro xformer is called even when
-                                      the macro appears in non-head position */
-    SCM_MACRO_PARAMETER = 1L<<1    /* Parameterizable macro, created by
-                                      define-syntax-parameter (srfi-139). */
+    SCM_MACRO_IDENTIFIER = 1L<<0,     /* Macro xformer is called even when
+                                         the macro appears in non-head
+                                         position. */
+    SCM_MACRO_PARAMETERIZABLE = 1L<<1 /* Parameterizable macro, created by
+                                         define-syntax-parameter (srfi-139). */
 };
 
 /* Note on parameterizable macro: Parameterizable macro allows its transformer

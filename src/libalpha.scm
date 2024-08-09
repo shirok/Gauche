@@ -390,6 +390,8 @@
                 (cond
                  [(SCM_EQ flag 'identifier-macro)
                   (logior= flag-bits SCM_MACRO_IDENTIFIER)]
+                 [(SCM_EQ flag 'parameterizable)
+                  (logior= flag-bits SCM_MACRO_PARAMETERIZABLE)]
                  [else
                   (Scm_Error "Unknown flag symbol: %S" flag)]))
               flags)
