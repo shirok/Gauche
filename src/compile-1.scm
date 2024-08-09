@@ -845,8 +845,6 @@
 
 (define-pass1-syntax (define-syntax form cenv) :null
   (check-toplevel form cenv)
-  ;; Temporary: we use the old compiler's syntax-rules implementation
-  ;; for the time being.
   (match form
     [(_ name expr)
      (let* ([cenv (cenv-add-name cenv (variable-name name))]

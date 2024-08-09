@@ -1848,11 +1848,7 @@
   (%make-macro-transformer name
                            (~ macro'transformer)
                            (~ macro'info-alist)
-                           ;; TRANSIENT: So far, we only use identifier-macro
-                           ;; in flags, so this is enough.  If we add more
-                           ;; flags, this should be consing identifier-macro
-                           ;; onto original macro tansformer's flags.
-                           '(identifier-macro)))
+                           (cons 'identifier-macro (~ macro'flags))))
 
 ;; Returns an S-expr all macros in which are expanded.
 ;; The resulting form may not be equivalent to the input form, though,
