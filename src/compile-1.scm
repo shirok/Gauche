@@ -1037,6 +1037,33 @@
                                    (cenv-frames cenv)))]
     [_ (error "syntax-error: malformed syntax-rules:" form)]))
 
+(define-pass1-syntax (syntax-parameterize form cenv) :gauche
+  (match form
+    [(_ ((keys trans-specs) ...) body ...)
+     (let* ([macros
+             (map (^[key]
+                    (or (and-let* ([ (identifier? key) ]
+                                   [r (cenv-lookup cenv key)])
+                          (cond [(wrapped-identifier? r)
+                                 (and-let* ([m (global-ref-type r)]
+                                            [ (macro? m) ])
+                                   m)]
+                                [(macro? r) r]
+                                [else #f]))
+                        (error "syntax-parameterize: identifer bound to a \
+                                macro expected, but got:" key)))
+                  keys)]
+            [xforms (map (^[key spec]
+                           (pass1/eval-macro-rhs 'syntax-parameterize spec
+                                                 (cenv-add-name cenv key)))
+                         keys trans-specs)]
+            [saves (map macro-transformer xforms)])
+       (dynamic-wind
+        (^[] (set! saves (map swap-macro-transformer! macros saves)))
+        (^[] (pass1/body body cenv))
+        (^[] (set! saves (map swap-macro-transformer! macros saves)))))]
+    [_ (error "Malformed syntax-parameterize:" form)]))
+
 ;; If family ........................................
 
 (define-pass1-syntax (if form cenv) :null

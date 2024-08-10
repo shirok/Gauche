@@ -1,3 +1,8 @@
+2024-08-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (define-syntax-parameter, syntax-parameterize):
+	  Added srfi-139 (preliminary).  We need more error checks and tests.
+
 2024-08-06  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (make-id-transformer): Attach expression name
