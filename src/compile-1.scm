@@ -1053,15 +1053,18 @@
                         (error "syntax-parameterize: identifer bound to a \
                                 macro expected, but got:" key)))
                   keys)]
-            [xforms (map (^[key spec]
-                           (pass1/eval-macro-rhs 'syntax-parameterize spec
-                                                 (cenv-add-name cenv key)))
-                         keys trans-specs)]
-            [saves (map macro-transformer xforms)])
+            [newmacros (map (^[key spec]
+                              (pass1/eval-macro-rhs 'syntax-parameterize spec
+                                                    (cenv-add-name cenv key)))
+                            keys trans-specs)]
+            [saves (map (^[newmacro]
+                          (list (macro-transformer newmacro)
+                                (~ newmacro'flags)))
+                        newmacros)])
        (dynamic-wind
-        (^[] (set! saves (map swap-macro-transformer! macros saves)))
+        (^[] (set! saves (map %swap-macro-transformer! macros saves)))
         (^[] (pass1/body body cenv))
-        (^[] (set! saves (map swap-macro-transformer! macros saves)))))]
+        (^[] (set! saves (map %swap-macro-transformer! macros saves)))))]
     [_ (error "Malformed syntax-parameterize:" form)]))
 
 ;; If family ........................................

@@ -2414,6 +2414,29 @@
   (test-include-r7 "include/srfi-135-tests.scm"))
 
 ;;-----------------------------------------------------------------------
+;; Syntax parameters
+
+(test-section "SRFI-139")
+
+(define-module srfi-139-tests
+  (use gauche.test)
+  ;; srfi-139 is built-in
+  (define-syntax-parameter foo (syntax-rules () [(_ a) '(a a)]))
+
+  (test* "syntax parameter 1" '((oof oof) (foof foof foof))
+         (list (foo oof)
+               (syntax-parameterize ([foo (syntax-rules () [(_ a) '(a a a)])])
+                  (foo foof))))
+
+  (test* "syntax-parameter 2" '((oof oof) (foof))
+         (list (foo oof)
+               (syntax-parameterize ([foo (make-id-transformer
+                                           (syntax-rules ()
+                                             [_ 'foof]))])
+                  (list foo))))
+  )
+
+;;-----------------------------------------------------------------------
 ;; Integer division
 
 (test-section "SRFI-141")

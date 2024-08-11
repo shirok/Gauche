@@ -103,15 +103,24 @@ ScmObj Scm_MacroName(ScmMacro *mac)
     return (mac->name? SCM_OBJ(mac->name) : SCM_FALSE);
 }
 
-/* called from syntax-parameterize */
-ScmObj Scm_SwapMacroTransformer(ScmMacro *mac, ScmObj new_transformer)
+/* Called from syntax-parameterize.
+   This API is internal and subject to change.
+ */
+void Scm__SwapMacroTransformer(ScmMacro *mac,
+                               ScmObj *pxformer,
+                               u_long *pflags)
 {
     if (!(mac->flags & SCM_MACRO_PARAMETERIZABLE)) {
         Scm_Error("Macro %S is not parameterizable.", SCM_OBJ(mac));
     }
-    ScmObj prev = mac->transformer;
-    mac->transformer = new_transformer;
-    return prev;
+    ScmObj oxformer = mac->transformer;
+    u_long oflags = mac->flags;
+
+    mac->transformer = *pxformer;
+    mac->flags = *pflags | SCM_MACRO_PARAMETERIZABLE;
+
+    *pxformer = oxformer;
+    *pflags = oflags & (~SCM_MACRO_PARAMETERIZABLE);
 }
 
 /*===================================================================

@@ -78,7 +78,9 @@ enum {
    later, so don't count on this interface.
 */
 
-SCM_EXTERN ScmObj Scm_SwapMacroTransformer(ScmMacro *m, ScmObj new_xformer);
+SCM_EXTERN void Scm__SwapMacroTransformer(ScmMacro *m,
+                                          ScmObj *pxformer,
+                                          u_long *pflags);
 
 
 /*

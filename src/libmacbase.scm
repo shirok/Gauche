@@ -160,8 +160,25 @@
 (define-cproc identifier-macro? (mac::<macro>) ::<boolean>
   (return (logand (-> mac flags) SCM_MACRO_IDENTIFIER)))
 
-(define-cproc swap-macro-transformer! (mac::<macro> new-transformer)
-  Scm_SwapMacroTransformer)
+;; new-transformer&flags := (<transformer> (<flag> ...))
+;; Returns old info in the same format
+;; This API is subject to change.
+(define-cproc %swap-macro-transformer! (mac::<macro> new-transformer&flags)
+  (SCM_ASSERT (SCM_PAIRP new-transformer&flags))
+  (SCM_ASSERT (SCM_PAIRP (SCM_CDR new-transformer&flags)))
+  (let* ([xformer (SCM_CAR new-transformer&flags)]
+         [flags (SCM_CADR new-transformer&flags)]
+         [iflags::u_long 0])
+    (for-each (lambda (f)
+                (if (SCM_EQ f 'identifier-macro)
+                  (logior= iflags SCM_MACRO_IDENTIFIER)
+                  (Scm_Error "Invalid macro flag: %S" f)))
+              flags)
+    (Scm__SwapMacroTransformer mac (& xformer) (& iflags))
+    (if (logand iflags SCM_MACRO_IDENTIFIER)
+      (set! flags '(identifier-macro))
+      (set! flags '()))
+    (return (SCM_LIST2 xformer flags))))
 
 ;; Macro expand tracer
 ;; *trace-macro* can be #f (default - no trace), #t (trace all macros),
