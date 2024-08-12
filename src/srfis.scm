@@ -1391,6 +1391,18 @@ MaybeとEither: オプショナルなコンテナ型
 @ref{Maybe and Either optional container types}参照。
 
 
+srfi-190, srfi-190
+()
+
+Coroutine generators
+Supported by the module @code{srfi.190}.
+@xref{Coroutine generators}.
+
+コルーチンジェネレータ
+モジュール@code{srfi.190}でサポートされます。
+@ref{Coroutine generators}参照。
+
+
 srfi-192, srfi-192
 ()
 

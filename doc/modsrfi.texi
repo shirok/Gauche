@@ -82,6 +82,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Custom ports::                srfi.181
 * Linear adjustable-length strings::  srfi.185
 * Maybe and Either optional container types::  srfi.189
+* Coroutine generators::        srfi.190
 * Port positioning::            srfi.192
 * Command line::                srfi.193
 * Random data generators (SRFI)::  srfi.194
@@ -10891,7 +10892,7 @@ SRFI-118 (@ref{Simple adjustable-size strings}参照)を使っているコード
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Maybe and Either optional container types, Port positioning, Linear adjustable-length strings, Library modules - SRFIs
+@node Maybe and Either optional container types, Coroutine generators, Linear adjustable-length strings, Library modules - SRFIs
 @section @code{srfi.189} - Maybe and Either: optional container types
 @c NODE MaybeとEither、オプショナルなコンテナ型, @code{srfi.189} - MaybeとEither、オプショナルなコンテナ型
 
@@ -11669,7 +11670,34 @@ Otherwise, first @code{Just} is returned.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Port positioning, Command line, Maybe and Either optional container types, Library modules - SRFIs
+@node Coroutine generators, Port positioning, Maybe and Either optional container types, Library modules - SRFIs
+@section @code{srfi.190} - Coroutine generators
+@c NODE コルーチンジェネレータ,  @code{srfi.190} - コルーチンジェネレータ
+
+@deftp {Module} srfi.190
+@mdindex srfi.190
+This module provides a macro, @code{coroutine-generator},
+that simplifies defining a generator-based coroutine.
+@end deftp
+
+@defmac coroutine-generator body
+[SRFI-190]
+@c MOD srfi.190
+@end defmac
+
+@defmac yield
+[SRFI-190]
+@c MOD srfi.190
+@end defmac
+
+@defmac define-coroutine-generator name expr
+@defmacx define-coroutine-generator (name . formals) body @dots{}
+[SRFI-190]
+@c MOD srfi.190
+@end defmac
+
+@c ----------------------------------------------------------------------
+@node Port positioning, Command line, Coroutine generators, Library modules - SRFIs
 @section @code{srfi.192} - Port positioning
 @c NODE ポート位置,  @code{srfi.192} - ポート位置
 
