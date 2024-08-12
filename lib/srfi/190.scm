@@ -31,26 +31,24 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; EXPERIMENTAL - not using identifier syntax
-;; NB: This isn't correct.  See the mail archive of SRFI-190.
-
 (define-module srfi.190
   (use gauche.generator)
+  (use util.identifier-syntax)
   (export coroutine-generator yield define-coroutine-generator))
 (select-module srfi.190)
 
-(define yield-proc
-  (make-parameter (^_ (error "yield used outside coroutine generator"))))
-
-(define (yield x) ((yield-proc) x))
+(define-syntax-parameter yield
+  (er-macro-transformer
+   (^[f r c]
+     (error "yield used outside coroutine generator:" f))))
 
 (define-syntax coroutine-generator
   (syntax-rules ()
     [(_ . body)
      (make-coroutine-generator
       (^[%yield]
-       (parameterize ((yield-proc %yield))
-         . body)))]))
+        (syntax-parameterize ((yield (identifier-syntax %yield)))
+                             . body)))]))
 
 (define-syntax define-coroutine-generator
   (syntax-rules ()

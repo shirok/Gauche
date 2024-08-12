@@ -2,9 +2,9 @@
 ;;; https://github.com/scheme-requests-for-implementation/srfi-190/test.scm
 
 (import (scheme base)
-(srfi 158)
-(srfi-190) ; not yet finalized
-(srfi 64))
+        (srfi 158)
+        (srfi 190)
+        (srfi 64))
 
 (test-begin "SRFI 190")
 

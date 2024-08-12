@@ -1,3 +1,8 @@
+2024-08-11  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/190.scm: Proper support of srfi-190, based on
+	  identifier syntax and syntax parameters.
+
 2024-08-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (define-syntax-parameter, syntax-parameterize):

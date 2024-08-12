@@ -2890,6 +2890,17 @@
   (test-include-r7 "include/srfi-189-tests"))
 
 ;;-----------------------------------------------------------------------
+;; Coroutine generators
+
+(test-section "SRFI-190")
+
+(define-module srfi-190-tests
+  (use gauche.test)
+  (use srfi.190)
+  (test-module 'srfi.190)
+  (test-include-r7 "include/srfi-190-tests"))
+
+;;-----------------------------------------------------------------------
 ;; NB: SRFI-192 is tested in gauche.vport
 
 ;;-----------------------------------------------------------------------
