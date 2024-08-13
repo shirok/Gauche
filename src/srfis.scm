@@ -1084,9 +1084,19 @@ Scheme プログラムを実行可能ファイルにコンパイルする
 サポートされています。
 @ref{Comamnd to compile scripts}参照。
 
+
+srfi-139
+(define-syntax-parameter syntax-parameterize)
+
+Syntax parameters
+Built-in.  @xref{Syntax parameters}.
+
+構文パラメータ
+組み込みです。@ref{Syntax parameters}参照。
+
+
 srfi-141, srfi-141
 ()
-
 
 Integer division
 This has become a part of R7RS large.

@@ -37,6 +37,7 @@ Gaucheは、名前の衝突を避ける安全なマクロを簡単に書ける�
 * Hygienic macros::
 * Traditional macros::
 * Hybrid macros::
+* Syntax parameters::
 * Identifiers::
 * Debugging macros::
 * Macro utilities::
@@ -1688,7 +1689,7 @@ global bindings inserted by the macro.
 @c COMMON
 @end defspec
 
-@node Hybrid macros, Identifiers, Traditional macros, Macros
+@node Hybrid macros, Syntax parameters, Traditional macros, Macros
 @section Hybrid macros
 @c NODE ハイブリッドマクロ
 
@@ -1772,7 +1773,103 @@ Gaucheではひとつのフォームで束縛を決定してしまう方が良�
 @c COMMON
 @end defmac
 
-@node Identifiers, Debugging macros, Hybrid macros, Macros
+@node Syntax parameters, Identifiers, Hybrid macros, Macros
+@section Syntax parameters
+@c NODE 構文パラメータ
+
+Syntax parameters allows to rebind syntactic binding dynamically
+during macro expandsion.  The form resembles @code{parameterize}
+(@pxref{Parameters}), but works purely at macro expansion time.
+It allows to define a macro that affects other macros hygienically.
+It is defined by SRFI-139.
+
+Suppose you want to have a macro @code{(block <body> ...)} that
+evaluates expression @code{<body>} sequentially.  Inside it,
+we want to have another macro @code{(return <expr>)}, which
+evaluates @code{<expr>} and then exits @code{(block ...)},
+making the value of @code{<expr>} as the value of @code{(block ...)},
+
+In other words, the macro @code{block} need to change the behavior of
+@code{return}.  It can be written, for example, as follows:
+
+@example
+(define-syntax block
+  (er-macro-transformer
+    (^[f r c]
+      (quasirename r
+       `(let/cc ,'return ,@@(cdr f)))))
+
+(block (print 1) (print 2) (return 'oops) (print 4))
+ @result{} @r{print 1, 2, and then returns @code{oops}}
+@end example
+
+But note that this needs to insert @code{return} unhyginenically.
+It may break, for example, when combined with another library that
+uses @code{return} for other purposes.
+
+With syntax parameters, you can write it hygienically:
+
+@example
+(define-syntax-parameter return
+  (syntax-rules ()
+    ((_ . _) (syntax-error "return outside block"))))
+
+(define-syntax block
+  (syntax-rules ()
+    ((_ body ...)
+     (let/cc %return
+       (syntax-parameterize ((return (syntax-rules ()
+                                       ((_ expr) (%return expr)))))
+         body ...)))))
+@end example
+
+The @code{return} has desired effect with @code{block} only if it
+refers to the same bindings.  Suppose you make the above code into
+a library, and the user imports the library with prefix.  Then,
+the user can refer to the non-local-exit return with the prefix,
+and that can coexist of whatever @code{return} defined in the
+user's module.
+
+@example
+(use block :prefix b:)
+
+(define return ...)
+
+(b:block
+  ...
+  (return ...)  ; This refers to the 'return' in the current module
+  ...
+  (b:return 'oops) ; This invokes 'return' to exit from the block
+  ...
+  )
+@end example
+
+@defspec define-syntax-parameter name transformer-spec
+[SRFI-139]
+Like @code{define-syntax}, binds @var{name} with
+a macro created by @var{transformer-spec}, but the binding
+is marked as a syntax parameter, and can be altered with
+@code{syntax-parameterize}.
+
+The @var{transformer-spec} works as a default syntax, invoked
+when no @code{syntax-parameterize} on @var{name} is in effect.
+The forms allowed in @var{transformer-spec} is the same
+as @code{define-syntax}.
+@var{}
+@end defspec
+
+@defspec syntax-parameterize ((key transformer-spec) @dots{}) body @dots{}
+[SRFI-139]
+The @var{key}s must be identifiers bound to syntax parameters.
+This form alters the macro transformers of @var{key}s with the ones
+specified by the given @var{transformer-spec}s, then proceed to
+compile @var{body} @dots{}.  The altered bindings are effective
+during the dynamic scope of macro-expansion phase.  (Be aware that
+it has nothing to do with the dynamic scope at runtime.)
+@end defspec
+
+
+@node Identifiers, Debugging macros, Syntax parameters, Macros
 @section Identifiers
 @c NODE 識別子
 
