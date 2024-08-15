@@ -1777,20 +1777,41 @@ Gaucheではひとつのフォームで束縛を決定してしまう方が良�
 @section Syntax parameters
 @c NODE 構文パラメータ
 
+@c EN
 Syntax parameters allows to rebind syntactic binding dynamically
 during macro expandsion.  The form resembles @code{parameterize}
 (@pxref{Parameters}), but works purely at macro expansion time.
 It allows to define a macro that affects other macros hygienically.
 It is defined by SRFI-139.
+@c JP
+構文パラメータは、マクロ展開時に動的に構文束縛を置き換えるものです。
+束縛フォームは@code{parameterize}に似ています(@ref{Parameters}参照)が、
+マクロ展開時のみに作用します。
+これを使うと、他のマクロに影響を与えるマクロを衛生的に書くことができます。
+構文パラメータはSRFI-139で定義されました。
+@c COMMON
 
+@c EN
 Suppose you want to have a macro @code{(block <body> ...)} that
 evaluates expression @code{<body>} sequentially.  Inside it,
 we want to have another macro @code{(return <expr>)}, which
 evaluates @code{<expr>} and then exits @code{(block ...)},
 making the value of @code{<expr>} as the value of @code{(block ...)},
+@c JP
+例えば、@code{(block <body> ...)}というマクロを考えてみます。
+これは@code{<body>}を順番に実行します。@var{<body>}の中で、
+別のマクロ@code{(return <expr>)}を呼び出すことができて、
+その場合、@code{<expr>}が評価され、それを値として直ちに@code{(block ...)}から
+脱出します。
+@c COMMON
 
+@c EN
 In other words, the macro @code{block} need to change the behavior of
 @code{return}.  It can be written, for example, as follows:
+@c JP
+言ってみれば、マクロ@code{block}はマクロ@code{return}の振る舞いを変える必要がある
+わけです。これは次のように書くことができるでしょう。
+@c COMMON
 
 @example
 (define-syntax block
@@ -1803,11 +1824,21 @@ In other words, the macro @code{block} need to change the behavior of
  @result{} @r{print 1, 2, and then returns @code{oops}}
 @end example
 
+@c EN
 But note that this needs to insert @code{return} unhyginenically.
 It may break, for example, when combined with another library that
 uses @code{return} for other purposes.
+@c JP
+ただ、この定義では@code{return}を非衛生的に挿入する必要があることに注目してください。
+これは、@code{return}を別の目的で使いたい他のライブラリがあった場合、
+一緒に使うと衝突してうまくいかないかもしれません。
+@c COMMON
 
+@c EN
 With syntax parameters, you can write it hygienically:
+@c JP
+構文パラメータを使うと、衛生的に書くことができます:
+@c COMMON
 
 @example
 (define-syntax-parameter return
@@ -1823,12 +1854,22 @@ With syntax parameters, you can write it hygienically:
          body ...)))))
 @end example
 
+@c EN
 The @code{return} has desired effect with @code{block} only if it
-refers to the same bindings.  Suppose you make the above code into
+refers to the same bindings of @code{define-syntax-parameter}.
+Suppose you make the above code into
 a library, and the user imports the library with prefix.  Then,
 the user can refer to the non-local-exit return with the prefix,
 and that can coexist of whatever @code{return} defined in the
 user's module.
+@c JP
+@code{block}の中の@code{return}は、@code{define-syntax-parameter}で
+定義された@code{return}と同じ束縛を参照している時のみ効果を持ちます。
+例えば上記コードをライブラリにして、ユーザがプレフィックスつきでそれを
+インポートしたとしましょう。
+その場合、非局所的脱出をする@code{return}をプレフィクスつきになり、
+そのモジュールで定義される別の@code{return}と共存できます。
+@c COMMON
 
 @example
 (use block :prefix b:)
@@ -1837,35 +1878,63 @@ user's module.
 
 (b:block
   ...
+@c EN
   (return ...)  ; This refers to the 'return' in the current module
+@c JP
+  (return ...)  ; 現在のモジュールの 'return' を参照
+@c COMMON
   ...
+@c EN
   (b:return 'oops) ; This invokes 'return' to exit from the block
+@c JP
+  (b:return 'oops) ; blockから抜ける return の呼び出し
+@c COMMON
   ...
   )
 @end example
 
 @defspec define-syntax-parameter name transformer-spec
 [SRFI-139]
+@c EN
 Like @code{define-syntax}, binds @var{name} with
 a macro created by @var{transformer-spec}, but the binding
 is marked as a syntax parameter, and can be altered with
 @code{syntax-parameterize}.
+@c JP
+@code{define-syntax}と同様に、@var{transformer-spec}で作られるマクロを
+@var{name}に束縛します。それに加えて、束縛が構文パラメータであることが記録され、
+@code{syntax-parameterize}で置き換えることができるようになります。
+@c COMMON
 
-The @var{transformer-spec} works as a default syntax, invoked
+@c EN
+The given @var{transformer-spec} works as a default macro, invoked
 when no @code{syntax-parameterize} on @var{name} is in effect.
 The forms allowed in @var{transformer-spec} is the same
 as @code{define-syntax}.
-@var{}
+@c JP
+与えられた@var{transformer-spec}は、@var{name}が
+@code{syntax-parameterize}で再束縛されていない場合のデフォルトのマクロとして
+動作します。@var{transformer-spec}に使える形式は
+@code{define-syntax}のものと同じです。
+@c COMMON
 @end defspec
 
 @defspec syntax-parameterize ((key transformer-spec) @dots{}) body @dots{}
 [SRFI-139]
+@c EN
 The @var{key}s must be identifiers bound to syntax parameters.
 This form alters the macro transformers of @var{key}s with the ones
 specified by the given @var{transformer-spec}s, then proceed to
 compile @var{body} @dots{}.  The altered bindings are effective
 during the dynamic scope of macro-expansion phase.  (Be aware that
 it has nothing to do with the dynamic scope at runtime.)
+@c JP
+@var{key}は構文パラメタに束縛された識別子でなければなりません。
+このフォームは、@var{key}の構文束縛を@var{transformer-spec}で指定されるものに
+置き換えて、@var{body} @dots{}を実行します。
+この再束縛はマクロ展開時の動的スコープで有効です
+(実行時の動的スコープとは関係ないことに注意してください)。
+@c COMMON
 @end defspec
 
 
