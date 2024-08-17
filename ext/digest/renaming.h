@@ -44,3 +44,12 @@
 #define SHA512_Final    Scm_SHA512_Final
 #define SHA512_End      Scm_SHA512_End
 #define SHA512_Data     Scm_SHA512_Data
+
+#define sha3_Init       Scm_SHA3_Init
+#define sha3_Init256    Scm_SHA3_256_Init
+#define sha3_Init384    Scm_SHA3_384_Init
+#define sha3_Init512    Scm_SHA3_512_Init
+#define sha3_Update     Scm_SHA3_Update
+#define sha3_Finalize   Scm_SHA3_Finalize
+#define sha3_SetFlags   Scm_SHA3_SetFlags
+#define sha3_HashBuffer Scm_SHA3_HashBuffer

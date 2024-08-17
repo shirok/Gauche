@@ -25,9 +25,9 @@ rfc--md5.$(SOEXT) : $(md5_OBJECTS)
 md5.sci rfc--md5.c : md5.scm
 	$(PRECOMP) -e -P -o rfc--md5 $(srcdir)/md5.scm
 
-sha_OBJECTS = rfc--sha.$(OBJEXT) sha2.$(OBJEXT)
+sha_OBJECTS = rfc--sha.$(OBJEXT) sha2.$(OBJEXT) sha3.$(OBJEXT)
 
-$(sha_OBJECTS) : sha2.h
+$(sha_OBJECTS) : sha2.h sha3.h
 
 rfc--sha.$(SOEXT) : $(sha_OBJECTS)
 	$(MODLINK) rfc--sha.$(SOEXT) $(sha_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)

@@ -1,0 +1,3 @@
+Sha3 implementaiton is by Andrey Jivsov, crypto@brainhub.org
+The files sha3.h and sha3.c are public domain.
+https://github.com/brainhub/SHA3IUF

@@ -123,13 +123,19 @@
   (.define SHA2_USE_INTTYPES_H)         ; use uintXX_t
   (.include "sha2.h")
 
+  (.include "sha3.h")
+
   (.define LIBGAUCHE_EXT_BODY)
   (.include <gauche/extern.h>)      ; fix SCM_EXTERN in SCM_CLASS_DECL
-  )
 
- (define-ctype ScmShaContext::(.struct
-                               (SCM_HEADER :: ""
-                                ctx::SHA_CTX)))
+  (define-ctype ScmShaContext
+    :: (.struct
+        (SCM_HEADER ::||
+         version::int                     ; 0 (uninitialized), 2 or 3
+         ||::(.union
+              (v2::SHA_CTX
+               v3::sha3_context)))))
+  )
 
  (define-cclass <sha-context> :private
    ScmShaContext* "Scm_ShaContextClass" ()
@@ -137,62 +143,84 @@
    [allocator
     (let* ([ctx :: ScmShaContext* (SCM_NEW_INSTANCE ScmShaContext klass)])
       (cast void initargs)              ; suppress unused var warning
+      (set! (-> ctx version) 0)         ; uninitialized
       (return (SCM_OBJ ctx)))])
 
+ (define-cfn check-version (ctx::ScmShaContext* vers::int) ::void :static
+   (when (== (-> ctx version) 0)
+     (Scm_Error "%S is uninitialized" ctx))
+   (when (!= (-> ctx version) vers)
+     (Scm_Error "%S is initialized with different version" ctx)))
+
  (define-cproc %sha1-init (ctx::<sha-context>) ::<void>
-   (SHA1_Init (& (-> ctx ctx))))
+   (set! (-> ctx version) 2)
+   (SHA1_Init (& (-> ctx v2))))
  (define-cproc %sha224-init (ctx::<sha-context>) ::<void>
-   (SHA224_Init (& (-> ctx ctx))))
+   (set! (-> ctx version) 2)
+   (SHA224_Init (& (-> ctx v2))))
  (define-cproc %sha256-init (ctx::<sha-context>) ::<void>
-   (SHA256_Init (& (-> ctx ctx))))
+   (set! (-> ctx version) 2)
+   (SHA256_Init (& (-> ctx v2))))
  (define-cproc %sha384-init (ctx::<sha-context>) ::<void>
-   (SHA384_Init (& (-> ctx ctx))))
+   (set! (-> ctx version) 2)
+   (SHA384_Init (& (-> ctx v2))))
  (define-cproc %sha512-init (ctx::<sha-context>) ::<void>
-   (SHA512_Init (& (-> ctx ctx))))
+   (set! (-> ctx version) 2)
+   (SHA512_Init (& (-> ctx v2))))
 
  (define-cise-stmt common-update
-   [(_ update ctx data)
+   [(_ update ctx vers data)
     `(cond
       [(SCM_U8VECTORP ,data)
-       (,update (& (-> ,ctx ctx))
+       (,update (& (-> ,ctx ,vers))
                 (cast (const unsigned char*)
                       (SCM_UVECTOR_ELEMENTS (SCM_U8VECTOR ,data)))
                 (SCM_U8VECTOR_SIZE (SCM_U8VECTOR ,data)))]
       [(SCM_STRINGP ,data)
        (let* ([b::(const ScmStringBody*) (SCM_STRING_BODY ,data)])
-         (,update (& (-> ,ctx ctx))
+         (,update (& (-> ,ctx ,vers))
                   (cast (const unsigned char*) (SCM_STRING_BODY_START b))
                   (SCM_STRING_BODY_SIZE b)))]
       [else (SCM_TYPE_ERROR ,data "u8vector or string")])])
 
  (define-cproc %sha1-update (ctx::<sha-context> data) ::<void>
-   (common-update SHA1_Update ctx data))
+   (check-version ctx 2)
+   (common-update SHA1_Update ctx v2 data))
  (define-cproc %sha224-update (ctx::<sha-context> data) ::<void>
-   (common-update SHA224_Update ctx data))
+   (check-version ctx 2)
+   (common-update SHA224_Update ctx v2 data))
  (define-cproc %sha256-update (ctx::<sha-context> data) ::<void>
-   (common-update SHA256_Update ctx data))
+   (check-version ctx 2)
+   (common-update SHA256_Update ctx v2 data))
  (define-cproc %sha384-update (ctx::<sha-context> data) ::<void>
-   (common-update SHA384_Update ctx data))
+   (check-version ctx 2)
+   (common-update SHA384_Update ctx v2 data))
  (define-cproc %sha512-update (ctx::<sha-context> data) ::<void>
-   (common-update SHA512_Update ctx data))
+   (check-version ctx 2)
+   (common-update SHA512_Update ctx v2 data))
 
  (define-cise-stmt common-final
-   [(_ final ctx size)
+   [(_ final ctx vers size)
     `(let* ([digest::(.array (unsigned char) (,size))])
-       (,final digest (& (-> ,ctx ctx)))
+       (,final digest (& (-> ,ctx ,vers)))
        (return (Scm_MakeString (cast (const char*) digest)
                                ,size ,size
                                (logior SCM_STRING_INCOMPLETE
                                        SCM_STRING_COPYING))))])
 
  (define-cproc %sha1-final (ctx::<sha-context>)
-   (common-final SHA1_Final ctx SHA1_DIGEST_LENGTH))
+   (check-version ctx 2)
+   (common-final SHA1_Final ctx v2 SHA1_DIGEST_LENGTH))
  (define-cproc %sha224-final (ctx::<sha-context>)
-   (common-final SHA224_Final ctx SHA224_DIGEST_LENGTH))
+   (check-version ctx 2)
+   (common-final SHA224_Final ctx v2 SHA224_DIGEST_LENGTH))
  (define-cproc %sha256-final (ctx::<sha-context>)
-   (common-final SHA256_Final ctx SHA256_DIGEST_LENGTH))
+   (check-version ctx 2)
+   (common-final SHA256_Final ctx v2 SHA256_DIGEST_LENGTH))
  (define-cproc %sha384-final (ctx::<sha-context>)
-   (common-final SHA384_Final ctx SHA384_DIGEST_LENGTH))
+   (check-version ctx 2)
+   (common-final SHA384_Final ctx v2 SHA384_DIGEST_LENGTH))
  (define-cproc %sha512-final (ctx::<sha-context>)
-   (common-final SHA512_Final ctx SHA512_DIGEST_LENGTH))
+   (check-version ctx 2)
+   (common-final SHA512_Final ctx v2 SHA512_DIGEST_LENGTH))
  )
