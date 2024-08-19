@@ -960,8 +960,20 @@
 
   (dynload-and-eval
    "macros"
-   (begin
-     (load (build-path *top-srcdir* "test" "test-precomp" "macros-user"))
+   (let ()
+     (cond-expand
+      [gauche.os.windows
+       (use gauche.test)
+       (use file.util)
+       (define *top-srcdir*
+         (sys-normalize-pathname (or (sys-getenv "top_srcdir") "..")
+                                 :absolute #t :canonicalize #t))
+       (define macros-user-path
+         (build-path *top-srcdir* ".." "test" "test-precomp" "macros-user"))]
+      [else
+       (define macros-user-path
+         (build-path *top-srcdir* "test" "test-precomp" "macros-user"))])
+     (load macros-user-path)
      (test* "compiled macro (er)" '((apple) (banana) bonk)
             (map er-aif-test '(apple banana dragonfruit)))
      (test* "compiled macro (id-macro)" '(#f 1 2)
