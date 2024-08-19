@@ -42,7 +42,11 @@
           <sha224> sha224-digest sha224-digest-string
           <sha256> sha256-digest sha256-digest-string
           <sha384> sha384-digest sha384-digest-string
-          <sha512> sha512-digest sha512-digest-string))
+          <sha512> sha512-digest sha512-digest-string
+          <sha3-256> sha3-256-digest sha3-256-digest-string
+          <sha3-384> sha3-384-digest sha3-384-digest-string
+          <sha3-512> sha3-512-digest sha3-512-digest-string
+          ))
 (select-module rfc.sha)
 
 ;;;
@@ -69,12 +73,18 @@
 (define sha256-digest (gen-digest %sha256-init %sha256-update %sha256-final))
 (define sha384-digest (gen-digest %sha384-init %sha384-update %sha384-final))
 (define sha512-digest (gen-digest %sha512-init %sha512-update %sha512-final))
+(define sha3-256-digest (gen-digest %sha3-256-init %sha3-256-update %sha3-256-final))
+(define sha3-384-digest (gen-digest %sha3-384-init %sha3-384-update %sha3-384-final))
+(define sha3-512-digest (gen-digest %sha3-512-init %sha3-512-update %sha3-512-final))
 
 (define (sha1-digest-string s)   (with-input-from-string s sha1-digest))
 (define (sha224-digest-string s) (with-input-from-string s sha224-digest))
 (define (sha256-digest-string s) (with-input-from-string s sha256-digest))
 (define (sha384-digest-string s) (with-input-from-string s sha384-digest))
 (define (sha512-digest-string s) (with-input-from-string s sha512-digest))
+(define (sha3-256-digest-string s) (with-input-from-string s sha3-256-digest))
+(define (sha3-384-digest-string s) (with-input-from-string s sha3-384-digest))
+(define (sha3-512-digest-string s) (with-input-from-string s sha3-512-digest))
 
 ;;;
 ;;; Digest framework
@@ -110,6 +120,12 @@
 (define-framework 256  64)
 (define-framework 384  128)
 (define-framework 512  128)
+(define-framework 256  64)
+(define-framework 384  128)
+(define-framework 512  128)
+(define-framework |3-256|  64)
+(define-framework |3-384|  128)
+(define-framework |3-512|  128)
 
 ;;;
 ;;; Low-level bindings
@@ -207,7 +223,13 @@
  (define-cproc %sha512-update (ctx::<sha-context> data) ::<void>
    (check-version ctx 2)
    (common-update SHA512_Update ctx v2 data))
- (define-cproc %sha3-update (ctx::<sha-context> data) ::<void>
+ (define-cproc %sha3-256-update (ctx::<sha-context> data) ::<void>
+   (check-version ctx 3)
+   (common-update Scm_SHA3_Update ctx v3 data))
+ (define-cproc %sha3-384-update (ctx::<sha-context> data) ::<void>
+   (check-version ctx 3)
+   (common-update Scm_SHA3_Update ctx v3 data))
+ (define-cproc %sha3-512-update (ctx::<sha-context> data) ::<void>
    (check-version ctx 3)
    (common-update Scm_SHA3_Update ctx v3 data))
 
