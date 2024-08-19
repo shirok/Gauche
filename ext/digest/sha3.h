@@ -1,6 +1,10 @@
 #ifndef SHA3_H
 #define SHA3_H
 
+/*[SK] refer to the Gauche's config */
+#include <gauche/config.h>
+#include "renaming.h"
+
 #include <stdint.h>
 
 /* -------------------------------------------------------------------------
