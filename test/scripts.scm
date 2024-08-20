@@ -773,6 +773,11 @@
          (^[]
            (write '(add-load-path "."))
            (write '(use gauche.threads)) ; some tests need this
+           (write '(use file.util))
+           (write `(define *top-srcdir*
+                     ,(if (absolute-path? *top-srcdir*)
+                        *top-srcdir*
+                        (build-path ".." *top-srcdir*))))
            (write '(load libname))
            (write '(write expr))
            (write '(exit 0))))
@@ -958,14 +963,18 @@
   (test* "running precomp 5" #t (do-precomp! '("macros.scm") '("-e")))
   (test* "compile 5" #t (do-compile! "macros" '("macros.c")))
 
-  (dynload-and-eval
-   "macros"
-   (begin
-     (load (build-path *top-srcdir* "test" "test-precomp" "macros-user"))
-     (test* "compiled macro (er)" '((apple) (banana) bonk)
-            (map er-aif-test '(apple banana dragonfruit)))
-     (test* "compiled macro (id-macro)" '(#f 1 2)
-            (im-state-test)))))
+  (test* "compiled macro"
+         '(("compiled macro (er)" ((apple) (banana) bonk))
+           ("compiled macro (id-macro)" (#f 1 2)))
+         (dynload-and-eval
+          "macros"
+          (begin
+            (load (build-path *top-srcdir* "test" "test-precomp" "macros-user"))
+            `(("compiled macro (er)"
+               ,(map er-aif-test '(apple banana dragonfruit)))
+              ("compiled macro (id-macro)"
+               ,(im-state-test))))))
+  )
 
 (wrap-with-test-directory precomp-test-1 '("test.o"))
 (wrap-with-test-directory precomp-test-2 '("test.o"))
