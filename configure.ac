@@ -103,7 +103,6 @@ AS_CASE(["$host"],
     ],
   [*-*-darwin*], [
     AC_DEFINE(GC_DARWIN_THREADS,1,[Define to use Darwin threads])
-    AC_DEFINE(GC_PTHREADS,1,[Define to use pthreads])
     INCLUDES="$INCLUDES -I/sw/include"
     THREADLIBS="-lpthread"
     GAUCHE_THREAD_TYPE=pthreads

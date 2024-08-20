@@ -83,9 +83,6 @@
 /* Define to use OpenBSD threads */
 #undef GC_OPENBSD_THREADS
 
-/* Define to use pthreads */
-#undef GC_PTHREADS
-
 /* Define to use Solaris pthreads */
 #undef GC_SOLARIS_PTHREADS
 
