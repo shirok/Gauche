@@ -253,12 +253,12 @@ historical reasons.
 The first thing in the stub code is `(.include "mqueue_glue.h")`, which
 is C/C++ `#include "mqueue_glue.h"`.
 
-The `define-stub-type` directive tells the stub generator about the
+The `declare-stub-type` directive tells the stub generator about the
 `<mqueue>` class you create in this extension.
 
 [source,scheme]
 ----
-(define-stub-type <mqueue> "MQueue*" "mqueue"
+(declare-stub-type <mqueue> "MQueue*" "mqueue"
   "MQUEUE_P" "MQUEUE_UNBOX" "MQUEUE_BOX")
 ----
 
@@ -267,7 +267,7 @@ error messages), C function or macro to check the type, an unboxer,
 and a boxer.
 
 NOTE: I'm planning to have better way to define foreign types.
-Consider this `define-type` as temporary solution.
+Consider this `declare-stub-type` as temporary solution.
 
 The `define-cproc` directive defines the foreign function interface:
 
