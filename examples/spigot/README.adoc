@@ -1,3 +1,5 @@
+= What's in here?
+
 This directory contains sources of `spigot` extension module,
 as an example of Gauche extension.
 
@@ -50,11 +52,11 @@ in the Gauche's standard location.
 ----
 
 
-= What's going on?
+== What's going on?
 
 Let's see each step in details.
 
-== Configure
+=== Configure
 
 The `configure` script is like GNU autotool's `configure`,
 but written in Gauche.  It generates `Makefile` from
@@ -73,11 +75,11 @@ installed into the Gauche library directory
 (`.packages` subdirectory under `(gauche-site-library-directory)`)
 and `gauche-package` command refers to it.
 
-== Build
+=== Build
 
 By default, `make` invokes just a single command, `gauche-package compile`.
 It takes source files and builds a dynamically-loadable file
-(`*.so` on Unix platforms, `*.dll` on Windows), taking care of
+(`+*.so+` on Unix platforms, `+*.dll+` on Windows), taking care of
 necessary include files and libraries related to Gauche.
 
 The basic usage is as follows:
@@ -109,19 +111,19 @@ to be precompiled.  Pure-Scheme files can just be installed as is.
 (The command can also take `*.stub` files, which is an old way
 to define C-Scheme bridge.  Its use is deprecated.)
 
-== Test
+=== Test
 
 `Make check` simply rungs `gosh` on the test script `test.scm`.
 The test script loads the extension with `(use math.spigot)`, and
 perform typical tests.
 
 
-== Install
+=== Install
 
 The template makefile uses `gauche-install` command, which has
 some advantages over typical `install` script.
 
-== Cleanup
+=== Cleanup
 
 Makefile uses `gauche-package compile` command again, but with
 `--clean` option this time.  Since `gauche-package compile`
