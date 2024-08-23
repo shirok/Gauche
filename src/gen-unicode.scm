@@ -892,18 +892,17 @@
 (define (generate-width-tables db)
   (define prop-count (length (ucd-east-asian-widths)))
   (define subtable-count prop-count)
-  (define width-table (~ db'width-table))
 
   ;; returns subtable-number
   (define (gen-subtable start-code)
-    (let1 e (dict-get width-table start-code 'N)
+    (let1 e (ucd-get-east-asian-width db start-code)
       (if (any?-ec (: lb 256)
-                   (not (eq? (dict-get width-table (+ start-code lb) 'N) e)))
+                   (not (eq? (ucd-get-east-asian-width db (+ start-code lb)) e)))
         (rlet1 subtable-num subtable-count
           (print "  {")
           (do-ec (: c 128)
-                 (let ([w0 (dict-get width-table (+ start-code (* c 2)) 'N)]
-                       [w1 (dict-get width-table (+ start-code (* c 2) 1) 'N)])
+                 (let ([w0 (ucd-get-east-asian-width db (+ start-code (* c 2)))]
+                       [w1 (ucd-get-east-asian-width db (+ start-code (* c 2) 1))])
                    (print #"    WIDTH_ENTRY(WIDTH_~|w1|, WIDTH_~|w0|),")))
           (print "  },")
           (inc! subtable-count))

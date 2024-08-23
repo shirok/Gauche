@@ -29,7 +29,8 @@
   (use file.util)
   (use text.csv)
   (export ucd-parse-files
-          ucd-get-entry ucd-get-category-ranges ucd-get-break-property
+          ucd-get-entry ucd-get-category-ranges
+          ucd-get-break-property ucd-get-east-asian-width
           ucd-map-entries
 
           ucd-save-db ucd-load-db ucd-version
@@ -180,6 +181,11 @@
 ;; return break property
 (define (ucd-get-break-property db code)
   (dict-get (unichar-db-break-table db) code #f))
+
+;; API
+;; return East Asian Width
+(define (ucd-get-east-asian-width db code)
+  (dict-get (unichar-db-width-table db) code 'N))
 
 (define-record-type ucd-simple-case-map #t #t
   case      ; upper or lower, for this character itself (title==upper)
