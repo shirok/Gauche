@@ -1,7 +1,7 @@
 = HOWTO: Updating character attributes to the latest Unicode standard
 
 Gauche uses some of character attributes defined in Unicode
-standard.  They are extraced from files provided as Unicode
+standard.  They are extracted from files provided as Unicode
 Character Database (UCD), but we have it in packed format for
 the space efficiency.
 
@@ -27,7 +27,7 @@ We use two stage build process for it:
 
 The first step reads UCD data files and generates `src/unicode-data.scm`,
 which only includes necessary information.
-This is only needed to be done when Unicode is updated; so we don't
+This step is only needed to be done when Unicode is updated; so we don't
 require developers to do it.  We check in `src/unicode-data.scm` to
 the repo.
 
@@ -69,21 +69,21 @@ $ gosh src/gen-unicode.scm --fetch $UNICODEDIR [$UNICODE_VERSION]
 
 This downloads those files into `$UNICODEDIR`.  By default it downloads
 the latest version; however, if the changes in newer versions of Unicode
-trip build process, you can give version number in the second argument
-to download older versions of data files.
+trip the build process, you can give version number in the second argument
+to download older versions of the data files.
 
 
 == Review the changes
 
 Property values may be added in the newer Unicode version,
-so check `src/gauche/char_attr.h` and the beginning of
-`src/gen-unicode.scm` to see if we need to update.  We take advantage
+so you want to check `src/gauche/char_attr.h` and the beginning of
+`src/gen-unicode.scm` to see if we need to update the code.  We take advantage
 of property value distribution over codepoints for space-efficient
 encoding (e.g. using flat tables on some ranges and binary trees
-on others).   You may need to tweak the code if new range of
+on others).   You may need to tweak the code if new ranges of
 characters are added.
 
-Check changes in link:http://www.unicode.org/reports/tr29/[TR29].
+Check changes in link:http://www.unicode.org/reports/tr29/[TR29], too.
 The state-transition table is hardcoded in `ext/text/unicode.scm`
 (they can't be extracted from UCD files).  Any change in TR29
 must be manually reflected to the code.
@@ -100,3 +100,30 @@ $ make UNICODEDATA=$UNICODEDIR char-data
 ----
 
 And it's done!
+
+
+== Dealing with `unicode-data.scm`
+
+The module `text.unicode.ucd` provides the utilities to read/write
+`unicode-data.scm` and access information in it.  Its format is described
+in the source.  However, it may be changed as Unicode evloves and/or
+Gauche's Unicode support is enhanced, so do not count on the current
+format.
+
+In case if you need to hack the unicode data extraction step, here's a
+brief description of `text.unicde.ucd`.
+
+The file `unicode-data.scm` is a serialized format of `unichar-db` record.
+You can read the file with `(ucd-load-db <iport>)` to get a `unichar-db`
+instance, and write the serialized format to the current output port
+with `(ucd-save-db <unichar-db>)`.
+
+Once you get a `unichar-db` record, you can query
+
+- `(ucd-get-entry <db> <codepoint>)` returns a `ucd-entry` instance,
+  that holds main character attributes such as character's general category,
+  case mapping, etc.
+- `(ucd-get-break-property <db> <codepoint>)` returns a `ucd-break-property`
+  instance, that holds character's Grapheme_Break and Word_Break categories.
+- `(ucd-get-east-asian-width <db> <codepoint>)` returns a symbol of character's
+  East Asian Width property.
