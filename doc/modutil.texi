@@ -2833,6 +2833,14 @@ time to run.  A task can be run once, or can be run periodically.
 指定する時刻が付随します。タスクは一回だけ走らせることも、
 定期的に走らせることもできます。
 @c COMMON
+
+@c EN
+For portable code, you can use SRFI-120 (@pxref{Timer APIs}),
+which is written on top of this module.
+@c JP
+ポータブルなコードでは、このモジュールの上に構築された
+SRFI-120を使うこともできます(@ref{Timer APIs}参照)。
+@c COMMON
 @end deftp
 
 @deftp {Class} <scheduler>
@@ -3080,11 +3088,9 @@ The exception is returned from @code{scheduler-terminate!}.
 @deftp {Module} control.thread-pool
 @mdindex control.thread-pool
 @c EN
-Provides thread pools.  Only available when Gauche is compiled
-with pthreads support.
+Provides thread pools.
 @c JP
-スレッドプールを提供します。Gaucheがpthreadサポート付きでコンパイルされている
-場合にのみ利用可能です。
+スレッドプールを提供します。
 @c COMMON
 @end deftp
 
@@ -6399,9 +6405,14 @@ vector internally.
 @defun numeric-range start end :optional step
 [SRFI-196]
 @c MOD data.range
-Creates and returns a range of integers starting from @var{start} (inclusive)
+@c EN
+Creates and returns a range of numbers starting from @var{start} (inclusive)
 and ending below @var{end} (exclusive), increasing with @var{step}.
 The default value of @var{step} is 1.
+@c JP
+@var{start}から始まり、@var{step}ごとに増加し、@var{end}未満で終わる数値のレンジを
+作って返します。@var{step}が省略された場合は1が使われます。
+@c COMMON
 
 @example
 (range->list (numeric-range 2 6))
@@ -6415,9 +6426,15 @@ The default value of @var{step} is 1.
 @defun iota-range length :optional start step
 [SRFI-196]
 @c MOD data.range
-Creates and returns a range of integers.  Total length of the range
+@c EN
+Creates and returns a range of numbers.  Total length of the range
 is @var{length}.  The range starts from @var{start} (default 0),
 and increased with @var{step} (default 1).
+@c JP
+長さが@var{length}で、@var{start}から始まり@var{step}ごとに増加する
+数値のレンジを作って返します。@var{start}、@var{step}の省略時の値は
+それぞれ0と1です。
+@c COMMON
 
 @example
 (range->list (iota-range 5))
@@ -6431,13 +6448,25 @@ and increased with @var{step} (default 1).
 @defun vector-range vec :optional start end
 [SRFI-196+]
 @c MOD data.range
+@c EN
 Returns a range over the given vector @var{vec}.
 The vector is kept in the range, so you shouldn't mutate @var{vec}.
 See also @code{vector->range} below.
+@c JP
+ベクタ@var{vec}にアクセスするレンジを作って返します。
+ベクタはそのままレンジのデータ元として使われるので、
+この後で@var{vec}を変更してはなりません。
+下の@code{vector->range}も参照。
+@c COMMON
 
+@c EN
 The optional @var{start} and @var{end} arguments limits the
 range of the vector to be used.
 They are Gauche's extension and not in SRFI-196.
+@c JP
+省略可能引数@var{start}と@var{end}はベクタの使う範囲のインデックスを制限します。
+これらの引数はGaucheの独自拡張で、SRFI-196にはありません。
+@c COMMON
 
 @example
 (range->list (vector-range '#(a b c)))
@@ -6445,16 +6474,27 @@ They are Gauche's extension and not in SRFI-196.
 
 (range->list (vector-range '#(a b c d e) 1 4))
   @result{} (b c d)
+
+(range-ref (vector-range '#(a b c d e) 2) 0)n
+  @result{} c
 @end example
 @end defun
 
 @defun uvector-range uvec :optional start end
 @c MOD data.range
+@c EN
 Returns a range over the given uniform vector @var{uvec}.
 The uniform vector is kept in the range, so you shouldn't mutate @var{uvec}.
 
 The optional @var{start} and @var{end} arguments limits the
 range of the uniorm vector to be used.
+@c JP
+ユニフォームベクタ@var{uvec}にアクセスするレンジを作って返します。
+ユニフォームベクタはそのままレンジのデータ元として使われるので、
+この後で@var{uvec}を変更してはなりません。
+
+省略可能引数@var{start}と@var{end}はベクタの使う範囲のインデックスを制限します。
+@c COMMON
 @end defun
 
 @defun bitvector/bool-range bvec :optional start end
