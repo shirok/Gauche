@@ -14918,7 +14918,7 @@ return a parser.
 @end example
 
 @c EN
-The parsers so far doen't handle the case when the list contains no
+The parsers so far doesn't handle the case when the list contains no
 integers.   Using @code{$or} combinator, which represents a choice,
 we can modify it to handle zero-element case.
 @c JP
@@ -15811,7 +15811,7 @@ input, and yields @var{val} as the result of parser.
 
 @c EN
 Frequently used in @code{$let} and @code{$let*}'s body, but can be
-used anywhere a parser is expected.
+used anywhere where a parser is expected.
 @c JP
 @code{$let}や@code{$let*}の本体で使われることが多いですが、
 パーザを期待するところではどこでも使えます。
@@ -15923,10 +15923,10 @@ If you just need a lookahead parser, you can use @code{$assert}.
 Creates a parser that matches a Scheme object @var{obj},
 which may be a character, a string, a char-set, or a symbol.
 If @var{obj} is a char-set, the parser matches any character in the set.
-Specifying a symbol can be used when you're pasing token stream
-instead of character stream.
+Specifying a symbol can be used when you're parsing a token stream
+instead of a character stream.
 
-On success, the value of the parse is the matched input.
+On success, the value of the parser is the matched input.
 
 The resulting parser is atomic, that is, it doesn't consume
 input when it fails.
@@ -16100,7 +16100,7 @@ It can be costly to construct strings eagerly, for a string may be
 just an intermediate one to be a part of a larger string.  We provide
 a lightweight lazily string construction mechanism, called ropes.
 
-A rope is either a character, a string or a pair of ropes.  It allows
+A rope is either a character, a string, or a pair of ropes.  It allows
 O(1) concatenation.  A rope becomes a string when @emph{finalized}.
 The parser drivers such as @code{peg-run-parser} automatically finalizes
 ropes in the parser result.
@@ -16154,7 +16154,7 @@ If all of the parsers p1 p2 @dots{} fail without consuming input,
 @code{$or} returns a compound failure of all the failures.  You may
 wish to produce better error message than that.  Putting @code{$fail}
 parser at the last doesn't cut it, for @code{$fail} doesn't consume
-input so all the previous failures would be compound.   In such cases,
+input so all the previous failures would compound.   In such cases,
 you can use the second form---if the argument before the last parser
 is a keyword @code{:else}, then @code{$or} discards the previous failures.
 
