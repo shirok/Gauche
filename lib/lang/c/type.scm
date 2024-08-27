@@ -400,7 +400,7 @@
 (define (c-actual-type c-type)
   (match c-type
     [('.type _ quals inner)
-     (attach-qualifier inner quals)]
+     (attach-qualifier (c-actual-type inner) quals)]
     [_ c-type]))
 
 ;;;
