@@ -1,5 +1,8 @@
 2024-08-27  Shiro Kawai  <shiro@acm.org>
 
+	* configure.ac: Add GAUCHE_SNAPSHOT_ID, an optional string to dicern
+	  versions of snapshot tarballs.
+
 	* lib/lang/c/type.scm (c-actual-type): Fix the case when identifier
 	  is typedef'ed to an aggregate type.  The old code assumed the
 	  inner type was always a basic type.

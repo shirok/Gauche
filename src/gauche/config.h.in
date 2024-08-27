@@ -44,6 +44,9 @@
 /* Gauche signature string */
 #undef GAUCHE_SIGNATURE
 
+/* Gauche snapshot id */
+#undef GAUCHE_SNAPSHOT_ID
+
 /* Define if you use axTLS */
 #undef GAUCHE_USE_AXTLS
 

@@ -240,10 +240,16 @@ void usage(int errorp)
 #define THREAD_OPT ""
 #endif
 
+#ifdef GAUCHE_SNAPSHOT_ID
+#define SNAPSHOT_OPT ",snapshot=" GAUCHE_SNAPSHOT_ID
+#else
+#define SNAPSHOT_OPT ""
+#endif
+
 void version(void)
 {
-    Scm_Printf(SCM_CUROUT, "Gauche scheme shell, version %s [%s%s], %s\n",
-               GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT,
+    Scm_Printf(SCM_CUROUT, "Gauche scheme shell, version %s [%s%s%s], %s\n",
+               GAUCHE_VERSION, SCM_CHAR_ENCODING_NAME, THREAD_OPT, SNAPSHOT_OPT,
                Scm_HostArchitecture());
     static ScmObj version_alist_proc = SCM_UNDEFINED;
     SCM_BIND_PROC(version_alist_proc, "version-alist", Scm_GaucheModule());

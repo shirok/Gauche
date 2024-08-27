@@ -13,6 +13,19 @@ AC_CONFIG_MACRO_DIRS([m4])
 # (This may be useful for "prerelease", such as 0.99.x as pre-1.0)
 GAUCHE_ABI_VERSION=0.98
 
+# SNAPSHOT_ID is a string uniquely identifies snapshot tarballs that shares
+# the same version string.  It is not included in (gauche-version), but
+# in GAUCHE_SIGNATURE and shown in the output of 'gosh -V'.
+#
+# For official release versions, this should be empty. Mostly intended
+# to be used for automated bleeding-edge tarballs (in that case, this string
+# has a timestamp YYYYMMDD).  It can be specified manually in case when we
+# need a special snapshot.
+#
+# The reason we don't use versions is that we don't want to create versioned
+# subdirectories for every snapshot.
+GAUCHE_SNAPSHOT_ID=
+
 AC_CHECK_TOOL(RC, windres, false)
 
 LT_INIT
@@ -326,6 +339,10 @@ if test -z "$GAUCHE_ABI_VERSION"; then
 fi
 AC_SUBST(GAUCHE_ABI_VERSION)
 AC_DEFINE_UNQUOTED(GAUCHE_ABI_VERSION, "$GAUCHE_ABI_VERSION", [Gauche ABI version string])
+
+if test -n "$GAUCHE_SNAPSHOT_ID"; then
+  AC_DEFINE_UNQUOTED(GAUCHE_SNAPSHOT_ID, "$GAUCHE_SNAPSHOT_ID", [Gauche snapshot ID])
+fi
 
 GAUCHE_SIGNATURE="$GAUCHE_ABI_VERSION,utf8,$GAUCHE_THREAD_TYPE"
 AC_DEFINE_UNQUOTED(GAUCHE_SIGNATURE, "$GAUCHE_SIGNATURE", [Gauche signature string])
