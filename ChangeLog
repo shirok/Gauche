@@ -1,5 +1,7 @@
 2024-08-27  Shiro Kawai  <shiro@acm.org>
 
+	* tools/make-tgz.sh: Allow creating snapshot tarball with snapshot_id
+
 	* configure.ac: Add GAUCHE_SNAPSHOT_ID, an optional string to dicern
 	  versions of snapshot tarballs.
 
