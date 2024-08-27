@@ -1,3 +1,10 @@
+2024-08-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/lang/c/type.scm (c-actual-type): Fix the case when identifier
+	  is typedef'ed to an aggregate type.  The old code assumed the
+	  inner type was always a basic type.
+	  This was the cause of https://github.com/shirok/Gauche/issues/1044
+
 2024-08-11  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/190.scm: Proper support of srfi-190, based on

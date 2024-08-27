@@ -320,15 +320,22 @@
 
 ;; Add qualifier to the 'main' type, which would be attached to the variable.
 (define (attach-qualifier c-type qual)
+  (define (merge-quals new-qs qs)
+    (if (null? new-qs)
+      qs
+      (let1 qs (merge-quals (cdr new-qs) qs)
+        (if (memq (car new-qs) qs)
+          qs
+          (cons (car new-qs) qs)))))
   (match c-type
-    [('.pointer qs inner) `(.pointer ,(cons qual qs) ,inner)]
+    [('.pointer qs inner) `(.pointer ,(merge-quals qual qs) ,inner)]
     [('.array inner . rest) `(.array ,(attach-qualifier inner qual) ,@rest)]
-    [('.function qs . rest) `(.function ,(cons qual qs) ,@rest)]
-    [('.struct tag qs . rest) `(.struct ,tag ,(cons qual qs) ,@rest)]
-    [('.union tag qs . rest) `(.union ,tag ,(cons qual qs) ,@rest)]
-    [('.enum tag qs . rest) `(.enum ,tag ,(cons qual qs) ,@rest)]
-    [('.type name qs inner) `(.type ,name ,(cons qual qs) ,inner)]
-    [(btype qs) `(,btype ,(cons qual qs))]))
+    [('.function qs . rest) `(.function ,(merge-quals qual qs) ,@rest)]
+    [('.struct tag qs . rest) `(.struct ,tag ,(merge-quals qual qs) ,@rest)]
+    [('.union tag qs . rest) `(.union ,tag ,(merge-quals qual qs) ,@rest)]
+    [('.enum tag qs . rest) `(.enum ,tag ,(merge-quals qual qs) ,@rest)]
+    [('.type name qs inner) `(.type ,name ,(merge-quals qual qs) ,inner)]
+    [(btype qs) `(,btype ,(merge-quals qual qs))]))
 
 ;; Types and its "weight".  The latter is used for type upgrading.
 (define-constant *integral-type-weight*
@@ -391,17 +398,9 @@
 
 ;; strip typedefs and returns the actual type
 (define (c-actual-type c-type)
-  (define (merge-quals new-qs qs)
-    (if (null? new-qs)
-      qs
-      (let1 qs (merge-quals (cdr new-qs) qs)
-        (if (memq (car new-qs) qs)
-          qs
-          (cons (car new-qs) qs)))))
   (match c-type
     [('.type _ quals inner)
-     (match-let1 (t qs) (c-actual-type inner)
-       `(,t ,(merge-quals quals qs)))]
+     (attach-qualifier inner quals)]
     [_ c-type]))
 
 ;;;
