@@ -298,7 +298,7 @@
        (unless (or (string? a2) (symbol? a2) (eq? a2 :null) (integer? a2)
                    (and (output-port? a2) (port-file-number a2)))
          (errorf "output redirection '~a' requires a filename, a symbol, \
-                  :null, integer file descriptor or file input port, \
+                  :null, integer file descriptor or file output port, \
                   but got ~s for file descriptor ~s"
                  (car arg) a2 (cadr arg)))]
       [(<& >&) (unless (integer? a2)
