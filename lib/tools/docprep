@@ -197,10 +197,15 @@
         [node (rxmatch-substring match 2)])
     (format #f "~a{~a}" cmd (lookup node *node-table*))))
 
+;; TRANSIENT:
+;;  This script is used by 0.9.15 to prepare tarball of sources after 0.9.15,
+;;  so it needs to work without the newly added parseopt's help string feature.
+;;  We just comment out the help string thingy for now.  Revive them after
+;;  the new release.
 (define (usage)
   (print "Usage: gosh tools/docprep [options] infile")
-  (print "Options:")
-  (print (option-parser-help-string))
+  ;;(print "Options:")
+  ;;(print (option-parser-help-string))
   (exit 1))
 
 ;; TODO: Switch to use 'ja' (language code) instead of 'jp' (country code)
@@ -208,8 +213,14 @@
   (define language 'en)
   (let-args (cdr args)
       ([outfile "o=s{FILE}" ? "Writes output to {FILE} instead of stdout."]
-       [#f "en" => (^[] (set! language 'en)) ? "Set output language to English"]
-       [#f "jp" => (^[] (set! language 'jp)) ? "Set output language to Japanese"]
+       [#f "en" => (^[] (set! language 'en))
+           ;; TRANSIENT: See above comment
+           ;; ? "Set output language to English"
+           ]
+       [#f "jp" => (^[] (set! language 'jp))
+           ;; TRANSIENT: See above comment
+           ;; ? "Set output language to Japanese"
+           ]
        [else _ (usage)]
        . a)
 
