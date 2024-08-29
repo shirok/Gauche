@@ -212,8 +212,9 @@
 (define (main args)
   (define language 'en)
   (let-args (cdr args)
-      ([outfile "o=s{FILE}"
+      ([outfile "o=s"
                 ;; TRANSIENT: See above comment
+                ;; "o=s{FILE}"
                 ;; ? "Writes output to {FILE} instead of stdout."
                 ]
        [#f "en" => (^[] (set! language 'en))
