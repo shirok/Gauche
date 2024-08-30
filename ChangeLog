@@ -1,3 +1,9 @@
+2024-08-29  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/version.scm: Relaxed relnum syntax.  Now it allows
+	  sequence of chars except delimiting ones ([._-]).  It is becaues
+	  bleeding-edge tarball has something like 0.9.15-p1+20240829.
+
 2024-08-27  Shiro Kawai  <shiro@acm.org>
 
 	* tools/make-tgz.sh: Allow creating snapshot tarball with snapshot_id

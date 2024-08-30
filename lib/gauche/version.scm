@@ -44,7 +44,7 @@
 ;;; <principal-release> := <relnum>
 ;;; <post-subrelease>   := [.-] <relnum>
 ;;; <pre-subrelease>    := _ <relnum>
-;;; <relnum>       := [0-9A-Za-z]+
+;;; <relnum>       := [^._-]+
 ;;;
 ;;; Typically <relnum> is composed by numeric part and extension part.
 ;;; For example, "23a" is composed by an integer 23 and extension "a".
@@ -65,7 +65,7 @@
 ;;;      remove it from both.  Repeat this until the head of the lists
 ;;;      differ.
 ;;;   3. Now we have the following cases.
-;;;     (1) Both lists are empty: versions are the same.
+;;;     (1) Both lists are empty. Versions are the same.
 ;;;     (2) One list (A) is empty and the other list (B) has post-subrelease
 ;;;         at head: A is prior to B
 ;;;     (3) One list (A) is empty and the other list (B) has pre-subrelease
@@ -92,7 +92,7 @@
 (select-module gauche.version)
 
 (define (relnum-decompose vn)
-  (rxmatch-if (rxmatch #/^(\d*)(\w*)$/ vn) (#f num suffix)
+  (rxmatch-if (rxmatch #/^(\d*)([^-_.]*)$/ vn) (#f num suffix)
     (values (if (string=? num "") -1 (x->integer num)) suffix)
     (errorf "unparsable release number: ~s" vn)))
 
