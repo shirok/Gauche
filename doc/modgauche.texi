@@ -32117,7 +32117,7 @@ The version number here is defined by the following syntax.
  <principal-release> : <relnum>
  <post-subrelease>   : [.-] <relnum>
  <pre-subrelease>    : _ <relnum>?
- <relnum>            : [0-9A-Za-z]+
+ <relnum>            : [^._-]+
 @end example
 
 @c EN
