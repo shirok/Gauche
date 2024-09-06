@@ -927,6 +927,15 @@
 ;; methods here.  Other specialized methods on built-in objects are
 ;; still defined in gauche.interactive.
 
+;; Setting this dynamic state to true makes describe to show more details,
+;; which may be too much for casual use.  (We don't use make-parameter,
+;; for parameter system is not initialized at this point.)
+(define describe-details
+  (let1 flag #f
+    (case-lambda
+      [() flag]
+      [(val) (begin0 flag (set! flag val))])))
+
 (define (describe-common obj)
   (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj)))
   (values))
@@ -937,11 +946,13 @@
     (unless (null? slots)
       (format #t "slots:\n")
       (dolist [s (map slot-definition-name slots)]
-        (format #t "  ~10s: ~a\n" s
-                (if (slot-bound? obj s)
-                  (with-output-to-string
-                    (^[] (write-limited (slot-ref obj s) 60)))
-                  "#<unbound>")))))
+        (when (or (describe-details)
+                  (not (#/^%/ (symbol->string s))))
+          (format #t "  ~10s: ~a\n" s
+                  (if (slot-bound? obj s)
+                    (with-output-to-string
+                      (^[] (write-limited (slot-ref obj s) 60)))
+                    "#<unbound>"))))))
   (values))
 
 (define-method describe (object) ; default
@@ -980,5 +991,5 @@
           class-slot-definition class-slot-accessor
           x->string x->integer x->number ref |setter of ref|
           ~ ref*
-          describe describe-common describe-slots
+          describe describe-common describe-slots describe-details
           )))
