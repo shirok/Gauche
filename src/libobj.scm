@@ -934,7 +934,11 @@
   (let1 flag #f
     (case-lambda
       [() flag]
-      [(val) (begin0 flag (set! flag val))])))
+      [(val)
+       (assume-type val <boolean>
+                    "Value of describe-details must be a boolean, but got:"
+                    val)
+       (begin0 flag (set! flag val))])))
 
 (define (describe-common obj)
   (format #t "~s is an instance of class ~a\n" obj (class-name (class-of obj)))
