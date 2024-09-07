@@ -2761,7 +2761,58 @@ slots:
   current-column: 0
   link      : #<oport (standard output) 0x7ff0cc6cddd0>
 @end example
+
+@c EN
+By default, this procedure does not display the slots whose name begins
+with @code{%}.  It reflects the convention that private or internal
+slots are named so.  There're no mechanism in the Gauche object
+system to ``hide'' such slots; it is purely for users' convenience,
+not to clutter @code{describe} output with excess details.
+If necessary, you can set the dynamic state @code{describe-details} @code{#t}
+to make @code{describe-slots} show all the slots.
+@c JP
+デフォルトでは、この手続きは@code{%}で始まる名前を持つスロットを表示しません。
+これは内部的に使われるスロットを@code{%}で始める慣習を反映したものです。
+オブジェクトシステムとしては、特定の名前のスロットを「隠す」機能はありません。
+これは純粋に、@code{describe}の出力を余分な情報で溢れさせないための
+ユーザインタフェースとしての機能です。
+必要なら、動的状態@code{describe-details}を真の値に設定することで、
+@code{describe-slots}が全てのスロットを表示するようにできます。
+@c COMMON
 @end defun
+
+@defun describe-details :optional flag
+@c EN
+This is a global dynamic state to control whether @code{describe}
+shows auxiliary details.  When called without arguments, it
+returns the current state.   When given @var{flag}, which is a boolean,
+it sets @var{flag} as the current state, and returns the previous state.
+
+The defalut value is @code{#f}, in which case @code{describe} does not
+show the details.  Notably, an object's slots whose name begins with
+@code{%} won't be shown.
+
+Currently, the state is global and changing it is not thread-safe.
+We intend this as a REPL user-interface parameter, rather than something
+manipulated by a program.  We may change it to thread-safe,
+or even a parameter, in future if it is found useful.
+@c JP
+これはグローバルな動的状態で、@code{describe}が補助的な詳細を表示するかどうかを制御します。
+引数なしで呼ばれた場合が現在の状態を返します。引数@var{flag}を与えた場合、
+それは真偽値でなければならず、@var{flag}の値が現在の状態となり、
+直前の状態が返されます。
+
+デフォルトの値は@code{#f}で、@code{describe}は詳細を表示しません。
+特に、オブジェクトのスロット名が@code{%}ではじまるものは省略されます。
+
+今のところ、状態はグローバルであり、変更はスレッドセーフではありません。
+この状態はプログラムで頻繁にいじるものではなく、
+REPLユーザインタフェースの調整パラメタと考えているためです。
+ただ、将来、便利だとわかればこれをスレッドセーフにしたり、
+パラメータにしたりするかもしれません。
+@c COMMON
+@end defun
+
 
 @node Changing classes,  , Describing instance, Instance
 @subsection Changing classes
