@@ -3289,23 +3289,45 @@ APIがまだ固まっていません。)
 @subsection Conversions between Scheme and C
 @c NODE SchemeとCの間の変換
 
+@c EN
 In the C world, Scheme objects are uniformly represented
 as an opaque tagged pointer @code{ScmObj}.  In order to access
 the actual objects, you need to check its runtime type information
 and to retrive the actual C type out of it.
+@c JP
+Cの世界では、Schemeオブジェクトは不透明なタグつきポインタ@code{ScmObj}として
+統一的に扱われます。オブジェクトの実体にアクセスするには、
+実行時型情報を調べて、適切なCの型を取り出す必要があります。
+@c COMMON
 
+@c EN
 @emph{Stub types} are the objects that bridge Scheme runtime types
 and C types.  Since mappings between Scheme types and C types are
 not one-to-one, there are more stub types than either types;
 for example, Scheme @code{<integer>} type may be bridged to C @code{int}
 type by the stub type @code{<int>}, but it may also be bridged to
 C @code{short} type by the stub type @code{<short>}.
+@c JP
+@emph{スタブタイプ}はSchemeの型とCの型の橋渡しをするオブジェクトです。
+Schemeの型とCの型の対応は1対1ではないので、どちらの型よりも多いスタブタイプがあります。
+例えばSchemeの@code{<integer>}型は、スタブタイプ@code{<int>}によってCの@code{int}型
+にマップされるかもしれませんし、スタブタイプ@code{<short>}によってCの@code{short}型に
+マップされるかもしれません。
+@c COMMON
 
+@c EN
 Do not confuse stub types and Gauche's runtime types---stub types
 are meta information associated to runtime types.  You can look up
 a stub type by its name by @code{cgen-type-from-name}.
 The session below shows the difference of the runtime types and
 stub types:
+@c JP
+スタブタイプとGaucheの実行時型を混同しないようにしてください。
+スタブタイプは、実行時の型に結びつけられたメタ情報と言えます。
+スタブタイプの名前がわかると、@code{cgen-type-from-name}によって
+スタブタイプの実体を得ることができます。
+次のセッションは実行時型とスタブタイプの違いを見せるものです。
+@c COMMON
 
 @example
 gosh> <int>
@@ -3329,10 +3351,6 @@ slots:
   c-type    : "int"
   description: "int"
   cclass    : #f
-  %c-predicate: "SCM_INTEGERP"
-  %unboxer  : "Scm_GetInteger"
-  %boxer    : "Scm_MakeInteger"
-  %maybe    : #f
 
 gosh> <integer>
 #<class <integer>>
@@ -3364,16 +3382,10 @@ slots:
   c-type    : "ScmObj"
   description: "exact integer"
   cclass    : #f
-  %c-predicate: "SCM_INTEGERP"
-  %unboxer  : ""
-  %boxer    : "SCM_OBJ_SAFE"
-  %maybe    : #f
-
 @end example
 
-Each stub type has a @emph{C-predicate},
-a @emph{boxer} and an @emph{unboxer}, each of them is a Scheme
-string for the name of a C function or C macro.
+Each stub type ``knows'' how to generate C expressions of
+@emph{C-predicate}, a @emph{boxer} and an @emph{unboxer}.
 A C-predicate takes @code{ScmObj} object and returns C boolean
 value that if the given object has a valid type and range for the
 stub type.
