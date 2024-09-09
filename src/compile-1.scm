@@ -307,9 +307,7 @@
            (cond
             [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
             [(macro? head)  ; locally defined macro
-             (if (identifier-macro? head)
-               (pass1/body-id-macro-expand-rec head exprs mframe vframe cenv)
-               (pass1/body-macro-expand-rec head exprs mframe vframe cenv))]
+             (pass1/body-macro-expand-rec head exprs mframe vframe cenv)]
             [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
              (pass1/body-finish exprs mframe vframe cenv)]
             [(and (pair? head) (eq? (car head) :rec))
@@ -374,28 +372,17 @@
              (or (and-let* ([gloc (id->bound-gloc head)]
                             [gval (gloc-ref gloc)]
                             [ (macro? gval) ])
-                   (if (identifier-macro? gval)
-                     (pass1/body-id-macro-expand-rec gval exprs mframe vframe cenv)
-                     (pass1/body-macro-expand-rec gval exprs mframe vframe cenv)))
+                   (pass1/body-macro-expand-rec gval exprs mframe vframe cenv))
                  (pass1/body-finish exprs mframe vframe cenv))]
             [else (error "[internal] pass1/body" head)]))
          (pass1/body-finish exprs mframe vframe cenv))]
     [_ (pass1/body-finish exprs mframe vframe cenv)]))
 
 (define (pass1/body-macro-expand-rec mac exprs mframe vframe cenv)
-  (pass1/body-rec
-   (acons (call-macro-expander mac (caar exprs) cenv)
-          (cdar exprs) ;src
-          (cdr exprs)) ;rest
-   mframe vframe cenv))
-
-(define (pass1/body-id-macro-expand-rec mac exprs mframe vframe cenv)
-  (pass1/body-rec
-   (acons (cons (call-id-macro-expander mac (caaar exprs) cenv)
-                (cdaar exprs))
-          (cdar exprs) ;src
-          (cdr exprs)) ;rest
-   mframe vframe cenv))
+  (match-let1 ((expr . src) . rest) exprs
+    (pass1/body-rec
+     (acons (call-macro-expander mac expr cenv) src rest)
+     mframe vframe cenv)))
 
 ;; Finishing internal definitions.  If we have internal defs, we wrap
 ;; the rest by letrec.
