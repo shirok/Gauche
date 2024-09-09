@@ -81,12 +81,7 @@
     (receive (gval type) (global-call-type id cenv)
       (if gval
         (case type
-          [(macro)
-           (if (identifier-macro? gval)
-             (pass1 (cons (call-id-macro-expander gval id cenv)
-                          (cdr program))
-                    cenv)
-             (pass1 (call-macro-expander gval program cenv) cenv))]
+          [(macro) (pass1 (call-macro-expander gval program cenv) cenv)]
           [(syntax) (call-syntax-handler gval program cenv)]
           [(inline) (or (pass1/expand-inliner program id gval cenv)
                         (pass1/call program ($gref id) (cdr program) cenv))]
@@ -109,11 +104,7 @@
               [(wrapped-identifier? h) (pass1/global-call h)]
               [(lvar? h) (pass1/call program ($lref h) (cdr program) cenv)]
               [(macro? h) ;; local macro
-               (if (identifier-macro? h)
-                 (pass1 (cons (call-id-macro-expander h (car program) cenv)
-                              (cdr program))
-                        cenv)
-                 (pass1 (call-macro-expander h program cenv) cenv))]
+               (pass1 (call-macro-expander h program cenv) cenv)]
               [(syntax? h);; locally rebound syntax
                (call-syntax-handler h program cenv)]
               [else (error "[internal] unknown resolution of head:" h)]))]

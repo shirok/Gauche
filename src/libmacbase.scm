@@ -193,29 +193,46 @@
                         [else #f]))
               *trace-macro*))))
 
+(define-inline (show-macro-trace mac input output)
+  (when (and *trace-macro* (%macro-traced? mac))
+    ;; NB: We need to apply unravel-syntax on input and output at once,
+    ;; so that we can correspond the identifiers from input and output.
+    (let1 unraveled (unravel-syntax (cons input output))
+      (display "Macro input>>>\n" (current-trace-port))
+      (pprint (car unraveled) :port (current-trace-port) :level #f :length #f)
+      (display "\nMacro output<<<\n" (current-trace-port))
+      (pprint (cdr unraveled) :port (current-trace-port) :level #f :length #f)
+      (display "\n" (current-trace-port))
+      (flush (current-trace-port)))))
+
+;; Internal API called from Pass1
+;;   EXPR is an S-expr (<identifier> <e> ...), and we know that <identifier>
+;;   is bound to a macro MAC.  It calls macro expander and returns the result
+;;   S-expr.  There are some auxliary bookkeeping stuff---we attach macro's
+;;   original form info to the first pair of the resulting form (if the result
+;;   is a pair), and handles macro tracing if needed.
 (define (call-macro-expander mac expr cenv)
-  (let* ([r ((macro-transformer mac) expr cenv)]
+  (let* ([r (if (identifier-macro? mac)
+              (extended-cons ((macro-transformer mac) (car expr) cenv)
+                             (cdr expr))
+              ((macro-transformer mac) expr cenv))]
          [out (if (and (pair? r) (not (eq? expr r)))
                 (rlet1 p (if (extended-pair? r)
                            r
                            (extended-cons (car r) (cdr r)))
                   (pair-attribute-set! p 'original expr))
                 r)])
-    (when (and *trace-macro* (%macro-traced? mac))
-      ;; NB: We need to apply unravel-syntax on expr and out at once,
-      ;; so that we can correspond the identifiers from input and output.
-      (let1 unraveled (unravel-syntax (cons expr out))
-        (display "Macro input>>>\n" (current-trace-port))
-        (pprint (car unraveled) :port (current-trace-port) :level #f :length #f)
-        (display "\nMacro output<<<\n" (current-trace-port))
-        (pprint (cdr unraveled) :port (current-trace-port) :level #f :length #f)
-        (display "\n" (current-trace-port))
-        (flush (current-trace-port))))
+    (show-macro-trace mac expr out)
     out))
 
+;; This is called when a macro is used at non-head position.  FORM
+;; can be either (set! <identifier> <expr>) form, or <identifier>.
+;; If MAC is not an id-macro, we don't expand the form and returns the
+;; macro object itself (semantically it is an error).
 (define (call-id-macro-expander mac form cenv)
   (if (identifier-macro? mac)
-    (call-macro-expander mac form cenv)
+    (rlet1 out ((macro-transformer mac) form cenv)
+      (show-macro-trace mac form out))
     mac))
 
 (define-cproc make-syntax (name::<symbol> module::<module> proc)
