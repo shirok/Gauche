@@ -297,6 +297,12 @@
     (when (or (and (pair? mframe) (assq var mframe))
               (and (pair? vframe) (assq var vframe)))
       (error "Duplicate internal definitions of" var)))
+  (define (body-macro-expand mac exprs mframe vframe cenv)
+    (match-let1 ((expr . src) . rest) exprs
+      (pass1/body-rec
+       (acons (call-macro-expander mac expr cenv) src rest)
+       mframe vframe cenv)))
+
   (match exprs
     [(((op . args) . src) . rest)
      (or (and-let* ([ (or (not vframe) (not (assq op vframe))) ]
@@ -307,7 +313,7 @@
            (cond
             [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
             [(macro? head)  ; locally defined macro
-             (pass1/body-macro-expand-rec head exprs mframe vframe cenv)]
+             (body-macro-expand head exprs mframe vframe cenv)]
             [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
              (pass1/body-finish exprs mframe vframe cenv)]
             [(and (pair? head) (eq? (car head) :rec))
@@ -372,17 +378,11 @@
              (or (and-let* ([gloc (id->bound-gloc head)]
                             [gval (gloc-ref gloc)]
                             [ (macro? gval) ])
-                   (pass1/body-macro-expand-rec gval exprs mframe vframe cenv))
+                   (body-macro-expand gval exprs mframe vframe cenv))
                  (pass1/body-finish exprs mframe vframe cenv))]
             [else (error "[internal] pass1/body" head)]))
          (pass1/body-finish exprs mframe vframe cenv))]
     [_ (pass1/body-finish exprs mframe vframe cenv)]))
-
-(define (pass1/body-macro-expand-rec mac exprs mframe vframe cenv)
-  (match-let1 ((expr . src) . rest) exprs
-    (pass1/body-rec
-     (acons (call-macro-expander mac expr cenv) src rest)
-     mframe vframe cenv)))
 
 ;; Finishing internal definitions.  If we have internal defs, we wrap
 ;; the rest by letrec.
