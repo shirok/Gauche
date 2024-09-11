@@ -1,3 +1,9 @@
+2024-09-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/sysutil.scm (sys-find-file), libsrc/file/util.scm:
+	  Move file.util#find-file-in-paths to the core, for sys-exec
+	  will need it.  Cf. https://github.com/shirok/Gauche/issues/1071
+
 2024-09-05  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (describe-slots): Hide slots starting with '%' by

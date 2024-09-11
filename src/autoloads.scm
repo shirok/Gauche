@@ -140,7 +140,8 @@
                              (:macro string-interpolate*))
 
 (autoload "gauche/sysutil"
-          sys-realpath sys-fdset list->sys-fdset sys-fdset->list)
+          sys-realpath sys-fdset list->sys-fdset sys-fdset->list
+          sys-find-file)
 
 (autoload gauche.vecutil
           vector-tabulate vector-map vector-map! vector-for-each

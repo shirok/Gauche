@@ -510,27 +510,8 @@
     (string-append (path-sans-extension path) "." ext)
     (path-sans-extension path)))
 
-(define (find-file-in-paths name
-                            :key (paths (cond [(sys-getenv "PATH")
-                                               => (cut string-split <>
-                                                       (cond-expand
-                                                        [gauche.os.windows #\;]
-                                                        [else #\:]))]
-                                              [else '()]))
-                                 (pred file-is-executable?)
-                                 (extensions '()))
-  (define names
-    (if (null? extensions)
-      `(,name)
-      (cons name
-            (map (^e (string-append name "." e)) extensions))))
-  (define (try n) (and (pred n) n))
-  (if (absolute-path? name)
-    (any try names)
-    (let loop ((paths paths))
-      (and (not (null? paths))
-           (or (any try (map (cute build-path (car paths) <>) names))
-               (loop (cdr paths)))))))
+;; find-file-in-paths is now in core.  This is for the backward compatibility.
+(define find-file-in-paths sys-find-file)
 
 ;;;=============================================================
 ;;; File attributes

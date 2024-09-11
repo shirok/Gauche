@@ -38,9 +38,6 @@
 ;; Src/libsys.scm is pre-compiled at the time of distribution,
 ;; so we cannot have platform-dependent cond-expand in it.
 
-;; These are better to be in src/scmlib.scm, but right now we don't have
-;; a nice way to make cond-expand work (when compiling src/scmlib.scm
-;; cond-expand uses the host gosh's feature set, not the target gosh's.)
 (cond-expand
  [gauche.sys.select
   (define (sys-fdset . pfs)
@@ -112,3 +109,42 @@
 
     (resolve '() (append! (if (absolute? path) '() (decompose (sys-getcwd)))
                           (decompose path))))])
+
+;; Find a file that satisfies a predicate in given list of paths.
+;; This is a generalization of what execvp does to search executable from PATH.
+;; This used to be file.util#find-file-in-paths.  We moved it here so that
+;; sys-exec can rely on it, as we switch to execve(2) from execvp(3).
+(define (sys-find-file name
+                       :key (paths (cond [(sys-getenv "PATH")
+                                          => (cut string-split <>
+                                                  (cond-expand
+                                                   [gauche.os.windows #\;]
+                                                   [else #\:]))]
+                                         [else '()]))
+                            (pred (cute sys-access <> X_OK))
+                            (extensions (cond-expand
+                                         [gauche.os.windows '("exe")]
+                                         [else '()])))
+  (define names
+    (if (null? extensions)
+      `(,name)
+      (cons name
+            (map (^e (string-append name "." e)) extensions))))
+  (define (try n) (and (pred n) n))
+  (define (abspath? path)               ;dupe of file.util#absolute-path?
+    (cond-expand
+     [gauche.os.windows (#/^[\/\\]|^[A-Za-z]:/ path)]
+     [else              (#/^\// path)]))
+  (define (mkpath dir file)             ;dupe of file.util#build-path
+    (string-append dir
+                   (cond-expand
+                    [gauche.os.windows "\\"]
+                    [else              "/"])
+                   file))
+
+  (if (abspath? name)
+    (any try names)
+    (let loop ((paths paths))
+      (and (not (null? paths))
+           (or (any try (map (cute mkpath (car paths) <>) names))
+               (loop (cdr paths)))))))
