@@ -1044,26 +1044,6 @@
     (when (< pid 0) (Scm_SysError "fork failed"))
     (return pid)))
 
-;; NB: the signature of old version was (command args :optional iomap).
-;; The new version is (command args :key iomap sigmask).
-;; For transitional stage, we accept both.
-;; (define-cfn get-exec-args (rest iomap::ScmObj* sigmask::ScmSysSigset**)
-;;   ::void :static
-;;   (let* ([s_sigmask SCM_NIL])
-;;     (set! (* iomap) SCM_NIL
-;;           (* sigmask) NULL)
-;;     (cond
-;;      [(and (SCM_PAIRP rest) (SCM_NULLP (SCM_CDR rest))) ; old signature
-;;       (set! (* iomap) (SCM_CAR rest))]
-;;      [else
-;;       (set! (* iomap) (Scm_GetKeyword ':iomap rest SCM_NIL)
-;;             s_sigmask (Scm_GetKeyword ':sigmask rest SCM_FALSE))
-;;       (cond [(SCM_SYS_SIGSET_P s_sigmask)
-;;              (set! (* sigmask) (SCM_SYS_SIGSET s_sigmask))]
-;;             [(not (SCM_FALSEP s_sigmask))
-;;              (Scm_Error "<sys-sigset> or #f required, but got %S" s_sigmask)])
-;;       ])))
-
 (define-cproc sys-exec (command::<string>
                         args::<list>
                         :key (iomap ()) (sigmask::<sys-sigset>? #f)
