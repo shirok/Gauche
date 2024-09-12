@@ -122,9 +122,7 @@
                                                    [else #\:]))]
                                          [else '()]))
                             (pred (cute sys-access <> X_OK))
-                            (extensions (cond-expand
-                                         [gauche.os.windows '("exe")]
-                                         [else '()])))
+                            (extensions '()))
   (define names
     (if (null? extensions)
       `(,name)
@@ -136,7 +134,7 @@
      [gauche.os.windows (#/^[\/\\]|^[A-Za-z]:/ path)]
      [else              (#/^\// path)]))
   (define (mkpath dir file)             ;dupe of file.util#build-path
-    (string-append dir
+    (string-append (sys-normalize-pathname dir)
                    (cond-expand
                     [gauche.os.windows "\\"]
                     [else              "/"])
