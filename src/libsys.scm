@@ -1050,8 +1050,8 @@
                         (directory::<string>? #f)
                         (detached::<boolean> #f))
   ::<void>
-  (let* ([flags::u_int (?: detached SCM_EXEC_DETACHED 0)])
-    (Scm_SysExec command args iomap sigmask directory flags)))
+  (let* ([flags::u_long (?: detached SCM_EXEC_DETACHED 0)])
+    (Scm_SysExec command args iomap sigmask directory SCM_NIL flags)))
 
 (define-cproc sys-fork-and-exec (command::<string>
                                  args::<list>
@@ -1061,7 +1061,7 @@
   (let* ([flags::u_int SCM_EXEC_WITH_FORK])
     (when detached
       (set! flags (logior flags SCM_EXEC_DETACHED)))
-    (return (Scm_SysExec command args iomap sigmask directory flags))))
+    (return (Scm_SysExec command args iomap sigmask directory SCM_NIL flags))))
 
 (define-cproc sys-getcwd () Scm_GetCwd)
 (define-cproc sys-getegid () ::<int> getegid)

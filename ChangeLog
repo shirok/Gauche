@@ -1,3 +1,11 @@
+2024-09-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_SysExec): Change API to allow environment in the
+	  argument.  This is technically a compatibility-breaking change.
+	  Our hope is that no extensions rely on this API, for it is
+	  pretty low-level and awkward to use.  It's much more convenient
+	  to use gauche.process.
+
 2024-09-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/sysutil.scm (sys-find-file), libsrc/file/util.scm:

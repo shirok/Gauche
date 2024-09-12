@@ -245,7 +245,7 @@ enum {
 
 SCM_EXTERN ScmObj Scm_SysExec(ScmString *file, ScmObj args,
                               ScmObj iomap, ScmSysSigset *mask,
-                              ScmString *dir, int flags);
+                              ScmString *dir, ScmObj env, u_long flags);
 SCM_EXTERN int   *Scm_SysPrepareFdMap(ScmObj iomap);
 SCM_EXTERN void   Scm_SysSwapFds(int *fds);
 

@@ -1643,7 +1643,8 @@ static char *win_create_command_line(TCHAR *program_path,
  *   the process exit status will be lost when the child process terminates.
  */
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
-                   ScmSysSigset *mask, ScmString *dir, int flags)
+                   ScmSysSigset *mask, ScmString *dir,
+                   ScmObj env SCM_UNUSED, u_long flags)
 {
     int argc = Scm_Length(args);
     pid_t pid = 0;
