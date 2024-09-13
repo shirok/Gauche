@@ -114,6 +114,12 @@
 ;; This is a generalization of what execvp does to search executable from PATH.
 ;; This used to be file.util#find-file-in-paths.  We moved it here so that
 ;; sys-exec can rely on it, as we switch to execve(2) from execvp(3).
+;;
+;; The default value handling of pred and extensions are a bit involved.
+;; The default of pred is to check the file is executable, and the default of
+;; extensions is '().  However, on Windows, if both are omitted, we default
+;; extensions to be '("exe" "com" "cmd" "bad"), to mimic the behaivor of
+;; execvp().
 (define (sys-find-file name
                        :key (paths (cond [(sys-getenv "PATH")
                                           => (cut string-split <>
@@ -121,14 +127,27 @@
                                                    [gauche.os.windows #\;]
                                                    [else #\:]))]
                                          [else '()]))
-                            (pred (cute sys-access <> X_OK))
-                            (extensions '()))
+                            pred
+                            extensions)
+  (define real-predicate
+    (if (undefined? pred)
+      (cute sys-access <> X_OK)
+      pred))
+  (define real-extensions
+    (if (undefined? extensions)
+      (cond-expand
+       [gauche.os.windows (if (undefined? pred)
+                            '("exe" "com" "cmd" "bat")
+                            '())]
+       [else '()])
+      (assume-type extensions (<List> <string>)
+                   "List of strings expected, but got:" extensions)))
   (define names
-    (if (null? extensions)
+    (if (null? real-extensions)
       `(,name)
       (cons name
-            (map (^e (string-append name "." e)) extensions))))
-  (define (try n) (and (pred n) n))
+            (map (^e (string-append name "." e)) real-extensions))))
+  (define (try n) (and (real-predicate n) n))
   (define (abspath? path)               ;dupe of file.util#absolute-path?
     (cond-expand
      [gauche.os.windows (#/^[\/\\]|^[A-Za-z]:/ path)]

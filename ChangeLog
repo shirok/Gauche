@@ -408,7 +408,7 @@
 
 	* src/system.c (Scm_SysExec),
 	  src/libsys.scm (%sys-escape-windows-command-line): When a BAT file
-	  is run via CreateProcess, Windoes uses different rules to parse
+	  is run via CreateProcess, Windows uses different rules to parse
 	  the command line, causing a security risk.  We reject 'unsafe'
 	  characters in the command line arguments if BAT file is the program
 	  to run.  See CVE-2024-3566
