@@ -1,3 +1,9 @@
+2024-09-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/system.c (Scm_SysExec): Switch to use execve() on POSIX platform.
+	  Executable is searched by sys-find-file, instead of relying on
+	  execvp().
+
 2024-09-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec): Change API to allow environment in the

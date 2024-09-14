@@ -29,6 +29,9 @@
     (normalize pathname)
     (map normalize (cons pathname pathnames))))
 
+(define (na pathname . pathnames)       ;make it absolute
+  (sys-normalize-pathname (apply n pathname pathnames) :absolute #t))
+
 ;; mingw doesn't have fully compatible permissions as unix.
 ;; this procedure compensates it.
 (define (P perm)
@@ -760,24 +763,24 @@
 
   (unwind-protect
       (begin
-        (test* "find-file-in-paths" (n "test.out/bin/foo")
+        (test* "find-file-in-paths" (na "test.out/bin/foo")
                (find-file-in-paths "foo"
                                    :paths paths
                                    :pred file-exists?))
-        (test* "find-file-in-paths" (n "test.out/usr/bin/foo")
+        (test* "find-file-in-paths" (na "test.out/usr/bin/foo")
                (find-file-in-paths "foo"
                                    :paths (cdr paths)
                                    :pred file-exists?))
-        (test* "find-file-in-paths" (n "test.out/usr/sbin/ban")
+        (test* "find-file-in-paths" (na "test.out/usr/sbin/ban")
                (find-file-in-paths "ban"
                                    :paths paths
                                    :pred file-exists?))
-        (test* "find-file-in-paths" (n "test.out/usr/bin/ban.exe")
+        (test* "find-file-in-paths" (na "test.out/usr/bin/ban.exe")
                (find-file-in-paths "ban"
                                    :paths paths
                                    :pred file-exists?
                                    :extensions '("exe")))
-        (test* "find-file-in-paths" (n "test.out/bin/ban.com")
+        (test* "find-file-in-paths" (na "test.out/bin/ban.com")
                (find-file-in-paths "ban"
                                    :paths paths
                                    :pred file-exists?

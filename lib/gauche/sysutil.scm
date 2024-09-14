@@ -161,7 +161,9 @@
 
   (if (abspath? name)
     (any try names)
-    (let loop ((paths paths))
-      (and (not (null? paths))
-           (or (any try (map (cute mkpath (car paths) <>) names))
-               (loop (cdr paths)))))))
+    (and-let1 found
+        (let loop ((paths paths))
+          (and (not (null? paths))
+               (or (any try (map (cute mkpath (car paths) <>) names))
+                   (loop (cdr paths)))))
+      (sys-normalize-pathname found :absolute #t))))

@@ -1643,11 +1643,10 @@ static char *win_create_command_line(TCHAR *program_path,
  *   the process exit status will be lost when the child process terminates.
  */
 ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
-                   ScmSysSigset *mask, ScmString *dir,
-                   ScmObj env SCM_UNUSED, u_long flags)
+                   ScmSysSigset *mask SCM_UNUSED, ScmString *dir,
+                   ScmObj env, u_long flags)
 {
     int argc = Scm_Length(args);
-    pid_t pid = 0;
     int forkp = flags & SCM_EXEC_WITH_FORK;
     int detachp = flags & SCM_EXEC_DETACHED;
 
@@ -1657,10 +1656,35 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 
     /* make a C array of C strings */
     char **argv = Scm_ListToCStringArray(args, TRUE, NULL);
-    const char *program = Scm_GetStringConst(file);
 
     /* setting up iomap table */
     int *fds = Scm_SysPrepareFdMap(iomap);
+
+    /* find executable.
+       If FILE contains path separators, we don't use path search.
+    */
+    const char *program;
+    if (SCM_FALSEP(Scm_StringScanChar(file, '/', SCM_STRING_SCAN_INDEX))
+#if defined(GAUCHE_WINDOWS)
+        && SCM_FALSEP(Scm_StringScanChar(file, '\\', SCM_STRING_SCAN_INDEX))
+#endif
+        ) {
+        static ScmObj sys_find_file_proc = SCM_UNDEFINED;
+        SCM_BIND_PROC(sys_find_file_proc, "sys-find-file", Scm_GaucheModule());
+        ScmObj fullpath = Scm_ApplyRec1(sys_find_file_proc, SCM_OBJ(file));
+        if (!SCM_STRINGP(fullpath)) {
+            Scm_Error("Can't find executable file %S in PATH.", SCM_OBJ(file));
+        }
+        program = Scm_GetStringConst(SCM_STRING(fullpath));
+    } else {
+        program = Scm_GetStringConst(file);
+    }
+
+    /* Set up environment */
+    char **envp = NULL;
+    if (SCM_PAIRP(env)) {
+        envp = Scm_ListToCStringArray(env, TRUE, NULL);
+    }
 
     /*
      * From now on, we have totally different code for Unix and Windows.
@@ -1673,6 +1697,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
     if (dir != NULL) cdir = Scm_GetStringConst(dir);
 
     /* When requested, call fork() here. */
+    pid_t pid = 0;
     if (forkp) {
         SCM_SYSCALL(pid, fork());
         if (pid < 0) Scm_SysError("fork failed");
@@ -1703,7 +1728,11 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
             Scm_SysSigmask(SIG_SETMASK, mask);
         }
 
-        execvp(program, (char *const*)argv);
+        if (envp == NULL) {
+            execv(program, (char *const*)argv);
+        } else {
+            execve(program, (char *const*)argv, envp);
+        }
         /* here, we failed */
         Scm_Panic("exec failed: %s: %s", program, strerror(errno));
     }
@@ -1715,8 +1744,6 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
      * Windows path
      */
     const char *cdir = NULL;
-    (void)mask; /* suppress unused var warning */
-    (void)pid;  /* suppress unused var warning */
     if (dir != NULL) {
         /* we need full path for CreateProcess. */
         dir = SCM_STRING(Scm_NormalizePathname(dir, SCM_PATH_ABSOLUTE|SCM_PATH_CANONICALIZE));
