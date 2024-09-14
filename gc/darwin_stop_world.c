@@ -23,7 +23,10 @@
 
 #include <sys/sysctl.h>
 #include <mach/machine.h>
-#include <CoreFoundation/CoreFoundation.h>
+
+#if defined(ARM32) && defined(ARM_THREAD_STATE32)
+# include <CoreFoundation/CoreFoundation.h>
+#endif
 
 /* From "Inside Mac OS X - Mach-O Runtime Architecture" published by Apple
    Page 49:
@@ -83,15 +86,16 @@ GC_INNER ptr_t GC_FindTopOfStack(unsigned long stack_start)
 # ifdef DEBUG_THREADS_EXTRA
     GC_log_printf("FindTopOfStack start at sp= %p\n", (void *)frame);
 # endif
-  while (frame->savedSP != 0) {
-    /* if there are no more stack frames, stop */
+  while (frame->savedSP != 0) { /* stop if no more stack frames */
+    unsigned long maskedLR;
 
     frame = (StackFrame*)frame->savedSP;
 
     /* we do these next two checks after going to the next frame
        because the LR for the first stack frame in the loop
        is not set up on purpose, so we shouldn't check it. */
-    if ((frame->savedLR & ~0x3) == 0 || (frame->savedLR & ~0x3) == ~0x3UL)
+    maskedLR = frame -> savedLR & ~0x3UL;
+    if (0 == maskedLR || ~0x3UL == maskedLR)
       break; /* if the next LR is bogus, stop */
   }
 # ifdef DEBUG_THREADS_EXTRA
@@ -560,12 +564,13 @@ GC_INNER void GC_stop_world(void)
     GC_log_printf("Stopping the world from thread %p\n",
                   (void *)(word)my_thread);
 # endif
-# ifdef PARALLEL_MARK
-    if (GC_parallel) {
       /* Make sure all free list construction has stopped before we     */
       /* start.  No new construction can start, since free list         */
       /* construction is required to acquire and release the GC lock    */
       /* before it starts, and we have the lock.                        */
+
+# ifdef PARALLEL_MARK
+    if (GC_parallel) {
       GC_acquire_mark_lock();
       GC_ASSERT(GC_fl_builder_count == 0);
       /* We should have previously waited for it to become zero. */

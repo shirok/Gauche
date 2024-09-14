@@ -22,16 +22,16 @@
 #  this will generate gc.sln
 #
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
-set(PACKAGE_VERSION 8.2.4)
+set(PACKAGE_VERSION 8.2.8)
 # Version must match that in AC_INIT of configure.ac and that in README.
 # Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 # Info (current:revision:age) for the Libtool versioning system.
 # These values should match those in cord/cord.am and Makefile.am.
-set(LIBCORD_VER_INFO    6:0:5)
-set(LIBGC_VER_INFO      6:2:5)
+set(LIBCORD_VER_INFO    6:1:5)
+set(LIBGC_VER_INFO      6:4:5)
 set(LIBGCCPP_VER_INFO   6:0:5)
 
 option(enable_cplusplus "C++ support" OFF)
@@ -143,9 +143,6 @@ elseif (MSVC)
   # All warnings but ignoring "unreferenced formal parameter" and
   # "conditional expression is constant" ones.
   add_compile_options(/W4 /wd4100 /wd4127)
-  # Disable crt security warnings, since unfortunately they warn about all
-  # sorts of safe uses of strncpy.
-  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 elseif (WATCOM)
   add_compile_options(/wx)
   if (NOT enable_threads)
@@ -155,6 +152,11 @@ elseif (WATCOM)
 else()
   # TODO add -[W]pedantic -Wno-long-long
   add_compile_options(-Wall -Wextra)
+endif()
+
+if (WIN32)
+  # Disable MS crt security warnings reported e.g. for getenv, strcpy.
+  add_definitions("-D_CRT_SECURE_NO_DEPRECATE")
 endif()
 
 include_directories(include)
@@ -196,10 +198,13 @@ set(ATOMIC_OPS_LIBS "") # TODO: Assume libatomic_ops library is not needed.
 # Thread support detection.
 if (CMAKE_USE_PTHREADS_INIT)
   set(SRC ${SRC} gc_dlopen.c)
-  if (CYGWIN OR MSYS)
+  if (CYGWIN OR WIN32)
     set(SRC ${SRC} win32_threads.c)
   else()
     set(SRC ${SRC} pthread_start.c pthread_stop_world.c pthread_support.c)
+  endif()
+  if (APPLE)
+    set(SRC ${SRC} darwin_stop_world.c)
   endif()
   if (HOST MATCHES .*-.*-hpux10.*)
     message(FATAL_ERROR "HP/UX 10 POSIX threads are not supported.")
@@ -223,12 +228,8 @@ if (CMAKE_USE_PTHREADS_INIT)
     add_definitions("-D_PTHREADS")
     set(NEED_LIB_RT ON)
   endif()
-  if (MSYS)
+  if (WIN32) # AND NOT CYGWIN
     # Does not provide process fork functionality.
-  elseif (APPLE)
-    # The incremental mode conflicts with fork handling (for now).
-    # Thus, HANDLE_FORK is not defined.
-    set(SRC ${SRC} darwin_stop_world.c)
   elseif (enable_handle_fork AND NOT disable_handle_fork)
     add_definitions("-DHANDLE_FORK")
   endif()
@@ -321,7 +322,11 @@ if (enable_redirect_malloc)
   else()
     add_definitions("-DREDIRECT_MALLOC=GC_malloc")
   endif()
-  add_definitions("-DGC_USE_DLOPEN_WRAP")
+  if (WIN32)
+    add_definitions("-DREDIRECT_MALLOC_IN_HEADER")
+  else()
+    add_definitions("-DGC_USE_DLOPEN_WRAP")
+  endif()
 endif(enable_redirect_malloc)
 
 if (enable_munmap)
@@ -384,10 +389,10 @@ endif(enable_werror)
 
 if (enable_single_obj_compilation OR BUILD_SHARED_LIBS)
   set(SRC extra/gc.c) # override SRC
-  if (CMAKE_USE_PTHREADS_INIT)
+  if (CMAKE_USE_PTHREADS_INIT AND NOT (CYGWIN OR WIN32))
     add_definitions("-DGC_PTHREAD_START_STANDALONE")
     set(SRC ${SRC} pthread_start.c)
-  endif(CMAKE_USE_PTHREADS_INIT)
+  endif()
 elseif (BORLAND)
   # Suppress "GC_push_contents_hdr() is declared but never used" warning.
   add_compile_options(/w-use)
@@ -396,6 +401,18 @@ endif()
 # Add implementation of backtrace() and backtrace_symbols().
 if (MSVC)
   set(SRC ${SRC} extra/msvc_dbg.c)
+endif()
+
+# Declare that the libraries do not refer to external symbols.
+if (BUILD_SHARED_LIBS AND NOT (APPLE OR ${CMAKE_SYSTEM_NAME} MATCHES "BSD"))
+  # Note: performed before CMAKE_REQUIRED_FLAGS is updated with "-c".
+  if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
+    set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
+    check_c_compiler_flag(${WL_NO_UNDEFINED_OPT} HAVE_FLAG_WL_NO_UNDEFINED)
+  else()
+    set(WL_NO_UNDEFINED_OPT "LINKER:--no-undefined")
+    check_linker_flag(C "${WL_NO_UNDEFINED_OPT}" HAVE_FLAG_WL_NO_UNDEFINED)
+  endif()
 endif()
 
 # Instruct check_c_source_compiles to skip linking.
@@ -407,7 +424,14 @@ SET(CMAKE_REQUIRED_FLAGS "-c")
 if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
   check_c_compiler_flag(-Werror HAVE_FLAG_WERROR)
   if (HAVE_FLAG_WERROR)
+    check_c_compiler_flag(-Wno-unused-command-line-argument
+                          HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
     SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror")
+    # Prevent "linker input unused" error in further check_c_compiler_flag.
+    if (HAVE_FLAG_WNO_UNUSED_CMDLINE_ARG)
+      SET(CMAKE_REQUIRED_FLAGS
+          "${CMAKE_REQUIRED_FLAGS} -Wno-unused-command-line-argument")
+    endif()
   endif(HAVE_FLAG_WERROR)
 endif()
 
@@ -420,13 +444,6 @@ if (BUILD_SHARED_LIBS)
     add_compile_options(-fvisibility=hidden)
   else()
     add_definitions("-DGC_NO_VISIBILITY")
-  endif()
-  if (${CMAKE_VERSION} VERSION_LESS "3.18.0")
-    set(WL_NO_UNDEFINED_OPT "-Wl,--no-undefined")
-    check_c_compiler_flag(${WL_NO_UNDEFINED_OPT} HAVE_FLAG_WL_NO_UNDEFINED)
-  else()
-    set(WL_NO_UNDEFINED_OPT "LINKER:--no-undefined")
-    check_linker_flag(C "${WL_NO_UNDEFINED_OPT}" HAVE_FLAG_WL_NO_UNDEFINED)
   endif()
 else()
   add_definitions("-DGC_NOT_DLL")
@@ -443,6 +460,14 @@ if (HAVE_FLAG_F_NO_STRICT_ALIASING)
   add_compile_options(-fno-strict-aliasing)
 endif()
 
+# Prevent "__builtin_return_address with a nonzero argument is unsafe" warning.
+if (NOT BORLAND AND NOT MSVC AND NOT WATCOM)
+  check_c_compiler_flag(-Wno-frame-address HAVE_FLAG_WNO_FRAME_ADDRESS)
+  if (HAVE_FLAG_WNO_FRAME_ADDRESS)
+    add_compile_options(-Wno-frame-address)
+  endif(HAVE_FLAG_WNO_FRAME_ADDRESS)
+endif()
+
 # Extra user-defined flags to pass both to C and C++ compilers.
 if (DEFINED CFLAGS_EXTRA)
   separate_arguments(CFLAGS_EXTRA_LIST UNIX_COMMAND "${CFLAGS_EXTRA}")
@@ -457,6 +482,17 @@ endif()
 
 # Check for getcontext (uClibc can be configured without it, for example).
 check_function_exists(getcontext HAVE_GETCONTEXT)
+if (HAVE_GETCONTEXT AND NOT APPLE)
+  # Double check getcontext() is available (needed at least on OpenBSD 7.3).
+  # Note: OS X is excluded here because the header filename differs.
+  check_c_source_compiles("
+#include <ucontext.h>\n
+int main(void) { ucontext_t ctxt; (void)getcontext(&ctxt); return 0; }"
+    HAVE_GETCONTEXT_FUNC)
+  if (NOT HAVE_GETCONTEXT_FUNC)
+    set(HAVE_GETCONTEXT OFF)
+  endif()
+endif()
 if (NOT HAVE_GETCONTEXT)
   add_definitions("-DNO_GETCONTEXT")
 endif()
@@ -504,7 +540,7 @@ int main(void) {\n
         add_definitions("-DHAVE_PTHREAD_SETNAME_NP_WITH_TID")
       endif()
     endif(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG)
-  endif (HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
+  endif(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID)
 endif()
 
 # Check for dladdr (used for debugging).
@@ -692,8 +728,12 @@ if (build_tests)
     add_test(NAME cordtest COMMAND cordtest)
 
     if (WIN32 AND NOT CYGWIN)
+      if (NOT (CMAKE_C_COMPILER_ID STREQUAL "Clang"))
+        # Workaround MS Clang failure to compile a resource file.
+        set(DE_WIN_RC cord/tests/de_win.rc)
+      endif()
       add_executable(de cord/tests/de.c cord/tests/de_win.c
-                     cord/tests/de_win.rc)
+                     ${DE_WIN_RC})
       set_target_properties(de PROPERTIES WIN32_EXECUTABLE TRUE)
       target_link_libraries(de PRIVATE cord gc gdi32)
     endif()

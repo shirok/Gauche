@@ -169,7 +169,7 @@ STATIC GC_descr GC_double_descr(GC_descr descriptor, word nwords)
     if ((descriptor & GC_DS_TAGS) == GC_DS_LENGTH) {
         descriptor = GC_bm_table[BYTES_TO_WORDS((word)descriptor)];
     }
-    descriptor |= (descriptor & ~GC_DS_TAGS) >> nwords;
+    descriptor |= (descriptor & ~(GC_descr)GC_DS_TAGS) >> nwords;
     return(descriptor);
 }
 
@@ -577,7 +577,7 @@ GC_API GC_descr GC_CALL GC_make_descriptor(const GC_word * bm, size_t len)
         if (index == -1) return(WORDS_TO_BYTES(last_set_bit+1) | GC_DS_LENGTH);
                                 /* Out of memory: use conservative      */
                                 /* approximation.                       */
-        result = GC_MAKE_PROC(GC_typed_mark_proc_index, (word)index);
+        result = GC_MAKE_PROC(GC_typed_mark_proc_index, index);
     }
     return result;
 }
@@ -598,8 +598,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_explicitly_typed(size_t lb,
     /* the former might be updated asynchronously.                      */
     lg = BYTES_TO_GRANULES(GC_size(op));
     set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
-    GC_dirty(op + GRANULES_TO_WORDS(lg) - 1);
-    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 
@@ -644,8 +642,6 @@ GC_API GC_ATTR_MALLOC void * GC_CALL
         lg = BYTES_TO_GRANULES(GC_size(op));
     }
     set_obj_descr(op, GRANULES_TO_WORDS(lg), d);
-    GC_dirty((word *)op + GRANULES_TO_WORDS(lg) - 1);
-    REACHABLE_AFTER_DIRTY(d);
     return op;
 }
 

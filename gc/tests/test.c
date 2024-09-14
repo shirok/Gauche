@@ -103,7 +103,7 @@
 #   include <pthread.h>
 # endif
 
-# if ((defined(DARWIN) && defined(MPROTECT_VDB) \
+# if ((defined(DARWIN) && defined(MPROTECT_VDB) && !defined(THREADS) \
        && !defined(MAKE_BACK_GRAPH) && !defined(TEST_HANDLE_FORK)) \
       || (defined(THREADS) && !defined(CAN_HANDLE_FORK)) \
       || defined(HAVE_NO_FORK) || defined(USE_WINALLOC)) \
@@ -199,6 +199,12 @@
               GC_printf("Out of memory\n"); \
               exit(1); \
             }
+
+static void *checkOOM(void *p)
+{
+  CHECK_OUT_OF_MEMORY(p);
+  return p;
+}
 
 /* Define AO primitives for a single-threaded mode. */
 #ifndef AO_HAVE_compiler_barrier
@@ -458,7 +464,7 @@ sexpr reverse1(sexpr x, sexpr y)
 sexpr reverse(sexpr x)
 {
 #   ifdef TEST_WITH_SYSTEM_MALLOC
-      GC_noop1(GC_HIDE_POINTER(malloc(100000)));
+      GC_noop1(GC_HIDE_POINTER(checkOOM(malloc(100000))));
 #   endif
     return( reverse1(x, nil) );
 }
@@ -764,7 +770,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     e = uncollectable_ints(1, 1);
     /* Check that realloc updates object descriptors correctly */
     AO_fetch_and_add1(&collectable_count);
-    f = (sexpr *)GC_MALLOC(4 * sizeof(sexpr));
+    f = (sexpr *)checkOOM(GC_MALLOC(4 * sizeof(sexpr)));
     f = (sexpr *)GC_REALLOC((void *)f, 6 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(f);
     AO_fetch_and_add1(&realloc_count);
@@ -777,7 +783,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
     AO_fetch_and_add1(&realloc_count);
     GC_PTR_STORE_AND_DIRTY(g + 799, ints(1, 18));
     AO_fetch_and_add1(&collectable_count);
-    h = (sexpr *)GC_MALLOC(1025 * sizeof(sexpr));
+    h = (sexpr *)checkOOM(GC_MALLOC(1025 * sizeof(sexpr)));
     h = (sexpr *)GC_REALLOC((void *)h, 2000 * sizeof(sexpr));
     CHECK_OUT_OF_MEMORY(h);
     AO_fetch_and_add1(&realloc_count);
@@ -827,7 +833,7 @@ void *GC_CALLBACK reverse_test_inner(void *data)
         a_set(reverse(reverse(a_get())));
 #       if !defined(AT_END) && !defined(THREADS)
           /* This is not thread safe, since realloc explicitly deallocates */
-          a_set(GC_REALLOC(a_get(), (i & 1) != 0 ? 500 : 8200));
+          a_set(checkOOM(GC_REALLOC(a_get(), (i & 1) != 0 ? 500 : 8200)));
           AO_fetch_and_add1(&realloc_count);
 #       endif
     }
@@ -915,6 +921,7 @@ tn * mktree(int n)
     tn * result = GC_NEW(tn);
     tn * left, * right;
 
+    CHECK_OUT_OF_MEMORY(result);
     AO_fetch_and_add1(&collectable_count);
 #   if defined(MACOS)
         /* get around static data limitations. */
@@ -925,7 +932,6 @@ tn * mktree(int n)
         }
 #   endif
     if (n == 0) return(0);
-    CHECK_OUT_OF_MEMORY(result);
     result -> level = n;
     result -> lchild = left = mktree(n - 1);
     result -> rchild = right = mktree(n - 1);
@@ -1053,56 +1059,71 @@ void chktree(tn *t, int n)
         FAIL;
     }
     if (AO_fetch_and_add1(&extra_count) % 373 == 0) {
-        (void)GC_MALLOC((unsigned)AO_fetch_and_add1(&extra_count) % 5001);
+        (void)checkOOM(GC_MALLOC(
+                        (unsigned)AO_fetch_and_add1(&extra_count) % 5001));
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> lchild, n-1);
     if (AO_fetch_and_add1(&extra_count) % 73 == 0) {
-        (void)GC_MALLOC((unsigned)AO_fetch_and_add1(&extra_count) % 373);
+        (void)checkOOM(GC_MALLOC(
+                        (unsigned)AO_fetch_and_add1(&extra_count) % 373));
         AO_fetch_and_add1(&collectable_count);
     }
     chktree(t -> rchild, n-1);
 }
 
-#if defined(GC_PTHREADS)
-  pthread_key_t fl_key;
-#endif
+#ifndef VERY_SMALL_CONFIG
+# if defined(GC_PTHREADS)
+    pthread_key_t fl_key;
+# endif
 
-void * alloc8bytes(void)
-{
-# ifndef GC_PTHREADS
-    AO_fetch_and_add1(&atomic_count);
-    return GC_MALLOC_ATOMIC(8);
-# elif defined(SMALL_CONFIG) || defined(GC_DEBUG)
-    AO_fetch_and_add1(&collectable_count);
-    return(GC_MALLOC(8));
-# else
-    void ** my_free_list_ptr;
-    void * my_free_list;
-    void * next;
+  void * alloc8bytes(void)
+  {
+#   ifndef GC_PTHREADS
+      AO_fetch_and_add1(&atomic_count);
+      return GC_MALLOC_ATOMIC(8);
+#   elif defined(SMALL_CONFIG) || defined(GC_DEBUG)
+      AO_fetch_and_add1(&collectable_count);
+      return GC_MALLOC(8);
+#   else
+      void ** my_free_list_ptr;
+      void * my_free_list;
+      void * next;
 
-    my_free_list_ptr = (void **)pthread_getspecific(fl_key);
-    if (my_free_list_ptr == 0) {
+      my_free_list_ptr = (void **)pthread_getspecific(fl_key);
+      if (NULL == my_free_list_ptr) {
         my_free_list_ptr = GC_NEW_UNCOLLECTABLE(void *);
         if (NULL == my_free_list_ptr) return NULL;
         AO_fetch_and_add1(&uncollectable_count);
         if (pthread_setspecific(fl_key, my_free_list_ptr) != 0) {
-            GC_printf("pthread_setspecific failed\n");
-            FAIL;
+          GC_printf("pthread_setspecific failed\n");
+          FAIL;
         }
-    }
-    my_free_list = *my_free_list_ptr;
-    if (my_free_list == 0) {
+      }
+      my_free_list = *my_free_list_ptr;
+      if (NULL == my_free_list) {
         my_free_list = GC_malloc_many(8);
         if (NULL == my_free_list) return NULL;
+      }
+      next = GC_NEXT(my_free_list);
+      GC_PTR_STORE_AND_DIRTY(my_free_list_ptr, next);
+      GC_NEXT(my_free_list) = NULL;
+      AO_fetch_and_add1(&collectable_count);
+      return my_free_list;
+#   endif
+  }
+
+  void alloc_small(int n)
+  {
+    int i;
+
+    for (i = 0; i < n; i += 8) {
+      void *p = alloc8bytes();
+
+      CHECK_OUT_OF_MEMORY(p);
     }
-    next = GC_NEXT(my_free_list);
-    GC_PTR_STORE_AND_DIRTY(my_free_list_ptr, next);
-    GC_NEXT(my_free_list) = 0;
-    AO_fetch_and_add1(&collectable_count);
-    return(my_free_list);
-# endif
-}
+  }
+#endif /* !VERY_SMALL_CONFIG */
 
 #include "gc_inline.h"
 
@@ -1117,19 +1138,11 @@ void test_tinyfl(void)
   BZERO(tfls, sizeof(tfls));
   /* TODO: Improve testing of FAST_MALLOC functionality. */
   GC_MALLOC_WORDS(results[0], 11, tfls[0]);
+  CHECK_OUT_OF_MEMORY(results[0]);
   GC_MALLOC_ATOMIC_WORDS(results[1], 20, tfls[1]);
+  CHECK_OUT_OF_MEMORY(results[1]);
   GC_CONS(results[2], results[0], results[1], tfls[2]);
-}
-
-void alloc_small(int n)
-{
-    int i;
-
-    for (i = 0; i < n; i += 8) {
-        void *p = alloc8bytes();
-
-        CHECK_OUT_OF_MEMORY(p);
-    }
+  CHECK_OUT_OF_MEMORY(results[2]);
 }
 
 # if defined(THREADS) && defined(GC_DEBUG)
@@ -1204,8 +1217,8 @@ void typed_test(void)
     GC_descr d2;
     GC_descr d3 = GC_make_descriptor(bm_large, 32);
     GC_descr d4 = GC_make_descriptor(bm_huge, 320);
-    GC_word * x = (GC_word *)GC_MALLOC_EXPLICITLY_TYPED(
-                                320 * sizeof(GC_word) + 123, d4);
+    GC_word * x = (GC_word *)checkOOM(GC_MALLOC_EXPLICITLY_TYPED(
+                                        320 * sizeof(GC_word) + 123, d4));
     int i;
 
     AO_fetch_and_add1(&collectable_count);
@@ -1517,16 +1530,16 @@ void run_one_test(void)
         {
            size_t i;
            for (i = 0; i < 10000; ++i) {
-             (void)GC_MALLOC(0);
+             (void)checkOOM(GC_MALLOC(0));
              AO_fetch_and_add1(&collectable_count);
-             GC_FREE(GC_MALLOC(0));
-             (void)GC_MALLOC_ATOMIC(0);
+             GC_FREE(checkOOM(GC_MALLOC(0)));
+             (void)checkOOM(GC_MALLOC_ATOMIC(0));
              AO_fetch_and_add1(&atomic_count);
-             GC_FREE(GC_MALLOC_ATOMIC(0));
+             GC_FREE(checkOOM(GC_MALLOC_ATOMIC(0)));
              test_generic_malloc_or_special(GC_malloc_atomic(1));
              AO_fetch_and_add1(&atomic_count);
-             GC_FREE(GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(1));
-             GC_FREE(GC_MALLOC_IGNORE_OFF_PAGE(2));
+             GC_FREE(checkOOM(GC_MALLOC_ATOMIC_IGNORE_OFF_PAGE(1)));
+             GC_FREE(checkOOM(GC_MALLOC_IGNORE_OFF_PAGE(2)));
            }
          }
     thr_hndl_sb.gc_thread_handle = GC_get_my_stackbottom(&thr_hndl_sb.sb);
@@ -1548,10 +1561,10 @@ void run_one_test(void)
         (GC_gcollect(),GC_malloc(12)),
         (void *)0);
     /* GC_malloc(0) must return NULL or something we can deallocate. */
-        GC_free(GC_malloc(0));
-        GC_free(GC_malloc_atomic(0));
-        GC_free(GC_malloc(0));
-        GC_free(GC_malloc_atomic(0));
+        GC_free(checkOOM(GC_malloc(0)));
+        GC_free(checkOOM(GC_malloc_atomic(0)));
+        GC_free(checkOOM(GC_malloc(0)));
+        GC_free(checkOOM(GC_malloc_atomic(0)));
 #   ifndef NO_TEST_HANDLE_FORK
         GC_atfork_prepare();
         pid = fork();
@@ -1638,8 +1651,8 @@ void run_one_test(void)
 #   endif /* DBG_HDRS_ALL */
     tree_test();
 #   ifdef TEST_WITH_SYSTEM_MALLOC
-      free(calloc(1,1));
-      free(realloc(NULL, 64));
+      free(checkOOM(calloc(1,1)));
+      free(checkOOM(realloc(NULL, 64)));
 #   endif
 #   ifndef NO_CLOCK
       if (print_stats) {
@@ -1673,7 +1686,7 @@ void run_one_test(void)
 /* Execute some tests after termination of other test threads (if any). */
 void run_single_threaded_test(void) {
     GC_disable();
-    GC_FREE(GC_MALLOC(100));
+    GC_FREE(checkOOM(GC_MALLOC(100)));
     GC_enable();
 }
 
@@ -1714,23 +1727,19 @@ void check_heap_stats(void)
       GC_printf("GC should be initialized!\n");
       FAIL;
     }
-#   ifdef VERY_SMALL_CONFIG
+
     /* The upper bounds are a guess, which has been empirically */
-    /* adjusted.  On low end uniprocessors with incremental GC  */
+    /* adjusted.  On low-end uniprocessors with incremental GC  */
     /* these may be particularly dubious, since empirically the */
     /* heap tends to grow largely as a result of the GC not     */
     /* getting enough cycles.                                   */
-#     if CPP_WORDSZ == 64
-        max_heap_sz = 4500000;
-#     else
-        max_heap_sz = 2800000;
-#     endif
+#   if CPP_WORDSZ == 64
+      max_heap_sz = 26000000;
 #   else
-#     if CPP_WORDSZ == 64
-        max_heap_sz = 26000000;
-#     else
-        max_heap_sz = 16000000;
-#     endif
+      max_heap_sz = 16000000;
+#   endif
+#   ifdef VERY_SMALL_CONFIG
+      max_heap_sz /= 4;
 #   endif
 #   ifdef GC_DEBUG
         max_heap_sz *= 2;
@@ -1887,6 +1896,10 @@ void check_heap_stats(void)
       (void)GC_get_size_map_at(-1);
       (void)GC_get_size_map_at(1);
 #   endif
+    if (GC_size(NULL) != 0) {
+      GC_printf("GC_size(NULL) failed\n");
+      FAIL;
+    }
 
 #   ifdef NO_CLOCK
       GC_printf("Completed %u collections\n", (unsigned)GC_get_gc_no());
@@ -2416,10 +2429,12 @@ int main(void)
     if (GC_get_rate() != 10 || GC_get_max_prior_attempts() != 1)
         FAIL;
     GC_set_warn_proc(warn_proc);
-    if ((code = pthread_key_create(&fl_key, 0)) != 0) {
+#   ifndef VERY_SMALL_CONFIG
+      if ((code = pthread_key_create(&fl_key, 0)) != 0) {
         GC_printf("Key creation failed, errno= %d\n", code);
         FAIL;
-    }
+      }
+#   endif
     set_print_procs();
 #   if NTHREADS > 0
       for (i = 0; i < NTHREADS; ++i) {

@@ -67,8 +67,8 @@ CORD_API size_t CORD_pos_to_index(CORD_pos p);
 /* Fetch the character located at the given position:   */
 CORD_API char CORD_pos_fetch(CORD_pos p);
 
-/* Initialize the position to refer to the give cord and index. */
-/* Note that this is the most expensive function on positions:  */
+/* Initialize the position to refer to the given cord and index.    */
+/* Note that this is the most expensive function on positions.      */
 CORD_API void CORD_set_pos(CORD_pos p, CORD x, size_t i);
 
 /* Advance the position to the next character.  */
@@ -118,7 +118,7 @@ CORD_API void CORD__prev(CORD_pos);
         /* 0 < n < CORD_pos_chars_left(p).      */
 
 #define CORD_pos_cur_char_addr(p) \
-        (p)[0].cur_leaf + ((p)[0].cur_pos - (p)[0].cur_start)
+    ((p)[0].cur_leaf + ((p)[0].cur_pos - (p)[0].cur_start))
         /* Address of the current character in cache.   */
 
 #ifdef __cplusplus

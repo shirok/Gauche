@@ -34,8 +34,6 @@ void GC_noop6(word arg1 GC_ATTR_UNUSED, word arg2 GC_ATTR_UNUSED,
 # endif
 }
 
-volatile word GC_noop_sink;
-
 /* Single argument version, robust against whole program analysis. */
 GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_noop1(word x)
@@ -546,7 +544,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
     /* The following is 0 only for small objects described by a simple  */
     /* length descriptor.  For many applications this is the common     */
     /* case, so we try to detect it quickly.                            */
-    if (descr & ((~(WORDS_TO_BYTES(SPLIT_RANGE_WORDS) - 1)) | GC_DS_TAGS)) {
+    if (descr & (~(word)(WORDS_TO_BYTES(SPLIT_RANGE_WORDS)-1) | GC_DS_TAGS)) {
       word tag = descr & GC_DS_TAGS;
 
       GC_STATIC_ASSERT(GC_DS_TAGS == 0x3);
@@ -613,7 +611,7 @@ GC_INNER mse * GC_mark_from(mse *mark_stack_top, mse *mark_stack,
                             (unsigned long)descr);
             }
 #         endif /* ENABLE_TRACE */
-          descr &= ~GC_DS_TAGS;
+          descr &= ~(word)GC_DS_TAGS;
           credit -= WORDS_TO_BYTES(WORDSZ/2); /* guess */
           for (; descr != 0; descr <<= 1, current_p += sizeof(word)) {
             if ((descr & SIGNB) == 0) continue;
@@ -1087,7 +1085,7 @@ STATIC void GC_do_parallel_mark(void)
         ABORT("Tried to start parallel mark in bad state");
     GC_VERBOSE_LOG_PRINTF("Starting marking for mark phase number %lu\n",
                           (unsigned long)GC_mark_no);
-    GC_first_nonempty = (AO_t)GC_mark_stack;
+    AO_store(&GC_first_nonempty, (AO_t)GC_mark_stack);
     GC_active_count = 0;
     GC_helper_count = 1;
     GC_help_wanted = TRUE;
@@ -1198,8 +1196,8 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
 {
     word length;
 
-    bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    top = (void *)((word)top & ~(ALIGNMENT-1));
+    bottom = (void *)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    top = (void *)((word)top & ~(word)(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
     GC_mark_stack_top++;
@@ -1209,7 +1207,7 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
     length = (word)top - (word)bottom;
 #   if GC_DS_TAGS > ALIGNMENT - 1
         length += GC_DS_TAGS;
-        length &= ~GC_DS_TAGS;
+        length &= ~(word)GC_DS_TAGS;
 #   endif
     GC_mark_stack_top -> mse_start = (ptr_t)bottom;
     GC_mark_stack_top -> mse_descr.w = length;
@@ -1230,8 +1228,8 @@ GC_API void GC_CALL GC_push_all(void *bottom, void *top)
   {
     struct hblk * h;
 
-    bottom = (ptr_t)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    top = (ptr_t)(((word) top) & ~(ALIGNMENT-1));
+    bottom = (ptr_t)(((word)bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    top = (ptr_t)((word)top & ~(word)(ALIGNMENT-1));
     if ((word)bottom >= (word)top) return;
 
     h = HBLKPTR(bottom + HBLKSIZE);
@@ -1431,27 +1429,30 @@ void GC_add_trace_entry(char *kind, word arg1, word arg2)
     if (GC_trace_buf_ptr >= TRACE_ENTRIES) GC_trace_buf_ptr = 0;
 }
 
-GC_API void GC_CALL GC_print_trace_inner(word gc_no)
+GC_API void GC_CALL GC_print_trace_inner(GC_word gc_no)
 {
     int i;
 
-    for (i = GC_trace_buf_ptr-1; i != GC_trace_buf_ptr; i--) {
+    for (i = GC_trace_buf_ptr-1;; i--) {
         struct trace_entry *p;
 
         if (i < 0) i = TRACE_ENTRIES-1;
         p = GC_trace_buf + i;
-        if (p -> gc_no < gc_no || p -> kind == 0) {
+        /* Compare gc_no values (p->gc_no is less than given gc_no) */
+        /* taking into account that the counter may overflow.       */
+        if ((((p -> gc_no) - gc_no) & SIGNB) != 0 || p -> kind == 0) {
             return;
         }
         GC_printf("Trace:%s (gc:%u, bytes:%lu) 0x%lX, 0x%lX\n",
-                  p -> kind, (unsigned)p -> gc_no,
-                  (unsigned long)p -> bytes_allocd,
+                  p -> kind, (unsigned)(p -> gc_no),
+                  (unsigned long)(p -> bytes_allocd),
                   (long)p->arg1 ^ 0x80000000L, (long)p->arg2 ^ 0x80000000L);
+        if (i == GC_trace_buf_ptr) break;
     }
     GC_printf("Trace incomplete\n");
 }
 
-GC_API void GC_CALL GC_print_trace(word gc_no)
+GC_API void GC_CALL GC_print_trace(GC_word gc_no)
 {
     DCL_LOCK_STATE;
 
@@ -1467,8 +1468,8 @@ GC_API void GC_CALL GC_print_trace(word gc_no)
 GC_ATTR_NO_SANITIZE_ADDR GC_ATTR_NO_SANITIZE_MEMORY GC_ATTR_NO_SANITIZE_THREAD
 GC_API void GC_CALL GC_push_all_eager(void *bottom, void *top)
 {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
+    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    word * t = (word *)(((word) top) & ~(word)(ALIGNMENT-1));
     REGISTER word *p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
@@ -1515,8 +1516,8 @@ GC_INNER void GC_push_all_stack(ptr_t bottom, ptr_t top)
   GC_INNER void GC_push_conditional_eager(void *bottom, void *top,
                                           GC_bool all)
   {
-    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(ALIGNMENT-1));
-    word * t = (word *)(((word) top) & ~(ALIGNMENT-1));
+    word * b = (word *)(((word) bottom + ALIGNMENT-1) & ~(word)(ALIGNMENT-1));
+    word * t = (word *)(((word) top) & ~(word)(ALIGNMENT-1));
     REGISTER word *p;
     REGISTER word *lim;
     REGISTER ptr_t greatest_ha = (ptr_t)GC_greatest_plausible_heap_addr;
@@ -1798,7 +1799,7 @@ STATIC void GC_push_marked(struct hblk *h, hdr *hhdr)
 /* the disclaim notifiers.                                              */
 /* To determine whether an object has been reclaimed, we require that   */
 /* any live object has a non-zero as one of the two lowest bits of the  */
-/* first word.  On the other hand, a reclaimed object is a members of   */
+/* first word.  On the other hand, a reclaimed object is a member of    */
 /* free-lists, and thus contains a word-aligned next-pointer as the     */
 /* first word.                                                          */
  GC_ATTR_NO_SANITIZE_THREAD

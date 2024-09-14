@@ -94,7 +94,7 @@ contributed originally by Dave Barrett.
       ---      +--------------+   |                   |                  |
        ^       |              |   |                   |                  |
        |       |              |   |                   |                  |
-      TOP_SZ   +--------------+<--+                   |                  |
+     TOP_SZ    +--------------+<--+                   |                  |
      (items)+-<|      []      | *                     |                  |
        |    |  +--------------+  if 0 < bi< HBLKSIZE  |                  |
        |    |  |              | then large object     |                  |
@@ -104,8 +104,8 @@ contributed originally by Dave Barrett.
             v                                         |         aligned) |
         bi= |GET_BI(p){->hash_link}->key==hi          |                  |
             v                                         |                  |
-            |   (bottom_index)  \ scratch_alloc'd     |                  |
-            |   ( struct  bi )  / by get_index()      |                  |
+            |   (bottom_index)  \ GC_scratch_alloc'd  |                  |
+            |    (struct bi)    / by get_index()      |                  |
       ---   +->+--------------+                       |                  |
        ^       |              |                       |                  |
        |       |              |                       |                  |
@@ -124,43 +124,48 @@ contributed originally by Dave Barrett.
            |   +--------------+                      |   +-+-+-----+-+-+-+-+  ---
            |                                         |   |<----MAP_LEN---->|
            |                                         |   =HBLKSIZE/GRANULE_BYTES
-     HDR(p)| GC_find_header(p)                       |    (1024 on Alpha)
-           |                           \ from        |    (8/16 bits each)
+     HDR(p)| GC_find_header(p)                       |    (1024 elements on Alpha)
+           |                           \ from        |    (16 bits each)
            |    (hdr) (struct hblkhdr) / alloc_hdr() |
            +--->+----------------------+             |
-      GET_HDR(p)| word   hb_sz (words) |             |
+      GET_HDR(p)| struct hblk *hb_next |             |
                 +----------------------+             |
-                | struct hblk *hb_next |             |
+                | ...                  |             |
                 +----------------------+             |
-                | word hb_descr        |             |
+                | uchar  hb_obj_kind   |             |
                 +----------------------+             |
-                | char * hb_map        |>------------+
+                | uchar  hb_flags      |             |
+                +----------------------+             |
+                | hb_last_reclaimed    |             |
+                +----------------------+             |
+                | size_t hb_sz         |             |
+                +----------------------+             |
+                | word   hb_descr      |             |
+                +----------------------+             |
+                | ushort *hb_map       |>------------+
                 +----------------------+
-                |   uchar hb_obj_kind  |
-                +----------------------+
-                |    uchar hb_flags    |
-                +----------------------+
-                |   hb_last_reclaimed  |
+                | AO_t   hb_n_marks    |
        ---      +----------------------+
         ^       |                      |
-    MARK_BITS_SZ|       hb_marks[]     |  * if hdr is free, hb_sz is the size of
-      (words)   |                      |  a heap chunk (struct hblk) of at least
-        v       |                      |  MININCR*HBLKSIZE bytes (below),
-       ---      +----------------------+  otherwise, size of each object in chunk.
+        |       |                      | * if hdr is free, hb_sz is the size
+    MARK_BITS_SZ| char/word hb_marks[] | of a heap chunk (struct hblk) of at
+        |       |                      | least MINHINCR*HBLKSIZE bytes (below);
+        v       |                      | otherwise, size of each object in chunk.
+       ---      +----------------------+
 
 
 Dynamic data structures above are interleaved throughout the heap in blocks
-of size `MININCR * HBLKSIZE` bytes as done by `gc_scratch_alloc` which cannot
+of size `MINHINCR * HBLKSIZE` bytes as done by `GC_scratch_alloc` which cannot
 be freed; free lists are used (e.g. `alloc_hdr`). `hblk`'s below are
 collected.
 
 
                  (struct hblk)
       ---    +----------------------+ < HBLKSIZE  ---
-       ^     +-----hb_body----------+ (and WORDSZ) ^         ---   ---
-       |     |                      |   aligned    |          ^     ^
+       ^     +-----hb_body----------+ (and WORDSZ- ^         ---   ---
+       |     |                      |  aligned)    |          ^     ^
+       |     |                      |              |          |     |
        |     |                      |              |        hb_sz   |
-       |     |                      |              |       (words)  |
        |     |      Object 0        |              |          |     |
        |     |                      |            i |(word-    v     |
        |     + - - - - - - - - - - -+ ---   (bytes)|aligned) ---    |

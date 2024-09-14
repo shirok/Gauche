@@ -87,7 +87,8 @@ int main(void)
     volatile word sp;
     unsigned ps = GETPAGESIZE();
     JMP_BUF b;
-#   if !defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */
+#   if (!defined(__cplusplus) || __cplusplus < 201703L /* before c++17 */) \
+       && (!defined(__GNUC__) || defined(__OPTIMIZE__))
       register
 #   endif
       int x = (int)strlen(a_str); /* 1, slightly disguised */
@@ -101,12 +102,12 @@ int main(void)
     if (nested_sp_fn() < sp) {
       printf("Stack appears to grow down, which is the default.\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)sp + ps) & ~(ps-1));
+             ((unsigned long)sp + ps) & ~(unsigned long)(ps-1));
     } else {
       printf("Stack appears to grow up.\n");
       printf("Define STACK_GROWS_UP in gc_priv.h\n");
       printf("A good guess for STACKBOTTOM on this machine is 0x%lx.\n",
-             ((unsigned long)sp + ps) & ~(ps-1));
+             (unsigned long)sp & ~(unsigned long)(ps-1)); /* round down */
     }
     printf("Note that this may vary between machines of ostensibly\n");
     printf("the same architecture (e.g. Sun 3/50s and 3/80s).\n");

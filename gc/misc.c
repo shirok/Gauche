@@ -281,7 +281,8 @@ STATIC void GC_init_size_map(void)
 # ifdef THREADS
 #   define BIG_CLEAR_SIZE 2048  /* Clear this much now and then.        */
 # else
-    STATIC word GC_stack_last_cleared = 0; /* GC_no when we last did this */
+    STATIC word GC_stack_last_cleared = 0;
+                        /* GC_gc_no value when we last did this.        */
     STATIC ptr_t GC_min_sp = NULL;
                         /* Coolest stack pointer value from which       */
                         /* we've already cleared the stack.             */
@@ -363,22 +364,22 @@ STATIC void GC_init_size_map(void)
         ptr_t limit = sp;
 
         MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
-        limit = (ptr_t)((word)limit & ~0xf);
+        limit = (ptr_t)((word)limit & ~(word)0xf);
                         /* Make it sufficiently aligned for assembly    */
                         /* implementations of GC_clear_stack_inner.     */
         return GC_clear_stack_inner(arg, limit);
       }
       BZERO((void *)dummy, SMALL_CLEAR_SIZE*sizeof(word));
 #   else
-      if (GC_gc_no > GC_stack_last_cleared) {
-        /* Start things over, so we clear the entire stack again */
-        if (GC_stack_last_cleared == 0)
+      if (GC_gc_no != GC_stack_last_cleared) {
+        /* Start things over, so we clear the entire stack again.   */
+        if (EXPECT(NULL == GC_high_water, FALSE))
           GC_high_water = (ptr_t)GC_stackbottom;
         GC_min_sp = GC_high_water;
         GC_stack_last_cleared = GC_gc_no;
         GC_bytes_allocd_at_reset = GC_bytes_allocd;
       }
-      /* Adjust GC_high_water */
+      /* Adjust GC_high_water.  */
       MAKE_COOLER(GC_high_water, WORDS_TO_BYTES(DEGRADE_RATE) + GC_SLOP);
       if ((word)sp HOTTER_THAN (word)GC_high_water) {
           GC_high_water = sp;
@@ -389,7 +390,7 @@ STATIC void GC_init_size_map(void)
 
         MAKE_HOTTER(limit, SLOP);
         if ((word)sp COOLER_THAN (word)limit) {
-          limit = (ptr_t)((word)limit & ~0xf);
+          limit = (ptr_t)((word)limit & ~(word)0xf);
                           /* Make it sufficiently aligned for assembly  */
                           /* implementations of GC_clear_stack_inner.   */
           GC_min_sp = sp;
@@ -434,7 +435,7 @@ GC_API void * GC_CALL GC_base(void * p)
         }
     if (HBLK_IS_FREE(candidate_hdr)) return(0);
     /* Make sure r points to the beginning of the object */
-        r = (ptr_t)((word)r & ~(WORDS_TO_BYTES(1) - 1));
+        r = (ptr_t)((word)r & ~(word)(WORDS_TO_BYTES(1)-1));
         {
             size_t offset = HBLKDISPL(r);
             word sz = candidate_hdr -> hb_sz;
@@ -461,20 +462,21 @@ GC_API int GC_CALL GC_is_heap_ptr(const void *p)
     return HDR_FROM_BI(bi, p) != 0;
 }
 
-/* Return the size of an object, given a pointer to its base.           */
-/* (For small objects this also happens to work from interior pointers, */
-/* but that shouldn't be relied upon.)                                  */
 GC_API size_t GC_CALL GC_size(const void * p)
 {
-    hdr * hhdr = HDR(p);
+    hdr *hhdr;
 
+    /* Accept NULL for compatibility with malloc_usable_size(). */
+    if (EXPECT(NULL == p, FALSE)) return 0;
+
+    hhdr = HDR(p);
     return (size_t)hhdr->hb_sz;
 }
-
 
 /* These getters remain unsynchronized for compatibility (since some    */
 /* clients could call some of them from a GC callback holding the       */
 /* allocator lock).                                                     */
+
 GC_API size_t GC_CALL GC_get_heap_size(void)
 {
     /* ignore the memory space returned to OS (i.e. count only the      */
@@ -2351,8 +2353,7 @@ GC_API void * GC_CALL GC_do_blocking(GC_fn_type fn, void * client_data)
 static void block_add_size(struct hblk *h, word pbytes)
 {
   hdr *hhdr = HDR(h);
-  *(word *)pbytes += (WORDS_TO_BYTES(hhdr->hb_sz) + (HBLKSIZE - 1))
-                        & ~(word)(HBLKSIZE - 1);
+  *(word *)pbytes += (hhdr -> hb_sz + (HBLKSIZE - 1)) & ~(word)(HBLKSIZE - 1);
 }
 
 GC_API size_t GC_CALL GC_get_memory_use(void)

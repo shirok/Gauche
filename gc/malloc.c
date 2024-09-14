@@ -136,14 +136,14 @@ STATIC void GC_extend_size_map(size_t i)
   /* For these larger sizes, we use an even number of granules.         */
   /* This makes it easier to, e.g., construct a 16-byte-aligned         */
   /* allocator even if GRANULE_BYTES is 8.                              */
-  granule_sz = (granule_sz + 1) & ~1;
+  granule_sz = (granule_sz + 1) & ~(size_t)1;
   if (granule_sz > MAXOBJGRANULES)
     granule_sz = MAXOBJGRANULES;
 
   /* If we can fit the same number of larger objects in a block, do so. */
   number_of_objs = HBLK_GRANULES / granule_sz;
   GC_ASSERT(number_of_objs != 0);
-  granule_sz = (HBLK_GRANULES / number_of_objs) & ~1;
+  granule_sz = (HBLK_GRANULES / number_of_objs) & ~(size_t)1;
 
   byte_sz = GRANULES_TO_BYTES(granule_sz) - EXTRA_BYTES;
                         /* We may need one extra byte; do not always    */
@@ -470,14 +470,22 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
     STATIC ptr_t GC_libpthread_end = 0;
     STATIC ptr_t GC_libld_start = 0;
     STATIC ptr_t GC_libld_end = 0;
+    static GC_bool lib_bounds_set = FALSE;
 
-    STATIC void GC_init_lib_bounds(void)
+    GC_INNER void GC_init_lib_bounds(void)
     {
       IF_CANCEL(int cancel_state;)
+      DCL_LOCK_STATE;
 
-      if (GC_libpthread_start != 0) return;
+      /* This test does not need to ensure memory visibility, since     */
+      /* the bounds will be set when/if we create another thread.       */
+      if (EXPECT(lib_bounds_set, TRUE)) return;
+
       DISABLE_CANCEL(cancel_state);
       GC_init(); /* if not called yet */
+#     if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        LOCK(); /* just to set GC_lock_holder */
+#     endif
       if (!GC_text_mapping("libpthread-",
                            &GC_libpthread_start, &GC_libpthread_end)) {
         /* Some libc implementations like bionic, musl and glibc 2.34   */
@@ -493,13 +501,15 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
           /* This might still work with some versions of libpthread,      */
           /* so we do not abort.                                          */
 #       endif
-          /* Generate message only once:                                  */
-            GC_libpthread_start = (ptr_t)1;
       }
       if (!GC_text_mapping("ld-", &GC_libld_start, &GC_libld_end)) {
           WARN("Failed to find ld.so text mapping: Expect crash\n", 0);
       }
+#     if defined(GC_ASSERTIONS) && defined(GC_ALWAYS_MULTITHREADED)
+        UNLOCK();
+#     endif
       RESTORE_CANCEL(cancel_state);
+      lib_bounds_set = TRUE;
     }
 # endif /* GC_LINUX_THREADS */
 
@@ -512,14 +522,9 @@ GC_API GC_ATTR_MALLOC void * GC_CALL GC_malloc_uncollectable(size_t lb)
       /* libpthread allocated some memory that is only pointed to by    */
       /* mmapped thread stacks.  Make sure it is not collectible.       */
       {
-        static GC_bool lib_bounds_set = FALSE;
         ptr_t caller = (ptr_t)__builtin_return_address(0);
-        /* This test does not need to ensure memory visibility, since   */
-        /* the bounds will be set when/if we create another thread.     */
-        if (!EXPECT(lib_bounds_set, TRUE)) {
-          GC_init_lib_bounds();
-          lib_bounds_set = TRUE;
-        }
+
+        GC_init_lib_bounds();
         if (((word)caller >= (word)GC_libpthread_start
              && (word)caller < (word)GC_libpthread_end)
             || ((word)caller >= (word)GC_libld_start
@@ -698,7 +703,7 @@ GC_API void GC_CALL GC_free(void * p)
 #   define REDIRECT_FREE_F REDIRECT_FREE
 # endif
 
-  void free(void * p)
+  void free(void * p GC_ATTR_UNUSED)
   {
 #   ifndef IGNORE_FREE
 #     if defined(GC_LINUX_THREADS) && !defined(USE_PROC_FOR_LIBRARIES)

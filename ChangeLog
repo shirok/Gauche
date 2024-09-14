@@ -1,3 +1,7 @@
+2024-09-14  Shiro Kawai  <shiro@acm.org>
+
+	* gc/: bumped bdwgc 8.2.8
+
 2024-09-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/system.c (Scm_SysExec): Switch to use execve() on POSIX platform.

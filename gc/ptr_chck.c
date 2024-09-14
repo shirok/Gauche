@@ -227,7 +227,7 @@ GC_API void * GC_CALL GC_is_visible(void *p)
     retry:
             switch(descr & GC_DS_TAGS) {
                 case GC_DS_LENGTH:
-                    if ((word)p - (word)base > descr) goto fail;
+                    if ((word)p - (word)base >= descr) goto fail;
                     break;
                 case GC_DS_BITMAP:
                     if ((word)p - (word)base >= WORDS_TO_BYTES(BITMAP_BITS)
@@ -241,9 +241,13 @@ GC_API void * GC_CALL GC_is_visible(void *p)
                     break;
                 case GC_DS_PER_OBJECT:
                     if ((signed_word)descr >= 0) {
-                      descr = *(word *)((ptr_t)base + (descr & ~GC_DS_TAGS));
+                      descr = *(word *)((ptr_t)base
+                                        + (descr & ~(word)GC_DS_TAGS));
                     } else {
                       ptr_t type_descr = *(ptr_t *)base;
+
+                      if (EXPECT(NULL == type_descr, FALSE))
+                        goto fail; /* see comment in GC_mark_from */
                       descr = *(word *)(type_descr
                                         - (descr - (word)(GC_DS_PER_OBJECT
                                            - GC_INDIR_PER_OBJ_BIAS)));

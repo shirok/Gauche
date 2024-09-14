@@ -83,7 +83,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
      *  The initiating threads holds the GC lock, and sets GC_help_wanted.
      *
      *  Other threads:
-     *     1) update helper_count (while holding mark_lock.)
+     *     1) update helper_count (while holding the mark lock).
      *     2) allocate a local mark stack
      *     repeatedly:
      *          3) Steal a global mark stack entry by atomically replacing
@@ -94,7 +94,7 @@ GC_EXTERN unsigned GC_n_mark_procs;
      *          6) If necessary, copy local stack to global one,
      *             holding mark lock.
      *    7) Stop when the global mark stack is empty.
-     *    8) decrement helper_count (holding mark_lock).
+     *    8) decrement helper_count (holding the mark lock).
      *
      * This is an experiment to see if we can do something along the lines
      * of the University of Tokyo SGC in a less intrusive, though probably
@@ -234,7 +234,7 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
 # define LONG_MULT(hprod, lprod, x, y) \
     do { \
         __asm__ __volatile__("mull %2" : "=a"(lprod), "=d"(hprod) \
-                             : "g"(y), "0"(x)); \
+                             : "r"(y), "0"(x)); \
     } while (0)
 #else
 # if defined(__int64) && !defined(__GNUC__) && !defined(CPPCHECK)
@@ -246,7 +246,7 @@ GC_INLINE mse * GC_push_obj(ptr_t obj, hdr * hhdr,  mse * mark_stack_top,
     do { \
         ULONG_MULT_T prod = (ULONG_MULT_T)(x) * (ULONG_MULT_T)(y); \
         GC_STATIC_ASSERT(sizeof(x) + sizeof(y) <= sizeof(prod)); \
-        hprod = prod >> 32; \
+        hprod = (unsigned32)(prod >> 32); \
         lprod = (unsigned32)prod; \
     } while (0)
 #endif /* !I386 */
@@ -369,7 +369,7 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
 
 /*
  * Push a single value onto mark stack. Mark from the object pointed to by p.
- * Invoke FIXUP_POINTER(p) before any further processing.
+ * Invoke FIXUP_POINTER() before any further processing.
  * P is considered valid even if it is an interior pointer.
  * Previously marked objects are not pushed.  Hence we make progress even
  * if the mark stack overflows.
@@ -379,14 +379,16 @@ GC_INLINE mse * GC_push_contents_hdr(ptr_t current, mse * mark_stack_top,
     /* Try both the raw version and the fixed up one.   */
 # define GC_PUSH_ONE_STACK(p, source) \
     do { \
+      word pp = (word)(p); \
+      \
       if ((word)(p) >= (word)GC_least_plausible_heap_addr \
           && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
          PUSH_ONE_CHECKED_STACK(p, source); \
       } \
-      FIXUP_POINTER(p); \
-      if ((word)(p) >= (word)GC_least_plausible_heap_addr \
-          && (word)(p) < (word)GC_greatest_plausible_heap_addr) { \
-         PUSH_ONE_CHECKED_STACK(p, source); \
+      FIXUP_POINTER(pp); \
+      if (pp >= (word)GC_least_plausible_heap_addr \
+          && pp < (word)GC_greatest_plausible_heap_addr) { \
+         PUSH_ONE_CHECKED_STACK(pp, source); \
       } \
     } while (0)
 #else /* !NEED_FIXUP_POINTER */

@@ -26,6 +26,13 @@
 #ifndef GCCONFIG_H
 #define GCCONFIG_H
 
+#ifndef GC_H
+# ifdef HAVE_CONFIG_H
+#   include "config.h"
+# endif
+# include "../gc.h"
+#endif
+
 #ifdef CPPCHECK
 # undef CLOCKS_PER_SEC
 # undef FIXUP_POINTER
@@ -156,13 +163,12 @@ EXTERN_C_BEGIN
 # endif
 # if defined(__arm) || defined(__arm__) || defined(__thumb__)
 #    define ARM32
-#    if defined(NACL)
+#    if defined(NACL) || defined(SYMBIAN)
 #      define mach_type_known
 #    elif !defined(LINUX) && !defined(NETBSD) && !defined(FREEBSD) \
           && !defined(OPENBSD) && !defined(DARWIN) && !defined(_WIN32) \
           && !defined(__CEGCC__) && !defined(NN_PLATFORM_CTR) \
-          && !defined(GC_NO_NOSYS) && !defined(SN_TARGET_PSP2) \
-          && !defined(SYMBIAN)
+          && !defined(GC_NO_NOSYS) && !defined(SN_TARGET_PSP2)
 #      define NOSYS
 #      define mach_type_known
 #    endif
@@ -682,7 +688,7 @@ EXTERN_C_BEGIN
 #   define mach_type_known
 # endif
 # if defined(__riscv) && (defined(FREEBSD) || defined(LINUX) \
-                          || defined(OPENBSD))
+                          || defined(NETBSD) || defined(OPENBSD))
 #   define RISCV
 #   define mach_type_known
 # endif
@@ -697,10 +703,6 @@ EXTERN_C_BEGIN
 
 # if defined(NN_BUILD_TARGET_PLATFORM_NX)
 #   define NINTENDO_SWITCH
-#   define mach_type_known
-# endif
-
-# if defined(SYMBIAN)
 #   define mach_type_known
 # endif
 
@@ -1112,13 +1114,15 @@ EXTERN_C_BEGIN
 # define STACK_GRAN 0x1000000
 
 # ifdef SYMBIAN
-#   define MACH_TYPE "SYMBIAN"
 #   define OS_TYPE "SYMBIAN"
-#   define CPP_WORDSZ 32
 #   define ALIGNMENT 4
 #   define DATASTART (ptr_t)ALIGNMENT /* cannot be null */
 #   define DATAEND (ptr_t)ALIGNMENT
-# endif
+#   ifndef USE_MMAP
+      /* sbrk() is not available. */
+#     define USE_MMAP 1
+#   endif
+# endif /* SYMBIAN */
 
 # ifdef M68K
 #   define MACH_TYPE "M68K"
@@ -1158,7 +1162,7 @@ EXTERN_C_BEGIN
 #         endif /* !GLIBC2 */
 #       else
           extern int etext[];
-#         define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+#         define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~(word)0xfff))
 #       endif
 #   endif
 #   ifdef AMIGA
@@ -1423,7 +1427,7 @@ EXTERN_C_BEGIN
 #   ifdef SEQUENT
 #       define OS_TYPE "SEQUENT"
         extern int etext[];
-#       define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+#       define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~(word)0xfff))
 #       define STACKBOTTOM ((ptr_t)0x3ffff000)
 #   endif
 #   ifdef EMSCRIPTEN
@@ -1451,7 +1455,7 @@ EXTERN_C_BEGIN
 #   endif
 #   ifdef HAIKU
       extern int etext[];
-#     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+#     define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~(word)0xfff))
 #   endif
 #   ifdef SOLARIS
 #       define DATASTART GC_SysVGetDataStart(0x1000, (ptr_t)_etext)
@@ -1464,7 +1468,8 @@ EXTERN_C_BEGIN
 #   ifdef SCO
 #       define OS_TYPE "SCO"
         extern int etext[];
-#       define DATASTART ((ptr_t)((((word)(etext)) + 0x3fffff) & ~0x3fffff) \
+#       define DATASTART ((ptr_t)((((word)(etext)) + 0x3fffff) \
+                                    & ~(word)0x3fffff) \
                                  + ((word)(etext) & 0xfff))
 #       define STACKBOTTOM ((ptr_t)0x7ffffffc)
 #   endif
@@ -1536,7 +1541,7 @@ EXTERN_C_BEGIN
 #            endif
 #       else
              extern int etext[];
-#            define DATASTART ((ptr_t)((((word)(etext)) + 0xfff) & ~0xfff))
+#            define DATASTART ((ptr_t)(((word)(etext) + 0xfff) & ~(word)0xfff))
 #       endif
 #       ifdef USE_I686_PREFETCH
 #         define PREFETCH(x) \
@@ -1617,7 +1622,7 @@ EXTERN_C_BEGIN
         extern int etext[];
         extern int _stklen;
         extern int __djgpp_stack_limit;
-#       define DATASTART ((ptr_t)((((word)(etext)) + 0x1ff) & ~0x1ff))
+#       define DATASTART ((ptr_t)((((word)(etext)) + 0x1ff) & ~(word)0x1ff))
 /* #define STACKBOTTOM ((ptr_t)((word)_stubinfo+_stubinfo->size+_stklen)) */
 #       define STACKBOTTOM ((ptr_t)((word)__djgpp_stack_limit + _stklen))
                 /* This may not be right.  */
@@ -1756,12 +1761,13 @@ EXTERN_C_BEGIN
           extern int end[];
 #       endif
         extern int _DYNAMIC_LINKING[], _gp[];
-#       define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) & ~0x3ffff) \
+#       define DATASTART ((ptr_t)((((word)(etext) + 0x3ffff) \
+                                    & ~(word)0x3ffff) \
                                   + ((word)(etext) & 0xffff)))
 #       define DATAEND ((ptr_t)(edata))
 #       define GC_HAVE_DATAREGION2
 #       define DATASTART2 (_DYNAMIC_LINKING \
-                ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~0x3ffff) \
+                ? (ptr_t)(((word)_gp + 0x8000 + 0x3ffff) & ~(word)0x3ffff) \
                 : (ptr_t)edata)
 #       define DATAEND2 ((ptr_t)(end))
 #       define ALIGNMENT 4
@@ -1956,7 +1962,8 @@ EXTERN_C_BEGIN
         /* Hence we give an upper pound.                                */
         /* This is currently unused, since we disabled HEURISTIC2       */
         extern int __start[];
-#       define HEURISTIC2_LIMIT ((ptr_t)((word)(__start) & ~(getpagesize()-1)))
+#       define HEURISTIC2_LIMIT ((ptr_t)((word)(__start) \
+                                         & ~(word)(getpagesize()-1)))
 #       ifndef GC_OSF1_THREADS
           /* Unresolved signal issues with threads.     */
 #         define MPROTECT_VDB
@@ -2079,7 +2086,8 @@ EXTERN_C_BEGIN
     extern int etext[];
 #   ifdef CX_UX
 #       define OS_TYPE "CX_UX"
-#       define DATASTART ((ptr_t)((((word)(etext) + 0x3fffff) & ~0x3fffff) \
+#       define DATASTART ((ptr_t)((((word)(etext) + 0x3fffff) \
+                                    & ~(word)0x3fffff) \
                                   + 0x10000))
 #   endif
 #   ifdef DGUX
@@ -2160,14 +2168,18 @@ EXTERN_C_BEGIN
 #     endif
 #   endif
 #   ifdef DARWIN
-      /* iOS */
+      /* OS X, iOS */
 #     define DARWIN_DONT_PARSE_STACK 1
 #     define STACKBOTTOM ((ptr_t)0x16fdfffff)
-      /* MPROTECT_VDB causes use of non-public API like exc_server,     */
-      /* this could be a reason for blocking the client application in  */
-      /* the store.                                                     */
-#     if TARGET_OS_IPHONE && !defined(NO_DYLD_BIND_FULLY_IMAGE)
-#       define NO_DYLD_BIND_FULLY_IMAGE
+#     if TARGET_OS_IPHONE
+#       ifndef NO_DYLD_BIND_FULLY_IMAGE
+#         define NO_DYLD_BIND_FULLY_IMAGE
+#       endif
+        /* MPROTECT_VDB causes use of non-public API like exc_server,   */
+        /* this could be a reason for blocking the client application   */
+        /* in the store.                                                */
+#     elif TARGET_OS_OSX
+#       define MPROTECT_VDB
 #     endif
 #   endif
 #   ifdef FREEBSD
@@ -2279,7 +2291,10 @@ EXTERN_C_BEGIN
       extern void *__stack_base__;
 #     define STACKBOTTOM ((ptr_t)(__stack_base__))
 #   endif
-#endif
+#   ifdef SYMBIAN
+      /* Nothing specific. */
+#   endif
+# endif /* ARM32 */
 
 # ifdef CRIS
 #   define MACH_TYPE "CRIS"
@@ -2547,6 +2562,9 @@ EXTERN_C_BEGIN
       extern int __data_start[] __attribute__((__weak__));
 #     define DATASTART ((ptr_t)__data_start)
 #   endif
+#   ifdef NETBSD
+      /* Nothing specific. */
+#   endif
 #   ifdef OPENBSD
       /* Nothing specific. */
 #   endif
@@ -2635,7 +2653,14 @@ EXTERN_C_BEGIN
 # define DATAEND (__end__ != 0 ? (ptr_t)__end__ : (ptr_t)_end)
 #endif
 
-#if (defined(SVR4) || defined(HOST_ANDROID) || defined(HOST_TIZEN)) \
+#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
+        /* OS has SVR4 generic features.        */
+        /* Probably others also qualify.        */
+# define SVR4
+#endif
+
+#if (defined(HOST_ANDROID) || defined(HOST_TIZEN) \
+     || (defined(LINUX) && defined(SPARC))) \
     && !defined(GETPAGESIZE)
   EXTERN_C_END
 # include <unistd.h>
@@ -2645,7 +2670,8 @@ EXTERN_C_BEGIN
 
 #ifndef GETPAGESIZE
 # if defined(AIX) || defined(IRIX5) || defined(LINUX) || defined(SOLARIS) \
-     || defined(NETBSD) || defined(FREEBSD) || defined(HPUX)
+     || defined(NETBSD) || defined(FREEBSD) || defined(OPENBSD) \
+     || defined(HPUX)
     EXTERN_C_END
 #   include <unistd.h>
     EXTERN_C_BEGIN
@@ -2659,12 +2685,6 @@ EXTERN_C_BEGIN
   /* tkill() exists only on arm32/mips(32)/x86. */
   /* NDK r11+ deprecates tkill() but keeps it for Mono clients. */
 # define USE_TKILL_ON_ANDROID
-#endif
-
-#if defined(SOLARIS) || defined(DRSNX) || defined(UTS4)
-        /* OS has SVR4 generic features.        */
-        /* Probably others also qualify.        */
-# define SVR4
 #endif
 
 #if defined(MPROTECT_VDB) && defined(__GLIBC__) \
@@ -2698,8 +2718,18 @@ EXTERN_C_BEGIN
 # define NO_SIGNALS_UNBLOCK_IN_MAIN
 #endif
 
+#if defined(PARALLEL_MARK) && defined(GC_PTHREADS) \
+    && !defined(GC_PTHREADS_PARAMARK) && !defined(__MINGW32__)
+  /* Use pthread-based parallel mark implementation.    */
+  /* Except for MinGW 32/64 to workaround a deadlock in */
+  /* winpthreads-3.0b internals.                        */
+# define GC_PTHREADS_PARAMARK
+#endif
+
 #if !defined(NO_MARKER_SPECIAL_SIGMASK) \
-    && (defined(NACL) || defined(GC_WIN32_PTHREADS))
+    && (defined(NACL) || defined(GC_WIN32_PTHREADS) \
+        || (defined(GC_PTHREADS_PARAMARK) && defined(GC_WIN32_THREADS)) \
+        || defined(GC_NO_PTHREAD_SIGMASK))
   /* Either there is no pthread_sigmask(), or GC marker thread cannot   */
   /* steal and drop user signal calls.                                  */
 # define NO_MARKER_SPECIAL_SIGMASK
@@ -2794,20 +2824,6 @@ EXTERN_C_BEGIN
 # define MUNMAP_THRESHOLD 2
 #endif
 
-#if defined(USE_MUNMAP) && defined(COUNT_UNMAPPED_REGIONS) \
-    && !defined(GC_UNMAPPED_REGIONS_SOFT_LIMIT)
-  /* The default limit of vm.max_map_count on Linux is ~65530.          */
-  /* There is approximately one mapped region to every unmapped region. */
-  /* Therefore if we aim to use up to half of vm.max_map_count for the  */
-  /* GC (leaving half for the rest of the process) then the number of   */
-  /* unmapped regions should be one quarter of vm.max_map_count.        */
-# if defined(__DragonFly__)
-#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT (1000000 / 4)
-# else
-#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT 16384
-# endif
-#endif
-
 #if defined(GC_DISABLE_INCREMENTAL) || defined(DEFAULT_VDB)
 # undef GWW_VDB
 # undef MPROTECT_VDB
@@ -2873,7 +2889,9 @@ EXTERN_C_BEGIN
 #endif
 
 #if defined(MPROTECT_VDB) && !defined(MSWIN32) && !defined(MSWINCE)
+  EXTERN_C_END
 # include <signal.h> /* for SA_SIGINFO, SIGBUS */
+  EXTERN_C_BEGIN
 #endif
 
 #if defined(SIGBUS) && !defined(HAVE_SIGBUS) && !defined(CPPCHECK)
@@ -2900,6 +2918,27 @@ EXTERN_C_BEGIN
     && !defined(NO_VDB_FOR_STATIC_ROOTS)
   /* Cannot determine whether a static root page is dirty?      */
 # define NO_VDB_FOR_STATIC_ROOTS
+#endif
+
+#if defined(MPROTECT_VDB) && !defined(DONT_COUNT_PROTECTED_REGIONS) \
+    && !defined(COUNT_PROTECTED_REGIONS) \
+    && (defined(LINUX) || defined(__DragonFly__))
+# define COUNT_PROTECTED_REGIONS
+#endif
+
+#if (defined(COUNT_PROTECTED_REGIONS) || defined(COUNT_UNMAPPED_REGIONS)) \
+    && !defined(GC_UNMAPPED_REGIONS_SOFT_LIMIT)
+  /* The default limit of vm.max_map_count on Linux is ~65530.      */
+  /* There is approximately one mapped region to every protected or */
+  /* unmapped region.  Therefore if we aim to use up to half of     */
+  /* vm.max_map_count for the GC (leaving half for the rest of the  */
+  /* process) then the number of such regions should be one quarter */
+  /* of vm.max_map_count.                                           */
+# if defined(__DragonFly__)
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT (1000000 / 4)
+# else
+#   define GC_UNMAPPED_REGIONS_SOFT_LIMIT 16384
+# endif
 #endif
 
 #if ((defined(UNIX_LIKE) && (defined(DARWIN) || defined(HAIKU) \
@@ -3053,7 +3092,7 @@ EXTERN_C_BEGIN
 
 /* Outline pthread primitives to use in GC_get_[main_]stack_base.       */
 #if ((defined(FREEBSD) && defined(__GLIBC__)) /* kFreeBSD */ \
-     || defined(LINUX) || defined(NETBSD) || defined(HOST_ANDROID)) \
+     || defined(LINUX) || defined(NETBSD)) \
     && !defined(NO_PTHREAD_GETATTR_NP)
 # define HAVE_PTHREAD_GETATTR_NP 1
 #elif defined(FREEBSD) && !defined(__GLIBC__) \
@@ -3098,7 +3137,8 @@ EXTERN_C_BEGIN
     && !defined(HAVE_NO_FORK) \
     && ((defined(GC_PTHREADS) && !defined(NACL) \
          && !defined(GC_WIN32_PTHREADS) && !defined(USE_WINALLOC)) \
-        || (defined(DARWIN) && defined(MPROTECT_VDB)) || defined(HANDLE_FORK))
+        || (defined(DARWIN) && defined(MPROTECT_VDB) /* && !THREADS */) \
+        || (defined(HANDLE_FORK) && defined(GC_PTHREADS)))
   /* Attempts (where supported and requested) to make GC_malloc work in */
   /* a child process fork'ed from a multi-threaded parent.              */
 # define CAN_HANDLE_FORK

@@ -54,32 +54,19 @@
   }
 #endif /* !SHORT_DBG_HDRS */
 
-#ifdef LINT2
-  long GC_random(void)
-  {
-    static unsigned seed = 1; /* not thread-safe */
-
-    /* Linear congruential pseudo-random numbers generator.     */
-    seed = (seed * 1103515245U + 12345) & GC_RAND_MAX; /* overflow is ok */
-    return (long)seed;
-  }
-#endif
-
 #ifdef KEEP_BACK_PTRS
 
-#ifdef LINT2
-# define RANDOM() GC_random()
-#else
-# include <stdlib.h>
-# define GC_RAND_MAX RAND_MAX
+  /* Use a custom trivial random() implementation as the standard   */
+  /* one might lead to crashes (if used from a multi-threaded code) */
+  /* or to a compiler warning about the deterministic result.       */
+  static int GC_rand(void)
+  {
+    static GC_RAND_STATE_T seed;
 
-# if defined(__GLIBC__) || defined(SOLARIS) \
-     || defined(HPUX) || defined(IRIX5) || defined(OSF1)
-#   define RANDOM() random()
-# else
-#   define RANDOM() (long)rand()
-# endif
-#endif /* !LINT2 */
+    return GC_RAND_NEXT(&seed);
+  }
+
+# define RANDOM() (long)GC_rand()
 
   /* Store back pointer to source in dest, if that appears to be possible. */
   /* This is not completely safe, since we may mistakenly conclude that    */
@@ -108,7 +95,6 @@
   /* and *offset_p.                                                     */
   /*   source is root ==> *base_p = address, *offset_p = 0              */
   /*   source is heap object ==> *base_p != 0, *offset_p = offset       */
-  /*   Returns 1 on success, 0 if source couldn't be determined.        */
   /* Dest can be any address within a heap object.                      */
   GC_API GC_ref_kind GC_CALL GC_get_back_ptr_info(void *dest, void **base_p,
                                                   size_t *offset_p)
@@ -163,16 +149,17 @@
   GC_API void * GC_CALL GC_generate_random_heap_address(void)
   {
     size_t i;
-    word heap_offset = RANDOM();
+    word heap_offset = (word)RANDOM();
 
-    if (GC_heapsize > GC_RAND_MAX) {
+    if (GC_heapsize > (word)GC_RAND_MAX) {
         heap_offset *= GC_RAND_MAX;
-        heap_offset += RANDOM();
+        heap_offset += (word)RANDOM();
     }
     heap_offset %= GC_heapsize;
         /* This doesn't yield a uniform distribution, especially if     */
-        /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,    */
+        /* e.g. RAND_MAX is 1.5*GC_heapsize.  But for typical cases,    */
         /* it's not too bad.                                            */
+
     for (i = 0;; ++i) {
         size_t size;
 
@@ -312,8 +299,8 @@ static void *store_debug_info(void *p, size_t lb,
     LOCK();
     if (!GC_debugging_started)
         GC_start_debugging_inner();
-    ADD_CALL_CHAIN(p, ra);
     result = GC_store_debug_info_inner(p, (word)lb, s, i);
+    ADD_CALL_CHAIN(p, ra);
     UNLOCK();
     return result;
 }
@@ -587,11 +574,11 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
   /* case, we need to make sure that all objects have debug headers.    */
   GC_INNER void * GC_debug_generic_malloc_inner(size_t lb, int k)
   {
-    void * result;
+    void *base, *result;
 
     GC_ASSERT(I_HOLD_LOCK());
-    result = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
-    if (NULL == result) {
+    base = GC_generic_malloc_inner(SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
+    if (NULL == base) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -599,19 +586,20 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
-    ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
+    result = GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
+    ADD_CALL_CHAIN(base, GC_RETURN_ADDR);
+    return result;
   }
 
   GC_INNER void * GC_debug_generic_malloc_inner_ignore_off_page(size_t lb,
                                                                 int k)
   {
-    void * result;
+    void *base, *result;
 
     GC_ASSERT(I_HOLD_LOCK());
-    result = GC_generic_malloc_inner_ignore_off_page(
+    base = GC_generic_malloc_inner_ignore_off_page(
                                 SIZET_SAT_ADD(lb, DEBUG_BYTES), k);
-    if (NULL == result) {
+    if (NULL == base) {
         GC_err_printf("GC internal allocation (%lu bytes) returning NULL\n",
                        (unsigned long) lb);
         return(0);
@@ -619,8 +607,9 @@ STATIC void * GC_debug_generic_malloc(size_t lb, int knd, GC_EXTRA_PARAMS)
     if (!GC_debugging_started) {
         GC_start_debugging_inner();
     }
-    ADD_CALL_CHAIN(result, GC_RETURN_ADDR);
-    return (GC_store_debug_info_inner(result, (word)lb, "INTERNAL", 0));
+    result = GC_store_debug_info_inner(base, (word)lb, "INTERNAL", 0);
+    ADD_CALL_CHAIN_INNER(base);
+    return result;
   }
 #endif /* DBG_HDRS_ALL */
 
@@ -890,8 +879,8 @@ GC_API void * GC_CALL GC_debug_realloc(void * p, size_t lb, GC_EXTRA_PARAMS)
         break;
 #    endif
       default:
-        result = NULL; /* initialized to prevent warning. */
-        ABORT_RET("GC_debug_realloc: encountered bad kind");
+        result = GC_debug_generic_malloc(lb, hhdr -> hb_obj_kind, OPT_RA s, i);
+        break;
     }
 
     if (result != NULL) {
@@ -986,7 +975,7 @@ STATIC void GC_check_heap_block(struct hblk *hbp, word dummy GC_ATTR_UNUSED)
     } else {
       plim = hbp->hb_body + HBLKSIZE - sz;
     }
-    /* go through all words in block */
+    /* go through all objects in block */
     for (bit_no = 0; (word)p <= (word)plim;
          bit_no += MARK_BIT_OFFSET(sz), p += sz) {
       if (mark_bit_from_hdr(hhdr, bit_no) && GC_HAS_DEBUG_INFO((ptr_t)p)) {

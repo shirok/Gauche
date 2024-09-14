@@ -260,6 +260,16 @@
 
 static GC_bool parallel_initialized = FALSE;
 
+#if defined(MPROTECT_VDB) && defined(DARWIN)
+  GC_INNER int GC_inner_pthread_create(pthread_t *t,
+                                GC_PTHREAD_CREATE_CONST pthread_attr_t *a,
+                                void *(*fn)(void *), void *arg)
+  {
+    INIT_REAL_SYMS();
+    return REAL_FUNC(pthread_create)(t, a, fn, arg);
+  }
+#endif
+
 #ifndef GC_ALWAYS_MULTITHREADED
   GC_INNER GC_bool GC_need_to_lock = FALSE;
 #endif
@@ -724,8 +734,15 @@ GC_INNER GC_thread GC_lookup_thread(pthread_t id)
   GC_INNER unsigned char *GC_check_finalizer_nested(void)
   {
     GC_thread me = GC_lookup_thread(pthread_self());
-    unsigned nesting_level = me->finalizer_nested;
+    unsigned nesting_level;
 
+#   if defined(INCLUDE_LINUX_THREAD_DESCR) && defined(REDIRECT_MALLOC)
+      /* As noted in GC_start_routine, an allocation may happen in  */
+      /* GC_get_stack_base, causing GC_notify_or_invoke_finalizers  */
+      /* to be called before the thread gets registered.            */
+      if (EXPECT(NULL == me, FALSE)) return NULL;
+#   endif
+    nesting_level = me->finalizer_nested;
     if (nesting_level) {
       /* We are inside another GC_invoke_finalizers().          */
       /* Skip some implicitly-called GC_invoke_finalizers()     */
@@ -1219,6 +1236,9 @@ static void fork_parent_proc(void)
 static void fork_child_proc(void)
 {
     GC_release_dirty_lock();
+#   ifndef GC_DISABLE_INCREMENTAL
+      GC_dirty_update_child();
+#   endif
 #   ifdef PARALLEL_MARK
       if (GC_parallel) {
 #       if defined(THREAD_SANITIZER) && defined(GC_ASSERTIONS) \
@@ -1238,9 +1258,6 @@ static void fork_child_proc(void)
 #   endif
     /* Clean up the thread table, so that just our thread is left.      */
     GC_remove_all_threads_but_me();
-#   ifndef GC_DISABLE_INCREMENTAL
-      GC_dirty_update_child();
-#   endif
     RESTORE_CANCEL(fork_cancel_state);
     UNLOCK();
     /* Even though after a fork the child only inherits the single      */
@@ -1269,12 +1286,6 @@ static void fork_child_proc(void)
   GC_API void GC_CALL GC_atfork_prepare(void)
   {
     if (!EXPECT(GC_is_initialized, TRUE)) GC_init();
-#   if defined(GC_DARWIN_THREADS) && defined(MPROTECT_VDB)
-      if (GC_auto_incremental) {
-        GC_ASSERT(0 == GC_handle_fork);
-        ABORT("Unable to fork while mprotect_thread is running");
-      }
-#   endif
     if (GC_handle_fork <= 0)
       fork_prepare_proc();
   }
@@ -2069,6 +2080,7 @@ GC_API void GC_CALL GC_allow_register_threads(void)
     UNLOCK();
 # endif
   INIT_REAL_SYMS(); /* to initialize symbols while single-threaded */
+  GC_init_lib_bounds();
   GC_start_mark_threads();
   set_need_to_lock();
 }
@@ -2219,6 +2231,7 @@ GC_INNER_PTHRSTART GC_thread GC_start_rtn_prepare_thread(
     INIT_REAL_SYMS();
     if (!EXPECT(parallel_initialized, TRUE))
       GC_init_parallel();
+    GC_init_lib_bounds();
     if (sem_init(&si.registered, GC_SEM_INIT_PSHARED, 0) != 0)
       ABORT("sem_init failed");
 

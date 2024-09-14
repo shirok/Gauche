@@ -1,4 +1,116 @@
 
+== [8.2.8] 2024-09-08 ==
+
+* Allow GC_size() argument to be null
+* Disable backtrace saving at garbage collections if DONT_SAVE_TO_LAST_STACK
+* Eliminate 'cast signed to bigger unsigned' CSA warnings in GC_find_limit
+* Eliminate 'x might be clobbered by longjmp' gcc warning in setjmp_t.c
+* Fix 'un-mprotect vdb failed' abort with out-of-memory reason on Linux
+* Fix ADD_CALL_CHAIN() placement to follow GC_store_debug_info_inner call
+* Fix GC_debug_realloc to support custom kind
+* Fix GC_is_visible for case of arg pointing exactly to object upper bound
+* Fix GC_print_trace_inner to print the last element of the circular buffer
+* Fix cordtst2.tmp file deletion in cordtest on Windows
+* Fix double lock in GC_malloc called from backtrace()
+* Fix handling of page-unaligned boundaries in soft_set_grungy_pages
+* Fix heap blocks size computation by GC_get_memory_use
+* Fix indent of a closing curly braces in GC_apply_to_all_blocks
+* Fix infinite resend lost signals if a thread is restarted by SIGQUIT
+* Fix null pointer dereference in GC_is_visible if type_descr is null
+* Fix per_object_helper() after changing hb_sz units
+* Fix pointer relational comparison in GC_do_enumerate_reachable_objects
+* Fix poor thread-local allocation performance because of double EXTRA_BYTES
+* Fix potential GC_add_roots_inner call with an overflowed pointer (Win32)
+* Fix potential address overflow in GC_add_to_heap
+* Fix potential buffer overrun during read in GC_text_mapping
+* Fix various typos in comments
+* Prevent GC_noop_sink from scanning by the collector
+* Prevent redirected malloc call from a garbage collection routine
+* Redirect malloc_usable_size() in leak_detector.h
+* Remove redundant dirty/reachable_here calls in GC_malloc_explicitly_typed
+* Update and fix diagrams describing the tree structure for pointer lookups
+* Use atomic store to set GC_first_nonempty in GC_do_parallel_mark
+* Use atomic store to set entry id and update cache_ptr in slow_getspecific
+* Workaround '.obj file not found' error reported by watcom wlib
+
+
+== [8.2.6] 2024-02-04 ==
+
+* Avoid unexpected heap growth in gctest for the case of VERY_SMALL_CONFIG
+* Change gc.man to include gc/gc.h
+* Check for out-of-memory on every memory allocation in tests
+* Do not compile pthread_start.c on Cygwin even if build shared libs (CMake)
+* Eliminate 'alloc_small declared but unused' gcc warning in gctest
+* Eliminate 'make_key is defined but unused' gcc warning in threadkeytest
+* Eliminate 'old_segv_handler is defined but unused' gcc warning on OpenBSD
+* Eliminate 'rand() may return deterministic values' warning
+* Eliminate 'unused parameter' compiler warnings reported by MS clang
+* Eliminate 'unused parameter' gcc warning in free() if IGNORE_FREE
+* Eliminate 'unused value' gcc warnings in init_global_static_roots (Symbian)
+* Eliminate GCC warning of unsafe __builtin_return_address(1) in Cmake script
+* Eliminate compiler warning of missing cast in LONG_MULT after shift
+* Eliminate warning of unused expression result in GC_FreeBSDGetDataStart
+* Ensure _GNU_SOURCE is defined if HAVE_DLADDR is defined by configure
+* Fix 'g++ not found' error on OpenBSD (Makefile.direct)
+* Fix 'implicit declaration of function pthread_atfork' gcc error on MinGW
+* Fix 'implicit declaration of function sbrk' gcc error on Symbian
+* Fix 'implicit declaration of iscntrl()' warning in cord/de_win (MinGW)
+* Fix 'info' buffer potential overrun in GC_save_callers
+* Fix 'l-value specifies const object' MSVC error in GC_push_many_regs
+* Fix 'linker input unused' error inside check_c_compiler_flag (CMake)
+* Fix 'missing binary operator before token' gcc error in gcconfig.h
+* Fix 'missing sysconf() prototype' gcc error in setjmp_t tool (OpenBSD)
+* Fix 'sigset_t undeclared' MS VC error if pthreads-w32 is used
+* Fix 'undefined reference' linker errors if shared build on OpenBSD (CMake)
+* Fix 'unused GC_set_and_save_fault_handler' warning on OS X
+* Fix GC_push_stack_for() to push also Xmm registers on Windows/x64
+* Fix GC_set_handle_fork(1) on Darwin when MPROTECT_VDB but no threads
+* Fix MACH_TYPE macro redefinition on Symbian/arm
+* Fix SVR4 macro definition order
+* Fix asm constraint in LONG_MULT for gcc/x86
+* Fix assertion violation in GC_get_maps on Linux if malloc redirection
+* Fix back graph and checksums support in WCC_MAKEFILE
+* Fix bitwise negation and rounding direction in setjmp_t tool
+* Fix checksums GC_record_fault invocation on Darwin
+* Fix closing bracket placement for case statement in configure
+* Fix deprecation warning about support of CMake older than v3.5
+* Fix extra 'extern C' for include signal.h in gcconfig.h
+* Fix getcontext() detection by CMake on OpenBSD
+* Fix handling of GC_gc_no counter wrap in GC_clear_stack
+* Fix handling of GC_gc_no counter wrap in GC_notify_or_invoke_finalizers
+* Fix indent of a closing curly brace in GC_forward_exception
+* Fix lock assertion violation in GC_try_to_collect_inner on OS X
+* Fix missing GC_pthread_sigmask on FreeBSD and NetBSD
+* Fix missing _setjmp() on djgpp
+* Fix missing atomic barriers in CORD_from_file_lazy
+* Fix missing outermost parentheses in CORD_pos_cur_char_addr and hugetest
+* Fix missing redirect and implementation of pthread_sigmask() on OpenBSD
+* Fix missing type widening before left shift in GC_MAKE_PROC
+* Fix misspelled GC_HEADERS_H macro in gc_priv.h
+* Fix null dereference in check_finalizer_nested if redirect malloc on Linux
+* Fix posix_memalign() to overwrite pointer storage only on success
+* Fix race in init_lib_bounds on Linux with glibc v2.34+ if redirect malloc
+* Fix skipped removal of page protection in case of address hash collision
+* Fix typos in comments
+* Fix undefined GC_real_pthread_sigmask if redirect malloc on OS X
+* Fix update of last_back_trace_gc_no if KEEP_BACK_PTRS is not defined
+* Handle GC_gc_no counter overflow properly in GC_print_trace
+* Include Darwin CoreFoundation.h only if 32-bit ARM
+* Make gc_allocator<void> members public
+* Re-enable incremental mode on OS X (arm64)
+* Remove .log and cordtest .tmp files by 'make clean' (Makefile.direct)
+* Remove a redundant check of HOST_ANDROID in gcconfig.h
+* Remove duplication of random numbers generator formula
+* Specify constexpr in GC allocators if C++20 or later
+* Support NetBSD/riscv64
+* Support non-msys MinGW build by CMake
+* Turn on handle fork by default on Darwin (multi-threaded only)
+* Use AO primitives in GC_RAND_NEXT instead of no_sanitize attribute
+* Workaround 'malloc inconsistent dll linkage' MS VC error in CMake script
+* Workaround MS Clang failure to compile de_win.rc
+* Workaround mark stack overflow in GC_push_finalizer_structures on MinGW
+
+
 == [8.2.4] 2023-05-26 ==
 
 * Abort with appropriate message if first call of mmap fails with EPERM
@@ -6,7 +118,7 @@
 * Adjust WoW64 workaround to work on UWP/WinRT
 * Adjust naming of Win32/64 and x86/64 words in comments and documentation
 * Avoid potential race between realloc and GC_block_was_dirty
-* Do not double-clear first two words of object in GC_generic_malloc_aligned
+* Do not double-clear first two words of object in GC_generic_malloc
 * Do not mention FASTLOCK in comment
 * Do not mix debug and non-debug allocations in disclaim tests
 * Do not prohibit threaded builds with malloc redirection on non-Linux
@@ -444,6 +556,27 @@
 * Workaround 'push_regs configured incorrectly' error (GCC-11)
 * Workaround 'same value in both branches of ternary operator' cppcheck FP
 * Workaround various cppcheck false positives
+
+
+== [8.0.14] 2024-09-07 ==
+
+* Disable backtrace saving at garbage collections if DONT_SAVE_TO_LAST_STACK
+* Fix infinite resend lost signals if a thread is restarted by SIGQUIT
+
+Also, includes 7.6.22 changes
+
+
+== [8.0.12] 2024-02-04 ==
+
+* Eliminate 'make_key is defined but unused' gcc warning in threadkeytest
+* Ensure _GNU_SOURCE is defined if HAVE_DLADDR is defined by configure
+* Fix 'implicit declaration of function pthread_atfork' gcc error on MinGW
+* Fix 'missing binary operator before token' gcc error in gcconfig.h
+* Fix GC_set_handle_fork(1) on Darwin when MPROTECT_VDB but no threads
+* Fix checksums GC_record_fault invocation on Darwin
+* Fix extra 'extern C' for include signal.h in gcconfig.h
+
+Also, includes 7.6.20 changes
 
 
 == [8.0.10] 2023-05-26 ==
@@ -960,6 +1093,28 @@ Also, includes 7.6.18 changes
 * Workaround 'bad pointer arithmetic' false waring in check_annotated_obj
 * Workaround Clang optimizer bug crashing clear_stack_inner on OS X 10.8
 * Workaround Thread Sanitizer (TSan) false positive warnings
+
+
+== [7.6.22] 2024-09-07 ==
+
+* Eliminate 'cast signed to bigger unsigned' CSA warnings in GC_find_limit
+* Fix GC_debug_realloc to support custom kind
+* Fix heap blocks size computation by GC_get_memory_use
+* Fix pointer relational comparison in GC_do_enumerate_reachable_objects
+* Prevent GC_noop_sink from scanning by the collector
+
+Also, includes 7.4.28 changes
+
+
+== [7.6.20] 2024-02-03 ==
+
+* Eliminate compiler warning of missing cast in LONG_MULT after shift
+* Fix 'sigset_t undeclared' MS VC error if pthreads-w32 is used
+* Fix lock assertion violation in GC_try_to_collect_inner on OS X
+* Fix missing outermost parentheses in macro definitions in huge test
+* Fix undefined GC_real_pthread_sigmask if redirect malloc on OS X
+
+Also, includes 7.4.26 changes
 
 
 == [7.6.18] 2023-05-26 ==
@@ -1531,6 +1686,41 @@ Also, includes 7.4.6 changes
 Also, includes 7.4.4 changes
 
 
+== [7.4.28] 2024-09-07 ==
+
+* Avoid gcc stringop-overflow warning for intended overflow in smashtest
+* Fix ADD_CALL_CHAIN() placement to follow GC_store_debug_info_inner call
+* Fix GC_is_visible for case of arg pointing exactly to object upper bound
+* Fix GC_print_trace_inner to print the last element of the circular buffer
+* Fix cordtst2.tmp file deletion in cordtest on Windows
+* Fix double lock in GC_malloc called from backtrace()
+* Fix indent of a closing curly braces in GC_apply_to_all_blocks
+* Fix null pointer dereference in GC_is_visible if type_descr is null
+* Fix per_object_helper() after changing hb_sz units
+* Fix poor thread-local allocation performance because of double EXTRA_BYTES
+* Fix potential GC_add_roots_inner call with an overflowed pointer (Win32)
+* Fix potential address overflow in GC_add_to_heap
+* Fix potential buffer overrun during read in GC_text_mapping
+* Fix typos in comments
+* Prevent redirected malloc call from a garbage collection routine
+* Remove redundant dirty/reachable_here calls in GC_malloc_explicitly_typed
+* Update and fix diagrams describing the tree structure for pointer lookups
+
+
+== [7.4.26] 2024-02-03 ==
+
+* Eliminate 'unused parameter' gcc warning in free() if IGNORE_FREE
+* Eliminate 'unused value' gcc warnings in init_global_static_roots (Symbian)
+* Fix 'implicit declaration of function sbrk' gcc error on Symbian
+* Fix 'unused GC_set_and_save_fault_handler' warning on OS X
+* Fix GC_push_stack_for() to push also Xmm registers on Windows/x64
+* Fix MACH_TYPE macro redefinition on Symbian/arm
+* Fix missing GC_pthread_sigmask on FreeBSD and NetBSD
+* Fix missing redirect and implementation of pthread_sigmask() on OpenBSD
+
+Also, includes 7.2r changes.
+
+
 == [7.4.24] 2023-05-25 ==
 
 * Adjust CORD_ec comment placement in ec.h
@@ -2089,6 +2279,57 @@ Also, includes 7.2e, 7.2d, 7.2c, 7.2b changes
 * Use pthread_key for thread-local storage on FreeBSD
 * Use union of AO_t and word to favor strict-aliasing compiler optimization
 Also, includes 7.2 changes
+
+
+== [7.2s] 2024-09-06 ==
+
+* Avoid gcc stringop-overflow warning for intended overflow in smashtest
+* Eliminate 'type defaults to int in declaration' warning (REDIRECT_MALLOC)
+* Eliminate 'value exceeds maximum object size' GCC warning in huge_test
+* Eliminate warning and simplify expression in GC_init_explicit_typing
+* Fix 'GetVersion deprecated' compiler warning in os_dep (MS VC)
+* Fix 'value truncated' compiler warning in CORD_cat (MS VC)
+* Fix ADD_CALL_CHAIN() placement to follow GC_store_debug_info_inner call
+* Fix GC_is_visible for case of arg pointing exactly to object upper bound
+* Fix GC_jmp_buf multiple definition
+* Fix GC_print_trace_inner to print the last element of the circular buffer
+* Fix double lock in GC_malloc called from backtrace()
+* Fix indent of a closing curly braces in GC_apply_to_all_blocks
+* Fix null pointer dereference in GC_is_visible if type_descr is null
+* Fix per_object_helper() after changing hb_sz units
+* Fix poor thread-local allocation performance because of double EXTRA_BYTES
+* Fix potential GC_add_roots_inner call with an overflowed pointer (Win32)
+* Fix potential address overflow in GC_add_to_heap
+* Fix potential buffer overrun during read in GC_text_mapping
+* Fix typos in comments
+* Prevent compiler warnings regarding unused argument and printf in extra
+* Prevent redirected malloc call from a garbage collection routine
+* Remove barrett_diagram file duplicated by tree.html
+* Remove non-existing DISCARD_WORDS from GC data structure ASCII diagram
+* Resolve GCC warning in setjmp_t.c
+* Update and fix diagrams describing the tree structure for pointer lookups
+
+
+== [7.2r] 2024-02-03 ==
+
+* Fix 'g++ not found' error on OpenBSD (Makefile.direct)
+* Fix 'implicit declaration of iscntrl()' warning in cord/de_win (MinGW)
+* Fix 'info' buffer potential overrun in GC_save_callers
+* Fix 'missing sysconf() prototype' gcc error in setjmp_t tool (OpenBSD)
+* Fix SVR4 macro definition order
+* Fix asm constraint in LONG_MULT for gcc/x86
+* Fix assertion violation in GC_get_maps on Linux if malloc redirection
+* Fix bitwise negation and rounding direction in setjmp_t tool
+* Fix closing bracket placement for case statement in configure
+* Fix indent of a closing curly brace in GC_forward_exception
+* Fix missing outermost parentheses in CORD_pos_cur_char_addr
+* Fix missing type widening before left shift in GC_MAKE_PROC
+* Fix misspelled GC_HEADERS_H macro in gc_priv.h
+* Fix null dereference in check_finalizer_nested if redirect malloc on Linux
+* Fix posix_memalign() to overwrite pointer storage only on success
+* Fix skipped removal of page protection in case of address hash collision
+* Fix typos in comments
+* Fix update of last_back_trace_gc_no if KEEP_BACK_PTRS is not defined
 
 
 == [7.2q] 2023-05-25 ==

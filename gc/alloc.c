@@ -530,9 +530,7 @@ STATIC void GC_maybe_gc(void)
         /* used instead of GC_never_stop_func here.             */
         if (GC_stopped_mark(GC_time_limit == GC_TIME_UNLIMITED?
                             GC_never_stop_func : GC_timeout_stop_func)) {
-#           ifdef SAVE_CALL_CHAIN
-                GC_save_callers(GC_last_stack);
-#           endif
+            SAVE_CALLERS_TO_LAST_STACK();
             GC_finish_collection();
         } else {
             if (!GC_is_full_gc) {
@@ -621,9 +619,7 @@ GC_INNER GC_bool GC_try_to_collect_inner(GC_stop_func stop_func)
         }
     GC_invalidate_mark_state();  /* Flush mark stack.   */
     GC_clear_marks();
-#   ifdef SAVE_CALL_CHAIN
-        GC_save_callers(GC_last_stack);
-#   endif
+    SAVE_CALLERS_TO_LAST_STACK();
     GC_is_full_gc = TRUE;
     if (!GC_stopped_mark(stop_func)) {
       if (!GC_incremental) {
@@ -736,9 +732,7 @@ GC_INNER void GC_collect_a_little_inner(int n)
 
         if (i < max_deficit && !GC_dont_gc) {
             /* Need to finish a collection.     */
-#           ifdef SAVE_CALL_CHAIN
-                GC_save_callers(GC_last_stack);
-#           endif
+            SAVE_CALLERS_TO_LAST_STACK();
 #           ifdef PARALLEL_MARK
                 if (GC_parallel)
                     GC_wait_for_reclaim();
@@ -1408,7 +1402,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
         if (0 == bytes) return;
     }
     endp = (word)p + bytes;
-    if (endp <= (word)p) {
+    while (endp <= (word)p) {
         /* Address wrapped. */
         bytes -= HBLKSIZE;
         if (0 == bytes) return;
@@ -1474,6 +1468,7 @@ STATIC void GC_add_to_heap(struct hblk *p, size_t bytes)
         GC_greatest_real_heap_addr = endp;
       }
 #   endif
+    GC_handle_protected_regions_limit();
     if (old_capacity > 0) {
 #     ifndef GWW_VDB
         /* Recycling may call GC_add_to_heap() again but should not     */

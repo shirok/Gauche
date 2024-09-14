@@ -28,26 +28,17 @@
 #undef GC_NO_THREAD_REDIRECTS
 #include "gc_disclaim.h"
 
-#if defined(GC_PTHREADS) || defined(LINT2)
-# define NOT_GCBUILD
-# include "private/gc_priv.h"
-
-  GC_ATTR_NO_SANITIZE_THREAD
-  static int GC_rand(void) /* nearly identical to GC_random */
-  {
-    static unsigned seed; /* concurrent update does not hurt the test */
-
-    seed = (seed * 1103515245U + 12345) & (~0U >> 1);
-    return (int)seed;
-  }
-
+#define NOT_GCBUILD
+#include "private/gc_priv.h"
   /* Redefine the standard rand() with a trivial (yet sufficient for    */
   /* the test purpose) implementation to avoid crashes inside rand()    */
-  /* on some targets (e.g. FreeBSD 13.0) when used concurrently.        */
+  /* on some hosts (e.g. FreeBSD 13.0) when used concurrently.          */
   /* The standard specifies rand() as not a thread-safe API function.   */
-# undef rand
-# define rand() GC_rand()
-#endif /* GC_PTHREADS || LINT2 */
+  /* On other hosts (e.g. OpenBSD 7.3), use of the standard rand()      */
+  /* causes "rand() may return deterministic values" warning.           */
+#undef rand
+static GC_RAND_STATE_T seed; /* concurrent update does not hurt the test */
+#define rand() GC_RAND_NEXT(&seed)
 
 #define my_assert(e) \
     if (!(e)) { \
@@ -211,6 +202,8 @@ void *test(void *data)
     memset(pop, 0, sizeof(pop));
     for (i = 0; i < MUTATE_CNT; ++i) {
         int t = rand() % POP_SIZE;
+        int j;
+
         switch (rand() % (i > GROW_LIMIT? 5 : 3)) {
         case 0: case 3:
             if (pop[t])
@@ -221,8 +214,8 @@ void *test(void *data)
                 pop[t] = pop[t]->cdr;
             break;
         case 2:
-            pop[t] = pair_new(pop[rand() % POP_SIZE],
-                              pop[rand() % POP_SIZE]);
+            j = rand() % POP_SIZE;
+            pop[t] = pair_new(pop[j], pop[rand() % POP_SIZE]);
             break;
         }
         if (rand() % 8 == 1)

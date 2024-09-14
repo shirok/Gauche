@@ -385,7 +385,7 @@
 # endif
 
 # if (defined(GC_DARWIN_THREADS) || defined(GC_WIN32_PTHREADS) \
-      || defined(GC_OPENBSD_THREADS) || defined(__native_client__)) \
+      || defined(__native_client__)) \
      && !defined(GC_NO_PTHREAD_SIGMASK)
     /* Either there is no pthread_sigmask() or no need to intercept it. */
 #   define GC_NO_PTHREAD_SIGMASK
@@ -450,6 +450,14 @@
 #   define GC_NOEXCEPT noexcept
 # else
 #   define GC_NOEXCEPT throw()
+# endif
+#endif
+
+#ifndef GC_CONSTEXPR
+# if __cplusplus >= 202002L
+#   define GC_CONSTEXPR constexpr
+# else
+#   define GC_CONSTEXPR /* empty */
 # endif
 #endif
 

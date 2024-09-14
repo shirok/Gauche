@@ -27,7 +27,8 @@
 #endif
 
 #if (defined(__linux__) || defined(__GLIBC__) || defined(__GNU__) \
-     || defined(__CYGWIN__) || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID) \
+     || defined(__CYGWIN__) || defined(HAVE_DLADDR) \
+     || defined(HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID) \
      || defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG) \
      || defined(HAVE_PTHREAD_SETNAME_NP_WITH_TID)) && !defined(_GNU_SOURCE)
   /* Can't test LINUX, since this must be defined before other includes. */
@@ -186,9 +187,7 @@ typedef int GC_bool;
 # define GC_ATTR_WORD_ALIGNED /* empty */
 #endif
 
-#ifndef HEADERS_H
-# include "gc_hdrs.h"
-#endif
+#include "gc_hdrs.h"
 
 #ifndef GC_ATTR_NO_SANITIZE_ADDR
 # ifndef ADDRESS_SANITIZER
@@ -224,7 +223,7 @@ typedef int GC_bool;
 #endif /* !GC_ATTR_NO_SANITIZE_THREAD */
 
 #ifndef GC_ATTR_UNUSED
-# if GC_GNUC_PREREQ(3, 4)
+# if GC_GNUC_PREREQ(3, 4) || defined(__clang__)
 #   define GC_ATTR_UNUSED __attribute__((__unused__))
 # else
 #   define GC_ATTR_UNUSED /* empty */
@@ -991,7 +990,7 @@ EXTERN_C_BEGIN
 
 /* Round up allocation size (in bytes) to a multiple of a granule.      */
 #define ROUNDUP_GRANULE_SIZE(lb) /* lb should have no side-effect */ \
-            (SIZET_SAT_ADD(lb, GRANULE_BYTES - 1) & ~(GRANULE_BYTES - 1))
+        (SIZET_SAT_ADD(lb, GRANULE_BYTES-1) & ~(size_t)(GRANULE_BYTES-1))
 
 /* Round up byte allocation requests to integral number of words, etc. */
 # define ROUNDED_UP_GRANULES(lb) /* lb should have no side-effect */ \
@@ -1098,9 +1097,6 @@ union word_ptr_ao_u {
 # endif
 };
 
-/* We maintain layout maps for heap blocks containing objects of a given */
-/* size.  Each entry in this map describes a byte offset and has the     */
-/* following type.                                                       */
 struct hblkhdr {
     struct hblk * hb_next;      /* Link field for hblk free list         */
                                 /* and for lists of chunks waiting to be */
@@ -1454,12 +1450,14 @@ struct _GC_arrays {
 # ifdef USE_MUNMAP
 #   define GC_unmapped_bytes GC_arrays._unmapped_bytes
     word _unmapped_bytes;
-#   ifdef COUNT_UNMAPPED_REGIONS
-#     define GC_num_unmapped_regions GC_arrays._num_unmapped_regions
-      signed_word _num_unmapped_regions;
-#   endif
 # else
 #   define GC_unmapped_bytes 0
+# endif
+# if defined(COUNT_UNMAPPED_REGIONS) && defined(USE_MUNMAP)
+#   define GC_num_unmapped_regions GC_arrays._num_unmapped_regions
+    signed_word _num_unmapped_regions;
+# else
+#   define GC_num_unmapped_regions 0
 # endif
   bottom_index * _all_nils;
 # define GC_scan_ptr GC_arrays._scan_ptr
@@ -1487,6 +1485,8 @@ struct _GC_arrays {
 #   define GC_trace_addr GC_arrays._trace_addr
     ptr_t _trace_addr;
 # endif
+# define GC_noop_sink GC_arrays._noop_sink
+  volatile word _noop_sink;
 # define GC_capacity_heap_sects GC_arrays._capacity_heap_sects
   size_t _capacity_heap_sects;
 # define GC_n_heap_sects GC_arrays._n_heap_sects
@@ -1566,13 +1566,17 @@ struct _GC_arrays {
 #   define GC_root_index GC_arrays._root_index
     struct roots * _root_index[RT_SIZE];
 # endif
-# ifdef SAVE_CALL_CHAIN
-#   define GC_last_stack GC_arrays._last_stack
+# if defined(SAVE_CALL_CHAIN) && !defined(DONT_SAVE_TO_LAST_STACK) \
+     && (!defined(REDIRECT_MALLOC) || !defined(GC_HAVE_BUILTIN_BACKTRACE))
     struct callinfo _last_stack[NFRAMES];
                 /* Stack at last garbage collection.  Useful for        */
                 /* debugging mysterious object disappearances.  In the  */
                 /* multi-threaded case, we currently only save the      */
-                /* calling stack.                                       */
+                /* calling stack.  Not supported in case of malloc      */
+                /* redirection because backtrace() may call malloc().   */
+#   define SAVE_CALLERS_TO_LAST_STACK() GC_save_callers(GC_arrays._last_stack)
+# else
+#   define SAVE_CALLERS_TO_LAST_STACK() (void)0
 # endif
 # ifndef SEPARATE_GLOBALS
 #   define GC_objfreelist GC_arrays._objfreelist
@@ -1923,12 +1927,12 @@ GC_INNER void GC_invalidate_mark_state(void);
                                 /* ones, and roots may point to         */
                                 /* unmarked objects.  Reset mark stack. */
 GC_INNER GC_bool GC_mark_some(ptr_t cold_gc_frame);
-                        /* Perform about one pages worth of marking     */
+                        /* Perform about one page of marking            */
                         /* work of whatever kind is needed.  Returns    */
                         /* quickly if no collection is in progress.     */
-                        /* Return TRUE if mark phase finished.          */
+                        /* Return TRUE if mark phase is finished.       */
 GC_INNER void GC_initiate_gc(void);
-                                /* initiate collection.                 */
+                                /* Initiate collection.                 */
                                 /* If the mark state is invalid, this   */
                                 /* becomes full collection.  Otherwise  */
                                 /* it's partial.                        */
@@ -2449,9 +2453,24 @@ GC_EXTERN void (*GC_print_heap_obj)(ptr_t p);
   GC_EXTERN long GC_backtraces;
 #endif
 
-#ifdef LINT2
-# define GC_RAND_MAX (~0U >> 1)
-  GC_API_PRIV long GC_random(void);
+/* A trivial (linear congruential) pseudo-random numbers generator, */
+/* safe for the concurrent usage.                                   */
+#define GC_RAND_MAX ((int)(~0U >> 1))
+#if defined(AO_HAVE_store) && defined(THREAD_SANITIZER)
+#   define GC_RAND_STATE_T volatile AO_t
+#   define GC_RAND_NEXT(pseed) GC_rand_next(pseed)
+    GC_INLINE int GC_rand_next(GC_RAND_STATE_T *pseed)
+    {
+      AO_t next = (AO_t)((AO_load(pseed) * 1103515245U + 12345)
+                         & (unsigned)GC_RAND_MAX);
+      AO_store(pseed, next);
+      return (int)next;
+    }
+#else
+#   define GC_RAND_STATE_T unsigned
+#   define GC_RAND_NEXT(pseed) /* overflow and race are OK */ \
+                (int)(*(pseed) = (*(pseed) * 1103515245U + 12345) \
+                                 & (unsigned)GC_RAND_MAX)
 #endif
 
 GC_EXTERN GC_bool GC_print_back_height;
@@ -2503,7 +2522,7 @@ GC_EXTERN GC_bool GC_print_back_height;
     /* Compute end address for an unmap operation on the indicated block. */
     GC_INLINE ptr_t GC_unmap_end(ptr_t start, size_t bytes)
     {
-      return (ptr_t)((word)(start + bytes) & ~(GC_page_size - 1));
+      return (ptr_t)((word)(start + bytes) & ~(word)(GC_page_size-1));
     }
 # endif
 #endif /* USE_MUNMAP */
@@ -2564,7 +2583,8 @@ GC_EXTERN GC_bool GC_print_back_height;
 # endif
 
 # ifdef CAN_HANDLE_FORK
-#   if defined(PROC_VDB) || defined(SOFT_VDB)
+#   if defined(PROC_VDB) || defined(SOFT_VDB) \
+       || (defined(MPROTECT_VDB) && defined(GC_DARWIN_THREADS))
       GC_INNER void GC_dirty_update_child(void);
                 /* Update pid-specific resources (like /proc file       */
                 /* descriptors) needed by the dirty bits implementation */
@@ -2573,6 +2593,19 @@ GC_EXTERN GC_bool GC_print_back_height;
 #     define GC_dirty_update_child() (void)0
 #   endif
 # endif /* CAN_HANDLE_FORK */
+
+# if defined(MPROTECT_VDB) && defined(DARWIN)
+    EXTERN_C_END
+#   include <pthread.h>
+    EXTERN_C_BEGIN
+#   ifdef THREADS
+      GC_INNER int GC_inner_pthread_create(pthread_t *t,
+                                GC_PTHREAD_CREATE_CONST pthread_attr_t *a,
+                                void *(*fn)(void *), void *arg);
+#   else
+#     define GC_inner_pthread_create pthread_create
+#   endif
+# endif /* MPROTECT_VDB && DARWIN */
 
   GC_INNER GC_bool GC_dirty_init(void);
                 /* Returns true if dirty bits are maintained (otherwise */
@@ -2590,6 +2623,14 @@ GC_EXTERN GC_bool GC_print_back_height;
 # define GC_dirty(p) (GC_manual_vdb ? GC_dirty_inner(p) : (void)0)
 # define REACHABLE_AFTER_DIRTY(p) GC_reachable_here(p)
 #endif /* !GC_DISABLE_INCREMENTAL */
+
+#if defined(COUNT_PROTECTED_REGIONS) && defined(MPROTECT_VDB)
+  /* Do actions on heap growth, if needed, to prevent hitting the       */
+  /* kernel limit on the VM map regions.                                */
+  GC_INNER void GC_handle_protected_regions_limit(void);
+#else
+# define GC_handle_protected_regions_limit() (void)0
+#endif
 
 /* Same as GC_base but excepts and returns a pointer to const object.   */
 #define GC_base_C(p) ((const void *)GC_base((/* no const */ void *)(p)))
@@ -2765,7 +2806,7 @@ GC_EXTERN signed_word GC_bytes_found;
 #endif
 
 #ifdef CHECKSUMS
-# if defined(MPROTECT_VDB) && !defined(DARWIN)
+# ifdef MPROTECT_VDB
     void GC_record_fault(struct hblk * h);
 # endif
   void GC_check_dirty(void);
@@ -2787,6 +2828,13 @@ GC_INNER void GC_start_debugging_inner(void);   /* defined in dbg_mlc.c. */
 /* Assumes we hold the allocation lock.                         */
 GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
                                          int linenum);
+
+#if defined(REDIRECT_MALLOC) && !defined(REDIRECT_MALLOC_IN_HEADER) \
+    && defined(GC_LINUX_THREADS)
+  GC_INNER void GC_init_lib_bounds(void);
+#else
+# define GC_init_lib_bounds() (void)0
+#endif
 
 #ifdef REDIRECT_MALLOC
 # ifdef GC_LINUX_THREADS
@@ -2857,7 +2905,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
   void * GC_find_limit(void *, int);
 #endif
 
-#ifdef UNIX_LIKE
+#if defined(UNIX_LIKE) && !defined(NO_DEBUGGING)
   GC_INNER void GC_set_and_save_fault_handler(void (*handler)(int));
 #endif
 
@@ -2995,7 +3043,7 @@ GC_INNER void *GC_store_debug_info_inner(void *p, word sz, const char *str,
 # elif (defined(GC_LINUX_THREADS) || defined(GC_DGUX386_THREADS)) \
        && !defined(GC_USESIGRT_SIGNALS)
 #   if defined(SPARC) && !defined(SIGPWR)
-      /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.      */
+      /* Linux/SPARC doesn't properly define SIGPWR in <signal.h>.      */
       /* It is aliased to SIGLOST in asm/signal.h, though.              */
 #     define SIG_SUSPEND SIGLOST
 #   else
