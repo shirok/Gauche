@@ -605,13 +605,13 @@
      (test* "Windows escaping quirks (exe)" "(\"&whoami)"
             (process-output->string `(,gosh "-Eprint *argv*" "-Eexit" _ "\"&whoami"))))
    (test* "Windows escaping quirks (bat)" "a-b-c"
-            (process-output->string `("test.bat" a b c)))
+            (process-output->string `(".\\test.bat" a b c)))
    (test* "Windows escaping quirks (bat)" (test-error <error> #/unsafe/)
-            (process-output->string `("test.bat" "\"&whoami")))
+            (process-output->string `(".\\test.bat" "\"&whoami")))
    (test* "Windows escaping quirks (cmd)" "a-b-c"
-            (process-output->string `("test.cmd" a b c)))
+            (process-output->string `(".\\test.cmd" a b c)))
    (test* "Windows escaping quirks (cmd)" (test-error <error> #/unsafe/)
-            (process-output->string `("test.cmd" "\"&whoami")))
+            (process-output->string `(".\\test.cmd" "\"&whoami")))
    )]
  [else])
 
