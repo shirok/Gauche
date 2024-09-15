@@ -1682,7 +1682,7 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
 
     /* Set up environment */
     char **envp = NULL;
-    if (SCM_PAIRP(env)) {
+    if (SCM_LISTP(env)) {
         envp = Scm_ListToCStringArray(env, TRUE, NULL);
     }
 

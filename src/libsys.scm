@@ -1046,22 +1046,27 @@
 
 (define-cproc sys-exec (command::<string>
                         args::<list>
-                        :key (iomap ()) (sigmask::<sys-sigset>? #f)
+                        :key
+                        (iomap ())
+                        (sigmask::<sys-sigset>? #f)
                         (directory::<string>? #f)
-                        (detached::<boolean> #f))
+                        (detached::<boolean> #f)
+                        (environment #f))
   ::<void>
   (let* ([flags::u_long (?: detached SCM_EXEC_DETACHED 0)])
-    (Scm_SysExec command args iomap sigmask directory SCM_NIL flags)))
+    (Scm_SysExec command args iomap sigmask directory environment flags)))
 
 (define-cproc sys-fork-and-exec (command::<string>
                                  args::<list>
                                  :key (iomap ()) (sigmask::<sys-sigset>? #f)
                                  (directory::<string>? #f)
-                                 (detached::<boolean> #f))
+                                 (detached::<boolean> #f)
+                                 (environment #f))
   (let* ([flags::u_int SCM_EXEC_WITH_FORK])
     (when detached
       (set! flags (logior flags SCM_EXEC_DETACHED)))
-    (return (Scm_SysExec command args iomap sigmask directory SCM_NIL flags))))
+    (return
+     (Scm_SysExec command args iomap sigmask directory environment flags))))
 
 (define-cproc sys-getcwd () Scm_GetCwd)
 (define-cproc sys-getegid () ::<int> getegid)

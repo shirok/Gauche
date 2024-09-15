@@ -1,5 +1,8 @@
 2024-09-14  Shiro Kawai  <shiro@acm.org>
 
+	* src/libsys.scm (sys-exec, sys-fork-and-exec): Add :environment
+	  keyword arg.
+
 	* gc/: bumped bdwgc 8.2.8
 
 2024-09-13  Shiro Kawai  <shiro@acm.org>
