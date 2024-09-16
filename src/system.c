@@ -1680,12 +1680,6 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         program = Scm_GetStringConst(file);
     }
 
-    /* Set up environment */
-    char **envp = NULL;
-    if (SCM_LISTP(env)) {
-        envp = Scm_ListToCStringArray(env, TRUE, NULL);
-    }
-
     /*
      * From now on, we have totally different code for Unix and Windows.
      */
@@ -1728,10 +1722,11 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
             Scm_SysSigmask(SIG_SETMASK, mask);
         }
 
-        if (envp == NULL) {
-            execv(program, (char *const*)argv);
+        if (SCM_LISTP(env)) {
+            execve(program, (char *const*)argv,
+                   Scm_ListToCStringArray(env, TRUE, NULL));
         } else {
-            execve(program, (char *const*)argv, envp);
+            execv(program, (char *const*)argv);
         }
         /* here, we failed */
         Scm_Panic("exec failed: %s: %s", program, strerror(errno));
