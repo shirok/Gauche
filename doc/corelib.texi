@@ -32929,7 +32929,7 @@ Windowsネイティブな環境ではこの手続きは使えません。
 @c COMMON
 @end defun
 
-@defun sys-exec command args :key directory iomap sigmask
+@defun sys-exec command args :key directory iomap sigmask environment
 @c EN
 [POSIX+]
 Execute @var{command} with @var{args}, a list of arguments.
@@ -33049,6 +33049,33 @@ which is not very convenient in most cases.
 @c COMMON
 
 @c EN
+Finally, @var{environment} keyword argument specifies
+the environment where the new process sees.
+If it is @code{#f} (default), the new process sees the same enviornment
+of the caller process.
+Otherwise, it must be a list of strings.
+Each string must be a form of @code{"NAME=VALUE"}, where @var{NAME}
+is the name of envionemnt variable, and @var{VALUE} is its value.
+Environment variable's name cannot contain @code{=}, while its value can.
+This format is compatible with what @code{sys-environ} returns
+(@pxref{Environment inquiry}),
+so that you can get the current enviornment with @code{sys-environ},
+add/remove/modify some of its entries, and pass it to this argument.
+@c JP
+最後に、@var{environment}キーワード引数は新たなプロセスから見える環境を指定します。
+デフォルト値は@code{#f}で、その場合は新たなプロセスは現在のプロセスの環境を引き継ぎます。
+そうでなければ、引数は文字列のリストでなければならず、
+各文字列は@code{"NAME=VALUE"}の形式でなければなりません。
+@var{NAME}が環境変数の名前を、@var{VALUE}がその値を示します。
+@var{NAME}は@code{=}を含むことはできませんが、@var{VALUE}に@code{=}を含めることは
+できます。
+この形式は@code{sys-environ}が返す形式と互換です
+(@ref{Environment inquiry}参照)。
+したがって、@code{sys-environ}で取得した環境にエントリを追加したり、
+そこからエントリを削除したりしてこの引数に渡すことができます。
+@c COMMON
+
+@c EN
 When @code{sys-exec}
 encounters an error, most of the time it raises an error condition.
 Once the file descriptors are permuted, however, it would be impractical
@@ -33072,7 +33099,7 @@ Windowsネイティブ環境では、標準入力、標準出力、標準エラ�
 @c COMMON
 @end defun
 
-@defun sys-fork-and-exec command args :key directory iomap sigmask detached
+@defun sys-fork-and-exec command args :key directory iomap sigmask detached environment
 @c EN
 Like @code{sys-exec}, but executes @code{fork(2)} just before
 remapping I/O, altering signal mask and call @code{execvp(2)}.
