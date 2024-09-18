@@ -217,7 +217,8 @@
                        (redirects '())
                        (wait   #f) (fork   #t)
                        (host   #f)    ;remote execution
-                       (sigmask #f) (directory #f) (detached #f))
+                       (sigmask #f) (directory #f) (detached #f)
+                       (environment #t))
     (let* ([redirs (%canon-redirects redirects input output error)]
            [argv (map x->string command)]
            [proc (make <process> :command (car argv))]
@@ -234,7 +235,8 @@
           (let1 pid (sys-fork-and-exec (car argv) argv
                                        :iomap iomap :directory dir
                                        :sigmask (%ensure-mask sigmask)
-                                       :detached detached)
+                                       :detached detached
+                                       :environment environment)
             (push! (ref proc 'processes) proc)
             (set!  (ref proc 'pid) pid)
             (dolist [p toclose]
@@ -250,7 +252,8 @@
           (sys-exec (car argv) argv
                     :iomap iomap :directory dir
                     :sigmask (%ensure-mask sigmask)
-                    :detached detached))))))
+                    :detached detached
+                    :enrivonment environment))))))
 
 (define (%canon-redirects redirects in out err)
   (rlet1 redirs
@@ -571,7 +574,8 @@
 ;; would cover typical use case...
 (define (run-pipeline commands
                       :key (input #f) (output #f) (error #f)
-                      (wait #f) (sigmask #f) (directory #f) (detached #f))
+                      (wait #f) (sigmask #f) (directory #f) (detached #f)
+                      (environment #f))
   (when (null? commands)
     (error "At least one command is required to run-command-pipeline"))
   (and-let1 offending (any (^c (and (not (pair? c)) (list c))) commands)
@@ -582,7 +586,8 @@
          [cmds (map (^[cmdline in out]
                       `(,cmdline :input ,in :output ,out :error ,error
                                  :sigmask ,sigmask
-                                 :directory ,directory :detached ,detached))
+                                 :directory ,directory :detached ,detached
+                                 :environment environment))
                     commands
                     (cons input (map car pipe-pairs))
                     (fold-right cons (list output) (map cdr pipe-pairs)))]

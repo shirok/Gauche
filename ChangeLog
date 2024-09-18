@@ -1,3 +1,7 @@
+2024-09-17  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/gauche/process.scm: Support :envioronment keyword arg.
+
 2024-09-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/libsys.scm (sys-exec, sys-fork-and-exec): Add :environment
