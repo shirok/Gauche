@@ -1,3 +1,6 @@
+;;; SPDX-FileCopyrightText: 2024 Shiro Kawai, John Cowan, Arne Babenhauserheide
+;;; SPDX-License-Identifier: MIT
+
 (cond-expand
   (guile
    (import (scheme base)
@@ -8,6 +11,7 @@
    (import (scheme base)
            (srfi 234)
            (srfi 1)
+           (srfi 11) ;; let-values
            (rename (except (chibi test) test-equal)
                    (test test-equal))))
   (chicken
@@ -31,6 +35,32 @@
                       (b d)
                       (c)
                       (d c))))
+
+;; details: multiple values
+(test-equal
+    '((a b d c) #f #f)
+  (let-values
+      (((v0 v1 v2)
+        (topological-sort/details '((a b c)
+                              (b d)
+                              (c)
+                              (d c)))))
+    (list v0 v1 v2)))
+
+;; cycle
+(test-equal
+    #f
+  (topological-sort '((a b)
+                      (b a))))
+
+;; cycle error details
+(test-equal
+    '(#f "graph has circular dependency" (a b))
+  (let-values
+      (((v0 v1 v2)
+        (topological-sort/details '((a b)
+                                    (b a)))))
+    (list v0 v1 v2)))
 
 (test-equal
     '("a" "b" "d" "c")

@@ -1,20 +1,22 @@
+;;; SPDX-FileCopyrightText: 2024 Shiro Kawai, John Cowan, Arne Babenhauserheide
+;;; SPDX-License-Identifier: MIT
+
 ;;; Code adapted from gauche https://github.com/shirok/Gauche/blob/master/lib/util/toposort.scm :
 ;;;
 ;;; srfi-234.scm - topological sorting
 ;;;
 ;;;  Written by Shiro Kawai (shiro@acm.org)  2001
-;;;  Public Domain..  I guess lots of Scheme programmers have already
-;;;  written similar code.
-;;;
+;;;             Arne Babenhauserheide        2023--2024
+;;;  Public Domain.
 
 (define-module srfi.234
-  (export topological-sort
-          edgelist->graph
-          edgelist/inverted->graph
-          graph->edgelist
-          graph->edgelist/inverted
-          connected-components))
+  (export topological-sort topological-sort/details
+          edgelist->graph edgelist/inverted->graph
+          graph->edgelist graph->edgelist/inverted
+          connected-components)
+  )
 (select-module srfi.234)
+
 
 (define topological-sort
   (case-lambda
@@ -22,7 +24,18 @@
     ((graph eq) (topological-sort-impl graph eq #f))
     ((graph eq nodes) (topological-sort-impl graph eq nodes))))
 
+(define topological-sort/details
+  (case-lambda
+    ((graph) (topological-sort-impl/details graph equal? #f))
+    ((graph eq) (topological-sort-impl/details graph eq #f))
+    ((graph eq nodes) (topological-sort-impl/details graph eq nodes))))
+
 (define (topological-sort-impl graph eq nodes)
+  (let-values (((v0 v1 v2)
+                (topological-sort-impl/details graph eq nodes)))
+    v0))
+
+(define (topological-sort-impl/details graph eq nodes)
   (define table (map (lambda (n)
                        (cons (car n) 0))
                      graph))
