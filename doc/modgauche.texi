@@ -7294,15 +7294,31 @@ console messages align nicely visually.)
 
 @defun cf-msg-checking fmt arg @dots{}
 @c MOD gauche.configure
+@c EN
 Writes out ``checking XXX...'' message.  The @var{fmt} and @var{arg} @dots{}
 arguments are passed to @code{format} to produce the ``XXX'' part
 (@pxref{Formatting output}).
+@c JP
+``checking XXX...'' というメッセージを出力します。@var{fmt}と@var{arg} @dots{}
+引数は@code{format}に渡されて、``XXX''の部分を生成します
+(@ref{Formatting output}参照)。
+@c COMMON
 
+@c EN
 For the current output port, this does not emit the trailing newline,
 expecting @code{cf-msg-result} will be called subsequently.
+@c JP
+現在の出力ポートに向けては、改行文字は出力されません。
+この後で@code{cf-msg-result}が呼ばれることを期待しているからです。
+@c COMMON
 
+@c EN
 Here's an excerpt of the source that uses @code{cf-msg-checking}
 and @code{cf-msg-result}:
+@c JP
+以下は、@code{cf-msg-checking}と@code{cf-msg-result}を使っているソースからの
+抜粋です。
+@c COMMON
 @example
 (define (compiler-can-produce-executable?)
   (cf-msg-checking "whether the ~a compiler works" (~ (cf-lang)'name))
@@ -7312,54 +7328,103 @@ and @code{cf-msg-result}:
     (cf-msg-result (if result "yes" "no"))))
 @end example
 
+@c EN
 This produces a console output like this:
+@c JP
+この例は、次のような出力を生成します:
+@c COMMON
 @example
 checking whether the C compiler works... yes
 @end example
+@c EN
 while the log file records more info:
+@c JP
+また、ログファイルに対しては次の情報が記録されます:
+@c COMMON
 @example
 checking: whether the C compiler works
+@c EN
 ... whatever logging message from run-compiler-with-content ...
+@c JP
+... run-compiler-with-contentのログ出力 ...
+@c COMMON
 result: yes
 @end example
 
+@c EN
 This corresponds to autoconf's @code{AC_MSG_CHECKING}.
+@c JP
+これはautoconfの@code{AC_MSG_CHECKING}に対応します。
+@c COMMON
 @end defun
 
 @defun cf-msg-result fmt arg @dots{}
 @c MOD gauche.configure
+@c EN
 The @var{fmt} and @var{arg} @dots{} are passed to @code{format}, and
 the formatted message and newline is written out
-(@pxref{Formatting output}).
+(@pxref{Formatting output}).  Typically, the message is simply
+``yes'' or ``no'', or the name (of a library, a header, etc.) that is found.
 For the log file, it records ``result: XXX'' where XXX is the
-formatted message.  Supposed to be used with @code{cf-msg-checking}.
-4
+formatted message.  Supposed to be used with @code{cf-msg-checking}; see the
+example of @code{cf-msg-checking} above.
 This corresponds to autoconf's @code{AC_MSG_RESULT}.
+@c JP
+@var{fmt}と@var{arg} @dots{}が@code{format}に渡され、フォーマット結果が出力されます。
+通常、メッセージは単なる ``yes'' / ``no'' か、見つかった(ライブラリやヘッダの)名前です。
+ログファイルに対しては、XXXをフォーマットされたメッセージとして、
+``result: XXX''という文字列が記録されます。
+@code{cf-msg-checking}と一緒に使うことを想定しています。
+上の@code{cf-msg-checking}の例を見てください。
+これはautoconfの@code{AC_MSG_RESULT}に対応します。
+
+@c COMMON
 @end defun
 
 @defun cf-msg-notice fmt arg @dots{}
 @c MOD gauche.configure
+@c EN
 Produces formatted message to both console and log.  Newline is added.
 This corresponds to autoconf's @code{AC_MSG_NOTICE}.
+@c JP
+フォーマットされたメッセージをコンソールとログファイルの両方に出力します。
+最後に改行文字が追加されます。これはautoconfの@code{AC_MSG_NOTICE}に対応します。
+@c COMMON
 @end defun
 
 @defun cf-msg-warn fmt arg @dots{}
 @defunx cf-msg-error fmt arg @dots{}
 @c MOD gauche.configure
+@c EN
 Produces ``Warning: XXX'' and
 ``Error: XXX'' messages, respectively.
 The @var{fmt} and @var{arg} @dots{} are passed to @code{format} to
 generate XXX part (@pxref{Formatting output}).
-Then, @code{cf-msg-error} exits with exit code 1.
 
+Additionally, @code{cf-msg-error} exits with exit code 1.
+@c JP
+それぞれ、``Warning: XXX'' および ``Error: XXX'' というメッセージを出力します。
+@var{fmt}と@var{arg} @dots{}は@code{format}に渡されて、
+XXXの部分の文字列を生成します (@ref{Formatting output}参照)。
+
+さらに、@code{cf-msg-error}は終了コード1でプロセスを終了します。
+@c COMMON
+
+@c EN
 These corresponds to
 autoconf's @code{AC_MSG_WARN} and @code{AC_MSG_ERROR}.
 NB: @code{AC_MSG_ERROR} can specify the exit code,
 but @code{cf-msg-error} uses fixed exit code (1) for now.
+@c JP
+これらは、autoconfの@code{AC_MSG_WARN}と@code{AC_MSG_ERROR}に相当します。
+註: @code{AC_MSG_ERROR}は終了コードが指定できますが、
+@code{cf-msg-error}は今の所1に固定です。
+@c COMMON
 @end defun
 
 @defun cf-echo arg @dots{} [> file][>> file]
 @c MOD gauche.configure
+@c EN
 Convenience routine to replace shell's @code{echo} command.
 
 If the argument list ends with @code{> @var{file}} or
@@ -7373,6 +7438,20 @@ If the argument list doesn't end with those redirection message,
 it writes out the argument to both the current output port
 and the log file, space separated, newline terminated.
 For the log file, the message is prefixed with ``Message:''.
+@c JP
+シェルの@code{echo}コマンドを置き換える便利手続きです。
+
+引数リストが@code{> @var{file}}もしくは@code{>> @var{file}}で終わっている場合
+(@var{file}はファイル名の文字列)、これはシェルの@code{echo}のように動作します。
+すなわち、その部分を除く@var{arg} @dots{}が空白文字を間に挟んで
+@var{file}に書き出されます。また最後に改行文字も書き出されます。
+@code{>}を使った場合は@var{file}は上書きされ、@code{>>}の場合は追記されます。
+
+引数リストが上記リダイレクト指示で終わっていない場合は、
+現在の出力ポートとログファイル両方に、@var{arg} @dots{}を空白文字を間に挟んで出力します。
+また最後に改行文字も書き出されます。ログファイルに向けては、メッセージの前に
+``Message:''が出力されます。
+@c COMMON
 @end defun
 
 @c EN
