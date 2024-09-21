@@ -7517,7 +7517,7 @@ Returns @code{#t} iff @var{symbol} is @code{cf-define}d.
 @c COMMON
 @end defun
 
-@defun cf-subst symbol value
+@defun cf-subst symbol :optional value
 @c MOD gauche.configure
 @c EN
 Registers a substitution parameter @var{symbol} with @var{value}.
@@ -7526,6 +7526,11 @@ is substituted with @var{value}.
 
 @var{Value} is usually a string, but can be any Scheme objects;
 its @code{display} representation.
+
+If @var{value} is @code{#f} or omitted, it works a bit differently.
+If @var{symbol} hasn't been registered as a substitution parameter,
+it is registered with an empty string as its value.  If @var{symbol} has
+already been registered, however, its value is left intact.
 @c JP
 置換パラメータ@var{symbol}を値@var{value}で定義します。
 出力ファイルを生成する時に、テンプレートの@var{@@symbol@@}が
@@ -7533,6 +7538,10 @@ its @code{display} representation.
 
 @var{value}は通常文字列ですが、任意のSchemeオブジェクトで構いません。
 @code{display}での印字表現が使われます。
+
+@var{value}が省略されるか@code{#f}の場合はちょっと違った動作になります。
+@var{symbol}がまだ置換パラメータとして登録されていない場合は、
+空文字列を値として置換パラメータを登録します。既に登録されていた場合は値をそのまま残します。
 @c COMMON
 
 @c EN
@@ -7630,14 +7639,24 @@ autoconfではこのパターンは、現在の置換パラメータを保存し
 
 @defun cf-have-subst? symbol
 @c MOD gauche.configure
-Returns true iff @code{symbol} is registered as a substitution parameter by
+@c EN
+Returns true iff @var{symbol} is registered as a substitution parameter by
 @code{cf-subst}.
+@c JP
+@var{symbol}が@code{cf-subst}で置換パラメータとして登録されていれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end defun
 
 @defun cf-arg-var symbol
 @c MOD gauche.configure
-Lookup the environment variable @code{symbol} and if it is found,
-use its value as the substitution value.  For example,
+@c EN
+Lookup the environment variable with the name @var{symbol} and if it is found,
+use its value as the substitution value.  If it is not found, and
+if @var{symbol} hasn't been already registered as a substitution parameter,
+register it with an empty string as its value; otherwise, do nothing.
+
+For example,
 if you call @code{(cf-arg-var 'MYCFLAGS)}, then the user
 can provide the value of @code{@@MYCFLAGS@@} as
 @code{MYCFLAGS=-g ./configure}.
@@ -7646,21 +7665,46 @@ This corresponds to autoconf's @code{AC_ARG_VAR}, but we lack the ability
 of setting the help string.  That's because @code{cf-arg-var} must
 be run after @code{cf-init}, but the help message is constructed
 within @code{cf-init}.
+@c JP
+名前@var{symbol}を持つ環境変数を探し、見つかればそれを置換パラメータ@var{symbol}の
+値とします。環境変数が見つからない場合、まだ@var{symbol}が置換パラメータとして登録されて
+いなければ、空文字列を値として登録します。そうでなければ何もしません。
+
+例えば、@code{(cf-arg-var 'MYCFLAGS)}を呼び出しておくと、
+ユーザは@code{@@MYCFLAGS@@}の置換を@code{MYCFLAGS=-g ./configure}のようにして
+与えることができます。
+
+これはautoconfの@code{AC_ARG_VAR}に相当します。
+ただし、autoconfと違ってヘルプ文字列を与えることはできません。
+@code{cf-arg-var}は@code{cf-init}より後に呼ばれねばならず、
+しかしヘルプ文字列は@code{cf-init}内で構築される必要があるからです。
+@c COMMON
 @end defun
 
 @defun cf-ref symbol :optional default
 @c MOD gauche.configure
+@c EN
 This looks up the value of the substitution parameter @var{symbol}.
 If there's no such substitution parameter registered,
 it returns @var{default} when it's provided, otherwise
 throws an error.
+@c JP
+置換パラメータ@var{symbol}の値を返します。該当する置換パラメータが登録されていない場合、
+@var{default}が与えられていればそれを返し、そうでなければエラーを投げます。
+@c COMMON
 @end defun
 
 @defun cf$ symbol
 @c MOD gauche.configure
+@c EN
 Looks up the value of the substitution parameter @var{cf-ref},
 but it returns empty string if it's unregistered.  Useful
 to use within string interpolation, e.g. @code{#"gosh ~(cf$'GOSHFLAGS)"}.
+@c JP
+@code{cf-ref}と同じように置換パラメータ@var{symbol}の値を返しますが、
+該当する置換パラメータが登録されていない場合は空文字列を返します。
+文字列補間の中で@code{#"gosh ~(cf$'GOSHFLAGS)"}のように使えるので便利です。
+@c COMMON
 @end defun
 
 @c EN
