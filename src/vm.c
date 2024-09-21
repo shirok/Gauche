@@ -89,8 +89,7 @@ struct ScmContinuationPromptRec {
 /* bitflags for ScmContFrame->marker */
 enum {
       SCM_CONT_SHIFT_MARKER = (1L<<0),
-      SCM_CONT_RESET_MARKER = (1L<<1),
-      SCM_CONT_DYNWIND_MARKER = (1L<<2),
+      SCM_CONT_RESET_MARKER = (1L<<1)
 };
 
 static void push_prompt_cont(ScmVM*, ScmObj, ScmObj);
@@ -101,10 +100,6 @@ static void push_boundary_cont(ScmVM*, ScmObj, ScmObj);
 
 /* return true if cont has the end marker of partial continuation */
 #define MARKER_FRAME_P(cont)   ((cont)->marker & SCM_CONT_SHIFT_MARKER)
-
-/* return true if cont is of dynamic-wind body */
-#define DYNWIND_FRAME_P(cont)  ((cont)->marker & SCM_CONT_DYNWIND_MARKER)
-
 
 /* A stub VM code to make VM return immediately */
 static ScmWord return_code[] = { SCM_VM_INSN(SCM_VM_RET) };
@@ -1932,9 +1927,7 @@ ScmObj *Scm_pc_PushCC(ScmVM *vm, ScmPContinuationProc *after, int datasize)
 static ScmObj *push_dynamic_handler_cc(ScmVM *vm, ScmPContinuationProc *after,
                                        ScmObj dh, int datasize)
 {
-    ScmObj *data = new_ccont(vm, after, (ScmWord*)dh, datasize);
-    CONT->marker |= SCM_CONT_DYNWIND_MARKER;
-    return data;
+    return new_ccont(vm, after, (ScmWord*)dh, datasize);
 }
 
 /*

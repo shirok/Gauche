@@ -158,7 +158,7 @@ SCM_EXTERN ScmObj Scm_ContinuationMarkSetToList(const ScmContinuationMarkSet *,
  *
  *   |  base   |
  *   |   pc    |  <-- PCont procedure
- *   |  cpc    |  <-- CCont procedure, NULL, or #<dynamic-handler>
+ *   |  cpc    |  <-- CCont procedure or NULL
  *   | marker  |
  *   | size=N  |
  *   |  denv   |
