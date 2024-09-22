@@ -13,7 +13,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 # (This may be useful for "prerelease", such as 0.99.x as pre-1.0)
 GAUCHE_ABI_VERSION=0.98
 
-# SNAPSHOT_ID is a string uniquely identifies snapshot tarballs that shares
+# SNAPSHOT_ID is a string uniquely identifies a snapshot tarball that shares
 # the same version string.  It is not included in (gauche-version), but
 # in GAUCHE_SIGNATURE and shown in the output of 'gosh -V'.
 #
