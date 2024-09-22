@@ -14,13 +14,13 @@
 dnl Process this file with autoconf to produce configure.
 
 dnl Initialization.
-AC_INIT(gc,8.2.8,https://github.com/ivmai/bdwgc/issues)
+AC_INIT([gc],[8.2.8],[https://github.com/ivmai/bdwgc/issues])
 dnl Version must conform to: [0-9]+[.][0-9]+[.][0-9]+
 
 AC_CONFIG_SRCDIR(gcj_mlc.c)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_TARGET
-AC_PREREQ(2.61)
+AC_PREREQ([2.71])
 GC_SET_VERSION
 AM_INIT_AUTOMAKE([foreign nostdinc subdir-objects])
 AC_CONFIG_HEADERS([include/config.h])
@@ -37,7 +37,7 @@ LT_INIT([disable-static])
 # Only the shared libraries are produced by default, use "--enable-static"
 # option to override it.
 dnl Note: If Autoconf reports that LIBTOOL (or AC_ENABLE_SHARED, or
-dnl AC_PROG_LIBTOOL) is undefined, Libtool installation should be checked.
+dnl LT_INIT) is undefined, Libtool installation should be checked.
 
 # Special CFLAGS to use when building
 gc_cflags=""
@@ -392,15 +392,15 @@ if test "$GCC" = yes; then
   AC_MSG_CHECKING([whether compiler supports -Wextra])
   old_CFLAGS="$CFLAGS"
   CFLAGS="-Wextra $CFLAGS"
-  AC_TRY_COMPILE([],[], [ac_cv_cc_wextra=yes], [ac_cv_cc_wextra=no])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[ac_cv_cc_wextra=yes],[ac_cv_cc_wextra=no])
   CFLAGS="$old_CFLAGS"
   AC_MSG_RESULT($ac_cv_cc_wextra)
   AS_IF([test "$ac_cv_cc_wextra" = yes], [WEXTRA="-Wextra"], [WEXTRA="-W"])
   AC_MSG_CHECKING([whether compiler supports -Wpedantic])
   CFLAGS="-Wpedantic -Wno-long-long $CFLAGS"
-  AC_TRY_COMPILE([],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
     extern int quiet;
-  ], [ac_cv_cc_pedantic=yes], [ac_cv_cc_pedantic=no])
+  ]])],[ac_cv_cc_pedantic=yes],[ac_cv_cc_pedantic=no])
   CFLAGS="$old_CFLAGS"
   AC_MSG_RESULT($ac_cv_cc_pedantic)
   WPEDANTIC=
@@ -411,11 +411,11 @@ if test "$GCC" = yes; then
 fi
 
 AC_MSG_CHECKING(for xlc)
-AC_TRY_COMPILE([],[
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
  #ifndef __xlC__
  # error
  #endif
-], [compiler_xlc=yes], [compiler_xlc=no])
+]])],[compiler_xlc=yes],[compiler_xlc=no])
 AC_MSG_RESULT($compiler_xlc)
 if test $compiler_xlc = yes -a "$powerpc_darwin" = true; then
   # the darwin stack-frame-walking code is completely broken on xlc
@@ -443,7 +443,7 @@ if test "$GCC" = yes; then
   if test "$ac_cv_fno_strict_aliasing" != skipped; then
     old_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS -fno-strict-aliasing"
-    AC_TRY_COMPILE([],[], [ac_cv_fno_strict_aliasing=yes], [])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[ac_cv_fno_strict_aliasing=yes],[])
     CFLAGS="$old_CFLAGS"
     AS_IF([test "$ac_cv_fno_strict_aliasing" = yes],
           [CFLAGS="$CFLAGS -fno-strict-aliasing"], [])
@@ -575,8 +575,7 @@ if test "${enable_shared}" != no -a "${enable_static}" != yes; then
       AC_MSG_CHECKING([whether compiler supports -fvisibility])
       old_CFLAGS="$CFLAGS"
       CFLAGS="-Werror -fvisibility=hidden $CFLAGS"
-      AC_TRY_COMPILE([],[], [ac_cv_fvisibility_hidden=yes],
-                     [ac_cv_fvisibility_hidden=no])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[ac_cv_fvisibility_hidden=yes],[ac_cv_fvisibility_hidden=no])
       CFLAGS="$old_CFLAGS"
       AS_IF([test "$ac_cv_fvisibility_hidden" = yes],
             [CFLAGS="-DGC_VISIBILITY_HIDDEN_SET -fvisibility=hidden $CFLAGS"],
@@ -641,7 +640,7 @@ addobjs="$addobjs $machdep"
 AC_SUBST(addobjs)
 AC_SUBST(addlibs)
 
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Suppress "extension used" clang warning (when compiling .S files).
 if test x$compile_asm = xtrue -a "$GCC" = yes; then
@@ -797,9 +796,9 @@ AC_MSG_CHECKING([whether -Wno-frame-address works])
 use_wno_error_frame_address=no
 old_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -Werror -Wno-frame-address $CFLAGS_EXTRA"
-AC_TRY_COMPILE([], [{
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[{
     if (!__builtin_return_address(1)) return 1;
-}], [ use_wno_error_frame_address=yes ])
+}]])],[ use_wno_error_frame_address=yes ],[])
 CFLAGS="$old_CFLAGS"
 AC_MSG_RESULT($use_wno_error_frame_address)
 if test x"$use_wno_error_frame_address" = xyes; then
@@ -811,12 +810,12 @@ AC_MSG_CHECKING(for dladdr)
 have_dladdr=no
 old_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $CFLAGS_EXTRA"
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #define _GNU_SOURCE 1
-#include <dlfcn.h>], [{
+#include <dlfcn.h>]], [[{
     Dl_info info;
     (void)dladdr("", &info);
-}], [ have_dladdr=yes ])
+}]])],[ have_dladdr=yes ],[])
 CFLAGS="$old_CFLAGS"
 AC_MSG_RESULT($have_dladdr)
 if test x"$have_dladdr" = xyes; then
@@ -827,10 +826,7 @@ fi
 AC_MSG_CHECKING(for sigsetjmp)
 old_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $CFLAGS_EXTRA"
-AC_TRY_LINK([#include <setjmp.h>],
-            [sigjmp_buf t; sigsetjmp(t, 0)],
-  [AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <setjmp.h>]], [[sigjmp_buf t; sigsetjmp(t, 0)]])],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
    AC_DEFINE([GC_NO_SIGSETJMP], [1], [Missing sigsetjmp function.])])
 CFLAGS="$old_CFLAGS"
 
@@ -839,30 +835,24 @@ AS_IF([test "$THREADS" = posix],
   [AC_MSG_CHECKING(for pthread_setname_np)
    old_CFLAGS="$CFLAGS"
    CFLAGS="$CFLAGS $CFLAGS_EXTRA -Werror"
-   AC_TRY_COMPILE([
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #         define _GNU_SOURCE 1
 #         include <pthread.h>
-        ], [pthread_setname_np("thread-name")],
-     [AC_MSG_RESULT([yes (w/o tid)])
+        ]], [[pthread_setname_np("thread-name")]])],[AC_MSG_RESULT([yes (w/o tid)])
       AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID], [1],
-                [Define to use 'pthread_setname_np(const char*)' function.])],
-     [AC_TRY_COMPILE([
+                [Define to use 'pthread_setname_np(const char*)' function.])],[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #         define _GNU_SOURCE 1
 #         include <pthread.h>
-        ], [pthread_setname_np(pthread_self(), "thread-name-%u", 0)],
-       [AC_MSG_RESULT([yes (with tid and arg)])
+        ]], [[pthread_setname_np(pthread_self(), "thread-name-%u", 0)]])],[AC_MSG_RESULT([yes (with tid and arg)])
         AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITH_TID_AND_ARG], [1],
          [Define to use 'pthread_setname_np(pthread_t, const char*, void *)'
-          function.])],
-       [AC_TRY_COMPILE([
+          function.])],[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #             define _GNU_SOURCE 1
 #             include <pthread.h>
-            ], [pthread_setname_np(pthread_self(), "thread-name")],
-         [AC_MSG_RESULT([yes (with tid)])
+            ]], [[pthread_setname_np(pthread_self(), "thread-name")]])],[AC_MSG_RESULT([yes (with tid)])
           AC_DEFINE([HAVE_PTHREAD_SETNAME_NP_WITH_TID], [1],
                     [Define to use 'pthread_setname_np(pthread_t, const char*)'
-                     function.])],
-         [AC_MSG_RESULT(no)])])])
+                     function.])],[AC_MSG_RESULT(no)])])])
    CFLAGS="$old_CFLAGS"])
 
 # Check for AViiON Machines running DGUX
@@ -1086,10 +1076,8 @@ if test x"$with_libatomic_ops" = xcheck; then
   old_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $CFLAGS_EXTRA -DGC_BUILTIN_ATOMIC"
   CFLAGS="$CFLAGS -I${srcdir}/include -I${srcdir}/tests"
-  AC_TRY_RUN([#include "test_atomic_ops.c"],
-    [AC_MSG_RESULT(yes)
-     with_libatomic_ops=none],
-    [AC_MSG_RESULT(no)], [AC_MSG_RESULT(skipped because cross-compiling)])
+  AC_RUN_IFELSE([AC_LANG_SOURCE([[#include "test_atomic_ops.c"]])],[AC_MSG_RESULT(yes)
+     with_libatomic_ops=none],[AC_MSG_RESULT(no)],[AC_MSG_RESULT(skipped because cross-compiling)])
   CFLAGS="$old_CFLAGS"
 fi
 
@@ -1156,20 +1144,14 @@ AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
     [ old_CFLAGS="$CFLAGS"
       CFLAGS="$CFLAGS $AO_TRYLINK_CFLAGS $CFLAGS_EXTRA"
       AC_MSG_CHECKING([for lock-free AO_or primitive])
-      AC_TRY_LINK([#include "atomic_ops.h"],
-                  [AO_t x=0;AO_or(&x,1)],
-        [ AC_MSG_RESULT(yes)
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "atomic_ops.h"]], [[AO_t x=0;AO_or(&x,1)]])],[ AC_MSG_RESULT(yes)
           AC_DEFINE([HAVE_LOCKFREE_AO_OR], [1],
-            [libatomic_ops AO_or primitive implementation is lock-free.]) ],
-        [ AC_MSG_RESULT(no) ])
+            [libatomic_ops AO_or primitive implementation is lock-free.]) ],[ AC_MSG_RESULT(no) ])
       AC_MSG_CHECKING([for lock-free AO load/store, test-and-set primitives])
-      AC_TRY_LINK([#include "atomic_ops.h"],
- [AO_t x=0;unsigned char c=0;AO_TS_t z=AO_TS_INITIALIZER;
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include "atomic_ops.h"]], [[AO_t x=0;unsigned char c=0;AO_TS_t z=AO_TS_INITIALIZER;
   (void)AO_test_and_set_acquire(&z);AO_CLEAR(&z);AO_compiler_barrier();
   AO_store(&x,AO_load(&x)+1);AO_char_store(&c,AO_char_load(&c)+1);
-  AO_store_release(&x,AO_load_acquire(&x)+1)],
-        [ AC_MSG_RESULT(yes) ],
-        [ AC_MSG_RESULT(no)
+  AO_store_release(&x,AO_load_acquire(&x)+1)]])],[ AC_MSG_RESULT(yes) ],[ AC_MSG_RESULT(no)
           use_thread_local_alloc=no
           AC_DEFINE([BASE_ATOMIC_OPS_EMULATED], [1],
                     [AO load, store and/or test-and-set primitives are
@@ -1177,12 +1159,8 @@ AS_IF([test x$with_libatomic_ops != xnone -a x$need_atomic_ops_asm != xtrue],
       AS_IF([test x$use_parallel_mark != xno],
         [ AC_MSG_CHECKING(
                 [for lock-free compare-and-swap and fetch-and-add primitives])
-          AC_TRY_LINK(
- [#define AO_REQUIRE_CAS
-  #include "atomic_ops.h"],
- [AO_t x=0;(void)AO_fetch_and_add(&x,1);(void)AO_compare_and_swap(&x,1,2)],
-                    [ AC_MSG_RESULT(yes) ],
-                    [ AC_MSG_RESULT(no)
+          AC_LINK_IFELSE([AC_LANG_PROGRAM([[#define AO_REQUIRE_CAS
+  #include "atomic_ops.h"]], [[AO_t x=0;(void)AO_fetch_and_add(&x,1);(void)AO_compare_and_swap(&x,1,2)]])],[ AC_MSG_RESULT(yes) ],[ AC_MSG_RESULT(no)
                       use_parallel_mark=no ]) ])
       CFLAGS="$old_CFLAGS" ])
 
