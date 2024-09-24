@@ -1,0 +1,58 @@
+# Use of bdwgc in Gauche
+
+Gauche adopts link:https://github.com/ivmai/bdwgc[Boehm-Demers-Weiser GC (bdwgc)].
+We have a copy of source tree and build it as a part of `libgauche`,
+instead of linking it as an external library.
+
+## Why don't we just link an external `libgc`?
+
+Bdwgc has several compile-time configuration options, and Gauche needs
+them to be set in specific way.  Separately compiled `libgc` may not
+be compiled with the same configuration.
+
+Some package creator may not like this for security reasons.  If a serious
+security vulnerability is found in bdwgc, they want to distribute updates
+for `libgc` only and expect the issue to be addressed.  If Gauche has
+an embedded bdwgc, the security update must be created separately for Gauche.
+
+It is a difficult issue, for using `libgc` compiled with different
+configuration may cause serious performance degradation, or even crashes.
+An idea is to check the system `libgc` configuration at Gauche's `configure`
+and use the system's whenever possible.
+
+
+## How is `gc/` configured?
+
+We take advantage of autoconf's `configure.gnu` hook.
+Autoconf-generated `configure` script runs `configure.gnu` script if
+there exists one.
+
+When you run the toplevel `configure`, it recurse down to `gc/configure`.
+We install a tailored `gc/configure.gnu`, which invokes a script
+`gc/configure.gnu-gauche`.  It is a wrapper to call `gc/configure`
+with tailored configuration options.
+
+The sources of `gc/configure.gnu` and `gc/configure.gnu-gauche` are
+under `tools/` directory.  The former is copied to `gc/` by
+'./DIST gen` script.  The latter is processed in the toplevel `configure`
+script to produce `gc/configure.gnu-gauche`.  With this mechanism,
+we don't need to modify GC source tree when it is updated to the
+newer releases.
+
+
+## How to update `gc/` source tree
+
+When a new version of bdwgc is released, you can just remove `gc/` and
+replace the source tree with the new one.
+
+However, the current bdwgc uses some depracated autoconf macros (as of
+8.2.8, it has `AC_PREREQ(2.61)`, which is pretty old.), and you sees
+a bunch of warnings.
+
+Gauche already requires autoconf 2.71 or later, so there's no reason to
+keep `gc/configure.ac` compatible with older autotools.
+
+You can update `gc/configure.ac` with `autoreconf`, but there's a caveat.
+It doesn't handle nested `AC_TRY_COMPLE`/`AC_TRY_LINK`, and produces
+soem artifacts.  You need to manually edit it and repeat `autoreconf` until
+all the nested old macros are processed.
