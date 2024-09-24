@@ -7,10 +7,10 @@ instead of linking it as an external library.
 ## Why don't we just link an external `libgc`?
 
 Bdwgc has several compile-time configuration options, and Gauche needs
-them to be set in specific way.  Separately compiled `libgc` may not
-be compiled with the same configuration.
+them to be set in a specific way.  Separately compiled `libgc` may not have
+been compiled with the same configuration.
 
-Some package creator may not like this for security reasons.  If a serious
+Some package maintainers may not like this for security reasons.  If a serious
 security vulnerability is found in bdwgc, they want to distribute updates
 for `libgc` only and expect the issue to be addressed.  If Gauche has
 an embedded bdwgc, the security update must be created separately for Gauche.
@@ -34,7 +34,7 @@ with tailored configuration options.
 
 The sources of `gc/configure.gnu` and `gc/configure.gnu-gauche` are
 under `tools/` directory.  The former is copied to `gc/` by
-'./DIST gen` script.  The latter is processed in the toplevel `configure`
+`./DIST gen` script.  The latter is processed in the toplevel `configure`
 script to produce `gc/configure.gnu-gauche`.  With this mechanism,
 we don't need to modify GC source tree when it is updated to the
 newer releases.
@@ -45,8 +45,8 @@ newer releases.
 When a new version of bdwgc is released, you can just remove `gc/` and
 replace the source tree with the new one.
 
-However, the current bdwgc uses some depracated autoconf macros (as of
-8.2.8, it has `AC_PREREQ(2.61)`, which is pretty old.), and you sees
+However, the current bdwgc uses some deprecated autoconf macros (as of
+8.2.8, it has `AC_PREREQ(2.61)`, which is pretty old.), and you see
 a bunch of warnings.
 
 Gauche already requires autoconf 2.71 or later, so there's no reason to
