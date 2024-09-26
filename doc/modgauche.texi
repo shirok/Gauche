@@ -18339,11 +18339,11 @@ two procedures from @code{gauche.process}.
 @c NODE サブプロセスの実行
 
 @defun do-process cmd/args :key redirects input output error @
-                   fork directory host sigmask on-abnormal-exit
+                   fork environment directory host sigmask on-abnormal-exit
 @defunx do-process! cmd/args :key redirects input output error @
-                    fork directory host sigmask
+                    fork environment directory host sigmask
 @defunx run-process cmd/args :key redirects input output error @
-                   fork directory host sigmask wait
+                   fork environment directory host sigmask wait
 @c MOD gauche.process
 @c EN
 Runs a command with arguments given to @var{cmd/args} in a subprocess.
@@ -19067,6 +19067,27 @@ of the argument values.
 @c JP
 @subsubheading 実行環境
 @c COMMON
+
+@deftp {Subprocess argument} environment @var{env-list}
+@c EN
+The argument must be @code{#f} (default) or a list of strings,
+each of which has the form @code{@var{NAME}=@var{VALUE}}.
+If it is @code{#f}, the subprocess inherits the same environment
+variables as the current process.  If it is a list of strings,
+it specifies the environment variables the subprocess sees.
+The form is the same as what @code{sys-environ} returns, so you
+can easily add to/remove from the current environment
+(@pxref{Environment inquiry}).
+@c JP
+引数は@code{#f}(デフォルト)もしくは文字列のリストでなければなりません。
+文字列のリストの場合、各文字列は@code{@var{NAME}=@var{VALUE}}という形式でなければなりません。
+これが@code{#f}の場合、子プロセスは現在のプロセスの環境変数を引き継ぎます。
+文字列のリストの場合であれば、それが子プロセスの環境変数を指定します。
+この形式は@code{sys-environ}が返すものと同じなので、
+容易に現在の環境変数に環境変数を加えたり取り除いたりすることができます
+(@ref{Environment inquiry}参照)。
+@c COMMON
+@end deftp
 
 @deftp {Subprocess argument} directory @var{directory}
 @c EN
