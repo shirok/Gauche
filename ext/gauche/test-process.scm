@@ -20,7 +20,8 @@
     (write '(define (main args)
               (cond [(equal? (cadr args) "cat")  (cat (cddr args))]
                     [(equal? (cadr args) "ls")   (ls (cddr args))]
-                    [(equal? (cadr args) "grep") (grep (cddr args))])))
+                    [(equal? (cadr args) "grep") (grep (cddr args))]
+                    [(equal? (cadr args) "env")  (env (cddr args))])))
     (write '(define (cat args)
               (guard (e [else
                          (format (current-error-port) "~a~%" (ref e'message))
@@ -59,6 +60,9 @@
                     (with-input-from-file f
                       (cut grep-1 read-line))))
                 hit)))
+    (write '(define (env args)
+              (for-each print (sys-environ))
+              0))
     ))
 
 ;; shorthand of normalizing pathname.  this doesn't do anything on
@@ -200,6 +204,22 @@
               )
          (equal? s s1)))
 
+(test* "run-process (environment)" '()
+       (let* ((p  (run-process (cmd "env") :output :pipe
+                               :environment '()))
+              (in (process-output p))
+              (s  (port->string-list in))
+              (x  (process-wait p)))
+         s))
+
+(test* "run-process (environment)" '("FOO=BAR")
+       (let* ((p  (run-process (cmd "env") :output :pipe
+                               :environment '("FOO=BAR")))
+              (in (process-output p))
+              (s  (port->string-list in))
+              (x  (process-wait p)))
+         s))
+
 (test* "do-process :on-abnormal-exit #f" #f
        (do-process (cmd "cat" "NoSuchFile") :output :null :error :null))
 (test* "do-process :on-abnormal-exit #f" #t
@@ -300,6 +320,14 @@
            (display "banana\nhabana\ntabata\ncabara\n"
                     (process-input p))
            (close-port (process-input p))
+           (process-wait p)
+           (port->string (process-output p))))
+
+  (test* "pipelining +environment" "FOO=BAR\n"
+         (let1 p (run-pipeline `(,(cmd "env")
+                                 ,(cmd "grep" "^FOO="))
+                               :input :pipe :output :pipe
+                               :environment (cons "FOO=BAR" (sys-environ)))
            (process-wait p)
            (port->string (process-output p))))
   )

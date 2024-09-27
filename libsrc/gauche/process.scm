@@ -587,7 +587,7 @@
                       `(,cmdline :input ,in :output ,out :error ,error
                                  :sigmask ,sigmask
                                  :directory ,directory :detached ,detached
-                                 :environment environment))
+                                 :environment ,environment))
                     commands
                     (cons input (map car pipe-pairs))
                     (fold-right cons (list output) (map cdr pipe-pairs)))]
