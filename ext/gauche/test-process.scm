@@ -204,21 +204,29 @@
               )
          (equal? s s1)))
 
-(test* "run-process (environment)" '()
+(cond-expand
+ [gauche.os.windows
+  ;; TRANSIENT: Remove this cond-expand once we implement :environment
+  ;; on windows.
+  ]
+ [else
+  ;; Quirk: OSX adds __CF_USER_TEXT_ENCODING env var unconditionally.
+  (test* "run-process (environment)" '()
        (let* ((p  (run-process (cmd "env") :output :pipe
                                :environment '()))
               (in (process-output p))
               (s  (port->string-list in))
               (x  (process-wait p)))
-         s))
+         (remove #/^__CF_USER_TEXT_ENCODING=/ s)))
 
-(test* "run-process (environment)" '("FOO=BAR")
-       (let* ((p  (run-process (cmd "env") :output :pipe
-                               :environment '("FOO=BAR")))
-              (in (process-output p))
-              (s  (port->string-list in))
-              (x  (process-wait p)))
-         s))
+  (test* "run-process (environment)" '("FOO=BAR")
+         (let* ((p  (run-process (cmd "env") :output :pipe
+                                 :environment '("FOO=BAR")))
+                (in (process-output p))
+                (s  (port->string-list in))
+                (x  (process-wait p)))
+         (remove #/^__CF_USER_TEXT_ENCODING=/ s)))
+  ])
 
 (test* "do-process :on-abnormal-exit #f" #f
        (do-process (cmd "cat" "NoSuchFile") :output :null :error :null))
