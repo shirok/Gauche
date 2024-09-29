@@ -331,13 +331,20 @@
            (process-wait p)
            (port->string (process-output p))))
 
-  (test* "pipelining +environment" "FOO=BAR\n"
-         (let1 p (run-pipeline `(,(cmd "env")
-                                 ,(cmd "grep" "^FOO="))
-                               :input :pipe :output :pipe
-                               :environment (cons "FOO=BAR" (sys-environ)))
-           (process-wait p)
-           (port->string (process-output p))))
+  (cond-expand
+   [gauche.os.windows
+    ;; TRANSIENT: Remove this cond-expand once we implement :environment
+    ;; on windows.
+    ]
+   [else
+    (test* "pipelining +environment" "FOO=BAR\n"
+           (let1 p (run-pipeline `(,(cmd "env")
+                                   ,(cmd "grep" "^FOO="))
+                                 :input :pipe :output :pipe
+                                 :environment (cons "FOO=BAR" (sys-environ)))
+             (process-wait p)
+             (port->string (process-output p))))
+    ])
   )
 
 ;;-------------------------------
