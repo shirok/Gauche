@@ -1,3 +1,9 @@
+2024-09-29  Shiro Kawai  <shiro@acm.org>
+
+	* src/srfis.scm: Support srfi-234 officially.
+	* lib/util/toposort.scm: Implement on top of srfi-234; this module
+	  is for the backward compatibility.
+
 2024-09-17  Shiro Kawai  <shiro@acm.org>
 
 	* libsrc/gauche/process.scm: Support :envioronment keyword arg.

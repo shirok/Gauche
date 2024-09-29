@@ -1,10 +1,22 @@
 ;;;
 ;;; toposort.scm - topological sorting
 ;;;
-;;;  Written by Shiro Kawai (shiro@acm.org)  2001
-;;;  Public Domain..  I guess lots of Scheme programmers have already
-;;;  written similar code.
+;;;  The original code was enhanced and became srfi-234.  We keep this
+;;;  as an adapter to srfi-234 for the backward compatibility.
+;;;  Since the srfi-234 reference implementation refers to this file,
+;;;  we keep the original code below, within the block comment.
 ;;;
+
+(define-module util.toposort
+  (use srfi.234 :rename ((topological-sort srfi-234:topological-sort)))
+  (export topological-sort))
+(select-module util.toposort)
+
+(define (topological-sort nodes :optional (eq eqv?))
+  (or (srfi-234:topological-sort nodes eq)
+      (error "graph has circular dependency")))
+
+#|
 
 ;; The algorithm is loosely based on Algorithm T in TAOCP section 2.2.3.
 
@@ -53,3 +65,5 @@
     (unless (null? rest)
       (error "graph has circular dependency" (map car rest))))
   (reverse result))
+
+|#
