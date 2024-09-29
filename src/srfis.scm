@@ -1658,6 +1658,16 @@ Supported by the module @code{srfi.232}
 (@ref{Flexible curried procedures}参照)。
 
 
+srfi-234, srfi-234
+()
+
+Topological sorting
+Supported by the module @code{srfi.234}
+
+トポロジカルソート
+@code{srfi.234}でサポートされます。
+
+
 srfi-235, srfi-235
 ()
 

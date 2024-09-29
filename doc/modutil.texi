@@ -99,7 +99,7 @@
 * Relation framework::          util.relation
 * Stream library::              util.stream
 * Temporal relation::           util.temporal-relation
-* Topological sort::            util.toposort
+* Topological sort (legacy)::   util.toposort
 * Unification::                 util.unification
 * CGI utility::                 www.cgi
 * CGI testing::                 www.cgi.test
@@ -37516,7 +37516,7 @@ of characters.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Temporal relation, Topological sort, Stream library, Library modules - Utilities
+@node Temporal relation, Topological sort (legacy), Stream library, Library modules - Utilities
 @section @code{util.temporal-relation} - Temporal relation
 @c NODE 時間的関係, @code{util.temporal-relation} - 時間的関係
 
@@ -37753,9 +37753,9 @@ The possible relations are a subset of interval-interval relations:
 
 
 @c ----------------------------------------------------------------------
-@node Topological sort, Unification, Temporal relation, Library modules - Utilities
+@node Topological sort (legacy), Unification, Temporal relation, Library modules - Utilities
 @section @code{util.toposort} - Topological sort
-@c NODE トポロジカルソート, @code{util.toposort} - トポロジカルソート
+@c NODE トポロジカルソート(レガシー), @code{util.toposort} - トポロジカルソート
 
 @deftp {Module} util.toposort
 @mdindex util.toposort
@@ -37763,6 +37763,14 @@ The possible relations are a subset of interval-interval relations:
 Implements topological sort algorithm.
 @c JP
 トポロジカルソートのアルゴリズムを実装します。
+@c COMMON
+
+@c EN
+SRFI-234 now defines a superset of the functionalities this module provides.
+New code should use it instead of this module.
+@c JP
+今では、SRFI-234がこのモジュールの上位互換の機能を提供しています。
+新しいコードはSRFI-234を使ってください。
 @c COMMON
 @end deftp
 
@@ -37798,7 +37806,7 @@ If the graph contains circular reference, an error is signaled.
 @end defun
 
 @c ----------------------------------------------------------------------
-@node Unification, CGI utility, Topological sort, Library modules - Utilities
+@node Unification, CGI utility, Topological sort (legacy), Library modules - Utilities
 @section @code{util.unification} - Unification
 @c NODE ユニフィケーション, @code{util.unification} - ユニフィケーション
 
