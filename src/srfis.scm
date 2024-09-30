@@ -1663,9 +1663,11 @@ srfi-234, srfi-234
 
 Topological sorting
 Supported by the module @code{srfi.234}
+(@pxref{Topological sorting}).
 
 トポロジカルソート
-@code{srfi.234}でサポートされます。
+@code{srfi.234}でサポートされます
+(@ref{Topological sorting}参照)。
 
 
 srfi-235, srfi-235

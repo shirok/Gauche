@@ -37767,9 +37767,10 @@ Implements topological sort algorithm.
 
 @c EN
 SRFI-234 now defines a superset of the functionalities this module provides.
-New code should use it instead of this module.
+New code should use it instead of this module (@pxref{Topological sorting}).
 @c JP
-今では、SRFI-234がこのモジュールの上位互換の機能を提供しています。
+今では、SRFI-234がこのモジュールの上位互換の機能を提供しています
+(@ref{Topological sorting}参照)。
 新しいコードはSRFI-234を使ってください。
 @c COMMON
 @end deftp

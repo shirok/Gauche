@@ -102,6 +102,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Composing comparators::       srfi.228
 * Tagged procedures::           srfi.229
 * Flexible curried procedures::  srfi.232
+* Topological sorting::         srfi.234
 * Combinators (SRFI)::          srfi.235
 * Codesets::                    srfi.238
 * Destructuring lists::         srfi.239
@@ -16020,7 +16021,7 @@ is signaled.
 
 
 @c ----------------------------------------------------------------------
-@node Flexible curried procedures, Combinators (SRFI), Tagged procedures, Library modules - SRFIs
+@node Flexible curried procedures, Topological sorting, Tagged procedures, Library modules - SRFIs
 @section @code{srfi.232} - Flexible curried procedures
 @c NODE 柔軟なカリー化された手続き, @code{srfi.232} - 柔軟なカリー化された手続き
 
@@ -16194,7 +16195,58 @@ A shorthand of @code{(define name (curried formals body @dots{}))}.
 @end defmac
 
 @c ----------------------------------------------------------------------
-@node Combinators (SRFI), Codesets, Flexible curried procedures, Library modules - SRFIs
+@node Topological sorting, Combinators (SRFI), Flexible curried procedures, Library modules - SRFIs
+@section @code{srfi.234} - Topological sorting
+@c NODE トポロジカルソート, @code{srfi.234} - トポロジカルソート
+
+@deftp {Module} srfi.234
+@mdindex srfi.234
+This module implements topological sort algorithm.
+
+The SRFI is an enhancement of Gauche's @code{util.toposort} module
+(@pxref{Topological sort (legacy)}).
+As this SRFI is finalized, we encourage new code to use this for
+richer features and portability.  Original @code{util.toposort} has
+become a thin wrapper of this module.
+@end deftp
+
+@defun topological-sort graph :optional eq node-array
+[SRFI-234]
+@c MOD srfi.234
+@end defun
+
+@defun topological-sort/details graph :optional eq node-array
+[SRFI-234]
+@c MOD srfi.234
+@end defun
+
+@defun edgelist->graph edgelist :optional retriever
+[SRFI-234]
+@c MOD srfi.234
+@end defun
+
+@defun edgelist/inverted->graph edgelist :optional retriever
+[SRFI-234]
+@c MOD srfi.234
+@end defun
+
+@defun graph->edgelist graph
+[SRFI-234]
+@c MOD srfi.234
+@end defun
+
+@defun graph->edgelist/inverted graph
+[SRFI-234]
+@c MOD srfi.234
+@end defun
+
+@defun connected-components graph
+[SRFI-234]
+@c MOD srfi.234
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Combinators (SRFI), Codesets, Topological sorting, Library modules - SRFIs
 @section @code{srfi.235} - Combinators (SRFI)
 @c NODE コンビネータ (SRFI), @code{srfi.235} - コンビネータ (SRFI)
 
