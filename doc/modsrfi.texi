@@ -16213,11 +16213,55 @@ become a thin wrapper of this module.
 @defun topological-sort graph :optional eq node-array
 [SRFI-234]
 @c MOD srfi.234
+Returns a list of node, ordered to satisfy the dependency graph
+represented by @var{graph}.
+
+@var{Graph} represents a directed acyclic graph (DAG) by a list
+of connections, where each connection is the form
+@example
+(<node> <downstream> <downstream2> ...)
+@end example
+that means a node @code{<node>} is connected to other nodes
+@code{<downstream>} etc.   @code{<node>} can be arbitrary
+object.  Their equality is compared by a procedure @var{eq},
+which is @code{equal?} by default.
+
+If the graph contains cycles, @code{#f} is returned.
+
+@example
+(topological-sort '((shirt tie belt)
+                    (tie jacket)
+                    (belt jacket)
+                    (watch)
+                    (pants shoes belt)
+                    (undershorts pants shoes)
+                    (socks shoes)))
+ @result{} (socks undershorts watch shirt tie pants belt jacket shoes)
+@end example
+
+If the optional @var{node-array} is given and not @code{#f}, it must
+be a vector of nodes, and @var{graph} uses integer indices
+of the nodes in place of nodes themselves.  The comparison
+predicate @var{eq} is applied on the indices.  Once the nodes are
+sorted, they are looked up from @var{node-array}, and a list of
+nodes is returned.
 @end defun
 
 @defun topological-sort/details graph :optional eq node-array
 [SRFI-234]
 @c MOD srfi.234
+Like @code{topological-sort}, but returns three values for
+further information.  The meanings of arguments are the same
+as @code{topological-sort}.
+
+If nodes can be topologically sorted, the first return value
+is a sorted list of nodes, and the second and the third values are
+@code{#f}.
+
+If nodes cannot be topologically sorted, the first return value
+is @code{#f}, the second return value is an error message,
+and the third value is a list of nodes that provides information
+of at least one cycle.
 @end defun
 
 @defun edgelist->graph edgelist :optional retriever

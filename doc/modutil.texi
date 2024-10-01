@@ -37778,31 +37778,40 @@ New code should use it instead of this module (@pxref{Topological sorting}).
 @defun topological-sort graph :optional eqproc
 @c MOD util.toposort
 @c EN
-@var{Graph} represents a directed acyclic graph (DAG) by a list
-of connections, where each connection is the form
-@example
-(<node> <downstream> <downstream2> ...)
-@end example
-that means a node @code{<node>} is connected to other nodes
-@code{<downstream>} etc.   @code{<node>} can be arbitrary
-object, as far as it can be compared by the procedure @var{eqproc},
-which is @var{eqv?} by default (@pxref{Equality}).
-Returns a list of @code{<node>}s sorted topologically.
+Returns a topologically sorted list of nodes,
+when the node dependencies are specified by @var{graph}.
+@xref{Topological sorting}, for the details.
 
-If the graph contains circular reference, an error is signaled.
+This procedure differs from SRFI-234's @code{topological-sort}
+in the following ways:
+
+@itemize @bullet
+@item
+When @var{graph} contains cycles, this one raises an error,
+while SRFI-234's returns @code{#f}.
+@item
+The default of node comparison predicate @var{eqproc} is @code{eqv?},
+while in SRFI-234 it is @code{equal?}
+@item
+This one does not take the third argument.
+@end itemize
 @c JP
-@var{Graph}は有向非循環グラフ(DAG)を表現するリストです。
-リストの各要素は次の形をしています。
-@example
-(<node> <downstream> <downstream2> ...)
-@end example
-これで、ノード@code{<node>}から別のノード@code{<downstream>}等への接続が
-あることを表現します。@code{<node>}はどんなオブジェクトであっても構いませんが、
-同一性の判定が@var{eqproc}で行えなければなりません。@var{eqproc}の既定値は
-@code{eqv?}です (@ref{Equality}参照)。
-トポロジカルにソートされたノードのリストを返します。
+@var{graph}によって指定される依存関係の元で、
+トポロジカルソートされたノードのリストを返します。
+@var{graph}の形式について詳しくは@ref{Topological sorting}を参照してください。
 
-グラフに循環が検出された場合はエラーとなります。
+この手続きは、SRFI-234の@code{topological-sort}に比べて次の点で異なります。
+
+@itemize @bullet
+@item
+@var{graph}が循環を含んでいた場合、SRFI-234は@code{#f}を返しますが、
+この手続きはエラーを投げます。
+@item
+ノード比較手続き@var{eqproc}のデフォルトは、SRFI-234では@code{equal?}ですが、
+この手続きでは@code{eqv?}です。
+@item
+この手続きは3番目の引数を取りません。
+@end itemize
 @c COMMON
 @end defun
 
