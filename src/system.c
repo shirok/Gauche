@@ -1805,12 +1805,15 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
             size_t numenvs = Scm_Length(env);
             TCHAR **envs = SCM_NEW_ATOMIC_ARRAY(TCHAR*, numenvs);
             size_t nc = 0;
+            ScmObj ep = env;
             for (size_t i = 0; i < numenvs; i++) {
-                SCM_ASSERT(SCM_PAIRP(env) && SCM_STRINGP(SCM_CAR(env)));
+                if (!(SCM_PAIRP(ep) && SCM_STRINGP(SCM_CAR(ep)))) {
+                    Scm_Error("Invalid environment list: %S", env);
+                }
                 envs[i] =
-                    Scm_MBS2WCS(Scm_GetStringConst(SCM_STRING(SCM_CAR(env))));
+                    Scm_MBS2WCS(Scm_GetStringConst(SCM_STRING(SCM_CAR(ep))));
                 nc += _tcslen(envs[i]) + 1;
-                env = SCM_CDR(env);
+                ep = SCM_CDR(ep);
             }
             nc += 1;
 
