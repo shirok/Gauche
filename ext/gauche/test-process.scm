@@ -204,29 +204,25 @@
               )
          (equal? s s1)))
 
-(cond-expand
- [gauche.os.windows
-  ;; TRANSIENT: Remove this cond-expand once we implement :environment
-  ;; on windows.
-  ]
- [else
-  ;; Quirk: OSX adds __CF_USER_TEXT_ENCODING env var unconditionally.
-  (test* "run-process (environment)" '()
+;; Quirk:
+;;  OSX adds __CF_USER_TEXT_ENCODING env var unconditionally.
+;;  On Windows we add AVOID_EMPTY_ENVIRONMENT, for CreateProcess doesn't
+;;   like an empty environment.
+(test* "run-process (environment)" '()
        (let* ((p  (run-process (cmd "env") :output :pipe
                                :environment '()))
               (in (process-output p))
               (s  (port->string-list in))
               (x  (process-wait p)))
-         (remove #/^__CF_USER_TEXT_ENCODING=/ s)))
+         (remove #/^(__CF_USER_TEXT_ENCODING=|AVOID_EMPTY_ENVIRONMENT=)/ s)))
 
-  (test* "run-process (environment)" '("FOO=BAR")
-         (let* ((p  (run-process (cmd "env") :output :pipe
-                                 :environment '("FOO=BAR")))
-                (in (process-output p))
-                (s  (port->string-list in))
-                (x  (process-wait p)))
+(test* "run-process (environment)" '("FOO=BAR")
+       (let* ((p  (run-process (cmd "env") :output :pipe
+                               :environment '("FOO=BAR")))
+              (in (process-output p))
+              (s  (port->string-list in))
+              (x  (process-wait p)))
          (remove #/^__CF_USER_TEXT_ENCODING=/ s)))
-  ])
 
 (test* "do-process :on-abnormal-exit #f" #f
        (do-process (cmd "cat" "NoSuchFile") :output :null :error :null))
@@ -331,20 +327,13 @@
            (process-wait p)
            (port->string (process-output p))))
 
-  (cond-expand
-   [gauche.os.windows
-    ;; TRANSIENT: Remove this cond-expand once we implement :environment
-    ;; on windows.
-    ]
-   [else
-    (test* "pipelining +environment" "FOO=BAR\n"
-           (let1 p (run-pipeline `(,(cmd "env")
-                                   ,(cmd "grep" "^FOO="))
-                                 :input :pipe :output :pipe
-                                 :environment (cons "FOO=BAR" (sys-environ)))
-             (process-wait p)
-             (port->string (process-output p))))
-    ])
+  (test* "pipelining +environment" "FOO=BAR\n"
+         (let1 p (run-pipeline `(,(cmd "env")
+                                 ,(cmd "grep" "^FOO="))
+                               :input :pipe :output :pipe
+                               :environment (cons "FOO=BAR" (sys-environ)))
+           (process-wait p)
+           (port->string (process-output p))))
   )
 
 ;;-------------------------------

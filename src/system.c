@@ -1787,13 +1787,51 @@ ScmObj Scm_SysExec(ScmString *file, ScmObj args, ScmObj iomap,
         }
 
         char *cmdline = win_create_command_line(program_path, pathlen, args);
+
+        TCHAR *tenvp = NULL;
+        if (SCM_NULLP(env)) {
+            /* CreateProcess rejects empty emvironemnt block.
+               (cf. https://nullprogram.com/blog/2023/08/23/)
+               We insert a dummy environemnt variable to workaround it.
+            */
+            env = SCM_LIST1(SCM_MAKE_STR("AVOID_EMPTY_ENVIRONMENT=1"));
+        }
+        if (SCM_LISTP(env)) {
+            /* We need to consturct a TCHAR[] block that contains NUL
+               characters, which gets tricky, for our utility MBS2WCS does
+               not handle the case.  This is not a performance critical
+               path, so we allocage temporary strings abundantly.
+            */
+            size_t numenvs = Scm_Length(env);
+            TCHAR **envs = SCM_NEW_ATOMIC_ARRAY(TCHAR*, numenvs);
+            size_t nc = 0;
+            for (size_t i = 0; i < numenvs; i++) {
+                SCM_ASSERT(SCM_PAIRP(env) && SCM_STRINGP(SCM_CAR(env)));
+                envs[i] =
+                    Scm_MBS2WCS(Scm_GetStringConst(SCM_STRING(SCM_CAR(env))));
+                nc += _tcslen(envs[i]) + 1;
+                env = SCM_CDR(env);
+            }
+            nc += 1;
+
+            tenvp = SCM_NEW_ATOMIC_ARRAY(TCHAR, nc);
+            TCHAR *tp = tenvp;
+            for (size_t i = 0; i < numenvs; i++) {
+                size_t elen = _tcslen(envs[i])+1;
+                memcpy(tp, envs[i], elen * sizeof(TCHAR));
+                tp += elen;
+            }
+            *tp = 0;
+            creation_flags |= CREATE_UNICODE_ENVIRONMENT;
+        }
+
         BOOL r = CreateProcess(program_path,
                                SCM_MBS2WCS(cmdline),
                                NULL, /* process attr */
                                NULL, /* thread addr */
                                TRUE, /* inherit handles */
                                creation_flags, /* creation flags */
-                               NULL, /* nenvironment */
+                               tenvp, /* nenvironment */
                                curdir, /* current dir */
                                &si,  /* startup info */
                                &pi); /* process info */
