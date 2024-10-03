@@ -260,20 +260,20 @@
 
  (define-cfn sha3_256_finalize (buf::uint8_t* ctx::sha3_context*) ::void :static
    (let* ([r::uint8_t* (cast uint8_t* (sha3_Finalize ctx))])
-     (memcpy r buf SHA256_DIGEST_LENGTH)))
+     (memcpy buf r SHA256_DIGEST_LENGTH)))
  (define-cfn sha3_384_finalize (buf::uint8_t* ctx::sha3_context*) ::void :static
    (let* ([r::uint8_t* (cast uint8_t* (sha3_Finalize ctx))])
-     (memcpy r buf SHA384_DIGEST_LENGTH)))
+     (memcpy buf r SHA384_DIGEST_LENGTH)))
  (define-cfn sha3_512_finalize (buf::uint8_t* ctx::sha3_context*) ::void :static
    (let* ([r::uint8_t* (cast uint8_t* (sha3_Finalize ctx))])
-     (memcpy r buf SHA512_DIGEST_LENGTH)))
+     (memcpy buf r SHA512_DIGEST_LENGTH)))
 
  (define-cproc %sha3-256-final (ctx::<sha-context>)
    (check-version ctx 3)
-   (common-final sha3_256_finalize ctx v3 SHA512_DIGEST_LENGTH))
+   (common-final sha3_256_finalize ctx v3 SHA256_DIGEST_LENGTH))
  (define-cproc %sha3-384-final (ctx::<sha-context>)
    (check-version ctx 3)
-   (common-final sha3_384_finalize ctx v3 SHA512_DIGEST_LENGTH))
+   (common-final sha3_384_finalize ctx v3 SHA384_DIGEST_LENGTH))
  (define-cproc %sha3-512-final (ctx::<sha-context>)
    (check-version ctx 3)
    (common-final sha3_512_finalize ctx v3 SHA512_DIGEST_LENGTH))
