@@ -517,7 +517,6 @@ fi
 
 dnl ===========================================================
 dnl Checks for library functions.
-AC_PROG_GCC_TRADITIONAL
 
 dnl This is required to test trunc and rint below
 AC_CHECK_LIB(m, sin)

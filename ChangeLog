@@ -1,3 +1,7 @@
+2024-10-03  Shiro Kawai  <shiro@acm.org>
+
+	* Officially support SHA-3
+
 2024-09-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/srfis.scm: Support srfi-234 officially.
