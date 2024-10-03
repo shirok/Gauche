@@ -21241,18 +21241,15 @@ This is for the backward compatibility.  It is same as
 @deftp {Module} rfc.sha
 @mdindex rfc.sha
 @c EN
-This module implements US Secure Hash Algorithm
-defined in RFC 4634.  It provides SHA-1, SHA-224, SHA-256,
-SHA-384 and SHA-512 (the latter four are sometimes referred
-as SHA-2 collectively).
+This module implements US Secure Hash Algorithms.
+It provides SHA-1, SHA-2, and SHA-3.
 
 The module extends util.digest
 (@pxref{Message digester framework}).
 @c JP
 このモジュールは、RFC 4634で定義されている
 US Secure Hash Algorithmを実装しています。
-提供されるアルゴリズムはSHA-1, SHA-224, SHA-256, SHA-384および
-SHA-512です (後の4つを総称してSHA-2と呼ぶこともあります)。
+提供されるアルゴリズムはSHA-1, SHA-2, SHA-3を実装しています。
 
 このモジュールは、util.digest (@ref{Message digester framework}参照)
 を拡張しています。
@@ -21292,11 +21289,17 @@ should use @code{rfc.sha}.
 @deftpx {Class} <sha256>
 @deftpx {Class} <sha384>
 @deftpx {Class} <sha512>
+@deftpx {Class} <sha3-256>
+@deftpx {Class} <sha3-384>
+@deftpx {Class} <sha3-512>
 @clindex sha1
 @clindex sha224
 @clindex sha256
 @clindex sha384
 @clindex sha512
+@clindex sha3-256
+@clindex sha3-384
+@clindex sha3-512
 @c MOD rfc.sha
 @c EN
 An instance of these class keeps internal state of SHA digest algorithm.
@@ -21310,6 +21313,17 @@ so you can pass this class to message digest procedures such as
 を実装しており、
 メッセージダイジェストを行う@code{digest-message-to}などの手続きに
 このクラスオブジェクトを渡すことができます(@ref{Message digester framework}参照)。
+@c COMMON
+
+@c EN
+Classes @code{<sha224>}, @code{<sha256>}, @code{<sha384>}, and @code{<sha512>}
+implement SHA-2.  Classes @code{<sha3-256>}, @code{<sha3-384>}, and
+@code{<sha3-512>} implement SHA-3.
+@c JP
+@code{<sha224>}、@code{<sha256>}、@code{<sha384>}、@code{<sha512>}の
+各クラスはSHA-2を実装しています。
+@code{<sha3-256>}、@code{<sha3-384>}、@code{<sha3-512>}の各クラスは
+SHA-3を実装しています。
 @c COMMON
 @end deftp
 
@@ -21328,6 +21342,9 @@ HMAC鍵つきダイジェスター(@ref{HMAC keyed-hashing}参照)を使って�
 @defunx sha256-digest
 @defunx sha384-digest
 @defunx sha512-digest
+@defunx sha3-256-digest
+@defunx sha3-384-digest
+@defunx sha3-512-digest
 @c MOD rfc.sha
 @c DEPRECATED
 @c EN
@@ -21344,6 +21361,9 @@ its digest in an incomplete string.
 @defunx sha256-digest-string string
 @defunx sha384-digest-string string
 @defunx sha512-digest-string string
+@defunx sha3-256-digest-string string
+@defunx sha3-384-digest-string string
+@defunx sha3-512-digest-string string
 @c MOD rfc.sha
 @c DEPRECATED
 @c EN
