@@ -1,6 +1,6 @@
 2024-10-03  Shiro Kawai  <shiro@acm.org>
 
-	* Officially support SHA-3
+	* ext/digest/sha3.c: Officially support SHA-3.  Add SHA3-224.
 
 2024-09-29  Shiro Kawai  <shiro@acm.org>
 

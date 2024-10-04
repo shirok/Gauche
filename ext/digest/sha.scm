@@ -43,6 +43,7 @@
           <sha256> sha256-digest sha256-digest-string
           <sha384> sha384-digest sha384-digest-string
           <sha512> sha512-digest sha512-digest-string
+          <sha3-224> sha3-224-digest sha3-224-digest-string
           <sha3-256> sha3-256-digest sha3-256-digest-string
           <sha3-384> sha3-384-digest sha3-384-digest-string
           <sha3-512> sha3-512-digest sha3-512-digest-string
@@ -73,6 +74,7 @@
 (define sha256-digest (gen-digest %sha256-init %sha256-update %sha256-final))
 (define sha384-digest (gen-digest %sha384-init %sha384-update %sha384-final))
 (define sha512-digest (gen-digest %sha512-init %sha512-update %sha512-final))
+(define sha3-224-digest (gen-digest %sha3-224-init %sha3-224-update %sha3-224-final))
 (define sha3-256-digest (gen-digest %sha3-256-init %sha3-256-update %sha3-256-final))
 (define sha3-384-digest (gen-digest %sha3-384-init %sha3-384-update %sha3-384-final))
 (define sha3-512-digest (gen-digest %sha3-512-init %sha3-512-update %sha3-512-final))
@@ -82,6 +84,7 @@
 (define (sha256-digest-string s) (with-input-from-string s sha256-digest))
 (define (sha384-digest-string s) (with-input-from-string s sha384-digest))
 (define (sha512-digest-string s) (with-input-from-string s sha512-digest))
+(define (sha3-224-digest-string s) (with-input-from-string s sha3-224-digest))
 (define (sha3-256-digest-string s) (with-input-from-string s sha3-256-digest))
 (define (sha3-384-digest-string s) (with-input-from-string s sha3-384-digest))
 (define (sha3-512-digest-string s) (with-input-from-string s sha3-512-digest))
@@ -123,6 +126,7 @@
 (define-framework 256  64)
 (define-framework 384  128)
 (define-framework 512  128)
+(define-framework |3-224|  64)
 (define-framework |3-256|  64)
 (define-framework |3-384|  128)
 (define-framework |3-512|  128)
@@ -183,6 +187,9 @@
  (define-cproc %sha512-init (ctx::<sha-context>) ::<void>
    (set! (-> ctx version) 2)
    (SHA512_Init (& (-> ctx v2))))
+ (define-cproc %sha3-224-init (ctx::<sha-context>) ::<void>
+   (set! (-> ctx version) 3)
+   (sha3_Init224 (& (-> ctx v3))))
  (define-cproc %sha3-256-init (ctx::<sha-context>) ::<void>
    (set! (-> ctx version) 3)
    (sha3_Init256 (& (-> ctx v3))))
@@ -223,6 +230,9 @@
  (define-cproc %sha512-update (ctx::<sha-context> data) ::<void>
    (check-version ctx 2)
    (common-update SHA512_Update ctx v2 data))
+ (define-cproc %sha3-224-update (ctx::<sha-context> data) ::<void>
+   (check-version ctx 3)
+   (common-update Scm_SHA3_Update ctx v3 data))
  (define-cproc %sha3-256-update (ctx::<sha-context> data) ::<void>
    (check-version ctx 3)
    (common-update Scm_SHA3_Update ctx v3 data))
@@ -258,6 +268,9 @@
    (check-version ctx 2)
    (common-final SHA512_Final ctx v2 SHA512_DIGEST_LENGTH))
 
+ (define-cfn sha3_224_finalize (buf::uint8_t* ctx::sha3_context*) ::void :static
+   (let* ([r::uint8_t* (cast uint8_t* (sha3_Finalize ctx))])
+     (memcpy buf r SHA224_DIGEST_LENGTH)))
  (define-cfn sha3_256_finalize (buf::uint8_t* ctx::sha3_context*) ::void :static
    (let* ([r::uint8_t* (cast uint8_t* (sha3_Finalize ctx))])
      (memcpy buf r SHA256_DIGEST_LENGTH)))
@@ -268,6 +281,9 @@
    (let* ([r::uint8_t* (cast uint8_t* (sha3_Finalize ctx))])
      (memcpy buf r SHA512_DIGEST_LENGTH)))
 
+ (define-cproc %sha3-224-final (ctx::<sha-context>)
+   (check-version ctx 3)
+   (common-final sha3_224_finalize ctx v3 SHA224_DIGEST_LENGTH))
  (define-cproc %sha3-256-final (ctx::<sha-context>)
    (check-version ctx 3)
    (common-final sha3_256_finalize ctx v3 SHA256_DIGEST_LENGTH))

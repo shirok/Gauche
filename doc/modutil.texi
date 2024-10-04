@@ -21289,6 +21289,7 @@ should use @code{rfc.sha}.
 @deftpx {Class} <sha256>
 @deftpx {Class} <sha384>
 @deftpx {Class} <sha512>
+@deftpx {Class} <sha3-224>
 @deftpx {Class} <sha3-256>
 @deftpx {Class} <sha3-384>
 @deftpx {Class} <sha3-512>
@@ -21297,6 +21298,7 @@ should use @code{rfc.sha}.
 @clindex sha256
 @clindex sha384
 @clindex sha512
+@clindex sha3-224
 @clindex sha3-256
 @clindex sha3-384
 @clindex sha3-512
@@ -21342,6 +21344,7 @@ HMAC鍵つきダイジェスター(@ref{HMAC keyed-hashing}参照)を使って�
 @defunx sha256-digest
 @defunx sha384-digest
 @defunx sha512-digest
+@defunx sha3-224-digest
 @defunx sha3-256-digest
 @defunx sha3-384-digest
 @defunx sha3-512-digest
@@ -21361,6 +21364,7 @@ its digest in an incomplete string.
 @defunx sha256-digest-string string
 @defunx sha384-digest-string string
 @defunx sha512-digest-string string
+@defunx sha3-224-digest-string string
 @defunx sha3-256-digest-string string
 @defunx sha3-384-digest-string string
 @defunx sha3-512-digest-string string
