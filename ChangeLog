@@ -1,3 +1,9 @@
+2024-10-05  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm: Avoid exporting REPL-variables *1 etc.
+	  from #<module gauche>.
+	  https://github.com/shirok/Gauche/issues/1066
+
 2024-10-03  Shiro Kawai  <shiro@acm.org>
 
 	* ext/digest/sha3.c: Officially support SHA-3.  Add SHA3-224.

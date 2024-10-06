@@ -259,8 +259,11 @@
 ;; modules in REPL without losing access to the history.  So we "inject"
 ;; those variables into #<module gauche>.  It is not generally recommended
 ;; way, though.
-;; We also export those history variables, so the modules that does not
-;; inherit gauche can still use them by (import gauche :only (*1 ...)).
+;;
+;; We also export those history variables from gauche.base, if it has already
+;; been loaded.  Moduels that imports gauche.base should see all variables
+;; defined in #<module gauche>.  This runtime hack is also a kludge.
+
 (define-in-module gauche *1 #f)
 (define-in-module gauche *1+ '())
 (define-in-module gauche *2 #f)
@@ -273,8 +276,8 @@
   (display "*2: ") (repl-print *2) (newline)
   (display "*3: ") (repl-print *3) (newline)
   (values))
-(with-module gauche
-  (export *1 *1+ *2 *2+ *3 *3+ *e *history))
+(and-let1 m (find-module 'gauche.base)
+  (eval '(export *1 *1+ *2 *2+ *3 *3+ *e *history) m))
 
 (define (%set-history-expr! r)
   (unless (null? r)
