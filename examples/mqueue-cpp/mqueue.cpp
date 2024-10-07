@@ -12,7 +12,7 @@
 #include <functional>
 #include <algorithm>
 
-class MQueue_eq : public unary_function<MQueue*, bool> {
+class MQueue_eq  {
     string name;
   public:
     explicit MQueue_eq(const string& name_) : name(name_) {}
