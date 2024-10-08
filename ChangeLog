@@ -1,3 +1,7 @@
+2024-10-07  Shiro Kawai  <shiro@acm.org>
+
+	* doc/corelib.texi: Document <Assortment> type constructor.
+
 2024-10-05  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm: Avoid exporting REPL-variables *1 etc.

@@ -681,12 +681,15 @@ as @code{<top>}.  We'll provide a way to attach type info in future.
 @deftpx {Type Constructor} <Vector> type :optional min-length max-length
 @clindex List
 @clindex Vector
-@var{Type} must be a type expression.
 @c EN
+@var{Type} must be a type expression.
+
 These create a list or a vector type whose elements are of @var{type},
 respectively.
 For example, @code{(<List> <string>)} is a list of strings.
 @c JP
+@var{type}は型の式でなければなりません。
+
 各要素が@var{type}であるようなリストもしくはベクタの型を作ります。
 例えば@code{(<List> <string>)}は文字列のリストです。
 @c COMMON
@@ -710,6 +713,58 @@ Note: @code{subtype?} uses covariant subtyping, that is,
 @code{(subtype? (<List> <string>) <list>)}は@code{#t}です。
 @c COMMON
 @end deftp
+
+@deftp {Type Constructor}  <Assortment> constant @dots{}
+@clindex Assortment
+@c EN
+@var{Constants} must be an expression that evaluates to a symbol,
+a boolean or a number, at the compile time.  This type expression
+creates a type whose instances are limited to the given constant values.
+@c JP
+@var{constants}はコンパイル時にシンボル、真偽値、あるいは数値に評価される式でなければなりません。
+この型の式は、与えられた定数のみをインスタンスとみなす記述型を作ります。
+@c COMMON
+
+@example
+(define (p obj)
+  (of-type? obj (<Assortment> 'one 'two 'three)))
+
+(p 'one)   @result{} #t
+(p 'three) @result{} #t
+(p 'four)  @result{} #f
+@end example
+
+@c EN
+Mere membership test can be realized simply with a list or a set, but
+the construction of assortment type is done in compile-time, and
+potentially creates opportunities for optimizations or compile-time
+checks.  For example, you can proclaim the argument is only allowed
+with certain set of symbols:
+@c JP
+単なるメンバシップの検査ならリストやセットでもできますが、
+assortment型の生成はコンパイル時に行われ、
+最適化やコンパイル時検査の機会を増やします。
+例えば、引数が特定のシンボルのいずれかしか取らないことを、次のような形で
+宣言しておくことができるでしょう。
+@c COMMON
+
+@example
+(define (p obj)
+  (assume-type obj (<Assortment> 'one 'two 'three))
+  ...)
+@end example
+
+@c EN
+Currently, it is only used by a runtime check.  However, in futuer version
+of Gauche, the compiler knows the argument @var{obj} must be one of these
+symbols, and may use that information for static analysis.
+@c JP
+現在のところこれは実行時チェックに使われるだけですが、
+将来のGaucheではコンパイラが、引数はこれらのシンボルしか許されないという情報を
+静的解析に利用するかもしれません。
+@c COMMON
+@end deftp
+
 
 @node Native types,  , Type expressions and type constructors, Types and classes
 @subsection Native types
