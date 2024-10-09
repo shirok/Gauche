@@ -8183,15 +8183,26 @@ called in the tail context even if the procedure created by
 
 @deftp {Module} srfi.160
 @mdindex srfi.160
+@c EN
 This is an enhancement of SRFI-4, Homogeneous vectors
 (@pxref{Homogeneous vectors}), and then become a part
 of R7RS-large (@pxref{R7RS uniform vectors}).
 
 In Gauche, all the procedures in this module are provided
 as a part of @code{gauche.uvector} module
-(@pxref{Uniform vectors}, and described there.
+(@pxref{Uniform vectors}), and described there.
 
 This module only exports the procedures defined in @code{srfi.160}.
+@c JP
+これはSRFI-4の拡張で (@ref{Homogeneous vectors}参照)、
+R7RS-largeの一部になりました (@ref{R7RS uniform vectors}参照)。
+
+Gaucheでは、このモジュールの全ての手続きは @code{gauche.uvector}
+モジュールで提供されているので、そちらで説明されています
+(@ref{Uniform vectors}参照)。
+
+このモジュールは、@code{srfi.160}で定義されている手続きのみをエクスポートします。
+@c COMMON
 @end deftp
 
 @c ----------------------------------------------------------------------
@@ -8291,9 +8302,15 @@ GaucheではこのモジュールはGaucheのネイティブシステムイン�
 @defun posix-error? obj
 [SRFI-170]
 @c MOD srfi.170
+@c EN
 Returns @code{#t} iff @var{obj} is a condition thrown due to
 underlying POSIX-layer error.  On Gauche, POSIX-layer condition
 is the same as @code{<system-error>} (@pxref{Conditions}).
+@c JP
+@var{obj}がPOSIXレイヤから投げられたコンディションである場合に@code{#t}を返します。
+Gaucheeでは、POSIXレイヤのコンディションは@code{<system-error>}の
+インスタンスです (@ref{Conditions}参照)。
+@c COMMON
 @end defun
 
 @defun posix-error-name err
