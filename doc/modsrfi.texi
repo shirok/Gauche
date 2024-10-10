@@ -8316,19 +8316,49 @@ Gaucheeでは、POSIXレイヤのコンディションは@code{<system-error>}�
 @defun posix-error-name err
 [SRFI-170]
 @c MOD srfi.170
-The argument must be a POSIX-layer condition (@code{<system-error>} object).
-Returns the POSIX error name such as @code{ENOENT}.
+@c EN
+The argument must be a POSIX-layer condition, that is,
+an object that satisfies @code{posix-error?}.  In Gauche,
+it is a @code{<system-error>} object.
+
+Returns the POSIX error name (symbol)
+of the given condition, such as @code{ENOENT}.
 
 See also @code{sys-errno->symbol} (@pxref{System inquiry}).
+@c JP
+引数はPOSIX層のコンディション、つまり@code{posix-error?}を満たすオブジェクトで
+なければなりません。Gaucheではそれは@code{<system-error>}オブジェクトです。
+
+与えられたコンディションのPOSIXエラー名をシンボルで返します
+(例: @code{ENOENT})。
+
+@code{sys-errno->symbol}も参照してください
+(@ref{System inquiry})。
+@c COMMON
 @end defun
 
 @defun posix-error-message err
 [SRFI-170]
 @c MOD srfi.170
-The argument must be a POSIX-layer condition (@code{<system-error>} object).
-Returns the error message describing the error.
+@c EN
+The argument must be a POSIX-layer condition, that is,
+an object that satisfies @code{posix-error?}.  In Gauche,
+it is a @code{<system-error>} object.
+
+Returns the error message (string) describing the error,
+e.g. @code{"No such file or directory"}.
 
 See also @code{sys-strerror} (@pxref{System inquiry}).
+@c JP
+引数はPOSIX層のコンディション、つまり@code{posix-error?}を満たすオブジェクトで
+なければなりません。Gaucheではそれは@code{<system-error>}オブジェクトです。
+
+与えられたコンディションのPOSIXエラーメッセージを文字列で返します
+(例: @code{"No such file or directory"})。
+
+@code{sys-strerror}も参照してください
+(@ref{System inquiry})。
+@c COMMON
 @end defun
 
 @subheading I/O
