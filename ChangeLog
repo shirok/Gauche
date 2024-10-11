@@ -1,3 +1,10 @@
+2024-10-10  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/version-alist.scm (gauche): Allow excluding certain
+	  info from the output of 'gosh -V' by setting an environment
+	  variable GAUCHE_VERSION_INFO_EXCLUSION.
+	  https://github.com/shirok/Gauche/issues/1042
+
 2024-10-07  Shiro Kawai  <shiro@acm.org>
 
 	* doc/corelib.texi: Document <Assortment> type constructor.
