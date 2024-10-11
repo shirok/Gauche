@@ -7,10 +7,10 @@
   (use gauche.process))
 (select-module gauche.version-alist)
 
-(define-in-module gauche (version-alist)
+(define-in-module gauche (version-alist :key (full #f))
   (let1 fs ((with-module gauche.internal cond-features))
     (remove
-     version-info-excluded?
+     (if full (constantly #f) version-info-excluded?)
      `((version ,(gauche-version))
        (command "gosh")
        (scheme.id gauche)
