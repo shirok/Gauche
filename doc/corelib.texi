@@ -10410,14 +10410,14 @@ used with another string. A string cursor also becomes invalid when
 the associated string is modified. Accessing an invalid cursor does
 not always fail though. Running @code{gosh} with @code{-fsafe-string-cursors}
 could help catch these issues, with some performance overhead.
-@xref{Invoking Gosh}.
+@xref{Gosh command-line options}.
 @c JP
 文字列カーソルは特定の文字列と結びついていて、それ以外の文字列に対して使うのは無効です。
 また、元の文字列が変更されると文字列カーソルは無効になります。
 ただ、無効になったカーソルを使っても必ずしもエラーになるとは限りません。
 @code{gosh}を@code{-fsafe-string-cursors}オプションつきで起動すると、
 性能が落ちますがその種のエラーを検出することができます。
-詳しくは@ref{Invoking Gosh}を参照してください。
+詳しくは@ref{Gosh command-line options}を参照してください。
 @c COMMON
 
 @c EN
@@ -29458,6 +29458,15 @@ The information is the same as what displayed with @code{gosh -V}.
 @c JP
 様々なランタイムの情報をalistで返します。
 @code{gosh -V}で表示される情報と同じです。
+@c COMMON
+
+@c EN
+The result is affected by the value of the environemnt variable
+@code{GAUCHE_VERSION_INFO_EXCLUSION}.  @xref{Environment variables},
+for details.
+@c JP
+結果は環境変数@code{GAUCHE_VERSION_INFO_EXCLUSION}に影響を受けます。
+詳しくは@ref{Environment variables}を参照してください。
 @c COMMON
 @end defun
 

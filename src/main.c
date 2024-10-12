@@ -222,6 +222,9 @@ void usage(int errorp)
             "  GAUCHE_TEST_REPORT_ERROR\n"
             "      When set, a stack trace is printed when an error is raised during\n"
             "      running the test code in ``gauche.test'' framework.\n"
+            "  GAUCHE_VERSION_INFO_EXCLUSION\n"
+            "      The value must be a comma-separated keys in version-alist.\n"
+            "      The keys listed here are excluded from the output of gosh -V.\n"
 #if defined(GAUCHE_WINDOWS)
             "  GAUCHE_WINDOWS_CONSOLE_RAW\n"
             "      (Windows only) On Windows (MinGW), gosh in interactive mode wraps\n"

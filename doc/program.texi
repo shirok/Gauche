@@ -66,11 +66,14 @@ Scheme program and exit.
 @c COMMON
 @end deftp
 
-@c EN
-@subheading Command-line options
-@c JP
-@subheading コマンドラインオプション
-@c COMMON
+@menu
+* Gosh command-line options::
+* Environment variables::
+@end menu
+
+@node Gosh command-line options, Environment variables, Invoking Gosh, Invoking Gosh
+@subsection Command-line options
+@c NODE コマンドラインオプション
 
 @c EN
 The following command line options are recognized by @code{gosh}.
@@ -112,9 +115,18 @@ Makes @code{gosh} not to load the default initialization file.
 
 @deftp {Command Option} -V
 @c EN
-Prints the @code{gosh} version and exits.
+Prints the @code{gosh} version, and various configuration information
+(SRFI-176).  See @code{version-alist} for the details of configuration
+parameters @pxref{Environment inquiry}.
+You can control what info to be shown by the environment variable
+@code{GAUCHE_VERSION_INFO_EXCLUSION} (@pxref{Environment variables}).
+section below.
 @c JP
-@code{gosh}のバージョンを表示して終了します。
+@code{gosh}のバージョンおよび様々なコンフィグレーション情報を表示します
+(SRFI-176)。コンフィグレーション情報については@code{version-alist}を見てください
+(@ref{Environment inquiry})。
+どういった情報を表示するかは、環境変数@code{GAUCHE_VERSION_INFO_EXCLUSION}で
+カスタマイズできます。@ref{Environment variables}参照。
 @c COMMON
 @end deftp
 
@@ -451,11 +463,9 @@ of appearance.  For example, adding a load path by -I affects the
 与えません。
 @c COMMON
 
-@c EN
-@subheading Environment variables
-@c JP
-@subheading 環境変数
-@c COMMON
+@node Environment variables,  , Gosh command-line options, Invoking Gosh
+@subsection Environment variables
+@c NODE 環境変数
 
 @c EN
 The following environment variables are recognized:
@@ -699,6 +709,29 @@ Useful for diagnosis of unexpected errors.
 @c COMMON
 @end deftp
 
+@deftp {Environment variable} GAUCHE_VERSION_INFO_EXCLSION
+@c EN
+The value must be a comma-separated keys in @code{version-alist}
+(@pxref{Environment inquiry}).
+The keys listed here are excluded from the output of @code{gosh -V}.
+For example, the following setting omits @code{scheme.path} and
+@code{build.configure} from output of @code{gosh -V}.  Those values
+may contain username and/or project names, and there may be cases
+when you don't want make them to be public accidentally, by attaching
+output of @code{gosh -V} to a bug report or something.
+@c JP
+値は@code{version-alist}に現れるキーをコンマ区切りで並べたものです
+(@ref{Environment inquiry}参照)。ここに挙げられたキーは、@code{gosh -V}
+の出力から除外されます。例えば次の設定は、@code{gosh -V}の出力に
+@code{scheme.path}と@code{build.configure}を含めません。
+これらの値はユーザ名やプロジェクト名を含んでいる場合がありますが、
+バグレポート等に@code{gosh -V}の結果を含める時に、
+それらをうっかり公開してしまわないようにしたい、という場合などに便利です。
+@c COMMON
+@example
+GAUCHE_VERSION_INFO_EXCLUSION=scheme.path,build.configure
+@end example
+@end deftp
 
 @deftp {Environment variable} TMP
 @deftpx {Environment variable} TMPDIR

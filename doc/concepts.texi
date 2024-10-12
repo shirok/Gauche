@@ -332,14 +332,15 @@ Gaucheはプログラムを読み込む時に、トークン@code{#!fold-case}�
 @c EN
 @item Use @code{-fcase-fold} command-line argument
 Alternatively, you can give a command-line argument @code{-fcase-fold}
-to the @code{gosh} command (@pxref{Invoking Gosh}).
+to the @code{gosh} command (@pxref{Gosh command-line options}).
 In this mode, the reader folds uppercase characters in symbols to lowercase
 ones.  If a symbol name contains uppercase characters, it is written
 out using |-escape (@pxref{Symbols}).
 @c JP
 @item @code{-fcase-fold}コマンドライン引数を使う
 また、@code{gosh}インタプリタの起動時に@code{-fcase-fold}コマンドライン引数を
-与えると、Gaucheは大文字小文字を区別しないモードで動作します (@ref{Invoking Gosh}参照)。
+与えると、Gaucheは大文字小文字を区別しないモードで動作します
+(@ref{Gosh command-line options}参照)。
 このモードでは、リーダはシンボルの読み込みの際に大文字を小文字に変換します。
 大文字を含んでいるシンボルに関しては、`|' 文字でエスケープされて書き出されます
 (@ref{Symbols}参照)。
