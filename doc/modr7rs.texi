@@ -10922,33 +10922,62 @@ The linear update version @code{mapping-map/monotone!} may reuse
 @defun mapping-for-each proc m
 [R7RS mapping]
 @c MOD scheme.mapping
+Calls @var{proc} on each entry in the mapping @var{m}, in increasing
+order of the keys.  The entry's key and value are passed as arguments
+to @var{proc}.  Result of @var{proc} is discarded.
+Returns an unspecified value.
 @end defun
 
 @defun mapping-fold kons knil m
 [R7RS mapping]
 @c MOD scheme.mapping
+Calls @var{proc} on each entry in the mapping @var{m}, in increasing
+order of the keys.  A procedure @var{kons} takes three arguments:
+the entry's key, the entry's value, and an accumlated value, whose
+initial value is @var{knil} and the previous result of @var{kons}
+subsequently.  Returns the last result of @var{kons}.
 @end defun
 
 @defun mapping-fold/reverse kons knil m
 [R7RS mapping]
 @c MOD scheme.mapping
+Liek @code{mapping-fold}, but calls @var{proc} for entris in
+decreasing order of keys in the mapping @var{m}.
 @end defun
 
 @defun mapping-map->list proc m
 [R7RS mapping]
 @c MOD scheme.mapping
+Calls @var{proc} on each entry in the mapping @var{m}, in increasing
+order of the keys.  The entry's key and value are passed as arguments
+to @var{proc}.  The result of each call of @var{proc} is gathered
+into a list and returned.
 @end defun
 
 @defun mapping-filter pred m
 @defunx mapping-filter! pred m
 [R7RS mapping]
 @c MOD scheme.mapping
+Returns a mapping that contains all the entries from the mapping @var{m}
+except those for which @var{pred} returns false.  The procedure
+@var{pred} gets to arguments, an entry's key and an entry's value.
+
+The functional version @code{mapping-filter} doesn't modify @var{m},
+while the linear-updating verison @code{mapping-filter!} may reuse
+@var{m} to create a result.
 @end defun
 
 @defun mapping-remove pred m
 @defunx mapping-remove! pred m
 [R7RS mapping]
 @c MOD scheme.mapping
+Returns a mapping that contains all the entries from the mapping @var{m}
+except those for which @var{pred} returns a true value.  The procedure
+@var{pred} gets to arguments, an entry's key and an entry's value.
+
+The functional version @code{mapping-remove} doesn't modify @var{m},
+while the linear-updating verison @code{mapping-remove!} may reuse
+@var{m} to create a result.
 @end defun
 
 @defun mapping-partition pred m
