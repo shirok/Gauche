@@ -69,6 +69,7 @@ Scheme program and exit.
 @menu
 * Gosh command-line options::
 * Environment variables::
+* Windows-specific executable::
 @end menu
 
 @node Gosh command-line options, Environment variables, Invoking Gosh, Invoking Gosh
@@ -463,7 +464,7 @@ of appearance.  For example, adding a load path by -I affects the
 与えません。
 @c COMMON
 
-@node Environment variables,  , Gosh command-line options, Invoking Gosh
+@node Environment variables, Windows-specific executable, Gosh command-line options, Invoking Gosh
 @subsection Environment variables
 @c NODE 環境変数
 
@@ -747,12 +748,9 @@ Different environment variables may be used on different platforms.
 @c COMMON
 @end deftp
 
-
-@c EN
-@subheading Windows-specific executable
-@c JP
-@subheading Windows特有の実行ファイル
-@c COMMON
+@node Windows-specific executable,  , Environment variables, Invoking Gosh
+@subsection Windows-specific executable
+@c NODE Windows特有の実行ファイル
 
 @c EN
 On Windows-native platforms (mingw), two interpreter executables are
