@@ -2781,40 +2781,89 @@ We'll adjust it occasionally.
 @section Auxiliary programs
 @c NODE 補助プログラム
 
+@c EN
 When you install Gauche, you'll get several auxiliary programs
 that help developing Gauche applications.
+@c JP
+Gaucheをインストールすると、Gaucheでの開発に役立ついくつかの補助プログラムも
+インストールされます。
+@c COMMON
 
 @table @code
 @item gauche-config
+@c EN
 This program can be used to query various configuation parameters of
 installed Gauche.
+@c JP
+インストールされたGaucheのコンフィグレーションパラメータを問い合わせるプログラムです。
+@c COMMON
 @item gauche-package
+@c EN
 Extension package manager.  It can be used to install extension
-packages and query their parameters.  You can also use this to
+packages and query installed extensions' parameters.  You can also use this to
 start writing your own extensions.
+@c JP
+拡張パッケージマネージャ。拡張パッケージをインストールし、またインストールされた
+拡張の設定を問い合わせることができます。
+自分で新たな拡張を書く際にも使えます。
+@c COMMON
 @item gauche-install
+@c EN
 An alternative @code{install} program.  Gauche extensions can use
 this instead of system's @code{install} command, so that they don't
 need to worry about differences among platforms.
+@c JP
+@code{install}プログラムの代替。Gauche拡張モジュールは、システムの@code{install}
+コマンドのかわりにこのプログラムを使えば、プラットフォームごとの細かい違いを
+気にする必要がなくなります。
+@c COMMON
 @item gauche-compile-r7rs
+@c EN
 This program can be used to create an executable binary from
 Gauche scripts.
+@c JP
+このプログラムはGaucheスクリプトから実行可能バイナリを作るのに使えます。
+@c COMMON
 @item gauche-cesconv
 @end table
 
+@c EN
 Additionally, if you configure Gauche with @code{--enable-shared-commands},
 the following programs are also installed.
+@c JP
+さらに、Gaucheのconfigure時に@code{--enable-shared-commands}を渡すと、
+以下のプログラムも追加でインストールされます。
+@c COMMON
 
 @table @code
 @item scheme-r7rs
 @itemx scheme-srfi-0
 @itemx scheme-srfi-7
+@c EN
 Those are the names of Scheme interpreter suggeted by SRFI-22.
 They are symlinked to @code{gosh}.
+@c JP
+これらはSRFI-22で推奨されているSchemeインタプリタの標準名です。
+@code{gosh}へのシンボリックリンクになります。　
+@c COMMON
 @item compile-r7rs
+@c EN
 This is the name of Scheme compiler recommended by SRFI-138.
 It is symlinked to @code{gauche-compile-r7rs}.
+@c JP
+これはSRFI-138で推奨されているSchemeコンパイラ名です。
+@code{gauche-compile-r7rs}へのシンボリックリンクになります。
+@c COMMON
 @end table
+
+@c EN
+Since these are common names in the Scheme world, keep in mind that
+other Scheme implementations
+may already have installed programs with the same name.
+@c JP
+これらの名前はScheme界で共通のため、他のScheme処理系が同じ名前のプログラムを既に
+インストールしているかもしれないことに留意してください。
+@c COMMON
 
 @c ----------------------------------------------------------------------
 @menu
