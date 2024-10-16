@@ -51,118 +51,135 @@
      "Include path options required to compile programs using Gauche\n\
       (Note: This doesn't work if Gauche installation directory\n\
       path contains whitespaces.  See --incdirs below.)"
-     #f)
+     "Gaucheを使ったプログラムをコンパイルするのに必要なインクルードパスオプション\n\
+      (Gaucheのインストール先のパスが空白を含んでいる場合、これは
+      使えません。下の--incdirsを見てください。)")
     ((("-L" "-L$gauche_archdir $local_lib"))
      "Library path options required to link programs using Gauche\n\
       (Note: This doesn't work if Gauche installation directory\n\
       path contains whitespaces.  See --archdirs below.)"
-     #f)
+     "Gaucheを使ったプログラムをコンパイルするのに必要なライブラリパスオプション\n\
+      (Gaucheのインストール先のパスが空白を含んでいる場合、これは
+      使えません。下の--incdirsを見てください。)")
     ((("-l" "-l$garchabi $gauche_libs"))
      "Link library options required to link programs using Gauche."
-     #f)
+     "Gaucheを使ったプログラムをリンクする時に必要なライブラリオプション")
     ((("--cc" "$cc"))
-     "The name of the compiler used to compile this Gacuhe."
-     #f)
+     "The name of the C compiler used to compile this Gauche."
+     "このGaucheをコンパイルする時に使われたCコンパイラ名")
     ((("--cpp" "$cpp"))
      "The command to run the C preprocessor."
-     #f)
+     "Cプリプロセッサを走らせるコマンド")
     ((("--ac" "$gauche_aclocaldir"))
      "The directory that contains Gauche-specific autoconf macros."
-     #f)
+     "Gauche用のautoconfマクロがインストールされているディレクトリ名")
     ((("--reconfigure" "./configure $gauche_configure_args"))
      "The command line used to configure the current installation."
-     #f)
+     "現在インストールされているGaucheに使われたconfigureのオプション")
     ((("--arch" "$arch"))
      "The autoconf-style architecture signature (cpu-vendor-kernel-os)."
-     #f)
+     "autoconf形式のアーキテクチャシグネチャ (cpu-vendor-kernel-os)")
     ((("--incdirs" "$incdirs")
       ("--archdirs" "$archdirs"))
      "The list of directory names to be looked for include files and\n\
       libraries, respectively.  Each directory name may be quoted if\n\
       it contains whitespaces, and separated by ':' on Unix platforms, or\n\
       by ';' on Windows platforms."
-     #f)
+     "それぞれ、インクルードファイルとライブラリファイルが探されるディレクトリのリスト。\n\
+      各ディレクトリ名は、それが空白を含んでいる場合はクオートされています。また、\n\
+      それぞれのディレクトリ名の間はUnixでは ':'、Windowsでは ';' で区切られています。")
     ((("--local-incdir" "$local_inc")
       ("--local-libdir" "$local_lib"))
      "These are '-I' and '-L' flags for additional local headers/libraries\n\
       to search, given by '--with-local' configure flags.  Note that those\n\
       are also included in '-I', '-L', '--incdirs', and '--archdirs'."
-     #f)
+     "これらは、追加のローカルヘッダファイルやライブラリファイルを探すために必要な\n\
+      '-I' および '-L' フラグのリストです。これらはconfigure時の '--with-local' \n\
+      オプションにより設定されます。追加のローカルディレクトリは、'-I'、'-L'、'--incdirs'\n\
+      '--arcdirs' の出力にも含まれます。")
 
     (section
      "Parameters to install files"
      "ファイルをインストールするためのパラメータ")
     ((("--prefix" "$prefix"))
      "The directory prefix set by configure."
-     #f)
+     "configure時に設定されたディレクトリプレフィクス")
     ((("--sysincdir" "$gauche_incdir")
       ("--siteincdir" "$gauche_siteincdir")
       ("--pkgincdir" "$gauche_pkgincdir"))
      "Directories where system|site|package header files of extensions go."
-     #f)
+     "それぞれ、システム/サイト/パッケージレベルの拡張モジュールヘッダファイルが\n\
+      インストールされるべきディレクトリ")
     ((("--syslibdir" "$gauche_libdir")
       ("--sitelibdir" "$gauche_sitelibdir")
       ("--pkglibdir" "$gauche_pkglibdir"))
      "Directories where system|site|package scheme files go."
-     #f)
+     "それぞれ、システム/サイト/パッケージのSchemeファイルがインストールされる\n\
+      べきディレクトリ")
     ((("--sysarchdir" "$gauche_archdir")
       ("--sitearchdir" "$gauche_sitearchdir")
       ("--pkgarchdir" "$gauche_pkgarchdir"))
      "Directories where system|site|package DSO files go."
-     #f)
+     "それぞれ、システム/サイト/パッケージのDSOファイルがインストールされる\n\
+      べきディレクトリ")
     ((("--mandir" "$mandir")
       ("--infodir" "$infodir"))
      "Directories where gauche manpage and info docs are installed."
-     #f)
+     "それぞれ、Gaucheのmanpageとinfoドキュメントがインストールされるべきディレクトリ")
 
     (section
      "Parameters to help building extensions"
      "拡張モジュールをビルドするためのパラメータ")
     ((("--object-suffix" "$object_suffix"))
-     "The extension of the compiled objects (e.g. 'o' or 'obj)."
-     #f)
+     "The extension of the compiled objects (e.g. 'o' or 'obj')."
+     "コンパイルされたオブジェクトファイルの拡張子 (例: 'o' や 'obj')")
     ((("--executable-suffix" "$executable_suffix"))
      "The extension of the executable including a period (empty on Unix systems,\n\
       '.exe' on Windows."
-     #f)
+     "実行可能ファイルの拡張氏(ピリオドを含む)。Unixシステムでは空文字列、
+      Windowsでは '.exe'。")
     ((("--so-suffix" "$shlib_so_suffix"))
      "The extension for dynamically loadable (dlopen-able) modules (e.g. 'so')."
-     #f)
+     "動的ロード(dlopen)可能なファイルの拡張子 (例: 'so')")
     ((("--so-cflags" "$shlib_so_cflags"))
      "Additional CFLAGS to create dynamically loadable modules."
-     #f)
+     "動的ロード可能なファイルを作るために追加で必要なCFLAGS")
     ((("--so-ldflags" "$shlib_so_ldflags"))
      "Additional LDFLAGS to create dynamically loadable modules."
-     #f)
+     "動的ロード可能なファイルを作るために追加で必要なLDFLAGS")
     ((("--so-libs" "$shlib_so_libs"))
      "Additional libraries required to create dynamically loadable modules."
-     #f)
+     "動的ロード可能なファイルを作るために追加で必要なライブラリ")
     ((("--dylib-suffix" "$shlib_dylib_suffix"))
      "The extension for dynamically linked libraries (as opposed to dlopen()ed)\n\
       Usually the same as --so-suffix, but OSX wants 'dylib'."
-     #f)
+     "動的リンクされる (dlopenされるのではない) ライブラリファイルの拡張子。\n\
+      通常は--so-suffixと同じだが、OSXでは 'dylib'。")
     ((("--dylib-ldflags" "$shlib_dylib_ldflags"))
      "LDFLAGS to create dynamically linked libraries."
-     #f)
+     "動的リンクされるライブラリファイルを作るのに必要なLDFLAGS。")
     ((("--rpath-flag" "$rpath_flag"))
      "Compiler flag(s) to embed RPATH"
-     #f)
+     "RPATHを埋め込むためのコンパイラフラグ")
     ((("--default-cflags" "$default_cflags"))
      "This is the CFLAGS used to compile Gauche, and to be used to compile\n\
       extensions as well."
-     #f)
+     "Gaucheをコンパイルする時に使われたCFLAGS。拡張モジュールをコンパイルする時にも\n\
+      同じフラグを使うべき。")
     ((("--cppflags" "$cppflags"))
      "Compiler flag(s) passed to C preprocessor"
-     #f)
+     "Cプリプロセッサに渡されるコンパイラフラグ")
     ((("--static-libs" "$static_libs"))
      "List of library link flags ('-llib') required to link Gauche statically.\n\
       Similar to '-l', but this includes the libraries that are used\n\
       for extension modules, and also the static library itself,\n\
       that is -lgauche-static-X.X."
-     #f)
+     "Gaucheを静的リンクする時に必要なリンクフラグ ('-llib') のリスト。\n\
+     '-l' と似ているが、これは拡張モジュールが必要とするライブラリ、\n\
+     及びGaucheの静的ライブラリ本体('-lgauche-static-X.X')を含んでいる。")
     ((("--libgauche-so" "$libgauche_so"))
      "The base name of dynamically linked libgauche."
-     #f)
+     "動的リンクされるlibgaucheのbasename")
 
     )) ; end of *config-parameters*
 
