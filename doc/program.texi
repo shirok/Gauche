@@ -143,6 +143,26 @@ Gaucheがシステムにインストールされていた場合、指定バー�
 これは、Gaucheのバージョンを特定して実行したい場合に便利です。
 なお、この機能で指定できる@var{version}は0.9.6かそれ以降のみです。
 @c COMMON
+
+@c EN
+If the specified version isn't installed on the system, @code{gosh} exits
+with a message.  If you add @code{:} before @var{version}, however,
+@code{gosh} falls back to itself when it can't find the given version.
+@c JP
+指定のバージョンのGaucheがシステムにインストールされていない場合、@code{gosh}は
+メッセージを出して終了します。これを避けたい場合、@var{version}の前に@code{:}を
+加えると、Gaucheは指定バージョンが見つからない場合は自分自身の実行を続けます。
+@c COMMON
+
+@example
+# Suppose you don't have version 0.9.13 on your machine.
+$ gosh -v 0.9.13
+No installed Gauche with version 0.9.13 under /usr/lib/.
+$ gosh -v :0.9.13
+WARNING: No installed Gauche with version 0.9.13 under /usr/lib/. Using the current version.
+gosh$ (gauche-version)
+"0.9.15"
+@end example
 @end deftp
 
 
@@ -261,11 +281,10 @@ This option controls compiler and runtime behavior.  For now we have
 following options available:
 @table @asis
 @item case-fold
-Ignore case for symbols.
+Ignore case for symbols.  @xref{Case-sensitivity}.
 @item include-verbose
 Reports whenever a file is included.
 Useful to check precisely which files are included in what order.
-
 @item load-verbose
 Reports whenever a file is loaded.
 Useful to check precisely which files are loaded in what order.
@@ -289,12 +308,13 @@ Prohibits the compiler from running post-inline optimization pass.
 Don't keep source information for debugging.  Consumes less memory.
 @item safe-string-cursors
 String cursors used on wrong strings will raise an error. This may
-cause performance problems because all cursors will be allocated on
-heap. @xref{String cursors}.
+catch bugs but decreases performance
+because all cursors will be allocated on heap. @xref{String cursors}.
 @item test
-Adds "@code{../src}" and "@code{../lib}" to the load path before loading
-initialization file.  This is useful when you want to test the
-compiled @code{gosh} REPL without installing it.
+This option allows you to run @code{gosh} when you build it, without
+installing it.  If given, this adds @code{../lib}, @code{../libsrc},
+and @code{../src}, relative to the place @code{gosh} is, to
+the load path before loading initialization file.
 @item warn-legacy-syntax
 Warns if the reader sees legacy hex-escape syntax in string literals.
 @xref{Reader lexical mode}.
@@ -304,37 +324,46 @@ Warns if the reader sees legacy hex-escape syntax in string literals.
 このオプションはコンパイラとランタイムの動作に影響を与えます。
 今のところ、次のオプションのみが@var{compiler-option}として有効です。
 @table @asis
+@item case-fold
+シンボルの大文字小文字を区別しません。
+@ref{Case-sensitivity} を参照して下さい。
+@item include-verbose
+ファイルがincludeされる時にそれを報告します。
+正確にどのファイルがどういう順序でincludeされているかを調べるのに便利です。
+@item load-verbose
+ファイルがロードされる時にそれを報告します。
+正確にどのファイルがどういう順序でロードされているかを調べるのに便利です。
 @item no-inline
-一切のインライン展開を行いません。このオプションは以下の no-inline-globals
-no-inline-locals および no-inline-constants を同時に指定したのと等価です。
+一切のインライン展開を行いません。このオプションは以下の no-inline-globals、
+no-inline-locals、no-inline-constants、no-inline-setters
+を同時に指定したのと等価です。
+@item no-inline-constants
+定数のインライン展開を行ないません。
 @item no-inline-globals
 大域(global)関数のインライン展開を展開を行ないません。
 @item no-inline-locals
 局所(local)関数のインライン展開を展開を行ないません。
-@item no-inline-constants
-定数のインライン展開を行ないません。
-@item no-post-inline-pass
-インライン展開後に再び最適化パスを走らせるのを抑止します。
+@item no-inline-setters
+セッター関数のインライン展開を行いません。
 @item no-lambda-lifting-pass
 lambda lifting最適化パスを抑止します。
+@item no-post-inline-pass
+インライン展開後に再び最適化パスを走らせるのを抑止します。
 @item no-source-info
 デバッグのためのソースファイル情報を保持しません。メモリの使用量は小さくなります。
-@item load-verbose
-ファイルがロードされる時にそれを報告します。
-正確にどのファイルがどういう順序でロードされているかを調べるのに便利です。
-@item include-verbose
-ファイルがincludeされる時にそれを報告します。
-正確にどのファイルがどういう順序でincludeされているかを調べるのに便利です。
+@item safe-string-cursors
+文字列カーソルをそのカーソルが作られた文字列以外の文字列に使おうとした時に
+エラーを投げます。バグを検出できますが、文字列カーソルが常にヒープアロケートされる
+ので性能は低下します。@ref{String cursors}参照。
+@item test
+Gaucheをソースツリーからコンパイルしたまま、
+インストールせずに実行するためのオプションです。
+このオプションが指定されると、@code{gosh}は初期化ファイルを読む前に、
+@code{gosh}のあるディレクトリからの相対パスで
+@code{../lib}、@code{../libsrc}、@code{../src} をロードパスに加えます。
 @item warn-legacy-syntax
 文字列リテラル中に古い形式の16進数エスケープ形式があったら警告します。
 @ref{Reader lexical mode} を参照して下さい。
-@item case-fold
-シンボルの大文字小文字を区別しません。
-@ref{Case-sensitivity} を参照して下さい。
-@item test
-"@code{../src}" と "@code{../lib}" を、初期化ファイルを読む前に
-ロードパスに加えます。これは、作成された@code{gosh}をインストールせずに
-実行してみるのに便利です。
 @end table
 @c COMMON
 @end deftp
@@ -523,7 +552,7 @@ we plan to make this default.
 @code{#<undef>}に依存してたコードは壊れる可能性があります。
 詳しくは@ref{Undefined values}を参照してください。
 
-この機能はなるべくONtにしておくようにお勧めします。
+この機能はなるべくONにしておくようにお勧めします。
 将来はデフォルトで警告を出すようにする予定です。
 @c COMMON
 @end deftp
