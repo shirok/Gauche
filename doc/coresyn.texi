@@ -1515,16 +1515,17 @@ Takes two procedure @var{get} and @var{set}.  Returns a new
 procedure which does the same thing as @var{get}, and its setter is
 locked to @var{set}.
 
-The intention of this procedure is, according to the SRFI-17 document,
-to allow implementations to inline setters efficiently.  Gauche
-hasn't implement such optimization yet.
+When an inlinable procedure has a locked setter, generalized @code{set!}
+may be inlined by the compiler.  @xref{Definitions}, for inlinable
+procedure definition.
 @c JP
 2つの手続き、@var{get}と@var{set}を取り、新しい手続きを返します。
 新しい手続きは@var{get}と同じ動作をし、そのsetter手続きは@var{set}にロックされて
 います。
 
-この手続きは、SRFI-17によれば、setter手続きのインライン展開を可能にするための
-ものですが、Gaucheではまだそのような最適化は実装されていません。
+インライン化可能な手続きにsetterがロックされている場合、一般化された@code{set!}は
+コンパイラによってインライン展開される場合があります。
+インライン化可能な手続きの定義については@ref{Definitions}を参照してください。
 @c COMMON
 @end defun
 
