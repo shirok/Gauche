@@ -16314,21 +16314,54 @@ of at least one cycle.
 @defun edgelist->graph edgelist :optional retriever
 [SRFI-234]
 @c MOD srfi.234
+Converts a list of edges @var{edgelist} to a graph acceptable by
+@code{topolocial-sort}.  Each edge is a list of two nodes, representing
+a directed edge @code{(@var{from-node} @var{to-node})}.
+The returned graph is a list of
+@code{(@var{from-node} @var{downstream-node} @var{downstream-node2} @dots{})}.
+
+The optional argument @var{retriever} is called
+as @code{(@var{retriever} @var{from-node} @var{graph})} to get a
+graph entry starting with @var{from-node}.  When omitted, @code{assoc}
+is used.  If you need to compare nodes in a special way different from
+@code{equal?}, you can give a customized procedure.
+
+@example
+(edgelist->graph '((a b) (a c) (b e) (c b)))
+ @result{} ((a b c) (b e) (c b))
+@end example
 @end defun
 
 @defun edgelist/inverted->graph edgelist :optional retriever
 [SRFI-234]
 @c MOD srfi.234
+Like @code{edgelist->graph}, but take each edge entry
+as @code{(@var{to-node} @var{from-node})}.
+
+@example
+(edgelist/inverted->graph '((a b) (a c) (b e) (a e)))
+ @result{} ((b a) (c a) (e b a))
+@end example
 @end defun
 
 @defun graph->edgelist graph
 [SRFI-234]
 @c MOD srfi.234
+Given @var{graph}, which is a list of
+@code{(@var{from-node} @var{downstream-node} @var{downstream-node1} @dots{})},
+returns a list of edges, each of which being
+@code{(@var{from-node} @var{to-node})}.
+This is an inverse operation of @code{edgelist->graph}.
 @end defun
 
 @defun graph->edgelist/inverted graph
 [SRFI-234]
 @c MOD srfi.234
+Given @var{graph}, which is a list of
+@code{(@var{from-node} @var{downstream-node} @var{downstream-node1} @dots{})},
+returns a list of edges, each of which being
+@code{(@var{to-node} @var{from-node})}.
+This is an inverse operation of @code{edgelist/inverted->graph}.
 @end defun
 
 @defun connected-components graph
