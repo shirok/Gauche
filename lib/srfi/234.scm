@@ -105,10 +105,8 @@
 ;; Calculate the connected components from a graph of in-neighbors
 ;; implements Kosaraju's algorithm: https://en.wikipedia.org/wiki/Kosaraju%27s_algorithm
 (define (connected-components graph)
-  (define nodes-with-inbound-links (map car graph))
   ;; graph of out-neighbors
   (define graph/inverted (edgelist->graph (graph->edgelist/inverted graph)))
-  (define nodes-with-outbound-links (map car graph/inverted))
   ;; for simplicity this uses a list of nodes to query for membership. This is expensive.
   (define visited '())
   (define vertex-list '())
@@ -140,7 +138,9 @@
     (unless (member u in-component)
       (set! components (cons '() components))
       (assign! u u)))
-  (for-each visit! nodes-with-outbound-links)
+  ;; We visit all vertices.  The next expression may call visit! on
+  ;; the same node more than once, but second time and after is no-op.
+  (for-each (lambda (g) (for-each visit! g)) graph)
   (for-each assign-as-component! vertex-list)
   components)
 

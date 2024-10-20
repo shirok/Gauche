@@ -1,3 +1,8 @@
+2024-10-19  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/234.scm (connected-components): Fix a bug in the
+	  reference impl.
+
 2024-10-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/version-alist.scm (gauche): Allow excluding certain
