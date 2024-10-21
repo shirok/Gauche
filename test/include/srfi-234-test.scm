@@ -110,6 +110,16 @@
 
 (test-assert
  (lset= (lambda (a b) (lset= eqv? a b))
+        '((1) (2))
+        (connected-components '((1 2)))))
+
+(test-assert
+ (lset= (lambda (a b) (lset= eqv? a b))
+        '((1 2))
+        (connected-components '((1 2) (2 1)))))
+
+(test-assert
+ (lset= (lambda (a b) (lset= eqv? a b))
         '((1 2) (3 4))
         (connected-components '((1 2 3 4)
                                 (2 1 3)
@@ -135,8 +145,6 @@
                             (5 2) (5 6)
                             (6 5)
                             (7 4) (7 6) (7 7))))))
-
-
 
 (define (permutations edgelist)
   (if (null? edgelist) '(())
