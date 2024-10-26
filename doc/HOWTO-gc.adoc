@@ -54,5 +54,5 @@ keep `gc/configure.ac` compatible with older autotools.
 
 You can update `gc/configure.ac` with `autoreconf`, but there's a caveat.
 It doesn't handle nested `AC_TRY_COMPLE`/`AC_TRY_LINK`, and produces
-soem artifacts.  You need to manually edit it and repeat `autoreconf` until
+some artifacts.  You need to manually edit it and repeat `autoreconf` until
 all the nested old macros are processed.
