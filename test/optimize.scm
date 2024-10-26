@@ -244,6 +244,31 @@
                        [_ #f]))
             (proc->insn/split case-lambda-pass2-inline-3)))
 
+;; getter-with-setter inlining
+(define-inline (getter-setter-inline-1 x) (car x))
+(define-inline (getter-setter-inline-1-set! x v) (set-car! x v))
+(define-inline getter-setter-inline-2
+  (getter-with-setter getter-setter-inline-1 getter-setter-inline-1-set!))
+(test* "inlining getter-with-setter-ed proc, global def, named, get"
+       '(((LREF0-CAR)) ((RET)))
+       (proc->insn/split (^x (getter-setter-inline-2 x))))
+(test* "inlining getter-with-setter-ed proc, global def, named, set"
+       '(((LREF0-PUSH)) ((CONSTI-PUSH 2)) ((GREF-TAIL-CALL 2) set-car!) ((RET)))
+       (unwrap-syntax
+        (proc->insn/split (^x (set! (getter-setter-inline-2 x) 2)))))
+
+(define-inline getter-setter-inline-3
+  (getter-with-setter (^x (cdr x))
+                      (^[x v] (set-cdr! x v))))
+(test* "inlining getter-with-setter-ed proc, global def, anon lambda, get"
+       '(((LREF0-CDR)) ((RET)))
+       (proc->insn/split (^x (getter-setter-inline-3 x))))
+(test* "inlining getter-with-setter-ed proc, global def, anon-lambda, set"
+       '(((LREF0-PUSH)) ((CONSTI-PUSH 2)) ((GREF-TAIL-CALL 2) set-cdr!) ((RET)))
+       (unwrap-syntax
+        (proc->insn/split (^x (set! (getter-setter-inline-3 x) 2)))))
+
+
 
 (test-section "lambda lifting")
 
