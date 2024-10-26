@@ -516,6 +516,7 @@
 (define eager.            (global-id 'eager))
 (define else.             (global-id 'else))
 (define error.            (global-id 'error))
+(define getter-with-setter. (global-id 'getter-with-setter))
 (define include-ci.       (global-id 'include-ci))
 (define include.          (global-id 'include))
 (define lambda.           (global-id 'lambda))
@@ -735,6 +736,19 @@
                  (values closures closed)
                  (loop (cdr lvars) (cdr inits)
                        (acons (car lvars) (car inits) closed))))))]
+        ;; Special treatment of
+        ;;  (define-inline foo (getter-with-setter (lambda ...) (lambda.. )))
+        [(and (has-tag? iform $CALL)
+              (has-tag? ($call-proc iform) $GREF)
+              (global-identifier=? ($gref-id ($call-proc iform))
+                                   getter-with-setter.)
+              (= (length ($call-args iform)) 2))
+         (receive (closures1 closed1)
+             (pass1/check-inlinable-lambda (car ($call-args iform)))
+           (receive (closures2 closed2)
+               (pass1/check-inlinable-lambda (cadr ($call-args iform)))
+             (values (append closures1 closures2)
+                     (append closed1 closed2))))]
         [else (values '() '())]))
 
 (define (pass1/define-inline-classify-env name lv&inits cenv)
