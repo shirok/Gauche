@@ -80,7 +80,7 @@
    (fallback :init-keyword :fallback)))
 
 ;; Low-level API
-;; Parse optsepc and reurun <option-spec>.
+;; Parse optsepc and return <option-spec>.
 (define (make-option-spec optspec :key (help-string #f)
                                        (default #f)
                                        (handler #f))
