@@ -1,3 +1,10 @@
+2024-10-30  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm (run-option-parser): Revise low-level API.
+	  There's not much point to make <option-parser> applicable.  Explicit
+	  procedure to apply the parser on the args is better for clear API
+	  and readability.
+
 2024-10-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm (pass1/check-inlinable-lambda): Allow inlining

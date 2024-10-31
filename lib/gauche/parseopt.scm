@@ -40,7 +40,7 @@
 
    ;; low-level API
    make-option-spec option-spec-value option-spec-appeared?
-   build-option-parser get-option-spec
+   build-option-parser run-option-parser get-option-spec
 
    ;; deprecated API
    make-option-parser parse-options))
@@ -224,8 +224,11 @@
         [else
          (process-args args)]))
 
-;; Now, this is the argument parser body.
-(define (parse-cmdargs args option-specs fallback)
+;; Low-level API
+;; This is the argument parser body.
+(define (run-option-parser option-parser args :optional (fallback #f))
+  (define option-specs (~ option-parser'option-specs))
+  (define fallback-proc (or fallback (~ option-parser'fallback)))
   (let loop ([args args])
     (receive (option nextargs) (next-option args)
       (if option
@@ -253,8 +256,8 @@
               ;; fallback handler, but keep processing 'known' as an option.
               ;; However, we need this behavior for the backward compatibility.
               [(#/^([^=]+)=/ option)
-               => (^m (fallback (m 1) (cons (m 'after) nextargs) loop))]
-              [else (fallback option nextargs loop)])
+               => (^m (fallback-proc (m 1) (cons (m 'after) nextargs) loop))]
+              [else (fallback-proc option nextargs loop)])
         nextargs))))
 
 ;; Low-level API
@@ -263,10 +266,12 @@
     :option-specs specs
     :fallback (or fallback default-fallback)))
 
+;; This is for the backward compatibility.
+;; New code should use run-option-parser if it wants low-level access.
 (define-method object-apply ((parser <option-parser>) args)
-  (parse-cmdargs args (~ parser'option-specs) (~ parser'fallback)))
+  (run-option-parser parser args))
 (define-method object-apply ((parser <option-parser>) args fallback)
-  (parse-cmdargs args (~ parser'option-specs) fallback))
+  (run-option-parser parser args fallback))
 
 (define (default-fallback option arg looper)
   (error <parseopt-error> :option-name #f
@@ -442,7 +447,7 @@
                                (build-option-parser
                                 (list ,@(map cadr bindings))
                                 :fallback ,else-handler)))
-                 (let ((,restvar ((current-option-parser) ,args)))
+                 (let ((,restvar (run-option-parser (current-option-parser) ,args)))
                    (let ,(filter-map
                           (match-lambda
                             [(#f _ _) #f]
@@ -498,4 +503,4 @@
 (define-syntax parse-options
   (syntax-rules ()
     [(_ args clauses)
-     ((make-option-parser clauses) args)]))
+     (run-option-parser (make-option-parser clauses) args)]))
