@@ -17706,24 +17706,123 @@ option specオブジェクトを作ってコマンドライン引数をパーズ
 提供されています。独自のパーザを作りたい時に便利です。
 @c COMMON
 
-@defun make-option-spec spec-string :key help-string default handler
+@defun make-option-spec option-spec :key default callback help-string
 @c MOD gauche.parseopt
+Parse a string @var{option-spec} (see ``Option spec'' above)
+and returns an option spec object, which should
+be treated as opaque.
+
+The keyword arguments corresponds to the values in the @var{bind-spec}
+of @code{let-args} form.
 @end defun
 
 @defun build-option-parser specs :key fallback
 @c MOD gauche.parseopt
+Given a list of option spec objects creates and returns
+an option parser object.  Each option spec object can be created
+with @code{make-option-spec}.
+
+The returned option parser object can be passed to
+@code{run-option-parser} to handle the actual command-line argument list.
+
+The optional @var{fallback} argument must be a procedure if provided.
+See @code{run-option-parser}, for how and when it is called.
+@end defun
+
+@defun run-option-parser option-parser args :optionap fallback
+@c MOD gauche.parseopt
+Handle command-line argument list @var{args}, which must be a
+list of string, with an option parser @var{option-parser}.
+
+It handles the command-line options in @var{args} if any, and set up
+each option's value in the option spec, then returns the rest of
+the argument list.
+
+It looks elements in @var{args} from left to right.  If it encounters
+a string beginning with @code{-}, it thinks the string is a command-line
+option and search option specs in @var{option-server}.
+Note that a string @code{--} marks the end of the option list; it is
+consumed, and the remaining arguments are immediately returned.
+
+If there's a matching option spec, the option itself and the option's
+argument(s) (if the option takes ones) are taken out from @var{args}.
+Then, the option's value is determined as follows.
+
+@itemize @bullet
+@item
+If the option spec has a handler, the handler is called with the option's
+argument(s), and its return value becomes the option's value.
+@item
+Otherwise, if the option does not take an argument, @code{#t}.
+@item
+Otherwise, if the option takes a single argument, the argument itself.
+@item
+Otherwise, the list of arguments.
+@end itemize
+
+Furthermore, the option has plural flag, the final result of
+the option's value
+is a list of all option values.  Otherwise, the option's value
+is overwritten as the last value of the option.
+
+If the given option-like string does not match any of the option specs,
+a fallback procedure is called.  A fallback procedure can be given
+by @var{fallback} optional argument, or the fallback argument
+given to @code{build-option-parser}.  The fallback procedure is
+called with three arguments: the unrecognized option string (without
+preceding hyphen(s)), the argument list following it, and
+a closure that takes an argument list to continue the parsing.
+
+The fallback procedure may process the unknown option as it pleases.
+Whatever the fallback procedure returns becomes the return value
+of @code{run-option-parser}.  If the fallback procedure wants to continue
+processing the rest of the arugment list, tail call the third argument.
+
+If no fallback argument is given to @code{run-option-parser} nor
+@code{build-option-parser}, the default fallback procedure is called,
+which throws ``unrecognized option'' @code{<parseopt-error>} error.
 @end defun
 
 @defun get-option-spec option-parser option-name
 @c MOD gauche.parseopt
+Returns an option spec object that has the option name @var{option-name}
+from @var{option-parser}.  After @code{run-option-parser},
+you need to get an option spec to retrieve the option's value.
 @end defun
 
 @defun option-spec-appeared? optspec
 @c MOD gauche.parseopt
+Returns true if an option spec @var{optspec} has appeared
+in the command-line argument list.  This must be called after
+@code{run-option-parser}.
 @end defun
 
 @defun option-spec-value optspec
 @c MOD gauche.parseopt
+Returns the option's value of an option spec @var{optspec}.
+This must be called after @code{run-option-parser}.
+
+The option's value is determined as follows.
+
+@itemize @bullet
+@item
+If the option didn't appear in the command-line argument list,
+the ``default'' value given to the @code{make-option-spec}.
+@item
+If the option did appear in the comamnd-line argument list,
+the value of each occurrence is determined as follows:
+@itemize @minus
+@item
+If the option doesn't take an argument, @code{#t}.
+@item
+If the option takes one argument, the given argument.
+@item
+If the option takes multiple arguments, the list of the given arguments.
+@end itemize
+Then, if the option is plural, all the value from occurrences
+are gathered to a list in the order or appearance; otherwise,
+the value form the last occurrence is kept.
+@end itemize
 @end defun
 
 @c EN
