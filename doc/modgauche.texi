@@ -17096,7 +17096,7 @@ It must be one of the following forms.
 1. (@var{var} @var{option-spec} [@var{default}] [? @var{helpstr}])
 2. (@var{var} @var{option-spec} [@var{default}] => @var{callback} [? @var{helpstr}])
 
-3. (else => @var{handler})
+3. (else => @var{fallback})
 4. (else @var{formals} @var{body} ...)
 @end example
 
@@ -17159,9 +17159,9 @@ If the corresponding option is not given in @var{args},
 The last @var{bind-spec} may be the form 3 or 4. in which case
 the clause is selected when no other @var{option-spec} matches
 a given command-line option.
-In the form 3, @var{handler} will be called with three arguments;
+In the form 3, @var{fallback} will be called with three arguments;
 the given option, a list of remaining command-line arguments,
-and a continuation procedure.  The @var{handler}
+and a continuation procedure.  The @var{fallback}
 is supposed to handle the given option, and it may call the
 continuation procedure with the remaining arguments to continue
 processing, or it may return a list of arguments which will
@@ -17172,10 +17172,10 @@ The form 4 is a shorthand notion of
 最後の@var{bind-spec}には3か4の形式も許されます。
 この節は、どの@var{option-spec}にもマッチしないコマンドラインオプションが
 与えられた場合に選択されます。
-3番目の形式では、@var{handler}が3つの引数を伴って呼び出されます。
+3番目の形式では、@var{fallback}が3つの引数を伴って呼び出されます。
 引数は、マッチしなかったコマンドラインオプション、
 残りのコマンドライン引数、そして引数処理に戻るための継続手続きです。
-@var{handler}は与えられたコマンドラインオプションを処理した後、
+@var{fallback}は与えられたコマンドラインオプションを処理した後、
 オプション処理を続けたければ継続手続きに残りのコマンドライン引数を渡し、
 オプション処理を打ちきりたければ残りのコマンドライン引数を戻り値として
 返します。返された値は通常の(オプションでない)コマンドライン引数として扱われます。
@@ -17214,10 +17214,11 @@ C における典型的な @code{getopt} や @code{getopt_long} の実装とは�
 
 @c EN
 If the parser encounters an argument with only two minus signs `@code{--}',
-it stops argument parsing and returns a list of arguments after `@code{--}'.
+it stops argument parsing and treats the rest of arguments as non-option
+command-line arguments.
 @c JP
 パーサは、ハイフン2つのみの引数 `@code{--}' に遭遇すると、引数パーシングを
-中止して`@code{--}' の後の引数のリストを返します。
+中止して`@code{--}' の後の引数リストをオプションでない引数リストとして扱います。
 @c COMMON
 
 @c EN
@@ -17820,8 +17821,8 @@ If the option takes one argument, the given argument.
 If the option takes multiple arguments, the list of the given arguments.
 @end itemize
 Then, if the option is plural, all the value from occurrences
-are gathered to a list in the order or appearance; otherwise,
-the value form the last occurrence is kept.
+are gathered to a list in the @emph{reverse} order or appearance;
+otherwise, the value form the last occurrence is kept.
 @end itemize
 @end defun
 
