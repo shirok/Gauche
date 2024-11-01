@@ -250,7 +250,7 @@
          (run '()))
   (test* "plural args" '((#t) ("foo"))
          (run '("-a" "-b" "foo")))
-  (test* "plural args" '((#t #t) ("bar" "foo"))
+  (test* "plural args" '((#t #t) ("foo" "bar"))
          (run '("-a" "-b" "foo" "-a" "-b" "bar")))
   )
 

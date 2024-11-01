@@ -1,3 +1,12 @@
+2024-10-31  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/parseopt.scm: Change the order of plural option's
+	  values; it's more reasonable to return the order appearing in
+	  the command-line arguments.  Plural option support is added
+	  after 0.9.15, so this shouldn't be a compatibility issue.
+	* lib/tools/*: Removed `reverse` from plural option values
+	  according to the above change.
+
 2024-10-30  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm (run-option-parser): Revise low-level API.

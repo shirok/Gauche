@@ -129,7 +129,7 @@
          (cgen-precompile src
                           :out.c out.c
                           :out.sci (or out.sci ext-module)
-                          :load-paths (reverse includes)
+                          :load-paths includes
                           :strip-prefix prefix
                           :ext-initializer extini
                           :sub-initializers subinits
@@ -147,7 +147,7 @@
                                 :strip-prefix prefix
                                 :single-sci-file single-sci
                                 :dso-name dso-name
-                                :load-paths (reverse includes)
+                                :load-paths includes
                                 :omit-line-directives omit-line-directives
                                 :omit-debug-source-info omit-debug-source-info
                                 :predef-syms predef-syms

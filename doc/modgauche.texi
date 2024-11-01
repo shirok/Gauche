@@ -17668,7 +17668,7 @@ binds the rest of the arguments to @var{restargs}.
          (cond [(equal? opt "c") rest]
                [else (push! r opt) (cont rest)]))
        . restargs)
-     (print "options: " (reverse r))
+     (print "options: " r)
      (print "restargs: " restargs)
      0)))
 @end example
@@ -17701,24 +17701,33 @@ and option spec objects which does the actual parsing work.
 Those classes are internal, but a few procedures are exported
 so that you can build your own parser.
 @c JP
-内部的に、@code{let-args}はoption parserオブジェクトと
-option specオブジェクトを作ってコマンドライン引数をパーズします。
+内部的に、@code{let-args}はオプションパーザオブジェクトと
+オプション指定オブジェクトを作ってコマンドライン引数をパーズします。
 これらのクラスの詳細は公開していませんが、それらを扱うためのいくつかの手続きが
 提供されています。独自のパーザを作りたい時に便利です。
 @c COMMON
 
 @defun make-option-spec option-spec :key default callback help-string
 @c MOD gauche.parseopt
+@c EN
 Parse a string @var{option-spec} (see ``Option spec'' above)
 and returns an option spec object, which should
 be treated as opaque.
 
 The keyword arguments corresponds to the values in the @var{bind-spec}
 of @code{let-args} form.
+@c JP
+@var{option-spec}にあるオプション指定文字列(上の「オプション指定」の項参照)を解析し、
+オプション指定オブジェクトを作って返します。
+オプション指定オブジェクトは不透明なオブジェクトとして扱ってください。
+
+キーワード引数は@code{let-args}形式の@var{bind-spec}で指定するものに相当します。
+@c COMMON
 @end defun
 
 @defun build-option-parser specs :key fallback
 @c MOD gauche.parseopt
+@c EN
 Given a list of option spec objects creates and returns
 an option parser object.  Each option spec object can be created
 with @code{make-option-spec}.
@@ -17728,44 +17737,101 @@ The returned option parser object can be passed to
 
 The optional @var{fallback} argument must be a procedure if provided.
 See @code{run-option-parser}, for how and when it is called.
+@c JP
+オプション指定オブジェクトのリストを取り、オプションパーザオブジェクトを作って返します。
+オプション指定オブジェクトは@code{make-option-spec}で作ることができます。
+
+作られたオプションパーザオブジェクトは@code{run-option-parser}に渡して、
+コマンドライン引数を処理するのに使えます。
+
+省略可能な@var{fallback}引数は、渡す場合は手続きでなければなりません。
+それがいつどのように呼ばれるかは@code{run-option-parser}を参照してください。
+@c COMMON
 @end defun
 
 @defun run-option-parser option-parser args :optionap fallback
 @c MOD gauche.parseopt
+@c EN
 Handle command-line argument list @var{args}, which must be a
 list of string, with an option parser @var{option-parser}.
+@c JP
+文字列のリストで表されたコマンドライン引数のリスト@var{var}を、
+オプションパーザオブジェクト@var{option-parser}によって処理します。
+@c COMMON
 
+@c EN
 It handles the command-line options in @var{args} if any, and set up
 each option's value in the option spec, then returns the rest of
 the argument list.
+@c JP
+@var{args}の中にコマンドラインオプションが含まれていればそれを処理し、
+その値を該当するオプション指定オブジェクトに保存します。
+そしてオプションとその引数を取り除いた残りのコマンドライン引数リストを返します。
+@c COMMON
 
-It looks elements in @var{args} from left to right.  If it encounters
+@c EN
+It looks for elements in @var{args} from left to right.  If it encounters
 a string beginning with @code{-}, it thinks the string is a command-line
-option and search option specs in @var{option-server}.
+option and search option specs in @var{option-parser}.
 Note that a string @code{--} marks the end of the option list; it is
 consumed, and the remaining arguments are immediately returned.
+@c JP
+この手続きは、@var{args}の要素を順に見てゆきます。
+引数が@code{-}で始まっていたら、それをコマンドラインオプションとみなし、
+@var{option-parser}の持つオプション指定オブジェクトに該当するものを探します。
+ただし、@code{--}だけの引数は特別で、コマンドラインオプションの終了とみなされ、
+それ以降の引数リストが直ちに返されます。
+@c COMMON
 
+@c EN
 If there's a matching option spec, the option itself and the option's
 argument(s) (if the option takes ones) are taken out from @var{args}.
 Then, the option's value is determined as follows.
+@c JP
+マッチするオプション指定があれば、オプションおよび(そのオプションが引数を取るなら)
+オプション引数が@var{args}から除かれ、オプションの値が次のとおり決められます。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 If the option spec has a handler, the handler is called with the option's
 argument(s), and its return value becomes the option's value.
+@c JP
+オプション指定がハンドラを持っている場合は、オプション引数を引数にしてハンドラが呼ばれ、
+その戻り値がオプションの値となります。
+@c COMMON
 @item
+@c EN
 Otherwise, if the option does not take an argument, @code{#t}.
+@c JP
+そうでなく、オプションが引数を取らない場合は、@code{#t}。
+@c COMMON
 @item
-Otherwise, if the option takes a single argument, the argument itself.
+@c EN
+Otherwise, if the option takes a single argument, the given argument itself.
+@c JP
+そうでなく、オプションが一つだけ引数を取る場合は、その与えられた引数。
+@c COMMON
 @item
+@c EN
 Otherwise, the list of arguments.
+@c JP
+そうでなければ、与えられた引数のリスト。
+@c COMMON
 @end itemize
 
+@c EN
 Furthermore, the option has plural flag, the final result of
-the option's value
-is a list of all option values.  Otherwise, the option's value
+the option's value is a list of all option values.
+Otherwise, the option's value
 is overwritten as the last value of the option.
+@c JP
+さらに、オプションが複数回指定可能な場合は、オプションの値がリストにまとめられます。
+複数回指定不可の場合、最後の値が最終的なオプションの値となります。
+@c COMMON
 
+@c EN
 If the given option-like string does not match any of the option specs,
 a fallback procedure is called.  A fallback procedure can be given
 by @var{fallback} optional argument, or the fallback argument
@@ -17773,56 +17839,130 @@ given to @code{build-option-parser}.  The fallback procedure is
 called with three arguments: the unrecognized option string (without
 preceding hyphen(s)), the argument list following it, and
 a closure that takes an argument list to continue the parsing.
+@c JP
+オプションに見えるコマンドライン引数がオプション指定のいずれにもマッチしない場合、
+fallback手続きが呼ばれます。fallback手続きは、省略可能な@var{fallback}引数に
+与えられていればそれを、そうでなければ@code{build-option-parser}に与えられた
+@var{fallback}が呼ばれます。fallback手続きは3つの引数を取ります:
+認識されなかったオプション引数 (先行するハイフンを除いたもの)、
+その後に続く引数リスト、そして、処理を続けるための継続手続きです。
+@c COMMON
 
+@c EN
 The fallback procedure may process the unknown option as it pleases.
 Whatever the fallback procedure returns becomes the return value
 of @code{run-option-parser}.  If the fallback procedure wants to continue
 processing the rest of the arugment list, tail call the third argument.
+@c JP
+fallback手続きは、好きなように未知のオプションを処理できます。
+fallback手続きが返した値がそのまま@code{run-option-parser}の返り値となります。
+もしfallback手続きが残りの引数リストに対してコマンドライン引数処理を継続したい場合は、
+残りの引数リストを引数として継続手続きを末尾呼び出ししてください。
+@c COMMON
 
+@c EN
 If no fallback argument is given to @code{run-option-parser} nor
 @code{build-option-parser}, the default fallback procedure is called,
 which throws ``unrecognized option'' @code{<parseopt-error>} error.
+@c JP
+@code{run-option-parser}にも@code{build-option-parser}にもfallback手続きが
+与えられなかった場合はデフォルトの手続きが呼ばれます。それは
+``unrecognized option''をメッセージとする@code{<parseopt-error>}エラーを
+投げます。
+@c COMMON
 @end defun
 
 @defun get-option-spec option-parser option-name
 @c MOD gauche.parseopt
+@c EN
 Returns an option spec object that has the option name @var{option-name}
 from @var{option-parser}.  After @code{run-option-parser},
 you need to get an option spec to retrieve the option's value.
+
+If no option spec matches @var{option-name}, @code{#f} is returned.
+@c JP
+@var{option-parser}の持つオプション指定オブジェクトから、@var{option-name}
+にマッチするものを返します。@code{run-option-parser}を実行した後、
+オプションの値を取り出すためにはオプション指定オブジェクトを得る必要があります。
+
+@var{option-name}にマッチするオプション指定が無い場合は@code{#f}が返されます。
+@c COMMON
 @end defun
 
 @defun option-spec-appeared? optspec
 @c MOD gauche.parseopt
+@c EN
 Returns true if an option spec @var{optspec} has appeared
 in the command-line argument list.  This must be called after
 @code{run-option-parser}.
+@c JP
+オプション指定@var{optspec}で表されるオプションがコマンドライン引数に現れたかどうかを
+真偽値で返します。これは@code{run-option-parser}呼び出しの後で呼ばなければなりません。
+@c COMMON
 @end defun
 
 @defun option-spec-value optspec
 @c MOD gauche.parseopt
+@c EN
 Returns the option's value of an option spec @var{optspec}.
 This must be called after @code{run-option-parser}.
+@c JP
+オプション指定@var{optspec}の値を返します。
+これは@code{run-option-parser}呼び出しの後で呼ばなければなりません。
+@c COMMON
 
+@c EN
 The option's value is determined as follows.
+@c JP
+オプションの値は次のとおり決定されます。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 If the option didn't appear in the command-line argument list,
 the ``default'' value given to the @code{make-option-spec}.
+@c JP
+オプションがコマンドライン引数リストに現れなければ、
+@code{make-option-spec}に与えたデフォルト値。
+@c COMMON
 @item
+@c EN
 If the option did appear in the comamnd-line argument list,
 the value of each occurrence is determined as follows:
+@c JP
+オプションがコマンドライン引数リストに現れた場合は、
+次のいずれか:
+@c COMMON
 @itemize @minus
 @item
+@c EN
 If the option doesn't take an argument, @code{#t}.
+@c JP
+オプションが引数を取らない場合は@code{#t}。
+@c COMMON
 @item
+@c EN
 If the option takes one argument, the given argument.
+@c JP
+オプションが引数をひとつ取る場合は、与えられた引数。
+@c COMMON
 @item
+@c EN
 If the option takes multiple arguments, the list of the given arguments.
+@c JP
+オプションが複数の引数を取る場合は、与えられた引数のリスト。
+@c COMMON
 @end itemize
+@c EN
 Then, if the option is plural, all the value from occurrences
-are gathered to a list in the @emph{reverse} order or appearance;
+are gathered to a list in the order of appearance;
 otherwise, the value form the last occurrence is kept.
+@c JP
+さらに、オプションが複数回指定可能な場合は、
+全てのオプションの値がコマンドラインに出現した順でリストにまとめられます。
+そうでない場合は、最後のオプションの値が保持されます。
+@c COMMON
 @end itemize
 @end defun
 

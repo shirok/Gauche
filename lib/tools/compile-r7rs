@@ -107,7 +107,7 @@
        . files)
     (match files
       [(script.scm)
-       (let* ([dirs (append (reverse incdirs) (reverse appenddirs))]
+       (let* ([dirs (append incdirs appenddirs)]
               [extras (fold-right (lambda (dir acc)
                                     (append acc (find-slds dir)))
                                   '() dirs)]

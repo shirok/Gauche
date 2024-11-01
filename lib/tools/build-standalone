@@ -54,7 +54,7 @@
                 ? "Specify the search path of extra files (lib/library.scm ...)
                    if they're not relative to the current directory.
                    This option can be given multiple times."]
-       [defs "D=s{VAR[=VAL]}"
+       [defs "D*=s{VAR[=VAL]}"
               ? "Add C preprocessor definitions while compiling the generated
                  C code.  This option can be given multiple times."]
        [hdrdirs "header-dir*=s{DIR}"
@@ -79,10 +79,10 @@
     (build-standalone (car files)
                       :outfile outfile
                       :extra-files (cdr files)
-                      :include-dirs (reverse incdirs)
-                      :cpp-definitions (reverse defs)
-                      :header-dirs (reverse hdrdirs)
-                      :library-dirs (reverse libdirs)
+                      :include-dirs incdirs
+                      :cpp-definitions defs
+                      :header-dirs hdrdirs
+                      :library-dirs libdirs
                       :dynamic dynamic
                       :keep-c-file keepc))
   0)

@@ -115,7 +115,9 @@
 ;; Low-level API
 (define (option-spec-value optspec)
   (if (option-spec-appeared? optspec)
-    (~ optspec'value)
+    (if (~ optspec'plural?)
+      (reverse (~ optspec'value))
+      (~ optspec'value))
     (~ optspec'default)))
 
 ;; Helper functions
