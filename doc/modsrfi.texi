@@ -16367,6 +16367,22 @@ This is an inverse operation of @code{edgelist/inverted->graph}.
 @defun connected-components graph
 [SRFI-234]
 @c MOD srfi.234
+Returns a list of node lists, where each list of nodes consists of
+a connected component of a directed graph @var{graph}.
+The format of @var{graph} argument is the same as @code{topological-sort},
+i.e. @code{((node downstream @dots{}) @dots{})}.
+
+A connected component is a group of nodes such that from any node in the group
+can reach any other nodes in the same group.
+
+@example
+(connected-components '((1 2 3) (2 1) (3 4) (4 3)))
+  @result{} ((4 3) (1 2))
+@end example
+
+Note: The order of result list, and the order of each node group in the
+list, don't matter.  Mathematically, they should be sets instead of
+lists.
 @end defun
 
 @c ----------------------------------------------------------------------
