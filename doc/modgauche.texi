@@ -17103,7 +17103,7 @@ It must be one of the following forms.
 @c EN
 A list of command-line arguments passed to @var{args} are parsed
 according to @var{option-spec}s.  If the corresponding option
-is given, a variable @var{var} is bound to a value as follows:
+is given, the option's ``value'' is determined as follows:
 
 @example
 (a) If the @var{bind-spec} is 1., then
@@ -17118,7 +17118,7 @@ is given, a variable @var{var} is bound to a value as follows:
 @c JP
 コマンドライン引数のリストが@var{args}に渡されると、それが
 @var{option-spec}に基づいてパーズされます。該当するオプションが見付かれば、
-変数@var{var}が次に述べる値に束縛されます：
+オプションの「値」が次のとおり決定されます。
 
 @example
 (a) @var{bind-spec}の形式が上の1. の場合：
@@ -17127,6 +17127,19 @@ is given, a variable @var{var} is bound to a value as follows:
   (a3) @var{option-spec}がそれ以上の引数を要求する場合は、引数の値のリスト。
 (b) @var{bind-spec}の形式が上の2.の場合、@var{callback}を引数の値を伴って呼び出し、その戻り値。
 @end example
+@c COMMON
+
+@c EN
+An option can be singular, meaning at most one appearance is effective,
+or it can be plural, meaning multiple apperances are considered.
+If an option is singular, @code{var} is bound to the value determined
+as above.  If an option is plural, @var{var} is bound to the list of
+above values from all occurrences.
+@c JP
+オプションには、「単数」、つまりたかだか一回までの指定が有効か、
+「複数」、つまりコマンドラインに複数現れたらそれを全て考慮されるかがあります。
+単数オプションでは、@var{var}は上で決定される値がそのまま束縛されます。
+複数オプションでは、@var{var}は上で決定される値のリストが束縛されます。
 @c COMMON
 
 @c EN
@@ -17499,6 +17512,21 @@ For example, an option spec @code{"h|help"} will match both
 オプションにいくつかの別名がある場合は、"|" でつなげて書いておくことができます。
 例えば@code{"h|help"}という@var{option-spec}は
 "h"にも"help"にもマッチします。
+@c COMMON
+
+@c EN
+If an asterisk @code{*} is followed by the name(s) of the option,
+the option is plural, that is, it can be specified multiple times and
+you can get the values as a list.  For example, @code{I|incdir*=s} means
+@code{-I} and @code{-incdir} option can appear more than once in
+the command line, and its final value would be a list of string argument
+given to all of the options.
+@c JP
+オプションの名前の後に@code{*}を置くと、オプションが複数であること、
+つまり複数回指定できて、その値のリストを受け取れることを示します。
+例えば@code{I|incdir*=s}という指定は、
+@code{-I}や@code{-incdir}オプションがコマンドラインで複数回指定できて、
+その最終的な値は与えられた文字列引数のリストになります。
 @c COMMON
 
 @c EN
