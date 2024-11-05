@@ -8416,12 +8416,20 @@ the argument to @code{cf-init}.
 
 @deftp {Module} gauche.connection
 @mdindex gauche.connection
+@c EN
 A connection is an abstract class to handle full-duplex
 communication channel.  The actual data I/O is done through
 Scheme ports; a channel provides an interface to retrieve those
 ports.  It also has interface to know endpoint names, and the
 way to shutdown the communication.
+@c JP
+コネクションは双方向コミュニケーションチャネルを抽象化するクラスです。
+実際のデータI/OはSchemeポートを使いますが、
+コネクションはコミュニケーションに利用できるポートを得るのに使えるほか、
+通信相手の名前を得たり、通信をシャットダウンする操作を提供します。
+@c COMMON
 
+@c EN
 The @code{<socket>} class, for example, implements the connection
 framework (@pxref{Networking}).  The @code{<tls>} class, which
 wraps a socket to provide TLS communication, also implements it.
@@ -8429,7 +8437,17 @@ That means you can write a client code that works both plain
 socket connection and secure connection.
 You can also abstract communication to the external process
 as a connection (@pxref{Process connection}).
+@c JP
+例えば@code{<socket>}クラスはコネクションフレームワークを実装しています
+(@ref{Networking}参照)。
+ソケットをラップしてTLS通信を提供する@code{<tls>}クラスも、
+コネクションフレームワークを実装しています。
+すると、生のソケットでもTLSソケットでも同じように使えるクライアントコードを書くことができます。
+また、外部プロセスとの通信をコネクションとして抽象化することもできます
+(@ref{Process connection}参照)。
+@c COMMON
 
+@c EN
 Each of the connection endpoints (@emph{self} for our side,
 and @emph{peer} fo the other side) has @emph{addresses},
 some object that identifies the endpoint.  The framework
@@ -8439,8 +8457,21 @@ to get its string representation, so that can be used for logging
 and monitoring.  The concrete
 class can choose suitable address representation.  For example,
 @code{<socket>} uses @code{<sockaddr>} for the addresses.
+@c JP
+コネクションのエンドポイント(自分自身を@emph{self}、相手を@emph{peer}と呼びます)は
+それぞれエンドポイントを同定する@emph{アドレス}を持ちます。
+このフレームワークではアドレスの具体的な型は指定しません。ただ、
+アドレスは@code{connection-address-name}に渡せば
+わかりやすい文字列表現を得られるので、ロギングやモニタリングに使えます。
+コネクションの具体クラスはアドレスをどう表現するかを選べます。
+例えば@code{<socket>}は@code{<sockaddr>}をアドレスとして使います。
+@c COMMON
 
+@c EN
 A concrete class must implement the following methods.
+@c JP
+具体クラスは以下のメソッドを実装しなければなりません。
+@c COMMON
 
 @example
 connection-self-address (c <connection>)
@@ -8452,10 +8483,16 @@ connection-close (c <connection>)
 connection-address-name obj                ; optional
 @end example
 
+@c EN
 At this moment this framework doesn't provide a generic way to
 @emph{create} a connection, since the way to do it may greatly vary
 depending on the concrete implementation.  Each concrete implementation
 should provide its own procedure to create and return a new connection.
+@c JP
+今のところ、このフレームワークはコネクションを作るジェネリックな方法は提供しません。
+それは具体的な実装によって大きく異なるからです。
+各具体クラスは、新たなコネクションを返す独自の手続きを提供しなければなりません。
+@c COMMON
 @end deftp
 
 
