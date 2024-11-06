@@ -1330,7 +1330,7 @@ static u_long legacy_flonum_hash(double f)
         two_pow_63 = ldexp(1.0, 63);
         minus_two_pow_63 = -ldexp(1.0, 63);
         two_pow_32 = ldexp(1.0, 32);
-        AO_nop_full();
+        Scm_AtomicThreadFence();
         initialized = TRUE;
     }
     /* This condition eliminates NaN as well. */

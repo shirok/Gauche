@@ -164,7 +164,7 @@ static ScmObj force_exc_handler(ScmObj *argv, int argc, void *data)
     SCM_INTERNAL_MUTEX_LOCK(c->mutex);
     if (c->state == SCM_PROMISE_UNFORCED) {
         c->code = argv[0];      /* condition object */
-        AO_nop_full();
+        Scm_AtomicThreadFence();
         c->state = SCM_PROMISE_EXCEPTION;
     }
     SCM_INTERNAL_MUTEX_UNLOCK(c->mutex);
@@ -190,7 +190,7 @@ static ScmObj force_cc(ScmObj result, void **data)
                See srfi-45 for the details. */
             ScmPromiseContent *cc = SCM_PROMISE(result)->content;
             c->code  = cc->code;
-            AO_nop_full();
+            Scm_AtomicThreadFence();
             c->state = cc->state;
             SCM_PROMISE(result)->content = c;
         } else {
@@ -199,7 +199,7 @@ static ScmObj force_cc(ScmObj result, void **data)
                one from writing (lazy 3).  So play safe. */
             SCM_ASSERT(SCM_LISTP(result));
             c->code = result;
-            AO_nop_full();
+            Scm_AtomicThreadFence();
             c->state = SCM_PROMISE_FORCED;
         }
     }
@@ -635,7 +635,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
     ScmAtomicWord zero = 0;	/* Need to use C11 intrinsic */
 
     do {
-        if (AO_compare_and_swap_full(&lp->owner, zero, SCM_WORD(vm))) {
+        if (Scm_AtomicCompareAndSwap(&lp->owner, zero, SCM_WORD(vm))) {
             /* Here we own the lazy pair. */
             volatile ScmObj item = lp->data.item;
             volatile ScmObj attrs = SCM_NIL;
@@ -648,7 +648,7 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
                 lp->data.item = generator_to_lazy_pair(lp->data.generator);
                 lp->data.generator = attrs;
                 lp->owner = XPAIR_DESC();
-                AO_nop_full();
+                Scm_AtomicThreadFence();
                 SCM_SET_CAR_UNCHECKED(obj, item); /* Overwrite LazyPair tag */
             } SCM_WHEN_ERROR {
                 lp->owner = (ScmAtomicWord)0; /*NB: See above about error handling*/

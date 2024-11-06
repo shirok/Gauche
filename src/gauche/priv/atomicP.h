@@ -24,13 +24,12 @@
 typedef ScmWord ScmAtomicWord;
 typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
 
-/* We disguise with AO_ operations for now.  */
-#define AO_store_full(loc, val)  atomic_store(loc, val)
-#define AO_store(loc, val)       atomic_store(loc, val)
-#define AO_load(loc)             atomic_load(loc)
-#define AO_compare_and_swap_full(loc, oldval, newval) \
+#define Scm_AtomicStore(loc, val)     atomic_store(loc, val)
+#define Scm_AtomicStoreFull(loc, val) atomic_store(loc, val)
+#define Scm_AtomicLoad(loc)           atomic_load(loc)
+#define Scm_AtomicCompareAndSwap(loc, oldval, newval) \
     atomic_compare_exchange_strong(loc, &oldval, newval)
-#define AO_nop_full()            atomic_thread_fence(__ATOMIC_SEQ_CST)
+#define Scm_AtomicThreadFence()       atomic_thread_fence(__ATOMIC_SEQ_CST)
 
 #  else /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
 /*
@@ -40,13 +39,13 @@ typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
 typedef ScmWord ScmAtomicWord;
 typedef volatile ScmAtomicWord ScmAtomicVar;
 
-#define AO_store_full(loc, val)  __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
-#define AO_store(loc, val)       __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
-#define AO_load(loc)             __atomic_load_n(loc, __ATOMIC_SEQ_CST)
-#define AO_compare_and_swap_full(loc, oldval, newval) \
-    __atomic_compare_exchange_n(loc, &oldval, newval, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
-#define AO_nop_full()            __atomic_thread_fence(__ATOMIC_SEQ_CST)
 
+#define Scm_AtomicStore(loc, val)     __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
+#define Scm_AtomicStoreFull(loc, val) __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
+#define Scm_AtomicLoad(loc)           __atomic_load(loc, __ATOMIC_SEQ_CST)
+#define Scm_AtomicCompareAndSwap(loc, oldval, newval) \
+    __atomic_compare_exchange_n(loc, &oldval, newval, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define Scm_AtomicThreadFence()       __atomic_thread_fence(__ATOMIC_SEQ_CST)
 
 #  endif /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
 
@@ -103,6 +102,13 @@ typedef volatile ScmAtomicWord ScmAtomicVar;
 
 typedef AO_t ScmAtomicWord;
 typedef volatile AO_t ScmAtomicVar;
+
+#define Scm_AtomicStore(loc, val)     AO_store(loc, val)
+#define Scm_AtomicStoreFull(loc, val) AO_store_full(loc, val)
+#define Scm_AtomicLoad(loc)           AO_load(loc)
+#define Scm_AtomicCompareAndSwap(loc, oldval, newval) \
+    AO_compare_and_swap_full(loc, oldval, newval)
+#define Scm_AtomicThreadFence()       AO_nop_full()
 
 #endif
 

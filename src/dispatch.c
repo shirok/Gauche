@@ -169,7 +169,7 @@ static ScmObj mhash_probe(const mhash *h, ScmClass *k, int nargs)
         /* Need to strip 'const', because of C11 error
            http://www.open-std.org/jtc1/sc22/wg14/www/docs/summary.htm#dr_459 */
         ScmAtomicVar *loc = (ScmAtomicVar*)&h->bins[j];
-        ScmWord w = SCM_WORD(AO_load(loc));
+        ScmWord w = SCM_WORD(Scm_AtomicLoad(loc));
         if (w == 0) break;
         if (w != 1) {
             mhash_entry *e = (mhash_entry*)w;
@@ -190,7 +190,7 @@ static mhash *mhash_insert_1(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
     ScmObj ltail = SCM_NIL, ntail = SCM_NIL;
     int i = 0;
     for (; i < h->size; i++) {
-        ScmWord w = SCM_WORD(AO_load(&h->bins[j]));
+        ScmWord w = SCM_WORD(Scm_AtomicLoad(&h->bins[j]));
         if (w == 0) {           /* end of chain */
             if (free_slot < 0) free_slot = j;
             break;
@@ -216,7 +216,7 @@ static mhash *mhash_insert_1(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
     e->nargs = nargs;
     e->leaves = SCM_METHOD_LEAF_P(m)? Scm_Cons(SCM_OBJ(m), ltail) : ltail;
     e->nonleaves = SCM_METHOD_LEAF_P(m) ? ntail : Scm_Cons(SCM_OBJ(m), ntail);
-    AO_store_full(&h->bins[free_slot], (ScmAtomicWord)e);
+    Scm_AtomicStoreFull(&h->bins[free_slot], (ScmAtomicWord)e);
     h->num_entries++;
     return h;
 }
@@ -253,7 +253,7 @@ static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 
     int i = 0;
     for (; i < h->size; i++) {
-        ScmWord w = SCM_WORD(AO_load(&h->bins[j]));
+        ScmWord w = SCM_WORD(Scm_AtomicLoad(&h->bins[j]));
         if (w == 0) break;
         if (w == 1) continue;
         mhash_entry *e = (mhash_entry*)w;
@@ -273,14 +273,14 @@ static mhash *mhash_delete(mhash *h, ScmClass *k, int nargs, ScmMethod *m)
 
             if (SCM_NULLP(ml) && SCM_NULLP(ml)) {
                 h->num_entries--;
-                AO_store(&h->bins[j], 1); /* mark as deleted */
+                Scm_AtomicStore(&h->bins[j], 1); /* mark as deleted */
             } else {
                 mhash_entry *e = SCM_NEW(mhash_entry);
                 e->klass = k;
                 e->nargs = nargs;
                 e->leaves = ml;
                 e->nonleaves = mn;
-                AO_store_full(&h->bins[j], (ScmAtomicWord)e);
+                Scm_AtomicStoreFull(&h->bins[j], (ScmAtomicWord)e);
             }
             break;
         }
@@ -365,16 +365,16 @@ ScmMethodDispatcher *Scm__BuildMethodDispatcher(ScmObj methods, int axis)
 
 void Scm__MethodDispatcherAdd(ScmMethodDispatcher *dis, ScmMethod *m)
 {
-    mhash *h = (mhash*)AO_load(&dis->methodHash);
+    mhash *h = (mhash*)Scm_AtomicLoad(&dis->methodHash);
     mhash *h2 = add_method_to_dispatcher(h, dis->axis, m);
-    if (h != h2) AO_store(&dis->methodHash, (ScmAtomicWord)h2);
+    if (h != h2) Scm_AtomicStore(&dis->methodHash, (ScmAtomicWord)h2);
 }
 
 void Scm__MethodDispatcherDelete(ScmMethodDispatcher *dis, ScmMethod *m)
 {
-    mhash *h = (mhash*)AO_load(&dis->methodHash);
+    mhash *h = (mhash*)Scm_AtomicLoad(&dis->methodHash);
     mhash *h2 = delete_method_from_dispatcher(h, dis->axis, m);
-    if (h != h2) AO_store(&dis->methodHash, (ScmAtomicWord)h2);
+    if (h != h2) Scm_AtomicStore(&dis->methodHash, (ScmAtomicWord)h2);
 }
 
 ScmObj Scm__MethodDispatcherLookup(ScmMethodDispatcher *dis,
@@ -382,7 +382,7 @@ ScmObj Scm__MethodDispatcherLookup(ScmMethodDispatcher *dis,
 {
     if (dis->axis <= argc) {
         ScmClass *selector = typev[dis->axis];
-        mhash *h = (mhash*)AO_load(&dis->methodHash);
+        mhash *h = (mhash*)Scm_AtomicLoad(&dis->methodHash);
         return mhash_probe(h, selector, argc);
     } else {
         return SCM_FALSE;
@@ -395,7 +395,7 @@ ScmObj Scm__MethodDispatcherInfo(const ScmMethodDispatcher *dis)
     /* Need to strip 'const', because of C11 error
        http://www.open-std.org/jtc1/sc22/wg14/www/docs/summary.htm#dr_459 */
     ScmAtomicVar *loc = (ScmAtomicVar*)&dis->methodHash;
-    const mhash *mh = (const mhash*)AO_load(loc);
+    const mhash *mh = (const mhash*)Scm_AtomicLoad(loc);
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("axis"));
     SCM_APPEND1(h, t, SCM_MAKE_INT(dis->axis));
     SCM_APPEND1(h, t, SCM_MAKE_KEYWORD("num-entries"));

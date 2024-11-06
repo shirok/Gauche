@@ -72,7 +72,7 @@
    (c "SCM_CLASS_DEFAULT_CPL")
    ()
    (printer (let* ([b::ScmSharedBox* (SCM_SHARED_BOX obj)]
-                   [cnt::ScmAtomicWord (AO_load (& (-> b counter)))])
+                   [cnt::ScmAtomicWord (Scm_AtomicLoad (& (-> b counter)))])
               (Scm_Printf port "#<shared-box[%d]<%d>"
                           (-> b numValues) cnt)
               (dotimes [i (-> b numValues)]
@@ -195,7 +195,7 @@
                                            (- numVals 1))))]
          [i::int 0])
     (SCM_SET_CLASS z (& Scm_SharedBoxClass))
-    (AO_store (& (-> z counter)) (cast ScmAtomicWord initial-count))
+    (Scm_AtomicStore (& (-> z counter)) (cast ScmAtomicWord initial-count))
     (set! (-> z numValues) numVals)
     (dolist [v values]
       (set! (aref (-> z values) (post++ i)) v))
@@ -203,7 +203,7 @@
 
 ;; API
 (define-cproc shared-box-count (cb::<shared-box>)
-  (let* ([v::ScmAtomicWord (AO_load (& (-> cb counter)))])
+  (let* ([v::ScmAtomicWord (Scm_AtomicLoad (& (-> cb counter)))])
     ;; NB: We might need an api to convert ScmAtomicWord to Scheme integer.
     (return (Scm_MakeInteger (cast long v)))))
 
@@ -211,7 +211,7 @@
 (define-cproc shared-box-inc! (cb::<shared-box>
                                :optional (delta::<fixnum> 1))
   (for ()
-    (let* ([v::ScmAtomicWord (AO_load (& (-> cb counter)))]
+    (let* ([v::ScmAtomicWord (Scm_AtomicLoad (& (-> cb counter)))]
            [vv::ScmAtomicWord (+ v delta)])
-      (when (AO_compare_and_swap_full (& (-> cb counter)) v vv)
+      (when (Scm_AtomicCompareAndSwap (& (-> cb counter)) v vv)
         (return (Scm_MakeInteger (cast long v)))))))

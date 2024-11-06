@@ -175,7 +175,7 @@ static int pax_active_p()
         SCM_ASSERT(ptr != NULL);
         int r = mprotect(ptr, pagesize, PROT_WRITE|PROT_EXEC);
         (void)munmap(ptr, pagesize);
-        AO_store_full(&result_cache, (r < 0));
+        Scm_AtomicStoreFull(&result_cache, (r < 0));
     }
     return result_cache;
 }

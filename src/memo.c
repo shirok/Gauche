@@ -154,12 +154,12 @@ static _Bool memo_equalv(ScmObj *keys, int nkeys, ScmAtomicVar *entry_keys)
     int rest_keys;
     int fixed_keys = get_numkeys(nkeys, &rest_keys);
     for (int i = 0; i < fixed_keys; i++) {
-        ScmObj k = (ScmObj)AO_load(entry_keys+i);
+        ScmObj k = (ScmObj)Scm_AtomicLoad(entry_keys+i);
         if (!equal_1(keys[i], k)) return FALSE;
     }
     if (rest_keys) {
         ScmObj rest = keys[fixed_keys], rp;
-        ScmObj entry_rest = (ScmObj)AO_load(entry_keys+fixed_keys);
+        ScmObj entry_rest = (ScmObj)Scm_AtomicLoad(entry_keys+fixed_keys);
         SCM_FOR_EACH(rp, rest) {
             if (!SCM_PAIRP(entry_rest)) return FALSE;
             if (!equal_1(SCM_CAR(rp), SCM_CAR(entry_rest))) return FALSE;
@@ -189,7 +189,7 @@ ScmObj Scm_MemoTableGetv(ScmMemoTable *tab, ScmObj *keys, int nkeys)
     for (u_long i = 0; i < st->capacity / 2; i++) {
         u_long k = (hashv+i) % st->capacity;
         u_long idx = k * tab->entry_size;
-        ScmAtomicWord entry_hdr = AO_load(&st->vec[idx]);
+        ScmAtomicWord entry_hdr = Scm_AtomicLoad(&st->vec[idx]);
         if (entry_hdr == 0) return SCM_UNBOUND; /* not found */
         if ((entry_hdr & 0x01) == 0
             || entry_hdr != hashv_hdr) {
@@ -233,10 +233,10 @@ static inline void insert_entry(ScmMemoTable *tab, ScmMemoTableStorage *st,
 {
     int num_keys = get_total_numkeys(tab->num_keys);
     for (int ik = 0; ik < num_keys; ik++) {
-        AO_store(&st->vec[entry_index+1+ik], (ScmAtomicWord)keys[ik]);
+        Scm_AtomicStore(&st->vec[entry_index+1+ik], (ScmAtomicWord)keys[ik]);
     }
-    AO_store(&st->vec[entry_index+1+num_keys], (ScmAtomicWord)val);
-    AO_store_full(&st->vec[entry_index], hashv_hdr);
+    Scm_AtomicStore(&st->vec[entry_index+1+num_keys], (ScmAtomicWord)val);
+    Scm_AtomicStoreFull(&st->vec[entry_index], hashv_hdr);
 }
 
 /* returns TRUE on success, FALSE on failure */
@@ -248,10 +248,10 @@ static int search_and_insert(ScmMemoTable *tab, ScmMemoTableStorage *st,
     for (u_long i = 0; i < st->capacity / 2; i++) {
         u_long k = (hashv+i) % st->capacity;
         u_long idx = k * tab->entry_size;
-        ScmAtomicWord entry_hdr = AO_load(&st->vec[idx]);
+        ScmAtomicWord entry_hdr = Scm_AtomicLoad(&st->vec[idx]);
         if (entry_hdr == 0) {
             /* The table doesn't have the key.  Try to claim this entry. */
-            if (AO_compare_and_swap_full(&st->vec[idx], entry_hdr,
+            if (Scm_AtomicCompareAndSwap(&st->vec[idx], entry_hdr,
                                          (ScmAtomicWord)vm)) {
                 insert_entry(tab, st, idx, hashv_hdr, keys, val);
                 return TRUE;
@@ -281,8 +281,8 @@ static int search_and_insert(ScmMemoTable *tab, ScmMemoTableStorage *st,
                the value is 0 and gone to mark the header invalid.  If it
                happens, this insertion is ignored.  It's ok because of
                idempotency. */
-            AO_store_full(&st->vec[idx+1+get_total_numkeys(tab->num_keys)],
-                          (ScmAtomicWord)val);
+            Scm_AtomicStoreFull(&st->vec[idx+1+get_total_numkeys(tab->num_keys)],
+                                (ScmAtomicWord)val);
             return TRUE;
         }
     }
@@ -305,15 +305,15 @@ static void extend_table(ScmMemoTable *tab)
        costs extra time to re-compute that result. */
     for (u_long i = 0; i < orig_st->capacity; i++) {
         u_long idx = i * tab->entry_size;
-        ScmAtomicWord entry_hdr = AO_load(&orig_st->vec[idx]);
+        ScmAtomicWord entry_hdr = Scm_AtomicLoad(&orig_st->vec[idx]);
         if ((entry_hdr & 0x01) == 0) {
             /* unused, invalid, or someone is working on it. */
             continue;
         }
         for (int k = 0; k < num_keys; k++) {
-            keys[k] = SCM_OBJ(AO_load(&orig_st->vec[idx+1+k]));
+            keys[k] = SCM_OBJ(Scm_AtomicLoad(&orig_st->vec[idx+1+k]));
         }
-        ScmObj val = SCM_OBJ(AO_load(&orig_st->vec[idx+1+num_keys]));
+        ScmObj val = SCM_OBJ(Scm_AtomicLoad(&orig_st->vec[idx+1+num_keys]));
         if (!search_and_insert(tab, new_st, entry_hdr, keys, val, self)) {
             Scm_Panic("memo table overflow double fault");
         }
@@ -396,16 +396,16 @@ void Scm__MemoTableDump(ScmMemoTable *tab, ScmPort *port)
                    tab->storage->vec[i]);
         int valid = tab->storage->vec[i] & 0x01;
         for (int j = 0; j < fixed_keys; j++) {
-            ScmAtomicWord key = AO_load(&tab->storage->vec[i+1+j]);
+            ScmAtomicWord key = Scm_AtomicLoad(&tab->storage->vec[i+1+j]);
             dump_1(key, valid, port);
         }
         if (rest_keys) {
-            ScmAtomicWord keys = AO_load(&tab->storage->vec[i+1+fixed_keys]);
+            ScmAtomicWord keys = Scm_AtomicLoad(&tab->storage->vec[i+1+fixed_keys]);
             dump_1(keys, valid, port);
         }
 
         ScmAtomicWord value =
-            AO_load(&tab->storage->vec[i+1+fixed_keys+rest_keys]);
+            Scm_AtomicLoad(&tab->storage->vec[i+1+fixed_keys+rest_keys]);
         dump_1(value, valid, port);
     }
 }

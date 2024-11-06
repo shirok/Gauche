@@ -3081,7 +3081,7 @@ int Scm__WinMutexLock(HANDLE mutex)
 int Scm__WinFastLockInit(ScmInternalFastlock *spin)
 {
     *spin = SCM_NEW(struct win_spinlock_rec);
-    AO_store(&(*spin)->lock_state, 0);
+    Scm_AtomicStore(&(*spin)->lock_state, 0);
     return 0;
 }
 
@@ -3090,7 +3090,7 @@ int Scm__WinFastLockLock(ScmInternalFastlock spin)
     /* spin may be NULL when FASTLOCK_LOCK is called on already-closed port. */
     if (spin != NULL) {
         ScmAtomicVar idle = 0;
-        while (!AO_compare_and_swap_full(&spin->lock_state, idle, 1)) {
+        while (!Scm_AtomicCompareAndSwap(&spin->lock_state, idle, 1)) {
             /* idle might be changed */
             idle = 0;
             /* it might be slow */
@@ -3104,7 +3104,7 @@ int Scm__WinFastLockUnlock(ScmInternalFastlock spin)
 {
     /* spin may be NULL when FASTLOCK_LOCK is called on already-closed port. */
     if (spin != NULL) {
-        AO_store_full(&spin->lock_state, 0);
+        Scm_AtomicStoreFull(&spin->lock_state, 0);
     }
     return 0;
 }
