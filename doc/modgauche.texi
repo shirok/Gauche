@@ -8499,44 +8499,85 @@ should provide its own procedure to create and return a new connection.
 @deffn {Method} connection-self-address connection
 @deffnx {Method} connection-peer-address connection
 @c MOD gauche.connection
+@c EN
 Returns the address of this @var{connection}'s endpoint and
 its peer's.  For sockets and @code{<tls>}, it is an instance
 of @code{<sockaddr>}.  For processes, it is a string
 describing the process.
+@c JP
+@var{connection}のエンドポイントの自分自身と相手のアドレスをそれぞれ返します。
+ソケットと@code{<tls>}オブジェクトでは、アドレスは@code{<sockaddr>}のインスタンスです。
+プロセスコネクションでは、プロセスを記述する文字列です。
+@c COMMON
 
+@c EN
 If @var{connection} is not connected, these methods can return @code{#f}.
+@c JP
+@var{connection}が接続されていなければ@code{#f}が返されるかもしれません。
+@c COMMON
 
+@c EN
 The returned value (other than @code{#f}) must be able to
 be passed to @code{connection-address-name} method.
+@c JP
+@code{#f}でない返り値は、@code{connection-address-name}に渡すことができます。
+@c COMMON
 
+@c EN
 Currently addresses are only used for logging purpose within
 the connection framework; however, we may enhance the framework
 to add ``connect'' operation, for example, so the concrete class
 is encouraged to use objects that can be used to create connections.
+@c JP
+今のところ、アドレスはロギング用途にのみ使われています。
+しかし、将来、``connect'' 操作もこのフレームワークで提供することになるかもしれまえｓん。
+新たな具体クラスを実装する場合は、可能ならコネクションを作るために渡せるオブジェクトを
+アドレスにするのが良いでしょう。
+@c COMMON
 @end deffn
 
 @deffn {Method} connection-address-name address
 @c MOD gauche.connection
+@c EN
 This method returns a string representation of @var{address}, which is
 a returned value from @code{connection-self-address} and
-@code{connection-peer-address}.  The default method just uses
+@code{connection-peer-address}.  It is for display/logging.
+For sockets, a resonable string representation of socket address is
+returned.   The default method just uses
 @var{address}'s @code{display}-representation.  If a concrete
 class chooses aggregate objects to represent addresses, it should
 provide this method as well.
+@c JP
+このメソッドは、@code{connection-self-address}や@code{connection-peer-address}
+から返されるアドレスオブジェクトを取り、その文字列表現を返します。ソケットアドレスの場合は、
+読みやすい文字列表示が返されます。デフォルトメソッドはアドレスオブジェクトの
+display表示になります。具体クラスはより読みやすい表記を返すメソッドを実装すべきです。
+@c COMMON
 @end deffn
 
 @deffn {Method} connection-input-port connection
 @deffnx {Method} connection-output-port connection
 @c MOD gauche.connection
-Returns an input port and an output port to read from and write to
-the connection, respectively.
+@c EN
+Returns an input port and an output port of the connection, respectively.
+Writing to the output port sends the data to the peer,
+and reading from the input port returns the received data.
 
 If the connection is not connected, or already shutdown or closed,
 the return value of these methods are unspecified.
+@c JP
+コネクションの入力ポートと出力ポートをそれぞれ返します。
+出力ポートに書き込むことでデータを送信することができ、
+また入力ポートから読み込むことで受信したデータを読み出せます。
+
+コネクションがまだ接続されていなかったり、既にクローズしている場合は
+これらのメソッドの戻り値は不定です。
+@c COMMON
 @end deffn
 
 @deffn {Method} connection-shutdown connection :optional how
 @c MOD gauche.connection
+@c EN
 Shutdown the connection.  You can either shutdown the connection
 entirely at once, or shutdown only read or write channel of it.
 
@@ -8549,39 +8590,101 @@ Note that merely closing the connection doesn't shutdown the
 connection---the process may fork after creating the connection,
 and in that case, one process may close the connection without
 shutting down.
+@c JP
+コネクションを遮断します。送受信を同時に遮断することも、
+送信か受信どちらかのみを遮断することもできます。
 
+遮断は、通信相手に通信の終了を通知する操作です。
+通常、送信を遮断すると、通信相手側では受信データとしてEOFが返されます。
+遮断したコネクションに対応するポートは閉じられ、以降の操作に使うことはきません。
+
+コネクションをクローズするだけでは、必ずしも通信が遮断されるとは限らないことに
+注意してください。例えばコネクションを作った後でプロセスがforkした場合、
+一方のプロセスがコネクションを閉じてももう一方のプロセスのコネクションは遮断されません。
+@c COMMON
+
+@c EN
 The @var{how} argument must be one of those symbols:
+@c JP
+@var{how}引数は次のいずれかのシンボルです。
+@c COMMON
 @table @code
 @item read
+@c EN
 Shutdown read channel of the connection.
+@c JP
+読み込み(受信)チャネルを遮断します。
+@c COMMON
 @item write
+@c EN
 Shutdown write channel of the connection.
+@c JP
+書き込み(送信)チャネルを遮断します。
+@c COMMON
 @item both
+@c EN
 Shutdown both channels of the connection.
+@c JP
+送受信両方のチャネルを遮断します。
+@c COMMON
 @end table
 
-If omitted, @var{both} is assumed.
+@c EN
+If omitted, @code{both} is assumed.
+@c JP
+省略時は@code{both}と同じです。
+@c COMMON
 
+@c EN
 Shutting down already shut down channel has no effect.
+@c JP
+既に遮断されたチャネルを再び遮断しても何も起きません。
+@c COMMON
 
+@c EN
 Note: Some concrete implementation of connection may not allow
 to shutdown each channels independently.  In such case,
 the connection is shut down entirely regardless of @var{how} argument.
+@c JP
+註: 具体的な実装によっては、送信・受信チャネルを独立して遮断できないかもしれません。
+その場合は、@var{how}引数に関わらず送受信両方が遮断されます。
+@c COMMON
 
+@c EN
 The one-argument case is handled by the default method (it calls
 two-argument method with @code{both} as @var{how}).  So the
 concrete class only need to define two argument method.
+@c JP
+@var{how}引数が省略された場合はデフォルトメソッドが@var{how}に@code{both}を
+指定したメソッドを呼ぶので、具体クラスは2引数のメソッドのみを定義すれば良いです。
+@c COMMON
 @end deffn
 
 @deffn {Method} connection-close connection
 @c MOD gauche.connection
+@c EN
 Close the connection.  This destroys the connection and frees
 local resources.  Note that this does not shutdown the connection
-itself.  If this connection is the only endpoint of this side,
+itself.  For example, when a process forks after establishing a connection and
+the parent process closes the connection, the child process can still
+communicate with the connection.
+
+If this connection is the only endpoint of this side,
 the peer will get an error when it tries to communicate.
 
 See @code{connection-shutdown} for the details of shutting down
 a connection.
+@c JP
+コネクションをクローズします。これはローカルのコネクションオブジェクトを破棄して
+リソースを開放します。コネクションそのものが遮断されるわけではないことに注意してください。
+例えばコネクション接続後にプロセスがforkし、親プロセスがコネクションをクローズしたとしても、
+子プロセスは通信を続けることができます。
+
+このコネクションがローカル側の唯一のエンドポイントである場合は、
+こちらがクローズした後に相手が通信しようとすると、相手側でエラーになるでしょう。
+
+コネクションの遮断については@code{connection-shutdown}を参照してください。
+@c COMMON
 @end deffn
 
 @c ----------------------------------------------------------------------
