@@ -34,7 +34,6 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/configP.h"
-#include "gauche/priv/boxP.h"
 
 /* Srfi-195 extends box type to allow muliple values.  We use separate
    types for single-value box and multi-value box, for we want to optimize
