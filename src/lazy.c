@@ -632,10 +632,10 @@ ScmObj Scm_ForceLazyPair(volatile ScmLazyPair *obj)
     static const ScmTimeSpec req = {0, 1000000};
     ScmTimeSpec rem;
     ScmVM *vm = Scm_VM();
-    ScmAtomicWord zero = 0;	/* Need to use C11 intrinsic */
 
     do {
-        if (Scm_AtomicCompareAndSwap(&lp->owner, zero, SCM_WORD(vm))) {
+        ScmAtomicWord zero = 0;
+        if (Scm_AtomicCompareExchange(&lp->owner, &zero, SCM_WORD(vm))) {
             /* Here we own the lazy pair. */
             volatile ScmObj item = lp->data.item;
             volatile ScmObj attrs = SCM_NIL;

@@ -298,6 +298,26 @@ void Scm_SetRuntimeReplState(int full)
 }
 
 /*=============================================================
+ * Memory utilities
+ */
+
+#if SCM_ATOMIC_NEED_HELPER
+/* This is only needed if we fall back to libatomic_ops and not GNUC */
+int Scm__AtomicCompareExchange(ScmAtomicVar *loc,
+                               ScmAtomicWord *expectedloc,
+                               ScmAtomicWord newval)
+{
+    ScmAtomicWord expected = *expectedloc;
+    ScmAtomicWord oldval = AO_fetch_compare_and_swap_full(loc,
+                                                          expected,
+                                                          newval);
+    *expectedloc = expected;
+    return oldval == expected;
+}
+#endif /*SCM_ATOMIC_NEED_HELPER*/
+
+
+/*=============================================================
  * GC utilities
  */
 

@@ -8,6 +8,21 @@
  *  ScmAtomicWord - A type of a value that can be used for atomic operations.
  *  ScmAtomicVar  - Location must be declared with this type to be operated
  *                  on atomically.
+ *
+ * APIs
+ *  Scm_AtomicLoad(ScmAtomicVar *loc) -> ScmAtomicWord
+ *     Load the value atomically.
+ *  Scm_AtomicStore(ScmAtomicVar *loc, ScmAtomicWord) -> void
+ *     Store the value atomically.
+ *  Scm_AtomicStoreFull(ScmAtomicVar *loc, ScmAtomicWord) -> void
+ *     Store the value atomically and perform memory barrier.
+ *  Scm_AtomicCompareExchange(ScmAtomicVar *loc, ScmAtomicWord *expected,
+ *                            ScmAtomicWord newval) -> bool
+ *     Compare *expected and *loc, and if they match, store newval to *loc.
+ *     Otherwise, the value of *loc is stored in *expected.
+ *     Returns TRUE if *loc is updated, FALSE if not.
+ *  Scm_AtomicThreadFence() -> void
+ *     Synchronize memory.
  */
 
 #ifndef GAUCHE_PRIV_ATOMICP_H
@@ -27,8 +42,8 @@ typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
 #define Scm_AtomicStore(loc, val)     atomic_store(loc, val)
 #define Scm_AtomicStoreFull(loc, val) atomic_store(loc, val)
 #define Scm_AtomicLoad(loc)           atomic_load(loc)
-#define Scm_AtomicCompareAndSwap(loc, oldval, newval) \
-    atomic_compare_exchange_strong(loc, &oldval, newval)
+#define Scm_AtomicCompareExchange(loc, expectedloc, newval)  \
+    atomic_compare_exchange_strong(loc, expectedloc, newval)
 #define Scm_AtomicThreadFence()       atomic_thread_fence(__ATOMIC_SEQ_CST)
 
 #  else /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
@@ -43,8 +58,8 @@ typedef volatile ScmAtomicWord ScmAtomicVar;
 #define Scm_AtomicStore(loc, val)     __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
 #define Scm_AtomicStoreFull(loc, val) __atomic_store_n(loc, val, __ATOMIC_SEQ_CST)
 #define Scm_AtomicLoad(loc)           __atomic_load(loc, __ATOMIC_SEQ_CST)
-#define Scm_AtomicCompareAndSwap(loc, oldval, newval) \
-    __atomic_compare_exchange_n(loc, &oldval, newval, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define Scm_AtomicCompareExchange(loc, expectedloc, newval) \
+    __atomic_compare_exchange_n(loc, expectedloc, newval, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
 #define Scm_AtomicThreadFence()       __atomic_thread_fence(__ATOMIC_SEQ_CST)
 
 #  endif /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
@@ -106,8 +121,26 @@ typedef volatile AO_t ScmAtomicVar;
 #define Scm_AtomicStore(loc, val)     AO_store(loc, val)
 #define Scm_AtomicStoreFull(loc, val) AO_store_full(loc, val)
 #define Scm_AtomicLoad(loc)           AO_load(loc)
-#define Scm_AtomicCompareAndSwap(loc, oldval, newval) \
-    AO_compare_and_swap_full(loc, oldval, newval)
+
+#if defined(__GNUC__)
+#  define Scm_AtomicCompareExchange(loc, expectedloc, newval)           \
+    ({                                                                  \
+        AO_t expected__ = *expectedloc;                                 \
+        AO_t oldval__ =                                                 \
+            AO_fetch_compare_and_swap_full(loc, expected__, newval);    \
+        *expectedloc = oldval__;                                        \
+        expected__ == oldval__;                                         \
+      })
+#else /*!__GNUC__*/
+#  define Scm_AtomicCompareExchange(loc, expectedloc, newval) \
+    Scm__AtomicCompareExchange(loc, expectedloc, newval)
+
+#  define SCM_ATOMIC_NEED_HELPER 1
+extern int Scm__AtomicCompareExchange(ScmAtomicVar *loc,
+                                      ScmAtomicWord *expectedloc,
+                                      ScmAtomicWord newval);
+#endif /*!__GNUC__*/
+
 #define Scm_AtomicThreadFence()       AO_nop_full()
 
 #endif

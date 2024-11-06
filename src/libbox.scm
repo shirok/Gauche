@@ -213,5 +213,5 @@
   (for ()
     (let* ([v::ScmAtomicWord (Scm_AtomicLoad (& (-> cb counter)))]
            [vv::ScmAtomicWord (+ v delta)])
-      (when (Scm_AtomicCompareAndSwap (& (-> cb counter)) v vv)
+      (when (Scm_AtomicCompareExchange (& (-> cb counter)) (& v) vv)
         (return (Scm_MakeInteger (cast long v)))))))

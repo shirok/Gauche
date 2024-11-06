@@ -251,7 +251,8 @@ static int search_and_insert(ScmMemoTable *tab, ScmMemoTableStorage *st,
         ScmAtomicWord entry_hdr = Scm_AtomicLoad(&st->vec[idx]);
         if (entry_hdr == 0) {
             /* The table doesn't have the key.  Try to claim this entry. */
-            if (Scm_AtomicCompareAndSwap(&st->vec[idx], entry_hdr,
+            ScmAtomicWord expected = entry_hdr;
+            if (Scm_AtomicCompareExchange(&st->vec[idx], &expected,
                                          (ScmAtomicWord)vm)) {
                 insert_entry(tab, st, idx, hashv_hdr, keys, val);
                 return TRUE;
