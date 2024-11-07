@@ -1,5 +1,8 @@
 2024-11-07  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/interactive/editable-reader.scm (make-editable-reader):
+	  Clear buffered input when a reader raise an error, so that
+	  subsequent read won't be confused.
 	* src/gauche.h (SCM_CHAR_MAX): Change SCM_CHAR_MAX to 0x10ffff.
 	  We intentionally took wider range for the room of extension,
 	  but now that internal encoding is fixed to utf-8 and more

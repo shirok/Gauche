@@ -66,7 +66,12 @@
           [buffer (open-input-string "")])
       (define (read-1 reader)
         (rec (try)
-          (let1 x (reader buffer)
+          (let1 x (guard (e [(is-a? e <read-error>)
+                             ;; discard remaining input so that subsequent
+                             ;; read won't be confused
+                             (set! buffer (open-input-string ""))
+                             (raise e)])
+                    (reader buffer))
             (if (eof-object? x)
               (let1 input (read-line/edit ctx)
                 (if (eof-object? input)
