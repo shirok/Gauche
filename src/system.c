@@ -3090,7 +3090,7 @@ int Scm__WinFastLockLock(ScmInternalFastlock spin)
     /* spin may be NULL when FASTLOCK_LOCK is called on already-closed port. */
     if (spin != NULL) {
         ScmAtomicVar idle = 0;
-        while (!Scm_AtomicCompareAndSwap(&spin->lock_state, idle, 1)) {
+        while (!Scm_AtomicCompareExchange(&spin->lock_state, idle, 1)) {
             /* idle might be changed */
             idle = 0;
             /* it might be slow */
