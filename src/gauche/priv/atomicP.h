@@ -21,6 +21,8 @@
  *     Compare *expected and *loc, and if they match, store newval to *loc.
  *     Otherwise, the value of *loc is stored in *expected.
  *     Returns TRUE if *loc is updated, FALSE if not.
+ *  Scm_AtomicExchange(ScmAtomicVar *loc, ScmAtomicWord newval) -> ScmAtomicWord
+ *     Set newval to *loc, and returns the previous value of *loc
  *  Scm_AtomicThreadFence() -> void
  *     Synchronize memory.
  */
@@ -44,6 +46,7 @@ typedef volatile _Atomic ScmAtomicWord ScmAtomicVar;
 #define Scm_AtomicLoad(loc)           atomic_load(loc)
 #define Scm_AtomicCompareExchange(loc, expectedloc, newval)  \
     atomic_compare_exchange_strong(loc, expectedloc, newval)
+#define Scm_AtomicExchange(loc, newval) atomic_exchange(loc, newval)
 #define Scm_AtomicThreadFence()       atomic_thread_fence(__ATOMIC_SEQ_CST)
 
 #  else /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
@@ -60,6 +63,7 @@ typedef volatile ScmAtomicWord ScmAtomicVar;
 #define Scm_AtomicLoad(loc)           __atomic_load(loc, __ATOMIC_SEQ_CST)
 #define Scm_AtomicCompareExchange(loc, expectedloc, newval) \
     __atomic_compare_exchange_n(loc, expectedloc, newval, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)
+#define Scm_AtomicExchange(loc, newval) __atomic_exchange_n(loc, newval, __ATOMIC_SEQ_CST)
 #define Scm_AtomicThreadFence()       __atomic_thread_fence(__ATOMIC_SEQ_CST)
 
 #  endif /* GC_BUILTIN_ATOMIC && !HAVE_STDATOMIC_H */
@@ -131,15 +135,31 @@ typedef volatile AO_t ScmAtomicVar;
         *expectedloc = oldval__;                                        \
         expected__ == oldval__;                                         \
       })
+
+#  define Scm_AtomicExchange(loc, newval)                               \
+    ({                                                                  \
+        AO_t current__;                                                 \
+        do {                                                            \
+            current__ = *loc;                                           \
+        } while (AO_compare_and_swap_full(loc, current__, newval));     \
+      })
+
 #else /*!__GNUC__*/
 #  define Scm_AtomicCompareExchange(loc, expectedloc, newval) \
     Scm__AtomicCompareExchange(loc, expectedloc, newval)
+#  define Scm_AtomicExchange(loc, newval) \
+    Scm__AtomicExchange(loc, newval)
 
 #  define SCM_ATOMIC_NEED_HELPER 1
 extern int Scm__AtomicCompareExchange(ScmAtomicVar *loc,
                                       ScmAtomicWord *expectedloc,
                                       ScmAtomicWord newval);
+extern int Scm__AtomicExchange(ScmAtomicVar *loc, ScmAtomicWord newval);
+
 #endif /*!__GNUC__*/
+
+
+
 
 #define Scm_AtomicThreadFence()       AO_nop_full()
 

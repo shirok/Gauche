@@ -303,6 +303,8 @@ void Scm_SetRuntimeReplState(int full)
 
 #if SCM_ATOMIC_NEED_HELPER
 /* This is only needed if we fall back to libatomic_ops and not GNUC */
+#include "gauche/priv/atomicP.h"
+
 int Scm__AtomicCompareExchange(ScmAtomicVar *loc,
                                ScmAtomicWord *expectedloc,
                                ScmAtomicWord newval)
@@ -313,6 +315,16 @@ int Scm__AtomicCompareExchange(ScmAtomicVar *loc,
                                                           newval);
     *expectedloc = expected;
     return oldval == expected;
+}
+
+ScmAtomicWord Scm__AtomicExchange(ScmAtomicVar *loc,
+                                  ScmAtomicWord newval)
+{
+    ScmAtomicWord current;
+    do {
+        current = *loc;
+    } while (AO_compare_and_swap_full(loc, current, newval));
+    return current;
 }
 #endif /*SCM_ATOMIC_NEED_HELPER*/
 

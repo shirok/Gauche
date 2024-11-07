@@ -1,3 +1,11 @@
+2024-11-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/atomicP.h: Change API to align to C11 atomic
+	  primitives rather than emulating libatomic_ops primitives.
+	  atomic_compare_exchange in C11 is not a simple replacement of
+	  AO_compare_and_swap.  Since AO_ will fade out, we emulate C11
+	  semantics with AO_* when C11 primitives isn't available.
+
 2024-10-31  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/parseopt.scm: Change the order of plural option's
