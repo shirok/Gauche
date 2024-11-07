@@ -385,7 +385,7 @@ typedef struct ScmFlonumRec {
 /*
  * CHARACTERS
  *
- *  A character is represented by (up to) 29-bit integer Unicode codepoint.
+ *  A character is represented by an integer Unicode codepoint.
  */
 
 #define SCM_CHAR(obj)           ((ScmChar)(obj))
