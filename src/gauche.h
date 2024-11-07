@@ -385,10 +385,7 @@ typedef struct ScmFlonumRec {
 /*
  * CHARACTERS
  *
- *  A character is represented by (up to) 29-bit integer.  The actual
- *  encoding depends on compile-time flags.
- *
- *  For character cases, I only care about ASCII chars (at least for now)
+ *  A character is represented by (up to) 29-bit integer Unicode codepoint.
  */
 
 #define SCM_CHAR(obj)           ((ScmChar)(obj))
@@ -397,7 +394,7 @@ typedef struct ScmFlonumRec {
 #define SCM_MAKE_CHAR(ch)       SCM_OBJ((intptr_t)(((unsigned long)(ch))<<8) + 3)
 
 #define SCM_CHAR_INVALID        ((ScmChar)(-2)) /* indicate invalid char (-2 is used to avoid conflict with libc's EOF) */
-#define SCM_CHAR_MAX            (0xffffff)
+#define SCM_CHAR_MAX            (0x10ffff)
 
 #define SCM_CHAR_ASCII_P(ch)    ((ch) < 0x80)
 

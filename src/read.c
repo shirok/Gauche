@@ -780,7 +780,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
         for (i=0; i<buflen; i++) {
             if (isxdigit(buf[i])) {
                 val = val*16 + Scm_DigitToInt(buf[i], 16, FALSE);
-                if (val > 0x10ffff) overflow = TRUE;
+                if (val > SCM_CHAR_MAX) overflow = TRUE;
             } else if (terminator && buf[i] == ';' && i > 0) {
                 /* R7RS syntax */
                 *nextbuf = buf+i+1;
@@ -810,6 +810,7 @@ ScmChar Scm_ReadXdigitsFromString(const char *buf,
         for (int i=0; i<ndigits; i++) {
             if (!isxdigit(buf[i])) return SCM_CHAR_INVALID;
             val = val * 16 + Scm_DigitToInt(buf[i], 16, FALSE);
+            if (val > SCM_CHAR_MAX) return SCM_CHAR_INVALID;
         }
         *nextbuf = buf + ndigits;
         if (!legacy_fallback && key != 'x') val = Scm_UcsToChar(val);
