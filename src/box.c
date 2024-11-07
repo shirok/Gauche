@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/configP.h"
+#include "gauche/priv/boxP.h"
 
 /* Srfi-195 extends box type to allow muliple values.  We use separate
    types for single-value box and multi-value box, for we want to optimize
@@ -168,4 +169,54 @@ ScmMVBox *Scm_ListToMVBox(ScmObj elts)
         b->values[i] = SCM_CAR(elts);
     }
     return b;
+}
+
+/* Atomic Box.
+ *  SRFI-230 defines four types of atomic boxes.
+ */
+
+static ScmObj atomic_box_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
+{
+    return SCM_OBJ(Scm_MakeAtomicBox(klass, SCM_UNDEFINED));
+}
+
+SCM_DEFINE_BASE_CLASS(Scm_AtomicBoxClass, ScmClass,
+                      NULL, NULL, NULL, atomic_box_allocate,
+                      SCM_CLASS_DEFAULT_CPL);
+
+ScmAtomicBox *Scm_MakeAtomicBox(ScmClass *klass, ScmObj obj)
+{
+    SCM_ASSERT(Scm_TypeP(SCM_OBJ(klass), SCM_CLASS_ATOMIC_BOX));
+    ScmAtomicBox *z = SCM_NEW(ScmAtomicBox);
+    SCM_SET_CLASS(z, klass);
+    Scm_AtomicStoreFull(&z->val, (ScmAtomicWord)obj);
+    return z;
+}
+
+ScmObj Scm_AtomicBoxRef(ScmAtomicBox *abox)
+{
+    return SCM_OBJ(Scm_AtomicLoad(&abox->val));
+}
+
+void Scm_AtomicBoxSet(ScmAtomicBox *abox, ScmObj obj)
+{
+    Scm_AtomicStoreFull(&abox->val, (ScmAtomicWord)obj);
+}
+
+ScmObj Scm_AtomicBoxSwap(ScmAtomicBox *abox, ScmObj obj)
+{
+    ScmAtomicWord old = Scm_AtomicExchange(&abox->val, (ScmAtomicWord)obj);
+    return SCM_OBJ(old);
+}
+
+ScmObj Scm_AtomicBoxCompareAndSwap(ScmAtomicBox *abox,
+                                   ScmObj expected,
+                                   ScmObj obj)
+{
+    ScmAtomicWord desired = (ScmAtomicWord)obj;
+    ScmAtomicWord old = (ScmAtomicWord)expected;;
+    do {
+        old = Scm_AtomicLoad(&abox->val);
+    } while (Scm_AtomicCompareExchange(&abox->val, &old, desired));
+    return SCM_OBJ(old);
 }

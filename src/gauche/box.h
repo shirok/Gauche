@@ -72,5 +72,21 @@ SCM_CLASS_DECL(Scm_MVBoxClass);
 SCM_EXTERN ScmMVBox *Scm_MakeMVBox(ScmSmallInt size, ScmObj init);
 SCM_EXTERN ScmMVBox *Scm_ListToMVBox(ScmObj elts);
 
+/* An atomic box.  We don't expose internals; see priv/atomicP.h */
+
+typedef struct ScmAtomicBoxRec ScmAtomicBox;
+
+SCM_CLASS_DECL(Scm_AtomicBoxClass);
+#define SCM_CLASS_ATOMIC_BOX      (&Scm_AtomicBoxClass)
+#define SCM_ATOMIC_BOX(obj)       ((ScmAtomicBox*)(obj))
+#define SCM_ATOMIX_BOX_P(obj)     (Scm_TypeP(obj, SCM_CLASS_ATOMIC_BOX))
+
+SCM_EXTERN ScmAtomicBox *Scm_MakeAtomicBox(ScmClass *klass, ScmObj obj);
+SCM_EXTERN ScmObj Scm_AtomixBoxRef(ScmAtomicBox *abox);
+SCM_EXTERN void   Scm_AtomixBoxSet(ScmAtomicBox *abox, ScmObj val);
+SCM_EXTERN ScmObj Scm_AtomixBoxSwap(ScmAtomicBox *abox, ScmObj val);
+SCM_EXTERN ScmObj Scm_AtomixBoxCompareAndSwap(ScmAtomicBox *abox,
+                                              ScmObj expected,
+                                              ScmObj desired);
 
 #endif /*GAUCHE_BOX_H*/
