@@ -997,6 +997,8 @@
   (t "{\"x\":null}" 'null)
   (t "{\"x\": \"abc\\\"\\\\\\/\\b\\f\\n\\r\\t\\u0040abc\"}"
      "abc\"\\/\u0008\u000c\u000a\u000d\u0009@abc")
+  (t "{\"x\": \"\\ud800\\udc01\"}"
+     "\x10001;")
   )
 
 (let ()
@@ -1006,6 +1008,14 @@
   (t "{\"x\": 100")
   (t "{x : 100}}")
   )
+
+(let ()
+  (define (t str)
+    (test* #"parse error (unpaired surrogate) ~str"
+           (test-error <json-parse-error> #/unpaired (low|high) surrogate/)
+           (parse-json-string str)))
+  (t "{\"a\":\"\\ud800abc\"}")
+  (t "{\"a\":\"abc\\ude01xyz\"}"))
 
 (test* "parsing an object"
        '(("Image"

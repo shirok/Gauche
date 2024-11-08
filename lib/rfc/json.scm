@@ -131,15 +131,7 @@
 
 (define %unicode
   (let ([%hex4 ($lift (^s (string->number (list->string s) 16))
-                      ($many ($. #[\da-fA-F]) 4 4))]
-        ;; NB: If we just $fail, the higher-level parser may conceal the
-        ;; direct cause of the error by backtracking.  Unpaired surrogate
-        ;; is an unrecoverable error, so we throw <json-parse-error> directly.
-        ;; There may be a better way to integrate this kind of error in
-        ;; the combinators; let's see.
-        [err (^c (errorf <json-parse-error>
-                         :position #f :object c
-                         "unpaired surrogate: \\u~4,'0x" c))])
+                      ($many ($. #[\da-fA-F]) 4 4))])
     ($let ([ ($. #\u) ]
            [c %hex4])
       (cond [(<= #xd800 c #xdbff)
@@ -149,16 +141,9 @@
                               (utf16->ucs4 `(,c ,c2) 'permissive)
                             (and (null? x)
                                  ($return (ucs->char cc))))))
-                  ;; NB: We wrap (err c) with dummy $let to put the call
-                  ;; to the err into a parser monad.  Simple ($return (err c))
-                  ;; or ($fail (err c)) won't do, since (err c) is evaluated
-                  ;; at the parser-construction time, not the actual parsing
-                  ;; time.  We need a dummy ($return #t) clause to ensure
-                  ;; (err c) is wrapped; ($let () x) is expanded to just x.
-                  ;; Definitely we need something better to do this kind of
-                  ;; operation.
-                  ($let ([($return #t)]) (err c)))]
-            [(<= #xdc00 c #xdfff) (err c)]
+                  ($raise (format "unpaired high surrogate: \\u~4,'0x" c)))]
+            [(<= #xdc00 c #xdfff)
+             ($raise (format "unpaired low surrogate: \\u~4,'0x" c))]
             [else ($return (ucs->char c))]))))
 
 (define %string
