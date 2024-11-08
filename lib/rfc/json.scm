@@ -245,44 +245,46 @@
                      "can't convert Scheme object to json:" obj)]))
 
 (define (print-object obj)
-  (display "{")
-  (fold (^[attr comma]
+  (write-char #\{)
+  (fold (^[attr comma-needed?]
           (unless (pair? attr)
             (error <json-construct-error> :object obj
                    "construct-json needs an assoc list or dictionary, \
                     but got:" obj))
-          (display comma)
+          (when comma-needed?
+            (write-char #\,))
           (print-string (x->string (car attr)))
-          (display ":")
+          (write-char #\:)
           (print-value (cdr attr))
-          ",")
-        "" obj)
-  (display "}"))
+          #t)
+        #f obj)
+  (write-char #\}))
 
 (define (print-array obj)
-  (display "[")
+  (write-char #\[)
   (for-each-with-index (^[i val]
-                         (unless (zero? i) (display ","))
+                         (unless (zero? i) (write-char #\,))
                          (print-value val))
                        obj)
-  (display "]"))
+  (write-char #\]))
 
 (define (print-instance obj)            ;<json-mixin>
   (let1 class (class-of obj)
-    (display "{")
-    (fold (^[slot comma]
+    (write-char #\{)
+    (fold (^[slot comma-needed?]
             (if-let1 json-name (slot-definition-option slot :json-name #f)
               (begin
-                (display comma)
+                (when comma-needed?
+                  (write-char #\,))
                 (print-string (if (eqv? json-name #t)
                                 (x->string (slot-definition-name slot))
                                 (x->string json-name)))
-                (display ":")
+                (write-char #\:)
                 (print-value (slot-ref obj (slot-definition-name slot)))
-                ",")
-              comma))
-          "" (class-slots class))
-    (display "}")))
+                #t)
+              comma-needed?))
+          #f (class-slots class))
+    (write-char #\})))
 
 (define (print-number num)
   (cond [(or (not (real? num)) (not (finite? num)))
@@ -307,9 +309,9 @@
              (if (>= code #x10000)
                (for-each hexescape (ucs4->utf16 code))
                (hexescape code)))]))
-  (display "\"")
+  (write-char #\")
   (string-for-each print-char str)
-  (display "\""))
+  (write-char #\"))
 
 (define (construct-json x :optional (oport (current-output-port)))
   (with-output-to-port oport
