@@ -6051,7 +6051,7 @@ We don't have any better idea now, unfortunately.
 @defun num-pairs lis
 @c EN
 Returns the number of pairs that consists a (proper, dotted, or circular)
-list @var{lis}, in an exact ineger.
+list @var{lis}, in an exact integer.
 If @var{lis} is a proper list, it is the same as @code{length}.
 @c JP
 リスト@var{lis}を構成するペアの数を正確な整数で返します。@var{lis}はドットリストや循環リスト

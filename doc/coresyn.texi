@@ -4154,7 +4154,7 @@ the current module, you can use @code{module-binds?}
 @c COMMON
 
 @c EN
-One upon a time, the Scheme world was simple.  We had one single global
+Once upon a time, the Scheme world was simple.  We had one single global
 space we called the toplevel.  Toplevel definitions can be understood
 as side-effects to this global space; if the name hasn't been exist
 there yet, create a new binding, otherwise, overwrite existing one.
@@ -4311,7 +4311,7 @@ The modern way of such augumentation is to use renaming import:
 
 @c EN
 Gauche's module system predates R6RS and R7RS, and it regards a module
-as a first-class entity and suppors class-like inheritance.  It is
+as a first-class entity and supports class-like inheritance.  It is
 upper-compatible to R7RS libraries, but we take freedom in interpreting
 R7RS undefined behaviors.
 @c JP
@@ -4393,7 +4393,7 @@ REPLセマンティクスで動くことを期待していたコードはある�
 In order to support the transition, if you set an environment
 variable @code{GAUCHE_LEGACY_DEFINE}, Gauche treats definitions
 in the same way as 0.9.8 and before.
-Note that if you that, you may see Gauche can't include some valid R7RS
+Note that if you do that, you may see Gauche can't include some valid R7RS
 code that has multiple libraries in one file.
 @c JP
 移行をスムースにするために、環境変数@code{GAUCHE_LEGACY_DEFINE}が定義されている
