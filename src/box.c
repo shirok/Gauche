@@ -180,9 +180,25 @@ static ScmObj atomic_box_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(Scm_MakeAtomicBox(klass, SCM_UNDEFINED));
 }
 
-SCM_DEFINE_BASE_CLASS(Scm_AtomicBoxClass, ScmClass,
-                      NULL, NULL, NULL, atomic_box_allocate,
-                      SCM_CLASS_DEFAULT_CPL);
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicBoxClass, NULL, NULL, NULL,
+                         atomic_box_allocate,
+                         SCM_CLASS_DEFAULT_CPL);
+
+static ScmClass *atomic_box_cpl[] = {
+    SCM_CLASS_STATIC_PTR(Scm_AtomicBoxClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass),
+    NULL
+};
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicFlagClass, NULL, NULL, NULL,
+                         atomic_box_allocate,
+                         atomic_box_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicFxboxClass, NULL, NULL, NULL,
+                         atomic_box_allocate,
+                         atomic_box_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicPairClass, NULL, NULL, NULL,
+                         atomic_box_allocate,
+                         atomic_box_cpl);
 
 ScmAtomicBox *Scm_MakeAtomicBox(ScmClass *klass, ScmObj obj)
 {
@@ -227,13 +243,27 @@ ScmObj Scm_AtomicBoxCompareAndSwap(ScmAtomicBox *abox,
    Also, no overflow check.
  */
 
-ScmObj Scm_AtomicBoxInc(ScmAtomicBox *abox, u_long delta)
+
+
+ScmObj Scm_AtomicBoxIncX(ScmAtomicBox *abox, u_long delta)
 {
     ScmAtomicWord val;
     ScmObj newval;
     do {
         val = abox->val;
         newval = SCM_MAKE_INT(SCM_INT_VALUE(SCM_OBJ(val)) + delta);
+    } while (!Scm_AtomicCompareExchange(&abox->val, &val,
+                                        (ScmAtomicWord)newval));
+    return SCM_OBJ(val);
+}
+
+ScmObj Scm_AtomicBoxAndX(ScmAtomicBox *abox, u_long mask)
+{
+    ScmAtomicWord val;
+    ScmObj newval;
+    do {
+        val = abox->val;
+        newval = SCM_MAKE_INT(SCM_INT_VALUE(SCM_OBJ(val)) & mask);
     } while (!Scm_AtomicCompareExchange(&abox->val, &val,
                                         (ScmAtomicWord)newval));
     return SCM_OBJ(val);

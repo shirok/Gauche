@@ -81,6 +81,15 @@ SCM_CLASS_DECL(Scm_AtomicBoxClass);
 #define SCM_ATOMIC_BOX(obj)       ((ScmAtomicBox*)(obj))
 #define SCM_ATOMIX_BOX_P(obj)     (Scm_TypeP(obj, SCM_CLASS_ATOMIC_BOX))
 
+SCM_CLASS_DECL(Scm_AtomicFlagClass);
+#define SCM_CLASS_ATOMIC_FLAG     (&Scm_AtomicFlagClass)
+
+SCM_CLASS_DECL(Scm_AtomicFxboxClass);
+#define SCM_CLASS_ATOMIC_FXBOX    (&Scm_AtomicFxboxClass)
+
+SCM_CLASS_DECL(Scm_AtomicPairClass);
+#define SCM_CLASS_ATOMIC_PAIR     (&Scm_AtomicPairClass)
+
 SCM_EXTERN ScmAtomicBox *Scm_MakeAtomicBox(ScmClass *klass, ScmObj obj);
 SCM_EXTERN ScmObj Scm_AtomixBoxRef(ScmAtomicBox *abox);
 SCM_EXTERN void   Scm_AtomixBoxSet(ScmAtomicBox *abox, ScmObj val);

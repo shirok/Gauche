@@ -1,3 +1,10 @@
+2024-11-10  Shiro Kawai  <shiro@acm.org>
+
+	* ext/gauche/atomic.scm: Provide atomic operations in a separate
+	  module for now.  It's mainly to organize namespaces.
+	  If we start using atomic boxes in core libraries,  we might
+	  move this to the core.
+
 2024-11-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive/editable-reader.scm (make-editable-reader):

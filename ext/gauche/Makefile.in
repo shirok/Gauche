@@ -16,7 +16,8 @@ LIBFILES = gauche--collection.$(SOEXT) \
 	   gauche--record.$(SOEXT) \
 	   gauche--generator.$(SOEXT) \
 	   gauche--unicode.$(SOEXT) \
-	   gauche--bitvector.$(SOEXT)
+	   gauche--bitvector.$(SOEXT) \
+	   gauche--atomic.$(SOEXT)
 SCMFILES = collection.sci \
 	   sequence.sci   \
 	   dictionary.sci \
@@ -26,7 +27,8 @@ SCMFILES = collection.sci \
 	   record.sci \
 	   generator.sci \
 	   unicode.sci \
-	   bitvector.sci
+	   bitvector.sci \
+	   atomic.sci
 
 CONFIG_GENERATED = Makefile
 PREGENERATED = unicode-attr.scm
@@ -43,7 +45,8 @@ OBJECTS = $(gauche-collection_OBJECTS) \
 	  $(gauche-record_OBJECTS) \
 	  $(gauche-generator_OBJECTS) \
 	  $(gauche-unicode_OBJECTS) \
-	  $(gauche-bitvector_OBJECTS)
+	  $(gauche-bitvector_OBJECTS) \
+	  $(gauche-atomic_OBJECTS)
 
 # gauche.collection
 gauche-collection_OBJECTS = gauche--collection.$(OBJEXT)
@@ -147,5 +150,15 @@ gauche--bitvector.$(SOEXT) : $(gauche-bitvector_OBJECTS)
 
 gauche--bitvector.c bitvector.sci : bitvector.scm
 	$(PRECOMP) -I $(builddir) -e -P -o gauche--bitvector $(srcdir)/bitvector.scm
+
+# gauche.atomic
+
+gauche-atomic_OBJECTS = gauche--atomic.$(OBJEXT)
+
+gauche--atomic.$(SOEXT) : $(gauche-atomic_OBJECTS)
+	$(MODLINK) gauche--atomic.$(SOEXT) $(gauche-atomic_OBJECTS) $(EXT_LIBGAUCHE) $(LIBS)
+
+gauche--atomic.c atomic.sci : atomic.scm
+	$(PRECOMP) -I $(builddir) -e -P -o gauche--atomic $(srcdir)/atomic.scm
 
 install : install-std
