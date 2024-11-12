@@ -38,11 +38,51 @@
 ;; so that we can run code written with srfi-230.
 
 (define-module gauche.atomic
-  (export make-atomic-box)
+  (export make-atomic-box atomic-box?
+          atomic-box-ref atomic-box-set!
+          atomic-box-swap! atomic-box-compare-and-swap!
+
+          make-atomic-flag atomic-flag?
+          atomic-flag-test-and-set! atomic-flag-clear!)
   )
 (select-module gauche.atomic)
 
 (inline-stub
+ (declare-stub-type <atomic-flag> "ScmAtomicBox*" "atomic flag")
+
+ (define-cproc make-atomic-flag ()
+   (return (SCM_OBJ (Scm_MakeAtomicBox SCM_CLASS_ATOMIC_FLAG SCM_FALSE))))
+ (define-cproc atomic-flag? (obj) ::<boolean>
+   (return (SCM_XTYPEP obj SCM_CLASS_ATOMIC_FLAG)))
+ (define-cproc atomic-flag-test-and-set! (atomic-flag::<atomic-flag>
+                                          :optional _)
+   (return (Scm_AtomicBoxSwap atomic-flag SCM_TRUE)))
+ (define-cproc atomic-flag-clear! (atomic-flag::<atomic-flag>
+                                   :optional _)
+   ::<void>
+   (Scm_AtomicBoxSet atomic-flag SCM_FALSE))
+
+ (declare-stub-type <atomic-box> "ScmAtomicBox*" "atomic box")
+
  (define-cproc make-atomic-box (obj)
    (return (SCM_OBJ (Scm_MakeAtomicBox SCM_CLASS_ATOMIC_BOX obj))))
+ (define-cproc atomic-box? (obj) ::<boolean>
+   (return (SCM_XTYPEP obj SCM_CLASS_ATOMIC_BOX)))
+ (define-cproc atomic-box-ref (atomic-box::<atomic-box>
+                               :optional _) ;; memory-order
+   (return (Scm_AtomicBoxRef atomic-box)))
+ (define-cproc atomic-box-set! (atomic-box::<atomic-box>
+                                obj
+                                :optional _) ;; memory-order
+   ::<void>
+   (Scm_AtomicBoxSet atomic-box obj))
+ (define-cproc atomic-box-swap! (atomic-box::<atomic-box>
+                                 obj
+                                 :optional _) ;; memory-order
+   (return (Scm_AtomicBoxSwap atomic-box obj)))
+ (define-cproc atomic-box-compare-and-swap! (atomic-box::<atomic-box>
+                                             expected
+                                             desired
+                                             :optional _) ;; memory-order
+   (return (Scm_AtomicBoxCompareAndSwap atomic-box expected desired)))
  )

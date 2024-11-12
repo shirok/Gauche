@@ -5,5 +5,6 @@
 (include "test-record.scm")
 (include "test-generator.scm")
 (include "test-bitvector.scm")
+(include "test-atomic.scm")
 (include "test-lazy.scm")
 (include "test-unicode.scm")

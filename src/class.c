@@ -3646,6 +3646,7 @@ void Scm__InitClass(void)
     /* box.c */
     CINIT(SCM_CLASS_BOX,    "<box>");
     CINIT(SCM_CLASS_MVBOX,  "<mv-box>");
+    BINIT(SCM_CLASS_ATOMIC_BASE, "<atomic-base>", NULL);
     BINIT(SCM_CLASS_ATOMIC_BOX, "<atomic-box>", NULL);
     BINIT(SCM_CLASS_ATOMIC_FLAG, "<atomic-flag>", NULL);
     BINIT(SCM_CLASS_ATOMIC_FXBOX, "<atomic-fxbox>", NULL);

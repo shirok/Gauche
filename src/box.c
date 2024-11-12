@@ -173,6 +173,8 @@ ScmMVBox *Scm_ListToMVBox(ScmObj elts)
 
 /* Atomic Box.
  *  SRFI-230 defines four types of atomic boxes.
+ *  Internally all of them shared the same C structure, and derived
+ *  from a common base class, <atomic-base>.
  */
 
 static ScmObj atomic_box_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
@@ -180,29 +182,41 @@ static ScmObj atomic_box_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     return SCM_OBJ(Scm_MakeAtomicBox(klass, SCM_UNDEFINED));
 }
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicBoxClass, NULL, NULL, NULL,
+static void atomic_box_print(ScmObj obj, ScmPort *port,
+                             ScmWriteContext *ctx SCM_UNUSED)
+{
+    Scm_Printf(port, "#<%A %S>",
+               Scm_ShortClassName(Scm_ClassOf(obj)),
+               Scm_AtomicBoxRef(SCM_ATOMIC_BOX(obj)));
+}
+
+
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicBaseClass, atomic_box_print, NULL, NULL,
                          atomic_box_allocate,
                          SCM_CLASS_DEFAULT_CPL);
 
 static ScmClass *atomic_box_cpl[] = {
-    SCM_CLASS_STATIC_PTR(Scm_AtomicBoxClass),
+    SCM_CLASS_STATIC_PTR(Scm_AtomicBaseClass),
     SCM_CLASS_STATIC_PTR(Scm_TopClass),
     NULL
 };
 
-SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicFlagClass, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicBoxClass, atomic_box_print, NULL, NULL,
                          atomic_box_allocate,
                          atomic_box_cpl);
-SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicFxboxClass, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicFlagClass, atomic_box_print, NULL, NULL,
                          atomic_box_allocate,
                          atomic_box_cpl);
-SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicPairClass, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicFxboxClass, atomic_box_print, NULL, NULL,
+                         atomic_box_allocate,
+                         atomic_box_cpl);
+SCM_DEFINE_BUILTIN_CLASS(Scm_AtomicPairClass, atomic_box_print, NULL, NULL,
                          atomic_box_allocate,
                          atomic_box_cpl);
 
 ScmAtomicBox *Scm_MakeAtomicBox(ScmClass *klass, ScmObj obj)
 {
-    SCM_ASSERT(Scm_TypeP(SCM_OBJ(klass), SCM_CLASS_ATOMIC_BOX));
+    SCM_ASSERT(Scm_SubclassP(klass, SCM_CLASS_ATOMIC_BASE));
     ScmAtomicBox *z = SCM_NEW(ScmAtomicBox);
     SCM_SET_CLASS(z, klass);
     Scm_AtomicStoreFull(&z->val, (ScmAtomicWord)obj);
@@ -225,15 +239,15 @@ ScmObj Scm_AtomicBoxSwap(ScmAtomicBox *abox, ScmObj obj)
     return SCM_OBJ(old);
 }
 
+/* Returns old value.  Caller can compare expected and returned value
+   to see if swap is succeeded. */
 ScmObj Scm_AtomicBoxCompareAndSwap(ScmAtomicBox *abox,
                                    ScmObj expected,
                                    ScmObj obj)
 {
     ScmAtomicWord desired = (ScmAtomicWord)obj;
     ScmAtomicWord old = (ScmAtomicWord)expected;;
-    do {
-        old = Scm_AtomicLoad(&abox->val);
-    } while (!Scm_AtomicCompareExchange(&abox->val, &old, desired));
+    (void)Scm_AtomicCompareExchange(&abox->val, &old, desired);
     return SCM_OBJ(old);
 }
 
@@ -242,8 +256,6 @@ ScmObj Scm_AtomicBoxCompareAndSwap(ScmAtomicBox *abox,
    is fixnum (the class of abox is <atomic-fixnum>).
    Also, no overflow check.
  */
-
-
 
 ScmObj Scm_AtomicBoxIncX(ScmAtomicBox *abox, u_long delta)
 {

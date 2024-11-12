@@ -72,29 +72,46 @@ SCM_CLASS_DECL(Scm_MVBoxClass);
 SCM_EXTERN ScmMVBox *Scm_MakeMVBox(ScmSmallInt size, ScmObj init);
 SCM_EXTERN ScmMVBox *Scm_ListToMVBox(ScmObj elts);
 
-/* An atomic box.  We don't expose internals; see priv/atomicP.h */
+/* An atomic box.  We don't expose internals; see priv/atomicP.h
+ * In C-level, we only have one structure, ScmAtomicBox. In Scheme
+ * level, we follow srfi-230, which defines 4 distinct atomic structures:
+ * atomic flag, atomic box, atomic fxbox, and atomic pair.
+ * All can be implemented on top of atomic box, but it is more convenient
+ * to have disjoint types.
+ */
 
 typedef struct ScmAtomicBoxRec ScmAtomicBox;
 
+SCM_CLASS_DECL(Scm_AtomicBaseClass);
+#define SCM_CLASS_ATOMIC_BASE   (&Scm_AtomicBaseClass)
+#define SCM_ATOMIC_BASE(obj)    ((ScmAtomicBox*)(obj))
+#define SCM_ATOMIX_BASE_P(obj)  (Scm_TypeP(obj, SCM_CLASS_ATOMIC_BASE))
+
 SCM_CLASS_DECL(Scm_AtomicBoxClass);
-#define SCM_CLASS_ATOMIC_BOX      (&Scm_AtomicBoxClass)
-#define SCM_ATOMIC_BOX(obj)       ((ScmAtomicBox*)(obj))
-#define SCM_ATOMIX_BOX_P(obj)     (Scm_TypeP(obj, SCM_CLASS_ATOMIC_BOX))
+#define SCM_CLASS_ATOMIC_BOX     (&Scm_AtomicBoxClass)
+#define SCM_ATOMIC_BOX(obj)     ((ScmAtomicBox*)(obj))
+#define SCM_ATOMIC_BOX_P(obj)   (SCM_XTYPEP(obj, SCM_CLASS_ATOMIC_BOX))
 
 SCM_CLASS_DECL(Scm_AtomicFlagClass);
-#define SCM_CLASS_ATOMIC_FLAG     (&Scm_AtomicFlagClass)
+#define SCM_CLASS_ATOMIC_FLAG   (&Scm_AtomicFlagClass)
+#define SCM_ATOMIC_FLAG(obj)    ((ScmAtomicBox*)(obj))
+#define SCM_ATOMIC_FLAG_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_ATOMIC_FLAG))
 
 SCM_CLASS_DECL(Scm_AtomicFxboxClass);
-#define SCM_CLASS_ATOMIC_FXBOX    (&Scm_AtomicFxboxClass)
+#define SCM_CLASS_ATOMIC_FXBOX  (&Scm_AtomicFxboxClass)
+#define SCM_ATOMIC_FXBOX(obj)   ((ScmAtomicBox*)(obj))
+#define SCM_ATOMIC_FXBOX_P(obj) (SCM_XTYPEP(obj, SCM_CLASS_ATOMIC_FXBOX))
 
 SCM_CLASS_DECL(Scm_AtomicPairClass);
-#define SCM_CLASS_ATOMIC_PAIR     (&Scm_AtomicPairClass)
+#define SCM_CLASS_ATOMIC_PAIR   (&Scm_AtomicPairClass)
+#define SCM_ATOMIC_PAIR(obj)    ((ScmAtomicBox*)(obj))
+#define SCM_ATOMIC_PAIR_P(obj)  (SCM_XTYPEP(obj, SCM_CLASS_ATOMIC_PAIR))
 
 SCM_EXTERN ScmAtomicBox *Scm_MakeAtomicBox(ScmClass *klass, ScmObj obj);
-SCM_EXTERN ScmObj Scm_AtomixBoxRef(ScmAtomicBox *abox);
-SCM_EXTERN void   Scm_AtomixBoxSet(ScmAtomicBox *abox, ScmObj val);
-SCM_EXTERN ScmObj Scm_AtomixBoxSwap(ScmAtomicBox *abox, ScmObj val);
-SCM_EXTERN ScmObj Scm_AtomixBoxCompareAndSwap(ScmAtomicBox *abox,
+SCM_EXTERN ScmObj Scm_AtomicBoxRef(ScmAtomicBox *abox);
+SCM_EXTERN void   Scm_AtomicBoxSet(ScmAtomicBox *abox, ScmObj val);
+SCM_EXTERN ScmObj Scm_AtomicBoxSwap(ScmAtomicBox *abox, ScmObj val);
+SCM_EXTERN ScmObj Scm_AtomicBoxCompareAndSwap(ScmAtomicBox *abox,
                                               ScmObj expected,
                                               ScmObj desired);
 
