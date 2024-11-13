@@ -250,33 +250,3 @@ ScmObj Scm_AtomicBoxCompareAndSwap(ScmAtomicBox *abox,
     (void)Scm_AtomicCompareExchange(&abox->val, &old, desired);
     return SCM_OBJ(old);
 }
-
-/* Atomic fxbox operations
-   We omit typecheck of abox->val, assuming the caller knows the content
-   is fixnum (the class of abox is <atomic-fixnum>).
-   Also, no overflow check.
- */
-
-ScmObj Scm_AtomicBoxIncX(ScmAtomicBox *abox, u_long delta)
-{
-    ScmAtomicWord val;
-    ScmObj newval;
-    do {
-        val = abox->val;
-        newval = SCM_MAKE_INT(SCM_INT_VALUE(SCM_OBJ(val)) + delta);
-    } while (!Scm_AtomicCompareExchange(&abox->val, &val,
-                                        (ScmAtomicWord)newval));
-    return SCM_OBJ(val);
-}
-
-ScmObj Scm_AtomicBoxAndX(ScmAtomicBox *abox, u_long mask)
-{
-    ScmAtomicWord val;
-    ScmObj newval;
-    do {
-        val = abox->val;
-        newval = SCM_MAKE_INT(SCM_INT_VALUE(SCM_OBJ(val)) & mask);
-    } while (!Scm_AtomicCompareExchange(&abox->val, &val,
-                                        (ScmAtomicWord)newval));
-    return SCM_OBJ(val);
-}

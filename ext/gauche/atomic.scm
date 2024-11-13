@@ -43,10 +43,20 @@
           atomic-box-swap! atomic-box-compare-and-swap!
 
           make-atomic-flag atomic-flag?
-          atomic-flag-test-and-set! atomic-flag-clear!)
+          atomic-flag-test-and-set! atomic-flag-clear!
+
+          make-atomic-fxbox atomic-fxbox?
+          atomic-fxbox-ref atomic-fxbox-set!
+          atomic-fxbox-swap! atomic-fxbox-compare-and-swap!
+          atomic-fxbox+/fetch! atomic-fxbox-/fetch!
+          atomic-fxbox-and/fetch!
+          atomic-fxbox-ior/fetch! atomic-fxbox-xor/fetch!)
   )
 (select-module gauche.atomic)
 
+;;;
+;;; Atomic flag
+;;;
 (inline-stub
  (declare-stub-type <atomic-flag> "ScmAtomicBox*" "atomic flag")
 
@@ -61,7 +71,12 @@
                                    :optional _)
    ::<void>
    (Scm_AtomicBoxSet atomic-flag SCM_FALSE))
+ )
 
+;;;
+;;; Atomic box (Scheme)
+;;;
+(inline-stub
  (declare-stub-type <atomic-box> "ScmAtomicBox*" "atomic box")
 
  (define-cproc make-atomic-box (obj)
@@ -86,3 +101,60 @@
                                              :optional _) ;; memory-order
    (return (Scm_AtomicBoxCompareAndSwap atomic-box expected desired)))
  )
+
+;;;
+;;; Atomic fxbox
+;;;
+;;;  We define fetch-and-modify operations in Scheme, for
+;;;  it's cumbersome to use atomicP primitives from extension.
+
+(inline-stub
+ (declare-stub-type <atomic-fxbox> "ScmAtomicBox*" "atomic fxbox")
+
+ (define-cproc make-atomic-fxbox (obj::<fixnum>)
+   (return (SCM_OBJ (Scm_MakeAtomicBox SCM_CLASS_ATOMIC_FXBOX
+                                       (SCM_MAKE_INT obj)))))
+ (define-cproc atomic-fxbox? (obj) ::<boolean>
+   (return (SCM_XTYPEP obj SCM_CLASS_ATOMIC_FXBOX)))
+ (define-cproc atomic-fxbox-ref (atomic-fxbox::<atomic-fxbox>
+                                 :optional _)
+   (return (Scm_AtomicBoxRef atomic-fxbox)))
+ (define-cproc atomic-fxbox-set! (atomic-fxbox::<atomic-fxbox>
+                                  obj::<fixnum>
+                                  :optional _) ;; memory-order
+   ::<void>
+   (Scm_AtomicBoxSet atomic-fxbox (SCM_MAKE_INT obj)))
+ (define-cproc atomic-fxbox-swap! (atomic-fxbox::<atomic-fxbox>
+                                   obj::<fixnum>
+                                   :optional _) ;; memory-order
+   (return (Scm_AtomicBoxSwap atomic-fxbox (SCM_MAKE_INT obj))))
+ (define-cproc atomic-fxbox-compare-and-swap! (atomic-fxbox::<atomic-fxbox>
+                                               expected::<fixnum>
+                                               desired::<fixnum>
+                                               :optional _) ;; memory-order
+   (return (Scm_AtomicBoxCompareAndSwap atomic-fxbox
+                                        (SCM_MAKE_INT expected)
+                                        (SCM_MAKE_INT desired))))
+ )
+
+(define-syntax define-atomic-fxbox-fetch-and-modify
+  (er-macro-transformer
+   (^[f r c]
+     (let ([name (cadr f)]
+           [op (caddr f)])
+       (quasirename r
+         `(define (,name fxbox val :optional _)
+            (let retry ()
+              (let* ([prev (atomic-fxbox-ref fxbox)]
+                     [r (atomic-fxbox-compare-and-swap! fxbox
+                                                        prev
+                                                        (,op prev val))])
+                (if (eqv? prev r)
+                  r
+                  (retry))))))))))
+
+(define-atomic-fxbox-fetch-and-modify atomic-fxbox+/fetch! +)
+(define-atomic-fxbox-fetch-and-modify atomic-fxbox-/fetch! -)
+(define-atomic-fxbox-fetch-and-modify atomic-fxbox-and/fetch! logand)
+(define-atomic-fxbox-fetch-and-modify atomic-fxbox-ior/fetch! logior)
+(define-atomic-fxbox-fetch-and-modify atomic-fxbox-xor/fetch! logxor)
