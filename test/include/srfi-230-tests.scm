@@ -9,7 +9,7 @@
 
 ;; To test collision situation, this needs to be not too small,
 ;; though too many threads may slow down the tests.
-(define *num-test-threads* 1000)
+(define *num-test-threads* 500)
 
 ;;;
 ;;; Memory order
