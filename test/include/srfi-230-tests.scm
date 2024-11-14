@@ -7,6 +7,14 @@
  ((library (srfi 18)) (import (srfi 18)))
  (else))
 
+(cond-expand
+ ((library (srfi 210)) (import (only (srfi 210) list/mv)))
+ (else
+  ;; not a complete replacement, but this suffices for our purpose.
+  (define-syntax list/mv
+    (syntax-rules ()
+      ((_ mv-expr) (call-with-values (lambda () mv-expr) list))))))
+
 ;; To test collision situation, this needs to be not too small,
 ;; though too many threads may slow down the tests.
 (define *num-test-threads* 500)
@@ -59,7 +67,8 @@
     (for-each thread-start! threads)
     (for-each thread-join! threads)
     (check counter => (fold + 0 (iota *num-test-threads*)))
-    )))
+    ))
+ (else))
 
 ;;;
 ;;; Atomic box
@@ -103,7 +112,8 @@
     (for-each thread-start! threads)
     (for-each thread-join! threads)
     (check counter => (fold + 0 (iota *num-test-threads*)))
-    )))
+    ))
+ (else))
 
 ;;;
 ;;; Atomic fxbox
@@ -153,7 +163,8 @@
     (for-each thread-join! threads)
     (check (atomic-fxbox-ref counter) =>
            (- (fold + 0 (iota *num-test-threads*))))
-    )))
+    ))
+ (else))
 
 ;;;
 ;;; Atomic pair
@@ -161,21 +172,47 @@
 
 (let ()
   (define x (make-atomic-pair 'p 'q))
-  (define-syntax mv->list
-    (syntax-rules ()
-      ((_ expr) (call-with-values (lambda () expr) list))))
   (check (atomic-pair? x) => #t)
-  (check (mv->list (atomic-pair-ref x)) => '(p q))
+  (check (list/mv (atomic-pair-ref x)) => '(p q))
   (atomic-pair-set! x 'r 's)
-  (check (mv->list (atomic-pair-ref x)) => '(r s))
-  (check (mv->list (atomic-pair-swap! x 't 'u)) => '(r s))
-  (check (mv->list (atomic-pair-ref x)) => '(t u))
-  (check (mv->list (atomic-pair-compare-and-swap! x 'p 'q 'v 'w)) => '(t u))
-  (check (mv->list (atomic-pair-ref x)) => '(t u))
-  (check (mv->list (atomic-pair-compare-and-swap! x 't 'q 'v 'w)) => '(t u))
-  (check (mv->list (atomic-pair-ref x)) => '(t u))
-  (check (mv->list (atomic-pair-compare-and-swap! x 'p 'u 'v 'w)) => '(t u))
-  (check (mv->list (atomic-pair-ref x)) => '(t u))
-  (check (mv->list (atomic-pair-compare-and-swap! x 't 'u 'v 'w)) => '(t u))
-  (check (mv->list (atomic-pair-ref x)) => '(v w))
+  (check (list/mv (atomic-pair-ref x)) => '(r s))
+  (check (list/mv (atomic-pair-swap! x 't 'u)) => '(r s))
+  (check (list/mv (atomic-pair-ref x)) => '(t u))
+  (check (list/mv (atomic-pair-compare-and-swap! x 'p 'q 'v 'w)) => '(t u))
+  (check (list/mv (atomic-pair-ref x)) => '(t u))
+  (check (list/mv (atomic-pair-compare-and-swap! x 't 'q 'v 'w)) => '(t u))
+  (check (list/mv (atomic-pair-ref x)) => '(t u))
+  (check (list/mv (atomic-pair-compare-and-swap! x 'p 'u 'v 'w)) => '(t u))
+  (check (list/mv (atomic-pair-ref x)) => '(t u))
+  (check (list/mv (atomic-pair-compare-and-swap! x 't 'u 'v 'w)) => '(t u))
+  (check (list/mv (atomic-pair-ref x)) => '(v w))
   )
+
+(cond-expand
+ ((library (srfi 18))
+  (let ()
+    (define accumulator (make-atomic-pair 0 0))
+    (define (accumulate! delta)
+      (define (try curr-sum curr-val)
+        (let-values (((prev-sum prev-val)
+                      (atomic-pair-compare-and-swap! accumulator
+                                                     curr-sum curr-val
+                                                     (+ curr-sum curr-val) delta)))
+          (unless (and (eq? prev-sum curr-sum)
+                       (eq? prev-val curr-val))
+            (try prev-sum prev-val))))
+      (call-with-values (lambda () (atomic-pair-ref accumulator)) try))
+    (define threads (unfold (lambda (x) (= x *num-test-threads*))
+                            (lambda (x) (make-thread
+                                         (lambda ()
+                                           (thread-sleep! 0.000001)
+                                           (accumulate! x))))
+                            (lambda (x) (+ x 1))
+                            0))
+    (for-each thread-start! threads)
+    (for-each thread-join! threads)
+    (check (list/mv (atomic-pair-ref accumulator)) =>
+           (list (fold + 0 (iota (- *num-test-threads* 1)))
+                 (- *num-test-threads* 1)))
+    ))
+ (else))
