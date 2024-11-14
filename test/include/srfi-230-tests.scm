@@ -140,3 +140,28 @@
     (check (atomic-fxbox-ref counter) =>
            (- (fold + 0 (iota *num-test-threads*))))
     )))
+
+;;;
+;;; Atomic pair
+;;;
+
+(let ()
+  (define x (make-atomic-pair 'p 'q))
+  (define-syntax mv->list
+    (syntax-rules ()
+      ((_ expr) (call-with-values (lambda () expr) list))))
+  (check (atomic-pair? x) => #t)
+  (check (mv->list (atomic-pair-ref x)) => '(p q))
+  (atomic-pair-set! x 'r 's)
+  (check (mv->list (atomic-pair-ref x)) => '(r s))
+  (check (mv->list (atomic-pair-swap! x 't 'u)) => '(r s))
+  (check (mv->list (atomic-pair-ref x)) => '(t u))
+  (check (mv->list (atomic-pair-compare-and-swap! x 'p 'q 'v 'w)) => '(t u))
+  (check (mv->list (atomic-pair-ref x)) => '(t u))
+  (check (mv->list (atomic-pair-compare-and-swap! x 't 'q 'v 'w)) => '(t u))
+  (check (mv->list (atomic-pair-ref x)) => '(t u))
+  (check (mv->list (atomic-pair-compare-and-swap! x 'p 'u 'v 'w)) => '(t u))
+  (check (mv->list (atomic-pair-ref x)) => '(t u))
+  (check (mv->list (atomic-pair-compare-and-swap! x 't 'u 'v 'w)) => '(t u))
+  (check (mv->list (atomic-pair-ref x)) => '(v w))
+  )

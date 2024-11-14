@@ -50,7 +50,11 @@
           atomic-fxbox-swap! atomic-fxbox-compare-and-swap!
           atomic-fxbox+/fetch! atomic-fxbox-/fetch!
           atomic-fxbox-and/fetch!
-          atomic-fxbox-ior/fetch! atomic-fxbox-xor/fetch!)
+          atomic-fxbox-ior/fetch! atomic-fxbox-xor/fetch!
+
+          make-atomic-pair atomic-pair?
+          atomic-pair-ref atomic-pair-set!
+          atomic-pair-swap! atomic-pair-compare-and-swap!)
   )
 (select-module gauche.atomic)
 
@@ -158,3 +162,48 @@
 (define-atomic-fxbox-fetch-and-modify atomic-fxbox-and/fetch! logand)
 (define-atomic-fxbox-fetch-and-modify atomic-fxbox-ior/fetch! logior)
 (define-atomic-fxbox-fetch-and-modify atomic-fxbox-xor/fetch! logxor)
+
+;;;
+;;; Atomic pairs
+;;;
+
+(inline-stub
+ (declare-stub-type <atomic-pair> "ScmAtomicBox*" "atomic pair")
+
+ (define-cproc make-atomic-pair (ca cd)
+   (return (SCM_OBJ (Scm_MakeAtomicBox SCM_CLASS_ATOMIC_PAIR
+                                       (Scm_Cons ca cd)))))
+ (define-cproc atomic-pair? (obj) ::<boolean>
+   (return (SCM_XTYPEP obj SCM_CLASS_ATOMIC_PAIR)))
+ (define-cproc atomic-pair-ref (pair::<atomic-pair> :optional _)
+   ::(<top> <top>)
+   (let* ((p (Scm_AtomicBoxRef pair)))
+     (SCM_ASSERT (SCM_PAIRP p))
+     (return (SCM_CAR p) (SCM_CDR p))))
+ (define-cproc atomic-pair-set! (pair::<atomic-pair> ca cd :optional _)
+   ::<void>
+   (Scm_AtomicBoxSet pair (Scm_Cons ca cd)))
+ (define-cproc atomic-pair-swap! (pair::<atomic-pair> ca cd :optional _)
+   ::(<top> <top>)
+   (let* ((p (Scm_AtomicBoxSwap pair (Scm_Cons ca cd))))
+     (SCM_ASSERT (SCM_PAIRP p))
+     (return (SCM_CAR p) (SCM_CDR p))))
+ (define-cproc atomic-pair-compare-and-swap! (pair::<atomic-pair>
+                                              expected-car
+                                              expected-cdr
+                                              desired-car
+                                              desired-cdr)
+   ::(<top> <top>)
+   (let* ([newp (Scm_Cons desired-car desired-cdr)])
+     (loop
+      (let* ([p (Scm_AtomicBoxRef pair)])
+        (SCM_ASSERT (SCM_PAIRP p))
+        (let* ([prev-car (SCM_CAR p)]
+               [prev-cdr (SCM_CDR p)])
+          (if (and (SCM_EQ prev-car expected-car)
+                   (SCM_EQ prev-cdr expected-cdr))
+            (let* ([p2 (Scm_AtomicBoxCompareAndSwap pair p newp)])
+              (when (SCM_EQ p p2)
+                (return prev-car prev-cdr))) ;success
+            (return prev-car prev-cdr)))))))
+ )
