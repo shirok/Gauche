@@ -12,6 +12,17 @@
 (define *num-test-threads* 1000)
 
 ;;;
+;;; Memory order
+;;;;
+
+(check (memory-order? (memory-order relaxed)) => #t)
+(check (memory-order? (memory-order acquire)) => #t)
+(check (memory-order? (memory-order release)) => #t)
+(check (memory-order? (memory-order acquire-release)) => #t)
+(check (memory-order? (memory-order sequentially-consistent)) => #t)
+(check (memory-order? 'invalid-memory-order) => #f)
+
+;;;
 ;;; Atomic flags
 ;;;
 
@@ -36,7 +47,8 @@
              (increment! delta))        ; retry
             (else                       ; we got lock
              (set! counter (+ counter delta))
-             (atomic-flag-clear! flag))))
+             (atomic-flag-clear! flag)
+             (atomic-fence (memory-order sequentially-consistent)))))
     (define threads (unfold (lambda (x) (= x *num-test-threads*))
                             (lambda (x) (make-thread
                                          (lambda ()
@@ -79,7 +91,8 @@
              (increment! delta))        ; retry
             (else                       ; we got lock
              (set! counter (+ counter delta))
-             (atomic-box-set! box #f))))
+             (atomic-box-set! box #f)
+             (atomic-fence (memory-order sequentially-consistent)))))
     (define threads (unfold (lambda (x) (= x *num-test-threads*))
                             (lambda (x) (make-thread
                                          (lambda ()
@@ -127,7 +140,8 @@
   (let ()
     (define counter (make-atomic-fxbox 0))
     (define (increment! delta)
-      (atomic-fxbox-/fetch! counter delta))
+      (atomic-fxbox-/fetch! counter delta
+                            (memory-order sequentially-consistent)))
     (define threads (unfold (lambda (x) (= x *num-test-threads*))
                             (lambda (x) (make-thread
                                          (lambda ()
