@@ -205,14 +205,13 @@
     (define threads (unfold (lambda (x) (= x *num-test-threads*))
                             (lambda (x) (make-thread
                                          (lambda ()
-                                           (thread-sleep! 0.000001)
+                                           (thread-sleep! 0.001)
                                            (accumulate! x))))
                             (lambda (x) (+ x 1))
                             0))
     (for-each thread-start! threads)
     (for-each thread-join! threads)
-    (check (list/mv (atomic-pair-ref accumulator)) =>
-           (list (fold + 0 (iota (- *num-test-threads* 1)))
-                 (- *num-test-threads* 1)))
+    (check (apply + (list/mv (atomic-pair-ref accumulator))) =>
+           (apply + (iota *num-test-threads*)))
     ))
  (else))
