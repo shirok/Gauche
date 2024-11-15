@@ -551,7 +551,7 @@ clean :
 	       test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEXT) \
 	       gauche-config.c \
 	       *.$(OBJEXT) *~ *.a *.t *.def *.exp *.exe *.dll \
-	       test.log test.dir so_locations gauche/*~ paths_arch.c \
+	       test.out test.log test.dir so_locations gauche/*~ paths_arch.c \
 	       gauche/config_threads.h gauche-config.in.c \
 	       staticinit.c staticinit_gdbm.c staticinit_mbed.c \
 	       gauche-install.in.c gauche-package.in.c gauche-cesconv.in.c \
