@@ -210,7 +210,7 @@ void Scm_SysMmapWX(size_t len,
 #if !defined(GAUCHE_WINDOWS)
     if (!pax_active_p()) goto fallback;
     /* TODO */
-    Scm_Error("System has Pax MPROTECT activated.  We haven't suppored it yet.");
+    Scm_Error("System has Pax MPROTECT activated.  We haven't supported it yet.");
 #endif /*GAUCHE_WINDOWS*/
  fallback:
     {

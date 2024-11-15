@@ -591,7 +591,7 @@ This is used by @code{ed} procedure in @code{gauche.interactive} module.
 @deftp {Environment variable} GAUCHE_HISTORY_FILE
 @c EN
 Specifies the filename where the REPL history is saved.
-If this environment varible is not set, history is saved
+If this environment variable is not set, history is saved
 in @file{~/.gosh_history}.  If this environment variable
 is set but an empty string, history isn't saved.
 If the process is suid/sgid-ed, history won't be saved.

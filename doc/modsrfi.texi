@@ -3988,7 +3988,7 @@ faster than @code{:collection}).
 @c EN
 If one argument is given to the generic
 qualifier @code{:} and it is a collection other than the specific
-types suppored directly in SRFI-42, this qualifer is used.
+types supported directly in SRFI-42, this qualifer is used.
 @c JP
 汎用qualifier@code{:}に1つの引数が与えられ、
 それがSRFI-42で用意されている型以外のコレクションであれば、

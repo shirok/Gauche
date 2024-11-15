@@ -78,7 +78,7 @@
                            (wrap-with-proxy-type ($gref-id arg) gloc)
                            v)))]
                  [else
-                  (errorf "Can't use non-inlinable global varible `~s' in \
+                  (errorf "Can't use non-inlinable global variable `~s' in \
                            type constructor expression: ~s"
                           ($gref-id arg)
                           ($*-src iform))])]

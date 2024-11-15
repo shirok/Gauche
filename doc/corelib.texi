@@ -797,7 +797,7 @@ object can be treated as that type:
 @end example
 
 @c EN
-Or obtain size and alignemnt info on the running platform:
+Or obtain size and alignment info on the running platform:
 @c JP
 また、実行中のプラットフォームにおけるその型のデータの大きさやアラインメントを知ることもできます。
 @c COMMON

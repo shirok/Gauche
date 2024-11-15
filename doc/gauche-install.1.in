@@ -76,7 +76,7 @@ The fifth format removes
 in the
 .IR DIRECTORY .
 Irrelevant options are ignored, so it is handy to uninstall
-files just by chaning \fB\-T\fR in the fourth format to \fB\-U\fR.
+files just by changing \fB\-T\fR in the fourth format to \fB\-U\fR.
 .SH "OPTIONS"
 .PP
 \fB\-C\fR, \fB\-\-canonical\-suffix\fR

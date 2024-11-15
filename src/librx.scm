@@ -194,7 +194,7 @@
     (cond [(null? more) (func-1 rx string sub)]
           [else
            (unless (even? (length more))
-             (errorf "~a: regexp and subsitution don't pair up" name))
+             (errorf "~a: regexp and substitution don't pair up" name))
            (let loop ([s (func-1 rx string sub)]
                       [args more])
              (if (null? args)

@@ -1601,7 +1601,7 @@ srfi-226, srfi-226
 ()
 
 Control features
-Partially suppored as built-in and @code{gauche.threads} module.
+Partially supported as built-in and @code{gauche.threads} module.
 @xref{Control features} for the details.
 
 制御機構

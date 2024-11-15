@@ -12488,7 +12488,7 @@ SRFI-60の@code{bitwise-if}、@code{rotate-bit-field}、
 This module provides a set of flonum-specific operations.
 Originally defined as SRFI-144.
 
-In Gauche, a flonum is IEEE 754 double-precision floating point numbers.
+In Gauche, a flonum is an IEEE 754 double-precision floating point number.
 @c JP
 このモジュールはflonumに特化した操作を提供します。
 SRFI-144として制定されました。

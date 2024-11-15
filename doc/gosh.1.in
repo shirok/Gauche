@@ -165,7 +165,7 @@ Currently, only 7 is the valid value of
 If
 .I version
 is not the running Gauche's version, but the specified verision
-is installed in the system, execute taht version's gosh instead.
+is installed in the system, execute that version's gosh instead.
 This is useful when you want to invoke a specific version of Gauche.
 The version must be 0.9.6 or later.
 .TP

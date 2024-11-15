@@ -1156,7 +1156,7 @@
          (set! glist (SCM_NEW_ATOMIC_ARRAY gid_t ngid))
          (for-each (lambda (gid)
                      (unless (SCM_INTP gid)
-                       (Scm_Error "gid list contains invalud value: %S" gid))
+                       (Scm_Error "gid list contains invalid value: %S" gid))
                      (set! (aref glist k) (SCM_INT_VALUE gid))
                      (post++ k))
                    gids)

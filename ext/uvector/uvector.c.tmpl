@@ -68,7 +68,7 @@ ScmObj Scm_UVectorAlias(ScmClass *klass, ScmUVector *v,
                   klass);
     }
     if ((start*srcalign)%reqalign != 0 || (end*srcalign)%reqalign != 0) {
-        Scm_Error("aliasing %S of range (%d, %d) to %S doesn't satisfy alignemnt requirement.",
+        Scm_Error("aliasing %S of range (%d, %d) to %S doesn't satisfy alignment requirement.",
                   Scm_ClassOf(SCM_OBJ(v)), start, end, klass);
     }
     if (reqalign >= srcalign) dstsize = (end-start) / (reqalign/srcalign);
