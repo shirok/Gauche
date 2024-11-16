@@ -38,6 +38,7 @@
 ;; so that we can run code written with srfi-230.
 
 (define-module gauche.atomic
+  (use gauche.threads)
   (export make-atomic-box atomic-box?
           atomic-box-ref atomic-box-set!
           atomic-box-swap! atomic-box-compare-and-swap!
@@ -153,9 +154,8 @@
                      [r (atomic-fxbox-compare-and-swap! fxbox
                                                         prev
                                                         (,op prev val))])
-                (if (eqv? prev r)
-                  r
-                  (retry))))))))))
+                (cond [(eqv? prev r) r]
+                      [else (thread-yield!) (retry)])))))))))
 
 (define-atomic-fxbox-fetch-and-modify atomic-fxbox+/fetch! +)
 (define-atomic-fxbox-fetch-and-modify atomic-fxbox-/fetch! -)
@@ -204,6 +204,7 @@
                    (SCM_EQ prev-cdr expected-cdr))
             (let* ([p2 (Scm_AtomicBoxCompareAndSwap pair p newp)])
               (when (SCM_EQ p p2)
-                (return prev-car prev-cdr))) ;success
+                (return prev-car prev-cdr)) ;success
+              (Scm_YieldCPU))
             (return prev-car prev-cdr)))))))
  )
