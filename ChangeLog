@@ -1,3 +1,7 @@
+2024-11-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/230.scm: Support srfi-230.
+
 2024-11-10  Shiro Kawai  <shiro@acm.org>
 
 	* ext/gauche/atomic.scm: Provide atomic operations in a separate
