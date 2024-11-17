@@ -101,6 +101,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Optional arguments::          srfi.227
 * Composing comparators::       srfi.228
 * Tagged procedures::           srfi.229
+* Atomic operations::           srfi.230
 * Flexible curried procedures::  srfi.232
 * Topological sorting::         srfi.234
 * Combinators (SRFI)::          srfi.235
@@ -15985,7 +15986,7 @@ ordering predicate and hash function.
 @end defvar
 
 @c ----------------------------------------------------------------------
-@node Tagged procedures, Flexible curried procedures, Composing comparators, Library modules - SRFIs
+@node Tagged procedures, Atomic operations, Composing comparators, Library modules - SRFIs
 @section @code{srfi.229} - Tagged procedures
 @c NODE 手続きタグ, @code{srfi.229} - 手続きタグ
 
@@ -16068,7 +16069,162 @@ is signaled.
 
 
 @c ----------------------------------------------------------------------
-@node Flexible curried procedures, Topological sorting, Tagged procedures, Library modules - SRFIs
+@node Atomic operations, Flexible curried procedures, Tagged procedures, Library modules - SRFIs
+@section @code{srfi.230} - Atomic operations
+@c NODE アトミックな操作, @code{srfi.230} - アトミックな操作
+
+@deftp {Module} srfi.230
+@mdindex srfi.230
+@end deftp
+
+@subheading Memory order
+
+@defmac memory-order symbol
+[SRFI-230]
+@c MOD srfi.230
+@end defmac
+
+@defun memory-order?
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@subheading Atomic flag
+
+@defun make-atomic-flag
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-flag? obj
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-flag-test-and-set! flag :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-flag-clear! flag :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@subheading Atomic box
+
+@defun make-atomic-box val
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-box? obj
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-box-ref abox :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-box-set! abox val :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-box-swap! abox val :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-box-compare-and-swap! abox expected desired :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@subheading Atomic fxbox
+
+@defun make-atomic-fxbox val
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-fxbox? obj
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-fxbox-ref abox :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-fxbox-set! abox val :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-fxbox-swap! abox val :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-fxbox-compare-and-swap! abox expected desired :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-fxbox+/fetch! abox val :optional memory-order
+@defunx atomic-fxbox-/fetch! abox val :optional memory-order
+@defunx atomic-fxbo-and/fetch! abox val :optional memory-order
+@defunx atomic-fxbo-ior/fetch! abox val :optional memory-order
+@defunx atomic-fxbo-xor/fetch! abox val :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@subheading Atomic pair
+
+@defun make-atomic-pair val1 val2
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-pair? obj
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-pair-ref apair :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-pair-set! apair val1 val2 :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-pair-swap! apair val1 val2 :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@defun atomic-pair-compare-and-swap! abox expected1 expected2 desired1 desired2 :optional memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@subheading Memory synchronization
+
+@defun atomic-fence memory-order
+[SRFI-230]
+@c MOD srfi.230
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Flexible curried procedures, Topological sorting, Atomic operations, Library modules - SRFIs
 @section @code{srfi.232} - Flexible curried procedures
 @c NODE 柔軟なカリー化された手続き, @code{srfi.232} - 柔軟なカリー化された手続き
 

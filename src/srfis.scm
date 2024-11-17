@@ -1645,6 +1645,18 @@ Supported by the module @code{srfi.229}
 (@ref{Tagged procedures}参照)。
 
 
+srfi-230, srfi-230
+()
+
+Atomic Operations
+Supported by the module @code{srfi.230}
+(@pxref{Atomic operations}).
+
+アトミックな操作
+@code{srfi.230}でサポートされます。
+(@ref{Atomic operations}参照)。
+
+
 srfi-232, srfi-232
 ()
 
