@@ -16075,6 +16075,19 @@ is signaled.
 
 @deftp {Module} srfi.230
 @mdindex srfi.230
+This srfi defines a set of data types and operations that perform
+certain dereference and modification operations atomically.
+The interface is similar to C++'s atomic operation library.
+
+The srfi also defines sevaral relaxed memory order constraints.
+In the current Gauche operations, those operation involves VM-level
+procedure calls and all operations are done with sequentially consistent
+order, no matter what @var{memory-order} argument is.
+Other Scheme implementations that inline-compiles these
+operations may emit more efficient code with relaxed memory orders.
+
+Gauche's implementation does utilize lock-free atomic operations,
+so they may still faster than using mutexes (@pxref{Mutex}).
 @end deftp
 
 @subheading Memory order
@@ -16082,106 +16095,214 @@ is signaled.
 @defmac memory-order symbol
 [SRFI-230]
 @c MOD srfi.230
+If @var{symbol} must be one of the following symbols specifying
+memory order: @code{relaxed}, @code{aquire}, @code{release},
+@code{aquire-release}, or @code{sequentially-consistent},
+it is returned as is.  Otherwise, a syntax error is thrown.
+This can be used instaed of @code{quote} to statically check
+the validity of the symbol.
+
+In Gauche's current implementation, all atomic operations are
+done in @code{sequentially-consistent}, no matter what memory order
+you specify.  Portable code may use more relaxed order and expect
+it runs more efficiently on other implementations.
 @end defmac
 
-@defun memory-order?
+@defun memory-order? obj
 [SRFI-230]
 @c MOD srfi.230
+Returns @code{#t} if @var{obj} is one of the valid symbols as
+memory order, @code{#f} otherwise.
 @end defun
 
 @subheading Atomic flag
 
+An atomic flag is a storage that holds a boolean value.
+The initial value is @code{#f}.
+Referencing the flag can only be done with
+@code{atomic-flag-test-and-set!}, which turns the value to @code{#t}.
+
 @defun make-atomic-flag
 [SRFI-230]
 @c MOD srfi.230
+Returns a newly created atomic flag.  Its value is @code{#f}.
 @end defun
 
 @defun atomic-flag? obj
 [SRFI-230]
 @c MOD srfi.230
+Returns @code{#t} if @code{obj} is an atomic flag,
+@code{#f} otherwise.
 @end defun
 
 @defun atomic-flag-test-and-set! flag :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Set @var{flag}'s value to @code{#t} and returns its previous value,
+atomically.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @defun atomic-flag-clear! flag :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Reset @var{flag}'s value to @code{#f}.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @subheading Atomic box
 
+An atomic box is a storage that holds a Scheme value.
+
 @defun make-atomic-box val
 [SRFI-230]
 @c MOD srfi.230
+Creates a new atomic box whose value is @var{val}.
 @end defun
 
 @defun atomic-box? obj
 [SRFI-230]
 @c MOD srfi.230
+Returns @code{#t} if @code{obj} is an atomic box,
+@code{#f} otherwise.
 @end defun
 
 @defun atomic-box-ref abox :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Returns the content of atomic box @var{abox}.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @defun atomic-box-set! abox val :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Sets @var{val} as the content of atomic box @var{abox},
+and returns an undefined value.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @defun atomic-box-swap! abox val :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Sets @var{val} as the content of atomic box @var{abox},
+and returns the previous content, atomically.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
+
+@example
+(define b (make-atomic-box 'foo))
+
+(atomic-box-swap! box 'bar)   @result{} foo
+(atomic-box-ref box)          @result{} bar
+@end example
+
 @end defun
 
 @defun atomic-box-compare-and-swap! abox expected desired :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Compares the content of atomic box @var{abox} and @var{expected}.
+If both are the same (in @code{eq?} sense), sets @var{desired} as the
+new value of @var{abox}.  Returns the previous content.  All operations
+are done atomically.
+
+You can know the content is altered if @code{(eq? return-value expected)}
+is true.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @subheading Atomic fxbox
 
-@defun make-atomic-fxbox val
+An atomic fxbox is a storage that can hold a fixnum.
+It provides atomic fetcy-compute-store opertaions as well.
+
+@defun make-atomic-fxbox fxval
 [SRFI-230]
 @c MOD srfi.230
+Creates a new atomic box whose value is @var{fxval}.
 @end defun
 
 @defun atomic-fxbox? obj
 [SRFI-230]
 @c MOD srfi.230
+Returns @code{#t} if @code{obj} is an atomic fxbox,
+@code{#f} otherwise.
 @end defun
 
-@defun atomic-fxbox-ref abox :optional memory-order
+@defun atomic-fxbox-ref fxbox :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Returns the content of atomic fxbox @var{fxbox}.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
-@defun atomic-fxbox-set! abox val :optional memory-order
+@defun atomic-fxbox-set! fxbox fxval :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Sets @var{fxval} as the content of atomic fxbox @var{fxbox},
+and returns an undefined value.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
-@defun atomic-fxbox-swap! abox val :optional memory-order
+@defun atomic-fxbox-swap! fxbox fxval :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Sets @var{fxval} as the content of atomic fxbox @var{fxbox},
+and returns the previous content, atomically.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
-@defun atomic-fxbox-compare-and-swap! abox expected desired :optional memory-order
+@defun atomic-fxbox-compare-and-swap! fxbox expected desired :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Compares the content of atomic fxbox @var{fxbox} and @var{expected}.
+If both are the same (in @code{eq?} sense), sets @var{desired} as the
+new value of @var{fxbox}.  Returns the previous content.  All operations
+are done atomically.
+
+You can know the content is altered if @code{(eq? return-value expected)}
+is true.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
-@defun atomic-fxbox+/fetch! abox val :optional memory-order
-@defunx atomic-fxbox-/fetch! abox val :optional memory-order
-@defunx atomic-fxbo-and/fetch! abox val :optional memory-order
-@defunx atomic-fxbo-ior/fetch! abox val :optional memory-order
-@defunx atomic-fxbo-xor/fetch! abox val :optional memory-order
+@defun atomic-fxbox+/fetch! fxbox fxval :optional memory-order
+@defunx atomic-fxbox-/fetch! fxbox fxval :optional memory-order
+@defunx atomic-fxbo-and/fetch! fxbox fxval :optional memory-order
+@defunx atomic-fxbo-ior/fetch! fxbox fxval :optional memory-order
+@defunx atomic-fxbo-xor/fetch! fxbox fxval :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Retrieves the value of atomic fxbox @var{fxbox}, calculates
+@code{(+ prev-val fxval)}, @code{(- prev-val fxval)},
+@code{(logand prev-val fxval)}, @code{(logior prev-val fxval}),
+or @code{(logxor prev-val fxval)}, respectively,
+then store the result to @var{fxbox}, and returns the previsou value.
+The entire sequence of operations are done atomically.
+
+This does not check the numerical overflow.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @subheading Atomic pair
