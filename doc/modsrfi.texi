@@ -16307,34 +16307,68 @@ the @var{memory-order} argument.
 
 @subheading Atomic pair
 
+An atomic pair is a storage that can hold two Scheme values,
+and both can be updated at once atomically.
+
 @defun make-atomic-pair val1 val2
 [SRFI-230]
 @c MOD srfi.230
+Creates a new atomic pair that has two values, @var{val1} and @var{val2}.
+@c MOD srfi.230
+
 @end defun
 
 @defun atomic-pair? obj
 [SRFI-230]
 @c MOD srfi.230
+Returns @code{#t} if @code{obj} is an atomic pair,
+@code{#f} otherwise.
 @end defun
 
 @defun atomic-pair-ref apair :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Atomically dereference the two values @var{apair} holds,
+and returns them as the two return values.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @defun atomic-pair-set! apair val1 val2 :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Atomically stores @var{val1} and @var{val2} to an atomic pair @var{apair}.
+Returns an undefined value.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @defun atomic-pair-swap! apair val1 val2 :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Atomically stores @var{val1} and @var{val2} to an atomic pair @var{apair}
+and returns the previous values.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @defun atomic-pair-compare-and-swap! abox expected1 expected2 desired1 desired2 :optional memory-order
 [SRFI-230]
 @c MOD srfi.230
+Compare two values in atomic box @var{abox} with @var{expected1} and
+@var{expected2}, respectively.  If each corresponding values are
+the same (in @code{eq?} sense), store @var{desired1} and @code{desired2}
+to @var{abox}.  Always returns teh original values.
+The whole operations are done atomically.
+
+You can know the values are altered by comparing returned values
+and expected values.
+
+Gauche uses sequentially consistent order regardless of
+the @var{memory-order} argument.
 @end defun
 
 @subheading Memory synchronization
@@ -16342,6 +16376,10 @@ the @var{memory-order} argument.
 @defun atomic-fence memory-order
 [SRFI-230]
 @c MOD srfi.230
+Synchronize memory according to at least @var{memory-order}
+constraints.  In the current version of Gauche,
+regardless of @var{memory-order},
+the memory is synchronized with sequentially consistent manner.
 @end defun
 
 @c ----------------------------------------------------------------------
