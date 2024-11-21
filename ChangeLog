@@ -3080,7 +3080,7 @@
 2021-04-08  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile.scm (macroexpand-all, global-call-type),
-	  src/gauche/vm.h (SCM_COMPILE_NOINLINE_INLINER): Allow macorexpand-all
+	  src/gauche/vm.h (SCM_COMPILE_NOINLINE_INLINER): Allow macroexpand-all
 	  to expand hybrid macro as well.  We still need to suppress expansion
 	  of general inliners, for they can insert $asm node, which is not
 	  useful as the output of macro expansion.  This is a kludge, due to
@@ -11295,7 +11295,7 @@
 
 2012-02-17  Shiro Kawai  <shiro@acm.org>
 
-	* lib/gauche/generator.scm (glet*, glet1): Added convenience macors
+	* lib/gauche/generator.scm (glet*, glet1): Added convenience macros
 	  that captures the monadic pattern frequently appear in generator
 	  code.
 
@@ -18952,7 +18952,7 @@
 	  to avoid (use slib) to load srfi-29, which overrides builtin 'format'
 	  by the incompatible srfi-29's format.
 	* src/gauche.h (SCM_EXTENDED_PAIR_P): fixed a bug that caused SEGV
-	  when the macor was applied to statically allocated objects.
+	  when the macro was applied to statically allocated objects.
 	* src/extlib.stub (hash-table-update!): added, based on John Kilburg's
 	  patch.
 	* test/hash.scm: added test for hash-table-update!, based on

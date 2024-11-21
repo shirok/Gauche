@@ -1054,7 +1054,7 @@ struct ScmProcedureRec {
    For <procedure> and <generic>, it shows whether the setter is locked.
    For <method>, it shows whether the alteration of the method is disallowed,
    i.e. one can't redefine a method with matching signature.
-   (These two roles are reflected to the two macors,
+   (These two roles are reflected to the two macros,
    SCM_PROCEDURE_SETTER_LOCKED and SCM_PROCEDURE_METHOD_LOCKED)
    TODO: When we change ABI, maybe split these roles to different flags.
  */
