@@ -1,3 +1,12 @@
+2024-11-22  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (%expand-define-method): Avoid including
+	  "#<identifier..>" in the method unique name, since it has portions
+	  that vary for each build and hinders reproducible build.  The name
+	  is not relevant to the program execution; only needs to be unique
+	  inside the module.  So we use gensym-generated counter instead.
+	  https://github.com/shirok/Gauche/issues/1080
+
 2024-11-15  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/230.scm: Support srfi-230.

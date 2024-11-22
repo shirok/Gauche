@@ -155,7 +155,11 @@
                        form)]
            ;; We bind method body to an artificially weird module-local name,
            ;; so that test-module can find and scan the method's body.
-           [method-unique-name (symbol-append name specs)]
+           [method-unique-name (gensym
+                                (symbol->string
+                                 (symbol-append (unwrap-syntax name)
+                                                (unwrap-syntax specs)
+                                                '|.|)))]
            )
       (receive (true-name getter-name) (%check-setter-name name)
         (let1 gf (gensym "gf")
