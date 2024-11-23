@@ -762,13 +762,12 @@
      ,@files)
    :directory "test.o"))
 
-;; On Windows we can't remove dll file that's being used in the active
-;; process, so we spawn a child gosh and load it.
+;; Removing a DSO file while it is opened tend to cause issues, so we invoke
+;; a child gosh to load and test it.
 (define-syntax dynload-and-eval
   (syntax-rules ()
     [(_ libname expr)
-     (cond-expand
-      [gauche.os.windows
+     (begin
        (with-output-to-file "test.o/t.scm"
          (^[]
            (write '(add-load-path "."))
@@ -785,11 +784,7 @@
                               :output :pipe :directory "test.o")]
               [result (read (process-output p))])
          (process-wait p)
-         result)]
-      [else
-       (load libname :paths '("./test.o"))
-       expr])]))
-
+         result))]))
 
 (define (precomp-test-1)
   (test* "running precomp 1" #t
