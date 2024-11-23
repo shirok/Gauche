@@ -39,7 +39,7 @@
                 0)))
     (write '(define (ls _)
               ;; glob will be tested later, so we avoid using it.
-              (for-each print (sys-readdir "."))
+              (for-each print (sort (sys-readdir ".")))
               0))
     (write '(define (grep args)
               (let* ([opt-v (equal? (car args) "-v")]
