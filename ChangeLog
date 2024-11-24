@@ -129,7 +129,7 @@
 
 	* src/libobj.scm (describe-slots): Hide slots starting with '%' by
 	  default.  Setting a dynamic state describe-details to a true value
-	  changes it.  Since 'describe' is for human interaction, we thing
+	  changes it.  Since 'describe' is for human interaction, we think
 	  this bit of convention would help users.
 
 2024-08-29  Shiro Kawai  <shiro@acm.org>
