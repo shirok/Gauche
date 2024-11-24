@@ -662,9 +662,9 @@
                                           ~a,\
                                           ~a);\n"
                        (if mod (tmodule-cname mod) "Scm_CurrentModule()")
-                       (if mod (cgen-safe-comment (~ mod'name)) "")
+                       (if mod (cgen-safe-comment-sexp (~ mod'name)) "")
                        (cgen-cexpr sym)
-                       (cgen-safe-comment (unwrap-syntax id))
+                       (cgen-safe-comment-sexp id)
                        tmp
                        (case flags
                          [(2) 'SCM_BINDING_CONST]
@@ -916,7 +916,7 @@
            [inliner (check-packed-inliner code)])
       (define (init-thunk)
         (format #t "    SCM_COMPILED_CODE_CONST_INITIALIZER(  /* ~a */\n"
-                (cgen-safe-comment (~ code'name)))
+                (cgen-safe-comment-sexp (~ code'name)))
         (format #t "            (ScmWord*)(~a), ~a,\n"
                 cvn (length cv))
         (format #t "            ~a, ~a, ~a, ~a, ~a, ~a,\n"
@@ -951,7 +951,7 @@
     (unless (cgen-literal-static? (~ self'code-name))
       (print "  SCM_COMPILED_CODE("(~ self'c-name)")->name = "
              (cgen-cexpr (~ self'code-name))";"
-             "/* "(cgen-safe-comment (~ self'value'full-name))" */"))
+             "/* "(cgen-safe-comment-sexp (~ self'value'full-name))" */"))
     (unless (cgen-literal-static? (~ self'signature-info))
       (print "  SCM_COMPILED_CODE("(~ self'c-name)")->signatureInfo = "
              (cgen-cexpr (~ self'signature-info)) ";"))
@@ -1029,7 +1029,7 @@
              [insnval (vm-build-insn insn)]
              [name-info (if first-cexpr
                           ""
-                          (format "/* ~a */\n    " (cgen-safe-comment full-name)))]
+                          (format "/* ~a */\n    " (cgen-safe-comment-sexp full-name)))]
              [insn-cexpr
               (alloc-word
                ;; We emit it as signed integer so that 64bit machine
@@ -1055,18 +1055,18 @@
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
                       (cgen-cexpr (cadr lv))
-                      (cgen-safe-comment (write-to-string (cadr cv))))
+                      (cgen-safe-comment-sexp (cadr cv)))
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
-                      (cgen-safe-comment (write-to-string (cadr cv))))))
+                      (cgen-safe-comment-sexp (cadr cv)))))
            (loop (cddr cv) (cddr lv) (+ count 2) first-cexpr)]
           [(obj+label)
            (alloc-word
             (if (cgen-literal-static? (cadr lv))
               (format "SCM_WORD(~a) /* ~a */"
                       (cgen-cexpr (cadr lv))
-                      (cgen-safe-comment (write-to-string (cadr cv))))
+                      (cgen-safe-comment-sexp (cadr cv)))
               (format "SCM_WORD(SCM_UNDEFINED) /* ~a */"
-                      (cgen-safe-comment (write-to-string (cadr cv))))))
+                      (cgen-safe-comment-sexp (cadr cv)))))
            (alloc-word
             (format "SCM_WORD((ScmWord*)~a + ~d)  /*    ~3d */"
                     first-cexpr (caddr cv) (caddr cv)))
@@ -1192,5 +1192,5 @@
   (init (self)
     (format #t "  ~a = Scm_MakeClosure(~a, NULL); /* ~a */\n"
             (cgen-cexpr self) (cgen-cexpr (~ self'code))
-            (cgen-safe-comment (write-to-string (~ self'value)))))
+            (cgen-safe-comment-sexp (~ self'value))))
   (static (self) #f))

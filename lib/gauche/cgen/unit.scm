@@ -48,7 +48,7 @@
           cgen-include cgen-define cpp-condition->string
 
           cgen-safe-name cgen-safe-name-friendly
-          cgen-safe-string cgen-safe-comment
+          cgen-safe-string cgen-safe-comment cgen-safe-comment-sexp
 
           ;; semi-private routines
           cgen-emit-static-data)
@@ -393,3 +393,8 @@
 ;; Escape  '*/' so that str can be inserted safely within a comment.
 (define (cgen-safe-comment str)
   (regexp-replace-all* (x->string str) #/\/\*/ "/ *" #/\*\// "* /"))
+
+;; Useful to include sexp in C comment.  Strip #<identifier ...> away
+;; for the readability.
+(define (cgen-safe-comment-sexp obj)
+  (cgen-safe-comment (write-to-string (unwrap-syntax obj))))
