@@ -879,6 +879,19 @@ int Scm_Require(ScmObj feature, int flags, ScmLoadPacket *packet)
     return do_require(feature, flags, Scm__RequireBaseModule(), packet);
 }
 
+/* Called when load fails during require.  We need to reset the providing
+   chain.*/
+static inline void require_error_cleanup(ScmVM *vm,
+                                         ScmObj feature,
+                                         ScmModule *prev_mod)
+{
+    vm->module = prev_mod;
+    (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
+    ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
+    (void)SCM_INTERNAL_COND_BROADCAST(ldinfo.prov_cv);
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
+}
+
 int do_require(ScmObj feature, int flags, ScmModule *base_mod,
                ScmLoadPacket *packet)
 {
@@ -938,24 +951,32 @@ int do_require(ScmObj feature, int flags, ScmModule *base_mod,
     }
 
     if (!SCM_FALSEP(provided)) return 0; /* no work to do */
-    /* Make sure to load the file into base_mod.   We don't need UNWIND_PROTECT
-       here, since errors are caught in Scm_Load. */
+    /* Make sure to load the file into base_mod. */
     ScmLoadPacket xresult;
     ScmModule *prev_mod = vm->module;
     vm->module = base_mod;
-    int r = Scm_Load(Scm_GetStringConst(SCM_STRING(feature)), 0, &xresult);
-    vm->module = prev_mod;
-    if (packet) packet->exception = xresult.exception;
 
-    if (r < 0) {
-        /* Load failed */
-        (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);
-        ldinfo.providing = Scm_AssocDeleteX(feature, ldinfo.providing, SCM_CMP_EQUAL);
-        (void)SCM_INTERNAL_COND_BROADCAST(ldinfo.prov_cv);
-        (void)SCM_INTERNAL_MUTEX_UNLOCK(ldinfo.prov_mutex);
-        if (flags&SCM_LOAD_PROPAGATE_ERROR) Scm_Raise(xresult.exception, 0);
-        else return -1;
+    /* A bit awkward, but if SCM_LOAD_PROPAGATE_ERROR is given, we don't
+       want to 'stop' the error, for we don't want to lose the stack trace.
+    */
+    if (flags&SCM_LOAD_PROPAGATE_ERROR) {
+        SCM_UNWIND_PROTECT {
+            (void)Scm_Load(Scm_GetStringConst(SCM_STRING(feature)),
+                           SCM_LOAD_PROPAGATE_ERROR, &xresult);
+        } SCM_WHEN_ERROR {
+            require_error_cleanup(vm, feature, prev_mod);
+            SCM_NEXT_HANDLER;
+        } SCM_END_PROTECT;
+    } else {
+        int r = Scm_Load(Scm_GetStringConst(SCM_STRING(feature)), 0, &xresult);
+        if (packet) packet->exception = xresult.exception;
+
+        if (r < 0) {
+            require_error_cleanup(vm, feature, prev_mod);
+            return -1;
+        }
     }
+    vm->module = prev_mod;
 
     /* Success */
     (void)SCM_INTERNAL_MUTEX_LOCK(ldinfo.prov_mutex);

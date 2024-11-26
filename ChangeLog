@@ -1,3 +1,9 @@
+2024-11-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/load.c (do_require): Use non-error-trapping Scm_Load when
+	  PROPAGATE_ERROR is requrested.
+	  https://github.com/shirok/Gauche/issues/1081
+
 2024-11-24  Shiro Kawai  <shiro@acm.org>
 
 	* configure.ac: 0.9.15-p2, for reproducible "official" package.
