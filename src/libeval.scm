@@ -159,23 +159,24 @@
       (begin0 (read port)
         (current-read-context prev-read-context)))
 
-    (guard (e [else (let1 e2 (if (condition? e)
-                               ($ make-compound-condition e
-                                  $ make <load-condition-mixin>
-                                  :history (current-load-history)
-                                  :port (current-load-port)
-                                  :expr #f)
-                               e)
-                      (restore-load-context)
-                      (raise e2))])
-      (setup-load-context)
-      ;; Discard BOM
-      (when (eq? (gauche-character-encoding) 'utf-8)
-        (when (eqv? (peek-char port) #\ufeff)
-          (read-char port)))
-      (do ([s (read+ port) (read+ port)])
-          [(eof-object? s)]
-        (eval s #f)))
+    (with-exception-handler
+     (^e (let1 e2 (if (condition? e)
+                    ($ make-compound-condition e
+                       $ make <load-condition-mixin>
+                       :history (current-load-history)
+                       :port (current-load-port)
+                       :expr #f)
+                    e)
+           (restore-load-context)
+           (raise e2)))
+     (^[]
+       (setup-load-context)
+       ;; Discard BOM
+       (when (eqv? (peek-char port) #\ufeff)
+         (read-char port))
+       (do ([s (read+ port) (read+ port)])
+           [(eof-object? s)]
+         (eval s #f))))
     (restore-load-context)
     #t))
 

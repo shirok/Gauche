@@ -1,5 +1,10 @@
 2024-11-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/libeval.scm (load-from-port): Use with-exception-handler
+	  instead of guard to reraise wrapped condition.  Guard rewinds
+	  stack before calling the handler, so a portion of stack trace
+	  is lost.
+
 	* src/load.c (do_require): Use non-error-trapping Scm_Load when
 	  PROPAGATE_ERROR is requrested.
 	  https://github.com/shirok/Gauche/issues/1081
