@@ -1,3 +1,11 @@
+2024-11-26  Shiro Kawai  <shiro@acm.org>
+
+	* src/symbol.c (Scm_Gensym): Avoid race.  It is theoretically
+	  harmless as far as gensym result is used as uninterned symbols
+	  (even two threads reads the same counter, created symbols are
+	  different), but their name can be dumped to a file, and it
+	  is better to avoid conflicts.
+
 2024-11-25  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (load-from-port): Use with-exception-handler

@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/configP.h"
+#include "gauche/priv/atomicP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/moduleP.h"
 
@@ -158,13 +159,16 @@ static SCM_DEFINE_STRING_CONST(default_prefix, "G", 1, 1);
 ScmObj Scm_Gensym(ScmString *prefix)
 {
     char numbuf[50];
-    /* We don't need mutex for this variable, since the race on it is
-       tolerated---multiple threads may get the same name symbols,
-       but they are uninterned and never be eq? to each other. */
-    static intptr_t gensym_count = 0;
+    static ScmAtomicVar gensym_count = 0;
+    ScmAtomicWord mycount = Scm_AtomicLoad(&gensym_count);
+
+    while (!Scm_AtomicCompareExchange(&gensym_count, &mycount, mycount+1)) {
+        mycount = Scm_AtomicLoad(&gensym_count);
+        Scm_YieldCPU();
+    }
 
     if (prefix == NULL) prefix = &default_prefix;
-    int nc = snprintf(numbuf, 49, "%"PRIdPTR, gensym_count++);
+    int nc = snprintf(numbuf, 49, "%"PRIdPTR, mycount);
     numbuf[49] = '\0';
     ScmObj name = Scm_StringAppendC(prefix, numbuf, nc, nc);
     ScmSymbol *sym = make_sym(SCM_CLASS_SYMBOL, SCM_STRING(name), FALSE);
