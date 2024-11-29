@@ -1505,27 +1505,38 @@
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     NEXT))
 
-;; EXTEND-DENV addr
-;; TAIL-EXTEND-DENV
+;; EXTEND-DENV(op) addr
+;; TAIL-EXTEND-DENV(op)
 ;;   Push new key-value pair on the current denv.
-;;   VAL0 holds the key, and stack top holds the value.
+;;   VAL0 holds the value, and stack top holds the key.
 ;;   EXTEND-DENV is for non-tail calls, and a continuation is pushed
 ;;   before adding key-value pair.
-(define-insn EXTEND-DENV 0 label #f
-  (let* ([arg] [next::ScmWord*])
+;;   If OP == 0, the value shadows the previous value.
+;;   If OP == 1, the value is consed to the previous value.
+;;   TRANSIENT: We allow num-params = 0 only to compile this with 0.9.15.
+;;   Drop it when a new release is made.
+(define-insn EXTEND-DENV (1 0) label #f
+  (let* ([op::int (SCM_VM_INSN_ARG code)]
+         [key] [next::ScmWord*])
     (SCM_FLONUM_ENSURE_MEM VAL0)
-    (POP-ARG arg)
+    (POP-ARG key)
     (FETCH-LOCATION next)
     INCR_PC
     (PUSH-CONT next)
-    (Scm_VMPushDynamicEnv arg VAL0)
+    (if (== op 0)
+      (Scm_VMPushDynamicEnv key VAL0)
+      (Scm_VMPushDynamicEnv key (Scm_Cons VAL0
+                                          (Scm_VMFindDynamicEnv key SCM_NIL))))
     NEXT))
 
-(define-insn TAIL-EXTEND-DENV 0 none #f
-  (let* ([arg])
+(define-insn TAIL-EXTEND-DENV (1 0) none #f
+  (let* ([op::int (SCM_VM_INSN_ARG code)] [key])
     (SCM_FLONUM_ENSURE_MEM VAL0)
-    (POP-ARG arg)
-    (Scm_VMPushDynamicEnv arg VAL0)
+    (POP-ARG key)
+    (if (== op 0)
+      (Scm_VMPushDynamicEnv key VAL0)
+      (Scm_VMPushDynamicEnv key (Scm_Cons VAL0
+                                          (Scm_VMFindDynamicEnv key SCM_NIL))))
     NEXT))
 
 ;; EXPERIMENTAL

@@ -1,3 +1,10 @@
+2024-11-28  Shiro Kawai  <shiro@acm.org>
+
+	* src/vminsn.scm (EXTEND-DENV, TAIL-EXTEND-DENV),
+	  src/compile-5.scm (pass5/$DYNENV): Enhanced those instructions to
+	  cons a new value to existing value.  The operation can be used
+	  to optimize with-exception-handler etc.
+
 2024-11-26  Shiro Kawai  <shiro@acm.org>
 
 	* src/symbol.c (Scm_Gensym): Avoid race.  It is theoretically

@@ -709,11 +709,17 @@
 ;;   continuation is extended.  Otherwise, a new continuation frame is
 ;;   pushed, dynenv is extended and <expr> is evalutaed in a tail
 ;;   context.
+;;   FLAG - if 'push is given, the value is pushed to the current
+;;   value of dynamic env with key.
 (define-simple-struct $dynenv $DYNENV $dynenv
   (src       ; original source for debugging
-   kvs       ; (key value) exprs
+   kvs       ; (key-iform value-iform [flag ...])
    body      ; body expression
    ))
+
+(define-inline ($dynenv-key iform) (car ($dynenv-kvs iform)))
+(define-inline ($dynenv-value iform) (cadr ($dynenv-kvs iform)))
+(define-inline ($dynenv-flags iform) (cddr ($dynenv-kvs iform)))
 
 ;; The followings are builtin version of standard procedures.
 ;;

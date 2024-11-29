@@ -920,16 +920,17 @@
 ;; $DYNENV
 (define (pass5/$DYNENV iform target renv ctx)
   (let ([ccb (ctarget-ccb target)]
-        [dkey (pass5/rec (car ($dynenv-kvs iform)) target renv 'normal/bottom)])
+        [dkey (pass5/rec ($dynenv-key iform) target renv 'normal/bottom)]
+        [flag (if (memq 'push ($dynenv-flags iform)) 1 0)])
     (compiled-code-emit-PUSH! ccb)
-    (let* ([dval (pass5/rec (cadr ($dynenv-kvs iform)) target renv 'normal/top)]
+    (let* ([dval (pass5/rec ($dynenv-value iform) target renv 'normal/top)]
            [dkv  (imax dkey (+ dval 1))])
       (if (tail-context? ctx)
         (begin
-          (compiled-code-emit0i! ccb TAIL-EXTEND-DENV ($*-src iform))
+          (compiled-code-emit1i! ccb TAIL-EXTEND-DENV flag ($*-src iform))
           (imax dkv (pass5/rec ($dynenv-body iform) target renv 'tail)))
         (let1 merge-label (compiled-code-new-label ccb)
-          (compiled-code-emit0oi! ccb EXTEND-DENV merge-label ($*-src iform))
+          (compiled-code-emit1oi! ccb EXTEND-DENV flag merge-label ($*-src iform))
           (let1 dbody (pass5/rec ($dynenv-body iform) target renv 'tail)
             (compiled-code-emit-RET! ccb)
             (compiled-code-set-label! ccb merge-label)
