@@ -294,6 +294,9 @@ $(OBJECTS) : $(HEADERS)
 autoloads.c : autoloads.scm
 	$(BUILD_GOSH) autoloads.scm
 
+buildinfo.c : gen-buildinfo.scm
+	$(BUILD_GOSH) gen-buildinfo.scm
+
 builtin-syms.c gauche/priv/builtin-syms.h : builtin-syms.scm
 	$(BUILD_GOSH) builtin-syms.scm
 
@@ -395,7 +398,7 @@ char-data : gen-unicode.scm
 
 char.$(OBJEXT) : char_attr.c
 
-core.$(OBJEXT) : features.c
+core.$(OBJEXT) : features.c buildinfo.c
 
 winmain.$(OBJEXT) : main.c $(HEADERS)
 
@@ -529,7 +532,7 @@ bench-pushcc.c : bench-pushcc.scm
 	$(BUILD_GOSH) $(PRECOMP) bench-pushcc.scm
 
 # clean ------------------------------------------------
-PREGENERATED = compile.c autoloads.c builtin-syms.c \
+PREGENERATED = compile.c autoloads.c buildinfo.c builtin-syms.c \
 	       gauche/priv/builtin-syms.h vminsn.c gauche/vminsn.h \
 	       ../lib/gauche/vm/insn.scm native-supp.scm \
 	       char_attr.c gauche/priv/unicode_attr.h \

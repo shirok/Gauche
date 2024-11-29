@@ -600,6 +600,7 @@
 (define-cproc %gauche-runtime-directory () Scm_RuntimeDirectory)
 (define-cproc %gauche-libgauche-path () Scm_LibgauchePath)
 (define-cproc %gauche-executable-path () Scm_ExecutablePath)
+(define-cproc %build-gosh-version () Scm_BuildGoshVersion)
 
 ;;
 ;; External view of VM.

@@ -678,6 +678,14 @@ init_cond_features()
     }
 }
 
+#include "buildinfo.c"
+
+ScmObj Scm_BuildGoshVersion()
+{
+    return SCM_MAKE_STR(build_gosh_version);
+}
+
+
 /*=============================================================
  * 'Main'
  */
