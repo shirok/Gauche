@@ -26771,7 +26771,7 @@ If the control goes out from this form before completing evaluation,
 e.g. by an error, it is unlocked and another thread may start
 evaluating @var{expr}s.  If you have operations that should never
 be evaluated more than once no matter what, you should use @code{guard}
-or @code{unwind-protect} to make sure
+or @code{unwind-protect} to make sure evaluation completes.
 @c JP
 制御が式の評価を全て完了する前に、エラーなどでフォームから制御が外にに移った場合、
 ロックは外され、他のスレッドが@var{expr}を評価できるようになります。
