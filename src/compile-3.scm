@@ -92,10 +92,12 @@
 (define (pass3/$IT iform labels) iform)
 
 (define (pass3/$DYNENV iform labels)
-  (let ([key (pass3/rec (car ($dynenv-kvs iform)) labels)]
-        [val (pass3/rec (cadr ($dynenv-kvs iform)) labels)]
+  (let ([key (pass3/rec ($dynenv-key iform) labels)]
+        [val (pass3/rec ($dynenv-value iform) labels)]
         [expr (pass3/rec ($dynenv-body iform) labels)])
-    ($dynenv-kvs-set! iform `(,key ,val))
+    (unless (and (eq? key ($dynenv-key iform))
+                 (eq? val ($dynenv-value iform)))
+      ($dynenv-kvs-set! iform `(,key ,val ,@($dynenv-opts iform))))
     ($dynenv-body-set! iform expr)
     iform))
 

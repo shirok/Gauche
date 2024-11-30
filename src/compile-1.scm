@@ -501,6 +501,7 @@
 (define (global-id% id) (make-identifier id (find-module 'gauche.internal) '()))
 
 (define %expression-name-mark-key.     (global-id% '%expression-name-mark-key))
+(define %exception-handler-mark-key.   (global-id% '%exception-handler-mark-key))
 (define %make-er-transformer.          (global-id% '%make-er-transformer))
 (define %make-er-transformer/toplevel. (global-id% '%make-er-transformer/toplevel))
 (define %make-id-transformer.          (global-id% '%make-id-transformer))
