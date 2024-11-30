@@ -1,3 +1,9 @@
+2024-11-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-5.scm (pass5/$DYNENV): Stop emitting EXTEND-DENV;
+	  it is replaced by PRE-CALL and TAIL-EXTEND-DENV.
+	  https://github.com/shirok/Gauche/issues/1086
+
 2024-11-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-i.scm (with-exception-handler): Inline expand

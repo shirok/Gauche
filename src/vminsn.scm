@@ -1505,7 +1505,6 @@
     (local_env_shift vm (SCM_VM_INSN_ARG code))
     NEXT))
 
-;; EXTEND-DENV(op) addr
 ;; TAIL-EXTEND-DENV(op)
 ;;   Push new key-value pair on the current denv.
 ;;   VAL0 holds the value, and stack top holds the key.
@@ -1515,6 +1514,9 @@
 ;;   If OP == 1, the value is consed to the previous value.
 ;;   TRANSIENT: We allow num-params = 0 only to compile this with 0.9.15.
 ;;   Drop it when a new release is made.
+
+;; TRANSIENT: EXTEND-DENV is no longer emitted.  We keep it to run
+;; code precompiled with 0.9.15.  Remove it after the next release.
 (define-insn EXTEND-DENV (1 0) label #f
   (let* ([op::int (SCM_VM_INSN_ARG code)]
          [key] [next::ScmWord*])

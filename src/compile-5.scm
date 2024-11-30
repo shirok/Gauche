@@ -919,22 +919,26 @@
 
 ;; $DYNENV
 (define (pass5/$DYNENV iform target renv ctx)
-  (let ([ccb (ctarget-ccb target)]
-        [dkey (pass5/rec ($dynenv-key iform) target renv 'normal/bottom)]
-        [flag (if (memq 'push ($dynenv-flags iform)) 1 0)])
+  (let* ([ccb (ctarget-ccb target)]
+         [merge-label (and (not (tail-context? ctx))
+                           (compiled-code-new-label ccb))]
+         [dcont (if (tail-context? ctx)
+                  0
+                  (begin
+                    (compiled-code-emit1oi! ccb PRE-CALL 0 merge-label
+                                            ($*-src iform))
+                    (cont-frame-size)))]
+         [dkey (pass5/rec ($dynenv-key iform) target renv 'normal/bottom)]
+         [flag (if (memq 'push ($dynenv-flags iform)) 1 0)])
     (compiled-code-emit-PUSH! ccb)
     (let* ([dval (pass5/rec ($dynenv-value iform) target renv 'normal/top)]
            [dkv  (imax dkey (+ dval 1))])
-      (if (tail-context? ctx)
-        (begin
-          (compiled-code-emit1i! ccb TAIL-EXTEND-DENV flag ($*-src iform))
-          (imax dkv (pass5/rec ($dynenv-body iform) target renv 'tail)))
-        (let1 merge-label (compiled-code-new-label ccb)
-          (compiled-code-emit1oi! ccb EXTEND-DENV flag merge-label ($*-src iform))
-          (let1 dbody (pass5/rec ($dynenv-body iform) target renv 'tail)
-            (compiled-code-emit-RET! ccb)
-            (compiled-code-set-label! ccb merge-label)
-            (imax dkv dbody)))))))
+      (compiled-code-emit1i! ccb TAIL-EXTEND-DENV flag ($*-src iform))
+      (let1 dbody (pass5/rec ($dynenv-body iform) target renv 'tail)
+        (unless (tail-context? ctx)
+          (compiled-code-emit-RET! ccb)
+          (compiled-code-set-label! ccb merge-label))
+        (+ dcont (imax dkv dbody))))))
 
 ;; $ASMs.  For some instructions, we may pick more specialized one
 ;; depending on its arguments.
