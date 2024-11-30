@@ -201,6 +201,7 @@ test.record
 /lib/srfi-*.scm
 /lib/sxml/
 /src/autoloads.c
+/src/buildinfo.c
 /src/builtin-syms.c
 /src/char_attr.c
 /src/compile.c
