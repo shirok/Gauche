@@ -290,6 +290,17 @@
       [() ($asm src `(,CURERR) '())]
       [else (undefined)])))
 
+(define-builtin-inliner with-exception-handler
+  (^[src args]
+    (match args
+      [(handler (? (cut has-tag? <> $LAMBDA) lmda))
+       ($dynenv src
+                (list ($call #f ($gref %exception-handler-mark-key.) '())
+                      handler
+                      '(push))
+                ($lambda-body lmda))]
+      [else (undefined)])))
+
 (define-builtin-inliner dynamic-wind
   (^[src args]
     (match args

@@ -1,5 +1,10 @@
 2024-11-29  Shiro Kawai  <shiro@acm.org>
 
+	* src/compile-i.scm (with-exception-handler): Inline expand
+	  it to $DYNENV IForm when the body is a literal lambda.
+	  This speeds up a lot.
+	  https://github.com/shirok/Gauche/issues/1083
+
 	* src/compile*.scm: Additional work to enhance $DYNENV.
 
 	* src/Makefile.in, src/core.c, lib/gauche/version-alist.scm:

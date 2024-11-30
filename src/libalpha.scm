@@ -50,6 +50,8 @@
 (select-module gauche.internal)
 (define-cproc %expression-name-mark-key ()
   (return (Scm__GetDenvKey SCM_DENV_KEY_EXPRESSION_NAME)))
+(define-cproc %exception-handler-mark-key ()
+  (return (Scm__GetDenvKey SCM_DENV_KEY_EXCEPTION_HANDLER)))
 
 ;;;
 ;;;  errors
