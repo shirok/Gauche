@@ -362,11 +362,11 @@
   ;; Returns a prompt string.
   (define prompt-string-editable
     (if given-prompter
-      (cut with-output-to-string (given-prompter))
+      (cut with-output-to-string given-prompter)
       (cut default-prompt-string "$")))
   (define prompt-string-noneditable
     (if given-prompter
-      (cut with-output-to-string (given-prompter))
+      (cut with-output-to-string given-prompter)
       (cut default-prompt-string ">")))
 
   ;; Try creating editable reader.
