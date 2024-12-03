@@ -287,6 +287,9 @@
 
 (define (%set-history-exception! e) (set! *e e))
 
+;; This is kluge for Windows deferred console creation.
+(define *line-edit-ctx* #f)
+
 ;; Will be extended for fancier printer
 (define (repl-print x) (write/ss x) (flush))
 
@@ -342,30 +345,52 @@
           [h    (sys-normalize-pathname h :absolute #t :expand #t)]
           [else (sys-normalize-pathname "~/.gosh_history" :expand #t)])))
 
-;; The variable *read-edit* is #t by default, #f if env var
-;; GAUCHE_NO_READ_EDIT is set.  It is also controlled by -fread-edit or
-;; -fno-read-edit flag.
-(define-values (%prompter %reader %line-edit-ctx)
+;; Returns three values, prompter, reader, and line-edit-context,
+;; depending on the editable repl setting, terminal capability, and an
+;; optional user-provided prompt generator.
+;;
+;; Editable repl setting is indicated by the variable *read-edit*.  It is
+;; on by default, but can be turned off by the env var GAUCHE_NO_READ_EDIT
+;; or -fno-read-edit flag.
+;;
+(define (make-suitable-prompter/reader/ctx given-prompter)
+  ;; fallback reader when we don't use editable repl.  We sill handle
+  ;; toplevel commands.
+  (define vanilla-reader
+    (make-repl-reader read read-line consume-trailing-whitespaces))
+
+  ;; Returns a prompt string.
+  (define prompt-string-editable
+    (if given-prompter
+      (cut with-output-to-string (given-prompter))
+      (cut default-prompt-string "$")))
+  (define prompt-string-noneditable
+    (if given-prompter
+      (cut with-output-to-string (given-prompter))
+      (cut default-prompt-string ">")))
+
+  ;; Try creating editable reader.
   (receive (r rl skipper ctx)
-      (if (with-module gauche.internal *read-edit*)
-        (make-editable-reader (^[] (default-prompt-string "$"))
-                              (get-history-filename))
-        (values #f #f #f #f))
-    (define vanilla-reader
-      (make-repl-reader read read-line consume-trailing-whitespaces))
+    (if (with-module gauche.internal *read-edit*)
+      (make-editable-reader prompt-string-editable
+                            (get-history-filename))
+      (values #f #f #f #f))
     (if (and r rl skipper ctx)
       (let1 editing-reader (make-repl-reader r rl skipper)
         (set! *read-edit-state* 'editable)
+        ;; Editable repl
         (values (^[]
-                  ;; if input editor is running, prompt is shown by the reader
+                  ;; We only let prompter write prompt when we're in
+                  ;; vanilla mode.
                   (when (eq? *read-edit-state* 'vanilla)
-                    (display (default-prompt-string)) (flush)))
+                    (display (prompt-string-noneditable))))
                 (^[]
                   (if (eq? *read-edit-state* 'editable)
                     (editing-reader)
                     (vanilla-reader)))
                 ctx))
-      (values (^[] (display (default-prompt-string)) (flush))
+      ;; Non-editabl repl
+      (values (^[] (display (prompt-string-noneditable)) (flush))
               vanilla-reader
               #f))))
 
@@ -408,16 +433,20 @@
        (set! *controls* (apply write-controls-copy *controls* kvs)))]))
 
 ;; This shadows gauche#read-eval-print-loop
+;; NB: We ignore reader argument,  The whole point of thsi procedure
+;; is to provide an editable reader, so the user doesn't need to customize it.
 (define (read-eval-print-loop :optional (reader #f)
                                         (evaluator #f)
                                         (printer #f)
                                         (prompter #f))
-  (let ([reader    (or reader %reader)]
-        [evaluator (or evaluator %evaluator)]
-        [printer   (or printer %printer)]
-        [prompter  (or prompter %prompter)])
+  (receive (%prompter %reader ctx)
+      (make-suitable-prompter/reader/ctx prompter)
+    (set! *line-edit-ctx* ctx)          ;kludge
     ((with-module gauche read-eval-print-loop)
-     reader evaluator printer prompter)))
+     %reader
+     (or evaluator %evaluator)
+     (or printer %printer)
+     %prompter)))
 
 ;;;
 ;;; Misc. setup

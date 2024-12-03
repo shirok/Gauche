@@ -1,3 +1,9 @@
+2024-12-02  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/interactive.scm (read-eval-print-loop): Adapt to
+	  user-provided prompter.
+	  https://github.com/shirok/Gauche/issues/1088
+
 2024-11-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-5.scm (pass5/$DYNENV): Stop emitting EXTEND-DENV;

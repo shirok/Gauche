@@ -436,8 +436,13 @@
 ;;; Repl
 ;;;
 
+;; Note: `gauche.interactive` also defines `read-eval-print-loop` which is
+;; capable of input editing.  `Gosh` calls either one depending on the
+;; availability of capable terminal.
+
 (select-module gauche.internal)
 
+;; Fallback
 (define (%repl-print . vals) (for-each (^e (write e) (newline)) vals))
 (define (%repl-prompt) (display "gosh> ") (flush))
 
