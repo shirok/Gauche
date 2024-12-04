@@ -498,12 +498,14 @@
   (let* ([prefix (sys-normalize-pathname
                   (string-append (gauche-architecture-directory) "/../../..")
                   :canonicalize #t)]
+         [windows? (or (assq 'gauche.os.windows (cond-features))
+                       (assq 'gauche.os.cygwin (cond-features)))]
          [globpath (string-append prefix "/gauche-*/" version "/"
                                   (gauche-architecture) "/"
-                                  (cond-expand
+                                  (if windows?
                                    ;; glob requires a file extension on Windows
-                                   [gauche.os.windows "gosh.exe"]
-                                   [else              "gosh"]))]
+                                    "gosh.exe"
+                                    "gosh"))]
          [goshes (glob globpath)]
          ;; Remove -v option from args
          [args (let loop ([args (cdr args)]
@@ -513,8 +515,7 @@
                        [(#/^-v/ (car args)) (loop (cdr args) r)]
                        [else (loop (cdr args) (cons (car args) r))]))])
     (if (pair? goshes)
-      (cond-expand
-       [gauche.os.windows
+      (if windows?
         ;; On windows, sys-exec (execvp) doesn't work like unix.
         ;; Notably, exit status of the exec'ed process is lost.
         ;; So we use sys-fork-and-exec (CreateProcess) and wait for the
@@ -527,10 +528,7 @@
              [(sys-wait-signaled? status)
               (sys-kill (sys-getpid) (sis-wait-termsig status))]
              [else (exit 70)])))        ;EX_SOFTWARE
-        ]
-       [else
-        (sys-exec (car goshes) (cons (car goshes) args)) ;never return
-        ])
+        (sys-exec (car goshes) (cons (car goshes) args))) ;never return
       prefix)))
 
 ;;;

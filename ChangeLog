@@ -1,3 +1,8 @@
+2024-12-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/libeval.scm (%invoke-other-version): Avoid using cond-expand.
+	  This file may be precompiled on different platforms.
+
 2024-12-02  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/interactive.scm (read-eval-print-loop): Adapt to
