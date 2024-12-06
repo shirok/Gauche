@@ -23500,6 +23500,22 @@ and re-invoke them afterwards.
 これらの手続きの内部で継続を捕捉し、後で再起動することは
 許されています。
 @c COMMON
+
+@c EN
+Note: The module @code{gauche.interactive} also defines
+@code{read-eval-print-loop} which handles line editing.
+If you import @code{gauche.interactive}, be aware that the original
+@code{read-eval-print-loop} may be shadowed.
+The line-editing version of @code{read-eval-print-loop} has
+the same API, except that the user-provided @var{reader} argument is ignored.
+@c JP
+註: @code{gauche.interactive}ではREPLでの行編集をサポートする
+@code{read-eval-print-loop}手続きを定義しています。
+@code{gauche.interactive}をインポートした場合、Gaucheの元の
+@code{read-eval-print-loop}がシャドウされるかもしれないことに注意してください。
+@code{gauche.interactive}の@code{read-eval-print-loop}は
+同じインタフェースを持ちますが、ユーザが提供する@var{reader}は無視されます。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
