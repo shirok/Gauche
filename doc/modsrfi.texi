@@ -17078,7 +17078,7 @@ If there's a matching entry, its thunk is called and its result(s) is/are
 returned.  If there's no matching entry, @var{else-thunk} is invoked
 if present and its result(s) is/are returned.
 If there's neither @var{else-thunk}, an undefined value is returned.
-@c @JP
+@c JP
 @var{thunk-alist}引数は、値とサンクのペアのリストです。
 まず@var{value}が評価され、その値が@var{thunk-alist}中のペアのcarの値と順に@var{eqv?}
 で比較されます。一致するエントリが見つかったら、そのペアのcdrにあるサンクが呼ばれ、
