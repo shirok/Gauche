@@ -375,6 +375,22 @@ SCM_CLASS_DECL(Scm_LoadConditionMixinClass);
 #define SCM_LOAD_CONDITION_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_LOAD_CONDITION_MIXIN)
 #define SCM_LOAD_CONDITION_MIXIN(obj)  ((ScmLoadConditionMixin*)(obj))
 
+/* <include-condition-mixin>
+   Attached to the error within the included file.
+   Note that `include` is fully expanded first, then compiled and
+   executed.  So we only track the included file name.
+ */
+
+typedef struct ScmIncludeConditionMixinRec {
+    ScmCondition common;
+    ScmObj includee;            /* included filename */
+} ScmIncludeConditionMixin;
+
+SCM_CLASS_DECL(Scm_IncludeConditionMixinClass);
+#define SCM_CLASS_INCLUDE_CONDITION_MIXIN (&Scm_IncludeConditionMixinClass)
+#define SCM_INCLUDE_CONDITION_MIXIN_P(obj) SCM_ISA(obj, SCM_CLASS_INCLUDE_CONDITION_MIXIN)
+#define SCM_INCLUDE_CONDITION_MIXIN(obj)  ((ScmIncludeConditionMixin*)(obj))
+
 /* <compile-error-mixin>
    Attached to the error during compiling.
    The EXPR slot contains the offending expression.  If it is a pair,

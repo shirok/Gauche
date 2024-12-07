@@ -391,6 +391,17 @@
     (port))
    (allocator (c "load_condition_mixin_allocate")))
 
+ (define-cfn include-condition-mixin-allocate (klass::ScmClass* _) :static
+   (let* ([c::ScmIncludeConditionMixin* (SCM_NEW_INSTANCE ScmIncludeConditionMixin klass)])
+     (set! (-> c includee) SCM_FALSE)
+     (return (SCM_OBJ c))))
+
+ (define-cclass <include-condition-mixin>
+   "ScmIncludeConditionMixin*" "Scm_IncludeConditionMixinClass"
+   (c "mixin_condition_cpa")
+   ((includee))
+   (allocator (c "include_condition_mixin_allocate")))
+
  (define-cfn compile-error-mixin-allocate (klass::ScmClass* _) :static
    (let* ([c::ScmCompileErrorMixin* (SCM_NEW_INSTANCE ScmCompileErrorMixin klass)])
      (set! (-> c expr) SCM_FALSE)
