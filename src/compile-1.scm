@@ -302,85 +302,87 @@
       (pass1/body-rec
        (acons (call-macro-expander mac expr cenv) src rest)
        mframe vframe cenv)))
+  (define (process-form-1 op head args incsrc rest mframe vframe cenv)
+    (unless (list? args)
+      (error "proper list required for function application \
+                     or macro use:" (caar exprs)))
+    (cond
+     [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
+     [(macro? head)  ; locally defined macro
+      (body-macro-expand head exprs mframe vframe cenv)]
+     [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
+      (pass1/body-finish exprs mframe vframe cenv)]
+     [(and (pair? head) (eq? (car head) :rec))
+      (pass1/body-finish exprs mframe vframe cenv)]
+     [(not (wrapped-identifier? head))
+      (error "[internal] pass1/body" head)]
+     [(or (global-identifier=? head define.)
+          (global-identifier=? head define-inline.)
+          (global-identifier=? head r5rs-define.))
+      (let1 def (match args
+                  [((name . formals) . body)
+                   `(,name :rec (,lambda. ,formals ,@body) . ,incsrc)]
+                  [(var init) `(,var :rec ,init . ,incsrc)]
+                  [(var)
+                   (if (global-identifier=? head r5rs-define.)
+                     (error "define without expression is not allowed in R7RS" (caar exprs))
+                     `(,var :rec ,(undefined) . ,incsrc))]
+                  [_ (error "malformed internal define:" (caar exprs))])
+        (dupe-check (car def) mframe vframe)
+        (if (not mframe)
+          (let* ([cenv (cenv-extend cenv '() SYNTAX)]
+                 [mframe (car (cenv-frames cenv))]
+                 [cenv (cenv-extend cenv `(,def) LEXICAL)]
+                 [vframe (car (cenv-frames cenv))])
+            (pass1/body-rec rest mframe vframe cenv))
+          (begin
+            (push! (cdr vframe) def)
+            (pass1/body-rec rest mframe vframe cenv))))]
+     [(global-identifier=? head define-syntax.) ; internal syntax definition
+      (match args
+        [(name trans-spec)
+         (dupe-check name mframe vframe)
+         (if (not mframe)
+           (let* ([cenv (cenv-extend cenv `((,name)) SYNTAX)]
+                  [mframe (car (cenv-frames cenv))]
+                  [cenv (cenv-extend cenv `() LEXICAL)]
+                  [vframe (car (cenv-frames cenv))]
+                  [trans (pass1/eval-macro-rhs
+                          'define-syntax trans-spec
+                          (cenv-add-name cenv (variable-name name)))])
+             (assq-set! (cdr mframe) name trans)
+             (pass1/body-rec rest mframe vframe cenv))
+           (begin
+             (push! (cdr mframe) `(,name))
+             (let1 trans (pass1/eval-macro-rhs
+                          'define-syntax trans-spec
+                          (cenv-add-name cenv (variable-name name)))
+               (assq-set! (cdr mframe) name trans)
+               (pass1/body-rec rest mframe vframe cenv))))]
+        [_ (error "syntax-error: malformed internal define-syntax:"
+                  `(,op ,@args))])]
+     [(global-identifier=? head begin.) ;intersperse forms
+      (pass1/body-rec (append (imap (cut cons <> incsrc) args) rest)
+                      mframe vframe cenv)]
+     [(global-identifier=? head include.)
+      (let1 sexpr&srcs (pass1/expand-include args cenv #f)
+        (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
+     [(global-identifier=? head include-ci.)
+      (let1 sexpr&srcs (pass1/expand-include args cenv #t)
+        (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
+     [(wrapped-identifier? head)
+      (or (and-let* ([gloc (id->bound-gloc head)]
+                     [gval (gloc-ref gloc)]
+                     [ (macro? gval) ])
+            (body-macro-expand gval exprs mframe vframe cenv))
+          (pass1/body-finish exprs mframe vframe cenv))]
+     [else (error "[internal] pass1/body" head)]))
 
   (match exprs
-    [(((op . args) . src) . rest)
+    [(((op . args) . incsrc) . rest)
      (or (and-let* ([ (or (not vframe) (not (assq op vframe))) ]
                     [head (pass1/lookup-head op cenv)])
-           (unless (list? args)
-             (error "proper list required for function application \
-                     or macro use:" (caar exprs)))
-           (cond
-            [(lvar? head) (pass1/body-finish exprs mframe vframe cenv)]
-            [(macro? head)  ; locally defined macro
-             (body-macro-expand head exprs mframe vframe cenv)]
-            [(syntax? head) ; when (let-syntax ((xif if)) (xif ...)) etc.
-             (pass1/body-finish exprs mframe vframe cenv)]
-            [(and (pair? head) (eq? (car head) :rec))
-             (pass1/body-finish exprs mframe vframe cenv)]
-            [(not (wrapped-identifier? head))
-             (error "[internal] pass1/body" head)]
-            [(or (global-identifier=? head define.)
-                 (global-identifier=? head define-inline.)
-                 (global-identifier=? head r5rs-define.))
-             (let1 def (match args
-                         [((name . formals) . body)
-                          `(,name :rec (,lambda. ,formals ,@body) . ,src)]
-                         [(var init) `(,var :rec ,init . ,src)]
-                         [(var)
-                          (if (global-identifier=? head r5rs-define.)
-                            (error "define without expression is not allowed in R7RS" (caar exprs))
-                            `(,var :rec ,(undefined) . ,src))]
-                         [_ (error "malformed internal define:" (caar exprs))])
-               (dupe-check (car def) mframe vframe)
-               (if (not mframe)
-                 (let* ([cenv (cenv-extend cenv '() SYNTAX)]
-                        [mframe (car (cenv-frames cenv))]
-                        [cenv (cenv-extend cenv `(,def) LEXICAL)]
-                        [vframe (car (cenv-frames cenv))])
-                   (pass1/body-rec rest mframe vframe cenv))
-                 (begin
-                   (push! (cdr vframe) def)
-                   (pass1/body-rec rest mframe vframe cenv))))]
-            [(global-identifier=? head define-syntax.) ; internal syntax definition
-             (match args
-               [(name trans-spec)
-                (dupe-check name mframe vframe)
-                (if (not mframe)
-                 (let* ([cenv (cenv-extend cenv `((,name)) SYNTAX)]
-                        [mframe (car (cenv-frames cenv))]
-                        [cenv (cenv-extend cenv `() LEXICAL)]
-                        [vframe (car (cenv-frames cenv))]
-                        [trans (pass1/eval-macro-rhs
-                                'define-syntax trans-spec
-                                (cenv-add-name cenv (variable-name name)))])
-                   (assq-set! (cdr mframe) name trans)
-                   (pass1/body-rec rest mframe vframe cenv))
-                 (begin
-                   (push! (cdr mframe) `(,name))
-                   (let1 trans (pass1/eval-macro-rhs
-                                'define-syntax trans-spec
-                                (cenv-add-name cenv (variable-name name)))
-                     (assq-set! (cdr mframe) name trans)
-                     (pass1/body-rec rest mframe vframe cenv))))]
-               [_ (error "syntax-error: malformed internal define-syntax:"
-                         `(,op ,@args))])]
-            [(global-identifier=? head begin.) ;intersperse forms
-             (pass1/body-rec (append (imap (cut cons <> src) args) rest)
-                             mframe vframe cenv)]
-            [(global-identifier=? head include.)
-             (let1 sexpr&srcs (pass1/expand-include args cenv #f)
-               (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
-            [(global-identifier=? head include-ci.)
-             (let1 sexpr&srcs (pass1/expand-include args cenv #t)
-               (pass1/body-rec (append sexpr&srcs rest) mframe vframe cenv))]
-            [(wrapped-identifier? head)
-             (or (and-let* ([gloc (id->bound-gloc head)]
-                            [gval (gloc-ref gloc)]
-                            [ (macro? gval) ])
-                   (body-macro-expand gval exprs mframe vframe cenv))
-                 (pass1/body-finish exprs mframe vframe cenv))]
-            [else (error "[internal] pass1/body" head)]))
+           (process-form-1 op head args incsrc rest mframe vframe cenv))
          (pass1/body-finish exprs mframe vframe cenv))]
     [_ (pass1/body-finish exprs mframe vframe cenv)]))
 
