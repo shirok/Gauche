@@ -75,6 +75,9 @@
               (car src-info) (cadr src-info) expr)
       (format port "    While compiling: ~,,,,90:s\n" expr))))
 
+(define-method report-additional-condition ((c <include-condition-mixin>) port)
+  (format port "    While including ~s\n" (~ c'includee)))
+
 (define-method report-additional-condition ((c <unbound-variable-error>) port)
   ;; Show potentially missed modules to be imported.
   ;; NB: This is inefficient, for export lists are built for all modules.

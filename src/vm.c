@@ -135,6 +135,7 @@ static ScmObj denv_key_exception_handler = SCM_UNBOUND;
 static ScmObj denv_key_dynamic_handler = SCM_UNBOUND;
 static ScmObj denv_key_parameterization = SCM_UNBOUND;
 static ScmObj denv_key_expression_name = SCM_UNBOUND;
+static ScmObj denv_key_include_source = SCM_UNBOUND;
 
 /* A dummy compiled code structure used as 'fill-in', when Scm_Apply
    is called without any VM code running.  See Scm_Apply below. */
@@ -3024,6 +3025,8 @@ ScmObj Scm__GetDenvKey(ScmDenvKeyName name)
         return denv_key_parameterization;
     case SCM_DENV_KEY_EXPRESSION_NAME:
         return denv_key_expression_name;
+    case SCM_DENV_KEY_INCLUDE_SOURCE:
+        return denv_key_include_source;
     }
     return SCM_UNDEFINED;       /* dummy */
 }
@@ -4316,6 +4319,7 @@ void Scm__InitVM(void)
     denv_key_dynamic_handler   = UNINTERNED(dynamic-handler);
     denv_key_parameterization  = UNINTERNED(parameterization);
     denv_key_expression_name   = UNINTERNED(expression-name);
+    denv_key_include_source    = UNINTERNED(include-source);
     continuation_symbol        = UNINTERNED(continuation);
 
     /* Initialize statically allocated default prompt tag.

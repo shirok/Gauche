@@ -52,6 +52,8 @@
   (return (Scm__GetDenvKey SCM_DENV_KEY_EXPRESSION_NAME)))
 (define-cproc %exception-handler-mark-key ()
   (return (Scm__GetDenvKey SCM_DENV_KEY_EXCEPTION_HANDLER)))
+(define-cproc %include-source-mark-key ()
+  (return (Scm__GetDenvKey SCM_DENV_KEY_INCLUDE_SOURCE)))
 
 ;;;
 ;;;  errors
