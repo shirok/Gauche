@@ -1676,21 +1676,33 @@
                    [else (make-bottom-cenv)]) ; use default module
     (receive (env-header-size cont-frame-size)
         (parse-target-params target-params)
-      (guard (e [else
-                 ;; Attach the source with <compile-error-mixin>, if it is
-                 ;; not alrady attached.
-                 ;; TODO: check if e is an expected error (such as syntax error)
-                 ;; or an unexpected error (compiler bug).
-                 (if (and (is-a? e <compound-condition>)
-                          (find (^c (and (is-a? c <compile-error-mixin>)
-                                         (eq? (~ c'expr) program)))
-                                (~ e '%conditions)))
-                   (raise e)
-                   ($ raise $ make-compound-condition e
-                      $ make <compile-error-mixin> :expr program))])
-        (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
-               (make-compile-target env-header-size cont-frame-size)
-               '() 'tail)))))
+      (with-error-handler
+          (^e (raise (%attach-compile-error-context e program)))
+        (^[]
+          (pass5 (pass2-4 (pass1 program cenv) (cenv-module cenv))
+                 (make-compile-target env-header-size cont-frame-size)
+                 '() 'tail))))))
+
+;; Attach <compile-error-mixin> and/or <include-condition-mixin> to the
+;; thrown condition, if necessary.
+;; TODO: check if e is an expected error (such as syntax error)
+;; or an unexpected error (compiler bug).
+(define (%attach-compile-error-context e program)
+  (define include-source-mixin
+    (and-let1 incsrc (continuation-mark-set-first (current-continuation-marks)
+                                                  (%include-source-mark-key))
+      (make <include-condition-mixin> :includee incsrc)))
+  (define compile-error-mixin
+    ;; avoid attaching duplicate mixins
+    (if (and (is-a? e <compound-condition>)
+             (find (^c (and (is-a? c <compile-error-mixin>)
+                            (eq? (~ c'expr) program)))
+                   (~ e '%conditions)))
+      #f
+      (make <compile-error-mixin> :expr program)))
+  (apply make-compound-condition e
+         (cond-list [include-source-mixin]
+                    [compile-error-mixin])))
 
 ;; stub for future extension
 (define (compile-partial program module) #f)

@@ -382,7 +382,10 @@
     [(((op . args) . incsrc) . rest)
      (or (and-let* ([ (or (not vframe) (not (assq op vframe))) ]
                     [head (pass1/lookup-head op cenv)])
-           (process-form-1 op head args incsrc rest mframe vframe cenv))
+           (if (null? incsrc)
+             (process-form-1 op head args incsrc rest mframe vframe cenv)
+             (with-continuation-mark (%include-source-mark-key) incsrc
+               (process-form-1 op head args incsrc rest mframe vframe cenv))))
          (pass1/body-finish exprs mframe vframe cenv))]
     [_ (pass1/body-finish exprs mframe vframe cenv)]))
 
@@ -419,9 +422,10 @@
                          (cons (pass1/body-1 (car exprs) stmtenv) r))))))]))
 
 (define (pass1/body-1 expr&src cenv)
-  (let1 src (cdr expr&src)
-    (if (string? src)
-      (pass1 (car expr&src) (cenv-swap-source cenv src))
+  (let1 incsrc (cdr expr&src)
+    (if (string? incsrc)
+      (with-continuation-mark (%include-source-mark-key) incsrc
+        (pass1 (car expr&src) (cenv-swap-source cenv incsrc)))
       (pass1 (car expr&src) cenv))))
 
 ;;--------------------------------------------------------------
@@ -1943,12 +1947,10 @@
 ;; Include .............................................
 
 (define-pass1-syntax (include form cenv) :gauche
-  ($seq (map (^p (pass1 (car p) (cenv-swap-source cenv (cdr p))))
-             (pass1/expand-include (cdr form) cenv #f))))
+  (pass1/body-rest (pass1/expand-include (cdr form) cenv #f) cenv))
 
 (define-pass1-syntax (include-ci form cenv) :gauche
-  ($seq (map (^p (pass1 (car p) (cenv-swap-source cenv (cdr p))))
-             (pass1/expand-include (cdr form) cenv #t))))
+  (pass1/body-rest (pass1/expand-include (cdr form) cenv #t) cenv))
 
 ;; Returns  ((Sexpr . Filename) ...)
 (define (pass1/expand-include args cenv case-fold?)
