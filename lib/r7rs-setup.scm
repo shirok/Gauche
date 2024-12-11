@@ -91,68 +91,59 @@
 
 ;; r7rs.library - R7RS define-library form
 (define-module r7rs.library
+  (use util.match)
+  (import r7rs.import)
   (export define-library)
 
-  ;; A trick - must be replaced once we have explicit-renaming macro.
-  (define (global-id sym) ((with-module gauche.internal make-identifier)
-                           sym (find-module 'gauche) '()))
-  (define global-id=?     (with-module gauche.internal global-identifier=?))
-  (define define-module.  (global-id 'define-module))
-  (define with-module.    (global-id 'with-module))
-  (define define-syntax.  (global-id 'define-syntax.))
-  (define extend.         (global-id 'extend))
+  (define-syntax define-library
+    (er-macro-transformer
+     (^[f r c]
+       (define (transform-decl decl)
+         ;; Since define-library can't be an output of macro, we can just
+         ;; compare symbols literally.
+         (case (car decl)
+           [(include-library-declarations)
+            (unless (string? (cadr decl))
+              (error "include-library-declarations needs a string argument, \
+                      but got:" (cadr decl)))
+            ;; We share file searching logic with 'include' form.
+            (call-with-port
+                ($ (with-module gauche.internal pass1/open-include-file)
+                   (cadr decl)
+                   (or (current-load-path) (sys-getcwd)))
+              (^p (quasirename r
+                    `(begin ,@(map transform-decl (port->sexp-list p))))))]
+           [(export)      (quasirename r `(export ,@(cdr decl)))]
+           [(import)      (quasirename r `(r7rs-import ,@(cdr decl)))]
+           [(begin)       (quasirename r `(begin ,@(cdr decl)))]
+           [(include)     (quasirename r `(include ,@(cdr decl)))]
+           [(include-ci)  (quasirename r `(include-ci ,@(cdr decl)))]
+           [(cond-expand)
+            ;; cond-expand needs special handling.  The expansion logic is the
+            ;; same as SRFI-0 cond-expand, but we have to treat the expanded
+            ;; form as library-declarations instead of ordinary Scheme expressions.
+            ;; The current implementation relies on how cond-expand constructs
+            ;; the output; if we change cond-expand, we may need to tweak this
+            ;; as well.
+            (let1 expanded (macroexpand `(,(r'cond-expand) ,@(cdr decl)) #t)
+              (if (pair? expanded)
+                (if (c (car expanded) (r'begin))
+                  `(,(r'begin)  ,@(map transform-decl (cdr expanded)))
+                  (transform-decl expanded))
+                (error "cond-expand expands to non-list:" expanded)))]
+           [else
+            ;; cond-expand may insert use clause, so
+            (if (and (pair? decl) (c (car decl) (r'use)))
+              decl
+              (error "Invalid library declaration:" decl))]))
 
-  (define export.         (global-id 'export))
-  (define begin.          (global-id 'begin))
-  (define include.        (global-id 'include))
-  (define include-ci.     (global-id 'include-ci))
-  (define cond-expand.    (global-id 'cond-expand))
-  (define r7rs-import.    ((with-module gauche.internal make-identifier)
-                           'r7rs-import (find-module 'r7rs.import) '()))
-  (define use.            (global-id 'use))
-
-  (define-macro (define-library name . decls)
-    `(,define-module. ,(library-name->module-name name)
-       (,extend.)
-       ,@(map transform-decl decls)))
-
-  (define (transform-decl decl)
-    ;; Since define-library can't be an output of macro, we can just
-    ;; compare symbols literally.
-    (case (car decl)
-      [(include-library-declarations)
-       (unless (string? (cadr decl))
-         (error "include-library-declarations needs a string argument, but got:"
-                (cadr decl)))
-       ;; We share file searching logic with 'include' form.
-       (call-with-port
-        ($ (with-module gauche.internal pass1/open-include-file)
-           (cadr decl)
-           (or (current-load-path) (sys-getcwd)))
-        (^p `(,begin. ,@(map transform-decl (port->sexp-list p)))))]
-      [(export)      `(,export. ,@(cdr decl))]
-      [(import)      `(,r7rs-import. ,@(cdr decl))]
-      [(begin)       `(,begin. ,@(cdr decl))]
-      [(include)     `(,include. ,@(cdr decl))]
-      [(include-ci)  `(,include-ci. ,@(cdr decl))]
-      [(cond-expand)
-       ;; cond-expand needs special handling.  The expansion logic is the
-       ;; same as SRFI-0 cond-expand, but we have to treat the expanded
-       ;; form as library-declarations instead of ordinary Scheme expressions.
-       ;; The current implementation relies on how cond-expand constructs
-       ;; the output; if we change cond-expand, we may need to tweak this
-       ;; as well.
-       (let1 expanded (macroexpand `(,cond-expand. ,@(cdr decl)) #t)
-         (if (pair? expanded)
-           (if (global-id=? (car expanded) begin.)
-             `(,begin. ,@(map transform-decl (cdr expanded)))
-             (transform-decl expanded))
-           (error "cond-expand expands to non-list:" expanded)))]
-      [else
-       ;; cond-expand may insert use clause, so
-       (if (and (pair? decl) (global-id=? (car decl) use.))
-         decl
-         (error "Invalid library declaration:" decl))]))
+       ;; main body of define-library expander
+       (match f
+         [(_ name . decls)
+          (quasirename r
+            `(define-module ,(library-name->module-name name)
+               (extend)
+               ,@(map transform-decl decls)))]))))
   )
 
 ;;
