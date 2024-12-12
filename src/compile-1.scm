@@ -97,7 +97,11 @@
   (cond
    [(pair? program)                    ; (op . args)
     (unless (list? program)
-      (error "proper list required for function application or macro use:" program))
+      (errorf "proper list required for function application or macro use: ~s~a"
+              program
+              (if-let1 si (debug-source-info program)
+                (format " at ~s:~s" (car si) (cadr si))
+                "")))
     (cond
      [(pass1/lookup-head (car program) cenv)
       => (^h (cond
