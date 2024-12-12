@@ -199,6 +199,8 @@
     ;; so that we can correspond the identifiers from input and output.
     (let1 unraveled (unravel-syntax (cons input output))
       (display "Macro input>>>\n" (current-trace-port))
+      (and-let1 si (debug-source-info input)
+        (format #t "    at ~s:~s\n" (car si) (cadr si)))
       (pprint (car unraveled) :port (current-trace-port) :level #f :length #f)
       (display "\nMacro output<<<\n" (current-trace-port))
       (pprint (cdr unraveled) :port (current-trace-port) :level #f :length #f)
