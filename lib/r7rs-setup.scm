@@ -45,49 +45,40 @@
 ;; in this module.
 (define-module r7rs.import
   (use util.match)
-  (use scheme.list)
   (export r7rs-import)
 
-  ;; A trick - must be replaced once we have explicit-renaming macro.
-  (define import.  ((with-module gauche.internal make-identifier)
-                    'import (find-module 'gauche) '()))
-  (define require. ((with-module gauche.internal make-identifier)
-                    'require (find-module 'gauche) '()))
-  (define begin.   ((with-module gauche.internal make-identifier)
-                    'begin (find-module 'gauche) '()))
-
-  (define-macro (r7rs-import . import-sets)
-    `(,begin. ,@(append-map %transfer-import-spec import-sets)))
-  (define-macro (require-if-module-doesnt-exist modname)
-    (if (find-module modname)
-      #f
-      `(,require. ,(module-name->path modname))))
-
-  (define require-if-module-doesnt-exist.
-    ((with-module gauche.internal make-identifier)
-     'require-if-module-doesnt-exist (current-module) '()))
-
-  (define (%transfer-import-spec import-set)
-    (define (rec import-set)
-      (match import-set
-        [('only import-set identifier ...)
-         `(,@(rec import-set) :only ,identifier)]
-        [('except import-set identifier ...)
-         `(,@(rec import-set) :except ,identifier)]
-        [('prefix import-set identifier)
-         `(,@(rec import-set) :prefix ,identifier)]
-        [('rename import-set mapping ...)
-         `(,@(rec import-set) :rename ,mapping)]
-        [else
-         ;; Kludge: Warn if a programmer say (import gauche).
-         (when (equal? import-set '(gauche))
-           (warn "(import (gauche)) does not import anything.  \
+  (define-syntax r7rs-import
+    (er-macro-transformer
+     (^[f r c]
+       (define (id=?? name) (cute c (r name) <>))
+       (define (require-if-module-doesnt-exist modname)
+         (if (find-module modname)
+           '()
+           `((,(r 'require) ,(module-name->path modname)))))
+       (define (transfer-import-spec import-set)
+         (define (rec import-set)
+           (match import-set
+             [((? (id=?? 'only)) import-set identifier ...)
+              `(,@(rec import-set) ,(r :only) ,identifier)]
+             [((? (id=?? 'except)) import-set identifier ...)
+              `(,@(rec import-set) ,(r :except) ,identifier)]
+             [((? (id=?? 'prefix)) import-set identifier)
+              `(,@(rec import-set) ,(r :prefix) ,identifier)]
+             [((? (id=?? 'rename)) import-set mapping ...)
+              `(,@(rec import-set) ,(r :rename) ,mapping)]
+             [else
+              ;; Kludge: Warn if a programmer say (import gauche).
+              (when (equal? import-set '(gauche))
+                (warn "(import (gauche)) does not import anything.  \
                   If you intend to import Gauche's built-in bindings, \
                   say (import (gauche base)).\n"))
-         (list (library-name->module-name import-set))]))
-    (let1 import-spec (rec (unwrap-syntax import-set))
-      `((,require-if-module-doesnt-exist. ,(car import-spec))
-        (,import. ,import-spec)))))
+              (list (library-name->module-name import-set))]))
+         (let1 import-spec (rec (unwrap-syntax import-set))
+           `(,@(require-if-module-doesnt-exist (car import-spec))
+             (,(r 'import) ,import-spec))))
+       (quasirename r
+         `(begin ,@(append-map transfer-import-spec (cdr f)))))))
+  )
 
 ;; r7rs.library - R7RS define-library form
 (define-module r7rs.library
