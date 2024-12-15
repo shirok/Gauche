@@ -946,6 +946,8 @@
             :setter "if (SCM_INTP(value) && SCM_INT_VALUE(value) >= 0) \
                        obj->printIndent = SCM_INT_VALUE(value); \
                      else obj->printIndent = 0;")
+    (bytestring :type <boolean> :c-name "bytestring"
+                :setter "obj->bytestring = !SCM_FALSEP(value);")
     (string-length :type <int> :c-name "stringLength"
                    :getter "if (obj->stringLength < 0) return SCM_FALSE; \
                             else return SCM_MAKE_INT(obj->stringLength);"
@@ -961,7 +963,7 @@
 
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (make-write-controls :key length level width base radix pretty indent
-                                  string-length exact-decimal
+                                  bytestring string-length exact-decimal
                                   print-length print-level print-width
                                   print-base print-radix print-pretty)
   (define (arg k k-alt) (if (undefined? k-alt) k k-alt))
@@ -972,6 +974,7 @@
     :base   (arg base   print-base)
     :radix  (arg radix  print-radix)
     :pretty (arg pretty print-pretty)
+    :bytestring bytestring
     :string-length string-length
     :indent indent
     :exact-decimal exact-decimal))
@@ -983,7 +986,7 @@
 ;; (Maybe we should write this in C to avoid overhead.)
 ;; TRANSIENT: The print-* keyword arguments for the backward compatibility
 (define (write-controls-copy wc :key length level width base radix pretty indent
-                                     string-length exact-decimal
+                                     bytestring string-length exact-decimal
                                      print-length print-level print-width
                                      print-base print-radix print-pretty)
   (let-syntax [(select
@@ -1005,6 +1008,7 @@
           [radix  (select radix  print-radix)]
           [pretty (select pretty print-pretty)]
           [indent (select indent)]
+          [bytestring    (select bytestring)]
           [string-length (select string-length)]
           [exact-decimal (select exact-decimal)])
       (if (and (eqv? length (slot-ref wc 'length))
@@ -1014,6 +1018,7 @@
                (eqv? radix  (slot-ref wc 'radix))
                (eqv? pretty (slot-ref wc 'pretty))
                (eqv? indent (slot-ref wc 'indent))
+               (eqv? bytestring    (slot-ref wc 'bytestring))
                (eqv? string-length (slot-ref wc 'string-length))
                (eqv? exact-decimal (slot-ref wc 'exact-decimal)))
         wc
@@ -1025,6 +1030,7 @@
           :radix  radix
           :pretty pretty
           :indent indent
+          :bytestring bytestring
           :string-length string-length
           :exact-decimal exact-decimal)))))
 

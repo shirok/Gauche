@@ -45,6 +45,8 @@ struct ScmWriteControlsRec {
     int printPretty;            /* boolean, #t to use pretty printer */
     int printIndent;            /* >=0 extra indent to be added after each
                                    newline when pretty printing. */
+    int bytestring;             /* boolean, #t to use bytestring repr for
+                                   u8vector (srfi-207) */
     int stringLength;           /* -1 for no limit.  Length of literal string */
     int exactDecimal;           /* #t to use decimal point for exact numbers
                                    whenever possible. */

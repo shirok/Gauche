@@ -669,6 +669,51 @@ ScmObj Scm_ReadUVector(ScmPort *port, const char *tag, ScmReadContext *ctx)
 
 /* printer */
 
+/* u8vector has two ways to print - as a numeric vector like other uvecotrs,
+   or as a bytestring (srfi-207).  To keep the generic macro work, we employ
+   a kludge.
+ */
+static void print_u8vector_generic(ScmObj, ScmPort*, ScmWriteContext*);
+
+static void print_u8vector(ScmObj obj, ScmPort *out,
+                           ScmWriteContext *ctx)
+{
+    const ScmWriteControls *wp =
+        Scm_GetWriteControls(ctx, Scm_PortWriteState(out));
+    if (!wp->bytestring) {
+        print_u8vector_generic(obj, out, ctx);
+    } else {
+        Scm_Putz("#u8\"", 4, out);
+        u_char *cp = SCM_U8VECTOR_ELEMENTS(obj);
+        for (int i=0; i<SCM_U8VECTOR_SIZE(obj); i++) {
+            switch (cp[i]) {
+            case '\"': Scm_Putz("\\\"", 2, out); break;
+            case '\\': Scm_Putz("\\\\", 2, out); break;
+            case 0x07: Scm_Putz("\\a", 2, out); break;
+            case 0x08: Scm_Putz("\\b", 2, out); break;
+            case 0x09: Scm_Putz("\\t", 2, out); break;
+            case 0x0a: Scm_Putz("\\n", 2, out); break;
+            case 0x0d: Scm_Putz("\\r", 2, out); break;
+            case 0x7c: Scm_Putz("\\|", 2, out); break;
+            default:
+                if (cp[i] >= 0x20 && cp[i] <= 0x7e) {
+                    Scm_Putc(cp[i], out);
+                } else {
+                    Scm_Putz("\\x", 2, out);
+                    Scm_Putc(Scm_IntToDigit((cp[i] >> 4), 16, 0, 0), out);
+                    Scm_Putc(Scm_IntToDigit((cp[i] & 0x0f), 16, 0, 0), out);
+                    Scm_Putc(';', out);
+                }
+            }
+        }
+        Scm_Putz("\"", 1, out);
+    }
+}
+
+/* reneme the macro-generated generic version. */
+#define print_u8vector print_u8vector_generic
+
+
 #define DEF_PRINT(TAG, tag, T, pr)                                      \
 static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
                                             ScmPort *out,               \

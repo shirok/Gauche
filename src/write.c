@@ -133,6 +133,7 @@ ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto)
         p->printRadix = FALSE;
         p->printPretty = FALSE;
         p->printIndent = 0;
+        p->bytestring = 0;
         p->stringLength = -1;
         p->exactDecimal = FALSE;
     }
