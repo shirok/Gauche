@@ -12479,28 +12479,58 @@ this macro simply nests the steps:
 
 @deftp {Module} srfi.207
 @mdindex srfi.207
+@c EN
 This SRFI defines an alternative representation of bytevectors, and
 provides a bunch of procedures that can treat a bytevector as a bytestring.
+@c JP
+このSRFIはバイトベクタの別形式の外部表現を定義し、
+バイトベクタをバイト列(bytestring)として扱える多くの手続きを提供します。
+@c COMMON
 @end deftp
 
 @defun bytestring arg @dots{}
 [SRFI-207]
 @c MOD srfi.207
+@c EN
 Each argument must be either one of the followings, and the procedure
 returns a new bytevector which is concatenation of the given arguments.
+@c JP
+各引数はそれぞれ以下のいずれかでなければなりません。
+手続きは与えられた引数を全部つなげた新たなバイトベクタを作って返します。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 An exact integer, between 0 and 255 inclusive.
+@c JP
+0から255までの間の整数
+@c COMMON
 @item
+@c EN
 An ASCII character.
+@c JP
+ASCII文字
+@c COMMON
 @item
+@c EN
 A bytevector
+@c JP
+バイトベクタ
+@c COMMON
 @item
+@c EN
 A string of ASCII characters
+@c JP
+ASCII文字列
+@c COMMON
 @end itemize
 
+@c EN
 An error is signaled if anything other than above is given.
+@c JP
+上記以外のオブジェクトが引数に与えられた場合はエラーが投げられます。
+@c COMMON
 
 @example
 (bytestring "lor" #\r #\x65 #u8(#x6d))
