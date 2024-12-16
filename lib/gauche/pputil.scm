@@ -201,6 +201,14 @@
                   (layout-shorthand obj rec c))
              (layout-list (sprefix obj "(" c) (map+ rec obj) c))]
         [(vector? obj) (layout-list (sprefix obj "#(" c) (mapi rec obj) c)]
+        [(and (u8vector? obj)
+              (~ c 'controls 'bytestring))
+         (layout-simple
+          (sprefix obj
+                   ($ write-to-string obj
+                      (cut write <>
+                           (write-controls-copy (~ c'controls) :pretty #f)))
+                   c))]
         [(is-a? obj <uvector>)
          (let1 tag (rxmatch-substring
                      (#/[csuf]\d+/ (x->string (class-name (class-of obj)))))

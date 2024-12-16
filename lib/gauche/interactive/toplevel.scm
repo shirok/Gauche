@@ -405,8 +405,9 @@
   \n  radix <boolean>     - Add radix prefix ('#x' etc.) befors whole numbers.\
   \n                        [default: ~(~ default-pm'radix)]\
   \n  string-length <integer>|#f\
-  \n                      - Max length of string literals before abbreviated."
-
+  \n                      - Max length of string literals before abbreviated.\
+  \n  bytestring <boolean>\
+  \n                        If true, u8vector is printed with string notation."
   (^[args]
     (match args
       [() #f]
@@ -417,8 +418,9 @@
        (apply print-mode
               (append-map
                (^[kv]
-                 `(,(if (memq (car kv) '(pretty length level width base radix
-                                         string-length exact-decimal))
+                 `(,(if (memq (car kv)
+                              '(pretty length level width base radix
+                                string-length bytestring exact-decimal))
                       (make-keyword (car kv))
                       (error "print-mode: unrecognized key:" (car kv)))
                    ,(cadr kv)))
@@ -432,6 +434,7 @@
       (format #t "          base : ~3d\n"  (~ c'base))
       (format #t "         radix : ~3d\n"  (~ c'radix))
       (format #t " string-length : ~3d\n"  (~ c'string-length))
+      (format #t "    bytestring : ~3@a\n" (~ c'bytestring))
       (format #t " exact-decimal : ~3d\n"  (~ c'exact-decimal)))
     *no-value*))
 

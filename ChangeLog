@@ -1,3 +1,15 @@
+2024-12-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/priv/writerP.h (ScmWriteControls),
+	  src/libobj.scm (write-object),
+	  src/vector.c (print_u8vector): Support bytestring option of
+	  <write-controls>, to switch output of u8vector to use
+	  srfi-207 string-notated bytevector.
+	* lib/gauche/pputil.scm (layout-misc): Make prettyprinter aware
+	  of bytestring flag.
+	* lib/gauche/interactive/toplevel.scm: Make print-mode aware
+	  of bytestring flag.
+
 2024-12-09  Shiro Kawai  <shiro@acm.org>
 
 	* src/compile-1.scm: Attach include source info in the continuation
