@@ -918,6 +918,7 @@
             :pretty ,(~ obj'pretty)
             :width  ,(~ obj'width)
             :indent ,(~ obj'indent)
+            :bytestring    ,(~ obj'bytestring)
             :string-length ,(~ obj'string-length)
             :exact-decimal ,(~ obj'exact-decimal))))
 
