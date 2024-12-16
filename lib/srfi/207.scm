@@ -380,25 +380,8 @@
 
 (define (write-textual-bytestring bv :optional (port (current-output-port)))
   (assume-type bv <u8vector>)
-  (display "#u8\"" port)
-  (do-ec (: byte bv)
-         (cond
-          [(eq? byte (char->integer #\")) (display "\\\"" port)]
-          [(eq? byte (char->integer #\\)) (display "\\\\" port)]
-          [(eq? byte #x07) (display "\\a" port)]
-          [(eq? byte #x08) (display "\\b" port)]
-          [(eq? byte #x09) (display "\\t" port)]
-          [(eq? byte #x0a) (display "\\n" port)]
-          [(eq? byte #x0d) (display "\\r" port)]
-          [(eq? byte #x7c) (display "\\|" port)]
-          [(<= #x20 byte #x7e) (display (integer->char byte) port)]
-          [else
-           ;;(format port "\\x~2,'0x;" byte)
-           (display "\\x" port)
-           (display (integer->digit (ash byte -4) 16) port)
-           (display (integer->digit (logand byte #x0f) 16) port)
-           (display ";" port)]))
-  (display "\"" port))
+  ;; string-notated u8vector printing is supported natively.
+  (write bv port (make-write-controls :bytestring #t)))
 
 (define (write-binary-bytestring port . args)
   ;; TODO: We can avoid intermediate u8vectors.
