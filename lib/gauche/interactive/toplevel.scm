@@ -407,7 +407,10 @@
   \n  string-length <integer>|#f\
   \n                      - Max length of string literals before abbreviated.\
   \n  bytestring <boolean>\
-  \n                        If true, u8vector is printed with string notation."
+  \n                        If true, u8vector is printed with string notation.\
+  \n  exact-decimal <boolean>\
+  \n                        If true, use decimal notation for exact rational\
+  \n                        numbers if they can be written out exactly."
   (^[args]
     (match args
       [() #f]
