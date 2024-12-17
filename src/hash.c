@@ -1078,8 +1078,8 @@ ScmObj Scm_HashTableStat(ScmHashTable *table)
  * Printer
  */
 
-/* Note: When pprint is used, hash table priting is directly handled by pprint
-   and this is never called. */
+/* Note: When pprint is used, hash table printing is directly handled
+   by pprint and this is never called. */
 static void hash_print(ScmObj obj, ScmPort *port,
                        ScmWriteContext *ctx SCM_UNUSED)
 {

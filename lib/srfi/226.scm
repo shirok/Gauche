@@ -1,5 +1,5 @@
 ;;
-;; Compsite library of entire SRFI-226
+;; Composite library of entire SRFI-226
 ;;
 
 (define-module srfi.226

@@ -1,10 +1,10 @@
-The contents of this directory is for various experiment.
+The contents of this directory is for various experiments.
 For now, they're mostly syntactic sugars just to make program shorter,
 rather than introducing new abstractions.   The merit of such syntactic
 sugars is highly subjective, only to be estimated after substantial use
 in production code.   These modules are to try them in the real situation.
 
-It is highly possible that, after some periodof trial, we decide to drop
+It is highly possible that, after some period of trial, we decide to drop
 or change some of the stuff here.  Unlike other 'unofficial' modules which
 tend to stick if they are around a few years, the stuff here may be changed
 even after use of several years.  If you want to use these in your code,

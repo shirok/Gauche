@@ -20341,7 +20341,7 @@ thread may evaluate @var{expression} simultaneously.
 In general, you shouldn't have side-effecting computation
 in @var{expression}---even if it is only evaluated once,
 you may not exactly know when the evaluation occur, so
-having side-effects there is a bad ides.
+having side-effects there is a bad idea.
 (See @code{force} below for multi-thread semantics).
 @c JP
 @var{expression}は一回以上評価され得ることに気をつけてください。
@@ -32783,7 +32783,7 @@ Returns @code{#t} if @var{obj} is a time object.
 The argument must be either a @code{<time>} object, a real number,
 or @code{#f}.  If it is an absolute @code{<time>} object, it specifies
 an absolute point of time.  If it is a @code{<time>} object of
-@code{time-duration} type, it is taken as a relative tiem from the current time.
+@code{time-duration} type, it is taken as a relative time from the current time.
 If it is a real number, it specifies
 the number of seconds from the current time.
 

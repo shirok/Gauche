@@ -10811,7 +10811,7 @@ The @var{failure} procedure is expected to tail-call either
 
 The @var{insert} procedure passed to @var{failure} takes
 two arguments, @var{value} and @var{retval}.  It creates
-a new mapping that has all the entires of @var{m} and
+a new mapping that has all the entries of @var{m} and
 a new entry with @var{k} and @var{value}, and returns
 the new mapping and @var{retval}.
 

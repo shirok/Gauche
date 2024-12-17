@@ -24,7 +24,7 @@
     ((let (name binding ...) body ...)
      (%let-loop name (binding ...) () () (body ...)))
 
-    ;; standrad named let (which may have rest parameter)
+    ;; standard named let (which may have rest parameter)
     ((let name bindings body ...)
      (%let-loop name bindings () () (body ...)))
 

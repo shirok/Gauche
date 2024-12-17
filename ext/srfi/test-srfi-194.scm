@@ -1,4 +1,4 @@
-;; srfi.194 depends on data.random, so test it iere.
+;; srfi.194 depends on data.random, so test it here.
 
 (use gauche.test)
 (test-start "SRFI-194")

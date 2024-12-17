@@ -1,7 +1,7 @@
 DESCRIPTION:
     The output samples for this test vector come exclusively from my
     own implementation and so may be completely incorrect.  Use with
-    a very large grain of salt.  The input sample 4 KB of misc.
+    a very large grain of salt.  The input sample is 4 KB of misc.
     data.
     
     (Total length of test vector data: 16384)

@@ -433,7 +433,7 @@
        (set! *controls* (apply write-controls-copy *controls* kvs)))]))
 
 ;; This shadows gauche#read-eval-print-loop
-;; NB: We ignore reader argument,  The whole point of thsi procedure
+;; NB: We ignore reader argument,  The whole point of this procedure
 ;; is to provide an editable reader, so the user doesn't need to customize it.
 (define (read-eval-print-loop :optional (reader #f)
                                         (evaluator #f)

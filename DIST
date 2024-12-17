@@ -122,7 +122,7 @@ do_self_host_test () {
     echo "************************* STAGE2 INSTALL ***************************"
     (cd $destdir/stage2; \
      PATH=$XPATH make install && PATH=$XPATH make -s install-check)
-    echo "************************ EXTENTION EXAMPLES ************************"
+    echo "************************ EXTENSION EXAMPLES ************************"
     mkdir -p $destdir/spigot
     (cd $destdir/spigot; \
      PATH=$XPATH $srcdir/examples/spigot/configure --prefix=$destdir && \

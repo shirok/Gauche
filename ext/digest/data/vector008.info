@@ -1,5 +1,5 @@
 DESCRIPTION:
-    The output samples for thi test vector come exclusively from my
+    The output samples for this test vector come exclusively from my
     own implementation and so may be completely incorrect.  Use with
     a very large grain of salt.  The input sample exactly the same
     length as the SHA-384 and SHA-512 block lengths.

@@ -4687,8 +4687,8 @@ key in @var{immap}, respectively.  If @var{immap} is empty,
 @mdindex data.priority-map
 @c EN
 Priority map is a dictionary that can map keys to values, while
-the entires are sorted by their @emph{values}.
-(If the entires are sorted by keys, it's a treemap--@pxref{Treemaps}).
+the entries are sorted by their @emph{values}.
+(If the entries are sorted by keys, it's a treemap--@pxref{Treemaps}).
 @c JP
 プライオリティマップは、キーを値にマッピングする辞書で、
 エントリが値によってソートされているものです
@@ -11472,7 +11472,7 @@ displays lines matching @code{#/regexp/} with line numbers.
 @c COMMON
 
 @example
-(file-filer-fold
+(file-filter-fold
   (^[line nc out]
     (when (#/regexp/ line) (format out "~3d: ~a\n" nc line))
     (+ nc 1))

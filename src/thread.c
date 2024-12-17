@@ -390,7 +390,7 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
    safe---the thread may leave memory in inconsistent state.
 
    In any way, the target thread is marked as SCM_VM_TERMINATED.  If we
-   avoid the forcible termiantion, the thread remains in the system, but
+   avoid the forcible termination, the thread remains in the system, but
    as soon as it unblocks and resumes execution of Gauche code, it will
    see the terminate request and terminate itself.
 */

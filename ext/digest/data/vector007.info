@@ -1,7 +1,7 @@
 DESCRIPTION:
-    The output samples for thi test vector come exclusively from my
+    The output samples for this test vector come exclusively from my
     own implementation and so may be completely incorrect.  Use with
-    a very large grain of salt.  The input sample one byte shorter
+    a very large grain of salt.  The input sample is one byte shorter
     than the SHA-256 block length.
     
     (Total length of test vector data: 63)
