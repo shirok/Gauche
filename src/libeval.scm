@@ -570,7 +570,11 @@
  (define-cise-stmt add-gc-info
    ;; assuming variable h, t
    ([_ key val]
-    `(SCM_APPEND1 h t (list ',key (Scm_MakeIntegerFromUI (cast u_long ,val))))))
+    ;; The field of GC_prof_stats_s may be -1 if the runtime doesn't
+    ;; provide the value.  We exclude it.
+    `(let* ([vv::long (cast long ,val)])
+       (when (>= vv 0)
+         (SCM_APPEND1 h t (list ',key (Scm_MakeInteger vv)))))))
 
  (define-cise-stmt add-gc-stat
    ;; assuming variable st, size, i, h, t
