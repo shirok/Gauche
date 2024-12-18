@@ -565,18 +565,55 @@
 ;; API
 (define-cproc gc () (call <void> GC_gcollect))
 
+;; Macros for gc-stat
+(inline-stub
+ (define-cise-stmt add-gc-info
+   ;; assuming variable h, t
+   ([_ key val]
+    `(SCM_APPEND1 h t (list ',key (Scm_MakeIntegerFromUI (cast u_long ,val))))))
+
+ (define-cise-stmt add-gc-stat
+   ;; assuming variable st, size, i, h, t
+   [(_ key slot)
+    `(when (< i size)
+       (add-gc-info ,key (ref st ,slot))
+       (set! i (+ i (sizeof GC_word))))])
+ )
+
 ;; API
 (define-cproc gc-stat ()
-  (return
-   (list
-    (list ':total-heap-size
-          (Scm_MakeIntegerFromUI (cast u_long (GC_get_heap_size))))
-    (list ':free-bytes
-          (Scm_MakeIntegerFromUI (cast u_long (GC_get_free_bytes))))
-    (list ':bytes-since-gc
-          (Scm_MakeIntegerFromUI (cast u_long (GC_get_bytes_since_gc))))
-    (list ':total-bytes
-          (Scm_MakeIntegerFromUI (cast u_long (GC_get_total_bytes)))))))
+  (let* ([st::(struct GC_prof_stats_s)]
+         [size::size_t (GC_get_prof_stats (& st) (sizeof st))]
+         [i::size_t 0]
+         [h SCM_NIL]
+         [t SCM_NIL]
+         ;; for the backward compatibility
+         [heapsize::GC_word (- (ref st heapsize_full)
+                               (ref st unmapped_bytes))]
+         [freebytes::GC_word (- (ref st free_bytes_full)
+                                (ref st unmapped_bytes))]
+         [totalbytes::GC_word (+ (ref st bytes_allocd_since_gc)
+                                 (ref st allocd_bytes_before_gc))]
+         )
+    ;; The first for keys needs to be that name for backward compatibility.
+    (add-gc-info :total-heap-size heapsize)
+    (add-gc-info :free-bytes freebytes)
+    (add-gc-stat :bytes-since-gc bytes_allocd_since_gc)
+    (add-gc-info :total-bytes totalbytes)
+
+    (add-gc-stat :unmapped-bytes unmapped-bytes)
+    (add-gc-stat :heap-size-full heapsize_full)
+    (add-gc-stat :free-bytes-full free_bytes_full)
+    (add-gc-stat :allocated-bytes-before-gc allocd_bytes_before_gc)
+    (add-gc-stat :non-gc-bytes non_gc_bytes)
+    (add-gc-stat :gc-cycle gc_no)
+    (add-gc-stat :num-markers markers_m1)
+    (add-gc-stat :bytes-reclaimed-since-gc bytes_reclaimed_since_gc)
+    (add-gc-stat :reclaimed-bytes-before-gc reclaimed_bytes_before_gc)
+    (add-gc-stat :explicitly-freed-bytes-since-gc expl_freed_bytes_since_gc)
+    (add-gc-stat :obtained-from-os-bytes obtained_from_os_bytes)
+
+    (return h)))
 
 (select-module gauche.internal)
 ;; for diagnostics
