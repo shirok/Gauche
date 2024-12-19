@@ -33685,15 +33685,79 @@ immediately before that.
 @defun gc-stat
 @c EN
 Returns a list of lists, each inner list contains a keyword and
-related statistics. Current statistics include @code{:total-heap-size},
-@code{:free-bytes}, @code{:bytes-since-gc} and @code{:total-bytes}.
+related statistics number (integer).
 @c JP
 GCに関する統計情報を返します。返り値はリストのリストで、
-内側のリストはキーワードと対応する数値からなります。
-現在、返されるキーワードは
-@code{:total-heap-size}、
-@code{:free-bytes}、@code{:bytes-since-gc}、@code{:total-bytes}です。
+内側のリストはキーワードと対応する統計の整数値からなります。
 @c COMMON
+
+@example
+(gc-stat)
+ @result{}
+    ((:total-heap-size 7925760) (:free-bytes 524288) (:bytes-since-gc 473792)
+     (:total-bytes 9925872) (:unmapped-bytes 0) (:heap-size-full 7925760)
+     (:free-bytes-full 524288) (:allocated-bytes-before-gc 9452080)
+     (:non-gc-bytes 0) (:gc-cycle 4) (:num-markers 15)
+     (:bytes-reclaimed-since-gc 947824) (:reclaimed-bytes-before-gc 1615840)
+     (:explicitly-freed-bytes-since-gc 0) (:obtained-from-os-bytes 9302016))
+@end example
+
+@c EN
+The meaning of each keyword is as follows.  The list of available keywords
+may change depending on GC version.
+(The descriptions about @code{GC_*()} calls and @code{GC_prof_stats_s}
+are for those who know Boehm GC.)
+@c JP
+それぞれのキーワードの意味は次のとおりです。
+なお、返されるキーワードはGCのバージョンによって変わる可能性があります。
+@c COMMON
+
+@table @code
+@item :total-heap-size
+Heap size in bytes, not including the area unmapped to OS.
+(The value @code{GC_get_heap_size()} returns.)
+@item :heap-size-full
+Heap size in bytes, including the area unmapped to OS.
+(The value of @code{heapsize_full} field of @code{GC_prof_stats_s}.)
+@item :free-bytes
+Total bytes contained in free blocks.
+(The value @code{GC_get_free_bytes()} returns.)
+@item :free-bytes-full
+Total bytes contained in free and unmapped blocks.
+(The value of @code{free_bytes_full} field of @code{GC_prof_stat_s}.)
+@item :unmapped-bytes
+Amount of memory unmapped to OS.
+(The value @code{GC_get_unmapped_bytes()} returns.)
+@item :bytes-since-gc
+Number of bytes allocated since the recent collection.
+(The value @code{GC_get_bytes_since_gc()} returns).
+@item :allocated-bytes-before-gc
+Number of bytes allocated before the recent collection.
+This value may wrap if the process has allocated so many bytes.
+(The value of @code{allocd_bytes_before_gc} field of @code{GC_prof_stat_s}.)
+@item :non-gc-bytes
+Number of bytes not considered for collection.
+(The value of @code{non_gc_bytes} field of @code{GC_prof_stat_s}.)
+@item :gc-cycle
+Garbage collection cycle number.  The value may wrap.
+(The value of @code{gc_no} field of @code{GC_prof_stat_s}.)
+@item :num-markers
+Number of marker threads, excluding the initiating one.
+(The value of @code{markers_m1} field of @code{GC_prof_stat_s}.)
+@item :bytes-reclaimed-since-gc
+Approx. number of reclaimed bytes after the recent collection.
+(The value of @code{bytes_reclaimed_since_gc} field of @code{GC_prof_stat_s}.)
+@item :reclaimed-bytes-before-gc
+Approx. number of bytesreclaimed before the recent collection.
+The value may wrap.
+(The value of @code{reclaimed_bytes_before_gc} field of @code{GC_prof_stat_s}.)
+@item :explicitly-freed-bytes-since-gc
+Number of bytes freed explicitly since the recent collection.
+(The value of @code{expl_freed_bytes_since_gc} field of @code{GC_prof_stat_s}.)
+@item :obtained-from-os-bytes
+Total amount of memory obtained from OS in bytes.
+(The value of @code{obtained_from_os_bytes} field of @code{GC_prof_stat_s}.)
+@end table
 @end defun
 
 @node Memory mapping, Miscellaneous system calls, Garbage collection, System interface
