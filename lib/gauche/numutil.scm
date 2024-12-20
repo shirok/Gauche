@@ -31,7 +31,20 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-(select-module gauche)
+(define-module gauche.numutil
+  (export continued-fraction real->rational
+          print-exact-decimal-point-number
+          expt-mod gamma lgamma
+          exact-integer-sqrt real-valued? rational-valued? integer-valued?
+          div-and-mod div mod
+          div0-and-mod0 div0 mod0
+          floor/ floor-quotient floor-remainder
+          truncate/ truncate-quotient truncate-remainder
+          square
+          encode-float
+          approx=?)
+  )
+(select-module gauche.numutil)
 
 ;; Gauche is not designed for number crunching programs.  Here I define
 ;; some R5RS functions in Scheme, just for completeness.
@@ -391,9 +404,6 @@
          (error "Mantissa is out of range (must be between 0 and 2^53-1):"
                 mantissa))
        (* sign (ldexp mantissa exponent))])))
-
-;; Nearly equal comparison
-;;  (Unofficial yet; see how it works)
 
 (define (approx=? x y :optional (relative-tolerance (flonum-epsilon))
                                 (absolute-tolerance (least-positive-flonum)))

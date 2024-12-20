@@ -69,7 +69,7 @@
   `(register-autoload 'scheme ',file ',vars))
 
 ;;==========================================================
-(autoload "gauche/numutil"
+(autoload gauche.numutil
           exact-integer-sqrt
           continued-fraction real->rational
           print-exact-decimal-point-number
@@ -79,7 +79,7 @@
           floor/ floor-quotient floor-remainder
           truncate/ truncate-quotient truncate-remainder
           square encode-float
-          approx=? nearly=?)
+          approx=?)
 
 (autoload "gauche/redefutil"
           redefine-class! class-redefinition

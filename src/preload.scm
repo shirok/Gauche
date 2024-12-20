@@ -29,3 +29,10 @@
 (use util.match)
 (use rfc.822)
 (use rfc.mime)
+
+;; TRANSIENT - We changed autoloaded gauche.numutil to be a separate module
+;; instead of injecting definitions to #<module gauche>, after 0.9.15.
+;; But 0.9.15 Gauche doesn't expect gauche/numitl.scm to have a separate
+;; module.  So we trigger autoload of BUILD_GOSH's numutil here.
+;; Remove after the new release.
+square

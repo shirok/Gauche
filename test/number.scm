@@ -2623,4 +2623,11 @@
 (test* "object-/" "a/3" (/ "a" 3))
 (test* "object-/" "/a"  (/ "a"))
 
+;;------------------------------------------------------------------
+(test-section "numutil binding")
+
+;; gauche.numutil is autoloaded.  We test its binding here, so that
+;; autoload failure can be catched by this point.
+(test-module 'gauche.numutil)
+
 (test-end)

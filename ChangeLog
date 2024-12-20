@@ -1,3 +1,8 @@
+2024-12-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numutil.scm: Put this in a separate module
+	  gauche.numutil, so that we can have some private functions here.
+
 2024-12-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/libeval.scm (gc-stat): Enhanced to include more info.
