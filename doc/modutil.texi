@@ -28421,88 +28421,152 @@ CAPSLOCKがoffであるとき、ユーザが
 
 @deffn {Generic function} chready? console
 @c MOD text.console
+@c EN
 Returns true if there's a key sequence to be read in the console's
 input.
+@c JP
+コンソールの入力からキーシーケンスが直ちに読み出せる状態であれば@code{#t}を、
+そうでなければ@code{#f}を返します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} query-cursor-position console
 @c MOD text.console
+@c EN
 Returns two values, the current cursor's x and y position.
 The top-left corner is (0,0).
+@c JP
+コンソールのカーソル位置を問い合わせ、そのx座標とy座標を２つの値として
+返します。左上のコーナーが(0, 0)です。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} move-cursor-to console row column
 @c MOD text.console
+@c EN
 Move cursor to the specified position.  The top-left corner is (0,0).
+@c JP
+カーソルを指定位置に移動します。左上のコーナーが(0, 0)です。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} reset-terminal console
 @c MOD text.console
+@c EN
 Reset terminal.  Usually this sets the
 character attributes to the default,
 clears the screen, and moves the cursor to (0, 0).
+@c JP
+端末をリセットします。通常、これは文字属性をデフォルトに戻し、
+スクリーンをクリアしてカーソルを(0, 0)に移動します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} clear-screen console
 @c MOD text.console
+@c EN
 Clear entire screen.
+@c JP
+全画面をクリアします。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} clear-to-eol console
 @c MOD text.console
+@c EN
 Clear characters from the current cursor position to the
 end of the line.
+@c JP
+現在のカーソル位置から行末までをクリアします。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} clear-to-eos console
 @c MOD text.console
+@c EN
 Clear characters from the current cursor position to the
 end of the screen.
+@c JP
+現在のカーソル位置とそれ以降をクリアします。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} hide-cursor console
 @deffnx {Generic function} show-cursor console
 @c MOD text.console
+@c EN
 Hide/show the cursor.
+@c JP
+カーソルを隠す、あるいは表示します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} cursor-down/scroll-up console
 @c MOD text.console
+@c EN
 If the cursor is at the bottom line of the screen,
 scroll up the contents and clear the bottom line; the cursor stays
 the same position.  If the cursor is not at the bottom line of
 the screen, move the cursor down.
+@c JP
+カーソルが画面の一番下の行にある場合は、画面全体をスクロールアップし、最下行をクリアします。
+カーソルは同じ位置にとどまります。
+そうでなければ、カーソルを同じカラムの一行下に移動します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} cursor-up/scroll-down console
 @c MOD text.console
+@c EN
 If the cursor is at the top line of the screen,
 scroll down the contents and clear the top line; the cursor stays
 the same position.  If the cursor is not at the top line of
 the screen, move the cursor up.
+@c JP
+カーソルが画面の一番上の行にある場合は、画面全体をスクロールダウンし、最上行をクリアします。
+カーソルは同じ位置にとどまります。
+そうでなければ、カーソルを同じカラムの一行上に移動します。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} query-screen-size console
 @c MOD text.console
+@c EN
 Returns two values, the width and height of the screen.
 
 Note: This may affect what's shown in the console.
 It is recommended that you only call this before redrawing
 the entire screen and save the result.
+@c JP
+スクリーンの幅と高さを２つの値で返します。
+
+註: この操作は画面上の表示に影響を与えるかもしれません。
+画面全体を再描画する前にこの呼び出しを行い、結果を保存しておくことをおすすめします。
+@c COMMON
 @end deffn
 
-@deffn {Generic function} set-character-attribute console spec
+@deffn {Generic function} set-character-attribute console attr
 @c MOD text.console
+@c EN
 Set the console so that the subsequent characters will be written
-with attributes specified by @var{spec}.
+with attributes specified by @var{attr}.
 
 The character attributes spec is a list in the following format:
+@c JP
+これ以降に書かれる文字の文字属性を@var{attr}に設定します。
+
+文字属性@var{attr}は次の形式のリストです。
+@c COMMON
 
 @example
 (<fgcolor> [<bgcolor> . <option> ...])
 @end example
 
+@c EN
 where:
+@c JP
+ここで、
+@c COMMON
 
 @example
 <fgcolor> : <color> | #f     ; #f means default
@@ -28511,30 +28575,60 @@ where:
 <option> : bright | reverse | underscore
 @end example
 
+@c EN
 For example, you can set characters to be written in red with
 black background and underscore, you can call:
+@c JP
+例えば、以降の文字を黒背景に赤字、下線つきで表示したい場合は、こう呼び出します:
+@c COMMON
 
 @example
 (set-character-attribute con '(red black underscore))
 @end example
 
+@c EN
 That the options may seem rather limited in the age of
 full-color bitmap displays.  That's what it used to be, young lads.
+@c JP
+フルカラービットマップディスプレイが一般的になった現代では、
+指定可能な属性がひどく限られているように感じられるかもしれません。
+昔はみなこういうものだったのじゃよ、若者よ。
+@c COMMON
 @end deffn
 
 @deffn {Generic function} reset-character-attribute console
 @c MOD text.console
+@c EN
 Reset character attributes to the default.
+@c JP
+文字属性をデフォルトに戻します。
+@c COMMON
 @end deffn
 
-@deffn {Generic function} with-character-attribute console attrs thunk
+@deffn {Generic function} with-character-attribute console attr thunk
 @c MOD text.console
-Sets the console's attributes to @var{attrs} and calls @var{thunk},
-then restores the attributes.  Even if @var{thunk} throws an error,
-attributes are restored.
+@c EN
+Sets the console's attributes to @var{attr} and calls @var{thunk},
+then resets the attributes.  Even if @var{thunk} throws an error,
+attributes are reset.
+
+See @code{set-character-attribute} above for the form of @var{attr}.
 
 Note: You should be able to nest this, but currently nesting
-isn't working.
+isn't working.  The end of innermost @code{with-character-attribute}
+resets the attributes.
+@c JP
+コンソールの文字属性を@var{attr}に変更した上で@var{thunk}を呼び出し、
+その後で文字属性をデフォルトに戻します。@var{thunk}がエラーを投げた場合でも
+文字属性は戻されます。
+
+@code{attr}の形式については上の@code{set-character-attribute}を
+参照してください。
+
+註: この手続きはネストして使えるべきですが、今の所ネストは動きません。
+一番内側の@code{with-character-attribute}が終わった時点で
+属性がリセットされてしまいます。　
+@c COMMON
 @end deffn
 
 
