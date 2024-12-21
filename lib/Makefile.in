@@ -67,8 +67,8 @@ SCMFILES = \
        gauche/netutil.scm gauche/modutil.scm gauche/libutil.scm  \
        gauche/generic-sortutil.scm gauche/fileutil.scm gauche/sysutil.scm \
        gauche/regexp.scm gauche/regexp/sre.scm \
-       gauche/sigutil.scm gauche/numutil.scm gauche/let-opt.scm \
-       gauche/logutil.scm \
+       gauche/sigutil.scm gauche/numutil.scm gauche/numioutil.scm \
+       gauche/let-opt.scm gauche/logutil.scm \
        gauche/vm/bbb.scm gauche/vm/debugger.scm gauche/vm/debug-info.scm \
        gauche/vm/insn-core.scm gauche/vm/insn.scm \
        gauche/vm/profiler.scm gauche/vm/register-machine.scm \

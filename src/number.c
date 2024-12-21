@@ -4131,6 +4131,17 @@ print_radix_prefix(ScmPort *port, u_long radix)
     }
 }
 
+/* Returns #<module gauche.numioutil>, which implements some less-used
+   printing routines.  This is called only once per SCM_BIND_PROC of
+   those routines, so not performance critical. */
+static ScmModule*
+gauche_numioutil_module()
+{
+    Scm_Require(SCM_MAKE_STR("gauche/numioutil"), SCM_LOAD_PROPAGATE_ERROR, NULL);
+    return Scm_FindModule(SCM_SYMBOL(SCM_INTERN("gauche.numioutil")), 0);
+}
+
+
 static size_t
 print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
 {
@@ -4186,7 +4197,7 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
             ScmObj print_exact_decimal_point_number_proc = SCM_UNDEFINED;
             SCM_BIND_PROC(print_exact_decimal_point_number_proc,
                           "print-exact-decimal-point-number",
-                          Scm_GaucheInternalModule());
+                          gauche_numioutil_module());
             ScmObj r =
                 Scm_ApplyRec2(print_exact_decimal_point_number_proc,
                               obj, SCM_OBJ(port));

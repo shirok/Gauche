@@ -1,5 +1,9 @@
 2024-12-20  Shiro Kawai  <shiro@acm.org>
 
+	* lib/gauche/numioutil.scm: Move print-exact-decimal-point-number
+	  here.  We don't want to advertise that procedure, but autoloading
+	  it from gauche.numutil causes gauche.base to export it.
+
 	* lib/gauche/numutil.scm: Put this in a separate module
 	  gauche.numutil, so that we can have some private functions here.
 
