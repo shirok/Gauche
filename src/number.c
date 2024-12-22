@@ -4194,7 +4194,7 @@ print_number(ScmPort *port, ScmObj obj, u_long flags, ScmNumberFormat *fmt)
         return Scm_DStringSize(&ds);
     } else if (SCM_RATNUMP(obj)) {
         if (flags & SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT) {
-            ScmObj print_exact_decimal_point_number_proc = SCM_UNDEFINED;
+            static ScmObj print_exact_decimal_point_number_proc = SCM_UNDEFINED;
             SCM_BIND_PROC(print_exact_decimal_point_number_proc,
                           "print-exact-decimal-point-number",
                           gauche_numioutil_module());
