@@ -148,11 +148,11 @@
                      (string-length "#?,- : ")
                      (string-length thr-prefix)))
   (cond [(debug-source-info form)
-         => (^[info] (format p "#?,~a~s:~a:calling `~,,,,v:s' with args:\n"
-                             thr-prefix (car info) (cadr info) w procname))]
+         => (^[info] (format p "#?,~a~s:~a:~,,,,v:s\n"
+                             thr-prefix (car info) (cadr info) w form))]
         [else
-         (format p "#?,~acalling `~,,,,v:s' with args:\n"
-                 thr-prefix w procname)])
+         (format p "#?,~a~,,,,v:s\n"
+                 thr-prefix w form)])
   (dolist [arg args]
     (format p "#?,>~a ~,,,,v:s\n" thr-prefix w arg))
   (flush p))
