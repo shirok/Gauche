@@ -37,12 +37,10 @@
 ;; We splitted this from gauche.numutil, for we don't want these
 ;; routines to be imported to #<module gauche>.
 
-(define-module gauche.numioutil
-  (export print-exact-decimal-point-number
-          )
-  )
+(define-module gauche.numioutil)
 (select-module gauche.numioutil)
 
+;; Internal API - Directly called from writer.c
 ;; If a rational can be exactly represented with decimal-point notation,
 ;; return the string notation.  Otherwise, return #f.
 ;; This is called during number to string conversion.
