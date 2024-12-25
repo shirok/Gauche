@@ -4258,6 +4258,9 @@ void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
     if (ctrl->printRadix) {
         fmt->flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
     }
+    if (ctrl->exactDecimal) {
+        fmt->flags |= SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT;
+    }
 }
 
 /* API */
