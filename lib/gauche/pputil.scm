@@ -94,6 +94,8 @@
 (define-inline (>=* a b) (and a b (>= a b)))
 (define-inline (-* a b . args)
   (and a b (if (null? args) (- a b) (apply -* (- a b) args))))
+(define-inline (+* a b . args)
+  (and a b (if (null? args) (+ a b) (apply +* (+ a b) args))))
 (define-inline (min* a b) (if a (if b (min a b) a) b))
 
 ;; Render OBJ into a string.  The resulting string is then used with
@@ -297,31 +299,35 @@
 ;; find out best fit.  Each layouter may be invoked more than once,
 ;; when retry happens.
 (define (do-layout-elements room memo elts)
-  (define (do-oneline r es strs)
+  (define (do-oneline r es strs first?)
     (match es
       [() (cons strs (-* room r))]
-      [(e . es) (match-let1 (s . w) (e room memo)
+      [(e . es) (match-let1 (s . w) (e r memo)
                   (cond [(not w) (do-linear room elts)] ;giveup
                         [(>* w room)                            ;too big
                          (do-fill room es (list* 'b s 'b strs))]
-                        [(>* w r)
+                        [(and first? (>* r w))
+                         (do-oneline (-*  r w) es (list* s 's strs) #f)]
+                        [(>* w (-* r 1))
                          (do-fill (-* room w) es (list* s 'b strs))]
                         [else
-                         (do-oneline (-* r w 1) es (list* s 's strs))]))]))
+                         (do-oneline (-* r w 1) es (list* s 's strs) #f)]))]))
   (define (do-fill r es strs)
     (match es
       [() (cons strs #f)]
-      [(e . es) (match-let1 (s . w) (e room memo)
+      [(e . es) (match-let1 (s . w) (e r memo)
                   (cond [(not w) (do-linear room elts)]
                         [(>* w (-* r 1))
-                         (do-fill (-* room w 1) es (list* s 'b strs))]
-                        [else (do-fill (-* r w 1) es (list* s 's strs))]))]))
+                         (do-fill (-* room w) es (list* s 'b strs))]
+                        [else
+                         (do-fill (-* r w 1) es (list* s 's strs))]))]))
   (define (do-linear r es)
     (cons (fold (^[e strs] (match-let1 (s . w) (e room memo) (list* s 'b strs)))
                 '() es)
           #f))
-  (match-let1 (s . w) (do-oneline room elts '())
-    (cons (cons ")" s) w)))
+
+  (match-let1 (s . w) (do-oneline room elts '() #t)
+    (cons (cons ")" s) (+* w 1))))
 
 ;; Render the nested list of strings.  Some trick: S's and b's right
 ;; after open paren are ignored.  S's right after b's are also ignored.

@@ -707,8 +707,8 @@
       [data2 '(Lorem (ipsum #(dolor (sit (amet . consectetur)))))]
       )
   (define (t name expect data . args)
-    (test* #"~|name| ~|args|" expect
-           (with-output-to-string (^[] (apply pprint data args)))))
+    (test*/diff #"~|name| ~|args|" expect
+                (with-output-to-string (^[] (apply pprint data args)))))
   (define elli (with-module gauche.internal (string-ellipsis)))
   (let-syntax
       ([t* (syntax-rules ()
@@ -762,6 +762,39 @@
         "(Lorem\
        \n (ipsum #(dolor (sit #))))\n")
     ))
+
+;; Rounding error
+;; https://github.com/shirok/Gauche/issues/941
+(test*/diff "rounding"
+            "(abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc
+                     abc abc abc abc abc abc abc abc abc abc)
+"
+            (with-output-to-string (cut pprint (make-list 100 'abc)
+                                        :indent 20 :width 60)))
+
+;; some more rounding tests
+(let ((expected '("(abc)\n"
+                  "(abc abc)\n"
+                  "(abc abc\n abc)\n"
+                  "(abc abc\n abc abc)\n"
+                  "(abc abc\n abc abc\n abc)\n"
+                  "(abc abc\n abc abc\n abc abc)\n"
+                  "(abc abc\n abc abc\n abc abc\n abc)\n"
+                  "(abc abc\n abc abc\n abc abc\n abc abc)\n")))
+  (dotimes [i (length expected)]
+    (test*/diff #"rounding ~i"
+                (~ expected i)
+                (with-output-to-string
+                  (cut pprint (make-list (+ i 1) 'abc) :width 8))))
+  )
 
 (test* "no newline" "(a\n a)"
        (call-with-output-string

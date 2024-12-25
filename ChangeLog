@@ -1,3 +1,8 @@
+2024-12-24  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/pputil.scm (do-layout-elements): Fix column rounding
+	  issue https://github.com/shirok/Gauche/issues/941
+
 2024-12-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/numioutil.scm: Move print-exact-decimal-point-number
