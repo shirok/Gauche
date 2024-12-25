@@ -58,8 +58,8 @@ enum ScmWriteCaseFlags {
 
 SCM_EXTERN ScmWriteControls *Scm_MakeWriteControls(const ScmWriteControls *proto);
 SCM_EXTERN const ScmWriteControls *Scm_DefaultWriteControls(void);
-SCM_EXTERN const ScmWriteControls *Scm_GetWriteControls(ScmWriteContext *ctx,
-                                                        ScmWriteState *st);
+SCM_EXTERN const ScmWriteControls *Scm_GetWriteControls(const ScmWriteContext *ctx,
+                                                        const ScmWriteState *st);
 
 SCM_EXTERN int Scm_WriteContextMode(const ScmWriteContext *ctx);
 SCM_EXTERN int Scm_WriteContextCase(const ScmWriteContext *ctx);

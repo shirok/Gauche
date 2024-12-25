@@ -145,8 +145,8 @@ const ScmWriteControls *Scm_DefaultWriteControls(void)
     return defaultWriteControls;
 }
 
-const ScmWriteControls *Scm_GetWriteControls(ScmWriteContext *ctx,
-                                             ScmWriteState *st)
+const ScmWriteControls *Scm_GetWriteControls(const ScmWriteContext *ctx,
+                                             const ScmWriteState *st)
 {
     if (ctx && ctx->controls) return ctx->controls;
     if (st && st->controls) return st->controls;

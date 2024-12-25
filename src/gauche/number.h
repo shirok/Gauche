@@ -413,6 +413,8 @@ typedef struct ScmNumberFormatRec {
 } ScmNumberFormat;
 
 SCM_EXTERN void   Scm_NumberFormatInit(ScmNumberFormat*);
+SCM_EXTERN void   Scm_NumberFormatFromWriteContext(ScmNumberFormat*,
+                                                   const ScmWriteContext*);
 SCM_EXTERN size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *f);
 SCM_EXTERN size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *f);
 

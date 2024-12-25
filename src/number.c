@@ -40,6 +40,7 @@
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/arith.h"
 #include "gauche/priv/bytesP.h"
+#include "gauche/priv/writerP.h"
 
 #include <limits.h>
 #include <float.h>
@@ -4245,6 +4246,18 @@ void Scm_NumberFormatInit(ScmNumberFormat* fmt)
     fmt->exp_lo = -3;
     fmt->exp_hi = 10;
     fmt->exp_width = 0;
+}
+
+/* API */
+void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
+                                      const ScmWriteContext* ctx)
+{
+    Scm_NumberFormatInit(fmt);
+    const ScmWriteControls *ctrl = Scm_GetWriteControls(ctx, NULL);
+    fmt->radix = ctrl->printBase;
+    if (ctrl->printRadix) {
+        fmt->flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
+    }
 }
 
 /* API */
