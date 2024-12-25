@@ -1,3 +1,10 @@
+2024-12-25  Shiro Kawai  <shiro@acm.org>
+
+	* src/gauche/number.h (ScmNumberFormat): Change struct format
+	  for flexibility of future extensions.  This is technically an
+	  ABI change (recompilation required if user code uses ScmNumberFormat
+	  explicitly).
+
 2024-12-24  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/pputil.scm (do-layout-elements): Fix column rounding

@@ -403,18 +403,21 @@ enum ScmNumberFormatFlags {
     SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT = (1L<<7)
 };
 
+/* Fine controls of number formatting.   */
 typedef struct ScmNumberFormatRec {
-    u_long flags;
-    int radix;
-    int precision;    /* # of digits after decimal point, -1 for unlimited */
-    int exp_lo;       /* use exp notation if exponent <= exp_lo */
-    int exp_hi;       /* use exp notation if exponent >= exp_hi */
-    int exp_width;    /* min # of digits used for exponent */
+    u_long flags;       /* bitflags of ScmNumberFormatFlags */
+    int32_t precision;  /* # of digits after decimal point, -1 for unlimited */
+    int8_t radix;       /* base radix */
+    int8_t exp_lo;      /* use exp notation if exponent <= exp_lo */
+    int8_t exp_hi;      /* use exp notation if exponent >= exp_hi */
+    int8_t exp_width;   /* min # of digits used for exponent */
+    u_long reserved[2]; /* for future extension */
 } ScmNumberFormat;
 
 SCM_EXTERN void   Scm_NumberFormatInit(ScmNumberFormat*);
 SCM_EXTERN void   Scm_NumberFormatFromWriteContext(ScmNumberFormat*,
-                                                   const ScmWriteContext*);
+                                                   const ScmWriteContext*,
+                                                   const ScmWriteState*);
 SCM_EXTERN size_t Scm_PrintNumber(ScmPort *port, ScmObj n, ScmNumberFormat *f);
 SCM_EXTERN size_t Scm_PrintDouble(ScmPort *port, double d, ScmNumberFormat *f);
 

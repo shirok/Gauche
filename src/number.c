@@ -4240,14 +4240,16 @@ void Scm_NumberFormatInit(ScmNumberFormat* fmt)
     fmt->exp_lo = -3;
     fmt->exp_hi = 10;
     fmt->exp_width = 0;
+    fmt->reserved[0] = fmt->reserved[1] = 0;
 }
 
 /* API */
 void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
-                                      const ScmWriteContext* ctx)
+                                      const ScmWriteContext* ctx, /* may be NULL */
+                                      const ScmWriteState *state) /* may be NULL */
 {
     Scm_NumberFormatInit(fmt);
-    const ScmWriteControls *ctrl = Scm_GetWriteControls(ctx, NULL);
+    const ScmWriteControls *ctrl = Scm_GetWriteControls(ctx, state);
     fmt->radix = ctrl->printBase;
     if (ctrl->printRadix) {
         fmt->flags |= SCM_NUMBER_FORMAT_ALT_RADIX;
