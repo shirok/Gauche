@@ -119,6 +119,8 @@ static double roundeven(double);
  * Classes of Numeric Tower
  */
 
+/* NB: We don't need the print procedure, for Scm_Write handles numbers
+   directly. */
 static ScmClass *numeric_cpl[] = {
     SCM_CLASS_STATIC_PTR(Scm_RationalClass),
     SCM_CLASS_STATIC_PTR(Scm_RealClass),
@@ -128,17 +130,15 @@ static ScmClass *numeric_cpl[] = {
     NULL
 };
 
-static void number_print(ScmObj obj, ScmPort *port, ScmWriteContext *ctx);
-
-SCM_DEFINE_BUILTIN_CLASS(Scm_NumberClass, number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_NumberClass, NULL, NULL, NULL, NULL,
                          numeric_cpl+4);
-SCM_DEFINE_BUILTIN_CLASS(Scm_ComplexClass, number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_ComplexClass, NULL, NULL, NULL, NULL,
                          numeric_cpl+3);
-SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass, number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_RealClass, NULL, NULL, NULL, NULL,
                          numeric_cpl+2);
-SCM_DEFINE_BUILTIN_CLASS(Scm_RationalClass, number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_RationalClass, NULL, NULL, NULL, NULL,
                          numeric_cpl+1);
-SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass, number_print, NULL, NULL, NULL,
+SCM_DEFINE_BUILTIN_CLASS(Scm_IntegerClass, NULL, NULL, NULL, NULL,
                          numeric_cpl);
 
 /*=====================================================================
@@ -4104,12 +4104,6 @@ static void print_double(ScmDString *ds, double val, int plus_sign,
         }
         Scm_DStringPutz(ds, zbuf, -1);
     }
-}
-
-static void number_print(ScmObj obj, ScmPort *port,
-                         ScmWriteContext *ctx SCM_UNUSED)
-{
-    Scm_PrintNumber(port, obj, NULL);
 }
 
 #define FLT_BUF 65  /* need to hold binary representation of the least fixnum */
