@@ -1,5 +1,10 @@
 2024-12-25  Shiro Kawai  <shiro@acm.org>
 
+	* src/vector.c: Make uvector print routine follow writeControls
+	  https://github.com/shirok/Gauche/issues/1093
+	  NB: This allocates more than before the change.  Mind the
+	  performance.
+
 	* src/gauche/number.h (ScmNumberFormat): Change struct format
 	  for flexibility of future extensions.  This is technically an
 	  ABI change (recompilation required if user code uses ScmNumberFormat

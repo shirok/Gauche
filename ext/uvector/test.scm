@@ -81,24 +81,33 @@
 (test* "#u64()" "#u64(0 1 2 3 4)"
        (with-output-to-string
          (^[] (write (apply u64vector (iota 5))))))
-(test* "#f16()" "#f16()"
+(test* "#f16()" "#f16(-1.0 0.0 1.0 2.0 3.0)"
        (with-output-to-string
-         (^[] (write (f16vector)))))
-(test* "#f32()" "#f32()"
+         (^[] (write (f16vector -1 0 1 2 3)))))
+(test* "#f32()" "#f32(-1.0 0.0 1.0 2.0 3.0)"
        (with-output-to-string
-         (^[] (write (f32vector)))))
-(test* "#f64()" "#f64()"
+         (^[] (write (f32vector -1 0 1 2 3)))))
+(test* "#f64()" "#f64(-1.0 0.0 1.0 2.0 3.0)"
        (with-output-to-string
-         (^[] (write (f64vector)))))
-(test* "#c32()" "#c32()"
+         (^[] (write (f64vector -1 0 1 2 3)))))
+(test* "#c32()" "#c32(-1.0-1.0i -1.0+1.0i 1.0+1.0i 1.0-1.0i)"
        (with-output-to-string
-         (^[] (write (c32vector)))))
-(test* "#c64()" "#c64()"
+         (^[] (write (c32vector -1-i -1+i 1+i 1-i)))))
+(test* "#c64()" "#c64(-1.0-1.0i -1.0+1.0i 1.0+1.0i 1.0-1.0i)"
        (with-output-to-string
-         (^[] (write (c64vector)))))
-(test* "#c128()" "#c128()"
+         (^[] (write (c64vector -1-i -1+i 1+i 1-i)))))
+(test* "#c128()" "#c128(-1.0-1.0i -1.0+1.0i 1.0+1.0i 1.0-1.0i)"
        (with-output-to-string
-         (^[] (write (c128vector)))))
+         (^[] (write (c128vector -1-i -1+i 1+i 1-i)))))
+
+(test* "#u8() w/controls" "#u8(a1 b2 c3)"
+       (with-output-to-string
+         (^[] (write (u8vector #xa1 #xb2 #xc3)
+                     (make-write-controls :base 16)))))
+(test* "#u8() w/controls" "#u8(#xa1 #xb2 #xc3)"
+       (with-output-to-string
+         (^[] (write (u8vector #xa1 #xb2 #xc3)
+                     (make-write-controls :base 16 :radix #t)))))
 
 ;;-------------------------------------------------------------------
 (test-section "constructors")

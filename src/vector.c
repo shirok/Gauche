@@ -667,8 +667,6 @@ ScmObj Scm_ReadUVector(ScmPort *port, const char *tag, ScmReadContext *ctx)
  * Class-dependent functions
  */
 
-/* printer */
-
 /* u8vector has two ways to print - as a numeric vector like other uvecotrs,
    or as a bytestring (srfi-207).  To keep the generic macro work, we employ
    a kludge.
@@ -713,14 +711,24 @@ static void print_u8vector(ScmObj obj, ScmPort *out,
 /* reneme the macro-generated generic version. */
 #define print_u8vector print_u8vector_generic
 
+/* Default printers.
+   We convert each element to ScmObj and pass it to Scm_PrintNumber,
+   so that we can have consistent output regarding the current write
+   control parameters.  This may allocate SmcObj for each element,
+   though.  If performance becomes an issue, we may need to consider
+   skipping Scm_PrintNumber when there's no special settings in
+   the write controls.
+ */
 
-#define DEF_PRINT(TAG, tag, T, pr)                                      \
+#define DEF_PRINT(TAG, tag, T, box)                                     \
 static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
                                             ScmPort *out,               \
                                             ScmWriteContext *ctx)       \
 {                                                                       \
-    const ScmWriteControls *wp =                                        \
-        Scm_GetWriteControls(ctx, Scm_PortWriteState(out));             \
+    const ScmWriteState *s = Scm_PortWriteState(out);                   \
+    const ScmWriteControls *wp =  Scm_GetWriteControls(ctx, s);         \
+    ScmNumberFormat fmt;                                                \
+    Scm_NumberFormatFromWriteContext(&fmt, ctx, s);                     \
     Scm_Printf(out, "#"#tag"(");                                        \
     for (int i=0; i<SCM_CPP_CAT3(SCM_,TAG,VECTOR_SIZE)(obj); i++) {     \
         T elt = SCM_CPP_CAT3(SCM_,TAG,VECTOR_ELEMENTS)(obj)[i];         \
@@ -729,78 +737,30 @@ static void SCM_CPP_CAT3(print_,tag,vector)(ScmObj obj,                 \
             Scm_Printf(out, SCM_WRITTEN_ELLIPSIS);                      \
             break;                                                      \
         }                                                               \
-        pr(out, elt);                                                   \
+        Scm_PrintNumber(out, box(elt), &fmt);                           \
     }                                                                   \
     Scm_Printf(out, ")");                                               \
 }
 
-#define spr(out, elt) Scm_Printf(out, "%d", elt)
-#define upr(out, elt) Scm_Printf(out, "%u", elt)
-#define fpr(out, elt) Scm_PrintDouble(out, (double)elt, 0)
-#define c32pr(out, elt)                                                 \
-    do {                                                                \
-        Scm_PrintDouble(out, Scm_HalfToDouble(SCM_HALF_COMPLEX_REAL(elt)), 0); \
-        Scm_Putz("+", 1, out);                                          \
-        Scm_PrintDouble(out, Scm_HalfToDouble(SCM_HALF_COMPLEX_IMAG(elt)), 0); \
-        Scm_Putz("i", 1, out);                                          \
-    } while (0)
-#define c64pr(out, elt)                                 \
-    do {                                                \
-        Scm_PrintDouble(out, (double)crealf(elt), 0);   \
-        Scm_Putz("+", 1, out);                          \
-        Scm_PrintDouble(out, (double)cimagf(elt), 0);   \
-        Scm_Putz("i", 1, out);                          \
-    } while (0)
-#define c128pr(out, elt)                        \
-    do {                                        \
-        Scm_PrintDouble(out, creal(elt), 0);    \
-        Scm_Putz("+", 1, out);                  \
-        Scm_PrintDouble(out, cimag(elt), 0);    \
-        Scm_Putz("i", 1, out);                  \
-    } while (0)
-
-
-static inline void s64pr(ScmPort *out, int64_t elt)
+static ScmObj hf_to_flonum(ScmHalfFloat hf)
 {
-#if SIZEOF_LONG == 4
-    char buf[50];
-    snprintf(buf, 50, "%lld", elt);
-    Scm_Printf(out, "%s", buf);
-#else
-    Scm_Printf(out, "%ld", elt);
-#endif
+    return Scm_MakeFlonum(Scm_HalfToDouble(hf));
 }
 
-static inline void u64pr(ScmPort *out, uint64_t elt)
-{
-#if SIZEOF_LONG == 4
-    char buf[50];
-    snprintf(buf, 50, "%llu", elt);
-    Scm_Printf(out, "%s", buf);
-#else
-    Scm_Printf(out, "%lu", elt);
-#endif
-}
-
-static inline void f16pr(ScmPort *out, ScmHalfFloat elt)
-{
-    Scm_PrintDouble(out, Scm_HalfToDouble(elt), 0);
-}
-
-DEF_PRINT(S8, s8,   int8_t, spr)
-DEF_PRINT(U8, u8,   uint8_t, upr)
-DEF_PRINT(S16, s16, int16_t, spr)
-DEF_PRINT(U16, u16, uint16_t, upr)
-DEF_PRINT(S32, s32, int32_t, spr)
-DEF_PRINT(U32, u32, uint32_t, upr)
-DEF_PRINT(S64, s64, int64_t, s64pr)
-DEF_PRINT(U64, u64, uint64_t, u64pr)
-DEF_PRINT(F16, f16, ScmHalfFloat, f16pr)
-DEF_PRINT(F32, f32, float, fpr)
-DEF_PRINT(F64, f64, double, fpr)
-DEF_PRINT(C32, c32, ScmHalfComplex, c32pr)
-DEF_PRINT(C64, c64, ScmFloatComplex, c64pr)
-DEF_PRINT(C128, c128, ScmDoubleComplex, c128pr)
+DEF_PRINT(S8, s8,   int8_t, SCM_MAKE_INT)
+DEF_PRINT(U8, u8,   uint8_t, SCM_MAKE_INT)
+DEF_PRINT(S16, s16, int16_t, SCM_MAKE_INT)
+DEF_PRINT(U16, u16, uint16_t, SCM_MAKE_INT)
+DEF_PRINT(S32, s32, int32_t, Scm_MakeInteger)
+DEF_PRINT(U32, u32, uint32_t, Scm_MakeIntegerU)
+DEF_PRINT(S64, s64, int64_t, Scm_MakeInteger64)
+DEF_PRINT(U64, u64, uint64_t, Scm_MakeIntegerU64)
+DEF_PRINT(F16, f16, ScmHalfFloat, hf_to_flonum)
+DEF_PRINT(F32, f32, float, Scm_MakeFlonum)
+DEF_PRINT(F64, f64, double, Scm_MakeFlonum)
+DEF_PRINT(C32, c32, ScmHalfComplex, Scm_HalfComplexToComplex)
+DEF_PRINT(C64, c64, ScmFloatComplex, Scm_FloatComplexToComplex)
+DEF_PRINT(C128, c128, ScmDoubleComplex, Scm_DoubleComplexToComplex)
 
 
 /* comparer */
