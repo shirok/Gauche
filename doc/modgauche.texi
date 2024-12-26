@@ -17169,7 +17169,7 @@ examples).
 
 (define (show-help progname)
   (print "Usage: ....")
-  (pritn "Options:")
+  (print "Options:")
   (print (option-parser-help-string))
   (exit 0))
 @end example
