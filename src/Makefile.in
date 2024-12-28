@@ -479,7 +479,7 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEX
 	@for testfile in $(TESTFILES); do \
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
-	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
+	  ./gosh -ftest -I$(top_srcdir)/test $(top_srcdir)/test/$$testfile >> test.log; \
 	done
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
@@ -498,7 +498,7 @@ test2 : gosh$(EXEEXT)
 	  GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
 	  top_builddir=$(top_builddir) \
-	  ./gosh -ftest -I$(top_srcdir)/test $$testfile >> test.log; \
+	  ./gosh -ftest -I$(top_srcdir)/test $(top_srcdir)/test/$$testfile >> test.log; \
 	done
 
 # test-summary-check is called at the end of all tests and set up exit status.
