@@ -4351,6 +4351,8 @@ struct numread_packet {
     int strict;                 /* reject gauche extension */
     int throwerror;             /* throws error on parse, instead of
                                    returning #f. */
+    const char *errormsg;       /* if throwerror == FALSE, the error message
+                                   is kept here. */
 };
 
 enum { /* used in the exactness flag */
@@ -4937,6 +4939,8 @@ static ScmObj numread_error(const char *msg, struct numread_packet *ctx)
         Scm_Error("bad number format %s: %A", msg,
                   Scm_MakeString(ctx->buffer, ctx->buflen,
                                  ctx->buflen, 0));
+    } else {
+        ctx->errormsg = msg;
     }
     return SCM_FALSE;
 }
@@ -4963,6 +4967,7 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
         ctx.explicit = FALSE;
         ctx.strict = flags&SCM_NUMBER_FORMAT_STRICT_R7RS;
         ctx.throwerror = FALSE;
+        ctx.errormsg = NULL;
         ctx.radix = radix;
         ctx.noradixprefix = flags&SCM_NUMBER_FORMAT_ALT_RADIX;
         return read_number(&ctx);
