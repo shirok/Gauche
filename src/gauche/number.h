@@ -400,7 +400,12 @@ enum ScmNumberFormatFlags {
        notation prefixed with #e.
        [N] same.
        [S] ignored. */
-    SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT = (1L<<7)
+    SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT = (1L<<7),
+
+    /* Returns an error message string if the input is invalid.
+       [N] ignored.
+       [S] returns error message instead of #f on error.*/
+    SCM_NUMBER_FORMAT_ERROR_MESSAGE = (1L<<8)
 };
 
 /* Fine controls of number formatting.   */

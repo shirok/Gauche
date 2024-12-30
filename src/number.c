@@ -4945,15 +4945,26 @@ static ScmObj numread_error(const char *msg, struct numread_packet *ctx)
     return SCM_FALSE;
 }
 
-/* FLAGS is enum  ScmNumberFormatFlags (see number.h).  Only some of the
+/* Public API of number parser.
+   FLAGS is enum  ScmNumberFormatFlags (see number.h).  Only some of the
    flags are recognized for printing numbers. */
-ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
+ScmObj Scm_StringToNumber(ScmString *str, int base, u_long flags)
 {
     ScmSmallInt len, size;
     const char *p = Scm_GetStringContent(str, &size, &len, NULL);
+    _Bool ret_msg = flags&SCM_NUMBER_FORMAT_ERROR_MESSAGE;
+
     if (size != len) {
         /* This can't be a proper number. */
-        return SCM_FALSE;
+        if (ret_msg) {
+            static ScmObj badchar = SCM_FALSE;
+            if (SCM_FALSEP(badchar)) {
+                badchar = SCM_MAKE_STR("Non-ascii character can't be in numbers.");
+            }
+            return badchar;
+        } else {
+            return SCM_FALSE;
+        }
     } else {
         struct numread_packet ctx;
         ctx.buffer = p;
@@ -4968,9 +4979,17 @@ ScmObj Scm_StringToNumber(ScmString *str, int radix, u_long flags)
         ctx.strict = flags&SCM_NUMBER_FORMAT_STRICT_R7RS;
         ctx.throwerror = FALSE;
         ctx.errormsg = NULL;
-        ctx.radix = radix;
+        ctx.radix = base;
         ctx.noradixprefix = flags&SCM_NUMBER_FORMAT_ALT_RADIX;
-        return read_number(&ctx);
+        ScmObj r = read_number(&ctx);
+        if (SCM_FALSEP(r) && ret_msg) {
+            if (ctx.errormsg) {
+                return SCM_MAKE_STR_COPYING(ctx.errormsg);
+            } else {
+                return SCM_MAKE_STR("(unknown error).");
+            }
+        }
+        return r;
     }
 }
 
