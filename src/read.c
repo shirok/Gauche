@@ -1397,13 +1397,15 @@ static ScmObj read_number(ScmPort *port, ScmChar initial, int radix,
         flags |= SCM_NUMBER_FORMAT_STRICT_R7RS;
     }
     int default_radix = radix >= 2? radix : 10;
+    flags |= SCM_NUMBER_FORMAT_ERROR_MESSAGE;
     ScmObj num = Scm_StringToNumber(s, default_radix, flags);
-    if (num == SCM_FALSE) {
+    if (!SCM_NUMBERP(num)) {
         if (radix >= 2) {
             /* In this case, we've read #<radix>r syntax */
-            Scm_ReadError(port, "bad numeric format: \"#%dr%A\"", radix, s);
+            Scm_ReadError(port, "bad numeric format: \"#%dr%A\": %A",
+                          radix, s, num);
         } else {
-            Scm_ReadError(port, "bad numeric format: %S", s);
+            Scm_ReadError(port, "bad numeric format: %S: %A", s, num);
         }
     }
     return num;
