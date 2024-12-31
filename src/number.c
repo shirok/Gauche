@@ -4371,7 +4371,7 @@ static u_long longlimit[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
    into bignum. */
 static u_long bigdig[SCM_RADIX_MAX-SCM_RADIX_MIN+1] = { 0 };
 
-static ScmObj numread_error(const char *msg, struct numread_packet *ctx);
+static ScmObj numerr(const char *msg, struct numread_packet *ctx);
 
 /* Returns either small integer, bignum, or #f.
    initval may be a Scheme integer that will be 'concatenated' before
@@ -4413,13 +4413,15 @@ static ScmObj read_uint(const char **strp, int *lenp,
         int digval = -1;
         char c = tolower(*str);
         if (c == '_') {
-            if (ctx->strict || str == *strp) return SCM_FALSE;
+            if (ctx->strict) {
+                return numerr("'_' in numeric literal isn't allowed in the strict mode", ctx);
+            }
             /* srfi-169 - allow '_' in digits for readability
                when number is expliticly prefixed. */
-            if (underscore_read || (!digread && digits == 0)) {
+            if (str == *strp || underscore_read || (!digread && digits == 0)) {
                 /* Don't allow underscore at the beginning, or
                    consecutive underscores */
-                return SCM_FALSE;
+                return numerr("Invalid use of '_' in numeric literal", ctx);
             }
             underscore_read = TRUE;
             continue;
@@ -4461,7 +4463,7 @@ static ScmObj read_uint(const char **strp, int *lenp,
     *strp = str; *lenp = len;
     if (underscore_read) {
         /* integer literal can't end with '_' */
-        return SCM_FALSE;
+        return numerr("Invalid use of '_' in numeric literal", ctx);
     }
 
     if (value_big == NULL) return Scm_MakeInteger(value_int);
@@ -4604,7 +4606,9 @@ static ScmObj read_real(const char **strp, int *lenp,
     case '+':
         (*strp)++; (*lenp)--; sign_seen = TRUE;
     }
-    if ((*lenp) <= 0) return SCM_FALSE;
+    if ((*lenp) <= 0) {
+        return numerr("Stray sign", ctx);
+    }
     mark = *strp;
 
     /* Recognize specials */
@@ -4622,7 +4626,9 @@ static ScmObj read_real(const char **strp, int *lenp,
     /* Read integral part */
     if (**strp != '.') {
         intpart = read_uint(strp, lenp, ctx, SCM_FALSE);
-        if (SCM_FALSEP(intpart)) return SCM_FALSE;
+        if (SCM_FALSEP(intpart)) {
+            return numerr("Stray period", ctx);
+        }
         if ((*lenp) <= 0) {
             if (minusp) intpart = Scm_Negate(intpart);
             if (ctx->exactness == INEXACT) {
@@ -4636,16 +4642,19 @@ static ScmObj read_real(const char **strp, int *lenp,
             ScmObj denom;
             int lensave;
 
-            if ((*lenp) <= 1 || mark == *strp) return SCM_FALSE;
+            if ((*lenp) <= 1 || mark == *strp) {
+                return numerr("Stray slash", ctx);
+            }
             (*strp)++; (*lenp)--;
             lensave = *lenp;
             denom = read_uint(strp, lenp, ctx, SCM_FALSE);
-            if (SCM_FALSEP(denom)) return SCM_FALSE;
+            if (SCM_FALSEP(denom)) {
+                return numerr("Incomplete rational", ctx);
+            }
             if (SCM_EXACT_ZERO_P(denom)) {
                 if (lensave > *lenp) {
                     if (ctx->exactness != INEXACT) {
-                        return numread_error("(exact infinity/nan is not supported.)",
-                                             ctx);
+                        return numerr("Exact infinity/nan is not supported", ctx);
                     }
                     if (SCM_EXACT_ZERO_P(intpart)) return SCM_NAN;
                     return minusp? SCM_NEGATIVE_INFINITY:SCM_POSITIVE_INFINITY;
@@ -4669,12 +4678,14 @@ static ScmObj read_real(const char **strp, int *lenp,
        At this point, simple integer is already eliminated. */
     if (**strp == '.') {
         if (ctx->radix != 10) {
-            return numread_error("(only 10-based fraction is supported)", ctx);
+            return numerr("(only 10-based fraction is supported)", ctx);
         }
         (*strp)++; (*lenp)--;
         const char *fracp = *strp;
         fraction = read_uint(strp, lenp, ctx, intpart);
-        if (SCM_FALSEP(fraction)) return SCM_FALSE;
+        if (SCM_FALSEP(fraction)) {
+            return numerr("Incomplete decimal point number", ctx);
+        }
         /* Count fraction digits.  we can't simply do *strp - fracp,
            for fraction part may contain '_' (srfi-169). */
         for (; fracp < *strp; fracp++) {
@@ -4728,8 +4739,8 @@ static ScmObj read_real(const char **strp, int *lenp,
                ratnum, such large (or small) exponent is highly unusual
                and we assume we can report implementation limitation
                violation. */
-            return numread_error("(such an exact number is out of implementation limitation)",
-                                 ctx);
+            return numerr("Such an exact number is out of implementation limitation",
+                          ctx);
         }
         if (exp_minusp || SCM_EQ(fraction, SCM_MAKE_INT(0))) {
             return Scm_MakeFlonum(minusp? -0.0:0.0);
@@ -4795,12 +4806,11 @@ static ScmObj read_number(struct numread_packet *ctx)
     const char *str = ctx->buffer;
     int len = ctx->buflen;
 
-#define CHK_EXACT_COMPLEX()                                                 \
-    do {                                                                    \
-        if (ctx->exactness == EXACT) {                                      \
-            return numread_error("(exact complex number is not supported)", \
-                                 ctx);                                      \
-        }                                                                   \
+#define CHK_EXACT_COMPLEX()                                              \
+    do {                                                                 \
+        if (ctx->exactness == EXACT) {                                   \
+            return numerr("Exact complex number is not supported", ctx); \
+        }                                                                \
     } while (0)
 
     /* check suggested radix. */
@@ -4933,7 +4943,7 @@ static ScmObj read_number(struct numread_packet *ctx)
     }
 }
 
-static ScmObj numread_error(const char *msg, struct numread_packet *ctx)
+static ScmObj numerr(const char *msg, struct numread_packet *ctx)
 {
     if (ctx->throwerror) {
         Scm_Error("bad number format %s: %A", msg,
