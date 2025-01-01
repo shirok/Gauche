@@ -372,6 +372,10 @@ ScmObj Scm_ListToUVector(ScmClass *klass, ScmObj list, int clamp)
                                                  NULL);
     ScmObj cp = list;
     for (ScmSize i=0; i<length; i++, cp = SCM_CDR(cp)) {
+        if (!SCM_NUMBERP(SCM_CAR(cp))) {
+            Scm_Error("Bad type of element; number expected, but got: %S",
+                      SCM_CAR(cp));
+        }
         switch (type) {
         case SCM_UVECTOR_S8:
             SCM_S8VECTOR_ELEMENTS(v)[i] =
