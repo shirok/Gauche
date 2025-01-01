@@ -1,3 +1,8 @@
+2024-12-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c (read_real): Allow much larger exponent for explicitly
+	  exact numbers.  https://github.com/shirok/Gauche/issues/898
+
 2024-12-29  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_number): Propagate numeric parser error message.

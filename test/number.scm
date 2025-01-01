@@ -474,11 +474,13 @@
 (test* "exact fractonal number" (- (real-expt 10 296))
        (string->number "#e-0.0001e300"))
 
+;; This depends on MAX_EXACT_EXPONENT in number.c
+(test* "exact fractonal number" (real-expt 10 1000)
+       (read-from-string "#e1e1000"))
+(test* "exact fractonal number" (real-expt 10 -10000)
+       (read-from-string "#e1e-10000"))
 (test* "exact fractonal number" (test-error)
-       (read-from-string "#e1e330"))
-(test* "exact fractonal number" (test-error)
-       (read-from-string "#e1e-330"))
-
+       (read-from-string "#e1e-100000"))
 
 ;;------------------------------------------------------------------
 (test-section "complex reader")

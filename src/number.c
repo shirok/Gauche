@@ -75,6 +75,13 @@ int Scm_IsInf(double x)
    memory.  So I assume it is reasonable to limit its range. */
 #define MAX_EXPONENT  325
 
+/* If the number if explicitly exact, we can allow much larger exponent---
+   theoretically as much as the memory can hold.  In reality, though,
+   exact numbers too big are too heavy to handle.  This is somewhat
+   arbitrary limitaition:
+ */
+#define MAX_EXACT_EXPONENT  65535
+
 /* Linux gcc have those, but the declarations aren't included unless
    __USE_ISOC9X is defined.  Just in case. */
 #ifdef HAVE_TRUNC
@@ -4723,10 +4730,12 @@ static ScmObj read_real(const char **strp, int *lenp,
             if (!isdigit(c)) break;
             underscore = FALSE;
             if (!exp_overflow) {
+                /* We limit the range of exponent, so this never overflow. */
                 exponent = exponent * 10 + (c - '0');
                 /* Check obviously wrong exponent range.  More subtle check
                    will be done later. */
-                if (exponent >= MAX_EXPONENT) {
+                if ((ctx->exactness == EXACT && exponent >= MAX_EXACT_EXPONENT)
+                    || (ctx->exactness != EXACT && exponent >= MAX_EXPONENT)) {
                     exp_overflow = TRUE;
                 }
             }
@@ -4739,8 +4748,7 @@ static ScmObj read_real(const char **strp, int *lenp,
                ratnum, such large (or small) exponent is highly unusual
                and we assume we can report implementation limitation
                violation. */
-            return numerr("Such an exact number is out of implementation limitation",
-                          ctx);
+            return numerr("Exact number exponent is too big", ctx);
         }
         if (exp_minusp || SCM_EQ(fraction, SCM_MAKE_INT(0))) {
             return Scm_MakeFlonum(minusp? -0.0:0.0);
