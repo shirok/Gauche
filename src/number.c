@@ -36,6 +36,7 @@
 #include "gauche/scmconst.h"
 #include "gauche/bits.h"
 #include "gauche/bits_inline.h"
+#include "gauche/priv/atomicP.h"
 #include "gauche/priv/bignumP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/arith.h"
@@ -320,11 +321,11 @@ int Scm_IsArmLE(ScmObj endian)
 #undef COUNT_FLONUM_ALLOC
 
 #ifdef COUNT_FLONUM_ALLOC  /* for benchmarks.  usually this should be off. */
-static u_long flonum_count = 0;
+static ScmAtomicVar flonum_count = 0;
 
-static void report_flonum_count(void *data)
+static void report_flonum_count(void *data SCM_UNUSED)
 {
-    fprintf(stderr, "allocated flonums = %8d\n", flonum_count);
+    fprintf(stderr, "\nallocated flonums = %8ld\n", flonum_count);
 }
 #endif /*COUNT_FLONUM_ALLOC*/
 
@@ -333,7 +334,10 @@ ScmObj Scm_MakeFlonum(double d)
     ScmFlonum *f = SCM_NEW(ScmFlonum);
     SCM_FLONUM_VALUE(f) = d;
 #ifdef COUNT_FLONUM_ALLOC
-    flonum_count++;
+    ScmAtomicWord c;
+    do {
+        c = flonum_count;
+    } while (!Scm_AtomicCompareExchange(&flonum_count, &c, c+1));
 #endif
     return SCM_MAKE_FLONUM_MEM(f);
 }
