@@ -77,3 +77,48 @@
       (display ".")
       (display (substring digits (- diglen k) diglen))
       (+ diglen 3 (if (negative? number) 1 0)))))
+
+;; Repeating decimals
+;;   We support notation of 1.2#34 as 1.23434343434...
+;;
+;; - The caller deals with numeric prefixes and exponent part, so
+;;   the 'main' numeric part, which consists of digits, '#', '.',
+;;   and '_', is passed.
+;; - Returns either a rational or #f.
+
+(define (read-repeating-decimal word)
+  (define (digits&scale deci) ; "12.3#4" -> "123#4" & 2
+    (if-let1 m (#/\./ deci)
+      (let* ([integ (m 'before)]
+             [frac (m 'after)]
+             [digits (string-append integ frac)])
+        (if (string-scan frac #\#)
+          (values digits (- (string-length frac) 1))
+          (values digits (string-length frac))))
+      (values deci 0)))
+  (define (split-repeats digits) ; "123#45" -> (* (+ 123 45/99) 100)
+    (receive (pre post) (string-scan digits #\# 'both)
+      (let* ([ndigs-repeating (string-length post)]
+             [factor (expt 10 ndigs-repeating)]
+             [repeating (string->number post)]
+             [non-repeating (if (equal? pre "")
+                              0
+                              (string->number pre))])
+        (* (+ non-repeating (/ repeating (- factor 1))) factor))))
+  ;; avoid depending on srfi.13
+  (define (strcount str char)
+    (define e (string-cursor-end str))
+    (let loop ((c (string-cursor-start str))
+               (count 0))
+      (cond [(string-cursor=? c e) count]
+            [(char=? (string-ref str c) char)
+             (loop (string-cursor-next str c) (+ count 1))]
+            [else
+             (loop (string-cursor-next str c) count)])))
+
+  (assume-type word <string>)
+  (and (not (#/__/ word))               ;don't allow consecutive '_'
+       (<= (strcount word #\.) 1)
+       (= (strcount word #\#) 1)
+       (receive (digits scale) (digits&scale (regexp-replace-all #/_/ word ""))
+         (* (split-repeats digits) (expt 10 (- scale))))))
