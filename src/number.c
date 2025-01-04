@@ -4905,6 +4905,7 @@ static ScmObj read_number(struct numread_packet *ctx)
     ScmObj realpart = read_real(&str, &len, ctx);
     if (SCM_FALSEP(realpart) || len == 0) return realpart;
 
+    ctx->padread = FALSE;
     switch (*str) {
     case '@':
         /* polar representation of complex*/

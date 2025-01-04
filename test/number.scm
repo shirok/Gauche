@@ -538,6 +538,13 @@
 (test* "complex reader (polar)" (make-polar 3.5 -3.0) 7/2@-3.0)
 (test* "complex reader (polar)" #f (string->number "7/2@-3.14i"))
 
+(test* "complex reader (padding)" '(100.0 234.5)
+       (decompose-complex (string->number "1##+234.5###i")))
+(test* "complex reader (padding)" '100.0
+       (decompose-complex (string->number "1##@.0###")))
+(test* "complex reader (padding)" '(0.0 1.2)
+       (decompose-complex (string->number "1.2##@.5###pi")))
+
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")
 
