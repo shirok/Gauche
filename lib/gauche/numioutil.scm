@@ -78,22 +78,32 @@
       (display (substring digits (- diglen k) diglen))
       (+ diglen 3 (if (negative? number) 1 0)))))
 
-;; Repeating decimals
-;;   We support notation of 1.2#34 as 1.23434343434...
+;; Read hashsign number literals.
 ;;
-;; - The caller deals with numeric prefixes and exponent part, so
-;;   the 'main' numeric part, which consists of digits, '#', '.',
-;;   and '_', is passed.
-;; - Returns either a rational or #f.
+;;   We support 2 kinds of syntax.
+;;   1. Insignificant digits (R5RS) - If a <ureal> portion of numeric literal
+;;        has '#'s up to the end, it designates insignificant digits.
+;;        We read it as if it's '0'.
+;;          123##.## == 12300.00
+;;   2. Repeating decimal (Gauche) - If any digits (incuding decimal point)
+;;        follow a single '#', it designates a repeating decimal, e.g.
+;;          0.5#12  == 0.512121212...
+;;
+;;   When the main number reader detects '#', it cut out the ureal portion
+;;   including '#', and calls read-hashsign-numeric.
+;;
+;;   It returns a rational number, or #f if the syntax is invalid.
 
-(define (read-repeating-decimal word)
+(define (read-hashsign-numeric word)
   (define (digits&scale deci) ; "12.3#4" -> "123#4" & 2
     (if-let1 m (#/\./ deci)
       (let* ([integ (m 'before)]
              [frac (m 'after)]
              [digits (string-append integ frac)])
         (if (string-scan frac #\#)
-          (values digits (- (string-length frac) 1))
+          (if (#/\d$/ frac)
+            (values digits (- (string-length frac) 1))
+            (values digits (string-length frac)))
           (values digits (string-length frac))))
       (values deci 0)))
   (define (split-repeats digits) ; "123#45" -> (* (+ 123 45/99) 100)
@@ -119,6 +129,11 @@
   (assume-type word <string>)
   (and (not (#/__/ word))               ;don't allow consecutive '_'
        (<= (strcount word #\.) 1)
-       (= (strcount word #\#) 1)
-       (receive (digits scale) (digits&scale (regexp-replace-all #/_/ word ""))
-         (* (split-repeats digits) (expt 10 (- scale))))))
+       (let1 purified (regexp-replace-all #/_/ word "") ;remove '_'
+         (receive (digits scale) (digits&scale purified)
+           (cond [(#/^\d+#+$/ digits)
+                  (* (string->number (regexp-replace-all #/#/ digits "0"))
+                     (expt 10 (- scale)))]
+                 [(= (strcount purified #\#) 1)
+                  (* (split-repeats digits) (expt 10 (- scale)))]
+                 [else #f])))))

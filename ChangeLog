@@ -1,3 +1,11 @@
+2025-01-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/number.c, lib/gauche/numioutil.scm: Support repeating decimal
+	  notation.  Delegate R7RS padding '#' reading to Scheme routine.
+	  Technically, this makes previously non-number token to a number
+	  (e.g. '0.#1 was read as a symbol before, but now it's a number).
+	  I expect such weird token has been |-escaped practically.
+
 2024-12-31  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c (read_real): Allow much larger exponent for explicitly

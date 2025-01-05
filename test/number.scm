@@ -409,17 +409,11 @@
 (test* "padding" '(100.0 #t) (flonum-test "100.0#"))
 (test* "padding" '(1.0 #t) (flonum-test "1.#"))
 
-(test* "padding" (test-error) (flonum-test "1#1"))
-(test* "padding" (test-error) (flonum-test "1##1"))
-(test* "padding" (test-error) (flonum-test "1#.1"))
-(test* "padding" (test-error) (flonum-test "1.#1"))
-
 (test* "padding" (test-error) (flonum-test ".#"))
 (test* "padding" '(0.0 #t) (flonum-test "0.#"))
 (test* "padding" '(0.0 #t) (flonum-test ".0#"))
 (test* "padding" '(0.0 #t) (flonum-test "0#"))
 (test* "padding" '(0.0 #t) (flonum-test "0#.#"))
-(test* "padding" (test-error) (flonum-test "0#.0"))
 
 (test* "padding" '(1000.0 #t) (flonum-test "1#e2"))
 (test* "padding" '(1000.0 #t) (flonum-test "1##e1"))
@@ -544,6 +538,28 @@
        (decompose-complex (string->number "1##@.0###")))
 (test* "complex reader (padding)" '(0.0 1.2)
        (decompose-complex (string->number "1.2##@.5###pi")))
+
+;;------------------------------------------------------------------
+(test-section "repeating decimals")
+
+(define (test-repeating-real input expect)
+  (test* #"repeating decimal ~|input|" (inexact expect)
+         (string->number input))
+  (test* #"repeating decimal ~|input|" expect
+         (string->number (string-append "#e" input)))
+  )
+
+(test-repeating-real "0.#1" 1/9)
+(test-repeating-real "0.#12" 12/99)
+(test-repeating-real "1.#142857" (+ 1 1/7))
+(test-repeating-real "0.1#12" (+ 1/10 12/990))
+(test-repeating-real "0#1" 10/9)
+(test-repeating-real "12.3#456e-2" (/ (+ 123/10 456/9990) 100))
+(test-repeating-real "12.3#456e3" (* (+ 123/10 456/9990) 1000))
+
+(test* "bad repeating decimal 1" #f (string->number "0.##1"))
+(test* "bad repeating decimal 2" #f (string->number "0.#1#"))
+(test* "bad repeating decimal 3" #f (string->number "0#.#1"))
 
 ;;------------------------------------------------------------------
 (test-section "integer writer syntax")

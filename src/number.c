@@ -4438,15 +4438,12 @@ static ScmObj read_uint(const char **strp, int *lenp,
             continue;
         }
 
-        if (ctx->padread) {
-            if (c == '#') digval = 0;
-            else break;
-        } else if (digread && c == '#') {
-            digval = 0;
+        if (digread && c == '#') {
             ctx->padread = TRUE;
             if (ctx->exactness == NOEXACT) {
                 ctx->exactness = INEXACT;
             }
+            break;              /* We let read-hashsign-numeric to parse it. */
         } else {
             for (const char *ptab = tab; ptab < tab+radix; ptab++) {
                 if (c == *ptab) {
@@ -4476,7 +4473,12 @@ static ScmObj read_uint(const char **strp, int *lenp,
         /* integer literal can't end with '_' */
         return numerr("Invalid use of '_' in numeric literal", ctx);
     }
-
+    if (ctx->padread) {
+        if (ctx->strict) {
+            return numerr("'#' in numeric literal isn't allowed in the strict mode", ctx);
+        }
+        return SCM_FALSE;       /* caller will handle this */
+    }
     if (value_big == NULL) return Scm_MakeInteger(value_int);
     if (digits > 0) {
         value_big = Scm_BignumAccMultAddUI(value_big,
@@ -4599,6 +4601,76 @@ static double algorithmR(ScmObj f, int e, double z)
     /*NOTREACHED*/
 }
 
+/* When read_real detects potential repeating decimal notation, this is called.
+   START points to the beginning of digit sequence (after prefixes and sign),
+   STRP is a reference to the pointer where a character after '#' resides,
+   LENP is a reference to the remaining length of input.  Those references
+   are updated to the consumed input.
+   If the input is successfully parsed, returns a rational number.  *STRP
+   may point to a remaining input (exponent part of the real, imaginary
+   part of a complex, or angular part of a complex).
+   IF the input can't be parsed, it either returns #f or throws an error,
+   depending on ctx->throwerror.
+ */
+static ScmObj read_repeating_decimal(const char *start,
+                                     const char **strp,
+                                     int *lenp,
+                                     int decimal_point_read,
+                                     struct numread_packet *ctx)
+{
+    /* possibly repeating decimal.  We don't need performance here,
+       so we delegate parsing to a Scheme routine. */
+    int remaining = *lenp;
+    for (;remaining > 0; --remaining) {
+        switch (**strp) {
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+        case '_': case '#':
+            (*strp)++;
+            continue;
+        case '.':
+            if (decimal_point_read) {
+                return numerr("Invalid use of '#'", ctx);
+            } else {
+                (*strp)++;
+                continue;
+            }
+        case '+': case '-': case '@':
+        case 'e': case 'E':     /* exponent suffix */
+        case 'i': case 'I':     /* imaginary suffix */
+        case 'p': case 'P':     /* 'pi' suffix of angular part */
+            break;
+        default:
+            return numerr("Invalid use of '#'", ctx);
+        }
+        break;
+    }
+    *lenp = remaining;
+    ScmObj word = Scm_MakeString(start, *strp - start, *strp - start, 0);
+    static ScmObj read_hashsign_numeric_proc = SCM_UNDEFINED;
+    SCM_BIND_PROC(read_hashsign_numeric_proc,
+                  "read-hashsign-numeric",
+                  gauche_numioutil_module());
+    ScmObj r = Scm_ApplyRec1(read_hashsign_numeric_proc, word);
+    if (SCM_FALSEP(r)) {
+        return numerr("Invalid use of '#'", ctx);
+    } else {
+        return r;
+    }
+}
+
+static ScmObj scale_exact(ScmObj exactnum, _Bool minusp, int scale)
+{
+    ScmObj e = Scm_Mul(exactnum,
+                       Scm_ExactIntegerExpt(SCM_MAKE_INT(10),
+                                            Scm_MakeInteger(scale)));
+    if (minusp) return Scm_Negate(e);
+    else return e;
+}
+
+/* Read one real number, including sign.  Update *strp and *lenp.
+   Stops at the end of word, or additional part of complex number.
+   Returns a real number, or #f. */
 static ScmObj read_real(const char **strp, int *lenp,
                         struct numread_packet *ctx)
 {
@@ -4637,10 +4709,29 @@ static ScmObj read_real(const char **strp, int *lenp,
     /* Read integral part */
     if (**strp != '.') {
         intpart = read_uint(strp, lenp, ctx, SCM_FALSE);
-        if (SCM_FALSEP(intpart)) {
-            return numerr("Stray period", ctx);
+        if (ctx->padread) {
+            /* hash sign in numeric literal.  We don't need performance,
+               so we delegate parsing to a Scheme routine. */
+            (*strp)++;          /* read past '#' */
+            (*lenp)--;
+            const char *save = *strp;
+            ScmObj r = read_repeating_decimal(mark, strp, lenp, FALSE, ctx);
+            if (SCM_FALSEP(r) && save < *strp) return r;
+            if (*lenp <= 0) {
+                if (minusp) r = Scm_Negate(r);
+                if (ctx->exactness == INEXACT) {
+                    return Scm_Inexact(r);
+                } else {
+                    return r;
+                }
+            }
+            intpart = r;
+            /* fallthrough */
         }
-        if ((*lenp) <= 0) {
+        if (SCM_FALSEP(intpart)) {
+            return numerr("Invalid numeric literal", ctx);
+        }
+        if (*lenp <= 0) {
             if (minusp) intpart = Scm_Negate(intpart);
             if (ctx->exactness == INEXACT) {
                 return Scm_Inexact(intpart);
@@ -4648,7 +4739,9 @@ static ScmObj read_real(const char **strp, int *lenp,
                 return intpart;
             }
         }
-        if (**strp == '/') {
+
+        /* See if it's a rational */
+        if (!ctx->padread && **strp == '/') {
             /* possibly rational */
             ScmObj denom;
             int lensave;
@@ -4686,29 +4779,45 @@ static ScmObj read_real(const char **strp, int *lenp,
     }
 
     /* Read fractional part.
-       At this point, simple integer is already eliminated. */
+       At this point, simple integer is already eliminated.
+       Note: If the repeating decimal notation appeared in the intpart,
+       the decimal point and subsequent digits are already taken care of. */
     if (**strp == '.') {
         if (ctx->radix != 10) {
             return numerr("(only 10-based fraction is supported)", ctx);
         }
+        if (*lenp == 1 && SCM_FALSEP(intpart)) {
+            return SCM_FALSE;   /* input is '.' */
+        }
+
         (*strp)++; (*lenp)--;
         const char *fracp = *strp;
         fraction = read_uint(strp, lenp, ctx, intpart);
+
+        if (ctx->padread) {
+            /* hash sign in fractinal part. */
+            SCM_ASSERT(**strp == '#');
+            (*strp)++;
+            (*lenp)--;
+            ScmObj r = read_repeating_decimal(mark, strp, lenp, TRUE, ctx);
+            if (SCM_FALSEP(r)) return r;
+            fraction = r;
+            fracdigs = 0;       /* scaling is already done */
+        } else {
+            /* Count fraction digits.  we can't simply do *strp - fracp,
+               for fraction part may contain '_' (srfi-169). */
+            for (; fracp < *strp; fracp++) {
+                if (*fracp != '_') fracdigs++;
+            }
+        }
+
         if (SCM_FALSEP(fraction)) {
             return numerr("Incomplete decimal point number", ctx);
-        }
-        /* Count fraction digits.  we can't simply do *strp - fracp,
-           for fraction part may contain '_' (srfi-169). */
-        for (; fracp < *strp; fracp++) {
-            if (*fracp != '_') fracdigs++;
         }
     } else {
         fraction = intpart;
     }
 
-    if (SCM_FALSEP(intpart)) {
-        if (fracdigs == 0) return SCM_FALSE; /* input was "." */
-    }
     if (mark == *strp) return SCM_FALSE;
 
     /* Read exponent.  */
@@ -4765,13 +4874,13 @@ static ScmObj read_real(const char **strp, int *lenp,
 
     /* Compose the number. */
     if (ctx->exactness == EXACT) {
-        /* Explicit exact number.  We can continue exact arithmetic
-           (it may end up ratnum) */
-        ScmObj e = Scm_Mul(fraction,
-                           Scm_ExactIntegerExpt(SCM_MAKE_INT(10),
-                                                Scm_MakeInteger(exponent-fracdigs)));
-        if (minusp) return Scm_Negate(e);
-        else        return e;
+        return scale_exact(fraction, minusp, exponent-fracdigs);
+    }
+
+    if (SCM_RATNUMP(fraction)) {
+        /* Repeating decimal case.
+           Scale, then inexactify, to avoid rounding error (though slow) */
+        return Scm_Inexact(scale_exact(fraction, minusp, exponent-fracdigs));
     }
 
     /* Get double approximaiton of fraction.  If fraction >= 2^53 we'll
