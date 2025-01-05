@@ -4601,7 +4601,7 @@ static double algorithmR(ScmObj f, int e, double z)
     /*NOTREACHED*/
 }
 
-/* When read_real detects potential repeating decimal notation, this is called.
+/* When read_real encounters '#', this is called.
    START points to the beginning of digit sequence (after prefixes and sign),
    STRP is a reference to the pointer where a character after '#' resides,
    LENP is a reference to the remaining length of input.  Those references
@@ -4612,11 +4612,11 @@ static double algorithmR(ScmObj f, int e, double z)
    IF the input can't be parsed, it either returns #f or throws an error,
    depending on ctx->throwerror.
  */
-static ScmObj read_repeating_decimal(const char *start,
-                                     const char **strp,
-                                     int *lenp,
-                                     int decimal_point_read,
-                                     struct numread_packet *ctx)
+static ScmObj read_hashsign_numeric(const char *start,
+                                    const char **strp,
+                                    int *lenp,
+                                    int decimal_point_read,
+                                    struct numread_packet *ctx)
 {
     /* possibly repeating decimal.  We don't need performance here,
        so we delegate parsing to a Scheme routine. */
@@ -4636,7 +4636,8 @@ static ScmObj read_repeating_decimal(const char *start,
                 continue;
             }
         case '+': case '-': case '@':
-        case 'e': case 'E':     /* exponent suffix */
+        case 'e': case 'E': case 's': case 'S': case 'f': case 'F':
+        case 'd': case 'D': case 'l': case 'L': /* exponent suffix */
         case 'i': case 'I':     /* imaginary suffix */
         case 'p': case 'P':     /* 'pi' suffix of angular part */
             break;
@@ -4659,6 +4660,7 @@ static ScmObj read_repeating_decimal(const char *start,
     }
 }
 
+/* Returns (* exactnum (expt 10 scale)), in exact number. */
 static ScmObj scale_exact(ScmObj exactnum, _Bool minusp, int scale)
 {
     ScmObj e = Scm_Mul(exactnum,
@@ -4715,7 +4717,7 @@ static ScmObj read_real(const char **strp, int *lenp,
             (*strp)++;          /* read past '#' */
             (*lenp)--;
             const char *save = *strp;
-            ScmObj r = read_repeating_decimal(mark, strp, lenp, FALSE, ctx);
+            ScmObj r = read_hashsign_numeric(mark, strp, lenp, FALSE, ctx);
             if (SCM_FALSEP(r) && save < *strp) return r;
             if (*lenp <= 0) {
                 if (minusp) r = Scm_Negate(r);
@@ -4799,7 +4801,7 @@ static ScmObj read_real(const char **strp, int *lenp,
             SCM_ASSERT(**strp == '#');
             (*strp)++;
             (*lenp)--;
-            ScmObj r = read_repeating_decimal(mark, strp, lenp, TRUE, ctx);
+            ScmObj r = read_hashsign_numeric(mark, strp, lenp, TRUE, ctx);
             if (SCM_FALSEP(r)) return r;
             fraction = r;
             fracdigs = 0;       /* scaling is already done */
