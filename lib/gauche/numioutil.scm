@@ -49,34 +49,40 @@
 (define (print-exact-decimal-point-number n port)
   (assume-type n <rational>)
   (assume-type port <port>)
-  (and-let* ([denom (denominator n)]
-             [k2 (twos-exponent-factor denom)]
-             [d2 (quotient denom (ash 1 k2))]
-             [k5 (let factorize-5 ([d d2] [k 0])
-                   (if (= d 1)
-                     k
-                     (receive (q r) (quotient&remainder d 5)
-                       (and (zero? r) (factorize-5 q (+ k 1))))))]
-             ;; now that denominator is 2^{k2} * 5^{k5}.  adjust it
-             ;; to 10^{k}.
-             [k (max k2 k5)]
-             [f (if (< k2 k5) (expt 2 (- k5 k2)) (expt 5 (- k2 k5)))]
-             [number (* f (numerator n))]
-             [abs-number (abs number)]
-             [s (number->string abs-number 10)]
-             [slen (string-length s)])
-    (receive (digits diglen)
-        (if (> slen k)
-          (values s slen)
-          (values (string-append (make-string (- (+ k 1) slen) #\0) s)
-                  (+ k 1)))
-      (display "#e" port)
-      (when (negative? number) (display "-" port))
-      ;; NB: Avoid string-take-right etc., for it will depend on srfi.13
-      (display (substring digits 0 (- diglen k)))
-      (display ".")
-      (display (substring digits (- diglen k) diglen))
-      (+ diglen 3 (if (negative? number) 1 0)))))
+  (receive (k2 k5 r) (factorize-2-5 (denominator n))
+    (and-let* ([ (= r 1) ]
+               ;; now that denominator is 2^{k2} * 5^{k5}.  adjust it
+               ;; to 10^{k}.
+               [k (max k2 k5)]
+               [f (if (< k2 k5) (expt 2 (- k5 k2)) (expt 5 (- k2 k5)))]
+               [number (* f (numerator n))]
+               [abs-number (abs number)]
+               [s (number->string abs-number 10)]
+               [slen (string-length s)])
+      (receive (digits diglen)
+          (if (> slen k)
+            (values s slen)
+            (values (string-append (make-string (- (+ k 1) slen) #\0) s)
+                    (+ k 1)))
+        (display "#e" port)
+        (when (negative? number) (display "-" port))
+        ;; NB: Avoid string-take-right etc., for it will depend on srfi.13
+        (display (substring digits 0 (- diglen k)))
+        (display ".")
+        (display (substring digits (- diglen k) diglen))
+        (+ diglen 3 (if (negative? number) 1 0))))))
+
+;; Given integer n > 0, returns k2, k5, and r, such that n = 2^{k2}*5{^k5}*r
+(define (factorize-2-5 n)
+  (let* ([k2 (twos-exponent-factor n)]
+         [d2 (quotient n (ash 1 k2))])
+    (let factorize-5 ([d d2] [k5 0])
+      (receive (q r) (quotient&remainder d 5)
+        (if (zero? r)
+          (if (= d 1)
+            (values k2 k5 1)
+            (factorize-5 q (+ k5 1)))
+          (values k2 k5 d))))))
 
 ;; Read hashsign number literals.
 ;;
