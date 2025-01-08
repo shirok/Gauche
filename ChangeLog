@@ -1,3 +1,9 @@
+2025-01-07  Shiro Kawai  <shiro@acm.org>
+
+	* src/libnum.scm (number->string): Allow the first optional argument
+	  to be a <write-controls>
+	  https://github.com/shirok/Gauche/issues/1096
+
 2025-01-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/number.c, lib/gauche/numioutil.scm: Support repeating decimal

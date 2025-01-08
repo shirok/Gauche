@@ -37,6 +37,7 @@
  (.include "gauche/priv/configP.h"
            "gauche/vminsn.h"
            "gauche/priv/bignumP.h"
+           "gauche/priv/writerP.h"
            <stdlib.h>
            <float.h>
            <math.h>)
@@ -219,35 +220,49 @@
 (define-inline inexact exact->inexact)           ;R6RS
 
 (select-module scheme)
-(define-cproc number->string (obj :optional (radix::<fixnum> 10)
+(define-cproc number->string (obj :optional (control-or-radix #f)
                                             (flags #f)
                                             (precision::<fixnum> -1))
   :fast-flonum :constant
-  (let* ([f::u_long 0]
-         [fmt::ScmNumberFormat]
+  (let* ([fmt::ScmNumberFormat]
          [o::ScmPort* (SCM_PORT (Scm_MakeOutputStringPort TRUE))])
-    (when (or (< radix SCM_RADIX_MIN) (> radix SCM_RADIX_MAX))
-      (Scm_Error "radix must be an integer between %d and %d, but got %d"
-                 SCM_RADIX_MIN SCM_RADIX_MAX radix))
-    (cond [(or (SCM_FALSEP flags) (SCM_NULLP flags)) (set! f 0)]
-          [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
-          [(SCM_PAIRP flags)
-           (unless (SCM_FALSEP (Scm_Memq 'uppercase flags))
-             (logior= f SCM_NUMBER_FORMAT_USE_UPPER))
-           (unless (SCM_FALSEP (Scm_Memq 'plus flags))
-             (logior= f SCM_NUMBER_FORMAT_SHOW_PLUS))
-           (unless (SCM_FALSEP (Scm_Memq 'radix flags))
-             (logior= f SCM_NUMBER_FORMAT_ALT_RADIX))
-           (unless (SCM_FALSEP (Scm_Memq 'notational flags))
-             (logior= f SCM_NUMBER_FORMAT_ROUND_NOTATIONAL))]
-          [else
-           (Scm_Error "flags argument must be a list of symbols (uppercase, \
-                       plus, radix, notational) or a boolean, but got: %S"
-                      flags)])
     (Scm_NumberFormatInit (& fmt))
-    (set! (ref fmt radix) radix)
-    (set! (ref fmt flags) f)
-    (set! (ref fmt precision) precision)
+    (cond
+     [(SCM_WRITE_CONTROLS_P control-or-radix)
+      (let* ([c::ScmWriteControls* (SCM_WRITE_CONTROLS control-or-radix)])
+        (set! (ref fmt radix) (-> c printBase))
+        (when (-> c printRadix)
+          (logior= (ref fmt flags) SCM_NUMBER_FORMAT_ALT_RADIX))
+        (when (-> c exactDecimal)
+          (logior= (ref fmt flags) SCM_NUMBER_FORMAT_EXACT_DECIMAL_POINT)))]
+     [(SCM_INTP control-or-radix)
+      (let* ([f::u_long 0]
+             [radix::ScmSmallInt (SCM_INT_VALUE control-or-radix)])
+        (when (or (< radix SCM_RADIX_MIN) (> radix SCM_RADIX_MAX))
+          (Scm_Error "radix must be an integer between %d and %d, but got %d"
+                     SCM_RADIX_MIN SCM_RADIX_MAX radix))
+        (cond [(or (SCM_FALSEP flags) (SCM_NULLP flags)) (set! f 0)]
+              [(SCM_TRUEP flags) (set! f SCM_NUMBER_FORMAT_USE_UPPER)];compatibility
+              [(SCM_PAIRP flags)
+               (unless (SCM_FALSEP (Scm_Memq 'uppercase flags))
+                 (logior= f SCM_NUMBER_FORMAT_USE_UPPER))
+               (unless (SCM_FALSEP (Scm_Memq 'plus flags))
+                 (logior= f SCM_NUMBER_FORMAT_SHOW_PLUS))
+               (unless (SCM_FALSEP (Scm_Memq 'radix flags))
+                 (logior= f SCM_NUMBER_FORMAT_ALT_RADIX))
+               (unless (SCM_FALSEP (Scm_Memq 'notational flags))
+                 (logior= f SCM_NUMBER_FORMAT_ROUND_NOTATIONAL))]
+              [else
+               (Scm_Error "flags argument must be a list of symbols (uppercase, \
+                                plus, radix, notational) or a boolean, but got: %S"
+                          flags)])
+        (set! (ref fmt radix) radix)
+        (set! (ref fmt flags) f)
+        (set! (ref fmt precision) precision))]
+     [(SCM_FALSEP control-or-radix)]    ;default
+     [else
+      (Scm_Error "<write-controls> or fixnum expected, but got: %S"
+                 control-or-radix)])
     (Scm_PrintNumber o obj (& fmt))
     (return (Scm_GetOutputString o 0))))
 

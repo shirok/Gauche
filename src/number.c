@@ -4270,7 +4270,9 @@ void Scm_NumberFormatFromWriteContext(ScmNumberFormat* fmt,
     }
 }
 
-/* API */
+/* API
+   This is for users' convenience.  The 'real' operation is done by
+   Scm_PrintNumber.  */
 ScmObj Scm_NumberToString(ScmObj obj, int radix, u_long flags)
 {
     if (radix < SCM_RADIX_MIN || radix > SCM_RADIX_MAX)
