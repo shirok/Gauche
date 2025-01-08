@@ -67,9 +67,9 @@
         (display "#e" port)
         (when (negative? number) (display "-" port))
         ;; NB: Avoid string-take-right etc., for it will depend on srfi.13
-        (display (substring digits 0 (- diglen k)))
-        (display ".")
-        (display (substring digits (- diglen k) diglen))
+        (display (substring digits 0 (- diglen k)) port)
+        (display "." port)
+        (display (substring digits (- diglen k) diglen) port)
         (+ diglen 3 (if (negative? number) 1 0))))))
 
 ;; Given integer n > 0, returns k2, k5, and r, such that n = 2^{k2}*5{^k5}*r
