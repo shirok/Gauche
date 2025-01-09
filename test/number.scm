@@ -477,6 +477,21 @@
        (read-from-string "#e1e-100000"))
 
 ;;------------------------------------------------------------------
+(test-section "exact decimal writer")
+
+(let ((wc (make-write-controls :exact-decimal #t)))
+  (define (t num expected)
+    (test* #"exact decimal writer ~num" expected
+           (number->string num wc)))
+
+  (t 1/10 "#e0.1")
+  (t 123/10000 "#e0.0123")
+  (t 123456789/10000 "#e12345.6789")
+  (t (expt 1/2 12) "#e0.000244140625")
+  (t (expt 1/5 5) "#e0.00032")
+  )
+
+;;------------------------------------------------------------------
 (test-section "complex reader")
 
 (define (decompose-complex z)
