@@ -4705,44 +4705,61 @@ we assume closed range.)
 @c COMMON
 @end defun
 
-@defun number->string z :optional radix use-upper?
-@defunx string->number string :optional radix default-exactness
+@defun number->string z :optional base
+@defunx number->string z :optional write-controls
 [R7RS+ base]
 @c EN
-These procedures convert a number and its string representation
-in radix @var{radix} system.
-@var{radix} must be between 2 and 36 inclusive.
-If @var{radix} is omitted, 10 is assumed.
+Converts a number @var{z} to its string representation.
 
-@code{Number->string} takes a number @var{z} and returns a string.
-If @var{z} is not an exact integer, @var{radix} must be 10.
-For the numbers with radix more than 10, lower case alphabet
-character is used for digits, unless the optional argument
-@var{use-upper?} is true, in that case upper case characters are used.
-The argument @var{use-upper?} is Gauche's extension.
+The first form is specified in R7RS;
+@var{radix} must be an exact integer between 2 and 36 inclusive,
+the number is rendere with that radix.
+If it is omitted, 10 is assumed.
+If @var{z} is not an exact number, @var{radix} must be 10.
 
+The second form is a Gauche extension, which allows more control
+over the output format.  The optional argument is an instance of
+@code{<write-controls>}.  @xref{Output controls}, for the details.
+@c JP
+数値@var{z}の文字列表現を返します。
+
+最初の形式では、@var{radix}は2から36の間の正確な整数でなければなりません。
+出力は@var{radix}進法で表現されます。
+省略された場合は10とみなします。
+@var{z}が正確数でない場合、@var{radix}は10でなければなりません。
+
+二番目の形式はGaucheの拡張で、より細かい出力の制御を可能にします。
+@var{write-controls}は@code{<write-controls>}のインスタンスです。
+詳しくは@ref{Output controls}を参照してください。
+@c COMMON
+
+@example
+(number->string 299792458) @result{} "299792458"
+(number->string 299792458 16) @result{} "11de784a"
+
+(number->string 299792458 (make-write-controls :base 16))
+  @result{} "11de784a"
+
+(number->string 1234/1000 (make-write-controls :exact-decimal #t))
+  @result{} "#e1.234"
+@end example
+@end defun
+
+@defun string->number string :optional radix default-exactness
+@c EN
 @code{String->number} takes a string @var{string} and parses it
 as a number in radix @var{radix} system.  If the number contains
 a decimal point, only radix 10 is allowed.  If the given string
 can't be a number, @code{#f} is returned.
 
 The @var{default-exactness} optional argument of @code{string->number}
-is Gauche's extension, and it must be either @code{#f} (default),
+is a Gauche's extension, and it must be either @code{#f} (default),
 a symbol @code{exact}, or a symbol @code{inexact}.
 If it is either symbol, it sets the exactness of the number if
 no exactness prefix (@code{#e} or @code{#i}) is given.
 If @var{string} has an exactness prefix, @var{default-exactness}
 is irrelevant.
 @c JP
-これらの手続きは数値とそれを@var{radix}進数で表現する文字列とを変換します。
-@var{radix}は2から36の間でなければなりません。省略された場合は10進数とみなされます。
-
-@code{number->string}は数値@var{z}を取り文字列を返します。
-@var{z}が正確な整数以外の場合、@var{radix}は10でなければなりません。
-10より大きい@var{radix}に関しては、小文字のアルファベットが桁として使われます。
-但し、省略可能な引数@var{use-upper?}に真の値が与えられた場合は大文字のアルファベットが
-使われます。@var{use-upper?}引数はGaucheの拡張です。
-
 @code{string->number}は文字列@var{string}を取り数値を返します。
 入力が小数点を含んでいる場合は10進数表記しか認識されません。
 与えられた文字列が数値を構成しない場合は@code{#f}が返されます。
@@ -4767,6 +4784,7 @@ is irrelevant.
   @result{} 1/3
 @end example
 @end defun
+
 
 @deffn {Generic Function} x->number obj
 @deffnx {Generic Function} x->integer obj
