@@ -26343,6 +26343,24 @@ content, before closing double-quotes.
 @c COMMON
 @end defivar
 
+@defivar <write-controls> exact-decimal
+@c EN
+This slot holds a boolean value.  If it's @code{#f} (default), exact
+non-integral rationals are printed as rational from.  If it's true,
+exact rationals are prited with decimal notation, with @code{#e} prefix,
+whenever possible.
+@c JP
+このスロットは真偽値を持ちます。@code{#f}の場合、
+正確な非整数の有理数は分数として表示されますが、
+真の場合、可能な限り@code{#e}プレフィクスをつけた小数として表示されます。
+@c COMMON
+@example
+(number->string 1234/1000 (make-write-xontrols :exact-decimal #t))
+  @result{} "#e1.234"
+@end example
+@end defivar
+
+
 @c EN
 A write-controls object is immutable.  If you need a controls object
 with a slight variation of an existing controls object,
@@ -26375,7 +26393,7 @@ Common Lispのスペシャル変数の名前をそのまま反映した
 @c COMMON
 @end deftp
 
-@defun make-write-controls :key length level base radix pretty width indent string-length
+@defun make-write-controls :key length level base radix pretty width indent string-length exact-decimal
 @c EN
 Creates and returns a write-controls object.
 @c JP
@@ -26383,7 +26401,7 @@ Creates and returns a write-controls object.
 @c COMMON
 @end defun
 
-@defun write-controls-copy controls :key length level base radix pretty width indent string-length
+@defun write-controls-copy controls :key length level base radix pretty width indent string-length exact-decimal
 @c EN
 Returns a copy of another write-controls object @var{controls}.
 If keyword arguments are given, those values override the
