@@ -113,10 +113,13 @@
 
 (define join-exc (make-parameter #f))
 
+;; Creates a wrapped thread-join!.  It works like thread-join!, except
+;; when thread-join! throws an error, catch it and returns R.  If the
+;; error is not a terminated-thread-exception, record it in join-exc.
 (define (%make-joiner r)
   (^[thread :optional (timeout #f) (timeout-val #f)]
     (guard (e [(terminated-thread-exception? e) r]
-              [else (join-exc e) '()])
+              [else (join-exc e) r])
       (thread-join! thread timeout timeout-val))))
 
 (define-syntax %with-wrapped-join
