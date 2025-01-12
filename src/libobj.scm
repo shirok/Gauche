@@ -747,6 +747,15 @@
         [else #f]))
 
 ;;----------------------------------------------------------------
+;; Generic initialize
+
+;; These prevent users accidentally define `initialize` on <top>.
+(define-method initialize :locked ((obj <top>) initargs)
+  (next-method))
+(define-method initialize :locked ((obj <object>) initargs)
+  (next-method))
+
+;;----------------------------------------------------------------
 ;; Generic coercion
 ;;  (should this be in separate file, e.g. coerce.scm?
 ;;   autoload may have problem with autoloading generic fn.)

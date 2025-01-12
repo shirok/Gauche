@@ -1,3 +1,9 @@
+2025-01-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/libobj.scm (initialize): Define locked method for <top> and
+	  <object> to prevent user code accidentally overrides them.
+	  https://github.com/shirok/Gauche/issues/1085
+
 2025-01-10  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/pmap.scm: Make sure all worker threads are joined,
