@@ -1020,7 +1020,7 @@ struct ScmProcedureRec {
     unsigned int currying : 1;     /* autocurrying */
     unsigned int constant : 1;     /* constant procedure. see below. */
     unsigned int leaf     : 1;     /* leaf procedure/method */
-    unsigned int reserved : 1;     /* unused yet. */
+    unsigned int placeholder : 1;  /* placeholder method. */
 #if GAUCHE_API_VERSION >= 98
     unsigned int reserved32 : 32;  /* unused yet. */
 #endif /*GAUCHE_API_VERSION >= 98*/

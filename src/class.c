@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/code.h"
+#include "gauche/vminsn.h"
 #include "gauche/priv/configP.h"
 #include "gauche/priv/builtin-syms.h"
 #include "gauche/priv/classP.h"
@@ -2046,7 +2047,8 @@ static ScmObj object_initialize(ScmNextMethod *nm SCM_UNUSED,
 }
 
 static ScmClass *object_initialize_SPEC[] = {
-    SCM_CLASS_STATIC_PTR(Scm_ObjectClass), SCM_CLASS_STATIC_PTR(Scm_ListClass)
+    SCM_CLASS_STATIC_PTR(Scm_ObjectClass),
+    SCM_CLASS_STATIC_PTR(Scm_TopClass)
 };
 static SCM_DEFINE_METHOD(object_initialize_rec,
                          &Scm_GenericInitialize,
@@ -2260,9 +2262,10 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
     SCM_ASSERT(SCM_PAIRP(methods));
     if (SCM_NULLP(SCM_CDR(methods))) {
         /* We have only one method, so just check its applicability
-           and retrun the list without allocation if possible. */
-        if (Scm_MethodApplicableForClasses(SCM_METHOD(SCM_CAR(methods)),
-                                           typev, argc)) {
+           and return the list without allocation if possible. */
+        if (!SCM_METHOD(SCM_CAR(methods))->common.placeholder
+            && Scm_MethodApplicableForClasses(SCM_METHOD(SCM_CAR(methods)),
+                                              typev, argc)) {
             return methods;
         } else {
             return SCM_NIL;
@@ -2271,7 +2274,9 @@ ScmObj Scm_ComputeApplicableMethods(ScmGeneric *gf, ScmObj *argv, int argc,
         SCM_FOR_EACH(mp, methods) {
             ScmObj m = SCM_CAR(mp);
             SCM_ASSERT(SCM_METHODP(m));
-            if (Scm_MethodApplicableForClasses(SCM_METHOD(m), typev, argc)) {
+
+            if (!SCM_METHOD(m)->common.placeholder
+                && Scm_MethodApplicableForClasses(SCM_METHOD(m), typev, argc)) {
                 SCM_APPEND1(h, t, SCM_OBJ(m));
             }
         }
@@ -2470,17 +2475,22 @@ static ScmObj method_allocate(ScmClass *klass, ScmObj initargs SCM_UNUSED)
     meth->generic = NULL;
     meth->specializers = NULL;
     meth->func = NULL;
+    meth->data = NULL;
     return SCM_OBJ(meth);
 }
 
 static void method_print(ScmObj obj, ScmPort *port,
                          ScmWriteContext *ctx SCM_UNUSED)
 {
-    Scm_Printf(port, "#<method %S>", SCM_METHOD(obj)->common.info);
+    ScmMethod *m = SCM_METHOD(obj);
+    Scm_Printf(port, "#<method %S%s%s>",
+               m->common.info,
+               (m->common.locked ? " :locked" : ""),
+               (m->common.placeholder ? " :placeholder" : ""));
 }
 
 /* See if this method doesn't use 'next-method' in its body. */
-static int method_leaf_p(ScmClosure *body)
+static int method_body_leaf_p(ScmClosure *body)
 {
     ScmCompiledCode *code = SCM_COMPILED_CODE(SCM_CLOSURE_CODE(body));
     if (!SCM_PAIRP(code->signatureInfo)
@@ -2489,6 +2499,28 @@ static int method_leaf_p(ScmClosure *body)
                                   SCM_SYM_UNUSED_ARGS,
                                   SCM_NIL);
     return !SCM_FALSEP(Scm_Memq(SCM_SYM_NEXT_METHOD, attr));
+}
+
+/* See if this method is a placeholder (just calls next-method and nothing
+   else).
+   next-method is always the last argument, so the instructions are the same
+   no matter how many arguments it takes.
+ */
+static ScmWord placehodler_code[] = {
+    SCM_VM_INSN(SCM_VM_LREF0),
+    SCM_VM_INSN1(SCM_VM_TAIL_CALL, 0),
+    SCM_VM_INSN(SCM_VM_RET)
+};
+
+static _Bool method_body_placeholder_p(ScmClosure *body)
+{
+    ScmCompiledCode *code = SCM_COMPILED_CODE(SCM_CLOSURE_CODE(body));
+    if (code->codeSize != sizeof(placehodler_code)/sizeof(ScmWord))
+        return FALSE;
+    for (int i = 0; i < code->codeSize; i++) {
+        if (code->code[i] != placehodler_code[i]) return FALSE;
+    }
+    return TRUE;
 }
 
 /*
@@ -2559,7 +2591,8 @@ static ScmObj method_initialize(ScmNextMethod *nm SCM_UNUSED,
 
     m->common.required = req;
     m->common.optional = opt;
-    m->common.leaf = method_leaf_p(SCM_CLOSURE(body));
+    m->common.leaf = method_body_leaf_p(SCM_CLOSURE(body));
+    m->common.placeholder = method_body_placeholder_p(SCM_CLOSURE(body));
     m->generic = g;
     m->specializers = specarray;
     m->func = NULL;

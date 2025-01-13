@@ -1,3 +1,12 @@
+2025-01-12  Shiro Kawai  <shiro@acm.org>
+
+	* src/class.c: Recognize 'placeholder' methods, methods whose body
+	  is solely to call next-method and nothing else, and exclude them
+	  from compute-applicable-methods.  Such placeholder methods can be
+	  used to prevent users overriding the method with the specializers
+	  later.  With this feature, you can add such a placeholder method
+	  without impacting dispatch performance.
+
 2025-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (initialize): Define locked method for <top> and

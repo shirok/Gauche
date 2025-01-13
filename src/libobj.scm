@@ -752,8 +752,8 @@
 ;; These prevent users accidentally define `initialize` on <top>.
 (define-method initialize :locked ((obj <top>) initargs)
   (next-method))
-(define-method initialize :locked ((obj <object>) initargs)
-  (next-method))
+
+;; (initialize <object> <top>) is defined in class.c
 
 ;;----------------------------------------------------------------
 ;; Generic coercion

@@ -88,7 +88,7 @@ void Scm__ProcedureInit(ScmProcedure *proc,
     proc->currying = FALSE;
     proc->constant = FALSE;
     proc->leaf = FALSE;
-    proc->reserved = 0;
+    proc->placeholder = FALSE;
     proc->info = info;
     proc->setter = SCM_FALSE;
     proc->inliner = SCM_FALSE;
