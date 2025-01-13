@@ -7,6 +7,12 @@
 	  later.  With this feature, you can add such a placeholder method
 	  without impacting dispatch performance.
 
+	  (Scm_InitBuiltinMethod): Make built-in method created with this
+	  'locked' implicitly.  Replacing such fundamental method would
+	  lead unexpected behavior.  This is technically an incompatible
+	  change, but the code broken by this change is doing something
+	  inherently dangerous.
+
 2025-01-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/libobj.scm (initialize): Define locked method for <top> and

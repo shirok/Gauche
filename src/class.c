@@ -3636,6 +3636,7 @@ void Scm_InitBuiltinMethod(ScmMethod *m)
     m->common.info = Scm_Cons(m->generic->common.info,
                               class_array_to_names(m->specializers,
                                                    m->common.required));
+    m->common.locked = TRUE;    /* Locked by default */
     Scm_AddMethod(m->generic, m);
 }
 
