@@ -68,7 +68,7 @@
  *     and can be mostly specialized by a single argument.  The typical
  *     example is `ref'.
  *
- *  When methods are mostly specilized by N-th argument, we call the N
+ *  When methods are mostly specialized by the N-th argument, we call the N
  *  as AXIS (zero based).  Typically, methods tend to be specialized by
  *  the first argument, in which case axis is 0.
  *

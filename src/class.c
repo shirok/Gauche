@@ -49,7 +49,7 @@
 #include "gauche/priv/vmP.h"
 
 /* Some routines uses small array on stack to keep data about
-   arguments to dispatch.  If the # of args used for dispach is bigger
+   arguments to dispatch.  If the # of args used for dispatch is bigger
    than this, the routine allocates an array in heap. */
 #define PREALLOC_SIZE  32
 
@@ -316,7 +316,7 @@ ScmObj Scm_ShortClassName(ScmClass *klass)
  *    must allocate extra storage for as many slots as class->numInstanceSlots.
  *
  *    The allocated and set up structure is returned as ScmObj, which
- *    eventually retured by (ALLOCATE-INSTANCE ...) method, and passed to
+ *    eventually returned by (ALLOCATE-INSTANCE ...) method, and passed to
  *    (INITIALIZE obj initargs) structure.
  *
  *  (INITIALIZE obj initargs)
