@@ -2541,6 +2541,19 @@ the task is distibuted to multiple threads.
 @var{mapper}キーワード引数にmapperを渡すことで、各スレッドにどのように仕事が
 割り振られるかをカスタマイズできます。
 @c COMMON
+
+@c EN
+If a @var{proc} raises an uncaptured condition, it is reraised
+by @var{pmap}.  If uncaptured conditions are raised concurrently
+from multiple threads, one of them are reraised, while others are
+discarded.
+@c JP
+@var{proc}が捕捉されないコンディションをraiseした場合、
+@var{pmap}はそれを再raiseします。複数のスレッドから同時に
+捕捉されないコンディションが上がった場合は、どれかひとつが再raiseされ
+他は捨てられます。
+
+@c COMMON
 @end defun
 
 @defun pfind pred collection :key mapper
@@ -2576,6 +2589,14 @@ depends on various factors, so you shouln't count on a deterministic behavior.
 @c JP
 @var{pred}を満たす要素が複数あった場合にどれが返るかは様々な状況に依存するので、
 決定的な振る舞いを期待すべきではありません。
+@c COMMON
+
+@c EN
+If @var{pred} raises an uncaptured condition, remaining tasks are
+cancelled and the condition is reraised.
+@c JP
+@var{pred}が捕捉されないコンディションをraisetした場合、
+他のタスクはキャンセルされ、コンディションが再raiseされます。
 @c COMMON
 @end defun
 
