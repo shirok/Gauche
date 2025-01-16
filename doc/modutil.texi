@@ -14084,16 +14084,45 @@ Jacobi symbol @code{(@var{a}/@var{n})} を計算します
 @c MOD math.prime
 @c EN
 Euler's totient function of nonnegative integer @var{n}.
+@code{(totient n)} returns a number of positive integers upto @var{n}
+that are relatively prime to @var{n.}.
 
 The current implementation relies on @code{mc-factorize} above,
 so it may take very long if @var{n} contains large prime factors.
 @c JP
 オイラーのトーシェント関数です。@var{n}は非負整数です。
+@code{(totient n)}は、0以上@var{n}以下の整数で@var{n}と互いに素な
+整数の数を返します。
 
 現在の実装は上の@code{mc-factorize}を使っており、
 @var{n}が大きな素因数を持っている場合は非常に長い時間がかかります。
 @c COMMON
 @end defun
+
+@defun reduced-totient n
+@c MOD math.prime
+@c EN
+A reduced totient function, a.k.a. Carmichael function,
+returns the smallest positive integer @var{m} such that
+@code{(expt-mod a m n)} equals to 1 for every @var{a}
+relatively prime to a positive integer @var{n}.
+
+When @var{n} is 1 or prime numbers, it is the same as @code{(totient n)}.
+
+The current implementation relies on @code{mc-factorize} above,
+so it may take very long if @var{n} contains large prime factors.
+@c JP
+簡約トーシェント関数、あるいはカーマイケル関数として知られるこの
+関数は、正整数@var{n}と互いに素なあらゆる@var{a}について
+@code{(expt-mod a m n)}が1となるような最小の正の整数@var{m}を返します。
+
+@var{n}が1か素数の場合は@code{(totient n)}と同じ数になります。
+
+現在の実装は上の@code{mc-factorize}を使っており、
+@var{n}が大きな素因数を持っている場合は非常に長い時間がかかります。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Simplex solver, Windows support, Prime numbers, Library modules - Utilities
