@@ -441,10 +441,13 @@
 ;;;
 
 (define (totient n)
-  (if (<= n 2)
-    1
-    (fold (^[pk phi] (* phi (expt (car pk) (- (length pk) 1)) (- (car pk) 1)))
-          1 (group-sequence (mc-factorize n)))))
+  (cond [(<= n 2) 1]
+        [(twos-exponent n) => (^k (ash 1 (- k 1)))] ;fast path
+        [else
+         (fold (^[pk phi] (* phi
+                             (expt (car pk) (- (length pk) 1))
+                             (- (car pk) 1)))
+               1 (group-sequence (mc-factorize n)))]))
 
 ;; Wishlist
 ;;   deterministic prime?  (maybe using AKS primality test)
