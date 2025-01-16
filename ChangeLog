@@ -1,3 +1,7 @@
+2025-01-15  Shiro Kawai  <shiro@acm.org>
+
+	* lib/math/prime.scm (grouped-factorize, reduced-totient): Added.
+
 2025-01-12  Shiro Kawai  <shiro@acm.org>
 
 	* src/class.c: Recognize 'placeholder' methods, methods whose body

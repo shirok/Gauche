@@ -44,8 +44,8 @@
   (export primes *primes* reset-primes
           small-prime? *small-prime-bound*
           miller-rabin-prime? bpsw-prime?
-          naive-factorize mc-factorize
-          jacobi totient))
+          naive-factorize mc-factorize grouped-factorize
+          jacobi totient reduced-totient))
 (select-module math.prime)
 
 ;;;
@@ -436,6 +436,14 @@
           ps  ; n is unbreakable, so the original factorization was fine.
           (sort (append nf (drop-right ps 1))))))))
 
+;; API
+;; Factorize n and returns ((p_1 . k_1) ... (p_n . k_n)), where
+;;   n = p_1^{k_1] * ... * p_n^{k_n}
+(define (grouped-factorize n :optional (factorizer mc-factorize))
+  (map (^[ps] (cons (car ps) (length ps)))
+       (group-sequence (factorizer n))))
+
+
 ;;;
 ;;; Fun stuff
 ;;;
@@ -445,9 +453,28 @@
         [(twos-exponent n) => (^k (ash 1 (- k 1)))] ;fast path
         [else
          (fold (^[pk phi] (* phi
-                             (expt (car pk) (- (length pk) 1))
+                             (expt (car pk) (- (cdr pk) 1))
                              (- (car pk) 1)))
-               1 (group-sequence (mc-factorize n)))]))
+               1 (grouped-factorize n))]))
+
+;; reduced-totient n =
+;;    totient n  (n = 1, 2, 4, or odd primes)
+;;    1/2 totient n (n = 2^r except 1, 2, 4)
+;;    lcm of reduced-totient p_i^k_i where n = p_1^k_1 * ... * p_n^k_n
+
+(define (reduced-totient n)
+  (case n
+    [(1 2) 1]
+    [(4) 2]
+    [else (let* ([k (twos-exponent-factor n)]
+                 [r (ash n (- k))])
+            (if (and (= r 1) (> k 2))
+              (ash 1 (- k 2))           ;fast path - 1/2 totient(2^k)
+              (fold (^[pk l] (lcm l (* (expt (car pk) (- (cdr pk) 1))
+                                       (- (car pk) 1))))
+                    (if (> k 2) (ash 1 (- k 2)) 1)
+                    (grouped-factorize r))))]))
+
 
 ;; Wishlist
 ;;   deterministic prime?  (maybe using AKS primality test)
