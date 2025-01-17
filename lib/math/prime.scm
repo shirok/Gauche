@@ -398,17 +398,18 @@
               (and (< G n) G)))           ; if (= G N), we failed.
           (loop y (* r 2) q))))))
 
-;; Try MC factorization.  Returns (divisor . quotient).
-;; Note: This will loop forever if N is a prime.  The caller should
-;; exclude primes.  Unfortunately, we don't have a deterministic primality
-;; test > 2^64 yet.
-(define (mc-try-factorize n)
-  (let loop ()
-    (if-let1 d (mc-find-divisor-1 n (random-integer n))
-      (cons d (quotient n d))
-      (loop))))
+;; See below.
+(define-constant mc-factorize-retry-limit 1000)
 
 ;; API
+;;  Try factorize N using monte carlo factorization.
+;;  We first extract small factors, then using mc-find-divisor-1
+;;  with a random seed.  When it fails, we retry with different random
+;;  seeds, up to mc-factorize-retry-limit times.
+;;  Note: When N contains large prime, single attempt of mc-find-divisor-1
+;;  takes quite long, so it's likely that we never hit the retry limit before
+;;  the caller gives up.  We limit the retries merely to avoid theoretical
+;;  infinite loop.
 (define (mc-factorize n)
   ;; Break up n.  We first exclude primes if possible.
   ;; The worst case scenario is that n contains a factor
@@ -416,12 +417,23 @@
   (define (smash n)
     (if (definite-prime? n)
       `(,n)
-      (let1 d (mc-try-factorize n)
-        (append (smash (car d)) (smash (cdr d))))))
+      (if-let1 d (mc-try-factorize n)
+        (append (smash (car d)) (smash (cdr d)))
+        `(,n))))                        ;gave up
+
+  ;; Try MC factorization.  Returns (divisor . quotient), or #f if
+  ;; it gave up.
+  ;; Note: Without retry limit, this will loop forever if N is a prime.
+  (define (mc-try-factorize n)
+    (let loop ((retry 0))
+      (and (< retry mc-factorize-retry-limit)
+           (if-let1 d (mc-find-divisor-1 n (random-integer n))
+             (cons d (quotient n d))
+             (loop (+ retry 1))))))
 
   (define (definite-prime? n)
     (cond [(< n *small-prime-bound*) (small-prime? n)]
-          [(< n 18446744073709551616) (bpsw-prime? n)]; (expt 2 64)
+          [(< n (real-expt 2 64)) (bpsw-prime? n)]; (expt 2 64)
           [else #f]))
 
   (define try-prime-limit 1000)
