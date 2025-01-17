@@ -1564,7 +1564,6 @@ a nonnegative real numebr (relative time in seconds), or
 a @code{<time>} object (absolute timepoint).  If the timeout reaches
 before the result is available, @var{timeout-val} is returned, which
 defaults to @code{#f}.
-Calling @code{future-get} more than once returns the same result.
 @c JP
 @var{future}の結果が既に求まっていれば、この手続きはただちにそれを返します。
 まだ計算中であった場合は、デフォルトでこの手続きは計算が終わるまでブロックします。
@@ -1573,7 +1572,6 @@ Calling @code{future-get} more than once returns the same result.
 非負実数ならその秒数だけ待ち、@code{<time>}オブジェクトならそれで指定される
 絶対時間まで待ちます。タイムアウトが起きた場合は@var{timeout-val}が返されます。
 デフォルトは@code{#f}です。
-@code{future-get}を複数回呼んでも同じ結果が返されます。
 @c COMMON
 
 @c EN
