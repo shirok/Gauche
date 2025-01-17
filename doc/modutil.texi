@@ -14044,10 +14044,8 @@ on the same @var{n}.  But it will always return the definitive
 results as far as every prime factor of @var{n} is smaller than 2^64.
 
 At this moment, if @var{n} contains a prime factor greater than
-2^64, this routine would keep trying factorizing it forever.
-Practical applications should have some means to interrupt the
-function and give it up after some time bounds.
-This will be addressed once we have deterministic primality test.
+2^64, this routine would take very long time, and possibly give
+up factorization and the result may contain a possibly composite numbers.
 @c JP
 この手続きは@code{naive-factorize}よりも大きな数に使えます
 (目安としては1e20程度まで)。
@@ -14056,9 +14054,7 @@ This will be addressed once we have deterministic primality test.
 @var{n}の素因数が全て2^64より小さければ、かならず確定的な答えを返します。
 
 今のところ、@var{n}が2^64以上の素因数を含んでいる場合、この手続きは
-永遠にそれを分割しようとしてループしてしまいます。現実的なアプリケーションは
-何らかの方法で一定の時間でルーチンを中断して諦めるメカニズムが必要でしょう。
-全ての入力に大して確定的な素数判定が実装されれば、この欠陥も修正されます。
+非常に長くかかり、また結果には合成数かもしれない要素が含まれます。
 @c COMMON
 @end defun
 
