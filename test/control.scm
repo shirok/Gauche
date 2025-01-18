@@ -689,4 +689,25 @@
          (port-closed? outlet0))
   )
 
+;;--------------------------------------------------------------------
+;; control.timeout
+;;
+
+(test-section "control.timeout")
+(use control.timeout)
+(use srfi.19)
+(test-module 'control.timeout)
+
+(test* "timeout (not)" 'ok
+       (do/timeout (10 'oops) (sys-nanosleep 10) 'ok))
+
+(test* "timeout (timeout)" 'oops
+       (do/timeout (0.1 'oops) (sys-sleep 1) 'ok))
+
+(test* "timeout (already passed)" 'oops
+       (do/timeout ((subtract-duration (current-time)
+                                       (make-time time-duration 0 1))
+                    'oops)
+                   (sys-sleep 1) 'ok))
+
 (test-end)
