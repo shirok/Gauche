@@ -141,7 +141,7 @@
 ;;;  Gauche specific hooks
 ;;;
 
-;; Called when enetering a new group.
+;; Called when entering a new group.
 (define (gauche-test-group-hook runner suite-name)
   ;; [Gauche] SRFI-64's test-begin/test-end is effectively our grouping.
   ;; We indent the message according to te group nesting level
@@ -385,14 +385,15 @@
 (define-syntax test-group
   (syntax-rules ()
     ((test-group suite-name . body)
-     (let ((r (test-runner-current)))
+     (let ((r (or (test-runner-current) (test-runner-create))))
        ;; Ideally should also set line-number, if available.
        (test-result-alist! r (list (cons 'test-name suite-name)))
        (if (%test-should-execute r)
-           (dynamic-wind
-               (lambda () (test-begin suite-name))
-               (lambda () . body)
-               (lambda () (test-end  suite-name))))))))
+           (test-with-runner
+            r (dynamic-wind
+                  (lambda () (test-begin suite-name))
+                  (lambda () . body)
+                  (lambda () (test-end  suite-name)))))))))
 
 (define-syntax test-group-with-cleanup
   (syntax-rules ()
