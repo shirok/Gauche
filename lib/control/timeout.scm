@@ -38,7 +38,7 @@
 (select-module control.timeout)
 
 (define (with-timeout thunk timeout :optional (timeout-val #f))
-  (let1 t (thread-start! (make-thread thunk))
+  (let1 t (thread-start! (make-thread (^[] (values->list (thunk)))))
     (guard (e [(uncaught-exception? e)
                (raise (uncaught-exception-reason e))]
               [(join-timeout-exception? e)
@@ -47,7 +47,7 @@
               [(terminated-thread-exception? e)
                (raise e)]
               [else (raise e)])
-      (thread-join! t timeout))))
+      (apply values (thread-join! t timeout)))))
 
 (define-syntax do/timeout
   (syntax-rules ()

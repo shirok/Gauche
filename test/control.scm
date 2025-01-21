@@ -704,6 +704,9 @@
 (test* "timeout (not)" 'ok
        (do/timeout (10 'oops) (sys-nanosleep 10) 'ok))
 
+(test* "timeout (mv)" '(a b)
+       (values->list (do/timeout (10) (values 'a 'b))))
+
 (test* "timeout (timeout)" 'oops
        (do/timeout (0.1 'oops) (sys-sleep 1) 'ok))
 
