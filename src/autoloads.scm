@@ -73,7 +73,7 @@
           exact-integer-sqrt
           continued-fraction real->rational
           print-exact-decimal-point-number
-          expt-mod gamma lgamma
+          expt-mod inverse-mod gamma lgamma
           real-valued? rational-valued? integer-valued?
           div-and-mod div mod div0-and-mod0 div0 mod0
           floor/ floor-quotient floor-remainder

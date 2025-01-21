@@ -33,7 +33,7 @@
 
 (define-module gauche.numutil
   (export continued-fraction real->rational
-          expt-mod gamma lgamma
+          expt-mod inverse-mod gamma lgamma
           exact-integer-sqrt real-valued? rational-valued? integer-valued?
           div-and-mod div mod
           div0-and-mod0 div0 mod0
@@ -180,6 +180,21 @@
               [(zero? (logand b e)) (loop (ash b -1) (modulo (* r r) m))]
               [else (loop (ash b -1) (modulo (* (modulo (* r r) m) n) m))])))
     (modulo (expt (inexact n) e) m))) ; inexact fallback
+
+;; modulus inverse.  returns q^-1 such that (* q q^-1) = 1 [mod m]
+;; returns #f if the inverse does not exist.
+(define (inverse-mod q m)
+  ;; Extended GCD - returns g and s where
+  ;;   g = (gcd a b) = a*s + b*t
+  ;;   We won't use t, so no need to return it.
+  (define (xgcd a b)
+    (let loop ((r0 a) (r1 b) (s0 1) (s1 0))
+      (if (or (zero? r1) (= r0 1))
+        (values r0 s0)
+        (let1 q (quotient r0 r1)
+          (loop r1 (- r0 (* q r1)) s1 (- s0 (* q s1)))))))
+  (receive (g s) (xgcd q m)
+    (and (= g 1) (modulo s m))))
 
 ;; Gamma functions.  If the system provides tgamma/lgamma, we use it.
 ;; Otherwise we use an alternative implementation ported from John D Cook's

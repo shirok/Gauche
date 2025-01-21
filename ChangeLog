@@ -1,3 +1,7 @@
+2025-01-20  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numutil.scm (inverse-mod): Added.
+
 2025-01-17  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/timeout.scm: Added experimentally.

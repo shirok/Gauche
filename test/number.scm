@@ -750,6 +750,17 @@
 (test-expt-mod -324574950475018750175057087501 100184859387038471089598349534598)
 (test-expt-mod 324574950475018750175057087501 -100184859387038471089598349534598)
 
+(define (test-inverse-mod q mod)
+  (test* (format "inverse-mod(~a, ~a)" q mod) 1
+         (let1 inv (inverse-mod q mod)
+           (modulo (* inv q) mod))))
+
+(test-inverse-mod 3 7)
+(test-inverse-mod 4353 1578373)
+(test-inverse-mod 37738272 5239453458458273)
+
+(test* "inverse-mod (no inversion)" #f (inverse-mod 5 20))
+
 (test-section "exact<->inexact")
 
 (for-each
