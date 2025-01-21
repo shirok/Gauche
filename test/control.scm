@@ -243,6 +243,9 @@
   (test* "future error handling (propagated)" (test-error <error> "oops")
          (future-get f)))
 
+(test* "timeout" 'timeout
+       (future-get (future (sys-sleep 10)) 0.01 'timeout))
+
 ;;--------------------------------------------------------------------
 ;; control.pmap
 ;;

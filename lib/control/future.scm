@@ -76,5 +76,6 @@
 
 (define (future-get future :optional (timeout #f) (timeout-val #f))
   (assume-type future <future>)
-  (guard (e [(<uncaught-exception> e) (raise (~ e'reason))])
-    (apply values (thread-join! (~ future'%thread) timeout timeout-val))))
+  (guard (e [(uncaught-exception? e) (raise (~ e'reason))]
+            [else (raise e)])
+    (apply values (thread-join! (~ future'%thread) timeout (list timeout-val)))))
