@@ -13433,7 +13433,7 @@ Same as @code{(map enum-name (enum-set->enum-list eset))}.
 @mdindex srfi.210
 @c EN
 This module provides macros and procedures to blend multiple-value
-expressions naturally into the orinary single-value expressions.
+expressions naturally into the ordinary single-value expressions.
 @c JP
 このモジュールは、複数の値を返す式を通常の単一の値を扱う式にうまく混ぜて使えるようにする
 マクロや手続きを提供します。

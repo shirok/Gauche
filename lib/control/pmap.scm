@@ -54,7 +54,7 @@
 ;;   sequential-mapper - A sigleton mapper that runs in a single (current) thread.
 ;;      If the running system is single-core, this is the default mapper.
 ;;
-;;   pool-mapper - Use thread pool.  This is ideal when each task requies
+;;   pool-mapper - Use thread pool.  This is ideal when each task requires
 ;;      some processing time, so that the overhead of thread pool is
 ;;      negligible.
 ;;

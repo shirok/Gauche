@@ -34,7 +34,7 @@
 ;; This is a provisional implementation; we'll use implicit thread pool
 ;; to avoid thread creation overhead eventually.
 
-;; Guile and Racket uses 'touch' to retrive the result of a future, but
+;; Guile and Racket uses 'touch' to retrieve the result of a future, but
 ;; that name seems too generic.  We adopt 'future-get'.
 
 ;; If a future already finished computation, 'future-get' returns immediately

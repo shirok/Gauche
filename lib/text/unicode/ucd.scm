@@ -603,7 +603,7 @@
 ;;;
 
 ;; Dump format should be regarded as internal - we may change it at any
-;; tiem as we like.
+;; time as we like.
 
 ;; For now, we dump it in three parts, correspoinding to the unichar-db
 ;; slots.  To suppress the size of the dump, we use simple run-length

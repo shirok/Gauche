@@ -2489,7 +2489,7 @@ returned input port.
 This module provides high-level utilities to run code in parallel
 using threads.
 For example, the @code{pmap} procedure applies the given procedure
-on each elements in the collection and gathers the restuls into a list,
+on each elements in the collection and gathers the results into a list,
 just like @code{map}, but the appliation of the procedure is done in parallel.
 @c JP
 このモジュールは、コードを複数スレッドで並列に走らせる高レベルユーティリティを提供します。
@@ -2601,7 +2601,7 @@ cancelled and the condition is reraised.
 @subheading Mappers
 
 @c EN
-A mapper is an object that encapsulates a storategy to run
+A mapper is an object that encapsulates a strategy to run
 tasks in parallel.  We provide the following mappers.
 @c JP
 mapperはタスクを並列に走らせる戦略をカプセル化したものです。

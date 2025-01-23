@@ -376,7 +376,7 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
    in VM loop, it responds to the flag and terminates itself.
 
    If that fails, we send a signal to the thread.  If the thread is blocked
-   by a system call, this most likely unblocks the thread and termnates it.
+   by a system call, this most likely unblocks the thread and terminates it.
    (We use a dedicated signal.
 
    There are cases when signals can fail.  On POSIX platform, if the thread
