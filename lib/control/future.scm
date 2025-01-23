@@ -52,7 +52,8 @@
 
 (define-module control.future
   (use gauche.threads)
-  (export <future> future? future make-future future-done? future-get))
+  (export <future> future? future make-future future-done?
+          future-get future-get/timeout-thunk))
 (select-module control.future)
 
 (define-class <future> ()
@@ -79,3 +80,10 @@
   (guard (e [(uncaught-exception? e) (raise (~ e'reason))]
             [else (raise e)])
     (apply values (thread-join! (~ future'%thread) timeout (list timeout-val)))))
+
+(define (future-get/timeout-thunk future timeout timeout-thunk)
+  (assume-type future <future>)
+  (guard (e [(uncaught-exception? e) (raise (~ e'reason))]
+            [(join-timeout-exception? e) (timeout-thunk)]
+            [else (raise e)])
+    (apply values (thread-join! (~ future'%thread) timeout))))

@@ -246,6 +246,13 @@
 (test* "timeout" 'timeout
        (future-get (future (sys-sleep 10)) 0.01 'timeout))
 
+(test* "timeout mv" '(time out)
+       (values->list
+        (future-get/timeout-thunk (future
+                                   (begin (sys-sleep 10) (values 1 2)))
+                                  0.01
+                                  (^[] (values 'time 'out)))))
+
 ;;--------------------------------------------------------------------
 ;; control.pmap
 ;;
@@ -708,7 +715,12 @@
        (values->list (do/timeout (10) (values 'a 'b))))
 
 (test* "timeout (timeout)" 'oops
-       (do/timeout (0.1 'oops) (sys-sleep 1) 'ok))
+       (do/timeout (0.01 'oops) (sys-sleep 1) 'ok))
+
+(test* "timeout (mv, timeout)" '(x y)
+       (values->list (do/timeout (0.01 (values 'x 'y))
+                                 (sys-sleep 1)
+                                 (values 'a 'b))))
 
 (test* "timeout (already passed)" 'oops
        (do/timeout ((subtract-duration (current-time)

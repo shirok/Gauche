@@ -37,13 +37,13 @@
           do/timeout))
 (select-module control.timeout)
 
-(define (with-timeout thunk timeout :optional (timeout-val #f))
+(define (with-timeout thunk timeout :optional (timeout-thunk (^[] #f)))
   (let1 t (thread-start! (make-thread (^[] (values->list (thunk)))))
     (guard (e [(uncaught-exception? e)
                (raise (uncaught-exception-reason e))]
               [(join-timeout-exception? e)
                (thread-terminate! t)
-               timeout-val]
+               (timeout-thunk)]
               [(terminated-thread-exception? e)
                (raise e)]
               [else (raise e)])
@@ -51,7 +51,7 @@
 
 (define-syntax do/timeout
   (syntax-rules ()
-    [(_ (timeout timeout-val) body ...)
-     (with-timeout (lambda () body ...) timeout timeout-val)]
+    [(_ (timeout timeout-expr) body ...)
+     (with-timeout (^[] body ...) timeout (^[] timeout-expr))]
     [(_ (timeout) body ...)
-     (do/timeout (timeout #f) body ...)]))
+     (with-timeout (^[] body ...) timeout)]))
