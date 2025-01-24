@@ -16,9 +16,10 @@
     [(dir author email)
      (directory-fold dir
                      (^[path seed]
-                       (when (or (#/\.(c|h|scm|stub|in|texi)$/ path)
+                       (when (or (#/\.(c|h|scm|stub|in|texi|tmpl)$/ path)
                                  (member (sys-basename path)
-                                         '("COPYING" "genstub" "geninsn")))
+                                         '("COPYING" "genstub" "geninsn"))
+                                 (#/lib\/tools\// path))
                          (check-file path author email)))
                      #f)]
     [_ (usage)])
