@@ -3,7 +3,7 @@
 ;;;
 ;;;   Copyright (c) 2020  Goran Weinholt
 ;;;   Copyright (c) 2024  Antero Mejr  <mail@antr.me>
-;;;   Copyright (c) 2024  Shiro Kawai <shiro@acm.org>
+;;;   Copyright (c) 2024-2025  Shiro Kawai  <shiro@acm.org>
 ;;;
 ;;;   This module is a Gauche port of the SRFI 215 sample implementation,
 ;;;   and is therefore MIT-licensed.

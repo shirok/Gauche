@@ -1,4 +1,4 @@
-;;; SPDX-FileCopyrightText: 2024 Shiro Kawai, John Cowan, Arne Babenhauserheide
+;;; SPDX-FileCopyright Text: 2024-2025  Shiro Kawai  <shiro@acm.org>
 ;;; SPDX-License-Identifier: MIT
 
 ;;; Code adapted from gauche https://github.com/shirok/Gauche/blob/master/lib/util/toposort.scm :

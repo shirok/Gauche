@@ -1,7 +1,7 @@
 ;;;
 ;;; math/prime.scm - utilities related to prime numbers
 ;;;
-;;;   Copyright (c) 2013-2024  Shiro Kawai  <shiro@acm.org>
+;;;   Copyright (c) 2013-2025  Shiro Kawai  <shiro@acm.org>
 ;;;   Copyright (c) 2013  @cddddr
 ;;;
 ;;;   Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
   (export primes *primes* reset-primes
           small-prime? *small-prime-bound*
           miller-rabin-prime? bpsw-prime?
-          naive-factorize mc-factorize grouped-factorize
+          naive-factorize mc-factorize ecm-factorize grouped-factorize
           jacobi totient reduced-totient))
 (select-module math.prime)
 
@@ -447,6 +447,71 @@
         (if (null? (cdr nf))
           ps  ; n is unbreakable, so the original factorization was fine.
           (sort (append nf (drop-right ps 1))))))))
+
+;; API
+;;  Elliptic Curve factorization
+(define (ecm-factorize n)
+
+  ;; (/ p q) mod m.  May return #f if q doesn't have inverse.
+  (define (/-mod p q m)
+    (and-let1 q^-1 (inverse-mod q m)
+      (modulo (* p q^-1) m)))
+
+  ;; Elliptic curve addition R=P+Q
+  (define (point-add P Q a n)
+    (let* ((xp (car P)) (yp (cdr P))
+           (xq (car Q)) (yq (cdr Q))
+           (s (if (= xp xq)
+                (/-mod (+ (* 3 (modulo (expt xp 2) n)) a) (* 2 yp) n)
+                (/-mod (- yq yp) (- xq xp) n))))
+      (and s
+           (let* ((xr (modulo (- (modulo (expt s 2) n) xp xq) n))
+                  (yr (modulo (- yp (* s (- xp xr))) n)))
+             (cons xr yr)))))
+
+  (define (point-double p a n)
+    (point-add p p a n))
+
+  ;; Scalar multiplication of a point on the elliptic curve
+  (define (scalar-multiply k p a n)
+    (if (zero? k)
+      '(0 . 0)
+      (let loop ((k k) (q '(0 . 0)) (p p))
+        (if (zero? k)
+          q
+          (loop (quotient k 2)
+                (if (odd? k) (point-add p q a n) q)
+                (point-double p a n))))))
+
+  (define random default-miller-rabin-random-integer)
+
+  (define (find-factor n)
+    (let loop ((tries 0))
+      (if (> tries 100)  ;; Limit the number of tries
+        #f
+        (let* ((a (+ 1 (random n)))
+               (b (random n))
+               (x (random n))
+               (y (random n))
+               (g (gcd (* 4 (expt a 3) (+ (* 27 (expt b 2))))
+                       n)))
+          (if (> g 1)
+            g
+            (let ((p (cons x y)))
+              (do ((k 1 (+ k 1)))
+                  ((>= k n) #f)
+                (let* ((q #?,(scalar-multiply k p a n))
+                       (factor (gcd (- (car q)) n)))
+                  (if (and (> factor 1) (< factor n))
+                    factor)))))))))
+
+  (let factorize ((n n) (fs '()))
+    (if-let1 f #?,(find-factor n)
+      (factorize (quotient n f) (cons f fs)))))
+
+;; Example of factorization
+;(display (factorize 10403)) ;; Replace with your composite number
+
 
 ;; API
 ;; Factorize n and returns ((p_1 . k_1) ... (p_n . k_n)), where
