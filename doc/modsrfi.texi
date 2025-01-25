@@ -17610,15 +17610,28 @@ SRFIではこれらのテストはSRFI-64のフレームワーク上で実行さ
 @defun property-test-runner
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a SRFI-64 test runner object specialized for property testing.
 In Gauche, this simply returns SRFI-64 simple runner, but other
 implementations may have some additional features.  It is recommended
 that portable code sets the runner created with this procedure
 before calling property test procedures.
+@c JP
+プロパティテストのための、SRFI-64 テストランナーオブジェクトを返します。
+Gaucheではこれは単にSRFI-64 simple runnerを返しますが、
+他の実装では機能を追加したランナーが返されるかもしれません。
+ポータブルなコードを書いている時は、
+このテストランナーを使ってプロパティテストを行うと良いでしょう。
+@c COMMON
 @end defun
 
+@c EN
 @subheading Generators
+@c JP
+@subheading ジェネレータ
+@c COMMON
 
+@c EN
 These are procedures that create generators of specific types.
 You can find similar generator procedurs in @code{data.random}
 (@pxref{Random data generators})
@@ -17627,32 +17640,69 @@ but the procedures here creates generators with one specific
 property suitable for testing: They start generating certain
 pre-defined values--typical, or boundary values--before generating
 random values.
+@c JP
+以下の手続きは特定の型のオブジェクトを生成するジェネレータを作ります。
+@code{data.random}(@ref{Random data generators}参照)や
+@code{srfi.194}(@ref{Random data generators (SRFI)}参照)にも
+似たような手続きがありますが、このモジュールのジェネレータ作成手続きで
+作られるジェネレータには、プロパティテストに適した特性があります。
+それは、ランダムな値を生成する前に、決められた一連の値(典型的な値および
+境界値)を生成するということです。
+@c COMMON
 
+@c EN
 All created generators captures the value of parameter
 @code{random-data-random-source} (@pxref{Random data generators}) when created.
 If you want to have reproducible results, you can provide your own
 random source.
+@c JP
+以下の手続きで作られるジェネレータは、作成時の
+@code{random-data-random-source}パラメータの値を取り込みます
+(@ref{Random data generators}参照)。
+テストを再現可能にしたい場合は、自前のランダムソースを使うことができます。
+@c COMMON
 
 @defun boolean-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a generator that yields @code{#t} and @code{#f}, then
 a random boolean values in equal probability.
+@c JP
+@code{#t}、@code{#f}、そしてそれに続いて二つの真偽値を等確率でランダムに
+生成するジェネレータを作って返します。
+@c COMMON
 
+@c EN
 See also @code{booleans$} in @code{data.random}
 (@pxref{Random data generators}).
+@c JP
+@code{data.random}の@code{booleans$}も参照
+(@ref{Random data generators})。
+@c COMMON
 @end defun
 
 @defun bytevector-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a generator that yields an empty bytevector @code{#u8()} first,
 then bytevectors of random length and random content subsequently.
+@c JP
+まず空のバイトベクタ @code{#u8()} を生成し、続いて
+ランダムな長さでランダムな内容を持つバイトベクタを生成するジェネレータを作って返します。
+@c COMMON
 
+@c EN
 In Gauche, it is realized as follows (@pxref{Random data generators},
 for @code{sequences-of} and @code{integers$}).
 The constant @code{sequence-max-size} is currently 33 but may be
 changed.
+@c JP
+Gaucheではこの手続きは、@code{sequences-of}と@code{integers$}を
+使って次のとおり実装されています(@ref{Random data generators}参照)。
+定数@code{sequence-max-size}は今の所33ですが、将来変更されるかもしれません。
+@c COMMON
 @example
 (gcons* '#u8()
         (sequences-of <u8vector>
