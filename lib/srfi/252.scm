@@ -35,6 +35,7 @@
   (use gauche.test)
   (use srfi.64 :prefix srfi-64:)
   (use gauche.generator)
+  (use scheme.charset)
   (use data.random)
   (export boolean-generator bytevector-generator
           char-generator string-generator symbol-generator
@@ -172,16 +173,24 @@
                         (integers$ sequence-max-size)
                         (integers$ 256))))
 
-(define (char-generator) (gcons* #\null (chars$ char-set:full)))
+(define (%weighted-chars$)
+  (weighted-samples-from
+   `((20 . ,(chars$ char-set:ascii-letter+digit))
+     (8 . ,(chars$ char-set:ascii-graphic))
+     (5 . ,(chars$ char-set:graphic))
+     (1 . ,(chars$ char-set:full)))))
+
+(define (char-generator)
+  (gcons* #\null (%weighted-chars$)))
 
 (define (string-generator)
   ($ gcons* ""
-     $ strings-of (integers$ sequence-max-size) (chars$ char-set:full)))
+     $ strings-of (integers$ sequence-max-size) (%weighted-chars$)))
 
 (define (symbol-generator)
   ($ gcons* '||
      $ gmap string->symbol
-     $ strings-of (integers$ sequence-max-size) (chars$ char-set:full)))
+     $ strings-of (integers$ sequence-max-size) (%weighted-chars$)))
 
 (define (complex-generator) (inexact-complex-generator))
 
