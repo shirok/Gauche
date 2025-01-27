@@ -17714,55 +17714,83 @@ Gaucheではこの手続きは、@code{sequences-of}と@code{integers$}を
 @defun char-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a character generator that yields @code{#\null}, then
-random characters subsequently.  Currently we sample
-charactres uniformly from the entire Unicode range, but that
-causes most of the characters to be very infrequently used ones.
-We might change it in future.
+random characters subsequently.
+
+Currently we use heuristically weighted sampling, so that ASCII
+characters tends to appear a lot, although entire Unicode range
+characters can appear.
 
 See also @code{chars$} in @code{data.random}
 (@pxref{Random data generators}).
+@c JP
+最初に@code{#\null}を、その後はランダムな文字を返すジェネレータを
+作って返します。
+
+今のところ、経験的に重み付けしたサンプリングを使っていて、
+ASCII文字が出やすくなっていますが、全てのUnicode文字が生成される
+可能性があります。
+
+@code{data.random}の@code{chars$}も参照してください
+(@ref{Random data generators})。
+@c COMMON
 @end defun
 
 @defun string-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a string generator that yields an empty string @code{""},
 then strings of random length and random content subsequently.
 
-In Gauche, it is realized as follows (@pxref{Random data generators},
+In Gauche, it is effectively equivalent to the following code
+(@pxref{Random data generators},
 for @code{strings-of} and @code{integers$}).
 The constant @code{sequence-max-size} is currently 33 but may be
 changed.
+@c JP
+まず空文字列、その後はランダムな長さのランダムな文字列を生成する
+ジェネレータを作って返します。
+
+Gaucheの実装は、次のコードと実質的に等価です
+(@code{strings-of}と@code{integers$}については@ref{Random data generators}参照)。
+定数@code{sequence-max-size}は今の所33ですが変更されるかもしれません。
+@c COMMON
 @example
 (gcons* ""
-  (strings-of (integers$ sequence-max-size) (chars$ char-set:full)))
+  (strings-of (integers$ sequence-max-size)
+              (rlet1 g (char-generator)
+                (g))))          ; discard initial #\null
 @end example
-
-Note that the chracters are sampled uniformly from the entire Unicode
-range, which causes almost all strings to consist of very infrequently
-used characters.  We might address this in future.
 @end defun
 
 @defun symbol-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a symbol generator that yields a symbol whose name
 is empty (@code{||}), then symbols of random length and
 random content subsequently.   It is basically
 @code{(gmap string->symbol (string-generator))}.
-
-Note that the chracters are sampled uniformly from the entire Unicode
-range, which causes almost all symbols to consist of very infrequently
-used characters.  We might address this in future.
+@c JP
+まず空の名前のシンボル(@code{||})、続いてランダムな長さのランダムな名前を持つ
+シンボルを生成するジェネレータを作って返します。
+基本的には@code{(gmap string->symbol (string-generator))}と考えて良いです。
+@c COMMON
 @end defun
 
 @defun complex-generator
 @defunx inexact-complex-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a generator that yields the following inexact complex
 numbers, followed by random complex numbers.
+@c JP
+以下の複素数を順に生成し、続いてランダムな複素数を生成するジェネレータを
+作って返します。
+@c COMMON
 
 @example
 0.0 -0.0 0.5 -0.5 1.0 -1.0
@@ -17774,24 +17802,46 @@ numbers, followed by random complex numbers.
 +inf.0 -inf.0 +nan.0
 @end example
 
-Note: SRFI specifies @code{complex-generator} to return
+@c EN
+Note: SRFI specifies generators created by @code{complex-generator} to return
 both exact and inexact complex numbers if the implementation supports
 them.  Gauche doesn't have exact complex numbers, so it is the
 same as @code{inexact-complex-generator}.
+@c JP
+註: SRFIでは、@code{complex-generator}が作るジェネレータは
+実装がサポートしていれば正確な複素数と非正確な複素数のどちらも返すと
+されています。Gaucheは正確な複素数を持っていないので、
+これは@code{inexact-complex-generator}と同じです。
+@c COMMON
 
-In Gauche, a random complex number is created by
+@c EN
+In Gauche's implementation, a random complex number is created by
 uniformly sampled finite flonums for real and imaginary parts.
 Note that ``uniformly sampled finite flonums'' are not the same
 as ``uniformly sampled real numbers''; See @code{finite-flonums$}
+of @code{data.random}
 for the details (@pxref{Random data generators}).
+@c JP
+Gaucheの実装では、ランダムな複素数は、実部と虚部をそれぞれ
+有限浮動小数点数の集合から一様にサンプリングして作っています。
+「一様にサンプリングした有限浮動小数点数」は、
+「一様にサンプリングした実数」とは異なることに注意してください。
+詳しくは@code{data.random}の@code{finite-flonums$}を参照
+(@ref{Random data generators})。
+@c COMMON
 @end defun
 
 @defun exact-complex-generator
 @defunx exact-integer-complex-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Gauche does not support exact complex numbers, and these procedures
 raise an error when called.
+@c JP
+Gaucheは正確な複素数をサポートしていないので、
+これらの手続きは呼ばれたらエラーを投げます。
+@c COMMON
 @end defun
 
 @defun integer-generator
