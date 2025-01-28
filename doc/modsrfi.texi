@@ -17849,20 +17849,42 @@ Gaucheは正確な複素数をサポートしていないので、
 @defunx inexact-integer-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Return generators that yields integers, exact integers,
 and inexact integers, respectively.
+@c JP
+整数、正確な整数、非正確な整数をそれぞれ生成するジェネレータを作って返します。
+@c COMMON
 
+@c EN
 The exact integer generator always yield @code{0}, @code{1}, and @code{-1}
 at the beginning, then random integers follow.
+@c JP
+正確な整数のジェネレータは、まず@code{0}、@code{1}、@code{-1}を
+順に生成してから、続いてランダムな整数を生成します。
+@c COMMON
 
+@c EN
 The inexact integer generator always yield @code{0.0}, @code{-0.0},
 @code{1.0}, and @code{-1.0}
 at the beginning, then random integers follow.
+@c JP
+非正確な整数のジェネレータは、まず@code{0.0}、@code{-0.0}、
+@code{1.0}、@code{-1.0}を
+順に生成してから、続いてランダムな整数を生成します。
+@c COMMON
 
+@c EN
 The general integer generator created by @code{integer-generator}
 samples evenly from an exact integer genratgor and an inexact
 integer generator.
+@c JP
+@code{integer-generator}が返す一般の整数のジェネレータは、
+正確な整数のジェネレータと不正確な整数のジェネレータから当確率で
+ランダムにサンプリングします。
+@c COMMON
 
+@c EN
 Since the range of exact integers is only bounded by the memory,
 uniform sampling from the entire possible range is infeasible;
 almost all samples would become a huge integer.  Instead, we split
@@ -17872,6 +17894,17 @@ Small integers and fixnums are sampled uniformly within its range,
 and bignums are sampled according to the power law; so, we see
 a lot more bignums closer to fixnum range, with occasional really big
 numbers sprinkled in.
+@c JP
+正確な整数の範囲はメモリの許す限り大きくできるので、
+可能な値の範囲から一様サンプリングするのは現実的ではありません。
+ほとんど全てのサンプルは非常に大きな整数になってしまうでしょう。
+かわりにGaucheでは、整数の範囲を3つに区切りました。
+比較的小さな整数、fixnum、そしてbignumです。
+小さな整数とfixnumは範囲内で一様サンプリングされます。
+bignumはべき乗則によってサンプリングされます。
+従って、生成されるbignumの多くはfixnumに近いレンジになり、
+時折非常に大きな整数が混ざるという感じになります。
+@c COMMON
 @end defun
 
 @defun rational-generator
