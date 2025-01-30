@@ -35,6 +35,7 @@
 #include "gauche.h"
 #include "gauche/priv/configP.h"
 #include "gauche/vm.h"
+#include "gauche/thread.h"
 
 /* Signals
  *
@@ -153,7 +154,7 @@ static struct sigdesc {
     const char *name;
     int num;
     int defaultHandle;
-} sigDesc[] = {
+} *sigDesc, sigDesc_default[] = {
 #ifdef SIGHUP
     SIGDEF(SIGHUP,  SIGDEF_EXIT),     /* Hangup (POSIX) */
 #endif
@@ -1030,10 +1031,49 @@ int Scm_SigWait(ScmSysSigset *mask)
  * Initialize
  */
 
+static struct sigdesc *extend_sigdesc()
+{
+#if defined(SIGRTMIN) && defined(SIGRTMAX)
+    /* Add real-time signals to the sigDesc table.  This needs to be
+       done dynamically, for SIGRTMIN/SIGRTMAX may not be a constant.*/
+    int n_static_sigdesc = sizeof(sigDesc_default)/sizeof(struct sigdesc);
+    int n_rtsigs = SIGRTMAX - SIGRTMIN + 1;
+    int n_sigdesc = n_static_sigdesc + n_rtsigs;
+    sigDesc = SCM_NEW_ARRAY(struct sigdesc, n_sigdesc);
+    int8_t i = 0;
+    for (; i < n_static_sigdesc - 1; i++) { /* -1 for terminator */
+        sigDesc[i] = sigDesc_default[i];
+    }
+    int8_t j = 0;
+    for (; j < n_rtsigs; i++, j++) {
+        sigDesc[i].num = SIGRTMIN + j;
+        sigDesc[i].defaultHandle = SIGDEF_NOHANDLE;
+        if (j == 0) {
+            sigDesc[i].name = "SIGRTMIN";
+        } else if (j == n_rtsigs - 1) {
+            sigDesc[i].name = "SIGRTMAX";
+        } else {
+            char buf[16];
+            snprintf(buf, 15, "SIGRTMIN+%d", j);
+            sigDesc[i].name = Scm_StrdupPartial(buf, strlen(buf));
+        }
+    }
+    sigDesc[n_sigdesc - 1].name = NULL;
+    sigDesc[n_sigdesc - 1].num = -1;
+    sigDesc[n_sigdesc - 1].defaultHandle = 0;
+    return sigDesc;
+#else /* !(defined(SIGRTMIN) && defined(SIGRTMAX)) */
+    return sigDesc_default;
+#endif
+}
+
+
 void Scm__InitSignal(void)
 {
     ScmModule *mod = Scm_GaucheModule();
     ScmObj defsigh_sym = Scm_Intern(&default_sighandler_name);
+
+    sigDesc = extend_sigdesc();
 
     (void)SCM_INTERNAL_MUTEX_INIT(sigHandlers.mutex);
     sigemptyset(&sigHandlers.masterSigset);
