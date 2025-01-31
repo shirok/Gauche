@@ -4,6 +4,10 @@
 	  Let thread-terminate! sends the signal again if thread is too busy
 	  to call Scm_SigCheck(), which makes the thread exit.
 	  https://github.com/shirok/Gauche/issues/1106
+	* src/gauche/pthread.h (GAUCHE_PTHREAD_SIGNAL): Use SIGUSR1 for
+	  thread termination singal on OSX, for it does not have real-time
+	  signals.  (OSX does no use signals but use thread_suspend /
+	  thread_resume in GC.)
 	* src/libextra.scm, test/thread-termination.scm: Add procedures
 	  specifically made to test thread-termination-by-signal behavior.
 

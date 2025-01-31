@@ -78,13 +78,18 @@ typedef pthread_t ScmInternalThread;
    provide them (on cygwin, SIGRTMIN == SIGRTMAX).   We use SIGPWR
    instead.
 */
-#if defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)
-#  if !defined(__CYGWIN__)
-#    define GAUCHE_PTHREAD_SIGNAL (SIGRTMIN+5)
-#  else
-#    define GAUCHE_PTHREAD_SIGNAL SIGPWR
+#if !defined(GAUCHE_PTHREAD_SIGNAL)
+#  if defined(SIGRTMIN)
+#    if !defined(__CYGWIN__)
+#      define GAUCHE_PTHREAD_SIGNAL (SIGRTMIN+5)
+#    else
+#      define GAUCHE_PTHREAD_SIGNAL SIGPWR
+#    endif
+#  elif defined(__APPLE__)
+#    define GAUCHE_PTHREAD_SIGNAL SIGUSR1
 #  endif
-#endif /*defined(SIGRTMIN) && !defined(GAUCHE_PTHREAD_SIGNAL)*/
+#endif /*!defined(GAUCHE_PTHREAD_SIGNAL)*/
+
 
 /* ScmInternalMutex - a mutex structure.
 
