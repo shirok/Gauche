@@ -63,6 +63,27 @@
    (cast void get_libgauche_path)  ; ditto
    (return (substitute_all input mark subst))))
 
+;; Busy loop to test thread termination.
+;;   thread-terminate! first flags target VM with a termination request,
+;;   but if thread doesn't terminate with it (either busy executing a subr
+;;   or blocked), it sends a signal.
+;;   The test (test/thread-termination.scm) kicks busy loop in a thread,
+;;   and call thread-terminate!.  If thread is really terminated,
+;;   it stops incrementing busy-loop-counter.
+(inline-stub
+ (define-cvar busy-loop-counter ::ScmSmallInt :static 0)
+ (define-cproc busy-loop (max-count::<fixnum>)
+   (let* ([ts::ScmTimeSpec])
+     (while (< (post++ busy-loop-counter) max-count)
+       (when (% busy-loop-counter 100000)
+         (set! (ref ts tv_sec) 0)
+         (set! (ref ts tv_nsec) 100000)
+         (Scm_NanoSleep (& ts) NULL)))
+     (return SCM_TRUE)))
+ (define-cproc get-busy-loop-counter () ::<fixnum>
+   (return busy-loop-counter))
+ )
+
 ;; Entry point
 
 (define (main args)

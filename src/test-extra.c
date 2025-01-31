@@ -20,6 +20,11 @@ int main(int argc, const char **argv)
     Scm_AddLoadPath("../libsrc/", FALSE);
     Scm_AddLoadPath("../lib/", FALSE);
     Scm_Init_libextra(Scm_UserModule());
+
+    sigset_t set;
+    Scm_SigFillSetMostly(&set);
+    Scm_SetMasterSigmask(&set);
+
     Scm_SimpleMain(argc, argv, NULL, 0);
     return 0;
 }

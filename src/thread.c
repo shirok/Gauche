@@ -397,11 +397,11 @@ ScmObj Scm_ThreadSleep(ScmObj timeout)
 
 /* Caller must hold target->vmlock.  return TRUE if the target terminates
    gracefully. */
-static int wait_for_termination(ScmVM *target)
+static int wait_for_termination(ScmVM *target, int ms)
 {
     ScmTimeSpec ts;
     int r;
-    ScmObj t = Scm_MakeFlonum(0.001); /* 1ms. somewhat arbitrary */
+    ScmObj t = Scm_MakeFlonum((double)ms/1000.0);
     Scm_GetTimeSpec(t, &ts);
     do {
         r = SCM_INTERNAL_COND_TIMEDWAIT(target->cond, target->vmlock, &ts);
@@ -443,18 +443,20 @@ ScmObj Scm_ThreadTerminate(ScmVM *target, u_long flags)
                     target->stopRequest = SCM_VM_REQUEST_TERMINATE;
                     target->attentionRequest = TRUE;
                     if (flags & SCM_THREAD_TERMINATE_SCHEDULE) break;
-                    if (wait_for_termination(target)) break;
+                    if (wait_for_termination(target, 1)) break;
 
                     /* Second try */
                     SCM_ASSERT(target->thread);
 #if defined(GAUCHE_USE_PTHREADS)
 # if defined(GAUCHE_PTHREAD_SIGNAL)
                     pthread_kill(target->thread, GAUCHE_PTHREAD_SIGNAL);
+                    if (wait_for_termination(target, 50)) break;
+                    pthread_kill(target->thread, GAUCHE_PTHREAD_SIGNAL);
+                    if (wait_for_termination(target, 1)) break;
 # endif /*defined(GAUCHE_PTHREAD_SIGNAL)*/
 #elif defined(GAUCHE_USE_WTHREADS)
                     /* TODO: implement signal mechanism using an event */
 #endif  /* defined(GAUCHE_USE_WTHREADS) */
-                    if (wait_for_termination(target)) break;
 
                     thread_cleanup_inner(target);
 

@@ -418,6 +418,15 @@ static void sig_handle(int signum)
        terminating and in the cleanup phase. */
     if (vm == NULL) return;
 
+#if defined(GAUCHE_PTHREAD_SIGNAL)
+    /* We don't queue thread termination signal.  If we get second time,
+       just quit.  (NB: We'll consider about cleanup issues in future.) */
+    if (signum == GAUCHE_PTHREAD_SIGNAL
+        && vm->sigq.sigcounts[signum] > 0) {
+        SCM_INTERNAL_THREAD_EXIT();
+    }
+#endif /*defined(GAUCHE_PTHREAD_SIGNAL)*/
+
     if (signalPendingLimit == 0) {
         vm->sigq.sigcounts[signum] = 1;
     } else if (++vm->sigq.sigcounts[signum] >= signalPendingLimit) {

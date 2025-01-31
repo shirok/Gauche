@@ -486,6 +486,9 @@ test : gosh$(EXEEXT) test-vmstack$(EXEEXT) test-arith$(EXEEXT) test-extra$(EXEEX
 	 ./test-extra $(top_srcdir)/test/capi.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \
+	 ./test-extra $(top_srcdir)/test/thread-termination.scm >> test.log
+	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
+	  top_srcdir=$(top_srcdir) \
 	 ./gosh -ftest -e "(define *case-fold* #f)" $(top_srcdir)/test/symcase.scm >> test.log
 	@GAUCHE_TEST_RECORD_FILE=$(TESTRECORD) \
 	  top_srcdir=$(top_srcdir) \

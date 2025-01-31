@@ -1,3 +1,12 @@
+2025-01-30  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c, src/thread.c: Fix handling of RT signals.
+	  Let thread-terminate! sends the signal again if thread is too busy
+	  to call Scm_SigCheck(), which makes the thread exit.
+	  https://github.com/shirok/Gauche/issues/1106
+	* src/libextra.scm, test/thread-termination.scm: Add procedures
+	  specifically made to test thread-termination-by-signal behavior.
+
 2025-01-20  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/future.scm (future-get): Fixed timeout bug
