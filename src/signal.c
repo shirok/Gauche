@@ -34,6 +34,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/configP.h"
+#include "gauche/priv/signalP.h"
 #include "gauche/vm.h"
 #include "gauche/thread.h"
 
@@ -1033,6 +1034,44 @@ int Scm_SigWait(ScmSysSigset *mask)
     Scm_Error("sigwait not supported on this platform");
     return 0;
 #endif
+}
+
+/*================================================================
+ * Introspection
+ */
+
+/* Returns ((signame sigvalue) ...) */
+ScmObj Scm__GetSignalInfo()
+{
+    struct sigdesc *d = sigDesc;
+    ScmObj h = SCM_NIL, t = SCM_NIL;
+    ScmObj name;
+    int num;
+
+    for (; d->name != NULL; d++) {
+        name = SCM_MAKE_STR(d->name);
+        num = d->num;
+        SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+    }
+#if defined(GAUCHE_PTHREAD_SIGNAL)
+    name = SCM_MAKE_STR("GAUCHE_PTHREAD_SIGNAL");
+    num = GAUCHE_PTHREAD_SIGNAL;
+    SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+#endif
+#if defined(GC_THREADS)
+    fprintf(stderr, "zon\n");
+    num = GC_get_suspend_signal();
+    if (num >= 0) {
+        name = SCM_MAKE_STR("SIG_SUSPEND");
+        SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+    }
+    num = GC_get_thr_restart_signal();
+    if (num >= 0) {
+        name = SCM_MAKE_STR("SIG_THR_RESTART");
+        SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+    }
+#endif
+    return h;
 }
 
 

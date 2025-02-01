@@ -37,7 +37,8 @@
 (select-module gauche)
 (inline-stub
   (.include "gauche/priv/configP.h"
-            "gauche/priv/mmapP.h")
+            "gauche/priv/mmapP.h"
+            "gauche/priv/signalP.h")
   (.include <stdlib.h> <locale.h> <math.h> <sys/types.h> <sys/stat.h> <fcntl.h>)
   (.unless (defined "GAUCHE_WINDOWS")
     (.include <grp.h> <pwd.h> <sys/wait.h> <utime.h>
@@ -409,9 +410,14 @@
     (make <sys-sigset>)
     (apply sys-sigset-add! (make <sys-sigset>) signals)))
 
+(select-module gauche.internal)
+(define-cproc get-signal-info ()
+  (return (Scm__GetSignalInfo)))
+
 ;;---------------------------------------------------------------------
 ;; stdio.h
 
+(select-module gauche)
 (define-cproc sys-remove (filename::<const-cstring>) ::<void>
   (let* ([r::int])
     (SCM_SYSCALL r (remove filename))

@@ -1,3 +1,9 @@
+2025-01-31  Shiro Kawai  <shiro@acm.org>
+
+	* src/signal.c (Scm__GetSignalInfo), libsys.scm (get-signal-info):
+	  An internal inspection utility to return system's signal names
+	  and numbers.
+
 2025-01-30  Shiro Kawai  <shiro@acm.org>
 
 	* src/signal.c, src/thread.c: Fix handling of RT signals.
