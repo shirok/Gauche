@@ -273,9 +273,10 @@
 ;; Generator combiners
 
 (define (list-generator-of gen :optional (max-length #f))
-  (if max-length
-    (lists-of (integers$ max-length) gen)
-    (lists-of gen)))
+  (gcons* '()
+          (if max-length
+            (lists-of (integers$ max-length) gen)
+            (lists-of gen))))
 
 (define (pair-generator-of car-gen :optional (cdr-gen #f))
   (pairs-of car-gen (or cdr-gen car-gen)))
@@ -284,6 +285,7 @@
   (gmap (^v (^ _ v)) gen))
 
 (define (vector-generator-of gen :optional (max-length #f))
-  (if max-length
-    (vectors-of (integers$ max-length) gen)
-    (vectors-of gen)))
+  (gcons* '#()
+          (if max-length
+            (vectors-of (integers$ max-length) gen)
+            (vectors-of gen))))
