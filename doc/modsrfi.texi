@@ -17912,15 +17912,29 @@ bignumはべき乗則によってサンプリングされます。
 @defunx inexact-rational-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Return generators that yields rational numbers, exact rational numbers,
 and inexact rational numbers, respectively.
+@c JP
+それぞれ、有理数、正確な有理数、そして不正確な有理数を生成するジェネレータを
+作って返します。
+@c COMMON
 
+@c EN
 The exact rational number generator yields
 @code{0}, @code{1}, @code{-1}, @code{1/2}, and @code{-1/2} at
 the beginning, then generate @code{(/ a b)} where @code{a}, @code{b}
 are generated in the same way as @code{exact-integer-generator}'s
 distribution, except 0 is excluded from @code{b}.
+@c JP
+正確な有理数ジェネレータは、最初に
+@code{0}、@code{1}、@code{-1}、@code{1/2}、@code{-1/2}を順に生成し、
+その後は@code{exact-integer-generator}と同じ分布で生成した
+正確な整数@code{a}、@code{b}を使って@code{(/ a b)}を生成します
+(@code{b}から0は除外します)。
+@c COMMON
 
+@c EN
 The inexact rational number generator yields
 @code{0.0}, @code{-0.0}, @code{0.5}, @code{=0.5}, @code{1.0}, and @code{-1.0}
 at the beginning, then proceed to generate random inexact rational numbers.
@@ -17928,10 +17942,26 @@ In Gauche, inexact rational numbers are finite flonums, and we uniformly
 samples from all possible finite flonums (which is @emph{not} the same
 as uniform sample from a range of real numbers).
 See @code{finite-flonums$} in @ref{Random data generators}.
+@c JP
+非正確な有理数ジェネレータは、最初に
+@code{0.0}、@code{-0.0}、@code{0.5}、@code{=0.5}、@code{1.0}、@code{-1.0}
+を順に生成し、その後は非正確な有理数をランダムに生成します。
+Gaucheでは非正確な有理数は有限な浮動小数点数で表されるので、
+可能な有限浮動小数点数から一様サンプリングした値を使います
+(これは表現可能な実数範囲からの一様サンプリングではありません)。
+詳しくは@ref{Random data generators}の@code{finite-flonums$}
+を参照してください。
+@c COMMON
 
+@c EN
 The general rational number generator created by @code{rational-generator}
 evenly samples from an exact rational number generator and
 an inexact rational number generator.
+@c JP
+@code{rational-generator}が返す一般の有理数ジェネレータは、
+正確な有理数ジェネレータと非正確な有理数ジェネレータから等確率で
+サンプリングします。
+@c COMMON
 @end defun
 
 @defun real-generator
@@ -17939,14 +17969,27 @@ an inexact rational number generator.
 @defunx inexact-real-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Return generators that yields real numbers, exact real numbers,
 and inexact real numbers, respectively.
+@c JP
+それぞれ、実数、正確な実数、そして不正確な実数を生成するジェネレータを
+作って返します。
+@c COMMON
 
+@c EN
 In Gauche, the set of exact real numbers are exactly the same as
 the set of exact rational numbers (infinites and NaNs are inexact),
 so @code{exact-real-generator} is the same as
 @code{exact-rational-generator}.
+@c JP
+Gaucheでは、正確な実数の集合は正確な有理数の集合と一致します
+(無限大およびNaNは非正確だからです)。
+従って、@code{exact-real-generator}は
+@code{exact-rational-generator}と同じです。
+@c COMMON
 
+@c EN
 The inexact real number generator yields
 @code{0.0}, @code{-0.0}, @code{0.5}, @code{-0.5},
 @code{1.0}, @code{-1.0}, @code{+inf.0},  @code{-inf.0}, and @code{+nan.0}
@@ -17954,10 +17997,25 @@ at the beginning, followed by inexact real numbers uniformly sampled
 from all possible finite flonums (which is @emph{not} the same
 as uniform sample from a range of real numbers).
 See @code{finite-flonums$} in @ref{Random data generators}.
+@c JP
+非正確な実数のジェネレータは、まず
+@code{0.0}、@code{-0.0}、@code{0.5}、@code{-0.5},
+@code{1.0}、@code{-1.0}、@code{+inf.0}、@code{-inf.0}、@code{+nan.0}を
+順に生成し、以降は可能な有限浮動小数点数から一様サンプリングした値を使います
+(これは表現可能な実数範囲からの一様サンプリングではありません)。
+詳しくは@ref{Random data generators}の@code{finite-flonums$}
+を参照してください。
+@c COMMON
 
+@c EN
 The general real number generator created by @code{real-generator}
 evenly samples from an exact real number generator and
 an inexact real number generator.
+@c JP
+@code{real-generator}が返す一般の実数ジェネレータは、
+正確な実数ジェネレータと非正確な実数ジェネレータから等確率で
+サンプリングします。
+@c COMMON
 @end defun
 
 @defun number-generator
@@ -17965,6 +18023,7 @@ an inexact real number generator.
 @defunx inexact-number-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 In Gauche, the set of exact numbers is the same as
 the set of exact rational numbers (we don't have exact complex),
 and the set of inexact numbers
@@ -17973,43 +18032,89 @@ Thus @code{exact-number-generator} is the same as
 @code{exact-rational-generator}, and
 @code{inexact-number-generator} is the same as
 @code{inexact-complex-generator}.
+@c JP
+Gaucheでは、正確な数の集合は(正確な複素数を持ってないので)
+正確な有理数の集合と等しく、非正確な数の集合は
+非正確な複素数の集合と等しいです。
+従って、@code{exact-number-generator}は
+@code{exact-rational-generator}と同じ、
+@code{inexact-number-generator}は
+@code{inexact-complex-generator}と同じです。
+@c COMMON
 
+@c EN
 The general number generator created by @code{number-generator}
 evenly samples from an exact number generator and
 an inexact number generator.
+@c JP
+@code{number-generator}が返す一般の数ジェネレータは、
+正確な数ジェネレータと非正確な数ジェネレータから等確率で
+サンプリングします。
+@c COMMON
 @end defun
 
 @defun list-generator-of elt-generator :optional max-length
 @defunx vector-generator-of elt-generator :optional mex-length
 [SRFI-252]
 @c MOD srfi.252
-Return generators that yield a list/vector of random length
+@c EN
+Return generators that yield an empty list or vector
+first, then lists or vectors of random length
 up to @var{max-length},
 and elements generated by @var{elt-generator}, respectively.
 Similar to @code{lists-of}/@code{vectors-of} in @code{data.random}.
+@c JP
+最初に空リスト/空ベクタを、以降は@var{max-length}を最大長とする
+ランダムな長さのリストおよびベクタを
+それぞれ生成するジェネレータを作って返します。
+返されるリストやベクタの要素は、ジェネレータ@var{elt-generator}で
+作られます。
+@code{data.random}の@code{lists-of}/@code{vectors-of}と似ています。
+@c COMMON
 
+@c EN
 When @var{max-length} is omitted, we leave the length to the default
 of @code{lists-of}/@code{vectors-of},
  which is determined by the parameter
 @code{default-sizer} in @code{data.random}.
 @xref{Random data generators}, for the details.
+@c JP
+@var{max-length}が省略された場合は、@code{lists-of}/@code{vectors-of}の
+デフォルトに任せます。それは@code{data.random}のパラメータ
+@code{default-sizer}で制御されます。
+詳しくは@ref{Random data generators}を参照してください。
+@c COMMON
 @end defun
 
 @defun pair-generator-of car-generator :optional cdr-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a generator that yields pairs, whose car is generated
 with @code{car-generator} and whose cdr is generated
 with @code{cdr-generator}.  If @var{cdr-generator} is omitted,
 @code{car-generator} is used.
+@c JP
+ペアを生成するジェネレータを作って返します。
+@code{cdr-generator}が指定された場合、各ペアのcarは
+@code{car-generator}、cdrは@code{cdr-generator}で生成します。
+@code{cdr-generator}が省略された場合、carとcdr両方に@code{car-generator}を
+使います。
+@c COMMON
 @end defun
 
 @defun procedure-generator-of value-generator
 [SRFI-252]
 @c MOD srfi.252
+@c EN
 Returns a generator that yields procedures, which accepts
 any number of arguments and returns a value generated with
 @var{value-generator}.
+@c JP
+手続きを生成するジェネレータを作って返します。
+各手続きは任意個の引数を取り、@code{value-generator}が生成する
+値を戻り値とします。
+@c COMMON
 @end defun
 
 
