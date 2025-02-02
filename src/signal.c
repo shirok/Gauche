@@ -1059,7 +1059,6 @@ ScmObj Scm__GetSignalInfo()
     SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
 #endif
 #if defined(GC_THREADS)
-    fprintf(stderr, "zon\n");
     num = GC_get_suspend_signal();
     if (num >= 0) {
         name = SCM_MAKE_STR("SIG_SUSPEND");
