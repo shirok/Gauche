@@ -1040,34 +1040,44 @@ int Scm_SigWait(ScmSysSigset *mask)
  * Introspection
  */
 
-/* Returns ((signame sigvalue) ...) */
+/* Returns ((signame sigvalue handle?) ...) */
+/* handle? is whether Gauche can handle the signal */
 ScmObj Scm__GetSignalInfo()
 {
     struct sigdesc *d = sigDesc;
     ScmObj h = SCM_NIL, t = SCM_NIL;
     ScmObj name;
-    int num;
+    int num, handlep;
+    sigset_t masterset;
+
+    (void)SCM_INTERNAL_MUTEX_LOCK(sigHandlers.mutex);
+    masterset = sigHandlers.masterSigset;
+    (void)SCM_INTERNAL_MUTEX_UNLOCK(sigHandlers.mutex);
 
     for (; d->name != NULL; d++) {
         name = SCM_MAKE_STR(d->name);
         num = d->num;
-        SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+        handlep = sigismember(&masterset, num);
+        SCM_APPEND1(h, t, SCM_LIST3(name, SCM_MAKE_INT(num), SCM_MAKE_BOOL(handlep)));
     }
 #if defined(GAUCHE_PTHREAD_SIGNAL)
     name = SCM_MAKE_STR("GAUCHE_PTHREAD_SIGNAL");
     num = GAUCHE_PTHREAD_SIGNAL;
-    SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+    handlep = sigismember(&masterset, num);
+    SCM_APPEND1(h, t, SCM_LIST3(name, SCM_MAKE_INT(num), SCM_MAKE_BOOL(handlep)));
 #endif
 #if defined(GC_THREADS)
     num = GC_get_suspend_signal();
     if (num >= 0) {
         name = SCM_MAKE_STR("SIG_SUSPEND");
-        SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+        handlep = sigismember(&masterset, num);
+        SCM_APPEND1(h, t, SCM_LIST3(name, SCM_MAKE_INT(num), SCM_MAKE_BOOL(handlep)));
     }
     num = GC_get_thr_restart_signal();
     if (num >= 0) {
         name = SCM_MAKE_STR("SIG_THR_RESTART");
-        SCM_APPEND1(h, t, SCM_LIST2(name, SCM_MAKE_INT(num)));
+        handlep = sigismember(&masterset, num);
+        SCM_APPEND1(h, t, SCM_LIST3(name, SCM_MAKE_INT(num), SCM_MAKE_BOOL(handlep)));
     }
 #endif
     return h;
