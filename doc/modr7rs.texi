@@ -225,14 +225,6 @@ SRFI-1とSRFI-13を使うには、次のようにします。
 @end example
 
 @c EN
-(It's not that Gauche treat @code{srfi} name specially; installation
-of Gauche includes adapter libraries such as @file{srfi/1.scm}.)
-@c JP
-(これが動くのは、Gaucheが@code{srfi}という名前を特別扱いしているのではなく、
-Gaucheをインストールした時に@code{srfi/1.scm}等のアダプタライブラリが作られているからです)
-@c COMMON
-
-@c EN
 A tip: To use Gauche's built-in features (the bindings that are
 available by default in Gauche code) from R7RS code, import
 @code{(gauche base)} library (@pxref{Importing gauche built-ins}):
@@ -447,36 +439,6 @@ this moment.
 ただし、@code{gosh}を@code{-r7}オプションつきで起動していなければ、
 この時点でロードされているのは@code{user#import}で指定したライブラリだけです。
 @c COMMON
-
-@c EN
-If you want to switch the ``vanilla'' r7rs environment, that is, even
-not loading @code{(scheme base)}, then you can use @code{r7rs}
-module and directly select @code{r7rs.user}:
-@c JP
-もし、「すっぴん」のR7RS環境、つまり@code{(scheme base)}でさえロードされていない
-環境へと切り替えたければ、@code{r7rs}モジュールをuseして
-直接@code{r7rs.user}モジュールを選択します。
-@c COMMON
-
-@example
-gosh> (use r7rs)
-gosh> (select-module r7rs.user)
-gosh[r7rs.user]>
-@end example
-
-@c EN
-If you do this, the only
-bindings visible initially are @code{import} and @code{define-library};
-even @code{define} is undefined!
-You have to manually do @code{(import (scheme base))} etc. to start
-writing Scheme in this environment.
-@c JP
-こうして切り替えた場合、使えるフォームは@code{import}と@code{define-library}
-だけです (@code{define}でさえ定義されていません!)
-この環境でSchemeを書くには、まず @code{(import (scheme base))} 等として
-束縛をインポートする必要があります。
-@c COMMON
-
 
 @node Three forms of import,  , Traveling between two worlds back and forth, R7RS integration
 @subsection Three import forms
