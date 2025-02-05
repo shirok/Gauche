@@ -501,6 +501,8 @@ struct ScmVMRec {
                                    before returning to trampoline to another
                                    subr. */
 
+    int    joinCount;           /* how many times this thread is join!-ed? */
+
     ScmObj dynamicHandlers;     /* chain of active dynamic handlers          */
 
     ScmObj *sp;                 /* stack pointer */

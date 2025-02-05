@@ -226,6 +226,7 @@ ScmObj Scm_ThreadJoin(ScmVM *target, ScmObj timeout, volatile ScmObj timeoutval)
         result = target->result; resultx = target->resultException;
         target->resultException = SCM_FALSE; /* clear it */
     }
+    target->joinCount++;
     SCM_INTERNAL_MUTEX_SAFE_LOCK_END();
     if (intr) Scm_SigCheck(Scm_VM());
     if (tout) {

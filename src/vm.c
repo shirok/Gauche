@@ -292,6 +292,7 @@ ScmVM *Scm_NewVM(ScmVM *proto, ScmObj name)
     for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = SCM_UNDEFINED;
     v->numVals = 1;
     v->trampoline = -1;
+    v->joinCount = 0;
 
     /* Thread inherits dynamic environment.
        Note: We only need to inherit parameterization.  Other dynamic envs
@@ -409,6 +410,7 @@ ScmVM *Scm_VMTakeSnapshot(ScmVM *master)
     for (int i=0; i<SCM_VM_MAX_VALUES; i++) v->vals[i] = master->vals[i];
     v->numVals = master->numVals;
     v->trampoline = master->trampoline;
+    v->joinCount = master->joinCount;
     v->denv = master->denv;
     v->dynamicHandlers = master->dynamicHandlers;
 
@@ -563,7 +565,7 @@ static void vm_finalize(ScmObj obj, void *data SCM_UNUSED)
     ScmVM *vm = SCM_VM(obj);
     ScmObj re = vm->resultException;
 
-    if (SCM_UNCAUGHT_EXCEPTION_P(re)) {
+    if (SCM_UNCAUGHT_EXCEPTION_P(re) && vm->joinCount == 0) {
         Scm_Warn("A thread %S (%lu) died a lonely death"
                  " with an uncaught exception %S.",
                  vm->name, vm->vmid, SCM_THREAD_EXCEPTION(re)->data);
