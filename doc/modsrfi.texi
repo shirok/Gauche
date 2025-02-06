@@ -15935,7 +15935,7 @@ based on the comparators of the fields.
 Creates a comparator for objects of a @emph{union} type of the types
 dealt with the given comparators.
 @c JP
-与えられた比較器が扱う型の直和型を扱える比較器を作ります。
+与えられた比較器が扱う型のユニオン型を扱える比較器を作ります。
 @c COMMON
 
 @c EN
@@ -16009,7 +16009,7 @@ comparator.  Its domain is empty; that is, its type predicate always
 returns @code{#f}, and it is an error to invoke its equality predicate,
 ordering predicate and hash function.
 @c JP
-これは直和型の比較器の単位元として動作する比較器です。
+これはユニオン型の比較器の単位元として動作する比較器です。
 この比較器が対象とする定義域は空集合です。すなわち、型検査述語は常に@code{#f}を返します。
 等価判定述語、順序判定述語、およびハッシュ関数はエラーを投げます。
 @c COMMON

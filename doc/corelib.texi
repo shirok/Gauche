@@ -549,12 +549,12 @@ Scheme界の中ではそれなりに実用的な型です。
 @clindex /
 @c EN
 @var{Type} @dots{} must be type expressions.
-This creates a @emph{sum type} of @var{type} @dots{}.
+This creates a @emph{union type} of @var{type} @dots{}.
 For example, @code{(</> <string> <symbol>)} is a type that is
 either a string or a symbol.
 @c JP
 @var{type} @dots{} はそれぞれ型の式でなければなりません。
-この型コンストラクタは、@var{type} @dots{} の直和型を作ります。
+この型コンストラクタは、@var{type} @dots{} のユニオン型を作ります。
 例えば@code{(</> <string> <symbol>)}は文字列かシンボルであるような型を表します。
 @c COMMON
 @end deftp
