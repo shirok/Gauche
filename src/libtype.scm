@@ -282,20 +282,21 @@
      (set! sub (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE sub))))]
     [(SCM_PROXY_TYPE_P super)
      (set! super (SCM_OBJ (Scm_ProxyTypeRef (SCM_PROXY_TYPE super))))]
-    ;; Both are classes, we can use subclass?
-    [(and (SCM_CLASSP sub) (SCM_CLASSP super))
-     (return (SCM_MAKE_BOOL (Scm_SubclassP (SCM_CLASS sub) (SCM_CLASS super))))]
     ;; Filter out the trivial cases
     [(SCM_EQ super (SCM_OBJ SCM_CLASS_TOP)) (return SCM_TRUE)]
     [(SCM_EQ sub (SCM_OBJ SCM_CLASS_BOTTOM)) (return SCM_TRUE)]
     [(SCM_EQ super sub) (return SCM_TRUE)]
     ;; Native types can be a subtype of a class.  No type (except BOTTOM) can
     ;; be a subtype of a native type.
-    [(SCM_NATIVE_TYPE_P sub)
+    [(and (SCM_NATIVE_TYPE_P sub)
+          (SCM_CLASSP super))
      (let* ([klass (-> (SCM_NATIVE_TYPE sub) super)])
        (SCM_ASSERT (SCM_CLASSP klass))
        (set! sub klass))]
     [(SCM_NATIVE_TYPE_P super) (return SCM_FALSE)]
+    ;; Both are classes, we can use subclass?
+    [(and (SCM_CLASSP sub) (SCM_CLASSP super))
+     (return (SCM_MAKE_BOOL (Scm_SubclassP (SCM_CLASS sub) (SCM_CLASS super))))]
     ;; Delegate descriptive types to its handlers.
     [(SCM_DESCRIPTIVE_TYPE_P sub)
      (let* ([k::ScmClass* (Scm_ClassOf sub)])
@@ -597,7 +598,7 @@
   :deconstructor (^[type] (~ type'members))
   :validator (^[type obj] (any (cut of-type? obj <>) (~ type'members)))
   :subtype? (^[type super]
-              (if (is-a? super </>)
+              (if (or (is-a? super </>) <class>)
                 (every (cut subtype? <> super) (~ type'members))
                 'super))
   :supertype? (^[type sub] (any (cut subtype? sub <>) (~ type'members))))
