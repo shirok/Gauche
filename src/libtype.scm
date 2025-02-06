@@ -619,7 +619,8 @@
   :subtype? (^[type super]
               (if (is-a? super <?>)
                 (subtype? (~ type'primary-type) (~ super'primary-type))
-                'super))
+                (and (of-type? #f super)
+                     (subtype? (~ type'primary-type) super))))
   :supertype? (^[type sub] (subtype? sub (~ type'primary-type))))
 
 ;;;

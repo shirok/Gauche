@@ -87,7 +87,10 @@
 (t-subtype <real>    (<?> <integer>) #f)
 (t-subtype (<?> <integer>) (<?> <real>) #t)
 (t-subtype (<?> <integer>) <integer> #f)
+(t-subtype (<?> <boolean>) <boolean> #t)
 (t-subtype (<?> <integer>) (</> (<?> <number>) (<?> <string>)) #t)
+(t-subtype (<?> <char>) (</> <boolean> <char>) #t)
+(t-subtype (<?> <char>) (</> <integer> <char>) #f)
 
 (t-subtype (<Tuple> <integer> <string>) <list> #t)
 (t-subtype (<Tuple> <integer> <string>) (<Tuple> <integer> <string>) #t)
@@ -139,6 +142,8 @@
 (t-subtype (<Assortment> 1 3) <integer> #t)
 (t-subtype (<Assortment> 1 'a) (</> <integer> <symbol>) #t)
 (t-subtype (<Assortment> 1 'a) (</> <integer> <string>) #f)
+(t-subtype (</> (<Assortment> #f) <char>) (<?> <char>) #t)
+(t-subtype (<?> <char>) (</> (<Assortment> #f) <char>) #t)
 
 (test-section "built-in type constructors")
 
