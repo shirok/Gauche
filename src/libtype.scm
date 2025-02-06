@@ -295,7 +295,7 @@
      (let* ([klass (-> (SCM_NATIVE_TYPE sub) super)])
        (SCM_ASSERT (SCM_CLASSP klass))
        (set! sub klass))]
-    [(SCM_NATIVE_TYPE_P super) (return FALSE)]
+    [(SCM_NATIVE_TYPE_P super) (return SCM_FALSE)]
     ;; Delegate descriptive types to its handlers.
     [(SCM_DESCRIPTIVE_TYPE_P sub)
      (let* ([k::ScmClass* (Scm_ClassOf sub)])
