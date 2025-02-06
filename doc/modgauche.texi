@@ -25815,14 +25815,17 @@ after the execution of the thread terminates.
 
 @c EN
 If a thread execution is terminated because of uncaught exception,
-and its result is never retrieved by @code{thread-join!}, a warning
+and @code{thread-join!} has never been called on the thread until
+it is garbage-collected, a warning
 will be printed to the standard error port notifying
 ``thread dies a lonely death'':  It usually indicates some coding
 error.  If you don't collect the result of threads, you have to
 make sure that all the exceptions are captured and handled within @var{thunk}.
 @c JP
-もしスレッドが捕捉されない例外のために実行を終了し、その結果が@code{thread-join!}で
-回収されなかった場合、標準エラーポートに``thread dies a lonely death'' という
+もしスレッドが捕捉されない例外のために実行を終了し、
+@code{thread-join!}がそのスレッドに対し一切呼ばれずに
+スレッドがガベージコレクトされた場合、
+標準エラーポートに``thread dies a lonely death'' という
 警告メッセージが出力されます。そのようなケースは通常何らかのコーディングエラーで
 あるからです。スレッドの結果を回収しない場合は、
 @var{thunk}中ですべての例外を捕捉し処理しなければなりません。
