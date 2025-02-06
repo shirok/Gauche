@@ -597,10 +597,7 @@
                  (slot-set! type 'members args))
   :deconstructor (^[type] (~ type'members))
   :validator (^[type obj] (any (cut of-type? obj <>) (~ type'members)))
-  :subtype? (^[type super]
-              (if (or (is-a? super </>) <class>)
-                (every (cut subtype? <> super) (~ type'members))
-                'super))
+  :subtype? (^[type super] (every (cut subtype? <> super) (~ type'members)))
   :supertype? (^[type sub] (any (cut subtype? sub <>) (~ type'members))))
 
 ;;;
