@@ -248,10 +248,10 @@
 
 (test* "timeout mv" '(time out)
        (values->list
-        (future-get/timeout-thunk (future
-                                   (begin (sys-sleep 10) (values 1 2)))
-                                  0.01
-                                  (^[] (values 'time 'out)))))
+        (future-get/timeout (future
+                             (begin (sys-sleep 10) (values 1 2)))
+                            0.01
+                            (^[] (values 'time 'out)))))
 
 ;;--------------------------------------------------------------------
 ;; control.pmap
