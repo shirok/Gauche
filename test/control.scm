@@ -248,6 +248,12 @@
 
 (test* "timeout mv" '(time out)
        (values->list
+        (future-get (future (begin (sys-sleep 10) (values 1 2)))
+                    0.01
+                    (values 'time 'out))))
+
+(test* "timeout mv (procedural)" '(time out)
+       (values->list
         (future-get/timeout (future
                              (begin (sys-sleep 10) (values 1 2)))
                             0.01
