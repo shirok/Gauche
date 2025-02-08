@@ -37,7 +37,7 @@ libmbedtls.a: mbedtls-$(MBEDTLS_VERSION)
 	cd mbedtls-$(MBEDTLS_VERSION)                \
 	 && ../process-config.sh $(GAUCHE_THREAD_TYPE) include/mbedtls/mbedtls_config.h \
 	 && cmake @MBEDTLS_CMAKE_OPTIONS@ .          \
-	 && make -f CMakeFiles/Makefile2 library/all \
+	 && $(MAKE) -f CMakeFiles/Makefile2 library/all \
 	 && cd library                               \
 	 && cp $(MBEDTLS_LIBS) ../..
 
