@@ -259,6 +259,16 @@
                             0.01
                             (^[] (values 'time 'out)))))
 
+(test* "future-get hybrid syntax"
+       '(1 2)
+       (map future-get (list (future 1) (future 2))))
+
+(test* "future-get hybrid syntax (timeout)"
+       '(a b)
+       (map (cut future-get <> 0.01 <>)
+            (list (future (sys-sleep 10)) (future (sys-sleep 10)))
+            '(a b)))
+
 ;;--------------------------------------------------------------------
 ;; control.pmap
 ;;
