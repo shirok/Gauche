@@ -1547,12 +1547,14 @@ Returns @code{#t} if @var{obj} is a future, @code{#f} otherwise.
 @end defun
 
 
-@defun future-get future :optional timeout timeout-val
+@defmac future-get future :optional timeout timeout-expr
 @c MOD control.future
 @c EN
-The argument must be a future.  Retrieve the result(s) of @var{future}.
+The @var{future} argument must be an expression that yields a future.
+This macro retrieves its the result(s).
 @c JP
-引数はfutureでなければなりません。@var{future}の結果を取り出します。
+@var{future}引数はfutureを生成する式でなければなりません。
+このマクロはその結果を取り出します。
 @c COMMON
 
 @c EN
@@ -1562,17 +1564,35 @@ the result is ready by default.  You can limit how long you will wait by
 @var{timeout} argument, which can be @code{#f} (default, no timeout),
 a nonnegative real numebr (relative time in seconds), or
 a @code{<time>} object (absolute timepoint).  If the timeout reaches
-before the result is available, @var{timeout-val} is returned, which
-defaults to @code{#f}.
+before the result is available, @var{timeout-expr} is evaluated
+in the tail context of the call of @code{future-get}.
+When @var{timeout-expr} is omitted, @code{#f} is assumed.
 @c JP
 @var{future}の結果が既に求まっていれば、この手続きはただちにそれを返します。
 まだ計算中であった場合は、デフォルトでこの手続きは計算が終わるまでブロックします。
 待つ時間の上限を@var{timeout}引数で指定することもできます。
 @var{timeout}が@code{#f}(デフォルト)なら無制限に待ち、
 非負実数ならその秒数だけ待ち、@code{<time>}オブジェクトならそれで指定される
-絶対時間まで待ちます。タイムアウトが起きた場合は@var{timeout-val}が返されます。
-デフォルトは@code{#f}です。
+絶対時間まで待ちます。タイムアウトが起きた場合は@var{timeout-expr}が
+@code{future-get}の呼び出しの末尾コンテクストで評価されます。
+@var{timeout-expr}が省略された場合のデフォルトは@code{#f}です。
 @c COMMON
+
+@c EN
+Since this is a macro, you can put multi-value yielding expression
+in @var{timeout-expr}.  It is convenient to give the timeout values
+for a multi-value yielding future:
+@c JP
+これはマクロなので、多値を生成する式を@var{timeout-expr}に与えることが
+できます。多値を生成するfutureに対するタイムアウト値を指定するのに便利です。
+@c COMMON
+
+@example
+(define f (future (sys-sleep 1) (values 'a 'b 'c)))
+
+(future-get f 0.1 (values 'x 'y 'z))
+ @result{} @r{returns 3 values:} x y z
+@end example
 
 @c EN
 If an uncaught exception is raised during computation in the future,
@@ -1590,8 +1610,42 @@ futureの計算中に捕捉されない例外が投げられた場合、それ�
 (現在は、二度目以降は例外を投げることなく@code{#<undef>}が返されますが、
 将来変わる可能性があります)。
 @c COMMON
-@end defun
 
+@c EN
+NB: Up to Gauche 0.9.15, @code{future-get} was a procedure.  We changed
+it to a macro to allow multiple timeout values naturally.
+
+For the backward compatibility, @code{future-get} is actually defined
+as a hybrid macro (@pxref{Hybrid macros}),
+so the existing code that passes @code{future-get}
+as a higher-order function still works:
+@c JP
+註: Gauche 0.9.15までの@code{future-get}は手続きでしたが、
+多値のタイムアウト値を自然に扱うために、マクロに変更されました。
+
+互換性のために、@code{future-get}は実際にはハイブリッドマクロとして
+定義されています (@ref{Hybrid macros}参照)。
+@code{future-get}を高階手続きとして引数に渡している次のようなコードは
+そのまま動きます:
+@c COMMON
+
+@example
+(map future-get (list (future 1) (future 2))) @result{} (1 2)
+@end example
+
+@c EN
+The only visible change from 0.9.15 code is when @var{timeout-expr}
+is evaluated: In the previous releases, it was evaluated when you
+call @code{future-get}; in the current releases, it is evaluated
+when the timeout occurs.  If the exsting code relies on the timing,
+it needs to be updated.
+@c JP
+0.9.15以前のコードとの唯一の目に見える違いは、いつ@var{timeout-expr}が
+評価されるかです。以前のリリースでは、それは@code{future-get}の呼び出し時に
+評価されていましたが、現在のリリースではタイムアウトが起きた時点で評価されます。
+このタイミングに依存している既存のコードがあれば、アップデートが必要です。
+@c COMMON
+@end defmac
 
 @defun future-done? future
 @c MOD control.future
