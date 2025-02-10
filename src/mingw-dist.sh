@@ -13,19 +13,16 @@ set -e
 DISABLE_BUILD_GOSH_FLAGS="BUILD_GOSH_FLAGS="
 
 # Set MINGWDIR if MinGW is installed in different place.
+# NB: We no longer officially support 32bit build.  We just keep the variable
+# for those who want to build it by themselves.
 case "$MSYSTEM" in
-  MINGW64)
-    mingwdir=${MINGWDIR:-/mingw64}
-    mingwarch="x86_64"
-    ;;
   MINGW32)
     mingwdir=${MINGWDIR:-/mingw32}
     mingwarch="i686"
     ;;
   *)
-    echo 'WARNING: $MSYSTEM is neither "MINGW32" or "MINGW64".'
-    mingwdir=${MINGWDIR:-/mingw}
-    mingwarch="unknown"
+    mingwdir=${MINGWDIR:-/mingw64}
+    mingwarch="x86_64"
     ;;
 esac
 
@@ -40,12 +37,10 @@ export PATH=$mingwdir/bin:$PATH
 #  building i686 binary on x86_64 shell, for example), so this setting
 #  makes things easier.
 case "$MSYSTEM" in
-  MINGW64)
-    buildopt=--build=x86_64-w64-mingw32;;
   MINGW32)
     buildopt=--build=i686-w64-mingw32;;
   *)
-    buildopt=--build=i686-pc-mingw32;;
+    buildopt=--build=x86_64-w64-mingw32;;
 esac
 
 # Process Options:
@@ -143,12 +138,7 @@ make install $DISABLE_BUILD_GOSH_FLAGS
 (cd src; make install-mingw $DISABLE_BUILD_GOSH_FLAGS)
 make install-examples $DISABLE_BUILD_GOSH_FLAGS
 rm -rf $distdir/lib/libgauche.dll*
-case "$MSYSTEM" in
-  MINGW64|MINGW32)
-    mingw_dll="libwinpthread-1.dll";;
-  *)
-    mingw_dll="mingwm10.dll";;
-esac
+mingw_dll="libwinpthread-1.dll";;
 
 # If we use external mbedtls, we need these DLLs.
 # NB: those dlls also depend on libgcc.

@@ -142,7 +142,7 @@ The MbedTLS source is downloaded and compiled during build.
 
 [source,sh]
 ----
-MSYSTEM=MINGW64 src/mingw-dist.sh --with-mbedtls
+src/mingw-dist.sh --with-mbedtls
 ----
 
 If you choose this, you need CMake and Python3 installed on your system,
@@ -157,7 +157,7 @@ instead:
 
 [source,sh]
 ----
-MSYSTEM=MINGW64 src/mingw-dist.sh --with-mbedtls=dll
+src/mingw-dist.sh --with-mbedtls=dll
 ----
 
 If you choose this, Gauche binary does not include MbedTLS and hence
