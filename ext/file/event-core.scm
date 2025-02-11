@@ -38,7 +38,7 @@
  ;;
  ;; Linux (inotify)
  ;;
- (.when (defined HAVE_SYS_INOTIFY_H)
+ (.when (and (defined HAVE_SYS_INOTIFY_H) (not HAVE_SYS_EVENT_H))
    (.include <sys/inotify.h>)
 
    (define-ctype ScmSysInotifyEvent::(.struct
