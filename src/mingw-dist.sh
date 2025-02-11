@@ -138,7 +138,7 @@ make install $DISABLE_BUILD_GOSH_FLAGS
 (cd src; make install-mingw $DISABLE_BUILD_GOSH_FLAGS)
 make install-examples $DISABLE_BUILD_GOSH_FLAGS
 rm -rf $distdir/lib/libgauche.dll*
-mingw_dll="libwinpthread-1.dll";;
+mingw_dll="libwinpthread-1.dll"
 
 # If we use external mbedtls, we need these DLLs.
 # NB: those dlls also depend on libgcc.
