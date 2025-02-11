@@ -2647,7 +2647,7 @@ depends on various factors, so you shouln't count on a deterministic behavior.
 If @var{pred} raises an uncaptured condition, remaining tasks are
 cancelled and the condition is reraised.
 @c JP
-@var{pred}が捕捉されないコンディションをraisetした場合、
+@var{pred}が捕捉されないコンディションをraiseした場合、
 他のタスクはキャンセルされ、コンディションが再raiseされます。
 @c COMMON
 @end defun
@@ -3708,7 +3708,7 @@ we use @code{string-comparator} to compare string pathnames
 @c JP
 どんなキャッシュにも、比較器とストレージがあります。
 比較器はキーを比較するのに使われます。上の例ではパス名を比較するために
-@code{string-comparator}を渡しています
+@code{string-comparator}を渡しています。
 比較器について詳しくは@ref{Basic comparators}を参照してください。
 @c COMMON
 
