@@ -18474,7 +18474,7 @@ is implemented on top of continuation marks, allowing its body
 to be evaluated in tail context (@pxref{Parameters}).
 @c JP
 継続マークは、継続フレームに付加されるキーと値の関連です。
-キーと値には任意のSchemeuオブジェクトが使えます。
+キーと値には任意のSchemeオブジェクトが使えます。
 これだけ聞いてもなんだかよく分からないかもしれませんが、
 継続マークを使って色々便利な言語機能を実装することができます。
 例えば、新しい@code{parameterize}は本体を末尾コンテクストで評価することが
