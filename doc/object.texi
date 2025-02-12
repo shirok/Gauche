@@ -2582,7 +2582,7 @@ updating @var{obj} (which would cause infinite loop).
 
 @defun class-slot-ref class slot-name
 @defunx class-slot-set! class slot-name obj
-@defunx class-slot-bound? class slot-name obj
+@defunx class-slot-bound? class slot-name
 @c EN
 When slot's @code{:allocation} option is either @code{:class}
 or @code{:each-subclass}, these procedures allow you to
