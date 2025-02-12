@@ -8256,7 +8256,7 @@ SRFI-114にも同じ手続きがあります。
 @end defun
 
 @defun comparator-min-in-list comparator list
-@defunx comparator-min-in-list comparator list
+@defunx comparator-max-in-list comparator list
 [SRFI-162]
 @c MOD srfi.162
 @c EN
@@ -12534,7 +12534,7 @@ An error is signaled if anything other than above is given.
 
 @example
 (bytestring "lor" #\r #\x65 #u8(#x6d))
-  @result{} #u8(108 111 114 114 101 109)  ; #u8"lorem"
+  @result{} #u8(108 111 114 114 101 109)  ; #u8"lorrem"
 @end example
 @end defun
 
