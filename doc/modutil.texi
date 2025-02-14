@@ -14264,11 +14264,19 @@ If there's no solutions, it returns @code{#f}.
 
 @deftp {Module} os.windows
 @mdindex os.windows
+@c EN
 This module is only available on Windows-native Gauche, and
 provides Windows-specific procedures.
 You can check @code{gauche.os.windows} feature with
- @code{cond-expand} macro (@pxref{Feature conditional})
+@code{cond-expand} macro (@pxref{Feature conditional})
 to conditionalize windows-specific code.
+@c JP
+このモジュールはWindowsネイティブのGaucheにのみあり、
+Windows特有の機能を提供します。
+@code{cond-expand}マクロで@code{gauche.os.windows}機能特定子を使うことにより、
+Windows特有の機能をコードに含めることができます
+(@ref{Feature conditional}参照)。
+@c COMMON
 
 @example
 (cond-expand
@@ -14279,12 +14287,14 @@ to conditionalize windows-specific code.
    ... Unix code ...])
 @end example
 
-Currently there aren't enough procedures provided here, but
-eventually we want to support simple scripting on Windows.
-
+@c EN
 Unless otherwise noted,
 when Windows API returns an error value, a @code{<system-error>} condition
 is thrown.
+@c JP
+特に記述のない場合、Windows APIがエラーを返した場合には
+@code{<system-error>}コンディションが投げられます。
+@c COMMON
 @end deftp
 
 @menu
@@ -14294,11 +14304,17 @@ is thrown.
 
 @node Windows dialogs, Windows console API, Windows support, Windows support
 @subsection Windows dialogs
+@c NODE Windowsアイアログ
 
+@c EN
 Currenly we only have MessageBox API.
+@c JP
+今のところ、MessageBoxが使えます。
+@c COMMON
 
 @defun sys-message-box window message :optional caption flags
 @c MOD os.windows
+@c EN
 Calls Windows MessageBox API.   The @var{window} argument should
 be a handle for a window, or @code{#f}; at the moment we don't
 provide any API that retrieves window handles, so you should always
@@ -14309,6 +14325,16 @@ argument takes a string to be used in the window title.
 The @var{flags} argument is an integer; it should be @code{logior}
 of values from one or more of the following groups.  See the
 Windows reference manual for the details.
+@c JP
+WindowsのMessageBox APIを呼びます。
+@var{window}はウィンドウハンドルか@code{#f}でなければなりませが、
+今のところウィンドウハンドルを得るAPIがないので、常に@code{#f}を渡してください。
+@var{message}引数はメッセージボックスに表示する文字列です。
+省略可能な@var{caption}引数はウィンドウタイトルに使われる文字列です。
+
+@var{flags}引数は以下に挙げる定数を@code{logior}で組み合わせた整数です。
+詳しくはWindowsのリファレンスマニュアルを参照してください。
+@c COMMON
 
 @table @emph
 @item Buttons
@@ -14321,7 +14347,11 @@ Windows reference manual for the details.
 @code{MB_YESNO},
 @code{MB_YESNOCANCEL}
 @item Icon
+@c EN
 Default is no icon.  Possible values:
+@c JP
+デフォルトはアイコン無し。指定可能な値は:
+@c COMMON
 @code{MB_ICONEXCLAMATION},
 @code{MB_ICONWARNING},
 @code{MB_ICONINFORMATION},
@@ -14348,8 +14378,12 @@ Default is no icon.  Possible values:
 @code{MB_SERVICE_NOTIFICATION}
 @end table
 
+@c EN
 Return value is one of the following integer constants,
 indicating which button is pressed:
+@c JP
+戻り値は、どのボタンが押されたかを示す次の整数値のいずれかです。
+@c COMMON
 @code{IDABORT},
 @code{IDCANCEL},
 @code{IDCONTINUE},
@@ -14363,35 +14397,64 @@ indicating which button is pressed:
 
 @node Windows console API,  , Windows dialogs, Windows support
 @subsection Windows console API
+@c NODE WindowsコンソールAPI
 
+@c EN
 Most of these procedures corresponds to Windows Console API one-to-one.
 See the Windows reference for the detail description of what each API does.
+@c JP
+以下のほとんどの手続きはWindowsコンソールAPIと1対1対応しています。
+詳しくはWindows APIの対応するドキュメントを参照してください。
+@c COMMON
 
+@c EN
 @subsubheading Attaching and detaching
+@c JP
+@subsubheading アタッチとデタッチ
+@c COMMON
 
 @defun sys-alloc-console
 @defunx sys-free-console
 [Windows]
 @c MOD os.windows
+@c EN
 Calls @code{AllocConsole} and @code{FreeConsole}, respectively.
+Returns an undefined value.
+@c JP
+それぞれ、@code{AllocConsole}と@code{FreeConsole}を呼びます。
+未定義値を返します。
+@c COMMON
 @end defun
 
 @defun sys-generate-console-ctrl-event event pgid
 [Windows]
 @c MOD os.windows
+@c EN
 Calls @code{GenerateConsoleCtrlEvent}.  For @var{event} argument,
 the constants @code{CTRL_C_EVENT} and @code{CTRL_BREAK_EVENT} are available.
+@c JP
+@code{GenerateConsoleCtrlEvent}を呼びます。
+@var{event}引数には@code{CTRL_C_EVENT}か@code{CTRL_BREAK_EVENT}を指定できます。
+@c COMMON
 @end defun
 
 @defvr {Constant} CTRL_C_EVENT
 @defvrx {Constant} CTRL_BREAK_EVENT
 [Windows]
 @c MOD os.windows
+@c EN
 Constants to be used for @var{event} argument of
-@code{sys-generate-console} above.
+@code{sys-generate-console-ctl-event} above.
+@c JP
+@code{sys-generate-console-ctl-event}の@var{event}引数に渡せる定数です。
+@c COMMON
 @end defvr
 
+@c EN
 @subsubheading Console codepage
+@c JP
+@subsubheading コンソールコードページ
+@c COMMON
 
 @defun sys-get-console-cp
 @defunx sys-get-console-output-cp
@@ -14399,41 +14462,79 @@ Constants to be used for @var{event} argument of
 @defunx sys-set-console-output-cp codepage
 [Windows]
 @c MOD os.windows
+@c EN
 Call @code{GetConsoleCP}, @code{GetConsoleOutputCP},
 @code{SetConsoleCP}, and @code{SetConsoleOutputCP}, respectively.
 Setter procedures returns an undefined value.
+@c JP
+それぞれ、@code{GetConsoleCP}、@code{GetConsoleOutputCP}、
+@code{SetConsoleCP}、@code{SetConsoleOutputCP}を呼びます。
+値をセットする手続きは未定義値を返します。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Console cursor
+@c JP
+@subsubheading コンソールカーソル
+@c COMMON
 
 @defun sys-get-console-cursor-info handle
 @defunx sys-set-console-cursor-info handle size visible
 [Windows]
 @c MOD os.windows
+@c EN
 Call @code{GetConsoleCursorInfo} and @code{SetConsoleCursorInfo},
-respectively.  @var{Handle} is a handle to the console screen buffer.
+respectively.  @var{Handle} is a handle to the console screen buffer
+(see @code{sys-create-console-screen-buffer} blow).
 The getter returns two values, size (the integer
 percentage of the character cell that is filled by the cursor,
 between 1 and 100), and a boolean visible flag.
 The setter takes a handle to the console screen buffer,
 integer size percentage, and boolean visible flag.  It returns
 an undefined value.
+@c JP
+それぞれ、@code{GetConsoleCursorInfo}と@code{SetConsoleCursorInfo}を呼びます。
+@var{handle}はコンソールスクリーンバッファのハンドルです
+(下の@code{sys-create-console-screen-buffer}を参照)。
+@code{sys-get-console-cursor-info}はカーソルのサイズ
+(カーソルがどのくらいセルを覆うかのパーセンテージ、1から100)および
+カーソルが見えているかどうかの真偽値を2つの値として返します。
+@code{sys-set-console-cursor-info}はカーソルのサイズパーセンテージと
+可視かどうかの真偽値を取ってセットし、未定義値を返します。
+@c COMMON
 @end defun
 
 @defun sys-set-console-cursor-position handle x y
 [Windows]
 @c MOD os.windows
+@c EN
 Calls @code{SetConsoleCursorPosition}.
-@var{Handle} is a handle to the console screen buffer.
+@var{Handle} is a handle to the console screen buffer
+(see @code{sys-create-console-screen-buffer} blow).
 @var{X} and @var{y} are cursor coordinates in character position,
 where (0, 0) is the upper-left corner of the console screen buffer.
 It returns an undefined value.
 
 To get the current cursor position, you can use
 @code{sys-get-console-screen-buffer-info}.
+@c JP
+@code{SetConsoleCursorPosition}を呼びます。
+@var{handle}はコンソールスクリーンバッファのハンドルです
+(下の@code{sys-create-console-screen-buffer}を参照)。
+@var{x}と@var{y}は文字単位のカーソル位置で、スクリーンバッファ左上端が(0, 0)です。
+未定義値を返します。
+
+現在のカーソル位置を得るには
+@code{sys-get-console-screen-buffer-info}が使えます。
+@c COMMON
 @end defun
 
+@c EN
 @subsubheading Console mode
+@c JP
+@subsubheading コンソールモード
+@c COMMON
 
 @defun sys-get-console-mode handle
 @defunx sys-set-console-mode handle mode
@@ -14452,7 +14553,11 @@ To get the current cursor position, you can use
 @c MOD os.windows
 @end defvr
 
+@c EN
 @subsubheading Screen buffer
+@c JP
+@subsubheading スクリーンバッファ
+@c COMMON
 
 @defun sys-create-console-screen-buffer desired-access share-mode inheritable
 [Windows]
@@ -14536,7 +14641,11 @@ To get the current cursor position, you can use
 @c MOD os.windows
 @end defun
 
+@c EN
 @subsubheading Console input/output
+@c JP
+@subsubheading コンソール入出力
+@c COMMON
 
 @deftp {Class} <win:input-record>
 @clindex win:input-record
@@ -14655,7 +14764,11 @@ To get the current cursor position, you can use
 @c MOD os.windows
 @end defun
 
+@c EN
 @subsubheading Standard handles
+@c JP
+@subsubheading 標準ハンドル
+@c COMMON
 
 @defun sys-get-std-handle which
 @defunx sys-set-std-handle which handle
