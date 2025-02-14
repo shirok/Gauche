@@ -1,3 +1,9 @@
+2025-02-13  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (~*): Experimentally add 'Chain of comparison'
+	  macro.  The name is still provisional.
+	  https://github.com/shirok/Gauche/issues/1114
+
 2025-02-07  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/future.scm (future-get): Experimentally support
