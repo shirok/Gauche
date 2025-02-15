@@ -192,8 +192,8 @@
       (unless (<= (- e s) (- tlen tstart))
         (errorf "source range (~s,~s) is greater than the target vector" s e))
       (if (and (eq? target src)
-               (or (>< s <= tstart <  e)
-                   (>< tstart < s < (+ tstart (- e s)))))
+               (or (ineq s <= tstart <  e)
+                   (ineq tstart < s < (+ tstart (- e s)))))
         ;; overlapping self copy.  we need extra step not to overwrite
         ;; before copy.
         (begin

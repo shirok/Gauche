@@ -1,3 +1,11 @@
+2025-02-15  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (ineq): Nah, '><' is too peculiar and stands out
+	  too much.  The sequence can also appear in a rendered HTML sequence,
+	  making searching difficult.
+	  Trying 'ineq'.  Considering the fact that the rest of form is an
+	  inequality, this seems more adequate.
+
 2025-02-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (><): Try different name for chain of comparison.

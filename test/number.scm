@@ -1206,8 +1206,8 @@
 (numcmp-multiarg-test '(1 1 1 1 1 0)    #f #f #f #f #t)
 
 (define (numrange3-test x y z left-inclusive right-inclusive)
-  (test* #"left-inclusive ~x ~y ~z" left-inclusive (>< x <= y < z))
-  (test* #"right-inclusive ~x ~y ~z)" right-inclusive (>< x < y <= z)))
+  (test* #"ineq left-inclusive ~x ~y ~z" left-inclusive (ineq x <= y < z))
+  (test* #"ineq right-inclusive ~x ~y ~z)" right-inclusive (ineq x < y <= z)))
 
 (numrange3-test 1 2 3 #t #t)
 (numrange3-test 1 1 3 #t #f)
@@ -1886,14 +1886,14 @@
            (receive (d m) (div-and-mod x y)
              (let1 z (+ (* d y) m)
                (list (or (= x z) z)
-                     (or (>< 0 <= m < (abs y)) m))))))
+                     (or (ineq 0 <= m < (abs y)) m))))))
 
   (define (test-div0 x y =)
     (test* (format "~a div0 ~a" x y) '(#t #t)
            (receive (d m) (div0-and-mod0 x y)
              (let1 z (+ (* d y) m)
                (list (or (= x z) z)
-                     (or (>< (- (abs y)) <= (* m 2) < (abs y))
+                     (or (ineq (- (abs y)) <= (* m 2) < (abs y))
                          m))))))
 
   ((do-quadrants test-div) 3 2 =)

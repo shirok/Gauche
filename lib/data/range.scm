@@ -107,7 +107,7 @@
     (set! (~ r'indexer)
           (^[o i]
             (assume (and (exact-integer? i)
-                         (>< 0 <= i < length))
+                         (ineq 0 <= i < length))
                     "Index out of range:" i)
             (raw-indexer storage (+ offset i))))))
 
@@ -115,7 +115,7 @@
 ;; ranges slot contains #((offset . subrange) ...)
 (define (%appended-range-index range i)
   (assume (exact-integer? i) "Range index must be an exact integer:" i)
-  (assume (>< 0 <= i < (~ range'length)) "Range index out of range:" i)
+  (assume (ineq 0 <= i < (~ range'length)) "Range index out of range:" i)
   (let* ([vec (~ range'ranges)]
          [len (vector-length vec)])
     (define (call-indexer p i)
@@ -283,7 +283,7 @@
 ;; The optional fallback is Gauche extension
 (define (range-ref range n :optional fallback)
   (assume (range? range))
-  (cond [(>< 0 <= n < (range-length range)) ((~ range'indexer) range n)]
+  (cond [(ineq 0 <= n < (range-length range)) ((~ range'indexer) range n)]
         [(undefined? fallback) (error "Index out of range:" n)]
         [else fallback]))
 

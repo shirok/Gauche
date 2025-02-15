@@ -120,7 +120,7 @@
          [#/^\s*$/ (_) (show (car es))]  ; the first entry by default
          [#/^\s*(\d+)\s*$/ (_ N)
           (let1 n (- (x->integer N) 1)
-            (if (>< 0 <= n < (length es))
+            (if (ineq 0 <= n < (length es))
               (show (list-ref es n))
               (loop)))]
          [#/^\s*q\s*$/ (_) #f]

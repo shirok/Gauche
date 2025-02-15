@@ -42,7 +42,7 @@
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
-                             assume assume-type ><
+                             assume assume-type ineq
                              dotimes dolist do-plist doplist
                              ecase typecase etypecase cond-list
                              define-condition-type condition
@@ -920,20 +920,20 @@
 
 ;; Experimental - the name may change
 ;;
-;; e.g. (>< 0 <= x < 100)  => (let ((x_ x))
-;;                              (and (<= 0 x_)
-;;                                   (< x_ 100)))
+;; e.g. (ineq 0 <= x < 100)  => (let ((x_ x))
+;;                                (and (<= 0 x_)
+;;                                     (< x_ 100)))
 ;;
 ;; more generally:
 ;;
-;;  (>< v0 R0 v1 R1 ... Rk-1 vk)
+;;  (ineq v0 R0 v1 R1 ... Rk-1 vk)
 ;;  => (let ((tv0 v0) (tv1 v1) ... (tvk vk))
 ;;        (and (R0 tv0 tv1)
 ;;             (R1 tv1 tv2)
 ;;             ...
 ;;             (Rk-1 tvk-1 tvk)))
 
-(define-syntax ><
+(define-syntax ineq
   (er-macro-transformer
    (^[f r c]
      (unless (odd? (length (cdr f)))
