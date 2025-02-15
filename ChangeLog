@@ -1,3 +1,9 @@
+2025-02-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (><): Try different name for chain of comparison.
+	  We realized ~* is very similar to ~, but their function is totally
+	  different. Let's see how it feels.  Retire the old <:<= and <=:<.
+
 2025-02-13  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (~*): Experimentally add 'Chain of comparison'

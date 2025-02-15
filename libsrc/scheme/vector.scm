@@ -192,8 +192,8 @@
       (unless (<= (- e s) (- tlen tstart))
         (errorf "source range (~s,~s) is greater than the target vector" s e))
       (if (and (eq? target src)
-               (or (and (<= s tstart) (< tstart e))
-                   (and (< tstart s) (< s (+ tstart (- e s))))))
+               (or (>< s <= tstart <  e)
+                   (>< tstart < s < (+ tstart (- e s)))))
         ;; overlapping self copy.  we need extra step not to overwrite
         ;; before copy.
         (begin
@@ -211,7 +211,7 @@
                          (unless (vector? v)
                            (error "vector expected, but got:" v))
                          (let1 l (vector-length v)
-                           (unless (and (<= 0 s l) (<= 0 e l) (<= s e))
+                           (unless (<= 0 s e l)
                              (errorf "invalid subvector range, \
                                      start:~s end:~s subvec:~s" s e v))
                            (+ c (- e s)))]

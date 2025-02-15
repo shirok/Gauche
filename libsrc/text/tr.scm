@@ -120,7 +120,7 @@
                       [size  (- toi fromi -1)])
                  (when (negative? size)
                    (errorf "wrong character order: ~a-~a" from to))
-                 (if (and (< fromi table-size) (<= table-size toi))
+                 (if (>< fromi < table-size <= toi)
                    (start (read-char)
                           (list* (list (- toi table-size)
                                        (integer->char table-size)
@@ -160,7 +160,7 @@
 ;; complement.  array doesn't contain repeat.
 (define (complement-char-array array table-size)
   (define (add-range from to rest)
-    (if (and (< from table-size) (<= table-size to))
+    (if (>< from < table-size <= to)
       (list* (list (- to table-size -1)
                    (integer->char table-size)
                    (integer->char to))
