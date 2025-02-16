@@ -1,5 +1,13 @@
 2025-02-15  Shiro Kawai  <shiro@acm.org>
 
+	* src/gauche/compare.h, src/gauche/priv/compareP.h: Move the definition
+	  of ScmComparator struct to a private header.  Some of the fields
+	  are lazily computed, so the user code should never access the
+	  struct fields directly.
+	  We have allowed typeFn and eqFn to be accessed directly, but now
+	  those should be accessed via ScmCompartorTypeTestPredicate() and
+	  Scm_ComparatorEqualityPredicate().
+
 	* src/libmacro.scm (ineq): Nah, '><' is too peculiar and stands out
 	  too much.  The sequence can also appear in a rendered HTML sequence,
 	  making searching difficult.

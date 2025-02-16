@@ -34,20 +34,9 @@
 #ifndef GAUCHE_COMPARE_H
 #define GAUCHE_COMPARE_H
 
-
 SCM_DECL_BEGIN
 
-/* srfi-114/srfi-128 comparator */
-struct ScmComparatorRec {
-    SCM_HEADER;
-    ScmObj name;                /* debugging aid */
-    ScmObj typeFn;              /* proc */
-    ScmObj eqFn;                /* proc */
-    ScmObj compareFn;           /* proc */
-    ScmObj hashFn;              /* proc */
-    ScmObj orderFn;             /* proc */
-    u_long flags;
-};
+/* Definition of struct ScmComparatorRec is private (priv/compareP.h) */
 
 /* Difference between srfi-114 and srfi-128:
    srfi-114 uses (compare a b) => -1 (a<b), 0 (a=b) or 1 (a>b)
@@ -94,6 +83,8 @@ SCM_CLASS_DECL(Scm_ComparatorClass);
 SCM_EXTERN ScmObj Scm_MakeComparator(ScmObj type, ScmObj eq,
                                      ScmObj compare_or_order, ScmObj hash,
                                      ScmObj name, u_long flags);
+SCM_EXTERN ScmObj Scm_ComparatorTypeTestPredicate(ScmComparator *);
+SCM_EXTERN ScmObj Scm_ComparatorEqualityPredicate(ScmComparator *);
 SCM_EXTERN ScmObj Scm_ComparatorComparisonProcedure(ScmComparator *);
 SCM_EXTERN ScmObj Scm_ComparatorOrderingPredicate(ScmComparator *);
 SCM_EXTERN ScmObj Scm_ComparatorHashFunction(ScmComparator *);

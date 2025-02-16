@@ -33,7 +33,8 @@
 
 (select-module gauche.internal)
 (inline-stub
- (.include "gauche/priv/configP.h"))
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/compareP.h"))
 
 ;;;
 ;;; Comparator (a la SRFI-114/128)
@@ -138,8 +139,14 @@
 (define-cproc comparator-hashable? (c::<comparator>) ::<boolean>
   (return (not (logand (-> c flags) SCM_COMPARATOR_NO_HASH))))
 (define-cproc comparator-type-test-predicate (c::<comparator>) :constant
-  (return (-> c typeFn)))
+  Scm_ComparatorTypeTestPredicate)
 (define-cproc comparator-equality-predicate (c::<comparator>) :constant
+  Scm_ComparatorEqualityPredicate)
+
+(define-cfn Scm_ComparatorTypeTestPredicate (c::ScmComparator*)
+  (return (-> c typeFn)))
+
+(define-cfn Scm_ComparatorEqualityPredicate (c::ScmComparator*)
   (return (-> c eqFn)))
 
 ;; comparator-comparison-procedure

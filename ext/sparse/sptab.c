@@ -140,7 +140,7 @@ SCM_DEFINE_BUILTIN_CLASS(Scm_SparseTableClass,
 static u_long sparse_table_hash(SparseTable *st, ScmObj key)
 {
     if (st->hashfn) return st->hashfn(key);
-    ScmObj h = st->comparator->hashFn;
+    ScmObj h = Scm_ComparatorHashFunction(st->comparator);
     ScmObj r = Scm_ApplyRec1(h, key);
     if (!SCM_INTEGERP(r)) {
         Scm_Error("hash function %S returns non-integer: %S", h, r);
@@ -151,7 +151,7 @@ static u_long sparse_table_hash(SparseTable *st, ScmObj key)
 static int sparse_table_eq(SparseTable *st, ScmObj a, ScmObj b)
 {
     if (st->cmpfn) return st->cmpfn(a, b);
-    ScmObj e = st->comparator->eqFn;
+    ScmObj e = Scm_ComparatorEqualityPredicate(st->comparator);
     ScmObj r = Scm_ApplyRec2(e, a, b);
     return !SCM_FALSEP(r);
 }

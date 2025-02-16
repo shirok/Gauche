@@ -35,6 +35,7 @@
 #define LIBGAUCHE_BODY
 #include "gauche.h"
 #include "gauche/priv/configP.h"
+#include "gauche/priv/compareP.h"
 
 /*
  * Comparator

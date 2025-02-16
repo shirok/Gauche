@@ -38,7 +38,8 @@
 ;;;
 
 (inline-stub
- (.include "gauche/priv/configP.h")
+ (.include "gauche/priv/configP.h"
+           "gauche/priv/compareP.h")
 
  (define-cise-stmt dict-check-entry
    [(_ dict key expr)
