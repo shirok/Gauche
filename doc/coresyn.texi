@@ -1780,6 +1780,27 @@ evaluated.  If @var{alternative} is not provided, it results undefined value.
       (values #f #f)))
   @result{} 1 @r{and} 2
 @end example
+
+@c EN
+Anything other than boolean false (@code{#f}) counts
+to true.  However, if @var{test} yields an undefined value @code{#<undef>},
+a warning is issued (although it is treated as a true value).
+An undefined value is often returned from a procedure whose return
+value shouldn't matter. hence the caller should not rely on it.
+@xref{Undefined values}, for the details.
+@c JP
+偽値(@code{#f})以外は全て真の値として扱われます。
+ただし、@var{test}が未定義値@code{#<undef>}を返した場合には、
+警告が表示されます (値自体は真の値扱いになりますが)。
+未定義値はしばしば、戻り値に意味がない手続きが返します。
+呼び出し側は、そのような手続きの戻り値に依存した処理をすべきではありません。
+詳しくは@ref{Undefined values}を参照してください。
+@c COMMON
+
+@example
+gosh> (if (if #f #t) 'a 'b)
+WARNING: #<undef> is used in boolean context.
+@end example
 @end defspec
 
 @defspec cond clause1 clause2 @dots{}
