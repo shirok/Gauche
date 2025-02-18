@@ -7260,7 +7260,7 @@ indexes are given, the content between those indexes are taken.
 @c ----------------------------------------------------------------------
 @node Skew binary random-access lists, Sparse data containers, Ring buffer, Library modules - Utilities
 @section @code{data.skew-list} - Skew binary random-access lists
-@c NODE Skew binary random-access lists, @code{data.sparse} - Skew binary random-access lists
+@c NODE Skew binary random-access lists, @code{data.skew-list} - Skew binary random-access lists
 
 @deftp {Module} data.skew-list
 @mdindex data.skew-list

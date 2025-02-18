@@ -17369,23 +17369,6 @@ is returned.
 @c COMMON
 
 @c EN
-Note: The name @code{.$} comes from the fact that @code{.} is
-commonly used for function composition in literatures and some
-programming languages, and that Gauche uses suffix @code{$} to
-indicate combinators.   However, since it is not a valid R7RS
-identifier, portable programs may want to use the alias @code{compose},
-with which you can easily add a portable definition using SRFI-0,
-for example.
-@c JP
-註: @code{.$}という名前は、文献やいくつかの他のプログラミング言語で
-@code{.}が関数合成によく使われること、そしてGaucheではコンビネータの末尾に
-@code{$}をつける習慣があることから来ています。ただ、これはR7RSの
-範囲内では有効な識別子でないので、ポータビリティを考えるプログラムは
-別名の@code{compose}を使った方が良いでしょう。そうすればSRFI-0などを
-使って容易に移植が可能です。
-@c COMMON
-
-@c EN
 SRFI-210 provides @code{compose-left} and @code{compose-right};
 @pxref{Procedures and syntax for multiple values}.
 @c JP
