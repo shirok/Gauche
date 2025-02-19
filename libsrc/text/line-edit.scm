@@ -112,7 +112,7 @@
    (initpos-y)
    (initpos-x)
    (screen-height)
-   (screen-width)
+   (screen-width :init-value 79)
 
    ;; These are the cursor position immediately before a command is invoked
    ;; (or, more precisely, the cursor position after the last redraw).

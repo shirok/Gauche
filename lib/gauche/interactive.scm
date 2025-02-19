@@ -410,27 +410,60 @@
 (define-constant *default-controls*
   (make-write-controls :length 50 :level 10 :width 79 :string-length 256
                        :pretty (not (sys-getenv "GAUCHE_REPL_NO_PPRINT"))))
-(define *controls* *default-controls*)
 
-(define (%printer . exprs)
-  (dolist [expr exprs]
-    (write expr *controls*)
-    (newline)))
+;; Returns printer and print-mode procedure.  Both needs to keep
+;; the current write context, and needs to update them according
+;; to line-edit-context.
+(define (make-printer/print-mode edit-ctx)
+  (define (sw)                          ;screen width
+    (if edit-ctx (~ edit-ctx'screen-width) 79))
+  (let* ([last-width (sw)]
+         [controls (write-controls-copy *default-controls*
+                                        :width last-width)])
+    (define (%update-controls!)
+      (unless (= last-width (sw))
+        (set! last-width (sw))
+        (set! controls (write-controls-copy *default-controls*
+                                            :width last-width))))
+    (define (printer . exprs)
+      (%update-controls!)
+      (dolist [expr exprs]
+        (write expr controls)
+        (newline)))
+    (define (print-mode . args)
+      (%update-controls!)
+      (apply
+       (case-lambda
+         [() controls]                   ; return the current controls
+         [(c)                            ; set controls directly
+          (let1 c (if (eq? c 'default)
+                    (write-controls-copy *default-controls*
+                                         :width last-width)
+                    c)
+            (assume-type c <write-controls>)
+            (rlet1 old controls
+              (set! controls c)
+              ;; NB: Without this, ^L won't reset the modified width.
+              ;; You need to change the actual screen width to make it
+              ;; reset.
+              ;; However, with this, setting width with print-mode
+              ;; is immediately reverted by the next printer call.
+              ;; We'll think more of better interaction.
+              ;;(set! last-width (~ controls'width))
+              ))]
+         [kvs
+          (rlet1 old controls
+            (set! controls (apply write-controls-copy controls kvs))
+            ;;(set! last-width (~ controls'width))
+            )])
+       args))
+    (values printer print-mode)))
 
-;; API
-(define print-mode
-  (case-lambda
-    [() *controls*]                     ; return the current controls
-    [(c)                                ; set controls directly
-     (let1 c (if (eq? c 'default)
-               *default-controls*
-               c)
-       (assume-type c <write-controls>)
-       (rlet1 old *controls*
-         (set! *controls* c)))]
-    [kvs
-     (rlet1 old *controls*
-       (set! *controls* (apply write-controls-copy *controls* kvs)))]))
+(define print-mode-proc
+  (make-parameter (^ _ *default-controls*)))
+
+(define (print-mode . args)
+  (apply (print-mode-proc) args))
 
 ;; This shadows gauche#read-eval-print-loop
 ;; NB: We ignore reader argument,  The whole point of this procedure
@@ -442,11 +475,14 @@
   (receive (%prompter %reader ctx)
       (make-suitable-prompter/reader/ctx prompter)
     (set! *line-edit-ctx* ctx)          ;kludge
-    ((with-module gauche read-eval-print-loop)
-     %reader
-     (or evaluator %evaluator)
-     (or printer %printer)
-     %prompter)))
+    (receive (%printer %print-mode)
+        (make-printer/print-mode ctx)
+      (parameterize ((print-mode-proc %print-mode))
+        ((with-module gauche read-eval-print-loop)
+         %reader
+         (or evaluator %evaluator)
+         (or printer %printer)
+         %prompter)))))
 
 ;;;
 ;;; Misc. setup
