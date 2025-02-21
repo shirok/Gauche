@@ -142,7 +142,7 @@
            [expo (vector-ref v 1)]
            [sign (vector-ref v 2)]
            [open? (odd? mant)])
-      (if (= mant 4503599627370496)     ;2^52
+      (if (= mant (real-expt 2 52))
         (values (expt 2 (- expo 1)) (expt 2 (- expo 2)) open?)
         (values (expt 2 (- expo 1)) (expt 2 (- expo 1)) open?))))
 
