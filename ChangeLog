@@ -1,3 +1,7 @@
+2025-02-20  Shiro Kawai  <shiro@acm.org>
+
+	* ext/sparse: Add c32, c64, and c128 sparse vectors.
+
 2025-02-18  Shiro Kawai  <shiro@acm.org>
 
 	* src/gauche/interactive.scm: When line-edit mode is on, reflect

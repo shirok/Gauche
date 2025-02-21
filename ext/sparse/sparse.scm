@@ -48,7 +48,8 @@
           <sparse-u8vector> <sparse-s16vector> <sparse-u16vector>
           <sparse-s32vector> <sparse-u32vector> <sparse-s64vector>
           <sparse-u64vector> <sparse-f16vector> <sparse-f32vector>
-          <sparse-f64vector>
+          <sparse-f64vector> <sparse-c32vector> <sparse-c64vector>
+          <sparse-c128vector>
           sparse-vector-max-index-bits
           make-sparse-vector sparse-vector-num-entries
           sparse-vector-ref sparse-vector-set! sparse-vector-exists?
@@ -63,7 +64,8 @@
           <sparse-u8matrix> <sparse-s16matrix> <sparse-u16matrix>
           <sparse-s32matrix> <sparse-u32matrix> <sparse-s64matrix>
           <sparse-u64matrix> <sparse-f16matrix> <sparse-f32matrix>
-          <sparse-f64matrix>
+          <sparse-f64matrix> <sparse-c32matrix> <sparse-c64matrix>
+          <sparse-c128matrix>
           make-sparse-matrix sparse-matrix-num-entries
           sparse-matrix-ref sparse-matrix-set! sparse-matrix-exists?
           sparse-matrix-clear! sparse-matrix-delete! sparse-matrix-copy
@@ -285,10 +287,13 @@
            [(SCM_EQ type 'f16) (set! klass SCM_CLASS_SPARSE_F16VECTOR)]
            [(SCM_EQ type 'f32) (set! klass SCM_CLASS_SPARSE_F32VECTOR)]
            [(SCM_EQ type 'f64) (set! klass SCM_CLASS_SPARSE_F64VECTOR)]
+           [(SCM_EQ type 'c32) (set! klass SCM_CLASS_SPARSE_C32VECTOR)]
+           [(SCM_EQ type 'c64) (set! klass SCM_CLASS_SPARSE_C64VECTOR)]
+           [(SCM_EQ type 'c128) (set! klass SCM_CLASS_SPARSE_C128VECTOR)]
            [else (Scm_TypeError "type"
                                 "subclass of <sparse-vector-base>, #f, or \
                                  one of symbols s8, u8, s16, u16, s32, u32, \
-                                 s64, u64, f16, f32, f64"
+                                 s64, u64, f16, f32, f64, c32, c64, c128"
                                 type)])
      (return (MakeSparseVector klass default-value 0))))
 
@@ -392,6 +397,9 @@
 (define-refset <sparse-f16vector>)
 (define-refset <sparse-f32vector>)
 (define-refset <sparse-f64vector>)
+(define-refset <sparse-c32vector>)
+(define-refset <sparse-c64vector>)
+(define-refset <sparse-c128vector>)
 
 ;; sparse vector comparator is just a singleton.
 (define *sparse-vector-comparator*
@@ -495,13 +503,16 @@
         [(f16) <sparse-f16matrix>]
         [(f32) <sparse-f32matrix>]
         [(f64) <sparse-f64matrix>]
+        [(c32) <sparse-c32matrix>]
+        [(c64) <sparse-c64matrix>]
+        [(c128) <sparse-c128matrix>]
         [else (if (and (subtype? type <sparse-matrix-base>)
                        (not (eq? type <sparse-matrix-base>)))
                 type
                 (error "type argument must be a subclass of \
                         <sparse-matrix-base>, #f, or one of \
                         s8, u8, s16, u16, s32, u32, s64, u64, \
-                        f16, f32 or f64, but got:" type))])
+                        f16, f32, f64, c32, c64, or c128, but got:" type))])
     (%make-sparse-vector class default flags)))
 
 (define-cproc sparse-matrix-num-entries (sv::<sparse-matrix>) ::<ulong>

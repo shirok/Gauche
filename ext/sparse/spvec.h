@@ -193,6 +193,21 @@ SCM_CLASS_DECL(Scm_SparseF64VectorClass);
 #define SPARSE_F64VECTOR(obj)       ((SparseVector*)(obj))
 #define SPARSE_F64VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_F64VECTOR)
 
+SCM_CLASS_DECL(Scm_SparseC32VectorClass);
+#define SCM_CLASS_SPARSE_C32VECTOR  (&Scm_SparseC32VectorClass)
+#define SPARSE_C32VECTOR(obj)       ((SparseVector*)(obj))
+#define SPARSE_C32VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_C32VECTOR)
+
+SCM_CLASS_DECL(Scm_SparseC64VectorClass);
+#define SCM_CLASS_SPARSE_C64VECTOR  (&Scm_SparseC64VectorClass)
+#define SPARSE_C64VECTOR(obj)       ((SparseVector*)(obj))
+#define SPARSE_C64VECTOR_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_C64VECTOR)
+
+SCM_CLASS_DECL(Scm_SparseC128VectorClass);
+#define SCM_CLASS_SPARSE_C128VECTOR (&Scm_SparseC128VectorClass)
+#define SPARSE_C128VECTOR(obj)      ((SparseVector*)(obj))
+#define SPARSE_C128VECTOR_P(obj)    SCM_XTYPEP(obj, SCM_CLASS_SPARSE_C128VECTOR)
+
 SCM_CLASS_DECL(Scm_SparseMatrixBaseClass);
 #define SCM_CLASS_SPARSE_MATRIX_BASE  (&Scm_SparseMatrixBaseClass)
 #define SPARSE_MATRIX_BASE_P(obj) SCM_ISA(obj, SCM_CLASS_SPARSE_MATRIX_BASE)
@@ -256,5 +271,20 @@ SCM_CLASS_DECL(Scm_SparseF64MatrixClass);
 #define SCM_CLASS_SPARSE_F64MATRIX  (&Scm_SparseF64MatrixClass)
 #define SPARSE_F64MATRIX(obj)       ((SparseVector*)(obj))
 #define SPARSE_F64MATRIX_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_F64MATRIX)
+
+SCM_CLASS_DECL(Scm_SparseC32MatrixClass);
+#define SCM_CLASS_SPARSE_C32MATRIX  (&Scm_SparseC32MatrixClass)
+#define SPARSE_C32MATRIX(obj)       ((SparseVector*)(obj))
+#define SPARSE_C32MATRIX_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_C32MATRIX)
+
+SCM_CLASS_DECL(Scm_SparseC64MatrixClass);
+#define SCM_CLASS_SPARSE_C64MATRIX  (&Scm_SparseC64MatrixClass)
+#define SPARSE_C64MATRIX(obj)       ((SparseVector*)(obj))
+#define SPARSE_C64MATRIX_P(obj)     SCM_XTYPEP(obj, SCM_CLASS_SPARSE_C64MATRIX)
+
+SCM_CLASS_DECL(Scm_SparseC128MatrixClass);
+#define SCM_CLASS_SPARSE_C128MATRIX (&Scm_SparseC128MatrixClass)
+#define SPARSE_C128MATRIX(obj)      ((SparseVector*)(obj))
+#define SPARSE_C128MATRIX_P(obj)    SCM_XTYPEP(obj, SCM_CLASS_SPARSE_C128MATRIX)
 
 #endif /*GAUCHE_SPVEC_H*/

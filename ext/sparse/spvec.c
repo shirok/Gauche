@@ -266,38 +266,36 @@ typedef struct ULeafRec {
     Leaf hdr;                   /* LEAF_DATA has bitmap of used entries */
     union {
         ScmWord dummy[2];       /* placeholder */
-        int8_t         s8[2*SIZEOF_LONG];
-        uint8_t        u8[2*SIZEOF_LONG];
-        int16_t        s16[SIZEOF_LONG];
-        uint16_t       u16[SIZEOF_LONG];
-        int32_t        s32[SIZEOF_LONG/2];
-        uint32_t       u32[SIZEOF_LONG/2];
-        int64_t        s64[SIZEOF_LONG/4];
-        uint64_t       u64[SIZEOF_LONG/4];
-        ScmHalfFloat   f16[SIZEOF_LONG];
-        float          f32[SIZEOF_LONG/2];
-        double         f64[SIZEOF_LONG/4];
+        int8_t           s8[16];
+        uint8_t          u8[16];
+        int16_t          s16[8];
+        uint16_t         u16[8];
+        int32_t          s32[4];
+        uint32_t         u32[4];
+        int64_t          s64[2];
+        uint64_t         u64[2];
+        ScmHalfFloat     f16[8];
+        float            f32[4];
+        double           f64[2];
+        ScmHalfComplex   c32[4];
+        ScmFloatComplex  c64[2];
+        ScmDoubleComplex c128[1];
     };
 } ULeaf;
 
 #define ULEAF(leaf)  ((ULeaf*)leaf)
 
-#if SIZEOF_LONG == 4
-#define SHIFT8   3
-#define SHIFT16  2
-#define SHIFT32  1
-#define SHIFT64  0
-#else  /* SIZEOF_LONG != 4 */
 #define SHIFT8   4
 #define SHIFT16  3
 #define SHIFT32  2
 #define SHIFT64  1
-#endif /* SIZEOF_LONG != 4 */
+#define SHIFT128 0
 
-#define MASK8  ((1UL<<SHIFT8)-1)
-#define MASK16 ((1UL<<SHIFT16)-1)
-#define MASK32 ((1UL<<SHIFT32)-1)
-#define MASK64 ((1UL<<SHIFT64)-1)
+#define MASK8   ((1UL<<SHIFT8)-1)
+#define MASK16  ((1UL<<SHIFT16)-1)
+#define MASK32  ((1UL<<SHIFT32)-1)
+#define MASK64  ((1UL<<SHIFT64)-1)
+#define MASK128 ((1UL<<SHIFT128)-1)
 
 #define U_HAS_ENTRY(leaf, ind, mask) leaf_data_bit_test(leaf, (ind)&(mask))
 #define U_SET_ENTRY(leaf, ind, mask) leaf_data_bit_set(leaf, (ind)&(mask))
@@ -350,6 +348,9 @@ U_REF(u64, MASK64, Scm_MakeIntegerU64)
 U_REF(f16, MASK16, F16BOX)
 U_REF(f32, MASK32, F32BOX)
 U_REF(f64, MASK64, Scm_VMReturnFlonum)
+U_REF(c32, MASK32, Scm_HalfComplexToComplex)
+U_REF(c64, MASK64, Scm_FloatComplexToComplex)
+U_REF(c128, MASK128, Scm_DoubleComplexToComplex)
 
 /*-------------------------------------------------------------------
  * Uniform Sparse Vector Set
@@ -426,6 +427,24 @@ static int f64_set(Leaf *leaf, u_long index, ScmObj val)
     U_SET_CHECK(MASK64);
 }
 
+static int c32_set(Leaf *leaf, u_long index, ScmObj val)
+{
+    ULEAF(leaf)->c32[index&MASK32] = Scm_GetHalfComplex(val);
+    U_SET_CHECK(MASK32);
+}
+
+static int c64_set(Leaf *leaf, u_long index, ScmObj val)
+{
+    ULEAF(leaf)->c64[index&MASK64] = Scm_GetFloatComplex(val);
+    U_SET_CHECK(MASK64);
+}
+
+static int c128_set(Leaf *leaf, u_long index, ScmObj val)
+{
+    ULEAF(leaf)->c128[index&MASK128] = Scm_GetDoubleComplex(val);
+    U_SET_CHECK(MASK128);
+}
+
 /*-------------------------------------------------------------------
  * Uniform Sparse Vector Delete
  */
@@ -493,6 +512,21 @@ static ScmObj f64_delete(Leaf *leaf, u_long index)
     U_DEL(f64_ref, MASK64);
 }
 
+static ScmObj c32_delete(Leaf *leaf, u_long index)
+{
+    U_DEL(c32_ref, MASK32);
+}
+
+static ScmObj c64_delete(Leaf *leaf, u_long index)
+{
+    U_DEL(c64_ref, MASK64);
+}
+
+static ScmObj c128_delete(Leaf *leaf, u_long index)
+{
+    U_DEL(c128_ref, MASK128);
+}
+
 /*-------------------------------------------------------------------
  * Uniform Sparse Vector Iter
  */
@@ -527,6 +561,9 @@ U_ITER(u64, MASK64)
 U_ITER(f16, MASK16)
 U_ITER(f32, MASK32)
 U_ITER(f64, MASK64)
+U_ITER(c32, MASK32)
+U_ITER(c64, MASK64)
+U_ITER(c128, MASK128)
 
 /*-------------------------------------------------------------------
  * Uniform Sparse Vector Descriptors and constructors
@@ -559,6 +596,9 @@ U_DECL(u64, U64, SHIFT64);
 U_DECL(f16, F16, SHIFT16);
 U_DECL(f32, F32, SHIFT32);
 U_DECL(f64, F64, SHIFT64);
+U_DECL(c32, C32, SHIFT32);
+U_DECL(c64, C64, SHIFT64);
+U_DECL(c128, C128, SHIFT128);
 
 /*===================================================================
  * Generic constructor
@@ -580,6 +620,9 @@ ScmObj MakeSparseVector(ScmClass *klass, ScmObj defaultValue, u_long flags)
     else if (SCM_EQ(SCM_CLASS_SPARSE_F16VECTOR, klass)) desc = &f16_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_F32VECTOR, klass)) desc = &f32_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_F64VECTOR, klass)) desc = &f64_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_C32VECTOR, klass)) desc = &c32_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_C64VECTOR, klass)) desc = &c64_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_C128VECTOR, klass))desc = &c128_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_MATRIX, klass))    desc = &g_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_S8MATRIX, klass))  desc = &s8_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_U8MATRIX, klass))  desc = &u8_desc;
@@ -592,6 +635,9 @@ ScmObj MakeSparseVector(ScmClass *klass, ScmObj defaultValue, u_long flags)
     else if (SCM_EQ(SCM_CLASS_SPARSE_F16MATRIX, klass)) desc = &f16_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_F32MATRIX, klass)) desc = &f32_desc;
     else if (SCM_EQ(SCM_CLASS_SPARSE_F64MATRIX, klass)) desc = &f64_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_C32MATRIX, klass)) desc = &c32_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_C64MATRIX, klass)) desc = &c64_desc;
+    else if (SCM_EQ(SCM_CLASS_SPARSE_C128MATRIX, klass))desc = &c128_desc;
     else {
         Scm_TypeError("class", "subclass of <sparse-vector-base>",
                       SCM_OBJ(klass));
@@ -629,6 +675,9 @@ void Scm_Init_spvec(ScmModule *mod)
     INITC(Scm_SparseF16VectorClass, "<sparse-f16vector>");
     INITC(Scm_SparseF32VectorClass, "<sparse-f32vector>");
     INITC(Scm_SparseF64VectorClass, "<sparse-f64vector>");
+    INITC(Scm_SparseC32VectorClass, "<sparse-c32vector>");
+    INITC(Scm_SparseC64VectorClass, "<sparse-c64vector>");
+    INITC(Scm_SparseC128VectorClass, "<sparse-c128vector>");
 
     INITC(Scm_SparseMatrixBaseClass, "<sparse-matrix-base>");
     INITC(Scm_SparseMatrixClass, "<sparse-matrix>");
@@ -643,4 +692,7 @@ void Scm_Init_spvec(ScmModule *mod)
     INITC(Scm_SparseF16MatrixClass, "<sparse-f16matrix>");
     INITC(Scm_SparseF32MatrixClass, "<sparse-f32matrix>");
     INITC(Scm_SparseF64MatrixClass, "<sparse-f64matrix>");
+    INITC(Scm_SparseC32MatrixClass, "<sparse-c32matrix>");
+    INITC(Scm_SparseC64MatrixClass, "<sparse-c64matrix>");
+    INITC(Scm_SparseC128MatrixClass, "<sparse-c128matrix>");
 }

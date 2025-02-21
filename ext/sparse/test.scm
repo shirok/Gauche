@@ -153,11 +153,12 @@
          sparse-vector-ref sparse-vector-set! sparse-vector-exists?
          sparse-vector-fold
          (const 0) (const 1)
-         (if (memq tag '(f16 f32 f64))
-           '(3.0 6.0 9.0)
-           '(3 6 9))))
+         (cond [(memq tag '(f16 f32 f64)) '(3.0 6.0 9.0)]
+               [(memq tag '(c32 c64 c128)) '(3+2i 6-5i 9+8i)]
+               [else '(3 6 9)])))
 
-(for-each spvec-simple '(#f s8 u8 s16 u16 s32 u32 s64 u64 f16 f32 f64))
+(for-each spvec-simple
+          '(#f s8 u8 s16 u16 s32 u32 s64 u64 f16 f32 f64 c32 c64 c128))
 
 (define (spvec-heavy tag valgen)
   (heavy-test #"sparse-~(or tag \"\")vector"
@@ -181,7 +182,12 @@
 (spvec-heavy 'f16 (^x (exact->inexact (logand x #x3ff))))
 (spvec-heavy 'f32 (^x (exact->inexact (logand x #xfffff))))
 (spvec-heavy 'f64 exact->inexact)
-
+(spvec-heavy 'c32 (^x (let1 v (exact->inexact (logand x #x3ff))
+                        (make-rectangular (/ v 2) (- v 1)))))
+(spvec-heavy 'c64 (^x (let1 v (exact->inexact (logand x #xfffff))
+                        (make-rectangular (/ v 2) (- v 1)))))
+(spvec-heavy 'c128 (^x (let1 v (exact->inexact x)
+                         (make-rectangular (/ v 2) (- v 1)))))
 
 ;; sparse table----------------------------------------------------
 (test-section "sparse-table")
