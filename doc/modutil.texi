@@ -7798,6 +7798,9 @@ Sparse vectors also implements the Collection API
 @clindex sparse-f16vector
 @clindex sparse-f32vector
 @clindex sparse-f64vector
+@clindex sparse-c32vector
+@clindex sparse-c64vector
+@clindex sparse-c128vector
 @c MOD data.sparse
 @c EN
 The actual sparse vector classes.  Inherits @code{<sparse-vector-base>}.
@@ -7805,7 +7808,8 @@ An instance of @code{<sparse-vector>} can contain any Scheme objects.
 
 @code{@@} is either one of @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
-@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, or @code{c128}.
 The range of values an instance of those classes can hold
 is the same as the corresponding @code{<@@vector>} class
 in @code{gauche.uvector} (@pxref{Uniform vectors}).  That is,
@@ -7818,7 +7822,8 @@ between 0 and 255.
 
 @code{@@}は @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
-@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64}のいずれかで、
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, @code{c128}のいずれかで、
 それぞれの疎なベクタの格納可能な値は、@code{gauche.uvector}の
 対応する@code{<@@vector>}に準じます(@ref{Uniform vectors}参照)。
 つまり、@code{<sparse-u8vector>}の要素には0以上255以下の正確な整数を
@@ -7833,7 +7838,8 @@ Creates an empty sparse vector.  The @var{type} argument can be
 @code{#f} (default), one of subclasses of @code{<sparse-vector-base>},
 or a symbol of either one of @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
-@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, or @code{c128}.
 
 If @var{type} is omitted or @code{#f}, a @code{<sparse-vector>} is
 created.  If it is a class, an instance of the class is created
@@ -7846,8 +7852,8 @@ is created.
 @code{<sparse-vector-base>}のサブクラスのどれか、
 あるいはシンボル@code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
-@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64}のいずれかを
-指定できます。
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, @code{c128}のいずれかを指定できます。
 
 @var{type}が省略されるか@code{#f}の場合は@code{<sparse-vector>}のインスタンスが
 作られます。@var{type}がクラスであればそのインスタンスが、またシンボルであれば、
@@ -8147,6 +8153,7 @@ this limitation in future.
 @deftp {Class} <sparse-matrix-base>
 @clindex sparse-matrix-base
 @c MOD data.sparse
+@c EN
 An abstract base class of sparse matrixes.  Inherits @code{<collection>}.
 
 Like sparse vectors, a sparse matrix can be of type that
@@ -8154,6 +8161,14 @@ can store any Scheme objects, or that can store only
 certain types of numbers.
 
 All of these sparse matrix subtypes can be accessed by the same API.
+@c JP
+疎な行列の抽象ベースクラスです。@code{<collection>}を継承しています。
+
+疎なベクタと同様に、疎な行列には任意のSchemeオブジェクトを格納できるものと、
+特定の範囲の数値を格納できるものがあります。
+
+全ての疎な行列のサブタイプへのアクセスには同じAPIが使えます。
+@c COMMON
 @end deftp
 
 @deftp {Class} <sparse-matrix>
@@ -8170,35 +8185,72 @@ All of these sparse matrix subtypes can be accessed by the same API.
 @clindex sparse-f16matrix
 @clindex sparse-f32matrix
 @clindex sparse-f64matrix
+@clindex sparse-c32matrix
+@clindex sparse-c64matrix
+@clindex sparse-c128matrix
 @c MOD data.sparse
+@c EN
 The actual sparse matrix classes.  Inherits @code{<sparse-matrix-base>}.
 An instance of @code{<sparse-matrix>} can contain any Scheme objects.
+@c JP
+疎な行列の具体クラスです。それぞれ@code{<sparse-matrix-base>}を継承します。
+@code{<sparse-matrix>}のインスタンスは任意のSchemeオブジェクトを格納できます。
+@c COMMON
 
+@c EN
 @code{@@} is either one of @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
-@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, or @code{c128}.
 The range of values an instance of those classes can hold
 is the same as the corresponding @code{<@@vector>} class
 in @code{gauche.uvector} (@pxref{Uniform vectors}).  That is,
 @code{<sparse-u8matrix>} can have exact integer values
 between 0 and 255.
+@c JP
+@code{@@}は @code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, @code{c128}のいずれかで、
+それぞれの疎な行列の格納可能な値は、@code{gauche.uvector}の
+対応する@code{<@@vector>}に準じます(@ref{Uniform vectors}参照)。
+つまり、@code{<sparse-u8matrix>}の要素には0以上255以下の正確な整数を
+格納できます。
+@c COMMON
 @end deftp
 
 @defun make-sparse-matrix :optional type :key default
 @c MOD data.sparse
+@c EN
 Creates an empty sparse matrix.  The @var{type} argument can be
 @code{#f} (default), one of subclasses of @code{<sparse-matrix-base>},
 or a symbol of either one of @code{s8}, @code{u8},
 @code{s16}, @code{u16}, @code{s32}, @code{u32},
-@code{s64}, @code{u64}, @code{f16}, @code{f32}, or @code{f64}.
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, or @code{c128}.
+@c JP
+空の疎な行列を作成して返します。@var{type}引数は@code{#f}(デフォルト)か、
+@code{<sparse-matrix-base>}のサブクラスのどれか、
+あるいはシンボル@code{s8}, @code{u8},
+@code{s16}, @code{u16}, @code{s32}, @code{u32},
+@code{s64}, @code{u64}, @code{f16}, @code{f32}, @code{f64},
+@code{c32}, @code{c64}, @code{c128}のいずれかを指定できます。
+@c COMMON
 
+@c EN
 If @var{type} is omitted or @code{#f}, a @code{<sparse-matrix>} is
 created.  If it is a class, an instance of the class is created
 (It is an error to pass a class that is not a subclass of
 @code{<sparse-matrix-base>}.)
 If it is a symbol, an instance of corresponding @code{<sparse-@@matrix>}
 is created.
+@c JP
+@var{type}が省略されるか@code{#f}の場合は@code{<sparse-matrix>}のインスタンスが
+作られます。@var{type}がクラスであればそのインスタンスが、またシンボルであれば、
+対応する@code{<sparse-@@matrix>}のインスタンスが作られます。
+@c COMMON
 
+@c EN
 You can specify the default value of the matrix by @var{default}
 keyword argument.   If given, the vector behaves as if it is filled
 with the default value (but the matrix iterator only picks
@@ -8206,6 +8258,14 @@ the values explicitly set).
 
 Note that you have to give the optional argument as well
 to specify the keyword argument.
+@c JP
+キーワード引数@var{default}によって、作成する行列の要素既定値を指定できます。
+この引数が与えられると、行列は全てあらかじめその値で埋められているかのように
+振る舞います (ただしイテレータは陽にセットされた値のみ取り出します)。
+
+キーワード引数を与える場合、それに先立って省略可能引数も与える必要が
+あることに注意してください。
+@c COMMON
 @end defun
 
 @defun sparse-matrix-num-entries mat
