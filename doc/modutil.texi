@@ -23057,12 +23057,14 @@ Returns the version number of @var{uuid}.
 @c EN
 A comparator to compare and hash uuids.  @xref{Basic comparators}.
 
-Note: Equality of uuids can be tested with @code{equal?}.
+Note: Equality of uuids can be tested with @code{equal?},
+and uuids can be sorted using generic @code{compare}.
 @c JP
 UUID同士を比較したりハッシュ値を取れる比較器です。
 比較器については@ref{Basic comparators}参照。
 
-註: 二つのUUIDが等しいかどうかは@code{equal?}で検査できます。
+註: 二つのUUIDが等しいかどうかは@code{equal?}で、
+また、ジェネリックな@code{compare}でUUIDのソートができます。
 @c COMMON
 @end defvar
 
