@@ -1590,6 +1590,33 @@
           (rotate! (car vals) (cadr vals) (list-ref vals 2))
           vals)))
 
+(let ((x 0) (xx 0) (y 0) (yy 0) (yyy 0) (z 0))
+  (define-syntax t-ineq
+    (syntax-rules ()
+      [(_ expect form)
+       (test 'form expect (lambda () form))]))
+
+  ;; Using set! to prevent the compiler does constant folding
+  (set! x -0.5)
+  (set! x xx)
+  (set! y 13.0)
+  (set! yy y)
+  (set! yyy y)
+  (set! z +inf.0)
+
+  (t-ineq #t (ineq x < y < z))
+  (t-ineq #f (ineq 0 < x < 1 < y))
+  (t-ineq #t (ineq -1 < x < 1 < y))
+  (t-ineq #f (ineq x < xx))
+  (t-ineq #t (ineq x <= xx))
+  (t-ineq #t (ineq x <= xx <= y <= yy <= yyy))
+  (t-ineq #f (ineq y < yy < yyy))
+  (t-ineq #f (ineq x > y > z))
+  (t-ineq #f (ineq x >= y >= yyy))
+  (t-ineq #t (ineq z >= y >= yyy))
+  (t-ineq #t (ineq x < y = yyy < z))
+  )
+
 (test "dotimes" '(0 1 2 3 4 5 6 7 8 9)
       (lambda ()
         (let ((m '()))

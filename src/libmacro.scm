@@ -936,14 +936,16 @@
 (define-syntax ineq
   (er-macro-transformer
    (^[f r c]
-     (unless (odd? (length (cdr f)))
-       (error "Number of argument list is not odd:" f))
-     (let* ([vrs (slices (cdr f) 2)]
-            [tmps (map (^[vr] (gensym (x->string (car vr)))) vrs)])
-       (quasirename r
-         `(let ,(map (^[tmp vr] `(,tmp ,(car vr))) tmps vrs)
-            (and ,@(map (^[tmp tmp+1 vr] `(,(cadr vr) ,tmp ,tmp+1))
-                        tmps (cdr tmps) vrs))))))))
+     (let1 args (cdr f)
+       (when (null? args) (error "Malformed ineq:" f))
+       (unless (odd? (length args))
+         (error "Number of argument list is not odd:" f))
+       (let* ([tmps (map (^v (gensym (x->string v))) args)]
+              [vrs (slices tmps 2)])
+         (quasirename r
+           `(let ,(map (^[tmp arg] `(,tmp ,arg)) tmps args)
+              (and ,@(map (^[vr0 vr1] `(,(cadr vr0) ,(car vr0) ,(car vr1)))
+                          vrs (cdr vrs))))))))))
 
 ;;; repeat construct
 
