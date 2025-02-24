@@ -1,3 +1,9 @@
+2025-02-23  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/numioutil.scm (print-exact-decimal-point-number): Prints
+	  repeating decimal representation if necessary, up to a certain
+	  cycle length (1024 for now).
+
 2025-02-20  Shiro Kawai  <shiro@acm.org>
 
 	* ext/sparse: Add c32, c64, and c128 sparse vectors.

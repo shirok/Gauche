@@ -40,6 +40,10 @@
 (define-module gauche.numioutil)
 (select-module gauche.numioutil)
 
+;;;
+;;;  Finding exact decimal representation
+;;;
+
 ;; Internal API - Directly called from writer.c
 ;; If a rational can be exactly represented with decimal-point notation,
 ;; return the string notation.  Otherwise, return #f.
@@ -51,23 +55,16 @@
   (assume-type port <port>)
   (receive (k2 k5 r) (factorize-2-5 (denominator n))
     (receive (c k) (decimal-factor k2 k5)
-      (and-let* ([ (= r 1) ]
-                 [number (* c (numerator n))]
-                 [abs-number (abs number)]
-                 [s (number->string abs-number 10)]
-                 [slen (string-length s)])
-        (receive (digits diglen)
-            (if (> slen k)
-              (values s slen)
-              (values (string-append (make-string (- (+ k 1) slen) #\0) s)
-                      (+ k 1)))
-          (display "#e" port)
-          (when (negative? number) (display "-" port))
-          ;; NB: Avoid string-take-right etc., for it will depend on srfi.13
-          (display (substring digits 0 (- diglen k)) port)
-          (display "." port)
-          (display (substring digits (- diglen k) diglen) port)
-          (+ diglen 3 (if (negative? number) 1 0)))))))
+      (if (= r 1)
+        ;; denominator only has 2 and 5 in factors.  no repeating part.
+        (print-exact-string port (negative? n) k
+                            (* c (abs (numerator n))) '())
+        ;; we get repeating decimal.
+        (let ([numer (abs (* c (numerator n)))])
+          (receive (intpart reppart) (detect-repetition numer r)
+            (and intpart
+                 (print-exact-string port (negative? n) k
+                                     intpart reppart))))))))
 
 ;; Given integer n > 0, returns k2, k5, and r, such that n = 2^{k2}*5^{k5}*r
 (define (factorize-2-5 n)
@@ -88,8 +85,53 @@
          [c (if (< k2 k5) (expt 2 (- k5 k2)) (expt 5 (- k2 k5)))])
     (values c k)))
 
-;; Read hashsign number literals.
-;;
+;; Try to determine repeating decimal notation.  We already factored the
+;; denominator so we have 1/10^k * numer/r.
+;; Returns two values, integer part floor(numer/r) and the repeating
+;; part.  If the repeating part is too long (over max-repeat-length),
+;; returns two #fs.
+;; NB: all arguments must be positive.
+(define (detect-repetition numer r :optional (max-repeat-length 1024))
+  (receive (qi nr) (quotient&remainder numer r)
+    (let loop ([n nr] [digs '()] [cnt 0])
+      (if (> cnt max-repeat-length)
+        (values #f #f)
+        (receive (q n) (quotient&remainder (* n 10) r)
+          (if (= n nr)
+            (values qi (reverse (cons q digs)))
+            (loop n (cons q digs) (+ cnt 1))))))))
+
+;; We determined the given number is sign * (1/10)^k * (integral + repeating),
+;; where integral is a nonnegative integer and repeating is a list of
+;; digits to repeat afterwards.  sign is -1 if neg? is #t.
+;; Print string representation to port, and return the # of characters printed.
+(define (print-exact-string port neg? k integral repeating)
+  (let* ([s (number->string integral)]
+         [slen (string-length s)])
+    (receive (digits diglen)
+        (if (> slen k)
+          (values s slen)
+          (values (string-append (make-string (- (+ k 1) slen) #\0) s) (+ k 1)))
+      (display "#e" port)
+      (when neg? (display "-" port))
+      ;; NB: Avoid string-take-right etc., for it will depend on srfi.13
+      (display (substring digits 0 (- diglen k)) port)
+      (display "." port)
+      (display (substring digits (- diglen k) diglen) port)
+      (unless (null? repeating)
+        (display "#" port)
+        (dolist [d repeating] (display (integer->digit d) port)))
+      (+ diglen
+         3  ;; "#e" + "."
+         (if neg? 1 0)      ;; '-'
+         (if (null? repeating)
+           0
+           (+ (length repeating) 1)))))) ;; +1 for '#'
+
+;;;
+;;; Read hashsign number literals.
+;;;
+
 ;;   We support 2 kinds of syntax.
 ;;   1. Insignificant digits (R5RS) - If a <ureal> portion of numeric literal
 ;;        has '#'s up to the end, it designates insignificant digits.
