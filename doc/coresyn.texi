@@ -201,7 +201,7 @@ e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
 are used beyond decimal.
 @c JP
 @item 数値リテラル
-GaucheはR7RSのオプショナルな数値構文と、Gauche特有の拡張をサポートしていまｓ．
+GaucheはR7RSのオプショナルな数値構文と、Gauche特有の拡張をサポートしています。
 
 非正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
 できます。例：@code{30.}, @code{.25}, @code{-.4}。
