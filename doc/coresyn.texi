@@ -134,28 +134,38 @@ it with '|', e.g. '@code{|this is a symbol|}'.
 
 @c EN
 @item Numeric literals
+Gauche supports some optional R7RS number syntax and some Gauche-specific
+extensions.
+
 Either integral part or fraction part of inexact real numbers can be omitted
 if it is zero, i.e. @code{30.}, @code{.25}, @code{-.4} are read as
 real numbers.
-The number reader recognizes '@code{#}' as insignificant digits.
+
+You can include a hash sign '@code{#}' in numeric literals.  It can have
+two separate meanings.
+@enumerate
+@item
+If the fractional part of the numbe ends with consecutive '@code{#}'s,
+it indicates insiginificant digits (as supported in R5RS).
+Gauche replaces them with 0.  The consecutive '@code{#}' can start
+from before the decimal point.
+Literals with insignificat digits are inexact without the explicit
+exact prefix, even without a decimal point or exponential part.
+For example, @code{12##.##} is read as @code{1200.00},
+@code{0.123##e5} is read as @code{0.12300e5},
+and @code{1##+2##i} is read as @code{100+200i}.
+@item
+If the literal has a decimal point, and one '@code{#}' followed by at
+least one digit in the fractional part,
+it denotes @emph{repeating decimal}.  The digits following @code{#} are
+repeated indefinitely.  For example,
+@code{0.#3} means @code{0.33333333@dots{}}.  More interestingly,
+you can write an exact number in this notation.
+@code{#e0.1#142857} yields @code{4/35} (i.e. 1/10 + 1/70).
+@end enumerate
+
 Complex numbers can be written both in the rectangular format
 (e.g. @code{1+0.3i}) and in the polar format (e.g. @code{3.0@@1.57}).
-Inexact real numbers include
-the positive infinity, the negative infinity, and NaN,
-which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
-respectively.  (@code{-nan.0} is also read as NaN.)
-
-Gauche supports SRFI-169 (underscores in numbers) notation; you can
-insert a character @code{_} between digits in numeric literals
-to improve readability, e.g. @code{#b1100_1010_1111_1110}.
-A valid underscore must be surrounded by digits; @code{1_2_3} is ok,
-but @code{_123}, @code{123_}, and @code{12__3} are not.
-
-Gauche also adopts Common-Lisp style radix prefixed numeric literals,
-e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
-2 and 36 are recognized; alphabetic letters @code{a-zA-Z}
-are used beyond decimal.
-
 For the polar notation of complex numbers, Gauche allows the suffix @code{pi}
 to denote the phase by multiples of pi.  The Scheme syntax use radians for
 the phase, but you can only approximate pi with the floating point numbers,
@@ -173,29 +183,55 @@ gosh> 2@@0.5pi
 gosh> 2@@-0.5pi
 0.0-2.0i
 @end example
+
+Inexact real numbers include
+the positive infinity, the negative infinity, and NaN,
+which are represented as @code{+inf.0}, @code{-inf.0} and @code{+nan.0},
+respectively.  (@code{-nan.0} is also read as NaN.)
+
+Gauche supports SRFI-169 (underscores in numbers) notation; you can
+insert a character @code{_} between digits in numeric literals
+to improve readability, e.g. @code{#b1100_1010_1111_1110}.
+A valid underscore must be surrounded by digits; @code{1_2_3} is ok,
+but @code{_123}, @code{123_}, and @code{12__3} are not.
+
+Gauche also adopts Common-Lisp style radix prefixed numeric literals,
+e.g. @code{#3r120} (@code{120} in base-3, 15 in decimal).  Radix between
+2 and 36 are recognized; alphabetic letters @code{a-zA-Z}
+are used beyond decimal.
 @c JP
 @item 数値リテラル
+GaucheはR7RSのオプショナルな数値構文と、Gauche特有の拡張をサポートしていまｓ．
+
 非正確な実数の整数部または小数部のいずれかが0の場合、それを省略することが
 できます。例：@code{30.}, @code{.25}, @code{-.4}。
-数値のリーダは、パディングの'@code{#}'を認識します。
-複素数表記は直交座標形 (例：@code{1+0.3i}) でも極座標形 (例：@code{3.0@@1.57}) でも
-認識されます。
-非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
-それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
-表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
 
-Gaucheはまた、SRFI-169 (数値中のアンダースコア)構文をサポートしています。
-読みやすくするために、数値中に@code{_}を挿入することができます
-(例: @code{#b1100_1010_1111_1110})。
-ただし、各アンダースコアは数字に囲まれていなければなりません。
-@code{1_2_3}はokですが、@code{_123}、@code{123_}、@code{12__3}は
-有効な数値リテラルではありません。
+数値リテラル中に '@code{#}' を含めることができます。これは使われ方によって
+次の二つの異なる意味を持ちます。
+@enumerate
+@item
+数値の小数部ががひと続きの@code{#}で終わっている場合、それは「重要でない
+(有効数字外の)桁」を意味します(この構文はR5RSに含まれていました)。
+Gaucheはそれらの桁を0で置き換えます。
+@code{#}の連続は整数部から始まって小数点を
+またいでも構いません。この表記がある数値リテラルは、小数点や指数部を
+持たなくても、明示的な正確数プレフィクスがない限りは非正確数となります。
+例: @code{12##.##} @equiv{} @code{1200.00}、
+@code{0.123##e5} @equiv{} @code{0.12300e5}、
+@code{1##+2##i} @equiv{} @code{100+200i}。
+@item
+リテラルの小数部にひとつ@code{#}がありその後にひとつ以上の数字が続いている
+場合、それは@emph{循環小数}を表します。
+@code{#}の後に続く桁が無限に繰り返されていると解釈されます。
+例えば@code{0.#3}は@code{0.33333333@dots{}}の意味です。
+おもしろいのは、正確数を指定した場合です。
+@code{#e0.1#142857}は@code{4/35}になります (つまり、1/10 + 1/70)。
+@end enumerate
 
-Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
-例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
-認識されます。10進数より上では@code{a-zA-Z}のアルファベットを使えます。
 
-複素数の極座標記法において、Gaucheではサフィックス@code{pi}をつけることにより
+複素数表記は直交座標形 (例：@code{1+0.3i}) でも
+極座標形 (例：@code{3.0@@1.57}) でも認識されます。
+極座標記法において、Gaucheではサフィックス@code{pi}をつけることにより
 偏角をπの係数で表すことができます。Schemeの構文では偏角はラジアンですが、
 πは浮動小数点数では近似値でしか扱えないので、偏角ゼロ以外で切りの良い数値を
 表現することができません。
@@ -212,6 +248,21 @@ gosh> 2@@0.5pi
 gosh> 2@@-0.5pi
 0.0-2.0i
 @end example
+
+非正確な実数は、正の無限大、負の無限大、非数(NaN)を含み、
+それらはそれぞれ@code{+inf.0}、@code{-inf.0}、および@code{+nan.0}と
+表記されます。(@code{-nan.0}も非数(NaN)として読まれます)。
+
+Gaucheはまた、SRFI-169 (数値中のアンダースコア)構文をサポートしています。
+読みやすくするために、数値中に@code{_}を挿入することができます
+(例: @code{#b1100_1010_1111_1110})。
+ただし、各アンダースコアは数字に囲まれていなければなりません。
+@code{1_2_3}はokですが、@code{_123}、@code{123_}、@code{12__3}は
+有効な数値リテラルではありません。
+
+Gaucheはまた、Common Lisp風の基数を明示した数値リテラルも認識します。
+例えば3進数の120は@code{#3r120}と書けます(10進数で15)。2進数から36進数まで
+認識されます。10進数より上では@code{a-zA-Z}のアルファベットを使えます。
 @c COMMON
 
 @c EN
