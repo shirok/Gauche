@@ -26329,17 +26329,31 @@ content, before closing double-quotes.
 @defivar <write-controls> exact-decimal
 @c EN
 This slot holds a boolean value.  If it's @code{#f} (default), exact
-non-integral rationals are printed as rational from.  If it's true,
-exact rationals are prited with decimal notation, with @code{#e} prefix,
-whenever possible.
+non-integral rationals are printed in fractional from.  If it's true,
+exact rationals are prited with decimal notation, with @code{#e} prefix.
+If the denominator has factors rather than 2 and 5,
+it is printed with repeating decimal notation (@pxref{Lexical structure}).
+However, if the length of repeating cycle is too long, it gives up
+and falls back to fractional form.
 @c JP
 このスロットは真偽値を持ちます。@code{#f}の場合、
 正確な非整数の有理数は分数として表示されますが、
-真の場合、可能な限り@code{#e}プレフィクスをつけた小数として表示されます。
+真の場合、@code{#e}プレフィクスをつけた小数として表示されます。
+有理数の分母に2と5以外の因数がある場合は循環小数表記が使われます
+(@ref{Lexical structure}参照)。ただし、循環部の長さが長くなりすぎる
+場合は諦めて分数表記になります。
 @c COMMON
 @example
-(number->string 1234/1000 (make-write-xontrols :exact-decimal #t))
+(define wc (make-write-controls :exact-decimal #t))
+
+(number->string 1234/1000 wc)
   @result{} "#e1.234"
+(number->string (expt 1/2 10) wc)
+  @result{} "#e0.0009765625"
+(number->string 5/7 wc)
+  @result{} "#e0.#714285"  @r{; repeating decimal notation}
+(number->string 1/2063 wc)
+  @result{} "1/2063" @r{; it has repeating cycle of 1031 digits, so we give up.}
 @end example
 @end defivar
 
