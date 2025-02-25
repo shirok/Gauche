@@ -3364,7 +3364,7 @@ close to zero, in which case relative tolerance becomes too small.
 @var{x}か@var{y}の少なくとも一方が非実数の複素数である場合は、
 @code{abs}のかわりに@code{magnitude}が使われます。
 
-省略された場合、@code{relative-tolerance}には
+省略された場合、@var{relative-tolerance}には
 @code{(flonum-epsilon)}の値が、@var{absolute-tolerance}には
 @code{(least-positive-flonum)}の値が使われます。
 すなわち、デフォルトでは@code{approx=?}は
