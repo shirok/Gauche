@@ -255,17 +255,21 @@
 (define-inline (flsqrt x) (real-sqrt x))
 (define (flcbrt x)
   (assume (real? x))
-  ;; (%expt x 1/3) may give us a complex root, so we roll our own.
+  ;; (expt x 1/3) may give us a complex root, so we roll our own.
   (if (or (nan? x) (infinite? x))
     x
-    (let loop ([r (flcopysign (magnitude (real-expt x 1/3)) x)])
+    (let loop ([r (flcopysign (magnitude (real-expt x 1/3)) x)]
+               [prev-r +nan.0])
       (if (zero? r)
         r
         (let1 r+ (- r (/ (- (* r r r) x)
                          (* 3 r r)))
-          (if (= r r+)
-            r
-            (loop r+)))))))
+          (cond [(= r r+) r]
+                [(<= (abs (- r r+)) (* 2 (flonum-epsilon)))
+                 (if (= r+ prev-r)
+                   (/ (+ r prev-r) 2)
+                   (loop r+ r))]
+                [else (loop r+ r)]))))))
 (define-cproc flhypot (x::<double> y::<double>)
   ::<double> :fast-flonum :constant hypot)
 (define-inline (flexpt x y) (real-expt x y))

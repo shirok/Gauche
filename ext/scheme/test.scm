@@ -590,6 +590,13 @@
   (use scheme.base)
   (include "../../test/include/srfi-144-tests.scm")
   (with-module tests.scheme.flonum
-    (run-flonum-tests)))
+    (run-flonum-tests))
+  )
+
+;; This used to go infinite loop b/c numeric error.
+;; https://github.com/shirok/Gauche/issues/1118
+(test* "flcbrt (issue #1118)" -1.5874010519681994
+       ((with-module scheme.flonum flcbrt) -4)
+       approx=?)
 
 (test-end)
