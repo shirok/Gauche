@@ -12295,6 +12295,14 @@ Or even use multiple values:
                ((tmp1 tmp2) (f tmp1 tmp2)))
    (g tmp1 tmp2))
 @end example
+
+@c EN
+@xref{Combinators (SRFI)}, for procedural way to compose chaining
+procedure calls.
+@c JP
+なお、手続き的に手続き呼び出しをチェインするように合成する手段としては
+@ref{Combinators (SRFI)}もあります。
+@c COMMON
 @end deftp
 
 @defmac chain initial-value [placeholder [ellipsis]] step @dots{}
@@ -16944,12 +16952,20 @@ works as if @code{(apply reducer (map mapper args))}.
 @defun left-section proc arg @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Returns a procedure such that, when applied to more args, calls @var{proc}
 with @var{arg} @dots{} and the given args.  In other words,
-returns a specialized procedure with the left argumen(s) are given
+returns a specialized procedure with the left argument(s) are given
 as @var{arg} @dots{}.
 
 In Gauche, this is the same as @code{(pa$ arg @dots{})} (@pxref{Combinators}).
+@c JP
+手続きを返します。その手続きを引数@var{x} @dots{}で呼び出すことは、
+@var{(@var{proc} @var{arg} @dots{} @var{x} @dots{})} と同じ効果をもたらします。
+言い換えれば、右側の引数を@var{arg} @dots{}で固定した手続きを返します。
+
+Gaucheではこれは@code{(pa$ arg @dots{})}と同じです(@ref{Combinators}参照)。
+@c COMMON
 
 @example
 ((left-section list 'a 'b 'c) 'd 'e 'f)
@@ -16960,16 +16976,27 @@ In Gauche, this is the same as @code{(pa$ arg @dots{})} (@pxref{Combinators}).
 @defun right-section proc arg @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Returns a procedure such that, when applied to more args, calls @var{proc}
-with the newly given args concatenated with @code{(reverse @var{arg} @dots{})}.
+with the newly given args concatenated with
+@code{(reverse (list @var{arg} @dots{})}).
+@c JP
+手続きを返します。その手続きを引数@var{x} @dots{}で呼び出すことは、
+@code{(apply @var{proc} @var{x} @dots{} (reverse (list @var{arg} @dots{})))}
+と同じ効果をもたらします。
+@c COMMON
 
 @example
 ((right-section list 'a 'b 'c) 'd 'e 'f)
  @result{} (d e f c b a)
 @end example
 
+@c EN
 The reason that @var{arg} @dots{} is reversed is because of
 this invariance:
+@c JP
+@var{arg} @dots{}を逆順にするのは次の不変条件を満たすためです。
+@c COMMON
 
 @example
 (right-section proc arg arg1 @dots{})
@@ -16980,14 +17007,28 @@ this invariance:
 @defun apply-chain proc proc2 @dots{}
 [SRFI-235]
 @c MOD srfi.235
+@c EN
 Returns a procedure such that it applies the last procedure to the
 given arguments, then applies the previous procedure on the
 returned value(s), and so on.  Returns the result(s) of @var{proc}.
+@c JP
+手続きを返します。その手続きに引数を渡すと、
+まず最後の@var{proc}がその引数で呼ばれ、
+その戻り値(複数可)を引数としてその手前の@var{proc}が呼ばれ…という具合に
+進み、先頭の@var{proc}の戻り値が手続きの戻り値となります。
+@c COMMON
 
 @example
 ((apply-chain car cdr) '(a b c d)) @result{} b
 ((apply-chain list div-and-mod) 10 3) @result{} (3 1)
 @end example
+
+@c EN
+@xref{Pipeline operators}, for another way to chain procedure calls.
+@c JP
+手続き呼び出しをチェインする別のやり方として、
+@ref{Pipeline operators}があります。
+@c COMMON
 @end defun
 
 @defun arguments-drop proc n
