@@ -1,3 +1,9 @@
+2025-02-27  Shiro Kawai  <shiro@acm.org>
+
+	* ext/data/queue.scm (mtqueue-close!): Add API to close an mtqueue
+	  without inserting a new data.  If there are threads waiting on
+	  the queue, they reads timeout-val.
+
 2025-02-25  Shiro Kawai  <shiro@acm.org>
 
 	* ext/scheme/flonum.scm (flcbrt): Avoid infinite loop because of

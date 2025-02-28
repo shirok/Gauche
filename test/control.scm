@@ -731,11 +731,11 @@
        (values->list (do/timeout (10) (values 'a 'b))))
 
 (test* "timeout (timeout)" 'oops
-       (do/timeout (0.01 'oops) (sys-sleep 1) 'ok))
+       (do/timeout (0.1 'oops) (sys-sleep 10) 'ok))
 
 (test* "timeout (mv, timeout)" '(x y)
-       (values->list (do/timeout (0.01 (values 'x 'y))
-                                 (sys-sleep 1)
+       (values->list (do/timeout (0.1 (values 'x 'y))
+                                 (sys-sleep 10)
                                  (values 'a 'b))))
 
 (test* "timeout (already passed)" 'oops

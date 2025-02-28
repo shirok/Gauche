@@ -944,6 +944,15 @@
                 [_ (dequeue/wait! q 0 #f #t)]
                 [b (~ q'closed)])
            (list a b)))
+  (test* "close mtqueue without inserting item (timeout)"
+         'oops
+         (let* ([q (make-mtqueue)]
+                [t (thread-start!
+                    (make-thread (^[] (dequeue/wait! q 100 'oops))))])
+           (mtqueue-close! q)
+           (guard (e [(<uncaught-exception> e)
+                      (raise (~ e'reason))])
+             (thread-join! t))))
   (test* "closed mtqueue rejects enqueue"
          (test-error <error> #/queue is closed/)
          (let1 q (make-mtqueue)

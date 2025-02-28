@@ -200,7 +200,7 @@
 
 (test* "mtqueue room" +inf.0 (mtqueue-room (make-mtqueue)))
 
-;; Note: */wait! APIs are tested in ext/threads/test.scm instead of here,
+;; Note: */wait! APIs are tested in test/thread.scm instead of here,
 ;; since we need threads working.
 
 (test-end)

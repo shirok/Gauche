@@ -59,7 +59,8 @@
           find-in-queue remove-from-queue!
           any-in-queue every-in-queue
 
-          enqueue/wait! queue-push/wait! dequeue/wait! queue-pop/wait!)
+          enqueue/wait! queue-push/wait! dequeue/wait! queue-pop/wait!
+          mtqueue-close!)
   )
 (select-module data.queue)
 
@@ -359,6 +360,16 @@
        (return (SCM_MAKE_INT room))
        (return SCM_POSITIVE_INFINITY))))
 
+ ;; API
+ (define-cproc mtqueue-close! (q::<mtqueue>)
+   (let* ([retval SCM_UNDEFINED])
+     (do-with-timeout q retval SCM_FALSE SCM_UNDEFINED writerWait
+                      ()                  ;init
+                      FALSE               ;wait-check
+                      (begin (set! (MTQ_CLOSED q) TRUE);do-ok
+                             (notify-readers (Q q))))
+     (return retval)))
+
  ;; caller must hold big lock
  ;; %qtail isn't used in data.queue, but used by SRFI-117
  (define-cproc %qhead (q::<queue>) (return (Q_HEAD q)))
@@ -541,6 +552,8 @@
 
 ;; dequeue!
 (inline-stub
+ ;; If queue is empty, returns TRUE.  Otherwise, dequeue one item and store it to
+ ;; result, then returns FALSE.  Lock must be held by the caller.
  (define-cfn dequeue-int (q::Queue* result::ScmObj*) ::int
    (cond [(Q_EMPTY_P q) (return TRUE)]
          [else
@@ -569,12 +582,21 @@
                                                      (close::<boolean> #f))
    (let* ([retval SCM_UNDEFINED])
      (do-with-timeout q retval timeout timeout-val readerWait
+                      ;; init
                       (begin (post++ (MTQ_READER_SEM q))
                              (when close (set! (MTQ_CLOSED q) TRUE))
                              (notify-writers (Q q)))
-                      (Q_EMPTY_P q)
+                      ;; wait-check
+                      ;;  - wait while queue is empty
+                      ;;  - or, until the queue is closed
+                      ;;    - but we exclude the case when *we* closed it
+                      (and (Q_EMPTY_P q)
+                           (or close (not (MTQ_CLOSED q))))
+                      ;; do-ok
                       (begin (pre-- (MTQ_READER_SEM q))
-                             (dequeue_int (Q q) (& retval))
+                             ;; queue can be empty if it is just closed
+                             (when (dequeue_int (Q q) (& retval))
+                               (set! retval timeout-val))
                              (notify-writers (Q q))))
      (return retval)))
 
