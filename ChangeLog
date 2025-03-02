@@ -1,3 +1,8 @@
+2025-03-02  Shiro Kawai  <shiro@acm.org>
+
+	* src/libsys.scm (glob-fold, make-glob-fs-folder): Handle Windows
+	  drive letters.  https://github.com/shirok/Gauche/1090
+
 2025-02-27  Shiro Kawai  <shiro@acm.org>
 
 	* ext/data/queue.scm (mtqueue-close!): Add API to close an mtqueue

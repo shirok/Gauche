@@ -53,6 +53,13 @@
     (.undef _SC_CLK_TCK)) ;; avoid undefined reference to sysconf
   )
 
+;; Are we use Windows-style pathname?
+;;  We can't use cond-expand, for this file may be cross-precompiled.
+(select-module gauche.internal)
+(define windows-path?
+  (let1 r (delay (boolean (assq 'gauche.os.windows (cond-features))))
+    (^[] (force r))))
+
 ;;---------------------------------------------------------------------
 ;; dirent.h - read directory
 ;;   we don't have correspoinding functions, but provide these:
@@ -71,17 +78,15 @@
                                                  (absolute #f)
                                                  (expand #f)
                                                  (canonicalize #f))
-  ;; NB: We can't use cond-expand, for this file is cross-precompiled.
-  (define windows? (assq 'gauche.os.windows (cond-features)))
-  (define separator (if windows? "\\" "/"))
+  (define separator (if (windows-path?) "\\" "/"))
   (define (expand-tilde path)
     (if-let1 m (and expand (rxmatch #/^~([^\\\/]*)/ path))
       (let* ([user (m 1)]
              [home (if (equal? user "")
-                     (if windows?
+                     (if (windows-path?)
                        (get-windows-home)
                        (get-unix-home (sys-getpwuid (sys-getuid))))
-                     (if windows?
+                     (if (windows-path?)
                        (error "'~user' expansil isn't supported on Windows:"
                               path)
                        (get-unix-home (sys-getpwnam (m 1)))))])
@@ -94,7 +99,7 @@
   (define (get-unix-home pw)
     (if pw (~ pw'dir) (error "Couldn't obtain username for :" pathname)))
   (define (absolute? path)
-    (if windows?
+    (if (windows-path?)
       (rxmatch #/^([A-Za-z]:)?[\\\/]/ path)
       (rxmatch #/^\// path)))
   (define (abs-path path)
@@ -103,7 +108,7 @@
       path))
   (define (root? comps)
     (or (equal? comps '(""))
-        (and windows?
+        (and (windows-path?)
              (length=? comps 1)
              (rxmatch #/^[A-Za-z]:$/ (car comps)))))
   (define (canon-path path)
@@ -121,7 +126,7 @@
                  (loop (cdr comps) (cons (car comps) r) #f)
                  (loop (cdr comps) (cdr r) #t))]
               [else (loop (cdr comps) (cons (car comps) r) #f)]))
-      (if windows?
+      (if (windows-path?)
         (string-join (string-split path #\/) "\\")
         path)))
   ($ canon-path $ abs-path $ expand-tilde pathname))
@@ -1472,17 +1477,15 @@
 
 (define sys-glob glob) ;; backward compatibility
 
-(define (glob-fold patterns proc seed :key (separator #f)
-                                           (folder glob-fs-folder)
-                                           (sorter sort)
-                                           (prefix #f))
+(select-module gauche.internal)
+
+(define-in-module gauche (glob-fold patterns proc seed
+                                    :key (separator #f)
+                                         (folder glob-fs-folder)
+                                         (sorter sort)
+                                         (prefix #f))
   (let* ([sep (or separator
-                  ;; Avoid using cond-expand, for this may be precompiled
-                  ;; on different architecture.
-                  (if (assq 'gauche.os.windows
-                            (with-module gauche.internal (cond-features)))
-                    #[/\\]
-                    #[/]))]
+                  (if (windows-path?) #[/\\] #[/]))]
          [r (fold (cut glob-fold-1 <> proc <> sep folder prefix) seed
                   (fold glob-expand-braces '()
                         (if (list? patterns) patterns (list patterns))))])
@@ -1509,9 +1512,13 @@
           [(equal? comp "**") '**]
           [else (glob-component->regexp comp)]))
   (let1 comps (string-split pattern separator)
-    (if (equal? (car comps) "")
-      (cons #t (map f (cdr comps)))
-      (cons prefix (map f comps)))))
+    (cond [(equal? (car comps) "")      ;absolute
+           (cons #t (map f (cdr comps)))]
+          [(and (windows-path?) (#/^[a-zA-Z]:$/ (car comps)))
+           ;; Windows drive letter
+           (cons #t (map f comps))]
+          [else
+           (cons prefix (map f comps))])))
 
 ;; */*.{c,scm} -> '(*/*.c */*.scm)
 ;;
@@ -1562,7 +1569,7 @@
 ;; treats the initial dot differently (e.g. '*' and '?' at the beginning
 ;; of the pattern doesn't match the beginning dot).  The shell mode
 ;; doesn't have such criterion.
-(define (glob-component->regexp pattern :key (mode :glob))
+(define-in-module gauche (glob-component->regexp pattern :key (mode :glob))
   (define n read-char)
   (define nd '(comp . #[.]))
   (define ra '(rep 0 #f any))
@@ -1628,7 +1635,8 @@
                  [(char? (car cs)) (loop (cdr cs) (cons (car cs) r))]
                  [else #f])))))
 
-(define (make-glob-fs-fold :key (root-path #f) (current-path #f))
+(define-in-module gauche (make-glob-fs-fold :key (root-path #f)
+                                                 (current-path #f))
   ;; NB: We don't use cond-expand, for precompilation may be done on
   ;; different architecture.
   (let1 separ (if (#/mingw/ (gauche-architecture)) "\\" "/")
@@ -1655,6 +1663,14 @@
         ;; unreasonable if we fail to go down the path even if we know
         ;; the exact name.
         (cond [(eq? regexp 'dir?) (proc prefix seed)]
+              [(and-let* ([ (windows-path?) ]
+                          [ (equal? prefix separ) ]
+                          [s (fixed-regexp? regexp) ]
+                          [ (#/^[A-Za-z]:$/ s) ])
+                 ;; Windows drive letter handling.
+                 (if (sys-access s R_OK)
+                   (proc s seed)
+                   seed))]
               [(fixed-regexp? regexp)
                => (^s (let1 full (string-append prefix s)
                         (if (and (file-exists? full)
@@ -1820,7 +1836,7 @@
 ;; is so twisted that it is virtually impossible to make it right.
 ;; For now, we reject arguments that contain 'unsafe' characters.
 ;; Cf. https://nvd.nist.gov/vuln/detail/CVE-2024-3566
-(define (%sys-escape-windows-command-line s batfilep)
+(define-in-module gauche (%sys-escape-windows-command-line s batfilep)
   (cond [(not (string? s))
          (%sys-escape-windows-command-line (write-to-string s))]
         [(equal? s "") "\"\""]
