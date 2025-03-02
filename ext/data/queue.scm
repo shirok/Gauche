@@ -367,7 +367,8 @@
                       ()                  ;init
                       FALSE               ;wait-check
                       (begin (set! (MTQ_CLOSED q) TRUE);do-ok
-                             (notify-readers (Q q))))
+                             (notify-readers (Q q))
+                             (notify-writers (Q q))))
      (return retval)))
 
  ;; caller must hold big lock
