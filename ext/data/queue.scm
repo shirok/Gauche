@@ -413,7 +413,9 @@
  (define-cvar close_marker :static)
  (initcode
   (set! close_marker
-        (Scm_MakeSymbol (SCM_MAKE_STR "queue-close-marker") TRUE)))
+        (Scm_MakeSymbol
+         (SCM_STRING (SCM_MAKE_STR "queue-close-marker"))
+         FALSE)))
 
  (define-cfn close-marker? (obj) ::_Bool :inline :static
    (return (SCM_EQ obj close_marker)))
