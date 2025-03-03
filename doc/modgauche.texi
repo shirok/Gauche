@@ -26737,7 +26737,7 @@ follows.
 @c MOD gauche.threads
 @c EN
 When this form is first evaluated, it evaluates @var{expr} @dots{}
-returns the result(s) of the lat expression.
+returns the result(s) of the last expression.
 The results are memoized, so the subsequent
 evaluation of the form returns the same results without
 evaluating @var{expr}s.

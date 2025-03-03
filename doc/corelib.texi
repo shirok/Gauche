@@ -29891,7 +29891,7 @@ to include above special characters in the pattern.
 
 @defun glob-fold pattern proc seed :key separator folder sorter
 @c EN
-This is actually a low-level construct of the glob function.
+This is a low-level construct of the glob function.
 Actually, @var{glob} is simply written like this:
 @c JP
 これはグロブ関数の低レベル版です。実際@var{glob}は以下のように書いたの
