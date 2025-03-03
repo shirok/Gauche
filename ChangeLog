@@ -1,5 +1,9 @@
 2025-03-02  Shiro Kawai  <shiro@acm.org>
 
+	* ext/data/queue.scm (mtqueue-close!): Instead of directly changing
+	  MTQ_CLOSED flag, use dummy element to close the queue; this
+	  keeps the queue state sane all the time.
+
 	* src/libsys.scm (glob-fold, make-glob-fs-folder): Handle Windows
 	  drive letters.  https://github.com/shirok/Gauche/1090
 

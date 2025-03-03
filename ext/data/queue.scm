@@ -360,17 +360,6 @@
        (return (SCM_MAKE_INT room))
        (return SCM_POSITIVE_INFINITY))))
 
- ;; API
- (define-cproc mtqueue-close! (q::<mtqueue>)
-   (let* ([retval SCM_UNDEFINED])
-     (do-with-timeout q retval SCM_FALSE SCM_UNDEFINED writerWait
-                      ()                  ;init
-                      FALSE               ;wait-check
-                      (begin (set! (MTQ_CLOSED q) TRUE);do-ok
-                             (notify-readers (Q q))
-                             (notify-writers (Q q))))
-     (return retval)))
-
  ;; caller must hold big lock
  ;; %qtail isn't used in data.queue, but used by SRFI-117
  (define-cproc %qhead (q::<queue>) (return (Q_HEAD q)))
@@ -416,6 +405,21 @@
   (when (mtqueue? q)
     (error "Can't get internal list of <mtqueue>:" q))
   (%qhead q))
+
+;; A unique object used to 'close' the queue without inserting a datum.
+;; dequeue ignores this.
+(inline-stub
+ (define-cvar close_marker :static)
+ (initcode
+  (set! close_marker (Scm_Cons (SCM_INTERN "queue-close-marker") SCM_NIL)))
+
+ (define-cfn close-marker? (obj) ::_Bool :inline :static
+   (return (SCM_EQ obj close_marker)))
+
+ (define-cproc %close-marker ()
+   (return close_marker))
+ )
+
 
 ;;;
 ;;; Enqueue/dequeue
@@ -498,6 +502,10 @@
                       (when mt? (%notify-readers q)))))))
   q)
 
+(define (mtqueue-close! q)
+  (assume-type q <mtqueue>)
+  (enqueue/wait! q (%close-marker) #f #f #t))
+
 (inline-stub
  ;; queue-push! - add item(s) to the head
  (define-cfn queue-push-int (q::Queue* cnt::ScmSmallInt head tail) ::void
@@ -556,15 +564,18 @@
  ;; If queue is empty, returns TRUE.  Otherwise, dequeue one item and store it to
  ;; result, then returns FALSE.  Lock must be held by the caller.
  (define-cfn dequeue-int (q::Queue* result::ScmObj*) ::int
-   (cond [(Q_EMPTY_P q) (return TRUE)]
-         [else
-          (let* ([h (Q_HEAD q)])
-            (set! (* result) (SCM_CAR h)
-                  (Q_HEAD q) (SCM_CDR h))
-            (set! (SCM_CAR h) SCM_NIL
-                  (SCM_CDR h) SCM_NIL) ; to be friendly to GC
-            (when (>= (Q_LENGTH q) 0) (dec! (Q_LENGTH q)))
-            (return FALSE))]))
+   (while TRUE
+     (when (Q_EMPTY_P q) (return TRUE))
+     (let* ([h (Q_HEAD q)]
+            [r])
+       (set! r (SCM_CAR h)
+             (Q_HEAD q) (SCM_CDR h))
+       (set! (SCM_CAR h) SCM_NIL
+             (SCM_CDR h) SCM_NIL) ; to be friendly to GC
+       (when (>= (Q_LENGTH q) 0) (dec! (Q_LENGTH q)))
+       (when (close-marker? r) (continue))
+       (set! (* result) r)
+       (return FALSE))))
 
  (define-cproc dequeue! (q::<queue> :optional fallback)
    (let* ([empty::int FALSE] [fb::(volatile ScmObj) fallback] [r SCM_UNDEFINED])
@@ -588,11 +599,7 @@
                              (when close (set! (MTQ_CLOSED q) TRUE))
                              (notify-writers (Q q)))
                       ;; wait-check
-                      ;;  - wait while queue is empty
-                      ;;  - or, until the queue is closed
-                      ;;    - but we exclude the case when *we* closed it
-                      (and (Q_EMPTY_P q)
-                           (or close (not (MTQ_CLOSED q))))
+                      (Q_EMPTY_P q)
                       ;; do-ok
                       (begin (pre-- (MTQ_READER_SEM q))
                              ;; queue can be empty if it is just closed
@@ -604,6 +611,10 @@
  (define-cfn dequeue-all-int (q::Queue*)
    (let* ([lis (Q_HEAD q)])
      (set! (Q_LENGTH q) 0 (Q_HEAD q) SCM_NIL (Q_TAIL q) SCM_NIL)
+     (when (SCM_PAIRP lis)
+       (let* ([last (Scm_LastPair lis)])
+         (when (close-marker? (SCM_CAR last))
+           (set! lis (Scm_DeleteX close_marker lis SCM_CMP_EQ)))))
      (return lis)))
 
  (define-cproc dequeue-all! (q::<queue>)
