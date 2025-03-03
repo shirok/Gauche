@@ -407,11 +407,13 @@
   (%qhead q))
 
 ;; A unique object used to 'close' the queue without inserting a datum.
-;; dequeue ignores this.
+;; Dequeue ignores this.  This object shouldn't leak outside of this module.
+;; If inserted, this is always the last item in the queue.
 (inline-stub
  (define-cvar close_marker :static)
  (initcode
-  (set! close_marker (Scm_Cons (SCM_INTERN "queue-close-marker") SCM_NIL)))
+  (set! close_marker
+        (Scm_MakeSymbol (SCM_MAKE_STR "queue-close-marker") TRUE)))
 
  (define-cfn close-marker? (obj) ::_Bool :inline :static
    (return (SCM_EQ obj close_marker)))
@@ -502,6 +504,9 @@
                       (when mt? (%notify-readers q)))))))
   q)
 
+;; API
+;; TODO: We may want to allow to call this on already closed queue w/o
+;; raising an error.
 (define (mtqueue-close! q)
   (assume-type q <mtqueue>)
   (enqueue/wait! q (%close-marker) #f #f #t))
@@ -614,6 +619,8 @@
      (when (SCM_PAIRP lis)
        (let* ([last (Scm_LastPair lis)])
          (when (close-marker? (SCM_CAR last))
+           ;; A bit dumb way to remove the marker.
+           ;; (drop-right lis 1) should do, but we don't have it in C API.
            (set! lis (Scm_DeleteX close_marker lis SCM_CMP_EQ)))))
      (return lis)))
 
