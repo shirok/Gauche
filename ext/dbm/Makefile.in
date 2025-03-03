@@ -22,7 +22,7 @@ all : $(LIBFILES)
 gdbm_OBJECTS   = dbm--gdbm.$(OBJEXT)
 
 dbm--gdbm.$(SOEXT) : $(gdbm_OBJECTS)
-	$(MODLINK) dbm--gdbm.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @GDBMLIB@ $(LIBS)
+	$(MODLINK) dbm--gdbm.$(SOEXT) $(gdbm_OBJECTS) $(EXT_LIBGAUCHE) @LDFLAGS@ @GDBMLIB@ $(LIBS)
 
 gdbm.sci dbm--gdbm.c : gdbm.scm
 	$(PRECOMP) -e -P -o dbm--gdbm $(srcdir)/gdbm.scm
@@ -30,7 +30,7 @@ gdbm.sci dbm--gdbm.c : gdbm.scm
 ndbm_OBJECTS   = dbm--ndbm.$(OBJEXT)
 
 dbm--ndbm.$(SOEXT) : $(ndbm_OBJECTS)
-	$(MODLINK) dbm--ndbm.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @NDBMLIB@ $(LIBS)
+	$(MODLINK) dbm--ndbm.$(SOEXT) $(ndbm_OBJECTS) $(EXT_LIBGAUCHE) @LDFLAGS@ @NDBMLIB@ $(LIBS)
 
 ndbm.sci dbm--ndbm.c : ndbm.scm
 	$(PRECOMP) -e -P -o dbm--ndbm $(srcdir)/ndbm.scm
@@ -40,7 +40,7 @@ dbm--ndbm.$(OBJEXT): dbm--ndbm.c ndbm-suffixes.h
 odbm_OBJECTS   = dbm--odbm.$(OBJEXT)
 
 dbm--odbm.$(SOEXT) : $(odbm_OBJECTS)
-	$(MODLINK) dbm--odbm.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @ODBMLIB@ $(LIBS)
+	$(MODLINK) dbm--odbm.$(SOEXT) $(odbm_OBJECTS) $(EXT_LIBGAUCHE) @LDFLAGS@ @ODBMLIB@ $(LIBS)
 
 odbm.sci dbm--odbm.c : odbm.scm
 	$(PRECOMP) -e -P -o dbm--odbm $(srcdir)/odbm.scm
