@@ -8756,8 +8756,13 @@ method for efficiency.
 @code{dict-put!}(*), @code{dict-delete!}(*),
 @code{dict-push!}, @code{dict-pop!}, @code{dict-update!},
 @code{dict-clear!}
+@c EN
 (If the dictionary is immutable, these methods are not specialized
 and the default methods throw an error.)
+@c JP
+(変更不可なディクショナリの実装では、これらのメソッドは特定化されず、
+デフォルトメソッドはエラーを投げます)。
+@c COMMON
 
 @item Walkers
 @code{call-with-iterator}(*),
@@ -8885,7 +8890,7 @@ doesn't need to compare keys as a whole (e.g. @code{<trie>} compares
 keys element-wise, so no direct key comparator is used.
 @xref{Trie}).  The caller need to handle such cases.
 @c JP
-註: このメソッドは@code{#t}を返すことがあります。ディクショナリが、
+註: このメソッドは@code{#f}を返すことがあります。ディクショナリが、
 キー同士を直接比較しない場合があるからです
 (例: @code{<trie>}はキーの各要素ごとに比較するので、キーまるごとの比較器というのは
 使いません。@ref{Trie}参照)。呼び出し側は@code{#f}が返る可能性を常に念頭に置いてください。

@@ -6240,7 +6240,7 @@ The result still shares the @var{list}.
 これらは@var{list}が@var{k}要素より短い場合にもエラーを通知しません。
 @code{drop-right*}はその場合は単に空リストを返します。
 @code{take-right*}はその場合はデフォルトで@var{list}そのものを
-返しますが、@var{fill?}が真であれば@var{list}の右側に
+返しますが、@var{fill?}が真であれば@var{list}の左側に
 足りない分だけ@var{padding}を足したものを返します。その場合でも
 結果の尾部は@var{list}と共有されます。
 @c COMMON
@@ -6276,6 +6276,7 @@ If @var{k} is negative or larger than the length of @var{list},
 the behavior depends on whether the optional @var{fallback} argument
 is given or not.  If @var{fallback} is given, it is returned.
 Otherwise, an error is signaled.
+(The optional @var{fallback} argument is Gauche's extension to R7RS).
 @c JP
 @var{list}の@var{k}番目のcdrを返します。@var{list}は
 正規のリストでもドットリストでも循環リストでも構いません。
@@ -6284,6 +6285,7 @@ Otherwise, an error is signaled.
 @var{k}の値が負であったり@var{list}の長さ以上の場合、
 @var{fallback}引数が与えられていればそれが返され、
 そうでなければエラーが報告されます。
+(省略可能な@var{fallback}引数はGauche独自の拡張です)。
 @c COMMON
 @end defun
 
@@ -6312,13 +6314,12 @@ it is returned for such case.  This is an extension of Gauche.
 @c EN
 Modifies the @var{k}-th element of a @var{list} by @var{v}.
 It is an error unless @var{k} is an exact integer between 0 and
-one minus the length of @var{k}.  If @var{list} is immutable,
-no error is signalled but the behavior is undefined.
+one minus the length of @var{k} and @var{list} is mutable.
 @c JP
 リスト@var{list}の@var{k}番目の要素を@var{v}へと変更します。
-@var{k}が0から(- リストの長さ 1)の範囲の正確な整数でない場合は
-エラーが報告されます。@var{list}が変更不可なリストであった場合、
-エラーは報告されませんが、その後の振る舞いは不定となります。
+@var{k}が0から(- リストの長さ 1)の範囲の正確な整数でない場合、
+また@var{list}が変更可能なリストでない場合は
+エラーが報告されます。
 @c COMMON
 @end defun
 
@@ -6327,10 +6328,10 @@ no error is signalled but the behavior is undefined.
 [R7RS list]
 @c EN
 Returns the last pair of @var{list}.
-@var{list} can be a proper or dotted list.
+@var{list} can be a proper or dotted list with at least one pair.
 @c JP
 @var{list}の最後のペアを返します。@var{list}は
-正規のリストかドットリストです。
+ペアをひとつ以上持つ正規のリストかドットリストです。
 @c COMMON
 
 @example
