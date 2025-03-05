@@ -717,7 +717,7 @@ Useful for diagnosis of unexpected errors.
 @c COMMON
 @end deftp
 
-@deftp {Environment variable} GAUCHE_VERSION_INFO_EXCLSION
+@deftp {Environment variable} GAUCHE_VERSION_INFO_EXCLUSION
 @c EN
 The value must be a comma-separated keys in @code{version-alist}
 (@pxref{Environment inquiry}).
@@ -1578,7 +1578,7 @@ in the source tree.
 @c JP
 直前の変更をundoするには@code{C-_}を使います。@code{C-_}を続けてタイプすれば
 どんどん編集をundoできます。undoのモデルはEmacsと同じで、つまり
-[undo自体をundoする]こともできます。
+「undo自体をundoする」こともできます。
 詳しいアルゴリズムは、ソースの@file{lib/text/line-edit.scm}末尾の
 コメントを見てください。
 @c COMMON
@@ -2885,22 +2885,40 @@ may already have installed programs with the same name.
 @c NODE 設定を問い合わせる, @code{gauche-config} - 設定を問い合わせる
 
 @deftp {Program} gauche-config [option]
+@c EN
 Without options, prints the command usage.  With an option, prints
 the string associated to the option, which is determined at configuration
 time.
+@c JP
+オプションを与えずに起動すると使い方を表示します。
+オプションを与えると、configure時にそのオプションに結び付けられた文字列を
+表示します。
+@c COMMON
 
+@c EN
 Here are some examples.  Note that output may vary on your platform.
+@c JP
+いくつか例を示します。実際に表示される文字列はプラットフォームによって異なります。
+@c COMMON
 
 @itemize @bullet
 @item
+@c EN
 Print the running architecture:
+@c JP
+実行アーキテクチャの表示:
+@c COMMON
 @example
 $ gauche-config --arch
 x86_64-pc-linux-gnu
 @end example
 
 @item
+@c EN
 Print the library flags required to link programs using Gauche:
+@c JP
+Gaucheをリンクするプログラムをビルドする際に必要なライブラリフラグ:
+@c COMMON
 
 @example
 $ gauche-config -l
@@ -2908,7 +2926,11 @@ $ gauche-config -l
 @end example
 
 @item
+@c EN
 Print the include path flags required to comple Gauche extension.
+@c JP
+Gauche拡張をコンパイルする際に必要なインクルードパスフラグ:
+@c COMMON
 
 @example
 $ gauche-config -I
@@ -2916,8 +2938,12 @@ $ gauche-config -I
 @end example
 @end itemize
 
+@c EN
 The command accepts the following arguments.  You can only give at most
 one.
+@c JP
+コマンドは以下のコマンドライン引数を取ります。ひとつだけ指定できます。
+@c COMMON
 
 @c xinclude man-gauche-config.texi
 
