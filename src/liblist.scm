@@ -119,18 +119,37 @@
 (define-cproc ipair? (obj) ::<boolean> Scm_ImmutablePairP)
 (define-cproc ipair (car cdr) ::<pair>
   (return (SCM_PAIR (Scm_MakeImmutablePair car cdr SCM_NIL))))
+
+(inline-stub
+ ;; Common routine for ilist and ilist*
+ ;; if star? is TRUE, we treat the last arg as the last cdr.
+ (define-cfn ilist_base (args star?::int)
+  (cond [(SCM_NULLP args) (return '())]
+        [(SCM_NULLP (SCM_CDR args))
+         (if star?
+           (return (SCM_CAR args))
+           (return (Scm_MakeImmutablePair (SCM_CAR args) '() '())))]
+        [else
+         (let* ([h (Scm_MakeImmutablePair (SCM_CAR args) '() '())]
+                [t h])
+           (for [(set! args (SCM_CDR args))
+                 (SCM_PAIRP (SCM_CDR args))
+                 (set! args (SCM_CDR args))]
+             (let* ([p (Scm_MakeImmutablePair (SCM_CAR args) '() '())])
+               (SCM_SET_CDR_UNCHECKED t p)
+               (set! t p)))
+           (if star?
+             (SCM_SET_CDR_UNCHECKED t (SCM_CAR args))
+             (let* ([p (Scm_MakeImmutablePair (SCM_CAR args) '() '())])
+               (SCM_SET_CDR_UNCHECKED t p)))
+           (return h))]))
+ )
+
 (define-cproc ilist (:rest args) ::<list>
-  (if (SCM_NULLP args)
-    (return SCM_NIL)
-    (let* ([h SCM_NIL] [t SCM_NIL])
-      (dopairs (cp args)
-        (if (SCM_NULLP t)
-          (set! h (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL SCM_NIL)
-                t h)
-          (let* ([p (Scm_MakeImmutablePair (SCM_CAR cp) SCM_NIL SCM_NIL)])
-            (SCM_SET_CDR_UNCHECKED t p)
-            (set! t p))))
-      (return h))))
+  (return (ilist_base args FALSE)))
+
+(define-cproc ilist* (:rest args) ::<list>
+  (return (ilist_base args TRUE)))
 
 (select-module scheme)
 (define-cproc null? (obj) ::<boolean> :fast-flonum :constant

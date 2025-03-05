@@ -1,3 +1,7 @@
+2025-03-04  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (ilist*): Add ilist*.
+
 2025-03-02  Shiro Kawai  <shiro@acm.org>
 
 	* ext/data/queue.scm (mtqueue-close!): Instead of directly changing

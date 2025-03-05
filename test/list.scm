@@ -705,13 +705,23 @@
        (let1 p (ipair 1 2)
          (cons (car p) (cdr p))))
 
-(test* "ilist" '(#t #t #t #f)
+(test* "ilist" '((1 2 3) #t #t #t #f)
        (let1 p (ilist 1 2 3)
-         (list (ipair? p)
+         (list p
+               (ipair? p)
                (ipair? (cdr p))
                (ipair? (cddr p))
                (ipair? (cdddr p)))))
 (test* "ilist" '() (ilist))
+
+(test* "ilist*" '((1 2 . 3) #t #t #f)
+       (let1 p (ilist* 1 2 3)
+         (list p
+               (ipair? p)
+               (ipair? (cdr p))
+               (ipair? (cddr p)))))
+(test* "ilist" '() (ilist))
+(test* "ilist*" 'a (ilist* 'a))
 
 (test* "ipair immutability" (test-error)
        (let1 p (ipair 1 2)
