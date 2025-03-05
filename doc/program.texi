@@ -503,6 +503,16 @@ The following environment variables are recognized:
 以下の環境変数を認識します。
 @c COMMON
 
+@deftp {Environment variable} GAUCHE_ALLOW_UNDEFINED_TEST
+@c EN
+Suppress warnings when @code{#<undef>} is used in the test expression of branch.
+@xref{Undefined values}, for the details.
+@c JP
+@code{#<undef>}が条件式のテスト式に使われた場合に出る警告を抑止します。
+詳しくは@ref{Undefined values}を参照してください。
+@c COMMON
+@end deftp
+
 @deftp {Environment variable} GAUCHE_AVAILABLE_PROCESSORS
 @c EN
 You can get the number of system's processors by
@@ -525,38 +535,6 @@ the return value of @code{sys-available-processors}.
 この環境変数は、@code{sys-available-processors}が返す値を上書きします。
 @c COMMON
 @end deftp
-
-@deftp {Environment variable} GAUCHE_CHECK_UNDEFINED_TEST
-@c EN
-Warn if @code{#<undef>} is used in the test expression of branch.
-
-In boolean context, @code{#<undef>} counts true.  It is also
-often the case that a procedure returns @code{#<undef>} when
-the return value doesn't matter, and you shouldn't rely on
-the value that is supposed not to matter--the procedure may
-change the return value in future (which should be ok, since
-the value shouldn't have mattered), which can cause unintentional
-and hard-to-track bugs.
-@xref{Undefined values}, for the details.
-
-We strongly recommend users to turn on this warning.  In future,
-we plan to make this default.
-@c JP
-@code{#<undef>}が条件式のテスト式に使われた場合に警告を出します。
-
-真偽値判定では@code{#<undef>}は真とみなされます。しかし、
-@code{#<undef>}を返す手続きはしばしば、
-「戻り値に意味はない」ことを示すためにそれを返しています。
-戻り値に意味がないなら、その値に依存したコードを書くべきではありません。
-もし、手続きが将来、もともと意味が無いのだからと戻り値を変えた場合に、
-@code{#<undef>}に依存してたコードは壊れる可能性があります。
-詳しくは@ref{Undefined values}を参照してください。
-
-この機能はなるべくONにしておくようにお勧めします。
-将来はデフォルトで警告を出すようにする予定です。
-@c COMMON
-@end deftp
-
 
 @deftp {Environment variable} GAUCHE_DYNLOAD_PATH
 @c EN
