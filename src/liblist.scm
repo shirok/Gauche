@@ -326,6 +326,7 @@
         [else (error "argument must be a list, but got:" l)]))
 
 (define-inline cons* list*)             ;SRFI-1
+(define-inline ipair* ilist*)           ;SRFI-116
 
 (define (last lis) (car (last-pair lis))) ;SRFI-1
 

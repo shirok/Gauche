@@ -5780,14 +5780,22 @@ SRFI-1 (R7RS @code{(scheme list)}) が@code{cons*}という名前を定義しま
 @end defun
 
 @defun ilist* obj obj2 @dots{}
+@defunx ipair* obj obj2 @dots{}
+[R7RS ilist]
 @c EN
 Immutable counterparts of @code{list*}.  Creates an immutable list
 from @code{obj} @dots{}, but the last argument is used as the @code{cdr}
 of the last pair.
+
+Both name works exactly the same.
+R7RS @code{(scheme ilist)} defines @code{ipair*}.
 @c JP
 @code{list*}の変更不可バージョンです。
 @code{obj} @dots{}からなる変更不可なリストを作りますが、最後の引数は
 最後のペアの@code{cdr}になります。
+
+どちらの名前も同じ動作ですが、R7RSの@code{(scheme ilist)}は
+@code{ipair*}を定義しています。
 @c COMMON
 @example
 (ilist* 1 2 3) @result{} (1 2 . 3)

@@ -49,7 +49,8 @@
   (use util.match)
   (export ipair                         ;builtin
           ilist                         ;builtin
-          xipair ipair* make-ilist ilist-tabulate
+          ipair*                        ;builtin
+          xipair make-ilist ilist-tabulate
           ilist-copy iiota
 
           iq
@@ -184,10 +185,6 @@
      (gtree->itree '(x ...))]))
 
 (define (xipair cd ca) (ipair ca cd))
-(define (ipair* x . xs)
-  (if (null? xs)
-    x
-    (ipair x (apply ipair* xs))))
 (define (make-ilist n :optional (fill (undefined)))
   (let loop ([r '()] [n n])
     (if (<= n 0)
