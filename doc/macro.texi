@@ -534,11 +534,15 @@ in the same scope.
 
 @c EN
 The @var{transformer-spec} can be either one of @code{syntax-rules}
-form, @code{er-macro-transformer} form, or another macro keyword
+form, @code{er-macro-transformer} form,
+@code{make-id-transformer} form,
+or another macro keyword
 or syntactic keyword.  We'll explain them later.
 @c JP
 @var{transformer-spec}は@code{syntax-rules}フォーム、
-@code{er-macro-transformer}フォーム、あるいは他のマクロキーワードか
+@code{er-macro-transformer}フォーム、
+@code{make-id-transformer}フォーム、
+あるいは他のマクロキーワードか
 構文キーワードです。これについては後述します。
 @c COMMON
 

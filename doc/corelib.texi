@@ -18739,7 +18739,7 @@ types from other Scheme types.  Currently, Gauche uses an uninterned
 symbol as a continuation mark key.  It may be changed in future,
 so do not count on it.
 @c JP
-SRFI-226は継続マークキーが他のSchemebオブジェクトと異なる型であることを
+SRFI-226は継続マークキーが他のSchemeオブジェクトと異なる型であることを
 要請していないことに注意してください。今のところ、Gaucheではインターンされていない
 シンボルを継続マークキーとして返しています。これは将来変わるかもしれないので、
 それに依存したコードは書かないようにしてください。
