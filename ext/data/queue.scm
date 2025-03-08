@@ -55,7 +55,7 @@
           queue-push! queue-push-unique! enqueue! enqueue-unique!
           queue-pop! dequeue! dequeue-all!
           queue-front queue-rear queue-length
-          queue->list list->queue queue-internal-list
+          queue->list list->queue
           find-in-queue remove-from-queue!
           any-in-queue every-in-queue
 

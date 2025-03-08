@@ -5008,6 +5008,18 @@ deque (double-ended queue)が必要です。@code{data.ring-buffer}モジュー�
 @c COMMON
 @end deftp
 
+@menu
+* Queue classes and constructors::
+* Queue predicates::
+* Queue basic operations::
+* Queue other accessors::
+* Queue as channel::
+@end menu
+
+@node Queue classes and constructors, Queue predicates, Queue, Queue
+@subsection Queue classes and constructors
+@c NODE キューのクラスとコンストラクタ
+
 @deftp {Class} <queue>
 @clindex queue
 @c MOD data.queue
@@ -5095,6 +5107,21 @@ initialize the @code{max-length} slot.
 @c COMMON
 @end defun
 
+@defun copy-queue queue
+@c MOD data.queue
+@c EN
+Returns a copy of the queue.  If @var{queue} is an mtqueue,
+a fresh mtqueue with the same content and max length is returned.
+@c JP
+キュー@var{queue}のコピーを返します。@var{queue}がmtqueueなら、
+同じ内容と最大長を持つ新たなmtqueueが返されます。
+@c COMMON
+@end defun
+
+@node Queue predicates, Queue basic operations, Queue classes and constructors, Queue
+@subsection Queue predicates
+@c NODE キューに関する述語
+
 @defun queue? obj
 @c MOD data.queue
 @c EN
@@ -5123,96 +5150,9 @@ Returns @code{#t} if @var{obj} is an empty queue.
 @c COMMON
 @end defun
 
-@defun queue-length queue
-@c MOD data.queue
-@c EN
-Returns the number of the items in the queue.
-@c JP
-キューの中にある要素の数を返します。
-@c COMMON
-@end defun
-
-@defun mtqueue-max-length mtqueue
-@c MOD data.queue
-@c EN
-Returns the maximum number of items the mtqueue can hold.
-If the queue doesn't have a limit, @code{#f} is returned.
-@c JP
-キューが保持できる要素の最大数を返します。限度がない場合は@code{#f}が返ります。
-@c COMMON
-@end defun
-
-@defun mtqueue-room mtqueue
-@c MOD data.queue
-@c EN
-Returns the number of elements the mtqueue can accept at this moment
-before it hits its maximum length.   For example, if the queue
-already has the maximum number of elements, 0 is returned.
-If the queue doesn't have the limit, @code{+inf.0} is returned.
-@c JP
-保持できる最大容量に達するまであといくつ要素を受け入れることができるかを
-示す整数を返します。例えば、既にキューがいっぱいであれば0が返ります。
-キューに最大容量が設定されていなければ@code{+inf.0}が返ります。
-@c COMMON
-
-@c EN
-Note that even if this returns a non-zero finite value, subsequent
-@code{enqueue!} may throw an error because of the queue being full.
-It's because another thread may put an item to the queue
-between this procedure call and @code{enqueue!}.  To avoid
-this situation, use @code{enqueue/wait!} to insert item
-to mtqueue with finite max-length.
-@c JP
-この手続きが0以外有限値を返した場合でも、続く@code{enqueue!}の呼び出し時点で
-キューがいっぱいになっている可能性があることに注意してください。
-この手続きの呼び出しと@code{enqueue!}の
-呼び出しの間に、他のスレッドがキューに要素を入れるかもしれないからです。
-有限長のmtqueueに確実に要素を挿入したい場合は@code{enqueue/wait!}を使ってください。
-@c COMMON
-@end defun
-
-@defun mtqueue-num-waiting-readers mtqueue
-@c MOD data.queue
-@c EN
-Returns the number of threads waiting on the mtqueue to read
-at this moment.
-The return value is always a nonnegative exact integer.
-
-Note that the value might change between this procedure's returning
-the value and your checking it, if some other thread inserts
-an element into the queue.  To use the value reliably, you need
-another mutex to restrict putting items in the queue.
-@c JP
-@var{mtqueue}からの読み出しで待っているスレッドの数を返します。
-返り値は常に非負の正確な整数です。
-
-この手続きが値を返してからその値を使うまでの間に、別のスレッドが
-キューに要素を挿入したら、待っているスレッドの数は変わってしまうことに
-注意してください。この手続きの返り値を安全に使うには、
-キューに値を挿入する部分を別に排他制御する必要があります。
-@c COMMON
-
-@example
-(define q (make-mtqueue))
-
-(thread-start! (make-thread (^[] (dequeue/wait! q))))
-
-(mtqueue-num-waiting-readers q) @result{} 1
-
-(enqueue! q 'a)
-
-(mtqueue-num-waiting-readers q) @result{} 0
-@end example
-@end defun
-
-@defun copy-queue queue
-@c MOD data.queue
-@c EN
-Returns a copy of the queue.
-@c JP
-キューqueueのコピーを返します。
-@c COMMON
-@end defun
+@node Queue basic operations, Queue other accessors, Queue predicates, Queue
+@subsection Basic queue operations
+@c NODE 基本的なキュー操作
 
 @defun enqueue! queue obj :optional more-objs @dots{}
 @c MOD data.queue
@@ -5339,6 +5279,124 @@ See also @code{queue->list} below.
 @c COMMON
 @end defun
 
+@defun remove-from-queue! pred queue
+@c MOD data.queue
+@c EN
+Removes all items in the queue that satisfies @var{pred}.
+Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
+The order of arguments follows
+@code{remove} in @code{scheme.list}
+(@pxref{R7RS lists}).
+@c JP
+キューから、述語@var{pred}を満たす要素を全て取り除きます。
+要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
+引数の順序は@code{scheme.list}
+の@code{remove}に揃えました (@ref{R7RS lists}参照)。
+@c COMMON
+@end defun
+
+@c EN
+Note on portability:
+Scheme48 has @code{delete-from-queue!}, which takes object to remove
+rather than predicate, and also takes arguments in reversed order
+(i.e. queue comes first).   Avoid conflicting with that I intentionally
+left out @code{delete-from-queue!}; it's easy to write one in either
+Scheme48 compatible way or consistent to SRFI-1 argument order.
+@c JP
+移植性に関する註：Scheme48には、述語ではなく削除するオブジェクトそのものを取る
+@code{delete-from-queue!}がありますが、引数の順序が逆(キューが先)になっています。
+まぎらわしい衝突を避けるため、敢えて@code{delete-from-queue!}は
+提供しませんでした。@code{remove-from-queue!}を使えば、Scheme48互換の方法でも、
+あるいはSRFI-1と一貫性のある方法でも@code{delete-from-queue!}を簡単に書けるでしょう。
+@c COMMON
+
+
+@node Queue other accessors, Queue as channel, Queue basic operations, Queue
+@subsection Other queue accessors
+@c NODE その他のキューのアクセサ
+
+@defun queue-length queue
+@c MOD data.queue
+@c EN
+Returns the number of the items in the queue.
+@c JP
+キューの中にある要素の数を返します。
+@c COMMON
+@end defun
+
+@defun mtqueue-max-length mtqueue
+@c MOD data.queue
+@c EN
+Returns the maximum number of items the mtqueue can hold.
+If the queue doesn't have a limit, @code{#f} is returned.
+@c JP
+キューが保持できる要素の最大数を返します。限度がない場合は@code{#f}が返ります。
+@c COMMON
+@end defun
+
+@defun mtqueue-room mtqueue
+@c MOD data.queue
+@c EN
+Returns the number of elements the mtqueue can accept at this moment
+before it hits its maximum length.   For example, if the queue
+already has the maximum number of elements, 0 is returned.
+If the queue doesn't have the limit, @code{+inf.0} is returned.
+@c JP
+保持できる最大容量に達するまであといくつ要素を受け入れることができるかを
+示す整数を返します。例えば、既にキューがいっぱいであれば0が返ります。
+キューに最大容量が設定されていなければ@code{+inf.0}が返ります。
+@c COMMON
+
+@c EN
+Note that even if this returns a non-zero finite value, subsequent
+@code{enqueue!} may throw an error because of the queue being full.
+It's because another thread may put an item to the queue
+between this procedure call and @code{enqueue!}.  To avoid
+this situation, use @code{enqueue/wait!} to insert item
+to mtqueue with finite max-length.
+@c JP
+この手続きが0以外有限値を返した場合でも、続く@code{enqueue!}の呼び出し時点で
+キューがいっぱいになっている可能性があることに注意してください。
+この手続きの呼び出しと@code{enqueue!}の
+呼び出しの間に、他のスレッドがキューに要素を入れるかもしれないからです。
+有限長のmtqueueに確実に要素を挿入したい場合は@code{enqueue/wait!}を使ってください。
+@c COMMON
+@end defun
+
+@defun mtqueue-num-waiting-readers mtqueue
+@c MOD data.queue
+@c EN
+Returns the number of threads waiting on the mtqueue to read
+at this moment.
+The return value is always a nonnegative exact integer.
+
+Note that the value might change between this procedure's returning
+the value and your checking it, if some other thread inserts
+an element into the queue.  To use the value reliably, you need
+another mutex to restrict putting items in the queue.
+@c JP
+@var{mtqueue}からの読み出しで待っているスレッドの数を返します。
+返り値は常に非負の正確な整数です。
+
+この手続きが値を返してからその値を使うまでの間に、別のスレッドが
+キューに要素を挿入したら、待っているスレッドの数は変わってしまうことに
+注意してください。この手続きの返り値を安全に使うには、
+キューに値を挿入する部分を別に排他制御する必要があります。
+@c COMMON
+
+@example
+(define q (make-mtqueue))
+
+(thread-start! (make-thread (^[] (dequeue/wait! q))))
+
+(mtqueue-num-waiting-readers q) @result{} 1
+
+(enqueue! q 'a)
+
+(mtqueue-num-waiting-readers q) @result{} 0
+@end example
+@end defun
+
 @defun queue-front queue :optional fallback
 @defunx queue-rear queue :optional fallback
 @c MOD data.queue
@@ -5401,38 +5459,6 @@ Gaucheでは@code{queue->list}は新しいリストをアロケートしてキ�
 @c COMMON
 @end defun
 
-@defun queue-internal-list queue
-@c MOD data.queue
-@c EN
-Like @code{queue->list}, returns a list whose content is the items
-in the queue in order, but the returned list @emph{may} share the
-internal storage of @var{queue}.  The returned list can be modified
-by subsequent operations of @var{queue}, and any modification on the
-list can make @var{queue} inconsistent.
-
-Because of this danger, we don't allow @code{<mtqueue>} to be
-passed to this procedure; it would signal an error if you do so.
-
-If you just want to extract the accumulated result in @var{queue} without
-copying, consider @code{dequeue-all!}, which is safe because it atomically
-resets the queue.  Use this procedure only when you absolutely need
-to access the contents of the queue without taking them out.
-@c JP
-@code{queue->list}と同じように、@var{queue}の内容をリストとして返しますが、
-そのリストは@var{queue}の内部構造と共有されているかもしれません。
-つまり、返されたリストは続く@var{queue}への操作によって変更される可能性があり、
-また返されたリストを変更すると@var{queue}の一貫性は失われるでしょう。
-
-この危険性のため、@code{<mtqueue>}をこの手続きに渡すことは禁じられています。
-もしそうしたらエラーとなります。
-
-@var{queue}に蓄積されたデータをコピーせずに取り出したいというだけなら、
-@code{dequeue-all!}を使ってください。それは取り出すのとキューを空にする
-操作をアトミックに行うので安全です。この手続きは、キューの中身を取り出すこと無く
-内部にアクセスしたいという場合にだけ使って下さい。
-@c COMMON
-@end defun
-
 @defun find-in-queue pred queue
 @c MOD data.queue
 @c EN
@@ -5477,36 +5503,9 @@ SRFI-1の@code{every}のように、@var{queue}中の各要素に
 @c COMMON
 @end defun
 
-@defun remove-from-queue! pred queue
-@c MOD data.queue
-@c EN
-Removes all items in the queue that satisfies @var{pred}.
-Returns @code{#t} if any item is removed.  Otherwise returns @code{#f}.
-The order of arguments follows
-@code{remove} in @code{scheme.list}
-(@pxref{R7RS lists}).
-@c JP
-キューから、述語@var{pred}を満たす要素を全て取り除きます。
-要素が削除された場合は@code{#t}が、そうでなければ@code{#f}が返されます。
-引数の順序は@code{scheme.list}
-の@code{remove}に揃えました (@ref{R7RS lists}参照)。
-@c COMMON
-@end defun
-
-@c EN
-Note on portability:
-Scheme48 has @code{delete-from-queue!}, which takes object to remove
-rather than predicate, and also takes arguments in reversed order
-(i.e. queue comes first).   Avoid conflicting with that I intentionally
-left out @code{delete-from-queue!}; it's easy to write one in either
-Scheme48 compatible way or consistent to SRFI-1 argument order.
-@c JP
-移植性に関する註：Scheme48には、述語ではなく削除するオブジェクトそのものを取る
-@code{delete-from-queue!}がありますが、引数の順序が逆(キューが先)になっています。
-まぎらわしい衝突を避けるため、敢えて@code{delete-from-queue!}は
-提供しませんでした。@code{remove-from-queue!}を使えば、Scheme48互換の方法でも、
-あるいはSRFI-1と一貫性のある方法でも@code{delete-from-queue!}を簡単に書けるでしょう。
-@c COMMON
+@node Queue as channel,  , Queue other accessors, Queue
+@subsection Queue as channel
+@c NODE チャネルとしてのキュー
 
 @defun enqueue/wait! mtqueue obj :optional timeout timeout-val close
 @defunx queue-push/wait! mtqueue obj :optional timeout timeout-val close

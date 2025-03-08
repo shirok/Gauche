@@ -1,3 +1,9 @@
+2025-03-08  Shiro Kawai  <shiro@acm.org>
+
+	* ext/data/queue.scm: Un-export queue-internal-list.  It is only to
+	  support scheme.list-queue, and really shouldn't be used for other
+	  purposes.
+
 2025-03-07  Shiro Kawai  <shiro@acm.org>
 
 	* ext/data/queue.scm (enqueue/wait!, queue-push/wait!, mtqueue-close!):

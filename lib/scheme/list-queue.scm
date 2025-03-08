@@ -81,7 +81,8 @@
 (define (list-queue-empty? q) (queue-empty? q))
 (define (list-queue-front q) (queue-front q))
 (define (list-queue-back q) (queue-rear q))
-(define (list-queue-list q) (queue-internal-list q))
+(define (list-queue-list q)
+  ((with-module data.queue queue-internal-list) q))
 
 ;; This also returns internal structure.
 (define (list-queue-first-last q)
