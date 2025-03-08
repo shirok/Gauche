@@ -963,10 +963,21 @@
          (let1 q (make-mtqueue)
            (dequeue/wait! q 0 #f #t)
            (enqueue/wait! q 'a)))
+  (test* "closed mtqueue makes enqueue/wait give up"
+         'gave-up
+         (let1 q (make-mtqueue)
+           (dequeue/wait! q 0 #f #t)
+           (enqueue/wait! q 'a #f 'gave-up #f #f)))
   (test* "enqueue with closing" #t
          (let1 q (make-mtqueue)
            (enqueue/wait! q 'a #f #f #t)
            (~ q'closed)))
+  (test* "multiple mtqueue-close! is ok"
+         '(#f :queue-closed)
+         (let* ([q (make-mtqueue)]
+                [r0 (mtqueue-close! q)]
+                [r1 (mtqueue-close! q)])
+           (list r0 r1)))
   )
 
 ;;---------------------------------------------------------------------

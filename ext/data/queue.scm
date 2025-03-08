@@ -232,6 +232,11 @@
              [else (SCM_INTERNAL_COND_WAIT (-> ,q ,slot) (MTQ_MUTEX ,q))
                    (set! ,status 0)]))])
 
+ ;; error code used in do-with-timeout
+ ;; 'init' part of the code set variable 'err'
+ (.define ERR_CLOSED 1)                 ; queue is closed
+ (.define ERR_CLOSED_OK 2)              ; queue is closed, but pass
+
  ;; (do-with-timeout Q RETVAL TIMEOUT TIMEOUT-VAL CVAR INIT WAIT-CHECK DO-OK)
  ;;   Lock Q and execute INIT, and wait while WAIT-CHECK satisfies.  Once
  ;;   WAIT-CHECK returns false, execute a statement DO-OK.  CVAR is a
@@ -247,7 +252,7 @@
       `(let* ([,ts :: (ScmTimeSpec)] [,status :: int 0]
               [,tv :: (volatile ScmObj) ,timeout-val]
               [,pts :: (ScmTimeSpec*) (Scm_GetTimeSpec ,timeout (& ,ts))]
-              [,inited :: int FALSE] [err :: (const char *) NULL])
+              [,inited :: int FALSE] [err :: int 0])
          (while TRUE
            (with-mtq-mutex-lock ,q
              (unless ,inited ,init (set! ,inited TRUE))
@@ -260,11 +265,14 @@
                  (set! (MTQ_LOCKER ,q) SCM_FALSE)
                  (notify-lockers ,q)
                  (break))))
-           (when err
-             (Scm_Error "%s: %S" err ,q))
-           (case ,status
-             [(CW_TIMEDOUT) (set! ,retval ,tv)]
-             [(CW_INTR)     (Scm_SigCheck (Scm_VM)) (continue)]) ;restart op
+           (case err
+             [(ERR_CLOSED) (Scm_Error "queue is closed: %S" ,q)]
+             [(ERR_CLOSED_OK) (set! ,retval ,timeout-val)]
+             [else
+              (case ,status
+                [(CW_TIMEDOUT) (set! ,retval ,tv)]
+                [(CW_INTR)     (Scm_SigCheck (Scm_VM)) (continue)]) ;restart op
+              ])
            (break))))])
 
  (define-cproc %lock-mtq (q::<mtqueue>) ::<void>   (grab-mtq-big-lock q))
@@ -474,11 +482,16 @@
  (define-cproc enqueue/wait! (q::<mtqueue> obj
                                            :optional (timeout #f)
                                                      (timeout-val #f)
-                                                     (close::<boolean> #f))
-   (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
+                                                     (close::<boolean> #f)
+                                                     (if-closed :error))
+   (let* ([cell (SCM_LIST1 obj)]
+          [close-code::int (?: (SCM_EQ if-closed ':error)
+                               ERR_CLOSED
+                               ERR_CLOSED_OK)]
+          [retval (SCM_OBJ q)])
      (do-with-timeout q retval timeout timeout-val writerWait
                       (when (MTQ_CLOSED q)
-                        (set! err "queue is closed"))
+                        (set! err close-code))
                       (?: (!= (MTQ_MAXLEN q) 0)
                           (mtq-overflows q 1)
                           (== (MTQ_READER_SEM q) 0))
@@ -507,11 +520,12 @@
   q)
 
 ;; API
-;; TODO: We may want to allow to call this on already closed queue w/o
-;; raising an error.
 (define (mtqueue-close! q)
   (assume-type q <mtqueue>)
-  (enqueue/wait! q (%close-marker) #f #f #t))
+  (let1 r (enqueue/wait! q (%close-marker) #f (%close-marker) #t #f)
+    (if (eq? r (%close-marker))
+      :queue-closed
+      #f)))
 
 (inline-stub
  ;; queue-push! - add item(s) to the head
@@ -536,11 +550,16 @@
  (define-cproc queue-push/wait! (q::<mtqueue> obj
                                               :optional (timeout #f)
                                                         (timeout-val #f)
-                                                        (close::<boolean> #f))
-   (let* ([cell (SCM_LIST1 obj)] [retval (SCM_OBJ q)])
+                                                        (close::<boolean> #f)
+                                                        (if-closed ':error))
+   (let* ([cell (SCM_LIST1 obj)]
+          [close-code::int (?: (SCM_EQ if-closed ':error)
+                               ERR_CLOSED_OK
+                               ERR_CLOSED)]
+          [retval (SCM_OBJ q)])
      (do-with-timeout q retval timeout timeout-val writerWait
                       (when (MTQ_CLOSED q)
-                        (set! err "queue is closed"))
+                        (set! err close-code))
                       (?: (!= (MTQ_MAXLEN q) 0)
                           (mtq-overflows q 1)
                           (== (MTQ_READER_SEM q) 0))

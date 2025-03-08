@@ -1,3 +1,10 @@
+2025-03-07  Shiro Kawai  <shiro@acm.org>
+
+	* ext/data/queue.scm (enqueue/wait!, queue-push/wait!, mtqueue-close!):
+	  Add option for enqueue/wait! to return instead of error when
+	  the queue is already closed.
+	  Allow mtqueue-close! to be called on closed queue.
+
 2025-03-04  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (ilist*): Add ilist*.
