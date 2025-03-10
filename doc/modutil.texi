@@ -5173,7 +5173,7 @@ has a positive finite value, and adding @var{obj}s makes the number of
 elements in @var{queue} exceeds @code{max-length},
 an error is signaled and @var{queue} won't be modified.
 (If @code{max-length} is zero, this procedure always fail.
-Use @code{enqueue/wait!} below.)
+Use @code{enqueue/wait!}.  @xref{Queue as channel}, for the details.)
 @c JP
 @var{queue}がmtqueueの場合、渡されたオブジェクト全ての追加は
 アトミックに行われます。すなわち、途中に別スレッドが要素を挿入する
@@ -5182,7 +5182,7 @@ Use @code{enqueue/wait!} below.)
 @code{max-length}を越えることになる場合は、@var{queue}は
 変更されずエラーとなります。
 (@code{max-length}がゼロの場合、この手続きは常にエラーとなります。
-下に説明する@code{enqueue/wait!}を使ってください。)
+@code{enqueue/wait!}を使ってください。@ref{Queue as channel}参照。)
 @c COMMON
 
 @c EN
@@ -5271,11 +5271,11 @@ such a queue as an synchronization device.
 @c EN
 Returns the whole content of the queue by a list, with emptying
 @var{queue}.   If @var{queue} is already empty, returns an empty list.
-See also @code{queue->list} below.
+See also @code{queue->list} (@pxref{Queue other accessors}).
 @c JP
 キューの全ての内容をリストにして返します。キューそのものは空になります。
 キューが既に空の場合は空リストが返されます。
-下の@code{queue->list}も参照してください。
+@code{queue->list}も参照してください(@ref{Queue other accessors})。
 @c COMMON
 @end defun
 
@@ -5507,22 +5507,43 @@ SRFI-1の@code{every}のように、@var{queue}中の各要素に
 @subsection Queue as channel
 @c NODE チャネルとしてのキュー
 
+@c EN
+Mtqueues can be used as a communication channel between threads
+to implement producer-consumer pattern.  Using @code{enqueue/wait!},
+the producer is suspended when the queue is full, until
+the consumer reads the items to make room.  Using @code{dequeue/wait!},
+the consumer is suspended when the queue is empty, until
+the producer make items available.
+@c JP
+Mtqueueはスレッドを使った生産者-消費者パターンの並行動作に使えます。
+生産者が@code{enqueue/wait!}でキューに要素を挿入しようとして
+キューが一杯であった場合、消費者が要素を取り出すまで待ちます。
+消費者が@code{dequeue/wait!}でキューから要素を取り出そうとして
+キューが空であった場合、生産者が要素を挿入するまで待ちます。
+@c COMMON
+
+@c EN
+You can specify timeouts for those procedures as well, in case
+some threads got stuck.
+@c JP
+また、これらの手続きにはタイムアウトを設定することができ、
+スレッドがスタックした場合に対応できます。
+@c COMMON
+
 @defun enqueue/wait! mtqueue obj :optional timeout timeout-val close
 @defunx queue-push/wait! mtqueue obj :optional timeout timeout-val close
-@defunx dequeue/wait! mtqueue :optional timeout timeout-val close
-@defunx queue-pop/wait! mtqueue :optional timeout timeout-val close
 @c MOD data.queue
 @c EN
-These synchronizing variants allows an mtqueue to be used
-as a ``channel'', which communicates producer thread(s) and
-consumer thread(s).
+Insert @var{obj} to @var{mtqueue}.  Like @code{enqueue!} and
+@code{queue-push!}, @code{euqueue/wait!} inserts @var{obj} at the
+end of the queue (so that it will be retrieved after existing
+items are dequeued), while @var{queue-push/wait!} inserts @var{obj}
+at the beginning of the queue (so that it will be retrieved
+next call of dequeue).
 
-The caller thread would block if the mtqueue has reached
-its maximum length (for @code{enqueue/wait!} and @code{queue-push/wait!}),
-or the mtqueue is empty (for @code{dequeue/wait!} and
-@code{queue-pop/wait!}).   The blocked caller thread is unblocked
-either when the blocking condition is resolved, or the timeout
-condition is met.
+If the queue is full, the caller is blocked.
+The caller is unblocked when items are taken, or the timeout
+reaches.
 
 The optional @var{timeout} argument specifies the timeout condition.
 If it is @code{#f}, those procedures wait indefinitely.
@@ -5536,14 +5557,16 @@ In case the call is blocked then timed out, the value of
 When @code{enqueue/wait!} and @code{queue-push/wait!} succeeds
 without hitting timeout, they return @code{#t}.
 @c JP
-これらの同期的手続きで、@var{mtqueue}を、生産者スレッドと消費者スレッドの間に立つ
-「チャネル」として使うことができます。
+@var{obj}を@var{mtqueue}に挿入します。
+@code{enqueue!}/@code{queue-push!}と同様に、
+@code{enqueue/wait!}は@var{obj}をキューの末尾に
+(従って、既にある要素が全て取り除かれてから@var{obj}が取られます)、
+@code{queue-push/wait!}は@var{obj}をキューの先頭に
+(従って、@var{obj}は次のdequeueで取られます)、それぞれ挿入します。
 
-@code{enqueue/wait!}と@code{queue-push/wait!}は、
-キューの要素数が@var{max-length}を越える場合に、キューに空きができるまで、
-@code{dequeue/wait!}と@code{queue-pop/wait!}は、
-キューが空の場合に、キューに要素が追加されるまで、
-呼び出しスレッドをブロックします。
+キューが既に一杯である場合、呼び出しはブロックします。
+キューから要素が取り出されて空きができるか、タイムアウトした場合に
+これらの手続きは戻ります。
 
 @var{timeout}引数で、ブロックされたスレッドのタイムアウトを指定することができます。
 @code{#f}は指定しなかった場合と同じで、キューの状態が変化するまで
@@ -5560,22 +5583,6 @@ without hitting timeout, they return @code{#t}.
 @c COMMON
 
 @c EN
-If @var{mtqueue} is already closed, @code{enqueue/wait!} and
-@code{queue-push/wait!} raise an error, without modifying the queue.
-The check and queue insertion is done atomically, to eliminate
-the possibility that other thread tries to enqueue between the
-check and insetion.  You can use @code{dequeue/wait!} and
-@code{queue-pop/wait!} on a closed mtqueue.
-@c JP
-もし@var{mtqueue}が既にクローズされていたら、@code{enqueue/wait!} and
-@code{queue-push/wait!}はキューを変更せずにエラーを投げます。
-フラグのチェックとキューへの挿入はアトミックに行われるので、
-チェックと挿入の間に他のスレッドがenqueueしてしまうことはありません。
-@code{dequeue/wait!}と@code{queue-push/wait!}はクローズ済みのmtqueueに
-対しても使えます。
-@c COMMON
-
-@c EN
 The last optinoal argument, @code{close}, closes the queue if it is given
 and true.  The close operation is done atomically, and if you're calling
 @code{enqueue/wait!} or @code{queue-push/wait!}, @var{obj} is guaranteed
@@ -5588,7 +5595,63 @@ the channel.
 @var{obj}が最後にキューに追加されるデータであることが保証されます。
 これはチャネルの「シャットダウン」操作と考えることができます。
 @c COMMON
+
+@c EN
+If @var{mtqueue} is already closed, an error is raised
+ without modifying the queue.
+The check and queue insertion is done atomically, to eliminate
+the possibility that other thread tries to enqueue between the
+check and insetion.
+@c JP
+もし@var{mtqueue}が既にクローズされていたらエラーが投げられます。
+キューは変更されません。
+フラグのチェックとキューへの挿入はアトミックに行われるので、
+チェックと挿入の間に他のスレッドがenqueueしてしまうことはありません。
+@c COMMON
+
 @end defun
+
+@defun dequeue/wait! mtqueue :optional timeout timeout-val close
+@defunx queue-pop/wait! mtqueue :optional timeout timeout-val close
+@c MOD data.queue
+@c EN
+Remove one item from the head of the queue and returns it.
+Both procedures works exactly the same.  You can use @code{dequeue/wait!}
+to pair with @code{enqueue/wait!}, and @code{queue-pop/wait!}
+with @code{queue-push/wait!}, for clarity.
+
+The caller thread would block if the queue is empty.
+The blocked caller thread is unblockedeither
+when the blocking condition is resolved, or the timeout
+condition is met.
+
+See the @code{enqueue/wait!} entry above for the meaning of
+@var{timeout}, @var{timeout-val}, and @var{close} arguments.
+@c JP
+キューの先頭から要素を取り出して返します。
+どちらの手続きも全く同じ動作ですが、
+@code{dequeue/wait!}は@code{enqueue/wait!}と対で、
+@code{queue-pop/wait!}は@code{queue-push/wait!}と対で使うとわかりやすいでしょう。
+
+呼び出しスレッドは、キューが空であった場合ブロックします。
+キューに要素が追加されるか、タイムアウトが起きたら戻ってきます。
+
+@var{timeout}、@var{timeout-val}、@var{close}引数については
+上の@code{enqueue/wait!}を参照してください。
+@c COMMON
+@end defun
+
+@defun mtqueue-close! mtqueue
+@c MOD data.queue
+@c EN
+Closes the mtqueue without inserting or retrieving objects.
+If the mtqueue is closed, it does nothing.
+@c JP
+mtqueueに要素を追加することなくキューをクローズします。
+キューが既にクローズされていた場合は何もしません。
+@c COMMON
+@end defun
+
 
 @c ----------------------------------------------------------------------
 @node Random data generators, Range, Queue, Library modules - Utilities
