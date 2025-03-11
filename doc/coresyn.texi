@@ -3906,7 +3906,8 @@ is bound to each @var{var}s.  In the first form, it is an error
 unless @var{expr} yields the same number of values as @var{var}s.
 @c JP
 まず@var{expr}が評価され、続いて各値が@var{var}に順に束縛されます。
-最初の形式では、@var{expr}
+最初の形式では、@var{expr}が@var{var}と同じ数だけの値を生成しなければ
+エラーとなります。
 @c COMMON
 @example
 (define-values (lo hi) (min&max 3 -1 15 2))
@@ -5607,6 +5608,17 @@ Makes all bindings in the current module available to modules
 that imports it.
 @c JP
 カレントモジュール中の全ての束縛をexportします。
+@c COMMON
+
+@c EN
+This is intended for modules during early development, when
+you don't know which bindings should be exported.  Once the module
+interface is taking shape, we strongly recommend to list
+the external API explicitly using @code{export}.
+@c JP
+これは開発の初期に、まだどの束縛をエクスポートすべきかが固まっていない
+段階で使われることを想定しています。開発が進んでAPIが見えてきたら、
+@code{export}を使って外部APIを明示することを強くお勧めします。
 @c COMMON
 @end defspec
 
