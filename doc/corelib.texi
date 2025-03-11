@@ -14539,7 +14539,7 @@ For portable Scheme code, SRFI-181 provides conversion between
 strings and bytevectors, specifying character encodings
 (@pxref{Transcoded ports}).
 @c JP
-ポータブルなSchemekコードを書くには、SRFI-181が提供する
+ポータブルなSchemeコードを書くには、SRFI-181が提供する
 文字列とバイトベクタの変換手続きが使えるでしょう。
 文字エンコーディングを指定することもできます
 (@ref{Transcoded ports}参照)。

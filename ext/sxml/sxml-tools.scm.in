@@ -137,7 +137,7 @@
               '("/>")
               `(">" ,@(rec content) "</" ,sname ">"))))]
      [(string? tree) (sxml:string->xml tree)] ; *text*
-     [else (sxml:error "sxml->html - unexpected type of node: " tree)]))
+     [else (sxml:error "sxml->xml - unexpected type of node: " tree)]))
   (define (ns->attr prefix&uri)
     `(,(symbol-append 'xmlns: (car prefix&uri)) ,(cdr prefix&uri)))
   (rec sxml))
