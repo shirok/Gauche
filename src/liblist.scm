@@ -164,26 +164,83 @@
     (return len)))
 
 (select-module gauche)
-(define-cproc length<=? (list k::<integer>) ::<boolean> :constant
-  (if (SCM_INTP k)
-    (let* ([n::ScmSmallInt (SCM_INT_VALUE k)])
-      (dolist [_ list] (when (<= (post-- n) 0) (return FALSE)))
-      (return (<= 0 n)))
-    ;; k is bignum. it is impossible to have that long list, but list
-    ;; can be circular, so we need to scan list entirely anyway.
-    (if (< (Scm_Sign k) 0)
-      (return FALSE)
-      (let* ([ln::ScmSmallInt (Scm_Length list)])
-        (return (>= ln 0))))))
-(define-cproc length=? (list k::<integer>) ::<boolean> :constant
-  (if (SCM_INTP k)
-    (let* ([n::ScmSmallInt (SCM_INT_VALUE k)])
-      (dolist [_ list] (when (<= (post-- n) 0) (return FALSE)))
-      (return (== 0 n)))
-    (return FALSE)))
-(define (length<? list k) (length<=? list (- k 1)))
-(define (length>? list k) (not (length<=? list k)))
-(define (length>=? list k) (not (length<? list k)))
+;; Internal routines for length=? etc.
+(define-cfn length-cmp-lis (lis1 lis2) ::int :static
+  (let* ([hare1 lis1] [tortoise1 lis1] [hare2 lis2] [tortoise2 lis2]
+         [circle1::_Bool FALSE] [circle2::_Bool FALSE])
+    (for ()
+      (cond
+       [(not (SCM_PAIRP hare1)) (return (?: (SCM_PAIRP hare2) -1 0))]
+       [(not (SCM_PAIRP hare2)) (return 1)]
+       [else (set! hare1 (SCM_CDR hare1)
+                   hare2 (SCM_CDR hare2))
+             (cond
+              [(not (SCM_PAIRP hare1)) (return (?: (SCM_PAIRP hare2) -1 0))]
+              [(not (SCM_PAIRP hare2)) (return 1)]
+              [else (set! hare1 (SCM_CDR hare1)
+                          hare2 (SCM_CDR hare2)
+                          tortoise1 (SCM_CDR tortoise1)
+                          tortoise2 (SCM_CDR tortoise2))
+                    (when (SCM_EQ hare1 tortoise1) (set! circle1 TRUE))
+                    (when (SCM_EQ hare2 tortoise2) (set! circle2 TRUE))
+                    (when (and circle1 circle2) (return 0))
+                    ;; loop
+                    ])]))))
+
+(define-cfn length-cmp-k (lis k::long) ::int :static
+  (let* ([hare lis] [tortoise lis])
+    (for ()
+      (cond
+       [(not (SCM_PAIRP hare)) (return (?: (== k 0) 0 -1))]
+       [(<= k 0) (return 1)]
+       [else (set! hare (SCM_CDR hare)
+                   k (- k 1))
+             (cond
+              [(not (SCM_PAIRP hare)) (return (?: (== k 0) 0 -1))]
+              [(== k 0) (return 1)]
+              [else (set! hare (SCM_CDR hare)
+                          tortoise (SCM_CDR tortoise)
+                          k (- k 1))
+                    (when (SCM_EQ hare tortoise) (return 1))
+                    ;; loop
+                    ])]))))
+
+;; The case K is huge and no possible finite list has matching length.
+;; We still need to handle the case when lis is infinite (circular).
+(define-cfn length-cmp-big (lis) ::int :static
+  (let* ([ln::ScmSmallInt (Scm_Length lis)])
+    (return (?: (< ln 0) 1 -1))))
+
+(define-cfn length-cmp-generic (lis lis-or-k) ::int :static
+  (cond
+   [(SCM_LISTP lis-or-k) (return (length-cmp-lis lis lis-or-k))]
+   [(not (and (SCM_REALP lis-or-k) (Scm_FiniteP lis-or-k)))
+    (Scm_Error "A pair or a finite real number expected, but got: %S" lis-or-k)]
+   [(< (Scm_Sign lis-or-k) 0) (return 1)]
+   [(SCM_INTP lis-or-k) (return (length-cmp-k lis (SCM_INT_VALUE lis-or-k)))]
+   [(SCM_BIGNUMP lis-or-k) (return (length-cmp-big lis))]
+   [else                                ;real number
+    (let* ([oor::int FALSE]
+           [k::long (Scm_GetIntegerClamp (Scm_Round lis-or-k SCM_ROUND_FLOOR)
+                                         SCM_CLAMP_BOTH
+                                         (& oor))])
+      (cond [oor (return (length-cmp-big lis))]
+            [(Scm_IntegerP lis-or-k) (return (length-cmp-k lis k))]
+            [else
+             ;; we never have an equal condition
+             (let* ([r::int (length-cmp-k lis k)])
+               (return (?: (<= r 0) -1 1)))]))]))
+
+(define-cproc length=? (lis lis-or-k) ::<boolean> :constant
+  (return (== (length-cmp-generic lis lis-or-k) 0)))
+(define-cproc length<? (lis lis-or-k) ::<boolean> :constant
+  (return (< (length-cmp-generic lis lis-or-k) 0)))
+(define-cproc length<=? (lis lis-or-k) ::<boolean> :constant
+  (return (<= (length-cmp-generic lis lis-or-k) 0)))
+(define-cproc length>? (lis lis-or-k) ::<boolean> :constant
+  (return (> (length-cmp-generic lis lis-or-k) 0)))
+(define-cproc length>=? (lis lis-or-k) ::<boolean> :constant
+  (return (>= (length-cmp-generic lis lis-or-k) 0)))
 
 (select-module scheme)
 (define-cproc append (:rest lists) (inliner APPEND) Scm_Append)

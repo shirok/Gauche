@@ -1,3 +1,7 @@
+2025-03-11  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (length<=? etc.): Allow to compare two lists.
+
 2025-03-08  Shiro Kawai  <shiro@acm.org>
 
 	* ext/data/queue.scm: Un-export queue-internal-list.  It is only to
