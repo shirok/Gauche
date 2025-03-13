@@ -6039,54 +6039,72 @@ use @var{num-pairs} below.
 @c COMMON
 @end defun
 
-@defun length=? x k
-@defunx length<? x k
-@defunx length<=? x k
-@defunx length>? x k
-@defunx length>=? x k
+@defun length=? lis lis-or-num
+@defunx length<? lis lis-or-num
+@defunx length<=? lis lis-or-num
+@defunx length>? lis lis-or-num
+@defunx length>=? lis lis-or-num
 @c EN
-Returns @code{#t} iff @var{x} is a (possibly improper) list whose length is
-equal to, less than, less than or equal to, greater than, or greater than
-or equal to an exact integer @var{k}, respectively.
-This procedure only follows the list up to the @var{k} items, so
-it doesn't realize elements of lazy sequence more than
-needed (@xref{Lazy sequences}, for the lazy sequences).
+These procedures compare the lengths of two lists,
+or the length of list and a number.
+They only need to look at the lists until it determine the result,
+so it can be much more efficient than taking actual length of
+lists to compare.  They can also handle dotted or circular lists.
 
-Dotted lists and circular lists are allowed.  For the dotted list,
-the cdr of the last pair isn't counted; that is, a non-pair object
-has length 0, and @code{(a . b)} has length 1.
-A circular list is treated as if it has infinite length.
-@c JP
-それぞれ、リスト@var{x}の長さが正確な整数kと等しいか、k未満か、k以下か、kより大きいか、
-k以上かの場合に@code{#t}を、そうでなければ@code{#f}を返します。
-この関数は@var{k}要素までしかリストを辿らないので、特に@var{x}が遅延シーケンス
-(@ref{Lazy sequences}参照)である場合に、必要以上にリストを実体化しなくて済みます。
-
-@var{x}はドットリストや循環リストでも構いません。
-ドットリストの長さを数える際には最後のペアのcdrは無視します。
-つまり、ペアでないオブジェクトの長さは0で、@code{(a . b)}の長さは1になります。
-循環リストは無限の長さを持つとみなします。
-@c COMMON
+The second argument can be another list or a real number.  It is not
+a typical interface, but convenient nevertheless.
 
 @example
-(length<=? '(a b) 2)  @result{} #t
-(length<=? '(a b) 1)  @result{} #f
-(length<=? '()    0)  @result{} #t
+(length<=? '(a b) '(a b c))  @result{} #t
+(length>?  '(a b) '(a b c))  @result{} #f
 
-;; dotted list cases
-(length<=? 'a       0)  @result{} #t
-(length<=? '(a . b) 0)  @result{} #f
-(length<=? '(a . b) 1)  @result{} #t
+;; Using number
+(length=? '(a b c d e) 5)    @result{} #t
+
+;; It can take any real number
+(length>? '(a b c) 2.5)      @result{} #t
+
+;; Dotted list counts number of pairs
+(length=? '(a b . c) 2)      @result{} #t
+
+;; Works with circular lists as infinite length
+(length>? '(a . #0=(b . #0#)) 100000) @result{} #t
+(length=? '#0=(a . #0#) '#1=(b b . #1#)) @result{} #t
+
+;; Either one can be infinite lazy sequence, as far as
+;; the other is finite.
+(length<? (liota) 5)         @result{} #f
 @end example
-
-@c EN
-NB: The name of these procedures might be misleading, for other procedures
-with the name @code{something<=?} etc. usually takes objects of the same type.
-We don't have any better idea now, unfortunately.
 @c JP
-註: これらの手続きの名前は混乱を招きやすいかもしれません。@code{something<=?}等の
-名前は通常、同じ型のオブジェクト同士の比較に使われるからです。
-残念ながら、今のところより良い名前を思いつけていません。
+これらの手続きは、ふたつのリストの長さ同士、あるいはひとつのリストの長さと
+与えられた数とを比較します。
+結果を得るのに必要なだけしかリストを読まないので、
+それぞれのリストの長さを取って比較するよりもずっと効率的です。
+また、ドットリストや循環リストも扱えます。
+
+二番目の引数はリストか実数です。典型的なインタフェースからは逸脱していますが、
+便利なので採用しました。
+
+@example
+(length<=? '(a b) '(a b c))  @result{} #t
+(length>?  '(a b) '(a b c))  @result{} #f
+
+;; 数で長さを指定
+(length=? '(a b c d e) 5)    @result{} #t
+
+;; どんな実数でも使える
+(length>? '(a b c) 2.5)      @result{} #t
+
+;; ドットリストはペアの数を数える
+(length=? '(a b . c) 2)      @result{} #t
+
+;; 循環リストは無限の長さを持つとみなす
+(length>? '(a . #0=(b . #0#)) 100000) @result{} #t
+(length=? '#0=(a . #0#) '#1=(b b . #1#)) @result{} #t
+
+;; 一方が有限であれば、無限の遅延シーケンスもok
+(length<? (liota) 5)         @result{} #f
+@end example
 @c COMMON
 @end defun
 
