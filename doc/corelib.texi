@@ -3274,7 +3274,55 @@ Hence @code{(< x y) @result{} #f} does not imply @code{(>= x y) @result{} #t}.
 @c COMMON
 @end defun
 
+@defmac ineq v0 op0 v1 @dots{}
+@c EN
+N-ary nature of comparison procedures allows you to write something like
+@code{(< 0 x 100)}.  However, if you have close/open range, you have to
+fall back to verbose @code{(and (<= 0 x) (< x 100))}.  With @code{ineq}
+(for inequality), you can write it as @code{(ineq 0 <= x < 100)}.
 
+Formally, @code{(ineq v0 op0 v1 op1 @dots{} opN vN+1)} is expanded
+into the following:
+@c JP
+比較手続きは3つ以上の引数を取れるので、例えば@code{(< 0 x 100)}のように
+書くことができます。しかし、片方が開区間、もう片方が閉区間といった場合は
+短く書くことができず、@code{(and (<= 0 x) (< x 100))}としなければ
+なりませんでした。@code{ineq}マクロ(inequality=不等式)を使うと、
+これを@code{(ineq 0 <= x < 100)}と書くことができます。
+
+正式には、@code{(ineq v0 op0 v1 op1 @dots{} opN vN+1)}は
+次のとおり展開されます。
+@c COMMON
+
+@example
+(let ((_v0 v0) (_op0 op0) ... (_opN opN) (_vN+1 vN+1))
+  (and (_op0 _v0 _v1)
+       (_op1 _v1 _v2)
+       ...
+       (_opN _vN _vN+1)))
+@end example
+
+@c EN
+The operator @var{op0} etc. does not need to be a numerical comparison;
+any binary operator would do, but probably only comparison-like
+operators make sense.
+@c JP
+演算@var{op0}などは二項演算子として使えさえすれば、
+数値比較手続きである必要はありません。
+ただ、上の展開が意味を持つのは基本的には何らかの比較手続きでしょう。
+@c COMMON
+
+@example
+(ineq #\A char-ci<=? x char-ci<? y char-ci<=? #\Z)
+@end example
+
+@c EN
+It is an error if the number of arguments are not odd.
+@c JP
+引数の数が奇数でない場合はエラーとなります。
+@c COMMON
+@end defmac
+！
 @defun max x1 x2 @dots{}
 @defunx min x1 x2 @dots{}
 [R7RS base]
