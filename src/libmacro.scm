@@ -42,7 +42,7 @@
                              let1 if-let1 and-let1 let/cc begin0 rlet1
                              let-values let*-values define-values set!-values
                              values-ref values->list
-                             assume assume-type ineq
+                             assume assume-type ineq ineq/comparator
                              dotimes dolist do-plist doplist
                              ecase typecase etypecase cond-list
                              define-condition-type condition
@@ -946,6 +946,25 @@
            `(let ,(map (^[tmp arg] `(,tmp ,arg)) tmps args)
               (and ,@(map (^[vr0 vr1] `(,(cadr vr0) ,(car vr0) ,(car vr1)))
                           vrs (cdr vrs))))))))))
+
+(define-syntax ineq/comparator
+  (er-macro-transformer
+   (^[f r c]
+     (match f
+       [(_ cmpr . args)
+        (when (null? args) (error "Malformed ineq:" f))
+        (unless (odd? (length args))
+          (error "Number of argument list is not odd:" f))
+        (let* ([ctmp (gensym (x->string cmpr))]
+               [tmps (map (^v (gensym (x->string v))) args)]
+               [vrs (slices tmps 2)])
+          (quasirename r
+            `(let ((,ctmp ,cmpr)
+                   ,@(map (^[tmp arg] `(,tmp ,arg)) tmps args))
+               (and ,@(map (^[vr0 vr1] `(,(cadr vr0) ,ctmp ,(car vr0) ,(car vr1)))
+                           vrs (cdr vrs))))))]
+       [_ (error "Malformed ineq/comparator:" f)]))))
+
 
 ;;; repeat construct
 

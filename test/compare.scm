@@ -263,6 +263,27 @@
   (t #f '(0 1) '(1 1) '(1 0))
   )
 
+(test* "ineq/comparator string-ci-comparator"
+       '(#t #f #f)
+       (list
+        (ineq/comparator string-ci-comparator
+                         "abc" <? "ABCD" <=? "ABCD" <? "abd")
+        (ineq/comparator string-ci-comparator
+                         "abc" <? "ABCD" <? "ABCD" <? "abd")
+        (ineq/comparator string-ci-comparator
+                         "abd" <? "ABCD" <=? "ABCD" <? "abd")
+        ))
+
+(test* "ineq/comparator string-ci-comparator"
+       '(#t #f #t)
+       (let1 cmp (make-comparator #t = > #f)
+         (list
+          (ineq/comparator cmp 9 <? 7 <=? 7 <? 5)
+          (ineq/comparator cmp 9 <? 9 <=? 9 <? 8)
+          (ineq/comparator cmp 9 <? 6 <=? 3 <? 1)
+          )))
+
+
 (test-section "default comparator extension")
 
 (define-class <moo> () ((v :init-keyword :v)))
