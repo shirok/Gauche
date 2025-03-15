@@ -326,12 +326,13 @@
     [<string> 'str]
     [(<?> <symbol>) 'maybe-symbol]
     [(<List> (</> <string> <symbol>)) 'string-or-symbol-list]
+    [<vector> => (^v `(vector ,v))]
     [else 'other]))
 
 (test* "typecase" '(int str maybe-symbol maybe-symbol
-                        string-or-symbol-list other)
+                        string-or-symbol-list (vector #()) other)
        (map t-typecase
-            '(10 "abc" foo #f (a "b" c) (d 3 f))))
+            '(10 "abc" foo #f (a "b" c) #() (d 3 f))))
 
 (define (t-etypecase obj)
   (etypecase obj

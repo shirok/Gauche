@@ -1,3 +1,7 @@
+2025-03-14  Shiro Kawai  <shiro@acm.org>
+
+	* src/libmacro.scm (typecase): Support '=>', like case.
+
 2025-03-11  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (length<=? etc.): Allow to compare two lists.

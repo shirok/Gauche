@@ -1064,9 +1064,15 @@
      (match f
        [(_ expr clause ...)
         (let1 v (gensym)
+          (define (=>? x) (c x (r'=>)))
           (define (clauses cs)
             (match cs
               [() (undefined)]
+              [((type-expr (? =>?) expr) . rest)
+               (quasirename r
+                 `(if (of-type? ,v ,type-expr)
+                    (,expr ,v)
+                    ,(clauses rest)))]
               [((type-expr expr ...) . rest)
                (if (c (r'else) type-expr)
                  (if (null? rest)
