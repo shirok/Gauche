@@ -2053,6 +2053,7 @@ can only appear as the last clause, if any.
 
 @example
 (@var{type-expr} @var{expr} @dots{})
+(@var{type-expr} => @var{expr})
 (else @var{expr1} @var{expr2} @dots{})
 @end example
 
@@ -2065,16 +2066,26 @@ Each @var{type-expr} must be a type expression (@pxref{Types and classes}).
 @c EN
 This macro first evaluates @var{key-expr}, then tests if its value is
 of the type @var{type-expr}, in turn.  If the type constraint is satisfied,
-the @var{expr} @dots{} in the clause is evaluated and the last result(s)
-becomes the value of @code{typecase}.  Type constrant is checked with
+the rest of the clause is evaluated--in the first form,
+@var{expr} @dots{} are evaluated as if they're in @code{begin},
+and in the second form, @var{epxr} is evaluated and expected to yield
+a procedure, and tail-called with the value of @var{key-expr} as an
+argument.
+
+Type constraint is checked with
 @code{of-type?} (@pxref{Generic type predicates}).
+
 If none of the type constrait is
 satisfied, @var{expr}s in the @code{else} clause is evaluated if any,
 or an undefined value results.
 @c JP
-このマクロはまず@var{key-expr}を評価し、次にその値が型@var{type-expr}であるかどうかを
-順番に検査してゆきます。もし型の制約が満たされたら、その節にある@var{expr} @dots{}
-が評価され、その最後の値が@code{typecase}の値となります。
+このマクロはまず@var{key-expr}を評価し、
+次にその値が型@var{type-expr}であるかどうかを
+順番に検査してゆきます。もし型の制約が満たされたら、その節の残りの部分が評価されます。
+最初の形式では@var{expr} @dots{}が@code{begin}で囲まれてるかのうように評価され、
+二番目の形式では@var{expr}の評価結果(手続きにならなければなりません)が、
+@kbd{key-expr}の結果を引数として呼び出されます。
+
 型の制約は@code{of-type?}で検査されます (@ref{Generic type predicates}参照)。
 どの節の型でもなかった場合、@code{else}節があればその中の式が順に評価されて最後の値が
 @code{typecase}の値となり、@code{else}節がなければ未定義値が返されます。
@@ -2083,12 +2094,14 @@ or an undefined value results.
 @example
 (typecase key-expr
   (<integer> 'a)
-  ((</> <string> <symbol>) 'b))
+  ((</> <string> <symbol>) 'b)
+  (<list> => proc))
  @equiv{}
 (let ((tmp key-expr))
   (cond
     ((of-type? tmp <integer>) 'a)
-    ((of-type? tmp (</> <string> <symbol>)) 'b)))
+    ((of-type? tmp (</> <string> <symbol>)) 'b)
+    ((of-type? tmp <list>) (proc tmp))))
 @end example
 @end defmac
 
@@ -2129,7 +2142,7 @@ If there are no expressions then @code{#t} is returned.
 @var{test}式が順に評価されます。最初に偽の値を返したところで評価が止まり、
 偽の値が返されます。残りの式は評価されません。
 もし全ての式が真の値を返した場合は、最後の式の値が返されます。
-式が与えれない場合は@code{#t}が返されます。
+式がない場合は@code{#t}が返されます。
 @c COMMON
 
 @example
