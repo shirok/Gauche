@@ -31,28 +31,38 @@
 ;;;   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;
 
-;; EXPERIMENTAL
-
 ;; cseq is like lseq, but producer and consumer run concurrently
 
 (define-module control.cseq
   (use gauche.generator)
   (use gauche.threads)
+  (use gauche.record)
   (use data.queue)
+  (use srfi.229)                        ;procedure tag
   (export generator->cseq
-          coroutine->cseq)
+          coroutine->cseq
+          cseq?)
   )
 (select-module control.cseq)
 
+(define-record-type cseq-rec #t #T
+  thread
+  queue)
+
 (define (%concurrent-generator->lseq q thunk)
   (define t (thread-start! (make-thread thunk)))
-  (generator->lseq (^[] (let1 r (dequeue/wait! q)
-                          (when (eof-object? (car r))
-                            (guard (e [(<uncaught-exception> e)
-                                       (raise (~ e 'reason))]
-                                      [else (raise e)])
-                              (thread-join! t)))
-                          (apply values r)))))
+  (generator->lseq
+   (lambda/tag (make-cseq-rec t q)
+               []
+               (let1 r (dequeue/wait! q)
+                 (when (eof-object? (car r))
+                   (guard (e [(<uncaught-exception> e)
+                              (raise (~ e 'reason))]
+                             [(<terminated-thread-exception> e)
+                              (eof-object)]
+                             [else (raise e)])
+                     (thread-join! t)))
+                 (apply values r)))))
 
 (define (generator->cseq producer :key (queue-length #f))
   (define q (make-mtqueue :max-length (or queue-length 64)))
@@ -74,3 +84,11 @@
       (proc yielder)
       (enqueue/wait! q (list (eof-object)))))
   (%concurrent-generator->lseq q thunk))
+
+(define (%cseq-rec gen)
+  (and-let* ([ (procedure/tag? gen) ]
+             [tag (procedure-tag gen)]
+             [ (cseq-rec? tag) ])
+    tag))
+
+(define (cseq? gen) (boolean (%cseq-rec gen)))

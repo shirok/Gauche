@@ -1,3 +1,9 @@
+2025-03-16  Shiro Kawai  <shiro@acm.org>
+
+	* lib/control/cseq.scm: Keep the thread and queue in the procedure
+	  tag of cseq generator, so that we can later close the queue and/or
+	  terminate the thread.
+
 2025-03-14  Shiro Kawai  <shiro@acm.org>
 
 	* src/libmacro.scm (typecase): Support '=>', like case.
