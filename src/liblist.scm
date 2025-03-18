@@ -938,6 +938,22 @@
     (return z)))
 (define-cproc extended-list (elt :rest more) ::<list> Scm_ExtendedCons)
 
+(define-cproc extended-list-copy (lis)
+  (let* ([h SCM_NIL] [t SCM_NIL])
+    (for ()
+      (cond [(SCM_NULLP lis) (return h)]
+            [(SCM_EXTENDED_PAIR_P lis)
+             (let* ([p (Scm_MakeExtendedPair (SCM_CAR lis) SCM_NIL
+                                             (-> (SCM_EXTENDED_PAIR lis) attributes))])
+               (SCM_APPEND h t p)
+               (set! lis (SCM_CDR lis)))]
+            [(SCM_PAIRP lis)
+             (SCM_APPEND1 h t (SCM_CAR lis))
+             (set! lis (SCM_CDR lis))]
+            [else
+             (SCM_APPEND h t lis)
+             (return h)]))))
+
 (define-cproc pair-attributes (pair::<pair>) Scm_PairAttr)
 
 (define-cproc pair-attribute-get (pair::<pair> key :optional fallback)

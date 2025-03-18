@@ -801,4 +801,34 @@
   (set! data2 #f)
   )
 
+(let ((data1 ($ extended-cons 1
+                ($ cons 2
+                   $ extended-cons 3 '() '((a . b)))
+                '((c . d) (e . f))))
+      (data2 ($ extended-cons 1
+                ($ extended-cons 2 3 '((g . h) (i . j)))
+                '((k . l))))
+      (data3 ($ extended-cons 1
+                ($ cons 2 3)
+                '((k . l)))))
+  (define (xpair->list lis)
+    (cond [(extended-pair? lis)
+           (list (car lis) (xpair->list (cdr lis))
+                 (pair-attributes lis))]
+          [(pair? lis) (list (car lis) (xpair->list (cdr lis)) #f)]
+          [else lis]))
+
+  (test* "extended-list-copy 1"
+         '(1 (2 (3 () ((a . b))) #f) ((c . d) (e . f)))
+         (xpair->list (extended-list-copy data1)))
+
+  (test* "extended-list-copy 2"
+         '(1 (2 3 ((g . h) (i . j))) ((k . l)))
+         (xpair->list (extended-list-copy data2)))
+
+  (test* "extended-list-copy 3"
+         '(1 (2 3 #f) ((k . l)))
+         (xpair->list (extended-list-copy data3)))
+  )
+
 (test-end)

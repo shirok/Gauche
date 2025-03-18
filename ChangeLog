@@ -1,3 +1,7 @@
+2025-03-17  Shiro Kawai  <shiro@acm.org>
+
+	* src/liblist.scm (extended-list-copy): Added.
+
 2025-03-16  Shiro Kawai  <shiro@acm.org>
 
 	* lib/control/cseq.scm: Keep the thread and queue in the procedure
