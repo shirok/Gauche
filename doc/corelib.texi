@@ -7807,6 +7807,30 @@ ordinary pairs.
 @c COMMON
 @end defun
 
+@defun extended-list-copy obj
+@c EN
+Copies the ``spine'' of a (possibly dotted) list @var{obj}.
+If it includes an extended pair, a new extended pair is created
+sharing the same pair attributes. (Pair attribute list itself
+isn't copied).
+@c JP
+@var{obj}の「背骨」にあたるリストをコピーします。@var{obj}はドットリストでも
+構いません。
+@var{obj}が拡張ペアを含んでいた場合は、ペア属性を共有する新たな拡張ペアが
+作られます。(ペア属性自体はコピーされません)。
+@c COMMON
+
+@example
+(define a (extended-cons 1 (extended-cons 2 3 '((A . B))) '((C . D))))
+
+(define b (extended-list-copy a))
+
+(pair-attributes b) @result{} ((C . D))
+(pair-attributes (cdr b)) @result{} ((A . B))
+@end example
+
+@end defun
+
 @defun pair-attributes pair
 @c EN
 Returns pair attributes of @var{pair} as an alist.
