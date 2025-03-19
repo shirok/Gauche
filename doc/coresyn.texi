@@ -2512,7 +2512,7 @@ yields @code{#f}, stops evaluation and returns @code{#f} from @code{and-let*}.
 @var{body} @dots{}が評価されます。もし@var{expression}が@code{#f}を返したら、
 評価を打ち切り、@code{and-let*}から@code{#f}を返します。
 @c COMMON
-@item (@var{expression}x)
+@item (@var{expression})
 @c EN
 In this form, @var{variable} is omitted.  @var{Expression} is evaluated
 and the result is used just to determine whether we continue or
