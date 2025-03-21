@@ -1,3 +1,9 @@
+2025-03-20  Shiro Kawai  <shiro@acm.org>
+
+	* libsrc/text/console.scm (getch): Avoid using queue-internal-list.
+	  Use queue->list instead.  This conses, but we don't think it'll
+	  be too much perfomance hit.  We'll see.
+
 2025-03-17  Shiro Kawai  <shiro@acm.org>
 
 	* src/liblist.scm (extended-list-copy): Added.
