@@ -113,13 +113,31 @@ int Scm_Compare(ScmObj x, ScmObj y)
     if (SCM_NULLP(y)) return (SCM_NULLP(x)? 0 : 1);
     if (SCM_PAIRP(x)) {
         if (SCM_PAIRP(y)) {
-            ScmObj px = x;
-            ScmObj py = y;
+            ScmObj px = x, sx = x;
+            ScmObj py = y, sy = y;
+            int cellsx = 0, cellsy = 0;
+            int cyclex = FALSE, cycley = FALSE;
             while (SCM_PAIRP(px) && SCM_PAIRP(py)) {
                 int r = Scm_Compare(SCM_CAR(px), SCM_CAR(py));
                 if (r != 0) return r;
-                px = SCM_CDR(px);
-                py = SCM_CDR(py);
+                px = SCM_CDR(px); if (!cyclex) cellsx++;
+                py = SCM_CDR(py); if (!cycley) cellsy++;
+                if (!(SCM_PAIRP(px) && SCM_PAIRP(py))) break;
+                r = Scm_Compare(SCM_CAR(px), SCM_CAR(py));
+                if (r != 0) return r;
+                px = SCM_CDR(px); if (!cyclex) cellsx++;
+                py = SCM_CDR(py); if (!cycley) cellsy++;
+                sx = SCM_CDR(sx);
+                sy = SCM_CDR(sy);
+                if (SCM_EQ(sx, px)) cyclex = TRUE;
+                if (SCM_EQ(sy, py)) cycley = TRUE;
+                if (cyclex && cycley) {
+                    return (cellsx < cellsy
+                            ? -1
+                            : (cellsx > cellsy
+                               ? 1
+                               : 0));
+                }
             }
             return Scm_Compare(px, py);
         }

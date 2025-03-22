@@ -49,6 +49,11 @@
      ("pair"   (A b c) (a b c) #f)
      ("pair"   (a b)   (a b c) #f)
 
+     ("cyclic" (a a a) #1=(a . #1#) #f)
+     ("cyclic" #2=(a . #2#) #3=(a . #3#) #t)
+     ("cyclic" #4=(a . #4#) #5=(a a . #5#) #f)
+     ("cyclic" (a . #6=(a . #6#)) #7=(a a . #7#)  #f)
+
      ("vector" #(a b c) #(a b c) #t)
      ("vector" #(a B c) #(a b c) #f)
      ("vector" #(a b) #(a b c) #f)
