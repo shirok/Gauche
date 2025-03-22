@@ -51,8 +51,8 @@
 
      ("cyclic" (a a a) #1=(a . #1#) #f)
      ("cyclic" #2=(a . #2#) #3=(a . #3#) #t)
-     ("cyclic" #4=(a . #4#) #5=(a a . #5#) #f)
-     ("cyclic" (a . #6=(a . #6#)) #7=(a a . #7#)  #f)
+     ("cyclic" #4=(a . #4#) #5=(a a . #5#) #t)
+     ("cyclic" (a . #6=(a . #6#)) #7=(a a . #7#)  #t)
 
      ("vector" #(a b c) #(a b c) #t)
      ("vector" #(a B c) #(a b c) #f)

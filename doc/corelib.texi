@@ -1253,6 +1253,26 @@ If both tails are not empty, compare the heads of the tails.
 @c COMMON
 
 @c EN
+Note that this definition covers the case when one of either arguments
+are infinite list, or the both arguments are circular but have difference
+in some of their eleemnts.  The only remaining case, when both are circular
+and have the same contents, we regard them equivalent, since @code{equal?}
+returns @code{#t} for such lists. The actual topology of two circular
+lists may differ.
+@c JP
+上の定義はまた、リストの一方が循環リストの場合、また両方循環リストであっても
+内容が異なる場合をカバーしていることに注意してください。
+残るのは両方のリストが循環リストで、内容も同じ場合ですが、それらは等価とみなされます。
+@code{equal?}も@code{#t}を返すからです。この場合、両循環リストのトポロジーは
+異なっていても構いません。
+@c COMMON
+
+@example
+(compare '#0=(a . #0#) '#1=(a a . #1#)) @result{} 0
+@end example
+
+
+@c EN
 Vectors (including uniform vectors) are compared first by their
 lengths, and if they are the same, elements are compared from left to right.
 Note that it's different from lists and strings.
