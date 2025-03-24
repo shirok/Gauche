@@ -2509,7 +2509,7 @@ These procedures can be used to expand globally defined macros.
 展開されたフォームを返します。そうでなければ、@var{form} をそのまま
 返します。
 
-@code{macroexpand} は、@var{form}の一番外側の式がが展開できなくなるまで
+@code{macroexpand} は、@var{form}の一番外側の式が展開できなくなるまで
 @code{macroexpand-1} を繰り返します。
 (@code{macroexpand}は@var{form}の一番外側以外のマクロは展開しません。
 @var{form}内の全てのマクロを展開するには@code{macroexpand-all}を使ってください。)
