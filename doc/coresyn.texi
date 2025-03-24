@@ -210,7 +210,7 @@ GaucheはR7RSのオプショナルな数値構文と、Gauche特有の拡張を�
 次の二つの異なる意味を持ちます。
 @enumerate
 @item
-数値の小数ががひと続きの@code{#}で終わっている場合、それは「重要でない
+数値の小数部がひと続きの@code{#}で終わっている場合、それは「重要でない
 (有効数字外の)桁」を意味します(この構文はR5RSに含まれていました)。
 Gaucheはそれらの桁を0で置き換えます。
 @code{#}の連続は整数部から始まって小数点を
@@ -3739,15 +3739,15 @@ definitions work just like assignments.
 (define x 3)
 (define (value-of-x) x)
 
-(value-of-x x) @result{} 3
+(value-of-x) @result{} 3
 
 (define x 4)
 
-(value-of-x x) @result{} 4
+(value-of-x) @result{} 4
 @end example
 
 @c EN
-If @var{variable} is not bound in the current module, but has an
+If @var{variable} is not bound in the current module, but has
 imported bindings, things get interesting but complicated.
 @xref{Into the Scheme-Verse}, for the details.
 @c JP

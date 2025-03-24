@@ -7579,7 +7579,7 @@ pointed by @var{keys} is replaced with the return value of @var{proc}.
 @c COMMON
 
 @example
-(assoc-update-in '((a (b . 1) (c . 2))) '(a c) (cut + <> 1))
+(alist-update-in '((a (b . 1) (c . 2))) '(a c) (cut + <> 1))
   @result{} ((a (b . 1) (c . 3))
 @end example
 

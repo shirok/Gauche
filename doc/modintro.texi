@@ -367,7 +367,7 @@ For generic RDBMS interface, see @ref{Database independent access layer}.
 非常に大きなハッシュテーブル(数百万エントリ)の場合、
 @ref{Sparse tables}の方がメモリ効率が良い可能性もあります。
 @item
-@emph{平衡木} - 辞書のキーに順序づけが必要な場合はツリーマップがが利用できます。
+@emph{平衡木} - 辞書のキーに順序づけが必要な場合はツリーマップが利用できます。
 @ref{Treemaps}参照。
 @item
 @emph{不変なマップ} - しばしは、変更不可能な辞書が便利な場面があります。

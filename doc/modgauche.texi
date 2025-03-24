@@ -24116,7 +24116,7 @@ test record fileが既に存在していると、@code{test-start}は
 @c COMMON
 
 @c EN
-If you writes the @code{check} target in your makefile as follows,
+If you write the @code{check} target in your makefile as follows,
 you will get the final one-line summary every time you run
 @code{make check}, assuming that @file{test1.scm}, @file{test2.scm},
 and @file{test3.scm} all has @code{(test-record-file "test.record")}
