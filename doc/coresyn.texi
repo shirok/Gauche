@@ -1692,9 +1692,13 @@ v @result{} #(("A" "b" "a"))
 @c EN
 Retrieves the value of @var{place}, sets its @code{cdr} back to @var{place}
 and returns its @code{car}.
+
+An error is thrown if the original value of @var{place} is not a pair.
 @c JP
 @var{place}の値を取り出し、その@code{cdr}を@var{place}にセットします。
 元の値の@code{car}を返します。
+
+@var{place}の元の値がペアでない場合はエラーが投げられます。
 @c COMMON
 
 @example
