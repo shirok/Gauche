@@ -53,9 +53,14 @@ ScmObj Scm_CharEncodingName(void)
     return SCM_INTERN(SCM_CHAR_ENCODING_NAME);
 }
 
-/* includes encoding-specific auxiliary functions */
-#define SCM_CHAR_ENCODING_BODY
-#include "gauche/char_utf_8.h"
+/* Array of character encoding names, recognizable by iconv, that are
+   compatible with this native encoding. */
+static const char *supportedCharacterEncodings[] = {
+    "UTF-8",
+    "ISO-10646/UTF-8",
+    "UTF8",
+    NULL
+};
 
 const char **Scm_SupportedCharacterEncodings(void)
 {
@@ -74,6 +79,158 @@ int Scm_SupportedCharacterEncodingP(const char *encoding)
         if (*p == '\0' && *q == '\0') return TRUE;
     }
     return FALSE;
+}
+
+/* This table is referenced by SCM_CHAR_NFOLLOWS macro  */
+char Scm_CharSizeTable[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 0x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 1x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 2x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 3x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 4x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 5x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 6x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 7x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 8x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 9x */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* ax */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* bx */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* cx */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, /* dx */
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, /* ex */
+    3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 0, 0  /* fx */
+};
+
+ScmChar Scm_CharUtf8Getc(const unsigned char *cp)
+{
+    ScmChar ch;
+    unsigned char *ucp = (unsigned char *)cp;
+    unsigned char first = *ucp++;
+    if (first < 0x80) { return first; }
+    else if (first < 0xc0) { return SCM_CHAR_INVALID; }
+    else if (first < 0xe0) {
+        ch = first&0x1f;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (ch < 0x80) return SCM_CHAR_INVALID;
+    }
+    else if (first < 0xf0) {
+        ch = first&0x0f;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (ch < 0x800) return SCM_CHAR_INVALID;
+    }
+    else if (first < 0xf8) {
+        ch = first&0x07;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (ch < 0x10000) return SCM_CHAR_INVALID;
+    }
+    else if (first < 0xfc) {
+        ch = first&0x03;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (ch < 0x200000) return SCM_CHAR_INVALID;
+    }
+    else if (first < 0xfe) {
+        ch = first&0x01;
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (*ucp < 0x80 || *ucp >= 0xc0) return SCM_CHAR_INVALID;
+        ch = (ch<<6) | (*ucp++&0x3f);
+        if (ch < 0x4000000) return SCM_CHAR_INVALID;
+    }
+    else {
+        return SCM_CHAR_INVALID;
+    }
+    return ch;
+}
+
+void Scm_CharUtf8Putc(unsigned char *cp, ScmChar ch)
+{
+    if (ch < 0x80) {
+        *cp = (u_char)ch;
+    }
+    else if (ch < 0x800) {
+        *cp++ = (u_char)((ch>>6)&0x1f) | 0xc0;
+        *cp = (u_char)(ch&0x3f) | 0x80;
+    }
+    else if (ch < 0x10000) {
+        *cp++ = (u_char)((ch>>12)&0x0f) | 0xe0;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp = (u_char)(ch&0x3f) | 0x80;
+    }
+    else if (ch < 0x200000) {
+        *cp++ = (u_char)((ch>>18)&0x07) | 0xf0;
+        *cp++ = (u_char)((ch>>12)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp = (u_char)(ch&0x3f) | 0x80;
+    }
+    else if (ch < 0x4000000) {
+        *cp++ = (u_char)((ch>>24)&0x03) | 0xf8;
+        *cp++ = (u_char)((ch>>18)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>12)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp = (u_char)(ch&0x3f) | 0x80;
+    } else {
+        *cp++ = (u_char)((ch>>30)&0x1) | 0xfc;
+        *cp++ = (u_char)((ch>>24)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>18)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>12)&0x3f) | 0x80;
+        *cp++ = (u_char)((ch>>6)&0x3f) | 0x80;
+        *cp++ = (u_char)(ch&0x3f) | 0x80;
+    }
+}
+
+int Scm__CharIsExtraWhiteSpace(ScmChar c, int intraline)
+{
+    if (c < 0x2000) {
+        return (c == 0x00a0         /* Zs NO-BREAK SPACE */
+                || c == 0x1680);    /* Zs OGHAM SPACE MARK */
+    } else if (c <= 0x200a) {
+        /* 0x2000 - 0x200a are all Zs's */
+        return TRUE;
+    } else {
+        return (c == 0x3000         /* Zs IDEOGRAPHIC SPACE */
+                || c == 0x202f      /* Zs NARROW NO-BREAK SPACE */
+                || c == 0x205f      /* Zs MEDIUM MATHEMATICAL SPACE */
+                || (!intraline
+                    && (c == 0x2029        /* Zp PARAGRAPH SEPARATOR */
+                        || c == 0x2028))); /* Zl LINE SEPARATOR */
+    }
+}
+
+/*
+ * Lookup character category.  The tables are in char_attr.c, automatically
+ * generated by gen-unicode.scm.
+ */
+static inline unsigned char Scm__LookupCharCategory(ScmChar ch)
+{
+    if (ch == SCM_CHAR_INVALID || ch >= 0x10ffff) {
+        return SCM_CHAR_CATEGORY_Cn;
+    } else if (ch < 0x20000) {
+        return ucs_general_category_00000[ch];
+    } else {
+        return ucs_general_category_20000(ch);
+    }
 }
 
 /* '0' -> 0, 'a' -> 10, etc.
