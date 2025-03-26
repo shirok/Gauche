@@ -2634,7 +2634,7 @@ Note that, in multithreaded environment,
 the change of the value of @var{var}s are visible from
 all the threads.   This form is provided mainly for
 the porting convenience.   Use parameter objects instead
-(@pxref{Parameters}) for thread-local dynamic state.
+(@pxref{Parameters}) for dyncamically-scoped variables.
 @c JP
 動的スコープの変数をエミュレートするマクロです。
 @var{var}は@code{fluid-let}フォームを含むスコープで定義されている
@@ -2644,9 +2644,8 @@ the porting convenience.   Use parameter objects instead
 
 マルチスレッド環境下では、@var{var}の値の変化は全てのスレッドから見えます。
 このフォームは主として他の処理系のコードを移植する際の利便性のために
-追加されました。スレッドローカルな動的状態を実現するには、
-パラメータオブジェクト(@ref{Parameters}参照)を
-使って下さい。
+追加されました。動的スコープの変数を実現するには、
+パラメータオブジェクト(@ref{Parameters}参照)を使って下さい。
 @c COMMON
 @example
 (define x 0)
