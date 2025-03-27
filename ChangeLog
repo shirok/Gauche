@@ -1,3 +1,7 @@
+2025-03-27  Shiro Kawai  <shiro@acm.org>
+
+	* lib/srfi/258.scm: Added srfi-258 uninterned symbols.
+
 2025-03-21  Shiro Kawai  <shiro@acm.org>
 
 	* src/compare.c (Scm_Compare): Handle the case when both are circular

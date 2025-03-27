@@ -3339,5 +3339,23 @@
 ;;-----------------------------------------------------------------------
 ;; SRFI-252 depends on mt-random, and will be tested in ext/srfi.
 
+;;-----------------------------------------------------------------------
+;; Uninterned symbols
+
+(test-section "SRFI-258")
+
+(define-module srfi-258-tests
+  (use gauche.test)
+  (use srfi.258)
+  (test-module 'srfi.258)
+
+  (define (us? x) (and (symbol? x) (not (symbol-interned? x))))
+  (test* "generate-uninterned-symbol (default)" #t
+         (us? (generate-uninterned-symbol)))
+  (test* "generate-uninterned-symbol (string)" #t
+         (us? (generate-uninterned-symbol "Foo")))
+  (test* "generate-uninterned-symbol (symbol)" #t
+         (us? (generate-uninterned-symbol 'Foo)))
+  )
 
 (test-end)
