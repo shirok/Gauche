@@ -1760,3 +1760,15 @@ Supported by the module @code{srfi.252}
 プロパティテスト
 @code{srfi.252}でサポートされます
 (@ref{プロパティテスト}参照)。
+
+
+srfi-258, srfi-258
+()
+
+Uninterned symbols
+Supported by the module @code{srfi.258}
+(@pxref{Uninterned symbols}.
+
+インターンされないシンボル
+@code{srfi.258}でサポートされます
+(@ref{インターンされないシンボル}参照)。

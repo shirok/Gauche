@@ -109,6 +109,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Destructuring lists::         srfi.239
 * Syntactic monads::            srfi.247
 * Property testing::            srfi.252
+* Uninterned symbols::
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -17517,7 +17518,7 @@ arguments.
 
 
 @c ----------------------------------------------------------------------
-@node Property testing,  , Syntactic monads, Library modules - SRFIs
+@node Property testing, Uninterned symbols, Syntactic monads, Library modules - SRFIs
 @section @code{srfi.252} - Property testing
 @c NODE プロパティテスト, @code{srfi.252} - プロパティテスト
 
@@ -18156,6 +18157,49 @@ any number of arguments and returns a value generated with
 各手続きは任意個の引数を取り、@code{value-generator}が生成する
 値を戻り値とします。
 @c COMMON
+@end defun
+
+@c ----------------------------------------------------------------------
+@node Uninterned symbols,  , Property testing, Library modules - SRFIs
+@section @code{srfi.258} - Uninterned symbols
+@c NODE インターンされないシンボル, @code{srfi.258} - インターンされないシンボル
+
+@deftp {Module} srfi.258
+@mdindex srfi.258
+This SRFI defines a common interface to handle uninterned symbols.
+
+Uninterned symbols are the symbols that are not registered to the
+internal hashtables mapping names to symbols. There's no way to
+get a symbol @code{eq?} to an existing uninterned symbol, except
+being passed a direct reference to it.  It is handy for legacy Lisp
+macros to avoid name collisions, for uninterned symbols created
+during macro expansion will never conflict with symboss created
+elsewhere.
+
+With its hygiene macro system, Scheme does not need uninterned symbols
+to avoid name conflicts in macros.  Nevertheless, many Scheme implementations,
+including Gauche, provide this facility, partly to ease porting
+other Lisp idioms, or a handy way to get a unique object.
+
+This SRFI is defined so that the user program can access uninterned
+symbosl portably, if the implementation provides one.
+
+Gauche has the following two procedures defined in this SRFI as built-in:
+
+@example
+string->uninterned-symbol
+symbol-interned?
+@end example
+
+@xref{Symbols}, for the details.
+@end deftp
+
+@defun generate-uninterned-symbol :optional prefix
+[SRFI-258]
+@c MOD srfi.258
+Creates and returns a fresh uninterned symbol.  Similar to
+@code{gensym} (@pxref{Symbols}), but this allows both symbol
+and string in @var{prefix}.
 @end defun
 
 
