@@ -16602,6 +16602,7 @@ A shorthand of @code{(define name (curried formals body @dots{}))}.
 
 @deftp {Module} srfi.234
 @mdindex srfi.234
+@c EN
 This module implements topological sort algorithm.
 
 The SRFI is an enhancement of Gauche's @code{util.toposort} module
@@ -16609,14 +16610,27 @@ The SRFI is an enhancement of Gauche's @code{util.toposort} module
 As this SRFI is finalized, we encourage new code to use this for
 richer features and portability.  Original @code{util.toposort} has
 become a thin wrapper of this module.
+@c JP
+このモジュールはトポロジカルソートを実装しています。
+
+このSRFIはもともとGaucheの@code{util.toposort}を拡張して作られました
+(@pxref{Topological sort (legacy)})。
+このSRFIがfinalizeされたので、新たなコードではこちらのSRFIを使うことを推奨します。
+元の@code{util.toposort}は今ではこのSRFIの薄いラッパーになっています。
+@c COMMON
 @end deftp
 
 @defun topological-sort graph :optional eq node-array
 [SRFI-234]
 @c MOD srfi.234
+@c EN
 Returns a list of node, ordered to satisfy the dependency graph
 represented by @var{graph}.
+@c JP
+@var{graph}で表される依存関係を満たすように整列したノードのリストを返します。
+@c COMMON
 
+@c EN
 @var{Graph} represents a directed acyclic graph (DAG) by a list
 of connections, where each connection is the form
 @example
@@ -16626,8 +16640,22 @@ that means a node @code{<node>} is connected to other nodes
 @code{<downstream>} etc.   @code{<node>} can be arbitrary
 object.  Their equality is compared by a procedure @var{eq},
 which is @code{equal?} by default.
+@c JP
+@var{graph}は有向非循環グラフ(DAG)を接続のリストで表したものです。
+各接続は次の形式です。
+@example
+(<node> <downstream> <downstream2> ...)
+@end example
+これは、@code{<node>}から他のノード@code{<downstream>} @dots{}への
+接続があることを示してます。@code{<node>}はどんなオブジェクトであっても構いません。
+ノード同士の等しさは@var{eq}引数で比較され、そのデフォルトは@code{equal?}です。
+@c COMMON
 
+@c EN
 If the graph contains cycles, @code{#f} is returned.
+@c JP
+グラフに循環があった場合は@code{#f}が返されます。
+@c COMMON
 
 @example
 (topological-sort '((shirt tie belt)
@@ -16640,17 +16668,26 @@ If the graph contains cycles, @code{#f} is returned.
  @result{} (socks undershorts watch shirt tie pants belt jacket shoes)
 @end example
 
+@c EN
 If the optional @var{node-array} is given and not @code{#f}, it must
 be a vector of nodes, and @var{graph} uses integer indices
 of the nodes in place of nodes themselves.  The comparison
 predicate @var{eq} is applied on the indices.  Once the nodes are
 sorted, they are looked up from @var{node-array}, and a list of
 nodes is returned.
+@c JP
+省略可能引数@var{node-array}が与えられ、それが@code{#f}でない場合、
+それはノードのベクタでなければなりません。その場合、@var{graph}はノード自体ではなく
+@var{node-array}へのインデックスで表現されます。
+トポロジカルソートが終了したら、結果は@var{node-array}にあるノードのリストで
+返されます。
+@c COMMON
 @end defun
 
 @defun topological-sort/details graph :optional eq node-array
 [SRFI-234]
 @c MOD srfi.234
+@c EN
 Like @code{topological-sort}, but returns three values for
 further information.  The meanings of arguments are the same
 as @code{topological-sort}.
@@ -16658,11 +16695,24 @@ as @code{topological-sort}.
 If nodes can be topologically sorted, the first return value
 is a sorted list of nodes, and the second and the third values are
 @code{#f}.
+@c JP
+@code{topological-sort}と似ていますが、より詳しい情報を3つの戻り値で返します。
+引数の意味は@code{topological-sort}と同じです。
 
+ノードがトポロジカルソート可能であれば、最初の戻り値はソートされたノードのリスト、
+二番目と三番目の戻り値は@code{#f}です。
+@c COMMON
+
+@c EN
 If nodes cannot be topologically sorted, the first return value
 is @code{#f}, the second return value is an error message,
 and the third value is a list of nodes that provides information
 of at least one cycle.
+@c JP
+ノードがトポロジカルソート可能でない場合、最初の戻り値は@code{#f}、
+二番目の戻り値はエラーメッセージ、そして三番目の戻り値は
+少なくともひとつの循環についての情報を与えるノードのリストです。
+@c COMMON
 @end defun
 
 @defun edgelist->graph edgelist :optional retriever
