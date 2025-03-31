@@ -42,8 +42,8 @@
 (define-in-module gauche -> (undefined)) ; need to be bound for identifier match
 
 ;; Ensure the result of pass1 is a type, or returns #f.
-;; Called from pass1/type-expression to compile type expression.
-;; Always returns a ($const TYPE).
+;; Called from pass1/type-expression to compile a type expression.
+;; Always returns a ($const TYPE) if not #f.
 ;; Classes are wrapped with proxy-type.
 (define (type/ensure iform cenv)
   (or (and-let* ([ ($const? iform) ]

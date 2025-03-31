@@ -53,7 +53,7 @@
                                              [gauche.os.windows 'windows]
                                              [else 'posix])))
   (ecase flavor
-   ;; Windows flavors is supported in src/libsys.scm.  See the comment in it.
+   ;; Windows flavor is supported in src/libsys.scm.  See the comment in it.
    [(windows)
     (%sys-escape-windows-command-line str #f)]
    [(windows-batchfile)
