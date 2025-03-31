@@ -245,13 +245,7 @@
   (hash-table-fold h (^[k v r] (logxor (logxor (hash k) (hash v)) r)) 0))
 
 (define-method object-equal? ((a <hash-table>) (b <hash-table>))
-  (define (subset? x y)
-    (not (hash-table-find x (^[k v] (not (and (hash-table-exists? y k)
-                                              (=? default-comparator
-                                                  v (hash-table-get y k))))))))
-  (and (equal? (hash-table-comparator a) (hash-table-comparator b))
-       (subset? a b)
-       (subset? b a)))
+  (hash-table=? default-comparator a b))
 
 ;; Make charset hashable
 (define-method object-hash ((c <char-set>) _) (char-set-hash c))
@@ -289,7 +283,7 @@
 
 ;;
 ;; Turn on generic dispatcher on selected gfs.
-;; Eventually, we automate attaching dispacher whenever gf meets certain
+;; Eventually, we automate attaching dispatcher whenever gf meets certain
 ;; criteria.  The dispatcher is so effective, (e.g. ref <vector>
 ;; gets 8x speedup) so we manually turn it on for soem gfs.
 ;; In case if bug is found in dispatcher mechanism, use -fno-generic-dispatcher
