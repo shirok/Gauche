@@ -16718,17 +16718,34 @@ of at least one cycle.
 @defun edgelist->graph edgelist :optional retriever
 [SRFI-234]
 @c MOD srfi.234
+@c EN
 Converts a list of edges @var{edgelist} to a graph acceptable by
 @code{topolocial-sort}.  Each edge is a list of two nodes, representing
 a directed edge @code{(@var{from-node} @var{to-node})}.
 The returned graph is a list of
 @code{(@var{from-node} @var{downstream-node} @var{downstream-node2} @dots{})}.
+@c JP
+エッジのリスト@var{edgelist}を、@code{topological-sort}に渡せる形式のグラフへと
+変換します。各エッジは@code{(@var{from-node} @var{to-node})}の形式で、
+@var{from-node}から@var{to-node}への直接の接続があることを示します。
+返されるグラフは、
+@code{(@var{from-node} @var{downstream-node} @var{downstream-node2} @dots{})}
+を要素とするリストです。
+@c COMMON
 
+@c EN
 The optional argument @var{retriever} is called
 as @code{(@var{retriever} @var{from-node} @var{graph})} to get a
 graph entry starting with @var{from-node}.  When omitted, @code{assoc}
 is used.  If you need to compare nodes in a special way different from
 @code{equal?}, you can give a customized procedure.
+@c JP
+省略可能引数@var{retriever}は、グラフから@var{from-node}を起点とする
+エントリを抜きだす手続きで、@code{(@var{retriever} @var{from-node} @var{graph})}
+のように呼ばれます。デフォルトは@code{assoc}です。
+扱うグラフのノードが@code{equal?}で単純に比較できないものである場合に、
+この引数に必要な機能を持つ手続きを渡すことができます。
+@c COMMON
 
 @example
 (edgelist->graph '((a b) (a c) (b e) (c b)))
@@ -16739,8 +16756,13 @@ is used.  If you need to compare nodes in a special way different from
 @defun edgelist/inverted->graph edgelist :optional retriever
 [SRFI-234]
 @c MOD srfi.234
+@c EN
 Like @code{edgelist->graph}, but take each edge entry
 as @code{(@var{to-node} @var{from-node})}.
+@c JP
+@code{edgelist->graph}と似ていますが、エッジリストの各エントリは
+@code{(@var{to-node} @var{from-node})}と解釈されます。
+@c COMMON
 
 @example
 (edgelist/inverted->graph '((a b) (a c) (b e) (a e)))
@@ -16751,42 +16773,72 @@ as @code{(@var{to-node} @var{from-node})}.
 @defun graph->edgelist graph
 [SRFI-234]
 @c MOD srfi.234
+@c EN
 Given @var{graph}, which is a list of
 @code{(@var{from-node} @var{downstream-node} @var{downstream-node1} @dots{})},
 returns a list of edges, each of which being
 @code{(@var{from-node} @var{to-node})}.
 This is an inverse operation of @code{edgelist->graph}.
+@c JP
+@code{(@var{from-node} @var{downstream-node} @var{downstream-node1} @dots{})}
+のリストである@var{graph}を取り、
+@code{(@var{from-node} @var{to-node})}のリストであるエッジリストを返します。
+これは@code{edgelist->graph}の逆関数です。
+@c COMMON
 @end defun
 
 @defun graph->edgelist/inverted graph
 [SRFI-234]
 @c MOD srfi.234
+@c EN
 Given @var{graph}, which is a list of
 @code{(@var{from-node} @var{downstream-node} @var{downstream-node1} @dots{})},
 returns a list of edges, each of which being
 @code{(@var{to-node} @var{from-node})}.
 This is an inverse operation of @code{edgelist/inverted->graph}.
+@c JP
+@code{(@var{from-node} @var{downstream-node} @var{downstream-node1} @dots{})}
+のリストである@var{graph}を取り、
+@code{(@var{to-node} @var{from-node})}のリストであるエッジリストを返します。
+これは@code{edgelist/inverted->graph}の逆関数です。
+@c COMMON
 @end defun
 
 @defun connected-components graph
 [SRFI-234]
 @c MOD srfi.234
+@c EN
 Returns a list of node lists, where each list of nodes consists of
 a connected component of a directed graph @var{graph}.
 The format of @var{graph} argument is the same as @code{topological-sort},
 i.e. @code{((node downstream @dots{}) @dots{})}.
+@c JP
+有向グラフ@var{graph}から、連結成分(connected component)のノードリストのリストを返します。
+@var{graph}のフォーマットは@code{topological-sort}に渡すものと同じ、
+すなわち@code{((node downstream @dots{}) @dots{})}のリストです。
+@c COMMON
 
+@c EN
 A connected component is a group of nodes such that from any node in the group
 can reach any other nodes in the same group.
+@c JP
+連結成分とは、グラフ内のノードのグループで、そのグループ内のどのノードから出発しても
+グループ内の他のノードに到達できるようなものです。
+@c COMMON
 
 @example
 (connected-components '((1 2 3) (2 1) (3 4) (4 3)))
   @result{} ((4 3) (1 2))
 @end example
 
+@c EN
 Note: The order of result list, and the order of each node group in the
 list, don't matter.  Mathematically, they should be sets instead of
 lists.
+@c JP
+註: 結果のリストの順序、また各ノードグループのリストの順序に意味はありません。
+数学的には、これらはリストよりもセットであるべきものです。
+@c COMMON
 @end defun
 
 @c ----------------------------------------------------------------------
