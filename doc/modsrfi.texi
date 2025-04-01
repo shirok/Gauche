@@ -109,7 +109,7 @@ R7RSライブラリとしては@code{(srfi 13)})ということに注意して�
 * Destructuring lists::         srfi.239
 * Syntactic monads::            srfi.247
 * Property testing::            srfi.252
-* Uninterned symbols::
+* Uninterned symbols::          srfi.258
 @end menu
 
 @node Testing availability of SRFIs, SRFIs that have become R7RS-large, Library modules - SRFIs, Library modules - SRFIs
@@ -11730,20 +11730,50 @@ This module provides a macro, @code{coroutine-generator},
 that simplifies defining a generator-based coroutine.
 @end deftp
 
-@defmac coroutine-generator body
+@defmac coroutine-generator body @dots{}
 [SRFI-190]
 @c MOD srfi.190
+Returns a generator procedure.  When called first, it executes @var{body}.
+If a syntax @code{yield} appears within @var{body}, it is evaluated to
+the yielding procedure.  When the yielding procedure is called, the
+continuation of the rest of @var{body} is saved and the control returns
+to the caller of the generator.  When the generator is called again,
+it resumes from the saved continuation.  If @var{body} evaluates to the
+last expression, it's the end of generator and the generator returns EOF.
+
+The @code{coroutine-generator} expression can be similary expressed
+with @code{make-coroutine-generator} (@pxref{Generator constructors}),
+by explicitly introducing a variable bound to the yielding procedure:
+
+@example
+(make-coroutine-generator
+  (lambda (yield) body @dots{}))
+@end example
+
+The difference is that, with this SRFI,
+@var{yield} is not a lexically bound variable, but rather
+a syntax parameter (@pxref{Syntax parameters}).
 @end defmac
 
 @defmac yield
 [SRFI-190]
 @c MOD srfi.190
+A syntax parameter that evaluates to the yielding procedure
+within @code{coroutine-generator}.  It is an error if it appears outside of
+the body of @code{coroutine-generator}.
 @end defmac
 
-@defmac define-coroutine-generator name expr
+@defmac define-coroutine-generator name body @dots{}
 @defmacx define-coroutine-generator (name . formals) body @dots{}
 [SRFI-190]
 @c MOD srfi.190
+These are shorthand of the following:
+
+@example
+(define name (coroutine-generator body @dots{}))
+
+(define (name . formals) (coroutine-generator body @dots{}))
+@end example
 @end defmac
 
 @c ----------------------------------------------------------------------
