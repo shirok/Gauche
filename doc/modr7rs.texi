@@ -1293,9 +1293,9 @@ Exports bindings of R7RS @code{(scheme cxr)} library.
 From R7RS programs,
 those bindings are available by @code{(import (scheme cxr))}.
 @c JP
-R7RSの@code{(scheme complex)}ライブラリの束縛をエクスポートします。
+R7RSの@code{(scheme cxr)}ライブラリの束縛をエクスポートします。
 R7RSプログラムからは、エクスポートされた束縛は
-@code{(import (scheme complex))}とすることで使えます。
+@code{(import (scheme cxr))}とすることで使えます。
 @c COMMON
 
 @c EN
