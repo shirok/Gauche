@@ -8026,6 +8026,7 @@ Returns true if and only if @var{obj} is a symbol.
 @end defun
 
 @defun symbol-interned? symbol
+[SRFI-258]
 @c EN
 Returns @code{#t} if @var{symbol} is an interned symbol,
 @code{#f} if it is an uninterned symbol.   An error is signaled
@@ -8033,6 +8034,12 @@ if @var{symbol} is not a symbol.
 @c JP
 シンボル@var{symbol}がインターンされていれば@code{#t}を、
 そうでなければ@code{#f}を返します。シンボルでないものが渡された場合はエラーとなります。
+@c COMMON
+
+@c EN
+This is included in SRFI-258 (@pxref{Uninterned symbols}).
+@c JP
+これはSRFI-258に含まれています(@ref{Uninterned symbols}参照)。
 @c COMMON
 @end defun
 
@@ -8078,6 +8085,7 @@ Returns a symbol whose name is a string @var{string}.
 @end defun
 
 @defun string->uninterned-symbol string
+[SRFI-258]
 @c EN
 Like @code{string->symbol}, but the created symbol is uninterned.
 @c JP
@@ -8087,6 +8095,12 @@ Like @code{string->symbol}, but the created symbol is uninterned.
 @example
 (string->uninterned-symbol "a") @result{} #:a
 @end example
+
+@c EN
+This is included in SRFI-258 (@pxref{Uninterned symbols}).
+@c JP
+これはSRFI-258に含まれています(@ref{Uninterned symbols}参照)。
+@c COMMON
 @end defun
 
 
@@ -8103,6 +8117,14 @@ the convenience of debugging.
 @var{prefix}が与えられた場合は、それは文字列でなければならず、
 それが作られるシンボルのプレフィクスに使われます。これは主としてデバッグを
 容易にするためのものです。
+@c COMMON
+
+@c EN
+This is similar to SRFI-258's @code{generate-uninterned-symbol}
+(@pxref{Uninterned symbols}).
+@c JP
+これはSRFI-258の@code{generate-uninterned-symbol}と似ています
+(@ref{Uninterned symbols}参照)。
 @c COMMON
 @end defun
 

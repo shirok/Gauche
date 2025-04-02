@@ -18298,40 +18298,87 @@ any number of arguments and returns a value generated with
 
 @deftp {Module} srfi.258
 @mdindex srfi.258
+@c EN
 This SRFI defines a common interface to handle uninterned symbols.
 
 Uninterned symbols are the symbols that are not registered to the
-internal hashtables mapping names to symbols. There's no way to
-get a symbol @code{eq?} to an existing uninterned symbol, except
-being passed a direct reference to it.  It is handy for legacy Lisp
+internal hashtables mapping names to symbols. Ordinary symbols
+are registered, so when symbols with the same name are read,
+they are guaranteed to be @code{eq?} to each other.
+On the other hand, there's no way to get a symbol @code{eq?} to an
+existing uninterned symbol, except
+being passed a direct reference to it.
+
+It is handy for legacy Lisp
 macros to avoid name collisions, for uninterned symbols created
 during macro expansion will never conflict with symboss created
 elsewhere.
+@c JP
+このSRFIは、インターンされないシンボルについての共通のインタフェースを定義しています。
 
+インターンされないシンボルとは、内部の名前からシンボルへのハッシュテーブルに登録
+されないシンボルのことです。通常のシンボルは名前が登録されているので、
+同じ名前のシンボルを読んだらそれがシンボルとして@code{eq?}になることが保証されています。
+インターンされないシンボルは、そのシンボルへの参照を直接受け渡しする以外に、
+@code{eq?}であるシンボルを入手する方法がありません。
+
+インターンされないシンボルは、レガシーなLispマクロにおいて名前の衝突を避けるために
+便利に使われてきました。マクロ展開時に作られたインターンされないシンボルは
+プログラム中の他のシンボルと決して衝突しないからです。
+@c COMMON
+
+@c EN
 With its hygiene macro system, Scheme does not need uninterned symbols
-to avoid name conflicts in macros.  Nevertheless, many Scheme implementations,
+to avoid name conflicts in macros (@pxref{Macros}).
+Nevertheless, many Scheme implementations,
 including Gauche, provide this facility, partly to ease porting
 other Lisp idioms, or a handy way to get a unique object.
+@c JP
+Schemeには衛生的マクロシステムがあるので、マクロで名前衝突を避けるために
+インターンされないシンボルを使う必要はありません(@ref{Macros}参照)。
+それでも、Gaucheを含む多くのScheme実装ではこの機能を提供しています。
+他のLispのイディオムを移植したり、単に実行時にユニークなオブジェクトを得るのに
+便利だからです。
+@c COMMON
 
+@c EN
 This SRFI is defined so that the user program can access uninterned
 symbosl portably, if the implementation provides one.
+@c JP
+このSRFIは、インターンされないシンボルを提供している実装間でポータブルな
+インタフェースを提供するためのものです。
+@c COMMON
 
+@c EN
 Gauche has the following two procedures defined in this SRFI as built-in:
+@c JP
+Gaucheでは、SRFI-258のうち次の２つの手続きは組み込みです。
+@c COMMON
 
 @example
 string->uninterned-symbol
 symbol-interned?
 @end example
 
+@c EN
 @xref{Symbols}, for the details.
+@c JP
+詳しくは@ref{Symbols}を参照してください。
+@c COMMON
 @end deftp
 
 @defun generate-uninterned-symbol :optional prefix
 [SRFI-258]
 @c MOD srfi.258
+@c EN
 Creates and returns a fresh uninterned symbol.  Similar to
 @code{gensym} (@pxref{Symbols}), but this allows both symbol
 and string in @var{prefix}.
+@c JP
+新たなインターンされないシンボルを作って返します。
+@code{gensym}と似ていますが、こちらは@var{prefix}にシンボルも文字列も使えます
+(@xref{Symbols}参照)。
+@c COMMON
 @end defun
 
 
