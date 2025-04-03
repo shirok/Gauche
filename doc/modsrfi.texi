@@ -11726,48 +11726,85 @@ Otherwise, first @code{Just} is returned.
 
 @deftp {Module} srfi.190
 @mdindex srfi.190
+@c EN
 This module provides a macro, @code{coroutine-generator},
 that simplifies defining a generator-based coroutine.
+@c JP
+このモジュールは、ジェネレータを元にしたコルーチンの定義を簡単にするマクロ
+@code{coroutine-generator}を提供します。
+@c COMMON
 @end deftp
 
 @defmac coroutine-generator body @dots{}
 [SRFI-190]
 @c MOD srfi.190
-Returns a generator procedure.  When called first, it executes @var{body}.
+@c EN
+Returns a generator procedure.  When called first,
+the created generator procedure executes @var{body} from the beginning.
 If a syntax @code{yield} appears within @var{body}, it is evaluated to
 the yielding procedure.  When the yielding procedure is called, the
 continuation of the rest of @var{body} is saved and the control returns
 to the caller of the generator.  When the generator is called again,
 it resumes from the saved continuation.  If @var{body} evaluates to the
 last expression, it's the end of generator and the generator returns EOF.
+@c JP
+ジェネレータ手続きを返します。作られたジェネレータ手続きは、最初に呼ばれると
+@var{body}を最初から順に実行します。
+@var{body}の中に構文@code{yield}が現れた場合、
+それは制御を譲る手続き(yielding procedure)に評価され、
+それが呼ばれると@var{body}の残りの部分の継続が保存されて制御がジェネレータの
+呼び出し元に戻ります。ジェネレータが再び呼ばれると、保存されていた継続が再起動されます。
+@var{body}の最後の式の評価が終わると、
+ジェネレータからEOFが返されてジェネレータの終端となります。
+@c COMMON
 
+@c EN
 The @code{coroutine-generator} expression can be similary expressed
 with @code{make-coroutine-generator} (@pxref{Generator constructors}),
 by explicitly introducing a variable bound to the yielding procedure:
+@c JP
+@code{coroutine-generator}とほぼ同じことは、
+@code{make-coroutine-generator}を使って制御を譲る手続きを受け取る変数を明示
+することでも実現できます(@ref{Generator constructors}参照)。
+@c COMMON
 
 @example
 (make-coroutine-generator
   (lambda (yield) body @dots{}))
 @end example
 
+@c EN
 The difference is that, with this SRFI,
 @var{yield} is not a lexically bound variable, but rather
 a syntax parameter (@pxref{Syntax parameters}).
+@c JP
+違いは、このSRFIでは@var{yield}はレキシカル変数ではなく構文パラメータであることです
+(@ref{Syntax parameters}参照)。
+@c COMMON
 @end defmac
 
 @defmac yield
 [SRFI-190]
 @c MOD srfi.190
+@c EN
 A syntax parameter that evaluates to the yielding procedure
 within @code{coroutine-generator}.  It is an error if it appears outside of
 the body of @code{coroutine-generator}.
+@c JP
+@code{coroutine-generator}の中では、制御を譲る手続きへと評価される
+構文パラメータです。@code{coroutine-generator}で使われた場合はエラーとなります。
+@c COMMON
 @end defmac
 
 @defmac define-coroutine-generator name body @dots{}
 @defmacx define-coroutine-generator (name . formals) body @dots{}
 [SRFI-190]
 @c MOD srfi.190
+@c EN
 These are shorthand of the following:
+@c JP
+それぞれ以下の形式の略記です。
+@c COMMON
 
 @example
 (define name (coroutine-generator body @dots{}))
