@@ -259,6 +259,10 @@
    ;;  It may have a thunk that computes the expression.
    (value  :init-keyword :value :init-value #f)
    ;; VALUE: the Scheme value this literal represents.
+   (comment :init-keyword :comment :init-value #f)
+   ;; COMMENT: Auxiliary info (string) to be emitted into C source.
+   ;; It is up to each literal class how to use this info.
+   ;; #f if there's no comment.
 
    (inferred-literal-types :allocation :class :init-value '())
    ))
@@ -344,19 +348,22 @@
      (syntax-error "malformed define-cgen-literal:" (define-cgen-literal . _)))
     ))
 
-;; method cgen-literal returns a <cgen-literal> node for the
+;; procedure cgen-literal returns a <cgen-literal> node for the
 ;; literal value of given Scheme value.  It first scans the current
 ;; unit's toplevel nodes with the same value, and returns it if found.
 ;; Otherwise, it creates a new node and register it to the toplevel if
 ;; necessary.
-;; The check of value's class is a bit of kludge.  We want to share
-;; equal strings or vectors; but there may be some objects which defines
-;; object-equal? that returns #t with different class's instances.
+;;
+;; The optional comment is attached to the created <cgen-literal>
+;; (if comment is given, the literal instance won't be shared).
+;; It is up to the literal class how to use the comment.
 
-(define (cgen-literal value)
-  (or (and-let* ([unit (cgen-current-unit)])
+(define (cgen-literal value :optional (comment #f))
+  (or (and-let* ([unit (cgen-current-unit)]
+                 [ (not comment) ])
         (lookup-literal-value unit value))
-      (cgen-make-literal value)))
+      (rlet1 lit (cgen-make-literal value)
+        (when comment (set! (~ lit 'comment) comment)))))
 
 ;; useful function to obtain initializer
 
@@ -754,6 +761,8 @@
   [decl (self)
     (let* ([value (~ self'value)]
            [class (class-of value)])
+      (and-let1 c (~ self'comment)
+        (print "/* " (cgen-safe-comment c) " */"))
       (print "static "(uvector-class->c-type-name class)" "(~ self'elements)"[] = {")
       ;; Avoid using generic fold over uvector (value), for that would introduce
       ;; dependency to gauche.uvector.

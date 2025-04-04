@@ -1,3 +1,11 @@
+2025-04-04  Shiro Kawai  <shiro@acm.org>
+
+	* lib/gauche/cgen/literal.scm (cgen-literal): Allow to add
+	  comment to <cgen-literal> instance.  Some cgen-literal class
+	  may emit it to the generated C code.
+	  For now, the uvector literal of compressed debug info
+	  shows a clue that which procedure it is for.
+
 2025-03-27  Shiro Kawai  <shiro@acm.org>
 
 	* lib/srfi/258.scm: Added srfi-258 uninterned symbols.

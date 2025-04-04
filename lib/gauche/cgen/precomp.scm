@@ -986,8 +986,12 @@
     (let1 codevec (encode-debug-info (cgen-current-unit)
                                      (unwrap-syntax di))
       (record-debug-info-stat! (cgen-current-unit) codevec #f)
-      (let ([codevec-lit (cgen-literal codevec)]
-            [datum-cname (cgen-allocate-static-datum 'runtime)])
+      (let* ([name (~ code 'name)]
+             [comment (if name
+                        (format "debug info of ~a" name)
+                        "debug info")]
+             [codevec-lit (cgen-literal codevec comment)]
+             [datum-cname (cgen-allocate-static-datum 'runtime)])
         (cgen-init (format "  ~a = Scm_MakePackedDebugInfo(SCM_U8VECTOR(~a),\
                                          SCM_debug_info_const_vector);"
                            datum-cname
