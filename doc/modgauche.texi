@@ -3168,7 +3168,7 @@ declarations that needs @file{gauche.h}.
 @file{gauche.h}内にある宣言を必要とします。
 @c COMMON
 
-@defun cgen-literal obj
+@defun cgen-literal obj :optional comment
 @c MOD gauche.cgen
 @c EN
 Returns an @code{<cgen-literal>} object for a Scheme object @var{obj},
@@ -3189,6 +3189,39 @@ See the example in @code{cgen-expr} entry below.
 @code{cgen-cexpr}にそれを渡すことで、Scheme値を実行時にCから参照するための
 Cコード断片を得ることができます。下の@code{cgen-cexpr}のエントリにある
 例を参照してください。
+@c COMMON
+
+@c EN
+The optional @var{comment} will be attached to the created
+@code{<cgen-literal>} objet, which may be included in the output
+C code inside a comment.
+How to use @var{comment} is up to individual cgen-literal
+subclass.  The argument must be a string.
+@c JP
+省略可能な@var{comment}引数は、作られた@code{<cgen-literal>}オブジェクトに
+付加され、生成されたCコードのコメント内に使われる可能性があります。
+実際に@var{comment}をどう使うかはcgen-literalの個々のサブクラスに依存します。
+この引数は文字列でなければなりません。
+@c COMMON
+
+@c EN
+When a created literal isn't wrapped by C preprocessor conditionals
+and doesn't have a comment, it is registered in the internal hashtable
+per unit, and the same (in @code{equal?} sense) literals share a common
+instance.  For example, if you call @code{(cgen-literal '(a b c))} multiple
+times, there will be only one literal object created at runtime
+and all of its use site references that one object.  Furthermore,
+if there's a literal @code{(d a b c)}, the cdr of its literal also
+refers to the literal @code{(a b c)}.
+@c JP
+リテラルにCプリプロセッサコンディションやコメントが付加されていない場合、
+作られたリテラルはユニットごとのハッシュテーブルに登録され、
+同じ(@code{equal?}な)リテラルは共有されます。
+例えば@code{(cgen-literal '(a b c))}を複数回呼んだとすると、
+リテラルのインスタンスは一つだけ作られ、リテラルを使う場面は全て
+その同じリテラルを参照します。
+さらに@code{(d a b c)}のリテラルを作ると、作られたリテラルのcdrは
+さきほどの@code{(a b c)}のリテラルを参照します。
 @c COMMON
 @end defun
 
