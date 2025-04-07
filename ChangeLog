@@ -1,3 +1,8 @@
+2025-04-06  Shiro Kawai  <shiro@acm.org>
+
+	* src/compile-1.scm (define-inline): Allow "curried" definition
+	  i.e. (define-inline ((foo x) y) ...).
+
 2025-04-04  Shiro Kawai  <shiro@acm.org>
 
 	* lib/gauche/cgen/literal.scm (cgen-literal): Allow to add

@@ -682,6 +682,8 @@
 (define-pass1-syntax (define-inline form cenv) :gauche
   (check-toplevel form cenv)
   (match form
+    [(_ ((nested ...)  . args) . body)
+     (pass1 `(,define-inline. ,nested (,lambda. ,args ,@body)) cenv)]
     [(_ (name . args) . body)
      (pass1/define-inline form name `(,lambda. ,args ,@body) cenv)]
     [(_ name expr)

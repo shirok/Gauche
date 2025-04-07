@@ -341,6 +341,20 @@
        (filter-insn (^(x) (let* ([p (f x a)] [q (g x p)] [r (h x q)]) (y r)))
                     'PUSH-LOCAL-ENV))
 
+;; Curried inline procedure
+(define-inline ((curried x) y) (list x y))
+(test* "curried inline procedure" '(((CONSTI-PUSH 3))
+                                    ((CONSTI 5))
+                                    ((LIST 2))
+                                    ((RET)))
+       (proc->insn/split (^[] ((curried 3) 5))))
+(define-inline curried-1 (curried 7))
+(test* "curried inline procedure (indirect)" '(((CONSTI-PUSH 7))
+                                               ((CONSTI 9))
+                                               ((LIST 2))
+                                               ((RET)))
+       (proc->insn/split (^[] (curried-1 9))))
+
 ;; Tests for optimizer bug fixed in 2546f82
 (define-inline (foo p xs . xss)
   (if (null? xss)
