@@ -1931,7 +1931,12 @@ static ScmObj read_sharp_asterisk(ScmPort *port, ScmReadContext *ctx)
 
  finish:;
     ScmObj s = Scm_DStringGet(&ds, 0);
-    return Scm_StringToBitvector(SCM_STRING(s), FALSE);
+    ScmObj bv = Scm_StringToBitvector(SCM_STRING(s), FALSE);
+    SCM_ASSERT(SCM_BITVECTORP(bv));
+    if (ctx->flags & RCTX_LITERAL_IMMUTABLE) {
+         SCM_BITVECTOR_IMMUTABLE_SET(bv, TRUE);
+    }
+    return bv;
 }
 
 /* OBSOLETED: gauche.uvector used to call this to set up reader pointer.
