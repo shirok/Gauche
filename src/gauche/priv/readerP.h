@@ -52,16 +52,6 @@ enum ScmReadContextFlags {
     RCTX_LITERAL_IMMUTABLE = (1L<<1), /* literal should be read as immutable */
     RCTX_DISABLE_CTOR = (1L<<2), /* disable #,() */
     RCTX_RECURSIVELY = (1L<<3),  /* used internally. */
-
-    RCTX_LEXICAL_MODE_MASK = 0xf0 /* >>4 and get ScmReadLexicalMode */
 };
-
-#define RCTX_LEXICAL_MODE_SHIFT  4
-#define RCTX_LEXICAL_MODE(ctx) \
-    ((((ctx)->flags)&RCTX_LEXICAL_MODE_MASK)>>RCTX_LEXICAL_MODE_SHIFT)
-#define RCTX_LEXICAL_MODE_SET(ctx, mode)                                \
-    (((ctx)->flags)                                                     \
-     = (((ctx)->flags & ~RCTX_LEXICAL_MODE_MASK)                        \
-        | (((mode)<<RCTX_LEXICAL_MODE_SHIFT)&RCTX_LEXICAL_MODE_MASK)))
 
 #endif /*GAUCHE_PRIV_READERP_H*/

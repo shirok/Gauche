@@ -51,7 +51,7 @@ SCM_EXTERN ScmReadContext *Scm_SetCurrentReadContext(ScmReadContext *ctx);
     legacy
     warn-legacy
     strict-r7
-   This is kept in a parameter, so it's thread-local.
+   This is kept in a parameter.
 
    NB: The actual implementation is in port.c, because ports require
    this working at initialization, but reader is initialized after ports.
