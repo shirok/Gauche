@@ -1299,7 +1299,7 @@ which is concatenation of all the subvectors.
 @subheading 述語
 @c COMMON
 
-@defun bitvector-emtpy? bv
+@defun bitvector-empty? bv
 [SRFI-178]
 @c MOD gauche.bitvector
 @c EN
