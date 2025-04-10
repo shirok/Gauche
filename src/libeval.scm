@@ -122,7 +122,6 @@
         [prev-next    (current-load-next)]
         [prev-reader-lexical-mode (reader-lexical-mode)]
         [prev-eval-situation (vm-eval-situation)]
-        [prev-read-context (current-read-context)]
         [load-read-context (%new-read-context-for-load)])
 
     (define (setup-load-context)
@@ -146,18 +145,14 @@
       (current-load-next prev-next)
       (reader-lexical-mode prev-reader-lexical-mode)
       (vm-eval-situation prev-eval-situation)
-      (current-read-context prev-read-context)
       (close-port port)
       (%record-load-stat #f)
       (%port-unlock! port))
 
-    ;; Read a source form with load-read-context.  We don't use dynamic-wind,
-    ;; for the error from read will be captured by the guard and the context
-    ;; will be restored anyway.
+    ;; Read a source form with load-read-context.
     (define (read+ port)
-      (current-read-context load-read-context)
-      (begin0 (read port)
-        (current-read-context prev-read-context)))
+      (parameterize ((current-read-context load-read-context))
+        (read port)))
 
     (with-exception-handler
      (^e (let1 e2 (if (condition? e)

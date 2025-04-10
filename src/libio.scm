@@ -707,14 +707,6 @@
    "SCM_READ_REFERENCE_P" "SCM_READ_REFERENCE" "")
  )
 
-(define-cproc current-read-context (:optional ctx)
-  (if (SCM_UNBOUNDP ctx)
-    (return (SCM_OBJ (Scm_CurrentReadContext)))
-    (if (SCM_READ_CONTEXT_P ctx)
-      (return (SCM_OBJ (Scm_SetCurrentReadContext (SCM_READ_CONTEXT ctx))))
-      (begin (Scm_Error "<read-context> required, but got:" ctx)
-             (return SCM_UNDEFINED))))) ;dummy
-
 (define-cproc read-reference? (obj) ::<boolean> SCM_READ_REFERENCE_P)
 
 (define-cproc read-reference-has-value? (ref::<read-reference>)

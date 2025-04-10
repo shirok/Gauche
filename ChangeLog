@@ -1,3 +1,9 @@
+2025-04-09  Shiro Kawai  <shiro@acm.org>
+
+	* src/libio.scm, src/read.c (current-read-context): Expose the
+	  primitive parameter directly; there's no need to wrap it with
+	  subr.
+
 2025-04-07  Shiro Kawai  <shiro@acm.org>
 
 	* src/read.c (read_sharp_asterisk): Make bitvector literal immutable
