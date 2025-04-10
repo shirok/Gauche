@@ -16,6 +16,10 @@ DISABLE_BUILD_GOSH_FLAGS="BUILD_GOSH_FLAGS="
 # NB: We no longer officially support 32bit build.  We just keep the variable
 # for those who want to build it by themselves.
 case "$MSYSTEM" in
+  UCRT64)
+    mingwdir=${MINGWDIR:-/ucrt64}
+    mingwarch="ucrt-x86_64"
+    ;;
   MINGW32)
     mingwdir=${MINGWDIR:-/mingw32}
     mingwarch="i686"
@@ -37,6 +41,8 @@ export PATH=$mingwdir/bin:$PATH
 #  building i686 binary on x86_64 shell, for example), so this setting
 #  makes things easier.
 case "$MSYSTEM" in
+  UCRT64)
+    buildopt=--build=x86_64-w64-mingw32;;
   MINGW32)
     buildopt=--build=i686-w64-mingw32;;
   *)

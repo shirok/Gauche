@@ -184,10 +184,11 @@ extern __declspec(dllimport) const char *Scm_WCS2MBS(const WCHAR *s);
    NB: Windows' mkdir() and _wmkdir() takes one argument.
    NB: Substituing stat with _wstat64 must be in sync with
        the usage of struct __stat64 in ScmSysStatRec (see system.h)
+   NB: UCRT's _waccess() causes error when X_OK is passed.
  */
 #if defined(UNICODE)
 #define open(path, ...)    _wopen(Scm_MBS2WCS(path), __VA_ARGS__)
-#define access(path, mode) _waccess(Scm_MBS2WCS(path), mode)
+#define access(path, mode) _waccess(Scm_MBS2WCS(path), (mode) & ~X_OK)
 #define chdir(dir)         _wchdir(Scm_MBS2WCS(dir))
 #define chmod(path, mode)  _wchmod(Scm_MBS2WCS(path), mode)
 #define mkdir(dir)         _wmkdir(Scm_MBS2WCS(dir))
