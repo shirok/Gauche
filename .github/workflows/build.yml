@@ -16,7 +16,7 @@ jobs:
       TESTLOG_PATH: testlog-linux
     steps:
     - uses: actions/checkout@v4
-    - uses: shirok/setup-gauche@v5
+    - uses: shirok/setup-gauche@v6
     - name: Run release version of Gauche
       run: |
         gosh -V
@@ -59,7 +59,7 @@ jobs:
       TESTLOG_PATH: testlog-osx-${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
-    - uses: shirok/setup-gauche@v5
+    - uses: shirok/setup-gauche@v6
     - name: Run release version of Gauche
       run: |
         gosh -V
@@ -95,30 +95,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, i686]
+        sys: [ucrt64, mingw64, mingw32]
         include:
-        - arch: x86_64
+        - sys: ucrt64
+          env: ucrt-x86_64
+          arch: x86_64
           bit: 64
           devtool_path: D:\devtool64
-        - arch: i686
+        - sys: mingw64
+          env: x86_64
+          arch: x86_64
+          bit: 64
+          devtool_path: D:\devtool64
+        - sys: mingw32
+          env: i686
+          arch: i686
           bit: 32
           devtool_path: D:\devtool32
     env:
       GAUCHE_VERSION_URL: https://practical-scheme.net/gauche/releases/latest.txt
       GAUCHE_INSTALLER_URL: https://practical-scheme.net/gauche/releases/latest.${{ matrix.bit }}bit.msi
       GAUCHE_PATH: ${{ matrix.devtool_path }}\Gauche\bin
-      TESTLOG_NAME: testlog-windows-${{ matrix.arch }}
-      TESTLOG_PATH: testlog-windows-${{ matrix.arch }}
+      TESTLOG_NAME: testlog-windows-${{ matrix.sys }}
+      TESTLOG_PATH: testlog-windows-${{ matrix.sys }}
     steps:
     - run: git config --global core.autocrlf false
     - uses: actions/checkout@v4
     - uses: msys2/setup-msys2@v2
       with:
-        msystem: MINGW${{ matrix.bit }}
+        msystem: ${{ matrix.sys }}
         path-type: inherit
         release: true
         update: true
-        install: 'base-devel mingw-w64-${{ matrix.arch }}-toolchain mingw-w64-${{ matrix.arch }}-autotools'
+        install: 'base-devel mingw-w64-${{ matrix.env }}-toolchain mingw-w64-${{ matrix.env }}-autotools'
     - name: Run MSYS2 once
       shell: msys2 {0}
       run: |
@@ -144,14 +153,6 @@ jobs:
       run: |
         where gosh
         gosh -V
-    - name: Install tools
-      shell: msys2 {0}
-      run: |
-        where openssl
-        echo 'Rename unavailable openssl.exe'
-        mv /mingw${{ matrix.bit }}/bin/openssl.exe /mingw${{ matrix.bit }}/bin/openssl_NG.exe
-        where openssl
-        /usr/bin/openssl version
     - name: Build
       shell: msys2 {0}
       run: |
@@ -179,5 +180,5 @@ jobs:
     #  if: always()
     #  uses: actions/upload-artifact@v4
     #  with:
-    #    name: Gauche-${{ matrix.arch }}
-    #    path: ../Gauche-mingw-dist/Gauche-${{ matrix.arch }}
+    #    name: Gauche-${{ matrix.env }}
+    #    path: ../Gauche-mingw-dist/Gauche-${{ matrix.env }}
