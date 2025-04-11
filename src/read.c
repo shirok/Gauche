@@ -103,6 +103,11 @@ static ScmPrimitiveParameter *defaultReadContext;
 ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
 {
     ScmVM *vm = Scm_VM();
+
+    if (ctx == NULL) {
+        ctx = Scm_MakeReadContext(NULL);
+    }
+
     volatile ScmObj r = SCM_NIL;
     if (!SCM_PORTP(port) || SCM_PORT_DIR(port) != SCM_PORT_INPUT) {
         Scm_Error("input port required: %S", port);
@@ -127,7 +132,7 @@ ScmObj Scm_ReadWithContext(ScmObj port, ScmReadContext *ctx)
 
 ScmObj Scm_Read(ScmObj port)
 {
-    return Scm_ReadWithContext(port, Scm_MakeReadContext(NULL));
+    return Scm_ReadWithContext(port, NULL);
 }
 
 /* Convenience functions */

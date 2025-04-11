@@ -535,8 +535,9 @@
 
 (select-module scheme)
 
-(define-cproc read (:optional (port::<input-port> (current-input-port)))
-  (return (Scm_Read (SCM_OBJ port))))
+(define-cproc read (:optional (port::<input-port> (current-input-port))
+                              (ctx::<read-context>? #f))
+  (return (Scm_ReadWithContext (SCM_OBJ port) ctx)))
 
 (define-cproc read-char (:optional (port::<input-port> (current-input-port)))
   (inliner READ-CHAR)

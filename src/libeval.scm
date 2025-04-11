@@ -149,11 +149,6 @@
       (%record-load-stat #f)
       (%port-unlock! port))
 
-    ;; Read a source form with load-read-context.
-    (define (read+ port)
-      (parameterize ((current-read-context load-read-context))
-        (read port)))
-
     (with-exception-handler
      (^e (let1 e2 (if (condition? e)
                     ($ make-compound-condition e
@@ -169,7 +164,7 @@
        ;; Discard BOM
        (when (eqv? (peek-char port) #\ufeff)
          (read-char port))
-       (do ([s (read+ port) (read+ port)])
+       (do ([s (read port load-read-context) (read port load-read-context)])
            [(eof-object? s)]
          (eval s #f))))
     (restore-load-context)

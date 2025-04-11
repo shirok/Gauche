@@ -311,6 +311,7 @@
    (%cclass <sys-stat> "ScmSysStat*")
    (%cclass <time> "ScmTime*")
    (%cclass <sys-fdset> "ScmSysFdset*")
+   (%cclass <read-context> "ScmReadContext*")
    ;; NB: <sys-tm> is defined using define-cstruct in libsys.scm, and its
    ;; C type isn't visible from outside.
    ;;(%cclass <sys-tm> "ScmSysTm*")
