@@ -11,7 +11,7 @@ The reference manual tells whether a particular procedure
 is supported on "`Windows native`".
 
 As of 0.9.5, the official Windows binaries are built with
-mingw-w64 (see link:http://mingw-w64.org/[]).  It may still be
+mingw-w64 (see link:https://www.mingw-w64.org/[]).  It may still be
 built with the original MinGW, but our support efforts are
 prioritized in favor of mingw-w64.  By '`MinGW version`' in
 the following sections, we mean Gauche built with mingw-w64.
@@ -25,7 +25,7 @@ from the source.
 
 You need the following software:
 
-=== link:http://msys2.github.io[MSYS2]
+=== link:https://www.msys2.org/[MSYS2]
 
 Download the installer and follow the instruction.  I recommend
 to leave the installation folder default (`C:\msys64`, for x86_64).
@@ -38,31 +38,22 @@ For +mingw-w64-***+ packages, choose suitable architecture.
 
 The following packages are needed:
 
-- mingw-w64-ucrt-x86_64-gcc
-- autoconf
-- automake
-- libtool
-- pkg-config
-- make
+- base-devel
+- mingw-w64-ucrt-x86_64-toolchain
+- mingw-w64-ucrt-x86_64-autotools
 
 The following packages are strongly recommended.  Gauche can be built
 without them, but some features will not be available.
 
-- mingw-w64-ucrt-x86_64-zlib
-- mingw-w64-ucrt-x86_64-libiconv
-- texinfo
+- mingw-w64-ucrt-x86_64-zlib (included in toolchain)
+- mingw-w64-ucrt-x86_64-libiconv (included in toolchain)
+- texinfo (included in base-devel)
 
 The following packages are used if you wand to compile MbedTLS within
 Gauche.  See "Build with MbedTLS" below for the details.
 
 - cmake
 - python3
-
-The following packages are only used for testing (`make check`).  You
-don't need them just to build and use Gauche:
-
-- openssl
-- winpty
 
 
 [NOTE]
@@ -106,14 +97,14 @@ If you start from git repo clone (instead of source tarball), you
 have to run `./DIST gen` first to generate configure scripts.
 
 Once configure scripts are in place, run the `mingw-dist.sh` on the
-MSYS shell as follows:
+*MSYS2 UCRT64 shell* (not MSYS2 MSYS shell) as follows:
 
 [source,sh]
 ----
-MSYSTEM=MINGW64 src/mingw-dist.sh
+src/mingw-dist.sh
 ----
 
-The compiled binaries are in `../Gauche-mingw-dist/Gauche-x86_64`.
+The compiled binaries are in `../Gauche-mingw-dist/Gauche-ucrt-x86_64`.
 It includes DLLs needed to run `gosh`, so you can just zip
 the directory and copy to whatever machine you like.
 
@@ -127,7 +118,7 @@ you can build Gauche-gl as well.  Give `--with-gl` option:
 
 [source,sh]
 ----
-MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl
+src/mingw-dist.sh --with-gl
 ----
 
 
@@ -173,7 +164,7 @@ Run `src/mingw-dist.sh` with `--with-installer` option, for example:
 
 [source,sh]
 ----
-MSYSTEM=MINGW64 src/mingw-dist.sh --with-gl --with-installer
+src/mingw-dist.sh --with-gl --with-installer
 ----
 
 This creates installer file `../Gauche-mingw-X.X.X-{32|64}bit.msi`.
