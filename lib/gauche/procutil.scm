@@ -262,3 +262,18 @@
 (define port-fold-right generator-fold-right)
 (define port-for-each generator-for-each)
 (define port-map generator-map)
+
+;; Experimental code
+
+;; 'Runs'
+;;   A 'run' of code is a sequence of instructions without making external
+;;   function calls. It can contain branches, so a run have a single
+;;   entry point and one or more exit points.  It can have loops in it.
+
+;; (define (code->runs code)
+;;   (assume-type code <compiled-code>)
+;;   (let loop ([insns (vm-code->list code)]
+;;              [runs '()])
+;;     (if (null? insns)
+;;       (reverse runs)
+;;       (let1 insn (car insns)

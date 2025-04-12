@@ -121,8 +121,7 @@
         [prev-history (current-load-history)]
         [prev-next    (current-load-next)]
         [prev-reader-lexical-mode (reader-lexical-mode)]
-        [prev-eval-situation (vm-eval-situation)]
-        [load-read-context (%new-read-context-for-load)])
+        [prev-eval-situation (vm-eval-situation)])
 
     (define (setup-load-context)
       (when (port-closed? port) (error "port already closed:" port))
@@ -164,9 +163,8 @@
        ;; Discard BOM
        (when (eqv? (peek-char port) #\ufeff)
          (read-char port))
-       (do ([s (read port load-read-context) (read port load-read-context)])
-           [(eof-object? s)]
-         (eval s #f))))
+       (generator-for-each (^s (eval s #f))
+                           (cute read port (%new-read-context-for-load)))))
     (restore-load-context)
     #t))
 

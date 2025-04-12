@@ -993,6 +993,14 @@ static ScmObj read_list_int(ScmPort *port, ScmChar closer,
     return SCM_NIL;             /* dummy */
 }
 
+/* Read a list.  The opening paren (or other opening character) is already
+   read.  Read up to, and including, the CLOSER character.
+   NB: We don't check RCTX_LITERAL_IMMUTABLE flag.  It's because (1) reading
+   the source code is mostly reading the list; the result is consumed
+   immediately by the compiler, and (2) literal list in the program is
+   always quoted, so we can build immutable list while handling quote
+   during compilation.
+*/
 static ScmObj read_list(ScmPort *port, ScmChar closer, ScmReadContext *ctx)
 {
     int has_ref;
