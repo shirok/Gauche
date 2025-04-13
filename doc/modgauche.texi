@@ -31137,8 +31137,21 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Returns a uniform vectors of the same type and length as @var{vec},
+and an integer index.
+The returned vector contains the elements in @var{vec} that satisfies
+@var{pred} at the left, up to the returned index, followed by
+the elements that don't satisfy @var{pred}
 @c JP
+@var{vec}と同じ型で同じ大きさのユニフォームベクタと、整数のインデックスを返します。
+戻り値のベクタは左から、@var{vec}の要素のうち@var{pred}を満たすものが順に
+インデックスまで格納され、続いて@var{pred}を満たさない要素が格納されます。
 @c COMMON
+
+@example
+(u8vector-partition odd? '#u8(0 1 2 3 4 5 6 7))
+ @result{} #u8(1 3 5 7 0 2 4 6) @r{and} 4
+@end example
 @end deffn
 
 @deffn {Function} @@vector-filter pred vec
@@ -31174,30 +31187,56 @@ length of @var{vec} is not a multiple of @var{n}.
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Applies @var{pred} on each element of a uniform vector @var{vec},
+and collects the elements that satisfies ('filter'), or doest not satisfy
+('remove'), into the same type of @var{vec} and returns it.
 @c JP
+ユニフォームベクタ@var{vec}の各要素に@var{pred}を適用し、
+それを満たす要素(filter)あるいは満たさない要素(remove)だけを集めた、
+@var{vec}と同じ型のユニフォームベクタを作って返します。
 @c COMMON
+
+@example
+(u8vector-filter odd? '#u8(0 1 2 3 4 5 6 7))
+ @result{} #u8(1 3 5 7)
+(u8vector-remove odd? '#u8(0 1 2 3 4 5 6 7))
+ @result{} #u8(0 2 4 6)
+@end example
 @end deffn
 
 
 @deffn {Function} make-@@vector-generator vec
 @findex make-u8vector-generator
-@findex s8ke-u8vector-generator
-@findex u16ke-u8vector-generator
-@findex s16ke-u8vector-generator
-@findex u32ke-u8vector-generator
-@findex s32ke-u8vector-generator
-@findex u64ke-u8vector-generator
-@findex s64ke-u8vector-generator
-@findex f16ke-u8vector-generator
-@findex f32ke-u8vector-generator
-@findex f64ke-u8vector-generator
-@findex c32ke-u8vector-generator
-@findex c64ke-u8vector-generator
-@findex c128ke-u8vector-generator
+@findex make-s8vector-generator
+@findex make-u16vector-generator
+@findex make-s16vector-generator
+@findex make-u32vector-generator
+@findex make-s32vector-generator
+@findex make-u64vector-generator
+@findex make-s64vector-generator
+@findex make-f16vector-generator
+@findex make-f32vector-generator
+@findex make-f64vector-generator
+@findex make-c32vector-generator
+@findex make-c64vector-generator
+@findex make-c128vector-generator
 [R7RS vector.@@]
 @c MOD gauche.uvector
 @c EN
+Creates and returns a generator that returns elements of @var{vec}
+one at a time in order.
 @c JP
+@var{vec}の要素を一つづつ順に返すジェネレータを作って返します。
+@c COMMON
+
+@c EN
+For Gauche-specific code, you can use the generic version,
+@code{uvector->generator} in @code{gauche.generator}
+(@pxref{Generators}).
+@c JP
+Gauche専用のコードであれば、@code{gauche.generator}にある
+ジェネリックなバージョン@code{uvector->generator}を使うこともできます
+(@ref{Generators}参照)。
 @c COMMON
 @end deffn
 
